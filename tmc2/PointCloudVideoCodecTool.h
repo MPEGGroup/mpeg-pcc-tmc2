@@ -1,0 +1,179 @@
+/* The copyright in this software is being made available under the BSD
+ * License, included below. This software may be subject to other third party
+ * and contributor rights, including patent rights, and no such rights are
+ * granted under this license.
+ *
+ * <OWNER> = Apple Inc.
+ * <ORGANIZATION> = Apple Inc.
+ * <YEAR> = 2017
+ *
+ * Copyright (c) 2017, Apple Inc.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *  * Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *  * Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *  * Neither the name of the <ORGANIZATION> nor the names of its contributors may
+ *    be used to endorse or promote products derived from this software without
+ *    specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS
+ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+ * THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#ifndef PointCloudVideoCodecTool_h
+#define PointCloudVideoCodecTool_h
+
+#define _CRT_SECURE_NO_WARNINGS
+
+#include <chrono>
+#include <fstream>
+#include <iostream>
+#include <limits>
+#include <sstream>
+#include <string>
+#include <unordered_map>
+
+#include "PCCPatchSegmenter.h"
+#include "PCCPointSet.h"
+#include "PCCVideo.h"
+
+#include "ArithmeticCodec.h"
+#include "KDTreeVectorOfVectorsAdaptor.h"
+#include "tbb/tbb.h"
+
+#include "PointCloudVideoCodecConfig.h"
+
+enum ColorTransform { COLOR_TRANSFORM_NONE = 0, COLOR_TRANSFORM_RGB_TO_YCBCR = 1 };
+
+enum CodecMode { CODEC_MODE_ENCODE = 0, CODEC_MODE_DECODE = 1 };
+
+typedef std::vector<pcc::PCCPointSet3> GroupOfFrames;
+
+struct Parameters {
+  std::string uncompressedDataPath;
+  std::string compressedStreamPath;
+  std::string reconstructedDataPath;
+  size_t mode;
+  size_t colorTransform;
+  size_t frameCount;
+  size_t startFrameNumber;
+  size_t groupOfFramesSize;
+
+  // segmentation
+  size_t nnNormalEstimation;
+  size_t maxNNCountRefineSegmentation;
+  size_t iterationCountRefineSegmentation;
+  size_t occupancyResolution;
+  size_t minPointCountPerCCPatchSegmentation;
+  size_t maxNNCountPatchSegmentation;
+  size_t surfaceThickness;
+  size_t maxAllowedDepth;
+  double maxAllowedDist2MissedPointsDetection;
+  double maxAllowedDist2MissedPointsSelection;
+  double lambdaRefineSegmentation;
+
+  // packing
+  size_t minimumImageWidth;
+  size_t minimumImageHeight;
+
+  // video encoding
+  size_t geometryQP;
+  size_t textureQP;
+
+  std::string colorSpaceConversionPath;
+  std::string videoEncoderPath;
+  std::string videoDecoderPath;
+
+  std::string colorSpaceConversionConfig;
+  std::string inverseColorSpaceConversionConfig;
+  std::string geometryConfig;
+  std::string textureConfig;
+
+  // occupancy map encoding
+  size_t maxCandidateCount;
+  size_t occupancyPrecision;
+
+  // smoothing
+  size_t neighborCountSmoothing;
+  double radius2Smoothing;
+  double radius2BoundaryDetection;
+  double thresholdSmoothing;
+
+  // coloring
+  size_t bestColorSearchRange;
+
+  Parameters(void) {
+    startFrameNumber = 0;
+    frameCount = 300;
+    groupOfFramesSize = 32;
+    colorTransform = COLOR_TRANSFORM_RGB_TO_YCBCR;
+    mode = CODEC_MODE_ENCODE;
+    nnNormalEstimation = 16;
+    maxNNCountRefineSegmentation = 256;
+    iterationCountRefineSegmentation = 100;
+    lambdaRefineSegmentation = 3.0;
+    occupancyResolution = 16;
+    minPointCountPerCCPatchSegmentation = 16;
+    maxNNCountPatchSegmentation = 16;
+    maxNNCountPatchSegmentation = 16;
+    maxAllowedDist2MissedPointsDetection = 9.0;
+    maxAllowedDist2MissedPointsSelection = 1.0;
+    surfaceThickness = 4;
+    maxAllowedDepth = 255;
+
+    minimumImageWidth = 1280;
+    minimumImageHeight = 1280;
+    geometryQP = 28;
+    textureQP = 43;
+
+    geometryConfig = "geometry.cfg";
+    colorSpaceConversionConfig = "rgb444toyuv420.cfg";
+    inverseColorSpaceConversionConfig = "yuv420torgb444.cfg";
+    textureConfig = "texture.cfg";
+
+    occupancyPrecision = 4;
+    maxCandidateCount = 4;
+
+    neighborCountSmoothing = 4 * occupancyPrecision * occupancyPrecision;
+    radius2BoundaryDetection = 4.0 * occupancyPrecision * occupancyPrecision;
+    radius2Smoothing = 4.0 * occupancyPrecision * occupancyPrecision;
+    thresholdSmoothing = 64.0;
+    bestColorSearchRange = 2;
+  }
+};
+
+typedef pcc::PCCImage<uint8_t, 3> PCCImage3B;
+typedef pcc::PCCVideo<uint8_t, 3> PCCVideo3B;
+
+struct EncodingContext {
+  size_t groupOfFramesIndex;
+  size_t width;
+  size_t height;
+  pcc::PCCPointSet3 frame0;
+  std::vector<pcc::PCCVector3<size_t>> pointToPixel;
+  std::vector<size_t> blockToPatch;
+  std::vector<uint32_t> occupancyMap;
+  std::vector<pcc::PCCPointCloudPatch> patches;
+};
+
+bool ParseParameters(int argc, char *argv[], Parameters &params);
+void Usage();
+int CompressVideo(const Parameters &params);
+int DecompressVideo(const Parameters &params);
+
+#endif /* PointCloudVideoCodecTool_h */
