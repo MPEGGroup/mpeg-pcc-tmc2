@@ -52,7 +52,10 @@
 namespace pcc {
 class PCCPointSet3 {
  public:
-  PCCPointSet3() { withColors = true; }
+  PCCPointSet3() {
+    withColors = false;
+    withReflectances = false;
+  }
   PCCPointSet3(const PCCPointSet3 &) = default;
   PCCPointSet3 &operator=(const PCCPointSet3 &rhs) = default;
   ~PCCPointSet3() = default;
@@ -81,6 +84,28 @@ class PCCPointSet3 {
     assert(index < colors.size() && withColors);
     colors[index] = color;
   }
+  uint16_t getReflectance(const size_t index) const {
+    assert(index < reflectances.size() && withReflectances);
+    return reflectances[index];
+  }
+  uint16_t &getReflectance(const size_t index) {
+    assert(index < reflectances.size() && withReflectances);
+    return reflectances[index];
+  }
+  void setReflectance(const size_t index, const uint16_t reflectance) {
+    assert(index < reflectances.size() && withReflectances);
+    reflectances[index] = reflectance;
+  }
+
+  bool hasReflectances() const { return withReflectances; }
+  void addReflectances() {
+    withReflectances = true;
+    resize(getPointCount());
+  }
+  void removeReflectances() {
+    withReflectances = false;
+    reflectances.resize(0);
+  }
 
   bool hasColors() const { return withColors; }
   void addColors() {
@@ -98,16 +123,23 @@ class PCCPointSet3 {
     if (hasColors()) {
       colors.resize(size);
     }
+    if (hasReflectances()) {
+      reflectances.resize(size);
+    }
   }
   void reserve(const size_t size) {
     positions.reserve(size);
     if (hasColors()) {
       colors.reserve(size);
     }
+    if (hasReflectances()) {
+      reflectances.reserve(size);
+    }
   }
   void clear() {
     positions.clear();
     colors.clear();
+    reflectances.clear();
   }
   size_t addPoint(const PCCPoint3D &position) {
     const size_t index = getPointCount();
@@ -115,7 +147,17 @@ class PCCPointSet3 {
     positions[index] = position;
     return index;
   }
-
+  void swapPoints(const size_t index1, const size_t index2) {
+    assert(index1 < getPointCount());
+    assert(index2 < getPointCount());
+    std::swap((*this)[index1], (*this)[index2]);
+    if (hasColors()) {
+      std::swap(getColor(index1), getColor(index2));
+    }
+    if (hasReflectances()) {
+      std::swap(getReflectance(index1), getReflectance(index2));
+    }
+  }
   PCCPoint3D computeCentroid() const {
     PCCPoint3D bary(0.0);
     const size_t pointCount = getPointCount();
@@ -197,9 +239,12 @@ class PCCPointSet3 {
       fout << "property uchar green" << std::endl;
       fout << "property uchar blue" << std::endl;
     }
+    if (hasReflectances()) {
+      fout << "property uint16 refc" << std::endl;
+    }
     fout << "element face 0" << std::endl;
     fout << "property list uint8 int32 vertex_index" << std::endl;
-    fout << "end_header " << std::endl;
+    fout << "end_header" << std::endl;
     if (asAscii) {
       fout << std::setprecision(std::numeric_limits<double>::max_digits10);
       for (size_t i = 0; i < pointCount; ++i) {
@@ -209,6 +254,9 @@ class PCCPointSet3 {
           const PCCColor3B &color = getColor(i);
           fout << " " << static_cast<int>(color[0]) << " " << static_cast<int>(color[1]) << " "
                << static_cast<int>(color[2]);
+        }
+        if (hasReflectances()) {
+          fout << " " << static_cast<int>(getReflectance(i));
         }
         fout << std::endl;
       }
@@ -222,6 +270,10 @@ class PCCPointSet3 {
         if (hasColors()) {
           const PCCColor3B &color = getColor(i);
           fout.write(reinterpret_cast<const char *>(&color), sizeof(uint8_t) * 3);
+        }
+        if (hasReflectances()) {
+          const uint16_t &reflectance = getReflectance(i);
+          fout.write(reinterpret_cast<const char *>(&reflectance), sizeof(uint16_t));
         }
       }
     }
@@ -309,7 +361,7 @@ class PCCPointSet3 {
         if (propertyType == "float64") {
           attributeInfo.type = ATTRIBUTE_TYPE_FLOAT64;
           attributeInfo.byteCount = 8;
-        } else if (propertyType == "float") {
+        } else if (propertyType == "float" || propertyType == "float32") {
           attributeInfo.type = ATTRIBUTE_TYPE_FLOAT32;
           attributeInfo.byteCount = 4;
         } else if (propertyType == "uint64") {
@@ -321,7 +373,7 @@ class PCCPointSet3 {
         } else if (propertyType == "uint16") {
           attributeInfo.type = ATTRIBUTE_TYPE_UINT16;
           attributeInfo.byteCount = 2;
-        } else if (propertyType == "uchar") {
+        } else if (propertyType == "uchar" || propertyType == "uint8") {
           attributeInfo.type = ATTRIBUTE_TYPE_UINT8;
           attributeInfo.byteCount = 1;
         } else if (propertyType == "int64") {
@@ -333,7 +385,7 @@ class PCCPointSet3 {
         } else if (propertyType == "int16") {
           attributeInfo.type = ATTRIBUTE_TYPE_INT16;
           attributeInfo.byteCount = 2;
-        } else if (propertyType == "char") {
+        } else if (propertyType == "char" || propertyType == "int8") {
           attributeInfo.type = ATTRIBUTE_TYPE_INT8;
           attributeInfo.byteCount = 1;
         }
@@ -352,21 +404,28 @@ class PCCPointSet3 {
     size_t indexR = PCC_UNDEFINED_INDEX;
     size_t indexG = PCC_UNDEFINED_INDEX;
     size_t indexB = PCC_UNDEFINED_INDEX;
+    size_t indexReflectance = PCC_UNDEFINED_INDEX;
     const size_t attributeCount = attributesInfo.size();
     for (size_t a = 0; a < attributeCount; ++a) {
       const auto &attributeInfo = attributesInfo[a];
-      if (attributeInfo.name == "x") {
+      if (attributeInfo.name == "x" &&
+          (attributeInfo.byteCount == 8 || attributeInfo.byteCount == 4)) {
         indexX = a;
-      } else if (attributeInfo.name == "y") {
+      } else if (attributeInfo.name == "y" &&
+                 (attributeInfo.byteCount == 8 || attributeInfo.byteCount == 4)) {
         indexY = a;
-      } else if (attributeInfo.name == "z") {
+      } else if (attributeInfo.name == "z" &&
+                 (attributeInfo.byteCount == 8 || attributeInfo.byteCount == 4)) {
         indexZ = a;
-      } else if (attributeInfo.name == "red") {
+      } else if (attributeInfo.name == "red" && attributeInfo.byteCount == 1) {
         indexR = a;
-      } else if (attributeInfo.name == "green") {
+      } else if (attributeInfo.name == "green" && attributeInfo.byteCount == 1) {
         indexG = a;
-      } else if (attributeInfo.name == "blue") {
+      } else if (attributeInfo.name == "blue" && attributeInfo.byteCount == 1) {
         indexB = a;
+      } else if ((attributeInfo.name == "reflectance" || attributeInfo.name == "refc") &&
+                 attributeInfo.byteCount <= 2) {
+        indexReflectance = a;
       }
     }
     if (indexX == PCC_UNDEFINED_INDEX || indexY == PCC_UNDEFINED_INDEX ||
@@ -376,6 +435,7 @@ class PCCPointSet3 {
     }
     withColors = indexR != PCC_UNDEFINED_INDEX && indexG != PCC_UNDEFINED_INDEX &&
                  indexB != PCC_UNDEFINED_INDEX;
+    withReflectances = indexReflectance != PCC_UNDEFINED_INDEX;
     resize(pointCount);
     if (isAscii) {
       size_t pointCounter = 0;
@@ -397,6 +457,9 @@ class PCCPointSet3 {
           color[0] = atoi(tokens[indexR].c_str());
           color[1] = atoi(tokens[indexG].c_str());
           color[2] = atoi(tokens[indexB].c_str());
+        }
+        if (hasReflectances()) {
+          reflectances[pointCounter] = uint16_t(atoi(tokens[indexReflectance].c_str()));
         }
         ++pointCounter;
       }
@@ -444,6 +507,15 @@ class PCCPointSet3 {
           } else if (a == indexB && attributeInfo.byteCount == 1) {
             auto &color = colors[pointCounter];
             ifs.read(reinterpret_cast<char *>(&color[2]), sizeof(uint8_t));
+          } else if (a == indexReflectance && attributeInfo.byteCount <= 2) {
+            if (indexReflectance == 1) {
+              uint8_t reflectance;
+              ifs.read(reinterpret_cast<char *>(&reflectance), sizeof(uint8_t));
+              reflectances[pointCounter] = reflectance;
+            } else {
+              auto &reflectance = reflectances[pointCounter];
+              ifs.read(reinterpret_cast<char *>(reflectance), sizeof(uint16_t));
+            }
           } else {
             char buffer[128];
             ifs.read(buffer, attributeInfo.byteCount);
@@ -454,6 +526,20 @@ class PCCPointSet3 {
     return true;
   }
   void convertRGBToYUV() {  // BT709
+    for (auto &color : colors) {
+      const uint8_t r = color[0];
+      const uint8_t g = color[1];
+      const uint8_t b = color[2];
+      const double y = std::round(0.212600 * r + 0.715200 * g + 0.072200 * b);
+      const double u = std::round(-0.114572 * r - 0.385428 * g + 0.500000 * b + 128.0);
+      const double v = std::round(0.500000 * r - 0.454153 * g - 0.045847 * b + 128.0);
+      assert(y >= 0.0 && y <= 255.0 && u >= 0.0 && u <= 255.0 && v >= 0.0 && v <= 255.0);
+      color[0] = static_cast<uint8_t>(y);
+      color[1] = static_cast<uint8_t>(u);
+      color[2] = static_cast<uint8_t>(v);
+    }
+  }
+  void convertRGBToYUVClosedLoop() {  // BT709
     for (auto &color : colors) {
       const uint8_t r = color[0];
       const uint8_t g = color[1];
@@ -472,9 +558,9 @@ class PCCPointSet3 {
       const double y1 = color[0];
       const double u1 = color[1] - 128.0;
       const double v1 = color[2] - 128.0;
-      const double r = Clip(round(y1 /*- 0.00000 * u1*/ + 1.57480 * v1), 0.0, 255.0);
-      const double g = Clip(round(y1 - 0.18733 * u1 - 0.46813 * v1), 0.0, 255.0);
-      const double b = Clip(round(y1 + 1.85563 * u1 /*+ 0.00000 * v1*/), 0.0, 255.0);
+      const double r = PCCClip(round(y1 /*- 0.00000 * u1*/ + 1.57480 * v1), 0.0, 255.0);
+      const double g = PCCClip(round(y1 - 0.18733 * u1 - 0.46813 * v1), 0.0, 255.0);
+      const double b = PCCClip(round(y1 + 1.85563 * u1 /*+ 0.00000 * v1*/), 0.0, 255.0);
       color[0] = static_cast<uint8_t>(r);
       color[1] = static_cast<uint8_t>(g);
       color[2] = static_cast<uint8_t>(b);
@@ -484,7 +570,9 @@ class PCCPointSet3 {
  private:
   std::vector<PCCPoint3D> positions;
   std::vector<PCCColor3B> colors;
+  std::vector<uint16_t> reflectances;
   bool withColors;
+  bool withReflectances;
 };
 }
 

@@ -247,7 +247,7 @@ class PCCStaticKdTree3 {
       std::swap(nodes[store], nodes[end - 1]);
 
       while (store < medianIndex &&
-             ApproximatelyEqual(
+             PCCApproximatelyEqual(
                  nodes[store].pos[splitAxis],
                  nodes[store + 1].pos[splitAxis])) {  // optimization in case of duplicated values
         ++store;
@@ -376,7 +376,7 @@ class PCCIncrementalKdTree3 {
   };
 
  public:
-  PCCIncrementalKdTree3(void) = default;
+  PCCIncrementalKdTree3(void) { root = PCC_UNDEFINED_INDEX; }
   PCCIncrementalKdTree3(const PCCIncrementalKdTree3 &) = default;
   PCCIncrementalKdTree3 &operator=(const PCCIncrementalKdTree3 &) = default;
   ~PCCIncrementalKdTree3(void) = default;
@@ -437,6 +437,14 @@ class PCCIncrementalKdTree3 {
     std::sort(result.neighbors, result.neighbors + neighbors.size());
     result.resultCount = neighbors.size();
   }
+  void findNearestNeighbors2(const PCCNNQuery3 &query2, PCCNNResult &result) const {
+    assert(result.neighbors && query2.nearestNeighborCount > 0);
+    result.resultCount = 0;
+    PCCHeap<PCCPointDistInfo> neighbors(result.neighbors, query2.nearestNeighborCount);
+    findNearestNeighbors(root, query2, neighbors);
+    std::sort(result.neighbors, result.neighbors + neighbors.size());
+    result.resultCount = neighbors.size();
+  }
   void findNeighbors(const PCCRangeQuery3 &query, PCCRangeResult &result) const {
     assert(result.neighbors && query.maxResultCount > 0);
     result.resultCount = 0;
@@ -477,6 +485,8 @@ class PCCIncrementalKdTree3 {
       case PCC_AXIS3_Z:
         return PCC_AXIS3_X;
       case PCC_AXIS3_UNDEFINED:
+        return PCC_AXIS3_X;
+      default:
         return PCC_AXIS3_X;
     }
   }
@@ -534,7 +544,7 @@ class PCCIncrementalKdTree3 {
       std::swap(nodes[store], nodes[end - 1]);
 
       while (store < medianIndex &&
-             ApproximatelyEqual(
+             PCCApproximatelyEqual(
                  nodes[store].pos[splitAxis],
                  nodes[store + 1].pos[splitAxis])) {  // optimization in case of duplicated values
         ++store;

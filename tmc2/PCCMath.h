@@ -450,7 +450,7 @@ class PCCMatrix3 {
 // A must be a symmetric matrix.
 // returns Q and D such that
 // Diagonal matrix D = QT * A * Q;  and  A = Q*D*QT
-void Diagonalize(const PCCMatrix3<double> &A, PCCMatrix3<double> &Q, PCCMatrix3<double> &D) {
+void PCCDiagonalize(const PCCMatrix3<double> &A, PCCMatrix3<double> &Q, PCCMatrix3<double> &D) {
   const int maxsteps = 24;  // certainly wont need that many.
   int k0, k1, k2;
   double o[3], m[3];
@@ -511,9 +511,9 @@ void Diagonalize(const PCCMatrix3<double> &A, PCCMatrix3<double> &Q, PCCMatrix3<
     m[1] = fabs(o[1]);
     m[2] = fabs(o[2]);
 
-    k0 = (m[0] > m[1] && m[0] > m[2])
-             ? 0
-             : (m[1] > m[2]) ? 1 : 2;  // index of largest element of offdiag
+    k0 = (m[0] > m[1] && m[0] > m[2]) ? 0 : (m[1] > m[2])
+                                                ? 1
+                                                : 2;  // index of largest element of offdiag
     k1 = (k0 + 1) % 3;
     k2 = (k0 + 2) % 3;
     if (o[k0] == 0.0) {
@@ -553,11 +553,11 @@ typedef PCCVector3<uint8_t> PCCColor3B;
 typedef PCCMatrix3<double> PCCMatrix3D;
 
 template <typename T>
-T Clip(const T &n, const T &lower, const T &upper) {
+T PCCClip(const T &n, const T &lower, const T &upper) {
   return std::max(lower, std::min(n, upper));
 }
 template <typename T>
-bool ApproximatelyEqual(T a, T b, T epsilon = std::numeric_limits<double>::epsilon()) {
+bool PCCApproximatelyEqual(T a, T b, T epsilon = std::numeric_limits<double>::epsilon()) {
   return fabs(a - b) <= ((fabs(a) < fabs(b) ? fabs(b) : fabs(a)) * epsilon);
 }
 }

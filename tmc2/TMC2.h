@@ -35,8 +35,8 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef PointCloudVideoCodecTool_h
-#define PointCloudVideoCodecTool_h
+#ifndef TMC2_h
+#define TMC2_h
 
 #define _CRT_SECURE_NO_WARNINGS
 
@@ -50,13 +50,15 @@
 
 #include "PCCPatchSegmenter.h"
 #include "PCCPointSet.h"
+#include "PCCPointSetProcessing.h"
+#include "PCCTMC2Common.h"
 #include "PCCVideo.h"
 
 #include "ArithmeticCodec.h"
 #include "KDTreeVectorOfVectorsAdaptor.h"
 #include "tbb/tbb.h"
 
-#include "PointCloudVideoCodecConfig.h"
+#include "TMC2Config.h"
 
 enum ColorTransform { COLOR_TRANSFORM_NONE = 0, COLOR_TRANSFORM_RGB_TO_YCBCR = 1 };
 
@@ -176,4 +178,4 @@ void Usage();
 int CompressVideo(const Parameters &params);
 int DecompressVideo(const Parameters &params);
 
-#endif /* PointCloudVideoCodecTool_h */
+#endif /* TMC2_h */

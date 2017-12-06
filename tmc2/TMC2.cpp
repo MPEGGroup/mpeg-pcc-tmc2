@@ -35,7 +35,7 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "PointCloudVideoCodecTool.h"
+#include "TMC2.h"
 
 using namespace std;
 using namespace pcc;
@@ -63,12 +63,11 @@ int main(int argc, char *argv[]) {
   return ret;
 }
 void Usage() {
-  std::cout << "pointcloud-video-codec v" << PointCloudVideoCodec_VERSION_MAJOR << "."
-            << PointCloudVideoCodec_VERSION_MAJOR << std::endl
+  std::cout << "tmc2 v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MAJOR << std::endl
             << std::endl;
 
   std::cout << "+ Usage" << std::endl;
-  std::cout << "\t Encode example: \n pointcloud-video-codec --mode 0 --geometryQP 27 --textureQP "
+  std::cout << "\t Encode example: \n tmc2 --mode 0 --geometryQP 27 --textureQP "
                "43 --uncompressedDataPath ../longdress/longdress_vox10_%i.ply "
                "--compressedStreamPath longdress.bin --startFrameNumber 1051 --groupOfFramesSize "
                "32 --frameCount 32 --videoEncoderPath \"../app/TAppEncoder\" "
@@ -78,7 +77,7 @@ void Usage() {
                "\"../app/geometry.cfg\" --textureConfig \"../app/texture.cfg\""
             << std::endl
             << std::endl;
-  std::cout << "\t Decode example: \n pointcloud-video-codec --mode 1 --reconstructedDataPath "
+  std::cout << "\t Decode example: \n tmc2 --mode 1 --reconstructedDataPath "
                "../dec/P07S24C04R01/P07S24C04R01_%i.ply --compressedStreamPath longdress.bin "
                "--startFrameNumber 1051  --videoDecoderPath \"../app/TAppDecoder\"  "
                "--colorSpaceConversionPath \"../app/HDRConvert\" "
@@ -1029,125 +1028,6 @@ void SmoothPointCloud(const vector<uint32_t> &partition, PCCPointSet3 &pointClou
     pointCloud[i] = temp[i];
   });
 }
-bool ColorApproximation(const PCCPointSet3 &frame, const Parameters &params,
-                        PCCPointSet3 &approximation) {
-  const size_t pointCountFrame = frame.getPointCount();
-  const size_t pointCountApproximation = approximation.getPointCount();
-  if (!pointCountFrame || !pointCountApproximation || !frame.hasColors()) {
-    return false;
-  }
-  approximation.addColors();
-
-  KDTreeVectorOfVectorsAdaptor<PCCPointSet3, double> kdtreeRefined(3, approximation, 10);
-  KDTreeVectorOfVectorsAdaptor<PCCPointSet3, double> kdtreeFrame(3, frame, 10);
-
-  vector<PCCColor3B> refinedColors1;
-  vector<vector<PCCColor3B>> refinedColors2;
-  refinedColors1.resize(pointCountApproximation);
-  refinedColors2.resize(pointCountApproximation);
-  const size_t num_results = 1;
-  vector<size_t> indices(num_results);
-  vector<double> sqrDist(num_results);
-  KNNResultSet<double> resultSet(num_results);
-  for (size_t index = 0; index < pointCountApproximation; ++index) {
-    resultSet.init(&indices[0], &sqrDist[0]);
-    kdtreeFrame.index->findNeighbors(resultSet, &approximation[index][0], SearchParams(10));
-    refinedColors1[index] = frame.getColor(indices[0]);
-  }
-  for (size_t index = 0; index < pointCountFrame; ++index) {
-    const PCCColor3B color = frame.getColor(index);
-    resultSet.init(&indices[0], &sqrDist[0]);
-    kdtreeRefined.index->findNeighbors(resultSet, &frame[index][0], SearchParams(10));
-    refinedColors2[indices[0]].push_back(color);
-  }
-  for (size_t index = 0; index < pointCountApproximation; ++index) {
-    const PCCColor3B color1 = refinedColors1[index];
-    const vector<PCCColor3B> colors2 = refinedColors2[index];
-    if (colors2.empty()) {
-      approximation.setColor(index, color1);
-    } else {
-      const double H = double(colors2.size());
-      const PCCVector3D centroid1(color1[0], color1[1], color1[2]);
-      PCCVector3D centroid2(0.0);
-      for (const auto color2 : colors2) {
-        for (size_t k = 0; k < 3; ++k) {
-          centroid2[k] += color2[k];
-        }
-      }
-      centroid2 /= H;
-
-      double D2 = 0.0;
-      for (const auto color2 : colors2) {
-        for (size_t k = 0; k < 3; ++k) {
-          const double d2 = centroid2[k] - color2[k];
-          D2 += d2 * d2;
-        }
-      }
-      const double r = double(pointCountApproximation) / double(pointCountFrame);
-      const double delta2 = (centroid2 - centroid1).getNorm2();
-      const double eps = 0.000001;
-
-      double w = 0.0;
-      if (delta2 > eps) {
-        const double alpha = D2 / delta2;
-        const double a = H * r - 1.0;
-        const double c = alpha * r - 1.0;
-        if (fabs(a) < eps) {
-          w = c * -0.5;
-        } else {
-          const double delta = 1.0 - a * c;
-          if (delta >= 0.0) {
-            w = (-1.0 + sqrt(delta)) / a;
-          }
-        }
-      }
-      PCCVector3D color0;
-      const double iw = 1.0 - w;
-      for (size_t k = 0; k < 3; ++k) {
-        color0[k] = Clip(round(w * centroid1[k] + iw * centroid2[k]), 0.0, 255.0);
-      }
-      double minError = std::numeric_limits<double>::max();
-      PCCVector3D bestColor(color0);
-      PCCVector3D color;
-      const int32_t searchRange = int32_t(params.bestColorSearchRange);
-      for (int32_t s1 = -searchRange; s1 <= searchRange; ++s1) {
-        color[0] = Clip(color0[0] + s1, 0.0, 255.0);
-        for (int32_t s2 = -searchRange; s2 <= searchRange; ++s2) {
-          color[1] = Clip(color0[1] + s2, 0.0, 255.0);
-          for (int32_t s3 = -searchRange; s3 <= searchRange; ++s3) {
-            color[2] = Clip(color0[2] + s3, 0.0, 255.0);
-
-            double e1 = 0.0;
-            for (size_t k = 0; k < 3; ++k) {
-              const double d = color[k] - color1[k];
-              e1 += d * d;
-            }
-            e1 /= double(pointCountApproximation);
-
-            double e2 = 0.0;
-            for (const auto color2 : colors2) {
-              for (size_t k = 0; k < 3; ++k) {
-                const double d = color[k] - color2[k];
-                e2 += d * d;
-              }
-            }
-            e2 /= double(pointCountFrame);
-
-            const double error = max(e1, e2);
-            if (error < minError) {
-              minError = error;
-              bestColor = color;
-            }
-          }
-        }
-      }
-      approximation.setColor(
-          index, PCCColor3B(uint8_t(bestColor[0]), uint8_t(bestColor[1]), uint8_t(bestColor[2])));
-    }
-  }
-  return true;
-}
-
 bool ColorPointCloud(const PCCVideo3B &video, const vector<PCCVector3<size_t>> pointToPixel,
                      const size_t shift, PCCPointSet3 &pointCloud) {
   const size_t pointCount = pointCloud.getPointCount();
@@ -1248,7 +1128,7 @@ int CompressGroupOfFrames(const GroupOfFrames &groupOfFrames, PCCBitstream &bits
   for (size_t f = 0; f < groupOfFramesSize; ++f) {
     assert(contexts[f].width == width && contexts[f].height == height);
     auto &context = contexts[f];
-    ColorApproximation(groupOfFrames[f], params, context.frame0);
+    PCCTransfertColors(groupOfFrames[f], int32_t(params.bestColorSearchRange), context.frame0);
     GenerateTextureVideo(context.frame0, context.pointToPixel, width, height, 2, videoTexture);
   }
 
@@ -1319,10 +1199,9 @@ int CompressVideo(const Parameters &params) {
       bitstream.buffer = buffer.get();
       bitstream.capacity = predictedBitstreamSize;
       bitstream.size = 0;
-      const uint32_t ContainerMagicNumber = 23021981;
-      const uint32_t ContainerVersion = 1;
-      PCCWriteToBuffer<uint32_t>(ContainerMagicNumber, bitstream.buffer, bitstream.size);
-      PCCWriteToBuffer<uint32_t>(ContainerVersion, bitstream.buffer, bitstream.size);
+
+      PCCWriteToBuffer<uint32_t>(PCCTMC2ContainerMagicNumber, bitstream.buffer, bitstream.size);
+      PCCWriteToBuffer<uint32_t>(PCCTMC2ContainerVersion, bitstream.buffer, bitstream.size);
       totalSizeIterator = bitstream.size;
       PCCWriteToBuffer<uint64_t>(0, bitstream.buffer, bitstream.size);  // reserved
     }
@@ -1676,17 +1555,15 @@ int DecompressVideo(const Parameters &params) {
   }
   fin.close();
 
-  const uint32_t ContainerMagicNumber = 23021981;
-  const uint32_t ContainerVersion = 1;
   uint32_t containerMagicNumber = 0;
   uint32_t containerVersion = 0;
   uint64_t totalSize = 0;
   PCCReadFromBuffer<uint32_t>(bitstream.buffer, containerMagicNumber, bitstream.size);
-  if (containerMagicNumber != ContainerMagicNumber) {
+  if (containerMagicNumber != PCCTMC2ContainerMagicNumber) {
     return -1;
   }
   PCCReadFromBuffer<uint32_t>(bitstream.buffer, containerVersion, bitstream.size);
-  if (containerVersion != ContainerVersion) {
+  if (containerVersion != PCCTMC2ContainerVersion) {
     return -1;
   }
   PCCReadFromBuffer<uint64_t>(bitstream.buffer, totalSize, bitstream.size);

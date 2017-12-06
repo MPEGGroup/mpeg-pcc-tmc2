@@ -203,7 +203,7 @@ class PCCPatchSegmenter3 {
 
     resampledPatchPartition.reserve(pointCount);
 
-    std::cout << "\n\t Computing ajacency info... ";
+    std::cout << "\n\t Computing adjacency info... ";
     std::vector<std::vector<size_t>> adj;
     ComputeAdjacencyInfo(points, kdtree, adj, maxNNCount);
     std::cout << "[done]" << std::endl;

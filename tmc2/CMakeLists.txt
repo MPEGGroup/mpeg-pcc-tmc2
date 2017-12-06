@@ -5,11 +5,11 @@ if (MSVC)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /NODEFAULTLIB:tbb.lib")
 endif()
 
-set (PointCloudVideoCodec_VERSION_MAJOR 0)
-set (PointCloudVideoCodec_VERSION_MINOR 1)
+set (TMC2_VERSION_MAJOR 0)
+set (TMC2_VERSION_MINOR 1)
 configure_file (
-  "${CMAKE_CURRENT_SOURCE_DIR}/PointCloudVideoCodecConfig.h.in"
-  "${PROJECT_BINARY_DIR}/tmc2/PointCloudVideoCodecConfig.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/TMC2Config.h.in"
+  "${PROJECT_BINARY_DIR}/tmc2/TMC2Config.h"
 )
 
 file(GLOB PROJECT_IN_FILES "*.in")

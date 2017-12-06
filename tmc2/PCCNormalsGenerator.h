@@ -156,7 +156,7 @@ class PCCNormalsGenerator3 {
       covMat[2][1] = covMat[1][2];
       covMat /= (nNResult.resultCount - 1.0);
 
-      Diagonalize(covMat, Q, D);
+      PCCDiagonalize(covMat, Q, D);
 
       D[0][0] = fabs(D[0][0]);
       D[1][1] = fabs(D[1][1]);
