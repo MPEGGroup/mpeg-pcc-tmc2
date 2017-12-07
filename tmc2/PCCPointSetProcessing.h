@@ -45,7 +45,91 @@
 #include "PCCPointSet.h"
 
 namespace pcc {
+inline bool PCCColorApproximation(const PCCPointSet3 &frame, PCCPointSet3 &approximation,
+                                  const double bestColorSearchStep = 0.1) {
+  const size_t pointCountFrame = frame.getPointCount();
+  const size_t pointCountApproximation = approximation.getPointCount();
+  if (!pointCountFrame || !pointCountApproximation || !frame.hasColors()) {
+    return false;
+  }
+  approximation.addColors();
 
+  KDTreeVectorOfVectorsAdaptor<PCCPointSet3, double> kdtreeRefined(3, approximation, 10);
+  KDTreeVectorOfVectorsAdaptor<PCCPointSet3, double> kdtreeFrame(3, frame, 10);
+
+  std::vector<PCCColor3B> refinedColors1;
+  std::vector<std::vector<PCCColor3B>> refinedColors2;
+  refinedColors1.resize(pointCountApproximation);
+  refinedColors2.resize(pointCountApproximation);
+  const size_t num_results = 1;
+  std::vector<size_t> indices(num_results);
+  std::vector<double> sqrDist(num_results);
+  nanoflann::KNNResultSet<double> resultSet(num_results);
+  for (size_t index = 0; index < pointCountApproximation; ++index) {
+    resultSet.init(&indices[0], &sqrDist[0]);
+    kdtreeFrame.index->findNeighbors(resultSet, &approximation[index][0],
+                                     nanoflann::SearchParams(10));
+    refinedColors1[index] = frame.getColor(indices[0]);
+  }
+  for (size_t index = 0; index < pointCountFrame; ++index) {
+    const PCCColor3B color = frame.getColor(index);
+    resultSet.init(&indices[0], &sqrDist[0]);
+    kdtreeRefined.index->findNeighbors(resultSet, &frame[index][0], nanoflann::SearchParams(10));
+    refinedColors2[indices[0]].push_back(color);
+  }
+  for (size_t index = 0; index < pointCountApproximation; ++index) {
+    const PCCColor3B color1 = refinedColors1[index];
+    const std::vector<PCCColor3B> colors2 = refinedColors2[index];
+    if (colors2.empty()) {
+      approximation.setColor(index, color1);
+    } else {
+      double s = 1.0 / colors2.size();
+      double r1 = 1.0 / pointCountApproximation;
+      double r2 = 1.0 / (pointCountFrame * colors2.size());
+      double w1 = 0.0;
+      double minError = std::numeric_limits<double>::max();
+      PCCVector3D bestColor;
+      while (w1 <= 1.0) {
+        const double w2 = 1.0 - w1;
+        PCCVector3D color(0.0);
+        for (const auto color2 : colors2) {
+          for (size_t k = 0; k < 3; ++k) {
+            color[k] += color2[k];
+          }
+        }
+        for (size_t k = 0; k < 3; ++k) {
+          color[k] = (std::min)(round(w2 * s * color[k] + w1 * color1[k]), 255.0);
+        }
+
+        double e1 = 0.0;
+        for (size_t k = 0; k < 3; ++k) {
+          const double d = color[k] - color1[k];
+          e1 += d * d;
+        }
+        e1 *= r1;
+
+        double e2 = 0.0;
+        for (const auto color2 : colors2) {
+          for (size_t k = 0; k < 3; ++k) {
+            const double d = color[k] - color2[k];
+            e2 += d * d;
+          }
+        }
+        e2 *= r2;
+
+        const double e = (std::max)(e1, e2);
+        if (e < minError) {
+          bestColor = color;
+          minError = e;
+        }
+        w1 += bestColorSearchStep;
+      }
+      approximation.setColor(
+          index, PCCColor3B(uint8_t(bestColor[0]), uint8_t(bestColor[1]), uint8_t(bestColor[2])));
+    }
+  }
+  return true;
+}
 inline bool PCCTransfertColors(const PCCPointSet3 &source, const int32_t searchRange,
                                PCCPointSet3 &target) {
   const size_t pointCountSource = source.getPointCount();

@@ -155,7 +155,7 @@ struct Parameters {
     radius2BoundaryDetection = 4.0 * occupancyPrecision * occupancyPrecision;
     radius2Smoothing = 4.0 * occupancyPrecision * occupancyPrecision;
     thresholdSmoothing = 64.0;
-    bestColorSearchRange = 2;
+    bestColorSearchRange = 0;
   }
 };
 
