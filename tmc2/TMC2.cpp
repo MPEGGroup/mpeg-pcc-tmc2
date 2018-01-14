@@ -1128,11 +1128,7 @@ int CompressGroupOfFrames(const GroupOfFrames &groupOfFrames, PCCBitstream &bits
   for (size_t f = 0; f < groupOfFramesSize; ++f) {
     assert(contexts[f].width == width && contexts[f].height == height);
     auto &context = contexts[f];
-    if (params.bestColorSearchRange > 0) {
-      PCCTransfertColors(groupOfFrames[f], int32_t(params.bestColorSearchRange), context.frame0);
-    } else {
-      PCCColorApproximation(groupOfFrames[f], context.frame0);
-    }
+    PCCTransfertColors(groupOfFrames[f], int32_t(params.bestColorSearchRange), context.frame0);
     GenerateTextureVideo(context.frame0, context.pointToPixel, width, height, 2, videoTexture);
   }
 
