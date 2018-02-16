@@ -36,16 +36,18 @@
  */
 
 #include "TMC2.h"
+#include <program_options_lite.h>
 
 using namespace std;
 using namespace pcc;
 using namespace nanoflann;
 
 int main(int argc, char *argv[]) {
+  std::cout << "tmc2 v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MAJOR << std::endl
+            << std::endl;
+
   Parameters params;
-  Usage();
   if (!ParseParameters(argc, argv, params)) {
-    std::cout << "Error: missing parameters!" << std::endl;
     return -1;
   }
   const auto start = std::chrono::high_resolution_clock::now();
@@ -62,121 +64,207 @@ int main(int argc, char *argv[]) {
             << std::endl;
   return ret;
 }
-void Usage() {
-  std::cout << "tmc2 v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MAJOR << std::endl
-            << std::endl;
 
-  std::cout << "+ Usage" << std::endl;
-  std::cout << "\t Encode example: \n tmc2 --mode 0 --geometryQP 27 --textureQP "
-               "43 --uncompressedDataPath ../longdress/longdress_vox10_%i.ply "
-               "--compressedStreamPath longdress.bin --startFrameNumber 1051 --groupOfFramesSize "
-               "32 --frameCount 32 --videoEncoderPath \"../app/TAppEncoder\" "
-               "--colorSpaceConversionPath \"../app/HDRConvert\" "
-               "--inverseColorSpaceConversionConfig \"../app/yuv420torgb444.cfg\" "
-               "--colorSpaceConversionConfig \"../app/rgb444toyuv420.cfg\" --geometryConfig "
-               "\"../app/geometry.cfg\" --textureConfig \"../app/texture.cfg\""
-            << std::endl
-            << std::endl;
-  std::cout << "\t Decode example: \n tmc2 --mode 1 --reconstructedDataPath "
-               "../dec/P07S24C04R01/P07S24C04R01_%i.ply --compressedStreamPath longdress.bin "
-               "--startFrameNumber 1051  --videoDecoderPath \"../app/TAppDecoder\"  "
-               "--colorSpaceConversionPath \"../app/HDRConvert\" "
-               "--inverseColorSpaceConversionConfig \"../app/yuv420torgb444.cfg\" "
-               "--colorSpaceConversionConfig \"../app/rgb444toyuv420.cfg\""
-            << std::endl
-            << std::endl;
-  std::cout << std::endl;
+//---------------------------------------------------------------------------
+// :: Command line / config parsing helpers
+
+template <typename T>
+static std::istream& readUInt(std::istream &in, T &val) {
+  unsigned int tmp;
+  in >> tmp;
+  val = T(tmp);
+  return in;
 }
 
-bool ParseParameters(int argc, char *argv[], Parameters &params) {
-  for (int i = 1; i < argc; ++i) {
-    if (!strcmp(argv[i], "--mode")) {
-      if (++i < argc) params.mode = static_cast<CodecMode>(atoi(argv[i]));
-    }
+static std::istream& operator>>(std::istream &in, CodecMode &val) {
+  return readUInt(in, val);
+}
 
-    else if (!strcmp(argv[i], "--colorSpaceConversionPath")) {
-      if (++i < argc) params.colorSpaceConversionPath = argv[i];
-    } else if (!strcmp(argv[i], "--videoEncoderPath")) {
-      if (++i < argc) params.videoEncoderPath = argv[i];
-    } else if (!strcmp(argv[i], "--videoDecoderPath")) {
-      if (++i < argc) params.videoDecoderPath = argv[i];
-    } else if (!strcmp(argv[i], "--uncompressedDataPath")) {
-      if (++i < argc) params.uncompressedDataPath = argv[i];
-    } else if (!strcmp(argv[i], "--compressedStreamPath")) {
-      if (++i < argc) params.compressedStreamPath = argv[i];
-    } else if (!strcmp(argv[i], "--reconstructedDataPath")) {
-      if (++i < argc) params.reconstructedDataPath = argv[i];
-    } else if (!strcmp(argv[i], "--frameCount")) {
-      if (++i < argc) params.frameCount = atoi(argv[i]);
-    } else if (!strcmp(argv[i], "--startFrameNumber")) {
-      if (++i < argc) params.startFrameNumber = atoi(argv[i]);
-    } else if (!strcmp(argv[i], "--groupOfFramesSize")) {
-      if (++i < argc) params.groupOfFramesSize = atoi(argv[i]);
-    } else if (!strcmp(argv[i], "--colorTransform")) {
-      if (++i < argc) params.colorTransform = static_cast<ColorTransform>(atoi(argv[i]));
-    } else if (!strcmp(argv[i], "--nnNormalEstimation")) {
-      if (++i < argc) params.nnNormalEstimation = atoi(argv[i]);
-    } else if (!strcmp(argv[i], "--maxNNCountRefineSegmentation")) {
-      if (++i < argc) params.maxNNCountRefineSegmentation = atoi(argv[i]);
-    } else if (!strcmp(argv[i], "--iterationCountRefineSegmentation")) {
-      if (++i < argc) params.iterationCountRefineSegmentation = atoi(argv[i]);
-    } else if (!strcmp(argv[i], "--occupancyResolution")) {
-      if (++i < argc) params.occupancyResolution = atoi(argv[i]);
-    } else if (!strcmp(argv[i], "--minPointCountPerCCPatchSegmentation")) {
-      if (++i < argc) params.minPointCountPerCCPatchSegmentation = atoi(argv[i]);
-    } else if (!strcmp(argv[i], "--maxNNCountPatchSegmentation")) {
-      if (++i < argc) params.maxNNCountPatchSegmentation = atoi(argv[i]);
-    } else if (!strcmp(argv[i], "--surfaceThickness")) {
-      if (++i < argc) params.surfaceThickness = atoi(argv[i]);
-    } else if (!strcmp(argv[i], "--maxAllowedDist2MissedPointsDetection")) {
-      if (++i < argc) params.maxAllowedDist2MissedPointsDetection = atof(argv[i]);
-    } else if (!strcmp(argv[i], "--maxAllowedDist2MissedPointsSelection")) {
-      if (++i < argc) params.maxAllowedDist2MissedPointsSelection = atof(argv[i]);
-    } else if (!strcmp(argv[i], "--lambdaRefineSegmentation")) {
-      if (++i < argc) params.lambdaRefineSegmentation = atof(argv[i]);
-    } else if (!strcmp(argv[i], "--minimumImageWidth")) {
-      if (++i < argc) params.minimumImageWidth = atoi(argv[i]);
-    } else if (!strcmp(argv[i], "--minimumImageHeight")) {
-      if (++i < argc) params.minimumImageHeight = atoi(argv[i]);
-    } else if (!strcmp(argv[i], "--geometryQP")) {
-      if (++i < argc) params.geometryQP = atoi(argv[i]);
-    } else if (!strcmp(argv[i], "--textureQP")) {
-      if (++i < argc) params.textureQP = atoi(argv[i]);
-    } else if (!strcmp(argv[i], "--geometryConfig")) {
-      if (++i < argc) params.geometryConfig = argv[i];
-    } else if (!strcmp(argv[i], "--textureConfig")) {
-      if (++i < argc) params.textureConfig = argv[i];
-    } else if (!strcmp(argv[i], "--inverseColorSpaceConversionConfig")) {
-      if (++i < argc) params.inverseColorSpaceConversionConfig = argv[i];
-    } else if (!strcmp(argv[i], "--colorSpaceConversionConfig")) {
-      if (++i < argc) params.colorSpaceConversionConfig = argv[i];
-    } else if (!strcmp(argv[i], "--maxCandidateCount")) {
-      if (++i < argc) params.maxCandidateCount = atoi(argv[i]);
-    } else if (!strcmp(argv[i], "--occupancyPrecision")) {
-      if (++i < argc) params.occupancyPrecision = atoi(argv[i]);
-    } else if (!strcmp(argv[i], "--neighborCountSmoothing")) {
-      if (++i < argc) params.neighborCountSmoothing = atoi(argv[i]);
-    } else if (!strcmp(argv[i], "--radius2Smoothing")) {
-      if (++i < argc) params.radius2Smoothing = atof(argv[i]);
-    } else if (!strcmp(argv[i], "--radius2BoundaryDetection")) {
-      if (++i < argc) params.radius2BoundaryDetection = atof(argv[i]);
-    } else if (!strcmp(argv[i], "--thresholdSmoothing")) {
-      if (++i < argc) params.thresholdSmoothing = atof(argv[i]);
-    } else if (!strcmp(argv[i], "--bestColorSearchRange")) {
-      if (++i < argc) params.bestColorSearchRange = atoi(argv[i]);
-    } else if (!strcmp(argv[i], "--maxAllowedDepth")) {
-      if (++i < argc) params.maxAllowedDepth = atoi(argv[i]);
-    }
+static std::istream& operator>>(std::istream &in, ColorTransform &val) {
+  return readUInt(in, val);
+}
+
+//---------------------------------------------------------------------------
+// :: Command line / config parsing
+
+bool ParseParameters(int argc, char *argv[], Parameters &params) {
+
+  namespace po = df::program_options_lite;
+
+  bool print_help = false;
+
+  // The definition of the program/config options, along with default values.
+  //
+  // NB: when updating the following tables:
+  //      (a) please keep to 80-columns for easier reading at a glance,
+  //      (b) do not vertically align values -- it breaks quickly
+  //
+  po::Options opts;
+  opts.addOptions()
+  ("help", print_help, false, "This help text")
+  ("c,config", po::parseConfigFile, "Configuration file name")
+
+  ("mode", params.mode, CODEC_MODE_ENCODE,
+     "The encoding/decoding mode:\n"
+     "  0: encode\n"
+     "  1: decode")
+
+  // i/o
+  ("uncompressedDataPath", params.uncompressedDataPath, {},
+     "Input pointcloud to encode. "
+     "Multi-frame sequences may be represented by %04i")
+
+  ("compressedStreamPath", params.compressedStreamPath, {},
+     "Output(encoder)/Input(decoder) compressed bitstream")
+
+  ("reconstructedDataPath", params.reconstructedDataPath, {},
+     "Output decoded pointcloud. "
+     "Multi-frame sequences may be represented by %04i")
+
+  // sequence configuration
+  ("startFrameNumber", params.startFrameNumber, {0},
+     "Fist frame number in sequence to encode/decode")
+
+  ("frameCount", params.frameCount, {300},
+     "Number of frames to encode")
+
+  ("groupOfFramesSize", params.groupOfFramesSize, {32},
+     "Random access period")
+
+  // colour space conversion
+  ("colorTransform", params.colorTransform, COLOR_TRANSFORM_RGB_TO_YCBCR,
+     "The colour transform to be applied:\n"
+     "  0: none\n"
+     "  1: RGB to YCbCr (Rec.709)")
+
+  ("colorSpaceConversionPath", params.colorSpaceConversionPath, {},
+     "Path to the HDRConvert. "
+     "If unset, an internal color space conversion is used")
+
+  ("colorSpaceConversionConfig",
+     params.colorSpaceConversionConfig, {"rgb444toyuv420.cfg"},
+     "HDRConvert configuration file used for RGB444 to YUV420 conversion")
+
+  ("inverseColorSpaceConversionConfig",
+     params.inverseColorSpaceConversionConfig, {"yuv420torgb444.cfg"},
+     "HDRConvert configuration file used for YUV420 to RGB444 conversion")
+
+  // segmentation
+  ("nnNormalEstimation", params.nnNormalEstimation, {16},
+     "Number of points used for normal estimation")
+
+  ("maxNNCountRefineSegmentation", params.maxNNCountRefineSegmentation, {256},
+     "Number of nearest neighbors used during segmentation refinement")
+
+  ("iterationCountRefineSegmentation",
+     params.iterationCountRefineSegmentation, {100},
+     "Number of iterations performed during segmentation refinement")
+
+  ("occupancyResolution", params.occupancyResolution, {16},
+     "Resolution T of the occupancy map")
+
+  ("minPointCountPerCCPatchSegmentation",
+     params.minPointCountPerCCPatchSegmentation, {16},
+     "Minimum number of points for a connected component to be "
+     "retained as a patch")
+
+  ("maxNNCountPatchSegmentation", params.maxNNCountPatchSegmentation, {16},
+     "Number of nearest neighbors used during connected components extraction")
+
+  ("surfaceThickness", params.surfaceThickness, {4},
+     "Surface thickness Δ")
+
+  ("maxAllowedDepth", params.maxAllowedDepth, {255},
+     "Maximum depth per patch")
+
+  ("maxAllowedDist2MissedPointsDetection",
+     params.maxAllowedDist2MissedPointsDetection, {9.0},
+     "Maximum distance for a point to be ignored during missed point "
+     "detection")
+
+  ("maxAllowedDist2MissedPointsSelection",
+     params.maxAllowedDist2MissedPointsSelection, {1.0},
+     "Maximum distance for a point to be ignored during missed points "
+     "selection")
+
+  ("lambdaRefineSegmentation", params.lambdaRefineSegmentation, {3.0},
+     "Controls the smoothness of the patch boundaries during segmentation "
+     "refinement")
+
+  // packing
+  ("minimumImageWidth", params.minimumImageWidth, {1280},
+     "Minimum width of packed patch frame")
+
+  ("minimumImageHeight", params.minimumImageHeight, {1280},
+     "Minimum height of packed patch frame")
+
+  // occupancy map
+  ("maxCandidateCount", params.maxCandidateCount, {4},
+     "Maximum nuber of candidates in list L")
+
+  ("occupancyPrecision", params.occupancyPrecision, {4},
+     "Occupancy map B0 precision")
+
+  // smoothing
+  // NB: various parameters are of the form n * occupancyPrecision**2
+  ("neighborCountSmoothing", params.neighborCountSmoothing, {4 * 16},
+     "todo(kmammou)")
+
+  ("radius2Smoothing", params.radius2Smoothing, {4.0 * 16},
+     "todo(kmammou)")
+
+  ("radius2BoundaryDetection", params.radius2BoundaryDetection, {4.0 * 16},
+     "todo(kmammou)")
+
+  ("thresholdSmoothing", params.thresholdSmoothing, {64.0},
+     "todo(kmammou)")
+
+  // colouring
+  ("bestColorSearchRange", params.bestColorSearchRange, {2},
+     "todo(kmammou)")
+
+  // video encoding
+  ("videoEncoderPath", params.videoEncoderPath, {},
+     "HM video encoder executable")
+
+  ("videoDecoderPath", params.videoDecoderPath, {},
+     "HM video decoder executable")
+
+  ("geometryQP", params.geometryQP, {28},
+     "QP for compression of geometry video")
+
+  ("textureQP", params.textureQP, {43},
+     "QP for compression of texture video")
+
+  ("geometryConfig", params.geometryConfig, {"geometry.cfg"},
+     "HM configuration file for geometry compression")
+
+  ("textureConfig", params.textureConfig, {"texture.cfg"},
+     "HM configuration file for texture compression")
+  ;
+
+  po::setDefaults(opts);
+  po::ErrorReporter err;
+  const list<const char*>& argv_unhandled =
+    po::scanArgv(opts, argc, (const char**)argv, err);
+
+  for (const auto arg : argv_unhandled) {
+    err.warn() << "Unhandled argument ignored: " << arg << "\n";
   }
 
+  if (argc == 1 || print_help) {
+    po::doHelp(std::cout, opts, 78);
+    return false;
+  }
+
+  // sanity checks
   if (!params.colorSpaceConversionPath.empty() &&
       !params.inverseColorSpaceConversionConfig.empty() &&
       !params.colorSpaceConversionConfig.empty()) {
     std::cout << "Info: Using external color space conversion" << std::endl;
     if (params.colorTransform != COLOR_TRANSFORM_NONE) {
-      std::cout << "Warning: Using external color space conversion requires colorTransform = "
-                   "COLOR_TRANSFORM_NONE!"
-                << std::endl;
+      err.warn() << "Using external color space conversion requires colorTransform = "
+                   "COLOR_TRANSFORM_NONE!\n";
       params.colorTransform = COLOR_TRANSFORM_NONE;
     }
   } else {
@@ -185,6 +273,28 @@ bool ParseParameters(int argc, char *argv[], Parameters &params) {
     params.inverseColorSpaceConversionConfig = "";
     params.colorSpaceConversionConfig = "";
   }
+
+  bool encoding = params.mode == CODEC_MODE_ENCODE;
+
+  if (encoding && params.uncompressedDataPath.empty())
+    err.error() << "uncompressedDataPath not set\n";
+
+  if (!encoding && params.reconstructedDataPath.empty())
+    err.error() << "reconstructedDataPath not set\n";
+
+  if (params.compressedStreamPath.empty())
+    err.error() << "compressedStreamPath not set\n";
+
+  if (encoding && params.videoEncoderPath.empty())
+    err.error() << "videoEncoderPath not set\n";
+
+  if (params.videoDecoderPath.empty())
+    err.error() << "videoDecoderPath not set\n";
+
+  // report the current configuration (only in the absence of errors so
+  // that errors/warnings are more obvious and in the same place).
+  if (err.is_errored)
+    return false;
 
   std::cout << "+ Parameters" << std::endl;
   std::cout << "\t mode                        " << params.mode << std::endl;
@@ -265,13 +375,6 @@ bool ParseParameters(int argc, char *argv[], Parameters &params) {
             << std::endl;
   std::cout << std::endl;
 
-  const bool test1 = params.mode == CODEC_MODE_ENCODE &&
-                     (params.uncompressedDataPath.empty() || params.compressedStreamPath.empty());
-  const bool test2 = params.mode == CODEC_MODE_DECODE &&
-                     (params.reconstructedDataPath.empty() || params.compressedStreamPath.empty());
-  if (test1 || test2) {
-    return false;
-  }
   return true;
 }
 

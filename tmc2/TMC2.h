@@ -70,8 +70,8 @@ struct Parameters {
   std::string uncompressedDataPath;
   std::string compressedStreamPath;
   std::string reconstructedDataPath;
-  size_t mode;
-  size_t colorTransform;
+  CodecMode mode;
+  ColorTransform colorTransform;
   size_t frameCount;
   size_t startFrameNumber;
   size_t groupOfFramesSize;
@@ -118,45 +118,6 @@ struct Parameters {
 
   // coloring
   size_t bestColorSearchRange;
-
-  Parameters(void) {
-    startFrameNumber = 0;
-    frameCount = 300;
-    groupOfFramesSize = 32;
-    colorTransform = COLOR_TRANSFORM_RGB_TO_YCBCR;
-    mode = CODEC_MODE_ENCODE;
-    nnNormalEstimation = 16;
-    maxNNCountRefineSegmentation = 256;
-    iterationCountRefineSegmentation = 100;
-    lambdaRefineSegmentation = 3.0;
-    occupancyResolution = 16;
-    minPointCountPerCCPatchSegmentation = 16;
-    maxNNCountPatchSegmentation = 16;
-    maxNNCountPatchSegmentation = 16;
-    maxAllowedDist2MissedPointsDetection = 9.0;
-    maxAllowedDist2MissedPointsSelection = 1.0;
-    surfaceThickness = 4;
-    maxAllowedDepth = 255;
-
-    minimumImageWidth = 1280;
-    minimumImageHeight = 1280;
-    geometryQP = 28;
-    textureQP = 43;
-
-    geometryConfig = "geometry.cfg";
-    colorSpaceConversionConfig = "rgb444toyuv420.cfg";
-    inverseColorSpaceConversionConfig = "yuv420torgb444.cfg";
-    textureConfig = "texture.cfg";
-
-    occupancyPrecision = 4;
-    maxCandidateCount = 4;
-
-    neighborCountSmoothing = 4 * occupancyPrecision * occupancyPrecision;
-    radius2BoundaryDetection = 4.0 * occupancyPrecision * occupancyPrecision;
-    radius2Smoothing = 4.0 * occupancyPrecision * occupancyPrecision;
-    thresholdSmoothing = 64.0;
-    bestColorSearchRange = 2;
-  }
 };
 
 typedef pcc::PCCImage<uint8_t, 3> PCCImage3B;
