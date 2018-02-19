@@ -104,40 +104,49 @@ bool ParseParameters(int argc, char *argv[], Parameters &params) {
   ("help", print_help, false, "This help text")
   ("c,config", po::parseConfigFile, "Configuration file name")
 
-  ("mode", params.mode, CODEC_MODE_ENCODE,
+  ("mode",
+     params.mode, CODEC_MODE_ENCODE,
      "The encoding/decoding mode:\n"
      "  0: encode\n"
      "  1: decode")
 
   // i/o
-  ("uncompressedDataPath", params.uncompressedDataPath, {},
+  ("uncompressedDataPath",
+     params.uncompressedDataPath, {},
      "Input pointcloud to encode. "
      "Multi-frame sequences may be represented by %04i")
 
-  ("compressedStreamPath", params.compressedStreamPath, {},
+  ("compressedStreamPath",
+     params.compressedStreamPath, {},
      "Output(encoder)/Input(decoder) compressed bitstream")
 
-  ("reconstructedDataPath", params.reconstructedDataPath, {},
+  ("reconstructedDataPath",
+     params.reconstructedDataPath, {},
      "Output decoded pointcloud. "
      "Multi-frame sequences may be represented by %04i")
 
   // sequence configuration
-  ("startFrameNumber", params.startFrameNumber, {0},
+  ("startFrameNumber",
+     params.startFrameNumber, {},
      "Fist frame number in sequence to encode/decode")
 
-  ("frameCount", params.frameCount, {300},
+  ("frameCount",
+     params.frameCount, size_t(300),
      "Number of frames to encode")
 
-  ("groupOfFramesSize", params.groupOfFramesSize, {32},
+  ("groupOfFramesSize",
+     params.groupOfFramesSize, size_t(32),
      "Random access period")
 
   // colour space conversion
-  ("colorTransform", params.colorTransform, COLOR_TRANSFORM_RGB_TO_YCBCR,
+  ("colorTransform",
+     params.colorTransform, COLOR_TRANSFORM_RGB_TO_YCBCR,
      "The colour transform to be applied:\n"
      "  0: none\n"
      "  1: RGB to YCbCr (Rec.709)")
 
-  ("colorSpaceConversionPath", params.colorSpaceConversionPath, {},
+  ("colorSpaceConversionPath",
+     params.colorSpaceConversionPath, {},
      "Path to the HDRConvert. "
      "If unset, an internal color space conversion is used")
 
@@ -150,96 +159,118 @@ bool ParseParameters(int argc, char *argv[], Parameters &params) {
      "HDRConvert configuration file used for YUV420 to RGB444 conversion")
 
   // segmentation
-  ("nnNormalEstimation", params.nnNormalEstimation, {16},
+  ("nnNormalEstimation",
+     params.nnNormalEstimation, size_t(16),
      "Number of points used for normal estimation")
 
-  ("maxNNCountRefineSegmentation", params.maxNNCountRefineSegmentation, {256},
+  ("maxNNCountRefineSegmentation",
+     params.maxNNCountRefineSegmentation, size_t(256),
      "Number of nearest neighbors used during segmentation refinement")
 
   ("iterationCountRefineSegmentation",
-     params.iterationCountRefineSegmentation, {100},
+     params.iterationCountRefineSegmentation, size_t(100),
      "Number of iterations performed during segmentation refinement")
 
-  ("occupancyResolution", params.occupancyResolution, {16},
+  ("occupancyResolution",
+     params.occupancyResolution, size_t(16),
      "Resolution T of the occupancy map")
 
   ("minPointCountPerCCPatchSegmentation",
-     params.minPointCountPerCCPatchSegmentation, {16},
+     params.minPointCountPerCCPatchSegmentation, size_t(16),
      "Minimum number of points for a connected component to be "
      "retained as a patch")
 
-  ("maxNNCountPatchSegmentation", params.maxNNCountPatchSegmentation, {16},
+  ("maxNNCountPatchSegmentation",
+     params.maxNNCountPatchSegmentation, size_t(16),
      "Number of nearest neighbors used during connected components extraction")
 
-  ("surfaceThickness", params.surfaceThickness, {4},
+  ("surfaceThickness",
+     params.surfaceThickness, size_t(4),
      "Surface thickness Δ")
 
-  ("maxAllowedDepth", params.maxAllowedDepth, {255},
+  ("maxAllowedDepth",
+     params.maxAllowedDepth, size_t(255),
      "Maximum depth per patch")
 
   ("maxAllowedDist2MissedPointsDetection",
-     params.maxAllowedDist2MissedPointsDetection, {9.0},
+     params.maxAllowedDist2MissedPointsDetection, 9.0,
      "Maximum distance for a point to be ignored during missed point "
      "detection")
 
   ("maxAllowedDist2MissedPointsSelection",
-     params.maxAllowedDist2MissedPointsSelection, {1.0},
+     params.maxAllowedDist2MissedPointsSelection, 1.0,
      "Maximum distance for a point to be ignored during missed points "
      "selection")
 
-  ("lambdaRefineSegmentation", params.lambdaRefineSegmentation, {3.0},
+  ("lambdaRefineSegmentation",
+     params.lambdaRefineSegmentation, 3.0,
      "Controls the smoothness of the patch boundaries during segmentation "
      "refinement")
 
   // packing
-  ("minimumImageWidth", params.minimumImageWidth, {1280},
+  ("minimumImageWidth",
+     params.minimumImageWidth, size_t(1280),
      "Minimum width of packed patch frame")
 
-  ("minimumImageHeight", params.minimumImageHeight, {1280},
+  ("minimumImageHeight",
+     params.minimumImageHeight, size_t(1280),
      "Minimum height of packed patch frame")
 
   // occupancy map
-  ("maxCandidateCount", params.maxCandidateCount, {4},
+  ("maxCandidateCount",
+     params.maxCandidateCount, size_t(4),
      "Maximum nuber of candidates in list L")
 
-  ("occupancyPrecision", params.occupancyPrecision, {4},
+  ("occupancyPrecision",
+     params.occupancyPrecision, size_t(4),
      "Occupancy map B0 precision")
 
   // smoothing
   // NB: various parameters are of the form n * occupancyPrecision**2
-  ("neighborCountSmoothing", params.neighborCountSmoothing, {4 * 16},
+  ("neighborCountSmoothing",
+     params.neighborCountSmoothing, size_t(4 * 16),
      "todo(kmammou)")
 
-  ("radius2Smoothing", params.radius2Smoothing, {4.0 * 16},
+  ("radius2Smoothing",
+     params.radius2Smoothing, 4.0 * 16,
      "todo(kmammou)")
 
-  ("radius2BoundaryDetection", params.radius2BoundaryDetection, {4.0 * 16},
+  ("radius2BoundaryDetection",
+     params.radius2BoundaryDetection, 4.0 * 16,
      "todo(kmammou)")
 
-  ("thresholdSmoothing", params.thresholdSmoothing, {64.0},
+  ("thresholdSmoothing",
+     params.thresholdSmoothing, 64.0,
      "todo(kmammou)")
 
   // colouring
-  ("bestColorSearchRange", params.bestColorSearchRange, {2},
+  ("bestColorSearchRange",
+     params.bestColorSearchRange, size_t(2),
      "todo(kmammou)")
 
   // video encoding
-  ("videoEncoderPath", params.videoEncoderPath, {},
+  ("videoEncoderPath",
+     params.videoEncoderPath, {},
      "HM video encoder executable")
 
-  ("videoDecoderPath", params.videoDecoderPath, {},
+  ("videoDecoderPath",
+     params.videoDecoderPath, {},
      "HM video decoder executable")
 
-  ("geometryQP", params.geometryQP, {28},
+  ("geometryQP",
+     params.geometryQP, size_t(28),
      "QP for compression of geometry video")
 
-  ("textureQP", params.textureQP, {43},
+  ("textureQP",
+     params.textureQP, size_t(43),
      "QP for compression of texture video")
 
-  ("geometryConfig", params.geometryConfig, {"geometry.cfg"},
+  ("geometryConfig",
+     params.geometryConfig, {"geometry.cfg"},
      "HM configuration file for geometry compression")
 
-  ("textureConfig", params.textureConfig, {"texture.cfg"},
+  ("textureConfig",
+     params.textureConfig, {"texture.cfg"},
      "HM configuration file for texture compression")
   ;
 
