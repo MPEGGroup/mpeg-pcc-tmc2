@@ -44,6 +44,8 @@
 #include "PCCImage.h"
 #include "PCCMisc.h"
 
+#include "pcc_system.h"
+
 namespace pcc {
 template <typename T, size_t N>
 class PCCVideo {
@@ -160,7 +162,7 @@ class PCCVideo {
           << rgbFileName << "\" -p OutputFile=\"" << yuvFileName << "\" -p SourceWidth=" << width
           << " -p SourceHeight=" << height << " -p NumberOfFrames=" << getFrameCount() << std::endl;
       std::cout << cmd.str();
-      if (system(cmd.str().c_str())) {
+      if (pcc::system(cmd.str().c_str())) {
         std::cout << "Error: can't run system command!" << std::endl;
         return false;
       }
@@ -176,7 +178,7 @@ class PCCVideo {
         << " --BitstreamFile=" << binFileName << " --ReconFile=" << recFileName << " --QP=" << qp
         << std::endl;
     std::cout << cmd.str();
-    if (system(cmd.str().c_str())) {
+    if (pcc::system(cmd.str().c_str())) {
       std::cout << "Error: can't run system command!" << std::endl;
       return false;
     }
@@ -216,7 +218,7 @@ class PCCVideo {
     cmd << decoderPath << " --BitstreamFile=" << binFileName << " --ReconFile=" << yuvRecFileName
         << std::endl;
     std::cout << cmd.str();
-    if (system(cmd.str().c_str())) {
+    if (pcc::system(cmd.str().c_str())) {
       std::cout << "Error: can't run system command!" << std::endl;
       return false;
     }
@@ -232,7 +234,7 @@ class PCCVideo {
           << "\" -p SourceWidth=" << width << " -p SourceHeight=" << height
           << " -p NumberOfFrames=" << frameCount << std::endl;
       std::cout << cmd.str();
-      if (system(cmd.str().c_str())) {
+      if (pcc::system(cmd.str().c_str())) {
         std::cout << "Error: can't run system command!" << std::endl;
         return false;
       }

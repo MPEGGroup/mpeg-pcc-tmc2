@@ -37,6 +37,7 @@
 
 #include "TMC2.h"
 #include <program_options_lite.h>
+#include "pcc_system.h"
 
 using namespace std;
 using namespace pcc;
@@ -50,18 +51,28 @@ int main(int argc, char *argv[]) {
   if (!ParseParameters(argc, argv, params)) {
     return -1;
   }
-  const auto start = std::chrono::high_resolution_clock::now();
+
+  // Timers to count elapsed wall/user time
+  pcc::chrono::Stopwatch<std::chrono::steady_clock> clock_wall;
+  pcc::chrono::Stopwatch<pcc::chrono::utime_inc_children_clock> clock_user;
+
+  clock_wall.start();
+
   int ret = 0;
   if (params.mode == CODEC_MODE_ENCODE) {
-    ret = CompressVideo(params);
+    ret = CompressVideo(params, clock_user);
   } else {
-    ret = DecompressVideo(params);
+    ret = DecompressVideo(params, clock_user);
   }
 
-  const auto end = std::chrono::high_resolution_clock::now();
-  std::cout << "Processing time: "
-            << std::chrono::duration<double, std::milli>(end - start).count() / 1000.0 << " s"
-            << std::endl;
+  clock_wall.stop();
+
+  using namespace std::chrono;
+  auto total_wall = duration_cast<milliseconds>(clock_wall.count()).count();
+  auto total_user = duration_cast<milliseconds>(clock_user.count()).count();
+  std::cout << "Processing time (wall): " << total_wall / 1000.0 << " s\n";
+  std::cout << "Processing time (user): " << total_user / 1000.0 << " s\n";
+
   return ret;
 }
 
@@ -1287,7 +1298,7 @@ int CompressGroupOfFrames(const GroupOfFrames &groupOfFrames, PCCBitstream &bits
         << "\" -p SourceWidth=" << width << " -p SourceHeight=" << height
         << " -p NumberOfFrames=" << textureFrameCount << std::endl;
     std::cout << cmd.str();
-    if (int ret = system(cmd.str().c_str())) {
+    if (int ret = pcc::system(cmd.str().c_str())) {
       std::cout << "Error: can't run system command!" << std::endl;
       return ret;
     }
@@ -1311,7 +1322,7 @@ int CompressGroupOfFrames(const GroupOfFrames &groupOfFrames, PCCBitstream &bits
   return 0;
 }
 
-int CompressVideo(const Parameters &params) {
+int CompressVideo(const Parameters &params, Stopwatch &clock) {
   const size_t startFrameNumber0 = params.startFrameNumber;
   const size_t endFrameNumber0 = params.startFrameNumber + params.frameCount;
   const size_t groupOfFramesSize0 = (std::max)(size_t(1), params.groupOfFramesSize);
@@ -1326,6 +1337,9 @@ int CompressVideo(const Parameters &params) {
     if (!LoadGroupOfFrames(startFrameNumber, endFrameNumber, groupOfFrames, params)) {
       return -1;
     }
+
+    clock.start();
+
     if (startFrameNumber == startFrameNumber0) {
       const size_t predictedBitstreamSize =
           10000 + 8 * params.frameCount * groupOfFrames[0].getPointCount();
@@ -1343,11 +1357,18 @@ int CompressVideo(const Parameters &params) {
     std::cout << "Compressing group of frames " << groupOfFramesIndex << ": " << startFrameNumber
               << " -> " << endFrameNumber << "..." << std::endl;
 
-    if (int ret = CompressGroupOfFrames(groupOfFrames, bitstream, params, groupOfFramesIndex++)) {
+    int ret = CompressGroupOfFrames(groupOfFrames, bitstream, params, groupOfFramesIndex++);
+
+    clock.stop();
+
+    if (ret) {
       return ret;
     }
+
     startFrameNumber = endFrameNumber;
   }
+
+  clock.stop();
 
   assert(bitstream.size <= bitstream.capacity);
   PCCWriteToBuffer<uint64_t>(bitstream.size, bitstream.buffer, totalSizeIterator);
@@ -1670,7 +1691,7 @@ int DecompressGroupOfFrames(const size_t groupOfFramesIndex, const Parameters &p
   return 0;
 }
 
-int DecompressVideo(const Parameters &params) {
+int DecompressVideo(const Parameters &params, Stopwatch &clock) {
   PCCBitstream bitstream = {};
   ifstream fin(params.compressedStreamPath, ios::binary);
   if (!fin.is_open()) {
@@ -1707,9 +1728,15 @@ int DecompressVideo(const Parameters &params) {
   size_t groupOfFramesIndex = 0;
   while (bitstream.size < bitstream.capacity) {
     vector<PCCPointSet3> groupOfFrames;
-    if (int ret = DecompressGroupOfFrames(groupOfFramesIndex++, params, groupOfFrames, bitstream)) {
+
+    clock.start();
+    int ret = DecompressGroupOfFrames(groupOfFramesIndex++, params, groupOfFrames, bitstream);
+    clock.stop();
+
+    if (ret) {
       return ret;
     }
+
     const size_t frameCount = groupOfFrames.size();
     char fileName[4096];
     for (size_t f = 0; f < frameCount; ++f) {

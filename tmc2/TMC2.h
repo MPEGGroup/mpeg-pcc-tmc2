@@ -60,6 +60,8 @@
 
 #include "TMC2Config.h"
 
+#include "pcc_chrono.h"
+
 enum ColorTransform { COLOR_TRANSFORM_NONE = 0, COLOR_TRANSFORM_RGB_TO_YCBCR = 1 };
 
 enum CodecMode { CODEC_MODE_ENCODE = 0, CODEC_MODE_DECODE = 1 };
@@ -134,9 +136,11 @@ struct EncodingContext {
   std::vector<pcc::PCCPointCloudPatch> patches;
 };
 
+typedef pcc::chrono::Stopwatch<pcc::chrono::utime_inc_children_clock> Stopwatch;
+
 bool ParseParameters(int argc, char *argv[], Parameters &params);
 void Usage();
-int CompressVideo(const Parameters &params);
-int DecompressVideo(const Parameters &params);
+int CompressVideo(const Parameters &params, Stopwatch&);
+int DecompressVideo(const Parameters &params, Stopwatch&);
 
 #endif /* TMC2_h */
