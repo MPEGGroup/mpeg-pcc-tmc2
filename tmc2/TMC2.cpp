@@ -1368,8 +1368,6 @@ int CompressVideo(const Parameters &params, Stopwatch &clock) {
     startFrameNumber = endFrameNumber;
   }
 
-  clock.stop();
-
   assert(bitstream.size <= bitstream.capacity);
   PCCWriteToBuffer<uint64_t>(bitstream.size, bitstream.buffer, totalSizeIterator);
   std::cout << "Total bitstream size " << bitstream.size << " B" << std::endl;
