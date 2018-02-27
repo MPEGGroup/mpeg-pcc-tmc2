@@ -44,7 +44,7 @@ using namespace pcc;
 using namespace nanoflann;
 
 int main(int argc, char *argv[]) {
-  std::cout << "tmc2 v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MAJOR << std::endl
+  std::cout << "tmc2 v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MINOR << std::endl
             << std::endl;
 
   Parameters params;
