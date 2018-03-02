@@ -1296,8 +1296,8 @@ int CompressGroupOfFrames(const GroupOfFrames &groupOfFrames, PCCBitstream &bits
     cmd << params.colorSpaceConversionPath << " -f " << params.inverseColorSpaceConversionConfig
         << " -p SourceFile=\"" << yuvFileName << "\" -p OutputFile=\"" << rgbFileName
         << "\" -p SourceWidth=" << width << " -p SourceHeight=" << height
-        << " -p NumberOfFrames=" << textureFrameCount << std::endl;
-    std::cout << cmd.str();
+        << " -p NumberOfFrames=" << textureFrameCount;
+    std::cout << cmd.str() << '\n';
     if (int ret = pcc::system(cmd.str().c_str())) {
       std::cout << "Error: can't run system command!" << std::endl;
       return ret;

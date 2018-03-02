@@ -160,8 +160,8 @@ class PCCVideo {
       std::stringstream cmd;
       cmd << colorSpaceConversionPath << " -f " << colorSpaceConversionConfig << " -p SourceFile=\""
           << rgbFileName << "\" -p OutputFile=\"" << yuvFileName << "\" -p SourceWidth=" << width
-          << " -p SourceHeight=" << height << " -p NumberOfFrames=" << getFrameCount() << std::endl;
-      std::cout << cmd.str();
+          << " -p SourceHeight=" << height << " -p NumberOfFrames=" << getFrameCount();
+      std::cout << cmd.str() << '\n';
       if (pcc::system(cmd.str().c_str())) {
         std::cout << "Error: can't run system command!" << std::endl;
         return false;
@@ -175,9 +175,8 @@ class PCCVideo {
         << " --InputBitDepth=" << depth
         << " --InputChromaFormat=420 --FrameRate=30 --FrameSkip=0 --SourceWidth=" << width
         << " --SourceHeight=" << height << " --FramesToBeEncoded=" << frames.size()
-        << " --BitstreamFile=" << binFileName << " --ReconFile=" << recFileName << " --QP=" << qp
-        << std::endl;
-    std::cout << cmd.str();
+        << " --BitstreamFile=" << binFileName << " --ReconFile=" << recFileName << " --QP=" << qp;
+    std::cout << cmd.str() << '\n';
     if (pcc::system(cmd.str().c_str())) {
       std::cout << "Error: can't run system command!" << std::endl;
       return false;
@@ -215,9 +214,8 @@ class PCCVideo {
     file.close();
     bitstream.size += compressedBitstreamSize;
     std::stringstream cmd;
-    cmd << decoderPath << " --BitstreamFile=" << binFileName << " --ReconFile=" << yuvRecFileName
-        << std::endl;
-    std::cout << cmd.str();
+    cmd << decoderPath << " --BitstreamFile=" << binFileName << " --ReconFile=" << yuvRecFileName;
+    std::cout << cmd.str() << '\n';
     if (pcc::system(cmd.str().c_str())) {
       std::cout << "Error: can't run system command!" << std::endl;
       return false;
@@ -232,8 +230,8 @@ class PCCVideo {
       cmd << colorSpaceConversionPath << " -f " << inverseColorSpaceConversionConfig
           << " -p SourceFile=\"" << yuvRecFileName << "\" -p OutputFile=\"" << rgbRecFileName
           << "\" -p SourceWidth=" << width << " -p SourceHeight=" << height
-          << " -p NumberOfFrames=" << frameCount << std::endl;
-      std::cout << cmd.str();
+          << " -p NumberOfFrames=" << frameCount;
+      std::cout << cmd.str() << '\n';
       if (pcc::system(cmd.str().c_str())) {
         std::cout << "Error: can't run system command!" << std::endl;
         return false;
