@@ -285,6 +285,9 @@ bool ParseParameters(int argc, char *argv[], Parameters &params) {
      "HM configuration file for texture compression")
 
   // lossless parameters
+  ("losslessGeo",
+     params.losslessGeo, false,
+      "Enable lossless encoding of geometry\n")
 
   ("noAttributes",
      params.noAttributes, false,
@@ -346,6 +349,7 @@ bool ParseParameters(int argc, char *argv[], Parameters &params) {
 
   std::cout << "+ Parameters" << std::endl;
   std::cout << "\t mode                        " << params.mode << std::endl;
+  std::cout << "\t losslessGeo                 " << params.losslessGeo << std::endl;
   std::cout << "\t noAttributes                " << params.noAttributes << std::endl;
   std::cout << "\t uncompressedDataPath        " << params.uncompressedDataPath << std::endl;
   std::cout << "\t compressedStreamPath        " << params.compressedStreamPath << std::endl;
@@ -1243,6 +1247,7 @@ int CompressGroupOfFrames(const GroupOfFrames &groupOfFrames, PCCBitstream &bits
   PCCWriteToBuffer<uint8_t>(uint8_t(params.radius2BoundaryDetection), bitstream.buffer,
                             bitstream.size);
   PCCWriteToBuffer<uint8_t>(uint8_t(params.thresholdSmoothing), bitstream.buffer, bitstream.size);
+  PCCWriteToBuffer<uint8_t>(uint8_t(params.losslessGeo), bitstream.buffer, bitstream.size);
   PCCWriteToBuffer<uint8_t>(uint8_t(params.noAttributes), bitstream.buffer, bitstream.size);
 
   auto sizeGeometryVideo = bitstream.size;
@@ -1279,9 +1284,11 @@ int CompressGroupOfFrames(const GroupOfFrames &groupOfFrames, PCCBitstream &bits
     GeneratePointCloud(context.patches, videoGeometry, 2 * f, context.blockToPatch,
                        context.occupancyMap, params.occupancyResolution, partition,
                        context.pointToPixel, context.frame0);
-    SmoothPointCloud(partition, context.frame0, params.radius2Smoothing,
-                     params.neighborCountSmoothing, params.radius2BoundaryDetection,
-                     params.thresholdSmoothing);
+    if (!params.losslessGeo) {
+      SmoothPointCloud(partition, context.frame0, params.radius2Smoothing,
+                       params.neighborCountSmoothing, params.radius2BoundaryDetection,
+                       params.thresholdSmoothing);
+    }
   }
 
   if (params.noAttributes) {
@@ -1642,6 +1649,8 @@ int DecompressGroupOfFrames(const size_t groupOfFramesIndex, const Parameters &p
   PCCReadFromBuffer<uint8_t>(bitstream.buffer, radius2BoundaryDetection, bitstream.size);
   uint8_t thresholdSmoothing = 0;
   PCCReadFromBuffer<uint8_t>(bitstream.buffer, thresholdSmoothing, bitstream.size);
+  uint8_t losslessGeo = 0;
+  PCCReadFromBuffer<uint8_t>(bitstream.buffer, losslessGeo, bitstream.size);
   uint8_t noAttributes = 0;
   PCCReadFromBuffer<uint8_t>(bitstream.buffer, noAttributes, bitstream.size);
 
@@ -1679,8 +1688,10 @@ int DecompressGroupOfFrames(const size_t groupOfFramesIndex, const Parameters &p
     GeneratePointCloud(context.patches, videoGeometry, 2 * f, context.blockToPatch,
                        context.occupancyMap, occupancyResolution, partition, context.pointToPixel,
                        context.frame0);
-    SmoothPointCloud(partition, context.frame0, radius2Smoothing, neighborCountSmoothing,
-                     radius2BoundaryDetection, thresholdSmoothing);
+    if (!losslessGeo) {
+      SmoothPointCloud(partition, context.frame0, radius2Smoothing, neighborCountSmoothing,
+                       radius2BoundaryDetection, thresholdSmoothing);
+    }
   }
 
   PCCVideo3B videoTexture;
