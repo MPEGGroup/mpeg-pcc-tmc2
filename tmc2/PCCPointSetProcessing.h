@@ -46,7 +46,7 @@
 
 namespace pcc {
 inline bool PCCTransfertColors(const PCCPointSet3 &source, const int32_t searchRange,
-                               PCCPointSet3 &target) {
+                               PCCPointSet3 &target, const bool losslessTexture = false) {
   const size_t pointCountSource = source.getPointCount();
   const size_t pointCountTarget = target.getPointCount();
   if (!pointCountSource || !pointCountTarget || !source.hasColors()) {
@@ -78,7 +78,7 @@ inline bool PCCTransfertColors(const PCCPointSet3 &source, const int32_t searchR
   for (size_t index = 0; index < pointCountTarget; ++index) {
     const PCCColor3B color1 = refinedColors1[index];
     const std::vector<PCCColor3B> &colors2 = refinedColors2[index];
-    if (colors2.empty()) {
+    if (colors2.empty() || losslessTexture) {
       target.setColor(index, color1);
     } else {
       const double H = double(colors2.size());

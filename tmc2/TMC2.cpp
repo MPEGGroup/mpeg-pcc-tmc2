@@ -289,6 +289,10 @@ bool ParseParameters(int argc, char *argv[], Parameters &params) {
      params.losslessGeo, false,
       "Enable lossless encoding of geometry\n")
 
+  ("losslessTexture",
+     params.losslessTexture, false,
+     "Enable lossless encoding of texture\n")
+
   ("noAttributes",
      params.noAttributes, false,
      "Disable encoding of attributes")
@@ -350,6 +354,7 @@ bool ParseParameters(int argc, char *argv[], Parameters &params) {
   std::cout << "+ Parameters" << std::endl;
   std::cout << "\t mode                        " << params.mode << std::endl;
   std::cout << "\t losslessGeo                 " << params.losslessGeo << std::endl;
+  std::cout << "\t losslessTexture             " << params.losslessTexture << std::endl;
   std::cout << "\t noAttributes                " << params.noAttributes << std::endl;
   std::cout << "\t uncompressedDataPath        " << params.uncompressedDataPath << std::endl;
   std::cout << "\t compressedStreamPath        " << params.compressedStreamPath << std::endl;
@@ -1248,6 +1253,7 @@ int CompressGroupOfFrames(const GroupOfFrames &groupOfFrames, PCCBitstream &bits
                             bitstream.size);
   PCCWriteToBuffer<uint8_t>(uint8_t(params.thresholdSmoothing), bitstream.buffer, bitstream.size);
   PCCWriteToBuffer<uint8_t>(uint8_t(params.losslessGeo), bitstream.buffer, bitstream.size);
+  PCCWriteToBuffer<uint8_t>(uint8_t(params.losslessTexture), bitstream.buffer, bitstream.size);
   PCCWriteToBuffer<uint8_t>(uint8_t(params.noAttributes), bitstream.buffer, bitstream.size);
 
   auto sizeGeometryVideo = bitstream.size;
@@ -1300,7 +1306,7 @@ int CompressGroupOfFrames(const GroupOfFrames &groupOfFrames, PCCBitstream &bits
   for (size_t f = 0; f < groupOfFramesSize; ++f) {
     assert(contexts[f].width == width && contexts[f].height == height);
     auto &context = contexts[f];
-    PCCTransfertColors(groupOfFrames[f], int32_t(params.bestColorSearchRange), context.frame0);
+    PCCTransfertColors(groupOfFrames[f], int32_t(params.bestColorSearchRange), context.frame0, params.losslessTexture);
     GenerateTextureVideo(context.frame0, context.pointToPixel, width, height, 2, videoTexture);
   }
 
@@ -1313,9 +1319,12 @@ int CompressGroupOfFrames(const GroupOfFrames &groupOfFrames, PCCBitstream &bits
   auto sizeTextureVideo = bitstream.size;
   videoTexture.compress(path.str() + "texture", params.textureQP, bitstream, params.textureConfig,
                         params.videoEncoderPath, params.colorSpaceConversionConfig,
-                        params.colorSpaceConversionPath);
-  if (params.inverseColorSpaceConversionConfig.empty() || params.colorSpaceConversionPath.empty()) {
-    videoTexture.read420(path.str() + "texture_rec.yuv", width, height, textureFrameCount);
+                        params.colorSpaceConversionPath, params.losslessTexture);
+  if (params.inverseColorSpaceConversionConfig.empty() || params.colorSpaceConversionPath.empty() || params.losslessTexture) {
+    if (params.losslessTexture)
+      videoTexture.read(path.str() + "texture_rec.yuv", width, height, textureFrameCount);
+    else
+      videoTexture.read420(path.str() + "texture_rec.yuv", width, height, textureFrameCount);
   } else {
     std::stringstream cmd;
     const std::string yuvFileName = path.str() + "texture_rec.yuv";
@@ -1651,6 +1660,8 @@ int DecompressGroupOfFrames(const size_t groupOfFramesIndex, const Parameters &p
   PCCReadFromBuffer<uint8_t>(bitstream.buffer, thresholdSmoothing, bitstream.size);
   uint8_t losslessGeo = 0;
   PCCReadFromBuffer<uint8_t>(bitstream.buffer, losslessGeo, bitstream.size);
+  uint8_t losslessTexture = 0;
+  PCCReadFromBuffer<uint8_t>(bitstream.buffer, losslessTexture, bitstream.size);
   uint8_t noAttributes = 0;
   PCCReadFromBuffer<uint8_t>(bitstream.buffer, noAttributes, bitstream.size);
 

@@ -124,6 +124,7 @@ struct Parameters {
   // lossless
   bool noAttributes;
   bool losslessGeo;
+  bool losslessTexture;
 };
 
 typedef pcc::PCCImage<uint8_t, 3> PCCImage3B;
