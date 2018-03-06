@@ -283,6 +283,12 @@ bool ParseParameters(int argc, char *argv[], Parameters &params) {
   ("textureConfig",
      params.textureConfig, {"texture.cfg"},
      "HM configuration file for texture compression")
+
+  // lossless parameters
+
+  ("noAttributes",
+     params.noAttributes, false,
+     "Disable encoding of attributes")
   ;
 
   po::setDefaults(opts);
@@ -340,6 +346,7 @@ bool ParseParameters(int argc, char *argv[], Parameters &params) {
 
   std::cout << "+ Parameters" << std::endl;
   std::cout << "\t mode                        " << params.mode << std::endl;
+  std::cout << "\t noAttributes                " << params.noAttributes << std::endl;
   std::cout << "\t uncompressedDataPath        " << params.uncompressedDataPath << std::endl;
   std::cout << "\t compressedStreamPath        " << params.compressedStreamPath << std::endl;
   std::cout << "\t reconstructedDataPath       " << params.reconstructedDataPath << std::endl;
@@ -1174,7 +1181,7 @@ void SmoothPointCloud(const vector<uint32_t> &partition, PCCPointSet3 &pointClou
   });
 }
 bool ColorPointCloud(const PCCVideo3B &video, const vector<PCCVector3<size_t>> pointToPixel,
-                     const size_t shift, PCCPointSet3 &pointCloud) {
+                     const size_t shift, PCCPointSet3 &pointCloud, bool noAttributes) {
   const size_t pointCount = pointCloud.getPointCount();
   if (!pointCount || !pointCloud.hasColors()) {
     return false;
@@ -1186,8 +1193,15 @@ bool ColorPointCloud(const PCCVideo3B &video, const vector<PCCVector3<size_t>> p
     const size_t f = location[2];
     const auto &frame = video.getFrame(shift + f);
     PCCColor3B color;
-    for (size_t c = 0; c < 3; ++c) {
-      color[c] = frame.getValue(c, x, y);
+    if (!noAttributes) {
+        for (size_t c = 0; c < 3; ++c) {
+            color[c] = frame.getValue(c, x, y);
+        }
+    }
+    else {
+        for (size_t c = 0; c < 3; ++c) {
+            color[c] = static_cast<uint8_t>(127);
+        }
     }
     pointCloud.setColor(i, color);
   }
@@ -1229,6 +1243,7 @@ int CompressGroupOfFrames(const GroupOfFrames &groupOfFrames, PCCBitstream &bits
   PCCWriteToBuffer<uint8_t>(uint8_t(params.radius2BoundaryDetection), bitstream.buffer,
                             bitstream.size);
   PCCWriteToBuffer<uint8_t>(uint8_t(params.thresholdSmoothing), bitstream.buffer, bitstream.size);
+  PCCWriteToBuffer<uint8_t>(uint8_t(params.noAttributes), bitstream.buffer, bitstream.size);
 
   auto sizeGeometryVideo = bitstream.size;
   videoGeometry.compress(path.str() + "geometry", params.geometryQP, bitstream,
@@ -1267,6 +1282,11 @@ int CompressGroupOfFrames(const GroupOfFrames &groupOfFrames, PCCBitstream &bits
     SmoothPointCloud(partition, context.frame0, params.radius2Smoothing,
                      params.neighborCountSmoothing, params.radius2BoundaryDetection,
                      params.thresholdSmoothing);
+  }
+
+  if (params.noAttributes) {
+    // do not perform any further texture encoding
+    return 0;
   }
 
   PCCVideo3B videoTexture;
@@ -1622,6 +1642,8 @@ int DecompressGroupOfFrames(const size_t groupOfFramesIndex, const Parameters &p
   PCCReadFromBuffer<uint8_t>(bitstream.buffer, radius2BoundaryDetection, bitstream.size);
   uint8_t thresholdSmoothing = 0;
   PCCReadFromBuffer<uint8_t>(bitstream.buffer, thresholdSmoothing, bitstream.size);
+  uint8_t noAttributes = 0;
+  PCCReadFromBuffer<uint8_t>(bitstream.buffer, noAttributes, bitstream.size);
 
   stringstream path;
   path << params.compressedStreamPath << "_dec_GOF" << groupOfFramesIndex << "_";
@@ -1662,25 +1684,27 @@ int DecompressGroupOfFrames(const size_t groupOfFramesIndex, const Parameters &p
   }
 
   PCCVideo3B videoTexture;
-  auto sizeTextureVideo = bitstream.size;
-  videoTexture.decompress(path.str() + "texture", width, height, groupOfFramesSize * 2, bitstream,
-                          params.videoDecoderPath, params.inverseColorSpaceConversionConfig,
-                          params.colorSpaceConversionPath);
-  sizeTextureVideo = bitstream.size - sizeTextureVideo;
-  std::cout << "texture video  ->" << sizeTextureVideo << " B" << std::endl;
+  if (!noAttributes) {
+    auto sizeTextureVideo = bitstream.size;
+    videoTexture.decompress(path.str() + "texture", width, height, groupOfFramesSize * 2, bitstream,
+                            params.videoDecoderPath, params.inverseColorSpaceConversionConfig,
+                            params.colorSpaceConversionPath, losslessTexture);
+    sizeTextureVideo = bitstream.size - sizeTextureVideo;
+    std::cout << "texture video  ->" << sizeTextureVideo << " B" << std::endl;
 
 #ifndef POINT_CLOUD_CODEC_DUMP_INTERMEDIARY_RESULTS
-  remove((path.str() + "texture.bin").c_str());
-  remove((path.str() + "texture_rec.yuv").c_str());
-  if (!params.colorSpaceConversionConfig.empty() && !params.colorSpaceConversionPath.empty() &&
-      !params.inverseColorSpaceConversionConfig.empty()) {
-    remove((path.str() + "texture_rec.rgb").c_str());
-  }
+    remove((path.str() + "texture.bin").c_str());
+    remove((path.str() + "texture_rec.yuv").c_str());
+    if (!params.colorSpaceConversionConfig.empty() && !params.colorSpaceConversionPath.empty() &&
+        !params.inverseColorSpaceConversionConfig.empty()) {
+      remove((path.str() + "texture_rec.rgb").c_str());
+    }
 #endif  // POINT_CLOUD_CODEC_DUMP_INTERMEDIARY_RESULTS
+  }
 
   for (size_t f = 0; f < groupOfFramesSize; ++f) {
     groupOfFrames[f] = contexts[f].frame0;
-    ColorPointCloud(videoTexture, contexts[f].pointToPixel, 2 * f, groupOfFrames[f]);
+    ColorPointCloud(videoTexture, contexts[f].pointToPixel, 2 * f, groupOfFrames[f], noAttributes);
     if (params.colorTransform == COLOR_TRANSFORM_RGB_TO_YCBCR) {
       groupOfFrames[f].convertYUVToRGB();
     }

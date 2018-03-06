@@ -120,6 +120,9 @@ struct Parameters {
 
   // coloring
   size_t bestColorSearchRange;
+
+  // lossless
+  bool noAttributes;
 };
 
 typedef pcc::PCCImage<uint8_t, 3> PCCImage3B;
