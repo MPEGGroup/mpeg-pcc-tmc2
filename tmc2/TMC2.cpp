@@ -343,7 +343,7 @@ bool ParseParameters(int argc, char *argv[], Parameters &params) {
   if (encoding && params.videoEncoderPath.empty())
     err.error() << "videoEncoderPath not set\n";
 
-  if (params.videoDecoderPath.empty())
+  if (!encoding && params.videoDecoderPath.empty())
     err.error() << "videoDecoderPath not set\n";
 
   // report the current configuration (only in the absence of errors so
