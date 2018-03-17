@@ -60,7 +60,7 @@
 
 #include "TMC2Config.h"
 
-#include "pcc_chrono.h"
+#include "PCCChrono.h"
 
 enum ColorTransform { COLOR_TRANSFORM_NONE = 0, COLOR_TRANSFORM_RGB_TO_YCBCR = 1 };
 
@@ -145,7 +145,7 @@ typedef pcc::chrono::Stopwatch<pcc::chrono::utime_inc_children_clock> Stopwatch;
 
 bool ParseParameters(int argc, char *argv[], Parameters &params);
 void Usage();
-int CompressVideo(const Parameters &params, Stopwatch&);
-int DecompressVideo(const Parameters &params, Stopwatch&);
+int CompressVideo(const Parameters &params, Stopwatch &);
+int DecompressVideo(const Parameters &params, Stopwatch &);
 
 #endif /* TMC2_h */

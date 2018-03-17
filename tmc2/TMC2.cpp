@@ -37,7 +37,7 @@
 
 #include "TMC2.h"
 #include <program_options_lite.h>
-#include "pcc_system.h"
+#include "PCCSystem.h"
 
 using namespace std;
 using namespace pcc;
@@ -80,26 +80,21 @@ int main(int argc, char *argv[]) {
 // :: Command line / config parsing helpers
 
 template <typename T>
-static std::istream& readUInt(std::istream &in, T &val) {
+static std::istream &readUInt(std::istream &in, T &val) {
   unsigned int tmp;
   in >> tmp;
   val = T(tmp);
   return in;
 }
 
-static std::istream& operator>>(std::istream &in, CodecMode &val) {
-  return readUInt(in, val);
-}
+static std::istream &operator>>(std::istream &in, CodecMode &val) { return readUInt(in, val); }
 
-static std::istream& operator>>(std::istream &in, ColorTransform &val) {
-  return readUInt(in, val);
-}
+static std::istream &operator>>(std::istream &in, ColorTransform &val) { return readUInt(in, val); }
 
 //---------------------------------------------------------------------------
 // :: Command line / config parsing
 
 bool ParseParameters(int argc, char *argv[], Parameters &params) {
-
   namespace po = df::program_options_lite;
 
   bool print_help = false;
@@ -111,197 +106,151 @@ bool ParseParameters(int argc, char *argv[], Parameters &params) {
   //      (b) do not vertically align values -- it breaks quickly
   //
   po::Options opts;
-  opts.addOptions()
-  ("help", print_help, false, "This help text")
-  ("c,config", po::parseConfigFile, "Configuration file name")
+  opts.addOptions()("help", print_help, false, "This help text")("c,config", po::parseConfigFile,
+                                                                 "Configuration file name")
 
-  ("mode",
-     params.mode, CODEC_MODE_ENCODE,
-     "The encoding/decoding mode:\n"
-     "  0: encode\n"
-     "  1: decode")
+      ("mode", params.mode, CODEC_MODE_ENCODE,
+       "The encoding/decoding mode:\n"
+       "  0: encode\n"
+       "  1: decode")
 
-  // i/o
-  ("uncompressedDataPath",
-     params.uncompressedDataPath, {},
-     "Input pointcloud to encode. "
-     "Multi-frame sequences may be represented by %04i")
+      // i/o
+      ("uncompressedDataPath", params.uncompressedDataPath, {},
+       "Input pointcloud to encode. "
+       "Multi-frame sequences may be represented by %04i")
 
-  ("compressedStreamPath",
-     params.compressedStreamPath, {},
-     "Output(encoder)/Input(decoder) compressed bitstream")
+          ("compressedStreamPath", params.compressedStreamPath, {},
+           "Output(encoder)/Input(decoder) compressed bitstream")
 
-  ("reconstructedDataPath",
-     params.reconstructedDataPath, {},
-     "Output decoded pointcloud. "
-     "Multi-frame sequences may be represented by %04i")
+              ("reconstructedDataPath", params.reconstructedDataPath, {},
+               "Output decoded pointcloud. "
+               "Multi-frame sequences may be represented by %04i")
 
-  // sequence configuration
-  ("startFrameNumber",
-     params.startFrameNumber, {},
-     "Fist frame number in sequence to encode/decode")
+      // sequence configuration
+      ("startFrameNumber", params.startFrameNumber, {},
+       "Fist frame number in sequence to encode/decode")
 
-  ("frameCount",
-     params.frameCount, size_t(300),
-     "Number of frames to encode")
+          ("frameCount", params.frameCount, size_t(300), "Number of frames to encode")
 
-  ("groupOfFramesSize",
-     params.groupOfFramesSize, size_t(32),
-     "Random access period")
+              ("groupOfFramesSize", params.groupOfFramesSize, size_t(32), "Random access period")
 
-  // colour space conversion
-  ("colorTransform",
-     params.colorTransform, COLOR_TRANSFORM_RGB_TO_YCBCR,
-     "The colour transform to be applied:\n"
-     "  0: none\n"
-     "  1: RGB to YCbCr (Rec.709)")
+      // colour space conversion
+      ("colorTransform", params.colorTransform, COLOR_TRANSFORM_RGB_TO_YCBCR,
+       "The colour transform to be applied:\n"
+       "  0: none\n"
+       "  1: RGB to YCbCr (Rec.709)")
 
-  ("colorSpaceConversionPath",
-     params.colorSpaceConversionPath, {},
-     "Path to the HDRConvert. "
-     "If unset, an internal color space conversion is used")
+          ("colorSpaceConversionPath", params.colorSpaceConversionPath, {},
+           "Path to the HDRConvert. "
+           "If unset, an internal color space conversion is used")
 
-  ("colorSpaceConversionConfig",
-     params.colorSpaceConversionConfig, {"rgb444toyuv420.cfg"},
-     "HDRConvert configuration file used for RGB444 to YUV420 conversion")
+              ("colorSpaceConversionConfig", params.colorSpaceConversionConfig,
+               {"rgb444toyuv420.cfg"},
+               "HDRConvert configuration file used for RGB444 to YUV420 conversion")
 
-  ("inverseColorSpaceConversionConfig",
-     params.inverseColorSpaceConversionConfig, {"yuv420torgb444.cfg"},
-     "HDRConvert configuration file used for YUV420 to RGB444 conversion")
+                  ("inverseColorSpaceConversionConfig", params.inverseColorSpaceConversionConfig,
+                   {"yuv420torgb444.cfg"},
+                   "HDRConvert configuration file used for YUV420 to RGB444 conversion")
 
-  // segmentation
-  ("nnNormalEstimation",
-     params.nnNormalEstimation, size_t(16),
-     "Number of points used for normal estimation")
+      // segmentation
+      ("nnNormalEstimation", params.nnNormalEstimation, size_t(16),
+       "Number of points used for normal estimation")
 
-  ("maxNNCountRefineSegmentation",
-     params.maxNNCountRefineSegmentation, size_t(256),
-     "Number of nearest neighbors used during segmentation refinement")
+          ("maxNNCountRefineSegmentation", params.maxNNCountRefineSegmentation, size_t(256),
+           "Number of nearest neighbors used during segmentation refinement")
 
-  ("iterationCountRefineSegmentation",
-     params.iterationCountRefineSegmentation, size_t(100),
-     "Number of iterations performed during segmentation refinement")
+              ("iterationCountRefineSegmentation", params.iterationCountRefineSegmentation,
+               size_t(100), "Number of iterations performed during segmentation refinement")
 
-  ("occupancyResolution",
-     params.occupancyResolution, size_t(16),
-     "Resolution T of the occupancy map")
+                  ("occupancyResolution", params.occupancyResolution, size_t(16),
+                   "Resolution T of the occupancy map")
 
-  ("minPointCountPerCCPatchSegmentation",
-     params.minPointCountPerCCPatchSegmentation, size_t(16),
-     "Minimum number of points for a connected component to be "
-     "retained as a patch")
+                      ("minPointCountPerCCPatchSegmentation",
+                       params.minPointCountPerCCPatchSegmentation, size_t(16),
+                       "Minimum number of points for a connected component to be "
+                       "retained as a patch")
 
-  ("maxNNCountPatchSegmentation",
-     params.maxNNCountPatchSegmentation, size_t(16),
-     "Number of nearest neighbors used during connected components extraction")
+                          ("maxNNCountPatchSegmentation", params.maxNNCountPatchSegmentation,
+                           size_t(16),
+                           "Number of nearest neighbors used during connected components "
+                           "extraction")
 
-  ("surfaceThickness",
-     params.surfaceThickness, size_t(4),
-     "Surface thickness Δ")
+                              ("surfaceThickness", params.surfaceThickness, size_t(4),
+                               "Surface thickness Δ")
 
-  ("maxAllowedDepth",
-     params.maxAllowedDepth, size_t(255),
-     "Maximum depth per patch")
+                                  ("maxAllowedDepth", params.maxAllowedDepth, size_t(255),
+                                   "Maximum depth per patch")
 
-  ("maxAllowedDist2MissedPointsDetection",
-     params.maxAllowedDist2MissedPointsDetection, 9.0,
-     "Maximum distance for a point to be ignored during missed point "
-     "detection")
+                                      ("maxAllowedDist2MissedPointsDetection",
+                                       params.maxAllowedDist2MissedPointsDetection, 9.0,
+                                       "Maximum distance for a point to be ignored during missed "
+                                       "point "
+                                       "detection")
 
-  ("maxAllowedDist2MissedPointsSelection",
-     params.maxAllowedDist2MissedPointsSelection, 1.0,
-     "Maximum distance for a point to be ignored during missed points "
-     "selection")
+                                          ("maxAllowedDist2MissedPointsSelection",
+                                           params.maxAllowedDist2MissedPointsSelection, 1.0,
+                                           "Maximum distance for a point to be ignored during "
+                                           "missed points "
+                                           "selection")
 
-  ("lambdaRefineSegmentation",
-     params.lambdaRefineSegmentation, 3.0,
-     "Controls the smoothness of the patch boundaries during segmentation "
-     "refinement")
+                                              ("lambdaRefineSegmentation",
+                                               params.lambdaRefineSegmentation, 3.0,
+                                               "Controls the smoothness of the patch boundaries "
+                                               "during segmentation "
+                                               "refinement")
 
-  // packing
-  ("minimumImageWidth",
-     params.minimumImageWidth, size_t(1280),
-     "Minimum width of packed patch frame")
+      // packing
+      ("minimumImageWidth", params.minimumImageWidth, size_t(1280),
+       "Minimum width of packed patch frame")
 
-  ("minimumImageHeight",
-     params.minimumImageHeight, size_t(1280),
-     "Minimum height of packed patch frame")
+          ("minimumImageHeight", params.minimumImageHeight, size_t(1280),
+           "Minimum height of packed patch frame")
 
-  // occupancy map
-  ("maxCandidateCount",
-     params.maxCandidateCount, size_t(4),
-     "Maximum nuber of candidates in list L")
+      // occupancy map
+      ("maxCandidateCount", params.maxCandidateCount, size_t(4),
+       "Maximum nuber of candidates in list L")
 
-  ("occupancyPrecision",
-     params.occupancyPrecision, size_t(4),
-     "Occupancy map B0 precision")
+          ("occupancyPrecision", params.occupancyPrecision, size_t(4), "Occupancy map B0 precision")
 
-  // smoothing
-  // NB: various parameters are of the form n * occupancyPrecision**2
-  ("neighborCountSmoothing",
-     params.neighborCountSmoothing, size_t(4 * 16),
-     "todo(kmammou)")
+      // smoothing
+      // NB: various parameters are of the form n * occupancyPrecision**2
+      ("neighborCountSmoothing", params.neighborCountSmoothing, size_t(4 * 16), "todo(kmammou)")
 
-  ("radius2Smoothing",
-     params.radius2Smoothing, 4.0 * 16,
-     "todo(kmammou)")
+          ("radius2Smoothing", params.radius2Smoothing, 4.0 * 16, "todo(kmammou)")
 
-  ("radius2BoundaryDetection",
-     params.radius2BoundaryDetection, 4.0 * 16,
-     "todo(kmammou)")
+              ("radius2BoundaryDetection", params.radius2BoundaryDetection, 4.0 * 16,
+               "todo(kmammou)")
 
-  ("thresholdSmoothing",
-     params.thresholdSmoothing, 64.0,
-     "todo(kmammou)")
+                  ("thresholdSmoothing", params.thresholdSmoothing, 64.0, "todo(kmammou)")
+      // colouring
+      ("bestColorSearchRange", params.bestColorSearchRange, size_t(2), "todo(kmammou)")
 
-  // colouring
-  ("bestColorSearchRange",
-     params.bestColorSearchRange, size_t(2),
-     "todo(kmammou)")
+      // video encoding
+      ("videoEncoderPath", params.videoEncoderPath, {}, "HM video encoder executable")
 
-  // video encoding
-  ("videoEncoderPath",
-     params.videoEncoderPath, {},
-     "HM video encoder executable")
+          ("videoDecoderPath", params.videoDecoderPath, {}, "HM video decoder executable")
 
-  ("videoDecoderPath",
-     params.videoDecoderPath, {},
-     "HM video decoder executable")
+              ("geometryQP", params.geometryQP, size_t(28), "QP for compression of geometry video")
 
-  ("geometryQP",
-     params.geometryQP, size_t(28),
-     "QP for compression of geometry video")
+                  ("textureQP", params.textureQP, size_t(43), "QP for compression of texture video")
 
-  ("textureQP",
-     params.textureQP, size_t(43),
-     "QP for compression of texture video")
+                      ("geometryConfig", params.geometryConfig, {"geometry.cfg"},
+                       "HM configuration file for geometry compression")
 
-  ("geometryConfig",
-     params.geometryConfig, {"geometry.cfg"},
-     "HM configuration file for geometry compression")
+                          ("textureConfig", params.textureConfig, {"texture.cfg"},
+                           "HM configuration file for texture compression")
 
-  ("textureConfig",
-     params.textureConfig, {"texture.cfg"},
-     "HM configuration file for texture compression")
+      // lossless parameters
+      ("losslessGeo", params.losslessGeo, false, "Enable lossless encoding of geometry\n")
 
-  // lossless parameters
-  ("losslessGeo",
-     params.losslessGeo, false,
-      "Enable lossless encoding of geometry\n")
+          ("losslessTexture", params.losslessTexture, false,
+           "Enable lossless encoding of texture\n")
 
-  ("losslessTexture",
-     params.losslessTexture, false,
-     "Enable lossless encoding of texture\n")
-
-  ("noAttributes",
-     params.noAttributes, false,
-     "Disable encoding of attributes")
-  ;
+              ("noAttributes", params.noAttributes, false, "Disable encoding of attributes");
 
   po::setDefaults(opts);
   po::ErrorReporter err;
-  const list<const char*>& argv_unhandled =
-    po::scanArgv(opts, argc, (const char**)argv, err);
+  const list<const char *> &argv_unhandled = po::scanArgv(opts, argc, (const char **)argv, err);
 
   for (const auto arg : argv_unhandled) {
     err.warn() << "Unhandled argument ignored: " << arg << "\n";
@@ -319,7 +268,7 @@ bool ParseParameters(int argc, char *argv[], Parameters &params) {
     std::cout << "Info: Using external color space conversion" << std::endl;
     if (params.colorTransform != COLOR_TRANSFORM_NONE) {
       err.warn() << "Using external color space conversion requires colorTransform = "
-                   "COLOR_TRANSFORM_NONE!\n";
+                    "COLOR_TRANSFORM_NONE!\n";
       params.colorTransform = COLOR_TRANSFORM_NONE;
     }
   } else {
@@ -337,19 +286,16 @@ bool ParseParameters(int argc, char *argv[], Parameters &params) {
   if (!encoding && params.reconstructedDataPath.empty())
     err.error() << "reconstructedDataPath not set\n";
 
-  if (params.compressedStreamPath.empty())
-    err.error() << "compressedStreamPath not set\n";
+  if (params.compressedStreamPath.empty()) err.error() << "compressedStreamPath not set\n";
 
-  if (encoding && params.videoEncoderPath.empty())
-    err.error() << "videoEncoderPath not set\n";
+  if (encoding && params.videoEncoderPath.empty()) err.error() << "videoEncoderPath not set\n";
 
   if (!encoding && params.videoDecoderPath.empty())
     err.error() << "videoDecoderPath not set\n";
 
   // report the current configuration (only in the absence of errors so
   // that errors/warnings are more obvious and in the same place).
-  if (err.is_errored)
-    return false;
+  if (err.is_errored) return false;
 
   std::cout << "+ Parameters" << std::endl;
   std::cout << "\t mode                        " << params.mode << std::endl;
@@ -427,7 +373,6 @@ bool ParseParameters(int argc, char *argv[], Parameters &params) {
             << params.radius2BoundaryDetection << std::endl;
   std::cout << "\t   thresholdSmoothing                          " << params.thresholdSmoothing
             << std::endl;
-
   std::cout << "\t coloring" << std::endl;
   std::cout << "\t   bestColorSearchRange                        " << params.bestColorSearchRange
             << std::endl;
@@ -1203,14 +1148,13 @@ bool ColorPointCloud(const PCCVideo3B &video, const vector<PCCVector3<size_t>> p
     const auto &frame = video.getFrame(shift + f);
     PCCColor3B color;
     if (!noAttributes) {
-        for (size_t c = 0; c < 3; ++c) {
-            color[c] = frame.getValue(c, x, y);
-        }
-    }
-    else {
-        for (size_t c = 0; c < 3; ++c) {
-            color[c] = static_cast<uint8_t>(127);
-        }
+      for (size_t c = 0; c < 3; ++c) {
+        color[c] = frame.getValue(c, x, y);
+      }
+    } else {
+      for (size_t c = 0; c < 3; ++c) {
+        color[c] = static_cast<uint8_t>(127);
+      }
     }
     pointCloud.setColor(i, color);
   }
@@ -1306,7 +1250,8 @@ int CompressGroupOfFrames(const GroupOfFrames &groupOfFrames, PCCBitstream &bits
   for (size_t f = 0; f < groupOfFramesSize; ++f) {
     assert(contexts[f].width == width && contexts[f].height == height);
     auto &context = contexts[f];
-    PCCTransfertColors(groupOfFrames[f], int32_t(params.bestColorSearchRange), context.frame0, params.losslessTexture);
+    PCCTransfertColors(groupOfFrames[f], int32_t(params.bestColorSearchRange), context.frame0,
+                       params.losslessTexture);
     GenerateTextureVideo(context.frame0, context.pointToPixel, width, height, 2, videoTexture);
   }
 
@@ -1320,7 +1265,8 @@ int CompressGroupOfFrames(const GroupOfFrames &groupOfFrames, PCCBitstream &bits
   videoTexture.compress(path.str() + "texture", params.textureQP, bitstream, params.textureConfig,
                         params.videoEncoderPath, params.colorSpaceConversionConfig,
                         params.colorSpaceConversionPath, params.losslessTexture);
-  if (params.inverseColorSpaceConversionConfig.empty() || params.colorSpaceConversionPath.empty() || params.losslessTexture) {
+  if (params.inverseColorSpaceConversionConfig.empty() || params.colorSpaceConversionPath.empty() ||
+      params.losslessTexture) {
     if (params.losslessTexture)
       videoTexture.read(path.str() + "texture_rec.yuv", width, height, textureFrameCount);
     else

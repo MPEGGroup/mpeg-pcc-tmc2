@@ -54,7 +54,8 @@ struct utime_inc_children_clock {
 
   static time_point now() noexcept;
 };
-}}
+}
+}
 
 //===========================================================================
 
@@ -66,9 +67,9 @@ namespace chrono {
  * This timer acts like a stopwatch and may be used to measure the
  * cumulative periods between successive calls to start() and stop().
  */
-template<typename Clock>
+template <typename Clock>
 class Stopwatch {
-public:
+ public:
   typedef typename Clock::duration duration;
 
   /// Reset the accumulated interval count.
@@ -87,38 +88,34 @@ public:
   /// NB: this excludes any currently active period marked by start().
   ///
   /// @return  cumulative elapsed time
-  constexpr duration count() const {
-    return cumulative_time_;
-  }
+  constexpr duration count() const { return cumulative_time_; }
 
-private:
+ private:
   typename Clock::time_point start_time_;
-  duration cumulative_time_ {duration::zero()};
+  duration cumulative_time_{duration::zero()};
 };
-}}
+}
+}
 
 //---------------------------------------------------------------------------
 
-template<typename Clock>
-void
-pcc::chrono::Stopwatch<Clock>::reset() {
+template <typename Clock>
+void pcc::chrono::Stopwatch<Clock>::reset() {
   cumulative_time_ = cumulative_time_.zero();
 }
 
 //---------------------------------------------------------------------------
 
-template<typename Clock>
-void
-pcc::chrono::Stopwatch<Clock>::start() {
+template <typename Clock>
+void pcc::chrono::Stopwatch<Clock>::start() {
   start_time_ = Clock::now();
 }
 
 //---------------------------------------------------------------------------
 
-template<typename Clock>
-typename pcc::chrono::Stopwatch<Clock>::duration
-pcc::chrono::Stopwatch<Clock>::stop() {
-  const auto& delta = duration(Clock::now() - start_time_);
+template <typename Clock>
+typename pcc::chrono::Stopwatch<Clock>::duration pcc::chrono::Stopwatch<Clock>::stop() {
+  const auto &delta = duration(Clock::now() - start_time_);
   cumulative_time_ += delta;
   return delta;
 }

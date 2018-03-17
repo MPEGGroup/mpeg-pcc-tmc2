@@ -32,13 +32,13 @@
  */
 
 #if _WIN32
-# define _UNICODE
-# include <windows.h>
+#define _UNICODE
+#include <windows.h>
 #endif
 
 #include <chrono>
 #include <memory>
-#include "pcc_system.h"
+#include "PCCSystem.h"
 
 //===========================================================================
 
@@ -46,19 +46,19 @@
 namespace pcc {
 namespace chrono {
 namespace detail {
-  using hundredns = std::chrono::duration<int64_t, std::ratio<1, 10000000>>;
+using hundredns = std::chrono::duration<int64_t, std::ratio<1, 10000000>>;
 
-  // global state to emulate getrusage(RUSAGE_CHILDREN).
-  extern hundredns g_cumulative_time_children;
-}}}
+// global state to emulate getrusage(RUSAGE_CHILDREN).
+extern hundredns g_cumulative_time_children;
+}
+}
+}
 #endif
 
 //===========================================================================
 
 #if _WIN32
-int
-pcc::system(const char* command) noexcept
-{
+int pcc::system(const char *command) noexcept {
   // Windows doesn't directly support an equivalent of RUSAGE_CHILDREN in
   // GetProcessTimes().  To fully emulate the support is complicated.
   // However, a first order approximation may be made if a process
@@ -70,18 +70,16 @@ pcc::system(const char* command) noexcept
   //  - gather the process times for the child
   //  - add to any existing process timers
   //
-  STARTUPINFOW si {};
-  PROCESS_INFORMATION pi {};
+  STARTUPINFOW si{};
+  PROCESS_INFORMATION pi{};
   si.cb = sizeof(si);
 
   size_t cmd_size = strlen(command) + 1;
-  std::unique_ptr<wchar_t[]> cmd {new wchar_t[cmd_size]};
+  std::unique_ptr<wchar_t[]> cmd{new wchar_t[cmd_size]};
   size_t num_converted = 0;
   mbstowcs_s(&num_converted, cmd.get(), cmd_size, command, _TRUNCATE);
 
-  if (!CreateProcessW(nullptr, cmd.get(),
-         nullptr, nullptr, 0, 0, nullptr, nullptr, &si, &pi))
-  {
+  if (!CreateProcessW(nullptr, cmd.get(), nullptr, nullptr, 0, 0, nullptr, nullptr, &si, &pi)) {
     return -1;
   }
 

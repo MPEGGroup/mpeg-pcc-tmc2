@@ -31,23 +31,74 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#pragma once
+#if _WIN32
+#define _UNICODE
+#include <windows.h>
+#endif
 
-#ifndef _WIN32
-# include <cstdlib>
+#include "PCCChrono.h"
+#include "TMC2Config.h"
+
+#if HAVE_GETRUSAGE
+#include <sys/resource.h>
+#include <sys/time.h>
 #endif
 
 //===========================================================================
 
+#if _WIN32
 namespace pcc {
-/**
- * a wrapper around ::system() for winapi compatibility.
- */
-#ifdef _WIN32
-int system(const char* command) noexcept;
-#else
-static inline int system(const char *command) { return ::system(command); }
-#endif
+namespace chrono {
+namespace detail {
+using hundredns = std::chrono::duration<int64_t, std::ratio<1, 10000000>>;
+
+// global state to emulate getrusage(RUSAGE_CHILDREN).
+hundredns g_cumulative_time_children{0};
 }
+}
+}
+#endif
+
+//---------------------------------------------------------------------------
+
+#if _WIN32
+pcc::chrono::utime_inc_children_clock::time_point
+pcc::chrono::utime_inc_children_clock::now() noexcept {
+  HANDLE hProcess = GetCurrentProcess();
+  FILETIME dummy, userTime;
+
+  GetProcessTimes(hProcess, &dummy, &dummy, &dummy, &userTime);
+
+  ULARGE_INTEGER val;
+  val.LowPart = userTime.dwLowDateTime;
+  val.HighPart = userTime.dwHighDateTime;
+
+  using namespace detail;
+  using hundredns = std::chrono::duration<int64_t, std::ratio<1, 10000000>>;
+  return time_point(hundredns(val.QuadPart) + g_cumulative_time_children);
+}
+#endif
+
+//---------------------------------------------------------------------------
+
+#if HAVE_GETRUSAGE
+pcc::chrono::utime_inc_children_clock::time_point
+pcc::chrono::utime_inc_children_clock::now() noexcept {
+  std::chrono::nanoseconds total;
+
+  struct rusage usage;
+  getrusage(RUSAGE_SELF, &usage);
+
+  total = std::chrono::seconds(usage.ru_utime.tv_sec) +
+          std::chrono::microseconds(usage.ru_utime.tv_usec);
+
+  if (getrusage(RUSAGE_CHILDREN, &usage)) return time_point(total);
+
+  total += std::chrono::seconds(usage.ru_utime.tv_sec) +
+           std::chrono::microseconds(usage.ru_utime.tv_usec);
+
+  return time_point(total);
+}
+#endif
 
 //===========================================================================

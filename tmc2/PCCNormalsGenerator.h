@@ -72,7 +72,12 @@ class PCCNormalsGenerator3 {
     double weight;
     uint32_t start;
     uint32_t end;
-    bool operator<(const PCCWeightedEdge &rhs) const { return weight < rhs.weight; }
+    bool operator<(const PCCWeightedEdge &rhs) const {
+      if (weight == rhs.weight) {
+        return start == rhs.start ? end < rhs.end : start < rhs.start;
+      }
+      return weight < rhs.weight;
+    }
   };
 
  public:

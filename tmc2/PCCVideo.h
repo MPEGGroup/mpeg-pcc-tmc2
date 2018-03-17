@@ -44,7 +44,7 @@
 #include "PCCImage.h"
 #include "PCCMisc.h"
 
-#include "pcc_system.h"
+#include "PCCSystem.h"
 
 namespace pcc {
 template <typename T, size_t N>
@@ -157,8 +157,7 @@ class PCCVideo {
         if (!write(yuvFileName)) {
           return false;
         }
-      }
-      else {
+      } else {
         if (!write420(yuvFileName)) {
           return false;
         }
@@ -183,12 +182,11 @@ class PCCVideo {
     const std::string recFileName = fileName + "_rec.yuv";
     std::stringstream cmd;
     cmd << encoderPath << " -c " << encoderConfig << " -i " << yuvFileName
-        << " --InputBitDepth=" << depth
-        << " --InternalBitDepth=" << depth
+        << " --InputBitDepth=" << depth << " --InternalBitDepth=" << depth
         << " --InputChromaFormat=" << format
-        << " --FrameRate=30 --FrameSkip=0 --SourceWidth=" << width
-        << " --SourceHeight=" << height << " --FramesToBeEncoded=" << frames.size()
-        << " --BitstreamFile=" << binFileName << " --ReconFile=" << recFileName << " --QP=" << qp;
+        << " --FrameRate=30 --FrameSkip=0 --SourceWidth=" << width << " --SourceHeight=" << height
+        << " --FramesToBeEncoded=" << frames.size() << " --BitstreamFile=" << binFileName
+        << " --ReconFile=" << recFileName << " --QP=" << qp;
     std::cout << cmd.str() << '\n';
     if (pcc::system(cmd.str().c_str())) {
       std::cout << "Error: can't run system command!" << std::endl;
@@ -213,7 +211,7 @@ class PCCVideo {
                   const std::string &decoderPath,
                   const std::string &inverseColorSpaceConversionConfig = "",
                   const std::string &colorSpaceConversionPath = "",
-                  const bool use444CodecIo = false ) {
+                  const bool use444CodecIo = false) {
     uint32_t compressedBitstreamSize = 0;
     pcc::PCCReadFromBuffer<uint32_t>(bitstream.buffer, compressedBitstreamSize, bitstream.size);
     const std::string binFileName = fileName + ".bin";
@@ -237,13 +235,13 @@ class PCCVideo {
     }
 
     // todo: should use444CodecIo allow conversion to happen?
-    if (inverseColorSpaceConversionConfig.empty() || colorSpaceConversionPath.empty() || use444CodecIo) {
+    if (inverseColorSpaceConversionConfig.empty() || colorSpaceConversionPath.empty() ||
+        use444CodecIo) {
       if (use444CodecIo) {
         if (!read(yuvRecFileName, width, height, frameCount)) {
           return false;
         }
-      }
-      else {
+      } else {
         if (!read420(yuvRecFileName, width, height, frameCount)) {
           return false;
         }

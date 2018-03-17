@@ -49,6 +49,7 @@
 
 namespace pcc {
 struct PCCPointCloudPatch {
+  size_t index;                // patch index
   size_t u1;                   // tangential shift
   size_t v1;                   // bitangential shift
   size_t d1;                   // depth shift
@@ -68,7 +69,9 @@ struct PCCPointCloudPatch {
   std::vector<bool> occupancy;    // occupancy map
 
   friend bool operator<(const PCCPointCloudPatch &lhs, const PCCPointCloudPatch &rhs) {
-    return lhs.sizeV != rhs.sizeV ? lhs.sizeV > rhs.sizeV : lhs.sizeU > rhs.sizeU;
+    return lhs.sizeV != rhs.sizeV
+               ? lhs.sizeV > rhs.sizeV
+               : (lhs.sizeU != rhs.sizeU ? lhs.sizeU > rhs.sizeU : lhs.index < rhs.index);
   }
 };
 
@@ -264,6 +267,7 @@ class PCCPatchSegmenter3 {
         const size_t patchIndex = patches.size();
         patches.resize(patchIndex + 1);
         PCCPointCloudPatch &patch = patches[patchIndex];
+        patch.index = patchIndex;
         const size_t clusterIndex = partition[connectedComponent[0]];
         if (clusterIndex == 0 || clusterIndex == 3) {
           patch.normalAxis = 0;
