@@ -34,6 +34,8 @@
 # Cmake
 mvsc/
 build/
+bin/
+!dependencies/tbb/build/
 Debug
 Release
 # Xcode
@@ -48,6 +50,7 @@ CMakeCache.txt
 *.cmake
 .idea
 DerivedData
+!source/lib/PccLibCommon/include/PCCConfig.h
 
 test/*.ply
 test/*.bin
