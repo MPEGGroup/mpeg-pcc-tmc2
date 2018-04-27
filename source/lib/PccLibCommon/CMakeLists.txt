@@ -9,9 +9,6 @@ ENABLE_LANGUAGE( C )
 INCLUDE(CheckSymbolExists)
 CHECK_SYMBOL_EXISTS( getrusage sys/resource.h HAVE_GETRUSAGE )
 
-SET( TMC2_VERSION_MAJOR 1 )
-SET( TMC2_VERSION_MINOR 2 )
-
 CONFIGURE_FILE( ${CMAKE_CURRENT_SOURCE_DIR}/include/PCCConfig.h.in
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/PCCConfig.h )
 

@@ -44,7 +44,6 @@ PCCVideoDecoder::PCCVideoDecoder() {
 
 }
 PCCVideoDecoder::~PCCVideoDecoder() {
-
 }
 
 bool PCCVideoDecoder::decompress( PCCVideo3B& video, const std::string &fileName,
@@ -57,7 +56,8 @@ bool PCCVideoDecoder::decompress( PCCVideo3B& video, const std::string &fileName
   uint32_t compressedBitstreamSize = 0;
   bitstream.read<uint32_t>( compressedBitstreamSize );
   const std::string binFileName = fileName + ".bin";
-  const std::string yuvRecFileName = addVideoFormat( fileName + "_rec.yuv", width, height, !use444CodecIo );
+  const std::string yuvRecFileName = addVideoFormat( fileName + "_rec" + ( use444CodecIo ? ".rgb" : ".yuv" ),
+                                                     width, height, !use444CodecIo );
   const std::string rgbRecFileName = addVideoFormat( fileName + "_rec.rgb", width, height );
   std::ofstream file(binFileName, std::ios::binary);
   const std::string format = use444CodecIo ? "444" : "420";

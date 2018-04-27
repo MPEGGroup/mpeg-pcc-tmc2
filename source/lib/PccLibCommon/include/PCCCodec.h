@@ -55,7 +55,7 @@ struct GeneratePointCloudParameters {
   double radius2Smoothing_;
   double radius2BoundaryDetection_;
   double thresholdSmoothing_;
-  bool losslessGeo_;
+  bool   losslessGeo_;
   size_t nbThread_;
 };
 
@@ -72,8 +72,9 @@ class PCCCodec {
 
  private:
   void generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext& frame,
-                           const PCCVideo3B &video, const size_t occupancyResolution,
-                           std::vector<uint32_t> &partition ) ;
+                           const PCCVideo3B &video,
+                           const GeneratePointCloudParameters params,
+                           std::vector<uint32_t> &partition );
 
   void smoothPointCloud( PCCPointSet3& reconstruct, PCCFrameContext& frame,
                          const std::vector<uint32_t> &partition,

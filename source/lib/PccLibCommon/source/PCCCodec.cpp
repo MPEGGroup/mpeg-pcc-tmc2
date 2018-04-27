@@ -55,7 +55,7 @@ void PCCCodec::generatePointCloud( PCCGroupOfFrames& reconstructs, PCCContext& c
   auto &videoGeometry = context.getVideoGeometry();
   for( size_t i = 0; i < frames.size(); i++ ) {
     std::vector<uint32_t> partition;
-    generatePointCloud( reconstructs[i], frames[i], videoGeometry, params.occupancyResolution_, partition );
+    generatePointCloud( reconstructs[i], frames[i], videoGeometry, params, partition );
     if (!params.losslessGeo_ ) {
       smoothPointCloud( reconstructs[i], frames[i], partition, params );
     }
@@ -76,7 +76,8 @@ bool PCCCodec::colorPointCloud( PCCGroupOfFrames& reconstructs, PCCContext& cont
 }
 
 void PCCCodec::generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext &frame,
-                                   const PCCVideo3B &video, const size_t occupancyResolution,
+                                   const PCCVideo3B &video,
+                                   const GeneratePointCloudParameters params,
                                    std::vector<uint32_t> &partition ) {
   auto& patches      = frame.getPatches();
   auto& pointToPixel = frame.getPointToPixel();
@@ -92,7 +93,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext &f
   }
   const auto &frame0 = video.getFrame(shift);
   const size_t imageWidth = video.getWidth();
-  const size_t blockToPatchWidth = frame.getWidth() / occupancyResolution;
+  const size_t blockToPatchWidth = frame.getWidth() / params.occupancyResolution_;
   reconstruct.addColors();
   const size_t patchCount = patches.size();
   for (size_t patchIndex = 0; patchIndex < patchCount; ++patchIndex) {
@@ -215,7 +216,7 @@ void PCCCodec::smoothPointCloud( PCCPointSet3& reconstruct, PCCFrameContext& fra
 bool PCCCodec::colorPointCloud( PCCPointSet3& reconstruct, PCCFrameContext& frame,
                                 const PCCVideo3B &video, const bool noAttributes ) {
   if( noAttributes ) {
-    for (auto color : reconstruct.getColors() ) {
+    for (auto& color : reconstruct.getColors() ) {
       for (size_t c = 0; c < 3; ++c) {
         color[c] = static_cast<uint8_t>(127);
       }

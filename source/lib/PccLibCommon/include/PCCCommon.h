@@ -80,6 +80,12 @@ namespace pcc {
   // ******************************************************************* //
   // Static functions
   // ******************************************************************* //
+
+  static void removeFiles( const std::string string ) {
+    if( remove( string.c_str() ) != 0 ) {
+      std::cout << "Could not remove the file: " << string << std::endl;
+    }
+  }
   static std::string removeFileExtension( const std::string string ) {
     size_t pos = string.find_last_of(".");
     return ( pos != std::string::npos && pos + 4 == string.length() ) ?

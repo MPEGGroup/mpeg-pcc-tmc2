@@ -63,7 +63,7 @@ bool PCCVideoEncoder::compress( PCCVideo3B& video, const std::string &fileName,
     return false;
   }
   const std::string format = use444CodecIo ? "444" : "420";
-  const std::string yuvFileName = addVideoFormat( fileName + ".yuv", width, height, !use444CodecIo );
+  const std::string yuvFileName = addVideoFormat( fileName + ( use444CodecIo ? ".rgb" : ".yuv" ), width, height, !use444CodecIo );
 
   // todo: should use444CodecIo allow conversion to happen?
   if (colorSpaceConversionConfig.empty() || colorSpaceConversionPath.empty() || use444CodecIo) {
@@ -93,7 +93,7 @@ bool PCCVideoEncoder::compress( PCCVideo3B& video, const std::string &fileName,
   }
 
   const std::string binFileName = fileName + ".bin";
-  const std::string recFileName = addVideoFormat( fileName + "_rec.yuv", width, height );
+  const std::string recFileName = addVideoFormat( fileName + "_rec" + ( use444CodecIo ? ".rgb" : ".yuv" ), width, height, !use444CodecIo );
   std::stringstream cmd;
   cmd << encoderPath << " -c " << encoderConfig << " -i " << yuvFileName
       << " --InputBitDepth=" << depth << " --InternalBitDepth=" << depth
