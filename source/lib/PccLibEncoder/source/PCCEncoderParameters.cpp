@@ -76,7 +76,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   radius2Smoothing_                     = 4.0 * 16;
   radius2BoundaryDetection_             = 4.0 * 16;
   thresholdSmoothing_                   = 64.0;
-  bestColorSearchRange_                 = 2;
+  bestColorSearchRange_                 = 0;
 
   videoEncoderPath_                     = {};
   geometryQP_                           = 28;
