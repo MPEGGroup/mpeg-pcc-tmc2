@@ -106,9 +106,9 @@ int PCCEncoder::compress( const PCCGroupOfFrames& sources, PCCContext &context,
   sizeGeometryVideo = bitstream.size() - sizeGeometryVideo;
 
   if( !params_.keepIntermediateFiles_ ){
-    remove( ( path.str() + "geometry.bin" ).c_str());
-    remove( addVideoFormat( path.str() + "geometry.yuv"    , width, height ).c_str());
-    remove( addVideoFormat( path.str() + "geometry_rec.yuv", width, height ).c_str());
+    removeFiles( path.str() + "geometry.bin" );
+    removeFiles( addVideoFormat( path.str() + "geometry.yuv"    , width, height ) );
+    removeFiles( addVideoFormat( path.str() + "geometry_rec.yuv", width, height ) );
   }  
 
   std::cout << "geometry video ->" << sizeGeometryVideo << " B ("
@@ -148,7 +148,8 @@ int PCCEncoder::compress( const PCCGroupOfFrames& sources, PCCContext &context,
                            bitstream, params_.textureConfig_,
                            params_.videoEncoderPath_, params_.colorSpaceConversionConfig_,
                            params_.colorSpaceConversionPath_, params_.losslessTexture_);
-    const std::string yuvFileName = addVideoFormat( path.str() + "texture_rec.yuv", width, height );
+    const std::string yuvFileName = addVideoFormat( path.str() + "texture_rec"  + ( params_.losslessTexture_ ? ".rgb" : ".yuv" ),
+                                                    width, height, params_.losslessTexture_ == 0 );
     if (params_.inverseColorSpaceConversionConfig_.empty() || params_.colorSpaceConversionPath_.empty() ||
         params_.losslessTexture_ ) {
       if ( params_.losslessTexture_ )
@@ -174,13 +175,17 @@ int PCCEncoder::compress( const PCCGroupOfFrames& sources, PCCContext &context,
     std::cout << "texture video  ->" << sizeTextureVideo << " B ("
         << (sizeTextureVideo * 8.0) / pointCount << " bpp)" << std::endl;
     if( !params_.keepIntermediateFiles_ ) {
-      remove((path.str() + "texture.bin").c_str());
-      remove( addVideoFormat( path.str() + "texture.yuv",     width, height ).c_str() );
-      remove( addVideoFormat( path.str() + "texture_rec.yuv", width, height ).c_str() );
-      if (!params_.colorSpaceConversionConfig_.empty() && !params_.colorSpaceConversionPath_.empty() &&
-          !params_.inverseColorSpaceConversionConfig_.empty()) {
-        remove( addVideoFormat( path.str() + "texture.rgb",     width, height ).c_str() );
-        remove( addVideoFormat( path.str() + "texture_rec.rgb", width, height ).c_str() );
+      removeFiles( path.str() + "texture.bin" );
+      removeFiles( addVideoFormat( path.str() + "texture"     + ( params_.losslessTexture_ ? ".rgb" : ".yuv" ),
+                                   width, height, params_.losslessTexture_ == 0 ) );
+      removeFiles( addVideoFormat( path.str() + "texture_rec" + ( params_.losslessTexture_ ? ".rgb" : ".yuv" ),
+                                   width, height, params_.losslessTexture_ == 0 ) );
+      if (!params_.colorSpaceConversionConfig_.empty() &&
+          !params_.colorSpaceConversionPath_.empty() &&
+          !params_.inverseColorSpaceConversionConfig_.empty() &&
+          ( params_.losslessTexture_ == 0 )) {
+        removeFiles( addVideoFormat( path.str() + "texture.rgb",     width, height ) );
+        removeFiles( addVideoFormat( path.str() + "texture_rec.rgb", width, height ) );
       }
     }
   }

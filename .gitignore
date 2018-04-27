@@ -38,21 +38,28 @@ bin/
 !dependencies/tbb/build/
 Debug
 Release
+CMakeFiles
+CMakeScripts
+CMakeCache.txt
 # Xcode
 *.pbxuser
 *.a
 xcuserdata
+#Eclipse 
+.project
+.cproject
 # User data
 data/
-CMakeFiles
-CMakeScripts
-CMakeCache.txt
 *.cmake
 .idea
 DerivedData
-!source/lib/PccLibCommon/include/PCCConfig.h
+
+source/lib/PccLibCommon/include/PCCConfig.h
 
 test/*.ply
 test/*.bin
 test/*.yuv
 test/*.rgb
+scripts/
+
+log.txt

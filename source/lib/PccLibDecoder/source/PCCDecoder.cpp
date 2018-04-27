@@ -81,8 +81,8 @@ int PCCDecoder::decompress( PCCBitstream &bitstream, PCCContext &context, PCCGro
                            context.size() * 2, bitstream, params_.videoDecoderPath_);
   sizeGeometryVideo = bitstream.size() - sizeGeometryVideo;
   if( !params_.keepIntermediateFiles_ ) {
-    remove((path.str() + "geometry.bin").c_str());
-    remove( addVideoFormat( path.str() + "geometry_rec.yuv", width_, height_ ).c_str());
+    removeFiles( path.str() + "geometry.bin" );
+    removeFiles( addVideoFormat( path.str() + "geometry_rec.yuv", width_, height_ ) );
   }
   std::cout << "geometry video ->" << sizeGeometryVideo << " B" << std::endl;
 
@@ -113,13 +113,14 @@ int PCCDecoder::decompress( PCCBitstream &bitstream, PCCContext &context, PCCGro
                              losslessTexture_ != 0 );
     sizeTextureVideo = bitstream.size() - sizeTextureVideo;
     std::cout << "texture video  ->" << sizeTextureVideo << " B" << std::endl;
-
     if(!params_.keepIntermediateFiles_ ) {
-      remove((path.str() + "texture.bin").c_str());
-      remove( addVideoFormat( path.str() + "texture_rec.yuv", width_, height_ ).c_str());
+      removeFiles( path.str() + "texture.bin" );
+      removeFiles( addVideoFormat( path.str() + "texture_rec" + ( losslessTexture_ ? ".rgb" : ".yuv" ),
+                                   width_, height_, losslessTexture_ == 0 ) );
       if( !params_.colorSpaceConversionPath_.empty() &&
-          !params_.inverseColorSpaceConversionConfig_.empty()) {
-        remove( addVideoFormat( path.str() + "texture_rec.rgb", width_, height_ ).c_str());
+          !params_.inverseColorSpaceConversionConfig_.empty() &&
+          ( losslessTexture_ == 0 ) ) {
+        removeFiles( addVideoFormat( path.str() + "texture_rec" + ".rgb" , width_, height_ ) );
       }
     }
   }
