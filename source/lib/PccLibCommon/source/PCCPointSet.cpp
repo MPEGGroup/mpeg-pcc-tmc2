@@ -497,17 +497,22 @@ bool PCCPointSet3::transfertColors( PCCPointSet3 &target, const int32_t searchRa
       const double r = double(pointCountTarget) / double(pointCountSource);
       const double delta2 = (centroid2 - centroid1).getNorm2();
       const double eps = 0.000001;
-      if (delta2 > eps) {  // centroid2 != centroid1
+
+      const bool fixWeight = 1; // m42538
+      if (fixWeight || delta2 > eps) {  // centroid2 != centroid1
         double w = 0.0;
-      const double alpha = D2 / delta2;
-      const double a = H * r - 1.0;
-      const double c = alpha * r - 1.0;
-      if (fabs(a) < eps) {
-        w = -0.5 * c;
-      } else {
-        const double delta = 1.0 - a * c;
-        if (delta >= 0.0) {
-          w = (-1.0 + sqrt(delta)) / a;
+
+      if (!fixWeight){        
+        const double alpha = D2 / delta2;
+        const double a = H * r - 1.0;
+        const double c = alpha * r - 1.0;
+        if (fabs(a) < eps) {
+          w = -0.5 * c;
+        } else {
+          const double delta = 1.0 - a * c;
+          if (delta >= 0.0) {
+            w = (-1.0 + sqrt(delta)) / a;
+          }
         }
       }
       const double oneMinusW = 1.0 - w;
