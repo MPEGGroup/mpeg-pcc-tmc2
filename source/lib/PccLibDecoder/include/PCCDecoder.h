@@ -77,6 +77,7 @@ private:
   uint8_t  losslessGeo_;
   uint8_t  losslessTexture_;
   uint8_t  noAttributes_;
+  bool     absoluteD1_;
   
 };
 }; //~namespace

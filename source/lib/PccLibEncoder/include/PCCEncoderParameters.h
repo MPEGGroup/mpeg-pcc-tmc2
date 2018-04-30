@@ -106,6 +106,8 @@ class PCCEncoderParameters {
     std::string         textureConfig_;
 
     bool                keepIntermediateFiles_;
+
+    bool                absoluteD1_;
   };
 
 }; //~namespace

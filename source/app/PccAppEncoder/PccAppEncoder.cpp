@@ -306,7 +306,13 @@ bool ParseParameters(int argc, char *argv[], PCCEncoderParameters& params ) {
     ("keepIntermediateFiles",
      params.keepIntermediateFiles_,
      params.keepIntermediateFiles_,
-     "Keep intermediate files: RGB, YUV and bin");
+     "Keep intermediate files: RGB, YUV and bin")
+
+     ("absoluteD1",
+         params.absoluteD1_,
+         params.absoluteD1_,
+        "Absolute D1")
+     ;
 
   po::setDefaults(opts);
   po::ErrorReporter err;

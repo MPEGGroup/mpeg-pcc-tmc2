@@ -57,6 +57,7 @@ struct GeneratePointCloudParameters {
   double thresholdSmoothing_;
   bool   losslessGeo_;
   size_t nbThread_;
+  bool   absoluteD1_;
 };
 
 class PCCCodec {

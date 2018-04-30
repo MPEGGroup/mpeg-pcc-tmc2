@@ -98,7 +98,8 @@ int PCCDecoder::decompress( PCCBitstream &bitstream, PCCContext &context, PCCGro
       (double)radius2BoundaryDetection_,
       (double)thresholdSmoothing_,
       losslessGeo_ != 0,
-      params_.nbThread_
+      params_.nbThread_,
+      absoluteD1_
   };
   generatePointCloud( reconstructs, context, generatePointCloudParameters );
 
@@ -196,11 +197,12 @@ void PCCDecoder::decompressOccupancyMap( PCCFrameContext& frame, PCCBitstream &b
 
   arithmeticDecoder.start_decoder();
   o3dgc::Static_Bit_Model bModel0;
-  o3dgc::Adaptive_Bit_Model bModelSizeU0, bModelSizeV0;
+  o3dgc::Adaptive_Bit_Model bModelSizeU0, bModelSizeV0, bModelAbsoluteD1;
   o3dgc::Adaptive_Data_Model orientationModel(4);
   int64_t prevSizeU0 = 0;
   int64_t prevSizeV0 = 0;
 
+  absoluteD1_ = (bool)arithmeticDecoder.decode( bModelAbsoluteD1 );
   for (size_t patchIndex = 0; patchIndex < patchCount; ++patchIndex) {
     auto &patch = patches[patchIndex];
     patch.getOccupancyResolution() = occupancyResolution_;

@@ -90,6 +90,8 @@ PCCEncoderParameters::PCCEncoderParameters() {
 
   nbThread_                             = 1;
   keepIntermediateFiles_                = false;
+
+  absoluteD1_                           = true;
 }
 
 PCCEncoderParameters::~PCCEncoderParameters() {
@@ -110,7 +112,7 @@ void PCCEncoderParameters::print(){
   std::cout << "\t colorTransform                         " << colorTransform_                       << std::endl;
   std::cout << "\t nbThread                               " << nbThread_                             << std::endl;
   std::cout << "\t keepIntermediateFiles                  " << keepIntermediateFiles_                << std::endl;
-
+  std::cout << "\t absoluteD1                             " << absoluteD1_                           << std::endl;
   std::cout << "\t segmentation" << std::endl;
   std::cout << "\t   nnNormalEstimation                   " << nnNormalEstimation_                   << std::endl;
   std::cout << "\t   maxNNCountRefineSegmentation         " << maxNNCountRefineSegmentation_         << std::endl;
@@ -123,11 +125,9 @@ void PCCEncoderParameters::print(){
   std::cout << "\t   maxAllowedDist2MissedPointsSelection " << maxAllowedDist2MissedPointsSelection_ << std::endl;
   std::cout << "\t   lambdaRefineSegmentation             " << lambdaRefineSegmentation_             << std::endl;
   std::cout << "\t   maxAllowedDepth                      " << maxAllowedDepth_                      << std::endl;
-
   std::cout << "\t packing" << std::endl;
   std::cout << "\t   minimumImageWidth                    " << minimumImageWidth_                    << std::endl;
   std::cout << "\t   minimumImageHeight                   " << minimumImageHeight_                   << std::endl;
-
   std::cout << "\t video encoding" << std::endl;
   std::cout << "\t   geometryQP                           " << geometryQP_                           << std::endl;
   std::cout << "\t   textureQP                            " << textureQP_                            << std::endl;
@@ -140,7 +140,6 @@ void PCCEncoderParameters::print(){
   std::cout << "\t occupancy map encoding " << std::endl;
   std::cout << "\t   maxCandidateCount                    " << maxCandidateCount_                    << std::endl;
   std::cout << "\t   occupancyPrecision                   " << occupancyPrecision_                   << std::endl;
-
   std::cout << "\t smoothing" << std::endl;
   std::cout << "\t   neighborCountSmoothing               " << neighborCountSmoothing_               << std::endl;
   std::cout << "\t   radius2Smoothing                     " << radius2Smoothing_                     << std::endl;

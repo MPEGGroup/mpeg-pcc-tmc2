@@ -128,7 +128,11 @@ void PCCCodec::generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext &f
                 PCCVector3D point1(point0);
                 if (f > 0) {
                   const auto &frame1 = video.getFrame(f + shift);
-                  point1[patch.getNormalAxis()] += frame1.getValue(0, x, y);
+                  if( !params.absoluteD1_ ){
+                    point1[patch.getNormalAxis()] += frame1.getValue(0, x, y);
+                  }else{
+                    point1[patch.getNormalAxis()] = double( frame1.getValue(0, x, y) + patch.getD1());
+                  }
                 }
                 const size_t pointindex_1 = reconstruct.addPoint(point1);
                 reconstruct.setColor(pointindex_1, color);

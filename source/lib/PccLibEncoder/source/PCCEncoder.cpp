@@ -129,7 +129,8 @@ int PCCEncoder::compress( const PCCGroupOfFrames& sources, PCCContext &context,
       params_.radius2BoundaryDetection_,
       params_.thresholdSmoothing_,
       params_.losslessGeo_,
-      params_.nbThread_
+      params_.nbThread_,
+      params_.absoluteD1_
   };
   generatePointCloud( reconstructs, context, generatePointCloudParameters );
 
@@ -415,11 +416,14 @@ bool PCCEncoder::dilateGeometryVideo( PCCContext &context) {
     for (size_t f = 0; f < 2; ++f) {
       PCCImage3B &frame1 = videoGeometry.getFrame( shift + f );
       generateIntraImage( frame, f, frame1);
-      if (f) {
+      if( (f) && ( !params_.absoluteD1_ ) ) {
         predictGeometryFrame( frame, videoGeometry.getFrame( shift ), frame1 );
       }
     }
     dilate( frame, videoGeometry.getFrame( shift ) );
+    if( params_.absoluteD1_ ) {
+      dilate( frame, videoGeometry.getFrame( shift + 1 ) );
+    }
   }
   return true;
 }
@@ -657,10 +661,11 @@ void PCCEncoder::compressOccupancyMap( PCCFrameContext& frame, PCCBitstream &bit
                                bitstream.buffer() + bitstream.size());
   arithmeticEncoder.start_encoder();
   o3dgc::Static_Bit_Model bModel0;
-  o3dgc::Adaptive_Bit_Model bModelSizeU0, bModelSizeV0;
+  o3dgc::Adaptive_Bit_Model bModelSizeU0, bModelSizeV0, bModelAbsoluteD1;
   o3dgc::Adaptive_Data_Model orientationModel(4);
   int64_t prevSizeU0 = 0;
   int64_t prevSizeV0 = 0;
+  arithmeticEncoder.encode( params_.absoluteD1_, bModelAbsoluteD1 );
   for (size_t patchIndex = 0; patchIndex < patchCount; ++patchIndex) {
     const auto &patch = patches[patchIndex];
     EncodeUInt32(uint32_t(patch.getU0()), bitCountU0, arithmeticEncoder, bModel0);
