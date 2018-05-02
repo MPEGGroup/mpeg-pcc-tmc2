@@ -389,6 +389,7 @@ bool PCCEncoder::generateGeometryVideo( const PCCGroupOfFrames& sources, PCCCont
   for( size_t i =0; i<frames.size();i++){
     generateGeometryVideo( sources[ i ], frames[ i ], segmenterParams, videoGeometry );
   }
+  return true;
 }
 
 bool PCCEncoder::resizeGeometryVideo( PCCContext &context ) {
@@ -431,7 +432,7 @@ void PCCEncoder::dilate( PCCFrameContext& frame, PCCImage3B &image, const PCCIma
   const size_t occupancyMapSizeV = image.getHeight() / params_.occupancyResolution_;
   const int64_t neighbors[4][2] = {{0, -1}, {-1, 0}, {1, 0}, {0, 1}};
   const size_t MAX_OCCUPANCY_RESOLUTION = 64;
-  assert(params_.occupancyResolution <= MAX_OCCUPANCY_RESOLUTION);
+  assert(params_.occupancyResolution_ <= MAX_OCCUPANCY_RESOLUTION);
   size_t count[MAX_OCCUPANCY_RESOLUTION][MAX_OCCUPANCY_RESOLUTION];
   PCCVector3<int32_t> values[MAX_OCCUPANCY_RESOLUTION][MAX_OCCUPANCY_RESOLUTION];
 
