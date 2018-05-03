@@ -215,10 +215,11 @@ void PCCDecoder::decompressOccupancyMap( PCCFrameContext& frame, PCCBitstream &b
 
     const int64_t deltaSizeU0 =
         o3dgc::UIntToInt(arithmeticDecoder.ExpGolombDecode(0, bModel0, bModelSizeU0));
-    const int64_t deltaSizeV0 = arithmeticDecoder.ExpGolombDecode(0, bModel0, bModelSizeV0);
+    const int64_t deltaSizeV0 = 
+        o3dgc::UIntToInt(arithmeticDecoder.ExpGolombDecode(0, bModel0, bModelSizeV0));
 
     patch.getSizeU0() = prevSizeU0 + deltaSizeU0;
-    patch.getSizeV0() = patchIndex == 0 ? deltaSizeV0 : prevSizeV0 - deltaSizeV0;
+    patch.getSizeV0() = prevSizeV0 + deltaSizeV0;
 
     prevSizeU0 = patch.getSizeU0();
     prevSizeV0 = patch.getSizeV0();

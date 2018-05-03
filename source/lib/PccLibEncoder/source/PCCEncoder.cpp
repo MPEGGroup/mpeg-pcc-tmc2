@@ -207,10 +207,14 @@ void PCCEncoder::printMap(std::vector<bool> img, const size_t sizeU, const size_
   std::cout << std::endl;
 }
 
+
+
+
 void PCCEncoder::spatialConsistencyPack(PCCFrameContext& frame, PCCFrameContext &prevFrame) {
   auto& width   = frame.getWidth(); 
   auto& height  = frame.getHeight(); 
   auto& patches = frame.getPatches();
+
   auto& prevPatches = prevFrame.getPatches();
   if (patches.empty()) {
     return;
@@ -805,12 +809,11 @@ void PCCEncoder::compressOccupancyMap( PCCFrameContext& frame, PCCBitstream &bit
     EncodeUInt32(uint32_t(patch.getV1()), bitCountV1, arithmeticEncoder, bModel0);
     EncodeUInt32(uint32_t(patch.getD1()), bitCountD1, arithmeticEncoder, bModel0);
     const int64_t deltaSizeU0 = static_cast<int64_t>(patch.getSizeU0()) - prevSizeU0;
-    const int64_t deltaSizeV0 =
-        patchIndex == 0 ? patch.getSizeV0() : prevSizeV0 - static_cast<int64_t>(patch.getSizeV0());
-    assert(deltaSizeV0 >= 0);
+    const int64_t deltaSizeV0 = static_cast<int64_t>(patch.getSizeV0()) - prevSizeV0;
     arithmeticEncoder.ExpGolombEncode(o3dgc::IntToUInt(int32_t(deltaSizeU0)), 0, bModel0,
                                       bModelSizeU0);
-    arithmeticEncoder.ExpGolombEncode(int32_t(deltaSizeV0), 0, bModel0, bModelSizeV0);
+    arithmeticEncoder.ExpGolombEncode(o3dgc::IntToUInt(int32_t(deltaSizeV0)), 0, bModel0,
+                                      bModelSizeV0);
     prevSizeU0 = patch.getSizeU0();
     prevSizeV0 = patch.getSizeV0();
     arithmeticEncoder.encode(uint32_t(patch.getNormalAxis()), orientationModel);
