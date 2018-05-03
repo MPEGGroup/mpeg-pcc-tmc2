@@ -58,6 +58,8 @@ class PCCPatch {
   size_t&                     getV0()                        { return v0_;                    }
   size_t&                     getSizeU0()                    { return sizeU0_;                }
   size_t&                     getSizeV0()                    { return sizeV0_;                }
+  size_t&                     setViewId()                    { return viewId_;                }
+  size_t&                     setBestMatchIdx()              { return bestMatchIdx_;          }
   size_t&                     getOccupancyResolution()       { return occupancyResolution_;   }
   size_t&                     getNormalAxis()                { return normalAxis_;            }
   size_t&                     getTangentAxis()               { return tangentAxis_;           }
@@ -80,6 +82,8 @@ class PCCPatch {
   size_t                      getNormalAxis()          const { return normalAxis_;            }
   size_t                      getTangentAxis()         const { return tangentAxis_;           }
   size_t                      getBitangentAxis()       const { return bitangentAxis_;         }
+  size_t                      getViewId()              const { return viewId_;                }
+  size_t                      getBestMatchIdx()        const { return bestMatchIdx_;          }
   const std::vector<int16_t>& getDepth( int i )        const { return depth_[i];              }
   const std::vector<bool>&    getOccupancy()           const { return occupancy_;             }
 
@@ -112,6 +116,8 @@ class PCCPatch {
   std::vector<int16_t> depth_[2];  // depth
   std::vector<bool> occupancy_;    // occupancy map
 
+  size_t viewId_;                  //viewId in [0,1,2,3,4,5]
+  size_t bestMatchIdx_;            //index of matched patch from pre-frame patch.
 };
 }
 

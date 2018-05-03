@@ -108,6 +108,8 @@ class PCCEncoderParameters {
     bool                keepIntermediateFiles_;
 
     bool                absoluteD1_;
+
+    bool                constrainedPack_;
   };
 
 }; //~namespace

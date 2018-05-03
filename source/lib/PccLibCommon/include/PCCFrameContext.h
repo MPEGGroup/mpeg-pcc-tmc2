@@ -46,18 +46,21 @@ class PCCFrameContext {
   PCCFrameContext();
   ~PCCFrameContext();
 
-  size_t&                          getIndex       () { return index_;        }
-  size_t&                          getWidth       () { return width_;        }
-  size_t&                          getHeight      () { return height_;       }
-  std::vector<PCCVector3<size_t>>& getPointToPixel() { return pointToPixel_; }
-  std::vector<size_t>&             getBlockToPatch() { return blockToPatch_; }
-  std::vector<uint32_t>&           getOccupancyMap() { return occupancyMap_; }
-  std::vector<PCCPatch>&           getPatches     () { return patches_;      }
+  size_t&                          getIndex             () { return index_;             }
+  size_t&                          getWidth             () { return width_;             }
+  size_t&                          getHeight            () { return height_;            }
+  size_t&                          getNumMatchedPatches () { return numMatchedPatches_; }
+  size_t&                          setNumMatchedPatches () { return numMatchedPatches_; }
+  std::vector<PCCVector3<size_t>>& getPointToPixel      () { return pointToPixel_;      }
+  std::vector<size_t>&             getBlockToPatch      () { return blockToPatch_;      }
+  std::vector<uint32_t>&           getOccupancyMap      () { return occupancyMap_;      }
+  std::vector<PCCPatch>&           getPatches           () { return patches_;           }
 
  private:
   size_t index_;
   size_t width_;
   size_t height_;
+  size_t numMatchedPatches_;
   std::vector<PCCVector3<size_t>> pointToPixel_;
   std::vector<size_t> blockToPatch_;
   std::vector<uint32_t> occupancyMap_;

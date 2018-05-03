@@ -130,7 +130,8 @@ int PCCEncoder::compress( const PCCGroupOfFrames& sources, PCCContext &context,
       params_.thresholdSmoothing_,
       params_.losslessGeo_,
       params_.nbThread_,
-      params_.absoluteD1_
+      params_.absoluteD1_,
+      params_.constrainedPack_
   };
   generatePointCloud( reconstructs, context, generatePointCloudParameters );
 
@@ -205,6 +206,129 @@ void PCCEncoder::printMap(std::vector<bool> img, const size_t sizeU, const size_
   }
   std::cout << std::endl;
 }
+
+void PCCEncoder::spatialConsistencyPack(PCCFrameContext& frame, PCCFrameContext &prevFrame) {
+  auto& width   = frame.getWidth(); 
+  auto& height  = frame.getHeight(); 
+  auto& patches = frame.getPatches();
+  auto& prevPatches = prevFrame.getPatches();
+  if (patches.empty()) {
+    return;
+  }
+  std::sort( patches.begin(), patches.end() );
+  int id = 0;
+  size_t occupancySizeU = params_.minimumImageWidth_ / params_.occupancyResolution_;
+  size_t occupancySizeV = (std::max)(params_.minimumImageHeight_ / params_.occupancyResolution_, patches[0].getSizeV0());
+  vector<PCCPatch> matchedPatches, tmpPatches;
+  matchedPatches.clear();
+  
+  float thresholdIOU = 0.2;
+  
+  //main loop.
+  for (auto &patch : prevPatches) {
+    assert(patch.getSizeU0() <= occupancySizeU);
+    assert(patch.getSizeV0() <= occupancySizeV);
+    id++;
+    float maxIou = 0.0; int bestIdx = -1, cId = 0;
+    for (auto &cpatch : patches) {
+      if ((patch.getViewId() == cpatch.getViewId()) && (cpatch.getBestMatchIdx() == -1))
+      {
+        Rect rect = Rect(patch.getU1(), patch.getV1(), patch.getSizeU(), patch.getSizeV());
+        Rect crect = Rect(cpatch.getU1(), cpatch.getV1(), cpatch.getSizeU(), cpatch.getSizeV());
+        float iou = computeIOU(rect, crect);
+        if (iou > maxIou) {
+          maxIou = iou;
+          bestIdx = cId;
+        }
+      }//end of if (patch.viewId == cpatch.viewId).
+      cId++;
+    }
+  
+    if (maxIou > thresholdIOU) {
+      //store the best match index
+      //printf("Best match patchId:[%d:%d], viewId:%d, iou:%9.6f\n", id, bestIdx, patch.viewId, maxIou);
+      patches[bestIdx].setBestMatchIdx() = id - 1; //the matched patch id in preivious frame.
+      matchedPatches.push_back(patches[bestIdx]);
+    }
+  }
+  
+  //generate new patch order.
+  vector<PCCPatch> newOrderPatches = matchedPatches;
+  
+  for (auto patch : patches) {
+    assert(patch.getSizeU0() <= occupancySizeU);
+    assert(patch.getSizeV0() <= occupancySizeV);
+    if (patch.getBestMatchIdx() == -1) {
+      newOrderPatches.push_back(patch);
+    }
+  }
+  
+  frame.setNumMatchedPatches() = matchedPatches.size();
+  //remove the below logs when useless.
+  printf("patches.size:%d,reOrderedPatches.size:%d,matchedpatches.size:%d\n", (int)patches.size(), (int)newOrderPatches.size(), (int)frame.getNumMatchedPatches());
+  patches = newOrderPatches;
+
+  for (auto &patch : patches) { occupancySizeU = (std::max)( occupancySizeU, patch.getSizeU0() + 1); }
+
+  width  = occupancySizeU * params_.occupancyResolution_;
+  height = occupancySizeV * params_.occupancyResolution_;
+
+  std::vector<bool> occupancyMap;
+  occupancyMap.resize( occupancySizeU * occupancySizeV, false );
+  for (auto &patch : patches) {
+    assert(patch.getSizeU0() <= occupancySizeU);
+    assert(patch.getSizeV0() <= occupancySizeV);
+    bool locationFound = false;
+    auto& occupancy =  patch.getOccupancy();
+    while (!locationFound) {
+      // print(patch.occupancy, patch.getSizeU0(), patch.getSizeV0());
+      // print(occupancyMap, occupancySizeU, occupancySizeV);
+      for (size_t v = 0; v <= occupancySizeV - patch.getSizeV0() && !locationFound; ++v) {
+        for (size_t u = 0; u <= occupancySizeU - patch.getSizeU0(); ++u) {
+          bool canFit = true;
+          for (size_t v0 = 0; v0 < patch.getSizeV0() && canFit; ++v0) {
+            const size_t y = v + v0;
+            for (size_t u0 = 0; u0 < patch.getSizeU0(); ++u0) {
+              const size_t x = u + u0;
+
+              if (occupancy[v0 * patch.getSizeU0() + u0] && occupancyMap[y * occupancySizeU + x]) {
+                canFit = false;
+                break;
+              }
+            }
+          }
+          if (!canFit) {
+            continue;
+          }
+          locationFound = true;
+          patch.getU0() = u;
+          patch.getV0() = v;
+          break;
+        }
+      }
+      if (!locationFound) {
+        occupancySizeV *= 2;
+        occupancyMap.resize( occupancySizeU * occupancySizeV );
+      }
+    }
+    for (size_t v0 = 0; v0 < patch.getSizeV0(); ++v0) {
+      const size_t v = patch.getV0() + v0;
+      for (size_t u0 = 0; u0 < patch.getSizeU0(); ++u0) {
+        const size_t u = patch.getU0() + u0;
+        occupancyMap[v * occupancySizeU + u] =
+            occupancyMap[v * occupancySizeU + u] || occupancy[v0 * patch.getSizeU0() + u0];
+      }
+    }
+
+    height = (std::max)( height, (patch.getV0() + patch.getSizeV0()) * patch.getOccupancyResolution() );
+    width  = (std::max)( width,  (patch.getU0() + patch.getSizeU0()) * patch.getOccupancyResolution() );
+    // print(occupancyMap, occupancySizeU, occupancySizeV);
+  }
+  printMap( occupancyMap, occupancySizeU, occupancySizeV );
+  std::cout << "actualImageSizeU " << width  << std::endl;
+  std::cout << "actualImageSizeV " << height << std::endl;
+}
+
 void PCCEncoder::pack( PCCFrameContext& frame  ) {
   auto& width   = frame.getWidth(); 
   auto& height  = frame.getHeight(); 
@@ -278,7 +402,7 @@ void PCCEncoder::pack( PCCFrameContext& frame  ) {
 
 bool PCCEncoder::generateGeometryVideo( const PCCPointSet3& source, PCCFrameContext& frame,
                                         const PCCPatchSegmenter3Parameters segmenterParams,
-                                        PCCVideo3B &videoGeometry ) {
+                                        PCCVideo3B &videoGeometry , PCCFrameContext &prevFrame , size_t frameIndex) {
   if (!source.getPointCount()) {
     return false;
   }
@@ -287,7 +411,11 @@ bool PCCEncoder::generateGeometryVideo( const PCCPointSet3& source, PCCFrameCont
   PCCPatchSegmenter3 segmenter;
   segmenter.setNbThread( params_.nbThread_ );
   segmenter.compute( source, segmenterParams, patches );
-  pack( frame );
+  if((frameIndex == 0) || (!params_.constrainedPack_)){
+    pack( frame );    
+  } else {
+    spatialConsistencyPack(frame , prevFrame);
+  }
   return true;
 }
 
@@ -371,8 +499,9 @@ bool PCCEncoder::predictGeometryFrame( PCCFrameContext& frame, const PCCImage3B 
 }
 
 
-bool PCCEncoder::generateGeometryVideo( const PCCGroupOfFrames& sources, PCCContext &context ) {
+bool PCCEncoder::generateGeometryVideo( const PCCGroupOfFrames& sources, PCCContext &context) {
 
+  bool res = false;
   PCCPatchSegmenter3Parameters segmenterParams;
   segmenterParams.nnNormalEstimation                    = params_.nnNormalEstimation_;
   segmenterParams.maxNNCountRefineSegmentation          = params_.maxNNCountRefineSegmentation_;
@@ -388,8 +517,10 @@ bool PCCEncoder::generateGeometryVideo( const PCCGroupOfFrames& sources, PCCCont
   auto& videoGeometry = context.getVideoGeometry();
   auto & frames = context.getFrames();
   for( size_t i =0; i<frames.size();i++){
-    generateGeometryVideo( sources[ i ], frames[ i ], segmenterParams, videoGeometry );
+  size_t preIndex = i > 0 ? (i - 1):0;
+    res = generateGeometryVideo( sources[ i ], frames[ i ], segmenterParams, videoGeometry , frames[preIndex] , i);
   }
+  return res;
 }
 
 bool PCCEncoder::resizeGeometryVideo( PCCContext &context ) {
@@ -435,7 +566,7 @@ void PCCEncoder::dilate( PCCFrameContext& frame, PCCImage3B &image, const PCCIma
   const size_t occupancyMapSizeV = image.getHeight() / params_.occupancyResolution_;
   const int64_t neighbors[4][2] = {{0, -1}, {-1, 0}, {1, 0}, {0, 1}};
   const size_t MAX_OCCUPANCY_RESOLUTION = 64;
-  assert(params_.occupancyResolution <= MAX_OCCUPANCY_RESOLUTION);
+  assert(params_.occupancyResolution_ <= MAX_OCCUPANCY_RESOLUTION);
   size_t count[MAX_OCCUPANCY_RESOLUTION][MAX_OCCUPANCY_RESOLUTION];
   PCCVector3<int32_t> values[MAX_OCCUPANCY_RESOLUTION][MAX_OCCUPANCY_RESOLUTION];
 

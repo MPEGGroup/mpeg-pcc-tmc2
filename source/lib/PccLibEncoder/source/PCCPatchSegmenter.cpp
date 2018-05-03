@@ -240,6 +240,10 @@ void PCCPatchSegmenter3::segmentPatches(const PCCPointSet3 &points, const PCCSta
         patch.getTangentAxis() = 0;
         patch.getBitangentAxis() = 1;
       }
+
+      patch.setViewId() = clusterIndex;
+      patch.setBestMatchIdx() = -1;
+
       PCCBox3D boundingBox;
       boundingBox.min_ = boundingBox.max_ = points[connectedComponent[0]];
       for (const auto i : connectedComponent) {
@@ -427,5 +431,16 @@ void PCCPatchSegmenter3::refineSegmentation(const PCCPointSet3 &pointCloud, cons
     });
     swap(tempPartition, partition);
   }
+}
+
+float pcc::computeIOU(Rect a, Rect b) {
+  float iou = 0.0f;
+  Rect intersec = a & b;
+  
+  //printf("intersec: [%d,%d],%d,%d\n", intersec.x, intersec.y, intersec.width, intersec.height);
+  int intersectionArea = intersec.area();
+  int unionArea = a.area() + b.area() - intersectionArea;
+  iou = (float)intersectionArea / unionArea;
+  return iou;
 }
 

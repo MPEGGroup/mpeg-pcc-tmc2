@@ -58,6 +58,7 @@ struct GeneratePointCloudParameters {
   bool   losslessGeo_;
   size_t nbThread_;
   bool   absoluteD1_;
+  bool   constrainedPack_;
 };
 
 class PCCCodec {

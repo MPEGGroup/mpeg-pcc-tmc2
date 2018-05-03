@@ -92,6 +92,8 @@ PCCEncoderParameters::PCCEncoderParameters() {
   keepIntermediateFiles_                = false;
 
   absoluteD1_                           = true;
+
+  constrainedPack_                      = true;
 }
 
 PCCEncoderParameters::~PCCEncoderParameters() {
@@ -113,6 +115,7 @@ void PCCEncoderParameters::print(){
   std::cout << "\t nbThread                               " << nbThread_                             << std::endl;
   std::cout << "\t keepIntermediateFiles                  " << keepIntermediateFiles_                << std::endl;
   std::cout << "\t absoluteD1                             " << absoluteD1_                           << std::endl;
+  std::cout << "\t constrainedPack                        " << constrainedPack_                      << std::endl;
   std::cout << "\t segmentation" << std::endl;
   std::cout << "\t   nnNormalEstimation                   " << nnNormalEstimation_                   << std::endl;
   std::cout << "\t   maxNNCountRefineSegmentation         " << maxNNCountRefineSegmentation_         << std::endl;

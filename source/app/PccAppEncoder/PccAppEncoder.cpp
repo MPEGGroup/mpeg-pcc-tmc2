@@ -308,11 +308,15 @@ bool ParseParameters(int argc, char *argv[], PCCEncoderParameters& params ) {
      params.keepIntermediateFiles_,
      "Keep intermediate files: RGB, YUV and bin")
 
-     ("absoluteD1",
-         params.absoluteD1_,
-         params.absoluteD1_,
-        "Absolute D1")
-     ;
+    ("absoluteD1",
+     params.absoluteD1_,
+     params.absoluteD1_,
+     "Absolute D1")
+
+    ("tempCons",
+     params.constrainedPack_,
+     params.constrainedPack_,
+     "Temporally consistent patch packing");
 
   po::setDefaults(opts);
   po::ErrorReporter err;
@@ -371,7 +375,6 @@ int CompressVideo( const PCCEncoderParameters& params, Stopwatch &clock) {
 
     std::cout << "Compressing group of frames " << contextIndex << ": " << startFrameNumber
               << " -> " << endFrameNumber << "..." << std::endl;
-
     int ret = encoder.compress( sources, context, bitstream, reconstructs );
 
     clock.stop();

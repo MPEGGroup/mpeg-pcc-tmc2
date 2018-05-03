@@ -92,6 +92,45 @@ class PCCPatchSegmenter3 {
  private:
   size_t nbThread_;
 };
+
+class Rect{
+  public:
+  Rect &operator=(const Rect &) = delete;
+  ~Rect() = default;
+  
+  Rect() { x_ = y_ = width_ = height_ = 0; }
+  Rect(int x, int y, int w, int h)
+  {
+    this->x_ = x; this->y_ = y;
+    width_ = w; height_ = h;
+  }
+  int area() {
+    return (width_*height_);
+  }
+  
+  Rect operator &(const Rect &rhs) {
+    Rect c;
+    int x1 = (this->x_ > rhs.x_) ? this->x_ : rhs.x_;
+    int y1 = (this->y_ > rhs.y_) ? this->y_ : rhs.y_;
+    c.width_ = (((this->x_ + this->width_) < (rhs.x_ + rhs.width_)) ? this->x_ + this->width_ : rhs.x_ + rhs.width_) - x1;
+    c.height_ = (((this->y_ + this->height_) < (rhs.y_ + rhs.height_)) ? this->y_ + this->height_ : rhs.y_ + rhs.height_) - y1;
+
+    c.x_ = x1;
+    c.y_ = y1;
+    if (c.width_ <= 0 || c.height_ <= 0)
+      c.x_ = c.y_ = c.width_ = c.height_ = 0;
+    return Rect(c);
+  }
+
+private:
+  int width_;
+  int height_;
+  int x_;
+  int y_;
+};
+
+float computeIOU(Rect a, Rect b);
+
 }
 
 #endif /* PCCPatchSegmenter_h */
