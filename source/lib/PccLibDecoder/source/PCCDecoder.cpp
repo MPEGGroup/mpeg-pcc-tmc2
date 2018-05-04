@@ -99,7 +99,8 @@ int PCCDecoder::decompress( PCCBitstream &bitstream, PCCContext &context, PCCGro
       (double)thresholdSmoothing_,
       losslessGeo_ != 0,
       params_.nbThread_,
-      absoluteD1_
+      absoluteD1_,
+      params_.binArithCoding_
   };
   generatePointCloud( reconstructs, context, generatePointCloudParameters );
 
@@ -195,9 +196,15 @@ void PCCDecoder::decompressOccupancyMap( PCCFrameContext& frame, PCCBitstream &b
   arithmeticDecoder.set_buffer(uint32_t(bitstream.capacity() - bitstream.size()),
                                bitstream.buffer() + bitstream.size());
 
+  bool bBinArithCoding = params_.binArithCoding_ && (!losslessGeo_) && 
+                         (occupancyResolution_ == 16) && (occupancyPrecision == 4);
+
   arithmeticDecoder.start_decoder();
   o3dgc::Static_Bit_Model bModel0;
   o3dgc::Adaptive_Bit_Model bModelSizeU0, bModelSizeV0, bModelAbsoluteD1;
+
+  o3dgc::Adaptive_Bit_Model orientationModel2;
+
   o3dgc::Adaptive_Data_Model orientationModel(4);
   int64_t prevSizeU0 = 0;
   int64_t prevSizeV0 = 0;
@@ -224,7 +231,25 @@ void PCCDecoder::decompressOccupancyMap( PCCFrameContext& frame, PCCBitstream &b
     prevSizeU0 = patch.getSizeU0();
     prevSizeV0 = patch.getSizeV0();
 
-    patch.getNormalAxis() = arithmeticDecoder.decode(orientationModel);
+    if (bBinArithCoding) {
+      size_t bit0 = arithmeticDecoder.decode(orientationModel2);
+      if (bit0 == 0) {  // 0
+        patch.getNormalAxis() = 0;
+      }
+      else {
+        size_t bit1 = arithmeticDecoder.decode(bModel0);
+        if (bit1 == 0) { // 10
+          patch.getNormalAxis() = 1;
+        }
+        else { // 11
+          patch.getNormalAxis() = 2;
+        }
+      }
+    }
+    else {
+      patch.getNormalAxis() = arithmeticDecoder.decode(orientationModel);
+    }
+
     if (patch.getNormalAxis() == 0) {
       patch.getTangentAxis() = 2;
       patch.getBitangentAxis() = 1;
@@ -259,6 +284,9 @@ void PCCDecoder::decompressOccupancyMap( PCCFrameContext& frame, PCCBitstream &b
   auto& blockToPatch = frame.getBlockToPatch();
   blockToPatch.resize(0);
   blockToPatch.resize(blockCount, 0);
+
+  o3dgc::Adaptive_Bit_Model candidateIndexModelBit[4];
+
   o3dgc::Adaptive_Data_Model candidateIndexModel(uint32_t(maxCandidateCount + 2));
   const uint32_t bitCountPatchIndex = PCCGetNumberOfBitsInFixedLengthRepresentation(patchCount + 1);
   for (size_t p = 0; p < blockCount; ++p) {
@@ -266,7 +294,39 @@ void PCCDecoder::decompressOccupancyMap( PCCFrameContext& frame, PCCBitstream &b
     if (candidates.size() == 1) {
       blockToPatch[p] = candidates[0];
     } else {
-      const size_t candidateIndex = arithmeticDecoder.decode(candidateIndexModel);
+
+      size_t candidateIndex;
+      if (bBinArithCoding) {
+        size_t bit0 = arithmeticDecoder.decode(candidateIndexModelBit[0]);
+        if (bit0 == 0) {
+          candidateIndex = 0; // Codeword: 0
+        }
+        else {
+          size_t bit1 = arithmeticDecoder.decode(candidateIndexModelBit[1]);
+          if (bit1 == 0) {
+            candidateIndex = 1; // Codeword 10
+          }
+          else {
+            size_t bit2 = arithmeticDecoder.decode(candidateIndexModelBit[2]);
+            if (bit2 == 0) {
+              candidateIndex = 2; // Codeword 110
+            }
+            else {
+              size_t bit3 = arithmeticDecoder.decode(candidateIndexModelBit[3]);
+              if (bit3 == 0) {
+                candidateIndex = 3; // Codeword 1110
+              }
+              else {
+                candidateIndex = 4; // Codeword 11110
+              }
+            }
+          }
+        }
+      }
+      else {
+        candidateIndex = arithmeticDecoder.decode(candidateIndexModel);
+      }
+
       if (candidateIndex == maxCandidateCount) {
         blockToPatch[p] = DecodeUInt32(bitCountPatchIndex, arithmeticDecoder, bModel0);
       } else {
@@ -314,6 +374,13 @@ void PCCDecoder::decompressOccupancyMap( PCCFrameContext& frame, PCCBitstream &b
     }
   }
   o3dgc::Adaptive_Bit_Model fullBlockModel, occupancyModel;
+
+  o3dgc::Adaptive_Bit_Model traversalOrderIndexModel_Bit0;
+  o3dgc::Adaptive_Bit_Model traversalOrderIndexModel_Bit1;
+  o3dgc::Adaptive_Bit_Model runCountModel2;
+  o3dgc::Adaptive_Bit_Model runLengthModel2[4];
+  static size_t runLengthInvTable[16] = { 0,  1,  2,  3,  7,  11,  14,  5,  13,  9,  6,  10,  12,  4,  8, 15 };
+
   o3dgc::Adaptive_Data_Model traversalOrderIndexModel(uint32_t(traversalOrderCount + 1));
   o3dgc::Adaptive_Data_Model runCountModel((uint32_t)(pointCount0));
   o3dgc::Adaptive_Data_Model runLengthModel((uint32_t)(pointCount0));
@@ -334,14 +401,44 @@ void PCCDecoder::decompressOccupancyMap( PCCFrameContext& frame, PCCBitstream &b
             occupancy = true;
           }
         } else {
-          const size_t bestTraversalOrderIndex = arithmeticDecoder.decode(traversalOrderIndexModel);
+
+          size_t bestTraversalOrderIndex;
+          if (bBinArithCoding) {
+            size_t bit1 = arithmeticDecoder.decode(traversalOrderIndexModel_Bit1);
+            size_t bit0 = arithmeticDecoder.decode(traversalOrderIndexModel_Bit0);
+            bestTraversalOrderIndex = (bit1 << 1) + bit0;
+          }
+          else {
+            bestTraversalOrderIndex = arithmeticDecoder.decode(traversalOrderIndexModel);
+          }
+
           const auto &traversalOrder = traversalOrders[bestTraversalOrderIndex];
-          const size_t runCountMinusTwo = arithmeticDecoder.decode(runCountModel);
+
+          int64_t runCountMinusTwo;
+          if (bBinArithCoding) {
+            runCountMinusTwo = arithmeticDecoder.ExpGolombDecode(0, bModel0, runCountModel2);
+          }
+          else {
+            runCountMinusTwo = arithmeticDecoder.decode(runCountModel);
+          }
+
           const size_t runCountMinusOne = runCountMinusTwo + 1;
           size_t i = 0;
           bool occupancy = arithmeticDecoder.decode(occupancyModel) != 0;
           for (size_t r = 0; r < runCountMinusOne; ++r) {
-            const size_t runLength = arithmeticDecoder.decode(runLengthModel);
+            size_t runLength;
+            if (bBinArithCoding) {
+              size_t bit3 = arithmeticDecoder.decode(runLengthModel2[3]);
+              size_t bit2 = arithmeticDecoder.decode(runLengthModel2[2]);
+              size_t bit1 = arithmeticDecoder.decode(runLengthModel2[1]);
+              size_t bit0 = arithmeticDecoder.decode(runLengthModel2[0]);
+              const size_t runLengthIdx = (bit3 << 3) + (bit2 << 2) + (bit1 << 1) + bit0;
+              runLength = runLengthInvTable[runLengthIdx];
+            }
+            else {
+              runLength = arithmeticDecoder.decode(runLengthModel);
+            }
+
             for (size_t j = 0; j <= runLength; ++j) {
               const auto &location = traversalOrder[i++];
               block0[location.second * blockSize0 + location.first] = occupancy;

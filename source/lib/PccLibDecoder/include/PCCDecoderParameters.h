@@ -57,6 +57,7 @@ class PCCDecoderParameters {
 
   size_t         nbThread_;
   bool           keepIntermediateFiles_;
+  bool           binArithCoding_;
 };
 
 }; //~namespace

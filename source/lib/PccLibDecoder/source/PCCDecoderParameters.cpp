@@ -46,6 +46,7 @@ PCCDecoderParameters::PCCDecoderParameters() {
     videoDecoderPath_                  = {};
     nbThread_                          = 1;
     keepIntermediateFiles_             = false;
+    binArithCoding_                    = true;
 }
 
 PCCDecoderParameters::~PCCDecoderParameters() {
@@ -62,6 +63,7 @@ void PCCDecoderParameters::print() {
   std::cout << "\t   colorSpaceConversionPath             " << colorSpaceConversionPath_          << std::endl;
   std::cout << "\t   videoDecoderPath                     " << videoDecoderPath_                  << std::endl;
   std::cout << "\t   inverseColorSpaceConversionConfig    " << inverseColorSpaceConversionConfig_ << std::endl;
+  std::cout << "\t   binArithCoding                       " << binArithCoding_                    << std::endl;
   std::cout << std::endl;
 }
 

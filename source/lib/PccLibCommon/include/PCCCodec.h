@@ -59,6 +59,7 @@ struct GeneratePointCloudParameters {
   size_t nbThread_;
   bool   absoluteD1_;
   bool   constrainedPack_;
+  bool   binArithCoding_;
 };
 
 class PCCCodec {

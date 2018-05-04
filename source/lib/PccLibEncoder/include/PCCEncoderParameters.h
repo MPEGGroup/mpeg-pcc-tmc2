@@ -110,6 +110,7 @@ class PCCEncoderParameters {
     bool                absoluteD1_;
 
     bool                constrainedPack_;
+    bool                binArithCoding_;
   };
 
 }; //~namespace

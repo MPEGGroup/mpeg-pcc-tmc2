@@ -316,7 +316,14 @@ bool ParseParameters(int argc, char *argv[], PCCEncoderParameters& params ) {
     ("tempCons",
      params.constrainedPack_,
      params.constrainedPack_,
-     "Temporally consistent patch packing");
+     "Temporally consistent patch packing")
+
+    ("binArithCoding",
+     params.binArithCoding_,
+     params.binArithCoding_,
+     "Binary arithmetic coding")
+
+     ;
 
   po::setDefaults(opts);
   po::ErrorReporter err;

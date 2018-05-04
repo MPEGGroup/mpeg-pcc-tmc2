@@ -131,7 +131,8 @@ int PCCEncoder::compress( const PCCGroupOfFrames& sources, PCCContext &context,
       params_.losslessGeo_,
       params_.nbThread_,
       params_.absoluteD1_,
-      params_.constrainedPack_
+      params_.constrainedPack_,
+      params_.binArithCoding_
   };
   generatePointCloud( reconstructs, context, generatePointCloudParameters );
 
@@ -791,6 +792,9 @@ void PCCEncoder::compressOccupancyMap( PCCFrameContext& frame, PCCBitstream &bit
   PCCBistreamPosition startPosition = bitstream.getPosition();
   bitstream += (uint64_t)4;  // placehoder for bitstream size
 
+  bool bBinArithCoding = params_.binArithCoding_ && (!params_.losslessGeo_) &&
+                         (params_.occupancyResolution_ == 16) && (params_.occupancyPrecision_ == 4);
+
   o3dgc::Arithmetic_Codec arithmeticEncoder;
   arithmeticEncoder.set_buffer(uint32_t(bitstream.capacity() - bitstream.size()),
                                bitstream.buffer() + bitstream.size());
@@ -798,6 +802,9 @@ void PCCEncoder::compressOccupancyMap( PCCFrameContext& frame, PCCBitstream &bit
   o3dgc::Static_Bit_Model bModel0;
   o3dgc::Adaptive_Bit_Model bModelSizeU0, bModelSizeV0, bModelAbsoluteD1;
   o3dgc::Adaptive_Data_Model orientationModel(4);
+
+  o3dgc::Adaptive_Bit_Model orientationModel2;
+
   int64_t prevSizeU0 = 0;
   int64_t prevSizeV0 = 0;
   arithmeticEncoder.encode( params_.absoluteD1_, bModelAbsoluteD1 );
@@ -816,7 +823,24 @@ void PCCEncoder::compressOccupancyMap( PCCFrameContext& frame, PCCBitstream &bit
                                       bModelSizeV0);
     prevSizeU0 = patch.getSizeU0();
     prevSizeV0 = patch.getSizeV0();
-    arithmeticEncoder.encode(uint32_t(patch.getNormalAxis()), orientationModel);
+
+    if (bBinArithCoding) {
+      if (patch.getNormalAxis() == 0) {
+        arithmeticEncoder.encode(0, orientationModel2);
+      }
+      else if (patch.getNormalAxis() == 1) {
+        arithmeticEncoder.encode(1, orientationModel2);
+        arithmeticEncoder.encode(0, bModel0);
+      }
+      else {
+        arithmeticEncoder.encode(1, orientationModel2);
+        arithmeticEncoder.encode(1, bModel0);
+      }
+    }
+    else {
+      arithmeticEncoder.encode(uint32_t(patch.getNormalAxis()), orientationModel);
+    }
+
   }
   const size_t blockToPatchWidth  = frame.getWidth()  / params_.occupancyResolution_;
   const size_t blockToPatchHeight = frame.getHeight() / params_.occupancyResolution_;
@@ -848,6 +872,9 @@ void PCCEncoder::compressOccupancyMap( PCCFrameContext& frame, PCCBitstream &bit
   for (auto &candidatePatch : candidatePatches) {  // add empty as potential candidate
     candidatePatch.push_back(0);
   }
+
+  o3dgc::Adaptive_Bit_Model candidateIndexModelBit[4];
+
   o3dgc::Adaptive_Data_Model candidateIndexModel(uint32_t( params_.maxCandidateCount_ + 2));
   const uint32_t bitCountPatchIndex =
       PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(patchCount + 1));
@@ -862,12 +889,46 @@ void PCCEncoder::compressOccupancyMap( PCCFrameContext& frame, PCCBitstream &bit
       for (uint32_t i = 0; i < candidateCount; ++i) {
         if (candidates[i] == patchIndex) {
           found = true;
-          arithmeticEncoder.encode(i, candidateIndexModel);
+
+          if (bBinArithCoding) {
+            if (i == 0) {
+              arithmeticEncoder.encode(0, candidateIndexModelBit[0]);
+            }
+            else if (i == 1) {
+              arithmeticEncoder.encode(1, candidateIndexModelBit[0]);
+              arithmeticEncoder.encode(0, candidateIndexModelBit[1]);
+            }
+            else if (i == 2) {
+              arithmeticEncoder.encode(1, candidateIndexModelBit[0]);
+              arithmeticEncoder.encode(1, candidateIndexModelBit[1]);
+              arithmeticEncoder.encode(0, candidateIndexModelBit[2]);
+            }
+            else if (i == 3) {
+              arithmeticEncoder.encode(1, candidateIndexModelBit[0]);
+              arithmeticEncoder.encode(1, candidateIndexModelBit[1]);
+              arithmeticEncoder.encode(1, candidateIndexModelBit[2]);
+              arithmeticEncoder.encode(0, candidateIndexModelBit[3]);
+            }
+          }
+          else {
+            arithmeticEncoder.encode(i, candidateIndexModel);
+          }
+
           break;
         }
       }
       if (!found) {
-        arithmeticEncoder.encode(uint32_t(params_.maxCandidateCount_), candidateIndexModel);
+
+        if (bBinArithCoding) {
+          arithmeticEncoder.encode(1, candidateIndexModelBit[0]);
+          arithmeticEncoder.encode(1, candidateIndexModelBit[1]);
+          arithmeticEncoder.encode(1, candidateIndexModelBit[2]);
+          arithmeticEncoder.encode(1, candidateIndexModelBit[3]);
+        }
+        else {
+          arithmeticEncoder.encode(uint32_t(params_.maxCandidateCount_), candidateIndexModel);
+        }
+
         EncodeUInt32(uint32_t(patchIndex), bitCountPatchIndex, arithmeticEncoder, bModel0);
       }
     }
@@ -912,6 +973,13 @@ void PCCEncoder::compressOccupancyMap( PCCFrameContext& frame, PCCBitstream &bit
     }
   }
   o3dgc::Adaptive_Bit_Model fullBlockModel, occupancyModel;
+
+  o3dgc::Adaptive_Bit_Model traversalOrderIndexModel_Bit0;
+  o3dgc::Adaptive_Bit_Model traversalOrderIndexModel_Bit1;
+  o3dgc::Adaptive_Bit_Model runCountModel2;
+  o3dgc::Adaptive_Bit_Model runLengthModel2[4];
+  static size_t runLengthTable[16] = { 0,  1,  2,  3,  13,  7,  10,  4,  14,  9,  11,  5,  12,  8,  6, 15 };
+
   o3dgc::Adaptive_Data_Model traversalOrderIndexModel(uint32_t(traversalOrderCount + 1));
   o3dgc::Adaptive_Data_Model runCountModel((uint32_t)(pointCount0));
   o3dgc::Adaptive_Data_Model runLengthModel((uint32_t)(pointCount0));
@@ -980,13 +1048,39 @@ void PCCEncoder::compressOccupancyMap( PCCFrameContext& frame, PCCBitstream &bit
           assert(bestRuns.size() >= 2);
           const uint32_t runCountMinusOne = uint32_t(bestRuns.size() - 1);
           const uint32_t runCountMinusTwo = uint32_t(bestRuns.size() - 2);
-          arithmeticEncoder.encode(uint32_t(bestTraversalOrderIndex), traversalOrderIndexModel);
-          arithmeticEncoder.encode(runCountMinusTwo, runCountModel);
+
+          if (bBinArithCoding) {
+            size_t bit1 = bestTraversalOrderIndex >> 1;
+            size_t bit0 = bestTraversalOrderIndex & 0x1;
+            arithmeticEncoder.encode(uint32_t(bit1), traversalOrderIndexModel_Bit1);
+            arithmeticEncoder.encode(uint32_t(bit0), traversalOrderIndexModel_Bit0);
+            arithmeticEncoder.ExpGolombEncode(uint32_t(runCountMinusTwo), 0, bModel0, runCountModel2);
+          }
+          else {
+            arithmeticEncoder.encode(uint32_t(bestTraversalOrderIndex), traversalOrderIndexModel);
+            arithmeticEncoder.encode(runCountMinusTwo, runCountModel);
+          }
+
           const auto &location0 = traversalOrders[bestTraversalOrderIndex][0];
           bool occupancy0 = block0[location0.second * blockSize0 + location0.first];
           arithmeticEncoder.encode(occupancy0, occupancyModel);
           for (size_t r = 0; r < runCountMinusOne; ++r) {
-            arithmeticEncoder.encode(uint32_t(bestRuns[r]), runLengthModel);
+
+            if (bBinArithCoding) {
+              size_t runLengthIdx = runLengthTable[bestRuns[r]];
+              size_t bit3 = (runLengthIdx >> 3) & 0x1;
+              size_t bit2 = (runLengthIdx >> 2) & 0x1;
+              size_t bit1 = (runLengthIdx >> 1) & 0x1;
+              size_t bit0 = runLengthIdx & 0x1;
+              arithmeticEncoder.encode(uint32_t(bit3), runLengthModel2[3]);
+              arithmeticEncoder.encode(uint32_t(bit2), runLengthModel2[2]);
+              arithmeticEncoder.encode(uint32_t(bit1), runLengthModel2[1]);
+              arithmeticEncoder.encode(uint32_t(bit0), runLengthModel2[0]);
+            }
+            else {
+              arithmeticEncoder.encode(uint32_t(bestRuns[r]), runLengthModel);
+            }
+
           }
         }
       }
