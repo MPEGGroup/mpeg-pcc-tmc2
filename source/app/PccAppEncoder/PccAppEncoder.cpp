@@ -298,6 +298,11 @@ bool ParseParameters(int argc, char *argv[], PCCEncoderParameters& params ) {
      params.noAttributes_,
      "Disable encoding of attributes")
 
+    ("losslessGeo444",
+     params.losslessGeo444_,
+     params.losslessGeo444_,
+     "Use 4444 format for lossless geometry")
+     
     ("nbThread",
      params.nbThread_,
      params.nbThread_,

@@ -77,8 +77,13 @@ int PCCDecoder::decompress( PCCBitstream &bitstream, PCCContext &context, PCCGro
   path << removeFileExtension( params_.compressedStreamPath_ ) << "_dec_GOF" << context.getIndex() << "_";
 
   auto sizeGeometryVideo = bitstream.size();
-  videoDecoder.decompress( context.getVideoGeometry(), path.str() + "geometry", width_, height_,
-                           context.size() * 2, bitstream, params_.videoDecoderPath_);
+	const size_t nbyteGeo = losslessGeo_ ? 2 : 1;
+  if (losslessGeo_)
+    videoDecoder.decompress(context.getVideoGeometry(), path.str() + "geometry", width_, height_,
+      context.size() * 2, bitstream, params_.videoDecoderPath_, "", "", losslessGeo444_, nbyteGeo);
+  else
+    videoDecoder.decompress(context.getVideoGeometry(), path.str() + "geometry", width_, height_,
+      context.size() * 2, bitstream, params_.videoDecoderPath_, "", "", false, nbyteGeo);
   sizeGeometryVideo = bitstream.size() - sizeGeometryVideo;
   if( !params_.keepIntermediateFiles_ ) {
     removeFiles( path.str() + "geometry.bin" );
@@ -98,6 +103,7 @@ int PCCDecoder::decompress( PCCBitstream &bitstream, PCCContext &context, PCCGro
       (double)radius2BoundaryDetection_,
       (double)thresholdSmoothing_,
       losslessGeo_ != 0,
+      losslessGeo444_ != 0,
       params_.nbThread_,
       absoluteD1_,
       params_.binArithCoding_
@@ -106,13 +112,14 @@ int PCCDecoder::decompress( PCCBitstream &bitstream, PCCContext &context, PCCGro
 
   if (!noAttributes_ ) {
     auto sizeTextureVideo = bitstream.size();
+	const size_t nbyteTexture = 1;
     videoDecoder.decompress( context.getVideoTexture(),
                              path.str() + "texture", width_, height_,
                              context.size() * 2, bitstream,
                              params_.videoDecoderPath_,
                              params_.inverseColorSpaceConversionConfig_,
                              params_.colorSpaceConversionPath_,
-                             losslessTexture_ != 0 );
+                             losslessTexture_ != 0, nbyteTexture );
     sizeTextureVideo = bitstream.size() - sizeTextureVideo;
     std::cout << "texture video  ->" << sizeTextureVideo << " B" << std::endl;
     if(!params_.keepIntermediateFiles_ ) {
@@ -147,6 +154,7 @@ int PCCDecoder::decompressHeader( PCCContext &context, PCCBitstream &bitstream )
   bitstream.read<uint8_t> ( losslessGeo_ );
   bitstream.read<uint8_t> ( losslessTexture_ );
   bitstream.read<uint8_t> ( noAttributes_ );
+  bitstream.read<uint8_t> ( losslessGeo444_);
   context.getWidth()  = width_;
   context.getHeight() = height_; 
   return 1;
@@ -157,6 +165,18 @@ void PCCDecoder::decompressOccupancyMap( PCCContext &context, PCCBitstream& bits
     frame.getWidth () = width_;
     frame.getHeight() = height_;
     decompressOccupancyMap( frame, bitstream);
+    auto&  patches = frame.getPatches();
+    auto& missedPointsPatch = frame.getMissedPointsPatch();
+    if (losslessGeo_) {
+      const size_t patchIndex = patches.size();
+      PCCPatch &dummyPatch = patches[patchIndex - 1];
+      missedPointsPatch.u0 = dummyPatch.getU0();
+      missedPointsPatch.v0 = dummyPatch.getV0();
+      missedPointsPatch.sizeU0 = dummyPatch.getSizeU0();
+      missedPointsPatch.sizeV0 = dummyPatch.getSizeV0();
+      missedPointsPatch.occupancyResolution = dummyPatch.getOccupancyResolution();
+      patches.pop_back();
+    }
   }
 }
 

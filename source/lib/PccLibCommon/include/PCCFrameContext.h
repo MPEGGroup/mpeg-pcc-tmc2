@@ -55,6 +55,7 @@ class PCCFrameContext {
   std::vector<size_t>&             getBlockToPatch      () { return blockToPatch_;      }
   std::vector<uint32_t>&           getOccupancyMap      () { return occupancyMap_;      }
   std::vector<PCCPatch>&           getPatches           () { return patches_;           }
+  PCCMissedPointsPatch&            getMissedPointsPatch () { return missedPointsPatch_; }
 
  private:
   size_t index_;
@@ -65,6 +66,7 @@ class PCCFrameContext {
   std::vector<size_t> blockToPatch_;
   std::vector<uint32_t> occupancyMap_;
   std::vector<PCCPatch> patches_;
+  PCCMissedPointsPatch missedPointsPatch_;
 };
 
 }; //~namespace

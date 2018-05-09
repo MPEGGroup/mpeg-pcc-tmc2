@@ -101,6 +101,7 @@ class PCCEncoderParameters {
     bool                noAttributes_;
     bool                losslessGeo_;
     bool                losslessTexture_;
+    bool                losslessGeo444_;
 
     std::string         geometryConfig_;
     std::string         textureConfig_;

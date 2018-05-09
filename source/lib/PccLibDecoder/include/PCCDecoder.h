@@ -46,10 +46,12 @@ class PCCFrameContext;
 class PCCGroupOfFrames; 
 template <typename T, size_t N>
 class PCCVideo;
-typedef pcc::PCCVideo<uint8_t, 3> PCCVideo3B;
+typedef pcc::PCCVideo<uint8_t, 3> PCCVideo3BT;
+typedef pcc::PCCVideo<uint16_t, 3> PCCVideo3BG;
 template <typename T, size_t N>
 class PCCImage;
-typedef pcc::PCCImage<uint8_t, 3> PCCImage3B;
+typedef pcc::PCCImage<uint8_t, 3> PCCImage3BT;
+typedef pcc::PCCImage<uint16_t, 3> PCCImage3BG;
 
 class PCCDecoder : public PCCCodec {
 public:
@@ -77,6 +79,7 @@ private:
   uint8_t  losslessGeo_;
   uint8_t  losslessTexture_;
   uint8_t  noAttributes_;
+  uint8_t  losslessGeo444_;
   bool     absoluteD1_;
   
 };

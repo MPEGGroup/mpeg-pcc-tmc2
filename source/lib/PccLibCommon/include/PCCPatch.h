@@ -119,6 +119,31 @@ class PCCPatch {
   size_t viewId_;                  //viewId in [0,1,2,3,4,5]
   size_t bestMatchIdx_;            //index of matched patch from pre-frame patch.
 };
+
+struct PCCMissedPointsPatch {
+  size_t sizeU;
+  size_t sizeV;
+  size_t u0;
+  size_t v0;
+  size_t sizeV0;
+  size_t sizeU0;
+  size_t occupancyResolution;
+  std::vector<bool> occupancy;
+  std::vector<uint16_t> x;
+  std::vector<uint16_t> y;
+  std::vector<uint16_t> z;
+  void resize(const size_t size) {
+    x.resize(size);
+    y.resize(size);
+    z.resize(size);
+  }
+  void resize(const size_t size, const uint16_t val) {
+    x.resize(size, val);
+    y.resize(size, val);
+    z.resize(size, val);
+  }
+  const size_t size() { return x.size(); }
+};
 }
 
 #endif /* PCCPatch_h */

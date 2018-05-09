@@ -44,10 +44,12 @@ class PCCGroupOfFrames;
 class PCCPointSet3;
 template <typename T, size_t N>
 class PCCVideo;
-typedef pcc::PCCVideo<uint8_t, 3> PCCVideo3B;
+typedef pcc::PCCVideo<uint8_t, 3> PCCVideo3BT;
+typedef pcc::PCCVideo<uint16_t, 3> PCCVideo3BG;
 template <typename T, size_t N>
 class PCCImage;
-typedef pcc::PCCImage<uint8_t, 3> PCCImage3B;
+typedef pcc::PCCImage<uint8_t, 3> PCCImage3BT;
+typedef pcc::PCCImage<uint16_t, 3> PCCImage3BG;
 
 struct GeneratePointCloudParameters {
   size_t occupancyResolution_;
@@ -56,6 +58,7 @@ struct GeneratePointCloudParameters {
   double radius2BoundaryDetection_;
   double thresholdSmoothing_;
   bool   losslessGeo_;
+  bool   losslessGeo444_;
   size_t nbThread_;
   bool   absoluteD1_;
   bool   constrainedPack_;
@@ -75,7 +78,7 @@ class PCCCodec {
 
  private:
   void generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext& frame,
-                           const PCCVideo3B &video,
+                           const PCCVideo3BG &video,
                            const GeneratePointCloudParameters params,
                            std::vector<uint32_t> &partition );
 
@@ -84,7 +87,7 @@ class PCCCodec {
                          const GeneratePointCloudParameters params );
 
   bool colorPointCloud( PCCPointSet3& reconstruct, PCCFrameContext& frame,
-                        const PCCVideo3B &video, const bool noAttributes);
+                        const PCCVideo3BT &video, const bool noAttributes);
 
 };
 

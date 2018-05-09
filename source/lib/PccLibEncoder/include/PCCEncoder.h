@@ -47,10 +47,12 @@ class PCCContext;
 class PCCFrameContext;
 template <typename T, size_t N>
 class PCCVideo;
-typedef pcc::PCCVideo<uint8_t, 3> PCCVideo3B;
+typedef pcc::PCCVideo<uint8_t, 3> PCCVideo3BT;
+typedef pcc::PCCVideo<uint16_t, 3> PCCVideo3BG;
 template <typename T, size_t N>
 class PCCImage;
-typedef pcc::PCCImage<uint8_t, 3> PCCImage3B;
+typedef pcc::PCCImage<uint8_t, 3> PCCImage3BT;
+typedef pcc::PCCImage<uint16_t, 3> PCCImage3BG;
 struct PCCPatchSegmenter3Parameters; 
 
 class PCCEncoder : public PCCCodec {
@@ -76,20 +78,23 @@ private:
 
   bool generateTextureVideo( const PCCGroupOfFrames& sources, PCCGroupOfFrames& reconstruct, PCCContext& context );
 
- 
-  void dilate( PCCFrameContext &frame, PCCImage3B &image, const PCCImage3B *reference = nullptr );
+  template <typename T>
+  void dilate( PCCFrameContext &frame, PCCImage<T, 3> &image, const PCCImage<T, 3> *reference = nullptr );
   void pack( PCCFrameContext& frame );
+  void packMissedPointsPatch( PCCFrameContext& frame, const std::vector<bool> &occupancyMap, size_t width, 
+                              size_t height, size_t occupancySizeU, size_t occupancySizeV, size_t maxOccupancyRow);
   void spatialConsistencyPack(PCCFrameContext& frame, PCCFrameContext &prevFrame);
   void generateOccupancyMap( PCCFrameContext& frameContext );
   void printMap(std::vector<bool> img, const size_t sizeU, const size_t sizeV);
-  void generateIntraImage( PCCFrameContext& frameContext, const size_t depthIndex, PCCImage3B &image);
-  bool predictGeometryFrame( PCCFrameContext& frameContext, const PCCImage3B &reference, PCCImage3B &image);
-
+  void generateIntraImage( PCCFrameContext& frameContext, const size_t depthIndex, PCCImage3BG &image);
+  bool predictGeometryFrame( PCCFrameContext& frameContext, const PCCImage3BG &reference, PCCImage3BG &image);
+  void generateMissedPointsPatch(const PCCPointSet3& source, PCCFrameContext& frameContext);
+  void sortMissedPointsPatch(PCCFrameContext& frameContext);
   bool generateGeometryVideo( const PCCPointSet3& source, PCCFrameContext& frameContext,
                              const PCCPatchSegmenter3Parameters segmenterParams,
-                             PCCVideo3B &videoGeometry, PCCFrameContext &prevFrame, size_t frameIndex);
+                             PCCVideo3BG &videoGeometry, PCCFrameContext &prevFrame, size_t frameIndex);
   bool generateTextureVideo( const PCCPointSet3& reconstruct, PCCFrameContext& frameContext,
-                             PCCVideo3B &video, const size_t frameCount );
+                             PCCVideo3BT &video, const size_t frameCount );
 
   PCCEncoderParameters params_;
 

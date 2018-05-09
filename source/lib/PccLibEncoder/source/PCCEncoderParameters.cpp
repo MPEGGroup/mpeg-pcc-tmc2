@@ -87,6 +87,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   losslessGeo_                          = false;
   losslessTexture_                      = false;
   noAttributes_                         = false;
+  losslessGeo444_                       = false;
 
   nbThread_                             = 1;
   keepIntermediateFiles_                = false;
@@ -106,6 +107,7 @@ void PCCEncoderParameters::print(){
   std::cout << "\t losslessGeo                            " << losslessGeo_                          << std::endl;
   std::cout << "\t losslessTexture                        " << losslessTexture_                      << std::endl;
   std::cout << "\t noAttributes                           " << noAttributes_                         << std::endl;
+  std::cout << "\t losslessGeo444                         " << losslessGeo444_                       << std::endl;
   std::cout << "\t uncompressedDataPath                   " << uncompressedDataPath_                 << std::endl;
   std::cout << "\t compressedStreamPath                   " << compressedStreamPath_                 << std::endl;
   std::cout << "\t reconstructedDataPath                  " << reconstructedDataPath_                << std::endl;

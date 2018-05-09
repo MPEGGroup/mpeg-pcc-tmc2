@@ -31,34 +31,150 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+// #ifndef PCCVideoEncoder_h
+// #define PCCVideoEncoder_h
+
+// #include "PCCCommon.h"
+
+// namespace pcc {
+
+// class PCCBitstream;
+// class PCCContext;
+// class PCCFrameContext;
+// template <typename T, size_t N>
+// class PCCVideo;
+// typedef pcc::PCCVideo<uint8_t, 3> PCCVideo3B;
+
+// class PCCVideoEncoder {
+// public:
+//   PCCVideoEncoder();
+//   ~PCCVideoEncoder();
+   
+//   bool compress( PCCVideo3B& video, const std::string &fileName, const size_t qp,
+//                  PCCBitstream &bitstream, const std::string &encoderConfig,
+//                  const std::string &encoderPath,
+//                  const std::string &colorSpaceConversionConfig = "",
+//                  const std::string &colorSpaceConversionPath = "",
+//                  const bool use444CodecIo = false );
+// private:
+
+// };
+// }; //~namespace
+
+// #endif /* PCCVideoEncoder_h */
 #ifndef PCCVideoEncoder_h
 #define PCCVideoEncoder_h
 
 #include "PCCCommon.h"
+#include "PCCBitstream.h"
+#include "PCCSystem.h"
+#include "PCCVideo.h"
 
 namespace pcc {
 
-class PCCBitstream;
-class PCCContext;
-class PCCFrameContext;
-template <typename T, size_t N>
-class PCCVideo;
-typedef pcc::PCCVideo<uint8_t, 3> PCCVideo3B;
+    class PCCBitstream;
+    class PCCContext;
+    class PCCFrameContext;
 
-class PCCVideoEncoder {
-public:
-  PCCVideoEncoder();
-  ~PCCVideoEncoder();
-   
-  bool compress( PCCVideo3B& video, const std::string &fileName, const size_t qp,
-                 PCCBitstream &bitstream, const std::string &encoderConfig,
-                 const std::string &encoderPath,
-                 const std::string &colorSpaceConversionConfig = "",
-                 const std::string &colorSpaceConversionPath = "",
-                 const bool use444CodecIo = false );
-private:
+    class PCCVideoEncoder {
+    public:
+        PCCVideoEncoder();
+        ~PCCVideoEncoder();
+        template <typename T>
+        bool compress(PCCVideo<T, 3> &video, const std::string &fileName, const size_t qp,
+            PCCBitstream &bitstream, const std::string &encoderConfig,
+            const std::string &encoderPath,
+            const std::string &colorSpaceConversionConfig = "",
+            const std::string &colorSpaceConversionPath = "",
+            const bool use444CodecIo = false, const size_t nbyte = 1);
+    private:
 
-};
+    };
+
+    PCCVideoEncoder::PCCVideoEncoder() {
+    
+    }
+    PCCVideoEncoder::~PCCVideoEncoder() {
+    
+    }
+
+    template <typename T>
+    bool PCCVideoEncoder::compress(PCCVideo<T, 3> &video, const std::string &fileName,
+        const size_t qp, PCCBitstream &bitstream,
+        const std::string &encoderConfig, const std::string &encoderPath,
+        const std::string &colorSpaceConversionConfig,
+        const std::string &colorSpaceConversionPath,
+        const bool use444CodecIo, const size_t nbyte) {
+        auto& frames = video.getFrames();
+        if (frames.empty()) {
+            return false;
+        }
+        const size_t width = frames[0].getWidth();
+        const size_t height = frames[0].getHeight();
+        const size_t depth = nbyte == 1 ? 8 : 10;
+        if (frames[0].getChannelCount() != 3) {
+            return false;
+        }
+        const std::string format = use444CodecIo ? "444" : "420";
+        const std::string yuvFileName = addVideoFormat(fileName + (use444CodecIo ? ".rgb" : ".yuv"), width, height, !use444CodecIo);  
+        // todo: should use444CodecIo allow conversion to happen?
+        if (colorSpaceConversionConfig.empty() || colorSpaceConversionPath.empty() || use444CodecIo) {
+            if (use444CodecIo) {
+                if (!video.write(yuvFileName, nbyte)) {
+                    return false;
+                }
+            }
+            else {
+                if (!video.write420(yuvFileName, nbyte)) {
+                    return false;
+                }
+            }
+        }
+        else {
+            const std::string rgbFileName = addVideoFormat(fileName + ".rgb", width, height);
+            if (!video.write(rgbFileName, nbyte)) {
+                return false;
+            }
+            std::stringstream cmd;
+            cmd << colorSpaceConversionPath << " -f " << colorSpaceConversionConfig << " -p SourceFile=\""
+                << rgbFileName << "\" -p OutputFile=\"" << yuvFileName << "\" -p SourceWidth=" << width
+                << " -p SourceHeight=" << height << " -p NumberOfFrames=" << video.getFrameCount();
+            std::cout << cmd.str() << '\n';
+            if (pcc::system(cmd.str().c_str())) {
+                std::cout << "Error: can't run system command!" << std::endl;
+                return false;
+            }
+        }
+
+        const std::string binFileName = fileName + ".bin";
+        const std::string recFileName = addVideoFormat(fileName + "_rec" + (use444CodecIo ? ".rgb" : ".yuv"), width, height, !use444CodecIo); // 
+        std::stringstream cmd;
+        cmd << encoderPath << " -c " << encoderConfig << " -i " << yuvFileName
+            << " --InputBitDepth=" << depth << " --InternalBitDepth=" << depth
+            << " --InputChromaFormat=" << format
+            << " --FrameRate=30 --FrameSkip=0 --SourceWidth=" << width << " --SourceHeight=" << height
+            << " --FramesToBeEncoded=" << frames.size() << " --BitstreamFile=" << binFileName
+            << " --ReconFile=" << recFileName << " --QP=" << qp;
+        std::cout << cmd.str() << '\n';
+        if (pcc::system(cmd.str().c_str())) {
+            std::cout << "Error: can't run system command!" << std::endl;
+            return false;
+        }
+
+        std::ifstream file(binFileName, std::ios::binary | std::ios::ate);
+        if (!file.good()) {
+            return false;
+        }
+        const uint64_t fileSize = file.tellg();
+        bitstream.write<uint32_t>(uint32_t(fileSize));
+        assert(bitstream.size() + fileSize < bitstream.capacity());
+        file.clear();
+        file.seekg(0);
+        file.read(reinterpret_cast<char *>(bitstream.buffer()) + bitstream.size(), fileSize);
+        bitstream += fileSize;
+        return true;
+    }
+
 }; //~namespace
 
 #endif /* PCCVideoEncoder_h */
