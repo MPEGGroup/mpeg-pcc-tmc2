@@ -76,21 +76,45 @@ int PCCDecoder::decompress( PCCBitstream &bitstream, PCCContext &context, PCCGro
   std::stringstream path;
   path << removeFileExtension( params_.compressedStreamPath_ ) << "_dec_GOF" << context.getIndex() << "_";
 
-  auto sizeGeometryVideo = bitstream.size();
-	const size_t nbyteGeo = losslessGeo_ ? 2 : 1;
-  if (losslessGeo_)
-    videoDecoder.decompress(context.getVideoGeometry(), path.str() + "geometry", width_, height_,
-      context.size() * 2, bitstream, params_.videoDecoderPath_, "", "", losslessGeo444_, nbyteGeo);
-  else
-    videoDecoder.decompress(context.getVideoGeometry(), path.str() + "geometry", width_, height_,
-      context.size() * 2, bitstream, params_.videoDecoderPath_, "", "", false, nbyteGeo);
-  sizeGeometryVideo = bitstream.size() - sizeGeometryVideo;
-  if( !params_.keepIntermediateFiles_ ) {
-    removeFiles( path.str() + "geometry.bin" );
-    removeFiles( addVideoFormat( path.str() + "geometry_rec.yuv", width_, height_ ) );
-  }
-  std::cout << "geometry video ->" << sizeGeometryVideo << " B" << std::endl;
+  const size_t nbyteGeo = losslessGeo_ ? 2 : 1;
+  if (!absoluteD1_) {
+    // Compress D0
+    auto sizeGeometryD0Video = bitstream.size();
+    videoDecoder.decompress(context.getVideoGeometry(), path.str() + "geometryD0", width_, height_,
+      context.size(), bitstream, params_.videoDecoderPath_, "", "", (losslessGeo_?losslessGeo444_:false), nbyteGeo);
+    sizeGeometryD0Video = bitstream.size() - sizeGeometryD0Video;
+    if (!params_.keepIntermediateFiles_) {
+      removeFiles(path.str() + "geometryD0.bin");
+      removeFiles(addVideoFormat(path.str() + "geometryD0_rec.yuv", width_, height_));
+    }
+    std::cout << "geometry D0 video ->" << sizeGeometryD0Video << " B" << std::endl;
 
+    // Compress D1
+    auto sizeGeometryD1Video = bitstream.size();
+    videoDecoder.decompress(context.getVideoGeometryD1(), path.str() + "geometryD1", width_, height_,
+      context.size(), bitstream, params_.videoDecoderPath_, "", "", (losslessGeo_?losslessGeo444_:false), nbyteGeo);
+    sizeGeometryD1Video = bitstream.size() - sizeGeometryD1Video;
+    if (!params_.keepIntermediateFiles_) {
+      removeFiles(path.str() + "geometryD1.bin");
+      removeFiles(addVideoFormat(path.str() + "geometryD1_rec.yuv", width_, height_));
+    }
+    std::cout << "geometry D1 video ->" << sizeGeometryD1Video << " B" << std::endl;
+  }
+  else {
+    auto sizeGeometryVideo = bitstream.size();
+    if (losslessGeo_)
+      videoDecoder.decompress(context.getVideoGeometry(), path.str() + "geometry", width_, height_,
+        context.size() * 2, bitstream, params_.videoDecoderPath_, "", "", losslessGeo444_, nbyteGeo);
+    else
+      videoDecoder.decompress(context.getVideoGeometry(), path.str() + "geometry", width_, height_,
+        context.size() * 2, bitstream, params_.videoDecoderPath_, "", "", false, nbyteGeo);
+    sizeGeometryVideo = bitstream.size() - sizeGeometryVideo;
+    if( !params_.keepIntermediateFiles_ ) {
+      removeFiles( path.str() + "geometry.bin" );
+      removeFiles( addVideoFormat( path.str() + "geometry_rec.yuv", width_, height_ ) );
+    }
+    std::cout << "geometry video ->" << sizeGeometryVideo << " B" << std::endl;
+  }
   auto sizeOccupancyMap = bitstream.size();
   decompressOccupancyMap( context, bitstream );
   sizeOccupancyMap = bitstream.size() - sizeOccupancyMap;
@@ -155,6 +179,14 @@ int PCCDecoder::decompressHeader( PCCContext &context, PCCBitstream &bitstream )
   bitstream.read<uint8_t> ( losslessTexture_ );
   bitstream.read<uint8_t> ( noAttributes_ );
   bitstream.read<uint8_t> ( losslessGeo444_);
+  uint8_t absD1;
+  bitstream.read<uint8_t> ( absD1);
+  if (absD1 > 0) {
+    absoluteD1_ = true;
+  }
+  else {
+    absoluteD1_ = false;
+  }
   context.getWidth()  = width_;
   context.getHeight() = height_; 
   return 1;
@@ -229,7 +261,7 @@ void PCCDecoder::decompressOccupancyMap( PCCFrameContext& frame, PCCBitstream &b
   int64_t prevSizeU0 = 0;
   int64_t prevSizeV0 = 0;
 
-  absoluteD1_ = (bool)arithmeticDecoder.decode( bModelAbsoluteD1 );
+  // absoluteD1_ = (bool)arithmeticDecoder.decode( bModelAbsoluteD1 );
   for (size_t patchIndex = 0; patchIndex < patchCount; ++patchIndex) {
     auto &patch = patches[patchIndex];
     patch.getOccupancyResolution() = occupancyResolution_;

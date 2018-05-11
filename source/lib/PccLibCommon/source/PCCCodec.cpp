@@ -53,9 +53,11 @@ void PCCCodec::generatePointCloud( PCCGroupOfFrames& reconstructs, PCCContext& c
                                    const GeneratePointCloudParameters params ) {
   auto& frames = context.getFrames();
   auto &videoGeometry = context.getVideoGeometry();
+  auto &videoGeometryD1 = context.getVideoGeometryD1();
+
   for( size_t i = 0; i < frames.size(); i++ ) {
     std::vector<uint32_t> partition;
-    generatePointCloud( reconstructs[i], frames[i], videoGeometry, params, partition );
+    generatePointCloud( reconstructs[i], frames[i], videoGeometry, videoGeometryD1, params, partition );
     if (!params.losslessGeo_ ) {
       smoothPointCloud( reconstructs[i], frames[i], partition, params );
     }
@@ -76,7 +78,7 @@ bool PCCCodec::colorPointCloud( PCCGroupOfFrames& reconstructs, PCCContext& cont
 }
 
 void PCCCodec::generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext &frame,
-                                   const PCCVideo3BG &video,
+                                   const PCCVideo3BG &video, const PCCVideo3BG &videoD1,
                                    const GeneratePointCloudParameters params,
                                    std::vector<uint32_t> &partition ) {
   auto& patches      = frame.getPatches();
@@ -86,10 +88,20 @@ void PCCCodec::generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext &f
   partition.resize(0);
   pointToPixel.resize(0);
   reconstruct.clear();
-  const size_t shift = frame.getIndex() * 2;
+
+  size_t shift;
   const size_t layerCount = 2;
-  if (video.getFrameCount() < (shift + layerCount)) {
-    return;
+  if (!params.absoluteD1_) {
+    shift = frame.getIndex();
+    if (video.getFrameCount() < (shift + 1)) {
+      return;
+    }
+  }
+  else {
+    shift = frame.getIndex() * 2;
+    if (video.getFrameCount() < (shift + layerCount)) {
+      return;
+    }
   }
   const auto &frame0 = video.getFrame(shift);
   const size_t imageWidth = video.getWidth();
@@ -127,10 +139,11 @@ void PCCCodec::generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext &f
               for (size_t f = 0; f < layerCount; ++f) {
                 PCCVector3D point1(point0);
                 if (f > 0) {
-                  const auto &frame1 = video.getFrame(f + shift);
                   if( !params.absoluteD1_ ){
+                    const auto &frame1 = videoD1.getFrame(shift);
                     point1[patch.getNormalAxis()] += frame1.getValue(0, x, y);
                   }else{
+                    const auto &frame1 = video.getFrame(f + shift);
                     point1[patch.getNormalAxis()] = double( frame1.getValue(0, x, y) + patch.getD1());
                   }
                 }

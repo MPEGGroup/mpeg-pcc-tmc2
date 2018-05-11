@@ -277,6 +277,16 @@ bool ParseParameters(int argc, char *argv[], PCCEncoderParameters& params ) {
      params.geometryConfig_,
      "HM configuration file for geometry compression")
 
+    ("geometryD0Config",
+     params.geometryD0Config_,
+     params.geometryD0Config_,
+     "HM configuration file for geometry D0 compression")
+
+    ("geometryD1Config",
+      params.geometryD1Config_,
+      params.geometryD1Config_,
+      "HM configuration file for geometry D1 compression")
+
     ("textureConfig",
      params.textureConfig_,
      params.textureConfig_,

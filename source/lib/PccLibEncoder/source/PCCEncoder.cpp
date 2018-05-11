@@ -96,34 +96,105 @@ int PCCEncoder::compress( const PCCGroupOfFrames& sources, PCCContext &context,
   height = (uint16_t)frames[0].getHeight();
   compressHeader( context, bitstream );
 
-  auto sizeGeometryVideo = bitstream.size();
-  auto& videoGeometry = context.getVideoGeometry();
-	const size_t nbyteGeo = params_.losslessGeo_ ? 2 : 1;
-  if (params_.losslessGeo_ && params_.losslessGeo444_)
-  {
-    videoEncoder.compress(videoGeometry, path.str() + "geometry", params_.geometryQP_, bitstream,
-      params_.geometryConfig_, params_.videoEncoderPath_, "", "", true, nbyteGeo);
+  const size_t nbyteGeo = params_.losslessGeo_ ? 2 : 1;
+  if (!params_.absoluteD1_) {
+    // Compress geometryD0
+    auto sizeGeometryD0Video = bitstream.size();
+    auto& videoGeometry = context.getVideoGeometry();
+	
+    if (params_.losslessGeo_ && params_.losslessGeo444_)
+    {
+      videoEncoder.compress(videoGeometry, path.str() + "geometryD0", (params_.geometryQP_-1), bitstream,
+        params_.geometryD0Config_, params_.videoEncoderPath_, "", "", true, nbyteGeo);
+      videoGeometry.read(addVideoFormat(path.str() + "geometryD0_rec.yuv", width, height),
+        width, height, frames.size(), nbyteGeo);
+    }
+    else
+    {
+      videoEncoder.compress(videoGeometry, path.str() + "geometryD0", (params_.geometryQP_-1), bitstream,
+        params_.geometryD0Config_, params_.videoEncoderPath_, "", "", false, nbyteGeo);
+      videoGeometry.read420(addVideoFormat(path.str() + "geometryD0_rec.yuv", width, height),
+        width, height, frames.size(), nbyteGeo);
+    }
+    sizeGeometryD0Video = bitstream.size() - sizeGeometryD0Video;
+
+    if( !params_.keepIntermediateFiles_ ){
+      removeFiles( path.str() + "geometryD0.bin" );
+      removeFiles( addVideoFormat( path.str() + "geometryD0.yuv"    , width, height ) );
+      removeFiles( addVideoFormat( path.str() + "geometryD0_rec.yuv", width, height ) );
+    }  
+
+    std::cout << "geometry D0 video ->" << sizeGeometryD0Video << " B ("
+        << (sizeGeometryD0Video * 8.0) / (frames.size() * pointCount) << " bpp)"
+        << std::endl;
+
+    // Form differential video geometryD1
+
+    auto& videoGeometryD1 = context.getVideoGeometryD1();
+    for (size_t f = 0; f < frames.size(); ++f) {
+      PCCImage3BG &frame1 = videoGeometryD1.getFrame(f);
+      predictGeometryFrame(frames[f], videoGeometry.getFrame(f), frame1);
+    }
+
+    // Compress geometryD1
+    auto sizeGeometryD1Video = bitstream.size();
+	
+    if (params_.losslessGeo_ && params_.losslessGeo444_)
+    {
+      videoEncoder.compress(videoGeometryD1, path.str() + "geometryD1", params_.geometryQP_, bitstream,
+        params_.geometryD1Config_, params_.videoEncoderPath_, "", "", true, nbyteGeo);
+      videoGeometryD1.read(addVideoFormat(path.str() + "geometryD1_rec.yuv", width, height),
+        width, height, frames.size(), nbyteGeo);
+    }
+    else
+    {
+      videoEncoder.compress(videoGeometryD1, path.str() + "geometryD1", params_.geometryQP_, bitstream,
+        params_.geometryD1Config_, params_.videoEncoderPath_, "", "", false, nbyteGeo);
+      videoGeometryD1.read420(addVideoFormat(path.str() + "geometryD1_rec.yuv", width, height),
+        width, height, frames.size(), nbyteGeo);
+    }
+    sizeGeometryD1Video = bitstream.size() - sizeGeometryD1Video;
+
+    if( !params_.keepIntermediateFiles_ ){
+      removeFiles( path.str() + "geometryD1.bin" );
+      removeFiles( addVideoFormat( path.str() + "geometryD1.yuv"    , width, height ) );
+      removeFiles( addVideoFormat( path.str() + "geometryD1_rec.yuv", width, height ) );
+    }
+
+    std::cout << "geometry D1 video ->" << sizeGeometryD1Video << " B ("
+        << (sizeGeometryD1Video * 8.0) / (frames.size() * pointCount) << " bpp)"
+        << std::endl;
+
+  }
+  else {
+    auto sizeGeometryVideo = bitstream.size();
+    auto& videoGeometry = context.getVideoGeometry();	
+    if (params_.losslessGeo_ && params_.losslessGeo444_)
+    {
+      videoEncoder.compress(videoGeometry, path.str() + "geometry", params_.geometryQP_, bitstream,
+        params_.geometryConfig_, params_.videoEncoderPath_, "", "", true, nbyteGeo);
       videoGeometry.read(addVideoFormat(path.str() + "geometry_rec.yuv", width, height),
-      width, height, 2 * frames.size(), nbyteGeo);
-  }
-  else
-  {
-    videoEncoder.compress(videoGeometry, path.str() + "geometry", params_.geometryQP_, bitstream,
-      params_.geometryConfig_, params_.videoEncoderPath_, "", "", false, nbyteGeo);
-      videoGeometry.read420(addVideoFormat(path.str() + "geometry_rec.yuv", width, height),
-      width, height, 2 * frames.size(), nbyteGeo);
-  }
-  sizeGeometryVideo = bitstream.size() - sizeGeometryVideo;
+        width, height, 2 * frames.size(), nbyteGeo);
+    }
+    else
+    {
+      videoEncoder.compress(videoGeometry, path.str() + "geometry", params_.geometryQP_, bitstream,
+        params_.geometryConfig_, params_.videoEncoderPath_, "", "", false, nbyteGeo);
+        videoGeometry.read420(addVideoFormat(path.str() + "geometry_rec.yuv", width, height),
+        width, height, 2 * frames.size(), nbyteGeo);
+    }
+    sizeGeometryVideo = bitstream.size() - sizeGeometryVideo;
 
-  if( !params_.keepIntermediateFiles_ ){
-    removeFiles( path.str() + "geometry.bin" );
-    removeFiles( addVideoFormat( path.str() + "geometry.yuv"    , width, height ) );
-    removeFiles( addVideoFormat( path.str() + "geometry_rec.yuv", width, height ) );
-  }  
+    if( !params_.keepIntermediateFiles_ ){
+      removeFiles( path.str() + "geometry.bin" );
+      removeFiles( addVideoFormat( path.str() + "geometry.yuv"    , width, height ) );
+      removeFiles( addVideoFormat( path.str() + "geometry_rec.yuv", width, height ) );
+    }  
 
-  std::cout << "geometry video ->" << sizeGeometryVideo << " B ("
-      << (sizeGeometryVideo * 8.0) / (2 * frames.size() * pointCount) << " bpp)"
-      << std::endl;
+    std::cout << "geometry video ->" << sizeGeometryVideo << " B ("
+        << (sizeGeometryVideo * 8.0) / (2 * frames.size() * pointCount) << " bpp)"
+        << std::endl;
+  }
 
   auto sizeOccupancyMap = bitstream.size();
   compressOccupancyMap( context, bitstream );
@@ -627,10 +698,16 @@ bool PCCEncoder::predictGeometryFrame( PCCFrameContext& frame, const PCCImage3BG
         for (size_t c = 0; c < 3; ++c) {
           const uint16_t value1 = static_cast<uint16_t>(image.getValue(c, x, y));
           const uint16_t value0 = static_cast<uint16_t>(reference.getValue(c, x, y));
-          assert(value0 <= value1);
-          const uint16_t delta = value1 - value0;
-          assert(delta < 10);
-          image.setValue(c, x, y, delta);
+          // assert(value0 <= value1);
+          int_least32_t delta = (int_least32_t) value1 - (int_least32_t) value0;
+          if (delta < 0) {
+            delta = 0;
+          }
+          if (delta > 9) {
+            delta = 9;
+          }
+          // assert(delta < 10);
+          image.setValue(c, x, y, (uint8_t) delta);
         }
       }
     }
@@ -775,7 +852,7 @@ void PCCEncoder::sortMissedPointsPatch(PCCFrameContext& frame) {
 }
 bool PCCEncoder::generateGeometryVideo( const PCCGroupOfFrames& sources, PCCContext &context) {
 
-  bool res = false;
+  bool res = true;
   PCCPatchSegmenter3Parameters segmenterParams;
   segmenterParams.nnNormalEstimation                    = params_.nnNormalEstimation_;
   segmenterParams.maxNNCountRefineSegmentation          = params_.maxNNCountRefineSegmentation_;
@@ -790,9 +867,13 @@ bool PCCEncoder::generateGeometryVideo( const PCCGroupOfFrames& sources, PCCCont
   segmenterParams.lambdaRefineSegmentation              = params_.lambdaRefineSegmentation_;
   auto& videoGeometry = context.getVideoGeometry();
   auto & frames = context.getFrames();
+
   for( size_t i =0; i<frames.size();i++){
   size_t preIndex = i > 0 ? (i - 1):0;
-    res = generateGeometryVideo( sources[ i ], frames[ i ], segmenterParams, videoGeometry , frames[preIndex] , i);
+    if (!generateGeometryVideo( sources[ i ], frames[ i ], segmenterParams, videoGeometry , frames[preIndex] , i)) {
+      res = false;
+      break;
+    }
   }
   return res;
 }
@@ -814,20 +895,27 @@ bool PCCEncoder::resizeGeometryVideo( PCCContext &context ) {
 
 bool PCCEncoder::dilateGeometryVideo( PCCContext &context) {
   auto& videoGeometry = context.getVideoGeometry();
+  auto& videoGeometryD1 = context.getVideoGeometryD1();
   for (auto &frame : context.getFrames() ) {
     generateOccupancyMap( frame );
     const size_t shift = videoGeometry.getFrameCount();
-    videoGeometry.resize( shift + 2 );
-    for (size_t f = 0; f < 2; ++f) {
-      PCCImage3BG &frame1 = videoGeometry.getFrame( shift + f );
-      generateIntraImage( frame, f, frame1);
-      if( (f) && ( !params_.absoluteD1_ ) ) {
-        predictGeometryFrame( frame, videoGeometry.getFrame( shift ), frame1 );
-      }
+
+    if (!params_.absoluteD1_) {
+      videoGeometry.resize(shift + 1);
+      videoGeometryD1.resize(shift + 1);
+      PCCImage3BG &frame1 = videoGeometry.getFrame(shift);
+      generateIntraImage(frame, 0, frame1);
+      PCCImage3BG &frame2 = videoGeometryD1.getFrame(shift);
+      generateIntraImage(frame, 1, frame2);
+      dilate(frame, videoGeometry.getFrame(shift));
     }
-    dilate( frame, videoGeometry.getFrame( shift ) );
-    if( params_.absoluteD1_ ) {
-      dilate( frame, videoGeometry.getFrame( shift + 1 ) );
+    else {
+      videoGeometry.resize( shift + 2 );
+      for (size_t f = 0; f < 2; ++f) {
+        PCCImage3BG &frame1 = videoGeometry.getFrame(shift + f);
+        generateIntraImage(frame, f, frame1);
+        dilate(frame, videoGeometry.getFrame(shift + f));
+      }
     }
   }
   return true;
@@ -1006,13 +1094,14 @@ int PCCEncoder::compressHeader( PCCContext &context, pcc::PCCBitstream &bitstrea
   bitstream.write<uint16_t>(uint16_t( context.getHeight() ) );
   bitstream.write<uint8_t> (uint8_t(params_.occupancyResolution_));
   bitstream.write<uint8_t> (uint8_t(params_.radius2Smoothing_));
-  bitstream.write<uint8_t> (uint8_t(params_.neighborCountSmoothing_));
+  bitstream.write<uint8_t> (uint8_t(params_.neighborCountSmoothing_)); 
   bitstream.write<uint8_t> (uint8_t(params_.radius2BoundaryDetection_));
   bitstream.write<uint8_t> (uint8_t(params_.thresholdSmoothing_));
   bitstream.write<uint8_t> (uint8_t(params_.losslessGeo_));
   bitstream.write<uint8_t> (uint8_t(params_.losslessTexture_));
   bitstream.write<uint8_t> (uint8_t(params_.noAttributes_));
   bitstream.write<uint8_t> (uint8_t(params_.losslessGeo444_));
+  bitstream.write<uint8_t>(uint8_t(params_.absoluteD1_));
   return 1;
 }
 
@@ -1104,7 +1193,7 @@ void PCCEncoder::compressOccupancyMap( PCCFrameContext& frame, PCCBitstream &bit
 
   int64_t prevSizeU0 = 0;
   int64_t prevSizeV0 = 0;
-  arithmeticEncoder.encode( params_.absoluteD1_, bModelAbsoluteD1 );
+  // arithmeticEncoder.encode( params_.absoluteD1_, bModelAbsoluteD1 );
   for (size_t patchIndex = 0; patchIndex < patchCount; ++patchIndex) {
     const auto &patch = patches[patchIndex];
     EncodeUInt32(uint32_t(patch.getU0()), bitCountU0, arithmeticEncoder, bModel0);

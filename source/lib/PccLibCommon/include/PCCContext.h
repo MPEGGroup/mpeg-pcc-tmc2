@@ -57,6 +57,7 @@ class PCCContext {
   PCCFrameContext& operator[]( int i ) { return frames_[i]; }
   std::vector<PCCFrameContext>& getFrames() { return frames_; }
   PCCVideo3BG& getVideoGeometry() { return videoGeometry_; }
+  PCCVideo3BG& getVideoGeometryD1() { return videoGeometryD1_; }
   PCCVideo3BT& getVideoTexture() { return videoTexture_; }
 
   void setIndex( size_t i ) { index_ = i; }
@@ -71,6 +72,7 @@ class PCCContext {
   size_t height_;
   std::vector<PCCFrameContext> frames_;
   PCCVideo3BG videoGeometry_;
+  PCCVideo3BG videoGeometryD1_;
   PCCVideo3BT videoTexture_;
 };
 }; //~namespace

@@ -82,6 +82,9 @@ PCCEncoderParameters::PCCEncoderParameters() {
   geometryQP_                           = 28;
   textureQP_                            = 43;
   geometryConfig_                       = {};
+  geometryD0Config_                     = {};
+  geometryD1Config_                     = {};
+
   textureConfig_                        = {};
 
   losslessGeo_                          = false;
@@ -141,6 +144,10 @@ void PCCEncoderParameters::print(){
   std::cout << "\t   colorSpaceConversionPath             " << colorSpaceConversionPath_             << std::endl;
   std::cout << "\t   videoEncoderPath                     " << videoEncoderPath_                     << std::endl;
   std::cout << "\t   geometryConfig                       " << geometryConfig_                       << std::endl;
+  if (absoluteD1_) {
+  std::cout << "\t   geometryD0Config                     " << geometryD0Config_ << std::endl;
+  std::cout << "\t   geometryD1Config                     " << geometryD1Config_ << std::endl;
+  }
   std::cout << "\t   textureConfig                        " << textureConfig_                        << std::endl;
   std::cout << "\t   colorSpaceConversionConfig           " << colorSpaceConversionConfig_           << std::endl;
   std::cout << "\t   inverseColorSpaceConversionConfig    " << inverseColorSpaceConversionConfig_    << std::endl;
@@ -202,5 +209,30 @@ bool PCCEncoderParameters::check(){
     ret = false;
     std::cerr << "videoEncoderPath not exist\n";
   }
+
+  if (absoluteD1_ && (!geometryD0Config_.empty() || !geometryD1Config_.empty()))
+  {
+    ret = false;
+    std::cerr << "When absoultD1 is true, geometryD0Config_ and geometryD1Config_ should be empty\n";
+  }
+
+  if (absoluteD1_ && geometryConfig_.empty())
+  {
+    ret = false;
+    std::cerr << "When absoultD1 is true, geometryConfig_ should be non-empty\n";
+  }
+
+  if (!absoluteD1_ && (geometryD0Config_.empty() || geometryD1Config_.empty()))
+  {
+    ret = false;
+    std::cerr << "When absoultD1 is false, geometryD0Config_ and geometryD1Config_ should be non-empty\n";
+  }
+
+  if (!absoluteD1_ && !geometryConfig_.empty())
+  {
+    ret = false;
+    std::cerr << "When absoultD1 is false, geometryConfig_ should be empty\n";
+  }
+
   return ret;
 }

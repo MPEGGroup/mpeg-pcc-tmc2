@@ -104,6 +104,8 @@ class PCCEncoderParameters {
     bool                losslessGeo444_;
 
     std::string         geometryConfig_;
+    std::string         geometryD0Config_;
+    std::string         geometryD1Config_;
     std::string         textureConfig_;
 
     bool                keepIntermediateFiles_;

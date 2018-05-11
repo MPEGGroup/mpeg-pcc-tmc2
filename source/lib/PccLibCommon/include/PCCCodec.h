@@ -78,7 +78,7 @@ class PCCCodec {
 
  private:
   void generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext& frame,
-                           const PCCVideo3BG &video,
+                           const PCCVideo3BG &video, const PCCVideo3BG &videoD1,
                            const GeneratePointCloudParameters params,
                            std::vector<uint32_t> &partition );
 
