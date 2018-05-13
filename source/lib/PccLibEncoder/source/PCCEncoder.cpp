@@ -502,8 +502,8 @@ void PCCEncoder::pack( PCCFrameContext& frame  ) {
 }
 
 void PCCEncoder::packMissedPointsPatch(PCCFrameContext &frame,
-                                       const std::vector<bool> &occupancyMap, size_t width,
-                                       size_t height, size_t occupancySizeU, size_t occupancySizeV,
+                                       const std::vector<bool> &occupancyMap, size_t &width,
+                                       size_t &height, size_t occupancySizeU, size_t occupancySizeV,
                                        size_t maxOccupancyRow) {
   auto& missedPointsPatch = frame.getMissedPointsPatch();
   missedPointsPatch.v0 = maxOccupancyRow;
@@ -513,7 +513,8 @@ void PCCEncoder::packMissedPointsPatch(PCCFrameContext &frame,
                                (params_.occupancyResolution_ * params_.occupancyResolution_)));
   size_t missedPointsPatchBlocksV =
       static_cast<size_t>(ceil(double(missedPointsPatchBlocks) / occupancySizeU));
-  int occupancyRows2Add = static_cast<int>(maxOccupancyRow + missedPointsPatchBlocksV - occupancySizeV);
+  int occupancyRows2Add = static_cast<int>(maxOccupancyRow + missedPointsPatchBlocksV -
+                                           height / params_.occupancyResolution_);
   occupancyRows2Add = occupancyRows2Add > 0 ? occupancyRows2Add : 0;
   occupancySizeV += occupancyRows2Add;
   height += occupancyRows2Add * params_.occupancyResolution_;

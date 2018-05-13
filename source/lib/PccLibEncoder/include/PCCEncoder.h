@@ -81,8 +81,8 @@ private:
   template <typename T>
   void dilate( PCCFrameContext &frame, PCCImage<T, 3> &image, const PCCImage<T, 3> *reference = nullptr );
   void pack( PCCFrameContext& frame );
-  void packMissedPointsPatch( PCCFrameContext& frame, const std::vector<bool> &occupancyMap, size_t width, 
-                              size_t height, size_t occupancySizeU, size_t occupancySizeV, size_t maxOccupancyRow);
+  void packMissedPointsPatch( PCCFrameContext& frame, const std::vector<bool> &occupancyMap, size_t &width, 
+                              size_t &height, size_t occupancySizeU, size_t occupancySizeV, size_t maxOccupancyRow);
   void spatialConsistencyPack(PCCFrameContext& frame, PCCFrameContext &prevFrame);
   void generateOccupancyMap( PCCFrameContext& frameContext );
   void printMap(std::vector<bool> img, const size_t sizeU, const size_t sizeV);
