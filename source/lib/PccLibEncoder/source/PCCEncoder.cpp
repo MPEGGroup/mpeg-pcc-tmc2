@@ -86,7 +86,6 @@ int PCCEncoder::compress( const PCCGroupOfFrames& sources, PCCContext &context,
   std::stringstream path;
   path << removeFileExtension( params_.compressedStreamPath_ ) << "_GOF" << context.getIndex() << "_";
 
-
   generateGeometryVideo( sources, context );
   resizeGeometryVideo( context );
   dilateGeometryVideo( context );
@@ -129,7 +128,6 @@ int PCCEncoder::compress( const PCCGroupOfFrames& sources, PCCContext &context,
         << std::endl;
 
     // Form differential video geometryD1
-
     auto& videoGeometryD1 = context.getVideoGeometryD1();
     for (size_t f = 0; f < frames.size(); ++f) {
       PCCImage3BG &frame1 = videoGeometryD1.getFrame(f);
@@ -165,6 +163,10 @@ int PCCEncoder::compress( const PCCGroupOfFrames& sources, PCCContext &context,
         << (sizeGeometryD1Video * 8.0) / (frames.size() * pointCount) << " bpp)"
         << std::endl;
 
+    auto sizeGeometryVideo = sizeGeometryD0Video + sizeGeometryD1Video;
+    std::cout << "geometry video ->" << sizeGeometryVideo << " B ("
+        << (sizeGeometryVideo * 8.0) / (2 * frames.size() * pointCount) << " bpp)"
+        << std::endl;
   }
   else {
     auto sizeGeometryVideo = bitstream.size();
@@ -1102,7 +1104,7 @@ int PCCEncoder::compressHeader( PCCContext &context, pcc::PCCBitstream &bitstrea
   bitstream.write<uint8_t> (uint8_t(params_.losslessTexture_));
   bitstream.write<uint8_t> (uint8_t(params_.noAttributes_));
   bitstream.write<uint8_t> (uint8_t(params_.losslessGeo444_));
-  bitstream.write<uint8_t>(uint8_t(params_.absoluteD1_));
+  bitstream.write<uint8_t> (uint8_t(params_.absoluteD1_));
   return 1;
 }
 

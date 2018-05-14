@@ -97,6 +97,16 @@ bool ParseParameters(int argc, char *argv[], PCCEncoderParameters& params ) {
     ("help", print_help, false, "This help text")
     ("c,config", po::parseConfigFile,"Configuration file name")
 
+    ("configurationFolder",
+     params.configurationFolder_,
+     params.configurationFolder_,
+     "Folder where the configuration files are stored, use for cfg relative paths.")
+
+    ("uncompressedDataFolder",
+     params.uncompressedDataFolder_,
+     params.uncompressedDataFolder_,
+     "Folder where the uncompress input data are stored, use for cfg relative paths.")
+
     // i/o
     ("uncompressedDataPath",
      params.uncompressedDataPath_,
@@ -352,7 +362,7 @@ bool ParseParameters(int argc, char *argv[], PCCEncoderParameters& params ) {
     po::doHelp( std::cout, opts, 78 );
     return false;
   }
-
+  params.completePath();
   params.print();
   if( !params.check() ) {
     err.error() << "Input parameters not correct \n";

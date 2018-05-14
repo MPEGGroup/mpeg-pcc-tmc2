@@ -99,6 +99,7 @@ int PCCDecoder::decompress( PCCBitstream &bitstream, PCCContext &context, PCCGro
       removeFiles(addVideoFormat(path.str() + "geometryD1_rec.yuv", width_, height_));
     }
     std::cout << "geometry D1 video ->" << sizeGeometryD1Video << " B" << std::endl;
+    std::cout << "geometry video ->" << sizeGeometryD0Video + sizeGeometryD1Video << " B" << std::endl;
   }
   else {
     auto sizeGeometryVideo = bitstream.size();
@@ -181,12 +182,7 @@ int PCCDecoder::decompressHeader( PCCContext &context, PCCBitstream &bitstream )
   bitstream.read<uint8_t> ( losslessGeo444_);
   uint8_t absD1;
   bitstream.read<uint8_t> ( absD1);
-  if (absD1 > 0) {
-    absoluteD1_ = true;
-  }
-  else {
-    absoluteD1_ = false;
-  }
+  absoluteD1_ = absD1 > 0;
   context.getWidth()  = width_;
   context.getHeight() = height_; 
   return 1;

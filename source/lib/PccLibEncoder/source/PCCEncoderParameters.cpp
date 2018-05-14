@@ -41,6 +41,8 @@ PCCEncoderParameters::PCCEncoderParameters() {
   uncompressedDataPath_                 = {};
   compressedStreamPath_                 = {};
   reconstructedDataPath_                = {};
+  configurationFolder_                  = {};
+  uncompressedDataFolder_               = {};
 
   startFrameNumber_                     = 0;
 
@@ -104,6 +106,34 @@ PCCEncoderParameters::PCCEncoderParameters() {
 PCCEncoderParameters::~PCCEncoderParameters() {
 }
 
+void PCCEncoderParameters::completePath(){
+  if( !uncompressedDataFolder_.empty() ){
+    if( !uncompressedDataPath_.empty() ){
+      uncompressedDataPath_ = uncompressedDataFolder_ + uncompressedDataPath_;
+    }
+  }
+  if( !configurationFolder_.empty() ){
+    if( !geometryConfig_  .empty() ){
+      geometryConfig_   = configurationFolder_ + geometryConfig_;
+    }
+    if( !geometryD0Config_.empty() ){
+      geometryD0Config_ = configurationFolder_ + geometryD0Config_;
+    }
+    if( !geometryD1Config_.empty() ){
+      geometryD1Config_ = configurationFolder_ + geometryD1Config_;
+    }
+    if( !textureConfig_   .empty() ){
+      textureConfig_    = configurationFolder_ + textureConfig_;
+    }
+    if( !inverseColorSpaceConversionConfig_   .empty() ) {
+      inverseColorSpaceConversionConfig_    = configurationFolder_ + inverseColorSpaceConversionConfig_;
+    }
+    if( !colorSpaceConversionConfig_   .empty() ) {
+      colorSpaceConversionConfig_    = configurationFolder_ + colorSpaceConversionConfig_;
+    }
+  }
+}
+
 void PCCEncoderParameters::print(){
 
   std::cout << "+ Parameters" << std::endl;
@@ -143,10 +173,11 @@ void PCCEncoderParameters::print(){
   std::cout << "\t   textureQP                            " << textureQP_                            << std::endl;
   std::cout << "\t   colorSpaceConversionPath             " << colorSpaceConversionPath_             << std::endl;
   std::cout << "\t   videoEncoderPath                     " << videoEncoderPath_                     << std::endl;
-  std::cout << "\t   geometryConfig                       " << geometryConfig_                       << std::endl;
-  if (absoluteD1_) {
-  std::cout << "\t   geometryD0Config                     " << geometryD0Config_ << std::endl;
-  std::cout << "\t   geometryD1Config                     " << geometryD1Config_ << std::endl;
+  if ( !absoluteD1_) {
+    std::cout << "\t   geometryD0Config                     " << geometryD0Config_ << std::endl;
+    std::cout << "\t   geometryD1Config                     " << geometryD1Config_ << std::endl;
+  }else{
+    std::cout << "\t   geometryConfig                       " << geometryConfig_                       << std::endl;
   }
   std::cout << "\t   textureConfig                        " << textureConfig_                        << std::endl;
   std::cout << "\t   colorSpaceConversionConfig           " << colorSpaceConversionConfig_           << std::endl;
@@ -163,6 +194,7 @@ void PCCEncoderParameters::print(){
   std::cout << "\t   bestColorSearchRange                 " << bestColorSearchRange_                 << std::endl;
   std::cout << std::endl;
 }
+
 bool PCCEncoderParameters::check(){
   bool ret = true;
   if (!colorSpaceConversionPath_.empty() &&

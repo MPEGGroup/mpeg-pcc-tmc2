@@ -44,8 +44,12 @@ class PCCEncoderParameters {
     ~PCCEncoderParameters();
     void print();
     bool check();
+    void completePath();
     
     size_t              startFrameNumber_;
+
+    std::string         configurationFolder_;
+    std::string         uncompressedDataFolder_;
 
     std::string         compressedStreamPath_;
     std::string         reconstructedDataPath_;

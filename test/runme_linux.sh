@@ -3,17 +3,57 @@
 MAINDIR=$( dirname $( cd "$( dirname $0 )" && pwd ) );
 EXTERNAL=$( dirname $MAINDIR )/external_pkg
 
-
 ## Input parameters
-
-SOURCE=${MAINDIR}/../source/longdress/longdress_vox10_%04i.ply
+SRCDIR=${MAINDIR}/../ply/ # note: this directory must containt: http://mpegfs.int-evry.fr/MPEG/PCC/DataSets/pointCloud/CfP/datasets/Dynamic_Objects/People                            
+CFGDIR=${MAINDIR}/cfg/
+RATE=2;
+COND=3;
+SEQ=25; 
 FRAMECOUNT=1;
-FRAMEINDEX=1051;
-BIN=longdress_F${FRAMECOUNT}.bin
 THREAD=1;
 
+## Set Configuration based on sequence, condition and rate
+if [ $COND -lt 3 ] 
+then
+  case $SEQ in
+      22) CFGSEQUENCE="sequence/queen-lossless.cfg";;
+      23) CFGSEQUENCE="sequence/loot_vox10-lossless.cfg";;
+      24) CFGSEQUENCE="sequence/redandblack_vox10-lossless.cfg";;
+      25) CFGSEQUENCE="sequence/soldier_vox10-lossless.cfg";;
+      26) CFGSEQUENCE="sequence/longdress_vox10-lossless.cfg";;
+      *) echo "sequence not correct ($SEQ)";   exit -1;;
+  esac 
+  CFGRATE=;
+  BIN=S${SEQ}C0${COND}_F${FRAMECOUNT}.bin
+else
+  case $SEQ in
+      22) CFGSEQUENCE="sequence/queen-lossless.cfg";;
+      23) CFGSEQUENCE="sequence/loot_vox10-lossless.cfg";;
+      24) CFGSEQUENCE="sequence/redandblack_vox10-lossless.cfg";;
+      25) CFGSEQUENCE="sequence/soldier_vox10-lossless.cfg";;
+      26) CFGSEQUENCE="sequence/longdress_vox10-lossless.cfg";;
+      *) echo "sequence not correct ($SEQ)";   exit -1;;
+  esac
+  case $RATE in
+      5) CFGRATE="rate/ctc-r5.cfg";; 
+      4) CFGRATE="rate/ctc-r4.cfg";; 
+      3) CFGRATE="rate/ctc-r3.cfg";; 
+      2) CFGRATE="rate/ctc-r2.cfg";; 
+      1) CFGRATE="rate/ctc-r1.cfg";; 
+      *) echo "rate not correct ($RATE)";   exit -1;;
+  esac
+  BIN=S${SEQ}C0${COND}R0${RATE}_F${FRAMECOUNT}.bin
+fi
 
-## External tool paths
+case $COND in
+  1) CFGCOMMON="common/ctc-common-lossless-geometry.cfg";          CFGCONDITION="condition/ctc-all-intra-lossless-geometry.cfg";;
+  2) CFGCOMMON="common/ctc-common-lossless-geometry-texture.cfg";  CFGCONDITION="condition/ctc-all-intra-lossless-geometry-texture.cfg";;
+  3) CFGCOMMON="common/ctc-common.cfg";                            CFGCONDITION="condition/ctc-all-intra.cfg";;
+  4) CFGCOMMON="common/ctc-common.cfg";                            CFGCONDITION="condition/ctc-random-access.cfg";;  
+  *) echo "Condition not correct ($COND)";   exit -1;;
+esac
+
+## Set external tool paths
 ENCODER="set_value";
 DECODER="set_value";
 HDRCONVERT="set_value";
@@ -40,37 +80,26 @@ if [ ! -f $HMDECODER ] ; then HMDECODER=${EXTERNAL}/HM16.16/bin/vc2015/x64/Relea
 if [ ! -f $HMDECODER ] ; then HMDECODER=${EXTERNAL}/HM16.16/bin/TAppDecoder;                        fi
 if [ ! -f $HMDECODER ] ; then HMDECODER=${EXTERNAL}/hm/bin/TAppDecoder;                             fi
 
-
 ## Parameters and pathes check
 if [ ! -f $ENCODER    ] ; then echo "Can't find PccAppEncoder, please set.     ($ENCODER )";   exit -1; fi
 if [ ! -f $DECODER    ] ; then echo "Can't find PccAppDecoder, please set.     ($DECODER )";   exit -1; fi
 if [ ! -f $HDRCONVERT ] ; then echo "Can't find HdrConverts, please set.       ($HDRCONVERT)"; exit -1; fi
 if [ ! -f $HMENCODER  ] ; then echo "Can't find TAppEncoderStatic, please set. ($HMENCODER)";  exit -1; fi
 if [ ! -f $HMDECODER  ] ; then echo "Can't find TAppDecoderStatic, please set. ($HMDECODER)";  exit -1; fi
-for((i=0;i<$FRAMECOUNT;i++))
-do
-  INDEX=`expr $i + $FRAMEINDEX`;
-  PLY=`printf $SOURCE $INDEX`;
-  if [ ! -f $PLY  ] ; then echo "Can't find input ply, please set. ($PLY)"; exit -1; fi
-done
-
 
 ## Encoder 
 if [ ! -f $BIN ] 
 then 
   $ENCODER \
-    --config=${MAINDIR}/cfg/ctc-common.cfg \
-    --config=${MAINDIR}/cfg/per-sequence/longdress_vox10.cfg \
-    --config=${MAINDIR}/cfg/ctc-r1.cfg \
-    --colorSpaceConversionPath=$HDRCONVERT \
-    --colorSpaceConversionConfig=${MAINDIR}/cfg/rgb444toyuv420.cfg \
-    --inverseColorSpaceConversionConfig=${MAINDIR}/cfg/yuv420torgb444.cfg \
-    --uncompressedDataPath=$SOURCE \
-    --startFrameNumber=$FRAMEINDEX \
+    --config=${CFGDIR}${CFGCOMMON} \
+    --config=${CFGDIR}${CFGSEQUENCE} \
+    --config=${CFGDIR}${CFGCONDITION} \
+    --config=${CFGDIR}${CFGRATE} \
+    --configurationFolder=${CFGDIR} \
+    --uncompressedDataFolder=${SRCDIR} \
     --frameCount=$FRAMECOUNT \
-    --videoEncoderPath=${HMENCODER} \
-    --geometryConfig=${MAINDIR}/cfg/ctc-hm-geometry-ai.cfg \
-    --textureConfig=${MAINDIR}/cfg/ctc-hm-texture-ai.cfg \
+    --colorSpaceConversionPath=$HDRCONVERT \
+    --videoEncoderPath=$HMENCODER \
     --nbThread=$THREAD \
     --keepIntermediateFiles=1 \
     --reconstructedDataPath=${BIN%.???}_rec_%04d.ply \
@@ -79,10 +108,9 @@ fi
 
 ## Decoder
 $DECODER \
-  --startFrameNumber=1051 \
   --compressedStreamPath=$BIN \
   --videoDecoderPath=${HMDECODER} \
   --colorSpaceConversionPath=${HDRCONVERT} \
-  --inverseColorSpaceConversionConfig=${MAINDIR}/cfg/yuv420torgb444.cfg \
+  --inverseColorSpaceConversionConfig=${CFGDIR}/hdrconvert/yuv420torgb444.cfg \
   --nbThread=$THREAD \
   --reconstructedDataPath=${BIN%.???}_dec_%04d.ply
