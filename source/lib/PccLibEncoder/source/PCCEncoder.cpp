@@ -1105,6 +1105,7 @@ int PCCEncoder::compressHeader( PCCContext &context, pcc::PCCBitstream &bitstrea
   bitstream.write<uint8_t> (uint8_t(params_.noAttributes_));
   bitstream.write<uint8_t> (uint8_t(params_.losslessGeo444_));
   bitstream.write<uint8_t> (uint8_t(params_.absoluteD1_));
+  bitstream.write<uint8_t> (uint8_t(params_.binArithCoding_));
   return 1;
 }
 

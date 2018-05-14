@@ -81,6 +81,7 @@ private:
   uint8_t  noAttributes_;
   uint8_t  losslessGeo444_;
   bool     absoluteD1_;
+  bool     binArithCoding_;
   
 };
 }; //~namespace

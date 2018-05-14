@@ -23,7 +23,7 @@ then
       26) CFGSEQUENCE="sequence/longdress_vox10-lossless.cfg";;
       *) echo "sequence not correct ($SEQ)";   exit -1;;
   esac 
-  CFGRATE=;
+  CFGRATE="rate/ctc-r5.cfg";;
   BIN=S${SEQ}C0${COND}_F${FRAMECOUNT}.bin
 else
   case $SEQ in

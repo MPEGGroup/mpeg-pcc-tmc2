@@ -147,11 +147,6 @@ bool ParseParameters(int argc, char *argv[], PCCDecoderParameters& params ) {
      params.keepIntermediateFiles_,
      "Keep intermediate files: RGB, YUV and bin")
 
-    ("binArithCoding",
-     params.binArithCoding_,
-     params.binArithCoding_,
-     "Binary arithmetic coding")
-
  ;
 
   po::setDefaults(opts);

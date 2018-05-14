@@ -131,7 +131,7 @@ int PCCDecoder::decompress( PCCBitstream &bitstream, PCCContext &context, PCCGro
       losslessGeo444_ != 0,
       params_.nbThread_,
       absoluteD1_,
-      params_.binArithCoding_
+      binArithCoding_
   };
   generatePointCloud( reconstructs, context, generatePointCloudParameters );
 
@@ -180,9 +180,11 @@ int PCCDecoder::decompressHeader( PCCContext &context, PCCBitstream &bitstream )
   bitstream.read<uint8_t> ( losslessTexture_ );
   bitstream.read<uint8_t> ( noAttributes_ );
   bitstream.read<uint8_t> ( losslessGeo444_);
-  uint8_t absD1;
-  bitstream.read<uint8_t> ( absD1);
+  uint8_t absD1, binArithCoding;
+  bitstream.read<uint8_t> ( absD1 );
   absoluteD1_ = absD1 > 0;
+  bitstream.read<uint8_t> ( binArithCoding );
+  binArithCoding_ =  binArithCoding > 0;
   context.getWidth()  = width_;
   context.getHeight() = height_; 
   return 1;
@@ -244,7 +246,7 @@ void PCCDecoder::decompressOccupancyMap( PCCFrameContext& frame, PCCBitstream &b
   arithmeticDecoder.set_buffer(uint32_t(bitstream.capacity() - bitstream.size()),
                                bitstream.buffer() + bitstream.size());
 
-  bool bBinArithCoding = params_.binArithCoding_ && (!losslessGeo_) && 
+  bool bBinArithCoding = binArithCoding_ && (!losslessGeo_) &&
                          (occupancyResolution_ == 16) && (occupancyPrecision == 4);
 
   arithmeticDecoder.start_decoder();
