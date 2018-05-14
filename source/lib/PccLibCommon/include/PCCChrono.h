@@ -39,16 +39,30 @@
 namespace pcc {
 namespace chrono {
 /**
- * Clock reporting elapsed user time of the current process and children.
+ * Clock reporting elapsed user time of the current process excluding children.
+ */
+struct utime_self_clock {
+  typedef std::chrono::nanoseconds duration;
+  typedef duration::rep rep;
+  typedef duration::period period;
+  typedef std::chrono::time_point<utime_self_clock, duration> time_point;
+
+  static constexpr bool is_steady = true;
+
+  static time_point now() noexcept;
+};
+
+/**
+ * Clock reporting elapsed user time of the current process's children.
  *
  * NB: under winapi, only child processes that have completed execution
  *     via pcc::system() are reported.
  */
-struct utime_inc_children_clock {
+struct utime_children_clock {
   typedef std::chrono::nanoseconds duration;
   typedef duration::rep rep;
   typedef duration::period period;
-  typedef std::chrono::time_point<utime_inc_children_clock, duration> time_point;
+  typedef std::chrono::time_point<utime_children_clock, duration> time_point;
 
   static constexpr bool is_steady = true;
 
@@ -94,10 +108,35 @@ class Stopwatch {
   typename Clock::time_point start_time_;
   duration cumulative_time_{duration::zero()};
 };
-}
-}
 
 //---------------------------------------------------------------------------
+
+/**
+ * Wrapper to simplify management of measuring elapsed user time of the
+ * current process and of child processes.
+ */
+struct StopwatchUserTime {
+  Stopwatch<utime_self_clock> self;
+  Stopwatch<utime_children_clock> children;
+
+  void reset() {
+    self.reset();
+    children.reset();
+  }
+
+  void start() {
+    self.start();
+    children.start();
+  }
+
+  void stop() {
+    self.stop();
+    children.stop();
+  }
+};
+}}
+
+//===========================================================================
 
 template <typename Clock>
 void pcc::chrono::Stopwatch<Clock>::reset() {
@@ -106,7 +145,7 @@ void pcc::chrono::Stopwatch<Clock>::reset() {
 
 //---------------------------------------------------------------------------
 
-template <typename Clock>
+template<typename Clock>
 void pcc::chrono::Stopwatch<Clock>::start() {
   start_time_ = Clock::now();
 }
