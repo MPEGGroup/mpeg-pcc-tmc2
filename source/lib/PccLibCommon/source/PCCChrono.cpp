@@ -62,8 +62,17 @@ hundredns g_cumulative_time_children{0};
 //---------------------------------------------------------------------------
 
 #if _WIN32
-pcc::chrono::utime_inc_children_clock::time_point
-pcc::chrono::utime_inc_children_clock::now() noexcept {
+pcc::chrono::utime_children_clock::time_point
+pcc::chrono::utime_children_clock::now() noexcept {
+  return time_point(detail::g_cumulative_time_children);
+}
+#endif
+
+//---------------------------------------------------------------------------
+
+#if _WIN32
+pcc::chrono::utime_self_clock::time_point
+pcc::chrono::utime_self_clock::now() noexcept {
   HANDLE hProcess = GetCurrentProcess();
   FILETIME dummy, userTime;
 
@@ -73,29 +82,38 @@ pcc::chrono::utime_inc_children_clock::now() noexcept {
   val.LowPart = userTime.dwLowDateTime;
   val.HighPart = userTime.dwHighDateTime;
 
-  using namespace detail;
   using hundredns = std::chrono::duration<int64_t, std::ratio<1, 10000000>>;
-  return time_point(hundredns(val.QuadPart) + g_cumulative_time_children);
+  return time_point(hundredns(val.QuadPart));
 }
 #endif
 
 //---------------------------------------------------------------------------
 
 #if HAVE_GETRUSAGE
-pcc::chrono::utime_inc_children_clock::time_point
-pcc::chrono::utime_inc_children_clock::now() noexcept {
-  std::chrono::nanoseconds total;
-
+pcc::chrono::utime_self_clock::time_point
+pcc::chrono::utime_self_clock::now() noexcept {
   struct rusage usage;
   getrusage(RUSAGE_SELF, &usage);
 
+  std::chrono::nanoseconds total;
   total = std::chrono::seconds(usage.ru_utime.tv_sec) +
           std::chrono::microseconds(usage.ru_utime.tv_usec);
 
-  if (getrusage(RUSAGE_CHILDREN, &usage)) return time_point(total);
+  return time_point(total);
+}
+#endif
 
-  total += std::chrono::seconds(usage.ru_utime.tv_sec) +
-           std::chrono::microseconds(usage.ru_utime.tv_usec);
+//---------------------------------------------------------------------------
+
+#if HAVE_GETRUSAGE
+pcc::chrono::utime_children_clock::time_point
+pcc::chrono::utime_children_clock::now() noexcept {
+  struct rusage usage;
+  getrusage(RUSAGE_CHILDREN, &usage);
+
+  std::chrono::nanoseconds total;
+  total = std::chrono::seconds(usage.ru_utime.tv_sec) +
+          std::chrono::microseconds(usage.ru_utime.tv_usec);
 
   return time_point(total);
 }
