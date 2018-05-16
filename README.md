@@ -27,19 +27,9 @@ the encoder.  The general pattern of usage is illustrated below, where
 multiple configuration files control different aspects of the test
 conditions.
 
-```ShellSession
-$ path/to/tmc2 \
-    -c cfg/ctc-common.cfg \
-    -c cfg/ctc-all-intra.cfg \
-    -c cfg/ctc-r1.cfg \
-    -c cfg/per-sequence/queen.cfg \
-    --uncompressedDataPath=path/toqueen/frame_%04d.ply \
-    --compressedStreamPath=output/bitstream/file.bin \
-    --videoEncoderPath=path/to/HM-like/encoder \
-    --videoDecoderPath=path/to/HM-like/decoder
-```
+An example of running could be find in ./test/runme_linux.sh
 
 NB: parameters set in one configuration file override the same parameter
 in earlier files.  ie. order matters.
 
-Further help text describing option usage is available using "./tmc2 --help".
+Further help text describing option usage is available using "./bin/PccAppEncoder --help" or "./bin/PccAppDecoder --help".

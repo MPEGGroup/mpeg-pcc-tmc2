@@ -1,0 +1,397 @@
+/* The copyright in this software is being made available under the BSD
+ * License, included below. This software may be subject to other third party
+ * and contributor rights, including patent rights, and no such rights are
+ * granted under this license.
+ *
+ * Copyright (c) 2010-2017, ISO/IEC
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *  * Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *  * Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *  * Neither the name of the ISO/IEC nor the names of its contributors may
+ *    be used to endorse or promote products derived from this software without
+ *    specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS
+ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+ * THE POSSIBILITY OF SUCH DAMAGE.
+ */
+#include "PccAppEncoder.h"
+
+using namespace std;
+using namespace pcc;
+using pcc::chrono::StopwatchUserTime;
+
+int main(int argc, char *argv[]) {
+  std::cout << "PccAppEncoder v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MINOR << std::endl
+            << std::endl;
+
+  PCCEncoderParameters params;
+  if (!ParseParameters(argc, argv, params )) {
+    return -1;
+  }
+  if( params.nbThread_ > 0 ) {
+    tbb::task_scheduler_init init( (int)params.nbThread_ );
+  }
+
+  // Timers to count elapsed wall/user time
+  pcc::chrono::Stopwatch<std::chrono::steady_clock> clockWall;
+  pcc::chrono::StopwatchUserTime clockUser;
+
+  clockWall.start();
+  int ret = CompressVideo(params, clockUser);
+  clockWall.stop();
+
+  using namespace std::chrono;
+  using ms = milliseconds;
+  auto totalWall = duration_cast<ms>(clockWall.count()).count();
+  std::cout << "Processing time (wall): " << totalWall / 1000.0 << " s\n";
+
+  auto totalUserSelf = duration_cast<ms>(clockUser.self.count()).count();
+  std::cout << "Processing time (user.self): "
+            << totalUserSelf / 1000.0 << " s\n";
+
+  auto totalUserChild = duration_cast<ms>(clockUser.children.count()).count();
+  std::cout << "Processing time (user.children): "
+            << totalUserChild / 1000.0 << " s\n";
+
+  return ret;
+}
+
+//---------------------------------------------------------------------------
+// :: Command line / config parsing helpers
+
+template <typename T>
+static std::istream &readUInt(std::istream &in, T &val) {
+  unsigned int tmp;
+  in >> tmp;
+  val = T(tmp);
+  return in;
+}
+
+static std::istream &operator>>(std::istream &in, ColorTransform &val) { return readUInt(in, val); }
+
+//---------------------------------------------------------------------------
+// :: Command line / config parsing
+
+bool ParseParameters(int argc, char *argv[], PCCEncoderParameters& params ) {
+
+  namespace po = df::program_options_lite;
+
+  bool print_help = false;
+
+  // The definition of the program/config options, along with default values.
+  //
+  // NB: when updating the following tables:
+  //      (a) please keep to 80-columns for easier reading at a glance,
+  //      (b) do not vertically align values -- it breaks quickly
+  //
+  po::Options opts;
+  opts.addOptions()
+    ("help", print_help, false, "This help text")
+    ("c,config", po::parseConfigFile,"Configuration file name")
+
+    // i/o
+    ("uncompressedDataPath",
+     params.uncompressedDataPath_,
+     params.uncompressedDataPath_,
+     "Input pointcloud to encode. Multi-frame sequences may be represented by %04i")
+
+    ("compressedStreamPath",
+     params.compressedStreamPath_,
+     params.compressedStreamPath_,
+     "Output(encoder)/Input(decoder) compressed bitstream")
+
+    ("reconstructedDataPath",
+     params.reconstructedDataPath_,
+     params.reconstructedDataPath_,
+     "Output decoded pointcloud. Multi-frame sequences may be represented by %04i")
+
+    // sequence configuration
+    ("startFrameNumber",
+     params.startFrameNumber_,
+     params.startFrameNumber_,
+     "First frame number in sequence to encode/decode")
+
+    ("frameCount",
+     params.frameCount_,
+     params.frameCount_,
+     "Number of frames to encode")
+
+    ("groupOfFramesSize",
+     params.groupOfFramesSize_,
+     params.groupOfFramesSize_,
+     "Random access period")
+
+    // colour space conversion
+    ("colorTransform",
+     params.colorTransform_,
+     params.colorTransform_,
+     "The colour transform to be applied:\n  0: none\n  1: RGB to YCbCr (Rec.709)")
+
+    ("colorSpaceConversionPath",
+     params.colorSpaceConversionPath_,
+     params.colorSpaceConversionPath_,
+     "Path to the HDRConvert. If unset, an internal color space conversion is used")
+
+    ("colorSpaceConversionConfig",
+     params.colorSpaceConversionConfig_,
+     params.colorSpaceConversionConfig_,
+     "HDRConvert configuration file used for RGB444 to YUV420 conversion")
+
+    ("inverseColorSpaceConversionConfig",
+     params.inverseColorSpaceConversionConfig_,
+     params.inverseColorSpaceConversionConfig_,
+     "HDRConvert configuration file used for YUV420 to RGB444 conversion")
+
+    // segmentation
+    ("nnNormalEstimation",
+     params.nnNormalEstimation_,
+     params.nnNormalEstimation_,
+     "Number of points used for normal estimation")
+
+    ("maxNNCountRefineSegmentation",
+     params.maxNNCountRefineSegmentation_,
+     params.maxNNCountRefineSegmentation_,
+     "Number of nearest neighbors used during segmentation refinement")
+
+    ("iterationCountRefineSegmentation",
+     params.iterationCountRefineSegmentation_,
+     params.iterationCountRefineSegmentation_,
+     "Number of iterations performed during segmentation refinement")
+
+    ("occupancyResolution",
+     params.occupancyResolution_,
+     params.occupancyResolution_,
+     "Resolution T of the occupancy map")
+
+    ("minPointCountPerCCPatchSegmentation",
+     params.minPointCountPerCCPatchSegmentation_,
+     params.minPointCountPerCCPatchSegmentation_,
+     "Minimum number of points for a connected component to be retained as a patch")
+
+    ("maxNNCountPatchSegmentation",
+     params.maxNNCountPatchSegmentation_,
+     params.maxNNCountPatchSegmentation_,
+     "Number of nearest neighbors used during connected components extraction")
+
+    ("surfaceThickness",
+     params.surfaceThickness_,
+     params.surfaceThickness_,
+     "Surface thickness Δ")
+
+    ("maxAllowedDepth",
+     params.maxAllowedDepth_,
+     params.maxAllowedDepth_,
+     "Maximum depth per patch")
+
+    ("maxAllowedDist2MissedPointsDetection",
+     params.maxAllowedDist2MissedPointsDetection_,
+     params.maxAllowedDist2MissedPointsDetection_,
+     "Maximum distance for a point to be ignored during missed point detection")
+
+    ("maxAllowedDist2MissedPointsSelection",
+     params.maxAllowedDist2MissedPointsSelection_,
+     params.maxAllowedDist2MissedPointsSelection_,
+     "Maximum distance for a point to be ignored during  missed points  selection")
+
+    ("lambdaRefineSegmentation",
+     params.lambdaRefineSegmentation_,
+     params.lambdaRefineSegmentation_,
+     "Controls the smoothness of the patch boundaries  during segmentation  refinement")
+
+    // packing
+    ("minimumImageWidth",
+     params.minimumImageWidth_,
+     params.minimumImageWidth_,
+     "Minimum width of packed patch frame")
+
+    ("minimumImageHeight",
+     params.minimumImageHeight_,
+     params.minimumImageHeight_,
+     "Minimum height of packed patch frame")
+
+    // occupancy map
+    ("maxCandidateCount",
+     params.maxCandidateCount_,
+     params.maxCandidateCount_,
+     "Maximum nuber of candidates in list L")
+
+    ("occupancyPrecision",
+    params.occupancyPrecision_,
+    params.occupancyPrecision_,
+    "Occupancy map B0 precision")
+
+    // smoothing
+    // NB: various parameters are of the form n * occupancyPrecision**2
+    ("neighborCountSmoothing",
+     params.neighborCountSmoothing_,
+     params.neighborCountSmoothing_,
+     "todo(kmammou)")
+
+    ("radius2Smoothing",
+     params.radius2Smoothing_,
+     params.radius2Smoothing_,
+     "todo(kmammou)")
+
+    ("radius2BoundaryDetection",
+     params.radius2BoundaryDetection_,
+     params.radius2BoundaryDetection_,
+     "todo(kmammou)")
+
+    ("thresholdSmoothing",
+     params.thresholdSmoothing_,
+     params.thresholdSmoothing_,
+     "todo(kmammou)")
+
+    // colouring
+    ("bestColorSearchRange",
+     params.bestColorSearchRange_,
+     params.bestColorSearchRange_,
+     "todo(kmammou)")
+
+    // video encoding
+    ("videoEncoderPath",
+     params.videoEncoderPath_,
+     params.videoEncoderPath_,
+     "HM video encoder executable")
+
+    ("geometryQP",
+     params.geometryQP_,
+     params.geometryQP_,
+     "QP for compression of geometry video")
+
+    ("textureQP",
+     params.textureQP_,
+     params.textureQP_,
+     "QP for compression of texture video")
+
+    ("geometryConfig",
+     params.geometryConfig_,
+     params.geometryConfig_,
+     "HM configuration file for geometry compression")
+
+    ("textureConfig",
+     params.textureConfig_,
+     params.textureConfig_,
+     "HM configuration file for texture compression")
+
+    // lossless parameters
+    ("losslessGeo",
+     params.losslessGeo_,
+     params.losslessGeo_,
+     "Enable lossless encoding of geometry\n")
+
+    ("losslessTexture",
+     params.losslessTexture_,
+     params.losslessTexture_,
+     "Enable lossless encoding of texture\n")
+
+    ("noAttributes",
+     params.noAttributes_,
+     params.noAttributes_,
+     "Disable encoding of attributes")
+
+    ("nbThread",
+     params.nbThread_,
+     params.nbThread_,
+     "Number of thread used for parallel processing")
+
+    ("keepIntermediateFiles",
+     params.keepIntermediateFiles_,
+     params.keepIntermediateFiles_,
+     "Keep intermediate files: RGB, YUV and bin");
+
+  po::setDefaults(opts);
+  po::ErrorReporter err;
+  const list<const char *> &argv_unhandled = po::scanArgv(opts, argc, (const char **)argv, err);
+
+  for (const auto arg : argv_unhandled) {
+    err.warn() << "Unhandled argument ignored: " << arg << "\n";
+  }
+
+  if (argc == 1 || print_help) {
+    po::doHelp( std::cout, opts, 78 );
+    return false;
+  }
+
+  params.print();
+  if( !params.check() ) {
+    err.error() << "Input parameters not correct \n";
+  }
+
+  // report the current configuration (only in the absence of errors so
+  // that errors/warnings are more obvious and in the same place).
+  if (err.is_errored) return false;
+
+  return true;
+}
+
+int CompressVideo( const PCCEncoderParameters& params, StopwatchUserTime &clock) {
+  const size_t startFrameNumber0 = params.startFrameNumber_;
+  const size_t endFrameNumber0 = params.startFrameNumber_ + params.frameCount_;
+  const size_t groupOfFramesSize0 = (std::max)(size_t(1), params.groupOfFramesSize_);
+  size_t startFrameNumber = startFrameNumber0;
+  size_t reconstructedFrameNumber = params.startFrameNumber_;
+  PCCBitstream bitstream;
+  std::unique_ptr<uint8_t> buffer;
+  PCCBistreamPosition totalSizeIterator = bitstream.getPosition();
+  size_t contextIndex = 0;
+  PCCEncoder encoder;
+  encoder.setParameters( params );
+  while (startFrameNumber < endFrameNumber0) {
+    const size_t endFrameNumber = min(startFrameNumber + groupOfFramesSize0, endFrameNumber0);
+    PCCContext context;
+    context.setIndex( contextIndex );
+    PCCGroupOfFrames sources, reconstructs;
+    if (!sources.load( params.uncompressedDataPath_, startFrameNumber,
+                       endFrameNumber, params.colorTransform_ ) ) {
+      return -1;
+    }
+    clock.start();
+
+    if (startFrameNumber == startFrameNumber0) {
+      const size_t predictedBitstreamSize =
+          10000 + 8 * params.frameCount_ * sources[0].getPointCount();
+      bitstream.initialize( predictedBitstreamSize );
+      bitstream.writeHeader();
+    }
+
+    std::cout << "Compressing group of frames " << contextIndex << ": " << startFrameNumber
+              << " -> " << endFrameNumber << "..." << std::endl;
+
+    int ret = encoder.compress( sources, context, bitstream, reconstructs );
+
+    clock.stop();
+
+    if (ret) {
+      return ret;
+    }
+    if( !params.reconstructedDataPath_.empty() ) {
+      reconstructs.write( params.reconstructedDataPath_, reconstructedFrameNumber );
+    }
+    sources.clear();
+    reconstructs.clear();
+    startFrameNumber = endFrameNumber;
+    contextIndex++;
+  }
+
+  std::cout << "Total bitstream size " << bitstream.size() << " B" << std::endl;
+  bitstream.write( params.compressedStreamPath_ );
+  return 0;
+}
+
