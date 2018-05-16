@@ -44,21 +44,13 @@ class PCCBitstream;
 class PCCContext;
 class PCCFrameContext;
 class PCCGroupOfFrames; 
-template <typename T, size_t N>
-class PCCVideo;
-typedef pcc::PCCVideo<uint8_t, 3> PCCVideo3BT;
-typedef pcc::PCCVideo<uint16_t, 3> PCCVideo3BG;
-template <typename T, size_t N>
-class PCCImage;
-typedef pcc::PCCImage<uint8_t, 3> PCCImage3BT;
-typedef pcc::PCCImage<uint16_t, 3> PCCImage3BG;
 
 class PCCDecoder : public PCCCodec {
 public:
   PCCDecoder();
   ~PCCDecoder();
 
-  int decompress( PCCBitstream &bitstream, PCCContext &context, PCCGroupOfFrames& reconstruct );
+  int decode( PCCBitstream &bitstream, PCCContext &context, PCCGroupOfFrames& reconstruct );
   void setParameters( PCCDecoderParameters value );
   
 private:

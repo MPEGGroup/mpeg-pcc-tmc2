@@ -41,7 +41,7 @@ int main(int argc, char *argv[]) {
             << std::endl;
 
   PCCDecoderParameters params;
-  if (!ParseParameters(argc, argv, params )) {
+  if (!parseParameters(argc, argv, params )) {
     return -1;
   }
   if( params.nbThread_ > 0 ) {
@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
   pcc::chrono::StopwatchUserTime clockUser;
 
   clockWall.start();
-  int ret = DecompressVideo(params, clockUser);
+  int ret = decompressVideo(params, clockUser);
   clockWall.stop();
 
   using namespace std::chrono;
@@ -88,7 +88,7 @@ static std::istream &operator>>(std::istream &in, ColorTransform &val) { return 
 //---------------------------------------------------------------------------
 // :: Command line / config parsing
 
-bool ParseParameters(int argc, char *argv[], PCCDecoderParameters& params ) {
+bool parseParameters(int argc, char *argv[], PCCDecoderParameters& params ) {
 
   namespace po = df::program_options_lite;
 
@@ -182,7 +182,7 @@ bool ParseParameters(int argc, char *argv[], PCCDecoderParameters& params ) {
   return true;
 }
 
-int DecompressVideo(const PCCDecoderParameters &params, StopwatchUserTime &clock) {
+int decompressVideo(const PCCDecoderParameters &params, StopwatchUserTime &clock) {
   PCCBitstream bitstream;
   if( ! bitstream.initialize( params.compressedStreamPath_ ) ) {
     return -1;
@@ -200,7 +200,7 @@ int DecompressVideo(const PCCDecoderParameters &params, StopwatchUserTime &clock
     PCCContext context;
     context.setIndex( contextIndex++ );
     clock.start();
-    int ret = decoder.decompress( bitstream, context, reconstruct );
+    int ret = decoder.decode( bitstream, context, reconstruct );
     clock.stop();
     if (ret) {
       return ret;

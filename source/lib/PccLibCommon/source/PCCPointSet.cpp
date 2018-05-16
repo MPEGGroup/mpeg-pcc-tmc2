@@ -39,7 +39,6 @@
 
 using namespace pcc;
 
-
 PCCPoint3D PCCPointSet3::computeCentroid() const {
   PCCPoint3D bary(0.0);
   const size_t pointCount = getPointCount();
@@ -52,6 +51,7 @@ PCCPoint3D PCCPointSet3::computeCentroid() const {
   }
   return bary;
 }
+
 PCCBox3D PCCPointSet3::computeBoundingBox() const {
   PCCBox3D bbox = { (std::numeric_limits<double>::max)(),
                     (std::numeric_limits<double>::lowest)()};

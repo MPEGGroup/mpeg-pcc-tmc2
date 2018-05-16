@@ -63,7 +63,6 @@ namespace pcc {
   // Coding tool configuration
   // ******************************************************************* //
   static const uint8_t PCC_SAVE_POINT_TYPE = 0; // Save point information in reconstructed ply.
-  static const uint8_t PCC_CORRECT_MAX_V0  = 0; // Correct max V0 value (must be remove after validation)
 
   // ******************************************************************* //
   // Common constants
@@ -80,17 +79,26 @@ namespace pcc {
   // ******************************************************************* //
   // Static functions
   // ******************************************************************* //
+  static bool exist(const std::string& sString )
+  {
+    struct stat buffer;
+    return (stat( sString.c_str(), &buffer) == 0);
+  }
 
-  static void removeFiles( const std::string string ) {
-    if( remove( string.c_str() ) != 0 ) {
-      std::cout << "Could not remove the file: " << string << std::endl;
+  static void removeFile( const std::string string ) {
+    if( exist( string ) ) {
+      if( remove( string.c_str() ) != 0 ) {
+        std::cout << "Could not remove the file: " << string << std::endl;
+      }
     }
   }
+
   static std::string removeFileExtension( const std::string string ) {
     size_t pos = string.find_last_of(".");
     return ( pos != std::string::npos && pos + 4 == string.length() ) ?
         string.substr( 0, pos ) : string;
   }
+
   static std::string addVideoFormat( const std::string string,
                                      const size_t width, const size_t height,
                                      const bool yuv420 = true,
@@ -106,16 +114,11 @@ namespace pcc {
     return string;
   }
 
-  static bool exist(const std::string& sString )
-  {
-    struct stat buffer;
-    return (stat( sString.c_str(), &buffer) == 0);
-  }
-
   static inline PCCEndianness PCCSystemEndianness() {
     uint32_t num = 1;
     return (*(reinterpret_cast<char *>(&num)) == 1) ? PCC_LITTLE_ENDIAN : PCC_BIG_ENDIAN;
   }
+
   template <typename T>
   static const T PCCEndianSwap(const T u) {
     union {
@@ -130,6 +133,7 @@ namespace pcc {
   static const T PCCToLittleEndian(const T u) {
     return (PCCSystemEndianness() == PCC_BIG_ENDIAN) ? PCCEndianSwap(u) : u;
   }
+
   template <typename T>
   static const T PCCFromLittleEndian(const T u) {
     return (PCCSystemEndianness() == PCC_BIG_ENDIAN) ? PCCEndianSwap(u) : u;

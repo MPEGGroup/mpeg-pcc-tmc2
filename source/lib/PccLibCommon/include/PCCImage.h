@@ -99,26 +99,25 @@ class PCCImage {
 					outfile.write((const char *)(chroma.data()), byteCount2);
 				}
 			}
-		}
-		else {
-    outfile.write((const char *)(channels_[0].data()), width_ * height_ * sizeof(T));
-    std::vector<T> chroma;
-    const size_t width2 = width_ / 2;
-    const size_t byteCount2 = width2 * sizeof(T);
-    chroma.resize(width2);
-    for (size_t c = 1; c < N; ++c) {
-      const auto &channel = channels_[c];
-      for (size_t y = 0; y < height_; y += 2) {
-        const T *const buffer1 = channel.data() + y * width_;
-        const T *const buffer2 = buffer1 + width_;
-        for (size_t x = 0; x < width_; x += 2) {
-          const size_t x2 = x / 2;
-          const uint64_t sum = buffer1[x] + buffer1[x + 1] + buffer2[x] + buffer2[x + 1];
-          chroma[x2] = T((sum + 2) / 4);
+		} else {
+      outfile.write((const char *)(channels_[0].data()), width_ * height_ * sizeof(T));
+      std::vector<T> chroma;
+      const size_t width2 = width_ / 2;
+      const size_t byteCount2 = width2 * sizeof(T);
+      chroma.resize(width2);
+      for (size_t c = 1; c < N; ++c) {
+        const auto &channel = channels_[c];
+        for (size_t y = 0; y < height_; y += 2) {
+          const T *const buffer1 = channel.data() + y * width_;
+          const T *const buffer2 = buffer1 + width_;
+          for (size_t x = 0; x < width_; x += 2) {
+            const size_t x2 = x / 2;
+            const uint64_t sum = buffer1[x] + buffer1[x + 1] + buffer2[x] + buffer2[x + 1];
+            chroma[x2] = T((sum + 2) / 4);
+          }
+          outfile.write((const char *)(chroma.data()), byteCount2);
         }
-        outfile.write((const char *)(chroma.data()), byteCount2);
       }
-    }
 		}
     return true;
   }
@@ -136,12 +135,11 @@ class PCCImage {
 			for (const auto &channel : channels) {
 				outfile.write((const char *)(channel.data()), byteCount);
 			}
-		}
-		else {
-    const size_t byteCount = width_ * height_ * sizeof(T);
-    for (const auto &channel : channels_) {
-      outfile.write((const char *)(channel.data()), byteCount);
-    }
+		} else {
+      const size_t byteCount = width_ * height_ * sizeof(T);
+      for (const auto &channel : channels_) {
+        outfile.write((const char *)(channel.data()), byteCount);
+      }
 		}
     return true;
   }
@@ -187,8 +185,7 @@ class PCCImage {
 			for (size_t i = 0; i < N; i++) {
 				copy(channels[i].begin(), channels[i].end(), channels_[i].begin());
 			}
-		}
-		else {
+		} else {
       infile.read((char *)(channels_[0].data()), width_ * height_ * sizeof(T));
       std::vector<T> chroma;
       const size_t width2 = width_ / 2;

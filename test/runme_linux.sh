@@ -13,25 +13,14 @@ FRAMECOUNT=1;
 THREAD=1;
 
 ## Set Configuration based on sequence, condition and rate
-if [ $COND -lt 3 ] 
+if [ $COND == 3 -o $COND == 4 ] 
 then
   case $SEQ in
-      22) CFGSEQUENCE="sequence/queen-lossless.cfg";;
-      23) CFGSEQUENCE="sequence/loot_vox10-lossless.cfg";;
-      24) CFGSEQUENCE="sequence/redandblack_vox10-lossless.cfg";;
-      25) CFGSEQUENCE="sequence/soldier_vox10-lossless.cfg";;
-      26) CFGSEQUENCE="sequence/longdress_vox10-lossless.cfg";;
-      *) echo "sequence not correct ($SEQ)";   exit -1;;
-  esac 
-  CFGRATE="rate/ctc-r5.cfg";;
-  BIN=S${SEQ}C0${COND}_F${FRAMECOUNT}.bin
-else
-  case $SEQ in
-      22) CFGSEQUENCE="sequence/queen-lossless.cfg";;
-      23) CFGSEQUENCE="sequence/loot_vox10-lossless.cfg";;
-      24) CFGSEQUENCE="sequence/redandblack_vox10-lossless.cfg";;
-      25) CFGSEQUENCE="sequence/soldier_vox10-lossless.cfg";;
-      26) CFGSEQUENCE="sequence/longdress_vox10-lossless.cfg";;
+      22) CFGSEQUENCE="sequence/queen.cfg";;
+      23) CFGSEQUENCE="sequence/loot_vox10.cfg";;
+      24) CFGSEQUENCE="sequence/redandblack_vox10.cfg";;
+      25) CFGSEQUENCE="sequence/soldier_vox10.cfg";;
+      26) CFGSEQUENCE="sequence/longdress_vox10.cfg";;
       *) echo "sequence not correct ($SEQ)";   exit -1;;
   esac
   case $RATE in
@@ -43,6 +32,17 @@ else
       *) echo "rate not correct ($RATE)";   exit -1;;
   esac
   BIN=S${SEQ}C0${COND}R0${RATE}_F${FRAMECOUNT}.bin
+else
+   case $SEQ in
+      22) CFGSEQUENCE="sequence/queen-lossless.cfg";;
+      23) CFGSEQUENCE="sequence/loot_vox10-lossless.cfg";;
+      24) CFGSEQUENCE="sequence/redandblack_vox10-lossless.cfg";;
+      25) CFGSEQUENCE="sequence/soldier_vox10-lossless.cfg";;
+      26) CFGSEQUENCE="sequence/longdress_vox10-lossless.cfg";;
+      *) echo "sequence not correct ($SEQ)";   exit -1;;
+  esac 
+  CFGRATE="rate/ctc-r5.cfg";;
+  BIN=S${SEQ}C0${COND}_F${FRAMECOUNT}.bin
 fi
 
 case $COND in

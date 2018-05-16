@@ -64,7 +64,7 @@ void PCCDecoder::setParameters( PCCDecoderParameters params ) {
   params_ = params; 
 }
 
-int PCCDecoder::decompress( PCCBitstream &bitstream, PCCContext &context, PCCGroupOfFrames& reconstructs ){
+int PCCDecoder::decode( PCCBitstream &bitstream, PCCContext &context, PCCGroupOfFrames& reconstructs ){
   if (!decompressHeader( context, bitstream ) ) {
     return 0;
   }
@@ -80,40 +80,31 @@ int PCCDecoder::decompress( PCCBitstream &bitstream, PCCContext &context, PCCGro
   if (!absoluteD1_) {
     // Compress D0
     auto sizeGeometryD0Video = bitstream.size();
-    videoDecoder.decompress(context.getVideoGeometry(), path.str() + "geometryD0", width_, height_,
-      context.size(), bitstream, params_.videoDecoderPath_, "", "", (losslessGeo_?losslessGeo444_:false), nbyteGeo);
+    videoDecoder.decompress( context.getVideoGeometry(), path.str() + "geometryD0", width_, height_,
+                             context.size(), bitstream, params_.videoDecoderPath_,
+                             "", "", (losslessGeo_?losslessGeo444_:false), nbyteGeo,
+                             params_.keepIntermediateFiles_ );
     sizeGeometryD0Video = bitstream.size() - sizeGeometryD0Video;
-    if (!params_.keepIntermediateFiles_) {
-      removeFiles(path.str() + "geometryD0.bin");
-      removeFiles(addVideoFormat(path.str() + "geometryD0_rec.yuv", width_, height_));
-    }
     std::cout << "geometry D0 video ->" << sizeGeometryD0Video << " B" << std::endl;
 
     // Compress D1
     auto sizeGeometryD1Video = bitstream.size();
     videoDecoder.decompress(context.getVideoGeometryD1(), path.str() + "geometryD1", width_, height_,
-      context.size(), bitstream, params_.videoDecoderPath_, "", "", (losslessGeo_?losslessGeo444_:false), nbyteGeo);
+                            context.size(), bitstream, params_.videoDecoderPath_,
+                            "", "", (losslessGeo_?losslessGeo444_:false), nbyteGeo,
+                            params_.keepIntermediateFiles_ );
     sizeGeometryD1Video = bitstream.size() - sizeGeometryD1Video;
-    if (!params_.keepIntermediateFiles_) {
-      removeFiles(path.str() + "geometryD1.bin");
-      removeFiles(addVideoFormat(path.str() + "geometryD1_rec.yuv", width_, height_));
-    }
+
     std::cout << "geometry D1 video ->" << sizeGeometryD1Video << " B" << std::endl;
     std::cout << "geometry video ->" << sizeGeometryD0Video + sizeGeometryD1Video << " B" << std::endl;
   }
   else {
     auto sizeGeometryVideo = bitstream.size();
-    if (losslessGeo_)
-      videoDecoder.decompress(context.getVideoGeometry(), path.str() + "geometry", width_, height_,
-        context.size() * 2, bitstream, params_.videoDecoderPath_, "", "", losslessGeo444_, nbyteGeo);
-    else
-      videoDecoder.decompress(context.getVideoGeometry(), path.str() + "geometry", width_, height_,
-        context.size() * 2, bitstream, params_.videoDecoderPath_, "", "", false, nbyteGeo);
+    videoDecoder.decompress(context.getVideoGeometry(), path.str() + "geometry", width_, height_,
+                            context.size() * 2, bitstream, params_.videoDecoderPath_,
+                            "", "", losslessGeo_ & losslessGeo444_, nbyteGeo,
+                            params_.keepIntermediateFiles_);
     sizeGeometryVideo = bitstream.size() - sizeGeometryVideo;
-    if( !params_.keepIntermediateFiles_ ) {
-      removeFiles( path.str() + "geometry.bin" );
-      removeFiles( addVideoFormat( path.str() + "geometry_rec.yuv", width_, height_ ) );
-    }
     std::cout << "geometry video ->" << sizeGeometryVideo << " B" << std::endl;
   }
   auto sizeOccupancyMap = bitstream.size();
@@ -137,26 +128,17 @@ int PCCDecoder::decompress( PCCBitstream &bitstream, PCCContext &context, PCCGro
 
   if (!noAttributes_ ) {
     auto sizeTextureVideo = bitstream.size();
-	const size_t nbyteTexture = 1;
+	  const size_t nbyteTexture = 1;
     videoDecoder.decompress( context.getVideoTexture(),
                              path.str() + "texture", width_, height_,
                              context.size() * 2, bitstream,
                              params_.videoDecoderPath_,
                              params_.inverseColorSpaceConversionConfig_,
                              params_.colorSpaceConversionPath_,
-                             losslessTexture_ != 0, nbyteTexture );
+                             losslessTexture_ != 0, nbyteTexture,
+                             params_.keepIntermediateFiles_ );
     sizeTextureVideo = bitstream.size() - sizeTextureVideo;
     std::cout << "texture video  ->" << sizeTextureVideo << " B" << std::endl;
-    if(!params_.keepIntermediateFiles_ ) {
-      removeFiles( path.str() + "texture.bin" );
-      removeFiles( addVideoFormat( path.str() + "texture_rec" + ( losslessTexture_ ? ".rgb" : ".yuv" ),
-                                   width_, height_, losslessTexture_ == 0 ) );
-      if( !params_.colorSpaceConversionPath_.empty() &&
-          !params_.inverseColorSpaceConversionConfig_.empty() &&
-          ( losslessTexture_ == 0 ) ) {
-        removeFiles( addVideoFormat( path.str() + "texture_rec" + ".rgb" , width_, height_ ) );
-      }
-    }
   }
   colorPointCloud( reconstructs, context, noAttributes_ != 0, params_.colorTransform_ );
   return 0;
@@ -344,36 +326,30 @@ void PCCDecoder::decompressOccupancyMap( PCCFrameContext& frame, PCCBitstream &b
     if (candidates.size() == 1) {
       blockToPatch[p] = candidates[0];
     } else {
-
       size_t candidateIndex;
       if (bBinArithCoding) {
         size_t bit0 = arithmeticDecoder.decode(candidateIndexModelBit[0]);
         if (bit0 == 0) {
           candidateIndex = 0; // Codeword: 0
-        }
-        else {
+        } else {
           size_t bit1 = arithmeticDecoder.decode(candidateIndexModelBit[1]);
           if (bit1 == 0) {
             candidateIndex = 1; // Codeword 10
-          }
-          else {
+          } else {
             size_t bit2 = arithmeticDecoder.decode(candidateIndexModelBit[2]);
             if (bit2 == 0) {
               candidateIndex = 2; // Codeword 110
-            }
-            else {
+            } else {
               size_t bit3 = arithmeticDecoder.decode(candidateIndexModelBit[3]);
               if (bit3 == 0) {
                 candidateIndex = 3; // Codeword 1110
-              }
-              else {
+              } else {
                 candidateIndex = 4; // Codeword 11110
               }
             }
           }
         }
-      }
-      else {
+      } else {
         candidateIndex = arithmeticDecoder.decode(candidateIndexModel);
       }
 
@@ -451,7 +427,6 @@ void PCCDecoder::decompressOccupancyMap( PCCFrameContext& frame, PCCBitstream &b
             occupancy = true;
           }
         } else {
-
           size_t bestTraversalOrderIndex;
           if (bBinArithCoding) {
             size_t bit1 = arithmeticDecoder.decode(traversalOrderIndexModel_Bit1);
@@ -461,14 +436,11 @@ void PCCDecoder::decompressOccupancyMap( PCCFrameContext& frame, PCCBitstream &b
           else {
             bestTraversalOrderIndex = arithmeticDecoder.decode(traversalOrderIndexModel);
           }
-
           const auto &traversalOrder = traversalOrders[bestTraversalOrderIndex];
-
           int64_t runCountMinusTwo;
           if (bBinArithCoding) {
             runCountMinusTwo = arithmeticDecoder.ExpGolombDecode(0, bModel0, runCountModel2);
-          }
-          else {
+          } else {
             runCountMinusTwo = arithmeticDecoder.decode(runCountModel);
           }
 
@@ -484,8 +456,7 @@ void PCCDecoder::decompressOccupancyMap( PCCFrameContext& frame, PCCBitstream &b
               size_t bit0 = arithmeticDecoder.decode(runLengthModel2[0]);
               const size_t runLengthIdx = (bit3 << 3) + (bit2 << 2) + (bit1 << 1) + bit0;
               runLength = runLengthInvTable[runLengthIdx];
-            }
-            else {
+            } else {
               runLength = arithmeticDecoder.decode(runLengthModel);
             }
 

@@ -61,16 +61,14 @@ public:
   ~PCCEncoder();
   void setParameters( PCCEncoderParameters params );
 
-  int compress( const PCCGroupOfFrames& sources, PCCContext &context, 
-                PCCBitstream &bitstream, PCCGroupOfFrames& reconstructs );
+  int encode( const PCCGroupOfFrames& sources, PCCContext &context,
+              PCCBitstream &bitstream, PCCGroupOfFrames& reconstructs );
 
 private:
   int  compressHeader( PCCContext &context, PCCBitstream &bitstream );
 
   void compressOccupancyMap( PCCContext &context, PCCBitstream& bitstream );
   void compressOccupancyMap( PCCFrameContext &frame, PCCBitstream& bitstream );
-
-
 
   bool generateGeometryVideo( const PCCGroupOfFrames& sources, PCCContext &context );
   bool resizeGeometryVideo( PCCContext &context );
@@ -97,7 +95,6 @@ private:
                              PCCVideo3BT &video, const size_t frameCount );
 
   PCCEncoderParameters params_;
-
 };
 
 }; //~namespace

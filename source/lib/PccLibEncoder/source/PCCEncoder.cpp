@@ -68,7 +68,7 @@ void PCCEncoder::setParameters( PCCEncoderParameters params ) {
   params_ = params; 
 }
 
-int PCCEncoder::compress( const PCCGroupOfFrames& sources, PCCContext &context,
+int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
                           PCCBitstream &bitstream, PCCGroupOfFrames& reconstructs ){
   assert( sources.size() < 256);
   if( sources.size() == 0 ) {
@@ -100,28 +100,11 @@ int PCCEncoder::compress( const PCCGroupOfFrames& sources, PCCContext &context,
     // Compress geometryD0
     auto sizeGeometryD0Video = bitstream.size();
     auto& videoGeometry = context.getVideoGeometry();
-	
-    if (params_.losslessGeo_ && params_.losslessGeo444_)
-    {
-      videoEncoder.compress(videoGeometry, path.str() + "geometryD0", (params_.geometryQP_-1), bitstream,
-        params_.geometryD0Config_, params_.videoEncoderPath_, "", "", true, nbyteGeo);
-      videoGeometry.read(addVideoFormat(path.str() + "geometryD0_rec.yuv", width, height),
-        width, height, frames.size(), nbyteGeo);
-    }
-    else
-    {
-      videoEncoder.compress(videoGeometry, path.str() + "geometryD0", (params_.geometryQP_-1), bitstream,
-        params_.geometryD0Config_, params_.videoEncoderPath_, "", "", false, nbyteGeo);
-      videoGeometry.read420(addVideoFormat(path.str() + "geometryD0_rec.yuv", width, height),
-        width, height, frames.size(), nbyteGeo);
-    }
+    videoEncoder.compress(videoGeometry, path.str() + "geometryD0", (params_.geometryQP_-1), bitstream,
+                          params_.geometryD0Config_, params_.videoEncoderPath_,
+                          "", "", "", params_.losslessGeo_ && params_.losslessGeo444_,
+                          nbyteGeo, params_.keepIntermediateFiles_);
     sizeGeometryD0Video = bitstream.size() - sizeGeometryD0Video;
-
-    if( !params_.keepIntermediateFiles_ ){
-      removeFiles( path.str() + "geometryD0.bin" );
-      removeFiles( addVideoFormat( path.str() + "geometryD0.yuv"    , width, height ) );
-      removeFiles( addVideoFormat( path.str() + "geometryD0_rec.yuv", width, height ) );
-    }  
 
     std::cout << "geometry D0 video ->" << sizeGeometryD0Video << " B ("
         << (sizeGeometryD0Video * 8.0) / (frames.size() * pointCount) << " bpp)"
@@ -136,28 +119,12 @@ int PCCEncoder::compress( const PCCGroupOfFrames& sources, PCCContext &context,
 
     // Compress geometryD1
     auto sizeGeometryD1Video = bitstream.size();
-	
-    if (params_.losslessGeo_ && params_.losslessGeo444_)
-    {
-      videoEncoder.compress(videoGeometryD1, path.str() + "geometryD1", params_.geometryQP_, bitstream,
-        params_.geometryD1Config_, params_.videoEncoderPath_, "", "", true, nbyteGeo);
-      videoGeometryD1.read(addVideoFormat(path.str() + "geometryD1_rec.yuv", width, height),
-        width, height, frames.size(), nbyteGeo);
-    }
-    else
-    {
-      videoEncoder.compress(videoGeometryD1, path.str() + "geometryD1", params_.geometryQP_, bitstream,
-        params_.geometryD1Config_, params_.videoEncoderPath_, "", "", false, nbyteGeo);
-      videoGeometryD1.read420(addVideoFormat(path.str() + "geometryD1_rec.yuv", width, height),
-        width, height, frames.size(), nbyteGeo);
-    }
-    sizeGeometryD1Video = bitstream.size() - sizeGeometryD1Video;
+    videoEncoder.compress(videoGeometryD1, path.str() + "geometryD1", params_.geometryQP_, bitstream,
+                          params_.geometryD1Config_, params_.videoEncoderPath_,
+                          "", "", "", params_.losslessGeo_ && params_.losslessGeo444_,
+                          nbyteGeo, params_.keepIntermediateFiles_);
 
-    if( !params_.keepIntermediateFiles_ ){
-      removeFiles( path.str() + "geometryD1.bin" );
-      removeFiles( addVideoFormat( path.str() + "geometryD1.yuv"    , width, height ) );
-      removeFiles( addVideoFormat( path.str() + "geometryD1_rec.yuv", width, height ) );
-    }
+    sizeGeometryD1Video = bitstream.size() - sizeGeometryD1Video;
 
     std::cout << "geometry D1 video ->" << sizeGeometryD1Video << " B ("
         << (sizeGeometryD1Video * 8.0) / (frames.size() * pointCount) << " bpp)"
@@ -167,32 +134,14 @@ int PCCEncoder::compress( const PCCGroupOfFrames& sources, PCCContext &context,
     std::cout << "geometry video ->" << sizeGeometryVideo << " B ("
         << (sizeGeometryVideo * 8.0) / (2 * frames.size() * pointCount) << " bpp)"
         << std::endl;
-  }
-  else {
+  } else {
     auto sizeGeometryVideo = bitstream.size();
     auto& videoGeometry = context.getVideoGeometry();	
-    if (params_.losslessGeo_ && params_.losslessGeo444_)
-    {
-      videoEncoder.compress(videoGeometry, path.str() + "geometry", params_.geometryQP_, bitstream,
-        params_.geometryConfig_, params_.videoEncoderPath_, "", "", true, nbyteGeo);
-      videoGeometry.read(addVideoFormat(path.str() + "geometry_rec.yuv", width, height),
-        width, height, 2 * frames.size(), nbyteGeo);
-    }
-    else
-    {
-      videoEncoder.compress(videoGeometry, path.str() + "geometry", params_.geometryQP_, bitstream,
-        params_.geometryConfig_, params_.videoEncoderPath_, "", "", false, nbyteGeo);
-        videoGeometry.read420(addVideoFormat(path.str() + "geometry_rec.yuv", width, height),
-        width, height, 2 * frames.size(), nbyteGeo);
-    }
+    videoEncoder.compress(videoGeometry, path.str() + "geometry", params_.geometryQP_, bitstream,
+                          params_.geometryConfig_, params_.videoEncoderPath_,
+                          "", "", "", params_.losslessGeo_ && params_.losslessGeo444_,
+                          nbyteGeo, params_.keepIntermediateFiles_ );
     sizeGeometryVideo = bitstream.size() - sizeGeometryVideo;
-
-    if( !params_.keepIntermediateFiles_ ){
-      removeFiles( path.str() + "geometry.bin" );
-      removeFiles( addVideoFormat( path.str() + "geometry.yuv"    , width, height ) );
-      removeFiles( addVideoFormat( path.str() + "geometry_rec.yuv", width, height ) );
-    }  
-
     std::cout << "geometry video ->" << sizeGeometryVideo << " B ("
         << (sizeGeometryVideo * 8.0) / (2 * frames.size() * pointCount) << " bpp)"
         << std::endl;
@@ -234,48 +183,15 @@ int PCCEncoder::compress( const PCCGroupOfFrames& sources, PCCContext &context,
 		const size_t nbyteTexture = 1;
     videoEncoder.compress( videoTexture,path.str() + "texture", params_.textureQP_,
                            bitstream, params_.textureConfig_,
-                           params_.videoEncoderPath_, params_.colorSpaceConversionConfig_,
-                           params_.colorSpaceConversionPath_, params_.losslessTexture_, nbyteTexture);
-    const std::string yuvFileName = addVideoFormat( path.str() + "texture_rec"  + ( params_.losslessTexture_ ? ".rgb" : ".yuv" ),
-                                                    width, height, params_.losslessTexture_ == 0 );
-    if (params_.inverseColorSpaceConversionConfig_.empty() || params_.colorSpaceConversionPath_.empty() ||
-        params_.losslessTexture_ ) {
-      if ( params_.losslessTexture_ )
-        videoTexture.read( yuvFileName, width, height, textureFrameCount, nbyteTexture);
-      else
-        videoTexture.read420(yuvFileName, width, height, textureFrameCount, nbyteTexture);
-    } else {
-      std::stringstream cmd;
-      const std::string rgbFileName = addVideoFormat( path.str() + "texture_rec.rgb", width, height );
-      cmd << params_.colorSpaceConversionPath_ << " -f " << params_.inverseColorSpaceConversionConfig_
-          << " -p SourceFile=\"" << yuvFileName << "\" -p OutputFile=\"" << rgbFileName
-          << "\" -p SourceWidth=" << width << " -p SourceHeight=" << height
-          << " -p NumberOfFrames=" << textureFrameCount;
-      std::cout << cmd.str() << '\n';
-      if (int ret = pcc::system(cmd.str().c_str())) {
-        std::cout << "Error: can't run system command!" << std::endl;
-        return ret;
-      }
-      videoTexture.read(rgbFileName, width, height, textureFrameCount, nbyteTexture);
-    }
-
+                           params_.videoEncoderPath_,
+                           params_.colorSpaceConversionConfig_,
+                           params_.inverseColorSpaceConversionConfig_,
+                           params_.colorSpaceConversionPath_,
+                           params_.losslessTexture_, nbyteTexture,
+                           params_.keepIntermediateFiles_ );
     sizeTextureVideo = bitstream.size() - sizeTextureVideo;
     std::cout << "texture video  ->" << sizeTextureVideo << " B ("
         << (sizeTextureVideo * 8.0) / pointCount << " bpp)" << std::endl;
-    if( !params_.keepIntermediateFiles_ ) {
-      removeFiles( path.str() + "texture.bin" );
-      removeFiles( addVideoFormat( path.str() + "texture"     + ( params_.losslessTexture_ ? ".rgb" : ".yuv" ),
-                                   width, height, params_.losslessTexture_ == 0 ) );
-      removeFiles( addVideoFormat( path.str() + "texture_rec" + ( params_.losslessTexture_ ? ".rgb" : ".yuv" ),
-                                   width, height, params_.losslessTexture_ == 0 ) );
-      if (!params_.colorSpaceConversionConfig_.empty() &&
-          !params_.colorSpaceConversionPath_.empty() &&
-          !params_.inverseColorSpaceConversionConfig_.empty() &&
-          ( params_.losslessTexture_ == 0 )) {
-        removeFiles( addVideoFormat( path.str() + "texture.rgb",     width, height ) );
-        removeFiles( addVideoFormat( path.str() + "texture_rec.rgb", width, height ) );
-      }
-    }
   }
   colorPointCloud( reconstructs, context, params_.noAttributes_ != 0, params_.colorTransform_ );
   return 0;
@@ -292,9 +208,6 @@ void PCCEncoder::printMap(std::vector<bool> img, const size_t sizeU, const size_
   }
   std::cout << std::endl;
 }
-
-
-
 
 void PCCEncoder::spatialConsistencyPack(PCCFrameContext& frame, PCCFrameContext &prevFrame) {
   auto& width   = frame.getWidth(); 
@@ -419,8 +332,9 @@ void PCCEncoder::spatialConsistencyPack(PCCFrameContext& frame, PCCFrameContext 
 
   if (frame.getMissedPointsPatch().size() > 0) {
     packMissedPointsPatch(frame, occupancyMap, width, height, occupancySizeU, occupancySizeV, maxOccupancyRow);
-  } else
+  } else {
     printMap(occupancyMap, occupancySizeU, occupancySizeV);
+  }
   std::cout << "actualImageSizeU " << width  << std::endl;
   std::cout << "actualImageSizeV " << height << std::endl;
 }
@@ -458,7 +372,6 @@ void PCCEncoder::pack( PCCFrameContext& frame  ) {
             const size_t y = v + v0;
             for (size_t u0 = 0; u0 < patch.getSizeU0(); ++u0) {
               const size_t x = u + u0;
-
               if (occupancy[v0 * patch.getSizeU0() + u0] && occupancyMap[y * occupancySizeU + x]) {
                 canFit = false;
                 break;
@@ -496,9 +409,9 @@ void PCCEncoder::pack( PCCFrameContext& frame  ) {
 
   if (frame.getMissedPointsPatch().size() > 0) {
     packMissedPointsPatch(frame, occupancyMap, width, height, occupancySizeU, occupancySizeV, maxOccupancyRow);
+  } else {
+    printMap( occupancyMap, occupancySizeU, occupancySizeV );
   }
-  else
-   printMap( occupancyMap, occupancySizeU, occupancySizeV );
   std::cout << "actualImageSizeU " << width  << std::endl;
   std::cout << "actualImageSizeV " << height << std::endl;
 }
@@ -1154,11 +1067,7 @@ void PCCEncoder::compressOccupancyMap( PCCFrameContext& frame, PCCBitstream &bit
   for (size_t patchIndex = 0; patchIndex < patchCount; ++patchIndex) {
     const auto &patch = patches[patchIndex];
     maxU0 = (std::max)(maxU0, patch.getU0());
-#if PCC_CORRECT_MAX_V0
     maxV0 = (std::max)(maxV0, patch.getV0());
-#else
-    maxV0 = (std::max)(maxU0, patch.getV0());
-#endif
     maxU1 = (std::max)(maxU1, patch.getU1());
     maxV1 = (std::max)(maxV1, patch.getV1());
     maxD1 = (std::max)(maxD1, patch.getD1());
@@ -1279,46 +1188,37 @@ void PCCEncoder::compressOccupancyMap( PCCFrameContext& frame, PCCBitstream &bit
       for (uint32_t i = 0; i < candidateCount; ++i) {
         if (candidates[i] == patchIndex) {
           found = true;
-
           if (bBinArithCoding) {
             if (i == 0) {
               arithmeticEncoder.encode(0, candidateIndexModelBit[0]);
-            }
-            else if (i == 1) {
+            } else if (i == 1) {
               arithmeticEncoder.encode(1, candidateIndexModelBit[0]);
               arithmeticEncoder.encode(0, candidateIndexModelBit[1]);
-            }
-            else if (i == 2) {
+            } else if (i == 2) {
               arithmeticEncoder.encode(1, candidateIndexModelBit[0]);
               arithmeticEncoder.encode(1, candidateIndexModelBit[1]);
               arithmeticEncoder.encode(0, candidateIndexModelBit[2]);
-            }
-            else if (i == 3) {
+            } else if (i == 3) {
               arithmeticEncoder.encode(1, candidateIndexModelBit[0]);
               arithmeticEncoder.encode(1, candidateIndexModelBit[1]);
               arithmeticEncoder.encode(1, candidateIndexModelBit[2]);
               arithmeticEncoder.encode(0, candidateIndexModelBit[3]);
             }
-          }
-          else {
+          } else {
             arithmeticEncoder.encode(i, candidateIndexModel);
           }
-
           break;
         }
       }
       if (!found) {
-
         if (bBinArithCoding) {
           arithmeticEncoder.encode(1, candidateIndexModelBit[0]);
           arithmeticEncoder.encode(1, candidateIndexModelBit[1]);
           arithmeticEncoder.encode(1, candidateIndexModelBit[2]);
           arithmeticEncoder.encode(1, candidateIndexModelBit[3]);
-        }
-        else {
+        } else {
           arithmeticEncoder.encode(uint32_t(params_.maxCandidateCount_), candidateIndexModel);
         }
-
         EncodeUInt32(uint32_t(patchIndex), bitCountPatchIndex, arithmeticEncoder, bModel0);
       }
     }
@@ -1445,8 +1345,7 @@ void PCCEncoder::compressOccupancyMap( PCCFrameContext& frame, PCCBitstream &bit
             arithmeticEncoder.encode(uint32_t(bit1), traversalOrderIndexModel_Bit1);
             arithmeticEncoder.encode(uint32_t(bit0), traversalOrderIndexModel_Bit0);
             arithmeticEncoder.ExpGolombEncode(uint32_t(runCountMinusTwo), 0, bModel0, runCountModel2);
-          }
-          else {
+          } else {
             arithmeticEncoder.encode(uint32_t(bestTraversalOrderIndex), traversalOrderIndexModel);
             arithmeticEncoder.encode(runCountMinusTwo, runCountModel);
           }
@@ -1455,7 +1354,6 @@ void PCCEncoder::compressOccupancyMap( PCCFrameContext& frame, PCCBitstream &bit
           bool occupancy0 = block0[location0.second * blockSize0 + location0.first];
           arithmeticEncoder.encode(occupancy0, occupancyModel);
           for (size_t r = 0; r < runCountMinusOne; ++r) {
-
             if (bBinArithCoding) {
               size_t runLengthIdx = runLengthTable[bestRuns[r]];
               size_t bit3 = (runLengthIdx >> 3) & 0x1;
@@ -1466,11 +1364,9 @@ void PCCEncoder::compressOccupancyMap( PCCFrameContext& frame, PCCBitstream &bit
               arithmeticEncoder.encode(uint32_t(bit2), runLengthModel2[2]);
               arithmeticEncoder.encode(uint32_t(bit1), runLengthModel2[1]);
               arithmeticEncoder.encode(uint32_t(bit0), runLengthModel2[0]);
-            }
-            else {
+            } else {
               arithmeticEncoder.encode(uint32_t(bestRuns[r]), runLengthModel);
             }
-
           }
         }
       }

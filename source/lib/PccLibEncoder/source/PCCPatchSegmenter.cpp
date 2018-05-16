@@ -41,7 +41,6 @@
 
 using namespace pcc;
 
-
 void PCCPatchSegmenter3::setNbThread( size_t nbThread ) {
   nbThread_ = nbThread;
   if( nbThread_ > 0 ) {

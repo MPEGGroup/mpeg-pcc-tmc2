@@ -45,9 +45,9 @@
 #include <program_options_lite.h>
 #include <tbb/tbb.h>
 
-bool ParseParameters( int argc, char *argv[], pcc::PCCDecoderParameters& params );
-void Usage();
-int DecompressVideo(const pcc::PCCDecoderParameters &params,
+bool parseParameters( int argc, char *argv[], pcc::PCCDecoderParameters& params );
+void usage();
+int decompressVideo(const pcc::PCCDecoderParameters &params,
                     pcc::chrono::StopwatchUserTime&);
 
 #endif /* PCC_APP_ENCODER_H */

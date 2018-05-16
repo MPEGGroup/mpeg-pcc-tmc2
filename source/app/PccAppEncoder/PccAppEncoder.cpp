@@ -41,7 +41,7 @@ int main(int argc, char *argv[]) {
             << std::endl;
 
   PCCEncoderParameters params;
-  if (!ParseParameters(argc, argv, params )) {
+  if (!parseParameters(argc, argv, params )) {
     return -1;
   }
   if( params.nbThread_ > 0 ) {
@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
   pcc::chrono::StopwatchUserTime clockUser;
 
   clockWall.start();
-  int ret = CompressVideo(params, clockUser);
+  int ret = compressVideo(params, clockUser);
   clockWall.stop();
 
   using namespace std::chrono;
@@ -88,7 +88,7 @@ static std::istream &operator>>(std::istream &in, ColorTransform &val) { return 
 //---------------------------------------------------------------------------
 // :: Command line / config parsing
 
-bool ParseParameters(int argc, char *argv[], PCCEncoderParameters& params ) {
+bool parseParameters(int argc, char *argv[], PCCEncoderParameters& params ) {
 
   namespace po = df::program_options_lite;
 
@@ -383,7 +383,7 @@ bool ParseParameters(int argc, char *argv[], PCCEncoderParameters& params ) {
   return true;
 }
 
-int CompressVideo( const PCCEncoderParameters& params, StopwatchUserTime &clock) {
+int compressVideo( const PCCEncoderParameters& params, StopwatchUserTime &clock) {
   const size_t startFrameNumber0 = params.startFrameNumber_;
   const size_t endFrameNumber0 = params.startFrameNumber_ + params.frameCount_;
   const size_t groupOfFramesSize0 = (std::max)(size_t(1), params.groupOfFramesSize_);
@@ -415,7 +415,7 @@ int CompressVideo( const PCCEncoderParameters& params, StopwatchUserTime &clock)
 
     std::cout << "Compressing group of frames " << contextIndex << ": " << startFrameNumber
               << " -> " << endFrameNumber << "..." << std::endl;
-    int ret = encoder.compress( sources, context, bitstream, reconstructs );
+    int ret = encoder.encode( sources, context, bitstream, reconstructs );
 
     clock.stop();
 
