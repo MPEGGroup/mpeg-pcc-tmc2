@@ -34,6 +34,7 @@
 
 using namespace std;
 using namespace pcc;
+using pcc::chrono::StopwatchUserTime;
 
 int main(int argc, char *argv[]) {
   std::cout << "PccAppEncoder v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MINOR << std::endl
@@ -48,18 +49,25 @@ int main(int argc, char *argv[]) {
   }
 
   // Timers to count elapsed wall/user time
-  pcc::chrono::Stopwatch<std::chrono::steady_clock> clock_wall;
-  pcc::chrono::Stopwatch<pcc::chrono::utime_inc_children_clock> clock_user;
+  pcc::chrono::Stopwatch<std::chrono::steady_clock> clockWall;
+  pcc::chrono::StopwatchUserTime clockUser;
 
-  clock_wall.start();
-  int ret = CompressVideo( params, clock_user);
-  clock_wall.stop();
+  clockWall.start();
+  int ret = CompressVideo(params, clockUser);
+  clockWall.stop();
 
   using namespace std::chrono;
-  auto total_wall = duration_cast<milliseconds>(clock_wall.count()).count();
-  auto total_user = duration_cast<milliseconds>(clock_user.count()).count();
-  std::cout << "Processing time (wall): " << total_wall / 1000.0 << " s\n";
-  std::cout << "Processing time (user): " << total_user / 1000.0 << " s\n";
+  using ms = milliseconds;
+  auto totalWall = duration_cast<ms>(clockWall.count()).count();
+  std::cout << "Processing time (wall): " << totalWall / 1000.0 << " s\n";
+
+  auto totalUserSelf = duration_cast<ms>(clockUser.self.count()).count();
+  std::cout << "Processing time (user.self): "
+            << totalUserSelf / 1000.0 << " s\n";
+
+  auto totalUserChild = duration_cast<ms>(clockUser.children.count()).count();
+  std::cout << "Processing time (user.children): "
+            << totalUserChild / 1000.0 << " s\n";
 
   return ret;
 }
@@ -375,7 +383,7 @@ bool ParseParameters(int argc, char *argv[], PCCEncoderParameters& params ) {
   return true;
 }
 
-int CompressVideo( const PCCEncoderParameters& params, Stopwatch &clock) {
+int CompressVideo( const PCCEncoderParameters& params, StopwatchUserTime &clock) {
   const size_t startFrameNumber0 = params.startFrameNumber_;
   const size_t endFrameNumber0 = params.startFrameNumber_ + params.frameCount_;
   const size_t groupOfFramesSize0 = (std::max)(size_t(1), params.groupOfFramesSize_);

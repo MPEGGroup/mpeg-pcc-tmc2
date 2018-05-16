@@ -46,10 +46,9 @@
 #include <program_options_lite.h>
 #include <tbb/tbb.h>
 
-typedef pcc::chrono::Stopwatch<pcc::chrono::utime_inc_children_clock> Stopwatch;
-
 bool ParseParameters(int argc, char *argv[], pcc::PCCEncoderParameters& params );
 void Usage();
-int  CompressVideo(  const pcc::PCCEncoderParameters& params, Stopwatch &);
+int CompressVideo(const pcc::PCCEncoderParameters& params,
+                  pcc::chrono::StopwatchUserTime&);
 
 #endif /* PCC_APP_DECODER_H */
