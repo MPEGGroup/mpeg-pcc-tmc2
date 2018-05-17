@@ -31,16 +31,20 @@ case "${MACHINE}" in
   *)     cmake -H${CURDIR} -B${CURDIR}/build/${MODE} -G "Visual Studio 14 2015 Win64" ${CMAKE_FLAGS};;
 esac
 
+
+
 case "${MACHINE}" in
   Linux) make -C ${CURDIR}/build/${MODE} -j ${NUMBER_OF_PROCESSORS} ${CMD} -s;; 
   Mac)   echo "Please, open the generated xcode project and build it ";;
-  *)     MSBUILD='/c/Program\ Files\ \(x86\)/MSBuild/14.0/Bin/MSBuild.exe';
-         if [ -f ${MSBUILD[@]} ] 
+  *)     MSBUILD="/c/Program Files (x86)/MSBuild/14.0/Bin/MSBuild.exe"
+         printf -v MSBUILDPATH '%q' "$MSBUILD"
+         MSBUILDFOUND=`ls "${MSBUILD[@]}" | grep "No such file or directory"`
+         if [ "$MSBUILDFOUND" == "" ] 
          then 
-           eval ${MSBUILD[@]} ./build/${MODE}/TMC2.sln /property:Configuration=${MODE};
+           eval ${MSBUILDPATH[@]} ./build/${MODE}/TMC2.sln /property:Configuration=${MODE};
          else
            echo "MsBuild not found ($MSBUILD)";
-           echo "Please, open the generated visual studio solution and build it ";         
+           echo "Please, open the generated visual studio solution and build it ";        
          fi
   ;;
 esac 
