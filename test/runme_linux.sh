@@ -6,9 +6,10 @@ EXTERNAL=$( dirname $MAINDIR )/external_pkg
 ## Input parameters
 SRCDIR=${MAINDIR}/../ply/ # note: this directory must containt: http://mpegfs.int-evry.fr/MPEG/PCC/DataSets/pointCloud/CfP/datasets/Dynamic_Objects/People                            
 CFGDIR=${MAINDIR}/cfg/
-RATE=2;
-COND=3;
+
 SEQ=25; 
+COND=3;
+RATE=2;
 FRAMECOUNT=1;
 THREAD=1;
 
@@ -46,10 +47,18 @@ else
 fi
 
 case $COND in
-  1) CFGCOMMON="common/ctc-common-lossless-geometry.cfg";          CFGCONDITION="condition/ctc-all-intra-lossless-geometry.cfg";;
-  2) CFGCOMMON="common/ctc-common-lossless-geometry-texture.cfg";  CFGCONDITION="condition/ctc-all-intra-lossless-geometry-texture.cfg";;
-  3) CFGCOMMON="common/ctc-common.cfg";                            CFGCONDITION="condition/ctc-all-intra.cfg";;
-  4) CFGCOMMON="common/ctc-common.cfg";                            CFGCONDITION="condition/ctc-random-access.cfg";;  
+  1) CFGCOMMON="common/ctc-common-lossless-geometry.cfg";;         
+  2) CFGCOMMON="common/ctc-common-lossless-geometry-texture.cfg";; 
+  3) CFGCOMMON="common/ctc-common.cfg";;                           
+  4) CFGCOMMON="common/ctc-common.cfg";;                           
+  *) echo "Condition not correct ($COND)";   exit -1;;
+esac
+
+case $COND in
+  1) CFGCONDITION="condition/ctc-all-intra-lossless-geometry.cfg";;
+  2) CFGCONDITION="condition/ctc-all-intra-lossless-geometry-texture.cfg";;
+  3) CFGCONDITION="condition/ctc-all-intra.cfg";;
+  4) CFGCONDITION="condition/ctc-random-access.cfg";;  
   *) echo "Condition not correct ($COND)";   exit -1;;
 esac
 
@@ -68,22 +77,32 @@ if [ ! -f $DECODER    ] ; then DECODER=${MAINDIR}/bin/PccAppDecoder;            
 if [ ! -f $DECODER    ] ; then DECODER=${MAINDIR}/bin/Release/PccAppDecoder.exe; fi
 if [ ! -f $DECODER    ] ; then DECODER=${MAINDIR}/bin/Debug/PccAppDecoder.exe;   fi
 
-if [ ! -f $HDRCONVERT ] ; then HDRCONVERT=${EXTERNAL}/HDRTools-0.17-dev/bin/HDRConvert.exe; fi
-if [ ! -f $HDRCONVERT ] ; then HDRCONVERT=${EXTERNAL}/HDRTools-0.17-dev/bin/HDRConvert;     fi
-if [ ! -f $HDRCONVERT ] ; then HDRCONVERT=${EXTERNAL}/HDRTools/bin/HDRConvert;              fi
+if [ ! -f $HDRCONVERT ] ; then HDRCONVERT=${EXTERNAL}/HDRTools/bin/HDRConvert;     fi
+if [ ! -f $HDRCONVERT ] ; then HDRCONVERT=${EXTERNAL}/HDRTools/bin/HDRConvert.exe; fi
 
-if [ ! -f $HMENCODER ] ; then HMENCODER=${EXTERNAL}/HM16.16/bin/vc2015/x64/Release/TAppEncoder.exe; fi
-if [ ! -f $HMENCODER ] ; then HMENCODER=${EXTERNAL}/HM16.16/TAppEncoder;                            fi
-if [ ! -f $HMENCODER ] ; then HMENCODER=${EXTERNAL}/hm/bin/TAppEncoder;                             fi
-
-if [ ! -f $HMDECODER ] ; then HMDECODER=${EXTERNAL}/HM16.16/bin/vc2015/x64/Release/TAppDecoder.exe; fi
-if [ ! -f $HMDECODER ] ; then HMDECODER=${EXTERNAL}/HM16.16/bin/TAppDecoder;                        fi
-if [ ! -f $HMDECODER ] ; then HMDECODER=${EXTERNAL}/hm/bin/TAppDecoder;                             fi
+if [ $COND == 3 -o $COND == 4 ] 
+then
+  if [ ! -f $HMENCODER ] ; then HMENCODER=${EXTERNAL}/HM-16.16/TAppEncoderStatic;                      fi
+  if [ ! -f $HMENCODER ] ; then HMENCODER=${EXTERNAL}/HM-16.16/bin/vc2015/x64/Release/TAppEncoder.exe; fi
+  if [ ! -f $HMENCODER ] ; then HMENCODER=${EXTERNAL}/HM-16.16/bin/vc2015/x64/Debug/TAppEncoder.exe;   fi
+  
+  if [ ! -f $HMDECODER ] ; then HMDECODER=${EXTERNAL}/HM-16.16/bin/TAppDecoderStatic;                  fi
+  if [ ! -f $HMDECODER ] ; then HMDECODER=${EXTERNAL}/HM-16.16/bin/vc2015/x64/Release/TAppDecoder.exe; fi
+  if [ ! -f $HMDECODER ] ; then HMDECODER=${EXTERNAL}/HM-16.16/bin/vc2015/x64/Debug/TAppDecoder.exe;   fi
+else
+  if [ ! -f $HMENCODER ] ; then HMENCODER=${EXTERNAL}/HM-16.14+SCM-8.3/TAppEncoderStatic;                      fi
+  if [ ! -f $HMENCODER ] ; then HMENCODER=${EXTERNAL}/HM-16.14+SCM-8.3/bin/vc2015/x64/Release/TAppEncoder.exe; fi
+  if [ ! -f $HMENCODER ] ; then HMENCODER=${EXTERNAL}/HM-16.14+SCM-8.3/bin/vc2015/x64/Debug/TAppEncoder.exe;   fi
+                                                     
+  if [ ! -f $HMDECODER ] ; then HMDECODER=${EXTERNAL}/HM-16.14+SCM-8.3/bin/TAppDecoderStatic;                  fi
+  if [ ! -f $HMDECODER ] ; then HMDECODER=${EXTERNAL}/HM-16.14+SCM-8.3/bin/vc2015/x64/Release/TAppDecoder.exe; fi
+  if [ ! -f $HMDECODER ] ; then HMDECODER=${EXTERNAL}/HM-16.14+SCM-8.3/bin/vc2015/x64/Debug/TAppDecoder.exe;   fi
+fi
 
 ## Parameters and pathes check
 if [ ! -f $ENCODER    ] ; then echo "Can't find PccAppEncoder, please set.     ($ENCODER )";   exit -1; fi
 if [ ! -f $DECODER    ] ; then echo "Can't find PccAppDecoder, please set.     ($DECODER )";   exit -1; fi
-if [ ! -f $HDRCONVERT ] ; then echo "Can't find HdrConverts, please set.       ($HDRCONVERT)"; exit -1; fi
+if [ ! -f $HDRCONVERT ] ; then echo "Can't find HdrConvert, please set.       ($HDRCONVERT)"; exit -1; fi
 if [ ! -f $HMENCODER  ] ; then echo "Can't find TAppEncoderStatic, please set. ($HMENCODER)";  exit -1; fi
 if [ ! -f $HMDECODER  ] ; then echo "Can't find TAppDecoderStatic, please set. ($HMDECODER)";  exit -1; fi
 

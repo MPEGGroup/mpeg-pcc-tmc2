@@ -41,8 +41,8 @@ namespace pcc {
 
 class PCCGroupOfFrames;
 class PCCFrameContext;
-typedef pcc::PCCVideo<uint8_t, 3> PCCVideo3BT;
-typedef pcc::PCCVideo<uint16_t, 3> PCCVideo3BG;
+typedef pcc::PCCVideo<uint8_t, 3>  PCCVideoTexture;
+typedef pcc::PCCVideo<uint16_t, 3> PCCVideoGeometry;
 
 class PCCContext {
  public:
@@ -56,9 +56,9 @@ class PCCContext {
 
   PCCFrameContext& operator[]( int i ) { return frames_[i]; }
   std::vector<PCCFrameContext>& getFrames() { return frames_; }
-  PCCVideo3BG& getVideoGeometry() { return videoGeometry_; }
-  PCCVideo3BG& getVideoGeometryD1() { return videoGeometryD1_; }
-  PCCVideo3BT& getVideoTexture() { return videoTexture_; }
+  PCCVideoGeometry& getVideoGeometry() { return videoGeometry_; }
+  PCCVideoGeometry& getVideoGeometryD1() { return videoGeometryD1_; }
+  PCCVideoTexture&  getVideoTexture() { return videoTexture_; }
 
   void setIndex( size_t i ) { index_ = i; }
   size_t getIndex(){ return index_; }
@@ -71,9 +71,9 @@ class PCCContext {
   size_t width_;
   size_t height_;
   std::vector<PCCFrameContext> frames_;
-  PCCVideo3BG videoGeometry_;
-  PCCVideo3BG videoGeometryD1_;
-  PCCVideo3BT videoTexture_;
+  PCCVideoGeometry videoGeometry_;
+  PCCVideoGeometry videoGeometryD1_;
+  PCCVideoTexture  videoTexture_;
 };
 }; //~namespace
 

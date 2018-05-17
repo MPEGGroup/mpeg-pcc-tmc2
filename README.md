@@ -54,7 +54,7 @@ Further help text describing option usage is available using "./bin/PccAppEncode
 	--config=cfg/condition/ctc-all-intra.cfg \
 	--config=cfg/sequence/longdress_vox10.cfg \
 	--config=cfg/rate/ctc-r3.cfg \
-	--uncompressedDataFolder=/home/wp21/PCC/contents/mpeg_datasets/CfP/datasets/Dynamic_Objects/People/ \
+	--uncompressedDataFolder=~/mpeg_datasets/CfP/datasets/Dynamic_Objects/People/ \
 	--frameCount=1 \
 	--videoEncoderPath=../external/HM-16.16/bin/TAppEncoderStatic \
 	--colorSpaceConversionPath=../external/HDRTools/bin/HDRConvert \

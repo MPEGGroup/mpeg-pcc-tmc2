@@ -113,8 +113,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
     // Form differential video geometryD1
     auto& videoGeometryD1 = context.getVideoGeometryD1();
     for (size_t f = 0; f < frames.size(); ++f) {
-      PCCImage3BG &frame1 = videoGeometryD1.getFrame(f);
-      predictGeometryFrame(frames[f], videoGeometry.getFrame(f), frame1);
+      auto &frame1 = videoGeometryD1.getFrame(f);
+      predictGeometryFrame( frames[f], videoGeometry.getFrame(f), frame1 );
     }
 
     // Compress geometryD1
@@ -163,9 +163,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
       params_.losslessGeo_,
       params_.losslessGeo444_,
       params_.nbThread_,
-      params_.absoluteD1_,
-      params_.constrainedPack_,
-      params_.binArithCoding_
+      params_.absoluteD1_
   };
   generatePointCloud( reconstructs, context, generatePointCloudParameters );
 
@@ -486,7 +484,8 @@ void PCCEncoder::packMissedPointsPatch(PCCFrameContext &frame,
 
 bool PCCEncoder::generateGeometryVideo( const PCCPointSet3& source, PCCFrameContext& frame,
                                         const PCCPatchSegmenter3Parameters segmenterParams,
-                                        PCCVideo3BG &videoGeometry, PCCFrameContext &prevFrame , size_t frameIndex) {
+										PCCVideoGeometry &videoGeometry, PCCFrameContext &prevFrame ,
+										size_t frameIndex) {
   if (!source.getPointCount()) {
     return false;
   }
@@ -549,7 +548,7 @@ void PCCEncoder::generateOccupancyMap( PCCFrameContext& frame ) {
   }
 }
 
-void PCCEncoder::generateIntraImage( PCCFrameContext& frame, const size_t depthIndex, PCCImage3BG &image) {
+void PCCEncoder::generateIntraImage( PCCFrameContext& frame, const size_t depthIndex, PCCImageGeometry &image) {
   auto& width  = frame.getWidth();
   auto& height = frame.getHeight();
   image.resize( width, height );
@@ -601,7 +600,7 @@ void PCCEncoder::generateIntraImage( PCCFrameContext& frame, const size_t depthI
   }
 }
 
-bool PCCEncoder::predictGeometryFrame( PCCFrameContext& frame, const PCCImage3BG &reference, PCCImage3BG &image) {
+bool PCCEncoder::predictGeometryFrame( PCCFrameContext& frame, const PCCImageGeometry &reference, PCCImageGeometry &image) {
   assert(reference.getWidth() ==  image.getWidth());
   assert(reference.getHeight() == image.getHeight());
   const size_t refWidth  = reference.getWidth();
@@ -819,16 +818,15 @@ bool PCCEncoder::dilateGeometryVideo( PCCContext &context) {
     if (!params_.absoluteD1_) {
       videoGeometry.resize(shift + 1);
       videoGeometryD1.resize(shift + 1);
-      PCCImage3BG &frame1 = videoGeometry.getFrame(shift);
+      auto &frame1 = videoGeometry.getFrame(shift);
       generateIntraImage(frame, 0, frame1);
-      PCCImage3BG &frame2 = videoGeometryD1.getFrame(shift);
+      auto &frame2 = videoGeometryD1.getFrame(shift);
       generateIntraImage(frame, 1, frame2);
       dilate(frame, videoGeometry.getFrame(shift));
-    }
-    else {
+    } else {
       videoGeometry.resize( shift + 2 );
       for (size_t f = 0; f < 2; ++f) {
-        PCCImage3BG &frame1 = videoGeometry.getFrame(shift + f);
+        auto &frame1 = videoGeometry.getFrame(shift + f);
         generateIntraImage(frame, f, frame1);
         dilate(frame, videoGeometry.getFrame(shift + f));
       }
@@ -975,7 +973,7 @@ bool PCCEncoder::generateTextureVideo( const PCCGroupOfFrames& sources, PCCGroup
 }
 
 bool PCCEncoder::generateTextureVideo( const PCCPointSet3& reconstruct, PCCFrameContext& frame,
-                                       PCCVideo3BT &video, const size_t frameCount ) {
+                                       PCCVideoTexture &video, const size_t frameCount ) {
   auto& pointToPixel = frame.getPointToPixel();
   const size_t pointCount = reconstruct.getPointCount();
   if (!pointCount || !reconstruct.hasColors()) {

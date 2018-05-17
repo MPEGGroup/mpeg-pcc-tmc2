@@ -47,12 +47,12 @@ class PCCContext;
 class PCCFrameContext;
 template <typename T, size_t N>
 class PCCVideo;
-typedef pcc::PCCVideo<uint8_t, 3> PCCVideo3BT;
-typedef pcc::PCCVideo<uint16_t, 3> PCCVideo3BG;
+typedef pcc::PCCVideo<uint8_t,  3> PCCVideoTexture;
+typedef pcc::PCCVideo<uint16_t, 3> PCCVideoGeometry;
 template <typename T, size_t N>
 class PCCImage;
-typedef pcc::PCCImage<uint8_t, 3> PCCImage3BT;
-typedef pcc::PCCImage<uint16_t, 3> PCCImage3BG;
+typedef pcc::PCCImage<uint8_t,  3> PCCImageTexture;
+typedef pcc::PCCImage<uint16_t, 3> PCCImageGeometry;
 struct PCCPatchSegmenter3Parameters; 
 
 class PCCEncoder : public PCCCodec {
@@ -84,15 +84,15 @@ private:
   void spatialConsistencyPack(PCCFrameContext& frame, PCCFrameContext &prevFrame);
   void generateOccupancyMap( PCCFrameContext& frameContext );
   void printMap(std::vector<bool> img, const size_t sizeU, const size_t sizeV);
-  void generateIntraImage( PCCFrameContext& frameContext, const size_t depthIndex, PCCImage3BG &image);
-  bool predictGeometryFrame( PCCFrameContext& frameContext, const PCCImage3BG &reference, PCCImage3BG &image);
+  void generateIntraImage( PCCFrameContext& frameContext, const size_t depthIndex, PCCImageGeometry &image);
+  bool predictGeometryFrame( PCCFrameContext& frameContext, const PCCImageGeometry &reference, PCCImageGeometry &image);
   void generateMissedPointsPatch(const PCCPointSet3& source, PCCFrameContext& frameContext);
   void sortMissedPointsPatch(PCCFrameContext& frameContext);
   bool generateGeometryVideo( const PCCPointSet3& source, PCCFrameContext& frameContext,
                              const PCCPatchSegmenter3Parameters segmenterParams,
-                             PCCVideo3BG &videoGeometry, PCCFrameContext &prevFrame, size_t frameIndex);
+                             PCCVideoGeometry &videoGeometry, PCCFrameContext &prevFrame, size_t frameIndex);
   bool generateTextureVideo( const PCCPointSet3& reconstruct, PCCFrameContext& frameContext,
-                             PCCVideo3BT &video, const size_t frameCount );
+		  	  	  	  	  	 PCCVideoTexture &video, const size_t frameCount );
 
   PCCEncoderParameters params_;
 };

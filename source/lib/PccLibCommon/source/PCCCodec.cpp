@@ -54,12 +54,11 @@ void PCCCodec::generatePointCloud( PCCGroupOfFrames& reconstructs, PCCContext& c
   auto& frames = context.getFrames();
   auto &videoGeometry = context.getVideoGeometry();
   auto &videoGeometryD1 = context.getVideoGeometryD1();
-
   for( size_t i = 0; i < frames.size(); i++ ) {
     std::vector<uint32_t> partition;
     generatePointCloud( reconstructs[i], frames[i], videoGeometry, videoGeometryD1, params, partition );
     if (!params.losslessGeo_ ) {
-      smoothPointCloud( reconstructs[i], frames[i], partition, params );
+      smoothPointCloud( reconstructs[i], partition, params );
     }
   }
 }
@@ -78,7 +77,7 @@ bool PCCCodec::colorPointCloud( PCCGroupOfFrames& reconstructs, PCCContext& cont
 }
 
 void PCCCodec::generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext &frame,
-                                   const PCCVideo3BG &video, const PCCVideo3BG &videoD1,
+                                   const PCCVideoGeometry &video, const PCCVideoGeometry &videoD1,
                                    const GeneratePointCloudParameters params,
                                    std::vector<uint32_t> &partition ) {
   auto& patches      = frame.getPatches();
@@ -246,7 +245,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext &f
   }
 }
 
-void PCCCodec::smoothPointCloud( PCCPointSet3& reconstruct, PCCFrameContext& frame,
+void PCCCodec::smoothPointCloud( PCCPointSet3& reconstruct,
                                  const std::vector<uint32_t> &partition,
                                  const GeneratePointCloudParameters params ) {
   const size_t pointCount = reconstruct.getPointCount();
@@ -314,7 +313,7 @@ void PCCCodec::smoothPointCloud( PCCPointSet3& reconstruct, PCCFrameContext& fra
   });
 }
 bool PCCCodec::colorPointCloud( PCCPointSet3& reconstruct, PCCFrameContext& frame,
-                                const PCCVideo3BT &video, const bool noAttributes ) {
+                                const PCCVideoTexture &video, const bool noAttributes ) {
   if( noAttributes ) {
     for (auto& color : reconstruct.getColors() ) {
       for (size_t c = 0; c < 3; ++c) {
