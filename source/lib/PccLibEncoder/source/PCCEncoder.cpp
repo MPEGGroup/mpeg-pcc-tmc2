@@ -163,9 +163,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
       params_.losslessGeo_,
       params_.losslessGeo444_,
       params_.nbThread_,
-      params_.absoluteD1_,
-      params_.constrainedPack_,
-      params_.binArithCoding_
+      params_.absoluteD1_
   };
   generatePointCloud( reconstructs, context, generatePointCloudParameters );
 

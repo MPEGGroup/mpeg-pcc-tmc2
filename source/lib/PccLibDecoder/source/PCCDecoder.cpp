@@ -121,8 +121,7 @@ int PCCDecoder::decode( PCCBitstream &bitstream, PCCContext &context, PCCGroupOf
       losslessGeo_ != 0,
       losslessGeo444_ != 0,
       params_.nbThread_,
-      absoluteD1_,
-      binArithCoding_
+      absoluteD1_
   };
   generatePointCloud( reconstructs, context, generatePointCloudParameters );
 
