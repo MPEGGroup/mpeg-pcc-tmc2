@@ -52,16 +52,16 @@ PCCDecoderParameters::~PCCDecoderParameters() {
 }
 void PCCDecoderParameters::print() {
   std::cout << "+ Parameters" << std::endl;
-  std::cout << "\t compressedStreamPath                   " << compressedStreamPath_              << std::endl;
-  std::cout << "\t reconstructedDataPath                  " << reconstructedDataPath_             << std::endl;
-  std::cout << "\t startFrameNumber                       " << startFrameNumber_                  << std::endl;
-  std::cout << "\t colorTransform                         " << colorTransform_                    << std::endl;
-  std::cout << "\t nbThread                               " << nbThread_                          << std::endl;
-  std::cout << "\t keepIntermediateFiles                  " << keepIntermediateFiles_             << std::endl;
+  std::cout << "\t compressedStreamPath                " << compressedStreamPath_              << std::endl;
+  std::cout << "\t reconstructedDataPath               " << reconstructedDataPath_             << std::endl;
+  std::cout << "\t startFrameNumber                    " << startFrameNumber_                  << std::endl;
+  std::cout << "\t colorTransform                      " << colorTransform_                    << std::endl;
+  std::cout << "\t nbThread                            " << nbThread_                          << std::endl;
+  std::cout << "\t keepIntermediateFiles               " << keepIntermediateFiles_             << std::endl;
   std::cout << "\t video encoding" << std::endl;
-  std::cout << "\t   colorSpaceConversionPath             " << colorSpaceConversionPath_          << std::endl;
-  std::cout << "\t   videoDecoderPath                     " << videoDecoderPath_                  << std::endl;
-  std::cout << "\t   inverseColorSpaceConversionConfig    " << inverseColorSpaceConversionConfig_ << std::endl;
+  std::cout << "\t   colorSpaceConversionPath          " << colorSpaceConversionPath_          << std::endl;
+  std::cout << "\t   videoDecoderPath                  " << videoDecoderPath_                  << std::endl;
+  std::cout << "\t   inverseColorSpaceConversionConfig " << inverseColorSpaceConversionConfig_ << std::endl;
   std::cout << std::endl;
 }
 

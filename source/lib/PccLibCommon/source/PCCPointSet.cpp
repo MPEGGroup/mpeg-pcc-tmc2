@@ -557,8 +557,9 @@ bool PCCPointSet3::transfertColors( PCCPointSet3 &target, const int32_t searchRa
           }
         }
       }
-      target.setColor(
-          index, PCCColor3B(uint8_t(bestColor[0]), uint8_t(bestColor[1]), uint8_t(bestColor[2])));
+      target.setColor( index, PCCColor3B( uint8_t(bestColor[0]),
+                                          uint8_t(bestColor[1]),
+                                          uint8_t(bestColor[2])));
       } else {  // centroid2 == centroid1
         target.setColor(index, color1);
       }

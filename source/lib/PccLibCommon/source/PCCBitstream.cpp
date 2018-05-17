@@ -126,14 +126,14 @@ void PCCBitstream::read( uint32_t& value, uint8_t bits, PCCBistreamPosition& pos
   value = 0;
   for(size_t i=0;i<bits;i++) {
     value |= ( ( data_[ pos.bytes ] >> ( 7 - pos.bits ) ) & 1 ) << ( bits - 1 - i );
-    if( pos.bits == 7 ){ pos.bytes++; pos.bits = 0; } else{  pos.bits++; }
+    if( pos.bits == 7 ){ pos.bytes++; pos.bits = 0; } else {  pos.bits++; }
   }
 }
 inline void PCCBitstream::write( uint32_t value, uint8_t bits, PCCBistreamPosition& pos ) {
   assert( bits >= 32 );
   for(size_t i=0;i<bits;i++) {
     data_[ pos.bytes ] |= ( ( value >> (bits - 1 - i )  ) & 1 ) << ( 7 - pos.bits );
-    if( pos.bits == 7 ){ pos.bytes++; pos.bits = 0; } else{  pos.bits++; }
+    if( pos.bits == 7 ){ pos.bytes++; pos.bits = 0; } else {  pos.bits++; }
   }
 }
 

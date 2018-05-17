@@ -95,8 +95,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext &f
     if (video.getFrameCount() < (shift + 1)) {
       return;
     }
-  }
-  else {
+  } else {
     shift = frame.getIndex() * 2;
     if (video.getFrameCount() < (shift + layerCount)) {
       return;
@@ -138,10 +137,10 @@ void PCCCodec::generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext &f
               for (size_t f = 0; f < layerCount; ++f) {
                 PCCVector3D point1(point0);
                 if (f > 0) {
-                  if( !params.absoluteD1_ ){
+                  if( !params.absoluteD1_ ) {
                     const auto &frame1 = videoD1.getFrame(shift);
                     point1[patch.getNormalAxis()] += frame1.getValue(0, x, y);
-                  }else{
+                  } else {
                     const auto &frame1 = video.getFrame(f + shift);
                     point1[patch.getNormalAxis()] = double( frame1.getValue(0, x, y) + patch.getD1());
                   }
@@ -191,9 +190,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext &f
         }
       }
     }
-  }
-  else if (params.losslessGeo_)
-  {
+  } else if (params.losslessGeo_) {
     size_t numMissedPts{ 0 };
     for (size_t v0 = 0; v0 < missedPointsPatch.sizeV0; ++v0) {
       for (size_t u0 = 0; u0 < missedPointsPatch.sizeU0; ++u0) {
@@ -227,18 +224,16 @@ void PCCCodec::generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext &f
         }
         if (numMissedPointsAdded < numMissedPts) {
           missedPoints[numMissedPointsAdded][0] = double(frame0.getValue(0, x, y));
-        }
-        else if (numMissedPointsAdded <= numMissedPointsAdded && numMissedPointsAdded < 2 * numMissedPts) {
+        } else if (numMissedPointsAdded <= numMissedPointsAdded && numMissedPointsAdded < 2 * numMissedPts) {
           missedPoints[numMissedPointsAdded - numMissedPts][1] = double(frame0.getValue(0, x, y));
-        }
-        else if (2 * numMissedPts <= numMissedPointsAdded && numMissedPointsAdded < 3 * numMissedPts) {
+        } else if (2 * numMissedPts <= numMissedPointsAdded && numMissedPointsAdded < 3 * numMissedPts) {
           missedPoints[numMissedPointsAdded - 2 * numMissedPts][2] = double(frame0.getValue(0, x, y));
           const size_t pointIndex = reconstruct.addPoint(missedPoints[numMissedPointsAdded - 2 * numMissedPts]);
           reconstruct.setColor(pointIndex, missedPointsColor);
-          for (size_t f = 0; f < layerCount; ++f)
+          for (size_t f = 0; f < layerCount; ++f) {
             pointToPixel.push_back(PCCVector3<size_t>(x, y, f));
+          }
         }
-        else {}
         numMissedPointsAdded++;
       }
     }
@@ -299,7 +294,6 @@ void PCCCodec::smoothPointCloud( PCCPointSet3& reconstruct,
         } else {
           temp[i] = query.point;
         }
-
       } else {
         temp[i] = query.point;
       }
