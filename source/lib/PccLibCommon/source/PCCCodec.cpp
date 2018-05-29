@@ -224,7 +224,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext &f
         }
         if (numMissedPointsAdded < numMissedPts) {
           missedPoints[numMissedPointsAdded][0] = double(frame0.getValue(0, x, y));
-        } else if (numMissedPointsAdded <= numMissedPointsAdded && numMissedPointsAdded < 2 * numMissedPts) {
+        } else if (numMissedPts <= numMissedPointsAdded && numMissedPointsAdded < 2 * numMissedPts) {
           missedPoints[numMissedPointsAdded - numMissedPts][1] = double(frame0.getValue(0, x, y));
         } else if (2 * numMissedPts <= numMissedPointsAdded && numMissedPointsAdded < 3 * numMissedPts) {
           missedPoints[numMissedPointsAdded - 2 * numMissedPts][2] = double(frame0.getValue(0, x, y));

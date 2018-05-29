@@ -633,6 +633,13 @@ bool PCCEncoder::predictGeometryFrame( PCCFrameContext& frame, const PCCImageGeo
 void PCCEncoder::generateMissedPointsPatch(const PCCPointSet3& source, PCCFrameContext& frame){  
   auto& patches = frame.getPatches();
   auto& missedPointsPatch = frame.getMissedPointsPatch();
+  missedPointsPatch.sizeU = 0;
+  missedPointsPatch.sizeU = 0;
+  missedPointsPatch.sizeV = 0;
+  missedPointsPatch.u0 = 0;
+  missedPointsPatch.v0 = 0;
+  missedPointsPatch.sizeV0 = 0;
+  missedPointsPatch.sizeU0 = 0;
   missedPointsPatch.occupancy.resize(0);
   PCCPointSet3 pointsToBeProjected;
   const int16_t infiniteDepth = (std::numeric_limits<int16_t>::max)();
@@ -709,59 +716,60 @@ void PCCEncoder::sortMissedPointsPatch(PCCFrameContext& frame) {
   const size_t neighborSearchRadius = 5;
   size_t missedPointCount =
       params_.losslessGeo444_ ? missedPointsPatch.size() : missedPointsPatch.size() / 3;
+  if (missedPointCount) {
+    vector<size_t> sortIdx;
+    sortIdx.reserve(missedPointCount);
+    PCCPointSet3 missedPointSet;
+    missedPointSet.resize(missedPointCount);
 
-  vector<size_t> sortIdx;
-  sortIdx.reserve(missedPointCount);
-  PCCPointSet3 missedPointSet;
-  missedPointSet.resize(missedPointCount);
+    for (size_t i = 0; i < missedPointCount; i++) {
+      missedPointSet[i] = params_.losslessGeo444_ ?
+        PCCPoint3D(missedPointsPatch.x[i], missedPointsPatch.y[i], missedPointsPatch.z[i]) :
+        PCCPoint3D(missedPointsPatch.x[i], missedPointsPatch.x[i + missedPointCount],
+          missedPointsPatch.x[i + missedPointCount * 2]);
+    }
+    PCCStaticKdTree3 kdtreeMissedPointSet;
+    kdtreeMissedPointSet.build(missedPointSet);
+    PCCPointDistInfo nNeighbor1[maxNeighborCount];
+    PCCNNResult result = { nNeighbor1, 0 };
+    PCCNNQuery3 query = { PCCVector3D(0.0), neighborSearchRadius, maxNeighborCount };
+    std::vector<size_t> fifo;
+    fifo.reserve(missedPointCount);
+    std::vector<bool> flags(missedPointCount, true);
 
-  for (size_t i = 0; i < missedPointCount; i++) {
-    missedPointSet[i] = params_.losslessGeo444_ ?
-      PCCPoint3D(missedPointsPatch.x[i], missedPointsPatch.y[i], missedPointsPatch.z[i]) :
-      PCCPoint3D(missedPointsPatch.x[i], missedPointsPatch.x[i + missedPointCount],
-        missedPointsPatch.x[i + missedPointCount * 2]);
-  }
-  PCCStaticKdTree3 kdtreeMissedPointSet;
-  kdtreeMissedPointSet.build(missedPointSet);
-  PCCPointDistInfo nNeighbor1[maxNeighborCount];
-  PCCNNResult result = { nNeighbor1, 0 };
-  PCCNNQuery3 query = { PCCVector3D(0.0), neighborSearchRadius, maxNeighborCount };
-  std::vector<size_t> fifo;
-  fifo.reserve(missedPointCount);
-  std::vector<bool> flags(missedPointCount, true);
-
-  for (size_t i = 0; i < missedPointCount; i++) {
-    if (flags[i]) {
-      flags[i] = false;
-      sortIdx.push_back(i);
-      fifo.push_back(i);
-      while (!fifo.empty()) {
-        const size_t currentIdx = fifo.back();
-        fifo.pop_back();
-        query.point = missedPointSet[currentIdx];
-        kdtreeMissedPointSet.findNearestNeighbors(query, result);
-        for (size_t j = 0; j < result.resultCount; j++) {
-          size_t n = result.neighbors[j].index;
-          if (flags[n]) {
-            flags[n] = false;
-            sortIdx.push_back(n);
-            fifo.push_back(n);
+    for (size_t i = 0; i < missedPointCount; i++) {
+      if (flags[i]) {
+        flags[i] = false;
+        sortIdx.push_back(i);
+        fifo.push_back(i);
+        while (!fifo.empty()) {
+          const size_t currentIdx = fifo.back();
+          fifo.pop_back();
+          query.point = missedPointSet[currentIdx];
+          kdtreeMissedPointSet.findNearestNeighbors(query, result);
+          for (size_t j = 0; j < result.resultCount; j++) {
+            size_t n = result.neighbors[j].index;
+            if (flags[n]) {
+              flags[n] = false;
+              sortIdx.push_back(n);
+              fifo.push_back(n);
+            }
           }
         }
       }
     }
-  }
-  for (size_t i = 0; i < missedPointCount; ++i) {
-    const PCCPoint3D missedPoint = missedPointSet[sortIdx[i]];
-    if (params_.losslessGeo444_) {
-      missedPointsPatch.x[i] = static_cast<uint16_t>(missedPoint.x());
-      missedPointsPatch.y[i] = static_cast<uint16_t>(missedPoint.y());
-      missedPointsPatch.z[i] = static_cast<uint16_t>(missedPoint.z());
-    }
-    else {
-      missedPointsPatch.x[i] = static_cast<uint16_t>(missedPoint.x());
-      missedPointsPatch.x[i + missedPointCount] = static_cast<uint16_t>(missedPoint.y());
-      missedPointsPatch.x[i + missedPointCount * 2] = static_cast<uint16_t>(missedPoint.z());
+    for (size_t i = 0; i < missedPointCount; ++i) {
+      const PCCPoint3D missedPoint = missedPointSet[sortIdx[i]];
+      if (params_.losslessGeo444_) {
+        missedPointsPatch.x[i] = static_cast<uint16_t>(missedPoint.x());
+        missedPointsPatch.y[i] = static_cast<uint16_t>(missedPoint.y());
+        missedPointsPatch.z[i] = static_cast<uint16_t>(missedPoint.z());
+      }
+      else {
+        missedPointsPatch.x[i] = static_cast<uint16_t>(missedPoint.x());
+        missedPointsPatch.x[i + missedPointCount] = static_cast<uint16_t>(missedPoint.y());
+        missedPointsPatch.x[i + missedPointCount * 2] = static_cast<uint16_t>(missedPoint.z());
+      }
     }
   }
 }
