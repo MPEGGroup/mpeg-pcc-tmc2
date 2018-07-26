@@ -60,6 +60,7 @@ class PCCVideoEncoder {
                 const std::string &inverseColorSpaceConversionConfig = "",
                 const std::string &colorSpaceConversionPath = "",
                 const bool use444CodecIo = false,
+                const bool flagColorSmoothing = false,
                 const size_t nbyte = 1,
                 const bool keepIntermediateFiles = false ) {
     auto& frames = video.getFrames();
@@ -142,6 +143,7 @@ class PCCVideoEncoder {
     file.seekg(0);
     file.read(reinterpret_cast<char *>(bitstream.buffer()) + bitstream.size(), fileSize);
     bitstream += fileSize;
+    file.close();
 
     if ( yuvVideo ) {
       if ( use444CodecIo ) {

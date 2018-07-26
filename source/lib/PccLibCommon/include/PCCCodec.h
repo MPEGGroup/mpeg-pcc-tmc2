@@ -57,6 +57,11 @@ struct GeneratePointCloudParameters {
   bool   losslessGeo444_;
   size_t nbThread_;
   bool   absoluteD1_;
+  double thresholdColorSmoothing_;
+  double thresholdLocalEntropy_;
+  double radius2ColorSmoothing_;
+  size_t neighborCountColorSmoothing_;
+  bool   flagColorSmoothing_;
 };
 
 class PCCCodec {
@@ -68,7 +73,8 @@ class PCCCodec {
                            const GeneratePointCloudParameters params );
 
   bool colorPointCloud( PCCGroupOfFrames& reconstructs, PCCContext& context,
-                        const bool noAttributes, const ColorTransform colorTransform );
+	  const bool noAttributes, const ColorTransform colorTransform, const GeneratePointCloudParameters params);
+
 
  private:
   void generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext& frame,
@@ -82,6 +88,9 @@ class PCCCodec {
 
   bool colorPointCloud( PCCPointSet3& reconstruct, PCCFrameContext& frame,
                         const PCCVideoTexture &video, const bool noAttributes);
+
+  void smoothPointCloudColor(PCCPointSet3& reconstruct, const GeneratePointCloudParameters params);
+
 
 };
 

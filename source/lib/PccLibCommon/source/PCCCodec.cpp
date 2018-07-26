@@ -64,11 +64,15 @@ void PCCCodec::generatePointCloud( PCCGroupOfFrames& reconstructs, PCCContext& c
 }
 
 bool PCCCodec::colorPointCloud( PCCGroupOfFrames& reconstructs, PCCContext& context,
-                                const bool noAttributes, const ColorTransform colorTransform ) {
+                               const bool noAttributes, const ColorTransform colorTransform,
+                               const GeneratePointCloudParameters params) {
   auto &video = context.getVideoTexture();
   auto& frames = context.getFrames();
   for( size_t i = 0; i < frames.size(); i++ ) {
     colorPointCloud( reconstructs[i], frames[i],  video, noAttributes );
+    if (!params.losslessGeo_ && params.flagColorSmoothing_) {
+      smoothPointCloudColor(reconstructs[i], params);
+    }
     if ( colorTransform == COLOR_TRANSFORM_RGB_TO_YCBCR ) {
       reconstructs[i].convertYUVToRGB();
     }
@@ -103,6 +107,10 @@ void PCCCodec::generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext &f
   }
   const auto &frame0 = video.getFrame(shift);
   const size_t imageWidth = video.getWidth();
+  const size_t imageHeight = video.getHeight();
+  std::vector<uint32_t> PBflag;
+  PBflag.resize(imageWidth * imageHeight, 0);
+
   const size_t blockToPatchWidth = frame.getWidth() / params.occupancyResolution_;
   reconstruct.addColors();
   const size_t patchCount = patches.size();
@@ -146,6 +154,67 @@ void PCCCodec::generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext &f
                   }
                 }
                 const size_t pointindex_1 = reconstruct.addPoint(point1);
+
+                // Identify boundary points
+                if (occupancyMap[y * imageWidth + x] != 0) {
+                  if (y > 0 && y < imageHeight - 1) {
+                    if (occupancyMap[(y - 1) * imageWidth + x] == 0 ||
+                        occupancyMap[(y + 1) * imageWidth + x] == 0) {
+                      PBflag[y * imageWidth + x] = 1;
+                      reconstruct.setBoundaryPointType(pointindex_1, static_cast<uint16_t>(1));
+                    }
+                  }
+                  if (x > 0 && x < imageWidth - 1) {
+                    if (occupancyMap[y * imageWidth + (x + 1)] == 0 ||
+                        occupancyMap[y * imageWidth + (x - 1)] == 0) {
+                      PBflag[y * imageWidth + x] = 1;
+                      reconstruct.setBoundaryPointType(pointindex_1, static_cast<uint16_t>(1));
+                    }
+                  }
+                  if (y > 0 && y < imageHeight - 1 && x > 0) {
+                    if (occupancyMap[(y - 1) * imageWidth + (x - 1)] == 0 ||
+                        occupancyMap[(y + 1) * imageWidth + (x - 1)] == 0) {
+                      PBflag[y * imageWidth + x] = 1;
+                      reconstruct.setBoundaryPointType(pointindex_1, static_cast<uint16_t>(1));
+                    }
+                  }
+                  if (y > 0 && y < imageHeight - 1 && x < imageWidth - 1) {
+                    if (occupancyMap[(y - 1) * imageWidth + (x + 1)] == 0 ||
+                        occupancyMap[(y + 1) * imageWidth + (x + 1)] == 0) {
+                      PBflag[y * imageWidth + x] = 1;
+                      reconstruct.setBoundaryPointType(pointindex_1, static_cast<uint16_t>(1));
+                    }
+                  }
+                }
+
+                // 1st Extension boundary region
+                if (occupancyMap[y * imageWidth + x] != 0) {
+                  if (y > 0 && y < imageHeight - 1) {
+                    if (PBflag[(y - 1) * imageWidth + x] == 1 ||
+                        PBflag[(y + 1) * imageWidth + x] == 1) {
+                      reconstruct.setBoundaryPointType(pointindex_1, static_cast<uint16_t>(1));
+                    }
+                  }
+                  if (x > 0 && x < imageWidth - 1) {
+                    if (PBflag[y * imageWidth + (x + 1)] == 1 ||
+                        PBflag[y * imageWidth + (x - 1)] == 1) {
+                      reconstruct.setBoundaryPointType(pointindex_1, static_cast<uint16_t>(1));
+                    }
+                  }
+                  if (y > 0 && y < imageHeight - 1 && x > 0) {
+                    if (PBflag[(y - 1) * imageWidth + (x - 1)] == 1 ||
+                        PBflag[(y + 1) * imageWidth + (x - 1)] == 1) {
+                      reconstruct.setBoundaryPointType(pointindex_1, static_cast<uint16_t>(1));
+                    }
+                  }
+                  if (y > 0 && y < imageHeight - 1 && x < imageWidth - 1) {
+                    if (PBflag[(y - 1) * imageWidth + (x + 1)] == 1 ||
+                        PBflag[(y + 1) * imageWidth + (x + 1)] == 1) {
+                      reconstruct.setBoundaryPointType(pointindex_1, static_cast<uint16_t>(1));
+                    }
+                  }
+                }
+
                 reconstruct.setColor(pointindex_1, color);
                 if( PCC_SAVE_POINT_TYPE == 1 ) {
                   reconstruct.setType( pointindex_1, f == 0 ? PointType::D0 : PointType::D1 );
@@ -278,6 +347,10 @@ void PCCCodec::smoothPointCloud( PCCPointSet3& reconstruct,
       }
 
       if (otherClusterPointCount) {
+        if (reconstruct.getBoundaryPointType(i) == 1) {
+          reconstruct.setBoundaryPointType(i, static_cast<uint16_t>(2));
+        }
+
         const auto sclaedPoint = double(neighborCount) * query.point;
         const double distToCentroid2 =
             int64_t((centroid - sclaedPoint).getNorm2() + (neighborCount / 2.0)) /
@@ -303,6 +376,94 @@ void PCCCodec::smoothPointCloud( PCCPointSet3& reconstruct,
     tbb::parallel_for(size_t( 0 ), pointCount, [&](const size_t i) {
       // for (size_t i = 0; i < pointCount; ++i) {
       reconstruct[i] = temp[i];
+    });
+  });
+}
+
+inline double Entropy(std::vector<uint8_t> &Data, int N) {
+  std::vector<size_t> Count;
+  Count.resize(256, 0);
+
+  for (size_t i = 0; i < N; ++i) {
+    ++Count[size_t(Data[i])];
+  }
+
+  double s = 0;
+  for (size_t i = 0; i < 256; ++i) {
+    if (Count[i]) {
+      double p = double(Count[i]) / double(N);
+      s += -p * std::log2(p);
+    }
+  }
+  return s;
+}
+
+void PCCCodec::smoothPointCloudColor(PCCPointSet3 &reconstruct,
+                                     const GeneratePointCloudParameters params) {
+  const size_t pointCount = reconstruct.getPointCount();
+  PCCStaticKdTree3 kdtree;
+  kdtree.build(reconstruct);
+  PCCPointSet3 temp;
+  temp.resize(pointCount);
+  tbb::task_arena limited((int)params.nbThread_);
+  limited.execute([&] {
+    tbb::parallel_for(size_t(0), pointCount, [&](const size_t i) {
+      //  for (size_t i = 0; i < pointCount; ++i) {
+      const size_t maxNeighborCount = 512;
+      PCCPointDistInfo nNeighbor[maxNeighborCount];
+      PCCNNResult result = {nNeighbor, 0};
+      const double maxDist = ceil(sqrt(params.radius2ColorSmoothing_));
+      PCCNNQuery3 query = {PCCVector3D(0.0), maxDist,
+                           (std::min)(maxNeighborCount, params.neighborCountColorSmoothing_)};
+
+      if (reconstruct.getBoundaryPointType(i) == 2) {
+        query.point = reconstruct[i];
+        kdtree.findNearestNeighbors(query, result);
+        assert(result.resultCount);
+        PCCVector3D centroid(0.0);
+
+        size_t neighborCount = 0;
+        std::vector<uint8_t> Lum;
+
+        for (size_t r = 0; r < result.resultCount; ++r) {
+          const double dist2 = result.neighbors[r].dist2;
+          if (dist2 > params.radius2ColorSmoothing_) {
+            break;
+          }
+          ++neighborCount;
+          const size_t index = result.neighbors[r].index;
+          PCCColor3B color = reconstruct.getColor(index);
+          centroid[0] += double(color[0]);
+          centroid[1] += double(color[1]);
+          centroid[2] += double(color[2]);
+
+          double Y =
+              0.2126 * double(color[0]) + 0.7152 * double(color[1]) + 0.0722 * double(color[2]);
+          Lum.push_back(uint8_t(Y));
+        }
+
+        PCCColor3B color;
+        if (neighborCount) {
+          for (size_t k = 0; k < 3; ++k) {
+            centroid[k] = double(int64_t(centroid[k] + (neighborCount / 2)) / neighborCount);
+          }
+
+          // Texture characterization
+          double H = Entropy(Lum, int(neighborCount));
+          PCCColor3B colorQP = reconstruct.getColor(i);
+          double distToCentroid2 = 0;
+          for (size_t k = 0; k < 3; ++k) {
+            distToCentroid2 += abs(centroid[k] - double(colorQP[k]));
+          }
+          if (distToCentroid2 >= double(params.thresholdColorSmoothing_) &&
+              H < double(params.thresholdLocalEntropy_)) {
+            color[0] = uint8_t(centroid[0]);
+            color[1] = uint8_t(centroid[1]);
+            color[2] = uint8_t(centroid[2]);
+            reconstruct.setColor(i, color);
+          }
+        }
+      }
     });
   });
 }

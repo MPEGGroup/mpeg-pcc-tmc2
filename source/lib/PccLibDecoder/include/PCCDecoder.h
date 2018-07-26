@@ -74,7 +74,11 @@ private:
   uint8_t  losslessGeo444_;
   bool     absoluteD1_;
   bool     binArithCoding_;
-  
+  uint8_t  thresholdColorSmoothing_;
+  double   thresholdLocalEntropy_;
+  uint8_t  radius2ColorSmoothing_;
+  uint8_t  neighborCountColorSmoothing_;
+  uint8_t  flagColorSmoothing_;
 };
 }; //~namespace
 

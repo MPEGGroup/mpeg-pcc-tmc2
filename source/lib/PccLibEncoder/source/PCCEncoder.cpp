@@ -95,6 +95,40 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
   height = (uint16_t)frames[0].getHeight();
   compressHeader( context, bitstream );
 
+  auto sizeOccupancyMap = bitstream.size();
+  compressOccupancyMap(context, bitstream);
+  sizeOccupancyMap = bitstream.size() - sizeOccupancyMap;
+  std::cout << " occupancy map  ->" << sizeOccupancyMap << " B ("
+	  << (sizeOccupancyMap * 8.0) / (2 * frames.size() * pointCount) << " bpp)"
+	  << std::endl;
+
+  // Group dilation in Geometry
+  if (params_.groupDilation_){
+	  auto& VideoGemetry = context.getVideoGeometry();
+
+	  for (size_t f = 0; f < frames.size(); ++f) {
+		  auto & frame = frames[f];
+		  auto& occupancyMap = frame.getOccupancyMap();
+		  auto  &frame1 = VideoGemetry.getFrame(2*f);
+		  auto  &frame2 = VideoGemetry.getFrame(2*f +1);
+
+		  uint16_t  tmp_d0, tmp_d1;
+		  uint32_t  tmp_avg;
+		  for (size_t y = 0; y < height; y++) {
+			  for (size_t x = 0; x < width; x++) {
+				  const size_t pos = y * width + x;
+				  if (occupancyMap[pos] == 0) {
+					  tmp_d0 = frame1.getValue(0, x, y);
+					  tmp_d1 = frame2.getValue(0, x, y);
+					  tmp_avg = ((uint32_t)tmp_d0 + (uint32_t)tmp_d1 + 1) >> 1;
+					  frame1.setValue(0, x, y, (uint16_t)tmp_avg);
+					  frame2.setValue(0, x, y, (uint16_t)tmp_avg);
+				  }
+			  }
+		  }
+	  }
+  }
+
   const size_t nbyteGeo = params_.losslessGeo_ ? 2 : 1;
   if (!params_.absoluteD1_) {
     // Compress geometryD0
@@ -138,21 +172,15 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
     auto sizeGeometryVideo = bitstream.size();
     auto& videoGeometry = context.getVideoGeometry();	
     videoEncoder.compress(videoGeometry, path.str() + "geometry", params_.geometryQP_, bitstream,
-                          params_.geometryConfig_, params_.videoEncoderPath_,
-                          "", "", "", params_.losslessGeo_ && params_.losslessGeo444_,
+                          params_.geometryConfig_, params_.videoEncoderPath_, "", "", "",
+                          params_.losslessGeo_ && params_.losslessGeo444_,
+                          params_.flagColorSmoothing_,
                           nbyteGeo, params_.keepIntermediateFiles_ );
     sizeGeometryVideo = bitstream.size() - sizeGeometryVideo;
     std::cout << "geometry video ->" << sizeGeometryVideo << " B ("
         << (sizeGeometryVideo * 8.0) / (2 * frames.size() * pointCount) << " bpp)"
         << std::endl;
   }
-
-  auto sizeOccupancyMap = bitstream.size();
-  compressOccupancyMap( context, bitstream );
-  sizeOccupancyMap = bitstream.size() - sizeOccupancyMap;
-  std::cout << " occupancy map  ->" << sizeOccupancyMap << " B ("
-      << (sizeOccupancyMap * 8.0) / (2 * frames.size() * pointCount) << " bpp)"
-      << std::endl;
 
   GeneratePointCloudParameters generatePointCloudParameters = {
       params_.occupancyResolution_,
@@ -163,7 +191,12 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
       params_.losslessGeo_,
       params_.losslessGeo444_,
       params_.nbThread_,
-      params_.absoluteD1_
+      params_.absoluteD1_,
+      params_.thresholdColorSmoothing_,
+      params_.thresholdLocalEntropy_,
+      params_.radius2ColorSmoothing_,
+      params_.flagColorSmoothing_
+
   };
   generatePointCloud( reconstructs, context, generatePointCloudParameters );
 
@@ -173,8 +206,38 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
     auto& videoTexture = context.getVideoTexture();
     const size_t textureFrameCount = 2 * frames.size();
     assert(textureFrameCount == videoTexture.getFrameCount());
+    if ( !(params_.losslessGeo_ && params_.textureDilationOffLossless_)) {
     for (size_t f = 0; f < textureFrameCount; ++f) {
       dilate( frames[ f / 2 ], videoTexture.getFrame( f ) );
+
+        if ((params_.groupDilation_ == true) && ((f & 0x1) == 1))
+        {
+          // Group dilation in texture
+          auto & frame = frames[f / 2];
+          auto& occupancyMap = frame.getOccupancyMap();
+          auto& width = frame.getWidth();
+          auto& height = frame.getHeight();
+          auto  &frame1 = videoTexture.getFrame(f - 1);
+          auto  &frame2 = videoTexture.getFrame(f);
+
+          uint8_t  tmp_d0, tmp_d1;
+          uint32_t tmp_avg;
+          for (size_t y = 0; y < height; y++) {
+            for (size_t x = 0; x < width; x++) {
+              const size_t pos = y * width + x;
+              if (occupancyMap[pos] == 0) {
+                for (size_t c = 0; c < 3; c++) {
+                  tmp_d0 = frame1.getValue(c, x, y);
+                  tmp_d1 = frame2.getValue(c, x, y);
+                  tmp_avg = ((uint32_t)tmp_d0 + (uint32_t)tmp_d1 + 1) >> 1;
+                  frame1.setValue(c, x, y, (uint8_t)tmp_avg);
+                  frame2.setValue(c, x, y, (uint8_t)tmp_avg);
+                }
+              }
+            }
+          }
+        }
+      }
     }
 
     auto sizeTextureVideo = bitstream.size();
@@ -184,14 +247,14 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
                            params_.videoEncoderPath_,
                            params_.colorSpaceConversionConfig_,
                            params_.inverseColorSpaceConversionConfig_,
-                           params_.colorSpaceConversionPath_,
-                           params_.losslessTexture_, nbyteTexture,
+                           params_.colorSpaceConversionPath_, params_.losslessTexture_,
+                           params_.flagColorSmoothing_, nbyteTexture,
                            params_.keepIntermediateFiles_ );
     sizeTextureVideo = bitstream.size() - sizeTextureVideo;
     std::cout << "texture video  ->" << sizeTextureVideo << " B ("
         << (sizeTextureVideo * 8.0) / pointCount << " bpp)" << std::endl;
   }
-  colorPointCloud( reconstructs, context, params_.noAttributes_ != 0, params_.colorTransform_ );
+  colorPointCloud(reconstructs, context, params_.noAttributes_ != 0, params_.colorTransform_, generatePointCloudParameters);
   return 0;
 }
 
@@ -1025,6 +1088,14 @@ int PCCEncoder::compressHeader( PCCContext &context, pcc::PCCBitstream &bitstrea
   bitstream.write<uint8_t> (uint8_t(params_.losslessGeo444_));
   bitstream.write<uint8_t> (uint8_t(params_.absoluteD1_));
   bitstream.write<uint8_t> (uint8_t(params_.binArithCoding_));
+  bitstream.write<uint8_t>(uint8_t(params_.flagColorSmoothing_));
+  if (params_.flagColorSmoothing_) {
+  bitstream.write<uint8_t> (uint8_t(params_.thresholdColorSmoothing_));
+  bitstream.write<double> (double(params_.thresholdLocalEntropy_));
+  bitstream.write<uint8_t>(uint8_t(params_.radius2ColorSmoothing_));
+  bitstream.write<uint8_t>(uint8_t(params_.neighborCountColorSmoothing_));
+  }
+  
   return 1;
 }
 

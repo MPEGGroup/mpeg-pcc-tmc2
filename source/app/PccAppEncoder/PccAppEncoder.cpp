@@ -268,6 +268,32 @@ bool parseParameters(int argc, char *argv[], PCCEncoderParameters& params ) {
      params.thresholdSmoothing_,
      "todo(kmammou)")
 
+	// color smoothing
+    ("thresholdColorSmoothing",
+     params.thresholdColorSmoothing_,
+     params.thresholdColorSmoothing_,
+     "Threshold of color smoothing")
+
+    ("thresholdLocalEntropy",
+     params.thresholdLocalEntropy_,
+     params.thresholdLocalEntropy_,
+     "Threshold of local entropy")
+
+    ("radius2ColorSmoothing",
+     params.radius2ColorSmoothing_,
+     params.radius2ColorSmoothing_,
+     "Redius of color smoothing")
+
+    ("neighborCountColorSmoothing",
+     params.neighborCountColorSmoothing_,
+     params.neighborCountColorSmoothing_,
+     "Neighbor count for color smoothing")
+
+    ("flagColorSmoothing",
+     params.flagColorSmoothing_,
+     params.flagColorSmoothing_,
+     "Enable color smoothing\n")
+
     // colouring
     ("bestColorSearchRange",
      params.bestColorSearchRange_,
@@ -356,7 +382,17 @@ bool parseParameters(int argc, char *argv[], PCCEncoderParameters& params ) {
      params.binArithCoding_,
      "Binary arithmetic coding")
 
+    ("groupDilation",
+      params.groupDilation_,
+      params.groupDilation_,
+      "Group Dilation")
      ;
+
+    ("textureDilationOffLossless",
+      params.textureDilationOffLossless_,
+      params.textureDilationOffLossless_,
+      "Group Dilation")
+      ;
 
   po::setDefaults(opts);
   po::ErrorReporter err;

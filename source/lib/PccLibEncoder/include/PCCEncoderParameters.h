@@ -98,6 +98,13 @@ class PCCEncoderParameters {
     double              radius2BoundaryDetection_;
     double              thresholdSmoothing_;
 
+    // color smoothing
+    double              thresholdColorSmoothing_;
+    double              thresholdLocalEntropy_;
+    double              radius2ColorSmoothing_;
+    size_t              neighborCountColorSmoothing_;
+    bool                flagColorSmoothing_;
+
     // coloring
     size_t              bestColorSearchRange_;
 
@@ -118,6 +125,10 @@ class PCCEncoderParameters {
 
     bool                constrainedPack_;
     bool                binArithCoding_;
+	
+    // dilation
+    bool		groupDilation_;
+    bool                textureDilationOffLossless_;
   };
 
 }; //~namespace

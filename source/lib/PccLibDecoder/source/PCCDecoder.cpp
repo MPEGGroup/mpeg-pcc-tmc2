@@ -76,6 +76,12 @@ int PCCDecoder::decode( PCCBitstream &bitstream, PCCContext &context, PCCGroupOf
   std::stringstream path;
   path << removeFileExtension( params_.compressedStreamPath_ ) << "_dec_GOF" << context.getIndex() << "_";
 
+  auto sizeOccupancyMap = bitstream.size();
+  decompressOccupancyMap(context, bitstream);
+  sizeOccupancyMap = bitstream.size() - sizeOccupancyMap;
+  std::cout << "occupancy map  ->" << sizeOccupancyMap << " B" << std::endl;
+
+
   const size_t nbyteGeo = losslessGeo_ ? 2 : 1;
   if (!absoluteD1_) {
     // Compress D0
@@ -107,10 +113,6 @@ int PCCDecoder::decode( PCCBitstream &bitstream, PCCContext &context, PCCGroupOf
     sizeGeometryVideo = bitstream.size() - sizeGeometryVideo;
     std::cout << "geometry video ->" << sizeGeometryVideo << " B" << std::endl;
   }
-  auto sizeOccupancyMap = bitstream.size();
-  decompressOccupancyMap( context, bitstream );
-  sizeOccupancyMap = bitstream.size() - sizeOccupancyMap;
-  std::cout << "occupancy map  ->" << sizeOccupancyMap << " B" << std::endl;
 
   GeneratePointCloudParameters generatePointCloudParameters = {
       occupancyResolution_,
@@ -121,7 +123,12 @@ int PCCDecoder::decode( PCCBitstream &bitstream, PCCContext &context, PCCGroupOf
       losslessGeo_ != 0,
       losslessGeo444_ != 0,
       params_.nbThread_,
-      absoluteD1_
+      absoluteD1_,
+      (double)thresholdColorSmoothing_,
+      (double)thresholdLocalEntropy_,
+      (double)radius2ColorSmoothing_,
+      neighborCountColorSmoothing_,
+      flagColorSmoothing_
   };
   generatePointCloud( reconstructs, context, generatePointCloudParameters );
 
@@ -139,7 +146,8 @@ int PCCDecoder::decode( PCCBitstream &bitstream, PCCContext &context, PCCGroupOf
     sizeTextureVideo = bitstream.size() - sizeTextureVideo;
     std::cout << "texture video  ->" << sizeTextureVideo << " B" << std::endl;
   }
-  colorPointCloud( reconstructs, context, noAttributes_ != 0, params_.colorTransform_ );
+  colorPointCloud(reconstructs, context, noAttributes_ != 0, params_.colorTransform_,
+                  generatePointCloudParameters);
   return 0;
 }
 
@@ -168,6 +176,13 @@ int PCCDecoder::decompressHeader( PCCContext &context, PCCBitstream &bitstream )
   binArithCoding_ =  binArithCoding > 0;
   context.getWidth()  = width_;
   context.getHeight() = height_; 
+  bitstream.read<uint8_t>(flagColorSmoothing_);
+  if (flagColorSmoothing_) {
+    bitstream.read<uint8_t>(thresholdColorSmoothing_);
+    bitstream.read<double>(thresholdLocalEntropy_);
+    bitstream.read<uint8_t>(radius2ColorSmoothing_);
+    bitstream.read<uint8_t>(neighborCountColorSmoothing_);
+  }
   return 1;
 }
 

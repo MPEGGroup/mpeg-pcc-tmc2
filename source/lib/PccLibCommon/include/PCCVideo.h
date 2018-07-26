@@ -136,7 +136,7 @@ class PCCVideo {
     return false;
   }
   size_t getWidth() const { return frames_.empty() ? 0 : frames_[0].getWidth(); }
-  size_t getHeight() const { return frames_.empty() ? 0 : frames_[0].height(); }
+  size_t getHeight() const { return frames_.empty() ? 0 : frames_[0].getHeight(); }
   size_t getFrameCount() const { return frames_.size(); }
 
  private:

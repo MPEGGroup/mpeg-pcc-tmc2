@@ -101,6 +101,15 @@ PCCEncoderParameters::PCCEncoderParameters() {
 
   constrainedPack_                      = true;
   binArithCoding_                       = true;
+
+  thresholdColorSmoothing_              = 10.0;
+  thresholdLocalEntropy_                = 4.5;
+  radius2ColorSmoothing_                = 4.0 * 16;
+  neighborCountColorSmoothing_          = 4 * 16;
+  flagColorSmoothing_                   = false;
+
+  groupDilation_			= true;
+  textureDilationOffLossless_		= true;
 }
 
 PCCEncoderParameters::~PCCEncoderParameters() {
@@ -182,6 +191,9 @@ void PCCEncoderParameters::print(){
   std::cout << "\t   textureConfig                        " << textureConfig_                        << std::endl;
   std::cout << "\t   colorSpaceConversionConfig           " << colorSpaceConversionConfig_           << std::endl;
   std::cout << "\t   inverseColorSpaceConversionConfig    " << inverseColorSpaceConversionConfig_    << std::endl;
+  std::cout << "\t dilation" << std::endl;
+  std::cout << "\t   GroupDilation                        " << groupDilation_ << std::endl;
+  std::cout << "\t   textureDilationOffLossless           " << textureDilationOffLossless_ << std::endl;
   std::cout << "\t occupancy map encoding " << std::endl;
   std::cout << "\t   maxCandidateCount                    " << maxCandidateCount_                    << std::endl;
   std::cout << "\t   occupancyPrecision                   " << occupancyPrecision_                   << std::endl;
@@ -190,6 +202,12 @@ void PCCEncoderParameters::print(){
   std::cout << "\t   radius2Smoothing                     " << radius2Smoothing_                     << std::endl;
   std::cout << "\t   radius2BoundaryDetection             " << radius2BoundaryDetection_             << std::endl;
   std::cout << "\t   thresholdSmoothing                   " << thresholdSmoothing_                   << std::endl;
+  std::cout << "\t color smoothing" << std::endl;
+  std::cout << "\t   thresholdColorSmoothing              " << thresholdColorSmoothing_ << std::endl;
+  std::cout << "\t   thresholdLocalEntropy                " << thresholdLocalEntropy_ << std::endl;
+  std::cout << "\t   radius2ColorSmoothing                " << radius2ColorSmoothing_ << std::endl;
+  std::cout << "\t   neighborCountColorSmoothing          " << neighborCountColorSmoothing_ << std::endl;
+  std::cout << "\t   flagColorSmoothing                   " << flagColorSmoothing_ << std::endl;
   std::cout << "\t coloring" << std::endl;
   std::cout << "\t   bestColorSearchRange                 " << bestColorSearchRange_                 << std::endl;
   std::cout << std::endl;
