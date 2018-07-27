@@ -103,7 +103,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
 	  << std::endl;
 
   // Group dilation in Geometry
-  if (params_.groupDilation_){
+  if (params_.groupDilation_ && params_.absoluteD1_){
 	  auto& VideoGemetry = context.getVideoGeometry();
 
 	  for (size_t f = 0; f < frames.size(); ++f) {
