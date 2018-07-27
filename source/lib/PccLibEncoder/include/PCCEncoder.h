@@ -86,13 +86,15 @@ private:
   void printMap(std::vector<bool> img, const size_t sizeU, const size_t sizeV);
   void generateIntraImage( PCCFrameContext& frameContext, const size_t depthIndex, PCCImageGeometry &image);
   bool predictGeometryFrame( PCCFrameContext& frameContext, const PCCImageGeometry &reference, PCCImageGeometry &image);
-  void generateMissedPointsPatch(const PCCPointSet3& source, PCCFrameContext& frameContext);
+  void generateMissedPointsPatch(const PCCPointSet3& source, PCCFrameContext& frameContext, bool useEnhancedDeltaDepthCode); //useEnhancedDeltaDepthCode for EDD
   void sortMissedPointsPatch(PCCFrameContext& frameContext);
   bool generateGeometryVideo( const PCCPointSet3& source, PCCFrameContext& frameContext,
                              const PCCPatchSegmenter3Parameters segmenterParams,
                              PCCVideoGeometry &videoGeometry, PCCFrameContext &prevFrame, size_t frameIndex);
   bool generateTextureVideo( const PCCPointSet3& reconstruct, PCCFrameContext& frameContext,
 		  	  	  	  	  	 PCCVideoTexture &video, const size_t frameCount );
+  //EDD
+  void generateIntraEnhancedDeltaDepthImage(PCCFrameContext& frame, const PCCImageGeometry &imageRef, PCCImageGeometry &image);
 
   PCCEncoderParameters params_;
 };

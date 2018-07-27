@@ -54,6 +54,8 @@ struct PCCPatchSegmenter3Parameters {
   double maxAllowedDist2MissedPointsDetection;
   double maxAllowedDist2MissedPointsSelection;
   double lambdaRefineSegmentation;
+  //EDD code
+  bool   useEnhancedDeltaDepthCode;
 };
 
 class PCCPatchSegmenter3 {
@@ -82,7 +84,8 @@ class PCCPatchSegmenter3 {
                        std::vector<PCCPatch> &patches,
                        std::vector<size_t> &patchPartition,
                        std::vector<size_t> &resampledPatchPartition,
-                       std::vector<size_t> missedPoints, PCCPointSet3 &resampled );
+                       std::vector<size_t> missedPoints, PCCPointSet3 &resampled 
+                       , bool useEnhancedDeltaDepthCode ); //EDD
   void refineSegmentation( const PCCPointSet3 &pointCloud, const PCCStaticKdTree3 &kdtree,
                            const PCCNormalsGenerator3 &normalsGen,
                            const PCCVector3D *orientations, const size_t orientationCount,

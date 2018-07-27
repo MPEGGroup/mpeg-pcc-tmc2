@@ -108,8 +108,11 @@ PCCEncoderParameters::PCCEncoderParameters() {
   neighborCountColorSmoothing_          = 4 * 16;
   flagColorSmoothing_                   = false;
 
-  groupDilation_			= true;
-  textureDilationOffLossless_		= true;
+  groupDilation_			                  = true;
+  textureDilationOffLossless_		        = true;
+
+  enhancedDeltaDepthCode_               = losslessGeo_ ? true : false; //EDD
+
 }
 
 PCCEncoderParameters::~PCCEncoderParameters() {
@@ -150,6 +153,7 @@ void PCCEncoderParameters::print(){
   std::cout << "\t losslessTexture                        " << losslessTexture_                      << std::endl;
   std::cout << "\t noAttributes                           " << noAttributes_                         << std::endl;
   std::cout << "\t losslessGeo444                         " << losslessGeo444_                       << std::endl;
+  std::cout << "\t enhancedDeltaDepthCode                 " << enhancedDeltaDepthCode_               << std::endl; //EDD
   std::cout << "\t uncompressedDataPath                   " << uncompressedDataPath_                 << std::endl;
   std::cout << "\t compressedStreamPath                   " << compressedStreamPath_                 << std::endl;
   std::cout << "\t reconstructedDataPath                  " << reconstructedDataPath_                << std::endl;
@@ -282,6 +286,15 @@ bool PCCEncoderParameters::check(){
   {
     ret = false;
     std::cerr << "When absoultD1 is false, geometryConfig_ should be empty\n";
+  }
+
+  if (!losslessGeo_ && enhancedDeltaDepthCode_) { //EDD
+    enhancedDeltaDepthCode_ = false;
+    std::cerr << "WARNING: enhancedDeltaDepthCode is only for lossless coding mode for now. Force enhancedDeltaDepthCode=FALSE.\n";
+  }
+
+  if (enhancedDeltaDepthCode_ && surfaceThickness_ == 1) { //EDD
+    std::cerr << "WARNING: EDD code doesn't bring any gain when surfaceThickness==1. Please consider to increase the value of surfaceThickness.\n";
   }
 
   return ret;

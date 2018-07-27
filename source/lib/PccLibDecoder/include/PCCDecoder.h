@@ -79,6 +79,7 @@ private:
   uint8_t  radius2ColorSmoothing_;
   uint8_t  neighborCountColorSmoothing_;
   uint8_t  flagColorSmoothing_;
+  bool     enhancedDeltaDepthCode_; //EDD
 };
 }; //~namespace
 

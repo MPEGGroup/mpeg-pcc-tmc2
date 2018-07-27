@@ -195,8 +195,9 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
       params_.thresholdColorSmoothing_,
       params_.thresholdLocalEntropy_,
       params_.radius2ColorSmoothing_,
+      params_.neighborCountColorSmoothing_,
       params_.flagColorSmoothing_
-
+      , (params_.losslessGeo_ ? params_.enhancedDeltaDepthCode_ : false) //EDD
   };
   generatePointCloud( reconstructs, context, generatePointCloudParameters );
 
@@ -547,8 +548,8 @@ void PCCEncoder::packMissedPointsPatch(PCCFrameContext &frame,
 
 bool PCCEncoder::generateGeometryVideo( const PCCPointSet3& source, PCCFrameContext& frame,
                                         const PCCPatchSegmenter3Parameters segmenterParams,
-										PCCVideoGeometry &videoGeometry, PCCFrameContext &prevFrame ,
-										size_t frameIndex) {
+										                    PCCVideoGeometry &videoGeometry, PCCFrameContext &prevFrame ,
+										                    size_t frameIndex) {
   if (!source.getPointCount()) {
     return false;
   }
@@ -558,7 +559,7 @@ bool PCCEncoder::generateGeometryVideo( const PCCPointSet3& source, PCCFrameCont
   segmenter.setNbThread( params_.nbThread_ );
   segmenter.compute(source, segmenterParams, patches);
   if (params_.losslessGeo_) {
-    generateMissedPointsPatch(source, frame);
+    generateMissedPointsPatch(source, frame, segmenterParams.useEnhancedDeltaDepthCode); //useEnhancedDeltaDepthCode for EDD code
     sortMissedPointsPatch(frame);
   }
   
@@ -681,7 +682,7 @@ bool PCCEncoder::predictGeometryFrame( PCCFrameContext& frame, const PCCImageGeo
           if (delta < 0) {
             delta = 0;
           }
-          if (delta > 9) {
+          if (!params_.losslessGeo_ && delta > 9) { //no clipping for lossless coding
             delta = 9;
           }
           // assert(delta < 10);
@@ -693,7 +694,7 @@ bool PCCEncoder::predictGeometryFrame( PCCFrameContext& frame, const PCCImageGeo
   return true;
 }
 
-void PCCEncoder::generateMissedPointsPatch(const PCCPointSet3& source, PCCFrameContext& frame){  
+void PCCEncoder::generateMissedPointsPatch(const PCCPointSet3& source, PCCFrameContext& frame, bool useEnhancedDeltaDepthCode) { //useEnhancedDeltaDepthCode for EDD
   auto& patches = frame.getPatches();
   auto& missedPointsPatch = frame.getMissedPointsPatch();
   missedPointsPatch.sizeU = 0;
@@ -717,14 +718,33 @@ void PCCEncoder::generateMissedPointsPatch(const PCCPointSet3& source, PCCFrameC
                   point0[patch.getTangentAxis()] = double(u) + patch.getU1();
                   point0[patch.getBitangentAxis()] = double(v) + patch.getV1();
                   pointsToBeProjected.addPoint(point0);
-                  const size_t depth1 = patch.getDepth(1)[p];
-                  if (depth1 > depth0) {
+                  if (useEnhancedDeltaDepthCode) {
+                    //EDD
+                    if (patch.getDepthEnhancedDeltaD()[p] != 0) {
                       PCCPoint3D point1;
-                      point1[patch.getNormalAxis()] = double(depth1) + patch.getD1();
                       point1[patch.getTangentAxis()] = double(u) + patch.getU1();
                       point1[patch.getBitangentAxis()] = double(v) + patch.getV1();
-                      pointsToBeProjected.addPoint(point1);
+                      for (uint16_t i = 0; i < 16; i++) //surfaceThickness is not necessary here?
+                      {
+                        if (patch.getDepthEnhancedDeltaD()[p] & (1 << i))
+                        {
+                          uint16_t nDeltaDCur = (i + 1);
+                          point1[patch.getNormalAxis()] = double(depth0 + patch.getD1() + nDeltaDCur);
+                          pointsToBeProjected.addPoint(point1);
+                        }
+                      }//for each i
+                    }//if( patch.getDepthEnhancedDeltaD()[p] != 0) )
                   }
+                  else {
+                    const size_t depth1 = patch.getDepth(1)[p];
+                    if (depth1 > depth0) {
+                        PCCPoint3D point1;
+                        point1[patch.getNormalAxis()] = double(depth1) + patch.getD1();
+                        point1[patch.getTangentAxis()] = double(u) + patch.getU1();
+                        point1[patch.getBitangentAxis()] = double(v) + patch.getV1();
+                        pointsToBeProjected.addPoint(point1);
+                    }
+                  } //~if (useEnhancedDeltaDepthCode) 
               }
           }
       }
@@ -851,6 +871,7 @@ bool PCCEncoder::generateGeometryVideo( const PCCGroupOfFrames& sources, PCCCont
   segmenterParams.maxAllowedDist2MissedPointsDetection  = params_.maxAllowedDist2MissedPointsDetection_;
   segmenterParams.maxAllowedDist2MissedPointsSelection  = params_.maxAllowedDist2MissedPointsSelection_;
   segmenterParams.lambdaRefineSegmentation              = params_.lambdaRefineSegmentation_;
+  segmenterParams.useEnhancedDeltaDepthCode             = params_.losslessGeo_ ? params_.enhancedDeltaDepthCode_ : false; //EDD - make sure EDD only for lossy for now
   auto& videoGeometry = context.getVideoGeometry();
   auto & frames = context.getFrames();
 
@@ -892,14 +913,29 @@ bool PCCEncoder::dilateGeometryVideo( PCCContext &context) {
       auto &frame1 = videoGeometry.getFrame(shift);
       generateIntraImage(frame, 0, frame1);
       auto &frame2 = videoGeometryD1.getFrame(shift);
-      generateIntraImage(frame, 1, frame2);
+      if (params_.enhancedDeltaDepthCode_) { //EDD
+        generateIntraEnhancedDeltaDepthImage(frame, frame1, frame2);
+      }
+      else {
+        generateIntraImage(frame, 1, frame2);
+      }
       dilate(frame, videoGeometry.getFrame(shift));
     } else {
       videoGeometry.resize( shift + 2 );
-      for (size_t f = 0; f < 2; ++f) {
-        auto &frame1 = videoGeometry.getFrame(shift + f);
-        generateIntraImage(frame, f, frame1);
-        dilate(frame, videoGeometry.getFrame(shift + f));
+      if (params_.enhancedDeltaDepthCode_) {
+        auto &frame1 = videoGeometry.getFrame(shift);
+        generateIntraImage(frame, 0, frame1);
+        auto &frame2 = videoGeometry.getFrame(shift + 1);
+        generateIntraEnhancedDeltaDepthImage(frame, frame1, frame2);
+        dilate(frame, videoGeometry.getFrame(shift));
+        dilate(frame, videoGeometry.getFrame(shift + 1));
+      }
+      else {
+        for (size_t f = 0; f < 2; ++f) {
+          auto &frame1 = videoGeometry.getFrame(shift + f);
+          generateIntraImage(frame, f, frame1);
+          dilate(frame, videoGeometry.getFrame(shift + f));
+        }
       }
     }
   }
@@ -1095,7 +1131,9 @@ int PCCEncoder::compressHeader( PCCContext &context, pcc::PCCBitstream &bitstrea
   bitstream.write<uint8_t>(uint8_t(params_.radius2ColorSmoothing_));
   bitstream.write<uint8_t>(uint8_t(params_.neighborCountColorSmoothing_));
   }
-  
+  if (params_.losslessGeo_)
+    bitstream.write<uint8_t>(uint8_t(params_.enhancedDeltaDepthCode_)); //EDD
+
   return 1;
 }
 
@@ -1452,4 +1490,55 @@ void PCCEncoder::compressOccupancyMap( PCCFrameContext& frame, PCCBitstream &bit
   uint32_t compressedBitstreamSize = arithmeticEncoder.stop_encoder();
   bitstream += (uint64_t) compressedBitstreamSize;
   bitstream.write<uint32_t>(compressedBitstreamSize, startPosition );
+}
+
+//EDD
+void PCCEncoder::generateIntraEnhancedDeltaDepthImage(PCCFrameContext &frame, const PCCImageGeometry &imageRef, PCCImageGeometry &image) {
+  size_t width = frame.getWidth();
+  size_t height = frame.getHeight();
+  image.resize(width, height);
+  image.set(0);
+  const int16_t infiniteDepth = (std::numeric_limits<int16_t>::max)();
+  for (const auto &patch : frame.getPatches()) {
+    const size_t v0 = patch.getV0() * patch.getOccupancyResolution();
+    const size_t u0 = patch.getU0() * patch.getOccupancyResolution();
+    for (size_t v = 0; v < patch.getSizeV(); ++v) {
+      for (size_t u = 0; u < patch.getSizeU(); ++u) {
+        const size_t p = v * patch.getSizeU() + u;
+        const int16_t d = patch.getDepth(0)[p];
+        if (d < infiniteDepth) {
+          const int16_t enhancedDeltaD = patch.getDepthEnhancedDeltaD()[p];
+          const size_t x = (u0 + u);
+          const size_t y = (v0 + v);
+          assert(x < width && y < height);
+          image.setValue(0, x, y, uint16_t(enhancedDeltaD + imageRef.getValue(0, x, y)));
+        }
+      }
+    }
+  }
+
+  //missed point patch
+  auto& missedPointsPatch = frame.getMissedPointsPatch();
+  const size_t v0 = missedPointsPatch.v0 * missedPointsPatch.occupancyResolution;
+  const size_t u0 = missedPointsPatch.u0 * missedPointsPatch.occupancyResolution;
+  if (missedPointsPatch.size())
+  {
+    for (size_t v = 0; v < missedPointsPatch.sizeV; ++v) {
+      for (size_t u = 0; u < missedPointsPatch.sizeU; ++u) {
+        const size_t p = v * missedPointsPatch.sizeU + u;
+        if (missedPointsPatch.x[p] < infiniteDepth) {
+          const size_t x = (u0 + u);
+          const size_t y = (v0 + v);
+          assert(x < width && y < height);
+          image.setValue(0, x, y, uint16_t(missedPointsPatch.x[p]));
+          if (params_.losslessGeo444_) {
+            image.setValue(1, x, y, uint16_t(missedPointsPatch.y[p]));
+            image.setValue(2, x, y, uint16_t(missedPointsPatch.z[p]));
+          }
+        }
+      }
+    }
+  }
+
+  return;
 }

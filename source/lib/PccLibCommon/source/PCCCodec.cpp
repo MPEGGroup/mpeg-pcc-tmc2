@@ -92,6 +92,18 @@ void PCCCodec::generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext &f
   pointToPixel.resize(0);
   reconstruct.clear();
 
+//EDD code
+  std::vector<size_t> vecEmptyBlocks;
+  if (params.enhancedDeltaDepthCode_) {
+    for (size_t i = 0; i < blockToPatch.size(); i++)
+      if (blockToPatch[i] == 0)
+        vecEmptyBlocks.push_back(i);
+  }
+  size_t nUsedEmptyBlockCount = 0;
+  size_t nPixelInCurrentBlockCount = 0;
+  size_t nFrameToStore = 0;
+  const size_t nPixelInBlockNum = params.occupancyResolution_ * params.occupancyResolution_;
+
   size_t shift;
   const size_t layerCount = 2;
   if (!params.absoluteD1_) {
@@ -142,86 +154,182 @@ void PCCCodec::generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext &f
               point0[patch.getNormalAxis()] = double(frame0.getValue(0, x, y) + patch.getD1());
               point0[patch.getTangentAxis()] = double(u) + patch.getU1();
               point0[patch.getBitangentAxis()] = double(v) + patch.getV1();
-              for (size_t f = 0; f < layerCount; ++f) {
-                PCCVector3D point1(point0);
-                if (f > 0) {
-                  if( !params.absoluteD1_ ) {
-                    const auto &frame1 = videoD1.getFrame(shift);
-                    point1[patch.getNormalAxis()] += frame1.getValue(0, x, y);
-                  } else {
-                    const auto &frame1 = video.getFrame(f + shift);
-                    point1[patch.getNormalAxis()] = double( frame1.getValue(0, x, y) + patch.getD1());
-                  }
-                }
-                const size_t pointindex_1 = reconstruct.addPoint(point1);
-
-                // Identify boundary points
-                if (occupancyMap[y * imageWidth + x] != 0) {
-                  if (y > 0 && y < imageHeight - 1) {
-                    if (occupancyMap[(y - 1) * imageWidth + x] == 0 ||
-                        occupancyMap[(y + 1) * imageWidth + x] == 0) {
-                      PBflag[y * imageWidth + x] = 1;
-                      reconstruct.setBoundaryPointType(pointindex_1, static_cast<uint16_t>(1));
-                    }
-                  }
-                  if (x > 0 && x < imageWidth - 1) {
-                    if (occupancyMap[y * imageWidth + (x + 1)] == 0 ||
-                        occupancyMap[y * imageWidth + (x - 1)] == 0) {
-                      PBflag[y * imageWidth + x] = 1;
-                      reconstruct.setBoundaryPointType(pointindex_1, static_cast<uint16_t>(1));
-                    }
-                  }
-                  if (y > 0 && y < imageHeight - 1 && x > 0) {
-                    if (occupancyMap[(y - 1) * imageWidth + (x - 1)] == 0 ||
-                        occupancyMap[(y + 1) * imageWidth + (x - 1)] == 0) {
-                      PBflag[y * imageWidth + x] = 1;
-                      reconstruct.setBoundaryPointType(pointindex_1, static_cast<uint16_t>(1));
-                    }
-                  }
-                  if (y > 0 && y < imageHeight - 1 && x < imageWidth - 1) {
-                    if (occupancyMap[(y - 1) * imageWidth + (x + 1)] == 0 ||
-                        occupancyMap[(y + 1) * imageWidth + (x + 1)] == 0) {
-                      PBflag[y * imageWidth + x] = 1;
-                      reconstruct.setBoundaryPointType(pointindex_1, static_cast<uint16_t>(1));
-                    }
-                  }
-                }
-
-                // 1st Extension boundary region
-                if (occupancyMap[y * imageWidth + x] != 0) {
-                  if (y > 0 && y < imageHeight - 1) {
-                    if (PBflag[(y - 1) * imageWidth + x] == 1 ||
-                        PBflag[(y + 1) * imageWidth + x] == 1) {
-                      reconstruct.setBoundaryPointType(pointindex_1, static_cast<uint16_t>(1));
-                    }
-                  }
-                  if (x > 0 && x < imageWidth - 1) {
-                    if (PBflag[y * imageWidth + (x + 1)] == 1 ||
-                        PBflag[y * imageWidth + (x - 1)] == 1) {
-                      reconstruct.setBoundaryPointType(pointindex_1, static_cast<uint16_t>(1));
-                    }
-                  }
-                  if (y > 0 && y < imageHeight - 1 && x > 0) {
-                    if (PBflag[(y - 1) * imageWidth + (x - 1)] == 1 ||
-                        PBflag[(y + 1) * imageWidth + (x - 1)] == 1) {
-                      reconstruct.setBoundaryPointType(pointindex_1, static_cast<uint16_t>(1));
-                    }
-                  }
-                  if (y > 0 && y < imageHeight - 1 && x < imageWidth - 1) {
-                    if (PBflag[(y - 1) * imageWidth + (x + 1)] == 1 ||
-                        PBflag[(y + 1) * imageWidth + (x + 1)] == 1) {
-                      reconstruct.setBoundaryPointType(pointindex_1, static_cast<uint16_t>(1));
-                    }
-                  }
-                }
-
-                reconstruct.setColor(pointindex_1, color);
-                if( PCC_SAVE_POINT_TYPE == 1 ) {
-                  reconstruct.setType( pointindex_1, f == 0 ? PointType::D0 : PointType::D1 );
+              //EDD code
+              if (params.enhancedDeltaDepthCode_) {
+                //D0
+                const size_t pointIndex0 = reconstruct.addPoint(point0);
+                reconstruct.setColor(pointIndex0, color);
+                if (PCC_SAVE_POINT_TYPE == 1) {
+                  reconstruct.setType(pointIndex0, PointType::D0);
                 }
                 partition.push_back(uint32_t(patchIndex));
-                pointToPixel.push_back(PCCVector3<size_t>(x, y, f));
+                pointToPixel.push_back(PCCVector3<size_t>(x, y, 0));
+
+                //EDD code
+                uint16_t eddCode = 0;
+                if (!params.absoluteD1_) {
+                  const auto &frame1 = videoD1.getFrame(shift);
+                  eddCode = frame1.getValue(0, x, y);
+                }
+                else {
+                  const auto &frame0 = video.getFrame(shift);
+                  const auto &frame1 = video.getFrame(shift + 1);
+                  //eddCode = frame1.getValue(0, x, y) - frame0.getValue(0, x, y);
+                  eddCode = (frame1.getValue(0, x, y) > frame0.getValue(0, x, y)) ? (frame1.getValue(0, x, y) - frame0.getValue(0, x, y)) : 0;
+                }
+                PCCVector3D  point1(point0);
+                if (eddCode == 0)
+                {
+                  const size_t pointIndex1 = reconstruct.addPoint(point1);
+                  reconstruct.setColor(pointIndex1, color);
+                  if (PCC_SAVE_POINT_TYPE == 1) {
+                    reconstruct.setType(pointIndex1, PointType::D1);
+                  }
+                  partition.push_back(uint32_t(patchIndex));
+                  pointToPixel.push_back(PCCVector3<size_t>(x, y, 1));
+                }
+                else
+                { //eddCode != 0
+                  uint16_t addedPointCount = 0;
+                  size_t   pointIndex1 = 0;
+                  //for (uint16_t i = 0; i < surfaceThickness; i++) 
+                  for (uint16_t i = 0; i < 10; i++)
+                  {
+                    if (eddCode & (1 << i))
+                    {
+                      uint8_t deltaDCur = (i + 1);
+                      point1[patch.getNormalAxis()] = (double)(point0[patch.getNormalAxis()] + deltaDCur);
+                      pointIndex1 = reconstruct.addPoint(point1);
+                      reconstruct.setColor(pointIndex1, color);
+                      if (PCC_SAVE_POINT_TYPE == 1) {
+                        reconstruct.setType(pointIndex1, PointType::InBetween);
+                      }
+                      partition.push_back(uint32_t(patchIndex));
+                      if (addedPointCount == 0)
+                      {
+                        pointToPixel.push_back(PCCVector3<size_t>(x, y, 1));
+                      }
+                      else
+                      {
+                        size_t uBlock = vecEmptyBlocks[nUsedEmptyBlockCount] % blockToPatchWidth;
+                        size_t vBlock = vecEmptyBlocks[nUsedEmptyBlockCount] / blockToPatchWidth;
+                        size_t uu = uBlock * params.occupancyResolution_ + nPixelInCurrentBlockCount % params.occupancyResolution_;
+                        size_t vv = vBlock * params.occupancyResolution_ + nPixelInCurrentBlockCount / params.occupancyResolution_;
+                        pointToPixel.push_back(PCCVector3<size_t>(uu, vv, nFrameToStore));
+                        occupancyMap[vv * imageWidth + uu] = 1; //occupied
+
+                        ++nPixelInCurrentBlockCount;
+                        if (nPixelInCurrentBlockCount >= nPixelInBlockNum)
+                        {
+                          nUsedEmptyBlockCount++;
+                          nPixelInCurrentBlockCount = 0;
+                          if (nUsedEmptyBlockCount >= vecEmptyBlocks.size())
+                          {
+                            if (nFrameToStore == 0)
+                            {
+                              nFrameToStore = 1;
+                              nUsedEmptyBlockCount = 0;
+                            }
+                            else
+                            {
+                              std::cout << "Enchanded delta depth: for packing the color of in-between points, all emptry blocks are used up. Need to enlarge image size. Not implemented... Exit for the moment...\n";
+                              exit(-1);
+                            }
+                          }
+                        }
+                      }
+                      addedPointCount++;
+                    }
+                  } //for each bit of EDD code
+
+                  if (PCC_SAVE_POINT_TYPE == 1) {
+                    reconstruct.setType(pointIndex1, PointType::D1);
+                  }
+                  //Without "Identify boundary points" & "1st Extension boundary region" as EDD code is only for lossless coding now
+                } // if (eddCode == 0) 
               }
+              else {//if (params.enhancedDeltaDepthCode_)
+                for (size_t f = 0; f < layerCount; ++f) {
+                  PCCVector3D point1(point0);
+                  if (f > 0) {
+                    if( !params.absoluteD1_ ) {
+                      const auto &frame1 = videoD1.getFrame(shift);
+                      point1[patch.getNormalAxis()] += frame1.getValue(0, x, y);
+                    } else {
+                      const auto &frame1 = video.getFrame(f + shift);
+                      point1[patch.getNormalAxis()] = double( frame1.getValue(0, x, y) + patch.getD1());
+                    }
+                  }
+                  const size_t pointindex_1 = reconstruct.addPoint(point1);
+
+                  // Identify boundary points
+                  if (occupancyMap[y * imageWidth + x] != 0) {
+                    if (y > 0 && y < imageHeight - 1) {
+                      if (occupancyMap[(y - 1) * imageWidth + x] == 0 ||
+                          occupancyMap[(y + 1) * imageWidth + x] == 0) {
+                        PBflag[y * imageWidth + x] = 1;
+                        reconstruct.setBoundaryPointType(pointindex_1, static_cast<uint16_t>(1));
+                      }
+                    }
+                    if (x > 0 && x < imageWidth - 1) {
+                      if (occupancyMap[y * imageWidth + (x + 1)] == 0 ||
+                          occupancyMap[y * imageWidth + (x - 1)] == 0) {
+                        PBflag[y * imageWidth + x] = 1;
+                        reconstruct.setBoundaryPointType(pointindex_1, static_cast<uint16_t>(1));
+                      }
+                    }
+                    if (y > 0 && y < imageHeight - 1 && x > 0) {
+                      if (occupancyMap[(y - 1) * imageWidth + (x - 1)] == 0 ||
+                          occupancyMap[(y + 1) * imageWidth + (x - 1)] == 0) {
+                        PBflag[y * imageWidth + x] = 1;
+                        reconstruct.setBoundaryPointType(pointindex_1, static_cast<uint16_t>(1));
+                      }
+                    }
+                    if (y > 0 && y < imageHeight - 1 && x < imageWidth - 1) {
+                      if (occupancyMap[(y - 1) * imageWidth + (x + 1)] == 0 ||
+                          occupancyMap[(y + 1) * imageWidth + (x + 1)] == 0) {
+                        PBflag[y * imageWidth + x] = 1;
+                        reconstruct.setBoundaryPointType(pointindex_1, static_cast<uint16_t>(1));
+                      }
+                    }
+                  }
+
+                  // 1st Extension boundary region
+                  if (occupancyMap[y * imageWidth + x] != 0) {
+                    if (y > 0 && y < imageHeight - 1) {
+                      if (PBflag[(y - 1) * imageWidth + x] == 1 ||
+                          PBflag[(y + 1) * imageWidth + x] == 1) {
+                        reconstruct.setBoundaryPointType(pointindex_1, static_cast<uint16_t>(1));
+                      }
+                    }
+                    if (x > 0 && x < imageWidth - 1) {
+                      if (PBflag[y * imageWidth + (x + 1)] == 1 ||
+                          PBflag[y * imageWidth + (x - 1)] == 1) {
+                        reconstruct.setBoundaryPointType(pointindex_1, static_cast<uint16_t>(1));
+                      }
+                    }
+                    if (y > 0 && y < imageHeight - 1 && x > 0) {
+                      if (PBflag[(y - 1) * imageWidth + (x - 1)] == 1 ||
+                          PBflag[(y + 1) * imageWidth + (x - 1)] == 1) {
+                        reconstruct.setBoundaryPointType(pointindex_1, static_cast<uint16_t>(1));
+                      }
+                    }
+                    if (y > 0 && y < imageHeight - 1 && x < imageWidth - 1) {
+                      if (PBflag[(y - 1) * imageWidth + (x + 1)] == 1 ||
+                          PBflag[(y + 1) * imageWidth + (x + 1)] == 1) {
+                        reconstruct.setBoundaryPointType(pointindex_1, static_cast<uint16_t>(1));
+                      }
+                    }
+                  }
+
+                  reconstruct.setColor(pointindex_1, color);
+                  if( PCC_SAVE_POINT_TYPE == 1 ) {
+                    reconstruct.setType( pointindex_1, f == 0 ? PointType::D0 : PointType::D1 );
+                  }
+                  partition.push_back(uint32_t(patchIndex));
+                  pointToPixel.push_back(PCCVector3<size_t>(x, y, f));
+                }
+              } //if (params.enhancedDeltaDepthCode_)
             }
           }
         }

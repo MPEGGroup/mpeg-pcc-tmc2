@@ -86,6 +86,8 @@ class PCCPatch {
   size_t                      getBestMatchIdx()        const { return bestMatchIdx_;          }
   const std::vector<int16_t>& getDepth( int i )        const { return depth_[i];              }
   const std::vector<bool>&    getOccupancy()           const { return occupancy_;             }
+  std::vector<int16_t>&       getDepthEnhancedDeltaD()       { return depthEnhancedDeltaD_;   } //EDD
+  const std::vector<int16_t>& getDepthEnhancedDeltaD() const { return depthEnhancedDeltaD_;   } //EDD
 
   void print() const {
     printf("Patch[%3zu] uv0 = %4zu %4zu / %4zu %4zu uvd1 = %4zu %4zu %4zu / %4zu %4zu %4zu \n",
@@ -118,6 +120,9 @@ class PCCPatch {
 
   size_t viewId_;                  //viewId in [0,1,2,3,4,5]
   size_t bestMatchIdx_;            //index of matched patch from pre-frame patch.
+
+  std::vector<int16_t> depthEnhancedDeltaD_;  // EDD
+
 };
 
 struct PCCMissedPointsPatch {

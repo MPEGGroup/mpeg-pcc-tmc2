@@ -385,13 +385,18 @@ bool parseParameters(int argc, char *argv[], PCCEncoderParameters& params ) {
     ("groupDilation",
       params.groupDilation_,
       params.groupDilation_,
-      "Group Dilation")
-     ;
+      "Group Dilation")     
 
     ("textureDilationOffLossless",
       params.textureDilationOffLossless_,
       params.textureDilationOffLossless_,
       "Group Dilation")
+
+    //EDD code
+    ("enhancedDeltaDepthCode",
+      params.enhancedDeltaDepthCode_,
+      params.enhancedDeltaDepthCode_,
+      "Use enhanced-delta-depth code")
       ;
 
   po::setDefaults(opts);

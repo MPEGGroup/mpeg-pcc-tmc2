@@ -62,6 +62,7 @@ struct GeneratePointCloudParameters {
   double radius2ColorSmoothing_;
   size_t neighborCountColorSmoothing_;
   bool   flagColorSmoothing_;
+  bool   enhancedDeltaDepthCode_; //EDD code
 };
 
 class PCCCodec {

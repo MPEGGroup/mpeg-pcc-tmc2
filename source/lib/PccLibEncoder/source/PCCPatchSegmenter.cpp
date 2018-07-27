@@ -97,7 +97,8 @@ void PCCPatchSegmenter3::compute( const PCCPointSet3 &geometry, const PCCPatchSe
                   params.maxAllowedDist2MissedPointsDetection,
                   params.maxAllowedDist2MissedPointsSelection, params.surfaceThickness,
                   params.maxAllowedDepth, partition, patches, patchPartition,
-                  resampledPatchPartition, missedPoints, resampled);
+                  resampledPatchPartition, missedPoints, resampled
+                  , params.useEnhancedDeltaDepthCode); //EDD
   std::cout << "[done]" << std::endl;
 }
 
@@ -158,7 +159,8 @@ void PCCPatchSegmenter3::segmentPatches(const PCCPointSet3 &points, const PCCSta
                             std::vector<PCCPatch> &patches,
                             std::vector<size_t> &patchPartition,
                             std::vector<size_t> &resampledPatchPartition,
-                            std::vector<size_t> missedPoints, PCCPointSet3 &resampled) {
+                            std::vector<size_t> missedPoints, PCCPointSet3 &resampled
+                            , bool useEnhancedDeltaDepthCode) { //useEnhancedDeltaDepthCode for EDD
   const size_t pointCount = points.getPointCount();
   patchPartition.resize(pointCount, 0);
 
@@ -265,6 +267,8 @@ void PCCPatchSegmenter3::segmentPatches(const PCCPointSet3 &points, const PCCSta
       patch.getV1()    = size_t(boundingBox.min_[patch.getBitangentAxis()]);
       patch.getD1()    = infiniteDepth;
       patch.getDepth(0).resize(patch.getSizeU() * patch.getSizeV(), infiniteDepth);
+      if (useEnhancedDeltaDepthCode) //EDD
+        patch.getDepthEnhancedDeltaD().resize(patch.getSizeU() * patch.getSizeV(), 0);
 
       patch.getOccupancyResolution() = occupancyResolution;
       patch.getSizeU0() = 0;
@@ -331,6 +335,18 @@ void PCCPatchSegmenter3::segmentPatches(const PCCPointSet3 &points, const PCCSta
             d > patch.getDepth(1)[p]) {
           patch.getDepth(1)[p] = d;
         }
+        //EDD
+        if (useEnhancedDeltaDepthCode && depth0 < infiniteDepth && (d - depth0) > 0 && (d - depth0) <= int16_t(surfaceThickness))
+        {
+          const uint16_t oldEDDCode = patch.getDepthEnhancedDeltaD()[p]; //EDD: to deal with the possible overflow problem
+          const uint16_t deltaD = d - depth0;
+          patch.getDepthEnhancedDeltaD()[p] |= 1 << (deltaD - 1);
+          if ((depth0 + patch.getDepthEnhancedDeltaD()[p]) > 1023) //EDD: 10 bit coding case. Temporary solution for data overflow case.
+          {
+            patch.getDepthEnhancedDeltaD()[p] = oldEDDCode;
+            std::cout << "(D0 + EDD-Code) > 1023. Data overflow observed (assume using 10bit coding). Temporary solution: the corresponding inbetween or Depth1 point will be regarded as missing point. To be improved if this happens a lot...\n";
+          }
+        }
       }
 
       patch.getSizeD() = 0;
@@ -361,10 +377,26 @@ void PCCPatchSegmenter3::segmentPatches(const PCCPointSet3 &points, const PCCSta
             resampledPatchPartition.push_back(patchIndex);
 
             patch.getDepth(1)[p] -= int16_t(patch.getD1());
-            point[patch.getNormalAxis()] = double(patch.getDepth(1)[p] + patch.getD1());
-            resampled.addPoint(point);
-            resampledPatchPartition.push_back(patchIndex);
-            assert( abs(patch.getDepth(1)[p] - patch.getDepth(0)[p]) <= int(surfaceThickness));
+            if (useEnhancedDeltaDepthCode) { //EDD
+              if (patch.getDepthEnhancedDeltaD()[p] != 0) {
+                for (uint16_t i = 0; i < surfaceThickness; i++)
+                {
+                  if (patch.getDepthEnhancedDeltaD()[p] & (1 << i))
+                  {
+                    uint16_t nDeltaDCur = (i + 1);
+                    point[patch.getNormalAxis()] = double(depth0 + patch.getD1() + nDeltaDCur);
+                    resampled.addPoint(point);
+                    resampledPatchPartition.push_back(patchIndex);
+                  }
+                }//for each i
+              }//if( patch.getDepthEnhancedDeltaD()[p] != 0) )
+            } //if(useEnhancedDeltaDepthCode)
+            else {
+              point[patch.getNormalAxis()] = double(patch.getDepth(1)[p] + patch.getD1());
+              resampled.addPoint(point);
+              resampledPatchPartition.push_back(patchIndex);
+              assert( abs(patch.getDepth(1)[p] - patch.getDepth(0)[p]) <= int(surfaceThickness));
+            }//if(useEnhancedDeltaDepthCode)
           }
         }
       }

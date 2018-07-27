@@ -74,7 +74,7 @@ namespace pcc {
   enum PCCEndianness  { PCC_BIG_ENDIAN = 0, PCC_LITTLE_ENDIAN = 1 };
   enum ColorTransform { COLOR_TRANSFORM_NONE = 0, COLOR_TRANSFORM_RGB_TO_YCBCR = 1 };
   enum PCCAxis3       { PCC_AXIS3_UNDEFINED = -1, PCC_AXIS3_X = 0, PCC_AXIS3_Y = 1, PCC_AXIS3_Z = 2 };
-  enum PointType      { Unset = 0, D0, D1, Smooth };
+  enum PointType      { Unset = 0, D0, D1, Smooth, InBetween }; //InBetween for EDD code
 
   // ******************************************************************* //
   // Static functions

@@ -127,9 +127,12 @@ class PCCEncoderParameters {
     bool                binArithCoding_;
 	
     // dilation
-    bool		groupDilation_;
+    bool		            groupDilation_;
     bool                textureDilationOffLossless_;
-  };
+
+    // EDD
+    bool                enhancedDeltaDepthCode_;
+};
 
 }; //~namespace
 

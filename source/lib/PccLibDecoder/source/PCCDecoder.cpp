@@ -129,6 +129,7 @@ int PCCDecoder::decode( PCCBitstream &bitstream, PCCContext &context, PCCGroupOf
       (double)radius2ColorSmoothing_,
       neighborCountColorSmoothing_,
       flagColorSmoothing_
+      , ((losslessGeo_ != 0) ? enhancedDeltaDepthCode_ : false) //EDD
   };
   generatePointCloud( reconstructs, context, generatePointCloudParameters );
 
@@ -183,6 +184,14 @@ int PCCDecoder::decompressHeader( PCCContext &context, PCCBitstream &bitstream )
     bitstream.read<uint8_t>(radius2ColorSmoothing_);
     bitstream.read<uint8_t>(neighborCountColorSmoothing_);
   }
+  //EDD
+  enhancedDeltaDepthCode_ = false;
+  if (losslessGeo_) {
+    uint8_t enhancedDeltaDepthCode;
+    bitstream.read<uint8_t>(enhancedDeltaDepthCode);
+    enhancedDeltaDepthCode_ = enhancedDeltaDepthCode > 0;
+  }
+
   return 1;
 }
 
