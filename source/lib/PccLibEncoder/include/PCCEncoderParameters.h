@@ -132,6 +132,10 @@ class PCCEncoderParameters {
 
     // EDD
     bool                enhancedDeltaDepthCode_;
+	
+    //visual quality
+	bool			patchColorSubsampling_;
+
 };
 
 }; //~namespace

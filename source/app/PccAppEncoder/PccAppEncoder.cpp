@@ -397,6 +397,13 @@ bool parseParameters(int argc, char *argv[], PCCEncoderParameters& params ) {
       params.enhancedDeltaDepthCode_,
       params.enhancedDeltaDepthCode_,
       "Use enhanced-delta-depth code")
+	  
+	//visual quality
+    ("patchColorSubsampling", 
+     params.patchColorSubsampling_, 
+     false, 
+     "Enable per patch color sub-sampling\n")
+
       ;
 
   po::setDefaults(opts);

@@ -155,6 +155,12 @@ bool parseParameters(int argc, char *argv[], PCCDecoderParameters& params ) {
      params.keepIntermediateFiles_,
      "Keep intermediate files: RGB, YUV and bin")
 
+	 //visual quality
+    ("patchColorSubsampling", 
+     params.patchColorSubsampling_, 
+     false, 
+     "Enable per-patch color up-sampling")
+
  ;
 
   po::setDefaults(opts);

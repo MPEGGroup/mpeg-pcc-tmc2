@@ -57,6 +57,8 @@ class PCCDecoderParameters {
 
   size_t         nbThread_;
   bool           keepIntermediateFiles_;
+  //visual quality
+  bool			patchColorSubsampling_;	
 };
 
 }; //~namespace

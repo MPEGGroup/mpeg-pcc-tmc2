@@ -62,6 +62,7 @@ void PCCDecoderParameters::print() {
   std::cout << "\t   colorSpaceConversionPath          " << colorSpaceConversionPath_          << std::endl;
   std::cout << "\t   videoDecoderPath                  " << videoDecoderPath_                  << std::endl;
   std::cout << "\t   inverseColorSpaceConversionConfig " << inverseColorSpaceConversionConfig_ << std::endl;
+  std::cout << "\t   patchColorSubsampling             " << patchColorSubsampling_             << std::endl;
   std::cout << std::endl;
 }
 

@@ -87,8 +87,8 @@ int PCCDecoder::decode( PCCBitstream &bitstream, PCCContext &context, PCCGroupOf
     // Compress D0
     auto sizeGeometryD0Video = bitstream.size();
     videoDecoder.decompress( context.getVideoGeometry(), path.str() + "geometryD0", width_, height_,
-                             context.size(), bitstream, params_.videoDecoderPath_,
-                             "", "", (losslessGeo_?losslessGeo444_:false), nbyteGeo,
+                             context.size(), bitstream, params_.videoDecoderPath_, context,
+                             "", "", (losslessGeo_?losslessGeo444_:false), false, nbyteGeo,
                              params_.keepIntermediateFiles_ );
     sizeGeometryD0Video = bitstream.size() - sizeGeometryD0Video;
     std::cout << "geometry D0 video ->" << sizeGeometryD0Video << " B" << std::endl;
@@ -96,8 +96,8 @@ int PCCDecoder::decode( PCCBitstream &bitstream, PCCContext &context, PCCGroupOf
     // Compress D1
     auto sizeGeometryD1Video = bitstream.size();
     videoDecoder.decompress(context.getVideoGeometryD1(), path.str() + "geometryD1", width_, height_,
-                            context.size(), bitstream, params_.videoDecoderPath_,
-                            "", "", (losslessGeo_?losslessGeo444_:false), nbyteGeo,
+                            context.size(), bitstream, params_.videoDecoderPath_, context,
+                            "", "", (losslessGeo_?losslessGeo444_:false), false, nbyteGeo,
                             params_.keepIntermediateFiles_ );
     sizeGeometryD1Video = bitstream.size() - sizeGeometryD1Video;
 
@@ -107,8 +107,8 @@ int PCCDecoder::decode( PCCBitstream &bitstream, PCCContext &context, PCCGroupOf
   else {
     auto sizeGeometryVideo = bitstream.size();
     videoDecoder.decompress(context.getVideoGeometry(), path.str() + "geometry", width_, height_,
-                            context.size() * 2, bitstream, params_.videoDecoderPath_,
-                            "", "", losslessGeo_ & losslessGeo444_, nbyteGeo,
+                            context.size() * 2, bitstream, params_.videoDecoderPath_, context,
+                            "", "", losslessGeo_ & losslessGeo444_, false, nbyteGeo,
                             params_.keepIntermediateFiles_);
     sizeGeometryVideo = bitstream.size() - sizeGeometryVideo;
     std::cout << "geometry video ->" << sizeGeometryVideo << " B" << std::endl;
@@ -140,9 +140,10 @@ int PCCDecoder::decode( PCCBitstream &bitstream, PCCContext &context, PCCGroupOf
                              path.str() + "texture", width_, height_,
                              context.size() * 2, bitstream,
                              params_.videoDecoderPath_,
+                             context,
                              params_.inverseColorSpaceConversionConfig_,
                              params_.colorSpaceConversionPath_,
-                             losslessTexture_ != 0, nbyteTexture,
+                             losslessTexture_ != 0, params_.patchColorSubsampling_, nbyteTexture,
                              params_.keepIntermediateFiles_ );
     sizeTextureVideo = bitstream.size() - sizeTextureVideo;
     std::cout << "texture video  ->" << sizeTextureVideo << " B" << std::endl;

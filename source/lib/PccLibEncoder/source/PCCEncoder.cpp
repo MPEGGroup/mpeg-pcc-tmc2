@@ -135,8 +135,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
     auto sizeGeometryD0Video = bitstream.size();
     auto& videoGeometry = context.getVideoGeometry();
     videoEncoder.compress(videoGeometry, path.str() + "geometryD0", (params_.geometryQP_-1), bitstream,
-                          params_.geometryD0Config_, params_.videoEncoderPath_,
-                          "", "", "", params_.losslessGeo_ && params_.losslessGeo444_,
+                          params_.geometryD0Config_, params_.videoEncoderPath_,  context,
+                          "", "", "", params_.losslessGeo_ && params_.losslessGeo444_, false,
                           nbyteGeo, params_.keepIntermediateFiles_);
     sizeGeometryD0Video = bitstream.size() - sizeGeometryD0Video;
 
@@ -154,8 +154,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
     // Compress geometryD1
     auto sizeGeometryD1Video = bitstream.size();
     videoEncoder.compress(videoGeometryD1, path.str() + "geometryD1", params_.geometryQP_, bitstream,
-                          params_.geometryD1Config_, params_.videoEncoderPath_,
-                          "", "", "", params_.losslessGeo_ && params_.losslessGeo444_,
+                          params_.geometryD1Config_, params_.videoEncoderPath_, context,
+                          "", "", "", params_.losslessGeo_ && params_.losslessGeo444_, false,
                           nbyteGeo, params_.keepIntermediateFiles_);
 
     sizeGeometryD1Video = bitstream.size() - sizeGeometryD1Video;
@@ -172,8 +172,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
     auto sizeGeometryVideo = bitstream.size();
     auto& videoGeometry = context.getVideoGeometry();	
     videoEncoder.compress(videoGeometry, path.str() + "geometry", params_.geometryQP_, bitstream,
-                          params_.geometryConfig_, params_.videoEncoderPath_, "", "", "",
-                          params_.losslessGeo_ && params_.losslessGeo444_,
+                          params_.geometryConfig_, params_.videoEncoderPath_, context, "", "", "",
+                          params_.losslessGeo_ && params_.losslessGeo444_, false,
                           params_.flagColorSmoothing_,
                           nbyteGeo, params_.keepIntermediateFiles_ );
     sizeGeometryVideo = bitstream.size() - sizeGeometryVideo;
@@ -245,10 +245,10 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
 		const size_t nbyteTexture = 1;
     videoEncoder.compress( videoTexture,path.str() + "texture", params_.textureQP_,
                            bitstream, params_.textureConfig_,
-                           params_.videoEncoderPath_,
+                           params_.videoEncoderPath_, context,
                            params_.colorSpaceConversionConfig_,
                            params_.inverseColorSpaceConversionConfig_,
-                           params_.colorSpaceConversionPath_, params_.losslessTexture_,
+                           params_.colorSpaceConversionPath_, params_.losslessTexture_, params_.patchColorSubsampling_,
                            params_.flagColorSmoothing_, nbyteTexture,
                            params_.keepIntermediateFiles_ );
     sizeTextureVideo = bitstream.size() - sizeTextureVideo;

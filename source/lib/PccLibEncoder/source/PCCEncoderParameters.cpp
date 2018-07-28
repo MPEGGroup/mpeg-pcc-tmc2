@@ -108,11 +108,12 @@ PCCEncoderParameters::PCCEncoderParameters() {
   neighborCountColorSmoothing_          = 4 * 16;
   flagColorSmoothing_                   = false;
 
-  groupDilation_			                  = true;
-  textureDilationOffLossless_		        = true;
+  groupDilation_    		            = true;
+  textureDilationOffLossless_           = true;
 
   enhancedDeltaDepthCode_               = losslessGeo_ ? true : false; //EDD
 
+  patchColorSubsampling_                = false;
 }
 
 PCCEncoderParameters::~PCCEncoderParameters() {
@@ -214,6 +215,7 @@ void PCCEncoderParameters::print(){
   std::cout << "\t   flagColorSmoothing                   " << flagColorSmoothing_ << std::endl;
   std::cout << "\t coloring" << std::endl;
   std::cout << "\t   bestColorSearchRange                 " << bestColorSearchRange_                 << std::endl;
+  std::cout << "\t   patchColorSubsampling                " << patchColorSubsampling_                << std::endl;
   std::cout << std::endl;
 }
 
