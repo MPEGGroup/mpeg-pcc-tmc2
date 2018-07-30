@@ -37,6 +37,7 @@
 #include "PCCCommon.h"
 #include "PCCDecoderParameters.h"
 #include "PCCCodec.h"
+#include "ArithmeticCodec.h"
 
 namespace pcc {
 
@@ -44,6 +45,8 @@ class PCCBitstream;
 class PCCContext;
 class PCCFrameContext;
 class PCCGroupOfFrames; 
+class PCCPatch;
+class Arithmetic_Codec;
 
 class PCCDecoder : public PCCCodec {
 public:
@@ -57,7 +60,10 @@ private:
  
   int  decompressHeader( PCCContext &context, PCCBitstream &bitstream );
   void decompressOccupancyMap( PCCContext &context, PCCBitstream& bitstream );
-  void decompressOccupancyMap( PCCFrameContext& frame, PCCBitstream &bitstream );
+
+  void decompressOccupancyMap( PCCFrameContext& frame, PCCBitstream &bitstream ,std::vector<PCCPatch> prePatches, size_t frameIndex);
+  void decompressPatchMetaDataM42195( std::vector<PCCPatch> &patches, std::vector<PCCPatch> prePatches, PCCBitstream &bitstream ,
+    o3dgc::Arithmetic_Codec &arithmeticDecoder, o3dgc::Static_Bit_Model &bModel0, uint32_t &compressedBitstreamSize, size_t occupancyPrecision);
 
   PCCDecoderParameters params_;
   
@@ -80,6 +86,8 @@ private:
   uint8_t  neighborCountColorSmoothing_;
   uint8_t  flagColorSmoothing_;
   bool     enhancedDeltaDepthCode_; //EDD
+  bool     deltaCoding_;
+
 };
 }; //~namespace
 

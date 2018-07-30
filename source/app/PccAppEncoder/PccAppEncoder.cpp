@@ -404,7 +404,12 @@ bool parseParameters(int argc, char *argv[], PCCEncoderParameters& params ) {
      false, 
      "Enable per patch color sub-sampling\n")
 
-      ;
+    ("deltaCoding_",
+     params.deltaCoding_,
+     params.deltaCoding_,
+     "Delta meta-data coding")
+
+     ;
 
   po::setDefaults(opts);
   po::ErrorReporter err;

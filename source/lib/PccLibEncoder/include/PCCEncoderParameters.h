@@ -136,7 +136,8 @@ class PCCEncoderParameters {
     //visual quality
 	bool			patchColorSubsampling_;
 
-};
+    bool                deltaCoding_;
+  };
 
 }; //~namespace
 

@@ -114,6 +114,8 @@ PCCEncoderParameters::PCCEncoderParameters() {
   enhancedDeltaDepthCode_               = losslessGeo_ ? true : false; //EDD
 
   patchColorSubsampling_                = false;
+
+  deltaCoding_                          = true;
 }
 
 PCCEncoderParameters::~PCCEncoderParameters() {
@@ -167,6 +169,7 @@ void PCCEncoderParameters::print(){
   std::cout << "\t absoluteD1                             " << absoluteD1_                           << std::endl;
   std::cout << "\t constrainedPack                        " << constrainedPack_                      << std::endl;
   std::cout << "\t binArithCoding                         " << binArithCoding_                       << std::endl;
+  std::cout << "\t deltaCoding                            " << deltaCoding_                          << std::endl;
   std::cout << "\t segmentation" << std::endl;
   std::cout << "\t   nnNormalEstimation                   " << nnNormalEstimation_                   << std::endl;
   std::cout << "\t   maxNNCountRefineSegmentation         " << maxNNCountRefineSegmentation_         << std::endl;

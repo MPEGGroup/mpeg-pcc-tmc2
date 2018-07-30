@@ -37,6 +37,7 @@
 #include "PCCCommon.h"
 #include "PCCEncoderParameters.h"
 #include "PCCCodec.h"
+#include "ArithmeticCodec.h"
 
 namespace pcc {
 
@@ -54,6 +55,9 @@ class PCCImage;
 typedef pcc::PCCImage<uint8_t,  3> PCCImageTexture;
 typedef pcc::PCCImage<uint16_t, 3> PCCImageGeometry;
 struct PCCPatchSegmenter3Parameters; 
+class PCCPatch;
+struct PCCBistreamPosition;
+class Arithmetic_Codec;
 
 class PCCEncoder : public PCCCodec {
 public:
@@ -68,7 +72,10 @@ private:
   int  compressHeader( PCCContext &context, PCCBitstream &bitstream );
 
   void compressOccupancyMap( PCCContext &context, PCCBitstream& bitstream );
-  void compressOccupancyMap( PCCFrameContext &frame, PCCBitstream& bitstream );
+
+  void compressOccupancyMap( PCCFrameContext &frame, PCCBitstream& bitstream, std::vector<pcc::PCCPatch> prePatches, size_t frameIndex);
+  void compressPatchMetaDataM42195( std::vector<pcc::PCCPatch> patches, std::vector<pcc::PCCPatch> prePatches, size_t numMatchedPatches, PCCBitstream &bitstream ,
+    o3dgc::Arithmetic_Codec &arithmeticEncoder, o3dgc::Static_Bit_Model &bModel0, PCCBistreamPosition &startPosition);
 
   bool generateGeometryVideo( const PCCGroupOfFrames& sources, PCCContext &context );
   bool resizeGeometryVideo( PCCContext &context );
