@@ -38,6 +38,7 @@
 #include "PCCEncoderParameters.h"
 #include "PCCCodec.h"
 #include "ArithmeticCodec.h"
+#include "PCCMetadata.h"
 
 namespace pcc {
 
@@ -69,12 +70,15 @@ public:
               PCCBitstream &bitstream, PCCGroupOfFrames& reconstructs );
 
 private:
+  int  writeMetadata(const PCCMetadata &metadata, PCCBitstream &bitstream );
+  int  compressMetadata(const PCCMetadata &metadata, o3dgc::Arithmetic_Codec &arithmeticEncoder );
+
   int  compressHeader( PCCContext &context, PCCBitstream &bitstream );
 
   void compressOccupancyMap( PCCContext &context, PCCBitstream& bitstream );
 
-  void compressOccupancyMap( PCCFrameContext &frame, PCCBitstream& bitstream, std::vector<pcc::PCCPatch> prePatches, size_t frameIndex);
-  void compressPatchMetaDataM42195( std::vector<pcc::PCCPatch> patches, std::vector<pcc::PCCPatch> prePatches, size_t numMatchedPatches, PCCBitstream &bitstream ,
+  void compressOccupancyMap( PCCFrameContext &frame, PCCBitstream& bitstream, PCCFrameContext &preFrame, size_t frameIndex);
+  void compressPatchMetaDataM42195(PCCFrameContext &frame, PCCFrameContext &preFrame, size_t numMatchedPatches, PCCBitstream &bitstream ,
     o3dgc::Arithmetic_Codec &arithmeticEncoder, o3dgc::Static_Bit_Model &bModel0, PCCBistreamPosition &startPosition);
 
   bool generateGeometryVideo( const PCCGroupOfFrames& sources, PCCContext &context );

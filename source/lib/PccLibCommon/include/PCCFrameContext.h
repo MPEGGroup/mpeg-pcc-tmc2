@@ -38,6 +38,7 @@
 
 #include "PCCPointSet.h"
 #include "PCCPatch.h"
+#include "PCCMetadata.h"
 
 namespace pcc {
 
@@ -56,6 +57,7 @@ class PCCFrameContext {
   std::vector<uint32_t>&           getOccupancyMap      () { return occupancyMap_;      }
   std::vector<PCCPatch>&           getPatches           () { return patches_;           }
   PCCMissedPointsPatch&            getMissedPointsPatch () { return missedPointsPatch_; }
+  PCCMetadata&                     getFrameLevelMetadata() { return frameLevelMetadata_; }
 
  private:
   size_t index_;
@@ -67,6 +69,7 @@ class PCCFrameContext {
   std::vector<uint32_t> occupancyMap_;
   std::vector<PCCPatch> patches_;
   PCCMissedPointsPatch missedPointsPatch_;
+  PCCMetadata frameLevelMetadata_;
 };
 
 }; //~namespace

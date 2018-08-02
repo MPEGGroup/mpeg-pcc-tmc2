@@ -448,10 +448,21 @@ int compressVideo( const PCCEncoderParameters& params, StopwatchUserTime &clock)
   size_t contextIndex = 0;
   PCCEncoder encoder;
   encoder.setParameters( params );
+  // Place to get/set default values for gof metadata enabled flags (in sequence level).
+  PCCMetadataEnabledFlags gofLevelMetadataEnabledFlags;
   while (startFrameNumber < endFrameNumber0) {
     const size_t endFrameNumber = min(startFrameNumber + groupOfFramesSize0, endFrameNumber0);
     PCCContext context;
     context.setIndex( contextIndex );
+    if (gofLevelMetadataEnabledFlags.getMetadataEnabled()) {
+      // Place to get/set gof-level metadata.
+      PCCMetadata gofLevelMetadata;
+      context.getGOFLevelMetadata() = gofLevelMetadata;
+      context.getGOFLevelMetadata().getMetadataEnabledFlags() = gofLevelMetadataEnabledFlags;
+      // Place to get/set frame metadata enabled flags (in gof level).
+      PCCMetadataEnabledFlags frameLevelMetadataEnabledFlags;
+      context.getGOFLevelMetadata().getLowerLevelMetadataEnabledFlags() = frameLevelMetadataEnabledFlags;
+    }
     PCCGroupOfFrames sources, reconstructs;
     if (!sources.load( params.uncompressedDataPath_, startFrameNumber,
                        endFrameNumber, params.colorTransform_ ) ) {
@@ -463,7 +474,7 @@ int compressVideo( const PCCEncoderParameters& params, StopwatchUserTime &clock)
       const size_t predictedBitstreamSize =
           10000 + 8 * params.frameCount_ * sources[0].getPointCount();
       bitstream.initialize( predictedBitstreamSize );
-      bitstream.writeHeader();
+      bitstream.writeHeader(gofLevelMetadataEnabledFlags);
     }
 
     std::cout << "Compressing group of frames " << contextIndex << ": " << startFrameNumber

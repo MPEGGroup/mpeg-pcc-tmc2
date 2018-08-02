@@ -36,6 +36,7 @@
 
 #include "PCCCommon.h"
 #include "PCCVideo.h"
+#include "PCCMetadata.h"
 
 namespace pcc {
 
@@ -59,6 +60,7 @@ class PCCContext {
   PCCVideoGeometry& getVideoGeometry() { return videoGeometry_; }
   PCCVideoGeometry& getVideoGeometryD1() { return videoGeometryD1_; }
   PCCVideoTexture&  getVideoTexture() { return videoTexture_; }
+  PCCMetadata&      getGOFLevelMetadata() { return gofLevelMetadata_; }
 
   void setIndex( size_t i ) { index_ = i; }
   size_t getIndex(){ return index_; }
@@ -74,6 +76,7 @@ class PCCContext {
   PCCVideoGeometry videoGeometry_;
   PCCVideoGeometry videoGeometryD1_;
   PCCVideoTexture  videoTexture_;
+  PCCMetadata gofLevelMetadata_;
 };
 }; //~namespace
 

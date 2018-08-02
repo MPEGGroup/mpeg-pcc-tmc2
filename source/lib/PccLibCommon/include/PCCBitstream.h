@@ -35,6 +35,7 @@
 #define PCCBitstream_h
 
 #include "PCCCommon.h"
+#include "PCCMetadata.h"
 
 namespace pcc {
 
@@ -60,8 +61,8 @@ class PCCBitstream {
     return *this;
   }
 
-  bool readHeader();
-  void writeHeader();
+  bool readHeader(PCCMetadataEnabledFlags &gofLevelMetadataEnabledFlags);
+  void writeHeader(const PCCMetadataEnabledFlags &gofLevelMetadataEnabledFlags);
 
   void writeSvlc( int32_t  iCode );
   void readSvlc ( int32_t& iCode);

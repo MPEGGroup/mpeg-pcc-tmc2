@@ -73,7 +73,7 @@ bool PCCBitstream::write( std::string compressedStreamPath ) {
   return true;
 }
 
-bool PCCBitstream::readHeader() {
+bool PCCBitstream::readHeader(PCCMetadataEnabledFlags &gofLevelMetadataEnabledFlags) {
   uint32_t containerMagicNumber = 0;
   uint32_t containerVersion = 0;
   uint64_t totalSize = 0;
@@ -87,14 +87,37 @@ bool PCCBitstream::readHeader() {
   }
   read<uint64_t>( totalSize );
   assert( data_.size() == totalSize );
+  uint8_t tmp;
+  read<uint8_t>(tmp);
+  gofLevelMetadataEnabledFlags.getMetadataEnabled() = tmp;
+  if (gofLevelMetadataEnabledFlags.getMetadataEnabled()) {
+    read<uint8_t>(tmp);
+    gofLevelMetadataEnabledFlags.getScaleEnabled() = tmp;
+    read<uint8_t>(tmp);
+    gofLevelMetadataEnabledFlags.getOffsetEnabled() = tmp;
+    read<uint8_t>(tmp);
+    gofLevelMetadataEnabledFlags.getRotationEnabled() = tmp;
+    read<uint8_t>(tmp);
+    gofLevelMetadataEnabledFlags.getPointSizeEnabled() = tmp;
+    read<uint8_t>(tmp);
+    gofLevelMetadataEnabledFlags.getPointShapeEnabled() = tmp;
+  }
   return true;
 }
 
-void PCCBitstream::writeHeader() {
+void PCCBitstream::writeHeader(const PCCMetadataEnabledFlags &gofLevelMetadataEnabledFlags) {
   write<uint32_t>( PCCTMC2ContainerMagicNumber );
   write<uint32_t>( PCCTMC2ContainerVersion );
   totalSizeIterator_ = getPosition();
   write<uint64_t>( 0 );  // reserved
+  write<uint8_t>(gofLevelMetadataEnabledFlags.getMetadataEnabled());
+  if (gofLevelMetadataEnabledFlags.getMetadataEnabled()) {
+    write<uint8_t>(gofLevelMetadataEnabledFlags.getScaleEnabled());
+    write<uint8_t>(gofLevelMetadataEnabledFlags.getOffsetEnabled());
+    write<uint8_t>(gofLevelMetadataEnabledFlags.getRotationEnabled());
+    write<uint8_t>(gofLevelMetadataEnabledFlags.getPointSizeEnabled());
+    write<uint8_t>(gofLevelMetadataEnabledFlags.getPointShapeEnabled());
+  }
 }
 
 void PCCBitstream::writeSvlc( int32_t  iCode ) {

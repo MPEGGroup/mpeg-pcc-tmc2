@@ -152,6 +152,157 @@ int PCCDecoder::decode( PCCBitstream &bitstream, PCCContext &context, PCCGroupOf
   return 0;
 }
 
+int PCCDecoder::readMetadata( PCCMetadata &metadata, PCCBitstream &bitstream ) {
+  auto &metadataEnabledFlags = metadata.getMetadataEnabledFlags();
+  if (!metadataEnabledFlags.getMetadataEnabled())
+    return 0;
+
+  uint8_t  tmp;
+
+  bitstream.read<uint8_t>(tmp);
+  metadata.getMetadataPresent() = static_cast<bool>(tmp);
+
+  if (metadata.getMetadataPresent()) {
+    if (metadataEnabledFlags.getScaleEnabled()) {
+      bitstream.read<uint8_t>(tmp);
+      metadata.getScalePresent() = static_cast<bool>(tmp);
+      if (metadata.getScalePresent())
+        bitstream.read<PCCVector3U>(metadata.getScale());
+    }
+
+    if (metadataEnabledFlags.getOffsetEnabled()) {
+      bitstream.read<uint8_t>(tmp);
+      metadata.getOffsetPresent() = static_cast<bool>(tmp);
+      if (metadata.getOffsetPresent())
+        bitstream.read<PCCVector3I>(metadata.getOffset());
+    }
+
+    if (metadataEnabledFlags.getRotationEnabled()) {
+      bitstream.read<uint8_t>(tmp);
+      metadata.getRotationPresent() = static_cast<bool>(tmp);
+      if (metadata.getRotationPresent())
+        bitstream.read<PCCVector3I>(metadata.getRotation());
+    }
+
+    if (metadataEnabledFlags.getPointSizeEnabled()) {
+      bitstream.read<uint8_t>(tmp);
+      metadata.getPointSizePresent() = static_cast<bool>(tmp);
+      if (metadata.getPointSizePresent())
+        bitstream.read<uint16_t>(metadata.getPointSize());
+    }
+
+    if (metadataEnabledFlags.getPointShapeEnabled()) {
+      bitstream.read<uint8_t>(tmp);
+      metadata.getPointShapePresent() = static_cast<bool>(tmp);
+      if (metadata.getPointShapePresent()) {
+        bitstream.read<uint8_t>(tmp);
+        metadata.getPointShape() = static_cast<PointShape>(tmp);
+      }
+    }
+  }
+
+  auto &lowerLevelMetadataEnabledFlags = metadata.getLowerLevelMetadataEnabledFlags();
+  bitstream.read<uint8_t>(tmp);
+  lowerLevelMetadataEnabledFlags.getMetadataEnabled() = static_cast<bool>(tmp);
+
+  if (lowerLevelMetadataEnabledFlags.getMetadataEnabled()) {
+    bitstream.read<uint8_t>(tmp);
+    lowerLevelMetadataEnabledFlags.getScaleEnabled() = static_cast<bool>(tmp);
+    bitstream.read<uint8_t>(tmp);
+    lowerLevelMetadataEnabledFlags.getOffsetEnabled() = static_cast<bool>(tmp);
+    bitstream.read<uint8_t>(tmp);
+    lowerLevelMetadataEnabledFlags.getRotationEnabled() = static_cast<bool>(tmp);
+    bitstream.read<uint8_t>(tmp);
+    lowerLevelMetadataEnabledFlags.getPointSizeEnabled() = static_cast<bool>(tmp);
+    bitstream.read<uint8_t>(tmp);
+    lowerLevelMetadataEnabledFlags.getPointShapeEnabled() = static_cast<bool>(tmp);
+  }
+
+  return 1;
+}
+
+int PCCDecoder::decompressMetadata( PCCMetadata &metadata, o3dgc::Arithmetic_Codec &arithmeticDecoder) {
+  auto &metadataEnabingFlags = metadata.getMetadataEnabledFlags();
+  if (!metadataEnabingFlags.getMetadataEnabled())
+    return 0;
+
+  static o3dgc::Static_Bit_Model   bModel0;
+
+  static o3dgc::Adaptive_Bit_Model bModelMetadataPresent;
+  metadata.getMetadataPresent() = arithmeticDecoder.decode(bModelMetadataPresent);
+
+  if (metadata.getMetadataPresent()) {
+    if (metadataEnabingFlags.getScaleEnabled()) {
+      static o3dgc::Adaptive_Bit_Model bModelScalePresent;
+      metadata.getScalePresent() = arithmeticDecoder.decode(bModelScalePresent);
+      if (metadata.getScalePresent()) {
+        metadata.getScale()[0] = DecodeUInt32(32, arithmeticDecoder, bModel0);
+        metadata.getScale()[1] = DecodeUInt32(32, arithmeticDecoder, bModel0);
+        metadata.getScale()[2] = DecodeUInt32(32, arithmeticDecoder, bModel0);
+      }
+    }
+
+    if (metadataEnabingFlags.getOffsetEnabled()) {
+      static o3dgc::Adaptive_Bit_Model bModelOffsetPresent;
+      metadata.getOffsetPresent() = arithmeticDecoder.decode(bModelOffsetPresent);
+      if (metadata.getOffsetPresent()) {
+        metadata.getOffset()[0] = (int32_t)o3dgc::UIntToInt(DecodeUInt32(32, arithmeticDecoder, bModel0));
+        metadata.getOffset()[1] = (int32_t)o3dgc::UIntToInt(DecodeUInt32(32, arithmeticDecoder, bModel0));
+        metadata.getOffset()[2] = (int32_t)o3dgc::UIntToInt(DecodeUInt32(32, arithmeticDecoder, bModel0));
+      }
+    }
+
+    if (metadataEnabingFlags.getRotationEnabled()) {
+      static o3dgc::Adaptive_Bit_Model bModelRotationPresent;
+      metadata.getRotationPresent() = arithmeticDecoder.decode(bModelRotationPresent);
+      if (metadata.getRotationPresent()) {
+        metadata.getRotation()[0] = (int32_t)o3dgc::UIntToInt(DecodeUInt32(32, arithmeticDecoder, bModel0));
+        metadata.getRotation()[1] = (int32_t)o3dgc::UIntToInt(DecodeUInt32(32, arithmeticDecoder, bModel0));
+        metadata.getRotation()[2] = (int32_t)o3dgc::UIntToInt(DecodeUInt32(32, arithmeticDecoder, bModel0));
+      }
+    }
+
+    if (metadataEnabingFlags.getPointSizeEnabled()) {
+      static o3dgc::Adaptive_Bit_Model bModelPointSizePresent;
+      metadata.getPointSizePresent() = arithmeticDecoder.decode(bModelPointSizePresent);
+      if (metadata.getPointSizePresent()) {
+        metadata.getPointSize() = DecodeUInt32(16, arithmeticDecoder, bModel0);
+      }
+    }
+
+    if (metadataEnabingFlags.getPointShapeEnabled()) {
+      static o3dgc::Adaptive_Bit_Model bModelPointShapePresent;
+      metadata.getPointShapePresent() = arithmeticDecoder.decode(bModelPointShapePresent);
+      if (metadata.getPointShapePresent()) {
+        metadata.getPointShape() = static_cast<PointShape>(DecodeUInt32(8, arithmeticDecoder, bModel0));
+      }
+    }
+  }
+
+  auto &lowerLevelMetadataEnabledFlags = metadata.getLowerLevelMetadataEnabledFlags();
+  static o3dgc::Adaptive_Bit_Model bModelLowerLevelMetadataEnabled;
+  lowerLevelMetadataEnabledFlags.getMetadataEnabled() = arithmeticDecoder.decode(bModelLowerLevelMetadataEnabled);
+
+  if (lowerLevelMetadataEnabledFlags.getMetadataEnabled()) {
+    static o3dgc::Adaptive_Bit_Model bModelLowerLevelScaleEnabled;
+    lowerLevelMetadataEnabledFlags.getScaleEnabled() = arithmeticDecoder.decode(bModelLowerLevelScaleEnabled);
+
+    static o3dgc::Adaptive_Bit_Model bModelLowerLevelOffsetEnabled;
+    lowerLevelMetadataEnabledFlags.getOffsetEnabled() = arithmeticDecoder.decode(bModelLowerLevelOffsetEnabled);
+
+    static o3dgc::Adaptive_Bit_Model bModelLowerLevelRotationEnabled;
+    lowerLevelMetadataEnabledFlags.getRotationEnabled() = arithmeticDecoder.decode(bModelLowerLevelRotationEnabled);
+
+    static o3dgc::Adaptive_Bit_Model bModelLowerLevelPointSizeEnabled;
+    lowerLevelMetadataEnabledFlags.getPointSizeEnabled() = arithmeticDecoder.decode(bModelLowerLevelPointSizeEnabled);
+
+    static o3dgc::Adaptive_Bit_Model bModelLowerLevelPointShapeEnabled;
+    lowerLevelMetadataEnabledFlags.getPointShapeEnabled() = arithmeticDecoder.decode(bModelLowerLevelPointShapeEnabled);
+  }
+
+  return 1;
+}
+
 int PCCDecoder::decompressHeader( PCCContext &context, PCCBitstream &bitstream ){
   uint8_t groupOfFramesSize;
   bitstream.read<uint8_t>( groupOfFramesSize );
@@ -177,6 +328,7 @@ int PCCDecoder::decompressHeader( PCCContext &context, PCCBitstream &bitstream )
   binArithCoding_ =  binArithCoding > 0;
   context.getWidth()  = width_;
   context.getHeight() = height_; 
+  readMetadata(context.getGOFLevelMetadata(), bitstream);
   bitstream.read<uint8_t>(flagColorSmoothing_);
   if (flagColorSmoothing_) {
     bitstream.read<uint8_t>(thresholdColorSmoothing_);
@@ -206,7 +358,9 @@ void PCCDecoder::decompressOccupancyMap( PCCContext &context, PCCBitstream& bits
     frame.getWidth () = width_;
     frame.getHeight() = height_;
     printf("frame %d\n",i);
-    decompressOccupancyMap( frame, bitstream, preFrame.getPatches(), i );
+    auto &frameLevelMetadataEnabledFlags = context.getGOFLevelMetadata().getLowerLevelMetadataEnabledFlags();
+    frame.getFrameLevelMetadata().getMetadataEnabledFlags() = frameLevelMetadataEnabledFlags;
+    decompressOccupancyMap( frame, bitstream, preFrame, i );
     preFrame = frame;
     auto&  patches = frame.getPatches();
     auto& missedPointsPatch = frame.getMissedPointsPatch();
@@ -223,8 +377,10 @@ void PCCDecoder::decompressOccupancyMap( PCCContext &context, PCCBitstream& bits
   }
 }
 
-void PCCDecoder::decompressPatchMetaDataM42195( std::vector<PCCPatch> &patches, std::vector<PCCPatch> prePatches, PCCBitstream &bitstream ,
+void PCCDecoder::decompressPatchMetaDataM42195(PCCFrameContext& frame, PCCFrameContext& preFrame, PCCBitstream &bitstream ,
   o3dgc::Arithmetic_Codec &arithmeticDecoder, o3dgc::Static_Bit_Model &bModel0, uint32_t &compressedBitstreamSize, size_t occupancyPrecision) {
+  auto&  patches = frame.getPatches();
+  auto&  prePatches = preFrame.getPatches();
   size_t patchCount = patches.size();
   uint8_t bitCount[5];
   uint8_t F = 0,A[5];
@@ -375,11 +531,15 @@ void PCCDecoder::decompressPatchMetaDataM42195( std::vector<PCCPatch> &patches, 
       patch.getTangentAxis() = 0;
       patch.getBitangentAxis() = 1;
     }
+	auto &patchLevelMetadataEnabledFlags = frame.getFrameLevelMetadata().getLowerLevelMetadataEnabledFlags();
+    auto &patchLevelMetadata = patch.getPatchLevelMetadata();
+    patchLevelMetadata.getMetadataEnabledFlags() = patchLevelMetadataEnabledFlags;
+    decompressMetadata(patchLevelMetadata, arithmeticDecoder);
   }
 }
 
 
-void PCCDecoder::decompressOccupancyMap( PCCFrameContext& frame, PCCBitstream &bitstream, std::vector<PCCPatch> prePatches, size_t frameIndex) {
+void PCCDecoder::decompressOccupancyMap( PCCFrameContext& frame, PCCBitstream &bitstream, PCCFrameContext& preFrame, size_t frameIndex) {
   uint32_t patchCount = 0;
   auto&  patches = frame.getPatches();
   bitstream.read<uint32_t>( patchCount );
@@ -430,6 +590,9 @@ void PCCDecoder::decompressOccupancyMap( PCCFrameContext& frame, PCCBitstream &b
                                  bitstream.buffer() + bitstream.size());
 
     arithmeticDecoder.start_decoder();
+	
+    decompressMetadata(frame.getFrameLevelMetadata(), arithmeticDecoder);
+
     o3dgc::Adaptive_Bit_Model bModelSizeU0, bModelSizeV0, bModelAbsoluteD1;
 
     o3dgc::Adaptive_Bit_Model orientationModel2;
@@ -438,7 +601,7 @@ void PCCDecoder::decompressOccupancyMap( PCCFrameContext& frame, PCCBitstream &b
     int64_t prevSizeU0 = 0;
     int64_t prevSizeV0 = 0;
 
-   // absoluteD1_ = (bool)arithmeticDecoder.decode( bModelAbsoluteD1 );
+    // absoluteD1_ = (bool)arithmeticDecoder.decode( bModelAbsoluteD1 );
     for (size_t patchIndex = 0; patchIndex < patchCount; ++patchIndex) {
       auto &patch = patches[patchIndex];
       patch.getOccupancyResolution() = occupancyResolution_;
@@ -461,25 +624,25 @@ void PCCDecoder::decompressOccupancyMap( PCCFrameContext& frame, PCCBitstream &b
       prevSizeU0 = patch.getSizeU0();
       prevSizeV0 = patch.getSizeV0();
 
-	  if (bBinArithCoding) {
-	   size_t bit0 = arithmeticDecoder.decode(orientationModel2);
-	   if (bit0 == 0) {  // 0
-	    patch.getNormalAxis() = 0;
-	   }
-	   else {
-	    size_t bit1 = arithmeticDecoder.decode(bModel0);
-	    if (bit1 == 0) { // 10
-	      patch.getNormalAxis() = 1;
-	    }
-	    else { // 11
-	      patch.getNormalAxis() = 2;
-	    }
-	   }
-	 }
-	 else {
-	  patch.getNormalAxis() = arithmeticDecoder.decode(orientationModel);
-	 }
-	  
+      if (bBinArithCoding) {
+        size_t bit0 = arithmeticDecoder.decode(orientationModel2);
+        if (bit0 == 0) {  // 0
+          patch.getNormalAxis() = 0;
+        }
+        else {
+          size_t bit1 = arithmeticDecoder.decode(bModel0);
+          if (bit1 == 0) { // 10
+            patch.getNormalAxis() = 1;
+          }
+          else { // 11
+            patch.getNormalAxis() = 2;
+          }
+        }
+      }
+      else {
+        patch.getNormalAxis() = arithmeticDecoder.decode(orientationModel);
+      }
+
       if (patch.getNormalAxis() == 0) {
         patch.getTangentAxis() = 2;
         patch.getBitangentAxis() = 1;
@@ -490,9 +653,13 @@ void PCCDecoder::decompressOccupancyMap( PCCFrameContext& frame, PCCBitstream &b
         patch.getTangentAxis() = 0;
         patch.getBitangentAxis() = 1;
       }
+      auto &patchLevelMetadataEnabledFlags = frame.getFrameLevelMetadata().getLowerLevelMetadataEnabledFlags();
+      auto &patchLevelMetadata = patch.getPatchLevelMetadata();
+      patchLevelMetadata.getMetadataEnabledFlags() = patchLevelMetadataEnabledFlags;
+      decompressMetadata(patchLevelMetadata, arithmeticDecoder);
     }
   } else {
-   decompressPatchMetaDataM42195(patches, prePatches, bitstream, arithmeticDecoder, bModel0, compressedBitstreamSize, occupancyPrecision);
+    decompressPatchMetaDataM42195(frame, preFrame, bitstream, arithmeticDecoder, bModel0, compressedBitstreamSize, occupancyPrecision);
   }
   
   const size_t blockToPatchWidth = width_ / occupancyResolution_;

@@ -193,7 +193,8 @@ int decompressVideo(const PCCDecoderParameters &params, StopwatchUserTime &clock
   if( ! bitstream.initialize( params.compressedStreamPath_ ) ) {
     return -1;
   }
-  if( ! bitstream.readHeader() ) {
+  PCCMetadataEnabledFlags gofLevelMetadataEnabledFlags;
+  if( ! bitstream.readHeader(gofLevelMetadataEnabledFlags) ) {
     return -1;
   }
   size_t frameNumber = params.startFrameNumber_;
@@ -205,6 +206,10 @@ int decompressVideo(const PCCDecoderParameters &params, StopwatchUserTime &clock
     PCCGroupOfFrames reconstruct; 
     PCCContext context;
     context.setIndex( contextIndex++ );
+    if (gofLevelMetadataEnabledFlags.getMetadataEnabled()) {
+      auto& gofLevelMetadata = context.getGOFLevelMetadata();
+      gofLevelMetadata.getMetadataEnabledFlags() = gofLevelMetadataEnabledFlags;
+    }
     clock.start();
     int ret = decoder.decode( bitstream, context, reconstruct );
     clock.stop();

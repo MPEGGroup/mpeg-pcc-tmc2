@@ -35,6 +35,7 @@
 #define PCCPatch_h
 
 #include "PCCCommon.h"
+#include "PCCMetadata.h"
 
 namespace pcc {
 
@@ -66,6 +67,7 @@ class PCCPatch {
   size_t&                     getBitangentAxis()             { return bitangentAxis_;         }
   std::vector<int16_t>&       getDepth( int i )              { return depth_[i];              }
   std::vector<bool>&          getOccupancy()                 { return occupancy_;             }
+  PCCMetadata&                getPatchLevelMetadata()        { return patchLevelMetadata_;    }
 
   size_t                      getIndex()               const { return index_;                 }
   size_t                      getU1()                  const { return u1_;                    }
@@ -88,6 +90,7 @@ class PCCPatch {
   const std::vector<bool>&    getOccupancy()           const { return occupancy_;             }
   std::vector<int16_t>&       getDepthEnhancedDeltaD()       { return depthEnhancedDeltaD_;   } //EDD
   const std::vector<int16_t>& getDepthEnhancedDeltaD() const { return depthEnhancedDeltaD_;   } //EDD
+  const PCCMetadata&          getPatchLevelMetadata()  const { return patchLevelMetadata_;    }
 
   void print() const {
     printf("Patch[%3zu] uv0 = %4zu %4zu / %4zu %4zu uvd1 = %4zu %4zu %4zu / %4zu %4zu %4zu \n",
@@ -111,6 +114,7 @@ class PCCPatch {
   size_t sizeU0_;                  // size of occupancy map
   size_t sizeV0_;                  // size of occupancy map
   size_t occupancyResolution_;     // ocupacy map resolution
+  PCCMetadata patchLevelMetadata_;
 
   size_t normalAxis_;              // x
   size_t tangentAxis_;             // y
