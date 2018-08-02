@@ -37,6 +37,7 @@
 #include "PCCCommon.h"
 #include "PCCDecoderParameters.h"
 #include "PCCCodec.h"
+#include "PCCMath.h"
 #include "ArithmeticCodec.h"
 #include "PCCMetadata.h"
 
@@ -83,6 +84,8 @@ private:
   uint8_t  losslessGeo444_;
   bool     absoluteD1_;
   bool     binArithCoding_;
+  float    modelScale_;
+  PCCVector3<float> modelOrigin_;
   uint8_t  thresholdColorSmoothing_;
   double   thresholdLocalEntropy_;
   uint8_t  radius2ColorSmoothing_;

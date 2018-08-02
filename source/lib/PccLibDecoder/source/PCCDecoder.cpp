@@ -129,6 +129,7 @@ int PCCDecoder::decode( PCCBitstream &bitstream, PCCContext &context, PCCGroupOf
       neighborCountColorSmoothing_,
       flagColorSmoothing_
       , ((losslessGeo_ != 0) ? enhancedDeltaDepthCode_ : false) //EDD
+	  , (params_.testLevelOfDetailSignaling_ > 0) // ignore LoD scaling for testing the signaling only
   };
   generatePointCloud( reconstructs, context, generatePointCloudParameters );
 
@@ -328,6 +329,8 @@ int PCCDecoder::decompressHeader( PCCContext &context, PCCBitstream &bitstream )
   binArithCoding_ =  binArithCoding > 0;
   context.getWidth()  = width_;
   context.getHeight() = height_; 
+  bitstream.read<float>(modelScale_);
+  bitstream.read<PCCVector3<float> >(modelOrigin_);
   readMetadata(context.getGOFLevelMetadata(), bitstream);
   bitstream.read<uint8_t>(flagColorSmoothing_);
   if (flagColorSmoothing_) {
@@ -576,11 +579,13 @@ void PCCDecoder::decompressOccupancyMap( PCCFrameContext& frame, PCCBitstream &b
     uint8_t bitCountU1 = 0;
     uint8_t bitCountV1 = 0;
     uint8_t bitCountD1 = 0;
+	uint8_t bitCountLod = 0;
     bitstream.read<uint8_t>( bitCountU0 );
     bitstream.read<uint8_t>( bitCountV0 );
     bitstream.read<uint8_t>( bitCountU1 );
     bitstream.read<uint8_t>( bitCountV1 );
     bitstream.read<uint8_t>( bitCountD1 );
+	bitstream.read<uint8_t>( bitCountLod);
     bitstream.read<uint32_t>(  compressedBitstreamSize );
 
     printf("bitCountU0V0U1V1D1:%d,%d,%d,%d,%d,compressedBitstreamSize:%d\n",bitCountU0, bitCountV0, bitCountU1, bitCountV1, bitCountD1, compressedBitstreamSize);
@@ -611,6 +616,7 @@ void PCCDecoder::decompressOccupancyMap( PCCFrameContext& frame, PCCBitstream &b
       patch.getU1() = DecodeUInt32(bitCountU1, arithmeticDecoder, bModel0);
       patch.getV1() = DecodeUInt32(bitCountV1, arithmeticDecoder, bModel0);
       patch.getD1() = DecodeUInt32(bitCountD1, arithmeticDecoder, bModel0);
+	  patch.getLod() = DecodeUInt32(bitCountLod, arithmeticDecoder, bModel0);
 
       const int64_t deltaSizeU0 =
           o3dgc::UIntToInt(arithmeticDecoder.ExpGolombDecode(0, bModel0, bModelSizeU0));

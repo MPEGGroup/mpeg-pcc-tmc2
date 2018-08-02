@@ -151,9 +151,13 @@ void PCCCodec::generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext &f
               }
 
               PCCVector3D point0;
-              point0[patch.getNormalAxis()] = double(frame0.getValue(0, x, y) + patch.getD1());
-              point0[patch.getTangentAxis()] = double(u) + patch.getU1();
-              point0[patch.getBitangentAxis()] = double(v) + patch.getV1();
+              //point0[patch.getNormalAxis()] = double(frame0.getValue(0, x, y) + patch.getD1());
+              //point0[patch.getTangentAxis()] = double(u) + patch.getU1();
+              //point0[patch.getBitangentAxis()] = double(v) + patch.getV1();
+              const double lodScale = params.ignoreLod_ ? 1.0 : double(1u << patch.getLod());
+			  point0[patch.getNormalAxis()] = double(frame0.getValue(0, x, y) + patch.getD1()) * lodScale;
+			  point0[patch.getTangentAxis()] = (double(u) + patch.getU1()) * lodScale;
+			  point0[patch.getBitangentAxis()] = (double(v) + patch.getV1()) * lodScale;
               //EDD code
               if (params.enhancedDeltaDepthCode_) {
                 //D0
@@ -254,10 +258,12 @@ void PCCCodec::generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext &f
                   if (f > 0) {
                     if( !params.absoluteD1_ ) {
                       const auto &frame1 = videoD1.getFrame(shift);
-                      point1[patch.getNormalAxis()] += frame1.getValue(0, x, y);
+                      //point1[patch.getNormalAxis()] += frame1.getValue(0, x, y);
+                      point1[patch.getNormalAxis()] += frame1.getValue(0, x, y) * lodScale;
                     } else {
                       const auto &frame1 = video.getFrame(f + shift);
-                      point1[patch.getNormalAxis()] = double( frame1.getValue(0, x, y) + patch.getD1());
+                      //point1[patch.getNormalAxis()] = double( frame1.getValue(0, x, y) + patch.getD1());
+					  point1[patch.getNormalAxis()] = double( frame1.getValue(0, x, y) + patch.getD1()) * lodScale;
                     }
                   }
                   const size_t pointindex_1 = reconstruct.addPoint(point1);

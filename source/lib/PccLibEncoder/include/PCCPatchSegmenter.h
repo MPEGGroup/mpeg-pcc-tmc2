@@ -54,6 +54,7 @@ struct PCCPatchSegmenter3Parameters {
   double maxAllowedDist2MissedPointsDetection;
   double maxAllowedDist2MissedPointsSelection;
   double lambdaRefineSegmentation;
+  size_t levelOfDetail;
   //EDD code
   bool   useEnhancedDeltaDepthCode;
 };

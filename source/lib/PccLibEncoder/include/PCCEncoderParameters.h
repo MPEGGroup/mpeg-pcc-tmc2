@@ -35,6 +35,7 @@
 #define PCCEncoderParameters_h
 
 #include "PCCCommon.h"
+#include "PCCMath.h"
 
 namespace pcc {
 
@@ -113,6 +114,14 @@ class PCCEncoderParameters {
     bool                losslessGeo_;
     bool                losslessTexture_;
     bool                losslessGeo444_;
+
+    // scale and bias
+    float               modelScale_;
+    PCCVector3<float>   modelOrigin_;
+
+	// patch sampling resolution
+	size_t              testLevelOfDetail_;
+	size_t              testLevelOfDetailSignaling_;
 
     std::string         geometryConfig_;
     std::string         geometryD0Config_;

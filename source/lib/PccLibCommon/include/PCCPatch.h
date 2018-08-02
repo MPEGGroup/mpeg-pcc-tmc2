@@ -67,6 +67,7 @@ class PCCPatch {
   size_t&                     getBitangentAxis()             { return bitangentAxis_;         }
   std::vector<int16_t>&       getDepth( int i )              { return depth_[i];              }
   std::vector<bool>&          getOccupancy()                 { return occupancy_;             }
+  size_t&                     getLod()                       { return levelOfDetail_;         }
   PCCMetadata&                getPatchLevelMetadata()        { return patchLevelMetadata_;    }
 
   size_t                      getIndex()               const { return index_;                 }
@@ -88,6 +89,7 @@ class PCCPatch {
   size_t                      getBestMatchIdx()        const { return bestMatchIdx_;          }
   const std::vector<int16_t>& getDepth( int i )        const { return depth_[i];              }
   const std::vector<bool>&    getOccupancy()           const { return occupancy_;             }
+  size_t                      getLod()                 const { return levelOfDetail_;         }
   std::vector<int16_t>&       getDepthEnhancedDeltaD()       { return depthEnhancedDeltaD_;   } //EDD
   const std::vector<int16_t>& getDepthEnhancedDeltaD() const { return depthEnhancedDeltaD_;   } //EDD
   const PCCMetadata&          getPatchLevelMetadata()  const { return patchLevelMetadata_;    }
@@ -114,6 +116,7 @@ class PCCPatch {
   size_t sizeU0_;                  // size of occupancy map
   size_t sizeV0_;                  // size of occupancy map
   size_t occupancyResolution_;     // ocupacy map resolution
+  size_t levelOfDetail_;           // level of detail, i.e., patch sampling resolution
   PCCMetadata patchLevelMetadata_;
 
   size_t normalAxis_;              // x

@@ -210,6 +210,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
       params_.neighborCountColorSmoothing_,
       params_.flagColorSmoothing_
       , (params_.losslessGeo_ ? params_.enhancedDeltaDepthCode_ : false) //EDD
+	  , (params_.testLevelOfDetailSignaling_ > 0)
   };
   generatePointCloud( reconstructs, context, generatePointCloudParameters );
 
@@ -582,6 +583,18 @@ bool PCCEncoder::generateGeometryVideo( const PCCPointSet3& source, PCCFrameCont
   if (params_.losslessGeo_) {
     generateMissedPointsPatch(source, frame, segmenterParams.useEnhancedDeltaDepthCode); //useEnhancedDeltaDepthCode for EDD code
     sortMissedPointsPatch(frame);
+  }
+  if (params_.testLevelOfDetail_ > 0) {
+    for (size_t i = 0; i < patches.size(); i++) {
+      patches[i].getLod() = params_.testLevelOfDetail_;
+    }
+  }
+
+  else if (params_.testLevelOfDetailSignaling_ > 0) { // generate semi-random levels of detail for testing
+    srand(frame.getPatches().size());         // use a deterministic seed based on frame size
+    for (size_t i = 0; i < patches.size(); i++) {
+      patches[i].getLod() = rand() % params_.testLevelOfDetailSignaling_;
+    }
   }
   
   if((frameIndex == 0) || (!params_.constrainedPack_)){
@@ -1281,6 +1294,8 @@ int PCCEncoder::compressHeader( PCCContext &context, pcc::PCCBitstream &bitstrea
   bitstream.write<uint8_t> (uint8_t(params_.losslessGeo444_));
   bitstream.write<uint8_t> (uint8_t(params_.absoluteD1_));
   bitstream.write<uint8_t> (uint8_t(params_.binArithCoding_));
+  bitstream.write<float>(params_.modelScale_);
+  bitstream.write<PCCVector3<float> >(params_.modelOrigin_);
   writeMetadata(context.getGOFLevelMetadata(), bitstream);
   bitstream.write<uint8_t>(uint8_t(params_.flagColorSmoothing_));
   if (params_.flagColorSmoothing_) {
@@ -1488,6 +1503,7 @@ void PCCEncoder::compressOccupancyMap( PCCContext &context, PCCBitstream& bitstr
       dummyPatch.getBitangentAxis() = 2;
       dummyPatch.getOccupancyResolution() = missedPointsPatch.occupancyResolution;
       dummyPatch.getOccupancy() = missedPointsPatch.occupancy;
+	  dummyPatch.getLod() = params_.testLevelOfDetail_;
       dummyPatch.setBestMatchIdx() = -1;
       compressOccupancyMap(frame, bitstream, preFrame, i);
       patches.pop_back();
@@ -1521,6 +1537,7 @@ void PCCEncoder::compressOccupancyMap( PCCFrameContext& frame, PCCBitstream &bit
     size_t maxU1 = 0;
     size_t maxV1 = 0;
     size_t maxD1 = 0;
+	size_t maxLod = 0;
     for (size_t patchIndex = 0; patchIndex < patchCount; ++patchIndex) {
       const auto &patch = patches[patchIndex];
       maxU0 = (std::max)(maxU0, patch.getU0());
@@ -1528,6 +1545,7 @@ void PCCEncoder::compressOccupancyMap( PCCFrameContext& frame, PCCBitstream &bit
       maxU1 = (std::max)(maxU1, patch.getU1());
       maxV1 = (std::max)(maxV1, patch.getV1());
       maxD1 = (std::max)(maxD1, patch.getD1());
+	  maxLod = (std::max)(maxLod, patch.getLod());
     }
     const uint8_t bitCountU0 =
         uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(maxU0 + 1)));
@@ -1539,12 +1557,15 @@ void PCCEncoder::compressOccupancyMap( PCCFrameContext& frame, PCCBitstream &bit
         uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(maxV1 + 1)));
     const uint8_t bitCountD1 =
         uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(maxD1 + 1)));
+	const uint8_t bitCountLod =
+		uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(maxLod + 1)));
 
     bitstream.write<uint8_t>(bitCountU0);
     bitstream.write<uint8_t>(bitCountV0);
     bitstream.write<uint8_t>(bitCountU1);
     bitstream.write<uint8_t>(bitCountV1);
     bitstream.write<uint8_t>(bitCountD1);
+	bitstream.write<uint8_t>(bitCountLod);
     startPosition = bitstream.getPosition();
     bitstream += (uint64_t)4;  // placehoder for bitstream size
 
@@ -1570,6 +1591,7 @@ void PCCEncoder::compressOccupancyMap( PCCFrameContext& frame, PCCBitstream &bit
       EncodeUInt32(uint32_t(patch.getU1()), bitCountU1, arithmeticEncoder, bModel0);
       EncodeUInt32(uint32_t(patch.getV1()), bitCountV1, arithmeticEncoder, bModel0);
       EncodeUInt32(uint32_t(patch.getD1()), bitCountD1, arithmeticEncoder, bModel0);
+	  EncodeUInt32(uint32_t(patch.getLod()), bitCountLod, arithmeticEncoder, bModel0);
       const int64_t deltaSizeU0 = static_cast<int64_t>(patch.getSizeU0()) - prevSizeU0;
       const int64_t deltaSizeV0 = static_cast<int64_t>(patch.getSizeV0()) - prevSizeV0;
       

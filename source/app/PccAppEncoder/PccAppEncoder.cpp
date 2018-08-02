@@ -382,6 +382,16 @@ bool parseParameters(int argc, char *argv[], PCCEncoderParameters& params ) {
      params.binArithCoding_,
      "Binary arithmetic coding")
 
+    // patch sampling resolution
+    ("testLevelOfDetail",
+     params.testLevelOfDetail_,
+     (size_t)0,
+     "Force non-zero level of detail for testing")
+     ("testLevelOfDetailSignaling",
+     params.testLevelOfDetailSignaling_,
+     (size_t)0,
+     "Test the patch resolution signaling with pseudo-random values")
+
     ("groupDilation",
       params.groupDilation_,
       params.groupDilation_,
@@ -475,6 +485,15 @@ int compressVideo( const PCCEncoderParameters& params, StopwatchUserTime &clock)
           10000 + 8 * params.frameCount_ * sources[0].getPointCount();
       bitstream.initialize( predictedBitstreamSize );
       bitstream.writeHeader(gofLevelMetadataEnabledFlags);
+    }
+
+    if (params.testLevelOfDetail_ > 0) {
+      const double lodScale = 1.0 / double(1u << params.testLevelOfDetail_);
+      for (auto& frame : sources.getFrames()) {
+        for (auto& point : frame.getPositions()) {
+          point *= lodScale;
+        }
+      }
     }
 
     std::cout << "Compressing group of frames " << contextIndex << ": " << startFrameNumber

@@ -261,12 +261,15 @@ void PCCPatchSegmenter3::segmentPatches(const PCCPointSet3 &points, const PCCSta
       }
 
       const int16_t infiniteDepth = (std::numeric_limits<int16_t>::max)();
-      patch.getSizeU() = 1 + size_t(boundingBox.max_[patch.getTangentAxis()] - boundingBox.min_[patch.getTangentAxis()]);
-      patch.getSizeV() = 1 + size_t(boundingBox.max_[patch.getBitangentAxis()] - boundingBox.min_[patch.getBitangentAxis()]);
-      patch.getU1()    = size_t(boundingBox.min_[patch.getTangentAxis()]);
+      //patch.getSizeU() = 1 + size_t(boundingBox.max_[patch.getTangentAxis()] - boundingBox.min_[patch.getTangentAxis()]);
+      //patch.getSizeV() = 1 + size_t(boundingBox.max_[patch.getBitangentAxis()] - boundingBox.min_[patch.getBitangentAxis()]);
+	  patch.getSizeU() = 1 + size_t(round(boundingBox.max_[patch.getTangentAxis()]) - floor(boundingBox.min_[patch.getTangentAxis()]));
+	  patch.getSizeV() = 1 + size_t(round(boundingBox.max_[patch.getBitangentAxis()]) - floor(boundingBox.min_[patch.getBitangentAxis()]));
+	  patch.getU1()    = size_t(boundingBox.min_[patch.getTangentAxis()]);
       patch.getV1()    = size_t(boundingBox.min_[patch.getBitangentAxis()]);
       patch.getD1()    = infiniteDepth;
       patch.getDepth(0).resize(patch.getSizeU() * patch.getSizeV(), infiniteDepth);
+	  patch.getLod() = 0;
       if (useEnhancedDeltaDepthCode) //EDD
         patch.getDepthEnhancedDeltaD().resize(patch.getSizeU() * patch.getSizeV(), 0);
 
