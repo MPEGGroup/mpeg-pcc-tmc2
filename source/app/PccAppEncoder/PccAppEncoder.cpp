@@ -419,6 +419,10 @@ bool parseParameters(int argc, char *argv[], PCCEncoderParameters& params ) {
      params.deltaCoding_,
      "Delta meta-data coding")
 
+      ("projectionMode",
+        params.projectionMode_,
+        params.projectionMode_,
+        "projectionMode - 0:min; 1:max;  2:adaptive frame & patch; 3:adaptive patch (all frames)");
      ;
 
   po::setDefaults(opts);

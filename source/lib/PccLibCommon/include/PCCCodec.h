@@ -57,6 +57,7 @@ struct GeneratePointCloudParameters {
   bool   losslessGeo444_;
   size_t nbThread_;
   bool   absoluteD1_;
+  size_t surfaceThickness;
   bool   ignoreLod_;
   double thresholdColorSmoothing_;
   double thresholdLocalEntropy_;

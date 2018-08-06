@@ -53,7 +53,7 @@ class PCCVideoEncoder {
   PCCVideoEncoder();
   ~PCCVideoEncoder();
   template <typename T>
-  bool compress(PCCVideo<T, 3> &video,
+  bool compress(PCCVideo<T, 3> &video,                                            
                 const std::string &fileName,
                 const size_t qp,
                 PCCBitstream &bitstream,
@@ -68,6 +68,8 @@ class PCCVideoEncoder {
                 const bool flagColorSmoothing = false,
                 const size_t nbyte = 1,
                 const bool keepIntermediateFiles = false ) {
+
+
     auto& frames = video.getFrames();
     if (frames.empty()) {
       return false;
@@ -79,6 +81,8 @@ class PCCVideoEncoder {
     if (frames[0].getChannelCount() != 3) {
       return false;
     }
+
+
     const std::string format = use444CodecIo ? "444" : "420";
     const std::string binFileName = fileName + ".bin";
     const std::string srcYuvFileName = addVideoFormat(fileName + (use444CodecIo ? ".rgb" : ".yuv"), width, height, !use444CodecIo);
@@ -337,6 +341,7 @@ class PCCVideoEncoder {
         }
     }
   }
+
     std::stringstream cmd;
     cmd << encoderPath
         << " -c " << encoderConfig

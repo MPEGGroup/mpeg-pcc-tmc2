@@ -54,7 +54,7 @@ void PCCCodec::generatePointCloud( PCCGroupOfFrames& reconstructs, PCCContext& c
   auto& frames = context.getFrames();
   auto &videoGeometry = context.getVideoGeometry();
   auto &videoGeometryD1 = context.getVideoGeometryD1();
-  for( size_t i = 0; i < frames.size(); i++ ) {
+    for( size_t i = 0; i < frames.size(); i++ ) {
     std::vector<uint32_t> partition;
     generatePointCloud( reconstructs[i], frames[i], videoGeometry, videoGeometryD1, params, partition );
     if (!params.losslessGeo_ ) {
@@ -155,9 +155,10 @@ void PCCCodec::generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext &f
               //point0[patch.getTangentAxis()] = double(u) + patch.getU1();
               //point0[patch.getBitangentAxis()] = double(v) + patch.getV1();
               const double lodScale = params.ignoreLod_ ? 1.0 : double(1u << patch.getLod());
-			  point0[patch.getNormalAxis()] = double(frame0.getValue(0, x, y) + patch.getD1()) * lodScale;
-			  point0[patch.getTangentAxis()] = (double(u) + patch.getU1()) * lodScale;
-			  point0[patch.getBitangentAxis()] = (double(v) + patch.getV1()) * lodScale;
+              //yo- const double lodScale = 1.0;
+              point0[patch.getNormalAxis()] = double(frame0.getValue(0, x, y) + patch.getD1()) * lodScale;
+			        point0[patch.getTangentAxis()] = (double(u) + patch.getU1()) * lodScale;
+			        point0[patch.getBitangentAxis()] = (double(v) + patch.getV1()) * lodScale;
               //EDD code
               if (params.enhancedDeltaDepthCode_) {
                 //D0
@@ -259,11 +260,16 @@ void PCCCodec::generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext &f
                     if( !params.absoluteD1_ ) {
                       const auto &frame1 = videoD1.getFrame(shift);
                       //point1[patch.getNormalAxis()] += frame1.getValue(0, x, y);
-                      point1[patch.getNormalAxis()] += frame1.getValue(0, x, y) * lodScale;
+                      if (patch.getProjectionMode() == 0)
+                        //point1[patch.getNormalAxis()] += (std::min)(frame1.getValue(0, x, y), uint16_t(9));
+                        point1[patch.getNormalAxis()] += frame1.getValue(0, x, y) * lodScale;
+                      else
+                        //point1[patch.getNormalAxis()] -= (std::min)(frame1.getValue(0, x, y), uint16_t(9));
+                        point1[patch.getNormalAxis()] -= frame1.getValue(0, x, y) * lodScale;
                     } else {
                       const auto &frame1 = video.getFrame(f + shift);
                       //point1[patch.getNormalAxis()] = double( frame1.getValue(0, x, y) + patch.getD1());
-					  point1[patch.getNormalAxis()] = double( frame1.getValue(0, x, y) + patch.getD1()) * lodScale;
+					            point1[patch.getNormalAxis()] = double( frame1.getValue(0, x, y) + patch.getD1()) * lodScale;
                     }
                   }
                   const size_t pointindex_1 = reconstruct.addPoint(point1);

@@ -62,6 +62,8 @@ class PCCPatch {
   size_t&                     setViewId()                    { return viewId_;                }
   size_t&                     setBestMatchIdx()              { return bestMatchIdx_;          }
   size_t&                     getOccupancyResolution()       { return occupancyResolution_;   }
+  size_t&                      getProjectionMode()           { return projectionMode_; }
+  size_t&                      getFrameProjectionMode()      { return frameProjectionMode_; }
   size_t&                     getNormalAxis()                { return normalAxis_;            }
   size_t&                     getTangentAxis()               { return tangentAxis_;           }
   size_t&                     getBitangentAxis()             { return bitangentAxis_;         }
@@ -82,6 +84,8 @@ class PCCPatch {
   size_t                      getSizeU0()              const { return sizeU0_;                }
   size_t                      getSizeV0()              const { return sizeV0_;                }
   size_t                      getOccupancyResolution() const { return occupancyResolution_;   }
+  size_t                      getProjectionMode()      const { return projectionMode_;        }
+  size_t                      getFrameProjectionMode() const { return frameProjectionMode_;   }
   size_t                      getNormalAxis()          const { return normalAxis_;            }
   size_t                      getTangentAxis()         const { return tangentAxis_;           }
   size_t                      getBitangentAxis()       const { return bitangentAxis_;         }
@@ -116,6 +120,8 @@ class PCCPatch {
   size_t sizeU0_;                  // size of occupancy map
   size_t sizeV0_;                  // size of occupancy map
   size_t occupancyResolution_;     // ocupacy map resolution
+  size_t projectionMode_;         // 0: related to the min depth value; 1: related to the max value
+  size_t frameProjectionMode_;    // 0: fixed projection mode, where all patches use projection mode 0; 1: variable projection mode, where each patch can use a different projection mode. 
   size_t levelOfDetail_;           // level of detail, i.e., patch sampling resolution
   PCCMetadata patchLevelMetadata_;
 

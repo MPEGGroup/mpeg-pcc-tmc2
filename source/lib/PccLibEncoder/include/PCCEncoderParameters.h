@@ -134,7 +134,7 @@ class PCCEncoderParameters {
 
     bool                constrainedPack_;
     bool                binArithCoding_;
-	
+    size_t              projectionMode_;
     // dilation
     bool		            groupDilation_;
     bool                textureDilationOffLossless_;

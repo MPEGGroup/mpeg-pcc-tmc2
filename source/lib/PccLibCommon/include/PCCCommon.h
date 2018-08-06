@@ -63,7 +63,7 @@ namespace pcc {
   // Coding tool configuration
   // ******************************************************************* //
   static const uint8_t PCC_SAVE_POINT_TYPE = 0; // Save point information in reconstructed ply.
-
+ 
   // ******************************************************************* //
   // Common constants
   // ******************************************************************* //

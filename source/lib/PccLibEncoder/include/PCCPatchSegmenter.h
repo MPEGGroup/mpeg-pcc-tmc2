@@ -55,8 +55,10 @@ struct PCCPatchSegmenter3Parameters {
   double maxAllowedDist2MissedPointsSelection;
   double lambdaRefineSegmentation;
   size_t levelOfDetail;
+  size_t projectionMode;
   //EDD code
   bool   useEnhancedDeltaDepthCode;
+
 };
 
 class PCCPatchSegmenter3 {
@@ -86,7 +88,10 @@ class PCCPatchSegmenter3 {
                        std::vector<size_t> &patchPartition,
                        std::vector<size_t> &resampledPatchPartition,
                        std::vector<size_t> missedPoints, PCCPointSet3 &resampled 
-                       , bool useEnhancedDeltaDepthCode ); //EDD
+    , const size_t paramProjectionMode
+    , bool useEnhancedDeltaDepthCode 
+
+); //EDD
   void refineSegmentation( const PCCPointSet3 &pointCloud, const PCCStaticKdTree3 &kdtree,
                            const PCCNormalsGenerator3 &normalsGen,
                            const PCCVector3D *orientations, const size_t orientationCount,
@@ -95,6 +100,11 @@ class PCCPatchSegmenter3 {
 
  private:
   size_t nbThread_;
+  std::vector<PCCPatch> boxMinDepths_;  // box depth list
+  std::vector<PCCPatch> boxMaxDepths_;  // box depth list
+  size_t selectFrameProjectionMode(const PCCPointSet3 &points, const size_t surfaceThickness, const size_t paramProjectionMode);
+  void   selectPatchProjectionMode(const PCCPointSet3 &points, size_t frameProjectionMode, std::vector<size_t> &connectedComponent, PCCPatch &patch);
+
 };
 
 class Rect{

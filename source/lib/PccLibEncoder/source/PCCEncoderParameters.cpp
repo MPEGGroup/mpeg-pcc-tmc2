@@ -96,6 +96,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
 
   nbThread_                             = 1;
   keepIntermediateFiles_                = false;
+  projectionMode_                       = 0;
 
   absoluteD1_                           = true;
 
@@ -218,6 +219,7 @@ void PCCEncoderParameters::print(){
   std::cout << "\t   flagColorSmoothing                   " << flagColorSmoothing_ << std::endl;
   std::cout << "\t coloring" << std::endl;
   std::cout << "\t   bestColorSearchRange                 " << bestColorSearchRange_                 << std::endl;
+  std::cout << "\t   projectionMode                       " << projectionMode_                       << std::endl;
   std::cout << "\t   patchColorSubsampling                " << patchColorSubsampling_                << std::endl;
   std::cout << std::endl;
 }

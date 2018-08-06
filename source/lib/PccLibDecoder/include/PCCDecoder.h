@@ -63,9 +63,10 @@ private:
   int  readMetadata(PCCMetadata &metadata, PCCBitstream &bitstream);
   int  decompressMetadata(PCCMetadata &metadata, o3dgc::Arithmetic_Codec &arithmeticDecoder);
   int  decompressHeader( PCCContext &context, PCCBitstream &bitstream );
-  void decompressOccupancyMap( PCCContext &context, PCCBitstream& bitstream );
 
-  void decompressOccupancyMap( PCCFrameContext& frame, PCCBitstream &bitstream , PCCFrameContext& preFrame, size_t frameIndex);
+  void decompressOccupancyMap( PCCContext &context,    PCCBitstream& bitstream, uint8_t& surfaceThickness);
+  void decompressOccupancyMap(PCCFrameContext& frame, PCCBitstream &bitstream, uint8_t& surfaceThickness, PCCFrameContext& preFrame, size_t frameIndex);
+
   void decompressPatchMetaDataM42195(PCCFrameContext& frame, PCCFrameContext& preFrame, PCCBitstream &bitstream ,
     o3dgc::Arithmetic_Codec &arithmeticDecoder, o3dgc::Static_Bit_Model &bModel0, uint32_t &compressedBitstreamSize, size_t occupancyPrecision);
 

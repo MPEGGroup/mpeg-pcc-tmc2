@@ -76,7 +76,8 @@ int PCCDecoder::decode( PCCBitstream &bitstream, PCCContext &context, PCCGroupOf
   path << removeFileExtension( params_.compressedStreamPath_ ) << "_dec_GOF" << context.getIndex() << "_";
 
   auto sizeOccupancyMap = bitstream.size();
-  decompressOccupancyMap(context, bitstream);
+  uint8_t surfaceThickness = 0;
+  decompressOccupancyMap(context, bitstream, surfaceThickness);
   sizeOccupancyMap = bitstream.size() - sizeOccupancyMap;
   std::cout << "occupancy map  ->" << sizeOccupancyMap << " B" << std::endl;
 
@@ -113,7 +114,7 @@ int PCCDecoder::decode( PCCBitstream &bitstream, PCCContext &context, PCCGroupOf
     std::cout << "geometry video ->" << sizeGeometryVideo << " B" << std::endl;
   }
 
-  GeneratePointCloudParameters generatePointCloudParameters = {
+  GeneratePointCloudParameters generatePointCloudParameters = {      
       occupancyResolution_,
       neighborCountSmoothing_,
       (double)radius2Smoothing_,
@@ -123,6 +124,8 @@ int PCCDecoder::decode( PCCBitstream &bitstream, PCCContext &context, PCCGroupOf
       losslessGeo444_ != 0,
       params_.nbThread_,
       absoluteD1_,
+      surfaceThickness ,                 
+      true,                               //ignoreLod_   //tch 
       (double)thresholdColorSmoothing_,
       (double)thresholdLocalEntropy_,
       (double)radius2ColorSmoothing_,
@@ -352,7 +355,7 @@ int PCCDecoder::decompressHeader( PCCContext &context, PCCBitstream &bitstream )
   return 1;
 }
 
-void PCCDecoder::decompressOccupancyMap( PCCContext &context, PCCBitstream& bitstream ){
+void PCCDecoder::decompressOccupancyMap( PCCContext &context, PCCBitstream& bitstream, uint8_t& surfaceThickness){
   size_t sizeFrames = context.getFrames().size();
 
   PCCFrameContext preFrame = context.getFrames()[0];
@@ -363,7 +366,7 @@ void PCCDecoder::decompressOccupancyMap( PCCContext &context, PCCBitstream& bits
     printf("frame %d\n",i);
     auto &frameLevelMetadataEnabledFlags = context.getGOFLevelMetadata().getLowerLevelMetadataEnabledFlags();
     frame.getFrameLevelMetadata().getMetadataEnabledFlags() = frameLevelMetadataEnabledFlags;
-    decompressOccupancyMap( frame, bitstream, preFrame, i );
+    decompressOccupancyMap( frame, bitstream, surfaceThickness, preFrame, i );
     preFrame = frame;
     auto&  patches = frame.getPatches();
     auto& missedPointsPatch = frame.getMissedPointsPatch();
@@ -379,6 +382,7 @@ void PCCDecoder::decompressOccupancyMap( PCCContext &context, PCCBitstream& bits
     }
   }
 }
+
 
 void PCCDecoder::decompressPatchMetaDataM42195(PCCFrameContext& frame, PCCFrameContext& preFrame, PCCBitstream &bitstream ,
   o3dgc::Arithmetic_Codec &arithmeticDecoder, o3dgc::Static_Bit_Model &bModel0, uint32_t &compressedBitstreamSize, size_t occupancyPrecision) {
@@ -542,7 +546,7 @@ void PCCDecoder::decompressPatchMetaDataM42195(PCCFrameContext& frame, PCCFrameC
 }
 
 
-void PCCDecoder::decompressOccupancyMap( PCCFrameContext& frame, PCCBitstream &bitstream, PCCFrameContext& preFrame, size_t frameIndex) {
+void PCCDecoder::decompressOccupancyMap( PCCFrameContext& frame, PCCBitstream &bitstream, uint8_t& surfaceThickness, PCCFrameContext& preFrame, size_t frameIndex) {
   uint32_t patchCount = 0;
   auto&  patches = frame.getPatches();
   bitstream.read<uint32_t>( patchCount );
@@ -562,9 +566,11 @@ void PCCDecoder::decompressOccupancyMap( PCCFrameContext& frame, PCCBitstream &b
     bitstream.read<uint8_t>( count );
     maxCandidateCount = count;
   }
-
   printf("occupancyPrecision:%d,maxCandidateCount:%d\n",occupancyPrecision, maxCandidateCount);
-  
+  uint8_t frameProjectionMode = 0;
+  bitstream.read<uint8_t>(surfaceThickness);
+  bitstream.read<uint8_t>(frameProjectionMode);
+
   o3dgc::Arithmetic_Codec arithmeticDecoder;
   o3dgc::Static_Bit_Model bModel0;
   uint32_t compressedBitstreamSize;
@@ -617,7 +623,19 @@ void PCCDecoder::decompressOccupancyMap( PCCFrameContext& frame, PCCBitstream &b
       patch.getV1() = DecodeUInt32(bitCountV1, arithmeticDecoder, bModel0);
       patch.getD1() = DecodeUInt32(bitCountD1, arithmeticDecoder, bModel0);
 	  patch.getLod() = DecodeUInt32(bitCountLod, arithmeticDecoder, bModel0);
-
+        patch.getFrameProjectionMode() = frameProjectionMode;
+      if (patch.getFrameProjectionMode() == 0)
+        patch.getProjectionMode() = 0;
+      else if (patch.getFrameProjectionMode() == 1)
+        patch.getProjectionMode() = 1;
+      else if (patch.getFrameProjectionMode() == 2) {
+        patch.getProjectionMode() = 0;
+        const uint8_t bitCountProjDir = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(2 + 1)));
+        patch.getProjectionMode() = DecodeUInt32(bitCountProjDir, arithmeticDecoder, bModel0);
+      }
+      else {
+        std::cout << "This frameProjectionMode doesn't exist!" << std::endl;
+      }
       const int64_t deltaSizeU0 =
           o3dgc::UIntToInt(arithmeticDecoder.ExpGolombDecode(0, bModel0, bModelSizeU0));
       const int64_t deltaSizeV0 = 
@@ -865,4 +883,3 @@ void PCCDecoder::decompressOccupancyMap( PCCFrameContext& frame, PCCBitstream &b
   arithmeticDecoder.stop_decoder();
   bitstream += (uint64_t)compressedBitstreamSize;
 }
-
