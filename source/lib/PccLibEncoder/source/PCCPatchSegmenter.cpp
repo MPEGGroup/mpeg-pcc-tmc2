@@ -361,18 +361,18 @@ void  PCCPatchSegmenter3::selectPatchProjectionMode(const PCCPointSet3 &points, 
 }
 
 void PCCPatchSegmenter3::segmentPatches(const PCCPointSet3 &points, const PCCStaticKdTree3 &kdtree,
-                            const size_t maxNNCount, const size_t minPointCountPerCC,
-                            const size_t occupancyResolution,
-                            const double maxAllowedDist2MissedPointsDetection,
-                            const double maxAllowedDist2MissedPointsSelection,
-                            const size_t surfaceThickness, const size_t maxAllowedDepth,
-                            const std::vector<size_t> &partition,
-                            std::vector<PCCPatch> &patches,
-                            std::vector<size_t> &patchPartition,
-                            std::vector<size_t> &resampledPatchPartition,
-                            std::vector<size_t> missedPoints, PCCPointSet3 &resampled
-                          , const size_t paramProjectionMode
-                            , bool useEnhancedDeltaDepthCode) { //useEnhancedDeltaDepthCode for EDD
+  const size_t maxNNCount, const size_t minPointCountPerCC,
+  const size_t occupancyResolution,
+  const double maxAllowedDist2MissedPointsDetection,
+  const double maxAllowedDist2MissedPointsSelection,
+  const size_t surfaceThickness, const size_t maxAllowedDepth,
+  const std::vector<size_t> &partition,
+  std::vector<PCCPatch> &patches,
+  std::vector<size_t> &patchPartition,
+  std::vector<size_t> &resampledPatchPartition,
+  std::vector<size_t> missedPoints, PCCPointSet3 &resampled
+  , const size_t paramProjectionMode
+  , bool useEnhancedDeltaDepthCode) { //useEnhancedDeltaDepthCode for EDD
   const size_t pointCount = points.getPointCount();
   patchPartition.resize(pointCount, 0);
 
@@ -393,10 +393,10 @@ void PCCPatchSegmenter3::segmentPatches(const PCCPointSet3 &points, const PCCSta
   }
 
   size_t frameProjectionMode = 0;
-  if (paramProjectionMode == 0)
-    frameProjectionMode = 0;
-  if (paramProjectionMode == 1)
-    frameProjectionMode = 1;
+  if (paramProjectionMode == 0) 
+    frameProjectionMode = 0; //max for all patches      
+  else if (paramProjectionMode == 1) 
+    frameProjectionMode = 1;//max for all patches      
   else
      frameProjectionMode = selectFrameProjectionMode(points, surfaceThickness, paramProjectionMode);
 
@@ -610,8 +610,18 @@ void PCCPatchSegmenter3::segmentPatches(const PCCPointSet3 &points, const PCCSta
             d > patch.getDepth(1)[p]) {
             patch.getDepth(1)[p] = d;
           }
-          if (patch.getDepth(1)[p] < patch.getDepth(0)[p])
-            std::cout << "compute d1 map : ERROR : proj0 and d1 < d0" << std::endl;
+          //EDD
+          if (useEnhancedDeltaDepthCode && depth0 < infiniteDepth && (d - depth0) > 0 && (d - depth0) <= int16_t(surfaceThickness))
+          {
+            const uint16_t oldEDDCode = patch.getDepthEnhancedDeltaD()[p]; //EDD: to deal with the possible overflow problem
+            const uint16_t deltaD = d - depth0;
+            patch.getDepthEnhancedDeltaD()[p] |= 1 << (deltaD - 1);
+            if ((depth0 + patch.getDepthEnhancedDeltaD()[p]) > 1023) //EDD: 10 bit coding case. Temporary solution for data overflow case.
+            {
+              patch.getDepthEnhancedDeltaD()[p] = oldEDDCode;
+              std::cout << "(D0 + EDD-Code) > 1023. Data overflow observed (assume using 10bit coding). Temporary solution: the corresponding inbetween or Depth1 point will be regarded as missing point. To be improved if this happens a lot...\n";
+            }
+          }
         }
       }
       else {
@@ -628,8 +638,18 @@ void PCCPatchSegmenter3::segmentPatches(const PCCPointSet3 &points, const PCCSta
             d < patch.getDepth(1)[p]) {
             patch.getDepth(1)[p] = d;
           }
-          if (patch.getDepth(1)[p] > patch.getDepth(0)[p])
-            std::cout << "compute d1 map : ERROR : proj1 and d1 > d0" << std::endl;
+          //EDD
+          if (useEnhancedDeltaDepthCode && depth0 < infiniteDepth && (depth0-d) > 0 && (depth0-d) <= int16_t(surfaceThickness))
+          {
+            const uint16_t oldEDDCode = patch.getDepthEnhancedDeltaD()[p]; //EDD: to deal with the possible overflow problem
+            const uint16_t deltaD = depth0-d;
+            patch.getDepthEnhancedDeltaD()[p] |= 1 << (deltaD - 1);
+            if ((depth0 - patch.getDepthEnhancedDeltaD()[p]) > 0) //EDD: 10 bit coding case. Temporary solution for data overflow case.
+            {
+              patch.getDepthEnhancedDeltaD()[p] = oldEDDCode;
+              std::cout << "(D0 + EDD-Code) > 1023. Data overflow observed (assume using 10bit coding). Temporary solution: the corresponding inbetween or Depth1 point will be regarded as missing point. To be improved if this happens a lot...\n";
+            }
+          }
         }
       }
       if (patch.getProjectionMode() == 1) {
@@ -671,7 +691,10 @@ void PCCPatchSegmenter3::segmentPatches(const PCCPointSet3 &points, const PCCSta
                   if (patch.getDepthEnhancedDeltaD()[p] & (1 << i))
                   {
                     uint16_t nDeltaDCur = (i + 1);
-                    point[patch.getNormalAxis()] = double(depth0 + patch.getD1() + nDeltaDCur);
+                    if (patch.getProjectionMode() == 0)
+                      point[patch.getNormalAxis()] = double(depth0 + patch.getD1() + nDeltaDCur);
+                    else
+                      point[patch.getNormalAxis()] = double(depth0 + patch.getD1() - nDeltaDCur);
                     resampled.addPoint(point);
                     resampledPatchPartition.push_back(patchIndex);
                   }

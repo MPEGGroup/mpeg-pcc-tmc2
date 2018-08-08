@@ -613,9 +613,12 @@ bool PCCEncoder::generateGeometryVideo( const PCCPointSet3& source, PCCFrameCont
 
 void PCCEncoder::generateOccupancyMap( PCCFrameContext& frame ) {
   auto& occupancyMap = frame.getOccupancyMap();
+  auto& fullOccupancyMap = frame.getFullOccupancyMap();
   auto& width   = frame.getWidth();
   auto& height  = frame.getHeight();
-  occupancyMap.resize( width * height, 0 );
+  occupancyMap.resize(width * height, 0);
+  if (!params_.absoluteD1_)
+    fullOccupancyMap.resize(width * height, 0);
   const int16_t infiniteDepth = (std::numeric_limits<int16_t>::max)();
   for (const auto &patch : frame.getPatches() ) {
     const size_t v0 = patch.getV0() * patch.getOccupancyResolution();
@@ -650,6 +653,8 @@ void PCCEncoder::generateOccupancyMap( PCCFrameContext& frame ) {
       }
     }
   }
+  if (!params_.absoluteD1_)
+    fullOccupancyMap = occupancyMap;
 }
 
 void PCCEncoder::generateIntraImage( PCCFrameContext& frame, const size_t depthIndex, PCCImageGeometry &image) {
@@ -703,87 +708,48 @@ void PCCEncoder::generateIntraImage( PCCFrameContext& frame, const size_t depthI
     }
   }
 }
-#define  TCH_CE2_8     0
 bool PCCEncoder::predictGeometryFrame( PCCFrameContext& frame, const PCCImageGeometry &reference, PCCImageGeometry &image) {
   assert(reference.getWidth() ==  image.getWidth());
   assert(reference.getHeight() == image.getHeight());
   const size_t refWidth  = reference.getWidth();
   const size_t refHeight = reference.getHeight();
-  auto& occupancyMap = frame.getOccupancyMap();
-#if  TCH_CE2_8 == 1
-  //compute blockToPatch array
+  auto& occupancyMap = frame.getFullOccupancyMap();
   size_t occupancyResolution = params_.occupancyResolution_;
-  auto& patches = frame.getPatches();
-  const size_t patchCount = patches.size();
-  const size_t blockToPatchWidth = frame.getWidth() / params_.occupancyResolution_;
-  const size_t blockToPatchHeight = frame.getHeight() / params_.occupancyResolution_;
-  const size_t blockCount = blockToPatchWidth * blockToPatchHeight;
-  auto& blockToPatch = frame.getBlockToPatch();
-  blockToPatch.resize(0);
-  blockToPatch.resize(blockCount, 0);
-  for (size_t patchIndex = 0; patchIndex < patchCount; ++patchIndex) {
-    const auto &patch = patches[patchIndex];
-    const auto& occupancy = patch.getOccupancy();
-    for (size_t v0 = 0; v0 < patch.getSizeV0(); ++v0) {
-      for (size_t u0 = 0; u0 < patch.getSizeU0(); ++u0) {
-        if (occupancy[v0 * patch.getSizeU0() + u0]) {
-          blockToPatch[(v0 + patch.getV0()) * blockToPatchWidth + (u0 + patch.getU0())] = patchIndex;
-        }
-      }
-    }
-  }
-#endif
 
   for (size_t y = 0; y < refHeight; ++y) {
     for (size_t x = 0; x < refWidth; ++x) {
       const size_t pos1 = y * refWidth + x;
       if (occupancyMap[pos1] == 1) {
-        for (size_t c = 0; c < 3; ++c) {
+        for (size_t c = 0; c < 1; ++c) {
+        //for (size_t c = 0; c < 3; ++c) {
           const uint16_t value1 = static_cast<uint16_t>(image.getValue(c, x, y));
           const uint16_t value0 = static_cast<uint16_t>(reference.getValue(c, x, y));
-          // assert(value0 <= value1);
-#if  TCH_CE2_8_YO == 1
-          assert(value1 <= value0);
-          //update blockToPatch
           size_t p = ((y / occupancyResolution) * (refWidth / occupancyResolution)) + (x / occupancyResolution);
-          size_t patchIndex = blockToPatch[p];
+          size_t patchIndex = frame.getBlockToPatch()[p]-1;
           auto patch = frame.getPatches()[patchIndex];
 
           int_least32_t delta = 0;  
-
-          if (patch.getProjectionMode() == 0) {        
+          if (patch.getProjectionMode() == 0) {
             delta = (int_least32_t)value1 - (int_least32_t)value0;
             if (delta < 0) {
               delta = 0;
             }
-            if (!params_.losslessGeo_ && delta > 9) { //no clipping for lossless coding
+            if (!params_.losslessGeo_ && delta > 9) {
               delta = 9;
             }
-            // assert(delta < 10);
             image.setValue(c, x, y, (uint8_t)delta);
           }
           else {
-            int_least32_t delta = (int_least32_t)value0 - (int_least32_t)value1;
+            delta = (int_least32_t)value0 - (int_least32_t)value1;
             if (delta < 0) {
               delta = 0;
             }
-            if (!params_.losslessGeo_ && delta > 9) { //no clipping for lossless coding
+          
+            if (!params_.losslessGeo_ && delta > 9) {//no clipping for lossless coding
               delta = 9;
             }
-            // assert(delta < 10);
             image.setValue(c, x, y, (uint8_t)delta);
-          }  
-#else
-          int_least32_t delta = (int_least32_t) value1 - (int_least32_t) value0;
-          if (delta < 0) {
-            delta = 0;
           }
-          if (!params_.losslessGeo_ && delta > 9) { //no clipping for lossless coding
-            delta = 9;
-          }
-          // assert(delta < 10);
-          image.setValue(c, x, y, (uint8_t) delta);
-#endif
         }
       }
     }
@@ -826,7 +792,11 @@ void PCCEncoder::generateMissedPointsPatch(const PCCPointSet3& source, PCCFrameC
                         if (patch.getDepthEnhancedDeltaD()[p] & (1 << i))
                         {
                           uint16_t nDeltaDCur = (i + 1);
-                          point1[patch.getNormalAxis()] = double(depth0 + patch.getD1() + nDeltaDCur);
+                          if (patch.getProjectionMode() == 0)
+                            point1[patch.getNormalAxis()] = double(depth0 + patch.getD1() + nDeltaDCur);
+                          else
+                            point1[patch.getNormalAxis()] = double(depth0 + patch.getD1() - nDeltaDCur);
+
                           pointsToBeProjected.addPoint(point1);
                         }
                       }//for each i
@@ -1511,8 +1481,8 @@ void PCCEncoder::compressPatchMetaDataM42195( PCCFrameContext &frame, PCCFrameCo
     EncodeUInt32(uint32_t(patch.getV0()), bitCount[1], arithmeticEncoder, bModel0);
     EncodeUInt32(uint32_t(patch.getU1()), bitCount[2], arithmeticEncoder, bModel0);
     EncodeUInt32(uint32_t(patch.getV1()), bitCount[3], arithmeticEncoder, bModel0);
-    EncodeUInt32(uint32_t(patch.getD1()), bitCount[4], arithmeticEncoder, bModel0);
-    if (patch.getFrameProjectionMode() == 2) {
+    EncodeUInt32(uint32_t(patch.getD1()), bitCount[4], arithmeticEncoder, bModel0); 
+    if (!params_.absoluteD1_  && (patch.getFrameProjectionMode() == 2)) {
       const uint8_t bitCountProjDir = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(2 + 1)));
       EncodeUInt32(uint32_t(patch.getProjectionMode()), bitCountProjDir, arithmeticEncoder, bModel0);
     }
@@ -1582,16 +1552,19 @@ void PCCEncoder::compressOccupancyMap( PCCContext &context, PCCBitstream& bitstr
   } 
 }
 
-void PCCEncoder::compressOccupancyMap( PCCFrameContext& frame, PCCBitstream &bitstream, PCCFrameContext& preFrame, size_t frameIndex) {
+void PCCEncoder::compressOccupancyMap(PCCFrameContext& frame, PCCBitstream &bitstream, PCCFrameContext& preFrame, size_t frameIndex) {
   auto& patches = frame.getPatches();
   const size_t patchCount = patches.size();
   bitstream.write<uint32_t>(uint32_t(patchCount));
-  bitstream.write<uint8_t> (uint8_t(params_.occupancyPrecision_));
-  bitstream.write<uint8_t> (uint8_t(params_.maxCandidateCount_));
-  printf("patchCount:%d, ",patchCount);
-  printf("occupancyPrecision:%d,maxCandidateCount:%d\n",params_.occupancyPrecision_, params_.maxCandidateCount_);
-  bitstream.write<uint8_t>(uint8_t(params_.surfaceThickness_));
-  bitstream.write<uint8_t>(uint8_t(patches[0].getFrameProjectionMode()));
+  bitstream.write<uint8_t>(uint8_t(params_.occupancyPrecision_));
+  bitstream.write<uint8_t>(uint8_t(params_.maxCandidateCount_));
+  printf("patchCount:%d, ", patchCount);
+  printf("occupancyPrecision:%d,maxCandidateCount:%d\n", params_.occupancyPrecision_, params_.maxCandidateCount_);
+
+  if (!params_.absoluteD1_) {
+    bitstream.write<uint8_t>(uint8_t(params_.surfaceThickness_));
+    bitstream.write<uint8_t>(uint8_t(patches[0].getFrameProjectionMode()));
+  }
 
   o3dgc::Arithmetic_Codec arithmeticEncoder;
   o3dgc::Static_Bit_Model bModel0;
@@ -1635,7 +1608,7 @@ void PCCEncoder::compressOccupancyMap( PCCFrameContext& frame, PCCBitstream &bit
     bitstream.write<uint8_t>(bitCountU1);
     bitstream.write<uint8_t>(bitCountV1);
     bitstream.write<uint8_t>(bitCountD1);
-	bitstream.write<uint8_t>(bitCountLod);
+    bitstream.write<uint8_t>(bitCountLod);
     startPosition = bitstream.getPosition();
     bitstream += (uint64_t)4;  // placehoder for bitstream size
 
@@ -1661,8 +1634,8 @@ void PCCEncoder::compressOccupancyMap( PCCFrameContext& frame, PCCBitstream &bit
       EncodeUInt32(uint32_t(patch.getU1()), bitCountU1, arithmeticEncoder, bModel0);
       EncodeUInt32(uint32_t(patch.getV1()), bitCountV1, arithmeticEncoder, bModel0);
       EncodeUInt32(uint32_t(patch.getD1()), bitCountD1, arithmeticEncoder, bModel0);
-	  EncodeUInt32(uint32_t(patch.getLod()), bitCountLod, arithmeticEncoder, bModel0);
-      if (patch.getFrameProjectionMode() == 2) {
+	    EncodeUInt32(uint32_t(patch.getLod()), bitCountLod, arithmeticEncoder, bModel0);
+      if (!params_.absoluteD1_ && (patch.getFrameProjectionMode() == 2)) {
         const uint8_t bitCountProjDir = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(2 + 1)));
         EncodeUInt32(uint32_t(patch.getProjectionMode()), bitCountProjDir, arithmeticEncoder, bModel0);
       }

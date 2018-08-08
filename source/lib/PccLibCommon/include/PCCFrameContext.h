@@ -54,7 +54,8 @@ class PCCFrameContext {
   size_t&                          setNumMatchedPatches () { return numMatchedPatches_; }
   std::vector<PCCVector3<size_t>>& getPointToPixel      () { return pointToPixel_;      }
   std::vector<size_t>&             getBlockToPatch      () { return blockToPatch_;      }
-  std::vector<uint32_t>&           getOccupancyMap      () { return occupancyMap_;      }
+  std::vector<uint32_t>&           getOccupancyMap      () { return occupancyMap_; }
+  std::vector<uint32_t>&           getFullOccupancyMap  () { return fullOccupancyMap_; }
   std::vector<PCCPatch>&           getPatches           () { return patches_;           }
   PCCMissedPointsPatch&            getMissedPointsPatch () { return missedPointsPatch_; }
   PCCMetadata&                     getFrameLevelMetadata() { return frameLevelMetadata_; }
@@ -67,6 +68,7 @@ class PCCFrameContext {
   std::vector<PCCVector3<size_t>> pointToPixel_;
   std::vector<size_t> blockToPatch_;
   std::vector<uint32_t> occupancyMap_;
+  std::vector<uint32_t> fullOccupancyMap_;
   std::vector<PCCPatch> patches_;
   PCCMissedPointsPatch missedPointsPatch_;
   PCCMetadata frameLevelMetadata_;

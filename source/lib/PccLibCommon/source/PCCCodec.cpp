@@ -203,7 +203,10 @@ void PCCCodec::generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext &f
                     if (eddCode & (1 << i))
                     {
                       uint8_t deltaDCur = (i + 1);
-                      point1[patch.getNormalAxis()] = (double)(point0[patch.getNormalAxis()] + deltaDCur);
+                      if (patch.getProjectionMode() == 0)
+                        point1[patch.getNormalAxis()] = (double)(point0[patch.getNormalAxis()] + deltaDCur);
+                      else
+                        point1[patch.getNormalAxis()] = (double)(point0[patch.getNormalAxis()] - deltaDCur);
                       pointIndex1 = reconstruct.addPoint(point1);
                       reconstruct.setColor(pointIndex1, color);
                       if (PCC_SAVE_POINT_TYPE == 1) {
@@ -253,7 +256,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext &f
                   //Without "Identify boundary points" & "1st Extension boundary region" as EDD code is only for lossless coding now
                 } // if (eddCode == 0) 
               }
-              else {//if (params.enhancedDeltaDepthCode_)
+              else {//not params.enhancedDeltaDepthCode_
                 for (size_t f = 0; f < layerCount; ++f) {
                   PCCVector3D point1(point0);
                   if (f > 0) {

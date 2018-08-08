@@ -76,8 +76,10 @@ int PCCDecoder::decode( PCCBitstream &bitstream, PCCContext &context, PCCGroupOf
   path << removeFileExtension( params_.compressedStreamPath_ ) << "_dec_GOF" << context.getIndex() << "_";
 
   auto sizeOccupancyMap = bitstream.size();
-  uint8_t surfaceThickness = 0;
+  uint8_t surfaceThickness = 4;
+ 
   decompressOccupancyMap(context, bitstream, surfaceThickness);
+
   sizeOccupancyMap = bitstream.size() - sizeOccupancyMap;
   std::cout << "occupancy map  ->" << sizeOccupancyMap << " B" << std::endl;
 
@@ -568,8 +570,10 @@ void PCCDecoder::decompressOccupancyMap( PCCFrameContext& frame, PCCBitstream &b
   }
   printf("occupancyPrecision:%d,maxCandidateCount:%d\n",occupancyPrecision, maxCandidateCount);
   uint8_t frameProjectionMode = 0;
-  bitstream.read<uint8_t>(surfaceThickness);
-  bitstream.read<uint8_t>(frameProjectionMode);
+  if (!absoluteD1_) {
+    bitstream.read<uint8_t>(surfaceThickness);
+    bitstream.read<uint8_t>(frameProjectionMode);
+  }
 
   o3dgc::Arithmetic_Codec arithmeticDecoder;
   o3dgc::Static_Bit_Model bModel0;
@@ -585,13 +589,13 @@ void PCCDecoder::decompressOccupancyMap( PCCFrameContext& frame, PCCBitstream &b
     uint8_t bitCountU1 = 0;
     uint8_t bitCountV1 = 0;
     uint8_t bitCountD1 = 0;
-	uint8_t bitCountLod = 0;
+	  uint8_t bitCountLod = 0;
     bitstream.read<uint8_t>( bitCountU0 );
     bitstream.read<uint8_t>( bitCountV0 );
     bitstream.read<uint8_t>( bitCountU1 );
     bitstream.read<uint8_t>( bitCountV1 );
     bitstream.read<uint8_t>( bitCountD1 );
-	bitstream.read<uint8_t>( bitCountLod);
+	  bitstream.read<uint8_t>( bitCountLod);
     bitstream.read<uint32_t>(  compressedBitstreamSize );
 
     printf("bitCountU0V0U1V1D1:%d,%d,%d,%d,%d,compressedBitstreamSize:%d\n",bitCountU0, bitCountV0, bitCountU1, bitCountV1, bitCountD1, compressedBitstreamSize);
@@ -622,19 +626,28 @@ void PCCDecoder::decompressOccupancyMap( PCCFrameContext& frame, PCCBitstream &b
       patch.getU1() = DecodeUInt32(bitCountU1, arithmeticDecoder, bModel0);
       patch.getV1() = DecodeUInt32(bitCountV1, arithmeticDecoder, bModel0);
       patch.getD1() = DecodeUInt32(bitCountD1, arithmeticDecoder, bModel0);
-	  patch.getLod() = DecodeUInt32(bitCountLod, arithmeticDecoder, bModel0);
+	    patch.getLod() = DecodeUInt32(bitCountLod, arithmeticDecoder, bModel0);
+
+      if (!absoluteD1_) {
         patch.getFrameProjectionMode() = frameProjectionMode;
-      if (patch.getFrameProjectionMode() == 0)
-        patch.getProjectionMode() = 0;
-      else if (patch.getFrameProjectionMode() == 1)
-        patch.getProjectionMode() = 1;
-      else if (patch.getFrameProjectionMode() == 2) {
-        patch.getProjectionMode() = 0;
-        const uint8_t bitCountProjDir = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(2 + 1)));
-        patch.getProjectionMode() = DecodeUInt32(bitCountProjDir, arithmeticDecoder, bModel0);
+        if (patch.getFrameProjectionMode() == 0)
+          patch.getProjectionMode() = 0;
+        else if (patch.getFrameProjectionMode() == 1)
+          patch.getProjectionMode() = 1;
+        else if (patch.getFrameProjectionMode() == 2) {
+          patch.getProjectionMode() = 0;
+          const uint8_t bitCountProjDir = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(2 + 1)));
+          patch.getProjectionMode() = DecodeUInt32(bitCountProjDir, arithmeticDecoder, bModel0);
+          std::cout << "patch.getProjectionMode()= " << patch.getProjectionMode() << std::endl;
+        }
+        else {
+          std::cout << "This frameProjectionMode doesn't exist!" << std::endl;
+        }
+        std::cout << "(frameProjMode, projMode)= (" << patch.getFrameProjectionMode() << ", " << patch.getProjectionMode() << ")" << std::endl;
       }
       else {
-        std::cout << "This frameProjectionMode doesn't exist!" << std::endl;
+        patch.getFrameProjectionMode() = 0;
+        patch.getProjectionMode() = 0;
       }
       const int64_t deltaSizeU0 =
           o3dgc::UIntToInt(arithmeticDecoder.ExpGolombDecode(0, bModel0, bModelSizeU0));
