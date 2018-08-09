@@ -127,6 +127,10 @@ class PCCVideoDecoder {
     else
     {
       cmd << decoderPath << " --BitstreamFile=" << binFileName << " --ReconFile=" << yuvRecFileName;
+      // if nbyte == 1 ensure output bitdepth as 8bit. This is to cater for case if 10bit encoding was used for lossy cases.
+      if (nbyte == 1) {
+        cmd << " --OutputBitDepth=8 --OutputBitDepthC=8";
+      }
     }
     
     std::cout << cmd.str() << '\n';

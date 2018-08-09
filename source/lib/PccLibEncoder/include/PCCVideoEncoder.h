@@ -367,7 +367,6 @@ class PCCVideoEncoder {
       << " -c " << encoderConfig
       << " -i " << srcYuvFileName
       << " --InputBitDepth=" << depth
-      << " --InternalBitDepth=" << depth
       << " --InputChromaFormat=" << format
       << " --FrameRate=30 "
       << " --FrameSkip=0 "
@@ -377,6 +376,13 @@ class PCCVideoEncoder {
       << " --BitstreamFile=" << binFileName
       << " --ReconFile=" << recYuvFileName
       << " --QP=" << qp;
+
+      // If depth==10 ensure InternalBitDepth == InputBitDepth. 
+      // Otherwise for lossy cases rely on video encoder config files to set InternalBitDepth ( for Main10 video encoders)
+      if (depth == 10) {
+        cmd << " --InternalBitDepth=" << depth;
+      }
+
     }
     std::cout << cmd.str() << '\n';
     if (pcc::system(cmd.str().c_str())) {
