@@ -343,20 +343,41 @@ class PCCVideoEncoder {
   }
 
     std::stringstream cmd;
-    cmd << encoderPath
-        << " -c " << encoderConfig
-        << " -i " << srcYuvFileName
-        << " --InputBitDepth=" << depth
-        << " --InternalBitDepth=" << depth
-        << " --InputChromaFormat=" << format
-        << " --FrameRate=30 "
-        << " --FrameSkip=0 "
-        << " --SourceWidth=" << width
-        << " --SourceHeight=" << height
-        << " --FramesToBeEncoded=" << frameCount
-        << " --BitstreamFile=" << binFileName
-        << " --ReconFile=" << recYuvFileName
-        << " --QP=" << qp;
+    if(use444CodecIo)
+    {
+      cmd << encoderPath
+      << " -c " << encoderConfig
+      << " -i " << srcYuvFileName
+      << " --InputBitDepth=" << depth
+      << " --InternalBitDepth=" << depth
+      << " --InputChromaFormat=" << format
+      << " --FrameRate=30 "
+      << " --FrameSkip=0 "
+      << " --SourceWidth=" << width
+      << " --SourceHeight=" << height
+      << " --FramesToBeEncoded=" << frameCount
+      << " --BitstreamFile=" << binFileName
+      << " --ReconFile=" << recYuvFileName
+      << " --QP=" << qp
+      << " --InputColourSpaceConvert=RGBtoGBR";
+    }
+    else
+    {
+      cmd << encoderPath
+      << " -c " << encoderConfig
+      << " -i " << srcYuvFileName
+      << " --InputBitDepth=" << depth
+      << " --InternalBitDepth=" << depth
+      << " --InputChromaFormat=" << format
+      << " --FrameRate=30 "
+      << " --FrameSkip=0 "
+      << " --SourceWidth=" << width
+      << " --SourceHeight=" << height
+      << " --FramesToBeEncoded=" << frameCount
+      << " --BitstreamFile=" << binFileName
+      << " --ReconFile=" << recYuvFileName
+      << " --QP=" << qp;
+    }
     std::cout << cmd.str() << '\n';
     if (pcc::system(cmd.str().c_str())) {
       std::cout << "Error: can't run system command!" << std::endl;

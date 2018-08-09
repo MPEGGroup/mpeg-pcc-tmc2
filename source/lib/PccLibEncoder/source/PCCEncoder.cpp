@@ -1452,8 +1452,10 @@ void PCCEncoder::compressPatchMetaDataM42195( PCCFrameContext &frame, PCCFrameCo
 
     const int64_t deltaSizeU0 = static_cast<int64_t>(patch.getSizeU0() - prepatch.getSizeU0());
     const int64_t deltaSizeV0 = static_cast<int64_t>(patch.getSizeV0() - prepatch.getSizeV0());
+#if !FIX_RC011
     printf("patch[%d]: u0v0u1v1d1:%d,%d;%d,%d;%d\n", patchIndex, patch.getU0(), patch.getV0(), patch.getU1(), patch.getV1(), patch.getD1());
-
+#endif
+    
     arithmeticEncoder.ExpGolombEncode(o3dgc::IntToUInt(int32_t(delta_index)), 0, bModel0,
       bModelPatchIndex);
     arithmeticEncoder.ExpGolombEncode(o3dgc::IntToUInt(int32_t(delta_u0)), 0, bModel0,
@@ -1488,8 +1490,9 @@ void PCCEncoder::compressPatchMetaDataM42195( PCCFrameContext &frame, PCCFrameCo
     }
     const int64_t deltaSizeU0 = static_cast<int64_t>(patch.getSizeU0()) - prevSizeU0;
     const int64_t deltaSizeV0 = static_cast<int64_t>(patch.getSizeV0()) - prevSizeV0;
+#if !FIX_RC011
     printf("patch[%d]: u0v0u1v1d1:%d,%d;%d,%d;%d\n", patchIndex, patch.getU0(), patch.getV0(), patch.getU1(), patch.getV1(), patch.getD1());
-
+#endif
     arithmeticEncoder.ExpGolombEncode(o3dgc::IntToUInt(int32_t(deltaSizeU0)), 0, bModel0,
                                       bModelSizeU0);
     arithmeticEncoder.ExpGolombEncode(o3dgc::IntToUInt(int32_t(deltaSizeV0)), 0, bModel0,
@@ -1558,8 +1561,10 @@ void PCCEncoder::compressOccupancyMap(PCCFrameContext& frame, PCCBitstream &bits
   bitstream.write<uint32_t>(uint32_t(patchCount));
   bitstream.write<uint8_t>(uint8_t(params_.occupancyPrecision_));
   bitstream.write<uint8_t>(uint8_t(params_.maxCandidateCount_));
+#if !FIX_RC011
   printf("patchCount:%d, ", patchCount);
   printf("occupancyPrecision:%d,maxCandidateCount:%d\n", params_.occupancyPrecision_, params_.maxCandidateCount_);
+#endif
 
   if (!params_.absoluteD1_) {
     bitstream.write<uint8_t>(uint8_t(params_.surfaceThickness_));
@@ -1569,8 +1574,9 @@ void PCCEncoder::compressOccupancyMap(PCCFrameContext& frame, PCCBitstream &bits
   o3dgc::Arithmetic_Codec arithmeticEncoder;
   o3dgc::Static_Bit_Model bModel0;
   PCCBistreamPosition startPosition;
+#if !FIX_RC011
   printf("frameIndex:%d\n",frameIndex);
-
+#endif
   bool bBinArithCoding = params_.binArithCoding_ && (!params_.losslessGeo_) &&
     (params_.occupancyResolution_ == 16) && (params_.occupancyPrecision_ == 4);
 
@@ -1641,8 +1647,9 @@ void PCCEncoder::compressOccupancyMap(PCCFrameContext& frame, PCCBitstream &bits
       }
       const int64_t deltaSizeU0 = static_cast<int64_t>(patch.getSizeU0()) - prevSizeU0;
       const int64_t deltaSizeV0 = static_cast<int64_t>(patch.getSizeV0()) - prevSizeV0;
-      
+#if !FIX_RC011
       printf("patch[%d]: u0v0u1v1d1:%d,%d;%d,%d;%d\n", patchIndex, patch.getU0(), patch.getV0(), patch.getU1(), patch.getV1(), patch.getD1());
+#endif
       arithmeticEncoder.ExpGolombEncode(o3dgc::IntToUInt(int32_t(deltaSizeU0)), 0, bModel0,
                                         bModelSizeU0);
       arithmeticEncoder.ExpGolombEncode(o3dgc::IntToUInt(int32_t(deltaSizeV0)), 0, bModel0,
@@ -1670,7 +1677,9 @@ void PCCEncoder::compressOccupancyMap(PCCFrameContext& frame, PCCBitstream &bits
     }
   } else {
     size_t numMatchedPatches = frame.getNumMatchedPatches();
+#if !FIX_RC011
     printf("numMatchedPatches:%d\n", numMatchedPatches);
+#endif
     compressPatchMetaDataM42195(frame, preFrame, numMatchedPatches, bitstream, arithmeticEncoder, bModel0, startPosition);
   }
 

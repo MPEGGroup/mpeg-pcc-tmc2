@@ -118,7 +118,17 @@ class PCCVideoDecoder {
     file.close();
     bitstream += (uint64_t)compressedBitstreamSize;
     std::stringstream cmd;
-    cmd << decoderPath << " --BitstreamFile=" << binFileName << " --ReconFile=" << yuvRecFileName;
+
+    if(use444CodecIo)
+    {
+      cmd << decoderPath << " --OutputColourSpaceConvert=GBRtoRGB"
+      << " --BitstreamFile=" << binFileName << " --ReconFile=" << yuvRecFileName;
+    }
+    else
+    {
+      cmd << decoderPath << " --BitstreamFile=" << binFileName << " --ReconFile=" << yuvRecFileName;
+    }
+    
     std::cout << cmd.str() << '\n';
     if (pcc::system(cmd.str().c_str())) {
       std::cout << "Error: can't run system command!" << std::endl;

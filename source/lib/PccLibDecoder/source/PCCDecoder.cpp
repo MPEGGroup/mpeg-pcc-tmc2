@@ -132,6 +132,9 @@ int PCCDecoder::decode( PCCBitstream &bitstream, PCCContext &context, PCCGroupOf
       (double)thresholdLocalEntropy_,
       (double)radius2ColorSmoothing_,
       neighborCountColorSmoothing_,
+#if FIX_RC011
+    (bool)
+#endif
       flagColorSmoothing_
       , ((losslessGeo_ != 0) ? enhancedDeltaDepthCode_ : false) //EDD
 	  , (params_.testLevelOfDetailSignaling_ > 0) // ignore LoD scaling for testing the signaling only
@@ -472,8 +475,10 @@ void PCCDecoder::decompressPatchMetaDataM42195(PCCFrameContext& frame, PCCFrameC
     topNmax[3] = topNmax[3] < patch.getV1() ? patch.getV1() : topNmax[3];
     topNmax[4] = topNmax[4] < patch.getD1() ? patch.getD1() : topNmax[4];
 
-
+#if !FIX_RC011
     printf("patch[%d]: u0v0u1v1d1,idx:%d,%d;%d,%d;%d\n", patchIndex, patch.getU0(), patch.getV0(), patch.getU1(), patch.getV1(), patch.getD1());
+#endif
+    
     prevSizeU0 = patch.getSizeU0();
     prevSizeV0 = patch.getSizeV0();
 
@@ -505,8 +510,9 @@ void PCCDecoder::decompressPatchMetaDataM42195(PCCFrameContext& frame, PCCFrameC
 
     patch.getSizeU0() = prevSizeU0 + deltaSizeU0;
     patch.getSizeV0() = prevSizeV0 + deltaSizeV0;
-    
+#if !FIX_RC011
     printf("patch[%d]: u0v0u1v1d1U0V0:%d,%d;%d,%d;%d\n", patchIndex, patch.getU0(), patch.getV0(), patch.getU1(), patch.getV1(), patch.getD1());
+#endif
     prevSizeU0 = patch.getSizeU0();
     prevSizeV0 = patch.getSizeV0();
 
@@ -568,7 +574,9 @@ void PCCDecoder::decompressOccupancyMap( PCCFrameContext& frame, PCCBitstream &b
     bitstream.read<uint8_t>( count );
     maxCandidateCount = count;
   }
+#if !FIX_RC011
   printf("occupancyPrecision:%d,maxCandidateCount:%d\n",occupancyPrecision, maxCandidateCount);
+#endif
   uint8_t frameProjectionMode = 0;
   if (!absoluteD1_) {
     bitstream.read<uint8_t>(surfaceThickness);
@@ -578,8 +586,9 @@ void PCCDecoder::decompressOccupancyMap( PCCFrameContext& frame, PCCBitstream &b
   o3dgc::Arithmetic_Codec arithmeticDecoder;
   o3dgc::Static_Bit_Model bModel0;
   uint32_t compressedBitstreamSize;
+#if !FIX_RC011
   printf("frameIndex:%d\n",frameIndex);
-
+#endif
   bool bBinArithCoding = binArithCoding_ && (!losslessGeo_) &&
     (occupancyResolution_ == 16) && (occupancyPrecision == 4);
 
@@ -653,8 +662,9 @@ void PCCDecoder::decompressOccupancyMap( PCCFrameContext& frame, PCCBitstream &b
           o3dgc::UIntToInt(arithmeticDecoder.ExpGolombDecode(0, bModel0, bModelSizeU0));
       const int64_t deltaSizeV0 = 
           o3dgc::UIntToInt(arithmeticDecoder.ExpGolombDecode(0, bModel0, bModelSizeV0));
-    
+#if !FIX_RC011
       printf("patch[%d]: u0v0u1v1d1:%d,%d;%d,%d;%d\n", patchIndex, patch.getU0(), patch.getV0(), patch.getU1(), patch.getV1(), patch.getD1());
+#endif
       patch.getSizeU0() = prevSizeU0 + deltaSizeU0;
       patch.getSizeV0() = prevSizeV0 + deltaSizeV0;
 

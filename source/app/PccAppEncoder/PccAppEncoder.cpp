@@ -83,7 +83,9 @@ static std::istream &readUInt(std::istream &in, T &val) {
   return in;
 }
 
-static std::istream &operator>>(std::istream &in, ColorTransform &val) { return readUInt(in, val); }
+namespace pcc{
+  static std::istream &operator>>(std::istream &in, ColorTransform &val) { return readUInt(in, val); }
+}
 
 //---------------------------------------------------------------------------
 // :: Command line / config parsing
@@ -413,8 +415,11 @@ bool parseParameters(int argc, char *argv[], PCCEncoderParameters& params ) {
      params.patchColorSubsampling_, 
      false, 
      "Enable per patch color sub-sampling\n")
-
+#if FIX_RC011
+  ("deltaCoding",
+#else
     ("deltaCoding_",
+#endif
      params.deltaCoding_,
      params.deltaCoding_,
      "Delta meta-data coding")

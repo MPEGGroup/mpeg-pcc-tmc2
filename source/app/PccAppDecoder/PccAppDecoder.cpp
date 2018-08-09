@@ -83,7 +83,9 @@ static std::istream &readUInt(std::istream &in, T &val) {
   return in;
 }
 
-static std::istream &operator>>(std::istream &in, ColorTransform &val) { return readUInt(in, val); }
+namespace pcc{
+  static std::istream &operator>>(std::istream &in, ColorTransform &val) { return readUInt(in, val); }
+}
 
 //---------------------------------------------------------------------------
 // :: Command line / config parsing

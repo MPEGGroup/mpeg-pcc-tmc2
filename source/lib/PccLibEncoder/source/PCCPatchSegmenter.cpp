@@ -497,7 +497,7 @@ void PCCPatchSegmenter3::segmentPatches(const PCCPointSet3 &points, const PCCSta
       patch.getSizeU0() = 0;
       patch.getSizeV0() = 0;
       selectPatchProjectionMode(points, frameProjectionMode, connectedComponent, patch);
-
+      
       for (const auto i : connectedComponent) {
         const PCCVector3D point = points[i];
         const int16_t d = int16_t(round(point[patch.getNormalAxis()]));
@@ -622,6 +622,8 @@ void PCCPatchSegmenter3::segmentPatches(const PCCPointSet3 &points, const PCCSta
               std::cout << "(D0 + EDD-Code) > 1023. Data overflow observed (assume using 10bit coding). Temporary solution: the corresponding inbetween or Depth1 point will be regarded as missing point. To be improved if this happens a lot...\n";
             }
           }
+          if (patch.getDepth(1)[p] < patch.getDepth(0)[p])
+            std::cout << "compute d1 map : ERROR : proj0 and d1 < d0" << std::endl;
         }
       }
       else {
