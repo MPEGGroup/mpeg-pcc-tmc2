@@ -702,6 +702,7 @@ void PCCPatchSegmenter3::segmentPatches(const PCCPointSet3 &points, const PCCSta
                   }
                 }//for each i
               }//if( patch.getDepthEnhancedDeltaD()[p] != 0) )
+
             } //if(useEnhancedDeltaDepthCode)
             else {
               point[patch.getNormalAxis()] = double(patch.getDepth(1)[p] + patch.getD1());

@@ -95,7 +95,7 @@ class PCCVideoDecoder {
                   const size_t frameCount,
                   PCCBitstream &bitstream,
                   const std::string &decoderPath,
-				  PCCContext& contexts,	
+				          PCCContext& contexts,
                   const std::string &inverseColorSpaceConversionConfig = "",
                   const std::string &colorSpaceConversionPath = "",
                   const bool use444CodecIo = false,
@@ -106,8 +106,8 @@ class PCCVideoDecoder {
     bitstream.read<uint32_t>(compressedBitstreamSize);
     const std::string binFileName = fileName + ".bin";
     const std::string yuvRecFileName = addVideoFormat(fileName + "_rec" + (use444CodecIo ? ".rgb" : ".yuv"),
-                                                      width, height, !use444CodecIo);
-    const std::string rgbRecFileName = addVideoFormat(fileName + "_rec.rgb", width, height);
+                                                      width, height, !use444CodecIo, nbyte==2?"10":"8");
+    const std::string rgbRecFileName = addVideoFormat(fileName + "_rec.rgb", width, height, true, nbyte==2?"10":"8");
     std::ofstream file(binFileName, std::ios::binary);
     const std::string format = use444CodecIo ? "444" : "420";
     if (!file.good()) {
@@ -141,6 +141,7 @@ class PCCVideoDecoder {
     // todo: should use444CodecIo allow conversion to happen?
     if (inverseColorSpaceConversionConfig.empty() || colorSpaceConversionPath.empty() ||
         use444CodecIo) {
+      
       if (use444CodecIo) {
         if (!video.read(yuvRecFileName, width, height, frameCount, nbyte)) {
           return false;

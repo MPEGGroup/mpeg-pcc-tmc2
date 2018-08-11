@@ -150,6 +150,17 @@ struct PCCMissedPointsPatch {
   std::vector<uint16_t> x;
   std::vector<uint16_t> y;
   std::vector<uint16_t> z;
+#if M43579
+  std::vector<uint16_t> r;
+  std::vector<uint16_t> g;
+  std::vector<uint16_t> b;
+  std::vector<size_t> eddSavedPointsIndex;
+//  std::vector<PCCVector3<size_t>> missedPoint2Pixel;
+//  std::vector<PCCVector3<size_t>>& getMissedPoint2Pixel      () { return missedPoint2Pixel;      }
+  size_t MPnumber;
+  size_t MPnumbercolor;
+#endif
+  
   void resize(const size_t size) {
     x.resize(size);
     y.resize(size);
@@ -160,7 +171,25 @@ struct PCCMissedPointsPatch {
     y.resize(size, val);
     z.resize(size, val);
   }
+  
   const size_t size() { return x.size(); }
+#if M43579
+  const size_t sizeofcolor() { return r.size();}
+  void         setMPnumber(size_t numofMPs){MPnumber=numofMPs;}
+  void         setMPnumbercolor(size_t numofMPs){MPnumbercolor=numofMPs;}
+  const size_t getMPnumber() {return MPnumber;}
+  const size_t getMPnumbercolor() {return MPnumbercolor;}
+  void resizecolor(const size_t size) {
+    r.resize(size);
+    g.resize(size);
+    b.resize(size);
+  }
+  void resizecolor(const size_t size, const uint16_t val) {
+    r.resize(size, val);
+    g.resize(size, val);
+    b.resize(size, val);
+  }
+#endif
 };
 }
 

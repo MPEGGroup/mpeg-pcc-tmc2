@@ -92,6 +92,11 @@ void PCCCodec::generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext &f
   pointToPixel.resize(0);
   reconstruct.clear();
 
+#if M43579
+  auto& eddSavedMissedPoint = frame.getMissedPointsPatch().eddSavedPointsIndex;
+  eddSavedMissedPoint.resize(0);
+#endif
+  
 //EDD code
   std::vector<size_t> vecEmptyBlocks;
   if (params.enhancedDeltaDepthCode_) {
@@ -125,7 +130,17 @@ void PCCCodec::generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext &f
 
   const size_t blockToPatchWidth = frame.getWidth() / params.occupancyResolution_;
   reconstruct.addColors();
+  
+
+  
   const size_t patchCount = patches.size();
+#if JKEI_TEST
+  FILE *fp;
+  fp = fopen("gencloud.txt","a");
+  fprintf(fp, "patchnumber: %zu\n", patchCount);
+  fclose(fp);
+#endif
+  
   for (size_t patchIndex = 0; patchIndex < patchCount; ++patchIndex) {
     const size_t patchIndexPlusOne = patchIndex + 1;
     const auto &patch = patches[patchIndex];
@@ -170,6 +185,16 @@ void PCCCodec::generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext &f
                 partition.push_back(uint32_t(patchIndex));
                 pointToPixel.push_back(PCCVector3<size_t>(x, y, 0));
 
+#if 0 //JKEI_TEST
+                FILE *fp;
+                fp = fopen("geometry.txt","a");
+                fprintf(fp, "%zu(edd=x): %f, %f, %f\n", reconstruct.getPointCount(),
+                        point0[0],
+                        point0[1],
+                        point0[2]);
+                fflush(fp);
+                fclose(fp);
+#endif
                 //EDD code
                 uint16_t eddCode = 0;
                 if (!params.absoluteD1_) {
@@ -192,6 +217,16 @@ void PCCCodec::generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext &f
                   }
                   partition.push_back(uint32_t(patchIndex));
                   pointToPixel.push_back(PCCVector3<size_t>(x, y, 1));
+#if 0 //JKEI_TEST
+                  FILE *fp;
+                  fp = fopen("geometry.txt","a");
+                  fprintf(fp, "%zu(edd=0): %f, %f, %f\n", reconstruct.getPointCount(),
+                          point1[0],
+                          point1[1],
+                          point1[2]);
+                  fflush(fp);
+                  fclose(fp);
+#endif
                 }
                 else
                 { //eddCode != 0
@@ -209,6 +244,17 @@ void PCCCodec::generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext &f
                         point1[patch.getNormalAxis()] = (double)(point0[patch.getNormalAxis()] - deltaDCur);
                       pointIndex1 = reconstruct.addPoint(point1);
                       reconstruct.setColor(pointIndex1, color);
+#if 0//JKEI_TEST
+                      FILE *fp;
+                      fp = fopen("geometry.txt","a");
+                      fprintf(fp, "%zu(edd=%d): %f, %f, %f\n", reconstruct.getPointCount(),i,
+                              point1[0],
+                              point1[1],
+                              point1[2]);
+                      fflush(fp);
+                      fclose(fp);
+#endif
+                      
                       if (PCC_SAVE_POINT_TYPE == 1) {
                         reconstruct.setType(pointIndex1, PointType::InBetween);
                       }
@@ -224,8 +270,10 @@ void PCCCodec::generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext &f
                         size_t uu = uBlock * params.occupancyResolution_ + nPixelInCurrentBlockCount % params.occupancyResolution_;
                         size_t vv = vBlock * params.occupancyResolution_ + nPixelInCurrentBlockCount / params.occupancyResolution_;
                         pointToPixel.push_back(PCCVector3<size_t>(uu, vv, nFrameToStore));
+#if M43579
+                        eddSavedMissedPoint.push_back(pointToPixel.size()-1);
+#else
                         occupancyMap[vv * imageWidth + uu] = 1; //occupied
-
                         ++nPixelInCurrentBlockCount;
                         if (nPixelInCurrentBlockCount >= nPixelInBlockNum)
                         {
@@ -245,6 +293,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext &f
                             }
                           }
                         }
+#endif
                       }
                       addedPointCount++;
                     }
@@ -258,7 +307,11 @@ void PCCCodec::generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext &f
               }
               else {//not params.enhancedDeltaDepthCode_
                 for (size_t f = 0; f < layerCount; ++f) {
+#if JKEI_TEST
+                  printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+#endif
                   PCCVector3D point1(point0);
+
                   if (f > 0) {
                     if( !params.absoluteD1_ ) {
                       const auto &frame1 = videoD1.getFrame(shift);
@@ -343,14 +396,80 @@ void PCCCodec::generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext &f
                   }
                   partition.push_back(uint32_t(patchIndex));
                   pointToPixel.push_back(PCCVector3<size_t>(x, y, f));
+#if JKEI_TEST
+                  if(0 &&patchIndex==0 && f==0)
+                  {
+                    FILE *fp;
+                    fp = fopen("geometry_noedd.txt","a");
+                    const PCCVector3<size_t> location = pointToPixel[pointToPixel.size()-1];
+                    const PCCColor3B color = reconstruct.getColor(pointToPixel.size()-1);
+                    fprintf(fp, "%zu : (%f, %f, %f), %zu, %zu, %zu -> %zu, %zu, %zu\n",
+                            pointToPixel.size()-1,
+                            point0[0], point0[1], point0[2],
+                            location[0], location[1], location[2],
+                            color[0], color[1], color[2]);
+                    fflush(fp);
+                    fclose(fp);
+                  }
+#endif
                 }
-              } //if (params.enhancedDeltaDepthCode_)
+              } //else (params.enhancedDeltaDepthCode_)
             }
           }
         }
       }
     }
   }
+
+  /*
+#if M43579
+#if JKEI_TEST
+  FILE *fp;
+  fp = fopen("missedpointpatch_genPointCloud.txt","w");
+#endif
+  
+  if (params.losslessGeo_)
+  {
+    //Add point GPS from missedPointsPatch without inserting to pointToPixel
+    auto& missedPointsPatch = frame.getMissedPointsPatch();
+    PCCColor3B missedPointsColor(uint8_t(0));
+    missedPointsColor[0] = 0;
+    missedPointsColor[1] = 255;
+    missedPointsColor[2] = 255;
+    if(params.losslessGeo444_)
+    {
+      for(int i=0;i<missedPointsPatch.size();i++)
+      {
+        PCCVector3D point0;
+        point0[0] = missedPointsPatch.x[i];
+        point0[1] = missedPointsPatch.y[i];
+        point0[2] = missedPointsPatch.z[i];
+        const size_t pointIndex = reconstruct.addPoint(point0);
+        reconstruct.setColor(pointIndex, missedPointsColor);
+      }
+    }
+    else
+    {
+      assert(missedPointsPatch.size()%3==0);
+      size_t sizeofMPs=(missedPointsPatch.size())/3;
+#if JKEI_TEST
+      fprintf(fp, "sizeofMPs : %zu\n", sizeofMPs);
+#endif
+      for(int i=0;i<sizeofMPs;i++)
+      {
+        PCCVector3D point0;
+        point0[0] = missedPointsPatch.x[i];
+        point0[1] = missedPointsPatch.x[i+sizeofMPs];
+        point0[2] = missedPointsPatch.x[i+2*sizeofMPs];
+        const size_t pointIndex = reconstruct.addPoint(point0);
+#if JKEI_TEST
+        fprintf(fp, "%d : %f, %f, %f\n", i, point0[0], point0[1],point0[2]);
+#endif
+        reconstruct.setColor(pointIndex, missedPointsColor);
+      }
+    }
+  } //lossless
+#else
   // Add points from missedPointsPatch
   auto& missedPointsPatch = frame.getMissedPointsPatch();
   PCCColor3B missedPointsColor(uint8_t(0));
@@ -377,12 +496,16 @@ void PCCCodec::generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext &f
             const size_t pointIndex = reconstruct.addPoint(point0);
             reconstruct.setColor(pointIndex, missedPointsColor);
             for (size_t f = 0; f < layerCount; ++f)
+            {
               pointToPixel.push_back(PCCVector3<size_t>(x, y, f));
+            }
           }
         }
       }
     }
   } else if (params.losslessGeo_) {
+
+    
     size_t numMissedPts{ 0 };
     for (size_t v0 = 0; v0 < missedPointsPatch.sizeV0; ++v0) {
       for (size_t u0 = 0; u0 < missedPointsPatch.sizeU0; ++u0) {
@@ -416,20 +539,40 @@ void PCCCodec::generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext &f
         }
         if (numMissedPointsAdded < numMissedPts) {
           missedPoints[numMissedPointsAdded][0] = double(frame0.getValue(0, x, y));
-        } else if (numMissedPts <= numMissedPointsAdded && numMissedPointsAdded < 2 * numMissedPts) {
+        }
+        else if (numMissedPts <= numMissedPointsAdded && numMissedPointsAdded < 2 * numMissedPts) {
           missedPoints[numMissedPointsAdded - numMissedPts][1] = double(frame0.getValue(0, x, y));
-        } else if (2 * numMissedPts <= numMissedPointsAdded && numMissedPointsAdded < 3 * numMissedPts) {
+        }
+        else if (2 * numMissedPts <= numMissedPointsAdded && numMissedPointsAdded < 3 * numMissedPts) {
           missedPoints[numMissedPointsAdded - 2 * numMissedPts][2] = double(frame0.getValue(0, x, y));
           const size_t pointIndex = reconstruct.addPoint(missedPoints[numMissedPointsAdded - 2 * numMissedPts]);
+#if JKEI_TEST
+            fprintf(fp, "%zu : %f, %f, %f\n", numMissedPointsAdded - 2 * numMissedPts, missedPoints[numMissedPointsAdded - 2 * numMissedPts][0],missedPoints[numMissedPointsAdded - 2 * numMissedPts][1], missedPoints[numMissedPointsAdded - 2 * numMissedPts][2]);
+#endif
           reconstruct.setColor(pointIndex, missedPointsColor);
           for (size_t f = 0; f < layerCount; ++f) {
             pointToPixel.push_back(PCCVector3<size_t>(x, y, f));
           }
         }
         numMissedPointsAdded++;
-      }
+      }//u
+    } //v
+#if JKEI_TEST
+    fprintf(fp, "---------------\n");
+    fprintf(fp, "missedpoints: %zu, addedpoints : %zu\n", numMissedPts, numMissedPointsAdded);
+    for(int xx=0;xx<numMissedPts;xx++)
+    {
+      fprintf(fp, "%d : %f, %f, %f\n", xx, missedPoints[xx][0],missedPoints[xx][1], missedPoints[xx][2]);
     }
+#endif
   }
+  
+#if JKEI_TEST
+  fclose(fp);
+#endif
+  
+#endif //m
+   */
 }
 
 void PCCCodec::smoothPointCloud( PCCPointSet3& reconstruct,

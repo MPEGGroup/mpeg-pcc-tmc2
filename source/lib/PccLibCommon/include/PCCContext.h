@@ -60,8 +60,35 @@ class PCCContext {
   PCCVideoGeometry& getVideoGeometry() { return videoGeometry_; }
   PCCVideoGeometry& getVideoGeometryD1() { return videoGeometryD1_; }
   PCCVideoTexture&  getVideoTexture() { return videoTexture_; }
+#if M43579
+  PCCVideoGeometry& getVideoMPsGeometry() { return videoMPsGeometry_; }
+  PCCVideoGeometry&  getVideoMPsTexture() { return videoMPsTexture_; }
+  PCCFrameContext& getFrameContext(int i) { return frames_[i]; }
+  const size_t getGofSize() { return frames_.size(); }
+  
+  const bool getLosslessGeo444() { return losslessGeo444_; }
+  const bool getLosslessGeo() { return losslessGeo_; }
+  const bool getLosslessAtt() { return losslessTexture_; }
+  
+  void setLosslessGeo444(bool losslessGeo444){ losslessGeo444_ = losslessGeo444;}
+  void setLossless(bool losslessGeo){ losslessGeo_ = losslessGeo;}
+  void setLosslessAtt(bool losslessTexture){ losslessTexture_ = losslessTexture;}
+  
+  const size_t getMPGeoWidth() {return MPGeoWidth_;}
+  const size_t getMPGeoHeight() {return MPGeoHeight_;}
+  const size_t getMPAttWidth() {return MPAttWidth_;}
+  const size_t getMPAttHeight() {return MPAttHeight_;}
+  
+  void setMPGeoWidth(size_t width) { MPGeoWidth_=width;}
+  void setMPGeoHeight(size_t height) { MPGeoHeight_=height;}
+  void setMPAttWidth(size_t width) { MPAttWidth_=width;}
+  void setMPAttHeight(size_t height) { MPAttHeight_=height;}
+ 
+  
+#endif
   PCCMetadata&      getGOFLevelMetadata() { return gofLevelMetadata_; }
 
+  
   void setIndex( size_t i ) { index_ = i; }
   size_t getIndex(){ return index_; }
   size_t& getWidth(){ return width_; }
@@ -76,6 +103,17 @@ class PCCContext {
   PCCVideoGeometry videoGeometry_;
   PCCVideoGeometry videoGeometryD1_;
   PCCVideoTexture  videoTexture_;
+#if M43579
+  PCCVideoGeometry videoMPsGeometry_;
+  PCCVideoGeometry videoMPsTexture_; //for 10 bit
+  bool losslessGeo444_;
+  bool losslessGeo_;
+  bool losslessTexture_;
+  size_t MPGeoWidth_;
+  size_t MPGeoHeight_;
+  size_t MPAttWidth_;
+  size_t MPAttHeight_;
+#endif
   PCCMetadata gofLevelMetadata_;
 };
 }; //~namespace

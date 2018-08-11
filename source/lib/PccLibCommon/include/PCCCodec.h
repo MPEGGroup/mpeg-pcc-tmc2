@@ -78,8 +78,7 @@ class PCCCodec {
 
   bool colorPointCloud( PCCGroupOfFrames& reconstructs, PCCContext& context,
 	  const bool noAttributes, const ColorTransform colorTransform, const GeneratePointCloudParameters params);
-
-
+  
  private:
   void generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext& frame,
                            const PCCVideoGeometry &video, const PCCVideoGeometry &videoD1,

@@ -71,7 +71,8 @@ bool PCCGroupOfFrames::write( const std::string reconstructedDataPath, size_t& f
   char fileName[ 4096 ];
   for( auto &pointSet : frames_ ) {
     sprintf( fileName, reconstructedDataPath.c_str(), frameNumber++ );
-    if( !pointSet.write( fileName ) ) { 
+    //JKEI
+    if( !pointSet.write( fileName, true ) ) {
       return false;
     }
   }

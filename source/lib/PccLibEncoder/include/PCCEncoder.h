@@ -86,7 +86,18 @@ private:
   bool dilateGeometryVideo( PCCContext &context );
 
   bool generateTextureVideo( const PCCGroupOfFrames& sources, PCCGroupOfFrames& reconstruct, PCCContext& context );
-
+#if M43579
+  
+  
+  void generateMissedPointsGeometryVideo(PCCContext& context, PCCGroupOfFrames& reconstructs);
+  void writeMissedPointsGeometryNumber(PCCContext& context, PCCBitstream &bitstream);
+  void generateMissedPointsTextureVideo(PCCContext& context, PCCGroupOfFrames& reconstructs, PCCBitstream &bitstream);
+  void writeMissedPointsTextureNumber(PCCContext& context, PCCBitstream &bitstream);
+  
+  void generateMPsGeometryImage    (PCCContext& context, PCCFrameContext& frame, PCCImageGeometry &image);
+  void generateMPsTextureImage(PCCContext& context, PCCFrameContext& frame, PCCImageGeometry &image, size_t shift, const PCCPointSet3& reconstruct);
+#endif
+  
   template <typename T>
   void dilate( PCCFrameContext &frame, PCCImage<T, 3> &image, const PCCImage<T, 3> *reference = nullptr );
   void pack( PCCFrameContext& frame );

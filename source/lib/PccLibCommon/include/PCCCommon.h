@@ -34,7 +34,9 @@
 #define PCCTMC2Common_h
 
 #define FIX_RC011 1
-#define FIX_RC011_edd 1
+#define JKEI_TEST 1
+#define M43673 1
+#define M43579 1
 
 #include <limits>
 #include <assert.h>

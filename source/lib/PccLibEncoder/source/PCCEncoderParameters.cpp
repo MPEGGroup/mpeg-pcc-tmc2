@@ -93,7 +93,12 @@ PCCEncoderParameters::PCCEncoderParameters() {
   losslessTexture_                      = false;
   noAttributes_                         = false;
   losslessGeo444_                       = false;
-
+#if ALP_IMPROVED_LOSSLESS
+  geometryMPConfig_ = {};
+  textureMPConfig_ = {};
+//  qStepMissedPointsGeometry_ = 1;
+//  qStepMissedPointsTexture_  = 1;
+#endif
   nbThread_                             = 1;
   keepIntermediateFiles_                = false;
   projectionMode_                       = 0;
@@ -198,6 +203,13 @@ void PCCEncoderParameters::print(){
     std::cout << "\t   geometryConfig                       " << geometryConfig_                       << std::endl;
   }
   std::cout << "\t   textureConfig                        " << textureConfig_                        << std::endl;
+#if M43579
+  if(losslessGeo_)
+  std::cout<<"\tgeometryMPConfig : "               << geometryMPConfig_<<std::endl;
+  if(losslessTexture_)
+  std::cout<<"\ttextureMPConfig : "               << textureMPConfig_<<std::endl;
+#endif
+
   std::cout << "\t   colorSpaceConversionConfig           " << colorSpaceConversionConfig_           << std::endl;
   std::cout << "\t   inverseColorSpaceConversionConfig    " << inverseColorSpaceConversionConfig_    << std::endl;
   std::cout << "\t dilation" << std::endl;
@@ -304,5 +316,17 @@ bool PCCEncoderParameters::check(){
     std::cerr << "WARNING: EDD code doesn't bring any gain when surfaceThickness==1. Please consider to increase the value of surfaceThickness.\n";
   }
 
+#if M43579
+  if(geometryMPConfig_.empty() )
+  {
+    geometryMPConfig_=geometryConfig_;
+  }
+  
+  if(textureMPConfig_.empty() )
+  {
+    textureMPConfig_=textureConfig_;
+  }
+  
+#endif
   return ret;
 }

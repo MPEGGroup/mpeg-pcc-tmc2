@@ -114,7 +114,12 @@ class PCCEncoderParameters {
     bool                losslessGeo_;
     bool                losslessTexture_;
     bool                losslessGeo444_;
-
+#if  M43579
+//  size_t              qStepMissedPointsGeometry_;
+//  size_t              qStepMissedPointsTexture_;
+  std::string         geometryMPConfig_;
+  std::string         textureMPConfig_;
+#endif
     // scale and bias
     float               modelScale_;
     PCCVector3<float>   modelOrigin_;

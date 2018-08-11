@@ -82,7 +82,6 @@ class PCCVideoEncoder {
       return false;
     }
 
-
     const std::string format = use444CodecIo ? "444" : "420";
     const std::string binFileName = fileName + ".bin";
     const std::string srcYuvFileName = addVideoFormat(fileName + (use444CodecIo ? ".rgb" : ".yuv"), width, height, !use444CodecIo);
@@ -90,7 +89,8 @@ class PCCVideoEncoder {
     const std::string recYuvFileName = addVideoFormat(fileName + "_rec" + (use444CodecIo ? ".rgb" : ".yuv"), width, height, !use444CodecIo);
     const std::string recRgbFileName = addVideoFormat(fileName + "_rec" + ".rgb", width, height, !use444CodecIo);
 
-    const bool yuvVideo = colorSpaceConversionConfig.empty() || colorSpaceConversionPath.empty() || use444CodecIo;
+
+      const bool yuvVideo = colorSpaceConversionConfig.empty() || colorSpaceConversionPath.empty() || use444CodecIo;
     // todo: should use444CodecIo allow conversion to happen?
     if( yuvVideo ) {
       if (use444CodecIo) {
