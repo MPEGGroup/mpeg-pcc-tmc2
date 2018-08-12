@@ -213,6 +213,7 @@ int decompressVideo(const PCCDecoderParameters &params, StopwatchUserTime &clock
     PCCGroupOfFrames reconstruct; 
     PCCContext context;
     context.setIndex( contextIndex++ );
+
     if (gofLevelMetadataEnabledFlags.getMetadataEnabled()) {
       auto& gofLevelMetadata = context.getGOFLevelMetadata();
       gofLevelMetadata.getMetadataEnabledFlags() = gofLevelMetadataEnabledFlags;

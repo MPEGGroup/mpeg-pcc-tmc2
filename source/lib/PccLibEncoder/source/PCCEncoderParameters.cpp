@@ -93,12 +93,11 @@ PCCEncoderParameters::PCCEncoderParameters() {
   losslessTexture_                      = false;
   noAttributes_                         = false;
   losslessGeo444_                       = false;
-#if ALP_IMPROVED_LOSSLESS
-  geometryMPConfig_ = {};
-  textureMPConfig_ = {};
-//  qStepMissedPointsGeometry_ = 1;
-//  qStepMissedPointsTexture_  = 1;
-#endif
+
+  useMissedPointsVideo_                 = true;
+  geometryMPConfig_                     = {};
+  textureMPConfig_                      = {};
+
   nbThread_                             = 1;
   keepIntermediateFiles_                = false;
   projectionMode_                       = 0;
@@ -163,6 +162,7 @@ void PCCEncoderParameters::print(){
   std::cout << "\t noAttributes                           " << noAttributes_                         << std::endl;
   std::cout << "\t losslessGeo444                         " << losslessGeo444_                       << std::endl;
   std::cout << "\t enhancedDeltaDepthCode                 " << enhancedDeltaDepthCode_               << std::endl; //EDD
+  std::cout << "\t useMissedPointsVideo                   " << useMissedPointsVideo_                 <<std::endl;
   std::cout << "\t uncompressedDataPath                   " << uncompressedDataPath_                 << std::endl;
   std::cout << "\t compressedStreamPath                   " << compressedStreamPath_                 << std::endl;
   std::cout << "\t reconstructedDataPath                  " << reconstructedDataPath_                << std::endl;
@@ -203,13 +203,11 @@ void PCCEncoderParameters::print(){
     std::cout << "\t   geometryConfig                       " << geometryConfig_                       << std::endl;
   }
   std::cout << "\t   textureConfig                        " << textureConfig_                        << std::endl;
-#if M43579
-  if(losslessGeo_)
-  std::cout<<"\tgeometryMPConfig : "               << geometryMPConfig_<<std::endl;
-  if(losslessTexture_)
-  std::cout<<"\ttextureMPConfig : "               << textureMPConfig_<<std::endl;
-#endif
-
+  if(useMissedPointsVideo_)
+  {
+  std::cout <<"\t geometryMPConfig                        "               << geometryMPConfig_<<std::endl;
+  std::cout<<"\t textureMPConfig                          "               << textureMPConfig_<<std::endl;
+  }
   std::cout << "\t   colorSpaceConversionConfig           " << colorSpaceConversionConfig_           << std::endl;
   std::cout << "\t   inverseColorSpaceConversionConfig    " << inverseColorSpaceConversionConfig_    << std::endl;
   std::cout << "\t dilation" << std::endl;
@@ -316,7 +314,6 @@ bool PCCEncoderParameters::check(){
     std::cerr << "WARNING: EDD code doesn't bring any gain when surfaceThickness==1. Please consider to increase the value of surfaceThickness.\n";
   }
 
-#if M43579
   if(geometryMPConfig_.empty() )
   {
     geometryMPConfig_=geometryConfig_;
@@ -326,7 +323,6 @@ bool PCCEncoderParameters::check(){
   {
     textureMPConfig_=textureConfig_;
   }
-  
-#endif
+
   return ret;
 }

@@ -60,9 +60,9 @@ class PCCContext {
   PCCVideoGeometry& getVideoGeometry() { return videoGeometry_; }
   PCCVideoGeometry& getVideoGeometryD1() { return videoGeometryD1_; }
   PCCVideoTexture&  getVideoTexture() { return videoTexture_; }
-#if M43579
+
   PCCVideoGeometry& getVideoMPsGeometry() { return videoMPsGeometry_; }
-  PCCVideoGeometry&  getVideoMPsTexture() { return videoMPsTexture_; }
+  PCCVideoTexture&  getVideoMPsTexture() { return videoMPsTexture_; }
   PCCFrameContext& getFrameContext(int i) { return frames_[i]; }
   const size_t getGofSize() { return frames_.size(); }
   
@@ -83,9 +83,14 @@ class PCCContext {
   void setMPGeoHeight(size_t height) { MPGeoHeight_=height;}
   void setMPAttWidth(size_t width) { MPAttWidth_=width;}
   void setMPAttHeight(size_t height) { MPAttHeight_=height;}
- 
+
+  void setUseMissedPointsVideo(bool code) {useMissedPointsVideo_=code;}
+  bool getUseMissedPointsVideo() {return useMissedPointsVideo_;}
   
-#endif
+  void setEnhancedDeltaDepth(bool code) {enhancedDeltaDepth_=code;}
+  bool getEnhancedDeltaDepth( ) {return enhancedDeltaDepth_;}
+ 
+
   PCCMetadata&      getGOFLevelMetadata() { return gofLevelMetadata_; }
 
   
@@ -103,9 +108,9 @@ class PCCContext {
   PCCVideoGeometry videoGeometry_;
   PCCVideoGeometry videoGeometryD1_;
   PCCVideoTexture  videoTexture_;
-#if M43579
+
   PCCVideoGeometry videoMPsGeometry_;
-  PCCVideoGeometry videoMPsTexture_; //for 10 bit
+  PCCVideoTexture videoMPsTexture_;
   bool losslessGeo444_;
   bool losslessGeo_;
   bool losslessTexture_;
@@ -113,7 +118,9 @@ class PCCContext {
   size_t MPGeoHeight_;
   size_t MPAttWidth_;
   size_t MPAttHeight_;
-#endif
+  bool useMissedPointsVideo_;
+  bool enhancedDeltaDepth_;
+
   PCCMetadata gofLevelMetadata_;
 };
 }; //~namespace

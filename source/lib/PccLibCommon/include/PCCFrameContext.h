@@ -59,7 +59,7 @@ class PCCFrameContext {
   std::vector<PCCPatch>&           getPatches           () { return patches_;           }
   PCCMissedPointsPatch&            getMissedPointsPatch () { return missedPointsPatch_; }
   PCCMetadata&                     getFrameLevelMetadata() { return frameLevelMetadata_; }
-#if M43579
+
   const size_t getMPGeoWidth() {return MPGeoWidth_;}
   const size_t getMPGeoHeight() {return MPGeoHeight_;}
   const size_t getMPAttWidth() {return MPAttWidth_;}
@@ -76,16 +76,17 @@ class PCCFrameContext {
   void setLosslessGeo(bool lossless){losslessGeo_=lossless;}
   void setLosslessGeo444(bool lossless){losslessGeo444_=lossless;}
   void setLosslessAtt(bool lossless){losslessAtt_=lossless;}
-  
-  PCCMissedPointsPatch&            getEDDsavedMissedPointsPatch () { return eddSavedMissedPointsPatch_; }
-#endif
+  void setUseMissedPointsVideo(bool code) {useMissedPointsVideo_=code;}
+  bool getUseMissedPointsVideo() {return useMissedPointsVideo_;}
+  void setEnhancedDeltaDepth(bool code) {enhancedDeltaDepth_=code;}
+  bool getEnhancedDeltaDepth( ) {return enhancedDeltaDepth_;}
   
  private:
   size_t index_;
   size_t width_;
   size_t height_;
   size_t numMatchedPatches_;
-#if M43579
+
   size_t MPGeoWidth_;
   size_t MPGeoHeight_;
   size_t MPAttWidth_;
@@ -93,16 +94,15 @@ class PCCFrameContext {
   bool losslessGeo_;
   bool losslessGeo444_;
   bool losslessAtt_;
-#endif//_vc
+  bool useMissedPointsVideo_;
+  bool enhancedDeltaDepth_;
+
   std::vector<PCCVector3<size_t>> pointToPixel_;
   std::vector<size_t> blockToPatch_;
   std::vector<uint32_t> occupancyMap_;
   std::vector<uint32_t> fullOccupancyMap_;
   std::vector<PCCPatch> patches_;
   PCCMissedPointsPatch missedPointsPatch_;
-#if M43579
-  PCCMissedPointsPatch eddSavedMissedPointsPatch_;
-#endif
   PCCMetadata frameLevelMetadata_;
 };
 

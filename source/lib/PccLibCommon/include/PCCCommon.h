@@ -34,9 +34,6 @@
 #define PCCTMC2Common_h
 
 #define FIX_RC011 1
-#define JKEI_TEST 1
-#define M43673 1
-#define M43579 1
 
 #include <limits>
 #include <assert.h>
@@ -67,19 +64,21 @@ namespace pcc {
   // ******************************************************************* //
   // Coding tool configuration
   // ******************************************************************* //
+
   static const uint8_t PCC_SAVE_POINT_TYPE = 0; // Save point information in reconstructed ply.
- 
+
   // ******************************************************************* //
   // Common constants
   // ******************************************************************* //
   const uint32_t PCCTMC2ContainerMagicNumber  = 23021981;
   const uint32_t PCCTMC2ContainerVersion      = 1;
   const uint32_t PCC_UNDEFINED_INDEX          = -1;
+  
 
   enum PCCEndianness  { PCC_BIG_ENDIAN = 0, PCC_LITTLE_ENDIAN = 1 };
   enum ColorTransform { COLOR_TRANSFORM_NONE = 0, COLOR_TRANSFORM_RGB_TO_YCBCR = 1 };
   enum PCCAxis3       { PCC_AXIS3_UNDEFINED = -1, PCC_AXIS3_X = 0, PCC_AXIS3_Y = 1, PCC_AXIS3_Z = 2 };
-  enum PointType      { Unset = 0, D0, D1, Smooth, InBetween }; //InBetween for EDD code
+  enum PointType      { Unset = 0, D0, D1, Smooth, InBetween  }; //InBetween for EDD code
 
   // ******************************************************************* //
   // Static functions

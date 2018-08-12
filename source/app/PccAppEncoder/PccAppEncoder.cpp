@@ -358,8 +358,12 @@ bool parseParameters(int argc, char *argv[], PCCEncoderParameters& params ) {
      params.losslessGeo444_,
      params.losslessGeo444_,
      "Use 4444 format for lossless geometry")
+
+  ("useMissedPointsVideo",
+   params.useMissedPointsVideo_,
+   params.useMissedPointsVideo_,
+   "compress missed point with video codec")
   
-#if M43579
   ("geometryMPConfig",
    params.geometryMPConfig_,
    params.geometryMPConfig_,
@@ -369,8 +373,6 @@ bool parseParameters(int argc, char *argv[], PCCEncoderParameters& params ) {
    params.textureMPConfig_,
    params.textureMPConfig_,
    "HM configuration file for missed points texture compression")
-
-#endif
   
 //etc
     ("nbThread",
@@ -488,7 +490,7 @@ int compressVideo( const PCCEncoderParameters& params, StopwatchUserTime &clock)
     const size_t endFrameNumber = min(startFrameNumber + groupOfFramesSize0, endFrameNumber0);
     PCCContext context;
     context.setIndex( contextIndex );
-#if M43579
+
     context.setLosslessGeo444(params.losslessGeo444_);
     context.setLossless(params.losslessGeo_);
     context.setLosslessAtt(params.losslessTexture_);
@@ -496,7 +498,8 @@ int compressVideo( const PCCEncoderParameters& params, StopwatchUserTime &clock)
     context.setMPAttWidth(64);
     context.setMPGeoHeight(0);
     context.setMPAttHeight(0);
-#endif
+    context.setEnhancedDeltaDepth(params.enhancedDeltaDepthCode_);
+    context.setUseMissedPointsVideo(params.useMissedPointsVideo_);
     
     if (gofLevelMetadataEnabledFlags.getMetadataEnabled()) {
       // Place to get/set gof-level metadata.

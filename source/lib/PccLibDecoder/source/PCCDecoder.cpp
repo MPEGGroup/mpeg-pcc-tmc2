@@ -116,8 +116,7 @@ int PCCDecoder::decode( PCCBitstream &bitstream, PCCContext &context, PCCGroupOf
     std::cout << "geometry video ->" << sizeGeometryVideo << " B" << std::endl;
   }
 
-#if M43579
-  if(losslessGeo_) {
+  if(losslessGeo_ && context.getUseMissedPointsVideo()) {
     auto sizeMissedPointsGeometry = bitstream.size();
     
     readMissedPointsGeometryNumber(context, bitstream);
@@ -137,7 +136,7 @@ int PCCDecoder::decode( PCCBitstream &bitstream, PCCContext &context, PCCGroupOf
     //fillMissedPoints(reconstructs, context, 0, params_.colorTransform_); //0. geo
     
   }
-#endif
+
   
   GeneratePointCloudParameters generatePointCloudParameters = {      
       occupancyResolution_,
@@ -182,8 +181,7 @@ int PCCDecoder::decode( PCCBitstream &bitstream, PCCContext &context, PCCGroupOf
     sizeTextureVideo = bitstream.size() - sizeTextureVideo;
     std::cout << "texture video  ->" << sizeTextureVideo << " B" << std::endl;
     
-#if M43579
-    if(losslessTexture_ && !noAttributes_)
+    if(losslessTexture_ && context.getUseMissedPointsVideo())
     {
       auto sizeMissedPointsTexture = bitstream.size();
       readMissedPointsTextureNumber(context, bitstream);
@@ -191,23 +189,21 @@ int PCCDecoder::decode( PCCBitstream &bitstream, PCCContext &context, PCCGroupOf
       videoDecoder.decompress( context.getVideoMPsTexture(),
                               path.str() + "mps_texture",
                               context.getMPAttWidth(), context.getMPAttHeight(),
-                              context.size() * 2, bitstream, //*2??
+                              context.size(), bitstream, //frameCount*2??
                               params_.videoDecoderPath_,
                               context,
                               params_.inverseColorSpaceConversionConfig_,
                               params_.colorSpaceConversionPath_,
                               1, //losslessTexture_ != 0,
                               0, //params_.patchColorSubsampling_,
-                              2, //nbyteTexture,
+                              nbyteTexture, //nbyteTexture,
                               params_.keepIntermediateFiles_ );
       sizeMissedPointsTexture = bitstream.size() - sizeMissedPointsTexture;
       generateMissedPointsTexturefromVideo(context, reconstructs);
       
       std::cout << " missed points texture -> " << sizeMissedPointsTexture << " B"<<endl;
-      
-      //fillMissedPoints(reconstructs, context, 1, params_.colorTransform_); //1. texture
+
     }
-#endif
   }
   colorPointCloud(reconstructs, context, noAttributes_ != 0, params_.colorTransform_,
                   generatePointCloudParameters);
@@ -385,6 +381,9 @@ int PCCDecoder::decompressHeader( PCCContext &context, PCCBitstream &bitstream )
   bitstream.read<uint8_t> ( losslessTexture_ );
   bitstream.read<uint8_t> ( noAttributes_ );
   bitstream.read<uint8_t> ( losslessGeo444_);
+  useMissedPointsVideo_=true;
+  //if(losslessGeo_)
+  bitstream.read<uint8_t> ( useMissedPointsVideo_);
   uint8_t absD1, binArithCoding,deltaCoding;
   bitstream.read<uint8_t> ( absD1 );
   absoluteD1_ = absD1 > 0;
@@ -412,10 +411,29 @@ int PCCDecoder::decompressHeader( PCCContext &context, PCCBitstream &bitstream )
   bitstream.read<uint8_t> ( deltaCoding );
   deltaCoding_ = deltaCoding > 0;
 
+
+  context.setLosslessGeo444(losslessGeo444_);
+  context.setLossless(losslessGeo_);
+  context.setLosslessAtt(losslessTexture_);
+  context.setMPGeoWidth(64);
+  context.setMPAttWidth(64);
+  context.setMPGeoHeight(0);
+  context.setMPAttHeight(0);
+  context.setUseMissedPointsVideo(useMissedPointsVideo_);
+  context.setEnhancedDeltaDepth(enhancedDeltaDepthCode_);
+  auto& frames = context.getFrames();
+  for(size_t i=0; i<frames.size(); i++)
+  {
+    frames[i].setLosslessGeo(losslessGeo_);
+    frames[i].setLosslessGeo444(losslessGeo444_);
+    frames[i].setLosslessAtt(losslessTexture_);
+    frames[i].setEnhancedDeltaDepth(enhancedDeltaDepthCode_);
+    frames[i].setUseMissedPointsVideo(useMissedPointsVideo_);
+  }
+
   return 1;
 }
 
-#if M43579
 void PCCDecoder::readMissedPointsGeometryNumber(PCCContext& context, PCCBitstream &bitstream)
 {
   
@@ -424,12 +442,6 @@ void PCCDecoder::readMissedPointsGeometryNumber(PCCContext& context, PCCBitstrea
   size_t numofMPs;
   bitstream.read<size_t>( MPwidth );
 
-#if JKEI_TEST
-  FILE *fp;
-  fp = fopen("dec_size.txt","a");
-  fprintf(fp, "width : %zu\n", MPwidth);
-#endif
-  
   for (auto &framecontext : context.getFrames() ) {
     
     bitstream.read<size_t>( numofMPs );
@@ -438,9 +450,7 @@ void PCCDecoder::readMissedPointsGeometryNumber(PCCContext& context, PCCBitstrea
       framecontext.getMissedPointsPatch().resize(numofMPs);
     else
     framecontext.getMissedPointsPatch().resize(numofMPs*3);
-#if JKEI_TEST
-    fprintf(fp, "(%zu) numofMPs %zu\n", framecontext.getIndex(), numofMPs);
-#endif
+
     size_t height = (3*numofMPs)/MPwidth+1;
     size_t heightby8= height/8;
     if(heightby8*8!=height)
@@ -451,11 +461,7 @@ void PCCDecoder::readMissedPointsGeometryNumber(PCCContext& context, PCCBitstrea
   
   context.setMPGeoWidth(size_t(MPwidth));
   context.setMPGeoHeight(size_t(maxHeight));
-#if JKEI_TEST
-  fprintf(fp, "MPsize %zux%zu\n", context.getMPGeoWidth( ), context.getMPGeoHeight());
-  fflush(fp);
-  fclose(fp);
-#endif
+
 
 }
 void PCCDecoder::readMissedPointsTextureNumber(PCCContext& context, PCCBitstream &bitstream)
@@ -464,32 +470,23 @@ void PCCDecoder::readMissedPointsTextureNumber(PCCContext& context, PCCBitstream
   size_t MPwidth;
   size_t numofMPs;
   bitstream.read<size_t>( MPwidth );
-#if JKIE_TEST
-  FILE *fp;
-  fp = fopen("dec-attsize.txt","a");
-  fprintf(fp, "width, num - %zu\n", MPwidth);
-#endif
+
   for (auto &framecontext : context.getFrames() ) {
     
     bitstream.read<size_t>( numofMPs );
     framecontext.getMissedPointsPatch().setMPnumbercolor(size_t(numofMPs));
     framecontext.getMissedPointsPatch().resizecolor(numofMPs);
-#if JKIE_TEST
-    fprintf(fp, "(%zu) numofMPs %zu\n", framecontext.getIndex(), numofMPs);
-#endif
-    size_t height = (3*numofMPs)/MPwidth+1;
+
+    size_t height = numofMPs/MPwidth+1;
     size_t heightby8= height/8;
     if(heightby8*8!=height)
       height = (heightby8+1)*8;
     maxHeight = (std::max)( maxHeight, height );
-    
   }
-  assert(maxHeight==context.getMPAttHeight ());
-#if JKIE_TEST
-  fprintf(fp, "MPsize %zux%zu\n", context.getMPAttWidth( ), context.getMPAttHeight());
-  fflush(fp);
-  fclose(fp);
-#endif
+  
+  context.setMPAttWidth(size_t(MPwidth));
+  context.setMPAttHeight(size_t(maxHeight));
+
 }
 
 void PCCDecoder::generateMissedPointsGeometryfromVideo(PCCContext& context, PCCGroupOfFrames& reconstructs)
@@ -513,7 +510,6 @@ cout<<"generate Missed Points (Geometry) : frame "<<shift<<", # of Missed Points
 void PCCDecoder::generateMissedPointsTexturefromVideo(PCCContext& context, PCCGroupOfFrames& reconstructs)
 {
   const size_t gofSize = context.getGofSize();
-  //size_t maxWidth = 0, maxHeight = 0;
   auto& videoMPsTexture = context.getVideoMPsTexture();
   videoMPsTexture.resize(gofSize);
   for (auto &framecontext : context.getFrames() ) {
@@ -521,10 +517,7 @@ void PCCDecoder::generateMissedPointsTexturefromVideo(PCCContext& context, PCCGr
     framecontext.setLosslessAtt(context.getLosslessAtt());
     generateMPsTexturefromImage(context, framecontext, reconstructs, shift);
     
-   cout<<"generate Missed Points (Texture) : frame "<<shift<<", # of Missed Points Geometry : "<<framecontext.getMissedPointsPatch().size()<<endl;
-    //auto& MPTexFrame = videoMPsTexture.getFrame(shift);
-    //maxWidth  = (std::max)( maxWidth,  MPTexFrame.getWidth () );
-    //maxHeight = (std::max)( maxHeight, MPTexFrame.getHeight() );
+   cout<<"generate Missed Points (Texture) : frame "<<shift<<", # of Missed Points Texture : "<<framecontext.getMissedPointsPatch().size()<<endl;
   }
   cout<<"MissedPoints Texture [done]"<<endl;
 }
@@ -535,7 +528,6 @@ void PCCDecoder::generateMPsGeometryfromImage(PCCContext& context, PCCFrameConte
   auto &image = videoMPsGeometry.getFrame(frameIndex);
   auto& missedPointsPatch = frame.getMissedPointsPatch();
   size_t width  = image.getWidth();
-  size_t height = image.getHeight();
   bool losslessGeo444 = frame.getLosslessGeo444();
   
   size_t numofMPs = missedPointsPatch.getMPnumber();
@@ -544,14 +536,6 @@ void PCCDecoder::generateMPsGeometryfromImage(PCCContext& context, PCCFrameConte
   else
     missedPointsPatch.resize(numofMPs*3);
   
-#if JKEI_TEST
-  FILE *fp;
-  char filename[100];
-  sprintf(filename, "dec-missedpointpatch-mpgeoimage%zu.txt", frame.getIndex());
-  fp = fopen(filename,"w");
-  fprintf(fp, "numofMP : %zu\n", numofMPs);
-
-#endif
 
   for(size_t i=0; i<numofMPs; i++)
   {
@@ -568,30 +552,11 @@ void PCCDecoder::generateMPsGeometryfromImage(PCCContext& context, PCCFrameConte
       missedPointsPatch.x[numofMPs + i]    =image.getValue(0, (numofMPs + i)%width, (numofMPs + i)/width);
       missedPointsPatch.x[2 * numofMPs + i]=image.getValue(0, (2*numofMPs + i)%width, (2*numofMPs + i)/width);
       
-#if JKEI_TEST
-      fprintf(fp, "%zu : (x) %zu, %zu, (y) %zu, %zu, (z) %zu, %zu :\t %hu, %hu, %hu\n", i,
-              i%width, i/width,(numofMPs + i)%width, (numofMPs + i)/width,
-              (2*numofMPs + i)%width, (2*numofMPs + i)/width,
-              missedPointsPatch.x[i],
-              missedPointsPatch.x[numofMPs + i],
-              missedPointsPatch.x[2*numofMPs + i]);
-#endif
-      
-      
     }
     
   }
   
   
-#if JKEI_TEST
-  if(missedPointsPatch.size()%3!=0)
-  {
-    printf("PANIC!!!!!!!!!!!!!!!!!!!!!!\n");
-  }
-  
-    fclose(fp);
-  
-#endif
 }
 void PCCDecoder::generateMPsTexturefromImage(PCCContext& context, PCCFrameContext& frame, PCCGroupOfFrames& reconstructs,size_t frameIndex)
 {
@@ -600,26 +565,17 @@ void PCCDecoder::generateMPsTexturefromImage(PCCContext& context, PCCFrameContex
   auto &image = videoMPsTexture.getFrame(frameIndex);
   auto& missedPointsPatch = frame.getMissedPointsPatch();
   size_t width  = image.getWidth();
-  size_t height = image.getHeight();
-  
-  std::vector<uint16_t> tempValues;
-  tempValues.resize(width*height);
-  size_t i=0;
-  for(int ch=0;ch<3;ch++)
+  size_t numofMPs = missedPointsPatch.getMPnumbercolor();
+ 
+  for(size_t i=0; i<numofMPs; i++)
   {
-    for(size_t yy=0;yy<height; yy++)
-    {
-      for(size_t xx=0;xx<width;xx++)
-      {
-        tempValues[ch*width*height+i] = image.getValue(ch, xx, yy);
-        i++;
-      }
-    }
+    assert(i/width<image.getHeight());
+    missedPointsPatch.r[i] = image.getValue(0, i%width, i/width);
+    missedPointsPatch.g[i] = image.getValue(1, i%width, i/width);
+    missedPointsPatch.b[i] = image.getValue(2, i%width, i/width);
   }
 
 }
-
-#endif //_vc
 
 void PCCDecoder::decompressOccupancyMap( PCCContext &context, PCCBitstream& bitstream, uint8_t& surfaceThickness){
   size_t sizeFrames = context.getFrames().size();
@@ -634,6 +590,9 @@ void PCCDecoder::decompressOccupancyMap( PCCContext &context, PCCBitstream& bits
     frame.getFrameLevelMetadata().getMetadataEnabledFlags() = frameLevelMetadataEnabledFlags;
     decompressOccupancyMap( frame, bitstream, surfaceThickness, preFrame, i );
     preFrame = frame;
+
+    if(!context.getUseMissedPointsVideo())
+    {
     auto&  patches = frame.getPatches();
     auto& missedPointsPatch = frame.getMissedPointsPatch();
     if (losslessGeo_) {
@@ -645,6 +604,7 @@ void PCCDecoder::decompressOccupancyMap( PCCContext &context, PCCBitstream& bits
       missedPointsPatch.sizeV0 = dummyPatch.getSizeV0();
       missedPointsPatch.occupancyResolution = dummyPatch.getOccupancyResolution();
       patches.pop_back();
+    }
     }
   }
 }

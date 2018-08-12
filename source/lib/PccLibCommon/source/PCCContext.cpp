@@ -39,12 +39,13 @@
 using namespace pcc;
 
 PCCContext::PCCContext() : index_( 0 ) {}
-PCCContext::~PCCContext(){ frames_.clear(); videoGeometry_.clear(); videoTexture_.clear();
-#if M43579
+PCCContext::~PCCContext(){
+  frames_.clear();
+  videoGeometry_.clear();
+  videoTexture_.clear();
   videoMPsGeometry_.clear();
   videoMPsTexture_.clear();
-#endif
-  
+ 
 }
 
 void PCCContext::resize( size_t size ) { 

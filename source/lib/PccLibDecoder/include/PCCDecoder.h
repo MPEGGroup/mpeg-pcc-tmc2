@@ -66,7 +66,7 @@ private:
 
   void decompressOccupancyMap( PCCContext &context,    PCCBitstream& bitstream, uint8_t& surfaceThickness);
   void decompressOccupancyMap(PCCFrameContext& frame, PCCBitstream &bitstream, uint8_t& surfaceThickness, PCCFrameContext& preFrame, size_t frameIndex);
-#if M43579
+
   void generateMPsGeometryfromImage    (PCCContext& context, PCCFrameContext& frame, PCCGroupOfFrames& reconstructs,size_t frameIndex);
   void generateMPsTexturefromImage     (PCCContext& context, PCCFrameContext& frame, PCCGroupOfFrames& reconstructs,size_t frameIndex);
   
@@ -75,7 +75,6 @@ private:
   
   void generateMissedPointsGeometryfromVideo(PCCContext& context, PCCGroupOfFrames& reconstructs);
   void generateMissedPointsTexturefromVideo(PCCContext& context, PCCGroupOfFrames& reconstructs);
-#endif
   void decompressPatchMetaDataM42195(PCCFrameContext& frame, PCCFrameContext& preFrame, PCCBitstream &bitstream ,
     o3dgc::Arithmetic_Codec &arithmeticDecoder, o3dgc::Static_Bit_Model &bModel0, uint32_t &compressedBitstreamSize, size_t occupancyPrecision);
 
@@ -92,6 +91,7 @@ private:
   uint8_t  losslessTexture_;
   uint8_t  noAttributes_;
   uint8_t  losslessGeo444_;
+  uint8_t  useMissedPointsVideo_;
   bool     absoluteD1_;
   bool     binArithCoding_;
   float    modelScale_;

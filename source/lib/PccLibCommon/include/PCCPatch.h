@@ -150,16 +150,13 @@ struct PCCMissedPointsPatch {
   std::vector<uint16_t> x;
   std::vector<uint16_t> y;
   std::vector<uint16_t> z;
-#if M43579
+
   std::vector<uint16_t> r;
   std::vector<uint16_t> g;
   std::vector<uint16_t> b;
-  std::vector<size_t> eddSavedPointsIndex;
-//  std::vector<PCCVector3<size_t>> missedPoint2Pixel;
-//  std::vector<PCCVector3<size_t>>& getMissedPoint2Pixel      () { return missedPoint2Pixel;      }
+  size_t numEddSavedPoints;
   size_t MPnumber;
   size_t MPnumbercolor;
-#endif
   
   void resize(const size_t size) {
     x.resize(size);
@@ -173,7 +170,7 @@ struct PCCMissedPointsPatch {
   }
   
   const size_t size() { return x.size(); }
-#if M43579
+
   const size_t sizeofcolor() { return r.size();}
   void         setMPnumber(size_t numofMPs){MPnumber=numofMPs;}
   void         setMPnumbercolor(size_t numofMPs){MPnumbercolor=numofMPs;}
@@ -189,7 +186,6 @@ struct PCCMissedPointsPatch {
     g.resize(size, val);
     b.resize(size, val);
   }
-#endif
 };
 }
 
