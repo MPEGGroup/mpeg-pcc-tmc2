@@ -73,7 +73,7 @@ namespace pcc {
   const uint32_t PCCTMC2ContainerMagicNumber  = 23021981;
   const uint32_t PCCTMC2ContainerVersion      = 1;
   const uint32_t PCC_UNDEFINED_INDEX          = -1;
-  
+  const bool printDetailedInfo = false;
 
   enum PCCEndianness  { PCC_BIG_ENDIAN = 0, PCC_LITTLE_ENDIAN = 1 };
   enum ColorTransform { COLOR_TRANSFORM_NONE = 0, COLOR_TRANSFORM_RGB_TO_YCBCR = 1 };

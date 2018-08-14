@@ -146,6 +146,11 @@ bool parseParameters(int argc, char *argv[], PCCDecoderParameters& params ) {
      params.videoDecoderPath_,
      "HM video decoder executable")
 
+    ("videoDecoderOccupancyMapPath",
+     params.videoDecoderOccupancyMapPath_,
+     params.videoDecoderOccupancyMapPath_,
+     "HM lossless video decoder executable for occupancy map")
+
     ("nbThread",
      params.nbThread_,
      params.nbThread_,

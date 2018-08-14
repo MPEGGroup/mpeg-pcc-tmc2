@@ -78,6 +78,12 @@ int PCCDecoder::decode( PCCBitstream &bitstream, PCCContext &context, PCCGroupOf
   auto sizeOccupancyMap = bitstream.size();
   uint8_t surfaceThickness = 4;
  
+  if (useOccupancyMapVideo_ && (!losslessGeo_ || useMissedPointsVideo_)) {
+    videoDecoder.decompress(context.getVideoOccupancyMap(), path.str() + "occupancy",
+                            width_/occupancyPrecision_,
+                            height_/occupancyPrecision_,
+                            context.size(), bitstream, params_.videoDecoderOccupancyMapPath_, context);
+  }
   decompressOccupancyMap(context, bitstream, surfaceThickness);
 
   sizeOccupancyMap = bitstream.size() - sizeOccupancyMap;
@@ -373,6 +379,7 @@ int PCCDecoder::decompressHeader( PCCContext &context, PCCBitstream &bitstream )
   bitstream.read<uint16_t>( width_ );
   bitstream.read<uint16_t>( height_ );
   bitstream.read<uint8_t> ( occupancyResolution_ );
+  bitstream.read<uint8_t> ( occupancyPrecision_ );
   bitstream.read<uint8_t> ( radius2Smoothing_ );
   bitstream.read<uint8_t> ( neighborCountSmoothing_ );
   bitstream.read<uint8_t> ( radius2BoundaryDetection_ );
@@ -382,8 +389,10 @@ int PCCDecoder::decompressHeader( PCCContext &context, PCCBitstream &bitstream )
   bitstream.read<uint8_t> ( noAttributes_ );
   bitstream.read<uint8_t> ( losslessGeo444_);
   useMissedPointsVideo_=true;
+  useOccupancyMapVideo_=true;
   //if(losslessGeo_)
   bitstream.read<uint8_t> ( useMissedPointsVideo_);
+  bitstream.read<uint8_t> ( useOccupancyMapVideo_);
   uint8_t absD1, binArithCoding,deltaCoding;
   bitstream.read<uint8_t> ( absD1 );
   absoluteD1_ = absD1 > 0;
@@ -420,6 +429,7 @@ int PCCDecoder::decompressHeader( PCCContext &context, PCCBitstream &bitstream )
   context.setMPGeoHeight(0);
   context.setMPAttHeight(0);
   context.setUseMissedPointsVideo(useMissedPointsVideo_);
+  context.setUseOccupancyMapVideo(useOccupancyMapVideo_);
   context.setEnhancedDeltaDepth(enhancedDeltaDepthCode_);
   auto& frames = context.getFrames();
   for(size_t i=0; i<frames.size(); i++)
@@ -429,6 +439,7 @@ int PCCDecoder::decompressHeader( PCCContext &context, PCCBitstream &bitstream )
     frames[i].setLosslessAtt(losslessTexture_);
     frames[i].setEnhancedDeltaDepth(enhancedDeltaDepthCode_);
     frames[i].setUseMissedPointsVideo(useMissedPointsVideo_);
+    frames[i].setUseOccupancyMapVideo(useOccupancyMapVideo_);
   }
 
   return 1;
@@ -588,24 +599,32 @@ void PCCDecoder::decompressOccupancyMap( PCCContext &context, PCCBitstream& bits
     printf("frame %d\n",i);
     auto &frameLevelMetadataEnabledFlags = context.getGOFLevelMetadata().getLowerLevelMetadataEnabledFlags();
     frame.getFrameLevelMetadata().getMetadataEnabledFlags() = frameLevelMetadataEnabledFlags;
-    decompressOccupancyMap( frame, bitstream, surfaceThickness, preFrame, i );
-    preFrame = frame;
+    if (useOccupancyMapVideo_ && (!losslessGeo_ || useMissedPointsVideo_)) {
+      PCCImageOccupancyMap &videoFrame = context.getVideoOccupancyMap().getFrame(frame.getIndex());
+      GenerateOccupancyMapFromVideoFrame(occupancyResolution_, occupancyPrecision_, width_, height_,
+                                         frame.getOccupancyMap(), videoFrame);
+          
+      DecompressOccupancyMapInfo(width_, height_, occupancyResolution_, occupancyPrecision_, frame.getPatches(),
+                                 frame.getBlockToPatch(), frame.getOccupancyMap(), bitstream, frame, surfaceThickness, preFrame, i);
+    } else {
+      decompressOccupancyMap( frame, bitstream, surfaceThickness, preFrame, i );
 
-    if(!context.getUseMissedPointsVideo())
-    {
-    auto&  patches = frame.getPatches();
-    auto& missedPointsPatch = frame.getMissedPointsPatch();
-    if (losslessGeo_) {
-      const size_t patchIndex = patches.size();
-      PCCPatch &dummyPatch = patches[patchIndex - 1];
-      missedPointsPatch.u0 = dummyPatch.getU0();
-      missedPointsPatch.v0 = dummyPatch.getV0();
-      missedPointsPatch.sizeU0 = dummyPatch.getSizeU0();
-      missedPointsPatch.sizeV0 = dummyPatch.getSizeV0();
-      missedPointsPatch.occupancyResolution = dummyPatch.getOccupancyResolution();
-      patches.pop_back();
+      if(!context.getUseMissedPointsVideo()) {
+        auto&  patches = frame.getPatches();
+        auto& missedPointsPatch = frame.getMissedPointsPatch();
+        if (losslessGeo_) {
+          const size_t patchIndex = patches.size();
+          PCCPatch &dummyPatch = patches[patchIndex - 1];
+          missedPointsPatch.u0 = dummyPatch.getU0();
+          missedPointsPatch.v0 = dummyPatch.getV0();
+          missedPointsPatch.sizeU0 = dummyPatch.getSizeU0();
+          missedPointsPatch.sizeV0 = dummyPatch.getSizeV0();
+          missedPointsPatch.occupancyResolution = dummyPatch.getOccupancyResolution();
+          patches.pop_back();
+        }
+      }
     }
-    }
+    preFrame = frame;
   }
 }
 
@@ -1127,3 +1146,248 @@ void PCCDecoder::decompressOccupancyMap( PCCFrameContext& frame, PCCBitstream &b
   arithmeticDecoder.stop_decoder();
   bitstream += (uint64_t)compressedBitstreamSize;
 }
+
+void PCCDecoder::GenerateOccupancyMapFromVideoFrame(size_t occupancyResolution, size_t occupancyPrecision,
+                                                    size_t width, size_t height,
+                                                    std::vector<uint32_t> &occupancyMap,
+                                                    const PCCImageOccupancyMap &videoFrame) {
+  occupancyMap.resize(width * height, 0);
+  for (size_t v=0; v<height; ++v) {
+    for (size_t u=0; u<width; ++u) {
+      occupancyMap[v*width+u] = videoFrame.getValue(0, u/occupancyPrecision, v/occupancyPrecision);
+    }
+  }
+}
+
+void PCCDecoder::DecompressOccupancyMapInfo(const size_t width, const size_t height,
+                                            const size_t &occupancyResolution, const size_t &occupancyMapPrecision,
+                                            std::vector<PCCPatch> &patches, std::vector<size_t> &blockToPatch,
+                                            std::vector<uint32_t> &occupancyMap, PCCBitstream &bitstream,
+                                            PCCFrameContext& frame, uint8_t& surfaceThickness,
+                                            PCCFrameContext& preFrame, size_t frameIndex) {
+  uint32_t patchCount = 0;
+  bitstream.read<uint32_t>( patchCount );
+  patches.resize( patchCount );
+    
+#if !FIX_RC011
+  printf("patchCount:%d, ",patchCount);
+#endif
+  size_t maxCandidateCount = 0;
+  {
+    uint8_t count = 0;
+    bitstream.read<uint8_t>( count );
+    maxCandidateCount = count;
+  }
+#if !FIX_RC011
+  printf("occupancyPrecision:%d,maxCandidateCount:%d\n",occupancyMapPrecision, maxCandidateCount);
+#endif
+  uint8_t frameProjectionMode = 0;
+  if (!absoluteD1_) {
+      bitstream.read<uint8_t>(surfaceThickness);
+      bitstream.read<uint8_t>(frameProjectionMode);
+  }
+    
+  o3dgc::Arithmetic_Codec arithmeticDecoder;
+  o3dgc::Static_Bit_Model bModel0;
+  uint32_t compressedBitstreamSize;
+#if !FIX_RC011
+  printf("frameIndex:%d\n",frameIndex);
+#endif
+  bool bBinArithCoding = binArithCoding_ && (!losslessGeo_) &&
+    (occupancyResolution_ == 16) && (occupancyMapPrecision == 4);
+    
+  if((frameIndex == 0)||(!deltaCoding_)) {
+    uint8_t bitCountU0 = 0;
+    uint8_t bitCountV0 = 0;
+    uint8_t bitCountU1 = 0;
+    uint8_t bitCountV1 = 0;
+    uint8_t bitCountD1 = 0;
+    uint8_t bitCountLod = 0;
+    bitstream.read<uint8_t>( bitCountU0 );
+    bitstream.read<uint8_t>( bitCountV0 );
+    bitstream.read<uint8_t>( bitCountU1 );
+    bitstream.read<uint8_t>( bitCountV1 );
+    bitstream.read<uint8_t>( bitCountD1 );
+    bitstream.read<uint8_t>( bitCountLod);
+    bitstream.read<uint32_t>(  compressedBitstreamSize );
+    
+    printf("bitCountU0V0U1V1D1:%d,%d,%d,%d,%d,compressedBitstreamSize:%d\n",bitCountU0, bitCountV0, bitCountU1, bitCountV1, bitCountD1, compressedBitstreamSize);
+        
+    assert(compressedBitstreamSize + bitstream.size() <= bitstream.capacity());
+    arithmeticDecoder.set_buffer(uint32_t(bitstream.capacity() - bitstream.size()),
+                                 bitstream.buffer() + bitstream.size());
+        
+    arithmeticDecoder.start_decoder();
+        
+    decompressMetadata(frame.getFrameLevelMetadata(), arithmeticDecoder);
+        
+    o3dgc::Adaptive_Bit_Model bModelSizeU0, bModelSizeV0, bModelAbsoluteD1;
+        
+    o3dgc::Adaptive_Bit_Model orientationModel2;
+        
+    o3dgc::Adaptive_Data_Model orientationModel(4);
+    int64_t prevSizeU0 = 0;
+    int64_t prevSizeV0 = 0;
+    
+        // absoluteD1_ = (bool)arithmeticDecoder.decode( bModelAbsoluteD1 );
+    for (size_t patchIndex = 0; patchIndex < patchCount; ++patchIndex) {
+      auto &patch = patches[patchIndex];
+      patch.getOccupancyResolution() = occupancyResolution_;
+        
+      patch.getU0() = DecodeUInt32(bitCountU0, arithmeticDecoder, bModel0);
+      patch.getV0() = DecodeUInt32(bitCountV0, arithmeticDecoder, bModel0);
+      patch.getU1() = DecodeUInt32(bitCountU1, arithmeticDecoder, bModel0);
+      patch.getV1() = DecodeUInt32(bitCountV1, arithmeticDecoder, bModel0);
+      patch.getD1() = DecodeUInt32(bitCountD1, arithmeticDecoder, bModel0);
+      patch.getLod() = DecodeUInt32(bitCountLod, arithmeticDecoder, bModel0);
+    
+      if (!absoluteD1_) {
+        patch.getFrameProjectionMode() = frameProjectionMode;
+        if (patch.getFrameProjectionMode() == 0)
+          patch.getProjectionMode() = 0;
+        else if (patch.getFrameProjectionMode() == 1)
+          patch.getProjectionMode() = 1;
+        else if (patch.getFrameProjectionMode() == 2) {
+          patch.getProjectionMode() = 0;
+        const uint8_t bitCountProjDir = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(2 + 1)));
+        patch.getProjectionMode() = DecodeUInt32(bitCountProjDir, arithmeticDecoder, bModel0);
+        std::cout << "patch.getProjectionMode()= " << patch.getProjectionMode() << std::endl;
+      }
+      else {
+        std::cout << "This frameProjectionMode doesn't exist!" << std::endl;
+      }
+      std::cout << "(frameProjMode, projMode)= (" << patch.getFrameProjectionMode() << ", " << patch.getProjectionMode() << ")" << std::endl;
+    }
+    else {
+      patch.getFrameProjectionMode() = 0;
+      patch.getProjectionMode() = 0;
+    }
+    const int64_t deltaSizeU0 =
+    o3dgc::UIntToInt(arithmeticDecoder.ExpGolombDecode(0, bModel0, bModelSizeU0));
+    const int64_t deltaSizeV0 =
+      o3dgc::UIntToInt(arithmeticDecoder.ExpGolombDecode(0, bModel0, bModelSizeV0));
+#if !FIX_RC011
+    printf("patch[%d]: u0v0u1v1d1:%d,%d;%d,%d;%d\n", patchIndex, patch.getU0(), patch.getV0(), patch.getU1(), patch.getV1(), patch.getD1());
+#endif
+    patch.getSizeU0() = prevSizeU0 + deltaSizeU0;
+    patch.getSizeV0() = prevSizeV0 + deltaSizeV0;
+            
+    prevSizeU0 = patch.getSizeU0();
+    prevSizeV0 = patch.getSizeV0();
+            
+    if (bBinArithCoding) {
+      size_t bit0 = arithmeticDecoder.decode(orientationModel2);
+      if (bit0 == 0) {  // 0
+        patch.getNormalAxis() = 0;
+      }
+      else {
+        size_t bit1 = arithmeticDecoder.decode(bModel0);
+        if (bit1 == 0) { // 10
+          patch.getNormalAxis() = 1;
+        }
+        else { // 11
+          patch.getNormalAxis() = 2;
+        }
+      }
+    }
+    else {
+      patch.getNormalAxis() = arithmeticDecoder.decode(orientationModel);
+    }
+            
+    if (patch.getNormalAxis() == 0) {
+      patch.getTangentAxis() = 2;
+      patch.getBitangentAxis() = 1;
+    } else if (patch.getNormalAxis() == 1) {
+      patch.getTangentAxis() = 2;
+      patch.getBitangentAxis() = 0;
+    } else {
+      patch.getTangentAxis() = 0;
+      patch.getBitangentAxis() = 1;
+    }
+    auto &patchLevelMetadataEnabledFlags = frame.getFrameLevelMetadata().getLowerLevelMetadataEnabledFlags();
+    auto &patchLevelMetadata = patch.getPatchLevelMetadata();
+    patchLevelMetadata.getMetadataEnabledFlags() = patchLevelMetadataEnabledFlags;
+    decompressMetadata(patchLevelMetadata, arithmeticDecoder);
+    }
+  } else {
+    decompressPatchMetaDataM42195(frame, preFrame, bitstream, arithmeticDecoder, bModel0, compressedBitstreamSize, occupancyMapPrecision);
+  }
+    
+  const size_t blockToPatchWidth = width_ / occupancyResolution_;
+  const size_t blockToPatchHeight = height_ / occupancyResolution_;
+  const size_t blockCount = blockToPatchWidth * blockToPatchHeight;
+  std::vector<std::vector<size_t>> candidatePatches;
+  candidatePatches.resize(blockCount);
+  for (int64_t patchIndex = patchCount - 1; patchIndex >= 0; --patchIndex) {
+    // add actual patches based on their bounding box
+    const auto &patch = patches[patchIndex];
+    for (size_t v0 = 0; v0 < patch.getSizeV0(); ++v0) {
+      for (size_t u0 = 0; u0 < patch.getSizeU0(); ++u0) {
+        candidatePatches[(patch.getV0() + v0) * blockToPatchWidth + (patch.getU0() + u0)].push_back(patchIndex + 1);
+      }
+    }
+  }
+    
+  blockToPatch.resize(0);
+  blockToPatch.resize(blockCount, 0);
+    
+  o3dgc::Adaptive_Bit_Model candidateIndexModelBit[4];
+  o3dgc::Adaptive_Data_Model candidateIndexModel(uint32_t(maxCandidateCount + 2));
+  const uint32_t bitCountPatchIndex = PCCGetNumberOfBitsInFixedLengthRepresentation(patchCount);
+  for (size_t p = 0; p < blockCount; ++p) {
+    blockToPatch[p] = 0;
+    const auto &candidates = candidatePatches[p];
+    if (candidates.size() > 0) {
+      bool empty = TRUE;
+      size_t positionU = (p%blockToPatchWidth)*occupancyResolution;
+      size_t positionV = (p/blockToPatchWidth)*occupancyResolution;
+      for (size_t v=positionV; v<positionV+occupancyResolution && empty; ++v) {
+        for (size_t u=positionU; u<positionU+occupancyResolution && empty; ++u) {
+          if (occupancyMap[u+v*width]) {
+            empty = false;
+            if (candidates.size() == 1) {
+              blockToPatch[p] = candidates[0];
+            } else {
+              size_t candidateIndex;
+              if (bBinArithCoding) {
+                size_t bit0 = arithmeticDecoder.decode(candidateIndexModelBit[0]);
+                if (bit0 == 0) {
+                  candidateIndex = 0; // Codeword: 0
+                } else {
+                  size_t bit1 = arithmeticDecoder.decode(candidateIndexModelBit[1]);
+                  if (bit1 == 0) {
+                    candidateIndex = 1; // Codeword 10
+                  } else {
+                    size_t bit2 = arithmeticDecoder.decode(candidateIndexModelBit[2]);
+                    if (bit2 == 0) {
+                      candidateIndex = 2; // Codeword 110
+                    } else {
+                      size_t bit3 = arithmeticDecoder.decode(candidateIndexModelBit[3]);
+                      if (bit3 == 0) {
+                        candidateIndex = 3; // Codeword 1110
+                      } else {
+                        candidateIndex = 4; // Codeword 11110
+                      }
+                    }
+                  }
+                }
+              } else {
+                candidateIndex = arithmeticDecoder.decode(candidateIndexModel);
+              }
+            
+              if (candidateIndex == maxCandidateCount) {
+                blockToPatch[p] = DecodeUInt32(bitCountPatchIndex, arithmeticDecoder, bModel0);
+              } else {
+                blockToPatch[p] = candidates[candidateIndex];
+              }
+            }
+          }
+        }
+      }
+    }
+    
+  }
+  arithmeticDecoder.stop_decoder();
+  bitstream += compressedBitstreamSize;
+}
+

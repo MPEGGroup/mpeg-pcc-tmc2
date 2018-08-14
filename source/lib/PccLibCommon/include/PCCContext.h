@@ -44,6 +44,7 @@ class PCCGroupOfFrames;
 class PCCFrameContext;
 typedef pcc::PCCVideo<uint8_t, 3>  PCCVideoTexture;
 typedef pcc::PCCVideo<uint16_t, 3> PCCVideoGeometry;
+typedef pcc::PCCVideo<uint8_t, 3>  PCCVideoOccupancyMap;
 
 class PCCContext {
  public:
@@ -60,7 +61,8 @@ class PCCContext {
   PCCVideoGeometry& getVideoGeometry() { return videoGeometry_; }
   PCCVideoGeometry& getVideoGeometryD1() { return videoGeometryD1_; }
   PCCVideoTexture&  getVideoTexture() { return videoTexture_; }
-
+  PCCVideoOccupancyMap& getVideoOccupancyMap() { return videoOccupancyMap_; }
+    
   PCCVideoGeometry& getVideoMPsGeometry() { return videoMPsGeometry_; }
   PCCVideoTexture&  getVideoMPsTexture() { return videoMPsTexture_; }
   PCCFrameContext& getFrameContext(int i) { return frames_[i]; }
@@ -87,6 +89,9 @@ class PCCContext {
   void setUseMissedPointsVideo(bool code) {useMissedPointsVideo_=code;}
   bool getUseMissedPointsVideo() {return useMissedPointsVideo_;}
   
+  void setUseOccupancyMapVideo(bool code) { useOccupancyMapVideo = code; }
+  bool getUseOccupancyMapVideo() { return useOccupancyMapVideo; }
+    
   void setEnhancedDeltaDepth(bool code) {enhancedDeltaDepth_=code;}
   bool getEnhancedDeltaDepth( ) {return enhancedDeltaDepth_;}
  
@@ -108,7 +113,8 @@ class PCCContext {
   PCCVideoGeometry videoGeometry_;
   PCCVideoGeometry videoGeometryD1_;
   PCCVideoTexture  videoTexture_;
-
+  PCCVideoOccupancyMap videoOccupancyMap_;
+    
   PCCVideoGeometry videoMPsGeometry_;
   PCCVideoTexture videoMPsTexture_;
   bool losslessGeo444_;
@@ -119,6 +125,7 @@ class PCCContext {
   size_t MPAttWidth_;
   size_t MPAttHeight_;
   bool useMissedPointsVideo_;
+  bool useOccupancyMapVideo;
   bool enhancedDeltaDepth_;
 
   PCCMetadata gofLevelMetadata_;

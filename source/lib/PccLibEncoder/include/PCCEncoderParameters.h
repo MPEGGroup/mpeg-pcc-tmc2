@@ -58,6 +58,7 @@ class PCCEncoderParameters {
     ColorTransform      colorTransform_;
     std::string         colorSpaceConversionPath_;
     std::string         videoEncoderPath_;
+    std::string         videoEncoderOccupancyMapPath_;
 
     std::string         colorSpaceConversionConfig_;
     std::string         inverseColorSpaceConversionConfig_;
@@ -92,6 +93,9 @@ class PCCEncoderParameters {
     // occupancy map encoding
     size_t              maxCandidateCount_;
     size_t              occupancyPrecision_;
+    std::string         occupancyMapVideoEncoderConfig_;
+    size_t              occupancyMapQP_;
+    bool                useOccupancyMapVideo_;
 
     // smoothing
     size_t              neighborCountSmoothing_;

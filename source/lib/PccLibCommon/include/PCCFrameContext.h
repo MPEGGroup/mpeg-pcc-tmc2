@@ -78,6 +78,8 @@ class PCCFrameContext {
   void setLosslessAtt(bool lossless){losslessAtt_=lossless;}
   void setUseMissedPointsVideo(bool code) {useMissedPointsVideo_=code;}
   bool getUseMissedPointsVideo() {return useMissedPointsVideo_;}
+  void setUseOccupancyMapVideo(bool code) { useOccupancyMapVideo = code; }
+  bool getUseOccupancyMapVideo() { return useOccupancyMapVideo; }
   void setEnhancedDeltaDepth(bool code) {enhancedDeltaDepth_=code;}
   bool getEnhancedDeltaDepth( ) {return enhancedDeltaDepth_;}
   
@@ -95,6 +97,7 @@ class PCCFrameContext {
   bool losslessGeo444_;
   bool losslessAtt_;
   bool useMissedPointsVideo_;
+  bool useOccupancyMapVideo;
   bool enhancedDeltaDepth_;
 
   std::vector<PCCVector3<size_t>> pointToPixel_;

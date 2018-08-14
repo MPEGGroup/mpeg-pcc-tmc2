@@ -51,11 +51,13 @@ template <typename T, size_t N>
 class PCCVideo;
 typedef pcc::PCCVideo<uint8_t,  3> PCCVideoTexture;
 typedef pcc::PCCVideo<uint16_t, 3> PCCVideoGeometry;
+typedef pcc::PCCVideo<uint8_t,  3> PCCVideoOccupancyMap;
 template <typename T, size_t N>
 class PCCImage;
 typedef pcc::PCCImage<uint8_t,  3> PCCImageTexture;
 typedef pcc::PCCImage<uint16_t, 3> PCCImageGeometry;
-struct PCCPatchSegmenter3Parameters; 
+typedef pcc::PCCImage<uint8_t,  3> PCCImageOccupancyMap;
+struct PCCPatchSegmenter3Parameters;
 class PCCPatch;
 struct PCCBistreamPosition;
 class Arithmetic_Codec;
@@ -80,6 +82,11 @@ private:
   void compressOccupancyMap( PCCFrameContext &frame, PCCBitstream& bitstream, PCCFrameContext &preFrame, size_t frameIndex);
   void compressPatchMetaDataM42195(PCCFrameContext &frame, PCCFrameContext &preFrame, size_t numMatchedPatches, PCCBitstream &bitstream ,
     o3dgc::Arithmetic_Codec &arithmeticEncoder, o3dgc::Static_Bit_Model &bModel0, PCCBistreamPosition &startPosition);
+  void compressOccupancyMapInfo( PCCFrameContext &frame, PCCBitstream& bitstream, PCCFrameContext& preFrame, size_t frameIndex);
+  bool generateOccupancyMapVideo( const PCCGroupOfFrames& sources, PCCContext& context );
+  bool generateOccupancyMapVideo(const size_t imageWidth, const size_t imageHeight,
+                                 std::vector<uint32_t> &occupancyMap,
+                                 PCCImageOccupancyMap &videoFrameOccupancyMap);
 
   bool generateGeometryVideo( const PCCGroupOfFrames& sources, PCCContext &context );
   bool resizeGeometryVideo( PCCContext &context );

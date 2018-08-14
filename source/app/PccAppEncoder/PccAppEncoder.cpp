@@ -248,6 +248,21 @@ bool parseParameters(int argc, char *argv[], PCCEncoderParameters& params ) {
     params.occupancyPrecision_,
     "Occupancy map B0 precision")
 
+    ("occupancyMapVideoEncoderConfig",
+     params.occupancyMapVideoEncoderConfig_,
+     params.occupancyMapVideoEncoderConfig_,
+     "Occupancy map encoder config file")
+    
+    ("occupancyMapQP",
+     params.occupancyMapQP_,
+     params.occupancyMapQP_,
+     "QP for compression of occupancy map video")
+
+    ("useOccupancyMapVideo",
+     params.useOccupancyMapVideo_,
+     params.useOccupancyMapVideo_,
+     "compress occupancy map with video codec")
+
     // smoothing
     // NB: various parameters are of the form n * occupancyPrecision**2
     ("neighborCountSmoothing",
@@ -307,6 +322,11 @@ bool parseParameters(int argc, char *argv[], PCCEncoderParameters& params ) {
      params.videoEncoderPath_,
      params.videoEncoderPath_,
      "HM video encoder executable")
+
+    ("videoEncoderOccupancyMapPath",
+     params.videoEncoderOccupancyMapPath_,
+     params.videoEncoderOccupancyMapPath_,
+     "HM lossless video encoder executable for occupancy map")
 
     ("geometryQP",
      params.geometryQP_,
@@ -500,6 +520,7 @@ int compressVideo( const PCCEncoderParameters& params, StopwatchUserTime &clock)
     context.setMPAttHeight(0);
     context.setEnhancedDeltaDepth(params.enhancedDeltaDepthCode_);
     context.setUseMissedPointsVideo(params.useMissedPointsVideo_);
+    context.setUseOccupancyMapVideo(params.useOccupancyMapVideo_);
     
     if (gofLevelMetadataEnabledFlags.getMetadataEnabled()) {
       // Place to get/set gof-level metadata.

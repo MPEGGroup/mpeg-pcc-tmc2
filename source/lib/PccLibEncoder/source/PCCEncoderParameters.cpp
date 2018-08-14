@@ -73,6 +73,9 @@ PCCEncoderParameters::PCCEncoderParameters() {
 
   maxCandidateCount_                    = 4;
   occupancyPrecision_                   = 4;
+  occupancyMapVideoEncoderConfig_       = {};
+  occupancyMapQP_                       = 8;
+  useOccupancyMapVideo_                 = true;
 
   neighborCountSmoothing_               = 4 * 16;
   radius2Smoothing_                     = 4.0 * 16;
@@ -81,6 +84,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   bestColorSearchRange_                 = 0;
 
   videoEncoderPath_                     = {};
+  videoEncoderOccupancyMapPath_         = {};
   geometryQP_                           = 28;
   textureQP_                            = 43;
   geometryConfig_                       = {};
@@ -94,7 +98,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   noAttributes_                         = false;
   losslessGeo444_                       = false;
 
-  useMissedPointsVideo_                 = true;
+  useMissedPointsVideo_                 = (losslessGeo_|| losslessTexture_)? true : false;
   geometryMPConfig_                     = {};
   textureMPConfig_                      = {};
 
@@ -151,6 +155,9 @@ void PCCEncoderParameters::completePath(){
     if( !colorSpaceConversionConfig_   .empty() ) {
       colorSpaceConversionConfig_    = configurationFolder_ + colorSpaceConversionConfig_;
     }
+    if( !occupancyMapVideoEncoderConfig_.empty() ){
+      occupancyMapVideoEncoderConfig_ = configurationFolder_ + occupancyMapVideoEncoderConfig_;
+    }
   }
 }
 
@@ -196,6 +203,7 @@ void PCCEncoderParameters::print(){
   std::cout << "\t   textureQP                            " << textureQP_                            << std::endl;
   std::cout << "\t   colorSpaceConversionPath             " << colorSpaceConversionPath_             << std::endl;
   std::cout << "\t   videoEncoderPath                     " << videoEncoderPath_                     << std::endl;
+  std::cout << "\t   videoEncoderOccupancyMapPath         " << videoEncoderOccupancyMapPath_         << std::endl;
   if ( !absoluteD1_) {
     std::cout << "\t   geometryD0Config                     " << geometryD0Config_ << std::endl;
     std::cout << "\t   geometryD1Config                     " << geometryD1Config_ << std::endl;
@@ -216,6 +224,9 @@ void PCCEncoderParameters::print(){
   std::cout << "\t occupancy map encoding " << std::endl;
   std::cout << "\t   maxCandidateCount                    " << maxCandidateCount_                    << std::endl;
   std::cout << "\t   occupancyPrecision                   " << occupancyPrecision_                   << std::endl;
+  std::cout << "\t   occupancyMapVideoEncoderConfig       " << occupancyMapVideoEncoderConfig_       << std::endl;
+  std::cout << "\t   occupancyMapQP                       " << occupancyMapQP_                       << std::endl;
+  std::cout << "\t   useOccupancyMapVideo                 " << useOccupancyMapVideo_                 <<std::endl;
   std::cout << "\t smoothing" << std::endl;
   std::cout << "\t   neighborCountSmoothing               " << neighborCountSmoothing_               << std::endl;
   std::cout << "\t   radius2Smoothing                     " << radius2Smoothing_                     << std::endl;
@@ -280,6 +291,14 @@ bool PCCEncoderParameters::check(){
     ret = false;
     std::cerr << "videoEncoderPath not exist\n";
   }
+  if( videoEncoderOccupancyMapPath_.empty()     ) {
+    ret = false;
+    std::cerr << "videoEncoderOccupancyMapPath not set\n";
+  }
+  if( !exist( videoEncoderOccupancyMapPath_  )  ) {
+    ret = false;
+    std::cerr << "videoEncoderOccupancyMapPath not exist\n";
+  }
 
   if (absoluteD1_ && (!geometryD0Config_.empty() || !geometryD1Config_.empty()))
   {
@@ -313,6 +332,10 @@ bool PCCEncoderParameters::check(){
   if (enhancedDeltaDepthCode_ && surfaceThickness_ == 1) { //EDD
     std::cerr << "WARNING: EDD code doesn't bring any gain when surfaceThickness==1. Please consider to increase the value of surfaceThickness.\n";
   }
+    
+  if (losslessGeo_ && !useMissedPointsVideo_ && useOccupancyMapVideo_) {
+    std::cerr << "WARNING: When losslessGeo is active, video based occupancy map encoding can only be used with video based missed points endcoding\n";
+  }
 
   if(geometryMPConfig_.empty() )
   {
@@ -322,6 +345,11 @@ bool PCCEncoderParameters::check(){
   if(textureMPConfig_.empty() )
   {
     textureMPConfig_=textureConfig_;
+  }
+
+  if ( occupancyMapVideoEncoderConfig_.empty() ) {
+    ret = false;
+    std::cerr << "occupancyMapVideoEncoderConfig not set\n";
   }
 
   return ret;

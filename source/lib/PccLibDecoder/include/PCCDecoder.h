@@ -40,6 +40,7 @@
 #include "PCCMath.h"
 #include "ArithmeticCodec.h"
 #include "PCCMetadata.h"
+#include "PCCPatch.h"
 
 namespace pcc {
 
@@ -49,6 +50,10 @@ class PCCFrameContext;
 class PCCGroupOfFrames; 
 class PCCPatch;
 class Arithmetic_Codec;
+
+template <typename T, size_t N>
+class PCCImage;
+typedef pcc::PCCImage<uint8_t,  3> PCCImageOccupancyMap;
 
 class PCCDecoder : public PCCCodec {
 public:
@@ -67,6 +72,16 @@ private:
   void decompressOccupancyMap( PCCContext &context,    PCCBitstream& bitstream, uint8_t& surfaceThickness);
   void decompressOccupancyMap(PCCFrameContext& frame, PCCBitstream &bitstream, uint8_t& surfaceThickness, PCCFrameContext& preFrame, size_t frameIndex);
 
+  void GenerateOccupancyMapFromVideoFrame(size_t occupancyResolution, size_t occupancyPrecision,
+                                          size_t width, size_t height,
+                                          std::vector<uint32_t> &occupancyMap,
+                                          const PCCImageOccupancyMap &videoFrame);
+  void DecompressOccupancyMapInfo(const size_t width, const size_t height,
+                                  const size_t &occupancyResolution, const size_t &occupancyMapPrecision,
+                                  std::vector<PCCPatch> &patches, std::vector<size_t> &blockToPatch,
+                                  std::vector<uint32_t> &occupancyMap, PCCBitstream &bitstream,                                      PCCFrameContext& frame, uint8_t& surfaceThickness,
+                                  PCCFrameContext& preFrame, size_t frameIndex);
+    
   void generateMPsGeometryfromImage    (PCCContext& context, PCCFrameContext& frame, PCCGroupOfFrames& reconstructs,size_t frameIndex);
   void generateMPsTexturefromImage     (PCCContext& context, PCCFrameContext& frame, PCCGroupOfFrames& reconstructs,size_t frameIndex);
   
@@ -83,6 +98,7 @@ private:
   uint16_t width_;
   uint16_t height_;
   uint8_t  occupancyResolution_;
+  uint8_t  occupancyPrecision_;
   uint8_t  radius2Smoothing_;
   uint8_t  neighborCountSmoothing_;
   uint8_t  radius2BoundaryDetection_;
@@ -92,6 +108,7 @@ private:
   uint8_t  noAttributes_;
   uint8_t  losslessGeo444_;
   uint8_t  useMissedPointsVideo_;
+  uint8_t  useOccupancyMapVideo_;
   bool     absoluteD1_;
   bool     binArithCoding_;
   float    modelScale_;

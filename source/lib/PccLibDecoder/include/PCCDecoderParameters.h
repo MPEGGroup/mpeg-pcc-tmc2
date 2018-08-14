@@ -51,6 +51,7 @@ class PCCDecoderParameters {
   std::string    reconstructedDataPath_;
 
   std::string    videoDecoderPath_;
+  std::string    videoDecoderOccupancyMapPath_;
   ColorTransform colorTransform_;
   std::string    colorSpaceConversionPath_;
   std::string    inverseColorSpaceConversionConfig_;
