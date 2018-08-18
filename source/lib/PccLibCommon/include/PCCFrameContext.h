@@ -76,8 +76,8 @@ class PCCFrameContext {
   void setLosslessGeo(bool lossless){losslessGeo_=lossless;}
   void setLosslessGeo444(bool lossless){losslessGeo444_=lossless;}
   void setLosslessAtt(bool lossless){losslessAtt_=lossless;}
-  void setUseMissedPointsVideo(bool code) {useMissedPointsVideo_=code;}
-  bool getUseMissedPointsVideo() {return useMissedPointsVideo_;}
+  void setUseMissedPointsSeparateVideo(bool value) {useMissedPointsSeparateVideo_=value;}
+  bool getUseMissedPointsSeparateVideo() {return useMissedPointsSeparateVideo_;}
   void setUseOccupancyMapVideo(bool code) { useOccupancyMapVideo = code; }
   bool getUseOccupancyMapVideo() { return useOccupancyMapVideo; }
   void setEnhancedDeltaDepth(bool code) {enhancedDeltaDepth_=code;}
@@ -96,7 +96,7 @@ class PCCFrameContext {
   bool losslessGeo_;
   bool losslessGeo444_;
   bool losslessAtt_;
-  bool useMissedPointsVideo_;
+  bool useMissedPointsSeparateVideo_;
   bool useOccupancyMapVideo;
   bool enhancedDeltaDepth_;
 

@@ -77,13 +77,15 @@ int PCCDecoder::decode( PCCBitstream &bitstream, PCCContext &context, PCCGroupOf
 
   auto sizeOccupancyMap = bitstream.size();
   uint8_t surfaceThickness = 4;
- 
-  if (useOccupancyMapVideo_ && (!losslessGeo_ || useMissedPointsVideo_)) {
+
+  if (!losslessGeo_ || useOccupancyMapVideo_ )
+  {
     videoDecoder.decompress(context.getVideoOccupancyMap(), path.str() + "occupancy",
                             width_/occupancyPrecision_,
                             height_/occupancyPrecision_,
                             context.size(), bitstream, params_.videoDecoderOccupancyMapPath_, context);
   }
+
   decompressOccupancyMap(context, bitstream, surfaceThickness);
 
   sizeOccupancyMap = bitstream.size() - sizeOccupancyMap;
@@ -122,7 +124,7 @@ int PCCDecoder::decode( PCCBitstream &bitstream, PCCContext &context, PCCGroupOf
     std::cout << "geometry video ->" << sizeGeometryVideo << " B" << std::endl;
   }
 
-  if(losslessGeo_ && context.getUseMissedPointsVideo()) {
+  if(losslessGeo_ && context.getUseMissedPointsSeparateVideo()) {
     auto sizeMissedPointsGeometry = bitstream.size();
     
     readMissedPointsGeometryNumber(context, bitstream);
@@ -187,7 +189,7 @@ int PCCDecoder::decode( PCCBitstream &bitstream, PCCContext &context, PCCGroupOf
     sizeTextureVideo = bitstream.size() - sizeTextureVideo;
     std::cout << "texture video  ->" << sizeTextureVideo << " B" << std::endl;
     
-    if(losslessTexture_ && context.getUseMissedPointsVideo())
+    if(losslessTexture_ && context.getUseMissedPointsSeparateVideo())
     {
       auto sizeMissedPointsTexture = bitstream.size();
       readMissedPointsTextureNumber(context, bitstream);
@@ -388,10 +390,10 @@ int PCCDecoder::decompressHeader( PCCContext &context, PCCBitstream &bitstream )
   bitstream.read<uint8_t> ( losslessTexture_ );
   bitstream.read<uint8_t> ( noAttributes_ );
   bitstream.read<uint8_t> ( losslessGeo444_);
-  useMissedPointsVideo_=true;
+  useMissedPointsSeparateVideo_=true;
   useOccupancyMapVideo_=true;
   //if(losslessGeo_)
-  bitstream.read<uint8_t> ( useMissedPointsVideo_);
+  bitstream.read<uint8_t> ( useMissedPointsSeparateVideo_);
   bitstream.read<uint8_t> ( useOccupancyMapVideo_);
   uint8_t absD1, binArithCoding,deltaCoding;
   bitstream.read<uint8_t> ( absD1 );
@@ -428,7 +430,7 @@ int PCCDecoder::decompressHeader( PCCContext &context, PCCBitstream &bitstream )
   context.setMPAttWidth(64);
   context.setMPGeoHeight(0);
   context.setMPAttHeight(0);
-  context.setUseMissedPointsVideo(useMissedPointsVideo_);
+  context.setUseMissedPointsSeparateVideo(useMissedPointsSeparateVideo_);
   context.setUseOccupancyMapVideo(useOccupancyMapVideo_);
   context.setEnhancedDeltaDepth(enhancedDeltaDepthCode_);
   auto& frames = context.getFrames();
@@ -438,7 +440,7 @@ int PCCDecoder::decompressHeader( PCCContext &context, PCCBitstream &bitstream )
     frames[i].setLosslessGeo444(losslessGeo444_);
     frames[i].setLosslessAtt(losslessTexture_);
     frames[i].setEnhancedDeltaDepth(enhancedDeltaDepthCode_);
-    frames[i].setUseMissedPointsVideo(useMissedPointsVideo_);
+    frames[i].setUseMissedPointsSeparateVideo(useMissedPointsSeparateVideo_);
     frames[i].setUseOccupancyMapVideo(useOccupancyMapVideo_);
   }
 
@@ -599,7 +601,9 @@ void PCCDecoder::decompressOccupancyMap( PCCContext &context, PCCBitstream& bits
     printf("frame %d\n",i);
     auto &frameLevelMetadataEnabledFlags = context.getGOFLevelMetadata().getLowerLevelMetadataEnabledFlags();
     frame.getFrameLevelMetadata().getMetadataEnabledFlags() = frameLevelMetadataEnabledFlags;
-    if (useOccupancyMapVideo_ && (!losslessGeo_ || useMissedPointsVideo_)) {
+
+    if (useOccupancyMapVideo_ && (!losslessGeo_ || useMissedPointsSeparateVideo_))
+    {
       PCCImageOccupancyMap &videoFrame = context.getVideoOccupancyMap().getFrame(frame.getIndex());
       GenerateOccupancyMapFromVideoFrame(occupancyResolution_, occupancyPrecision_, width_, height_,
                                          frame.getOccupancyMap(), videoFrame);
@@ -607,9 +611,21 @@ void PCCDecoder::decompressOccupancyMap( PCCContext &context, PCCBitstream& bits
       DecompressOccupancyMapInfo(width_, height_, occupancyResolution_, occupancyPrecision_, frame.getPatches(),
                                  frame.getBlockToPatch(), frame.getOccupancyMap(), bitstream, frame, surfaceThickness, preFrame, i);
     } else {
+      if (useOccupancyMapVideo_)
+      {
+        PCCImageOccupancyMap &videoFrame = context.getVideoOccupancyMap().getFrame(frame.getIndex());
+        GenerateOccupancyMapFromVideoFrame(occupancyResolution_, occupancyPrecision_, width_, height_,
+                                           frame.getOccupancyMap(), videoFrame);
+        
+        DecompressOccupancyMapInfo(width_, height_, occupancyResolution_, occupancyPrecision_, frame.getPatches(),
+                                   frame.getBlockToPatch(), frame.getOccupancyMap(), bitstream, frame, surfaceThickness, preFrame, i);
+      }
+      else
+      {
       decompressOccupancyMap( frame, bitstream, surfaceThickness, preFrame, i );
+      }
 
-      if(!context.getUseMissedPointsVideo()) {
+      if(!context.getUseMissedPointsSeparateVideo()) {
         auto&  patches = frame.getPatches();
         auto& missedPointsPatch = frame.getMissedPointsPatch();
         if (losslessGeo_) {
@@ -1338,7 +1354,7 @@ void PCCDecoder::DecompressOccupancyMapInfo(const size_t width, const size_t hei
     blockToPatch[p] = 0;
     const auto &candidates = candidatePatches[p];
     if (candidates.size() > 0) {
-      bool empty = TRUE;
+      bool empty = true;
       size_t positionU = (p%blockToPatchWidth)*occupancyResolution;
       size_t positionV = (p/blockToPatchWidth)*occupancyResolution;
       for (size_t v=positionV; v<positionV+occupancyResolution && empty; ++v) {

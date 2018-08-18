@@ -100,7 +100,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
     frames[i].setLosslessGeo444(params_.losslessGeo444_);
     frames[i].setLosslessAtt(params_.losslessTexture_);
     frames[i].setEnhancedDeltaDepth(params_.enhancedDeltaDepthCode_);
-    frames[i].setUseMissedPointsVideo(params_.useMissedPointsVideo_);
+    frames[i].setUseMissedPointsSeparateVideo(params_.useMissedPointsSeparateVideo_);
     frames[i].setUseOccupancyMapVideo(params_.useOccupancyMapVideo_);
   }
 
@@ -116,10 +116,15 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
   auto& height = context.getHeight();
   width  = (uint16_t)frames[0].getWidth ();
   height = (uint16_t)frames[0].getHeight();
+  auto sizeFrameHeader = bitstream.size();
   compressHeader( context, bitstream );
-
+  sizeFrameHeader = bitstream.size() - sizeFrameHeader;
+  std::cout << " frame header info  ->" << sizeFrameHeader << " B " << std::endl;
+  
   auto sizeOccupancyMap = bitstream.size();
-  if (params_.useOccupancyMapVideo_ && (!params_.losslessGeo_ || params_.useMissedPointsVideo_)) {
+
+  if (!params_.losslessGeo_ || params_.useOccupancyMapVideo_)
+  {
     generateOccupancyMapVideo(sources, context);
     auto& videoOccupancyMap = context.getVideoOccupancyMap();
     videoEncoder.compress(videoOccupancyMap, path.str() + "occupancy", params_.occupancyMapQP_, bitstream,
@@ -127,6 +132,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
   }
 
   compressOccupancyMap(context, bitstream);
+  
   sizeOccupancyMap = bitstream.size() - sizeOccupancyMap;
   std::cout << " occupancy map  ->" << sizeOccupancyMap << " B ("
     << (sizeOccupancyMap * 8.0) / (2 * frames.size() * pointCount) << " bpp)"
@@ -218,7 +224,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
 
   ////////////////////////////////////////////////////////////////////
   //
-  if (params_.losslessGeo_ && context.getUseMissedPointsVideo())
+  if (params_.losslessGeo_ && context.getUseMissedPointsSeparateVideo())
   {
     auto sizeMissedPointsGeometry = bitstream.size();
     generateMissedPointsGeometryVideo(context, reconstructs);
@@ -324,7 +330,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
     ////////////////////////////////////////////////////////////////////
     //
 
-    if(params_.losslessTexture_ && context.getUseMissedPointsVideo())
+    if(params_.losslessTexture_ && context.getUseMissedPointsSeparateVideo())
     {
       auto sizeMissedPointsTexture = bitstream.size();
       generateMissedPointsTextureVideo(context, reconstructs, bitstream);//1. texture
@@ -556,7 +562,7 @@ void PCCEncoder::spatialConsistencyPack(PCCFrameContext& frame, PCCFrameContext 
     // print(occupancyMap, occupancySizeU, occupancySizeV);
   }
 
-  if (frame.getMissedPointsPatch().size() > 0 && !frame.getUseMissedPointsVideo()) {
+  if (frame.getMissedPointsPatch().size() > 0 && !frame.getUseMissedPointsSeparateVideo()) {
     packMissedPointsPatch(frame, occupancyMap, width, height, occupancySizeU, occupancySizeV, maxOccupancyRow);
   } else
   {
@@ -635,7 +641,7 @@ void PCCEncoder::pack( PCCFrameContext& frame  ) {
     // print(occupancyMap, occupancySizeU, occupancySizeV);
   }
 
-  if (frame.getMissedPointsPatch().size() > 0 && !frame.getUseMissedPointsVideo()) {
+  if (frame.getMissedPointsPatch().size() > 0 && !frame.getUseMissedPointsSeparateVideo()) {
     packMissedPointsPatch(frame, occupancyMap, width, height, occupancySizeU, occupancySizeV, maxOccupancyRow);
   } else
   {
@@ -789,7 +795,7 @@ void PCCEncoder::generateOccupancyMap( PCCFrameContext& frame ) {
     }
   }
 
-  if(!frame.getUseMissedPointsVideo())
+  if(!frame.getUseMissedPointsSeparateVideo())
   {
   auto& missedPointsPatch = frame.getMissedPointsPatch();
   const size_t v0 = missedPointsPatch.v0 * missedPointsPatch.occupancyResolution;
@@ -845,7 +851,7 @@ void PCCEncoder::generateIntraImage( PCCFrameContext& frame, const size_t depthI
     exit(-1);
   }
 
-  if(!frame.getUseMissedPointsVideo())
+  if(!frame.getUseMissedPointsSeparateVideo())
   {
     auto& missedPointsPatch = frame.getMissedPointsPatch();
     const size_t v0 = missedPointsPatch.v0 * missedPointsPatch.occupancyResolution;
@@ -1006,7 +1012,7 @@ void PCCEncoder::generateMissedPointsPatch(const PCCPointSet3& source, PCCFrameC
       missedPointsPatch.z[i] = static_cast<uint16_t>(missedPoint.z());
     }
 
-    if(frame.getUseMissedPointsVideo())
+    if(frame.getUseMissedPointsSeparateVideo())
     {
     missedPointsPatch.setMPnumber(missedPoints.size());
     }
@@ -1015,7 +1021,7 @@ void PCCEncoder::generateMissedPointsPatch(const PCCPointSet3& source, PCCFrameC
     const size_t mps = missedPoints.size();
     missedPointsPatch.resize(3 * mps);
 
-    if(frame.getUseMissedPointsVideo())
+    if(frame.getUseMissedPointsSeparateVideo())
     {
     missedPointsPatch.setMPnumber(missedPoints.size());
     }
@@ -1520,14 +1526,14 @@ bool PCCEncoder::generateTextureVideo( const PCCPointSet3& reconstruct, PCCFrame
                                        PCCVideoTexture &video, const size_t frameCount ) {
   auto& pointToPixel = frame.getPointToPixel();
   
-  bool useMissedPointsVideo=frame.getUseMissedPointsVideo();
+  bool useMissedPointsSeparateVideo=frame.getUseMissedPointsSeparateVideo();
   bool losslessAtt = frame.getLosslessAtt();
   auto& missedPointsPatch=frame.getMissedPointsPatch();
   size_t numOfMPGeos =missedPointsPatch.getMPnumber();
   size_t numEddSavedPoints = missedPointsPatch.numEddSavedPoints;
   size_t pointCount = reconstruct.getPointCount();
   
-  if(useMissedPointsVideo && losslessAtt)
+  if(useMissedPointsSeparateVideo && losslessAtt)
   {
   pointCount = reconstruct.getPointCount() - numOfMPGeos - numEddSavedPoints;
   if(missedPointsPatch.sizeofcolor()<(numOfMPGeos+numEddSavedPoints))
@@ -1560,7 +1566,7 @@ bool PCCEncoder::generateTextureVideo( const PCCPointSet3& reconstruct, PCCFrame
     image.setValue(2, u, v, color[2]);
   }
 
-  if(losslessAtt && useMissedPointsVideo)
+  if(losslessAtt && useMissedPointsSeparateVideo)
   {
     if(frame.getEnhancedDeltaDepth()) //if(1)
     {
@@ -1739,7 +1745,7 @@ int PCCEncoder::compressHeader( PCCContext &context, pcc::PCCBitstream &bitstrea
   bitstream.write<uint8_t> (uint8_t(params_.noAttributes_));
   bitstream.write<uint8_t> (uint8_t(params_.losslessGeo444_));
   //if(params_.losslessGeo_)
-  bitstream.write<uint8_t> (uint8_t(params_.useMissedPointsVideo_));
+  bitstream.write<uint8_t> (uint8_t(params_.useMissedPointsSeparateVideo_));
   bitstream.write<uint8_t> (uint8_t(params_.useOccupancyMapVideo_));
   bitstream.write<uint8_t> (uint8_t(params_.absoluteD1_));
   bitstream.write<uint8_t> (uint8_t(params_.binArithCoding_));
@@ -1940,7 +1946,7 @@ void PCCEncoder::compressOccupancyMap( PCCContext &context, PCCBitstream& bitstr
   PCCFrameContext preFrame = context.getFrames()[0];
   for( int i = 0; i < sizeFrames; i++ ){
     PCCFrameContext &frame = context.getFrames()[i];
-    if (params_.losslessGeo_ && !context.getUseMissedPointsVideo())
+    if (params_.losslessGeo_ && !context.getUseMissedPointsSeparateVideo())
     {
       auto& patches = frame.getPatches();
       auto& missedPointsPatch = frame.getMissedPointsPatch();
@@ -1962,6 +1968,9 @@ void PCCEncoder::compressOccupancyMap( PCCContext &context, PCCBitstream& bitstr
       dummyPatch.getOccupancy() = missedPointsPatch.occupancy;
 	  dummyPatch.getLod() = params_.testLevelOfDetail_;
       dummyPatch.setBestMatchIdx() = -1;
+      if(context.getUseOccupancyMapVideo())
+        compressOccupancyMapInfo(frame, bitstream, preFrame, i);
+      else
       compressOccupancyMap(frame, bitstream, preFrame, i);
       patches.pop_back();
     } else if (!params_.useOccupancyMapVideo_) {
@@ -2578,7 +2587,7 @@ void PCCEncoder::generateIntraEnhancedDeltaDepthImage(PCCFrameContext &frame, co
     }
   }
 
-  if(!frame.getUseMissedPointsVideo())
+  if(!frame.getUseMissedPointsSeparateVideo())
   {
   //sdlfj
   //missed point patch

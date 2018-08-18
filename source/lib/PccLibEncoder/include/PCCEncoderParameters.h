@@ -120,7 +120,7 @@ class PCCEncoderParameters {
     bool                losslessGeo444_;
 
     //missed points video
-    bool                useMissedPointsVideo_;
+    bool                useMissedPointsSeparateVideo_;
     std::string         geometryMPConfig_;
     std::string         textureMPConfig_;
 

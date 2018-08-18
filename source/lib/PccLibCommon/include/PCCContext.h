@@ -86,8 +86,8 @@ class PCCContext {
   void setMPAttWidth(size_t width) { MPAttWidth_=width;}
   void setMPAttHeight(size_t height) { MPAttHeight_=height;}
 
-  void setUseMissedPointsVideo(bool code) {useMissedPointsVideo_=code;}
-  bool getUseMissedPointsVideo() {return useMissedPointsVideo_;}
+  void setUseMissedPointsSeparateVideo(bool code) {useMissedPointsSeparateVideo_=code;}
+  bool getUseMissedPointsSeparateVideo() {return useMissedPointsSeparateVideo_;}
   
   void setUseOccupancyMapVideo(bool code) { useOccupancyMapVideo = code; }
   bool getUseOccupancyMapVideo() { return useOccupancyMapVideo; }
@@ -124,7 +124,7 @@ class PCCContext {
   size_t MPGeoHeight_;
   size_t MPAttWidth_;
   size_t MPAttHeight_;
-  bool useMissedPointsVideo_;
+  bool useMissedPointsSeparateVideo_;
   bool useOccupancyMapVideo;
   bool enhancedDeltaDepth_;
 

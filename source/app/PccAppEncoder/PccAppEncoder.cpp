@@ -379,9 +379,9 @@ bool parseParameters(int argc, char *argv[], PCCEncoderParameters& params ) {
      params.losslessGeo444_,
      "Use 4444 format for lossless geometry")
 
-  ("useMissedPointsVideo",
-   params.useMissedPointsVideo_,
-   params.useMissedPointsVideo_,
+  ("useMissedPointsSeparateVideo",
+   params.useMissedPointsSeparateVideo_,
+   params.useMissedPointsSeparateVideo_,
    "compress missed point with video codec")
   
   ("geometryMPConfig",
@@ -410,7 +410,7 @@ bool parseParameters(int argc, char *argv[], PCCEncoderParameters& params ) {
      params.absoluteD1_,
      "Absolute D1")
 
-    ("tempCons",
+    ("constrainedPack",
      params.constrainedPack_,
      params.constrainedPack_,
      "Temporally consistent patch packing")
@@ -474,6 +474,28 @@ bool parseParameters(int argc, char *argv[], PCCEncoderParameters& params ) {
     err.warn() << "Unhandled argument ignored: " << arg << "\n";
   }
 
+   if(!params.losslessGeo_ && !params.losslessTexture_)
+   {
+     params.useOccupancyMapVideo_=true;
+   }
+   
+   if( params.videoEncoderOccupancyMapPath_.empty() || !exist( params.videoEncoderOccupancyMapPath_)    ) {
+     
+     params.videoEncoderOccupancyMapPath_ = params.videoEncoderPath_;
+   }
+   if(params.useMissedPointsSeparateVideo_)
+   {
+     if(params.geometryMPConfig_.empty() || !exist( params.geometryMPConfig_) )
+     {
+       params.geometryMPConfig_=params.geometryConfig_;
+     }
+     
+     if(params.textureMPConfig_.empty() || !exist( params.textureMPConfig_) )
+     {
+       params.textureMPConfig_=params.textureConfig_;
+     }
+   }
+   
   if (argc == 1 || print_help) {
     po::doHelp( std::cout, opts, 78 );
     return false;
@@ -519,7 +541,7 @@ int compressVideo( const PCCEncoderParameters& params, StopwatchUserTime &clock)
     context.setMPGeoHeight(0);
     context.setMPAttHeight(0);
     context.setEnhancedDeltaDepth(params.enhancedDeltaDepthCode_);
-    context.setUseMissedPointsVideo(params.useMissedPointsVideo_);
+    context.setUseMissedPointsSeparateVideo(params.useMissedPointsSeparateVideo_);
     context.setUseOccupancyMapVideo(params.useOccupancyMapVideo_);
     
     if (gofLevelMetadataEnabledFlags.getMetadataEnabled()) {

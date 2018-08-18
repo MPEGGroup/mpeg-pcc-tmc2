@@ -107,7 +107,7 @@ private:
   uint8_t  losslessTexture_;
   uint8_t  noAttributes_;
   uint8_t  losslessGeo444_;
-  uint8_t  useMissedPointsVideo_;
+  uint8_t  useMissedPointsSeparateVideo_;
   uint8_t  useOccupancyMapVideo_;
   bool     absoluteD1_;
   bool     binArithCoding_;

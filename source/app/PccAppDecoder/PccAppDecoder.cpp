@@ -183,6 +183,10 @@ bool parseParameters(int argc, char *argv[], PCCDecoderParameters& params ) {
     err.warn() << "Unhandled argument ignored: " << arg << "\n";
   }
 
+  if ( params.videoDecoderOccupancyMapPath_.empty() || !exist(params.videoDecoderOccupancyMapPath_ ) ) {
+    params.videoDecoderOccupancyMapPath_ =params.videoDecoderPath_;
+  }
+  
   if (argc == 1 || print_help) {
     po::doHelp( std::cout, opts, 78 );
     return false;

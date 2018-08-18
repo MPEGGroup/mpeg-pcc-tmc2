@@ -92,7 +92,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext &f
   pointToPixel.resize(0);
   reconstruct.clear();
 
-  bool useMissedPointsVideo=frame.getUseMissedPointsVideo();
+  bool useMissedPointsSeparateVideo=frame.getUseMissedPointsSeparateVideo();
   PCCPointSet3 eddSavedPoints;
   size_t numEddSavedPoints=0;
   
@@ -211,7 +211,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext &f
                         point1[patch.getNormalAxis()] = (double)(point0[patch.getNormalAxis()] + deltaDCur);
                       else
                         point1[patch.getNormalAxis()] = (double)(point0[patch.getNormalAxis()] - deltaDCur);
-                      if(!useMissedPointsVideo)
+                      if(!useMissedPointsSeparateVideo)
                       {
                       pointIndex1 = reconstruct.addPoint(point1);
                       reconstruct.setColor(pointIndex1, color);
@@ -223,7 +223,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext &f
                       
                       if (addedPointCount == 0)
                       {
-                        if(useMissedPointsVideo)
+                        if(useMissedPointsSeparateVideo)
                         {
                         pointIndex1 = reconstruct.addPoint(point1);
                         reconstruct.setColor(pointIndex1, color);
@@ -238,7 +238,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext &f
                       }
                       else
                       {
-                        if(useMissedPointsVideo)
+                        if(useMissedPointsSeparateVideo)
                         {
                         numEddSavedPoints++;
                         eddSavedPoints.addPoint(point1);
@@ -271,7 +271,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext &f
                             }
                           }
                         }
-                        }//useMissedPointsVideo
+                        }//useMissedPointsSeparateVideo
 
                       }
                       addedPointCount++;
@@ -380,7 +380,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext &f
     }
   }
 
-  if(useMissedPointsVideo)
+  if(useMissedPointsSeparateVideo)
   {
   if (params.losslessGeo_)
   {
@@ -445,7 +445,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext &f
     missedPointsPatch.setMPnumbercolor(numofMPcolor+numofEddSaved);
     assert(numEddSavedPoints == numofEddSaved);
   }
-  }//useMissedPointsVideo
+  }//useMissedPointsSeparateVideo
   else
   {
   // Add points from missedPointsPatch
@@ -534,7 +534,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext &f
 
   }
     
-  }//else :useMissedPointsVideo
+  }//else :useMissedPointsSeparateVideo
 
    
 }
@@ -711,14 +711,14 @@ bool PCCCodec::colorPointCloud( PCCPointSet3& reconstruct, PCCFrameContext& fram
     auto& pointToPixel = frame.getPointToPixel();
     auto& color        = reconstruct.getColors();
 
-    bool useMissedPointsVideo = frame.getUseMissedPointsVideo();
+    bool useMissedPointsSeparateVideo = frame.getUseMissedPointsSeparateVideo();
     bool losslessAtt = frame.getLosslessAtt();
     auto& missedPointsPatch=frame.getMissedPointsPatch();
     size_t numOfMPColor = missedPointsPatch.getMPnumbercolor();
     size_t numOfMPGeos =missedPointsPatch.getMPnumber();
     size_t numEddSavedPoints = missedPointsPatch.numEddSavedPoints;
     size_t pointCount = reconstruct.getPointCount();
-    if(useMissedPointsVideo && losslessAtt)
+    if(useMissedPointsSeparateVideo && losslessAtt)
     {
       pointCount = reconstruct.getPointCount() - numOfMPGeos - numEddSavedPoints;
     assert( numOfMPColor == (numEddSavedPoints+numOfMPGeos));
@@ -742,7 +742,7 @@ bool PCCCodec::colorPointCloud( PCCPointSet3& reconstruct, PCCFrameContext& fram
       }
     }
 
-    if(losslessAtt && useMissedPointsVideo)
+    if(losslessAtt && useMissedPointsSeparateVideo)
     {
       if(frame.getEnhancedDeltaDepth())
       {

@@ -98,10 +98,11 @@ PCCEncoderParameters::PCCEncoderParameters() {
   noAttributes_                         = false;
   losslessGeo444_                       = false;
 
-  useMissedPointsVideo_                 = (losslessGeo_|| losslessTexture_)? true : false;
+  useMissedPointsSeparateVideo_         = false; //(losslessGeo_|| losslessTexture_)? true : false;
   geometryMPConfig_                     = {};
   textureMPConfig_                      = {};
-
+     useOccupancyMapVideo_              = (losslessGeo_|| losslessTexture_)? false : true;
+  
   nbThread_                             = 1;
   keepIntermediateFiles_                = false;
   projectionMode_                       = 0;
@@ -117,7 +118,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   neighborCountColorSmoothing_          = 4 * 16;
   flagColorSmoothing_                   = false;
 
-  groupDilation_    		            = true;
+  groupDilation_    		                = true;
   textureDilationOffLossless_           = true;
 
   enhancedDeltaDepthCode_               = losslessGeo_ ? true : false; //EDD
@@ -158,6 +159,18 @@ void PCCEncoderParameters::completePath(){
     if( !occupancyMapVideoEncoderConfig_.empty() ){
       occupancyMapVideoEncoderConfig_ = configurationFolder_ + occupancyMapVideoEncoderConfig_;
     }
+    if(useMissedPointsSeparateVideo_)
+    {
+      if( !geometryMPConfig_.empty())
+      {
+        geometryMPConfig_= configurationFolder_ + geometryMPConfig_;
+      }
+      
+      if( !textureMPConfig_.empty())
+      {
+        textureMPConfig_= configurationFolder_ + textureMPConfig_;
+      }
+    }
   }
 }
 
@@ -169,7 +182,7 @@ void PCCEncoderParameters::print(){
   std::cout << "\t noAttributes                           " << noAttributes_                         << std::endl;
   std::cout << "\t losslessGeo444                         " << losslessGeo444_                       << std::endl;
   std::cout << "\t enhancedDeltaDepthCode                 " << enhancedDeltaDepthCode_               << std::endl; //EDD
-  std::cout << "\t useMissedPointsVideo                   " << useMissedPointsVideo_                 <<std::endl;
+  std::cout << "\t useMissedPointsSeparateVideo           " << useMissedPointsSeparateVideo_                 <<std::endl;
   std::cout << "\t uncompressedDataPath                   " << uncompressedDataPath_                 << std::endl;
   std::cout << "\t compressedStreamPath                   " << compressedStreamPath_                 << std::endl;
   std::cout << "\t reconstructedDataPath                  " << reconstructedDataPath_                << std::endl;
@@ -211,10 +224,12 @@ void PCCEncoderParameters::print(){
     std::cout << "\t   geometryConfig                       " << geometryConfig_                       << std::endl;
   }
   std::cout << "\t   textureConfig                        " << textureConfig_                        << std::endl;
-  if(useMissedPointsVideo_)
+  if(useMissedPointsSeparateVideo_)
   {
-  std::cout <<"\t geometryMPConfig                        "               << geometryMPConfig_<<std::endl;
-  std::cout<<"\t textureMPConfig                          "               << textureMPConfig_<<std::endl;
+    if(losslessGeo_)
+      std::cout <<"\t geometryMPConfig                        "               << geometryMPConfig_<<std::endl;
+    if(losslessTexture_)
+      std::cout<<"\t textureMPConfig                          "               << textureMPConfig_<<std::endl;
   }
   std::cout << "\t   colorSpaceConversionConfig           " << colorSpaceConversionConfig_           << std::endl;
   std::cout << "\t   inverseColorSpaceConversionConfig    " << inverseColorSpaceConversionConfig_    << std::endl;
@@ -331,10 +346,6 @@ bool PCCEncoderParameters::check(){
 
   if (enhancedDeltaDepthCode_ && surfaceThickness_ == 1) { //EDD
     std::cerr << "WARNING: EDD code doesn't bring any gain when surfaceThickness==1. Please consider to increase the value of surfaceThickness.\n";
-  }
-    
-  if (losslessGeo_ && !useMissedPointsVideo_ && useOccupancyMapVideo_) {
-    std::cerr << "WARNING: When losslessGeo is active, video based occupancy map encoding can only be used with video based missed points endcoding\n";
   }
 
   if(geometryMPConfig_.empty() )
