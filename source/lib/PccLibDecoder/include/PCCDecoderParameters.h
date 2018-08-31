@@ -60,7 +60,7 @@ class PCCDecoderParameters {
   bool           keepIntermediateFiles_;
   size_t         testLevelOfDetailSignaling_;
   //visual quality
-  bool			patchColorSubsampling_;	
+  bool           patchColorSubsampling_;
 };
 
 }; //~namespace

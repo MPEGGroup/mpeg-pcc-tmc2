@@ -167,12 +167,11 @@ bool parseParameters(int argc, char *argv[], PCCDecoderParameters& params ) {
     (size_t)0,
     "Disable patch sampling resolution scaling; use in conjunction with same parameter in encoder")
 
-	 //visual quality
+   //visual quality
     ("patchColorSubsampling", 
      params.patchColorSubsampling_, 
      false, 
      "Enable per-patch color up-sampling")
-
  ;
 
   po::setDefaults(opts);
@@ -184,7 +183,7 @@ bool parseParameters(int argc, char *argv[], PCCDecoderParameters& params ) {
   }
 
   if ( params.videoDecoderOccupancyMapPath_.empty() || !exist(params.videoDecoderOccupancyMapPath_ ) ) {
-    params.videoDecoderOccupancyMapPath_ =params.videoDecoderPath_;
+    params.videoDecoderOccupancyMapPath_ = params.videoDecoderPath_;
   }
   
   if (argc == 1 || print_help) {

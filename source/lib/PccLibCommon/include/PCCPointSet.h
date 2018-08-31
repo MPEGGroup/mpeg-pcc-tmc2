@@ -72,16 +72,16 @@ class PCCPointSet3 {
     colors_[index] = color;
   }
   uint16_t getBoundaryPointType(const size_t index) const {
-	  assert(index < BoundaryPointTypes.size());
-	  return BoundaryPointTypes[index];
+    assert(index < BoundaryPointTypes.size());
+    return BoundaryPointTypes[index];
   }
   uint16_t &getBoundaryPointType(const size_t index) {
-	  assert(index < BoundaryPointTypes.size());
-	  return BoundaryPointTypes[index];
+    assert(index < BoundaryPointTypes.size());
+    return BoundaryPointTypes[index];
   }
   void setBoundaryPointType(const size_t index, const uint16_t BoundaryPointType) {
-	  assert(index < BoundaryPointTypes.size());
-	  BoundaryPointTypes[index] = BoundaryPointType;
+    assert(index < BoundaryPointTypes.size());
+    BoundaryPointTypes[index] = BoundaryPointType;
   }
   uint16_t getReflectance(const size_t index) const {
     assert(index < reflectances_.size() && withReflectances_);
@@ -144,7 +144,7 @@ class PCCPointSet3 {
     if( PCC_SAVE_POINT_TYPE ) {
       types_.resize( size );
     }
-	BoundaryPointTypes.resize(size);
+    BoundaryPointTypes.resize(size);
   }
   void reserve(const size_t size) {
     positions_.reserve(size);
@@ -157,7 +157,7 @@ class PCCPointSet3 {
     if( PCC_SAVE_POINT_TYPE ) {
       types_.reserve( size );
     }
-	BoundaryPointTypes.reserve(size);
+    BoundaryPointTypes.reserve(size);
   }
   void clear() {
     positions_.clear();
@@ -166,7 +166,7 @@ class PCCPointSet3 {
     if( PCC_SAVE_POINT_TYPE ) {
       types_.clear();
     }
-	BoundaryPointTypes.clear();
+    BoundaryPointTypes.clear();
   }
   size_t addPoint(const PCCPoint3D &position) {
     const size_t index = getPointCount();

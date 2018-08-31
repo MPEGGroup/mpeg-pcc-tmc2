@@ -72,8 +72,7 @@ class PCCBitstream {
 
   template <typename T>
   void writeFlag( T  value ) {
-    uint32_t code = (uint32_t)value;
-    write( value, 1, position_ );
+    write(  (uint32_t)value, 1, position_ );
   }
   template <typename T>
   void readFlag ( T& value ) {

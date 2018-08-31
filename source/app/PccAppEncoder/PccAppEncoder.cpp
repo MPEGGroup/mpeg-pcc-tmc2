@@ -285,7 +285,7 @@ bool parseParameters(int argc, char *argv[], PCCEncoderParameters& params ) {
      params.thresholdSmoothing_,
      "todo(kmammou)")
 
-	// color smoothing
+     // color smoothing
     ("thresholdColorSmoothing",
      params.thresholdColorSmoothing_,
      params.thresholdColorSmoothing_,
@@ -379,20 +379,20 @@ bool parseParameters(int argc, char *argv[], PCCEncoderParameters& params ) {
      params.losslessGeo444_,
      "Use 4444 format for lossless geometry")
 
-  ("useMissedPointsSeparateVideo",
-   params.useMissedPointsSeparateVideo_,
-   params.useMissedPointsSeparateVideo_,
-   "compress missed point with video codec")
-  
-  ("geometryMPConfig",
-   params.geometryMPConfig_,
-   params.geometryMPConfig_,
-   "HM configuration file for missed points geometry compression")
-  
-  ("textureMPConfig",
-   params.textureMPConfig_,
-   params.textureMPConfig_,
-   "HM configuration file for missed points texture compression")
+    ("useMissedPointsSeparateVideo",
+     params.useMissedPointsSeparateVideo_,
+     params.useMissedPointsSeparateVideo_,
+     "compress missed point with video codec")
+
+    ("geometryMPConfig",
+     params.geometryMPConfig_,
+     params.geometryMPConfig_,
+     "HM configuration file for missed points geometry compression")
+
+    ("textureMPConfig",
+     params.textureMPConfig_,
+     params.textureMPConfig_,
+     "HM configuration file for missed points texture compression")
   
 //etc
     ("nbThread",
@@ -445,25 +445,21 @@ bool parseParameters(int argc, char *argv[], PCCEncoderParameters& params ) {
       params.enhancedDeltaDepthCode_,
       params.enhancedDeltaDepthCode_,
       "Use enhanced-delta-depth code")
-	  
-	//visual quality
+
+    //visual quality
     ("patchColorSubsampling", 
      params.patchColorSubsampling_, 
      false, 
      "Enable per patch color sub-sampling\n")
-#if FIX_RC011
-  ("deltaCoding",
-#else
-    ("deltaCoding_",
-#endif
-     params.deltaCoding_,
-     params.deltaCoding_,
-     "Delta meta-data coding")
+    ("deltaCoding",
+      params.deltaCoding_,
+      params.deltaCoding_,
+      "Delta meta-data coding")
 
-      ("projectionMode",
-        params.projectionMode_,
-        params.projectionMode_,
-        "projectionMode - 0:min; 1:max;  2:adaptive frame & patch; 3:adaptive patch (all frames)");
+    ("projectionMode",
+      params.projectionMode_,
+      params.projectionMode_,
+      "projectionMode - 0:min; 1:max;  2:adaptive frame & patch; 3:adaptive patch (all frames)");
      ;
 
   po::setDefaults(opts);
@@ -473,29 +469,7 @@ bool parseParameters(int argc, char *argv[], PCCEncoderParameters& params ) {
   for (const auto arg : argv_unhandled) {
     err.warn() << "Unhandled argument ignored: " << arg << "\n";
   }
-
-   if(!params.losslessGeo_ && !params.losslessTexture_)
-   {
-     params.useOccupancyMapVideo_=true;
-   }
-   
-   if( params.videoEncoderOccupancyMapPath_.empty() || !exist( params.videoEncoderOccupancyMapPath_)    ) {
-     
-     params.videoEncoderOccupancyMapPath_ = params.videoEncoderPath_;
-   }
-   if(params.useMissedPointsSeparateVideo_)
-   {
-     if(params.geometryMPConfig_.empty() || !exist( params.geometryMPConfig_) )
-     {
-       params.geometryMPConfig_=params.geometryConfig_;
-     }
-     
-     if(params.textureMPConfig_.empty() || !exist( params.textureMPConfig_) )
-     {
-       params.textureMPConfig_=params.textureConfig_;
-     }
-   }
-   
+  
   if (argc == 1 || print_help) {
     po::doHelp( std::cout, opts, 78 );
     return false;
@@ -521,7 +495,6 @@ int compressVideo( const PCCEncoderParameters& params, StopwatchUserTime &clock)
   size_t reconstructedFrameNumber = params.startFrameNumber_;
   PCCBitstream bitstream;
   std::unique_ptr<uint8_t> buffer;
-  PCCBistreamPosition totalSizeIterator = bitstream.getPosition();
   size_t contextIndex = 0;
   PCCEncoder encoder;
   encoder.setParameters( params );

@@ -67,7 +67,6 @@ PCCEncoderParameters::PCCEncoderParameters() {
   maxAllowedDist2MissedPointsSelection_ = 1.0;
   lambdaRefineSegmentation_             = 3.0;
 
-
   minimumImageWidth_                    = 1280;
   minimumImageHeight_                   = 1280;
 
@@ -101,7 +100,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   useMissedPointsSeparateVideo_         = false; //(losslessGeo_|| losslessTexture_)? true : false;
   geometryMPConfig_                     = {};
   textureMPConfig_                      = {};
-     useOccupancyMapVideo_              = (losslessGeo_|| losslessTexture_)? false : true;
+  useOccupancyMapVideo_                 = (losslessGeo_|| losslessTexture_)? false : true;
   
   nbThread_                             = 1;
   keepIntermediateFiles_                = false;
@@ -118,7 +117,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   neighborCountColorSmoothing_          = 4 * 16;
   flagColorSmoothing_                   = false;
 
-  groupDilation_    		                = true;
+  groupDilation_                        = true;
   textureDilationOffLossless_           = true;
 
   enhancedDeltaDepthCode_               = losslessGeo_ ? true : false; //EDD
@@ -182,7 +181,7 @@ void PCCEncoderParameters::print(){
   std::cout << "\t noAttributes                           " << noAttributes_                         << std::endl;
   std::cout << "\t losslessGeo444                         " << losslessGeo444_                       << std::endl;
   std::cout << "\t enhancedDeltaDepthCode                 " << enhancedDeltaDepthCode_               << std::endl; //EDD
-  std::cout << "\t useMissedPointsSeparateVideo           " << useMissedPointsSeparateVideo_                 <<std::endl;
+  std::cout << "\t useMissedPointsSeparateVideo           " << useMissedPointsSeparateVideo_         << std::endl;
   std::cout << "\t uncompressedDataPath                   " << uncompressedDataPath_                 << std::endl;
   std::cout << "\t compressedStreamPath                   " << compressedStreamPath_                 << std::endl;
   std::cout << "\t reconstructedDataPath                  " << reconstructedDataPath_                << std::endl;
@@ -306,15 +305,12 @@ bool PCCEncoderParameters::check(){
     ret = false;
     std::cerr << "videoEncoderPath not exist\n";
   }
-  if( videoEncoderOccupancyMapPath_.empty()     ) {
-    ret = false;
-    std::cerr << "videoEncoderOccupancyMapPath not set\n";
+  
+  if( useOccupancyMapVideo_ && ( videoEncoderOccupancyMapPath_.empty() || !exist( videoEncoderOccupancyMapPath_) ) ) {
+    std::cerr << "WARNING: videoEncoderOccupancyMapPath is set as videoEncoderPath_ : "<<videoEncoderPath_ << std::endl;
+    videoEncoderOccupancyMapPath_ = videoEncoderPath_;
   }
-  if( !exist( videoEncoderOccupancyMapPath_  )  ) {
-    ret = false;
-    std::cerr << "videoEncoderOccupancyMapPath not exist\n";
-  }
-
+  
   if (absoluteD1_ && (!geometryD0Config_.empty() || !geometryD1Config_.empty()))
   {
     ret = false;
@@ -347,18 +343,19 @@ bool PCCEncoderParameters::check(){
   if (enhancedDeltaDepthCode_ && surfaceThickness_ == 1) { //EDD
     std::cerr << "WARNING: EDD code doesn't bring any gain when surfaceThickness==1. Please consider to increase the value of surfaceThickness.\n";
   }
-
-  if(geometryMPConfig_.empty() )
-  {
-    geometryMPConfig_=geometryConfig_;
+ 
+  if(useMissedPointsSeparateVideo_) {
+    if(geometryMPConfig_.empty() || !exist( geometryMPConfig_) ) {
+      std::cerr << "WARNING: geometryMPConfig_ is set as geometryConfig_ : "<<geometryConfig_ << std::endl;
+      geometryMPConfig_ = geometryConfig_;
+    }
+    if(textureMPConfig_.empty() || !exist( textureMPConfig_) ) {
+      std::cerr << "WARNING: textureMPConfig_ is set as textureConfig_ : "<<textureConfig_ << std::endl;
+      textureMPConfig_ = textureConfig_;
+    }
   }
   
-  if(textureMPConfig_.empty() )
-  {
-    textureMPConfig_=textureConfig_;
-  }
-
-  if ( occupancyMapVideoEncoderConfig_.empty() ) {
+  if ( useOccupancyMapVideo_ && occupancyMapVideoEncoderConfig_.empty() ) {
     ret = false;
     std::cerr << "occupancyMapVideoEncoderConfig not set\n";
   }

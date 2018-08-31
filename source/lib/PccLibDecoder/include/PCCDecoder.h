@@ -56,45 +56,44 @@ class PCCImage;
 typedef pcc::PCCImage<uint8_t,  3> PCCImageOccupancyMap;
 
 class PCCDecoder : public PCCCodec {
-public:
+ public:
   PCCDecoder();
   ~PCCDecoder();
 
   int decode( PCCBitstream &bitstream, PCCContext &context, PCCGroupOfFrames& reconstruct );
   void setParameters( PCCDecoderParameters value );
-  
-private:
- 
+
+ private:
+
   int  readMetadata(PCCMetadata &metadata, PCCBitstream &bitstream);
   int  decompressMetadata(PCCMetadata &metadata, o3dgc::Arithmetic_Codec &arithmeticDecoder);
   int  decompressHeader( PCCContext &context, PCCBitstream &bitstream );
 
-  void decompressOccupancyMap( PCCContext &context,    PCCBitstream& bitstream, uint8_t& surfaceThickness);
-  void decompressOccupancyMap(PCCFrameContext& frame, PCCBitstream &bitstream, uint8_t& surfaceThickness, PCCFrameContext& preFrame, size_t frameIndex);
+  void decompressOccupancyMap( PCCContext &context,  PCCBitstream& bitstream, uint8_t& surfaceThickness);
+  void decompressOccupancyMap(  PCCContext &context, PCCFrameContext& frame, PCCBitstream &bitstream, 
+                                uint8_t& surfaceThickness, PCCFrameContext& preFrame, size_t frameIndex );
 
   void GenerateOccupancyMapFromVideoFrame(size_t occupancyResolution, size_t occupancyPrecision,
                                           size_t width, size_t height,
                                           std::vector<uint32_t> &occupancyMap,
                                           const PCCImageOccupancyMap &videoFrame);
-  void DecompressOccupancyMapInfo(const size_t width, const size_t height,
-                                  const size_t &occupancyResolution, const size_t &occupancyMapPrecision,
-                                  std::vector<PCCPatch> &patches, std::vector<size_t> &blockToPatch,
-                                  std::vector<uint32_t> &occupancyMap, PCCBitstream &bitstream,                                      PCCFrameContext& frame, uint8_t& surfaceThickness,
-                                  PCCFrameContext& preFrame, size_t frameIndex);
-    
-  void generateMPsGeometryfromImage    (PCCContext& context, PCCFrameContext& frame, PCCGroupOfFrames& reconstructs,size_t frameIndex);
-  void generateMPsTexturefromImage     (PCCContext& context, PCCFrameContext& frame, PCCGroupOfFrames& reconstructs,size_t frameIndex);
-  
+
+  void generateMPsGeometryfromImage    (PCCContext& context, PCCFrameContext& frame, PCCGroupOfFrames& reconstructs,
+                                        size_t frameIndex);
+  void generateMPsTexturefromImage     (PCCContext& context, PCCFrameContext& frame, PCCGroupOfFrames& reconstructs,
+                                        size_t frameIndex);
+
   void readMissedPointsGeometryNumber(PCCContext& context, PCCBitstream &bitstream);
   void readMissedPointsTextureNumber(PCCContext& context, PCCBitstream &bitstream);
-  
+
   void generateMissedPointsGeometryfromVideo(PCCContext& context, PCCGroupOfFrames& reconstructs);
   void generateMissedPointsTexturefromVideo(PCCContext& context, PCCGroupOfFrames& reconstructs);
   void decompressPatchMetaDataM42195(PCCFrameContext& frame, PCCFrameContext& preFrame, PCCBitstream &bitstream ,
-    o3dgc::Arithmetic_Codec &arithmeticDecoder, o3dgc::Static_Bit_Model &bModel0, uint32_t &compressedBitstreamSize, size_t occupancyPrecision);
+                                     o3dgc::Arithmetic_Codec &arithmeticDecoder, o3dgc::Static_Bit_Model &bModel0,
+                                     uint32_t &compressedBitstreamSize, size_t occupancyPrecision);
 
   PCCDecoderParameters params_;
-  
+
   uint16_t width_;
   uint16_t height_;
   uint8_t  occupancyResolution_;

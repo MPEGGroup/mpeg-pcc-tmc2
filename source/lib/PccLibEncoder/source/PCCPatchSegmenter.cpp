@@ -245,8 +245,8 @@ size_t PCCPatchSegmenter3::selectFrameProjectionMode(const PCCPointSet3 &points,
       for (int i = 0; i < points.getPointCount(); i++) {
         const PCCVector3D point = points[i];
         const int16_t d = int16_t(round(point[plan.getNormalAxis()]));
-        const size_t u = size_t(round(point[plan.getTangentAxis()] - plan.getU1()));
-        const size_t v = size_t(round(point[plan.getBitangentAxis()] - plan.getV1()));
+        const int64_t u = int64_t(round(point[plan.getTangentAxis  ()] - plan.getU1()));
+        const int64_t v = int64_t(round(point[plan.getBitangentAxis()] - plan.getV1()));
         if (u < 0 || u >= plan.getSizeU())          std::cout << " u < 0 || u >= plan.getSizeU() ! (u,v,d) = (" << u << "," << v << "," << d << ")." << std::endl;
         if (v < 0 || v >= plan.getSizeV())          std::cout << " u < 0 || u >= plan.getSizeV() ! (u,v,d) = (" << u << "," << v << "," << d << ")." << std::endl;
         assert(u >= 0 && u < plan.getSizeU());
@@ -278,12 +278,9 @@ size_t PCCPatchSegmenter3::selectFrameProjectionMode(const PCCPointSet3 &points,
     double ratioD1D0 = double(cptD1[0] + cptD1[1] + cptD1[2]) / double(cptD0[0] + cptD0[1] + cptD0[2]);
     double ratioD1D0Threshold = 0.8;
  
-
-  if (paramProjectionMode == 3) {
-    double ratioD1D0Threshold = 0.0;
-  }
-
-  else if (paramProjectionMode == 2) {
+    if (paramProjectionMode == 3) {
+      ratioD1D0Threshold = 0.0;  
+    } else if (paramProjectionMode == 2) {
     if (ratioD1D0 < ratioD1D0Threshold) {
       frameProjectionMode = 0;              //min for all patches
     }
@@ -314,8 +311,6 @@ void  PCCPatchSegmenter3::selectPatchProjectionMode(const PCCPointSet3 &points, 
     patch.getFrameProjectionMode() = 2;
     uint16_t cptMinD0[3] = { 0,0,0 };
     uint16_t cptMaxD0[3] = { 0,0,0 };
-    int cpt_debug = 0;
-    int ccSize = connectedComponent.size();
     for (const auto i : connectedComponent) {
       const PCCVector3D point = points[i];
       const int16_t d = int16_t(round(point[patch.getNormalAxis()]));
@@ -483,13 +478,13 @@ void PCCPatchSegmenter3::segmentPatches(const PCCPointSet3 &points, const PCCSta
       const int16_t infiniteDepth = (std::numeric_limits<int16_t>::max)();
       //patch.getSizeU() = 1 + size_t(boundingBox.max_[patch.getTangentAxis()] - boundingBox.min_[patch.getTangentAxis()]);
       //patch.getSizeV() = 1 + size_t(boundingBox.max_[patch.getBitangentAxis()] - boundingBox.min_[patch.getBitangentAxis()]);
-	    patch.getSizeU() = 1 + size_t(round(boundingBox.max_[patch.getTangentAxis()]) - floor(boundingBox.min_[patch.getTangentAxis()]));
-	    patch.getSizeV() = 1 + size_t(round(boundingBox.max_[patch.getBitangentAxis()]) - floor(boundingBox.min_[patch.getBitangentAxis()]));
-	    patch.getU1()    = size_t(boundingBox.min_[patch.getTangentAxis()]);
+      patch.getSizeU() = 1 + size_t(round(boundingBox.max_[patch.getTangentAxis()]) - floor(boundingBox.min_[patch.getTangentAxis()]));
+      patch.getSizeV() = 1 + size_t(round(boundingBox.max_[patch.getBitangentAxis()]) - floor(boundingBox.min_[patch.getBitangentAxis()]));
+      patch.getU1()    = size_t(boundingBox.min_[patch.getTangentAxis()]);
       patch.getV1()    = size_t(boundingBox.min_[patch.getBitangentAxis()]);
       patch.getD1()    = infiniteDepth;
       patch.getDepth(0).resize(patch.getSizeU() * patch.getSizeV(), infiniteDepth);
-	    patch.getLod() = 0;
+      patch.getLod() = 0;
       if (useEnhancedDeltaDepthCode) //EDD
         patch.getDepthEnhancedDeltaD().resize(patch.getSizeU() * patch.getSizeV(), 0);
 
@@ -646,7 +641,7 @@ void PCCPatchSegmenter3::segmentPatches(const PCCPointSet3 &points, const PCCSta
             const uint16_t oldEDDCode = patch.getDepthEnhancedDeltaD()[p]; //EDD: to deal with the possible overflow problem
             const uint16_t deltaD = depth0-d;
             patch.getDepthEnhancedDeltaD()[p] |= 1 << (deltaD - 1);
-            if ((depth0 - patch.getDepthEnhancedDeltaD()[p]) > 0) //EDD: 10 bit coding case. Temporary solution for data overflow case.
+            if ((depth0 - patch.getDepthEnhancedDeltaD()[p]) < 0) //EDD: 10 bit coding case. Temporary solution for data overflow case.
             {
               patch.getDepthEnhancedDeltaD()[p] = oldEDDCode;
               std::cout << "(D0 + EDD-Code) > 1023. Data overflow observed (assume using 10bit coding). Temporary solution: the corresponding inbetween or Depth1 point will be regarded as missing point. To be improved if this happens a lot...\n";

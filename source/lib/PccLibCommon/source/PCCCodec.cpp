@@ -161,8 +161,8 @@ void PCCCodec::generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext &f
               const double lodScale = params.ignoreLod_ ? 1.0 : double(1u << patch.getLod());
               //yo- const double lodScale = 1.0;
               point0[patch.getNormalAxis()] = double(frame0.getValue(0, x, y) + patch.getD1()) * lodScale;
-			        point0[patch.getTangentAxis()] = (double(u) + patch.getU1()) * lodScale;
-			        point0[patch.getBitangentAxis()] = (double(v) + patch.getV1()) * lodScale;
+              point0[patch.getTangentAxis()] = (double(u) + patch.getU1()) * lodScale;
+              point0[patch.getBitangentAxis()] = (double(v) + patch.getV1()) * lodScale;
               //EDD code
               if (params.enhancedDeltaDepthCode_) {
                 //D0
@@ -300,7 +300,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext &f
                     } else {
                       const auto &frame1 = video.getFrame(f + shift);
                       //point1[patch.getNormalAxis()] = double( frame1.getValue(0, x, y) + patch.getD1());
-					            point1[patch.getNormalAxis()] = double( frame1.getValue(0, x, y) + patch.getD1()) * lodScale;
+                      point1[patch.getNormalAxis()] = double( frame1.getValue(0, x, y) + patch.getD1()) * lodScale;
                     }
                   }
                   const size_t pointindex_1 = reconstruct.addPoint(point1);

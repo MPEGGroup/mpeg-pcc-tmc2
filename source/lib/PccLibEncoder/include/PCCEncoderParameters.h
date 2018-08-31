@@ -40,122 +40,122 @@
 namespace pcc {
 
 class PCCEncoderParameters {
-  public:
-    PCCEncoderParameters();
-    ~PCCEncoderParameters();
-    void print();
-    bool check();
-    void completePath();
-    
-    size_t              startFrameNumber_;
+ public:
+  PCCEncoderParameters();
+  ~PCCEncoderParameters();
+  void print();
+  bool check();
+  void completePath();
 
-    std::string         configurationFolder_;
-    std::string         uncompressedDataFolder_;
+  size_t              startFrameNumber_;
 
-    std::string         compressedStreamPath_;
-    std::string         reconstructedDataPath_;
+  std::string         configurationFolder_;
+  std::string         uncompressedDataFolder_;
 
-    ColorTransform      colorTransform_;
-    std::string         colorSpaceConversionPath_;
-    std::string         videoEncoderPath_;
-    std::string         videoEncoderOccupancyMapPath_;
+  std::string         compressedStreamPath_;
+  std::string         reconstructedDataPath_;
 
-    std::string         colorSpaceConversionConfig_;
-    std::string         inverseColorSpaceConversionConfig_;
+  ColorTransform      colorTransform_;
+  std::string         colorSpaceConversionPath_;
+  std::string         videoEncoderPath_;
+  std::string         videoEncoderOccupancyMapPath_;
 
-    size_t              nbThread_;
+  std::string         colorSpaceConversionConfig_;
+  std::string         inverseColorSpaceConversionConfig_;
 
-    size_t              frameCount_;
-    size_t              groupOfFramesSize_;
-    std::string         uncompressedDataPath_;
+  size_t              nbThread_;
 
-    // packing
-    size_t              minimumImageWidth_;
-    size_t              minimumImageHeight_;
+  size_t              frameCount_;
+  size_t              groupOfFramesSize_;
+  std::string         uncompressedDataPath_;
 
-    // video encoding
-    size_t              geometryQP_;
-    size_t              textureQP_;
+  // packing
+  size_t              minimumImageWidth_;
+  size_t              minimumImageHeight_;
 
-    // segmentation
-    size_t              nnNormalEstimation_;
-    size_t              maxNNCountRefineSegmentation_;
-    size_t              iterationCountRefineSegmentation_;
-    size_t              occupancyResolution_;
-    size_t              minPointCountPerCCPatchSegmentation_;
-    size_t              maxNNCountPatchSegmentation_;
-    size_t              surfaceThickness_;
-    size_t              maxAllowedDepth_;
-    double              maxAllowedDist2MissedPointsDetection_;
-    double              maxAllowedDist2MissedPointsSelection_;
-    double              lambdaRefineSegmentation_;
+  // video encoding
+  size_t              geometryQP_;
+  size_t              textureQP_;
 
-    // occupancy map encoding
-    size_t              maxCandidateCount_;
-    size_t              occupancyPrecision_;
-    std::string         occupancyMapVideoEncoderConfig_;
-    size_t              occupancyMapQP_;
-    bool                useOccupancyMapVideo_;
+  // segmentation
+  size_t              nnNormalEstimation_;
+  size_t              maxNNCountRefineSegmentation_;
+  size_t              iterationCountRefineSegmentation_;
+  size_t              occupancyResolution_;
+  size_t              minPointCountPerCCPatchSegmentation_;
+  size_t              maxNNCountPatchSegmentation_;
+  size_t              surfaceThickness_;
+  size_t              maxAllowedDepth_;
+  double              maxAllowedDist2MissedPointsDetection_;
+  double              maxAllowedDist2MissedPointsSelection_;
+  double              lambdaRefineSegmentation_;
 
-    // smoothing
-    size_t              neighborCountSmoothing_;
-    double              radius2Smoothing_;
-    double              radius2BoundaryDetection_;
-    double              thresholdSmoothing_;
+  // occupancy map encoding
+  size_t              maxCandidateCount_;
+  size_t              occupancyPrecision_;
+  std::string         occupancyMapVideoEncoderConfig_;
+  size_t              occupancyMapQP_;
+  bool                useOccupancyMapVideo_;
 
-    // color smoothing
-    double              thresholdColorSmoothing_;
-    double              thresholdLocalEntropy_;
-    double              radius2ColorSmoothing_;
-    size_t              neighborCountColorSmoothing_;
-    bool                flagColorSmoothing_;
+  // smoothing
+  size_t              neighborCountSmoothing_;
+  double              radius2Smoothing_;
+  double              radius2BoundaryDetection_;
+  double              thresholdSmoothing_;
 
-    // coloring
-    size_t              bestColorSearchRange_;
+  // color smoothing
+  double              thresholdColorSmoothing_;
+  double              thresholdLocalEntropy_;
+  double              radius2ColorSmoothing_;
+  size_t              neighborCountColorSmoothing_;
+  bool                flagColorSmoothing_;
 
-    // lossless
-    bool                noAttributes_;
-    bool                losslessGeo_;
-    bool                losslessTexture_;
-    bool                losslessGeo444_;
+  // coloring
+  size_t              bestColorSearchRange_;
 
-    //missed points video
-    bool                useMissedPointsSeparateVideo_;
-    std::string         geometryMPConfig_;
-    std::string         textureMPConfig_;
+  // lossless
+  bool                noAttributes_;
+  bool                losslessGeo_;
+  bool                losslessTexture_;
+  bool                losslessGeo444_;
+
+  //missed points video
+  bool                useMissedPointsSeparateVideo_;
+  std::string         geometryMPConfig_;
+  std::string         textureMPConfig_;
 
   // scale and bias
-    float               modelScale_;
-    PCCVector3<float>   modelOrigin_;
+  float               modelScale_;
+  PCCVector3<float>   modelOrigin_;
 
-	// patch sampling resolution
-	size_t              testLevelOfDetail_;
-	size_t              testLevelOfDetailSignaling_;
+  // patch sampling resolution
+  size_t              testLevelOfDetail_;
+  size_t              testLevelOfDetailSignaling_;
 
-    std::string         geometryConfig_;
-    std::string         geometryD0Config_;
-    std::string         geometryD1Config_;
-    std::string         textureConfig_;
+  std::string         geometryConfig_;
+  std::string         geometryD0Config_;
+  std::string         geometryD1Config_;
+  std::string         textureConfig_;
 
-    bool                keepIntermediateFiles_;
+  bool                keepIntermediateFiles_;
 
-    bool                absoluteD1_;
+  bool                absoluteD1_;
 
-    bool                constrainedPack_;
-    bool                binArithCoding_;
-    size_t              projectionMode_;
-    // dilation
-    bool		            groupDilation_;
-    bool                textureDilationOffLossless_;
+  bool                constrainedPack_;
+  bool                binArithCoding_;
+  size_t              projectionMode_;
+  // dilation
+  bool                groupDilation_;
+  bool                textureDilationOffLossless_;
 
-    // EDD
-    bool                enhancedDeltaDepthCode_;
-	
-    //visual quality
-	bool			patchColorSubsampling_;
+  // EDD
+  bool                enhancedDeltaDepthCode_;
 
-    bool                deltaCoding_;
-  };
+  //visual quality
+  bool                patchColorSubsampling_;
+
+  bool                deltaCoding_;
+};
 
 }; //~namespace
 

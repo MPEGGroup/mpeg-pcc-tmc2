@@ -125,7 +125,7 @@ bool PCCPointSet3::write( const std::string &fileName, const bool asAscii ) {
         fout << " " << static_cast<int>(getReflectance(i));
       }
       if( PCC_SAVE_POINT_TYPE ) {
-        fout << " " << types_[ i ];
+        fout << " " <<  static_cast<int>( types_[ i ] );
       }
       fout << std::endl;
     }
