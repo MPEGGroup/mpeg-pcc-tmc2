@@ -8,9 +8,9 @@ if [ ! -d $EXTERNAL ] ; then EXTERNAL=$( dirname $MAINDIR )/external; fi
 SRCDIR=${MAINDIR}/../ply/ # note: this directory must containt: http://mpegfs.int-evry.fr/MPEG/PCC/DataSets/pointCloud/CfP/datasets/Dynamic_Objects/People                            
 CFGDIR=${MAINDIR}/cfg/
 
-SEQ=25; 
-COND=2;
-RATE=2;
+SEQ=25;       # in [22;26]
+COND=2;       # in [ C2AI, C2LD, CWAI, CWRA]
+RATE=2;       # in [1;5]
 FRAMECOUNT=1;
 THREAD=1;
 
@@ -21,45 +21,34 @@ HDRCONVERT="set_value";
 HMENCODER="set_value";
 HMDECODER="set_value";
 
-if [ ! -f $ENCODER    ] ; then ENCODER=${MAINDIR}/bin/PccAppEncoder;             fi
-if [ ! -f $ENCODER    ] ; then ENCODER=${MAINDIR}/bin/Release/PccAppEncoder.exe; fi
-if [ ! -f $ENCODER    ] ; then ENCODER=${MAINDIR}/bin/Debug/PccAppEncoder.exe;   fi
-
-if [ ! -f $DECODER    ] ; then DECODER=${MAINDIR}/bin/PccAppDecoder;             fi
-if [ ! -f $DECODER    ] ; then DECODER=${MAINDIR}/bin/Release/PccAppDecoder.exe; fi
-if [ ! -f $DECODER    ] ; then DECODER=${MAINDIR}/bin/Debug/PccAppDecoder.exe;   fi
+if [ ! -f $ENCODER    ] ; then ENCODER=${MAINDIR}/bin/PccAppEncoder;               fi
+if [ ! -f $ENCODER    ] ; then ENCODER=${MAINDIR}/bin/Release/PccAppEncoder.exe;   fi
+if [ ! -f $ENCODER    ] ; then ENCODER=${MAINDIR}/bin/Debug/PccAppEncoder.exe;     fi
+                                                                                   
+if [ ! -f $DECODER    ] ; then DECODER=${MAINDIR}/bin/PccAppDecoder;               fi
+if [ ! -f $DECODER    ] ; then DECODER=${MAINDIR}/bin/Release/PccAppDecoder.exe;   fi
+if [ ! -f $DECODER    ] ; then DECODER=${MAINDIR}/bin/Debug/PccAppDecoder.exe;     fi
 
 if [ ! -f $HDRCONVERT ] ; then HDRCONVERT=${EXTERNAL}/HDRTools/bin/HDRConvert;     fi
 if [ ! -f $HDRCONVERT ] ; then HDRCONVERT=${EXTERNAL}/HDRTools/bin/HDRConvert.exe; fi
 
-if [ $COND == 3 -o $COND == 4 ] 
-then
-  if [ ! -f $HMENCODER ] ; then HMENCODER=${EXTERNAL}/HM-16.16/bin/TAppEncoderStatic;                  fi
-  if [ ! -f $HMENCODER ] ; then HMENCODER=${EXTERNAL}/HM-16.16/bin/vc2015/x64/Release/TAppEncoder.exe; fi
-  if [ ! -f $HMENCODER ] ; then HMENCODER=${EXTERNAL}/HM-16.16/bin/vc2015/x64/Debug/TAppEncoder.exe;   fi
-  
-  if [ ! -f $HMDECODER ] ; then HMDECODER=${EXTERNAL}/HM-16.16/bin/TAppDecoderStatic;                  fi
-  if [ ! -f $HMDECODER ] ; then HMDECODER=${EXTERNAL}/HM-16.16/bin/vc2015/x64/Release/TAppDecoder.exe; fi
-  if [ ! -f $HMDECODER ] ; then HMDECODER=${EXTERNAL}/HM-16.16/bin/vc2015/x64/Debug/TAppDecoder.exe;   fi
-else
-  if [ ! -f $HMENCODER ] ; then HMENCODER=${EXTERNAL}/HM-16.14+SCM-8.3/bin/TAppEncoderStatic;                  fi
-  if [ ! -f $HMENCODER ] ; then HMENCODER=${EXTERNAL}/HM-16.14+SCM-8.3/bin/vc2015/x64/Release/TAppEncoder.exe; fi
-  if [ ! -f $HMENCODER ] ; then HMENCODER=${EXTERNAL}/HM-16.14+SCM-8.3/bin/vc2015/x64/Debug/TAppEncoder.exe;   fi
-                                                     
-  if [ ! -f $HMDECODER ] ; then HMDECODER=${EXTERNAL}/HM-16.14+SCM-8.3/bin/TAppDecoderStatic;                  fi
-  if [ ! -f $HMDECODER ] ; then HMDECODER=${EXTERNAL}/HM-16.14+SCM-8.3/bin/vc2015/x64/Release/TAppDecoder.exe; fi
-  if [ ! -f $HMDECODER ] ; then HMDECODER=${EXTERNAL}/HM-16.14+SCM-8.3/bin/vc2015/x64/Debug/TAppDecoder.exe;   fi
-fi
+if [ ! -f $HMENCODER ] ; then HMENCODER=${EXTERNAL}/HM-16.18+SCM-8.7/bin/TAppEncoderStatic;                  fi
+if [ ! -f $HMENCODER ] ; then HMENCODER=${EXTERNAL}/HM-16.18+SCM-8.7/bin/vc2015/x64/Release/TAppEncoder.exe; fi
+if [ ! -f $HMENCODER ] ; then HMENCODER=${EXTERNAL}/HM-16.18+SCM-8.7/bin/vc2015/x64/Debug/TAppEncoder.exe;   fi
+                                                   
+if [ ! -f $HMDECODER ] ; then HMDECODER=${EXTERNAL}/HM-16.18+SCM-8.7/bin/TAppDecoderStatic;                  fi
+if [ ! -f $HMDECODER ] ; then HMDECODER=${EXTERNAL}/HM-16.18+SCM-8.7/bin/vc2015/x64/Release/TAppDecoder.exe; fi
+if [ ! -f $HMDECODER ] ; then HMDECODER=${EXTERNAL}/HM-16.18+SCM-8.7/bin/vc2015/x64/Debug/TAppDecoder.exe;   fi
 
 ## Parameters and pathes check
 if [ ! -f $ENCODER    ] ; then echo "Can't find PccAppEncoder, please set.     ($ENCODER )";   exit -1; fi
 if [ ! -f $DECODER    ] ; then echo "Can't find PccAppDecoder, please set.     ($DECODER )";   exit -1; fi
-if [ ! -f $HDRCONVERT ] ; then echo "Can't find HdrConvert, please set.       ($HDRCONVERT)"; exit -1; fi
+if [ ! -f $HDRCONVERT ] ; then echo "Can't find HdrConvert, please set.        ($HDRCONVERT)"; exit -1; fi
 if [ ! -f $HMENCODER  ] ; then echo "Can't find TAppEncoderStatic, please set. ($HMENCODER)";  exit -1; fi
 if [ ! -f $HMDECODER  ] ; then echo "Can't find TAppDecoderStatic, please set. ($HMDECODER)";  exit -1; fi
 
 ## Set Configuration based on sequence, condition and rate
-if [ $COND == 3 -o $COND == 4 ] 
+if [ $COND == "CWAI" -o $COND == "CWRA" ] 
 then
   case $SEQ in
       22) CFGSEQUENCE="sequence/queen.cfg";;
@@ -77,7 +66,7 @@ then
       1) CFGRATE="rate/ctc-r1.cfg";; 
       *) echo "rate not correct ($RATE)";   exit -1;;
   esac
-  BIN=S${SEQ}C0${COND}R0${RATE}_F${FRAMECOUNT}.bin
+  BIN=S${SEQ}${COND}R0${RATE}_F${FRAMECOUNT}.bin
 else
    case $SEQ in
       22) CFGSEQUENCE="sequence/queen-lossless.cfg";;
@@ -88,26 +77,22 @@ else
       *) echo "sequence not correct ($SEQ)";   exit -1;;
   esac 
   CFGRATE="rate/ctc-r5.cfg"
-  BIN=S${SEQ}C0${COND}_F${FRAMECOUNT}.bin
+  BIN=S${SEQ}${COND}_F${FRAMECOUNT}.bin
 fi
 
 case $COND in
-  1) CFGCOMMON="common/ctc-common-lossless-geometry.cfg";;         
-  2) CFGCOMMON="common/ctc-common-lossless-geometry-texture.cfg";; 
-  3) CFGCOMMON="common/ctc-common.cfg";;                           
-  4) CFGCOMMON="common/ctc-common.cfg";;          
-  5) CFGCOMMON="common/ctc-common-lossless-geometry.cfg";;         
-  6) CFGCOMMON="common/ctc-common-lossless-geometry-texture.cfg";;                  
+  C2AI) CFGCOMMON="common/ctc-common-lossless-geometry-texture.cfg";;
+  C2LD) CFGCOMMON="common/ctc-common-lossless-geometry-texture.cfg";; 
+  CWAI) CFGCOMMON="common/ctc-common.cfg";;                           
+  CWRA) CFGCOMMON="common/ctc-common.cfg";;           
   *) echo "Condition not correct ($COND)";   exit -1;;
 esac
 
 case $COND in
-  1) CFGCONDITION="condition/ctc-all-intra-lossless-geometry.cfg";;
-  2) CFGCONDITION="condition/ctc-all-intra-lossless-geometry-texture.cfg";;
-  3) CFGCONDITION="condition/ctc-all-intra.cfg";;
-  4) CFGCONDITION="condition/ctc-random-access.cfg";;  
-  5) CFGCONDITION="condition/ctc-random-access-lossless-geometry.cfg";;
-  6) CFGCONDITION="condition/ctc-random-access-lossless-geometry-texture.cfg";;
+  C2AI) CFGCONDITION="condition/ctc-all-intra-lossless-geometry-texture.cfg";;
+  C2LD) CFGCONDITION="condition/ctc-low-delay-lossless-geometry-texture.cfg";;
+  CWAI) CFGCONDITION="condition/ctc-all-intra.cfg";;
+  CWRA) CFGCONDITION="condition/ctc-random-access.cfg";;  
   *) echo "Condition not correct ($COND)";   exit -1;;
 esac
 
