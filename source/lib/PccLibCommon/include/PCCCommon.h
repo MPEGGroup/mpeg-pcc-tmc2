@@ -33,8 +33,6 @@
 #ifndef PCCTMC2Common_h
 #define PCCTMC2Common_h
 
-#define FIX_RC011 1
-
 #include <limits>
 #include <assert.h>
 #include <chrono>
