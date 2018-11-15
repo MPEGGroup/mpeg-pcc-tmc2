@@ -90,7 +90,7 @@ class PCCDecoder : public PCCCodec {
   void generateMissedPointsTexturefromVideo(PCCContext& context, PCCGroupOfFrames& reconstructs);
   void decompressPatchMetaDataM42195(PCCFrameContext& frame, PCCFrameContext& preFrame, PCCBitstream &bitstream ,
                                      o3dgc::Arithmetic_Codec &arithmeticDecoder, o3dgc::Static_Bit_Model &bModel0,
-                                     uint32_t &compressedBitstreamSize, size_t occupancyPrecision);
+                                     uint32_t &compressedBitstreamSize, size_t occupancyPrecision, uint8_t enable_flexible_patch_flag);
 
   PCCDecoderParameters params_;
 
@@ -98,6 +98,7 @@ class PCCDecoder : public PCCCodec {
   uint16_t height_;
   uint8_t  occupancyResolution_;
   uint8_t  occupancyPrecision_;
+  bool     gridSmoothing_;
   uint8_t  radius2Smoothing_;
   uint8_t  neighborCountSmoothing_;
   uint8_t  radius2BoundaryDetection_;
@@ -117,9 +118,11 @@ class PCCDecoder : public PCCCodec {
   uint8_t  radius2ColorSmoothing_;
   uint8_t  neighborCountColorSmoothing_;
   uint8_t  flagColorSmoothing_;
-  bool     enhancedDeltaDepthCode_; //EDD
+  bool     enhancedDeltaDepthCode_;
   bool     deltaCoding_;
-
+  bool     sixDirectionMode_;
+  bool     oneLayerMode_;
+  bool     singleLayerPixelInterleaving_;
 };
 }; //~namespace
 

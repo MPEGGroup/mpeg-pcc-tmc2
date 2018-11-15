@@ -40,12 +40,13 @@ int main(int argc, char *argv[]) {
   std::cout << "PccAppEncoder v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MINOR << std::endl
             << std::endl;
 
-  PCCEncoderParameters params;
-  if (!parseParameters(argc, argv, params )) {
+  PCCEncoderParameters encoderParams;
+  PCCMetricsParameters metricsParams;
+  if (!parseParameters(argc, argv, encoderParams, metricsParams )) {
     return -1;
   }
-  if( params.nbThread_ > 0 ) {
-    tbb::task_scheduler_init init( (int)params.nbThread_ );
+  if( encoderParams.nbThread_ > 0 ) {
+    tbb::task_scheduler_init init( (int)encoderParams.nbThread_ );
   }
 
   // Timers to count elapsed wall/user time
@@ -53,7 +54,7 @@ int main(int argc, char *argv[]) {
   pcc::chrono::StopwatchUserTime clockUser;
 
   clockWall.start();
-  int ret = compressVideo(params, clockUser);
+  int ret = compressVideo( encoderParams, metricsParams, clockUser );
   clockWall.stop();
 
   using namespace std::chrono;
@@ -90,10 +91,10 @@ namespace pcc{
 //---------------------------------------------------------------------------
 // :: Command line / config parsing
 
-bool parseParameters(int argc, char *argv[], PCCEncoderParameters& params ) {
-
+bool parseParameters( int argc, char *argv[],
+                      PCCEncoderParameters& encoderParams
+                      , PCCMetricsParameters& metricsParams ) {
   namespace po = df::program_options_lite;
-
   bool print_help = false;
 
   // The definition of the program/config options, along with default values.
@@ -108,360 +109,459 @@ bool parseParameters(int argc, char *argv[], PCCEncoderParameters& params ) {
     ("c,config", po::parseConfigFile,"Configuration file name")
 
     ("configurationFolder",
-     params.configurationFolder_,
-     params.configurationFolder_,
+     encoderParams.configurationFolder_,
+     encoderParams.configurationFolder_,
      "Folder where the configuration files are stored, use for cfg relative paths.")
 
     ("uncompressedDataFolder",
-     params.uncompressedDataFolder_,
-     params.uncompressedDataFolder_,
+     encoderParams.uncompressedDataFolder_,
+     encoderParams.uncompressedDataFolder_,
      "Folder where the uncompress input data are stored, use for cfg relative paths.")
 
     // i/o
     ("uncompressedDataPath",
-     params.uncompressedDataPath_,
-     params.uncompressedDataPath_,
+     encoderParams.uncompressedDataPath_,
+     encoderParams.uncompressedDataPath_,
      "Input pointcloud to encode. Multi-frame sequences may be represented by %04i")
 
     ("compressedStreamPath",
-     params.compressedStreamPath_,
-     params.compressedStreamPath_,
+     encoderParams.compressedStreamPath_,
+     encoderParams.compressedStreamPath_,
      "Output(encoder)/Input(decoder) compressed bitstream")
 
     ("reconstructedDataPath",
-     params.reconstructedDataPath_,
-     params.reconstructedDataPath_,
+     encoderParams.reconstructedDataPath_,
+     encoderParams.reconstructedDataPath_,
      "Output decoded pointcloud. Multi-frame sequences may be represented by %04i")
 
     // sequence configuration
     ("startFrameNumber",
-     params.startFrameNumber_,
-     params.startFrameNumber_,
+     encoderParams.startFrameNumber_,
+     encoderParams.startFrameNumber_,
      "First frame number in sequence to encode/decode")
 
     ("frameCount",
-     params.frameCount_,
-     params.frameCount_,
+     encoderParams.frameCount_,
+     encoderParams.frameCount_,
      "Number of frames to encode")
 
     ("groupOfFramesSize",
-     params.groupOfFramesSize_,
-     params.groupOfFramesSize_,
+     encoderParams.groupOfFramesSize_,
+     encoderParams.groupOfFramesSize_,
      "Random access period")
 
     // colour space conversion
     ("colorTransform",
-     params.colorTransform_,
-     params.colorTransform_,
+     encoderParams.colorTransform_,
+     encoderParams.colorTransform_,
      "The colour transform to be applied:\n  0: none\n  1: RGB to YCbCr (Rec.709)")
 
     ("colorSpaceConversionPath",
-     params.colorSpaceConversionPath_,
-     params.colorSpaceConversionPath_,
+     encoderParams.colorSpaceConversionPath_,
+     encoderParams.colorSpaceConversionPath_,
      "Path to the HDRConvert. If unset, an internal color space conversion is used")
 
     ("colorSpaceConversionConfig",
-     params.colorSpaceConversionConfig_,
-     params.colorSpaceConversionConfig_,
+     encoderParams.colorSpaceConversionConfig_,
+     encoderParams.colorSpaceConversionConfig_,
      "HDRConvert configuration file used for RGB444 to YUV420 conversion")
 
     ("inverseColorSpaceConversionConfig",
-     params.inverseColorSpaceConversionConfig_,
-     params.inverseColorSpaceConversionConfig_,
+     encoderParams.inverseColorSpaceConversionConfig_,
+     encoderParams.inverseColorSpaceConversionConfig_,
      "HDRConvert configuration file used for YUV420 to RGB444 conversion")
 
     // segmentation
     ("nnNormalEstimation",
-     params.nnNormalEstimation_,
-     params.nnNormalEstimation_,
+     encoderParams.nnNormalEstimation_,
+     encoderParams.nnNormalEstimation_,
      "Number of points used for normal estimation")
 
     ("maxNNCountRefineSegmentation",
-     params.maxNNCountRefineSegmentation_,
-     params.maxNNCountRefineSegmentation_,
+     encoderParams.maxNNCountRefineSegmentation_,
+     encoderParams.maxNNCountRefineSegmentation_,
      "Number of nearest neighbors used during segmentation refinement")
 
     ("iterationCountRefineSegmentation",
-     params.iterationCountRefineSegmentation_,
-     params.iterationCountRefineSegmentation_,
+     encoderParams.iterationCountRefineSegmentation_,
+     encoderParams.iterationCountRefineSegmentation_,
      "Number of iterations performed during segmentation refinement")
 
     ("occupancyResolution",
-     params.occupancyResolution_,
-     params.occupancyResolution_,
+     encoderParams.occupancyResolution_,
+     encoderParams.occupancyResolution_,
      "Resolution T of the occupancy map")
 
     ("minPointCountPerCCPatchSegmentation",
-     params.minPointCountPerCCPatchSegmentation_,
-     params.minPointCountPerCCPatchSegmentation_,
+     encoderParams.minPointCountPerCCPatchSegmentation_,
+     encoderParams.minPointCountPerCCPatchSegmentation_,
      "Minimum number of points for a connected component to be retained as a patch")
 
     ("maxNNCountPatchSegmentation",
-     params.maxNNCountPatchSegmentation_,
-     params.maxNNCountPatchSegmentation_,
+     encoderParams.maxNNCountPatchSegmentation_,
+     encoderParams.maxNNCountPatchSegmentation_,
      "Number of nearest neighbors used during connected components extraction")
 
     ("surfaceThickness",
-     params.surfaceThickness_,
-     params.surfaceThickness_,
-     "Surface thickness Δ")
+     encoderParams.surfaceThickness_,
+     encoderParams.surfaceThickness_,
+     "Surface thickness")
 
     ("maxAllowedDepth",
-     params.maxAllowedDepth_,
-     params.maxAllowedDepth_,
+     encoderParams.maxAllowedDepth_,
+     encoderParams.maxAllowedDepth_,
      "Maximum depth per patch")
 
     ("maxAllowedDist2MissedPointsDetection",
-     params.maxAllowedDist2MissedPointsDetection_,
-     params.maxAllowedDist2MissedPointsDetection_,
+     encoderParams.maxAllowedDist2MissedPointsDetection_,
+     encoderParams.maxAllowedDist2MissedPointsDetection_,
      "Maximum distance for a point to be ignored during missed point detection")
 
     ("maxAllowedDist2MissedPointsSelection",
-     params.maxAllowedDist2MissedPointsSelection_,
-     params.maxAllowedDist2MissedPointsSelection_,
+     encoderParams.maxAllowedDist2MissedPointsSelection_,
+     encoderParams.maxAllowedDist2MissedPointsSelection_,
      "Maximum distance for a point to be ignored during  missed points  selection")
 
     ("lambdaRefineSegmentation",
-     params.lambdaRefineSegmentation_,
-     params.lambdaRefineSegmentation_,
+     encoderParams.lambdaRefineSegmentation_,
+     encoderParams.lambdaRefineSegmentation_,
      "Controls the smoothness of the patch boundaries  during segmentation  refinement")
 
     // packing
     ("minimumImageWidth",
-     params.minimumImageWidth_,
-     params.minimumImageWidth_,
+     encoderParams.minimumImageWidth_,
+     encoderParams.minimumImageWidth_,
      "Minimum width of packed patch frame")
 
     ("minimumImageHeight",
-     params.minimumImageHeight_,
-     params.minimumImageHeight_,
+     encoderParams.minimumImageHeight_,
+     encoderParams.minimumImageHeight_,
      "Minimum height of packed patch frame")
 
     // occupancy map
     ("maxCandidateCount",
-     params.maxCandidateCount_,
-     params.maxCandidateCount_,
+     encoderParams.maxCandidateCount_,
+     encoderParams.maxCandidateCount_,
      "Maximum nuber of candidates in list L")
 
     ("occupancyPrecision",
-    params.occupancyPrecision_,
-    params.occupancyPrecision_,
+    encoderParams.occupancyPrecision_,
+    encoderParams.occupancyPrecision_,
     "Occupancy map B0 precision")
 
     ("occupancyMapVideoEncoderConfig",
-     params.occupancyMapVideoEncoderConfig_,
-     params.occupancyMapVideoEncoderConfig_,
+     encoderParams.occupancyMapVideoEncoderConfig_,
+     encoderParams.occupancyMapVideoEncoderConfig_,
      "Occupancy map encoder config file")
     
     ("occupancyMapQP",
-     params.occupancyMapQP_,
-     params.occupancyMapQP_,
+     encoderParams.occupancyMapQP_,
+     encoderParams.occupancyMapQP_,
      "QP for compression of occupancy map video")
 
     ("useOccupancyMapVideo",
-     params.useOccupancyMapVideo_,
-     params.useOccupancyMapVideo_,
+     encoderParams.useOccupancyMapVideo_,
+     encoderParams.useOccupancyMapVideo_,
      "compress occupancy map with video codec")
 
     // smoothing
     // NB: various parameters are of the form n * occupancyPrecision**2
     ("neighborCountSmoothing",
-     params.neighborCountSmoothing_,
-     params.neighborCountSmoothing_,
+     encoderParams.neighborCountSmoothing_,
+     encoderParams.neighborCountSmoothing_,
      "todo(kmammou)")
 
     ("radius2Smoothing",
-     params.radius2Smoothing_,
-     params.radius2Smoothing_,
+     encoderParams.radius2Smoothing_,
+     encoderParams.radius2Smoothing_,
      "todo(kmammou)")
 
     ("radius2BoundaryDetection",
-     params.radius2BoundaryDetection_,
-     params.radius2BoundaryDetection_,
+     encoderParams.radius2BoundaryDetection_,
+     encoderParams.radius2BoundaryDetection_,
      "todo(kmammou)")
 
     ("thresholdSmoothing",
-     params.thresholdSmoothing_,
-     params.thresholdSmoothing_,
+     encoderParams.thresholdSmoothing_,
+     encoderParams.thresholdSmoothing_,
      "todo(kmammou)")
 
-     // color smoothing
+    //grid smoothing (m44705 CE2.17)
+    ("gridSmoothing",
+      encoderParams.gridSmoothing_,
+      encoderParams.gridSmoothing_,
+      "Enable grid smoothing")
+
+  // color smoothing
     ("thresholdColorSmoothing",
-     params.thresholdColorSmoothing_,
-     params.thresholdColorSmoothing_,
+     encoderParams.thresholdColorSmoothing_,
+     encoderParams.thresholdColorSmoothing_,
      "Threshold of color smoothing")
 
     ("thresholdLocalEntropy",
-     params.thresholdLocalEntropy_,
-     params.thresholdLocalEntropy_,
+     encoderParams.thresholdLocalEntropy_,
+     encoderParams.thresholdLocalEntropy_,
      "Threshold of local entropy")
 
     ("radius2ColorSmoothing",
-     params.radius2ColorSmoothing_,
-     params.radius2ColorSmoothing_,
+     encoderParams.radius2ColorSmoothing_,
+     encoderParams.radius2ColorSmoothing_,
      "Redius of color smoothing")
 
     ("neighborCountColorSmoothing",
-     params.neighborCountColorSmoothing_,
-     params.neighborCountColorSmoothing_,
+     encoderParams.neighborCountColorSmoothing_,
+     encoderParams.neighborCountColorSmoothing_,
      "Neighbor count for color smoothing")
 
     ("flagColorSmoothing",
-     params.flagColorSmoothing_,
-     params.flagColorSmoothing_,
+     encoderParams.flagColorSmoothing_,
+     encoderParams.flagColorSmoothing_,
      "Enable color smoothing\n")
+
+  // color pre-smoothing
+    ("thresholdColorPreSmoothing",
+     encoderParams.thresholdColorPreSmoothing_,
+     encoderParams.thresholdColorPreSmoothing_,
+     "Threshold of color pre-smoothing")
+
+    ("thresholdColorPreSmoothingLocalEntropy",
+     encoderParams.thresholdColorPreSmoothingLocalEntropy_,
+     encoderParams.thresholdColorPreSmoothingLocalEntropy_,
+     "Threshold of color pre-smoothing local entropy")
+
+    ("radius2ColorPreSmoothing",
+     encoderParams.radius2ColorPreSmoothing_,
+     encoderParams.radius2ColorPreSmoothing_,
+     "Redius of color pre-smoothing")
+
+    ("neighborCountColorPreSmoothing",
+     encoderParams.neighborCountColorPreSmoothing_,
+     encoderParams.neighborCountColorPreSmoothing_,
+     "Neighbor count for color pre-smoothing")
+
+    ("flagColorPreSmoothing",
+     encoderParams.flagColorPreSmoothing_,
+     encoderParams.flagColorPreSmoothing_,
+     "Enable color pre-smoothing\n")
 
     // colouring
     ("bestColorSearchRange",
-     params.bestColorSearchRange_,
-     params.bestColorSearchRange_,
+     encoderParams.bestColorSearchRange_,
+     encoderParams.bestColorSearchRange_,
      "todo(kmammou)")
 
     // video encoding
     ("videoEncoderPath",
-     params.videoEncoderPath_,
-     params.videoEncoderPath_,
+     encoderParams.videoEncoderPath_,
+     encoderParams.videoEncoderPath_,
      "HM video encoder executable")
 
     ("videoEncoderOccupancyMapPath",
-     params.videoEncoderOccupancyMapPath_,
-     params.videoEncoderOccupancyMapPath_,
+     encoderParams.videoEncoderOccupancyMapPath_,
+     encoderParams.videoEncoderOccupancyMapPath_,
      "HM lossless video encoder executable for occupancy map")
 
     ("geometryQP",
-     params.geometryQP_,
-     params.geometryQP_,
+     encoderParams.geometryQP_,
+     encoderParams.geometryQP_,
      "QP for compression of geometry video")
 
     ("textureQP",
-     params.textureQP_,
-     params.textureQP_,
+     encoderParams.textureQP_,
+     encoderParams.textureQP_,
      "QP for compression of texture video")
 
     ("geometryConfig",
-     params.geometryConfig_,
-     params.geometryConfig_,
+     encoderParams.geometryConfig_,
+     encoderParams.geometryConfig_,
      "HM configuration file for geometry compression")
 
     ("geometryD0Config",
-     params.geometryD0Config_,
-     params.geometryD0Config_,
+     encoderParams.geometryD0Config_,
+     encoderParams.geometryD0Config_,
      "HM configuration file for geometry D0 compression")
 
     ("geometryD1Config",
-      params.geometryD1Config_,
-      params.geometryD1Config_,
+      encoderParams.geometryD1Config_,
+      encoderParams.geometryD1Config_,
       "HM configuration file for geometry D1 compression")
 
     ("textureConfig",
-     params.textureConfig_,
-     params.textureConfig_,
+     encoderParams.textureConfig_,
+     encoderParams.textureConfig_,
      "HM configuration file for texture compression")
 
     // lossless parameters
     ("losslessGeo",
-     params.losslessGeo_,
-     params.losslessGeo_,
+     encoderParams.losslessGeo_,
+     encoderParams.losslessGeo_,
      "Enable lossless encoding of geometry\n")
 
     ("losslessTexture",
-     params.losslessTexture_,
-     params.losslessTexture_,
+     encoderParams.losslessTexture_,
+     encoderParams.losslessTexture_,
      "Enable lossless encoding of texture\n")
 
     ("noAttributes",
-     params.noAttributes_,
-     params.noAttributes_,
+     encoderParams.noAttributes_,
+     encoderParams.noAttributes_,
      "Disable encoding of attributes")
 
     ("losslessGeo444",
-     params.losslessGeo444_,
-     params.losslessGeo444_,
+     encoderParams.losslessGeo444_,
+     encoderParams.losslessGeo444_,
      "Use 4444 format for lossless geometry")
 
     ("useMissedPointsSeparateVideo",
-     params.useMissedPointsSeparateVideo_,
-     params.useMissedPointsSeparateVideo_,
+     encoderParams.useMissedPointsSeparateVideo_,
+     encoderParams.useMissedPointsSeparateVideo_,
      "compress missed point with video codec")
 
     ("geometryMPConfig",
-     params.geometryMPConfig_,
-     params.geometryMPConfig_,
+     encoderParams.geometryMPConfig_,
+     encoderParams.geometryMPConfig_,
      "HM configuration file for missed points geometry compression")
 
     ("textureMPConfig",
-     params.textureMPConfig_,
-     params.textureMPConfig_,
+     encoderParams.textureMPConfig_,
+     encoderParams.textureMPConfig_,
      "HM configuration file for missed points texture compression")
   
-//etc
+    //etc
     ("nbThread",
-     params.nbThread_,
-     params.nbThread_,
+     encoderParams.nbThread_,
+     encoderParams.nbThread_,
      "Number of thread used for parallel processing")
 
     ("keepIntermediateFiles",
-     params.keepIntermediateFiles_,
-     params.keepIntermediateFiles_,
+     encoderParams.keepIntermediateFiles_,
+     encoderParams.keepIntermediateFiles_,
      "Keep intermediate files: RGB, YUV and bin")
 
     ("absoluteD1",
-     params.absoluteD1_,
-     params.absoluteD1_,
+     encoderParams.absoluteD1_,
+     encoderParams.absoluteD1_,
      "Absolute D1")
 
     ("constrainedPack",
-     params.constrainedPack_,
-     params.constrainedPack_,
+     encoderParams.constrainedPack_,
+     encoderParams.constrainedPack_,
      "Temporally consistent patch packing")
 
     ("binArithCoding",
-     params.binArithCoding_,
-     params.binArithCoding_,
+     encoderParams.binArithCoding_,
+     encoderParams.binArithCoding_,
      "Binary arithmetic coding")
 
     // patch sampling resolution
     ("testLevelOfDetail",
-     params.testLevelOfDetail_,
+     encoderParams.testLevelOfDetail_,
      (size_t)0,
      "Force non-zero level of detail for testing")
-     ("testLevelOfDetailSignaling",
-     params.testLevelOfDetailSignaling_,
+    ("testLevelOfDetailSignaling",
+     encoderParams.testLevelOfDetailSignaling_,
      (size_t)0,
      "Test the patch resolution signaling with pseudo-random values")
 
     ("groupDilation",
-      params.groupDilation_,
-      params.groupDilation_,
+      encoderParams.groupDilation_,
+      encoderParams.groupDilation_,
       "Group Dilation")     
 
     ("textureDilationOffLossless",
-      params.textureDilationOffLossless_,
-      params.textureDilationOffLossless_,
+      encoderParams.textureDilationOffLossless_,
+      encoderParams.textureDilationOffLossless_,
       "Group Dilation")
 
     //EDD code
     ("enhancedDeltaDepthCode",
-      params.enhancedDeltaDepthCode_,
-      params.enhancedDeltaDepthCode_,
+      encoderParams.enhancedDeltaDepthCode_,
+      encoderParams.enhancedDeltaDepthCode_,
       "Use enhanced-delta-depth code")
 
     //visual quality
     ("patchColorSubsampling", 
-     params.patchColorSubsampling_, 
+     encoderParams.patchColorSubsampling_, 
      false, 
      "Enable per patch color sub-sampling\n")
     ("deltaCoding",
-      params.deltaCoding_,
-      params.deltaCoding_,
-      "Delta meta-data coding")
+     encoderParams.deltaCoding_,
+     encoderParams.deltaCoding_,
+     "Delta meta-data coding")
 
     ("projectionMode",
-      params.projectionMode_,
-      params.projectionMode_,
-      "projectionMode - 0:min; 1:max;  2:adaptive frame & patch; 3:adaptive patch (all frames)");
-     ;
+      encoderParams.projectionMode_,
+      encoderParams.projectionMode_,
+      "projectionMode - 0:min; 1:max;  2:adaptive frame & patch; 3:adaptive patch (all frames)")
 
+    ("oneLayerMode",
+      encoderParams.oneLayerMode_,
+      encoderParams.oneLayerMode_,
+      "Use one layer mode")
+
+    ("singleLayerPixelInterleaving",
+      encoderParams.singleLayerPixelInterleaving_,
+      encoderParams.singleLayerPixelInterleaving_,
+      "Use single layer pixel interleaving")
+
+    ("sixDirectionMode",
+      encoderParams.sixDirectionMode_,
+      encoderParams.sixDirectionMode_,
+      "Use Six Direction Projection mode")
+
+    ("surfaceSeparation",
+      encoderParams.surfaceSeparation_,
+      encoderParams.surfaceSeparation_,
+      "surface separation")
+
+    //flexible packing + safeguard + push-pull
+    ("packingStrategy",
+      encoderParams.packingStrategy_,
+      encoderParams.packingStrategy_,
+      "Patches packing strategy(0: anchor packing, 1/2/3(default): flexible packing with 2, 4, or 8 orientations)\n")
+
+    ("safeGuardDistance",
+      encoderParams.safeGuardDistance_,
+      encoderParams.safeGuardDistance_,
+      "Number of empty blocks that must exist between the patches (default=1)\n")
+
+    ("textureBGFill",
+      encoderParams.textureBGFill_,
+      encoderParams.textureBGFill_,
+      "Selects the background filling operation for texture only (0: anchor's dilation, 1(default): push-pull algorithm)\n")
+        ;
+
+   opts.addOptions()
+     ("computeChecksum",
+      metricsParams.computeChecksum_,
+      metricsParams.computeChecksum_,
+      "Compute checksum")
+
+     ("computeMetrics",
+       metricsParams.computeMetrics_,
+       metricsParams.computeMetrics_,
+      "Compute metrics")
+
+     ("normalDataPath",
+      metricsParams.normalDataPath_,
+      metricsParams.normalDataPath_,
+      "Input pointcloud to encode. Multi-frame sequences may be represented by %04i")
+
+     ("resolution",
+      metricsParams.resolution_,
+      metricsParams.resolution_,
+      "Specify the intrinsic resolution")
+
+     ("dropdups",
+      metricsParams.dropDuplicates_,
+      metricsParams.dropDuplicates_,
+      "0(detect), 1(drop), 2(average) subsequent points with same coordinates")
+
+     ("neighborsProc",
+      metricsParams.neighborsProc_,
+      metricsParams.neighborsProc_,
+      "0(undefined), 1(average), 2(weighted average), 3(min), 4(max) neighbors with same geometric distance")
+      ;
   po::setDefaults(opts);
   po::ErrorReporter err;
   const list<const char *> &argv_unhandled = po::scanArgv(opts, argc, (const char **)argv, err);
@@ -469,16 +569,22 @@ bool parseParameters(int argc, char *argv[], PCCEncoderParameters& params ) {
   for (const auto arg : argv_unhandled) {
     err.warn() << "Unhandled argument ignored: " << arg << "\n";
   }
-  
+   
   if (argc == 1 || print_help) {
     po::doHelp( std::cout, opts, 78 );
     return false;
   }
-  params.completePath();
-  params.print();
-  if( !params.check() ) {
-    err.error() << "Input parameters not correct \n";
+  encoderParams.completePath();
+  encoderParams.print();
+  if( !encoderParams.check() ) {
+    err.error() << "Input encoder parameters not correct \n";
   }
+  metricsParams.completePath();
+  metricsParams.print();
+  if( !metricsParams.check() ) {
+    err.error() << "Input metrics parameters not correct \n";
+  }
+  metricsParams.startFrameNumber_ = encoderParams.startFrameNumber_;
 
   // report the current configuration (only in the absence of errors so
   // that errors/warnings are more obvious and in the same place).
@@ -487,17 +593,24 @@ bool parseParameters(int argc, char *argv[], PCCEncoderParameters& params ) {
   return true;
 }
 
-int compressVideo( const PCCEncoderParameters& params, StopwatchUserTime &clock) {
-  const size_t startFrameNumber0 = params.startFrameNumber_;
-  const size_t endFrameNumber0 = params.startFrameNumber_ + params.frameCount_;
-  const size_t groupOfFramesSize0 = (std::max)(size_t(1), params.groupOfFramesSize_);
+int compressVideo( const PCCEncoderParameters& encoderParams,
+                   const PCCMetricsParameters& metricsParams,
+                   StopwatchUserTime &clock) {
+  const size_t startFrameNumber0 = encoderParams.startFrameNumber_;
+  const size_t endFrameNumber0 = encoderParams.startFrameNumber_ + encoderParams.frameCount_;
+  const size_t groupOfFramesSize0 = (std::max)(size_t(1), encoderParams.groupOfFramesSize_);
   size_t startFrameNumber = startFrameNumber0;
-  size_t reconstructedFrameNumber = params.startFrameNumber_;
+  size_t reconstructedFrameNumber = encoderParams.startFrameNumber_;
   PCCBitstream bitstream;
   std::unique_ptr<uint8_t> buffer;
   size_t contextIndex = 0;
   PCCEncoder encoder;
-  encoder.setParameters( params );
+  encoder.setParameters( encoderParams );
+  std::vector<std::vector<uint8_t>> reconstructedChecksums, sourceReorderChecksums, reconstructedReorderChecksums;
+  PCCMetrics metrics;
+  PCCChecksum checksum;
+  metrics .setParameters( metricsParams );
+  checksum.setParameters( metricsParams );
 
   // Place to get/set default values for gof metadata enabled flags (in sequence level).
   PCCMetadataEnabledFlags gofLevelMetadataEnabledFlags;
@@ -505,17 +618,16 @@ int compressVideo( const PCCEncoderParameters& params, StopwatchUserTime &clock)
     const size_t endFrameNumber = min(startFrameNumber + groupOfFramesSize0, endFrameNumber0);
     PCCContext context;
     context.setIndex( contextIndex );
-
-    context.setLosslessGeo444(params.losslessGeo444_);
-    context.setLossless(params.losslessGeo_);
-    context.setLosslessAtt(params.losslessTexture_);
+    context.setLosslessGeo444(encoderParams.losslessGeo444_);
+    context.setLossless(encoderParams.losslessGeo_);
+    context.setLosslessAtt(encoderParams.losslessTexture_);
     context.setMPGeoWidth(64);
     context.setMPAttWidth(64);
     context.setMPGeoHeight(0);
     context.setMPAttHeight(0);
-    context.setEnhancedDeltaDepth(params.enhancedDeltaDepthCode_);
-    context.setUseMissedPointsSeparateVideo(params.useMissedPointsSeparateVideo_);
-    context.setUseOccupancyMapVideo(params.useOccupancyMapVideo_);
+    context.setEnhancedDeltaDepth(encoderParams.enhancedDeltaDepthCode_);
+    context.setUseMissedPointsSeparateVideo(encoderParams.useMissedPointsSeparateVideo_);
+    context.setUseOccupancyMapVideo(encoderParams.useOccupancyMapVideo_);
     
     if (gofLevelMetadataEnabledFlags.getMetadataEnabled()) {
       // Place to get/set gof-level metadata.
@@ -527,21 +639,21 @@ int compressVideo( const PCCEncoderParameters& params, StopwatchUserTime &clock)
       context.getGOFLevelMetadata().getLowerLevelMetadataEnabledFlags() = frameLevelMetadataEnabledFlags;
     }
     PCCGroupOfFrames sources, reconstructs;
-    if (!sources.load( params.uncompressedDataPath_, startFrameNumber,
-                       endFrameNumber, params.colorTransform_ ) ) {
+    if (!sources.load( encoderParams.uncompressedDataPath_, startFrameNumber,
+                       endFrameNumber, encoderParams.colorTransform_ ) ) {
       return -1;
     }
     clock.start();
 
     if (startFrameNumber == startFrameNumber0) {
       const size_t predictedBitstreamSize =
-          10000 + 8 * params.frameCount_ * sources[0].getPointCount();
+          10000 + 8 * encoderParams.frameCount_ * sources[0].getPointCount();
       bitstream.initialize( predictedBitstreamSize );
       bitstream.writeHeader(gofLevelMetadataEnabledFlags);
     }
 
-    if (params.testLevelOfDetail_ > 0) {
-      const double lodScale = 1.0 / double(1u << params.testLevelOfDetail_);
+    if (encoderParams.testLevelOfDetail_ > 0) {
+      const double lodScale = 1.0 / double(1u << encoderParams.testLevelOfDetail_);
       for (auto& frame : sources.getFrames()) {
         for (auto& point : frame.getPositions()) {
           point *= lodScale;
@@ -555,11 +667,28 @@ int compressVideo( const PCCEncoderParameters& params, StopwatchUserTime &clock)
 
     clock.stop();
 
+    PCCGroupOfFrames normals;
+    if(  metricsParams.computeMetrics_ ) {
+      if(metricsParams.normalDataPath_ != "" ){
+        if ( !normals.load( metricsParams.normalDataPath_, startFrameNumber,
+                            endFrameNumber, ColorTransform::COLOR_TRANSFORM_NONE ) ) {
+          return -1;
+        }
+      }
+      metrics.compute( sources, reconstructs, normals );
+    }
+    if( metricsParams.computeChecksum_) {
+      if( encoderParams.losslessGeo_ && encoderParams.losslessTexture_ ) {
+        checksum.computeSource   ( sources );
+        checksum.computeReordered( reconstructs );
+      }
+      checksum.computeReconstructed( reconstructs );
+    }
     if (ret) {
       return ret;
     }
-    if( !params.reconstructedDataPath_.empty() ) {
-      reconstructs.write( params.reconstructedDataPath_, reconstructedFrameNumber );
+    if( !encoderParams.reconstructedDataPath_.empty() ) {
+      reconstructs.write( encoderParams.reconstructedDataPath_, reconstructedFrameNumber );
     }
     sources.clear();
     reconstructs.clear();
@@ -568,7 +697,17 @@ int compressVideo( const PCCEncoderParameters& params, StopwatchUserTime &clock)
   }
 
   std::cout << "Total bitstream size " << bitstream.size() << " B" << std::endl;
-  bitstream.write( params.compressedStreamPath_ );
+  bitstream.write( encoderParams.compressedStreamPath_ );
+
+  if( metricsParams.computeMetrics_ ) {
+    metrics.display();
+  }
+  if( metricsParams.computeChecksum_) {
+    if( encoderParams.losslessGeo_ && encoderParams.losslessTexture_ ) {
+      checksum.compareSrcRec();
+    }
+    checksum.write( encoderParams.compressedStreamPath_ );
+  }
   return 0;
 }
 

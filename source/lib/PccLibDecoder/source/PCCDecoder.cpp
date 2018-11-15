@@ -82,15 +82,17 @@ int PCCDecoder::decode( PCCBitstream &bitstream, PCCContext &context, PCCGroupOf
     videoDecoder.decompress(context.getVideoOccupancyMap(), path.str() + "occupancy",
                             width_/occupancyPrecision_,
                             height_/occupancyPrecision_,
-                            context.size(), bitstream, params_.videoDecoderOccupancyMapPath_, context);
+                            context.size(), bitstream, params_.videoDecoderOccupancyMapPath_, context
+                            ,"", "", (losslessGeo_?losslessGeo444_:false), false, 1,params_.keepIntermediateFiles_
+    );
   }
-
-  decompressOccupancyMap(context, bitstream, surfaceThickness );
 
   sizeOccupancyMap = bitstream.size() - sizeOccupancyMap;
   std::cout << "occupancy map  ->" << sizeOccupancyMap << " B" << std::endl;
 
   const size_t nbyteGeo = losslessGeo_ ? 2 : 1;
+  const size_t frameCountGeometry = oneLayerMode_ ? 1 : 2;
+  const size_t frameCountTexture  = oneLayerMode_  ? 1 : 2;
   if (!absoluteD1_) {
     // Compress D0
     auto sizeGeometryD0Video = bitstream.size();
@@ -115,7 +117,7 @@ int PCCDecoder::decode( PCCBitstream &bitstream, PCCContext &context, PCCGroupOf
   else {
     auto sizeGeometryVideo = bitstream.size();
     videoDecoder.decompress(context.getVideoGeometry(), path.str() + "geometry", width_, height_,
-                            context.size() * 2, bitstream, params_.videoDecoderPath_, context,
+                            context.size() * frameCountGeometry, bitstream, params_.videoDecoderPath_, context,
                             "", "", losslessGeo_ & losslessGeo444_, false, nbyteGeo,
                             params_.keepIntermediateFiles_);
     sizeGeometryVideo = bitstream.size() - sizeGeometryVideo;
@@ -143,27 +145,34 @@ int PCCDecoder::decode( PCCBitstream &bitstream, PCCContext &context, PCCGroupOf
 
   }
 
+  decompressOccupancyMap(context, bitstream, surfaceThickness);
 
-  GeneratePointCloudParameters generatePointCloudParameters = {      
-                                                               occupancyResolution_,
-                                                               neighborCountSmoothing_,
-                                                               (double)radius2Smoothing_,
-                                                               (double)radius2BoundaryDetection_,
-                                                               (double)thresholdSmoothing_,
-                                                               losslessGeo_ != 0,
-                                                               losslessGeo444_ != 0,
-                                                               params_.nbThread_,
-                                                               absoluteD1_,
-                                                               surfaceThickness ,
-                                                               true,                               //ignoreLod_   //tch
-                                                               (double)thresholdColorSmoothing_,
-                                                               (double)thresholdLocalEntropy_,
-                                                               (double)radius2ColorSmoothing_,
-                                                               neighborCountColorSmoothing_,
-                                                               (bool) flagColorSmoothing_ ,
-                                                               ((losslessGeo_ != 0) ? enhancedDeltaDepthCode_ : false), //EDD
-                                                               (params_.testLevelOfDetailSignaling_ > 0) // ignore LoD scaling for testing the signaling only
-  };
+  GeneratePointCloudParameters generatePointCloudParameters;
+  generatePointCloudParameters.occupancyResolution_          = occupancyResolution_;
+  generatePointCloudParameters.occupancyPrecision_           = occupancyPrecision_;
+  generatePointCloudParameters.gridSmoothing_                = gridSmoothing_;
+  generatePointCloudParameters.neighborCountSmoothing_       = neighborCountSmoothing_;
+  generatePointCloudParameters.radius2Smoothing_             = (double)radius2Smoothing_;
+  generatePointCloudParameters.radius2BoundaryDetection_     = (double)radius2BoundaryDetection_;
+  generatePointCloudParameters.thresholdSmoothing_           = (double)thresholdSmoothing_;
+  generatePointCloudParameters.losslessGeo_                  = losslessGeo_ != 0;
+  generatePointCloudParameters.losslessGeo444_               = losslessGeo444_ != 0;
+  generatePointCloudParameters.nbThread_                     = params_.nbThread_;
+  generatePointCloudParameters.absoluteD1_                   = absoluteD1_;
+  generatePointCloudParameters.surfaceThickness              = surfaceThickness ;
+  generatePointCloudParameters.ignoreLod_                    = true;
+  generatePointCloudParameters.thresholdColorSmoothing_      = (double)thresholdColorSmoothing_;
+  generatePointCloudParameters.thresholdLocalEntropy_        = (double)thresholdLocalEntropy_;
+  generatePointCloudParameters.radius2ColorSmoothing_        = (double)radius2ColorSmoothing_;
+  generatePointCloudParameters.neighborCountColorSmoothing_  = neighborCountColorSmoothing_;
+  generatePointCloudParameters.flagColorSmoothing_           = (bool) flagColorSmoothing_ ;
+  generatePointCloudParameters.enhancedDeltaDepthCode_       = ((losslessGeo_ != 0) ? enhancedDeltaDepthCode_ : false);
+  generatePointCloudParameters.deltaCoding_                  = (params_.testLevelOfDetailSignaling_ > 0); // ignore LoD scaling for testing the signaling only
+  generatePointCloudParameters.oneLayerMode_                 = oneLayerMode_;
+  generatePointCloudParameters.singleLayerPixelInterleaving_ = singleLayerPixelInterleaving_;
+  generatePointCloudParameters.sixDirectionMode_             = sixDirectionMode_;
+  generatePointCloudParameters.path_                         = path.str();
+
   generatePointCloud( reconstructs, context, generatePointCloudParameters );
 
   if (!noAttributes_ ) {
@@ -171,7 +180,7 @@ int PCCDecoder::decode( PCCBitstream &bitstream, PCCContext &context, PCCGroupOf
     const size_t nbyteTexture = 1;
     videoDecoder.decompress( context.getVideoTexture(),
                              path.str() + "texture", width_, height_,
-                             context.size() * 2, bitstream,
+                             context.size() * frameCountTexture, bitstream,
                              params_.videoDecoderPath_,
                              context,
                              params_.inverseColorSpaceConversionConfig_,
@@ -181,11 +190,9 @@ int PCCDecoder::decode( PCCBitstream &bitstream, PCCContext &context, PCCGroupOf
     sizeTextureVideo = bitstream.size() - sizeTextureVideo;
     std::cout << "texture video  ->" << sizeTextureVideo << " B" << std::endl;
 
-    if(losslessTexture_ && context.getUseMissedPointsSeparateVideo())
-    {
+    if(losslessTexture_ && context.getUseMissedPointsSeparateVideo()) {
       auto sizeMissedPointsTexture = bitstream.size();
       readMissedPointsTextureNumber(context, bitstream);
-
       videoDecoder.decompress( context.getVideoMPsTexture(),
                                path.str() + "mps_texture",
                                context.getMPAttWidth(), context.getMPAttHeight(),
@@ -200,57 +207,51 @@ int PCCDecoder::decode( PCCBitstream &bitstream, PCCContext &context, PCCGroupOf
                                params_.keepIntermediateFiles_ );
       sizeMissedPointsTexture = bitstream.size() - sizeMissedPointsTexture;
       generateMissedPointsTexturefromVideo(context, reconstructs);
-
       std::cout << " missed points texture -> " << sizeMissedPointsTexture << " B"<<endl;
-
     }
   }
   colorPointCloud(reconstructs, context, noAttributes_ != 0, params_.colorTransform_,
                   generatePointCloudParameters);
-
-
   return 0;
 }
 
 int PCCDecoder::readMetadata( PCCMetadata &metadata, PCCBitstream &bitstream ) {
   auto &metadataEnabledFlags = metadata.getMetadataEnabledFlags();
-  if (!metadataEnabledFlags.getMetadataEnabled())
+  if (!metadataEnabledFlags.getMetadataEnabled()) {
     return 0;
-
+  }
   uint8_t  tmp;
-
   bitstream.read<uint8_t>(tmp);
   metadata.getMetadataPresent() = static_cast<bool>(tmp);
-
   if (metadata.getMetadataPresent()) {
     if (metadataEnabledFlags.getScaleEnabled()) {
       bitstream.read<uint8_t>(tmp);
       metadata.getScalePresent() = static_cast<bool>(tmp);
-      if (metadata.getScalePresent())
+      if (metadata.getScalePresent()) {
         bitstream.read<PCCVector3U>(metadata.getScale());
+      }
     }
-
     if (metadataEnabledFlags.getOffsetEnabled()) {
       bitstream.read<uint8_t>(tmp);
       metadata.getOffsetPresent() = static_cast<bool>(tmp);
-      if (metadata.getOffsetPresent())
+      if (metadata.getOffsetPresent()) {
         bitstream.read<PCCVector3I>(metadata.getOffset());
+      }
     }
-
     if (metadataEnabledFlags.getRotationEnabled()) {
       bitstream.read<uint8_t>(tmp);
       metadata.getRotationPresent() = static_cast<bool>(tmp);
-      if (metadata.getRotationPresent())
+      if (metadata.getRotationPresent()) {
         bitstream.read<PCCVector3I>(metadata.getRotation());
+      }
     }
-
     if (metadataEnabledFlags.getPointSizeEnabled()) {
       bitstream.read<uint8_t>(tmp);
       metadata.getPointSizePresent() = static_cast<bool>(tmp);
-      if (metadata.getPointSizePresent())
+      if (metadata.getPointSizePresent()) {
         bitstream.read<uint16_t>(metadata.getPointSize());
+      }
     }
-
     if (metadataEnabledFlags.getPointShapeEnabled()) {
       bitstream.read<uint8_t>(tmp);
       metadata.getPointShapePresent() = static_cast<bool>(tmp);
@@ -264,7 +265,6 @@ int PCCDecoder::readMetadata( PCCMetadata &metadata, PCCBitstream &bitstream ) {
   auto &lowerLevelMetadataEnabledFlags = metadata.getLowerLevelMetadataEnabledFlags();
   bitstream.read<uint8_t>(tmp);
   lowerLevelMetadataEnabledFlags.getMetadataEnabled() = static_cast<bool>(tmp);
-
   if (lowerLevelMetadataEnabledFlags.getMetadataEnabled()) {
     bitstream.read<uint8_t>(tmp);
     lowerLevelMetadataEnabledFlags.getScaleEnabled() = static_cast<bool>(tmp);
@@ -277,20 +277,17 @@ int PCCDecoder::readMetadata( PCCMetadata &metadata, PCCBitstream &bitstream ) {
     bitstream.read<uint8_t>(tmp);
     lowerLevelMetadataEnabledFlags.getPointShapeEnabled() = static_cast<bool>(tmp);
   }
-
   return 1;
 }
 
 int PCCDecoder::decompressMetadata( PCCMetadata &metadata, o3dgc::Arithmetic_Codec &arithmeticDecoder) {
   auto &metadataEnabingFlags = metadata.getMetadataEnabledFlags();
-  if (!metadataEnabingFlags.getMetadataEnabled())
+  if (!metadataEnabingFlags.getMetadataEnabled()) {
     return 0;
-
+  }
   static o3dgc::Static_Bit_Model   bModel0;
-
   static o3dgc::Adaptive_Bit_Model bModelMetadataPresent;
   metadata.getMetadataPresent() = arithmeticDecoder.decode(bModelMetadataPresent);
-
   if (metadata.getMetadataPresent()) {
     if (metadataEnabingFlags.getScaleEnabled()) {
       static o3dgc::Adaptive_Bit_Model bModelScalePresent;
@@ -301,7 +298,6 @@ int PCCDecoder::decompressMetadata( PCCMetadata &metadata, o3dgc::Arithmetic_Cod
         metadata.getScale()[2] = DecodeUInt32(32, arithmeticDecoder, bModel0);
       }
     }
-
     if (metadataEnabingFlags.getOffsetEnabled()) {
       static o3dgc::Adaptive_Bit_Model bModelOffsetPresent;
       metadata.getOffsetPresent() = arithmeticDecoder.decode(bModelOffsetPresent);
@@ -311,7 +307,6 @@ int PCCDecoder::decompressMetadata( PCCMetadata &metadata, o3dgc::Arithmetic_Cod
         metadata.getOffset()[2] = (int32_t)o3dgc::UIntToInt(DecodeUInt32(32, arithmeticDecoder, bModel0));
       }
     }
-
     if (metadataEnabingFlags.getRotationEnabled()) {
       static o3dgc::Adaptive_Bit_Model bModelRotationPresent;
       metadata.getRotationPresent() = arithmeticDecoder.decode(bModelRotationPresent);
@@ -321,7 +316,6 @@ int PCCDecoder::decompressMetadata( PCCMetadata &metadata, o3dgc::Arithmetic_Cod
         metadata.getRotation()[2] = (int32_t)o3dgc::UIntToInt(DecodeUInt32(32, arithmeticDecoder, bModel0));
       }
     }
-
     if (metadataEnabingFlags.getPointSizeEnabled()) {
       static o3dgc::Adaptive_Bit_Model bModelPointSizePresent;
       metadata.getPointSizePresent() = arithmeticDecoder.decode(bModelPointSizePresent);
@@ -329,7 +323,6 @@ int PCCDecoder::decompressMetadata( PCCMetadata &metadata, o3dgc::Arithmetic_Cod
         metadata.getPointSize() = DecodeUInt32(16, arithmeticDecoder, bModel0);
       }
     }
-
     if (metadataEnabingFlags.getPointShapeEnabled()) {
       static o3dgc::Adaptive_Bit_Model bModelPointShapePresent;
       metadata.getPointShapePresent() = arithmeticDecoder.decode(bModelPointShapePresent);
@@ -346,20 +339,15 @@ int PCCDecoder::decompressMetadata( PCCMetadata &metadata, o3dgc::Arithmetic_Cod
   if (lowerLevelMetadataEnabledFlags.getMetadataEnabled()) {
     static o3dgc::Adaptive_Bit_Model bModelLowerLevelScaleEnabled;
     lowerLevelMetadataEnabledFlags.getScaleEnabled() = arithmeticDecoder.decode(bModelLowerLevelScaleEnabled);
-
     static o3dgc::Adaptive_Bit_Model bModelLowerLevelOffsetEnabled;
     lowerLevelMetadataEnabledFlags.getOffsetEnabled() = arithmeticDecoder.decode(bModelLowerLevelOffsetEnabled);
-
     static o3dgc::Adaptive_Bit_Model bModelLowerLevelRotationEnabled;
     lowerLevelMetadataEnabledFlags.getRotationEnabled() = arithmeticDecoder.decode(bModelLowerLevelRotationEnabled);
-
     static o3dgc::Adaptive_Bit_Model bModelLowerLevelPointSizeEnabled;
     lowerLevelMetadataEnabledFlags.getPointSizeEnabled() = arithmeticDecoder.decode(bModelLowerLevelPointSizeEnabled);
-
     static o3dgc::Adaptive_Bit_Model bModelLowerLevelPointShapeEnabled;
     lowerLevelMetadataEnabledFlags.getPointShapeEnabled() = arithmeticDecoder.decode(bModelLowerLevelPointShapeEnabled);
   }
-
   return 1;
 }
 
@@ -374,6 +362,9 @@ int PCCDecoder::decompressHeader( PCCContext &context, PCCBitstream &bitstream )
   bitstream.read<uint16_t>( height_ );
   bitstream.read<uint8_t> ( occupancyResolution_ );
   bitstream.read<uint8_t> ( occupancyPrecision_ );
+  uint8_t gridSmoothing;
+  bitstream.read<uint8_t>(gridSmoothing);
+  gridSmoothing_ = gridSmoothing > 0;
   bitstream.read<uint8_t> ( radius2Smoothing_ );
   bitstream.read<uint8_t> ( neighborCountSmoothing_ );
   bitstream.read<uint8_t> ( radius2BoundaryDetection_ );
@@ -384,12 +375,16 @@ int PCCDecoder::decompressHeader( PCCContext &context, PCCBitstream &bitstream )
   bitstream.read<uint8_t> ( losslessGeo444_);
   useMissedPointsSeparateVideo_=true;
   useOccupancyMapVideo_=true;
-  //if(losslessGeo_)
   bitstream.read<uint8_t> ( useMissedPointsSeparateVideo_);
   bitstream.read<uint8_t> ( useOccupancyMapVideo_);
-  uint8_t absD1, binArithCoding,deltaCoding;
+  uint8_t absD1, binArithCoding,deltaCoding, sixDirection;
   bitstream.read<uint8_t> ( absD1 );
   absoluteD1_ = absD1 > 0;
+  if (absoluteD1_) {
+    bitstream.read<uint8_t>(sixDirection);
+    sixDirectionMode_ = sixDirection > 0;
+  }
+
   bitstream.read<uint8_t> ( binArithCoding );
   binArithCoding_ =  binArithCoding > 0;
   context.getWidth()  = width_;
@@ -404,7 +399,6 @@ int PCCDecoder::decompressHeader( PCCContext &context, PCCBitstream &bitstream )
     bitstream.read<uint8_t>(radius2ColorSmoothing_);
     bitstream.read<uint8_t>(neighborCountColorSmoothing_);
   }
-  //EDD
   enhancedDeltaDepthCode_ = false;
   if (losslessGeo_) {
     uint8_t enhancedDeltaDepthCode;
@@ -414,6 +408,13 @@ int PCCDecoder::decompressHeader( PCCContext &context, PCCBitstream &bitstream )
   bitstream.read<uint8_t> ( deltaCoding );
   deltaCoding_ = deltaCoding > 0;
 
+  uint8_t oneLayerMode;
+  bitstream.read<uint8_t> ( oneLayerMode );
+  oneLayerMode_       = oneLayerMode > 0;
+
+  uint8_t singleLayerPixelInterleave;
+  bitstream.read<uint8_t>(singleLayerPixelInterleave);
+  singleLayerPixelInterleaving_ = singleLayerPixelInterleave > 0;
 
   context.setLosslessGeo444(losslessGeo444_);
   context.setLossless(losslessGeo_);
@@ -426,8 +427,7 @@ int PCCDecoder::decompressHeader( PCCContext &context, PCCBitstream &bitstream )
   context.setUseOccupancyMapVideo(useOccupancyMapVideo_);
   context.setEnhancedDeltaDepth(enhancedDeltaDepthCode_);
   auto& frames = context.getFrames();
-  for(size_t i=0; i<frames.size(); i++)
-  {
+  for(size_t i=0; i<frames.size(); i++) {
     frames[i].setLosslessGeo(losslessGeo_);
     frames[i].setLosslessGeo444(losslessGeo444_);
     frames[i].setLosslessAtt(losslessTexture_);
@@ -435,85 +435,68 @@ int PCCDecoder::decompressHeader( PCCContext &context, PCCBitstream &bitstream )
     frames[i].setUseMissedPointsSeparateVideo(useMissedPointsSeparateVideo_);
     frames[i].setUseOccupancyMapVideo(useOccupancyMapVideo_);
   }
-
   return 1;
 }
 
-void PCCDecoder::readMissedPointsGeometryNumber(PCCContext& context, PCCBitstream &bitstream)
-{
-
+void PCCDecoder::readMissedPointsGeometryNumber(PCCContext& context, PCCBitstream &bitstream) {
   size_t maxHeight = 0;
   size_t MPwidth;
   size_t numofMPs;
   bitstream.read<size_t>( MPwidth );
-
   for (auto &framecontext : context.getFrames() ) {
-
     bitstream.read<size_t>( numofMPs );
     framecontext.getMissedPointsPatch().setMPnumber(size_t(numofMPs));
-    if(context.getLosslessGeo444())
+    if(context.getLosslessGeo444()) {
       framecontext.getMissedPointsPatch().resize(numofMPs);
-    else
+    } else {
       framecontext.getMissedPointsPatch().resize(numofMPs*3);
-
+    }
     size_t height = (3*numofMPs)/MPwidth+1;
     size_t heightby8= height/8;
-    if(heightby8*8!=height)
+    if(heightby8*8!=height) {
       height = (heightby8+1)*8;
-
+    }
     maxHeight = (std::max)( maxHeight, height );
   }
-
   context.setMPGeoWidth(size_t(MPwidth));
   context.setMPGeoHeight(size_t(maxHeight));
-
-
 }
-void PCCDecoder::readMissedPointsTextureNumber(PCCContext& context, PCCBitstream &bitstream)
-{
+
+void PCCDecoder::readMissedPointsTextureNumber(PCCContext& context, PCCBitstream &bitstream) {
   size_t maxHeight = 0;
   size_t MPwidth;
   size_t numofMPs;
   bitstream.read<size_t>( MPwidth );
-
   for (auto &framecontext : context.getFrames() ) {
-
     bitstream.read<size_t>( numofMPs );
     framecontext.getMissedPointsPatch().setMPnumbercolor(size_t(numofMPs));
     framecontext.getMissedPointsPatch().resizecolor(numofMPs);
-
     size_t height = numofMPs/MPwidth+1;
     size_t heightby8= height/8;
-    if(heightby8*8!=height)
+    if(heightby8*8!=height) {
       height = (heightby8+1)*8;
+    }
     maxHeight = (std::max)( maxHeight, height );
   }
-
   context.setMPAttWidth(size_t(MPwidth));
   context.setMPAttHeight(size_t(maxHeight));
-
 }
 
-void PCCDecoder::generateMissedPointsGeometryfromVideo(PCCContext& context, PCCGroupOfFrames& reconstructs)
-{
+void PCCDecoder::generateMissedPointsGeometryfromVideo(PCCContext& context, PCCGroupOfFrames& reconstructs) {
   const size_t gofSize = context.getGofSize();
-  //size_t maxWidth = 0, maxHeight = 0;
   auto& videoMPsGeometry = context.getVideoMPsGeometry();
   videoMPsGeometry.resize(gofSize);
   for (auto &framecontext : context.getFrames() ) {
-    const size_t shift = framecontext.getIndex(); //videoMPsGeometry.getFrameCount();
+    const size_t shift = framecontext.getIndex();
     framecontext.setLosslessGeo(context.getLosslessGeo());
     framecontext.setLosslessGeo444(context.getLosslessGeo444());
-
     generateMPsGeometryfromImage(context, framecontext, reconstructs, shift);
-
     cout<<"generate Missed Points (Geometry) : frame "<<shift<<", # of Missed Points Geometry : "<<framecontext.getMissedPointsPatch().size()<<endl;
-
   }
   cout<<"MissedPoints Geometry [done]"<<endl;
 }
-void PCCDecoder::generateMissedPointsTexturefromVideo(PCCContext& context, PCCGroupOfFrames& reconstructs)
-{
+
+void PCCDecoder::generateMissedPointsTexturefromVideo(PCCContext& context, PCCGroupOfFrames& reconstructs) {
   const size_t gofSize = context.getGofSize();
   auto& videoMPsTexture = context.getVideoMPsTexture();
   videoMPsTexture.resize(gofSize);
@@ -521,66 +504,52 @@ void PCCDecoder::generateMissedPointsTexturefromVideo(PCCContext& context, PCCGr
     const size_t shift = framecontext.getIndex(); //
     framecontext.setLosslessAtt(context.getLosslessAtt());
     generateMPsTexturefromImage(context, framecontext, reconstructs, shift);
-
     cout<<"generate Missed Points (Texture) : frame "<<shift<<", # of Missed Points Texture : "<<framecontext.getMissedPointsPatch().size()<<endl;
   }
   cout<<"MissedPoints Texture [done]"<<endl;
 }
 
-void PCCDecoder::generateMPsGeometryfromImage(PCCContext& context, PCCFrameContext& frame, PCCGroupOfFrames& reconstructs, size_t frameIndex)
-{
+void PCCDecoder::generateMPsGeometryfromImage(PCCContext& context, PCCFrameContext& frame, PCCGroupOfFrames& reconstructs, size_t frameIndex) {
   auto& videoMPsGeometry = context.getVideoMPsGeometry();
   auto &image = videoMPsGeometry.getFrame(frameIndex);
   auto& missedPointsPatch = frame.getMissedPointsPatch();
   size_t width  = image.getWidth();
   bool losslessGeo444 = frame.getLosslessGeo444();
-
   size_t numofMPs = missedPointsPatch.getMPnumber();
-  if(losslessGeo444)
+  if(losslessGeo444) {
     missedPointsPatch.resize(numofMPs);
-  else
+  } else {
     missedPointsPatch.resize(numofMPs*3);
+  }
 
-
-  for(size_t i=0; i<numofMPs; i++)
-  {
-
-    if (frame.getLosslessGeo444())
-    {
+  for(size_t i=0; i<numofMPs; i++) {
+   if (frame.getLosslessGeo444())  {
       missedPointsPatch.x[i] = image.getValue(0, i%width, i/width);
       missedPointsPatch.y[i] = image.getValue(0, i%width, i/width);
       missedPointsPatch.z[i] = image.getValue(0, i%width, i/width);
+    } else {
+      missedPointsPatch.x[i]               = image.getValue(0, i%width, i/width);
+      missedPointsPatch.x[numofMPs + i]    = image.getValue(0, (numofMPs + i)%width, (numofMPs + i)/width);
+      missedPointsPatch.x[2 * numofMPs + i]= image.getValue(0, (2*numofMPs + i)%width, (2*numofMPs + i)/width);
     }
-    else{
-
-      missedPointsPatch.x[i]               =image.getValue(0, i%width, i/width);
-      missedPointsPatch.x[numofMPs + i]    =image.getValue(0, (numofMPs + i)%width, (numofMPs + i)/width);
-      missedPointsPatch.x[2 * numofMPs + i]=image.getValue(0, (2*numofMPs + i)%width, (2*numofMPs + i)/width);
-
-    }
-
   }
 }
-void PCCDecoder::generateMPsTexturefromImage(PCCContext& context, PCCFrameContext& frame, PCCGroupOfFrames& reconstructs,size_t frameIndex)
-{
 
+void PCCDecoder::generateMPsTexturefromImage(PCCContext& context, PCCFrameContext& frame, PCCGroupOfFrames& reconstructs,size_t frameIndex) {
   auto& videoMPsTexture = context.getVideoMPsTexture();
   auto &image = videoMPsTexture.getFrame(frameIndex);
   auto& missedPointsPatch = frame.getMissedPointsPatch();
   size_t width  = image.getWidth();
   size_t numofMPs = missedPointsPatch.getMPnumbercolor();
-
-  for(size_t i=0; i<numofMPs; i++)
-  {
+  for(size_t i=0; i<numofMPs; i++)  {
     assert(i/width<image.getHeight());
     missedPointsPatch.r[i] = image.getValue(0, i%width, i/width);
     missedPointsPatch.g[i] = image.getValue(1, i%width, i/width);
     missedPointsPatch.b[i] = image.getValue(2, i%width, i/width);
   }
-
 }
 
-void PCCDecoder::decompressOccupancyMap( PCCContext &context, PCCBitstream& bitstream, uint8_t& surfaceThickness) {
+void PCCDecoder::decompressOccupancyMap( PCCContext &context, PCCBitstream& bitstream, uint8_t& surfaceThickness){
 
   size_t sizeFrames = context.getFrames().size();
   PCCFrameContext preFrame = context.getFrames()[0];
@@ -588,7 +557,6 @@ void PCCDecoder::decompressOccupancyMap( PCCContext &context, PCCBitstream& bits
     PCCFrameContext &frame = context.getFrames()[i];
     frame.getWidth () = width_;
     frame.getHeight() = height_;
-    printf("frame %d\n",i);
     auto &frameLevelMetadataEnabledFlags = context.getGOFLevelMetadata().getLowerLevelMetadataEnabledFlags();
     frame.getFrameLevelMetadata().getMetadataEnabledFlags() = frameLevelMetadataEnabledFlags;
     decompressOccupancyMap( context, frame, bitstream, surfaceThickness, preFrame, i );
@@ -608,84 +576,79 @@ void PCCDecoder::decompressOccupancyMap( PCCContext &context, PCCBitstream& bits
           patches.pop_back();
         }
       }
-    }    
+    }
     preFrame = frame;
-  } 
+  }
 }
 
 void PCCDecoder::decompressPatchMetaDataM42195(PCCFrameContext& frame, PCCFrameContext& preFrame, PCCBitstream &bitstream ,
-                                               o3dgc::Arithmetic_Codec &arithmeticDecoder, o3dgc::Static_Bit_Model &bModel0, uint32_t &compressedBitstreamSize, size_t occupancyPrecision) {
+                                               o3dgc::Arithmetic_Codec &arithmeticDecoder, o3dgc::Static_Bit_Model &bModel0,
+                                               uint32_t &compressedBitstreamSize, size_t occupancyPrecision, uint8_t enable_flexible_patch_flag) {
   auto&  patches = frame.getPatches();
   auto&  prePatches = preFrame.getPatches();
   size_t patchCount = patches.size();
   uint8_t bitCount[5];
   uint8_t F = 0,A[5];
   size_t topNmax[5] = {0,0,0,0,0};
-
   bitstream.read<uint8_t>( F );
   for (size_t i = 0; i < 5; i++) {
     A[4 - i] = F&1;
     F = F>>1;
   }
   F = F&1;
-
   for (size_t i = 0; i < 5; i++) {
     if(A[i])   bitstream.read<uint8_t>( bitCount[i] );
   }
 
-  //uint32_t compressedBitstreamSize;
   bitstream.read<uint32_t>(  compressedBitstreamSize );
   assert(compressedBitstreamSize + bitstream.size() <= bitstream.capacity());
-  //o3dgc::Arithmetic_Codec arithmeticDecoder;
   arithmeticDecoder.set_buffer(uint32_t(bitstream.capacity() - bitstream.size()),
                                bitstream.buffer() + bitstream.size());
 
   bool bBinArithCoding = binArithCoding_ && (!losslessGeo_) &&
       (occupancyResolution_ == 16) && (occupancyPrecision == 4);
 
+  bool useOneLayermode = oneLayerMode_ || singleLayerPixelInterleaving_;
+
   arithmeticDecoder.start_decoder();
-  //o3dgc::Static_Bit_Model bModel0;
   o3dgc::Adaptive_Bit_Model bModelPatchIndex, bModelU0, bModelV0, bModelU1, bModelV1, bModelD1,bModelIntSizeU0,bModelIntSizeV0;
   o3dgc::Adaptive_Bit_Model bModelSizeU0, bModelSizeV0, bModelAbsoluteD1;
-
   o3dgc::Adaptive_Bit_Model orientationModel2;
-
   o3dgc::Adaptive_Data_Model orientationModel(4);
+  o3dgc::Adaptive_Data_Model orientationPatchModel(NumPatchOrientations - 1 + 2);
+  o3dgc::Adaptive_Bit_Model orientationPatchFlagModel2;
   int64_t prevSizeU0 = 0;
   int64_t prevSizeV0 = 0;
-  // absoluteD1_ = (bool)arithmeticDecoder.decode( bModelAbsoluteD1 );
-
   uint32_t numMatchedPatches;
-  const uint8_t bitMatchedPatchCount =
-      uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(patchCount)));
+  const uint8_t bitMatchedPatchCount = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(patchCount)));
   numMatchedPatches = DecodeUInt32(bitMatchedPatchCount, arithmeticDecoder, bModel0);
 
+  int64_t predIndex = 0;
   for (size_t patchIndex = 0; patchIndex < numMatchedPatches; ++patchIndex) {
     auto &patch = patches[patchIndex];
     patch.getOccupancyResolution() = occupancyResolution_;
-    int64_t delta_index = 
-        o3dgc::UIntToInt(arithmeticDecoder.ExpGolombDecode(0, bModel0, bModelPatchIndex));
-    patch.setBestMatchIdx() = (size_t)(delta_index + patchIndex);
+    int64_t delta_index = o3dgc::UIntToInt(arithmeticDecoder.ExpGolombDecode(0, bModel0, bModelPatchIndex));
+    patch.setBestMatchIdx() = (size_t)(delta_index + predIndex);
+    predIndex += (delta_index+1);
 
     const auto &prePatch = prePatches[patch.getBestMatchIdx()];
-    const int64_t delta_U0 = 
-        o3dgc::UIntToInt(arithmeticDecoder.ExpGolombDecode(0, bModel0, bModelU0));
-    const int64_t delta_V0 = 
-        o3dgc::UIntToInt(arithmeticDecoder.ExpGolombDecode(0, bModel0, bModelV0));
-    const int64_t delta_U1 = 
-        o3dgc::UIntToInt(arithmeticDecoder.ExpGolombDecode(0, bModel0, bModelU1));
-    const int64_t delta_V1 = 
-        o3dgc::UIntToInt(arithmeticDecoder.ExpGolombDecode(0, bModel0, bModelV1));
-    const int64_t delta_D1 = 
-        o3dgc::UIntToInt(arithmeticDecoder.ExpGolombDecode(0, bModel0, bModelD1));
+    const int64_t delta_U0 = o3dgc::UIntToInt(arithmeticDecoder.ExpGolombDecode(0, bModel0, bModelU0));
+    const int64_t delta_V0 = o3dgc::UIntToInt(arithmeticDecoder.ExpGolombDecode(0, bModel0, bModelV0));
+    const int64_t delta_U1 = o3dgc::UIntToInt(arithmeticDecoder.ExpGolombDecode(0, bModel0, bModelU1));
+    const int64_t delta_V1 = o3dgc::UIntToInt(arithmeticDecoder.ExpGolombDecode(0, bModel0, bModelV1));
+    const int64_t delta_D1 = o3dgc::UIntToInt(arithmeticDecoder.ExpGolombDecode(0, bModel0, bModelD1));
+    const int64_t deltaSizeU0 = o3dgc::UIntToInt(arithmeticDecoder.ExpGolombDecode(0, bModel0, bModelIntSizeU0));
+    const int64_t deltaSizeV0 =  o3dgc::UIntToInt(arithmeticDecoder.ExpGolombDecode(0, bModel0, bModelIntSizeV0));
 
-    const int64_t deltaSizeU0 =
-        o3dgc::UIntToInt(arithmeticDecoder.ExpGolombDecode(0, bModel0, bModelIntSizeU0));
-    const int64_t deltaSizeV0 = 
-        o3dgc::UIntToInt(arithmeticDecoder.ExpGolombDecode(0, bModel0, bModelIntSizeV0));
+    if ( sixDirectionMode_ && absoluteD1_ ) {
+      patch.getProjectionMode() = arithmeticDecoder.decode(bModel0);
+    } else {
+      patch.getProjectionMode() = 0;
+    }
 
     patch.getU0() = delta_U0 + prePatch.getU0();
     patch.getV0() = delta_V0 + prePatch.getV0();
+    patch.getPatchOrientation() = prePatch.getPatchOrientation();
     patch.getU1() = delta_U1 + prePatch.getU1();
     patch.getV1() = delta_V1 + prePatch.getV1();
     patch.getD1() = delta_D1 + prePatch.getD1();
@@ -705,6 +668,9 @@ void PCCDecoder::decompressPatchMetaDataM42195(PCCFrameContext& frame, PCCFrameC
     patch.getNormalAxis() = prePatch.getNormalAxis();
     patch.getTangentAxis() = prePatch.getTangentAxis();
     patch.getBitangentAxis() = prePatch.getBitangentAxis();
+    if (printDetailedInfo) {
+      patch.print_decoder();
+    }
   }
 
   //Get Bitcount.
@@ -712,21 +678,32 @@ void PCCDecoder::decompressPatchMetaDataM42195(PCCFrameContext& frame, PCCFrameC
     if (A[i] == 0)  bitCount[i] = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(topNmax[i] + 1)));
   }
 
-
   for (size_t patchIndex = numMatchedPatches; patchIndex < patchCount; ++patchIndex) {
     auto &patch = patches[patchIndex];
     patch.getOccupancyResolution() = occupancyResolution_;
-
     patch.getU0() = DecodeUInt32(bitCount[0], arithmeticDecoder, bModel0);
     patch.getV0() = DecodeUInt32(bitCount[1], arithmeticDecoder, bModel0);
+    if (enable_flexible_patch_flag) {
+      bool flexible_patch_present_flag = arithmeticDecoder.decode(orientationPatchFlagModel2);
+      if (flexible_patch_present_flag) {
+        patch.getPatchOrientation() = arithmeticDecoder.decode(orientationPatchModel) + 1;
+      } else {
+        patch.getPatchOrientation() = 0;
+      }
+    } else {
+      patch.getPatchOrientation() = 0;
+    }
     patch.getU1() = DecodeUInt32(bitCount[2], arithmeticDecoder, bModel0);
     patch.getV1() = DecodeUInt32(bitCount[3], arithmeticDecoder, bModel0);
     patch.getD1() = DecodeUInt32(bitCount[4], arithmeticDecoder, bModel0);
 
-    const int64_t deltaSizeU0 =
-        o3dgc::UIntToInt(arithmeticDecoder.ExpGolombDecode(0, bModel0, bModelSizeU0));
-    const int64_t deltaSizeV0 = 
-        o3dgc::UIntToInt(arithmeticDecoder.ExpGolombDecode(0, bModel0, bModelSizeV0));
+    if (sixDirectionMode_ && absoluteD1_ ) {
+      patch.getProjectionMode() = arithmeticDecoder.decode(bModel0);
+    } else {
+      patch.getProjectionMode() = 0;
+    }
+    const int64_t deltaSizeU0 = o3dgc::UIntToInt(arithmeticDecoder.ExpGolombDecode(0, bModel0, bModelSizeU0));
+    const int64_t deltaSizeV0 = o3dgc::UIntToInt(arithmeticDecoder.ExpGolombDecode(0, bModel0, bModelSizeV0));
 
     patch.getSizeU0() = prevSizeU0 + deltaSizeU0;
     patch.getSizeV0() = prevSizeV0 + deltaSizeV0;
@@ -738,22 +715,17 @@ void PCCDecoder::decompressPatchMetaDataM42195(PCCFrameContext& frame, PCCFrameC
       size_t bit0 = arithmeticDecoder.decode(orientationModel2);
       if (bit0 == 0) {  // 0
         patch.getNormalAxis() = 0;
-      }
-      else {
+      } else {
         size_t bit1 = arithmeticDecoder.decode(bModel0);
         if (bit1 == 0) { // 10
           patch.getNormalAxis() = 1;
-        }
-        else { // 11
+        } else { // 11
           patch.getNormalAxis() = 2;
         }
       }
-    }
-    else {
+    } else {
       patch.getNormalAxis() = arithmeticDecoder.decode(orientationModel);
     }
-
-
     if (patch.getNormalAxis() == 0) {
       patch.getTangentAxis() = 2;
       patch.getBitangentAxis() = 1;
@@ -768,6 +740,9 @@ void PCCDecoder::decompressPatchMetaDataM42195(PCCFrameContext& frame, PCCFrameC
     auto &patchLevelMetadata = patch.getPatchLevelMetadata();
     patchLevelMetadata.getMetadataEnabledFlags() = patchLevelMetadataEnabledFlags;
     decompressMetadata(patchLevelMetadata, arithmeticDecoder);
+    if (printDetailedInfo) {
+      patch.print_decoder();
+    }
   }
 }
 
@@ -778,12 +753,16 @@ void PCCDecoder::decompressOccupancyMap( PCCContext &context, PCCFrameContext& f
   auto&  patches = frame.getPatches();
   bitstream.read<uint32_t>( patchCount );
   patches.resize( patchCount );
-  printf("patchCount:%d, ",patchCount);
+
+  o3dgc::Adaptive_Bit_Model  interpolateModel;
+  o3dgc::Adaptive_Bit_Model  fillingModel;
+  o3dgc::Adaptive_Data_Model minD1Model(3);
+  o3dgc::Adaptive_Data_Model neighborModel(3);
 
   if( useOccupancyMapVideo_ ) {
     PCCImageOccupancyMap &videoFrame = context.getVideoOccupancyMap().getFrame( frame.getIndex() );
     GenerateOccupancyMapFromVideoFrame( occupancyResolution_, occupancyPrecision_, width_, height_,
-                                        frame.getOccupancyMap(), videoFrame );    
+                                        frame.getOccupancyMap(), videoFrame );
   }
 
   size_t maxCandidateCount = 0;
@@ -805,6 +784,9 @@ void PCCDecoder::decompressOccupancyMap( PCCContext &context, PCCFrameContext& f
   bool bBinArithCoding = binArithCoding_ && (!losslessGeo_) &&
       (occupancyResolution_ == 16) && (occupancyPrecision_ == 4);
 
+  uint8_t enable_flexible_patch_flag;
+  bitstream.read<uint8_t>(enable_flexible_patch_flag);
+
   if((frameIndex == 0)||(!deltaCoding_)) {
     uint8_t bitCountU0 = 0;
     uint8_t bitCountV0 = 0;
@@ -820,31 +802,35 @@ void PCCDecoder::decompressOccupancyMap( PCCContext &context, PCCFrameContext& f
     bitstream.read<uint8_t>( bitCountLod);
     bitstream.read<uint32_t>(  compressedBitstreamSize );
 
-    printf("bitCountU0V0U1V1D1:%d,%d,%d,%d,%d,compressedBitstreamSize:%d\n",bitCountU0, bitCountV0, bitCountU1, bitCountV1, bitCountD1, compressedBitstreamSize);
-
     assert(compressedBitstreamSize + bitstream.size() <= bitstream.capacity());
     arithmeticDecoder.set_buffer(uint32_t(bitstream.capacity() - bitstream.size()),
                                  bitstream.buffer() + bitstream.size());
-
     arithmeticDecoder.start_decoder();
-
     decompressMetadata(frame.getFrameLevelMetadata(), arithmeticDecoder);
-
     o3dgc::Adaptive_Bit_Model bModelSizeU0, bModelSizeV0, bModelAbsoluteD1;
-
     o3dgc::Adaptive_Bit_Model orientationModel2;
-
     o3dgc::Adaptive_Data_Model orientationModel(4);
+    o3dgc::Adaptive_Data_Model orientationPatchModel(NumPatchOrientations - 1 + 2);
+    o3dgc::Adaptive_Bit_Model orientationPatchFlagModel2;
     int64_t prevSizeU0 = 0;
     int64_t prevSizeV0 = 0;
-
-    // absoluteD1_ = (bool)arithmeticDecoder.decode( bModelAbsoluteD1 );
+    bool useOneLayermode = oneLayerMode_ || singleLayerPixelInterleaving_;
     for (size_t patchIndex = 0; patchIndex < patchCount; ++patchIndex) {
       auto &patch = patches[patchIndex];
       patch.getOccupancyResolution() = occupancyResolution_;
 
       patch.getU0() = DecodeUInt32(bitCountU0, arithmeticDecoder, bModel0);
       patch.getV0() = DecodeUInt32(bitCountV0, arithmeticDecoder, bModel0);
+      if (enable_flexible_patch_flag) {
+        bool flexible_patch_present_flag = arithmeticDecoder.decode(orientationPatchFlagModel2);
+        if (flexible_patch_present_flag) {
+          patch.getPatchOrientation() = arithmeticDecoder.decode(orientationPatchModel)+1;
+        } else {
+          patch.getPatchOrientation() = 0;
+        }
+      } else {
+        patch.getPatchOrientation() = 0;
+      }
       patch.getU1() = DecodeUInt32(bitCountU1, arithmeticDecoder, bModel0);
       patch.getV1() = DecodeUInt32(bitCountV1, arithmeticDecoder, bModel0);
       patch.getD1() = DecodeUInt32(bitCountD1, arithmeticDecoder, bModel0);
@@ -852,29 +838,29 @@ void PCCDecoder::decompressOccupancyMap( PCCContext &context, PCCFrameContext& f
 
       if (!absoluteD1_) {
         patch.getFrameProjectionMode() = frameProjectionMode;
-        if (patch.getFrameProjectionMode() == 0)
+        if (patch.getFrameProjectionMode() == 0){
           patch.getProjectionMode() = 0;
-        else if (patch.getFrameProjectionMode() == 1)
+        } else if (patch.getFrameProjectionMode() == 1){
           patch.getProjectionMode() = 1;
-        else if (patch.getFrameProjectionMode() == 2) {
+        } else if (patch.getFrameProjectionMode() == 2) {
           patch.getProjectionMode() = 0;
           const uint8_t bitCountProjDir = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(2 + 1)));
           patch.getProjectionMode() = DecodeUInt32(bitCountProjDir, arithmeticDecoder, bModel0);
           std::cout << "patch.getProjectionMode()= " << patch.getProjectionMode() << std::endl;
-        }
-        else {
+        } else {
           std::cout << "This frameProjectionMode doesn't exist!" << std::endl;
         }
         std::cout << "(frameProjMode, projMode)= (" << patch.getFrameProjectionMode() << ", " << patch.getProjectionMode() << ")" << std::endl;
-      }
-      else {
+      } else {
         patch.getFrameProjectionMode() = 0;
-        patch.getProjectionMode() = 0;
+        if (sixDirectionMode_) {
+          patch.getProjectionMode() = arithmeticDecoder.decode(bModel0);
+        } else {
+          patch.getProjectionMode() = 0;
+        }
       }
-      const int64_t deltaSizeU0 =
-          o3dgc::UIntToInt(arithmeticDecoder.ExpGolombDecode(0, bModel0, bModelSizeU0));
-      const int64_t deltaSizeV0 =
-          o3dgc::UIntToInt(arithmeticDecoder.ExpGolombDecode(0, bModel0, bModelSizeV0));
+      const int64_t deltaSizeU0 = o3dgc::UIntToInt(arithmeticDecoder.ExpGolombDecode(0, bModel0, bModelSizeU0));
+      const int64_t deltaSizeV0 = o3dgc::UIntToInt(arithmeticDecoder.ExpGolombDecode(0, bModel0, bModelSizeV0));
 
       patch.getSizeU0() = prevSizeU0 + deltaSizeU0;
       patch.getSizeV0() = prevSizeV0 + deltaSizeV0;
@@ -886,18 +872,15 @@ void PCCDecoder::decompressOccupancyMap( PCCContext &context, PCCFrameContext& f
         size_t bit0 = arithmeticDecoder.decode(orientationModel2);
         if (bit0 == 0) {  // 0
           patch.getNormalAxis() = 0;
-        }
-        else {
+        } else {
           size_t bit1 = arithmeticDecoder.decode(bModel0);
           if (bit1 == 0) { // 10
             patch.getNormalAxis() = 1;
-          }
-          else { // 11
+          } else { // 11
             patch.getNormalAxis() = 2;
           }
         }
-      }
-      else {
+      } else {
         patch.getNormalAxis() = arithmeticDecoder.decode(orientationModel);
       }
 
@@ -915,10 +898,14 @@ void PCCDecoder::decompressOccupancyMap( PCCContext &context, PCCFrameContext& f
       auto &patchLevelMetadata = patch.getPatchLevelMetadata();
       patchLevelMetadata.getMetadataEnabledFlags() = patchLevelMetadataEnabledFlags;
       decompressMetadata(patchLevelMetadata, arithmeticDecoder);
+
+      if (printDetailedInfo) {
+        patch.print_decoder();
+      }
     }
   } else {
     decompressPatchMetaDataM42195( frame, preFrame, bitstream, arithmeticDecoder, bModel0, 
-                                   compressedBitstreamSize, occupancyPrecision_ ) ;
+                                   compressedBitstreamSize, occupancyPrecision_, enable_flexible_patch_flag ) ;
   }
 
   const size_t blockToPatchWidth = width_ / occupancyResolution_;
@@ -929,10 +916,10 @@ void PCCDecoder::decompressOccupancyMap( PCCContext &context, PCCFrameContext& f
   candidatePatches.resize(blockCount);
   for (int64_t patchIndex = patchCount - 1; patchIndex >= 0; --patchIndex) {
     // add actual patches based on their bounding box
-    const auto &patch = patches[patchIndex];
+    auto &patch = patches[patchIndex];
     for (size_t v0 = 0; v0 < patch.getSizeV0(); ++v0) {
       for (size_t u0 = 0; u0 < patch.getSizeU0(); ++u0) {
-        candidatePatches[(patch.getV0() + v0) * blockToPatchWidth + (patch.getU0() + u0)].push_back(patchIndex + 1);
+        candidatePatches[patch.patchBlock2CanvasBlock(u0, v0, blockToPatchWidth, blockToPatchHeight)].push_back(patchIndex + 1);
       }
     }
   }
@@ -945,11 +932,18 @@ void PCCDecoder::decompressOccupancyMap( PCCContext &context, PCCFrameContext& f
   blockToPatch.resize(0);
   blockToPatch.resize(blockCount, 0);
 
-  o3dgc::Adaptive_Bit_Model candidateIndexModelBit[4];
+  auto& interpolateMap = frame.getInterpolate();
+  auto& fillingMap     = frame.getFilling();
+  auto& minD1Map       = frame.getMinD1();
+  auto& neighborMap    = frame.getNeighbor();
+  interpolateMap.resize( blockCount, 0 );
+  fillingMap    .resize( blockCount, 0 );
+  minD1Map      .resize( blockCount, 0 );
+  neighborMap   .resize( blockCount, 1 );
 
+  o3dgc::Adaptive_Bit_Model candidateIndexModelBit[4];
   o3dgc::Adaptive_Data_Model candidateIndexModel(uint32_t(maxCandidateCount + 2));
   const uint32_t bitCountPatchIndex = PCCGetNumberOfBitsInFixedLengthRepresentation(patchCount + 1);
-
   if( useOccupancyMapVideo_ ) {
     auto& occupancyMap = frame.getOccupancyMap();
     for (size_t p = 0; p < blockCount; ++p) {
@@ -999,6 +993,22 @@ void PCCDecoder::decompressOccupancyMap( PCCContext &context, PCCFrameContext& f
                   blockToPatch[p] = candidates[candidateIndex];
                 }
               }
+              interpolateMap[ p ] = 0;
+              fillingMap    [ p ] = 0;
+              minD1Map      [ p ] = 0;
+              neighborMap   [ p ] = 1;
+              if( blockToPatch[p] > 0 ) {
+                if( absoluteD1_ && oneLayerMode_ ) {
+                  interpolateMap[ p ] = arithmeticDecoder.decode( interpolateModel);
+                  if( interpolateMap[ p ] > 0 ){
+                    neighborMap[ p ] = arithmeticDecoder.decode( neighborModel ) + 1;
+                  }
+                  minD1Map[ p ] = arithmeticDecoder.decode( minD1Model);
+                  if( minD1Map[ p ] > 1 || interpolateMap[ p ] > 0 ) {
+                    fillingMap[ p ] = arithmeticDecoder.decode( fillingModel);
+                  }
+                }
+              }
             }
           }
         }
@@ -1042,6 +1052,22 @@ void PCCDecoder::decompressOccupancyMap( PCCContext &context, PCCFrameContext& f
           blockToPatch[p] = candidates[candidateIndex];
         }
       } //size=1
+      interpolateMap[ p ] = 0;
+      fillingMap    [ p ] = 0;
+      minD1Map      [ p ] = 0;
+      neighborMap   [ p ] = 1;
+      if( blockToPatch[p] > 0 ) {
+        if( absoluteD1_ && oneLayerMode_  ) {
+          interpolateMap[ p ] = arithmeticDecoder.decode( interpolateModel);
+          if( interpolateMap[ p ] > 0 ){
+            neighborMap[ p ] = arithmeticDecoder.decode( neighborModel ) + 1;
+          }
+          minD1Map[ p ] = arithmeticDecoder.decode( minD1Model);
+          if( minD1Map[ p ] > 1 || interpolateMap[ p ] > 0 ) {
+            fillingMap[ p ] = arithmeticDecoder.decode( fillingModel);
+          }
+        }
+      }
     } //blockCount
   }
 
@@ -1085,13 +1111,11 @@ void PCCDecoder::decompressOccupancyMap( PCCContext &context, PCCFrameContext& f
       }
     }
     o3dgc::Adaptive_Bit_Model fullBlockModel, occupancyModel;
-
     o3dgc::Adaptive_Bit_Model traversalOrderIndexModel_Bit0;
     o3dgc::Adaptive_Bit_Model traversalOrderIndexModel_Bit1;
     o3dgc::Adaptive_Bit_Model runCountModel2;
     o3dgc::Adaptive_Bit_Model runLengthModel2[4];
     static size_t runLengthInvTable[16] = { 0,  1,  2,  3,  7,  11,  14,  5,  13,  9,  6,  10,  12,  4,  8, 15 };
-
     o3dgc::Adaptive_Data_Model traversalOrderIndexModel(uint32_t(traversalOrderCount + 1));
     o3dgc::Adaptive_Data_Model runCountModel((uint32_t)(pointCount0));
     o3dgc::Adaptive_Data_Model runLengthModel((uint32_t)(pointCount0));
@@ -1117,8 +1141,7 @@ void PCCDecoder::decompressOccupancyMap( PCCContext &context, PCCFrameContext& f
               size_t bit1 = arithmeticDecoder.decode(traversalOrderIndexModel_Bit1);
               size_t bit0 = arithmeticDecoder.decode(traversalOrderIndexModel_Bit0);
               bestTraversalOrderIndex = (bit1 << 1) + bit0;
-            }
-            else {
+            } else {
               bestTraversalOrderIndex = arithmeticDecoder.decode(traversalOrderIndexModel);
             }
             const auto &traversalOrder = traversalOrders[bestTraversalOrderIndex];
@@ -1144,7 +1167,6 @@ void PCCDecoder::decompressOccupancyMap( PCCContext &context, PCCFrameContext& f
               } else {
                 runLength = arithmeticDecoder.decode(runLengthModel);
               }
-
               for (size_t j = 0; j <= runLength; ++j) {
                 const auto &location = traversalOrder[i++];
                 block0[location.second * blockSize0 + location.first] = occupancy;
@@ -1156,7 +1178,6 @@ void PCCDecoder::decompressOccupancyMap( PCCContext &context, PCCFrameContext& f
               block0[location.second * blockSize0 + location.first] = occupancy;
             }
           }
-
           for (size_t v1 = 0; v1 < blockSize0; ++v1) {
             const size_t v2 = v0 * occupancyResolution_ + v1 * occupancyPrecision_;
             for (size_t u1 = 0; u1 < blockSize0; ++u1) {

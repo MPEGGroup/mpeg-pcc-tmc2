@@ -45,6 +45,8 @@ class PCCDecoderParameters {
   void print();
   bool check();
 
+  void completePath();
+
   size_t         startFrameNumber_;
   
   std::string    compressedStreamPath_;

@@ -45,5 +45,16 @@ PCCFrameContext::~PCCFrameContext(){
   blockToPatch_.clear();
   occupancyMap_.clear();
   patches_     .clear();
+  srcPointCloudByPatch_.clear();
+  srcPointCloudByBlock_.clear();
+  recPointCloudByBlock_.clear();
+  for( auto& block: pointToPixelByBlock_ ){
+    block.clear();
+  }
+  pointToPixelByBlock_.clear();
+  interpolate_        .clear();
+  filling_            .clear();
+  minD1_              .clear();
+  neighbor_           .clear();
 }
 

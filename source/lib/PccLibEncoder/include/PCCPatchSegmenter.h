@@ -56,9 +56,11 @@ struct PCCPatchSegmenter3Parameters {
   double lambdaRefineSegmentation;
   size_t levelOfDetail;
   size_t projectionMode;
-  //EDD code
   bool   useEnhancedDeltaDepthCode;
-
+  bool   sixDirectionMode;
+  bool   absoluteD1;
+  bool   useOneLayermode;
+  bool   surfaceSeparation;
 };
 
 class PCCPatchSegmenter3 {
@@ -69,8 +71,12 @@ class PCCPatchSegmenter3 {
   ~PCCPatchSegmenter3() = default;
   void setNbThread( size_t nbThread );
 
-  void compute( const PCCPointSet3 &geometry, const PCCPatchSegmenter3Parameters &params,
-                std::vector<PCCPatch> &patches );
+  void compute( const PCCPointSet3 &geometry,
+                const PCCPatchSegmenter3Parameters &params,
+                std::vector<PCCPatch> &patches,
+                std::vector<PCCPointSet3> &subPointCloud,
+                float& distanceSrcRec );
+
   void initialSegmentation( const PCCPointSet3 &geometry,
                             const PCCNormalsGenerator3 &normalsGen,
                             const PCCVector3D *orientations, const size_t orientationCount,
@@ -87,11 +93,15 @@ class PCCPatchSegmenter3 {
                        std::vector<PCCPatch> &patches,
                        std::vector<size_t> &patchPartition,
                        std::vector<size_t> &resampledPatchPartition,
-                       std::vector<size_t> missedPoints, PCCPointSet3 &resampled 
-    , const size_t paramProjectionMode
-    , bool useEnhancedDeltaDepthCode 
+                       std::vector<size_t> missedPoints, PCCPointSet3 &resampled,
+                       const size_t paramProjectionMode,
+                       bool useEnhancedDeltaDepthCode,
+                       const bool createSubPointCloud,
+                       std::vector<PCCPointSet3> &subPointCloud,
+                       float& distanceSrcRec,
+                       const bool sixDirection,
+                       bool useSurfaceSeparation );
 
-); //EDD
   void refineSegmentation( const PCCPointSet3 &pointCloud, const PCCStaticKdTree3 &kdtree,
                            const PCCNormalsGenerator3 &normalsGen,
                            const PCCVector3D *orientations, const size_t orientationCount,
@@ -104,7 +114,6 @@ class PCCPatchSegmenter3 {
   std::vector<PCCPatch> boxMaxDepths_;  // box depth list
   size_t selectFrameProjectionMode(const PCCPointSet3 &points, const size_t surfaceThickness, const size_t paramProjectionMode);
   void   selectPatchProjectionMode(const PCCPointSet3 &points, size_t frameProjectionMode, std::vector<size_t> &connectedComponent, PCCPatch &patch);
-
 };
 
 class Rect{
@@ -113,8 +122,7 @@ class Rect{
   ~Rect() = default;
   
   Rect() { x_ = y_ = width_ = height_ = 0; }
-  Rect(int x, int y, int w, int h)
-  {
+  Rect(int x, int y, int w, int h) {
     this->x_ = x; this->y_ = y;
     width_ = w; height_ = h;
   }
@@ -128,11 +136,11 @@ class Rect{
     int y1 = (this->y_ > rhs.y_) ? this->y_ : rhs.y_;
     c.width_ = (((this->x_ + this->width_) < (rhs.x_ + rhs.width_)) ? this->x_ + this->width_ : rhs.x_ + rhs.width_) - x1;
     c.height_ = (((this->y_ + this->height_) < (rhs.y_ + rhs.height_)) ? this->y_ + this->height_ : rhs.y_ + rhs.height_) - y1;
-
     c.x_ = x1;
     c.y_ = y1;
-    if (c.width_ <= 0 || c.height_ <= 0)
+    if (c.width_ <= 0 || c.height_ <= 0) {
       c.x_ = c.y_ = c.width_ = c.height_ = 0;
+    }
     return Rect(c);
   }
 

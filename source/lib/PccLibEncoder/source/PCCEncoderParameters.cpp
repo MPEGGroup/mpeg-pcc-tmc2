@@ -38,93 +38,115 @@ using namespace pcc ;
 
 
 PCCEncoderParameters::PCCEncoderParameters() {
-  uncompressedDataPath_                 = {};
-  compressedStreamPath_                 = {};
-  reconstructedDataPath_                = {};
-  configurationFolder_                  = {};
-  uncompressedDataFolder_               = {};
+  uncompressedDataPath_                    = {};
+  compressedStreamPath_                    = {};
+  reconstructedDataPath_                   = {};
+  configurationFolder_                     = {};
+  uncompressedDataFolder_                  = {};
 
-  startFrameNumber_                     = 0;
+  startFrameNumber_                        = 0;
 
-  frameCount_                           = 300;
-  groupOfFramesSize_                    = 32;
+  frameCount_                              = 300;
+  groupOfFramesSize_                       = 32;
 
-  colorTransform_                       = COLOR_TRANSFORM_RGB_TO_YCBCR;
-  colorSpaceConversionPath_             = {};
+  colorTransform_                          = COLOR_TRANSFORM_RGB_TO_YCBCR;
+  colorSpaceConversionPath_                = {};
 
-  colorSpaceConversionConfig_           = {};
-  inverseColorSpaceConversionConfig_    = {};
-  nnNormalEstimation_                   = 16;
-  maxNNCountRefineSegmentation_         = 256;
-  iterationCountRefineSegmentation_     = 100;
+  colorSpaceConversionConfig_              = {};
+  inverseColorSpaceConversionConfig_       = {};
+  nnNormalEstimation_                      = 16;
+  maxNNCountRefineSegmentation_            = 256;
+  iterationCountRefineSegmentation_        = 100;
 
-  occupancyResolution_                  = 16;
-  minPointCountPerCCPatchSegmentation_  = 16;
-  maxNNCountPatchSegmentation_          = 16;
-  surfaceThickness_                     = 4;
-  maxAllowedDepth_                      = 255;
-  maxAllowedDist2MissedPointsDetection_ = 9.0;
-  maxAllowedDist2MissedPointsSelection_ = 1.0;
-  lambdaRefineSegmentation_             = 3.0;
+  occupancyResolution_                     = 16;
+  minPointCountPerCCPatchSegmentation_     = 16;
+  maxNNCountPatchSegmentation_             = 16;
+  surfaceThickness_                        = 4;
+  maxAllowedDepth_                         = 255;
+  maxAllowedDist2MissedPointsDetection_    = 9.0;
+  maxAllowedDist2MissedPointsSelection_    = 1.0;
+  lambdaRefineSegmentation_                = 3.0;
 
-  minimumImageWidth_                    = 1280;
-  minimumImageHeight_                   = 1280;
+  minimumImageWidth_                       = 1280;
+  minimumImageHeight_                      = 1280;
 
-  maxCandidateCount_                    = 4;
-  occupancyPrecision_                   = 4;
-  occupancyMapVideoEncoderConfig_       = {};
-  occupancyMapQP_                       = 8;
-  useOccupancyMapVideo_                 = true;
+  maxCandidateCount_                       = 4;
+  occupancyPrecision_                      = 4;
+  occupancyMapVideoEncoderConfig_          = {};
+  occupancyMapQP_                          = 8;
+  useOccupancyMapVideo_                    = true;
 
-  neighborCountSmoothing_               = 4 * 16;
-  radius2Smoothing_                     = 4.0 * 16;
-  radius2BoundaryDetection_             = 4.0 * 16;
-  thresholdSmoothing_                   = 64.0;
-  bestColorSearchRange_                 = 0;
+  gridSmoothing_                           = true;
+  neighborCountSmoothing_                  = 4 * 16;
+  radius2Smoothing_                        = 4.0 * 16;
+  radius2BoundaryDetection_                = 4.0 * 16;
+  thresholdSmoothing_                      = 64.0;
+  bestColorSearchRange_                    = 0;
 
-  videoEncoderPath_                     = {};
-  videoEncoderOccupancyMapPath_         = {};
-  geometryQP_                           = 28;
-  textureQP_                            = 43;
-  geometryConfig_                       = {};
-  geometryD0Config_                     = {};
-  geometryD1Config_                     = {};
+  videoEncoderPath_                        = {};
+  videoEncoderOccupancyMapPath_            = {};
+  geometryQP_                              = 28;
+  textureQP_                               = 43;
+  geometryConfig_                          = {};
+  geometryD0Config_                        = {};
+  geometryD1Config_                        = {};
 
-  textureConfig_                        = {};
+  textureConfig_                           = {};
 
-  losslessGeo_                          = false;
-  losslessTexture_                      = false;
-  noAttributes_                         = false;
-  losslessGeo444_                       = false;
+  losslessGeo_                             = false;
+  losslessTexture_                         = false;
+  noAttributes_                            = false;
+  losslessGeo444_                          = false;
 
-  useMissedPointsSeparateVideo_         = false; //(losslessGeo_|| losslessTexture_)? true : false;
-  geometryMPConfig_                     = {};
-  textureMPConfig_                      = {};
-  useOccupancyMapVideo_                 = (losslessGeo_|| losslessTexture_)? false : true;
-  
-  nbThread_                             = 1;
-  keepIntermediateFiles_                = false;
-  projectionMode_                       = 0;
+  useMissedPointsSeparateVideo_            = false;
+  geometryMPConfig_                        = {};
+  textureMPConfig_                         = {};
+  useOccupancyMapVideo_                    = (losslessGeo_|| losslessTexture_)? false : true;
 
-  absoluteD1_                           = true;
+  nbThread_                                = 1;
+  keepIntermediateFiles_                   = false;
+  projectionMode_                          = 0;
 
-  constrainedPack_                      = true;
-  binArithCoding_                       = true;
+  absoluteD1_                              = true;
 
-  thresholdColorSmoothing_              = 10.0;
-  thresholdLocalEntropy_                = 4.5;
-  radius2ColorSmoothing_                = 4.0 * 16;
-  neighborCountColorSmoothing_          = 4 * 16;
-  flagColorSmoothing_                   = false;
+  constrainedPack_                         = true;
+  binArithCoding_                          = true;
 
-  groupDilation_                        = true;
-  textureDilationOffLossless_           = true;
+  thresholdColorSmoothing_                 = 10.0;
+  thresholdLocalEntropy_                   = 4.5;
+  radius2ColorSmoothing_                   = 4.0 * 16;
+  neighborCountColorSmoothing_             = 4 * 16;
+  flagColorSmoothing_                      = false;
 
-  enhancedDeltaDepthCode_               = losslessGeo_ ? true : false; //EDD
+  thresholdColorPreSmoothing_              = 10.0;
+  thresholdColorPreSmoothingLocalEntropy_  = 4.5;
+  radius2ColorPreSmoothing_                = 4.0 * 16;
+  neighborCountColorPreSmoothing_          = 4 * 16;
+  flagColorPreSmoothing_                   = true;
 
-  patchColorSubsampling_                = false;
+  groupDilation_                           = true;
+  textureDilationOffLossless_              = true;
 
-  deltaCoding_                          = true;
+  enhancedDeltaDepthCode_                  = losslessGeo_ ? true : false;
+
+  patchColorSubsampling_                   = false;
+
+  deltaCoding_                             = true;
+
+  oneLayerMode_                            = false;
+
+  singleLayerPixelInterleaving_            = false;
+
+  sixDirectionMode_                        = absoluteD1_ ? true : false; //Six Direction Projection
+
+  surfaceSeparation_                       = false;
+
+  //Flexible Patch Packing
+  packingStrategy_                         = 1;
+
+  textureBGFill_                           = 1;
+
+  safeGuardDistance_                       = 0;
 }
 
 PCCEncoderParameters::~PCCEncoderParameters() {
@@ -158,15 +180,11 @@ void PCCEncoderParameters::completePath(){
     if( !occupancyMapVideoEncoderConfig_.empty() ){
       occupancyMapVideoEncoderConfig_ = configurationFolder_ + occupancyMapVideoEncoderConfig_;
     }
-    if(useMissedPointsSeparateVideo_)
-    {
-      if( !geometryMPConfig_.empty())
-      {
+    if(useMissedPointsSeparateVideo_) {
+      if( !geometryMPConfig_.empty()) {
         geometryMPConfig_= configurationFolder_ + geometryMPConfig_;
       }
-      
-      if( !textureMPConfig_.empty())
-      {
+      if( !textureMPConfig_.empty()) {
         textureMPConfig_= configurationFolder_ + textureMPConfig_;
       }
     }
@@ -174,13 +192,12 @@ void PCCEncoderParameters::completePath(){
 }
 
 void PCCEncoderParameters::print(){
-
   std::cout << "+ Parameters" << std::endl;
   std::cout << "\t losslessGeo                            " << losslessGeo_                          << std::endl;
   std::cout << "\t losslessTexture                        " << losslessTexture_                      << std::endl;
   std::cout << "\t noAttributes                           " << noAttributes_                         << std::endl;
   std::cout << "\t losslessGeo444                         " << losslessGeo444_                       << std::endl;
-  std::cout << "\t enhancedDeltaDepthCode                 " << enhancedDeltaDepthCode_               << std::endl; //EDD
+  std::cout << "\t enhancedDeltaDepthCode                 " << enhancedDeltaDepthCode_               << std::endl;
   std::cout << "\t useMissedPointsSeparateVideo           " << useMissedPointsSeparateVideo_         << std::endl;
   std::cout << "\t uncompressedDataPath                   " << uncompressedDataPath_                 << std::endl;
   std::cout << "\t compressedStreamPath                   " << compressedStreamPath_                 << std::endl;
@@ -210,6 +227,9 @@ void PCCEncoderParameters::print(){
   std::cout << "\t packing" << std::endl;
   std::cout << "\t   minimumImageWidth                    " << minimumImageWidth_                    << std::endl;
   std::cout << "\t   minimumImageHeight                   " << minimumImageHeight_                   << std::endl;
+  std::cout << "\t   packingStrategy                      " << packingStrategy_                      << std::endl;
+  std::cout << "\t   safeGuardDistance                    " << safeGuardDistance_                    << std::endl;
+  std::cout << "\t   textureBGFill                        " << textureBGFill_                        << std::endl;
   std::cout << "\t video encoding" << std::endl;
   std::cout << "\t   geometryQP                           " << geometryQP_                           << std::endl;
   std::cout << "\t   textureQP                            " << textureQP_                            << std::endl;
@@ -223,39 +243,52 @@ void PCCEncoderParameters::print(){
     std::cout << "\t   geometryConfig                       " << geometryConfig_                       << std::endl;
   }
   std::cout << "\t   textureConfig                        " << textureConfig_                        << std::endl;
-  if(useMissedPointsSeparateVideo_)
-  {
-    if(losslessGeo_)
-      std::cout <<"\t geometryMPConfig                        "               << geometryMPConfig_<<std::endl;
-    if(losslessTexture_)
-      std::cout<<"\t textureMPConfig                          "               << textureMPConfig_<<std::endl;
+  if(useMissedPointsSeparateVideo_) {
+    if(losslessGeo_){
+      std::cout <<"\t geometryMPConfig                        " << geometryMPConfig_                 << std::endl;
+    }
+    if(losslessTexture_){
+      std::cout<<"\t textureMPConfig                          " << textureMPConfig_                  << std::endl;
+    }
   }
   std::cout << "\t   colorSpaceConversionConfig           " << colorSpaceConversionConfig_           << std::endl;
   std::cout << "\t   inverseColorSpaceConversionConfig    " << inverseColorSpaceConversionConfig_    << std::endl;
   std::cout << "\t dilation" << std::endl;
-  std::cout << "\t   GroupDilation                        " << groupDilation_ << std::endl;
-  std::cout << "\t   textureDilationOffLossless           " << textureDilationOffLossless_ << std::endl;
+  std::cout << "\t   GroupDilation                        " << groupDilation_                        << std::endl;
+  std::cout << "\t   textureDilationOffLossless           " << textureDilationOffLossless_           << std::endl;
   std::cout << "\t occupancy map encoding " << std::endl;
   std::cout << "\t   maxCandidateCount                    " << maxCandidateCount_                    << std::endl;
   std::cout << "\t   occupancyPrecision                   " << occupancyPrecision_                   << std::endl;
   std::cout << "\t   occupancyMapVideoEncoderConfig       " << occupancyMapVideoEncoderConfig_       << std::endl;
   std::cout << "\t   occupancyMapQP                       " << occupancyMapQP_                       << std::endl;
-  std::cout << "\t   useOccupancyMapVideo                 " << useOccupancyMapVideo_                 <<std::endl;
-  std::cout << "\t smoothing" << std::endl;
+  std::cout << "\t   useOccupancyMapVideo                 " << useOccupancyMapVideo_                 << std::endl;
+  std::cout << "\t geometry smoothing" << std::endl;
+  std::cout << "\t   gridSmoothing                        " << gridSmoothing_                        << std::endl;
   std::cout << "\t   neighborCountSmoothing               " << neighborCountSmoothing_               << std::endl;
   std::cout << "\t   radius2Smoothing                     " << radius2Smoothing_                     << std::endl;
   std::cout << "\t   radius2BoundaryDetection             " << radius2BoundaryDetection_             << std::endl;
   std::cout << "\t   thresholdSmoothing                   " << thresholdSmoothing_                   << std::endl;
   std::cout << "\t color smoothing" << std::endl;
-  std::cout << "\t   thresholdColorSmoothing              " << thresholdColorSmoothing_ << std::endl;
-  std::cout << "\t   thresholdLocalEntropy                " << thresholdLocalEntropy_ << std::endl;
-  std::cout << "\t   radius2ColorSmoothing                " << radius2ColorSmoothing_ << std::endl;
-  std::cout << "\t   neighborCountColorSmoothing          " << neighborCountColorSmoothing_ << std::endl;
-  std::cout << "\t   flagColorSmoothing                   " << flagColorSmoothing_ << std::endl;
+  std::cout << "\t   thresholdColorSmoothing              " << thresholdColorSmoothing_              << std::endl;
+  std::cout << "\t   thresholdLocalEntropy                " << thresholdLocalEntropy_                << std::endl;
+  std::cout << "\t   radius2ColorSmoothing                " << radius2ColorSmoothing_                << std::endl;
+  std::cout << "\t   neighborCountColorSmoothing          " << neighborCountColorSmoothing_          << std::endl;
+  std::cout << "\t   flagColorSmoothing                   " << flagColorSmoothing_                   << std::endl;
+  std::cout << "\t color pre-smoothing" << std::endl;
+  std::cout << "\t   thresholdColorPreSmoothing           " << thresholdColorSmoothing_              << std::endl;
+  std::cout << "\t   thresholdColorPreSmoothingLocalEntropy " << thresholdColorPreSmoothingLocalEntropy_ << std::endl;
+  std::cout << "\t   radius2ColorPreSmoothing             " << radius2ColorPreSmoothing_             << std::endl;
+  std::cout << "\t   neighborCountColorPreSmoothing       " << neighborCountColorPreSmoothing_       << std::endl;
+  std::cout << "\t   flagColorPreSmoothing                " << flagColorPreSmoothing_                << std::endl;
   std::cout << "\t coloring" << std::endl;
   std::cout << "\t   bestColorSearchRange                 " << bestColorSearchRange_                 << std::endl;
   std::cout << "\t   projectionMode                       " << projectionMode_                       << std::endl;
   std::cout << "\t   patchColorSubsampling                " << patchColorSubsampling_                << std::endl;
+  std::cout << "\t One Layer Mode" << std::endl;
+  std::cout << "\t   oneLayerMode                         " << oneLayerMode_                         << std::endl;
+  std::cout << "\t   singleLayerPixelInterleaving         " << singleLayerPixelInterleaving_         << std::endl;
+  std::cout << "\t six Direction Projection               " << sixDirectionMode_                     << std::endl;
+  std::cout << "\t surface Separation                     " << surfaceSeparation_                    << std::endl;
   std::cout << std::endl;
 }
 
@@ -267,7 +300,7 @@ bool PCCEncoderParameters::check(){
     std::cout << "Info: Using external color space conversion" << std::endl;
     if (colorTransform_ != COLOR_TRANSFORM_NONE) {
       std::cerr << "Using external color space conversion requires colorTransform = "
-                    "COLOR_TRANSFORM_NONE!\n";
+          "COLOR_TRANSFORM_NONE!\n";
       colorTransform_ = COLOR_TRANSFORM_NONE;
     }
     if( !exist( colorSpaceConversionPath_) ) {
@@ -305,45 +338,39 @@ bool PCCEncoderParameters::check(){
     ret = false;
     std::cerr << "videoEncoderPath not exist\n";
   }
-  
+
   if( useOccupancyMapVideo_ && ( videoEncoderOccupancyMapPath_.empty() || !exist( videoEncoderOccupancyMapPath_) ) ) {
     std::cerr << "WARNING: videoEncoderOccupancyMapPath is set as videoEncoderPath_ : "<<videoEncoderPath_ << std::endl;
     videoEncoderOccupancyMapPath_ = videoEncoderPath_;
   }
-  
-  if (absoluteD1_ && (!geometryD0Config_.empty() || !geometryD1Config_.empty()))
-  {
+
+  if (absoluteD1_ && (!geometryD0Config_.empty() || !geometryD1Config_.empty())) {
     ret = false;
     std::cerr << "When absoultD1 is true, geometryD0Config_ and geometryD1Config_ should be empty\n";
   }
-
-  if (absoluteD1_ && geometryConfig_.empty())
-  {
+  if (absoluteD1_ && geometryConfig_.empty()) {
     ret = false;
     std::cerr << "When absoultD1 is true, geometryConfig_ should be non-empty\n";
   }
-
-  if (!absoluteD1_ && (geometryD0Config_.empty() || geometryD1Config_.empty()))
-  {
+  if (!absoluteD1_ && (geometryD0Config_.empty() || geometryD1Config_.empty())) {
     ret = false;
     std::cerr << "When absoultD1 is false, geometryD0Config_ and geometryD1Config_ should be non-empty\n";
   }
 
-  if (!absoluteD1_ && !geometryConfig_.empty())
-  {
+  if (!absoluteD1_ && !geometryConfig_.empty()) {
     ret = false;
     std::cerr << "When absoultD1 is false, geometryConfig_ should be empty\n";
   }
 
-  if (!losslessGeo_ && enhancedDeltaDepthCode_) { //EDD
+  if (!losslessGeo_ && enhancedDeltaDepthCode_) {
     enhancedDeltaDepthCode_ = false;
     std::cerr << "WARNING: enhancedDeltaDepthCode is only for lossless coding mode for now. Force enhancedDeltaDepthCode=FALSE.\n";
   }
 
-  if (enhancedDeltaDepthCode_ && surfaceThickness_ == 1) { //EDD
+  if (enhancedDeltaDepthCode_ && surfaceThickness_ == 1) {
     std::cerr << "WARNING: EDD code doesn't bring any gain when surfaceThickness==1. Please consider to increase the value of surfaceThickness.\n";
   }
- 
+
   if(useMissedPointsSeparateVideo_) {
     if(geometryMPConfig_.empty() || !exist( geometryMPConfig_) ) {
       std::cerr << "WARNING: geometryMPConfig_ is set as geometryConfig_ : "<<geometryConfig_ << std::endl;
@@ -354,11 +381,35 @@ bool PCCEncoderParameters::check(){
       textureMPConfig_ = textureConfig_;
     }
   }
-  
-  if ( useOccupancyMapVideo_ && occupancyMapVideoEncoderConfig_.empty() ) {
-    ret = false;
-    std::cerr << "occupancyMapVideoEncoderConfig not set\n";
+
+  if ( losslessGeo_ && oneLayerMode_) {
+    oneLayerMode_ = false;
+    std::cerr << "WARNING: oneLayerMode_ is only for lossy coding mode for now. Force oneLayerMode=FALSE.\n";
   }
 
+  if ( losslessGeo_ && singleLayerPixelInterleaving_ ) {
+    singleLayerPixelInterleaving_ = false;
+    std::cerr << "WARNING: singleLayerPixelInterleaving is only for lossy coding mode for now. Force singleLayerPixelInterleaving=FALSE.\n";
+  }
+
+  if (singleLayerPixelInterleaving_ ) {
+    if( !oneLayerMode_ ) {
+      oneLayerMode_     = true;
+      std::cerr << "Pixel Interleaving is built on single layer coding. Force oneLayerMode=TRUE.\n";
+    }
+    //if( sixDirectionMode_ ) {
+    //  sixDirectionMode_ = false;
+    //  std::cerr << "Pixel Interleaving is built on single layer coding. Force sixDirectionMode=FALSE.\n";
+    //}
+    //if( packingStrategy_ ) {
+    //  packingStrategy_  = false;
+    //  std::cerr << "Pixel Interleaving is built on single layer coding. Force packingStrategy=FALSE.\n";
+    //}
+  }
+
+  if ( useOccupancyMapVideo_ && occupancyMapVideoEncoderConfig_.empty() ) {
+    ret = false;
+    std::cerr << "to use segmentation, you must define a segmentationDataPath \n";
+  }
   return ret;
 }

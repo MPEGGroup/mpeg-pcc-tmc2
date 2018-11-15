@@ -275,36 +275,28 @@ class PCCImage {
     }
     return false;
   } 
-  bool copy_block(size_t top, size_t left, size_t width, size_t height, PCCImage& block) {
+  bool copyBlock(size_t top, size_t left, size_t width, size_t height, PCCImage& block) {
     assert(top >= 0 && left >= 0 && (width + left) < width_ && (height + top) < height_);
-    for (size_t cc = 0; cc < N; cc++)
-    {
-      for (size_t i = top; i < top + height; i++)
-      {
-        for (size_t j = left; j < left + width; j++)
-        {
+    for (size_t cc = 0; cc < N; cc++) {
+      for (size_t i = top; i < top + height; i++) {
+        for (size_t j = left; j < left + width; j++) {
           block.setValue(cc, (j - left), (i - top), getValue(cc, j, i));
         }
       }
     }
     return true;
   }
-  bool set_block(size_t top, size_t left, PCCImage& block) {
-
+  bool setBlock(size_t top, size_t left, PCCImage& block) {
     assert(top >= 0 && left >= 0 && (block.getWidth() + left) < width_ && (block.getHeight() + top) < height_);
-    for (size_t cc = 0; cc < N; cc++)
-    {
-      for (size_t i = top; i < top + block.getHeight(); i++)
-      {
-        for (size_t j = left; j < left + block.getWidth(); j++)
-        {
+    for (size_t cc = 0; cc < N; cc++) {
+      for (size_t i = top; i < top + block.getHeight(); i++) {
+        for (size_t j = left; j < left + block.getWidth(); j++) {
           setValue(cc, j, i, block.getValue(cc, (j - left), (i - top)));
         }
       }
     }
     return true;
   }
-
  private:
   size_t width_;
   size_t height_;

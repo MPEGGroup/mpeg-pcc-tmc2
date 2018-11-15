@@ -49,7 +49,7 @@
 #include <memory>
 #include <queue>
 #include <algorithm>
-
+#include <map>
 #include "PCCConfig.h"
 
 namespace pcc {
@@ -76,13 +76,15 @@ namespace pcc {
   enum PCCEndianness  { PCC_BIG_ENDIAN = 0, PCC_LITTLE_ENDIAN = 1 };
   enum ColorTransform { COLOR_TRANSFORM_NONE = 0, COLOR_TRANSFORM_RGB_TO_YCBCR = 1 };
   enum PCCAxis3       { PCC_AXIS3_UNDEFINED = -1, PCC_AXIS3_X = 0, PCC_AXIS3_Y = 1, PCC_AXIS3_Z = 2 };
-  enum PointType      { Unset = 0, D0, D1, Smooth, InBetween  }; //InBetween for EDD code
+  enum PointType { Unset = 0, D0, D1, DF, Smooth, InBetween };
+  const size_t IntermediateLayerIndex  = 100;
+  const size_t NeighborThreshold       = 4;
+  const size_t NumPatchOrientations    = 8;
 
   // ******************************************************************* //
   // Static functions
   // ******************************************************************* //
-  static bool exist(const std::string& sString )
-  {
+  static bool exist(const std::string& sString ) {
     struct stat buffer;
     return (stat( sString.c_str(), &buffer) == 0);
   }
@@ -141,8 +143,8 @@ namespace pcc {
     return (PCCSystemEndianness() == PCC_BIG_ENDIAN) ? PCCEndianSwap(u) : u;
   }
 
-  static void PCCDivideRange(const size_t start, const size_t end,
-                             const size_t chunckCount, std::vector<size_t> &subRanges) {
+  static void PCCDivideRange( const size_t start, const size_t end,
+                              const size_t chunckCount, std::vector<size_t> &subRanges) {
     const size_t elementCount = end - start;
     if (elementCount <= chunckCount) {
       subRanges.resize(elementCount + 1);

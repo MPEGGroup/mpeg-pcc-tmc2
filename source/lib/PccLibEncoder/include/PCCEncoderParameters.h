@@ -102,6 +102,7 @@ class PCCEncoderParameters {
   double              radius2Smoothing_;
   double              radius2BoundaryDetection_;
   double              thresholdSmoothing_;
+  bool                gridSmoothing_;
 
   // color smoothing
   double              thresholdColorSmoothing_;
@@ -109,6 +110,13 @@ class PCCEncoderParameters {
   double              radius2ColorSmoothing_;
   size_t              neighborCountColorSmoothing_;
   bool                flagColorSmoothing_;
+
+  // color pre-smoothing
+  double              thresholdColorPreSmoothing_;
+  double              thresholdColorPreSmoothingLocalEntropy_;
+  double              radius2ColorPreSmoothing_;
+  size_t              neighborCountColorPreSmoothing_;
+  bool                flagColorPreSmoothing_;
 
   // coloring
   size_t              bestColorSearchRange_;
@@ -155,6 +163,19 @@ class PCCEncoderParameters {
   bool                patchColorSubsampling_;
 
   bool                deltaCoding_;
+
+  bool                oneLayerMode_;
+
+  bool                singleLayerPixelInterleaving_;
+
+  bool                sixDirectionMode_;
+  bool                surfaceSeparation_;
+
+  // Flexible Patch Packing
+  size_t              packingStrategy_;
+  size_t              textureBGFill_;
+  size_t              safeGuardDistance_;
+
 };
 
 }; //~namespace

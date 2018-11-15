@@ -80,7 +80,7 @@ private:
   void compressOccupancyMap( PCCContext &context, PCCBitstream& bitstream );
   void compressOccupancyMap( PCCFrameContext &frame, PCCBitstream& bitstream, PCCFrameContext &preFrame, size_t frameIndex );
   void compressPatchMetaDataM42195(PCCFrameContext &frame, PCCFrameContext &preFrame, size_t numMatchedPatches, PCCBitstream &bitstream ,
-    o3dgc::Arithmetic_Codec &arithmeticEncoder, o3dgc::Static_Bit_Model &bModel0, PCCBistreamPosition &startPosition);
+    o3dgc::Arithmetic_Codec &arithmeticEncoder, o3dgc::Static_Bit_Model &bModel0, PCCBistreamPosition &startPosition, uint8_t enable_flexible_patch_flag);
   bool generateOccupancyMapVideo( const PCCGroupOfFrames& sources, PCCContext& context );
   bool generateOccupancyMapVideo(const size_t imageWidth, const size_t imageHeight,
                                  std::vector<uint32_t> &occupancyMap,
@@ -90,7 +90,7 @@ private:
   bool resizeGeometryVideo( PCCContext &context );
   bool dilateGeometryVideo( PCCContext &context );
 
-  bool generateTextureVideo( const PCCGroupOfFrames& sources, PCCGroupOfFrames& reconstruct, PCCContext& context );
+  bool generateTextureVideo( const PCCGroupOfFrames& sources, PCCGroupOfFrames& reconstruct, PCCContext& context, const PCCEncoderParameters params);
 
   void writeMissedPointsGeometryNumber(PCCContext& context, PCCBitstream &bitstream);
   void writeMissedPointsTextureNumber(PCCContext& context, PCCBitstream &bitstream);
@@ -103,10 +103,21 @@ private:
   
   template <typename T>
   void dilate( PCCFrameContext &frame, PCCImage<T, 3> &image, const PCCImage<T, 3> *reference = nullptr );
-  void pack( PCCFrameContext& frame );
+  //Push-pull background filling
+  template <typename T>
+  int mean4w(T p1, unsigned char w1, T p2, unsigned char w2, T p3, unsigned char w3, T p4, unsigned char w4);
+  template <typename T>
+  void pullPushMip(PCCImage<T, 3> &image, PCCImage<T, 3> &mip, std::vector<uint32_t>& occupancyMap, std::vector<uint32_t> &mipOccupancyMap);
+  template <typename T>
+  void pullPushFill(PCCImage<T, 3> &image, PCCImage<T, 3> &mip, std::vector<uint32_t>& occupancyMap);
+  template <typename T>
+  void dilatePullPush(PCCFrameContext& frame, PCCImage<T, 3> &image);
+  void pack( PCCFrameContext& frame, int safeguard = 0  );
+  void packFlexible(PCCFrameContext& frame, int safeguard = 0);
   void packMissedPointsPatch( PCCFrameContext& frame, const std::vector<bool> &occupancyMap, size_t &width, 
                               size_t &height, size_t occupancySizeU, size_t occupancySizeV, size_t maxOccupancyRow);
-  void spatialConsistencyPack(PCCFrameContext& frame, PCCFrameContext &prevFrame);
+  void spatialConsistencyPack(PCCFrameContext& frame, PCCFrameContext &prevFrame, int safeguard = 0 );
+  void spatialConsistencyPackFlexible(PCCFrameContext& frame, PCCFrameContext &prevFrame, int safeguard = 0);
   void generateOccupancyMap( PCCFrameContext& frameContext );
   void printMap(std::vector<bool> img, const size_t sizeU, const size_t sizeV);
   void generateIntraImage( PCCFrameContext& frameContext, const size_t depthIndex, PCCImageGeometry &image);
@@ -115,13 +126,22 @@ private:
   void sortMissedPointsPatch(PCCFrameContext& frameContext);
   bool generateGeometryVideo( const PCCPointSet3& source, PCCFrameContext& frameContext,
                              const PCCPatchSegmenter3Parameters segmenterParams,
-                             PCCVideoGeometry &videoGeometry, PCCFrameContext &prevFrame, size_t frameIndex);
+                             PCCVideoGeometry &videoGeometry, PCCFrameContext &prevFrame, size_t frameIndex, float& distanceSrcRec
+    );
   bool generateTextureVideo( const PCCPointSet3& reconstruct, PCCFrameContext& frameContext,
                              PCCVideoTexture &video, const size_t frameCount );
-  //EDD
+
   void generateIntraEnhancedDeltaDepthImage(PCCFrameContext& frame, const PCCImageGeometry &imageRef, PCCImageGeometry &image);
 
   PCCEncoderParameters params_;
+  void reconsctuctionOptimization( PCCContext& context,
+                                   const GeneratePointCloudParameters params );
+  void reconsctuctionOptimization( PCCFrameContext &frame,
+                                   const PCCVideoGeometry &video,
+                                   const PCCVideoGeometry &videoD1,
+                                   const GeneratePointCloudParameters params);
+  void presmoothPointCloudColor(PCCPointSet3 &reconstruct, const PCCEncoderParameters params);
+
 };
 
 }; //~namespace

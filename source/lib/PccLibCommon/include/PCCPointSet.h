@@ -41,7 +41,8 @@ namespace pcc {
 
 class PCCPointSet3 {
  public:
-  PCCPointSet3() : withColors_( false ), withReflectances_ ( false ) {
+  PCCPointSet3() : withColors_( false ), withReflectances_ ( false ), withNormals_( false )
+  {
   }
   PCCPointSet3(const PCCPointSet3 &) = default;
   PCCPointSet3 &operator=(const PCCPointSet3 &rhs) = default;
@@ -72,16 +73,16 @@ class PCCPointSet3 {
     colors_[index] = color;
   }
   uint16_t getBoundaryPointType(const size_t index) const {
-    assert(index < BoundaryPointTypes.size());
-    return BoundaryPointTypes[index];
+    assert(index < boundaryPointTypes_.size());
+    return boundaryPointTypes_[index];
   }
   uint16_t &getBoundaryPointType(const size_t index) {
-    assert(index < BoundaryPointTypes.size());
-    return BoundaryPointTypes[index];
+    assert(index < boundaryPointTypes_.size());
+    return boundaryPointTypes_[index];
   }
   void setBoundaryPointType(const size_t index, const uint16_t BoundaryPointType) {
-    assert(index < BoundaryPointTypes.size());
-    BoundaryPointTypes[index] = BoundaryPointType;
+    assert(index < boundaryPointTypes_.size());
+    boundaryPointTypes_[index] = BoundaryPointType;
   }
   uint16_t getReflectance(const size_t index) const {
     assert(index < reflectances_.size() && withReflectances_);
@@ -129,9 +130,22 @@ class PCCPointSet3 {
     withColors_ = false;
     colors_.resize(0);
   }
-
+  const std::vector<PCCNormal3D>&   getNormals() const { return normals_; }
+  bool hasNormals() const { return withNormals_; }
+  void addNormals() {
+    withNormals_ = true;
+    resize(getPointCount());
+  }
+  void removeNormals() {
+    withNormals_ = false;
+    normals_.resize(0);
+  }
   bool transfertColors( PCCPointSet3 &target, const int32_t searchRange,
                         const bool losslessTexture = false ) const;
+  bool transfertColorSimple( PCCPointSet3 &target,
+                             const double bestColorSearchStep = 0.1 );
+  bool transfertColorWeight( PCCPointSet3 &target,
+                             const double bestColorSearchStep = 0.1 );
 
   size_t getPointCount() const { return positions_.size(); }
   void resize(const size_t size) {
@@ -144,7 +158,10 @@ class PCCPointSet3 {
     if( PCC_SAVE_POINT_TYPE ) {
       types_.resize( size );
     }
-    BoundaryPointTypes.resize(size);
+    if (hasNormals()) {
+      normals_.resize(size);
+    }
+    boundaryPointTypes_.resize(size);
   }
   void reserve(const size_t size) {
     positions_.reserve(size);
@@ -157,7 +174,7 @@ class PCCPointSet3 {
     if( PCC_SAVE_POINT_TYPE ) {
       types_.reserve( size );
     }
-    BoundaryPointTypes.reserve(size);
+    boundaryPointTypes_.reserve(size);
   }
   void clear() {
     positions_.clear();
@@ -166,7 +183,7 @@ class PCCPointSet3 {
     if( PCC_SAVE_POINT_TYPE ) {
       types_.clear();
     }
-    BoundaryPointTypes.clear();
+    boundaryPointTypes_.clear();
   }
   size_t addPoint(const PCCPoint3D &position) {
     const size_t index = getPointCount();
@@ -174,6 +191,16 @@ class PCCPointSet3 {
     positions_[index] = position;
     return index;
   }
+  size_t addPoint(const PCCPoint3D &position, const PCCColor3B &color ) {
+    withColors_ = true;
+    const size_t index = getPointCount();
+    resize( index + 1 );
+    colors_.resize( index + 1 );
+    positions_[index] = position;
+    colors_[index]    = color;
+    return index;
+  }
+
   void swapPoints(const size_t index1, const size_t index2) {
     assert(index1 < getPointCount());
     assert(index2 < getPointCount());
@@ -223,14 +250,57 @@ class PCCPointSet3 {
   void convertRGBToYUVClosedLoop() ;
   void convertYUVToRGB() ;
 
+  void removeDuplicate();
+  void distanceGeo     ( const PCCPointSet3& pointcloud,  float& distPAB, float& distPBA  ) const;
+  void distanceGeoColor( const PCCPointSet3& pointcloud,
+      float& distPAB,
+      float& distPBA,
+      float& distYAB,
+      float& distYBA,
+      float& distUAB,
+      float& distUBA,
+      float& distVAB,
+      float& distVBA ) const;
+
+  void removeDuplicate( PCCPointSet3& newPointcloud, size_t dropDuplicates ) const ;
+  void copyNormals ( const PCCPointSet3& sourceWithNormal );
+  void scaleNormals( const PCCPointSet3& sourceWithNormal );
+  std::vector<uint8_t> computeChecksum( bool reorderPoints = false );
+  void sortColor( std::vector<size_t>& list );
+  void reorder();
+  void reorder( PCCPointSet3& newPointcloud, bool dropDuplicates );
+  void swap( PCCPointSet3& newPointcloud );
  private:
-  std::vector<PCCPoint3D> positions_;
-  std::vector<PCCColor3B> colors_;
-  std::vector<uint16_t>   reflectances_;
-  std::vector<uint16_t>   BoundaryPointTypes;
-  std::vector<uint8_t>    types_;
-  bool                    withColors_;
-  bool                    withReflectances_;
+  void distance( const PCCPointSet3& pointcloud,
+                 float& distPAB,
+                 float& distPBA,
+                 float& distYAB,
+                 float& distYBA,
+                 float& distUAB,
+                 float& distUBA,
+                 float& distVAB,
+                 float& distVBA ) const ;
+  void distance( const PCCPointSet3& pointcloud,
+                 float& distPAB,
+                 float& distPBA ) const ;
+  void distance( const PCCPointSet3& pointcloud,
+                 float& distP,
+                 float& distY,
+                 float& distU,
+                 float& distV ) const;
+  void distance( const PCCPointSet3& pointcloud,
+                 float& distP ) const;
+  std::vector<uint8_t> computeMd5();
+
+  std::vector<PCCPoint3D>  positions_;
+  std::vector<PCCColor3B>  colors_;
+  std::vector<uint16_t>    reflectances_;
+  std::vector<uint16_t>    boundaryPointTypes_;
+  std::vector<uint8_t>     types_;
+  std::vector<PCCNormal3D> normals_;
+  bool                     withNormals_;
+  bool                     withColors_;
+  bool                     withReflectances_;
 };
 }
 

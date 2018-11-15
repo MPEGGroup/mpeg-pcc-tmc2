@@ -1,7 +1,7 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.12.2)
 PROJECT (TMC2 CXX)
 
-SET( TMC2_VERSION_MAJOR 3 )
+SET( TMC2_VERSION_MAJOR 4 )
 SET( TMC2_VERSION_MINOR 0 )
 
 INCLUDE( CheckCXXCompilerFlag )
@@ -28,6 +28,8 @@ ADD_SUBDIRECTORY(dependencies)
 ADD_SUBDIRECTORY(source/lib/PccLibCommon)
 ADD_SUBDIRECTORY(source/lib/PccLibDecoder)
 ADD_SUBDIRECTORY(source/lib/PccLibEncoder)
+ADD_SUBDIRECTORY(source/lib/PccLibMetrics)
 
 ADD_SUBDIRECTORY(source/app/PccAppEncoder)
 ADD_SUBDIRECTORY(source/app/PccAppDecoder)
+ADD_SUBDIRECTORY(source/app/PccAppMetrics)

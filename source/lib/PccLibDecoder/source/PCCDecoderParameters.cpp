@@ -37,16 +37,16 @@
 using namespace pcc;
 
 PCCDecoderParameters::PCCDecoderParameters() {
-    compressedStreamPath_              = {};
-    reconstructedDataPath_             = {};
-    startFrameNumber_                  = 0;
-    colorTransform_                    = COLOR_TRANSFORM_RGB_TO_YCBCR;
-    colorSpaceConversionPath_          = {};
-    inverseColorSpaceConversionConfig_ = {};
-    videoDecoderPath_                  = {};
-    videoDecoderOccupancyMapPath_      = {};
-    nbThread_                          = 1;
-    keepIntermediateFiles_             = false;
+  compressedStreamPath_              = {};
+  reconstructedDataPath_             = {};
+  startFrameNumber_                  = 0;
+  colorTransform_                    = COLOR_TRANSFORM_RGB_TO_YCBCR;
+  colorSpaceConversionPath_          = {};
+  inverseColorSpaceConversionConfig_ = {};
+  videoDecoderPath_                  = {};
+  videoDecoderOccupancyMapPath_      = {};
+  nbThread_                          = 1;
+  keepIntermediateFiles_             = false;
 }
 
 PCCDecoderParameters::~PCCDecoderParameters() {
@@ -65,7 +65,13 @@ void PCCDecoderParameters::print() {
   std::cout << "\t   videoDecoderOccupancyMapPath      " << videoDecoderOccupancyMapPath_      << std::endl;
   std::cout << "\t   inverseColorSpaceConversionConfig " << inverseColorSpaceConversionConfig_ << std::endl;
   std::cout << "\t   patchColorSubsampling             " << patchColorSubsampling_             << std::endl;
-  std::cout << std::endl;
+}
+
+void PCCDecoderParameters::completePath(){
+  if ( videoDecoderOccupancyMapPath_.empty() ||
+      !exist(videoDecoderOccupancyMapPath_ ) ) {
+    videoDecoderOccupancyMapPath_ = videoDecoderPath_;
+  }
 }
 
 bool PCCDecoderParameters::check() {
@@ -75,7 +81,7 @@ bool PCCDecoderParameters::check() {
     std::cout << "Info: Using external color space conversion" << std::endl;
     if (colorTransform_ != COLOR_TRANSFORM_NONE) {
       std::cout << "Using external color space conversion requires colorTransform = "
-                    "COLOR_TRANSFORM_NONE!\n";
+          "COLOR_TRANSFORM_NONE!\n";
       colorTransform_ = COLOR_TRANSFORM_NONE;
     }
   } else {

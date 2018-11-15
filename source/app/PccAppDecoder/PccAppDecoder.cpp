@@ -40,12 +40,13 @@ int main(int argc, char *argv[]) {
   std::cout << "PccAppDecoder v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MINOR << std::endl
             << std::endl;
 
-  PCCDecoderParameters params;
-  if (!parseParameters(argc, argv, params )) {
+  PCCDecoderParameters decoderParams;
+  PCCMetricsParameters metricsParams;
+  if (!parseParameters(argc, argv, decoderParams, metricsParams )) {
     return -1;
   }
-  if( params.nbThread_ > 0 ) {
-    tbb::task_scheduler_init init( (int)params.nbThread_ );
+  if( decoderParams.nbThread_ > 0 ) {
+    tbb::task_scheduler_init init( (int)decoderParams.nbThread_ );
   }
 
   // Timers to count elapsed wall/user time
@@ -53,7 +54,7 @@ int main(int argc, char *argv[]) {
   pcc::chrono::StopwatchUserTime clockUser;
 
   clockWall.start();
-  int ret = decompressVideo(params, clockUser);
+  int ret = decompressVideo( decoderParams, metricsParams, clockUser );
   clockWall.stop();
 
   using namespace std::chrono;
@@ -89,11 +90,14 @@ namespace pcc{
 //---------------------------------------------------------------------------
 // :: Command line / config parsing
 
-bool parseParameters(int argc, char *argv[], PCCDecoderParameters& params ) {
+bool parseParameters( int argc, char *argv[],
+                      PCCDecoderParameters& decoderParams,
+                      PCCMetricsParameters& metricsParams ) {
 
   namespace po = df::program_options_lite;
 
   bool print_help = false;
+  size_t ignore;
 
   // The definition of the program/config options, along with default values.
   //
@@ -108,93 +112,164 @@ bool parseParameters(int argc, char *argv[], PCCDecoderParameters& params ) {
 
     // i/o
     ("compressedStreamPath",
-     params.compressedStreamPath_,
-     params.compressedStreamPath_,
+     decoderParams.compressedStreamPath_,
+     decoderParams.compressedStreamPath_,
      "Output(encoder)/Input(decoder) compressed bitstream")
 
     ("reconstructedDataPath",
-     params.reconstructedDataPath_,
-     params.reconstructedDataPath_,
+     decoderParams.reconstructedDataPath_,
+     decoderParams.reconstructedDataPath_,
      "Output decoded pointcloud. Multi-frame sequences may be represented by %04i")
 
     // sequence configuration
     ("startFrameNumber",
-     params.startFrameNumber_,
-     params.startFrameNumber_,
+     decoderParams.startFrameNumber_,
+     decoderParams.startFrameNumber_,
      "Fist frame number in sequence to encode/decode")
 
     // colour space conversion
     ("colorTransform",
-     params.colorTransform_,
-     params.colorTransform_,
+     decoderParams.colorTransform_,
+     decoderParams.colorTransform_,
      "The colour transform to be applied:\n"
      "  0: none\n"
      "  1: RGB to YCbCr (Rec.709)")
 
     ("colorSpaceConversionPath",
-     params.colorSpaceConversionPath_,
-     params.colorSpaceConversionPath_,
+     decoderParams.colorSpaceConversionPath_,
+     decoderParams.colorSpaceConversionPath_,
      "Path to the HDRConvert. If unset, an internal color space conversion is used")
     
     ("inverseColorSpaceConversionConfig",
-     params.inverseColorSpaceConversionConfig_,
-     params.inverseColorSpaceConversionConfig_,
+     decoderParams.inverseColorSpaceConversionConfig_,
+     decoderParams.inverseColorSpaceConversionConfig_,
      "HDRConvert configuration file used for YUV420 to RGB444 conversion")
 
     ("videoDecoderPath",
-     params.videoDecoderPath_,
-     params.videoDecoderPath_,
+     decoderParams.videoDecoderPath_,
+     decoderParams.videoDecoderPath_,
      "HM video decoder executable")
 
     ("videoDecoderOccupancyMapPath",
-     params.videoDecoderOccupancyMapPath_,
-     params.videoDecoderOccupancyMapPath_,
+     decoderParams.videoDecoderOccupancyMapPath_,
+     decoderParams.videoDecoderOccupancyMapPath_,
      "HM lossless video decoder executable for occupancy map")
 
     ("nbThread",
-     params.nbThread_,
-     params.nbThread_,
+     decoderParams.nbThread_,
+     decoderParams.nbThread_,
      "Number of thread used for parallel processing")
 
     ("keepIntermediateFiles",
-     params.keepIntermediateFiles_,
-     params.keepIntermediateFiles_,
+     decoderParams.keepIntermediateFiles_,
+     decoderParams.keepIntermediateFiles_,
      "Keep intermediate files: RGB, YUV and bin")
 
     // patch sampling resolution testing
     ("testLevelOfDetailSignaling",
-    params.testLevelOfDetailSignaling_,
+    decoderParams.testLevelOfDetailSignaling_,
     (size_t)0,
     "Disable patch sampling resolution scaling; use in conjunction with same parameter in encoder")
 
-   //visual quality
+    //visual quality
     ("patchColorSubsampling", 
-     params.patchColorSubsampling_, 
+     decoderParams.patchColorSubsampling_,
      false, 
-     "Enable per-patch color up-sampling")
- ;
+     "Enable per-patch color up-sampling");
+
+  opts.addOptions()
+    ("computeChecksum",
+     metricsParams.computeChecksum_,
+     metricsParams.computeChecksum_,
+     "Compute checksum")
+
+    ("computeMetrics",
+      metricsParams.computeMetrics_,
+      metricsParams.computeMetrics_,
+     "Compute metrics")
+
+    ("uncompressedDataFolder",
+      metricsParams.uncompressedDataFolder_,
+      metricsParams.uncompressedDataFolder_,
+      "Folder where the uncompress input data are stored, use for cfg relative paths.")
+
+    ("startFrameNumber",
+     metricsParams.startFrameNumber_,
+     metricsParams.startFrameNumber_,
+     "Fist frame number in sequence to encode/decode")
+
+    ("frameCount",
+     metricsParams.frameCount_,
+     metricsParams.frameCount_,
+     "Number of frames to encode")
+
+    ("groupOfFramesSize",
+     metricsParams.groupOfFramesSize_,
+     metricsParams.groupOfFramesSize_,
+     "Random access period")
+
+    ("uncompressedDataPath",
+     metricsParams.uncompressedDataPath_,
+     metricsParams.uncompressedDataPath_,
+     "Input pointcloud to encode. Multi-frame sequences may be represented by %04i")
+
+    ("reconstructedDataPath",
+     metricsParams.reconstructedDataPath_,
+     metricsParams.reconstructedDataPath_,
+     "Output decoded pointcloud. Multi-frame sequences may be represented by %04i")
+
+    ("normalDataPath",
+     metricsParams.normalDataPath_,
+     metricsParams.normalDataPath_,
+     "Input pointcloud to encode. Multi-frame sequences may be represented by %04i")
+
+    ("resolution",
+     metricsParams.resolution_,
+     metricsParams.resolution_,
+     "Specify the intrinsic resolution")
+
+    ("dropdups",
+     metricsParams.dropDuplicates_,
+     metricsParams.dropDuplicates_,
+     "0(detect), 1(drop), 2(average) subsequent points with same coordinates")
+
+    ("neighborsProc",
+     metricsParams.neighborsProc_,
+     metricsParams.neighborsProc_,
+     "0(undefined), 1(average), 2(weighted average), 3(min), 4(max) neighbors with same geometric distance")
+
+    ("nbThread",
+     metricsParams.nbThread_,
+     metricsParams.nbThread_,
+     "Number of thread used for parallel processing")
+
+    ("minimumImageHeight",    ignore, ignore, "Ignore parameter")
+    ("flagColorPreSmoothing", ignore, ignore, "Ignore parameter")
+    ("surfaceSeparation",     ignore, ignore, "Ignore parameter");
 
   po::setDefaults(opts);
   po::ErrorReporter err;
   const list<const char *> &argv_unhandled = po::scanArgv(opts, argc, (const char **)argv, err);
-
   for (const auto arg : argv_unhandled) {
     err.warn() << "Unhandled argument ignored: " << arg << "\n";
   }
 
-  if ( params.videoDecoderOccupancyMapPath_.empty() || !exist(params.videoDecoderOccupancyMapPath_ ) ) {
-    params.videoDecoderOccupancyMapPath_ = params.videoDecoderPath_;
-  }
-  
   if (argc == 1 || print_help) {
     po::doHelp( std::cout, opts, 78 );
     return false;
   }
 
-  params.print();
-  if( !params.check() ) {
+  decoderParams.completePath();
+  decoderParams.print();
+  if( !decoderParams.check() ) {
     err.error() << "Input parameters are not correct \n";
   }
+  metricsParams.completePath();
+  metricsParams.print();
+  if( !metricsParams.check( true ) ) {
+    err.error() << "Input metrics parameters not correct \n";
+  }
+  metricsParams.startFrameNumber_ = decoderParams.startFrameNumber_;
 
   // report the current configuration (only in the absence of errors so
   // that errors/warnings are more obvious and in the same place).
@@ -203,22 +278,32 @@ bool parseParameters(int argc, char *argv[], PCCDecoderParameters& params ) {
   return true;
 }
 
-int decompressVideo(const PCCDecoderParameters &params, StopwatchUserTime &clock) {
+int decompressVideo( const PCCDecoderParameters &decoderParams,
+                     const PCCMetricsParameters &metricsParams,
+                     StopwatchUserTime &clock) {
   PCCBitstream bitstream;
-  if( ! bitstream.initialize( params.compressedStreamPath_ ) ) {
+  if( ! bitstream.initialize( decoderParams.compressedStreamPath_ ) ) {
     return -1;
   }
   PCCMetadataEnabledFlags gofLevelMetadataEnabledFlags;
   if( ! bitstream.readHeader(gofLevelMetadataEnabledFlags) ) {
     return -1;
   }
-  size_t frameNumber = params.startFrameNumber_;
+  size_t frameNumber = decoderParams.startFrameNumber_;
   size_t contextIndex = 0;
-
+  PCCMetrics  metrics;
+  PCCChecksum checksum;
+  metrics.setParameters( metricsParams );
+  checksum.setParameters( metricsParams );
+  std::vector<std::vector<uint8_t>> checksumsRec, checksumsDec;
+  size_t checksumIndex = 0;
+  if( metricsParams.computeChecksum_ ) {
+    checksum.read( decoderParams.compressedStreamPath_ );
+  }
   PCCDecoder decoder;
-  decoder.setParameters( params );
+  decoder.setParameters( decoderParams );
   while ( bitstream.size() < bitstream.capacity()) {
-    PCCGroupOfFrames reconstruct; 
+    PCCGroupOfFrames reconstructs;
     PCCContext context;
     context.setIndex( contextIndex++ );
 
@@ -227,12 +312,42 @@ int decompressVideo(const PCCDecoderParameters &params, StopwatchUserTime &clock
       gofLevelMetadata.getMetadataEnabledFlags() = gofLevelMetadataEnabledFlags;
     }
     clock.start();
-    int ret = decoder.decode( bitstream, context, reconstruct );
+    int ret = decoder.decode( bitstream, context, reconstructs );
     clock.stop();
     if (ret) {
       return ret;
     }
-    reconstruct.write( params.reconstructedDataPath_, frameNumber );
+    if( metricsParams.computeChecksum_ ) {
+      checksum.computeDecoded( reconstructs );
+    }
+    if( metricsParams.computeMetrics_ ) {
+      PCCGroupOfFrames sources, normals;
+      if (!sources.load( metricsParams.uncompressedDataPath_, frameNumber,
+                         frameNumber + reconstructs.size(), decoderParams.colorTransform_ ) ) {
+        return -1;
+      }
+      if(metricsParams.normalDataPath_ != "" ){
+        if ( !normals.load( metricsParams.normalDataPath_, frameNumber,
+                            frameNumber + reconstructs.size(), ColorTransform::COLOR_TRANSFORM_NONE ) ) {
+          return -1;
+        }
+      }
+      metrics.compute( sources, reconstructs, normals );
+      printf("here \n"); fflush(stdout);
+    }
+    printf("reconstructs.write \n"); fflush(stdout);
+    reconstructs.write( decoderParams.reconstructedDataPath_, frameNumber );
+    printf("reconstructs.write done \n"); fflush(stdout);
+  }
+  if( metricsParams.computeChecksum_ ) {
+    printf("checksum.compare() start\n"); fflush(stdout);
+    checksum.compareRecDec();
+    printf("checksum.compare() done\n"); fflush(stdout);
+  }
+  if( metricsParams.computeMetrics_ ) {
+    printf(" metrics.display() start\n"); fflush(stdout);
+    metrics.display();
+    printf(" metrics.display() done\n"); fflush(stdout);
   }
   return 0;
 }

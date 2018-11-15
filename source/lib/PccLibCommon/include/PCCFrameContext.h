@@ -59,6 +59,7 @@ class PCCFrameContext {
   std::vector<PCCPatch>&           getPatches           () { return patches_;           }
   PCCMissedPointsPatch&            getMissedPointsPatch () { return missedPointsPatch_; }
   PCCMetadata&                     getFrameLevelMetadata() { return frameLevelMetadata_; }
+  const PCCPatch&                  getPatch             (size_t index ) const { return patches_[index];    }
 
   const size_t getMPGeoWidth() {return MPGeoWidth_;}
   const size_t getMPGeoHeight() {return MPGeoHeight_;}
@@ -82,7 +83,15 @@ class PCCFrameContext {
   bool getUseOccupancyMapVideo() { return useOccupancyMapVideo; }
   void setEnhancedDeltaDepth(bool code) {enhancedDeltaDepth_=code;}
   bool getEnhancedDeltaDepth( ) {return enhancedDeltaDepth_;}
-  
+
+  std::vector<PCCPointSet3>&       getSrcPointCloudByPatch() { return srcPointCloudByPatch_;     }
+  PCCPointSet3&                    getSrcPointCloudByPatch( size_t patchIndex ) { return srcPointCloudByPatch_[patchIndex];     }
+  std::vector<PCCPointSet3>&       getSrcPointCloudByBlock() { return srcPointCloudByBlock_; }
+  std::vector<bool>&               getInterpolate()          { return interpolate_;        }
+  std::vector<bool>&               getFilling()              { return filling_; }
+  std::vector<size_t>&             getMinD1()                { return minD1_;                    }
+  std::vector<size_t>&             getNeighbor()             { return neighbor_;                 }
+
  private:
   size_t index_;
   size_t width_;
@@ -107,6 +116,15 @@ class PCCFrameContext {
   std::vector<PCCPatch> patches_;
   PCCMissedPointsPatch missedPointsPatch_;
   PCCMetadata frameLevelMetadata_;
+  std::vector<PCCPointSet3> srcPointCloudByPatch_;
+  std::vector<PCCPointSet3> srcPointCloudByBlock_;
+  std::vector<PCCPointSet3> recPointCloudByBlock_;
+  std::vector<std::vector<PCCVector3<size_t>>> pointToPixelByBlock_;
+  std::vector<bool>   interpolate_;
+  std::vector<bool>   filling_;
+  std::vector<size_t> minD1_;
+  std::vector<size_t> neighbor_;
+
 };
 
 }; //~namespace

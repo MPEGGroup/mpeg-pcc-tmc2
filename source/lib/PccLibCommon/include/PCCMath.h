@@ -505,9 +505,7 @@ static void PCCDiagonalize(const PCCMatrix3<double> &A, PCCMatrix3<double> &Q, P
     m[1] = fabs(o[1]);
     m[2] = fabs(o[2]);
 
-    k0 = (m[0] > m[1] && m[0] > m[2])
-             ? 0
-             : (m[1] > m[2]) ? 1 : 2;  // index of largest element of offdiag
+    k0 = (m[0] > m[1] && m[0] > m[2]) ? 0 : (m[1] > m[2]) ? 1 : 2;  // index of largest element of offdiag
     k1 = (k0 + 1) % 3;
     k2 = (k0 + 2) % 3;
     if (o[k0] == 0.0) {
@@ -542,6 +540,7 @@ static void PCCDiagonalize(const PCCMatrix3<double> &A, PCCMatrix3<double> &Q, P
 }
 typedef PCCVector3<double>  PCCVector3D;
 typedef PCCVector3<double>  PCCPoint3D;
+typedef PCCVector3<float>   PCCNormal3D;
 typedef PCCBox3<double>     PCCBox3D;
 typedef PCCVector3<uint8_t> PCCColor3B;
 typedef PCCMatrix3<double>  PCCMatrix3D;

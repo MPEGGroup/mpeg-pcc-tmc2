@@ -9,13 +9,14 @@ FILE(GLOB SRC *.h *.cpp *.c ${CMAKE_SOURCE_DIR}/dependencies/program-options-lit
 
 INCLUDE_DIRECTORIES( ${CMAKE_SOURCE_DIR}/source/lib/PccLibCommon/include                    
                      ${CMAKE_SOURCE_DIR}/source/lib/PccLibEncoder/include 
+                     ${CMAKE_SOURCE_DIR}/source/lib/PccLibMetrics/include 
                      ${CMAKE_SOURCE_DIR}/dependencies/program-options-lite
                      ${CMAKE_SOURCE_DIR}/dependencies/arithmetic-coding/inc
                      ${CMAKE_SOURCE_DIR}/dependencies/tbb/include )
                      
 ADD_EXECUTABLE( ${MYNAME} ${SRC} )
 
-SET( LIBS PccLibCommon PccLibEncoder tbb_static ) 
+SET( LIBS PccLibCommon PccLibEncoder PccLibMetrics tbb_static ) 
 
 TARGET_LINK_LIBRARIES( ${MYNAME} ${LIBS} )
 

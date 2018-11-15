@@ -38,17 +38,23 @@
 #include "PCCCommon.h"
 #include "PCCChrono.h"
 #include "PCCEncoder.h"
+#include "PCCMetrics.h"
+#include "PCCChecksum.h"
 #include "PCCContext.h"
 #include "PCCFrameContext.h"
 #include "PCCBitstream.h"
 #include "PCCGroupOfFrames.h"
 #include "PCCEncoderParameters.h"
+#include "PCCMetricsParameters.h"
 #include <program_options_lite.h>
 #include <tbb/tbb.h>
 
-bool parseParameters(int argc, char *argv[], pcc::PCCEncoderParameters& params );
+bool parseParameters( int argc, char *argv[],
+                      pcc::PCCEncoderParameters& encoderParams,
+                      pcc::PCCMetricsParameters& metricsParams );
 void usage();
-int compressVideo(const pcc::PCCEncoderParameters& params,
-                  pcc::chrono::StopwatchUserTime&);
+int compressVideo( const pcc::PCCEncoderParameters& encoderParams,
+                   const pcc::PCCMetricsParameters& metricsParams,
+                   pcc::chrono::StopwatchUserTime&);
 
 #endif /* PCC_APP_DECODER_H */

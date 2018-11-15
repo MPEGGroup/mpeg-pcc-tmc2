@@ -1,4 +1,4 @@
-# mpeg-pcc-tmc2  
+# VPCC - mpeg-pcc-tmc2 - realese 4.0  
 
 ## Building
 
@@ -27,8 +27,7 @@ Bash scripts can be use to build mpeg-pcc-tmc2 project:
 ### External dependencies
 
 The external dependencies must be download and build: 
-- HM-16.16
-- HM-16.14+SCM-8.3 
+- HM-16.18+SCM-8.7 
 - HDRTools
 - pcc_distortion
 
@@ -45,7 +44,6 @@ in earlier files.  ie. order matters.
 Further help text describing option usage is available using "./bin/PccAppEncoder --help" or "./bin/PccAppDecoder --help".
 
 ### PccAppEncoder
- 
 
 ```
 ./bin/PccAppEncoder \
