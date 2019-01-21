@@ -130,17 +130,15 @@ bool PCCChecksum::compare( std::vector<std::vector<uint8_t>>& checksumsA,
   return equal;
 }
 
-void PCCChecksum::compareSrcRec( ){
-  printf("PCCChecksum compareSrcRec \n"); fflush(stdout);
+bool PCCChecksum::compareSrcRec( ){
   bool equal = compare( checksumsSrc_, checksumsOrd_ );
   printf("SEQUENCE SOURCE AND RECONSCTRUTED MD5 %s => ENCODING IS %s\n",
          equal ? "OK" : "DIFF", equal ? "LOSSLESS" : "NOT LOSSLESS" ); fflush(stdout);
-  printf("PCCChecksum compareSrcRec done \n"); fflush(stdout);
+  return equal;
 }
 
-void PCCChecksum::compareRecDec(){
-  printf("PCCChecksum compareRecDec \n"); fflush(stdout);
+bool PCCChecksum::compareRecDec(){
   bool equal = compare( checksumsRec_, checksumsDec_ );
   printf("SEQUENCE RECONSCTRUTED AND DECODED MD5 %s \n", equal ? "OK" : "DIFF" );fflush(stdout);
-  printf("PCCChecksum compareRecDec done \n"); fflush(stdout);
+  return equal;
 }

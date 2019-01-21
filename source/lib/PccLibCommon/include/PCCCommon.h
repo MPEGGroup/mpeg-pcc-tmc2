@@ -77,6 +77,7 @@ namespace pcc {
   enum ColorTransform { COLOR_TRANSFORM_NONE = 0, COLOR_TRANSFORM_RGB_TO_YCBCR = 1 };
   enum PCCAxis3       { PCC_AXIS3_UNDEFINED = -1, PCC_AXIS3_X = 0, PCC_AXIS3_Y = 1, PCC_AXIS3_Z = 2 };
   enum PointType { Unset = 0, D0, D1, DF, Smooth, InBetween };
+  enum PCCVideoType   { OccupancyMap = 0, Geometry,  GeometryD0, GeometryD1, GeometryMP, Texture,  TextureMP, Other };
   const size_t IntermediateLayerIndex  = 100;
   const size_t NeighborThreshold       = 4;
   const size_t NumPatchOrientations    = 8;
@@ -84,6 +85,18 @@ namespace pcc {
   // ******************************************************************* //
   // Static functions
   // ******************************************************************* //
+  static std::string toString( PCCVideoType type ) {
+    switch( type ){
+    case PCCVideoType::OccupancyMap: return std::string( " occupancy map video"          ); break;
+    case PCCVideoType::Geometry    : return std::string( "geometry video"                ); break;
+    case PCCVideoType::GeometryD0  : return std::string( "geometry D0 video"             ); break;
+    case PCCVideoType::GeometryD1  : return std::string( "geometry D1 video"             ); break;
+    case PCCVideoType::GeometryMP  : return std::string( " missed points geometry video" ); break;
+    case PCCVideoType::Texture     : return std::string( "texture video "                ); break;
+    case PCCVideoType::TextureMP   : return std::string( " missed points texture video"  ); break;
+    }
+    return std::string( "not supported" );
+  }
   static bool exist(const std::string& sString ) {
     struct stat buffer;
     return (stat( sString.c_str(), &buffer) == 0);

@@ -64,14 +64,16 @@ class PCCDecoder : public PCCCodec {
   void setParameters( PCCDecoderParameters value );
 
  private:
+  int  decompress( PCCBitstream &bitstream, PCCContext &context );
+  int  decode( PCCContext &context, PCCGroupOfFrames& reconstruct );
 
   int  readMetadata(PCCMetadata &metadata, PCCBitstream &bitstream);
   int  decompressMetadata(PCCMetadata &metadata, o3dgc::Arithmetic_Codec &arithmeticDecoder);
   int  decompressHeader( PCCContext &context, PCCBitstream &bitstream );
 
-  void decompressOccupancyMap( PCCContext &context,  PCCBitstream& bitstream, uint8_t& surfaceThickness);
+  void decompressOccupancyMap( PCCContext &context,  PCCBitstream& bitstream );
   void decompressOccupancyMap(  PCCContext &context, PCCFrameContext& frame, PCCBitstream &bitstream, 
-                                uint8_t& surfaceThickness, PCCFrameContext& preFrame, size_t frameIndex );
+                               PCCFrameContext& preFrame, size_t frameIndex );
 
   void GenerateOccupancyMapFromVideoFrame(size_t occupancyResolution, size_t occupancyPrecision,
                                           size_t width, size_t height,

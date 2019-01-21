@@ -35,7 +35,7 @@
 #define PCCVideoEncoder_h
 
 #include "PCCCommon.h"
-#include "PCCBitstream.h"
+#include "PCCVideoBitstream.h"
 #include "PCCSystem.h"
 #include "PCCVideo.h"
 #include "PCCContext.h"
@@ -44,7 +44,6 @@
 
 namespace pcc {
 
-class PCCBitstream;
 class PCCContext;
 class PCCFrameContext;
 
@@ -56,7 +55,7 @@ class PCCVideoEncoder {
   bool compress(PCCVideo<T, 3> &video,
                 const std::string &fileName,
                 const size_t qp,
-                PCCBitstream &bitstream,
+                PCCVideoBitstream &bitstream,
                 const std::string &encoderConfig,
                 const std::string &encoderPath,
                 PCCContext& contexts,
@@ -360,14 +359,11 @@ class PCCVideoEncoder {
       return false;
     }
     const uint64_t fileSize = file.tellg();
-    bitstream.write<uint32_t>(uint32_t(fileSize));
-    assert(bitstream.size() + fileSize < bitstream.capacity());
+    bitstream.resize( (size_t)fileSize );
     file.clear();
     file.seekg(0);
-    file.read(reinterpret_cast<char *>(bitstream.buffer()) + bitstream.size(), fileSize);
-    bitstream += fileSize;
+    file.read(reinterpret_cast<char *>(bitstream.buffer()), fileSize);
     file.close();
-
     if ( yuvVideo ) {
       if ( use444CodecIo ) {
         video.read( recYuvFileName, width, height, frameCount, nbyte );

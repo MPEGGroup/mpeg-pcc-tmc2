@@ -52,7 +52,7 @@ using namespace pcc;
 PCCCodec::PCCCodec() {}
 PCCCodec::~PCCCodec() {}
 
-void PCCCodec::addGridCentroid(PCCVector3D& point, int patchIdx,
+void PCCCodec::addGridCentroid(PCCPoint3D& point, int patchIdx,
                                std::vector<int>& cnt, std::vector<PCCVector3D>& center_grid,
                                std::vector<int> &gpartition, std::vector<bool>& doSmooth, int grid) {
 
@@ -336,7 +336,7 @@ std::vector<PCCPoint3D> PCCCodec::generatePoints( const GeneratePointCloudParame
     }
     if ((x + y) % 2 == 1) {
       depth1 = point0[patch.getNormalAxis()];
-      PCCVector3D interpolateD0(point0);
+      PCCPoint3D interpolateD0(point0);
       if( patch.getProjectionMode() == 0 ){
         interpolateD0[patch.getNormalAxis()] = round((std::min)((std::max)(minimumDepth, depth1 - params.surfaceThickness), depth1));
       } else {
@@ -496,7 +496,7 @@ void PCCCodec::generatePointCloud(PCCPointSet3& reconstruct, PCCFrameContext &fr
               bool addPoint = true;
               if (params.enhancedDeltaDepthCode_) {
                 //D0
-                PCCVector3D point0 = patch.generatePoint( u, v, frame0.getValue(0, x, y), lodScale );
+                PCCPoint3D point0 = patch.generatePoint( u, v, frame0.getValue(0, x, y), lodScale );
                 const size_t pointIndex0 = reconstruct.addPoint(point0);
                 reconstruct.setColor(pointIndex0, color);
                 if (PCC_SAVE_POINT_TYPE == 1) {
@@ -515,7 +515,7 @@ void PCCCodec::generatePointCloud(PCCPointSet3& reconstruct, PCCFrameContext &fr
                   //eddCode = frame1.getValue(0, x, y) - frame0.getValue(0, x, y);
                   eddCode = (frame1.getValue(0, x, y) > frame0.getValue(0, x, y)) ? (frame1.getValue(0, x, y) - frame0.getValue(0, x, y)) : 0;
                 }
-                PCCVector3D  point1(point0);
+                PCCPoint3D  point1(point0);
                 if (eddCode == 0) {
                   const size_t pointIndex1 = reconstruct.addPoint(point1);
                   reconstruct.setColor(pointIndex1, color);
@@ -591,15 +591,15 @@ void PCCCodec::generatePointCloud(PCCPointSet3& reconstruct, PCCFrameContext &fr
                   //Without "Identify boundary points" & "1st Extension boundary region" as EDD code is only for lossless coding now
                 } // if (eddCode == 0) 
               } else {//not params.enhancedDeltaDepthCode_
-                std::vector<PCCVector3D> createdPoints = generatePoints( params, frame, video, videoD1, shift,
-                                                                         patchIndex,
-                                                                         u, v,
-                                                                         x, y,
-                                                                         frame.getInterpolate()[blockIndex],
-                                                                         frame.getFilling    ()[blockIndex],
-                                                                         frame.getMinD1      ()[blockIndex],
-                                                                         frame.getNeighbor   ()[blockIndex],
-                                                                         lodScale );
+                auto createdPoints = generatePoints( params, frame, video, videoD1, shift,
+                                                     patchIndex,
+                                                     u, v,
+                                                     x, y,
+                                                     frame.getInterpolate()[blockIndex],
+                                                     frame.getFilling    ()[blockIndex],
+                                                     frame.getMinD1      ()[blockIndex],
+                                                     frame.getNeighbor   ()[blockIndex],
+                                                     lodScale );
                 if ( createdPoints.size() > 0 ) {
                   for(size_t i = 0; i<createdPoints.size();i++) {
                     const size_t pointindex_1 = reconstruct.addPoint(createdPoints[i]);
@@ -646,7 +646,7 @@ void PCCCodec::generatePointCloud(PCCPointSet3& reconstruct, PCCFrameContext &fr
         assert(eddSavedPoints.getPointCount() == numEddSavedPoints);
         size_t pointIndex1;
         for (size_t eddPoint = 0; eddPoint < numEddSavedPoints; eddPoint++) {
-          PCCVector3D  point1;
+          PCCPoint3D  point1;
           point1 = eddSavedPoints[eddPoint];
           pointIndex1 = reconstruct.addPoint(point1);
           reconstruct.setColor(pointIndex1, missedPointsColor);
@@ -657,7 +657,7 @@ void PCCCodec::generatePointCloud(PCCPointSet3& reconstruct, PCCFrameContext &fr
       auto& missedPointsPatch = frame.getMissedPointsPatch();
       if (params.losslessGeo444_) {
         for (int i = 0; i < missedPointsPatch.size(); i++) {
-          PCCVector3D point0;
+          PCCPoint3D point0;
           point0[0] = missedPointsPatch.x[i];
           point0[1] = missedPointsPatch.y[i];
           point0[2] = missedPointsPatch.z[i];
@@ -668,7 +668,7 @@ void PCCCodec::generatePointCloud(PCCPointSet3& reconstruct, PCCFrameContext &fr
         assert(missedPointsPatch.size() % 3 == 0);
         size_t sizeofMPs = (missedPointsPatch.size()) / 3;
         for (int i = 0; i < sizeofMPs; i++) {
-          PCCVector3D point0;
+          PCCPoint3D point0;
           point0[0] = missedPointsPatch.x[i];
           point0[1] = missedPointsPatch.x[i + sizeofMPs];
           point0[2] = missedPointsPatch.x[i + 2 * sizeofMPs];
@@ -708,7 +708,7 @@ void PCCCodec::generatePointCloud(PCCPointSet3& reconstruct, PCCFrameContext &fr
               if (!occupancy) {
                 continue;
               }
-              PCCVector3D point0;
+              PCCPoint3D point0;
               point0[0] = double(frame0.getValue(0, x, y));
               point0[1] = double(frame0.getValue(1, x, y));
               point0[2] = double(frame0.getValue(2, x, y));
@@ -739,7 +739,7 @@ void PCCCodec::generatePointCloud(PCCPointSet3& reconstruct, PCCFrameContext &fr
         }
       }
       numMissedPts /= 3;
-      std::vector<PCCVector3D> missedPoints;
+      std::vector<PCCPoint3D> missedPoints;
       missedPoints.resize(numMissedPts);
       size_t numMissedPointsAdded{ 0 };
       size_t missedPointsPatchWidth = missedPointsPatch.sizeU0 * missedPointsPatch.occupancyResolution;
@@ -774,14 +774,14 @@ void PCCCodec::generatePointCloud(PCCPointSet3& reconstruct, PCCFrameContext &fr
 }
 
 bool PCCCodec::gridFiltering( const std::vector<uint32_t> &partition, PCCPointSet3 &pointCloud,
-                              PCCVector3D& curPos, PCCVector3D& centroid, int &cnt,
+                              PCCPoint3D& curPoint, PCCVector3D& centroid, int &cnt,
                               std::vector<int>& gcnt, std::vector<PCCVector3D>& center_grid, std::vector<bool>& doSmooth, int grid ) {
   const int w = SMOOTH_POINT_CLOUD_MAX_SIZE / grid;
   bool otherClusterPointCount = false;
 
-  int x = curPos.x();
-  int y = curPos.y();
-  int z = curPos.z();
+  int x = curPoint.x();
+  int y = curPoint.y();
+  int z = curPoint.z();
 
   int x2 = x / grid;
   int y2 = y / grid;
@@ -824,18 +824,18 @@ bool PCCCodec::gridFiltering( const std::vector<uint32_t> &partition, PCCPointSe
   if (!otherClusterPointCount) {
     return otherClusterPointCount;
   }
-
   PCCVector3D centroid3[2][2][2] = {};
+  PCCVector3D curVector(x,y,z);
   int grid2 = grid * 2;
 
-  if (gcnt[idx[0][0][0]] > 0) centroid3[0][0][0] = center_grid[idx[0][0][0]]; else centroid3[0][0][0] = curPos;
-  if (gcnt[idx[0][0][1]] > 0) centroid3[0][0][1] = center_grid[idx[0][0][1]]; else centroid3[0][0][1] = curPos;
-  if (gcnt[idx[0][1][0]] > 0) centroid3[0][1][0] = center_grid[idx[0][1][0]]; else centroid3[0][1][0] = curPos;
-  if (gcnt[idx[0][1][1]] > 0) centroid3[0][1][1] = center_grid[idx[0][1][1]]; else centroid3[0][1][1] = curPos;
-  if (gcnt[idx[1][0][0]] > 0) centroid3[1][0][0] = center_grid[idx[1][0][0]]; else centroid3[1][0][0] = curPos;
-  if (gcnt[idx[1][0][1]] > 0) centroid3[1][0][1] = center_grid[idx[1][0][1]]; else centroid3[1][0][1] = curPos;
-  if (gcnt[idx[1][1][0]] > 0) centroid3[1][1][0] = center_grid[idx[1][1][0]]; else centroid3[1][1][0] = curPos;
-  if (gcnt[idx[1][1][1]] > 0) centroid3[1][1][1] = center_grid[idx[1][1][1]]; else centroid3[1][1][1] = curPos;
+  if (gcnt[idx[0][0][0]] > 0) centroid3[0][0][0] = center_grid[idx[0][0][0]]; else centroid3[0][0][0] = curVector;
+  if (gcnt[idx[0][0][1]] > 0) centroid3[0][0][1] = center_grid[idx[0][0][1]]; else centroid3[0][0][1] = curVector;
+  if (gcnt[idx[0][1][0]] > 0) centroid3[0][1][0] = center_grid[idx[0][1][0]]; else centroid3[0][1][0] = curVector;
+  if (gcnt[idx[0][1][1]] > 0) centroid3[0][1][1] = center_grid[idx[0][1][1]]; else centroid3[0][1][1] = curVector;
+  if (gcnt[idx[1][0][0]] > 0) centroid3[1][0][0] = center_grid[idx[1][0][0]]; else centroid3[1][0][0] = curVector;
+  if (gcnt[idx[1][0][1]] > 0) centroid3[1][0][1] = center_grid[idx[1][0][1]]; else centroid3[1][0][1] = curVector;
+  if (gcnt[idx[1][1][0]] > 0) centroid3[1][1][0] = center_grid[idx[1][1][0]]; else centroid3[1][1][0] = curVector;
+  if (gcnt[idx[1][1][1]] > 0) centroid3[1][1][1] = center_grid[idx[1][1][1]]; else centroid3[1][1][1] = curVector;
 
   centroid3[0][0][0] = (grid2 - wx)*(grid2 - wy)*(grid2 - wz)*centroid3[0][0][0];
   centroid3[0][0][1] = (wx)*(grid2 - wy)*(grid2 - wz)*centroid3[0][0][1];
@@ -873,30 +873,33 @@ void PCCCodec::smoothPointCloudGrid(PCCPointSet3& reconstruct,
   const int disth = (int)params.occupancyPrecision_;
   const int grid = (int)params.occupancyPrecision_ * 2;
   for (int c = 0; c < pointCount; c++) {
-    PCCVector3D curPos = reconstruct[c];
-    int x = (int)curPos.x();
-    int y = (int)curPos.y();
-    int z = (int)curPos.z();
+    PCCPoint3D curPoint = reconstruct[c];
+    int x = (int)curPoint.x();
+    int y = (int)curPoint.y();
+    int z = (int)curPoint.z();
     if ( x < disth || y < disth || z < disth ||
         SMOOTH_POINT_CLOUD_MAX_SIZE <= x + disth || 
         SMOOTH_POINT_CLOUD_MAX_SIZE <= y + disth || 
         SMOOTH_POINT_CLOUD_MAX_SIZE <= z + disth) {
       continue;
     }
-    PCCVector3D centroid(0.0);
+    PCCVector3D centroid(0.0), curVector(x,y,z);
     int cnt = 0;
     bool otherClusterPointCount = false;
     if (reconstruct.getBoundaryPointType(c) == 1)  {
-      otherClusterPointCount = gridFiltering(partition, reconstruct, curPos, centroid, cnt, gcnt_, center_grid_, doSmooth_, grid);
+      otherClusterPointCount = gridFiltering(partition, reconstruct, curPoint, centroid, cnt, gcnt_, center_grid_, doSmooth_, grid);
     }
     if (otherClusterPointCount) {
-      double dist2 = ((curPos*cnt - centroid).getNorm2() + (double)cnt / 2.0) / (double)cnt;
+      double dist2 = ((curVector*cnt - centroid).getNorm2() + (double)cnt / 2.0) / (double)cnt;
       if (dist2 >= (std::max)((int)params.thresholdSmoothing_, (int)cnt) * 2) {
         centroid = (centroid + (double)cnt / 2.0) / (double)cnt;
         for (size_t k = 0; k < 3; ++k) {
           centroid[k] = double(int64_t(centroid[k]));
         }
-        reconstruct[c] = centroid;
+        // reconstruct[c] = centroid;
+        reconstruct[c][0] = centroid[0];
+        reconstruct[c][1] = centroid[1];
+        reconstruct[c][2] = centroid[2];
       }
     }
   }
@@ -906,34 +909,23 @@ void PCCCodec::smoothPointCloud(PCCPointSet3& reconstruct,
                                 const std::vector<uint32_t> &partition,
                                 const GeneratePointCloudParameters params) {
   const size_t pointCount = reconstruct.getPointCount();
-  PCCStaticKdTree3 kdtree;
-  kdtree.build(reconstruct);
+  PCCKdTree kdtree( reconstruct );
   PCCPointSet3 temp;
   temp.resize(pointCount);
   tbb::task_arena limited((int)params.nbThread_);
   limited.execute([&] {
     tbb::parallel_for(size_t(0), pointCount, [&](const size_t i) {
       //  for (size_t i = 0; i < pointCount; ++i) {
-      const size_t maxNeighborCount = 512;
-      PCCPointDistInfo nNeighbor[maxNeighborCount];
-      PCCNNResult result = { nNeighbor, 0 };
-      const double maxDist = ceil(sqrt(params.radius2Smoothing_));
-      PCCNNQuery3 query = { PCCVector3D(0.0), maxDist, (std::min)(maxNeighborCount, params.neighborCountSmoothing_) };
-
       const size_t clusterindex_ = partition[i];
-      query.point = reconstruct[i];
-      kdtree.findNearestNeighbors(query, result);
-      assert(result.resultCount);
+      PCCNNResult result;
+      kdtree.searchRadius( reconstruct[i], params.neighborCountSmoothing_, params.radius2Smoothing_, result );
       PCCVector3D centroid(0.0);
       bool otherClusterPointCount = false;
       size_t neighborCount = 0;
-      for (size_t r = 0; r < result.resultCount; ++r) {
-        const double dist2 = result.neighbors[r].dist2;
-        if (dist2 > params.radius2Smoothing_) {
-          break;
-        }
+      for (size_t r = 0; r < result.count(); ++r) {
+         const double& dist2 = result.dist(r);
         ++neighborCount;
-        const size_t pointindex_ = result.neighbors[r].index;
+        const size_t pointindex_ = result.indices(r);
         centroid += reconstruct[pointindex_];
         otherClusterPointCount |=
             (dist2 <= params.radius2BoundaryDetection_) && (partition[pointindex_] != clusterindex_);
@@ -943,24 +935,26 @@ void PCCCodec::smoothPointCloud(PCCPointSet3& reconstruct,
         if (reconstruct.getBoundaryPointType(i) == 1) {
           reconstruct.setBoundaryPointType(i, static_cast<uint16_t>(2));
         }
-        const auto sclaedPoint = double(neighborCount) * query.point;
+        const PCCVector3D sclaedPoint = double(neighborCount) * PCCVector3D( reconstruct[i][0], reconstruct[i][1], reconstruct[i][2] );
         const double distToCentroid2 =
             int64_t((centroid - sclaedPoint).getNorm2() + (neighborCount / 2.0)) /
             double(neighborCount);
         for (size_t k = 0; k < 3; ++k) {
-          centroid[k] = double(int64_t(centroid[k] + (neighborCount / 2)) / neighborCount);
+          centroid[k] = double(int64_t( ( centroid[k] + (neighborCount / 2)) / neighborCount));
         }
         if (distToCentroid2 >= params.thresholdSmoothing_) {
-          temp[i] = centroid;
+          temp[i][0] = centroid[0];
+          temp[i][1] = centroid[1];
+          temp[i][2] = centroid[2];
           reconstruct.setColor(i, PCCColor3B(255, 0, 0));
           if (PCC_SAVE_POINT_TYPE == 1) {
             reconstruct.setType(i, PointType::Smooth);
           }
         } else {
-          temp[i] = query.point;
+          temp[i] = reconstruct[i];
         }
       } else {
-        temp[i] = query.point;
+        temp[i] = reconstruct[i];
       }
     });
   });
@@ -975,37 +969,25 @@ void PCCCodec::smoothPointCloud(PCCPointSet3& reconstruct,
 void PCCCodec::smoothPointCloudColor(PCCPointSet3 &reconstruct,
                                      const GeneratePointCloudParameters params) {
   const size_t pointCount = reconstruct.getPointCount();
-  PCCStaticKdTree3 kdtree;
-  kdtree.build(reconstruct);
+  PCCKdTree kdtree( reconstruct );
   PCCPointSet3 temp;
   temp.resize(pointCount);
   tbb::task_arena limited((int)params.nbThread_);
   limited.execute([&] {
     tbb::parallel_for(size_t(0), pointCount, [&](const size_t i) {
       //  for (size_t i = 0; i < pointCount; ++i) {
-      const size_t maxNeighborCount = 512;
-      PCCPointDistInfo nNeighbor[maxNeighborCount];
-      PCCNNResult result = { nNeighbor, 0 };
-      const double maxDist = ceil(sqrt(params.radius2ColorSmoothing_));
-      PCCNNQuery3 query = { PCCVector3D(0.0), maxDist,
-                            (std::min)(maxNeighborCount, params.neighborCountColorSmoothing_) };
 
+      PCCNNResult result;
       if (reconstruct.getBoundaryPointType(i) == 2) {
-        query.point = reconstruct[i];
-        kdtree.findNearestNeighbors(query, result);
-        assert(result.resultCount);
+        kdtree.searchRadius( reconstruct[i], params.neighborCountColorSmoothing_, params.radius2ColorSmoothing_, result );
         PCCVector3D centroid(0.0);
 
         size_t neighborCount = 0;
         std::vector<uint8_t> Lum;
 
-        for (size_t r = 0; r < result.resultCount; ++r) {
-          const double dist2 = result.neighbors[r].dist2;
-          if (dist2 > params.radius2ColorSmoothing_) {
-            break;
-          }
+        for (size_t r = 0; r < result.count(); ++r) {
           ++neighborCount;
-          const size_t index = result.neighbors[r].index;
+          const size_t index = result.indices(r);
           PCCColor3B color = reconstruct.getColor(index);
           centroid[0] += double(color[0]);
           centroid[1] += double(color[1]);

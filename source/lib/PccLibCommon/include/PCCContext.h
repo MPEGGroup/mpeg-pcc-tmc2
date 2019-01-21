@@ -37,6 +37,7 @@
 #include "PCCCommon.h"
 #include "PCCVideo.h"
 #include "PCCMetadata.h"
+#include "PCCVideoBitstream.h"
 
 namespace pcc {
 
@@ -105,6 +106,32 @@ class PCCContext {
   size_t& getHeight(){ return height_; }
   void   resize( size_t size );
 
+  PCCVideoBitstream& createVideoBitstream( PCCVideoType type ){
+    videoBitstream_.push_back( PCCVideoBitstream( type ) );
+    return videoBitstream_.back();
+  }
+  size_t getVideoBitstreamCount(){ return videoBitstream_.size();   }
+  PCCVideoBitstream& getVideoBitstream( size_t index ){ return videoBitstream_[index]; }
+
+  PCCVideoBitstream& getVideoBitstream( PCCVideoType type  ) {
+    for( auto& value: videoBitstream_ ) {
+      if( value.type() == type ){
+        return value;
+      }
+    }
+    printf("ERROR: can't get video bitstream of type %s \n",toString( type ).c_str() ); fflush(stdout);
+    exit(-1);
+  }
+
+  bool traceVideoBitstream() {
+    size_t index = 0;
+    printf("List VideoBitstream: "); fflush(stdout);
+    for( auto& value: videoBitstream_ ) {
+      printf("%lu / %lu: ",index, videoBitstream_.size());
+      value.trace();
+      index++;
+    }
+  }
  private:
   size_t index_;
   size_t width_;
@@ -129,6 +156,8 @@ class PCCContext {
   bool enhancedDeltaDepth_;
 
   PCCMetadata gofLevelMetadata_;
+
+  std::vector<PCCVideoBitstream> videoBitstream_;
 };
 }; //~namespace
 

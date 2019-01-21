@@ -43,6 +43,7 @@ struct PCCBistreamPosition{
   uint64_t bytes;
   uint8_t  bits;
 };
+class PCCVideoBitstream;
 
 class PCCBitstream {
  public:
@@ -63,6 +64,9 @@ class PCCBitstream {
 
   bool readHeader(PCCMetadataEnabledFlags &gofLevelMetadataEnabledFlags);
   void writeHeader(const PCCMetadataEnabledFlags &gofLevelMetadataEnabledFlags);
+
+  void readVideoNalu ( PCCVideoBitstream& videoBitstream );
+  void writeVideoNalu( PCCVideoBitstream& videoBitstream );
 
   void writeSvlc( int32_t  iCode );
   void readSvlc ( int32_t& iCode);

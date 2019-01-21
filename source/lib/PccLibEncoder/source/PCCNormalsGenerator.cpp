@@ -56,7 +56,7 @@ void PCCNormalsGenerator3::init(const size_t pointCount, const PCCNormalsGenerat
     barycenters_.resize(0);
   }
 }
-void PCCNormalsGenerator3::compute(const PCCPointSet3 &pointCloud, const PCCStaticKdTree3 &kdtree,
+void PCCNormalsGenerator3::compute(const PCCPointSet3 &pointCloud, const PCCKdTree &kdtree,
               const PCCNormalsGenerator3Parameters &params, const size_t nbThread ) {
   nbThread_ = nbThread;
   init( pointCloud.getPointCount(), params );
@@ -67,24 +67,22 @@ void PCCNormalsGenerator3::compute(const PCCPointSet3 &pointCloud, const PCCStat
   orientNormals(pointCloud, kdtree, params);
 }
 void PCCNormalsGenerator3::computeNormal(const size_t index, const PCCPointSet3 &pointCloud,
-                    const PCCStaticKdTree3 &kdtree, const PCCNormalsGenerator3Parameters &params,
+                    const PCCKdTree &kdtree, const PCCNormalsGenerator3Parameters &params,
                     PCCNNResult &nNResult) {
-  const PCCNNQuery3 nNQuery = {pointCloud[index], params.radiusNormalEstimation_,
-                                params.numberOfNearestNeighborsInNormalEstimation_};
-  PCCVector3D bary(pointCloud[index]), normal(0.0), eigenval(0.0);
+  const double radius = params.radiusNormalEstimation_ * params.radiusNormalEstimation_;
+  PCCVector3D bary( pointCloud[index][0], pointCloud[index][1], pointCloud[index][2] ), normal(0.0), eigenval(0.0);
   PCCMatrix3D covMat, Q, D;
-  kdtree.findNearestNeighbors(nNQuery, nNResult);
-  if (nNResult.resultCount > 1) {
+  kdtree.search( pointCloud[index], params.numberOfNearestNeighborsInNormalEstimation_, nNResult );
+  if (nNResult.count() > 1) {
     bary = 0.0;
-    for (size_t i = 0; i < nNResult.resultCount; ++i) {
-      bary += pointCloud[nNResult.neighbors[i].index];
+    for (size_t i = 0; i < nNResult.count(); ++i) {
+      bary += pointCloud[nNResult.indices(i)];
     }
-    bary /= double(nNResult.resultCount);
-
+    bary /= double(nNResult.count());
     covMat = 0.0;
     PCCVector3D pt;
-    for (size_t i = 0; i < nNResult.resultCount; ++i) {
-      pt = pointCloud[nNResult.neighbors[i].index] - bary;
+    for (size_t i = 0; i < nNResult.count(); ++i) {
+      pt = pointCloud[nNResult.indices(i)] - bary;
       covMat[0][0] += pt[0] * pt[0];
       covMat[1][1] += pt[1] * pt[1];
       covMat[2][2] += pt[2] * pt[2];
@@ -95,7 +93,7 @@ void PCCNormalsGenerator3::computeNormal(const size_t index, const PCCPointSet3 
     covMat[1][0] = covMat[0][1];
     covMat[2][0] = covMat[0][2];
     covMat[2][1] = covMat[1][2];
-    covMat /= (nNResult.resultCount - 1.0);
+    covMat /= (nNResult.count() - 1.0);
 
     PCCDiagonalize(covMat, Q, D);
 
@@ -153,10 +151,10 @@ void PCCNormalsGenerator3::computeNormal(const size_t index, const PCCPointSet3 
     barycenters_[index] = bary;
   }
   if (params.storeNumberOfNearestNeighborsInNormalEstimation_) {
-    numberOfNearestNeighborsInNormalEstimation_[index] = uint32_t(nNResult.resultCount);
+    numberOfNearestNeighborsInNormalEstimation_[index] = uint32_t(nNResult.count());
   }
 }
-void PCCNormalsGenerator3::computeNormals(const PCCPointSet3 &pointCloud, const PCCStaticKdTree3 &kdtree,
+void PCCNormalsGenerator3::computeNormals(const PCCPointSet3 &pointCloud, const PCCKdTree &kdtree,
                     const PCCNormalsGenerator3Parameters &params ) {
   const size_t pointCount = pointCloud.getPointCount();
   normals_.resize(pointCount);
@@ -169,30 +167,22 @@ void PCCNormalsGenerator3::computeNormals(const PCCPointSet3 &pointCloud, const 
       const size_t start = subRanges[i];
       const size_t end = subRanges[i + 1];
       PCCNNResult nNResult;
-      std::vector<PCCPointDistInfo> neighbors;
-      neighbors.resize((std::min)(pointCount, params.numberOfNearestNeighborsInNormalEstimation_));
-      nNResult.neighbors = neighbors.data();
-      nNResult.resultCount = 0;
       for (size_t ptIndex = start; ptIndex < end; ++ptIndex) {
         computeNormal(ptIndex, pointCloud, kdtree, params, nNResult);
       }
     });
   });
 }
-void PCCNormalsGenerator3::orientNormals(const PCCPointSet3 &pointCloud, const PCCStaticKdTree3 &kdtree,
+void PCCNormalsGenerator3::orientNormals(const PCCPointSet3 &pointCloud, const PCCKdTree &kdtree,
                     const PCCNormalsGenerator3Parameters &params) {
   if (params.orientationStrategy_ == PCC_NORMALS_GENERATOR_ORIENTATION_SPANNING_TREE) {
     const size_t pointCount = pointCloud.getPointCount();
     PCCNNResult nNResult;
-    std::vector<PCCPointDistInfo> neighbors;
-    neighbors.resize((std::min)(pointCount, params.numberOfNearestNeighborsInNormalOrientation_));
-    nNResult.neighbors = neighbors.data();
-    nNResult.resultCount = 0;
     visited_.resize(pointCount);
     std::fill(visited_.begin(), visited_.end(), 0);
-    PCCNNQuery3 nNQuery = {PCCVector3<double>(0.0), params.radiusNormalOrientation_,
+    PCCNNQuery3 nNQuery = {PCCPoint3D(0.0), (float)params.radiusNormalOrientation_ * params.radiusNormalOrientation_,
                             params.numberOfNearestNeighborsInNormalOrientation_};
-    PCCNNQuery3 nNQuery2 = {PCCVector3<double>(0.0), (std::numeric_limits<double>::max)(),
+    PCCNNQuery3 nNQuery2 = {PCCPoint3D(0.0), (std::numeric_limits<float>::max)(),
                             params.numberOfNearestNeighborsInNormalOrientation_};
     size_t processedPointCount = 0;
     for (size_t ptIndex = 0; ptIndex < pointCount; ++ptIndex) {
@@ -200,7 +190,7 @@ void PCCNormalsGenerator3::orientNormals(const PCCPointSet3 &pointCloud, const P
         visited_[ptIndex] = 1;
         ++processedPointCount;
         size_t numberOfNormals;
-        PCCVector3<double> accumulatedNormals;
+        PCCVector3D accumulatedNormals;
         addNeighbors(uint32_t(ptIndex), pointCloud, kdtree, nNQuery2, nNResult,
                       accumulatedNormals, numberOfNormals);
         if (!numberOfNormals) {
@@ -251,16 +241,19 @@ void PCCNormalsGenerator3::orientNormals(const PCCPointSet3 &pointCloud, const P
   }
 }
 void PCCNormalsGenerator3::addNeighbors(const uint32_t current, const PCCPointSet3 &pointCloud,
-                  const PCCStaticKdTree3 &kdtree, PCCNNQuery3 &nNQuery, PCCNNResult &nNResult,
-                  PCCVector3<double> &accumulatedNormals, size_t &numberOfNormals) {
+                  const PCCKdTree &kdtree, PCCNNQuery3 &nNQuery, PCCNNResult &nNResult,
+                  PCCVector3D &accumulatedNormals, size_t &numberOfNormals) {
   accumulatedNormals = 0.0;
-  numberOfNormals = 0;
-  nNQuery.point = pointCloud[current];
-  kdtree.findNearestNeighbors(nNQuery, nNResult);
+  numberOfNormals = 0;  
+  if( nNQuery.radius > 32768.0 ){
+    kdtree.search( pointCloud[current], nNQuery.nearestNeighborCount, nNResult );
+  }else{
+    kdtree.searchRadius( pointCloud[current], nNQuery.nearestNeighborCount, nNQuery.radius, nNResult );
+  }
   PCCWeightedEdge newEdge;
   uint32_t index;
-  for (size_t i = 0; i < nNResult.resultCount; ++i) {
-    index = nNResult.neighbors[i].index;
+  for (size_t i = 0; i < nNResult.count(); ++i) {
+    index = nNResult.indices(i);
     if (!visited_[index]) {
       newEdge.weight_ = fabs(normals_[current] * normals_[index]);
       newEdge.end_ = index;
@@ -272,35 +265,30 @@ void PCCNormalsGenerator3::addNeighbors(const uint32_t current, const PCCPointSe
     }
   }
 }
-void PCCNormalsGenerator3::smoothNormals(const PCCPointSet3 &pointCloud, const PCCStaticKdTree3 &kdtree,
+void PCCNormalsGenerator3::smoothNormals(const PCCPointSet3 &pointCloud, const PCCKdTree &kdtree,
                     const PCCNormalsGenerator3Parameters &params ) {
   const double w2 = params.weightNormalSmoothing_;
   const double w0 = (1 - w2);
   const size_t pointCount = pointCloud.getPointCount();
-  PCCNNQuery3 nNQuery = {PCCVector3<double>(0.0), params.radiusNormalSmoothing_,
-                          params.numberOfNearestNeighborsInNormalSmoothing_};
-  PCCVector3<double> n0, n1, n2;
+  PCCVector3D n0, n1, n2;
   std::vector<size_t> subRanges;
   const size_t chunckCount = 64;
   PCCDivideRange(0, pointCount, chunckCount, subRanges);
+  const double radius = params.radiusNormalSmoothing_ * params.radiusNormalSmoothing_;
   for (size_t it = 0; it < params.numberOfIterationsInNormalSmoothing_; ++it) {
     tbb::task_arena limited( (int)nbThread_ );       
     limited.execute([&]{ 
       tbb::parallel_for(size_t(0), subRanges.size() - 1, [&](const size_t i) {
         const size_t start = subRanges[i];
         const size_t end = subRanges[i + 1];
-        PCCNNResult nNResult;
-        std::vector<PCCPointDistInfo> neighbors;
-        neighbors.resize((std::min)(pointCount, params.numberOfNearestNeighborsInNormalSmoothing_));
-        nNResult.neighbors = neighbors.data();
-        nNResult.resultCount = 0;
+        PCCNNResult result;
         for (size_t ptIndex = start; ptIndex < end; ++ptIndex) {
-          nNQuery.point = pointCloud[ptIndex];
-          kdtree.findNearestNeighbors(nNQuery, nNResult);
+          kdtree.searchRadius( pointCloud[ptIndex], 
+                               params.numberOfNearestNeighborsInNormalSmoothing_, radius, result );
           n0 = normals_[ptIndex];
           n1 = 0.0;
-          for (size_t i = 1; i < nNResult.resultCount; ++i) {
-            n2 = normals_[nNResult.neighbors[i].index];
+          for (size_t i = 1; i < result.count(); ++i) {
+            n2 = normals_[result.indices(i)];
             if (n0 * n2 < 0.0) {
               n1 -= n2;
             } else {

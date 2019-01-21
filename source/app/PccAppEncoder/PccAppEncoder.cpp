@@ -60,16 +60,18 @@ int main(int argc, char *argv[]) {
   using namespace std::chrono;
   using ms = milliseconds;
   auto totalWall = duration_cast<ms>(clockWall.count()).count();
-  std::cout << "Processing time (wall): " << totalWall / 1000.0 << " s\n";
+  std::cout << "Processing time (wall): "
+            << ( ret == 0 ? totalWall / 1000.0 : -1 ) << " s\n";
 
   auto totalUserSelf = duration_cast<ms>(clockUser.self.count()).count();
   std::cout << "Processing time (user.self): "
-            << totalUserSelf / 1000.0 << " s\n";
+            << ( ret == 0 ? totalUserSelf / 1000.0 : -1 ) << " s\n";
 
   auto totalUserChild = duration_cast<ms>(clockUser.children.count()).count();
   std::cout << "Processing time (user.children): "
-            << totalUserChild / 1000.0 << " s\n";
+            << ( ret == 0 ? totalUserChild / 1000.0 : -1 ) << " s\n";
 
+  std::cout << "Peak memory: " << getPeakMemory() << " KB\n";
   return ret;
 }
 
@@ -702,12 +704,13 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
   if( metricsParams.computeMetrics_ ) {
     metrics.display();
   }
+  bool checksumEqual = true;
   if( metricsParams.computeChecksum_) {
     if( encoderParams.losslessGeo_ && encoderParams.losslessTexture_ ) {
-      checksum.compareSrcRec();
+      checksumEqual =checksum.compareSrcRec();
     }
     checksum.write( encoderParams.compressedStreamPath_ );
   }
-  return 0;
+  return checksumEqual ? 0 : -1;
 }
 

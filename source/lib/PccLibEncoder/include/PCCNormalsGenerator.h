@@ -44,7 +44,7 @@ enum PCCNormalsGeneratorOrientation {
 };
 
 struct PCCNormalsGenerator3Parameters {
-  PCCPoint3D viewPoint_;
+  PCCVector3D viewPoint_;
   double radiusNormalSmoothing_;
   double radiusNormalEstimation_;
   double radiusNormalOrientation_;
@@ -79,7 +79,7 @@ class PCCNormalsGenerator3 {
   ~PCCNormalsGenerator3() = default;
   void clear() { normals_.resize(0); }
   void init( const size_t pointCount, const PCCNormalsGenerator3Parameters &params );
-  void compute( const PCCPointSet3 &pointCloud, const PCCStaticKdTree3 &kdtree,
+  void compute( const PCCPointSet3 &pointCloud, const PCCKdTree &kdtree,
                 const PCCNormalsGenerator3Parameters &params, const size_t nbThread );
   PCCVector3D getNormal(const size_t pos) const {
     assert(pos < normals_.size());
@@ -100,22 +100,22 @@ class PCCNormalsGenerator3 {
   size_t getNormalCount() const { return normals_.size(); }
 
   void computeNormal( const size_t index, const PCCPointSet3 &pointCloud,
-                      const PCCStaticKdTree3 &kdtree, const PCCNormalsGenerator3Parameters &params,
+                      const PCCKdTree &kdtree, const PCCNormalsGenerator3Parameters &params,
                       PCCNNResult &nNResult );
-  void computeNormals( const PCCPointSet3 &pointCloud, const PCCStaticKdTree3 &kdtree,
+  void computeNormals( const PCCPointSet3 &pointCloud, const PCCKdTree &kdtree,
                        const PCCNormalsGenerator3Parameters &params );
-  void orientNormals( const PCCPointSet3 &pointCloud, const PCCStaticKdTree3 &kdtree,
+  void orientNormals( const PCCPointSet3 &pointCloud, const PCCKdTree &kdtree,
                       const PCCNormalsGenerator3Parameters &params );
   void addNeighbors( const uint32_t current, const PCCPointSet3 &pointCloud,
-                     const PCCStaticKdTree3 &kdtree, PCCNNQuery3 &nNQuery, PCCNNResult &nNResult,
-                     PCCVector3<double> &accumulatedNormals, size_t &numberOfNormals );
-  void smoothNormals( const PCCPointSet3 &pointCloud, const PCCStaticKdTree3 &kdtree,
+                     const PCCKdTree &kdtree, PCCNNQuery3 &nNQuery, PCCNNResult &nNResult,
+                     PCCVector3D &accumulatedNormals, size_t &numberOfNormals );
+  void smoothNormals( const PCCPointSet3 &pointCloud, const PCCKdTree &kdtree,
                       const PCCNormalsGenerator3Parameters &params );
 
  private:
   std::vector<PCCVector3D> normals_;
   std::vector<PCCVector3D> eigenvalues_;
-  std::vector<PCCPoint3D> barycenters_;
+  std::vector<PCCVector3D> barycenters_;
   std::vector<uint32_t> numberOfNearestNeighborsInNormalEstimation_;
   std::vector<uint32_t> visited_;
   std::priority_queue<PCCWeightedEdge> edges_;

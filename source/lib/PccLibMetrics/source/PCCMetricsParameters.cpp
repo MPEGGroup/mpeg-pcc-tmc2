@@ -37,8 +37,9 @@
 using namespace pcc ;
 
 PCCMetricsParameters::PCCMetricsParameters() {
-  computeMetrics_         = false;
-  computeChecksum_        = false;
+  computeMetrics_         = true;
+  computeChecksum_        = true;
+
   startFrameNumber_       = 0;
   frameCount_             = 0;
   groupOfFramesSize_      = 32;
@@ -99,17 +100,22 @@ bool PCCMetricsParameters::check( bool checkFiles ){
   if( computeMetrics_ ) {
     if( checkFiles ) {
       if( uncompressedDataPath_.empty() ) {
-         ret = false;
-         std::cerr << "uncompressedDataPath not set\n";
+         std::cout << "uncompressedDataPath not set\n";
+         std::cout << "WARNING: Source ply not correctly set: disable compute metric. \n";
+         std::cout << "WARNING: Source ply not correctly set: disable compute metric. \n";
+         computeMetrics_ = false;
       }
       if( reconstructedDataPath_.empty() ) {
-        ret = false;
-        std::cerr << "reconstructedDataPath_ not set\n";
+        std::cout << "reconstructedDataPath_ not set\n";
+        std::cout << "WARNING: Reconstructed ply not correctly set: disable compute metric. \n";
+        std::cout << "WARNING: Reconstructed ply not correctly set: disable compute metric. \n";
       }
     }
     if( computeC2p_ && normalDataPath_.empty() ) {
-      ret = false;
-      std::cerr << "normalDataPath_ not set if computeC2p_ == true \n";
+      std::cout << "normalDataPath_ not set if computeC2p_ == true \n";
+      std::cout << "WARNING: Normal ply not correctly set: disable compute metric. \n";
+      std::cout << "WARNING: Normal ply not correctly set: disable compute metric. \n";
+      computeMetrics_ = false;
     }
   }
   return ret;

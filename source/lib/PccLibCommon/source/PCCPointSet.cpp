@@ -98,18 +98,15 @@ void PCCPointSet3::distance( const PCCPointSet3& pointcloud, float& distP, float
   distY = 0.f;
   distU = 0.f;
   distV = 0.f;
-  PCCStaticKdTree3 kdtree;
-  kdtree.build(pointcloud);
-  PCCPointDistInfo nNeighbor;
-  PCCNNResult result = { &nNeighbor, 0 };
-  PCCNNQuery3 query = { PCCVector3D(0.0), (std::numeric_limits<double>::max)(), 1 };
+  PCCKdTree kdtree( pointcloud );
+  PCCNNResult result;
+
   for (size_t i = 0; i < positions_.size(); ++i) {
-    query.point = positions_[i];
-    kdtree.findNearestNeighbors( query, result );
-    distP += result.neighbors[0].dist2;
+    kdtree.search(  positions_[i], 1, result );
+    distP += result.dist(0);
     float yuvA[3], yuvB[3];
     convertRGBtoYUV_BT709( colors_[i],                                    yuvA );
-    convertRGBtoYUV_BT709( pointcloud.colors_[result.neighbors[0].index], yuvB );
+    convertRGBtoYUV_BT709( pointcloud.colors_[result.indices(0)], yuvB );
     distY += pow( yuvA[0] - yuvB[0], 2.f );
     distU += pow( yuvA[1] - yuvB[1], 2.f );
     distV += pow( yuvA[2] - yuvB[2], 2.f );
@@ -123,15 +120,11 @@ void PCCPointSet3::distance( const PCCPointSet3& pointcloud, float& distP, float
 
 void PCCPointSet3::distance( const PCCPointSet3& pointcloud, float& distP ) const {
   distP = 0.f;
-  PCCStaticKdTree3 kdtree;
-  kdtree.build(pointcloud);
-  PCCPointDistInfo nNeighbor;
-  PCCNNResult result = { &nNeighbor, 0 };
-  PCCNNQuery3 query = { PCCVector3D(0.0), (std::numeric_limits<double>::max)(), 1 };
+  PCCKdTree kdtree( pointcloud );
+  PCCNNResult result;
   for (size_t i = 0; i < positions_.size(); ++i) {
-    query.point = positions_[i];
-    kdtree.findNearestNeighbors( query, result );
-    distP += result.neighbors[0].dist2;
+    kdtree.search(  positions_[i], 1, result );
+    distP += result.dist(0);
   }
   distP /= (float)( positions_.size() );
 }
@@ -236,7 +229,6 @@ std::vector<uint8_t> PCCPointSet3::computeMd5(){
 }
 
 void PCCPointSet3::sortColor( std::vector<size_t>& list ){
-  // printf("List: "); for(size_t i=0;i<list.size();i++) { printf("%9lu ",list[i]); } printf("\n");
   for(size_t i=0;i<list.size();i++) {
     size_t indexMin = i;
     for(size_t j=i+1;j<list.size();j++) {
@@ -248,7 +240,6 @@ void PCCPointSet3::sortColor( std::vector<size_t>& list ){
       size_t tmp = list[indexMin];    list[indexMin] = list[i];    list[i] = tmp;
     }
   }
-  // printf("Sort: "); for(size_t i=0;i<list.size();i++) { printf("%9lu ",list[i]); } printf("\n");
 }
 
 void PCCPointSet3::reorder( PCCPointSet3& newPointcloud, bool dropDuplicates ) {
@@ -263,7 +254,6 @@ void PCCPointSet3::reorder( PCCPointSet3& newPointcloud, bool dropDuplicates ) {
     }
     map[x][y][z].push_back( i );
   }
-  printf("reorder: %lu duplicate found ( dropDuplicates = %d ) \n",duplicate,dropDuplicates);  fflush(stdout);
   if( withColors_ ) {
     for(auto itX=map.begin();itX!=map.end();itX++) {
       for(auto  itY=itX->second.begin();itY!=itX->second.end();itY++) {
@@ -304,7 +294,6 @@ void PCCPointSet3::reorder( PCCPointSet3& newPointcloud, bool dropDuplicates ) {
       }
     }
   }
-  printf("reorder: %9lu  => %9lu \n", positions_.size(), newPointcloud.positions_.size() ); fflush(stdout);
 }
 
 void PCCPointSet3::reorder() {
@@ -341,9 +330,15 @@ bool PCCPointSet3::write( const std::string &fileName, const bool asAscii ) {
     }
   }
   fout << "element vertex " << pointCount << std::endl;
-  fout << "property float64 x" << std::endl;
-  fout << "property float64 y" << std::endl;
-  fout << "property float64 z" << std::endl;
+  if( asAscii ) {
+    fout << "property float x" << std::endl;
+    fout << "property float y" << std::endl;
+    fout << "property float z" << std::endl;
+  }else{
+    fout << "property int16 x" << std::endl;
+    fout << "property int16 y" << std::endl;
+    fout << "property int16 z" << std::endl;
+  }
   if (hasColors()) {
     fout << "property uchar red" << std::endl;
     fout << "property uchar green" << std::endl;
@@ -384,10 +379,10 @@ bool PCCPointSet3::write( const std::string &fileName, const bool asAscii ) {
   } else {
     fout.clear();
     fout.close();
-    fout.open(fileName, std::ofstream::binary | std::ofstream::app);
+    fout.open(fileName, std::ofstream::binary | std::ofstream::out);
     for (size_t i = 0; i < pointCount; ++i) {
       const PCCPoint3D &position = (*this)[i];
-      fout.write(reinterpret_cast<const char *const>(&position), sizeof(double) * 3);
+      fout.write(reinterpret_cast<const char *const>(&position), sizeof(PCCType) * 3);
       if (hasColors()) {
         const PCCColor3B &color = getColor(i);
         fout.write(reinterpret_cast<const char *>(&color), sizeof(uint8_t) * 3);
@@ -600,7 +595,7 @@ bool PCCPointSet3::read(const std::string &fileName) {
     }
   } else {
     ifs.close();
-    ifs.open( fileName, std::ifstream::binary | std::ifstream::app);
+    ifs.open( fileName, std::ifstream::binary | std::ifstream::in);
     ifs.read(tmp, MAX_BUFFER_SIZE);
     char *str = strstr(tmp, "end_header");
     str = strstr(str, "\n");
@@ -609,7 +604,7 @@ bool PCCPointSet3::read(const std::string &fileName) {
     ifs.seekg(headerCount, std::ios::beg);  // JR: NOK on windows
 #else
     ifs.close();
-    ifs.open( fileName, std::ifstream::binary | std::ifstream::app);
+    ifs.open( fileName, std::ifstream::binary | std::ifstream::in);
     ifs.read(tmp, headerCount);
 #endif
     for (size_t pointCounter = 0; pointCounter < pointCount && !ifs.eof(); ++pointCounter) {
@@ -754,28 +749,23 @@ bool PCCPointSet3::transfertColors( PCCPointSet3 &target, const int32_t searchRa
   if (!pointCountSource || !pointCountTarget || !source.hasColors()) {
     return false;
   }
-  KDTreeVectorOfVectorsAdaptor<PCCPointSet3, double> kdtreeTarget(3, target, 10);
-  KDTreeVectorOfVectorsAdaptor<PCCPointSet3, double> kdtreeSource(3, source, 10);
 
+  PCCKdTree kdtreeTarget( target ), kdtreeSource( source );
   target.addColors();
   std::vector<PCCColor3B> refinedColors1;
   std::vector<std::vector<PCCColor3B>> refinedColors2;
   refinedColors1.resize(pointCountTarget);
   refinedColors2.resize(pointCountTarget);
   const size_t num_results = 1;
-  std::vector<size_t> indices(num_results);
-  std::vector<double> sqrDist(num_results);
-  nanoflann::KNNResultSet<double> resultSet(num_results);
+  PCCNNResult result;
   for (size_t index = 0; index < pointCountTarget; ++index) {
-    resultSet.init(&indices[0], &sqrDist[0]);
-    kdtreeSource.index->findNeighbors(resultSet, &target[index][0], nanoflann::SearchParams(10));
-    refinedColors1[index] = source.getColor(indices[0]);
+    kdtreeSource.search( target[index], num_results, result );
+    refinedColors1[index] = source.getColor( result.indices(0));
   }
   for (size_t index = 0; index < pointCountSource; ++index) {
     const PCCColor3B color = source.getColor(index);
-    resultSet.init(&indices[0], &sqrDist[0]);
-    kdtreeTarget.index->findNeighbors(resultSet, &source[index][0], nanoflann::SearchParams(10));
-    refinedColors2[indices[0]].push_back(color);
+    kdtreeTarget.search( source[index], num_results, result );
+    refinedColors2[result.indices(0)].push_back(color);
   }
   for (size_t index = 0; index < pointCountTarget; ++index) {
     const PCCColor3B color1 = refinedColors1[index];
@@ -884,28 +874,22 @@ bool PCCPointSet3::transfertColorSimple( PCCPointSet3 &target,
   }
   target.addColors();
 
-  KDTreeVectorOfVectorsAdaptor<PCCPointSet3, double> kdtreeSource(3, source, 10);
-  KDTreeVectorOfVectorsAdaptor<PCCPointSet3, double> kdtreeTarget(3, target, 10);
+  PCCKdTree kdtreeSource( source ), kdtreeTarget( target );
 
   std::vector<PCCColor3B> refinedColors1;
   std::vector<std::vector<PCCColor3B>> refinedColors2;
   refinedColors1.resize( pointCountTarget );
   refinedColors2.resize( pointCountTarget );
   const size_t num_results = 1;
-  std::vector<size_t> indices(num_results);
-  std::vector<double> sqrDist(num_results);
-  nanoflann::KNNResultSet<double> resultSet(num_results);
+  PCCNNResult result;
   for (size_t index = 0; index < pointCountTarget; ++index) {
-    resultSet.init(&indices[0], &sqrDist[0]);
-    kdtreeSource.index->findNeighbors(resultSet, &target[index][0],
-                                     nanoflann::SearchParams(10));
-    refinedColors1[index] = source.getColor(indices[0]);
+    kdtreeSource.search( target[index], num_results, result );
+    refinedColors1[index] = source.getColor(result.indices(0));
   }
   for (size_t index = 0; index < pointCountSource; ++index) {
     const PCCColor3B color = source.getColor(index);
-    resultSet.init(&indices[0], &sqrDist[0]);
-    kdtreeTarget.index->findNeighbors(resultSet, &source[index][0], nanoflann::SearchParams(10));
-    refinedColors2[indices[0]].push_back(color);
+    kdtreeSource.search( source[index], num_results, result );
+    refinedColors2[result.indices(0)].push_back(color);
   }
   for (size_t index = 0; index < pointCountTarget; ++index) {
     const PCCColor3B color1 = refinedColors1[index];
@@ -970,34 +954,27 @@ bool PCCPointSet3::transfertColorWeight( PCCPointSet3 &target,
     return false;
   }
   target.addColors();
-
-  KDTreeVectorOfVectorsAdaptor<PCCPointSet3, double> kdtreeSource(3, source, 10);
+  PCCKdTree kdtreeSource ( source );
+  PCCNNResult result;
   const size_t num_results = 5;
-  std::vector<size_t> indices( num_results );
-  std::vector<double> sqrDist( num_results );
-  nanoflann::KNNResultSet<double> resultSet(num_results);
-
   for (size_t index = 0; index < pointCountTarget; ++index) {
-    resultSet.init(&indices[0], &sqrDist[0]);
-    kdtreeSource.index->findNeighbors(resultSet, &target[index][0],
-                                     nanoflann::SearchParams(10));
+    kdtreeSource.search( target[index], num_results, result );
     double color[3] = { 0., 0., 0.};
     double sum = 0;
-    if( num_results > 1 && sqrDist[0] > 0.0001 ) {
-      for(size_t i=0;i<num_results;i++){
-        const auto& found = source.getColor(indices[i]);
-        const double w = 1.0 / pow( sqrDist[i], 2.0 );
+    if( result.count() > 1 && result.dist(0) > 0.0001 ) {
+      for(size_t i=0;i<result.count();i++){
+        const auto& found = source.getColor(result.indices(i));
+        const double w = 1.0 / pow( result.dist(i), 2.0 );
         color[0] += found[0] * w;
         color[1] += found[1] * w;
         color[2] += found[2] * w;
         sum += w;
       }
-
       color[0] /= sum;
       color[1] /= sum;
       color[2] /= sum;
     } else {
-      const auto& found = source.getColor(indices[0]);
+      const auto& found = source.getColor(result.indices(0));
       color[0] = found[0];
       color[1] = found[1];
       color[2] = found[2];
@@ -1040,7 +1017,6 @@ void PCCPointSet3::copyNormals( const PCCPointSet3& sourceWithNormal ) {
 }
 
 void PCCPointSet3::scaleNormals( const PCCPointSet3& sourceWithNormal ) {
-  printf("Scale normal start \n"); fflush(stdout);
   if( !sourceWithNormal.withNormals_ ) {
     std::cerr << "Normal object don't have normals \n" << std::endl;
     exit(-1);
@@ -1048,22 +1024,21 @@ void PCCPointSet3::scaleNormals( const PCCPointSet3& sourceWithNormal ) {
   addNormals();
   std::vector<size_t> count;
   count.resize( getPointCount(), 0 );
-  const size_t num_results = 30; // update normals (10)
-  PCCStaticKdTree3 kdtreeSrc, kdtreeDst;
-  kdtreeSrc.build( sourceWithNormal );
-  kdtreeDst.build( *this );
-  PCCPointDistInfo nNeighbor[num_results];
-  PCCNNResult result = { nNeighbor, 0 };
-  PCCNNQuery3 query = { PCCVector3D(0.0), (std::numeric_limits<double>::max)(), num_results };
-
+  const size_t num_results_max = 30;
+  const size_t num_results_incr = 5;
+  PCCKdTree kdtreeSrc( sourceWithNormal ), kdtreeDst( *this );
+  PCCNNResult result;
   for (size_t i = 0; i < sourceWithNormal.getPointCount(); i++) {
     // For point 'i' in A, find its nearest neighbor in B. store it in 'j'
-    query.point = sourceWithNormal.positions_[i];
-    kdtreeDst.findNearestNeighbors( query, result );
+    size_t num_results = 0;
+    do {
+      num_results  += num_results_incr;
+      kdtreeDst.search( sourceWithNormal.positions_[i], num_results, result );
+    } while( result.dist(0) == result.dist(num_results-1) && num_results + num_results_incr <= num_results_max );
 #if 1 // update normals
-    for( size_t j=0;j<num_results;j++){
-      if( result.neighbors[0].dist2 == result.neighbors[j].dist2 ) {
-        size_t index = result.neighbors[j].index;
+    for( size_t j=0;j<result.count();j++){
+      if( result.dist(0) == result.dist(j) ) {
+        size_t index = result.indices(j);
         normals_ [index][0] += sourceWithNormal.normals_[i][0];
         normals_ [index][1] += sourceWithNormal.normals_[i][1];
         normals_ [index][2] += sourceWithNormal.normals_[i][2];
@@ -1071,7 +1046,7 @@ void PCCPointSet3::scaleNormals( const PCCPointSet3& sourceWithNormal ) {
       }
     }
 #else
-    size_t index = result.neighbors[0].index;
+    size_t index = results.indices(0);
     normals_ [index][0] += sourceWithNormal.normals_[i][0];
     normals_ [index][1] += sourceWithNormal.normals_[i][1];
     normals_ [index][2] += sourceWithNormal.normals_[i][2];
@@ -1085,13 +1060,17 @@ void PCCPointSet3::scaleNormals( const PCCPointSet3& sourceWithNormal ) {
       normals_[i][1] /= count[i];
       normals_[i][2] /= count[i];
     } else {
-      query.point = positions_[i];
-      kdtreeSrc.findNearestNeighbors( query, result );
+
+      size_t num_results = 0;
+      do {
+        num_results  += num_results_incr;
+        kdtreeSrc.search( positions_[i], num_results, result );
+      } while( result.dist(0) == result.dist(num_results-1) && num_results + num_results_incr <= num_results_max );
 #if 1 // update normals (10)
       size_t num = 0;
       for( size_t j=0;j<num_results;j++){
-        if( result.neighbors[0].dist2 == result.neighbors[j].dist2 ) {
-          size_t index = result.neighbors[j].index;
+        if( result.dist(0) ==  result.dist(j) ) {
+          size_t index =  result.indices(j);
           normals_[i][0] += sourceWithNormal.normals_[index][0];
           normals_[i][1] += sourceWithNormal.normals_[index][1];
           normals_[i][2] += sourceWithNormal.normals_[index][2];
@@ -1102,14 +1081,13 @@ void PCCPointSet3::scaleNormals( const PCCPointSet3& sourceWithNormal ) {
       normals_[i][1] /= num;
       normals_[i][2] /= num;
 #else
-      size_t index = result.neighbors[0].index;
+      size_t index = results.indices(0);
       normals_[i][0] = sourceWithNormal.normals_[index][0];
       normals_[i][1] = sourceWithNormal.normals_[index][1];
       normals_[i][2] = sourceWithNormal.normals_[index][2];
 #endif
     }
   }
-  printf("Scale normal done \n"); fflush(stdout);
 }
 
 

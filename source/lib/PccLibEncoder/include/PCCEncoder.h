@@ -72,6 +72,13 @@ public:
               PCCBitstream &bitstream, PCCGroupOfFrames& reconstructs );
 
 private:
+  int encode( const PCCGroupOfFrames& sources, PCCContext &context, PCCGroupOfFrames& reconstructs );
+  int compress( PCCContext &context, PCCBitstream &bitstream );
+
+
+  void buildBlockToPatch( PCCContext &context );
+  void buildBlockToPatch( PCCFrameContext &frame, PCCFrameContext &preFrame, size_t frameIndex );
+
   int  writeMetadata(const PCCMetadata &metadata, PCCBitstream &bitstream );
   int  compressMetadata(const PCCMetadata &metadata, o3dgc::Arithmetic_Codec &arithmeticEncoder );
 
@@ -96,7 +103,7 @@ private:
   void writeMissedPointsTextureNumber(PCCContext& context, PCCBitstream &bitstream);
   
   void generateMissedPointsGeometryVideo(PCCContext& context, PCCGroupOfFrames& reconstructs);
-  void generateMissedPointsTextureVideo(PCCContext& context, PCCGroupOfFrames& reconstructs, PCCBitstream &bitstream);
+  void generateMissedPointsTextureVideo(PCCContext& context, PCCGroupOfFrames& reconstructs );
   
   void generateMPsGeometryImage    (PCCContext& context, PCCFrameContext& frame, PCCImageGeometry &image);
   void generateMPsTextureImage(PCCContext& context, PCCFrameContext& frame, PCCImageTexture &image, size_t shift, const PCCPointSet3& reconstruct);

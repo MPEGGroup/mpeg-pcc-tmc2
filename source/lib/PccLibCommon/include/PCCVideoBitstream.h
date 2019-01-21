@@ -1,4 +1,3 @@
-
 /* The copyright in this software is being made available under the BSD
  * License, included below. This software may be subject to other third party
  * and contributor rights, including patent rights, and no such rights are
@@ -31,47 +30,34 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef PCCChecksum_h
-#define PCCChecksum_h
+
+#ifndef PCCVideoBitstream_h
+#define PCCVideoBitstream_h
 
 #include "PCCCommon.h"
-
-#include "PCCPointSet.h"
-#include "PCCMetricsParameters.h"
-
 namespace pcc {
 
-class PCCGroupOfFrames;
+class PCCVideoBitstream {
+ public:
+  PCCVideoBitstream( PCCVideoType type ) : type_ ( type ) { data_.clear(); }
+  ~PCCVideoBitstream() { data_.clear(); }
 
+  void resize( size_t size ){ data_.resize( size ); }
 
-class PCCChecksum {
-public:
-  PCCChecksum();
-  ~PCCChecksum();
-  void setParameters( PCCMetricsParameters params );
+  std::vector<uint8_t>& vector() { return data_; }
+  uint8_t*     buffer()     { return data_.data(); }
+  size_t       size()       { return data_.size(); }
+  size_t       naluSize()   { return data_.size() + 4; }
+  PCCVideoType type()       { return type_; }
 
-  void read ( const std::string compressedStreamPath );
-  void write( const std::string compressedStreamPath );
-
-  void computeSource       ( PCCGroupOfFrames& groupOfFrames );
-  void computeReordered    ( PCCGroupOfFrames& groupOfFrames );
-  void computeReconstructed( PCCGroupOfFrames& groupOfFrames );
-  void computeDecoded      ( PCCGroupOfFrames& groupOfFrames );
-
-  bool compareSrcRec();
-  bool compareRecDec();
-private:
-  bool compare( std::vector<std::vector<uint8_t>>& checksumsA,
-                std::vector<std::vector<uint8_t>>& checksumsB );
-
-  PCCMetricsParameters params_;
-
-  std::vector<std::vector<uint8_t>> checksumsSrc_;
-  std::vector<std::vector<uint8_t>> checksumsOrd_;
-  std::vector<std::vector<uint8_t>> checksumsRec_;
-  std::vector<std::vector<uint8_t>> checksumsDec_;
+  void trace() {
+    std::cout << toString( type_ ) << " ->" << naluSize() << " B " << std::endl;
+  }
+ private:
+  std::vector<uint8_t> data_;
+  PCCVideoType type_;
 };
 
-}; //~namespace
+}
 
-#endif /* PCCMetrics.h */
+#endif /* PCCBitstream_h */

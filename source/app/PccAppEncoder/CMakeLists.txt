@@ -5,14 +5,17 @@ STRING(REPLACE " " "_" MYNAME ${MYNAME})
 SET( MYNAME ${MYNAME}${CMAKE_DEBUG_POSTFIX} )
 PROJECT(${MYNAME} C CXX)
 
-FILE(GLOB SRC *.h *.cpp *.c ${CMAKE_SOURCE_DIR}/dependencies/program-options-lite/* )
+FILE(GLOB SRC *.h *.cpp *.c ${CMAKE_SOURCE_DIR}/dependencies/program-options-lite/* 
+                            ${CMAKE_SOURCE_DIR}/dependencies/nanoflann/*.hpp
+                            ${CMAKE_SOURCE_DIR}/dependencies/nanoflann/*.h )
 
 INCLUDE_DIRECTORIES( ${CMAKE_SOURCE_DIR}/source/lib/PccLibCommon/include                    
                      ${CMAKE_SOURCE_DIR}/source/lib/PccLibEncoder/include 
                      ${CMAKE_SOURCE_DIR}/source/lib/PccLibMetrics/include 
                      ${CMAKE_SOURCE_DIR}/dependencies/program-options-lite
                      ${CMAKE_SOURCE_DIR}/dependencies/arithmetic-coding/inc
-                     ${CMAKE_SOURCE_DIR}/dependencies/tbb/include )
+                     ${CMAKE_SOURCE_DIR}/dependencies/tbb/include
+                     ${CMAKE_SOURCE_DIR}/dependencies/nanoflann )
                      
 ADD_EXECUTABLE( ${MYNAME} ${SRC} )
 

@@ -93,33 +93,29 @@ void QualityMetrics::compute( const PCCPointSet3& pointcloudA, const PCCPointSet
   #define NUM_RESULTS 30
   const size_t num_results = NUM_RESULTS;
 
-  PCCStaticKdTree3 kdtree;
-  kdtree.build( pointcloudB );
-  PCCPointDistInfo nNeighbor[num_results];
-  PCCNNResult result = { nNeighbor, 0 };
-  PCCNNQuery3 query = { PCCVector3D(0.0), (std::numeric_limits<double>::max)(), num_results };
+  PCCKdTree kdtree( pointcloudB );
+  PCCNNResult result;
+  const size_t num_results_max  = 30;
+  const size_t num_results_incr = 5;
 
   auto& normalsB = pointcloudB.getNormals();
   printf("PointCloud A = %lu points B = %lu points \n",pointcloudA.getPointCount(),pointcloudB.getPointCount());
   for (size_t indexA = 0; indexA < pointcloudA.getPointCount(); indexA++) {
-    //printf("Point %9lu / %9lu: %6.1f %6.1f %6.1f \n", indexA, pointcloudA.getPointCount(),
-    //  pointcloudA[indexA][0], pointcloudA[indexA][1], pointcloudA[indexA][2] ); fflush(stdout);
-
     // For point 'i' in A, find its nearest neighbor in B. store it in 'j'
-    query.point = pointcloudA[indexA];
-    kdtree.findNearestNeighbors( query, result );
+    size_t num_results = 0;
+    do {
+      num_results  += num_results_incr;
+      kdtree.search( pointcloudA[indexA], num_results, result );
+    } while( result.dist(0) == result.dist(num_results-1) && num_results + num_results_incr <= num_results_max );
 
-
-    // Compute point-to-point, which should be equal to sqrt( sqrDist[0] )
-    double distProjC2c = result.neighbors[0].dist2; 
-    // printf("Point %9lu / %9lu: %6.1f %6.1f %6.1f distProjC2c = %f \n", indexA, pointcloudA.getPointCount(),
-    //    pointcloudA[indexA][0], pointcloudA[indexA][1], pointcloudA[indexA][2],distProjC2c ); fflush(stdout);
+    // Compute point-to-point, which should be equal to sqrt( dist[0] )
+    double distProjC2c = result.dist(0);
 
     // Build the list of all the points of same distances.
     std::vector<size_t> sameDistList;
     if (params_.computeColor_ || params_.computeC2p_ ) {
-      for (size_t j = 0; j < num_results && ( fabs( result.neighbors[0].dist2 - result.neighbors[j].dist2) < 1e-8 ) ; j++) {
-        sameDistList.push_back( result.neighbors[j].index );
+      for (size_t j = 0; j < num_results && ( fabs( result.dist(0) - result.dist(j)) < 1e-8 ) ; j++) {
+        sameDistList.push_back( result.indices(j) );
       }
     }
     std::sort (sameDistList.begin(), sameDistList.end() );
@@ -127,8 +123,6 @@ void QualityMetrics::compute( const PCCPointSet3& pointcloudA, const PCCPointSet
     // Compute point-to-plane, normals in B will be used for point-to-plane
     double distProjC2p = 0.0;
     if ( params_.computeC2p_ && pointcloudB.hasNormals() && pointcloudA.hasNormals() ){
-
-#if 1 // update normals
       for (auto& indexB : sameDistList ) {
         std::vector<double> errVector(3);
         for(size_t j=0;j<3;j++){
@@ -138,55 +132,14 @@ void QualityMetrics::compute( const PCCPointSet3& pointcloudA, const PCCPointSet
                            errVector[1] * normalsB[indexB][1] +
                            errVector[2] * normalsB[indexB][2], 2.f );
         distProjC2p += dist;
-//        if( indexA > 426000 && indexA < 427000 ){
-//          printf("%9lu: A = %9.5f %9.5f %9.5f => %9lu Nrm = %9.5f %9.5f %9.5f => %20.15f \n",
-//                 indexA,
-//                 pointcloudA[indexA][0],
-//                 pointcloudA[indexA][1],
-//                 pointcloudA[indexA][2],
-//                 indexB,
-//                 normalsB[indexB][0],
-//                 normalsB[indexB][1],
-//                 normalsB[indexB][2], dist ); fflush(stdout);
-//        }
       }
       distProjC2p /= sameDistList.size();
-//      if( ( indexA % 1000 == 0 ) || ( indexA > 426000 && indexA < 427000 ) ){
-//        printf("%9lu: A = %9.5f %9.5f %9.5f => %20.15f => %20.15f \n",
-//               indexA,
-//               pointcloudA[indexA][0],
-//               pointcloudA[indexA][1],
-//               pointcloudA[indexA][2],
-//               distProjC2p, sseC2p ); fflush(stdout);
-//      }
-#else
-      size_t indexB = result.neighbors[0].index;
-       std::vector<double> errVector(3);
-       for(size_t i=0;i<3;i++){
-         errVector[i] = pointcloudA[indexA][i] - pointcloudB[indexB][i];
-       }
-       if( indexA > 0 && indexA < 1000 ){
-         printf("%9lu: A = %9.5f %9.5f %9.5f => %9lu Nrm = %9.5f %9.5f %9.5f => \n",
-                indexA,
-                pointcloudA[indexA][0],
-                pointcloudA[indexA][1],
-                pointcloudA[indexA][2],
-                indexB,
-                 normalsB[indexB][0],
-                 normalsB[indexB][1],
-                 normalsB[indexB][2]); fflush(stdout);
-       }
-        distProjC2p = pow( errVector[0] * normalsB[indexB][0] +
-                           errVector[1] * normalsB[indexB][1] +
-                           errVector[2] * normalsB[indexB][2], 2.f );
-#endif
     }
 
-    size_t indexB = result.neighbors[0].index;
+    size_t indexB = result.indices(0);
     double distColor[3];
     distColor[0] = distColor[1] = distColor[2] = 0.0;
     if ( params_.computeColor_ && pointcloudA.hasColors() && pointcloudB.hasColors() ) {
-      // printf("Compute color %lu params_.neighborsProc_ = %lu  sameDistList = %lu \n",indexA,params_.neighborsProc_,sameDistList.size() );
       std::vector<float> yuvA, yuvB;
       PCCColor3B rgb;
       convertRGBtoYUV_BT709( pointcloudA.getColor( indexA ), yuvA );
@@ -200,12 +153,6 @@ void QualityMetrics::compute( const PCCPointSet3& pointcloudA, const PCCPointSet
             int nbdupcumul = 0;
             unsigned int r = 0, g = 0, b = 0;
             for (size_t i = 0; i < sameDistList.size(); i++) {
-//              if( indexA > 17000 && indexA < 17100 ){
-//                printf("  %7lu  => %4d %4d %4d \n",sameDistList[i],
-//                       (int)pointcloudB.getColor( sameDistList[i] )[0],
-//                       (int)pointcloudB.getColor( sameDistList[i] )[1],
-//                       (int)pointcloudB.getColor( sameDistList[i] )[2]); fflush(stdout);
-//              }
               int nbdup = 1; // pointcloudB.xyz.nbdup[ indices_sameDst[n] ];
               r += nbdup * pointcloudB.getColor( sameDistList[i] )[0];
               g += nbdup * pointcloudB.getColor( sameDistList[i] )[1];
@@ -215,30 +162,10 @@ void QualityMetrics::compute( const PCCPointSet3& pointcloudA, const PCCPointSet
             rgb[0] = (unsigned char)round( (double)r / nbdupcumul );
             rgb[1] = (unsigned char)round( (double)g / nbdupcumul );
             rgb[2] = (unsigned char)round( (double)b / nbdupcumul );
-            // printf("%lu %lu %lu nbdupcumul = %d\n",rgb[0],rgb[1],rgb[2], nbdupcumul );
             convertRGBtoYUV_BT709( rgb, yuvB );
             for(size_t i=0;i<3;i++){
               distColor[i] = pow( yuvA[i] - yuvB[i], 2.f );
             }
-//            if( indexA > 17000 && indexA < 17100 ){
-////              printf("Point %7lu / %7lu => dist = %9f A %6.1f %6.1f %6.1f  %4d %4d %4d B %6.1f %6.1f %6.1f  %4d %4d %4d Drop = %d \n",
-////                     indexA, pointcloudA.getPointCount(),
-////                     result.neighbors[0].dist2,
-////                     pointcloudA[indexA][0],            pointcloudA[indexA][1],            pointcloudA[indexA][2],
-////                     (int)pointcloudA.getColor( indexA )[0], (int)pointcloudA.getColor( indexA )[1], (int)pointcloudA.getColor( indexA )[2],
-////                     pointcloudB[indexB][0],            pointcloudB[indexB][1],            pointcloudB[indexB][2],
-////                     (int)rgb[0], (int)rgb[1], (int)rgb[2],
-////                     nbdupcumul ); fflush(stdout);
-//              printf("Point %7lu / %7lu => dist = %9f A %4d %4d %4d B %4d %4d %4d %f %f %f  Drop = %d =>  %f %f %f => %f %f %f \n",
-//                     indexA, pointcloudA.getPointCount(),
-//                     result.neighbors[0].dist2,
-//                     (int)pointcloudA.getColor( indexA )[0], (int)pointcloudA.getColor( indexA )[1], (int)pointcloudA.getColor( indexA )[2],
-//                     (int)rgb[0], (int)rgb[1], (int)rgb[2],
-//                     yuvB[0],yuvB[1],yuvB[2],
-//                     nbdupcumul ,
-//                     distColor[0],distColor[1],distColor[2],
-//                     sseColor[0],sseColor[1],sseColor[2]); fflush(stdout);
-//            }
           }
           break;
           case 3:   // Min
@@ -313,36 +240,6 @@ void QualityMetrics::compute( const PCCPointSet3& pointcloudA, const PCCPointSet
       c2pHausdorffPsnr_ = getPSNR( c2pHausdorff_, psnr_, 3 );
     }
   }
-//  printf(" sse_dist_b_c2c = %40.35f / %9f = %40.35f \n",
-//         sseC2c, (float)num, c2cMse_ );
-//
-//  printf(" getPSNR(  %40.35f,  %40.35f, 3 ) =>  %40.35f     \n",
-//         c2cMse_,
-//         psnr_,
-//         getPSNR( c2cMse_, psnr_, 3 ),
-//         c2cPsnr_ );
-//
-//
-//  float factor = 3.f;
-//  float p    = psnr_;
-//  float dist = c2cMse_;
-//  float max_energy = p * p;
-//  float psnr  = 10 * log10( (factor * max_energy) / dist );
-//  float psnr2 = getPSNR( c2cMse_, psnr_, 3 );
-//
-//  printf("\n");
-//  printf("p          = %40.35f \n",p);
-//  printf("max_energy = %40.35f \n",max_energy);
-//  printf("dist       = %40.35f \n",dist);
-//  printf("log        = %40.35f \n", log10( (factor * max_energy) / dist ));
-//  printf("psnr       = %40.35f \n",psnr);
-//  printf("psnr2      = %40.35f \n",psnr2);
-//  printf("\n");
-//
-//  printf(" sse_dist_b_c2c = %40.35f / %9f = %40.35f \n",
-//         sseC2p, (float)num, c2pMse_ );
-//  printf(" getPSNR(  %20.15f,  %20.15f, 3 ) =>  %20.15f  \n", c2pMse_, psnr_, getPSNR( c2pMse_, psnr_, 3 ) );
-
   if ( params_.computeColor_ ) {
     for(size_t i = 0 ;i<3;i++) {
       colorMse_ [i] = float(   sseColor [i] / num );
@@ -477,24 +374,18 @@ void PCCMetrics::compute( const PCCGroupOfFrames& sources,
 void PCCMetrics::compute( PCCPointSet3& source,
                           PCCPointSet3& reconstruct,
                           const PCCPointSet3& normalSource ) {
-
   if( normalSource.getPointCount() > 0 ) {
     source     .copyNormals ( normalSource );
     reconstruct.scaleNormals( normalSource );
   }
-  printf("start QualityMetrics \n"); fflush(stdout);
-
   QualityMetrics q1, q2;
   q1.setParameters( params_ );
   q1.compute( source, reconstruct );
-
   q2.setParameters( params_ );
   q2.compute( reconstruct, source );
-
   quality1.push_back( q1 );
   quality2.push_back( q2 );
   qualityF.push_back( q1 + q2 );
-  printf("done QualityMetrics \n"); fflush(stdout);
 }
 
 void PCCMetrics::display(){

@@ -108,7 +108,7 @@ class PCCCodec {
                          const bool   projectionMode,
                          const double lodScale);
 
-  std::vector<PCCVector3D> generatePoints( const GeneratePointCloudParameters& params,
+  std::vector<PCCPoint3D> generatePoints( const GeneratePointCloudParameters& params,
                                            PCCFrameContext &frame,
                                            const PCCVideoGeometry &video,
                                            const PCCVideoGeometry &videoD1,
@@ -184,13 +184,13 @@ class PCCCodec {
                              const std::vector<uint32_t> &partition,
                              const GeneratePointCloudParameters params );
 
-  void addGridCentroid( PCCVector3D& point, int patchIdx,
+  void addGridCentroid( PCCPoint3D& point, int patchIdx,
                         std::vector<int>& cnt, std::vector<PCCVector3D>& center_grid,
                         std::vector<int> &gpartition, std::vector<bool>& doSmooth, int grid);
 
 
   bool gridFiltering( const std::vector<uint32_t> &partition, PCCPointSet3 &pointCloud,
-                      PCCVector3D& curPos, PCCVector3D& centroid, int &cnt,
+                      PCCPoint3D& curPos, PCCVector3D& centroid, int &cnt,
                       std::vector<int>& gcnt, std::vector<PCCVector3D>& center_grid, std::vector<bool>& doSmooth, int grid );
 
 

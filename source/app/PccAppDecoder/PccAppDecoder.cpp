@@ -60,16 +60,17 @@ int main(int argc, char *argv[]) {
   using namespace std::chrono;
   using ms = milliseconds;
   auto totalWall = duration_cast<ms>(clockWall.count()).count();
-  std::cout << "Processing time (wall): " << totalWall / 1000.0 << " s\n";
+  std::cout << "Processing time (wall): " << ( ret == 0 ? totalWall / 1000.0 : -1 ) << " s\n";
 
   auto totalUserSelf = duration_cast<ms>(clockUser.self.count()).count();
   std::cout << "Processing time (user.self): "
-            << totalUserSelf / 1000.0 << " s\n";
+            << ( ret == 0 ? totalUserSelf / 1000.0 : -1 ) << " s\n";
 
   auto totalUserChild = duration_cast<ms>(clockUser.children.count()).count();
   std::cout << "Processing time (user.children): "
-            << totalUserChild / 1000.0 << " s\n";
+            << ( ret == 0 ? totalUserChild / 1000.0 : -1 ) << " s\n";
 
+  std::cout << "Peak memory: " << getPeakMemory() << " KB\n";
   return ret;
 }
 
@@ -333,21 +334,16 @@ int decompressVideo( const PCCDecoderParameters &decoderParams,
         }
       }
       metrics.compute( sources, reconstructs, normals );
-      printf("here \n"); fflush(stdout);
     }
-    printf("reconstructs.write \n"); fflush(stdout);
     reconstructs.write( decoderParams.reconstructedDataPath_, frameNumber );
-    printf("reconstructs.write done \n"); fflush(stdout);
-  }
-  if( metricsParams.computeChecksum_ ) {
-    printf("checksum.compare() start\n"); fflush(stdout);
-    checksum.compareRecDec();
-    printf("checksum.compare() done\n"); fflush(stdout);
   }
   if( metricsParams.computeMetrics_ ) {
-    printf(" metrics.display() start\n"); fflush(stdout);
     metrics.display();
-    printf(" metrics.display() done\n"); fflush(stdout);
+  }
+  if( metricsParams.computeChecksum_ ) {
+    if( ! checksum.compareRecDec() ){
+      return -1;
+    }
   }
   return 0;
 }

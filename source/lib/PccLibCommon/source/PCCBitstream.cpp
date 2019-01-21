@@ -32,6 +32,7 @@
  */
 #include "PCCCommon.h"
 #include "PCCBitstream.h"
+#include "PCCVideoBitstream.h"
 
 using namespace pcc; 
 
@@ -127,6 +128,22 @@ void PCCBitstream::readSvlc ( int32_t& iCode) {
   uint32_t uiBits = 0;
   readUvlc( uiBits ); 
   iCode = ( uiBits & 1) ? -(int32_t)(uiBits>>1) : (int32_t)(uiBits>>1); 
+}
+
+void PCCBitstream::readVideoNalu( PCCVideoBitstream& videoBitstream ) {
+  uint32_t size = 0;
+  read<uint32_t>(size);
+  videoBitstream.resize( size );
+  memcpy( videoBitstream.buffer(), data_.data() + position_.bytes, size );
+  videoBitstream.trace();
+  position_.bytes += size;
+}
+
+void PCCBitstream::writeVideoNalu( PCCVideoBitstream& videoBitstream ) {
+  write<uint32_t>( videoBitstream.size() );
+  memcpy( data_.data() + position_.bytes, videoBitstream.buffer(), videoBitstream.size() );
+  videoBitstream.trace();
+  position_.bytes += videoBitstream.size();
 }
 
 void PCCBitstream::read ( uint32_t& value, uint8_t bits ) {

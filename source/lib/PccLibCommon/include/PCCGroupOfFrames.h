@@ -38,7 +38,6 @@
 
 namespace pcc {
 class PCCPointSet3; 
-
 class PCCGroupOfFrames {
  public:
    PCCGroupOfFrames();
@@ -56,7 +55,6 @@ class PCCGroupOfFrames {
     return frames_[index];
   } 
   std::vector<PCCPointSet3>& getFrames() { return frames_; }
-
 
   std::vector<PCCPointSet3>::iterator begin() { return frames_.begin(); }
   std::vector<PCCPointSet3>::iterator end  () { return frames_.end  (); }

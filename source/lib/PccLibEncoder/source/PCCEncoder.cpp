@@ -77,17 +77,65 @@ void PCCEncoder::setParameters( PCCEncoderParameters params ) {
 
 int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
                         PCCBitstream &bitstream, PCCGroupOfFrames& reconstructs ){
+  size_t oneLayerModeOriginal                 = params_.oneLayerMode_;
+  size_t singleLayerPixelInterleavingOriginal = params_.singleLayerPixelInterleaving_;
+  if( params_.nbThread_ > 0 ) {
+    tbb::task_scheduler_init init( (int)params_.nbThread_ );
+  }
+  encode( sources, context, reconstructs );
+  compress( context, bitstream );
+  params_.oneLayerMode_                = oneLayerModeOriginal;
+  params_.singleLayerPixelInterleaving_= singleLayerPixelInterleavingOriginal;
+  }
+
+int PCCEncoder::compress( PCCContext &context, PCCBitstream &bitstream ){
+  auto sizeFrameHeader = bitstream.size();
+  compressHeader( context, bitstream );
+  sizeFrameHeader = bitstream.size() - sizeFrameHeader;
+  std::cout << "frame header info  ->" << sizeFrameHeader << " B " << std::endl;
+  context.traceVideoBitstream();
+  if( params_.useOccupancyMapVideo_ ) {
+    bitstream.writeVideoNalu( context.getVideoBitstream( PCCVideoType::OccupancyMap ) );
+  }
+  if (!params_.absoluteD1_) {
+     bitstream.writeVideoNalu( context.getVideoBitstream( PCCVideoType::GeometryD0 ) );
+     bitstream.writeVideoNalu( context.getVideoBitstream( PCCVideoType::GeometryD1 ) );
+  } else {
+     bitstream.writeVideoNalu( context.getVideoBitstream(  PCCVideoType::Geometry ) );
+  }
+  if( params_.losslessGeo_ && context.getUseMissedPointsSeparateVideo()) {
+     bitstream.writeVideoNalu( context.getVideoBitstream(  PCCVideoType::GeometryMP ) );
+       }
+  if (!params_.noAttributes_ ) {
+    bitstream.writeVideoNalu( context.getVideoBitstream( PCCVideoType::Texture ) );
+    if(params_.losslessTexture_ && context.getUseMissedPointsSeparateVideo()) {
+      bitstream.writeVideoNalu( context.getVideoBitstream( PCCVideoType::TextureMP ) );
+      auto sizeMissedPointsTexture = bitstream.size();
+     }
+  }
+
+  size_t sizeOccupancyMap = bitstream.size();
+  compressOccupancyMap(context, bitstream);
+  sizeOccupancyMap = ( bitstream.size() - sizeOccupancyMap )
+      + context.getVideoBitstream( PCCVideoType::OccupancyMap ).naluSize();
+  std::cout << " occupancy map  ->" << sizeOccupancyMap << " B " << std::endl;
+  if (params_.losslessGeo_ && context.getUseMissedPointsSeparateVideo()) {
+     writeMissedPointsGeometryNumber( context, bitstream );
+      }
+  if( !params_.noAttributes_ ) {
+     if(params_.losslessTexture_ && context.getUseMissedPointsSeparateVideo())  {
+       writeMissedPointsTextureNumber( context, bitstream );
+    }
+  }
+}
+
+int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
+                        PCCGroupOfFrames& reconstructs ){
   assert( sources.size() < 256);
   if( sources.size() == 0 ) {
     return 0;
   }
-  size_t oneLayerModeOriginal                 = params_.oneLayerMode_;
-  size_t singleLayerPixelInterleavingOriginal = params_.singleLayerPixelInterleaving_;
   auto sizeGeoVideo = 0;
-
-  if( params_.nbThread_ > 0 ) {
-    tbb::task_scheduler_init init( (int)params_.nbThread_ );
-  }
   reconstructs.resize( sources.size() );
   context.resize( sources.size() );
   auto& frames = context.getFrames();
@@ -128,16 +176,12 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
   auto& height = context.getHeight();
   width  = (uint16_t)frames[0].getWidth ();
   height = (uint16_t)frames[0].getHeight();
-  auto sizeFrameHeader = bitstream.size();
-  compressHeader( context, bitstream );
-  sizeFrameHeader = bitstream.size() - sizeFrameHeader;
-  std::cout << " frame header info  ->" << sizeFrameHeader << " B " << std::endl;
 
-  auto sizeOccupancyMap = bitstream.size();
   if(params_.useOccupancyMapVideo_) {
+    auto& videoBitstream = context.createVideoBitstream( PCCVideoType::OccupancyMap );
     generateOccupancyMapVideo(sources, context);
     auto& videoOccupancyMap = context.getVideoOccupancyMap();
-    videoEncoder.compress( videoOccupancyMap, path.str() + "occupancy", params_.occupancyMapQP_, bitstream,
+    videoEncoder.compress( videoOccupancyMap, path.str() + "occupancy", params_.occupancyMapQP_, videoBitstream,
                            params_.occupancyMapVideoEncoderConfig_, params_.videoEncoderOccupancyMapPath_, context
                            , "", "", "", false, false,
                            params_.flagColorSmoothing_, params_.flagColorPreSmoothing_, 1, params_.keepIntermediateFiles_);
@@ -172,18 +216,14 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
   const size_t nbyteGeo = params_.losslessGeo_ ? 2 : 1;
   if (!params_.absoluteD1_) {
     // Compress geometryD0
-    auto sizeGeometryD0Video = bitstream.size();
+    auto& videoBitstreamD0 = context.createVideoBitstream( PCCVideoType::GeometryD0 );
     auto& videoGeometry = context.getVideoGeometry();
-    videoEncoder.compress( videoGeometry, path.str() + "geometryD0", (params_.geometryQP_-1), bitstream,
+    videoEncoder.compress( videoGeometry, path.str() + "geometryD0", (params_.geometryQP_-1), videoBitstreamD0,
                            params_.geometryD0Config_, params_.videoEncoderPath_, context,
                            "", "", "", params_.losslessGeo_ && params_.losslessGeo444_, false,
                            params_.flagColorSmoothing_,
                            params_.flagColorPreSmoothing_,
                            nbyteGeo, params_.keepIntermediateFiles_);
-    sizeGeometryD0Video = bitstream.size() - sizeGeometryD0Video;
-    std::cout << "geometry D0 video ->" << sizeGeometryD0Video << " B ("
-        << (sizeGeometryD0Video * 8.0) / (frames.size() * pointCount) << " bpp)"
-        << std::endl;
     // Form differential video geometryD1
     auto& videoGeometryD1 = context.getVideoGeometryD1();
     for (size_t f = 0; f < frames.size(); ++f) {
@@ -192,28 +232,24 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
     }
 
     // Compress geometryD1
-    auto sizeGeometryD1Video = bitstream.size();
-    videoEncoder.compress( videoGeometryD1, path.str() + "geometryD1", params_.geometryQP_, bitstream,
+    auto& videoBitstreamD1 = context.createVideoBitstream( PCCVideoType::GeometryD1 );
+    videoEncoder.compress( videoGeometryD1, path.str() + "geometryD1", params_.geometryQP_,
+                           videoBitstreamD1,
                            params_.geometryD1Config_, params_.videoEncoderPath_, context,
                            "", "", "", params_.losslessGeo_ && params_.losslessGeo444_, false,
                            params_.flagColorSmoothing_,
                            params_.flagColorPreSmoothing_,
                            nbyteGeo, params_.keepIntermediateFiles_);
 
-    sizeGeometryD1Video = bitstream.size() - sizeGeometryD1Video;
-
-    std::cout << "geometry D1 video ->" << sizeGeometryD1Video << " B ("
-        << (sizeGeometryD1Video * 8.0) / (frames.size() * pointCount) << " bpp)"
-        << std::endl;
-
-    auto sizeGeometryVideo = sizeGeometryD0Video + sizeGeometryD1Video;
+    auto sizeGeometryVideo = videoBitstreamD0.naluSize()  + videoBitstreamD1.naluSize();
     std::cout << "geometry video ->" << sizeGeometryVideo << " B ("
         << (sizeGeometryVideo * 8.0) / (2 * frames.size() * pointCount) << " bpp)"
         << std::endl;
   } else {
-    auto sizeGeometryVideo = bitstream.size();
+    auto& videoBitstream = context.createVideoBitstream( PCCVideoType::Geometry );
     auto& videoGeometry = context.getVideoGeometry();  
-    videoEncoder.compress( videoGeometry, path.str() + "geometry", params_.geometryQP_, bitstream,
+    videoEncoder.compress( videoGeometry, path.str() + "geometry", params_.geometryQP_,
+                           videoBitstream,
                            params_.oneLayerMode_ ? getEncoderConfig1L( params_.geometryConfig_ ) : params_.geometryConfig_,
                                params_.videoEncoderPath_, context,
                                "", "", "",
@@ -221,33 +257,23 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
                                params_.flagColorSmoothing_,
                                params_.flagColorPreSmoothing_,
                                nbyteGeo, params_.keepIntermediateFiles_ );
-    sizeGeometryVideo = bitstream.size() - sizeGeometryVideo;
-    sizeGeoVideo = sizeGeometryVideo;
-    std::cout << "geometry video ->" << sizeGeometryVideo << " B ("
-        << (sizeGeometryVideo * 8.0) / (nbFramesGeometry * frames.size() * pointCount) << " bpp)"
-        << std::endl;
   }
 
-  ////////////////////////////////////////////////////////////////////
   if (params_.losslessGeo_ && context.getUseMissedPointsSeparateVideo()) {
-    auto sizeMissedPointsGeometry = bitstream.size();
+    auto& videoBitstreamMP = context.createVideoBitstream( PCCVideoType::GeometryMP );
     generateMissedPointsGeometryVideo(context, reconstructs);
-    writeMissedPointsGeometryNumber(context, bitstream);
     auto& videoMPsGeometry = context.getVideoMPsGeometry();
-    videoEncoder.compress( videoMPsGeometry, path.str() + "mps_geo", (params_.geometryQP_), bitstream,
+    videoEncoder.compress( videoMPsGeometry, path.str() + "mps_geo", (params_.geometryQP_),
+                           videoBitstreamMP,
                            params_.geometryMPConfig_, params_.videoEncoderPath_, context,
                            "", "", "", 0, //params_.losslessGeo_ && params_.losslessGeo444_=0
                            false, //patchColorSubsampling
                            params_.flagColorSmoothing_,
                            params_.flagColorPreSmoothing_,
                            2, params_.keepIntermediateFiles_); //nByteGeo=2 (10 bit coding)
-
-    sizeMissedPointsGeometry = bitstream.size() - sizeMissedPointsGeometry;
-    std::cout << " missed points geometry -> " << sizeMissedPointsGeometry << " B ("
-        << (sizeMissedPointsGeometry * 8.0) / (2 * frames.size() * pointCount) << " bpp)"
-        << std::endl;
   }
-  ////////////////////////////////////////////////////////////////////
+  buildBlockToPatch( context );
+
   GeneratePointCloudParameters generatePointCloudParameters;
   generatePointCloudParameters.occupancyResolution_          = params_.occupancyResolution_;
   generatePointCloudParameters.occupancyPrecision_           = params_.occupancyPrecision_;
@@ -296,11 +322,6 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
   if( params_.absoluteD1_ && params_.oneLayerMode_ && !params_.singleLayerPixelInterleaving_) {
     reconsctuctionOptimization( context, generatePointCloudParameters );
   }
-  compressOccupancyMap(context, bitstream);
-  sizeOccupancyMap = bitstream.size() - sizeOccupancyMap - sizeGeoVideo;
-  std::cout << " occupancy map  ->" << sizeOccupancyMap << " B ("
-      << (sizeOccupancyMap * 8.0) / (2 * frames.size() * pointCount) << " bpp)"
-      << std::endl;
   generatePointCloud( reconstructs, context, generatePointCloudParameters );
 
   if( !params_.noAttributes_ ) {
@@ -324,7 +345,6 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
             auto& height = frame.getHeight();
             auto  &frame1 = videoTexture.getFrame(f - 1);
             auto  &frame2 = videoTexture.getFrame(f);
-
             uint8_t  tmp_d0, tmp_d1;
             uint32_t tmp_avg;
             for (size_t y = 0; y < height; y++) {
@@ -346,11 +366,10 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
       }
     }
 
-    auto sizeTextureVideo = bitstream.size();
     const size_t nbyteTexture = 1;
-
+    auto& videoBitstream = context.createVideoBitstream( PCCVideoType::Texture );
     videoEncoder.compress( videoTexture,path.str() + "texture", params_.textureQP_,
-                           bitstream,
+                           videoBitstream,
                            params_.oneLayerMode_ ? getEncoderConfig1L( params_.textureConfig_ ) : params_.textureConfig_,
                                params_.videoEncoderPath_, context,
                                params_.colorSpaceConversionConfig_,
@@ -359,18 +378,13 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
                                params_.flagColorSmoothing_, params_.flagColorPreSmoothing_, nbyteTexture,
                                params_.keepIntermediateFiles_ );
 
-    sizeTextureVideo = bitstream.size() - sizeTextureVideo;
-    std::cout << "texture video  ->" << sizeTextureVideo << " B ("
-        << (sizeTextureVideo * 8.0) / pointCount << " bpp)" << std::endl;
-
-    ////////////////////////////////////////////////////////////////////
     if(params_.losslessTexture_ && context.getUseMissedPointsSeparateVideo())  {
-      auto sizeMissedPointsTexture = bitstream.size();
-      generateMissedPointsTextureVideo(context, reconstructs, bitstream);//1. texture
-      writeMissedPointsTextureNumber(context, bitstream);
+      auto& videoBitstreamMP = context.createVideoBitstream( PCCVideoType::TextureMP );
+      generateMissedPointsTextureVideo(context, reconstructs );//1. texture
       auto& videoMPsTexture = context.getVideoMPsTexture();
       videoEncoder.compress( videoMPsTexture,path.str() + "mps_tex", params_.textureQP_,
-                             bitstream, params_.textureMPConfig_,
+                             videoBitstreamMP,
+                             params_.textureMPConfig_,
                              params_.videoEncoderPath_, context,
                              params_.colorSpaceConversionConfig_,
                              params_.inverseColorSpaceConversionConfig_,
@@ -378,17 +392,9 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
                              false, //params_.patchColorSubsampling_,
                              params_.flagColorSmoothing_, params_.flagColorPreSmoothing_, nbyteTexture,
                              params_.keepIntermediateFiles_ );
-
-      sizeMissedPointsTexture = bitstream.size() - sizeMissedPointsTexture;
-      std::cout << " missed points texture -> " << sizeMissedPointsTexture << " B ("
-          << (sizeMissedPointsTexture * 8.0) / (2 * frames.size() * pointCount) << " bpp)"
-          << std::endl;
     }
-    ////////////////////////////////////////////////////////////////////
   }
   colorPointCloud(reconstructs, context, params_.noAttributes_ != 0, params_.colorTransform_, generatePointCloudParameters);
-  params_.oneLayerMode_                = oneLayerModeOriginal;
-  params_.singleLayerPixelInterleaving_= singleLayerPixelInterleavingOriginal;
   return 0;
 }
 
@@ -1248,17 +1254,13 @@ void PCCEncoder::generateMissedPointsPatch(const PCCPointSet3& source, PCCFrameC
     }
   }
 
-  PCCStaticKdTree3 kdtreeMissedPoints;
-  kdtreeMissedPoints.build(pointsToBeProjected);
-  PCCPointDistInfo nNeighbor;
-  PCCNNResult result = { &nNeighbor, 0 };
-  PCCNNQuery3 query = { PCCVector3D(0.0), (std::numeric_limits<double>::max)(), 1 };
+  PCCKdTree kdtreeMissedPoints(pointsToBeProjected);
+  PCCNNResult result;
   std::vector<size_t> missedPoints;
   missedPoints.resize(0);
   for (size_t i = 0; i < source.getPointCount(); ++i) {
-    query.point = source[i];
-    kdtreeMissedPoints.findNearestNeighbors(query, result);
-    const double dist2 = result.neighbors[0].dist2;
+    kdtreeMissedPoints.search( source[i], 1, result);
+    const double dist2 = result.dist(0);
     if (dist2 > 0.0) {
       missedPoints.push_back(i);
     }
@@ -1301,7 +1303,7 @@ void PCCEncoder::generateMissedPointsPatch(const PCCPointSet3& source, PCCFrameC
 void PCCEncoder::sortMissedPointsPatch(PCCFrameContext& frame) {
   auto& missedPointsPatch = frame.getMissedPointsPatch();
   const size_t maxNeighborCount = 5;
-  const size_t neighborSearchRadius = 5;
+  const size_t neighborSearchRadius = 5 * 5;
   size_t missedPointCount =
       params_.losslessGeo444_ ? missedPointsPatch.size() : missedPointsPatch.size() / 3;
   if (missedPointCount) {
@@ -1315,11 +1317,8 @@ void PCCEncoder::sortMissedPointsPatch(PCCFrameContext& frame) {
           PCCPoint3D(missedPointsPatch.x[i], missedPointsPatch.x[i + missedPointCount],
                      missedPointsPatch.x[i + missedPointCount * 2]);
     }
-    PCCStaticKdTree3 kdtreeMissedPointSet;
-    kdtreeMissedPointSet.build(missedPointSet);
-    PCCPointDistInfo nNeighbor1[maxNeighborCount];
-    PCCNNResult result = { nNeighbor1, 0 };
-    PCCNNQuery3 query = { PCCVector3D(0.0), neighborSearchRadius, maxNeighborCount };
+    PCCKdTree kdtreeMissedPointSet(missedPointSet);
+    PCCNNResult result;
     std::vector<size_t> fifo;
     fifo.reserve(missedPointCount);
     std::vector<bool> flags(missedPointCount, true);
@@ -1332,10 +1331,9 @@ void PCCEncoder::sortMissedPointsPatch(PCCFrameContext& frame) {
         while (!fifo.empty()) {
           const size_t currentIdx = fifo.back();
           fifo.pop_back();
-          query.point = missedPointSet[currentIdx];
-          kdtreeMissedPointSet.findNearestNeighbors(query, result);
-          for (size_t j = 0; j < result.resultCount; j++) {
-            size_t n = result.neighbors[j].index;
+          kdtreeMissedPointSet.searchRadius(missedPointSet[currentIdx], maxNeighborCount, neighborSearchRadius, result);
+          for (size_t j = 0; j < result.count(); j++) {
+            size_t n = result.indices(j);
             if (flags[n]) {
               flags[n] = false;
               sortIdx.push_back(n);
@@ -1432,7 +1430,7 @@ void PCCEncoder::writeMissedPointsTextureNumber(PCCContext& context, PCCBitstrea
   assert(maxHeight==context.getMPAttHeight ());
 }
 
-void PCCEncoder::generateMissedPointsTextureVideo(PCCContext& context, PCCGroupOfFrames& reconstructs, PCCBitstream &bitstream) {
+void PCCEncoder::generateMissedPointsTextureVideo(PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   auto& videoMPsTexture = context.getVideoMPsTexture();
   auto gofSize = context.getGofSize();
   videoMPsTexture.resize(gofSize);
@@ -1700,11 +1698,11 @@ void PCCEncoder::reconsctuctionOptimization( PCCFrameContext &frame,
                       if (!occupancy) {
                         continue;
                       }
-                      std::vector<PCCVector3D> createdPoints = generatePoints( params, frame, video, videoD1, shift,
-                                                                               patchIndex,
-                                                                               u, v, 
-                                                                               x, y,
-                                                                               interpolate, filling, minD1, neighbor, lodScale );
+                      auto createdPoints = generatePoints( params, frame, video, videoD1, shift,
+                                                           patchIndex,
+                                                           u, v,
+                                                           x, y,
+                                                           interpolate, filling, minD1, neighbor, lodScale );
                       if (createdPoints.size() > 0 ) {
                         for(size_t i = 0; i<createdPoints.size();i++) {
                           reconstruct[optimizationIndex].addPoint(createdPoints[i]);
@@ -2088,8 +2086,8 @@ void PCCEncoder::dilatePullPush(PCCFrameContext& frame, PCCImage<T, 3> &image) {
 
 void PCCEncoder::presmoothPointCloudColor(PCCPointSet3 &reconstruct, const PCCEncoderParameters params) {
   const size_t pointCount = reconstruct.getPointCount();
-  PCCStaticKdTree3 kdtree;
-  kdtree.build(reconstruct);
+  PCCKdTree kdtree(reconstruct);
+  PCCNNResult result;
   std::vector<PCCColor3B> temp;
   temp.resize(pointCount);
   for (size_t m = 0; m < pointCount; ++m) {
@@ -2099,27 +2097,20 @@ void PCCEncoder::presmoothPointCloudColor(PCCPointSet3 &reconstruct, const PCCEn
   limited.execute([&] {
     tbb::parallel_for(size_t(0), pointCount, [&](const size_t i) {
       //  for (size_t i = 0; i < pointCount; ++i) {
-      const size_t maxNeighborCount = 512;
-      PCCPointDistInfo nNeighbor[maxNeighborCount];
-      PCCNNResult result = {nNeighbor, 0};
-      const double maxDist = ceil(sqrt(params.radius2ColorSmoothing_));
-      PCCNNQuery3 query = {PCCVector3D(0.0), maxDist,
-                           (std::min)(maxNeighborCount, params.neighborCountColorSmoothing_)};
 
+      PCCNNResult result;
       if (reconstruct.getBoundaryPointType(i) == 2) {
-        query.point = reconstruct[i];
-        kdtree.findNearestNeighbors(query, result);
-        assert(result.resultCount);
+        kdtree.searchRadius( reconstruct[i], params.neighborCountColorSmoothing_, params.radius2ColorSmoothing_,result);
         PCCVector3D centroid(0.0);
         size_t neighborCount = 0;
         std::vector<uint8_t> Lum;
-        for (size_t r = 0; r < result.resultCount; ++r) {
-          const double dist2 = result.neighbors[r].dist2;
+        for (size_t r = 0; r < result.count(); ++r) {
+          const double dist2 = result.dist(r);
           if (dist2 > params.radius2ColorSmoothing_) {
             break;
           }
           ++neighborCount;
-          const size_t index = result.neighbors[r].index;
+          const size_t index = result.indices(r);
           PCCColor3B color = reconstruct.getColor(index);
           centroid[0] += double(color[0]);
           centroid[1] += double(color[1]);
@@ -2508,9 +2499,7 @@ void PCCEncoder::compressPatchMetaDataM42195( PCCFrameContext &frame, PCCFrameCo
   printf("numMatchedPatches:%d, F:%d,A:%d,%d,%d,%d,%d\n", (int)numMatchedPatches, F, A[0], A[1], A[2], A[3], A[4]);
   //printf("topNmaxU:%d,%d,%d,%d,%d\n", TopNmaxU0, TopNmaxV0, TopNmaxU1, TopNmaxV1, TopNmaxD1);
   //printf("maxU:%d,%d,%d,%d,%d\n", maxU0, maxV0, maxU1, maxV1, maxD1);
-
   //size_t topNPatch = numMatchedPatches;
-
   uint8_t bitCount[5];
   bitCount[0] = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(maxU0 + 1))); 
   bitCount[0] = maxU0 > TopNmaxU0 ? bitCount[0] : uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(TopNmaxU0 + 1)));
@@ -2631,6 +2620,69 @@ void PCCEncoder::compressPatchMetaDataM42195( PCCFrameContext &frame, PCCFrameCo
       arithmeticEncoder.encode(uint32_t(patch.getNormalAxis()), orientationModel);
     }
     compressMetadata(patch.getPatchLevelMetadata(), arithmeticEncoder);
+  }
+}
+
+void PCCEncoder::buildBlockToPatch( PCCContext &context ){
+  size_t sizeFrames = context.getFrames().size();
+  PCCFrameContext preFrame = context.getFrames()[0];
+  for( int i = 0; i < sizeFrames; i++ ){
+    PCCFrameContext &frame = context.getFrames()[i];
+    if (params_.losslessGeo_ && !context.getUseMissedPointsSeparateVideo()) {
+      auto& patches = frame.getPatches();
+      auto& missedPointsPatch = frame.getMissedPointsPatch();
+      const size_t patchIndex = patches.size();
+      patches.resize(patchIndex + 1);
+      PCCPatch &dummyPatch = patches[patchIndex];
+      dummyPatch.getIndex() = patchIndex;
+      dummyPatch.getU0() = missedPointsPatch.u0;
+      dummyPatch.getV0() = missedPointsPatch.v0;
+      dummyPatch.getSizeU0() = missedPointsPatch.sizeU0;
+      dummyPatch.getSizeV0() = missedPointsPatch.sizeV0;
+      dummyPatch.getU1() = 0;
+      dummyPatch.getV1() = 0;
+      dummyPatch.getD1() = 0;
+      dummyPatch.getNormalAxis() = 0;
+      dummyPatch.getTangentAxis() = 1;
+      dummyPatch.getBitangentAxis() = 2;
+      dummyPatch.getOccupancyResolution() = missedPointsPatch.occupancyResolution;
+      dummyPatch.getOccupancy() = missedPointsPatch.occupancy;
+      dummyPatch.getLod() = params_.testLevelOfDetail_;
+      dummyPatch.setBestMatchIdx() = -1;
+      dummyPatch.getPatchOrientation() = 0;
+      buildBlockToPatch(frame, preFrame, i);
+      patches.pop_back();
+    } else {
+      buildBlockToPatch(frame, preFrame, i);
+    }
+    preFrame = frame;
+  }
+}
+
+
+void PCCEncoder::buildBlockToPatch( PCCFrameContext &frame, PCCFrameContext &preFrame, size_t frameIndex ){
+  auto& patches = frame.getPatches();
+  const size_t patchCount = patches.size();
+  const size_t blockToPatchWidth = frame.getWidth() / params_.occupancyResolution_;
+  const size_t blockToPatchHeight = frame.getHeight() / params_.occupancyResolution_;
+  const size_t blockCount = blockToPatchWidth * blockToPatchHeight;
+  auto& blockToPatch = frame.getBlockToPatch();
+  blockToPatch.resize(0);
+  blockToPatch.resize(blockCount, 0);
+  auto& interpolateMap = frame.getInterpolate();
+  auto& fillingMap     = frame.getFilling();
+  auto& minD1Map       = frame.getMinD1();
+  auto& neighborMap    = frame.getNeighbor();
+  for (size_t patchIndex = 0; patchIndex < patchCount; ++patchIndex) {
+    auto &patch = patches[patchIndex];
+    const auto& occupancy = patch.getOccupancy();
+    for (size_t v0 = 0; v0 < patch.getSizeV0(); ++v0) {
+      for (size_t u0 = 0; u0 < patch.getSizeU0(); ++u0) {
+        if (occupancy[v0 * patch.getSizeU0() + u0]) {
+          blockToPatch[patch.patchBlock2CanvasBlock(u0, v0, blockToPatchWidth, blockToPatchHeight)] = patchIndex + 1;
+        }
+      }
+    }
   }
 }
 

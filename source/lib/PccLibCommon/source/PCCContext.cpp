@@ -45,7 +45,7 @@ PCCContext::~PCCContext(){
   videoTexture_.clear();
   videoMPsGeometry_.clear();
   videoMPsTexture_.clear();
- 
+  videoBitstream_.clear();
 }
 
 void PCCContext::resize( size_t size ) { 

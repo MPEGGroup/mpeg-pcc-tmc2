@@ -39,7 +39,7 @@
 namespace pcc {
 
 class PCCNormalsGenerator3;
-class PCCStaticKdTree3;
+class PCCKdTree;
 class PCCPatch;
 
 struct PCCPatchSegmenter3Parameters {
@@ -81,9 +81,9 @@ class PCCPatchSegmenter3 {
                             const PCCNormalsGenerator3 &normalsGen,
                             const PCCVector3D *orientations, const size_t orientationCount,
                             std::vector<size_t> &partition );
-  void computeAdjacencyInfo( const PCCPointSet3 &pointCloud, const PCCStaticKdTree3 &kdtree,
+  void computeAdjacencyInfo( const PCCPointSet3 &pointCloud, const PCCKdTree &kdtree,
                              std::vector<std::vector<size_t>> &adj, const size_t maxNNCount );
-  void segmentPatches( const PCCPointSet3 &points, const PCCStaticKdTree3 &kdtree,
+  void segmentPatches( const PCCPointSet3 &points, const PCCKdTree &kdtree,
                        const size_t maxNNCount, const size_t minPointCountPerCC,
                        const size_t occupancyResolution,
                        const double maxAllowedDist2MissedPointsDetection,
@@ -102,7 +102,7 @@ class PCCPatchSegmenter3 {
                        const bool sixDirection,
                        bool useSurfaceSeparation );
 
-  void refineSegmentation( const PCCPointSet3 &pointCloud, const PCCStaticKdTree3 &kdtree,
+  void refineSegmentation( const PCCPointSet3 &pointCloud, const PCCKdTree &kdtree,
                            const PCCNormalsGenerator3 &normalsGen,
                            const PCCVector3D *orientations, const size_t orientationCount,
                            const size_t maxNNCount, const double lambda,

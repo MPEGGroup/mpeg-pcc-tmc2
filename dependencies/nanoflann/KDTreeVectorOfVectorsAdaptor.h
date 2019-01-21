@@ -32,6 +32,14 @@
 
 #include <vector>
 
+  /** Metaprogramming helper traits class for the L2_simple (Euclidean) metric */
+  struct metric_L2_Simple_2 {
+    template<class T, class DataSource>
+    struct traits {
+      typedef nanoflann::L2_Simple_Adaptor<T,DataSource,double> distance_t;
+    };
+  };
+
 // ===== This example shows how to use nanoflann with these types of containers: =======
 // typedef std::vector<std::vector<double> > my_vector_of_vectors_t;
 // typedef std::vector<Eigen::VectorXd> my_vector_of_vectors_t;   // This requires #include
@@ -48,15 +56,25 @@
  * nanoflann::metric_L2_Simple, etc.
   *  \tparam IndexType The type for indices in the KD-tree index (typically, size_t of int)
   */
-template <class VectorOfVectorsType, typename num_t = double, int DIM = -1,
+template <class VectorOfVectorsType, typename num_t = double, typename DistType = double, int DIM = -1,
           class Distance = nanoflann::metric_L2, typename IndexType = size_t>
 struct KDTreeVectorOfVectorsAdaptor {
-  typedef KDTreeVectorOfVectorsAdaptor<VectorOfVectorsType, num_t, DIM, Distance> self_t;
+  typedef KDTreeVectorOfVectorsAdaptor<VectorOfVectorsType, num_t, DistType, DIM, Distance> self_t;
   typedef typename Distance::template traits<num_t, self_t>::distance_t metric_t;
   typedef nanoflann::KDTreeSingleIndexAdaptor<metric_t, self_t, DIM, IndexType> index_t;
 
   index_t *index;  //! The kd-tree index for the user to call its methods as usual with any other
                    //! FLANN index.
+
+  /// Constructor: takes a const ref to the vector of vectors object with the data points
+  KDTreeVectorOfVectorsAdaptor() {
+  }
+  void init( const int dimensionality, const VectorOfVectorsType &mat, const int leaf_max_size = 10 ){
+    m_data = mat;
+    index = new index_t(dimensionality, *this /* adaptor */,
+                        nanoflann::KDTreeSingleIndexAdaptorParams(leaf_max_size));
+    index->buildIndex();
+  }
 
   /// Constructor: takes a const ref to the vector of vectors object with the data points
   KDTreeVectorOfVectorsAdaptor(const int dimensionality, const VectorOfVectorsType &mat,
@@ -102,10 +120,10 @@ struct KDTreeVectorOfVectorsAdaptor {
 
   // Returns the distance between the vector "p1[0:size-1]" and the data point with index "idx_p2"
   // stored in the class:
-  inline num_t kdtree_distance(const num_t *p1, const size_t idx_p2, size_t size) const {
-    num_t s = 0;
+  inline DistType kdtree_distance(const num_t *p1, const size_t idx_p2, size_t size) const {
+    DistType s = 0;
     for (size_t i = 0; i < size; i++) {
-      const num_t d = p1[i] - m_data[idx_p2][i];
+      const DistType d = (DistType)p1[i] - (DistType)m_data[idx_p2][i];
       s += d * d;
     }
     return s;

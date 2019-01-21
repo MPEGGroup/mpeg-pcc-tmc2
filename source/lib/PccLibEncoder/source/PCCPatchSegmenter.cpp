@@ -61,11 +61,11 @@ void PCCPatchSegmenter3::compute( const PCCPointSet3 &geometry,
   };
   const size_t orientationCount = 6;
   std::cout << "  Computing normals for original point cloud... ";
-  PCCStaticKdTree3 kdtree;
-  kdtree.build(geometry);
+  PCCKdTree kdtree(geometry);
+  PCCNNResult result;
   PCCNormalsGenerator3 normalsGen;
   const PCCNormalsGenerator3Parameters normalsGenParams = {
-                                                           PCCPoint3D(0.0),
+                                                           PCCVector3D(0.0),
                                                            (std::numeric_limits<double>::max)(),
                                                            (std::numeric_limits<double>::max)(),
                                                            (std::numeric_limits<double>::max)(),
@@ -112,7 +112,6 @@ void PCCPatchSegmenter3::compute( const PCCPointSet3 &geometry,
                   params.sixDirectionMode,
                   params.surfaceSeparation
   );
-
   std::cout << "[done]" << std::endl;
 }
 
@@ -143,7 +142,7 @@ void PCCPatchSegmenter3::initialSegmentation( const PCCPointSet3 &geometry,
 }
 
 void PCCPatchSegmenter3::computeAdjacencyInfo( const PCCPointSet3 &pointCloud,
-                                               const PCCStaticKdTree3 &kdtree,
+                                               const PCCKdTree &kdtree,
                                                std::vector<std::vector<size_t>> &adj,
                                                const size_t maxNNCount) {
   const size_t pointCount = pointCloud.getPointCount();
@@ -151,16 +150,12 @@ void PCCPatchSegmenter3::computeAdjacencyInfo( const PCCPointSet3 &pointCloud,
   tbb::task_arena limited( (int)nbThread_ );       
   limited.execute([&]{ 
     tbb::parallel_for(size_t( 0 ), pointCount, [&](const size_t i) {
-      std::vector<PCCPointDistInfo> nNeighbor;
-      nNeighbor.resize(maxNNCount);
-      PCCNNResult result = {nNeighbor.data(), 0};
-      PCCNNQuery3 query = {PCCVector3D(0.0), (std::numeric_limits<double>::max)(), maxNNCount};
-      query.point = pointCloud[i];
-      kdtree.findNearestNeighbors(query, result);
+      PCCNNResult result;
+      kdtree.search( pointCloud[i], maxNNCount, result);
       std::vector<size_t> &neighbors = adj[i];
-      neighbors.resize(result.resultCount);
-      for (size_t j = 0; j < result.resultCount; ++j) {
-        neighbors[j] = result.neighbors[j].index;
+      neighbors.resize(result.count());
+      for (size_t j = 0; j < result.count(); ++j) {
+        neighbors[j] = result.indices(j);
       }
     });
   });
@@ -170,9 +165,7 @@ size_t PCCPatchSegmenter3::selectFrameProjectionMode( const PCCPointSet3 &points
                                                       const size_t paramProjectionMode ) {
   const int16_t infiniteDepth = (std::numeric_limits<int16_t>::max)();
   const size_t boxSize = size_t(1024);
-
   size_t frameProjectionMode = 0;
-
   //allocate patch cube
   boxMinDepths_.resize(3);
   boxMaxDepths_.resize(3);
@@ -224,7 +217,7 @@ size_t PCCPatchSegmenter3::selectFrameProjectionMode( const PCCPointSet3 &points
   for (auto &plan : boxMinDepths_) {
     std::fill(plan.getDepth(0).begin(), plan.getDepth(0).end(), infiniteDepth);
     for (int i = 0; i < points.getPointCount(); i++) {
-      const PCCVector3D point = points[i];
+      const auto& point = points[i];
       const int16_t d = int16_t(round(point[plan.getNormalAxis()]));
       const size_t u = size_t(round(point[plan.getTangentAxis()] - plan.getU1()));
       const size_t v = size_t(round(point[plan.getBitangentAxis()] - plan.getV1()));
@@ -241,7 +234,7 @@ size_t PCCPatchSegmenter3::selectFrameProjectionMode( const PCCPointSet3 &points
   for (auto &plan : boxMaxDepths_) {
     std::fill(plan.getDepth(0).begin(), plan.getDepth(0).end(), 0);
     for (int i = 0; i < points.getPointCount(); i++) {
-      const PCCVector3D point = points[i];
+      const auto& point = points[i];
       const int16_t d = int16_t(round(point[plan.getNormalAxis()]));
       const size_t u = size_t(round(point[plan.getTangentAxis()] - plan.getU1()));
       const size_t v = size_t(round(point[plan.getBitangentAxis()] - plan.getV1()));
@@ -260,7 +253,7 @@ size_t PCCPatchSegmenter3::selectFrameProjectionMode( const PCCPointSet3 &points
   for (auto &plan : boxMinDepths_) {
     plan.getDepth(1) = plan.getDepth(0);
     for (int i = 0; i < points.getPointCount(); i++) {
-      const PCCVector3D point = points[i];
+      const auto& point = points[i];
       const int16_t d = int16_t(round(point[plan.getNormalAxis()]));
       const int64_t u = int64_t(round(point[plan.getTangentAxis  ()] - plan.getU1()));
       const int64_t v = int64_t(round(point[plan.getBitangentAxis()] - plan.getV1()));
@@ -329,7 +322,7 @@ void  PCCPatchSegmenter3::selectPatchProjectionMode( const PCCPointSet3 &points,
     uint16_t cptMinD0[3] = { 0,0,0 };
     uint16_t cptMaxD0[3] = { 0,0,0 };
     for (const auto i : connectedComponent) {
-      const PCCVector3D point = points[i];
+      const auto& point = points[i];
       const int16_t d = int16_t(round(point[patch.getNormalAxis()]));
       const size_t u = size_t(round(point[patch.getTangentAxis()]));
       const size_t v = size_t(round(point[patch.getBitangentAxis()]));
@@ -376,7 +369,7 @@ void  PCCPatchSegmenter3::selectPatchProjectionMode( const PCCPointSet3 &points,
 }
 
 void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3 &points,
-                                         const PCCStaticKdTree3 &kdtree,
+                                         const PCCKdTree &kdtree,
                                          const size_t maxNNCount, const size_t minPointCountPerCC,
                                          const size_t occupancyResolution,
                                          const double maxAllowedDist2MissedPointsDetection,
@@ -398,6 +391,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3 &points,
   patchPartition.resize(pointCount, 0);
   resampledPatchPartition.reserve(pointCount);
 
+  PCCNNResult result;
   const double Threshold_Color_Error = 400;
   std::vector<PCCColor3B> frame_pcc_color;
   PCCColor3B RGB_val;
@@ -514,10 +508,13 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3 &points,
       }
 
       PCCBox3D boundingBox;
-      boundingBox.min_ = boundingBox.max_ = points[connectedComponent[0]];
+      for (size_t k = 0; k < 3; ++k) {
+        boundingBox.min_[k] = points[connectedComponent[0]][k];
+        boundingBox.max_[k] = points[connectedComponent[0]][k];
+      }
       for (const auto i : connectedComponent) {
         patchPartition[i] = patchIndex + 1;
-        const PCCVector3D point = points[i];
+        const auto& point = points[i];
         for (size_t k = 0; k < 3; ++k) {
           if (point[k] < boundingBox.min_[k]) {
             boundingBox.min_[k] = floor(point[k]);
@@ -562,7 +559,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3 &points,
       }
 
       for (const auto i : connectedComponent) {
-        const PCCVector3D point = points[i];
+        const auto& point = points[i];
         const int16_t d = int16_t(round(point[patch.getNormalAxis()]));
         const size_t u = size_t(round(point[patch.getTangentAxis()] - patch.getU1()));
         const size_t v = size_t(round(point[patch.getBitangentAxis()] - patch.getV1()));
@@ -707,7 +704,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3 &points,
       if ( patch.getProjectionMode() == 0 ) { //min
         if (!useSurfaceSeparation ) {
           for (const auto i : connectedComponent) {
-            const PCCVector3D point = points[i];
+            const auto& point = points[i];
             const int16_t d = int16_t(round(point[patch.getNormalAxis()]));
             const size_t u = size_t(round(point[patch.getTangentAxis()] - patch.getU1()));
             const size_t v = size_t(round(point[patch.getBitangentAxis()] - patch.getV1()));
@@ -753,7 +750,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3 &points,
               proc_d1_select_flag = false;
             }
             for (const auto i : connectedComponent) {
-              const PCCVector3D point = points[i];
+              const auto& point = points[i];
               const int16_t d = int16_t(round(point[patch.getNormalAxis()]));
               const size_t u = size_t(round(point[patch.getTangentAxis()] - patch.getU1()));
               const size_t v = size_t(round(point[patch.getBitangentAxis()] - patch.getV1()));
@@ -832,7 +829,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3 &points,
       } else { // else ( patch.getProjectionMode() == 0 )
         if (!useSurfaceSeparation) {
           for (const auto i : connectedComponent) {
-            const PCCVector3D point = points[i];
+            const auto& point = points[i];
             const int16_t d = int16_t(round(point[patch.getNormalAxis()]));
             const size_t u = size_t(round(point[patch.getTangentAxis()] - patch.getU1()));
             const size_t v = size_t(round(point[patch.getBitangentAxis()] - patch.getV1()));
@@ -876,7 +873,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3 &points,
             }
 
             for (const auto i : connectedComponent) {
-              const PCCVector3D point = points[i];
+              const auto& point = points[i];
               const int16_t d = int16_t(round(point[patch.getNormalAxis()]));
               const size_t u = size_t(round(point[patch.getTangentAxis()] - patch.getU1()));
               const size_t v = size_t(round(point[patch.getBitangentAxis()] - patch.getV1()));
@@ -971,7 +968,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3 &points,
               point[patch.getNormalAxis()] = double(depth0) + patch.getD1();
               point[patch.getTangentAxis()] = double(u) + patch.getU1();
               point[patch.getBitangentAxis()] = double(v) + patch.getV1();
-              resampled.addPoint(point);
+              resampled.addPoint((const PCCVector3D)point);
               resampledPatchPartition.push_back(patchIndex);
               if ( createSubPointCloud ) { rec.addPoint(point); }
 
@@ -1089,16 +1086,18 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3 &points,
 
         auto& sub = subPointCloud[ subPointCloud.size() - 1 ];
         sub.resize(0);
-        PCCStaticKdTree3 kdtreeRec;
-        kdtreeRec.build(rec);
-        PCCPointDistInfo nNeighborRec;
-        PCCNNResult resultRec = {&nNeighborRec, 0};
-        PCCNNQuery3 queryRec = {PCCVector3D(0.0), (std::numeric_limits<double>::max)(), 1};
+        PCCKdTree kdtreeRec(rec);
+        // kdtreeRec.build(rec);
+        // PCCPointDistInfo nNeighborRec;
+        // PCCNNResult resultRec = {&nNeighborRec, 0};
+        // PCCNNQuery3 queryRec = {PCCPoint3D(0.0), (std::numeric_limits<float>::max)(), 1};
+
         for (const auto i : connectedComponent) {
-          queryRec.point = points[i];
-          kdtreeRec.findNearestNeighbors(queryRec, resultRec);
-          assert(resultRec.resultCount);
-          const double dist2 = resultRec.neighbors[0].dist2;
+          // queryRec.point = points[i];
+          // kdtreeRec.findNearestNeighbors(queryRec, resultRec);
+          // assert(resultRec.resultCount);
+          kdtreeRec.search( points[i], 1, result );
+          const double dist2 = result.dist( 0 );
           if (dist2  <= maxAllowedDist2MissedPointsSelection ) {
             sub.addPoint( points[i], points.getColor( i ) );
           }
@@ -1108,18 +1107,17 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3 &points,
           << patch.getU1() << ", " << patch.getV1() << ") (dd, du,dv) = (" << patch.getSizeD() << ", "
           << patch.getSizeU() << "," << patch.getSizeV() << "), Direction: " << patch.getProjectionMode() << std::endl;
     }
-    PCCStaticKdTree3 kdtreeResampled;
-    kdtreeResampled.build(resampled);
-    PCCPointDistInfo nNeighbor;
-    PCCNNResult result = {&nNeighbor, 0};
-    PCCNNQuery3 query = {PCCVector3D(0.0), (std::numeric_limits<double>::max)(), 1};
+    PCCKdTree kdtreeResampled(resampled);
+    //PCCPointDistInfo nNeighbor;
+    //PCCNNResult result = {&nNeighbor, 0};
+    //PCCNNQuery3 query = {PCCPoint3D(0.0), (std::numeric_limits<float>::max)(), 1};
 
     missedPoints.resize(0);
     for (size_t i = 0; i < pointCount; ++i) {
-      query.point = points[i];
-      kdtreeResampled.findNearestNeighbors(query, result);
-      assert(result.resultCount);
-      const double dist2 = result.neighbors[0].dist2;
+      // query.point = points[i];
+      kdtreeResampled.search( points[i], 1, result);
+      // assert(result.resultCount);
+      const double dist2 = result.dist(0);
       missedPointsDistance[i] = dist2;
       if (dist2 > maxAllowedDist2MissedPointsSelection) {
         missedPoints.push_back(i);
@@ -1133,7 +1131,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3 &points,
 }
 
 
-void PCCPatchSegmenter3::refineSegmentation(const PCCPointSet3 &pointCloud, const PCCStaticKdTree3 &kdtree,
+void PCCPatchSegmenter3::refineSegmentation(const PCCPointSet3 &pointCloud, const PCCKdTree &kdtree,
                                             const PCCNormalsGenerator3 &normalsGen,
                                             const PCCVector3D *orientations, const size_t orientationCount,
                                             const size_t maxNNCount, const double lambda,
@@ -1143,23 +1141,29 @@ void PCCPatchSegmenter3::refineSegmentation(const PCCPointSet3 &pointCloud, cons
   computeAdjacencyInfo(pointCloud, kdtree, adj, maxNNCount);
   const size_t pointCount = pointCloud.getPointCount();
   const double weight = lambda / maxNNCount;
-  std::vector<size_t> tempPartition = partition;
-  tempPartition.resize(pointCount);
+  std::vector<size_t> tempPartition(pointCount);
+  std::vector<std::vector<size_t>> scoresSmooth(pointCount, std::vector<size_t>(orientationCount));
   for (size_t k = 0; k < iterationCount; ++k) {
     tbb::task_arena limited( (int)nbThread_ );       
+    limited.execute([&] {
+      tbb::parallel_for(size_t(0), pointCount, [&](const size_t i) {
+        auto &scoreSmooth = scoresSmooth[i];
+        std::fill(scoreSmooth.begin(), scoreSmooth.end(), 0);
+        for (auto &neighbor : adj[i]) {
+          scoreSmooth[partition[neighbor]]++;
+        }
+      });
+    });
     limited.execute([&]{ 
       tbb::parallel_for( size_t( 0 ), pointCount, [&](const size_t i) {
         const PCCVector3D normal = normalsGen.getNormal(i);
         const std::vector<size_t> &neighbors = adj[i];
         size_t clusterIndex = partition[i];
         double bestScore = 0.0;
+        const auto &scoreSmooth = scoresSmooth[i];
         for (size_t j = 0; j < orientationCount; ++j) {
           const double scoreNormal = normal * orientations[j];
-          double scoreSmooth = 0.0;
-          for (const auto n : neighbors) {
-            scoreSmooth += (j == partition[n]);
-          }
-          const double score = scoreNormal + weight * scoreSmooth;
+          const double score = scoreNormal + weight * scoreSmooth[j];
           if (score > bestScore) {
             bestScore = score;
             clusterIndex = j;

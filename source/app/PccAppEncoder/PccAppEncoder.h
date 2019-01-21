@@ -37,6 +37,7 @@
 
 #include "PCCCommon.h"
 #include "PCCChrono.h"
+#include "PCCMemory.h"
 #include "PCCEncoder.h"
 #include "PCCMetrics.h"
 #include "PCCChecksum.h"

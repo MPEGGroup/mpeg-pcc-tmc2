@@ -84,6 +84,9 @@ class PCCFrameContext {
   void setEnhancedDeltaDepth(bool code) {enhancedDeltaDepth_=code;}
   bool getEnhancedDeltaDepth( ) {return enhancedDeltaDepth_;}
 
+  const size_t getSurfaceThickness() {return surfaceThickness_;}
+  void setSurfaceThickness( size_t surfaceThickness ) { surfaceThickness_ = surfaceThickness;}
+
   std::vector<PCCPointSet3>&       getSrcPointCloudByPatch() { return srcPointCloudByPatch_;     }
   PCCPointSet3&                    getSrcPointCloudByPatch( size_t patchIndex ) { return srcPointCloudByPatch_[patchIndex];     }
   std::vector<PCCPointSet3>&       getSrcPointCloudByBlock() { return srcPointCloudByBlock_; }
@@ -102,6 +105,7 @@ class PCCFrameContext {
   size_t MPGeoHeight_;
   size_t MPAttWidth_;
   size_t MPAttHeight_;
+  size_t surfaceThickness_;
   bool losslessGeo_;
   bool losslessGeo444_;
   bool losslessAtt_;

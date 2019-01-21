@@ -36,7 +36,11 @@
 
 #include "PCCCommon.h"
 
+
 namespace pcc {
+
+typedef int16_t              PCCType;
+
 /// Vector dim 3
 template <typename T>
 class PCCVector3 {
@@ -70,7 +74,10 @@ class PCCVector3 {
     }
   }
   T getNorm() const { return static_cast<T>(sqrt(getNorm2())); }
-  T getNorm2() const { return (*this) * (*this); }
+  T getNorm2() const {
+  //  return (*this) * (*this);
+    return data_[0] * data_[0] + data_[1] * data_[1] + data_[2] * data_[2];
+  }
   PCCVector3 &operator=(const PCCVector3 &rhs) {
     memcpy(data_, rhs.data_, sizeof(data_));
     return *this;
@@ -124,9 +131,10 @@ class PCCVector3 {
     data_[2] = rhs[2];
     return *this;
   }
-  T operator*(const PCCVector3 &rhs) const {
-    return (data_[0] * rhs.data_[0] + data_[1] * rhs.data_[1] + data_[2] * rhs.data_[2]);
-  }
+
+  // T operator*(const PCCVector3 &rhs) const {
+  //   return (data_[0] * rhs.data_[0] + data_[1] * rhs.data_[1] + data_[2] * rhs.data_[2]);
+  // }
   PCCVector3 operator^(const PCCVector3 &rhs) const {
     return PCCVector3<T>(data_[1] * rhs.data_[2] - data_[2] * rhs.data_[1],
                          data_[2] * rhs.data_[0] - data_[0] * rhs.data_[2],
@@ -440,6 +448,25 @@ class PCCMatrix3 {
   T data_[3][3];
 };
 
+typedef PCCVector3<double>  PCCVector3D;
+typedef PCCVector3<int16_t> PCCPoint3D;
+
+typedef PCCBox3   <double>  PCCBox3D;
+typedef PCCVector3<uint8_t> PCCColor3B;
+typedef PCCVector3<double>  PCCNormal3D;
+typedef PCCMatrix3<double>  PCCMatrix3D;
+
+
+static PCCVector3D  operator+( const PCCVector3D& a, const PCCPoint3D&  b ) { return PCCVector3D( a[0] + b[0], a[1] + b[1], a[2] + b[2] ); }
+static PCCVector3D  operator+( const PCCPoint3D & a, const PCCVector3D& b ) { return PCCVector3D( a[0] + b[0], a[1] + b[1], a[2] + b[2] ); }
+static PCCVector3D  operator-( const PCCVector3D& a, const PCCPoint3D&  b ) { return PCCVector3D( a[0] - b[0], a[1] - b[1], a[2] - b[2] ); }
+static PCCVector3D  operator-( const PCCPoint3D & a, const PCCVector3D& b ) { return PCCVector3D( a[0] - b[0], a[1] - b[1], a[2] - b[2] ); }
+static double       operator*( const PCCVector3D& a, const PCCVector3D& b ) { return (a[0] * b[0] + a[1] * b[1] + a[2] * b[2]); }
+static double       operator*( const PCCVector3D& a, const PCCPoint3D&  b ) { return (a[0] * b[0] + a[1] * b[1] + a[2] * b[2]); }
+static double       operator*( const PCCPoint3D & a, const PCCVector3D& b ) { return (a[0] * b[0] + a[1] * b[1] + a[2] * b[2]); }
+static PCCVector3D& operator+=(      PCCVector3D &a, const PCCPoint3D&  b ) { a = a + b; return a; }
+static PCCVector3D& operator-=(      PCCVector3D &a, const PCCPoint3D&  b ) { a = a - b; return a; }
+
 // Slightly modified version of http://www.melax.com/diag.html?attredirects=0
 // A must be a symmetric matrix.
 // returns Q and D such that
@@ -538,19 +565,15 @@ static void PCCDiagonalize(const PCCMatrix3<double> &A, PCCMatrix3<double> &Q, P
     q[3] /= mq;
   }
 }
-typedef PCCVector3<double>  PCCVector3D;
-typedef PCCVector3<double>  PCCPoint3D;
-typedef PCCVector3<float>   PCCNormal3D;
-typedef PCCBox3<double>     PCCBox3D;
-typedef PCCVector3<uint8_t> PCCColor3B;
-typedef PCCMatrix3<double>  PCCMatrix3D;
+
+
 
 template <typename T>
 T PCCClip(const T &n, const T &lower, const T &upper) {
   return (std::max)(lower, (std::min)(n, upper));
 }
 template <typename T>
-bool PCCApproximatelyEqual(T a, T b, T epsilon = std::numeric_limits<double>::epsilon()) {
+bool PCCApproximatelyEqual(T a, T b, T epsilon = std::numeric_limits<PCCType>::epsilon()) {
   return fabs(a - b) <= ((fabs(a) < fabs(b) ? fabs(b) : fabs(a)) * epsilon);
 }
 }

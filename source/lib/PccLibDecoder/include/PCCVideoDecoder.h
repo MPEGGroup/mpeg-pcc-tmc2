@@ -36,7 +36,7 @@
 #define PCCVideoDecoder_h
 
 #include "PCCCommon.h"
-#include "PCCBitstream.h"
+#include "PCCVideoBitstream.h"
 #include "PCCSystem.h"
 #include "PCCVideo.h"
 
@@ -62,7 +62,7 @@ class PCCVideoDecoder {
                   const size_t width,
                   const size_t height,
                   const size_t frameCount,
-                  PCCBitstream &bitstream,
+                  PCCVideoBitstream &bitstream,
                   const std::string &decoderPath,
                   PCCContext& contexts,
                   const std::string &inverseColorSpaceConversionConfig = "",
@@ -71,8 +71,6 @@ class PCCVideoDecoder {
                   const bool patchColorSubsampling = false,
                   const size_t nbyte = 1,
                   const bool keepIntermediateFiles = false ) {
-    uint32_t compressedBitstreamSize = 0;
-    bitstream.read<uint32_t>(compressedBitstreamSize);
     const std::string binFileName = fileName + ".bin";
     const std::string yuvRecFileName = addVideoFormat(fileName + "_rec" + (use444CodecIo ? ".rgb" : ".yuv"),
                                                       width, height, !use444CodecIo, nbyte==2?"10":"8");
@@ -82,10 +80,8 @@ class PCCVideoDecoder {
     if (!file.good()) {
       return false;
     }
-    file.write(reinterpret_cast<char *>(bitstream.buffer()) + bitstream.size(),
-               compressedBitstreamSize);
+    file.write(reinterpret_cast<char *>(bitstream.buffer()), bitstream.size());
     file.close();
-    bitstream += (uint64_t)compressedBitstreamSize;
     std::stringstream cmd;
 
     if(use444CodecIo) {

@@ -200,6 +200,25 @@ class PCCPointSet3 {
     colors_[index]    = color;
     return index;
   }
+  size_t addPoint(const PCCVector3D &position) {
+    const size_t index = getPointCount();
+    resize(index + 1);
+    positions_[index][0] = position[0];
+    positions_[index][1] = position[1];
+    positions_[index][2] = position[2];
+    return index;
+  }
+  size_t addPoint(const PCCVector3D &position, const PCCColor3B &color ) {
+    withColors_ = true;
+    const size_t index = getPointCount();
+    resize( index + 1 );
+    colors_.resize( index + 1 );
+    positions_[index][0] = position[0];
+    positions_[index][1] = position[1];
+    positions_[index][2] = position[2];
+    colors_[index]    = color;
+    return index;
+  }
 
   void swapPoints(const size_t index1, const size_t index2) {
     assert(index1 < getPointCount());
