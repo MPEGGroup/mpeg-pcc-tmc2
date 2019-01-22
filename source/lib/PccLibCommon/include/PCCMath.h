@@ -75,7 +75,6 @@ class PCCVector3 {
   }
   T getNorm() const { return static_cast<T>(sqrt(getNorm2())); }
   T getNorm2() const {
-  //  return (*this) * (*this);
     return data_[0] * data_[0] + data_[1] * data_[1] + data_[2] * data_[2];
   }
   PCCVector3 &operator=(const PCCVector3 &rhs) {

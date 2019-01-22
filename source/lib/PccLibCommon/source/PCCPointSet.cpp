@@ -1035,7 +1035,6 @@ void PCCPointSet3::scaleNormals( const PCCPointSet3& sourceWithNormal ) {
       num_results  += num_results_incr;
       kdtreeDst.search( sourceWithNormal.positions_[i], num_results, result );
     } while( result.dist(0) == result.dist(num_results-1) && num_results + num_results_incr <= num_results_max );
-#if 1 // update normals
     for( size_t j=0;j<result.count();j++){
       if( result.dist(0) == result.dist(j) ) {
         size_t index = result.indices(j);
@@ -1045,13 +1044,6 @@ void PCCPointSet3::scaleNormals( const PCCPointSet3& sourceWithNormal ) {
         count    [index]++;
       }
     }
-#else
-    size_t index = results.indices(0);
-    normals_ [index][0] += sourceWithNormal.normals_[i][0];
-    normals_ [index][1] += sourceWithNormal.normals_[i][1];
-    normals_ [index][2] += sourceWithNormal.normals_[i][2];
-    count    [index]++;
-#endif
   }
 
   for (long i = 0; i < getPointCount(); i++) {
@@ -1066,7 +1058,6 @@ void PCCPointSet3::scaleNormals( const PCCPointSet3& sourceWithNormal ) {
         num_results  += num_results_incr;
         kdtreeSrc.search( positions_[i], num_results, result );
       } while( result.dist(0) == result.dist(num_results-1) && num_results + num_results_incr <= num_results_max );
-#if 1 // update normals (10)
       size_t num = 0;
       for( size_t j=0;j<num_results;j++){
         if( result.dist(0) ==  result.dist(j) ) {
@@ -1080,12 +1071,6 @@ void PCCPointSet3::scaleNormals( const PCCPointSet3& sourceWithNormal ) {
       normals_[i][0] /= num;
       normals_[i][1] /= num;
       normals_[i][2] /= num;
-#else
-      size_t index = results.indices(0);
-      normals_[i][0] = sourceWithNormal.normals_[index][0];
-      normals_[i][1] = sourceWithNormal.normals_[index][1];
-      normals_[i][2] = sourceWithNormal.normals_[index][2];
-#endif
     }
   }
 }

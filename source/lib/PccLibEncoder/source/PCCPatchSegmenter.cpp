@@ -1087,15 +1087,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3 &points,
         auto& sub = subPointCloud[ subPointCloud.size() - 1 ];
         sub.resize(0);
         PCCKdTree kdtreeRec(rec);
-        // kdtreeRec.build(rec);
-        // PCCPointDistInfo nNeighborRec;
-        // PCCNNResult resultRec = {&nNeighborRec, 0};
-        // PCCNNQuery3 queryRec = {PCCPoint3D(0.0), (std::numeric_limits<float>::max)(), 1};
-
         for (const auto i : connectedComponent) {
-          // queryRec.point = points[i];
-          // kdtreeRec.findNearestNeighbors(queryRec, resultRec);
-          // assert(resultRec.resultCount);
           kdtreeRec.search( points[i], 1, result );
           const double dist2 = result.dist( 0 );
           if (dist2  <= maxAllowedDist2MissedPointsSelection ) {
@@ -1108,15 +1100,9 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3 &points,
           << patch.getSizeU() << "," << patch.getSizeV() << "), Direction: " << patch.getProjectionMode() << std::endl;
     }
     PCCKdTree kdtreeResampled(resampled);
-    //PCCPointDistInfo nNeighbor;
-    //PCCNNResult result = {&nNeighbor, 0};
-    //PCCNNQuery3 query = {PCCPoint3D(0.0), (std::numeric_limits<float>::max)(), 1};
-
     missedPoints.resize(0);
     for (size_t i = 0; i < pointCount; ++i) {
-      // query.point = points[i];
       kdtreeResampled.search( points[i], 1, result);
-      // assert(result.resultCount);
       const double dist2 = result.dist(0);
       missedPointsDistance[i] = dist2;
       if (dist2 > maxAllowedDist2MissedPointsSelection) {
@@ -1179,7 +1165,6 @@ void PCCPatchSegmenter3::refineSegmentation(const PCCPointSet3 &pointCloud, cons
 float pcc::computeIOU(Rect a, Rect b) {
   float iou = 0.0f;
   Rect intersec = a & b;
-  //printf("intersec: [%d,%d],%d,%d\n", intersec.x, intersec.y, intersec.width, intersec.height);
   int intersectionArea = intersec.area();
   int unionArea = a.area() + b.area() - intersectionArea;
   iou = (float)intersectionArea / unionArea;

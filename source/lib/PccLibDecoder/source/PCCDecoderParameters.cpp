@@ -130,9 +130,5 @@ bool PCCDecoderParameters::check() {
     ret = false;
     std::cerr << "videoDecoderOccupancyMapPath not exist\n";
   }
-  //  if( reconstructedDataPath_.empty() ) {
-  //    ret = false;
-  //    std::cerr << "reconstructedDataPath not set\n";
-  //  }
   return ret;
 }
