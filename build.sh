@@ -18,6 +18,7 @@ if [ "$MACHINE" == "Linux" ] ; then NUMBER_OF_PROCESSORS=`grep -c ^processor /pr
 for i in "$@"
 do  
   case "$i" in
+    doc|Doc|doc|doc\/      ) make -C ${CURDIR}/doc/; exit;;
     debug|Debug|DEBUG      ) MODE=Debug; CMAKE_FLAGS="$CMAKE_FLAGS-DCMAKE_C_FLAGS=\"-g2\" -DCMAKE_CXX_FLAGS=\"-g2\" ";;
     release|Release|RELEASE) MODE=Release;;
     *                      ) echo "ERROR: arguments \"$i\" not supported: option = [debug|release]"; exit -1;;
@@ -30,8 +31,6 @@ case "${MACHINE}" in
   Mac)   cmake -H${CURDIR} -B${CURDIR}/build/${MODE} -G "Xcode"                       ${CMAKE_FLAGS};;
   *)     cmake -H${CURDIR} -B${CURDIR}/build/${MODE} -G "Visual Studio 14 2015 Win64" ${CMAKE_FLAGS};;
 esac
-
-
 
 case "${MACHINE}" in
   Linux) make -C ${CURDIR}/build/${MODE} -j ${NUMBER_OF_PROCESSORS} ${CMD} -s;; 

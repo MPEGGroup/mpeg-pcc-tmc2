@@ -9,7 +9,7 @@ SRCDIR=${MAINDIR}/../ply/ # note: this directory must containt: http://mpegfs.in
 CFGDIR=${MAINDIR}/cfg/
 
 SEQ=25;       # in [22;26]
-COND=2;       # in [ C2AI, C2LD, CWAI, CWRA]
+COND=2;       # in [C2AI, C2LD, CWAI, CWRA]
 RATE=2;       # in [1;5]
 FRAMECOUNT=1;
 THREAD=1;
@@ -48,7 +48,7 @@ if [ ! -f $HMENCODER  ] ; then echo "Can't find TAppEncoderStatic, please set. (
 if [ ! -f $HMDECODER  ] ; then echo "Can't find TAppDecoderStatic, please set. ($HMDECODER)";  exit -1; fi
 
 ## Set Configuration based on sequence, condition and rate
-if [ $COND == "CWAI" -o $COND == "CWRA" ] 
+if [ $COND == "C2AI" -o $COND == "C2RA" ] 
 then
   case $SEQ in
       22) CFGSEQUENCE="sequence/queen.cfg";;
@@ -81,18 +81,18 @@ else
 fi
 
 case $COND in
-  C2AI) CFGCOMMON="common/ctc-common-lossless-geometry-texture.cfg";;
-  C2LD) CFGCOMMON="common/ctc-common-lossless-geometry-texture.cfg";; 
-  CWAI) CFGCOMMON="common/ctc-common.cfg";;                           
-  CWRA) CFGCOMMON="common/ctc-common.cfg";;           
+  CWAI) CFGCOMMON="common/ctc-common-lossless-geometry-texture.cfg";;
+  CWLD) CFGCOMMON="common/ctc-common-lossless-geometry-texture.cfg";; 
+  C2AI) CFGCOMMON="common/ctc-common.cfg";;                           
+  C2RA) CFGCOMMON="common/ctc-common.cfg";;           
   *) echo "Condition not correct ($COND)";   exit -1;;
 esac
 
 case $COND in
-  C2AI) CFGCONDITION="condition/ctc-all-intra-lossless-geometry-texture.cfg";;
-  C2LD) CFGCONDITION="condition/ctc-low-delay-lossless-geometry-texture.cfg";;
-  CWAI) CFGCONDITION="condition/ctc-all-intra.cfg";;
-  CWRA) CFGCONDITION="condition/ctc-random-access.cfg";;  
+  CWAI) CFGCONDITION="condition/ctc-all-intra-lossless-geometry-texture.cfg";;
+  CWLD) CFGCONDITION="condition/ctc-low-delay-lossless-geometry-texture.cfg";;
+  C2AI) CFGCONDITION="condition/ctc-all-intra.cfg";;
+  C2RA) CFGCONDITION="condition/ctc-random-access.cfg";;  
   *) echo "Condition not correct ($COND)";   exit -1;;
 esac
 
