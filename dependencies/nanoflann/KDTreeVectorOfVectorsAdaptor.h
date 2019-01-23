@@ -67,10 +67,12 @@ struct KDTreeVectorOfVectorsAdaptor {
                    //! FLANN index.
 
   /// Constructor: takes a const ref to the vector of vectors object with the data points
-  KDTreeVectorOfVectorsAdaptor() {
+  KDTreeVectorOfVectorsAdaptor():
+    index ( NULL ) {
   }
   void init( const int dimensionality, const VectorOfVectorsType &mat, const int leaf_max_size = 10 ){
     m_data = mat;
+    if( index ) { delete index; index = NULL; }
     index = new index_t(dimensionality, *this /* adaptor */,
                         nanoflann::KDTreeSingleIndexAdaptorParams(leaf_max_size));
     index->buildIndex();
@@ -79,7 +81,7 @@ struct KDTreeVectorOfVectorsAdaptor {
   /// Constructor: takes a const ref to the vector of vectors object with the data points
   KDTreeVectorOfVectorsAdaptor(const int dimensionality, const VectorOfVectorsType &mat,
                                const int leaf_max_size = 10)
-      : m_data(mat) {
+      : m_data(mat), index( NULL ) {
     // assert(mat.size()!=0 && mat[0].size()!=0);
     // const size_t dims = mat[0].size();
     // if (DIM>0 && static_cast<int>(dims)!=DIM)
@@ -87,6 +89,7 @@ struct KDTreeVectorOfVectorsAdaptor {
     // template
     // argument");
     // size_t dims = dimensionality;
+    if( index ) { delete index; index = NULL; }
     index = new index_t(dimensionality, *this /* adaptor */,
                         nanoflann::KDTreeSingleIndexAdaptorParams(leaf_max_size));
     index->buildIndex();

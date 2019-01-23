@@ -203,6 +203,7 @@ int PCCDecoder::decode( PCCContext &context, PCCGroupOfFrames& reconstructs ){
   generatePointCloudParameters.flagColorSmoothing_           = (bool) flagColorSmoothing_ ;
   generatePointCloudParameters.enhancedDeltaDepthCode_       = ((losslessGeo_ != 0) ? enhancedDeltaDepthCode_ : false);
   generatePointCloudParameters.deltaCoding_                  = (params_.testLevelOfDetailSignaling_ > 0); // ignore LoD scaling for testing the signaling only
+  generatePointCloudParameters.removeDuplicatePoints_        = removeDuplicatePoints_;
   generatePointCloudParameters.oneLayerMode_                 = oneLayerMode_;
   generatePointCloudParameters.singleLayerPixelInterleaving_ = singleLayerPixelInterleaving_;
   generatePointCloudParameters.sixDirectionMode_             = sixDirectionMode_;
@@ -441,9 +442,13 @@ int PCCDecoder::decompressHeader( PCCContext &context, PCCBitstream &bitstream )
   bitstream.read<uint8_t> ( deltaCoding );
   deltaCoding_ = deltaCoding > 0;
 
+  uint8_t removeDuplicatePoints;
+  bitstream.read<uint8_t> ( removeDuplicatePoints );
+  removeDuplicatePoints_ = removeDuplicatePoints > 0;
+
   uint8_t oneLayerMode;
   bitstream.read<uint8_t> ( oneLayerMode );
-  oneLayerMode_       = oneLayerMode > 0;
+  oneLayerMode_ = oneLayerMode > 0;
 
   uint8_t singleLayerPixelInterleave;
   bitstream.read<uint8_t>(singleLayerPixelInterleave);

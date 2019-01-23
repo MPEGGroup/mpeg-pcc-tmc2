@@ -1160,6 +1160,10 @@ void PCCPatchSegmenter3::refineSegmentation(const PCCPointSet3 &pointCloud, cons
     });
     swap(tempPartition, partition);
   }
+  for( auto& vector : scoresSmooth ){
+      vector.clear();
+  }
+  scoresSmooth.clear();
 }
 
 float pcc::computeIOU(Rect a, Rect b) {

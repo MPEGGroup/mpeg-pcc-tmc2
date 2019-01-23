@@ -127,7 +127,7 @@ class PCCEncoderParameters {
   bool                losslessTexture_;
   bool                losslessGeo444_;
 
-  //missed points video
+  // missed points video
   bool                useMissedPointsSeparateVideo_;
   std::string         geometryMPConfig_;
   std::string         textureMPConfig_;
@@ -139,19 +139,16 @@ class PCCEncoderParameters {
   // patch sampling resolution
   size_t              testLevelOfDetail_;
   size_t              testLevelOfDetailSignaling_;
-
   std::string         geometryConfig_;
   std::string         geometryD0Config_;
   std::string         geometryD1Config_;
   std::string         textureConfig_;
-
   bool                keepIntermediateFiles_;
-
   bool                absoluteD1_;
-
   bool                constrainedPack_;
   bool                binArithCoding_;
   size_t              projectionMode_;
+
   // dilation
   bool                groupDilation_;
   bool                textureDilationOffLossless_;
@@ -159,15 +156,14 @@ class PCCEncoderParameters {
   // EDD
   bool                enhancedDeltaDepthCode_;
 
-  //visual quality
-  bool                patchColorSubsampling_;
-
-  bool                deltaCoding_;
-
+  // reconstruction
+  bool                removeDuplicatePoints_;
   bool                oneLayerMode_;
-
   bool                singleLayerPixelInterleaving_;
 
+  //visual quality
+  bool                patchColorSubsampling_;
+  bool                deltaCoding_;
   bool                sixDirectionMode_;
   bool                surfaceSeparation_;
 
@@ -175,6 +171,7 @@ class PCCEncoderParameters {
   size_t              packingStrategy_;
   size_t              textureBGFill_;
   size_t              safeGuardDistance_;
+
 
 };
 

@@ -506,6 +506,11 @@ bool parseParameters( int argc, char *argv[],
       encoderParams.singleLayerPixelInterleaving_,
       "Use single layer pixel interleaving")
 
+    ("removeDuplicatePoints",
+      encoderParams.removeDuplicatePoints_,
+      encoderParams.removeDuplicatePoints_,
+      "Remove duplicate points( ")
+
     ("sixDirectionMode",
       encoderParams.sixDirectionMode_,
       encoderParams.sixDirectionMode_,
@@ -694,6 +699,7 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
     }
     sources.clear();
     reconstructs.clear();
+    normals.clear();
     startFrameNumber = endFrameNumber;
     contextIndex++;
   }
@@ -707,7 +713,7 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
   bool checksumEqual = true;
   if( metricsParams.computeChecksum_) {
     if( encoderParams.losslessGeo_ && encoderParams.losslessTexture_ ) {
-      checksumEqual =checksum.compareSrcRec();
+      checksumEqual = checksum.compareSrcRec();
     }
     checksum.write( encoderParams.compressedStreamPath_ );
   }

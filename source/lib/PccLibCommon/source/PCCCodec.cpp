@@ -517,13 +517,15 @@ void PCCCodec::generatePointCloud(PCCPointSet3& reconstruct, PCCFrameContext &fr
                 }
                 PCCPoint3D  point1(point0);
                 if (eddCode == 0) {
-                  const size_t pointIndex1 = reconstruct.addPoint(point1);
-                  reconstruct.setColor(pointIndex1, color);
-                  if (PCC_SAVE_POINT_TYPE == 1) {
-                    reconstruct.setType(pointIndex1, PointType::D1);
+                  if( !params.removeDuplicatePoints_ ){
+                    const size_t pointIndex1 = reconstruct.addPoint(point1);
+                    reconstruct.setColor(pointIndex1, color);
+                    if (PCC_SAVE_POINT_TYPE == 1) {
+                      reconstruct.setType(pointIndex1, PointType::D1);
+                    }
+                    partition.push_back(uint32_t(patchIndex));
+                    pointToPixel.push_back(PCCVector3<size_t>(x, y, 1));
                   }
-                  partition.push_back(uint32_t(patchIndex));
-                  pointToPixel.push_back(PCCVector3<size_t>(x, y, 1));
                 } else { //eddCode != 0
                   uint16_t addedPointCount = 0;
                   size_t   pointIndex1 = 0;
@@ -602,28 +604,31 @@ void PCCCodec::generatePointCloud(PCCPointSet3& reconstruct, PCCFrameContext &fr
                                                      lodScale );
                 if ( createdPoints.size() > 0 ) {
                   for(size_t i = 0; i<createdPoints.size();i++) {
-                    const size_t pointindex_1 = reconstruct.addPoint(createdPoints[i]);
-                    reconstruct.setColor(pointindex_1, color);
-                    if (PCC_SAVE_POINT_TYPE == 1) {
-                      if (params.singleLayerPixelInterleaving_){
-                        size_t flag;
-                        flag = (i == 0) ? (x + y) % 2 : (i == 1) ? (x + y + 1) % 2 : IntermediateLayerIndex;
-                        reconstruct.setType(pointindex_1, flag == 0 ? PointType::D0 : flag == 1 ? PointType::D1 : PointType::DF);
-                      } else {
-                        reconstruct.setType(pointindex_1, i == 0 ? PointType::D0 :
-                            i == 1 ? PointType::D1 : PointType::DF );
+                    if( ( !params.removeDuplicatePoints_ ) ||
+                        ( ( i == 0 ) || ( createdPoints[i] != createdPoints[0] ) ) ) {
+                      const size_t pointindex_1 = reconstruct.addPoint(createdPoints[i]);
+                      reconstruct.setColor(pointindex_1, color);
+                      if (PCC_SAVE_POINT_TYPE == 1) {
+                        if (params.singleLayerPixelInterleaving_){
+                          size_t flag;
+                          flag = (i == 0) ? (x + y) % 2 : (i == 1) ? (x + y + 1) % 2 : IntermediateLayerIndex;
+                          reconstruct.setType(pointindex_1, flag == 0 ? PointType::D0 : flag == 1 ? PointType::D1 : PointType::DF);
+                        } else {
+                          reconstruct.setType(pointindex_1, i == 0 ? PointType::D0 :
+                              i == 1 ? PointType::D1 : PointType::DF );
+                        }
                       }
+                      partition.push_back(uint32_t(patchIndex));
+                      if (params.singleLayerPixelInterleaving_){
+                        pointToPixel.push_back(PCCVector3<size_t>(x, y, i == 0 ? ((size_t)( x + y     ) % 2 ) :
+                            i == 1 ? ((size_t)( x + y + 1 ) % 2 ) : IntermediateLayerIndex ) );
+                      } else if(params.oneLayerMode_) {
+                        pointToPixel.push_back(PCCVector3<size_t>(x, y, i == 0 ? 0 : i == 1 ? IntermediateLayerIndex : IntermediateLayerIndex + 1 ) );
+                      } else {
+                        pointToPixel.push_back(PCCVector3<size_t>(x, y, i < 2 ? i : IntermediateLayerIndex + 1 ));
+                      }
+                      identifyBoundaryPoints( occupancyMap, x, y, imageWidth, imageHeight, pointindex_1, PBflag, reconstruct );
                     }
-                    partition.push_back(uint32_t(patchIndex));
-                    if (params.singleLayerPixelInterleaving_){
-                      pointToPixel.push_back(PCCVector3<size_t>(x, y, i == 0 ? ((size_t)( x + y     ) % 2 ) :
-                          i == 1 ? ((size_t)( x + y + 1 ) % 2 ) : IntermediateLayerIndex ) );
-                    } else if(params.oneLayerMode_) {
-                      pointToPixel.push_back(PCCVector3<size_t>(x, y, i == 0 ? 0 : i == 1 ? IntermediateLayerIndex : IntermediateLayerIndex + 1 ) );
-                    } else {
-                      pointToPixel.push_back(PCCVector3<size_t>(x, y, i < 2 ? i : IntermediateLayerIndex + 1 ));
-                    }
-                    identifyBoundaryPoints( occupancyMap, x, y, imageWidth, imageHeight, pointindex_1, PBflag, reconstruct );
                   }
                 }
               } //fi (params.enhancedDeltaDepthCode_)
@@ -1101,6 +1106,8 @@ bool PCCCodec::colorPointCloud(PCCPointSet3& reconstruct, PCCFrameContext& frame
                                const PCCVideoTexture &video, const bool noAttributes,
                                const GeneratePointCloudParameters& params,
                                const size_t frameCount) {
+
+  printf("Start colorPointCloud \n"); fflush(stdout);
   if (noAttributes) {
     for (auto& color : reconstruct.getColors()) {
       for (size_t c = 0; c < 3; ++c) {

@@ -295,6 +295,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
   generatePointCloudParameters.flagColorSmoothing_           = params_.flagColorSmoothing_;
   generatePointCloudParameters.enhancedDeltaDepthCode_       = (params_.losslessGeo_ ? params_.enhancedDeltaDepthCode_ : false);
   generatePointCloudParameters.deltaCoding_                  = (params_.testLevelOfDetailSignaling_ > 0);
+  generatePointCloudParameters.removeDuplicatePoints_        = params_.removeDuplicatePoints_;
   generatePointCloudParameters.oneLayerMode_                 = params_.oneLayerMode_;
   generatePointCloudParameters.singleLayerPixelInterleaving_ = params_.singleLayerPixelInterleaving_;
   generatePointCloudParameters.sixDirectionMode_             = params_.sixDirectionMode_;
@@ -2241,6 +2242,14 @@ bool PCCEncoder::generateTextureVideo( const PCCPointSet3& reconstruct, PCCFrame
   if( !params_.oneLayerMode_) {
     mapD1.resize( frame.getWidth() * frame.getHeight(), false );
   }
+
+  std::vector<bool> markT1;
+  if( ! params_.oneLayerMode_ && params_.removeDuplicatePoints_ ) {
+    const size_t size = frame.getWidth() * frame.getHeight();
+    markT1.resize( size );
+    for(size_t i=0;i<size;i++){  markT1[ i ] = false; }
+  }
+
   for (size_t i = 0; i < pointCount; ++i) {
     const PCCVector3<size_t> location = pointToPixel[i];
     const PCCColor3B color = reconstruct.getColor(i);
@@ -2260,6 +2269,18 @@ bool PCCEncoder::generateTextureVideo( const PCCPointSet3& reconstruct, PCCFrame
         image.setValue(0, u, v, color[0]);
         image.setValue(1, u, v, color[1]);
         image.setValue(2, u, v, color[2]);
+      }
+      if (!params_.oneLayerMode_ && params_.removeDuplicatePoints_ ) {
+        if( f == 0 ) {
+          if( !markT1[  v * frame.getWidth() + u ] ) {
+            auto &image1 = video.getFrame(1 + shift);
+            image1.setValue(0, u, v, color[0]);
+            image1.setValue(1, u, v, color[1]);
+            image1.setValue(2, u, v, color[2]);
+          }
+        } else {
+          markT1[  v * frame.getWidth() + u ] = true;
+        }
       }
     }
   }
@@ -2433,7 +2454,7 @@ int PCCEncoder::compressHeader( PCCContext &context, pcc::PCCBitstream &bitstrea
   bitstream.write<uint8_t> (uint8_t(params_.losslessTexture_));
   bitstream.write<uint8_t> (uint8_t(params_.noAttributes_));
   bitstream.write<uint8_t> (uint8_t(params_.losslessGeo444_));
-  bitstream.write<uint8_t>(uint8_t(params_.useMissedPointsSeparateVideo_));
+  bitstream.write<uint8_t> (uint8_t(params_.useMissedPointsSeparateVideo_));
   bitstream.write<uint8_t> (uint8_t(params_.useOccupancyMapVideo_));
   bitstream.write<uint8_t> (uint8_t(params_.absoluteD1_));
   if (params_.absoluteD1_) {
@@ -2454,6 +2475,7 @@ int PCCEncoder::compressHeader( PCCContext &context, pcc::PCCBitstream &bitstrea
     bitstream.write<uint8_t>(uint8_t(params_.enhancedDeltaDepthCode_));
   }
   bitstream.write<uint8_t>(uint8_t(params_.deltaCoding_));
+  bitstream.write<uint8_t>(uint8_t(params_.removeDuplicatePoints_));
   bitstream.write<uint8_t>(uint8_t(params_.oneLayerMode_));
   bitstream.write<uint8_t>(uint8_t(params_.singleLayerPixelInterleaving_));
   return 1;

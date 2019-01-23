@@ -126,27 +126,23 @@ PCCEncoderParameters::PCCEncoderParameters() {
 
   groupDilation_                           = true;
   textureDilationOffLossless_              = true;
-
   enhancedDeltaDepthCode_                  = losslessGeo_ ? true : false;
-
   patchColorSubsampling_                   = false;
-
   deltaCoding_                             = true;
 
+  // reconstruction
+  removeDuplicatePoints_                   = true;
   oneLayerMode_                            = false;
-
   singleLayerPixelInterleaving_            = false;
 
-  sixDirectionMode_                        = absoluteD1_ ? true : false; //Six Direction Projection
-
+  sixDirectionMode_                        = absoluteD1_ ? true : false;
   surfaceSeparation_                       = false;
 
   //Flexible Patch Packing
   packingStrategy_                         = 1;
-
   textureBGFill_                           = 1;
-
   safeGuardDistance_                       = 0;
+
 }
 
 PCCEncoderParameters::~PCCEncoderParameters() {
@@ -284,7 +280,8 @@ void PCCEncoderParameters::print(){
   std::cout << "\t   bestColorSearchRange                 " << bestColorSearchRange_                 << std::endl;
   std::cout << "\t   projectionMode                       " << projectionMode_                       << std::endl;
   std::cout << "\t   patchColorSubsampling                " << patchColorSubsampling_                << std::endl;
-  std::cout << "\t One Layer Mode" << std::endl;
+  std::cout << "\t Reconstruction " << std::endl;
+  std::cout << "\t   removeDuplicatePoints                " << removeDuplicatePoints_                << std::endl;
   std::cout << "\t   oneLayerMode                         " << oneLayerMode_                         << std::endl;
   std::cout << "\t   singleLayerPixelInterleaving         " << singleLayerPixelInterleaving_         << std::endl;
   std::cout << "\t six Direction Projection               " << sixDirectionMode_                     << std::endl;

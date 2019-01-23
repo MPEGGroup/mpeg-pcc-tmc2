@@ -184,6 +184,7 @@ class PCCPointSet3 {
       types_.clear();
     }
     boundaryPointTypes_.clear();
+    normals_.clear();
   }
   size_t addPoint(const PCCPoint3D &position) {
     const size_t index = getPointCount();

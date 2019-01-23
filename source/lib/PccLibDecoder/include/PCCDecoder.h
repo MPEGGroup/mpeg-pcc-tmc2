@@ -123,6 +123,7 @@ class PCCDecoder : public PCCCodec {
   bool     enhancedDeltaDepthCode_;
   bool     deltaCoding_;
   bool     sixDirectionMode_;
+  bool     removeDuplicatePoints_;
   bool     oneLayerMode_;
   bool     singleLayerPixelInterleaving_;
 };
