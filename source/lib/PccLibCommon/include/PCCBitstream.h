@@ -117,6 +117,7 @@ class PCCBitstream {
       uint8_t u8[sizeof(T)];
     } source;
     source.u = u;
+    if( pos.bytes + 16 >= data_.size() ) { realloc(); }
     if (PCCSystemEndianness() == PCC_LITTLE_ENDIAN) {
       for (size_t k = 0; k < sizeof(T); k++) {
         data_[pos.bytes++] = source.u8[k];
@@ -147,6 +148,11 @@ class PCCBitstream {
   }
 
  private:
+
+  inline void realloc( const size_t size = 4096 ){
+    const size_t newSize =  data_.size() + ( ( ( size / 4096) + 1 ) * 4096 );
+    data_.resize( newSize );
+  }
   void align( PCCBistreamPosition & pos );
   void read( uint32_t& value, uint8_t bits, PCCBistreamPosition& pos );
   void write( uint32_t value, uint8_t bits, PCCBistreamPosition& pos );

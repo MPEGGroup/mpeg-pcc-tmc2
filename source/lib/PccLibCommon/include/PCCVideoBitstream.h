@@ -43,12 +43,11 @@ class PCCVideoBitstream {
   ~PCCVideoBitstream() { data_.clear(); }
 
   void resize( size_t size ){ data_.resize( size ); }
-
-  std::vector<uint8_t>& vector() { return data_; }
-  uint8_t*     buffer()     { return data_.data(); }
-  size_t       size()       { return data_.size(); }
-  size_t       naluSize()   { return data_.size() + 4; }
-  PCCVideoType type()       { return type_; }
+  std::vector<uint8_t>& vector  () { return data_; }
+  uint8_t*              buffer  () { return data_.data(); }
+  size_t                size    () { return data_.size(); }
+  size_t                naluSize() { return data_.size() + 4; }
+  PCCVideoType          type    () { return type_; }
 
   void trace() {
     std::cout << toString( type_ ) << " ->" << naluSize() << " B " << std::endl;

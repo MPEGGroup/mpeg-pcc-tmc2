@@ -123,7 +123,7 @@ class PCCContext {
     exit(-1);
   }
 
-  bool traceVideoBitstream() {
+  void traceVideoBitstream() {
     size_t index = 0;
     printf("List VideoBitstream: "); fflush(stdout);
     for( auto& value: videoBitstream_ ) {

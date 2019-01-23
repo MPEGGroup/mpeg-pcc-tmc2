@@ -64,13 +64,15 @@ void PCCDecoder::setParameters( PCCDecoderParameters params ) {
 }
 
 int PCCDecoder::decode( PCCBitstream &bitstream, PCCContext &context, PCCGroupOfFrames& reconstructs ){
+  int ret = 0; 
   if( params_.nbThread_ > 0 ) {
     tbb::task_scheduler_init init( (int)params_.nbThread_ );
   }
   if (!decompress( bitstream, context ) ) {
     return 0;
   }
-  decode( context, reconstructs );
+  ret |= decode( context, reconstructs );
+  return ret; 
 }
 
 int PCCDecoder::decompress( PCCBitstream &bitstream, PCCContext &context ) {

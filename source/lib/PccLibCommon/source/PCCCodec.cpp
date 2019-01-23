@@ -77,13 +77,15 @@ void PCCCodec::addGridCentroid(PCCPoint3D& point, int patchIdx,
 
 void PCCCodec::generatePointCloud( PCCGroupOfFrames& reconstructs, PCCContext& context,
                                    const GeneratePointCloudParameters params) {
-  if (params.gridSmoothing_) {
-    //reset for each GOF
-    const int w = SMOOTH_POINT_CLOUD_MAX_SIZE / ((int)params.occupancyPrecision_ * 2);
-    center_grid_.resize(w*w*w);
-    gcnt_.resize(w*w*w);
-    gpartition_.resize(w*w*w);
-    doSmooth_.resize(w*w*w);
+  if (!params.losslessGeo_) {
+    if (params.gridSmoothing_) {
+      //reset for each GOF
+      const int w = SMOOTH_POINT_CLOUD_MAX_SIZE / ((int)params.occupancyPrecision_ * 2);
+      center_grid_.resize(w*w*w);
+      gcnt_.resize(w*w*w);
+      gpartition_.resize(w*w*w);
+      doSmooth_.resize(w*w*w);
+    }
   }
   auto& frames = context.getFrames();
   auto &videoGeometry = context.getVideoGeometry();

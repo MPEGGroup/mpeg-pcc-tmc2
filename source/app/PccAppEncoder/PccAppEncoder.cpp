@@ -653,9 +653,9 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
     clock.start();
 
     if (startFrameNumber == startFrameNumber0) {
-      const size_t predictedBitstreamSize =
-          10000 + 8 * encoderParams.frameCount_ * sources[0].getPointCount();
-      bitstream.initialize( predictedBitstreamSize );
+      // const size_t predictedBitstreamSize =
+      //     10000 + 8 * encoderParams.frameCount_ * sources[0].getPointCount();
+      // bitstream.initialize( predictedBitstreamSize );
       bitstream.writeHeader(gofLevelMetadataEnabledFlags);
     }
 

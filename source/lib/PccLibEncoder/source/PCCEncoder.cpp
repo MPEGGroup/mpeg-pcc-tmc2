@@ -77,16 +77,18 @@ void PCCEncoder::setParameters( PCCEncoderParameters params ) {
 
 int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
                         PCCBitstream &bitstream, PCCGroupOfFrames& reconstructs ){
+  int ret = 0;
   size_t oneLayerModeOriginal                 = params_.oneLayerMode_;
   size_t singleLayerPixelInterleavingOriginal = params_.singleLayerPixelInterleaving_;
   if( params_.nbThread_ > 0 ) {
     tbb::task_scheduler_init init( (int)params_.nbThread_ );
   }
-  encode( sources, context, reconstructs );
-  compress( context, bitstream );
+  ret |= encode( sources, context, reconstructs );
+  ret |= compress( context, bitstream );
   params_.oneLayerMode_                = oneLayerModeOriginal;
   params_.singleLayerPixelInterleaving_= singleLayerPixelInterleavingOriginal;
-  }
+  return ret; 
+}
 
 int PCCEncoder::compress( PCCContext &context, PCCBitstream &bitstream ){
   auto sizeFrameHeader = bitstream.size();
@@ -127,6 +129,7 @@ int PCCEncoder::compress( PCCContext &context, PCCBitstream &bitstream ){
        writeMissedPointsTextureNumber( context, bitstream );
     }
   }
+  return 0; 
 }
 
 int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,

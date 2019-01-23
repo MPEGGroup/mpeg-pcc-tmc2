@@ -140,6 +140,7 @@ void PCCBitstream::readVideoNalu( PCCVideoBitstream& videoBitstream ) {
 }
 
 void PCCBitstream::writeVideoNalu( PCCVideoBitstream& videoBitstream ) {
+  realloc( videoBitstream.size() );
   write<uint32_t>( videoBitstream.size() );
   memcpy( data_.data() + position_.bytes, videoBitstream.buffer(), videoBitstream.size() );
   videoBitstream.trace();
@@ -173,7 +174,12 @@ inline void PCCBitstream::write( uint32_t value, uint8_t bits, PCCBistreamPositi
   assert( bits >= 32 );
   for(size_t i=0;i<bits;i++) {
     data_[ pos.bytes ] |= ( ( value >> (bits - 1 - i )  ) & 1 ) << ( 7 - pos.bits );
-    if( pos.bits == 7 ){ pos.bytes++; pos.bits = 0; } else {  pos.bits++; }
+    if( pos.bits == 7 ){
+      pos.bytes++; pos.bits = 0;
+      if( pos.bytes + 16 >= data_.size() ) { realloc(); }
+    } else {
+      pos.bits++;
+    }
   }
 }
 

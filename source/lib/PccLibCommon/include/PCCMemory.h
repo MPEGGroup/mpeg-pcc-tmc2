@@ -36,7 +36,30 @@ namespace pcc {
 
 #define TRACE_CHECK_MEMORY
 #ifdef TRACE_CHECK_MEMORY
-#ifndef WIN32
+#if _WIN32
+#if (WIN32_CHECK_MEMORY_LEAKS)
+#include "windows.h"
+#include "psapi.h"
+static int getUsedMemory() { // Note: this value is in KB!
+  PROCESS_MEMORY_COUNTERS pmc;
+  GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc));
+  return pmc.WorkingSetSize;
+}
+
+static uint64_t getPeakMemory() { // Note: this value is in KB!
+  PROCESS_MEMORY_COUNTERS pmc;
+  GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc));
+  return (uint64_t)pmc.PeakWorkingSetSize / 1024;
+}
+#else
+static int getUsedMemory() { // Note: this value is in KB!
+  return 0;
+}
+static uint64_t getPeakMemory() { // Note: this value is in KB!
+  return 0;
+}
+#endif
+#else
 static int parseLine( char* pLine ) {
   int iLen = (int)strlen( pLine );
   const char* pTmp = pLine;
@@ -80,23 +103,6 @@ static uint64_t getPeakMemory() { // Note: this value is in KB!
   fclose(pFile);
   return iResult;
 }
-#else
-#if (WIN32_CHECK_MEMORY_LEAKS)
-#include "windows.h"
-#include "psapi.h"
-static int getUsedMemory() { // Note: this value is in KB!
-  PROCESS_MEMORY_COUNTERS pmc;
-  GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc));
-  return pmc.WorkingSetSize;
-}
-
-static uint64_t getPeakMemory() { // Note: this value is in KB!
-  PROCESS_MEMORY_COUNTERS pmc;
-  GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc));
-  return (uint64_t)pmc.PeakWorkingSetSize / 1024;
-}
-
-#endif
 #endif
 
 #endif
