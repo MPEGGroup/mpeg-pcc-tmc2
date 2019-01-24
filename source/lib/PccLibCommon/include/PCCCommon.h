@@ -52,6 +52,10 @@
 #include <map>
 #include "PCCConfig.h"
 
+#if defined(WIN32)
+  #include <windows.h>
+#endif
+
 namespace pcc {
 
   // ******************************************************************* //
