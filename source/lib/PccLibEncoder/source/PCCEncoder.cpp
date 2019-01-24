@@ -83,8 +83,12 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
   if( params_.nbThread_ > 0 ) {
     tbb::task_scheduler_init init( (int)params_.nbThread_ );
   }
+  printf("PCCEncoder: encode (start) \n"); fflush(stdout);
   ret |= encode( sources, context, reconstructs );
+  printf("PCCEncoder: encode (done) \n"); fflush(stdout);
+  printf("PCCEncoder: compress (start) \n"); fflush(stdout);
   ret |= compress( context, bitstream );
+  printf("PCCEncoder: compress (done) \n"); fflush(stdout);
   params_.oneLayerMode_                = oneLayerModeOriginal;
   params_.singleLayerPixelInterleaving_= singleLayerPixelInterleavingOriginal;
   return ret; 
@@ -92,43 +96,58 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
 
 int PCCEncoder::compress( PCCContext &context, PCCBitstream &bitstream ){
   auto sizeFrameHeader = bitstream.size();
+  printf("PCCEncoder: compress (start: bitstream = %lu / %lu ) \n",
+         bitstream.size(), bitstream.capacity()); fflush(stdout);
   compressHeader( context, bitstream );
+  printf("PCCEncoder: compress (header: bitstream = %lu / %lu ) \n",
+         bitstream.size(), bitstream.capacity()); fflush(stdout);
   sizeFrameHeader = bitstream.size() - sizeFrameHeader;
   std::cout << "frame header info  ->" << sizeFrameHeader << " B " << std::endl;
   context.traceVideoBitstream();
+
+  printf("PCCEncoder: compress (video bitstream start: bitstream = %lu / %lu ) \n",
+         bitstream.size(), bitstream.capacity()); fflush(stdout);
   if( params_.useOccupancyMapVideo_ ) {
-    bitstream.writeVideoNalu( context.getVideoBitstream( PCCVideoType::OccupancyMap ) );
+    bitstream.write( context.getVideoBitstream( PCCVideoType::OccupancyMap ) );
   }
   if (!params_.absoluteD1_) {
-     bitstream.writeVideoNalu( context.getVideoBitstream( PCCVideoType::GeometryD0 ) );
-     bitstream.writeVideoNalu( context.getVideoBitstream( PCCVideoType::GeometryD1 ) );
+    bitstream.write( context.getVideoBitstream( PCCVideoType::GeometryD0 ) );
+    bitstream.write( context.getVideoBitstream( PCCVideoType::GeometryD1 ) );
   } else {
-     bitstream.writeVideoNalu( context.getVideoBitstream(  PCCVideoType::Geometry ) );
+    bitstream.write( context.getVideoBitstream(  PCCVideoType::Geometry ) );
   }
   if( params_.losslessGeo_ && context.getUseMissedPointsSeparateVideo()) {
-     bitstream.writeVideoNalu( context.getVideoBitstream(  PCCVideoType::GeometryMP ) );
-       }
+    bitstream.write( context.getVideoBitstream(  PCCVideoType::GeometryMP ) );
+  }
   if (!params_.noAttributes_ ) {
-    bitstream.writeVideoNalu( context.getVideoBitstream( PCCVideoType::Texture ) );
+    bitstream.write( context.getVideoBitstream( PCCVideoType::Texture ) );
     if(params_.losslessTexture_ && context.getUseMissedPointsSeparateVideo()) {
-      bitstream.writeVideoNalu( context.getVideoBitstream( PCCVideoType::TextureMP ) );
+      bitstream.write( context.getVideoBitstream( PCCVideoType::TextureMP ) );
       auto sizeMissedPointsTexture = bitstream.size();
      }
   }
+  printf("PCCEncoder: compress (video bitstream done: bitstream = %lu / %lu ) \n",
+         bitstream.size(), bitstream.capacity()); fflush(stdout);
 
   size_t sizeOccupancyMap = bitstream.size();
   compressOccupancyMap(context, bitstream);
+
+  printf("PCCEncoder: compress (metadata done: bitstream = %lu / %lu ) \n",
+         bitstream.size(),bitstream.capacity()); fflush(stdout);
   sizeOccupancyMap = ( bitstream.size() - sizeOccupancyMap )
       + context.getVideoBitstream( PCCVideoType::OccupancyMap ).naluSize();
   std::cout << " occupancy map  ->" << sizeOccupancyMap << " B " << std::endl;
+
   if (params_.losslessGeo_ && context.getUseMissedPointsSeparateVideo()) {
      writeMissedPointsGeometryNumber( context, bitstream );
-      }
+  }
   if( !params_.noAttributes_ ) {
      if(params_.losslessTexture_ && context.getUseMissedPointsSeparateVideo())  {
        writeMissedPointsTextureNumber( context, bitstream );
     }
   }
+  printf("PCCEncoder: compress (done: bitstream = %lu / %lu ) \n",
+         bitstream.size(),bitstream.capacity()); fflush(stdout);
   return 0; 
 }
 
@@ -2485,7 +2504,9 @@ int PCCEncoder::compressHeader( PCCContext &context, pcc::PCCBitstream &bitstrea
 }
 
 void PCCEncoder::compressPatchMetaDataM42195( PCCFrameContext &frame, PCCFrameContext &preFrame, size_t numMatchedPatches,
-                                              PCCBitstream &bitstream , o3dgc::Arithmetic_Codec &arithmeticEncoder, o3dgc::Static_Bit_Model &bModel0, PCCBistreamPosition &startPosition, uint8_t enable_flexible_patch_flag) {
+                                              PCCBitstream &bitstream , o3dgc::Arithmetic_Codec &arithmeticEncoder,
+                                              o3dgc::Static_Bit_Model &bModel0,
+                                              uint8_t enable_flexible_patch_flag) {
   auto &patches = frame.getPatches();
   auto &prePatches = preFrame.getPatches();
   size_t patchCount = patches.size();
@@ -2550,15 +2571,9 @@ void PCCEncoder::compressPatchMetaDataM42195( PCCFrameContext &frame, PCCFrameCo
     if (A[i])   bitstream.write<uint8_t>(bitCount[i]);
   }
 
-  startPosition = bitstream.getPosition();
-  bitstream += (uint64_t)4;  // placehoder for bitstream size
-
   bool bBinArithCoding = params_.binArithCoding_ && (!params_.losslessGeo_) &&
       (params_.occupancyResolution_ == 16) && (params_.occupancyPrecision_ == 4);
 
-  arithmeticEncoder.set_buffer(uint32_t(bitstream.capacity() - bitstream.size()),
-                               bitstream.buffer() + bitstream.size());
-  arithmeticEncoder.start_encoder();
   o3dgc::Adaptive_Bit_Model bModelPatchIndex, bModelU0, bModelV0, bModelU1, bModelV1, bModelD1,bModelIntSizeU0,bModelIntSizeV0;
   o3dgc::Adaptive_Bit_Model bModelSizeU0, bModelSizeV0, bModelAbsoluteD1;
   o3dgc::Adaptive_Data_Model orientationModel(4);
@@ -2764,7 +2779,6 @@ void PCCEncoder::compressOccupancyMap(PCCFrameContext& frame, PCCBitstream &bits
   o3dgc::Adaptive_Data_Model neighborModel(3);
   o3dgc::Arithmetic_Codec arithmeticEncoder;
   o3dgc::Static_Bit_Model bModel0;
-  PCCBistreamPosition startPosition;
   bool bBinArithCoding = params_.binArithCoding_ && (!params_.losslessGeo_) &&
       (params_.occupancyResolution_ == 16) && (params_.occupancyPrecision_ == 4);
 
@@ -2772,6 +2786,9 @@ void PCCEncoder::compressOccupancyMap(PCCFrameContext& frame, PCCBitstream &bits
 
   uint8_t enable_flexible_patch_flag = params_.packingStrategy_;
   bitstream.write<uint8_t>(enable_flexible_patch_flag);
+
+  arithmeticEncoder.set_buffer( 0x00ffffff );
+  arithmeticEncoder.start_encoder();
 
   if((frameIndex == 0)||(!params_.deltaCoding_)) {
     size_t maxU0 = 0;
@@ -2802,12 +2819,6 @@ void PCCEncoder::compressOccupancyMap(PCCFrameContext& frame, PCCBitstream &bits
     bitstream.write<uint8_t>(bitCountV1);
     bitstream.write<uint8_t>(bitCountD1);
     bitstream.write<uint8_t>(bitCountLod);
-    startPosition = bitstream.getPosition();
-    bitstream += (uint64_t)4;  // placehoder for bitstream size
-
-    arithmeticEncoder.set_buffer(uint32_t(bitstream.capacity() - bitstream.size()),
-                                 bitstream.buffer() + bitstream.size());
-    arithmeticEncoder.start_encoder();
 
     compressMetadata(frame.getFrameLevelMetadata(), arithmeticEncoder);
 
@@ -2871,7 +2882,8 @@ void PCCEncoder::compressOccupancyMap(PCCFrameContext& frame, PCCBitstream &bits
     }
   } else {
     size_t numMatchedPatches = frame.getNumMatchedPatches();
-    compressPatchMetaDataM42195(frame, preFrame, numMatchedPatches, bitstream, arithmeticEncoder, bModel0, startPosition, enable_flexible_patch_flag);
+    compressPatchMetaDataM42195( frame, preFrame, numMatchedPatches, bitstream, arithmeticEncoder, bModel0,
+                                 enable_flexible_patch_flag);
   }
 
   const size_t blockToPatchWidth = frame.getWidth() / params_.occupancyResolution_;
@@ -3124,8 +3136,7 @@ void PCCEncoder::compressOccupancyMap(PCCFrameContext& frame, PCCBitstream &bits
     } //v0 < blockHeight
   }
   uint32_t compressedBitstreamSize = arithmeticEncoder.stop_encoder();
-  bitstream += (uint64_t)compressedBitstreamSize;
-  bitstream.write<uint32_t>(compressedBitstreamSize, startPosition);
+  bitstream.write( arithmeticEncoder.buffer(), compressedBitstreamSize );
 }
 
 void PCCEncoder::generateIntraEnhancedDeltaDepthImage(PCCFrameContext &frame, const PCCImageGeometry &imageRef, PCCImageGeometry &image) {

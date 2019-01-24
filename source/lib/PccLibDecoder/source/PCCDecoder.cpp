@@ -80,22 +80,22 @@ int PCCDecoder::decompress( PCCBitstream &bitstream, PCCContext &context ) {
     return 0;
   }
   if( useOccupancyMapVideo_ ) {
-    bitstream.readVideoNalu( context.createVideoBitstream( PCCVideoType::OccupancyMap ) );
+    bitstream.read( context.createVideoBitstream( PCCVideoType::OccupancyMap ) );
   }
   if (!absoluteD1_) {
-     bitstream.readVideoNalu( context.createVideoBitstream( PCCVideoType::GeometryD0 ) );
-     bitstream.readVideoNalu( context.createVideoBitstream( PCCVideoType::GeometryD1 ) );
+     bitstream.read( context.createVideoBitstream( PCCVideoType::GeometryD0 ) );
+     bitstream.read( context.createVideoBitstream( PCCVideoType::GeometryD1 ) );
   } else {
-     bitstream.readVideoNalu( context.createVideoBitstream( PCCVideoType::Geometry ) );
+     bitstream.read( context.createVideoBitstream( PCCVideoType::Geometry ) );
   }
 
   if(losslessGeo_ && context.getUseMissedPointsSeparateVideo()) {
-     bitstream.readVideoNalu( context.createVideoBitstream( PCCVideoType::GeometryMP ) );
+     bitstream.read( context.createVideoBitstream( PCCVideoType::GeometryMP ) );
   }
   if (!noAttributes_ ) {
-    bitstream.readVideoNalu( context.createVideoBitstream( PCCVideoType::Texture ) );
+    bitstream.read( context.createVideoBitstream( PCCVideoType::Texture ) );
     if(losslessTexture_ && context.getUseMissedPointsSeparateVideo()) {
-      bitstream.readVideoNalu( context.createVideoBitstream( PCCVideoType::TextureMP ) );
+      bitstream.read( context.createVideoBitstream( PCCVideoType::TextureMP ) );
       auto sizeMissedPointsTexture = bitstream.size();
     }
   }

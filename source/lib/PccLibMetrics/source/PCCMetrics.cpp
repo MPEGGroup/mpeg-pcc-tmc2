@@ -99,7 +99,7 @@ void QualityMetrics::compute( const PCCPointSet3& pointcloudA, const PCCPointSet
   const size_t num_results_incr = 5;
 
   auto& normalsB = pointcloudB.getNormals();
-  printf("PointCloud A = %lu points B = %lu points \n",pointcloudA.getPointCount(),pointcloudB.getPointCount());
+  // printf("PointCloud A = %9lu points B = %9lu points \n",pointcloudA.getPointCount(),pointcloudB.getPointCount());
   for (size_t indexA = 0; indexA < pointcloudA.getPointCount(); indexA++) {
     // For point 'i' in A, find its nearest neighbor in B. store it in 'j'
     size_t num_results = 0;
@@ -177,7 +177,7 @@ void QualityMetrics::compute( const PCCPointSet3& pointcloudA, const PCCPointSet
               convertRGBtoYUV_BT709( pointcloudB.getColor( index ), yuvB );
               float dist = pow( yuvA[0] - yuvB[0], 2.f ) + pow( yuvA[1] - yuvB[1], 2.f ) + pow( yuvA[2] - yuvB[2], 2.f );
               if( ( ( params_.neighborsProc_ == 3 ) && ( dist < distBest ) ) ||
-                  ( ( params_.neighborsProc_ == 4 ) && ( dist > distBest ) ) ) {                                                                   
+                  ( ( params_.neighborsProc_ == 4 ) && ( dist > distBest ) ) ) {
                 distBest  = dist;
                 indexBest = index;
               }

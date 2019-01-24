@@ -87,7 +87,7 @@ private:
   void compressOccupancyMap( PCCContext &context, PCCBitstream& bitstream );
   void compressOccupancyMap( PCCFrameContext &frame, PCCBitstream& bitstream, PCCFrameContext &preFrame, size_t frameIndex );
   void compressPatchMetaDataM42195(PCCFrameContext &frame, PCCFrameContext &preFrame, size_t numMatchedPatches, PCCBitstream &bitstream ,
-    o3dgc::Arithmetic_Codec &arithmeticEncoder, o3dgc::Static_Bit_Model &bModel0, PCCBistreamPosition &startPosition, uint8_t enable_flexible_patch_flag);
+    o3dgc::Arithmetic_Codec &arithmeticEncoder, o3dgc::Static_Bit_Model &bModel0, uint8_t enable_flexible_patch_flag);
   bool generateOccupancyMapVideo( const PCCGroupOfFrames& sources, PCCContext& context );
   bool generateOccupancyMapVideo(const size_t imageWidth, const size_t imageHeight,
                                  std::vector<uint32_t> &occupancyMap,

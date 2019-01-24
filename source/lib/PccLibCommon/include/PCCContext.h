@@ -125,9 +125,9 @@ class PCCContext {
 
   void traceVideoBitstream() {
     size_t index = 0;
-    printf("List VideoBitstream: "); fflush(stdout);
+    printf("List VideoBitstream: \n"); fflush(stdout);
     for( auto& value: videoBitstream_ ) {
-      printf("%lu / %lu: ",index, videoBitstream_.size());
+      printf("  * %lu / %lu: ",index, videoBitstream_.size());
       value.trace();
       index++;
     }

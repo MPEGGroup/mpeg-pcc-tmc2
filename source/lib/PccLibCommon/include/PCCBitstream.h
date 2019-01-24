@@ -65,8 +65,9 @@ class PCCBitstream {
   bool readHeader(PCCMetadataEnabledFlags &gofLevelMetadataEnabledFlags);
   void writeHeader(const PCCMetadataEnabledFlags &gofLevelMetadataEnabledFlags);
 
-  void readVideoNalu ( PCCVideoBitstream& videoBitstream );
-  void writeVideoNalu( PCCVideoBitstream& videoBitstream );
+  void read( PCCVideoBitstream& videoBitstream );
+  void write( PCCVideoBitstream& videoBitstream );
+  void write( const uint8_t* data, const size_t size );
 
   void writeSvlc( int32_t  iCode );
   void readSvlc ( int32_t& iCode);
@@ -120,10 +121,12 @@ class PCCBitstream {
     if( pos.bytes + 16 >= data_.size() ) { realloc(); }
     if (PCCSystemEndianness() == PCC_LITTLE_ENDIAN) {
       for (size_t k = 0; k < sizeof(T); k++) {
+        assert( pos.bytes >= data_.size() );
         data_[pos.bytes++] = source.u8[k];
       }
     } else {
       for (size_t k = 0; k < sizeof(T); k++) {
+        assert( pos.bytes >= data_.size() );
         data_[pos.bytes++] = source.u8[sizeof(T) - k - 1];
       }
     }

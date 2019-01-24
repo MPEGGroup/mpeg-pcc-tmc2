@@ -130,7 +130,7 @@ void PCCBitstream::readSvlc ( int32_t& iCode) {
   iCode = ( uiBits & 1) ? -(int32_t)(uiBits>>1) : (int32_t)(uiBits>>1); 
 }
 
-void PCCBitstream::readVideoNalu( PCCVideoBitstream& videoBitstream ) {
+void PCCBitstream::read( PCCVideoBitstream& videoBitstream ) {
   uint32_t size = 0;
   read<uint32_t>(size);
   videoBitstream.resize( size );
@@ -139,12 +139,16 @@ void PCCBitstream::readVideoNalu( PCCVideoBitstream& videoBitstream ) {
   position_.bytes += size;
 }
 
-void PCCBitstream::writeVideoNalu( PCCVideoBitstream& videoBitstream ) {
-  realloc( videoBitstream.size() );
-  write<uint32_t>( videoBitstream.size() );
-  memcpy( data_.data() + position_.bytes, videoBitstream.buffer(), videoBitstream.size() );
+void PCCBitstream::write( PCCVideoBitstream& videoBitstream ) {
+  write( videoBitstream.buffer(), videoBitstream.size() );
   videoBitstream.trace();
-  position_.bytes += videoBitstream.size();
+}
+
+void PCCBitstream::write( const uint8_t* data, const size_t size ) {
+  realloc( size );
+  write<uint32_t>( size );
+  memcpy( data_.data() + position_.bytes, data, size );
+  position_.bytes += size;
 }
 
 void PCCBitstream::read ( uint32_t& value, uint8_t bits ) {
@@ -162,6 +166,7 @@ void PCCBitstream::align( PCCBistreamPosition & pos ) {
     pos.bits = 0, pos.bytes++;
   }
 }
+
 void PCCBitstream::read( uint32_t& value, uint8_t bits, PCCBistreamPosition& pos ) {
   assert( bits >= 32 );
   value = 0;
@@ -170,13 +175,15 @@ void PCCBitstream::read( uint32_t& value, uint8_t bits, PCCBistreamPosition& pos
     if( pos.bits == 7 ){ pos.bytes++; pos.bits = 0; } else {  pos.bits++; }
   }
 }
+
 inline void PCCBitstream::write( uint32_t value, uint8_t bits, PCCBistreamPosition& pos ) {
   assert( bits >= 32 );
+  if( pos.bytes + 16 >= data_.size() ) { realloc(); }
   for(size_t i=0;i<bits;i++) {
+    assert( pos.bytes >= data_.size() );
     data_[ pos.bytes ] |= ( ( value >> (bits - 1 - i )  ) & 1 ) << ( 7 - pos.bits );
     if( pos.bits == 7 ){
       pos.bytes++; pos.bits = 0;
-      if( pos.bytes + 16 >= data_.size() ) { realloc(); }
     } else {
       pos.bits++;
     }
