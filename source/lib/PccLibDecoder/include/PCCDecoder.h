@@ -121,6 +121,7 @@ class PCCDecoder : public PCCCodec {
   uint8_t  neighborCountColorSmoothing_;
   uint8_t  flagColorSmoothing_;
   bool     enhancedDeltaDepthCode_;
+  bool     improveEDD_;
   bool     deltaCoding_;
   bool     sixDirectionMode_;
   bool     removeDuplicatePoints_;

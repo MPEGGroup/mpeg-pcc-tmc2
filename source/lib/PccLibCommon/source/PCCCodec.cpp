@@ -509,13 +509,34 @@ void PCCCodec::generatePointCloud(PCCPointSet3& reconstruct, PCCFrameContext &fr
 
                 uint16_t eddCode = 0;
                 if (!params.absoluteD1_) {
+				  if(!params.improveEDD_) {
                   const auto &frame1 = videoD1.getFrame(shift);
                   eddCode = frame1.getValue(0, x, y);
+                } else {
+					std::cout << "EDD improvement is not implemented for absoluteD1=0" << std::endl;
+				  }
                 } else {
                   const auto &frame0 = video.getFrame(shift);
                   const auto &frame1 = video.getFrame(shift + 1);
                   //eddCode = frame1.getValue(0, x, y) - frame0.getValue(0, x, y);
+				  if (!params.improveEDD_)
                   eddCode = (frame1.getValue(0, x, y) > frame0.getValue(0, x, y)) ? (frame1.getValue(0, x, y) - frame0.getValue(0, x, y)) : 0;
+				  else {
+					uint16_t diff = frame1.getValue(0, x, y) - frame0.getValue(0, x, y);
+					assert(diff >= 0);
+					// Convert occupancy map to eddCode
+					if (diff == 0) {
+					  eddCode = 0;
+                }
+					else if (diff == 1) {
+					  eddCode = 1;
+					}
+					else {
+					  uint16_t bits = diff - 1;
+					  uint16_t symbol = (1 << bits) - occupancyMap[patch.patch2Canvas(u,v,imageWidth,imageHeight,x,y)];
+					  eddCode = symbol | (1 << bits);
+					}
+				  }
                 }
                 PCCPoint3D  point1(point0);
                 if (eddCode == 0) {

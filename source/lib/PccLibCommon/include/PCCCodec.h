@@ -83,6 +83,7 @@ struct GeneratePointCloudParameters {
   bool               oneLayerMode_;
   bool               singleLayerPixelInterleaving_;
   bool               sixDirectionMode_;
+  bool               improveEDD_;
   std::string        path_;
 };
 

@@ -172,6 +172,8 @@ class PCCEncoderParameters {
   size_t              textureBGFill_;
   size_t              safeGuardDistance_;
 
+  // Improve EDD
+  bool                improveEDD_;
 
 };
 

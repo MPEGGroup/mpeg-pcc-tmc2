@@ -143,6 +143,8 @@ PCCEncoderParameters::PCCEncoderParameters() {
   textureBGFill_                           = 1;
   safeGuardDistance_                       = 0;
 
+  //Improve EDD
+  improveEDD_		                       = 1;
 }
 
 PCCEncoderParameters::~PCCEncoderParameters() {
@@ -286,6 +288,7 @@ void PCCEncoderParameters::print(){
   std::cout << "\t   singleLayerPixelInterleaving         " << singleLayerPixelInterleaving_         << std::endl;
   std::cout << "\t six Direction Projection               " << sixDirectionMode_                     << std::endl;
   std::cout << "\t surface Separation                     " << surfaceSeparation_                    << std::endl;
+  std::cout << "\t improve EDD                            " << improveEDD_		                     << std::endl;
   std::cout << std::endl;
 }
 

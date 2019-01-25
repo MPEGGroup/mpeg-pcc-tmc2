@@ -536,6 +536,11 @@ bool parseParameters( int argc, char *argv[],
       encoderParams.textureBGFill_,
       encoderParams.textureBGFill_,
       "Selects the background filling operation for texture only (0: anchor's dilation, 1(default): push-pull algorithm)\n")
+
+	("improveEDD",
+      encoderParams.improveEDD_,
+      encoderParams.improveEDD_,
+      "Code EDD code in the occupancy map\n")
         ;
 
    opts.addOptions()

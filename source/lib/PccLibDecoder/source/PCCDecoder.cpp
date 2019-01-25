@@ -209,6 +209,7 @@ int PCCDecoder::decode( PCCContext &context, PCCGroupOfFrames& reconstructs ){
   generatePointCloudParameters.oneLayerMode_                 = oneLayerMode_;
   generatePointCloudParameters.singleLayerPixelInterleaving_ = singleLayerPixelInterleaving_;
   generatePointCloudParameters.sixDirectionMode_             = sixDirectionMode_;
+  generatePointCloudParameters.improveEDD_		             = improveEDD_;
   generatePointCloudParameters.path_                         = path.str();
 
   generatePointCloud( reconstructs, context, generatePointCloudParameters );
@@ -440,6 +441,9 @@ int PCCDecoder::decompressHeader( PCCContext &context, PCCBitstream &bitstream )
     uint8_t enhancedDeltaDepthCode;
     bitstream.read<uint8_t>(enhancedDeltaDepthCode);
     enhancedDeltaDepthCode_ = enhancedDeltaDepthCode > 0;
+	uint8_t improveEDD;
+    bitstream.read<uint8_t>(improveEDD);
+    improveEDD_ = improveEDD > 0;
   }
   bitstream.read<uint8_t> ( deltaCoding );
   deltaCoding_ = deltaCoding > 0;

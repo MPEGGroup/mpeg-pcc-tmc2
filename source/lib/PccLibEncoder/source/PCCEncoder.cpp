@@ -321,6 +321,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
   generatePointCloudParameters.oneLayerMode_                 = params_.oneLayerMode_;
   generatePointCloudParameters.singleLayerPixelInterleaving_ = params_.singleLayerPixelInterleaving_;
   generatePointCloudParameters.sixDirectionMode_             = params_.sixDirectionMode_;
+  generatePointCloudParameters.improveEDD_		             = params_.improveEDD_;
   generatePointCloudParameters.path_                         = path.str();
 
   for( auto& frame : context.getFrames() ) {
@@ -459,6 +460,7 @@ bool PCCEncoder::generateOccupancyMapVideo( const size_t imageWidth, const size_
   const size_t blockToPatchWidth = imageWidth / params_.occupancyResolution_;
   const size_t blockToPatchHeight = imageHeight / params_.occupancyResolution_;
 
+  if (!params_.improveEDD_) {
   videoFrameOccupancyMap.resize(videoFrameOccupancyMapSizeU, videoFrameOccupancyMapSizeV);
   for (size_t v0 = 0; v0 < blockToPatchHeight; ++v0) {
     for (size_t u0 = 0; u0 < blockToPatchWidth; ++u0) {
@@ -491,6 +493,18 @@ bool PCCEncoder::generateOccupancyMapVideo( const size_t imageWidth, const size_
         }
       }
     }
+  }
+  } else {
+	  videoFrameOccupancyMap.resize(imageWidth, imageHeight);
+	  for (size_t v = 0; v < imageHeight; v++) {
+		  for (size_t u = 0; u < imageWidth; u++) {
+			  size_t i = v * imageWidth + u;
+			  size_t symbol = occupancyMap[i];
+			  if (symbol < 0) symbol = 0;
+			  if (symbol > 1023) symbol = 1023;
+			  videoFrameOccupancyMap.setValue(0, u, v, symbol);
+		  }
+	  }
   }
   return true;
 }
@@ -1086,6 +1100,46 @@ void PCCEncoder::generateOccupancyMap( PCCFrameContext& frame ) {
   if (!params_.absoluteD1_) {
     fullOccupancyMap = occupancyMap;
   }
+}
+
+void PCCEncoder::modifyOccupancyMap(PCCFrameContext& frame, const PCCImageGeometry &imageRef, const PCCImageGeometry &image)
+{
+	auto& occupancyMap = frame.getOccupancyMap();
+	auto& fullOccupancyMap = frame.getFullOccupancyMap();
+	auto& width = frame.getWidth();
+	auto& height = frame.getHeight();
+	occupancyMap.resize(width * height, 0);
+	if (!params_.absoluteD1_)
+		fullOccupancyMap.resize(width * height, 0);
+	const int16_t infiniteDepth = (std::numeric_limits<int16_t>::max)();
+	for (auto &patch : frame.getPatches()) {
+		const size_t v0 = patch.getV0() * patch.getOccupancyResolution();
+		const size_t u0 = patch.getU0() * patch.getOccupancyResolution();
+		for (size_t v = 0; v < patch.getSizeV(); ++v) {
+			for (size_t u = 0; u < patch.getSizeU(); ++u) {
+				const size_t p = v * patch.getSizeU() + u;
+				const int16_t d = patch.getDepth(0)[p];
+				
+				const int16_t eddCode = patch.getDepthEnhancedDeltaD()[p];
+								
+				size_t x, y;
+				auto indx = patch.patch2Canvas(u,v,width,height,x,y);
+				assert(x < width && y < height);
+				const size_t d0 = imageRef.getValue(0, x, y);
+				const size_t d1 = image.getValue(0, x, y);
+				if ((d < infiniteDepth) && (occupancyMap[indx] == 1) && ((d1 - d0) > 1)) {
+					uint16_t bits = d1 - d0 - 1;
+					uint16_t eddExtract = eddCode & (~((~0) << bits));
+					uint16_t symbol = (((1 << bits) - 1) - eddExtract);
+					occupancyMap[indx] += symbol;
+				}
+			}
+		}
+	}
+	
+	if (!params_.absoluteD1_)
+		fullOccupancyMap = occupancyMap;
+
 }
 
 void PCCEncoder::generateIntraImage( PCCFrameContext& frame, const size_t depthIndex, PCCImageGeometry &image) {
@@ -1793,9 +1847,14 @@ bool PCCEncoder::dilateGeometryVideo( PCCContext &context) {
         auto &frame1 = videoGeometry.getFrame(shift);
         generateIntraImage(frame, 0, frame1);
         auto &frame2 = videoGeometry.getFrame(shift + 1);
+		if (params_.improveEDD_)
+			generateIntraImage(frame, 1, frame2);
+		else
         generateIntraEnhancedDeltaDepthImage(frame, frame1, frame2);
         dilate(frame, videoGeometry.getFrame(shift));
         dilate(frame, videoGeometry.getFrame(shift + 1));
+		if (params_.improveEDD_)
+			modifyOccupancyMap(frame, frame1, frame2);
       } else {
         if (params_.oneLayerMode_ && params_.singleLayerPixelInterleaving_) {
           auto &frame1 = videoGeometry.getFrame(shift);
@@ -1847,6 +1906,9 @@ void PCCEncoder::dilate( PCCFrameContext& frame, PCCImage<T, 3> &image, const PC
           const int64_t y0 = v0 + v2;
           assert(x0 < int64_t(image.getWidth()) && y0 < int64_t(image.getHeight()));
           const size_t location0 = y0 * image.getWidth() + x0;
+		  if (params_.improveEDD_)
+			  nonZeroPixelCount += (occupancyMapTemp[location0] > 0);
+		  else
           nonZeroPixelCount += (occupancyMapTemp[location0] == 1);
         }
       }
@@ -2495,6 +2557,7 @@ int PCCEncoder::compressHeader( PCCContext &context, pcc::PCCBitstream &bitstrea
   }
   if (params_.losslessGeo_) {
     bitstream.write<uint8_t>(uint8_t(params_.enhancedDeltaDepthCode_));
+    bitstream.write<uint8_t>(uint8_t(params_.improveEDD_));
   }
   bitstream.write<uint8_t>(uint8_t(params_.deltaCoding_));
   bitstream.write<uint8_t>(uint8_t(params_.removeDuplicatePoints_));
