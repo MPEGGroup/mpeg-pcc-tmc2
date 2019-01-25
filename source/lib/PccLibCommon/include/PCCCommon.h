@@ -51,9 +51,13 @@
 #include <algorithm>
 #include <map>
 #include "PCCConfig.h"
-
 #if defined(WIN32)
   #include <windows.h>
+#endif
+#if defined(__APPLE__) && defined(__MACH__)
+  #include <unistd.h>
+  #include <sys/resource.h>
+  #include <mach/mach.h>
 #endif
 
 namespace pcc {

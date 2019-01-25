@@ -52,9 +52,6 @@ namespace pcc {
     return (uint64_t)pmc.PeakWorkingSetSize / 1024;
   }
 #elif defined(__APPLE__) && defined(__MACH__)
-  #include <unistd.h>
-  #include <sys/resource.h>
-  #include <mach/mach.h>
   static int getUsedMemory() {
     struct mach_task_basic_info info;
     mach_msg_type_number_t infoCount = MACH_TASK_BASIC_INFO_COUNT;
