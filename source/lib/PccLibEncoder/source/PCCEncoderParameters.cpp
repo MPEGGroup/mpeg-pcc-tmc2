@@ -144,7 +144,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   safeGuardDistance_                       = 0;
 
   //Improve EDD
-  improveEDD_		                       = 1;
+  improveEDD_		                           = 0;
 }
 
 PCCEncoderParameters::~PCCEncoderParameters() {
@@ -365,6 +365,11 @@ bool PCCEncoderParameters::check(){
   if (!losslessGeo_ && enhancedDeltaDepthCode_) {
     enhancedDeltaDepthCode_ = false;
     std::cerr << "WARNING: enhancedDeltaDepthCode is only for lossless coding mode for now. Force enhancedDeltaDepthCode=FALSE.\n";
+  }
+
+  if (!enhancedDeltaDepthCode_ && improveEDD_) {
+    improveEDD_ = false;
+    std::cerr << "WARNING: improveEDD_ can't be true when enhancedDeltaDepthCode_ is false. Force improveEDD_=FALSE.\n";
   }
 
   if (enhancedDeltaDepthCode_ && surfaceThickness_ == 1) {
