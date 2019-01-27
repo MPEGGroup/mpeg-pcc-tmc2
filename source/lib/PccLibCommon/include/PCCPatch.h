@@ -104,22 +104,35 @@ class PCCPatch {
   size_t&                     getPatchOrientation()          { return patchOrientation_;      }
   size_t                      getPatchOrientation()    const { return patchOrientation_;      }
 
-  inline double generateNormalCoordinate( const uint16_t depth, const double lodScale ) const {
+  inline double generateNormalCoordinate( const uint16_t depth, const double lodScale, const bool useMppSepVid, const bool lossyMpp ) const {
     double coord = 0;
-    if ( projectionMode_ == 0) {
-      coord  = ((double)depth + (double)d1_) * lodScale;
-    } else {
-      double tmp_depth = double(d1_) - double(depth);
-      if (tmp_depth > 0) {
-        coord = tmp_depth * lodScale;
+    if (lossyMpp && ! useMppSepVid){ // support lossy missed points patch in same video frame, re-shift depth values to store in 10-bit video frame
+      if (projectionMode_ == 0) {
+        coord = ((double)(depth >> 2) + (double)d1_) * lodScale;   
+      }
+      else {
+        double tmp_depth = double(d1_) - double(depth >> 2);
+        if (tmp_depth > 0) {
+          coord = tmp_depth * lodScale;
+        }
+      }
+    }else{
+      if (projectionMode_ == 0) {
+        coord = ((double)depth + (double)d1_) * lodScale;
+      }
+      else {
+        double tmp_depth = double(d1_) - double(depth);
+        if (tmp_depth > 0) {
+          coord = tmp_depth * lodScale;
+        }
       }
     }
     return coord;
   }
 
-  PCCPoint3D generatePoint( const size_t u, const size_t v, const uint16_t depth, const double lodScale ) const {
+  PCCPoint3D generatePoint( const size_t u, const size_t v, const uint16_t depth, const double lodScale, const bool useMppSepVid, const bool lossyMpp ) const {
     PCCPoint3D point0;
-    point0[normalAxis_   ] = generateNormalCoordinate( depth, lodScale );
+    point0[normalAxis_   ] = generateNormalCoordinate( depth, lodScale, useMppSepVid, lossyMpp );
     point0[tangentAxis_  ] = (double(u) + u1_) * lodScale;
     point0[bitangentAxis_] = (double(v) + v1_) * lodScale;
     return point0;
@@ -311,6 +324,7 @@ struct PCCMissedPointsPatch {
   size_t v0;
   size_t sizeV0;
   size_t sizeU0;
+  size_t numMissedPts;
   size_t occupancyResolution;
   std::vector<bool> occupancy;
   std::vector<uint16_t> x;

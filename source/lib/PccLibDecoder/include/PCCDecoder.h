@@ -80,16 +80,9 @@ class PCCDecoder : public PCCCodec {
                                           std::vector<uint32_t> &occupancyMap,
                                           const PCCImageOccupancyMap &videoFrame);
 
-  void generateMPsGeometryfromImage    (PCCContext& context, PCCFrameContext& frame, PCCGroupOfFrames& reconstructs,
-                                        size_t frameIndex);
-  void generateMPsTexturefromImage     (PCCContext& context, PCCFrameContext& frame, PCCGroupOfFrames& reconstructs,
-                                        size_t frameIndex);
-
   void readMissedPointsGeometryNumber(PCCContext& context, PCCBitstream &bitstream);
   void readMissedPointsTextureNumber(PCCContext& context, PCCBitstream &bitstream);
 
-  void generateMissedPointsGeometryfromVideo(PCCContext& context, PCCGroupOfFrames& reconstructs);
-  void generateMissedPointsTexturefromVideo(PCCContext& context, PCCGroupOfFrames& reconstructs);
   void decompressPatchMetaDataM42195(PCCFrameContext& frame, PCCFrameContext& preFrame, PCCBitstream &bitstream ,
                                      o3dgc::Arithmetic_Codec &arithmeticDecoder, o3dgc::Static_Bit_Model &bModel0,
                                      uint32_t &compressedBitstreamSize, size_t occupancyPrecision, uint8_t enable_flexible_patch_flag);
@@ -127,6 +120,7 @@ class PCCDecoder : public PCCCodec {
   bool     removeDuplicatePoints_;
   bool     oneLayerMode_;
   bool     singleLayerPixelInterleaving_;
+  bool     useAdditionalPointsPatch_;
 };
 }; //~namespace
 

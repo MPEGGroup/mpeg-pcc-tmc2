@@ -145,6 +145,13 @@ PCCEncoderParameters::PCCEncoderParameters() {
 
   //Improve EDD
   improveEDD_		                           = 0;
+
+  //lossy missed points patch
+  lossyMissedPointsPatch_                  = false;
+  minNormSumOfInvDist4MPSelection_         = 0.35;
+  lossyMppGeoQP_                           = 4;
+
+  useAdditionalPointsPatch_               = false;
 }
 
 PCCEncoderParameters::~PCCEncoderParameters() {
@@ -289,6 +296,10 @@ void PCCEncoderParameters::print(){
   std::cout << "\t six Direction Projection               " << sixDirectionMode_                     << std::endl;
   std::cout << "\t surface Separation                     " << surfaceSeparation_                    << std::endl;
   std::cout << "\t improve EDD                            " << improveEDD_		                     << std::endl;
+  std::cout << "\t Lossy missed points patch" << std::endl;
+  std::cout << "\t   lossyMissedPointsPatch               " << lossyMissedPointsPatch_              << std::endl;
+  std::cout << "\t   minNormSumOfInvDist4MPSelection      " << minNormSumOfInvDist4MPSelection_     << std::endl;
+  std::cout << "\t   lossyMppGeoQP                        " << lossyMppGeoQP_                       << std::endl;
   std::cout << std::endl;
 }
 
@@ -381,6 +392,9 @@ bool PCCEncoderParameters::check(){
       std::cerr << "WARNING: geometryMPConfig_ is set as geometryConfig_ : "<<geometryConfig_ << std::endl;
       geometryMPConfig_ = geometryConfig_;
     }
+    else{
+      std::cout << "geometryMPConfig: " << geometryMPConfig_ << std::endl; 
+    }
     if(textureMPConfig_.empty() || !exist( textureMPConfig_) ) {
       std::cerr << "WARNING: textureMPConfig_ is set as textureConfig_ : "<<textureConfig_ << std::endl;
       textureMPConfig_ = textureConfig_;
@@ -416,5 +430,15 @@ bool PCCEncoderParameters::check(){
     ret = false;
     std::cerr << "to use segmentation, you must define a segmentationDataPath \n";
   }
+  if (lossyMissedPointsPatch_) {
+    if (!useMissedPointsSeparateVideo_){
+      std::cerr << "Lossy missed points patch in the same video frame as the regular patches is not optimized as of now.\n";
+    }
+    if ((minNormSumOfInvDist4MPSelection_ < 0.0) || (minNormSumOfInvDist4MPSelection_ > 1.0)) {
+      ret = false;
+      std::cerr << "minNormSumOfInvDist4MPSelection must be between 0.0 and 1.0 (inclusive)\n";
+    }
+  }
+
   return ret;
 }

@@ -175,6 +175,13 @@ class PCCEncoderParameters {
   // Improve EDD
   bool                improveEDD_;
 
+  // Lossy Missed Points Patch
+  bool lossyMissedPointsPatch_;          
+  double minNormSumOfInvDist4MPSelection_;
+  int lossyMppGeoQP_;
+
+  bool useAdditionalPointsPatch_;
+
 };
 
 }; //~namespace

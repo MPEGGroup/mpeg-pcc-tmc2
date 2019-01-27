@@ -85,6 +85,7 @@ struct GeneratePointCloudParameters {
   bool               sixDirectionMode_;
   bool               improveEDD_;
   std::string        path_;
+  bool               useAdditionalPointsPatch_;
 };
 
 class PCCCodec {
@@ -99,6 +100,16 @@ class PCCCodec {
   bool colorPointCloud( PCCGroupOfFrames& reconstructs, PCCContext& context,
                         const bool noAttributes, const ColorTransform colorTransform,
                         const GeneratePointCloudParameters params);
+
+  void generateMPsGeometryfromImage(PCCContext& context, PCCFrameContext& frame, PCCGroupOfFrames& reconstructs,
+    size_t frameIndex);
+  
+  void generateMPsTexturefromImage(PCCContext& context, PCCFrameContext& frame, PCCGroupOfFrames& reconstructs,
+    size_t frameIndex);
+  
+  void generateMissedPointsGeometryfromVideo(PCCContext& context, PCCGroupOfFrames& reconstructs);
+  
+  void generateMissedPointsTexturefromVideo(PCCContext& context, PCCGroupOfFrames& reconstructs);
 
  protected:
   int getDeltaNeighbors( const PCCImageGeometry& frame,

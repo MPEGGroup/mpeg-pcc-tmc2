@@ -541,6 +541,23 @@ bool parseParameters( int argc, char *argv[],
       encoderParams.improveEDD_,
       encoderParams.improveEDD_,
       "Code EDD code in the occupancy map\n")
+
+    //lossy-missed-points patch
+    ("lossyMissedPointsPatch",
+      encoderParams.lossyMissedPointsPatch_,
+      encoderParams.lossyMissedPointsPatch_,
+      "Lossy missed points patch(0: no lossy missed points patch, 1: enable lossy missed points patch (default=0)\n")
+
+    ("minNormSumOfInvDist4MPSelection",
+       encoderParams.minNormSumOfInvDist4MPSelection_,
+       encoderParams.minNormSumOfInvDist4MPSelection_,
+       "Minimum normalized sum of inverse distance for missed points selection: double value between 0.0 and 1.0 (default=0.35)\n")
+
+    ("lossyMppGeoQP",
+       encoderParams.lossyMppGeoQP_,
+       encoderParams.lossyMppGeoQP_,
+       "QP value for geometry in lossy missed points patch (default=4)\n")
+
         ;
 
    opts.addOptions()
@@ -676,7 +693,6 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
     std::cout << "Compressing group of frames " << contextIndex << ": " << startFrameNumber
               << " -> " << endFrameNumber << "..." << std::endl;
     int ret = encoder.encode( sources, context, bitstream, reconstructs );
-
     clock.stop();
 
     PCCGroupOfFrames normals;

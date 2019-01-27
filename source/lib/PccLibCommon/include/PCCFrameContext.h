@@ -86,6 +86,8 @@ class PCCFrameContext {
 
   const size_t getSurfaceThickness() {return surfaceThickness_;}
   void setSurfaceThickness( size_t surfaceThickness ) { surfaceThickness_ = surfaceThickness;}
+  const bool getUseAdditionalPointsPatch() { return useAdditionalPointsPatch_; }
+  void setUseAdditionalPointsPatch(bool useAdditionalPointsPatch) { useAdditionalPointsPatch_ = useAdditionalPointsPatch; }
 
   std::vector<PCCPointSet3>&       getSrcPointCloudByPatch() { return srcPointCloudByPatch_;     }
   PCCPointSet3&                    getSrcPointCloudByPatch( size_t patchIndex ) { return srcPointCloudByPatch_[patchIndex];     }
@@ -112,6 +114,7 @@ class PCCFrameContext {
   bool useMissedPointsSeparateVideo_;
   bool useOccupancyMapVideo;
   bool enhancedDeltaDepth_;
+  bool useAdditionalPointsPatch_;
 
   std::vector<PCCVector3<size_t>> pointToPixel_;
   std::vector<size_t> blockToPatch_;

@@ -54,7 +54,7 @@ class PCCVideoEncoder {
   template <typename T>
   bool compress(PCCVideo<T, 3> &video,
                 const std::string &fileName,
-                const size_t qp,
+                const int qp,
                 PCCVideoBitstream &bitstream,
                 const std::string &encoderConfig,
                 const std::string &encoderPath,
@@ -346,6 +346,7 @@ class PCCVideoEncoder {
       // Otherwise for lossy cases rely on video encoder config files to set InternalBitDepth ( for Main10 video encoders)
       if (depth == 10) {
         cmd << " --InternalBitDepth=" << depth;
+        cmd << " --OutputBitDepth=" << depth;   // to support lossy missed points patch in the same video frame
       }
     }
     std::cout << cmd.str() << '\n';
