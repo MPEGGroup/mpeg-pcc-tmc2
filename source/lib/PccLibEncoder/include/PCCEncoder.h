@@ -61,7 +61,46 @@ struct PCCPatchSegmenter3Parameters;
 class PCCPatch;
 struct PCCBistreamPosition;
 class Arithmetic_Codec;
-
+  struct SparseMatrixCoefficient {
+    int32_t _index;
+    double _value;
+  };
+  
+  struct SparseMatrixRow {
+    SparseMatrixRow() {
+      _coefficientCount = 0;
+    }
+    void addCofficient(const int32_t j, const double value) {
+      assert(_coefficientCount < 5);
+      auto & coeff= _coefficients[_coefficientCount++];
+      coeff._index = j;
+      coeff._value = value;
+    }
+    int32_t _coefficientCount;
+    SparseMatrixCoefficient _coefficients[5];
+  };
+  
+  struct SparseMatrix {
+    const SparseMatrixRow & getRow(const int32_t i) const {
+      assert(i < _rows.size());
+      return _rows[i];
+    }
+    SparseMatrixRow & getRow(const int32_t i) {
+      assert(i < _rows.size());
+      return _rows[i];
+    }
+    void resize(const int32_t rowCount) {
+      _rows.resize(rowCount);
+    }
+    std::vector<SparseMatrixRow> _rows;
+  };
+  struct PaddingContext{
+    std::vector<int32_t> _mapping;
+    std::vector<int32_t> _invMapping;
+    SparseMatrix _A;
+    std::vector<double> _b[3];
+    std::vector<double> _x, _p, _r, _q;
+  };
 class PCCEncoder : public PCCCodec {
 public:
   PCCEncoder();
@@ -119,6 +158,8 @@ private:
   void pullPushFill(PCCImage<T, 3> &image, PCCImage<T, 3> &mip, std::vector<uint32_t>& occupancyMap);
   template <typename T>
   void dilatePullPush(PCCFrameContext& frame, PCCImage<T, 3> &image);
+  template <typename T>
+  void dilateSparseLinearModel(PCCFrameContext& frame, PCCImage<T, 3> &image, int layerIdx, PCCVideoType videoType);
   void pack( PCCFrameContext& frame, int safeguard = 0  );
   void packFlexible(PCCFrameContext& frame, int safeguard = 0);
   void packMissedPointsPatch( PCCFrameContext& frame, const std::vector<bool> &occupancyMap, size_t &width, 

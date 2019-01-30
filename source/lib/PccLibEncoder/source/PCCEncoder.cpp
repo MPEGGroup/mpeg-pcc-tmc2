@@ -44,7 +44,7 @@
 #include "PCCEncoderParameters.h"
 #include "PCCKdTree.h"
 #include <tbb/tbb.h>
-
+#include "PCCChrono.h"
 #include "PCCEncoder.h"
 
 using namespace std;
@@ -372,11 +372,25 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
     assert(textureFrameCount == videoTexture.getFrameCount());
     if ( !(params_.losslessGeo_ && params_.textureDilationOffLossless_)) {
       for (size_t f = 0; f < textureFrameCount; ++f) {
+
+        using namespace std::chrono;
+        pcc::chrono::Stopwatch<std::chrono::steady_clock> clockPadding;
+        clockPadding.start();
+
         if(params_.textureBGFill_ == 1) {
           dilatePullPush( frames[ f / nbFramesTexture ], videoTexture.getFrame( f ) );
-        } else {
+        }
+        else if(params_.textureBGFill_ == 2)
+          dilateSparseLinearModel( frames[ f / nbFramesTexture ], videoTexture.getFrame( f ), f, Texture);
+        else {
           dilate( frames[ f / nbFramesTexture ], videoTexture.getFrame( f ) );
         }
+        
+        clockPadding.stop();
+        using ms = milliseconds;
+        auto totalPaddingTime = duration_cast<ms>(clockPadding.count()).count();
+        std::cout << "Processing time (Padding "<<f<<"): " << totalPaddingTime / 1000.0 << " s\n";
+        
         if ((params_.groupDilation_ == true) && ((f & 0x1) == 1)) {
           if( !params_.oneLayerMode_ ) {
             // Group dilation in texture
@@ -2106,6 +2120,169 @@ void PCCEncoder::dilate( PCCFrameContext& frame, PCCImage<T, 3> &image, const PC
   }
 }
 
+template <typename T>
+void PCCEncoder::dilateSparseLinearModel(PCCFrameContext& framecontext, PCCImage<T, 3> &image, int layerIdx, PCCVideoType videoType)
+{
+  const size_t maxChannel = (videoType==Texture)?3:1;
+  const int32_t width = image.getWidth ();
+  const int32_t height = image.getHeight ();
+  const int32_t maxIterationCount = 1024;
+  const double maxError = 0.00001;
+  const auto occupancyMap = framecontext.getOccupancyMap();
+  const int32_t mask = (1 << 16) - 1;
+  PaddingContext context;
+  cout<<"start padding in dilateSparseLinearModel - layerIdx:"<<layerIdx<<", videoType:"<<videoType<<endl;
+  
+  const int32_t pixelCount = width*height;
+  context._invMapping.resize(pixelCount);
+  context._mapping.resize(pixelCount);
+  int32_t emptyPixelCount = 0;
+  for(int32_t yPix = 0; yPix < height; ++yPix) {
+    for(int32_t xPix = 0; xPix < width; ++xPix) {
+      if (occupancyMap[ (yPix * width + xPix)] == 0) {
+        const int32_t index  = emptyPixelCount++;
+        context._mapping[yPix * width + xPix] = index;
+        context._invMapping[index] = (yPix << 16) + xPix;
+      }
+    }
+  }
+  if (emptyPixelCount==0) {
+    cout<<"emptyPixelCount == 0"<<endl;
+    return;
+  }
+  else if(emptyPixelCount == pixelCount)
+  {
+    cout<<"emptyPixelCount == pixelCount"<<endl;
+    for(int32_t yPix = 0; yPix< height; ++yPix) {
+      for(int32_t xPix = 0; xPix < width; ++xPix) {
+        for(int ch=0; ch<maxChannel; ch++)
+          image.setValue(ch, xPix, yPix, 128);
+      }
+    }
+    return;
+  }
+  
+  context._invMapping.resize(emptyPixelCount);
+  context._A.resize(emptyPixelCount);
+  for(int32_t ch = 0; ch < maxChannel; ++ch) {
+    context._b[ch].resize(emptyPixelCount);
+  }
+  for(int32_t index0 = 0; index0 < emptyPixelCount; ++index0) {
+    
+    const int32_t pixelLocation = context._invMapping[index0];
+    const int32_t yPix = pixelLocation >> 16;
+    const int32_t xPix = pixelLocation & mask;
+    auto & row = context._A.getRow(index0);
+    row._coefficientCount = 0;
+    
+    const int32_t siftY[4] = {-1, 1, 0, 0};
+    const int32_t siftX[4] = {0, 0, -1, 1};
+    for(int32_t ch = 0; ch < maxChannel; ++ch) {
+      context._b[ch][index0] = 0.0;
+    }
+    int32_t neighbourCount = 0;
+    for(int32_t k = 0; k < 4; ++k) {
+      const int32_t y1 = yPix + siftY[k];
+      const int32_t x1 = xPix + siftX[k];
+      if (y1 >= 0 && y1 < height &&
+          x1 >= 0 && x1 < width) {
+        ++neighbourCount;
+        if (occupancyMap[(y1) * width + (x1)] == 0) {
+          const int32_t localPixelLocation = y1 * width + x1;
+          assert(localPixelLocation < width*height);
+          const int32_t index1 = context._mapping[localPixelLocation];
+          assert(index1 < emptyPixelCount);
+          row.addCofficient(index1, -1.0);
+        } else {
+          for(int32_t ch = 0; ch < maxChannel; ++ch) {
+            context._b[ch][index0] += image.getValue(ch, x1, y1);
+          }
+        }
+      }
+    }
+    row.addCofficient(index0, neighbourCount);
+  }
+  const auto & A = context._A;
+  auto & x = context._x;
+  auto & p = context._p;
+  auto & r = context._r;
+  auto & q = context._q;
+  x.resize(emptyPixelCount);
+  p.resize(emptyPixelCount);
+  r.resize(emptyPixelCount);
+  q.resize(emptyPixelCount);
+  for(int32_t ch = 0; ch < maxChannel; ++ch) {
+    const auto & b = context._b[ch];
+    
+    for(int32_t i = 0; i < emptyPixelCount; ++i) {
+      x[i] = 128.0;
+    }
+    for(int32_t i = 0; i < emptyPixelCount; ++i) {
+      const auto & row =  A.getRow(i);
+      double ri = b[i];
+      for(int32_t j = 0; j < row._coefficientCount; ++j) {
+        const auto & coeff = row._coefficients[j];
+        ri -= coeff._value * x[coeff._index];
+      }
+      p[i] = r[i] = ri;
+    }
+    
+    double error = 0.0;
+    int32_t it = 0;
+    for(; it < maxIterationCount; ++it) {
+      double rtr = 0.0;
+      for(int32_t i = 0; i < emptyPixelCount; ++i) {
+        rtr += r[i] * r[i];
+      }
+      error = sqrt(rtr) / emptyPixelCount;
+      if (error < maxError) {
+        break;
+      }
+      double ptAp = 0.0;
+      for(int32_t i = 0; i < emptyPixelCount; ++i) {
+        const auto & row =  A.getRow(i);
+        double sq = 0.0;
+        for(int32_t j = 0; j < row._coefficientCount; ++j) {
+          const auto & coeff = row._coefficients[j];
+          sq += coeff._value * p[coeff._index];
+        }
+        q[i] = sq;
+        ptAp += p[i] * sq;
+      }
+      const double alpha = rtr / ptAp;
+      for(int32_t i = 0; i < emptyPixelCount; ++i) {
+        x[i] += alpha * p[i];
+        r[i] -= alpha * q[i];
+      }
+      double r1tr1 = 0.0;
+      for(int32_t i = 0; i < emptyPixelCount; ++i) {
+        r1tr1 += r[i] * r[i];
+      }
+      const double betha = r1tr1 / rtr;
+      for(int32_t i = 0; i < emptyPixelCount; ++i) {
+        p[i] = r[i] + betha * p[i];
+      }
+    }
+    std::cout << it << " -> error = " << error << std::endl;
+    
+    for(int32_t index0 = 0; index0 < emptyPixelCount; ++index0) {
+      const int32_t pixelLocation = context._invMapping[index0];
+      const int32_t yPixOut = pixelLocation >> 16;
+      const int32_t xPixOut = pixelLocation & mask;
+      const double v = std::round(x[index0]);
+      if (v >= 255.0) {
+        image.setValue(ch, xPixOut, yPixOut, 255);
+      } else if (v <= 0.0) {
+        image.setValue(ch, xPixOut, yPixOut, 0);
+      } else {
+        image.setValue(ch, xPixOut, yPixOut, uint8_t(v));
+      }
+    }//index0
+  }
+  
+  cout<<"dilateSparseLinear: finished"<<endl;
+  return;
+}
 /* pull push filling algorithm */
 template <typename T>
 int PCCEncoder::mean4w(T p1, unsigned char w1, T p2, unsigned char w2, T p3, unsigned char w3, T p4, unsigned char w4) {

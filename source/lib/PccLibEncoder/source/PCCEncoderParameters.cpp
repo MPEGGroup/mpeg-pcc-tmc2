@@ -140,7 +140,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
 
   //Flexible Patch Packing
   packingStrategy_                         = 1;
-  textureBGFill_                           = 1;
+  textureBGFill_                           = 2;
   safeGuardDistance_                       = 0;
 
   //Improve EDD
