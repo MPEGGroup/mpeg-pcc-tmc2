@@ -425,6 +425,7 @@ int PCCDecoder::decompressHeader( PCCContext &context, PCCBitstream &bitstream )
   bitstream.read<uint8_t> ( losslessTexture_ );
   bitstream.read<uint8_t> ( noAttributes_ );
   bitstream.read<uint8_t> ( losslessGeo444_);
+  bitstream.read<uint8_t> ( minLevel_);
   useMissedPointsSeparateVideo_=true;
   useOccupancyMapVideo_=true;
   bitstream.read<uint8_t> ( useMissedPointsSeparateVideo_);
@@ -584,16 +585,24 @@ void PCCDecoder::decompressPatchMetaDataM42195(PCCFrameContext& frame, PCCFrameC
   auto&  patches = frame.getPatches();
   auto&  prePatches = preFrame.getPatches();
   size_t patchCount = patches.size();
-  uint8_t bitCount[5];
-  uint8_t F = 0,A[5];
-  size_t topNmax[5] = {0,0,0,0,0};
+  uint8_t bitCount[6];
+  uint8_t F = 0,A[5]= {0,0,0,0,0};
+  size_t topNmax[6] = {0,0,0,0,0,0};
+  
   bitstream.read<uint8_t>( F );
-  for (size_t i = 0; i < 5; i++) {
-    A[4 - i] = F&1;
+  for (size_t i = 0; i < 4; i++)
+  {
+    A[3 - i] = F&1;
     F = F>>1;
   }
   F = F&1;
-  for (size_t i = 0; i < 5; i++) {
+  const size_t minLevel=minLevel_;
+  const uint8_t maxBitCountForMinDepth=uint8_t(10-gbitCountSize[minLevel]);
+  bitCount[4]=maxBitCountForMinDepth;
+  
+  
+  for (size_t i = 0; i < 4; i++)
+  {
     if(A[i])   bitstream.read<uint8_t>( bitCount[i] );
   }
 
@@ -605,7 +614,7 @@ void PCCDecoder::decompressPatchMetaDataM42195(PCCFrameContext& frame, PCCFrameC
   bool bBinArithCoding = binArithCoding_ && (!losslessGeo_) &&
       (occupancyResolution_ == 16) && (occupancyPrecision == 4);
 
-  bool useOneLayermode = oneLayerMode_ || singleLayerPixelInterleaving_;
+  
 
   arithmeticDecoder.start_decoder();
   o3dgc::Adaptive_Bit_Model bModelPatchIndex, bModelU0, bModelV0, bModelU1, bModelV1, bModelD1,bModelIntSizeU0,bModelIntSizeV0;
@@ -619,7 +628,7 @@ void PCCDecoder::decompressPatchMetaDataM42195(PCCFrameContext& frame, PCCFrameC
   uint32_t numMatchedPatches;
   const uint8_t bitMatchedPatchCount = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(patchCount)));
   numMatchedPatches = DecodeUInt32(bitMatchedPatchCount, arithmeticDecoder, bModel0);
-
+  printf("numMatchedPatches:%d, F:%d,A:%d,%d,%d,%d\n", (int)numMatchedPatches, F, A[0], A[1], A[2], A[3]);
   int64_t predIndex = 0;
   for (size_t patchIndex = 0; patchIndex < numMatchedPatches; ++patchIndex) {
     auto &patch = patches[patchIndex];
@@ -648,7 +657,20 @@ void PCCDecoder::decompressPatchMetaDataM42195(PCCFrameContext& frame, PCCFrameC
     patch.getPatchOrientation() = prePatch.getPatchOrientation();
     patch.getU1() = delta_U1 + prePatch.getU1();
     patch.getV1() = delta_V1 + prePatch.getV1();
-    patch.getD1() = delta_D1 + prePatch.getD1();
+    size_t currentD1=0;
+    size_t prevD1=prePatch.getD1();
+    if(patch.getProjectionMode()==0)
+    {
+      prevD1=prevD1/minLevel;
+      currentD1=(prevD1-delta_D1);
+      patch.getD1() = (delta_D1 + prevD1)*minLevel;
+    }
+    else{
+      prevD1=(1024-prevD1)/minLevel;
+      currentD1= (delta_D1 + prevD1);
+      patch.getD1() = 1024-currentD1*minLevel; //(delta_D1 + prePatch.getD1()/minLevel)*minLevel;
+    }
+    
     patch.getSizeU0() = deltaSizeU0 + prePatch.getSizeU0();
     patch.getSizeV0() = deltaSizeV0 + prePatch.getSizeV0();
 
@@ -657,7 +679,9 @@ void PCCDecoder::decompressPatchMetaDataM42195(PCCFrameContext& frame, PCCFrameC
     topNmax[1] = topNmax[1] < patch.getV0() ? patch.getV0() : topNmax[1];
     topNmax[2] = topNmax[2] < patch.getU1() ? patch.getU1() : topNmax[2];
     topNmax[3] = topNmax[3] < patch.getV1() ? patch.getV1() : topNmax[3];
-    topNmax[4] = topNmax[4] < patch.getD1() ? patch.getD1() : topNmax[4];
+    size_t D1 = patch.getD1()/minLevel;
+    topNmax[4] = topNmax[4] < D1 ? D1 : topNmax[4];
+
 
     prevSizeU0 = patch.getSizeU0();
     prevSizeV0 = patch.getSizeV0();
@@ -671,7 +695,7 @@ void PCCDecoder::decompressPatchMetaDataM42195(PCCFrameContext& frame, PCCFrameC
   }
 
   //Get Bitcount.
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < 4; i++) {
     if (A[i] == 0)  bitCount[i] = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(topNmax[i] + 1)));
   }
 
@@ -692,13 +716,23 @@ void PCCDecoder::decompressPatchMetaDataM42195(PCCFrameContext& frame, PCCFrameC
     }
     patch.getU1() = DecodeUInt32(bitCount[2], arithmeticDecoder, bModel0);
     patch.getV1() = DecodeUInt32(bitCount[3], arithmeticDecoder, bModel0);
-    patch.getD1() = DecodeUInt32(bitCount[4], arithmeticDecoder, bModel0);
+    size_t D1 = DecodeUInt32(bitCount[4], arithmeticDecoder, bModel0);
 
     if (sixDirectionMode_ && absoluteD1_ ) {
       patch.getProjectionMode() = arithmeticDecoder.decode(bModel0);
     } else {
       patch.getProjectionMode() = 0;
     }
+    if(patch.getProjectionMode()==0)
+    {
+      patch.getD1()=D1*minLevel;
+    }
+    else
+    {
+      patch.getD1()=(1024-D1*minLevel);
+    }
+    //printf("PATCH%zu : minDepth: %zu\n", patchIndex, patch.getD1());
+    
     const int64_t deltaSizeU0 = o3dgc::UIntToInt(arithmeticDecoder.ExpGolombDecode(0, bModel0, bModelSizeU0));
     const int64_t deltaSizeV0 = o3dgc::UIntToInt(arithmeticDecoder.ExpGolombDecode(0, bModel0, bModelSizeV0));
 
@@ -750,7 +784,9 @@ void PCCDecoder::decompressOccupancyMap( PCCContext &context, PCCFrameContext& f
   auto&  patches = frame.getPatches();
   bitstream.read<uint32_t>( patchCount );
   patches.resize( patchCount );
-
+  const size_t minLevel=minLevel_;
+  const uint8_t maxBitCountForMinDepth = uint8_t(10-gbitCountSize[minLevel]);
+  
   o3dgc::Adaptive_Bit_Model  interpolateModel;
   o3dgc::Adaptive_Bit_Model  fillingModel;
   o3dgc::Adaptive_Data_Model minD1Model(3);
@@ -796,7 +832,7 @@ void PCCDecoder::decompressOccupancyMap( PCCContext &context, PCCFrameContext& f
     bitstream.read<uint8_t>( bitCountV0 );
     bitstream.read<uint8_t>( bitCountU1 );
     bitstream.read<uint8_t>( bitCountV1 );
-    bitstream.read<uint8_t>( bitCountD1 );
+    bitCountD1=maxBitCountForMinDepth;
     bitstream.read<uint8_t>( bitCountLod);
     bitstream.read<uint32_t>(  compressedBitstreamSize );
 
@@ -812,7 +848,7 @@ void PCCDecoder::decompressOccupancyMap( PCCContext &context, PCCFrameContext& f
     o3dgc::Adaptive_Bit_Model orientationPatchFlagModel2;
     int64_t prevSizeU0 = 0;
     int64_t prevSizeV0 = 0;
-    bool useOneLayermode = oneLayerMode_ || singleLayerPixelInterleaving_;
+    
     for (size_t patchIndex = 0; patchIndex < patchCount; ++patchIndex) {
       auto &patch = patches[patchIndex];
       patch.getOccupancyResolution() = occupancyResolution_;
@@ -831,7 +867,8 @@ void PCCDecoder::decompressOccupancyMap( PCCContext &context, PCCFrameContext& f
       }
       patch.getU1() = DecodeUInt32(bitCountU1, arithmeticDecoder, bModel0);
       patch.getV1() = DecodeUInt32(bitCountV1, arithmeticDecoder, bModel0);
-      patch.getD1() = DecodeUInt32(bitCountD1, arithmeticDecoder, bModel0);
+      size_t D1 =DecodeUInt32(bitCountD1, arithmeticDecoder, bModel0);
+      patch.getD1() = D1*minLevel;
       patch.getLod() = DecodeUInt32(bitCountLod, arithmeticDecoder, bModel0);
 
       if (!absoluteD1_) {
@@ -857,6 +894,9 @@ void PCCDecoder::decompressOccupancyMap( PCCContext &context, PCCFrameContext& f
           patch.getProjectionMode() = 0;
         }
       }
+      if(patch.getProjectionMode()==1)
+        patch.getD1() = 1024-D1*minLevel;
+
       const int64_t deltaSizeU0 = o3dgc::UIntToInt(arithmeticDecoder.ExpGolombDecode(0, bModel0, bModelSizeU0));
       const int64_t deltaSizeV0 = o3dgc::UIntToInt(arithmeticDecoder.ExpGolombDecode(0, bModel0, bModelSizeV0));
 

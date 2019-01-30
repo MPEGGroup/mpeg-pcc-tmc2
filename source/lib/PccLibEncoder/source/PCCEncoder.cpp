@@ -1711,6 +1711,7 @@ bool PCCEncoder::generateGeometryVideo( const PCCGroupOfFrames& sources, PCCCont
   segmenterParams.minPointCountPerCCPatchSegmentation   = params_.minPointCountPerCCPatchSegmentation_;
   segmenterParams.maxNNCountPatchSegmentation           = params_.maxNNCountPatchSegmentation_;
   segmenterParams.surfaceThickness                      = params_.surfaceThickness_;
+  segmenterParams.minLevel                        = params_.minLevel_;
   segmenterParams.maxAllowedDepth                       = params_.maxAllowedDepth_;
   segmenterParams.maxAllowedDist2MissedPointsDetection  = params_.maxAllowedDist2MissedPointsDetection_;
   segmenterParams.maxAllowedDist2MissedPointsSelection  = params_.maxAllowedDist2MissedPointsSelection_;
@@ -2817,6 +2818,7 @@ int PCCEncoder::compressHeader( PCCContext &context, pcc::PCCBitstream &bitstrea
   bitstream.write<uint8_t> (uint8_t(params_.losslessTexture_));
   bitstream.write<uint8_t> (uint8_t(params_.noAttributes_));
   bitstream.write<uint8_t> (uint8_t(params_.losslessGeo444_));
+  bitstream.write<uint8_t> (uint8_t(params_.minLevel_));
   bitstream.write<uint8_t> (uint8_t(params_.useMissedPointsSeparateVideo_));
   bitstream.write<uint8_t> (uint8_t(params_.useOccupancyMapVideo_));
   bitstream.write<uint8_t> (uint8_t(params_.absoluteD1_));
@@ -2858,6 +2860,9 @@ void PCCEncoder::compressPatchMetaDataM42195( PCCFrameContext &frame, PCCFrameCo
   size_t TopNmaxU1 = 0, maxU1 = 0;
   size_t TopNmaxV1 = 0, maxV1 = 0;
   size_t TopNmaxD1 = 0, maxD1 = 0;
+  const size_t minLevel=params_.minLevel_;
+  const uint8_t maxBitCountForMinDepth=uint8_t(10-gbitCountSize[minLevel]);
+  
   //get the maximum u0,v0,u1,v1 and d1.
   for (size_t patchIndex = 0; patchIndex < numMatchedPatches; ++patchIndex) {
     const auto &patch = patches[patchIndex];
@@ -2865,30 +2870,32 @@ void PCCEncoder::compressPatchMetaDataM42195( PCCFrameContext &frame, PCCFrameCo
     TopNmaxV0 = (std::max)(TopNmaxV0, patch.getV0());
     TopNmaxU1 = (std::max)(TopNmaxU1, patch.getU1());
     TopNmaxV1 = (std::max)(TopNmaxV1, patch.getV1());
-    TopNmaxD1 = (std::max)(TopNmaxD1, patch.getD1());
+    size_t D1 = patch.getD1()/minLevel;
+    TopNmaxD1 = (std::max)(TopNmaxD1, D1);
+
   }
   uint8_t F = 1;  //true if the maximum value comes from the latter part.
-  uint8_t A[5] = { 0, 0, 0, 0, 0 };
+  uint8_t A[4] = { 0, 0, 0, 0 };
   for (size_t patchIndex = numMatchedPatches; patchIndex < patchCount; ++patchIndex) {
     const auto &patch = patches[patchIndex];
     maxU0 = (std::max)(maxU0, patch.getU0());
     maxV0 = (std::max)(maxV0, patch.getV0());
     maxU1 = (std::max)(maxU1, patch.getU1());
     maxV1 = (std::max)(maxV1, patch.getV1());
-    maxD1 = (std::max)(maxD1, patch.getD1());
+    size_t D1 = patch.getD1()/minLevel;
+    maxD1 = (std::max)(maxD1, D1);
 
     A[0] = maxU0 > TopNmaxU0 ? 1 : A[0];
     A[1] = maxV0 > TopNmaxV0 ? 1 : A[1];
     A[2] = maxU1 > TopNmaxU1 ? 1 : A[2];
     A[3] = maxV1 > TopNmaxV1 ? 1 : A[3];
-    A[4] = maxD1 > TopNmaxD1 ? 1 : A[4]; 
+    
   }
   //Generate F and A.
-  if (A[0]+A[1]+A[2]+A[3]+A[4] == 0) {  F = 0; }
-  printf("numMatchedPatches:%d, F:%d,A:%d,%d,%d,%d,%d\n", (int)numMatchedPatches, F, A[0], A[1], A[2], A[3], A[4]);
-  //printf("topNmaxU:%d,%d,%d,%d,%d\n", TopNmaxU0, TopNmaxV0, TopNmaxU1, TopNmaxV1, TopNmaxD1);
-  //printf("maxU:%d,%d,%d,%d,%d\n", maxU0, maxV0, maxU1, maxV1, maxD1);
-  //size_t topNPatch = numMatchedPatches;
+  if (A[0]+A[1]+A[2]+A[3] == 0)
+  {  F = 0; }
+  printf("numMatchedPatches:%d, F:%d,A:%d,%d,%d,%d)\n", (int)numMatchedPatches, F, A[0], A[1], A[2], A[3]);
+
   uint8_t bitCount[5];
   bitCount[0] = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(maxU0 + 1))); 
   bitCount[0] = maxU0 > TopNmaxU0 ? bitCount[0] : uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(TopNmaxU0 + 1)));
@@ -2898,19 +2905,17 @@ void PCCEncoder::compressPatchMetaDataM42195( PCCFrameContext &frame, PCCFrameCo
   bitCount[2] = maxU1 > TopNmaxU1 ? bitCount[2] : uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(TopNmaxU1 + 1)));
   bitCount[3] = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(maxV1 + 1)));
   bitCount[3] = maxV1 > TopNmaxV1 ? bitCount[3] : uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(TopNmaxV1 + 1)));
-  bitCount[4] = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(maxD1 + 1)));
-  bitCount[4] = maxD1 > TopNmaxD1 ? bitCount[4] : uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(TopNmaxD1 + 1)));
-
-  //printf("bitCount:%d,%d,%d,%d,%d\n",bitCount[0],bitCount[1],bitCount[2],bitCount[3],bitCount[4]);
+ bitCount[4] = maxBitCountForMinDepth;
+ 
   //write F and A into bitstream.
   uint8_t flag = F;
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < 4; i++) {
     flag = flag << 1;
     flag += A[i];
   }
 
   bitstream.write<uint8_t>(flag);
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < 4; i++) {
     if (A[i])   bitstream.write<uint8_t>(bitCount[i]);
   }
 
@@ -2940,7 +2945,19 @@ void PCCEncoder::compressPatchMetaDataM42195( PCCFrameContext &frame, PCCFrameCo
     const int64_t delta_v0 = static_cast<int64_t>(patch.getV0() - prepatch.getV0());
     const int64_t delta_u1 = static_cast<int64_t>(patch.getU1() - prepatch.getU1());
     const int64_t delta_v1 = static_cast<int64_t>(patch.getV1() - prepatch.getV1());
-    const int64_t delta_d1 = static_cast<int64_t>(patch.getD1() - prepatch.getD1());
+    size_t currentD1=patch.getD1();
+    size_t prevD1=prepatch.getD1();
+    if(patch.getProjectionMode()==0)
+    {
+      currentD1=currentD1/minLevel;
+      prevD1=prevD1/minLevel;
+    }
+    else{
+      currentD1=(1024-currentD1)/minLevel;
+      prevD1=(1024-prevD1)/minLevel;
+    }
+    const int64_t delta_d1 = static_cast<int64_t>(currentD1 - prevD1);
+    //printf("PATCH%zu) projectionMode: %zu, prevD1: %zu, currentD1: %zu, delta_d1: %llu, minDepth: %zu\n", patchIndex, patch.getProjectionMode(),prevD1, currentD1, delta_d1, patch.getD1());
     const int64_t deltaSizeU0 = static_cast<int64_t>(patch.getSizeU0() - prepatch.getSizeU0());
     const int64_t deltaSizeV0 = static_cast<int64_t>(patch.getSizeV0() - prepatch.getSizeV0());
 
@@ -2975,7 +2992,17 @@ void PCCEncoder::compressPatchMetaDataM42195( PCCFrameContext &frame, PCCFrameCo
     }
     EncodeUInt32(uint32_t(patch.getU1()), bitCount[2], arithmeticEncoder, bModel0);
     EncodeUInt32(uint32_t(patch.getV1()), bitCount[3], arithmeticEncoder, bModel0);
-    EncodeUInt32(uint32_t(patch.getD1()), bitCount[4], arithmeticEncoder, bModel0); 
+    size_t currentD1=patch.getD1();
+    if(patch.getProjectionMode()==0)
+    {
+      currentD1=currentD1/minLevel;
+    }
+    else{
+      currentD1=(1024-currentD1)/minLevel;
+    }
+    //printf("PATCH%zu : minDepth: %zu\n", patchIndex, patch.getD1());
+    EncodeUInt32(uint32_t(currentD1), bitCount[4], arithmeticEncoder, bModel0);
+    
     if (!params_.absoluteD1_  && (patch.getFrameProjectionMode() == 2)) {
       const uint8_t bitCountProjDir = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(2 + 1)));
       EncodeUInt32(uint32_t(patch.getProjectionMode()), bitCountProjDir, arithmeticEncoder, bModel0);
@@ -3115,7 +3142,9 @@ void PCCEncoder::compressOccupancyMap(PCCFrameContext& frame, PCCBitstream &bits
     bitstream.write<uint8_t>(uint8_t(params_.surfaceThickness_));
     bitstream.write<uint8_t>(uint8_t(patches[0].getFrameProjectionMode()));
   }
-
+  const size_t minLevel=params_.minLevel_;
+  const uint8_t maxBitCountForMinDepth=uint8_t(10-gbitCountSize[minLevel]);
+  
   o3dgc::Adaptive_Bit_Model interpolateModel;
   o3dgc::Adaptive_Bit_Model fillingModel;
   o3dgc::Adaptive_Data_Model minD1Model(3);
@@ -3144,21 +3173,21 @@ void PCCEncoder::compressOccupancyMap(PCCFrameContext& frame, PCCBitstream &bits
       maxV0 = (std::max)(maxV0, patch.getV0());
       maxU1 = (std::max)(maxU1, patch.getU1());
       maxV1 = (std::max)(maxV1, patch.getV1());
-      maxD1 = (std::max)(maxD1, patch.getD1());
+      
       maxLod = (std::max)(maxLod, patch.getLod());
     }
     const uint8_t bitCountU0  = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(maxU0 + 1)));
     const uint8_t bitCountV0  = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(maxV0 + 1)));
     const uint8_t bitCountU1  = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(maxU1 + 1)));
     const uint8_t bitCountV1  = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(maxV1 + 1)));
-    const uint8_t bitCountD1  = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(maxD1 + 1)));
+    const uint8_t bitCountD1  = maxBitCountForMinDepth;
     const uint8_t bitCountLod = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(maxLod + 1)));
 
     bitstream.write<uint8_t>(bitCountU0);
     bitstream.write<uint8_t>(bitCountV0);
     bitstream.write<uint8_t>(bitCountU1);
     bitstream.write<uint8_t>(bitCountV1);
-    bitstream.write<uint8_t>(bitCountD1);
+    
     bitstream.write<uint8_t>(bitCountLod);
 
     compressMetadata(frame.getFrameLevelMetadata(), arithmeticEncoder);
@@ -3186,7 +3215,16 @@ void PCCEncoder::compressOccupancyMap(PCCFrameContext& frame, PCCBitstream &bits
       }
       EncodeUInt32(uint32_t(patch.getU1()), bitCountU1, arithmeticEncoder, bModel0);
       EncodeUInt32(uint32_t(patch.getV1()), bitCountV1, arithmeticEncoder, bModel0);
-      EncodeUInt32(uint32_t(patch.getD1()), bitCountD1, arithmeticEncoder, bModel0);
+      size_t D1;
+      if(patch.getProjectionMode()==0)
+        D1 = patch.getD1()/minLevel;
+      else
+      {
+        D1=1024-patch.getD1();
+        D1=D1/minLevel;
+      }
+      
+      EncodeUInt32(uint32_t(D1), bitCountD1, arithmeticEncoder, bModel0);
       EncodeUInt32(uint32_t(patch.getLod()), bitCountLod, arithmeticEncoder, bModel0);
       if (!params_.absoluteD1_ && (patch.getFrameProjectionMode() == 2)) {
         const uint8_t bitCountProjDir = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(2 + 1)));

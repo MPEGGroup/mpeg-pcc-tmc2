@@ -85,6 +85,7 @@ class PCCEncoderParameters {
   size_t              minPointCountPerCCPatchSegmentation_;
   size_t              maxNNCountPatchSegmentation_;
   size_t              surfaceThickness_;
+  size_t              minLevel_;//8,16,32,64
   size_t              maxAllowedDepth_;
   double              maxAllowedDist2MissedPointsDetection_;
   double              maxAllowedDist2MissedPointsSelection_;

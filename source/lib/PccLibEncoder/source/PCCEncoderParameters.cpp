@@ -62,6 +62,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   minPointCountPerCCPatchSegmentation_     = 16;
   maxNNCountPatchSegmentation_             = 16;
   surfaceThickness_                        = 4;
+  minLevel_                                = 64;
   maxAllowedDepth_                         = 255;
   maxAllowedDist2MissedPointsDetection_    = 9.0;
   maxAllowedDist2MissedPointsSelection_    = 1.0;
@@ -228,6 +229,7 @@ void PCCEncoderParameters::print(){
   std::cout << "\t   maxAllowedDist2MissedPointsDetection " << maxAllowedDist2MissedPointsDetection_ << std::endl;
   std::cout << "\t   maxAllowedDist2MissedPointsSelection " << maxAllowedDist2MissedPointsSelection_ << std::endl;
   std::cout << "\t   lambdaRefineSegmentation             " << lambdaRefineSegmentation_             << std::endl;
+  std::cout << "\t   depthQuantizationStep                " << minLevel_                      << std::endl;
   std::cout << "\t   maxAllowedDepth                      " << maxAllowedDepth_                      << std::endl;
   std::cout << "\t packing" << std::endl;
   std::cout << "\t   minimumImageWidth                    " << minimumImageWidth_                    << std::endl;

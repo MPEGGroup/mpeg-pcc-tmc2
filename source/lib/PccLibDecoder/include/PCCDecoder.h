@@ -121,6 +121,7 @@ class PCCDecoder : public PCCCodec {
   bool     oneLayerMode_;
   bool     singleLayerPixelInterleaving_;
   bool     useAdditionalPointsPatch_;
+  uint8_t  minLevel_;
 };
 }; //~namespace
 

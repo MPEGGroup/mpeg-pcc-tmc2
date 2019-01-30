@@ -59,14 +59,14 @@ int main(int argc, char *argv[]) {
   using namespace std::chrono;
   using ms = milliseconds;
   auto totalWall = duration_cast<ms>(clockWall.count()).count();
-  std::cout << "Processing time (wall): " << totalWall / 1000.0 << " s\n";
+  std::cout << "metric:Processing time (wall): " << totalWall / 1000.0 << " s\n";
 
   auto totalUserSelf = duration_cast<ms>(clockUser.self.count()).count();
-  std::cout << "Processing time (user.self): "
+  std::cout << "metric:Processing time (user.self): "
             << totalUserSelf / 1000.0 << " s\n";
 
   auto totalUserChild = duration_cast<ms>(clockUser.children.count()).count();
-  std::cout << "Processing time (user.children): "
+  std::cout << "metric:Processing time (user.children): "
             << totalUserChild / 1000.0 << " s\n";
   return ret;
 }

@@ -208,7 +208,12 @@ bool parseParameters( int argc, char *argv[],
      encoderParams.surfaceThickness_,
      encoderParams.surfaceThickness_,
      "Surface thickness")
-
+  
+  ("minLevel",
+   encoderParams.minLevel_,
+   encoderParams.minLevel_,
+   "minimum level for patches")
+  
     ("maxAllowedDepth",
      encoderParams.maxAllowedDepth_,
      encoderParams.maxAllowedDepth_,

@@ -50,6 +50,7 @@ struct PCCPatchSegmenter3Parameters {
   size_t minPointCountPerCCPatchSegmentation;
   size_t maxNNCountPatchSegmentation;
   size_t surfaceThickness;
+  size_t minLevel;
   size_t maxAllowedDepth;
   double maxAllowedDist2MissedPointsDetection;
   double maxAllowedDist2MissedPointsSelection;
@@ -89,6 +90,7 @@ class PCCPatchSegmenter3 {
                        const double maxAllowedDist2MissedPointsDetection,
                        const double maxAllowedDist2MissedPointsSelection,
                        const size_t surfaceThickness, const size_t maxAllowedDepth,
+                       const size_t minLevel,
                        const std::vector<size_t> &partition,
                        std::vector<PCCPatch> &patches,
                        std::vector<size_t> &patchPartition,
@@ -112,7 +114,7 @@ class PCCPatchSegmenter3 {
   size_t nbThread_;
   std::vector<PCCPatch> boxMinDepths_;  // box depth list
   std::vector<PCCPatch> boxMaxDepths_;  // box depth list
-  size_t selectFrameProjectionMode(const PCCPointSet3 &points, const size_t surfaceThickness, const size_t paramProjectionMode);
+  size_t selectFrameProjectionMode(const PCCPointSet3 &points, const size_t surfaceThickness, const size_t minLevel, const size_t paramProjectionMode);
   void   selectPatchProjectionMode(const PCCPointSet3 &points, size_t frameProjectionMode, std::vector<size_t> &connectedComponent, PCCPatch &patch);
 };
 

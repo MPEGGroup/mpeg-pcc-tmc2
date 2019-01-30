@@ -102,7 +102,9 @@ void PCCPatchSegmenter3::compute( const PCCPointSet3 &geometry,
                   params.minPointCountPerCCPatchSegmentation, params.occupancyResolution,
                   params.maxAllowedDist2MissedPointsDetection,
                   params.maxAllowedDist2MissedPointsSelection, params.surfaceThickness,
-                  params.maxAllowedDepth, partition, patches, patchPartition,
+                  params.maxAllowedDepth,
+                  params.minLevel,
+                  partition, patches, patchPartition,
                   resampledPatchPartition, missedPoints, resampled,
                   params.projectionMode,
                   params.useEnhancedDeltaDepthCode,
@@ -162,6 +164,7 @@ void PCCPatchSegmenter3::computeAdjacencyInfo( const PCCPointSet3 &pointCloud,
 }
 size_t PCCPatchSegmenter3::selectFrameProjectionMode( const PCCPointSet3 &points,
                                                       const size_t surfaceThickness,
+                                                      const size_t minLevel,
                                                       const size_t paramProjectionMode ) {
   const int16_t infiniteDepth = (std::numeric_limits<int16_t>::max)();
   const size_t boxSize = size_t(1024);
@@ -226,7 +229,7 @@ size_t PCCPatchSegmenter3::selectFrameProjectionMode( const PCCPointSet3 &points
       const size_t p = v * plan.getSizeU() + u;
       if (plan.getDepth(0)[p] > d) {
         plan.getDepth(0)[p] = d;
-        plan.getD1() = (std::min)(plan.getD1(), size_t(d));
+        plan.getD1() = (std::min)(plan.getD1(), size_t(minLevel*(d/minLevel)));
       }
     }
   }
@@ -243,7 +246,7 @@ size_t PCCPatchSegmenter3::selectFrameProjectionMode( const PCCPointSet3 &points
       const size_t p = v * plan.getSizeU() + u;
       if (plan.getDepth(0)[p] < d) {
         plan.getDepth(0)[p] = d;
-        plan.getD1() = (std::max)(plan.getD1(), size_t(d));
+        plan.getD1() = (std::max)(plan.getD1(), size_t(minLevel*(d/minLevel)));
       }
     }
   }
@@ -375,6 +378,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3 &points,
                                          const double maxAllowedDist2MissedPointsDetection,
                                          const double maxAllowedDist2MissedPointsSelection,
                                          const size_t surfaceThickness, const size_t maxAllowedDepth,
+                                         const size_t minLevel,
                                          const std::vector<size_t> &partition,
                                          std::vector<PCCPatch> &patches,
                                          std::vector<size_t> &patchPartition,
@@ -429,7 +433,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3 &points,
     } else if (paramProjectionMode == 1) {
       frameProjectionMode = 1;//max for all patches
     } else {
-      frameProjectionMode = selectFrameProjectionMode(points, surfaceThickness, paramProjectionMode);
+      frameProjectionMode = selectFrameProjectionMode(points, surfaceThickness, minLevel, paramProjectionMode);
     }
   }
 
@@ -575,6 +579,9 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3 &points,
             patch.getSizeU0() = (std::max)(patch.getSizeU0(), u / patch.getOccupancyResolution());
             patch.getSizeV0() = (std::max)(patch.getSizeV0(), v / patch.getOccupancyResolution());
             patch.getD1() = (std::min)(patch.getD1(), size_t(d));
+            size_t value=patch.getD1(); //patch.getD1();
+            value = (value/minLevel);
+            patch.getD1()=value*minLevel;
           }
         } else { //max
           if (!sixDirection) {
@@ -587,6 +594,9 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3 &points,
               patch.getSizeU0() = (std::max)(patch.getSizeU0(), u / patch.getOccupancyResolution());
               patch.getSizeV0() = (std::max)(patch.getSizeV0(), v / patch.getOccupancyResolution());
               patch.getD1() = (std::min)(patch.getD1(), size_t(d));
+              size_t value=patch.getD1(); //patch.getD1();
+              value = (value/minLevel);
+              patch.getD1()=value*minLevel;
             }
           } else {
             if (patch.getDepth(0)[p] == infiniteDepth) {
@@ -595,6 +605,10 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3 &points,
               patch.getSizeU0() = (std::max)(patch.getSizeU0(), u / patch.getOccupancyResolution());
               patch.getSizeV0() = (std::max)(patch.getSizeV0(), v / patch.getOccupancyResolution());
               patch.getD1() = (std::max)(patch.getD1(), size_t(d));
+              size_t value = size_t( patch.getD1() /minLevel );
+              if(value*minLevel<patch.getD1()) patch.getD1()=(1+value)*minLevel;
+              else patch.getD1()=value*minLevel;
+              //std::cout<<"~~~~~~"<<value<<" -> "<<patch.getD1()<<std::endl;
             } else {
               if (patch.getDepth(0)[p] < d) {
                 patch.getDepth(0)[p] = d;
@@ -602,6 +616,11 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3 &points,
                 patch.getSizeU0() = (std::max)(patch.getSizeU0(), u / patch.getOccupancyResolution());
                 patch.getSizeV0() = (std::max)(patch.getSizeV0(), v / patch.getOccupancyResolution());
                 patch.getD1() = (std::max)(patch.getD1(), size_t(d));
+                size_t value = size_t( patch.getD1() /minLevel );
+                if(value*minLevel<patch.getD1()) patch.getD1()=(1+value)*minLevel;
+                else patch.getD1()=value*minLevel;
+                //std::cout<<"*******"<<value<<" -> "<<patch.getD1()<<std::endl;
+                
               }
             }
           }
@@ -939,7 +958,13 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3 &points,
         }
       } // fi ( patch.getProjectionMode() == 0 )
       if (!sixDirection && patch.getProjectionMode() == 1) {
-        patch.getD1() = (size_t)(std::max)(int(0), int(patch.getD1() - int(surfaceThickness)));
+        //patch.getD1() = (size_t)(std::max)(int(0), int(patch.getD1() - int(surfaceThickness)));
+        //jkei[??] is it as intended?
+        size_t quatnizedSurfaceThickness =  size_t(double(surfaceThickness)/double(minLevel)+0.5)*minLevel;
+        if(patch.getD1()<quatnizedSurfaceThickness)
+          patch.getD1() = 0;
+        else
+          patch.getD1() = patch.getD1()-quatnizedSurfaceThickness;
       }
 
       patch.getSizeD() = 0;
