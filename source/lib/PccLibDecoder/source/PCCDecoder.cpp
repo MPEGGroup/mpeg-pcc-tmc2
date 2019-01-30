@@ -943,71 +943,31 @@ void PCCDecoder::decompressOccupancyMap( PCCContext &context, PCCFrameContext& f
   o3dgc::Adaptive_Data_Model candidateIndexModel(uint32_t(maxCandidateCount + 2));
   const uint32_t bitCountPatchIndex = PCCGetNumberOfBitsInFixedLengthRepresentation(patchCount + 1);
   if( useOccupancyMapVideo_ ) {
-    auto& occupancyMap = frame.getOccupancyMap();
+    for (size_t iterPatch=0; iterPatch<patches.size(); ++iterPatch) {
+      const auto &patch = patches[iterPatch];
+      for (size_t v0 = 0; v0 < patch.getSizeV0(); ++v0) {
+        for (size_t u0 = 0; u0 < patch.getSizeU0(); ++u0) {
+          //jkei
+          int pos=patch.patchBlock2CanvasBlock((u0), (v0), blockToPatchWidth, blockToPatchHeight);
+          assert(pos>=0);
+          blockToPatch[pos] = iterPatch+1;
+        }
+      }
+    }
     for (size_t p = 0; p < blockCount; ++p) {
-      blockToPatch[p] = 0;
-      const auto &candidates = candidatePatches[p];
-      if (candidates.size() > 0) {
-        bool empty = true;
-        size_t positionU = (p%blockToPatchWidth) * occupancyResolution_;
-        size_t positionV = (p/blockToPatchWidth) * occupancyResolution_;
-        for (size_t v=positionV; v<positionV+occupancyResolution_ && empty; ++v) {
-          for (size_t u=positionU; u<positionU+occupancyResolution_ && empty; ++u) {
-            if (occupancyMap[u+v*width_]) {
-              empty = false;
-              if (candidates.size() == 1) {
-                blockToPatch[p] = candidates[0];
-              } else {
-                size_t candidateIndex;
-                if (bBinArithCoding) {
-                  size_t bit0 = arithmeticDecoder.decode(candidateIndexModelBit[0]);
-                  if (bit0 == 0) {
-                    candidateIndex = 0; // Codeword: 0
-                  } else {
-                    size_t bit1 = arithmeticDecoder.decode(candidateIndexModelBit[1]);
-                    if (bit1 == 0) {
-                      candidateIndex = 1; // Codeword 10
-                    } else {
-                      size_t bit2 = arithmeticDecoder.decode(candidateIndexModelBit[2]);
-                      if (bit2 == 0) {
-                        candidateIndex = 2; // Codeword 110
-                      } else {
-                        size_t bit3 = arithmeticDecoder.decode(candidateIndexModelBit[3]);
-                        if (bit3 == 0) {
-                          candidateIndex = 3; // Codeword 1110
-                        } else {
-                          candidateIndex = 4; // Codeword 11110
-                        }
-                      }
-                    }
-                  }
-                } else {
-                  candidateIndex = arithmeticDecoder.decode(candidateIndexModel);
-                }
-
-                if (candidateIndex == maxCandidateCount) {
-                  blockToPatch[p] = DecodeUInt32(bitCountPatchIndex, arithmeticDecoder, bModel0);
-                } else {
-                  blockToPatch[p] = candidates[candidateIndex];
-                }
-              }
-              interpolateMap[ p ] = 0;
-              fillingMap    [ p ] = 0;
-              minD1Map      [ p ] = 0;
-              neighborMap   [ p ] = 1;
-              if( blockToPatch[p] > 0 ) {
-                if( absoluteD1_ && oneLayerMode_ ) {
-                  interpolateMap[ p ] = arithmeticDecoder.decode( interpolateModel);
-                  if( interpolateMap[ p ] > 0 ){
-                    neighborMap[ p ] = arithmeticDecoder.decode( neighborModel ) + 1;
-                  }
-                  minD1Map[ p ] = arithmeticDecoder.decode( minD1Model);
-                  if( minD1Map[ p ] > 1 || interpolateMap[ p ] > 0 ) {
-                    fillingMap[ p ] = arithmeticDecoder.decode( fillingModel);
-                  }
-                }
-              }
-            }
+      interpolateMap[ p ] = 0;
+      fillingMap    [ p ] = 0;
+      minD1Map      [ p ] = 0;
+      neighborMap   [ p ] = 1;
+      if( blockToPatch[p] > 0 ) {
+        if( absoluteD1_ && oneLayerMode_ ) {
+          interpolateMap[ p ] = arithmeticDecoder.decode( interpolateModel);
+          if( interpolateMap[ p ] > 0 ){
+            neighborMap[ p ] = arithmeticDecoder.decode( neighborModel ) + 1;
+          }
+          minD1Map[ p ] = arithmeticDecoder.decode( minD1Model);
+          if( minD1Map[ p ] > 1 || interpolateMap[ p ] > 0 ) {
+            fillingMap[ p ] = arithmeticDecoder.decode( fillingModel);
           }
         }
       }

@@ -443,6 +443,32 @@ void PCCCodec::generatePointCloud(PCCPointSet3& reconstruct, PCCFrameContext &fr
 
   std::vector<size_t> vecEmptyBlocks;
   if (params.enhancedDeltaDepthCode_) {
+
+    //jkei[!!]there should be more intelligent way!
+    const size_t b2pWidth  = frame.getWidth() / params.occupancyResolution_;
+    const size_t b2pHeight = frame.getHeight() / params.occupancyResolution_;
+    
+    for (size_t patchIndex = 0; patchIndex < patches.size(); ++patchIndex) {
+      auto &patch = patches[patchIndex];
+      size_t nonZeroPixel=0;
+      for (size_t v0 = 0; v0 < patch.getSizeV0(); ++v0) {
+        for (size_t u0 = 0; u0 < patch.getSizeU0(); ++u0) {
+          const size_t blockIndex  = patch.patchBlock2CanvasBlock( u0, v0 ,b2pWidth, b2pHeight );
+          nonZeroPixel=0;
+          for (size_t v1 = 0; v1 < patch.getOccupancyResolution(); ++v1) {
+            const size_t v = v0 * patch.getOccupancyResolution() + v1;
+            for (size_t u1 = 0; u1 < patch.getOccupancyResolution(); ++u1) {
+              const size_t u = u0 * patch.getOccupancyResolution() + u1;
+              size_t x,y;
+              nonZeroPixel += (occupancyMap[patch.patch2Canvas(u,v,video.getWidth(),video.getHeight(),x,y)] != 0);
+            }//u1
+          }//v1
+          if(nonZeroPixel==0)
+            blockToPatch[blockIndex] =0;
+        }//u0
+      }//v0
+    }//patch
+    
     for (size_t i = 0; i < blockToPatch.size(); i++){
       if (blockToPatch[i] == 0){
         vecEmptyBlocks.push_back(i);

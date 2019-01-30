@@ -2948,8 +2948,6 @@ void PCCEncoder::compressOccupancyMap(PCCFrameContext& frame, PCCBitstream &bits
   bool bBinArithCoding = params_.binArithCoding_ && (!params_.losslessGeo_) &&
       (params_.occupancyResolution_ == 16) && (params_.occupancyPrecision_ == 4);
 
-  bool useOneLayermode = params_.oneLayerMode_ || params_.singleLayerPixelInterleaving_;
-
   uint8_t enable_flexible_patch_flag = params_.packingStrategy_;
   bitstream.write<uint8_t>(enable_flexible_patch_flag);
 
@@ -3073,71 +3071,9 @@ void PCCEncoder::compressOccupancyMap(PCCFrameContext& frame, PCCBitstream &bits
       }
     }
   }
-  std::vector<std::vector<size_t>> candidatePatches;
-  candidatePatches.resize(blockCount);
-  for (int64_t patchIndex = patchCount - 1; patchIndex >= 0; --patchIndex) {  // add actual patches based on their bounding box
-    auto &patch = patches[patchIndex];
-    for (size_t v0 = 0; v0 < patch.getSizeV0(); ++v0) {
-      for (size_t u0 = 0; u0 < patch.getSizeU0(); ++u0) {
-        candidatePatches[patch.patchBlock2CanvasBlock(u0, v0, blockToPatchWidth, blockToPatchHeight)].push_back(patchIndex + 1);
-      }
-    }
-  }
-  if(!params_.useOccupancyMapVideo_) {
-    for (auto &candidatePatch : candidatePatches) {  // add empty as potential candidate
-      candidatePatch.push_back(0);
-    }
-  }
-  o3dgc::Adaptive_Bit_Model candidateIndexModelBit[4];
-  o3dgc::Adaptive_Data_Model candidateIndexModel(uint32_t(params_.maxCandidateCount_ + 2));
-  const uint32_t bitCountPatchIndex =
-      PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(patchCount + (params_.useOccupancyMapVideo_?0:1)));
+
   for (size_t p = 0; p < blockCount; ++p) {
     const size_t patchIndex = blockToPatch[p];
-    const auto &candidates = candidatePatches[p];
-    if (candidates.size() == 1 || (params_.useOccupancyMapVideo_ && patchIndex==0))  {
-      // empty
-    } else {
-      const uint32_t candidateCount = uint32_t( (std::min)(candidates.size(), params_.maxCandidateCount_));
-      bool found = false;
-      for (uint32_t i = 0; i < candidateCount; ++i) {
-        if (candidates[i] == patchIndex) {
-          found = true;
-          if (bBinArithCoding) {
-            if (i == 0) {
-              arithmeticEncoder.encode(0, candidateIndexModelBit[0]);
-            } else if (i == 1) {
-              arithmeticEncoder.encode(1, candidateIndexModelBit[0]);
-              arithmeticEncoder.encode(0, candidateIndexModelBit[1]);
-            } else if (i == 2) {
-              arithmeticEncoder.encode(1, candidateIndexModelBit[0]);
-              arithmeticEncoder.encode(1, candidateIndexModelBit[1]);
-              arithmeticEncoder.encode(0, candidateIndexModelBit[2]);
-            } else if (i == 3) {
-              arithmeticEncoder.encode(1, candidateIndexModelBit[0]);
-              arithmeticEncoder.encode(1, candidateIndexModelBit[1]);
-              arithmeticEncoder.encode(1, candidateIndexModelBit[2]);
-              arithmeticEncoder.encode(0, candidateIndexModelBit[3]);
-            }
-          } else {
-            arithmeticEncoder.encode(i, candidateIndexModel);
-          }
-          break;
-        }
-      }
-      if (!found) {
-        if (bBinArithCoding) {
-          arithmeticEncoder.encode(1, candidateIndexModelBit[0]);
-          arithmeticEncoder.encode(1, candidateIndexModelBit[1]);
-          arithmeticEncoder.encode(1, candidateIndexModelBit[2]);
-          arithmeticEncoder.encode(1, candidateIndexModelBit[3]);
-        } else {
-          arithmeticEncoder.encode(uint32_t(params_.maxCandidateCount_), candidateIndexModel);
-        }
-        EncodeUInt32(uint32_t(patchIndex), bitCountPatchIndex, arithmeticEncoder, bModel0);
-      }
-    }
-
     if( patchIndex > 0 ) {
       if( params_.absoluteD1_ && params_.oneLayerMode_ ) {
         arithmeticEncoder.encode(uint32_t(interpolateMap[ p ]), interpolateModel);
@@ -3151,156 +3087,7 @@ void PCCEncoder::compressOccupancyMap(PCCFrameContext& frame, PCCBitstream &bits
       }
     }
   }
-
-  if(!params_.useOccupancyMapVideo_) {
-    const size_t blockSize0 = params_.occupancyResolution_ / params_.occupancyPrecision_;
-    const size_t pointCount0 = blockSize0 * blockSize0;
-    const size_t traversalOrderCount = 4;
-    std::vector<std::vector<std::pair<size_t, size_t>>> traversalOrders;
-    traversalOrders.resize(traversalOrderCount);
-    for (size_t k = 0; k < traversalOrderCount; ++k) {
-      auto &traversalOrder = traversalOrders[k];
-      traversalOrder.reserve(pointCount0);
-      if (k == 0) {
-        for (size_t v1 = 0; v1 < blockSize0; ++v1) {
-          for (size_t u1 = 0; u1 < blockSize0; ++u1) {
-            traversalOrder.push_back(std::make_pair(u1, v1));
-          }
-        }
-      } else if (k == 1) {
-        for (size_t v1 = 0; v1 < blockSize0; ++v1) {
-          for (size_t u1 = 0; u1 < blockSize0; ++u1) {
-            traversalOrder.push_back(std::make_pair(v1, u1));
-          }
-        }
-      } else if (k == 2) {
-        for (int64_t k = 1; k < int64_t(2 * blockSize0); ++k) {
-          for (size_t u1 = (std::max)(int64_t(0), k - int64_t(blockSize0));
-              int64_t(u1) < (std::min)(k, int64_t(blockSize0)); ++u1) {
-            const size_t v1 = k - (u1 + 1);
-            traversalOrder.push_back(std::make_pair(u1, v1));
-          }
-        }
-      } else {
-        for (int64_t k = 1; k < int64_t(2 * blockSize0); ++k) {
-          for (size_t u1 = (std::max)(int64_t(0), k - int64_t(blockSize0));
-              int64_t(u1) < (std::min)(k, int64_t(blockSize0)); ++u1) {
-            const size_t v1 = k - (u1 + 1);
-            traversalOrder.push_back(std::make_pair(blockSize0 - (1 + u1), v1));
-          }
-        }
-      }
-    }
-    o3dgc::Adaptive_Bit_Model fullBlockModel, occupancyModel;
-    o3dgc::Adaptive_Bit_Model traversalOrderIndexModel_Bit0;
-    o3dgc::Adaptive_Bit_Model traversalOrderIndexModel_Bit1;
-    o3dgc::Adaptive_Bit_Model runCountModel2;
-    o3dgc::Adaptive_Bit_Model runLengthModel2[4];
-    static size_t runLengthTable[16] = { 0,  1,  2,  3,  13,  7,  10,  4,  14,  9,  11,  5,  12,  8,  6, 15 };
-
-    o3dgc::Adaptive_Data_Model traversalOrderIndexModel(uint32_t(traversalOrderCount + 1));
-    o3dgc::Adaptive_Data_Model runCountModel((uint32_t)(pointCount0));
-    o3dgc::Adaptive_Data_Model runLengthModel((uint32_t)(pointCount0));
-
-    std::vector<bool> block0;
-    std::vector<size_t> bestRuns;
-    std::vector<size_t> runs;
-    block0.resize(pointCount0);
-    auto& width = frame.getWidth();
-    auto& occupancyMap = frame.getOccupancyMap();
-    for (size_t v0 = 0; v0 < blockToPatchHeight; ++v0) {
-      for (size_t u0 = 0; u0 < blockToPatchWidth; ++u0) {
-        const size_t patchIndex = blockToPatch[v0 * blockToPatchWidth + u0];
-        if (patchIndex) {
-          size_t fullCount = 0;
-          for (size_t v1 = 0; v1 < blockSize0; ++v1) {
-            const size_t v2 = v0 * params_.occupancyResolution_ + v1 * params_.occupancyPrecision_;
-            for (size_t u1 = 0; u1 < blockSize0; ++u1) {
-              const size_t u2 = u0 * params_.occupancyResolution_ + u1 * params_.occupancyPrecision_;
-              bool isFull = false;
-              for (size_t v3 = 0; v3 < params_.occupancyPrecision_ && !isFull; ++v3) {
-                for (size_t u3 = 0; u3 < params_.occupancyPrecision_ && !isFull; ++u3) {
-                  isFull |= occupancyMap[(v2 + v3) * width + u2 + u3] == 1;
-                }
-              }
-              block0[v1 * blockSize0 + u1] = isFull;
-              fullCount += isFull;
-              for (size_t v3 = 0; v3 < params_.occupancyPrecision_; ++v3) {
-                for (size_t u3 = 0; u3 < params_.occupancyPrecision_; ++u3) {
-                  occupancyMap[(v2 + v3) * width + u2 + u3] = isFull;
-                }
-              }
-            }
-          }
-
-          if (fullCount == pointCount0) {
-            arithmeticEncoder.encode(true, fullBlockModel);
-          } else {
-            arithmeticEncoder.encode(false, fullBlockModel);
-            bestRuns.clear();
-            size_t bestTraversalOrderIndex = 0;
-            for (size_t k = 0; k < traversalOrderCount; ++k) {
-              auto &traversalOrder = traversalOrders[k];
-              const auto &location0 = traversalOrder[0];
-              bool occupancy0 = block0[location0.second * blockSize0 + location0.first];
-              size_t runLength = 0;
-              runs.clear();
-              for (size_t p = 1; p < traversalOrder.size(); ++p) {
-                const auto &location = traversalOrder[p];
-                const bool occupancy1 = block0[location.second * blockSize0 + location.first];
-                if (occupancy1 != occupancy0) {
-                  runs.push_back(runLength);
-                  occupancy0 = occupancy1;
-                  runLength = 0;
-                } else {
-                  ++runLength;
-                }
-              }
-              runs.push_back(runLength);
-              if (k == 0 || runs.size() < bestRuns.size()) {
-                bestRuns = runs;
-                bestTraversalOrderIndex = k;
-              }
-            }
-
-            assert(bestRuns.size() >= 2);
-            const uint32_t runCountMinusOne = uint32_t(bestRuns.size() - 1);
-            const uint32_t runCountMinusTwo = uint32_t(bestRuns.size() - 2);
-
-            if (bBinArithCoding) {
-              size_t bit1 = bestTraversalOrderIndex >> 1;
-              size_t bit0 = bestTraversalOrderIndex & 0x1;
-              arithmeticEncoder.encode(uint32_t(bit1), traversalOrderIndexModel_Bit1);
-              arithmeticEncoder.encode(uint32_t(bit0), traversalOrderIndexModel_Bit0);
-              arithmeticEncoder.ExpGolombEncode(uint32_t(runCountMinusTwo), 0, bModel0, runCountModel2);
-            } else {
-              arithmeticEncoder.encode(uint32_t(bestTraversalOrderIndex), traversalOrderIndexModel);
-              arithmeticEncoder.encode(runCountMinusTwo, runCountModel);
-            }
-
-            const auto &location0 = traversalOrders[bestTraversalOrderIndex][0];
-            bool occupancy0 = block0[location0.second * blockSize0 + location0.first];
-            arithmeticEncoder.encode(occupancy0, occupancyModel);
-            for (size_t r = 0; r < runCountMinusOne; ++r) {
-              if (bBinArithCoding) {
-                size_t runLengthIdx = runLengthTable[bestRuns[r]];
-                size_t bit3 = (runLengthIdx >> 3) & 0x1;
-                size_t bit2 = (runLengthIdx >> 2) & 0x1;
-                size_t bit1 = (runLengthIdx >> 1) & 0x1;
-                size_t bit0 = runLengthIdx & 0x1;
-                arithmeticEncoder.encode(uint32_t(bit3), runLengthModel2[3]);
-                arithmeticEncoder.encode(uint32_t(bit2), runLengthModel2[2]);
-                arithmeticEncoder.encode(uint32_t(bit1), runLengthModel2[1]);
-                arithmeticEncoder.encode(uint32_t(bit0), runLengthModel2[0]);
-              } else {
-                arithmeticEncoder.encode(uint32_t(bestRuns[r]), runLengthModel);
-              }
-            }
-          }
-        }
-      }
-    } //v0 < blockHeight
-  }
+  
   uint32_t compressedBitstreamSize = arithmeticEncoder.stop_encoder();
   bitstream.write( arithmeticEncoder.buffer(), compressedBitstreamSize );
 }

@@ -228,7 +228,6 @@ class PCCPatch {
   }
 
   bool checkFitPatchCanvas(std::vector<bool> canvas, size_t canvasStrideBlk, size_t canvasHeightBlk, int safeguard = 0){
-    auto& occupancy = getOccupancy();
     for (size_t v0 = 0; v0 < getSizeV0(); ++v0) {
       for (size_t u0 = 0; u0 < getSizeU0(); ++u0) {
         for (int deltaY = -safeguard; deltaY < safeguard + 1; deltaY++) {
@@ -236,7 +235,9 @@ class PCCPatch {
             int pos = patchBlock2CanvasBlock(u0 + deltaX, v0 + deltaY, canvasStrideBlk, canvasHeightBlk);
             if (pos < 0) {
               return false;
-            } else if (occupancy[v0 * getSizeU0() + u0] && canvas[pos]) {
+            }
+            else if (canvas[pos])
+            {
               return false;
             }
           }
