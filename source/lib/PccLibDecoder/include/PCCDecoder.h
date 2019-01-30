@@ -69,6 +69,7 @@ class PCCDecoder : public PCCCodec {
 
   int  readMetadata(PCCMetadata &metadata, PCCBitstream &bitstream);
   int  decompressMetadata(PCCMetadata &metadata, o3dgc::Arithmetic_Codec &arithmeticDecoder);
+  int  decompressMetadata(PCCMetadata &metadata, o3dgc::Arithmetic_Codec &arithmeticDecoder, o3dgc::Static_Bit_Model &bModelMaxDepth0, o3dgc::Adaptive_Bit_Model &bModelMaxDepthDD);
   int  decompressHeader( PCCContext &context, PCCBitstream &bitstream );
 
   void decompressOccupancyMap( PCCContext &context,  PCCBitstream& bitstream );

@@ -454,17 +454,20 @@ void PCCCodec::generatePointCloud(PCCPointSet3& reconstruct, PCCFrameContext &fr
       for (size_t v0 = 0; v0 < patch.getSizeV0(); ++v0) {
         for (size_t u0 = 0; u0 < patch.getSizeU0(); ++u0) {
           const size_t blockIndex  = patch.patchBlock2CanvasBlock( u0, v0 ,b2pWidth, b2pHeight );
-          nonZeroPixel=0;
-          for (size_t v1 = 0; v1 < patch.getOccupancyResolution(); ++v1) {
-            const size_t v = v0 * patch.getOccupancyResolution() + v1;
-            for (size_t u1 = 0; u1 < patch.getOccupancyResolution(); ++u1) {
-              const size_t u = u0 * patch.getOccupancyResolution() + u1;
-              size_t x,y;
-              nonZeroPixel += (occupancyMap[patch.patch2Canvas(u,v,video.getWidth(),video.getHeight(),x,y)] != 0);
-            }//u1
-          }//v1
-          if(nonZeroPixel==0)
-            blockToPatch[blockIndex] =0;
+          if(blockToPatch[blockIndex] != 0)
+          {
+            nonZeroPixel=0;
+            for (size_t v1 = 0; v1 < patch.getOccupancyResolution(); ++v1) {
+              const size_t v = v0 * patch.getOccupancyResolution() + v1;
+              for (size_t u1 = 0; u1 < patch.getOccupancyResolution(); ++u1) {
+                const size_t u = u0 * patch.getOccupancyResolution() + u1;
+                size_t x,y;
+                nonZeroPixel += (occupancyMap[patch.patch2Canvas(u,v,video.getWidth(),video.getHeight(),x,y)] != 0);
+              }//u1
+            }//v1
+            if(nonZeroPixel==0)
+              blockToPatch[blockIndex] =0;
+          }
         }//u0
       }//v0
     }//patch
@@ -1172,7 +1175,7 @@ bool PCCCodec::colorPointCloud(PCCPointSet3& reconstruct, PCCFrameContext& frame
                                const GeneratePointCloudParameters& params,
                                const size_t frameCount) {
 
-  printf("Start colorPointCloud \n"); fflush(stdout);
+  printf("Start colorPointCloud : %zu\n", frame.getIndex()); fflush(stdout);
   if (noAttributes) {
     for (auto& color : reconstruct.getColors()) {
       for (size_t c = 0; c < 3; ++c) {

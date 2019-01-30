@@ -102,6 +102,9 @@ bool PCCBitstream::readHeader(PCCMetadataEnabledFlags &gofLevelMetadataEnabledFl
     gofLevelMetadataEnabledFlags.getPointSizeEnabled() = tmp;
     read<uint8_t>(tmp);
     gofLevelMetadataEnabledFlags.getPointShapeEnabled() = tmp;
+    read<uint8_t>(tmp);
+    gofLevelMetadataEnabledFlags.setMaxDepthEnabled(tmp);
+
   }
   return true;
 }
@@ -118,6 +121,7 @@ void PCCBitstream::writeHeader(const PCCMetadataEnabledFlags &gofLevelMetadataEn
     write<uint8_t>(gofLevelMetadataEnabledFlags.getRotationEnabled());
     write<uint8_t>(gofLevelMetadataEnabledFlags.getPointSizeEnabled());
     write<uint8_t>(gofLevelMetadataEnabledFlags.getPointShapeEnabled());
+    write<uint8_t>(gofLevelMetadataEnabledFlags.getMaxDepthEnabled());
   }
 }
 

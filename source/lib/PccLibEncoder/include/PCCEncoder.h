@@ -120,6 +120,7 @@ private:
 
   int  writeMetadata(const PCCMetadata &metadata, PCCBitstream &bitstream );
   int  compressMetadata(const PCCMetadata &metadata, o3dgc::Arithmetic_Codec &arithmeticEncoder );
+  int  compressMetadata(const PCCMetadata &metadata, o3dgc::Arithmetic_Codec &arithmeticEncoder, o3dgc::Static_Bit_Model &bModelMaxDepth0, o3dgc::Adaptive_Bit_Model &bModelMaxDepthDD);
 
   int  compressHeader( PCCContext &context, PCCBitstream &bitstream );
 

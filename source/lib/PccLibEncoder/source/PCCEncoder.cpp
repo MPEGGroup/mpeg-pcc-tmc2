@@ -96,16 +96,16 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
 
 int PCCEncoder::compress( PCCContext &context, PCCBitstream &bitstream ){
   auto sizeFrameHeader = bitstream.size();
-  printf("PCCEncoder: compress (start: bitstream = %lu / %lu ) \n",
+  printf("PCCEncoder: compress (start: bitstream = %llu / %llu ) \n",
          bitstream.size(), bitstream.capacity()); fflush(stdout);
   compressHeader( context, bitstream );
-  printf("PCCEncoder: compress (header: bitstream = %lu / %lu ) \n",
+  printf("PCCEncoder: compress (header: bitstream = %llu / %llu ) \n",
          bitstream.size(), bitstream.capacity()); fflush(stdout);
   sizeFrameHeader = bitstream.size() - sizeFrameHeader;
   std::cout << "frame header info  ->" << sizeFrameHeader << " B " << std::endl;
   context.traceVideoBitstream();
 
-  printf("PCCEncoder: compress (video bitstream start: bitstream = %lu / %lu ) \n",
+  printf("PCCEncoder: compress (video bitstream start: bitstream =%llulu / %llu ) \n",
          bitstream.size(), bitstream.capacity()); fflush(stdout);
   if( params_.useOccupancyMapVideo_ ) {
     bitstream.write( context.getVideoBitstream( PCCVideoType::OccupancyMap ) );
@@ -123,16 +123,15 @@ int PCCEncoder::compress( PCCContext &context, PCCBitstream &bitstream ){
     bitstream.write( context.getVideoBitstream( PCCVideoType::Texture ) );
     if( params_.useAdditionalPointsPatch_ && context.getUseMissedPointsSeparateVideo()) {
       bitstream.write( context.getVideoBitstream( PCCVideoType::TextureMP ) );
-      auto sizeMissedPointsTexture = bitstream.size();
      }
   }
-  printf("PCCEncoder: compress (video bitstream done: bitstream = %lu / %lu ) \n",
+  printf("PCCEncoder: compress (video bitstream done: bitstream = %llu / %llu ) \n",
          bitstream.size(), bitstream.capacity()); fflush(stdout);
 
   size_t sizeOccupancyMap = bitstream.size();
   compressOccupancyMap(context, bitstream);
 
-  printf("PCCEncoder: compress (metadata done: bitstream = %lu / %lu ) \n",
+  printf("PCCEncoder: compress (metadata done: bitstream =%llulu / %llu ) \n",
          bitstream.size(),bitstream.capacity()); fflush(stdout);
   sizeOccupancyMap = ( bitstream.size() - sizeOccupancyMap )
       + context.getVideoBitstream( PCCVideoType::OccupancyMap ).naluSize();
@@ -153,7 +152,7 @@ int PCCEncoder::compress( PCCContext &context, PCCBitstream &bitstream ){
        writeMissedPointsTextureNumber( context, bitstream );
     }
   }
-  printf("PCCEncoder: compress (done: bitstream = %lu / %lu ) \n",
+  printf("PCCEncoder: compress (done: bitstream = %llu / %llu ) \n",
          bitstream.size(),bitstream.capacity()); fflush(stdout);
   return 0; 
 }
@@ -164,7 +163,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
   if( sources.size() == 0 ) {
     return 0;
   }
-  auto sizeGeoVideo = 0;
+  //auto sizeGeoVideo = 0;
   reconstructs.resize( sources.size() );
   context.resize( sources.size() );
   auto& frames = context.getFrames();
@@ -173,7 +172,9 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
     for (size_t i = 0; i < frames.size(); i++) {
       // Place to get/set frame-level metadata.
       PCCMetadata frameLevelMetadata;
+      frameLevelMetadata.setMetadataType(METADATA_FRAME);
       frames[i].getFrameLevelMetadata() = frameLevelMetadata;
+      frames[i].getFrameLevelMetadata().setIndex(i);
       frames[i].getFrameLevelMetadata().getMetadataEnabledFlags() = frameLevelMetadataEnabledFlags;
       // Place to get/set patch metadata enabled flags (in frame level).
       PCCMetadataEnabledFlags patchLevelMetadataEnabledFlags;
@@ -455,7 +456,9 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
       }
     }
   }
+
   colorPointCloud(reconstructs, context, params_.noAttributes_ != 0, params_.colorTransform_, generatePointCloudParameters);
+  
   return 0;
 }
 
@@ -1046,10 +1049,16 @@ bool PCCEncoder::generateGeometryVideo( const PCCPointSet3& source, PCCFrameCont
   segmenter.setNbThread( params_.nbThread_ );
   segmenter.compute( source, segmenterParams, patches,frame.getSrcPointCloudByPatch(), distanceSrcRec );
   auto &patchLevelMetadataEnabledFlags = frame.getFrameLevelMetadata().getLowerLevelMetadataEnabledFlags();
+
   if (patchLevelMetadataEnabledFlags.getMetadataEnabled()) {
     for (size_t i = 0; i < patches.size(); i++) {
       // Place to get/set patch-level metadata.
       PCCMetadata patchLevelMetadata;
+      //patchLevelMetadata.getMetadataPresent()=true;
+      patchLevelMetadata.setMetadataPresent(true);
+      patchLevelMetadataEnabledFlags.setMetadataEnabled(true);
+      patchLevelMetadata.setMetadataType(METADATA_PATCH);
+      patchLevelMetadata.getLowerLevelMetadataEnabledFlags().setMetadataEnabled(false);
       patches[i].getPatchLevelMetadata() = patchLevelMetadata;
       patches[i].getPatchLevelMetadata().getMetadataEnabledFlags() = patchLevelMetadataEnabledFlags;
     }
@@ -1207,9 +1216,9 @@ void PCCEncoder::generateIntraImage( PCCFrameContext& frame, const size_t depthI
       }
     }
   }
-  std::cout << "maxDepth " << maxDepth << std::endl;
+
   if (maxDepth > 255) {
-    std::cout << "Error: maxDepth > 255" << maxDepth << std::endl;
+    std::cout << "Error: maxDepth("<<maxDepth<<") > 255" << std::endl;
     exit(-1);
   }
 
@@ -2674,6 +2683,7 @@ int PCCEncoder::writeMetadata( const PCCMetadata &metadata, pcc::PCCBitstream &b
     return 0;
   }
   bitstream.write<uint8_t>(metadata.getMetadataPresent());
+  std::cout<<"read/write METADATA TYPE: "<<metadata.getMetadataType()<<" METADATA present: "<<metadata.getMetadataPresent()<<std::endl;
   if (metadata.getMetadataPresent()) {
     if (metadataEnabledFlags.getScaleEnabled()) {
       bitstream.write<uint8_t>(metadata.getScalePresent());
@@ -2716,6 +2726,7 @@ int PCCEncoder::writeMetadata( const PCCMetadata &metadata, pcc::PCCBitstream &b
     bitstream.write<uint8_t>(lowerLevelMetadataEnabledFlags.getRotationEnabled());
     bitstream.write<uint8_t>(lowerLevelMetadataEnabledFlags.getPointSizeEnabled());
     bitstream.write<uint8_t>(lowerLevelMetadataEnabledFlags.getPointShapeEnabled());
+    bitstream.write<uint8_t>(lowerLevelMetadataEnabledFlags.getMaxDepthEnabled());
   }
   return 1;
 }
@@ -2728,7 +2739,7 @@ int PCCEncoder::compressMetadata(const PCCMetadata &metadata, o3dgc::Arithmetic_
   static o3dgc::Static_Bit_Model   bModel0;
   static o3dgc::Adaptive_Bit_Model bModelMetadataPresent;
   arithmeticEncoder.encode(metadata.getMetadataPresent(), bModelMetadataPresent);
-
+  
   if (metadata.getMetadataPresent()) {
     if (metadataEnabingFlags.getScaleEnabled()) {
       static o3dgc::Adaptive_Bit_Model bModelScalePresent;
@@ -2780,7 +2791,7 @@ int PCCEncoder::compressMetadata(const PCCMetadata &metadata, o3dgc::Arithmetic_
   auto &lowerLevelMetadataEnabledFlags = metadata.getLowerLevelMetadataEnabledFlags();
   static o3dgc::Adaptive_Bit_Model bModelLowerLevelMetadataEnabled;
   arithmeticEncoder.encode(lowerLevelMetadataEnabledFlags.getMetadataEnabled(), bModelLowerLevelMetadataEnabled);
-
+  //std::cout<<"METADATA lowerLevelMetaData: "<<lowerLevelMetadataEnabledFlags.getMetadataEnabled()<<std::endl;
   if (lowerLevelMetadataEnabledFlags.getMetadataEnabled()) {
     static o3dgc::Adaptive_Bit_Model bModelLowerLevelScaleEnabled;
     arithmeticEncoder.encode(lowerLevelMetadataEnabledFlags.getScaleEnabled(), bModelLowerLevelScaleEnabled);
@@ -2796,7 +2807,119 @@ int PCCEncoder::compressMetadata(const PCCMetadata &metadata, o3dgc::Arithmetic_
 
     static o3dgc::Adaptive_Bit_Model bModelLowerLevelPointShapeEnabled;
     arithmeticEncoder.encode(lowerLevelMetadataEnabledFlags.getPointShapeEnabled(), bModelLowerLevelPointShapeEnabled);
+    
+    static o3dgc::Adaptive_Bit_Model bModelLowerLevelMaxDepthEnabled;
+    arithmeticEncoder.encode(lowerLevelMetadataEnabledFlags.getMaxDepthEnabled(), bModelLowerLevelMaxDepthEnabled);
+
   }
+  return 1;
+}
+
+int PCCEncoder::compressMetadata(const PCCMetadata &metadata, o3dgc::Arithmetic_Codec &arithmeticEncoder, o3dgc::Static_Bit_Model &bModelMaxDepth0, o3dgc::Adaptive_Bit_Model &bModelMaxDepthDD
+                                 ) {
+  auto &metadataEnabingFlags = metadata.getMetadataEnabledFlags();
+  if (!metadataEnabingFlags.getMetadataEnabled()) {
+    return 0;
+  }
+  static o3dgc::Static_Bit_Model   bModel0;
+  static o3dgc::Adaptive_Bit_Model bModelMetadataPresent;
+  arithmeticEncoder.encode(metadata.getMetadataPresent(), bModelMetadataPresent);
+  
+  if (metadata.getMetadataPresent()) {
+    
+    if (metadataEnabingFlags.getScaleEnabled()) {
+      static o3dgc::Adaptive_Bit_Model bModelScalePresent;
+      arithmeticEncoder.encode(metadata.getScalePresent(), bModelScalePresent);
+      if (metadata.getScalePresent()) {
+        EncodeUInt32(uint32_t(metadata.getScale()[0]), 32, arithmeticEncoder, bModel0);
+        EncodeUInt32(uint32_t(metadata.getScale()[1]), 32, arithmeticEncoder, bModel0);
+        EncodeUInt32(uint32_t(metadata.getScale()[2]), 32, arithmeticEncoder, bModel0);
+      }
+    }
+    
+    if (metadataEnabingFlags.getOffsetEnabled()) {
+      static o3dgc::Adaptive_Bit_Model bModelOffsetPresent;
+      arithmeticEncoder.encode(metadata.getOffsetPresent(), bModelOffsetPresent);
+      if (metadata.getOffsetPresent()) {
+        EncodeUInt32(o3dgc::IntToUInt(metadata.getOffset()[0]), 32, arithmeticEncoder, bModel0);
+        EncodeUInt32(o3dgc::IntToUInt(metadata.getOffset()[1]), 32, arithmeticEncoder, bModel0);
+        EncodeUInt32(o3dgc::IntToUInt(metadata.getOffset()[2]), 32, arithmeticEncoder, bModel0);
+      }
+    }
+    
+    if (metadataEnabingFlags.getRotationEnabled()) {
+      static o3dgc::Adaptive_Bit_Model bModelRotationPresent;
+      arithmeticEncoder.encode(metadata.getRotationPresent(), bModelRotationPresent);
+      if (metadata.getRotationPresent()) {
+        EncodeUInt32(o3dgc::IntToUInt(metadata.getRotation()[0]), 32, arithmeticEncoder, bModel0);
+        EncodeUInt32(o3dgc::IntToUInt(metadata.getRotation()[1]), 32, arithmeticEncoder, bModel0);
+        EncodeUInt32(o3dgc::IntToUInt(metadata.getRotation()[2]), 32, arithmeticEncoder, bModel0);
+      }
+    }
+    
+    if (metadataEnabingFlags.getPointSizeEnabled()) {
+      static o3dgc::Adaptive_Bit_Model bModelPointSizePresent;
+      arithmeticEncoder.encode(metadata.getPointSizePresent(), bModelPointSizePresent);
+      if (metadata.getPointSizePresent()) {
+        EncodeUInt32(uint32_t(metadata.getPointSize()), 16, arithmeticEncoder, bModel0);
+      }
+    }
+    
+    if (metadataEnabingFlags.getPointShapeEnabled()) {
+      static o3dgc::Adaptive_Bit_Model bModelPointShapePresent;
+      arithmeticEncoder.encode(metadata.getPointShapePresent(), bModelPointShapePresent);
+      if (metadata.getPointShapePresent()) {
+        EncodeUInt32(uint32_t(metadata.getPointShape()), 8, arithmeticEncoder, bModel0);
+      }
+    }
+    
+    if(metadataEnabingFlags.getMaxDepthEnabled())
+    {
+      const uint8_t maxBitCountForMaxDepth= metadata.getbitCountQDepth();
+      int64_t currentDD=0;
+      if(maxBitCountForMaxDepth==0) //delta_DD
+      {
+        currentDD=metadata.getQMaxDepthInPatch();
+        arithmeticEncoder.ExpGolombEncode(o3dgc::IntToUInt(int32_t(currentDD)),    0, bModelMaxDepth0, bModelMaxDepthDD);
+      }
+      else
+      {
+        currentDD=metadata.getQMaxDepthInPatch();
+        EncodeUInt32(uint32_t(currentDD), maxBitCountForMaxDepth, arithmeticEncoder, bModelMaxDepth0);
+      }
+
+    }
+  }
+  
+  if(metadata.getMetadataType()==METADATA_PATCH)
+  {
+    //std::cout<<"lowerLevelFlags: "<<metadata.getLowerLevelMetadataEnabledFlags().getMetadataEnabled()<<std::endl;
+    return 1;
+  }
+  
+  auto &lowerLevelMetadataEnabledFlags = metadata.getLowerLevelMetadataEnabledFlags();
+  static o3dgc::Adaptive_Bit_Model bModelLowerLevelMetadataEnabled;
+  arithmeticEncoder.encode(lowerLevelMetadataEnabledFlags.getMetadataEnabled(), bModelLowerLevelMetadataEnabled);
+  std::cout<<"lowerLevelFlags: "<<metadata.getLowerLevelMetadataEnabledFlags().getMetadataEnabled()<<std::endl;
+  if (lowerLevelMetadataEnabledFlags.getMetadataEnabled()) {
+    static o3dgc::Adaptive_Bit_Model bModelLowerLevelScaleEnabled;
+    arithmeticEncoder.encode(lowerLevelMetadataEnabledFlags.getScaleEnabled(), bModelLowerLevelScaleEnabled);
+    
+    static o3dgc::Adaptive_Bit_Model bModelLowerLevelOffsetEnabled;
+    arithmeticEncoder.encode(lowerLevelMetadataEnabledFlags.getOffsetEnabled(), bModelLowerLevelOffsetEnabled);
+    
+    static o3dgc::Adaptive_Bit_Model bModelLowerLevelRotationEnabled;
+    arithmeticEncoder.encode(lowerLevelMetadataEnabledFlags.getRotationEnabled(), bModelLowerLevelRotationEnabled);
+    
+    static o3dgc::Adaptive_Bit_Model bModelLowerLevelPointSizeEnabled;
+    arithmeticEncoder.encode(lowerLevelMetadataEnabledFlags.getPointSizeEnabled(), bModelLowerLevelPointSizeEnabled);
+    
+    static o3dgc::Adaptive_Bit_Model bModelLowerLevelPointShapeEnabled;
+    arithmeticEncoder.encode(lowerLevelMetadataEnabledFlags.getPointShapeEnabled(), bModelLowerLevelPointShapeEnabled);
+
+  }
+  
+  
   return 1;
 }
 
@@ -2860,8 +2983,14 @@ void PCCEncoder::compressPatchMetaDataM42195( PCCFrameContext &frame, PCCFrameCo
   size_t TopNmaxU1 = 0, maxU1 = 0;
   size_t TopNmaxV1 = 0, maxV1 = 0;
   size_t TopNmaxD1 = 0, maxD1 = 0;
+  size_t TopNmaxDD = 0, maxDD = 0;
   const size_t minLevel=params_.minLevel_;
   const uint8_t maxBitCountForMinDepth=uint8_t(10-gbitCountSize[minLevel]);
+  uint8_t maxAllowedDepthP1=params_.maxAllowedDepth_+1;
+  uint8_t bitCountDDMax=0; //255
+  while((maxAllowedDepthP1)>>bitCountDDMax) bitCountDDMax++;
+  const uint8_t maxBitCountForMaxDepth=uint8_t(9-gbitCountSize[minLevel]); //20190129
+
   
   //get the maximum u0,v0,u1,v1 and d1.
   for (size_t patchIndex = 0; patchIndex < numMatchedPatches; ++patchIndex) {
@@ -2872,6 +3001,9 @@ void PCCEncoder::compressPatchMetaDataM42195( PCCFrameContext &frame, PCCFrameCo
     TopNmaxV1 = (std::max)(TopNmaxV1, patch.getV1());
     size_t D1 = patch.getD1()/minLevel;
     TopNmaxD1 = (std::max)(TopNmaxD1, D1);
+    size_t DD = patch.getSizeD()/minLevel;
+    TopNmaxDD = (std::max)(TopNmaxDD, DD);
+
 
   }
   uint8_t F = 1;  //true if the maximum value comes from the latter part.
@@ -2884,6 +3016,8 @@ void PCCEncoder::compressPatchMetaDataM42195( PCCFrameContext &frame, PCCFrameCo
     maxV1 = (std::max)(maxV1, patch.getV1());
     size_t D1 = patch.getD1()/minLevel;
     maxD1 = (std::max)(maxD1, D1);
+    size_t DD = patch.getSizeD()/minLevel;
+    maxDD = (std::max)(maxDD, DD);
 
     A[0] = maxU0 > TopNmaxU0 ? 1 : A[0];
     A[1] = maxV0 > TopNmaxV0 ? 1 : A[1];
@@ -2894,7 +3028,7 @@ void PCCEncoder::compressPatchMetaDataM42195( PCCFrameContext &frame, PCCFrameCo
   //Generate F and A.
   if (A[0]+A[1]+A[2]+A[3] == 0)
   {  F = 0; }
-  printf("numMatchedPatches:%d, F:%d,A:%d,%d,%d,%d)\n", (int)numMatchedPatches, F, A[0], A[1], A[2], A[3]);
+  
 
   uint8_t bitCount[5];
   bitCount[0] = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(maxU0 + 1))); 
@@ -2929,11 +3063,16 @@ void PCCEncoder::compressPatchMetaDataM42195( PCCFrameContext &frame, PCCFrameCo
   o3dgc::Adaptive_Data_Model orientationPatchModel(NumPatchOrientations - 1 + 2);
   o3dgc::Adaptive_Bit_Model orientationPatchFlagModel2;
 
+  //jkei[??] do we need to signal frame metadata here too?
+  std::cout<<"Frame Level Metadata42195 ->>> ";
+  compressMetadata(frame.getFrameLevelMetadata(), arithmeticEncoder);
+
+  
   const uint8_t bitCountNumPatches =
       uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(patchCount)));//numMatchedPatches <= patchCount
   EncodeUInt32(uint32_t(numMatchedPatches), bitCountNumPatches, arithmeticEncoder, bModel0);
+  printf("numPatch:%d(%d), numMatchedPatches:%d, F:%d,A:%d,%d,%d,%d\n", (int)patchCount,(int)bitCountNumPatches, (int)numMatchedPatches, F, A[0], A[1], A[2], A[3]);
 
-  bool useOneLayermode = params_.oneLayerMode_ || params_.singleLayerPixelInterleaving_;
   int64_t predIndex = 0;
   for (size_t patchIndex = 0; patchIndex < numMatchedPatches; ++patchIndex) {
     const auto &patch    = patches[patchIndex];
@@ -2957,7 +3096,7 @@ void PCCEncoder::compressPatchMetaDataM42195( PCCFrameContext &frame, PCCFrameCo
       prevD1=(1024-prevD1)/minLevel;
     }
     const int64_t delta_d1 = static_cast<int64_t>(currentD1 - prevD1);
-    //printf("PATCH%zu) projectionMode: %zu, prevD1: %zu, currentD1: %zu, delta_d1: %llu, minDepth: %zu\n", patchIndex, patch.getProjectionMode(),prevD1, currentD1, delta_d1, patch.getD1());
+
     const int64_t deltaSizeU0 = static_cast<int64_t>(patch.getSizeU0() - prepatch.getSizeU0());
     const int64_t deltaSizeV0 = static_cast<int64_t>(patch.getSizeV0() - prepatch.getSizeV0());
 
@@ -2973,6 +3112,28 @@ void PCCEncoder::compressPatchMetaDataM42195( PCCFrameContext &frame, PCCFrameCo
     if ( params_.absoluteD1_ && params_.sixDirectionMode_ ) {
       arithmeticEncoder.encode(patch.getProjectionMode(), bModel0);
     }
+  }//end of matched patches
+
+  o3dgc::Adaptive_Bit_Model bModelDD;
+  for (size_t patchIndex = 0; patchIndex < numMatchedPatches; ++patchIndex) {
+    const auto &patch    = patches[patchIndex];
+    const auto &prepatch = prePatches[patch.getBestMatchIdx()];
+    //size_t currentDD=patch.getSizeD()/minLevel;
+    //size_t prevDD=prepatch.getSizeD()/minLevel;
+    
+    size_t quantDD=patch.getSizeD()==0?0:((patch.getSizeD()-1)/minLevel +1);
+    size_t prevQDD=patch.getSizeD()==0?0:((prepatch.getSizeD()-1)/minLevel +1);
+    
+    //if(currentDD*minLevel != patch.getSizeD())    currentDD+=1;
+    //if(prevDD*minLevel    != prepatch.getSizeD()) prevDD+=1;
+    const int64_t delta_dd = static_cast<int64_t>(quantDD - prevQDD);
+    auto &patchTemp = patches[patchIndex];
+    PCCMetadata& metadata=patchTemp.getPatchLevelMetadata();
+    metadata.setbitCountQDepth(0);
+    metadata.setQMaxDepthInPatch(delta_dd);
+    metadata.setIndex(patchIndex);
+    
+    compressMetadata(metadata, arithmeticEncoder, bModel0, bModelDD);
   }
 
   int64_t prevSizeU0 = patches[numMatchedPatches-1].getSizeU0();
@@ -3000,9 +3161,18 @@ void PCCEncoder::compressPatchMetaDataM42195( PCCFrameContext &frame, PCCFrameCo
     else{
       currentD1=(1024-currentD1)/minLevel;
     }
-    //printf("PATCH%zu : minDepth: %zu\n", patchIndex, patch.getD1());
     EncodeUInt32(uint32_t(currentD1), bitCount[4], arithmeticEncoder, bModel0);
     
+    //maxDepth
+    //size_t currentDD=patch.getSizeD()/minLevel;
+    //if(currentDD*minLevel != patch.getSizeD())    currentDD+=1;
+    size_t quantDD=patch.getSizeD()==0?0:((patch.getSizeD()-1)/minLevel +1);
+    auto &patchTemp = patches[patchIndex];
+    PCCMetadata& metadata=patchTemp.getPatchLevelMetadata();
+    metadata.setbitCountQDepth(maxBitCountForMaxDepth);
+    metadata.setQMaxDepthInPatch(int64_t(quantDD));
+    metadata.setIndex(patchIndex);
+
     if (!params_.absoluteD1_  && (patch.getFrameProjectionMode() == 2)) {
       const uint8_t bitCountProjDir = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(2 + 1)));
       EncodeUInt32(uint32_t(patch.getProjectionMode()), bitCountProjDir, arithmeticEncoder, bModel0);
@@ -3029,7 +3199,7 @@ void PCCEncoder::compressPatchMetaDataM42195( PCCFrameContext &frame, PCCFrameCo
     } else {
       arithmeticEncoder.encode(uint32_t(patch.getNormalAxis()), orientationModel);
     }
-    compressMetadata(patch.getPatchLevelMetadata(), arithmeticEncoder);
+    compressMetadata(patch.getPatchLevelMetadata(), arithmeticEncoder,bModel0, bModelDD);
   }
 }
 
@@ -3144,6 +3314,7 @@ void PCCEncoder::compressOccupancyMap(PCCFrameContext& frame, PCCBitstream &bits
   }
   const size_t minLevel=params_.minLevel_;
   const uint8_t maxBitCountForMinDepth=uint8_t(10-gbitCountSize[minLevel]);
+  const uint8_t maxBitCountForMaxDepth=uint8_t(9-gbitCountSize[minLevel]); //20190129
   
   o3dgc::Adaptive_Bit_Model interpolateModel;
   o3dgc::Adaptive_Bit_Model fillingModel;
@@ -3160,12 +3331,13 @@ void PCCEncoder::compressOccupancyMap(PCCFrameContext& frame, PCCBitstream &bits
   arithmeticEncoder.set_buffer( 0x00ffffff );
   arithmeticEncoder.start_encoder();
 
+  printf("start location %d, %d\n", int(bitstream.getPosition().bytes), int(bitstream.getPosition().bits));
+  
   if((frameIndex == 0)||(!params_.deltaCoding_)) {
     size_t maxU0 = 0;
     size_t maxV0 = 0;
     size_t maxU1 = 0;
     size_t maxV1 = 0;
-    size_t maxD1 = 0;
     size_t maxLod = 0;
     for (size_t patchIndex = 0; patchIndex < patchCount; ++patchIndex) {
       const auto &patch = patches[patchIndex];
@@ -3181,6 +3353,7 @@ void PCCEncoder::compressOccupancyMap(PCCFrameContext& frame, PCCBitstream &bits
     const uint8_t bitCountU1  = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(maxU1 + 1)));
     const uint8_t bitCountV1  = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(maxV1 + 1)));
     const uint8_t bitCountD1  = maxBitCountForMinDepth;
+    const uint8_t bitCountDD  = maxBitCountForMaxDepth;
     const uint8_t bitCountLod = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(maxLod + 1)));
 
     bitstream.write<uint8_t>(bitCountU0);
@@ -3190,8 +3363,10 @@ void PCCEncoder::compressOccupancyMap(PCCFrameContext& frame, PCCBitstream &bits
     
     bitstream.write<uint8_t>(bitCountLod);
 
+    std::cout<<"Frame Level Metadata ->>> ";
     compressMetadata(frame.getFrameLevelMetadata(), arithmeticEncoder);
 
+    o3dgc::Adaptive_Bit_Model bModelDD;
     o3dgc::Static_Bit_Model bModel0;
     o3dgc::Adaptive_Bit_Model bModelSizeU0, bModelSizeV0, bModelAbsoluteD1;
     o3dgc::Adaptive_Data_Model orientationModel(4);
@@ -3225,6 +3400,18 @@ void PCCEncoder::compressOccupancyMap(PCCFrameContext& frame, PCCBitstream &bits
       }
       
       EncodeUInt32(uint32_t(D1), bitCountD1, arithmeticEncoder, bModel0);
+      
+      size_t quantDD=patch.getSizeD()==0?0:((patch.getSizeD()-1)/minLevel +1);
+
+      auto &patchTemp = patches[patchIndex];
+      PCCMetadata& metadata=patchTemp.getPatchLevelMetadata();
+      metadata.setbitCountQDepth(bitCountDD);
+      metadata.setQMaxDepthInPatch(int64_t(quantDD));
+      metadata.setIndex(patchIndex);
+      metadata.setMetadataType(METADATA_PATCH);
+      metadata.setMetadataPresent(true);
+
+      
       EncodeUInt32(uint32_t(patch.getLod()), bitCountLod, arithmeticEncoder, bModel0);
       if (!params_.absoluteD1_ && (patch.getFrameProjectionMode() == 2)) {
         const uint8_t bitCountProjDir = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(2 + 1)));
@@ -3257,7 +3444,7 @@ void PCCEncoder::compressOccupancyMap(PCCFrameContext& frame, PCCBitstream &bits
       } else {
         arithmeticEncoder.encode(uint32_t(patch.getNormalAxis()), orientationModel);
       }
-      compressMetadata(patch.getPatchLevelMetadata(), arithmeticEncoder);
+      compressMetadata(patch.getPatchLevelMetadata(), arithmeticEncoder, bModel0, bModelDD );
     }
   } else {
     size_t numMatchedPatches = frame.getNumMatchedPatches();

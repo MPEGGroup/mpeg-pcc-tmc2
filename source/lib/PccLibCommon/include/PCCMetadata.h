@@ -45,13 +45,18 @@ namespace pcc {
 
   class PCCMetadataEnabledFlags {
   public:
-    PCCMetadataEnabledFlags() : 
-      metadataEnabled_            (false), 
+    PCCMetadataEnabledFlags() :
+#if CE210_MAXDEPTH
+      metadataEnabled_            (true),
+#else
+      metadataEnabled_            (false),
+#endif
       scaleEnabled_               (false), 
       offsetEnabled_              (false),
       rotationEnabled_            (false),
       pointSizeEnabled_           (false), 
-      pointShapeEnabled_          (false)
+      pointShapeEnabled_          (false),
+      maxDepthEnabled_ (true)
     {};
     ~PCCMetadataEnabledFlags() {};
 
@@ -63,11 +68,14 @@ namespace pcc {
     bool& getPointShapeEnabled()        { return pointShapeEnabled_;  }
 
     bool  getMetadataEnabled()    const { return metadataEnabled_;    }
+    void  setMetadataEnabled(bool flag)          { metadataEnabled_=flag;    }
     bool  getScaleEnabled()       const { return scaleEnabled_;       }
     bool  getOffsetEnabled()      const { return offsetEnabled_;      }
     bool  getRotationEnabled()    const { return rotationEnabled_;    }
     bool  getPointSizeEnabled()   const { return pointSizeEnabled_;   }
     bool  getPointShapeEnabled()  const { return pointShapeEnabled_;  }
+    bool  getMaxDepthEnabled()    const { return maxDepthEnabled_;    }
+    void  setMaxDepthEnabled(bool maxDepthEnabled)    {  maxDepthEnabled_=maxDepthEnabled;    }
 
   private:
     bool metadataEnabled_;
@@ -76,6 +84,7 @@ namespace pcc {
     bool rotationEnabled_;
     bool pointSizeEnabled_;
     bool pointShapeEnabled_;
+    bool maxDepthEnabled_;
   };
 
   class PCCMetadata {
@@ -91,7 +100,10 @@ namespace pcc {
       pointSizePresent_               (false),
       pointSize_                      (1),
       pointShapePresent_              (false),
-      pointShape_                     (Circle) 
+      pointShape_                     (Circle),
+      maxDepthPresent_                (true),
+      maxQDepthInPatch_               (255),
+      metadataType_                   (METADATA_GOF)
     {};
     PCCMetadata(const PCCMetadata& pccMetadata) {
       scalePresent_                   = pccMetadata.getScalePresent();
@@ -106,10 +118,12 @@ namespace pcc {
       pointShape_                     = pccMetadata.getPointShape();
       metadataEnabledFlags_           = pccMetadata.getMetadataEnabledFlags();
       lowerLevelMetadataEnabledFlags_ = pccMetadata.getLowerLevelMetadataEnabledFlags();
+      metadataType_                   = pccMetadata.getMetadataType();
     }
     ~PCCMetadata() {};
     
     bool&                             getMetadataPresent()                      { return metadataPresent_;                }
+    void                              setMetadataPresent(bool flag)             { metadataPresent_=flag;}
     bool&                             getScalePresent()                         { return scalePresent_;                   }
     PCCVector3U&                      getScale()                                { return scale_;                          }
     bool&                             getOffsetPresent()                        { return offsetPresent_;                  }
@@ -134,8 +148,19 @@ namespace pcc {
     uint16_t                          getPointSize()                      const { return pointSize_;                      }
     bool                              getPointShapePresent()              const { return pointShapePresent_;              }
     PointShape                        getPointShape()                     const { return pointShape_;                     }
+    bool                              getMaxDepthPresent()              const { return maxDepthPresent_;              }
+
     const PCCMetadataEnabledFlags&    getMetadataEnabledFlags()           const { return metadataEnabledFlags_;           }
     const PCCMetadataEnabledFlags&    getLowerLevelMetadataEnabledFlags() const { return lowerLevelMetadataEnabledFlags_; }
+    METADATATYPE                      getMetadataType() const {return metadataType_;}
+    void                              setMetadataType(METADATATYPE type){metadataType_=type;}
+    size_t                            getIndex()              const { return index_;    }
+    void                              setIndex(size_t index)        {  index_=index;    }
+    uint8_t                           getbitCountQDepth() const{return bitCountQDepth_;}
+    void                              setbitCountQDepth(uint8_t bitcount) {bitCountQDepth_=bitcount;}
+    int64_t                            getQMaxDepthInPatch() {return maxQDepthInPatch_;}
+    int64_t                            getQMaxDepthInPatch() const {return maxQDepthInPatch_;}
+    void                              setQMaxDepthInPatch(int64_t depth) {maxQDepthInPatch_=depth;}
 
   private:
     bool                              metadataPresent_;
@@ -151,6 +176,12 @@ namespace pcc {
     PointShape                        pointShape_;
     PCCMetadataEnabledFlags           metadataEnabledFlags_;
     PCCMetadataEnabledFlags           lowerLevelMetadataEnabledFlags_;
+    bool                              maxDepthPresent_;
+    uint8_t                           bitCountQDepth_;
+    int64_t                           maxQDepthInPatch_;
+    size_t                            index_;
+    METADATATYPE                      metadataType_;
+
   };
 
 }; //~namespace

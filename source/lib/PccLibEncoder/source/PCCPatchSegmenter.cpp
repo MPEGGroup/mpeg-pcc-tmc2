@@ -1086,6 +1086,9 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3 &points,
         }
       }
 
+      size_t quantDD=patch.getSizeD()==0?0:((patch.getSizeD()-1)/minLevel +1);
+      patch.getSizeD() = (std::min)(quantDD*minLevel, static_cast<size_t>(maxAllowedDepth));
+
       if ( createSubPointCloud ) {
         PCCPointSet3 testSrc,testRec;
         for (const auto i : connectedComponent) {
