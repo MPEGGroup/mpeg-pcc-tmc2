@@ -530,7 +530,7 @@ bool parseParameters( int argc, char *argv[],
     ("packingStrategy",
       encoderParams.packingStrategy_,
       encoderParams.packingStrategy_,
-      "Patches packing strategy(0: anchor packing, 1/2/3(default): flexible packing with 2, 4, or 8 orientations)\n")
+      "Patches packing strategy(0: anchor packing, 1(default)/2/3: flexible packing with 2, 4, or 8 orientations)\n")
 
     ("safeGuardDistance",
       encoderParams.safeGuardDistance_,
@@ -562,6 +562,11 @@ bool parseParameters( int argc, char *argv[],
        encoderParams.lossyMppGeoQP_,
        encoderParams.lossyMppGeoQP_,
        "QP value for geometry in lossy missed points patch (default=4)\n")
+	   
+    ("globalPatchAllocation",
+      encoderParams.globalPatchAllocation_,
+      encoderParams.globalPatchAllocation_,
+      "global matched patch allocation in a temporay way.(0: anchor's packing method(default), 1: gpa algorithm)\n")
 
         ;
 

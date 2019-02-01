@@ -153,6 +153,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   lossyMppGeoQP_                           = 4;
 
   useAdditionalPointsPatch_               = false;
+  globalPatchAllocation_                   = false;
 }
 
 PCCEncoderParameters::~PCCEncoderParameters() {
@@ -236,6 +237,7 @@ void PCCEncoderParameters::print(){
   std::cout << "\t   minimumImageHeight                   " << minimumImageHeight_                   << std::endl;
   std::cout << "\t   packingStrategy                      " << packingStrategy_                      << std::endl;
   std::cout << "\t   safeGuardDistance                    " << safeGuardDistance_                    << std::endl;
+  std::cout << "\t   globalPatchAllocation_               " << globalPatchAllocation_                << std::endl;
   std::cout << "\t   textureBGFill                        " << textureBGFill_                        << std::endl;
   std::cout << "\t video encoding" << std::endl;
   std::cout << "\t   geometryQP                           " << geometryQP_                           << std::endl;

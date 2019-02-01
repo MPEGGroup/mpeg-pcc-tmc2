@@ -40,6 +40,36 @@
 namespace pcc {
 
 
+struct GPAPatchData
+{
+	bool isMatched;
+	bool isGlobalPatch;
+	int  globalPatchIndex;
+	
+	size_t sizeU0;
+	size_t sizeV0;
+	std::vector<bool> occupancy;
+
+	size_t u0;
+	size_t v0;
+	size_t patchOrientation;
+
+	void initialize() {
+		isMatched        = false;
+		isGlobalPatch    = false;
+		globalPatchIndex = -1;
+
+		sizeU0 = 0;
+		sizeV0 = 0;
+		occupancy.clear();
+
+		u0 = -1;
+		v0 = -1;
+		patchOrientation = -1;
+	}
+};
+
+
 class PCCPatch {
  public:
   PCCPatch(){};
@@ -60,7 +90,7 @@ class PCCPatch {
   size_t&                     getSizeU0()                    { return sizeU0_;                }
   size_t&                     getSizeV0()                    { return sizeV0_;                }
   size_t&                     setViewId()                    { return viewId_;                }
-  size_t&                     setBestMatchIdx()              { return bestMatchIdx_;          }
+  int32_t&                    setBestMatchIdx()              { return bestMatchIdx_;          }
   size_t&                     getOccupancyResolution()       { return occupancyResolution_;   }
   size_t&                     getProjectionMode()            { return projectionMode_; }
   size_t&                     getFrameProjectionMode()       { return frameProjectionMode_; }
@@ -90,7 +120,7 @@ class PCCPatch {
   size_t                      getTangentAxis()         const { return tangentAxis_;           }
   size_t                      getBitangentAxis()       const { return bitangentAxis_;         }
   size_t                      getViewId()              const { return viewId_;                }
-  size_t                      getBestMatchIdx()        const { return bestMatchIdx_;          }
+  int32_t                     getBestMatchIdx()        const { return bestMatchIdx_;          }
   const std::vector<int16_t>& getDepth( int i )        const { return depth_[i];              }
   const std::vector<bool>&    getOccupancy()           const { return occupancy_;             }
   size_t                      getLod()                 const { return levelOfDetail_;         }
@@ -103,7 +133,8 @@ class PCCPatch {
   //Flexible Patch Orientation
   size_t&                     getPatchOrientation()          { return patchOrientation_;      }
   size_t                      getPatchOrientation()    const { return patchOrientation_;      }
-
+  bool&						  getIsGlobalPatch() { return isGlobalPatch_; }
+  bool						  getIsGlobalPatch() const { return isGlobalPatch_; }
   inline double generateNormalCoordinate( const uint16_t depth, const double lodScale, const bool useMppSepVid, const bool lossyMpp ) const {
     double coord = 0;
     if (lossyMpp && ! useMppSepVid){ // support lossy missed points patch in same video frame, re-shift depth values to store in 10-bit video frame
@@ -144,9 +175,9 @@ class PCCPatch {
         x = u + u0_ * occupancyResolution_;
         y = v + v0_ * occupancyResolution_;
         break;
-      case 1 :
-        x = (sizeV0_ * occupancyResolution_ - 1 - v) + u0_ * occupancyResolution_;
-        y = u + v0_ * occupancyResolution_;
+      case 1 ://swapAxis
+		x = v + u0_ * occupancyResolution_;
+		y = u + v0_ * occupancyResolution_;
         break;
       case  2:
         x = (sizeU0_ * occupancyResolution_ - 1 - u) + u0_ * occupancyResolution_;
@@ -169,7 +200,7 @@ class PCCPatch {
         y = (sizeV0_ * occupancyResolution_ - 1 - v) + v0_ * occupancyResolution_;
         break;
       case 7:
-        x = v + u0_ * occupancyResolution_;
+		x = (sizeV0_ * occupancyResolution_ - 1 - v) + u0_ * occupancyResolution_;
         y = u + v0_ * occupancyResolution_;
         break;
       default : assert( 0 ); break;
@@ -189,8 +220,8 @@ class PCCPatch {
         x = uBlk + u0_;
         y = vBlk + v0_;
         break;
-      case   1:
-        x = (sizeV0_ - 1 - vBlk) + u0_ ;
+      case   1://swapAxis
+ 	    x = vBlk + u0_;
         y = uBlk + v0_ ;
         break;
       case   2:
@@ -214,7 +245,7 @@ class PCCPatch {
         y = (sizeV0_ - 1 - vBlk) + v0_;
         break;
       case   7:
-        x = vBlk + u0_;
+	    x = (sizeV0_ - 1 - vBlk) + u0_;
         y = uBlk + v0_;
         break;
       default : return -1; break;
@@ -286,6 +317,79 @@ class PCCPatch {
             : (lhs.sizeU_ != rhs.sizeU_ ? lhs.sizeU_ > rhs.sizeU_ : lhs.index_ < rhs.index_);
   }
 
+
+  GPAPatchData& getPreGPAPatchData()       { return preGPAPatchData_; }
+  GPAPatchData  getPreGPAPatchData() const { return preGPAPatchData_; }
+
+  GPAPatchData& getCurGPAPatchData()        { return curGPAPatchData_;  }
+  GPAPatchData  getCurGPAPatchData()  const { return curGPAPatchData_;  }
+
+  int patchBlock2CanvasBlockForGPA(const size_t uBlk, const size_t vBlk, size_t canvasStrideBlk, size_t canvasHeightBlk) const {
+	  size_t x, y;
+	  switch (curGPAPatchData_.patchOrientation) {
+	  case 0:
+		  x = uBlk + curGPAPatchData_.u0;
+		  y = vBlk + curGPAPatchData_.v0;
+		  break;
+	  case 1: //swapAxis
+  		  x = vBlk + curGPAPatchData_.u0;
+		  y = uBlk + curGPAPatchData_.v0;
+		  break;
+	  case 2:
+		  x = (curGPAPatchData_.sizeU0 - 1 - uBlk) + curGPAPatchData_.u0;
+		  y = (curGPAPatchData_.sizeV0 - 1 - vBlk) + curGPAPatchData_.v0;
+		  break;
+	  case 3:
+		  x = vBlk + curGPAPatchData_.u0;
+		  y = (curGPAPatchData_.sizeU0 - 1 - uBlk) + curGPAPatchData_.v0;
+		  break;
+	  case 4:
+		  x = (curGPAPatchData_.sizeU0 - 1 - uBlk) + curGPAPatchData_.u0;
+		  y = vBlk + curGPAPatchData_.v0;
+		  break;
+	  case 5:
+		  x = (curGPAPatchData_.sizeV0 - 1 - vBlk) + curGPAPatchData_.u0;
+		  y = (curGPAPatchData_.sizeU0 - 1 - uBlk) + curGPAPatchData_.v0;
+		  break;
+	  case 6:
+		  x = uBlk + curGPAPatchData_.u0;
+		  y = (curGPAPatchData_.sizeV0 - 1 - vBlk) + curGPAPatchData_.v0;
+		  break;
+	  case 7:
+		  x = (curGPAPatchData_.sizeV0 - 1 - vBlk) + curGPAPatchData_.u0;
+		  y = uBlk + curGPAPatchData_.v0;
+		  break;
+	  default: return -1; break;
+	  }
+	  //checking the results are within canvas boundary (missing y check)
+	  if (x < 0) return -1;
+	  if (y < 0) return -1;
+	  if (x >= canvasStrideBlk) return -1;
+	  if (y >= canvasHeightBlk) return -1;
+	  return (x + canvasStrideBlk * y);
+  }
+
+  bool checkFitPatchCanvasForGPA(std::vector<bool> canvas, size_t canvasStrideBlk, size_t canvasHeightBlk, int safeguard = 0) {
+	  for (size_t v0 = 0; v0 < curGPAPatchData_.sizeV0; ++v0) {
+		  for (size_t u0 = 0; u0 < curGPAPatchData_.sizeU0; ++u0) {
+			  for (int deltaY = -safeguard; deltaY < safeguard + 1; deltaY++) {
+				  for (int deltaX = -safeguard; deltaX < safeguard + 1; deltaX++) {
+					  int pos = patchBlock2CanvasBlockForGPA(u0 + deltaX, v0 + deltaY, canvasStrideBlk, canvasHeightBlk);
+					  if (pos < 0) {
+						  return false;
+					  }
+					  else if (canvas[pos]) {
+						  return false;
+					  }
+				  }
+			  }
+		  }
+	  }
+
+	  return true;
+  }
+
+
  private:
   size_t index_;                   // patch index
   size_t u1_;                      // tangential shift
@@ -311,11 +415,16 @@ class PCCPatch {
   std::vector<bool> occupancy_;    // occupancy map
 
   size_t viewId_;                  //viewId in [0,1,2,3,4,5]
-  size_t bestMatchIdx_;            //index of matched patch from pre-frame patch.
+  int32_t bestMatchIdx_;            //index of matched patch from pre-frame patch.
 
   std::vector<int16_t> depthEnhancedDeltaD_;
   std::vector<int64_t> depth0PCidx_;       // for Surface separation
   size_t patchOrientation_;        // patch orientation in canvas atlas
+
+
+  GPAPatchData curGPAPatchData_;
+  GPAPatchData preGPAPatchData_;
+  bool	isGlobalPatch_;
 };
 
 struct PCCMissedPointsPatch {
@@ -338,6 +447,10 @@ struct PCCMissedPointsPatch {
   size_t numEddSavedPoints;
   size_t MPnumber;
   size_t MPnumbercolor;
+	
+  //GPA.
+  size_t pre_v0;
+  size_t temp_v0;
 
   void resize(const size_t size) {
     x.resize(size);

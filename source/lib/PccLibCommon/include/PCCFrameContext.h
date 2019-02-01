@@ -41,6 +41,18 @@
 #include "PCCMetadata.h"
 
 namespace pcc {
+	struct PCCGPAFrameSize {
+		size_t widthGPA_;
+		size_t heightGPA_;
+	};
+
+	struct PCCFrameOCPInfo {
+		size_t occupancySizeU_;
+		size_t occupancySizeV_;
+		size_t maxOccupancyRow_;
+		std::vector<bool> occupancyMap_;
+	};
+
 
 class PCCFrameContext {
  public:
@@ -97,6 +109,12 @@ class PCCFrameContext {
   std::vector<size_t>&             getMinD1()                { return minD1_;                    }
   std::vector<size_t>&             getNeighbor()             { return neighbor_;                 }
 
+
+  PCCGPAFrameSize&                     getPrePCCGPAFrameSize()  { return prePCCGPAFrameSize_;  }
+  PCCGPAFrameSize&                     getCurPCCGPAFrameSize() { return curPCCGPAFrameSize_; }
+
+  PCCFrameOCPInfo &					   getPCCOCPGPAInfo() { return ocpGPAInfo_; }
+
  private:
   size_t index_;
   size_t width_;
@@ -131,6 +149,12 @@ class PCCFrameContext {
   std::vector<bool>   filling_;
   std::vector<size_t> minD1_;
   std::vector<size_t> neighbor_;
+
+
+  PCCGPAFrameSize prePCCGPAFrameSize_;
+  PCCGPAFrameSize curPCCGPAFrameSize_;
+
+  PCCFrameOCPInfo ocpGPAInfo_;
 
 };
 

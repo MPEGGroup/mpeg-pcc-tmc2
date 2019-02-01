@@ -38,6 +38,7 @@
 #include "PCCVideo.h"
 #include "PCCMetadata.h"
 #include "PCCVideoBitstream.h"
+#include <map>
 
 namespace pcc {
 
@@ -46,6 +47,15 @@ class PCCFrameContext;
 typedef pcc::PCCVideo<uint8_t, 3>  PCCVideoTexture;
 typedef pcc::PCCVideo<uint16_t, 3> PCCVideoGeometry;
 typedef pcc::PCCVideo<uint8_t, 3>  PCCVideoOccupancyMap;
+
+class PCCPatch;
+typedef std::map<size_t, PCCPatch> unionPatch;                     // unionPatch ----- [TrackIndex, PatchUnion];
+typedef std::pair<size_t, size_t>  GlobalPatch;                     // GlobalPatch ----- [FrameIndex, PatchIndex];
+typedef std::map<size_t, std::vector<GlobalPatch> > GlobalPatches;  // GlobalPatches --- [TrackIndex, <GlobalPatch>];
+typedef std::pair<size_t, size_t>  SubContext;                      // SubContext ------ [start, end);
+
+
+
 
 class PCCContext {
  public:
@@ -106,6 +116,11 @@ class PCCContext {
   size_t& getHeight(){ return height_; }
   void   resize( size_t size );
 
+
+  std::vector<SubContext>&  getSubContexts() { return subContexts_; }
+  std::vector<unionPatch>& getunionPatch() { return unionPatch_; }
+
+
   PCCVideoBitstream& createVideoBitstream( PCCVideoType type ){
     videoBitstream_.push_back( PCCVideoBitstream( type ) );
     return videoBitstream_.back();
@@ -158,6 +173,8 @@ class PCCContext {
   PCCMetadata gofLevelMetadata_;
 
   std::vector<PCCVideoBitstream> videoBitstream_;
+  std::vector<SubContext>  subContexts_;
+  std::vector<unionPatch> unionPatch_;
 };
 }; //~namespace
 

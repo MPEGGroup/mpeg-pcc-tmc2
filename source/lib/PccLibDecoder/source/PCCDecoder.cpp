@@ -593,7 +593,11 @@ int PCCDecoder::decompressHeader( PCCContext &context, PCCBitstream &bitstream )
   uint8_t useAdditionalPointsPatch;
   bitstream.read<uint8_t>(useAdditionalPointsPatch);
   useAdditionalPointsPatch_ = useAdditionalPointsPatch > 0;
-  
+
+  uint8_t globalPatchAllocation;
+  bitstream.read<uint8_t>(globalPatchAllocation);
+  globalPatchAllocation_ = globalPatchAllocation > 0;
+
   context.setLosslessGeo444(losslessGeo444_);
   context.setLossless(losslessGeo_);
   context.setLosslessAtt(losslessTexture_);
@@ -700,28 +704,13 @@ void PCCDecoder::decompressPatchMetaDataM42195(PCCFrameContext& frame, PCCFrameC
   auto&  prePatches = preFrame.getPatches();
   size_t patchCount = patches.size();
   uint8_t bitCount[6];
-  uint8_t F = 0,A[5]= {0,0,0,0,0};
+  uint8_t F = 0, A[5] = {0,0,0,0,0};
   size_t topNmax[6] = {0,0,0,0,0,0};
-  
-  bitstream.read<uint8_t>( F );
-  for (size_t i = 0; i < 4; i++)
-  {
-    A[3 - i] = F&1;
-    F = F>>1;
-  }
-  F = F&1;
   const size_t minLevel=minLevel_;
-  const uint8_t maxBitCountForMinDepth=uint8_t(10-gbitCountSize[minLevel]); //jkei[!!]inputbitdepth
+  const uint8_t maxBitCountForMinDepth=uint8_t(10-gbitCountSize[minLevel]);
   bitCount[4]=maxBitCountForMinDepth;
-  const uint8_t maxBitCountForMaxDepth=uint8_t(9-gbitCountSize[minLevel]); //20180129:9??
+  const uint8_t maxBitCountForMaxDepth=uint8_t(9-gbitCountSize[minLevel]);
   bitCount[5]=maxBitCountForMaxDepth;
-
-  
-  for (size_t i = 0; i < 4; i++)
-  {
-    if(A[i])   bitstream.read<uint8_t>( bitCount[i] );
-  }
-
   bitstream.read<uint32_t>(  compressedBitstreamSize );
   assert(compressedBitstreamSize + bitstream.size() <= bitstream.capacity());
   arithmeticDecoder.set_buffer(uint32_t(bitstream.capacity() - bitstream.size()),
@@ -748,7 +737,22 @@ void PCCDecoder::decompressPatchMetaDataM42195(PCCFrameContext& frame, PCCFrameC
   uint32_t numMatchedPatches;
   const uint8_t bitMatchedPatchCount = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(patchCount)));
   numMatchedPatches = DecodeUInt32(bitMatchedPatchCount, arithmeticDecoder, bModel0);
-  printf("numPatch:%d(%d), numMatchedPatches:%d, F:%d,A:%d,%d,%d,%d\n", (int)patchCount,(int)bitMatchedPatchCount, (int)numMatchedPatches, F, A[0], A[1], A[2], A[3]);
+  F = uint8_t(DecodeUInt32(1, arithmeticDecoder, bModel0));
+  if (F) {
+	uint8_t flag = uint8_t(DecodeUInt32(4, arithmeticDecoder, bModel0));
+
+    for (int i = 0; i < 4; i++) {
+		A[3 - i] = flag & 1;
+		flag = flag >> 1;
+	  }
+	for (int i = 0; i < 4; i++) {
+		if (A[i]) bitCount[i] = uint8_t(DecodeUInt32(8, arithmeticDecoder, bModel0));
+	}
+  }
+  if (printDetailedInfo) {
+  printf("numPatch:%d(%d), numMatchedPatches:%d, F:%d,A[4]:%d,%d,%d,%d\n", (int)patchCount,(int)bitMatchedPatchCount, (int)numMatchedPatches, F, A[0], A[1], A[2], A[3]);
+  }
+
   int64_t predIndex = 0;
   for (size_t patchIndex = 0; patchIndex < numMatchedPatches; ++patchIndex) {
     auto &patch = patches[patchIndex];
@@ -938,7 +942,7 @@ void PCCDecoder::decompressOccupancyMap( PCCContext &context, PCCFrameContext& f
   patches.resize( patchCount );
   const size_t minLevel=minLevel_;
   const uint8_t maxBitCountForMinDepth = uint8_t(10-gbitCountSize[minLevel]);
-  const uint8_t maxBitCountForMaxDepth = uint8_t(9-gbitCountSize[minLevel]); //20180129
+  const uint8_t maxBitCountForMaxDepth = uint8_t(9-gbitCountSize[minLevel]);
   
   o3dgc::Adaptive_Bit_Model  interpolateModel;
   o3dgc::Adaptive_Bit_Model  fillingModel;
@@ -1153,34 +1157,114 @@ void PCCDecoder::decompressOccupancyMap( PCCContext &context, PCCFrameContext& f
   o3dgc::Adaptive_Data_Model candidateIndexModel(uint32_t(maxCandidateCount + 2));
   const uint32_t bitCountPatchIndex = PCCGetNumberOfBitsInFixedLengthRepresentation(patchCount + 1);
   if( useOccupancyMapVideo_ ) {
-    for (size_t iterPatch=0; iterPatch<patches.size(); ++iterPatch) {
-      const auto &patch = patches[iterPatch];
-      for (size_t v0 = 0; v0 < patch.getSizeV0(); ++v0) {
-        for (size_t u0 = 0; u0 < patch.getSizeU0(); ++u0) {
-          int pos=patch.patchBlock2CanvasBlock((u0), (v0), blockToPatchWidth, blockToPatchHeight);
-          assert(pos>=0);
-          blockToPatch[pos] = iterPatch+1;
-        }
-      }
-    }
-    for (size_t p = 0; p < blockCount; ++p) {
-      interpolateMap[ p ] = 0;
-      fillingMap    [ p ] = 0;
-      minD1Map      [ p ] = 0;
-      neighborMap   [ p ] = 1;
-      if( blockToPatch[p] > 0 ) {
-        if( absoluteD1_ && oneLayerMode_ ) {
-          interpolateMap[ p ] = arithmeticDecoder.decode( interpolateModel);
-          if( interpolateMap[ p ] > 0 ){
-            neighborMap[ p ] = arithmeticDecoder.decode( neighborModel ) + 1;
-          }
-          minD1Map[ p ] = arithmeticDecoder.decode( minD1Model);
-          if( minD1Map[ p ] > 1 || interpolateMap[ p ] > 0 ) {
-            fillingMap[ p ] = arithmeticDecoder.decode( fillingModel);
-          }
-        }
-      }
-    }
+	  if (globalPatchAllocation_) {
+		  auto& occupancyMap = frame.getOccupancyMap();
+		  for (size_t p = 0; p < blockCount; ++p) {
+			  blockToPatch[p] = 0;
+			  const auto &candidates = candidatePatches[p];
+			  if (candidates.size() > 0) {
+				  bool empty = true;
+				  size_t positionU = (p%blockToPatchWidth) * occupancyResolution_;
+				  size_t positionV = (p / blockToPatchWidth) * occupancyResolution_;
+				  for (size_t v = positionV; v < positionV + occupancyResolution_ && empty; ++v) {
+					  for (size_t u = positionU; u < positionU + occupancyResolution_ && empty; ++u) {
+						  if (occupancyMap[u + v*width_]) {
+							  empty = false;
+							  if (candidates.size() == 1) {
+								  blockToPatch[p] = candidates[0];
+							  }
+							  else {
+								  size_t candidateIndex;
+								  if (bBinArithCoding) {
+									  size_t bit0 = arithmeticDecoder.decode(candidateIndexModelBit[0]);
+									  if (bit0 == 0) {
+										  candidateIndex = 0; // Codeword: 0
+									  }
+									  else {
+										  size_t bit1 = arithmeticDecoder.decode(candidateIndexModelBit[1]);
+										  if (bit1 == 0) {
+											  candidateIndex = 1; // Codeword 10
+										  }
+										  else {
+											  size_t bit2 = arithmeticDecoder.decode(candidateIndexModelBit[2]);
+											  if (bit2 == 0) {
+												  candidateIndex = 2; // Codeword 110
+											  }
+											  else {
+												  size_t bit3 = arithmeticDecoder.decode(candidateIndexModelBit[3]);
+												  if (bit3 == 0) {
+													  candidateIndex = 3; // Codeword 1110
+												  }
+												  else {
+													  candidateIndex = 4; // Codeword 11110
+												  }
+											  }
+										  }
+									  }
+								  }
+								  else {
+									  candidateIndex = arithmeticDecoder.decode(candidateIndexModel);
+								  }
+
+								  if (candidateIndex == maxCandidateCount) {
+									  blockToPatch[p] = DecodeUInt32(bitCountPatchIndex, arithmeticDecoder, bModel0);
+								  }
+								  else {
+									  blockToPatch[p] = candidates[candidateIndex];
+								  }
+							  }
+							  interpolateMap[p] = 0;
+							  fillingMap[p] = 0;
+							  minD1Map[p] = 0;
+							  neighborMap[p] = 1;
+							  if (blockToPatch[p] > 0) {
+								  if (absoluteD1_ && oneLayerMode_) {
+									  interpolateMap[p] = arithmeticDecoder.decode(interpolateModel);
+									  if (interpolateMap[p] > 0) {
+										  neighborMap[p] = arithmeticDecoder.decode(neighborModel) + 1;
+									  }
+									  minD1Map[p] = arithmeticDecoder.decode(minD1Model);
+									  if (minD1Map[p] > 1 || interpolateMap[p] > 0) {
+										  fillingMap[p] = arithmeticDecoder.decode(fillingModel);
+									  }
+								  }
+							  }
+						  }
+					  }
+				  }
+			  }
+		  }
+	  } else {
+		  for (size_t iterPatch = 0; iterPatch < patches.size(); ++iterPatch) {
+			  const auto &patch = patches[iterPatch];
+			  for (size_t v0 = 0; v0 < patch.getSizeV0(); ++v0) {
+				  for (size_t u0 = 0; u0 < patch.getSizeU0(); ++u0) {
+					  //jkei
+					  int pos = patch.patchBlock2CanvasBlock((u0), (v0), blockToPatchWidth, blockToPatchHeight);
+					  assert(pos >= 0);
+					  blockToPatch[pos] = iterPatch + 1;
+				  }
+			  }
+		  }
+		  for (size_t p = 0; p < blockCount; ++p) {
+			  interpolateMap[p] = 0;
+			  fillingMap[p] = 0;
+			  minD1Map[p] = 0;
+			  neighborMap[p] = 1;
+			  if (blockToPatch[p] > 0) {
+				  if (absoluteD1_ && oneLayerMode_) {
+					  interpolateMap[p] = arithmeticDecoder.decode(interpolateModel);
+					  if (interpolateMap[p] > 0) {
+						  neighborMap[p] = arithmeticDecoder.decode(neighborModel) + 1;
+					  }
+					  minD1Map[p] = arithmeticDecoder.decode(minD1Model);
+					  if (minD1Map[p] > 1 || interpolateMap[p] > 0) {
+						  fillingMap[p] = arithmeticDecoder.decode(fillingModel);
+					  }
+				  }
+			  }
+		  }
+	  }
   } else {
     for (size_t p = 0; p < blockCount; ++p) {
       const auto &candidates = candidatePatches[p];

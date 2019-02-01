@@ -40,6 +40,8 @@
 #include "ArithmeticCodec.h"
 #include "PCCMetadata.h"
 
+#include <map>
+
 namespace pcc {
 
 class PCCPointSet3; 
@@ -101,6 +103,17 @@ class Arithmetic_Codec;
     std::vector<double> _b[3];
     std::vector<double> _x, _p, _r, _q;
   };
+
+
+typedef std::map<size_t, PCCPatch> unionPatch;                     // unionPatch ----- [TrackIndex, UnionPatch];
+typedef std::pair<size_t, size_t>  GlobalPatch;                     // GlobalPatch ----- [FrameIndex, PatchIndex];
+typedef std::map<size_t, std::vector<GlobalPatch> > GlobalPatches;  // GlobalPatches --- [TrackIndex, <GlobalPatch>];
+typedef std::pair<size_t, size_t>  SubContext;                      // SubContext ------ [start, end);
+
+#define BAD_HEIGHT_THRESHOLD    1.10
+#define BAD_CONDITION_THRESHOLD 2
+
+
 class PCCEncoder : public PCCCodec {
 public:
   PCCEncoder();
@@ -192,6 +205,27 @@ private:
                                    const GeneratePointCloudParameters params);
   void presmoothPointCloudColor(PCCPointSet3 &reconstruct, const PCCEncoderParameters params);
 
+  // perform data-adaptive GPA method;
+  void   performDataAdaptiveGPAMethod(PCCContext& context);
+  // start a subContext;
+  void   initializeSubContext(PCCFrameContext& frameContext, SubContext& subContext, GlobalPatches& globalPatchTracks, unionPatch& unionPatch, size_t frameIndex);
+  // generate globalPatches;
+  void   generateGlobalPatches(PCCContext& context, size_t frameIndex, GlobalPatches& globalPatchTracks, size_t preIndex);
+  // patch unions generation and packing; return the height of the unionsPackingImage;
+  size_t unionPatchGenerationAndPacking(const GlobalPatches& globalPatchTracks, PCCContext& context, unionPatch& unionPatch, size_t refFrameIdx, int safeguard = 0, bool useRefFrame = false);
+  // update patch information;
+  void   updateGPAPatchInformation(PCCContext& context, SubContext& subContext, unionPatch& unionPatch);
+  // perform data-adaptive gpa packing;
+  void   performGPAPacking(const SubContext& subContext, unionPatch& unionPatch, PCCContext& context, bool& badGPAPacking, size_t unionsHeight, int safeguard = 0, bool useRefFrame = false);
+
+  void clearCurrentGPAPatchDataInfor(PCCContext& context, SubContext& subContext);
+
+  void packingFirstFrame(PCCContext& context, size_t frameIndex, bool packingStrategy, int safeguard, bool hasRefFrame);
+  void updatePatchInformation(PCCContext& context, SubContext& subContext);
+  void packingWithoutRefForFirstFrameNoglobalPatch(PCCPatch& patch, size_t i, size_t icount, size_t& occupancySizeU, size_t& occupancySizeV, const size_t safeguard,
+	  std::vector<bool> & occupancyMap, size_t& heightGPA, size_t& widthGPA, size_t maxOccupancyRow);
+  void packingWithRefForFirstFrameNoglobalPatch(PCCPatch& patch, const std::vector<PCCPatch> prePatches, size_t startFrameIndex, size_t i, size_t icount, size_t& occupancySizeU, size_t& occupancySizeV, const size_t safeguard,
+	  std::vector<bool> & occupancyMap, size_t& heightGPA, size_t& widthGPA, size_t maxOccupancyRow);
 };
 
 }; //~namespace

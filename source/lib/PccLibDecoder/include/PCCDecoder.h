@@ -123,6 +123,7 @@ class PCCDecoder : public PCCCodec {
   bool     singleLayerPixelInterleaving_;
   bool     useAdditionalPointsPatch_;
   uint8_t  minLevel_;
+  bool     globalPatchAllocation_;
 };
 }; //~namespace
 

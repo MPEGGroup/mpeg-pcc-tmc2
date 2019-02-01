@@ -198,7 +198,10 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
   path << removeFileExtension( params_.compressedStreamPath_ ) << "_GOF" << context.getIndex() << "_";
 
   generateGeometryVideo( sources, context );
-
+  //RA mode.
+  if(params_.globalPatchAllocation_) {
+    performDataAdaptiveGPAMethod(context);
+  }
   const size_t nbFramesGeometry = params_.oneLayerMode_  ? 1 : 2;
   const size_t nbFramesTexture  = params_.oneLayerMode_  ? 1 : 2;
   resizeGeometryVideo( context );
@@ -563,16 +566,17 @@ void PCCEncoder::spatialConsistencyPack(PCCFrameContext& frame, PCCFrameContext 
   size_t occupancySizeV = (std::max)(params_.minimumImageHeight_ / params_.occupancyResolution_, patches[0].getSizeV0());
   vector<PCCPatch> matchedPatches, tmpPatches;
   matchedPatches.clear();
-  float thresholdIOU = 0.2;
+  float thresholdIOU = 0.2f;
 
   //main loop.
   for (auto &patch : prevPatches) {
     assert(patch.getSizeU0() <= occupancySizeU);
     assert(patch.getSizeV0() <= occupancySizeV);
     id++;
-    float maxIou = 0.0; int bestIdx = -1, cId = 0;
+    float maxIou = 0.0f;
+	int bestIdx = -1, cId = 0;
     for (auto &cpatch : patches) {
-      if ((patch.getViewId() == cpatch.getViewId()) && (cpatch.getBestMatchIdx() == -1)) {
+      if ((patch.getViewId() == cpatch.getViewId()) && (cpatch.getBestMatchIdx() == InvalidPatchIndex)) {
         Rect rect = Rect(patch.getU1(), patch.getV1(), patch.getSizeU(), patch.getSizeV());
         Rect crect = Rect(cpatch.getU1(), cpatch.getV1(), cpatch.getSizeU(), cpatch.getSizeV());
         float iou = computeIOU(rect, crect);
@@ -595,7 +599,7 @@ void PCCEncoder::spatialConsistencyPack(PCCFrameContext& frame, PCCFrameContext 
   for (auto patch : patches) {
     assert(patch.getSizeU0() <= occupancySizeU);
     assert(patch.getSizeV0() <= occupancySizeV);
-    if (patch.getBestMatchIdx() == -1) {
+    if (patch.getBestMatchIdx() == InvalidPatchIndex) {
       newOrderPatches.push_back(patch);
     }
   }
@@ -672,16 +676,17 @@ void PCCEncoder::spatialConsistencyPackFlexible(PCCFrameContext& frame, PCCFrame
   size_t occupancySizeV = (std::max)(patches[0].getSizeU0(), patches[0].getSizeV0());
   vector<PCCPatch> matchedPatches, tmpPatches;
   matchedPatches.clear();
-  float thresholdIOU = 0.2;
+  float thresholdIOU = 0.2f;
 
   //main loop.
   for (auto &patch : prevPatches) {
     assert(patch.getSizeU0() <= occupancySizeU);
     assert(patch.getSizeV0() <= occupancySizeV);
     id++;
-    float maxIou = 0.0; int bestIdx = -1, cId = 0;
+    float maxIou = 0.0f;
+	int bestIdx = -1, cId = 0;
     for (auto &cpatch : patches) {
-      if ((patch.getViewId() == cpatch.getViewId()) && (cpatch.getBestMatchIdx() == -1)) {
+      if ((patch.getViewId() == cpatch.getViewId()) && (cpatch.getBestMatchIdx() == InvalidPatchIndex)) {
         Rect rect = Rect(patch.getU1(), patch.getV1(), patch.getSizeU(), patch.getSizeV());
         Rect crect = Rect(cpatch.getU1(), cpatch.getV1(), cpatch.getSizeU(), cpatch.getSizeV());
         float iou = computeIOU(rect, crect);
@@ -706,7 +711,7 @@ void PCCEncoder::spatialConsistencyPackFlexible(PCCFrameContext& frame, PCCFrame
   for (auto patch : patches) {
     assert(patch.getSizeU0() <= occupancySizeU);
     assert(patch.getSizeV0() <= occupancySizeV);
-    if (patch.getBestMatchIdx() == -1) {
+    if (patch.getBestMatchIdx() == InvalidPatchIndex) {
       newOrderPatches.push_back(patch);
     }
   }
@@ -738,7 +743,7 @@ void PCCEncoder::spatialConsistencyPackFlexible(PCCFrameContext& frame, PCCFrame
     bool locationFound = false;
     auto& occupancy = patch.getOccupancy();
     while (!locationFound) {
-      if (patch.getBestMatchIdx() != -1) {
+      if (patch.getBestMatchIdx() != InvalidPatchIndex) {
         patch.getPatchOrientation() = prevPatches[patch.getBestMatchIdx()].getPatchOrientation();
         //try to place on the same position as the matched patch
         patch.getU0() = prevPatches[patch.getBestMatchIdx()].getU0();
@@ -768,7 +773,7 @@ void PCCEncoder::spatialConsistencyPackFlexible(PCCFrameContext& frame, PCCFrame
           for (size_t u = 0; u < occupancySizeU && !locationFound; ++u) {
             patch.getU0() = u;
             patch.getV0() = v;
-            for (size_t orientationIdx = 0; orientationIdx < NumPatchOrientations && !locationFound; orientationIdx++) {
+            for (size_t orientationIdx = 0; orientationIdx < pow(2, params_.packingStrategy_) && !locationFound; orientationIdx++) {
               if (patch.getSizeU0() > patch.getSizeV0()) {
                 patch.getPatchOrientation() = orientation_horizontal[orientationIdx];
               } else {
@@ -919,7 +924,7 @@ void PCCEncoder::packFlexible(PCCFrameContext& frame, int safeguard) {
         for (size_t u = 0; u < occupancySizeU && !locationFound; ++u) {
           patch.getU0() = u;
           patch.getV0() = v;
-          for (size_t orientationIdx = 0; orientationIdx < NumPatchOrientations && !locationFound; orientationIdx++) {
+          for (size_t orientationIdx = 0; orientationIdx < pow(2, params_.packingStrategy_) && !locationFound; orientationIdx++) {
             if(patch.getSizeU0() > patch.getSizeV0()) {
               patch.getPatchOrientation() = orientation_horizontal[orientationIdx];
             } else {
@@ -2968,6 +2973,8 @@ int PCCEncoder::compressHeader( PCCContext &context, pcc::PCCBitstream &bitstrea
   bitstream.write<uint8_t>(uint8_t(params_.oneLayerMode_));
   bitstream.write<uint8_t>(uint8_t(params_.singleLayerPixelInterleaving_));
   bitstream.write<uint8_t>(uint8_t(params_.useAdditionalPointsPatch_));
+  bitstream.write<uint8_t>(uint8_t(params_.globalPatchAllocation_));
+  
   return 1;
 }
 
@@ -3006,8 +3013,6 @@ void PCCEncoder::compressPatchMetaDataM42195( PCCFrameContext &frame, PCCFrameCo
 
 
   }
-  uint8_t F = 1;  //true if the maximum value comes from the latter part.
-  uint8_t A[4] = { 0, 0, 0, 0 };
   for (size_t patchIndex = numMatchedPatches; patchIndex < patchCount; ++patchIndex) {
     const auto &patch = patches[patchIndex];
     maxU0 = (std::max)(maxU0, patch.getU0());
@@ -3018,40 +3023,8 @@ void PCCEncoder::compressPatchMetaDataM42195( PCCFrameContext &frame, PCCFrameCo
     maxD1 = (std::max)(maxD1, D1);
     size_t DD = patch.getSizeD()/minLevel;
     maxDD = (std::max)(maxDD, DD);
-
-    A[0] = maxU0 > TopNmaxU0 ? 1 : A[0];
-    A[1] = maxV0 > TopNmaxV0 ? 1 : A[1];
-    A[2] = maxU1 > TopNmaxU1 ? 1 : A[2];
-    A[3] = maxV1 > TopNmaxV1 ? 1 : A[3];
-    
-  }
-  //Generate F and A.
-  if (A[0]+A[1]+A[2]+A[3] == 0)
-  {  F = 0; }
-  
-
-  uint8_t bitCount[5];
-  bitCount[0] = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(maxU0 + 1))); 
-  bitCount[0] = maxU0 > TopNmaxU0 ? bitCount[0] : uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(TopNmaxU0 + 1)));
-  bitCount[1] = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(maxV0 + 1)));
-  bitCount[1] = maxV0 > TopNmaxV0 ? bitCount[1] : uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(TopNmaxV0 + 1)));
-  bitCount[2] = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(maxU1 + 1)));
-  bitCount[2] = maxU1 > TopNmaxU1 ? bitCount[2] : uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(TopNmaxU1 + 1)));
-  bitCount[3] = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(maxV1 + 1)));
-  bitCount[3] = maxV1 > TopNmaxV1 ? bitCount[3] : uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(TopNmaxV1 + 1)));
- bitCount[4] = maxBitCountForMinDepth;
- 
-  //write F and A into bitstream.
-  uint8_t flag = F;
-  for (int i = 0; i < 4; i++) {
-    flag = flag << 1;
-    flag += A[i];
   }
 
-  bitstream.write<uint8_t>(flag);
-  for (int i = 0; i < 4; i++) {
-    if (A[i])   bitstream.write<uint8_t>(bitCount[i]);
-  }
 
   bool bBinArithCoding = params_.binArithCoding_ && (!params_.losslessGeo_) &&
       (params_.occupancyResolution_ == 16) && (params_.occupancyPrecision_ == 4);
@@ -3071,8 +3044,41 @@ void PCCEncoder::compressPatchMetaDataM42195( PCCFrameContext &frame, PCCFrameCo
   const uint8_t bitCountNumPatches =
       uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(patchCount)));//numMatchedPatches <= patchCount
   EncodeUInt32(uint32_t(numMatchedPatches), bitCountNumPatches, arithmeticEncoder, bModel0);
-  printf("numPatch:%d(%d), numMatchedPatches:%d, F:%d,A:%d,%d,%d,%d\n", (int)patchCount,(int)bitCountNumPatches, (int)numMatchedPatches, F, A[0], A[1], A[2], A[3]);
+  uint8_t flag = 0;
+  uint8_t F = 1;  //true if the maximum value comes from the latter part.
+  uint8_t A[4] = { 1, 1, 1, 1 };
+  uint8_t bitCount[5], topBitCount[5];
+  bitCount[0]	 = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(maxU0 + 1)));
+  topBitCount[0] = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(TopNmaxU0 + 1)));
+  bitCount[1]	 = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(maxV0 + 1)));
+  topBitCount[1] = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(TopNmaxV0 + 1)));
+  bitCount[2]    = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(maxU1 + 1)));
+  topBitCount[2] = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(TopNmaxU1 + 1)));
+  bitCount[3]    = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(maxV1 + 1)));
+  topBitCount[3] = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(TopNmaxV1 + 1)));
+  bitCount[4]    = maxBitCountForMinDepth;
 
+  for (int i = 0; i < 4; i++) {
+	if (bitCount[i] <= topBitCount[i]) {
+		bitCount[i] = topBitCount[i];
+		A[i] = 0;
+	}
+	flag = flag << 1;
+	flag += A[i];
+  }
+  //Generate F and A.
+  if (flag == 0) {	F = 0; }
+  EncodeUInt32(uint32_t(F), 1, arithmeticEncoder, bModel0);
+  if(F){
+	  EncodeUInt32(uint32_t(flag), 4, arithmeticEncoder, bModel0);
+	  for (int i = 0; i < 4; i++) {
+		  if (A[i])  EncodeUInt32(uint32_t(bitCount[i]), 8, arithmeticEncoder, bModel0);
+	  }
+  }
+  if (printDetailedInfo) {
+      printf("numPatch:%d(%d), numMatchedPatches:%d, F:%d,A:%d,%d,%d,%d\n", (int)patchCount,(int)bitCountNumPatches, (int)numMatchedPatches, F, A[0], A[1], A[2], A[3]);
+	  printf("bitCount:%d,%d,%d,%d,%d\n", (int)bitCount[0], (int)bitCount[1], (int)bitCount[2], (int)bitCount[3], (int)bitCount[4]);
+  }
   int64_t predIndex = 0;
   for (size_t patchIndex = 0; patchIndex < numMatchedPatches; ++patchIndex) {
     const auto &patch    = patches[patchIndex];
@@ -3325,7 +3331,8 @@ void PCCEncoder::compressOccupancyMap(PCCFrameContext& frame, PCCBitstream &bits
   bool bBinArithCoding = params_.binArithCoding_ && (!params_.losslessGeo_) &&
       (params_.occupancyResolution_ == 16) && (params_.occupancyPrecision_ == 4);
 
-  uint8_t enable_flexible_patch_flag = params_.packingStrategy_;
+
+  uint8_t enable_flexible_patch_flag = (params_.packingStrategy_ > 0);
   bitstream.write<uint8_t>(enable_flexible_patch_flag);
 
   arithmeticEncoder.set_buffer( 0x00ffffff );
@@ -3473,23 +3480,104 @@ void PCCEncoder::compressOccupancyMap(PCCFrameContext& frame, PCCBitstream &bits
       }
     }
   }
-
-  for (size_t p = 0; p < blockCount; ++p) {
-    const size_t patchIndex = blockToPatch[p];
-    if( patchIndex > 0 ) {
-      if( params_.absoluteD1_ && params_.oneLayerMode_ ) {
-        arithmeticEncoder.encode(uint32_t(interpolateMap[ p ]), interpolateModel);
-        if( interpolateMap[ p ] > 0 ) {
-          arithmeticEncoder.encode(uint32_t(neighborMap[ p ] - 1), neighborModel);
-        }
-        arithmeticEncoder.encode(uint32_t(minD1Map[ p ] ), minD1Model);
-        if( minD1Map[ p ] > 1 || interpolateMap[ p ] > 0 ) {
-          arithmeticEncoder.encode(uint32_t(fillingMap[ p ] ), fillingModel);
-        }
-      }
-    }
-  }
   
+  if (params_.globalPatchAllocation_) {
+	  std::vector<std::vector<size_t>> candidatePatches;
+	  candidatePatches.resize(blockCount);
+	  for (int64_t patchIndex = patchCount - 1; patchIndex >= 0; --patchIndex) {  // add actual patches based on their bounding box
+		auto &patch = patches[patchIndex];
+		for (size_t v0 = 0; v0 < patch.getSizeV0(); ++v0) {
+		  for (size_t u0 = 0; u0 < patch.getSizeU0(); ++u0) {
+			candidatePatches[patch.patchBlock2CanvasBlock(u0, v0, blockToPatchWidth, blockToPatchHeight)].push_back(patchIndex + 1);
+		  }
+		}
+	  }
+	  if(!params_.useOccupancyMapVideo_) {
+		for (auto &candidatePatch : candidatePatches) {  // add empty as potential candidate
+		  candidatePatch.push_back(0);
+		}
+	  }
+	  o3dgc::Adaptive_Bit_Model candidateIndexModelBit[4];
+	  o3dgc::Adaptive_Data_Model candidateIndexModel(uint32_t(params_.maxCandidateCount_ + 2));
+	  const uint32_t bitCountPatchIndex =
+		  PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(patchCount + (params_.useOccupancyMapVideo_?0:1)));
+	  for (size_t p = 0; p < blockCount; ++p) {
+		const size_t patchIndex = blockToPatch[p];
+		const auto &candidates = candidatePatches[p];
+		if (candidates.size() == 1 || (params_.useOccupancyMapVideo_ && patchIndex==0))  {
+		  // empty
+		} else {
+		  const uint32_t candidateCount = uint32_t( (std::min)(candidates.size(), params_.maxCandidateCount_));
+		  bool found = false;
+		  for (uint32_t i = 0; i < candidateCount; ++i) {
+			if (candidates[i] == patchIndex) {
+			  found = true;
+			  if (bBinArithCoding) {
+				if (i == 0) {
+				  arithmeticEncoder.encode(0, candidateIndexModelBit[0]);
+				} else if (i == 1) {
+				  arithmeticEncoder.encode(1, candidateIndexModelBit[0]);
+				  arithmeticEncoder.encode(0, candidateIndexModelBit[1]);
+				} else if (i == 2) {
+				  arithmeticEncoder.encode(1, candidateIndexModelBit[0]);
+				  arithmeticEncoder.encode(1, candidateIndexModelBit[1]);
+				  arithmeticEncoder.encode(0, candidateIndexModelBit[2]);
+				} else if (i == 3) {
+				  arithmeticEncoder.encode(1, candidateIndexModelBit[0]);
+				  arithmeticEncoder.encode(1, candidateIndexModelBit[1]);
+				  arithmeticEncoder.encode(1, candidateIndexModelBit[2]);
+				  arithmeticEncoder.encode(0, candidateIndexModelBit[3]);
+				}
+			  } else {
+				arithmeticEncoder.encode(i, candidateIndexModel);
+			  }
+			  break;
+			}
+		  }
+		  if (!found) {
+			if (bBinArithCoding) {
+			  arithmeticEncoder.encode(1, candidateIndexModelBit[0]);
+			  arithmeticEncoder.encode(1, candidateIndexModelBit[1]);
+			  arithmeticEncoder.encode(1, candidateIndexModelBit[2]);
+			  arithmeticEncoder.encode(1, candidateIndexModelBit[3]);
+			} else {
+			  arithmeticEncoder.encode(uint32_t(params_.maxCandidateCount_), candidateIndexModel);
+			}
+			EncodeUInt32(uint32_t(patchIndex), bitCountPatchIndex, arithmeticEncoder, bModel0);
+		  }
+		}
+
+		if( patchIndex > 0 ) {
+		  if( params_.absoluteD1_ && params_.oneLayerMode_ ) {
+			arithmeticEncoder.encode(uint32_t(interpolateMap[ p ]), interpolateModel);
+			if( interpolateMap[ p ] > 0 ) {
+			  arithmeticEncoder.encode(uint32_t(neighborMap[ p ] - 1), neighborModel);
+			}
+			arithmeticEncoder.encode(uint32_t(minD1Map[ p ] ), minD1Model);
+			if( minD1Map[ p ] > 1 || interpolateMap[ p ] > 0 ) {
+			  arithmeticEncoder.encode(uint32_t(fillingMap[ p ] ), fillingModel);
+			}
+		  }
+		}
+	  }
+  }
+  else {
+	  for (size_t p = 0; p < blockCount; ++p) {
+		  const size_t patchIndex = blockToPatch[p];
+		  if (patchIndex > 0) {
+			  if (params_.absoluteD1_ && params_.oneLayerMode_) {
+				  arithmeticEncoder.encode(uint32_t(interpolateMap[p]), interpolateModel);
+				  if (interpolateMap[p] > 0) {
+					  arithmeticEncoder.encode(uint32_t(neighborMap[p] - 1), neighborModel);
+				  }
+				  arithmeticEncoder.encode(uint32_t(minD1Map[p]), minD1Model);
+				  if (minD1Map[p] > 1 || interpolateMap[p] > 0) {
+					  arithmeticEncoder.encode(uint32_t(fillingMap[p]), fillingModel);
+				  }
+			  }
+		  }
+	  }
+  }
   uint32_t compressedBitstreamSize = arithmeticEncoder.stop_encoder();
   bitstream.write( arithmeticEncoder.buffer(), compressedBitstreamSize );
 }
@@ -3541,4 +3629,888 @@ void PCCEncoder::generateIntraEnhancedDeltaDepthImage(PCCFrameContext &frame, co
     }
   }
   return;
+}
+
+void PCCEncoder::performDataAdaptiveGPAMethod(PCCContext& context)
+{
+	// some valid parameters;
+	SubContext    subContextPre, subContextCur;           // [start, end);
+	unionPatch    unionPatchPre, unionPatchCur;          // [trackIndex, patchUnion];
+	GlobalPatches globalPatchTracks;                       // [trackIndex, <[frameIndex, patchIndex]>];
+	bool          startSubContext = true;                  // startSubContext is initialized as true;  start a subContext;
+	bool          endSubContext   = false;                 // endSubContext   is initialized as false; end   a subContext;
+	int			  preSubcontextFrameId = -1;
+	size_t        subcontextIdx = 0;
+	
+    // iterate over all frameContexts;
+	for (size_t frameIndex = 0; frameIndex < context.size(); ++frameIndex) {
+		bool useRefFrame = true/*params_.keepGPARotation_*/;
+		// determine whether start a subContext or not;
+		if (startSubContext) {
+			initializeSubContext(context[frameIndex], subContextPre, globalPatchTracks, unionPatchPre, frameIndex);
+
+			if (subContextPre.first == 0) {
+				useRefFrame = false;	
+			}
+			packingFirstFrame(context, frameIndex, params_.packingStrategy_, params_.safeGuardDistance_, useRefFrame);
+
+			context[subContextPre.first].getPrePCCGPAFrameSize() = context[subContextPre.first].getCurPCCGPAFrameSize();
+			context[subContextPre.first].getCurPCCGPAFrameSize().widthGPA_ = 0;
+			context[subContextPre.first].getCurPCCGPAFrameSize().heightGPA_ = 0;
+			for (auto&patch : context[subContextPre.first].getPatches()) {
+				patch.getPreGPAPatchData() = patch.getCurGPAPatchData();
+				patch.getCurGPAPatchData().initialize();
+			}
+			if (frameIndex == context.size() - 1) {
+				context.getSubContexts().emplace_back(subContextPre);
+				updatePatchInformation(context, subContextPre);
+				break;
+			}
+			subContextCur = subContextPre;
+			startSubContext = false;
+			continue;
+		}
+
+		subContextCur.first = subContextPre.first;
+		subContextCur.second = frameIndex + 1;
+		preSubcontextFrameId = subContextCur.first - 1;
+		if (subContextCur.first == 0) {
+			useRefFrame = false;
+			preSubcontextFrameId = -1;
+		}
+
+		// clear current information;
+		clearCurrentGPAPatchDataInfor(context, subContextCur);
+
+		// genrate globalPatchTracks;
+		size_t preIndex = frameIndex - subContextCur.first - 1; //preIndex is the previous index in the current subcontext.
+		generateGlobalPatches(context, frameIndex, globalPatchTracks, preIndex);
+		
+		// patch unions generation and packing;
+		size_t unionsHeight = unionPatchGenerationAndPacking(globalPatchTracks, context, unionPatchCur, preSubcontextFrameId, params_.safeGuardDistance_, useRefFrame);
+		
+		// perform GPA packing;
+		bool badPatchCount   = false;
+		bool badUnionsHeight = false;
+		bool badGPAPacking   = false;
+		if (double(unionPatchCur.size()) / globalPatchTracks.size() < 0.15) {
+			badPatchCount = true;
+		}
+		if (unionsHeight > params_.minimumImageHeight_) {
+			badUnionsHeight = true;
+		}
+		if (printDetailedInfo) {
+			std::cout << "badPatchCount: " << badPatchCount << "badUnionsHeight: " << badUnionsHeight << std::endl;
+		}
+		if (!badPatchCount && !badUnionsHeight) {
+			// patch information updating;
+			updateGPAPatchInformation(context, subContextCur, unionPatchCur);
+
+			//save the data into preGPAPatchData.
+			performGPAPacking(subContextCur, unionPatchCur, context, badGPAPacking, unionsHeight, params_.safeGuardDistance_, useRefFrame);
+		}
+
+		endSubContext = (badPatchCount || badUnionsHeight || badGPAPacking);
+		std::cout << "The endSubContext is: " << endSubContext << std::endl;
+
+		if (endSubContext) {
+			std::cout << "The frame is a end point --- " << frameIndex << std::endl;
+			// clear current information;
+			clearCurrentGPAPatchDataInfor(context, subContextCur);
+			assert(subContextCur.second - subContextCur.first > 1);
+
+			subContextCur.first  = 0;
+			subContextCur.second = 0;
+			unionPatchCur.clear();
+			globalPatchTracks.clear();                             // GlobalPatches.......;
+			// retain previous information;
+			context.getSubContexts().emplace_back(subContextPre);  // SubContext..........;
+			startSubContext = true;
+			endSubContext   = false;
+			frameIndex -= 1;	//should stay at the start point for next subcontext.
+
+			// update Patch information;
+			updatePatchInformation(context, subContextPre);
+		}
+		else {
+			std::cout << "The frame " << frameIndex<<" is not a end point ---"<< std::endl;
+			// previous information updating;
+			for (size_t j = subContextCur.first; j < subContextCur.second; ++j) {
+				auto& curPatches = context[j].getPatches();
+				context[j].getPrePCCGPAFrameSize() = context[j].getCurPCCGPAFrameSize();
+				assert(!curPatches.empty());
+				for (auto& curPatch : curPatches) {
+					curPatch.getPreGPAPatchData() = curPatch.getCurGPAPatchData();
+				}
+				if (context[j].getMissedPointsPatch().size() > 0 && !context[j].getUseMissedPointsSeparateVideo()) {
+					context[j].getMissedPointsPatch().pre_v0 = context[j].getMissedPointsPatch().temp_v0;
+				}
+			}
+			subContextPre = subContextCur;
+			unionPatchPre.clear();
+			unionPatchPre = unionPatchCur;
+			std::cout << "cleared current tried infor:" << std::endl;
+			// clear current information;
+			for (size_t j = subContextCur.first; j < subContextCur.second; ++j) {
+				auto& curPatches = context[j].getPatches();
+				assert(!curPatches.empty());
+				for (auto& curPatch : curPatches) {
+					curPatch.getCurGPAPatchData().initialize();
+				}
+			}
+			subContextCur.first  = 0;
+			subContextCur.second = 0;
+			unionPatchCur.clear();
+			// the ending......;
+			if (frameIndex == (context.size() - 1)) {
+				context.getSubContexts().emplace_back(subContextPre);      // SubContext..........;
+				std::cout << "This is the last frame......." << std::endl;
+
+				// update information;
+				updatePatchInformation(context, subContextPre);
+				break;
+			}
+		}
+	}
+}
+
+void PCCEncoder::initializeSubContext(PCCFrameContext& frameContext, SubContext& subContext, GlobalPatches& globalPatchTracks, unionPatch& unionPatch, size_t frameIndex)
+{
+	// 1. initialize subContext;
+	subContext.first  = frameIndex;
+	subContext.second = frameIndex + 1;
+	std::cout<<"New subContext:["<<subContext.first<<","<<subContext.second<<")"<<std::endl;
+
+	// 2. initialize globalPatchTracks && unionPatch;
+	unionPatch.clear();
+	globalPatchTracks.clear();
+	for (size_t patchIndex = 0; patchIndex < frameContext.getPatches().size(); ++patchIndex) {
+		globalPatchTracks[patchIndex].emplace_back(std::make_pair(frameIndex, patchIndex));
+		frameContext.getPatches()[patchIndex].getCurGPAPatchData().isGlobalPatch = true;
+		frameContext.getPatches()[patchIndex].getCurGPAPatchData().globalPatchIndex = patchIndex;
+	}
+}
+void PCCEncoder::clearCurrentGPAPatchDataInfor(PCCContext& context, SubContext& subContext) {
+	// clear current information;
+	for (size_t j = subContext.first; j < subContext.second; ++j) {
+		auto& curPatches = context[j].getPatches();
+		context[j].getMissedPointsPatch().temp_v0 = 0;
+		assert(!curPatches.empty());
+		for (auto& curPatch : curPatches) {
+			curPatch.getCurGPAPatchData().initialize();
+		}
+	}
+}
+void PCCEncoder::generateGlobalPatches(PCCContext& context, size_t frameIndex, GlobalPatches& globalPatchTracks, size_t preIndex)
+{
+	auto& curPatches = context[frameIndex].getPatches();
+	assert(curPatches.size() > 0);
+	for (GlobalPatches::iterator iter = globalPatchTracks.begin(); iter != globalPatchTracks.end(); iter++) {
+		size_t trackIndex   = iter->first;
+		auto&  trackPatches = iter->second;            // !!!< <frameIndex, patchIndex> >;
+		if (trackPatches.empty()) {
+			continue;
+		}
+		const auto& preGlobalPatch = trackPatches[preIndex];
+		const auto& prePatch       = context[preGlobalPatch.first].getPatches()[preGlobalPatch.second];
+		float thresholdIOU = 0.2;
+		float maxIou       = 0.0;
+		int   bestIdx      = -1;                       // best matched patch index in curPatches;
+		int   cId          = 0;                        // patch index in curPatches;
+		for (auto& curPatch : curPatches) {            // curPatches; may be modified;
+			if (prePatch.getViewId() == curPatch.getViewId() && !(curPatch.getCurGPAPatchData().isMatched)) {
+				Rect preRect = Rect(prePatch.getU1(), prePatch.getV1(), prePatch.getSizeU(), prePatch.getSizeV());
+				Rect curRect = Rect(curPatch.getU1(), curPatch.getV1(), curPatch.getSizeU(), curPatch.getSizeV());
+				float iou = computeIOU(preRect, curRect);
+				if (iou > maxIou) {
+					maxIou  = iou;
+					bestIdx = cId;
+				}
+			}
+			cId++;
+		}
+		if (maxIou > thresholdIOU) {                               // !!!best match found;
+			curPatches[bestIdx].getCurGPAPatchData().isMatched = true; // indicating the patch is already matched;
+			trackPatches.emplace_back(std::make_pair(frameIndex, bestIdx));
+		} else {
+			trackPatches.clear();
+		}
+	}
+
+	// update global patch information according to curGlobalPatches;
+	for (GlobalPatches::iterator iter = globalPatchTracks.begin(); iter != globalPatchTracks.end(); iter++) {
+		const size_t trackIndex = iter->first;
+		const auto&  trackPatches = iter->second;       // !!!< <frameIndex, patchIndex> >; 
+		if (trackPatches.empty()) {
+			continue;
+		}
+		for (const auto& trackPatch : trackPatches) {
+			GPAPatchData & curGPAPatchData = context[trackPatch.first].getPatches()[trackPatch.second].getCurGPAPatchData();
+			curGPAPatchData.isGlobalPatch    = true;
+			curGPAPatchData.globalPatchIndex = trackIndex;
+		}
+	}
+}
+
+size_t PCCEncoder::unionPatchGenerationAndPacking(const GlobalPatches& globalPatchTracks, PCCContext& context, unionPatch& unionPatchTemp, size_t refFrameIdx,int safeguard, bool useRefFrame)
+{
+	// 1. unionPatch generation;
+	unionPatchTemp.clear();
+	// 1.1 patchTracks generation;
+	std::map<size_t, std::vector<PCCPatch> > patchTracks;
+	for (GlobalPatches::const_iterator iter = globalPatchTracks.begin(); iter != globalPatchTracks.end(); iter++) {
+		const auto& trackIndex   = iter->first;
+		const auto& trackPatches = iter->second;
+		if (trackPatches.empty()) {
+			continue;
+		}
+		for (const auto& trackPatch : trackPatches) {
+			patchTracks[trackIndex].emplace_back(context[trackPatch.first].getPatches()[trackPatch.second]);
+		}
+	}
+	// 1.2 union processing --- patchTracks -> unionPatch;
+	for (std::map<size_t, std::vector<PCCPatch> >::const_iterator iter = patchTracks.begin(); iter != patchTracks.end(); iter++) {
+		const auto& trackIndex   = iter->first;
+		const auto& trackPatches = iter->second;
+		assert(trackPatches.size() != 0);
+		// get the sizeU0 && sizeV0;
+		size_t maxSizeU0 = 0;
+		size_t maxSizeV0 = 0;
+		for (const auto& trackPatch : trackPatches) {
+			maxSizeU0 = std::max<size_t>(maxSizeU0, trackPatch.getSizeU0());
+			maxSizeV0 = std::max<size_t>(maxSizeV0, trackPatch.getSizeV0());
+		}
+
+		// get the patch union;
+		PCCPatch curPatchUnion;
+		curPatchUnion.getIndex() = trackIndex;
+		curPatchUnion.getSizeU0() = maxSizeU0;
+		curPatchUnion.getSizeV0() = maxSizeV0;
+		curPatchUnion.getOccupancy().resize(maxSizeU0 * maxSizeV0, false);
+		if (useRefFrame &&(trackPatches.size() > 0)) {
+			assert(refFrameIdx != -1);
+			size_t matchedPatchIdx = trackPatches[0].getBestMatchIdx();//the first frame in the subcontext.
+			if (matchedPatchIdx == -1) {
+				curPatchUnion.getPatchOrientation() = -1;
+			} else {//suppose the refFrame is the same frame for all patches.
+				curPatchUnion.getPatchOrientation() = context[refFrameIdx].getPatches()[matchedPatchIdx].getPatchOrientation();
+				if (printDetailedInfo) {
+					std::cout << "Maintained orientation for curPatchUnion.getPatchOrientation() = " << curPatchUnion.getPatchOrientation() << std::endl;
+				}
+			}
+		}
+		for (const auto& trackPatch : trackPatches) {
+			const auto& occupancy = trackPatch.getOccupancy();
+			for (size_t v = 0; v < trackPatch.getSizeV0(); ++v) {
+				for (size_t u = 0; u < trackPatch.getSizeU0(); ++u) {
+					assert(v < maxSizeV0);
+					assert(u < maxSizeU0);
+					size_t p  = v * trackPatch.getSizeU0()    + u;
+					size_t up = v * curPatchUnion.getSizeU0() + u;
+					if (occupancy[p] && !(curPatchUnion.getOccupancy()[up]))
+						curPatchUnion.getOccupancy()[up] = true;
+				}
+			}
+		}
+		unionPatchTemp[trackIndex] = curPatchUnion;
+	}
+
+	// 2. unionPatch packing;
+	size_t occupancySizeU = params_.minimumImageWidth_ / params_.occupancyResolution_;
+	size_t occupancySizeV = (std::max)(unionPatchTemp[0].getSizeV0(), unionPatchTemp[0].getSizeU0());
+	for (unionPatch::const_iterator iter = unionPatchTemp.begin(); iter != unionPatchTemp.end(); iter++) {
+		const auto& curPatchUnion = iter->second;
+		occupancySizeU = std::max<size_t>(occupancySizeU, curPatchUnion.getSizeU0() + 1);
+		occupancySizeV = std::max<size_t>(occupancySizeV, curPatchUnion.getSizeV0() + 1);
+	}
+	size_t width  = occupancySizeU * params_.occupancyResolution_;
+	size_t height = occupancySizeV * params_.occupancyResolution_;
+	size_t maxOccupancyRow{ 0 };
+
+	std::vector<bool> occupancyMap;
+	vector<int> orientation_vertical   = { 0,1,2,3,4,6,5,7 };  // favoring vertical orientation 
+	vector<int> orientation_horizontal = { 1,0,3,2,5,7,4,6 };  // favoring horizontal orientations (that should be rotated) 
+	occupancyMap.resize(occupancySizeU * occupancySizeV, false);
+	for (unionPatch::iterator iter = unionPatchTemp.begin(); iter != unionPatchTemp.end(); iter++) {
+		auto& curUnionIndex = iter->first;
+		auto& curPatchUnion = iter->second;             // [u0, v0] may be modified;
+		assert(curPatchUnion.getSizeU0() < occupancySizeU);
+		assert(curPatchUnion.getSizeV0() < occupancySizeV);
+		bool  locationFound = false;
+		auto& occupancy     = curPatchUnion.getOccupancy();
+		while (!locationFound) {
+			for (size_t v = 0; v < occupancySizeV && !locationFound; ++v) {
+				for (size_t u = 0; u < occupancySizeU && !locationFound; ++u) {
+					curPatchUnion.getU0() = u;
+					curPatchUnion.getV0() = v;
+					if (params_.packingStrategy_ == 0) {
+						curPatchUnion.getPatchOrientation() = 0;
+						if (curPatchUnion.checkFitPatchCanvas(occupancyMap, occupancySizeU, occupancySizeV, safeguard)) {
+							locationFound = true;
+							if (printDetailedInfo) {
+								std::cout << "Orientation " << curPatchUnion.getPatchOrientation() << " selected for unionPatch " << curPatchUnion.getIndex() << " (" << u << "," << v << ")" << std::endl;
+							}
+						}
+					}
+					else {
+						if (useRefFrame &&(curPatchUnion.getPatchOrientation() != -1)) {
+							//already knonw Patch Orientation. just try.
+							if (curPatchUnion.checkFitPatchCanvas(occupancyMap, occupancySizeU, occupancySizeV, safeguard)) {
+								locationFound = true;
+								if (printDetailedInfo) {
+									std::cout << "location u0,v0 selected for unionPatch " << curPatchUnion.getIndex() << " (" << u << "," << v << ")" << std::endl;
+								}
+							}
+						} else {
+							for (size_t orientationIdx = 0; orientationIdx < pow(2, params_.packingStrategy_) && !locationFound; orientationIdx++) {
+								if (curPatchUnion.getSizeU0() > curPatchUnion.getSizeV0()) {
+									curPatchUnion.getPatchOrientation() = orientation_horizontal[orientationIdx];
+								} else {
+									curPatchUnion.getPatchOrientation() = orientation_vertical[orientationIdx];
+								}
+								if (curPatchUnion.checkFitPatchCanvas(occupancyMap, occupancySizeU, occupancySizeV, safeguard)) {
+									locationFound = true;
+									if (printDetailedInfo) {
+										std::cout << "Orientation " << curPatchUnion.getPatchOrientation() << " selected for unionPatch " << curPatchUnion.getIndex() << " (" << u << "," << v << ")" << std::endl;
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			if (!locationFound) {
+				occupancySizeV *= 2;
+				occupancyMap.resize(occupancySizeU * occupancySizeV);
+			}
+		}
+		for (size_t v0 = 0; v0 < curPatchUnion.getSizeV0(); ++v0) {
+			for (size_t u0 = 0; u0 < curPatchUnion.getSizeU0(); ++u0) {
+				int coord = curPatchUnion.patchBlock2CanvasBlock(u0, v0, occupancySizeU, occupancySizeV);
+				occupancyMap[coord] = occupancyMap[coord] || occupancy[v0 * curPatchUnion.getSizeU0() + u0];
+			}
+		}
+
+		if (curPatchUnion.getPatchOrientation() == 0 || curPatchUnion.getPatchOrientation() == 2 || curPatchUnion.getPatchOrientation() == 4 || curPatchUnion.getPatchOrientation() == 6) {
+			height = (std::max)(height, (curPatchUnion.getV0() + curPatchUnion.getSizeV0()) * params_.occupancyResolution_);
+			width  = (std::max)(width,  (curPatchUnion.getU0() + curPatchUnion.getSizeU0()) * params_.occupancyResolution_);
+			maxOccupancyRow = (std::max)(maxOccupancyRow, (curPatchUnion.getV0() + curPatchUnion.getSizeV0()));
+		}
+		else {
+			height = (std::max)(height, (curPatchUnion.getV0() + curPatchUnion.getSizeU0()) * params_.occupancyResolution_);
+			width  = (std::max)(width,  (curPatchUnion.getU0() + curPatchUnion.getSizeV0()) * params_.occupancyResolution_);
+			maxOccupancyRow = (std::max)(maxOccupancyRow, (curPatchUnion.getV0() + curPatchUnion.getSizeU0()));
+		}
+	}
+	std::cout << "actualImageSizeU " << width << std::endl;
+	std::cout << "actualImageSizeV " << height << std::endl;
+
+	return height;
+}
+void PCCEncoder::packingFirstFrame(PCCContext& context,  size_t frameIndex, bool packingStrategy, int safeguard, bool hasRefFrame) {
+	PCCFrameContext& frame = context[frameIndex];
+	auto&patches = frame.getPatches();
+	size_t occupancySizeU = params_.minimumImageWidth_ / params_.occupancyResolution_;
+	size_t occupancySizeV = (std::max)(patches[0].getSizeU0(), patches[0].getSizeV0());
+	
+	for (auto &patch : patches) { occupancySizeU = (std::max)(occupancySizeU, patch.getSizeU0() + 1); }
+	auto&widthGPA = frame.getCurPCCGPAFrameSize().widthGPA_;
+	auto &heithGPA = frame.getCurPCCGPAFrameSize().heightGPA_;
+	widthGPA = occupancySizeU * params_.occupancyResolution_;
+	heithGPA = occupancySizeV * params_.occupancyResolution_;
+	size_t maxOccupancyRow{ 0 };
+
+
+	if (packingStrategy == 0) {
+		std::vector<bool> occupancyMap;
+		occupancyMap.resize(occupancySizeU * occupancySizeV, false);
+		for (auto &patch : patches) {
+			assert(patch.getSizeU0() <= occupancySizeU);
+			assert(patch.getSizeV0() <= occupancySizeV);
+			bool locationFound = false;
+			auto& occupancy = patch.getOccupancy();
+			while (!locationFound) {
+				patch.getPatchOrientation() = 0; // only one orientation is allowed
+				for (int v = 0; v <= occupancySizeV && !locationFound; ++v) {
+					for (int u = 0; u <= occupancySizeU && !locationFound; ++u) {
+						patch.getU0() = u;
+						patch.getV0() = v;
+						if (patch.checkFitPatchCanvas(occupancyMap, occupancySizeU, occupancySizeV, safeguard)) {
+							locationFound = true;
+						}
+					}
+				}
+				if (!locationFound) {
+					occupancySizeV *= 2;
+					occupancyMap.resize(occupancySizeU * occupancySizeV);
+				}
+			}
+			for (size_t v0 = 0; v0 < patch.getSizeV0(); ++v0) {
+				const size_t v = patch.getV0() + v0;
+				for (size_t u0 = 0; u0 < patch.getSizeU0(); ++u0) {
+					const size_t u = patch.getU0() + u0;
+					occupancyMap[v * occupancySizeU + u] =
+						occupancyMap[v * occupancySizeU + u] || occupancy[v0 * patch.getSizeU0() + u0];
+				}
+			}
+
+			heithGPA = (std::max)(heithGPA, (patch.getV0() + patch.getSizeV0()) * patch.getOccupancyResolution());
+			widthGPA = (std::max)(widthGPA, (patch.getU0() + patch.getSizeU0()) * patch.getOccupancyResolution());
+			maxOccupancyRow = (std::max)(maxOccupancyRow, (patch.getV0() + patch.getSizeV0()));
+		}
+
+		if (frame.getMissedPointsPatch().size() > 0 && !frame.getUseMissedPointsSeparateVideo()) {
+			packMissedPointsPatch(frame, occupancyMap, widthGPA, heithGPA, occupancySizeU, occupancySizeV, maxOccupancyRow);
+			frame.getMissedPointsPatch().pre_v0 = frame.getMissedPointsPatch().v0;
+		}
+		else {
+			if (printDetailedInfo) {
+				printMap(occupancyMap, occupancySizeU, occupancySizeV);
+			}
+		}
+		std::cout << "actualImageSizeU " << widthGPA << std::endl;
+		std::cout << "actualImageSizeV " << heithGPA << std::endl;
+	} else {
+		vector<int> orientation_vertical = { 0,1,2,3,4,6,5,7 };//favoring vertical orientation
+		vector<int> orientation_horizontal = { 1,0,3,2,5,7,4,6 };//favoring horizontal orientations (that should be rotated) 
+		std::vector<bool> occupancyMap;
+		occupancyMap.resize(occupancySizeU * occupancySizeV, false);
+
+		for (auto &patch : patches) {
+			assert(patch.getSizeU0() <= occupancySizeU);
+			assert(patch.getSizeV0() <= occupancySizeV);
+			bool locationFound = false;
+			auto& occupancy = patch.getOccupancy();
+			GPAPatchData& curGPAPatchData = patch.getCurGPAPatchData();
+			curGPAPatchData.occupancy = occupancy;
+			curGPAPatchData.sizeU0 = patch.getSizeU0();
+			curGPAPatchData.sizeV0 = patch.getSizeV0();
+
+			while (!locationFound) {
+				//no ref patch for first frame.
+				if ((patch.getBestMatchIdx() != InvalidPatchIndex)&&(hasRefFrame)) {
+					std::vector<PCCPatch> &prevPatches = context[frameIndex-1].getPatches();
+					curGPAPatchData.patchOrientation = prevPatches[patch.getBestMatchIdx()].getPatchOrientation();
+					//try to place on the same position as the matched patch
+					curGPAPatchData.u0 = prevPatches[patch.getBestMatchIdx()].getU0();
+					curGPAPatchData.v0 = prevPatches[patch.getBestMatchIdx()].getV0();
+					if (patch.checkFitPatchCanvasForGPA(occupancyMap, occupancySizeU, occupancySizeV)) {
+						locationFound = true;
+						if (printDetailedInfo) {
+							std::cout << "Maintained orientation " << curGPAPatchData.patchOrientation << " for matched patch in the same position (" << curGPAPatchData.u0 << "," << curGPAPatchData.v0 << ")" << std::endl;
+						}
+					}
+					//if the patch couldn't fit, try to fit the patch in the top left position
+					for (int v = 0; v <= occupancySizeV && !locationFound; ++v) {
+						for (int u = 0; u <= occupancySizeU && !locationFound; ++u) {
+							curGPAPatchData.u0 = u;
+							curGPAPatchData.v0 = v;
+							if (patch.checkFitPatchCanvasForGPA(occupancyMap, occupancySizeU, occupancySizeV, safeguard)) {
+								locationFound = true;
+								if (printDetailedInfo) {
+									std::cout << "Maintained orientation " << curGPAPatchData.patchOrientation << " for matched patch:(" << curGPAPatchData.u0 << "," << curGPAPatchData.v0 << ")" << std::endl;
+								}
+							}
+						}
+					}
+				}
+				else {
+					//best effort
+					for (size_t v = 0; v < occupancySizeV && !locationFound; ++v) {
+						for (size_t u = 0; u < occupancySizeU && !locationFound; ++u) {
+							curGPAPatchData.u0 = u; 
+							curGPAPatchData.v0 = v;
+							for (size_t orientationIdx = 0; orientationIdx < pow(2, params_.packingStrategy_) && !locationFound; orientationIdx++) {
+								if (curGPAPatchData.sizeU0 > curGPAPatchData.sizeV0) {
+									curGPAPatchData.patchOrientation = orientation_horizontal[orientationIdx];
+								}
+								else {
+									curGPAPatchData.patchOrientation = orientation_vertical[orientationIdx];
+								}
+								if (patch.checkFitPatchCanvasForGPA(occupancyMap, occupancySizeU, occupancySizeV, safeguard)) {
+									locationFound = true;
+									if (printDetailedInfo) {
+										std::cout << "Orientation " << curGPAPatchData.patchOrientation << " selected for unmatched patch:(" << curGPAPatchData.u0 << "," << curGPAPatchData.v0 << ")" << std::endl;
+									}
+								}
+							}
+						}
+					}
+				}
+				if (!locationFound) {
+					occupancySizeV *= 2;
+					occupancyMap.resize(occupancySizeU * occupancySizeV);
+				}
+			}
+			for (size_t v0 = 0; v0 < curGPAPatchData.sizeV0; ++v0) {
+				for (size_t u0 = 0; u0 < curGPAPatchData.sizeU0; ++u0) {
+					int coord = patch.patchBlock2CanvasBlockForGPA(u0, v0, occupancySizeU, occupancySizeV);
+					occupancyMap[coord] = occupancyMap[coord] || occupancy[v0 * patch.getSizeU0() + u0];
+				}
+			}
+			if (curGPAPatchData.patchOrientation == 0 || curGPAPatchData.patchOrientation == 2 || curGPAPatchData.patchOrientation == 4 || curGPAPatchData.patchOrientation == 6) {
+				heithGPA = (std::max)(heithGPA, (curGPAPatchData.v0 + curGPAPatchData.sizeV0) * patch.getOccupancyResolution());
+				widthGPA = (std::max)(widthGPA, (curGPAPatchData.u0 + curGPAPatchData.sizeU0) * patch.getOccupancyResolution());
+				maxOccupancyRow = (std::max)(maxOccupancyRow, (curGPAPatchData.v0 + curGPAPatchData.sizeV0));
+			}
+			else {
+				heithGPA = (std::max)(heithGPA, (curGPAPatchData.v0 + curGPAPatchData.sizeU0) * patch.getOccupancyResolution());
+				widthGPA = (std::max)(widthGPA, (curGPAPatchData.u0 + curGPAPatchData.sizeV0) * patch.getOccupancyResolution());
+				maxOccupancyRow = (std::max)(maxOccupancyRow, (curGPAPatchData.v0 + curGPAPatchData.sizeU0));
+			}
+		}
+
+		if (frame.getMissedPointsPatch().size() > 0 && !frame.getUseMissedPointsSeparateVideo()) {
+			packMissedPointsPatch(frame, occupancyMap, widthGPA, heithGPA, occupancySizeU, occupancySizeV, maxOccupancyRow);
+			frame.getMissedPointsPatch().pre_v0 = frame.getMissedPointsPatch().v0;
+		}
+		else {
+			if (printDetailedInfo) {
+				printMap(occupancyMap, occupancySizeU, occupancySizeV);
+			}
+		}
+		std::cout << "actualImageSizeU " << widthGPA << std::endl;
+		std::cout << "actualImageSizeV " << heithGPA << std::endl;
+	}
+}
+
+void PCCEncoder::updatePatchInformation(PCCContext& context, SubContext& subContext)
+{
+	std::cout << "The subContext is: [" << subContext.first << ", " << subContext.second << ")" << std::endl;
+
+	for (size_t frameIndex = subContext.first; frameIndex < subContext.second; ++frameIndex) {
+		PCCFrameContext& frame = context[frameIndex];
+
+		frame.getWidth() = frame.getPrePCCGPAFrameSize().widthGPA_;
+		frame.getHeight() = frame.getPrePCCGPAFrameSize().heightGPA_;
+		auto&  curPatches = frame.getPatches();
+		for (auto& curPatch : curPatches) {
+			GPAPatchData& preGPAPatchData = curPatch.getPreGPAPatchData();
+			curPatch.getSizeU0() = preGPAPatchData.sizeU0;
+			curPatch.getSizeV0() = preGPAPatchData.sizeV0;
+			curPatch.getOccupancy() = preGPAPatchData.occupancy;
+			curPatch.getU0() = preGPAPatchData.u0;
+			curPatch.getV0() = preGPAPatchData.v0;
+			curPatch.getPatchOrientation() = preGPAPatchData.patchOrientation;
+			curPatch.getIsGlobalPatch() = preGPAPatchData.isGlobalPatch;		
+		}
+	
+		//update missedPoint patch infor.
+		if (frame.getMissedPointsPatch().size() > 0 && !frame.getUseMissedPointsSeparateVideo()) {
+			frame.getMissedPointsPatch().v0 = frame.getMissedPointsPatch().pre_v0;
+		}
+	}
+	return;
+}
+
+void PCCEncoder::updateGPAPatchInformation(PCCContext& context, SubContext& subContext, unionPatch& unionPatch)
+{
+	for (size_t i = subContext.first; i < subContext.second; ++i) {
+		auto& patches = context[i].getPatches();
+		for (auto& patch : patches) {
+			GPAPatchData& curGPAPatchData = patch.getCurGPAPatchData();
+			if (curGPAPatchData.isGlobalPatch) {
+				size_t globalIndex     = curGPAPatchData.globalPatchIndex;
+				auto&  cPatchUnion     = unionPatch[globalIndex];
+				size_t initialSizeU0   = patch.getSizeU0();
+				size_t initialSizeV0   = patch.getSizeV0();
+				size_t updatedSizeU0   = cPatchUnion.getSizeU0();
+				size_t updatedSizeV0   = cPatchUnion.getSizeV0();
+				auto& initialOccupancy = patch.getOccupancy();
+				std::vector<bool> updatedOccupancy(updatedSizeU0 * updatedSizeV0, false);
+				for (size_t v0 = 0; v0 < initialSizeV0; ++v0) {
+					for (size_t u0 = 0; u0 < initialSizeU0; ++u0) {
+						size_t initialIndex = v0 * initialSizeU0 + u0;
+						size_t updatedIndex = v0 * updatedSizeU0 + u0;
+						if (initialOccupancy[initialIndex] && !updatedOccupancy[updatedIndex])
+							updatedOccupancy[updatedIndex] = true;
+					}
+				}
+				curGPAPatchData.sizeU0    = updatedSizeU0;
+				curGPAPatchData.sizeV0    = updatedSizeV0;
+				curGPAPatchData.occupancy = updatedOccupancy;
+			}
+			else {
+				curGPAPatchData.sizeU0    = patch.getSizeU0();
+				curGPAPatchData.sizeV0    = patch.getSizeV0();
+				curGPAPatchData.occupancy = patch.getOccupancy();
+			}
+		}
+	}
+}
+
+void PCCEncoder::performGPAPacking(const SubContext& subContext, unionPatch& unionPatch, PCCContext& context, bool& badGPAPacking, size_t unionsHeight, int safeguard, bool useRefFrame)
+{
+	bool exceedMinimumImageHeight = false;                      // whether exceed minimunImageHeight or not;
+	size_t badCondition = 0;                                    // GPA bad condition count;
+	for (size_t i = subContext.first; i < subContext.second; ++i) {
+		auto& curFrameContext = context[i];
+		auto& widthGPA  = curFrameContext.getCurPCCGPAFrameSize().widthGPA_;
+		auto& heightGPA = curFrameContext.getCurPCCGPAFrameSize().heightGPA_;
+		auto& patches   = curFrameContext.getPatches();
+		if (patches.empty()) {
+			return;
+		}
+		int preIndex = i > 0 ? i - 1 : 0;
+		auto& prePatches = context[preIndex].getPatches();
+
+		size_t occupancySizeU = params_.minimumImageWidth_ / params_.occupancyResolution_;
+		size_t occupancySizeV = unionsHeight / params_.occupancyResolution_;
+		for (auto& patch : patches) {
+			occupancySizeU = (std::max)(occupancySizeU, patch.getCurGPAPatchData().sizeU0 + 1);
+		}
+		widthGPA  = occupancySizeU * params_.occupancyResolution_;
+		heightGPA = occupancySizeV * params_.occupancyResolution_;
+		size_t maxOccupancyRow{ 0 };
+
+		vector<int> orientation_vertical   = { 0,1,2,3,4,6,5,7 };    // favoring vertical orientation
+		vector<int> orientation_horizontal = { 1,0,3,2,5,7,4,6 };    // favoring horizontal orientations (that should be rotated) 
+		std::vector<bool> occupancyMap;
+		occupancyMap.resize(occupancySizeU * occupancySizeV, false);
+		// !!!packing global matched patch;
+		for (auto& patch : patches) {
+			GPAPatchData& curGPAPatchData = patch.getCurGPAPatchData();
+			if (curGPAPatchData.isGlobalPatch) {
+				assert(curGPAPatchData.sizeU0 <= occupancySizeU);
+				assert(curGPAPatchData.sizeV0 <= occupancySizeV);
+				const size_t trackIndex = curGPAPatchData.globalPatchIndex;
+				assert(unionPatch.count(trackIndex) != 0);
+				curGPAPatchData.u0 = unionPatch[trackIndex].getU0();
+				curGPAPatchData.v0 = unionPatch[trackIndex].getV0();
+				curGPAPatchData.patchOrientation = unionPatch[trackIndex].getPatchOrientation();
+				if (printDetailedInfo) {
+					std::cout << "Orientation:" << curGPAPatchData.patchOrientation << " for GPA patch in the same position (" << curGPAPatchData.u0 << "," << curGPAPatchData.v0 << ")" << std::endl;
+				}
+				for (size_t v0 = 0; v0 < curGPAPatchData.sizeV0; ++v0) {
+					for (size_t u0 = 0; u0 < curGPAPatchData.sizeU0; ++u0) {
+						int coord = patch.patchBlock2CanvasBlockForGPA(u0, v0, occupancySizeU, occupancySizeV);
+						occupancyMap[coord] = occupancyMap[coord] || curGPAPatchData.occupancy[v0 * curGPAPatchData.sizeU0 + u0];
+					}
+				}
+				if (curGPAPatchData.patchOrientation == 0 || curGPAPatchData.patchOrientation == 2 || curGPAPatchData.patchOrientation == 4 || curGPAPatchData.patchOrientation == 6) {
+					heightGPA = (std::max)(heightGPA, (curGPAPatchData.v0 + curGPAPatchData.sizeV0) * patch.getOccupancyResolution());
+					widthGPA  = (std::max)(widthGPA,  (curGPAPatchData.u0 + curGPAPatchData.sizeU0) * patch.getOccupancyResolution());
+					maxOccupancyRow = (std::max)(maxOccupancyRow, (curGPAPatchData.v0 + curGPAPatchData.sizeV0));
+				}
+				else {
+					heightGPA = (std::max)(heightGPA, (curGPAPatchData.v0 + curGPAPatchData.sizeU0) * patch.getOccupancyResolution());
+					widthGPA  = (std::max)(widthGPA,  (curGPAPatchData.u0 + curGPAPatchData.sizeV0) * patch.getOccupancyResolution());
+					maxOccupancyRow = (std::max)(maxOccupancyRow, (curGPAPatchData.v0 + curGPAPatchData.sizeU0));
+				}
+			}
+		}
+		// !!!packing non-global matched patch;
+		int icount = -1;
+		for (auto& patch : patches) {
+			icount++;
+			GPAPatchData& curGPAPatchData = patch.getCurGPAPatchData();
+			if (curGPAPatchData.isGlobalPatch) {
+				continue;
+			}
+
+			//not use reference frame only if the first frame or useRefFrame is disabled.
+			if ((i == 0) || ((i == subContext.first) && (!useRefFrame))) {	//not use ref.
+				packingWithoutRefForFirstFrameNoglobalPatch(patch, i, icount, occupancySizeU, occupancySizeV, safeguard, occupancyMap,
+					heightGPA, widthGPA, maxOccupancyRow);
+			} else {
+				//PCCPatch prePatch = prePatches[patch.getBestMatchIdx()];
+				packingWithRefForFirstFrameNoglobalPatch(patch, prePatches, subContext.first, i, icount, occupancySizeU, occupancySizeV,
+					safeguard, occupancyMap, heightGPA, widthGPA, maxOccupancyRow);
+			}
+		}
+
+		if (curFrameContext.getMissedPointsPatch().size() > 0 && !curFrameContext.getUseMissedPointsSeparateVideo()) {
+			packMissedPointsPatch(curFrameContext, occupancyMap, widthGPA, heightGPA, occupancySizeU, occupancySizeV, maxOccupancyRow);
+			curFrameContext.getMissedPointsPatch().temp_v0 = curFrameContext.getMissedPointsPatch().v0;
+		}
+		else {
+			if (printDetailedInfo) {
+				printMap(occupancyMap, occupancySizeU, occupancySizeV);
+			}
+		}
+
+		// determination......;
+		if (heightGPA > params_.minimumImageHeight_) {
+			exceedMinimumImageHeight = true;
+			break;
+		}
+		double validHeightRatio = (double(heightGPA)) / (double(curFrameContext.getHeight()));
+		if (validHeightRatio >= BAD_HEIGHT_THRESHOLD) {
+			badCondition++;
+		}
+	}
+
+	if (exceedMinimumImageHeight || badCondition > BAD_CONDITION_THRESHOLD) {
+		badGPAPacking = true;
+	}
+}
+
+void PCCEncoder::packingWithoutRefForFirstFrameNoglobalPatch(PCCPatch& patch,size_t i, size_t icount, size_t& occupancySizeU, size_t& occupancySizeV, const size_t safeguard,
+	std::vector<bool> & occupancyMap, size_t& heightGPA, size_t& widthGPA, size_t maxOccupancyRow)
+{
+	vector<int> orientation_vertical = { 0,1,2,3,4,6,5,7 };    // favoring vertical orientation
+	vector<int> orientation_horizontal = { 1,0,3,2,5,7,4,6 };    // favoring horizontal orientations (that should be rotated) 
+
+	GPAPatchData& preGPAPatchData = patch.getCurGPAPatchData();
+
+	assert(preGPAPatchData.sizeU0 <= occupancySizeU);
+	assert(preGPAPatchData.sizeV0 <= occupancySizeV);
+	bool locationFound = false;
+	auto& occupancy = patch.getOccupancy();
+	while (!locationFound) {
+		for (size_t v = 0; v < occupancySizeV && !locationFound; ++v) {
+			for (size_t u = 0; u < occupancySizeU && !locationFound; ++u) {
+				preGPAPatchData.u0 = u;
+				preGPAPatchData.v0 = v;
+				if (params_.packingStrategy_ == 0) {
+					if (patch.checkFitPatchCanvasForGPA(occupancyMap, occupancySizeU, occupancySizeV, safeguard)) {
+						locationFound = true;
+						if (printDetailedInfo) {
+							std::cout << "Orientation " << preGPAPatchData.patchOrientation << " selected for Patch: [" << icount << "] in the position (" << u << "," << v << ")" << std::endl;
+						}
+					}
+				}
+				else {	//try several orientation.
+						for (size_t orientationIdx = 0; orientationIdx < pow(2, params_.packingStrategy_) && !locationFound; orientationIdx++) {
+						if (patch.getSizeU0() > patch.getSizeV0()) {
+							preGPAPatchData.patchOrientation = orientation_horizontal[orientationIdx];
+						}
+						else {
+							preGPAPatchData.patchOrientation = orientation_vertical[orientationIdx];
+						}
+						if (patch.checkFitPatchCanvasForGPA(occupancyMap, occupancySizeU, occupancySizeV, safeguard)) {
+							locationFound = true;
+							if (printDetailedInfo) {
+								std::cout << "Orientation " << preGPAPatchData.patchOrientation << "selected for Patch: [" << icount << "] in the position (" << preGPAPatchData.u0 << "," << preGPAPatchData.v0 << ")" << std::endl;
+							}
+						}
+					}
+				}
+			}
+		}
+		if (!locationFound) {
+			occupancySizeV *= 2;
+			occupancyMap.resize(occupancySizeU * occupancySizeV);
+			if (printDetailedInfo) {
+				std::cout << "Increase occupancySizeV " << occupancySizeV << std::endl;
+			}
+		}
+	}
+	//update occupancy.
+	for (size_t v0 = 0; v0 < preGPAPatchData.sizeV0; ++v0) {
+		for (size_t u0 = 0; u0 < preGPAPatchData.sizeU0; ++u0) {
+			int coord = patch.patchBlock2CanvasBlockForGPA(u0, v0, occupancySizeU, occupancySizeV);
+			occupancyMap[coord] = occupancyMap[coord] || occupancy[v0 * patch.getSizeU0() + u0];
+		}
+	}
+	if (preGPAPatchData.patchOrientation == 0 || preGPAPatchData.patchOrientation == 2 || preGPAPatchData.patchOrientation == 4 || preGPAPatchData.patchOrientation == 6) {
+		heightGPA = (std::max)(heightGPA, (preGPAPatchData.v0 + preGPAPatchData.sizeV0) * patch.getOccupancyResolution());
+		widthGPA = (std::max)(widthGPA, (preGPAPatchData.u0 + preGPAPatchData.sizeU0) * patch.getOccupancyResolution());
+		maxOccupancyRow = (std::max)(maxOccupancyRow, (preGPAPatchData.v0 + preGPAPatchData.sizeV0));
+	}
+	else {
+		heightGPA = (std::max)(heightGPA, (preGPAPatchData.v0 + preGPAPatchData.sizeU0) * patch.getOccupancyResolution());
+		widthGPA = (std::max)(widthGPA, (preGPAPatchData.u0 + preGPAPatchData.sizeV0) * patch.getOccupancyResolution());
+		maxOccupancyRow = (std::max)(maxOccupancyRow, (preGPAPatchData.v0 + preGPAPatchData.sizeU0));
+	}
+}
+void PCCEncoder::packingWithRefForFirstFrameNoglobalPatch(PCCPatch& patch, const std::vector<PCCPatch> prePatches, size_t startFrameIndex, size_t i, size_t icount, size_t& occupancySizeU, size_t& occupancySizeV, const size_t safeguard,
+	std::vector<bool> & occupancyMap, size_t& heightGPA, size_t& widthGPA, size_t maxOccupancyRow)
+{
+	vector<int> orientation_vertical = { 0,1,2,3,4,6,5,7 };    // favoring vertical orientation
+	vector<int> orientation_horizontal = { 1,0,3,2,5,7,4,6 };    // favoring horizontal orientations (that should be rotated) 
+
+	GPAPatchData& preGPAPatchData = patch.getCurGPAPatchData();
+
+	assert(preGPAPatchData.sizeU0 <= occupancySizeU);
+	assert(preGPAPatchData.sizeV0 <= occupancySizeV);
+	bool locationFound = false;
+	auto& occupancy = patch.getOccupancy();
+	while (!locationFound) {
+		if (patch.getBestMatchIdx() != InvalidPatchIndex) {
+			PCCPatch prePatch = prePatches[patch.getBestMatchIdx()];
+			if (i == startFrameIndex) {
+				preGPAPatchData.patchOrientation = prePatch.getPatchOrientation();
+				//try to place on the same position as the matched patch
+				preGPAPatchData.u0 = prePatch.getU0();
+				preGPAPatchData.v0 = prePatch.getV0();
+			}
+			else {
+				preGPAPatchData.patchOrientation = prePatch.getCurGPAPatchData().patchOrientation;
+				//try to place on the same position as the matched patch
+				preGPAPatchData.u0 = prePatch.getCurGPAPatchData().u0;
+				preGPAPatchData.v0 = prePatch.getCurGPAPatchData().v0;
+			}
+			if (preGPAPatchData.patchOrientation == -1) {
+				assert(preGPAPatchData.patchOrientation != -1);
+			}
+
+			if (patch.checkFitPatchCanvasForGPA(occupancyMap, occupancySizeU, occupancySizeV, safeguard)) {
+				locationFound = true;
+				if (printDetailedInfo) {
+					std::cout << "Maintained TempGPA.orientation " << preGPAPatchData.patchOrientation << " for patch[" << icount << "] in the same position (" << preGPAPatchData.u0 << "," << preGPAPatchData.v0 << ")" << std::endl;
+				}
+			}
+
+			//if the patch couldn't fit, try to fit the patch in the top left position
+			for (int v = 0; v <= occupancySizeV && !locationFound; ++v) {
+				for (int u = 0; u <= occupancySizeU && !locationFound; ++u) {
+					preGPAPatchData.u0 = u;
+					preGPAPatchData.v0 = v;
+					if (patch.checkFitPatchCanvasForGPA(occupancyMap, occupancySizeU, occupancySizeV, safeguard)) {      // !!! function overload for GPA;
+						locationFound = true;
+						if (printDetailedInfo) {
+							std::cout << "Maintained TempGPA.orientation " << preGPAPatchData.patchOrientation << " for unmatched patch[" << icount << "] in the position (" << preGPAPatchData.u0 << "," << preGPAPatchData.v0 << ")" << std::endl;
+						}
+					}
+				}
+			}
+		}
+		else {
+			// best effort
+			for (size_t v = 0; v < occupancySizeV && !locationFound; ++v) {
+				for (size_t u = 0; u < occupancySizeU && !locationFound; ++u) {
+					preGPAPatchData.u0 = u;
+					preGPAPatchData.v0 = v;
+					for (size_t orientationIdx = 0; orientationIdx < pow(2, params_.packingStrategy_) && !locationFound; orientationIdx++) {
+						if (patch.getSizeU0() > patch.getSizeV0()) {
+							preGPAPatchData.patchOrientation = orientation_horizontal[orientationIdx];
+						}
+						else {
+							preGPAPatchData.patchOrientation = orientation_vertical[orientationIdx];
+						}
+						if (patch.checkFitPatchCanvasForGPA(occupancyMap, occupancySizeU, occupancySizeV, safeguard)) {
+							locationFound = true;
+							if (printDetailedInfo) {
+								std::cout << "Maintained TempGPA.orientation " << preGPAPatchData.patchOrientation << " for unmatched patch[" << icount << "] in the position (" << preGPAPatchData.u0 << "," << preGPAPatchData.v0 << ")" << std::endl;
+							}
+						}
+					}
+				}
+			}
+		}
+		if (!locationFound) {
+			occupancySizeV *= 2;
+			occupancyMap.resize(occupancySizeU * occupancySizeV);
+			if (printDetailedInfo) {
+				std::cout << "Increase occupancySizeV " << occupancySizeV << std::endl;
+			}
+		}
+	}
+	for (size_t v0 = 0; v0 < preGPAPatchData.sizeV0; ++v0) {
+		for (size_t u0 = 0; u0 < preGPAPatchData.sizeU0; ++u0) {
+			int coord = patch.patchBlock2CanvasBlockForGPA(u0, v0, occupancySizeU, occupancySizeV);
+			occupancyMap[coord] = occupancyMap[coord] || occupancy[v0 * preGPAPatchData.sizeU0 + u0];
+		}
+	}
+	if (preGPAPatchData.patchOrientation == 0 || preGPAPatchData.patchOrientation == 2 || preGPAPatchData.patchOrientation == 4 || preGPAPatchData.patchOrientation == 6) {
+		heightGPA = (std::max)(heightGPA, (preGPAPatchData.v0 + preGPAPatchData.sizeV0) * patch.getOccupancyResolution());
+		widthGPA = (std::max)(widthGPA, (preGPAPatchData.u0 + preGPAPatchData.sizeU0) * patch.getOccupancyResolution());
+		maxOccupancyRow = (std::max)(maxOccupancyRow, (preGPAPatchData.v0 + preGPAPatchData.sizeV0));
+	}
+	else {
+		heightGPA = (std::max)(heightGPA, (preGPAPatchData.v0 + preGPAPatchData.sizeU0) * patch.getOccupancyResolution());
+		widthGPA = (std::max)(widthGPA, (preGPAPatchData.u0 + preGPAPatchData.sizeV0) * patch.getOccupancyResolution());
+		maxOccupancyRow = (std::max)(maxOccupancyRow, (preGPAPatchData.v0 + preGPAPatchData.sizeU0));
+	}
 }

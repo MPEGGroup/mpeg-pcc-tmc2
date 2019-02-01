@@ -182,7 +182,8 @@ class PCCEncoderParameters {
   int lossyMppGeoQP_;
 
   bool useAdditionalPointsPatch_;
-
+  //GPA
+  bool                globalPatchAllocation_;
 };
 
 }; //~namespace

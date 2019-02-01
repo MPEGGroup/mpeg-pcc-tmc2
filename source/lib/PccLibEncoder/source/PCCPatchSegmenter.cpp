@@ -503,6 +503,10 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3 &points,
       patch.setViewId() = clusterIndex;
       patch.setBestMatchIdx() = -1;
 
+	  patch.getPreGPAPatchData().initialize();
+	  patch.getCurGPAPatchData(). initialize();
+
+
       if (sixDirection) {
         if (clusterIndex <= 2) {
           patch.getProjectionMode() = 0;
