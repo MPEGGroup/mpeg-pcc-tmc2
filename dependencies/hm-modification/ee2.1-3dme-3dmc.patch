@@ -1,0 +1,1140 @@
+Index: source/App/TAppDecoder/TAppDecCfg.cpp
+===================================================================
+--- source/App/TAppDecoder/TAppDecCfg.cpp	(revision 4972)
++++ source/App/TAppDecoder/TAppDecCfg.cpp	(working copy)
+@@ -73,6 +73,11 @@
+   ("BitstreamFile,b",           m_bitstreamFileName,                   string(""), "bitstream input file name")
+   ("ReconFile,o",               m_reconFileName,                       string(""), "reconstructed YUV output file name\n"
+                                                                                    "YUV writing is skipped if omitted")
++#if PATCH_BASED_MVP
++  ("BlockToPatchFile",          m_blockToPatchFileName,                string(""), "block to patch input file name")
++  ("OccupancyMapFile",          m_occupancyFileName,                   string(""), "occupancy map file name")
++  ("PatchInfoFile",             m_patchInfoFileName,                   string(""), "patch info file name")
++#endif
+   ("WarnUnknowParameter,w",     warnUnknowParameter,                                  0, "warn for unknown configuration parameters instead of failing")
+   ("SkipFrames,s",              m_iSkipFrame,                          0,          "number of frames to skip before random access")
+   ("OutputBitDepth,d",          m_outputBitDepth[CHANNEL_TYPE_LUMA],   0,          "bit depth of YUV output luma component (default: use 0 for native depth)")
+Index: source/App/TAppDecoder/TAppDecCfg.h
+===================================================================
+--- source/App/TAppDecoder/TAppDecCfg.h	(revision 4972)
++++ source/App/TAppDecoder/TAppDecCfg.h	(working copy)
+@@ -58,6 +58,12 @@
+ protected:
+   std::string   m_bitstreamFileName;                    ///< input bitstream file name
+   std::string   m_reconFileName;                        ///< output reconstruction file name
++#if PATCH_BASED_MVP
++  std::string   m_blockToPatchFileName;
++  std::string   m_occupancyFileName;
++  std::string   m_patchInfoFileName;
++#endif
++
+   Int           m_iSkipFrame;                           ///< counter for frames prior to the random access point to skip
+   Int           m_outputBitDepth[MAX_NUM_CHANNEL_TYPE]; ///< bit depth used for writing output
+   InputColourSpaceConversion m_outputColourSpaceConvert;
+@@ -81,6 +87,20 @@
+   TAppDecCfg()
+   : m_bitstreamFileName()
+   , m_reconFileName()
++#if DEPTH_BASED_MVP
++  , m_depthFileName()
++#endif
++#if DEPTH_COLOCATED_BASED_MVP || OUTPUT_DEPTH_MV
++  , m_motionFileName()
++#endif
++#if USE_PATCH_INFO
++  , m_patchFileName()
++#endif
++#if PATCH_BASED_MVP
++  , m_blockToPatchFileName()
++  , m_occupancyFileName()
++  , m_patchInfoFileName()
++#endif
+   , m_iSkipFrame(0)
+   // m_outputBitDepth array initialised below
+   , m_outputColourSpaceConvert(IPCOLOURSPACE_UNCHANGED)
+Index: source/App/TAppDecoder/TAppDecTop.cpp
+===================================================================
+--- source/App/TAppDecoder/TAppDecTop.cpp	(revision 4972)
++++ source/App/TAppDecoder/TAppDecTop.cpp	(working copy)
+@@ -69,6 +69,11 @@
+ {
+   m_bitstreamFileName.clear();
+   m_reconFileName.clear();
++#if PATCH_BASED_MVP
++  m_blockToPatchFileName.clear();
++  m_occupancyFileName.clear();
++  m_patchInfoFileName.clear();
++#endif
+ }
+ 
+ // ====================================================================================================================
+@@ -123,6 +128,50 @@
+     }
+   }
+ 
++#if PATCH_BASED_MVP
++  m_cTDecTop.setBlockToPatchFileName(m_blockToPatchFileName);
++  m_cTDecTop.setOccupancyMapFileName(m_occupancyFileName);
++
++  FILE* patchFile = NULL;
++  patchFile = fopen(m_patchInfoFileName.c_str(), "rb");
++
++  for (Int i = 0; i < MAX_NUM_FRAMES; i++)
++  {
++    long long readSize = fread(&g_numPatches[i], sizeof(long long), 1, patchFile);
++
++    if ( readSize != 1 && readSize != 0 )
++    {
++      printf("error!");
++    }
++
++    for (Int patchIdx = 0; patchIdx < g_numPatches[i]; patchIdx++)
++    {
++      readSize = fread(&g_projectionIndex[i][patchIdx], sizeof(long long), 1, patchFile);
++
++      if ( readSize != 1 )
++      {
++        printf("error!");
++      }
++
++      readSize = fread(g_patch2DInfo[i][patchIdx], sizeof(long long), 4, patchFile);
++
++      if ( readSize != 4 )
++      {
++        printf("error!");
++      }
++
++      readSize = fread(g_patch3DInfo[i][patchIdx], sizeof(long long), 3, patchFile);
++
++      if ( readSize != 3 )
++      {
++        printf("error!");
++      }
++    }
++  }
++
++  fclose(patchFile);
++#endif
++
+   // main decoder loop
+   Bool openedReconFile = false; // reconstruction file not yet opened. (must be performed after SPS is seen)
+   Bool loopFiltered = false;
+@@ -468,7 +517,11 @@
+           const Window &conf    = pcPic->getConformanceWindow();
+           const Window  defDisp = m_respectDefDispWindow ? pcPic->getDefDisplayWindow() : Window();
+ 
++#if OUTPUT_PRED
++          m_cTVideoIOYuvReconFile.write( pcPic->getPicYuvPred(),
++#else
+           m_cTVideoIOYuvReconFile.write( pcPic->getPicYuvRec(),
++#endif
+                                          m_outputColourSpaceConvert,
+                                          conf.getWindowLeftOffset() + defDisp.getWindowLeftOffset(),
+                                          conf.getWindowRightOffset() + defDisp.getWindowRightOffset(),
+@@ -591,7 +644,11 @@
+           const Window &conf    = pcPic->getConformanceWindow();
+           const Window  defDisp = m_respectDefDispWindow ? pcPic->getDefDisplayWindow() : Window();
+ 
++#if OUTPUT_PRED
++          m_cTVideoIOYuvReconFile.write( pcPic->getPicYuvPred(),
++#else
+           m_cTVideoIOYuvReconFile.write( pcPic->getPicYuvRec(),
++#endif
+                                          m_outputColourSpaceConvert,
+                                          conf.getWindowLeftOffset() + defDisp.getWindowLeftOffset(),
+                                          conf.getWindowRightOffset() + defDisp.getWindowRightOffset(),
+Index: source/App/TAppEncoder/TAppEncCfg.cpp
+===================================================================
+--- source/App/TAppEncoder/TAppEncCfg.cpp	(revision 4972)
++++ source/App/TAppEncoder/TAppEncCfg.cpp	(working copy)
+@@ -753,6 +753,11 @@
+   ("InputFile,i",                                     m_inputFileName,                             string(""), "Original YUV input file name")
+   ("BitstreamFile,b",                                 m_bitstreamFileName,                         string(""), "Bitstream output file name")
+   ("ReconFile,o",                                     m_reconFileName,                             string(""), "Reconstructed YUV output file name")
++#if PATCH_BASED_MVP || PATCH_BASED_MVP_NON_NORMATIVE
++  ("BlockToPatchFile",                                m_blockToPatchFileName,                      string(""), "Input block to patch file name")
++  ("OccupancyMapFile",                                m_occupancyMapFileName,                      string(""), "Input occupancy map file name")
++  ("PatchInfoFile",                                   m_patchInfoFileName,                         string(""), "Input patch info file name")
++#endif
+   ("SourceWidth,-wdt",                                m_iSourceWidth,                                       0, "Source picture width")
+   ("SourceHeight,-hgt",                               m_iSourceHeight,                                      0, "Source picture height")
+   ("InputBitDepth",                                   m_inputBitDepth[CHANNEL_TYPE_LUMA],                   8, "Bit-depth of input file")
+@@ -2797,6 +2802,11 @@
+   printf("Input          File                    : %s\n", m_inputFileName.c_str()          );
+   printf("Bitstream      File                    : %s\n", m_bitstreamFileName.c_str()      );
+   printf("Reconstruction File                    : %s\n", m_reconFileName.c_str()          );
++#if PATCH_BASED_MVP || PATCH_BASED_MVP_NON_NORMATIVE
++  printf("BlockToPatch   File                    : %s\n", m_blockToPatchFileName.c_str());
++  printf("OccupancyMap   File                    : %s\n", m_occupancyMapFileName.c_str());
++  printf("PatchInfo      File                    : %s\n", m_patchInfoFileName.c_str());
++#endif
+   printf("Real     Format                        : %dx%d %gHz\n", m_iSourceWidth - m_confWinLeft - m_confWinRight, m_iSourceHeight - m_confWinTop - m_confWinBottom, (Double)m_iFrameRate/m_temporalSubsampleRatio );
+   printf("Internal Format                        : %dx%d %gHz\n", m_iSourceWidth, m_iSourceHeight, (Double)m_iFrameRate/m_temporalSubsampleRatio );
+   printf("Sequence PSNR output                   : %s\n", (m_printMSEBasedSequencePSNR ? "Linear average, MSE-based" : "Linear average only") );
+Index: source/App/TAppEncoder/TAppEncCfg.h
+===================================================================
+--- source/App/TAppEncoder/TAppEncCfg.h	(revision 4972)
++++ source/App/TAppEncoder/TAppEncCfg.h	(working copy)
+@@ -72,6 +72,11 @@
+   std::string m_inputFileName;                                ///< source file name
+   std::string m_bitstreamFileName;                            ///< output bitstream file
+   std::string m_reconFileName;                                ///< output reconstruction file
++#if PATCH_BASED_MVP || PATCH_BASED_MVP_NON_NORMATIVE
++  std::string m_blockToPatchFileName;
++  std::string m_occupancyMapFileName;
++  std::string m_patchInfoFileName;
++#endif
+ 
+   // Lambda modifiers
+   Double    m_adLambdaModifier[ MAX_TLAYER ];                 ///< Lambda modifier array for each temporal layer
+Index: source/App/TAppEncoder/TAppEncTop.cpp
+===================================================================
+--- source/App/TAppEncoder/TAppEncTop.cpp	(revision 4972)
++++ source/App/TAppEncoder/TAppEncTop.cpp	(working copy)
+@@ -87,6 +87,11 @@
+   }
+   m_cTEncTop.setVPS(&vps);
+ 
++#if PATCH_BASED_MVP || PATCH_BASED_MVP_NON_NORMATIVE
++  m_cTEncTop.setBlockToPatchFileName                              ( m_blockToPatchFileName );
++  m_cTEncTop.setOccupancyMapFileName                              ( m_occupancyMapFileName );
++#endif
++
+   m_cTEncTop.setProfile                                           ( m_profile);
+   m_cTEncTop.setLevel                                             ( m_levelTier, m_level);
+   m_cTEncTop.setProgressiveSourceFlag                             ( m_progressiveSourceFlag);
+@@ -518,6 +523,47 @@
+   xCreateLib();
+   xInitLib(m_isField);
+ 
++#if PATCH_BASED_MVP || PATCH_BASED_MVP_NON_NORMATIVE
++  FILE* patchFile = NULL;
++  patchFile = fopen(m_patchInfoFileName.c_str(), "rb");
++
++  for (Int i = 0; i < MAX_NUM_FRAMES; i++)
++  {
++    long long readSize = fread(&g_numPatches[i], sizeof(long long), 1, patchFile);
++
++    if (readSize != 1 && readSize != 0)
++    {
++      printf("error!");
++    }
++
++    for (Int patchIdx = 0; patchIdx < g_numPatches[i]; patchIdx++)
++    {
++      readSize = fread(&g_projectionIndex[i][patchIdx], sizeof(long long), 1, patchFile);
++
++      if (readSize != 1)
++      {
++        printf("error!");
++      }
++
++      readSize = fread(g_patch2DInfo[i][patchIdx], sizeof(long long), 4, patchFile);
++
++      if (readSize != 4)
++      {
++        printf("error!");
++      }
++
++      readSize = fread(g_patch3DInfo[i][patchIdx], sizeof(long long), 3, patchFile);
++
++      if (readSize != 3)
++      {
++        printf("error!");
++      }
++    }
++  }
++
++  fclose(patchFile);
++#endif
++
+   printChromaFormat();
+ 
+   // main encoder loop
+@@ -566,6 +612,16 @@
+     m_cTVideoIOYuvInputFile.read( pcPicYuvOrg, &cPicYuvTrueOrg, ipCSC, m_aiPad, m_InputChromaFormatIDC, m_bClipInputVideoToRec709Range );
+ #endif
+ 
++#if OUTPUT_ORG_YUV
++    BitDepths bitDepths;
++    for (Int i = 0; i < MAX_NUM_CHANNEL_TYPE; i++)
++    {
++      bitDepths.recon[i] = m_inputBitDepth[i];
++    }
++
++    pcPicYuvOrg->dump("longdress_30fps_8bit.yuv", bitDepths, true);
++#endif
++
+     // increase number of received frames
+     m_iFrameRcvd++;
+ 
+@@ -585,7 +641,7 @@
+     if ( m_isField )
+     {
+       m_cTEncTop.encode( bEos, flush ? 0 : pcPicYuvOrg, flush ? 0 : &cPicYuvTrueOrg, snrCSC, m_cListPicYuvRec, outputAccessUnits, iNumEncoded, m_isTopFieldFirst );
+-    }
++    } 
+     else
+     {
+       m_cTEncTop.encode( bEos, flush ? 0 : pcPicYuvOrg, flush ? 0 : &cPicYuvTrueOrg, snrCSC, m_cListPicYuvRec, outputAccessUnits, iNumEncoded );
+Index: source/Lib/TLibCommon/TComDataCU.cpp
+===================================================================
+--- source/Lib/TLibCommon/TComDataCU.cpp	(revision 4972)
++++ source/Lib/TLibCommon/TComDataCU.cpp	(working copy)
+@@ -2887,6 +2887,113 @@
+     //----  co-located RightBottom Temporal Predictor  ---//
+   }
+ 
++#if PATCH_BASED_MVP
++  
++  UInt uiPartIdxCenter;
++  xDeriveCenterIdx(partIdx, uiPartIdxCenter);
++
++  Int xCoor = getCUPelX() + g_auiRasterToPelX[g_auiZscanToRaster[uiPartIdxCenter - m_absZIdxInCtu]];
++  Int yCoor = getCUPelY() + g_auiRasterToPelY[g_auiZscanToRaster[uiPartIdxCenter - m_absZIdxInCtu]];
++
++  Int picWidth = m_pcPic->getPicYuvRec()->getWidth(COMPONENT_Y);
++  Int blockToPatchWidth = picWidth / 16;
++
++  Int* occupancyMap = m_pcPic->getOccupancyMap();
++  long long* blockToPatch = m_pcPic->getBlockToPatch();
++
++  Int occupancyResolution = 16;
++
++  if ( m_pcSlice->getPOC() % 2 == 0 && occupancyMap[ yCoor * picWidth + xCoor ] )
++  {
++    Int xBlockIndex = xCoor / occupancyResolution;
++    Int yBlockIndex = yCoor / occupancyResolution;
++
++    Int patchIndex = blockToPatch[ yBlockIndex * blockToPatchWidth + xBlockIndex ] - 1;          // should be minus 1
++    Int frameIndex = m_pcSlice->getPOC() / 2;
++
++    // current 3D coordinate derivation
++    Int projectIndex = g_projectionIndex[frameIndex][patchIndex];
++
++    Int patchD1 = g_patch3DInfo[frameIndex][patchIndex][0];
++    Int patchU1 = g_patch3DInfo[frameIndex][patchIndex][1];
++    Int patchV1 = g_patch3DInfo[frameIndex][patchIndex][2];
++
++    Int patchU0 = g_patch2DInfo[frameIndex][patchIndex][0];
++    Int patchV0 = g_patch2DInfo[frameIndex][patchIndex][1];
++
++    Int xCoor3D = patchU1 + ( xCoor - patchU0 * occupancyResolution );
++    Int yCoor3D = patchV1 + ( yCoor - patchV0 * occupancyResolution );
++
++    // find the suitable patch in the reference frame
++    Int refPOC = m_pcSlice->getRefPOC(eRefPicList, refIdx);
++    Int refFrameIndex = refPOC / 2;
++    Int refNumPatches = g_numPatches[refFrameIndex];
++
++    Int bestPatchIndex = 0;
++    Int bestDist = MAX_INT;
++    for (Int refPatchIdx = 0; refPatchIdx < refNumPatches; refPatchIdx++ )
++    {
++      Int refProjectionIndex = g_projectionIndex[refFrameIndex][refPatchIdx];
++
++      if ( refProjectionIndex != projectIndex )
++      {
++        continue;
++      }
++
++      Int refPatchU1 = g_patch3DInfo[refFrameIndex][refPatchIdx][1];
++      Int refPatchV1 = g_patch3DInfo[refFrameIndex][refPatchIdx][2];
++
++      Int refPatchSizeU0 = g_patch2DInfo[refFrameIndex][refPatchIdx][2];
++      Int refPatchSizeV0 = g_patch2DInfo[refFrameIndex][refPatchIdx][3];
++
++      Int refPatch3DEndU1 = refPatchU1 + refPatchSizeU0 * occupancyResolution - 1;
++      Int refPatch3DEndV1 = refPatchV1 + refPatchSizeV0 * occupancyResolution - 1;
++
++      Bool xCond = (xCoor3D >= refPatchU1 && xCoor3D <= refPatch3DEndU1);
++      Bool yCond = (yCoor3D >= refPatchV1 && yCoor3D <= refPatch3DEndV1);
++
++      if ( xCond && yCond )
++      {
++        Int refPatchD1 = g_patch3DInfo[refFrameIndex][refPatchIdx][0];
++        Int patchDist = abs(patchD1 - refPatchD1);
++
++        if ( patchDist < bestDist )
++        {
++          bestDist = patchDist;
++          bestPatchIndex = refPatchIdx;
++        }
++      }
++    }
++
++    Int diff3DU = g_patch3DInfo[frameIndex][patchIndex][1] - g_patch3DInfo[refFrameIndex][bestPatchIndex][1];
++    Int diff3DV = g_patch3DInfo[frameIndex][patchIndex][2] - g_patch3DInfo[refFrameIndex][bestPatchIndex][2];
++
++    Int diff2DU = ( g_patch2DInfo[refFrameIndex][bestPatchIndex][0] - g_patch2DInfo[frameIndex][patchIndex][0] ) * occupancyResolution;
++    Int diff2DV = ( g_patch2DInfo[refFrameIndex][bestPatchIndex][1] - g_patch2DInfo[frameIndex][patchIndex][1] ) * occupancyResolution;
++
++    Int diffTotalU = diff3DU + diff2DU;
++    Int diffTotalV = diff3DV + diff2DV;
++
++    TComMv depthMVP(diffTotalU << 2, diffTotalV << 2);
++
++    if (pInfo->iN == 0)
++    {
++      pInfo->m_acMvCand[0] = depthMVP;
++      pInfo->iN++;
++    }
++    else if (pInfo->m_acMvCand[0] != depthMVP)
++    {
++      for (Int n = std::min((int)pInfo->iN, AMVP_MAX_NUM_CANDS - 1); n > 0; n--)
++      {
++        pInfo->m_acMvCand[n] = pInfo->m_acMvCand[n - 1];
++      }
++      pInfo->m_acMvCand[0] = depthMVP;
++      pInfo->iN = std::min((int)pInfo->iN + 1, AMVP_MAX_NUM_CANDS);
++    }
++  }
++
++#endif
++
+   while (pInfo->iN < AMVP_MAX_NUM_CANDS)
+   {
+     pInfo->m_acMvCand[pInfo->iN].set(0,0);
+Index: source/Lib/TLibCommon/TComPattern.cpp
+===================================================================
+--- source/Lib/TLibCommon/TComPattern.cpp	(revision 4972)
++++ source/Lib/TLibCommon/TComPattern.cpp	(working copy)
+@@ -84,7 +84,12 @@
+                               Int stride,
+                               Int bitDepthLuma,
+                               Int roiPosX,
+-                              Int roiPosY)
++                              Int roiPosY
++#if PATCH_BASED_MVP_NON_NORMATIVE
++                            , Int refIdx,
++                              RefPicList refPicList
++#endif
++                              )
+ #else
+ Void TComPattern::initPattern (Pel* piY,
+                                Int roiWidth,
+@@ -98,6 +103,10 @@
+   m_roiHeight = roiHeight;
+   m_patternStride = stride;
+   m_bitDepth = bitDepthLuma;
++#if PATCH_BASED_MVP_NON_NORMATIVE
++  m_refIdx = refIdx;
++  m_refPicList = refPicList;
++#endif
+ #if MCTS_ENC_CHECK
+   m_roiPosX       = roiPosX;
+   m_roiPosY       = roiPosY;
+Index: source/Lib/TLibCommon/TComPattern.h
+===================================================================
+--- source/Lib/TLibCommon/TComPattern.h	(revision 4972)
++++ source/Lib/TLibCommon/TComPattern.h	(working copy)
+@@ -61,6 +61,11 @@
+   Int   m_patternStride;
+   Int   m_bitDepth;
+ 
++#if PATCH_BASED_MVP_NON_NORMATIVE
++  Int   m_refIdx;
++  RefPicList m_refPicList;
++#endif
++
+ #if MCTS_ENC_CHECK  
+   Int   m_roiPosX;
+   Int   m_roiPosY;
+@@ -76,6 +81,12 @@
+   Int   getROIYHeight() const     { return m_roiHeight;      }
+   Int   getPatternLStride() const { return m_patternStride;  }
+   Int   getBitDepthY() const      { return m_bitDepth;       }
++
++#if PATCH_BASED_MVP_NON_NORMATIVE
++  Int   getRefIndex() const       { return m_refIdx;  }
++  RefPicList getRefPicList() const     { return m_refPicList;  }
++#endif
++
+ #if MCTS_ENC_CHECK
+   Int   getROIYPosX() const       { return m_roiPosX; }
+   Int   getROIYPosY() const       { return m_roiPosY; }
+@@ -101,6 +112,10 @@
+   , m_roiHeight(0)
+   , m_patternStride(0)
+   , m_bitDepth(0)
++#if PATCH_BASED_MVP_NON_NORMATIVE
++  , m_refIdx(0)
++  , m_refPicList(REF_PIC_LIST_X)
++#endif
+ #if MCTS_ENC_CHECK
+   , m_roiPosX(0)
+   , m_roiPosY(0)
+@@ -118,7 +133,11 @@
+ 
+   /// set parameters from Pel buffers for accessing neighbouring pixels
+ #if MCTS_ENC_CHECK
++#if PATCH_BASED_MVP_NON_NORMATIVE
++  Void initPattern(Pel* piY, Int roiWidth, Int roiHeight, Int stride, Int bitDepthLuma, Int roiPosX, Int roiPosY, Int refIdx = 0, RefPicList refPicList = REF_PIC_LIST_X);
++#else
+   Void initPattern(Pel* piY, Int roiWidth, Int roiHeight, Int stride, Int bitDepthLuma, Int roiPosX, Int roiPosY);
++#endif
+   Void setTileBorders(Int tileLeftTopPelPosX, Int tileLeftTopPelPosY, Int tileRightBottomPelPosX, Int tileRightBottomPelPosY);
+ #else
+   Void initPattern(Pel* piY, Int roiWidth, Int roiHeight, Int stride, Int bitDepthLuma);
+Index: source/Lib/TLibCommon/TComPic.cpp
+===================================================================
+--- source/Lib/TLibCommon/TComPic.cpp	(revision 4972)
++++ source/Lib/TLibCommon/TComPic.cpp	(working copy)
+@@ -63,6 +63,11 @@
+   {
+     m_apcPicYuv[i]      = NULL;
+   }
++
++#if PATCH_BASED_MVP || PATCH_BASED_MVP_NON_NORMATIVE
++  m_blockToPatch = NULL;
++  m_occupancyMap = NULL;
++#endif
+ }
+ 
+ TComPic::~TComPic()
+@@ -105,6 +110,11 @@
+   }
+ #endif
+ 
++#if PATCH_BASED_MVP || PATCH_BASED_MVP_NON_NORMATIVE
++  m_blockToPatch = new long long[iWidth / 16 * iHeight / 16];
++  m_occupancyMap = new Int[iWidth * iHeight];
++#endif
++
+   // there are no SEI messages associated with this picture initially
+   if (m_SEIs.size() > 0)
+   {
+@@ -212,6 +222,14 @@
+     m_apcPicYuvCSC = NULL;
+   }
+ 
++#if PATCH_BASED_MVP || PATCH_BASED_MVP_NON_NORMATIVE
++  delete m_blockToPatch;
++  m_blockToPatch = NULL;
++
++  delete m_occupancyMap;
++  m_occupancyMap = NULL;
++#endif
++
+   deleteSEIs(m_SEIs);
+ }
+ 
+Index: source/Lib/TLibCommon/TComPic.h
+===================================================================
+--- source/Lib/TLibCommon/TComPic.h	(revision 4972)
++++ source/Lib/TLibCommon/TComPic.h	(working copy)
+@@ -70,6 +70,12 @@
+ 
+   TComPicYuv*           m_pcPicYuvPred;           //  Prediction
+   TComPicYuv*           m_pcPicYuvResi;           //  Residual
++
++#if PATCH_BASED_MVP || PATCH_BASED_MVP_NON_NORMATIVE
++  long long*            m_blockToPatch;
++  Int*                  m_occupancyMap;
++#endif
++
+   Bool                  m_bReconstructed;
+   Bool                  m_bNeededForOutput;
+   UInt                  m_uiCurrSliceIdx;         // Index of current slice
+@@ -91,6 +97,11 @@
+   TComPic();
+   virtual ~TComPic();
+ 
++#if PATCH_BASED_MVP || PATCH_BASED_MVP_NON_NORMATIVE
++  long long*    getBlockToPatch() const                 { return m_blockToPatch; }
++  Int*          getOccupancyMap() const                 { return m_occupancyMap; }
++#endif
++
+ #if REDUCED_ENCODER_MEMORY
+   Void          create( const TComSPS &sps, const TComPPS &pps, const Bool bCreateEncoderSourcePicYuv, const Bool bCreateForImmediateReconstruction );
+   Void          prepareForEncoderSourcePicYuv();
+Index: source/Lib/TLibCommon/TComRdCost.h
+===================================================================
+--- source/Lib/TLibCommon/TComRdCost.h	(revision 4972)
++++ source/Lib/TLibCommon/TComRdCost.h	(working copy)
+@@ -138,6 +138,9 @@
+   Double calcRdCost( Double numBits, Double distortion, DFunc eDFunc = DF_DEFAULT );
+ 
+   Void    setDistortionWeight  ( const ComponentID compID, const Double distortionWeight ) { m_distortionWeight[compID] = distortionWeight; }
++#if PATCH_BASED_MVP_NON_NORMATIVE
++  Double  getDistortionWeight  ( const ComponentID compID ) { return m_distortionWeight[compID]; }
++#endif
+   Void    setLambda      ( Double dLambda, const BitDepths &bitDepths );
+   Void    setFrameLambda ( Double dLambda ) { m_dFrameLambda = dLambda; }
+ 
+Index: source/Lib/TLibCommon/TComRom.cpp
+===================================================================
+--- source/Lib/TLibCommon/TComRom.cpp	(revision 4972)
++++ source/Lib/TLibCommon/TComRom.cpp	(working copy)
+@@ -760,4 +760,23 @@
+ const UInt g_scalingListSize   [SCALING_LIST_SIZE_NUM] = {16,64,256,1024};
+ const UInt g_scalingListSizeX  [SCALING_LIST_SIZE_NUM] = { 4, 8, 16,  32};
+ 
++#if USE_PATCH_INFO
++long long g_numPatches;
++Double g_patch3DCoor[MAX_NUM_FRAMES][MAX_NUM_PATCHES][4];
++long long  g_patch2DCoor[MAX_NUM_FRAMES][MAX_NUM_PATCHES][4];
++#endif
++
++#if DEPTH_COLOCATED_BASED_MVP
++Int g_encodingOrder;
++#endif
++
++#if PATCH_BASED_MVP || PATCH_BASED_MVP_NON_NORMATIVE
++long long g_numPatches[MAX_NUM_FRAMES];
++long long g_projectionIndex[MAX_NUM_FRAMES][MAX_NUM_PATCHES];
++long long g_patch2DInfo[MAX_NUM_FRAMES][MAX_NUM_PATCHES][4];  // u0, v0, sizeU0, sizeV0
++long long g_patch3DInfo[MAX_NUM_FRAMES][MAX_NUM_PATCHES][3];  // d1, u1, v1
++
++Bool g_patchesChange[MAX_NUM_PATCHES];
++#endif
++
+ //! \}
+Index: source/Lib/TLibCommon/TComRom.h
+===================================================================
+--- source/Lib/TLibCommon/TComRom.h	(revision 4972)
++++ source/Lib/TLibCommon/TComRom.h	(working copy)
+@@ -174,6 +174,16 @@
+ 
+ extern UChar g_ucMsbP1Idx[256];
+ extern UChar g_getMsbP1Idx(UInt uiVal);
++
++#if PATCH_BASED_MVP || PATCH_BASED_MVP_NON_NORMATIVE
++extern long long g_numPatches[MAX_NUM_FRAMES];
++extern long long g_projectionIndex[MAX_NUM_FRAMES][MAX_NUM_PATCHES];
++extern long long g_patch2DInfo[MAX_NUM_FRAMES][MAX_NUM_PATCHES][4];  // u0, v0, sizeU0, sizeV0
++extern long long g_patch3DInfo[MAX_NUM_FRAMES][MAX_NUM_PATCHES][3];  // d1, u1, v1
++
++extern Bool g_patchesChange[MAX_NUM_PATCHES];
++
++#endif
+ //! \}
+ 
+ #endif  //__TCOMROM__
+Index: source/Lib/TLibCommon/TypeDef.h
+===================================================================
+--- source/Lib/TLibCommon/TypeDef.h	(revision 4972)
++++ source/Lib/TLibCommon/TypeDef.h	(working copy)
+@@ -48,6 +48,18 @@
+ //! \ingroup TLibCommon
+ //! \{
+ 
++#define OUTPUT_ORG_YUV                                    0
++#define OUTPUT_PRED                                       0
++#define OUTPUT_PARTITION_INFO                             0
++
++#define PATCH_BASED_MVP_NON_NORMATIVE                     1
++#define PATCH_BASED_MVP                                   0
++
++#if PATCH_BASED_MVP || PATCH_BASED_MVP_NON_NORMATIVE
++#define MAX_NUM_FRAMES                                    600
++#define MAX_NUM_PATCHES                                   1000
++#endif
++
+ // ====================================================================================================================
+ // Debugging
+ // ====================================================================================================================
+Index: source/Lib/TLibDecoder/TDecCu.cpp
+===================================================================
+--- source/Lib/TLibDecoder/TDecCu.cpp	(revision 4972)
++++ source/Lib/TLibDecoder/TDecCu.cpp	(working copy)
+@@ -50,6 +50,9 @@
+ {
+   m_ppcYuvResi = NULL;
+   m_ppcYuvReco = NULL;
++#if OUTPUT_PRED
++  m_ppcYuvPred = NULL;
++#endif
+   m_ppcCU      = NULL;
+ }
+ 
+@@ -83,6 +86,9 @@
+ 
+   m_ppcYuvResi = new TComYuv*[m_uiMaxDepth-1];
+   m_ppcYuvReco = new TComYuv*[m_uiMaxDepth-1];
++#if OUTPUT_PRED
++  m_ppcYuvPred = new TComYuv*[m_uiMaxDepth - 1];
++#endif
+   m_ppcCU      = new TComDataCU*[m_uiMaxDepth-1];
+ 
+   for ( UInt ui = 0; ui < m_uiMaxDepth-1; ui++ )
+@@ -101,6 +107,9 @@
+ 
+     m_ppcYuvResi[ui] = new TComYuv;    m_ppcYuvResi[ui]->create( uiWidth, uiHeight, chromaFormatIDC );
+     m_ppcYuvReco[ui] = new TComYuv;    m_ppcYuvReco[ui]->create( uiWidth, uiHeight, chromaFormatIDC );
++#if OUTPUT_PRED
++    m_ppcYuvPred[ui] = new TComYuv;    m_ppcYuvPred[ui]->create( uiWidth, uiHeight, chromaFormatIDC );
++#endif
+     m_ppcCU     [ui] = new TComDataCU; m_ppcCU     [ui]->create( chromaFormatIDC, uiNumPartitions, uiWidth, uiHeight, true, uiMaxWidth >> (m_uiMaxDepth - 1)
+                                                                , paletteMaxSize, paletteMaxPredSize );
+   }
+@@ -123,11 +132,17 @@
+   {
+     m_ppcYuvResi[ui]->destroy(); delete m_ppcYuvResi[ui]; m_ppcYuvResi[ui] = NULL;
+     m_ppcYuvReco[ui]->destroy(); delete m_ppcYuvReco[ui]; m_ppcYuvReco[ui] = NULL;
++#if OUTPUT_PRED
++    m_ppcYuvPred[ui]->destroy(); delete m_ppcYuvPred[ui]; m_ppcYuvPred[ui] = NULL;
++#endif
+     m_ppcCU     [ui]->destroy(); delete m_ppcCU     [ui]; m_ppcCU     [ui] = NULL;
+   }
+ 
+   delete [] m_ppcYuvResi; m_ppcYuvResi = NULL;
+   delete [] m_ppcYuvReco; m_ppcYuvReco = NULL;
++#if OUTPUT_PRED
++  delete [] m_ppcYuvPred; m_ppcYuvPred = NULL;
++#endif
+   delete [] m_ppcCU     ; m_ppcCU      = NULL;
+ }
+ 
+@@ -495,6 +510,10 @@
+   }
+ #endif
+ 
++#if OUTPUT_PRED
++  m_ppcYuvReco[uiDepth]->copyToPicYuv(pcCU->getPic()->getPicYuvPred(), pcCU->getCtuRsAddr(), pcCU->getZorderIdxInCtu());
++#endif
++
+   // inter recon
+   xDecodeInterTexture( pcCU, uiDepth );
+ 
+@@ -749,11 +768,19 @@
+       TComTURecurse tuRecurseWithPU(tuRecurseCU, false, (uiInitTrDepth==0)?TComTU::DONT_SPLIT : TComTU::QUAD_SPLIT);
+ 
+       do
+-      {
+-        xIntraRecQT( m_ppcYuvReco[uiDepth], m_ppcYuvReco[uiDepth], m_ppcYuvResi[uiDepth], chanType, tuRecurseWithPU );
+-      } while (tuRecurseWithPU.nextSection(tuRecurseCU));
+-    }
++    {
++#if OUTPUT_PRED
++      xIntraRecQT(m_ppcYuvReco[uiDepth], m_ppcYuvPred[uiDepth], m_ppcYuvResi[uiDepth], chanType, tuRecurseWithPU);
++#else
++      xIntraRecQT(m_ppcYuvReco[uiDepth], m_ppcYuvReco[uiDepth], m_ppcYuvResi[uiDepth], chanType, tuRecurseWithPU);
++#endif
++    } while (tuRecurseWithPU.nextSection(tuRecurseCU));
+   }
++
++#if OUTPUT_PRED
++  m_ppcYuvPred[uiDepth]->copyToPicYuv(pcCU->getPic()->getPicYuvPred(), pcCU->getCtuRsAddr(), pcCU->getZorderIdxInCtu());
++#endif
++}
+   else
+   {
+     assert( pcCU->getPic()->getChromaFormat() == CHROMA_444 );
+Index: source/Lib/TLibDecoder/TDecCu.h
+===================================================================
+--- source/Lib/TLibDecoder/TDecCu.h	(revision 4972)
++++ source/Lib/TLibDecoder/TDecCu.h	(working copy)
+@@ -60,6 +60,9 @@
+   UInt                m_uiMaxDepth;       ///< max. number of depth
+   TComYuv**           m_ppcYuvResi;       ///< array of residual buffer
+   TComYuv**           m_ppcYuvReco;       ///< array of prediction & reconstruction buffer
++#if OUTPUT_PRED
++  TComYuv**           m_ppcYuvPred;
++#endif
+   TComDataCU**        m_ppcCU;            ///< CU data array
+ 
+   // access channel
+Index: source/Lib/TLibDecoder/TDecGop.h
+===================================================================
+--- source/Lib/TLibDecoder/TDecGop.h	(revision 4972)
++++ source/Lib/TLibDecoder/TDecGop.h	(working copy)
+@@ -81,6 +81,11 @@
+   Int                   m_decodedPictureHashSEIEnabled;  ///< Checksum(3)/CRC(2)/MD5(1)/disable(0) acting on decoded picture hash SEI message
+   UInt                  m_numberOfChecksumErrorsDetected;
+ 
++#if PATCH_BASED_MVP
++  std::string           m_blockToPatchFileName;
++  std::string           m_occupancyFileName;
++#endif
++
+ public:
+   TDecGop();
+   virtual ~TDecGop();
+@@ -101,6 +106,14 @@
+   Void setDecodedPictureHashSEIEnabled(Int enabled) { m_decodedPictureHashSEIEnabled = enabled; }
+   UInt getNumberOfChecksumErrorsDetected() const { return m_numberOfChecksumErrorsDetected; }
+ 
++#if PATCH_BASED_MVP
++  Void setBlockToPatchFileName(std::string blockToPatchFileName) { m_blockToPatchFileName = blockToPatchFileName; }
++  std::string getBlockToPatchFileName()                          { return m_blockToPatchFileName; }
++
++  Void setOccupancyMapFileName(std::string occupancyMapFileName) { m_occupancyFileName = occupancyMapFileName; }
++  std::string getOccupancyMapFileName()                          { return m_occupancyFileName; }
++#endif
++
+ };
+ 
+ //! \}
+Index: source/Lib/TLibDecoder/TDecSlice.cpp
+===================================================================
+--- source/Lib/TLibDecoder/TDecSlice.cpp	(revision 4972)
++++ source/Lib/TLibDecoder/TDecSlice.cpp	(working copy)
+@@ -85,7 +85,9 @@
+   m_pcEntropyDecoder->resetEntropy      (pcSlice);
+ 
+   // decoder doesn't need prediction & residual frame buffer
++#if !OUTPUT_PRED
+   pcPic->setPicYuvPred( 0 );
++#endif
+   pcPic->setPicYuvResi( 0 );
+ 
+ #if ENC_DEC_TRACE
+Index: source/Lib/TLibDecoder/TDecTop.cpp
+===================================================================
+--- source/Lib/TLibDecoder/TDecTop.cpp	(revision 4972)
++++ source/Lib/TLibDecoder/TDecTop.cpp	(working copy)
+@@ -901,6 +901,49 @@
+     m_cTrQuant.setUseScalingList(false);
+   }
+ 
++#if PATCH_BASED_MVP
++
++  if (pcSlice->getPOC() % 2 == 0 )
++  {
++
++    Int picWidth = m_pcPic->getPicYuvRec()->getWidth(COMPONENT_Y);
++    Int picHeight = m_pcPic->getPicYuvRec()->getHeight(COMPONENT_Y);
++
++    Int blockToPatchWidth = picWidth / 16;
++    Int blockToPatchHeight = picHeight / 16;
++
++    Int currPOC = pcSlice->getPOC() / 2;
++    long long offset = (long long)currPOC * blockToPatchWidth * blockToPatchHeight;
++
++    std::string blockToPatchFileName = m_cGopDecoder.getBlockToPatchFileName();
++    FILE* blockToPatchFile = NULL;
++    blockToPatchFile = fopen(blockToPatchFileName.c_str(), "rb");
++    fseeko(blockToPatchFile, offset * sizeof(long long), SEEK_SET);
++    long long* blockToPatch = m_pcPic->getBlockToPatch();
++    size_t readSize = fread(blockToPatch, sizeof(long long), blockToPatchWidth * blockToPatchHeight, blockToPatchFile);
++    if (readSize != blockToPatchWidth * blockToPatchHeight)
++    {
++      printf("error!");
++    }
++    fclose(blockToPatchFile);
++
++    offset = (long long)currPOC * picWidth * picHeight;
++    std::string occupancyMapFileName = m_cGopDecoder.getOccupancyMapFileName();
++    FILE* occupancyMapFile = NULL;
++    occupancyMapFile = fopen(occupancyMapFileName.c_str(), "rb");
++    fseeko(occupancyMapFile, offset * sizeof(Int), SEEK_SET);
++    Int* occupancyMap = m_pcPic->getOccupancyMap();
++    readSize = fread(occupancyMap, sizeof(Int), picWidth * picHeight, occupancyMapFile);
++    if (readSize != picWidth * picHeight)
++    {
++      printf("error!");
++    }
++    fclose(occupancyMapFile);
++
++  }
++
++#endif
++
+   //  Decode a picture
+   m_cGopDecoder.decompressSlice(&(nalu.getBitstream()), m_pcPic);
+ 
+Index: source/Lib/TLibDecoder/TDecTop.h
+===================================================================
+--- source/Lib/TLibDecoder/TDecTop.h	(revision 4972)
++++ source/Lib/TLibDecoder/TDecTop.h	(working copy)
+@@ -133,6 +133,12 @@
+   Void  destroy ();
+ 
+   Void setDecodedPictureHashSEIEnabled(Int enabled) { m_cGopDecoder.setDecodedPictureHashSEIEnabled(enabled); }
++
++#if PATCH_BASED_MVP
++  Void setBlockToPatchFileName(std::string blockToPatchFileName) { m_cGopDecoder.setBlockToPatchFileName(blockToPatchFileName); }
++  Void setOccupancyMapFileName(std::string occupancyMapFileName) { m_cGopDecoder.setOccupancyMapFileName(occupancyMapFileName); }
++#endif
++
+ #if MCTS_ENC_CHECK
+   Void setTMctsCheckEnabled(Bool enabled) { m_tmctsCheckEnabled = enabled; }
+ 
+Index: source/Lib/TLibEncoder/TEncCfg.h
+===================================================================
+--- source/Lib/TLibEncoder/TEncCfg.h	(revision 4972)
++++ source/Lib/TLibEncoder/TEncCfg.h	(working copy)
+@@ -111,6 +111,11 @@
+ class TEncCfg
+ {
+ protected:
++#if PATCH_BASED_MVP || PATCH_BASED_MVP_NON_NORMATIVE
++  std::string m_blockToPatchFileName;
++  std::string m_occupancyFileName;
++#endif
++
+   //==== File I/O ========
+   Int       m_iFrameRate;
+   Int       m_FrameSkip;
+@@ -462,6 +467,24 @@
+   virtual ~TEncCfg()
+   {}
+ 
++#if DEPTH_BASED_MVP
++  Void setDepthFileName(std::string depthFileName) { m_depthFileName = depthFileName; }
++  std::string getDepthFileName()                   { return m_depthFileName; }
++#endif
++
++#if DEPTH_COLOCATED_BASED_MVP || OUTPUT_DEPTH_MV
++  Void setMotionFileName(std::string motionFileName) { m_motionFileName = motionFileName; }
++  std::string getMotionFileName()                    { return m_motionFileName; }
++#endif
++
++#if PATCH_BASED_MVP || PATCH_BASED_MVP_NON_NORMATIVE
++  Void setBlockToPatchFileName(std::string blockToPatchFileName) { m_blockToPatchFileName = blockToPatchFileName; }
++  std::string getBlockToPatchFileName()                          { return m_blockToPatchFileName; }
++
++  Void setOccupancyMapFileName(std::string occupancyMapFileName) { m_occupancyFileName = occupancyMapFileName; }
++  std::string getOccupancyMapFileName()                          { return m_occupancyFileName; }
++#endif
++
+   Void setProfile(Profile::Name profile) { m_profile = profile; }
+   Void setLevel(Level::Tier tier, Level::Name level) { m_levelTier = tier; m_level = level; }
+ 
+Index: source/Lib/TLibEncoder/TEncGOP.cpp
+===================================================================
+--- source/Lib/TLibEncoder/TEncGOP.cpp	(revision 4972)
++++ source/Lib/TLibEncoder/TEncGOP.cpp	(working copy)
+@@ -1635,6 +1635,57 @@
+       for(UInt nextCtuTsAddr = 0; nextCtuTsAddr < numberOfCtusInFrame; )
+       {
+         m_pcSliceEncoder->precompressSlice( pcPic );
++
++#if PATCH_BASED_MVP || PATCH_BASED_MVP_NON_NORMATIVE
++
++        if ( pcSlice->getPOC() % 2 == 0 )
++        {
++
++          Int picWidth = pcPic->getPicYuvRec()->getWidth(COMPONENT_Y);
++          Int picHeight = pcPic->getPicYuvRec()->getHeight(COMPONENT_Y);
++
++          Int blockToPatchWidth = picWidth / 16;
++          Int blockToPatchHeight = picHeight / 16;
++
++          Int currPOC = pcSlice->getPOC() / 2;
++          long long offset = (long long)currPOC * blockToPatchWidth * blockToPatchHeight;
++
++          std::string blockToPatchFileName = m_pcEncTop->getBlockToPatchFileName();
++          FILE* blockToPatchFile = NULL;
++          blockToPatchFile = fopen(blockToPatchFileName.c_str(), "rb");
++          fseek(blockToPatchFile, offset * sizeof(long long), SEEK_SET);
++          long long* blockToPatch = pcPic->getBlockToPatch();
++          size_t readSize = fread(blockToPatch, sizeof(long long), blockToPatchWidth * blockToPatchHeight, blockToPatchFile);
++          if (readSize != blockToPatchWidth * blockToPatchHeight)
++          {
++            printf("error!");
++          }
++          fclose(blockToPatchFile);
++
++          offset = (long long)currPOC * picWidth * picHeight;
++          std::string occupancyMapFileName = m_pcEncTop->getOccupancyMapFileName();
++          FILE* occupancyMapFile = NULL;
++          occupancyMapFile = fopen(occupancyMapFileName.c_str(), "rb");
++          fseek(occupancyMapFile, offset * sizeof(Int), SEEK_SET);
++          Int* occupancyMap = pcPic->getOccupancyMap();
++          readSize = fread(occupancyMap, sizeof(Int), picWidth * picHeight, occupancyMapFile);
++          if (readSize != picWidth * picHeight)
++          {
++            printf("error!");
++          }
++          fclose(occupancyMapFile);
++        
++        }
++
++#endif
++
++#if PATCH_BASED_MVP_NON_NORMATIVE
++        for (Int i = 0; i < MAX_NUM_PATCHES; i++ )
++        {
++          g_patchesChange[i] = true;
++        }
++#endif
++
+         m_pcSliceEncoder->compressSlice   ( pcPic, false, false );
+ 
+         const UInt curSliceSegmentEnd = pcSlice->getSliceSegmentCurEndCtuTsAddr();
+@@ -1891,6 +1942,45 @@
+     {
+       pcPic->compressMotion();
+     }
++
++#if OUTPUT_DEPTH_MV
++    if (pcSlice->getSliceType() != I_SLICE && pcSlice->getPOC() % 2 == 0)
++    {
++      std::string motionFileName = m_pcEncTop->getMotionFileName();
++      FILE* motionFile = fopen(motionFileName.c_str(), "ab");
++
++      for (Int cuAddr = 0; cuAddr < pcPic->getNumberOfCtusInFrame(); cuAddr++)
++      {
++        TComDataCU* pcCU = pcPic->getCtu(cuAddr);
++
++        TComCUMvField* cuMvFieldList0 = pcCU->getCUMvField(REF_PIC_LIST_0);
++        TComCUMvField* cuMvFieldList1 = pcCU->getCUMvField(REF_PIC_LIST_1);
++
++        for (Int i = 0; i < pcCU->getTotalNumPart(); i++)
++        {
++          Int refIdxList0 = cuMvFieldList0->getRefIdx(i);
++          Int mvXList0 = cuMvFieldList0->getMv(i).getHor();
++          Int mvYList0 = cuMvFieldList0->getMv(i).getVer();
++
++          Int refIdxList1 = cuMvFieldList1->getRefIdx(i);
++          Int mvXList1 = cuMvFieldList1->getMv(i).getHor();
++          Int mvYList1 = cuMvFieldList1->getMv(i).getVer();
++
++          fwrite(&refIdxList0, sizeof(Int), 1, motionFile);
++          fwrite(&mvXList0, sizeof(Int), 1, motionFile);
++          fwrite(&mvYList0, sizeof(Int), 1, motionFile);
++
++          fwrite(&refIdxList1, sizeof(Int), 1, motionFile);
++          fwrite(&mvXList1, sizeof(Int), 1, motionFile);
++          fwrite(&mvYList1, sizeof(Int), 1, motionFile);
++        }
++      }
++
++      fclose(motionFile);
++    }
++#endif
++
++
+ #if REDUCED_ENCODER_MEMORY
+     if ( m_pcCfg->getIntraPeriod() == 1 && m_pcCfg->getUseIntraBlockCopy() )
+     {
+Index: source/Lib/TLibEncoder/TEncSearch.cpp
+===================================================================
+--- source/Lib/TLibEncoder/TEncSearch.cpp	(revision 4972)
++++ source/Lib/TLibEncoder/TEncSearch.cpp	(working copy)
+@@ -4080,8 +4080,15 @@
+                         iRoiHeight,
+                         pcYuv->getStride(COMPONENT_Y),
+                         pcCU->getSlice()->getSPS()->getBitDepth(CHANNEL_TYPE_LUMA),
++#if PATCH_BASED_MVP_NON_NORMATIVE
+                         roiPosX,
++                        roiPosY,
++                        iRefIdxPred,
++                        eRefPicList);
++#else
++                        roiPosX,
+                         roiPosY);
++#endif
+   xInitTileBorders(pcCU, &cPattern);
+ #else
+   cPattern.initPattern( pcYuv->getAddr  ( COMPONENT_Y, uiPartAddr ),
+@@ -4397,6 +4404,107 @@
+   // set rcMv (Median predictor) as start point and as best point
+   xTZSearchHelp( pcPatternKey, cStruct, rcMv.getHor(), rcMv.getVer(), 0, 0 );
+ 
++#if PATCH_BASED_MVP_NON_NORMATIVE
++
++  Int xCoor = pcPatternKey->getROIYPosX() + pcPatternKey->getROIYWidth() / 2;
++  Int yCoor = pcPatternKey->getROIYPosY() + pcPatternKey->getROIYHeight() / 2;
++
++  Int picWidth = pcCU->getSlice()->getSPS()->getPicWidthInLumaSamples();
++  Int occupancyResolution = 16;
++  Int blockToPatchWidth = picWidth / occupancyResolution;
++  
++  Int* occupancyMap = pcCU->getPic()->getOccupancyMap();
++  long long* blockToPatch = pcCU->getPic()->getBlockToPatch();
++
++  if (pcCU->getSlice()->getPOC() % 2 == 0 && occupancyMap[yCoor * picWidth + xCoor])
++  {
++    Int xBlockIndex = xCoor / occupancyResolution;
++    Int yBlockIndex = yCoor / occupancyResolution;
++
++    Int patchIndex = blockToPatch[yBlockIndex * blockToPatchWidth + xBlockIndex] - 1;          // should be minus 1
++    Int frameIndex = pcCU->getSlice()->getPOC() / 2;
++
++    // current 3D coordinate derivation
++    Int projectIndex = g_projectionIndex[frameIndex][patchIndex];
++
++    Int patchD1 = g_patch3DInfo[frameIndex][patchIndex][0];
++    Int patchU1 = g_patch3DInfo[frameIndex][patchIndex][1];
++    Int patchV1 = g_patch3DInfo[frameIndex][patchIndex][2];
++
++    Int patchU0 = g_patch2DInfo[frameIndex][patchIndex][0];
++    Int patchV0 = g_patch2DInfo[frameIndex][patchIndex][1];
++
++    Int xCoor3D = patchU1 + (xCoor - patchU0 * occupancyResolution);
++    Int yCoor3D = patchV1 + (yCoor - patchV0 * occupancyResolution);
++
++
++    RefPicList eRefPicList = pcPatternKey->getRefPicList();
++    Int refIdx = pcPatternKey->getRefIndex();
++
++    // find the suitable patch in the reference frame
++    Int refPOC = pcCU->getSlice()->getRefPOC(eRefPicList, refIdx);
++    Int refFrameIndex = refPOC / 2;
++    Int refNumPatches = g_numPatches[refFrameIndex];
++
++    Int bestPatchIndex = 0;
++    Int bestDist = MAX_INT;
++    for (Int refPatchIdx = 0; refPatchIdx < refNumPatches; refPatchIdx++)
++    {
++      Int refProjectionIndex = g_projectionIndex[refFrameIndex][refPatchIdx];
++
++      if (refProjectionIndex != projectIndex)
++      {
++        continue;
++      }
++
++      Int refPatchU1 = g_patch3DInfo[refFrameIndex][refPatchIdx][1];
++      Int refPatchV1 = g_patch3DInfo[refFrameIndex][refPatchIdx][2];
++
++      Int refPatchSizeU0 = g_patch2DInfo[refFrameIndex][refPatchIdx][2];
++      Int refPatchSizeV0 = g_patch2DInfo[refFrameIndex][refPatchIdx][3];
++
++      Int refPatch3DEndU1 = refPatchU1 + refPatchSizeU0 * occupancyResolution - 1;
++      Int refPatch3DEndV1 = refPatchV1 + refPatchSizeV0 * occupancyResolution - 1;
++
++      Bool xCond = (xCoor3D >= refPatchU1 && xCoor3D <= refPatch3DEndU1);
++      Bool yCond = (yCoor3D >= refPatchV1 && yCoor3D <= refPatch3DEndV1);
++
++      if (xCond && yCond)
++      {
++        Int refPatchD1 = g_patch3DInfo[refFrameIndex][refPatchIdx][0];
++        Int patchDist = abs(patchD1 - refPatchD1);
++
++        if (patchDist < bestDist)
++        {
++          bestDist = patchDist;
++          bestPatchIndex = refPatchIdx;
++        }
++      }
++    }
++
++    Int diff3DU = g_patch3DInfo[frameIndex][patchIndex][1] - g_patch3DInfo[refFrameIndex][bestPatchIndex][1];
++    Int diff3DV = g_patch3DInfo[frameIndex][patchIndex][2] - g_patch3DInfo[refFrameIndex][bestPatchIndex][2];
++
++    Int diff2DU = (g_patch2DInfo[refFrameIndex][bestPatchIndex][0] - g_patch2DInfo[frameIndex][patchIndex][0]) * occupancyResolution;
++    Int diff2DV = (g_patch2DInfo[refFrameIndex][bestPatchIndex][1] - g_patch2DInfo[frameIndex][patchIndex][1]) * occupancyResolution;
++
++    Int diffTotalU = diff3DU + diff2DU;
++    Int diffTotalV = diff3DV + diff2DV;
++
++    TComMv startMV(diffTotalU << 2, diffTotalV << 2);
++    pcCU->clipMv(startMV);
++
++#if ME_ENABLE_ROUNDING_OF_MVS
++    startMV.divideByPowerOf2(2);
++#else
++    startMV >>= 2;
++#endif
++
++    xTZSearchHelp(pcPatternKey, cStruct, startMV.getHor(), startMV.getVer(), 0, 0);
++  }
++
++#endif
++
+   // test whether one of PRED_A, PRED_B, PRED_C MV is better start point than Median predictor
+   if ( bTestOtherPredictedMV )
+   {
+@@ -4909,6 +5017,9 @@
+                           pcPatternKey->getROIYWidth(),
+                           pcPatternKey->getROIYHeight(),
+                           iRefStride,
++#if PATCH_BASED_MVP_NON_NORMATIVE
++                          
++#endif
+ #if MCTS_ENC_CHECK
+                           pcPatternKey->getBitDepthY(),
+                           pcPatternKey->getROIYPosX(),
