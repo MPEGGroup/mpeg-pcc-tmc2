@@ -58,6 +58,8 @@ class PCCEncoderParameters {
   ColorTransform      colorTransform_;
   std::string         colorSpaceConversionPath_;
   std::string         videoEncoderPath_;
+  bool                use3dmc_;
+  std::string         videoEncoderAuxPath_;
   std::string         videoEncoderOccupancyMapPath_;
 
   std::string         colorSpaceConversionConfig_;

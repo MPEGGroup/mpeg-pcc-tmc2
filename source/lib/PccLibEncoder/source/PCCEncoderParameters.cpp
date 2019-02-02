@@ -85,6 +85,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   bestColorSearchRange_                    = 0;
 
   videoEncoderPath_                        = {};
+  videoEncoderAuxPath_                     = {};
   videoEncoderOccupancyMapPath_            = {};
   geometryQP_                              = 28;
   textureQP_                               = 43;
@@ -152,8 +153,9 @@ PCCEncoderParameters::PCCEncoderParameters() {
   minNormSumOfInvDist4MPSelection_         = 0.35;
   lossyMppGeoQP_                           = 4;
 
-  useAdditionalPointsPatch_               = false;
+  useAdditionalPointsPatch_                = false;
   globalPatchAllocation_                   = false;
+  use3dmc_                                 = true;
 }
 
 PCCEncoderParameters::~PCCEncoderParameters() {
@@ -244,6 +246,7 @@ void PCCEncoderParameters::print(){
   std::cout << "\t   textureQP                            " << textureQP_                            << std::endl;
   std::cout << "\t   colorSpaceConversionPath             " << colorSpaceConversionPath_             << std::endl;
   std::cout << "\t   videoEncoderPath                     " << videoEncoderPath_                     << std::endl;
+  std::cout << "\t   videoEncoderAuxPath                  " << videoEncoderAuxPath_                  << std::endl;
   std::cout << "\t   videoEncoderOccupancyMapPath         " << videoEncoderOccupancyMapPath_         << std::endl;
   if ( !absoluteD1_) {
     std::cout << "\t   geometryD0Config                     " << geometryD0Config_ << std::endl;
@@ -262,6 +265,8 @@ void PCCEncoderParameters::print(){
   }
   std::cout << "\t   colorSpaceConversionConfig           " << colorSpaceConversionConfig_           << std::endl;
   std::cout << "\t   inverseColorSpaceConversionConfig    " << inverseColorSpaceConversionConfig_    << std::endl;
+  std::cout << "\t   apply3dMotionCompensation            " << use3dmc_                              << std::endl;
+  
   std::cout << "\t dilation" << std::endl;
   std::cout << "\t   GroupDilation                        " << groupDilation_                        << std::endl;
   std::cout << "\t   textureDilationOffLossless           " << textureDilationOffLossless_           << std::endl;
@@ -357,6 +362,11 @@ bool PCCEncoderParameters::check(){
   if( useOccupancyMapVideo_ && ( videoEncoderOccupancyMapPath_.empty() || !exist( videoEncoderOccupancyMapPath_) ) ) {
     std::cerr << "WARNING: videoEncoderOccupancyMapPath is set as videoEncoderPath_ : "<<videoEncoderPath_ << std::endl;
     videoEncoderOccupancyMapPath_ = videoEncoderPath_;
+  }
+
+  if (videoEncoderAuxPath_.empty() || !exist(videoEncoderAuxPath_)) {
+    std::cerr << "WARNING: videoEncoderAuxPath_ is set as videoEncoderPath_ : " << videoEncoderPath_ << std::endl;
+    videoEncoderAuxPath_ = videoEncoderPath_;
   }
 
   if (absoluteD1_ && (!geometryD0Config_.empty() || !geometryD1Config_.empty())) {

@@ -148,7 +148,7 @@ namespace pcc {
     uint16_t                          getPointSize()                      const { return pointSize_;                      }
     bool                              getPointShapePresent()              const { return pointShapePresent_;              }
     PointShape                        getPointShape()                     const { return pointShape_;                     }
-    bool                              getMaxDepthPresent()              const { return maxDepthPresent_;              }
+    bool                              getMaxDepthPresent()                const { return maxDepthPresent_;              }
 
     const PCCMetadataEnabledFlags&    getMetadataEnabledFlags()           const { return metadataEnabledFlags_;           }
     const PCCMetadataEnabledFlags&    getLowerLevelMetadataEnabledFlags() const { return lowerLevelMetadataEnabledFlags_; }

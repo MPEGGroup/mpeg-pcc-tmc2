@@ -67,7 +67,9 @@ class PCCVideoEncoder {
                 const bool flagColorSmoothing = false,
                 const bool flagColorPreSmoothing = false,
                 const size_t nbyte = 1,
-                const bool keepIntermediateFiles = false ) {
+                const bool keepIntermediateFiles = false, 
+                const bool use3dmv = false,
+                const std::string orgFileName = "" ){
 
     auto& frames = video.getFrames();
     if (frames.empty()) {
@@ -83,6 +85,9 @@ class PCCVideoEncoder {
 
     const std::string format = use444CodecIo ? "444" : "420";
     const std::string binFileName = fileName + ".bin";
+    const std::string blockToPatchFileName = orgFileName + "blockToPatch.txt";
+    const std::string occupancyMapFileName = orgFileName + "occupancy.txt";
+    const std::string patchInfoFileName = orgFileName + "patchInfo.txt";
     const std::string srcYuvFileName = addVideoFormat(fileName + (use444CodecIo ? ".rgb" : ".yuv"),
                                                       width, height, !use444CodecIo, nbyte==2?"10":"8" );
     const std::string srcRgbFileName = addVideoFormat(fileName + ".rgb",
@@ -326,6 +331,11 @@ class PCCVideoEncoder {
           << " --ReconFile=" << recYuvFileName
           << " --QP=" << qp
           << " --InputColourSpaceConvert=RGBtoGBR";
+      if (use3dmv) {
+        cmd << " --BlockToPatchFile=" << blockToPatchFileName
+          << " --OccupancyMapFile=" << occupancyMapFileName
+          << " --PatchInfoFile=" << patchInfoFileName;
+      }
     } else {
       cmd << encoderPath
           << " -c " << encoderConfig
@@ -348,6 +358,11 @@ class PCCVideoEncoder {
         cmd << " --InternalBitDepth=" << depth;
         cmd << " --OutputBitDepth=" << depth;   // to support lossy missed points patch in the same video frame
       }
+      if (use3dmv) {
+        cmd << " --BlockToPatchFile=" << blockToPatchFileName
+          << " --OccupancyMapFile=" << occupancyMapFileName
+          << " --PatchInfoFile=" << patchInfoFileName;
+    }
     }
     std::cout << cmd.str() << '\n';
     if (pcc::system(cmd.str().c_str())) {

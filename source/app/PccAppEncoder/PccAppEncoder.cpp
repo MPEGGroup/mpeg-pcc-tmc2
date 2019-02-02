@@ -363,6 +363,11 @@ bool parseParameters( int argc, char *argv[],
      encoderParams.videoEncoderPath_,
      "HM video encoder executable")
 
+    ("videoEncoderAuxPath",
+      encoderParams.videoEncoderAuxPath_,
+      encoderParams.videoEncoderAuxPath_,
+      "HM video encoder executable")
+
     ("videoEncoderOccupancyMapPath",
      encoderParams.videoEncoderOccupancyMapPath_,
      encoderParams.videoEncoderOccupancyMapPath_,
@@ -566,7 +571,12 @@ bool parseParameters( int argc, char *argv[],
     ("globalPatchAllocation",
       encoderParams.globalPatchAllocation_,
       encoderParams.globalPatchAllocation_,
-      "global matched patch allocation in a temporay way.(0: anchor's packing method(default), 1: gpa algorithm)\n")
+      "Global temporally consistent patch allocation.(0: anchor's packing method(default), 1: gpa algorithm)\n")
+
+    ("apply3dMotionCompensation",
+      encoderParams.use3dmc_,
+      encoderParams.use3dmc_,
+      "Use auxilliary informaion for 3d motion compensation.(0: convntion video coding, 1: 3D motion compensated)\n")
 
         ;
 

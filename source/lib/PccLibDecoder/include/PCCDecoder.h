@@ -124,6 +124,7 @@ class PCCDecoder : public PCCCodec {
   bool     useAdditionalPointsPatch_;
   uint8_t  minLevel_;
   bool     globalPatchAllocation_;
+  bool     use3dmc_;
 };
 }; //~namespace
 

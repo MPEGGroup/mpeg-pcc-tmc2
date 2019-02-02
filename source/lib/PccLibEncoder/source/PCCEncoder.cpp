@@ -197,6 +197,18 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
   std::stringstream path;
   path << removeFileExtension( params_.compressedStreamPath_ ) << "_GOF" << context.getIndex() << "_";
 
+  std::stringstream pathOccupancy;
+  pathOccupancy << path.str() + "occupancy.txt";
+  FILE *occupancyFile = fopen(pathOccupancy.str().c_str(), "wb");
+
+  std::stringstream pathPatchInfo;
+  pathPatchInfo << path.str() + "patchInfo.txt";
+  FILE *patchInfoFile = fopen(pathPatchInfo.str().c_str(), "wb");
+
+  std::stringstream pathBlockToPatch1;
+  pathBlockToPatch1 << path.str() + "blockToPatch.txt";
+  FILE *blockToPatchFile = fopen(pathBlockToPatch1.str().c_str(), "wb");
+
   generateGeometryVideo( sources, context );
   //RA mode.
   if(params_.globalPatchAllocation_) {
@@ -218,8 +230,9 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
     videoEncoder.compress( videoOccupancyMap, path.str() + "occupancy", params_.occupancyMapQP_, videoBitstream,
                            params_.occupancyMapVideoEncoderConfig_, params_.videoEncoderOccupancyMapPath_, context
                            , "", "", "", false, false,
-                           params_.flagColorSmoothing_, params_.flagColorPreSmoothing_, 1, params_.keepIntermediateFiles_);
+                           params_.flagColorSmoothing_, params_.flagColorPreSmoothing_, 1, params_.keepIntermediateFiles_, false);
   }
+  buildBlockToPatch(context);
   // Group dilation in Geometry
   if (params_.groupDilation_ && params_.absoluteD1_ && !params_.oneLayerMode_){
     auto& VideoGemetry = context.getVideoGeometry();
@@ -229,6 +242,37 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
         auto& occupancyMap = frame.getOccupancyMap();
         auto  &frame1 = VideoGemetry.getFrame(2*f);
         auto  &frame2 = VideoGemetry.getFrame(2*f +1);
+        if (params_.use3dmc_) {
+          auto& blockToPatch = frame.getBlockToPatch();
+          const size_t blockToPatchWidth = frame.getWidth() / params_.occupancyResolution_;
+          const size_t blockToPatchHeight = frame.getHeight() / params_.occupancyResolution_;
+          fwrite(&blockToPatch[0], sizeof(size_t), blockToPatchHeight * blockToPatchWidth, blockToPatchFile);
+          fwrite(&occupancyMap[0], sizeof(uint32_t), height * width, occupancyFile);
+
+          auto &patches = frame.getPatches();
+          const size_t numPatches = patches.size();
+          fwrite(&numPatches, sizeof(size_t), 1, patchInfoFile);
+          for (size_t patchIdx = 0; patchIdx < numPatches; ++patchIdx) {
+            const auto &patch = patches[patchIdx];
+            size_t projectionIndex = patch.getNormalAxis();
+            size_t u0 = patch.getU0();
+            size_t v0 = patch.getV0();
+            size_t sizeU0 = patch.getSizeU0();
+            size_t sizeV0 = patch.getSizeV0();
+            size_t d1 = patch.getD1();
+            size_t u1 = patch.getU1();
+            size_t v1 = patch.getV1();
+
+            fwrite(&projectionIndex, sizeof(size_t), 1, patchInfoFile);
+            fwrite(&u0, sizeof(size_t), 1, patchInfoFile);
+            fwrite(&v0, sizeof(size_t), 1, patchInfoFile);
+            fwrite(&sizeU0, sizeof(size_t), 1, patchInfoFile);
+            fwrite(&sizeV0, sizeof(size_t), 1, patchInfoFile);
+            fwrite(&d1, sizeof(size_t), 1, patchInfoFile);
+            fwrite(&u1, sizeof(size_t), 1, patchInfoFile);
+            fwrite(&v1, sizeof(size_t), 1, patchInfoFile);
+          }
+        }
         uint16_t  tmp_d0, tmp_d1;
         uint32_t  tmp_avg;
         for (size_t y = 0; y < height; y++) {
@@ -247,6 +291,10 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
     }
   }
 
+  fclose(blockToPatchFile);
+  fclose(occupancyFile);
+  fclose(patchInfoFile);
+
   const size_t nbyteGeo = (params_.losslessGeo_ || (params_.lossyMissedPointsPatch_ && !context.getUseMissedPointsSeparateVideo())) ? 2 : 1; 
   if (!params_.absoluteD1_) {
     if (params_.lossyMissedPointsPatch_){
@@ -256,11 +304,14 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
     auto& videoBitstreamD0 = context.createVideoBitstream( PCCVideoType::GeometryD0 );
     auto& videoGeometry = context.getVideoGeometry();
     videoEncoder.compress( videoGeometry, path.str() + "geometryD0", (params_.geometryQP_-1), videoBitstreamD0,
-                           params_.geometryD0Config_, params_.videoEncoderPath_, context,
-                           "", "", "", params_.losslessGeo_ && params_.losslessGeo444_, false,
+                           params_.geometryD0Config_,
+                           (params_.use3dmc_ != 0) ? params_.videoEncoderAuxPath_ : params_.videoEncoderPath_,
+                           context, "", "", "", params_.losslessGeo_ && params_.losslessGeo444_, false,
                            params_.flagColorSmoothing_,
                            params_.flagColorPreSmoothing_,
-                           nbyteGeo, params_.keepIntermediateFiles_);
+                           nbyteGeo, params_.keepIntermediateFiles_, params_.use3dmc_ ,
+                           path.str());
+
     // Form differential video geometryD1
     auto& videoGeometryD1 = context.getVideoGeometryD1();
     for (size_t f = 0; f < frames.size(); ++f) {
@@ -272,11 +323,13 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
     auto& videoBitstreamD1 = context.createVideoBitstream( PCCVideoType::GeometryD1 );
     videoEncoder.compress( videoGeometryD1, path.str() + "geometryD1", params_.geometryQP_,
                            videoBitstreamD1,
-                           params_.geometryD1Config_, params_.videoEncoderPath_, context,
-                           "", "", "", params_.losslessGeo_ && params_.losslessGeo444_, false,
+                           params_.geometryD1Config_, 
+                           (params_.use3dmc_ != 0) ? params_.videoEncoderAuxPath_ : params_.videoEncoderPath_ , 
+                           context, "", "", "", params_.losslessGeo_ && params_.losslessGeo444_, false,
                            params_.flagColorSmoothing_,
                            params_.flagColorPreSmoothing_,
-                           nbyteGeo, params_.keepIntermediateFiles_);
+                           nbyteGeo, params_.keepIntermediateFiles_, params_.use3dmc_,
+                           path.str());
 
     auto sizeGeometryVideo = videoBitstreamD0.naluSize()  + videoBitstreamD1.naluSize();
     std::cout << "geometry video ->" << sizeGeometryVideo << " B ("
@@ -288,12 +341,13 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
     videoEncoder.compress( videoGeometry, path.str() + "geometry", params_.geometryQP_,
                            videoBitstream,
                            params_.oneLayerMode_ ? getEncoderConfig1L( params_.geometryConfig_ ) : params_.geometryConfig_,
-                               params_.videoEncoderPath_, context,
+                               (params_.use3dmc_ != 0) ? params_.videoEncoderAuxPath_ : params_.videoEncoderPath_, context,
                                "", "", "",
                                params_.losslessGeo_ && params_.losslessGeo444_, false,
                                params_.flagColorSmoothing_,
                                params_.flagColorPreSmoothing_,
-                               nbyteGeo, params_.keepIntermediateFiles_ );
+                               nbyteGeo, params_.keepIntermediateFiles_ , params_.use3dmc_,
+                               path.str());
   }
 
   if ( params_.useAdditionalPointsPatch_ && context.getUseMissedPointsSeparateVideo()) {
@@ -308,13 +362,12 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
                            false, //patchColorSubsampling
                            params_.flagColorSmoothing_,
                            params_.flagColorPreSmoothing_,
-                           2, params_.keepIntermediateFiles_); //nByteGeo=2 (10 bit coding)
+                           2, false, params_.keepIntermediateFiles_); //nByteGeo=2 (10 bit coding)
 
     if (params_.lossyMissedPointsPatch_) {
       generateMissedPointsGeometryfromVideo(context, reconstructs);
     }
   }
-  buildBlockToPatch( context );
 
   GeneratePointCloudParameters generatePointCloudParameters;
   generatePointCloudParameters.occupancyResolution_          = params_.occupancyResolution_;
@@ -430,12 +483,12 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
     videoEncoder.compress( videoTexture,path.str() + "texture", params_.textureQP_,
                            videoBitstream,
                            params_.oneLayerMode_ ? getEncoderConfig1L( params_.textureConfig_ ) : params_.textureConfig_,
-                               params_.videoEncoderPath_, context,
+                               (params_.use3dmc_ != 0) ? params_.videoEncoderAuxPath_ : params_.videoEncoderPath_, context,
                                params_.colorSpaceConversionConfig_,
                                params_.inverseColorSpaceConversionConfig_,
                                params_.colorSpaceConversionPath_, params_.losslessTexture_, params_.patchColorSubsampling_,
                                params_.flagColorSmoothing_, params_.flagColorPreSmoothing_, nbyteTexture,
-                               params_.keepIntermediateFiles_ );
+                               params_.keepIntermediateFiles_, params_.use3dmc_, path.str());
 
     if(params_.useAdditionalPointsPatch_ && context.getUseMissedPointsSeparateVideo())  {
       auto& videoBitstreamMP = context.createVideoBitstream( PCCVideoType::TextureMP );
@@ -452,7 +505,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
                              params_.losslessTexture_ , // && !params_.lossyMissedPointsPatch_,
                              false, //params_.patchColorSubsampling_,
                              params_.flagColorSmoothing_, params_.flagColorPreSmoothing_, nbyteTexture,
-                             params_.keepIntermediateFiles_ );
+                             false, params_.keepIntermediateFiles_);
     
       if (params_.lossyMissedPointsPatch_) {
         generateMissedPointsTexturefromVideo(context, reconstructs);
@@ -462,6 +515,10 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
 
   colorPointCloud(reconstructs, context, params_.noAttributes_ != 0, params_.colorTransform_, generatePointCloudParameters);
   
+  //remove(pathBlockToPatch1.str().c_str());
+  //remove(pathOccupancy.str().c_str());
+  //remove(pathPatchInfo.str().c_str());
+
   return 0;
 }
 
