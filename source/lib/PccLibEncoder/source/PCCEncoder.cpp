@@ -96,17 +96,20 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
 
 int PCCEncoder::compress( PCCContext &context, PCCBitstream &bitstream ){
   auto sizeFrameHeader = bitstream.size();
-  printf("PCCEncoder: compress (start: bitstream = %llu / %llu ) \n",
-         bitstream.size(), bitstream.capacity()); fflush(stdout);
+  //printf("PCCEncoder: compress (start: bitstream = %llu / %llu ) \n",
+  //       bitstream.size(), bitstream.capacity()); fflush(stdout);
+  std::cout << "PCCEncoder: compress (start: bitstream = " << bitstream.size() << " / " << bitstream.capacity() << " )" << std::endl;
   compressHeader( context, bitstream );
-  printf("PCCEncoder: compress (header: bitstream = %llu / %llu ) \n",
-         bitstream.size(), bitstream.capacity()); fflush(stdout);
+  //printf("PCCEncoder: compress (header: bitstream = %llu / %llu ) \n",
+         //bitstream.size(), bitstream.capacity()); fflush(stdout);
+  std::cout << "PCCEncoder: compress (header: bitstream = " << bitstream.size() << " / " << bitstream.capacity() << " )" << std::endl;
   sizeFrameHeader = bitstream.size() - sizeFrameHeader;
   std::cout << "frame header info  ->" << sizeFrameHeader << " B " << std::endl;
   context.traceVideoBitstream();
 
-  printf("PCCEncoder: compress (video bitstream start: bitstream =%llulu / %llu ) \n",
-         bitstream.size(), bitstream.capacity()); fflush(stdout);
+  //printf("PCCEncoder: compress (video bitstream start: bitstream =%llulu / %llu ) \n",
+         //bitstream.size(), bitstream.capacity()); fflush(stdout);
+  std::cout << "PCCEncoder: compress (video bitstream start: bitstream = "<< bitstream.size()<<" / "<< bitstream.capacity()<<" )" << std::endl;
   if( params_.useOccupancyMapVideo_ ) {
     bitstream.write( context.getVideoBitstream( PCCVideoType::OccupancyMap ) );
   }
@@ -125,14 +128,16 @@ int PCCEncoder::compress( PCCContext &context, PCCBitstream &bitstream ){
       bitstream.write( context.getVideoBitstream( PCCVideoType::TextureMP ) );
      }
   }
-  printf("PCCEncoder: compress (video bitstream done: bitstream = %llu / %llu ) \n",
-         bitstream.size(), bitstream.capacity()); fflush(stdout);
+  //printf("PCCEncoder: compress (video bitstream done: bitstream = %llu / %llu ) \n",
+         //bitstream.size(), bitstream.capacity()); fflush(stdout);
+  std::cout << "PCCEncoder: compress (video bitstream done: bitstream = :"<<bitstream.size()<<" / "<< bitstream.capacity()<<" )" << std::endl;
 
   size_t sizeOccupancyMap = bitstream.size();
   compressOccupancyMap(context, bitstream);
 
-  printf("PCCEncoder: compress (metadata done: bitstream =%llulu / %llu ) \n",
-         bitstream.size(),bitstream.capacity()); fflush(stdout);
+  //printf("PCCEncoder: compress (metadata done: bitstream =%llulu / %llu ) \n",
+         //bitstream.size(),bitstream.capacity()); fflush(stdout);
+  std::cout << "PCCEncoder: compress (metadata done: bitstream = "<< bitstream.size()<<" / "<< bitstream.capacity()<<" )" << std::endl;
   sizeOccupancyMap = ( bitstream.size() - sizeOccupancyMap )
       + context.getVideoBitstream( PCCVideoType::OccupancyMap ).naluSize();
   std::cout << " occupancy map  ->" << sizeOccupancyMap << " B " << std::endl;
@@ -152,9 +157,10 @@ int PCCEncoder::compress( PCCContext &context, PCCBitstream &bitstream ){
        writeMissedPointsTextureNumber( context, bitstream );
     }
   }
-  printf("PCCEncoder: compress (done: bitstream = %llu / %llu ) \n",
-         bitstream.size(),bitstream.capacity()); fflush(stdout);
-  return 0; 
+  //printf("PCCEncoder: compress (done: bitstream = %llu / %llu ) \n",
+         //bitstream.size(),bitstream.capacity()); fflush(stdout);
+  std::cout << "PCCEncoder: compress (done: bitstream = " << bitstream.size() << " / " << bitstream.capacity() << " )" << std::endl;
+  return 0;
 }
 
 int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,

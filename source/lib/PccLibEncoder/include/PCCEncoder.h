@@ -181,7 +181,7 @@ private:
                               size_t &height, size_t occupancySizeU, size_t occupancySizeV, size_t maxOccupancyRow);
   void spatialConsistencyPack(PCCFrameContext& frame, PCCFrameContext &prevFrame, int safeguard = 0 );
   void spatialConsistencyPackFlexible(PCCFrameContext& frame, PCCFrameContext &prevFrame, int safeguard = 0);
-  void PCCEncoder::spatialConsistencyPackTetris(PCCFrameContext & frame, PCCFrameContext & prevFrame, int safeguard = 0);
+  void spatialConsistencyPackTetris(PCCFrameContext & frame, PCCFrameContext & prevFrame, int safeguard = 0);
   void generateOccupancyMap( PCCFrameContext& frameContext );
   void modifyOccupancyMap(PCCFrameContext& frame, const PCCImageGeometry &imageRef, const PCCImageGeometry &image);
   void printMap(std::vector<bool> img, const size_t sizeU, const size_t sizeV);
