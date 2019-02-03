@@ -535,7 +535,7 @@ bool parseParameters( int argc, char *argv[],
     ("packingStrategy",
       encoderParams.packingStrategy_,
       encoderParams.packingStrategy_,
-      "Patches packing strategy(0: anchor packing, 1(default)/2/3: flexible packing with 2, 4, or 8 orientations)\n")
+      "Patches packing strategy(0: anchor packing, 1(default): flexible packing with 2 orientations, 2: tetris packing)\n")
 
     ("safeGuardDistance",
       encoderParams.safeGuardDistance_,
@@ -576,7 +576,7 @@ bool parseParameters( int argc, char *argv[],
     ("apply3dMotionCompensation",
       encoderParams.use3dmc_,
       encoderParams.use3dmc_,
-      "Use auxilliary informaion for 3d motion compensation.(0: convntion video coding, 1: 3D motion compensated)\n")
+      "Use auxilliary information for 3d motion compensation.(0: conventional video coding, 1: 3D motion compensated)\n")
 
         ;
 

@@ -145,7 +145,7 @@ class PCCVideoEncoder {
               occupancyResolution = patch.getOccupancyResolution();
               patch_left = patch.getU0() * occupancyResolution;
               patch_top = patch.getV0() * occupancyResolution;
-              if (patch.getPatchOrientation() % 2 == 0) {
+              if (!(patch.isPatchDimensionSwitched())) {
                 patch_width = patch.getSizeU0() * occupancyResolution;
                 patch_height = patch.getSizeV0() * occupancyResolution;
               } else {

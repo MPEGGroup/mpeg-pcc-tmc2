@@ -89,7 +89,8 @@ namespace pcc {
   enum PointType { Unset = 0, D0, D1, DF, Smooth, InBetween };
   enum PCCVideoType   { OccupancyMap = 0, Geometry,  GeometryD0, GeometryD1, GeometryMP, Texture,  TextureMP, Other };
   enum METADATATYPE {METADATA_GOF=0, METADATA_FRAME, METADATA_PATCH};
-  
+  enum PatchOrientation { DEFAULT = 0, SWAP = 1, ROT180 = 2, ROT270 = 3, MIRROR = 4, MROT90 = 5, MROT180 = 6, ROT90 = 7, MROT270 = 8 }; //switched SWAP with ROT90 positions
+
   const size_t IntermediateLayerIndex  = 100;
   const size_t NeighborThreshold       = 4;
   const size_t NumPatchOrientations    = 8;

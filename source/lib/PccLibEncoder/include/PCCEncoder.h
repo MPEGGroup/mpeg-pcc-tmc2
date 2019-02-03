@@ -176,13 +176,16 @@ private:
   void dilateSparseLinearModel(PCCFrameContext& frame, PCCImage<T, 3> &image, int layerIdx, PCCVideoType videoType);
   void pack( PCCFrameContext& frame, int safeguard = 0  );
   void packFlexible(PCCFrameContext& frame, int safeguard = 0);
+  void packTetris(PCCFrameContext & frame, int safeguard = 0);
   void packMissedPointsPatch( PCCFrameContext& frame, const std::vector<bool> &occupancyMap, size_t &width, 
                               size_t &height, size_t occupancySizeU, size_t occupancySizeV, size_t maxOccupancyRow);
   void spatialConsistencyPack(PCCFrameContext& frame, PCCFrameContext &prevFrame, int safeguard = 0 );
   void spatialConsistencyPackFlexible(PCCFrameContext& frame, PCCFrameContext &prevFrame, int safeguard = 0);
+  void PCCEncoder::spatialConsistencyPackTetris(PCCFrameContext & frame, PCCFrameContext & prevFrame, int safeguard = 0);
   void generateOccupancyMap( PCCFrameContext& frameContext );
   void modifyOccupancyMap(PCCFrameContext& frame, const PCCImageGeometry &imageRef, const PCCImageGeometry &image);
   void printMap(std::vector<bool> img, const size_t sizeU, const size_t sizeV);
+  void printMapTetris(std::vector<bool> img, const size_t sizeU, const size_t sizeV, std::vector<int> horizon);
   void generateIntraImage( PCCFrameContext& frameContext, const size_t depthIndex, PCCImageGeometry &image);
   bool predictGeometryFrame( PCCFrameContext& frameContext, const PCCImageGeometry &reference, PCCImageGeometry &image);
   void generateMissedPointsPatch(const PCCPointSet3& source, PCCFrameContext& frameContext, bool useEnhancedDeltaDepthCode); //useEnhancedDeltaDepthCode for EDD

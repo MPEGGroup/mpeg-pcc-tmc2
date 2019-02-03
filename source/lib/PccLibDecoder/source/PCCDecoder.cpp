@@ -854,10 +854,10 @@ void PCCDecoder::decompressPatchMetaDataM42195(PCCFrameContext& frame, PCCFrameC
       if (flexible_patch_present_flag) {
         patch.getPatchOrientation() = arithmeticDecoder.decode(orientationPatchModel) + 1;
       } else {
-        patch.getPatchOrientation() = 0;
+        patch.getPatchOrientation() = PatchOrientation::DEFAULT;
       }
     } else {
-      patch.getPatchOrientation() = 0;
+      patch.getPatchOrientation() = PatchOrientation::DEFAULT;
     }
     patch.getU1() = DecodeUInt32(bitCount[2], arithmeticDecoder, bModel0);
     patch.getV1() = DecodeUInt32(bitCount[3], arithmeticDecoder, bModel0);
@@ -1027,10 +1027,10 @@ void PCCDecoder::decompressOccupancyMap( PCCContext &context, PCCFrameContext& f
         if (flexible_patch_present_flag) {
           patch.getPatchOrientation() = arithmeticDecoder.decode(orientationPatchModel)+1;
         } else {
-          patch.getPatchOrientation() = 0;
+          patch.getPatchOrientation() = PatchOrientation::DEFAULT;
         }
       } else {
-        patch.getPatchOrientation() = 0;
+        patch.getPatchOrientation() = PatchOrientation::DEFAULT;
       }
       patch.getU1() = DecodeUInt32(bitCountU1, arithmeticDecoder, bModel0);
       patch.getV1() = DecodeUInt32(bitCountV1, arithmeticDecoder, bModel0);

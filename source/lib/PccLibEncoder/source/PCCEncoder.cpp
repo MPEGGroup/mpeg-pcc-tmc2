@@ -534,6 +534,21 @@ void PCCEncoder::printMap(std::vector<bool> img, const size_t sizeU, const size_
   std::cout << std::endl;
 }
 
+void PCCEncoder::printMapTetris(std::vector<bool> img, const size_t sizeU, const size_t sizeV, std::vector<int> horizon) {
+	std::cout << std::endl;
+	std::cout << "PrintMap size = " << sizeU << " x " << sizeV << std::endl;
+	for (size_t v = 0; v < sizeV; ++v) {
+		for (size_t u = 0; u < sizeU; ++u) {
+			if (v == horizon[u])
+				std::cout << (img[v * sizeU + u] ? 'U' : 'O');
+			else
+				std::cout << (img[v * sizeU + u] ? 'X' : '.');
+		}
+		std::cout << std::endl;
+	}
+	std::cout << std::endl;
+}
+
 bool PCCEncoder::generateOccupancyMapVideo( const PCCGroupOfFrames& sources, PCCContext& context ) {
   auto& videoOccupancyMap = context.getVideoOccupancyMap();
   bool ret = true;
@@ -678,7 +693,7 @@ void PCCEncoder::spatialConsistencyPack(PCCFrameContext& frame, PCCFrameContext 
     bool locationFound = false;
     auto& occupancy =  patch.getOccupancy();
     while (!locationFound) {
-      patch.getPatchOrientation() = 0; // only one orientation is allowed
+      patch.getPatchOrientation() = PatchOrientation::DEFAULT; // only one orientation is allowed
       for (int v = 0; v <= occupancySizeV && !locationFound; ++v) {
         for (int u = 0; u <= occupancySizeU && !locationFound; ++u) {
           patch.getU0() = u;
@@ -790,8 +805,10 @@ void PCCEncoder::spatialConsistencyPackFlexible(PCCFrameContext& frame, PCCFrame
   height = occupancySizeV * params_.occupancyResolution_;
   size_t maxOccupancyRow{ 0 };
 
-  vector<int> orientation_vertical  = { 0,1,2,3,4,6,5,7 };//favoring vertical orientation
-  vector<int> orientation_horizontal = { 1,0,3,2,5,7,4,6 };//favoring horizontal orientations (that should be rotated) 
+  //vector<int> orientation_vertical = { PatchOrientation::DEFAULT,PatchOrientation::ROT90,PatchOrientation::ROT180,PatchOrientation::ROT270,PatchOrientation::MIRROR,PatchOrientation::MROT180,PatchOrientation::MROT90,PatchOrientation::MROT270 };    // favoring vertical orientation
+  //vector<int> orientation_horizontal = { PatchOrientation::ROT90,PatchOrientation::DEFAULT,PatchOrientation::ROT270,PatchOrientation::ROT180,PatchOrientation::MROT90,PatchOrientation::MROT270,PatchOrientation::MIRROR,PatchOrientation::MROT180 };    // favoring horizontal orientations (that should be rotated) 
+  vector<int> orientation_vertical = { PatchOrientation::DEFAULT,PatchOrientation::SWAP };    // favoring vertical orientation
+  vector<int> orientation_horizontal = { PatchOrientation::SWAP,PatchOrientation::DEFAULT };    // favoring horizontal orientations (that should be rotated) 
   std::vector<bool> occupancyMap;
   occupancyMap.resize(occupancySizeU * occupancySizeV, false);
   for (auto &patch : patches) {
@@ -857,7 +874,7 @@ void PCCEncoder::spatialConsistencyPackFlexible(PCCFrameContext& frame, PCCFrame
         occupancyMap[coord] = occupancyMap[coord] || occupancy[v0 * patch.getSizeU0() + u0];
       }
     }
-    if (patch.getPatchOrientation() == 0 || patch.getPatchOrientation() == 2 || patch.getPatchOrientation() == 4 || patch.getPatchOrientation() == 6) {
+    if (!(patch.isPatchDimensionSwitched())) {
       height = (std::max)(height, (patch.getV0() + patch.getSizeV0()) * patch.getOccupancyResolution());
       width = (std::max)(width, (patch.getU0() + patch.getSizeU0()) * patch.getOccupancyResolution());
       maxOccupancyRow = (std::max)(maxOccupancyRow, (patch.getV0() + patch.getSizeV0()));
@@ -879,6 +896,227 @@ void PCCEncoder::spatialConsistencyPackFlexible(PCCFrameContext& frame, PCCFrame
   std::cout << "actualImageSizeV " << height << std::endl;
 }
 
+void PCCEncoder::spatialConsistencyPackTetris(PCCFrameContext & frame, PCCFrameContext & prevFrame, int safeguard)
+{
+	auto& width = frame.getWidth();
+	auto& height = frame.getHeight();
+	auto& patches = frame.getPatches();
+
+	auto& prevPatches = prevFrame.getPatches();
+	if (patches.empty()) {
+		return;
+	}
+	std::sort(patches.begin(), patches.end(), [](PCCPatch& a, PCCPatch& b) { return a.gt(b); });
+	int id = 0;
+	size_t occupancySizeU = params_.minimumImageWidth_ / params_.occupancyResolution_;
+	size_t occupancySizeV = (std::max)(patches[0].getSizeU0(), patches[0].getSizeV0());
+	vector<PCCPatch> matchedPatches, tmpPatches;
+	matchedPatches.clear();
+	float thresholdIOU = 0.2;
+
+	//main loop.
+	for (auto &patch : prevPatches) {
+		assert(patch.getSizeU0() <= occupancySizeU);
+		assert(patch.getSizeV0() <= occupancySizeV);
+		id++;
+		float maxIou = 0.0; int bestIdx = -1, cId = 0;
+		for (auto &cpatch : patches) {
+			if ((patch.getViewId() == cpatch.getViewId()) && (cpatch.getBestMatchIdx() == -1)) {
+				Rect rect = Rect(patch.getU1(), patch.getV1(), patch.getSizeU(), patch.getSizeV());
+				Rect crect = Rect(cpatch.getU1(), cpatch.getV1(), cpatch.getSizeU(), cpatch.getSizeV());
+				float iou = computeIOU(rect, crect);
+				if (iou > maxIou) {
+					maxIou = iou;
+					bestIdx = cId;
+				}
+			} //end of if (patch.viewId == cpatch.viewId).
+			cId++;
+		}
+
+		if (maxIou > thresholdIOU) {
+			//store the best match index
+			patches[bestIdx].setBestMatchIdx() = id - 1; //the matched patch id in preivious frame.
+			matchedPatches.push_back(patches[bestIdx]);
+		}
+	}
+
+	//generate new patch order.
+	vector<PCCPatch> newOrderPatches = matchedPatches;
+
+	for (auto patch : patches) {
+		assert(patch.getSizeU0() <= occupancySizeU);
+		assert(patch.getSizeV0() <= occupancySizeV);
+		if (patch.getBestMatchIdx() == -1) {
+			newOrderPatches.push_back(patch);
+		}
+	}
+	frame.setNumMatchedPatches() = matchedPatches.size();
+
+	//remove the below logs when useless.
+	if (printDetailedInfo) {
+		std::cout << "patches.size:" << patches.size() << ",reOrderedPatches.size:" << newOrderPatches.size() << ",matchedpatches.size:" << frame.getNumMatchedPatches() << std::endl;
+	}
+	patches = newOrderPatches;
+	if (printDetailedInfo) {
+		std::cout << "Patch order:" << std::endl;
+		for (auto &patch : patches) { std::cout << "Patch[" << patch.getIndex() << "]=(" << patch.getSizeU0() << "," << patch.getSizeV0() << ")" << std::endl; }
+	}
+
+	for (auto &patch : patches) { occupancySizeU = (std::max)(occupancySizeU, patch.getSizeU0() + 1); }
+
+	width = occupancySizeU * params_.occupancyResolution_;
+	height = occupancySizeV * params_.occupancyResolution_;
+	size_t maxOccupancyRow{ 0 };
+
+
+	std::vector<bool> occupancyMap;
+	occupancyMap.resize(occupancySizeU * occupancySizeV, false);
+	std::vector<int> horizon;
+	horizon.resize(occupancySizeU, 0);
+
+	for (auto &patch : patches) {
+		assert(patch.getSizeU0() <= occupancySizeU);
+		assert(patch.getSizeV0() <= occupancySizeV);
+		auto& occupancy = patch.getOccupancy();
+		//getting the horizons using the rotation 0 position
+		std::vector<int> top_horizon;
+		std::vector<int> bottom_horizon;
+		std::vector<int> right_horizon;
+		std::vector<int> left_horizon;
+		patch.get_patch_horizons(top_horizon, bottom_horizon, right_horizon, left_horizon);
+
+		bool locationFound = false;
+		while (!locationFound) {
+			int best_wasted_space = (std::numeric_limits<int>::max)();
+			size_t best_u, best_v;
+			int best_orientation;
+			if (patch.getBestMatchIdx() != -1)
+			{
+				patch.getPatchOrientation() = prevPatches[patch.getBestMatchIdx()].getPatchOrientation();
+				best_orientation = patch.getPatchOrientation();
+				//spiral search to find the closest available position
+				int x = 0;
+				int y = 0;
+				int end = (std::max)(occupancySizeU, occupancySizeV) * (std::max)(occupancySizeU, occupancySizeV) * 4;
+				for (int i = 0; i < end && !locationFound; ++i)
+				{
+					// Translate coordinates and mask them out.
+					int xp = x + prevPatches[patch.getBestMatchIdx()].getU0();
+					int yp = y + prevPatches[patch.getBestMatchIdx()].getV0();
+					if (printDetailedInfo)
+						std::cout << "Testing position (" << xp << ',' << yp << ')' << std::endl;
+					if (xp >= 0 && xp < occupancySizeU && yp >= 0 && yp < occupancySizeV)
+					{
+						patch.getU0() = xp;
+						patch.getV0() = yp;
+						if (patch.checkFitPatchCanvas(occupancyMap, occupancySizeU, occupancySizeV, safeguard)) {
+							locationFound = true;
+							best_u = xp;
+							best_v = yp;
+							if (printDetailedInfo)
+								std::cout << "Maintained orientation " << patch.getPatchOrientation() << " for matched patch " << patch.getIndex() << " in new position (" << xp << "," << yp << ")" << std::endl;
+						}
+					}
+					if (abs(x) <= abs(y) && (x != y || x >= 0))
+						x += ((y >= 0) ? 1 : -1);
+					else
+						y += ((x >= 0) ? -1 : 1);
+				}
+			}
+			else
+			{
+				//vector<int> orientation_values = { PatchOrientation::DEFAULT,PatchOrientation::ROT90,PatchOrientation::ROT180,PatchOrientation::ROT270,PatchOrientation::MIRROR,PatchOrientation::MROT180,PatchOrientation::MROT90,PatchOrientation::MROT270 };    // favoring vertical orientation
+				vector<int> orientation_values = { PatchOrientation::DEFAULT,PatchOrientation::SWAP };    // favoring vertical orientation
+				//tetris packing
+				for (size_t u = 0; u < occupancySizeU; ++u) {
+					for (size_t v = 0; v < occupancySizeV; ++v) {
+						patch.getU0() = u;
+						patch.getV0() = v;
+						for (size_t orientationIdx = 0; orientationIdx < pow(2, params_.packingStrategy_ - 1); orientationIdx++) {
+							patch.getPatchOrientation() = orientation_values[orientationIdx];
+							if (!patch.isPatchLocationAboveHorizon(horizon, top_horizon, bottom_horizon, right_horizon, left_horizon)) {
+								if (printDetailedInfo)
+									std::cout << "(" << u << "," << v << "|" << patch.getPatchOrientation() << ") above horizon" << std::endl;
+								continue;
+							}
+							if (patch.checkFitPatchCanvas(occupancyMap, occupancySizeU, occupancySizeV, safeguard)) {
+								//now calculate the wasted space
+								int wasted_space = patch.calculate_wasted_space(horizon, top_horizon, bottom_horizon, right_horizon, left_horizon);
+								if (wasted_space < best_wasted_space)
+								{
+									best_wasted_space = wasted_space;
+									best_u = u;
+									best_v = v;
+									best_orientation = patch.getPatchOrientation();
+									locationFound = true;
+								}
+							}
+						}
+					}
+				}
+			}
+			if (!locationFound) {
+				occupancySizeV *= 2;
+				occupancyMap.resize(occupancySizeU * occupancySizeV);
+			}
+			else
+			{
+				//select the best position and orientation
+				patch.getU0() = best_u;
+				patch.getV0() = best_v;
+				patch.getPatchOrientation() = best_orientation;
+				if (printDetailedInfo)
+					std::cout << "Selected position (" << best_u << "," << best_v << ") and orientation " << best_orientation << std::endl;
+				//update the horizon
+				patch.update_horizon(horizon, top_horizon, bottom_horizon, right_horizon, left_horizon);
+				//debugging
+				if (printDetailedInfo)
+				{
+					std::cout << "New Horizon :[";
+					for (int i = 0; i < occupancySizeU; i++) {
+						std::cout << horizon[i] << ",";
+					}
+					std::cout << "]" << std::endl;
+				}
+			}
+		}
+		for (size_t v0 = 0; v0 < patch.getSizeV0(); ++v0) {
+			for (size_t u0 = 0; u0 < patch.getSizeU0(); ++u0) {
+				int coord = patch.patchBlock2CanvasBlock(u0, v0, occupancySizeU, occupancySizeV);
+				occupancyMap[coord] =
+					occupancyMap[coord] || occupancy[v0 * patch.getSizeU0() + u0];
+			}
+		}
+		if (!(patch.isPatchDimensionSwitched()))
+		{
+			height = (std::max)(height, (patch.getV0() + patch.getSizeV0()) * patch.getOccupancyResolution());
+			width = (std::max)(width, (patch.getU0() + patch.getSizeU0()) * patch.getOccupancyResolution());
+			maxOccupancyRow = (std::max)(maxOccupancyRow, (patch.getV0() + patch.getSizeV0()));
+		}
+		else
+		{
+			height = (std::max)(height, (patch.getV0() + patch.getSizeU0()) * patch.getOccupancyResolution());
+			width = (std::max)(width, (patch.getU0() + patch.getSizeV0()) * patch.getOccupancyResolution());
+			maxOccupancyRow = (std::max)(maxOccupancyRow, (patch.getV0() + patch.getSizeU0()));
+		}
+
+		if (printDetailedInfo)
+		{
+			printMapTetris(occupancyMap, occupancySizeU, occupancySizeV, horizon);
+		}
+	}
+
+	if (frame.getMissedPointsPatch().size() > 0 && !frame.getUseMissedPointsSeparateVideo()) {
+		packMissedPointsPatch(frame, occupancyMap, width, height, occupancySizeU, occupancySizeV, maxOccupancyRow);
+	}
+	else
+	{
+		if (printDetailedInfo)
+			printMap(occupancyMap, occupancySizeU, occupancySizeV);
+	}
+	std::cout << "actualImageSizeU " << width << std::endl;
+	std::cout << "actualImageSizeV " << height << std::endl;
+}
 void PCCEncoder::pack( PCCFrameContext& frame, int safeguard  ) {
   auto& width   = frame.getWidth(); 
   auto& height  = frame.getHeight(); 
@@ -903,7 +1141,7 @@ void PCCEncoder::pack( PCCFrameContext& frame, int safeguard  ) {
     bool locationFound = false;
     auto& occupancy =  patch.getOccupancy();
     while (!locationFound) {
-      patch.getPatchOrientation() = 0; //only allowed orientation in anchor
+      patch.getPatchOrientation() = PatchOrientation::DEFAULT; //only allowed orientation in anchor
       for (int v = 0; v <= occupancySizeV && !locationFound; ++v) {
         for (int u = 0; u <= occupancySizeU && !locationFound; ++u) {
           patch.getU0() = u;
@@ -968,8 +1206,10 @@ void PCCEncoder::packFlexible(PCCFrameContext& frame, int safeguard) {
   size_t maxOccupancyRow{ 0 };
 
   std::vector<bool> occupancyMap;
-  vector<int> orientation_vertical = {0,1,2,3,4,6,5,7};//favoring vertical orientation 
-  vector<int> orientation_horizontal = {1,0,3,2,5,7,4,6};//favoring horizontal orientations (that should be rotated) 
+  //vector<int> orientation_vertical = { PatchOrientation::DEFAULT,PatchOrientation::ROT90,PatchOrientation::ROT180,PatchOrientation::ROT270,PatchOrientation::MIRROR,PatchOrientation::MROT180,PatchOrientation::MROT90,PatchOrientation::MROT270 };    // favoring vertical orientation
+  //vector<int> orientation_horizontal = { PatchOrientation::ROT90,PatchOrientation::DEFAULT,PatchOrientation::ROT270,PatchOrientation::ROT180,PatchOrientation::MROT90,PatchOrientation::MROT270,PatchOrientation::MIRROR,PatchOrientation::MROT180 };    // favoring horizontal orientations (that should be rotated) 
+  vector<int> orientation_vertical = { PatchOrientation::DEFAULT,PatchOrientation::SWAP };    // favoring vertical orientation
+  vector<int> orientation_horizontal = { PatchOrientation::SWAP,PatchOrientation::DEFAULT };    // favoring horizontal orientations (that should be rotated) 
   occupancyMap.resize(occupancySizeU * occupancySizeV, false);
   for (auto &patch : patches) {
     assert(patch.getSizeU0() <= occupancySizeU);
@@ -1008,7 +1248,7 @@ void PCCEncoder::packFlexible(PCCFrameContext& frame, int safeguard) {
       }
     }
 
-    if (patch.getPatchOrientation() == 0 || patch.getPatchOrientation() == 2 || patch.getPatchOrientation() == 4 || patch.getPatchOrientation() == 6) {
+    if (!(patch.isPatchDimensionSwitched())){
       height = (std::max)(height, (patch.getV0() + patch.getSizeV0()) * patch.getOccupancyResolution());
       width = (std::max)(width, (patch.getU0() + patch.getSizeU0()) * patch.getOccupancyResolution());
       maxOccupancyRow = (std::max)(maxOccupancyRow, (patch.getV0() + patch.getSizeV0()));
@@ -1030,6 +1270,157 @@ void PCCEncoder::packFlexible(PCCFrameContext& frame, int safeguard) {
   std::cout << "actualImageSizeV " << height << std::endl;
 }
 
+void PCCEncoder::packTetris(PCCFrameContext & frame, int safeguard)
+{
+	auto& width = frame.getWidth();
+	auto& height = frame.getHeight();
+	auto& patches = frame.getPatches();
+	//set no matched patches, since this function does not take into account the previous frame
+	frame.setNumMatchedPatches() = 0;
+	if (patches.empty()) {
+		return;
+	}
+	//sorting by patch largest dimension
+	std::sort(patches.begin(), patches.end(), [](PCCPatch& a, PCCPatch& b) { return a.gt(b); });
+	if (printDetailedInfo) {
+		std::cout << "Patch order:" << std::endl;
+		for (auto &patch : patches) { std::cout << "Patch[" << patch.getIndex() << "]=(" << patch.getSizeU0() << "," << patch.getSizeV0() << ")" << std::endl; }
+	}
+	size_t occupancySizeU = params_.minimumImageWidth_ / params_.occupancyResolution_;
+	size_t occupancySizeV = (std::max)(patches[0].getSizeV0(), patches[0].getSizeU0());
+	for (auto &patch : patches) { occupancySizeU = (std::max)(occupancySizeU, patch.getSizeU0() + 1); }
+
+	width = occupancySizeU * params_.occupancyResolution_;
+	height = occupancySizeV * params_.occupancyResolution_;
+	size_t maxOccupancyRow{ 0 };
+
+	std::vector<bool> occupancyMap;
+	occupancyMap.resize(occupancySizeU * occupancySizeV, false);
+	std::vector<int> horizon;
+	horizon.resize(occupancySizeU, 0);
+	if (printDetailedInfo)
+	{
+		std::cout << "Horizon :[";
+		for (int i = 0; i < occupancySizeU; i++) {
+			std::cout << horizon[i] << ",";
+		}
+		std::cout << "]" << std::endl;
+	}
+
+	for (auto &patch : patches) {
+		assert(patch.getSizeU0() <= occupancySizeU);
+		assert(patch.getSizeV0() <= occupancySizeV);
+		auto& occupancy = patch.getOccupancy();
+
+		//getting the horizons using the rotation 0 position
+		if (printDetailedInfo)
+			patch.print();
+		std::vector<int> top_horizon;
+		std::vector<int> bottom_horizon;
+		std::vector<int> right_horizon;
+		std::vector<int> left_horizon;
+		patch.get_patch_horizons(top_horizon, bottom_horizon, right_horizon, left_horizon);
+
+		bool locationFound = false;
+		//try to place the patch tetris-style
+		//vector<int> orientation_values = { PatchOrientation::DEFAULT,PatchOrientation::ROT90,PatchOrientation::ROT180,PatchOrientation::ROT270,PatchOrientation::MIRROR,PatchOrientation::MROT180,PatchOrientation::MROT90,PatchOrientation::MROT270 };    // favoring vertical orientation
+		vector<int> orientation_values = { PatchOrientation::DEFAULT,PatchOrientation::SWAP };    // favoring horizontal orientations (that should be rotated) 
+		while (!locationFound) {
+			int best_wasted_space = (std::numeric_limits<int>::max)();
+			size_t best_u, best_v;
+			int best_orientation;
+			for (size_t u = 0; u < occupancySizeU; ++u) {
+				for (size_t v = 0; v < occupancySizeV; ++v) {
+					patch.getU0() = u;
+					patch.getV0() = v;
+					for (size_t orientationIdx = 0; orientationIdx < pow(2, params_.packingStrategy_ - 1); orientationIdx++) {
+						patch.getPatchOrientation() = orientation_values[orientationIdx];
+						if (!patch.isPatchLocationAboveHorizon(horizon, top_horizon, bottom_horizon, right_horizon, left_horizon)) {
+							if (printDetailedInfo)
+								std::cout << "(" << u << "," << v << "|" << patch.getPatchOrientation() << ") above horizon" << std::endl;
+							continue;
+						}
+						if (printDetailedInfo)
+							std::cout << "(" << u << "," << v << "|" << patch.getPatchOrientation() << ")" << std::endl;
+						if (patch.checkFitPatchCanvas(occupancyMap, occupancySizeU, occupancySizeV, safeguard)) {
+							//now calculate the wasted space
+							int wasted_space = patch.calculate_wasted_space(horizon, top_horizon, bottom_horizon, right_horizon, left_horizon);
+							if (printDetailedInfo)
+								std::cout << "(wasted space) = " << wasted_space << std::endl;
+							if (wasted_space < best_wasted_space)
+							{
+								best_wasted_space = wasted_space;
+								best_u = u;
+								best_v = v;
+								best_orientation = patch.getPatchOrientation();
+								locationFound = true;
+							}
+						}
+					}
+				}
+			}
+			if (!locationFound) {
+				occupancySizeV *= 2;
+				occupancyMap.resize(occupancySizeU * occupancySizeV);
+				if (printDetailedInfo)
+					std::cout << "Increasing frame size (" << occupancySizeU << "," << occupancySizeV << ")" << std::endl;
+			}
+			else
+			{
+				//select the best position and orientation
+				patch.getU0() = best_u;
+				patch.getV0() = best_v;
+				patch.getPatchOrientation() = best_orientation;
+				if (printDetailedInfo)
+					std::cout << "Selected position (" << best_u << "," << best_v << ") and orientation " << best_orientation << "(wasted space=" << best_wasted_space << ")" << std::endl;
+				//update the horizon
+				patch.update_horizon(horizon, top_horizon, bottom_horizon, right_horizon, left_horizon);
+				//debugging
+				if (printDetailedInfo) {
+					std::cout << "Horizon :[";
+					for (int i = 0; i < occupancySizeU; i++) {
+						std::cout << horizon[i] << ",";
+					}
+					std::cout << "]" << std::endl;
+				}
+			}
+		}
+		for (size_t v0 = 0; v0 < patch.getSizeV0(); ++v0) {
+			for (size_t u0 = 0; u0 < patch.getSizeU0(); ++u0) {
+				int coord = patch.patchBlock2CanvasBlock(u0, v0, occupancySizeU, occupancySizeV);
+				occupancyMap[coord] =
+					occupancyMap[coord] || occupancy[v0 * patch.getSizeU0() + u0];
+			}
+		}
+		if (!(patch.isPatchDimensionSwitched()))
+		{
+			height = (std::max)(height, (patch.getV0() + patch.getSizeV0()) * patch.getOccupancyResolution());
+			width = (std::max)(width, (patch.getU0() + patch.getSizeU0()) * patch.getOccupancyResolution());
+			maxOccupancyRow = (std::max)(maxOccupancyRow, (patch.getV0() + patch.getSizeV0()));
+		}
+		else
+		{
+			height = (std::max)(height, (patch.getV0() + patch.getSizeU0()) * patch.getOccupancyResolution());
+			width = (std::max)(width, (patch.getU0() + patch.getSizeV0()) * patch.getOccupancyResolution());
+			maxOccupancyRow = (std::max)(maxOccupancyRow, (patch.getV0() + patch.getSizeU0()));
+		}
+
+		if (printDetailedInfo)
+		{
+			printMapTetris(occupancyMap, occupancySizeU, occupancySizeV, horizon);
+		}
+	}
+
+	if (frame.getMissedPointsPatch().size() > 0) {
+		packMissedPointsPatch(frame, occupancyMap, width, height, occupancySizeU, occupancySizeV, maxOccupancyRow);
+	}
+	else {
+		if (printDetailedInfo)
+			printMap(occupancyMap, occupancySizeU, occupancySizeV);
+	}
+	std::cout << "actualImageSizeU " << width << std::endl;
+	std::cout << "actualImageSizeV " << height << std::endl;
+}
 void PCCEncoder::packMissedPointsPatch(PCCFrameContext &frame,
                                        const std::vector<bool> &occupancyMap, size_t &width,
                                        size_t &height, size_t occupancySizeU, size_t occupancySizeV,
@@ -1151,11 +1542,24 @@ bool PCCEncoder::generateGeometryVideo( const PCCPointSet3& source, PCCFrameCont
       spatialConsistencyPack(frame , prevFrame, params_.safeGuardDistance_ );
     }
   } else {
-    if((frameIndex == 0) || (!params_.constrainedPack_)){
-      packFlexible( frame , params_.safeGuardDistance_ );
-    } else {
-      spatialConsistencyPackFlexible(frame , prevFrame, params_.safeGuardDistance_ );
-    }
+	  if (params_.packingStrategy_ == 1) {
+		  if ((frameIndex == 0) || (!params_.constrainedPack_)) {
+			  packFlexible(frame, params_.safeGuardDistance_);
+		  }
+		  else {
+			  spatialConsistencyPackFlexible(frame, prevFrame, params_.safeGuardDistance_);
+		  }
+	  }
+	  else {
+		  if (params_.packingStrategy_ == 2) {
+			  if ((frameIndex == 0) || (!params_.constrainedPack_)) {
+				  packTetris(frame, params_.safeGuardDistance_);
+			  }
+			  else {
+				  spatialConsistencyPackTetris(frame, prevFrame, params_.safeGuardDistance_);
+			  }
+		  }
+	  }
   }
 
   return true;
@@ -3206,7 +3610,7 @@ void PCCEncoder::compressPatchMetaDataM42195( PCCFrameContext &frame, PCCFrameCo
     EncodeUInt32(uint32_t(patch.getU0()), bitCount[0], arithmeticEncoder, bModel0);
     EncodeUInt32(uint32_t(patch.getV0()), bitCount[1], arithmeticEncoder, bModel0);
     if (enable_flexible_patch_flag) {
-      bool flexible_patch_present_flag = (patch.getPatchOrientation() != 0);
+      bool flexible_patch_present_flag = (patch.getPatchOrientation() != PatchOrientation::DEFAULT);
       if (flexible_patch_present_flag) {
         arithmeticEncoder.encode(1, orientationPatchFlagModel2);
         arithmeticEncoder.encode(patch.getPatchOrientation() - 1, orientationPatchModel);
@@ -3292,7 +3696,7 @@ void PCCEncoder::buildBlockToPatch( PCCContext &context ){
       dummyPatch.getOccupancy() = missedPointsPatch.occupancy;
       dummyPatch.getLod() = params_.testLevelOfDetail_;
       dummyPatch.setBestMatchIdx() = -1;
-      dummyPatch.getPatchOrientation() = 0;
+      dummyPatch.getPatchOrientation() = PatchOrientation::DEFAULT;
       buildBlockToPatch(frame, preFrame, i);
       patches.pop_back();
     } else {
@@ -3355,7 +3759,7 @@ void PCCEncoder::compressOccupancyMap( PCCContext &context, PCCBitstream& bitstr
       dummyPatch.getOccupancy() = missedPointsPatch.occupancy;
       dummyPatch.getLod() = params_.testLevelOfDetail_;
       dummyPatch.setBestMatchIdx() = -1;
-      dummyPatch.getPatchOrientation() = 0;
+      dummyPatch.getPatchOrientation() = PatchOrientation::DEFAULT;
       compressOccupancyMap(frame, bitstream, preFrame, i);
       patches.pop_back();
     } else {
@@ -3444,7 +3848,7 @@ void PCCEncoder::compressOccupancyMap(PCCFrameContext& frame, PCCBitstream &bits
       EncodeUInt32(uint32_t(patch.getU0()), bitCountU0, arithmeticEncoder, bModel0);
       EncodeUInt32(uint32_t(patch.getV0()), bitCountV0, arithmeticEncoder, bModel0);
       if (enable_flexible_patch_flag) {
-        bool flexible_patch_present_flag = (patch.getPatchOrientation() != 0);
+        bool flexible_patch_present_flag = (patch.getPatchOrientation() != PatchOrientation::DEFAULT);
         if (flexible_patch_present_flag) {
           arithmeticEncoder.encode(1, orientationPatchFlagModel2);
           arithmeticEncoder.encode(patch.getPatchOrientation()-1, orientationPatchModel);
@@ -3985,8 +4389,10 @@ size_t PCCEncoder::unionPatchGenerationAndPacking(const GlobalPatches& globalPat
 	size_t maxOccupancyRow{ 0 };
 
 	std::vector<bool> occupancyMap;
-	vector<int> orientation_vertical   = { 0,1,2,3,4,6,5,7 };  // favoring vertical orientation 
-	vector<int> orientation_horizontal = { 1,0,3,2,5,7,4,6 };  // favoring horizontal orientations (that should be rotated) 
+	//vector<int> orientation_vertical = { PatchOrientation::DEFAULT,PatchOrientation::ROT90,PatchOrientation::ROT180,PatchOrientation::ROT270,PatchOrientation::MIRROR,PatchOrientation::MROT180,PatchOrientation::MROT90,PatchOrientation::MROT270 };    // favoring vertical orientation
+	//vector<int> orientation_horizontal = { PatchOrientation::ROT90,PatchOrientation::DEFAULT,PatchOrientation::ROT270,PatchOrientation::ROT180,PatchOrientation::MROT90,PatchOrientation::MROT270,PatchOrientation::MIRROR,PatchOrientation::MROT180 };    // favoring horizontal orientations (that should be rotated) 
+	vector<int> orientation_vertical = { PatchOrientation::DEFAULT,PatchOrientation::SWAP };    // favoring vertical orientation
+	vector<int> orientation_horizontal = { PatchOrientation::SWAP,PatchOrientation::DEFAULT };    // favoring horizontal orientations (that should be rotated) 
 	occupancyMap.resize(occupancySizeU * occupancySizeV, false);
 	for (unionPatch::iterator iter = unionPatchTemp.begin(); iter != unionPatchTemp.end(); iter++) {
 		auto& curUnionIndex = iter->first;
@@ -4001,7 +4407,7 @@ size_t PCCEncoder::unionPatchGenerationAndPacking(const GlobalPatches& globalPat
 					curPatchUnion.getU0() = u;
 					curPatchUnion.getV0() = v;
 					if (params_.packingStrategy_ == 0) {
-						curPatchUnion.getPatchOrientation() = 0;
+						curPatchUnion.getPatchOrientation() = PatchOrientation::DEFAULT;
 						if (curPatchUnion.checkFitPatchCanvas(occupancyMap, occupancySizeU, occupancySizeV, safeguard)) {
 							locationFound = true;
 							if (printDetailedInfo) {
@@ -4048,7 +4454,7 @@ size_t PCCEncoder::unionPatchGenerationAndPacking(const GlobalPatches& globalPat
 			}
 		}
 
-		if (curPatchUnion.getPatchOrientation() == 0 || curPatchUnion.getPatchOrientation() == 2 || curPatchUnion.getPatchOrientation() == 4 || curPatchUnion.getPatchOrientation() == 6) {
+		if (!(curPatchUnion.isPatchDimensionSwitched())){
 			height = (std::max)(height, (curPatchUnion.getV0() + curPatchUnion.getSizeV0()) * params_.occupancyResolution_);
 			width  = (std::max)(width,  (curPatchUnion.getU0() + curPatchUnion.getSizeU0()) * params_.occupancyResolution_);
 			maxOccupancyRow = (std::max)(maxOccupancyRow, (curPatchUnion.getV0() + curPatchUnion.getSizeV0()));
@@ -4087,7 +4493,7 @@ void PCCEncoder::packingFirstFrame(PCCContext& context,  size_t frameIndex, bool
 			bool locationFound = false;
 			auto& occupancy = patch.getOccupancy();
 			while (!locationFound) {
-				patch.getPatchOrientation() = 0; // only one orientation is allowed
+				patch.getPatchOrientation() = PatchOrientation::DEFAULT; // only one orientation is allowed
 				for (int v = 0; v <= occupancySizeV && !locationFound; ++v) {
 					for (int u = 0; u <= occupancySizeU && !locationFound; ++u) {
 						patch.getU0() = u;
@@ -4128,8 +4534,10 @@ void PCCEncoder::packingFirstFrame(PCCContext& context,  size_t frameIndex, bool
 		std::cout << "actualImageSizeU " << widthGPA << std::endl;
 		std::cout << "actualImageSizeV " << heithGPA << std::endl;
 	} else {
-		vector<int> orientation_vertical = { 0,1,2,3,4,6,5,7 };//favoring vertical orientation
-		vector<int> orientation_horizontal = { 1,0,3,2,5,7,4,6 };//favoring horizontal orientations (that should be rotated) 
+		//vector<int> orientation_vertical = { PatchOrientation::DEFAULT,PatchOrientation::ROT90,PatchOrientation::ROT180,PatchOrientation::ROT270,PatchOrientation::MIRROR,PatchOrientation::MROT180,PatchOrientation::MROT90,PatchOrientation::MROT270 };    // favoring vertical orientation
+		//vector<int> orientation_horizontal = { PatchOrientation::ROT90,PatchOrientation::DEFAULT,PatchOrientation::ROT270,PatchOrientation::ROT180,PatchOrientation::MROT90,PatchOrientation::MROT270,PatchOrientation::MIRROR,PatchOrientation::MROT180 };    // favoring horizontal orientations (that should be rotated) 
+		vector<int> orientation_vertical = { PatchOrientation::DEFAULT,PatchOrientation::SWAP };    // favoring vertical orientation
+		vector<int> orientation_horizontal = { PatchOrientation::SWAP,PatchOrientation::DEFAULT };    // favoring horizontal orientations (that should be rotated) 
 		std::vector<bool> occupancyMap;
 		occupancyMap.resize(occupancySizeU * occupancySizeV, false);
 
@@ -4205,7 +4613,7 @@ void PCCEncoder::packingFirstFrame(PCCContext& context,  size_t frameIndex, bool
 					occupancyMap[coord] = occupancyMap[coord] || occupancy[v0 * patch.getSizeU0() + u0];
 				}
 			}
-			if (curGPAPatchData.patchOrientation == 0 || curGPAPatchData.patchOrientation == 2 || curGPAPatchData.patchOrientation == 4 || curGPAPatchData.patchOrientation == 6) {
+			if (!(curGPAPatchData.isPatchDimensionSwitched())){
 				heithGPA = (std::max)(heithGPA, (curGPAPatchData.v0 + curGPAPatchData.sizeV0) * patch.getOccupancyResolution());
 				widthGPA = (std::max)(widthGPA, (curGPAPatchData.u0 + curGPAPatchData.sizeU0) * patch.getOccupancyResolution());
 				maxOccupancyRow = (std::max)(maxOccupancyRow, (curGPAPatchData.v0 + curGPAPatchData.sizeV0));
@@ -4320,8 +4728,10 @@ void PCCEncoder::performGPAPacking(const SubContext& subContext, unionPatch& uni
 		heightGPA = occupancySizeV * params_.occupancyResolution_;
 		size_t maxOccupancyRow{ 0 };
 
-		vector<int> orientation_vertical   = { 0,1,2,3,4,6,5,7 };    // favoring vertical orientation
-		vector<int> orientation_horizontal = { 1,0,3,2,5,7,4,6 };    // favoring horizontal orientations (that should be rotated) 
+		//vector<int> orientation_vertical = { PatchOrientation::DEFAULT,PatchOrientation::ROT90,PatchOrientation::ROT180,PatchOrientation::ROT270,PatchOrientation::MIRROR,PatchOrientation::MROT180,PatchOrientation::MROT90,PatchOrientation::MROT270 };    // favoring vertical orientation
+		//vector<int> orientation_horizontal = { PatchOrientation::ROT90,PatchOrientation::DEFAULT,PatchOrientation::ROT270,PatchOrientation::ROT180,PatchOrientation::MROT90,PatchOrientation::MROT270,PatchOrientation::MIRROR,PatchOrientation::MROT180 };    // favoring horizontal orientations (that should be rotated) 
+		vector<int> orientation_vertical = { PatchOrientation::DEFAULT,PatchOrientation::SWAP };    // favoring vertical orientation
+		vector<int> orientation_horizontal = { PatchOrientation::SWAP,PatchOrientation::DEFAULT };    // favoring horizontal orientations (that should be rotated) 
 		std::vector<bool> occupancyMap;
 		occupancyMap.resize(occupancySizeU * occupancySizeV, false);
 		// !!!packing global matched patch;
@@ -4344,7 +4754,7 @@ void PCCEncoder::performGPAPacking(const SubContext& subContext, unionPatch& uni
 						occupancyMap[coord] = occupancyMap[coord] || curGPAPatchData.occupancy[v0 * curGPAPatchData.sizeU0 + u0];
 					}
 				}
-				if (curGPAPatchData.patchOrientation == 0 || curGPAPatchData.patchOrientation == 2 || curGPAPatchData.patchOrientation == 4 || curGPAPatchData.patchOrientation == 6) {
+				if (!(curGPAPatchData.isPatchDimensionSwitched())){
 					heightGPA = (std::max)(heightGPA, (curGPAPatchData.v0 + curGPAPatchData.sizeV0) * patch.getOccupancyResolution());
 					widthGPA  = (std::max)(widthGPA,  (curGPAPatchData.u0 + curGPAPatchData.sizeU0) * patch.getOccupancyResolution());
 					maxOccupancyRow = (std::max)(maxOccupancyRow, (curGPAPatchData.v0 + curGPAPatchData.sizeV0));
@@ -4405,8 +4815,10 @@ void PCCEncoder::performGPAPacking(const SubContext& subContext, unionPatch& uni
 void PCCEncoder::packingWithoutRefForFirstFrameNoglobalPatch(PCCPatch& patch,size_t i, size_t icount, size_t& occupancySizeU, size_t& occupancySizeV, const size_t safeguard,
 	std::vector<bool> & occupancyMap, size_t& heightGPA, size_t& widthGPA, size_t maxOccupancyRow)
 {
-	vector<int> orientation_vertical = { 0,1,2,3,4,6,5,7 };    // favoring vertical orientation
-	vector<int> orientation_horizontal = { 1,0,3,2,5,7,4,6 };    // favoring horizontal orientations (that should be rotated) 
+	//vector<int> orientation_vertical = { PatchOrientation::DEFAULT,PatchOrientation::ROT90,PatchOrientation::ROT180,PatchOrientation::ROT270,PatchOrientation::MIRROR,PatchOrientation::MROT180,PatchOrientation::MROT90,PatchOrientation::MROT270 };    // favoring vertical orientation
+	//vector<int> orientation_horizontal = { PatchOrientation::ROT90,PatchOrientation::DEFAULT,PatchOrientation::ROT270,PatchOrientation::ROT180,PatchOrientation::MROT90,PatchOrientation::MROT270,PatchOrientation::MIRROR,PatchOrientation::MROT180 };    // favoring horizontal orientations (that should be rotated) 
+	vector<int> orientation_vertical = { PatchOrientation::DEFAULT,PatchOrientation::SWAP };    // favoring vertical orientation
+	vector<int> orientation_horizontal = { PatchOrientation::SWAP,PatchOrientation::DEFAULT };    // favoring horizontal orientations (that should be rotated) 
 
 	GPAPatchData& preGPAPatchData = patch.getCurGPAPatchData();
 
@@ -4460,7 +4872,7 @@ void PCCEncoder::packingWithoutRefForFirstFrameNoglobalPatch(PCCPatch& patch,siz
 			occupancyMap[coord] = occupancyMap[coord] || occupancy[v0 * patch.getSizeU0() + u0];
 		}
 	}
-	if (preGPAPatchData.patchOrientation == 0 || preGPAPatchData.patchOrientation == 2 || preGPAPatchData.patchOrientation == 4 || preGPAPatchData.patchOrientation == 6) {
+	if (!(preGPAPatchData.isPatchDimensionSwitched())){
 		heightGPA = (std::max)(heightGPA, (preGPAPatchData.v0 + preGPAPatchData.sizeV0) * patch.getOccupancyResolution());
 		widthGPA = (std::max)(widthGPA, (preGPAPatchData.u0 + preGPAPatchData.sizeU0) * patch.getOccupancyResolution());
 		maxOccupancyRow = (std::max)(maxOccupancyRow, (preGPAPatchData.v0 + preGPAPatchData.sizeV0));
@@ -4474,8 +4886,10 @@ void PCCEncoder::packingWithoutRefForFirstFrameNoglobalPatch(PCCPatch& patch,siz
 void PCCEncoder::packingWithRefForFirstFrameNoglobalPatch(PCCPatch& patch, const std::vector<PCCPatch> prePatches, size_t startFrameIndex, size_t i, size_t icount, size_t& occupancySizeU, size_t& occupancySizeV, const size_t safeguard,
 	std::vector<bool> & occupancyMap, size_t& heightGPA, size_t& widthGPA, size_t maxOccupancyRow)
 {
-	vector<int> orientation_vertical = { 0,1,2,3,4,6,5,7 };    // favoring vertical orientation
-	vector<int> orientation_horizontal = { 1,0,3,2,5,7,4,6 };    // favoring horizontal orientations (that should be rotated) 
+	//vector<int> orientation_vertical = { PatchOrientation::DEFAULT,PatchOrientation::ROT90,PatchOrientation::ROT180,PatchOrientation::ROT270,PatchOrientation::MIRROR,PatchOrientation::MROT180,PatchOrientation::MROT90,PatchOrientation::MROT270 };    // favoring vertical orientation
+	//vector<int> orientation_horizontal = { PatchOrientation::ROT90,PatchOrientation::DEFAULT,PatchOrientation::ROT270,PatchOrientation::ROT180,PatchOrientation::MROT90,PatchOrientation::MROT270,PatchOrientation::MIRROR,PatchOrientation::MROT180 };    // favoring horizontal orientations (that should be rotated) 
+	vector<int> orientation_vertical = { PatchOrientation::DEFAULT,PatchOrientation::SWAP};    // favoring vertical orientation
+	vector<int> orientation_horizontal = { PatchOrientation::SWAP,PatchOrientation::DEFAULT};    // favoring horizontal orientations (that should be rotated) 
 
 	GPAPatchData& preGPAPatchData = patch.getCurGPAPatchData();
 
@@ -4560,7 +4974,7 @@ void PCCEncoder::packingWithRefForFirstFrameNoglobalPatch(PCCPatch& patch, const
 			occupancyMap[coord] = occupancyMap[coord] || occupancy[v0 * preGPAPatchData.sizeU0 + u0];
 		}
 	}
-	if (preGPAPatchData.patchOrientation == 0 || preGPAPatchData.patchOrientation == 2 || preGPAPatchData.patchOrientation == 4 || preGPAPatchData.patchOrientation == 6) {
+	if (!(preGPAPatchData.isPatchDimensionSwitched())){
 		heightGPA = (std::max)(heightGPA, (preGPAPatchData.v0 + preGPAPatchData.sizeV0) * patch.getOccupancyResolution());
 		widthGPA = (std::max)(widthGPA, (preGPAPatchData.u0 + preGPAPatchData.sizeU0) * patch.getOccupancyResolution());
 		maxOccupancyRow = (std::max)(maxOccupancyRow, (preGPAPatchData.v0 + preGPAPatchData.sizeV0));
