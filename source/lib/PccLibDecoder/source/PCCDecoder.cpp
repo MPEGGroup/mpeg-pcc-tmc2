@@ -202,7 +202,9 @@ int PCCDecoder::decode( PCCContext &context, PCCGroupOfFrames& reconstructs ){
   GeneratePointCloudParameters generatePointCloudParameters;
   generatePointCloudParameters.occupancyResolution_          = occupancyResolution_;
   generatePointCloudParameters.occupancyPrecision_           = occupancyPrecision_;
+  generatePointCloudParameters.flagGeometrySmoothing_        = (bool)flagGeometrySmoothing_;
   generatePointCloudParameters.gridSmoothing_                = gridSmoothing_;
+  generatePointCloudParameters.gridSize_                     = gridSize_;
   generatePointCloudParameters.neighborCountSmoothing_       = neighborCountSmoothing_;
   generatePointCloudParameters.radius2Smoothing_             = (double)radius2Smoothing_;
   generatePointCloudParameters.radius2BoundaryDetection_     = (double)radius2BoundaryDetection_;
@@ -528,13 +530,22 @@ int PCCDecoder::decompressHeader( PCCContext &context, PCCBitstream &bitstream )
   bitstream.read<uint16_t>( height_ );
   bitstream.read<uint8_t> ( occupancyResolution_ );
   bitstream.read<uint8_t> ( occupancyPrecision_ );
-  uint8_t gridSmoothing;
-  bitstream.read<uint8_t>(gridSmoothing);
-  gridSmoothing_ = gridSmoothing > 0;
-  bitstream.read<uint8_t> ( radius2Smoothing_ );
-  bitstream.read<uint8_t> ( neighborCountSmoothing_ );
-  bitstream.read<uint8_t> ( radius2BoundaryDetection_ );
-  bitstream.read<uint8_t> ( thresholdSmoothing_ );
+  bitstream.read<uint8_t> ( flagGeometrySmoothing_ );
+  if (flagGeometrySmoothing_){
+    uint8_t gridSmoothing;
+    bitstream.read<uint8_t>(gridSmoothing);
+    gridSmoothing_ = gridSmoothing > 0;
+    if (gridSmoothing_) {
+      bitstream.read<uint8_t> ( gridSize_ );
+      bitstream.read<uint8_t> ( thresholdSmoothing_ );
+    }
+    else{
+      bitstream.read<uint8_t>( radius2Smoothing_ );
+      bitstream.read<uint8_t>( neighborCountSmoothing_ );
+      bitstream.read<uint8_t>( radius2BoundaryDetection_ );
+      bitstream.read<uint8_t>( thresholdSmoothing_ );
+   }
+  }
   bitstream.read<uint8_t> ( losslessGeo_ );
   bitstream.read<uint8_t> ( losslessTexture_ );
   bitstream.read<uint8_t> ( noAttributes_ );

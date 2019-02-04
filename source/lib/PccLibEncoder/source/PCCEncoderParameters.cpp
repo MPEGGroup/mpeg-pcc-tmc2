@@ -77,7 +77,9 @@ PCCEncoderParameters::PCCEncoderParameters() {
   occupancyMapQP_                          = 8;
   useOccupancyMapVideo_                    = true;
 
+  flagGeometrySmoothing_                   = true;
   gridSmoothing_                           = true;
+  gridSize_                                = 8;
   neighborCountSmoothing_                  = 4 * 16;
   radius2Smoothing_                        = 4.0 * 16;
   radius2BoundaryDetection_                = 4.0 * 16;
@@ -277,11 +279,19 @@ void PCCEncoderParameters::print(){
   std::cout << "\t   occupancyMapQP                       " << occupancyMapQP_                       << std::endl;
   std::cout << "\t   useOccupancyMapVideo                 " << useOccupancyMapVideo_                 << std::endl;
   std::cout << "\t geometry smoothing" << std::endl;
-  std::cout << "\t   gridSmoothing                        " << gridSmoothing_                        << std::endl;
-  std::cout << "\t   neighborCountSmoothing               " << neighborCountSmoothing_               << std::endl;
-  std::cout << "\t   radius2Smoothing                     " << radius2Smoothing_                     << std::endl;
-  std::cout << "\t   radius2BoundaryDetection             " << radius2BoundaryDetection_             << std::endl;
-  std::cout << "\t   thresholdSmoothing                   " << thresholdSmoothing_                   << std::endl;
+  std::cout << "\t   flagGeometrySmoothing                " << flagGeometrySmoothing_                << std::endl;
+  if (flagGeometrySmoothing_ ){
+    std::cout << "\t   gridSmoothing                        " << gridSmoothing_                      << std::endl;
+    if(gridSmoothing_){
+      std::cout << "\t   gridSize                             " << gridSize_                         << std::endl;
+      std::cout << "\t   thresholdSmoothing                   " << thresholdSmoothing_               << std::endl;
+    } else{
+      std::cout << "\t   neighborCountSmoothing               " << neighborCountSmoothing_           << std::endl;
+      std::cout << "\t   radius2Smoothing                     " << radius2Smoothing_                 << std::endl;
+      std::cout << "\t   radius2BoundaryDetection             " << radius2BoundaryDetection_         << std::endl;
+      std::cout << "\t   thresholdSmoothing                   " << thresholdSmoothing_               << std::endl;
+    }
+  }
   std::cout << "\t color smoothing" << std::endl;
   std::cout << "\t   thresholdColorSmoothing              " << thresholdColorSmoothing_              << std::endl;
   std::cout << "\t   thresholdLocalEntropy                " << thresholdLocalEntropy_                << std::endl;
@@ -451,6 +461,16 @@ bool PCCEncoderParameters::check(){
     if ((minNormSumOfInvDist4MPSelection_ < 0.0) || (minNormSumOfInvDist4MPSelection_ > 1.0)) {
       ret = false;
       std::cerr << "minNormSumOfInvDist4MPSelection must be between 0.0 and 1.0 (inclusive)\n";
+    }
+  }
+
+  if (flagGeometrySmoothing_ && gridSmoothing_) {
+    if (gridSize_ == 0) {
+      ret=false;
+      std::cerr << "gridSize shall be greater than 0. \n";
+    }
+    if (gridSize_ % 2 == 1) {
+      std::cerr << "WARNING: gridSize should be an even number\n";
     }
   }
 

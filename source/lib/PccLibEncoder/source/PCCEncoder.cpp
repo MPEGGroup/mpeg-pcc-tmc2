@@ -378,7 +378,9 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
   GeneratePointCloudParameters generatePointCloudParameters;
   generatePointCloudParameters.occupancyResolution_          = params_.occupancyResolution_;
   generatePointCloudParameters.occupancyPrecision_           = params_.occupancyPrecision_;
+  generatePointCloudParameters.flagGeometrySmoothing_        = params_.flagGeometrySmoothing_;
   generatePointCloudParameters.gridSmoothing_                = params_.gridSmoothing_;
+  generatePointCloudParameters.gridSize_                     = params_.gridSize_;
   generatePointCloudParameters.neighborCountSmoothing_       = params_.neighborCountSmoothing_;
   generatePointCloudParameters.radius2Smoothing_             = params_.radius2Smoothing_;
   generatePointCloudParameters.radius2BoundaryDetection_     = params_.radius2BoundaryDetection_;
@@ -3404,11 +3406,20 @@ int PCCEncoder::compressHeader( PCCContext &context, pcc::PCCBitstream &bitstrea
   bitstream.write<uint16_t>(uint16_t( context.getHeight() ) );
   bitstream.write<uint8_t> (uint8_t(params_.occupancyResolution_));
   bitstream.write<uint8_t> (uint8_t(params_.occupancyPrecision_));
-  bitstream.write<uint8_t> (uint8_t(params_.gridSmoothing_));
-  bitstream.write<uint8_t> (uint8_t(params_.radius2Smoothing_));
-  bitstream.write<uint8_t> (uint8_t(params_.neighborCountSmoothing_)); 
-  bitstream.write<uint8_t> (uint8_t(params_.radius2BoundaryDetection_));
-  bitstream.write<uint8_t> (uint8_t(params_.thresholdSmoothing_));
+  bitstream.write<uint8_t>(uint8_t(params_.flagGeometrySmoothing_));
+  if (params_.flagGeometrySmoothing_){
+    bitstream.write<uint8_t> (uint8_t(params_.gridSmoothing_));
+    if (params_.gridSmoothing_) {
+      bitstream.write<uint8_t> (uint8_t(params_.gridSize_));
+      bitstream.write<uint8_t> (uint8_t(params_.thresholdSmoothing_));
+    }
+    else {
+      bitstream.write<uint8_t>(uint8_t(params_.radius2Smoothing_));
+      bitstream.write<uint8_t>(uint8_t(params_.neighborCountSmoothing_));
+      bitstream.write<uint8_t>(uint8_t(params_.radius2BoundaryDetection_));
+      bitstream.write<uint8_t>(uint8_t(params_.thresholdSmoothing_));
+    }
+  }
   bitstream.write<uint8_t> (uint8_t(params_.losslessGeo_));
   bitstream.write<uint8_t> (uint8_t(params_.losslessTexture_));
   bitstream.write<uint8_t> (uint8_t(params_.noAttributes_));

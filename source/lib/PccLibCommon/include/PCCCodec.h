@@ -62,6 +62,7 @@ struct GeneratePointCloudParameters {
   size_t             occupancyResolution_;
   size_t             occupancyPrecision_;
   bool               gridSmoothing_;
+  size_t             gridSize_;
   size_t             neighborCountSmoothing_;
   double             radius2Smoothing_;
   double             radius2BoundaryDetection_;
@@ -76,6 +77,7 @@ struct GeneratePointCloudParameters {
   double             thresholdLocalEntropy_;
   double             radius2ColorSmoothing_;
   size_t             neighborCountColorSmoothing_;
+  bool               flagGeometrySmoothing_;
   bool               flagColorSmoothing_;
   bool               enhancedDeltaDepthCode_;
   bool               deltaCoding_;
@@ -195,16 +197,17 @@ class PCCCodec {
 
   void smoothPointCloudGrid( PCCPointSet3& reconstruct,
                              const std::vector<uint32_t> &partition,
-                             const GeneratePointCloudParameters params );
+                             const GeneratePointCloudParameters params, int gridWidth);
 
   void addGridCentroid( PCCPoint3D& point, int patchIdx,
                         std::vector<int>& cnt, std::vector<PCCVector3D>& center_grid,
-                        std::vector<int> &gpartition, std::vector<bool>& doSmooth, int grid);
+                        std::vector<int> &gpartition, std::vector<bool>& doSmooth, int gridSize, int gridWidth);
 
 
   bool gridFiltering( const std::vector<uint32_t> &partition, PCCPointSet3 &pointCloud,
                       PCCPoint3D& curPos, PCCVector3D& centroid, int &cnt,
-                      std::vector<int>& gcnt, std::vector<PCCVector3D>& center_grid, std::vector<bool>& doSmooth, int grid );
+                      std::vector<int>& gcnt, std::vector<PCCVector3D>& center_grid, 
+                      std::vector<bool>& doSmooth, int gridSize, int gridWidth);
 
 
   void identifyBoundaryPoints( const std::vector<uint32_t>& occupancyMap,

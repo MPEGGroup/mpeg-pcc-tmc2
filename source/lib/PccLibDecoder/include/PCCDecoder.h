@@ -94,7 +94,9 @@ class PCCDecoder : public PCCCodec {
   uint16_t height_;
   uint8_t  occupancyResolution_;
   uint8_t  occupancyPrecision_;
+  uint8_t  flagGeometrySmoothing_;
   bool     gridSmoothing_;
+  uint8_t  gridSize_;
   uint8_t  radius2Smoothing_;
   uint8_t  neighborCountSmoothing_;
   uint8_t  radius2BoundaryDetection_;

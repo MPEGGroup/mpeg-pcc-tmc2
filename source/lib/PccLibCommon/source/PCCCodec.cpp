@@ -45,7 +45,6 @@
 
 #include "PCCCodec.h"
 
-#define SMOOTH_POINT_CLOUD_MAX_SIZE 1024
 
 using namespace pcc;
 
@@ -54,12 +53,12 @@ PCCCodec::~PCCCodec() {}
 
 void PCCCodec::addGridCentroid(PCCPoint3D& point, int patchIdx,
                                std::vector<int>& cnt, std::vector<PCCVector3D>& center_grid,
-                               std::vector<int> &gpartition, std::vector<bool>& doSmooth, int grid) {
+                               std::vector<int>& gpartition, std::vector<bool>& doSmooth, int gridSize, int gridWidth) {
 
-  const int w = SMOOTH_POINT_CLOUD_MAX_SIZE / grid;
-  int x = (int)point.x() / grid;
-  int y = (int)point.y() / grid;
-  int z = (int)point.z() / grid;
+  const int w = gridWidth;
+  int x = (int)point.x() / gridSize;
+  int y = (int)point.y() / gridSize;
+  int z = (int)point.z() / gridSize;
   int idx = x + y*w + z*w*w;
 
   if (cnt[idx] == 0) {
@@ -77,16 +76,7 @@ void PCCCodec::addGridCentroid(PCCPoint3D& point, int patchIdx,
 
 void PCCCodec::generatePointCloud( PCCGroupOfFrames& reconstructs, PCCContext& context,
                                    const GeneratePointCloudParameters params) {
-  if (!params.losslessGeo_) {
-    if (params.gridSmoothing_) {
-      //reset for each GOF
-      const int w = SMOOTH_POINT_CLOUD_MAX_SIZE / ((int)params.occupancyPrecision_ * 2);
-      center_grid_.resize(w*w*w);
-      gcnt_.resize(w*w*w);
-      gpartition_.resize(w*w*w);
-      doSmooth_.resize(w*w*w);
-    }
-  }
+
   auto& frames = context.getFrames();
   auto &videoGeometry = context.getVideoGeometry();
   auto &videoGeometryD1 = context.getVideoGeometryD1();
@@ -95,20 +85,44 @@ void PCCCodec::generatePointCloud( PCCGroupOfFrames& reconstructs, PCCContext& c
     std::vector<uint32_t> partition;
     generatePointCloud(reconstructs[i], frames[i], videoGeometry, videoGeometryD1, params, partition);
 
-    if (!params.losslessGeo_) {
+    if (!params.losslessGeo_ && params.flagGeometrySmoothing_ ) {
       if (params.gridSmoothing_) {
+        //reset for each GOF
+        PCCInt16Box3D boundingBox;
+        boundingBox.min_ = boundingBox.max_ = reconstructs[i][0];
+        for (int j = 0; j < reconstructs[i].getPointCount(); j++) {
+          const PCCPoint3D point = reconstructs[i][j];
+          for (size_t k = 0; k < 3; ++k) {
+            if (point[k] < boundingBox.min_[k]) {
+              boundingBox.min_[k] = floor(point[k]);
+            }
+            if (point[k] > boundingBox.max_[k]) {
+              boundingBox.max_[k] = ceil(point[k]);
+            }
+          }
+        }
+
+        int maxSize = (std::max)((std::max)(boundingBox.max_.x(), boundingBox.max_.y()), boundingBox.max_.z());
+
+        const int w = (maxSize+(int)params.gridSize_-1) / ((int)params.gridSize_);
+        center_grid_.resize(w*w*w);
+        gcnt_.resize(w*w*w);
+        gpartition_.resize(w*w*w);
+        doSmooth_.resize(w*w*w);
+
         int size = (int)gcnt_.size();
         gcnt_.resize(0);
         gcnt_.resize(size, 0);
         for (int j = 0; j < reconstructs[i].getPointCount(); j++) {
-          addGridCentroid(reconstructs[i][j], partition[j] + 1, gcnt_, center_grid_, gpartition_, doSmooth_, (int)params.occupancyPrecision_ * 2);
+          addGridCentroid(reconstructs[i][j], partition[j] + 1, gcnt_, center_grid_, gpartition_,
+                          doSmooth_, (int)params.gridSize_, w);
         }
         for (int i = 0; i < gcnt_.size(); i++) {
           if (gcnt_[i]) {
             center_grid_[i] /= gcnt_[i];
           }
         }
-        smoothPointCloudGrid(reconstructs[i], partition, params);
+        smoothPointCloudGrid(reconstructs[i], partition, params, w);
       } else {
         smoothPointCloud(reconstructs[i], partition, params);
       }
@@ -848,8 +862,9 @@ void PCCCodec::generatePointCloud(PCCPointSet3& reconstruct, PCCFrameContext &fr
 
 bool PCCCodec::gridFiltering( const std::vector<uint32_t> &partition, PCCPointSet3 &pointCloud,
                               PCCPoint3D& curPoint, PCCVector3D& centroid, int &cnt,
-                              std::vector<int>& gcnt, std::vector<PCCVector3D>& center_grid, std::vector<bool>& doSmooth, int grid ) {
-  const int w = SMOOTH_POINT_CLOUD_MAX_SIZE / grid;
+                              std::vector<int>& gcnt, std::vector<PCCVector3D>& center_grid, 
+                              std::vector<bool>& doSmooth, int grid, int gridWidth ) {
+  const int w = gridWidth;
   bool otherClusterPointCount = false;
 
   int x = curPoint.x();
@@ -941,26 +956,27 @@ bool PCCCodec::gridFiltering( const std::vector<uint32_t> &partition, PCCPointSe
 
 void PCCCodec::smoothPointCloudGrid(PCCPointSet3& reconstruct,
                                     const std::vector<uint32_t> &partition,
-                                    const GeneratePointCloudParameters params) {
+                                    const GeneratePointCloudParameters params, int gridWidth) {
   const size_t pointCount = reconstruct.getPointCount();
-  const int disth = (int)params.occupancyPrecision_;
-  const int grid = (int)params.occupancyPrecision_ * 2;
+  const int gridSize = (int)params.gridSize_;
+  const int disth = (std::max)(gridSize / 2, 1);
+  const int th = gridSize*gridWidth;
   for (int c = 0; c < pointCount; c++) {
     PCCPoint3D curPoint = reconstruct[c];
     int x = (int)curPoint.x();
     int y = (int)curPoint.y();
     int z = (int)curPoint.z();
-    if ( x < disth || y < disth || z < disth ||
-        SMOOTH_POINT_CLOUD_MAX_SIZE <= x + disth || 
-        SMOOTH_POINT_CLOUD_MAX_SIZE <= y + disth || 
-        SMOOTH_POINT_CLOUD_MAX_SIZE <= z + disth) {
+    if ( x < disth || y < disth || z < disth || 
+        th <= x + disth || 
+        th <= y + disth || 
+        th <= z + disth) {
       continue;
     }
     PCCVector3D centroid(0.0), curVector(x,y,z);
     int cnt = 0;
     bool otherClusterPointCount = false;
     if (reconstruct.getBoundaryPointType(c) == 1)  {
-      otherClusterPointCount = gridFiltering(partition, reconstruct, curPoint, centroid, cnt, gcnt_, center_grid_, doSmooth_, grid);
+      otherClusterPointCount = gridFiltering(partition, reconstruct, curPoint, centroid, cnt, gcnt_, center_grid_, doSmooth_, gridSize, gridWidth);
     }
     if (otherClusterPointCount) {
       double dist2 = ((curVector*cnt - centroid).getNorm2() + (double)cnt / 2.0) / (double)cnt;

@@ -106,6 +106,8 @@ class PCCEncoderParameters {
   double              radius2BoundaryDetection_;
   double              thresholdSmoothing_;
   bool                gridSmoothing_;
+  size_t              gridSize_;
+  bool                flagGeometrySmoothing_;
 
   // color smoothing
   double              thresholdColorSmoothing_;

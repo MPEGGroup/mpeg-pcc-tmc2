@@ -273,6 +273,12 @@ bool parseParameters( int argc, char *argv[],
 
     // smoothing
     // NB: various parameters are of the form n * occupancyPrecision**2
+
+    ("flagGeometrySmoothing",
+      encoderParams.flagGeometrySmoothing_,
+      encoderParams.flagGeometrySmoothing_,
+      "Enable geometry smoothing\n")
+
     ("neighborCountSmoothing",
      encoderParams.neighborCountSmoothing_,
      encoderParams.neighborCountSmoothing_,
@@ -298,6 +304,11 @@ bool parseParameters( int argc, char *argv[],
       encoderParams.gridSmoothing_,
       encoderParams.gridSmoothing_,
       "Enable grid smoothing")
+        
+    ("gridSize", 
+      encoderParams.gridSize_,
+      encoderParams.gridSize_, 
+      "grid size for the smoothing")
 
   // color smoothing
     ("thresholdColorSmoothing",
