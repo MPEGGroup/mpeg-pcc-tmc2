@@ -1,4 +1,3 @@
-
 /* The copyright in this software is being made available under the BSD
  * License, included below. This software may be subject to other third party
  * and contributor rights, including patent rights, and no such rights are
@@ -41,17 +40,17 @@
 #include "PCCMetadata.h"
 
 namespace pcc {
-	struct PCCGPAFrameSize {
-		size_t widthGPA_;
-		size_t heightGPA_;
-	};
+struct PCCGPAFrameSize {
+  size_t widthGPA_;
+  size_t heightGPA_;
+};
 
-	struct PCCFrameOCPInfo {
-		size_t occupancySizeU_;
-		size_t occupancySizeV_;
-		size_t maxOccupancyRow_;
-		std::vector<bool> occupancyMap_;
-	};
+struct PCCFrameOCPInfo {
+  size_t occupancySizeU_;
+  size_t occupancySizeV_;
+  size_t maxOccupancyRow_;
+  std::vector<bool> occupancyMap_;
+};
 
 
 class PCCFrameContext {
@@ -77,22 +76,20 @@ class PCCFrameContext {
   const size_t getMPGeoHeight() {return MPGeoHeight_;}
   const size_t getMPAttWidth() {return MPAttWidth_;}
   const size_t getMPAttHeight() {return MPAttHeight_;}
- 
+
   void setMPGeoWidth(size_t width) { MPGeoWidth_=width;}
   void setMPGeoHeight(size_t height) { MPGeoHeight_=height;}
   void setMPAttWidth(size_t width) { MPAttWidth_=width;}
   void setMPAttHeight(size_t height) { MPAttHeight_=height;}
-  
+
   const bool getLosslessGeo(){return losslessGeo_;}
   const bool getLosslessGeo444(){return losslessGeo444_;}
-  const bool getLosslessAtt(){return losslessAtt_;}
+  const bool getLosslessTexture(){return losslessTexture_;}
   void setLosslessGeo(bool lossless){losslessGeo_=lossless;}
   void setLosslessGeo444(bool lossless){losslessGeo444_=lossless;}
-  void setLosslessAtt(bool lossless){losslessAtt_=lossless;}
+  void setLosslessTexture(bool lossless){losslessTexture_=lossless;}
   void setUseMissedPointsSeparateVideo(bool value) {useMissedPointsSeparateVideo_=value;}
   bool getUseMissedPointsSeparateVideo() {return useMissedPointsSeparateVideo_;}
-  void setUseOccupancyMapVideo(bool code) { useOccupancyMapVideo = code; }
-  bool getUseOccupancyMapVideo() { return useOccupancyMapVideo; }
   void setEnhancedDeltaDepth(bool code) {enhancedDeltaDepth_=code;}
   bool getEnhancedDeltaDepth( ) {return enhancedDeltaDepth_;}
 
@@ -109,11 +106,20 @@ class PCCFrameContext {
   std::vector<size_t>&             getMinD1()                { return minD1_;                    }
   std::vector<size_t>&             getNeighbor()             { return neighbor_;                 }
 
+  void allocOneLayerData( const size_t occupancyResolution );
+  void printBlockToPatch( const size_t occupancyResolution );
+  void printOneLayerData( const size_t occupancyResolution );
+  void printInterpolate ( const size_t occupancyResolution );
+  void printNeightbor   ( const size_t occupancyResolution );
+  void printMinD1       ( const size_t occupancyResolution );
+  void printFilling     ( const size_t occupancyResolution );
 
-  PCCGPAFrameSize&                     getPrePCCGPAFrameSize()  { return prePCCGPAFrameSize_;  }
+  void printPatch();
+  void printPatchDecoder();
+
+  PCCGPAFrameSize&                     getPrePCCGPAFrameSize() { return prePCCGPAFrameSize_;  }
   PCCGPAFrameSize&                     getCurPCCGPAFrameSize() { return curPCCGPAFrameSize_; }
-
-  PCCFrameOCPInfo &					   getPCCOCPGPAInfo() { return ocpGPAInfo_; }
+  PCCFrameOCPInfo &                    getPCCOCPGPAInfo()      { return ocpGPAInfo_; }
 
  private:
   size_t index_;
@@ -126,18 +132,18 @@ class PCCFrameContext {
   size_t MPAttWidth_;
   size_t MPAttHeight_;
   size_t surfaceThickness_;
-  bool losslessGeo_;
-  bool losslessGeo444_;
-  bool losslessAtt_;
-  bool useMissedPointsSeparateVideo_;
-  bool useOccupancyMapVideo;
-  bool enhancedDeltaDepth_;
-  bool useAdditionalPointsPatch_;
+  bool   losslessGeo_;
+  bool   losslessGeo444_;
+  bool   losslessTexture_;
+  bool   useMissedPointsSeparateVideo_;
+  bool   enhancedDeltaDepth_;
+  bool   useAdditionalPointsPatch_;
 
   std::vector<PCCVector3<size_t>> pointToPixel_;
   std::vector<size_t> blockToPatch_;
   std::vector<uint32_t> occupancyMap_;
   std::vector<uint32_t> fullOccupancyMap_;
+
   std::vector<PCCPatch> patches_;
   PCCMissedPointsPatch missedPointsPatch_;
   PCCMetadata frameLevelMetadata_;
@@ -153,7 +159,6 @@ class PCCFrameContext {
 
   PCCGPAFrameSize prePCCGPAFrameSize_;
   PCCGPAFrameSize curPCCGPAFrameSize_;
-
   PCCFrameOCPInfo ocpGPAInfo_;
 
 };

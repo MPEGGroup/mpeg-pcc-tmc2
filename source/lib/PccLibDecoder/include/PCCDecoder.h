@@ -1,4 +1,3 @@
-
 /* The copyright in this software is being made available under the BSD
  * License, included below. This software may be subject to other third party
  * and contributor rights, including patent rights, and no such rights are
@@ -64,69 +63,11 @@ class PCCDecoder : public PCCCodec {
   void setParameters( PCCDecoderParameters value );
 
  private:
-  int  decompress( PCCBitstream &bitstream, PCCContext &context );
   int  decode( PCCContext &context, PCCGroupOfFrames& reconstruct );
 
-  int  readMetadata(PCCMetadata &metadata, PCCBitstream &bitstream);
-  int  decompressMetadata(PCCMetadata &metadata, o3dgc::Arithmetic_Codec &arithmeticDecoder);
-  int  decompressMetadata(PCCMetadata &metadata, o3dgc::Arithmetic_Codec &arithmeticDecoder, o3dgc::Static_Bit_Model &bModelMaxDepth0, o3dgc::Adaptive_Bit_Model &bModelMaxDepthDD);
-  int  decompressHeader( PCCContext &context, PCCBitstream &bitstream );
-
-  void decompressOccupancyMap( PCCContext &context,  PCCBitstream& bitstream );
-  void decompressOccupancyMap(  PCCContext &context, PCCFrameContext& frame, PCCBitstream &bitstream, 
-                               PCCFrameContext& preFrame, size_t frameIndex );
-
-  void GenerateOccupancyMapFromVideoFrame(size_t occupancyResolution, size_t occupancyPrecision,
-                                          size_t width, size_t height,
-                                          std::vector<uint32_t> &occupancyMap,
-                                          const PCCImageOccupancyMap &videoFrame);
-
-  void readMissedPointsGeometryNumber(PCCContext& context, PCCBitstream &bitstream);
-  void readMissedPointsTextureNumber(PCCContext& context, PCCBitstream &bitstream);
-
-  void decompressPatchMetaDataM42195(PCCFrameContext& frame, PCCFrameContext& preFrame, PCCBitstream &bitstream ,
-                                     o3dgc::Arithmetic_Codec &arithmeticDecoder, o3dgc::Static_Bit_Model &bModel0,
-                                     uint32_t &compressedBitstreamSize, size_t occupancyPrecision, uint8_t enable_flexible_patch_flag);
 
   PCCDecoderParameters params_;
 
-  uint16_t width_;
-  uint16_t height_;
-  uint8_t  occupancyResolution_;
-  uint8_t  occupancyPrecision_;
-  uint8_t  flagGeometrySmoothing_;
-  bool     gridSmoothing_;
-  uint8_t  gridSize_;
-  uint8_t  radius2Smoothing_;
-  uint8_t  neighborCountSmoothing_;
-  uint8_t  radius2BoundaryDetection_;
-  uint8_t  thresholdSmoothing_;
-  uint8_t  losslessGeo_;
-  uint8_t  losslessTexture_;
-  uint8_t  noAttributes_;
-  uint8_t  losslessGeo444_;
-  uint8_t  useMissedPointsSeparateVideo_;
-  uint8_t  useOccupancyMapVideo_;
-  bool     absoluteD1_;
-  bool     binArithCoding_;
-  float    modelScale_;
-  PCCVector3<float> modelOrigin_;
-  uint8_t  thresholdColorSmoothing_;
-  double   thresholdLocalEntropy_;
-  uint8_t  radius2ColorSmoothing_;
-  uint8_t  neighborCountColorSmoothing_;
-  uint8_t  flagColorSmoothing_;
-  bool     enhancedDeltaDepthCode_;
-  bool     improveEDD_;
-  bool     deltaCoding_;
-  bool     sixDirectionMode_;
-  bool     removeDuplicatePoints_;
-  bool     oneLayerMode_;
-  bool     singleLayerPixelInterleaving_;
-  bool     useAdditionalPointsPatch_;
-  uint8_t  minLevel_;
-  bool     globalPatchAllocation_;
-  bool     use3dmc_;
 };
 }; //~namespace
 

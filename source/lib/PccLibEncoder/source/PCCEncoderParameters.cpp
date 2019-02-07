@@ -1,4 +1,3 @@
-
 /* The copyright in this software is being made available under the BSD
  * License, included below. This software may be subject to other third party
  * and contributor rights, including patent rights, and no such rights are
@@ -33,7 +32,8 @@
  */
 #include "PCCCommon.h"
 #include "PCCEncoderParameters.h"
-
+#include "PCCContext.h"
+#include "PCCFrameContext.h"
 using namespace pcc ;
 
 
@@ -75,7 +75,6 @@ PCCEncoderParameters::PCCEncoderParameters() {
   occupancyPrecision_                      = 4;
   occupancyMapVideoEncoderConfig_          = {};
   occupancyMapQP_                          = 8;
-  useOccupancyMapVideo_                    = true;
 
   flagGeometrySmoothing_                   = true;
   gridSmoothing_                           = true;
@@ -105,7 +104,6 @@ PCCEncoderParameters::PCCEncoderParameters() {
   useMissedPointsSeparateVideo_            = false;
   geometryMPConfig_                        = {};
   textureMPConfig_                         = {};
-  useOccupancyMapVideo_                    = (losslessGeo_|| losslessTexture_)? false : true;
 
   nbThread_                                = 1;
   keepIntermediateFiles_                   = false;
@@ -142,13 +140,17 @@ PCCEncoderParameters::PCCEncoderParameters() {
   sixDirectionMode_                        = absoluteD1_ ? true : false;
   surfaceSeparation_                       = false;
 
+  // level of detail
+  testLevelOfDetail_                       = 0;
+  testLevelOfDetailSignaling_              = 0;
+
   //Flexible Patch Packing
   packingStrategy_                         = 1;
   textureBGFill_                           = 2;
   safeGuardDistance_                       = 0;
 
   //Improve EDD
-  improveEDD_		                           = 0;
+  improveEDD_                              = 0;
 
   //lossy missed points patch
   lossyMissedPointsPatch_                  = false;
@@ -277,7 +279,6 @@ void PCCEncoderParameters::print(){
   std::cout << "\t   occupancyPrecision                   " << occupancyPrecision_                   << std::endl;
   std::cout << "\t   occupancyMapVideoEncoderConfig       " << occupancyMapVideoEncoderConfig_       << std::endl;
   std::cout << "\t   occupancyMapQP                       " << occupancyMapQP_                       << std::endl;
-  std::cout << "\t   useOccupancyMapVideo                 " << useOccupancyMapVideo_                 << std::endl;
   std::cout << "\t geometry smoothing" << std::endl;
   std::cout << "\t   flagGeometrySmoothing                " << flagGeometrySmoothing_                << std::endl;
   if (flagGeometrySmoothing_ ){
@@ -314,7 +315,7 @@ void PCCEncoderParameters::print(){
   std::cout << "\t   singleLayerPixelInterleaving         " << singleLayerPixelInterleaving_         << std::endl;
   std::cout << "\t six Direction Projection               " << sixDirectionMode_                     << std::endl;
   std::cout << "\t surface Separation                     " << surfaceSeparation_                    << std::endl;
-  std::cout << "\t improve EDD                            " << improveEDD_		                     << std::endl;
+  std::cout << "\t improve EDD                            " << improveEDD_                           << std::endl;
   std::cout << "\t Lossy missed points patch" << std::endl;
   std::cout << "\t   lossyMissedPointsPatch               " << lossyMissedPointsPatch_              << std::endl;
   std::cout << "\t   minNormSumOfInvDist4MPSelection      " << minNormSumOfInvDist4MPSelection_     << std::endl;
@@ -369,7 +370,7 @@ bool PCCEncoderParameters::check(){
     std::cerr << "videoEncoderPath not exist\n";
   }
 
-  if( useOccupancyMapVideo_ && ( videoEncoderOccupancyMapPath_.empty() || !exist( videoEncoderOccupancyMapPath_) ) ) {
+  if( ( videoEncoderOccupancyMapPath_.empty() || !exist( videoEncoderOccupancyMapPath_) ) ) {
     std::cerr << "WARNING: videoEncoderOccupancyMapPath is set as videoEncoderPath_ : "<<videoEncoderPath_ << std::endl;
     videoEncoderOccupancyMapPath_ = videoEncoderPath_;
   }
@@ -440,17 +441,9 @@ bool PCCEncoderParameters::check(){
       oneLayerMode_     = true;
       std::cerr << "Pixel Interleaving is built on single layer coding. Force oneLayerMode=TRUE.\n";
     }
-    //if( sixDirectionMode_ ) {
-    //  sixDirectionMode_ = false;
-    //  std::cerr << "Pixel Interleaving is built on single layer coding. Force sixDirectionMode=FALSE.\n";
-    //}
-    //if( packingStrategy_ ) {
-    //  packingStrategy_  = false;
-    //  std::cerr << "Pixel Interleaving is built on single layer coding. Force packingStrategy=FALSE.\n";
-    //}
   }
 
-  if ( useOccupancyMapVideo_ && occupancyMapVideoEncoderConfig_.empty() ) {
+  if ( occupancyMapVideoEncoderConfig_.empty() ) {
     ret = false;
     std::cerr << "to use segmentation, you must define a segmentationDataPath \n";
   }
@@ -475,4 +468,46 @@ bool PCCEncoderParameters::check(){
   }
 
   return ret;
+}
+
+
+void PCCEncoderParameters::initializeContext( PCCContext &context ){
+  context.getLosslessGeo444              () = losslessGeo444_;
+  context.getLosslessGeo                 () = losslessGeo_;
+  context.getLosslessTexture             () = losslessTexture_;
+  context.getUseMissedPointsSeparateVideo() = useMissedPointsSeparateVideo_;
+  context.getEnhancedDeltaDepth          () = enhancedDeltaDepthCode_;
+  context.getLosslessGeo444              () = losslessGeo444_;
+  context.getLosslessGeo                 () = losslessGeo_;
+  context.getLosslessTexture             () = losslessTexture_;
+  context.getOccupancyResolution         () = occupancyResolution_;
+  context.getOccupancyPrecision          () = occupancyPrecision_;
+  context.getFlagGeometrySmoothing       () = flagGeometrySmoothing_;
+  context.getGridSmoothing               () = gridSmoothing_;
+  context.getGridSize                    () = gridSize_;
+  context.getRadius2Smoothing            () = radius2Smoothing_;
+  context.getNeighborCountSmoothing      () = neighborCountSmoothing_;
+  context.getRadius2BoundaryDetection    () = radius2BoundaryDetection_;
+  context.getThresholdSmoothing          () = thresholdSmoothing_;
+  context.getNoAttributes                () = noAttributes_;
+  context.getAbsoluteD1                  () = absoluteD1_;
+  context.getBinArithCoding              () = binArithCoding_;
+  context.getModelScale                  () = modelScale_;
+  context.getModelOrigin                 () = modelOrigin_;
+  context.getThresholdColorSmoothing     () = thresholdColorSmoothing_;
+  context.getThresholdLocalEntropy       () = thresholdLocalEntropy_;
+  context.getRadius2ColorSmoothing       () = radius2ColorSmoothing_;
+  context.getNeighborCountColorSmoothing () = neighborCountColorSmoothing_;
+  context.getFlagColorSmoothing          () = flagColorSmoothing_;
+  context.getEnhancedDeltaDepthCode      () = enhancedDeltaDepthCode_;
+  context.getImproveEDD                  () = improveEDD_;
+  context.getDeltaCoding                 () = deltaCoding_;
+  context.getSixDirectionMode            () = sixDirectionMode_;
+  context.getRemoveDuplicatePoints       () = removeDuplicatePoints_;
+  context.getOneLayerMode                () = oneLayerMode_;
+  context.getSingleLayerPixelInterleaving() = singleLayerPixelInterleaving_;
+  context.getUseAdditionalPointsPatch    () = useAdditionalPointsPatch_;
+  context.getMinLevel                    () = minLevel_;
+  context.getGlobalPatchAllocation       () = globalPatchAllocation_;
+  context.getUse3dmc                     () = use3dmc_;
 }

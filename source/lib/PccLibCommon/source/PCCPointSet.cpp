@@ -888,7 +888,7 @@ bool PCCPointSet3::transfertColorSimple( PCCPointSet3 &target,
   }
   for (size_t index = 0; index < pointCountSource; ++index) {
     const PCCColor3B color = source.getColor(index);
-    kdtreeSource.search( source[index], num_results, result );
+    kdtreeTarget.search( source[index], num_results, result );
     refinedColors2[result.indices(0)].push_back(color);
   }
   for (size_t index = 0; index < pointCountTarget; ++index) {

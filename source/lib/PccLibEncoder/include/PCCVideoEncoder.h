@@ -1,4 +1,3 @@
-
 /* The copyright in this software is being made available under the BSD
  * License, included below. This software may be subject to other third party
  * and contributor rights, including patent rights, and no such rights are
@@ -84,10 +83,10 @@ class PCCVideoEncoder {
     }
 
     const std::string format = use444CodecIo ? "444" : "420";
-    const std::string binFileName = fileName + ".bin";
+    const std::string binFileName          = fileName + ".bin";
     const std::string blockToPatchFileName = orgFileName + "blockToPatch.txt";
     const std::string occupancyMapFileName = orgFileName + "occupancy.txt";
-    const std::string patchInfoFileName = orgFileName + "patchInfo.txt";
+    const std::string patchInfoFileName    = orgFileName + "patchInfo.txt";
     const std::string srcYuvFileName = addVideoFormat(fileName + (use444CodecIo ? ".rgb" : ".yuv"),
                                                       width, height, !use444CodecIo, nbyte==2?"10":"8" );
     const std::string srcRgbFileName = addVideoFormat(fileName + ".rgb",
@@ -333,8 +332,8 @@ class PCCVideoEncoder {
           << " --InputColourSpaceConvert=RGBtoGBR";
       if (use3dmv) {
         cmd << " --BlockToPatchFile=" << blockToPatchFileName
-          << " --OccupancyMapFile=" << occupancyMapFileName
-          << " --PatchInfoFile=" << patchInfoFileName;
+            << " --OccupancyMapFile=" << occupancyMapFileName
+            << " --PatchInfoFile=" << patchInfoFileName;
       }
     } else {
       cmd << encoderPath
@@ -360,11 +359,11 @@ class PCCVideoEncoder {
       }
       if (use3dmv) {
         cmd << " --BlockToPatchFile=" << blockToPatchFileName
-          << " --OccupancyMapFile=" << occupancyMapFileName
-          << " --PatchInfoFile=" << patchInfoFileName;
+            << " --OccupancyMapFile=" << occupancyMapFileName
+            << " --PatchInfoFile=" << patchInfoFileName;
+      }
     }
-    }
-    std::cout << cmd.str() << '\n';
+    std::cout << cmd.str() << std::endl;
     if (pcc::system(cmd.str().c_str())) {
       std::cout << "Error: can't run system command!" << std::endl;
       return false;

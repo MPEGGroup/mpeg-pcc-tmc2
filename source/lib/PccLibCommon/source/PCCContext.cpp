@@ -1,4 +1,3 @@
-
 /* The copyright in this software is being made available under the BSD
  * License, included below. This software may be subject to other third party
  * and contributor rights, including patent rights, and no such rights are
@@ -56,3 +55,26 @@ void PCCContext::resize( size_t size ) {
     frames_[i].getIndex() = i; 
   } 
 }
+
+void PCCContext::allocOneLayerData( const size_t occupancyResolution ) {
+  for( auto& frame : frames_ ) {
+    frame.allocOneLayerData( occupancyResolution );
+  }
+}
+
+void PCCContext::printVideoBitstream() {
+  size_t index = 0;
+  printf("VideoBitstream list: \n"); fflush(stdout);
+  for( auto& value: videoBitstream_ ) {
+    printf("  * %lu / %lu: ",index, videoBitstream_.size());
+    value.trace();
+    index++;
+  }
+}
+
+void PCCContext::printBlockToPatch( const size_t occupancyResolution ){
+  for( auto& frame : frames_ ) {
+    frame.printBlockToPatch( occupancyResolution );
+  }
+}
+

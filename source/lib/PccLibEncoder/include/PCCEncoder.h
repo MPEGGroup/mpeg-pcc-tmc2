@@ -1,4 +1,3 @@
-
 /* The copyright in this software is being made available under the BSD
  * License, included below. This software may be subject to other third party
  * and contributor rights, including patent rights, and no such rights are
@@ -49,6 +48,7 @@ class PCCGroupOfFrames;
 class PCCBitstream;
 class PCCContext;
 class PCCFrameContext;
+
 template <typename T, size_t N>
 class PCCVideo;
 typedef pcc::PCCVideo<uint8_t,  3> PCCVideoTexture;
@@ -105,7 +105,7 @@ class Arithmetic_Codec;
   };
 
 
-typedef std::map<size_t, PCCPatch> unionPatch;                     // unionPatch ----- [TrackIndex, UnionPatch];
+typedef std::map<size_t, PCCPatch> unionPatch;                      // unionPatch ------ [TrackIndex, UnionPatch];
 typedef std::pair<size_t, size_t>  GlobalPatch;                     // GlobalPatch ----- [FrameIndex, PatchIndex];
 typedef std::map<size_t, std::vector<GlobalPatch> > GlobalPatches;  // GlobalPatches --- [TrackIndex, <GlobalPatch>];
 typedef std::pair<size_t, size_t>  SubContext;                      // SubContext ------ [start, end);
@@ -125,22 +125,7 @@ public:
 
 private:
   int encode( const PCCGroupOfFrames& sources, PCCContext &context, PCCGroupOfFrames& reconstructs );
-  int compress( PCCContext &context, PCCBitstream &bitstream );
 
-
-  void buildBlockToPatch( PCCContext &context );
-  void buildBlockToPatch( PCCFrameContext &frame, PCCFrameContext &preFrame, size_t frameIndex );
-
-  int  writeMetadata(const PCCMetadata &metadata, PCCBitstream &bitstream );
-  int  compressMetadata(const PCCMetadata &metadata, o3dgc::Arithmetic_Codec &arithmeticEncoder );
-  int  compressMetadata(const PCCMetadata &metadata, o3dgc::Arithmetic_Codec &arithmeticEncoder, o3dgc::Static_Bit_Model &bModelMaxDepth0, o3dgc::Adaptive_Bit_Model &bModelMaxDepthDD);
-
-  int  compressHeader( PCCContext &context, PCCBitstream &bitstream );
-
-  void compressOccupancyMap( PCCContext &context, PCCBitstream& bitstream );
-  void compressOccupancyMap( PCCFrameContext &frame, PCCBitstream& bitstream, PCCFrameContext &preFrame, size_t frameIndex );
-  void compressPatchMetaDataM42195(PCCFrameContext &frame, PCCFrameContext &preFrame, size_t numMatchedPatches, PCCBitstream &bitstream ,
-    o3dgc::Arithmetic_Codec &arithmeticEncoder, o3dgc::Static_Bit_Model &bModel0, uint8_t enable_flexible_patch_flag);
   bool generateOccupancyMapVideo( const PCCGroupOfFrames& sources, PCCContext& context );
   bool generateOccupancyMapVideo(const size_t imageWidth, const size_t imageHeight,
                                  std::vector<uint32_t> &occupancyMap,
@@ -150,16 +135,20 @@ private:
   bool resizeGeometryVideo( PCCContext &context );
   bool dilateGeometryVideo( PCCContext &context );
 
-  bool generateTextureVideo( const PCCGroupOfFrames& sources, PCCGroupOfFrames& reconstruct, PCCContext& context, const PCCEncoderParameters params);
+  bool generateTextureVideo( const PCCGroupOfFrames& sources,
+                             PCCGroupOfFrames& reconstruct,
+                             PCCContext& context,
+                             const PCCEncoderParameters params);
 
-  void writeMissedPointsGeometryNumber(PCCContext& context, PCCBitstream &bitstream);
-  void writeMissedPointsTextureNumber(PCCContext& context, PCCBitstream &bitstream);
-  
+
   void generateMissedPointsGeometryVideo(PCCContext& context, PCCGroupOfFrames& reconstructs);
   void generateMissedPointsTextureVideo(PCCContext& context, PCCGroupOfFrames& reconstructs );
   
-  void generateMPsGeometryImage    (PCCContext& context, PCCFrameContext& frame, PCCImageGeometry &image);
-  void generateMPsTextureImage(PCCContext& context, PCCFrameContext& frame, PCCImageTexture &image, size_t shift, const PCCPointSet3& reconstruct);
+  void generateMPsGeometryImage(PCCContext& context, PCCFrameContext& frame, PCCImageGeometry &image);
+  void generateMPsTextureImage(PCCContext& context,
+                               PCCFrameContext& frame,
+                               PCCImageTexture &image, size_t shift,
+                               const PCCPointSet3& reconstruct);
   
   template <typename T>
   void dilate( PCCFrameContext &frame, PCCImage<T, 3> &image, const PCCImage<T, 3> *reference = nullptr );
@@ -167,7 +156,9 @@ private:
   template <typename T>
   int mean4w(T p1, unsigned char w1, T p2, unsigned char w2, T p3, unsigned char w3, T p4, unsigned char w4);
   template <typename T>
-  void pullPushMip(PCCImage<T, 3> &image, PCCImage<T, 3> &mip, std::vector<uint32_t>& occupancyMap, std::vector<uint32_t> &mipOccupancyMap);
+  void pullPushMip(PCCImage<T, 3> &image, PCCImage<T, 3> &mip,
+                   std::vector<uint32_t>& occupancyMap,
+                   std::vector<uint32_t> &mipOccupancyMap);
   template <typename T>
   void pullPushFill(PCCImage<T, 3> &image, PCCImage<T, 3> &mip, std::vector<uint32_t>& occupancyMap);
   template <typename T>
@@ -188,47 +179,98 @@ private:
   void printMapTetris(std::vector<bool> img, const size_t sizeU, const size_t sizeV, std::vector<int> horizon);
   void generateIntraImage( PCCFrameContext& frameContext, const size_t depthIndex, PCCImageGeometry &image);
   bool predictGeometryFrame( PCCFrameContext& frameContext, const PCCImageGeometry &reference, PCCImageGeometry &image);
-  void generateMissedPointsPatch(const PCCPointSet3& source, PCCFrameContext& frameContext, bool useEnhancedDeltaDepthCode); //useEnhancedDeltaDepthCode for EDD
+  void generateMissedPointsPatch( const PCCPointSet3& source,
+                                  PCCFrameContext& frameContext,
+                                  bool useEnhancedDeltaDepthCode);
+
   void sortMissedPointsPatch(PCCFrameContext& frameContext);
   bool generateGeometryVideo( const PCCPointSet3& source, PCCFrameContext& frameContext,
                              const PCCPatchSegmenter3Parameters segmenterParams,
-                             PCCVideoGeometry &videoGeometry, PCCFrameContext &prevFrame, size_t frameIndex, float& distanceSrcRec
-    );
+                             PCCVideoGeometry &videoGeometry, PCCFrameContext &prevFrame,
+                             size_t frameIndex, float& distanceSrcRec );
+
   bool generateTextureVideo( const PCCPointSet3& reconstruct, PCCFrameContext& frameContext,
                              PCCVideoTexture &video, const size_t frameCount );
 
-  void generateIntraEnhancedDeltaDepthImage(PCCFrameContext& frame, const PCCImageGeometry &imageRef, PCCImageGeometry &image);
+  void generateIntraEnhancedDeltaDepthImage( PCCFrameContext& frame,
+                                             const PCCImageGeometry &imageRef,
+                                             PCCImageGeometry &image);
 
-  PCCEncoderParameters params_;
-  void reconsctuctionOptimization( PCCContext& context,
-                                   const GeneratePointCloudParameters params );
-  void reconsctuctionOptimization( PCCFrameContext &frame,
-                                   const PCCVideoGeometry &video,
-                                   const PCCVideoGeometry &videoD1,
-                                   const GeneratePointCloudParameters params);
+
+  void geometryGroupDilation( PCCContext& context );
+
+  void create3DMotionEstimationFiles( PCCContext& context, std::string path );
+  void remove3DMotionEstimationFiles( std::string path );
+
+  void reconstuctionOptimization( PCCContext& context,
+                                  const GeneratePointCloudParameters params );
+  void reconstuctionOptimization( PCCFrameContext &frame,
+                                  const PCCVideoGeometry &video,
+                                  const PCCVideoGeometry &videoD1,
+                                  const GeneratePointCloudParameters params);
   void presmoothPointCloudColor(PCCPointSet3 &reconstruct, const PCCEncoderParameters params);
 
   // perform data-adaptive GPA method;
   void   performDataAdaptiveGPAMethod(PCCContext& context);
   // start a subContext;
-  void   initializeSubContext(PCCFrameContext& frameContext, SubContext& subContext, GlobalPatches& globalPatchTracks, unionPatch& unionPatch, size_t frameIndex);
+  void   initializeSubContext(PCCFrameContext& frameContext,
+                              SubContext& subContext,
+                              GlobalPatches& globalPatchTracks,
+                              unionPatch& unionPatch,
+                              size_t frameIndex);
   // generate globalPatches;
-  void   generateGlobalPatches(PCCContext& context, size_t frameIndex, GlobalPatches& globalPatchTracks, size_t preIndex);
+  void   generateGlobalPatches(PCCContext& context,
+                               size_t frameIndex,
+                               GlobalPatches& globalPatchTracks,
+                               size_t preIndex);
   // patch unions generation and packing; return the height of the unionsPackingImage;
-  size_t unionPatchGenerationAndPacking(const GlobalPatches& globalPatchTracks, PCCContext& context, unionPatch& unionPatch, size_t refFrameIdx, int safeguard = 0, bool useRefFrame = false);
+  size_t unionPatchGenerationAndPacking(const GlobalPatches& globalPatchTracks,
+                                        PCCContext& context,
+                                        unionPatch& unionPatch,
+                                        size_t refFrameIdx,
+                                        int safeguard = 0,
+                                        bool useRefFrame = false);
   // update patch information;
   void   updateGPAPatchInformation(PCCContext& context, SubContext& subContext, unionPatch& unionPatch);
   // perform data-adaptive gpa packing;
-  void   performGPAPacking(const SubContext& subContext, unionPatch& unionPatch, PCCContext& context, bool& badGPAPacking, size_t unionsHeight, int safeguard = 0, bool useRefFrame = false);
+  void   performGPAPacking(const SubContext& subContext,
+                           unionPatch& unionPatch,
+                           PCCContext& context,
+                           bool& badGPAPacking,
+                           size_t unionsHeight,
+                           int safeguard = 0,
+                           bool useRefFrame = false);
 
   void clearCurrentGPAPatchDataInfor(PCCContext& context, SubContext& subContext);
 
   void packingFirstFrame(PCCContext& context, size_t frameIndex, bool packingStrategy, int safeguard, bool hasRefFrame);
   void updatePatchInformation(PCCContext& context, SubContext& subContext);
-  void packingWithoutRefForFirstFrameNoglobalPatch(PCCPatch& patch, size_t i, size_t icount, size_t& occupancySizeU, size_t& occupancySizeV, const size_t safeguard,
-	  std::vector<bool> & occupancyMap, size_t& heightGPA, size_t& widthGPA, size_t maxOccupancyRow);
-  void packingWithRefForFirstFrameNoglobalPatch(PCCPatch& patch, const std::vector<PCCPatch> prePatches, size_t startFrameIndex, size_t i, size_t icount, size_t& occupancySizeU, size_t& occupancySizeV, const size_t safeguard,
-	  std::vector<bool> & occupancyMap, size_t& heightGPA, size_t& widthGPA, size_t maxOccupancyRow);
+  void packingWithoutRefForFirstFrameNoglobalPatch( PCCPatch& patch,
+                                                    size_t i,
+                                                    size_t icount,
+                                                    size_t& occupancySizeU,
+                                                    size_t& occupancySizeV,
+                                                    const size_t safeguard,
+                                                    std::vector<bool> & occupancyMap,
+                                                    size_t& heightGPA,
+                                                    size_t& widthGPA,
+                                                    size_t maxOccupancyRow);
+
+  void packingWithRefForFirstFrameNoglobalPatch( PCCPatch& patch,
+                                                 const std::vector<PCCPatch> prePatches,
+                                                 size_t startFrameIndex,
+                                                 size_t i,
+                                                 size_t icount,
+                                                 size_t& occupancySizeU,
+                                                 size_t& occupancySizeV,
+                                                 const size_t safeguard,
+                                                 std::vector<bool> & occupancyMap,
+                                                 size_t& heightGPA,
+                                                 size_t& widthGPA,
+                                                 size_t maxOccupancyRow);
+
+
+  PCCEncoderParameters params_;
 };
 
 }; //~namespace

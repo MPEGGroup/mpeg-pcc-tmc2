@@ -60,7 +60,8 @@
   #include <mach/mach.h>
 #endif
 
-#define CE210_MAXDEPTH 0
+//
+// #define CE210_MAXDEPTH_EVALUATION
 
 namespace pcc {
 
@@ -83,12 +84,12 @@ namespace pcc {
   const uint32_t PCC_UNDEFINED_INDEX          = -1;
   const bool printDetailedInfo = false;
 
-  enum PCCEndianness  { PCC_BIG_ENDIAN = 0, PCC_LITTLE_ENDIAN = 1 };
-  enum ColorTransform { COLOR_TRANSFORM_NONE = 0, COLOR_TRANSFORM_RGB_TO_YCBCR = 1 };
-  enum PCCAxis3       { PCC_AXIS3_UNDEFINED = -1, PCC_AXIS3_X = 0, PCC_AXIS3_Y = 1, PCC_AXIS3_Z = 2 };
-  enum PointType { Unset = 0, D0, D1, DF, Smooth, InBetween };
-  enum PCCVideoType   { OccupancyMap = 0, Geometry,  GeometryD0, GeometryD1, GeometryMP, Texture,  TextureMP, Other };
-  enum METADATATYPE {METADATA_GOF=0, METADATA_FRAME, METADATA_PATCH};
+  enum PCCEndianness    { PCC_BIG_ENDIAN = 0, PCC_LITTLE_ENDIAN = 1 };
+  enum ColorTransform   { COLOR_TRANSFORM_NONE = 0, COLOR_TRANSFORM_RGB_TO_YCBCR = 1 };
+  enum PCCAxis3         { PCC_AXIS3_UNDEFINED = -1, PCC_AXIS3_X = 0, PCC_AXIS3_Y = 1, PCC_AXIS3_Z = 2 };
+  enum PointType        { Unset = 0, D0, D1, DF, Smooth, InBetween };
+  enum PCCVideoType     { OccupancyMap = 0, Geometry,  GeometryD0, GeometryD1, GeometryMP, Texture,  TextureMP, Other };
+  enum METADATATYPE     { METADATA_GOF=0, METADATA_FRAME, METADATA_PATCH};
   enum PatchOrientation { DEFAULT = 0, SWAP = 1, ROT180 = 2, ROT270 = 3, MIRROR = 4, MROT90 = 5, MROT180 = 6, ROT90 = 7, MROT270 = 8 }; //switched SWAP with ROT90 positions
 
   const size_t IntermediateLayerIndex  = 100;
@@ -114,12 +115,12 @@ namespace pcc {
   static std::string toString( PCCVideoType type ) {
     switch( type ){
     case PCCVideoType::OccupancyMap: return std::string( "occupancy map video"          ); break;
-    case PCCVideoType::Geometry    : return std::string( "geometry video"                ); break;
-    case PCCVideoType::GeometryD0  : return std::string( "geometry D0 video"             ); break;
-    case PCCVideoType::GeometryD1  : return std::string( "geometry D1 video"             ); break;
-    case PCCVideoType::GeometryMP  : return std::string( " missed points geometry video" ); break;
-    case PCCVideoType::Texture     : return std::string( "texture video "                ); break;
-    case PCCVideoType::TextureMP   : return std::string( " missed points texture video"  ); break;
+    case PCCVideoType::Geometry    : return std::string( "geometry video"               ); break;
+    case PCCVideoType::GeometryD0  : return std::string( "geometry D0 video"            ); break;
+    case PCCVideoType::GeometryD1  : return std::string( "geometry D1 video"            ); break;
+    case PCCVideoType::GeometryMP  : return std::string( "missed points geometry video" ); break;
+    case PCCVideoType::Texture     : return std::string( "texture video "               ); break;
+    case PCCVideoType::TextureMP   : return std::string( "missed points texture video"  ); break;
     }
     return std::string( "not supported" );
   }
@@ -213,7 +214,16 @@ namespace pcc {
     }
     return count;
   }
-  
+
+  template<typename... Args>
+  std::string string_format(const char* pFormat, Args... eArgs ) {
+    size_t iSize = snprintf( NULL, 0, pFormat, eArgs... );
+    std::string eBuffer;
+    eBuffer.reserve( iSize + 1 );
+    eBuffer.resize( iSize );
+    snprintf( &eBuffer[0], iSize + 1, pFormat, eArgs... );
+    return eBuffer;
+  }
 }
 
 #endif /* PCCTMC2Common_h */

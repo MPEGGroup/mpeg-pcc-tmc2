@@ -1,4 +1,3 @@
-
 /* The copyright in this software is being made available under the BSD
  * License, included below. This software may be subject to other third party
  * and contributor rights, including patent rights, and no such rights are
@@ -58,6 +57,7 @@ typedef pcc::PCCVideo<uint16_t, 3> PCCVideoGeometry;
 template <typename T, size_t N>
 class PCCImage;
 typedef pcc::PCCImage<uint16_t, 3> PCCImageGeometry;
+typedef pcc::PCCImage<uint8_t,  3> PCCImageOccupancyMap;
 struct GeneratePointCloudParameters {
   size_t             occupancyResolution_;
   size_t             occupancyPrecision_;
@@ -113,7 +113,37 @@ class PCCCodec {
   
   void generateMissedPointsTexturefromVideo(PCCContext& context, PCCGroupOfFrames& reconstructs);
 
+
+
+  void generateOccupancyMap( PCCContext &context, const size_t occupancyPrecision );
+
  protected:
+
+
+  void generateOccupancyMap( PCCFrameContext &frame,
+                             const PCCImageOccupancyMap &videoFrame,
+                             const size_t occupancyPrecision );
+
+  void generateBlockToPatchFromOccupancyMap( PCCContext &context,
+                                             const bool losslessGeo,
+                                             const bool lossyMissedPointsPatch,
+                                             const size_t testLevelOfDetail,
+                                             const size_t occupancyResolution );
+
+  void generateBlockToPatchFromOccupancyMap( PCCFrameContext &frame,
+                                             size_t frameIndex,
+                                             const size_t occupancyResolution );
+
+  void generateBlockToPatchFromBoundaryBox( PCCContext &context,
+                                            const bool losslessGeo,
+                                            const bool lossyMissedPointsPatch,
+                                            const size_t testLevelOfDetail,
+                                            const size_t occupancyResolution );
+
+  void generateBlockToPatchFromBoundaryBox( PCCFrameContext &frame,
+                                            size_t frameIndex,
+                                            const size_t occupancyResolution );
+
   int getDeltaNeighbors( const PCCImageGeometry& frame,
                          const PCCPatch& patch,
                          const int xOrg,

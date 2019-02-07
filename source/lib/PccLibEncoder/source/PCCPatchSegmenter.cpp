@@ -503,9 +503,8 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3 &points,
       patch.setViewId() = clusterIndex;
       patch.setBestMatchIdx() = -1;
 
-	  patch.getPreGPAPatchData().initialize();
-	  patch.getCurGPAPatchData(). initialize();
-
+      patch.getPreGPAPatchData().initialize();
+      patch.getCurGPAPatchData(). initialize();
 
       if (sixDirection) {
         if (clusterIndex <= 2) {
@@ -937,7 +936,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3 &points,
                   }
                   patch.getDepthEnhancedDeltaD()[p] |= 1 << (deltaD - 1);
                   if ((!sixDirection && (comp_depth0 - patch.getDepthEnhancedDeltaD()[p]) < 0) ||
-                      (sixDirection && (comp_depth0 + patch.getDepthEnhancedDeltaD()[p]) > 1023))   {
+                      (sixDirection && (comp_depth0 + patch.getDepthEnhancedDeltaD()[p]) > 1023)) {
                     patch.getDepthEnhancedDeltaD()[p] = oldEDDCode;
                     std::cout << "(D0 + EDD-Code) > 1023. Data overflow observed (assume using 10bit coding). Temporary solution: the corresponding inbetween or Depth1 point will be regarded as missing point. To be improved if this happens a lot...\n";
                   }

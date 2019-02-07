@@ -266,11 +266,6 @@ bool parseParameters( int argc, char *argv[],
      encoderParams.occupancyMapQP_,
      "QP for compression of occupancy map video")
 
-    ("useOccupancyMapVideo",
-     encoderParams.useOccupancyMapVideo_,
-     encoderParams.useOccupancyMapVideo_,
-     "compress occupancy map with video codec")
-
     // smoothing
     // NB: various parameters are of the form n * occupancyPrecision**2
 
@@ -479,11 +474,11 @@ bool parseParameters( int argc, char *argv[],
     // patch sampling resolution
     ("testLevelOfDetail",
      encoderParams.testLevelOfDetail_,
-     (size_t)0,
+     encoderParams.testLevelOfDetail_,
      "Force non-zero level of detail for testing")
     ("testLevelOfDetailSignaling",
      encoderParams.testLevelOfDetailSignaling_,
-     (size_t)0,
+     encoderParams.testLevelOfDetailSignaling_,
      "Test the patch resolution signaling with pseudo-random values")
 
     ("groupDilation",
@@ -558,7 +553,7 @@ bool parseParameters( int argc, char *argv[],
       encoderParams.textureBGFill_,
       "Selects the background filling operation for texture only (0: anchor's dilation, 1(default): push-pull algorithm)\n")
 
-	("improveEDD",
+    ("improveEDD",
       encoderParams.improveEDD_,
       encoderParams.improveEDD_,
       "Code EDD code in the occupancy map\n")
@@ -578,7 +573,7 @@ bool parseParameters( int argc, char *argv[],
        encoderParams.lossyMppGeoQP_,
        encoderParams.lossyMppGeoQP_,
        "QP value for geometry in lossy missed points patch (default=4)\n")
-	   
+
     ("globalPatchAllocation",
       encoderParams.globalPatchAllocation_,
       encoderParams.globalPatchAllocation_,
@@ -680,14 +675,13 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
     context.setIndex( contextIndex );
     context.setLosslessGeo444(encoderParams.losslessGeo444_);
     context.setLossless(encoderParams.losslessGeo_);
-    context.setLosslessAtt(encoderParams.losslessTexture_);
+    context.setLosslessTexture(encoderParams.losslessTexture_);
     context.setMPGeoWidth(64);
     context.setMPAttWidth(64);
     context.setMPGeoHeight(0);
     context.setMPAttHeight(0);
     context.setEnhancedDeltaDepth(encoderParams.enhancedDeltaDepthCode_);
     context.setUseMissedPointsSeparateVideo(encoderParams.useMissedPointsSeparateVideo_);
-    context.setUseOccupancyMapVideo(encoderParams.useOccupancyMapVideo_);
     
     if (gofLevelMetadataEnabledFlags.getMetadataEnabled()) {
       // Place to get/set gof-level metadata.

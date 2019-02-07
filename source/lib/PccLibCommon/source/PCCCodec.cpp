@@ -1,4 +1,3 @@
-
 /* The copyright in this software is being made available under the BSD
  * License, included below. This software may be subject to other third party
  * and contributor rights, including patent rights, and no such rights are
@@ -44,7 +43,6 @@
 #include "PCCPatch.h"
 
 #include "PCCCodec.h"
-
 
 using namespace pcc;
 
@@ -453,39 +451,10 @@ void PCCCodec::generatePointCloud(PCCPointSet3& reconstruct, PCCFrameContext &fr
   bool lossyMpp = !params.losslessGeo_ && useAdditionalPointsPatch;
   PCCPointSet3 eddSavedPoints;
   size_t numEddSavedPoints = 0;
-  frame.getMissedPointsPatch().numEddSavedPoints = 0;  
+  frame.getMissedPointsPatch().numEddSavedPoints_ = 0;
 
   std::vector<size_t> vecEmptyBlocks;
   if (params.enhancedDeltaDepthCode_) {
-
-    //jkei[!!]there should be more intelligent way!
-    const size_t b2pWidth  = frame.getWidth() / params.occupancyResolution_;
-    const size_t b2pHeight = frame.getHeight() / params.occupancyResolution_;
-    
-    for (size_t patchIndex = 0; patchIndex < patches.size(); ++patchIndex) {
-      auto &patch = patches[patchIndex];
-      size_t nonZeroPixel=0;
-      for (size_t v0 = 0; v0 < patch.getSizeV0(); ++v0) {
-        for (size_t u0 = 0; u0 < patch.getSizeU0(); ++u0) {
-          const size_t blockIndex  = patch.patchBlock2CanvasBlock( u0, v0 ,b2pWidth, b2pHeight );
-          if(blockToPatch[blockIndex] != 0)
-          {
-            nonZeroPixel=0;
-            for (size_t v1 = 0; v1 < patch.getOccupancyResolution(); ++v1) {
-              const size_t v = v0 * patch.getOccupancyResolution() + v1;
-              for (size_t u1 = 0; u1 < patch.getOccupancyResolution(); ++u1) {
-                const size_t u = u0 * patch.getOccupancyResolution() + u1;
-                size_t x,y;
-                nonZeroPixel += (occupancyMap[patch.patch2Canvas(u,v,video.getWidth(),video.getHeight(),x,y)] != 0);
-              }//u1
-            }//v1
-            if(nonZeroPixel==0)
-              blockToPatch[blockIndex] =0;
-          }
-        }//u0
-      }//v0
-    }//patch
-    
     for (size_t i = 0; i < blockToPatch.size(); i++){
       if (blockToPatch[i] == 0){
         vecEmptyBlocks.push_back(i);
@@ -559,34 +528,34 @@ void PCCCodec::generatePointCloud(PCCPointSet3& reconstruct, PCCFrameContext &fr
 
                 uint16_t eddCode = 0;
                 if (!params.absoluteD1_) {
-				  if(!params.improveEDD_) {
-                  const auto &frame1 = videoD1.getFrame(shift);
-                  eddCode = frame1.getValue(0, x, y);
-                } else {
-					std::cout << "EDD improvement is not implemented for absoluteD1=0" << std::endl;
-				  }
+                  if(!params.improveEDD_) {
+                    const auto &frame1 = videoD1.getFrame(shift);
+                    eddCode = frame1.getValue(0, x, y);
+                  } else {
+                    std::cout << "EDD improvement is not implemented for absoluteD1=0" << std::endl;
+                  }
                 } else {
                   const auto &frame0 = video.getFrame(shift);
                   const auto &frame1 = video.getFrame(shift + 1);
                   //eddCode = frame1.getValue(0, x, y) - frame0.getValue(0, x, y);
-				  if (!params.improveEDD_)
-                  eddCode = (frame1.getValue(0, x, y) > frame0.getValue(0, x, y)) ? (frame1.getValue(0, x, y) - frame0.getValue(0, x, y)) : 0;
-				  else {
-					uint16_t diff = frame1.getValue(0, x, y) - frame0.getValue(0, x, y);
-					assert(diff >= 0);
-					// Convert occupancy map to eddCode
-					if (diff == 0) {
-					  eddCode = 0;
-                }
-					else if (diff == 1) {
-					  eddCode = 1;
-					}
-					else {
-					  uint16_t bits = diff - 1;
-					  uint16_t symbol = (1 << bits) - occupancyMap[patch.patch2Canvas(u,v,imageWidth,imageHeight,x,y)];
-					  eddCode = symbol | (1 << bits);
-					}
-				  }
+                  if (!params.improveEDD_)
+                    eddCode = (frame1.getValue(0, x, y) > frame0.getValue(0, x, y)) ? (frame1.getValue(0, x, y) - frame0.getValue(0, x, y)) : 0;
+                  else {
+                    uint16_t diff = frame1.getValue(0, x, y) - frame0.getValue(0, x, y);
+                    assert(diff >= 0);
+                    // Convert occupancy map to eddCode
+                    if (diff == 0) {
+                      eddCode = 0;
+                    }
+                    else if (diff == 1) {
+                      eddCode = 1;
+                    }
+                    else {
+                      uint16_t bits = diff - 1;
+                      uint16_t symbol = (1 << bits) - occupancyMap[patch.patch2Canvas(u,v,imageWidth,imageHeight,x,y)];
+                      eddCode = symbol | (1 << bits);
+                    }
+                  }
                 }
                 PCCPoint3D  point1(point0);
                 if (eddCode == 0) {
@@ -720,7 +689,7 @@ void PCCCodec::generatePointCloud(PCCPointSet3& reconstruct, PCCFrameContext &fr
       missedPointsColor[2] = 255;
       if (frame.getEnhancedDeltaDepth()) {
         //add Edd to reconstruct
-        frame.getMissedPointsPatch().numEddSavedPoints = numEddSavedPoints;
+        frame.getMissedPointsPatch().numEddSavedPoints_ = numEddSavedPoints;
         assert(eddSavedPoints.getPointCount() == numEddSavedPoints);
         size_t pointIndex1;
         for (size_t eddPoint = 0; eddPoint < numEddSavedPoints; eddPoint++) {
@@ -736,9 +705,9 @@ void PCCCodec::generatePointCloud(PCCPointSet3& reconstruct, PCCFrameContext &fr
       if (params.losslessGeo444_) {
         for (int i = 0; i < missedPointsPatch.size(); i++) {
           PCCPoint3D point0;
-          point0[0] = missedPointsPatch.x[i];
-          point0[1] = missedPointsPatch.y[i];
-          point0[2] = missedPointsPatch.z[i];
+          point0[0] = missedPointsPatch.x_[i];
+          point0[1] = missedPointsPatch.y_[i];
+          point0[2] = missedPointsPatch.z_[i];
           const size_t pointIndex = reconstruct.addPoint(point0);
           reconstruct.setColor(pointIndex, missedPointsColor);
           partition.push_back(uint32_t(patchIndex)); 
@@ -748,20 +717,20 @@ void PCCCodec::generatePointCloud(PCCPointSet3& reconstruct, PCCFrameContext &fr
         size_t sizeofMPs = (missedPointsPatch.size()) / 3;
         for (int i = 0; i < sizeofMPs; i++) {
           PCCPoint3D point0;
-          point0[0] = missedPointsPatch.x[i];
-          point0[1] = missedPointsPatch.x[i + sizeofMPs];
-          point0[2] = missedPointsPatch.x[i + 2 * sizeofMPs];
+          point0[0] = missedPointsPatch.x_[i];
+          point0[1] = missedPointsPatch.x_[i + sizeofMPs];
+          point0[2] = missedPointsPatch.x_[i + 2 * sizeofMPs];
           const size_t pointIndex = reconstruct.addPoint(point0);
           reconstruct.setColor(pointIndex, missedPointsColor);
           partition.push_back(uint32_t(patchIndex)); 
         }
       } //fi losslessGeo444_
 
-    if (frame.getLosslessAtt() || lossyMpp) {
+    if (frame.getLosslessTexture() || lossyMpp) {
       //secure the size of rgb in missedpointpatch
       auto& missedPointsPatch = frame.getMissedPointsPatch();
       size_t numofMPcolor = (params.losslessGeo444_) ? missedPointsPatch.size() : missedPointsPatch.size() / 3;
-      size_t numofEddSaved = frame.getEnhancedDeltaDepth() ? missedPointsPatch.numEddSavedPoints : 0;
+      size_t numofEddSaved = frame.getEnhancedDeltaDepth() ? missedPointsPatch.numEddSavedPoints_ : 0;
       missedPointsPatch.resizecolor(numofMPcolor + numofEddSaved);
       missedPointsPatch.setMPnumbercolor(numofMPcolor + numofEddSaved);
       assert(numEddSavedPoints == numofEddSaved);
@@ -774,29 +743,29 @@ void PCCCodec::generatePointCloud(PCCPointSet3& reconstruct, PCCFrameContext &fr
     missedPointsColor[0] = 0;
     missedPointsColor[1] = 255;
     missedPointsColor[2] = 255;
-    size_t numMissedPts = missedPointsPatch.numMissedPts;
+    size_t numMissedPts = missedPointsPatch.numMissedPts_;
     size_t occupancySizeU = blockToPatchWidth;
-    size_t ores = missedPointsPatch.occupancyResolution;
+    size_t ores = missedPointsPatch.occupancyResolution_;
     size_t factor = params.losslessGeo444_ ? 1 : 3;
     size_t missedPointsPatchBlocks =
       static_cast<size_t>(ceil(double(numMissedPts * factor) / (ores * ores)));
-    missedPointsPatch.sizeV0 =
+    missedPointsPatch.sizeV0_ =
       static_cast<size_t>(ceil(double(missedPointsPatchBlocks) / occupancySizeU));
-    missedPointsPatch.sizeU0 =
-      static_cast<size_t>(ceil(double(missedPointsPatchBlocks) / missedPointsPatch.sizeV0));
-    missedPointsPatch.sizeV = missedPointsPatch.sizeV0 * ores;
-    missedPointsPatch.sizeU =
-      static_cast<size_t>(ceil(double(numMissedPts * factor) / missedPointsPatch.sizeV));
+    missedPointsPatch.sizeU0_ =
+      static_cast<size_t>(ceil(double(missedPointsPatchBlocks) / missedPointsPatch.sizeV0_));
+    missedPointsPatch.sizeV_ = missedPointsPatch.sizeV0_ * ores;
+    missedPointsPatch.sizeU_ =
+      static_cast<size_t>(ceil(double(numMissedPts * factor) / missedPointsPatch.sizeV_));
 
     if (params.losslessGeo_ && params.losslessGeo444_) {
-      for (size_t v0 = 0; v0 < missedPointsPatch.sizeV0; ++v0) {
-        for (size_t u0 = 0; u0 < missedPointsPatch.sizeU0; ++u0) {
-          for (size_t v1 = 0; v1 < missedPointsPatch.occupancyResolution; ++v1) {
-            const size_t v = v0 * missedPointsPatch.occupancyResolution + v1;
-            for (size_t u1 = 0; u1 < missedPointsPatch.occupancyResolution; ++u1) {
-              const size_t u = u0 * missedPointsPatch.occupancyResolution + u1;
-              const size_t x = missedPointsPatch.u0 * missedPointsPatch.occupancyResolution + u;
-              const size_t y = missedPointsPatch.v0 * missedPointsPatch.occupancyResolution + v;
+      for (size_t v0 = 0; v0 < missedPointsPatch.sizeV0_; ++v0) {
+        for (size_t u0 = 0; u0 < missedPointsPatch.sizeU0_; ++u0) {
+          for (size_t v1 = 0; v1 < missedPointsPatch.occupancyResolution_; ++v1) {
+            const size_t v = v0 * missedPointsPatch.occupancyResolution_ + v1;
+            for (size_t u1 = 0; u1 < missedPointsPatch.occupancyResolution_; ++u1) {
+              const size_t u = u0 * missedPointsPatch.occupancyResolution_ + u1;
+              const size_t x = missedPointsPatch.u0_ * missedPointsPatch.occupancyResolution_ + u;
+              const size_t y = missedPointsPatch.v0_ * missedPointsPatch.occupancyResolution_ + v;
               const bool occupancy = occupancyMap[y * imageWidth + x] != 0;
               if (!occupancy) {
                 continue;
@@ -819,10 +788,10 @@ void PCCCodec::generatePointCloud(PCCPointSet3& reconstruct, PCCFrameContext &fr
       std::vector<PCCPoint3D> missedPoints;
       missedPoints.resize(numMissedPts);
       size_t numMissedPointsAdded{ 0 };
-      const size_t v0 = missedPointsPatch.v0 * missedPointsPatch.occupancyResolution;
-      const size_t u0 = missedPointsPatch.u0 * missedPointsPatch.occupancyResolution;
-      for (size_t v = 0; v < missedPointsPatch.sizeV; ++v) {
-        for (size_t u = 0; u < missedPointsPatch.sizeU; ++u) {
+      const size_t v0 = missedPointsPatch.v0_ * missedPointsPatch.occupancyResolution_;
+      const size_t u0 = missedPointsPatch.u0_ * missedPointsPatch.occupancyResolution_;
+      for (size_t v = 0; v < missedPointsPatch.sizeV_; ++v) {
+        for (size_t u = 0; u < missedPointsPatch.sizeU_; ++u) {
           const size_t x = (u0 + u);
           const size_t y = (v0 + v);
             if (numMissedPointsAdded < numMissedPts) {
@@ -840,8 +809,8 @@ void PCCCodec::generatePointCloud(PCCPointSet3& reconstruct, PCCFrameContext &fr
           }//u
         } //v
         size_t counter{ 0 };
-        for (size_t v = 0; v < missedPointsPatch.sizeV; ++v) {
-          for (size_t u = 0; u < missedPointsPatch.sizeU; ++u) {
+        for (size_t v = 0; v < missedPointsPatch.sizeV_; ++v) {
+          for (size_t u = 0; u < missedPointsPatch.sizeU_; ++u) {
             const size_t x = (u0 + u);
             const size_t y = (v0 + v);
             if (counter < numMissedPts) {
@@ -985,10 +954,12 @@ void PCCCodec::smoothPointCloudGrid(PCCPointSet3& reconstruct,
         for (size_t k = 0; k < 3; ++k) {
           centroid[k] = double(int64_t(centroid[k]));
         }
-        // reconstruct[c] = centroid;
         reconstruct[c][0] = centroid[0];
         reconstruct[c][1] = centroid[1];
         reconstruct[c][2] = centroid[2];
+        if (PCC_SAVE_POINT_TYPE == 1) {
+          reconstruct.setType( c, PointType::Smooth );
+        }
       }
     }
   }
@@ -1139,7 +1110,6 @@ void PCCCodec::createSpecificLayerReconstruct(const PCCPointSet3&               
       int index = subReconstruct.addPoint(reconstruct[i]);
       subPartition.push_back(partition[i]);
       subReconstructIndex.push_back(i);
-
     }
   }
   subReconstruct.addColors();
@@ -1190,8 +1160,6 @@ bool PCCCodec::colorPointCloud(PCCPointSet3& reconstruct, PCCFrameContext& frame
                                const PCCVideoTexture &video, const bool noAttributes,
                                const GeneratePointCloudParameters& params,
                                const size_t frameCount) {
-
-  printf("Start colorPointCloud : %zu\n", frame.getIndex()); fflush(stdout);
   if (noAttributes) {
     for (auto& color : reconstruct.getColors()) {
       for (size_t c = 0; c < 3; ++c) {
@@ -1202,14 +1170,14 @@ bool PCCCodec::colorPointCloud(PCCPointSet3& reconstruct, PCCFrameContext& frame
     auto& pointToPixel = frame.getPointToPixel();
     auto& color = reconstruct.getColors();
     bool useMissedPointsSeparateVideo = frame.getUseMissedPointsSeparateVideo();
-    bool losslessAtt = frame.getLosslessAtt();
+    bool losslessAtt = frame.getLosslessTexture();
     bool losslessGeo = frame.getLosslessGeo();
     bool useAdditionalPointsPatch = frame.getUseAdditionalPointsPatch();
     bool lossyMissedPointsPatch = ! losslessGeo && useAdditionalPointsPatch; 
     auto& missedPointsPatch = frame.getMissedPointsPatch();
     size_t numOfMPColor = missedPointsPatch.getMPnumbercolor();
     size_t numOfMPGeos = missedPointsPatch.getMPnumber();
-    size_t numEddSavedPoints = missedPointsPatch.numEddSavedPoints;
+    size_t numEddSavedPoints = missedPointsPatch.numEddSavedPoints_;
     size_t pointCount = reconstruct.getPointCount();
     if ((losslessAtt || lossyMissedPointsPatch) && useMissedPointsSeparateVideo) {
       pointCount = reconstruct.getPointCount() - numOfMPGeos - numEddSavedPoints;
@@ -1272,16 +1240,16 @@ bool PCCCodec::colorPointCloud(PCCPointSet3& reconstruct, PCCFrameContext& frame
     if ((losslessAtt || lossyMissedPointsPatch) && useMissedPointsSeparateVideo) {
       if (frame.getEnhancedDeltaDepth()) {
         for (size_t i = 0; i < numEddSavedPoints; ++i) {
-          color[pointCount + i][0] = (uint8_t)missedPointsPatch.r[i];
-          color[pointCount + i][1] = (uint8_t)missedPointsPatch.g[i];
-          color[pointCount + i][2] = (uint8_t)missedPointsPatch.b[i];
+          color[pointCount + i][0] = (uint8_t)missedPointsPatch.r_[i];
+          color[pointCount + i][1] = (uint8_t)missedPointsPatch.g_[i];
+          color[pointCount + i][2] = (uint8_t)missedPointsPatch.b_[i];
         }
       }
       //miseed points
       for (size_t i = 0; i < numOfMPGeos; ++i) {
-        color[numEddSavedPoints + pointCount + i][0] = (uint8_t)missedPointsPatch.r[numEddSavedPoints + i];
-        color[numEddSavedPoints + pointCount + i][1] = (uint8_t)missedPointsPatch.g[numEddSavedPoints + i];
-        color[numEddSavedPoints + pointCount + i][2] = (uint8_t)missedPointsPatch.b[numEddSavedPoints + i];
+        color[numEddSavedPoints + pointCount + i][0] = (uint8_t)missedPointsPatch.r_[numEddSavedPoints + i];
+        color[numEddSavedPoints + pointCount + i][1] = (uint8_t)missedPointsPatch.g_[numEddSavedPoints + i];
+        color[numEddSavedPoints + pointCount + i][2] = (uint8_t)missedPointsPatch.b_[numEddSavedPoints + i];
       }
     }
   } //noAtt
@@ -1289,7 +1257,7 @@ bool PCCCodec::colorPointCloud(PCCPointSet3& reconstruct, PCCFrameContext& frame
 }
 
 void PCCCodec::generateMissedPointsGeometryfromVideo(PCCContext& context, PCCGroupOfFrames& reconstructs) {
-  const size_t gofSize = context.getGofSize();
+  const size_t gofSize = context.size();
   auto& videoMPsGeometry = context.getVideoMPsGeometry();
   videoMPsGeometry.resize(gofSize);
   for (auto &framecontext : context.getFrames()) {
@@ -1302,7 +1270,10 @@ void PCCCodec::generateMissedPointsGeometryfromVideo(PCCContext& context, PCCGro
   std::cout << "MissedPoints Geometry [done]" << std::endl;
 }
 
-void PCCCodec::generateMPsGeometryfromImage(PCCContext& context, PCCFrameContext& frame, PCCGroupOfFrames& reconstructs, size_t frameIndex) {
+void PCCCodec::generateMPsGeometryfromImage( PCCContext& context,
+                                             PCCFrameContext& frame,
+                                             PCCGroupOfFrames& reconstructs,
+                                             size_t frameIndex) {
   auto& videoMPsGeometry = context.getVideoMPsGeometry();
   auto &image = videoMPsGeometry.getFrame(frameIndex);
   auto& missedPointsPatch = frame.getMissedPointsPatch();
@@ -1318,32 +1289,36 @@ void PCCCodec::generateMPsGeometryfromImage(PCCContext& context, PCCFrameContext
 
   for (size_t i = 0; i<numofMPs; i++) {
     if (frame.getLosslessGeo444()) {
-      missedPointsPatch.x[i] = image.getValue(0, i%width, i / width);
-      missedPointsPatch.y[i] = image.getValue(0, i%width, i / width);
-      missedPointsPatch.z[i] = image.getValue(0, i%width, i / width);
+      missedPointsPatch.x_[i] = image.getValue(0, i%width, i / width);
+      missedPointsPatch.y_[i] = image.getValue(0, i%width, i / width);
+      missedPointsPatch.z_[i] = image.getValue(0, i%width, i / width);
     }
     else {
-      missedPointsPatch.x[i] = image.getValue(0, i%width, i / width);
-      missedPointsPatch.x[numofMPs + i] = image.getValue(0, (numofMPs + i) % width, (numofMPs + i) / width);
-      missedPointsPatch.x[2 * numofMPs + i] = image.getValue(0, (2 * numofMPs + i) % width, (2 * numofMPs + i) / width);
+      missedPointsPatch.x_[i               ] = image.getValue(0, i%width, i / width);
+      missedPointsPatch.x_[numofMPs + i    ] = image.getValue(0, (numofMPs + i) % width, (numofMPs + i) / width);
+      missedPointsPatch.x_[2 * numofMPs + i] = image.getValue(0, (2 * numofMPs + i) % width, (2 * numofMPs + i) / width);
     }
   }
 }
 
 void PCCCodec::generateMissedPointsTexturefromVideo(PCCContext& context, PCCGroupOfFrames& reconstructs) {
-  const size_t gofSize = context.getGofSize();
+  const size_t gofSize = context.size();
   auto& videoMPsTexture = context.getVideoMPsTexture();
   videoMPsTexture.resize(gofSize);
   for (auto &framecontext : context.getFrames()) {
     const size_t shift = framecontext.getIndex(); //
-    framecontext.setLosslessAtt(context.getLosslessAtt());
+    framecontext.setLosslessTexture(context.getLosslessTexture());
     generateMPsTexturefromImage(context, framecontext, reconstructs, shift);
-    std::cout << "generate Missed Points (Texture) : frame " << shift << ", # of Missed Points Texture : " << framecontext.getMissedPointsPatch().size() << std::endl;
+    std::cout << "generate Missed Points (Texture) : frame " << shift << ", # of Missed Points Texture : "
+        << framecontext.getMissedPointsPatch().size() << std::endl;
   }
   std::cout << "MissedPoints Texture [done]" << std::endl;
 }
 
-void PCCCodec::generateMPsTexturefromImage(PCCContext& context, PCCFrameContext& frame, PCCGroupOfFrames& reconstructs, size_t frameIndex) {
+void PCCCodec::generateMPsTexturefromImage( PCCContext& context,
+                                            PCCFrameContext& frame,
+                                            PCCGroupOfFrames& reconstructs,
+                                            size_t frameIndex) {
   auto& videoMPsTexture = context.getVideoMPsTexture();
   auto &image = videoMPsTexture.getFrame(frameIndex);
   auto& missedPointsPatch = frame.getMissedPointsPatch();
@@ -1351,8 +1326,160 @@ void PCCCodec::generateMPsTexturefromImage(PCCContext& context, PCCFrameContext&
   size_t numofMPs = missedPointsPatch.getMPnumbercolor();
   for (size_t i = 0; i<numofMPs; i++) {
     assert(i / width<image.getHeight());
-    missedPointsPatch.r[i] = image.getValue(0, i%width, i / width);
-    missedPointsPatch.g[i] = image.getValue(1, i%width, i / width);
-    missedPointsPatch.b[i] = image.getValue(2, i%width, i / width);
+    missedPointsPatch.r_[i] = image.getValue(0, i%width, i / width);
+    missedPointsPatch.g_[i] = image.getValue(1, i%width, i / width);
+    missedPointsPatch.b_[i] = image.getValue(2, i%width, i / width);
   }
 }
+
+void PCCCodec::generateOccupancyMap( PCCContext& context, const size_t occupancyPrecision ) {
+  size_t sizeFrames = context.getFrames().size();
+  for( auto& frame : context.getFrames() ){
+    generateOccupancyMap( frame, context.getVideoOccupancyMap().getFrame( frame.getIndex() ), occupancyPrecision );
+  }
+}
+
+void PCCCodec::generateOccupancyMap( PCCFrameContext& frame,
+                                     const PCCImageOccupancyMap &videoFrame,
+                                     const size_t occupancyPrecision ) {
+  auto& width  = frame.getWidth();
+  auto& height = frame.getHeight();
+  auto& occupancyMap = frame.getOccupancyMap();
+  occupancyMap.resize( width * height, 0 );
+  for (size_t v=0; v<height; ++v) {
+    for (size_t u=0; u<width; ++u) {
+      occupancyMap[v*width+u] = videoFrame.getValue(0, u/occupancyPrecision, v/occupancyPrecision);
+    }
+  }
+}
+
+void PCCCodec::generateBlockToPatchFromOccupancyMap( PCCContext &context,
+                                                     const bool losslessGeo,
+                                                     const bool lossyMissedPointsPatch,
+                                                     const size_t testLevelOfDetail,
+                                                     const size_t occupancyResolution ){
+  size_t sizeFrames = context.getFrames().size();
+  for( int i = 0; i < sizeFrames; i++ ){
+    PCCFrameContext &frame = context.getFrames()[i];
+    if (( losslessGeo  || lossyMissedPointsPatch ) && !context.getUseMissedPointsSeparateVideo()) {
+      auto& patches = frame.getPatches();
+      auto& missedPointsPatch = frame.getMissedPointsPatch();
+      const size_t patchIndex = patches.size();
+      patches.resize(patchIndex + 1);
+      PCCPatch &dummyPatch = patches[patchIndex];
+      dummyPatch.getIndex() = patchIndex;
+      dummyPatch.getU0() = missedPointsPatch.u0_;
+      dummyPatch.getV0() = missedPointsPatch.v0_;
+      dummyPatch.getSizeU0() = missedPointsPatch.sizeU0_;
+      dummyPatch.getSizeV0() = missedPointsPatch.sizeV0_;
+      dummyPatch.getU1() = 0;
+      dummyPatch.getV1() = 0;
+      dummyPatch.getD1() = 0;
+      dummyPatch.getNormalAxis() = 0;
+      dummyPatch.getTangentAxis() = 1;
+      dummyPatch.getBitangentAxis() = 2;
+      dummyPatch.getOccupancyResolution() = missedPointsPatch.occupancyResolution_;
+      dummyPatch.getOccupancy() = missedPointsPatch.occupancy_;
+      dummyPatch.getLod() = testLevelOfDetail;
+      dummyPatch.setBestMatchIdx() = -1;
+      dummyPatch.getPatchOrientation() = 0;
+      generateBlockToPatchFromOccupancyMap( frame, i, occupancyResolution );
+      patches.pop_back();
+    } else {
+      generateBlockToPatchFromOccupancyMap( frame, i, occupancyResolution );
+    }
+  }
+}
+
+void PCCCodec::generateBlockToPatchFromOccupancyMap( PCCFrameContext &frame, size_t frameIndex, const size_t occupancyResolution ){
+  auto& patches = frame.getPatches();
+  const size_t patchCount = patches.size();
+  const size_t blockToPatchWidth = frame.getWidth() / occupancyResolution;
+  const size_t blockToPatchHeight = frame.getHeight() / occupancyResolution;
+  const size_t blockCount = blockToPatchWidth * blockToPatchHeight;
+  auto& blockToPatch = frame.getBlockToPatch();
+  const auto& occupancyMap = frame.getOccupancyMap();
+  blockToPatch.resize(blockCount );
+  std::fill( blockToPatch.begin(), blockToPatch.end(), 0 );
+  for (size_t patchIndex = 0; patchIndex < patchCount; ++patchIndex) {
+    auto &patch = patches[patchIndex];
+    size_t nonZeroPixel=0;
+    for (size_t v0 = 0; v0 < patch.getSizeV0(); ++v0) {
+      for (size_t u0 = 0; u0 < patch.getSizeU0(); ++u0) {
+        const size_t blockIndex  = patch.patchBlock2CanvasBlock( u0, v0 ,blockToPatchWidth, blockToPatchHeight );
+        nonZeroPixel=0;
+        for (size_t v1 = 0; v1 < patch.getOccupancyResolution(); ++v1) {
+          const size_t v = v0 * patch.getOccupancyResolution() + v1;
+          for (size_t u1 = 0; u1 < patch.getOccupancyResolution(); ++u1) {
+            const size_t u = u0 * patch.getOccupancyResolution() + u1;
+            size_t x,y;
+            nonZeroPixel += (occupancyMap[patch.patch2Canvas(u,v,frame.getWidth(),frame.getHeight(),x,y)] != 0);
+          }//u1
+        }//v1
+        if( nonZeroPixel > 0 ){
+          blockToPatch[blockIndex] = patchIndex + 1;
+        }
+      }//u0
+    }//v0
+  }//patch
+}
+
+void PCCCodec::generateBlockToPatchFromBoundaryBox( PCCContext &context,
+                                                    const bool losslessGeo,
+                                                    const bool lossyMissedPointsPatch,
+                                                    const size_t testLevelOfDetail,
+                                                    const size_t occupancyResolution ){
+  size_t sizeFrames = context.getFrames().size();
+  for( int i = 0; i < sizeFrames; i++ ){
+    PCCFrameContext &frame = context.getFrames()[i];
+    if (( losslessGeo  || lossyMissedPointsPatch ) && !context.getUseMissedPointsSeparateVideo()) {
+      auto& patches = frame.getPatches();
+      auto& missedPointsPatch = frame.getMissedPointsPatch();
+      const size_t patchIndex = patches.size();
+      patches.resize(patchIndex + 1);
+      PCCPatch &dummyPatch = patches[patchIndex];
+      dummyPatch.getIndex() = patchIndex;
+      dummyPatch.getU0() = missedPointsPatch.u0_;
+      dummyPatch.getV0() = missedPointsPatch.v0_;
+      dummyPatch.getSizeU0() = missedPointsPatch.sizeU0_;
+      dummyPatch.getSizeV0() = missedPointsPatch.sizeV0_;
+      dummyPatch.getU1() = 0;
+      dummyPatch.getV1() = 0;
+      dummyPatch.getD1() = 0;
+      dummyPatch.getNormalAxis() = 0;
+      dummyPatch.getTangentAxis() = 1;
+      dummyPatch.getBitangentAxis() = 2;
+      dummyPatch.getOccupancyResolution() = missedPointsPatch.occupancyResolution_;
+      dummyPatch.getOccupancy() = missedPointsPatch.occupancy_;
+      dummyPatch.getLod() = testLevelOfDetail;
+      dummyPatch.setBestMatchIdx() = -1;
+      dummyPatch.getPatchOrientation() = 0;
+      generateBlockToPatchFromBoundaryBox( frame, i, occupancyResolution );
+      patches.pop_back();
+    } else {
+      generateBlockToPatchFromBoundaryBox( frame, i, occupancyResolution );
+    }
+  }
+}
+
+void PCCCodec::generateBlockToPatchFromBoundaryBox( PCCFrameContext &frame, size_t frameIndex, const size_t occupancyResolution ){
+  auto& patches = frame.getPatches();
+  const size_t patchCount = patches.size();
+  const size_t blockToPatchWidth = frame.getWidth() / occupancyResolution;
+  const size_t blockToPatchHeight = frame.getHeight() / occupancyResolution;
+  const size_t blockCount = blockToPatchWidth * blockToPatchHeight;
+  auto& blockToPatch = frame.getBlockToPatch();
+  const auto& occupancyMap = frame.getOccupancyMap();
+  blockToPatch.resize( blockCount );
+  std::fill( blockToPatch.begin(), blockToPatch.end(), 0 );
+  for (size_t patchIndex = 0; patchIndex < patchCount; ++patchIndex) {
+    auto &patch = patches[patchIndex];
+    for (size_t v0 = 0; v0 < patch.getSizeV0(); ++v0) {
+      for (size_t u0 = 0; u0 < patch.getSizeU0(); ++u0) {
+        const size_t blockIndex  = patch.patchBlock2CanvasBlock( u0, v0 ,blockToPatchWidth, blockToPatchHeight );
+        blockToPatch[blockIndex] = patchIndex + 1;
+      }//u0
+    }//v0
+  }//patch
+}
+

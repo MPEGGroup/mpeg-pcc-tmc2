@@ -1,4 +1,3 @@
-
 /* The copyright in this software is being made available under the BSD
  * License, included below. This software may be subject to other third party
  * and contributor rights, including patent rights, and no such rights are
@@ -38,6 +37,7 @@
 #include "PCCMath.h"
 
 namespace pcc {
+class PCCContext;
 
 class PCCEncoderParameters {
  public:
@@ -46,6 +46,8 @@ class PCCEncoderParameters {
   void print();
   bool check();
   void completePath();
+  void initializeContext( PCCContext& context );
+
 
   size_t              startFrameNumber_;
 
@@ -98,7 +100,6 @@ class PCCEncoderParameters {
   size_t              occupancyPrecision_;
   std::string         occupancyMapVideoEncoderConfig_;
   size_t              occupancyMapQP_;
-  bool                useOccupancyMapVideo_;
 
   // smoothing
   size_t              neighborCountSmoothing_;
@@ -181,11 +182,11 @@ class PCCEncoderParameters {
   bool                improveEDD_;
 
   // Lossy Missed Points Patch
-  bool lossyMissedPointsPatch_;          
-  double minNormSumOfInvDist4MPSelection_;
-  int lossyMppGeoQP_;
+  bool                lossyMissedPointsPatch_;
+  double              minNormSumOfInvDist4MPSelection_;
+  int                 lossyMppGeoQP_;
 
-  bool useAdditionalPointsPatch_;
+  bool                useAdditionalPointsPatch_;
   //GPA
   bool                globalPatchAllocation_;
 };
