@@ -52,6 +52,19 @@ class PCCVideoBitstream {
   void trace() {
     std::cout << toString( type_ ) << " ->" << naluSize() << " B " << std::endl;
   }
+
+  std::string getExtension() {
+    switch( type_ ) {
+      case PCCVideoType::OccupancyMap: return std::string( "occupancy"  ); break;
+      case PCCVideoType::Geometry    : return std::string( "geometry"   ); break;
+      case PCCVideoType::GeometryD0  : return std::string( "geometryD0" ); break;
+      case PCCVideoType::GeometryD1  : return std::string( "geometryD1" ); break;
+      case PCCVideoType::GeometryMP  : return std::string( "mps_geo"    ); break;
+      case PCCVideoType::Texture     : return std::string( "texture"    ); break;
+      case PCCVideoType::TextureMP   : return std::string( "mps_tex"    ); break;
+    }
+    return std::string( "unknown" );
+  }
  private:
   std::vector<uint8_t> data_;
   PCCVideoType type_;

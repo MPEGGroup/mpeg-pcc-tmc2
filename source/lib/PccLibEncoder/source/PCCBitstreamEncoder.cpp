@@ -524,7 +524,6 @@ void PCCBitstreamEncoder::compressPatchMetaDataM42195( PCCContext      &context,
   o3dgc::Adaptive_Data_Model minD1Model(3), neighborModel(3);
 
   //jkei[??] do we need to signal frame metadata here too?
-  std::cout<<"Frame Level Metadata42195 ->>> ";
   compressMetadata(frame.getFrameLevelMetadata(), arithmeticEncoder);
 
   const uint8_t bitCountNumPatches =
@@ -828,7 +827,6 @@ void PCCBitstreamEncoder::compressOccupancyMap( PCCContext      &context,
 
     bitstream.write<uint8_t>(bitCountLod);
 
-    std::cout<<"Frame Level Metadata ->>> ";
     compressMetadata(frame.getFrameLevelMetadata(), arithmeticEncoder);
 
     o3dgc::Adaptive_Bit_Model bModelDD;

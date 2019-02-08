@@ -544,7 +544,6 @@ void PCCBitstreamDecoder::decompressPatchMetaDataM42195( PCCContext& context,
   o3dgc::Adaptive_Bit_Model  interpolateModel, fillingModel, occupiedModel;
   o3dgc::Adaptive_Data_Model minD1Model(3), neighborModel(3);
 
-  std::cout<<"Frame Level Metadata42195 ->>> ";
   frame.getFrameLevelMetadata().setMetadataType(METADATA_FRAME);
   frame.getFrameLevelMetadata().setIndex(frame.getIndex());
   decompressMetadata(frame.getFrameLevelMetadata(), arithmeticDecoder);
@@ -853,7 +852,6 @@ void PCCBitstreamDecoder::decompressOccupancyMap( PCCContext &context,
                                   bitstream.buffer() + bitstream.size());
     arithmeticDecoder.start_decoder();
 
-    std::cout<<"Frame Level Metadata ->>> ";
     frame.getFrameLevelMetadata().setMetadataType(METADATA_FRAME);
     frame.getFrameLevelMetadata().setIndex(frame.getIndex());
     decompressMetadata(frame.getFrameLevelMetadata(), arithmeticDecoder);

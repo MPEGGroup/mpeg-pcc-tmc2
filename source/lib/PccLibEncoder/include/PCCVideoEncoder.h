@@ -52,52 +52,49 @@ class PCCVideoEncoder {
   ~PCCVideoEncoder();
   template <typename T>
   bool compress(PCCVideo<T, 3> &video,
-                const std::string &fileName,
+                const std::string &path,
                 const int qp,
                 PCCVideoBitstream &bitstream,
                 const std::string &encoderConfig,
                 const std::string &encoderPath,
                 PCCContext& contexts,
-                const std::string &colorSpaceConversionConfig = "",
+                const size_t nbyte                                   = 1,
+                const bool keepIntermediateFiles                     = false,
+                const bool use444CodecIo                             = false,
+                const bool patchColorSubsampling                     = false,
+                const bool use3dmv                                   = false,
+                const std::string &colorSpaceConversionConfig        = "",
                 const std::string &inverseColorSpaceConversionConfig = "",
-                const std::string &colorSpaceConversionPath = "",
-                const bool use444CodecIo = false,
-                const bool patchColorSubsampling = false,
-                const bool flagColorSmoothing = false,
-                const bool flagColorPreSmoothing = false,
-                const size_t nbyte = 1,
-                const bool keepIntermediateFiles = false, 
-                const bool use3dmv = false,
-                const std::string orgFileName = "" ){
-
+                const std::string &colorSpaceConversionPath          = "" ){
     auto& frames = video.getFrames();
     if (frames.empty()) {
       return false;
     }
-    const size_t width = frames[0].getWidth();
+    const size_t width  = frames[0].getWidth();
     const size_t height = frames[0].getHeight();
-    const size_t depth = nbyte == 1 ? 8 : 10;
+    const size_t depth  = nbyte == 1 ? 8 : 10;
     const size_t frameCount = video.getFrameCount();
     if (frames[0].getChannelCount() != 3) {
       return false;
     }
 
-    const std::string format = use444CodecIo ? "444" : "420";
+    const std::string type                 = bitstream.getExtension();
+    const std::string format               = use444CodecIo ? "444" : "420";
+    const std::string fileName             = path + type;
     const std::string binFileName          = fileName + ".bin";
-    const std::string blockToPatchFileName = orgFileName + "blockToPatch.txt";
-    const std::string occupancyMapFileName = orgFileName + "occupancy.txt";
-    const std::string patchInfoFileName    = orgFileName + "patchInfo.txt";
-    const std::string srcYuvFileName = addVideoFormat(fileName + (use444CodecIo ? ".rgb" : ".yuv"),
-                                                      width, height, !use444CodecIo, nbyte==2?"10":"8" );
-    const std::string srcRgbFileName = addVideoFormat(fileName + ".rgb",
-                                                      width, height, !use444CodecIo, nbyte==2?"10":"8" );
-    const std::string recYuvFileName = addVideoFormat(fileName + "_rec" + (use444CodecIo ? ".rgb" : ".yuv"),
-                                                      width, height, !use444CodecIo, nbyte==2?"10":"8" );
-    const std::string recRgbFileName = addVideoFormat(fileName + "_rec" + ".rgb",
-                                                      width, height, !use444CodecIo, nbyte==2?"10":"8" );
+    const std::string blockToPatchFileName = path + "blockToPatch.txt";
+    const std::string occupancyMapFileName = path + "occupancy.txt";
+    const std::string patchInfoFileName    = path + "patchInfo.txt";
+    const std::string srcYuvFileName       = addVideoFormat(fileName + (use444CodecIo ? ".rgb" : ".yuv"),
+                                                            width, height, !use444CodecIo, nbyte==2?"10":"8" );
+    const std::string srcRgbFileName       = addVideoFormat(fileName + ".rgb",
+                                                            width, height, !use444CodecIo, nbyte==2?"10":"8" );
+    const std::string recYuvFileName       = addVideoFormat(fileName + "_rec" + (use444CodecIo ? ".rgb" : ".yuv"),
+                                                            width, height, !use444CodecIo, nbyte==2?"10":"8" );
+    const std::string recRgbFileName       = addVideoFormat(fileName + "_rec" + ".rgb",
+                                                            width, height, !use444CodecIo, nbyte==2?"10":"8" );
 
     const bool yuvVideo = colorSpaceConversionConfig.empty() || colorSpaceConversionPath.empty() || use444CodecIo;
-    // todo: should use444CodecIo allow conversion to happen?
     if( yuvVideo ) {
       if (use444CodecIo) {
         if (!video.write( srcYuvFileName, nbyte)) {
@@ -292,7 +289,7 @@ class PCCVideoEncoder {
           }
         }
         //saving the video
-        video420.write420(srcYuvFileName,nbyte);
+        video420.write420(srcYuvFileName, nbyte );
       } else{
         if (!video.write( srcRgbFileName, nbyte )) {
           return false;

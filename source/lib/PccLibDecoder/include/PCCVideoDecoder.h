@@ -57,20 +57,24 @@ class PCCVideoDecoder {
 
   template <typename T>
   bool decompress(PCCVideo<T, 3> &video,
-                  const std::string &fileName,
+                  const std::string &path,
                   const size_t width,
                   const size_t height,
                   const size_t frameCount,
                   PCCVideoBitstream &bitstream,
                   const std::string &decoderPath,
                   PCCContext& contexts,
-                  const std::string &inverseColorSpaceConversionConfig = "",
-                  const std::string &colorSpaceConversionPath = "",
+                  const size_t nbyte = 1,
+                  const bool keepIntermediateFiles = false,
+
                   const bool use444CodecIo = false,
                   const bool patchColorSubsampling = false,
-                  const size_t nbyte = 1,
-                  const bool keepIntermediateFiles = false ) {
-    const std::string binFileName = fileName + ".bin";
+                  const std::string &inverseColorSpaceConversionConfig = "",
+                  const std::string &colorSpaceConversionPath = "" ) {
+
+    const std::string type           = bitstream.getExtension();
+    const std::string fileName       = path + type;
+    const std::string binFileName    = fileName + ".bin";
     const std::string yuvRecFileName = addVideoFormat(fileName + "_rec" + (use444CodecIo ? ".rgb" : ".yuv"),
                                                       width, height, !use444CodecIo, nbyte==2?"10":"8");
     const std::string rgbRecFileName = addVideoFormat(fileName + "_rec.rgb", width, height, true, nbyte==2?"10":"8");
@@ -99,9 +103,7 @@ class PCCVideoDecoder {
       std::cout << "Error: can't run system command!" << std::endl;
       return false;
     }
-    // todo: should use444CodecIo allow conversion to happen?
-    if (inverseColorSpaceConversionConfig.empty() || colorSpaceConversionPath.empty() ||
-        use444CodecIo) {
+    if (inverseColorSpaceConversionConfig.empty() || colorSpaceConversionPath.empty() || use444CodecIo) {
       if (use444CodecIo) {
         if (!video.read(yuvRecFileName, width, height, frameCount, nbyte)) {
           return false;

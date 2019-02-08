@@ -80,13 +80,13 @@ int PCCDecoder::decode( PCCContext &context, PCCGroupOfFrames& reconstructs ){
   const size_t frameCountTexture  = context.getOneLayerMode()  ? 1 : 2;
 
   auto& videoBitstreamOM = context.getVideoBitstream( PCCVideoType::OccupancyMap );
-  videoDecoder.decompress(context.getVideoOccupancyMap(), path.str() + "occupancy",
+  videoDecoder.decompress(context.getVideoOccupancyMap(), path.str(),
                           context.getWidth()/context.getOccupancyPrecision(),
                           context.getHeight()/context.getOccupancyPrecision(),
                           context.size(),
                           videoBitstreamOM,
-                          params_.videoDecoderOccupancyMapPath_, context
-                          ,"", "", (context.getLosslessGeo()?context.getLosslessGeo444():false), false, 1,params_.keepIntermediateFiles_ );
+                          params_.videoDecoderOccupancyMapPath_, context, 1,params_.keepIntermediateFiles_,
+                          (context.getLosslessGeo()?context.getLosslessGeo444():false), false,"", "");
   generateOccupancyMap( context, context.getOccupancyPrecision() );
 
   if (!context.getAbsoluteD1()) {
@@ -95,42 +95,37 @@ int PCCDecoder::decode( PCCContext &context, PCCGroupOfFrames& reconstructs ){
     }
     // Compress D0
     auto& videoBitstreamD0 =  context.getVideoBitstream( PCCVideoType::GeometryD0 );
-    videoDecoder.decompress( context.getVideoGeometry(), path.str() + "geometryD0", context.getWidth(), context.getHeight(),
+    videoDecoder.decompress( context.getVideoGeometry(), path.str(), context.getWidth(), context.getHeight(),
                              context.size(), videoBitstreamD0,
-                             params_.videoDecoderPath_, context,
-                             "", "", (context.getLosslessGeo()?context.getLosslessGeo444():false), false, nbyteGeo,
-                             params_.keepIntermediateFiles_ );
+                             params_.videoDecoderPath_, context, nbyteGeo, params_.keepIntermediateFiles_,
+                             (context.getLosslessGeo()?context.getLosslessGeo444():false) );
     std::cout << "geometry D0 video ->" << videoBitstreamD0.naluSize() << " B" << std::endl;
 
     // Compress D1
     auto& videoBitstreamD1 =  context.getVideoBitstream( PCCVideoType::GeometryD1 );
-    videoDecoder.decompress(context.getVideoGeometryD1(), path.str() + "geometryD1", context.getWidth(), context.getHeight(),
-                            context.size(), videoBitstreamD1,
-                            params_.videoDecoderPath_, context,
-                            "", "", (context.getLosslessGeo()?context.getLosslessGeo444():false), false, nbyteGeo,
-                            params_.keepIntermediateFiles_ );
+    videoDecoder.decompress(context.getVideoGeometryD1(), path.str(), context.getWidth(), context.getHeight(),
+                            context.size(), videoBitstreamD1, params_.videoDecoderPath_,
+                            context, nbyteGeo, params_.keepIntermediateFiles_,
+                            (context.getLosslessGeo()?context.getLosslessGeo444():false) );
     std::cout << "geometry D1 video ->" << videoBitstreamD1.naluSize() << " B" << std::endl;
 
     std::cout << "geometry video ->" << videoBitstreamD1.naluSize() + videoBitstreamD1.naluSize() << " B" << std::endl;
   } else {
     auto& videoBitstream =  context.getVideoBitstream( PCCVideoType::Geometry );
-    videoDecoder.decompress(context.getVideoGeometry(), path.str() + "geometry", context.getWidth(), context.getHeight(),
+    videoDecoder.decompress(context.getVideoGeometry(), path.str(), context.getWidth(), context.getHeight(),
                             context.size() * frameCountGeometry, videoBitstream,
-                            params_.videoDecoderPath_, context,
-                            "", "", context.getLosslessGeo() & context.getLosslessGeo444(), false, nbyteGeo,
-                            params_.keepIntermediateFiles_);
+                            params_.videoDecoderPath_, context, nbyteGeo,  params_.keepIntermediateFiles_,
+                            context.getLosslessGeo() & context.getLosslessGeo444() );
     std::cout << "geometry video ->" << videoBitstream.naluSize() << " B" << std::endl;
   }
 
   if(context.getUseAdditionalPointsPatch() && context.getUseMissedPointsSeparateVideo()) {
     auto& videoBitstreamMP =  context.getVideoBitstream( PCCVideoType::GeometryMP ); 
-    videoDecoder.decompress(context.getVideoMPsGeometry(), path.str() + "mps_geometry",
+    videoDecoder.decompress(context.getVideoMPsGeometry(), path.str(),
                             context.getMPGeoWidth(), context.getMPGeoHeight(),
-                            context.size(), videoBitstreamMP,
-                            params_.videoDecoderPath_, context,
-                            "", "", 0,//context.getLosslessGeo() & losslessGeo444_,
-                            false, 2,//patchColorSubsampling, 2.nByteGeo 10 bit coding
-                            params_.keepIntermediateFiles_ );
+                            context.size(), videoBitstreamMP, params_.videoDecoderPath_,
+                            context, 2, params_.keepIntermediateFiles_ );
+
     assert(context.getMPGeoWidth() == context.getVideoMPsGeometry().getWidth());
     assert(context.getMPGeoHeight() == context.getVideoMPsGeometry().getHeight());
     generateMissedPointsGeometryfromVideo(context, reconstructs); //0. geo : decode arithmetic coding part
@@ -183,31 +178,22 @@ int PCCDecoder::decode( PCCContext &context, PCCGroupOfFrames& reconstructs ){
   if (!context.getNoAttributes() ) {
     const size_t nbyteTexture = 1;
     auto& videoBitstream = context.getVideoBitstream( PCCVideoType::Texture );
-    videoDecoder.decompress( context.getVideoTexture(),
-                             path.str() + "texture",  context.getWidth(),  context.getHeight(),
+    videoDecoder.decompress( context.getVideoTexture(), path.str(), context.getWidth(),  context.getHeight(),
                              context.size() * frameCountTexture, videoBitstream,
-                             params_.videoDecoderPath_,
-                             context,
-                             params_.inverseColorSpaceConversionConfig_,
-                             params_.colorSpaceConversionPath_,
-                              context.getLosslessTexture() != 0, params_.patchColorSubsampling_, nbyteTexture,
-                             params_.keepIntermediateFiles_ );
+                             params_.videoDecoderPath_, context, nbyteTexture, params_.keepIntermediateFiles_,
+                             context.getLosslessTexture() != 0, params_.patchColorSubsampling_,
+                             params_.inverseColorSpaceConversionConfig_, params_.colorSpaceConversionPath_  );
     std::cout << "texture video  ->" << videoBitstream.naluSize() << " B" << std::endl;
 
     if( context.getUseAdditionalPointsPatch() && context.getUseMissedPointsSeparateVideo()) {
       auto& videoBitstreamMP = context.getVideoBitstream( PCCVideoType::TextureMP );
-      videoDecoder.decompress( context.getVideoMPsTexture(),
-                               path.str() + "mps_texture",
+      videoDecoder.decompress( context.getVideoMPsTexture(), path.str(),
                                context.getMPAttWidth(), context.getMPAttHeight(),
-                               context.size(), videoBitstreamMP, //frameCount*2??
-                               params_.videoDecoderPath_,
-                               context,
-                               params_.inverseColorSpaceConversionConfig_,
-                               params_.colorSpaceConversionPath_,
-                               context.getLosslessTexture(),                // && ! params_.lossyMissedPointsPatch_,
-                               0, //params_.patchColorSubsampling_,
-                               nbyteTexture, //nbyteTexture,
-                               params_.keepIntermediateFiles_ );
+                               context.size(), videoBitstreamMP, params_.videoDecoderPath_,
+                               context, nbyteTexture, params_.keepIntermediateFiles_,
+                               context.getLosslessTexture(), false,
+                               params_.inverseColorSpaceConversionConfig_, params_.colorSpaceConversionPath_ );
+
       generateMissedPointsTexturefromVideo(context, reconstructs);
       std::cout << " missed points texture -> " << videoBitstreamMP.naluSize() << " B"<<endl;
     }
