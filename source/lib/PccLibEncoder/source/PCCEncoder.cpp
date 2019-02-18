@@ -57,14 +57,14 @@ std::string getEncoderConfig1L( std::string string ) {
   return result;
 }
 
-PCCEncoder::PCCEncoder(){
+PCCEncoder::PCCEncoder() { 
 }
 
 PCCEncoder::~PCCEncoder(){
 }
 
-void PCCEncoder::setParameters( PCCEncoderParameters params ) { 
-  params_ = params; 
+void PCCEncoder::setParameters( PCCEncoderParameters params ) {
+  params_ = params;
 }
 
 int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
@@ -126,7 +126,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources,
   PCCVideoEncoder videoEncoder;
   const size_t pointCount = sources[ 0 ].getPointCount();
   std::stringstream path;
-  path << removeFileExtension( params_.compressedStreamPath_ ) << "_GOF" << context.getIndex() << "_";
+  SequenceParameterSet& sps = context.getSps();
+  path << removeFileExtension( params_.compressedStreamPath_ ) << "_GOF" << sps.getIndex() << "_";
 
   generateGeometryVideo( sources, context );
   //RA mode.
@@ -137,8 +138,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources,
   const size_t nbFramesTexture  = params_.oneLayerMode_  ? 1 : 2;
   resizeGeometryVideo( context );
   dilateGeometryVideo( context );
-  auto& width  = context.getWidth ();
-  auto& height = context.getHeight();
+  auto& width  = sps.getWidth ();
+  auto& height = sps.getHeight();
   width  = (uint16_t)frames[0].getWidth ();
   height = (uint16_t)frames[0].getHeight();
 
@@ -161,7 +162,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources,
     create3DMotionEstimationFiles( context, path.str() );
   }
 
-  const size_t nbyteGeo = (params_.losslessGeo_ || (params_.lossyMissedPointsPatch_ && !context.getUseMissedPointsSeparateVideo())) ? 2 : 1; 
+  const size_t nbyteGeo = (params_.losslessGeo_ || (params_.lossyMissedPointsPatch_ && !sps.getPcmSeparateVideoPresentFlag())) ? 2 : 1; 
   if (!params_.absoluteD1_) {
     if (params_.lossyMissedPointsPatch_){
       std::cout << "Error: lossyMissedPointsPatch has not been implemented for absoluteD1_ = 0 as yet. Exiting... " << std::endl; std::exit(-1);
@@ -205,7 +206,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources,
                            params_.losslessGeo_ && params_.losslessGeo444_, false, params_.use3dmc_ );
   }
 
-  if ( params_.useAdditionalPointsPatch_ && context.getUseMissedPointsSeparateVideo()) {
+  if ( params_.useAdditionalPointsPatch_ && sps.getPcmSeparateVideoPresentFlag()) {
     auto& videoBitstreamMP = context.createVideoBitstream( PCCVideoType::GeometryMP );
     generateMissedPointsGeometryVideo(context, reconstructs);
     auto& videoMPsGeometry = context.getVideoMPsGeometry();
@@ -320,7 +321,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources,
                            params_.colorSpaceConversionConfig_, params_.inverseColorSpaceConversionConfig_,
                            params_.colorSpaceConversionPath_ );
 
-    if(params_.useAdditionalPointsPatch_ && context.getUseMissedPointsSeparateVideo())  {
+    if(params_.useAdditionalPointsPatch_ && sps.getPcmSeparateVideoPresentFlag())  {
       auto& videoBitstreamMP = context.createVideoBitstream( PCCVideoType::TextureMP );
       generateMissedPointsTextureVideo(context, reconstructs );//1. texture
       auto& videoMPsTexture = context.getVideoMPsTexture();
@@ -1846,6 +1847,7 @@ void PCCEncoder::sortMissedPointsPatch(PCCFrameContext& frame) {
 }
 
 void PCCEncoder::generateMissedPointsGeometryVideo(PCCContext& context, PCCGroupOfFrames& reconstructs) {
+  auto& sps = context.getSps();
   auto& videoMPsGeometry = context.getVideoMPsGeometry();
   auto gofSize = context.size();
   size_t maxWidth=0;
@@ -1857,7 +1859,7 @@ void PCCEncoder::generateMissedPointsGeometryVideo(PCCContext& context, PCCGroup
     frame.setLosslessGeo444(context.getLosslessGeo444());
     frame.setMPGeoWidth(context.getMPGeoWidth());
     frame.setMPGeoHeight(0);
-    frame.setEnhancedDeltaDepth(context.getEnhancedDeltaDepth());
+    frame.setEnhancedDeltaDepth( sps.getEnhancedDepthCodeEnabledFlag());
     generateMPsGeometryImage    (context, frame,videoMPsGeometry.getFrame(shift));
     cout<<"generate Missed Points (Geometry) : frame "<<shift<<", # of Missed Points Geometry : "<<frame.getMissedPointsPatch().size()<<endl;
     //for resizing for mpgeometry

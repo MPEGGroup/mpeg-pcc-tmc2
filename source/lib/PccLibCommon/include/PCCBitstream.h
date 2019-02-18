@@ -39,7 +39,7 @@
 
 namespace pcc {
 
-struct PCCBistreamPosition{
+struct PCCBistreamPosition {
   uint64_t bytes;
   uint8_t  bits;
 };
@@ -49,122 +49,96 @@ class PCCBitstream {
  public:
   PCCBitstream();
   ~PCCBitstream();
-  bool initialize( std::string compressedStreamPath ); 
-  void initialize( uint64_t capacity ){ data_.resize( capacity, 0 ); }
-  bool write( std::string compressedStreamPath ); 
+  bool initialize( std::string compressedStreamPath );
+  void initialize( uint64_t capacity ) { data_.resize( capacity, 0 ); }
+  bool write( std::string compressedStreamPath );
 
-  uint8_t*  buffer(){ return data_.data(); }
-  uint64_t& size(){ return position_.bytes; }
-  uint64_t capacity() { return data_.size(); }
+  uint8_t *           buffer() { return data_.data(); }
+  uint64_t &          size() { return position_.bytes; }
+  uint64_t            capacity() { return data_.size(); }
   PCCBistreamPosition getPosition() { return position_; }
-  PCCBitstream & operator+=( const uint64_t size ) {
+  PCCBitstream &      operator+=( const uint64_t size ) {
     position_.bytes += size;
     return *this;
   }
 
-  bool readHeader(PCCMetadataEnabledFlags &gofLevelMetadataEnabledFlags);
-  void writeHeader(const PCCMetadataEnabledFlags &gofLevelMetadataEnabledFlags);
+  bool readHeader( PCCMetadataEnabledFlags& gofLevelMetadataEnabledFlags );
+  void writeHeader( const PCCMetadataEnabledFlags& gofLevelMetadataEnabledFlags );
 
-  void read( PCCVideoBitstream& videoBitstream );
+  void writeBuffer( const uint8_t *data, const size_t size );
   void write( PCCVideoBitstream& videoBitstream );
-  void write( const uint8_t* data, const size_t size );
+  void write( uint32_t value, uint8_t bits );
+  void writeSvlc( int32_t iCode );
+  void writeUvlc( uint32_t code );
 
-  void writeSvlc( int32_t  iCode );
-  void readSvlc ( int32_t& iCode);
-  void read ( uint32_t& value, uint8_t bits );
-  void write( uint32_t  value, uint8_t bits );
-  void align();
+  void     read( PCCVideoBitstream& videoBitstream );
+  uint32_t read( uint8_t bits );
+  int32_t  readSvlc();
+  uint32_t readUvlc();
 
-  template <typename T>
-  void writeFlag( T  value ) {
-    write(  (uint32_t)value, 1, position_ );
-  }
-  template <typename T>
-  void readFlag ( T& value ) {
-    uint32_t code;
-    read ( code, 1, position_ );
-    value=(T)code;
-  }
+  bool byteAligned() { return ( position_.bits == 0 ); }
 
   template <typename T>
-  void writeUvlc( T value ) {
-    uint32_t uiCode = (uint32_t)value;
-    uint32_t uiLength = 1, uiTemp = ++uiCode;
-    while( 1 != uiTemp ){ uiTemp >>= 1; uiLength += 2; }
-    write( 0,       uiLength  >> 1, position_ );
-    write( uiCode, (uiLength+1) >> 1, position_ );
-  }
-  template <typename T>
-  void readUvlc( T& value )  {
-    uint32_t uiVal = 0, uiCode = 0, uiLength = 0;
-    read( uiCode, 1, position_ );
-    if( 0 == uiCode ) {
-      while( ! ( uiCode & 1 )) { read( uiCode, 1, position_ ); uiLength++; }
-      read( uiVal, uiLength, position_ );
-      uiVal += (1 << uiLength)-1;
-    }
-    value = (T)uiVal;
-  }
-  template <typename T>
-  void write( const T u ) { write( u, position_ ); }
-  template <typename T>
-  void read( T &u ) { read( u, position_ ); }
-
-  template <typename T>
-  void write(const T u, PCCBistreamPosition &pos ) {
-    align(pos);
+  void write( const T u, PCCBistreamPosition &pos ) {
+    align( pos );
     union {
-      T u;
-      uint8_t u8[sizeof(T)];
+      T       u;
+      uint8_t u8[sizeof( T )];
     } source;
     source.u = u;
-    if( pos.bytes + 16 >= data_.size() ) { realloc(); }
-    if (PCCSystemEndianness() == PCC_LITTLE_ENDIAN) {
-      for (size_t k = 0; k < sizeof(T); k++) {
+    if ( pos.bytes + 16 >= data_.size() ) { realloc(); }
+    if ( PCCSystemEndianness() == PCC_LITTLE_ENDIAN ) {
+      for ( size_t k = 0; k < sizeof( T ); k++ ) {
         assert( pos.bytes >= data_.size() );
         data_[pos.bytes++] = source.u8[k];
       }
     } else {
-      for (size_t k = 0; k < sizeof(T); k++) {
+      for ( size_t k = 0; k < sizeof( T ); k++ ) {
         assert( pos.bytes >= data_.size() );
-        data_[pos.bytes++] = source.u8[sizeof(T) - k - 1];
+        data_[pos.bytes++] = source.u8[sizeof( T ) - k - 1];
       }
     }
   }
   template <typename T>
-  void read( T &u, PCCBistreamPosition &pos) {
-    align(pos);
+  T read( PCCBistreamPosition &pos ) {
+    align( pos );
     union {
-      T u;
-      uint8_t u8[sizeof(T)];
+      T       u;
+      uint8_t u8[sizeof( T )];
     } dest;
-    if (PCCSystemEndianness() == PCC_LITTLE_ENDIAN) {
-      for (size_t k = 0; k < sizeof(T); k++) {
-        dest.u8[k] = data_[pos.bytes++];
-      }
+    if ( PCCSystemEndianness() == PCC_LITTLE_ENDIAN ) {
+      for ( size_t k = 0; k < sizeof( T ); k++ ) { dest.u8[k] = data_[pos.bytes++]; }
     } else {
-      for (size_t k = 0; k < sizeof(T); k++) {
-        dest.u8[sizeof(T) - k - 1] = data_[pos.bytes++];
+      for ( size_t k = 0; k < sizeof( T ); k++ ) {
+        dest.u8[sizeof( T ) - k - 1] = data_[pos.bytes++];
       }
     }
-    u = dest.u;
+    return dest.u;
+  }
+  template <typename T>
+  void write( const T u ) {
+    write( u, position_ );
+  }
+  template <typename T>
+  T read( ) {
+   return read<T>( position_ );
   }
 
- private:
-
-  inline void realloc( const size_t size = 4096 ){
-    const size_t newSize =  data_.size() + ( ( ( size / 4096) + 1 ) * 4096 );
+private: 
+  uint32_t read( uint8_t bits, PCCBistreamPosition &pos );
+  void write( uint32_t value, uint8_t bits, PCCBistreamPosition &pos );
+  void align();
+  void align( PCCBistreamPosition &pos );
+  inline void realloc( const size_t size = 4096 ) {
+    const size_t newSize = data_.size() + ( ( ( size / 4096 ) + 1 ) * 4096 );
     data_.resize( newSize );
   }
-  void align( PCCBistreamPosition & pos );
-  void read( uint32_t& value, uint8_t bits, PCCBistreamPosition& pos );
-  void write( uint32_t value, uint8_t bits, PCCBistreamPosition& pos );
 
   std::vector<uint8_t> data_;
   PCCBistreamPosition  position_;
   PCCBistreamPosition  totalSizeIterator_;
 };
 
-}
+}  // namespace pcc
 
 #endif /* PCCBitstream_h */

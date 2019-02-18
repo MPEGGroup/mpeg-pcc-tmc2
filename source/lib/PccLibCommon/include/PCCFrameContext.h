@@ -52,7 +52,6 @@ struct PCCFrameOCPInfo {
   std::vector<bool> occupancyMap_;
 };
 
-
 class PCCFrameContext {
  public:
   PCCFrameContext();

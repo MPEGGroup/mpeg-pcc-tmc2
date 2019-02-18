@@ -1361,7 +1361,7 @@ void PCCCodec::generateBlockToPatchFromOccupancyMap( PCCContext &context,
   size_t sizeFrames = context.getFrames().size();
   for( int i = 0; i < sizeFrames; i++ ){
     PCCFrameContext &frame = context.getFrames()[i];
-    if (( losslessGeo  || lossyMissedPointsPatch ) && !context.getUseMissedPointsSeparateVideo()) {
+    if (( losslessGeo  || lossyMissedPointsPatch ) && !context.getSps().getPcmSeparateVideoPresentFlag()) {
       auto& patches = frame.getPatches();
       auto& missedPointsPatch = frame.getMissedPointsPatch();
       const size_t patchIndex = patches.size();
@@ -1432,7 +1432,7 @@ void PCCCodec::generateBlockToPatchFromBoundaryBox( PCCContext &context,
   size_t sizeFrames = context.getFrames().size();
   for( int i = 0; i < sizeFrames; i++ ){
     PCCFrameContext &frame = context.getFrames()[i];
-    if (( losslessGeo  || lossyMissedPointsPatch ) && !context.getUseMissedPointsSeparateVideo()) {
+    if (( losslessGeo  || lossyMissedPointsPatch ) && !context.getSps().getPcmSeparateVideoPresentFlag()) {
       auto& patches = frame.getPatches();
       auto& missedPointsPatch = frame.getMissedPointsPatch();
       const size_t patchIndex = patches.size();

@@ -106,6 +106,7 @@ bool parseParameters( int argc, char *argv[],
   //      (a) please keep to 80-columns for easier reading at a glance,
   //      (b) do not vertically align values -- it breaks quickly
   //
+  // clang-format off
   po::Options opts;
   opts.addOptions()
     ("help", print_help, false, "This help text")
@@ -248,6 +249,7 @@ bool parseParameters( int argc, char *argv[],
     ("flagColorPreSmoothing", ignore, ignore, "Ignore parameter")
     ("surfaceSeparation",     ignore, ignore, "Ignore parameter");
 
+  // clang-format on
   po::setDefaults(opts);
   po::ErrorReporter err;
   const list<const char *> &argv_unhandled = po::scanArgv(opts, argc, (const char **)argv, err);
@@ -306,7 +308,7 @@ int decompressVideo( const PCCDecoderParameters &decoderParams,
   while ( bitstream.size() < bitstream.capacity()) {
     PCCGroupOfFrames reconstructs;
     PCCContext context;
-    context.setIndex( contextIndex++ );
+    context.getSps().getIndex() = contextIndex++;
 
     if (gofLevelMetadataEnabledFlags.getMetadataEnabled()) {
       auto& gofLevelMetadata = context.getGOFLevelMetadata();

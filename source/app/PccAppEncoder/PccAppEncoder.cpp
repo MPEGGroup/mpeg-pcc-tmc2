@@ -105,6 +105,7 @@ bool parseParameters( int argc, char *argv[],
   //      (a) please keep to 80-columns for easier reading at a glance,
   //      (b) do not vertically align values -- it breaks quickly
   //
+  // clang-format off
   po::Options opts;
   opts.addOptions()
     ("help", print_help, false, "This help text")
@@ -617,6 +618,7 @@ bool parseParameters( int argc, char *argv[],
       metricsParams.neighborsProc_,
       "0(undefined), 1(average), 2(weighted average), 3(min), 4(max) neighbors with same geometric distance")
       ;
+  // clang-format on
   po::setDefaults(opts);
   po::ErrorReporter err;
   const list<const char *> &argv_unhandled = po::scanArgv(opts, argc, (const char **)argv, err);
@@ -672,17 +674,9 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
   while (startFrameNumber < endFrameNumber0) {
     const size_t endFrameNumber = min(startFrameNumber + groupOfFramesSize0, endFrameNumber0);
     PCCContext context;
-    context.setIndex( contextIndex );
-    context.setLosslessGeo444(encoderParams.losslessGeo444_);
-    context.setLossless(encoderParams.losslessGeo_);
-    context.setLosslessTexture(encoderParams.losslessTexture_);
-    context.setMPGeoWidth(64);
-    context.setMPAttWidth(64);
-    context.setMPGeoHeight(0);
-    context.setMPAttHeight(0);
-    context.setEnhancedDeltaDepth(encoderParams.enhancedDeltaDepthCode_);
-    context.setUseMissedPointsSeparateVideo(encoderParams.useMissedPointsSeparateVideo_);
-    
+    context.getSps().getIndex() = contextIndex;
+
+    // Must be moved in PccEncoder.
     if (gofLevelMetadataEnabledFlags.getMetadataEnabled()) {
       // Place to get/set gof-level metadata.
       PCCMetadata gofLevelMetadata;
@@ -692,6 +686,8 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
       PCCMetadataEnabledFlags frameLevelMetadataEnabledFlags;
       context.getGOFLevelMetadata().getLowerLevelMetadataEnabledFlags() = frameLevelMetadataEnabledFlags;
     }
+    //~Must be moved in PccEncoder.
+
     PCCGroupOfFrames sources, reconstructs;
     if (!sources.load( encoderParams.uncompressedDataPath_, startFrameNumber,
                        endFrameNumber, encoderParams.colorTransform_ ) ) {
