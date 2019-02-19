@@ -50,7 +50,7 @@ class Arithmetic_Codec;
 class ProfileTierLevel;
 class SequenceParameterSet; 
 class OccupancyParameterSet; 
-class GeometrySequenceMetadata; 
+class GeometrySequenceParams; 
 class AttributeParameterSet;
 
 class PCCBitstreamDecoderNewSyntax {
@@ -99,8 +99,8 @@ class PCCBitstreamDecoderNewSyntax {
                              PCCBitstream&         bitstream );
 
   // 7.3.11 Geometry sequence metadata syntax
-  void geometrySequenceMetadata( GeometrySequenceMetadata& geometrySequenceMetadata,
-                                 PCCBitstream&             bitstream );
+  void geometrySequenceParams( GeometrySequenceParams& geometrySequenceParams,
+                               PCCBitstream&             bitstream );
 
   // 7.3.12 Attribute parameter set syntax
   void attributeParameterSet( AttributeParameterSet& attributeParameterSet,
@@ -108,7 +108,7 @@ class PCCBitstreamDecoderNewSyntax {
                               size_t                 attributeIndex );
 
   // 7.3.13 Attribute sequence metadata syntax
-  void attributeSequenceMetadata( PCCContext&   context,
+  void attributeSequenceParams( PCCContext&   context,
                                   PCCBitstream& bitstream,
                                   size_t        attributeIndex,
                                   size_t        attributeDimension );
@@ -126,7 +126,7 @@ class PCCBitstreamDecoderNewSyntax {
   void geometryFrameParameterSet( PCCContext& context, PCCBitstream& bitstream );
 
   // 7.3.18 Geometry frame metadata syntax
-  void geometryFrameMetadata( PCCContext& context, PCCBitstream& bitstream );
+  void geometryFrameParams( PCCContext& context, PCCBitstream& bitstream );
 
   // 7.3.19 Attribute frame parameter set syntax
   void attributeFrameParameterSet( PCCContext&   context,
@@ -134,7 +134,7 @@ class PCCBitstreamDecoderNewSyntax {
                                    size_t        attributeIndex );
 
   // 7.3.20 Attribute frame metadata syntax
-  void attributeFrameMetadata( PCCContext&   context,
+  void attributeFrameParams( PCCContext&   context,
                                PCCBitstream& bitstream,
                                size_t        attributeIndex,
                                size_t        attributeDimension );
@@ -143,7 +143,7 @@ class PCCBitstreamDecoderNewSyntax {
   void geometryPatchParameterSet( PCCContext& context, PCCBitstream& bitstream );
 
   // 7.3.22 Geometry patch metadata syntax
-  void geometryPatchMetadata( PCCContext& context, PCCBitstream& bitstream );
+  void geometryPatchParams( PCCContext& context, PCCBitstream& bitstream );
 
   // 7.3.23 Attribute patch parameter set syntax
   void attributePatchParameterSet( PCCContext&   context,
@@ -151,7 +151,7 @@ class PCCBitstreamDecoderNewSyntax {
                                    size_t        attributeIndex );
 
   // 7.3.24 Attribute patch metadata syntax
-  void attributePatchMetadata( PCCContext&   context,
+  void attributePatchParams( PCCContext&   context,
                                PCCBitstream& bitstream,
                                size_t        attributeIndex,
                                size_t        attributeDimension );

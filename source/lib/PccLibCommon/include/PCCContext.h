@@ -54,7 +54,6 @@ typedef std::map<size_t, std::vector<GlobalPatch> >
                                   GlobalPatches;  // GlobalPatches --- [TrackIndex, <GlobalPatch>];
 typedef std::pair<size_t, size_t> SubContext;     // SubContext ------ [start, end);
 
-
 class VPCCParameterSet {
  public:
   VPCCParameterSet()
@@ -64,6 +63,7 @@ class VPCCParameterSet {
   uint8_t& getSequenceParameterSetId() { return sequenceParamterSetId_; }
   uint8_t& getAttributeIndex() { return attributeIndex_; }
   uint8_t& getLayerIndex() { return layerIndex_; }
+
  private:
   bool    pcmVideoFlag_;
   uint8_t sequenceParamterSetId_;
@@ -77,6 +77,7 @@ class ProfileTierLevel {
   bool&    getTierFlag() { return tierFlag_; }
   uint8_t& getProfileIdc() { return profileIdc_; }
   uint8_t& getLevelIdc() { return levelIdc_; }
+
  private:
   bool    tierFlag_;
   uint8_t profileIdc_;
@@ -88,79 +89,84 @@ class OccupancyParameterSet {
   OccupancyParameterSet() : codecId_( 0 ), packingBlockSize_( 0 ) {}
   uint8_t& getCodecId() { return codecId_; }
   uint8_t& getPackingBlockSize() { return packingBlockSize_; }
+
  private:
   uint8_t codecId_;
   uint8_t packingBlockSize_;
 };
 
-class GeometrySequenceMetadata {
+class GeometrySequenceParams {
  public:
-  bool&     getSmoothingMetadataPresentFlag() { return smoothingMetadataPresentFlag_; }
-  bool&     getScaleMetadataPresentFlag() { return scaleMetadataPresentFlag_; }
-  bool&     getOffsetMetadataPresentFlag() { return offsetMetadataPresentFlag_; }
-  bool&     getRotationMetadataPresentFlag() { return rotationMetadataPresentFlag_; }
-  bool&     getPointSizeMetadataPresentFlag() { return pointSizeMetadataPresentFlag_; }
-  bool&     getPointShapeMetadataPresentFlag() { return pointShapeMetadataPresentFlag_; }
-  uint8_t&  getSmoothingRadius() { return smoothingRadius_; }
-  uint8_t&  getSmoothingNeighbourCount() { return smoothingNeighbourCount_; }
-  uint8_t&  getSmoothingRadius2BoundaryDetection() { return smoothingRadius2BoundaryDetection_; }
+  GeometrySequenceParams()
+      : smoothingPresentFlag_( false ), smoothingEnabledFlag_( false ), scalePresentFlag_( false ),
+        offsetPresentFlag_( false ), rotationPresentFlag_( false ), pointSizePresentFlag_( false ),
+        pointShapePresentFlag_( false ), gridSize_( 0 ), smoothingThreshold_( 0 ), pointSize_( 0 ),
+        pointShape_( 0 ) {}
+
+  bool&     getSmoothingPresentFlag() { return smoothingPresentFlag_; }
+  bool&     getSmoothingEnabledFlag() { return smoothingEnabledFlag_; }
+  bool&     getScalePresentFlag() { return scalePresentFlag_; }
+  bool&     getOffsetPresentFlag() { return offsetPresentFlag_; }
+  bool&     getRotationPresentFlag() { return rotationPresentFlag_; }
+  bool&     getPointSizePresentFlag() { return pointSizePresentFlag_; }
+  bool&     getPointShapePresentFlag() { return pointShapePresentFlag_; }
+  uint8_t&  getGridSize() { return gridSize_; }
   uint8_t&  getSmoothingThreshold() { return smoothingThreshold_; }
-  uint32_t& getScaleMetadataOnAxis( int index ) { return scaleMetadataOnAxis_[index]; }
-  int32_t&  getOffsetMetadataOnAxis( int index ) { return offsetMetadataOnAxis_[index]; }
-  int32_t&  getRotationMetadataOnAxis( int index ) { return rotationMetadataOnAxis_[index]; }
-  uint8_t&  getPointSizeMetadata() { return pointSizeMetadata_; }
-  uint8_t&  getPointShapeMetadata() { return pointShapeMetadata_; }
+  uint32_t& getScaleOnAxis( int index ) { return scaleOnAxis_[index]; }
+  int32_t&  getOffsetOnAxis( int index ) { return offsetOnAxis_[index]; }
+  int32_t&  getRotationOnAxis( int index ) { return rotationOnAxis_[index]; }
+  uint8_t&  getPointSize() { return pointSize_; }
+  uint8_t&  getPointShape() { return pointShape_; }
+
  private:
-  bool     smoothingMetadataPresentFlag_;
-  bool     scaleMetadataPresentFlag_;
-  bool     offsetMetadataPresentFlag_;
-  bool     rotationMetadataPresentFlag_;
-  bool     pointSizeMetadataPresentFlag_;
-  bool     pointShapeMetadataPresentFlag_;
-  uint8_t  smoothingRadius_;
-  uint8_t  smoothingNeighbourCount_;
-  uint8_t  smoothingRadius2BoundaryDetection_;
+  bool     smoothingPresentFlag_;
+  bool     smoothingEnabledFlag_;
+  bool     scalePresentFlag_;
+  bool     offsetPresentFlag_;
+  bool     rotationPresentFlag_;
+  bool     pointSizePresentFlag_;
+  bool     pointShapePresentFlag_;
+  uint8_t  gridSize_;
   uint8_t  smoothingThreshold_;
-  uint32_t scaleMetadataOnAxis_[3];
-  int32_t  offsetMetadataOnAxis_[3];
-  int32_t  rotationMetadataOnAxis_[3];
-  uint8_t  pointSizeMetadata_;
-  uint8_t  pointShapeMetadata_;
+  uint32_t scaleOnAxis_[3];
+  int32_t  offsetOnAxis_[3];
+  int32_t  rotationOnAxis_[3];
+  uint8_t  pointSize_;
+  uint8_t  pointShape_;
 };
 
 class GeometryParameterSet {
  public:
   GeometryParameterSet()
-      : codecId_( 0 ), coordinatesBitdepth_( 0 ), pcmCodecId_( 0 ),
-        metadataEnabledFlag_( false ), patchMetadataEnabledFlag_( false ),
-        patchScaleMetadataEnabledFlag_( false ), patchOffsetMetadataEnabledFlag_( false ),
-        patchRotationMetadataEnabledFlag_( false ), patchPointSizeMetadataEnabledFlag_( false ),
-        patchPointShapeMetadataEnabledFlag_( false ) {}
+      : codecId_( 0 ), coordinatesBitdepth_( 0 ), pcmCodecId_( 0 ), metadataEnabledFlag_( false ),
+        patchEnabledFlag_( false ), patchScaleEnabledFlag_( false ),
+        patchOffsetEnabledFlag_( false ), patchRotationEnabledFlag_( false ),
+        patchPointSizeEnabledFlag_( false ), patchPointShapeEnabledFlag_( false ) {}
 
-  uint8_t& getCodecId() { return codecId_; }
-  uint8_t& get3dCoordinatesBitdepth() { return coordinatesBitdepth_; }
-  uint8_t& getPcmCodecId() { return pcmCodecId_; }
-  bool&    getMetadataEnabledFlag() { return metadataEnabledFlag_; }
-  bool&    getPatchMetadataEnabledFlag() { return patchMetadataEnabledFlag_; }
-  bool&    getPatchScaleMetadataEnabledFlag() { return patchScaleMetadataEnabledFlag_; }
-  bool&    getPatchOffsetMetadataEnabledFlag() { return patchOffsetMetadataEnabledFlag_; }
-  bool&    getPatchRotationMetadataEnabledFlag() { return patchRotationMetadataEnabledFlag_; }
-  bool&    getPatchPointSizeMetadataEnabledFlag() { return patchPointSizeMetadataEnabledFlag_; }
-  bool&    getPatchPointShapeMetadataEnabledFlag() { return patchPointShapeMetadataEnabledFlag_; }
-  GeometrySequenceMetadata& getGeometrySequenceMetadata() { return geometrySequenceMetadata_; }
+  uint8_t&                getCodecId() { return codecId_; }
+  uint8_t&                get3dCoordinatesBitdepth() { return coordinatesBitdepth_; }
+  uint8_t&                getPcmCodecId() { return pcmCodecId_; }
+  bool&                   getMetadataEnabledFlag() { return metadataEnabledFlag_; }
+  bool&                   getPatchEnabledFlag() { return patchEnabledFlag_; }
+  bool&                   getPatchScaleEnabledFlag() { return patchScaleEnabledFlag_; }
+  bool&                   getPatchOffsetEnabledFlag() { return patchOffsetEnabledFlag_; }
+  bool&                   getPatchRotationEnabledFlag() { return patchRotationEnabledFlag_; }
+  bool&                   getPatchPointSizeEnabledFlag() { return patchPointSizeEnabledFlag_; }
+  bool&                   getPatchPointShapeEnabledFlag() { return patchPointShapeEnabledFlag_; }
+  GeometrySequenceParams& getGeometrySequenceParams() { return geometrySequenceParams_; }
 
  private:
-  uint8_t                  codecId_;
-  uint8_t                  coordinatesBitdepth_;
-  uint8_t                  pcmCodecId_;
-  bool                     metadataEnabledFlag_;
-  bool                     patchMetadataEnabledFlag_;
-  bool                     patchScaleMetadataEnabledFlag_;
-  bool                     patchOffsetMetadataEnabledFlag_;
-  bool                     patchRotationMetadataEnabledFlag_;
-  bool                     patchPointSizeMetadataEnabledFlag_;
-  bool                     patchPointShapeMetadataEnabledFlag_;
-  GeometrySequenceMetadata geometrySequenceMetadata_;
+  uint8_t                codecId_;
+  uint8_t                coordinatesBitdepth_;
+  uint8_t                pcmCodecId_;
+  bool                   metadataEnabledFlag_;
+  bool                   patchEnabledFlag_;
+  bool                   patchScaleEnabledFlag_;
+  bool                   patchOffsetEnabledFlag_;
+  bool                   patchRotationEnabledFlag_;
+  bool                   patchPointSizeEnabledFlag_;
+  bool                   patchPointShapeEnabledFlag_;
+  GeometrySequenceParams geometrySequenceParams_;
 };
 
 class AttributeParameterSet {
@@ -175,7 +181,7 @@ class SequenceParameterSet {
  public:
   SequenceParameterSet()
       : index_( 0 ), width_( 0 ), height_( 0 ), layerCount_( 0 ), attributeCount_( 0 ),
-        enhancedDepthCodeEnabledFlag_( false ), multipleLayerStreamsPresentFlag_( false ),
+        enhancedOccupancyMapForDepthFlag_( false ), multipleLayerStreamsPresentFlag_( false ),
         pcmPatchEnabledFlag_( false ), pcmSeparateVideoPresentFlag_( false ),
         patchSequenceOrientationEnabledFlag_( false ), patchInterPredictionEnabledFlag_( false ),
         pixelInterleavingFlag_( false ), pointLocalReconstructionEnabledFlag_( false ) {
@@ -188,7 +194,7 @@ class SequenceParameterSet {
   size_t& getHeight() { return height_; }
   size_t& getLayerCount() { return layerCount_; }
   size_t& getAttributeCount() { return attributeCount_; }
-  bool&   getEnhancedDepthCodeEnabledFlag() { return enhancedDepthCodeEnabledFlag_; }
+  bool&   getEnhancedOccupancyMapForDepthFlag() { return enhancedOccupancyMapForDepthFlag_; }
   bool&   getMultipleLayerStreamsPresentFlag() { return multipleLayerStreamsPresentFlag_; }
   bool&   getPcmPatchEnabledFlag() { return pcmPatchEnabledFlag_; }
   bool&   getPcmSeparateVideoPresentFlag() { return pcmSeparateVideoPresentFlag_; }
@@ -217,7 +223,7 @@ class SequenceParameterSet {
   size_t                             height_;
   size_t                             layerCount_;
   size_t                             attributeCount_;
-  bool                               enhancedDepthCodeEnabledFlag_;
+  bool                               enhancedOccupancyMapForDepthFlag_;
   bool                               multipleLayerStreamsPresentFlag_;
   bool                               pcmPatchEnabledFlag_;
   bool                               pcmSeparateVideoPresentFlag_;
@@ -255,35 +261,35 @@ class PCCContext {
   PCCVideoGeometry&     getVideoMPsGeometry() { return videoMPsGeometry_; }
   PCCVideoTexture&      getVideoMPsTexture() { return videoMPsTexture_; }
 
-  // deprecated, must be removed: 
-  bool&                 getLosslessGeo444() { return losslessGeo444_; }
-  bool&                 getLosslessGeo() { return losslessGeo_; }
-  bool&                 getLosslessTexture() { return losslessTexture_; }
-  uint8_t&              getOccupancyPrecision() { return occupancyPrecision_; }
-  bool&                 getGridSmoothing() { return gridSmoothing_; }
-  uint8_t&              getGridSize() { return gridSize_; }
-  uint8_t&              getNoAttributes() { return noAttributes_; }
-  bool&                 getAbsoluteD1() { return absoluteD1_; }
-  bool&                 getBinArithCoding() { return binArithCoding_; }
-  float&                getModelScale() { return modelScale_; }
-  PCCVector3<float>&    getModelOrigin() { return modelOrigin_; }
-  uint8_t&              getThresholdColorSmoothing() { return thresholdColorSmoothing_; }
-  double&               getThresholdLocalEntropy() { return thresholdLocalEntropy_; }
-  uint8_t&              getRadius2ColorSmoothing() { return radius2ColorSmoothing_; }
-  uint8_t&              getNeighborCountColorSmoothing() { return neighborCountColorSmoothing_; }
-  uint8_t&              getFlagColorSmoothing() { return flagColorSmoothing_; }
-  bool&                 getImproveEDD() { return improveEDD_; }
-  bool&                 getDeltaCoding() { return deltaCoding_; }
-  bool&                 getSixDirectionMode() { return sixDirectionMode_; }
-  bool&                 getRemoveDuplicatePoints() { return removeDuplicatePoints_; }
-  bool&                 getUseAdditionalPointsPatch() { return useAdditionalPointsPatch_; }
-  uint8_t&              getMinLevel() { return minLevel_; }
-  bool&                 getGlobalPatchAllocation() { return globalPatchAllocation_; }
-  bool&                 getUse3dmc() { return use3dmc_; }
-  const size_t          getMPGeoWidth() { return MPGeoWidth_; }
-  const size_t          getMPGeoHeight() { return MPGeoHeight_; }
-  const size_t          getMPAttWidth() { return MPAttWidth_; }
-  const size_t          getMPAttHeight() { return MPAttHeight_; }
+  // deprecated, must be removed:
+  bool&              getLosslessGeo444() { return losslessGeo444_; }
+  bool&              getLosslessGeo() { return losslessGeo_; }
+  bool&              getLosslessTexture() { return losslessTexture_; }
+  uint8_t&           getOccupancyPrecision() { return occupancyPrecision_; }
+  bool&              getGridSmoothing() { return gridSmoothing_; }
+  // uint8_t&           getGridSize() { return gridSize_; }
+  uint8_t&           getNoAttributes() { return noAttributes_; }
+  bool&              getAbsoluteD1() { return absoluteD1_; }
+  bool&              getBinArithCoding() { return binArithCoding_; }
+  float&             getModelScale() { return modelScale_; }
+  PCCVector3<float>& getModelOrigin() { return modelOrigin_; }
+  uint8_t&           getThresholdColorSmoothing() { return thresholdColorSmoothing_; }
+  double&            getThresholdLocalEntropy() { return thresholdLocalEntropy_; }
+  uint8_t&           getRadius2ColorSmoothing() { return radius2ColorSmoothing_; }
+  uint8_t&           getNeighborCountColorSmoothing() { return neighborCountColorSmoothing_; }
+  uint8_t&           getFlagColorSmoothing() { return flagColorSmoothing_; }
+  bool&              getImproveEDD() { return improveEDD_; }
+  bool&              getDeltaCoding() { return deltaCoding_; }
+  bool&              getSixDirectionMode() { return sixDirectionMode_; }
+  bool&              getRemoveDuplicatePoints() { return removeDuplicatePoints_; }
+  bool&              getUseAdditionalPointsPatch() { return useAdditionalPointsPatch_; }
+  uint8_t&           getMinLevel() { return minLevel_; }
+  bool&              getGlobalPatchAllocation() { return globalPatchAllocation_; }
+  bool&              getUse3dmc() { return use3dmc_; }
+  const size_t       getMPGeoWidth() { return MPGeoWidth_; }
+  const size_t       getMPGeoHeight() { return MPGeoHeight_; }
+  const size_t       getMPAttWidth() { return MPAttWidth_; }
+  const size_t       getMPAttHeight() { return MPAttHeight_; }
 
   void setLosslessGeo444( bool losslessGeo444 ) { losslessGeo444_ = losslessGeo444; }
   void setLossless( bool losslessGeo ) { losslessGeo_ = losslessGeo; }
@@ -295,9 +301,13 @@ class PCCContext {
 
   PCCMetadata& getGOFLevelMetadata() { return gofLevelMetadata_; }
 
+  uint8_t& getSmoothingRadius() { return smoothingRadius_; }
+  uint8_t& getSmoothingNeighbourCount() { return smoothingNeighbourCount_; }
+  uint8_t& getSmoothingRadius2BoundaryDetection() { return smoothingRadius2BoundaryDetection_; }
+  
   std::vector<SubContext>& getSubContexts() { return subContexts_; }
   std::vector<unionPatch>& getunionPatch() { return unionPatch_; }
-  //~ deprecated, must be removed 
+  //~ deprecated, must be removed
 
   PCCVideoBitstream& createVideoBitstream( PCCVideoType type ) {
     videoBitstream_.push_back( PCCVideoBitstream( type ) );
@@ -347,7 +357,6 @@ class PCCContext {
   size_t            MPAttHeight_;
   uint8_t           occupancyPrecision_;
   bool              gridSmoothing_;
-  uint8_t           gridSize_;
   uint8_t           noAttributes_;
   bool              absoluteD1_;
   bool              binArithCoding_;
@@ -361,12 +370,16 @@ class PCCContext {
   bool              improveEDD_;
   bool              deltaCoding_;
   bool              sixDirectionMode_;
-  bool              removeDuplicatePoints_;  
+  bool              removeDuplicatePoints_;
   bool              useAdditionalPointsPatch_;
   uint8_t           minLevel_;
   bool              globalPatchAllocation_;
   bool              use3dmc_;
 
+  uint8_t                        smoothingRadius_;
+  uint8_t                        smoothingNeighbourCount_;
+  uint8_t                        smoothingRadius2BoundaryDetection_;
+  
   PCCMetadata                    gofLevelMetadata_;
   std::vector<PCCVideoBitstream> videoBitstream_;
   std::vector<SubContext>        subContexts_;

@@ -161,12 +161,12 @@ void PCCBitstreamDecoderNewSyntax::vpccVideoDataUnit( PCCContext&   context,
 void PCCBitstreamDecoderNewSyntax::vpccSequenceParameterSet( SequenceParameterSet& sps,
                                                              PCCBitstream&         bitstream ) {
   profileTierLevel( sps.getProfileTierLevel(), bitstream );
-  sps.getIndex()                        = bitstream.read( 4 );      // u(4)
-  sps.getWidth()                        = bitstream.read( 16 );     // u(16)
-  sps.getHeight()                       = bitstream.read( 16 );     // u(16)
-  sps.getEnhancedDepthCodeEnabledFlag() = bitstream.read( 1 );      // u(1)
-  sps.getLayerCount()                   = bitstream.read( 4 ) + 1;  // u(4)
-  int32_t layerCountMinus1              = (int32_t)sps.getLayerCount() - 1;
+  sps.getIndex()                            = bitstream.read( 4 );      // u(4)
+  sps.getWidth()                            = bitstream.read( 16 );     // u(16)
+  sps.getHeight()                           = bitstream.read( 16 );     // u(16)
+  sps.getEnhancedOccupancyMapForDepthFlag() = bitstream.read( 1 );      // u(1)
+  sps.getLayerCount()                       = bitstream.read( 4 ) + 1;  // u(4)
+  int32_t layerCountMinus1                  = (int32_t)sps.getLayerCount() - 1;
   if ( layerCountMinus1 > 0 ) {
     sps.getMultipleLayerStreamsPresentFlag() = bitstream.read( 1 );  // u(1)
   }
@@ -175,7 +175,7 @@ void PCCBitstreamDecoderNewSyntax::vpccSequenceParameterSet( SequenceParameterSe
   auto& layerPredictorIndex            = sps.getLayerPredictorIndex();
   for ( size_t i = 0; i < layerCountMinus1; i++ ) {
     layerAbsoluteCodingEnabledFlag[i + 1] = bitstream.read( 1 );  // u(1)
-    if ( ( layerAbsoluteCodingEnabledFlag[i + 1] == 0 ) && ( i > 0 ) ) {
+    if ( ( layerAbsoluteCodingEnabledFlag[i + 1] == 0 ) ) {
       if ( i > 0 ) {
         layerPredictorIndexDiff[i + 1] = bitstream.readUvlc();  // ue(v)
       } else {
@@ -234,54 +234,55 @@ void PCCBitstreamDecoderNewSyntax::geometryParameterSet( GeometryParameterSet& g
   if ( sps.getPcmSeparateVideoPresentFlag() ) {
     gps.getPcmCodecId() = bitstream.read( 1 );  // u(8)
   }
-  gps.getMetadataEnabledFlag();  // u(1)
+  gps.getMetadataEnabledFlag() = bitstream.read( 1 );  // u(1)
   if ( gps.getMetadataEnabledFlag() ) {
-    geometrySequenceMetadata( gps.getGeometrySequenceMetadata(), bitstream );
+    geometrySequenceParams( gps.getGeometrySequenceParams(), bitstream );
   }
-  gps.getPatchMetadataEnabledFlag() = bitstream.read( 1 );  // u(1)
-  if ( gps.getPatchMetadataEnabledFlag() ) {
-    gps.getPatchScaleMetadataEnabledFlag()      = bitstream.read( 1 );  // u(1)
-    gps.getPatchOffsetMetadataEnabledFlag()     = bitstream.read( 1 );  // u(1)
-    gps.getPatchRotationMetadataEnabledFlag()   = bitstream.read( 1 );  // u(1)
-    gps.getPatchPointSizeMetadataEnabledFlag()  = bitstream.read( 1 );  // u(1)
-    gps.getPatchPointShapeMetadataEnabledFlag() = bitstream.read( 1 );  // u(1)
+  gps.getPatchEnabledFlag() = bitstream.read( 1 );  // u(1)
+  if ( gps.getPatchEnabledFlag() ) {
+    gps.getPatchScaleEnabledFlag()      = bitstream.read( 1 );  // u(1)
+    gps.getPatchOffsetEnabledFlag()     = bitstream.read( 1 );  // u(1)
+    gps.getPatchRotationEnabledFlag()   = bitstream.read( 1 );  // u(1)
+    gps.getPatchPointSizeEnabledFlag()  = bitstream.read( 1 );  // u(1)
+    gps.getPatchPointShapeEnabledFlag() = bitstream.read( 1 );  // u(1)
   }
 }
 
-// 7.3.11 Geometry sequence metadata syntax
-void PCCBitstreamDecoderNewSyntax::geometrySequenceMetadata( GeometrySequenceMetadata& gsm,
-                                                             PCCBitstream&             bitstream ) {
-  gsm.getSmoothingMetadataPresentFlag()  = bitstream.read( 1 );  // u(1)
-  gsm.getScaleMetadataPresentFlag()      = bitstream.read( 1 );  // u(1)
-  gsm.getOffsetMetadataPresentFlag()     = bitstream.read( 1 );  // u(1)
-  gsm.getRotationMetadataPresentFlag()   = bitstream.read( 1 );  // u(1)
-  gsm.getPointSizeMetadataPresentFlag()  = bitstream.read( 1 );  // u(1)
-  gsm.getPointShapeMetadataPresentFlag() = bitstream.read( 1 );  // u(1)
-  if ( gsm.getSmoothingMetadataPresentFlag() ) {
-    gsm.getSmoothingRadius()                   = bitstream.read( 8 );  // u(8)
-    gsm.getSmoothingNeighbourCount()           = bitstream.read( 8 );  // u(8)
-    gsm.getSmoothingRadius2BoundaryDetection() = bitstream.read( 8 );  // u(8)
-    gsm.getSmoothingThreshold()                = bitstream.read( 8 );  // u(8)
+// 7.3.11 Geometry sequence Params syntax
+void PCCBitstreamDecoderNewSyntax::geometrySequenceParams( GeometrySequenceParams& gsp,
+                                                           PCCBitstream&           bitstream ) {
+  gsp.getSmoothingPresentFlag()     = bitstream.read( 1 );  // u(1)
+  gsp.getScalePresentFlag()         = bitstream.read( 1 );  // u(1)
+  gsp.getOffsetPresentFlag()        = bitstream.read( 1 );  // u(1)
+  gsp.getRotationPresentFlag()      = bitstream.read( 1 );  // u(1)
+  gsp.getPointSizePresentFlag()     = bitstream.read( 1 );  // u(1)
+  gsp.getPointShapePresentFlag()    = bitstream.read( 1 );  // u(1)
+  if ( gsp.getSmoothingPresentFlag() ) {
+    gsp.getSmoothingEnabledFlag() = bitstream.read( 1 );  // u(8)
+    if ( gsp.getSmoothingEnabledFlag() ) {
+      gsp.getGridSize()           = bitstream.read( 8 );  // u(8)
+      gsp.getSmoothingThreshold() = bitstream.read( 8 );  // u(8)
+    }
   }
-  if ( gsm.getScaleMetadataPresentFlag() ) {
+  if ( gsp.getScalePresentFlag() ) {
     for ( size_t d = 0; d < 3; d++ ) {
-      gsm.getScaleMetadataOnAxis( d ) = bitstream.read( 32 );  // u(32)
+      gsp.getScaleOnAxis( d ) = bitstream.read( 32 );  // u(32)
     }
-    if ( gsm.getOffsetMetadataPresentFlag() ) {
+    if ( gsp.getOffsetPresentFlag() ) {
       for ( size_t d = 0; d < 3; d++ ) {
-        gsm.getOffsetMetadataOnAxis( d ) = bitstream.read( 32 );  // i(32)
+        gsp.getOffsetOnAxis( d ) = bitstream.read( 32 );  // i(32)
       }
     }
-    if ( gsm.getRotationMetadataPresentFlag() ) {
+    if ( gsp.getRotationPresentFlag() ) {
       for ( size_t d = 0; d < 3; d++ ) {
-        gsm.getRotationMetadataOnAxis( d ) = bitstream.read( 32 );  // i(32)
+        gsp.getRotationOnAxis( d ) = bitstream.read( 32 );  // i(32)
       }
     }
-    if ( gsm.getPointSizeMetadataPresentFlag() ) {
-      gsm.getPointSizeMetadata() = bitstream.read( 8 );  // u(8)
+    if ( gsp.getPointSizePresentFlag() ) {
+      gsp.getPointSize() = bitstream.read( 8 );  // u(8)
     }
-    if ( gsm.getPointShapeMetadataPresentFlag() ) {
-      gsm.getPointShapeMetadata() = bitstream.read( 8 );  // u(8)
+    if ( gsp.getPointShapePresentFlag() ) {
+      gsp.getPointShape() = bitstream.read( 8 );  // u(8)
     }
   }
 }
@@ -289,7 +290,6 @@ void PCCBitstreamDecoderNewSyntax::geometrySequenceMetadata( GeometrySequenceMet
 // 7.3.12 Attribute parameter set syntax
 void PCCBitstreamDecoderNewSyntax::attributeParameterSet(
     AttributeParameterSet& attributeParameterSet, PCCBitstream& bitstream, size_t attributeIndex ) {
-  // apsAttributeId = attributeIndex;
   // apsAttributeTypeId[attributeIndex];           // u(4)
   // apsAttributeDimensionMinus1[attributeIndex];  // u(8)
   // apsAttributeCodecId[attributeIndex];          // u(8)
@@ -297,38 +297,38 @@ void PCCBitstreamDecoderNewSyntax::attributeParameterSet(
   // if ( spsPcmSeparateVideoPresentFlag ) {
   //   apsPcmAttributeCodecId[attributeIndex];  // u(8)
   // }
-  // apsAttributeMetadataEnabledFlag[attributeIndex];  // u(1)
-  // if ( apsAttributeMetadataEnabledFlag[attributeIndex] ) {
-  //   attributeSequenceMetadata( attributeIndex, attributeDimension );
+  // apsAttributeParamsEnabledFlag[attributeIndex];  // u(1)
+  // if ( apsAttributeParamsEnabledFlag[attributeIndex] ) {
+  //   attributeSequenceParams( attributeIndex, attributeDimension );
   // }
-  // apsAttributePatchMetadataEnabledFlag[attributeIndex];  // u(1)
-  // if ( apsAttributePatchMetadataEnabledFlag[attributeIndex] ) {
-  //   apsAttributePatchScaleMetadataEnabledFlag[attributeIndex];   // u(1)
-  //   apsAttributePatchOffsetMetadataEnabledFlag[attributeIndex];  // u(1)
+  // apsAttributePatchParamsEnabledFlag[attributeIndex];  // u(1)
+  // if ( apsAttributePatchParamsEnabledFlag[attributeIndex] ) {
+  //   apsAttributePatchScaleParamsEnabledFlag[attributeIndex];   // u(1)
+  //   apsAttributePatchOffsetParamsEnabledFlag[attributeIndex];  // u(1)
   // }
 }
 
-// 7.3.13 Attribute sequence metadata syntax
-void PCCBitstreamDecoderNewSyntax::attributeSequenceMetadata( PCCContext&   context,
+// 7.3.13 Attribute sequence Params syntax
+void PCCBitstreamDecoderNewSyntax::attributeSequenceParams( PCCContext&   context,
                                                               PCCBitstream& bitstream,
                                                               size_t        attributeIndex,
                                                               size_t        attributeDimension ) {
-  // asmAttributeSmoothingMetadataPresentFlag[attributeIndex];  // u(1)
-  // asmAttributeScaleMetadataPresentFlag[attributeIndex];      // u(1)
-  // asmAttributeOffsetMetadataPresentFlag[attributeIndex];     // u(1)
-  // if ( asmAttributeSmoothingMetadataPresentFlag[attributeIndex] ) {
+  // asmAttributeSmoothingParamsPresentFlag[attributeIndex];  // u(1)
+  // asmAttributeScaleParamsPresentFlag[attributeIndex];      // u(1)
+  // asmAttributeOffsetParamsPresentFlag[attributeIndex];     // u(1)
+  // if ( asmAttributeSmoothingParamsPresentFlag[attributeIndex] ) {
   //   asmAttributeSmoothingRadius[attributeIndex];                      // u(8)
   //   asmAttributeSmoothingNeighbourCount[attributeIndex];             // u(8)
   //   asmAttributeSmoothingRadius2BoundaryDetection[attributeIndex];  // u(8)
   //   asmAttributeSmoothingThreshold[attributeIndex];                   // u(8)
   //   asmAttributeSmoothingThresholdLocalEntropy[attributeIndex];     // u(3)
   // }
-  // if ( asmAttributeScaleMetadataPresentFlag[attributeIndex] ) {
+  // if ( asmAttributeScaleParamsPresentFlag[attributeIndex] ) {
   //   for ( size_t i = 0; i < attributeDimension; i++ ) {
-  //     asmAttributeScaleMetadata[attributeIndex][i];  // u(32)
-  //     if ( asmAttributeOffsetMetadataPresentFlag[attributeIndex] ) {
+  //     asmAttributeScaleParams[attributeIndex][i];  // u(32)
+  //     if ( asmAttributeOffsetParamsPresentFlag[attributeIndex] ) {
   //       for ( size_t i = 0; i < attributeDimension; i++ ) {
-  //         asmAttributeOffsetMetadata[attributeIndex][i];  // u(32)
+  //         asmAttributeOffsetParams[attributeIndex][i];  // i(32)
   //       }
   //     }
   //   }
@@ -387,108 +387,108 @@ void PCCBitstreamDecoderNewSyntax::geometryFrameParameterSet( PCCContext&   cont
                                                               PCCBitstream& bitstream ) {
   // gfpsGeometryFrameParameterSetId;  // ue(v)
   // gfpsPatchSequenceParameterSetId;  // ue(v)
-  // if ( gpsGeometryMetadataEnabledFlag ) {
-  //   gfpsOverrideGeometryMetadataFlag;  // u(1)
-  //   if ( gfpsOverrideGeometryMetadataFlag ) { geometryFrameMetadata(); }
+  // if ( gpsGeometryParamsEnabledFlag ) {
+  //   gfpsOverrideGeometryParamsFlag;  // u(1)
+  //   if ( gfpsOverrideGeometryParamsFlag ) { geometryFrameParams(); }
   // }
-  // if ( gpsGeometryPatchMetadataEnabledFlag ) {
-  //   gfpsOverrideGeometryPatchMetadataFlag;  // u(1)
-  //   if ( gfpsOverrideGeometryPatchMetadataFlag ) {
-  //     gfpsGeometryPatchScaleMetadataEnabledFlag;       // u(1)
-  //     gfpsGeometryPatchOffsetMetadataEnabledFlag;      // u(1)
-  //     gfpsGeometryPatchRotationMetadataEnabledFlag;    // u(1)
-  //     gfpsGeometryPatchPointSizeMetadataEnabledFlag;   // u(1)
-  //     gfpsGeometryPatchPointShapeMetadataEnabledFlag;  // u(1)
+  // if ( gpsGeometryPatchParamsEnabledFlag ) {
+  //   gfpsOverrideGeometryPatchParamsFlag;  // u(1)
+  //   if ( gfpsOverrideGeometryPatchParamsFlag ) {
+  //     gfpsGeometryPatchScaleParamsEnabledFlag;       // u(1)
+  //     gfpsGeometryPatchOffsetParamsEnabledFlag;      // u(1)
+  //     gfpsGeometryPatchRotationParamsEnabledFlag;    // u(1)
+  //     gfpsGeometryPatchPointSizeParamsEnabledFlag;   // u(1)
+  //     gfpsGeometryPatchPointShapeParamsEnabledFlag;  // u(1)
   //   }
   // }
   // byteAlignment( bitstream );
 }
 
-// 7.3.18 Geometry frame metadata syntax
-void PCCBitstreamDecoderNewSyntax::geometryFrameMetadata( PCCContext&   context,
+// 7.3.18 Geometry frame Params syntax
+void PCCBitstreamDecoderNewSyntax::geometryFrameParams( PCCContext&   context,
                                                           PCCBitstream& bitstream ) {
-  // gfmGeometrySmoothingMetadataPresentFlag;    // u(1)
-  // gfmGeometryScaleMetadataPresentFlag;        // u(1)
-  // gfmGeometryOffsetMetadataPresentFlag;       // u(1)
-  // gfmGeometryRotationMetadataPresentFlag;     // u(1)
-  // gfmGeometryPointSizeMetadataPresentFlag;    // u(1)
-  // gfmGeometryPointShapeMetadataPresentFlag;   // u(1)
-  // if ( gfmGeometrySmoothingMetadataPresentFlag ) {
-  //   gfmGeometrySmoothingRadius;                      // u(8)
-  //   gfmGeometrySmoothingNeighbourCount;              // u(8)
-  //   gfmGeometrySmoothingRadius2BoundaryDetection;    // u(8)
-  //   gfmGeometrySmoothingThreshold;                   // u(8)
+  // gfmGeometrySmoothingParamsPresentFlag;    // u(1)
+  // gfmGeometryScaleParamsPresentFlag;        // u(1)
+  // gfmGeometryOffsetParamsPresentFlag;       // u(1)
+  // gfmGeometryRotationParamsPresentFlag;     // u(1)
+  // gfmGeometryPointSizeParamsPresentFlag;    // u(1)
+  // gfmGeometryPointShapeParamsPresentFlag;   // u(1)
+  // if ( gfmGeometrySmoothingParamsPresentFlag ) {
+  //   gfpGeometrySmoothingEnabledFlag ; // u(1)
+  //   if ( gfpGeometrySmoothingEnabledFlag ) {  
+  //     gfpGeometrySmoothingGridSize ; // u(8)
+  //     gfpGeometrySmoothingThreshold ; // u(8)
+  //   }  
   // }
-  // if ( gfmGeometryScaleMetadataPresentFlag ) {
+  // if ( gfmGeometryScaleParamsPresentFlag ) {
   //   for ( size_t d = 0; d < 3; d++ ) {
-  //     gfmGeometryScaleMetadataOnAxis[d];  // u(32)
+  //     gfmGeometryScaleParamsOnAxis[d];  // u(32)
   //   }
   // }
-  // if ( gfmGeometryOffsetMetadataPresentFlag ) {
+  // if ( gfmGeometryOffsetParamsPresentFlag ) {
   //   for ( size_t d = 0; d < 3; d++ ) {
-  //     gfmGeometryOffsetMetadataOnAxis[d];  // i(32)
+  //     gfmGeometryOffsetParamsOnAxis[d];  // i(32)
   //   }
   // }
-  // if ( gfmGeometryRotationMetadataPresentFlag ) {
+  // if ( gfmGeometryRotationParamsPresentFlag ) {
   //   for ( size_t d = 0; d < 3; d++ ) {
-  //     gfmGeometryRotationMetadataOnAxis[d];  // i(32)
+  //     gfmGeometryRotationParamsOnAxis[d];  // i(32)
   //   }
   // }
-  // if ( gfmGeometryPointSizeMetadataPresentFlag ) {
-  //   gfmGeometryPointSizeMetadata;  // u(8)
+  // if ( gfmGeometryPointSizeParamsPresentFlag ) {
+  //   gfmGeometryPointSizeParams;  // u(8)
   // }
-  // if ( gfmGeometryPointShapeMetadataPresentFlag ) {
-  //   gfmGeometryPointShapeMetadata;  // u(8)
+  // if ( gfmGeometryPointShapeParamsPresentFlag ) {
+  //   gfmGeometryPointShapeParams;  // u(8)
   // }
 }
 
-// 7.3.19 Attribute frame parameter set syntax [ED.Note: should this be renamed to patch frame
-// attribute parameter set?]
+// 7.3.19 Attribute frame parameter set syntax 
 void PCCBitstreamDecoderNewSyntax::attributeFrameParameterSet( PCCContext&   context,
                                                                PCCBitstream& bitstream,
                                                                size_t        attributeIndex ) {
   // afpsAttributeFrameParameterSetId[attributeIndex];  // ue(v)
   // afpsPatchSequenceParameterSetId[attributeIndex];   // ue(v)
   // attributeDimension = apsAttributeDimensionMinus1[attributeIndex] + 1;
-  // if ( apsAttributeMetadataEnabledFlag[attributeIndex] ) {
-  //   afpsOverrideAttributeMetadata flag[attributeIndex];  // u(1)
-  //   if ( afpsOverrideAttributeMetadataFlag[attributeIndex] ) {
-  //     attributeFrameMetadata( attributeIndex, attributeDimension );
+  // if ( apsAttributeParamsEnabledFlag[attributeIndex] ) {
+  //   afpsOverrideAttributeParams flag[attributeIndex];  // u(1)
+  //   if ( afpsOverrideAttributeParamsFlag[attributeIndex] ) {
+  //     attributeFrameParams( attributeIndex, attributeDimension );
   //   }
   // }
-  // if ( apsAttributePatchMetadataEnabledFlag[attributeIndex] ) {
-  //   afpsOverrideAttributePatchMetadataFlag[attributeIndex];  // u(1)
-  //   if ( afpsOverrideAttributePatchMetadataFlag[attributeIndex] ) {
-  //     afpsAttributePatchScaleMetadataEnabledFlag[attributeIndex];   // u(1)
-  //     afpsAttributePatchOffsetMetadataEnabledFlag[attributeIndex];  // u(1)
+  // if ( apsAttributePatchParamsEnabledFlag[attributeIndex] ) {
+  //   afpsOverrideAttributePatchParamsFlag[attributeIndex];  // u(1)
+  //   if ( afpsOverrideAttributePatchParamsFlag[attributeIndex] ) {
+  //     afpsAttributePatchScaleParamsEnabledFlag[attributeIndex];   // u(1)
+  //     afpsAttributePatchOffsetParamsEnabledFlag[attributeIndex];  // u(1)
   //   }
   // }
   // byteAlignment( bitstream );
 }
 
-// 7.3.20 Attribute frame metadata syntax
-void PCCBitstreamDecoderNewSyntax::attributeFrameMetadata( PCCContext&   context,
+// 7.3.20 Attribute frame Params syntax
+void PCCBitstreamDecoderNewSyntax::attributeFrameParams( PCCContext&   context,
                                                            PCCBitstream& bitstream,
                                                            size_t        attributeIndex,
                                                            size_t        attributeDimension ) {
-  // afmAttributeSmoothingMetadataPresentFlag[attributeIndex];  // u(1)
-  // afmAttributeScaleMetadataPresentFlag[attributeIndex];      // u(1)
-  // afmAttributeOffsetMetadataPresentFlag[attributeIndex];     // u(1)
-  // if ( afmAttributeSmoothingMetadataPresentFlag[attributeIndex] ) {
+  // afmAttributeSmoothingParamsPresentFlag[attributeIndex];  // u(1)
+  // afmAttributeScaleParamsPresentFlag[attributeIndex];      // u(1)
+  // afmAttributeOffsetParamsPresentFlag[attributeIndex];     // u(1)
+  // if ( afmAttributeSmoothingParamsPresentFlag[attributeIndex] ) {
   //   afmAttributeSmoothingRadius[attributeIndex];                      // u(8)
   //   afmAttributeSmoothingNeighbourCount[attributeIndex];              // u(8)
   //   afmAttributeSmoothingRadius2BoundaryDetection[attributeIndex];    // u(8)
   //   afmAttributeSmoothingThreshold[attributeIndex];                   // u(8)
   //   afmAttributeSmoothingThresholdLocalEntropy[attributeIndex];       // u(3)
   // }
-  // if ( afmAttributeScaleMetadataPresentFlag[attributeIndex] ) {
+  // if ( afmAttributeScaleParamsPresentFlag[attributeIndex] ) {
   //   for ( size_t i = 0; i < attributeDimension; i++ ) {
-  //     afmAttributeScaleMetadata[attributeIndex][i];  // u(32)
+  //     afmAttributeScaleParams[attributeIndex][i];  // u(32)
   //   }
   // }
-  // if ( afmAttributeOffsetMetadataPresentFlag[attributeIndex] ) {
+  // if ( afmAttributeOffsetParamsPresentFlag[attributeIndex] ) {
   //   for ( size_t i = 0; i < attributeDimension; i++ ) {
-  //     afmAttributeOffsetMetadata[attributeIndex][i];  // u(32)
+  //     afmAttributeOffsetParams[attributeIndex][i];  // i(32)
   //   }
   // }
 }
@@ -498,54 +498,54 @@ void PCCBitstreamDecoderNewSyntax::geometryPatchParameterSet( PCCContext&   cont
                                                               PCCBitstream& bitstream ) {
   // gppsGeometryPatchParameterSetId;  // ue(v)
   // gppsGeometryFrameParameterSetId;  // ue(v)
-  // if ( gfpsGeometryPatchScaleMetadataEnabledFlag ||
-  //      gfpsGeometryPatchOffsetMetadataEnabledFlag ||
-  //      gfpsGeometryPatchRotationMetadataEnabledFlag ||
-  //      gfpsGeometryPatchPointSizeMetadataEnabledFlag ||
-  //      gfpsGeometryPatchPointShapeMetadataEnabledFlag ) {
-  //   gppsGeometryPatchMetadataPresentFlag;  // u(1)
-  //   if ( gppsGeometryPatchMetadataPresentFlag ) { geometryPatchMetadata(); }
+  // if ( gfpsGeometryPatchScaleParamsEnabledFlag ||
+  //      gfpsGeometryPatchOffsetParamsEnabledFlag ||
+  //      gfpsGeometryPatchRotationParamsEnabledFlag ||
+  //      gfpsGeometryPatchPointSizeParamsEnabledFlag ||
+  //      gfpsGeometryPatchPointShapeParamsEnabledFlag ) {
+  //   gppsGeometryPatchParamsPresentFlag;  // u(1)
+  //   if ( gppsGeometryPatchParamsPresentFlag ) { geometryPatchParams(); }
   // }
   // byteAlignment( bitstream );
 }
 
-// 7.3.22 Geometry patch metadata syntax
-void PCCBitstreamDecoderNewSyntax::geometryPatchMetadata( PCCContext&   context,
+// 7.3.22 Geometry patch Params syntax
+void PCCBitstreamDecoderNewSyntax::geometryPatchParams( PCCContext&   context,
                                                           PCCBitstream& bitstream ) {
-  // if ( gfpsGeometryPatchScaleMetadataEnabledFlag ) {
-  //   gpmGeometryPatchScaleMetadataPresentFlag;  // u(1)
-  //   if ( gpmGeometryPatchScaleMetadataPresentFlag ) {
+  // if ( gfpsGeometryPatchScaleParamsEnabledFlag ) {
+  //   gpmGeometryPatchScaleParamsPresentFlag;  // u(1)
+  //   if ( gpmGeometryPatchScaleParamsPresentFlag ) {
   //     for ( size_t d = 0; d < 3; d++ ) {
-  //       gpmGeometryPatchScaleMetadataOnAxis[d];  // u( 32 )
+  //       gpmGeometryPatchScaleParamsOnAxis[d];  // u( 32 )
   //     }
   //   }
   // }
-  // if ( gfpsGeometryPatchOffsetMetadataEnabledFlag ) {
-  //   gpmGeometryPatchOffsetMetadataPresentFlag;  // u(1)
-  //   if ( gpmGeometryPatchOffsetMetadataPresentFlag ) {
+  // if ( gfpsGeometryPatchOffsetParamsEnabledFlag ) {
+  //   gpmGeometryPatchOffsetParamsPresentFlag;  // u(1)
+  //   if ( gpmGeometryPatchOffsetParamsPresentFlag ) {
   //     for ( size_t d = 0; d < 3; d++ ) {
-  //       gpmGeometryPatchOffsetMetadataOnAxis[d];  // i( 32 )
+  //       gpmGeometryPatchOffsetParamsOnAxis[d];  // i( 32 )
   //     }
   //   }
   // }
-  // if ( gfpsGeometryPatchRotationMetadataEnabledFlag ) {
-  //   gpmGeometryPatchRotationMetadataPresentFlag;  // u(1)
-  //   if ( gpmGeometryPachRotationMetadataPresentFlag ) {
+  // if ( gfpsGeometryPatchRotationParamsEnabledFlag ) {
+  //   gpmGeometryPatchRotationParamsPresentFlag;  // u(1)
+  //   if ( gpmGeometryPachRotationParamsPresentFlag ) {
   //     for ( size_t d = 0; d < 3; d++ ) {
-  //       gpmGeometryPatchRotationMetadataOnAxis[d];  // i( 32 )
+  //       gpmGeometryPatchRotationParamsOnAxis[d];  // i( 32 )
   //     }
   //   }
   // }
-  // if ( gfpsGeometryPatchPointSizeMetadataEnabledFlag ) {
-  //   gpmGeometryPatchPointSizeMetadataPresentFlag;  // u(1)
-  //   if ( gpmGeometryPatchPointSizeMetadataPresentFlag ) {
-  //     gpmGeometryPatchPointSizeMetadata;  // u(16)
+  // if ( gfpsGeometryPatchPointSizeParamsEnabledFlag ) {
+  //   gpmGeometryPatchPointSizeParamsPresentFlag;  // u(1)
+  //   if ( gpmGeometryPatchPointSizeParamsPresentFlag ) {
+  //     gpmGeometryPatchPointSizeParams;  // u(16)
   //   }
   // }
-  // if ( gfpsGeometryPatchPointShapeMetadataEnabledFlag ) {
-  //   gpmGeometryPatchPointShapeMetadataPresentFlag;  // u(1)
-  //   if ( gpmGeometryPatchPointShapeMetadataPresentFlag ) {
-  //     gpmGeometryPatchPointShapeMetadata;  // u(8)
+  // if ( gfpsGeometryPatchPointShapeParamsEnabledFlag ) {
+  //   gpmGeometryPatchPointShapeParamsPresentFlag;  // u(1)
+  //   if ( gpmGeometryPatchPointShapeParamsPresentFlag ) {
+  //     gpmGeometryPatchPointShapeParams;  // u(8)
   //   }
   // }
 }
@@ -557,34 +557,34 @@ void PCCBitstreamDecoderNewSyntax::attributePatchParameterSet( PCCContext&   con
   // appsAttributePatchParameterSetId[attributeIndex];  // ue(v)
   // appsAttributeFrameParameterSetId[attributeIndex];  // ue(v)
   // attributeDimension = apsAttributeDimensionMinus1[attributeIndex] + 1;
-  // if ( afpsAttributePatchScaleMetadataEnabledFlag[attributeIndex] ||
-  //      afpsAttributePatchOffsetMetadataEnabledFlag[attributeIndex] ) {
-  //   appsAttributePatchMetadataPresentFlag[attributeIndex];  // u(1)
-  //   if ( appsAttributePatchMetadataPresentFlag[attributeIndex] ) {
-  //     attributePatchMetadata( attributeIndex, attributeDimension );
+  // if ( afpsAttributePatchScaleParamsEnabledFlag[attributeIndex] ||
+  //      afpsAttributePatchOffsetParamsEnabledFlag[attributeIndex] ) {
+  //   appsAttributePatchParamsPresentFlag[attributeIndex];  // u(1)
+  //   if ( appsAttributePatchParamsPresentFlag[attributeIndex] ) {
+  //     attributePatchParams( attributeIndex, attributeDimension );
   //   }
   // }
   // byteAlignment( bitstream );
 }
 
-// 7.3.24 Attribute patch metadata syntax
-void PCCBitstreamDecoderNewSyntax::attributePatchMetadata( PCCContext&   context,
+// 7.3.24 Attribute patch Params syntax
+void PCCBitstreamDecoderNewSyntax::attributePatchParams( PCCContext&   context,
                                                            PCCBitstream& bitstream,
                                                            size_t        attributeIndex,
                                                            size_t        attributeDimension ) {
-  // if ( afpsAttributePatchScaleMetadataEnabledFlag[attributeIndex] ) {
-  //   apmAttributePatchScaleMetadataPresentFlag[attributeIndex];  // u(1)
-  //   if ( apmAttributePatchScaleMetadataPresentFlag[attributeIndex] ) {
+  // if ( afpsAttributePatchScaleParamsEnabledFlag[attributeIndex] ) {
+  //   apmAttributePatchScaleParamsPresentFlag[attributeIndex];  // u(1)
+  //   if ( apmAttributePatchScaleParamsPresentFlag[attributeIndex] ) {
   //     for ( size_t i = 0; i < attributeDimension; i++ ) {
-  //       apmAttributePatchScaleMetadata[attributeIndex][i];  // u( 32 )
+  //       apmAttributePatchScaleParams[attributeIndex][i];  // u( 32 )
   //     }
   //   }
   // }
-  // if ( afpsAttributePatchOffsetMetadataEnabledFlag[attributeIndex] ) {
-  //   apmAttributePatchOffsetMetadataPresentFlag[attributeIndex];  // u(1)
-  //   if ( apmAttributePatchOffsetMetadataPresentFlag[attributeIndex] ) {
+  // if ( afpsAttributePatchOffsetParamsEnabledFlag[attributeIndex] ) {
+  //   apmAttributePatchOffsetParamsPresentFlag[attributeIndex];  // u(1)
+  //   if ( apmAttributePatchOffsetParamsPresentFlag[attributeIndex] ) {
   //     for ( size_t i = 0; i < attributeDimension; i++ ) {
-  //       apmAttributePatchOffsetMetadata[attributeIndex][i];  // i(32)
+  //       apmAttributePatchOffsetParams[attributeIndex][i];  // i(32)
   //     }
   //   }
   // }
@@ -748,6 +748,23 @@ void PCCBitstreamDecoderNewSyntax::patchFrameDataUnit( PCCContext&   context,
   // PdfuTotalNumberOfPatches[frameIndex] = patchIndex + 1;
   // if ( spsPointLocalReconstructionEnabledFlag ) { pointLocalReconstruction(); }
   // byteAlignment( bitstream );
+  // Note: 
+  // Vlad also proposed the following alternative mode, which saves on signaling the termination flag. Instead, a new mode is introduced that explicitly signals termination. This could also be used for the patch sequence data unit as well.
+  // patchFrameDataUnit( frmIdx) {  
+  //   p = -1  
+  //   do {  
+  //     p ++  
+  //     pfduPatchMode[ frmIdx ][ p ] ; // ue(v)
+  //     if( pfduPatchMode[ frmIdx ][ p ] !=IEND && 
+  //       pfduPatchMode[ frmIdx ][ p ] != PEND)  
+  //       patchInformationData(frmIdx, p, pfduPatchMode[ frmIdx ][ p ])  
+  //   } while( pfduPatchMode[ frmIdx ][ p ] !=IEND && 
+  //       pfduPatchMode[ frmIdx ][ p ] != PEND)  
+  //   PdfuTotalNumberOfPatches[ frmIdx ] = p  
+  //   if( spsPointLocalReconstructionEnabledFlag )  
+  //     pointLocalReconstruction( )  
+  //   byteAlignment( )    
+  // }  
 }
 
 // 7.3.30 Patch information data syntax
@@ -786,10 +803,10 @@ void PCCBitstreamDecoderNewSyntax::patchDataUnit( PCCContext&   context,
                                                   PCCBitstream& bitstream,
                                                   size_t        frameIndex,
                                                   size_t        patchIndex ) {
-  // pdu2dShiftU[frameIndex][patchIndex];               // u(v)
-  // pdu2dShiftV[frameIndex][patchIndex];               // u(v)
-  // pdu2dDeltaSizeU[frameIndex][patchIndex];          // se( v )
-  // pdu2dDeltaSizeV[frameIndex][patchIndex];          // se( v )
+  // pdu2dShiftU[frameIndex][patchIndex];              // ae(v)
+  // pdu2dShiftV[frameIndex][patchIndex];              // ae(v)
+  // pdu2dDeltaSizeU[frameIndex][patchIndex];          // ae(v)
+  // pdu2dDeltaSizeV[frameIndex][patchIndex];          // ae(v)
   // pdu3dShiftTangentAxis[frameIndex][patchIndex];    // u(v)
   // pdu3dShiftBitangentAxis[frameIndex][patchIndex];  // u(v)
   // pdu3dShiftNormalAxis[frameIndex][patchIndex];     // u(v)
@@ -815,14 +832,22 @@ void PCCBitstreamDecoderNewSyntax::deltaPatchDataUnit( PCCContext&   context,
                                                        PCCBitstream& bitstream,
                                                        size_t        frameIndex,
                                                        size_t        patchIndex ) {
-  // dpduPatchIndex[frameIndex][patchIndex];              // ae(v)
-  // dpdu2dShiftU[frameIndex][patchIndex];               // ae(v)
-  // dpdu2dShiftV[frameIndex][patchIndex];               // ae(v)
+  // dpduPatchIndex[frameIndex][patchIndex];            // ae(v)
+  // dpdu2dShiftU[frameIndex][patchIndex];              // ae(v)
+  // dpdu2dShiftV[frameIndex][patchIndex];              // ae(v)
   // dpdu2dDeltaSizeU[frameIndex][patchIndex];          // ae(v)
   // dpdu2dDeltaSizeV[frameIndex][patchIndex];          // ae(v)
   // dpdu3dShiftTangentAxis[frameIndex][patchIndex];    // ae(v)
   // dpdu3dShiftBitangentAxis[frameIndex][patchIndex];  // ae(v)
   // dpdu3dShiftNormalAxis[frameIndex][patchIndex];     // ae(v)
+  // projectionFlag = 0  
+  // i = 0  
+  // while (i < spsLayerCountMinus1 + 1 && projectionFlag == 0 )  {
+  //   projectionFlag = projectionFlag | spsLayerAbsoluteCodingEnabledFlag[ i ]   
+  // }
+  // if ( projectionFlag )  {
+  //   dpduProjectionMode[ frmIdx ][ patchIndex ] ; // ae(v)
+  // }
 }
 
 // 7.3.33 PCM patch data unit syntax
@@ -845,8 +870,8 @@ void PCCBitstreamDecoderNewSyntax::pointLocalReconstruction( PCCContext&   conte
                                                              PCCBitstream& bitstream ) {
   // for ( i = 0; i < BlockCount; i++ ) {
   //   if ( blockToPatch[i] >= 0 ) {
-  //     plrModeInterpolateFlag[i];                                   // ae(v)
-  //     if ( plrModeInterpolateFlag[i] ) { plrModeNeighbour[i]; }  // ae(v)
+  //     plrModeInterpolateFlag[i];                                  // ae(v)
+  //     if ( plrModeInterpolateFlag[i] ) { plrModeNeighbour[i]; }   // ae(v)
   //     plrModeMinimumDepthMinus1[i];                               // ae(v)
   //     if ( plrMode minimumDepthMinus1[i] > 0 || plrModeInterpolateFlag[i] ) {
   //       plrModeFillingFlag[i]  // ae(v)

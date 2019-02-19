@@ -1859,7 +1859,7 @@ void PCCEncoder::generateMissedPointsGeometryVideo(PCCContext& context, PCCGroup
     frame.setLosslessGeo444(context.getLosslessGeo444());
     frame.setMPGeoWidth(context.getMPGeoWidth());
     frame.setMPGeoHeight(0);
-    frame.setEnhancedDeltaDepth( sps.getEnhancedDepthCodeEnabledFlag());
+    frame.setEnhancedDeltaDepth( sps.getEnhancedOccupancyMapForDepthFlag());
     generateMPsGeometryImage    (context, frame,videoMPsGeometry.getFrame(shift));
     cout<<"generate Missed Points (Geometry) : frame "<<shift<<", # of Missed Points Geometry : "<<frame.getMissedPointsPatch().size()<<endl;
     //for resizing for mpgeometry

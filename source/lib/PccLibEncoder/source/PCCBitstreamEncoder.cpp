@@ -408,7 +408,7 @@ int PCCBitstreamEncoder::compressMetadata(const PCCMetadata &metadata, o3dgc::Ar
 int PCCBitstreamEncoder::compressHeader( PCCContext& context, pcc::PCCBitstream& bitstream ) {
   auto& sps = context.getSps();
   auto& gps = sps.getGeometryParameterSet();
-  auto& gsm = gps.getGeometrySequenceMetadata();
+  auto& gsp = gps.getGeometrySequenceParams();
   auto& ops = sps.getOccupancyParameterSet();
   bitstream.write<uint8_t>( ( uint8_t )( context.size() ) );
   if ( !context.size() ) { return 0; }
@@ -416,17 +416,17 @@ int PCCBitstreamEncoder::compressHeader( PCCContext& context, pcc::PCCBitstream&
   bitstream.write<uint16_t>( uint16_t( sps.getHeight() ) );
   bitstream.write<uint8_t>( uint8_t( ops.getPackingBlockSize() ) );
   bitstream.write<uint8_t>( uint8_t( context.getOccupancyPrecision() ) );
-  bitstream.write<uint8_t>( uint8_t( gsm.getSmoothingMetadataPresentFlag() ) );
-  if ( gsm.getSmoothingMetadataPresentFlag() ) {
+  bitstream.write<uint8_t>( uint8_t( gsp.getSmoothingPresentFlag() ) );
+  if ( gsp.getSmoothingPresentFlag() ) {
     bitstream.write<uint8_t>( uint8_t( context.getGridSmoothing() ) );
     if ( context.getGridSmoothing() ) {
-      bitstream.write<uint8_t>( uint8_t( context.getGridSize() ) );
-      bitstream.write<uint8_t>( uint8_t( gsm.getSmoothingThreshold() ) );
+      bitstream.write<uint8_t>( uint8_t( gsp.getGridSize() ) );
+      bitstream.write<uint8_t>( uint8_t( gsp.getSmoothingThreshold() ) );
     } else {
-      bitstream.write<uint8_t>( uint8_t( gsm.getSmoothingRadius() ) );
-      bitstream.write<uint8_t>( uint8_t( gsm.getSmoothingNeighbourCount() ) );
-      bitstream.write<uint8_t>( uint8_t( gsm.getSmoothingRadius2BoundaryDetection() ) );
-      bitstream.write<uint8_t>( uint8_t( gsm.getSmoothingThreshold() ) );
+      bitstream.write<uint8_t>( uint8_t( context.getSmoothingRadius() ) );
+      bitstream.write<uint8_t>( uint8_t( context.getSmoothingNeighbourCount() ) );
+      bitstream.write<uint8_t>( uint8_t( context.getSmoothingRadius2BoundaryDetection() ) );
+      bitstream.write<uint8_t>( uint8_t( gsp.getSmoothingThreshold() ) );
     }
   }
   bitstream.write<uint8_t>( uint8_t( context.getLosslessGeo() ) );
@@ -451,7 +451,7 @@ int PCCBitstreamEncoder::compressHeader( PCCContext& context, pcc::PCCBitstream&
     bitstream.write<uint8_t>( uint8_t( context.getNeighborCountColorSmoothing() ) );
   }
   if ( context.getLosslessGeo() ) {
-    bitstream.write<uint8_t>( uint8_t( sps.getEnhancedDepthCodeEnabledFlag() ) );
+    bitstream.write<uint8_t>( uint8_t( sps.getEnhancedOccupancyMapForDepthFlag() ) );
     bitstream.write<uint8_t>( uint8_t( context.getImproveEDD() ) );
   }
   bitstream.write<uint8_t>( uint8_t( context.getDeltaCoding() ) );

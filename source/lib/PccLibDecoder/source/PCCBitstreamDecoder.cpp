@@ -358,7 +358,7 @@ int PCCBitstreamDecoder::decompressMetadata( PCCMetadata&               metadata
 int PCCBitstreamDecoder::decompressHeader( PCCContext& context, PCCBitstream& bitstream ) {
   auto& sps = context.getSps();
   auto& gps = sps.getGeometryParameterSet();
-  auto& gsm = gps.getGeometrySequenceMetadata();
+  auto& gsp = gps.getGeometrySequenceParams();
   auto& ops = sps.getOccupancyParameterSet();
 
   uint8_t groupOfFramesSize = bitstream.read<uint8_t>();
@@ -368,17 +368,17 @@ int PCCBitstreamDecoder::decompressHeader( PCCContext& context, PCCBitstream& bi
   sps.getHeight()                       = bitstream.read<uint16_t>();
   ops.getPackingBlockSize()             = bitstream.read<uint8_t>();
   context.getOccupancyPrecision()       = bitstream.read<uint8_t>();
-  gsm.getSmoothingMetadataPresentFlag() = bitstream.read<uint8_t>();
-  if ( gsm.getSmoothingMetadataPresentFlag() ) {
+  gsp.getSmoothingPresentFlag() = bitstream.read<uint8_t>();
+  if ( gsp.getSmoothingPresentFlag() ) {
     context.getGridSmoothing() = bitstream.read<uint8_t>() > 0;
     if ( context.getGridSmoothing() ) {
-      context.getGridSize()       = bitstream.read<uint8_t>();
-      gsm.getSmoothingThreshold() = bitstream.read<uint8_t>();
+      gsp.getGridSize()               = bitstream.read<uint8_t>();
+      gsp.getSmoothingThreshold() = bitstream.read<uint8_t>();
     } else {
-      gsm.getSmoothingRadius()                   = bitstream.read<uint8_t>();
-      gsm.getSmoothingNeighbourCount()           = bitstream.read<uint8_t>();
-      gsm.getSmoothingRadius2BoundaryDetection() = bitstream.read<uint8_t>();
-      gsm.getSmoothingThreshold()                = bitstream.read<uint8_t>();
+      context.getSmoothingRadius()                   = bitstream.read<uint8_t>();
+      context.getSmoothingNeighbourCount()           = bitstream.read<uint8_t>();
+      context.getSmoothingRadius2BoundaryDetection() = bitstream.read<uint8_t>();
+      gsp.getSmoothingThreshold()                    = bitstream.read<uint8_t>();
     }
   }
   context.getLosslessGeo()             = bitstream.read<uint8_t>();
@@ -401,9 +401,9 @@ int PCCBitstreamDecoder::decompressHeader( PCCContext& context, PCCBitstream& bi
     context.getRadius2ColorSmoothing()       = bitstream.read<uint8_t>();
     context.getNeighborCountColorSmoothing() = bitstream.read<uint8_t>();
   }
-  sps.getEnhancedDepthCodeEnabledFlag() = false;
+  sps.getEnhancedOccupancyMapForDepthFlag() = false;
   if ( context.getLosslessGeo() ) {
-    sps.getEnhancedDepthCodeEnabledFlag() = bitstream.read<uint8_t>() > 0;
+    sps.getEnhancedOccupancyMapForDepthFlag() = bitstream.read<uint8_t>() > 0;
     context.getImproveEDD()               = bitstream.read<uint8_t>() > 0;
   }
   context.getDeltaCoding()                  = bitstream.read<uint8_t>() > 0;
@@ -422,7 +422,7 @@ int PCCBitstreamDecoder::decompressHeader( PCCContext& context, PCCBitstream& bi
     frames[i].setLosslessGeo( context.getLosslessGeo() );
     frames[i].setLosslessGeo444( context.getLosslessGeo444() );
     frames[i].setLosslessTexture( context.getLosslessTexture() );
-    frames[i].setEnhancedDeltaDepth( sps.getEnhancedDepthCodeEnabledFlag() );
+    frames[i].setEnhancedDeltaDepth( sps.getEnhancedOccupancyMapForDepthFlag() );
     frames[i].setUseMissedPointsSeparateVideo( sps.getPcmSeparateVideoPresentFlag() );
     frames[i].setUseAdditionalPointsPatch( context.getUseAdditionalPointsPatch() );
   }
@@ -813,7 +813,7 @@ void PCCBitstreamDecoder::decompressOccupancyMap( PCCContext&      context,
                                                   size_t           frameIndex ) {
   auto&    sps        = context.getSps();
   auto&    gps        = sps.getGeometryParameterSet();
-  auto&    gsm        = gps.getGeometrySequenceMetadata();
+  auto&    gsp        = gps.getGeometrySequenceParams();
   auto&    ops        = sps.getOccupancyParameterSet();
   auto&    patches    = frame.getPatches();
   uint32_t patchCount = bitstream.read<uint32_t>(  );

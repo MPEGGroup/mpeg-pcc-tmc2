@@ -74,7 +74,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   std::stringstream path;
   auto&             sps = context.getSps();
   auto&             gps = sps.getGeometryParameterSet();
-  auto&             gsm = gps.getGeometrySequenceMetadata();
+  auto&             gsp = gps.getGeometrySequenceParams();
   auto&             ops = sps.getOccupancyParameterSet();
   path << removeFileExtension( params_.compressedStreamPath_ ) << "_dec_GOF" << sps.getIndex()
        << "_";
@@ -144,7 +144,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   }
   bool useAdditionalPointsPatch = context.getFrames()[0].getUseAdditionalPointsPatch();
   bool lossyMissedPointsPatch   = !context.getLosslessGeo() && useAdditionalPointsPatch;
-  if ( ( context.getLosslessGeo() != 0 ) && sps.getEnhancedDepthCodeEnabledFlag() ) {
+  if ( ( context.getLosslessGeo() != 0 ) && sps.getEnhancedOccupancyMapForDepthFlag() ) {
     generateBlockToPatchFromOccupancyMap( context, context.getLosslessGeo(), lossyMissedPointsPatch,
                                           0, ops.getPackingBlockSize() );
   } else {
@@ -155,13 +155,13 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   GeneratePointCloudParameters generatePointCloudParameters;
   generatePointCloudParameters.occupancyResolution_          = ops.getPackingBlockSize();
   generatePointCloudParameters.occupancyPrecision_           = context.getOccupancyPrecision();
-  generatePointCloudParameters.flagGeometrySmoothing_        = gsm.getSmoothingMetadataPresentFlag();
+  generatePointCloudParameters.flagGeometrySmoothing_        = gsp.getSmoothingPresentFlag();
   generatePointCloudParameters.gridSmoothing_                = context.getGridSmoothing();
-  generatePointCloudParameters.gridSize_                     = context.getGridSize();
-  generatePointCloudParameters.neighborCountSmoothing_       = gsm.getSmoothingNeighbourCount();
-  generatePointCloudParameters.radius2Smoothing_             = (double)gsm.getSmoothingRadius();
-  generatePointCloudParameters.radius2BoundaryDetection_     = (double)gsm.getSmoothingRadius2BoundaryDetection();
-  generatePointCloudParameters.thresholdSmoothing_           = (double)gsm.getSmoothingThreshold();
+  generatePointCloudParameters.gridSize_                     = gsp.getGridSize();
+  generatePointCloudParameters.neighborCountSmoothing_       = context.getSmoothingNeighbourCount();
+  generatePointCloudParameters.radius2Smoothing_             = (double)context.getSmoothingRadius();
+  generatePointCloudParameters.radius2BoundaryDetection_     = (double)context.getSmoothingRadius2BoundaryDetection();
+  generatePointCloudParameters.thresholdSmoothing_           = (double)gsp.getSmoothingThreshold();
   generatePointCloudParameters.losslessGeo_                  = context.getLosslessGeo() != 0;
   generatePointCloudParameters.losslessGeo444_               = context.getLosslessGeo444() != 0;
   generatePointCloudParameters.nbThread_                     = params_.nbThread_;
@@ -173,7 +173,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   generatePointCloudParameters.radius2ColorSmoothing_        = (double)context.getRadius2ColorSmoothing();
   generatePointCloudParameters.neighborCountColorSmoothing_  = context.getNeighborCountColorSmoothing();
   generatePointCloudParameters.flagColorSmoothing_           = (bool) context.getFlagColorSmoothing();
-  generatePointCloudParameters.enhancedDeltaDepthCode_       = ((context.getLosslessGeo() != 0) ? sps.getEnhancedDepthCodeEnabledFlag() : false);
+  generatePointCloudParameters.enhancedDeltaDepthCode_       = ((context.getLosslessGeo() != 0) ? sps.getEnhancedOccupancyMapForDepthFlag() : false);
   generatePointCloudParameters.deltaCoding_                  = (params_.testLevelOfDetailSignaling_ > 0); // ignore LoD scaling for testing the signaling only
   generatePointCloudParameters.removeDuplicatePoints_        = context.getRemoveDuplicatePoints();
   generatePointCloudParameters.oneLayerMode_                 = !sps.getMultipleLayerStreamsPresentFlag();
