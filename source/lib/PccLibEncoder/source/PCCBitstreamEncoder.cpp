@@ -410,6 +410,8 @@ int PCCBitstreamEncoder::compressHeader( PCCContext& context, pcc::PCCBitstream&
   auto& gps = sps.getGeometryParameterSet();
   auto& gsp = gps.getGeometrySequenceParams();
   auto& ops = sps.getOccupancyParameterSet();
+  auto& aps = sps.getAttributeParameterSets( 0 );
+  auto& asp = aps.getAttributeSequenceParams();
   bitstream.write<uint8_t>( ( uint8_t )( context.size() ) );
   if ( !context.size() ) { return 0; }
   bitstream.write<uint16_t>( uint16_t( sps.getWidth() ) );
@@ -423,9 +425,9 @@ int PCCBitstreamEncoder::compressHeader( PCCContext& context, pcc::PCCBitstream&
       bitstream.write<uint8_t>( uint8_t( gsp.getSmoothingGridSize() ) );
       bitstream.write<uint8_t>( uint8_t( gsp.getSmoothingThreshold() ) );
     } else {
-      bitstream.write<uint8_t>( uint8_t( context.getSmoothingRadius() ) );
-      bitstream.write<uint8_t>( uint8_t( context.getSmoothingNeighbourCount() ) );
-      bitstream.write<uint8_t>( uint8_t( context.getSmoothingRadius2BoundaryDetection() ) );
+      bitstream.write<uint8_t>( uint8_t( asp.getSmoothingParamsPresentFlag() ) );
+      bitstream.write<uint8_t>( uint8_t( asp.getSmoothingNeighbourCount() ) );
+      bitstream.write<uint8_t>( uint8_t( asp.getSmoothingRadius2BoundaryDetection() ) );
       bitstream.write<uint8_t>( uint8_t( gsp.getSmoothingThreshold() ) );
     }
   }
@@ -443,12 +445,12 @@ int PCCBitstreamEncoder::compressHeader( PCCContext& context, pcc::PCCBitstream&
   bitstream.write<float>( context.getModelScale() );
   bitstream.write<PCCVector3<float> >( context.getModelOrigin() );
   writeMetadata( context.getGOFLevelMetadata(), bitstream );
-  bitstream.write<uint8_t>( uint8_t( context.getFlagColorSmoothing() ) );
-  if ( context.getFlagColorSmoothing() ) {
-    bitstream.write<uint8_t>( uint8_t( context.getThresholdColorSmoothing() ) );
-    bitstream.write<double>( double( context.getThresholdLocalEntropy() ) );
-    bitstream.write<uint8_t>( uint8_t( context.getRadius2ColorSmoothing() ) );
-    bitstream.write<uint8_t>( uint8_t( context.getNeighborCountColorSmoothing() ) );
+  bitstream.write<uint8_t>( uint8_t( asp.getSmoothingParamsPresentFlag() ) );
+  if ( asp.getSmoothingParamsPresentFlag() ) {
+    bitstream.write<uint8_t>( uint8_t( asp.getSmoothingThreshold() ) );
+    bitstream.write<double>( double( asp.getSmoothingThresholdLocalEntropy() ) );
+    bitstream.write<uint8_t>( uint8_t( asp.getSmoothingRadius() ) );
+    bitstream.write<uint8_t>( uint8_t( asp.getSmoothingNeighbourCount() ) );
   }
   if ( context.getLosslessGeo() ) {
     bitstream.write<uint8_t>( uint8_t( sps.getEnhancedOccupancyMapForDepthFlag() ) );

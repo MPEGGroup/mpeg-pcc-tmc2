@@ -66,24 +66,24 @@ bool PCCBitstream::write( std::string compressedStreamPath ) {
   return true;
 }
 
-// Must be moved in PccEncoderBitstream and PccDeccoderBitstream. 
+// Must be moved in PccEncoderBitstream and PccDeccoderBitstream.
 bool PCCBitstream::readHeader( PCCMetadataEnabledFlags& gofLevelMetadataEnabledFlags ) {
-   0;
+  0;
   uint64_t totalSize            = 0;
   uint32_t containerMagicNumber = read<uint32_t>();
   if ( containerMagicNumber != PCCTMC2ContainerMagicNumber ) { return false; }
-  uint32_t containerVersion     = read<uint32_t>();
+  uint32_t containerVersion = read<uint32_t>();
   if ( containerVersion != PCCTMC2ContainerVersion ) { return false; }
-  totalSize = read<uint64_t>(  );
+  totalSize = read<uint64_t>();
   assert( data_.size() == totalSize );
   gofLevelMetadataEnabledFlags.getMetadataEnabled() = read<uint8_t>();
   if ( gofLevelMetadataEnabledFlags.getMetadataEnabled() ) {
-    gofLevelMetadataEnabledFlags.getScaleEnabled() = read<uint8_t>();
-    gofLevelMetadataEnabledFlags.getOffsetEnabled() = read<uint8_t>();
-    gofLevelMetadataEnabledFlags.getRotationEnabled() = read<uint8_t>();
-    gofLevelMetadataEnabledFlags.getPointSizeEnabled() = read<uint8_t>();
+    gofLevelMetadataEnabledFlags.getScaleEnabled()      = read<uint8_t>();
+    gofLevelMetadataEnabledFlags.getOffsetEnabled()     = read<uint8_t>();
+    gofLevelMetadataEnabledFlags.getRotationEnabled()   = read<uint8_t>();
+    gofLevelMetadataEnabledFlags.getPointSizeEnabled()  = read<uint8_t>();
     gofLevelMetadataEnabledFlags.getPointShapeEnabled() = read<uint8_t>();
-#ifdef CE210_MAXDEPTH_EVALUATION  
+#ifdef CE210_MAXDEPTH_EVALUATION
     gofLevelMetadataEnabledFlags.setMaxDepthEnabled( read<uint8_t>() );
 #endif
   }
@@ -107,35 +107,35 @@ void PCCBitstream::writeHeader( const PCCMetadataEnabledFlags& gofLevelMetadataE
 #endif
   }
 }
-//~Must be moved in PccEncoderBitstream and PccDeccoderBitstream. 
+//~Must be moved in PccEncoderBitstream and PccDeccoderBitstream.
 
-  void PCCBitstream::writeUvlc( uint32_t code ) {    
-    uint32_t length = 1, temp = ++code;
-    while ( 1 != temp ) {
-      temp >>= 1;
-      length += 2;
-    }
-    write( 0, length >> 1, position_ );
-    write( code, ( length + 1 ) >> 1, position_ );
+void PCCBitstream::writeUvlc( uint32_t code ) {
+  uint32_t length = 1, temp = ++code;
+  while ( 1 != temp ) {
+    temp >>= 1;
+    length += 2;
   }
-  uint32_t PCCBitstream::readUvlc() {
-    uint32_t value = 0, code = 0, length = 0;
-    code = read( 1, position_ );
-    if ( 0 == code ) {
-      while ( !( code & 1 ) ) {
-        code = read( 1, position_ );
-        length++;
-      }
-      value = read( length, position_ );
-      value += ( 1 << length ) - 1;
+  write( 0, length >> 1, position_ );
+  write( code, ( length + 1 ) >> 1, position_ );
+}
+uint32_t PCCBitstream::readUvlc() {
+  uint32_t value = 0, code = 0, length = 0;
+  code = read( 1, position_ );
+  if ( 0 == code ) {
+    while ( !( code & 1 ) ) {
+      code = read( 1, position_ );
+      length++;
     }
-    return value;
+    value = read( length, position_ );
+    value += ( 1 << length ) - 1;
   }
+  return value;
+}
 
 void PCCBitstream::writeSvlc( int32_t code ) {
   writeUvlc( ( uint32_t )( code <= 0 ) ? -code << 1 : ( code << 1 ) - 1 );
 }
-int32_t PCCBitstream::readSvlc() {  
+int32_t PCCBitstream::readSvlc() {
   uint32_t bits = readUvlc();
   return ( bits & 1 ) ? -( int32_t )( bits >> 1 ) : ( int32_t )( bits >> 1 );
 }
@@ -160,7 +160,8 @@ void PCCBitstream::writeBuffer( const uint8_t* data, const size_t size ) {
 }
 
 uint32_t PCCBitstream::read( uint8_t bits ) { return read( bits, position_ ); }
-void PCCBitstream::write( uint32_t value, uint8_t bits ) { write( value, bits, position_ ); }
+void     PCCBitstream::write( uint32_t value, uint8_t bits ) { write( value, bits, position_ ); }
+
 void PCCBitstream::align() { align( position_ ); }
 void PCCBitstream::align( PCCBistreamPosition& pos ) {
   if ( pos.bits != 0 ) { pos.bits = 0, pos.bytes++; }
@@ -178,7 +179,7 @@ uint32_t PCCBitstream::read( uint8_t bits, PCCBistreamPosition& pos ) {
       pos.bits++;
     }
   }
-  return value; 
+  return value;
 }
 
 inline void PCCBitstream::write( uint32_t value, uint8_t bits, PCCBistreamPosition& pos ) {

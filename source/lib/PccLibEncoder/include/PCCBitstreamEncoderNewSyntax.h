@@ -55,6 +55,9 @@ class SequenceParameterSet;
 class OccupancyParameterSet;
 class GeometrySequenceParams;
 class AttributeParameterSet;
+class GeometryParameterSet; 
+class AttributeSequenceParams;
+
 
 class PCCBitstreamEncoderNewSyntax {
  public:
@@ -109,14 +112,13 @@ class PCCBitstreamEncoderNewSyntax {
 
   // 7.3.12 Attribute parameter set syntax
   void attributeParameterSet( AttributeParameterSet& attributeParameterSet,
-                              PCCBitstream&          bitstream,
-                              size_t                 attributeIndex );
+                              SequenceParameterSet&  sequenceParameterSet,
+                              PCCBitstream&          bitstream );
 
   // 7.3.13 Attribute sequence parameter syntax
-  void attributeSequenceParams( PCCContext&   context,
-                                PCCBitstream& bitstream,
-                                size_t        attributeIndex,
-                                size_t        attributeDimension );
+  void attributeSequenceParams( AttributeSequenceParams& attributeSequenceParams,
+                                uint8_t                  dimension,
+                                PCCBitstream&            bitstream );
 
   // 7.3.14 Patch sequence data unit syntax
   void patchSequenceDataUnit( PCCContext& context, PCCBitstream& bitstream );
@@ -204,7 +206,7 @@ class PCCBitstreamEncoderNewSyntax {
   // 7.3.34 Point local reconstruction syntax
   void pointLocalReconstruction( PCCContext& context, PCCBitstream& bitstream );
 
-  PCCEncoderParameters params;
+  PCCEncoderParameters params_;
 };
 
 };  // namespace pcc

@@ -54,6 +54,32 @@ int PCCBitstreamDecoderNewSyntax::decode( PCCContext& context, PCCBitstream& bit
   vpccUnit( context, bitstream, vpccUnitType );  // VPCC_AVD
   return 0;
 }
+
+void PCCBitstreamDecoderNewSyntax::vpccVideoDataUnit( PCCContext&   context,
+                                                      PCCBitstream& bitstream,
+                                                      VPCCUnitType& vpccUnitType ) {
+  if ( vpccUnitType == VPCC_OVD ) {
+    bitstream.read( context.getVideoBitstream( PCCVideoType::OccupancyMap ) );
+  } else if ( vpccUnitType == VPCC_GVD ) {
+    if ( !context.getAbsoluteD1() ) {
+      bitstream.read( context.getVideoBitstream( PCCVideoType::GeometryD0 ) );
+      bitstream.read( context.getVideoBitstream( PCCVideoType::GeometryD1 ) );
+    } else {
+      bitstream.read( context.getVideoBitstream( PCCVideoType::Geometry ) );
+    }
+    if ( context.getUseAdditionalPointsPatch() && context.getSps().getPcmSeparateVideoPresentFlag() ) {
+      bitstream.read( context.getVideoBitstream( PCCVideoType::GeometryMP ) );
+    }
+  } else if ( vpccUnitType == VPCC_AVD ) {
+    if ( !context.getNoAttributes() ) {
+      bitstream.read( context.getVideoBitstream( PCCVideoType::Texture ) );
+      if ( context.getUseAdditionalPointsPatch() && context.getSps().getPcmSeparateVideoPresentFlag() ) {
+        bitstream.read( context.getVideoBitstream( PCCVideoType::TextureMP ) );
+      }
+    }
+  }
+}
+
 uint32_t PCCBitstreamDecoderNewSyntax::DecodeUInt32( const uint32_t           bitCount,
                                                      o3dgc::Arithmetic_Codec& arithmeticDecoder,
                                                      o3dgc::Static_Bit_Model& bModel0 ) {
@@ -132,31 +158,6 @@ void PCCBitstreamDecoderNewSyntax::vpccUnitPayload( PCCContext&   context,
   }
 }
 
-void PCCBitstreamDecoderNewSyntax::vpccVideoDataUnit( PCCContext&   context,
-                                                      PCCBitstream& bitstream,
-                                                      VPCCUnitType& vpccUnitType ) {
-  if ( vpccUnitType == VPCC_OVD ) {
-    bitstream.read( context.getVideoBitstream( PCCVideoType::OccupancyMap ) );
-  } else if ( vpccUnitType == VPCC_GVD ) {
-    if ( !context.getAbsoluteD1() ) {
-      bitstream.read( context.getVideoBitstream( PCCVideoType::GeometryD0 ) );
-      bitstream.read( context.getVideoBitstream( PCCVideoType::GeometryD1 ) );
-    } else {
-      bitstream.read( context.getVideoBitstream( PCCVideoType::Geometry ) );
-    }
-    if ( context.getUseAdditionalPointsPatch() && context.getSps().getPcmSeparateVideoPresentFlag() ) {
-      bitstream.read( context.getVideoBitstream( PCCVideoType::GeometryMP ) );
-    }
-  } else if ( vpccUnitType == VPCC_AVD ) {
-    if ( !context.getNoAttributes() ) {
-      bitstream.read( context.getVideoBitstream( PCCVideoType::Texture ) );
-      if ( context.getUseAdditionalPointsPatch() && context.getSps().getPcmSeparateVideoPresentFlag() ) {
-        bitstream.read( context.getVideoBitstream( PCCVideoType::TextureMP ) );
-      }
-    }
-  }
-}
-
 // 7.3.6 Sequence parameter set syntax
 void PCCBitstreamDecoderNewSyntax::vpccSequenceParameterSet( SequenceParameterSet& sps,
                                                              PCCBitstream&         bitstream ) {
@@ -191,8 +192,10 @@ void PCCBitstreamDecoderNewSyntax::vpccSequenceParameterSet( SequenceParameterSe
   occupancyParameterSet( sps.getOccupancyParameterSet(), bitstream );
   geometryParameterSet( sps.getGeometryParameterSet(), sps, bitstream );
   sps.getAttributeCount() = bitstream.read( 16 );  // u(16)
+
+  sps.allocateAttributeParameterSets();
   for ( size_t i = 0; i < sps.getAttributeCount(); i++ ) {
-    attributeParameterSet( sps.getAttributeParameterSets( i ), bitstream, i );
+    attributeParameterSet( sps.getAttributeParameterSets( i ), sps, bitstream );
   }
   sps.getPatchSequenceOrientationEnabledFlag() = bitstream.read( 1 );  // u(1)
   sps.getPatchInterPredictionEnabledFlag()     = bitstream.read( 1 );  // u(1)
@@ -270,12 +273,12 @@ void PCCBitstreamDecoderNewSyntax::geometrySequenceParams( GeometrySequenceParam
     }
     if ( gsp.getOffsetPresentFlag() ) {
       for ( size_t d = 0; d < 3; d++ ) {
-        gsp.getOffsetOnAxis( d ) = bitstream.read( 32 );  // i(32)
+        gsp.getOffsetOnAxis( d ) = convertToInt( bitstream.read( 32 ) );  // i(32)
       }
     }
     if ( gsp.getRotationPresentFlag() ) {
       for ( size_t d = 0; d < 3; d++ ) {
-        gsp.getRotationOnAxis( d ) = bitstream.read( 32 );  // i(32)
+        gsp.getRotationOnAxis( d ) = convertToInt( bitstream.read( 32 ) );  // i(32)
       }
     }
     if ( gsp.getPointSizePresentFlag() ) {
@@ -288,51 +291,52 @@ void PCCBitstreamDecoderNewSyntax::geometrySequenceParams( GeometrySequenceParam
 }
 
 // 7.3.12 Attribute parameter set syntax
-void PCCBitstreamDecoderNewSyntax::attributeParameterSet(
-    AttributeParameterSet& attributeParameterSet, PCCBitstream& bitstream, size_t attributeIndex ) {
-  // apsAttributeTypeId[attributeIndex];           // u(4)
-  // apsAttributeDimensionMinus1[attributeIndex];  // u(8)
-  // apsAttributeCodecId[attributeIndex];          // u(8)
-  // attributeDimension = apsAttributeDimensionMinus1[attributeIndex] + 1;
-  // if ( spsPcmSeparateVideoPresentFlag ) {
-  //   apsPcmAttributeCodecId[attributeIndex];  // u(8)
-  // }
-  // apsAttributeParamsEnabledFlag[attributeIndex];  // u(1)
-  // if ( apsAttributeParamsEnabledFlag[attributeIndex] ) {
-  //   attributeSequenceParams( attributeIndex, attributeDimension );
-  // }
-  // apsAttributePatchParamsEnabledFlag[attributeIndex];  // u(1)
-  // if ( apsAttributePatchParamsEnabledFlag[attributeIndex] ) {
-  //   apsAttributePatchScaleParamsEnabledFlag[attributeIndex];   // u(1)
-  //   apsAttributePatchOffsetParamsEnabledFlag[attributeIndex];  // u(1)
-  // }
+void PCCBitstreamDecoderNewSyntax::attributeParameterSet( AttributeParameterSet& aps,
+                                                          SequenceParameterSet& sps,
+                                                          PCCBitstream&          bitstream ) {
+  aps.getTypeId()    = bitstream.read( 4 );      // u(4)
+  aps.getDimension() = bitstream.read( 8 ) + 1;  // u(8)
+  aps.getCodecId()   = bitstream.read( 8 );      // u(8)
+  if ( sps.getPcmSeparateVideoPresentFlag() ) {
+    aps.getPcmCodecId() = bitstream.read( 8 );  // u(8)
+  }
+  aps.getParamsEnabledFlag() = bitstream.read( 1 );  // u(1)
+  if ( aps.getParamsEnabledFlag() ) {
+    attributeSequenceParams( aps.getAttributeSequenceParams(), aps.getDimension(), bitstream );
+  }
+  aps.getPatchParamsEnabledFlag() = bitstream.read( 1 );  // u(1)
+  if ( aps.getPatchParamsEnabledFlag() ) {
+    aps.getPatchScaleParamsEnabledFlag()  = bitstream.read( 1 );  // u(1)
+    aps.getPatchOffsetParamsEnabledFlag() = bitstream.read( 1 );  // u(1)
+  }
 }
 
 // 7.3.13 Attribute sequence Params syntax
-void PCCBitstreamDecoderNewSyntax::attributeSequenceParams( PCCContext&   context,
-                                                              PCCBitstream& bitstream,
-                                                              size_t        attributeIndex,
-                                                              size_t        attributeDimension ) {
-  // asmAttributeSmoothingParamsPresentFlag[attributeIndex];  // u(1)
-  // asmAttributeScaleParamsPresentFlag[attributeIndex];      // u(1)
-  // asmAttributeOffsetParamsPresentFlag[attributeIndex];     // u(1)
-  // if ( asmAttributeSmoothingParamsPresentFlag[attributeIndex] ) {
-  //   asmAttributeSmoothingRadius[attributeIndex];                      // u(8)
-  //   asmAttributeSmoothingNeighbourCount[attributeIndex];             // u(8)
-  //   asmAttributeSmoothingRadius2BoundaryDetection[attributeIndex];  // u(8)
-  //   asmAttributeSmoothingThreshold[attributeIndex];                   // u(8)
-  //   asmAttributeSmoothingThresholdLocalEntropy[attributeIndex];     // u(3)
-  // }
-  // if ( asmAttributeScaleParamsPresentFlag[attributeIndex] ) {
-  //   for ( size_t i = 0; i < attributeDimension; i++ ) {
-  //     asmAttributeScaleParams[attributeIndex][i];  // u(32)
-  //     if ( asmAttributeOffsetParamsPresentFlag[attributeIndex] ) {
-  //       for ( size_t i = 0; i < attributeDimension; i++ ) {
-  //         asmAttributeOffsetParams[attributeIndex][i];  // i(32)
-  //       }
-  //     }
-  //   }
-  // }
+void PCCBitstreamDecoderNewSyntax::attributeSequenceParams( AttributeSequenceParams& asp,
+                                                            uint8_t                  dimension,
+                                                            PCCBitstream&            bitstream ) {
+  asp.getSmoothingParamsPresentFlag() = bitstream.read( 1 );  // u(1)
+  asp.getScaleParamsPresentFlag()     = bitstream.read( 1 );  // u(1)
+  asp.getOffsetParamsPresentFlag()    = bitstream.read( 1 );  // u(1)
+  if ( asp.getSmoothingParamsPresentFlag() ) {
+    asp.getSmoothingParamsPresentFlag()        = bitstream.read( 8 );  // u(8)
+    asp.getSmoothingNeighbourCount()           = bitstream.read( 8 );  // u(8)
+    asp.getSmoothingRadius2BoundaryDetection() = bitstream.read( 8 );  // u(8)
+    asp.getSmoothingThreshold()                = bitstream.read( 8 );  // u(8)
+    asp.getSmoothingThresholdLocalEntropy()    = bitstream.read( 3 );  // u(3)
+  }
+  if ( asp.getScaleParamsPresentFlag() ) {
+    asp.getScaleParams().resize( dimension );
+    for ( size_t i = 0; i < dimension; i++ ) {
+      asp.getScaleParams()[i] = bitstream.read( 32 );  // u(32)
+    }
+  }
+  if ( asp.getOffsetParamsPresentFlag() ) {
+    asp.getOffsetParams().resize( dimension );
+    for ( size_t i = 0; i < dimension; i++ ) {
+      asp.getOffsetParams()[i] = convertToInt( bitstream.read( 32 ) );  // i(32)
+    }
+  }
 }
 
 // 7.3.14 Patch sequence data unit syntax

@@ -168,12 +168,67 @@ class GeometryParameterSet {
   GeometrySequenceParams geometrySequenceParams_;
 };
 
-class AttributeParameterSet {
+class AttributeSequenceParams {
  public:
-  AttributeParameterSet() {}
+  AttributeSequenceParams()
+      : smoothingParamsPresentFlag_( false ), scaleParamsPresentFlag_( false ),
+        offsetParamsPresentFlag_( false ), smoothingRadius_( 0 ), smoothingNeighbourCount_( 0 ),
+        smoothingRadius2BoundaryDetection_( 0 ), smoothingThreshold_( 0 ),
+        smoothingThresholdLocalEntropy_( 0 ) {
+    scaleParams_.clear();
+    offsetParams_.clear();
+  }
+  bool&    getSmoothingParamsPresentFlag() { return smoothingParamsPresentFlag_; }
+  bool&    getScaleParamsPresentFlag() { return scaleParamsPresentFlag_; }
+  bool&    getOffsetParamsPresentFlag() { return offsetParamsPresentFlag_; }
+  uint8_t& getSmoothingRadius() { return smoothingRadius_; }
+  uint8_t& getSmoothingNeighbourCount() { return smoothingNeighbourCount_; }
+  uint8_t& getSmoothingRadius2BoundaryDetection() { return smoothingRadius2BoundaryDetection_; }
+  uint8_t& getSmoothingThreshold() { return smoothingThreshold_; }
+  uint8_t& getSmoothingThresholdLocalEntropy() { return smoothingThresholdLocalEntropy_; }
+  std::vector<uint32_t>& getScaleParams() { return scaleParams_; }
+  std::vector<int32_t>&  getOffsetParams() { return offsetParams_; }
 
  private:
-  // TODO
+  bool                  smoothingParamsPresentFlag_;
+  bool                  scaleParamsPresentFlag_;
+  bool                  offsetParamsPresentFlag_;
+  uint8_t               smoothingRadius_;
+  uint8_t               smoothingNeighbourCount_;
+  uint8_t               smoothingRadius2BoundaryDetection_;
+  uint8_t               smoothingThreshold_;
+  uint8_t               smoothingThresholdLocalEntropy_;
+  std::vector<uint32_t> scaleParams_;
+  std::vector<int32_t>  offsetParams_;
+};
+
+class AttributeParameterSet {
+ public:
+  AttributeParameterSet()
+      : typeId_( 0 ), dimension( 0 ), codecId_( 0 ), pcmCodecId_( 0 ), paramsEnabledFlag_( false ),
+        patchParamsEnabledFlag_( false ), patchScaleParamsEnabledFlag_( false ),
+        patchOffsetParamsEnabledFlag_( false ) {}
+
+  uint8_t& getTypeId() { return typeId_; }
+  uint8_t& getDimension() { return dimension; }
+  uint8_t& getCodecId() { return codecId_; }
+  uint8_t& getPcmCodecId() { return pcmCodecId_; }
+  bool&    getParamsEnabledFlag() { return paramsEnabledFlag_; }
+  bool&    getPatchParamsEnabledFlag() { return patchParamsEnabledFlag_; }
+  bool&    getPatchScaleParamsEnabledFlag() { return patchScaleParamsEnabledFlag_; }
+  bool&    getPatchOffsetParamsEnabledFlag() { return patchOffsetParamsEnabledFlag_; }
+  AttributeSequenceParams& getAttributeSequenceParams() { return attributeSequenceParams_; }
+
+ private:
+  uint8_t                 typeId_;
+  uint8_t                 dimension;
+  uint8_t                 codecId_;
+  uint8_t                 pcmCodecId_;
+  bool                    paramsEnabledFlag_;
+  bool                    patchParamsEnabledFlag_;
+  bool                    patchScaleParamsEnabledFlag_;
+  bool                    patchOffsetParamsEnabledFlag_;
+  AttributeSequenceParams attributeSequenceParams_;
 };
 
 class SequenceParameterSet {
@@ -215,6 +270,7 @@ class SequenceParameterSet {
   AttributeParameterSet& getAttributeParameterSets( size_t index ) {
     return attributeParameterSets_[index];
   }
+  void allocateAttributeParameterSets() { attributeParameterSets_.resize( attributeCount_ ); }
 
  private:
   size_t                             index_;
@@ -229,14 +285,14 @@ class SequenceParameterSet {
   bool                               patchSequenceOrientationEnabledFlag_;
   bool                               patchInterPredictionEnabledFlag_;
   bool                               pixelInterleavingFlag_;
-  bool                               pointLocalReconstructionEnabledFlag_;
-  std::vector<bool>                  layerAbsoluteCodingEnabledFlag_;  // spsLayerCount size
-  std::vector<size_t>                layerPredictorIndexDiff_;         // spsLayerCount size
-  std::vector<size_t>                layerPredictorIndex_;             // spsLayerCount size
+  bool                               pointLocalReconstructionEnabledFlag_;  
+  std::vector<bool>                  layerAbsoluteCodingEnabledFlag_;  // layerCount_ size
+  std::vector<size_t>                layerPredictorIndexDiff_;         // layerCount_ size
+  std::vector<size_t>                layerPredictorIndex_;             // layerCount_ size
   ProfileTierLevel                   profileTierLevel_;
-  GeometryParameterSet               geometryParameterSet_;
+  GeometryParameterSet               geometryParameterSet_; 
   OccupancyParameterSet              occupancyParameterSet_;
-  std::vector<AttributeParameterSet> attributeParameterSets_;
+  std::vector<AttributeParameterSet> attributeParameterSets_;          // attributeCount_ size
 };
 
 class PCCContext {
@@ -261,50 +317,31 @@ class PCCContext {
   PCCVideoTexture&      getVideoMPsTexture() { return videoMPsTexture_; }
 
   // deprecated, must be removed:
-  bool&              getLosslessGeo444() { return losslessGeo444_; }
-  bool&              getLosslessGeo() { return losslessGeo_; }
-  bool&              getLosslessTexture() { return losslessTexture_; }
-  uint8_t&           getOccupancyPrecision() { return occupancyPrecision_; }
-  bool&              getGridSmoothing() { return gridSmoothing_; }
-  uint8_t&           getNoAttributes() { return noAttributes_; }
-  bool&              getAbsoluteD1() { return absoluteD1_; }
-  bool&              getBinArithCoding() { return binArithCoding_; }
-  float&             getModelScale() { return modelScale_; }
-  PCCVector3<float>& getModelOrigin() { return modelOrigin_; }
-  uint8_t&           getThresholdColorSmoothing() { return thresholdColorSmoothing_; }
-  double&            getThresholdLocalEntropy() { return thresholdLocalEntropy_; }
-  uint8_t&           getRadius2ColorSmoothing() { return radius2ColorSmoothing_; }
-  uint8_t&           getNeighborCountColorSmoothing() { return neighborCountColorSmoothing_; }
-  uint8_t&           getFlagColorSmoothing() { return flagColorSmoothing_; }
-  bool&              getImproveEDD() { return improveEDD_; }
-  bool&              getDeltaCoding() { return deltaCoding_; }
-  bool&              getSixDirectionMode() { return sixDirectionMode_; }
-  bool&              getRemoveDuplicatePoints() { return removeDuplicatePoints_; }
-  bool&              getUseAdditionalPointsPatch() { return useAdditionalPointsPatch_; }
-  uint8_t&           getMinLevel() { return minLevel_; }
-  bool&              getGlobalPatchAllocation() { return globalPatchAllocation_; }
-  bool&              getUse3dmc() { return use3dmc_; }
-  const size_t       getMPGeoWidth() { return MPGeoWidth_; }
-  const size_t       getMPGeoHeight() { return MPGeoHeight_; }
-  const size_t       getMPAttWidth() { return MPAttWidth_; }
-  const size_t       getMPAttHeight() { return MPAttHeight_; }
-
-  void setLosslessGeo444( bool losslessGeo444 ) { losslessGeo444_ = losslessGeo444; }
-  void setLossless( bool losslessGeo ) { losslessGeo_ = losslessGeo; }
-  void setLosslessTexture( bool losslessTexture ) { losslessTexture_ = losslessTexture; }
-  void setMPGeoWidth( size_t width ) { MPGeoWidth_ = width; }
-  void setMPGeoHeight( size_t height ) { MPGeoHeight_ = height; }
-  void setMPAttWidth( size_t width ) { MPAttWidth_ = width; }
-  void setMPAttHeight( size_t height ) { MPAttHeight_ = height; }
-
-  PCCMetadata& getGOFLevelMetadata() { return gofLevelMetadata_; }
-
-  uint8_t& getSmoothingRadius() { return smoothingRadius_; }
-  uint8_t& getSmoothingNeighbourCount() { return smoothingNeighbourCount_; }
-  uint8_t& getSmoothingRadius2BoundaryDetection() { return smoothingRadius2BoundaryDetection_; }
-  
+  bool&                    getLosslessGeo444() { return losslessGeo444_; }
+  bool&                    getLosslessGeo() { return losslessGeo_; }
+  bool&                    getLosslessTexture() { return losslessTexture_; }
+  uint8_t&                 getOccupancyPrecision() { return occupancyPrecision_; }
+  bool&                    getGridSmoothing() { return gridSmoothing_; }
+  uint8_t&                 getNoAttributes() { return noAttributes_; }
+  bool&                    getAbsoluteD1() { return absoluteD1_; }
+  bool&                    getBinArithCoding() { return binArithCoding_; }
+  float&                   getModelScale() { return modelScale_; }
+  PCCVector3<float>&       getModelOrigin() { return modelOrigin_; }
+  bool&                    getImproveEDD() { return improveEDD_; }
+  bool&                    getDeltaCoding() { return deltaCoding_; }
+  bool&                    getSixDirectionMode() { return sixDirectionMode_; }
+  bool&                    getRemoveDuplicatePoints() { return removeDuplicatePoints_; }
+  bool&                    getUseAdditionalPointsPatch() { return useAdditionalPointsPatch_; }
+  uint8_t&                 getMinLevel() { return minLevel_; }
+  bool&                    getGlobalPatchAllocation() { return globalPatchAllocation_; }
+  bool&                    getUse3dmc() { return use3dmc_; }
+  size_t&                  getMPGeoWidth() { return MPGeoWidth_; }
+  size_t&                  getMPGeoHeight() { return MPGeoHeight_; }
+  size_t&                  getMPAttWidth() { return MPAttWidth_; }
+  size_t&                  getMPAttHeight() { return MPAttHeight_; }
+  PCCMetadata&             getGOFLevelMetadata() { return gofLevelMetadata_; }
   std::vector<SubContext>& getSubContexts() { return subContexts_; }
-  std::vector<unionPatch>& getunionPatch() { return unionPatch_; }
+  std::vector<unionPatch>& getUnionPatch() { return unionPatch_; }
   //~ deprecated, must be removed
 
   PCCVideoBitstream& createVideoBitstream( PCCVideoType type ) {
@@ -325,7 +362,6 @@ class PCCContext {
   void allocOneLayerData( const size_t occupancyResolution );
   void printVideoBitstream();
   void printBlockToPatch( const size_t occupancyResolution );
-
   VPCCParameterSet&     getVPCC() { return vpccParameterSet_; }
   SequenceParameterSet& getSps() {
     for ( auto& sps : sequenceParameterSets_ ) {
@@ -355,16 +391,13 @@ class PCCContext {
   size_t            MPAttHeight_;
   uint8_t           occupancyPrecision_;
   bool              gridSmoothing_;
-  uint8_t           noAttributes_;
   bool              absoluteD1_;
   bool              binArithCoding_;
   float             modelScale_;
   PCCVector3<float> modelOrigin_;
-  uint8_t           thresholdColorSmoothing_;
-  double            thresholdLocalEntropy_;
-  uint8_t           radius2ColorSmoothing_;
-  uint8_t           neighborCountColorSmoothing_;
-  uint8_t           flagColorSmoothing_;
+  
+  uint8_t           noAttributes_;
+
   bool              improveEDD_;
   bool              deltaCoding_;
   bool              sixDirectionMode_;
@@ -373,11 +406,6 @@ class PCCContext {
   uint8_t           minLevel_;
   bool              globalPatchAllocation_;
   bool              use3dmc_;
-
-  uint8_t                        smoothingRadius_;
-  uint8_t                        smoothingNeighbourCount_;
-  uint8_t                        smoothingRadius2BoundaryDetection_;
-  
   PCCMetadata                    gofLevelMetadata_;
   std::vector<PCCVideoBitstream> videoBitstream_;
   std::vector<SubContext>        subContexts_;

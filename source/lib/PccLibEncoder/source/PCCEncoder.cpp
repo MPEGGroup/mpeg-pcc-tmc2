@@ -1869,14 +1869,14 @@ void PCCEncoder::generateMissedPointsGeometryVideo(PCCContext& context, PCCGroup
   }
 
   //resizing for mpgeometry
-  assert(maxWidth==64);
-  assert(maxHeight%8==0);
-  context.setMPGeoWidth(maxWidth);
-  context.setMPGeoHeight(maxHeight);
-  for (auto &frame : context.getFrames() ) {
-    const size_t shift = frame.getIndex();
-    auto& MPGeoFrame = videoMPsGeometry.getFrame(shift);
-    MPGeoFrame.resize(maxWidth, maxHeight);
+  assert( maxWidth == 64 );
+  assert( maxHeight % 8 == 0 );
+  context.getMPGeoWidth()  = maxWidth;
+  context.getMPGeoHeight() = maxHeight;
+  for ( auto& frame : context.getFrames() ) {
+    const size_t shift      = frame.getIndex();
+    auto&        MPGeoFrame = videoMPsGeometry.getFrame( shift );
+    MPGeoFrame.resize( maxWidth, maxHeight );
   }
   cout<<"MissedPoints Geometry [done]"<<endl;
 }
@@ -1894,23 +1894,23 @@ void PCCEncoder::generateMissedPointsTextureVideo(PCCContext& context, PCCGroupO
     frame.setMPAttHeight(0);
     generateMPsTextureImage(context, frame, videoMPsTexture.getFrame(shift), shift, reconstructs[shift]);
     cout<<"generate Missed Points (Texture) : frame "<<shift<<", # of Missed Points Texture : "<<frame.getMissedPointsPatch().size()<<endl;
-    //for resizing for mpgeometry
-    auto& MPTexFrame = videoMPsTexture.getFrame(shift);
-    maxWidth  = (std::max)( maxWidth,  MPTexFrame.getWidth () );
-    maxHeight = (std::max)( maxHeight, MPTexFrame.getHeight() );
+    // for resizing for mpgeometry
+    auto& MPTexFrame = videoMPsTexture.getFrame( shift );
+    maxWidth         = ( std::max )( maxWidth, MPTexFrame.getWidth() );
+    maxHeight        = ( std::max )( maxHeight, MPTexFrame.getHeight() );
   }
-  //resizing for mpgeometry
-  assert(maxWidth==64);
-  assert(maxHeight%8==0);
-  context.setMPAttWidth(maxWidth);
-  context.setMPAttHeight(maxHeight);
-  for (auto &frame : context.getFrames() ) {
-    const size_t shift = frame.getIndex();
-    auto& MPTexFrame = videoMPsTexture.getFrame(shift);
-    MPTexFrame.resize(maxWidth, maxHeight);
+  // resizing for mpgeometry
+  assert( maxWidth == 64 );
+  assert( maxHeight % 8 == 0 );
+  context.getMPAttWidth()  = maxWidth;
+  context.getMPAttHeight() = maxHeight;
+  for ( auto& frame : context.getFrames() ) {
+    const size_t shift      = frame.getIndex();
+    auto&        MPTexFrame = videoMPsTexture.getFrame( shift );
+    MPTexFrame.resize( maxWidth, maxHeight );
   }
 
-  cout<<"MissedPoints Texture [done]"<<endl;
+  cout << "MissedPoints Texture [done]" << endl;
 }
 
 void PCCEncoder::generateMPsGeometryImage    (PCCContext& context, PCCFrameContext& frame, PCCImageGeometry &image) {

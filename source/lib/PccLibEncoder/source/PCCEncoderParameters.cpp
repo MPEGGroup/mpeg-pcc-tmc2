@@ -474,47 +474,55 @@ bool PCCEncoderParameters::check() {
 }
 
 void PCCEncoderParameters::initializeContext( PCCContext& context ) {
-  auto& sps                                      = context.getSps();
-  auto& gps                                      = sps.getGeometryParameterSet();
-  auto& gsp                                      = gps.getGeometrySequenceParams();
-  auto& ops                                      = sps.getOccupancyParameterSet();
-  sps.getPcmSeparateVideoPresentFlag()           = useMissedPointsSeparateVideo_;
-  sps.getEnhancedOccupancyMapForDepthFlag()      = enhancedDeltaDepthCode_;
-  sps.getPixelInterleavingFlag()                 = singleLayerPixelInterleaving_;
-  sps.getMultipleLayerStreamsPresentFlag()       = !oneLayerMode_;
-  gsp.getSmoothingPresentFlag()                  = flagGeometrySmoothing_;
-  gsp.getSmoothingGridSize()                              = gridSize_;
-  gsp.getSmoothingThreshold()                    = thresholdSmoothing_;
-  context.getSmoothingRadius()                   = radius2Smoothing_;
-  context.getSmoothingNeighbourCount()           = neighborCountSmoothing_;
-  context.getSmoothingRadius2BoundaryDetection() = radius2BoundaryDetection_;
-  ops.getPackingBlockSize()                      = occupancyResolution_;
-  context.getLosslessGeo444()                    = losslessGeo444_;
-  context.getLosslessGeo()                       = losslessGeo_;
-  context.getLosslessTexture()                   = losslessTexture_;
-  context.getOccupancyPrecision()                = occupancyPrecision_;
-  context.getGridSmoothing()                     = gridSmoothing_;
-  context.getNoAttributes()                      = noAttributes_;
-  context.getAbsoluteD1()                        = absoluteD1_;
-  context.getBinArithCoding()                    = binArithCoding_;
-  context.getModelScale()                        = modelScale_;
-  context.getModelOrigin()                       = modelOrigin_;
-  context.getThresholdColorSmoothing()           = thresholdColorSmoothing_;
-  context.getThresholdLocalEntropy()             = thresholdLocalEntropy_;
-  context.getRadius2ColorSmoothing()             = radius2ColorSmoothing_;
-  context.getNeighborCountColorSmoothing()       = neighborCountColorSmoothing_;
-  context.getFlagColorSmoothing()                = flagColorSmoothing_;
-  context.getImproveEDD()                        = improveEDD_;
-  context.getDeltaCoding()                       = deltaCoding_;
-  context.getSixDirectionMode()                  = sixDirectionMode_;
-  context.getRemoveDuplicatePoints()             = removeDuplicatePoints_;
-  context.getUseAdditionalPointsPatch()          = useAdditionalPointsPatch_;
-  context.getMinLevel()                          = minLevel_;
-  context.getGlobalPatchAllocation()             = globalPatchAllocation_;
-  context.getUse3dmc()                           = use3dmc_;
+  auto& sps                                  = context.getSps();
+  auto& gps                                  = sps.getGeometryParameterSet();
+  auto& gsp                                  = gps.getGeometrySequenceParams();
+  auto& ops                                  = sps.getOccupancyParameterSet();
+  sps.getAttributeCount()  = 1;
+  sps.allocateAttributeParameterSets();
+  auto& aps                                  = sps.getAttributeParameterSets( 0 );
+  auto& asp                                  = aps.getAttributeSequenceParams();
 
-  context.setMPGeoWidth( 64 );
-  context.setMPAttWidth( 64 );
-  context.setMPGeoHeight( 0 );
-  context.setMPAttHeight( 0 );
+  sps.getPcmSeparateVideoPresentFlag()       = useMissedPointsSeparateVideo_;
+  sps.getEnhancedOccupancyMapForDepthFlag()  = enhancedDeltaDepthCode_;
+  sps.getPixelInterleavingFlag()             = singleLayerPixelInterleaving_;
+  sps.getMultipleLayerStreamsPresentFlag()   = !oneLayerMode_;
+  gsp.getSmoothingPresentFlag()              = flagGeometrySmoothing_;
+  gsp.getSmoothingGridSize()                 = gridSize_;
+  gsp.getSmoothingThreshold()                = thresholdSmoothing_;
+  ops.getPackingBlockSize()                  = occupancyResolution_;
+  asp.getSmoothingParamsPresentFlag()        = radius2Smoothing_;
+  asp.getSmoothingNeighbourCount()           = neighborCountSmoothing_;
+  asp.getSmoothingRadius2BoundaryDetection() = radius2BoundaryDetection_;
+  asp.getSmoothingThreshold()                = thresholdColorSmoothing_;
+  asp.getSmoothingThresholdLocalEntropy()    = thresholdLocalEntropy_;
+  asp.getSmoothingRadius()                   = radius2ColorSmoothing_;
+  asp.getSmoothingNeighbourCount()           = neighborCountColorSmoothing_;
+  asp.getSmoothingParamsPresentFlag()        = flagColorSmoothing_;
+
+// deprecated  
+  context.getLosslessGeo444()                = losslessGeo444_;
+  context.getLosslessGeo()                   = losslessGeo_;
+  context.getLosslessTexture()               = losslessTexture_;
+  context.getOccupancyPrecision()            = occupancyPrecision_;
+  context.getGridSmoothing()                 = gridSmoothing_;
+  context.getNoAttributes()                  = noAttributes_;
+  context.getAbsoluteD1()                    = absoluteD1_;
+  context.getBinArithCoding()                = binArithCoding_;
+  context.getModelScale()                    = modelScale_;
+  context.getModelOrigin()                   = modelOrigin_;
+  context.getImproveEDD()                    = improveEDD_;
+  context.getDeltaCoding()                   = deltaCoding_;
+  context.getSixDirectionMode()              = sixDirectionMode_;
+  context.getRemoveDuplicatePoints()         = removeDuplicatePoints_;
+  context.getUseAdditionalPointsPatch()      = useAdditionalPointsPatch_;
+  context.getMinLevel()                      = minLevel_;
+  context.getGlobalPatchAllocation()         = globalPatchAllocation_;
+  context.getUse3dmc()                       = use3dmc_;
+
+  context.getMPGeoWidth()  = 64;
+  context.getMPAttWidth()  = 64;
+  context.getMPGeoHeight() = 0;
+  context.getMPAttHeight() = 0;
+  //~deprecated
 }

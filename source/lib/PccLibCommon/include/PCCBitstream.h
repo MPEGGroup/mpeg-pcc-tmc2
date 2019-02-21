@@ -68,6 +68,7 @@ class PCCBitstream {
   void writeBuffer( const uint8_t *data, const size_t size );
   void write( PCCVideoBitstream& videoBitstream );
   void write( uint32_t value, uint8_t bits );
+  
   void writeSvlc( int32_t iCode );
   void writeUvlc( uint32_t code );
 
@@ -78,6 +79,7 @@ class PCCBitstream {
 
   bool byteAligned() { return ( position_.bits == 0 ); }
 
+  //deprecated 
   template <typename T>
   void write( const T u, PCCBistreamPosition &pos ) {
     align( pos );
@@ -123,6 +125,7 @@ class PCCBitstream {
   T read( ) {
    return read<T>( position_ );
   }
+  //~deprecated
 
 private: 
   uint32_t read( uint8_t bits, PCCBistreamPosition &pos );

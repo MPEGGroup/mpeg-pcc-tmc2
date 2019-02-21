@@ -56,12 +56,14 @@ int PCCBitstreamDecoder::decode( PCCBitstream& bitstream, PCCContext& context ) 
     bitstream.read( context.createVideoBitstream( PCCVideoType::Geometry ) );
   }
 
-  if ( context.getUseAdditionalPointsPatch() && context.getSps().getPcmSeparateVideoPresentFlag() ) {
+  if ( context.getUseAdditionalPointsPatch() &&
+       context.getSps().getPcmSeparateVideoPresentFlag() ) {
     bitstream.read( context.createVideoBitstream( PCCVideoType::GeometryMP ) );
   }
   if ( !context.getNoAttributes() ) {
     bitstream.read( context.createVideoBitstream( PCCVideoType::Texture ) );
-    if ( context.getUseAdditionalPointsPatch() && context.getSps().getPcmSeparateVideoPresentFlag() ) {
+    if ( context.getUseAdditionalPointsPatch() &&
+         context.getSps().getPcmSeparateVideoPresentFlag() ) {
       bitstream.read( context.createVideoBitstream( PCCVideoType::TextureMP ) );
       auto sizeMissedPointsTexture = bitstream.size();
     }
@@ -69,7 +71,8 @@ int PCCBitstreamDecoder::decode( PCCBitstream& bitstream, PCCContext& context ) 
 
   decompressOccupancyMap( context, bitstream );
 
-  if ( context.getUseAdditionalPointsPatch() && context.getSps().getPcmSeparateVideoPresentFlag() ) {
+  if ( context.getUseAdditionalPointsPatch() &&
+       context.getSps().getPcmSeparateVideoPresentFlag() ) {
     readMissedPointsGeometryNumber( context, bitstream );
   } else if ( context.getUseAdditionalPointsPatch() &&
               !context.getSps().getPcmSeparateVideoPresentFlag() ) {
@@ -79,7 +82,8 @@ int PCCBitstreamDecoder::decode( PCCBitstream& bitstream, PCCContext& context ) 
     }
   }
   if ( !context.getNoAttributes() ) {
-    if ( context.getUseAdditionalPointsPatch() && context.getSps().getPcmSeparateVideoPresentFlag() ) {
+    if ( context.getUseAdditionalPointsPatch() &&
+         context.getSps().getPcmSeparateVideoPresentFlag() ) {
       auto sizeMissedPointsTexture = bitstream.size();
       readMissedPointsTextureNumber( context, bitstream );
     }
@@ -360,25 +364,29 @@ int PCCBitstreamDecoder::decompressHeader( PCCContext& context, PCCBitstream& bi
   auto& gps = sps.getGeometryParameterSet();
   auto& gsp = gps.getGeometrySequenceParams();
   auto& ops = sps.getOccupancyParameterSet();
+  sps.getAttributeCount() = 1;
+  sps.allocateAttributeParameterSets();
+  auto& aps = sps.getAttributeParameterSets( 0 );
+  auto& asp = aps.getAttributeSequenceParams();
 
   uint8_t groupOfFramesSize = bitstream.read<uint8_t>();
   if ( !groupOfFramesSize ) { return 0; }
   context.resize( groupOfFramesSize );
-  sps.getWidth()                        = bitstream.read<uint16_t>();
-  sps.getHeight()                       = bitstream.read<uint16_t>();
-  ops.getPackingBlockSize()             = bitstream.read<uint8_t>();
-  context.getOccupancyPrecision()       = bitstream.read<uint8_t>();
-  gsp.getSmoothingPresentFlag() = bitstream.read<uint8_t>();
+  sps.getWidth()                  = bitstream.read<uint16_t>();
+  sps.getHeight()                 = bitstream.read<uint16_t>();
+  ops.getPackingBlockSize()       = bitstream.read<uint8_t>();
+  context.getOccupancyPrecision() = bitstream.read<uint8_t>();
+  gsp.getSmoothingPresentFlag()   = bitstream.read<uint8_t>();
   if ( gsp.getSmoothingPresentFlag() ) {
     context.getGridSmoothing() = bitstream.read<uint8_t>() > 0;
     if ( context.getGridSmoothing() ) {
-      gsp.getSmoothingGridSize()               = bitstream.read<uint8_t>();
+      gsp.getSmoothingGridSize()  = bitstream.read<uint8_t>();
       gsp.getSmoothingThreshold() = bitstream.read<uint8_t>();
     } else {
-      context.getSmoothingRadius()                   = bitstream.read<uint8_t>();
-      context.getSmoothingNeighbourCount()           = bitstream.read<uint8_t>();
-      context.getSmoothingRadius2BoundaryDetection() = bitstream.read<uint8_t>();
-      gsp.getSmoothingThreshold()                    = bitstream.read<uint8_t>();
+      asp.getSmoothingParamsPresentFlag()        = bitstream.read<uint8_t>();
+      asp.getSmoothingNeighbourCount()           = bitstream.read<uint8_t>();
+      asp.getSmoothingRadius2BoundaryDetection() = bitstream.read<uint8_t>();
+      gsp.getSmoothingThreshold()                = bitstream.read<uint8_t>();
     }
   }
   context.getLosslessGeo()             = bitstream.read<uint8_t>();
@@ -394,30 +402,30 @@ int PCCBitstreamDecoder::decompressHeader( PCCContext& context, PCCBitstream& bi
   context.getModelScale()     = bitstream.read<float>();
   context.getModelOrigin()    = bitstream.read<PCCVector3<float> >();
   readMetadata( context.getGOFLevelMetadata(), bitstream );
-  context.getFlagColorSmoothing() = bitstream.read<uint8_t>();
-  if ( context.getFlagColorSmoothing() ) {
-    context.getThresholdColorSmoothing()     = bitstream.read<uint8_t>();
-    context.getThresholdLocalEntropy()       = bitstream.read<double>();
-    context.getRadius2ColorSmoothing()       = bitstream.read<uint8_t>();
-    context.getNeighborCountColorSmoothing() = bitstream.read<uint8_t>();
+  asp.getSmoothingParamsPresentFlag() = bitstream.read<uint8_t>();
+  if ( asp.getSmoothingParamsPresentFlag() ) {
+    asp.getSmoothingThreshold()             = bitstream.read<uint8_t>();
+    asp.getSmoothingThresholdLocalEntropy() = bitstream.read<double>();
+    asp.getSmoothingRadius()                = bitstream.read<uint8_t>();
+    asp.getSmoothingNeighbourCount()        = bitstream.read<uint8_t>();
   }
   sps.getEnhancedOccupancyMapForDepthFlag() = false;
   if ( context.getLosslessGeo() ) {
     sps.getEnhancedOccupancyMapForDepthFlag() = bitstream.read<uint8_t>() > 0;
-    context.getImproveEDD()               = bitstream.read<uint8_t>() > 0;
+    context.getImproveEDD()                   = bitstream.read<uint8_t>() > 0;
   }
-  context.getDeltaCoding()                  = bitstream.read<uint8_t>() > 0;
-  context.getRemoveDuplicatePoints()        = bitstream.read<uint8_t>() > 0;
-  sps.getMultipleLayerStreamsPresentFlag()  = bitstream.read<uint8_t>() > 0;
-  sps.getPixelInterleavingFlag()            = bitstream.read<uint8_t>() > 0;
-  context.getUseAdditionalPointsPatch()     = bitstream.read<uint8_t>() > 0;
-  context.getGlobalPatchAllocation()        = bitstream.read<uint8_t>() > 0;
+  context.getDeltaCoding()                 = bitstream.read<uint8_t>() > 0;
+  context.getRemoveDuplicatePoints()       = bitstream.read<uint8_t>() > 0;
+  sps.getMultipleLayerStreamsPresentFlag() = bitstream.read<uint8_t>() > 0;
+  sps.getPixelInterleavingFlag()           = bitstream.read<uint8_t>() > 0;
+  context.getUseAdditionalPointsPatch()    = bitstream.read<uint8_t>() > 0;
+  context.getGlobalPatchAllocation()       = bitstream.read<uint8_t>() > 0;
 
-  context.setMPGeoWidth( 64 );
-  context.setMPAttWidth( 64 );
-  context.setMPGeoHeight( 0 );
-  context.setMPAttHeight( 0 );
-  auto& frames = context.getFrames();
+  context.getMPGeoWidth()  = 64;
+  context.getMPAttWidth()  = 64;
+  context.getMPGeoHeight() = 0;
+  context.getMPAttHeight() = 0;
+  auto& frames             = context.getFrames();
   for ( size_t i = 0; i < frames.size(); i++ ) {
     frames[i].setLosslessGeo( context.getLosslessGeo() );
     frames[i].setLosslessGeo444( context.getLosslessGeo444() );
@@ -432,9 +440,9 @@ int PCCBitstreamDecoder::decompressHeader( PCCContext& context, PCCBitstream& bi
 void PCCBitstreamDecoder::readMissedPointsGeometryNumber( PCCContext&   context,
                                                           PCCBitstream& bitstream ) {
   size_t maxHeight = 0;
-  size_t MPwidth = bitstream.read<size_t>();
+  size_t MPwidth   = bitstream.read<size_t>();
   for ( auto& framecontext : context.getFrames() ) {
-    size_t numofMPs = bitstream.read<size_t>(  );
+    size_t numofMPs = bitstream.read<size_t>();
     framecontext.getMissedPointsPatch().setMPnumber( size_t( numofMPs ) );
     if ( context.getLosslessGeo444() ) {
       framecontext.getMissedPointsPatch().resize( numofMPs );
@@ -446,16 +454,16 @@ void PCCBitstreamDecoder::readMissedPointsGeometryNumber( PCCContext&   context,
     if ( heightby8 * 8 != height ) { height = ( heightby8 + 1 ) * 8; }
     maxHeight = ( std::max )( maxHeight, height );
   }
-  context.setMPGeoWidth( size_t( MPwidth ) );
-  context.setMPGeoHeight( size_t( maxHeight ) );
+  context.getMPGeoWidth()  = size_t( MPwidth );
+  context.getMPGeoHeight() = size_t( maxHeight );
 }
 
 void PCCBitstreamDecoder::readMissedPointsTextureNumber( PCCContext&   context,
                                                          PCCBitstream& bitstream ) {
   size_t maxHeight = 0;
-  size_t MPwidth = bitstream.read<size_t>();  
+  size_t MPwidth   = bitstream.read<size_t>();
   for ( auto& framecontext : context.getFrames() ) {
-    size_t numofMPs = bitstream.read<size_t>(  );
+    size_t numofMPs = bitstream.read<size_t>();
     framecontext.getMissedPointsPatch().setMPnumbercolor( size_t( numofMPs ) );
     framecontext.getMissedPointsPatch().resizecolor( numofMPs );
     size_t height    = numofMPs / MPwidth + 1;
@@ -463,8 +471,8 @@ void PCCBitstreamDecoder::readMissedPointsTextureNumber( PCCContext&   context,
     if ( heightby8 * 8 != height ) { height = ( heightby8 + 1 ) * 8; }
     maxHeight = ( std::max )( maxHeight, height );
   }
-  context.setMPAttWidth( size_t( MPwidth ) );
-  context.setMPAttHeight( size_t( maxHeight ) );
+  context.getMPAttWidth()  = size_t( MPwidth );
+  context.getMPAttHeight() = size_t( maxHeight );
 }
 
 void PCCBitstreamDecoder::decompressOccupancyMap( PCCContext& context, PCCBitstream& bitstream ) {
@@ -523,7 +531,7 @@ void PCCBitstreamDecoder::decompressPatchMetaDataM42195( PCCContext&            
   bitCount[4]                          = maxBitCountForMinDepth;
   const uint8_t maxBitCountForMaxDepth = uint8_t( 9 - gbitCountSize[minLevel] );
   bitCount[5]                          = maxBitCountForMaxDepth;
-  compressedBitstreamSize = bitstream.read<uint32_t>(  );
+  compressedBitstreamSize              = bitstream.read<uint32_t>();
   assert( compressedBitstreamSize + bitstream.size() <= bitstream.capacity() );
   arithmeticDecoder.set_buffer( uint32_t( bitstream.capacity() - bitstream.size() ),
                                 bitstream.buffer() + bitstream.size() );
@@ -816,18 +824,18 @@ void PCCBitstreamDecoder::decompressOccupancyMap( PCCContext&      context,
   auto&    gsp        = gps.getGeometrySequenceParams();
   auto&    ops        = sps.getOccupancyParameterSet();
   auto&    patches    = frame.getPatches();
-  uint32_t patchCount = bitstream.read<uint32_t>(  );
+  uint32_t patchCount = bitstream.read<uint32_t>();
   patches.resize( patchCount );
   const size_t  minLevel               = context.getMinLevel();
   const uint8_t maxBitCountForMinDepth = uint8_t( 10 - gbitCountSize[minLevel] );
   const uint8_t maxBitCountForMaxDepth = uint8_t( 9 - gbitCountSize[minLevel] );
 
   frame.allocOneLayerData( ops.getPackingBlockSize() );
-  size_t maxCandidateCount = bitstream.read<uint8_t>(  );
+  size_t  maxCandidateCount   = bitstream.read<uint8_t>();
   uint8_t frameProjectionMode = 0, surfaceThickness = 4;
   if ( !context.getAbsoluteD1() ) {
-    surfaceThickness = bitstream.read<uint8_t>(  );
-    frameProjectionMode = bitstream.read<uint8_t>(  );
+    surfaceThickness    = bitstream.read<uint8_t>();
+    frameProjectionMode = bitstream.read<uint8_t>();
   }
   frame.setSurfaceThickness( surfaceThickness );
 
@@ -839,7 +847,7 @@ void PCCBitstreamDecoder::decompressOccupancyMap( PCCContext&      context,
                          ( ops.getPackingBlockSize() == 16 ) &&
                          ( context.getOccupancyPrecision() == 4 );
 
-  uint8_t enable_flexible_patch_flag = bitstream.read<uint8_t>( );
+  uint8_t enable_flexible_patch_flag = bitstream.read<uint8_t>();
   if ( ( frameIndex == 0 ) || ( !context.getDeltaCoding() ) ) {
     uint8_t bitCountU0      = bitstream.read<uint8_t>();
     uint8_t bitCountV0      = bitstream.read<uint8_t>();

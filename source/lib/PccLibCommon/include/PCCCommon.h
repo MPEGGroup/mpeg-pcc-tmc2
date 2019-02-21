@@ -314,6 +314,14 @@ std::string string_format( const char* pFormat, Args... eArgs ) {
   snprintf( &eBuffer[0], iSize + 1, pFormat, eArgs... );
   return eBuffer;
 }
+
+static uint32_t convertToUInt( int32_t value ) {
+  return ( value <= 0 ) ? -value << 1 : ( value << 1 ) - 1;
+}
+static int32_t convertToInt( uint32_t value ) {
+    return ( value & 1) ? -(int32_t)(value>>1) : (int32_t)(value>>1);
+}
+
 }  // namespace pcc
 
 #endif /* PCCTMC2Common_h */
