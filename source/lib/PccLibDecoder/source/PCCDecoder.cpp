@@ -157,7 +157,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   generatePointCloudParameters.occupancyPrecision_           = context.getOccupancyPrecision();
   generatePointCloudParameters.flagGeometrySmoothing_        = gsp.getSmoothingPresentFlag();
   generatePointCloudParameters.gridSmoothing_                = context.getGridSmoothing();
-  generatePointCloudParameters.gridSize_                     = gsp.getGridSize();
+  generatePointCloudParameters.gridSize_                     = gsp.getSmoothingGridSize();
   generatePointCloudParameters.neighborCountSmoothing_       = context.getSmoothingNeighbourCount();
   generatePointCloudParameters.radius2Smoothing_             = (double)context.getSmoothingRadius();
   generatePointCloudParameters.radius2BoundaryDetection_     = (double)context.getSmoothingRadius2BoundaryDetection();

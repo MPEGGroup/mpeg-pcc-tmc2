@@ -48,11 +48,10 @@ typedef pcc::PCCVideo<uint16_t, 3> PCCVideoGeometry;
 typedef pcc::PCCVideo<uint8_t, 3>  PCCVideoOccupancyMap;
 
 class PCCPatch;
-typedef std::map<size_t, PCCPatch> unionPatch;   // unionPatch ------ [TrackIndex, PatchUnion];
-typedef std::pair<size_t, size_t>  GlobalPatch;  // GlobalPatch ----- [FrameIndex, PatchIndex];
-typedef std::map<size_t, std::vector<GlobalPatch> >
-                                  GlobalPatches;  // GlobalPatches --- [TrackIndex, <GlobalPatch>];
-typedef std::pair<size_t, size_t> SubContext;     // SubContext ------ [start, end);
+typedef std::map<size_t, PCCPatch>                  unionPatch;     // [TrackIndex, PatchUnion]
+typedef std::pair<size_t, size_t>                   GlobalPatch;    // [FrameIndex, PatchIndex]
+typedef std::map<size_t, std::vector<GlobalPatch> > GlobalPatches;  // [TrackIndex, <GlobalPatch>]
+typedef std::pair<size_t, size_t>                   SubContext;     // [start, end)
 
 class VPCCParameterSet {
  public:
@@ -100,7 +99,7 @@ class GeometrySequenceParams {
   GeometrySequenceParams()
       : smoothingPresentFlag_( false ), smoothingEnabledFlag_( false ), scalePresentFlag_( false ),
         offsetPresentFlag_( false ), rotationPresentFlag_( false ), pointSizePresentFlag_( false ),
-        pointShapePresentFlag_( false ), gridSize_( 0 ), smoothingThreshold_( 0 ), pointSize_( 0 ),
+        pointShapePresentFlag_( false ), smoothingGridSize_( 0 ), smoothingThreshold_( 0 ), pointSize_( 0 ),
         pointShape_( 0 ) {}
 
   bool&     getSmoothingPresentFlag() { return smoothingPresentFlag_; }
@@ -110,7 +109,7 @@ class GeometrySequenceParams {
   bool&     getRotationPresentFlag() { return rotationPresentFlag_; }
   bool&     getPointSizePresentFlag() { return pointSizePresentFlag_; }
   bool&     getPointShapePresentFlag() { return pointShapePresentFlag_; }
-  uint8_t&  getGridSize() { return gridSize_; }
+  uint8_t&  getSmoothingGridSize() { return smoothingGridSize_; }
   uint8_t&  getSmoothingThreshold() { return smoothingThreshold_; }
   uint32_t& getScaleOnAxis( int index ) { return scaleOnAxis_[index]; }
   int32_t&  getOffsetOnAxis( int index ) { return offsetOnAxis_[index]; }
@@ -126,7 +125,7 @@ class GeometrySequenceParams {
   bool     rotationPresentFlag_;
   bool     pointSizePresentFlag_;
   bool     pointShapePresentFlag_;
-  uint8_t  gridSize_;
+  uint8_t  smoothingGridSize_;
   uint8_t  smoothingThreshold_;
   uint32_t scaleOnAxis_[3];
   int32_t  offsetOnAxis_[3];
@@ -267,7 +266,6 @@ class PCCContext {
   bool&              getLosslessTexture() { return losslessTexture_; }
   uint8_t&           getOccupancyPrecision() { return occupancyPrecision_; }
   bool&              getGridSmoothing() { return gridSmoothing_; }
-  // uint8_t&           getGridSize() { return gridSize_; }
   uint8_t&           getNoAttributes() { return noAttributes_; }
   bool&              getAbsoluteD1() { return absoluteD1_; }
   bool&              getBinArithCoding() { return binArithCoding_; }

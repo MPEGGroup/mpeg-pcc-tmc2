@@ -483,7 +483,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   sps.getPixelInterleavingFlag()                 = singleLayerPixelInterleaving_;
   sps.getMultipleLayerStreamsPresentFlag()       = !oneLayerMode_;
   gsp.getSmoothingPresentFlag()                  = flagGeometrySmoothing_;
-  gsp.getGridSize()                              = gridSize_;
+  gsp.getSmoothingGridSize()                              = gridSize_;
   gsp.getSmoothingThreshold()                    = thresholdSmoothing_;
   context.getSmoothingRadius()                   = radius2Smoothing_;
   context.getSmoothingNeighbourCount()           = neighborCountSmoothing_;

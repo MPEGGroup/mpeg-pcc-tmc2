@@ -372,7 +372,7 @@ int PCCBitstreamDecoder::decompressHeader( PCCContext& context, PCCBitstream& bi
   if ( gsp.getSmoothingPresentFlag() ) {
     context.getGridSmoothing() = bitstream.read<uint8_t>() > 0;
     if ( context.getGridSmoothing() ) {
-      gsp.getGridSize()               = bitstream.read<uint8_t>();
+      gsp.getSmoothingGridSize()               = bitstream.read<uint8_t>();
       gsp.getSmoothingThreshold() = bitstream.read<uint8_t>();
     } else {
       context.getSmoothingRadius()                   = bitstream.read<uint8_t>();

@@ -260,7 +260,7 @@ void PCCBitstreamDecoderNewSyntax::geometrySequenceParams( GeometrySequenceParam
   if ( gsp.getSmoothingPresentFlag() ) {
     gsp.getSmoothingEnabledFlag() = bitstream.read( 1 );  // u(8)
     if ( gsp.getSmoothingEnabledFlag() ) {
-      gsp.getGridSize()           = bitstream.read( 8 );  // u(8)
+      gsp.getSmoothingGridSize()  = bitstream.read( 8 );  // u(8)
       gsp.getSmoothingThreshold() = bitstream.read( 8 );  // u(8)
     }
   }
@@ -760,7 +760,7 @@ void PCCBitstreamDecoderNewSyntax::patchFrameDataUnit( PCCContext&   context,
   //       patchInformationData(frmIdx, p, pfduPatchMode[ frmIdx ][ p ])  
   //   } while( pfduPatchMode[ frmIdx ][ p ] !=IEND && 
   //       pfduPatchMode[ frmIdx ][ p ] != PEND)  
-  //   PdfuTotalNumberOfPatches[ frmIdx ] = p  
+  //   pfduTotalNumberOfPatches[ frmIdx ] = p  
   //   if( spsPointLocalReconstructionEnabledFlag )  
   //     pointLocalReconstruction( )  
   //   byteAlignment( )    
@@ -812,7 +812,7 @@ void PCCBitstreamDecoderNewSyntax::patchDataUnit( PCCContext&   context,
   // pdu3dShiftNormalAxis[frameIndex][patchIndex];     // u(v)
   // pduNormalAxis[frameIndex][patchIndex];              // ae(v)
   // if ( pfhPatchOrientationPresentFlag[frameIndex] ) {
-  //   pduOrientationIndex[frameIndex][patchIndex];  // ae(v)
+  //   pduOrientationSwapFlag[frameIndex][patchIndex];  // ae(v)
   // }
   // if ( pfhPatchLodBitCount[frameIndex] > 0 ) {
   //    pduLod[frameIndex][patchIndex];  // u(v)
@@ -821,9 +821,10 @@ void PCCBitstreamDecoderNewSyntax::patchDataUnit( PCCContext&   context,
   // i              = 0;
   // while ( i < spsLayerCountMinus1 + 1 && projectionFlag == 0 ) {
   //   projectionFlag = projectionFlag | spsLayerAbsoluteCodingEnabledFlag[i];
-  //   if ( projectionFlag ) {
-  //     pduProjectionMode[frameIndex][patchIndex]  // ae(v)
-  //   }
+  //   i++;
+  // }
+  // if ( projectionFlag ) {
+  //   pduProjectionMode[frameIndex][patchIndex]  // ae(v)
   // }
 }
 
@@ -843,7 +844,8 @@ void PCCBitstreamDecoderNewSyntax::deltaPatchDataUnit( PCCContext&   context,
   // projectionFlag = 0  
   // i = 0  
   // while (i < spsLayerCountMinus1 + 1 && projectionFlag == 0 )  {
-  //   projectionFlag = projectionFlag | spsLayerAbsoluteCodingEnabledFlag[ i ]   
+  //   projectionFlag = projectionFlag | spsLayerAbsoluteCodingEnabledFlag[ i ]
+  //   i++;   
   // }
   // if ( projectionFlag )  {
   //   dpduProjectionMode[ frmIdx ][ patchIndex ] ; // ae(v)
@@ -857,24 +859,27 @@ void PCCBitstreamDecoderNewSyntax::pcmPatchDataUnit( PCCContext&   context,
                                                      size_t        patchIndex ) {
   // if ( spsPcmSeparateVideoFlag ) {
   //   ppduPatchInPcmVideoFlag[frameIndex][patchIndex];  // u(1)
-  //   ppdu2dShiftU[frameIndex][patchIndex];               // u(v)
-  //   ppdu2dShiftV[frameIndex][patchIndex];               // u(v)
-  //   ppdu2dSizeU[frameIndex][patchIndex];                // u(v)
-  //   ppdu2dSizeV[frameIndex][patchIndex];                // u(v)
-  //   ppduPcmPoints[frameIndex][patchIndex];               // ue(v)
+  //   ppdu2dShiftU[frameIndex][patchIndex];             // u(v)
+  //   ppdu2dShiftV[frameIndex][patchIndex];             // u(v)
+  //   ppdu2dDeltaSizeU[frameIndex][patchIndex];         // u(v)
+  //   ppdu2dDeltaSizeV[frameIndex][patchIndex];         // u(v)
+  //   ppduPcmPoints[frameIndex][patchIndex];            // ue(v)
   // }
 }
 
 // 7.3.34 Point local reconstruction syntax
 void PCCBitstreamDecoderNewSyntax::pointLocalReconstruction( PCCContext&   context,
                                                              PCCBitstream& bitstream ) {
-  // for ( i = 0; i < BlockCount; i++ ) {
-  //   if ( blockToPatch[i] >= 0 ) {
-  //     plrModeInterpolateFlag[i];                                  // ae(v)
-  //     if ( plrModeInterpolateFlag[i] ) { plrModeNeighbour[i]; }   // ae(v)
-  //     plrModeMinimumDepthMinus1[i];                               // ae(v)
-  //     if ( plrMode minimumDepthMinus1[i] > 0 || plrModeInterpolateFlag[i] ) {
-  //       plrModeFillingFlag[i]  // ae(v)
+  // for( j = 0; j < BlockToPatchMapHeight; j++ ) {
+  //   for( i = 0; i < BlockToPatchMapWidth; i++ ) {
+  //     if( BlockToPatchMap[ j ][ i ] >= 0 ) {
+  //       plrModeInterpolateFlag[ j ][ i ]   ; // ae(v)
+  //       if( plrModeInterpolateFlag[ j ][ i ] )
+  //         plrModeNeighbour[ j ][ i ]  ; // ae(v)
+  //       plrModeMinimumDepthMinus1[ j ][ i ]  ; // ae(v)
+  //       if( plrModeMinimumDepthMinus1[ j ][ i ]  > 0
+  //         || plrModeInterpolateFlag[ j ][ i ]  )
+  //         plrModeFillingFlag[ j ][ i ]  ; // ae(v)
   //     }
   //   }
   // }

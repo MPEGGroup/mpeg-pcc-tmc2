@@ -420,7 +420,7 @@ int PCCBitstreamEncoder::compressHeader( PCCContext& context, pcc::PCCBitstream&
   if ( gsp.getSmoothingPresentFlag() ) {
     bitstream.write<uint8_t>( uint8_t( context.getGridSmoothing() ) );
     if ( context.getGridSmoothing() ) {
-      bitstream.write<uint8_t>( uint8_t( gsp.getGridSize() ) );
+      bitstream.write<uint8_t>( uint8_t( gsp.getSmoothingGridSize() ) );
       bitstream.write<uint8_t>( uint8_t( gsp.getSmoothingThreshold() ) );
     } else {
       bitstream.write<uint8_t>( uint8_t( context.getSmoothingRadius() ) );
