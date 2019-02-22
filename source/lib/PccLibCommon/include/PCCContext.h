@@ -231,6 +231,198 @@ class AttributeParameterSet {
   AttributeSequenceParams attributeSequenceParams_;
 };
 
+class GeometryFrameParameterSet {
+ public:
+  GeometryFrameParameterSet()  {}
+ private:  
+};
+class GeometryPatchParameterSet {
+ public:
+  GeometryPatchParameterSet()  {}
+ private:  
+};
+class GeometryPatchParams {
+ public:
+  GeometryPatchParams()  {}
+ private:  
+};
+class GeometryFrameParams {
+ public:
+  GeometryFrameParams()  {}
+ private:  
+};
+
+
+class AttributeFrameParameterSet {
+ public:
+  AttributeFrameParameterSet()  {}
+ private:  
+};
+class AttributePatchParameterSet {
+ public:
+  AttributePatchParameterSet()  {}
+ private:  
+};
+class AttributePatchParams {
+ public:
+  AttributePatchParams()  {}
+ private:  
+};
+class AttributeFrameParams {
+ public:
+  AttributeFrameParams()  {}
+ private:  
+};
+
+class PatchFrameParameterSet {
+ public:
+  PatchFrameParameterSet()
+      : patchFrameParameterSetId_( 0 ), patchSequenceParameterSetId_( 0 ),
+        additionalLtPfocLsbLen_( 0 ), localOverrideGeometryPatchEnableFlag_( false),  patchOrientationPresentFlag_( false ) {
+    localOverrideAttributePatchEnableFlag_.clear();
+  }
+  ~PatchFrameParameterSet() { localOverrideAttributePatchEnableFlag_.clear(); }
+
+  uint8_t&           getPatchFrameParameterSetId() { return patchFrameParameterSetId_; }
+  uint8_t&           getPatchSequenceParameterSetId() { return patchSequenceParameterSetId_; }
+  uint8_t&           getAdditionalLtPfocLsbLen() { return additionalLtPfocLsbLen_; }
+  std::vector<bool>& getLocalOverrideAttributePatchEnableFlag() {
+    return localOverrideAttributePatchEnableFlag_;
+  }
+  bool& getPatchOrientationPresentFlag() { return patchOrientationPresentFlag_; }
+  bool& getLocalOverrideGeometryPatchEnableFlag() { return localOverrideGeometryPatchEnableFlag_; }
+
+ private:
+  uint8_t           patchFrameParameterSetId_;
+  uint8_t           patchSequenceParameterSetId_;
+  uint8_t           additionalLtPfocLsbLen_;
+  bool              localOverrideGeometryPatchEnableFlag_; 
+  bool              patchOrientationPresentFlag_;
+  std::vector<bool> localOverrideAttributePatchEnableFlag_;
+};
+
+class PatchFrameLayerUnit {
+ public:
+  PatchFrameLayerUnit()  {}
+ private:  
+};
+
+class PatchFrameHeader {
+ public:
+  PatchFrameHeader()  {}
+ private:  
+};
+
+class RefListStruct {
+ public:
+  RefListStruct() : numRefEntries_( 0 ) {
+    absDeltaPfocSt_.clear();
+    pfocLsbLt_.clear();
+    stRefPatchFrameFlag_.clear();
+    strpfEntrySignFlag_.clear();
+  }
+  ~RefListStruct() {
+    absDeltaPfocSt_.clear();
+    pfocLsbLt_.clear();
+    stRefPatchFrameFlag_.clear();
+    strpfEntrySignFlag_.clear();
+  }
+  uint8_t&              getNumRefEntries() { return numRefEntries_; }
+  std::vector<uint8_t>& getAbsDeltaPfocSt() { return absDeltaPfocSt_; }
+  std::vector<uint8_t>& getPfocLsbLt() { return pfocLsbLt_; }
+  std::vector<bool>&    getStRefPatchFrameFlag() { return stRefPatchFrameFlag_; }
+  std::vector<bool>&    getStrpfEntrySignFlag() { return strpfEntrySignFlag_; }
+
+  void allocate() {
+    absDeltaPfocSt_.resize( numRefEntries_, 0 );
+    pfocLsbLt_.resize( numRefEntries_, 0 );
+    stRefPatchFrameFlag_.resize( numRefEntries_, false );
+    strpfEntrySignFlag_.resize( numRefEntries_, false );
+  }
+
+ private:
+  uint8_t              numRefEntries_;
+  std::vector<uint8_t> absDeltaPfocSt_;
+  std::vector<uint8_t> pfocLsbLt_;
+  std::vector<bool>    stRefPatchFrameFlag_;
+  std::vector<bool>    strpfEntrySignFlag_;
+};
+
+class PatchSequenceParameterSet {
+ public:
+  PatchSequenceParameterSet()
+      : patchSequenceParameterSetId_( 0 ), log2MaxPatchFrameOrderCntLsb_( 0 ),
+        maxDecPatchFrameBuffering_( 0 ), numRefPatchFrameListsInSps_( 0 ),
+        longTermRefPatchFramesFlag_( false ) {
+    refListStruct_.clear();
+  }
+  ~PatchSequenceParameterSet() { refListStruct_.clear(); }
+
+  uint8_t& getLongTermRefPatchFramesFlag() { return patchSequenceParameterSetId_; }
+  uint8_t& getPatchSequenceParameterSetId() { return log2MaxPatchFrameOrderCntLsb_; }
+  uint8_t& getLog2MaxPatchFrameOrderCntLsbMinus4() { return maxDecPatchFrameBuffering_; }
+  uint8_t& getMaxDecPatchFrameBufferingMinus1() { return numRefPatchFrameListsInSps_; }
+  bool&    getNumRefPatchFrameListsInSps() { return longTermRefPatchFramesFlag_; }
+
+  RefListStruct& getRefListStruct( uint8_t index ) { return refListStruct_[index]; }
+  std::vector<RefListStruct>& getRefListStruct( ) { return refListStruct_; }
+
+ private:
+  uint8_t                    patchSequenceParameterSetId_;
+  uint8_t                    log2MaxPatchFrameOrderCntLsb_;
+  uint8_t                    maxDecPatchFrameBuffering_;
+  uint8_t                    numRefPatchFrameListsInSps_;
+  bool                       longTermRefPatchFramesFlag_;
+  std::vector<RefListStruct> refListStruct_;
+};
+
+class PatchSequenceUnitPayload {
+ public:
+  PatchSequenceUnitPayload() : unitType_( PSD_SPS ), frameIndex_( 0 ) {}
+
+  PSDUnitType& getUnitType() { return unitType_; }
+  uint8_t&     getFrameIndex() { return frameIndex_; }
+
+  PatchSequenceParameterSet&  getPatchSequenceParameterSet() { return patchSequenceParameterSet_; }
+  GeometryPatchParameterSet&  getGeometryPatchParameterSet() { return geometryPatchParameterSet_; }
+  AttributePatchParameterSet& getAttributePatchParameterSet() {
+    return attributePatchParameterSet_;
+  }
+  PatchFrameParameterSet&     getPatchFrameParameterSet() { return patchFrameParameterSet_; }
+  AttributeFrameParameterSet& getAttributeFrameParameterSet() {
+    return attributeFrameParameterSet_;
+  }
+  GeometryFrameParameterSet& getGeometryFrameParameterSet() { return geometryFrameParameterSet_; }
+  PatchFrameLayerUnit&       getPatchFrameLayerUnit() { return patchFrameLayerUnit_; }
+
+ private:
+  PSDUnitType                unitType_;
+  uint8_t                    frameIndex_;
+  PatchSequenceParameterSet  patchSequenceParameterSet_;
+  GeometryPatchParameterSet  geometryPatchParameterSet_;
+  AttributePatchParameterSet attributePatchParameterSet_;
+  PatchFrameParameterSet     patchFrameParameterSet_;
+  AttributeFrameParameterSet attributeFrameParameterSet_;
+  GeometryFrameParameterSet  geometryFrameParameterSet_;
+  PatchFrameLayerUnit        patchFrameLayerUnit_;
+};
+
+class PatchSequenceDataUnit {
+ public:
+  PatchSequenceDataUnit() : frameCount_( 0 ) { patchSequenceUnitPayload_.clear(); }
+  ~PatchSequenceDataUnit() { patchSequenceUnitPayload_.clear(); }
+
+  uint8_t& getFrameCount() { return frameCount_; }
+
+  std::vector<PatchSequenceUnitPayload>& getPatchSequenceUnitPayload() { return patchSequenceUnitPayload_; }
+
+
+ private:
+  uint8_t frameCount_;
+
+  std::vector<PatchSequenceUnitPayload> patchSequenceUnitPayload_;
+};
+
 class SequenceParameterSet {
  public:
   SequenceParameterSet()
@@ -372,6 +564,7 @@ class PCCContext {
     exit( -1 );
   }
 
+PatchSequenceDataUnit& getPatchSequenceDataUnit() { return patchSequenceDataUnit_;}
  private:
   std::vector<PCCFrameContext> frames_;
   PCCVideoGeometry             videoGeometry_;
@@ -395,7 +588,7 @@ class PCCContext {
   bool                           globalPatchAllocation_;
   bool                           use3dmc_;
   bool                           noAttributes_;
-  
+
   uint8_t                        minLevel_;
   uint8_t                        occupancyPrecision_;
   size_t                         MPGeoWidth_;
@@ -411,6 +604,7 @@ class PCCContext {
   //~ deprecated, must be removed
 
   VPCCParameterSet                  vpccParameterSet_;
+  PatchSequenceDataUnit             patchSequenceDataUnit_; 
   std::vector<SequenceParameterSet> sequenceParameterSets_;
 };
 };  // namespace pcc

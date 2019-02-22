@@ -159,7 +159,7 @@ void PCCBitstreamEncoderNewSyntax::vpccUnitPayload( PCCContext&   context,
   if ( vpccUnitType == VPCC_SPS ) {
     vpccSequenceParameterSet( context.getSps(), bitstream );
   } else if ( vpccUnitType == VPCC_PSD ) {
-    patchSequenceDataUnit( context, bitstream );
+    patchSequenceDataUnit( context.getPatchSequenceDataUnit(), context.getSps(), bitstream );
   } else if ( vpccUnitType == VPCC_OVD || vpccUnitType == VPCC_GVD || vpccUnitType == VPCC_AVD ) {
     vpccVideoDataUnit( context, bitstream, vpccUnitType );
   }
@@ -341,54 +341,56 @@ void PCCBitstreamEncoderNewSyntax::attributeSequenceParams( AttributeSequencePar
 }
 
 // 7.3.14 Patch sequence data unit syntax
-void PCCBitstreamEncoderNewSyntax::patchSequenceDataUnit( PCCContext&   context,
-                                                          PCCBitstream& bitstream ) {
-  // psdFrameCount                                 = 0;
-  // psdTerminatePatchSequenceInformationFlag = 0;
-  // while ( psdTerminatePatchSequenceInformationSignal == 0 ) {
-  //   psdUnitType;  // ue(v)
-  //   patchSequenceUnitPayload( psdFrameCount );
-  //   if ( psdUnitType == PSDPFLU ) {
-  //     psdFrameCount++ psdTerminatePatchSequenceInformationFlag;  // u(1)
-  //   }
-  // }
-  // byteAlignment( bitstream );
+void PCCBitstreamEncoderNewSyntax::patchSequenceDataUnit( PatchSequenceDataUnit& psdu,
+                                                          SequenceParameterSet&  sps,
+                                                          PCCBitstream&          bitstream ) {
+  auto& psup = psdu.getPatchSequenceUnitPayload();
+  for(size_t i=0;i< psup.size();i++){
+    bitstream.writeUvlc( (uint32_t)  psup[i].getUnitType()  );  // ue(v)
+    patchSequenceUnitPayload( psup[i], sps, bitstream );
+    if ( psup[i].getUnitType() == PSD_PFLU ) {     
+      bitstream.write( i + 1 == psup.size() );  // u(1)
+    }
+  }
+  byteAlignment( bitstream );
 }
 
 // 7.3.15 Patch sequence unit payload syntax
-void PCCBitstreamEncoderNewSyntax::patchSequenceUnitPayload( PCCContext&   context,
-                                                             PCCBitstream& bitstream,
-                                                             size_t        frameIndex ) {
-  // if ( psdUnitType == PSDSPS ) {
-  //   patchSequenceParameterSet();
-  // } else if ( psdUnitType == PSDGPPS ) {
-  //   geometryPatchParameterSet();
-  // } else if ( psdUnitType == PSDAPPS ) {
-  //   attributePatchParameterSet();
-  // } else if ( psdUnitType == PSDFPS ) {
-  //   patchFrameParameterSet();
-  // } else if ( psdUnitType == PSDAFPS ) {
-  //   attributeFrameParameterSet();
-  // } else if ( psdUnitType == PSDGFPS ) {
-  //   geometryFrameParameterSet();
-  // } else if ( psdUnitType == PSDPFLU ) {
-  //   patchFrameLayerUnit( frameIndex );
-  // }
+void PCCBitstreamEncoderNewSyntax::patchSequenceUnitPayload( PatchSequenceUnitPayload& psup,
+                                                             SequenceParameterSet&     sps,
+                                                             PCCBitstream&             bitstream ) {
+  if ( psup.getUnitType() == PSD_SPS ) {
+    patchSequenceParameterSet( psup.getPatchSequenceParameterSet(), bitstream );
+  } else if ( psup.getUnitType() == PSD_GPPS ) {
+    geometryPatchParameterSet( psup.getGeometryPatchParameterSet(), bitstream );
+  } else if ( psup.getUnitType() == PSD_APPS ) {
+    attributePatchParameterSet( psup.getAttributePatchParameterSet(), bitstream );
+  } else if ( psup.getUnitType() == PSD_FPS ) {
+    patchFrameParameterSet( psup.getPatchFrameParameterSet(), sps, bitstream );
+  } else if ( psup.getUnitType() == PSD_AFPS ) {
+    attributeFrameParameterSet( psup.getAttributeFrameParameterSet(), bitstream );
+  } else if ( psup.getUnitType() == PSD_GFPS ) {
+    geometryFrameParameterSet( psup.getGeometryFrameParameterSet(), bitstream );
+  } else if ( psup.getUnitType() == PSD_PFLU ) {
+    patchFrameLayerUnit( psup.getPatchFrameLayerUnit(), psup.getFrameIndex(), bitstream );
+  }
 }
 
 // 7.3.16 Patch sequence parameter set syntax
-void PCCBitstreamEncoderNewSyntax::patchSequenceParameterSet( PCCContext&   context,
+void PCCBitstreamEncoderNewSyntax::patchSequenceParameterSet( PatchSequenceParameterSet& psps,
                                                               PCCBitstream& bitstream ) {
-  // pspsPatchSequenceParameterSetId;            // ue(v)
-  // pspsLog2MaxPatchFrameOrderCntLsbMinus4;     // ue(v)
-  // pspsMaxDecPatchFrameBufferingMinus1;        // ue(v)
-  // pspsLongTermRefPatchFramesFlag;             // u(1)
-  // pspsNumRefPatchFrameListsInSps;             // ue(v)
-  // for ( size_t j = 0; j < pspsNumRefPatchFrameListsInSps; j++ ) { refListStruct( j ); }
+  bitstream.writeUvlc( psps.getPatchSequenceParameterSetId() );         // ue(v)
+  bitstream.writeUvlc( psps.getLog2MaxPatchFrameOrderCntLsbMinus4() );  // ue(v)
+  bitstream.writeUvlc( psps.getMaxDecPatchFrameBufferingMinus1() );     // ue(v)
+  bitstream.write( psps.getLongTermRefPatchFramesFlag(), 1 );           // u(1)
+  bitstream.writeUvlc( psps.getNumRefPatchFrameListsInSps() );          // ue(v)
+  for ( size_t i = 0; i < psps.getNumRefPatchFrameListsInSps(); i++ ) {
+    refListStruct( psps.getRefListStruct( i ), psps, bitstream );
+  }
 }
 
 // 7.3.17 Geometry frame parameter set syntax
-void PCCBitstreamEncoderNewSyntax::geometryFrameParameterSet( PCCContext&   context,
+void PCCBitstreamEncoderNewSyntax::geometryFrameParameterSet( GeometryFrameParameterSet& gfps,
                                                               PCCBitstream& bitstream ) {
   // gfpsGeometryFrameParameterSetId;  // ue(v)
   // gfpsPatchSequenceParameterSetId;  // ue(v)
@@ -410,8 +412,8 @@ void PCCBitstreamEncoderNewSyntax::geometryFrameParameterSet( PCCContext&   cont
 }
 
 // 7.3.18 Geometry frame Params syntax
-void PCCBitstreamEncoderNewSyntax::geometryFrameParams( PCCContext&   context,
-                                                          PCCBitstream& bitstream ) {
+void PCCBitstreamEncoderNewSyntax::geometryFrameParams( GeometryFrameParams& gfp,
+                                                        PCCBitstream&        bitstream ) {
   // gfmGeometrySmoothingParamsPresentFlag;    // u(1)
   // gfmGeometryScaleParamsPresentFlag;        // u(1)
   // gfmGeometryOffsetParamsPresentFlag;       // u(1)
@@ -420,10 +422,10 @@ void PCCBitstreamEncoderNewSyntax::geometryFrameParams( PCCContext&   context,
   // gfmGeometryPointShapeParamsPresentFlag;   // u(1)
   // if ( gfmGeometrySmoothingParamsPresentFlag ) {
   //   gfpGeometrySmoothingEnabledFlag ; // u(1)
-  //   if ( gfpGeometrySmoothingEnabledFlag ) {  
+  //   if ( gfpGeometrySmoothingEnabledFlag ) {
   //     gfpGeometrySmoothingGridSize ; // u(8)
   //     gfpGeometrySmoothingThreshold ; // u(8)
-  //   }  
+  //   }
   // }
   // if ( gfmGeometryScaleParamsPresentFlag ) {
   //   for ( size_t d = 0; d < 3; d++ ) {
@@ -448,10 +450,9 @@ void PCCBitstreamEncoderNewSyntax::geometryFrameParams( PCCContext&   context,
   // }
 }
 
-// 7.3.19 Attribute frame parameter set syntax 
-void PCCBitstreamEncoderNewSyntax::attributeFrameParameterSet( PCCContext&   context,
-                                                               PCCBitstream& bitstream,
-                                                               size_t        attributeIndex ) {
+// 7.3.19 Attribute frame parameter set syntax
+void PCCBitstreamEncoderNewSyntax::attributeFrameParameterSet( AttributeFrameParameterSet& afps,
+                                                               PCCBitstream& bitstream ) {
   // afpsAttributeFrameParameterSetId[attributeIndex];  // ue(v)
   // afpsPatchSequenceParameterSetId[attributeIndex];   // ue(v)
   // attributeDimension = apsAttributeDimensionMinus1[attributeIndex] + 1;
@@ -472,10 +473,9 @@ void PCCBitstreamEncoderNewSyntax::attributeFrameParameterSet( PCCContext&   con
 }
 
 // 7.3.20 Attribute frame Params syntax
-void PCCBitstreamEncoderNewSyntax::attributeFrameParams( PCCContext&   context,
-                                                           PCCBitstream& bitstream,
-                                                           size_t        attributeIndex,
-                                                           size_t        attributeDimension ) {
+void PCCBitstreamEncoderNewSyntax::attributeFrameParams( AttributeFrameParams& afp,
+                                                         size_t                dimension,
+                                                         PCCBitstream&         bitstream ) {
   // afmAttributeSmoothingParamsPresentFlag[attributeIndex];  // u(1)
   // afmAttributeScaleParamsPresentFlag[attributeIndex];      // u(1)
   // afmAttributeOffsetParamsPresentFlag[attributeIndex];     // u(1)
@@ -499,7 +499,7 @@ void PCCBitstreamEncoderNewSyntax::attributeFrameParams( PCCContext&   context,
 }
 
 // 7.3.21 Geometry patch parameter set syntax
-void PCCBitstreamEncoderNewSyntax::geometryPatchParameterSet( PCCContext&   context,
+void PCCBitstreamEncoderNewSyntax::geometryPatchParameterSet( GeometryPatchParameterSet& gpps,
                                                               PCCBitstream& bitstream ) {
   // gppsGeometryPatchParameterSetId;  // ue(v)
   // gppsGeometryFrameParameterSetId;  // ue(v)
@@ -515,8 +515,8 @@ void PCCBitstreamEncoderNewSyntax::geometryPatchParameterSet( PCCContext&   cont
 }
 
 // 7.3.22 Geometry patch Params syntax
-void PCCBitstreamEncoderNewSyntax::geometryPatchParams( PCCContext&   context,
-                                                          PCCBitstream& bitstream ) {
+void PCCBitstreamEncoderNewSyntax::geometryPatchParams( GeometryPatchParams& gpp,
+                                                        PCCBitstream&        bitstream ) {
   // if ( gfpsGeometryPatchScaleParamsEnabledFlag ) {
   //   gpmGeometryPatchScaleParamsPresentFlag;  // u(1)
   //   if ( gpmGeometryPatchScaleParamsPresentFlag ) {
@@ -556,9 +556,8 @@ void PCCBitstreamEncoderNewSyntax::geometryPatchParams( PCCContext&   context,
 }
 
 // 7.3.23 Attribute patch parameter set syntax
-void PCCBitstreamEncoderNewSyntax::attributePatchParameterSet( PCCContext&   context,
-                                                               PCCBitstream& bitstream,
-                                                               size_t        attributeIndex ) {
+void PCCBitstreamEncoderNewSyntax::attributePatchParameterSet( AttributePatchParameterSet& apps,
+                                                               PCCBitstream& bitstream ) {
   // appsAttributePatchParameterSetId[attributeIndex];  // ue(v)
   // appsAttributeFrameParameterSetId[attributeIndex];  // ue(v)
   // attributeDimension = apsAttributeDimensionMinus1[attributeIndex] + 1;
@@ -573,10 +572,9 @@ void PCCBitstreamEncoderNewSyntax::attributePatchParameterSet( PCCContext&   con
 }
 
 // 7.3.24 Attribute patch Params syntax
-void PCCBitstreamEncoderNewSyntax::attributePatchParams( PCCContext&   context,
-                                                           PCCBitstream& bitstream,
-                                                           size_t        attributeIndex,
-                                                           size_t        attributeDimension ) {
+void PCCBitstreamEncoderNewSyntax::attributePatchParams( AttributePatchParams& app,
+                                                         size_t                dimension,
+                                                         PCCBitstream&         bitstream ) {
   // if ( afpsAttributePatchScaleParamsEnabledFlag[attributeIndex] ) {
   //   apmAttributePatchScaleParamsPresentFlag[attributeIndex];  // u(1)
   //   if ( apmAttributePatchScaleParamsPresentFlag[attributeIndex] ) {
@@ -596,39 +594,40 @@ void PCCBitstreamEncoderNewSyntax::attributePatchParams( PCCContext&   context,
 }
 
 // 7.3.25 Patch frame parameter set syntax
-void PCCBitstreamEncoderNewSyntax::patchFrameParameterSet( PCCContext&   context,
-                                                           PCCBitstream& bitstream ) {
-  // pfpsPatchFrameParameterSetId;     // ue(v)
-  // pfpsPatchSequenceParameterSetId;  // ue(v)
-  // // pfpsGeometryPatchFrameParameterSetId;  // ue(v)
-  // // for ( i = 0; i < spsAttributeCount; i++ ) {
-  // //   pfpsAttributePatchFrameParameterSetId[i]  // ue(v)
-  // // }
-  // pfpsLocalOverrideGeometryPatchEnableFlag;  // u(1)
-  // for ( size_t i = 0; i < spsAttributeCount; i++ ) {
-  //   pfpsLocalOverrideAttributePatchEnableFlag[i];  // u(1)
-  // }
-  // // pfpsNumRefIdxDefaultActiveMinus1 // ue(v)
-  // pfpsAdditionalLtPfocLsbLen;  // ue(v)
-  // if ( spsPatchSequenceOrientationEnabledFlag ) {
-  //   pfpsPatchOrientationPresentFlag;  // u(1)
-  // }
-  // // Other?
-  // byteAlignment( bitstream );
+void PCCBitstreamEncoderNewSyntax::patchFrameParameterSet( PatchFrameParameterSet& pfps,
+                                                           SequenceParameterSet&   sps,
+                                                           PCCBitstream&           bitstream ) {
+  bitstream.writeUvlc( pfps.getPatchFrameParameterSetId()    );  // ue(v)
+  bitstream.writeUvlc( pfps.getPatchSequenceParameterSetId() );  // ue(v)
+  // Commented in CD: pfps.getGeometryPatchFrameParameterSetId;  // ue(v)
+  // Commented in CD: for ( i = 0; i < spsAttributeCount; i++ ) {
+  // Commented in CD:   pfps.getAttributePatchFrameParameterSetId[i]  // ue(v)
+  // Commented in CD: }
+  bitstream.write( pfps.getLocalOverrideGeometryPatchEnableFlag(), 1 );  // u(1)
+  for ( size_t i = 0; i < sps.getAttributeCount(); i++ ) {
+    bitstream.write( pfps.getLocalOverrideAttributePatchEnableFlag()[i], 1 );  // u(1)
+  }
+  // Commented in CD: pfps.getNumRefIdxDefaultActiveMinus1 = read() // ue(v)
+  bitstream.writeUvlc( pfps.getAdditionalLtPfocLsbLen() );  // ue(v)
+  if ( sps.getPatchSequenceOrientationEnabledFlag() ) {
+    bitstream.write( pfps.getPatchOrientationPresentFlag(), 1 );  // u(1)
+  }
+  // Commented in CD: Other?
+  byteAlignment( bitstream );
 }
 
 // 7.3.26 Patch frame layer unit syntax
-void PCCBitstreamEncoderNewSyntax::patchFrameLayerUnit( PCCContext&   context,
-                                                        PCCBitstream& bitstream,
-                                                        size_t        frameIndex ) {
+void PCCBitstreamEncoderNewSyntax::patchFrameLayerUnit( PatchFrameLayerUnit& pflu,
+                                                        size_t               frameIndex,
+                                                        PCCBitstream&        bitstream ) {
   // patchFrameHeader( frameIndex );
   // patchFrameDataUnit( frameIndex );
 }
 
 // 7.3.27 Patch frame header syntax
-void PCCBitstreamEncoderNewSyntax::patchFrameHeader( PCCContext&   context,
-                                                     PCCBitstream& bitstream,
-                                                     size_t        frameIndex ) {
+void PCCBitstreamEncoderNewSyntax::patchFrameHeader( PatchFrameHeader& pfh,
+                                                     size_t            frameIndex,
+                                                     PCCBitstream&     bitstream ) {
   // pfhPatchFrameParameterSetId[frameIndex];  // ue(v)
   // pfhAddress[frameIndex];                   // u(v)
   // pfhType[frameIndex];                      // ue(v)
@@ -695,84 +694,86 @@ void PCCBitstreamEncoderNewSyntax::patchFrameHeader( PCCContext&   context,
 }
 
 // 7.3.28 Reference list structure syntax
-void PCCBitstreamEncoderNewSyntax::refListStruct( PCCContext&   context,
-                                                  PCCBitstream& bitstream,
-                                                  size_t        referenceListIndex ) {
-  // numRefEntries[referenceListIndex];  // ue(v)
-  // for ( size_t i = 0; i < numRefEntries[referenceListIndex]; i++ ) {
-  //   if ( pspsLongTermRefPatchFramesFlag ) {
-  //     stRefPatchFrameFlag[referenceListIndex][i];  // u(1)
-  //     if ( stRefPatchFrameFlag[referenceListIndex][i] ) {
-  //       absDeltaPfocSt[referenceListIndex][i];  // ue(v)
-  //       if ( absDeltaPfocSt[referenceListIndex][i] > 0 ) {
-  //         strpfEntrySignFlag[referenceListIndex][i];  // u(1)
-  //       }
-  //     } else {
-  //       pfocLsbLt[referenceListIndex][i];  // u(v)
-  //     }
-  //   }
+void PCCBitstreamEncoderNewSyntax::refListStruct( RefListStruct&             rls,
+                                                  PatchSequenceParameterSet& psps,
+                                                  PCCBitstream&              bitstream ) {
+  bitstream.writeUvlc( rls.getNumRefEntries() );  // ue(v)
+  rls.allocate();
+  for ( size_t i = 0; i < rls.getNumRefEntries(); i++ ) {
+    if ( psps.getLongTermRefPatchFramesFlag() ) {
+      bitstream.write( rls.getStRefPatchFrameFlag()[i], 1 );  // u(1)
+      if ( rls.getStRefPatchFrameFlag()[i] ) {
+        bitstream.writeUvlc( rls.getAbsDeltaPfocSt()[i] );  // ue(v)
+        if ( rls.getAbsDeltaPfocSt()[i] > 0 ) {
+          bitstream.write( rls.getStrpfEntrySignFlag()[i], 1 );  // u(1)
+        } else {
+          bitstream.writeUvlc( rls.getPfocLsbLt()[i] );  // u(v)
+        }
+      }
+    }
+  }
 }
 
 // 7.3.29 Patch frame data unit syntax
 void PCCBitstreamEncoderNewSyntax::patchFrameDataUnit( PCCContext&   context,
                                                        PCCBitstream& bitstream,
                                                        size_t        frameIndex ) {
-// patchFrameDataUnit( frmIdx ) {  
-//   pfduPatchCountMinus1 ; // u(32)
-//   if( pfhType[ frmIdx ] != I )
-//     pfduInterPatchCount ; // ae(v)
-//   else
-//     pfduInterPatchCount = 0
-//   for( p = 0; p < pfduInterPatchCount; p++ ) {
-//     pfduPatchMode[ frmIdx ][ p ] = PINTER
-//     patchInformationData( frmIdx, p, pfduPatchMode[ frmIdx ][ p ] )
-//   }
-//   for( p = pfduInterPatchCount; p <= pfduPatchCountMinus1; p++ ) {
-//     pfduPatchMode[ frmIdx ][ p ] = pfhType[ frmIdx ]  ==  I ? IINTRA : PINTRA
-//     patchInformationData( frmIdx, p, pfduPatchMode[ frmIdx ][ p ] )
-//   }
-//   PfduTotalNumberOfPatches[ frmIdx ] = p
-//   if( spsPcmPatchEnabledFlag ) {
-//     pfduPatchMode[ frmIdx ][ p ] = pfhType[ frmIdx ]  ==  I ? IPCM : PPCM
-//     patchInformationData( frmIdx, p , pfduPatchMode[ frmIdx ][ p ] )
-//     PfduTotalNumberOfPatches[ frmIdx ]++
-//   }
-//   if( spsPointLocalReconstructionEnabledFlag )
-//     pointLocalReconstruction();
-//   byteAlignment();
-// }
+  // patchFrameDataUnit( frmIdx ) {
+  //   pfduPatchCountMinus1 ; // u(32)
+  //   if( pfhType[ frmIdx ] != I )
+  //     pfduInterPatchCount ; // ae(v)
+  //   else
+  //     pfduInterPatchCount = 0
+  //   for( p = 0; p < pfduInterPatchCount; p++ ) {
+  //     pfduPatchMode[ frmIdx ][ p ] = PINTER
+  //     patchInformationData( frmIdx, p, pfduPatchMode[ frmIdx ][ p ] )
+  //   }
+  //   for( p = pfduInterPatchCount; p <= pfduPatchCountMinus1; p++ ) {
+  //     pfduPatchMode[ frmIdx ][ p ] = pfhType[ frmIdx ]  ==  I ? IINTRA : PINTRA
+  //     patchInformationData( frmIdx, p, pfduPatchMode[ frmIdx ][ p ] )
+  //   }
+  //   PfduTotalNumberOfPatches[ frmIdx ] = p
+  //   if( spsPcmPatchEnabledFlag ) {
+  //     pfduPatchMode[ frmIdx ][ p ] = pfhType[ frmIdx ]  ==  I ? IPCM : PPCM
+  //     patchInformationData( frmIdx, p , pfduPatchMode[ frmIdx ][ p ] )
+  //     PfduTotalNumberOfPatches[ frmIdx ]++
+  //   }
+  //   if( spsPointLocalReconstructionEnabledFlag )
+  //     pointLocalReconstruction();
+  //   byteAlignment();
+  // }
 
-// patchFrameDataUnit( frmIdx) {  
-//   p = -1
-//   pfduMorePatchesAvailableFlag ; // ae(v)
-//   while ( morePatchesAvailableFlag ) {
-//     p ++
-//     pfduPatchMode[ frmIdx ][ p ] ; // ae(v)
-//     patchInformationData(frmIdx, p, pfduPatchMode[ frmIdx ][ p ])
-//     pfduMorePatchesAvailableFlag ; // ae(v)
-//   }
-//   PfduTotalNumberOfPatches[ frmIdx ] = p + 1
-//   if( spsPointLocalReconstructionEnabledFlag )
-//     pointLocalReconstruction();
-//   byteAlignment();
-// }
+  // patchFrameDataUnit( frmIdx) {
+  //   p = -1
+  //   pfduMorePatchesAvailableFlag ; // ae(v)
+  //   while ( morePatchesAvailableFlag ) {
+  //     p ++
+  //     pfduPatchMode[ frmIdx ][ p ] ; // ae(v)
+  //     patchInformationData(frmIdx, p, pfduPatchMode[ frmIdx ][ p ])
+  //     pfduMorePatchesAvailableFlag ; // ae(v)
+  //   }
+  //   PfduTotalNumberOfPatches[ frmIdx ] = p + 1
+  //   if( spsPointLocalReconstructionEnabledFlag )
+  //     pointLocalReconstruction();
+  //   byteAlignment();
+  // }
 
-// // Vlad also proposed the following alternative mode
-// patchFrameDataUnit( frmIdx) {  
-//   p = -1
-//   do {
-//     p ++
-//     pfduPatchMode[ frmIdx ][ p ] ; // ae(v)
-//     if( pfduPatchMode[ frmIdx ][ p ] !=IEND &&
-//       pfduPatchMode[ frmIdx ][ p ] != PEND)
-//       patchInformationData(frmIdx, p, pfduPatchMode[ frmIdx ][ p ])
-//   } while( pfduPatchMode[ frmIdx ][ p ] !=IEND &&
-//       pfduPatchMode[ frmIdx ][ p ] != PEND)
-//   PfduTotalNumberOfPatches[ frmIdx ] = p
-//   if( spsPointLocalReconstructionEnabledFlag )
-//     pointLocalReconstruction();
-//   byteAlignment();
-// }
+  // // Vlad also proposed the following alternative mode
+  // patchFrameDataUnit( frmIdx) {
+  //   p = -1
+  //   do {
+  //     p ++
+  //     pfduPatchMode[ frmIdx ][ p ] ; // ae(v)
+  //     if( pfduPatchMode[ frmIdx ][ p ] !=IEND &&
+  //       pfduPatchMode[ frmIdx ][ p ] != PEND)
+  //       patchInformationData(frmIdx, p, pfduPatchMode[ frmIdx ][ p ])
+  //   } while( pfduPatchMode[ frmIdx ][ p ] !=IEND &&
+  //       pfduPatchMode[ frmIdx ][ p ] != PEND)
+  //   PfduTotalNumberOfPatches[ frmIdx ] = p
+  //   if( spsPointLocalReconstructionEnabledFlag )
+  //     pointLocalReconstruction();
+  //   byteAlignment();
+  // }
 }
 
 // 7.3.30 Patch information data syntax
@@ -849,11 +850,11 @@ void PCCBitstreamEncoderNewSyntax::deltaPatchDataUnit( PCCContext&   context,
   // dpdu3dShiftTangentAxis[frameIndex][patchIndex];    // ae(v)
   // dpdu3dShiftBitangentAxis[frameIndex][patchIndex];  // ae(v)
   // dpdu3dShiftNormalAxis[frameIndex][patchIndex];     // ae(v)
-  // projectionFlag = 0  
-  // i = 0  
+  // projectionFlag = 0
+  // i = 0
   // while (i < spsLayerCountMinus1 + 1 && projectionFlag == 0 )  {
   //   projectionFlag = projectionFlag | spsLayerAbsoluteCodingEnabledFlag[ i ]
-  //   i++;   
+  //   i++;
   // }
   // if ( projectionFlag )  {
   //   dpduProjectionMode[ frmIdx ][ patchIndex ] ; // ae(v)

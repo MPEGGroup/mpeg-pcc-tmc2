@@ -43,21 +43,28 @@
 
 namespace pcc {
 
-class PCCGroupOfFrames;
 class PCCBitstream;
 class PCCContext;
-class PCCFrameContext;
-class PCCEncoderParameters;
-class PCCPatch;
-class ArithmeticCodec;
+class Arithmetic_Codec;
 class ProfileTierLevel;
 class SequenceParameterSet;
 class OccupancyParameterSet;
 class GeometrySequenceParams;
 class AttributeParameterSet;
-class GeometryParameterSet; 
-class AttributeSequenceParams;
-
+class PatchSequenceDataUnit;
+class PatchSequenceUnitPayload;
+class PatchSequenceParameterSet;
+class GeometryFrameParameterSet;
+class AttributeFrameParameterSet;
+class GeometryPatchParameterSet;
+class GeometryPatchParams;
+class AttributePatchParameterSet;
+class AttributePatchParams;
+class GeometryFrameParams;
+class PatchFrameLayerUnit;
+class PatchFrameParameterSet;
+class PatchFrameHeader;
+class RefListStruct;
 
 class PCCBitstreamEncoderNewSyntax {
  public:
@@ -121,59 +128,70 @@ class PCCBitstreamEncoderNewSyntax {
                                 PCCBitstream&            bitstream );
 
   // 7.3.14 Patch sequence data unit syntax
-  void patchSequenceDataUnit( PCCContext& context, PCCBitstream& bitstream );
+  void patchSequenceDataUnit( PatchSequenceDataUnit& patchSequenceDataUnit,
+                              SequenceParameterSet&  sequenceParameterSet,
+                              PCCBitstream&          bitstream );
 
   // 7.3.15 Patch sequence unit payload syntax
-  void patchSequenceUnitPayload( PCCContext& context, PCCBitstream& bitstream, size_t frameIndex );
+  void patchSequenceUnitPayload( PatchSequenceUnitPayload& patchSequenceUnitPayload,
+                                 SequenceParameterSet&     sequenceParameterSet,
+                                 PCCBitstream&             bitstream );
 
   // 7.3.16 Patch sequence parameter set syntax
-  void patchSequenceParameterSet( PCCContext& context, PCCBitstream& bitstream );
+  void patchSequenceParameterSet( PatchSequenceParameterSet& patchSequenceParameterSet,
+                                  PCCBitstream&              bitstream );
 
   // 7.3.17 Geometry frame parameter set syntax
-  void geometryFrameParameterSet( PCCContext& context, PCCBitstream& bitstream );
+  void geometryFrameParameterSet( GeometryFrameParameterSet& geometryFrameParameterSet,
+                                  PCCBitstream&              bitstream );
 
-  // 7.3.18 Geometry frame parameter syntax
-  void geometryFrameParams( PCCContext& context, PCCBitstream& bitstream );
+  // 7.3.18 Geometry frame metadata syntax
+  void geometryFrameParams( GeometryFrameParams& geometryFrameParams, PCCBitstream& bitstream );
 
   // 7.3.19 Attribute frame parameter set syntax
-  void attributeFrameParameterSet( PCCContext&   context,
-                                   PCCBitstream& bitstream,
-                                   size_t        attributeIndex );
+  void attributeFrameParameterSet( AttributeFrameParameterSet& attributeFrameParameterSet,
+                                   PCCBitstream&               bitstream );
 
-  // 7.3.20 Attribute frame parameter syntax
-  void attributeFrameParams( PCCContext&   context,
-                             PCCBitstream& bitstream,
-                             size_t        attributeIndex,
-                             size_t        attributeDimension );
+  // 7.3.20 Attribute frame metadata syntax
+  void attributeFrameParams( AttributeFrameParams& attributeFrameParams,
+                             size_t                dimension,
+                             PCCBitstream&         bitstream );
 
   // 7.3.21 Geometry patch parameter set syntax
-  void geometryPatchParameterSet( PCCContext& context, PCCBitstream& bitstream );
+  void geometryPatchParameterSet( GeometryPatchParameterSet& geometryPatchParameterSet,
+                                  PCCBitstream&              bitstream );
 
-  // 7.3.22 Geometry patch parameter syntax
-  void geometryPatchParams( PCCContext& context, PCCBitstream& bitstream );
+  // 7.3.22 Geometry patch metadata syntax
+  void geometryPatchParams( GeometryPatchParams& geometryPatchParams, PCCBitstream& bitstream );
 
   // 7.3.23 Attribute patch parameter set syntax
-  void attributePatchParameterSet( PCCContext&   context,
-                                   PCCBitstream& bitstream,
-                                   size_t        attributeIndex );
+  void attributePatchParameterSet( AttributePatchParameterSet& attributePatchParameterSet,
+                                   PCCBitstream&               bitstream );
 
-  // 7.3.24 Attribute patch parameter syntax
-  void attributePatchParams( PCCContext&   context,
-                             PCCBitstream& bitstream,
-                             size_t        attributeIndex,
-                             size_t        attributeDimension );
+  // 7.3.24 Attribute patch metadata syntax
+  void attributePatchParams( AttributePatchParams& attributePatchParams,
+                             size_t                dimension,
+                             PCCBitstream&         bitstream );
 
   // 7.3.25 Patch frame parameter set syntax
-  void patchFrameParameterSet( PCCContext& context, PCCBitstream& bitstream );
+  void patchFrameParameterSet( PatchFrameParameterSet& patchFrameParameterSet,
+                               SequenceParameterSet&   sequenceParameterSet,
+                               PCCBitstream&           bitstream );
 
   // 7.3.26 Patch frame layer unit syntax
-  void patchFrameLayerUnit( PCCContext& context, PCCBitstream& bitstream, size_t frameIndex );
+  void patchFrameLayerUnit( PatchFrameLayerUnit& patchFrameLayerUnit,
+                            size_t               frameIndex,
+                            PCCBitstream&        bitstream );
 
   // 7.3.27 Patch frame header syntax
-  void patchFrameHeader( PCCContext& context, PCCBitstream& bitstream, size_t frameIndex );
+  void patchFrameHeader( PatchFrameHeader& patchFrameHeader,
+                         size_t            frameIndex,
+                         PCCBitstream&     bitstream );
 
   // 7.3.28 Reference list structure syntax
-  void refListStruct( PCCContext& context, PCCBitstream& bitstream, size_t referenceListIndex );
+  void refListStruct( RefListStruct&             refListStruct,
+                      PatchSequenceParameterSet& patchSequenceParameterSet,
+                      PCCBitstream&              bitstream );
 
   // 7.3.29 Patch frame data unit syntax
   void patchFrameDataUnit( PCCContext& context, PCCBitstream& bitstream, size_t frameIndex );
