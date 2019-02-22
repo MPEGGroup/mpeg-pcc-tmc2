@@ -173,7 +173,6 @@ void PCCBitstreamDecoderNewSyntax::vpccSequenceParameterSet( SequenceParameterSe
   }
   auto& layerAbsoluteCodingEnabledFlag = sps.getLayerAbsoluteCodingEnabledFlag();
   auto& layerPredictorIndexDiff        = sps.getLayerPredictorIndexDiff();
-  auto& layerPredictorIndex            = sps.getLayerPredictorIndex();
   for ( size_t i = 0; i < layerCountMinus1; i++ ) {
     layerAbsoluteCodingEnabledFlag[i + 1] = bitstream.read( 1 );  // u(1)
     if ( ( layerAbsoluteCodingEnabledFlag[i + 1] == 0 ) ) {
@@ -181,8 +180,7 @@ void PCCBitstreamDecoderNewSyntax::vpccSequenceParameterSet( SequenceParameterSe
         layerPredictorIndexDiff[i + 1] = bitstream.readUvlc();  // ue(v)
       } else {
         layerPredictorIndexDiff[i + 1] = 0;
-      }
-      layerPredictorIndex[i + 1] = i - layerPredictorIndexDiff[i + 1];
+      }      
     }
   }
   sps.getPcmPatchEnabledFlag() = bitstream.read( 1 );  // u(1)
@@ -201,6 +199,7 @@ void PCCBitstreamDecoderNewSyntax::vpccSequenceParameterSet( SequenceParameterSe
   sps.getPatchInterPredictionEnabledFlag()     = bitstream.read( 1 );  // u(1)
   sps.getPixelInterleavingFlag()               = bitstream.read( 1 );  // u(1)
   sps.getPointLocalReconstructionEnabledFlag() = bitstream.read( 1 );  // u(1)
+  sps.getRemoveDuplicatePointEnabledFlag()     = bitstream.read( 1 );  // u(1)
   byteAlignment( bitstream );
 }
 
@@ -319,7 +318,7 @@ void PCCBitstreamDecoderNewSyntax::attributeSequenceParams( AttributeSequencePar
   asp.getScaleParamsPresentFlag()     = bitstream.read( 1 );  // u(1)
   asp.getOffsetParamsPresentFlag()    = bitstream.read( 1 );  // u(1)
   if ( asp.getSmoothingParamsPresentFlag() ) {
-    asp.getSmoothingParamsPresentFlag()        = bitstream.read( 8 );  // u(8)
+    asp.getSmoothingRadius()                   = bitstream.read( 8 );  // u(8)
     asp.getSmoothingNeighbourCount()           = bitstream.read( 8 );  // u(8)
     asp.getSmoothingRadius2BoundaryDetection() = bitstream.read( 8 );  // u(8)
     asp.getSmoothingThreshold()                = bitstream.read( 8 );  // u(8)
@@ -713,62 +712,67 @@ void PCCBitstreamDecoderNewSyntax::refListStruct( PCCContext&   context,
 }
 
 // 7.3.29 Patch frame data unit syntax
-// void PCCBitstreamDecoderNewSyntax::patchFrameDataUnit( PCCContext&   context,
-//                                                           PCCBitstream& bitstream,
-//                                                           size_t        frameIndex ) {
-//   // pfduPatchCountMinus1;  // u( 32 )
-//   // if ( pfhType[frameIndex] != I ) {
-//   //   pfduInterPatchCount;  // ae(v)
-//   // } else {
-//   //   pfduInterPatchCount = 0;
-//   // }
-//   // for ( size_t p = 0; p < pfduInterPatchCount; p++ ) {
-//   //   pfduPatchMode[frameIndex][p] = PINTER;
-//   //   patchInformationData( frameIndex, p, pfduPatchMode[frameIndex][p] );
-//   // }
-//   // for ( size_t p = pfduInterPatchCount; p <= pfduPatchCountMinus1; p++ ) {
-//   //   pfduPatchMode[frameIndex][p] = ( pfhType[frameIndex] == I ) ? IINTRA : PINTRA;
-//   //   patchInformationData( frameIndex, p, pfduPatchMode[frameIndex][p] );
-//   // }
-//   // if ( spsPcmPatchEnabledFlag ) {
-//   //   pfduPatchMode[frameIndex][p + 1] = pfhType[frameIndex] == I ? IPCM : PPCM;
-//   //   patchInformationData( frameIndex, p + 1, pfduPatchMode[frameIndex][p + 1] );
-//   // }
-//   // if ( spsPointLocalReconstructionEnabledFlag ) { pointLocalReconstruction(); }
-//   // byteAlignment( bitstream );
-// }
 
 void PCCBitstreamDecoderNewSyntax::patchFrameDataUnit( PCCContext&   context,
                                                        PCCBitstream& bitstream,
                                                        size_t        frameIndex ) {
-  // int patchIndex = -1 ;
-  // pfduMorePatchesAvailableFlag;  // u(1)
-  // while ( morePatchesAvailableFlag ) {
-  //   p++;
-  //   pfduPatchMode[frameIndex][patchIndex];  // ue(v)
-  //   patchInformationData( frameIndex, p, pfduPatchMode[frameIndex][patchIndex] );
-  //   pfduMorePatchesAvailableFlag;  // u(1)
-  // }
-  // PdfuTotalNumberOfPatches[frameIndex] = patchIndex + 1;
-  // if ( spsPointLocalReconstructionEnabledFlag ) { pointLocalReconstruction(); }
-  // byteAlignment( bitstream );
-  // Note: 
-  // Vlad also proposed the following alternative mode, which saves on signaling the termination flag. Instead, a new mode is introduced that explicitly signals termination. This could also be used for the patch sequence data unit as well.
-  // patchFrameDataUnit( frmIdx) {  
-  //   p = -1  
-  //   do {  
-  //     p ++  
-  //     pfduPatchMode[ frmIdx ][ p ] ; // ue(v)
-  //     if( pfduPatchMode[ frmIdx ][ p ] !=IEND && 
-  //       pfduPatchMode[ frmIdx ][ p ] != PEND)  
-  //       patchInformationData(frmIdx, p, pfduPatchMode[ frmIdx ][ p ])  
-  //   } while( pfduPatchMode[ frmIdx ][ p ] !=IEND && 
-  //       pfduPatchMode[ frmIdx ][ p ] != PEND)  
-  //   pfduTotalNumberOfPatches[ frmIdx ] = p  
-  //   if( spsPointLocalReconstructionEnabledFlag )  
-  //     pointLocalReconstruction( )  
-  //   byteAlignment( )    
-  // }  
+// patchFrameDataUnit( frmIdx ) {  
+//   pfduPatchCountMinus1 ; // u(32)
+//   if( pfhType[ frmIdx ] != I )
+//     pfduInterPatchCount ; // ae(v)
+//   else
+//     pfduInterPatchCount = 0
+//   for( p = 0; p < pfduInterPatchCount; p++ ) {
+//     pfduPatchMode[ frmIdx ][ p ] = PINTER
+//     patchInformationData( frmIdx, p, pfduPatchMode[ frmIdx ][ p ] )
+//   }
+//   for( p = pfduInterPatchCount; p <= pfduPatchCountMinus1; p++ ) {
+//     pfduPatchMode[ frmIdx ][ p ] = pfhType[ frmIdx ]  ==  I ? IINTRA : PINTRA
+//     patchInformationData( frmIdx, p, pfduPatchMode[ frmIdx ][ p ] )
+//   }
+//   PfduTotalNumberOfPatches[ frmIdx ] = p
+//   if( spsPcmPatchEnabledFlag ) {
+//     pfduPatchMode[ frmIdx ][ p ] = pfhType[ frmIdx ]  ==  I ? IPCM : PPCM
+//     patchInformationData( frmIdx, p , pfduPatchMode[ frmIdx ][ p ] )
+//     PfduTotalNumberOfPatches[ frmIdx ]++
+//   }
+//   if( spsPointLocalReconstructionEnabledFlag )
+//     pointLocalReconstruction();
+//   byteAlignment();
+// }
+
+// patchFrameDataUnit( frmIdx) {  
+//   p = -1
+//   pfduMorePatchesAvailableFlag ; // ae(v)
+//   while ( morePatchesAvailableFlag ) {
+//     p ++
+//     pfduPatchMode[ frmIdx ][ p ] ; // ae(v)
+//     patchInformationData(frmIdx, p, pfduPatchMode[ frmIdx ][ p ])
+//     pfduMorePatchesAvailableFlag ; // ae(v)
+//   }
+//   PfduTotalNumberOfPatches[ frmIdx ] = p + 1
+//   if( spsPointLocalReconstructionEnabledFlag )
+//     pointLocalReconstruction();
+//   byteAlignment();
+// }
+
+// // Vlad also proposed the following alternative mode
+// patchFrameDataUnit( frmIdx) {  
+//   p = -1
+//   do {
+//     p ++
+//     pfduPatchMode[ frmIdx ][ p ] ; // ae(v)
+//     if( pfduPatchMode[ frmIdx ][ p ] !=IEND &&
+//       pfduPatchMode[ frmIdx ][ p ] != PEND)
+//       patchInformationData(frmIdx, p, pfduPatchMode[ frmIdx ][ p ])
+//   } while( pfduPatchMode[ frmIdx ][ p ] !=IEND &&
+//       pfduPatchMode[ frmIdx ][ p ] != PEND)
+//   PfduTotalNumberOfPatches[ frmIdx ] = p
+//   if( spsPointLocalReconstructionEnabledFlag )
+//     pointLocalReconstruction();
+//   byteAlignment();
+// }
+
 }
 
 // 7.3.30 Patch information data syntax
@@ -796,7 +800,7 @@ void PCCBitstreamDecoderNewSyntax::patchInformationData( PCCContext&   context,
   //   }
   //   patchDataUnit( frameIndex, patchIndex );
   // } else if ( patchMode == PINTER ) {
-  //   patchDeltaDataUnit( frameIndex, patchIndex );
+  //   deltaPatchDataUnit( frameIndex, patchIndex );
   // } else if ( patchMode == IPCM || patchMode == PPCM ) {
   //   pcmPatchDataUnit( frameIndex, patchIndex );
   // }

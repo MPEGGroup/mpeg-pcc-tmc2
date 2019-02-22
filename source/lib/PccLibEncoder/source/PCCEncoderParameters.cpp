@@ -487,6 +487,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   sps.getEnhancedOccupancyMapForDepthFlag()  = enhancedDeltaDepthCode_;
   sps.getPixelInterleavingFlag()             = singleLayerPixelInterleaving_;
   sps.getMultipleLayerStreamsPresentFlag()   = !oneLayerMode_;
+  sps.getRemoveDuplicatePointEnabledFlag()   = removeDuplicatePoints_;
   gsp.getSmoothingPresentFlag()              = flagGeometrySmoothing_;
   gsp.getSmoothingGridSize()                 = gridSize_;
   gsp.getSmoothingThreshold()                = thresholdSmoothing_;
@@ -500,25 +501,24 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   asp.getSmoothingNeighbourCount()           = neighborCountColorSmoothing_;
   asp.getSmoothingParamsPresentFlag()        = flagColorSmoothing_;
 
-// deprecated  
-  context.getLosslessGeo444()                = losslessGeo444_;
-  context.getLosslessGeo()                   = losslessGeo_;
-  context.getLosslessTexture()               = losslessTexture_;
-  context.getOccupancyPrecision()            = occupancyPrecision_;
-  context.getGridSmoothing()                 = gridSmoothing_;
-  context.getNoAttributes()                  = noAttributes_;
-  context.getAbsoluteD1()                    = absoluteD1_;
-  context.getBinArithCoding()                = binArithCoding_;
-  context.getModelScale()                    = modelScale_;
-  context.getModelOrigin()                   = modelOrigin_;
-  context.getImproveEDD()                    = improveEDD_;
-  context.getDeltaCoding()                   = deltaCoding_;
-  context.getSixDirectionMode()              = sixDirectionMode_;
-  context.getRemoveDuplicatePoints()         = removeDuplicatePoints_;
-  context.getUseAdditionalPointsPatch()      = useAdditionalPointsPatch_;
-  context.getMinLevel()                      = minLevel_;
-  context.getGlobalPatchAllocation()         = globalPatchAllocation_;
-  context.getUse3dmc()                       = use3dmc_;
+  // deprecated
+  context.getLosslessGeo444()           = losslessGeo444_;
+  context.getLosslessGeo()              = losslessGeo_;
+  context.getLosslessTexture()          = losslessTexture_;
+  context.getOccupancyPrecision()       = occupancyPrecision_;
+  context.getGridSmoothing()            = gridSmoothing_;
+  context.getNoAttributes()             = noAttributes_;
+  context.getAbsoluteD1()               = absoluteD1_;
+  context.getBinArithCoding()           = binArithCoding_;
+  context.getModelScale()               = modelScale_;
+  context.getModelOrigin()              = modelOrigin_;
+  context.getImproveEDD()               = improveEDD_;
+  context.getDeltaCoding()              = deltaCoding_;
+  context.getSixDirectionMode()         = sixDirectionMode_;
+  context.getUseAdditionalPointsPatch() = useAdditionalPointsPatch_;
+  context.getMinLevel()                 = minLevel_;
+  context.getGlobalPatchAllocation()    = globalPatchAllocation_;
+  context.getUse3dmc()                  = use3dmc_;
 
   context.getMPGeoWidth()  = 64;
   context.getMPAttWidth()  = 64;

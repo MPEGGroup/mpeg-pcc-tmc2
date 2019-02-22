@@ -457,7 +457,7 @@ int PCCBitstreamEncoder::compressHeader( PCCContext& context, pcc::PCCBitstream&
     bitstream.write<uint8_t>( uint8_t( context.getImproveEDD() ) );
   }
   bitstream.write<uint8_t>( uint8_t( context.getDeltaCoding() ) );
-  bitstream.write<uint8_t>( uint8_t( context.getRemoveDuplicatePoints() ) );
+  bitstream.write<uint8_t>( uint8_t( sps.getRemoveDuplicatePointEnabledFlag() ) );
   bitstream.write<uint8_t>( uint8_t( sps.getMultipleLayerStreamsPresentFlag() ) );
   bitstream.write<uint8_t>( uint8_t( sps.getPixelInterleavingFlag() ) );
   bitstream.write<uint8_t>( uint8_t( context.getUseAdditionalPointsPatch() ) );
@@ -474,12 +474,12 @@ void PCCBitstreamEncoder::compressPatchMetaDataM42195( PCCContext      &context,
                                                        o3dgc::Arithmetic_Codec &arithmeticEncoder,
                                                        o3dgc::Static_Bit_Model &bModel0,
                                                        uint8_t enable_flexible_patch_flag) {
-  auto&        sps        = context.getSps();
-  auto&        ops        = sps.getOccupancyParameterSet();
-  auto &patches = frame.getPatches();
-  auto &prePatches = preFrame.getPatches();
-  size_t patchCount = patches.size();
-  size_t TopNmaxU0 = 0, maxU0 = 0;
+  auto&         sps        = context.getSps();
+  auto&         ops        = sps.getOccupancyParameterSet();
+  auto&         patches    = frame.getPatches();
+  auto&         prePatches = preFrame.getPatches();
+  size_t        patchCount = patches.size();
+  size_t        TopNmaxU0 = 0, maxU0 = 0;
   size_t TopNmaxV0 = 0, maxV0 = 0;
   size_t TopNmaxU1 = 0, maxU1 = 0;
   size_t TopNmaxV1 = 0, maxV1 = 0;

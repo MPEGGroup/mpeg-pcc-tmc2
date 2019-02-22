@@ -99,8 +99,8 @@ class GeometrySequenceParams {
   GeometrySequenceParams()
       : smoothingPresentFlag_( false ), smoothingEnabledFlag_( false ), scalePresentFlag_( false ),
         offsetPresentFlag_( false ), rotationPresentFlag_( false ), pointSizePresentFlag_( false ),
-        pointShapePresentFlag_( false ), smoothingGridSize_( 0 ), smoothingThreshold_( 0 ), pointSize_( 0 ),
-        pointShape_( 0 ) {}
+        pointShapePresentFlag_( false ), smoothingGridSize_( 0 ), smoothingThreshold_( 0 ),
+        pointSize_( 0 ), pointShape_( 0 ) {}
 
   bool&     getSmoothingPresentFlag() { return smoothingPresentFlag_; }
   bool&     getSmoothingEnabledFlag() { return smoothingEnabledFlag_; }
@@ -238,10 +238,10 @@ class SequenceParameterSet {
         enhancedOccupancyMapForDepthFlag_( false ), multipleLayerStreamsPresentFlag_( false ),
         pcmPatchEnabledFlag_( false ), pcmSeparateVideoPresentFlag_( false ),
         patchSequenceOrientationEnabledFlag_( false ), patchInterPredictionEnabledFlag_( false ),
-        pixelInterleavingFlag_( false ), pointLocalReconstructionEnabledFlag_( false ) {
+        pixelInterleavingFlag_( false ), pointLocalReconstructionEnabledFlag_( false ),
+        removeDuplicatePointEnabledFlag_( false ) {
     layerAbsoluteCodingEnabledFlag_.clear();
     layerPredictorIndexDiff_.clear();
-    layerPredictorIndex_.clear();
   }
   size_t& getIndex() { return index_; }
   size_t& getWidth() { return width_; }
@@ -256,8 +256,9 @@ class SequenceParameterSet {
   bool&   getPatchInterPredictionEnabledFlag() { return patchInterPredictionEnabledFlag_; }
   bool&   getPixelInterleavingFlag() { return pixelInterleavingFlag_; }
   bool&   getPointLocalReconstructionEnabledFlag() { return pointLocalReconstructionEnabledFlag_; }
+  bool&   getRemoveDuplicatePointEnabledFlag() { return removeDuplicatePointEnabledFlag_; }
+
   std::vector<size_t>& getLayerPredictorIndexDiff() { return layerPredictorIndexDiff_; }
-  std::vector<size_t>& getLayerPredictorIndex() { return layerPredictorIndex_; }
   std::vector<bool>& getLayerAbsoluteCodingEnabledFlag() { return layerAbsoluteCodingEnabledFlag_; }
 
   ProfileTierLevel&      getProfileTierLevel() { return profileTierLevel_; }
@@ -285,14 +286,14 @@ class SequenceParameterSet {
   bool                               patchSequenceOrientationEnabledFlag_;
   bool                               patchInterPredictionEnabledFlag_;
   bool                               pixelInterleavingFlag_;
-  bool                               pointLocalReconstructionEnabledFlag_;  
+  bool                               pointLocalReconstructionEnabledFlag_;
+  bool                               removeDuplicatePointEnabledFlag_;
   std::vector<bool>                  layerAbsoluteCodingEnabledFlag_;  // layerCount_ size
   std::vector<size_t>                layerPredictorIndexDiff_;         // layerCount_ size
-  std::vector<size_t>                layerPredictorIndex_;             // layerCount_ size
   ProfileTierLevel                   profileTierLevel_;
-  GeometryParameterSet               geometryParameterSet_; 
+  GeometryParameterSet               geometryParameterSet_;
   OccupancyParameterSet              occupancyParameterSet_;
-  std::vector<AttributeParameterSet> attributeParameterSets_;          // attributeCount_ size
+  std::vector<AttributeParameterSet> attributeParameterSets_;  // attributeCount_ size
 };
 
 class PCCContext {
@@ -322,7 +323,7 @@ class PCCContext {
   bool&                    getLosslessTexture() { return losslessTexture_; }
   uint8_t&                 getOccupancyPrecision() { return occupancyPrecision_; }
   bool&                    getGridSmoothing() { return gridSmoothing_; }
-  uint8_t&                 getNoAttributes() { return noAttributes_; }
+  bool&                    getNoAttributes() { return noAttributes_; }
   bool&                    getAbsoluteD1() { return absoluteD1_; }
   bool&                    getBinArithCoding() { return binArithCoding_; }
   float&                   getModelScale() { return modelScale_; }
@@ -330,7 +331,6 @@ class PCCContext {
   bool&                    getImproveEDD() { return improveEDD_; }
   bool&                    getDeltaCoding() { return deltaCoding_; }
   bool&                    getSixDirectionMode() { return sixDirectionMode_; }
-  bool&                    getRemoveDuplicatePoints() { return removeDuplicatePoints_; }
   bool&                    getUseAdditionalPointsPatch() { return useAdditionalPointsPatch_; }
   uint8_t&                 getMinLevel() { return minLevel_; }
   bool&                    getGlobalPatchAllocation() { return globalPatchAllocation_; }
@@ -359,9 +359,9 @@ class PCCContext {
     exit( -1 );
   }
 
-  void allocOneLayerData( const size_t occupancyResolution );
-  void printVideoBitstream();
-  void printBlockToPatch( const size_t occupancyResolution );
+  void                  allocOneLayerData( const size_t occupancyResolution );
+  void                  printVideoBitstream();
+  void                  printBlockToPatch( const size_t occupancyResolution );
   VPCCParameterSet&     getVPCC() { return vpccParameterSet_; }
   SequenceParameterSet& getSps() {
     for ( auto& sps : sequenceParameterSets_ ) {
@@ -382,30 +382,28 @@ class PCCContext {
   PCCVideoTexture              videoMPsTexture_;
 
   // deprecated, must be removed:
-  bool              losslessGeo444_;
-  bool              losslessGeo_;
-  bool              losslessTexture_;
-  size_t            MPGeoWidth_;
-  size_t            MPGeoHeight_;
-  size_t            MPAttWidth_;
-  size_t            MPAttHeight_;
-  uint8_t           occupancyPrecision_;
-  bool              gridSmoothing_;
-  bool              absoluteD1_;
-  bool              binArithCoding_;
-  float             modelScale_;
-  PCCVector3<float> modelOrigin_;
+  bool                           losslessGeo444_;
+  bool                           losslessGeo_;
+  bool                           losslessTexture_;
+  bool                           gridSmoothing_;
+  bool                           absoluteD1_;
+  bool                           binArithCoding_;
+  bool                           improveEDD_;
+  bool                           deltaCoding_;
+  bool                           sixDirectionMode_;
+  bool                           useAdditionalPointsPatch_;
+  bool                           globalPatchAllocation_;
+  bool                           use3dmc_;
+  bool                           noAttributes_;
   
-  uint8_t           noAttributes_;
-
-  bool              improveEDD_;
-  bool              deltaCoding_;
-  bool              sixDirectionMode_;
-  bool              removeDuplicatePoints_;
-  bool              useAdditionalPointsPatch_;
-  uint8_t           minLevel_;
-  bool              globalPatchAllocation_;
-  bool              use3dmc_;
+  uint8_t                        minLevel_;
+  uint8_t                        occupancyPrecision_;
+  size_t                         MPGeoWidth_;
+  size_t                         MPGeoHeight_;
+  size_t                         MPAttWidth_;
+  size_t                         MPAttHeight_;
+  float                          modelScale_;
+  PCCVector3<float>              modelOrigin_;
   PCCMetadata                    gofLevelMetadata_;
   std::vector<PCCVideoBitstream> videoBitstream_;
   std::vector<SubContext>        subContexts_;

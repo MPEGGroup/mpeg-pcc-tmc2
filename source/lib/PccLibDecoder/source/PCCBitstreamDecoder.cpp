@@ -415,7 +415,7 @@ int PCCBitstreamDecoder::decompressHeader( PCCContext& context, PCCBitstream& bi
     context.getImproveEDD()                   = bitstream.read<uint8_t>() > 0;
   }
   context.getDeltaCoding()                 = bitstream.read<uint8_t>() > 0;
-  context.getRemoveDuplicatePoints()       = bitstream.read<uint8_t>() > 0;
+  sps.getRemoveDuplicatePointEnabledFlag() = bitstream.read<uint8_t>() > 0;
   sps.getMultipleLayerStreamsPresentFlag() = bitstream.read<uint8_t>() > 0;
   sps.getPixelInterleavingFlag()           = bitstream.read<uint8_t>() > 0;
   context.getUseAdditionalPointsPatch()    = bitstream.read<uint8_t>() > 0;

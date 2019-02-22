@@ -177,7 +177,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   generatePointCloudParameters.flagColorSmoothing_           = (bool) asp.getSmoothingParamsPresentFlag();
   generatePointCloudParameters.enhancedDeltaDepthCode_       = ((context.getLosslessGeo() != 0) ? sps.getEnhancedOccupancyMapForDepthFlag() : false);
   generatePointCloudParameters.deltaCoding_                  = (params_.testLevelOfDetailSignaling_ > 0); // ignore LoD scaling for testing the signaling only
-  generatePointCloudParameters.removeDuplicatePoints_        = context.getRemoveDuplicatePoints();
+  generatePointCloudParameters.removeDuplicatePoints_        = sps.getRemoveDuplicatePointEnabledFlag();
   generatePointCloudParameters.oneLayerMode_                 = !sps.getMultipleLayerStreamsPresentFlag();
   generatePointCloudParameters.singleLayerPixelInterleaving_ = sps.getPixelInterleavingFlag();
   generatePointCloudParameters.sixDirectionMode_             = context.getSixDirectionMode();
