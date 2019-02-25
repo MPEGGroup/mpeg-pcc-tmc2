@@ -414,21 +414,22 @@ int PCCBitstreamEncoder::compressHeader( PCCContext& context, pcc::PCCBitstream&
   auto& asp = aps.getAttributeSequenceParams();
   bitstream.write<uint8_t>( ( uint8_t )( context.size() ) );
   if ( !context.size() ) { return 0; }
-  bitstream.write<uint16_t>( uint16_t( sps.getWidth() ) );
-  bitstream.write<uint16_t>( uint16_t( sps.getHeight() ) );
-  bitstream.write<uint8_t>( uint8_t( ops.getPackingBlockSize() ) );
+  bitstream.write<uint16_t>( uint16_t( sps.getFrameWidth() ) );
+  bitstream.write<uint16_t>( uint16_t( sps.getFrameHeight() ) );
+  bitstream.write<uint8_t>( uint8_t( ops.getOccupancyPackingBlockSize() ) );
   bitstream.write<uint8_t>( uint8_t( context.getOccupancyPrecision() ) );
-  bitstream.write<uint8_t>( uint8_t( gsp.getSmoothingPresentFlag() ) );
-  if ( gsp.getSmoothingPresentFlag() ) {
+  //jkei[??] is it changed as inteded?
+  bitstream.write<uint8_t>( uint8_t( gsp.getGeometrySmoothingParamsPresentFlag() ) );
+  if ( gsp.getGeometrySmoothingParamsPresentFlag() ) {
     bitstream.write<uint8_t>( uint8_t( context.getGridSmoothing() ) );
     if ( context.getGridSmoothing() ) {
-      bitstream.write<uint8_t>( uint8_t( gsp.getSmoothingGridSize() ) );
-      bitstream.write<uint8_t>( uint8_t( gsp.getSmoothingThreshold() ) );
+      bitstream.write<uint8_t>( uint8_t( gsp.getGeometrySmoothingGridSize() ) );
+      bitstream.write<uint8_t>( uint8_t( gsp.getGeometrySmoothingThreshold() ) );
     } else {
-      bitstream.write<uint8_t>( uint8_t( asp.getSmoothingParamsPresentFlag() ) );
-      bitstream.write<uint8_t>( uint8_t( asp.getSmoothingNeighbourCount() ) );
-      bitstream.write<uint8_t>( uint8_t( asp.getSmoothingRadius2BoundaryDetection() ) );
-      bitstream.write<uint8_t>( uint8_t( gsp.getSmoothingThreshold() ) );
+      bitstream.write<uint8_t>( uint8_t( asp.getAttributeSmoothingParamsPresentFlag() ) );
+      bitstream.write<uint8_t>( uint8_t( asp.getAttributeSmoothingNeighbourCount() ) );
+      bitstream.write<uint8_t>( uint8_t( asp.getAttributeSmoothingRadius2BoundaryDetection() ) );
+      bitstream.write<uint8_t>( uint8_t( gsp.getGeometrySmoothingThreshold() ) );
     }
   }
   bitstream.write<uint8_t>( uint8_t( context.getLosslessGeo() ) );
@@ -445,12 +446,12 @@ int PCCBitstreamEncoder::compressHeader( PCCContext& context, pcc::PCCBitstream&
   bitstream.write<float>( context.getModelScale() );
   bitstream.write<PCCVector3<float> >( context.getModelOrigin() );
   writeMetadata( context.getGOFLevelMetadata(), bitstream );
-  bitstream.write<uint8_t>( uint8_t( asp.getSmoothingParamsPresentFlag() ) );
-  if ( asp.getSmoothingParamsPresentFlag() ) {
-    bitstream.write<uint8_t>( uint8_t( asp.getSmoothingThreshold() ) );
-    bitstream.write<double>( double( asp.getSmoothingThresholdLocalEntropy() ) );
-    bitstream.write<uint8_t>( uint8_t( asp.getSmoothingRadius() ) );
-    bitstream.write<uint8_t>( uint8_t( asp.getSmoothingNeighbourCount() ) );
+  bitstream.write<uint8_t>( uint8_t( asp.getAttributeSmoothingParamsPresentFlag() ) );
+  if ( asp.getAttributeSmoothingParamsPresentFlag() ) {
+    bitstream.write<uint8_t>( uint8_t( asp.getAttributeSmoothingThreshold() ) );
+    bitstream.write<double>( double( asp.getAttributeSmoothingThresholdLocalEntropy() ) );
+    bitstream.write<uint8_t>( uint8_t( asp.getAttributeSmoothingRadius() ) );
+    bitstream.write<uint8_t>( uint8_t( asp.getAttributeSmoothingNeighbourCount() ) );
   }
   if ( context.getLosslessGeo() ) {
     bitstream.write<uint8_t>( uint8_t( sps.getEnhancedOccupancyMapForDepthFlag() ) );
@@ -518,7 +519,7 @@ void PCCBitstreamEncoder::compressPatchMetaDataM42195( PCCContext      &context,
 
 
   bool bBinArithCoding = context.getBinArithCoding() && (!context.getLosslessGeo()) &&
-      ( ops.getPackingBlockSize() == 16) && (context.getOccupancyPrecision() == 4);
+      ( ops.getOccupancyPackingBlockSize() == 16) && (context.getOccupancyPrecision() == 4);
 
   o3dgc::Adaptive_Bit_Model bModelPatchIndex, bModelU0, bModelV0, bModelU1, bModelV1, bModelD1,bModelIntSizeU0,bModelIntSizeV0;
   o3dgc::Adaptive_Bit_Model bModelSizeU0, bModelSizeV0, bModelAbsoluteD1;
@@ -716,8 +717,8 @@ void PCCBitstreamEncoder::compressOneLayerData( PCCContext&                 cont
     auto&        sps                = context.getSps();
     auto&        ops                = sps.getOccupancyParameterSet();
     auto&        blockToPatch       = frame.getBlockToPatch();
-    const size_t blockToPatchWidth  = frame.getWidth() / ops.getPackingBlockSize();
-    const size_t blockToPatchHeight = frame.getHeight() / ops.getPackingBlockSize();
+    const size_t blockToPatchWidth  = frame.getWidth() / ops.getOccupancyPackingBlockSize();
+    const size_t blockToPatchHeight = frame.getHeight() / ops.getOccupancyPackingBlockSize();
     auto&        interpolateMap     = frame.getInterpolate();
     auto&        fillingMap         = frame.getFilling();
     auto&        minD1Map           = frame.getMinD1();
@@ -802,7 +803,7 @@ void PCCBitstreamEncoder::compressOccupancyMap( PCCContext&      context,
   o3dgc::Arithmetic_Codec arithmeticEncoder;
   o3dgc::Static_Bit_Model bModel0;
   bool bBinArithCoding = context.getBinArithCoding() && (!context.getLosslessGeo()) &&
-      ( ops.getPackingBlockSize() == 16) && (context.getOccupancyPrecision() == 4);
+      ( ops.getOccupancyPackingBlockSize() == 16) && (context.getOccupancyPrecision() == 4);
   uint8_t enable_flexible_patch_flag = ( params_.packingStrategy_ > 0);
   bitstream.write<uint8_t>(enable_flexible_patch_flag);
 

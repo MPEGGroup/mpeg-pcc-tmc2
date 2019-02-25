@@ -78,7 +78,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   auto&             ops = sps.getOccupancyParameterSet();
   auto&             aps = sps.getAttributeParameterSets( 0 );
   auto&             asp = aps.getAttributeSequenceParams();
-  path << removeFileExtension( params_.compressedStreamPath_ ) << "_dec_GOF" << sps.getIndex()
+  path << removeFileExtension( params_.compressedStreamPath_ ) << "_dec_GOF" << sps.getSequenceParameterSetId()
        << "_";
 
   bool         lossyMpp = !context.getLosslessGeo() && context.getUseAdditionalPointsPatch();
@@ -93,8 +93,8 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   auto& videoBitstreamOM = context.getVideoBitstream( PCCVideoType::OccupancyMap );
   videoDecoder.decompress(
       context.getVideoOccupancyMap(), path.str(),
-      sps.getWidth() / context.getOccupancyPrecision(),
-      sps.getHeight() / context.getOccupancyPrecision(), context.size(), videoBitstreamOM,
+      sps.getFrameWidth() / context.getOccupancyPrecision(),
+      sps.getFrameHeight() / context.getOccupancyPrecision(), context.size(), videoBitstreamOM,
       params_.videoDecoderOccupancyMapPath_, context, 1, params_.keepIntermediateFiles_,
       ( context.getLosslessGeo() ? context.getLosslessGeo444() : false ), false, "", "" );
   generateOccupancyMap( context, context.getOccupancyPrecision() );
@@ -105,7 +105,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
     }
     // Compress D0
     auto& videoBitstreamD0 =  context.getVideoBitstream( PCCVideoType::GeometryD0 );
-    videoDecoder.decompress( context.getVideoGeometry(), path.str(), sps.getWidth(), sps.getHeight(),
+    videoDecoder.decompress( context.getVideoGeometry(), path.str(), sps.getFrameWidth(), sps.getFrameHeight(),
                              context.size(), videoBitstreamD0,
                              params_.videoDecoderPath_, context, nbyteGeo, params_.keepIntermediateFiles_,
                              (context.getLosslessGeo()?context.getLosslessGeo444():false) );
@@ -113,7 +113,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
 
     // Compress D1
     auto& videoBitstreamD1 =  context.getVideoBitstream( PCCVideoType::GeometryD1 );
-    videoDecoder.decompress(context.getVideoGeometryD1(), path.str(), sps.getWidth(), sps.getHeight(),
+    videoDecoder.decompress(context.getVideoGeometryD1(), path.str(), sps.getFrameWidth(), sps.getFrameHeight(),
                             context.size(), videoBitstreamD1, params_.videoDecoderPath_,
                             context, nbyteGeo, params_.keepIntermediateFiles_,
                             (context.getLosslessGeo()?context.getLosslessGeo444():false) );
@@ -122,7 +122,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
     std::cout << "geometry video ->" << videoBitstreamD1.naluSize() + videoBitstreamD1.naluSize() << " B" << std::endl;
   } else {
     auto& videoBitstream =  context.getVideoBitstream( PCCVideoType::Geometry );
-    videoDecoder.decompress(context.getVideoGeometry(), path.str(), sps.getWidth(), sps.getHeight(),
+    videoDecoder.decompress(context.getVideoGeometry(), path.str(), sps.getFrameWidth(), sps.getFrameHeight(),
                             context.size() * frameCountGeometry, videoBitstream,
                             params_.videoDecoderPath_, context, nbyteGeo,  params_.keepIntermediateFiles_,
                             context.getLosslessGeo() & context.getLosslessGeo444() );
@@ -148,33 +148,33 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   bool lossyMissedPointsPatch   = !context.getLosslessGeo() && useAdditionalPointsPatch;
   if ( ( context.getLosslessGeo() != 0 ) && sps.getEnhancedOccupancyMapForDepthFlag() ) {
     generateBlockToPatchFromOccupancyMap( context, context.getLosslessGeo(), lossyMissedPointsPatch,
-                                          0, ops.getPackingBlockSize() );
+                                          0, ops.getOccupancyPackingBlockSize() );
   } else {
     generateBlockToPatchFromBoundaryBox( context, context.getLosslessGeo(), lossyMissedPointsPatch,
-                                         0, ops.getPackingBlockSize() );
+                                         0, ops.getOccupancyPackingBlockSize() );
   }
 
   GeneratePointCloudParameters generatePointCloudParameters;
-  generatePointCloudParameters.occupancyResolution_          = ops.getPackingBlockSize();
+  generatePointCloudParameters.occupancyResolution_          = ops.getOccupancyPackingBlockSize();
   generatePointCloudParameters.occupancyPrecision_           = context.getOccupancyPrecision();
-  generatePointCloudParameters.flagGeometrySmoothing_        = gsp.getSmoothingPresentFlag();
+  generatePointCloudParameters.flagGeometrySmoothing_        = gsp.getGeometrySmoothingParamsPresentFlag();
   generatePointCloudParameters.gridSmoothing_                = context.getGridSmoothing();
-  generatePointCloudParameters.gridSize_                     = gsp.getSmoothingGridSize();
-  generatePointCloudParameters.neighborCountSmoothing_       = asp.getSmoothingNeighbourCount();
-  generatePointCloudParameters.radius2Smoothing_             = (double)asp.getSmoothingRadius();
-  generatePointCloudParameters.radius2BoundaryDetection_     = (double)asp.getSmoothingRadius2BoundaryDetection();
-  generatePointCloudParameters.thresholdSmoothing_           = (double)gsp.getSmoothingThreshold();
+  generatePointCloudParameters.gridSize_                     = gsp.getGeometrySmoothingGridSize();
+  generatePointCloudParameters.neighborCountSmoothing_       = asp.getAttributeSmoothingNeighbourCount();
+  generatePointCloudParameters.radius2Smoothing_             = (double)asp.getAttributeSmoothingRadius();
+  generatePointCloudParameters.radius2BoundaryDetection_     = (double)asp.getAttributeSmoothingRadius2BoundaryDetection();
+  generatePointCloudParameters.thresholdSmoothing_           = (double)gsp.getGeometrySmoothingThreshold();
   generatePointCloudParameters.losslessGeo_                  = context.getLosslessGeo() != 0;
   generatePointCloudParameters.losslessGeo444_               = context.getLosslessGeo444() != 0;
   generatePointCloudParameters.nbThread_                     = params_.nbThread_;
   generatePointCloudParameters.absoluteD1_                   = context.getAbsoluteD1();
   generatePointCloudParameters.surfaceThickness              = context[0].getSurfaceThickness();
   generatePointCloudParameters.ignoreLod_                    = true;
-  generatePointCloudParameters.thresholdColorSmoothing_      = (double)asp.getSmoothingThreshold();
-  generatePointCloudParameters.thresholdLocalEntropy_        = (double)asp.getSmoothingThresholdLocalEntropy();
-  generatePointCloudParameters.radius2ColorSmoothing_        = (double)asp.getSmoothingRadius();
-  generatePointCloudParameters.neighborCountColorSmoothing_  = asp.getSmoothingNeighbourCount();
-  generatePointCloudParameters.flagColorSmoothing_           = (bool) asp.getSmoothingParamsPresentFlag();
+  generatePointCloudParameters.thresholdColorSmoothing_      = (double)asp.getAttributeSmoothingThreshold();
+  generatePointCloudParameters.thresholdLocalEntropy_        = (double)asp.getAttributeSmoothingThresholdLocalEntropy();
+  generatePointCloudParameters.radius2ColorSmoothing_        = (double)asp.getAttributeSmoothingRadius();
+  generatePointCloudParameters.neighborCountColorSmoothing_  = asp.getAttributeSmoothingNeighbourCount();
+  generatePointCloudParameters.flagColorSmoothing_           = (bool) asp.getAttributeSmoothingParamsPresentFlag();
   generatePointCloudParameters.enhancedDeltaDepthCode_       = ((context.getLosslessGeo() != 0) ? sps.getEnhancedOccupancyMapForDepthFlag() : false);
   generatePointCloudParameters.deltaCoding_                  = (params_.testLevelOfDetailSignaling_ > 0); // ignore LoD scaling for testing the signaling only
   generatePointCloudParameters.removeDuplicatePoints_        = sps.getRemoveDuplicatePointEnabledFlag();
@@ -190,7 +190,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   if (!context.getNoAttributes() ) {
     const size_t nbyteTexture = 1;
     auto& videoBitstream = context.getVideoBitstream( PCCVideoType::Texture );
-    videoDecoder.decompress( context.getVideoTexture(), path.str(), sps.getWidth(),  sps.getHeight(),
+    videoDecoder.decompress( context.getVideoTexture(), path.str(), sps.getFrameWidth(),  sps.getFrameHeight(),
                              context.size() * frameCountTexture, videoBitstream,
                              params_.videoDecoderPath_, context, nbyteTexture, params_.keepIntermediateFiles_,
                              context.getLosslessTexture() != 0, params_.patchColorSubsampling_,

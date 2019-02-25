@@ -478,29 +478,32 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   auto& gps                                  = sps.getGeometryParameterSet();
   auto& gsp                                  = gps.getGeometrySequenceParams();
   auto& ops                                  = sps.getOccupancyParameterSet();
-  sps.getAttributeCount()  = 1;
+  sps.setAttributeCount(1);
   sps.allocateAttributeParameterSets();
   auto& aps                                  = sps.getAttributeParameterSets( 0 );
   auto& asp                                  = aps.getAttributeSequenceParams();
 
-  sps.getPcmSeparateVideoPresentFlag()       = useMissedPointsSeparateVideo_;
-  sps.getEnhancedOccupancyMapForDepthFlag()  = enhancedDeltaDepthCode_;
-  sps.getPixelInterleavingFlag()             = singleLayerPixelInterleaving_;
-  sps.getMultipleLayerStreamsPresentFlag()   = !oneLayerMode_;
-  sps.getRemoveDuplicatePointEnabledFlag()   = removeDuplicatePoints_;
-  gsp.getSmoothingPresentFlag()              = flagGeometrySmoothing_;
-  gsp.getSmoothingGridSize()                 = gridSize_;
-  gsp.getSmoothingThreshold()                = thresholdSmoothing_;
-  ops.getPackingBlockSize()                  = occupancyResolution_;
-  asp.getSmoothingParamsPresentFlag()        = radius2Smoothing_;
-  asp.getSmoothingNeighbourCount()           = neighborCountSmoothing_;
-  asp.getSmoothingRadius2BoundaryDetection() = radius2BoundaryDetection_;
-  asp.getSmoothingThreshold()                = thresholdColorSmoothing_;
-  asp.getSmoothingThresholdLocalEntropy()    = thresholdLocalEntropy_;
-  asp.getSmoothingRadius()                   = radius2ColorSmoothing_;
-  asp.getSmoothingNeighbourCount()           = neighborCountColorSmoothing_;
-  asp.getSmoothingParamsPresentFlag()        = flagColorSmoothing_;
+  sps.setPcmSeparateVideoPresentFlag(useMissedPointsSeparateVideo_);
+  sps.setEnhancedOccupancyMapForDepthFlag(enhancedDeltaDepthCode_);
+  sps.setPixelInterleavingFlag(singleLayerPixelInterleaving_);
+  sps.setMultipleLayerStreamsPresentFlag(!oneLayerMode_);
+  sps.setRemoveDuplicatePointEnabledFlag(removeDuplicatePoints_);
+  gsp.setGeometrySmoothingParamsPresentFlag(flagGeometrySmoothing_) ;
+  gsp.setGeometrySmoothingGridSize(gridSize_);
+  gsp.setGeometrySmoothingThreshold(thresholdSmoothing_);
+  
+  ops.setOccupancyPackingBlockSize(occupancyResolution_);
 
+  asp.setAttributeSmoothingParamsPresentFlag(radius2Smoothing_);
+  asp.setAttributeSmoothingNeighbourCount(neighborCountSmoothing_);    //jkei[??] same fuction twice??
+  asp.setAttributeSmoothingNeighbourCount(neighborCountColorSmoothing_);   //jkei[??] same fuction twice??
+  asp.setAttributeSmoothingRadius(radius2ColorSmoothing_);
+  asp.setAttributeSmoothingRadius2BoundaryDetection(radius2BoundaryDetection_);
+  asp.setAttributeSmoothingThreshold(thresholdColorSmoothing_);
+  asp.setAttributeSmoothingThresholdLocalEntropy(thresholdLocalEntropy_);
+  asp.setAttributeSmoothingParamsPresentFlag(flagColorSmoothing_);
+
+  
   // deprecated
   context.getLosslessGeo444()           = losslessGeo444_;
   context.getLosslessGeo()              = losslessGeo_;

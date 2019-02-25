@@ -127,7 +127,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources,
   const size_t pointCount = sources[ 0 ].getPointCount();
   std::stringstream path;
   SequenceParameterSet& sps = context.getSps();
-  path << removeFileExtension( params_.compressedStreamPath_ ) << "_GOF" << sps.getIndex() << "_";
+  path << removeFileExtension( params_.compressedStreamPath_ ) << "_GOF" << sps.getSequenceParameterSetId() << "_";
 
   generateGeometryVideo( sources, context );
   //RA mode.
@@ -138,10 +138,10 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources,
   const size_t nbFramesTexture  = params_.oneLayerMode_  ? 1 : 2;
   resizeGeometryVideo( context );
   dilateGeometryVideo( context );
-  auto& width  = sps.getWidth ();
-  auto& height = sps.getHeight();
-  width  = (uint16_t)frames[0].getWidth ();
-  height = (uint16_t)frames[0].getHeight();
+  sps.setFrameWidth ((uint16_t)frames[0].getWidth ());
+  sps.setFrameHeight ((uint16_t)frames[0].getHeight ());
+  auto width  = sps.getFrameWidth ();
+  auto height = sps.getFrameHeight();
 
   auto& videoBitstream = context.createVideoBitstream( PCCVideoType::OccupancyMap );
   generateOccupancyMapVideo( sources, context );

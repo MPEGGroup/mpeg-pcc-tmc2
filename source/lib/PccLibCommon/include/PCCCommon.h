@@ -63,6 +63,8 @@
 //
 // #define CE210_MAXDEPTH_EVALUATION
 
+#define UPDATED0225 1
+
 namespace pcc {
 
 // ******************************************************************* //

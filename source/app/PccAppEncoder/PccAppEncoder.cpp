@@ -674,7 +674,7 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
   while (startFrameNumber < endFrameNumber0) {
     const size_t endFrameNumber = min(startFrameNumber + groupOfFramesSize0, endFrameNumber0);
     PCCContext context;
-    context.getSps().getIndex() = contextIndex;
+    context.getSps().setSequenceParameterSetId(contextIndex);
 
     // Must be moved in PccEncoder.
     if (gofLevelMetadataEnabledFlags.getMetadataEnabled()) {

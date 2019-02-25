@@ -364,7 +364,7 @@ int PCCBitstreamDecoder::decompressHeader( PCCContext& context, PCCBitstream& bi
   auto& gps = sps.getGeometryParameterSet();
   auto& gsp = gps.getGeometrySequenceParams();
   auto& ops = sps.getOccupancyParameterSet();
-  sps.getAttributeCount() = 1;
+  sps.setAttributeCount(1);
   sps.allocateAttributeParameterSets();
   auto& aps = sps.getAttributeParameterSets( 0 );
   auto& asp = aps.getAttributeSequenceParams();
@@ -372,21 +372,22 @@ int PCCBitstreamDecoder::decompressHeader( PCCContext& context, PCCBitstream& bi
   uint8_t groupOfFramesSize = bitstream.read<uint8_t>();
   if ( !groupOfFramesSize ) { return 0; }
   context.resize( groupOfFramesSize );
-  sps.getWidth()                  = bitstream.read<uint16_t>();
-  sps.getHeight()                 = bitstream.read<uint16_t>();
-  ops.getPackingBlockSize()       = bitstream.read<uint8_t>();
+  sps.setFrameWidth(bitstream.read<uint16_t>());
+  sps.setFrameHeight(bitstream.read<uint16_t>());
+  ops.setOccupancyPackingBlockSize(bitstream.read<uint8_t>()) ;
   context.getOccupancyPrecision() = bitstream.read<uint8_t>();
-  gsp.getSmoothingPresentFlag()   = bitstream.read<uint8_t>();
-  if ( gsp.getSmoothingPresentFlag() ) {
-    context.getGridSmoothing() = bitstream.read<uint8_t>() > 0;
+  //jkei[??] is it changed as intended?? getGeometrySmoothingParamsPresentFlag
+  gsp.setGeometrySmoothingParamsPresentFlag(bitstream.read<uint8_t>());
+  if ( gsp.getGeometrySmoothingParamsPresentFlag() ) {
+    context.getGridSmoothing() = (bitstream.read<uint8_t>() > 0);
     if ( context.getGridSmoothing() ) {
-      gsp.getSmoothingGridSize()  = bitstream.read<uint8_t>();
-      gsp.getSmoothingThreshold() = bitstream.read<uint8_t>();
+      gsp.setGeometrySmoothingGridSize(bitstream.read<uint8_t>())  ;
+      gsp.setGeometrySmoothingThreshold(bitstream.read<uint8_t>()) ;
     } else {
-      asp.getSmoothingParamsPresentFlag()        = bitstream.read<uint8_t>();
-      asp.getSmoothingNeighbourCount()           = bitstream.read<uint8_t>();
-      asp.getSmoothingRadius2BoundaryDetection() = bitstream.read<uint8_t>();
-      gsp.getSmoothingThreshold()                = bitstream.read<uint8_t>();
+      asp.setAttributeSmoothingParamsPresentFlag(bitstream.read<uint8_t>())        ;
+      asp.setAttributeSmoothingNeighbourCount(bitstream.read<uint8_t>())           ;
+      asp.setAttributeSmoothingRadius2BoundaryDetection(bitstream.read<uint8_t>()) ;
+      gsp.setGeometrySmoothingThreshold(bitstream.read<uint8_t>())                 ;
     }
   }
   context.getLosslessGeo()             = bitstream.read<uint8_t>();
@@ -394,7 +395,7 @@ int PCCBitstreamDecoder::decompressHeader( PCCContext& context, PCCBitstream& bi
   context.getNoAttributes()            = bitstream.read<uint8_t>();
   context.getLosslessGeo444()          = bitstream.read<uint8_t>();
   context.getMinLevel()                = bitstream.read<uint8_t>();
-  sps.getPcmSeparateVideoPresentFlag() = bitstream.read<uint8_t>();
+  sps.setPcmSeparateVideoPresentFlag(bitstream.read<uint8_t>());
   context.getAbsoluteD1()              = bitstream.read<uint8_t>() > 0;
   if ( context.getAbsoluteD1() ) { context.getSixDirectionMode() = bitstream.read<uint8_t>() > 0; }
 
@@ -402,22 +403,22 @@ int PCCBitstreamDecoder::decompressHeader( PCCContext& context, PCCBitstream& bi
   context.getModelScale()     = bitstream.read<float>();
   context.getModelOrigin()    = bitstream.read<PCCVector3<float> >();
   readMetadata( context.getGOFLevelMetadata(), bitstream );
-  asp.getSmoothingParamsPresentFlag() = bitstream.read<uint8_t>();
-  if ( asp.getSmoothingParamsPresentFlag() ) {
-    asp.getSmoothingThreshold()             = bitstream.read<uint8_t>();
-    asp.getSmoothingThresholdLocalEntropy() = bitstream.read<double>();
-    asp.getSmoothingRadius()                = bitstream.read<uint8_t>();
-    asp.getSmoothingNeighbourCount()        = bitstream.read<uint8_t>();
+  asp.setAttributeSmoothingParamsPresentFlag(bitstream.read<uint8_t>());
+  if ( asp.getAttributeSmoothingParamsPresentFlag() ) {
+    asp.setAttributeSmoothingThreshold(bitstream.read<uint8_t>())            ;
+    asp.setAttributeSmoothingThresholdLocalEntropy(bitstream.read<double>()) ;
+    asp.setAttributeSmoothingRadius(bitstream.read<uint8_t>())               ;
+    asp.setAttributeSmoothingNeighbourCount(bitstream.read<uint8_t>())       ;
   }
-  sps.getEnhancedOccupancyMapForDepthFlag() = false;
+  sps.setEnhancedOccupancyMapForDepthFlag(false);
   if ( context.getLosslessGeo() ) {
-    sps.getEnhancedOccupancyMapForDepthFlag() = bitstream.read<uint8_t>() > 0;
+    sps.setEnhancedOccupancyMapForDepthFlag((bitstream.read<uint8_t>() > 0));
     context.getImproveEDD()                   = bitstream.read<uint8_t>() > 0;
   }
-  context.getDeltaCoding()                 = bitstream.read<uint8_t>() > 0;
-  sps.getRemoveDuplicatePointEnabledFlag() = bitstream.read<uint8_t>() > 0;
-  sps.getMultipleLayerStreamsPresentFlag() = bitstream.read<uint8_t>() > 0;
-  sps.getPixelInterleavingFlag()           = bitstream.read<uint8_t>() > 0;
+  context.getDeltaCoding()=(bitstream.read<uint8_t>() > 0);
+  sps.setRemoveDuplicatePointEnabledFlag((bitstream.read<uint8_t>() > 0)) ;
+  sps.setMultipleLayerStreamsPresentFlag((bitstream.read<uint8_t>() > 0)) ;
+  sps.setPixelInterleavingFlag((bitstream.read<uint8_t>() > 0))           ;
   context.getUseAdditionalPointsPatch()    = bitstream.read<uint8_t>() > 0;
   context.getGlobalPatchAllocation()       = bitstream.read<uint8_t>() > 0;
 
@@ -481,8 +482,8 @@ void PCCBitstreamDecoder::decompressOccupancyMap( PCCContext& context, PCCBitstr
   auto&  sps        = context.getSps();
   for ( int i = 0; i < sizeFrames; i++ ) {
     auto& frame       = context.getFrames()[i];
-    frame.getWidth()  = sps.getWidth();
-    frame.getHeight() = sps.getHeight();
+    frame.getWidth()  = sps.getFrameWidth();
+    frame.getHeight() = sps.getFrameHeight();
     auto& frameLevelMetadataEnabledFlags =
         context.getGOFLevelMetadata().getLowerLevelMetadataEnabledFlags();
     frame.getFrameLevelMetadata().getMetadataEnabledFlags() = frameLevelMetadataEnabledFlags;
@@ -537,7 +538,7 @@ void PCCBitstreamDecoder::decompressPatchMetaDataM42195( PCCContext&            
                                 bitstream.buffer() + bitstream.size() );
 
   bool bBinArithCoding = context.getBinArithCoding() && ( !context.getLosslessGeo() ) &&
-                         ( ops.getPackingBlockSize() == 16 ) && ( occupancyPrecision == 4 );
+                         ( ops.getOccupancyPackingBlockSize() == 16 ) && ( occupancyPrecision == 4 );
 
   arithmeticDecoder.start_decoder();
   o3dgc::Adaptive_Bit_Model bModelPatchIndex, bModelU0, bModelV0, bModelU1, bModelV1, bModelD1,
@@ -580,7 +581,7 @@ void PCCBitstreamDecoder::decompressPatchMetaDataM42195( PCCContext&            
   int64_t predIndex = 0;
   for ( size_t patchIndex = 0; patchIndex < numMatchedPatches; ++patchIndex ) {
     auto& patch                    = patches[patchIndex];
-    patch.getOccupancyResolution() = ops.getPackingBlockSize();
+    patch.getOccupancyResolution() = ops.getOccupancyPackingBlockSize();
     int64_t delta_index =
         o3dgc::UIntToInt( arithmeticDecoder.ExpGolombDecode( 0, bModel0, bModelPatchIndex ) );
     patch.setBestMatchIdx() = ( size_t )( delta_index + predIndex );
@@ -682,7 +683,7 @@ void PCCBitstreamDecoder::decompressPatchMetaDataM42195( PCCContext&            
 
   for ( size_t patchIndex = numMatchedPatches; patchIndex < patchCount; ++patchIndex ) {
     auto& patch                    = patches[patchIndex];
-    patch.getOccupancyResolution() = ops.getPackingBlockSize();
+    patch.getOccupancyResolution() = ops.getOccupancyPackingBlockSize();
     patch.getU0()                  = DecodeUInt32( bitCount[0], arithmeticDecoder, bModel0 );
     patch.getV0()                  = DecodeUInt32( bitCount[1], arithmeticDecoder, bModel0 );
     if ( enable_flexible_patch_flag ) {
@@ -791,8 +792,8 @@ void PCCBitstreamDecoder::decompressOneLayerData( PCCContext&                 co
     auto&        fillingMap         = frame.getFilling();
     auto&        minD1Map           = frame.getMinD1();
     auto&        neighborMap        = frame.getNeighbor();
-    const size_t blockToPatchWidth  = frame.getWidth() / ops.getPackingBlockSize();
-    const size_t blockToPatchHeight = frame.getHeight() / ops.getPackingBlockSize();
+    const size_t blockToPatchWidth  = frame.getWidth() / ops.getOccupancyPackingBlockSize();
+    const size_t blockToPatchHeight = frame.getHeight() / ops.getOccupancyPackingBlockSize();
     for ( size_t v0 = 0; v0 < patch.getSizeV0(); ++v0 ) {
       for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {
         int pos =
@@ -830,7 +831,7 @@ void PCCBitstreamDecoder::decompressOccupancyMap( PCCContext&      context,
   const uint8_t maxBitCountForMinDepth = uint8_t( 10 - gbitCountSize[minLevel] );
   const uint8_t maxBitCountForMaxDepth = uint8_t( 9 - gbitCountSize[minLevel] );
 
-  frame.allocOneLayerData( ops.getPackingBlockSize() );
+  frame.allocOneLayerData( ops.getOccupancyPackingBlockSize() );
   size_t  maxCandidateCount   = bitstream.read<uint8_t>();
   uint8_t frameProjectionMode = 0, surfaceThickness = 4;
   if ( !context.getAbsoluteD1() ) {
@@ -844,7 +845,7 @@ void PCCBitstreamDecoder::decompressOccupancyMap( PCCContext&      context,
   uint32_t                compressedBitstreamSize;
 
   bool bBinArithCoding = context.getBinArithCoding() && ( !context.getLosslessGeo() ) &&
-                         ( ops.getPackingBlockSize() == 16 ) &&
+                         ( ops.getOccupancyPackingBlockSize() == 16 ) &&
                          ( context.getOccupancyPrecision() == 4 );
 
   uint8_t enable_flexible_patch_flag = bitstream.read<uint8_t>();
@@ -880,7 +881,7 @@ void PCCBitstreamDecoder::decompressOccupancyMap( PCCContext&      context,
 
     for ( size_t patchIndex = 0; patchIndex < patchCount; ++patchIndex ) {
       auto& patch                    = patches[patchIndex];
-      patch.getOccupancyResolution() = ops.getPackingBlockSize();
+      patch.getOccupancyResolution() = ops.getOccupancyPackingBlockSize();
 
       patch.getU0() = DecodeUInt32( bitCountU0, arithmeticDecoder, bModel0 );
       patch.getV0() = DecodeUInt32( bitCountV0, arithmeticDecoder, bModel0 );

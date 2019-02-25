@@ -308,7 +308,7 @@ int decompressVideo( const PCCDecoderParameters &decoderParams,
   while ( bitstream.size() < bitstream.capacity()) {
     PCCGroupOfFrames reconstructs;
     PCCContext context;
-    context.getSps().getIndex() = contextIndex++;
+    context.getSps().setSequenceParameterSetId(contextIndex++);
 
     if (gofLevelMetadataEnabledFlags.getMetadataEnabled()) {
       auto& gofLevelMetadata = context.getGOFLevelMetadata();
