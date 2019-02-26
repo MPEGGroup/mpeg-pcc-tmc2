@@ -390,6 +390,7 @@ int PCCBitstreamDecoder::decompressHeader( PCCContext& context, PCCBitstream& bi
       gsp.setGeometrySmoothingThreshold(bitstream.read<uint8_t>())                 ;
     }
   }
+
   context.getLosslessGeo()             = bitstream.read<uint8_t>();
   context.getLosslessTexture()         = bitstream.read<uint8_t>();
   context.getNoAttributes()            = bitstream.read<uint8_t>();
@@ -418,7 +419,7 @@ int PCCBitstreamDecoder::decompressHeader( PCCContext& context, PCCBitstream& bi
   context.getDeltaCoding()=(bitstream.read<uint8_t>() > 0);
   sps.setRemoveDuplicatePointEnabledFlag((bitstream.read<uint8_t>() > 0)) ;
   sps.setMultipleLayerStreamsPresentFlag((bitstream.read<uint8_t>() > 0)) ;
-  sps.setPixelInterleavingFlag((bitstream.read<uint8_t>() > 0))           ;
+  sps.setPixelDeinterleavingFlag((bitstream.read<uint8_t>() > 0))           ;
   context.getUseAdditionalPointsPatch()    = bitstream.read<uint8_t>() > 0;
   context.getGlobalPatchAllocation()       = bitstream.read<uint8_t>() > 0;
 

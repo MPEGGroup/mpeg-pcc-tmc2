@@ -55,4 +55,6 @@ ConstructorInitializerAllOnOneLineOrOnePerLine: false
 DerivePointerAlignment: false
 PointerAlignment: Left
 IndentFunctionDeclarationAfterType: true
+BreakConstructorInitializers: AfterColon
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
 ...

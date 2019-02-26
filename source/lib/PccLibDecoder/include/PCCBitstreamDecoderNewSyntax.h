@@ -96,8 +96,7 @@ class PCCBitstreamDecoderNewSyntax {
                           VPCCUnitType& vpccUnitType );
 
   // 7.3.6 Sequence parameter set syntax
-  void vpccSequenceParameterSet( SequenceParameterSet& sequenceParameterSet,
-                                 PCCBitstream&         bitstream );
+  void sequenceParameterSet( SequenceParameterSet& sequenceParameterSet, PCCBitstream& bitstream );
 
   // 7.3.7 Byte alignment syntax
   void byteAlignment( PCCBitstream& bitstream );

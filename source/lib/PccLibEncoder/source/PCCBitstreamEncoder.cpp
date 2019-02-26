@@ -460,10 +460,9 @@ int PCCBitstreamEncoder::compressHeader( PCCContext& context, pcc::PCCBitstream&
   bitstream.write<uint8_t>( uint8_t( context.getDeltaCoding() ) );
   bitstream.write<uint8_t>( uint8_t( sps.getRemoveDuplicatePointEnabledFlag() ) );
   bitstream.write<uint8_t>( uint8_t( sps.getMultipleLayerStreamsPresentFlag() ) );
-  bitstream.write<uint8_t>( uint8_t( sps.getPixelInterleavingFlag() ) );
+  bitstream.write<uint8_t>( uint8_t( sps.getPixelDeinterleavingFlag() ) );
   bitstream.write<uint8_t>( uint8_t( context.getUseAdditionalPointsPatch() ) );
   bitstream.write<uint8_t>( uint8_t( context.getGlobalPatchAllocation() ) );
-
   return 1;
 }
 

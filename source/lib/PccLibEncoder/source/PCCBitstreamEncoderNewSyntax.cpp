@@ -157,7 +157,7 @@ void PCCBitstreamEncoderNewSyntax::vpccUnitPayload( PCCContext&   context,
                                                     PCCBitstream& bitstream,
                                                     VPCCUnitType  vpccUnitType ) {
   if ( vpccUnitType == VPCC_SPS ) {
-    vpccSequenceParameterSet( context.getSps(), bitstream );
+    sequenceParameterSet( context.getSps(), bitstream );
   } else if ( vpccUnitType == VPCC_PSD ) {
     patchSequenceDataUnit( context.getPatchSequenceDataUnit(), context.getSps(), bitstream );
   } else if ( vpccUnitType == VPCC_OVD || vpccUnitType == VPCC_GVD || vpccUnitType == VPCC_AVD ) {
@@ -166,18 +166,21 @@ void PCCBitstreamEncoderNewSyntax::vpccUnitPayload( PCCContext&   context,
 }
 
 // 7.3.6 Sequence parameter set syntax
-void PCCBitstreamEncoderNewSyntax::vpccSequenceParameterSet( SequenceParameterSet& sps,
-                                                             PCCBitstream&         bitstream ) {
+void PCCBitstreamEncoderNewSyntax::sequenceParameterSet( SequenceParameterSet& sps,
+                                                         PCCBitstream&         bitstream ) {
   int layerCountMinus1 = sps.getLayerCount();
   profileTierLevel( sps.getProfileTierLevel(), bitstream );
-  bitstream.write( (uint32_t)sps.getSequenceParameterSetId(), 4 );                             // u(4)
-  bitstream.write( (uint32_t)sps.getFrameWidth(), 16 );                            // u(16)
-  bitstream.write( (uint32_t)sps.getFrameHeight(), 16 );                           // u(16)
+  bitstream.write( (uint32_t)sps.getSequenceParameterSetId(), 4 );   // u(4)
+  bitstream.write( (uint32_t)sps.getFrameWidth(), 16 );              // u(16)
+  bitstream.write( (uint32_t)sps.getFrameHeight(), 16 );             // u(16)
+  bitstream.write( (uint32_t)sps.getAvgFrameRatePresentFlag(), 1 );  // u(1)
+  if ( sps.getAvgFrameRatePresentFlag() ) {
+    bitstream.write( (uint32_t)sps.getAvgFrameRate(), 16 );  // u(16)
+  }
   bitstream.write( (uint32_t)sps.getEnhancedOccupancyMapForDepthFlag(), 1 );  // u(1)
   bitstream.write( (uint32_t)layerCountMinus1, 4 );                           // u(4)
   if ( layerCountMinus1 > 0 ) {
-    bitstream.write( (uint32_t)sps.getMultipleLayerStreamsPresentFlag(),
-                     1 );  // u(1)
+    bitstream.write( (uint32_t)sps.getMultipleLayerStreamsPresentFlag(), 1 );  // u(1)
   }
   auto& layerAbsoluteCodingEnabledFlag = sps.getLayerAbsoluteCodingEnabledFlag();
   auto& layerPredictorIndexDiff        = sps.getLayerPredictorIndexDiff();
@@ -201,9 +204,9 @@ void PCCBitstreamEncoderNewSyntax::vpccSequenceParameterSet( SequenceParameterSe
   }
   bitstream.write( (uint32_t)sps.getPatchSequenceOrientationEnabledFlag(), 1 );  // u(1)
   bitstream.write( (uint32_t)sps.getPatchInterPredictionEnabledFlag(), 1 );      // u(1)
-  bitstream.write( (uint32_t)sps.getPixelInterleavingFlag(), 1 );                // u(1)
+  bitstream.write( (uint32_t)sps.getPixelDeinterleavingFlag(), 1 );              // u(1)
   bitstream.write( (uint32_t)sps.getPointLocalReconstructionEnabledFlag(), 1 );  // u(1)
-  bitstream.write( (uint32_t)sps.getRemoveDuplicatePointEnabledFlag(), 1 );  // u(1)
+  bitstream.write( (uint32_t)sps.getRemoveDuplicatePointEnabledFlag(), 1 );      // u(1)
   byteAlignment( bitstream );
 }
 
@@ -235,7 +238,8 @@ void PCCBitstreamEncoderNewSyntax::occupancyParameterSet( OccupancyParameterSet&
 void PCCBitstreamEncoderNewSyntax::geometryParameterSet( GeometryParameterSet& gps,
                                                          SequenceParameterSet& sps,
                                                          PCCBitstream&         bitstream ) {
-  bitstream.write( (uint32_t)gps.getGeometryCodecId(), 8 );                          // u(8)
+  bitstream.write( (uint32_t)gps.getGeometryCodecId(), 8 );
+  bitstream.write( (uint32_t)gps.getGeometryNominal2dBitdepth() - 1, 5 );            // u(5)
   bitstream.write( ( uint32_t )( gps.getGeometry3dCoordinatesBitdepth() - 1 ), 5 );  // u(5)
   if ( sps.getPcmSeparateVideoPresentFlag() ) {
     bitstream.write( (uint32_t)gps.getPcmGeometryCodecId(), 1 );  // u(8)
@@ -244,12 +248,12 @@ void PCCBitstreamEncoderNewSyntax::geometryParameterSet( GeometryParameterSet& g
   if ( gps.getGeometryParamsEnabledFlag() ) {
     geometrySequenceParams( gps.getGeometrySequenceParams(), bitstream );
   }
-  //jkei[??] is it changed as inteded?
+  // jkei[??] is it changed as inteded?
   bitstream.write( (uint32_t)gps.getGeometryPatchParamsEnabledFlag(), 1 );  // u(1)
   if ( gps.getGeometryPatchParamsEnabledFlag() ) {
-    bitstream.write( (uint32_t)gps.getGeometryPatchScaleParamsEnabledFlag(), 1 );       // u(1)
-    bitstream.write( (uint32_t)gps.getGeometryPatchOffsetParamsEnabledFlag(), 1 );      // u(1)
-    bitstream.write( (uint32_t)gps.getGeometryPatchRotationParamsEnabledFlag(), 1 );    // u(1)
+    bitstream.write( (uint32_t)gps.getGeometryPatchScaleParamsEnabledFlag(), 1 );     // u(1)
+    bitstream.write( (uint32_t)gps.getGeometryPatchOffsetParamsEnabledFlag(), 1 );    // u(1)
+    bitstream.write( (uint32_t)gps.getGeometryPatchRotationParamsEnabledFlag(), 1 );  // u(1)
     bitstream.write( (uint32_t)gps.getGeometryPatchPointSizeInfoEnabledFlag(), 1 );   // u(1)
     bitstream.write( (uint32_t)gps.getGeometryPatchPointShapeInfoEnabledFlag(), 1 );  // u(1)
   }
@@ -257,13 +261,13 @@ void PCCBitstreamEncoderNewSyntax::geometryParameterSet( GeometryParameterSet& g
 
 // 7.3.11 Geometry sequence metadata syntax
 void PCCBitstreamEncoderNewSyntax::geometrySequenceParams( GeometrySequenceParams& gsp,
-                                                             PCCBitstream&             bitstream ) {
-  bitstream.write( (uint32_t)gsp.getGeometrySmoothingParamsPresentFlag(), 1 );   // u(1)
-  bitstream.write( (uint32_t)gsp.getGeometryScaleParamsPresentFlag(), 1 );       // u(1)
-  bitstream.write( (uint32_t)gsp.getGeometryOffsetParamsPresentFlag(), 1 );      // u(1)
-  bitstream.write( (uint32_t)gsp.getGeometryRotationParamsPresentFlag(), 1 );    // u(1)
-  bitstream.write( (uint32_t)gsp.getGeometryPointSizeInfoPresentFlag(), 1 );   // u(1)
-  bitstream.write( (uint32_t)gsp.getGeometryPointShapeInfoPresentFlag(), 1 );  // u(1)
+                                                           PCCBitstream&           bitstream ) {
+  bitstream.write( (uint32_t)gsp.getGeometrySmoothingParamsPresentFlag(), 1 );  // u(1)
+  bitstream.write( (uint32_t)gsp.getGeometryScaleParamsPresentFlag(), 1 );      // u(1)
+  bitstream.write( (uint32_t)gsp.getGeometryOffsetParamsPresentFlag(), 1 );     // u(1)
+  bitstream.write( (uint32_t)gsp.getGeometryRotationParamsPresentFlag(), 1 );   // u(1)
+  bitstream.write( (uint32_t)gsp.getGeometryPointSizeInfoPresentFlag(), 1 );    // u(1)
+  bitstream.write( (uint32_t)gsp.getGeometryPointShapeInfoPresentFlag(), 1 );   // u(1)
   if ( gsp.getGeometrySmoothingParamsPresentFlag() ) {
     bitstream.write( (uint32_t)gsp.getGeometrySmoothingEnabledFlag(), 1 );  // u(8)
     if ( gsp.getGeometrySmoothingEnabledFlag() ) {
@@ -649,7 +653,7 @@ void PCCBitstreamEncoderNewSyntax::patchFrameHeader( PatchFrameHeader& pfh,
   //     pfhAdditionalPfocLsbVal[frameIndex][j];  // u(v)
   //   }
   // }
-  // if ( pfhType[frameIndex] == P && numRefEntries[RplsIdx] > 1 ) {
+  // if ( pfhType[frameIndex] == P && numRefEntries[RlsIdx] > 1 ) {
   //   pfhNumRefIdxActiveOverrideFlag[frameIndex];  // u(1)
   //   if ( pfhNumRefIdxActiveOverrideFlag[frameIndex] ) {
   //     pfhNumRefIdxActiveMinus1[frameIndex];  // ue(v)

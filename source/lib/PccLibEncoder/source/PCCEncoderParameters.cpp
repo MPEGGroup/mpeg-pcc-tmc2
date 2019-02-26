@@ -474,36 +474,35 @@ bool PCCEncoderParameters::check() {
 }
 
 void PCCEncoderParameters::initializeContext( PCCContext& context ) {
-  auto& sps                                  = context.getSps();
-  auto& gps                                  = sps.getGeometryParameterSet();
-  auto& gsp                                  = gps.getGeometrySequenceParams();
-  auto& ops                                  = sps.getOccupancyParameterSet();
-  sps.setAttributeCount(1);
+  auto& sps = context.getSps();
+  auto& gps = sps.getGeometryParameterSet();
+  auto& gsp = gps.getGeometrySequenceParams();
+  auto& ops = sps.getOccupancyParameterSet();
+  sps.setAttributeCount( 1 );
   sps.allocateAttributeParameterSets();
-  auto& aps                                  = sps.getAttributeParameterSets( 0 );
-  auto& asp                                  = aps.getAttributeSequenceParams();
+  auto& aps = sps.getAttributeParameterSets( 0 );
+  auto& asp = aps.getAttributeSequenceParams();
 
-  sps.setPcmSeparateVideoPresentFlag(useMissedPointsSeparateVideo_);
-  sps.setEnhancedOccupancyMapForDepthFlag(enhancedDeltaDepthCode_);
-  sps.setPixelInterleavingFlag(singleLayerPixelInterleaving_);
-  sps.setMultipleLayerStreamsPresentFlag(!oneLayerMode_);
-  sps.setRemoveDuplicatePointEnabledFlag(removeDuplicatePoints_);
-  gsp.setGeometrySmoothingParamsPresentFlag(flagGeometrySmoothing_) ;
-  gsp.setGeometrySmoothingGridSize(gridSize_);
-  gsp.setGeometrySmoothingThreshold(thresholdSmoothing_);
-  
-  ops.setOccupancyPackingBlockSize(occupancyResolution_);
+  sps.setPcmSeparateVideoPresentFlag( useMissedPointsSeparateVideo_ );
+  sps.setEnhancedOccupancyMapForDepthFlag( enhancedDeltaDepthCode_ );
+  sps.setPixelDeinterleavingFlag( singleLayerPixelInterleaving_ );
+  sps.setMultipleLayerStreamsPresentFlag( !oneLayerMode_ );
+  sps.setRemoveDuplicatePointEnabledFlag( removeDuplicatePoints_ );
+  gsp.setGeometrySmoothingParamsPresentFlag( flagGeometrySmoothing_ );
+  gsp.setGeometrySmoothingGridSize( gridSize_ );
+  gsp.setGeometrySmoothingThreshold( thresholdSmoothing_ );
 
-  asp.setAttributeSmoothingParamsPresentFlag(radius2Smoothing_);
-  asp.setAttributeSmoothingNeighbourCount(neighborCountSmoothing_);    //jkei[??] same fuction twice??
-  asp.setAttributeSmoothingNeighbourCount(neighborCountColorSmoothing_);   //jkei[??] same fuction twice??
-  asp.setAttributeSmoothingRadius(radius2ColorSmoothing_);
-  asp.setAttributeSmoothingRadius2BoundaryDetection(radius2BoundaryDetection_);
-  asp.setAttributeSmoothingThreshold(thresholdColorSmoothing_);
-  asp.setAttributeSmoothingThresholdLocalEntropy(thresholdLocalEntropy_);
-  asp.setAttributeSmoothingParamsPresentFlag(flagColorSmoothing_);
+  ops.setOccupancyPackingBlockSize( occupancyResolution_ );
 
-  
+  asp.setAttributeSmoothingParamsPresentFlag( radius2Smoothing_ );
+  // asp.setAttributeSmoothingNeighbourCount( neighborCountSmoothing_ );  
+  asp.setAttributeSmoothingNeighbourCount( neighborCountColorSmoothing_ );
+  asp.setAttributeSmoothingRadius( radius2ColorSmoothing_ );
+  asp.setAttributeSmoothingRadius2BoundaryDetection( radius2BoundaryDetection_ );
+  asp.setAttributeSmoothingThreshold( thresholdColorSmoothing_ );
+  asp.setAttributeSmoothingThresholdLocalEntropy( thresholdLocalEntropy_ );
+  asp.setAttributeSmoothingParamsPresentFlag( flagColorSmoothing_ );
+
   // deprecated
   context.getLosslessGeo444()           = losslessGeo444_;
   context.getLosslessGeo()              = losslessGeo_;

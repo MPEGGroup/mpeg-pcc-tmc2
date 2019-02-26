@@ -152,7 +152,7 @@ void PCCBitstreamDecoderNewSyntax::vpccUnitPayload( PCCContext&   context,
                                                     PCCBitstream& bitstream,
                                                     VPCCUnitType& vpccUnitType ) {
   if ( vpccUnitType == VPCC_SPS ) {
-    vpccSequenceParameterSet( context.getSps(), bitstream );
+    sequenceParameterSet( context.getSps(), bitstream );
   } else if ( vpccUnitType == VPCC_PSD ) {
     patchSequenceDataUnit( context.getPatchSequenceDataUnit(), context.getSps(), bitstream );
   } else if ( vpccUnitType == VPCC_OVD || vpccUnitType == VPCC_GVD || vpccUnitType == VPCC_AVD ) {
@@ -161,12 +161,16 @@ void PCCBitstreamDecoderNewSyntax::vpccUnitPayload( PCCContext&   context,
 }
 
 // 7.3.6 Sequence parameter set syntax
-void PCCBitstreamDecoderNewSyntax::vpccSequenceParameterSet( SequenceParameterSet& sps,
-                                                             PCCBitstream&         bitstream ) {
+void PCCBitstreamDecoderNewSyntax::sequenceParameterSet( SequenceParameterSet& sps,
+                                                         PCCBitstream&         bitstream ) {
   profileTierLevel( sps.getProfileTierLevel(), bitstream );
-  sps.setSequenceParameterSetId( bitstream.read( 4 ));      // u(4)
-  sps.setFrameWidth( bitstream.read( 16 ));     // u(16)
-  sps.setFrameHeight( bitstream.read( 16 ));     // u(16)
+  sps.setSequenceParameterSetId( bitstream.read( 4 ) );   // u(4)
+  sps.setFrameWidth( bitstream.read( 16 ) );              // u(16)
+  sps.setFrameHeight( bitstream.read( 16 ) );             // u(16)
+  sps.setAvgFrameRatePresentFlag( bitstream.read( 1 ) );  // u(1)
+  if ( sps.getAvgFrameRatePresentFlag() ) {
+    sps.setAvgFrameRate( bitstream.read( 16 ) );  // u(16)
+  }
   sps.setEnhancedOccupancyMapForDepthFlag(bitstream.read( 1 )) ;      // u(1)
   sps.setLayerCount(bitstream.read( 4 ) + 1) ;  // u(4)
   int32_t layerCountMinus1                  = (int32_t)sps.getLayerCount() - 1;
@@ -199,7 +203,7 @@ void PCCBitstreamDecoderNewSyntax::vpccSequenceParameterSet( SequenceParameterSe
   }
   sps.setPatchSequenceOrientationEnabledFlag(bitstream.read( 1 )) ;  // u(1)
   sps.setPatchInterPredictionEnabledFlag(bitstream.read( 1 ))  ;  // u(1)
-  sps.setPixelInterleavingFlag(bitstream.read( 1 )) ;  // u(1)
+  sps.setPixelDeinterleavingFlag(bitstream.read( 1 )) ;  // u(1)
   sps.setPointLocalReconstructionEnabledFlag(bitstream.read( 1 )) ;  // u(1)
   sps.setRemoveDuplicatePointEnabledFlag(bitstream.read( 1 )) ;  // u(1)
   byteAlignment( bitstream );
@@ -234,11 +238,12 @@ void PCCBitstreamDecoderNewSyntax::geometryParameterSet( GeometryParameterSet& g
                                                          SequenceParameterSet& sps,
                                                          PCCBitstream&         bitstream ) {
   gps.setGeometryCodecId(bitstream.read( 8 )) ;      // u(8)
+  
+  gps.setGeometryNominal2dBitdepth(bitstream.read( 5 ) + 1);  // u(5)
   gps.setGeometry3dCoordinatesBitdepth(bitstream.read( 5 ) + 1);  // u(5)
   if ( sps.getPcmSeparateVideoPresentFlag() ) {
     gps.setPcmGeometryCodecId(bitstream.read( 1 ));  // u(8)
-  }
-  
+  }  
   gps.setGeometryParamsEnabledFlag(bitstream.read( 1 ));  // u(1)
   //gps.getMetadataEnabledFlag() = bitstream.read( 1 );  // u(1)
   if ( gps.getGeometryParamsEnabledFlag() ) {
@@ -465,7 +470,7 @@ void PCCBitstreamDecoderNewSyntax::attributeFrameParameterSet( AttributeFramePar
   // afpsPatchSequenceParameterSetId[attributeIndex];   // ue(v)
   // attributeDimension = apsAttributeDimensionMinus1[attributeIndex] + 1;
   // if ( apsAttributeParamsEnabledFlag[attributeIndex] ) {
-  //   afpsOverrideAttributeParams flag[attributeIndex];  // u(1)
+  //   afpsOverrideAttributeParamsFlag[attributeIndex];  // u(1)
   //   if ( afpsOverrideAttributeParamsFlag[attributeIndex] ) {
   //     attributeFrameParams( attributeIndex, attributeDimension );
   //   }
@@ -656,7 +661,7 @@ void PCCBitstreamDecoderNewSyntax::patchFrameHeader( PatchFrameHeader& pfh,
   //     pfhAdditionalPfocLsbVal[frameIndex][j];  // u(v)
   //   }
   // }
-  // if ( pfhType[frameIndex] == P && numRefEntries[RplsIdx] > 1 ) {
+  // if ( pfhType[frameIndex] == P && numRefEntries[RlsIdx] > 1 ) {
   //   pfhNumRefIdxActiveOverrideFlag[frameIndex];  // u(1)
   //   if ( pfhNumRefIdxActiveOverrideFlag[frameIndex] ) {
   //     pfhNumRefIdxActiveMinus1[frameIndex];  // ue(v)

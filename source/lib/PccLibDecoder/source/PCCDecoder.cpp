@@ -179,7 +179,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   generatePointCloudParameters.deltaCoding_                  = (params_.testLevelOfDetailSignaling_ > 0); // ignore LoD scaling for testing the signaling only
   generatePointCloudParameters.removeDuplicatePoints_        = sps.getRemoveDuplicatePointEnabledFlag();
   generatePointCloudParameters.oneLayerMode_                 = !sps.getMultipleLayerStreamsPresentFlag();
-  generatePointCloudParameters.singleLayerPixelInterleaving_ = sps.getPixelInterleavingFlag();
+  generatePointCloudParameters.singleLayerPixelInterleaving_ = sps.getPixelDeinterleavingFlag();
   generatePointCloudParameters.sixDirectionMode_             = context.getSixDirectionMode();
   generatePointCloudParameters.improveEDD_                   = context.getImproveEDD();
   generatePointCloudParameters.path_                         = path.str();
