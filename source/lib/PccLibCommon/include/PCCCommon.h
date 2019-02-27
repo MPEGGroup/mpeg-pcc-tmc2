@@ -63,8 +63,7 @@
 //
 // #define CE210_MAXDEPTH_EVALUATION
 
-#define UPDATED0225 1
-
+//jkei: patchSequenceUnitPayload
 namespace pcc {
 
 // ******************************************************************* //
@@ -181,6 +180,10 @@ enum PSDUnitType {
   PSD_RSVD_29,  // 29: Reserved
   PSD_RSVD_30,  // 30: Reserved
   PSD_RSVD_31,  // 32: Reserved
+};
+
+enum CODECID{
+    CODEC_HEVC=0
 };
 
 const size_t IntermediateLayerIndex = 100;

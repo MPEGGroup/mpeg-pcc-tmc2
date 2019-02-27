@@ -480,7 +480,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   auto& ops = sps.getOccupancyParameterSet();
   sps.setAttributeCount( 1 );
   sps.allocateAttributeParameterSets();
-  auto& aps = sps.getAttributeParameterSets( 0 );
+  auto& aps = sps.getAttributeParameterSet( 0 );
   auto& asp = aps.getAttributeSequenceParams();
 
   sps.setPcmSeparateVideoPresentFlag( useMissedPointsSeparateVideo_ );
@@ -494,14 +494,14 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
 
   ops.setOccupancyPackingBlockSize( occupancyResolution_ );
 
-  asp.setAttributeSmoothingParamsPresentFlag( radius2Smoothing_ );
-  // asp.setAttributeSmoothingNeighbourCount( neighborCountSmoothing_ );  
+  //asp.setAttributeSmoothingParamsPresentFlag( radius2Smoothing_ ); //jkei? repetition??
+  asp.setAttributeSmoothingParamsPresentFlag( flagColorSmoothing_ );
+  // asp.setAttributeSmoothingNeighbourCount( neighborCountSmoothing_ );
   asp.setAttributeSmoothingNeighbourCount( neighborCountColorSmoothing_ );
   asp.setAttributeSmoothingRadius( radius2ColorSmoothing_ );
   asp.setAttributeSmoothingRadius2BoundaryDetection( radius2BoundaryDetection_ );
   asp.setAttributeSmoothingThreshold( thresholdColorSmoothing_ );
   asp.setAttributeSmoothingThresholdLocalEntropy( thresholdLocalEntropy_ );
-  asp.setAttributeSmoothingParamsPresentFlag( flagColorSmoothing_ );
 
   // deprecated
   context.getLosslessGeo444()           = losslessGeo444_;

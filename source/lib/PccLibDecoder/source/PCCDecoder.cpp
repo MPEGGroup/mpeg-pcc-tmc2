@@ -76,7 +76,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   auto&             gps = sps.getGeometryParameterSet();
   auto&             gsp = gps.getGeometrySequenceParams();
   auto&             ops = sps.getOccupancyParameterSet();
-  auto&             aps = sps.getAttributeParameterSets( 0 );
+  auto&             aps = sps.getAttributeParameterSet( 0 );
   auto&             asp = aps.getAttributeSequenceParams();
   path << removeFileExtension( params_.compressedStreamPath_ ) << "_dec_GOF" << sps.getSequenceParameterSetId()
        << "_";

@@ -410,7 +410,7 @@ int PCCBitstreamEncoder::compressHeader( PCCContext& context, pcc::PCCBitstream&
   auto& gps = sps.getGeometryParameterSet();
   auto& gsp = gps.getGeometrySequenceParams();
   auto& ops = sps.getOccupancyParameterSet();
-  auto& aps = sps.getAttributeParameterSets( 0 );
+  auto& aps = sps.getAttributeParameterSet( 0 );
   auto& asp = aps.getAttributeSequenceParams();
   bitstream.write<uint8_t>( ( uint8_t )( context.size() ) );
   if ( !context.size() ) { return 0; }
@@ -418,7 +418,7 @@ int PCCBitstreamEncoder::compressHeader( PCCContext& context, pcc::PCCBitstream&
   bitstream.write<uint16_t>( uint16_t( sps.getFrameHeight() ) );
   bitstream.write<uint8_t>( uint8_t( ops.getOccupancyPackingBlockSize() ) );
   bitstream.write<uint8_t>( uint8_t( context.getOccupancyPrecision() ) );
-  //jkei[??] is it changed as inteded?
+  //jkei[??] is it changed as intended?
   bitstream.write<uint8_t>( uint8_t( gsp.getGeometrySmoothingParamsPresentFlag() ) );
   if ( gsp.getGeometrySmoothingParamsPresentFlag() ) {
     bitstream.write<uint8_t>( uint8_t( context.getGridSmoothing() ) );

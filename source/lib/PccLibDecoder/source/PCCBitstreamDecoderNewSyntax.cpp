@@ -45,6 +45,8 @@ using namespace pcc;
 PCCBitstreamDecoderNewSyntax::PCCBitstreamDecoderNewSyntax() {}
 PCCBitstreamDecoderNewSyntax::~PCCBitstreamDecoderNewSyntax() {}
 
+//jkei[?] are we going to change it while(...) style later?
+//jkei[?] why do we need a variable vpccUntType here''?
 int PCCBitstreamDecoderNewSyntax::decode( PCCContext& context, PCCBitstream& bitstream ) {
   VPCCUnitType vpccUnitType;
   vpccUnit( context, bitstream, vpccUnitType );  // VPCC_SPS
@@ -96,8 +98,9 @@ uint32_t PCCBitstreamDecoderNewSyntax::DecodeUInt32( const uint32_t           bi
 void PCCBitstreamDecoderNewSyntax::vpccUnit( PCCContext&   context,
                                              PCCBitstream& bitstream,
                                              VPCCUnitType& vpccUnitType ) {
-  vpccUnitHeader( context, bitstream, vpccUnitType );
-  vpccUnitPayload( context, bitstream, vpccUnitType );
+  //jkei[?]would vpccUnitType=vpccUnitHeader( context, bitstream) be more straightfoward?? but current one looks prettier...
+  vpccUnitHeader( context, bitstream, vpccUnitType ); //jkei[!] vpccUnitType : output
+  vpccUnitPayload( context, bitstream, vpccUnitType ); //jkei[!] vpccUnitType : input
 }
 
 // 7.3.3 V-PCC unit header syntax
@@ -108,27 +111,41 @@ void PCCBitstreamDecoderNewSyntax::vpccUnitHeader( PCCContext&   context,
   auto& sps    = context.getSps();
   vpccUnitType = (VPCCUnitType)bitstream.read( 5 );  // u(5)
   if ( vpccUnitType == VPCC_AVD || vpccUnitType == VPCC_GVD || vpccUnitType == VPCC_OVD ||
-       vpccUnitType == VPCC_PSD ) {
-    vpcc.setSequenceParameterSetId(bitstream.read( 4 )) ;  // u(4)
+       vpccUnitType == VPCC_PSD )
+  {
+    vpcc.setSequenceParameterSetId( bitstream.read( 4 ) ) ;  // u(4)
   }
-  if ( vpccUnitType == VPCC_AVD ) {
-    vpcc.setAttributeIndex(bitstream.read( 7 )) ;  // u(7)
-    if ( sps.getMultipleLayerStreamsPresentFlag() ) {
-      vpcc.setLayerIndex(bitstream.read( 4 ))  ;  // u(4)
+  if ( vpccUnitType == VPCC_AVD )
+  {
+    vpcc.setAttributeIndex( bitstream.read( 7 ) ) ;  // u(7)
+    if ( sps.getMultipleLayerStreamsPresentFlag() )
+    {
+      vpcc.setLayerIndex( bitstream.read( 4 ) )  ;  // u(4)
       pcmSeparateVideoData( context, bitstream, 11 );
-    } else {
+    }
+    else
+    {
       pcmSeparateVideoData( context, bitstream, 15 );
     }
-  } else if ( vpccUnitType == VPCC_GVD ) {
-    if ( sps.getMultipleLayerStreamsPresentFlag() ) {
+  }
+  else if ( vpccUnitType == VPCC_GVD )
+  {
+    if ( sps.getMultipleLayerStreamsPresentFlag() )
+    {
       vpcc.setLayerIndex(bitstream.read( 4 )) ;  // u(4)
       pcmSeparateVideoData( context, bitstream, 18 );
-    } else {
+    }
+    else
+    {
       pcmSeparateVideoData( context, bitstream, 22 );
     }
-  } else if ( vpccUnitType == VPCC_OVD || vpccUnitType == VPCC_PSD ) {
+  }
+  else if ( vpccUnitType == VPCC_OVD || vpccUnitType == VPCC_PSD )
+  {
     bitstream.read( 23 );  // u(23)
-  } else {
+  }
+  else
+  {
     bitstream.read( 27 );  // u(27)
   }
 }
@@ -139,10 +156,13 @@ void PCCBitstreamDecoderNewSyntax::pcmSeparateVideoData( PCCContext&   context,
                                                          uint8_t       bitCount ) {
   auto& vpcc = context.getVPCC();
   auto& sps  = context.getSps();
-  if ( sps.getPcmSeparateVideoPresentFlag() && !vpcc.getLayerIndex() ) {
-    vpcc.setPCMVideoFlag(bitstream.read( 1 )) ;  // u(1)
+  if ( sps.getPcmSeparateVideoPresentFlag() && !vpcc.getLayerIndex() )
+  {
+    vpcc.setPCMVideoFlag( bitstream.read( 1 ) ) ;  // u(1)
     bitstream.read( bitCount );                    // u(bitCount)
-  } else {
+  }
+  else
+  {
     bitstream.read( bitCount + 1 );  // u(bitCount + 1)
   }
 }
@@ -150,11 +170,15 @@ void PCCBitstreamDecoderNewSyntax::pcmSeparateVideoData( PCCContext&   context,
 // 7.3.5 V-PCC unit payload syntax
 void PCCBitstreamDecoderNewSyntax::vpccUnitPayload( PCCContext&   context,
                                                     PCCBitstream& bitstream,
-                                                    VPCCUnitType& vpccUnitType ) {
-  if ( vpccUnitType == VPCC_SPS ) {
-    sequenceParameterSet( context.getSps(), bitstream );
+                                                    VPCCUnitType& vpccUnitType )
+{
+  auto& sps  = context.getSps(); //jkei[!] just for consistancy
+  auto& psdu = context.getPatchSequenceDataUnit();
+  if ( vpccUnitType == VPCC_SPS )
+  {
+    sequenceParameterSet( sps, bitstream );
   } else if ( vpccUnitType == VPCC_PSD ) {
-    patchSequenceDataUnit( context.getPatchSequenceDataUnit(), context.getSps(), bitstream );
+    patchSequenceDataUnit( psdu, sps, bitstream );
   } else if ( vpccUnitType == VPCC_OVD || vpccUnitType == VPCC_GVD || vpccUnitType == VPCC_AVD ) {
     vpccVideoDataUnit( context, bitstream, vpccUnitType );
   }
@@ -164,6 +188,7 @@ void PCCBitstreamDecoderNewSyntax::vpccUnitPayload( PCCContext&   context,
 void PCCBitstreamDecoderNewSyntax::sequenceParameterSet( SequenceParameterSet& sps,
                                                          PCCBitstream&         bitstream ) {
   profileTierLevel( sps.getProfileTierLevel(), bitstream );
+
   sps.setSequenceParameterSetId( bitstream.read( 4 ) );   // u(4)
   sps.setFrameWidth( bitstream.read( 16 ) );              // u(16)
   sps.setFrameHeight( bitstream.read( 16 ) );             // u(16)
@@ -172,10 +197,10 @@ void PCCBitstreamDecoderNewSyntax::sequenceParameterSet( SequenceParameterSet& s
     sps.setAvgFrameRate( bitstream.read( 16 ) );  // u(16)
   }
   sps.setEnhancedOccupancyMapForDepthFlag(bitstream.read( 1 )) ;      // u(1)
-  sps.setLayerCount(bitstream.read( 4 ) + 1) ;  // u(4)
-  int32_t layerCountMinus1                  = (int32_t)sps.getLayerCount() - 1;
+  sps.setLayerCountMinus1(bitstream.read( 4 )) ;  // u(4)
+  int32_t layerCountMinus1                  = (int32_t)sps.getLayerCountMinus1();
   if ( layerCountMinus1 > 0 ) {
-    sps.setMultipleLayerStreamsPresentFlag(bitstream.read( 1 ));  // u(1)
+    sps.setMultipleLayerStreamsPresentFlag( bitstream.read( 1 ) );  // u(1)
   }
   auto& layerAbsoluteCodingEnabledFlag = sps.getLayerAbsoluteCodingEnabledFlag();
   auto& layerPredictorIndexDiff        = sps.getLayerPredictorIndexDiff();
@@ -189,17 +214,17 @@ void PCCBitstreamDecoderNewSyntax::sequenceParameterSet( SequenceParameterSet& s
       }
     }
   }
-  sps.setPcmPatchEnabledFlag(bitstream.read( 1 ));  // u(1)
+  sps.setPcmPatchEnabledFlag( bitstream.read( 1 ) );  // u(1)
   if ( sps.getPcmPatchEnabledFlag() ) {
-    sps.setPcmSeparateVideoPresentFlag(bitstream.read( 1 )) ;  // u(1)
+    sps.setPcmSeparateVideoPresentFlag( bitstream.read( 1 ) ) ;  // u(1)
   }
   occupancyParameterSet( sps.getOccupancyParameterSet(), bitstream );
-  geometryParameterSet( sps.getGeometryParameterSet(), sps, bitstream );
-  sps.setAttributeCount(bitstream.read( 16 ))  ;  // u(16)
+  geometryParameterSet ( sps.getGeometryParameterSet(), sps, bitstream );
+  sps.setAttributeCount( bitstream.read( 16 ) );  // u(16)
 
   sps.allocateAttributeParameterSets();
   for ( size_t i = 0; i < sps.getAttributeCount(); i++ ) {
-    attributeParameterSet( sps.getAttributeParameterSets( i ), sps, bitstream );
+    attributeParameterSet( sps.getAttributeParameterSet( i ), sps, bitstream );
   }
   sps.setPatchSequenceOrientationEnabledFlag(bitstream.read( 1 )) ;  // u(1)
   sps.setPatchInterPredictionEnabledFlag(bitstream.read( 1 ))  ;  // u(1)
@@ -220,32 +245,32 @@ void PCCBitstreamDecoderNewSyntax::byteAlignment( PCCBitstream& bitstream ) {
 // 7.3.8 Profile, tier, and level syntax
 void PCCBitstreamDecoderNewSyntax::profileTierLevel( ProfileTierLevel& ptl,
                                                      PCCBitstream&     bitstream ) {
-  ptl.setTierFlag(bitstream.read( 1 ));  // u(1)
-  ptl.setProfileIdc(bitstream.read( 1 ));  // u(7)
-  bitstream.read( 48 );                       // u(48)
-  ptl.setLevelIdc(bitstream.read( 8 ));    // u(8)
+  ptl.setTierFlag  ( bitstream.read( 1 ) ); // u(1)
+  ptl.setProfileIdc( bitstream.read( 1 ) ); // u(7)
+  bitstream.read( 48 );                     // u(48)
+  ptl.setLevelIdc( bitstream.read( 8 ) );   // u(8)
 }
 
 // 7.3.9 Occupancy parameter set syntax
 void PCCBitstreamDecoderNewSyntax::occupancyParameterSet( OccupancyParameterSet& ops,
                                                           PCCBitstream&          bitstream ) {
-  ops.setOccupancyCodecId(bitstream.read( 8 ));  // u(8)
-  ops.setOccupancyPackingBlockSize(bitstream.read( 8 )) ;// u(8)
+  ops.setOccupancyCodecId( bitstream.read( 8 ) );           // u(8)
+  ops.setOccupancyPackingBlockSize( bitstream.read( 8 ) ) ; // u(8)
 }
 
 // 7.3.10 Geometry parameter set syntax
 void PCCBitstreamDecoderNewSyntax::geometryParameterSet( GeometryParameterSet& gps,
                                                          SequenceParameterSet& sps,
                                                          PCCBitstream&         bitstream ) {
+
   gps.setGeometryCodecId(bitstream.read( 8 )) ;      // u(8)
   
-  gps.setGeometryNominal2dBitdepth(bitstream.read( 5 ) + 1);  // u(5)
-  gps.setGeometry3dCoordinatesBitdepth(bitstream.read( 5 ) + 1);  // u(5)
+  gps.setGeometryNominal2dBitdepthMinus1(bitstream.read( 5 ) );  // u(5)
+  gps.setGeometry3dCoordinatesBitdepthMinus1(bitstream.read( 5 ) );  // u(5)
   if ( sps.getPcmSeparateVideoPresentFlag() ) {
     gps.setPcmGeometryCodecId(bitstream.read( 1 ));  // u(8)
   }  
   gps.setGeometryParamsEnabledFlag(bitstream.read( 1 ));  // u(1)
-  //gps.getMetadataEnabledFlag() = bitstream.read( 1 );  // u(1)
   if ( gps.getGeometryParamsEnabledFlag() ) {
     geometrySequenceParams( gps.getGeometrySequenceParams(), bitstream );
   }
@@ -303,14 +328,14 @@ void PCCBitstreamDecoderNewSyntax::attributeParameterSet( AttributeParameterSet&
                                                           SequenceParameterSet&  sps,
                                                           PCCBitstream&          bitstream ) {
   aps.setAttributeTypeId(bitstream.read( 4 )) ;      // u(4)
-  aps.setAttributeDimension(bitstream.read( 8 ) + 1) ;  // u(8)
+  aps.setAttributeDimensionMinus1(bitstream.read( 8 ) ) ;  // u(8)
   aps.setAttributeCodecId(bitstream.read( 8 ));      // u(8)
   if ( sps.getPcmSeparateVideoPresentFlag() ) {
     aps.setPcmAttributeCodecId(bitstream.read( 8 ))  ;  // u(8)
   }
   aps.setAttributeParamsEnabledFlag(bitstream.read( 1 ));  // u(1)
   if ( aps.getAttributeParamsEnabledFlag() ) {
-    attributeSequenceParams( aps.getAttributeSequenceParams(), aps.getAttributeDimension(), bitstream );
+    attributeSequenceParams( aps.getAttributeSequenceParams(), aps.getAttributeDimensionMinus1(), bitstream );
   }
   aps.setAttributePatchParamsEnabledFlag(bitstream.read( 1 ));  // u(1)
   if ( aps.getAttributePatchParamsEnabledFlag() ) {
@@ -361,8 +386,8 @@ void PCCBitstreamDecoderNewSyntax::patchSequenceDataUnit( PatchSequenceDataUnit&
     psdu.getPatchSequenceUnitPayload().push_back( psup );
     if ( psup.getUnitType() == PSD_PFLU ) {
       psdu.getFrameCount()++;
-      terminatePatchSequenceInformationFlag = bitstream.read( 1 );  // u(1)
     }
+    terminatePatchSequenceInformationFlag = bitstream.read( 1 );  // u(1)
   }
   byteAlignment( bitstream );
 }
@@ -374,15 +399,21 @@ void PCCBitstreamDecoderNewSyntax::patchSequenceUnitPayload( PatchSequenceUnitPa
   if ( psup.getUnitType() == PSD_SPS ) {
     patchSequenceParameterSet( psup.getPatchSequenceParameterSet(), bitstream );
   } else if ( psup.getUnitType() == PSD_GPPS ) {
-    geometryPatchParameterSet( psup.getGeometryPatchParameterSet(), bitstream );
+    geometryPatchParameterSet( psup.getGeometryPatchParameterSet(), psup.getGeometryFrameParameterSet(), bitstream );
   } else if ( psup.getUnitType() == PSD_APPS ) {
-    attributePatchParameterSet( psup.getAttributePatchParameterSet(), bitstream );
+    for( int attributeIndex = 0; attributeIndex < sps.getAttributeCount(); attributeIndex++)
+    {
+          attributePatchParameterSet( psup.getAttributePatchParameterSet(), sps.getAttributeParameterSet(attributeIndex), psup.getAttributeFrameParameterSet(), bitstream );
+    }
   } else if ( psup.getUnitType() == PSD_FPS ) {
     patchFrameParameterSet( psup.getPatchFrameParameterSet(), sps, bitstream );
   } else if ( psup.getUnitType() == PSD_AFPS ) {
-    attributeFrameParameterSet( psup.getAttributeFrameParameterSet(), bitstream );
+    for( int attributeIndex = 0; attributeIndex < sps.getAttributeCount(); attributeIndex++)
+    {
+      attributeFrameParameterSet( psup.getAttributeFrameParameterSet(), sps.getAttributeParameterSet(attributeIndex), bitstream );
+    }
   } else if ( psup.getUnitType() == PSD_GFPS ) {
-    geometryFrameParameterSet( psup.getGeometryFrameParameterSet(), bitstream );
+    geometryFrameParameterSet( psup.getGeometryFrameParameterSet(), sps.getGeometryParameterSet(), bitstream );
   } else if ( psup.getUnitType() == PSD_PFLU ) {
     patchFrameLayerUnit( psup.getPatchFrameLayerUnit(), psup.getFrameIndex(), bitstream );
   }
@@ -391,220 +422,317 @@ void PCCBitstreamDecoderNewSyntax::patchSequenceUnitPayload( PatchSequenceUnitPa
 // 7.3.16 Patch sequence parameter set syntax
 void PCCBitstreamDecoderNewSyntax::patchSequenceParameterSet( PatchSequenceParameterSet& psps,
                                                               PCCBitstream& bitstream ) {
-  psps.setPatchSequenceParameterSetId(bitstream.readUvlc())  ;  // ue(v)
-  psps.setLog2MaxPatchFrameOrderCntLsbMinus4(bitstream.readUvlc())  ;  // ue(v)
-  psps.setMaxDecPatchFrameBufferingMinus1(bitstream.readUvlc())  ;  // ue(v)
-  psps.setLongTermRefPatchFramesFlag(bitstream.read( 1 ))         ;   // u(1)
-  psps.setNumRefPatchFrameListsInSps(bitstream.readUvlc())         ;  // ue(v)
+  psps.setPatchSequenceParameterSetId       ( bitstream.readUvlc() );  // ue(v)
+  psps.setLog2MaxPatchFrameOrderCntLsbMinus4( bitstream.readUvlc() );  // ue(v)
+  psps.setMaxDecPatchFrameBufferingMinus1   ( bitstream.readUvlc() );  // ue(v)
+  psps.setLongTermRefPatchFramesFlag        ( bitstream.read( 1 ) );   // u(1)
+  psps.setNumRefPatchFrameListsInSps        ( bitstream.readUvlc() );  // ue(v)
   psps.getRefListStruct().resize( psps.getNumRefPatchFrameListsInSps() );
   for ( size_t i = 0; i < psps.getNumRefPatchFrameListsInSps(); i++ ) {
     refListStruct( psps.getRefListStruct( i ), psps, bitstream );
   }
 }
-
+/**********************************************************************/
+/* 2019.02.RC4                                                        */
+/* ISO/IEC 23090-5:2019(E) d19                                        */
 // 7.3.17 Geometry frame parameter set syntax
+/**********************************************************************/
 void PCCBitstreamDecoderNewSyntax::geometryFrameParameterSet( GeometryFrameParameterSet& gfps,
+                                                              GeometryParameterSet&      gps,
                                                               PCCBitstream& bitstream ) {
-  // gfpsGeometryFrameParameterSetId;  // ue(v)
-  // gfpsPatchSequenceParameterSetId;  // ue(v)
-  // if ( gpsGeometryParamsEnabledFlag ) {
-  //   gfpsOverrideGeometryParamsFlag;  // u(1)
-  //   if ( gfpsOverrideGeometryParamsFlag ) { geometryFrameParams(); }
-  // }
-  // if ( gpsGeometryPatchParamsEnabledFlag ) {
-  //   gfpsOverrideGeometryPatchParamsFlag;  // u(1)
-  //   if ( gfpsOverrideGeometryPatchParamsFlag ) {
-  //     gfpsGeometryPatchScaleParamsEnabledFlag;       // u(1)
-  //     gfpsGeometryPatchOffsetParamsEnabledFlag;      // u(1)
-  //     gfpsGeometryPatchRotationParamsEnabledFlag;    // u(1)
-  //     gfpsGeometryPatchPointSizeParamsEnabledFlag;   // u(1)
-  //     gfpsGeometryPatchPointShapeParamsEnabledFlag;  // u(1)
-  //   }
-  // }
-  // byteAlignment( bitstream );
+  
+  gfps.setGeometryFrameParameterSetId( bitstream.readUvlc() ); 
+  gfps.setPatchSequenceParameterSetId( bitstream.readUvlc() );
+  if(gps.getGeometryParamsEnabledFlag() )
+  {
+    gfps.setOverrideGeometryParamsFlag( bitstream.read( 1 ) );
+    if(gfps.getOverrideGeometryParamsFlag())
+    {
+      geometryFrameParams(gfps.getGeometryFrameParams(), bitstream );
+    }
+  }
+  
+  if(gps.getGeometryPatchParamsEnabledFlag())
+  {
+    gfps.setOverrideGeometryPatchParamsFlag( bitstream.read( 1 ) );
+    if(gfps.getOverrideGeometryPatchParamsFlag())
+    {
+      gfps.setGeometryPatchScaleParamsEnabledFlag   ( bitstream.read( 1 ) );
+      gfps.setGeometryPatchOffsetParamsEnabledFlag  ( bitstream.read( 1 ) );
+      gfps.setGeometryPatchRotationParamsEnabledFlag( bitstream.read( 1 ) );
+      gfps.setGeometryPatchPointSizeInfoEnabledFlag ( bitstream.read( 1 ) );
+      gfps.setGeometryPatchPointShapeInfoEnabledFlag( bitstream.read( 1 ) );
+    }
+  }
+  byteAlignment( bitstream );
 }
 
+/**********************************************************************/
+/* 2019.02.RC4                                                        */
+/* ISO/IEC 23090-5:2019(E) d19                                        */
 // 7.3.18 Geometry frame Params syntax
+/**********************************************************************/
 void PCCBitstreamDecoderNewSyntax::geometryFrameParams( GeometryFrameParams& gfp,
-                                                        PCCBitstream&        bitstream ) {
-  // gfmGeometrySmoothingParamsPresentFlag;    // u(1)
-  // gfmGeometryScaleParamsPresentFlag;        // u(1)
-  // gfmGeometryOffsetParamsPresentFlag;       // u(1)
-  // gfmGeometryRotationParamsPresentFlag;     // u(1)
-  // gfmGeometryPointSizeParamsPresentFlag;    // u(1)
-  // gfmGeometryPointShapeParamsPresentFlag;   // u(1)
-  // if ( gfmGeometrySmoothingParamsPresentFlag ) {
-  //   gfpGeometrySmoothingEnabledFlag ; // u(1)
-  //   if ( gfpGeometrySmoothingEnabledFlag ) {
-  //     gfpGeometrySmoothingGridSize ; // u(8)
-  //     gfpGeometrySmoothingThreshold ; // u(8)
-  //   }
-  // }
-  // if ( gfmGeometryScaleParamsPresentFlag ) {
-  //   for ( size_t d = 0; d < 3; d++ ) {
-  //     gfmGeometryScaleParamsOnAxis[d];  // u(32)
-  //   }
-  // }
-  // if ( gfmGeometryOffsetParamsPresentFlag ) {
-  //   for ( size_t d = 0; d < 3; d++ ) {
-  //     gfmGeometryOffsetParamsOnAxis[d];  // i(32)
-  //   }
-  // }
-  // if ( gfmGeometryRotationParamsPresentFlag ) {
-  //   for ( size_t d = 0; d < 3; d++ ) {
-  //     gfmGeometryRotationParamsOnAxis[d];  // i(32)
-  //   }
-  // }
-  // if ( gfmGeometryPointSizeParamsPresentFlag ) {
-  //   gfmGeometryPointSizeParams;  // u(8)
-  // }
-  // if ( gfmGeometryPointShapeParamsPresentFlag ) {
-  //   gfmGeometryPointShapeParams;  // u(8)
-  // }
+                                                        PCCBitstream&        bitstream )
+{ 
+  gfp.setGeometrySmoothingParamsPresentFlag( bitstream.read( 1 ) ); //  gfp_geometry_smoothing_params_present_flag  u(1)
+  gfp.setGeometryScaleParamsPresentFlag    ( bitstream.read( 1 ) ); //  gfp_geometry_scale_params_present_flag  u(1)
+  gfp.setGeometryOffsetParamsPresentFlag   ( bitstream.read( 1 ) ); //  gfp_geometry_offset_params_present_flag  u(1)
+  gfp.setGeometryRotationParamsPresentFlag ( bitstream.read( 1 ) ); //  gfp_geometry_rotation_params_present_flag  u(1)
+  gfp.setGeometryPointSizeInfoPresentFlag  ( bitstream.read( 1 ) ); //  gfp_geometry_point_size_info_present_flag  u(1)
+  gfp.setGeometryPointShapeInfoPresentFlag ( bitstream.read( 1 ) ); //  gfp_geometry_point_shape_info_present_flag  u(1)
+  
+  if(gfp.getGeometrySmoothingParamsPresentFlag())
+  {
+    gfp.setGeometrySmoothingEnabledFlag( bitstream.read( 1 ) );
+    if(gfp.getGeometrySmoothingEnabledFlag())
+    {
+      gfp.setGeometrySmoothingGridSize( bitstream.read( 8 ) );
+      gfp.setGeometrySmoothingThreshold( bitstream.read( 8 ) );
+    }
+  }
+  if(gfp.getGeometryScaleParamsPresentFlag())
+  {
+    for( size_t d = 0; d < 3; d++)
+    {
+      gfp.setGeometryScaleOnAxis(d, bitstream.read( 32 )); //      gfp_geometry_scale_on_axis[ d ]  u(32)
+    }
+  }
+  if(gfp.getGeometryOffsetParamsPresentFlag())
+  {
+    for( size_t d = 0; d < 3; d++)
+    {
+      gfp.setGeometryOffsetOnAxis(d, convertToInt(bitstream.read(32)) ) ; //i32
+    }
+  }
+  if(gfp.getGeometryRotationParamsPresentFlag())
+  {
+    for( size_t d = 0; d < 3; d++)
+    {
+      gfp.setGeometryRotationOnAxis(d, convertToInt(bitstream.read(32))); //i32
+    }
+  }
+  if(gfp.getGeometryPointSizeInfoPresentFlag())
+  {
+    gfp.setGeometryPointSizeInfo( bitstream.read(16) );
+  }
+  if(gfp.getGeometryPointShapeInfoPresentFlag())
+  {
+    gfp.setGeometryPointShapeInfo( bitstream.read(4) );
+  }
 }
-
+/**********************************************************************/
+/* 2019.02.RC5                                                        */
+/* ISO/IEC 23090-5:2019(E) d19                                        */
 // 7.3.19 Attribute frame parameter set syntax
 void PCCBitstreamDecoderNewSyntax::attributeFrameParameterSet( AttributeFrameParameterSet& afps,
-                                                               PCCBitstream& bitstream ) {
-  // afpsAttributeFrameParameterSetId[attributeIndex];  // ue(v)
-  // afpsPatchSequenceParameterSetId[attributeIndex];   // ue(v)
-  // attributeDimension = apsAttributeDimensionMinus1[attributeIndex] + 1;
-  // if ( apsAttributeParamsEnabledFlag[attributeIndex] ) {
-  //   afpsOverrideAttributeParamsFlag[attributeIndex];  // u(1)
-  //   if ( afpsOverrideAttributeParamsFlag[attributeIndex] ) {
-  //     attributeFrameParams( attributeIndex, attributeDimension );
-  //   }
-  // }
-  // if ( apsAttributePatchParamsEnabledFlag[attributeIndex] ) {
-  //   afpsOverrideAttributePatchParamsFlag[attributeIndex];  // u(1)
-  //   if ( afpsOverrideAttributePatchParamsFlag[attributeIndex] ) {
-  //     afpsAttributePatchScaleParamsEnabledFlag[attributeIndex];   // u(1)
-  //     afpsAttributePatchOffsetParamsEnabledFlag[attributeIndex];  // u(1)
-  //   }
-  // }
-  // byteAlignment( bitstream );
+                                                               AttributeParameterSet& aps,
+                                                               PCCBitstream& bitstream )
+{
+  //jkei : this is attributeIndex-th afps
+  afps.setAttributeFrameParameterSetId( bitstream.readUvlc() );
+  afps.setPatchSequencParameterSetId  ( bitstream.readUvlc() );
+  size_t attributeDimension = aps.getAttributeDimensionMinus1()+1;
+  if( aps.getAttributeParamsEnabledFlag() )
+  {
+    afps.setOverrideAttributeParamsFlag( bitstream.read(1) );     //    afps_override_attribute_params_flag[ attributeIndex ]  u(1)
+    if(afps.getOverrideAttributeParamsFlag())
+    {
+      attributeFrameParams( afps.getAttributeFrameParams(), attributeDimension, bitstream );
+    }
+  }
+  if(aps.getAttributePatchParamsEnabledFlag())
+  {
+    
+    afps.setOverrideAttributePatchParamsFlag( bitstream.read(1) );
+    if( afps.getOverrideAttributePatchParamsFlag() )
+    {
+      afps.setAttributePatchScaleParamsEnabledFlag ( bitstream.read(1) );
+      afps.setAttributePatchOffsetParamsEnabledFlag( bitstream.read(1) );
+    }
+  }
+  
+  byteAlignment( bitstream );
 }
 
+/**********************************************************************/
+/* 2019.02.RC5                                                        */
+/* ISO/IEC 23090-5:2019(E) d19                                        */
 // 7.3.20 Attribute frame Params syntax
 void PCCBitstreamDecoderNewSyntax::attributeFrameParams( AttributeFrameParams& afp,
-                                                         size_t                dimension,
-                                                         PCCBitstream&         bitstream ) {
-  // afmAttributeSmoothingParamsPresentFlag[attributeIndex];  // u(1)
-  // afmAttributeScaleParamsPresentFlag[attributeIndex];      // u(1)
-  // afmAttributeOffsetParamsPresentFlag[attributeIndex];     // u(1)
-  // if ( afmAttributeSmoothingParamsPresentFlag[attributeIndex] ) {
-  //   afmAttributeSmoothingRadius[attributeIndex];                      // u(8)
-  //   afmAttributeSmoothingNeighbourCount[attributeIndex];              // u(8)
-  //   afmAttributeSmoothingRadius2BoundaryDetection[attributeIndex];    // u(8)
-  //   afmAttributeSmoothingThreshold[attributeIndex];                   // u(8)
-  //   afmAttributeSmoothingThresholdLocalEntropy[attributeIndex];       // u(3)
-  // }
-  // if ( afmAttributeScaleParamsPresentFlag[attributeIndex] ) {
-  //   for ( size_t i = 0; i < attributeDimension; i++ ) {
-  //     afmAttributeScaleParams[attributeIndex][i];  // u(32)
-  //   }
-  // }
-  // if ( afmAttributeOffsetParamsPresentFlag[attributeIndex] ) {
-  //   for ( size_t i = 0; i < attributeDimension; i++ ) {
-  //     afmAttributeOffsetParams[attributeIndex][i];  // i(32)
-  //   }
-  // }
+                                                         size_t                attributeDimension,
+                                                         PCCBitstream&         bitstream )
+{
+  afp.setAttributeSmoothingParamsPresentFlag( bitstream.read(1) );
+  afp.setAttributeScaleParamsPresentFlag    ( bitstream.read(1) );
+  afp.setAttributeOffsetParamsPresentFlag   ( bitstream.read(1) );
+  if( afp.getAttributeSmoothingParamsPresentFlag() )
+  {
+    afp.setAttributeSmoothingRadius                  ( bitstream.read(8) );
+    afp.setAttributeSmoothingNeighbourCount          ( bitstream.read(8) );
+    afp.setAttributeSmoothingRadius2BoundaryDetection( bitstream.read(8) );
+    afp.setAttributeSmoothingThreshold               ( bitstream.read(8) );
+    afp.setAttributeSmoothingThresholdLocalEntropy   ( bitstream.read(3) );
+  }
+  
+  if( afp.getAttributeScaleParamsPresentFlag() )
+  {
+    for( size_t i = 0; i < attributeDimension; i++ )
+      afp.setAttributeScale( i,  bitstream.read(32) ); //u32
+  }
+  if( afp.getAttributeOffsetParamsPresentFlag() )
+  {
+    for( size_t i = 0; i < attributeDimension; i++ )
+      afp.setAttributeOffset( i,  convertToInt( bitstream.read(32) ) ); //i32
+  }
 }
 
+/**********************************************************************/
+/* 2019.02.RC6                                                        */
+/* ISO/IEC 23090-5:2019(E) d19                                        */
 // 7.3.21 Geometry patch parameter set syntax
 void PCCBitstreamDecoderNewSyntax::geometryPatchParameterSet( GeometryPatchParameterSet& gpps,
-                                                              PCCBitstream& bitstream ) {
-  // gppsGeometryPatchParameterSetId;  // ue(v)
-  // gppsGeometryFrameParameterSetId;  // ue(v)
-  // if ( gfpsGeometryPatchScaleParamsEnabledFlag ||
-  //      gfpsGeometryPatchOffsetParamsEnabledFlag ||
-  //      gfpsGeometryPatchRotationParamsEnabledFlag ||
-  //      gfpsGeometryPatchPointSizeParamsEnabledFlag ||
-  //      gfpsGeometryPatchPointShapeParamsEnabledFlag ) {
-  //   gppsGeometryPatchParamsPresentFlag;  // u(1)
-  //   if ( gppsGeometryPatchParamsPresentFlag ) { geometryPatchParams(); }
-  // }
-  // byteAlignment( bitstream );
+                                                              GeometryFrameParameterSet& gfps,
+                                                              PCCBitstream&              bitstream  )
+{
+  gpps.setGeometryPatchParameterSetId( bitstream.readUvlc() );
+  gpps.setGeometryFrameParameterSetId( bitstream.readUvlc() );
+  if( gfps.getGeometryPatchScaleParamsEnabledFlag() ||
+     gfps.getGeometryPatchOffsetParamsEnabledFlag() ||
+     gfps.getGeometryPatchRotationParamsEnabledFlag() ||
+     gfps.getGeometryPatchPointSizeInfoEnabledFlag() ||
+     gfps.getGeometryPatchPointShapeInfoEnabledFlag() )
+  {
+    gpps.setGeometryPatchParamsPresentFlag( bitstream.read(32) );
+    if( gpps.getGeometryPatchParamsPresentFlag() )
+      geometryPatchParams(gpps.getGeometryPatchParams(), gfps, bitstream );
+  }
+    
+  byteAlignment( bitstream );
 }
 
+/**********************************************************************/
+/* 2019.02.RC6                                                        */
+/* ISO/IEC 23090-5:2019(E) d19                                        */
 // 7.3.22 Geometry patch Params syntax
-void PCCBitstreamDecoderNewSyntax::geometryPatchParams( GeometryPatchParams& gpp,
-                                                        PCCBitstream&        bitstream ) {
-  // if ( gfpsGeometryPatchScaleParamsEnabledFlag ) {
-  //   gpmGeometryPatchScaleParamsPresentFlag;  // u(1)
-  //   if ( gpmGeometryPatchScaleParamsPresentFlag ) {
-  //     for ( size_t d = 0; d < 3; d++ ) {
-  //       gpmGeometryPatchScaleParamsOnAxis[d];  // u( 32 )
-  //     }
-  //   }
-  // }
-  // if ( gfpsGeometryPatchOffsetParamsEnabledFlag ) {
-  //   gpmGeometryPatchOffsetParamsPresentFlag;  // u(1)
-  //   if ( gpmGeometryPatchOffsetParamsPresentFlag ) {
-  //     for ( size_t d = 0; d < 3; d++ ) {
-  //       gpmGeometryPatchOffsetParamsOnAxis[d];  // i( 32 )
-  //     }
-  //   }
-  // }
-  // if ( gfpsGeometryPatchRotationParamsEnabledFlag ) {
-  //   gpmGeometryPatchRotationParamsPresentFlag;  // u(1)
-  //   if ( gpmGeometryPachRotationParamsPresentFlag ) {
-  //     for ( size_t d = 0; d < 3; d++ ) {
-  //       gpmGeometryPatchRotationParamsOnAxis[d];  // i( 32 )
-  //     }
-  //   }
-  // }
-  // if ( gfpsGeometryPatchPointSizeParamsEnabledFlag ) {
-  //   gpmGeometryPatchPointSizeParamsPresentFlag;  // u(1)
-  //   if ( gpmGeometryPatchPointSizeParamsPresentFlag ) {
-  //     gpmGeometryPatchPointSizeParams;  // u(16)
-  //   }
-  // }
-  // if ( gfpsGeometryPatchPointShapeParamsEnabledFlag ) {
-  //   gpmGeometryPatchPointShapeParamsPresentFlag;  // u(1)
-  //   if ( gpmGeometryPatchPointShapeParamsPresentFlag ) {
-  //     gpmGeometryPatchPointShapeParams;  // u(8)
-  //   }
-  // }
+void PCCBitstreamDecoderNewSyntax::geometryPatchParams( GeometryPatchParams&       gpp,
+                                                        GeometryFrameParameterSet& gfps,
+                                                        PCCBitstream&              bitstream )
+{
+ 
+  if( gfps.getGeometryPatchScaleParamsEnabledFlag() )
+  {
+    gpp.setGeometryPatchScaleParamsPresentFlag( bitstream.read(1) );
+    if( gpp.getGeometryPatchScaleParamsPresentFlag())
+    {
+      for( size_t d = 0; d < 3; d++ )
+      {
+        gpp.setGeometryPatchScaleOnAxis( d,  bitstream.read(32) );
+      }
+    }
+  }
+  if(gfps.getGeometryPatchOffsetParamsEnabledFlag() )
+  {
+    gpp.setGeometryPatchOffsetParamsPresentFlag( bitstream.read(1) );
+    if( gpp.getGeometryPatchOffsetParamsPresentFlag() )
+    {
+      for( size_t d = 0; d < 3; d++ )
+      {
+        gpp.setGeometryPatchOffsetOnAxis( d,  convertToInt(bitstream.read(32))  ); //i32
+      }
+    }
+  }
+  if( gfps.getGeometryPatchRotationParamsEnabledFlag() )
+  {
+    gpp.setGeometryPatchRotationParamsPresentFlag( bitstream.read(1) );
+    if( gpp.getGeometryPatchRotationParamsPresentFlag() )
+    {
+      for( size_t d = 0; d < 3; d++ )
+      {
+        gpp.setGeometryPatchRotationOnAxis( d,  convertToInt(bitstream.read(32))  );//i(32)
+      }
+    }
+  }
+  if( gfps.getGeometryPatchPointSizeInfoEnabledFlag() )
+  {
+    gpp.setGeometryPatchPointSizeInfoPresentFlag( bitstream.read(1) );
+    if( gpp.getGeometryPatchPointSizeInfoPresentFlag() )
+    {
+      gpp.setGeometryPatchPointSizeInfo( bitstream.read(16) );
+    }
+  }
+  if( gfps.getGeometryPatchPointShapeInfoEnabledFlag() )
+  {
+    gpp.setGeometryPatchPointShapeInfoPresentFlag( bitstream.read(1) );
+    if( gpp.getGeometryPatchPointShapeInfoPresentFlag() )
+    {
+      gpp.setGeometryPatchPointShapeInfo( bitstream.read(4) );
+    }
+  }
+  
 }
 
+/**********************************************************************/
+/* 2019.02.RC7                                                        */
+/* ISO/IEC 23090-5:2019(E) d19                                        */
 // 7.3.23 Attribute patch parameter set syntax
+/**********************************************************************/
 void PCCBitstreamDecoderNewSyntax::attributePatchParameterSet( AttributePatchParameterSet& apps,
-                                                               PCCBitstream& bitstream ) {
-  // appsAttributePatchParameterSetId[attributeIndex];  // ue(v)
-  // appsAttributeFrameParameterSetId[attributeIndex];  // ue(v)
-  // attributeDimension = apsAttributeDimensionMinus1[attributeIndex] + 1;
-  // if ( afpsAttributePatchScaleParamsEnabledFlag[attributeIndex] ||
-  //      afpsAttributePatchOffsetParamsEnabledFlag[attributeIndex] ) {
-  //   appsAttributePatchParamsPresentFlag[attributeIndex];  // u(1)
-  //   if ( appsAttributePatchParamsPresentFlag[attributeIndex] ) {
-  //     attributePatchParams( attributeIndex, attributeDimension );
-  //   }
-  // }
-  // byteAlignment( bitstream );
+                                                               AttributeParameterSet&      aps,
+                                                               AttributeFrameParameterSet& afps,
+                                                               PCCBitstream&               bitstream )
+{
+  apps.setAttributePatchParameterSetId( bitstream.readUvlc() );
+  apps.setAttributeFrameParameterSetId( bitstream.readUvlc() );
+  
+  size_t attributeDimension = aps.getAttributeDimensionMinus1() + 1;
+  if( afps.getAttributePatchScaleParamsEnabledFlag() || //_attribute_patch_scale_params_enabled_flag[ attributeIndex ]
+     afps.getAttributePatchOffsetParamsEnabledFlag() ) //afps_attribute_patch_offset_params_enabled_flag[ attributeIndex ]
+  {
+    apps.setAttributePatchParamsPresentFlag( bitstream.read(1) ); //apps_attribute_patch_params_present_flag[ attributeIndex ]
+    if( apps.getAttributePatchParamsPresentFlag() )
+    {
+      attributePatchParams(apps.getAttributePatchParams(), afps, attributeDimension, bitstream);
+    }
+  }
+  byteAlignment( bitstream );
 }
 
+/**********************************************************************/
+/* 2019.02.RC7                                                        */
+/* ISO/IEC 23090-5:2019(E) d19                                        */
 // 7.3.24 Attribute patch Params syntax
-void PCCBitstreamDecoderNewSyntax::attributePatchParams( AttributePatchParams& app,
-                                                         size_t                dimension,
-                                                         PCCBitstream&         bitstream ) {
-  // if ( afpsAttributePatchScaleParamsEnabledFlag[attributeIndex] ) {
-  //   apmAttributePatchScaleParamsPresentFlag[attributeIndex];  // u(1)
-  //   if ( apmAttributePatchScaleParamsPresentFlag[attributeIndex] ) {
-  //     for ( size_t i = 0; i < attributeDimension; i++ ) {
-  //       apmAttributePatchScaleParams[attributeIndex][i];  // u( 32 )
-  //     }
-  //   }
-  // }
-  // if ( afpsAttributePatchOffsetParamsEnabledFlag[attributeIndex] ) {
-  //   apmAttributePatchOffsetParamsPresentFlag[attributeIndex];  // u(1)
-  //   if ( apmAttributePatchOffsetParamsPresentFlag[attributeIndex] ) {
-  //     for ( size_t i = 0; i < attributeDimension; i++ ) {
-  //       apmAttributePatchOffsetParams[attributeIndex][i];  // i(32)
-  //     }
-  //   }
-  // }
+/**********************************************************************/
+void PCCBitstreamDecoderNewSyntax::attributePatchParams( AttributePatchParams&       app,
+                                                         AttributeFrameParameterSet& afps,
+                                                         size_t                      attributeDimension,
+                                                         PCCBitstream&               bitstream )
+{
+  if( afps.getAttributePatchScaleParamsEnabledFlag() )
+  {
+    app.setAttributePatchScaleParamsPresentFlag(bitstream.read(1));
+    if( app.getAttributePatchScaleParamsPresentFlag() )
+    {
+      for( size_t i = 0; i < attributeDimension; i++ )
+      {
+        app.setAttributePatchScale( i, bitstream.read(32) ); //u(32)
+      }
+    }
+  }
+  if( afps.getAttributePatchOffsetParamsEnabledFlag() )
+  {
+    app.setAttributePatchOffsetParamsPresentFlag( bitstream.read(1) ); 
+    if( app.getAttributePatchOffsetParamsPresentFlag() )
+    {
+      for( size_t i = 0; i < attributeDimension; i++ )
+      {
+        app.setAttributePatchOffset( i , convertToInt( bitstream.read(32)) ); // i(32)
+      }
+    }
+  }
+  
 }
+
 
 // 7.3.25 Patch frame parameter set syntax
 void PCCBitstreamDecoderNewSyntax::patchFrameParameterSet( PatchFrameParameterSet& pfps,

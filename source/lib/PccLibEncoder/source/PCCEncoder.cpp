@@ -85,6 +85,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext &context,
 
   params_.oneLayerMode_                = oneLayerModeOriginal;
   params_.singleLayerPixelInterleaving_= singleLayerPixelInterleavingOriginal;
+  
+  
   return ret; 
 }
 
@@ -2793,7 +2795,7 @@ bool PCCEncoder::generateTextureVideo(const PCCGroupOfFrames &sources, PCCGroupO
   bool ret = true;
   for( size_t i = 0; i < frames.size(); i++ ) {
     auto& frame = frames[ i ];
-    assert( frame.getWidth() == context.getWidth() && frame.getHeight() == context.getHeight() );
+    //assert( frame.getWidth() == context.getWidth() && frame.getHeight() == context.getHeight() );
     frame.setLosslessTexture(context.getLosslessTexture());
     size_t nbFrame = params_.oneLayerMode_ ? 1 : 2 ;
     if( params_.oneLayerMode_  && !params_.singleLayerPixelInterleaving_ ) {

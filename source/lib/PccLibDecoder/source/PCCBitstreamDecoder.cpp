@@ -366,7 +366,7 @@ int PCCBitstreamDecoder::decompressHeader( PCCContext& context, PCCBitstream& bi
   auto& ops = sps.getOccupancyParameterSet();
   sps.setAttributeCount(1);
   sps.allocateAttributeParameterSets();
-  auto& aps = sps.getAttributeParameterSets( 0 );
+  auto& aps = sps.getAttributeParameterSet( 0 );
   auto& asp = aps.getAttributeSequenceParams();
 
   uint8_t groupOfFramesSize = bitstream.read<uint8_t>();
