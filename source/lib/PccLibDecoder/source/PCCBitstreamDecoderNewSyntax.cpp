@@ -475,52 +475,53 @@ void PCCBitstreamDecoderNewSyntax::geometryFrameParameterSet( GeometryFrameParam
 void PCCBitstreamDecoderNewSyntax::geometryFrameParams( GeometryFrameParams& gfp,
                                                         PCCBitstream&        bitstream )
 { 
-  gfp.setGeometrySmoothingParamsPresentFlag( bitstream.read( 1 ) ); //  gfp_geometry_smoothing_params_present_flag  u(1)
-  gfp.setGeometryScaleParamsPresentFlag    ( bitstream.read( 1 ) ); //  gfp_geometry_scale_params_present_flag  u(1)
-  gfp.setGeometryOffsetParamsPresentFlag   ( bitstream.read( 1 ) ); //  gfp_geometry_offset_params_present_flag  u(1)
-  gfp.setGeometryRotationParamsPresentFlag ( bitstream.read( 1 ) ); //  gfp_geometry_rotation_params_present_flag  u(1)
-  gfp.setGeometryPointSizeInfoPresentFlag  ( bitstream.read( 1 ) ); //  gfp_geometry_point_size_info_present_flag  u(1)
-  gfp.setGeometryPointShapeInfoPresentFlag ( bitstream.read( 1 ) ); //  gfp_geometry_point_shape_info_present_flag  u(1)
+  gfp.setGeometrySmoothingParamsPresentFlag( bitstream.read( 1 ) ); // u(1)
+  gfp.setGeometryScaleParamsPresentFlag    ( bitstream.read( 1 ) ); // u(1)
+  gfp.setGeometryOffsetParamsPresentFlag   ( bitstream.read( 1 ) ); // u(1)
+  gfp.setGeometryRotationParamsPresentFlag ( bitstream.read( 1 ) ); // u(1)
+  gfp.setGeometryPointSizeInfoPresentFlag  ( bitstream.read( 1 ) ); // u(1)
+  gfp.setGeometryPointShapeInfoPresentFlag ( bitstream.read( 1 ) ); // u(1)
   
   if(gfp.getGeometrySmoothingParamsPresentFlag())
   {
-    gfp.setGeometrySmoothingEnabledFlag( bitstream.read( 1 ) );
+    gfp.setGeometrySmoothingEnabledFlag( bitstream.read( 1 ) );// u(1)
     if(gfp.getGeometrySmoothingEnabledFlag())
     {
-      gfp.setGeometrySmoothingGridSize( bitstream.read( 8 ) );
-      gfp.setGeometrySmoothingThreshold( bitstream.read( 8 ) );
+      gfp.setGeometrySmoothingGridSize( bitstream.read( 8 ) );// u(8)
+      gfp.setGeometrySmoothingThreshold( bitstream.read( 8 ) ); // u(8) 
     }
   }
   if(gfp.getGeometryScaleParamsPresentFlag())
   {
     for( size_t d = 0; d < 3; d++)
     {
-      gfp.setGeometryScaleOnAxis(d, bitstream.read( 32 )); //      gfp_geometry_scale_on_axis[ d ]  u(32)
+      gfp.setGeometryScaleOnAxis(d, bitstream.read( 32 )); // u(32)
     }
   }
   if(gfp.getGeometryOffsetParamsPresentFlag())
   {
     for( size_t d = 0; d < 3; d++)
     {
-      gfp.setGeometryOffsetOnAxis(d, convertToInt(bitstream.read(32)) ) ; //i32
+      gfp.setGeometryOffsetOnAxis(d, convertToInt(bitstream.read(32)) ) ; // i(32)
     }
   }
   if(gfp.getGeometryRotationParamsPresentFlag())
   {
     for( size_t d = 0; d < 3; d++)
     {
-      gfp.setGeometryRotationOnAxis(d, convertToInt(bitstream.read(32))); //i32
+      gfp.setGeometryRotationOnAxis(d, convertToInt(bitstream.read(32))); //i(32)
     }
   }
   if(gfp.getGeometryPointSizeInfoPresentFlag())
   {
-    gfp.setGeometryPointSizeInfo( bitstream.read(16) );
+    gfp.setGeometryPointSizeInfo( bitstream.read(16) ); // u(16) 
   }
   if(gfp.getGeometryPointShapeInfoPresentFlag())
   {
-    gfp.setGeometryPointShapeInfo( bitstream.read(4) );
+    gfp.setGeometryPointShapeInfo( bitstream.read(4) ); // u(4) 
   }
 }
+
 /**********************************************************************/
 /* 2019.02.RC5                                                        */
 /* ISO/IEC 23090-5:2019(E) d19                                        */
@@ -663,10 +664,10 @@ void PCCBitstreamDecoderNewSyntax::geometryPatchParams( GeometryPatchParams&    
   }
   if( gfps.getGeometryPatchPointShapeInfoEnabledFlag() )
   {
-    gpp.setGeometryPatchPointShapeInfoPresentFlag( bitstream.read(1) );
+    gpp.setGeometryPatchPointShapeInfoPresentFlag( bitstream.read(1) ); 
     if( gpp.getGeometryPatchPointShapeInfoPresentFlag() )
     {
-      gpp.setGeometryPatchPointShapeInfo( bitstream.read(4) );
+      gpp.setGeometryPatchPointShapeInfo( bitstream.read(4) ); 
     }
   }
   

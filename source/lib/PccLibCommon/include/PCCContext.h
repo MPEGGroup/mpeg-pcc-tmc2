@@ -195,7 +195,7 @@ class GeometrySequenceParams {
   int32_t  getGeometryOffsetOnAxis( int index ) { return geometryOffsetOnAxis_[index]; }
   int32_t  getGeometryRotationOnAxis( int index ) { return geometryRotationOnAxis_[index]; }
   uint16_t getGeometryPointSizeInfo() { return geometryPointSizeInfo_; }
-  uint     getGeometryPointShapeInfo() { return geometryPointShapeInfo_; }
+  uint8_t  getGeometryPointShapeInfo() { return geometryPointShapeInfo_; }
 
   void setGeometrySmoothingParamsPresentFlag( bool flag ) {
     geometrySmoothingParamsPresentFlag_ = flag;
@@ -224,7 +224,7 @@ class GeometrySequenceParams {
     geometryRotationOnAxis_[index] = rotation;
   }
   void setGeometryPointSizeInfo( uint16_t pointSize ) { geometryPointSizeInfo_ = pointSize; }
-  void setGeometryPointShapeInfo( uint pointShape ) { geometryPointShapeInfo_ = pointShape; }
+  void setGeometryPointShapeInfo( uint8_t pointShape ) { geometryPointShapeInfo_ = pointShape; }
 
  private:
   bool     geometrySmoothingParamsPresentFlag_;
@@ -240,7 +240,7 @@ class GeometrySequenceParams {
   int32_t  geometryOffsetOnAxis_[3];    // i32
   int32_t  geometryRotationOnAxis_[3];  // i32
   uint16_t geometryPointSizeInfo_;      // u16
-  uint     geometryPointShapeInfo_;     // u4
+  uint8_t  geometryPointShapeInfo_;     // u4
 };
 
 /**********************************************************************/
@@ -376,7 +376,7 @@ class AttributeSequenceParams {
             uint8_t smoothingNeighbourCount,
             uint8_t smoothingRadius2BoundaryDetection,
             uint8_t smoothingThreshold,
-            uint smoothingThresholdLocalEntropy)
+            uint8_t smoothingThresholdLocalEntropy)
   {
     attributeSmoothingParamsPresentFlag_=smoothingParamsPresentFlag;
     attributeScaleParamsPresentFlag_=scaleParamsPresentFlag;
@@ -397,7 +397,7 @@ class AttributeSequenceParams {
     return attributeSmoothingRadius2BoundaryDetection_;
   }
   uint8_t getAttributeSmoothingThreshold() { return attributeSmoothingThreshold_; }
-  uint    getAttributeSmoothingThresholdLocalEntropy() {
+  uint8_t getAttributeSmoothingThresholdLocalEntropy() {
     return attributeSmoothingThresholdLocalEntropy_;
   }
   std::vector<uint32_t>& getAttributeScaleParams() { return attributeScale_; }
@@ -420,7 +420,7 @@ class AttributeSequenceParams {
   void setAttributeSmoothingThreshold( uint8_t threshold ) {
     attributeSmoothingThreshold_ = threshold;
   }
-  void setAttributeSmoothingThresholdLocalEntropy( uint localEntropy ) {
+  void setAttributeSmoothingThresholdLocalEntropy( uint8_t localEntropy ) {
     attributeSmoothingThresholdLocalEntropy_ = localEntropy;
   }
   void setAttributeScaleParams( std::vector<uint32_t> params ) { attributeScale_ = params; }
@@ -438,7 +438,7 @@ class AttributeSequenceParams {
   uint8_t               attributeSmoothingNeighbourCount_;
   uint8_t               attributeSmoothingRadius2BoundaryDetection_;
   uint8_t               attributeSmoothingThreshold_;
-  uint                  attributeSmoothingThresholdLocalEntropy_;  // u3
+  uint8_t               attributeSmoothingThresholdLocalEntropy_;  // u3
   std::vector<uint32_t> attributeScale_;
   std::vector<int32_t>  attributeOffset_;
 };
@@ -542,7 +542,7 @@ class GeometryFrameParams {
     int32_t  getGeometryOffsetOnAxis(size_t index)   { return geometryOffsetOnAxis_[index];}
     int32_t  getGeometryRotationOnAxis(size_t index) { return geometryRotationOnAxis_[index];}
     uint16_t getGeometryPointSizeInfo()              { return geometryPointSizeInfo_;}
-    uint     getGeometryPointShapeInfo()             { return geometryPointShapeInfo_;}
+    uint8_t     getGeometryPointShapeInfo()             { return geometryPointShapeInfo_;}
     
     void  setGeometrySmoothingParamsPresentFlag(bool flag) { geometrySmoothingParamsPresentFlag_=flag;}
     void  setGeometryScaleParamsPresentFlag(bool flag)     { geometryScaleParamsPresentFlag_=flag;}
@@ -557,7 +557,7 @@ class GeometryFrameParams {
     void  setGeometryOffsetOnAxis(size_t index, int32_t offset)     { geometryOffsetOnAxis_[index]=offset;}
     void  setGeometryRotationOnAxis(size_t index, int32_t rotation) { geometryRotationOnAxis_[index]=rotation;}
     void  setGeometryPointSizeInfo(uint16_t pointSize)              { geometryPointSizeInfo_=pointSize;}
-    void  setGeometryPointShapeInfo(uint pointShape)                { geometryPointShapeInfo_=pointShape;}
+    void  setGeometryPointShapeInfo(uint8_t pointShape)                { geometryPointShapeInfo_=pointShape;}
     
   private:
     
@@ -574,7 +574,7 @@ class GeometryFrameParams {
     int32_t  geometryOffsetOnAxis_[3];  //i(32)
     int32_t  geometryRotationOnAxis_[3]; // i(32)
     uint16_t geometryPointSizeInfo_;  // u(16)
-    uint     geometryPointShapeInfo_; // u(4) ??
+    uint8_t     geometryPointShapeInfo_; // u(4) ??
 };
 
 /**********************************************************************/
@@ -669,7 +669,7 @@ class AttributeFrameParams {
   uint8_t getAttributeSmoothingNeighbourCount()           { return attributeSmoothingNeighbourCount_; }
   uint8_t getAttributeSmoothingRadius2BoundaryDetection() { return attributeSmoothingRadius2BoundaryDetection_; }
   uint8_t getAttributeSmoothingThreshold()                { return attributeSmoothingThreshold_; }
-  uint    getAttributeSmoothingThresholdLocalEntropy()    { return attributeSmoothingThresholdLocalEntropy_; } //u3
+  uint8_t getAttributeSmoothingThresholdLocalEntropy()    { return attributeSmoothingThresholdLocalEntropy_; } //u3
   std::vector<uint32_t> getAttributeScale()               { return attributeScale_; }
   std::vector<int32_t>  getAttributeOffset()              { return attributeOffset_; }
   uint32_t              getAttributeScale(size_t index)   { return attributeScale_[index]; }
@@ -697,7 +697,7 @@ class AttributeFrameParams {
   uint8_t               attributeSmoothingNeighbourCount_;
   uint8_t               attributeSmoothingRadius2BoundaryDetection_;
   uint8_t               attributeSmoothingThreshold_;
-  uint                  attributeSmoothingThresholdLocalEntropy_;  // u3
+  uint8_t               attributeSmoothingThresholdLocalEntropy_;  // u3
   std::vector<uint32_t> attributeScale_;
   std::vector<int32_t>  attributeOffset_;
   size_t                attributeDimension_;
@@ -784,7 +784,7 @@ class GeometryPatchParams {
   int32_t  getGeometryPatchOffsetOnAxis(size_t index)   { return geometryPatchOffsetOnAxis_[index];}
   int32_t  getGeometryPatchRotationOnAxis(size_t index) { return geometryPatchRotationOnAxis_[index];}
   uint16_t getGeometryPatchPointSizeInfo()  { return geometryPatchPointSizeInfo_;}
-  uint     getGeometryPatchPointShapeInfo() { return geometryPatchPointShapeInfo_;}
+  uint8_t  getGeometryPatchPointShapeInfo() { return geometryPatchPointShapeInfo_;}
   
   void setGeometryPatchScaleParamsPresentFlag(bool flag)    { geometryPatchScaleParamsPresentFlag_=flag;}
   void setGeometryPatchOffsetParamsPresentFlag(bool flag)   { geometryPatchOffsetParamsPresentFlag_=flag;}
@@ -795,19 +795,19 @@ class GeometryPatchParams {
   void setGeometryPatchOffsetOnAxis(size_t index, int32_t offset)     { geometryPatchOffsetOnAxis_[index]=offset;}
   void setGeometryPatchRotationOnAxis(size_t index, int32_t rotation) { geometryPatchRotationOnAxis_[index]=rotation;}
   void setGeometryPatchPointSizeInfo(uint16_t pointSize) { geometryPatchPointSizeInfo_=pointSize;}
-  void setGeometryPatchPointShapeInfo(uint pointShape)   { geometryPatchPointShapeInfo_=pointShape;}
-  
-  private:
-  bool geometryPatchScaleParamsPresentFlag_;
-  bool geometryPatchOffsetParamsPresentFlag_;
-  bool geometryPatchRotationParamsPresentFlag_;
-  bool geometryPatchPointSizeInfoPresentFlag_;
-  bool geometryPatchPointShapeInfoPresentFlag_;
-  uint32_t geometryPatchScaleOnAxis_[ 3 ];  //u(32)
-  int32_t  geometryPatchOffsetOnAxis_[ 3 ];  //i(32)
-  int32_t  geometryPatchRotationOnAxis_[ 3 ];  //i(32)
-  uint16_t geometryPatchPointSizeInfo_;  //u(16)
-  uint     geometryPatchPointShapeInfo_;  //u(4)
+  void setGeometryPatchPointShapeInfo(uint8_t pointShape)   { geometryPatchPointShapeInfo_=pointShape;}
+
+ private:
+  bool     geometryPatchScaleParamsPresentFlag_;
+  bool     geometryPatchOffsetParamsPresentFlag_;
+  bool     geometryPatchRotationParamsPresentFlag_;
+  bool     geometryPatchPointSizeInfoPresentFlag_;
+  bool     geometryPatchPointShapeInfoPresentFlag_;
+  uint32_t geometryPatchScaleOnAxis_[3];     // u(32)
+  int32_t  geometryPatchOffsetOnAxis_[3];    // i(32)
+  int32_t  geometryPatchRotationOnAxis_[3];  // i(32)
+  uint16_t geometryPatchPointSizeInfo_;      // u(16)
+  uint8_t  geometryPatchPointShapeInfo_;     // u(4)
 };
 
 /**********************************************************************/
@@ -1223,30 +1223,27 @@ class SequenceParameterSet {
   }
   
   SequenceParameterSet& operator=( const SequenceParameterSet& ) = default;
-  void init(
-            uint sequenceParameterSetId,
-            uint16_t frameWidth,
-            uint16_t frameHeight,
-            uint16_t avgFrameRate,
-            uint layerCountMinus1,
-            uint16_t attributeCount,
-            bool avgFrameRatePresentFlag,
-            bool enhancedOccupancyMapForDepthFlag,
-            bool multipleLayerStreamsPresentFlag,
-            bool pcmPatchEnabledFlag,
-            bool pcmSeparateVideoPresentFlag,
-            bool patchSequenceOrientationEnabledFlag,
-            bool patchInterPredictionEnabledFlag,
-            bool pixelDeinterleavingFlag,
-            bool pointLocalReconstructionEnabledFlag,
-            bool removeDuplicatePointEnabledFlag
-            )
-  {
+  void                  init( uint8_t  sequenceParameterSetId,
+                              uint16_t frameWidth,
+                              uint16_t frameHeight,
+                              uint16_t avgFrameRate,
+                              uint8_t  layerCountMinus1,
+                              uint16_t attributeCount,
+                              bool     avgFrameRatePresentFlag,
+                              bool     enhancedOccupancyMapForDepthFlag,
+                              bool     multipleLayerStreamsPresentFlag,
+                              bool     pcmPatchEnabledFlag,
+                              bool     pcmSeparateVideoPresentFlag,
+                              bool     patchSequenceOrientationEnabledFlag,
+                              bool     patchInterPredictionEnabledFlag,
+                              bool     pixelDeinterleavingFlag,
+                              bool     pointLocalReconstructionEnabledFlag,
+                              bool     removeDuplicatePointEnabledFlag ) {
     sequenceParameterSetId_= sequenceParameterSetId;
     frameWidth_= frameWidth;
     frameHeight_= frameHeight ;
     avgFrameRate_=avgFrameRate ;
-    layerCountMinus1_=layerCountMinus1 ;
+    layerCountMinus1_ = layerCountMinus1 ;
     attributeCount_=attributeCount ;
     avgFrameRatePresentFlag_=avgFrameRatePresentFlag ;
     enhancedOccupancyMapForDepthFlag_= enhancedOccupancyMapForDepthFlag ;
@@ -1262,11 +1259,11 @@ class SequenceParameterSet {
     allocateAttributeParameterSets();
   }
   
-  uint     getSequenceParameterSetId() { return sequenceParameterSetId_; }
+  uint8_t  getSequenceParameterSetId() { return sequenceParameterSetId_; }
   uint16_t getFrameWidth() { return frameWidth_; }
   uint16_t getFrameHeight() { return frameHeight_; }
   uint16_t getAvgFrameRate() { return avgFrameRate_; }
-  uint     getLayerCountMinus1() { return layerCountMinus1_; }
+  uint8_t  getLayerCountMinus1() { return layerCountMinus1_; }
   uint16_t getAttributeCount() { return attributeCount_; }
   bool     getAvgFrameRatePresentFlag() { return avgFrameRatePresentFlag_; }
   bool     getEnhancedOccupancyMapForDepthFlag() { return enhancedOccupancyMapForDepthFlag_; }
@@ -1288,7 +1285,7 @@ class SequenceParameterSet {
   }
   AttributeParameterSet&              getAttributeParameterSet( size_t attributeIndex ) { return attributeParameterSets_[attributeIndex]; }
 
-  void setSequenceParameterSetId( uint idx ) { sequenceParameterSetId_ = idx; }
+  void setSequenceParameterSetId( uint8_t idx ) { sequenceParameterSetId_ = idx; }
   void setFrameWidth( uint16_t width ) { frameWidth_ = width; }
   void setFrameHeight( uint16_t height ) { frameHeight_ = height; }
   void setAvgFrameRate( uint16_t frameRate ) { avgFrameRate_ = frameRate; }
@@ -1326,11 +1323,11 @@ class SequenceParameterSet {
   void allocateAttributeParameterSets() { attributeParameterSets_.resize( attributeCount_ ); }
 
  private:
-  uint                  sequenceParameterSetId_;
+  uint8_t               sequenceParameterSetId_;
   uint16_t              frameWidth_;
   uint16_t              frameHeight_;
   uint16_t              avgFrameRate_;
-  uint                  layerCountMinus1_;  /// sps_layer_count_minus1 u(4)
+  uint8_t               layerCountMinus1_;  /// sps_layer_count_minus1 u(4)
   uint16_t              attributeCount_;
   bool                  avgFrameRatePresentFlag_;
   bool                  enhancedOccupancyMapForDepthFlag_;
