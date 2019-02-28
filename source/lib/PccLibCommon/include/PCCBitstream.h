@@ -49,6 +49,7 @@ class PCCBitstream {
  public:
   PCCBitstream();
   ~PCCBitstream();
+  bool initialize( const PCCBitstream& bitstream );
   bool initialize( std::string compressedStreamPath );
   void initialize( uint64_t capacity ) { data_.resize( capacity, 0 ); }
   bool write( std::string compressedStreamPath );
@@ -127,6 +128,36 @@ class PCCBitstream {
   }
   //~deprecated
 
+#ifdef BITSTREAM_TRACE
+
+  template <typename... Args>
+  void trace( const char* pFormat, Args... eArgs ) {
+    if ( trace_ ) {
+      FILE* output = traceFile_ ? traceFile_ : stdout;
+      fprintf( output, "[%6lu - %2lu]: ", position_.bytes, position_.bits );
+      fprintf( output, pFormat, eArgs... );
+      fflush( output );
+    }
+  }
+  void setTrace( bool trace ){ trace_ = trace; }
+  bool getTrace(){ return trace_; }
+  bool openTrace( std::string file ) {
+    if ( traceFile_ ) {
+      fclose( traceFile_ );
+      traceFile_ = NULL;
+    }
+    if( ( traceFile_ = fopen( file.c_str(), "w" ) ) == NULL ) {
+      return false;
+    }
+    return true;
+  }
+  void closeTrace() {
+    if ( traceFile_ ) {
+      fclose( traceFile_ );
+      traceFile_ = NULL;
+    }
+  }
+#endif
 private: 
   uint32_t read( uint8_t bits, PCCBistreamPosition &pos );
   void write( uint32_t value, uint8_t bits, PCCBistreamPosition &pos );
@@ -140,6 +171,11 @@ private:
   std::vector<uint8_t> data_;
   PCCBistreamPosition  position_;
   PCCBistreamPosition  totalSizeIterator_;
+
+#ifdef BITSTREAM_TRACE
+  bool trace_;
+  FILE* traceFile_;
+#endif
 };
 
 }  // namespace pcc

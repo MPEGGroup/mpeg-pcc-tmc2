@@ -40,8 +40,23 @@ PCCBitstream::PCCBitstream() {
   position_.bytes = 0;
   position_.bits  = 0;
   data_.clear();
+#ifdef BITSTREAM_TRACE
+  trace_     = false;
+  traceFile_ = NULL;
+#endif
 }
+
 PCCBitstream::~PCCBitstream() { data_.clear(); }
+
+
+bool PCCBitstream::initialize( const PCCBitstream& bitstream ) {
+  position_.bytes = 0;
+  position_.bits  = 0;
+  data_.resize( bitstream.data_.size(), 0 );
+  memcpy( data_.data(), bitstream.data_.data(), bitstream.data_.size() ); 
+  return true;
+}
+
 
 bool PCCBitstream::initialize( std::string compressedStreamPath ) {
   std::ifstream fin( compressedStreamPath, std::ios::binary );
@@ -68,7 +83,9 @@ bool PCCBitstream::write( std::string compressedStreamPath ) {
 
 // Must be moved in PccEncoderBitstream and PccDeccoderBitstream.
 bool PCCBitstream::readHeader( PCCMetadataEnabledFlags& gofLevelMetadataEnabledFlags ) {
-  0;
+#ifdef BITSTREAM_TRACE
+  trace("Code: header \n"); 
+#endif
   uint64_t totalSize            = 0;
   uint32_t containerMagicNumber = read<uint32_t>();
   if ( containerMagicNumber != PCCTMC2ContainerMagicNumber ) { return false; }
@@ -91,6 +108,9 @@ bool PCCBitstream::readHeader( PCCMetadataEnabledFlags& gofLevelMetadataEnabledF
 }
 
 void PCCBitstream::writeHeader( const PCCMetadataEnabledFlags& gofLevelMetadataEnabledFlags ) {
+#ifdef BITSTREAM_TRACE
+  trace("Code: header \n"); 
+#endif
   write<uint32_t>( PCCTMC2ContainerMagicNumber );
   write<uint32_t>( PCCTMC2ContainerVersion );
   totalSizeIterator_ = getPosition();
@@ -117,7 +137,11 @@ void PCCBitstream::writeUvlc( uint32_t code ) {
   }
   write( 0, length >> 1, position_ );
   write( code, ( length + 1 ) >> 1, position_ );
+#ifdef BITSTREAM_TRACE
+  trace("Code: Uvlc : %4lu \n",code) ; 
+#endif
 }
+
 uint32_t PCCBitstream::readUvlc() {
   uint32_t value = 0, code = 0, length = 0;
   code = read( 1, position_ );
@@ -129,14 +153,26 @@ uint32_t PCCBitstream::readUvlc() {
     value = read( length, position_ );
     value += ( 1 << length ) - 1;
   }
+#ifdef BITSTREAM_TRACE
+  trace("Code: Uvlc : %4lu \n",value) ; 
+#endif
   return value;
 }
 
 void PCCBitstream::writeSvlc( int32_t code ) {
   writeUvlc( ( uint32_t )( code <= 0 ) ? -code << 1 : ( code << 1 ) - 1 );
+#ifdef BITSTREAM_TRACE
+  trace("Code: Svlc : %4d \n",code) ; 
+#endif
 }
 int32_t PCCBitstream::readSvlc() {
   uint32_t bits = readUvlc();
+#ifdef BITSTREAM_TRACE
+  if( trace_ ) {
+     fprintf(traceFile_?traceFile_:stdout,"Code: Svlc : %4d \n", ( bits & 1 ) ? -( int32_t )( bits >> 1 ) : ( int32_t )( bits >> 1 )) ;
+     fflush(stdout); 
+  }
+#endif
   return ( bits & 1 ) ? -( int32_t )( bits >> 1 ) : ( int32_t )( bits >> 1 );
 }
 void PCCBitstream::read( PCCVideoBitstream& videoBitstream ) {
@@ -145,11 +181,17 @@ void PCCBitstream::read( PCCVideoBitstream& videoBitstream ) {
   memcpy( videoBitstream.buffer(), data_.data() + position_.bytes, size );
   videoBitstream.trace();
   position_.bytes += size;
+#ifdef BITSTREAM_TRACE
+  trace("Code: video : %4lu \n",size) ; 
+#endif
 }
 
 void PCCBitstream::write( PCCVideoBitstream& videoBitstream ) {
   writeBuffer( videoBitstream.buffer(), videoBitstream.size() );
   videoBitstream.trace();
+#ifdef BITSTREAM_TRACE
+  trace("Code: video : %4lu \n",videoBitstream.size() ) ; 
+#endif
 }
 
 void PCCBitstream::writeBuffer( const uint8_t* data, const size_t size ) {
@@ -159,8 +201,19 @@ void PCCBitstream::writeBuffer( const uint8_t* data, const size_t size ) {
   position_.bytes += size;
 }
 
-uint32_t PCCBitstream::read( uint8_t bits ) { return read( bits, position_ ); }
-void     PCCBitstream::write( uint32_t value, uint8_t bits ) { write( value, bits, position_ ); }
+uint32_t PCCBitstream::read( uint8_t bits ) { 
+  uint32_t code = read( bits, position_ ); 
+#ifdef BITSTREAM_TRACE
+  trace("Code: %5lu : %4lu \n", bits, code ) ; 
+#endif
+  return code;   
+}
+void     PCCBitstream::write( uint32_t value, uint8_t bits ) { 
+  write( value, bits, position_ ); 
+#ifdef BITSTREAM_TRACE
+  trace("Code: %5lu : %4lu \n",bits, value ) ; 
+#endif
+}
 
 void PCCBitstream::align() { align( position_ ); }
 void PCCBitstream::align( PCCBistreamPosition& pos ) {

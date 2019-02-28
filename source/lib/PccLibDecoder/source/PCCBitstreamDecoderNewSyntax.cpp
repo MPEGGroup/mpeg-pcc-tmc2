@@ -60,6 +60,9 @@ int PCCBitstreamDecoderNewSyntax::decode( PCCContext& context, PCCBitstream& bit
 void PCCBitstreamDecoderNewSyntax::vpccVideoDataUnit( PCCContext&   context,
                                                       PCCBitstream& bitstream,
                                                       VPCCUnitType& vpccUnitType ) {
+#ifdef BITSTREAM_TRACE
+  bitstream.trace("%s \n", __func__ );
+#endif  
   if ( vpccUnitType == VPCC_OVD ) {
     bitstream.read( context.getVideoBitstream( PCCVideoType::OccupancyMap ) );
   } else if ( vpccUnitType == VPCC_GVD ) {
@@ -98,6 +101,9 @@ uint32_t PCCBitstreamDecoderNewSyntax::DecodeUInt32( const uint32_t           bi
 void PCCBitstreamDecoderNewSyntax::vpccUnit( PCCContext&   context,
                                              PCCBitstream& bitstream,
                                              VPCCUnitType& vpccUnitType ) {
+#ifdef BITSTREAM_TRACE
+  bitstream.trace("%s \n", __func__ );
+#endif  
   // jkei[?]would vpccUnitType=vpccUnitHeader( context, bitstream) be more straightfoward?? but
   // current one looks prettier...
   vpccUnitHeader( context, bitstream, vpccUnitType );   // jkei[!] vpccUnitType : output
@@ -108,6 +114,9 @@ void PCCBitstreamDecoderNewSyntax::vpccUnit( PCCContext&   context,
 void PCCBitstreamDecoderNewSyntax::vpccUnitHeader( PCCContext&   context,
                                                    PCCBitstream& bitstream,
                                                    VPCCUnitType& vpccUnitType ) {
+#ifdef BITSTREAM_TRACE
+  bitstream.trace("%s \n", __func__ );
+#endif  
   auto& vpcc   = context.getVPCC();
   auto& sps    = context.getSps();
   vpccUnitType = (VPCCUnitType)bitstream.read( 5 );  // u(5)
@@ -141,6 +150,9 @@ void PCCBitstreamDecoderNewSyntax::vpccUnitHeader( PCCContext&   context,
 void PCCBitstreamDecoderNewSyntax::pcmSeparateVideoData( PCCContext&   context,
                                                          PCCBitstream& bitstream,
                                                          uint8_t       bitCount ) {
+#ifdef BITSTREAM_TRACE
+  bitstream.trace("%s \n", __func__ );
+#endif  
   auto& vpcc = context.getVPCC();
   auto& sps  = context.getSps();
   if ( sps.getPcmSeparateVideoPresentFlag() && !vpcc.getLayerIndex() ) {
@@ -155,6 +167,9 @@ void PCCBitstreamDecoderNewSyntax::pcmSeparateVideoData( PCCContext&   context,
 void PCCBitstreamDecoderNewSyntax::vpccUnitPayload( PCCContext&   context,
                                                     PCCBitstream& bitstream,
                                                     VPCCUnitType& vpccUnitType ) {
+#ifdef BITSTREAM_TRACE
+  bitstream.trace("%s \n", __func__ );
+#endif  
   auto& sps  = context.getSps();  // jkei[!] just for consistancy
   auto& psdu = context.getPatchSequenceDataUnit();
   if ( vpccUnitType == VPCC_SPS ) {
@@ -169,6 +184,9 @@ void PCCBitstreamDecoderNewSyntax::vpccUnitPayload( PCCContext&   context,
 // 7.3.6 Sequence parameter set syntax
 void PCCBitstreamDecoderNewSyntax::sequenceParameterSet( SequenceParameterSet& sps,
                                                          PCCBitstream&         bitstream ) {
+#ifdef BITSTREAM_TRACE
+  bitstream.trace("%s \n", __func__ );
+#endif  
   profileTierLevel( sps.getProfileTierLevel(), bitstream );
 
   sps.setSequenceParameterSetId( bitstream.read( 4 ) );   // u(4)
@@ -218,6 +236,9 @@ void PCCBitstreamDecoderNewSyntax::sequenceParameterSet( SequenceParameterSet& s
 
 // 7.3.7 Byte alignment syntax
 void PCCBitstreamDecoderNewSyntax::byteAlignment( PCCBitstream& bitstream ) {
+#ifdef BITSTREAM_TRACE
+  bitstream.trace("%s \n", __func__ );
+#endif  
   bitstream.read( 1 );  // f(1): equal to 1
   while ( !bitstream.byteAligned() ) {
     bitstream.read( 1 );  // f(1): equal to 0
@@ -227,6 +248,9 @@ void PCCBitstreamDecoderNewSyntax::byteAlignment( PCCBitstream& bitstream ) {
 // 7.3.8 Profile, tier, and level syntax
 void PCCBitstreamDecoderNewSyntax::profileTierLevel( ProfileTierLevel& ptl,
                                                      PCCBitstream&     bitstream ) {
+#ifdef BITSTREAM_TRACE
+  bitstream.trace("%s \n", __func__ );
+#endif  
   ptl.setTierFlag( bitstream.read( 1 ) );    // u(1)
   ptl.setProfileIdc( bitstream.read( 1 ) );  // u(7)
   bitstream.read( 48 );                      // u(48)
@@ -236,6 +260,9 @@ void PCCBitstreamDecoderNewSyntax::profileTierLevel( ProfileTierLevel& ptl,
 // 7.3.9 Occupancy parameter set syntax
 void PCCBitstreamDecoderNewSyntax::occupancyParameterSet( OccupancyParameterSet& ops,
                                                           PCCBitstream&          bitstream ) {
+#ifdef BITSTREAM_TRACE
+  bitstream.trace("%s \n", __func__ );
+#endif  
   ops.setOccupancyCodecId( bitstream.read( 8 ) );           // u(8)
   ops.setOccupancyPackingBlockSize( bitstream.read( 8 ) );  // u(8)
 }
@@ -244,6 +271,9 @@ void PCCBitstreamDecoderNewSyntax::occupancyParameterSet( OccupancyParameterSet&
 void PCCBitstreamDecoderNewSyntax::geometryParameterSet( GeometryParameterSet& gps,
                                                          SequenceParameterSet& sps,
                                                          PCCBitstream&         bitstream ) {
+#ifdef BITSTREAM_TRACE
+  bitstream.trace("%s \n", __func__ );
+#endif  
   gps.setGeometryCodecId( bitstream.read( 8 ) );  // u(8)
   gps.setGeometryNominal2dBitdepthMinus1( bitstream.read( 5 ) );      // u(5)
   gps.setGeometry3dCoordinatesBitdepthMinus1( bitstream.read( 5 ) );  // u(5)
@@ -254,7 +284,15 @@ void PCCBitstreamDecoderNewSyntax::geometryParameterSet( GeometryParameterSet& g
   if ( gps.getGeometryParamsEnabledFlag() ) {
     geometrySequenceParams( gps.getGeometrySequenceParams(), bitstream );
   }
+  
+#ifdef BITSTREAM_TRACE
+  bitstream.trace("%s here \n", __func__ );
+#endif  
   gps.setGeometryPatchParamsEnabledFlag( bitstream.read( 1 ) );  // u(1)
+  
+#ifdef BITSTREAM_TRACE
+  bitstream.trace("%s here 2 \n", __func__ );
+#endif  
   if ( gps.getGeometryPatchParamsEnabledFlag() ) {
     gps.setGeometryPatchScaleParamsEnabledFlag( bitstream.read( 1 ) );     // u(1)
     gps.setGeometryPatchOffsetParamsEnabledFlag( bitstream.read( 1 ) );    // u(1)
@@ -267,6 +305,9 @@ void PCCBitstreamDecoderNewSyntax::geometryParameterSet( GeometryParameterSet& g
 // 7.3.11 Geometry sequence Params syntax
 void PCCBitstreamDecoderNewSyntax::geometrySequenceParams( GeometrySequenceParams& gsp,
                                                            PCCBitstream&           bitstream ) {
+#ifdef BITSTREAM_TRACE
+  bitstream.trace("%s \n", __func__ );
+#endif  
   gsp.setGeometrySmoothingParamsPresentFlag( bitstream.read( 1 ) );  // u(1)
   gsp.setGeometryScaleParamsPresentFlag( bitstream.read( 1 ) );      // u(1)
   gsp.setGeometryOffsetParamsPresentFlag( bitstream.read( 1 ) );     // u(1)
@@ -307,6 +348,9 @@ void PCCBitstreamDecoderNewSyntax::geometrySequenceParams( GeometrySequenceParam
 void PCCBitstreamDecoderNewSyntax::attributeParameterSet( AttributeParameterSet& aps,
                                                           SequenceParameterSet&  sps,
                                                           PCCBitstream&          bitstream ) {
+#ifdef BITSTREAM_TRACE
+  bitstream.trace("%s \n", __func__ );
+#endif  
   aps.setAttributeTypeId( bitstream.read( 4 ) );           // u(4)
   aps.setAttributeDimensionMinus1( bitstream.read( 8 ) );  // u(8)
   aps.setAttributeCodecId( bitstream.read( 8 ) );          // u(8)
@@ -329,6 +373,9 @@ void PCCBitstreamDecoderNewSyntax::attributeParameterSet( AttributeParameterSet&
 void PCCBitstreamDecoderNewSyntax::attributeSequenceParams( AttributeSequenceParams& asp,
                                                             uint8_t                  dimension,
                                                             PCCBitstream&            bitstream ) {
+#ifdef BITSTREAM_TRACE
+  bitstream.trace("%s \n", __func__ );
+#endif  
   asp.setAttributeSmoothingParamsPresentFlag( bitstream.read( 1 ) );  // u(1)
   asp.setAttributeScaleParamsPresentFlag( bitstream.read( 1 ) );      // u(1)
   asp.setAttributeOffsetParamsPresentFlag( bitstream.read( 1 ) );     // u(1)
@@ -357,6 +404,9 @@ void PCCBitstreamDecoderNewSyntax::attributeSequenceParams( AttributeSequencePar
 void PCCBitstreamDecoderNewSyntax::patchSequenceDataUnit( PatchSequenceDataUnit& psdu,
                                                           SequenceParameterSet&  sps,
                                                           PCCBitstream&          bitstream ) {
+#ifdef BITSTREAM_TRACE
+  bitstream.trace("%s \n", __func__ );
+#endif  
   psdu.setFrameCount( 0 );
   bool terminatePatchSequenceInformationFlag = false;
   while ( !terminatePatchSequenceInformationFlag ) {
@@ -375,6 +425,9 @@ void PCCBitstreamDecoderNewSyntax::patchSequenceDataUnit( PatchSequenceDataUnit&
 void PCCBitstreamDecoderNewSyntax::patchSequenceUnitPayload( PatchSequenceUnitPayload& psup,
                                                              SequenceParameterSet&     sps,
                                                              PCCBitstream&             bitstream ) {
+#ifdef BITSTREAM_TRACE
+  bitstream.trace("%s \n", __func__ );
+#endif  
   if ( psup.getUnitType() == PSD_SPS ) {
     patchSequenceParameterSet( psup.getPatchSequenceParameterSet(), bitstream );
   } else if ( psup.getUnitType() == PSD_GPPS ) {
@@ -404,6 +457,9 @@ void PCCBitstreamDecoderNewSyntax::patchSequenceUnitPayload( PatchSequenceUnitPa
 // 7.3.16 Patch sequence parameter set syntax
 void PCCBitstreamDecoderNewSyntax::patchSequenceParameterSet( PatchSequenceParameterSet& psps,
                                                               PCCBitstream& bitstream ) {
+#ifdef BITSTREAM_TRACE
+  bitstream.trace("%s \n", __func__ );
+#endif  
   psps.setPatchSequenceParameterSetId( bitstream.readUvlc() );         // ue(v)
   psps.setLog2MaxPatchFrameOrderCntLsbMinus4( bitstream.readUvlc() );  // ue(v)
   psps.setMaxDecPatchFrameBufferingMinus1( bitstream.readUvlc() );     // ue(v)
@@ -419,6 +475,9 @@ void PCCBitstreamDecoderNewSyntax::patchSequenceParameterSet( PatchSequenceParam
 void PCCBitstreamDecoderNewSyntax::geometryFrameParameterSet( GeometryFrameParameterSet& gfps,
                                                               GeometryParameterSet&      gps,
                                                               PCCBitstream& bitstream ) {
+#ifdef BITSTREAM_TRACE
+  bitstream.trace("%s \n", __func__ );
+#endif  
   gfps.setGeometryFrameParameterSetId( bitstream.readUvlc() );  // ue(v)
   gfps.setPatchSequenceParameterSetId( bitstream.readUvlc() );  // ue(v)
   if ( gps.getGeometryParamsEnabledFlag() ) {
@@ -444,6 +503,9 @@ void PCCBitstreamDecoderNewSyntax::geometryFrameParameterSet( GeometryFrameParam
 // 7.3.18 Geometry frame Params syntax
 void PCCBitstreamDecoderNewSyntax::geometryFrameParams( GeometryFrameParams& gfp,
                                                         PCCBitstream&        bitstream ) {
+#ifdef BITSTREAM_TRACE
+  bitstream.trace("%s \n", __func__ );
+#endif  
   gfp.setGeometrySmoothingParamsPresentFlag( bitstream.read( 1 ) );  // u(1)
   gfp.setGeometryScaleParamsPresentFlag( bitstream.read( 1 ) );      // u(1)
   gfp.setGeometryOffsetParamsPresentFlag( bitstream.read( 1 ) );     // u(1)
@@ -485,6 +547,9 @@ void PCCBitstreamDecoderNewSyntax::geometryFrameParams( GeometryFrameParams& gfp
 void PCCBitstreamDecoderNewSyntax::attributeFrameParameterSet( AttributeFrameParameterSet& afps,
                                                                AttributeParameterSet&      aps,
                                                                PCCBitstream& bitstream ) {
+#ifdef BITSTREAM_TRACE
+  bitstream.trace("%s \n", __func__ );
+#endif  
   // jkei : this is attributeIndex-th afps
   afps.setAttributeFrameParameterSetId( bitstream.readUvlc() );  // ue(v)
   afps.setPatchSequencParameterSetId( bitstream.readUvlc() );
@@ -510,6 +575,9 @@ void PCCBitstreamDecoderNewSyntax::attributeFrameParameterSet( AttributeFramePar
 void PCCBitstreamDecoderNewSyntax::attributeFrameParams( AttributeFrameParams& afp,
                                                          size_t                attributeDimension,
                                                          PCCBitstream&         bitstream ) {
+#ifdef BITSTREAM_TRACE
+  bitstream.trace("%s \n", __func__ );
+#endif  
   afp.setAttributeSmoothingParamsPresentFlag( bitstream.read( 1 ) );  // u(1)
   afp.setAttributeScaleParamsPresentFlag( bitstream.read( 1 ) );      // u(1)
   afp.setAttributeOffsetParamsPresentFlag( bitstream.read( 1 ) );     // u(1)
@@ -534,6 +602,9 @@ void PCCBitstreamDecoderNewSyntax::attributeFrameParams( AttributeFrameParams& a
 void PCCBitstreamDecoderNewSyntax::geometryPatchParameterSet( GeometryPatchParameterSet& gpps,
                                                               GeometryFrameParameterSet& gfps,
                                                               PCCBitstream& bitstream ) {
+#ifdef BITSTREAM_TRACE
+  bitstream.trace("%s \n", __func__ );
+#endif  
   gpps.setGeometryPatchParameterSetId( bitstream.readUvlc() );  // ue(v)
   gpps.setGeometryFrameParameterSetId( bitstream.readUvlc() );  // ue(v)
   if ( gfps.getGeometryPatchScaleParamsEnabledFlag() ||
@@ -552,6 +623,9 @@ void PCCBitstreamDecoderNewSyntax::geometryPatchParameterSet( GeometryPatchParam
 void PCCBitstreamDecoderNewSyntax::geometryPatchParams( GeometryPatchParams&       gpp,
                                                         GeometryFrameParameterSet& gfps,
                                                         PCCBitstream&              bitstream ) {
+#ifdef BITSTREAM_TRACE
+  bitstream.trace("%s \n", __func__ );
+#endif  
   if ( gfps.getGeometryPatchScaleParamsEnabledFlag() ) {
     gpp.setGeometryPatchScaleParamsPresentFlag( bitstream.read( 1 ) ); // u(1)
     if ( gpp.getGeometryPatchScaleParamsPresentFlag() ) {
@@ -595,6 +669,9 @@ void PCCBitstreamDecoderNewSyntax::attributePatchParameterSet( AttributePatchPar
                                                                AttributeParameterSet&      aps,
                                                                AttributeFrameParameterSet& afps,
                                                                PCCBitstream& bitstream ) {
+#ifdef BITSTREAM_TRACE
+  bitstream.trace("%s \n", __func__ );
+#endif  
   apps.setAttributePatchParameterSetId( bitstream.readUvlc() ); // ue(v)
   apps.setAttributeFrameParameterSetId( bitstream.readUvlc() ); // ue(v)
   size_t attributeDimension = aps.getAttributeDimensionMinus1() + 1;
@@ -614,6 +691,9 @@ void PCCBitstreamDecoderNewSyntax::attributePatchParams( AttributePatchParams&  
                                                          AttributeFrameParameterSet& afps,
                                                          size_t                      dimension,
                                                          PCCBitstream&               bitstream ) {
+#ifdef BITSTREAM_TRACE
+  bitstream.trace("%s \n", __func__ );
+#endif  
   if ( afps.getAttributePatchScaleParamsEnabledFlag() ) {
     app.setAttributePatchScaleParamsPresentFlag( bitstream.read( 1 ) );  // u(1)
     if ( app.getAttributePatchScaleParamsPresentFlag() ) {
@@ -636,6 +716,9 @@ void PCCBitstreamDecoderNewSyntax::attributePatchParams( AttributePatchParams&  
 void PCCBitstreamDecoderNewSyntax::patchFrameParameterSet( PatchFrameParameterSet& pfps,
                                                            SequenceParameterSet&   sps,
                                                            PCCBitstream&           bitstream ) {
+#ifdef BITSTREAM_TRACE
+  bitstream.trace("%s \n", __func__ );
+#endif  
   pfps.setPatchFrameParameterSetId( bitstream.readUvlc() );     // ue(v)
   pfps.setPatchSequenceParameterSetId( bitstream.readUvlc() );  // ue(v)
   // Commented in CD: pfps.getGeometryPatchFrameParameterSetId;  // ue(v)
@@ -659,6 +742,9 @@ void PCCBitstreamDecoderNewSyntax::patchFrameParameterSet( PatchFrameParameterSe
 void PCCBitstreamDecoderNewSyntax::patchFrameLayerUnit( PatchFrameLayerUnit& pflu,
                                                         size_t               frameIndex,
                                                         PCCBitstream&        bitstream ) {
+#ifdef BITSTREAM_TRACE
+  bitstream.trace("%s \n", __func__ );
+#endif  
   // patchFrameHeader( frameIndex );
   // patchFrameDataUnit( frameIndex );
 }
@@ -667,6 +753,9 @@ void PCCBitstreamDecoderNewSyntax::patchFrameLayerUnit( PatchFrameLayerUnit& pfl
 void PCCBitstreamDecoderNewSyntax::patchFrameHeader( PatchFrameHeader& pfh,
                                                      size_t            frameIndex,
                                                      PCCBitstream&     bitstream ) {
+#ifdef BITSTREAM_TRACE
+  bitstream.trace("%s \n", __func__ );
+#endif  
   // pfhPatchFrameParameterSetId[frameIndex];  // ue(v)
   // pfhAddress[frameIndex];                   // u(v)
   // pfhType[frameIndex];                      // ue(v)
@@ -736,6 +825,9 @@ void PCCBitstreamDecoderNewSyntax::patchFrameHeader( PatchFrameHeader& pfh,
 void PCCBitstreamDecoderNewSyntax::refListStruct( RefListStruct&             rls,
                                                   PatchSequenceParameterSet& psps,
                                                   PCCBitstream&              bitstream ) {
+#ifdef BITSTREAM_TRACE
+  bitstream.trace("%s \n", __func__ );
+#endif  
   rls.getNumRefEntries() = bitstream.readUvlc();  // ue(v)
   rls.allocate();
   for ( size_t i = 0; i < rls.getNumRefEntries(); i++ ) {
@@ -757,6 +849,9 @@ void PCCBitstreamDecoderNewSyntax::refListStruct( RefListStruct&             rls
 void PCCBitstreamDecoderNewSyntax::patchFrameDataUnit( PCCContext&   context,
                                                        PCCBitstream& bitstream,
                                                        size_t        frameIndex ) {
+#ifdef BITSTREAM_TRACE
+  bitstream.trace("%s \n", __func__ );
+#endif  
   // patchFrameDataUnit( frmIdx ) {
   //   pfduPatchCountMinus1 ; // u(32)
   //   if( pfhType[ frmIdx ] != I )
@@ -821,6 +916,9 @@ void PCCBitstreamDecoderNewSyntax::patchInformationData( PCCContext&   context,
                                                          size_t        frameIndex,
                                                          size_t        patchIndex,
                                                          size_t        patchMode ) {
+#ifdef BITSTREAM_TRACE
+  bitstream.trace("%s \n", __func__ );
+#endif  
   // if ( patchMode == PSKIP ) {
   //   // skip mode.
   //   // currently not supported but added it for convenience. Could easily be removed
@@ -851,6 +949,9 @@ void PCCBitstreamDecoderNewSyntax::patchDataUnit( PCCContext&   context,
                                                   PCCBitstream& bitstream,
                                                   size_t        frameIndex,
                                                   size_t        patchIndex ) {
+#ifdef BITSTREAM_TRACE
+  bitstream.trace("%s \n", __func__ );
+#endif  
   // pdu2dShiftU[frameIndex][patchIndex];              // ae(v)
   // pdu2dShiftV[frameIndex][patchIndex];              // ae(v)
   // pdu2dDeltaSizeU[frameIndex][patchIndex];          // ae(v)
@@ -881,6 +982,9 @@ void PCCBitstreamDecoderNewSyntax::deltaPatchDataUnit( PCCContext&   context,
                                                        PCCBitstream& bitstream,
                                                        size_t        frameIndex,
                                                        size_t        patchIndex ) {
+#ifdef BITSTREAM_TRACE
+  bitstream.trace("%s \n", __func__ );
+#endif  
   // dpduPatchIndex[frameIndex][patchIndex];            // ae(v)
   // dpdu2dShiftU[frameIndex][patchIndex];              // ae(v)
   // dpdu2dShiftV[frameIndex][patchIndex];              // ae(v)
@@ -905,6 +1009,9 @@ void PCCBitstreamDecoderNewSyntax::pcmPatchDataUnit( PCCContext&   context,
                                                      PCCBitstream& bitstream,
                                                      size_t        frameIndex,
                                                      size_t        patchIndex ) {
+#ifdef BITSTREAM_TRACE
+  bitstream.trace("%s \n", __func__ );
+#endif  
   // if ( spsPcmSeparateVideoFlag ) {
   //   ppduPatchInPcmVideoFlag[frameIndex][patchIndex];  // u(1)
   //   ppdu2dShiftU[frameIndex][patchIndex];             // u(v)
@@ -918,6 +1025,9 @@ void PCCBitstreamDecoderNewSyntax::pcmPatchDataUnit( PCCContext&   context,
 // 7.3.34 Point local reconstruction syntax
 void PCCBitstreamDecoderNewSyntax::pointLocalReconstruction( PCCContext&   context,
                                                              PCCBitstream& bitstream ) {
+#ifdef BITSTREAM_TRACE
+  bitstream.trace("%s \n", __func__ );
+#endif  
   // for( j = 0; j < BlockToPatchMapHeight; j++ ) {
   //   for( i = 0; i < BlockToPatchMapWidth; i++ ) {
   //     if( BlockToPatchMap[ j ][ i ] >= 0 ) {

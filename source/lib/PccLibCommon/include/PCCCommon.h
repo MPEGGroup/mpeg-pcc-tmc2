@@ -60,6 +60,11 @@
 #include <mach/mach.h>
 #endif
 
+// ******************************************************************* //
+// Trace mode to validate new syntax
+// ******************************************************************* //
+#define BITSTREAM_TRACE 
+
 //
 // #define CE210_MAXDEPTH_EVALUATION
 

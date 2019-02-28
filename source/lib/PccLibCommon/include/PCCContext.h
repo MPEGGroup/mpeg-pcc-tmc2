@@ -760,13 +760,10 @@ class PatchSequenceDataUnit {
   std::vector<PatchSequenceUnitPayload>& getPatchSequenceUnitPayload() {
     return patchSequenceUnitPayload_;
   }
-
   void setFrameCount( uint8_t frameCount ) { frameCount_ = frameCount; }
-
   void setPatchSequenceUnitPayload( std::vector<PatchSequenceUnitPayload> unitPayload ) {
     patchSequenceUnitPayload_ = unitPayload;
   }
-
  private:
   uint8_t frameCount_;
 
