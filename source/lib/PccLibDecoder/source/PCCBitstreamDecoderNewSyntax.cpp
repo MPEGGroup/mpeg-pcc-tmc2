@@ -285,14 +285,7 @@ void PCCBitstreamDecoderNewSyntax::geometryParameterSet( GeometryParameterSet& g
     geometrySequenceParams( gps.getGeometrySequenceParams(), bitstream );
   }
   
-#ifdef BITSTREAM_TRACE
-  bitstream.trace("%s here \n", __func__ );
-#endif  
   gps.setGeometryPatchParamsEnabledFlag( bitstream.read( 1 ) );  // u(1)
-  
-#ifdef BITSTREAM_TRACE
-  bitstream.trace("%s here 2 \n", __func__ );
-#endif  
   if ( gps.getGeometryPatchParamsEnabledFlag() ) {
     gps.setGeometryPatchScaleParamsEnabledFlag( bitstream.read( 1 ) );     // u(1)
     gps.setGeometryPatchOffsetParamsEnabledFlag( bitstream.read( 1 ) );    // u(1)

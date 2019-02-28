@@ -283,14 +283,8 @@ void PCCBitstreamEncoderNewSyntax::geometryParameterSet( GeometryParameterSet& g
     geometrySequenceParams( gps.getGeometrySequenceParams(), bitstream );
   }
   
-#ifdef BITSTREAM_TRACE
-  bitstream.trace("%s here \n", __func__ );
-#endif  
   // jkei[??] is it changed as intended?
   bitstream.write( (uint32_t)gps.getGeometryPatchParamsEnabledFlag(), 1 );  // u(1)
-#ifdef BITSTREAM_TRACE
-  bitstream.trace("%s here 2 \n", __func__ );
-#endif  
   if ( gps.getGeometryPatchParamsEnabledFlag() ) {
     bitstream.write( (uint32_t)gps.getGeometryPatchScaleParamsEnabledFlag(), 1 );     // u(1)
     bitstream.write( (uint32_t)gps.getGeometryPatchOffsetParamsEnabledFlag(), 1 );    // u(1)
@@ -412,7 +406,6 @@ void PCCBitstreamEncoderNewSyntax::patchSequenceDataUnit( PatchSequenceDataUnit&
     patchSequenceUnitPayload( psup[duCount], sps, bitstream );
     psd_terminate_patch_sequence_information_flag = ( duCount + 1 ) == psup.size();
     bitstream.write( (uint32_t)psd_terminate_patch_sequence_information_flag, 1 );  // u(1)
-
     if ( psup[psdFrameCount].getUnitType() == PSD_PFLU ) psdFrameCount++;
   }
   assert( psdFrameCount == psdu.getFrameCount() );
