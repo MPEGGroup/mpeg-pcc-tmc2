@@ -60,7 +60,8 @@ class PCCGroupOfFrames {
   std::vector<PCCPointSet3>::iterator end  () { return frames_.end  (); }
 
   bool load( const std::string uncompressedDataPath, const size_t startFrameNumber, 
-             const size_t endFrameNumber, const ColorTransform colorTransform );
+             const size_t endFrameNumber, const ColorTransform colorTransform,
+             const bool readNormals = false );
 
   bool write( const std::string reconstructedDataPath, size_t& frameNumber );
 

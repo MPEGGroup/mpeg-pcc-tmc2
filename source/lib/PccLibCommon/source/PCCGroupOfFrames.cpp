@@ -45,7 +45,8 @@ PCCGroupOfFrames::~PCCGroupOfFrames() {
 }
 
 bool PCCGroupOfFrames::load( const std::string uncompressedDataPath, const size_t startFrameNumber, 
-                            const size_t endFrameNumber, const ColorTransform colorTransform )  {
+                             const size_t endFrameNumber, const ColorTransform colorTransform,
+                             const bool readNormals  )  {
   char fileName[4096];
   if (endFrameNumber < startFrameNumber) {
     return false;
@@ -56,7 +57,7 @@ bool PCCGroupOfFrames::load( const std::string uncompressedDataPath, const size_
     sprintf(fileName, uncompressedDataPath.c_str(), frameNumber);
     auto &pointSet = frames_[frameNumber - startFrameNumber];
     pointSet.resize(0);
-    if (!pointSet.read(fileName)) {
+    if (!pointSet.read(fileName, readNormals )) {
       std::cout << "Error: can't open " << fileName << std::endl;
       return false;
     }

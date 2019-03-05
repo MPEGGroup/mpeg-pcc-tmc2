@@ -329,7 +329,7 @@ int decompressVideo( const PCCDecoderParameters &decoderParams,
       }
       if(metricsParams.normalDataPath_ != "" ){
         if ( !normals.load( metricsParams.normalDataPath_, frameNumber,
-                            frameNumber + reconstructs.size(), ColorTransform::COLOR_TRANSFORM_NONE ) ) {
+                            frameNumber + reconstructs.size(), ColorTransform::COLOR_TRANSFORM_NONE, true ) ) {
           return -1;
         }
       }

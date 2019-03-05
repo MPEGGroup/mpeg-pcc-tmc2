@@ -265,7 +265,7 @@ class PCCPointSet3 {
     return !tokens.empty();
   }
   bool write(const std::string &fileName, const bool asAscii = false ) ;
-  bool read(const std::string &fileName) ;
+  bool read(const std::string &fileName, const bool readNormals = false ) ;
   void convertRGBToYUV() ;
   void convertRGBToYUVClosedLoop() ;
   void convertYUVToRGB() ;

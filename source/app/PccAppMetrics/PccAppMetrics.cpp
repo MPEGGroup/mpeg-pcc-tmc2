@@ -203,7 +203,7 @@ int computeMetrics(const PCCMetricsParameters &metricsParams, StopwatchUserTime 
       return -1;
     }
     if( metricsParams.normalDataPath_ != "" ){
-      if (!normals.load( metricsParams.normalDataPath_, frameIndex, frameIndex + 1, ColorTransform::COLOR_TRANSFORM_NONE ) ) {
+      if (!normals.load( metricsParams.normalDataPath_, frameIndex, frameIndex + 1, ColorTransform::COLOR_TRANSFORM_NONE, true ) ) {
         return -1;
       }
     }
