@@ -149,7 +149,7 @@ enum VPCCUnitType {
   VPCC_RSVD_28,  // 28: Reserved
   VPCC_RSVD_29,  // 29: Reserved
   VPCC_RSVD_30,  // 30: Reserved
-  VPCC_RSVD_31,  // 32: Reserved
+  VPCC_RSVD_31   // 32: Reserved
 };
 
 enum PSDUnitType {
@@ -184,11 +184,16 @@ enum PSDUnitType {
   PSD_RSVD_28,  // 28: Reserved
   PSD_RSVD_29,  // 29: Reserved
   PSD_RSVD_30,  // 30: Reserved
-  PSD_RSVD_31,  // 32: Reserved
+  PSD_RSVD_31   // 32: Reserved
 };
 
 enum CODECID{
     CODEC_HEVC=0
+};
+
+enum PATCH_FRAME_TYPE {
+  I_PATCH_FRAME = 0,
+  P_PATCH_FRAME
 };
 
 const size_t IntermediateLayerIndex = 100;

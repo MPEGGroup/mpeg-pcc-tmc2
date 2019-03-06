@@ -443,7 +443,8 @@ void PCCBitstreamDecoderNewSyntax::patchSequenceUnitPayload( PatchSequenceUnitPa
     geometryFrameParameterSet( psup.getGeometryFrameParameterSet(), sps.getGeometryParameterSet(),
                                bitstream );
   } else if ( psup.getUnitType() == PSD_PFLU ) {
-    patchFrameLayerUnit( psup.getPatchFrameLayerUnit(), psup.getFrameIndex(), bitstream );
+    patchFrameLayerUnit( psup.getPatchFrameLayerUnit(), psup.getPatchSequenceParameterSet(), 
+                         psup.getFrameIndex(), bitstream );
   }
 }
 
@@ -733,17 +734,19 @@ void PCCBitstreamDecoderNewSyntax::patchFrameParameterSet( PatchFrameParameterSe
 
 // 7.3.26 Patch frame layer unit syntax
 void PCCBitstreamDecoderNewSyntax::patchFrameLayerUnit( PatchFrameLayerUnit& pflu,
+                                                        PatchSequenceParameterSet& psps,
                                                         size_t               frameIndex,
                                                         PCCBitstream&        bitstream ) {
 #ifdef BITSTREAM_TRACE
   bitstream.trace("%s \n", __func__ );
 #endif  
-  // patchFrameHeader( frameIndex );
+  patchFrameHeader( psps, pflu.getPatchFrameHeader(), frameIndex, bitstream );
   // patchFrameDataUnit( frameIndex );
 }
 
 // 7.3.27 Patch frame header syntax
-void PCCBitstreamDecoderNewSyntax::patchFrameHeader( PatchFrameHeader& pfh,
+void PCCBitstreamDecoderNewSyntax::patchFrameHeader( PatchSequenceParameterSet& psps,
+                                                     PatchFrameHeader&          pfh,
                                                      size_t            frameIndex,
                                                      PCCBitstream&     bitstream ) {
 #ifdef BITSTREAM_TRACE
@@ -812,6 +815,78 @@ void PCCBitstreamDecoderNewSyntax::patchFrameHeader( PatchFrameHeader& pfh,
   //   }
   // }
   // byteAlignment( bitstream );
+  pfh.setPatchFrameParameterSetId( bitstream.readUvlc() );                                         // ue( v )
+  pfh.setPatchFrameAddress( bitstream.readUvlc() );                                                // ue( v )
+  pfh.setPatchFrameType( bitstream.readUvlc() );                                                   // ue( v )
+  pfh.setPatchFrameOderCntLsb( bitstream.readUvlc() );                                             // ue( v )
+  if ( psps.getNumRefPatchFrameListsInSps() > 0 ) {
+    pfh.setRefPatchFrameListSpsFlag( bitstream.read( 1 ) );                                        // u( 1 )
+    if ( pfh.getRefPatchFrameListSpsFlag() ) {                                        
+      if ( psps.getNumRefPatchFrameListsInSps() > 1 ) {
+        pfh.setRefPatchFrameListIdx( bitstream.readUvlc() );                                       // u( v )
+      } else {
+        psps.getRefListStruct( psps.getNumRefPatchFrameListsInSps() );
+      }
+    }
+
+    // RlsIdx[i] = psps_num_ref_patch_frame_lists_in_sps ?
+    //   pfh_ref_patch_frame_list_idx[i] : psps_num_ref_patch_frame_lists_in_sps  (7 - 4)
+    uint8_t rlsIdx = psps.getNumRefPatchFrameListsInSps() ?
+      pfh.getRefPatchFrameListIdx() : psps.getNumRefPatchFrameListsInSps();
+    //NumLtrpfEntries[rlsIdx] = 0
+    //  for (i = 0; i < num_ref_entries[rlsIdx]; i++)
+    //    if (!st_ref_patch_frame_flag[rlsIdx][i])											          (7 - 8)
+    //      NumLtrpfEntries[rlsIdx]++
+    size_t numLtrpEntries = 0;
+    for ( size_t i = 0; i < psps.getRefListStruct( rlsIdx ).getNumRefEntries(); i++ ) {
+      if ( !psps.getRefListStruct( rlsIdx ).getStRefPatchFrameFlag( i ) )
+        numLtrpEntries++;                                                             
+    }
+
+    for ( size_t j = 0; j < numLtrpEntries; j++ ) {
+      pfh.setAdditionalPfocLsbPresentFlag( j, bitstream.read( 1 ) );                               // u( 1 )
+      if ( pfh.getAdditionalPfocLsbPresentFlag( j ) )
+        pfh.setAdditionalPfocLsbVal( j, bitstream.readUvlc() );                                    // ue( v )
+    }
+
+    if ( pfh.getPatchFrameType() == P_PATCH_FRAME 
+      && psps.getRefListStruct( rlsIdx ).getNumRefEntries() > 1 ) {
+      pfh.setPatchFrameNumRefIdxActiveOverrideFlag( bitstream.read( 1 ) );                         // u( 1 )
+      if ( pfh.getPatchFrameNumRefIdxActiveOverrideFlag() )
+        pfh.setPatchFrameNumRefIdxActiveMinus1( bitstream.readUvlc() );                            // ue( v )
+    }
+    if ( pfh.getPatchFrameType() == I_PATCH_FRAME ) {
+      pfh.setPatchFramehPatch2dShiftUBitCountMinus1( bitstream.read( 8 ) + 1 );                    // u( 8 )
+      pfh.setPatchFramehPatch2dShiftVBitCountMinus1( bitstream.read( 8 ) + 1 );                    // u( 8 )
+      pfh.setPatchFramehPatch3dShiftTangentAxisBitCountMinus1( bitstream.read( 8 ) + 1 );          // u( 8 )
+      pfh.setPatchFramehPatch3dShiftBitangentAxisBitCountMinus1( bitstream.read( 8 ) + 1 );        // u( 8 )
+      pfh.setPatchFramehPatch3dShiftNormalAxisBitCountMinus1( bitstream.read( 8 ) + 1 );           // u( 8 )
+      pfh.setPatchFramehPatchLodBitCount( bitstream.read( 8 ) + 1 );                               // u( 8 )
+    } else {                                                                                   
+      pfh.setPatchFrameInterPredictPatchBitCountFlag( bitstream.read( 1 ) );                       // u( 1 )
+      if ( pfh.getPatchFrameInterPredictPatchBitCountFlag() ) {
+        pfh.setPatchFrameInterPredictPatch2dShiftUBitCountFlag( bitstream.read( 1 ) );             // u( 1 )
+        if ( pfh.getPatchFrameInterPredictPatch2dShiftUBitCountFlag() )
+          pfh.setPatchFramehPatch2dShiftUBitCountMinus1( bitstream.read( 8 ) + 1 );                // u( 8 )
+        pfh.setPatchFrameInterPredictPatch2dShiftVBitCountFlag( bitstream.read( 1 ) );             // u( 1 )
+        if ( pfh.getPatchFrameInterPredictPatch2dShiftVBitCountFlag() )
+          pfh.setPatchFramehPatch2dShiftVBitCountMinus1( bitstream.read( 8 ) + 1 );                // u( 8 )
+        pfh.setPatchFrameInterPredictPatch3dShiftTangentAxisBitCountFlag( bitstream.read( 1 ) );   // u( 1 )
+        if ( pfh.getPatchFrameInterPredictPatch3dShiftTangentAxisBitCountFlag() )
+          pfh.setPatchFramehPatch3dShiftTangentAxisBitCountMinus1( bitstream.read( 8 ) + 1 );      // u( 8 )
+        pfh.setPatchFrameInterPredictPatch3dShiftBitangentAxisBitCountFlag( bitstream.read( 1 ) ); // u( 1 )
+        if ( pfh.getPatchFrameInterPredictPatch3dShiftBitangentAxisBitCountFlag() )
+          pfh.setPatchFramehPatch3dShiftBitangentAxisBitCountMinus1( bitstream.read( 8 ) + 1 );    // u( 8 )
+        pfh.setPatchFrameInterPredictPatch3dShiftNormalAxisBitCountFlag( bitstream.read( 1 ) );    // u( 1 )
+        if ( pfh.getPatchFrameInterPredictPatch3dShiftNormalAxisBitCountFlag() )
+          pfh.setPatchFramehPatch3dShiftNormalAxisBitCountMinus1( bitstream.read( 8 ) + 1 );       // u( 8 )
+        pfh.setPatchFrameInterPredictPatchLodBitCountFlag( bitstream.read( 1 ) );                  // u( 1 )
+        if ( pfh.getPatchFrameInterPredictPatchLodBitCountFlag() )
+          pfh.setPatchFramehPatchLodBitCount( bitstream.read( 8 ) + 1 );                           // u( 8 )
+      }
+    }
+    byteAlignment(bitstream);
+  }
 }
 
 // 7.3.28 Reference list structure syntax

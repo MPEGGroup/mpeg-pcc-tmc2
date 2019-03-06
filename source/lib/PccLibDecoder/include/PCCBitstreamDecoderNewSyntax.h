@@ -66,6 +66,7 @@ class PatchFrameLayerUnit;
 class PatchFrameParameterSet;
 class PatchFrameHeader;
 class RefListStruct;
+class PatchFrameDataUnit;
 
 class PCCBitstreamDecoderNewSyntax {
  public:
@@ -188,11 +189,13 @@ class PCCBitstreamDecoderNewSyntax {
 
   // 7.3.26 Patch frame layer unit syntax
   void patchFrameLayerUnit( PatchFrameLayerUnit& patchFrameLayerUnit,
+                            PatchSequenceParameterSet& patchSequenceParameterSet,
                             size_t               frameIndex,
                             PCCBitstream&        bitstream );
 
   // 7.3.27 Patch frame header syntax
-  void patchFrameHeader( PatchFrameHeader& patchFrameHeader,
+  void patchFrameHeader( PatchSequenceParameterSet& patchSequenceParameterSet,
+                         PatchFrameHeader&         patchFrameHeader,
                          size_t            frameIndex,
                          PCCBitstream&     bitstream );
 

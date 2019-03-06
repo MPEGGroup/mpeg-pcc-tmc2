@@ -75,6 +75,7 @@ class RefListStruct {
   std::vector<uint8_t>& getPfocLsbLt() { return pfocLsbLt_; }
   std::vector<bool>&    getStRefPatchFrameFlag() { return stRefPatchFrameFlag_; }
   std::vector<bool>&    getStrpfEntrySignFlag() { return strpfEntrySignFlag_; }
+  bool                  getStRefPatchFrameFlag( size_t index ) { return stRefPatchFrameFlag_[index]; }
 
   void allocate() {
     absDeltaPfocSt_.resize( numRefEntries_, 0 );
@@ -94,19 +95,145 @@ class RefListStruct {
 // 7.3.27  Patch frame header syntax
 class PatchFrameHeader {
  public:
-  PatchFrameHeader() {}
+  PatchFrameHeader() : frameIndex_( 0 ),
+                       patchFrameParameterSetId_( 0 ) ,
+                       type_( 0 ),
+                       address_( 0 ),
+                       patchFrameOrderCntLsb_( 0 ),
+                       refPatchFrameListIdx_( 0 ),
+                       refPatchFrameListSpsFlag_( 0 ),
+                       numRefIdxActiveOverrideFlag_( false ),
+                       numRefIdxActiveMinus1_( 0 ),
+                       interPredictPatch2dShiftUBitCountMinus1_( 0 ),
+                       interPredictPatch2dShiftVBitCountMinus1_( 0 ),
+                       interPredictPatch3dShiftTangentAxisBitCountMinus1_( 0 ),
+                       interPredictPatch3dShiftBitangentAxisBitCountMinus1_( 0 ),
+                       interPredictPatch3dShiftNormalAxisBitCountMinus1_( 0 ),
+                       interPredictPatchLodBitCount_( 0 ),
+                       interPredictPatchBitCountFlag_( false ),
+                       interPredictPatch2dShiftUBitCountFlag_( false ),
+                       interPredictPatch2dShiftVBitCountFlag_( false ),
+                       interPredictPatch3dShiftTangentAxisBitCountFlag_( false ),
+                       interPredictPatch3dShiftBitangentAxisBitCountFlag_( false ),
+                       interPredictPatch3dShiftNormalAxisBitCountFlag_( false ),
+                       interPredictPatchLodBitCountFlag_( false ) {
+                     additionalPfocLsbPresentFlag_.clear();
+                     additionalPfocLsbVal_.clear();
+  }
   PatchFrameHeader& operator=( const PatchFrameHeader& ) = default;
 
+  uint8_t               getPatchFrameParameterSetId() { return patchFrameParameterSetId_; }
+  uint32_t              getPatchFrameAddress() { return address_; }
+  uint32_t              getPatchFrameType() { return type_; }
+  uint8_t               getPatchFrameOderCntLsb() { return patchFrameOrderCntLsb_; }
+  bool                  getRefPatchFrameListSpsFlag() { return refPatchFrameListSpsFlag_; }
+  uint8_t               getRefPatchFrameListIdx() { return refPatchFrameListIdx_; }
+  std::vector<bool>     getAdditionalPfocLsbPresentFlag() { return additionalPfocLsbPresentFlag_; }
+  std::vector<uint32_t> getAdditionalPfocLsbVal() { return additionalPfocLsbVal_; }
+  bool                  getAdditionalPfocLsbPresentFlag(size_t index) { return  additionalPfocLsbPresentFlag_[index]; }
+  uint32_t              getAdditionalPfocLsbVal(size_t index) { return additionalPfocLsbVal_[index]; }
+  bool                  getPatchFrameNumRefIdxActiveOverrideFlag() { return numRefIdxActiveOverrideFlag_; }
+  uint8_t               getPatchFrameNumRefIdxActiveMinus1() { return numRefIdxActiveMinus1_; }
+
+  bool                  getPatchFrameInterPredictPatchBitCountFlag() { return interPredictPatchBitCountFlag_; }
+  bool                  getPatchFrameInterPredictPatch2dShiftUBitCountFlag() { return interPredictPatch2dShiftUBitCountFlag_; }
+  bool                  getPatchFrameInterPredictPatch2dShiftVBitCountFlag() { return interPredictPatch2dShiftVBitCountFlag_; }
+  bool                  getPatchFrameInterPredictPatch3dShiftTangentAxisBitCountFlag() { return interPredictPatch3dShiftTangentAxisBitCountFlag_; }
+  bool                  getPatchFrameInterPredictPatch3dShiftBitangentAxisBitCountFlag() { return interPredictPatch3dShiftBitangentAxisBitCountFlag_; }
+  bool                  getPatchFrameInterPredictPatch3dShiftNormalAxisBitCountFlag() { return interPredictPatch3dShiftNormalAxisBitCountFlag_; }
+  bool                  getPatchFrameInterPredictPatchLodBitCountFlag() { return interPredictPatchLodBitCountFlag_; }
+                        
+  uint8_t               getPatchFramehPatch2dShiftUBitCountMinus1() { return interPredictPatch2dShiftUBitCountMinus1_; }
+  uint8_t               getPatchFramehPatch2dShiftVBitCountMinus1() { return interPredictPatch2dShiftVBitCountMinus1_; }
+  uint8_t               getPatchFramehPatch3dShiftTangentAxisBitCountMinus1() { return interPredictPatch3dShiftTangentAxisBitCountMinus1_; }
+  uint8_t               getPatchFramehPatch3dShiftBitangentAxisBitCountMinus1() { return interPredictPatch3dShiftBitangentAxisBitCountMinus1_; }
+  uint8_t               getPatchFramehPatch3dShiftNormalAxisBitCountMinus1() { return interPredictPatch3dShiftNormalAxisBitCountMinus1_; }
+  uint8_t               getPatchFramehPatchLodBitCount() { return interPredictPatchLodBitCount_; }
+
+  void setPatchFrameParameterSetId( uint8_t setIdx ) { patchFrameParameterSetId_ = setIdx ; }
+  void setPatchFrameAddress( uint8_t addr ) { address_ = addr; }
+  void setPatchFrameType( uint8_t type ) { type_ = type ;}
+  void setPatchFrameOderCntLsb( uint8_t patchOrderCnt ) { patchFrameOrderCntLsb_ = patchOrderCnt; }
+  void setRefPatchFrameListSpsFlag( bool flag ) { refPatchFrameListSpsFlag_ = flag; }
+  void setRefPatchFrameListIdx( uint8_t listIdx ) { refPatchFrameListIdx_ = listIdx ; }
+  void setAdditionalPfocLsbPresentFlag(std::vector<bool> flags) { additionalPfocLsbPresentFlag_ = flags; }
+  void setAdditionalPfocLsbPresentFlag(size_t index, bool flag) { additionalPfocLsbPresentFlag_[index] = flag; }
+  void setAdditionalPfocLsbVal(std::vector<uint32_t> pFLsbVals) { additionalPfocLsbVal_ = pFLsbVals; }
+  void setAdditionalPfocLsbVal(size_t index, uint32_t pFLsbVal) { additionalPfocLsbVal_[index] = pFLsbVal; }
+  void setPatchFrameNumRefIdxActiveOverrideFlag( bool flag ) { numRefIdxActiveOverrideFlag_ = flag; }
+  void setPatchFrameNumRefIdxActiveMinus1( uint8_t refIdx ) { numRefIdxActiveMinus1_ = refIdx; }
+
+  void setPatchFrameInterPredictPatchBitCountFlag(bool flag) { interPredictPatchBitCountFlag_  = flag; }
+  void setPatchFrameInterPredictPatch2dShiftUBitCountFlag(bool flag) { interPredictPatch2dShiftUBitCountFlag_ = flag; }
+  void setPatchFrameInterPredictPatch2dShiftVBitCountFlag(bool flag) { interPredictPatch2dShiftVBitCountFlag_  = flag; }
+  void setPatchFrameInterPredictPatch3dShiftTangentAxisBitCountFlag(bool flag) { interPredictPatch3dShiftTangentAxisBitCountFlag_  = flag; }
+  void setPatchFrameInterPredictPatch3dShiftBitangentAxisBitCountFlag(bool flag) { interPredictPatch3dShiftBitangentAxisBitCountFlag_  = flag; }
+  void setPatchFrameInterPredictPatch3dShiftNormalAxisBitCountFlag(bool flag) { interPredictPatch3dShiftNormalAxisBitCountFlag_  = flag; }
+  void setPatchFrameInterPredictPatchLodBitCountFlag(bool flag) { interPredictPatchLodBitCountFlag_  = flag; }
+
+  void setPatchFramehPatch2dShiftUBitCountMinus1(uint8_t bitCount) { interPredictPatch2dShiftUBitCountMinus1_ = bitCount; }
+  void setPatchFramehPatch2dShiftVBitCountMinus1(uint8_t bitCount) { interPredictPatch2dShiftVBitCountMinus1_ = bitCount; }
+  void setPatchFramehPatch3dShiftTangentAxisBitCountMinus1(uint8_t bitCount) { interPredictPatch3dShiftTangentAxisBitCountMinus1_ = bitCount; }
+  void setPatchFramehPatch3dShiftBitangentAxisBitCountMinus1(uint8_t bitCount) { interPredictPatch3dShiftBitangentAxisBitCountMinus1_ = bitCount; }
+  void setPatchFramehPatch3dShiftNormalAxisBitCountMinus1(uint8_t bitCount) { interPredictPatch3dShiftNormalAxisBitCountMinus1_ = bitCount; }
+  void setPatchFramehPatchLodBitCount(uint8_t bitCount) { interPredictPatchLodBitCount_ = bitCount; }
+
  private:
+  uint8_t               frameIndex_;
+  uint8_t               patchFrameParameterSetId_;
+  uint8_t               type_; // this should be enum
+  uint32_t              address_; /*is yet to be defined*/
+  uint8_t               patchFrameOrderCntLsb_;
+  uint8_t               refPatchFrameListIdx_;
+  bool                  refPatchFrameListSpsFlag_;
+  std::vector<bool>     additionalPfocLsbPresentFlag_;
+  std::vector<uint32_t> additionalPfocLsbVal_;
+  bool                  numRefIdxActiveOverrideFlag_;
+  
+  uint8_t               numRefIdxActiveMinus1_;
+  uint8_t               interPredictPatch2dShiftUBitCountMinus1_;
+  uint8_t               interPredictPatch2dShiftVBitCountMinus1_;
+  uint8_t               interPredictPatch3dShiftTangentAxisBitCountMinus1_;
+  uint8_t               interPredictPatch3dShiftBitangentAxisBitCountMinus1_;
+  uint8_t               interPredictPatch3dShiftNormalAxisBitCountMinus1_;
+  uint8_t               interPredictPatchLodBitCount_;
+  bool                  interPredictPatchBitCountFlag_;
+  bool                  interPredictPatch2dShiftUBitCountFlag_;
+  bool                  interPredictPatch2dShiftVBitCountFlag_;
+  bool                  interPredictPatch3dShiftTangentAxisBitCountFlag_;
+  bool                  interPredictPatch3dShiftBitangentAxisBitCountFlag_;
+  bool                  interPredictPatch3dShiftNormalAxisBitCountFlag_;
+  bool                  interPredictPatchLodBitCountFlag_;
+};
+
+// 7.3.29  Patch sequence parameter set syntax
+class PatchFrameDataUnit {
+public:
+  PatchFrameDataUnit() {}
+  PatchFrameDataUnit& operator=(const PatchFrameDataUnit&) = default;
+private:
+
 };
 
 // 7.3.26  Patch frame layer unit syntax
 class PatchFrameLayerUnit {
- public:
-  PatchFrameLayerUnit() {}
-  PatchFrameLayerUnit& operator=( const PatchFrameLayerUnit& ) = default;
+public:
+  PatchFrameLayerUnit() : frameIndex_( 0 ) { }
+  PatchFrameLayerUnit& operator=(const PatchFrameLayerUnit&) = default;
 
- private:
+  uint8_t             getFrameIndex() { return frameIndex_; }
+  PatchFrameHeader&   getPatchFrameHeader() { return patchFrameHeader_; }
+  PatchFrameDataUnit& getPatchFrameDataUnit() { return patchFrameDataUnit_; }
+
+  void                setFrameIndex(uint8_t idx) { frameIndex_ = idx; }
+  void                setPatchFrameHeader(PatchFrameHeader params) { patchFrameHeader_ = params; }
+  void                setPatchFrameDataUnit(PatchFrameDataUnit params) { patchFrameDataUnit_ = params; }
+
+private:
+  uint8_t            frameIndex_;
+  PatchFrameHeader   patchFrameHeader_;
+  PatchFrameDataUnit patchFrameDataUnit_;
+
 };
 
 // 7.3.25  Patch frame parameter set syntax
