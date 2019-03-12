@@ -196,6 +196,18 @@ enum PATCH_FRAME_TYPE {
   P_PATCH_FRAME
 };
 
+enum PATCH_I_MODE {
+	I_INTRA = 0,
+	I_PCM,
+};
+
+enum PATCH_P_MODE {
+	P_SKIP = 0,
+	P_INTRA,
+	P_INTER,
+	P_PCM,
+};
+
 const size_t IntermediateLayerIndex = 100;
 const size_t NeighborThreshold      = 4;
 const size_t NumPatchOrientations   = 8;

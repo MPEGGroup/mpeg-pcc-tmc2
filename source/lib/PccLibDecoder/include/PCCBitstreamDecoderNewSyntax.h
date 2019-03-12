@@ -67,6 +67,10 @@ class PatchFrameParameterSet;
 class PatchFrameHeader;
 class RefListStruct;
 class PatchFrameDataUnit;
+class PatchInformationData;
+class PatchDataUnit;
+class DeltaPatchDataUnit;
+class PCMPatchDataUnit;
 
 class PCCBitstreamDecoderNewSyntax {
  public:
@@ -129,13 +133,11 @@ class PCCBitstreamDecoderNewSyntax {
                                 PCCBitstream&            bitstream );
 
   // 7.3.14 Patch sequence data unit syntax
-  void patchSequenceDataUnit( PatchSequenceDataUnit& patchSequenceDataUnit,
-                              SequenceParameterSet&  sequenceParameterSet,
-                              PCCBitstream&          bitstream );
+  void patchSequenceDataUnit( PCCContext& context, PCCBitstream& bitstream );
 
   // 7.3.15 Patch sequence unit payload syntax
   void patchSequenceUnitPayload( PatchSequenceUnitPayload& patchSequenceUnitPayload,
-                                 SequenceParameterSet&     sequenceParameterSet,
+                                 PCCContext&               context,
                                  PCCBitstream&             bitstream );
 
   // 7.3.16 Patch sequence parameter set syntax
@@ -188,15 +190,13 @@ class PCCBitstreamDecoderNewSyntax {
                                PCCBitstream&           bitstream );
 
   // 7.3.26 Patch frame layer unit syntax
-  void patchFrameLayerUnit( PatchFrameLayerUnit& patchFrameLayerUnit,
-                            PatchSequenceParameterSet& patchSequenceParameterSet,
-                            size_t               frameIndex,
+  void patchFrameLayerUnit( PatchFrameLayerUnit& pflu,
+                            PCCContext&          context,
                             PCCBitstream&        bitstream );
 
   // 7.3.27 Patch frame header syntax
-  void patchFrameHeader( PatchSequenceParameterSet& patchSequenceParameterSet,
-                         PatchFrameHeader&         patchFrameHeader,
-                         size_t            frameIndex,
+  void patchFrameHeader( PatchFrameHeader& pfh,
+                         PCCContext&                context,
                          PCCBitstream&     bitstream );
 
   // 7.3.28 Reference list structure syntax
@@ -205,35 +205,40 @@ class PCCBitstreamDecoderNewSyntax {
                       PCCBitstream&              bitstream );
 
   // 7.3.29 Patch frame data unit syntax
-  void patchFrameDataUnit( PCCContext& context, PCCBitstream& bitstream, size_t frameIndex );
+  void patchFrameDataUnit( PatchFrameDataUnit& pfdu,
+                           PatchFrameHeader&   pfh,
+                           PCCContext&         context,
+                           PCCBitstream&       bitstream );
 
   // 7.3.30 Patch information data syntax
-  void patchInformationData( PCCContext&   context,
+  void patchInformationData( PatchInformationData&    pid,
+                             size_t                   patchMode,
+                             PatchFrameHeader&        pfh,
+                             PCCContext&              context,
                              PCCBitstream& bitstream,
-                             size_t        frameIndex,
-                             size_t        patchIndex,
-                             size_t        patchMode );
+                             o3dgc::Arithmetic_Codec& arithmeticDecoder );
 
   // 7.3.31 Patch data unit syntax
-  void patchDataUnit( PCCContext&   context,
+  void patchDataUnit( PatchDataUnit&           pdu,
+                      PatchFrameHeader&        pfh,
+                      PCCContext&              context,
                       PCCBitstream& bitstream,
-                      size_t        frameIndex,
-                      size_t        patchIndex );
+                      o3dgc::Arithmetic_Codec& arithmeticDecoder );
 
   // 7.3.32  Delta Patch data unit syntax
   void deltaPatchDataUnit( PCCContext&   context,
                            PCCBitstream& bitstream,
-                           size_t        frameIndex,
-                           size_t        patchIndex );
+                           o3dgc::Arithmetic_Codec& arithmeticDecoder );
 
   // 7.3.33 PCM patch data unit syntax
   void pcmPatchDataUnit( PCCContext&   context,
                          PCCBitstream& bitstream,
-                         size_t        frameIndex,
-                         size_t        patchIndex );
+                         o3dgc::Arithmetic_Codec& arithmeticDecoder );
 
   // 7.3.34 Point local reconstruction syntax
-  void pointLocalReconstruction( PCCContext& context, PCCBitstream& bitstream );
+  void pointLocalReconstruction( PCCContext&              context,
+                                 PCCBitstream&            bitstream,
+                                 o3dgc::Arithmetic_Codec& arithmeticDecoder );
 };
 
 };  // namespace pcc

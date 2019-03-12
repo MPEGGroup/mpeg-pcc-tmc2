@@ -177,7 +177,7 @@ void PCCBitstreamEncoderNewSyntax::vpccUnitPayload( PCCContext&   context,
   if ( vpccUnitType == VPCC_SPS ) {
     sequenceParameterSet( sps, bitstream );
   } else if ( vpccUnitType == VPCC_PSD ) {
-    patchSequenceDataUnit( psdu, sps, bitstream );
+    patchSequenceDataUnit( context, bitstream );
   } else if ( vpccUnitType == VPCC_OVD || vpccUnitType == VPCC_GVD || vpccUnitType == VPCC_AVD ) {
     vpccVideoDataUnit( context, bitstream, vpccUnitType );
   }
@@ -391,22 +391,24 @@ void PCCBitstreamEncoderNewSyntax::attributeSequenceParams( AttributeSequencePar
 }
 
 // 7.3.14 Patch sequence data unit syntax
-void PCCBitstreamEncoderNewSyntax::patchSequenceDataUnit( PatchSequenceDataUnit& psdu,
-                                                          SequenceParameterSet&  sps,
+void PCCBitstreamEncoderNewSyntax::patchSequenceDataUnit( PCCContext&   context,
                                                           PCCBitstream&          bitstream ) {
 #ifdef BITSTREAM_TRACE
   bitstream.trace("%s \n", __func__ );
 #endif  
+  auto&  sps                                           = context.getSps();
+  auto&  psdu                                          = context.getPatchSequenceDataUnit();
   auto&  psup                                          = psdu.getPatchSequenceUnitPayload();
   bool   psd_terminate_patch_sequence_information_flag = false;
   size_t psdFrameCount                                 = 0;
   printf(" psup size = %lu \n",psup.size());
   for ( size_t duCount = 0; duCount < psup.size(); duCount++ ) {
     bitstream.writeUvlc( (uint32_t)psup[duCount].getUnitType() );  // ue(v)
-    patchSequenceUnitPayload( psup[duCount], sps, bitstream );
+    patchSequenceUnitPayload( psup[duCount], context, bitstream );
     psd_terminate_patch_sequence_information_flag = ( duCount + 1 ) == psup.size();
     bitstream.write( (uint32_t)psd_terminate_patch_sequence_information_flag, 1 );  // u(1)
-    if ( psup[psdFrameCount].getUnitType() == PSD_PFLU ) psdFrameCount++;
+    if ( psup[psdFrameCount].getUnitType() == PSD_PFLU ) 
+		psup[psdFrameCount].setFrameIndex( psdFrameCount++ );
   }
   assert( psdFrameCount == psdu.getFrameCount() );
   byteAlignment( bitstream );
@@ -414,12 +416,15 @@ void PCCBitstreamEncoderNewSyntax::patchSequenceDataUnit( PatchSequenceDataUnit&
 
 // 7.3.15 Patch sequence unit payload syntax
 void PCCBitstreamEncoderNewSyntax::patchSequenceUnitPayload( PatchSequenceUnitPayload& psup,
-                                                             SequenceParameterSet&     sps,
+                                                             PCCContext&               context,
                                                              PCCBitstream&             bitstream ) {
 #ifdef BITSTREAM_TRACE
   bitstream.trace("%s \n", __func__ );
 #endif  
-  // jkei : do we need functions to call a parent object?
+  // jkei : do we need functions to call a parent object? --> we need to have access to upper level
+  // objects in patch frame layer unit, so let's always carry the context variable and use it to
+  // access those upper level variables
+  auto& sps = context.getSps();
   if ( psup.getUnitType() == PSD_SPS ) {
     patchSequenceParameterSet( psup.getPatchSequenceParameterSet(), bitstream );
   } else if ( psup.getUnitType() == PSD_GPPS ) {
@@ -427,22 +432,22 @@ void PCCBitstreamEncoderNewSyntax::patchSequenceUnitPayload( PatchSequenceUnitPa
                                psup.getGeometryFrameParameterSet(), bitstream );
   } else if ( psup.getUnitType() == PSD_APPS ) {
     for ( int attributeIndex = 0; attributeIndex < sps.getAttributeCount(); attributeIndex++ ) {
-      attributePatchParameterSet( psup.getAttributePatchParameterSet(),
+      attributePatchParameterSet( psup.getAttributePatchParameterSet(attributeIndex),
                                   sps.getAttributeParameterSet( attributeIndex ),
-                                  psup.getAttributeFrameParameterSet(), bitstream );
+                                  psup.getAttributeFrameParameterSet(attributeIndex), bitstream );
     }
   } else if ( psup.getUnitType() == PSD_FPS ) {
     patchFrameParameterSet( psup.getPatchFrameParameterSet(), sps, bitstream );
   } else if ( psup.getUnitType() == PSD_AFPS ) {
     for ( int attributeIndex = 0; attributeIndex < sps.getAttributeCount(); attributeIndex++ ) {
-      attributeFrameParameterSet( psup.getAttributeFrameParameterSet(),
+      attributeFrameParameterSet( psup.getAttributeFrameParameterSet(attributeIndex),
                                   sps.getAttributeParameterSet( attributeIndex ), bitstream );
     }
   } else if ( psup.getUnitType() == PSD_GFPS ) {
     geometryFrameParameterSet( psup.getGeometryFrameParameterSet(), sps.getGeometryParameterSet(),
                                bitstream );
   } else if ( psup.getUnitType() == PSD_PFLU ) {
-    patchFrameLayerUnit( psup.getPatchFrameLayerUnit(), psup.getPatchSequenceParameterSet(), psup.getFrameIndex(), bitstream );
+    patchFrameLayerUnit( psup.getPatchFrameLayerUnit(), context, bitstream );
   }
 }
 
@@ -738,25 +743,25 @@ void PCCBitstreamEncoderNewSyntax::patchFrameParameterSet( PatchFrameParameterSe
 
 // 7.3.26 Patch frame layer unit syntax
 void PCCBitstreamEncoderNewSyntax::patchFrameLayerUnit( PatchFrameLayerUnit& pflu,
-                                                        PatchSequenceParameterSet&  psps,
-                                                        size_t               frameIndex,
+                                                        PCCContext&          context,
                                                         PCCBitstream&        bitstream ) {
 #ifdef BITSTREAM_TRACE
   bitstream.trace("%s \n", __func__ );
 #endif  
-  
-  patchFrameHeader( psps, pflu.getPatchFrameHeader(), frameIndex, bitstream );
-  //patchFrameDataUnit( context, bitstream, frameIndex );
+  patchFrameHeader( pflu.getPatchFrameHeader(), context, bitstream );
+  patchFrameDataUnit( pflu.getPatchFrameDataUnit(), pflu.getPatchFrameHeader(), context, bitstream);
 }
 
 // 7.3.27 Patch frame header syntax
-void PCCBitstreamEncoderNewSyntax::patchFrameHeader( PatchSequenceParameterSet& psps,
-                                                     PatchFrameHeader& pfh,
-                                                     size_t            frameIndex,
+void PCCBitstreamEncoderNewSyntax::patchFrameHeader( PatchFrameHeader& pfh,
+                                                     PCCContext&       context,
                                                      PCCBitstream&     bitstream ) {
 #ifdef BITSTREAM_TRACE
   bitstream.trace("%s \n", __func__ );
 #endif  
+
+  auto& psdu = context.getPatchSequenceDataUnit();
+  auto& psps = psdu.getPatchSequenceParameterSet( pfh.getPatchFrameParameterSetId() );
   bitstream.writeUvlc( pfh.getPatchFrameParameterSetId() );                                                 // ue(v )
   bitstream.writeUvlc( pfh.getPatchFrameAddress() );                                                        // u( v )
   bitstream.writeUvlc( pfh.getPatchFrameType() );                                                           // u( v )
@@ -772,8 +777,8 @@ void PCCBitstreamEncoderNewSyntax::patchFrameHeader( PatchSequenceParameterSet& 
   }
   // RlsIdx[i] = psps_num_ref_patch_frame_lists_in_sps ?
   //   pfh_ref_patch_frame_list_idx[i] : psps_num_ref_patch_frame_lists_in_sps  (7 - 4)
-  uint8_t rlsIdx = psps.getNumRefPatchFrameListsInSps() ?
-    pfh.getRefPatchFrameListIdx() : psps.getNumRefPatchFrameListsInSps();
+  uint8_t rlsIdx = psps.getNumRefPatchFrameListsInSps() ? pfh.getRefPatchFrameListIdx()
+                                                        : psps.getNumRefPatchFrameListsInSps();
   //NumLtrpfEntries[rlsIdx] = 0
   //  for (i = 0; i < num_ref_entries[rlsIdx]; i++)
   //    if (!st_ref_patch_frame_flag[rlsIdx][i])										           	(7 - 8)
@@ -855,142 +860,161 @@ void PCCBitstreamEncoderNewSyntax::refListStruct( RefListStruct&             rls
 }
 
 // 7.3.29 Patch frame data unit syntax
-void PCCBitstreamEncoderNewSyntax::patchFrameDataUnit( PCCContext&   context,
-                                                       PCCBitstream& bitstream,
-                                                       size_t        frameIndex ) {
+void PCCBitstreamEncoderNewSyntax::patchFrameDataUnit( PatchFrameDataUnit& pfdu,
+                                                       PatchFrameHeader&   pfh,
+                                                       PCCContext&         context,
+                                                       PCCBitstream&       bitstream ) {
 #ifdef BITSTREAM_TRACE
   bitstream.trace("%s \n", __func__ );
 #endif  
-  // patchFrameDataUnit( frmIdx ) {
-  //   pfduPatchCountMinus1 ; // u(32)
-  //   if( pfhType[ frmIdx ] != I )
-  //     pfduInterPatchCount ; // ae(v)
-  //   else
-  //     pfduInterPatchCount = 0
-  //   for( p = 0; p < pfduInterPatchCount; p++ ) {
-  //     pfduPatchMode[ frmIdx ][ p ] = PINTER
-  //     patchInformationData( frmIdx, p, pfduPatchMode[ frmIdx ][ p ] )
-  //   }
-  //   for( p = pfduInterPatchCount; p <= pfduPatchCountMinus1; p++ ) {
-  //     pfduPatchMode[ frmIdx ][ p ] = pfhType[ frmIdx ]  ==  I ? IINTRA : PINTRA
-  //     patchInformationData( frmIdx, p, pfduPatchMode[ frmIdx ][ p ] )
-  //   }
-  //   PfduTotalNumberOfPatches[ frmIdx ] = p
-  //   if( spsPcmPatchEnabledFlag ) {
-  //     pfduPatchMode[ frmIdx ][ p ] = pfhType[ frmIdx ]  ==  I ? IPCM : PPCM
-  //     patchInformationData( frmIdx, p , pfduPatchMode[ frmIdx ][ p ] )
-  //     PfduTotalNumberOfPatches[ frmIdx ]++
-  //   }
-  //   if( spsPointLocalReconstructionEnabledFlag )
-  //     pointLocalReconstruction();
-  //   byteAlignment();
-  // }
 
-  // patchFrameDataUnit( frmIdx) {
-  //   p = -1
-  //   pfduMorePatchesAvailableFlag ; // ae(v)
-  //   while ( morePatchesAvailableFlag ) {
-  //     p ++
-  //     pfduPatchMode[ frmIdx ][ p ] ; // ae(v)
-  //     patchInformationData(frmIdx, p, pfduPatchMode[ frmIdx ][ p ])
-  //     pfduMorePatchesAvailableFlag ; // ae(v)
-  //   }
-  //   PfduTotalNumberOfPatches[ frmIdx ] = p + 1
-  //   if( spsPointLocalReconstructionEnabledFlag )
-  //     pointLocalReconstruction();
-  //   byteAlignment();
-  // }
+  auto&         sps                            = context.getSps();
+  uint8_t       pfdu_more_available_patch_flag = pfdu.getPatchCount() > 0;
+  const uint8_t bitCountPatchMode =
+      ( PATCH_FRAME_TYPE( pfh.getPatchFrameType() ) ) == I_PATCH_FRAME ? 1 : 2;
 
-  // // Vlad also proposed the following alternative mode
-  // patchFrameDataUnit( frmIdx) {
-  //   p = -1
-  //   do {
-  //     p ++
-  //     pfduPatchMode[ frmIdx ][ p ] ; // ae(v)
-  //     if( pfduPatchMode[ frmIdx ][ p ] !=IEND &&
-  //       pfduPatchMode[ frmIdx ][ p ] != PEND)
-  //       patchInformationData(frmIdx, p, pfduPatchMode[ frmIdx ][ p ])
-  //   } while( pfduPatchMode[ frmIdx ][ p ] !=IEND &&
-  //       pfduPatchMode[ frmIdx ][ p ] != PEND)
-  //   PfduTotalNumberOfPatches[ frmIdx ] = p
-  //   if( spsPointLocalReconstructionEnabledFlag )
-  //     pointLocalReconstruction();
-  //   byteAlignment();
-  // }
+  o3dgc::Arithmetic_Codec arithmeticEncoder;
+  arithmeticEncoder.set_buffer( 0x00ffffff );
+  arithmeticEncoder.start_encoder();
+
+  o3dgc::Static_Bit_Model   bModel;
+  o3dgc::Adaptive_Bit_Model bModelMoreAvailablePatchFlag;
+
+  arithmeticEncoder.encode( pfdu_more_available_patch_flag,
+                            bModelMoreAvailablePatchFlag );  // ae(v)
+  for ( size_t puCount = 0; puCount < pfdu.getPatchCount(); puCount++ ) {
+    patchInformationData( pfdu.getPatchInformationData()[puCount], pfdu.getPatchMode()[puCount],
+                          pfh, context, bitstream, arithmeticEncoder );
+    pfdu_more_available_patch_flag = !( ( puCount + 1 ) == pfdu.getPatchCount() );
+    arithmeticEncoder.encode( pfdu_more_available_patch_flag,
+                              bModelMoreAvailablePatchFlag );  // ae(v)
+  }
+  if ( sps.getPointLocalReconstructionEnabledFlag() )
+    pointLocalReconstruction( context, bitstream, arithmeticEncoder );
+
+  uint32_t compressedBitstreamSize = arithmeticEncoder.stop_encoder();
+  bitstream.writeBuffer( arithmeticEncoder.buffer(), compressedBitstreamSize );
+
+  byteAlignment( bitstream );
 }
 
 // 7.3.30 Patch information data syntax
-void PCCBitstreamEncoderNewSyntax::patchInformationData( PCCContext&   context,
+void PCCBitstreamEncoderNewSyntax::patchInformationData(
+    PatchInformationData&    pid,
+    size_t                   patchMode,
+    PatchFrameHeader&        pfh,
+    PCCContext&              context,
                                                          PCCBitstream& bitstream,
-                                                         size_t        frameIndex,
-                                                         size_t        patchIndex,
-                                                         size_t        patchMode ) {
+    o3dgc::Arithmetic_Codec& arithmeticEncoder ) {
 #ifdef BITSTREAM_TRACE
   bitstream.trace("%s \n", __func__ );
 #endif  
-  // if ( patchMode == PSKIP ) {
-  //   // skip mode.
-  //   // currently not supported but added it for convenience. Could easily be removed
-  // } else if ( patchMode == IINTRA || patchMode == PINTRA ) {
-  //   if ( pfpsLocalOverrideGeometryPatchEnableFlag ) {
-  //     pidOverrideGeometryPatchFlag[frameIndex][patchIndex];  // u(1)
-  //     if ( pidOverrideGeometryPatchFlag[frameIndex][patchIndex] ) {
-  //       pidGeometryPatchParameterSetId[frameIndex][patchIndex];  // ue(v)
-  //     }
-  //   }
-  //   for ( i = 0; i < spsAttributeCount; i++ ) {
-  //     if ( pfpsLocalOverrideAttributePatchEnableFlag[i] ) {
-  //       pidOverrideAttributePatchFlag[patchIndex][i];  // u(1)
-  //     }
-  //     if ( pidOverrideAttributePatchFlag[patchIndex][i] )
-  //       pidAttributePatchParameterSetId[patchIndex][i];  // ue(v)
-  //   }
-  //   patchDataUnit( frameIndex, patchIndex );
-  // } else if ( patchMode == PINTER ) {
-  //   deltaPatchDataUnit( frameIndex, patchIndex );
-  // } else if ( patchMode == IPCM || patchMode == PPCM ) {
-  //   pcmPatchDataUnit( frameIndex, patchIndex );
-  // }
+
+  auto& sps  = context.getSps();
+  auto& psdu = context.getPatchSequenceDataUnit();
+  auto& pfps = psdu.getPatchFrameParameterSet( pfh.getPatchFrameParameterSetId() );
+
+  o3dgc::Static_Bit_Model bModel;
+  const uint8_t           bitCountGAppsId = 6;
+  if ( ( PATCH_FRAME_TYPE( pfh.getPatchFrameType() ) ) == P_PATCH_FRAME && patchMode == P_SKIP ) {
+    // skip mode.
+    // currently not supported but added it for convenience. Could easily be removed
+  } else if ( ( PATCH_FRAME_TYPE( pfh.getPatchFrameType() ) ) == I_PATCH_FRAME &&
+                  patchMode == I_INTRA ||
+              ( ( PATCH_FRAME_TYPE( pfh.getPatchFrameType() ) ) == P_PATCH_FRAME &&
+                patchMode == P_INTRA ) ) {
+    if ( pfps.getLocalOverrideGeometryPatchEnableFlag() ) {
+      arithmeticEncoder.encode( pid.getOverrideGeometryPatchFlag(),
+                                bModel );  // ae(v) needs to clarify bypass vs. regular?
+      if ( pid.getOverrideGeometryPatchFlag() ) {
+        EncodeUInt32( uint32_t( pid.getGeometryPatchParameterSetId() ), bitCountGAppsId,
+                      arithmeticEncoder, bModel );  // ae(v)
+      }
+    }
+    for ( int i = 0; i < sps.getAttributeCount(); i++ ) {
+      if ( pfps.getLocalOverrideAttributePatchEnableFlag()[i] ) {
+        arithmeticEncoder.encode( pid.getOverrideAttributePatchFlag()[i],
+                                  bModel );  // ae(v) needs to clarify bypass vs. regular?
+      }
+      if ( pid.getOverrideAttributePatchFlag()[i] ) {
+        EncodeUInt32( uint32_t( pid.getAttributePatchParameterSetId()[i] ), bitCountGAppsId,
+                      arithmeticEncoder, bModel );  // ae(v)
+      }
+    }
+
+    auto& pdu = pid.getPatchDataUnit();
+    patchDataUnit( pdu, pfh, context, bitstream, arithmeticEncoder );
+  } else if ( ( PATCH_FRAME_TYPE( pfh.getPatchFrameType() ) ) == P_PATCH_FRAME &&
+              patchMode == P_INTER ) {
+    auto& pdu = pid.getDeltaPatchDataUnit();
+    deltaPatchDataUnit( context, bitstream, arithmeticEncoder );
+  } else if ( ( PATCH_FRAME_TYPE( pfh.getPatchFrameType() ) ) == I_PATCH_FRAME &&
+                  patchMode == I_PCM ||
+              ( PATCH_FRAME_TYPE( pfh.getPatchFrameType() ) ) == P_PATCH_FRAME &&
+                  patchMode == P_PCM ) {
+    auto& pdu = pid.getPCMPatchDataUnit();
+    pcmPatchDataUnit( context, bitstream, arithmeticEncoder );
+  }
 }
 
 // 7.3.31 Patch data unit syntax
-void PCCBitstreamEncoderNewSyntax::patchDataUnit( PCCContext&   context,
+void PCCBitstreamEncoderNewSyntax::patchDataUnit( PatchDataUnit&           pdu,
+                                                  PatchFrameHeader&        pfh,
+                                                  PCCContext&              context,
                                                   PCCBitstream& bitstream,
-                                                  size_t        frameIndex,
-                                                  size_t        patchIndex ) {
+                                                  o3dgc::Arithmetic_Codec& arithmeticEncoder ) {
 #ifdef BITSTREAM_TRACE
   bitstream.trace("%s \n", __func__ );
 #endif  
-  // pdu2dShiftU[frameIndex][patchIndex];              // ae(v)
-  // pdu2dShiftV[frameIndex][patchIndex];              // ae(v)
-  // pdu2dDeltaSizeU[frameIndex][patchIndex];          // ae(v)
-  // pdu2dDeltaSizeV[frameIndex][patchIndex];          // ae(v)
-  // pdu3dShiftTangentAxis[frameIndex][patchIndex];    // u(v)
-  // pdu3dShiftBitangentAxis[frameIndex][patchIndex];  // u(v)
-  // pdu3dShiftNormalAxis[frameIndex][patchIndex];     // u(v)
-  // pduNormalAxis[frameIndex][patchIndex];              // ae(v)
-  // if ( pfhPatchOrientationPresentFlag[frameIndex] ) {
-  //   pduOrientationSwapFlag[frameIndex][patchIndex];  // ae(v)
-  // }
-  // if ( pfhPatchLodBitCount[frameIndex] > 0 ) {
-  //    pduLod[frameIndex][patchIndex];  // u(v)
-  // }
-  // projectionFlag = 0;
-  // i              = 0;
-  // while ( i < spsLayerCountMinus1 + 1 && projectionFlag == 0 ) {
-  //   projectionFlag = projectionFlag | spsLayerAbsoluteCodingEnabledFlag[i];
-  //   i++;
-  // }
-  // if ( projectionFlag ) {
-  //   pduProjectionMode[frameIndex][patchIndex]  // ae(v)
-  // }
+
+  o3dgc::Static_Bit_Model   bModel;
+  o3dgc::Adaptive_Bit_Model bModelIntSizeU0, bModelIntSizeV0, bModelOrientationSwapFlag, bModelProjectionFlag;
+  o3dgc::Adaptive_Data_Model orientationModel( 4 );
+
+  EncodeUInt32( uint32_t( pdu.get2DShiftU() ), pfh.getPatchFramehPatch2dShiftUBitCountMinus1(),
+                arithmeticEncoder, bModel );  // ae(v)
+  EncodeUInt32( uint32_t( pdu.get2DShiftV() ), pfh.getPatchFramehPatch2dShiftVBitCountMinus1(),
+                arithmeticEncoder, bModel );  // ae(v)
+  arithmeticEncoder.ExpGolombEncode( o3dgc::IntToUInt( int32_t( pdu.get2DDeltaSizeU() ) ), 0,
+                                     bModel, bModelIntSizeU0 );  // The way it is implemented in TM
+  arithmeticEncoder.ExpGolombEncode( o3dgc::IntToUInt( int32_t( pdu.get2DDeltaSizeU() ) ), 0,
+                                     bModel, bModelIntSizeV0 );  // The way it is implemented in TM
+
+  EncodeUInt32( uint32_t( pdu.get3DShiftTangentAxis() ),
+                pfh.getPatchFramehPatch3dShiftTangentAxisBitCountMinus1(), arithmeticEncoder,
+                bModel );  // ae(v)
+  EncodeUInt32( uint32_t( pdu.get3DShiftBiTangentAxis() ),
+                pfh.getPatchFramehPatch3dShiftBitangentAxisBitCountMinus1(), arithmeticEncoder,
+                bModel );  // ae(v)
+  EncodeUInt32( uint32_t( pdu.get3DShiftNormalAxis() ),
+                pfh.getPatchFramehPatch3dShiftNormalAxisBitCountMinus1(), arithmeticEncoder,
+                bModel );  // ae(v)
+
+  arithmeticEncoder.encode( uint32_t( pdu.getNormalAxis() ), orientationModel ); // in TM, this is being encoded with binarization (bBinArithCoding), what to do in that case???? 
+  //    ******  Does not appear in CD and not implemented by Vlad  *******
+  //if ( pfh.getPathOrientationPresentFlag() )
+  //  arithmeticEncode.encode( pdu.getOrientationSwapFlag(), bModelOrientationSwapFlag );  // ae(v)
+
+  if ( pfh.getPatchFramehPatchLodBitCount() > 0 ) {
+    EncodeUInt32( uint32_t( pdu.getLod() ), pfh.getPatchFramehPatchLodBitCount(), arithmeticEncoder,
+                  bModel );  // ae(v)
+  }
+  bool  projectionFlag = 0;
+  int   i              = 0;
+  auto& sps            = context.getSps();
+  while ( i < sps.getLayerCountMinus1() + 1 && projectionFlag == 0 ) {
+    projectionFlag = projectionFlag | sps.getLayerAbsoluteCodingEnabledFlag()[i];
+    i++;
+  }
+  if ( projectionFlag ) {
+    arithmeticEncoder.encode( pdu.getProjectionMode(), bModelProjectionFlag );  // ae(v)
+  }
 }
 
 // 7.3.32  Delta Patch data unit syntax
 void PCCBitstreamEncoderNewSyntax::deltaPatchDataUnit( PCCContext&   context,
                                                        PCCBitstream& bitstream,
-                                                       size_t        frameIndex,
-                                                       size_t        patchIndex ) {
+                                                       o3dgc::Arithmetic_Codec& arithmeticEncoder ) {
 #ifdef BITSTREAM_TRACE
   bitstream.trace("%s \n", __func__ );
 #endif  
@@ -1016,8 +1040,7 @@ void PCCBitstreamEncoderNewSyntax::deltaPatchDataUnit( PCCContext&   context,
 // 7.3.33 PCM patch data unit syntax
 void PCCBitstreamEncoderNewSyntax::pcmPatchDataUnit( PCCContext&   context,
                                                      PCCBitstream& bitstream,
-                                                     size_t        frameIndex,
-                                                     size_t        patchIndex ) {
+                                                     o3dgc::Arithmetic_Codec& arithmeticEncoder) {
 #ifdef BITSTREAM_TRACE
   bitstream.trace("%s \n", __func__ );
 #endif  
@@ -1032,8 +1055,8 @@ void PCCBitstreamEncoderNewSyntax::pcmPatchDataUnit( PCCContext&   context,
 }
 
 // 7.3.34 Point local reconstruction syntax
-void PCCBitstreamEncoderNewSyntax::pointLocalReconstruction( PCCContext&   context,
-                                                             PCCBitstream& bitstream ) {
+void PCCBitstreamEncoderNewSyntax::pointLocalReconstruction(
+    PCCContext& context, PCCBitstream& bitstream, o3dgc::Arithmetic_Codec& arithmeticEncoder ) {
 #ifdef BITSTREAM_TRACE
   bitstream.trace("%s \n", __func__ );
 #endif  

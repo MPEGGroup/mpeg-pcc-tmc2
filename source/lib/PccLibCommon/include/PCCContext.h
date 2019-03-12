@@ -53,6 +53,183 @@ typedef std::pair<size_t, size_t>                   GlobalPatch;    // [FrameInd
 typedef std::map<size_t, std::vector<GlobalPatch> > GlobalPatches;  // [TrackIndex, <GlobalPatch>]
 typedef std::pair<size_t, size_t>                   SubContext;     // [start, end)
 
+// 7.3.33  PCM patch data unit syntax
+class PCMPatchDataUnit {
+ public:
+  PCMPatchDataUnit(){};
+  ~PCMPatchDataUnit(){};
+
+ private:
+};
+
+// 7.3.32  Delta Patch data unit syntax
+class DeltaPatchDataUnit {
+ public:
+  DeltaPatchDataUnit(){};
+  ~DeltaPatchDataUnit(){};
+
+ private:
+};
+
+// 7.3.31  Patch data unit syntax
+class PatchDataUnit {
+ public:
+  PatchDataUnit() :
+      pdu2DShiftU_( 0 ),  // sizes need to be determined
+      pdu2DShiftV_( 0 ),
+      pdu2DDeltaSizeU_( 0 ),
+      pdu2DDeltaSizeV_( 0 ),
+      pdu3DShiftTangentAxis_( 0 ),
+      pdu3DShiftBiTangentAxis_( 0 ),
+      pdu3DShiftNormalAxis_( 0 ),
+      pduNormalAxis_( PCC_AXIS3_Z ),
+      pduOrientationSwapFlag_( false ),
+      pduLod_( 1 ),
+      pduProjectionMode_( false ){};
+
+  ~PatchDataUnit(){};
+
+  PatchDataUnit& operator=( const PatchDataUnit& ) = default;
+
+  uint64_t get2DShiftU() { return pdu2DShiftU_; }
+  uint64_t get2DShiftV() { return pdu2DShiftV_; }
+  int64_t  get2DDeltaSizeU() { return pdu2DDeltaSizeU_; }
+  int64_t  get2DDeltaSizeV() { return pdu2DDeltaSizeV_; }
+  uint64_t get3DShiftTangentAxis() { return pdu3DShiftTangentAxis_; }
+  uint64_t get3DShiftBiTangentAxis() { return pdu3DShiftBiTangentAxis_; }
+  uint64_t get3DShiftNormalAxis() { return pdu3DShiftNormalAxis_; }
+  PCCAxis3 getNormalAxis() { return pduNormalAxis_; }
+  uint8_t  getOrientationSwapFlag() { return pduOrientationSwapFlag_; }
+  uint8_t  getLod() { return pduLod_; }
+  bool     getProjectionMode() { return pduProjectionMode_; }
+
+  void set2DShiftU( uint64_t uShift ) { pdu2DShiftU_ = uShift; }
+  void set2DShiftV( uint64_t vShift ) { pdu2DShiftV_ = vShift; }
+  void set2DDeltaSizeU( int64_t deltaU ) { pdu2DDeltaSizeU_ = deltaU; }
+  void set2DDeltaSizeV( int64_t deltaV ) { pdu2DDeltaSizeV_ = deltaV; }
+  void set3DShiftTangentAxis( uint64_t tangentAxis ) { pdu3DShiftTangentAxis_ = tangentAxis; }
+  void set3DShiftBiTangentAxis( uint64_t biTangentAxis ) {
+    pdu3DShiftBiTangentAxis_ = biTangentAxis;
+  }
+  void set3DShiftNormalAxis( uint64_t normalAxis ) { pdu3DShiftNormalAxis_ = normalAxis; }
+  void setNormalAxis( PCCAxis3 axis ) { pduNormalAxis_ = axis; }
+  void setOrientationSwapFlag( bool flag ) { pduOrientationSwapFlag_ = flag; }
+  void setLod( uint8_t lod ) { pduLod_ = lod; }
+  void setProjectionMode( bool mode ) { pduProjectionMode_ = mode; }
+
+ private:
+  uint64_t pdu2DShiftU_;  // sizes need to be determined
+  uint64_t pdu2DShiftV_;
+  int64_t  pdu2DDeltaSizeU_;
+  int64_t  pdu2DDeltaSizeV_;
+  uint64_t pdu3DShiftTangentAxis_;
+  uint64_t pdu3DShiftBiTangentAxis_;
+  uint64_t pdu3DShiftNormalAxis_;
+  PCCAxis3 pduNormalAxis_;
+  bool     pduOrientationSwapFlag_;
+  uint8_t  pduLod_;
+  bool     pduProjectionMode_;
+};
+
+// 7.3.30  Patch information data syntax
+class PatchInformationData {
+ public:
+  PatchInformationData( size_t size = 0 ) { allocate( size ); };
+
+  ~PatchInformationData() {
+    overrideAttributePatchFlag_.clear();
+    attributePatchParameterSetId_.clear();
+  };
+
+  void init() {
+    overrideGeometryPatchFlag_ = false;
+    overrideAttributePatchFlag_.clear();
+    geometryPatchParameterSetId_ = 0;
+    attributePatchParameterSetId_.clear();
+  }
+
+  PatchInformationData& operator=( const PatchInformationData& ) = default;
+
+  void allocate( size_t size ) {
+    if ( size ) {
+      overrideAttributePatchFlag_.resize( size, false );
+      attributePatchParameterSetId_.resize( size, 0 );
+    }
+  }
+
+  bool                  getOverrideGeometryPatchFlag() { return overrideGeometryPatchFlag_; }
+  uint8_t               getGeometryPatchParameterSetId() { return geometryPatchParameterSetId_; }
+  std::vector<bool>&    getOverrideAttributePatchFlag() { return overrideAttributePatchFlag_; }
+  std::vector<uint8_t>& getAttributePatchParameterSetId() { return attributePatchParameterSetId_; }
+  PatchDataUnit&        getPatchDataUnit() { return patchDataUnit_; }
+  DeltaPatchDataUnit&   getDeltaPatchDataUnit() { return deltaPatchDataUnit_; }
+  PCMPatchDataUnit&     getPCMPatchDataUnit() { return pcmPatchDataUnit_; }
+
+  void setOverrideGeometryPatchFlag( bool flag ) { overrideGeometryPatchFlag_ = flag; }
+  void setGeometryPatchParameterSetId( uint8_t gpParameterSetId ) {
+    geometryPatchParameterSetId_ = gpParameterSetId;
+  }
+  void setOverrideAttributePatchFlag( std::vector<bool>& flagVec ) {
+    overrideAttributePatchFlag_ = flagVec;
+  }
+  void seAttributePatchParameterSetId( std::vector<uint8_t>& apParameterSetIdVec ) {
+    attributePatchParameterSetId_ = apParameterSetIdVec;
+  }
+  void setPatchDataUnit( PatchDataUnit& dataUnit ) { patchDataUnit_ = dataUnit; }
+  void setDeltaPatchDataUnit( DeltaPatchDataUnit& dataUnit ) { deltaPatchDataUnit_ = dataUnit; }
+  void setPCMPatchDataUnit( PCMPatchDataUnit& dataUnit ) { pcmPatchDataUnit_ = dataUnit; }
+
+ private:
+  bool                 overrideGeometryPatchFlag_;
+  uint8_t              geometryPatchParameterSetId_;
+  std::vector<bool>    overrideAttributePatchFlag_;    // size is number of attributes
+  std::vector<uint8_t> attributePatchParameterSetId_;  // size is number of attributes
+  PatchDataUnit        patchDataUnit_;
+  DeltaPatchDataUnit   deltaPatchDataUnit_;
+  PCMPatchDataUnit     pcmPatchDataUnit_;
+};
+
+// 7.3.29  Patch frame data unit syntax
+class PatchFrameDataUnit {
+ public:
+  PatchFrameDataUnit( uint8_t pCount = 0 ) { allocate( pCount ); }
+
+  ~PatchFrameDataUnit() {
+    patchMode_.clear();
+    patchInformationData_.clear();
+  }
+
+  void init() {
+    patchMode_.clear();
+    patchInformationData_.clear();
+  }
+
+  void allocate( uint8_t pCount ) {
+    if ( pCount ) {
+      patchMode_.resize( pCount );
+      patchInformationData_.resize( pCount );
+    }
+  }
+
+  PatchFrameDataUnit& operator=( const PatchFrameDataUnit& ) = default;
+
+  uint8_t                            getPatchCount() { return patchMode_.size(); }
+  std::vector<uint8_t>&              getPatchMode() { return patchMode_; }
+  std::vector<PatchInformationData>& getPatchInformationData() { return patchInformationData_; }
+
+  void setPatchFrameMode( std::vector<uint8_t>& mode ) {
+    patchMode_ = mode;
+  }  // dependency of enum on pfy_type vs. uint8_t?
+  void setPatchFrameMode( uint8_t patch, uint8_t mode ) { patchMode_[patch] = mode; }
+  void setPatchInformationData( std::vector<PatchInformationData>& pid ) {
+    patchInformationData_ = pid;
+  }
+
+ private:
+  std::vector<uint8_t> patchMode_;
+  std::vector<PatchInformationData> patchInformationData_;  // patchCount_ = size of vector
+};
+
 // 7.3.28  Reference list structure syntax
 class RefListStruct {
  public:
@@ -204,15 +381,6 @@ class PatchFrameHeader {
   bool                  interPredictPatch3dShiftBitangentAxisBitCountFlag_;
   bool                  interPredictPatch3dShiftNormalAxisBitCountFlag_;
   bool                  interPredictPatchLodBitCountFlag_;
-};
-
-// 7.3.29  Patch sequence parameter set syntax
-class PatchFrameDataUnit {
-public:
-  PatchFrameDataUnit() {}
-  PatchFrameDataUnit& operator=(const PatchFrameDataUnit&) = default;
-private:
-
 };
 
 // 7.3.26  Patch frame layer unit syntax
@@ -825,12 +993,19 @@ class PatchSequenceUnitPayload {
 
   PatchSequenceParameterSet&  getPatchSequenceParameterSet() { return patchSequenceParameterSet_; }
   GeometryPatchParameterSet&  getGeometryPatchParameterSet() { return geometryPatchParameterSet_; }
-  AttributePatchParameterSet& getAttributePatchParameterSet() {
-    return attributePatchParameterSet_;
+  std::vector<AttributePatchParameterSet>& getAttributePatchParameterSets() { return attributePatchParameterSet_; }
+  AttributePatchParameterSet& getAttributePatchParameterSet( size_t attributeIndex ) {
+    return attributePatchParameterSet_[attributeIndex];
+  }
+  AttributePatchParameterSet& getAttributeParameterSet( size_t attributeIndex ) {
+    return attributePatchParameterSet_[attributeIndex];
   }
   PatchFrameParameterSet&     getPatchFrameParameterSet() { return patchFrameParameterSet_; }
-  AttributeFrameParameterSet& getAttributeFrameParameterSet() {
+  std::vector < AttributeFrameParameterSet>& getAttributeFrameParameterSets() {
     return attributeFrameParameterSet_;
+  }
+  AttributeFrameParameterSet& getAttributeFrameParameterSet( size_t attributeIndex ) {
+    return attributeFrameParameterSet_[attributeIndex];
   }
   GeometryFrameParameterSet& getGeometryFrameParameterSet() { return geometryFrameParameterSet_; }
   PatchFrameLayerUnit&       getPatchFrameLayerUnit() { return patchFrameLayerUnit_; }
@@ -841,13 +1016,13 @@ class PatchSequenceUnitPayload {
   void setGeometryPatchParameterSet( GeometryPatchParameterSet param ) {
     geometryPatchParameterSet_ = param;
   }
-  void setAttributePatchParameterSet( AttributePatchParameterSet param ) {
+  void setAttributePatchParameterSet( std::vector<AttributePatchParameterSet> param ) {
     attributePatchParameterSet_ = param;
   }
   void setPatchFrameParameterSet( PatchFrameParameterSet param ) {
     patchFrameParameterSet_ = param;
   }
-  void setAttributeFrameParameterSet( AttributeFrameParameterSet param ) {
+  void setAttributeFrameParameterSet( std::vector<AttributeFrameParameterSet> param ) {
     attributeFrameParameterSet_ = param;
   }
   void setGeometryFrameParameterSet( GeometryFrameParameterSet param ) {
@@ -860,9 +1035,9 @@ class PatchSequenceUnitPayload {
   uint8_t                    frameIndex_;
   PatchSequenceParameterSet  patchSequenceParameterSet_;
   GeometryPatchParameterSet  geometryPatchParameterSet_;
-  AttributePatchParameterSet attributePatchParameterSet_;
+  std::vector<AttributePatchParameterSet> attributePatchParameterSet_;
   PatchFrameParameterSet     patchFrameParameterSet_;
-  AttributeFrameParameterSet attributeFrameParameterSet_;
+  std::vector<AttributeFrameParameterSet> attributeFrameParameterSet_;
   GeometryFrameParameterSet  geometryFrameParameterSet_;
   PatchFrameLayerUnit        patchFrameLayerUnit_;
 };
@@ -887,6 +1062,48 @@ class PatchSequenceDataUnit {
   std::vector<PatchSequenceUnitPayload>& getPatchSequenceUnitPayload() {
     return patchSequenceUnitPayload_;
   }
+
+  PatchSequenceParameterSet& getPatchSequenceParameterSet( const uint8_t psps_id ) {
+    for ( int payloadIndex = 0; payloadIndex < patchSequenceUnitPayload_.size(); payloadIndex++ ) {
+      if ( patchSequenceUnitPayload_[payloadIndex].getUnitType() == PSD_SPS ) {
+        // now check if the id is the requested one
+        auto& psps = patchSequenceUnitPayload_[payloadIndex].getPatchSequenceParameterSet();
+        if ( psps.getPatchSequenceParameterSetId() == psps_id ) return psps;
+      }
+    }
+  }
+
+  GeometryFrameParameterSet& getGeometryFrameParameterSet( const uint8_t gfps_id ) {
+    for ( int payloadIndex = 0; payloadIndex < patchSequenceUnitPayload_.size(); payloadIndex++ ) {
+      if ( patchSequenceUnitPayload_[payloadIndex].getUnitType() == PSD_GFPS ) {
+        // now check if the id is the requested one
+        auto& gfps = patchSequenceUnitPayload_[payloadIndex].getGeometryFrameParameterSet();
+        if ( gfps.getGeometryFrameParameterSetId() == gfps_id ) return gfps;
+      }
+    }
+  }
+
+  AttributeFrameParameterSet& getAttributeFrameParameterSet( const uint8_t afps_id, const uint8_t attribute_idx ) {
+    for ( int payloadIndex = 0; payloadIndex < patchSequenceUnitPayload_.size(); payloadIndex++ ) {
+      if ( patchSequenceUnitPayload_[payloadIndex].getUnitType() == PSD_AFPS ) {
+        // now check if the id is the requested one
+        auto& afps =
+            patchSequenceUnitPayload_[payloadIndex].getAttributeFrameParameterSet( attribute_idx );
+        if ( afps.getAttributeFrameParameterSetId() == afps_id ) return afps;
+      }
+    }
+  }
+
+  PatchFrameParameterSet& getPatchFrameParameterSet( const uint8_t pfps_id) {
+    for ( int payloadIndex = 0; payloadIndex < patchSequenceUnitPayload_.size(); payloadIndex++ ) {
+      if ( patchSequenceUnitPayload_[payloadIndex].getUnitType() == PSD_FPS ) {
+        // now check if the id is the requested one
+        auto& pfps = patchSequenceUnitPayload_[payloadIndex].getPatchFrameParameterSet();
+        if ( pfps.getPatchFrameParameterSetId() == pfps_id ) return pfps;
+      }
+    }
+  }
+
   void setFrameCount( uint8_t frameCount ) { frameCount_ = frameCount; }
   void setPatchSequenceUnitPayload( std::vector<PatchSequenceUnitPayload> unitPayload ) {
     patchSequenceUnitPayload_ = unitPayload;
