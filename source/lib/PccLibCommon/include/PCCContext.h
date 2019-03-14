@@ -53,22 +53,189 @@ typedef std::pair<size_t, size_t>                   GlobalPatch;    // [FrameInd
 typedef std::map<size_t, std::vector<GlobalPatch> > GlobalPatches;  // [TrackIndex, <GlobalPatch>]
 typedef std::pair<size_t, size_t>                   SubContext;     // [start, end)
 
+// 7.3.34 Point local reconstruction syntax
+class PointLocalReconstruction {
+ public:
+  PointLocalReconstruction():
+      plrBlockToPatchMapHeight_(0),
+      plrBlockToPatchMapWidth_(0) {
+    blockToPatchMap_.clear();
+    plrModeInterpolateFlag_.clear();
+    plrModeNeighbourMinus1_.clear();
+    plrModeMinimumDepthMinus1_.clear();
+    plrModeFillingFlag_.clear();
+  };
+  ~PointLocalReconstruction() {
+    blockToPatchMap_.clear();
+    plrModeInterpolateFlag_.clear();
+    plrModeNeighbourMinus1_.clear();
+    plrModeMinimumDepthMinus1_.clear();
+    plrModeFillingFlag_.clear();
+  };
+
+  PointLocalReconstruction& operator=( const PointLocalReconstruction& ) = default;
+
+  uint64_t getBlockToPatchMapHeight() { return plrBlockToPatchMapHeight_; };
+  uint64_t getBlockToPatchMapWidth() { return plrBlockToPatchMapWidth_; };
+  std::vector<uint8_t> getBlockToPatchMap() { return blockToPatchMap_; }
+  uint8_t getBlockToPatchMap( uint64_t x, uint64_t y ) {
+    return blockToPatchMap_[y * plrBlockToPatchMapWidth_ + x];
+  }
+  std::vector<bool> getModeInterpolateFlag() { return plrModeInterpolateFlag_; }
+  bool getModeInterpolateFlag( uint64_t x, uint64_t y) {
+    return plrModeInterpolateFlag_[y * plrBlockToPatchMapWidth_ + x]; 
+  }
+  std::vector<uint8_t> getModeNeighbourMinus1() { return plrModeNeighbourMinus1_; }
+  uint8_t getModeNeighbourMinus1( uint64_t x, uint64_t y ) {
+    return plrModeNeighbourMinus1_[y * plrBlockToPatchMapWidth_ + x];
+  }
+  std::vector<uint8_t> getModeMinimumDepthMinus1() { return plrModeMinimumDepthMinus1_; }
+  uint8_t getModeMinimumDepthMinus1( uint64_t x, uint64_t y ) {
+    return plrModeMinimumDepthMinus1_[y * plrBlockToPatchMapWidth_ + y];
+  }
+  std::vector<bool> getModeFillingFlag() { return plrModeFillingFlag_; }
+  bool getModeFillingFlag( uint64_t x, uint64_t y) {
+    return plrModeFillingFlag_[y * plrBlockToPatchMapWidth_ + x]; 
+  }
+
+  void setBlockToPatchMapHeight( uint64_t height ) { plrBlockToPatchMapHeight_ = height; };
+  void setBlockToPatchMapWidth( uint64_t width ) { plrBlockToPatchMapWidth_ = width; };
+  void setBlockToPatchMap( std::vector<uint8_t> map ) { blockToPatchMap_ = map; }
+  void setBlockToPatchMap( uint8_t val,  uint64_t x, uint64_t y ) {
+    blockToPatchMap_[y * plrBlockToPatchMapWidth_ + x] = val;
+  }
+  void setModeInterpolateFlag( std::vector<bool> modeFlags ) {
+    plrModeInterpolateFlag_ = modeFlags;
+  }
+  void setModeInterpolateFlag( bool flag, uint64_t x, uint64_t y) {
+    plrModeInterpolateFlag_[y * plrBlockToPatchMapWidth_ + x] = flag; 
+  }
+  void setModeNeighbourMinus1(std::vector<uint8_t> modeNeighbous) { 
+    plrModeNeighbourMinus1_ = modeNeighbous;
+  }
+  void setModeNeighbourMinus1(uint8_t modeNeighbour, uint64_t x, uint64_t y ) {
+    plrModeNeighbourMinus1_[y * plrBlockToPatchMapWidth_ + x] = modeNeighbour;
+  }
+  void setModeMinimumDepthMinus1(std::vector<uint8_t> minDepth ) {
+    plrModeMinimumDepthMinus1_ = minDepth; 
+  }
+  void setModeMinimumDepthMinus1(uint8_t minDepthVal, uint64_t x, uint64_t y ) {
+    plrModeMinimumDepthMinus1_[y * plrBlockToPatchMapWidth_ + x] = minDepthVal;
+  }
+  void setModeFillingFlag( std::vector<bool> modeFillingFlags ) {
+    plrModeFillingFlag_ = modeFillingFlags;
+  }
+  void setModeFillingFlag(bool flag, uint64_t x, uint64_t y) {
+    plrModeFillingFlag_[y * plrBlockToPatchMapWidth_ + x] = flag; 
+  }
+
+
+ private:
+   /* internal */
+   uint64_t             plrBlockToPatchMapHeight_;
+   uint64_t             plrBlockToPatchMapWidth_;
+   /* syntax */
+   std::vector<uint8_t> blockToPatchMap_; // size is plrBlockToPatchMapHeight_ * plrBlockToPatchMapWidth_
+   std::vector<bool>    plrModeInterpolateFlag_;
+   std::vector<uint8_t> plrModeNeighbourMinus1_;
+   std::vector<uint8_t> plrModeMinimumDepthMinus1_;
+   std::vector<bool>    plrModeFillingFlag_;
+};
+
 // 7.3.33  PCM patch data unit syntax
 class PCMPatchDataUnit {
  public:
-  PCMPatchDataUnit(){};
+  PCMPatchDataUnit() : 
+    ppduPatchInPcmVideoFlag_( false ),
+    ppdu2DShiftU_( 0 ), 
+    ppdu2DShiftV_( 0 ), 
+    ppdu2DDeltaSizeU_( 0 ),
+    ppdu2DDeltaSizeV_( 0 ),
+    ppduPcmPoints_( 0 ){};
   ~PCMPatchDataUnit(){};
+  PCMPatchDataUnit& operator=( const PCMPatchDataUnit& ) = default;
+
+  bool     getPatchInPcmVideoFlag() { return ppduPatchInPcmVideoFlag_; }
+  uint64_t get2DShiftU() { return ppdu2DShiftU_; }
+  uint64_t get2DShiftV() { return ppdu2DShiftV_; }
+  int64_t  get2DDeltaSizeU() { return ppdu2DDeltaSizeU_; }
+  int64_t  get2DDeltaSizeV() { return ppdu2DDeltaSizeV_; }
+  uint32_t getPcmPoints() { return ppduPcmPoints_;  }
+
+  void setPatchInPcmVideoFlag( bool flag ) { ppduPatchInPcmVideoFlag_ = flag; }
+  void set2DShiftU( uint64_t sizeU ) { ppdu2DShiftU_ = sizeU; }
+  void set2DShiftV( uint64_t sizeV ) { ppdu2DShiftV_ = sizeV; }
+  void set2DDeltaSizeU( int64_t deltaSizeU ) { ppdu2DDeltaSizeU_ = deltaSizeU; }
+  void set2DDeltaSizeV( int64_t deltaSizeV ) { ppdu2DDeltaSizeV_ = deltaSizeV; }
+  void setPcmPoints( uint32_t numPcmPoints ) { ppduPcmPoints_ = numPcmPoints; }
 
  private:
+   bool     ppduPatchInPcmVideoFlag_;
+   uint64_t ppdu2DShiftU_;
+   uint64_t ppdu2DShiftV_;
+   int64_t  ppdu2DDeltaSizeU_;
+   int64_t  ppdu2DDeltaSizeV_;
+   uint32_t ppduPcmPoints_;
 };
 
 // 7.3.32  Delta Patch data unit syntax
 class DeltaPatchDataUnit {
  public:
-  DeltaPatchDataUnit(){};
+   DeltaPatchDataUnit() :
+     dpduPatchIndex_( 0 ),
+     dpdu2DDeltaShiftU_( 0 ),
+     dpdu2DDeltaShiftV_( 0 ),
+     dpdu2DDeltaSizeU_( 0 ),
+     dpdu2DDeltaSizeV_( 0 ),
+     dpdu3DDeltaShiftTangentAxis_( 0 ),
+     dpdu3DDeltaShiftBiTangentAxis_( 0 ),
+     dpdu3DDeltaShiftNormalAxis_( 0 ),
+     dpduNormalAxis_( PCC_AXIS3_Z ),
+     dpduOrientationSwapFlag_( false ),
+     dpduLod_( 1 ),
+     dpduProjectionMode_( false ){};
   ~DeltaPatchDataUnit(){};
+  DeltaPatchDataUnit& operator=( const DeltaPatchDataUnit& ) = default;
+  
+  uint8_t  getDeltaPatchIdx() { return dpduPatchIndex_; }
+  int64_t  get2DDeltaShiftU() { return dpdu2DDeltaShiftU_; }
+  int64_t  get2DDeltaShiftV() { return dpdu2DDeltaShiftV_; }
+  int64_t  get2DDeltaSizeU() { return dpdu2DDeltaSizeU_; }
+  int64_t  get2DDeltaSizeV() { return dpdu2DDeltaSizeV_; }
+  int64_t  get3DDeltaShiftTangentAxis() { return dpdu3DDeltaShiftTangentAxis_; }
+  int64_t  get3DDeltaShiftBiTangentAxis() { return dpdu3DDeltaShiftBiTangentAxis_; }
+  int64_t  get3DDeltaShiftNormalAxis() { return dpdu3DDeltaShiftNormalAxis_; }
+  PCCAxis3 getNormalAxis() { return dpduNormalAxis_; }
+  uint8_t  getOrientationSwapFlag() { return dpduOrientationSwapFlag_; }
+  uint8_t  getLod() { return dpduLod_; }
+  bool     getProjectionMode() { return dpduProjectionMode_; }
+
+  void setDeltaPatchIdx( uint8_t dIdx ) { dpduPatchIndex_ = dIdx; }
+  void set2DDeltaShiftU( int64_t uShift ) { dpdu2DDeltaShiftU_ = uShift; }
+  void set2DDeltaShiftV( int64_t vShift ) { dpdu2DDeltaShiftV_ = vShift; }
+  void set2DDeltaSizeU( int64_t deltaU ) { dpdu2DDeltaSizeU_ = deltaU; }
+  void set2DDeltaSizeV( int64_t deltaV ) { dpdu2DDeltaSizeV_ = deltaV; }
+  void set3DDeltaShiftTangentAxis( int64_t tangentAxis ) { dpdu3DDeltaShiftTangentAxis_ = tangentAxis; }
+  void set3DDeltaShiftBiTangentAxis( int64_t biTangentAxis ) { dpdu3DDeltaShiftBiTangentAxis_ = biTangentAxis; }
+  void set3DDeltaShiftNormalAxis( int64_t normalAxis ) { dpdu3DDeltaShiftNormalAxis_ = normalAxis; }
+  void setNormalAxis( PCCAxis3 axis ) { dpduNormalAxis_ = axis; }
+  void setOrientationSwapFlag( bool flag ) { dpduOrientationSwapFlag_ = flag; }
+  void setLod( uint8_t lod ) { dpduLod_ = lod; }
+  void setProjectionMode( bool mode ) { dpduProjectionMode_ = mode; }
 
  private:
+   uint8_t  dpduPatchIndex_;
+   int64_t  dpdu2DDeltaShiftU_;  // sizes need to be determined
+   int64_t  dpdu2DDeltaShiftV_;
+   int64_t  dpdu2DDeltaSizeU_;
+   int64_t  dpdu2DDeltaSizeV_;
+   int64_t  dpdu3DDeltaShiftTangentAxis_;
+   int64_t  dpdu3DDeltaShiftBiTangentAxis_;
+   int64_t  dpdu3DDeltaShiftNormalAxis_;
+   PCCAxis3 dpduNormalAxis_;
+   bool     dpduOrientationSwapFlag_;
+   uint8_t  dpduLod_;
+   bool     dpduProjectionMode_;
 };
 
 // 7.3.31  Patch data unit syntax
@@ -216,6 +383,7 @@ class PatchFrameDataUnit {
   uint8_t                            getPatchCount() { return patchMode_.size(); }
   std::vector<uint8_t>&              getPatchMode() { return patchMode_; }
   std::vector<PatchInformationData>& getPatchInformationData() { return patchInformationData_; }
+  PointLocalReconstruction&          getPointLocalReconstruction() { return pointLocalReconstruction_; }
 
   void setPatchFrameMode( std::vector<uint8_t>& mode ) {
     patchMode_ = mode;
@@ -228,6 +396,7 @@ class PatchFrameDataUnit {
  private:
   std::vector<uint8_t> patchMode_;
   std::vector<PatchInformationData> patchInformationData_;  // patchCount_ = size of vector
+  PointLocalReconstruction pointLocalReconstruction_;
 };
 
 // 7.3.28  Reference list structure syntax

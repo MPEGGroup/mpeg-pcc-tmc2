@@ -889,9 +889,10 @@ void PCCBitstreamEncoderNewSyntax::patchFrameDataUnit( PatchFrameDataUnit& pfdu,
     arithmeticEncoder.encode( pfdu_more_available_patch_flag,
                               bModelMoreAvailablePatchFlag );  // ae(v)
   }
-  if ( sps.getPointLocalReconstructionEnabledFlag() )
-    pointLocalReconstruction( context, bitstream, arithmeticEncoder );
-
+  if ( sps.getPointLocalReconstructionEnabledFlag() ) {
+    auto& plr = pfdu.getPointLocalReconstruction();
+    pointLocalReconstruction( plr, context, bitstream, arithmeticEncoder );
+  }
   uint32_t compressedBitstreamSize = arithmeticEncoder.stop_encoder();
   bitstream.writeBuffer( arithmeticEncoder.buffer(), compressedBitstreamSize );
 
@@ -904,7 +905,7 @@ void PCCBitstreamEncoderNewSyntax::patchInformationData(
     size_t                   patchMode,
     PatchFrameHeader&        pfh,
     PCCContext&              context,
-                                                         PCCBitstream& bitstream,
+    PCCBitstream&            bitstream,
     o3dgc::Arithmetic_Codec& arithmeticEncoder ) {
 #ifdef BITSTREAM_TRACE
   bitstream.trace("%s \n", __func__ );
@@ -946,14 +947,14 @@ void PCCBitstreamEncoderNewSyntax::patchInformationData(
     patchDataUnit( pdu, pfh, context, bitstream, arithmeticEncoder );
   } else if ( ( PATCH_FRAME_TYPE( pfh.getPatchFrameType() ) ) == P_PATCH_FRAME &&
               patchMode == P_INTER ) {
-    auto& pdu = pid.getDeltaPatchDataUnit();
-    deltaPatchDataUnit( context, bitstream, arithmeticEncoder );
+    auto& dpdu = pid.getDeltaPatchDataUnit();
+    deltaPatchDataUnit( dpdu, pfh, context, bitstream, arithmeticEncoder );
   } else if ( ( PATCH_FRAME_TYPE( pfh.getPatchFrameType() ) ) == I_PATCH_FRAME &&
                   patchMode == I_PCM ||
               ( PATCH_FRAME_TYPE( pfh.getPatchFrameType() ) ) == P_PATCH_FRAME &&
                   patchMode == P_PCM ) {
-    auto& pdu = pid.getPCMPatchDataUnit();
-    pcmPatchDataUnit( context, bitstream, arithmeticEncoder );
+    auto& ppdu = pid.getPCMPatchDataUnit();
+    pcmPatchDataUnit( ppdu, pfh, context, bitstream, arithmeticEncoder );
   }
 }
 
@@ -1012,65 +1013,109 @@ void PCCBitstreamEncoderNewSyntax::patchDataUnit( PatchDataUnit&           pdu,
 }
 
 // 7.3.32  Delta Patch data unit syntax
-void PCCBitstreamEncoderNewSyntax::deltaPatchDataUnit( PCCContext&   context,
-                                                       PCCBitstream& bitstream,
+void PCCBitstreamEncoderNewSyntax::deltaPatchDataUnit( DeltaPatchDataUnit&      dpdu,
+                                                       PatchFrameHeader&        pfh,
+                                                       PCCContext&              context,
+                                                       PCCBitstream&            bitstream,
                                                        o3dgc::Arithmetic_Codec& arithmeticEncoder ) {
 #ifdef BITSTREAM_TRACE
   bitstream.trace("%s \n", __func__ );
-#endif  
-  // dpduPatchIndex[frameIndex][patchIndex];            // ae(v)
-  // dpdu2dShiftU[frameIndex][patchIndex];              // ae(v)
-  // dpdu2dShiftV[frameIndex][patchIndex];              // ae(v)
-  // dpdu2dDeltaSizeU[frameIndex][patchIndex];          // ae(v)
-  // dpdu2dDeltaSizeV[frameIndex][patchIndex];          // ae(v)
-  // dpdu3dShiftTangentAxis[frameIndex][patchIndex];    // ae(v)
-  // dpdu3dShiftBitangentAxis[frameIndex][patchIndex];  // ae(v)
-  // dpdu3dShiftNormalAxis[frameIndex][patchIndex];     // ae(v)
-  // projectionFlag = 0
-  // i = 0
-  // while (i < spsLayerCountMinus1 + 1 && projectionFlag == 0 )  {
-  //   projectionFlag = projectionFlag | spsLayerAbsoluteCodingEnabledFlag[ i ]
-  //   i++;
-  // }
-  // if ( projectionFlag )  {
-  //   dpduProjectionMode[ frmIdx ][ patchIndex ] ; // ae(v)
-  // }
+#endif
+  o3dgc::Static_Bit_Model    bModel;
+  o3dgc::Adaptive_Bit_Model  bModelPatchIdx, bModelPatch2DShiftU, bModelPatch2DShiftV, bModelPatchSizeU, bModelPatchSizeV;
+  o3dgc::Adaptive_Bit_Model  bModelPatch3DShiftNorm, bModelPatch3DShiftTan, bModelPatch3DShiftBitan; 
+  o3dgc::Adaptive_Bit_Model  bModelProjectionFlag;
+  
+  arithmeticEncoder.ExpGolombEncode( o3dgc::IntToUInt( int32_t( dpdu.getDeltaPatchIdx() ) ), 0,
+                                     bModel, bModelPatchIdx );
+  arithmeticEncoder.ExpGolombEncode( o3dgc::IntToUInt( int32_t( dpdu.get2DDeltaShiftU() ) ), 0,
+                                     bModel, bModelPatch2DShiftU );
+  arithmeticEncoder.ExpGolombEncode( o3dgc::IntToUInt( int32_t( dpdu.get2DDeltaShiftV() ) ), 0,
+                                     bModel, bModelPatch2DShiftV );
+  arithmeticEncoder.ExpGolombEncode( o3dgc::IntToUInt( int32_t( dpdu.get2DDeltaSizeU() ) ), 0,
+                                     bModel, bModelPatchSizeU );
+  arithmeticEncoder.ExpGolombEncode( o3dgc::IntToUInt( int32_t( dpdu.get2DDeltaSizeV() ) ), 0,
+                                     bModel, bModelPatchSizeV );
+  arithmeticEncoder.ExpGolombEncode( o3dgc::IntToUInt( int32_t( dpdu.get3DDeltaShiftTangentAxis() ) ), 0,
+                                     bModel, bModelPatch3DShiftTan );
+  arithmeticEncoder.ExpGolombEncode( o3dgc::IntToUInt( int32_t( dpdu.get3DDeltaShiftBiTangentAxis() ) ), 0,
+                                     bModel, bModelPatch3DShiftBitan );
+  arithmeticEncoder.ExpGolombEncode( o3dgc::IntToUInt( int32_t( dpdu.get3DDeltaShiftNormalAxis() ) ), 0,
+                                     bModel, bModelPatch3DShiftNorm );
+  bool  projectionFlag = 0;
+  int   i              = 0;
+  auto& sps            = context.getSps();
+  while ( i < sps.getLayerCountMinus1() + 1 && projectionFlag == 0 ) {
+    projectionFlag = projectionFlag | sps.getLayerAbsoluteCodingEnabledFlag()[i];
+    i++;
+  }
+  if ( projectionFlag )
+    arithmeticEncoder.encode( dpdu.getProjectionMode(), bModelProjectionFlag );
 }
 
 // 7.3.33 PCM patch data unit syntax
-void PCCBitstreamEncoderNewSyntax::pcmPatchDataUnit( PCCContext&   context,
-                                                     PCCBitstream& bitstream,
+void PCCBitstreamEncoderNewSyntax::pcmPatchDataUnit( PCMPatchDataUnit&        ppdu,
+                                                     PatchFrameHeader&        pfh,
+                                                     PCCContext&              context,
+                                                     PCCBitstream&            bitstream,
                                                      o3dgc::Arithmetic_Codec& arithmeticEncoder) {
 #ifdef BITSTREAM_TRACE
   bitstream.trace("%s \n", __func__ );
-#endif  
-  // if ( spsPcmSeparateVideoFlag ) {
-  //   ppduPatchInPcmVideoFlag[frameIndex][patchIndex];  // u(1)
-  //   ppdu2dShiftU[frameIndex][patchIndex];             // u(v)
-  //   ppdu2dShiftV[frameIndex][patchIndex];             // u(v)
-  //   ppdu2dDeltaSizeU[frameIndex][patchIndex];         // u(v)
-  //   ppdu2dDeltaSizeV[frameIndex][patchIndex];         // u(v)
-  //   ppduPcmPoints[frameIndex][patchIndex];            // ue(v)
-  // }
+#endif
+  o3dgc::Static_Bit_Model    bModel;
+  o3dgc::Adaptive_Bit_Model  bModelVideoPCMFlag;
+  o3dgc::Adaptive_Bit_Model  bModelIntSizeU, bModelIntSizeV, bModelPcmPoints;
+
+  auto& sps = context.getSps();
+  if ( sps.getPcmSeparateVideoPresentFlag() )
+    arithmeticEncoder.encode( ppdu.getPatchInPcmVideoFlag(), bModelVideoPCMFlag );
+  EncodeUInt32( uint32_t( ppdu.get2DShiftU() ), pfh.getPatchFramehPatch2dShiftUBitCountMinus1(),
+                arithmeticEncoder, bModel );  // ae(v)
+  EncodeUInt32( uint32_t( ppdu.get2DShiftV() ), pfh.getPatchFramehPatch2dShiftVBitCountMinus1(),
+                arithmeticEncoder, bModel );  // ae(v)
+  arithmeticEncoder.ExpGolombEncode( o3dgc::IntToUInt( int32_t( ppdu.get2DDeltaSizeU() ) ), 0,
+                                     bModel, bModelIntSizeU );  // ae(v)
+  arithmeticEncoder.ExpGolombEncode( o3dgc::IntToUInt( int32_t( ppdu.get2DDeltaSizeU() ) ), 0,
+                                     bModel, bModelIntSizeV );  // ae(v)
+  arithmeticEncoder.ExpGolombEncode( o3dgc::IntToUInt( int32_t( ppdu.getPcmPoints() ) ), 0,
+                                     bModel, bModelPcmPoints );  // ae(v)
 }
 
 // 7.3.34 Point local reconstruction syntax
-void PCCBitstreamEncoderNewSyntax::pointLocalReconstruction(
-    PCCContext& context, PCCBitstream& bitstream, o3dgc::Arithmetic_Codec& arithmeticEncoder ) {
+void PCCBitstreamEncoderNewSyntax::pointLocalReconstruction( PointLocalReconstruction& plr,
+                                                             PCCContext& context, 
+                                                             PCCBitstream& bitstream, 
+                                                             o3dgc::Arithmetic_Codec& arithmeticEncoder ) {
 #ifdef BITSTREAM_TRACE
   bitstream.trace("%s \n", __func__ );
-#endif  
-  // for( j = 0; j < BlockToPatchMapHeight; j++ ) {
-  //   for( i = 0; i < BlockToPatchMapWidth; i++ ) {
-  //     if( BlockToPatchMap[ j ][ i ] >= 0 ) {
-  //       plrModeInterpolateFlag[ j ][ i ]   ; // ae(v)
-  //       if( plrModeInterpolateFlag[ j ][ i ] )
-  //         plrModeNeighbour[ j ][ i ]  ; // ae(v)
-  //       plrModeMinimumDepthMinus1[ j ][ i ]  ; // ae(v)
-  //       if( plrModeMinimumDepthMinus1[ j ][ i ]  > 0
-  //         || plrModeInterpolateFlag[ j ][ i ]  )
-  //         plrModeFillingFlag[ j ][ i ]  ; // ae(v)
-  //     }
-  //   }
-  // }
+#endif
+  //o3dgc::Static_Bit_Model    bModel;
+  o3dgc::Adaptive_Bit_Model  bModelInterpolateFlag, bModelNeighbour, bModelMinDepth, bModelFillingFlag;
+
+  /* 8.4.5 */
+  /*blockToPatchMapWidth = Ceil( sps_frm_width / ocp_occupancy_packing_block_size )  */
+  /*blockToPatchMapHeight = Ceil( sps_frm_height / ocp_occupancy_packing_block_size )*/
+  /* this can be derived, but what happens if sps is updated? */
+  /*  uint64_t blockToPatchMapHeight = */
+  /*    static_cast<uint64_t>( ceil( double( context.getSps().getFrameHeight  */
+  /*                           context.getSps().getOccupancyParameterSet().getOccupancyPackingBlockSize) ) ); */
+  /*  uint64_t blockToPatchMapWidth = */
+  /*    static_cast<size_t>( ceil( double( context.getSps().getFrameWidth */
+  /*                         context.getSps().getOccupancyParameterSet().getOccupancyPackingBlockSize) ) ); */
+
+  /* [VZ: here for flag coding I've used adaptive model, should the static be used instead for ae(v)?] */
+  /* note array is row major, the indexing though is (i,j) (x,y) for convenience class methods take care of this*/
+  for ( uint64_t j = 0; j < plr.getBlockToPatchMapHeight(); j++ ) {
+    for ( uint64_t i = 0; i < plr.getBlockToPatchMapWidth(); i++ ) {
+      if ( plr.getBlockToPatchMap( i, j ) >= 0 ) {
+        arithmeticEncoder.encode( plr.getModeInterpolateFlag( i, j ), bModelInterpolateFlag );   // ae(v)
+        if ( plr.getModeInterpolateFlag( i, j ) )
+          arithmeticEncoder.encode( plr.getModeNeighbourMinus1( i, j ), bModelNeighbour );       // ae(v)
+        arithmeticEncoder.encode( plr.getModeMinimumDepthMinus1( i, j ), bModelMinDepth );       // ae(v)
+        if ( ( plr.getModeMinimumDepthMinus1( i, j ) > 0 ) || 
+             ( plr.getModeInterpolateFlag( i, j ) ) )
+          arithmeticEncoder.encode( plr.getModeFillingFlag( i, j ), bModelFillingFlag );         // ae(v)
+      }
+    }
+  }
 }

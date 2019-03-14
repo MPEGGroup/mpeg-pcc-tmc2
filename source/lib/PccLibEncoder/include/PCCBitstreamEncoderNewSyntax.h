@@ -70,6 +70,7 @@ class PatchInformationData;
 class PatchDataUnit;
 class DeltaPatchDataUnit;
 class PCMPatchDataUnit;
+class PointLocalReconstruction;
 
 
 class PCCBitstreamEncoderNewSyntax {
@@ -247,19 +248,24 @@ class PCCBitstreamEncoderNewSyntax {
                       o3dgc::Arithmetic_Codec& arithmeticEncoder );
 
   // 7.3.32  Delta Patch data unit syntax
-  void deltaPatchDataUnit( PCCContext&   context,
-                           PCCBitstream& bitstream,
+  void deltaPatchDataUnit( DeltaPatchDataUnit&      dpdu,
+                           PatchFrameHeader&        pfh,
+                           PCCContext&              context,
+                           PCCBitstream&            bitstream,
                            o3dgc::Arithmetic_Codec& arithmeticEncoder );
 
   // 7.3.33 PCM patch data unit syntax
-  void pcmPatchDataUnit( PCCContext&   context,
-                         PCCBitstream& bitstream,
+  void pcmPatchDataUnit( PCMPatchDataUnit&        ppdu,
+                         PatchFrameHeader&        pfh,
+                         PCCContext&              context,
+                         PCCBitstream&            bitstream,
                          o3dgc::Arithmetic_Codec& arithmeticEncoder );
 
   // 7.3.34 Point local reconstruction syntax
-  void pointLocalReconstruction( PCCContext&              context,
-                                 PCCBitstream&            bitstream,
-                                 o3dgc::Arithmetic_Codec& arithmeticEncoder );
+  void pointLocalReconstruction( PointLocalReconstruction& plr,
+                                 PCCContext&               context,
+                                 PCCBitstream&             bitstream,
+                                 o3dgc::Arithmetic_Codec&  arithmeticEncoder );
 
   PCCEncoderParameters params_;
 };
