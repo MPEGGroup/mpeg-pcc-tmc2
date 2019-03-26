@@ -1601,13 +1601,26 @@ class SequenceParameterSet {
   std::vector<AttributeParameterSet> attributeParameterSets_;  // attributeCount_ size
 
   // THE NEXT PARAMETERS ARE NOT IN THE VPCC CD SYNTAX DOCUMENTS AND WILL BE REMOVE
-  
+public: 
 
-  size_t                         surfaceThickness_;
-  bool                           losslessGeo444_;
-  bool                           losslessGeo_;
-  bool                           losslessTexture_;
+  bool                    getLosslessGeo444() { return losslessGeo444_; }
+  bool                    getLosslessGeo() { return losslessGeo_; }
+  bool                    getLosslessTexture() { return losslessTexture_; }
+  uint8_t                 getMinLevel() { return minLevel_; }
+  size_t                  getSurfaceThickness() { return surfaceThickness_; }
 
+  void                    setLosslessGeo444( bool losslessGeo444) { losslessGeo444_ = losslessGeo444; }
+  void                    setLosslessGeo(bool  losslessGeo ) { losslessGeo_ = losslessGeo; }
+  void                    setLosslessTexture(bool losslessTexture ) { losslessTexture_ = losslessTexture; }
+  void                    setMinLevel(uint8_t minLevel  ) { minLevel_ = minLevel; }
+  void                    setSurfaceThickness(size_t surfaceThickness  ) { surfaceThickness_ = surfaceThickness; }
+private:
+  size_t                  surfaceThickness_;
+  bool                    losslessGeo444_;
+  bool                    losslessGeo_;
+  bool                    losslessTexture_;
+  uint8_t                 minLevel_;
+  // THE NEXT PARAMETERS ARE NOT IN THE VPCC CD SYNTAX DOCUMENTS AND WILL BE REMOVE
 };
 
 // 7.3.4  PCM separate video data syntax
@@ -1658,9 +1671,10 @@ class PCCContext {
   PCCVideoTexture&      getVideoMPsTexture() { return videoMPsTexture_; }
 
   // deprecated, must be removed:
-  bool&                    getLosslessGeo444() { return losslessGeo444_; }
-  bool&                    getLosslessGeo() { return losslessGeo_; }
-  bool&                    getLosslessTexture() { return losslessTexture_; }
+  // bool&                    getLosslessGeo444() { return losslessGeo444_; }
+  // bool&                    getLosslessGeo() { return losslessGeo_; }
+  // bool&                    getLosslessTexture() { return losslessTexture_; }
+  // uint8_t&                 getMinLevel() { return minLevel_; }
 
   uint8_t&                 getOccupancyPrecision() { return occupancyPrecision_; }
   // bool&                    getNoAttributes() { return noAttributes_; }
@@ -1674,7 +1688,6 @@ class PCCContext {
   // bool&                    getDeltaCoding() { return deltaCoding_; }
   // bool&                    getSixDirectionMode() { return sixDirectionMode_; }
   // bool&                    getUseAdditionalPointsPatch() { return useAdditionalPointsPatch_; }
-  uint8_t&                 getMinLevel() { return minLevel_; }
   //  bool&                    getGlobalPatchAllocation() { return globalPatchAllocation_; }
   size_t&                  getMPGeoWidth() { return MPGeoWidth_; }
   size_t&                  getMPGeoHeight() { return MPGeoHeight_; }
@@ -1725,9 +1738,10 @@ class PCCContext {
 
 
   // JR: read the source code to define the list of the parameters activate by these parameters
-  bool                           losslessGeo444_;
-  bool                           losslessGeo_;
-  bool                           losslessTexture_;
+  // bool                           losslessGeo444_;
+  // bool                           losslessGeo_;
+  // bool                           losslessTexture_;
+  // uint8_t                        minLevel_;
 
   // deprecated, must be removed:
   // bool                           sixDirectionMode_;  // always true
@@ -1737,7 +1751,6 @@ class PCCContext {
 
   PCCMetadata                    gofLevelMetadata_;
 
-  uint8_t                        minLevel_;
   // Internale data 
   // bool                           deltaCoding_;  // sps.getPatchInterPredictionEnabledFlag()
   uint8_t                        occupancyPrecision_;

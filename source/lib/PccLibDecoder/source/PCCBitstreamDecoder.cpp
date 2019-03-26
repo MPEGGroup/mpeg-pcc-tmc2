@@ -428,11 +428,11 @@ int PCCBitstreamDecoder::decompressHeader( PCCContext& context, PCCBitstream& bi
 #ifdef BITSTREAM_TRACE
   bitstream.trace("Header general \n" ) ; 
 #endif
-  context.getLosslessGeo()             = bitstream.read<uint8_t>();
-  context.getLosslessTexture()         = bitstream.read<uint8_t>();
+  sps.setLosslessGeo(              bitstream.read<uint8_t>());
+  sps.setLosslessTexture(         bitstream.read<uint8_t>());
   sps.setAttributeCount( bitstream.read<uint8_t>() );
-  context.getLosslessGeo444()          = bitstream.read<uint8_t>();
-  context.getMinLevel()                = bitstream.read<uint8_t>();
+  sps.setLosslessGeo444(           bitstream.read<uint8_t>() );
+  sps.setMinLevel( bitstream.read<uint8_t>());
   sps.setPcmSeparateVideoPresentFlag(bitstream.read<uint8_t>());
   sps.setLayerAbsoluteCodingEnabledFlag( 0,  bitstream.read<uint8_t>() > 0 );
   // if ( sps.getLayerAbsoluteCodingEnabledFlag( 0 ) ) { 
@@ -467,7 +467,7 @@ int PCCBitstreamDecoder::decompressHeader( PCCContext& context, PCCBitstream& bi
 #ifdef BITSTREAM_TRACE
   bitstream.trace("Header lossless \n" ) ; 
 #endif
-  if ( context.getLosslessGeo() ) {
+  if ( sps.getLosslessGeo() ) {
     sps.setEnhancedOccupancyMapForDepthFlag((bitstream.read<uint8_t>() > 0));
     //  context.getImproveEDD()                   = bitstream.read<uint8_t>() > 0; always true
   }
@@ -485,9 +485,11 @@ int PCCBitstreamDecoder::decompressHeader( PCCContext& context, PCCBitstream& bi
   context.getMPAttHeight() = 0;
   auto& frames             = context.getFrames();
   for ( size_t i = 0; i < frames.size(); i++ ) {
-    frames[i].setLosslessGeo( context.getLosslessGeo() );
-    frames[i].setLosslessGeo444( context.getLosslessGeo444() );
-    frames[i].setLosslessTexture( context.getLosslessTexture() );
+    frames[i].setLosslessGeo( sps.getLosslessGeo() );
+    frames[i].setLosslessGeo444( sps.getLosslessGeo444() );
+    frames[i].setLosslessTexture( sps.getLosslessTexture() );
+    frames[i].setSurfaceThickness( sps.getSurfaceThickness() );
+
     // frames[i].setEnhancedDeltaDepth( sps.getEnhancedOccupancyMapForDepthFlag() );
     frames[i].setUseMissedPointsSeparateVideo( sps.getPcmSeparateVideoPresentFlag() );
     frames[i].setUseAdditionalPointsPatch( sps.getPcmPatchEnabledFlag() );
@@ -502,11 +504,12 @@ int PCCBitstreamDecoder::decompressHeader( PCCContext& context, PCCBitstream& bi
 void PCCBitstreamDecoder::readMissedPointsGeometryNumber( PCCContext&   context,
                                                           PCCBitstream& bitstream ) {
   size_t maxHeight = 0;
+  auto& sps = context.getSps();
   size_t MPwidth   = bitstream.read<size_t>();
   for ( auto& framecontext : context.getFrames() ) {
     size_t numofMPs = bitstream.read<size_t>();
     framecontext.getMissedPointsPatch().setMPnumber( size_t( numofMPs ) );
-    if ( context.getLosslessGeo444() ) {
+    if ( sps.getLosslessGeo444() ) {
       framecontext.getMissedPointsPatch().resize( numofMPs );
     } else {
       framecontext.getMissedPointsPatch().resize( numofMPs * 3 );
@@ -591,7 +594,7 @@ void PCCBitstreamDecoder::decompressPatchMetaDataM42195( PCCContext&            
   uint8_t F = 0, A[5] = {0, 0, 0, 0, 0};
   size_t  topNmax[6] = {0, 0, 0, 0, 0, 0};
 
-  const size_t  minLevel               = context.getMinLevel();
+  const size_t  minLevel               = sps.getMinLevel();
   const uint8_t maxBitCountForMinDepth = uint8_t( 10 - gbitCountSize[minLevel] );
   bitCount[4]                          = maxBitCountForMinDepth;
   const uint8_t maxBitCountForMaxDepth = uint8_t( 9 - gbitCountSize[minLevel] );
@@ -900,7 +903,7 @@ void PCCBitstreamDecoder::decompressOccupancyMap( PCCContext&      context,
   auto&    patches    = frame.getPatches();
   uint32_t patchCount = bitstream.read<uint32_t>();
   patches.resize( patchCount );
-  const size_t  minLevel               = context.getMinLevel();
+  const size_t  minLevel               = sps.getMinLevel();
   const uint8_t maxBitCountForMinDepth = uint8_t( 10 - gbitCountSize[minLevel] );
   const uint8_t maxBitCountForMaxDepth = uint8_t( 9  - gbitCountSize[minLevel] );
 

@@ -127,10 +127,11 @@ void PCCBitstreamEncoder::EncodeUInt32( const uint32_t value,
 void PCCBitstreamEncoder::writeMissedPointsGeometryNumber(PCCContext& context, PCCBitstream &bitstream) {
   size_t maxHeight = 0;
   size_t MPwidth=context.getMPGeoWidth ();
+  auto& sps = context.getSps();
   bitstream.write<size_t>(size_t( context.getMPGeoWidth () ) );
   for (auto &frame : context.getFrames() ) {
     size_t numofMPs=frame.getMissedPointsPatch().size();
-    if(!context.getLosslessGeo444()) {
+    if(!sps.getLosslessGeo444()) {
       numofMPs/=3;
     }
     bitstream.write<size_t>(size_t( numofMPs ) );
@@ -453,11 +454,11 @@ int PCCBitstreamEncoder::compressHeader( PCCContext& context, pcc::PCCBitstream&
 #ifdef BITSTREAM_TRACE
   bitstream.trace("Header general \n" ) ; 
 #endif
-  bitstream.write<uint8_t>( uint8_t( context.getLosslessGeo() ) );
-  bitstream.write<uint8_t>( uint8_t( context.getLosslessTexture() ) );
+  bitstream.write<uint8_t>( uint8_t( sps.getLosslessGeo() ) );
+  bitstream.write<uint8_t>( uint8_t( sps.getLosslessTexture() ) );
   bitstream.write<uint8_t>( uint8_t( sps.getAttributeCount() ) );
-  bitstream.write<uint8_t>( uint8_t( context.getLosslessGeo444() ) );
-  bitstream.write<uint8_t>( uint8_t( context.getMinLevel() ) );
+  bitstream.write<uint8_t>( uint8_t( sps.getLosslessGeo444() ) );
+  bitstream.write<uint8_t>( uint8_t( sps.getMinLevel() ) );
   bitstream.write<uint8_t>( uint8_t( sps.getPcmSeparateVideoPresentFlag() ) );
   bitstream.write<uint8_t>( uint8_t( sps.getLayerAbsoluteCodingEnabledFlag( 0 ) ) );
   // if ( sps.getLayerAbsoluteCodingEnabledFlag( 0 ) ) {
@@ -491,7 +492,7 @@ int PCCBitstreamEncoder::compressHeader( PCCContext& context, pcc::PCCBitstream&
 #ifdef BITSTREAM_TRACE
   bitstream.trace("Header lossless \n" ) ; 
 #endif
-  if ( context.getLosslessGeo() ) {
+  if ( sps.getLosslessGeo() ) {
     bitstream.write<uint8_t>( uint8_t( sps.getEnhancedOccupancyMapForDepthFlag() ) );
     // bitstream.write<uint8_t>( uint8_t( context.getImproveEDD() ) );
   }
@@ -529,7 +530,7 @@ void PCCBitstreamEncoder::compressPatchMetaDataM42195( PCCContext      &context,
   size_t TopNmaxV1 = 0, maxV1 = 0;
   size_t TopNmaxD1 = 0, maxD1 = 0;
   size_t TopNmaxDD = 0, maxDD = 0;
-  const size_t minLevel = context.getMinLevel();
+  const size_t minLevel = sps.getMinLevel();
   const uint8_t maxBitCountForMinDepth=uint8_t(10-gbitCountSize[minLevel]);
   uint8_t maxAllowedDepthP1 = params_.maxAllowedDepth_+1;
   uint8_t bitCountDDMax=0; //255
@@ -795,7 +796,7 @@ void PCCBitstreamEncoder::compressOccupancyMap( PCCContext &context, PCCBitstrea
   auto& sps = context.getSps();
   for( int i = 0; i < sizeFrames; i++ ){
     PCCFrameContext &frame = context.getFrames()[i];
-    if ((context.getLosslessGeo() || params_.lossyMissedPointsPatch_ ) && !sps.getPcmSeparateVideoPresentFlag()) {
+    if ((sps.getLosslessGeo() || params_.lossyMissedPointsPatch_ ) && !sps.getPcmSeparateVideoPresentFlag()) {
       auto& patches = frame.getPatches();
       auto& missedPointsPatch = frame.getMissedPointsPatch();
       const size_t patchIndex = patches.size();
@@ -847,7 +848,7 @@ void PCCBitstreamEncoder::compressOccupancyMap( PCCContext&      context,
     bitstream.write<uint8_t>(uint8_t( params_.surfaceThickness_ ) );
     bitstream.write<uint8_t>(uint8_t( patches[0].getFrameProjectionMode() ) );
   }
-  const size_t minLevel = context.getMinLevel();
+  const size_t minLevel = sps.getMinLevel();
   const uint8_t maxBitCountForMinDepth=uint8_t(10-gbitCountSize[minLevel]);
   const uint8_t maxBitCountForMaxDepth=uint8_t(9-gbitCountSize[minLevel]); //20190129
 

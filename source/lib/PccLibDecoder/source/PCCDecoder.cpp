@@ -97,7 +97,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   path << removeFileExtension( params_.compressedStreamPath_ ) << "_dec_GOF" << sps.getSequenceParameterSetId()
        << "_";
 
-  bool  lossyMpp = !context.getLosslessGeo() && sps.getPcmPatchEnabledFlag();
+  bool  lossyMpp = !sps.getLosslessGeo() && sps.getPcmPatchEnabledFlag();
   // const size_t nbyteGeo =
   //     ( context.getLosslessGeo() || ( lossyMpp && !sps.getPcmSeparateVideoPresentFlag() ) )
   //         ? 2
@@ -110,7 +110,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   videoDecoder.decompress(
       context.getVideoOccupancyMap(), path.str(), context.size(), videoBitstreamOM,
       params_.videoDecoderOccupancyMapPath_, context, params_.keepIntermediateFiles_,
-      ( context.getLosslessGeo() ? context.getLosslessGeo444() : false ), false, "", "" );
+      ( sps.getLosslessGeo() ? sps.getLosslessGeo444() : false ), false, "", "" );
   context.getOccupancyPrecision() = sps.getFrameWidth() / context.getVideoOccupancyMap().getWidth(); 
   printf("compute OccupancyPrecision = %lu \n", context.getOccupancyPrecision());
   generateOccupancyMap( context, context.getOccupancyPrecision() );
@@ -124,7 +124,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
     videoDecoder.decompress( context.getVideoGeometry(), path.str(), 
                              context.size(), videoBitstreamD0,
                              params_.videoDecoderPath_, context, params_.keepIntermediateFiles_,
-                             (context.getLosslessGeo()?context.getLosslessGeo444():false) );
+                             (sps.getLosslessGeo()?sps.getLosslessGeo444():false) );
     std::cout << "geometry D0 video ->" << videoBitstreamD0.naluSize() << " B" << std::endl;
 
     // Compress D1
@@ -132,7 +132,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
     videoDecoder.decompress(context.getVideoGeometryD1(), path.str(), 
                             context.size(), videoBitstreamD1, params_.videoDecoderPath_,
                             context, params_.keepIntermediateFiles_,
-                            (context.getLosslessGeo()?context.getLosslessGeo444():false) );
+                            (sps.getLosslessGeo()?sps.getLosslessGeo444():false) );
     std::cout << "geometry D1 video ->" << videoBitstreamD1.naluSize() << " B" << std::endl;
 
     std::cout << "geometry video ->" << videoBitstreamD1.naluSize() + videoBitstreamD1.naluSize() << " B" << std::endl;
@@ -141,7 +141,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
     videoDecoder.decompress(context.getVideoGeometry(), path.str(),
                             context.size() * frameCountGeometry, videoBitstream,
                             params_.videoDecoderPath_, context,  params_.keepIntermediateFiles_,
-                            context.getLosslessGeo() & context.getLosslessGeo444() );
+                            sps.getLosslessGeo() & sps.getLosslessGeo444() );
     std::cout << "geometry video ->" << videoBitstream.naluSize() << " B" << std::endl;
   }
 
@@ -158,12 +158,12 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
     //fillMissedPoints(reconstructs, context, 0, params_.colorTransform_); //0. geo
   }
   bool useAdditionalPointsPatch = sps.getPcmPatchEnabledFlag();
-  bool lossyMissedPointsPatch   = !context.getLosslessGeo() && useAdditionalPointsPatch;
-  if ( ( context.getLosslessGeo() != 0 ) && sps.getEnhancedOccupancyMapForDepthFlag() ) {
-    generateBlockToPatchFromOccupancyMap( context, context.getLosslessGeo(), lossyMissedPointsPatch,
+  bool lossyMissedPointsPatch   = !sps.getLosslessGeo() && useAdditionalPointsPatch;
+  if ( ( sps.getLosslessGeo() != 0 ) && sps.getEnhancedOccupancyMapForDepthFlag() ) {
+    generateBlockToPatchFromOccupancyMap( context, sps.getLosslessGeo(), lossyMissedPointsPatch,
                                           0, ops.getOccupancyPackingBlockSize() );
   } else {
-    generateBlockToPatchFromBoundaryBox( context, context.getLosslessGeo(), lossyMissedPointsPatch,
+    generateBlockToPatchFromBoundaryBox( context, sps.getLosslessGeo(), lossyMissedPointsPatch,
                                          0, ops.getOccupancyPackingBlockSize() );
   }
 
@@ -177,8 +177,8 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   generatePointCloudParameters.radius2Smoothing_             = (double)asp.getAttributeSmoothingRadius();
   generatePointCloudParameters.radius2BoundaryDetection_     = (double)asp.getAttributeSmoothingRadius2BoundaryDetection();
   generatePointCloudParameters.thresholdSmoothing_           = (double)gsp.getGeometrySmoothingThreshold();
-  generatePointCloudParameters.losslessGeo_                  = context.getLosslessGeo() != 0;
-  generatePointCloudParameters.losslessGeo444_               = context.getLosslessGeo444() != 0;
+  generatePointCloudParameters.losslessGeo_                  = sps.getLosslessGeo() != 0;
+  generatePointCloudParameters.losslessGeo444_               = sps.getLosslessGeo444() != 0;
   generatePointCloudParameters.nbThread_                     = params_.nbThread_;
   generatePointCloudParameters.absoluteD1_                   = sps.getLayerAbsoluteCodingEnabledFlag( 0 );
   generatePointCloudParameters.surfaceThickness              = context[0].getSurfaceThickness();
@@ -188,7 +188,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   generatePointCloudParameters.radius2ColorSmoothing_        = (double)asp.getAttributeSmoothingRadius();
   generatePointCloudParameters.neighborCountColorSmoothing_  = asp.getAttributeSmoothingNeighbourCount();
   generatePointCloudParameters.flagColorSmoothing_           = (bool) asp.getAttributeSmoothingParamsPresentFlag();
-  generatePointCloudParameters.enhancedDeltaDepthCode_       = ((context.getLosslessGeo() != 0) ? sps.getEnhancedOccupancyMapForDepthFlag() : false);
+  generatePointCloudParameters.enhancedDeltaDepthCode_       = ((sps.getLosslessGeo() != 0) ? sps.getEnhancedOccupancyMapForDepthFlag() : false);
   // generatePointCloudParameters.deltaCoding_                  = (params_.testLevelOfDetailSignaling_ > 0); // ignore LoD scaling for testing the signaling only
   generatePointCloudParameters.removeDuplicatePoints_        = sps.getRemoveDuplicatePointEnabledFlag();
   generatePointCloudParameters.oneLayerMode_                 = !sps.getMultipleLayerStreamsPresentFlag();
@@ -205,7 +205,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
     videoDecoder.decompress( context.getVideoTexture(), path.str(), 
                              context.size() * frameCountTexture, videoBitstream,
                              params_.videoDecoderPath_, context, params_.keepIntermediateFiles_,
-                             context.getLosslessTexture() != 0, params_.patchColorSubsampling_,
+                             sps.getLosslessTexture() != 0, params_.patchColorSubsampling_,
                              params_.inverseColorSpaceConversionConfig_, params_.colorSpaceConversionPath_  );
     std::cout << "texture video  ->" << videoBitstream.naluSize() << " B" << std::endl;
 
@@ -214,7 +214,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
       videoDecoder.decompress( context.getVideoMPsTexture(), path.str(),
                                context.size(), videoBitstreamMP, params_.videoDecoderPath_,
                                context, params_.keepIntermediateFiles_,
-                               context.getLosslessTexture(), false,
+                               sps.getLosslessTexture(), false,
                                params_.inverseColorSpaceConversionConfig_, params_.colorSpaceConversionPath_ );
 
       generateMissedPointsTexturefromVideo(context, reconstructs);

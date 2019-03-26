@@ -1404,13 +1404,15 @@ void PCCCodec::generateMissedPointsGeometryfromVideo(PCCContext& context, PCCGro
 #ifdef CODEC_TRACE
     trace( " generateMissedPointsGeometryfromVideo start \n" );
 #endif
+  auto& sps = context.getSps();
   const size_t gofSize = context.size();
   auto& videoMPsGeometry = context.getVideoMPsGeometry();
   videoMPsGeometry.resize(gofSize);
   for (auto &framecontext : context.getFrames()) {
     const size_t shift = framecontext.getIndex();
-    framecontext.setLosslessGeo(context.getLosslessGeo());
-    framecontext.setLosslessGeo444(context.getLosslessGeo444());
+    framecontext.setLosslessGeo(sps.getLosslessGeo());
+    framecontext.setLosslessTexture(sps.getLosslessTexture());
+    framecontext.setLosslessGeo444(sps.getLosslessGeo444());
     generateMPsGeometryfromImage(context, framecontext, reconstructs, shift);
     std::cout << "generate Missed Points (Geometry) : frame " << shift << ", # of Missed Points Geometry : " << framecontext.getMissedPointsPatch().size() << std::endl;
   }
@@ -1453,11 +1455,12 @@ void PCCCodec::generateMPsGeometryfromImage( PCCContext& context,
 
 void PCCCodec::generateMissedPointsTexturefromVideo(PCCContext& context, PCCGroupOfFrames& reconstructs) {
   const size_t gofSize = context.size();
+  auto& sps = context.getSps();
   auto& videoMPsTexture = context.getVideoMPsTexture();
   videoMPsTexture.resize(gofSize);
   for (auto &framecontext : context.getFrames()) {
     const size_t shift = framecontext.getIndex(); //
-    framecontext.setLosslessTexture(context.getLosslessTexture());
+    framecontext.setLosslessTexture(sps.getLosslessTexture());
     generateMPsTexturefromImage(context, framecontext, reconstructs, shift);
     std::cout << "generate Missed Points (Texture) : frame " << shift << ", # of Missed Points Texture : "
         << framecontext.getMissedPointsPatch().size() << std::endl;

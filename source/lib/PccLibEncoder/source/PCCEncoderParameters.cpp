@@ -507,11 +507,11 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   asp.setAttributeSmoothingThresholdLocalEntropy( thresholdLocalEntropy_ );
 
   // deprecated
-  context.getLosslessGeo444()           = losslessGeo444_;
-  context.getLosslessGeo()              = losslessGeo_;
-  context.getLosslessTexture()          = losslessTexture_;
+  sps.setLosslessGeo444(  losslessGeo444_ );
+  sps.setLosslessGeo(  losslessGeo_ );
+  sps.setLosslessTexture( losslessTexture_ );
   sps.setPatchInterPredictionEnabledFlag(  deltaCoding_ );
-  context.getMinLevel()                 = minLevel_;
+  sps.setMinLevel(  minLevel_ );
   // Encoder only data
   context.getOccupancyPrecision()       = occupancyPrecision_;
   context.getModelScale()               = modelScale_;

@@ -1885,9 +1885,10 @@ void PCCEncoder::generateMissedPointsGeometryVideo(PCCContext& context, PCCGroup
   videoMPsGeometry.resize(gofSize);
   for (auto &frame : context.getFrames() ) {
     const size_t shift = frame.getIndex();
-    frame.setLosslessGeo(context.getLosslessGeo());
-    frame.setLosslessGeo444(context.getLosslessGeo444());
-    frame.setMPGeoWidth(context.getMPGeoWidth());
+    frame.setLosslessGeo(sps.getLosslessGeo());
+    frame.setLosslessGeo444(sps.getLosslessGeo444());
+    frame.setLosslessTexture(sps.getLosslessTexture());
+    frame.setMPGeoWidth( context.getMPGeoWidth());
     frame.setMPGeoHeight(0);
     // frame.setEnhancedDeltaDepth( sps.getEnhancedOccupancyMapForDepthFlag());
     generateMPsGeometryImage    (context, frame,videoMPsGeometry.getFrame(shift));
@@ -1914,12 +1915,13 @@ void PCCEncoder::generateMissedPointsGeometryVideo(PCCContext& context, PCCGroup
 void PCCEncoder::generateMissedPointsTextureVideo(PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   auto& videoMPsTexture = context.getVideoMPsTexture();
   auto gofSize = context.size();
+  auto& sps = context.getSps();
   videoMPsTexture.resize(gofSize);
   size_t maxWidth=0;
   size_t maxHeight=0;
   for (auto &frame : context.getFrames() ) {
     const size_t shift = frame.getIndex();
-    frame.setLosslessTexture( context.getLosslessTexture() );
+    frame.setLosslessTexture( sps.getLosslessTexture() );
     frame.setMPAttWidth( context.getMPAttWidth() );
     frame.setMPAttHeight( 0 );
     generateMPsTextureImage(context, frame, videoMPsTexture.getFrame(shift), shift, reconstructs[shift]);
@@ -2822,10 +2824,11 @@ bool PCCEncoder::generateTextureVideo(const PCCGroupOfFrames &sources, PCCGroupO
   auto& frames = context.getFrames();
   auto& videoTexture = context.getVideoTexture();
   bool ret = true;
+  auto& sps = context.getSps();
   for( size_t i = 0; i < frames.size(); i++ ) {
     auto& frame = frames[ i ];
     //assert( frame.getWidth() == context.getWidth() && frame.getHeight() == context.getHeight() );
-    frame.setLosslessTexture(context.getLosslessTexture());
+    frame.setLosslessTexture(sps.getLosslessTexture());
     size_t nbFrame = params_.oneLayerMode_ ? 1 : 2 ;
     if( params_.oneLayerMode_  && !params_.singleLayerPixelInterleaving_ ) {
       // create sub reconstruct point cloud
