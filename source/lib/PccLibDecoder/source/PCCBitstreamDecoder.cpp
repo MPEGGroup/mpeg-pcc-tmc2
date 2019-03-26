@@ -471,7 +471,8 @@ int PCCBitstreamDecoder::decompressHeader( PCCContext& context, PCCBitstream& bi
     sps.setEnhancedOccupancyMapForDepthFlag((bitstream.read<uint8_t>() > 0));
     //  context.getImproveEDD()                   = bitstream.read<uint8_t>() > 0; always true
   }
-  context.getDeltaCoding()=(bitstream.read<uint8_t>() > 0);
+  sps.setPatchInterPredictionEnabledFlag( bitstream.read<uint8_t>() > 0 ) ; // context.getDeltaCoding() = (bitstream.read<uint8_t>() > 0);
+
   sps.setRemoveDuplicatePointEnabledFlag((bitstream.read<uint8_t>() > 0)) ;
   sps.setMultipleLayerStreamsPresentFlag((bitstream.read<uint8_t>() > 0)) ;
   sps.setPixelDeinterleavingFlag((bitstream.read<uint8_t>() > 0))           ;
@@ -921,7 +922,7 @@ void PCCBitstreamDecoder::decompressOccupancyMap( PCCContext&      context,
   //                        ( context.getOccupancyPrecision() == 4 );
 
   uint8_t enable_flexible_patch_flag = bitstream.read<uint8_t>();
-  if ( ( frameIndex == 0 ) || ( !context.getDeltaCoding() ) ) {
+  if ( ( frameIndex == 0 ) || ( ! sps.getPatchInterPredictionEnabledFlag() ) ) { // context.getDeltaCoding() 
     uint8_t bitCountU0      = bitstream.read<uint8_t>();
     uint8_t bitCountV0      = bitstream.read<uint8_t>();
     uint8_t bitCountU1      = bitstream.read<uint8_t>();

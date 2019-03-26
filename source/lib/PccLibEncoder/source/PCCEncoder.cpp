@@ -258,7 +258,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources,
   generatePointCloudParameters.neighborCountColorSmoothing_  = params_.neighborCountColorSmoothing_;
   generatePointCloudParameters.flagColorSmoothing_           = params_.flagColorSmoothing_;
   generatePointCloudParameters.enhancedDeltaDepthCode_       = (params_.losslessGeo_ ? params_.enhancedDeltaDepthCode_ : false);
-  generatePointCloudParameters.deltaCoding_                  = (params_.testLevelOfDetailSignaling_ > 0);
+  // generatePointCloudParameters.deltaCoding_                  = (params_.testLevelOfDetailSignaling_ > 0);
   generatePointCloudParameters.removeDuplicatePoints_        = params_.removeDuplicatePoints_;
   generatePointCloudParameters.oneLayerMode_                 = params_.oneLayerMode_;
   generatePointCloudParameters.singleLayerPixelInterleaving_ = params_.singleLayerPixelInterleaving_;

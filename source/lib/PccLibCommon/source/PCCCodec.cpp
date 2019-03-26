@@ -106,7 +106,7 @@ void PCCCodec::generatePointCloud( PCCGroupOfFrames& reconstructs, PCCContext& c
   trace( " double  radius2ColorSmoothing_;          = %f  \n", params.radius2ColorSmoothing_        );
   trace( " size_t  neighborCountColorSmoothing_;    = %lu \n", params.neighborCountColorSmoothing_  );
   trace( " bool    enhancedDeltaDepthCode_;         = %d  \n", params.enhancedDeltaDepthCode_       );
-  trace( " bool    deltaCoding_;                    = %d  \n", params.deltaCoding_                  );
+  // trace( " bool    deltaCoding_;                    = %d  \n", params.deltaCoding_                  );
   trace( " bool    removeDuplicatePoints_;          = %d  \n", params.removeDuplicatePoints_        );
   trace( " bool    oneLayerMode_;                   = %d  \n", params.oneLayerMode_                 );
   trace( " bool    singleLayerPixelInterleaving_;   = %d  \n", params.singleLayerPixelInterleaving_ );

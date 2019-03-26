@@ -122,15 +122,15 @@ class PCCFrameContext {
 
  private:
   size_t                                       index_;
-  size_t                                       numMatchedPatches_;
   bool                                         losslessGeo_;
   bool                                         losslessGeo444_;
   bool                                         losslessTexture_;
-  // bool                                         enhancedDeltaDepth_;  // sps.getEnhancedOccupancyMapForDepthFlag()
+  // bool                                      enhancedDeltaDepth_;  // sps.getEnhancedOccupancyMapForDepthFlag()
   // Deprecated data 
   
-  size_t                                       surfaceThickness_;
   // Internal data
+  size_t                                       numMatchedPatches_;
+  size_t                                       surfaceThickness_;
   size_t                                       width_;     //sps.getFrameWidth()
   size_t                                       height_;    //sps.getFrameHeight()
   bool                                         useMissedPointsSeparateVideo_;

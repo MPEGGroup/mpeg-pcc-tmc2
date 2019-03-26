@@ -80,7 +80,7 @@ struct GeneratePointCloudParameters {
   bool               flagGeometrySmoothing_;
   bool               flagColorSmoothing_;
   bool               enhancedDeltaDepthCode_;
-  bool               deltaCoding_;
+  // bool               deltaCoding_;
   bool               removeDuplicatePoints_;
   bool               oneLayerMode_;
   bool               singleLayerPixelInterleaving_;

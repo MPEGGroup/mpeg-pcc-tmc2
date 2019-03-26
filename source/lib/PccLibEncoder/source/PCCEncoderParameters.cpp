@@ -510,7 +510,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   context.getLosslessGeo444()           = losslessGeo444_;
   context.getLosslessGeo()              = losslessGeo_;
   context.getLosslessTexture()          = losslessTexture_;
-  context.getDeltaCoding()              = deltaCoding_;
+  sps.setPatchInterPredictionEnabledFlag(  deltaCoding_ );
   context.getMinLevel()                 = minLevel_;
   // Encoder only data
   context.getOccupancyPrecision()       = occupancyPrecision_;

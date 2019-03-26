@@ -1599,6 +1599,15 @@ class SequenceParameterSet {
   GeometryParameterSet               geometryParameterSet_;
   OccupancyParameterSet              occupancyParameterSet_;
   std::vector<AttributeParameterSet> attributeParameterSets_;  // attributeCount_ size
+
+  // THE NEXT PARAMETERS ARE NOT IN THE VPCC CD SYNTAX DOCUMENTS AND WILL BE REMOVE
+  
+
+  size_t                         surfaceThickness_;
+  bool                           losslessGeo444_;
+  bool                           losslessGeo_;
+  bool                           losslessTexture_;
+
 };
 
 // 7.3.4  PCM separate video data syntax
@@ -1652,6 +1661,7 @@ class PCCContext {
   bool&                    getLosslessGeo444() { return losslessGeo444_; }
   bool&                    getLosslessGeo() { return losslessGeo_; }
   bool&                    getLosslessTexture() { return losslessTexture_; }
+
   uint8_t&                 getOccupancyPrecision() { return occupancyPrecision_; }
   // bool&                    getNoAttributes() { return noAttributes_; }
   // bool&                    getGridSmoothing() { return gridSmoothing_; }
@@ -1661,7 +1671,7 @@ class PCCContext {
   // bool&                    getUse3dmc() { return use3dmc_; }
   float&                   getModelScale() { return modelScale_; }
   PCCVector3<float>&       getModelOrigin() { return modelOrigin_; }
-  bool&                    getDeltaCoding() { return deltaCoding_; }
+  // bool&                    getDeltaCoding() { return deltaCoding_; }
   // bool&                    getSixDirectionMode() { return sixDirectionMode_; }
   // bool&                    getUseAdditionalPointsPatch() { return useAdditionalPointsPatch_; }
   uint8_t&                 getMinLevel() { return minLevel_; }
@@ -1720,7 +1730,6 @@ class PCCContext {
   bool                           losslessTexture_;
 
   // deprecated, must be removed:
-  bool                           deltaCoding_;
   // bool                           sixDirectionMode_;  // always true
   // bool                           useAdditionalPointsPatch_; // // sps.getPcmPatchEnabledFlag()
   //  bool                           globalPatchAllocation_; // remove from bitstream
@@ -1728,8 +1737,9 @@ class PCCContext {
 
   PCCMetadata                    gofLevelMetadata_;
 
-  // Internale data 
   uint8_t                        minLevel_;
+  // Internale data 
+  // bool                           deltaCoding_;  // sps.getPatchInterPredictionEnabledFlag()
   uint8_t                        occupancyPrecision_;
   size_t                         MPGeoWidth_;
   size_t                         MPGeoHeight_;

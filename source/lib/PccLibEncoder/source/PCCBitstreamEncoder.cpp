@@ -495,7 +495,7 @@ int PCCBitstreamEncoder::compressHeader( PCCContext& context, pcc::PCCBitstream&
     bitstream.write<uint8_t>( uint8_t( sps.getEnhancedOccupancyMapForDepthFlag() ) );
     // bitstream.write<uint8_t>( uint8_t( context.getImproveEDD() ) );
   }
-  bitstream.write<uint8_t>( uint8_t( context.getDeltaCoding() ) );
+  bitstream.write<uint8_t>( uint8_t( sps.getPatchInterPredictionEnabledFlag() ) ); // context.getDeltaCoding() ) );
   bitstream.write<uint8_t>( uint8_t( sps.getRemoveDuplicatePointEnabledFlag() ) );
   bitstream.write<uint8_t>( uint8_t( sps.getMultipleLayerStreamsPresentFlag() ) );
   bitstream.write<uint8_t>( uint8_t( sps.getPixelDeinterleavingFlag() ) );
@@ -861,7 +861,7 @@ void PCCBitstreamEncoder::compressOccupancyMap( PCCContext&      context,
   arithmeticEncoder.set_buffer( 0x00ffffff );
   arithmeticEncoder.start_encoder();
 
-  if((frameIndex == 0)||(!context.getDeltaCoding())) {
+  if((frameIndex == 0)||(! sps.getPatchInterPredictionEnabledFlag() ) ) {  // context.getDeltaCoding()
     size_t maxU0 = 0;
     size_t maxV0 = 0;
     size_t maxU1 = 0;
