@@ -49,6 +49,7 @@ PCCContext::~PCCContext() {
   subContexts_.clear();
   unionPatch_.clear();
   sequenceParameterSets_.clear();
+  patchSequenceDataUnit_.allocate();
 }
 
 void PCCContext::resize( size_t size ) {

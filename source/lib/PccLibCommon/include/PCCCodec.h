@@ -84,8 +84,8 @@ struct GeneratePointCloudParameters {
   bool               removeDuplicatePoints_;
   bool               oneLayerMode_;
   bool               singleLayerPixelInterleaving_;
-  bool               sixDirectionMode_;
-  bool               improveEDD_;
+  // bool               sixDirectionMode_;
+  // bool               improveEDD_;
   std::string        path_;
   bool               useAdditionalPointsPatch_;
 };
@@ -100,7 +100,7 @@ class PCCCodec {
 
 
   bool colorPointCloud( PCCGroupOfFrames& reconstructs, PCCContext& context,
-                        const bool noAttributes, const ColorTransform colorTransform,
+                        const uint8_t attributeCount, const ColorTransform colorTransform,
                         const GeneratePointCloudParameters params);
 
   void generateMPsGeometryfromImage(PCCContext& context, PCCFrameContext& frame, PCCGroupOfFrames& reconstructs,
@@ -113,13 +113,10 @@ class PCCCodec {
   
   void generateMissedPointsTexturefromVideo(PCCContext& context, PCCGroupOfFrames& reconstructs);
 
-
-
   void generateOccupancyMap( PCCContext &context, const size_t occupancyPrecision );
 
  protected:
-
-
+ 
   void generateOccupancyMap( PCCFrameContext &frame,
                              const PCCImageOccupancyMap &videoFrame,
                              const size_t occupancyPrecision );
@@ -186,6 +183,34 @@ class PCCCodec {
   }
 
 
+#ifdef CODEC_TRACE
+  template <typename... Args>
+  void trace( const char* pFormat, Args... eArgs ) {
+    if ( trace_ ) {
+      FILE* output = traceFile_ ? traceFile_ : stdout;
+      fprintf( output, pFormat, eArgs... );
+      fflush( output );
+    }
+  }
+  void setTrace( bool trace ){ trace_ = trace; }
+  bool getTrace(){ return trace_; }
+  bool openTrace( std::string file ) {
+    if ( traceFile_ ) {
+      fclose( traceFile_ );
+      traceFile_ = NULL;
+    }
+    if( ( traceFile_ = fopen( file.c_str(), "w" ) ) == NULL ) {
+      return false;
+    }
+    return true;
+  }
+  void closeTrace() {
+    if ( traceFile_ ) {
+      fclose( traceFile_ );
+      traceFile_ = NULL;
+    }
+  }
+#endif
  private:
   void generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext& frame,
                            const PCCVideoGeometry &video, const PCCVideoGeometry &videoD1,
@@ -219,7 +244,7 @@ class PCCCodec {
                           const std::vector<size_t>& subReconstructIndex );
 
   bool colorPointCloud( PCCPointSet3& reconstruct, PCCFrameContext& frame,
-                        const PCCVideoTexture &video, const bool noAttributes,
+                        const PCCVideoTexture &video, const uint8_t attributeCount,
                         const GeneratePointCloudParameters& params,
                         const size_t frameCount );
 
@@ -239,7 +264,6 @@ class PCCCodec {
                       std::vector<int>& gcnt, std::vector<PCCVector3D>& center_grid, 
                       std::vector<bool>& doSmooth, int gridSize, int gridWidth);
 
-
   void identifyBoundaryPoints( const std::vector<uint32_t>& occupancyMap,
                                const size_t x,
                                const size_t y,
@@ -254,6 +278,10 @@ class PCCCodec {
   std::vector<bool> doSmooth_;
   std::vector<int> gpartition_;
 
+#ifdef CODEC_TRACE
+  bool trace_;
+  FILE* traceFile_;
+#endif
 };
 
 }; //~namespace

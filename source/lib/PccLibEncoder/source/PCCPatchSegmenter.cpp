@@ -111,7 +111,7 @@ void PCCPatchSegmenter3::compute( const PCCPointSet3 &geometry,
                   params.useOneLayermode,
                   subPointCloud,
                   distanceSrcRec,
-                  params.sixDirectionMode,
+                  params.absoluteD1,
                   params.surfaceSeparation
   );
   std::cout << "[done]" << std::endl;

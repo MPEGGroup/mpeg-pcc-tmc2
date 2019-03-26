@@ -528,10 +528,10 @@ bool parseParameters( int argc, char *argv[],
       encoderParams.removeDuplicatePoints_,
       "Remove duplicate points( ")
 
-    ("sixDirectionMode",
-      encoderParams.sixDirectionMode_,
-      encoderParams.sixDirectionMode_,
-      "Use Six Direction Projection mode")
+    // ("sixDirectionMode",
+    //   encoderParams.sixDirectionMode_,
+    //   encoderParams.sixDirectionMode_,
+    //   "Use Six Direction Projection mode")
 
     ("surfaceSeparation",
       encoderParams.surfaceSeparation_,
@@ -554,10 +554,10 @@ bool parseParameters( int argc, char *argv[],
       encoderParams.textureBGFill_,
       "Selects the background filling operation for texture only (0: anchor's dilation, 1(default): push-pull algorithm)\n")
 
-    ("improveEDD",
-      encoderParams.improveEDD_,
-      encoderParams.improveEDD_,
-      "Code EDD code in the occupancy map\n")
+    // ("improveEDD",
+    //   encoderParams.improveEDD_,
+    //   encoderParams.improveEDD_,
+    //   "Code EDD code in the occupancy map\n")
 
     //lossy-missed-points patch
     ("lossyMissedPointsPatch",

@@ -45,6 +45,7 @@
 #include "PCCFrameContext.h"
 #include "PCCPatch.h"
 
+#include "PCCHevcParser.h"
 
 namespace pcc {
 
@@ -58,15 +59,11 @@ class PCCVideoDecoder {
   template <typename T>
   bool decompress(PCCVideo<T, 3> &video,
                   const std::string &path,
-                  const size_t width,
-                  const size_t height,
                   const size_t frameCount,
                   PCCVideoBitstream &bitstream,
                   const std::string &decoderPath,
                   PCCContext& contexts,
-                  const size_t nbyte = 1,
                   const bool keepIntermediateFiles = false,
-
                   const bool use444CodecIo = false,
                   const bool patchColorSubsampling = false,
                   const std::string &inverseColorSpaceConversionConfig = "",
@@ -75,9 +72,32 @@ class PCCVideoDecoder {
     const std::string type           = bitstream.getExtension();
     const std::string fileName       = path + type;
     const std::string binFileName    = fileName + ".bin";
+
+    size_t width = 0, height = 0, bitDepth = 0; 
+    PCCHevcParser hevcParser;
+    hevcParser.getVideoSize( bitstream.vector(), width, height, bitDepth ); 
+    printf("read Size %lu %lu bit = %lu \n", width, height, bitDepth  ); 
+    if( bitstream.type() == PCCVideoType::OccupancyMap ||
+        bitstream.type() == PCCVideoType::Texture ||
+        bitstream.type() == PCCVideoType::TextureMP ){ 
+      bitDepth = 8;
+#ifdef BUG_FIX_BITDEPTH
+      // width    = bitstream.getWidth();
+      // height   = bitstream.getHeight();
+      bitDepth = bitstream.getBitdepth();
+      printf(" force bitdepth = %lu \n", bitDepth  ); 
+#endif 
+    } else {
+#ifdef BUG_FIX_BITDEPTH
+      // width    = bitstream.getWidth();
+      // height   = bitstream.getHeight();
+      bitDepth = bitstream.getBitdepth();
+      printf(" force bitdepth = %lu \n", bitDepth  ); 
+#endif 
+    }
     const std::string yuvRecFileName = addVideoFormat(fileName + "_rec" + (use444CodecIo ? ".rgb" : ".yuv"),
-                                                      width, height, !use444CodecIo, nbyte==2?"10":"8");
-    const std::string rgbRecFileName = addVideoFormat(fileName + "_rec.rgb", width, height, true, nbyte==2?"10":"8");
+                                                      width, height, !use444CodecIo, bitDepth==10?"10":"8");
+    const std::string rgbRecFileName = addVideoFormat(fileName + "_rec.rgb", width, height, true, bitDepth==10?"10":"8");
     std::ofstream file(binFileName, std::ios::binary);
     const std::string format = use444CodecIo ? "444" : "420";
     if (!file.good()) {
@@ -92,8 +112,9 @@ class PCCVideoDecoder {
           << " --BitstreamFile=" << binFileName << " --ReconFile=" << yuvRecFileName;
     } else {
       cmd << decoderPath << " --BitstreamFile=" << binFileName << " --ReconFile=" << yuvRecFileName;
-      // if nbyte == 1 ensure output bitdepth as 8bit. This is to cater for case if 10bit encoding was used for lossy cases.
-      if (nbyte == 1) {
+      // if bitDepth == 8 ensure output bitdepth as 8bit. This is to cater for case if 10bit encoding was used for lossy cases.
+     if (bitDepth == 8) 
+      {
         cmd << " --OutputBitDepth=8 --OutputBitDepthC=8";
       }
     }
@@ -105,18 +126,18 @@ class PCCVideoDecoder {
     }
     if (inverseColorSpaceConversionConfig.empty() || colorSpaceConversionPath.empty() || use444CodecIo) {
       if (use444CodecIo) {
-        if (!video.read(yuvRecFileName, width, height, frameCount, nbyte)) {
+        if (!video.read(yuvRecFileName, width, height, frameCount, bitDepth == 8 ? 1 :2 )) {
           return false;
         }
       } else {
-        if (!video.read420(yuvRecFileName, width, height, frameCount, nbyte)) {
+        if (!video.read420(yuvRecFileName, width, height, frameCount, bitDepth == 8 ? 1 :2 )) {
           return false;
         }
       }
     } else {
       if (patchColorSubsampling) {
         PCCVideo<T, 3> video420;
-        if (!video420.read420(yuvRecFileName, width, height, frameCount, nbyte)) {
+        if (!video420.read420(yuvRecFileName, width, height, frameCount, bitDepth == 8 ? 1 :2 )) {
           return false;
         }
         //allocate the output
@@ -270,7 +291,7 @@ class PCCVideoDecoder {
             //perform downsampling
             const std::string rgbRecFileNamePatch = addVideoFormat(fileName + "_tmp.rgb", patch_width, patch_height);
             const std::string yuvRecFileNamePatch = addVideoFormat(fileName + "_tmp.yuv", patch_width, patch_height, true);
-            if (!tmpImage.write420(yuvRecFileNamePatch, nbyte)) {
+            if (!tmpImage.write420(yuvRecFileNamePatch, bitDepth == 8 ? 1 :2 )) {
               return false;
             }
             std::stringstream cmd;
@@ -283,7 +304,7 @@ class PCCVideoDecoder {
               std::cout << "Error: can't run system command!" << std::endl;
               return false;
             }
-            tmpImage.read(rgbRecFileNamePatch, patch_width, patch_height,nbyte);
+            tmpImage.read(rgbRecFileNamePatch, patch_width, patch_height,bitDepth == 8 ? 1 :2 );
             //removing intermediate files
             remove(rgbRecFileNamePatch.c_str());
             remove(yuvRecFileNamePatch.c_str());
@@ -311,7 +332,7 @@ class PCCVideoDecoder {
           std::cout << "Error: can't run system command!" << std::endl;
           return false;
         }
-        if (!video.read(rgbRecFileName, width, height, frameCount, nbyte)) {
+        if (!video.read(rgbRecFileName, width, height, frameCount, bitDepth == 8 ? 1 :2 )) {
           return false;
         }
       }

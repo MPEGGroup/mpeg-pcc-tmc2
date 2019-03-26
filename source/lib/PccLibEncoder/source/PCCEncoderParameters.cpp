@@ -56,7 +56,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   minPointCountPerCCPatchSegmentation_    = 16;
   maxNNCountPatchSegmentation_            = 16;
   surfaceThickness_                       = 4;
-  minLevel_                               = 64;
+  minLevel_                               = 64;  // fix value
   maxAllowedDepth_                        = 255;
   maxAllowedDist2MissedPointsDetection_   = 9.0;
   maxAllowedDist2MissedPointsSelection_   = 1.0;
@@ -116,7 +116,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   removeDuplicatePoints_        = true;
   oneLayerMode_                 = false;
   singleLayerPixelInterleaving_ = false;
-  sixDirectionMode_             = absoluteD1_ ? true : false;
+  // sixDirectionMode_             = absoluteD1_ ? true : false;
   surfaceSeparation_            = false;
   // level of detail
   testLevelOfDetail_          = 0;
@@ -126,7 +126,8 @@ PCCEncoderParameters::PCCEncoderParameters() {
   textureBGFill_     = 2;
   safeGuardDistance_ = 0;
   // Improve EDD
-  improveEDD_ = 0;
+  // improveEDD_ = 0;
+
   // lossy missed points patch
   lossyMissedPointsPatch_          = false;
   minNormSumOfInvDist4MPSelection_ = 0.35;
@@ -306,9 +307,9 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   oneLayerMode                         " << oneLayerMode_ << std::endl;
   std::cout << "\t   singleLayerPixelInterleaving         " << singleLayerPixelInterleaving_
             << std::endl;
-  std::cout << "\t six Direction Projection               " << sixDirectionMode_ << std::endl;
+  //std::cout << "\t six Direction Projection               " << sixDirectionMode_ << std::endl;
   std::cout << "\t surface Separation                     " << surfaceSeparation_ << std::endl;
-  std::cout << "\t improve EDD                            " << improveEDD_ << std::endl;
+  // std::cout << "\t improve EDD                            " << improveEDD_ << std::endl;
   std::cout << "\t Lossy missed points patch" << std::endl;
   std::cout << "\t   lossyMissedPointsPatch               " << lossyMissedPointsPatch_ << std::endl;
   std::cout << "\t   minNormSumOfInvDist4MPSelection      " << minNormSumOfInvDist4MPSelection_
@@ -401,11 +402,11 @@ bool PCCEncoderParameters::check() {
                  "enhancedDeltaDepthCode=FALSE.\n";
   }
 
-  if ( !enhancedDeltaDepthCode_ && improveEDD_ ) {
-    improveEDD_ = false;
-    std::cerr << "WARNING: improveEDD_ can't be true when enhancedDeltaDepthCode_ is false. Force "
-                 "improveEDD_=FALSE.\n";
-  }
+  // if ( !enhancedDeltaDepthCode_ && improveEDD_ ) {
+  //   improveEDD_ = false;
+  //   std::cerr << "WARNING: improveEDD_ can't be true when enhancedDeltaDepthCode_ is false. Force "
+  //                "improveEDD_=FALSE.\n";
+  // }
 
   if ( enhancedDeltaDepthCode_ && surfaceThickness_ == 1 ) {
     std::cerr << "WARNING: EDD code doesn't bring any gain when surfaceThickness==1. Please "
@@ -488,15 +489,17 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   sps.setPixelDeinterleavingFlag( singleLayerPixelInterleaving_ );
   sps.setMultipleLayerStreamsPresentFlag( !oneLayerMode_ );
   sps.setRemoveDuplicatePointEnabledFlag( removeDuplicatePoints_ );
+  sps.setAttributeCount(  noAttributes_ ? 0 : 1 );
+  sps.setLayerAbsoluteCodingEnabledFlag( 0, absoluteD1_ );
+  sps.setPcmPatchEnabledFlag(  useAdditionalPointsPatch_ );
   gsp.setGeometrySmoothingParamsPresentFlag( flagGeometrySmoothing_ );
   gsp.setGeometrySmoothingGridSize( gridSize_ );
   gsp.setGeometrySmoothingThreshold( thresholdSmoothing_ );
+  gsp.setGeometrySmoothingEnabledFlag(  gridSmoothing_ ) ;
 
   ops.setOccupancyPackingBlockSize( occupancyResolution_ );
 
-  //asp.setAttributeSmoothingParamsPresentFlag( radius2Smoothing_ ); //jkei? repetition??
   asp.setAttributeSmoothingParamsPresentFlag( flagColorSmoothing_ );
-  // asp.setAttributeSmoothingNeighbourCount( neighborCountSmoothing_ );
   asp.setAttributeSmoothingNeighbourCount( neighborCountColorSmoothing_ );
   asp.setAttributeSmoothingRadius( radius2ColorSmoothing_ );
   asp.setAttributeSmoothingRadius2BoundaryDetection( radius2BoundaryDetection_ );
@@ -507,24 +510,24 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   context.getLosslessGeo444()           = losslessGeo444_;
   context.getLosslessGeo()              = losslessGeo_;
   context.getLosslessTexture()          = losslessTexture_;
+  context.getDeltaCoding()              = deltaCoding_;
+  context.getMinLevel()                 = minLevel_;
+  // Encoder only data
   context.getOccupancyPrecision()       = occupancyPrecision_;
-  context.getGridSmoothing()            = gridSmoothing_;
-  context.getNoAttributes()             = noAttributes_;
-  context.getAbsoluteD1()               = absoluteD1_;
-  context.getBinArithCoding()           = binArithCoding_;
   context.getModelScale()               = modelScale_;
   context.getModelOrigin()              = modelOrigin_;
-  context.getImproveEDD()               = improveEDD_;
-  context.getDeltaCoding()              = deltaCoding_;
-  context.getSixDirectionMode()         = sixDirectionMode_;
-  context.getUseAdditionalPointsPatch() = useAdditionalPointsPatch_;
-  context.getMinLevel()                 = minLevel_;
-  context.getGlobalPatchAllocation()    = globalPatchAllocation_;
-  context.getUse3dmc()                  = use3dmc_;
-
   context.getMPGeoWidth()  = 64;
   context.getMPAttWidth()  = 64;
   context.getMPGeoHeight() = 0;
   context.getMPAttHeight() = 0;
+
+  //asp.setAttributeSmoothingParamsPresentFlag( radius2Smoothing_ ); //jkei? repetition??
+  // asp.setAttributeSmoothingNeighbourCount( neighborCountSmoothing_ );
+  // context.getImproveEDD()               = improveEDD_;
+  // context.getBinArithCoding()           = binArithCoding_;
+  // context.getSixDirectionMode()         = sixDirectionMode_;
+  // context.getGlobalPatchAllocation()    = globalPatchAllocation_;
+  // context.getUse3dmc()                  = use3dmc_;
+
   //~deprecated
 }

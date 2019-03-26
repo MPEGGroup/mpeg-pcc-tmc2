@@ -62,25 +62,26 @@ void PCCBitstreamDecoderNewSyntax::vpccVideoDataUnit( PCCContext&   context,
                                                       VPCCUnitType& vpccUnitType ) {
 #ifdef BITSTREAM_TRACE
   bitstream.trace("%s \n", __func__ );
-#endif  
+#endif
+  auto& sps = context.getSps();
   if ( vpccUnitType == VPCC_OVD ) {
     bitstream.read( context.getVideoBitstream( PCCVideoType::OccupancyMap ) );
   } else if ( vpccUnitType == VPCC_GVD ) {
-    if ( !context.getAbsoluteD1() ) {
+    if ( !sps.getLayerAbsoluteCodingEnabledFlag( 0 ) ) {
       bitstream.read( context.getVideoBitstream( PCCVideoType::GeometryD0 ) );
       bitstream.read( context.getVideoBitstream( PCCVideoType::GeometryD1 ) );
     } else {
       bitstream.read( context.getVideoBitstream( PCCVideoType::Geometry ) );
     }
-    if ( context.getUseAdditionalPointsPatch() &&
-         context.getSps().getPcmSeparateVideoPresentFlag() ) {
+    if ( sps.getPcmPatchEnabledFlag() &&
+         sps.getPcmSeparateVideoPresentFlag() ) {
       bitstream.read( context.getVideoBitstream( PCCVideoType::GeometryMP ) );
     }
   } else if ( vpccUnitType == VPCC_AVD ) {
-    if ( !context.getNoAttributes() ) {
+    if ( sps.getAttributeCount() ) {
       bitstream.read( context.getVideoBitstream( PCCVideoType::Texture ) );
-      if ( context.getUseAdditionalPointsPatch() &&
-           context.getSps().getPcmSeparateVideoPresentFlag() ) {
+      if ( sps.getPcmPatchEnabledFlag() &&
+           sps.getPcmSeparateVideoPresentFlag() ) {
         bitstream.read( context.getVideoBitstream( PCCVideoType::TextureMP ) );
       }
     }
@@ -118,13 +119,13 @@ void PCCBitstreamDecoderNewSyntax::vpccUnitHeader( PCCContext&   context,
   bitstream.trace("%s \n", __func__ );
 #endif  
   auto& vpcc   = context.getVPCC();
-  auto& sps    = context.getSps();
   vpccUnitType = (VPCCUnitType)bitstream.read( 5 );  // u(5)
   if ( vpccUnitType == VPCC_AVD || vpccUnitType == VPCC_GVD || vpccUnitType == VPCC_OVD ||
        vpccUnitType == VPCC_PSD ) {
     vpcc.setSequenceParameterSetId( bitstream.read( 4 ) );  // u(4)
   }
   if ( vpccUnitType == VPCC_AVD ) {
+    auto& sps    = context.getSps();
     vpcc.setAttributeIndex( bitstream.read( 7 ) );  // u(7)
     if ( sps.getMultipleLayerStreamsPresentFlag() ) {
       vpcc.setLayerIndex( bitstream.read( 4 ) );  // u(4)
@@ -133,6 +134,7 @@ void PCCBitstreamDecoderNewSyntax::vpccUnitHeader( PCCContext&   context,
       pcmSeparateVideoData( context, bitstream, 15 );
     }
   } else if ( vpccUnitType == VPCC_GVD ) {
+    auto& sps    = context.getSps();
     if ( sps.getMultipleLayerStreamsPresentFlag() ) {
       vpcc.setLayerIndex( bitstream.read( 4 ) );  // u(4)
       pcmSeparateVideoData( context, bitstream, 18 );

@@ -80,56 +80,8 @@ class PCCBitstream {
 
   bool byteAligned() { return ( position_.bits == 0 ); }
 
-  //deprecated 
-  template <typename T>
-  void write( const T u, PCCBistreamPosition &pos ) {
-    align( pos );
-    union {
-      T       u;
-      uint8_t u8[sizeof( T )];
-    } source;
-    source.u = u;
-    if ( pos.bytes + 16 >= data_.size() ) { realloc(); }
-    if ( PCCSystemEndianness() == PCC_LITTLE_ENDIAN ) {
-      for ( size_t k = 0; k < sizeof( T ); k++ ) {
-        assert( pos.bytes >= data_.size() );
-        data_[pos.bytes++] = source.u8[k];
-      }
-    } else {
-      for ( size_t k = 0; k < sizeof( T ); k++ ) {
-        assert( pos.bytes >= data_.size() );
-        data_[pos.bytes++] = source.u8[sizeof( T ) - k - 1];
-      }
-    }
-  }
-  template <typename T>
-  T read( PCCBistreamPosition &pos ) {
-    align( pos );
-    union {
-      T       u;
-      uint8_t u8[sizeof( T )];
-    } dest;
-    if ( PCCSystemEndianness() == PCC_LITTLE_ENDIAN ) {
-      for ( size_t k = 0; k < sizeof( T ); k++ ) { dest.u8[k] = data_[pos.bytes++]; }
-    } else {
-      for ( size_t k = 0; k < sizeof( T ); k++ ) {
-        dest.u8[sizeof( T ) - k - 1] = data_[pos.bytes++];
-      }
-    }
-    return dest.u;
-  }
-  template <typename T>
-  void write( const T u ) {
-    write( u, position_ );
-  }
-  template <typename T>
-  T read( ) {
-   return read<T>( position_ );
-  }
-  //~deprecated
 
 #ifdef BITSTREAM_TRACE
-
   template <typename... Args>
   void trace( const char* pFormat, Args... eArgs ) {
     if ( trace_ ) {
@@ -158,6 +110,61 @@ class PCCBitstream {
     }
   }
 #endif
+
+  //deprecated 
+  template <typename T>
+  void write( const T u, PCCBistreamPosition &pos ) {
+    align( pos );
+    union {
+      T       u;
+      uint8_t u8[sizeof( T )];
+    } source;
+    source.u = u;
+    if ( pos.bytes + 16 >= data_.size() ) { realloc(); }
+    if ( PCCSystemEndianness() == PCC_LITTLE_ENDIAN ) {
+      for ( size_t k = 0; k < sizeof( T ); k++ ) {
+        assert( pos.bytes >= data_.size() );
+        data_[pos.bytes++] = source.u8[k];
+      }
+    } else {
+      for ( size_t k = 0; k < sizeof( T ); k++ ) {
+        assert( pos.bytes >= data_.size() );
+        data_[pos.bytes++] = source.u8[sizeof( T ) - k - 1];
+      }
+    }
+#ifdef BITSTREAM_TRACE
+  trace("CodF: %5lu : %4lu \n",sizeof( T ), u ) ; 
+#endif
+  }
+  template <typename T>
+  T read( PCCBistreamPosition &pos ) {
+    align( pos );
+    union {
+      T       u;
+      uint8_t u8[sizeof( T )];
+    } dest;
+    if ( PCCSystemEndianness() == PCC_LITTLE_ENDIAN ) {
+      for ( size_t k = 0; k < sizeof( T ); k++ ) { dest.u8[k] = data_[pos.bytes++]; }
+    } else {
+      for ( size_t k = 0; k < sizeof( T ); k++ ) {
+        dest.u8[sizeof( T ) - k - 1] = data_[pos.bytes++];
+      }
+    }
+  
+#ifdef BITSTREAM_TRACE
+  trace("CodF: %5lu : %4lu \n",sizeof( T ), dest.u ) ; 
+#endif
+    return dest.u;
+  }
+  template <typename T>
+  void write( const T u ) {
+    write( u, position_ );
+  }
+  template <typename T>
+  T read( ) {
+   return read<T>( position_ );
+  }
+  //~deprecated
 private: 
   uint32_t read( uint8_t bits, PCCBistreamPosition &pos );
   void write( uint32_t value, uint8_t bits, PCCBistreamPosition &pos );

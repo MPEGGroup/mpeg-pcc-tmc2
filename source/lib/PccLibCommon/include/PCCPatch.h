@@ -78,7 +78,6 @@ struct GPAPatchData
 
 };
 
-
 class PCCPatch {
  public:
   PCCPatch(){};

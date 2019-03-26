@@ -83,6 +83,7 @@ bool PCCBitstream::write( std::string compressedStreamPath ) {
 
 // Must be moved in PccEncoderBitstream and PccDeccoderBitstream.
 bool PCCBitstream::readHeader( PCCMetadataEnabledFlags& gofLevelMetadataEnabledFlags ) {
+  printf("readHeader \n"); fflush(stdout);
 #ifdef BITSTREAM_TRACE
   trace("Code: header \n"); 
 #endif
@@ -181,13 +182,26 @@ void PCCBitstream::read( PCCVideoBitstream& videoBitstream ) {
   memcpy( videoBitstream.buffer(), data_.data() + position_.bytes, size );
   videoBitstream.trace();
   position_.bytes += size;
+#ifdef BUG_FIX_BITDEPTH
+  // videoBitstream.setWidth( read<uint16_t>() ); 
+  // videoBitstream.setHeight( read<uint16_t>() ); 
+  videoBitstream.setBitdepth( read<uint8_t>() ); 
+  printf("BITSTREAM READ BITDEPTH = %lu \n",videoBitstream.getBitdepth());
+#endif
 #ifdef BITSTREAM_TRACE
   trace("Code: video : %4lu \n",size) ; 
 #endif
+  printf("read PCCVideoBitstream done size = %lu \n",size); fflush(stdout);
 }
 
 void PCCBitstream::write( PCCVideoBitstream& videoBitstream ) {
   writeBuffer( videoBitstream.buffer(), videoBitstream.size() );
+#ifdef BUG_FIX_BITDEPTH
+  printf("BITSTREAM WRITE BITDEPTH = %lu \n",videoBitstream.getBitdepth());
+  // write<uint16_t>( videoBitstream.getWidth() );
+  // write<uint16_t>( videoBitstream.getHeight() );
+  write<uint8_t>( videoBitstream.getBitdepth() );
+#endif 
   videoBitstream.trace();
 #ifdef BITSTREAM_TRACE
   trace("Code: video : %4lu \n",videoBitstream.size() ) ; 
@@ -232,6 +246,10 @@ uint32_t PCCBitstream::read( uint8_t bits, PCCBistreamPosition& pos ) {
       pos.bits++;
     }
   }
+  
+#ifdef BITSTREAM_TRACE
+  trace("Code: %5lu : %4lu \n",bits, value ) ; 
+#endif
   return value;
 }
 
@@ -248,4 +266,7 @@ inline void PCCBitstream::write( uint32_t value, uint8_t bits, PCCBistreamPositi
       pos.bits++;
     }
   }
+#ifdef BITSTREAM_TRACE
+  trace("Code: %5lu : %4lu \n",bits, value ) ; 
+#endif
 }

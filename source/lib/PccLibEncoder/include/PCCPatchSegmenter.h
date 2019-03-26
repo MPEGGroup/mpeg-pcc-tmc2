@@ -58,7 +58,7 @@ struct PCCPatchSegmenter3Parameters {
   size_t levelOfDetail;
   size_t projectionMode;
   bool   useEnhancedDeltaDepthCode;
-  bool   sixDirectionMode;
+  // bool   sixDirectionMode;
   bool   absoluteD1;
   bool   useOneLayermode;
   bool   surfaceSeparation;

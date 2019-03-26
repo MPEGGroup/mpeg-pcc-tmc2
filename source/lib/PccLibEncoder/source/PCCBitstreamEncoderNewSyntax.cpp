@@ -71,19 +71,19 @@ void PCCBitstreamEncoderNewSyntax::vpccVideoDataUnit( PCCContext&   context,
   if ( vpccUnitType == VPCC_OVD ) {
     bitstream.write( context.getVideoBitstream( PCCVideoType::OccupancyMap ) );
   } else if ( vpccUnitType == VPCC_GVD ) {
-    if ( !context.getAbsoluteD1() ) {
+    if ( !sps.getLayerAbsoluteCodingEnabledFlag( 0 ) ) {
       bitstream.write( context.getVideoBitstream( PCCVideoType::GeometryD0 ) );
       bitstream.write( context.getVideoBitstream( PCCVideoType::GeometryD1 ) );
     } else {
       bitstream.write( context.getVideoBitstream( PCCVideoType::Geometry ) );
     }
-    if ( context.getUseAdditionalPointsPatch() && sps.getPcmSeparateVideoPresentFlag() ) {
+    if ( sps.getPcmPatchEnabledFlag() && sps.getPcmSeparateVideoPresentFlag() ) {
       bitstream.write( context.getVideoBitstream( PCCVideoType::GeometryMP ) );
     }
   } else if ( vpccUnitType == VPCC_AVD ) {
-    if ( !context.getNoAttributes() ) {
+    if ( sps.getAttributeCount() > 0 ) {
       bitstream.write( context.getVideoBitstream( PCCVideoType::Texture ) );
-      if ( context.getUseAdditionalPointsPatch() && sps.getPcmSeparateVideoPresentFlag() ) {
+      if ( sps.getPcmPatchEnabledFlag() && sps.getPcmSeparateVideoPresentFlag() ) {
         bitstream.write( context.getVideoBitstream( PCCVideoType::TextureMP ) );
       }
     }

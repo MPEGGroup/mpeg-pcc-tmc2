@@ -170,7 +170,7 @@ class PCCEncoderParameters {
   //visual quality
   bool                patchColorSubsampling_;
   bool                deltaCoding_;
-  bool                sixDirectionMode_;
+  // bool                sixDirectionMode_;
   bool                surfaceSeparation_;
 
   // Flexible Patch Packing
@@ -179,7 +179,7 @@ class PCCEncoderParameters {
   size_t              safeGuardDistance_;
 
   // Improve EDD
-  bool                improveEDD_;
+  // bool                improveEDD_; always true
 
   // Lossy Missed Points Patch
   bool                lossyMissedPointsPatch_;

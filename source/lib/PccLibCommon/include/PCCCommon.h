@@ -64,12 +64,15 @@
 // Trace mode to validate new syntax
 // ******************************************************************* //
 #define BITSTREAM_TRACE 
+#define CODEC_TRACE 
 
 //
 // #define CE210_MAXDEPTH_EVALUATION
 
 //jkei: patchSequenceUnitPayload
 namespace pcc {
+
+#define BUG_FIX_BITDEPTH 
 
 // ******************************************************************* //
 // Version information
@@ -347,6 +350,19 @@ static uint32_t convertToUInt( int32_t value ) {
 }
 static int32_t convertToInt( uint32_t value ) {
     return ( value & 1) ? -(int32_t)(value>>1) : (int32_t)(value>>1);
+}
+
+template<typename T>
+void printVector( std::vector<T> data, const size_t width, const size_t height, const std::string string, const bool hexa = false ) {
+  if( data.size() == 0 ) { data.resize( width * height, 0 ); }
+    printf("%s: %lu %lu \n",string.c_str(), width, height);
+    for (size_t v0 = 0; v0 < height; ++v0) {
+      for (size_t u0 = 0; u0 < width; ++u0) {
+        if( hexa ) { printf("%2x", (int)(data[ v0 * width + u0 ]) ); }
+        else       { printf("%3d", (int)(data[ v0 * width + u0 ]) ); } 
+      }
+      printf("\n"); fflush(stdout); 
+    }
 }
 
 }  // namespace pcc

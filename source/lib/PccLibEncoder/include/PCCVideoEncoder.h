@@ -95,6 +95,7 @@ class PCCVideoEncoder {
                                                             width, height, !use444CodecIo, nbyte==2?"10":"8" );
 
     const bool yuvVideo = colorSpaceConversionConfig.empty() || colorSpaceConversionPath.empty() || use444CodecIo;
+
     if( yuvVideo ) {
       if (use444CodecIo) {
         if (!video.write( srcYuvFileName, nbyte)) {
@@ -376,6 +377,7 @@ class PCCVideoEncoder {
     file.seekg(0);
     file.read(reinterpret_cast<char *>(bitstream.buffer()), fileSize);
     file.close();
+    
     if ( yuvVideo ) {
       if ( use444CodecIo ) {
         video.read( recYuvFileName, width, height, frameCount, nbyte );
@@ -405,6 +407,12 @@ class PCCVideoEncoder {
       removeFile( recYuvFileName );
       removeFile( recRgbFileName );
     }
+#ifdef BUG_FIX_BITDEPTH
+    // bitstream.setWidth( width ); 
+    // bitstream.setHeight( height ); 
+    bitstream.setBitdepth( nbyte==2 ? 10 : 8 ); 
+    printf("SET bitstream.setBitdepth to %lu \n",bitstream.getBitdepth() );
+#endif
     return true;
   }
  private:

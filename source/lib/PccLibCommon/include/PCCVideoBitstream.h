@@ -65,9 +65,24 @@ class PCCVideoBitstream {
     }
     return std::string( "unknown" );
   }
+
+#ifdef BUG_FIX_BITDEPTH
+  // uint32_t getWidth() { return width_; }
+  // uint32_t getHeight() { return height_; }
+  // void    setWidth( uint32_t width ) { width_ = width; }
+  // void    setHeight( uint32_t height ) { height_ = height; }
+  uint8_t getBitdepth() { return bitdepth_; }
+  void    setBitdepth( uint8_t bitdepth ) { bitdepth_ = bitdepth; }
+#endif
  private:
   std::vector<uint8_t> data_;
   PCCVideoType type_;
+
+#ifdef BUG_FIX_BITDEPTH
+  // uint32_t width_; 
+  // uint32_t height_; 
+  uint8_t bitdepth_; 
+#endif
 };
 
 }
