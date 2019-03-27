@@ -391,7 +391,8 @@ int PCCBitstreamDecoder::decompressHeader( PCCContext& context, PCCBitstream& bi
   auto& gsp = gps.getGeometrySequenceParams();
   auto& ops = sps.getOccupancyParameterSet();
   sps.setAttributeCount(1);
-  sps.allocateAttributeParameterSets();
+  sps.setLayerCountMinus1(1);
+  sps.allocate();
   auto& aps = sps.getAttributeParameterSet( 0 );
   auto& asp = aps.getAttributeSequenceParams();
 

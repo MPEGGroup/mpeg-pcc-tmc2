@@ -37,7 +37,7 @@
 BasedOnStyle: Google  # Use the Google C++ style as the base for our format
 ---
 Language: Cpp
-ColumnLimit: 100  # Set column limit to 100
+ColumnLimit: 150  # Set column limit to 100
 DerivePointerAlignment: false  # Don't attempt to detect pointer alignment from file
 PointerAlignment: Right  # foo &bar;
 SortIncludes: false  # Sorting includes is currently causing builds to break
