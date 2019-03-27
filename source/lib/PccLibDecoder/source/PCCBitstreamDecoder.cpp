@@ -619,9 +619,9 @@ void PCCBitstreamDecoder::decompressPatchMetaDataM42195( PCCContext&            
   o3dgc::Adaptive_Bit_Model  interpolateModel, fillingModel, occupiedModel;
   o3dgc::Adaptive_Data_Model minD1Model( 3 ), neighborModel( 3 );
 
-  frame.getFrameLevelMetadata().setMetadataType( METADATA_FRAME );
-  frame.getFrameLevelMetadata().setIndex( frame.getIndex() );
-  decompressMetadata( frame.getFrameLevelMetadata(), arithmeticDecoder );
+ frame.getFrameLevelMetadata().setMetadataType( METADATA_FRAME );
+ frame.getFrameLevelMetadata().setIndex( frame.getIndex() );
+ decompressMetadata( frame.getFrameLevelMetadata(), arithmeticDecoder );
 
   int64_t       prevSizeU0 = 0;
   int64_t       prevSizeV0 = 0;
@@ -1043,8 +1043,7 @@ void PCCBitstreamDecoder::decompressOccupancyMap( PCCContext&      context,
         patch.getTangentAxis()   = 0;
         patch.getBitangentAxis() = 1;
       }
-      auto& patchLevelMetadataEnabledFlags =
-          frame.getFrameLevelMetadata().getLowerLevelMetadataEnabledFlags();
+      auto& patchLevelMetadataEnabledFlags = frame.getFrameLevelMetadata().getLowerLevelMetadataEnabledFlags();
       auto& patchLevelMetadata = patch.getPatchLevelMetadata();
       patchLevelMetadata.setIndex( patchIndex );
       patchLevelMetadata.setMetadataType( METADATA_PATCH );

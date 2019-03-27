@@ -346,12 +346,14 @@ class PatchFrameDataUnit {
   PatchInformationData&     getPatchInformationData( uint8_t index ) { return patchInformationData_[index]; }
   PointLocalReconstruction& getPointLocalReconstruction() { return pointLocalReconstruction_; }
 
+  void setPatchCount( uint8_t value ) { patchCount_ = value; }
   void setPatchFrameMode( uint8_t index, uint8_t value ) { patchMode_[index] = value; }
   void setPatchInformationData( uint8_t index, PatchInformationData& value ) { patchInformationData_[index] = value; }
-  void setPatchInformationData( uint8_t index, PatchInformationData value ) { patchInformationData_[index] = value; }
+  // void setPatchInformationData( uint8_t index, PatchInformationData value ) { patchInformationData_[index] = value; }
   void setPointLocalReconstruction( PointLocalReconstruction value ) { pointLocalReconstruction_ = value; }
 
  private:
+  uint8_t                           patchCount_;
   std::vector<uint8_t>              patchMode_;
   std::vector<PatchInformationData> patchInformationData_;  // patchCount_ = size of vector
   PointLocalReconstruction          pointLocalReconstruction_;
@@ -1532,8 +1534,7 @@ class SequenceParameterSet {
   bool                   getPixelDeinterleavingFlag() { return pixelDeinterleavingFlag_; }
   bool                   getPointLocalReconstructionEnabledFlag() { return pointLocalReconstructionEnabledFlag_; }
   bool                   getRemoveDuplicatePointEnabledFlag() { return removeDuplicatePointEnabledFlag_; }
-  std::vector<size_t>&   getLayerPredictorIndexDiff() { return layerPredictorIndexDiff_; }
-  std::vector<bool>&     getLayerAbsoluteCodingEnabledFlag() { return layerAbsoluteCodingEnabledFlag_; }
+  size_t                 getLayerPredictorIndexDiff( size_t index ) { return layerPredictorIndexDiff_[index]; }
   bool                   getLayerAbsoluteCodingEnabledFlag( size_t index ) { return layerAbsoluteCodingEnabledFlag_[index]; }
   ProfileTierLevel&      getProfileTierLevel() { return profileTierLevel_; }
   GeometryParameterSet&  getGeometryParameterSet() { return geometryParameterSet_; }
@@ -1556,6 +1557,9 @@ class SequenceParameterSet {
   void setPixelDeinterleavingFlag( bool value ) { pixelDeinterleavingFlag_ = value; }
   void setPointLocalReconstructionEnabledFlag( bool value ) { pointLocalReconstructionEnabledFlag_ = value; }
   void setRemoveDuplicatePointEnabledFlag( bool value ) { removeDuplicatePointEnabledFlag_ = value; }
+  
+  void addLayerAbsoluteCodingEnabledFlag( bool value ) { layerAbsoluteCodingEnabledFlag_.push_back( value ); }
+  void addLayerPredictorIndexDiff( bool value ) { layerPredictorIndexDiff_.push_back( value ); }
   void setLayerAbsoluteCodingEnabledFlag( size_t index, bool value ) {
     if ( layerAbsoluteCodingEnabledFlag_.size() < index + 1 ) { layerAbsoluteCodingEnabledFlag_.resize( index + 1 ); }
     layerAbsoluteCodingEnabledFlag_[index] = value;
@@ -1753,8 +1757,7 @@ class PCCContext {
   PCCMetadata gofLevelMetadata_;
 
   // Internale data
-  // bool                           deltaCoding_;  //
-  // sps.getPatchInterPredictionEnabledFlag()
+  // bool                           deltaCoding_;  // sps.getPatchInterPredictionEnabledFlag()
   uint8_t occupancyPrecision_;
   size_t  MPGeoWidth_;
   size_t  MPGeoHeight_;
@@ -1772,8 +1775,7 @@ class PCCContext {
   // bool                           improveEDD_;  // always true  edd param is
   // sps.getEnhancedOccupancyMapForDepthFlag()
   // bool                           binArithCoding_;
-  // bool                           absoluteD1_; //
-  // SequenceParameterSet.getLayerAbsoluteCodingEnabledFlag()
+  // bool                           absoluteD1_; // sps.getLayerAbsoluteCodingEnabledFlag()
   // bool                           use3dmc_;
   //~ deprecated, must be removed
 

@@ -244,6 +244,16 @@ class PCCBitstreamDecoderNewSyntax {
                                  PCCContext&               context,
                                  PCCBitstream&             bitstream,
                                  o3dgc::Arithmetic_Codec&  arithmeticDecoder );
+
+  // adaptor methods
+  void createPatchFrameDataStructure( PCCContext&   context );
+
+  void createPatchFrameDataStructure( PCCContext&      context,
+                                      PCCFrameContext& frame,
+                                      PCCFrameContext& refFrame, // change this to be derived from reference data structure
+                                      size_t           frameIndex );
+
+
 };
 
 };  // namespace pcc

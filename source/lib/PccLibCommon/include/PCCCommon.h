@@ -65,14 +65,13 @@
 // ******************************************************************* //
 #define BITSTREAM_TRACE 
 #define CODEC_TRACE 
+#define BUG_FIX_BITDEPTH 
 
 //
 // #define CE210_MAXDEPTH_EVALUATION
 
 //jkei: patchSequenceUnitPayload
 namespace pcc {
-
-#define BUG_FIX_BITDEPTH 
 
 // ******************************************************************* //
 // Version information
@@ -200,8 +199,9 @@ enum PATCH_FRAME_TYPE {
 };
 
 enum PATCH_I_MODE {
-	I_INTRA = 0,
+    I_INTRA = 0,
 	I_PCM,
+    I_END
 };
 
 enum PATCH_P_MODE {
@@ -209,6 +209,7 @@ enum PATCH_P_MODE {
 	P_INTRA,
 	P_INTER,
 	P_PCM,
+    P_END
 };
 
 const size_t IntermediateLayerIndex = 100;

@@ -200,19 +200,17 @@ void PCCBitstreamDecoderNewSyntax::sequenceParameterSet( SequenceParameterSet& s
   }
   sps.setEnhancedOccupancyMapForDepthFlag( bitstream.read( 1 ) );  // u(1)
   sps.setLayerCountMinus1( bitstream.read( 4 ) );                  // u(4)
-  int32_t layerCountMinus1 = (int32_t)sps.getLayerCountMinus1();
-  if ( layerCountMinus1 > 0 ) {
+  if ( sps.getLayerCountMinus1() > 0 ) {
     sps.setMultipleLayerStreamsPresentFlag( bitstream.read( 1 ) );  // u(1)
   }
-  auto& layerAbsoluteCodingEnabledFlag = sps.getLayerAbsoluteCodingEnabledFlag();
-  auto& layerPredictorIndexDiff        = sps.getLayerPredictorIndexDiff();
-  for ( size_t i = 0; i < layerCountMinus1; i++ ) {
-    layerAbsoluteCodingEnabledFlag[i + 1] = bitstream.read( 1 );  // u(1)
-    if ( ( layerAbsoluteCodingEnabledFlag[i + 1] == 0 ) ) {
+  sps.allocate();
+  for ( size_t i = 0; i < sps.getLayerCountMinus1(); i++ ) {
+    sps.setLayerAbsoluteCodingEnabledFlag( i + 1, bitstream.read( 1 ) );  // u(1)
+    if ( ( sps.getLayerAbsoluteCodingEnabledFlag( i + 1 ) == 0 ) ) {
       if ( i > 0 ) {
-        layerPredictorIndexDiff[i + 1] = bitstream.readUvlc();  // ue(v)
+        sps.setLayerPredictorIndexDiff( i + 1, bitstream.readUvlc() );  // ue(v)
       } else {
-        layerPredictorIndexDiff[i + 1] = 0;
+        sps.setLayerPredictorIndexDiff( i + 1, 0 );
       }
     }
   }
@@ -937,13 +935,10 @@ void PCCBitstreamDecoderNewSyntax::patchInformationData(
   if ( ( PATCH_FRAME_TYPE( pfh.getType() ) ) == P_PATCH_FRAME && patchMode == P_SKIP ) {
     // skip mode.
     // currently not supported but added it for convenience. Could easily be removed
-  } else if ( ( PATCH_FRAME_TYPE( pfh.getType() ) ) == I_PATCH_FRAME &&
-                  patchMode == I_INTRA ||
-              ( ( PATCH_FRAME_TYPE( pfh.getType() ) ) == P_PATCH_FRAME &&
-                patchMode == P_INTRA ) ) {
+  } else if ( ( ( PATCH_FRAME_TYPE( pfh.getType() ) ) == I_PATCH_FRAME && patchMode == I_INTRA ) ||
+              ( ( PATCH_FRAME_TYPE( pfh.getType() ) ) == P_PATCH_FRAME && patchMode == P_INTRA ) ) {
     if ( pfps.getLocalOverrideGeometryPatchEnableFlag() ) {
-      const bool overrideGeometryPatchFlag =
-          arithmeticDecoder.decode( bModelOverrideGeometryPatchFlag );  // ae(v) regular
+      const bool overrideGeometryPatchFlag = arithmeticDecoder.decode( bModelOverrideGeometryPatchFlag );  // ae(v) regular
       pid.setOverrideGeometryPatchFlag( overrideGeometryPatchFlag );
       if ( pid.getOverrideGeometryPatchFlag() ) {
         uint8_t gppsId = DecodeUInt32( bitCountGAppsId, arithmeticDecoder, bModel );
@@ -952,8 +947,7 @@ void PCCBitstreamDecoderNewSyntax::patchInformationData(
     }
     for ( int i = 0; i < sps.getAttributeCount(); i++ ) {
       if ( pfps.getLocalOverrideAttributePatchEnableFlag( i ) ) {
-        const bool overrideAttributePatchFlag =
-            arithmeticDecoder.decode( bModelOverrideAttributePatchFlag );
+        const bool overrideAttributePatchFlag = arithmeticDecoder.decode( bModelOverrideAttributePatchFlag );
         pid.addOverrideAttributePatchFlag( overrideAttributePatchFlag );
       }
       if ( pid.getOverrideAttributePatchFlag( i ) ) {
@@ -964,15 +958,12 @@ void PCCBitstreamDecoderNewSyntax::patchInformationData(
     PatchDataUnit pdu;
     patchDataUnit( pdu, pfh, context, bitstream, arithmeticDecoder );
     pid.setPatchDataUnit( pdu );
-  } else if ( ( PATCH_FRAME_TYPE( pfh.getType() ) ) == P_PATCH_FRAME &&
-              patchMode == P_INTER ) {
+  } else if ( ( PATCH_FRAME_TYPE( pfh.getType() ) ) == P_PATCH_FRAME && patchMode == P_INTER ) {
     DeltaPatchDataUnit dpdu;
     deltaPatchDataUnit( dpdu, pfh, context, bitstream, arithmeticDecoder);
     pid.setDeltaPatchDataUnit( dpdu );
-  } else if ( ( PATCH_FRAME_TYPE( pfh.getType() ) ) == I_PATCH_FRAME &&
-                  patchMode == I_PCM ||
-              ( PATCH_FRAME_TYPE( pfh.getType() ) ) == P_PATCH_FRAME &&
-                  patchMode == P_PCM ) {
+  } else if ( ( ( PATCH_FRAME_TYPE( pfh.getType() ) ) == I_PATCH_FRAME && patchMode == I_PCM ) ||
+              ( ( PATCH_FRAME_TYPE( pfh.getType() ) ) == P_PATCH_FRAME && patchMode == P_PCM ) ) {
     PCMPatchDataUnit ppdu;
     pcmPatchDataUnit( ppdu, pfh, context, bitstream, arithmeticDecoder);
   }
@@ -1021,7 +1012,6 @@ void PCCBitstreamDecoderNewSyntax::patchDataUnit( PatchDataUnit&           pdu,
     uint8_t lod = DecodeUInt32( pfh.getInterPredictPatchLodBitCount(), arithmeticDecoder, bModel );  // ae(v)
     pdu.setLod( lod );
   }
-
   bool  projectionFlag = 0;
   int   i              = 0;
   auto& sps            = context.getSps();
@@ -1121,4 +1111,56 @@ void PCCBitstreamDecoderNewSyntax::pointLocalReconstruction( PointLocalReconstru
       }
     }
   }
+}
+
+/* THIS SECTION ADDS PATCH RELATED CALCULATIONS AND GENERATED PFDS */
+
+void PCCBitstreamDecoderNewSyntax::createPatchFrameDataStructure(PCCContext&   context ) {
+  /* TODO */
+  size_t numPFDUs   = context.getFrames().size();
+  auto   ref        = context.getFrames()[0];
+  auto&  sps        = context.getSps();
+  auto&  psdu       = context.getPatchSequenceDataUnit(); // perhaps I need to allocate this
+
+  RefListStruct refList;
+  refList.allocate();
+  refList.setNumRefEntries( 1 ); // hardcoded allow only 1 reference frame
+  refList.setAbsDeltaPfocSt( 1 , 0 ); //hardcoded: allowed previous farme as reference
+
+  /* 1. Create sequence of the patch frames */
+  for ( size_t i = 0; i < numPFDUs; i++ ) {
+    auto& frame       = context.getFrames()[i];
+
+    PatchFrameHeader pfh;
+    PatchFrameDataUnit pfdu;
+    PatchFrameLayerUnit pflu;
+    PatchSequenceUnitPayload psup;
+
+    pflu.setFrameIndex( i );
+
+    for ( size_t k = 0; k < frame.getNumMatchedPatches(); k++ ) {
+      //...
+    }
+
+
+    frame.getWidth()  = sps.getFrameWidth();
+    frame.getHeight() = sps.getFrameHeight();
+    auto& frameLevelMetadataEnabledFlags =
+      context.getGOFLevelMetadata().getLowerLevelMetadataEnabledFlags();
+    frame.getFrameLevelMetadata().getMetadataEnabledFlags() = frameLevelMetadataEnabledFlags;
+
+    if ( sps.getPcmPatchEnabledFlag() && !sps.getPcmSeparateVideoPresentFlag() ) {
+      if ( !sps.getPcmSeparateVideoPresentFlag() ) {
+        // ...ppdu
+      }
+    }
+  }
+}
+
+void PCCBitstreamDecoderNewSyntax::createPatchFrameDataStructure( PCCContext&      context,
+                                                                  PCCFrameContext& frame,
+                                                                  PCCFrameContext& preFrame,
+                                                                  size_t           frameIndex ) {
+  /* TODO */
+
 }
