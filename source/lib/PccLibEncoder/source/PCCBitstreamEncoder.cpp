@@ -69,7 +69,7 @@ int PCCBitstreamEncoder::encode( PCCContext &context, PCCBitstream &bitstream ){
   auto& sps = context.getSps();
   std::cout << "PCCEncoder: compress (video bitstream start: bitstream = "<< bitstream.size()<<" / "<< bitstream.capacity()<<" )" << std::endl;
   bitstream.write( context.getVideoBitstream( PCCVideoType::OccupancyMap ) );
-  if (!sps.getLayerAbsoluteCodingEnabledFlag( 0 )) {
+  if (!sps.getLayerAbsoluteCodingEnabledFlag( 1 )) {
     bitstream.write( context.getVideoBitstream( PCCVideoType::GeometryD0 ) );
     bitstream.write( context.getVideoBitstream( PCCVideoType::GeometryD1 ) );
   } else {
@@ -460,8 +460,8 @@ int PCCBitstreamEncoder::compressHeader( PCCContext& context, pcc::PCCBitstream&
   bitstream.write<uint8_t>( uint8_t( sps.getLosslessGeo444() ) );
   bitstream.write<uint8_t>( uint8_t( sps.getMinLevel() ) );
   bitstream.write<uint8_t>( uint8_t( sps.getPcmSeparateVideoPresentFlag() ) );
-  bitstream.write<uint8_t>( uint8_t( sps.getLayerAbsoluteCodingEnabledFlag( 0 ) ) );
-  // if ( sps.getLayerAbsoluteCodingEnabledFlag( 0 ) ) {
+  bitstream.write<uint8_t>( uint8_t( sps.getLayerAbsoluteCodingEnabledFlag( 1 ) ) );
+  // if ( sps.getLayerAbsoluteCodingEnabledFlag( 1 ) ) {
   //    bitstream.write<uint8_t>( uint8_t( context.getSixDirectionMode() ) );
   // }
 #ifdef BITSTREAM_TRACE
@@ -649,7 +649,7 @@ void PCCBitstreamEncoder::compressPatchMetaDataM42195( PCCContext      &context,
     arithmeticEncoder.ExpGolombEncode(o3dgc::IntToUInt(int32_t(deltaSizeU0)), 0, bModel0, bModelIntSizeU0);
     arithmeticEncoder.ExpGolombEncode(o3dgc::IntToUInt(int32_t(deltaSizeV0)), 0, bModel0, bModelIntSizeV0);
 
-    if ( sps.getLayerAbsoluteCodingEnabledFlag( 0 )  ) { // && context.getSixDirectionMode()
+    if ( sps.getLayerAbsoluteCodingEnabledFlag( 1 )  ) { // && context.getSixDirectionMode()
       arithmeticEncoder.encode(patch.getProjectionMode(), bModel0);
     }
     
@@ -711,11 +711,11 @@ void PCCBitstreamEncoder::compressPatchMetaDataM42195( PCCContext      &context,
     metadata.setIndex(patchIndex);
     metadata.setMetadataPresent(true);
 
-    if (!sps.getLayerAbsoluteCodingEnabledFlag( 0 )  && (patch.getFrameProjectionMode() == 2)) {
+    if (!sps.getLayerAbsoluteCodingEnabledFlag( 1 )  && (patch.getFrameProjectionMode() == 2)) {
       const uint8_t bitCountProjDir = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(2 + 1)));
       EncodeUInt32(uint32_t(patch.getProjectionMode()), bitCountProjDir, arithmeticEncoder, bModel0);
     }
-    if ( sps.getLayerAbsoluteCodingEnabledFlag( 0 )  ) { // && context.getSixDirectionMode()
+    if ( sps.getLayerAbsoluteCodingEnabledFlag( 1 )  ) { // && context.getSixDirectionMode()
       arithmeticEncoder.encode(patch.getProjectionMode(), bModel0);
     }
     const int64_t deltaSizeU0 = static_cast<int64_t>(patch.getSizeU0()) - prevSizeU0;
@@ -759,7 +759,7 @@ void PCCBitstreamEncoder::compressOneLayerData( PCCContext&                 cont
                                                 o3dgc::Adaptive_Data_Model& minD1Model,
                                                 o3dgc::Adaptive_Bit_Model&  fillingModel ) {
   auto& sps = context.getSps();
-  if ( sps.getLayerAbsoluteCodingEnabledFlag( 0 ) && !sps.getMultipleLayerStreamsPresentFlag() ) {
+  if ( sps.getLayerAbsoluteCodingEnabledFlag( 1 ) && !sps.getMultipleLayerStreamsPresentFlag() ) {
     auto&        sps                = context.getSps();
     auto&        ops                = sps.getOccupancyParameterSet();
     auto&        blockToPatch       = frame.getBlockToPatch();
@@ -844,7 +844,7 @@ void PCCBitstreamEncoder::compressOccupancyMap( PCCContext&      context,
   bitstream.write<uint32_t>(uint32_t(patchCount));
   bitstream.write<uint8_t>( uint8_t( params_.maxCandidateCount_));
 
-  if (!sps.getLayerAbsoluteCodingEnabledFlag( 0 )) {
+  if (!sps.getLayerAbsoluteCodingEnabledFlag( 1 )) {
     bitstream.write<uint8_t>(uint8_t( params_.surfaceThickness_ ) );
     bitstream.write<uint8_t>(uint8_t( patches[0].getFrameProjectionMode() ) );
   }
@@ -943,11 +943,11 @@ void PCCBitstreamEncoder::compressOccupancyMap( PCCContext&      context,
       metadata.setMetadataPresent(true);
 
       EncodeUInt32(uint32_t(patch.getLod()), bitCountLod, arithmeticEncoder, bModel0);
-      if (!sps.getLayerAbsoluteCodingEnabledFlag( 0 ) && (patch.getFrameProjectionMode() == 2)) {
+      if (!sps.getLayerAbsoluteCodingEnabledFlag( 1 ) && (patch.getFrameProjectionMode() == 2)) {
         const uint8_t bitCountProjDir = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(2 + 1)));
         EncodeUInt32(uint32_t(patch.getProjectionMode()), bitCountProjDir, arithmeticEncoder, bModel0);
       }
-      if ( sps.getLayerAbsoluteCodingEnabledFlag( 0 )  ) { // && context.getSixDirectionMode()
+      if ( sps.getLayerAbsoluteCodingEnabledFlag( 1 )  ) { // && context.getSixDirectionMode()
         if (patch.getProjectionMode() == 0) {
           arithmeticEncoder.encode(0, bModel0);
         } else {

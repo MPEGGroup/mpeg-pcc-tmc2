@@ -62,6 +62,14 @@ class PCCDecoder : public PCCCodec {
   int decode( PCCBitstream &bitstream, PCCContext &context, PCCGroupOfFrames& reconstruct );
   void setParameters( PCCDecoderParameters value );
 
+  // adaptor methods
+  void createPatchFrameDataStructure( PCCContext&   context );
+
+  void createPatchFrameDataStructure( PCCContext&      context,
+                                      PCCFrameContext& frame,
+                                      PCCFrameContext& refFrame, // change this to be derived from reference data structure
+                                      size_t           frameIndex );
+
  private:
   int  decode( PCCContext &context, PCCGroupOfFrames& reconstruct );
 

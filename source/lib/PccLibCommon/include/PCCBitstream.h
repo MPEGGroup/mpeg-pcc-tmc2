@@ -90,6 +90,16 @@ class PCCBitstream {
       fprintf( output, pFormat, eArgs... );
       fflush( output );
     }
+  }  
+  
+  template <typename... Args>
+  void traceNH( const char* pFormat, Args... eArgs ) {
+    if ( trace_ ) {
+      FILE* output = traceFile_ ? traceFile_ : stdout;
+      fprintf( output, "[       -   ]: ");
+      fprintf( output, pFormat, eArgs... );
+      fflush( output );
+    }
   }
   void setTrace( bool trace ){ trace_ = trace; }
   bool getTrace(){ return trace_; }

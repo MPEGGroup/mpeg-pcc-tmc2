@@ -267,13 +267,6 @@ class PCCBitstreamEncoderNewSyntax {
                                  PCCBitstream&             bitstream,
                                  o3dgc::Arithmetic_Codec&  arithmeticEncoder );
 
-  // adaptor methods
-  void createPatchFrameDataStructure( PCCContext&   context );
-
-  void createPatchFrameDataStructure( PCCContext&      context,
-                                      PCCFrameContext& frame,
-                                      PCCFrameContext& preFrame,
-                                      size_t           frameIndex );
   PCCEncoderParameters params_;
 };
 

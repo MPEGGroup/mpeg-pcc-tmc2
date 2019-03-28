@@ -131,31 +131,40 @@ void PCCBitstream::writeHeader( const PCCMetadataEnabledFlags& gofLevelMetadataE
 //~Must be moved in PccEncoderBitstream and PccDeccoderBitstream.
 
 void PCCBitstream::writeUvlc( uint32_t code ) {
-  uint32_t length = 1, temp = ++code;
-  while ( 1 != temp ) {
-    temp >>= 1;
-    length += 2;
-  }
-  write( 0, length >> 1, position_ );
-  write( code, ( length + 1 ) >> 1, position_ );
 #ifdef BITSTREAM_TRACE
-  trace("Code: Uvlc : %4lu \n",code) ; 
+  uint32_t orgCode = code;
+  bool traceStartingValue = trace_;
+  trace_ = false; 
+#endif
+  uint32_t length = 1, temp = ++code;
+  while( 1 != temp ){ temp >>= 1; length += 2; }
+  write( 0,     length    >> 1 );
+  write( code, (length+1) >> 1 );
+#ifdef BITSTREAM_TRACE
+  trace_ = traceStartingValue;
+  trace("Code: Uvlc : %4lu \n",orgCode) ; 
 #endif
 }
 
 uint32_t PCCBitstream::readUvlc() {
+#ifdef BITSTREAM_TRACE
+  bool traceStartingValue = trace_;
+  trace_ = false; 
+#endif
   uint32_t value = 0, code = 0, length = 0;
-  code = read( 1, position_ );
-  if ( 0 == code ) {
-    while ( !( code & 1 ) ) {
-      code = read( 1, position_ );
+  code = read( 1 );
+  if( 0 == code )  {
+    length = 0;
+    while( ! ( code & 1 )) {
+      code = read( 1 );
       length++;
     }
-    value = read( length, position_ );
-    value += ( 1 << length ) - 1;
+    value = read( length );
+    value += (1 << length)-1;
   }
 #ifdef BITSTREAM_TRACE
-  trace("Code: Uvlc : %4lu \n",value) ; 
+  trace_ = traceStartingValue;
+  trace("Code: Uvlc : %4lu \n", value );
 #endif
   return value;
 }
@@ -177,15 +186,27 @@ int32_t PCCBitstream::readSvlc() {
   return ( bits & 1 ) ? -( int32_t )( bits >> 1 ) : ( int32_t )( bits >> 1 );
 }
 void PCCBitstream::read( PCCVideoBitstream& videoBitstream ) {
+#ifdef BITSTREAM_TRACE
+  trace("Code: PCCVideoBitstream \n") ; 
+#endif
   uint32_t size = read<uint32_t>();
+#ifdef BITSTREAM_TRACE
+  trace("Code: size = %lu \n",size) ; 
+#endif
   videoBitstream.resize( size );
   memcpy( videoBitstream.buffer(), data_.data() + position_.bytes, size );
   videoBitstream.trace();
   position_.bytes += size;
+#ifdef BITSTREAM_TRACE
+  trace("Code: data \n") ; 
+#endif
 #ifdef BUG_FIX_BITDEPTH
   // videoBitstream.setWidth( read<uint16_t>() ); 
   // videoBitstream.setHeight( read<uint16_t>() ); 
   videoBitstream.setBitdepth( read<uint8_t>() ); 
+#ifdef BITSTREAM_TRACE
+  trace("Code: depth = %lu \n",videoBitstream.getBitdepth() ) ; 
+#endif
   printf("BITSTREAM READ BITDEPTH = %lu \n",videoBitstream.getBitdepth());
 #endif
 #ifdef BITSTREAM_TRACE
@@ -195,12 +216,21 @@ void PCCBitstream::read( PCCVideoBitstream& videoBitstream ) {
 }
 
 void PCCBitstream::write( PCCVideoBitstream& videoBitstream ) {
+#ifdef BITSTREAM_TRACE
+  trace("Code: PCCVideoBitstream \n") ; 
+#endif
   writeBuffer( videoBitstream.buffer(), videoBitstream.size() );
+#ifdef BITSTREAM_TRACE
+  trace("Code: data \n") ; 
+#endif
 #ifdef BUG_FIX_BITDEPTH
   printf("BITSTREAM WRITE BITDEPTH = %lu \n",videoBitstream.getBitdepth());
   // write<uint16_t>( videoBitstream.getWidth() );
   // write<uint16_t>( videoBitstream.getHeight() );
   write<uint8_t>( videoBitstream.getBitdepth() );
+#ifdef BITSTREAM_TRACE
+  trace("Code: depth = %lu \n",videoBitstream.getBitdepth() ) ; 
+#endif
 #endif 
   videoBitstream.trace();
 #ifdef BITSTREAM_TRACE
@@ -211,6 +241,9 @@ void PCCBitstream::write( PCCVideoBitstream& videoBitstream ) {
 void PCCBitstream::writeBuffer( const uint8_t* data, const size_t size ) {
   realloc( size );
   write<uint32_t>( size );
+#ifdef BITSTREAM_TRACE
+  trace("Code: size = %lu \n",size) ; 
+#endif
   memcpy( data_.data() + position_.bytes, data, size );
   position_.bytes += size;
 }
@@ -248,7 +281,7 @@ uint32_t PCCBitstream::read( uint8_t bits, PCCBistreamPosition& pos ) {
   }
   
 #ifdef BITSTREAM_TRACE
-  trace("Code: %5lu : %4lu \n",bits, value ) ; 
+  trace("      %5lu : %4lu \n",bits, value ) ; 
 #endif
   return value;
 }
@@ -267,6 +300,6 @@ inline void PCCBitstream::write( uint32_t value, uint8_t bits, PCCBistreamPositi
     }
   }
 #ifdef BITSTREAM_TRACE
-  trace("Code: %5lu : %4lu \n",bits, value ) ; 
+  trace("      %5lu : %4lu  \n", bits, value ) ; 
 #endif
 }

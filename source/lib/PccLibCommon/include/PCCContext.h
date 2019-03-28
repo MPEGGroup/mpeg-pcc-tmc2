@@ -320,7 +320,7 @@ class PatchInformationData {
 // 7.3.29  Patch frame data unit syntax (pfdu)
 class PatchFrameDataUnit {
  public:
-  PatchFrameDataUnit( uint8_t pCount = 0 ) { allocate( pCount ); }
+  PatchFrameDataUnit() {}
   ~PatchFrameDataUnit() {
     patchMode_.clear();
     patchInformationData_.clear();
@@ -329,7 +329,7 @@ class PatchFrameDataUnit {
     patchMode_.clear();
     patchInformationData_.clear();
   }
-  void allocate( uint8_t pCount ) {
+  void allocatePatch( uint8_t pCount ) {
     if ( pCount ) {
       patchMode_.resize( pCount );
       patchInformationData_.resize( pCount );
@@ -383,19 +383,22 @@ class RefListStruct {
     strpfEntrySignFlag_.resize( numRefEntries_, false );
   }
 
+  void addAbsDeltaPfocSt( uint8_t value ) { absDeltaPfocSt_.push_back( value ); }
+  void addPfocLsbLt( uint8_t value ) { pfocLsbLt_.push_back( value ); }
+  void addStRefPatchFrameFlag( bool value ) { stRefPatchFrameFlag_.push_back( value ); }
+  void addStrpfEntrySignFlag( bool value ) { strpfEntrySignFlag_.push_back( value ); }
+
   uint8_t getNumRefEntries() { return numRefEntries_; }
   uint8_t getAbsDeltaPfocSt( uint16_t index ) { return absDeltaPfocSt_[index]; }
   uint8_t getPfocLsbLt( uint16_t index ) { return pfocLsbLt_[index]; }
   bool    getStRefPatchFrameFlag( uint16_t index ) { return stRefPatchFrameFlag_[index]; }
   bool    getStrpfEntrySignFlag( uint16_t index ) { return strpfEntrySignFlag_[index]; }
-  bool    getStRefPatchFrameFlag( size_t index ) { return stRefPatchFrameFlag_[index]; }
 
   void setNumRefEntries( uint8_t value ) { numRefEntries_ = value; }
   void setAbsDeltaPfocSt( uint16_t index, uint8_t value ) { absDeltaPfocSt_[index] = value; }
   void setPfocLsbLt( uint16_t index, uint8_t value ) { pfocLsbLt_[index] = value; }
   void setStRefPatchFrameFlag( uint16_t index, bool value ) { stRefPatchFrameFlag_[index] = value; }
   void setStrpfEntrySignFlag( uint16_t index, bool value ) { strpfEntrySignFlag_[index] = value; }
-  void setStRefPatchFrameFlag( size_t index, bool value ) { stRefPatchFrameFlag_[index] = value; }
 
  private:
   uint8_t              numRefEntries_;
@@ -541,7 +544,7 @@ class PatchFrameParameterSet {
       additionalLtPfocLsbLen_( 0 ),
       localOverrideGeometryPatchEnableFlag_( false ),
       patchOrientationPresentFlag_( false ) {
-    allocate();
+    allocatePatchFrame();
   }
   ~PatchFrameParameterSet() {
     localOverrideAttributePatchEnableFlag_.clear();
@@ -549,7 +552,7 @@ class PatchFrameParameterSet {
   }
   PatchFrameParameterSet& operator=( const PatchFrameParameterSet& ) = default;
 
-  void allocate( size_t size = 255 ) {
+  void allocatePatchFrame( size_t size = 255 ) {
     localOverrideAttributePatchEnableFlag_.resize( size, false );
     attributePatchFrameParameterSetId_.resize( size, 0 );
   }
@@ -963,14 +966,15 @@ class PatchSequenceParameterSet {
 
   PatchSequenceParameterSet& operator=( const PatchSequenceParameterSet& ) = default;
 
-  void                        allocate( size_t size = 1 ) { refListStruct_.resize( size ); }
+  void                        allocate( size_t size ) { refListStruct_.resize( size ); }
   uint8_t                     getPatchSequenceParameterSetId() { return patchSequenceParameterSetId_; }
   uint8_t                     getLog2MaxPatchFrameOrderCntLsbMinus4() { return log2MaxPatchFrameOrderCntLsb_; }
   uint8_t                     getMaxDecPatchFrameBufferingMinus1() { return maxDecPatchFrameBuffering_; }
   uint8_t                     getNumRefPatchFrameListsInSps() { return numRefPatchFrameListsInSps_; }
   bool                        getLongTermRefPatchFramesFlag() { return longTermRefPatchFramesFlag_; }
   RefListStruct&              getRefListStruct( uint8_t index ) { return refListStruct_[index]; }
-  std::vector<RefListStruct>& getRefListStruct() { return refListStruct_; }
+  uint8_t                     getRefListStructSize() { return refListStruct_.size(); }
+  // std::vector<RefListStruct>& getRefListStruct() { return refListStruct_; }
 
   void setPatchSequenceParameterSetId( uint8_t value ) { patchSequenceParameterSetId_ = value; }
   void setLog2MaxPatchFrameOrderCntLsbMinus4( uint8_t value ) { log2MaxPatchFrameOrderCntLsb_ = value; }
@@ -978,6 +982,9 @@ class PatchSequenceParameterSet {
   void setNumRefPatchFrameListsInSps( uint8_t value ) { numRefPatchFrameListsInSps_ = value; }
   void setLongTermRefPatchFramesFlag( bool value ) { longTermRefPatchFramesFlag_ = value; }
   void setRefListStruct( uint8_t index, RefListStruct value ) { refListStruct_[index] = value; }
+
+  
+  void addRefListStruct( RefListStruct value ) { refListStruct_.push_back( value ); }
 
  private:
   uint8_t                    patchSequenceParameterSetId_;
@@ -998,8 +1005,19 @@ class PatchSequenceUnitPayload {
     unitType_   = unitType;
     frameIndex_ = index;
   }
-
-  void allocate( size_t size = 1 ) {}
+  std::string strUnitType(){
+   switch( unitType_ ){
+    case PSD_SPS  : return std::string( "PSD_SPS"  ); break;
+    case PSD_FPS  : return std::string( "PSD_FPS"  ); break;
+    case PSD_GFPS : return std::string( "PSD_GFPS" ); break;
+    case PSD_AFPS : return std::string( "PSD_AFPS" ); break;
+    case PSD_GPPS : return std::string( "PSD_GPPS" ); break;
+    case PSD_APPS : return std::string( "PSD_APPS" ); break;
+    case PSD_PFLU : return std::string( "PSD_PFLU" ); break;
+    default: break;
+   }
+   return std::string( "ERROR" ); 
+  }
 
   PSDUnitType                 getUnitType() { return unitType_; }
   uint8_t                     getFrameIndex() { return frameIndex_; }
@@ -1021,6 +1039,9 @@ class PatchSequenceUnitPayload {
   void setGeometryFrameParameterSet( GeometryFrameParameterSet value ) { geometryFrameParameterSet_ = value; }
   void setPatchFrameLayerUnit( PatchFrameLayerUnit value ) { patchFrameLayerUnit_ = value; }
 
+  void addAttributePatchParameterSet( AttributePatchParameterSet& value ) { attributePatchParameterSet_.push_back( value ); }
+  void addAttributeFrameParameterSet( AttributeFrameParameterSet& value ) { attributeFrameParameterSet_.push_back( value ); }
+
  private:
   PSDUnitType                             unitType_;
   uint8_t                                 frameIndex_;
@@ -1041,67 +1062,101 @@ class PatchSequenceDataUnit {
 
   PatchSequenceDataUnit& operator=( const PatchSequenceDataUnit& ) = default;
 
-  void addPatchSequenceUnitPayload( PatchSequenceUnitPayload value ) { patchSequenceUnitPayload_.push_back( value ); }
+  void addPatchSequenceUnitPayload( PatchSequenceUnitPayload& value ) {
+     patchSequenceUnitPayload_.push_back( value ); 
+    }
+  PatchSequenceUnitPayload& addPatchSequenceUnitPayload() {
+    PatchSequenceUnitPayload psup; 
+    patchSequenceUnitPayload_.push_back( psup ); 
+    return patchSequenceUnitPayload_.back();
+  }
   // void addPatchSequenceUnitPayload( PatchSequenceUnitPayload& value ) { patchSequenceUnitPayload_.push_back(value ) ; }
-  void allocate() {
-    patchSequenceUnitPayload_.push_back( PatchSequenceUnitPayload( PSD_SPS,  0 ) );
-    patchSequenceUnitPayload_.push_back( PatchSequenceUnitPayload( PSD_FPS,  0 ) );
-    patchSequenceUnitPayload_.push_back( PatchSequenceUnitPayload( PSD_GFPS, 0 ) );
-    patchSequenceUnitPayload_.push_back( PatchSequenceUnitPayload( PSD_AFPS, 0 ) );
-    patchSequenceUnitPayload_.push_back( PatchSequenceUnitPayload( PSD_GPPS, 0 ) );
-    patchSequenceUnitPayload_.push_back( PatchSequenceUnitPayload( PSD_APPS, 0 ) );
-    patchSequenceUnitPayload_.push_back( PatchSequenceUnitPayload( PSD_PFLU, 0 ) );
+  
+  void addPatchSequenceUnitPayload( const PSDUnitType psdUnitType, const uint8_t index ) {
+    patchSequenceUnitPayload_.push_back( PatchSequenceUnitPayload( psdUnitType,  index ) );
   }
 
   uint8_t getPatchSequenceDataUnitSize() { return patchSequenceUnitPayload_.size(); }
-  uint8_t getFrameCount( std::vector<PatchSequenceUnitPayload> patchSequenceUnitPayload ) {
-    uint8_t frameCount = 0;
-    for ( int payloadIndex = 0; payloadIndex < patchSequenceUnitPayload.size(); payloadIndex++ ) {
-      frameCount += ( patchSequenceUnitPayload[payloadIndex].getUnitType() == PSD_PFLU );
-    }
-    return frameCount;
-  }
+   
+  
+
+  // uint8_t getFrameCount( std::vector<PatchSequenceUnitPayload> patchSequenceUnitPayload ) {
+  //   uint8_t frameCount = 0;
+  //   for ( int payloadIndex = 0; payloadIndex < patchSequenceUnitPayload.size(); payloadIndex++ ) {
+  //     frameCount += ( patchSequenceUnitPayload[payloadIndex].getUnitType() == PSD_PFLU );
+  //   }
+  //   return frameCount;
+  // }
   uint8_t                   getFrameCount() { return frameCount_; }  // PSD_PFLU only
-  PatchSequenceUnitPayload& getPatchSequenceUnitPayload( size_t index ) { return patchSequenceUnitPayload_[index]; }
 
-  PatchSequenceParameterSet& getPatchSequenceParameterSet( const uint8_t psps_id ) {
-    for ( int payloadIndex = 0; payloadIndex < patchSequenceUnitPayload_.size(); payloadIndex++ ) {
-      if ( patchSequenceUnitPayload_[payloadIndex].getUnitType() == PSD_SPS ) {
-        // now check if the id is the requested one
-        auto& psps = patchSequenceUnitPayload_[payloadIndex].getPatchSequenceParameterSet();
-        if ( psps.getPatchSequenceParameterSetId() == psps_id ) return psps;
-      }
-    }
+  // PatchSequenceUnitPayload& getPatchSequenceUnitPayload( size_t index ) { 
+
+  //   return patchSequenceUnitPayload_[index]; 
+  // }
+
+  PatchSequenceUnitPayload& getPatchSequenceUnitPayloadElement( const uint8_t index ) {
+    return patchSequenceUnitPayload_[index];
   }
 
-  GeometryFrameParameterSet& getGeometryFrameParameterSet( const uint8_t gfps_id ) {
-    for ( int payloadIndex = 0; payloadIndex < patchSequenceUnitPayload_.size(); payloadIndex++ ) {
-      if ( patchSequenceUnitPayload_[payloadIndex].getUnitType() == PSD_GFPS ) {
-        // now check if the id is the requested one
-        auto& gfps = patchSequenceUnitPayload_[payloadIndex].getGeometryFrameParameterSet();
-        if ( gfps.getGeometryFrameParameterSetId() == gfps_id ) return gfps;
+  void printPatchSequenceUnitPayload( ){
+    for ( size_t i = 0; i < patchSequenceUnitPayload_.size(); i++ ) {
+      printf("PatchSequenceUnitPayload %2lu / %2lu: Type = %lu FrameIndex = %lu \n",
+        i, patchSequenceUnitPayload_.size(),
+        patchSequenceUnitPayload_[i].getUnitType(), 
+        patchSequenceUnitPayload_[i].getFrameIndex() ); 
+      fflush(stdout);
+    } 
+  }
+  PatchSequenceUnitPayload& getPatchSequenceUnitPayload( const PSDUnitType psdUnitType, const uint8_t index ){
+    for ( size_t i = 0; i < patchSequenceUnitPayload_.size(); i++ ) {
+      if ( patchSequenceUnitPayload_[i].getUnitType() == psdUnitType && 
+           patchSequenceUnitPayload_[i].getFrameIndex() == index ) {
+        return patchSequenceUnitPayload_[i];
       }
-    }
+    } 
+    fprintf( stderr, "Error: can't find PatchSequenceUnitPayload of type: %lu and index = %lu  \n", 
+      psdUnitType, index );
   }
 
-  AttributeFrameParameterSet& getAttributeFrameParameterSet( const uint8_t afps_id, const uint8_t attribute_idx ) {
-    for ( int payloadIndex = 0; payloadIndex < patchSequenceUnitPayload_.size(); payloadIndex++ ) {
-      if ( patchSequenceUnitPayload_[payloadIndex].getUnitType() == PSD_AFPS ) {
-        // now check if the id is the requested one
-        auto& afps = patchSequenceUnitPayload_[payloadIndex].getAttributeFrameParameterSet( attribute_idx );
-        if ( afps.getAttributeFrameParameterSetId() == afps_id ) return afps;
-      }
-    }
+  // PSD_SPS = 0,  // 00: Patch sequence parameter set
+  // PSD_FPS,      // 01: Patch frame parameter set
+  // PSD_GFPS,     // 02: Geometry frame parameter set
+  // PSD_AFPS,     // 03: Attribute frame parameter set
+  // PSD_GPPS,     // 04: Geometry patch parameter set
+  // PSD_APPS,     // 05: Attribute patch parameter set
+  // PSD_PFLU,     // 06: Patch frame layer unit
+  PatchSequenceParameterSet& getPatchSequenceParameterSet( const uint8_t index ) {
+    auto& psup = getPatchSequenceUnitPayload( PSD_SPS, index ); 
+    return psup.getPatchSequenceParameterSet();
+  }
+  
+  PatchFrameParameterSet& getPatchFrameParameterSet( const uint8_t index ) {
+    auto& psup = getPatchSequenceUnitPayload( PSD_FPS, index ); 
+    return psup.getPatchFrameParameterSet();
+  }
+  
+  AttributeFrameParameterSet& getAttributeFrameParameterSet( const uint8_t index, const uint8_t attribute_idx ) {
+    auto& psup = getPatchSequenceUnitPayload( PSD_AFPS, index ); 
+    return psup.getAttributeFrameParameterSet( attribute_idx );
+  }
+  
+  GeometryFrameParameterSet& getGeometryFrameParameterSet( const uint8_t index ) {
+    auto& psup = getPatchSequenceUnitPayload( PSD_GFPS, index ); 
+    return psup.getGeometryFrameParameterSet();
+  }
+  GeometryPatchParameterSet& getGeometryPatchParameterSet( const uint8_t index ) {
+    auto& psup = getPatchSequenceUnitPayload( PSD_GPPS, index ); 
+    return psup.getGeometryPatchParameterSet();
   }
 
-  PatchFrameParameterSet& getPatchFrameParameterSet( const uint8_t pfps_id ) {
-    for ( int payloadIndex = 0; payloadIndex < patchSequenceUnitPayload_.size(); payloadIndex++ ) {
-      if ( patchSequenceUnitPayload_[payloadIndex].getUnitType() == PSD_FPS ) {
-        // now check if the id is the requested one
-        auto& pfps = patchSequenceUnitPayload_[payloadIndex].getPatchFrameParameterSet();
-        if ( pfps.getPatchFrameParameterSetId() == pfps_id ) return pfps;
-      }
-    }
+  AttributePatchParameterSet& getAttributePatchParameterSet( const uint8_t index, const uint8_t apps_id ) {
+    auto& psup = getPatchSequenceUnitPayload( PSD_APPS, index ); 
+    return psup.getAttributePatchParameterSet( apps_id );
+  }
+
+  PatchFrameLayerUnit& getPatchFrameLayerUnit( const uint8_t index ) {
+    auto& psup = getPatchSequenceUnitPayload( PSD_PFLU, index ); 
+    return psup.getPatchFrameLayerUnit();
   }
 
   void setFrameCount( uint8_t frameCount ) { frameCount_ = frameCount; }
@@ -1561,7 +1616,9 @@ class SequenceParameterSet {
   void addLayerAbsoluteCodingEnabledFlag( bool value ) { layerAbsoluteCodingEnabledFlag_.push_back( value ); }
   void addLayerPredictorIndexDiff( bool value ) { layerPredictorIndexDiff_.push_back( value ); }
   void setLayerAbsoluteCodingEnabledFlag( size_t index, bool value ) {
-    if ( layerAbsoluteCodingEnabledFlag_.size() < index + 1 ) { layerAbsoluteCodingEnabledFlag_.resize( index + 1 ); }
+    if ( layerAbsoluteCodingEnabledFlag_.size() < index + 1 ) { 
+      layerAbsoluteCodingEnabledFlag_.resize( index + 1, 0 ); 
+    }
     layerAbsoluteCodingEnabledFlag_[index] = value;
   }
   void setLayerPredictorIndexDiff( size_t index, bool value ) {
@@ -1661,7 +1718,8 @@ class PCCContext {
 
   const size_t                  size() { return frames_.size(); }
   std::vector<PCCFrameContext>& getFrames() { return frames_; }
-  PCCFrameContext&              operator[]( int i ) { return frames_[i]; }
+  PCCFrameContext&              getFrame( int16_t index ) { return frames_[index]; }
+  PCCFrameContext&              operator[]( int index ) { return frames_[index]; }
 
   PCCVideoGeometry&     getVideoGeometry() { return videoGeometry_; }
   PCCVideoGeometry&     getVideoGeometryD1() { return videoGeometryD1_; }

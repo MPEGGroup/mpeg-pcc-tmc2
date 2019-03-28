@@ -49,16 +49,19 @@ PCCContext::~PCCContext() {
   subContexts_.clear();
   unionPatch_.clear();
   sequenceParameterSets_.clear();
-  patchSequenceDataUnit_.allocate();
 }
 
 void PCCContext::resize( size_t size ) {
   frames_.resize( size );
-  for ( size_t i = 0; i < size; i++ ) { frames_[i].getIndex() = i; }
+  for ( size_t i = 0; i < size; i++ ) { 
+    frames_[i].getIndex() = i; 
+  }
 }
 
 void PCCContext::allocOneLayerData( const size_t occupancyResolution ) {
-  for ( auto& frame : frames_ ) { frame.allocOneLayerData( occupancyResolution ); }
+  for ( auto& frame : frames_ ) { 
+    frame.allocOneLayerData( occupancyResolution ); 
+  }
 }
 
 void PCCContext::printVideoBitstream() {

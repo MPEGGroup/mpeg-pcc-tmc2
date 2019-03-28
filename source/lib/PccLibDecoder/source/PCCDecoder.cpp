@@ -115,7 +115,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   printf("compute OccupancyPrecision = %lu \n", context.getOccupancyPrecision());
   generateOccupancyMap( context, context.getOccupancyPrecision() );
 
-  if (!sps.getLayerAbsoluteCodingEnabledFlag( 0 )) {
+  if (!sps.getLayerAbsoluteCodingEnabledFlag( 1 )) {
     if (lossyMpp) {
       std::cout << "ERROR! Lossy-missed-points-patch code not implemented when absoluteD_ = 0 as of now. Exiting ..." << std::endl; std::exit(-1);
     }
@@ -180,7 +180,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   generatePointCloudParameters.losslessGeo_                  = sps.getLosslessGeo() != 0;
   generatePointCloudParameters.losslessGeo444_               = sps.getLosslessGeo444() != 0;
   generatePointCloudParameters.nbThread_                     = params_.nbThread_;
-  generatePointCloudParameters.absoluteD1_                   = sps.getLayerAbsoluteCodingEnabledFlag( 0 );
+  generatePointCloudParameters.absoluteD1_                   = sps.getLayerAbsoluteCodingEnabledFlag( 1 );
   generatePointCloudParameters.surfaceThickness              = context[0].getSurfaceThickness();
   generatePointCloudParameters.ignoreLod_                    = true;
   generatePointCloudParameters.thresholdColorSmoothing_      = (double)asp.getAttributeSmoothingThreshold();
@@ -232,3 +232,55 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
 }
 
 
+
+/* THIS SECTION ADDS PATCH RELATED CALCULATIONS AND GENERATED PFDS */
+
+void PCCDecoder::createPatchFrameDataStructure(PCCContext&   context ) {
+  /* TODO */
+  size_t numPFDUs   = context.getFrames().size();
+  auto   ref        = context.getFrames()[0];
+  auto&  sps        = context.getSps();
+  auto&  psdu       = context.getPatchSequenceDataUnit(); // perhaps I need to allocate this
+
+  RefListStruct refList;
+  refList.allocate();
+  refList.setNumRefEntries( 1 ); // hardcoded allow only 1 reference frame
+  refList.setAbsDeltaPfocSt( 1 , 0 ); //hardcoded: allowed previous farme as reference
+
+  /* 1. Create sequence of the patch frames */
+  for ( size_t i = 0; i < numPFDUs; i++ ) {
+    auto& frame       = context.getFrames()[i];
+
+    PatchFrameHeader pfh;
+    PatchFrameDataUnit pfdu;
+    PatchFrameLayerUnit pflu;
+    PatchSequenceUnitPayload psup;
+
+    pflu.setFrameIndex( i );
+
+    for ( size_t k = 0; k < frame.getNumMatchedPatches(); k++ ) {
+      //...
+    }
+
+
+    frame.getWidth()  = sps.getFrameWidth();
+    frame.getHeight() = sps.getFrameHeight();
+    auto& frameLevelMetadataEnabledFlags =
+      context.getGOFLevelMetadata().getLowerLevelMetadataEnabledFlags();
+    frame.getFrameLevelMetadata().getMetadataEnabledFlags() = frameLevelMetadataEnabledFlags;
+
+    if ( sps.getPcmPatchEnabledFlag() && !sps.getPcmSeparateVideoPresentFlag() ) {
+      if ( !sps.getPcmSeparateVideoPresentFlag() ) {
+        // ...ppdu
+      }
+    }
+  }
+}
+
+void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
+                                                                  PCCFrameContext& frame,
+                                                                  PCCFrameContext& preFrame,
+                                                                  size_t           frameIndex ) {
+  /* TODO */
+
+}

@@ -3950,12 +3950,678 @@ void PCCEncoder::packingWithRefForFirstFrameNoglobalPatch (PCCPatch& patch,
   }
   if (!(preGPAPatchData.isPatchDimensionSwitched())){
     heightGPA = (std::max)(heightGPA, (preGPAPatchData.v0 + preGPAPatchData.sizeV0) * patch.getOccupancyResolution());
-    widthGPA = (std::max)(widthGPA, (preGPAPatchData.u0 + preGPAPatchData.sizeU0) * patch.getOccupancyResolution());
+    widthGPA  = (std::max)(widthGPA, (preGPAPatchData.u0 + preGPAPatchData.sizeU0) * patch.getOccupancyResolution());
     maxOccupancyRow = (std::max)(maxOccupancyRow, (preGPAPatchData.v0 + preGPAPatchData.sizeV0));
   }
   else {
     heightGPA = (std::max)(heightGPA, (preGPAPatchData.v0 + preGPAPatchData.sizeU0) * patch.getOccupancyResolution());
     widthGPA = (std::max)(widthGPA, (preGPAPatchData.u0 + preGPAPatchData.sizeV0) * patch.getOccupancyResolution());
     maxOccupancyRow = (std::max)(maxOccupancyRow, (preGPAPatchData.v0 + preGPAPatchData.sizeU0));
+  }
+}
+
+/* THIS SECTION ADDS PATCH RELATED CALCULATIONS AND GENERATED PFDS */
+
+void PCCEncoder::createPatchFrameDataStructure( PCCContext&   context ) {
+  
+  printf(" \n \ncreatePatchFrameDataStructure GOP start \n"); fflush(stdout);  
+  // emulate the compress occupancy map functionality
+  // this method operates on patch_sequence_unit_payload level
+  size_t numPFDUs = context.getFrames().size();
+  auto& sps = context.getSps();
+  auto& psdu = context.getPatchSequenceDataUnit(); // perhaps I need to allocate this
+
+  // allocate psdu
+  printf("psdu.getPatchSequenceDataUnitSize() = %lu   \n",psdu.getPatchSequenceDataUnitSize()); fflush(stdout); 
+  // PSD_SPS = 0,  // 00: Patch sequence parameter set
+  // PSD_FPS,      // 01: Patch frame parameter set
+  // PSD_GFPS,     // 02: Geometry frame parameter set
+  // PSD_AFPS,     // 03: Attribute frame parameter set
+  // PSD_GPPS,     // 04: Geometry patch parameter set
+  // PSD_APPS,     // 05: Attribute patch parameter set
+  // PSD_PFLU,     // 06: Patch frame layer unit
+ 
+  psdu.addPatchSequenceUnitPayload( PSD_SPS,  0 );
+  auto& psps = psdu.getPatchSequenceParameterSet( 0 );
+  RefListStruct rls; 
+  psps.addRefListStruct( rls );
+
+  psdu.addPatchSequenceUnitPayload( PSD_FPS,  0 );
+  psdu.addPatchSequenceUnitPayload( PSD_GFPS, 0 );
+  // auto& gfps = psdu.getGeometryFrameParameterSet( 0 );
+  // auto& fgp  = gfps.getGeometryFrameParams();
+
+  psdu.addPatchSequenceUnitPayload( PSD_AFPS, 0 );
+  for(size_t i = 0; i < sps.getAttributeCount() ; i++ ){
+    AttributeFrameParameterSet afps; 
+    psdu.getPatchSequenceUnitPayload( PSD_AFPS, 0 ).addAttributeFrameParameterSet( afps );
+  }
+  psdu.addPatchSequenceUnitPayload( PSD_GPPS, 0 );
+  // auto& gpps = psdu.getGeometryPatchParameterSet( 0 );
+  // auto& gpp  = gpps.getGeometryPatchParams();
+
+  // Alloc APPS
+  psdu.addPatchSequenceUnitPayload( PSD_APPS, 0 );
+  for(size_t i = 0; i < sps.getAttributeCount() ; i++ ){
+    AttributePatchParameterSet apps; 
+    psdu.getPatchSequenceUnitPayload( PSD_APPS, 0 ).addAttributePatchParameterSet( apps );
+  }
+  
+  for ( size_t i = 0; i < numPFDUs; i++ ) {
+    psdu.addPatchSequenceUnitPayload( PSD_PFLU, i );
+  }
+  psdu.printPatchSequenceUnitPayload();
+  printf("psdu.getPatchSequenceDataUnitSize() = %lu post allocation  \n",psdu.getPatchSequenceDataUnitSize()); fflush(stdout); 
+
+  // I want to have a reflist constructed here, but there is no access for the frame coding order
+  // add frame to the refernce list 
+  RefListStruct refList;
+  refList.allocate();
+  refList.setNumRefEntries( 1 ); // hardcoded allow only 1 reference frame
+  refList.addAbsDeltaPfocSt( 1 ); //hardcoded: allowed previous farme as reference
+  
+  PCCFrameContext& refFrame  = context.getFrame( 0 ); // this process reflects current sowtware reference selection and should be used only as an attempt of the bitexact implenentation.
+
+  // applicate the vector of psup
+
+  /* 1. Create sequence of the patch frames */
+  for ( size_t i = 0; i < numPFDUs; i++ ) {
+    PCCFrameContext &frame = context.getFrame ( i );
+    PatchFrameLayerUnit& pflu = psdu.getPatchFrameLayerUnit( i );
+    PatchFrameHeader&   pfh   = pflu.getPatchFrameHeader();
+    PatchFrameDataUnit& pfdu  = pflu.getPatchFrameDataUnit();
+    PatchSequenceUnitPayload psup;
+
+    pflu.setFrameIndex( i );
+
+    /* prepare :  allocate the total number of patches of each type */
+    /* TODO: create the parent class for the patch, inherit the child: pdu, ppdu, dpdu  */
+    /* N.B. it makes more sence to do as follows: pdu is parent : ipdu; ppdu; dpdu; spdu; mpdu are inherited */
+
+    /* iterate inter patches */
+    for ( size_t k = 0; k < frame.getNumMatchedPatches(); k++ ) {
+      PatchInformationData pid;
+      pfdu.addPatchMode( P_INTER );
+      pfdu.addPatchInformationData( pid );
+    }
+    /* iterate intra patches */
+    for ( size_t k = frame.getNumMatchedPatches(); k < frame.getPatches().size(); k++ ) {
+      PatchInformationData pid;
+      pfdu.addPatchInformationData( pid );
+      if(  frame.getIndex() == 0 ) {
+        pfdu.addPatchMode( I_INTRA );
+      } else { 
+        pfdu.addPatchMode( P_INTRA );
+      }
+    }
+
+    /*
+      N.B.
+      sps.getPcmSeparateVideoPresentFlag is not defined in the CD --> fix    
+    */
+    if ((sps.getLosslessGeo() || params_.lossyMissedPointsPatch_ ) && !sps.getPcmSeparateVideoPresentFlag()) {
+      /* get pfdu structure */
+      /* crate ppdu, currently ift is a last patch */
+      PatchInformationData pid;
+      PCMPatchDataUnit ppdu;
+
+      /* iterate patch list with current fraem order */
+      pfh.setPatchFrameOrderCntLsb( i ); // this is not correct, need to add functionaliuty to control index and order
+
+      auto& patches = frame.getPatches();
+      auto& missedPointsPatch = frame.getMissedPointsPatch();
+      const size_t patchIndex = patches.size();
+      patches.resize( patchIndex + 1);
+      PCCPatch &dummyPatch = patches[patchIndex];
+      dummyPatch.getIndex() = patchIndex;
+      dummyPatch.getU0() = missedPointsPatch.u0_;
+      dummyPatch.getV0() = missedPointsPatch.v0_;
+      dummyPatch.getSizeU0() = missedPointsPatch.sizeU0_;
+      dummyPatch.getSizeV0() = missedPointsPatch.sizeV0_;
+      dummyPatch.getU1() = 0;
+      dummyPatch.getV1() = 0;
+      dummyPatch.getD1() = 0;
+      dummyPatch.getNormalAxis() = 0;
+      dummyPatch.getTangentAxis() = 1;
+      dummyPatch.getBitangentAxis() = 2;
+      dummyPatch.getOccupancyResolution() = missedPointsPatch.occupancyResolution_;
+      dummyPatch.getOccupancy() = missedPointsPatch.occupancy_;
+      dummyPatch.getLod() = params_.testLevelOfDetail_;
+      dummyPatch.setBestMatchIdx() = -1;
+      dummyPatch.getPatchOrientation() = PatchOrientation::DEFAULT;
+      createPatchFrameDataStructure( context, frame, refFrame, i );
+      patches.pop_back();
+      
+      ppdu.set2DShiftU( dummyPatch.getU0() );
+      ppdu.set2DShiftU( dummyPatch.getV0() );
+      ppdu.set2DDeltaSizeU( dummyPatch.getSizeU0() );
+      ppdu.set2DDeltaSizeV( dummyPatch.getSizeV0() );
+
+      if ( frame.getIndex() == 0 ) { // get aclual frame type here, now is stub
+        pfdu.setPatchFrameMode( patchIndex, I_PCM );
+      } else {
+        pfdu.setPatchFrameMode( patchIndex, P_PCM );
+      }
+      pid.setPCMPatchDataUnit( ppdu );
+      pfdu.setPatchInformationData(patchIndex, pid);
+    } else {
+      createPatchFrameDataStructure( context, frame, refFrame, i);
+    }
+    // psup.setPatchFrameLayerUnit (pflu);
+
+    refFrame = frame;
+    /* put this frame to the refList structure */
+
+    // psdu.addPatchSequenceUnitPayload( psup );
+  } 
+}
+
+void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
+                                                PCCFrameContext& frame,
+                                                PCCFrameContext& refFrame,
+                                                size_t           frameIndex ) {       
+
+  printf(" \n \ncreatePatchFrameDataStructure Frame %lu start \n", frame.getIndex()); fflush(stdout);                   
+  auto&        patches    = frame.getPatches();
+  const size_t patchCount = patches.size();
+  auto&        sps        = context.getSps();
+  auto&        psdu       = context.getPatchSequenceDataUnit();
+  auto&        psup       = psdu.getPatchSequenceUnitPayload( PSD_PFLU, frameIndex );
+  auto&        ops        = sps.getOccupancyParameterSet();
+  auto&        pflu       = psup.getPatchFrameLayerUnit();
+  auto&        pfh        = pflu.getPatchFrameHeader();
+  auto&        pfdu       = pflu.getPatchFrameDataUnit();
+  auto&        pfps       = psup.getPatchFrameParameterSet();
+  
+
+  printf("psdu.getPatchSequenceDataUnitSize() = %lu   \n",psdu.getPatchSequenceDataUnitSize()); fflush(stdout); 
+  pfdu.setPatchCount( patchCount - 1 );
+  printf("patchCount = %lu  \n",patchCount); fflush(stdout); 
+
+  /*
+    N.B.
+    cuurent sw has no support for CD patch information coding 7.3.29 has only NEW implementation...
+  */
+  /* 
+    N.B.
+    maxCandidateCount --> this is not used any longer 
+  */
+
+  if ( !sps.getLayerAbsoluteCodingEnabledFlag( 0 ) ) {
+    //params_.surfaceThickness_; this is missing in the current CD should be a part of gfps
+    pfdu.getPatchInformationData( 0 ).getPatchDataUnit().setProjectionMode(patches[0].getFrameProjectionMode());
+  }
+
+  const size_t minLevel = sps.getMinLevel();
+  const uint8_t maxBitCountForMinDepth=uint8_t(10-gbitCountSize[minLevel]);
+  const uint8_t maxBitCountForMaxDepth=uint8_t(9-gbitCountSize[minLevel]); //20190129
+  uint8_t enable_flexible_patch_flag = ( params_.packingStrategy_ > 0);
+  uint8_t id = pfh.getPatchFrameParameterSetId();
+  pfps.setPatchOrientationPresentFlag( enable_flexible_patch_flag );
+
+  printf("frameIndex = %lu   \n",frameIndex); fflush(stdout); 
+  if ( (frameIndex == 0) || (!sps.getPatchInterPredictionEnabledFlag()) ) {
+    size_t maxU0 = 0;
+    size_t maxV0 = 0;
+    size_t maxU1 = 0;
+    size_t maxV1 = 0;
+    size_t maxLod = 0;
+    for ( size_t patchIndex = 0; patchIndex < patchCount; ++patchIndex ) {
+      const auto &patch = patches[patchIndex];
+      maxU0 = (std::max)(maxU0, patch.getU0());
+      maxV0 = (std::max)(maxV0, patch.getV0());
+      maxU1 = (std::max)(maxU1, patch.getU1());
+      maxV1 = (std::max)(maxV1, patch.getV1());
+      maxLod = (std::max)(maxLod, patch.getLod());
+    }
+
+    const uint8_t bitCountU0 = uint8_t( PCCGetNumberOfBitsInFixedLengthRepresentation( uint32_t( maxU0 + 1 ) ) );
+    const uint8_t bitCountV0 = uint8_t( PCCGetNumberOfBitsInFixedLengthRepresentation( uint32_t( maxV0 + 1 ) ) );
+    const uint8_t bitCountU1 = uint8_t( PCCGetNumberOfBitsInFixedLengthRepresentation( uint32_t( maxU1 + 1 ) ) );
+    const uint8_t bitCountV1 = uint8_t( PCCGetNumberOfBitsInFixedLengthRepresentation( uint32_t( maxV1 + 1 ) ) );
+    const uint8_t bitCountD1 = maxBitCountForMinDepth;
+    const uint8_t bitCountDD = maxBitCountForMaxDepth;
+    const uint8_t bitCountLod = uint8_t( PCCGetNumberOfBitsInFixedLengthRepresentation( uint32_t( maxLod + 1 ) ) );
+
+    printf("fill pfh  \n"); fflush(stdout); 
+    pfh.setInterPredictPatch2dShiftUBitCountMinus1( bitCountU0 - 1 );
+    pfh.setInterPredictPatch2dShiftVBitCountMinus1( bitCountV0 - 1 );
+    pfh.setInterPredictPatch3dShiftTangentAxisBitCountMinus1( bitCountU1 - 1 );
+    pfh.setInterPredictPatch3dShiftBitangentAxisBitCountMinus1( bitCountV1 - 1 );
+    pfh.setInterPredictPatch3dShiftNormalAxisBitCountMinus1( maxBitCountForMinDepth - 1 ); // minDepth
+    //pfh.setInterPredictPatch23dShiftNormalAxisBitCountMinus1( maxBitCountForMaxDepth - 1 ); //maxDepth TODO: add this to pfh
+    pfh.setInterPredictPatchLodBitCount( bitCountLod ); //AS in CD, not minus1, if equls to 0 no LoD present
+
+    printf("fill pfh done  \n"); fflush(stdout); 
+
+    //compress compressMetadata
+    int64_t prevSizeU0 = 0;
+    int64_t prevSizeV0 = 0;
+
+    for ( size_t patchIndex = 0; patchIndex < patchCount; ++patchIndex ) {
+      const auto &patch = patches[patchIndex];
+      //patchInformationData
+      if ( pfh.getType() == I_PATCH_FRAME ) {
+        pfdu.setPatchFrameMode( patchIndex, I_INTRA );
+      } else {
+        pfdu.setPatchFrameMode( patchIndex, P_INTRA );
+      }
+
+      pfdu.getPatchInformationData( patchIndex ).getPatchDataUnit().set2DShiftU(patch.getU0());
+      pfdu.getPatchInformationData( patchIndex ).getPatchDataUnit().set2DShiftV(patch.getV0());
+      if ( enable_flexible_patch_flag ) {
+        bool flexible_patch_present_flag = (patch.getPatchOrientation() != PatchOrientation::DEFAULT);
+        if (flexible_patch_present_flag) {
+          //pfh_patch_orientation_present_flag[ frmIdx ]  = 1 --> this is missing in CD 7.3.27, but is used in 7.3.31
+          pfdu.getPatchInformationData( patchIndex ).getPatchDataUnit().setOrientationSwapFlag( patch.getPatchOrientation() - 1 );
+        } else {
+          //pfh_patch_orientation_present_flag[ frmIdx ]  = 0 --> this is missing int CD 7.3.27, but is used in 7.3.31
+        }
+      }
+      pfdu.getPatchInformationData( patchIndex ).getPatchDataUnit().set3DShiftTangentAxis(patch.getU1());
+      pfdu.getPatchInformationData( patchIndex ).getPatchDataUnit().set3DShiftBiTangentAxis(patch.getV1());
+
+      size_t D1;
+      if ( patch.getProjectionMode() == 0 ) {
+        D1 = patch.getD1() / minLevel;
+      } else {
+        D1 = 1024 - patch.getD1();
+        D1 = D1 / minLevel;
+      }
+      pfdu.getPatchInformationData( patchIndex ).getPatchDataUnit().set3DShiftNormalAxis( D1 );
+      size_t quantDD = patch.getSizeD() == 0 ? 0 : ((patch.getSizeD() - 1) / minLevel + 1);
+
+      auto &patchTemp = patches[patchIndex];
+      PCCMetadata& metadata=patchTemp.getPatchLevelMetadata();
+      metadata.setbitCountQDepth(bitCountDD);
+#ifdef CE210_MAXDEPTH_EVALUATION
+      metadata.setQMaxDepthInPatch(int64_t(quantDD));
+#endif
+      metadata.setIndex(patchIndex);
+      metadata.setMetadataType(METADATA_PATCH);
+      metadata.setMetadataPresent(true);
+
+      pfdu.getPatchInformationData( patchIndex ).getPatchDataUnit().setLod(patch.getLod());
+      
+      if ( !sps.getLayerAbsoluteCodingEnabledFlag( 1 ) && (pfdu.getPatchInformationData( patchIndex ).getPatchDataUnit().getProjectionMode() == 2) ) {
+        const uint8_t bitCountProjDir = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(2 + 1)));
+      } // this is later usd with entropy coder, should we add this to PFH?
+      if ( sps.getLayerAbsoluteCodingEnabledFlag( 1 ) ) {
+        if ( patch.getProjectionMode() == 0 ) {
+          pfdu.getPatchInformationData( patchIndex ).getPatchDataUnit().setProjectionMode( 0 );
+        } else {
+          pfdu.getPatchInformationData( patchIndex ).getPatchDataUnit().setProjectionMode( 1 );
+        }
+      }
+
+      const int64_t deltaSizeU0 = static_cast<int64_t>(patch.getSizeU0()) - prevSizeU0;
+      const int64_t deltaSizeV0 = static_cast<int64_t>(patch.getSizeV0()) - prevSizeV0;
+      pfdu.getPatchInformationData( patchIndex ).getPatchDataUnit().set2DDeltaSizeU(deltaSizeU0);
+      pfdu.getPatchInformationData( patchIndex ).getPatchDataUnit().set2DDeltaSizeV(deltaSizeV0);
+      prevSizeU0 = patch.getSizeU0();
+      prevSizeV0 = patch.getSizeV0();
+
+      /*
+      compressMetadata( patch.getPatchLevelMetadata(), arithmeticEncoder, bModel0, bModelDD );
+      compressOneLayerData( context, frame, patch, arithmeticEncoder,
+                            occupiedModel, interpolateModel, neighborModel, minD1Model, fillingModel );
+      */
+      
+      // compressMetadata     --> mapping the data structures 7.3.17, 7.3.18
+      GeometryFrameParams gfp;
+      auto &metadataEnabingFlags = metadata.getMetadataEnabledFlags();
+
+      if ( metadata.getMetadataPresent() ) {
+        if ( metadataEnabingFlags.getScaleEnabled() ) {
+          gfp.setGeometryScaleOnAxis( 0, metadata.getScale()[0] );
+          gfp.setGeometryScaleOnAxis( 1, metadata.getScale()[1] );
+          gfp.setGeometryScaleOnAxis( 2, metadata.getScale()[2] );
+        }
+        if ( metadataEnabingFlags.getOffsetEnabled() ) {
+          gfp.setGeometryOffsetOnAxis( 0, metadata.getOffset()[0] );
+          gfp.setGeometryOffsetOnAxis( 1, metadata.getOffset()[1] );
+          gfp.setGeometryOffsetOnAxis( 2, metadata.getOffset()[2] );
+        }
+        if ( metadataEnabingFlags.getRotationEnabled() ) {
+          gfp.setGeometryRotationOnAxis( 0, metadata.getRotation()[0] );
+          gfp.setGeometryRotationOnAxis( 1, metadata.getRotation()[1] );
+          gfp.setGeometryRotationOnAxis( 2, metadata.getRotation()[2] );
+        }
+        if ( metadataEnabingFlags.getPointSizeEnabled() ) {
+          gfp.setGeometryPointShapeInfoPresentFlag(metadata.getPointSizePresent());
+          if ( gfp.getGeometryPointShapeInfoPresentFlag() ) {
+            gfp.setGeometryPointSizeInfo(metadata.getPointSize());
+          }
+        }
+        if ( metadataEnabingFlags.getPointShapeEnabled() ) {
+          gfp.setGeometryPointShapeInfoPresentFlag(metadata.getPointShapePresent());
+          if ( gfp.getGeometryPointShapeInfoPresentFlag() ) {
+            gfp.setGeometryPointSizeInfo( metadata.getPointShape() );
+          }
+        }
+#ifdef CE210_MAXDEPTH_EVALUATION
+        if ( metadataEnabingFlags.getMaxDepthEnabled() ) {
+          currentDD = metadata.getQMaxDepthInPatch();
+          //TODO: gfp.setGeometryMaxDeltaDepth(currentDD);
+        }
+#endif
+      }
+      auto &lowerLevelMetadataEnabledFlags = metadata.getLowerLevelMetadataEnabledFlags();
+      // gfp.set...(lowerLevelMetadataEnabledFlags.getMetadataEnabled())
+      if ( lowerLevelMetadataEnabledFlags.getMetadataEnabled() ) {
+        /* TODO: I could not locate the corespondence for these parameters*/
+        // lowerLevelMetadataEnabledFlags.getScaleEnabled()
+        // lowerLevelMetadataEnabledFlags.getOffsetEnabled()
+        // lowerLevelMetadataEnabledFlags.getRotationEnabled()
+        // lowerLevelMetadataEnabledFlags.getPointSizeEnabled()
+        // lowerLevelMetadataEnabledFlags.getPointShapeEnabled()
+
+      }
+
+      // compressOneLayerData --> PointLocalReconstruction 7.3.34
+      if ( sps.getLayerAbsoluteCodingEnabledFlag( 1 ) && !sps.getMultipleLayerStreamsPresentFlag() ) {
+        PointLocalReconstruction plr;
+        auto&        blockToPatch = frame.getBlockToPatch();
+        const size_t blockToPatchWidth = frame.getWidth() / ops.getOccupancyPackingBlockSize();
+        const size_t blockToPatchHeight = frame.getHeight() / ops.getOccupancyPackingBlockSize();
+        auto&        interpolateMap = frame.getInterpolate();
+        auto&        fillingMap = frame.getFilling();
+        auto&        minD1Map = frame.getMinD1();
+        auto&        neighborMap = frame.getNeighbor();
+
+        plr.setBlockToPatchMapWidth(blockToPatchWidth);
+        plr.setBlockToPatchMapHeight(blockToPatchHeight);
+
+
+        for ( size_t v0 = 0; v0 < patch.getSizeV0(); ++v0 ) {
+          for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {
+            int pos = patch.patchBlock2CanvasBlock((u0), (v0), blockToPatchWidth, blockToPatchHeight);
+            plr.setBlockToPatchMap( static_cast<uint32_t>( blockToPatch[pos] > 0 ), u0, v0 );
+            if( blockToPatch[ pos ] > 0 ) {
+              plr.setModeInterpolateFlag( bool( interpolateMap[pos] ), u0, v0 );
+              if( interpolateMap[ pos ] > 0 ) {
+                uint32_t code = static_cast<uint32_t>( int(neighborMap[ pos ]) - 1 );
+                plr.setModeNeighbourMinus1( code, u0, v0 );
+              }
+              uint8_t code =static_cast<uint8_t>( minD1Map[pos] ) - 1;
+              plr.setModeMinimumDepthMinus1( code, u0, v0 );
+              if( minD1Map[ pos ] > 1 || interpolateMap[ pos ] > 0 ) {
+                plr.setModeFillingFlag(static_cast<uint32_t>(fillingMap[ pos ] ), u0, v0);
+              }
+            }
+          }
+        }
+      }
+    }
+  } else {
+
+    auto&  refPatches = refFrame.getPatches();
+    // ref frame should go to ref structure 7.3.28
+    // currently only 1 frame shall be supported
+
+    size_t numMatchedPatches = frame.getNumMatchedPatches();
+    size_t TopNmaxU0 = 0, maxU0 = 0;
+    size_t TopNmaxV0 = 0, maxV0 = 0;
+    size_t TopNmaxU1 = 0, maxU1 = 0;
+    size_t TopNmaxV1 = 0, maxV1 = 0;
+    size_t TopNmaxD1 = 0, maxD1 = 0;
+    size_t TopNmaxDD = 0, maxDD = 0;
+    const size_t minLevel= sps.getMinLevel();
+    const uint8_t maxBitCountForMinDepth=uint8_t(10-gbitCountSize[minLevel]);
+    uint8_t maxAllowedDepthP1 = params_.maxAllowedDepth_+1;
+    uint8_t bitCountDDMax=0; //255
+    while((maxAllowedDepthP1)>>bitCountDDMax) bitCountDDMax++;
+    const uint8_t maxBitCountForMaxDepth=uint8_t(9-gbitCountSize[minLevel]); //20190129
+
+                                                                             //get the maximum u0,v0,u1,v1 and d1.
+    for (size_t patchIndex = 0; patchIndex < numMatchedPatches; ++patchIndex) {
+      const auto &patch = patches[patchIndex];
+      TopNmaxU0 = (std::max)(TopNmaxU0, patch.getU0());
+      TopNmaxV0 = (std::max)(TopNmaxV0, patch.getV0());
+      TopNmaxU1 = (std::max)(TopNmaxU1, patch.getU1());
+      TopNmaxV1 = (std::max)(TopNmaxV1, patch.getV1());
+      size_t D1 = patch.getD1()/minLevel;
+      TopNmaxD1 = (std::max)(TopNmaxD1, D1);
+      size_t DD = patch.getSizeD()/minLevel;
+      TopNmaxDD = (std::max)(TopNmaxDD, DD);
+    }
+    for (size_t patchIndex = numMatchedPatches; patchIndex < patchCount; ++patchIndex) {
+      const auto &patch = patches[patchIndex];
+      maxU0 = (std::max)(maxU0, patch.getU0());
+      maxV0 = (std::max)(maxV0, patch.getV0());
+      maxU1 = (std::max)(maxU1, patch.getU1());
+      maxV1 = (std::max)(maxV1, patch.getV1());
+      size_t D1 = patch.getD1()/minLevel;
+      maxD1 = (std::max)(maxD1, D1);
+      size_t DD = patch.getSizeD()/minLevel;
+      maxDD = (std::max)(maxDD, DD);
+    }
+    //  compressMetadata(frame.getFrameLevelMetadata(), arithmeticEncoder);
+    const uint8_t bitCountNumPatches =
+      uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(patchCount)));//numMatchedPatches <= patchCount
+    
+    uint8_t flag = 0;
+    uint8_t F = 1;  //true if the maximum value comes from the latter part.
+    uint8_t A[4] = { 1, 1, 1, 1 };
+
+    uint8_t bitCount[5], topBitCount[5];
+    bitCount   [0] = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(maxU0     + 1)));
+    topBitCount[0] = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(TopNmaxU0 + 1)));
+    bitCount   [1] = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(maxV0     + 1)));
+    topBitCount[1] = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(TopNmaxV0 + 1)));
+    bitCount   [2] = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(maxU1     + 1)));
+    topBitCount[2] = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(TopNmaxU1 + 1)));
+    bitCount   [3] = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(maxV1     + 1)));
+    topBitCount[3] = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(TopNmaxV1 + 1)));
+    bitCount   [4] = maxBitCountForMinDepth;
+
+    for (int i = 0; i < 4; i++) {
+      if (bitCount[i] <= topBitCount[i]) {
+        bitCount[i] = topBitCount[i];
+        A[i] = 0;
+      }
+      flag = flag << 1;
+      flag += A[i];
+    }
+    //Generate F and A.
+    if (flag == 0) { F = 0; }
+    pfh.setInterPredictPatchBitCountFlag( F );
+    if ( F ) {
+      pfh.setInterPredictPatch2dShiftUBitCountFlag( A[0] );
+      pfh.setInterPredictPatch2dShiftVBitCountFlag( A[1] );
+      pfh.setInterPredictPatch3dShiftTangentAxisBitCountFlag( A[2] );
+      pfh.setInterPredictPatch3dShiftBitangentAxisBitCountFlag( A[3] );
+      pfh.setInterPredictPatchLodBitCountFlag( A[4] );
+      if ( A[0] ) { pfh.setInterPredictPatch2dShiftUBitCountMinus1( bitCount[0] ); }
+      if ( A[1] ) { pfh.setInterPredictPatch2dShiftVBitCountMinus1( bitCount[1] ); }
+      if ( A[2] ) { pfh.setInterPredictPatch3dShiftTangentAxisBitCountMinus1( bitCount[2] ); }
+      if ( A[3] ) { pfh.setInterPredictPatch3dShiftBitangentAxisBitCountMinus1( bitCount[3] ); }
+      if ( A[4] ) { pfh.setInterPredictPatchLodBitCount( bitCount[4] ); }
+    }
+
+    int64_t predIndex = 0;
+    for ( size_t patchIndex = 0; patchIndex < numMatchedPatches; ++patchIndex ) {
+      const auto &patch    = patches[patchIndex];
+      const auto &refPatch = refPatches[patch.getBestMatchIdx()];
+      auto &curDpdu = pfdu.getPatchInformationData( patchIndex ).getDeltaPatchDataUnit();
+      pfdu.setPatchFrameMode( patchIndex, P_INTER );
+       
+      const int64_t delta_index = patch.getBestMatchIdx() - predIndex;
+      predIndex += (delta_index + 1);
+      const int64_t delta_u0 = static_cast<int64_t>(patch.getU0() - refPatch.getU0());
+      const int64_t delta_v0 = static_cast<int64_t>(patch.getV0() - refPatch.getV0());
+      const int64_t delta_u1 = static_cast<int64_t>(patch.getU1() - refPatch.getU1());
+      const int64_t delta_v1 = static_cast<int64_t>(patch.getV1() - refPatch.getV1());
+      size_t currentD1=patch.getD1();
+      size_t prevD1=refPatch.getD1();
+      if(patch.getProjectionMode()==0) {
+        currentD1=currentD1/minLevel;
+        prevD1=prevD1/minLevel;
+      } else {
+        currentD1=(1024-currentD1)/minLevel;
+        prevD1=(1024-prevD1)/minLevel;
+      }
+      const int64_t delta_d1 = static_cast<int64_t>(currentD1 - prevD1);
+      const int64_t deltaSizeU0 = static_cast<int64_t>(patch.getSizeU0() - refPatch.getSizeU0());
+      const int64_t deltaSizeV0 = static_cast<int64_t>(patch.getSizeV0() - refPatch.getSizeV0());
+
+      curDpdu.set2DDeltaShiftU( delta_u0 );
+      curDpdu.set2DDeltaShiftV( delta_v0 );
+      curDpdu.set3DDeltaShiftTangentAxis( delta_u1 );
+      curDpdu.set3DDeltaShiftTangentAxis( delta_v1 );
+      curDpdu.set3DDeltaShiftNormalAxis( delta_d1 );
+      curDpdu.set2DDeltaSizeU(deltaSizeU0);
+      curDpdu.set2DDeltaSizeV(deltaSizeV0);
+      
+      size_t quantDD=patch.getSizeD()==0?0:((patch.getSizeD()-1)/minLevel +1);
+      size_t prevQDD=patch.getSizeD()==0?0:((refPatch.getSizeD()-1)/minLevel +1);
+
+      const int64_t delta_dd = static_cast<int64_t>(quantDD - prevQDD);
+      auto &patchTemp = patches[patchIndex];
+      PCCMetadata& metadata=patchTemp.getPatchLevelMetadata();
+      metadata.setMetadataPresent(true);
+      metadata.setbitCountQDepth(0);
+      //metadata.setIndex(patchIndex);
+      //compressMetadata(metadata, arithmeticEncoder, bModel0, bModelDD);
+    }
+
+    int64_t prevSizeU0 = patches[numMatchedPatches-1].getSizeU0();
+    int64_t prevSizeV0 = patches[numMatchedPatches-1].getSizeV0();
+
+    for (size_t patchIndex = numMatchedPatches; patchIndex < patchCount; ++patchIndex) {
+      const auto &patch = patches[patchIndex];
+      auto &curPdu = pfdu.getPatchInformationData( patchIndex ).getPatchDataUnit();
+
+      curPdu.set2DShiftU(patch.getU0());
+      curPdu.set2DShiftV(patch.getV0());
+
+      if ( enable_flexible_patch_flag ) {
+        bool flexible_patch_present_flag = (patch.getPatchOrientation() != PatchOrientation::DEFAULT);
+        if (flexible_patch_present_flag) {
+          //pfh_patch_orientation_present_flag[ frmIdx ]  = 1 --> this is missing in CD 7.3.27, but is used in 7.3.31
+          pfdu.getPatchInformationData( patchIndex ).getPatchDataUnit().setOrientationSwapFlag( patch.getPatchOrientation() - 1 );
+        } else {
+          //pfh_patch_orientation_present_flag[ frmIdx ]  = 0 --> this is missing int CD 7.3.27, but is used in 7.3.31
+        }
+      }
+      curPdu.set3DShiftTangentAxis(patch.getU1());
+      curPdu.set3DShiftBiTangentAxis(patch.getV1());
+
+      size_t currentD1=patch.getD1();
+      if(patch.getProjectionMode()==0) {
+        currentD1=currentD1/minLevel;
+      } else {
+        currentD1=(1024-currentD1)/minLevel;
+      }
+      curPdu.set3DShiftNormalAxis( currentD1 );
+
+      size_t quantDD = patch.getSizeD() == 0 ? 0 : ((patch.getSizeD() - 1) / minLevel + 1);
+      auto &patchTemp = patches[patchIndex];
+      PCCMetadata& metadata=patchTemp.getPatchLevelMetadata();
+      metadata.setbitCountQDepth(maxBitCountForMaxDepth);
+#ifdef CE210_MAXDEPTH_EVALUATION
+      metadata.setQMaxDepthInPatch(int64_t(quantDD));
+#endif
+      metadata.setIndex(patchIndex);
+      metadata.setMetadataPresent(true);
+
+      const int64_t deltaSizeU0 = static_cast<int64_t>(patch.getSizeU0()) - prevSizeU0;
+      const int64_t deltaSizeV0 = static_cast<int64_t>(patch.getSizeV0()) - prevSizeV0;
+
+      curPdu.set2DDeltaSizeU(deltaSizeU0);
+      curPdu.set2DDeltaSizeU(deltaSizeV0);
+      curPdu.setNormalAxis(static_cast<pcc::PCCAxis3>(patch.getNormalAxis()));
+
+      //compressMetadata(patch.getPatchLevelMetadata(), arithmeticEncoder,bModel0, bModelDD);
+      GeometryFrameParams gfp;
+      auto &metadataEnabingFlags = metadata.getMetadataEnabledFlags();
+
+      if ( metadata.getMetadataPresent() ) {
+        if ( metadataEnabingFlags.getScaleEnabled() ) {
+          gfp.setGeometryScaleOnAxis( 0, metadata.getScale()[0] );
+          gfp.setGeometryScaleOnAxis( 1, metadata.getScale()[1] );
+          gfp.setGeometryScaleOnAxis( 2, metadata.getScale()[2] );
+        }
+        if ( metadataEnabingFlags.getOffsetEnabled() ) {
+          gfp.setGeometryOffsetOnAxis( 0, metadata.getOffset()[0] );
+          gfp.setGeometryOffsetOnAxis( 1, metadata.getOffset()[1] );
+          gfp.setGeometryOffsetOnAxis( 2, metadata.getOffset()[2] );
+        }
+        if ( metadataEnabingFlags.getRotationEnabled() ) {
+          gfp.setGeometryRotationOnAxis( 0, metadata.getRotation()[0] );
+          gfp.setGeometryRotationOnAxis( 1, metadata.getRotation()[1] );
+          gfp.setGeometryRotationOnAxis( 2, metadata.getRotation()[2] );
+        }
+        if ( metadataEnabingFlags.getPointSizeEnabled() ) {
+          gfp.setGeometryPointShapeInfoPresentFlag(metadata.getPointSizePresent());
+          if ( gfp.getGeometryPointShapeInfoPresentFlag() ) {
+            gfp.setGeometryPointSizeInfo(metadata.getPointSize());
+          }
+        }
+        if ( metadataEnabingFlags.getPointShapeEnabled() ) {
+          gfp.setGeometryPointShapeInfoPresentFlag(metadata.getPointShapePresent());
+          if ( gfp.getGeometryPointShapeInfoPresentFlag() ) {
+            gfp.setGeometryPointSizeInfo( metadata.getPointShape() );
+          }
+        }
+#ifdef CE210_MAXDEPTH_EVALUATION
+        if ( metadataEnabingFlags.getMaxDepthEnabled() ) {
+          currentDD = metadata.getQMaxDepthInPatch();
+          //TODO: gfp.setGeometryMaxDeltaDepth(currentDD);
+        }
+#endif
+      }
+      auto &lowerLevelMetadataEnabledFlags = metadata.getLowerLevelMetadataEnabledFlags();
+      // gfp.set...(lowerLevelMetadataEnabledFlags.getMetadataEnabled())
+      if ( lowerLevelMetadataEnabledFlags.getMetadataEnabled() ) {
+        /* TODO: I could not locate the corespondence for these parameters*/
+        // lowerLevelMetadataEnabledFlags.getScaleEnabled()
+        // lowerLevelMetadataEnabledFlags.getOffsetEnabled()
+        // lowerLevelMetadataEnabledFlags.getRotationEnabled()
+        // lowerLevelMetadataEnabledFlags.getPointSizeEnabled()
+        // lowerLevelMetadataEnabledFlags.getPointShapeEnabled()
+      }
+    }
+
+    for (size_t patchIndex = 0; patchIndex < patchCount; ++patchIndex) {
+      const auto &patch    = patches[patchIndex];
+
+      if ( sps.getLayerAbsoluteCodingEnabledFlag( 1 ) && !sps.getMultipleLayerStreamsPresentFlag() ) {
+        PointLocalReconstruction plr;
+        auto&        blockToPatch = frame.getBlockToPatch();
+        const size_t blockToPatchWidth = frame.getWidth() / ops.getOccupancyPackingBlockSize();
+        const size_t blockToPatchHeight = frame.getHeight() / ops.getOccupancyPackingBlockSize();
+        auto&        interpolateMap = frame.getInterpolate();
+        auto&        fillingMap = frame.getFilling();
+        auto&        minD1Map = frame.getMinD1();
+        auto&        neighborMap = frame.getNeighbor();
+
+        plr.setBlockToPatchMapWidth(blockToPatchWidth);
+        plr.setBlockToPatchMapHeight(blockToPatchHeight);
+
+
+        for ( size_t v0 = 0; v0 < patch.getSizeV0(); ++v0 ) {
+          for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {
+            int pos = patch.patchBlock2CanvasBlock((u0), (v0), blockToPatchWidth, blockToPatchHeight);
+            plr.setBlockToPatchMap( static_cast<uint32_t>( blockToPatch[pos] > 0 ), u0, v0 );
+            if( blockToPatch[ pos ] > 0 ) {
+              plr.setModeInterpolateFlag( bool( interpolateMap[pos] ), u0, v0 );
+              if( interpolateMap[ pos ] > 0 ) {
+                uint32_t code = static_cast<uint32_t>( int(neighborMap[ pos ]) - 1 );
+                plr.setModeNeighbourMinus1( code, u0, v0 );
+              }
+              uint8_t code =static_cast<uint8_t>( minD1Map[pos] ) - 1;
+              plr.setModeMinimumDepthMinus1( code, u0, v0 );
+              if( minD1Map[ pos ] > 1 || interpolateMap[ pos ] > 0 ) {
+                plr.setModeFillingFlag(static_cast<uint32_t>(fillingMap[ pos ] ), u0, v0);
+              }
+            }
+          }
+        }
+      }
+
+      //compressOneLayerData( context, frame, patch, arithmeticEncoder,
+      //                    occupiedModel, interpolateModel, neighborModel, minD1Model, fillingModel );
+    } //end of matched patches
   }
 }

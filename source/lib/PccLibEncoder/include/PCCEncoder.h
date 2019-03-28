@@ -123,6 +123,15 @@ public:
   int encode( const PCCGroupOfFrames& sources, PCCContext &context,
               PCCBitstream &bitstream, PCCGroupOfFrames& reconstructs );
 
+
+  // adaptor methods (JR: move for test )
+  void createPatchFrameDataStructure( PCCContext&   context );
+
+  void createPatchFrameDataStructure( PCCContext&      context,
+                                      PCCFrameContext& frame,
+                                      PCCFrameContext& preFrame,
+                                      size_t           frameIndex );
+
 private:
   int encode( const PCCGroupOfFrames& sources, PCCContext &context, PCCGroupOfFrames& reconstructs );
 
@@ -268,7 +277,6 @@ private:
                                                  size_t& heightGPA,
                                                  size_t& widthGPA,
                                                  size_t maxOccupancyRow);
-
 
   PCCEncoderParameters params_;
 };
