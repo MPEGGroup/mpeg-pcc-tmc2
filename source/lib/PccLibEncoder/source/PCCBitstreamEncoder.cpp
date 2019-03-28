@@ -574,7 +574,7 @@ void PCCBitstreamEncoder::compressPatchMetaDataM42195( PCCContext      &context,
   o3dgc::Adaptive_Data_Model minD1Model(3), neighborModel(3);
 
   //jkei[??] do we need to signal frame metadata here too?
-  compressMetadata(frame.getFrameLevelMetadata(), arithmeticEncoder);
+  // compressMetadata(frame.getFrameLevelMetadata(), arithmeticEncoder);
 
   const uint8_t bitCountNumPatches =
       uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(patchCount)));//numMatchedPatches <= patchCount
@@ -672,7 +672,7 @@ void PCCBitstreamEncoder::compressPatchMetaDataM42195( PCCContext      &context,
     metadata.setQMaxDepthInPatch(delta_dd);
 #endif
     metadata.setIndex(patchIndex);
-    compressMetadata(metadata, arithmeticEncoder, bModel0, bModelDD);
+    // compressMetadata(metadata, arithmeticEncoder, bModel0, bModelDD);
   }
 
   int64_t prevSizeU0 = patches[numMatchedPatches-1].getSizeU0();
@@ -737,7 +737,7 @@ void PCCBitstreamEncoder::compressPatchMetaDataM42195( PCCContext      &context,
     // } else {
     //   arithmeticEncoder.encode(uint32_t(patch.getNormalAxis()), orientationModel);
     // }
-    compressMetadata(patch.getPatchLevelMetadata(), arithmeticEncoder,bModel0, bModelDD);
+    // compressMetadata(patch.getPatchLevelMetadata(), arithmeticEncoder,bModel0, bModelDD);
   }
   for (size_t patchIndex = 0; patchIndex < patchCount; ++patchIndex) {
     const auto &patch    = patches[patchIndex];
@@ -892,7 +892,7 @@ void PCCBitstreamEncoder::compressOccupancyMap( PCCContext&      context,
 
     bitstream.write<uint8_t>(bitCountLod);
 
-    compressMetadata(frame.getFrameLevelMetadata(), arithmeticEncoder);
+    // compressMetadata(frame.getFrameLevelMetadata(), arithmeticEncoder);
 
     o3dgc::Adaptive_Bit_Model bModelDD;
     o3dgc::Static_Bit_Model bModel0;
@@ -974,7 +974,7 @@ void PCCBitstreamEncoder::compressOccupancyMap( PCCContext&      context,
       // } else {
       //   arithmeticEncoder.encode(uint32_t(patch.getNormalAxis()), orientationModel);
       // }
-      compressMetadata( patch.getPatchLevelMetadata(), arithmeticEncoder, bModel0, bModelDD );
+       // compressMetadata( patch.getPatchLevelMetadata(), arithmeticEncoder, bModel0, bModelDD );
       compressOneLayerData( context, frame, patch, arithmeticEncoder,
                             occupiedModel, interpolateModel, neighborModel, minD1Model, fillingModel );
     }
