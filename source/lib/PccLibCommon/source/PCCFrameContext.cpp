@@ -57,6 +57,7 @@ PCCFrameContext::~PCCFrameContext(){
   filling_            .clear();
   minD1_              .clear();
   neighbor_           .clear();
+  numMatchedPatches_  = 0;  
 }
 
 void PCCFrameContext::allocOneLayerData( const size_t occupancyResolution ){

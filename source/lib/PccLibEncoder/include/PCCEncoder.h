@@ -48,6 +48,9 @@ class PCCGroupOfFrames;
 class PCCBitstream;
 class PCCContext;
 class PCCFrameContext;
+class GeometryFrameParameterSet;
+class GeometryPatchParameterSet;
+class PointLocalReconstruction;
 
 template <typename T, size_t N>
 class PCCVideo;
@@ -277,6 +280,11 @@ private:
                                                  size_t& heightGPA,
                                                  size_t& widthGPA,
                                                  size_t maxOccupancyRow);
+
+  void setGeometryFrameParameterSet( PCCMetadata& metadata, GeometryFrameParameterSet& gfps );
+  void setGeometryPatchParameterSet( PCCMetadata& metadata, GeometryPatchParameterSet& gpps );
+
+  void setPointLocalReconstruction( PCCFrameContext& frame, const PCCPatch& patch, PointLocalReconstruction& plr, size_t occupancyPackingBlockSize );
 
   PCCEncoderParameters params_;
 };

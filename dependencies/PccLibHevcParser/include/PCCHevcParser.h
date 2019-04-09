@@ -56,7 +56,7 @@ private:
                    size_t& bitdepth );
 
   void createNalu( const std::vector<uint8_t>& buffer, const size_t pos, const size_t size );
-  void createNalu( const int frameIndex,
+  void createNalu( const size_t frameIndex,
                    const std::vector<uint8_t>& buffer,
                    const size_t pos,
                    const size_t size );

@@ -207,12 +207,12 @@ void PCCBitstream::read( PCCVideoBitstream& videoBitstream ) {
 #ifdef BITSTREAM_TRACE
   trace("Code: depth = %lu \n",videoBitstream.getBitdepth() ) ; 
 #endif
-  printf("BITSTREAM READ BITDEPTH = %lu \n",videoBitstream.getBitdepth());
+  printf("BITSTREAM READ BITDEPTH = %u \n",videoBitstream.getBitdepth());
 #endif
 #ifdef BITSTREAM_TRACE
   trace("Code: video : %4lu \n",size) ; 
 #endif
-  printf("read PCCVideoBitstream done size = %lu \n",size); fflush(stdout);
+  printf("read PCCVideoBitstream done size = %u \n",size); fflush(stdout);
 }
 
 void PCCBitstream::write( PCCVideoBitstream& videoBitstream ) {
@@ -224,7 +224,7 @@ void PCCBitstream::write( PCCVideoBitstream& videoBitstream ) {
   trace("Code: data \n") ; 
 #endif
 #ifdef BUG_FIX_BITDEPTH
-  printf("BITSTREAM WRITE BITDEPTH = %lu \n",videoBitstream.getBitdepth());
+  printf("BITSTREAM WRITE BITDEPTH = %u \n",videoBitstream.getBitdepth());
   // write<uint16_t>( videoBitstream.getWidth() );
   // write<uint16_t>( videoBitstream.getHeight() );
   write<uint8_t>( videoBitstream.getBitdepth() );

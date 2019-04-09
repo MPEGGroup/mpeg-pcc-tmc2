@@ -71,6 +71,9 @@ class PatchDataUnit;
 class DeltaPatchDataUnit;
 class PCMPatchDataUnit;
 class PointLocalReconstruction;
+class GeometryParameterSet; 
+class AttributeSequenceParams; 
+class AttributeFrameParams; 
 
 
 class PCCBitstreamEncoderNewSyntax {
@@ -86,6 +89,13 @@ class PCCBitstreamEncoderNewSyntax {
                      const uint32_t           bitCount,
                      o3dgc::Arithmetic_Codec& arithmeticEncoder,
                      o3dgc::Static_Bit_Model& bModel0 );
+
+
+void EncodeUInt32( const uint32_t           value,
+                                                 const uint32_t           bitCount,
+                                                 o3dgc::Arithmetic_Codec& arithmeticEncoder,
+                                                 o3dgc::Static_Bit_Model& bModel0,
+                                                 PCCBitstream& bitstream );
 
   // 7.3.2 V-PCC unit syntax
   void vpccUnit( PCCContext& context, PCCBitstream& bitstream, VPCCUnitType vpccUnitType );

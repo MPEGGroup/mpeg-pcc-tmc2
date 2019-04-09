@@ -63,14 +63,14 @@
 // ******************************************************************* //
 // Trace mode to validate new syntax
 // ******************************************************************* //
-#define BITSTREAM_TRACE 
-#define CODEC_TRACE 
-#define BUG_FIX_BITDEPTH 
+#define BITSTREAM_TRACE
+#define CODEC_TRACE
+#define BUG_FIX_BITDEPTH
 
 //
 // #define CE210_MAXDEPTH_EVALUATION
 
-//jkei: patchSequenceUnitPayload
+// jkei: patchSequenceUnitPayload
 namespace pcc {
 
 // ******************************************************************* //
@@ -96,16 +96,7 @@ enum PCCEndianness { PCC_BIG_ENDIAN = 0, PCC_LITTLE_ENDIAN = 1 };
 enum ColorTransform { COLOR_TRANSFORM_NONE = 0, COLOR_TRANSFORM_RGB_TO_YCBCR = 1 };
 enum PCCAxis3 { PCC_AXIS3_UNDEFINED = -1, PCC_AXIS3_X = 0, PCC_AXIS3_Y = 1, PCC_AXIS3_Z = 2 };
 enum PointType { Unset = 0, D0, D1, DF, Smooth, InBetween };
-enum PCCVideoType {
-  OccupancyMap = 0,
-  Geometry,
-  GeometryD0,
-  GeometryD1,
-  GeometryMP,
-  Texture,
-  TextureMP,
-  Other
-};
+enum PCCVideoType { OccupancyMap = 0, Geometry, GeometryD0, GeometryD1, GeometryMP, Texture, TextureMP, Other };
 enum METADATATYPE { METADATA_GOF = 0, METADATA_FRAME, METADATA_PATCH };
 enum PatchOrientation {
   DEFAULT = 0,
@@ -189,28 +180,13 @@ enum PSDUnitType {
   PSD_RSVD_31   // 32: Reserved
 };
 
-enum CODECID{
-    CODEC_HEVC=0
-};
+enum CODECID { CODEC_HEVC = 0 };
 
-enum PATCH_FRAME_TYPE {
-  I_PATCH_FRAME = 0,
-  P_PATCH_FRAME
-};
+enum PATCH_FRAME_TYPE { I_PATCH_FRAME = 0, P_PATCH_FRAME };
 
-enum PATCH_I_MODE {
-    I_INTRA = 0,
-	I_PCM,
-    I_END
-};
+enum PATCH_I_MODE { I_INTRA = 0, I_PCM, I_END };
 
-enum PATCH_P_MODE {
-	P_SKIP = 0,
-	P_INTRA,
-	P_INTER,
-	P_PCM,
-    P_END
-};
+enum PATCH_P_MODE { P_SKIP = 0, P_INTRA, P_INTER, P_PCM, P_END };
 
 const size_t IntermediateLayerIndex = 100;
 const size_t NeighborThreshold      = 4;
@@ -251,29 +227,22 @@ static bool exist( const std::string& sString ) {
 
 static void removeFile( const std::string string ) {
   if ( exist( string ) ) {
-    if ( remove( string.c_str() ) != 0 ) {
-      std::cout << "Could not remove the file: " << string << std::endl;
-    }
+    if ( remove( string.c_str() ) != 0 ) { std::cout << "Could not remove the file: " << string << std::endl; }
   }
 }
 
 static std::string removeFileExtension( const std::string string ) {
   size_t pos = string.find_last_of( "." );
-  return ( pos != std::string::npos && pos + 4 == string.length() ) ? string.substr( 0, pos )
-                                                                    : string;
+  return ( pos != std::string::npos && pos + 4 == string.length() ) ? string.substr( 0, pos ) : string;
 }
 
-static std::string addVideoFormat( const std::string string,
-                                   const size_t      width,
-                                   const size_t      height,
-                                   const bool        yuv420 = true,
-                                   const std::string pixel  = "8" ) {
+static std::string addVideoFormat(
+    const std::string string, const size_t width, const size_t height, const bool yuv420 = true, const std::string pixel = "8" ) {
   size_t      pos      = string.find_last_of( "." );
   std::string filename = string.substr( 0, pos ), extension = string.substr( pos );
   if ( extension == ".yuv" || extension == ".rgb" ) {
     std::stringstream result;
-    result << filename << "_" << width << "x" << height << "_" << pixel << "bit_"
-           << ( extension == ".yuv" && yuv420 ? "p420" : "p444" ) << extension;
+    result << filename << "_" << width << "x" << height << "_" << pixel << "bit_" << ( extension == ".yuv" && yuv420 ? "p420" : "p444" ) << extension;
     return result.str();
   }
   return string;
@@ -304,10 +273,7 @@ static const T PCCFromLittleEndian( const T u ) {
   return ( PCCSystemEndianness() == PCC_BIG_ENDIAN ) ? PCCEndianSwap( u ) : u;
 }
 
-static void PCCDivideRange( const size_t         start,
-                            const size_t         end,
-                            const size_t         chunckCount,
-                            std::vector<size_t>& subRanges ) {
+static void PCCDivideRange( const size_t start, const size_t end, const size_t chunckCount, std::vector<size_t>& subRanges ) {
   const size_t elementCount = end - start;
   if ( elementCount <= chunckCount ) {
     subRanges.resize( elementCount + 1 );
@@ -346,24 +312,24 @@ std::string string_format( const char* pFormat, Args... eArgs ) {
   return eBuffer;
 }
 
-static uint32_t convertToUInt( int32_t value ) {
-  return ( value <= 0 ) ? -value << 1 : ( value << 1 ) - 1;
-}
-static int32_t convertToInt( uint32_t value ) {
-    return ( value & 1) ? -(int32_t)(value>>1) : (int32_t)(value>>1);
-}
+static uint32_t convertToUInt( int32_t value ) { return ( value <= 0 ) ? -value << 1 : ( value << 1 ) - 1; }
+static int32_t  convertToInt( uint32_t value ) { return ( value & 1 ) ? -( int32_t )( value >> 1 ) : ( int32_t )( value >> 1 ); }
 
-template<typename T>
+template <typename T>
 void printVector( std::vector<T> data, const size_t width, const size_t height, const std::string string, const bool hexa = false ) {
-  if( data.size() == 0 ) { data.resize( width * height, 0 ); }
-    printf("%s: %lu %lu \n",string.c_str(), width, height);
-    for (size_t v0 = 0; v0 < height; ++v0) {
-      for (size_t u0 = 0; u0 < width; ++u0) {
-        if( hexa ) { printf("%2x", (int)(data[ v0 * width + u0 ]) ); }
-        else       { printf("%3d", (int)(data[ v0 * width + u0 ]) ); } 
+  if ( data.size() == 0 ) { data.resize( width * height, 0 ); }
+  printf( "%s: %lu %lu \n", string.c_str(), width, height );
+  for ( size_t v0 = 0; v0 < height; ++v0 ) {
+    for ( size_t u0 = 0; u0 < width; ++u0 ) {
+      if ( hexa ) {
+        printf( "%2x", (int)( data[v0 * width + u0] ) );
+      } else {
+        printf( "%3d", (int)( data[v0 * width + u0] ) );
       }
-      printf("\n"); fflush(stdout); 
     }
+    printf( "\n" );
+    fflush( stdout );
+  }
 }
 
 }  // namespace pcc

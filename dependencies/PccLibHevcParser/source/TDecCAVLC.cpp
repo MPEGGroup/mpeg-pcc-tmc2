@@ -1032,7 +1032,6 @@ Void TDecCavlc::parseSPS(TComSPS* pcSPS)
 #endif
     READ_UVLC(     uiCode, "bit_depth_luma_minus8" );
 
-    printf("bit_depth_luma_minus8 = %lu \n",uiCode);
     assert(uiCode <= 6);
     pcSPS->setBitDepthY( uiCode + 8 );
     pcSPS->setQpBDOffsetY( (Int) (6*uiCode) );

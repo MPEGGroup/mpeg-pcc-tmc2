@@ -47,33 +47,37 @@ PCCBitstreamDecoder::PCCBitstreamDecoder() {}
 PCCBitstreamDecoder::~PCCBitstreamDecoder() {}
 
 int PCCBitstreamDecoder::decode( PCCBitstream& bitstream, PCCContext& context ) {
-  printf("Decode start \n"); fflush(stdout);
-  
+  printf( "Decode start \n" );
+  fflush( stdout );
+
   auto& sps = context.getSps();
   if ( !decompressHeader( context, bitstream ) ) { return 0; }
-  
-  printf("read video bitstream start \n"); fflush(stdout);
+
+  printf( "read video bitstream start \n" );
+  fflush( stdout );
   bitstream.read( context.createVideoBitstream( PCCVideoType::OccupancyMap ) );
-  
-  printf("here \n"); fflush(stdout);
-  if ( !sps.getLayerAbsoluteCodingEnabledFlag( 1 ) ){
-  printf("then \n"); fflush(stdout);
+
+  printf( "here \n" );
+  fflush( stdout );
+  if ( !sps.getLayerAbsoluteCodingEnabledFlag( 1 ) ) {
+    printf( "then \n" );
+    fflush( stdout );
     bitstream.read( context.createVideoBitstream( PCCVideoType::GeometryD0 ) );
     bitstream.read( context.createVideoBitstream( PCCVideoType::GeometryD1 ) );
   } else {
-  printf("else \n"); fflush(stdout);
+    printf( "else \n" );
+    fflush( stdout );
     bitstream.read( context.createVideoBitstream( PCCVideoType::Geometry ) );
   }
-  printf("done \n"); fflush(stdout);
+  printf( "done \n" );
+  fflush( stdout );
 
-  if ( sps.getPcmPatchEnabledFlag() &&
-       sps.getPcmSeparateVideoPresentFlag() ) {
+  if ( sps.getPcmPatchEnabledFlag() && sps.getPcmSeparateVideoPresentFlag() ) {
     bitstream.read( context.createVideoBitstream( PCCVideoType::GeometryMP ) );
   }
   if ( sps.getAttributeCount() > 0 ) {
     bitstream.read( context.createVideoBitstream( PCCVideoType::Texture ) );
-    if ( sps.getPcmPatchEnabledFlag() &&
-         context.getSps().getPcmSeparateVideoPresentFlag() ) {
+    if ( sps.getPcmPatchEnabledFlag() && context.getSps().getPcmSeparateVideoPresentFlag() ) {
       bitstream.read( context.createVideoBitstream( PCCVideoType::TextureMP ) );
       auto sizeMissedPointsTexture = bitstream.size();
     }
@@ -81,22 +85,19 @@ int PCCBitstreamDecoder::decode( PCCBitstream& bitstream, PCCContext& context ) 
 
   decompressOccupancyMap( context, bitstream );
 
-  printf("decompressOccupancyMap done \n");fflush(stdout);
+  printf( "decompressOccupancyMap done \n" );
+  fflush( stdout );
 
-  if ( sps.getPcmPatchEnabledFlag() &&
-       sps.getPcmSeparateVideoPresentFlag() ) {
+  if ( sps.getPcmPatchEnabledFlag() && sps.getPcmSeparateVideoPresentFlag() ) {
     readMissedPointsGeometryNumber( context, bitstream );
-  } else if ( sps.getPcmPatchEnabledFlag() &&
-              !sps.getPcmSeparateVideoPresentFlag() ) {
+  } else if ( sps.getPcmPatchEnabledFlag() && !sps.getPcmSeparateVideoPresentFlag() ) {
     size_t numMissedPts{0};
-    for ( auto& frame : context.getFrames() ) {
-      frame.getMissedPointsPatch().numMissedPts_ = bitstream.read<size_t>();
-    }
+    for ( auto& frame : context.getFrames() ) { frame.getMissedPointsPatch().numMissedPts_ = bitstream.read<size_t>(); }
   }
-  printf(" here \n");fflush(stdout);
+  printf( " here \n" );
+  fflush( stdout );
   if ( sps.getAttributeCount() > 0 ) {
-    if ( sps.getPcmPatchEnabledFlag() &&
-         context.getSps().getPcmSeparateVideoPresentFlag() ) {
+    if ( sps.getPcmPatchEnabledFlag() && context.getSps().getPcmSeparateVideoPresentFlag() ) {
       auto sizeMissedPointsTexture = bitstream.size();
       readMissedPointsTextureNumber( context, bitstream );
     }
@@ -104,30 +105,25 @@ int PCCBitstreamDecoder::decode( PCCBitstream& bitstream, PCCContext& context ) 
   return 1;
 }
 
-uint32_t PCCBitstreamDecoder::DecodeUInt32( const uint32_t           bitCount,
-                                            o3dgc::Arithmetic_Codec& arithmeticDecoder,
-                                            o3dgc::Static_Bit_Model& bModel0 ) {
+uint32_t PCCBitstreamDecoder::DecodeUInt32( const uint32_t bitCount, o3dgc::Arithmetic_Codec& arithmeticDecoder, o3dgc::Static_Bit_Model& bModel0 ) {
   uint32_t decodedValue = 0;
-  for ( uint32_t i = 0; i < bitCount; ++i ) {
-    decodedValue += ( arithmeticDecoder.decode( bModel0 ) << i );
-  }
+  for ( uint32_t i = 0; i < bitCount; ++i ) { decodedValue += ( arithmeticDecoder.decode( bModel0 ) << i ); }
   return PCCFromLittleEndian<uint32_t>( decodedValue );
 }
 
 int PCCBitstreamDecoder::readMetadata( PCCMetadata& metadata, PCCBitstream& bitstream ) {
 #ifdef BITSTREAM_TRACE
-  bitstream.trace("Metadata start \n" ) ; 
+  bitstream.trace( "Metadata start \n" );
 #endif
   auto& metadataEnabledFlags = metadata.getMetadataEnabledFlags();
-  if ( !metadataEnabledFlags.getMetadataEnabled() ) { 
+  if ( !metadataEnabledFlags.getMetadataEnabled() ) {
 #ifdef BITSTREAM_TRACE
-  bitstream.trace("Metadata done not metadata \n" ) ; 
+    bitstream.trace( "Metadata done not metadata \n" );
 #endif
-    return 0; 
-}
+    return 0;
+  }
   metadata.getMetadataPresent() = bitstream.read<uint8_t>();
-  std::cout << "read/write METADATA TYPE: " << metadata.getMetadataType()
-            << " METADATA present: " << metadata.getMetadataPresent() << std::endl;
+  std::cout << "read/write METADATA TYPE: " << metadata.getMetadataType() << " METADATA present: " << metadata.getMetadataPresent() << std::endl;
   if ( metadata.getMetadataPresent() ) {
     if ( metadataEnabledFlags.getScaleEnabled() ) {
       metadata.getScalePresent() = bitstream.read<uint8_t>();
@@ -139,24 +135,18 @@ int PCCBitstreamDecoder::readMetadata( PCCMetadata& metadata, PCCBitstream& bits
     }
     if ( metadataEnabledFlags.getRotationEnabled() ) {
       metadata.getRotationPresent() = bitstream.read<uint8_t>();
-      if ( metadata.getRotationPresent() ) {
-        metadata.getRotation() = bitstream.read<PCCVector3I>();
-      }
+      if ( metadata.getRotationPresent() ) { metadata.getRotation() = bitstream.read<PCCVector3I>(); }
     }
     if ( metadataEnabledFlags.getPointSizeEnabled() ) {
       metadata.getPointSizePresent() = bitstream.read<uint8_t>();
-      if ( metadata.getPointSizePresent() ) {
-        metadata.getPointSize() = bitstream.read<uint16_t>();
-      }
+      if ( metadata.getPointSizePresent() ) { metadata.getPointSize() = bitstream.read<uint16_t>(); }
     }
     if ( metadataEnabledFlags.getPointShapeEnabled() ) {
       metadata.getPointShapePresent() = bitstream.read<uint8_t>();
-      if ( metadata.getPointShapePresent() ) {
-        metadata.getPointShape() = static_cast<pcc::PointShape>( bitstream.read<uint8_t>() );
-      }
+      if ( metadata.getPointShapePresent() ) { metadata.getPointShape() = static_cast<pcc::PointShape>( bitstream.read<uint8_t>() ); }
     }
   }
-  auto& lowerLevelMetadataEnabledFlags = metadata.getLowerLevelMetadataEnabledFlags();
+  auto& lowerLevelMetadataEnabledFlags                = metadata.getLowerLevelMetadataEnabledFlags();
   lowerLevelMetadataEnabledFlags.getMetadataEnabled() = bitstream.read<uint8_t>();
   if ( lowerLevelMetadataEnabledFlags.getMetadataEnabled() ) {
     lowerLevelMetadataEnabledFlags.getScaleEnabled()      = bitstream.read<uint8_t>();
@@ -169,13 +159,12 @@ int PCCBitstreamDecoder::readMetadata( PCCMetadata& metadata, PCCBitstream& bits
 #endif
   }
 #ifdef BITSTREAM_TRACE
-  bitstream.trace("Metadata done \n" ) ; 
+  bitstream.trace( "Metadata done \n" );
 #endif
   return 1;
 }
 
-int PCCBitstreamDecoder::decompressMetadata( PCCMetadata&             metadata,
-                                             o3dgc::Arithmetic_Codec& arithmeticDecoder ) {
+int PCCBitstreamDecoder::decompressMetadata( PCCMetadata& metadata, o3dgc::Arithmetic_Codec& arithmeticDecoder ) {
   auto& metadataEnabingFlags = metadata.getMetadataEnabledFlags();
   if ( !metadataEnabingFlags.getMetadataEnabled() ) { return 0; }
   static o3dgc::Static_Bit_Model   bModel0;
@@ -183,8 +172,7 @@ int PCCBitstreamDecoder::decompressMetadata( PCCMetadata&             metadata,
   metadata.getMetadataPresent() = arithmeticDecoder.decode( bModelMetadataPresent );
   std::cout << "METADATA TYPE: " << metadata.getMetadataType() << " Index: " << metadata.getIndex()
             << " present: " << ( metadata.getMetadataPresent() == true ? 1 : 0 )
-            << " lowerLevelFlags: "
-            << metadata.getLowerLevelMetadataEnabledFlags().getMetadataEnabled() << std::endl;
+            << " lowerLevelFlags: " << metadata.getLowerLevelMetadataEnabledFlags().getMetadataEnabled() << std::endl;
 
   if ( metadata.getMetadataPresent() ) {
     if ( metadataEnabingFlags.getScaleEnabled() ) {
@@ -200,67 +188,50 @@ int PCCBitstreamDecoder::decompressMetadata( PCCMetadata&             metadata,
       static o3dgc::Adaptive_Bit_Model bModelOffsetPresent;
       metadata.getOffsetPresent() = arithmeticDecoder.decode( bModelOffsetPresent );
       if ( metadata.getOffsetPresent() ) {
-        metadata.getOffset()[0] =
-            (int32_t)o3dgc::UIntToInt( DecodeUInt32( 32, arithmeticDecoder, bModel0 ) );
-        metadata.getOffset()[1] =
-            (int32_t)o3dgc::UIntToInt( DecodeUInt32( 32, arithmeticDecoder, bModel0 ) );
-        metadata.getOffset()[2] =
-            (int32_t)o3dgc::UIntToInt( DecodeUInt32( 32, arithmeticDecoder, bModel0 ) );
+        metadata.getOffset()[0] = (int32_t)o3dgc::UIntToInt( DecodeUInt32( 32, arithmeticDecoder, bModel0 ) );
+        metadata.getOffset()[1] = (int32_t)o3dgc::UIntToInt( DecodeUInt32( 32, arithmeticDecoder, bModel0 ) );
+        metadata.getOffset()[2] = (int32_t)o3dgc::UIntToInt( DecodeUInt32( 32, arithmeticDecoder, bModel0 ) );
       }
     }
     if ( metadataEnabingFlags.getRotationEnabled() ) {
       static o3dgc::Adaptive_Bit_Model bModelRotationPresent;
       metadata.getRotationPresent() = arithmeticDecoder.decode( bModelRotationPresent );
       if ( metadata.getRotationPresent() ) {
-        metadata.getRotation()[0] =
-            (int32_t)o3dgc::UIntToInt( DecodeUInt32( 32, arithmeticDecoder, bModel0 ) );
-        metadata.getRotation()[1] =
-            (int32_t)o3dgc::UIntToInt( DecodeUInt32( 32, arithmeticDecoder, bModel0 ) );
-        metadata.getRotation()[2] =
-            (int32_t)o3dgc::UIntToInt( DecodeUInt32( 32, arithmeticDecoder, bModel0 ) );
+        metadata.getRotation()[0] = (int32_t)o3dgc::UIntToInt( DecodeUInt32( 32, arithmeticDecoder, bModel0 ) );
+        metadata.getRotation()[1] = (int32_t)o3dgc::UIntToInt( DecodeUInt32( 32, arithmeticDecoder, bModel0 ) );
+        metadata.getRotation()[2] = (int32_t)o3dgc::UIntToInt( DecodeUInt32( 32, arithmeticDecoder, bModel0 ) );
       }
     }
     if ( metadataEnabingFlags.getPointSizeEnabled() ) {
       static o3dgc::Adaptive_Bit_Model bModelPointSizePresent;
       metadata.getPointSizePresent() = arithmeticDecoder.decode( bModelPointSizePresent );
-      if ( metadata.getPointSizePresent() ) {
-        metadata.getPointSize() = DecodeUInt32( 16, arithmeticDecoder, bModel0 );
-      }
+      if ( metadata.getPointSizePresent() ) { metadata.getPointSize() = DecodeUInt32( 16, arithmeticDecoder, bModel0 ); }
     }
     if ( metadataEnabingFlags.getPointShapeEnabled() ) {
       static o3dgc::Adaptive_Bit_Model bModelPointShapePresent;
       metadata.getPointShapePresent() = arithmeticDecoder.decode( bModelPointShapePresent );
-      if ( metadata.getPointShapePresent() ) {
-        metadata.getPointShape() =
-            static_cast<PointShape>( DecodeUInt32( 8, arithmeticDecoder, bModel0 ) );
-      }
+      if ( metadata.getPointShapePresent() ) { metadata.getPointShape() = static_cast<PointShape>( DecodeUInt32( 8, arithmeticDecoder, bModel0 ) ); }
     }
   }
 
-  auto& lowerLevelMetadataEnabledFlags = metadata.getLowerLevelMetadataEnabledFlags();
+  auto&                            lowerLevelMetadataEnabledFlags = metadata.getLowerLevelMetadataEnabledFlags();
   static o3dgc::Adaptive_Bit_Model bModelLowerLevelMetadataEnabled;
-  lowerLevelMetadataEnabledFlags.getMetadataEnabled() =
-      arithmeticDecoder.decode( bModelLowerLevelMetadataEnabled );
+  lowerLevelMetadataEnabledFlags.getMetadataEnabled() = arithmeticDecoder.decode( bModelLowerLevelMetadataEnabled );
 
   if ( lowerLevelMetadataEnabledFlags.getMetadataEnabled() ) {
     static o3dgc::Adaptive_Bit_Model bModelLowerLevelScaleEnabled;
-    lowerLevelMetadataEnabledFlags.getScaleEnabled() =
-        arithmeticDecoder.decode( bModelLowerLevelScaleEnabled );
+    lowerLevelMetadataEnabledFlags.getScaleEnabled() = arithmeticDecoder.decode( bModelLowerLevelScaleEnabled );
     static o3dgc::Adaptive_Bit_Model bModelLowerLevelOffsetEnabled;
-    lowerLevelMetadataEnabledFlags.getOffsetEnabled() =
-        arithmeticDecoder.decode( bModelLowerLevelOffsetEnabled );
+    lowerLevelMetadataEnabledFlags.getOffsetEnabled() = arithmeticDecoder.decode( bModelLowerLevelOffsetEnabled );
     static o3dgc::Adaptive_Bit_Model bModelLowerLevelRotationEnabled;
-    lowerLevelMetadataEnabledFlags.getRotationEnabled() =
-        arithmeticDecoder.decode( bModelLowerLevelRotationEnabled );
+    lowerLevelMetadataEnabledFlags.getRotationEnabled() = arithmeticDecoder.decode( bModelLowerLevelRotationEnabled );
     static o3dgc::Adaptive_Bit_Model bModelLowerLevelPointSizeEnabled;
-    lowerLevelMetadataEnabledFlags.getPointSizeEnabled() =
-        arithmeticDecoder.decode( bModelLowerLevelPointSizeEnabled );
+    lowerLevelMetadataEnabledFlags.getPointSizeEnabled() = arithmeticDecoder.decode( bModelLowerLevelPointSizeEnabled );
     static o3dgc::Adaptive_Bit_Model bModelLowerLevelPointShapeEnabled;
-    lowerLevelMetadataEnabledFlags.getPointShapeEnabled() =
-        arithmeticDecoder.decode( bModelLowerLevelPointShapeEnabled );
+    lowerLevelMetadataEnabledFlags.getPointShapeEnabled() = arithmeticDecoder.decode( bModelLowerLevelPointShapeEnabled );
 #ifdef CE210_MAXDEPTH_EVALUATION
     static o3dgc::Adaptive_Bit_Model bModelLowerLevelMaxDepthEnabled;
-    auto tmp = arithmeticDecoder.decode( bModelLowerLevelMaxDepthEnabled );
+    auto                             tmp = arithmeticDecoder.decode( bModelLowerLevelMaxDepthEnabled );
     lowerLevelMetadataEnabledFlags.setMaxDepthEnabled( bool( tmp ) );
 #endif
   }
@@ -292,55 +263,42 @@ int PCCBitstreamDecoder::decompressMetadata( PCCMetadata&               metadata
       static o3dgc::Adaptive_Bit_Model bModelOffsetPresent;
       metadata.getOffsetPresent() = arithmeticDecoder.decode( bModelOffsetPresent );
       if ( metadata.getOffsetPresent() ) {
-        metadata.getOffset()[0] =
-            (int32_t)o3dgc::UIntToInt( DecodeUInt32( 32, arithmeticDecoder, bModel0 ) );
-        metadata.getOffset()[1] =
-            (int32_t)o3dgc::UIntToInt( DecodeUInt32( 32, arithmeticDecoder, bModel0 ) );
-        metadata.getOffset()[2] =
-            (int32_t)o3dgc::UIntToInt( DecodeUInt32( 32, arithmeticDecoder, bModel0 ) );
+        metadata.getOffset()[0] = (int32_t)o3dgc::UIntToInt( DecodeUInt32( 32, arithmeticDecoder, bModel0 ) );
+        metadata.getOffset()[1] = (int32_t)o3dgc::UIntToInt( DecodeUInt32( 32, arithmeticDecoder, bModel0 ) );
+        metadata.getOffset()[2] = (int32_t)o3dgc::UIntToInt( DecodeUInt32( 32, arithmeticDecoder, bModel0 ) );
       }
     }
     if ( metadataEnabingFlags.getRotationEnabled() ) {
       static o3dgc::Adaptive_Bit_Model bModelRotationPresent;
       metadata.getRotationPresent() = arithmeticDecoder.decode( bModelRotationPresent );
       if ( metadata.getRotationPresent() ) {
-        metadata.getRotation()[0] =
-            (int32_t)o3dgc::UIntToInt( DecodeUInt32( 32, arithmeticDecoder, bModel0 ) );
-        metadata.getRotation()[1] =
-            (int32_t)o3dgc::UIntToInt( DecodeUInt32( 32, arithmeticDecoder, bModel0 ) );
-        metadata.getRotation()[2] =
-            (int32_t)o3dgc::UIntToInt( DecodeUInt32( 32, arithmeticDecoder, bModel0 ) );
+        metadata.getRotation()[0] = (int32_t)o3dgc::UIntToInt( DecodeUInt32( 32, arithmeticDecoder, bModel0 ) );
+        metadata.getRotation()[1] = (int32_t)o3dgc::UIntToInt( DecodeUInt32( 32, arithmeticDecoder, bModel0 ) );
+        metadata.getRotation()[2] = (int32_t)o3dgc::UIntToInt( DecodeUInt32( 32, arithmeticDecoder, bModel0 ) );
       }
     }
     if ( metadataEnabingFlags.getPointSizeEnabled() ) {
       static o3dgc::Adaptive_Bit_Model bModelPointSizePresent;
       metadata.getPointSizePresent() = arithmeticDecoder.decode( bModelPointSizePresent );
-      if ( metadata.getPointSizePresent() ) {
-        metadata.getPointSize() = DecodeUInt32( 16, arithmeticDecoder, bModel0 );
-      }
+      if ( metadata.getPointSizePresent() ) { metadata.getPointSize() = DecodeUInt32( 16, arithmeticDecoder, bModel0 ); }
     }
     if ( metadataEnabingFlags.getPointShapeEnabled() ) {
       static o3dgc::Adaptive_Bit_Model bModelPointShapePresent;
       metadata.getPointShapePresent() = arithmeticDecoder.decode( bModelPointShapePresent );
-      if ( metadata.getPointShapePresent() ) {
-        metadata.getPointShape() =
-            static_cast<PointShape>( DecodeUInt32( 8, arithmeticDecoder, bModel0 ) );
-      }
+      if ( metadata.getPointShapePresent() ) { metadata.getPointShape() = static_cast<PointShape>( DecodeUInt32( 8, arithmeticDecoder, bModel0 ) ); }
     }
-    int64_t       tempcurrentDD = 0;
-    const uint8_t maxBitCountForMaxDepth =
-        metadata.getbitCountQDepth();  // uint8_t(9-gbitCountSize[minLevel]);
+    int64_t       tempcurrentDD          = 0;
+    const uint8_t maxBitCountForMaxDepth = metadata.getbitCountQDepth();  // uint8_t(9-gbitCountSize[minLevel]);
 #ifdef CE210_MAXDEPTH_EVALUATION
     if ( metadataEnabingFlags.getMaxDepthEnabled() ) {
       // size_t currentDD=metadata.getQMaxDepthInPatch();
       if ( maxBitCountForMaxDepth == 0 ) {  // delta_DD
-        const int64_t delta_DD = o3dgc::UIntToInt( arithmeticDecoder.ExpGolombDecode(
-            0, bModelMaxDepth0, bModelMaxDepthDD ) );  // currentDD is delta_DD
-        tempcurrentDD          = delta_DD;
+        const int64_t delta_DD =
+            o3dgc::UIntToInt( arithmeticDecoder.ExpGolombDecode( 0, bModelMaxDepth0, bModelMaxDepthDD ) );  // currentDD is delta_DD
+        tempcurrentDD = delta_DD;
         metadata.setQMaxDepthInPatch( int64_t( delta_DD ) );  // add 20190129
       } else {
-        size_t currentDD =
-            DecodeUInt32( maxBitCountForMaxDepth, arithmeticDecoder, bModelMaxDepth0 );
+        size_t currentDD = DecodeUInt32( maxBitCountForMaxDepth, arithmeticDecoder, bModelMaxDepth0 );
         metadata.setQMaxDepthInPatch( int64_t( currentDD ) );
         tempcurrentDD = currentDD;
       }
@@ -354,70 +312,65 @@ int PCCBitstreamDecoder::decompressMetadata( PCCMetadata&               metadata
     // "<<metadata.getLowerLevelMetadataEnabledFlags().getMetadataEnabled()<<std::endl;
     return 1;
   }
-  auto& lowerLevelMetadataEnabledFlags = metadata.getLowerLevelMetadataEnabledFlags();
+  auto&                            lowerLevelMetadataEnabledFlags = metadata.getLowerLevelMetadataEnabledFlags();
   static o3dgc::Adaptive_Bit_Model bModelLowerLevelMetadataEnabled;
-  lowerLevelMetadataEnabledFlags.getMetadataEnabled() =
-      arithmeticDecoder.decode( bModelLowerLevelMetadataEnabled );
+  lowerLevelMetadataEnabledFlags.getMetadataEnabled() = arithmeticDecoder.decode( bModelLowerLevelMetadataEnabled );
 
   if ( lowerLevelMetadataEnabledFlags.getMetadataEnabled() ) {
     static o3dgc::Adaptive_Bit_Model bModelLowerLevelScaleEnabled;
-    lowerLevelMetadataEnabledFlags.getScaleEnabled() =
-        arithmeticDecoder.decode( bModelLowerLevelScaleEnabled );
+    lowerLevelMetadataEnabledFlags.getScaleEnabled() = arithmeticDecoder.decode( bModelLowerLevelScaleEnabled );
     static o3dgc::Adaptive_Bit_Model bModelLowerLevelOffsetEnabled;
-    lowerLevelMetadataEnabledFlags.getOffsetEnabled() =
-        arithmeticDecoder.decode( bModelLowerLevelOffsetEnabled );
+    lowerLevelMetadataEnabledFlags.getOffsetEnabled() = arithmeticDecoder.decode( bModelLowerLevelOffsetEnabled );
     static o3dgc::Adaptive_Bit_Model bModelLowerLevelRotationEnabled;
-    lowerLevelMetadataEnabledFlags.getRotationEnabled() =
-        arithmeticDecoder.decode( bModelLowerLevelRotationEnabled );
+    lowerLevelMetadataEnabledFlags.getRotationEnabled() = arithmeticDecoder.decode( bModelLowerLevelRotationEnabled );
     static o3dgc::Adaptive_Bit_Model bModelLowerLevelPointSizeEnabled;
-    lowerLevelMetadataEnabledFlags.getPointSizeEnabled() =
-        arithmeticDecoder.decode( bModelLowerLevelPointSizeEnabled );
+    lowerLevelMetadataEnabledFlags.getPointSizeEnabled() = arithmeticDecoder.decode( bModelLowerLevelPointSizeEnabled );
     static o3dgc::Adaptive_Bit_Model bModelLowerLevelPointShapeEnabled;
-    lowerLevelMetadataEnabledFlags.getPointShapeEnabled() =
-        arithmeticDecoder.decode( bModelLowerLevelPointShapeEnabled );
+    lowerLevelMetadataEnabledFlags.getPointShapeEnabled() = arithmeticDecoder.decode( bModelLowerLevelPointShapeEnabled );
 #ifdef CE210_MAXDEPTH_EVALUATION
     static o3dgc::Adaptive_Bit_Model bModelLowerLevelMaxDepthEnabled;
-    auto tmp = arithmeticDecoder.decode( bModelLowerLevelMaxDepthEnabled );
+    auto                             tmp = arithmeticDecoder.decode( bModelLowerLevelMaxDepthEnabled );
     lowerLevelMetadataEnabledFlags.setMaxDepthEnabled( bool( tmp ) );
 #endif
   }
   return 1;
 }
 int PCCBitstreamDecoder::decompressHeader( PCCContext& context, PCCBitstream& bitstream ) {
-  printf("decompressHeader start  \n"); fflush(stdout);
-  auto& sps = context.getSps();
+  printf( "decompressHeader start  \n" );
+  fflush( stdout );
+  auto& sps  = context.getSps();
   auto& psdu = context.getPatchSequenceDataUnit();
-  auto& gps = sps.getGeometryParameterSet();
-  auto& gsp = gps.getGeometrySequenceParams();
-  auto& ops = sps.getOccupancyParameterSet();
-  sps.setAttributeCount(1);
-  sps.setLayerCountMinus1(1);
+  auto& gps  = sps.getGeometryParameterSet();
+  auto& gsp  = gps.getGeometrySequenceParams();
+  auto& ops  = sps.getOccupancyParameterSet();
+  sps.setAttributeCount( 1 );
+  sps.setLayerCountMinus1( 1 );
   sps.allocate();
   auto& aps = sps.getAttributeParameterSet( 0 );
   auto& asp = aps.getAttributeSequenceParams();
 
 #ifdef BITSTREAM_TRACE
-  bitstream.trace("Header start \n" ) ; 
+  bitstream.trace( "Header start \n" );
 #endif
   uint8_t groupOfFramesSize = bitstream.read<uint8_t>();
   if ( !groupOfFramesSize ) { return 0; }
   context.resize( groupOfFramesSize );
-  sps.setFrameWidth(bitstream.read<uint16_t>());
-  sps.setFrameHeight(bitstream.read<uint16_t>());
-  ops.setOccupancyPackingBlockSize(bitstream.read<uint8_t>()) ;
+  sps.setFrameWidth( bitstream.read<uint16_t>() );
+  sps.setFrameHeight( bitstream.read<uint16_t>() );
+  ops.setOccupancyPackingBlockSize( bitstream.read<uint8_t>() );
   // context.getOccupancyPrecision() = bitstream.read<uint8_t>();
-  //jkei[??] is it changed as intended?? getGeometrySmoothingParamsPresentFlag
-  
+  // jkei[??] is it changed as intended?? getGeometrySmoothingParamsPresentFlag
+
 #ifdef BITSTREAM_TRACE
-  bitstream.trace("Header smooth geo \n" ) ; 
+  bitstream.trace( "Header smooth geo \n" );
 #endif
   gsp.setGeometrySmoothingParamsPresentFlag( bitstream.read<uint8_t>() );
-  printf("getGeometrySmoothingEnabledFlag %d \n", gsp.getGeometrySmoothingEnabledFlag());
+  printf( "getGeometrySmoothingEnabledFlag %d \n", gsp.getGeometrySmoothingEnabledFlag() );
   if ( gsp.getGeometrySmoothingParamsPresentFlag() ) {
     // if ( context.getGridSmoothing() ) {
-    gsp.setGeometrySmoothingEnabledFlag(bitstream.read<uint8_t>())  ;
-    gsp.setGeometrySmoothingGridSize(bitstream.read<uint8_t>())  ;
-    gsp.setGeometrySmoothingThreshold(bitstream.read<uint8_t>()) ;
+    gsp.setGeometrySmoothingEnabledFlag( bitstream.read<uint8_t>() );
+    gsp.setGeometrySmoothingGridSize( bitstream.read<uint8_t>() );
+    gsp.setGeometrySmoothingThreshold( bitstream.read<uint8_t>() );
     // } else {
     //   asp.setAttributeSmoothingParamsPresentFlag(bitstream.read<uint8_t>())        ;
     //   asp.setAttributeSmoothingNeighbourCount(bitstream.read<uint8_t>())           ;
@@ -427,20 +380,20 @@ int PCCBitstreamDecoder::decompressHeader( PCCContext& context, PCCBitstream& bi
   }
 
 #ifdef BITSTREAM_TRACE
-  bitstream.trace("Header general \n" ) ; 
+  bitstream.trace( "Header general \n" );
 #endif
-  sps.setLosslessGeo(              bitstream.read<uint8_t>());
-  sps.setLosslessTexture(         bitstream.read<uint8_t>());
+  sps.setLosslessGeo( bitstream.read<uint8_t>() );
+  sps.setLosslessTexture( bitstream.read<uint8_t>() );
   sps.setAttributeCount( bitstream.read<uint8_t>() );
-  sps.setLosslessGeo444(           bitstream.read<uint8_t>() );
-  sps.setMinLevel( bitstream.read<uint8_t>());
-  sps.setPcmSeparateVideoPresentFlag(bitstream.read<uint8_t>());
-  sps.setLayerAbsoluteCodingEnabledFlag( 1,  bitstream.read<uint8_t>() > 0 );
-  // if ( sps.getLayerAbsoluteCodingEnabledFlag( 1 ) ) { 
-  //    context.getSixDirectionMode() = bitstream.read<uint8_t>() > 0; 
+  sps.setLosslessGeo444( bitstream.read<uint8_t>() );
+  sps.setMinLevel( bitstream.read<uint8_t>() );
+  sps.setPcmSeparateVideoPresentFlag( bitstream.read<uint8_t>() );
+  sps.setLayerAbsoluteCodingEnabledFlag( 1, bitstream.read<uint8_t>() > 0 );
+  // if ( sps.getLayerAbsoluteCodingEnabledFlag( 1 ) ) {
+  //    context.getSixDirectionMode() = bitstream.read<uint8_t>() > 0;
   // }
 #ifdef BITSTREAM_TRACE
-  bitstream.trace("Header Model \n" ) ; 
+  bitstream.trace( "Header Model \n" );
 #endif
 
   // context.getBinArithCoding() = bitstream.read<uint8_t>() > 0;
@@ -450,33 +403,33 @@ int PCCBitstreamDecoder::decompressHeader( PCCContext& context, PCCBitstream& bi
   // context.getModelOrigin()[2] = bitstream.read<float>();
 
 #ifdef BITSTREAM_TRACE
-  bitstream.trace("Header metadata \n" ) ; 
+  bitstream.trace( "Header metadata \n" );
 #endif
   readMetadata( context.getGOFLevelMetadata(), bitstream );
 
 #ifdef BITSTREAM_TRACE
-  bitstream.trace("Header smooth attribut \n" ) ; 
+  bitstream.trace( "Header smooth attribut \n" );
 #endif
-  asp.setAttributeSmoothingParamsPresentFlag(bitstream.read<uint8_t>());
+  asp.setAttributeSmoothingParamsPresentFlag( bitstream.read<uint8_t>() );
   if ( asp.getAttributeSmoothingParamsPresentFlag() ) {
-    asp.setAttributeSmoothingThreshold(bitstream.read<uint8_t>())            ;
-    asp.setAttributeSmoothingThresholdLocalEntropy(bitstream.read<double>()) ;
-    asp.setAttributeSmoothingRadius(bitstream.read<uint8_t>())               ;
-    asp.setAttributeSmoothingNeighbourCount(bitstream.read<uint8_t>())       ;
+    asp.setAttributeSmoothingThreshold( bitstream.read<uint8_t>() );
+    asp.setAttributeSmoothingThresholdLocalEntropy( bitstream.read<double>() );
+    asp.setAttributeSmoothingRadius( bitstream.read<uint8_t>() );
+    asp.setAttributeSmoothingNeighbourCount( bitstream.read<uint8_t>() );
   }
-  sps.setEnhancedOccupancyMapForDepthFlag(false);
+  sps.setEnhancedOccupancyMapForDepthFlag( false );
 #ifdef BITSTREAM_TRACE
-  bitstream.trace("Header lossless \n" ) ; 
+  bitstream.trace( "Header lossless \n" );
 #endif
   if ( sps.getLosslessGeo() ) {
-    sps.setEnhancedOccupancyMapForDepthFlag((bitstream.read<uint8_t>() > 0));
+    sps.setEnhancedOccupancyMapForDepthFlag( ( bitstream.read<uint8_t>() > 0 ) );
     //  context.getImproveEDD()                   = bitstream.read<uint8_t>() > 0; always true
   }
-  sps.setPatchInterPredictionEnabledFlag( bitstream.read<uint8_t>() > 0 ) ; // context.getDeltaCoding() = (bitstream.read<uint8_t>() > 0);
+  sps.setPatchInterPredictionEnabledFlag( bitstream.read<uint8_t>() > 0 );  // context.getDeltaCoding() = (bitstream.read<uint8_t>() > 0);
 
-  sps.setRemoveDuplicatePointEnabledFlag((bitstream.read<uint8_t>() > 0)) ;
-  sps.setMultipleLayerStreamsPresentFlag((bitstream.read<uint8_t>() > 0)) ;
-  sps.setPixelDeinterleavingFlag((bitstream.read<uint8_t>() > 0))           ;
+  sps.setRemoveDuplicatePointEnabledFlag( ( bitstream.read<uint8_t>() > 0 ) );
+  sps.setMultipleLayerStreamsPresentFlag( ( bitstream.read<uint8_t>() > 0 ) );
+  sps.setPixelDeinterleavingFlag( ( bitstream.read<uint8_t>() > 0 ) );
   sps.setPcmPatchEnabledFlag( bitstream.read<uint8_t>() > 0 );
   // context.getGlobalPatchAllocation()       = bitstream.read<uint8_t>() > 0;
 
@@ -495,17 +448,17 @@ int PCCBitstreamDecoder::decompressHeader( PCCContext& context, PCCBitstream& bi
     frames[i].setUseMissedPointsSeparateVideo( sps.getPcmSeparateVideoPresentFlag() );
     frames[i].setUseAdditionalPointsPatch( sps.getPcmPatchEnabledFlag() );
   }
-  printf("decompressHeader done  \n"); fflush(stdout);
+  printf( "decompressHeader done  \n" );
+  fflush( stdout );
 #ifdef BITSTREAM_TRACE
-  bitstream.trace("Header done \n" ) ; 
+  bitstream.trace( "Header done \n" );
 #endif
   return 1;
 }
 
-void PCCBitstreamDecoder::readMissedPointsGeometryNumber( PCCContext&   context,
-                                                          PCCBitstream& bitstream ) {
+void PCCBitstreamDecoder::readMissedPointsGeometryNumber( PCCContext& context, PCCBitstream& bitstream ) {
   size_t maxHeight = 0;
-  auto& sps = context.getSps();
+  auto&  sps       = context.getSps();
   size_t MPwidth   = bitstream.read<size_t>();
   for ( auto& framecontext : context.getFrames() ) {
     size_t numofMPs = bitstream.read<size_t>();
@@ -524,8 +477,7 @@ void PCCBitstreamDecoder::readMissedPointsGeometryNumber( PCCContext&   context,
   context.getMPGeoHeight() = size_t( maxHeight );
 }
 
-void PCCBitstreamDecoder::readMissedPointsTextureNumber( PCCContext&   context,
-                                                         PCCBitstream& bitstream ) {
+void PCCBitstreamDecoder::readMissedPointsTextureNumber( PCCContext& context, PCCBitstream& bitstream ) {
   size_t maxHeight = 0;
   size_t MPwidth   = bitstream.read<size_t>();
   for ( auto& framecontext : context.getFrames() ) {
@@ -546,11 +498,10 @@ void PCCBitstreamDecoder::decompressOccupancyMap( PCCContext& context, PCCBitstr
   auto   preFrame   = context.getFrames()[0];
   auto&  sps        = context.getSps();
   for ( int i = 0; i < sizeFrames; i++ ) {
-    auto& frame       = context.getFrames()[i];
-    frame.getWidth()  = sps.getFrameWidth();
-    frame.getHeight() = sps.getFrameHeight();
-    auto& frameLevelMetadataEnabledFlags =
-        context.getGOFLevelMetadata().getLowerLevelMetadataEnabledFlags();
+    auto& frame                                             = context.getFrames()[i];
+    frame.getWidth()                                        = sps.getFrameWidth();
+    frame.getHeight()                                       = sps.getFrameHeight();
+    auto& frameLevelMetadataEnabledFlags                    = context.getGOFLevelMetadata().getLowerLevelMetadataEnabledFlags();
     frame.getFrameLevelMetadata().getMetadataEnabledFlags() = frameLevelMetadataEnabledFlags;
     decompressOccupancyMap( context, frame, bitstream, preFrame, i );
 
@@ -580,11 +531,11 @@ void PCCBitstreamDecoder::decompressPatchMetaDataM42195( PCCContext&            
                                                          PCCBitstream&            bitstream,
                                                          o3dgc::Arithmetic_Codec& arithmeticDecoder,
                                                          o3dgc::Static_Bit_Model& bModel0,
-                                                         uint32_t& compressedBitstreamSize,
-                                                         size_t    occupancyPrecision,
-                                                         uint8_t   enable_flexible_patch_flag ) {
+                                                         uint32_t&                compressedBitstreamSize,
+                                                         size_t                   occupancyPrecision,
+                                                         uint8_t                  enable_flexible_patch_flag ) {
 #ifdef BITSTREAM_TRACE
-  bitstream.trace("OccupancyMapM42195 start enable_flexible_patch_flag = %lu \n",enable_flexible_patch_flag ) ; 
+  bitstream.trace( "OccupancyMapM42195 start enable_flexible_patch_flag = %lu \n", enable_flexible_patch_flag );
 #endif
   auto&   sps        = context.getSps();
   auto&   ops        = sps.getOccupancyParameterSet();
@@ -602,15 +553,13 @@ void PCCBitstreamDecoder::decompressPatchMetaDataM42195( PCCContext&            
   bitCount[5]                          = maxBitCountForMaxDepth;
   compressedBitstreamSize              = bitstream.read<uint32_t>();
   assert( compressedBitstreamSize + bitstream.size() <= bitstream.capacity() );
-  arithmeticDecoder.set_buffer( uint32_t( bitstream.capacity() - bitstream.size() ),
-                                bitstream.buffer() + bitstream.size() );
+  arithmeticDecoder.set_buffer( uint32_t( bitstream.capacity() - bitstream.size() ), bitstream.buffer() + bitstream.size() );
 
-  //bool bBinArithCoding = context.getBinArithCoding() && ( !context.getLosslessGeo() ) &&
+  // bool bBinArithCoding = context.getBinArithCoding() && ( !context.getLosslessGeo() ) &&
   //                       ( ops.getOccupancyPackingBlockSize() == 16 ) && ( occupancyPrecision == 4 );
 
   arithmeticDecoder.start_decoder();
-  o3dgc::Adaptive_Bit_Model bModelPatchIndex, bModelU0, bModelV0, bModelU1, bModelV1, bModelD1,
-      bModelIntSizeU0, bModelIntSizeV0;
+  o3dgc::Adaptive_Bit_Model  bModelPatchIndex, bModelU0, bModelV0, bModelU1, bModelV1, bModelD1, bModelIntSizeU0, bModelIntSizeV0;
   o3dgc::Adaptive_Bit_Model  bModelSizeU0, bModelSizeV0, bModelAbsoluteD1;
   o3dgc::Adaptive_Bit_Model  orientationModel2;
   o3dgc::Adaptive_Data_Model orientationModel( 4 );
@@ -619,17 +568,17 @@ void PCCBitstreamDecoder::decompressPatchMetaDataM42195( PCCContext&            
   o3dgc::Adaptive_Bit_Model  interpolateModel, fillingModel, occupiedModel;
   o3dgc::Adaptive_Data_Model minD1Model( 3 ), neighborModel( 3 );
 
- frame.getFrameLevelMetadata().setMetadataType( METADATA_FRAME );
- frame.getFrameLevelMetadata().setIndex( frame.getIndex() );
- // decompressMetadata( frame.getFrameLevelMetadata(), arithmeticDecoder );
+  frame.getFrameLevelMetadata().setMetadataType( METADATA_FRAME );
+  frame.getFrameLevelMetadata().setIndex( frame.getIndex() );
+  // decompressMetadata( frame.getFrameLevelMetadata(), arithmeticDecoder );
 
   int64_t       prevSizeU0 = 0;
   int64_t       prevSizeV0 = 0;
   uint32_t      numMatchedPatches;
-  const uint8_t bitMatchedPatchCount =
-      uint8_t( PCCGetNumberOfBitsInFixedLengthRepresentation( uint32_t( patchCount ) ) );
-  numMatchedPatches = DecodeUInt32( bitMatchedPatchCount, arithmeticDecoder, bModel0 );
-  F                 = uint8_t( DecodeUInt32( 1, arithmeticDecoder, bModel0 ) );
+  const uint8_t bitMatchedPatchCount = uint8_t( PCCGetNumberOfBitsInFixedLengthRepresentation( uint32_t( patchCount ) ) );
+  numMatchedPatches                  = DecodeUInt32( bitMatchedPatchCount, arithmeticDecoder, bModel0 );  
+  frame.getNumMatchedPatches() = numMatchedPatches; 
+  F                                  = uint8_t( DecodeUInt32( 1, arithmeticDecoder, bModel0 ) );
   if ( F ) {
     uint8_t flag = uint8_t( DecodeUInt32( 4, arithmeticDecoder, bModel0 ) );
 
@@ -642,36 +591,28 @@ void PCCBitstreamDecoder::decompressPatchMetaDataM42195( PCCContext&            
     }
   }
   if ( printDetailedInfo ) {
-    printf( "numPatch:%d(%d), numMatchedPatches:%d, F:%d,A[4]:%d,%d,%d,%d\n", (int)patchCount,
-            (int)bitMatchedPatchCount, (int)numMatchedPatches, F, A[0], A[1], A[2], A[3] );
+    printf( "numPatch:%d(%d), numMatchedPatches:%d, F:%d,A[4]:%d,%d,%d,%d\n", (int)patchCount, (int)bitMatchedPatchCount, (int)numMatchedPatches, F,
+            A[0], A[1], A[2], A[3] );
   }
 
   int64_t predIndex = 0;
   for ( size_t patchIndex = 0; patchIndex < numMatchedPatches; ++patchIndex ) {
     auto& patch                    = patches[patchIndex];
     patch.getOccupancyResolution() = ops.getOccupancyPackingBlockSize();
-    int64_t delta_index =
-        o3dgc::UIntToInt( arithmeticDecoder.ExpGolombDecode( 0, bModel0, bModelPatchIndex ) );
-    patch.setBestMatchIdx() = ( size_t )( delta_index + predIndex );
+    int64_t delta_index            = o3dgc::UIntToInt( arithmeticDecoder.ExpGolombDecode( 0, bModel0, bModelPatchIndex ) );
+    patch.setBestMatchIdx()        = ( size_t )( delta_index + predIndex );
     predIndex += ( delta_index + 1 );
 
-    const auto&   prePatch = prePatches[patch.getBestMatchIdx()];
-    const int64_t delta_U0 =
-        o3dgc::UIntToInt( arithmeticDecoder.ExpGolombDecode( 0, bModel0, bModelU0 ) );
-    const int64_t delta_V0 =
-        o3dgc::UIntToInt( arithmeticDecoder.ExpGolombDecode( 0, bModel0, bModelV0 ) );
-    const int64_t delta_U1 =
-        o3dgc::UIntToInt( arithmeticDecoder.ExpGolombDecode( 0, bModel0, bModelU1 ) );
-    const int64_t delta_V1 =
-        o3dgc::UIntToInt( arithmeticDecoder.ExpGolombDecode( 0, bModel0, bModelV1 ) );
-    const int64_t delta_D1 =
-        o3dgc::UIntToInt( arithmeticDecoder.ExpGolombDecode( 0, bModel0, bModelD1 ) );
-    const int64_t deltaSizeU0 =
-        o3dgc::UIntToInt( arithmeticDecoder.ExpGolombDecode( 0, bModel0, bModelIntSizeU0 ) );
-    const int64_t deltaSizeV0 =
-        o3dgc::UIntToInt( arithmeticDecoder.ExpGolombDecode( 0, bModel0, bModelIntSizeV0 ) );
+    const auto&   prePatch    = prePatches[patch.getBestMatchIdx()];
+    const int64_t delta_U0    = o3dgc::UIntToInt( arithmeticDecoder.ExpGolombDecode( 0, bModel0, bModelU0 ) );
+    const int64_t delta_V0    = o3dgc::UIntToInt( arithmeticDecoder.ExpGolombDecode( 0, bModel0, bModelV0 ) );
+    const int64_t delta_U1    = o3dgc::UIntToInt( arithmeticDecoder.ExpGolombDecode( 0, bModel0, bModelU1 ) );
+    const int64_t delta_V1    = o3dgc::UIntToInt( arithmeticDecoder.ExpGolombDecode( 0, bModel0, bModelV1 ) );
+    const int64_t delta_D1    = o3dgc::UIntToInt( arithmeticDecoder.ExpGolombDecode( 0, bModel0, bModelD1 ) );
+    const int64_t deltaSizeU0 = o3dgc::UIntToInt( arithmeticDecoder.ExpGolombDecode( 0, bModel0, bModelIntSizeU0 ) );
+    const int64_t deltaSizeV0 = o3dgc::UIntToInt( arithmeticDecoder.ExpGolombDecode( 0, bModel0, bModelIntSizeV0 ) );
 
-    if ( sps.getLayerAbsoluteCodingEnabledFlag( 1 )  ) {   // &&  context.getSixDirectionMode()
+    if ( sps.getLayerAbsoluteCodingEnabledFlag( 1 ) ) {  // &&  context.getSixDirectionMode()
       patch.getProjectionMode() = arithmeticDecoder.decode( bModel0 );
     } else {
       patch.getProjectionMode() = 0;
@@ -689,10 +630,9 @@ void PCCBitstreamDecoder::decompressPatchMetaDataM42195( PCCContext&            
       currentD1     = ( prevD1 - delta_D1 );
       patch.getD1() = ( delta_D1 + prevD1 ) * minLevel;
     } else {
-      prevD1    = ( 1024 - prevD1 ) / minLevel;
-      currentD1 = ( delta_D1 + prevD1 );
-      patch.getD1() =
-          1024 - currentD1 * minLevel;  //(delta_D1 + prePatch.getD1()/minLevel)*minLevel;
+      prevD1        = ( 1024 - prevD1 ) / minLevel;
+      currentD1     = ( delta_D1 + prevD1 );
+      patch.getD1() = 1024 - currentD1 * minLevel;  //(delta_D1 + prePatch.getD1()/minLevel)*minLevel;
     }
 
     patch.getSizeU0() = deltaSizeU0 + prePatch.getSizeU0();
@@ -719,15 +659,14 @@ void PCCBitstreamDecoder::decompressPatchMetaDataM42195( PCCContext&            
   // read info from metadata and resconstruc maxDepth
   o3dgc::Adaptive_Bit_Model bModelDD;
   for ( size_t patchIndex = 0; patchIndex < numMatchedPatches; ++patchIndex ) {
-    auto& patch = patches[patchIndex];
-    auto& patchLevelMetadataEnabledFlags =
-        frame.getFrameLevelMetadata().getLowerLevelMetadataEnabledFlags();
+    auto& patch                                  = patches[patchIndex];
+    auto& patchLevelMetadataEnabledFlags         = frame.getFrameLevelMetadata().getLowerLevelMetadataEnabledFlags();
     auto& patchLevelMetadata                     = patch.getPatchLevelMetadata();
     patchLevelMetadata.getMetadataEnabledFlags() = patchLevelMetadataEnabledFlags;
     patchLevelMetadata.setIndex( patchIndex );
     patchLevelMetadata.setMetadataType( METADATA_PATCH );
     patchLevelMetadata.setbitCountQDepth( 0 );  // added 20190129
-    // decompressMetadata( patchLevelMetadata, arithmeticDecoder, bModel0, bModelDD );
+                                                // decompressMetadata( patchLevelMetadata, arithmeticDecoder, bModel0, bModelDD );
 
 #ifdef CE210_MAXDEPTH_EVALUATION
     const int64_t delta_DD = patchLevelMetadata.getQMaxDepthInPatch();
@@ -744,9 +683,7 @@ void PCCBitstreamDecoder::decompressPatchMetaDataM42195( PCCContext&            
 
   // Get Bitcount.
   for ( int i = 0; i < 4; i++ ) {
-    if ( A[i] == 0 ) {
-      bitCount[i] =  uint8_t( PCCGetNumberOfBitsInFixedLengthRepresentation( uint32_t( topNmax[i] + 1 ) ) );
-    }
+    if ( A[i] == 0 ) { bitCount[i] = uint8_t( PCCGetNumberOfBitsInFixedLengthRepresentation( uint32_t( topNmax[i] + 1 ) ) ); }
   }
 
   for ( size_t patchIndex = numMatchedPatches; patchIndex < patchCount; ++patchIndex ) {
@@ -768,7 +705,7 @@ void PCCBitstreamDecoder::decompressPatchMetaDataM42195( PCCContext&            
     patch.getV1() = DecodeUInt32( bitCount[3], arithmeticDecoder, bModel0 );
     size_t D1     = DecodeUInt32( bitCount[4], arithmeticDecoder, bModel0 );
 
-    if ( sps.getLayerAbsoluteCodingEnabledFlag( 1 ) ) {  // && context.getSixDirectionMode() 
+    if ( sps.getLayerAbsoluteCodingEnabledFlag( 1 ) ) {  // && context.getSixDirectionMode()
       patch.getProjectionMode() = arithmeticDecoder.decode( bModel0 );
     } else {
       patch.getProjectionMode() = 0;
@@ -789,20 +726,20 @@ void PCCBitstreamDecoder::decompressPatchMetaDataM42195( PCCContext&            
     prevSizeV0 = patch.getSizeV0();
 
     // if ( bBinArithCoding ) {
-      size_t bit0 = arithmeticDecoder.decode( orientationModel2 );
-      if ( bit0 == 0 ) {  // 0
-        patch.getNormalAxis() = 0;
-      } else {
-        size_t bit1 = arithmeticDecoder.decode( bModel0 );
-        if ( bit1 == 0 ) {  // 10
-          patch.getNormalAxis() = 1;
-        } else {  // 11
-          patch.getNormalAxis() = 2;
-        }
+    size_t bit0 = arithmeticDecoder.decode( orientationModel2 );
+    if ( bit0 == 0 ) {  // 0
+      patch.getNormalAxis() = 0;
+    } else {
+      size_t bit1 = arithmeticDecoder.decode( bModel0 );
+      if ( bit1 == 0 ) {  // 10
+        patch.getNormalAxis() = 1;
+      } else {  // 11
+        patch.getNormalAxis() = 2;
       }
-  //  } else {
-  //    patch.getNormalAxis() = arithmeticDecoder.decode( orientationModel );
-  //  }
+    }
+    //  } else {
+    //    patch.getNormalAxis() = arithmeticDecoder.decode( orientationModel );
+    //  }
     if ( patch.getNormalAxis() == 0 ) {
       patch.getTangentAxis()   = 2;
       patch.getBitangentAxis() = 1;
@@ -813,8 +750,7 @@ void PCCBitstreamDecoder::decompressPatchMetaDataM42195( PCCContext&            
       patch.getTangentAxis()   = 0;
       patch.getBitangentAxis() = 1;
     }
-    auto& patchLevelMetadataEnabledFlags =
-        frame.getFrameLevelMetadata().getLowerLevelMetadataEnabledFlags();
+    auto& patchLevelMetadataEnabledFlags         = frame.getFrameLevelMetadata().getLowerLevelMetadataEnabledFlags();
     auto& patchLevelMetadata                     = patch.getPatchLevelMetadata();
     patchLevelMetadata.getMetadataEnabledFlags() = patchLevelMetadataEnabledFlags;
     patchLevelMetadata.setIndex( patchIndex );
@@ -837,11 +773,10 @@ void PCCBitstreamDecoder::decompressPatchMetaDataM42195( PCCContext&            
 
   for ( size_t patchIndex = 0; patchIndex < patchCount; ++patchIndex ) {
     auto& patch = patches[patchIndex];
-    decompressOneLayerData( context, frame, patch, arithmeticDecoder, occupiedModel,
-                            interpolateModel, neighborModel, minD1Model, fillingModel );
+    decompressOneLayerData( context, frame, patch, arithmeticDecoder, occupiedModel, interpolateModel, neighborModel, minD1Model, fillingModel );
   }
 #ifdef BITSTREAM_TRACE
-  bitstream.trace("OccupancyMapM42195 done \n" ) ; 
+  bitstream.trace( "OccupancyMapM42195 done \n" );
 #endif
 }
 
@@ -865,8 +800,7 @@ void PCCBitstreamDecoder::decompressOneLayerData( PCCContext&                 co
     const size_t blockToPatchHeight = frame.getHeight() / ops.getOccupancyPackingBlockSize();
     for ( size_t v0 = 0; v0 < patch.getSizeV0(); ++v0 ) {
       for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {
-        int pos =
-            patch.patchBlock2CanvasBlock( ( u0 ), ( v0 ), blockToPatchWidth, blockToPatchHeight );
+        int      pos      = patch.patchBlock2CanvasBlock( ( u0 ), ( v0 ), blockToPatchWidth, blockToPatchHeight );
         uint32_t occupied = arithmeticDecoder.decode( occupiedModel );
         if ( occupied ) {
           interpolateMap[pos] = (bool)arithmeticDecoder.decode( interpolateModel );
@@ -875,26 +809,21 @@ void PCCBitstreamDecoder::decompressOneLayerData( PCCContext&                 co
             neighborMap[pos] = size_t( code + 1 );
           }
           minD1Map[pos] = (size_t)arithmeticDecoder.decode( minD1Model );
-          if ( minD1Map[pos] > 1 || interpolateMap[pos] > 0 ) {
-            fillingMap[pos] = (bool)arithmeticDecoder.decode( fillingModel );
-          }
+          if ( minD1Map[pos] > 1 || interpolateMap[pos] > 0 ) { fillingMap[pos] = (bool)arithmeticDecoder.decode( fillingModel ); }
         }
       }
     }
   }
 }
 
-void PCCBitstreamDecoder::decompressOccupancyMap( PCCContext&      context,
-                                                  PCCFrameContext& frame,
-                                                  PCCBitstream&    bitstream,
-                                                  PCCFrameContext& preFrame,
-                                                  size_t           frameIndex ) {
-                                                    
+void PCCBitstreamDecoder::decompressOccupancyMap(
+    PCCContext& context, PCCFrameContext& frame, PCCBitstream& bitstream, PCCFrameContext& preFrame, size_t frameIndex ) {
 #ifdef BITSTREAM_TRACE
-  bitstream.trace("OccupancyMap start \n" ) ; 
+  bitstream.trace( "OccupancyMap start \n" );
 #endif
 
-  printf("decompressOccupancyMap start  \n"); fflush(stdout);
+  printf( "decompressOccupancyMap start  \n" );
+  fflush( stdout );
   auto&    sps        = context.getSps();
   auto&    gps        = sps.getGeometryParameterSet();
   auto&    gsp        = gps.getGeometrySequenceParams();
@@ -904,7 +833,7 @@ void PCCBitstreamDecoder::decompressOccupancyMap( PCCContext&      context,
   patches.resize( patchCount );
   const size_t  minLevel               = sps.getMinLevel();
   const uint8_t maxBitCountForMinDepth = uint8_t( 10 - gbitCountSize[minLevel] );
-  const uint8_t maxBitCountForMaxDepth = uint8_t( 9  - gbitCountSize[minLevel] );
+  const uint8_t maxBitCountForMaxDepth = uint8_t( 9 - gbitCountSize[minLevel] );
 
   frame.allocOneLayerData( ops.getOccupancyPackingBlockSize() );
   size_t  maxCandidateCount   = bitstream.read<uint8_t>();
@@ -924,7 +853,7 @@ void PCCBitstreamDecoder::decompressOccupancyMap( PCCContext&      context,
   //                        ( context.getOccupancyPrecision() == 4 );
 
   uint8_t enable_flexible_patch_flag = bitstream.read<uint8_t>();
-  if ( ( frameIndex == 0 ) || ( ! sps.getPatchInterPredictionEnabledFlag() ) ) { // context.getDeltaCoding() 
+  if ( ( frameIndex == 0 ) || ( !sps.getPatchInterPredictionEnabledFlag() ) ) {  // context.getDeltaCoding()
     uint8_t bitCountU0      = bitstream.read<uint8_t>();
     uint8_t bitCountV0      = bitstream.read<uint8_t>();
     uint8_t bitCountU1      = bitstream.read<uint8_t>();
@@ -935,13 +864,12 @@ void PCCBitstreamDecoder::decompressOccupancyMap( PCCContext&      context,
     compressedBitstreamSize = bitstream.read<uint32_t>();
 
     assert( compressedBitstreamSize + bitstream.size() <= bitstream.capacity() );
-    arithmeticDecoder.set_buffer( uint32_t( bitstream.capacity() - bitstream.size() ),
-                                  bitstream.buffer() + bitstream.size() );
+    arithmeticDecoder.set_buffer( uint32_t( bitstream.capacity() - bitstream.size() ), bitstream.buffer() + bitstream.size() );
     arithmeticDecoder.start_decoder();
 
     frame.getFrameLevelMetadata().setMetadataType( METADATA_FRAME );
     frame.getFrameLevelMetadata().setIndex( frame.getIndex() );
- // decompressMetadata( frame.getFrameLevelMetadata(), arithmeticDecoder );
+    // decompressMetadata( frame.getFrameLevelMetadata(), arithmeticDecoder );
 
     o3dgc::Adaptive_Bit_Model  bModelDD;
     o3dgc::Adaptive_Bit_Model  bModelSizeU0, bModelSizeV0, bModelAbsoluteD1;
@@ -954,6 +882,7 @@ void PCCBitstreamDecoder::decompressOccupancyMap( PCCContext&      context,
     int64_t                    prevSizeU0 = 0;
     int64_t                    prevSizeV0 = 0;
 
+    frame.getNumMatchedPatches() = 0; 
     for ( size_t patchIndex = 0; patchIndex < patchCount; ++patchIndex ) {
       auto& patch                    = patches[patchIndex];
       patch.getOccupancyResolution() = ops.getOccupancyPackingBlockSize();
@@ -984,30 +913,26 @@ void PCCBitstreamDecoder::decompressOccupancyMap( PCCContext&      context,
         } else if ( patch.getFrameProjectionMode() == 1 ) {
           patch.getProjectionMode() = 1;
         } else if ( patch.getFrameProjectionMode() == 2 ) {
-          patch.getProjectionMode() = 0;
-          const uint8_t bitCountProjDir =
-              uint8_t( PCCGetNumberOfBitsInFixedLengthRepresentation( uint32_t( 2 + 1 ) ) );
-          patch.getProjectionMode() = DecodeUInt32( bitCountProjDir, arithmeticDecoder, bModel0 );
+          patch.getProjectionMode()     = 0;
+          const uint8_t bitCountProjDir = uint8_t( PCCGetNumberOfBitsInFixedLengthRepresentation( uint32_t( 2 + 1 ) ) );
+          patch.getProjectionMode()     = DecodeUInt32( bitCountProjDir, arithmeticDecoder, bModel0 );
           std::cout << "patch.getProjectionMode()= " << patch.getProjectionMode() << std::endl;
         } else {
           std::cout << "This frameProjectionMode doesn't exist!" << std::endl;
         }
-        std::cout << "(frameProjMode, projMode)= (" << patch.getFrameProjectionMode() << ", "
-                  << patch.getProjectionMode() << ")" << std::endl;
+        std::cout << "(frameProjMode, projMode)= (" << patch.getFrameProjectionMode() << ", " << patch.getProjectionMode() << ")" << std::endl;
       } else {
         patch.getFrameProjectionMode() = 0;
-       //if ( context.getSixDirectionMode() ) {
-          patch.getProjectionMode() = arithmeticDecoder.decode( bModel0 );
+        // if ( context.getSixDirectionMode() ) {
+        patch.getProjectionMode() = arithmeticDecoder.decode( bModel0 );
         // } else {
         //  patch.getProjectionMode() = 0;
         // }
       }
       if ( patch.getProjectionMode() == 1 ) patch.getD1() = 1024 - D1 * minLevel;
 
-      const int64_t deltaSizeU0 =
-          o3dgc::UIntToInt( arithmeticDecoder.ExpGolombDecode( 0, bModel0, bModelSizeU0 ) );
-      const int64_t deltaSizeV0 =
-          o3dgc::UIntToInt( arithmeticDecoder.ExpGolombDecode( 0, bModel0, bModelSizeV0 ) );
+      const int64_t deltaSizeU0 = o3dgc::UIntToInt( arithmeticDecoder.ExpGolombDecode( 0, bModel0, bModelSizeU0 ) );
+      const int64_t deltaSizeV0 = o3dgc::UIntToInt( arithmeticDecoder.ExpGolombDecode( 0, bModel0, bModelSizeV0 ) );
 
       patch.getSizeU0() = prevSizeU0 + deltaSizeU0;
       patch.getSizeV0() = prevSizeV0 + deltaSizeV0;
@@ -1016,17 +941,17 @@ void PCCBitstreamDecoder::decompressOccupancyMap( PCCContext&      context,
       prevSizeV0 = patch.getSizeV0();
 
       // if ( bBinArithCoding ) {
-        size_t bit0 = arithmeticDecoder.decode( orientationModel2 );
-        if ( bit0 == 0 ) {  // 0
-          patch.getNormalAxis() = 0;
-        } else {
-          size_t bit1 = arithmeticDecoder.decode( bModel0 );
-          if ( bit1 == 0 ) {  // 10
-            patch.getNormalAxis() = 1;
-          } else {  // 11
-            patch.getNormalAxis() = 2;
-          }
+      size_t bit0 = arithmeticDecoder.decode( orientationModel2 );
+      if ( bit0 == 0 ) {  // 0
+        patch.getNormalAxis() = 0;
+      } else {
+        size_t bit1 = arithmeticDecoder.decode( bModel0 );
+        if ( bit1 == 0 ) {  // 10
+          patch.getNormalAxis() = 1;
+        } else {  // 11
+          patch.getNormalAxis() = 2;
         }
+      }
       // } else {
       //   patch.getNormalAxis() = arithmeticDecoder.decode( orientationModel );
       // }
@@ -1042,7 +967,7 @@ void PCCBitstreamDecoder::decompressOccupancyMap( PCCContext&      context,
         patch.getBitangentAxis() = 1;
       }
       auto& patchLevelMetadataEnabledFlags = frame.getFrameLevelMetadata().getLowerLevelMetadataEnabledFlags();
-      auto& patchLevelMetadata = patch.getPatchLevelMetadata();
+      auto& patchLevelMetadata             = patch.getPatchLevelMetadata();
       patchLevelMetadata.setIndex( patchIndex );
       patchLevelMetadata.setMetadataType( METADATA_PATCH );
       patchLevelMetadata.getMetadataEnabledFlags() = patchLevelMetadataEnabledFlags;
@@ -1055,21 +980,20 @@ void PCCBitstreamDecoder::decompressOccupancyMap( PCCContext&      context,
 #else
       patch.getSizeD() = minLevel;
 #endif
-      decompressOneLayerData( context, frame, patch, arithmeticDecoder, occupiedModel,
-                              interpolateModel, neighborModel, minD1Model, fillingModel );
+      decompressOneLayerData( context, frame, patch, arithmeticDecoder, occupiedModel, interpolateModel, neighborModel, minD1Model, fillingModel );
       if ( printDetailedInfo ) { patch.printDecoder(); }
     }
   } else {
-    decompressPatchMetaDataM42195( context, frame, preFrame, bitstream, arithmeticDecoder, bModel0,
-                                   compressedBitstreamSize, context.getOccupancyPrecision(),
-                                   enable_flexible_patch_flag );
+    decompressPatchMetaDataM42195( context, frame, preFrame, bitstream, arithmeticDecoder, bModel0, compressedBitstreamSize,
+                                   context.getOccupancyPrecision(), enable_flexible_patch_flag );
   }
 
   arithmeticDecoder.stop_decoder();
   bitstream += (uint64_t)compressedBitstreamSize;
-  printf("decompressOccupancyMap done  \n"); fflush(stdout);
-                                               
+  printf( "decompressOccupancyMap done  \n" );
+  fflush( stdout );
+
 #ifdef BITSTREAM_TRACE
-  bitstream.trace("OccupancyMap done \n" ) ; 
+  bitstream.trace( "OccupancyMap done \n" );
 #endif
 }

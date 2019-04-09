@@ -77,12 +77,16 @@ class PCCBitstreamDecoderNewSyntax {
   PCCBitstreamDecoderNewSyntax();
   ~PCCBitstreamDecoderNewSyntax();
 
-  int decode( PCCContext& context, PCCBitstream& bitstream );
+  int decode( PCCBitstream& bitstream, PCCContext& context );
 
  private:
   uint32_t DecodeUInt32( const uint32_t           bitCount,
                          o3dgc::Arithmetic_Codec& arithmeticDecoder,
                          o3dgc::Static_Bit_Model& bModel0 );
+  uint32_t DecodeUInt32( const uint32_t           bitCount,
+                         o3dgc::Arithmetic_Codec& arithmeticDecoder,
+                         o3dgc::Static_Bit_Model& bModel0,
+                         PCCBitstream&            bitstream );
 
   // 7.3.2 V-PCC unit syntax
   void vpccUnit( PCCContext& context, PCCBitstream& bitstream, VPCCUnitType& vpccUnitType );

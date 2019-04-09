@@ -45,6 +45,15 @@ struct PCCBistreamPosition {
 };
 class PCCVideoBitstream;
 
+
+#ifdef BITSTREAM_TRACE
+#define TRACE_BITSTREAM_NH( fmt, ... ) bitstream.traceNH( fmt, ##__VA_ARGS__);
+#define TRACE_BITSTREAM( fmt, ... ) bitstream.trace( fmt, ##__VA_ARGS__);
+#else
+#define TRACE_BITSTREAM_NH( fmt, ... ) ;
+#define TRACE_BITSTREAM( fmt, ... ) ;
+#endif
+
 class PCCBitstream {
  public:
   PCCBitstream();
@@ -86,7 +95,7 @@ class PCCBitstream {
   void trace( const char* pFormat, Args... eArgs ) {
     if ( trace_ ) {
       FILE* output = traceFile_ ? traceFile_ : stdout;
-      fprintf( output, "[%6lu - %2lu]: ", position_.bytes, position_.bits );
+      fprintf( output, "[%6lu - %2u]: ", position_.bytes, position_.bits );
       fprintf( output, pFormat, eArgs... );
       fflush( output );
     }

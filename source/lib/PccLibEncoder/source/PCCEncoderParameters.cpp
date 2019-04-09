@@ -491,7 +491,8 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   sps.setMultipleLayerStreamsPresentFlag( !oneLayerMode_ );
   sps.setRemoveDuplicatePointEnabledFlag( removeDuplicatePoints_ );
   sps.setAttributeCount(  noAttributes_ ? 0 : 1 );
-  sps.setLayerAbsoluteCodingEnabledFlag( 0, absoluteD1_ );
+  sps.setLayerAbsoluteCodingEnabledFlag( 0, 0 );
+  sps.setLayerAbsoluteCodingEnabledFlag( 1, absoluteD1_ );
   sps.setPcmPatchEnabledFlag(  useAdditionalPointsPatch_ );
   gsp.setGeometrySmoothingParamsPresentFlag( flagGeometrySmoothing_ );
   gsp.setGeometrySmoothingGridSize( gridSize_ );
@@ -507,11 +508,11 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   asp.setAttributeSmoothingThreshold( thresholdColorSmoothing_ );
   asp.setAttributeSmoothingThresholdLocalEntropy( thresholdLocalEntropy_ );
 
+  sps.setPatchInterPredictionEnabledFlag( deltaCoding_ );
   // deprecated
   sps.setLosslessGeo444(  losslessGeo444_ );
   sps.setLosslessGeo(  losslessGeo_ );
   sps.setLosslessTexture( losslessTexture_ );
-  sps.setPatchInterPredictionEnabledFlag(  deltaCoding_ );
   sps.setMinLevel(  minLevel_ );
   // Encoder only data
   context.getOccupancyPrecision()       = occupancyPrecision_;

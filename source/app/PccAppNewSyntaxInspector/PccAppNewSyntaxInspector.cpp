@@ -38,6 +38,7 @@
 #include "PCCContext.h"
 #include "PCCFrameContext.h"
 #include "PCCEncoder.h"
+#include "PCCDecoder.h"
 #include "PCCBitstream.h"
 #include "PCCBitstreamDecoder.h"
 #include "PCCBitstreamEncoderNewSyntax.h"
@@ -49,29 +50,26 @@ using namespace std;
 using namespace pcc;
 using pcc::chrono::StopwatchUserTime;
 
-
 //---------------------------------------------------------------------------
 // :: Command line / config parsing helpers
 
 template <typename T>
-static std::istream &readUInt(std::istream &in, T &val) {
+static std::istream& readUInt( std::istream& in, T& val ) {
   unsigned int tmp;
   in >> tmp;
-  val = T(tmp);
+  val = T( tmp );
   return in;
 }
 
-namespace pcc{
-  static std::istream &operator>>(std::istream &in, ColorTransform &val) { return readUInt(in, val); }
-}
+namespace pcc {
+static std::istream& operator>>( std::istream& in, ColorTransform& val ) { return readUInt( in, val ); }
+}  // namespace pcc
 
 //---------------------------------------------------------------------------
 // :: Command line / config parsing
 
-bool parseParameters( int argc, char *argv[],
-                      std::string& compressedStreamPath, 
-                      PCCEncoderParameters& encoderParams ) {
-  namespace po = df::program_options_lite;
+bool parseParameters( int argc, char* argv[], std::string& compressedStreamPath, PCCEncoderParameters& encoderParams ) {
+  namespace po    = df::program_options_lite;
   bool print_help = false;
 
   // The definition of the program/config options, along with default values.
@@ -570,35 +568,28 @@ bool parseParameters( int argc, char *argv[],
         ;
 
   // clang-format on
-  po::setDefaults(opts);
-  po::ErrorReporter err;
-  const list<const char *> &argv_unhandled = po::scanArgv(opts, argc, (const char **)argv, err);
+  po::setDefaults( opts );
+  po::ErrorReporter        err;
+  const list<const char*>& argv_unhandled = po::scanArgv( opts, argc, (const char**)argv, err );
 
-  for (const auto arg : argv_unhandled) {
-    err.warn() << "Unhandled argument ignored: " << arg << "\n";
-  }
-   
-  if (argc == 1 || print_help) {
+  for ( const auto arg : argv_unhandled ) { err.warn() << "Unhandled argument ignored: " << arg << "\n"; }
+
+  if ( argc == 1 || print_help ) {
     po::doHelp( std::cout, opts, 78 );
     return false;
   }
   encoderParams.completePath();
   encoderParams.print();
-  if( !encoderParams.check() ) {
-    err.error() << "Input encoder parameters not correct \n";
-  }
+  if ( !encoderParams.check() ) { err.error() << "Input encoder parameters not correct \n"; }
 
   // report the current configuration (only in the absence of errors so
   // that errors/warnings are more obvious and in the same place).
-  if (err.is_errored) return false;
+  if ( err.is_errored ) return false;
 
   return true;
 }
 
-int newSyntaxBitstreamInspector( const std::string&  compressedStreamPath,
-                      PCCEncoderParameters& encoderParams, 
-                                 StopwatchUserTime& clock ) {
-                                   
+int newSyntaxBitstreamInspector( const std::string& compressedStreamPath, PCCEncoderParameters& encoderParams, StopwatchUserTime& clock ) {
   PCCBitstream bitstream;
   if ( !bitstream.initialize( compressedStreamPath ) ) { return -1; }
   PCCMetadataEnabledFlags gofLevelMetadataEnabledFlags;
@@ -613,28 +604,38 @@ int newSyntaxBitstreamInspector( const std::string&  compressedStreamPath,
       gofLevelMetadata.getMetadataEnabledFlags() = gofLevelMetadataEnabledFlags;
     }
     clock.start();
-    PCCBitstreamDecoder bitstreamDecoder;    
+    PCCBitstreamDecoder bitstreamDecoder;
     if ( !bitstreamDecoder.decode( bitstream, context ) ) {
       fflush( stdout );
       return 0;
     }
-    printf( "Read context %4lu : %9lu / %9lu \n", contextIndex, bitstream.size(),
-            bitstream.capacity() );
+    printf( "Read context %4lu : %9lu / %9lu \n", contextIndex, bitstream.size(), bitstream.capacity() );
     fflush( stdout );
-    
 
     PCCEncoder encoder;
     encoder.setParameters( encoderParams );
     encoderParams.initializeContext( context );
-    
+
     printf( "start createPatchFrameDataStructure \n" );
     fflush( stdout );
 
-    encoder.createPatchFrameDataStructure( context ); 
+#ifdef CODEC_TRACE
+    encoder.setTrace( true );
+    encoder.openTrace( removeFileExtension( encoderParams.compressedStreamPath_ ) + "_convertion_encode.txt" );
+#endif
+    encoder.createPatchFrameDataStructure( context );
+#ifdef CODEC_TRACE
+    encoder.setTrace( false );
+    encoder.closeTrace();
+#endif
 
+#if 1
+    printf( "PatchOrientationPresentFlag         = %d   \n", 
+      context.getPatchSequenceDataUnit().getPatchFrameParameterSet( 0 ).getPatchOrientationPresentFlag() );
+#endif
     printf( "done createPatchFrameDataStructure \n" );
     fflush( stdout );
-    PCCBitstream bitstreamNewSyntaxEnc;
+    PCCBitstream                 bitstreamNewSyntaxEnc;
     PCCBitstreamEncoderNewSyntax bitstreamEncoderNewSyntax;
 
 #ifdef BITSTREAM_TRACE
@@ -642,10 +643,10 @@ int newSyntaxBitstreamInspector( const std::string&  compressedStreamPath,
     bitstreamNewSyntaxEnc.openTrace( removeFileExtension( compressedStreamPath ) + "_new_syntax_encode.txt" );
 #endif
 
-    printf( "bitstreamEncoderNewSyntax: \n" ); fflush(stdout);
-    bitstreamEncoderNewSyntax.encode( context, bitstreamNewSyntaxEnc );    
-    printf( "  ==> new bitstream %9lu / %9lu \n", bitstreamNewSyntaxEnc.size(),
-            bitstreamNewSyntaxEnc.capacity() );
+    printf( "bitstreamEncoderNewSyntax: \n" );
+    fflush( stdout );
+    bitstreamEncoderNewSyntax.encode( context, bitstreamNewSyntaxEnc );
+    printf( "  ==> new bitstream %9lu / %9lu \n", bitstreamNewSyntaxEnc.size(), bitstreamNewSyntaxEnc.capacity() );
 
     PCCBitstream bitstreamNewSyntaxDec;
     bitstreamNewSyntaxDec.initialize( bitstreamNewSyntaxEnc );
@@ -657,50 +658,58 @@ int newSyntaxBitstreamInspector( const std::string&  compressedStreamPath,
 
     PCCContext contextDecoder;
     context.getSps().setSequenceParameterSetId( contextIndex );
-    printf( "bitstreamEncoderNewSyntax: \n" ); fflush(stdout);
-    bitstreamDecoderNewSyntax.decode( contextDecoder, bitstreamNewSyntaxDec ); 
+    printf( "bitstreamEncoderNewSyntax: \n" );
+    fflush( stdout );
+    bitstreamDecoderNewSyntax.decode( bitstreamNewSyntaxDec, contextDecoder );
 
-    printf( "Done context %4lu \n" );
+    PCCDecoder decoder;
+#ifdef CODEC_TRACE
+    decoder.setTrace( true );
+    decoder.openTrace( removeFileExtension( encoderParams.compressedStreamPath_ ) + "_convertion_decode.txt" );
+#endif
+    decoder.createPatchFrameDataStructure( contextDecoder );
+#ifdef CODEC_TRACE
+    decoder.setTrace( false );
+    decoder.closeTrace();
+#endif
+    printf( "Done context qsfdsd\n" );
     fflush( stdout );
 
     clock.stop();
     contextIndex++;
   }
+    printf( "Done newSyntaxBitstreamInspector \n" );
+    fflush( stdout );
   return 0;
 }
 
-
-int main(int argc, char *argv[]) {
-  std::cout << "PccAppNewSyntaxInspector v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MINOR << std::endl
-            << std::endl;
+int main( int argc, char* argv[] ) {
+  std::cout << "PccAppNewSyntaxInspector v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MINOR << std::endl << std::endl;
 
   PCCEncoderParameters encoderParams;
-  std::string compressedStreamPath;
-  if (!parseParameters(argc, argv, compressedStreamPath, encoderParams )) {
-    return -1;
-  }
+  std::string          compressedStreamPath;
+  if ( !parseParameters( argc, argv, compressedStreamPath, encoderParams ) ) { return -1; }
 
   // Timers to count elapsed wall/user time
   pcc::chrono::Stopwatch<std::chrono::steady_clock> clockWall;
-  pcc::chrono::StopwatchUserTime clockUser;
+  pcc::chrono::StopwatchUserTime                    clockUser;
 
   clockWall.start();
-  int ret = newSyntaxBitstreamInspector( compressedStreamPath,
-                 encoderParams,  clockUser );
+  int ret = newSyntaxBitstreamInspector( compressedStreamPath, encoderParams, clockUser );
   clockWall.stop();
 
+    printf( "newSyntaxBitstreamInspector done \n" );
+    fflush( stdout );
   using namespace std::chrono;
-  using ms = milliseconds;
-  auto totalWall = duration_cast<ms>(clockWall.count()).count();
+  using ms       = milliseconds;
+  auto totalWall = duration_cast<ms>( clockWall.count() ).count();
   std::cout << "Processing time (wall): " << ( ret == 0 ? totalWall / 1000.0 : -1 ) << " s\n";
 
-  auto totalUserSelf = duration_cast<ms>(clockUser.self.count()).count();
-  std::cout << "Processing time (user.self): "
-            << ( ret == 0 ? totalUserSelf / 1000.0 : -1 ) << " s\n";
+  auto totalUserSelf = duration_cast<ms>( clockUser.self.count() ).count();
+  std::cout << "Processing time (user.self): " << ( ret == 0 ? totalUserSelf / 1000.0 : -1 ) << " s\n";
 
-  auto totalUserChild = duration_cast<ms>(clockUser.children.count()).count();
-  std::cout << "Processing time (user.children): "
-            << ( ret == 0 ? totalUserChild / 1000.0 : -1 ) << " s\n";
+  auto totalUserChild = duration_cast<ms>( clockUser.children.count() ).count();
+  std::cout << "Processing time (user.children): " << ( ret == 0 ? totalUserChild / 1000.0 : -1 ) << " s\n";
 
   std::cout << "Peak memory: " << getPeakMemory() << " KB\n";
   return ret;

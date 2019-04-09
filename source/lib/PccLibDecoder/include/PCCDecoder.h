@@ -49,6 +49,9 @@ class PCCFrameContext;
 class PCCGroupOfFrames; 
 class PCCPatch;
 class Arithmetic_Codec;
+class GeometryFrameParameterSet;
+class GeometryPatchParameterSet;
+class PointLocalReconstruction;
 
 template <typename T, size_t N>
 class PCCImage;
@@ -73,9 +76,12 @@ class PCCDecoder : public PCCCodec {
  private:
   int  decode( PCCContext &context, PCCGroupOfFrames& reconstruct );
 
+  void setFrameMetadata( PCCMetadata& metadata, GeometryFrameParameterSet& gfps );
+  void setPatchMetadata( PCCMetadata& metadata, GeometryPatchParameterSet& gpps );
+
+  void setPointLocalReconstruction( PCCFrameContext& frame, PCCPatch& patch, PointLocalReconstruction& plr, size_t occupancyPackingBlockSize );
 
   PCCDecoderParameters params_;
-
 };
 }; //~namespace
 

@@ -107,36 +107,36 @@ void PCCHevcParser::getVideoSize( const std::vector<uint8_t>& buffer,
             height, 
             bitdepth );
 }
-void PCCHevcParser::display(){
-  int poc = 0;
+void PCCHevcParser::display() {
+  int    poc = 0;
   size_t sum = 0;
-  for( auto& nalu : vps_ ) {
-  	printf("%4d / %4d : Size = %8d type = %4d %9s VPS \n",
-  			poc, frames_.size(), nalu.size(), nalu.getNaluType(), getNaluType( nalu.getNaluType() ) );
-  	sum += nalu.size();
+  for ( auto& nalu : vps_ ) {
+    printf( "%4d / %4lu : Size = %8lu type = %4lu %9s VPS \n", poc, frames_.size(), nalu.size(), nalu.getNaluType(),
+            getNaluType( nalu.getNaluType() ) );
+    sum += nalu.size();
   }
-  for( auto& nalu : sps_ ) {
-  	printf("%4d / %4d : Size = %8d type = %4d %9s SPS \n",
-  			poc, frames_.size(), nalu.size(), nalu.getNaluType(), getNaluType( nalu.getNaluType() ) );
-  	sum += nalu.size();
+  for ( auto& nalu : sps_ ) {
+    printf( "%4d / %4lu : Size = %8lu type = %4lu %9s SPS \n", poc, frames_.size(), nalu.size(), nalu.getNaluType(),
+            getNaluType( nalu.getNaluType() ) );
+    sum += nalu.size();
   }
-  for( auto& nalu : pps_ ) {
-  	printf("%4d / %4d : Size = %8d type = %4d %9s PPS \n",
-  			poc, frames_.size(), nalu.size(), nalu.getNaluType(), getNaluType( nalu.getNaluType() ) );
-  	sum += nalu.size();
+  for ( auto& nalu : pps_ ) {
+    printf( "%4d / %4lu : Size = %8lu type = %4lu %9s PPS \n", poc, frames_.size(), nalu.size(), nalu.getNaluType(),
+            getNaluType( nalu.getNaluType() ) );
+    sum += nalu.size();
   }
-  for( auto& frame : frames_ ) {
-    for( auto& nalu : frame.getNalu() ) {
-        printf("%4d / %4d : Size = %8d type = %4d %9s \n",
-        		poc, frames_.size(), nalu.size(), nalu.getNaluType(), getNaluType( nalu.getNaluType() ) );
-		sum += nalu.size();
+  for ( auto& frame : frames_ ) {
+    for ( auto& nalu : frame.getNalu() ) {
+      printf( "%4d / %4lu : Size = %8lu type = %4lu %9s \n", poc, frames_.size(), nalu.size(), nalu.getNaluType(),
+              getNaluType( nalu.getNaluType() ) );
+      sum += nalu.size();
     }
     poc++;
   }
-  printf(" sum = %lu \n",sum);
+  printf( " sum = %lu \n", sum );
 }
 
-void PCCHevcParser::createNalu( const int frameIndex,
+void PCCHevcParser::createNalu( const size_t frameIndex,
                                 const std::vector<uint8_t>& buffer,
                                 const size_t pos,
                                 const size_t size ) {
@@ -159,7 +159,7 @@ void PCCHevcParser::setBuffer( const std::vector<uint8_t>& buffer,
                                 size_t& width, 
                                 size_t& height, 
                                 size_t& bitdepth ) {
-  const size_t   size = buffer.size();
+  const int   size = (int)buffer.size();
   const uint8_t* data = buffer.data();
   TDecCavlc* decCavlc = new TDecCavlc();
   int nalNumber              =  0;

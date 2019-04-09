@@ -411,7 +411,7 @@ class PCCVideoEncoder {
     // bitstream.setWidth( width ); 
     // bitstream.setHeight( height ); 
     bitstream.setBitdepth( nbyte==2 ? 10 : 8 ); 
-    printf("SET bitstream.setBitdepth to %lu \n",bitstream.getBitdepth() );
+    printf("SET bitstream.setBitdepth to %u \n",bitstream.getBitdepth() );
 #endif
     return true;
   }

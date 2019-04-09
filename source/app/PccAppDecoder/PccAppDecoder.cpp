@@ -299,7 +299,7 @@ int decompressVideo( const PCCDecoderParameters &decoderParams,
   metrics.setParameters( metricsParams );
   checksum.setParameters( metricsParams );
   std::vector<std::vector<uint8_t>> checksumsRec, checksumsDec;
-  size_t checksumIndex = 0;
+  // size_t checksumIndex = 0;
   if( metricsParams.computeChecksum_ ) {
     checksum.read( decoderParams.compressedStreamPath_ );
   }

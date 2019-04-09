@@ -90,6 +90,12 @@ struct GeneratePointCloudParameters {
   bool               useAdditionalPointsPatch_;
 };
 
+#ifdef CODEC_TRACE
+#define TRACE_CODEC( fmt, ... ) trace( fmt, ##__VA_ARGS__);
+#else
+#define TRACE_CODEC( fmt, ... ) ;
+#endif
+
 class PCCCodec {
  public:
   PCCCodec();
@@ -115,6 +121,34 @@ class PCCCodec {
 
   void generateOccupancyMap( PCCContext &context, const size_t occupancyPrecision );
 
+#ifdef CODEC_TRACE
+  template <typename... Args>
+  void trace( const char* pFormat, Args... eArgs ) {
+    if ( trace_ ) {
+      FILE* output = traceFile_ ? traceFile_ : stdout;
+      fprintf( output, pFormat, eArgs... );
+      fflush( output );
+    }
+  }
+  void setTrace( bool trace ){ trace_ = trace; }
+  bool getTrace(){ return trace_; }
+  bool openTrace( std::string file ) {
+    if ( traceFile_ ) {
+      fclose( traceFile_ );
+      traceFile_ = NULL;
+    }
+    if( ( traceFile_ = fopen( file.c_str(), "w" ) ) == NULL ) {
+      return false;
+    }
+    return true;
+  }
+  void closeTrace() {
+    if ( traceFile_ ) {
+      fclose( traceFile_ );
+      traceFile_ = NULL;
+    }
+  }
+#endif
  protected:
  
   void generateOccupancyMap( PCCFrameContext &frame,
@@ -183,34 +217,6 @@ class PCCCodec {
   }
 
 
-#ifdef CODEC_TRACE
-  template <typename... Args>
-  void trace( const char* pFormat, Args... eArgs ) {
-    if ( trace_ ) {
-      FILE* output = traceFile_ ? traceFile_ : stdout;
-      fprintf( output, pFormat, eArgs... );
-      fflush( output );
-    }
-  }
-  void setTrace( bool trace ){ trace_ = trace; }
-  bool getTrace(){ return trace_; }
-  bool openTrace( std::string file ) {
-    if ( traceFile_ ) {
-      fclose( traceFile_ );
-      traceFile_ = NULL;
-    }
-    if( ( traceFile_ = fopen( file.c_str(), "w" ) ) == NULL ) {
-      return false;
-    }
-    return true;
-  }
-  void closeTrace() {
-    if ( traceFile_ ) {
-      fclose( traceFile_ );
-      traceFile_ = NULL;
-    }
-  }
-#endif
  private:
   void generatePointCloud( PCCPointSet3& reconstruct, PCCFrameContext& frame,
                            const PCCVideoGeometry &video, const PCCVideoGeometry &videoD1,
