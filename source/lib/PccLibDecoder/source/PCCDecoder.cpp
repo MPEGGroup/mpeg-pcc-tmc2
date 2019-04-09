@@ -63,12 +63,22 @@ int PCCDecoder::decode( PCCBitstream& bitstream, PCCContext& context, PCCGroupOf
   bitstream.setTrace( true );
   bitstream.openTrace( removeFileExtension( params_.compressedStreamPath_ ) + "_prev_syntax_decode.txt" );
 #endif
-  if ( !bitstreamDecoder.decode( bitstream, context ) ) { return 0; }
+  if ( !bitstreamDecoder.decode( bitstream, context ) ) { 
+    printf("Decoder return 0 => stop decoding \n");
+    return 0; 
+  }
 #ifdef BITSTREAM_TRACE
   bitstream.closeTrace();
 #endif
 
+#ifdef CODEC_TRACE
+    setTrace( true );
+    openTrace( removeFileExtension( params_.compressedStreamPath_ ) + "_convertion_decode.txt" );
+#endif
   createPatchFrameDataStructure( context );
+#ifdef CODEC_TRACE
+  closeTrace();
+#endif
 
   ret |= decode( context, reconstructs );
   return ret;
@@ -417,7 +427,11 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
 
   setFrameMetadata( context.getGOFLevelMetadata(), psdu.getGeometryFrameParameterSet( 0 ) );
 
-  size_t indexPrevFrame = 0;
+  size_t indexPrevFrame = 0;  
+  context.getMPGeoWidth()  = 64;
+  context.getMPAttWidth()  = 64;
+  context.getMPGeoHeight() = 0;
+  context.getMPAttHeight() = 0;
   for ( int i = 0; i < psdu.getFrameCount(); i++ ) {
     auto& frame                                             = context.getFrame( i );
     auto& frameLevelMetadataEnabledFlags                    = context.getGOFLevelMetadata().getLowerLevelMetadataEnabledFlags();
@@ -425,25 +439,18 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
     frame.getWidth()                                        = sps.getFrameWidth();
     frame.getHeight()                                       = sps.getFrameHeight();
     frame.getFrameLevelMetadata().getMetadataEnabledFlags() = frameLevelMetadataEnabledFlags;
+    frame.setLosslessGeo( sps.getLosslessGeo() );
+    frame.setLosslessGeo444( sps.getLosslessGeo444() );
+    frame.setLosslessTexture( sps.getLosslessTexture() );
+    frame.setSurfaceThickness( sps.getSurfaceThickness() );
+
+    // frames[i].setEnhancedDeltaDepth( sps.getEnhancedOccupancyMapForDepthFlag() );
+    frame.setUseMissedPointsSeparateVideo( sps.getPcmSeparateVideoPresentFlag() );
+    frame.setUseAdditionalPointsPatch( sps.getPcmPatchEnabledFlag() );
 
     createPatchFrameDataStructure( context, frame, context.getFrame( indexPrevFrame ), i );
 
-    if ( sps.getPcmPatchEnabledFlag() && !sps.getPcmSeparateVideoPresentFlag() ) {
-      if ( !sps.getPcmSeparateVideoPresentFlag() ) {
-        auto& patches           = frame.getPatches();
-        auto& missedPointsPatch = frame.getMissedPointsPatch();
-        if ( sps.getPcmPatchEnabledFlag() ) {
-          const size_t patchIndex                = patches.size();
-          PCCPatch&    dummyPatch                = patches[patchIndex - 1];
-          missedPointsPatch.u0_                  = dummyPatch.getU0();
-          missedPointsPatch.v0_                  = dummyPatch.getV0();
-          missedPointsPatch.sizeU0_              = dummyPatch.getSizeU0();
-          missedPointsPatch.sizeV0_              = dummyPatch.getSizeV0();
-          missedPointsPatch.occupancyResolution_ = dummyPatch.getOccupancyResolution();
-          patches.pop_back();
-        }
-      }
-    }
+
     indexPrevFrame = i;
   }
 }
@@ -459,7 +466,6 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
   auto& pfps    = psdu.getPatchFrameParameterSet( 0 );
   auto& patches = frame.getPatches();
 
-  // uint32_t patchCount = pfdu.getPatchCount() + 1;
   TRACE_CODEC( "PatchCount %u \n", pfdu.getPatchCount() );
   patches.resize( (size_t)pfdu.getPatchCount() );
   TRACE_CODEC( "patches size = %lu \n", patches.size() );
@@ -468,14 +474,13 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
   const uint8_t maxBitCountForMinDepth = uint8_t( 10 - gbitCountSize[minLevel] );
   const uint8_t maxBitCountForMaxDepth = uint8_t( 9 - gbitCountSize[minLevel] );
   frame.allocOneLayerData( ops.getOccupancyPackingBlockSize() );
-  frame.setSurfaceThickness( sps.getSurfaceThickness() );
+
   TRACE_CODEC( "OccupancyPackingBlockSize           = %d \n", ops.getOccupancyPackingBlockSize() );
   TRACE_CODEC( "PatchSequenceOrientationEnabledFlag = %d \n", sps.getPatchSequenceOrientationEnabledFlag() );
   TRACE_CODEC( "PatchOrientationPresentFlag         = %d \n", pfps.getPatchOrientationPresentFlag() );
   TRACE_CODEC( "PatchInterPredictionEnabledFlag     = %d \n", sps.getPatchInterPredictionEnabledFlag() );
 
-  if ( ( frameIndex == 0 ) || ( !sps.getPatchInterPredictionEnabledFlag() ) ) {  // context.getDeltaCoding()
-
+  if ( ( frameIndex == 0 ) || ( !sps.getPatchInterPredictionEnabledFlag() ) ) {  
     frame.getFrameLevelMetadata().setMetadataType( METADATA_FRAME );
     frame.getFrameLevelMetadata().setIndex( frame.getIndex() );
     int64_t prevSizeU0 = 0;
@@ -515,24 +520,17 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
       TRACE_CODEC( "pdu.get3DShiftNormalAxis()    = %lu \n", pdu.get3DShiftNormalAxis() );
       TRACE_CODEC( "pdu.get2DDeltaSizeU()         = %ld \n", pdu.get2DDeltaSizeU() );
       TRACE_CODEC( "pdu.get2DDeltaSizeV()         = %ld \n", pdu.get2DDeltaSizeV() );
-
       if ( patch.getProjectionMode() == 0 ) {
         patch.getD1() = (int32_t)pdu.get3DShiftNormalAxis() * minLevel;
       } else {
         patch.getD1() = 1024 - (int32_t)pdu.get3DShiftNormalAxis() * minLevel;
       }
-
-      const int64_t deltaSizeU0 = pdu.get2DDeltaSizeU();
-      const int64_t deltaSizeV0 = pdu.get2DDeltaSizeV();
-
-      patch.getSizeU0() = prevSizeU0 + deltaSizeU0;
-      patch.getSizeV0() = prevSizeV0 + deltaSizeV0;
-
+      patch.getSizeU0() = prevSizeU0 + pdu.get2DDeltaSizeU();
+      patch.getSizeV0() = prevSizeV0 + pdu.get2DDeltaSizeV();
       prevSizeU0 = patch.getSizeU0();
       prevSizeV0 = patch.getSizeV0();
-      TRACE_CODEC( "pdu.getNormalAxis()           = %lu \n", pdu.getNormalAxis() );
-
       patch.getNormalAxis() = pdu.getNormalAxis();
+      TRACE_CODEC( "pdu.getNormalAxis()           = %lu \n", pdu.getNormalAxis() );
       TRACE_CODEC( "patch.getNormalAxis()         = %lu \n", patch.getNormalAxis() );
 
       if ( patch.getNormalAxis() == 0 ) {
@@ -687,27 +685,18 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
                    patch.getV1(), patch.getD1(), patch.getSizeU0(), patch.getSizeV0(), patch.getProjectionMode(), patch.getPatchOrientation(),
                    patch.getNormalAxis(), patch.getTangentAxis(), patch.getBitangentAxis() );
 
-      if ( printDetailedInfo ) { patch.printDecoder(); }
-    }
-
-    // read info from metadata and resconstruc maxDepth
-    // o3dgc::Adaptive_Bit_Model bModelDD;
-    for ( size_t patchIndex = 0; patchIndex < numMatchedPatches; ++patchIndex ) {
-      auto& patch                                  = patches[patchIndex];
       auto& patchLevelMetadataEnabledFlags         = frame.getFrameLevelMetadata().getLowerLevelMetadataEnabledFlags();
       auto& patchLevelMetadata                     = patch.getPatchLevelMetadata();
       patchLevelMetadata.getMetadataEnabledFlags() = patchLevelMetadataEnabledFlags;
       patchLevelMetadata.setIndex( patchIndex );
       patchLevelMetadata.setMetadataType( METADATA_PATCH );
-      patchLevelMetadata.setbitCountQDepth( 0 );  // added 20190129
-                                                  // decompressMetadata( patchLevelMetadata, arithmeticDecoder, bModel0, bModelDD );
+      patchLevelMetadata.setbitCountQDepth( 0 );  // added 20190129                                                  
 
 #ifdef CE210_MAXDEPTH_EVALUATION
       const int64_t delta_DD = patchLevelMetadata.getQMaxDepthInPatch();
 #else
       const int64_t delta_DD = 0;
 #endif
-      const auto& prePatch = prePatches[patch.getBestMatchIdx()];
       size_t      currentDD;
       size_t      prevDD = prePatch.getSizeD() / minLevel;
       if ( prevDD * minLevel != prePatch.getSizeD() ) prevDD += 1;
@@ -715,50 +704,33 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
       patch.getSizeD() = currentDD;
     }
 
-    // // Get Bitcount.
-    // for ( int i = 0; i < 4; i++ ) {
-    //   if ( A[i] == 0 ) { bitCount[i] = uint8_t( PCCGetNumberOfBitsInFixedLengthRepresentation( uint32_t( topNmax[i] + 1 ) ) ); }
-    // }
-
     for ( size_t patchIndex = numMatchedPatches; patchIndex < pfdu.getPatchCount(); ++patchIndex ) {
       auto& patch                    = patches[patchIndex];
       auto& pid                      = pfdu.getPatchInformationData( patchIndex );
       auto& pdu                      = pid.getPatchDataUnit();
       patch.getOccupancyResolution() = ops.getOccupancyPackingBlockSize();
-      patch.getU0()                  = pdu.get2DShiftU();  // DecodeUInt32( bitCount[0], arithmeticDecoder, bModel0 );
-      patch.getV0()                  = pdu.get2DShiftV();  // DecodeUInt32( bitCount[1], arithmeticDecoder, bModel0 );
-      // if ( enable_flexible_patch_flag ) {
-      //   bool flexible_patch_present_flag = arithmeticDecoder.decode( orientationPatchFlagModel2 );
-      //   if ( flexible_patch_present_flag ) {
-      //     patch.getPatchOrientation() = arithmeticDecoder.decode( orientationPatchModel ) + 1;
-      //   } else {
-      //     patch.getPatchOrientation() = PatchOrientation::DEFAULT;
-      //   }
-      // } else {
-      //   patch.getPatchOrientation() = PatchOrientation::DEFAULT;
-      // }
+      patch.getU0()                  = pdu.get2DShiftU(); 
+      patch.getV0()                  = pdu.get2DShiftV(); 
+
       if ( sps.getLayerAbsoluteCodingEnabledFlag( 1 ) ) {
         patch.getProjectionMode() = static_cast<size_t>( pdu.getProjectionMode() );
       } else {
         patch.getProjectionMode() = 0;
       }
-      patch.getU1() = pdu.get3DShiftTangentAxis();    // DecodeUInt32( bitCount[2], arithmeticDecoder, bModel0 );
-      patch.getV1() = pdu.get3DShiftBiTangentAxis();  // DecodeUInt32( bitCount[3], arithmeticDecoder, bModel0 );
-      size_t D1     = pdu.get3DShiftNormalAxis();     // DecodeUInt32( bitCount[4], arithmeticDecoder, bModel0 );
-
+      patch.getU1() = pdu.get3DShiftTangentAxis();    
+      patch.getV1() = pdu.get3DShiftBiTangentAxis();  
+      size_t D1     = pdu.get3DShiftNormalAxis();     
       patch.getProjectionMode() = pdu.getProjectionMode();
       if ( patch.getProjectionMode() == 0 ) {
         patch.getD1() = D1 * minLevel;
       } else {
         patch.getD1() = ( 1024 - D1 * minLevel );
       }
-
       if ( pfps.getPatchOrientationPresentFlag() ) {
         patch.getPatchOrientation() = pdu.getOrientationSwapFlag() ? PatchOrientation::SWAP : PatchOrientation::DEFAULT;
       } else {
         patch.getPatchOrientation() = PatchOrientation::DEFAULT;
       }
-
       patch.getSizeU0() = prevSizeU0 + pdu.get2DDeltaSizeU();
       patch.getSizeV0() = prevSizeV0 + pdu.get2DDeltaSizeV();
       TRACE_CODEC( "PrevSize = %ld %ld DeltaSize = %ld %ld => %lu %lu \n", prevSizeU0, prevSizeV0, pdu.get2DDeltaSizeU(), pdu.get2DDeltaSizeV(),
@@ -766,23 +738,6 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
 
       prevSizeU0 = patch.getSizeU0();
       prevSizeV0 = patch.getSizeV0();
-
-      // // if ( bBinArithCoding ) {
-      // size_t bit0 = arithmeticDecoder.decode( orientationModel2 );
-      // if ( bit0 == 0 ) {  // 0
-      //   patch.getNormalAxis() = 0;
-      // } else {
-      //   size_t bit1 = arithmeticDecoder.decode( bModel0 );
-      //   if ( bit1 == 0 ) {  // 10
-      //     patch.getNormalAxis() = 1;
-      //   } else {  // 11
-      //     patch.getNormalAxis() = 2;
-      //   }
-      // }
-      // //  } else {
-      // //    patch.getNormalAxis() = arithmeticDecoder.decode( orientationModel );
-      // //  }
-
       patch.getNormalAxis() = pdu.getNormalAxis();
 
       if ( patch.getNormalAxis() == 0 ) {
@@ -828,5 +783,22 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
     // #ifdef BITSTREAM_TRACE
     //     bitstream.trace( "OccupancyMapM42195 done \n" );
     // #endif
+  }
+  if ( sps.getPcmPatchEnabledFlag() && !sps.getPcmSeparateVideoPresentFlag() ) {
+    if ( !sps.getPcmSeparateVideoPresentFlag() ) {
+      // TO DO  JR 
+      // auto& patches           = frame.getPatches();
+      // auto& missedPointsPatch = frame.getMissedPointsPatch();
+      // if ( sps.getPcmPatchEnabledFlag() ) {
+      //   const size_t patchIndex                = patches.size();
+      //   PCCPatch&    dummyPatch                = patches[patchIndex - 1];
+      //   missedPointsPatch.u0_                  = dummyPatch.getU0();
+      //   missedPointsPatch.v0_                  = dummyPatch.getV0();
+      //   missedPointsPatch.sizeU0_              = dummyPatch.getSizeU0();
+      //   missedPointsPatch.sizeV0_              = dummyPatch.getSizeV0();
+      //   missedPointsPatch.occupancyResolution_ = dummyPatch.getOccupancyResolution();
+      //   patches.pop_back();
+      // }
+    }
   }
 }

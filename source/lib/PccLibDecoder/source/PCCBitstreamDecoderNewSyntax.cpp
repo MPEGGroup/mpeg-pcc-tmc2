@@ -54,7 +54,7 @@ int PCCBitstreamDecoderNewSyntax::decode( PCCBitstream& bitstream, PCCContext& c
   vpccUnit( context, bitstream, vpccUnitType );  // VPCC_OVD
   vpccUnit( context, bitstream, vpccUnitType );  // VPCC_GVD
   vpccUnit( context, bitstream, vpccUnitType );  // VPCC_AVD
-  return 0;
+  return 1;
 }
 
 void PCCBitstreamDecoderNewSyntax::vpccVideoDataUnit( PCCContext& context, PCCBitstream& bitstream, VPCCUnitType& vpccUnitType ) {
@@ -292,7 +292,9 @@ void PCCBitstreamDecoderNewSyntax::geometryParameterSet( GeometryParameterSet& g
     gps.setPcmGeometryCodecId( bitstream.read( 1 ) );  // u(8)
   }
   gps.setGeometryParamsEnabledFlag( bitstream.read( 1 ) );  // u(1)
-  if ( gps.getGeometryParamsEnabledFlag() ) { geometrySequenceParams( gps.getGeometrySequenceParams(), bitstream ); }
+  if ( gps.getGeometryParamsEnabledFlag() ) { 
+    geometrySequenceParams( gps.getGeometrySequenceParams(), bitstream ); 
+  }
 
   gps.setGeometryPatchParamsEnabledFlag( bitstream.read( 1 ) );  // u(1)
   if ( gps.getGeometryPatchParamsEnabledFlag() ) {
@@ -342,6 +344,16 @@ void PCCBitstreamDecoderNewSyntax::geometrySequenceParams( GeometrySequenceParam
       gsp.setGeometryPointShapeInfo( bitstream.read( 8 ) );  // u(8)
     }
   }
+  TRACE_BITSTREAM( "  GeometrySmoothingParamsPresentFlag = %d  \n", gsp.getGeometrySmoothingParamsPresentFlag() );
+  TRACE_BITSTREAM( "  GeometryScaleParamsPresentFlag     = %d  \n", gsp.getGeometryScaleParamsPresentFlag()     );
+  TRACE_BITSTREAM( "  GeometryOffsetParamsPresentFlag    = %d  \n", gsp.getGeometryOffsetParamsPresentFlag()   );
+  TRACE_BITSTREAM( "  GeometryRotationParamsPresentFlag  = %d  \n", gsp.getGeometryRotationParamsPresentFlag() );
+  TRACE_BITSTREAM( "  GeometryPointSizeInfoPresentFlag   = %d  \n", gsp.getGeometryPointSizeInfoPresentFlag()  );
+  TRACE_BITSTREAM( "  GeometryPointShapeInfoPresentFlag  = %d  \n", gsp.getGeometryPointShapeInfoPresentFlag() );
+  TRACE_BITSTREAM( "  getGeometrySmoothingEnabledFlag    = %d  \n", gsp.getGeometrySmoothingEnabledFlag() );
+  TRACE_BITSTREAM( "  getGeometrySmoothingGridSize       = %u  \n", gsp.getGeometrySmoothingGridSize() );
+  TRACE_BITSTREAM( "  getGeometrySmoothingThreshold      = %u  \n", gsp.getGeometrySmoothingThreshold() );
+
 }
 
 // 7.3.12 Attribute parameter set syntax

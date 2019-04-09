@@ -72,20 +72,25 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
 
   ret |= encode( sources, context, reconstructs );
 
-#ifdef BITSTREAM_TRACE
-  bitstream.setTrace( true );
-  bitstream.openTrace( removeFileExtension( params_.compressedStreamPath_ ) + "_prev_syntax_encode.txt" );
-#endif
   params_.initializeContext( context );
+#ifdef CODEC_TRACE
+    setTrace( true );
+    openTrace( removeFileExtension( params_.compressedStreamPath_ ) + "_convertion_encode.txt" );
+#endif
 #if 0
   PCCBitstreamEncoder bitstreamEncoder;
 #else
   PCCBitstreamEncoderNewSyntax bitstreamEncoder;
-  printf( "start createPatchFrameDataStructure \n" );
-  fflush( stdout );
   createPatchFrameDataStructure( context );
-  printf( "done createPatchFrameDataStructure \n" );
-  fflush( stdout );
+#endif
+#ifdef CODEC_TRACE
+  closeTrace();
+#endif
+
+
+#ifdef BITSTREAM_TRACE
+  bitstream.setTrace( true );
+  bitstream.openTrace( removeFileExtension( params_.compressedStreamPath_ ) + "_prev_syntax_encode.txt" );
 #endif
   bitstreamEncoder.setParameters( params_ );
   ret |= bitstreamEncoder.encode( context, bitstream );
@@ -3979,49 +3984,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
       N.B.
       sps.getPcmSeparateVideoPresentFlag is not defined in the CD --> fix
     */
-    if ( ( sps.getLosslessGeo() || params_.lossyMissedPointsPatch_ ) && !sps.getPcmSeparateVideoPresentFlag() ) {
-      /* get pfdu structure */
-      /* crate ppdu, currently ift is a last patch */
-      PatchInformationData pid;
-      PCMPatchDataUnit     ppdu;
-
-      /* iterate patch list with current fraem order */
-      pfh.setPatchFrameOrderCntLsb( i );  // this is not correct, need to add functionaliuty to control index and order
-
-      auto&        patches           = frame.getPatches();
-      auto&        missedPointsPatch = frame.getMissedPointsPatch();
-      const size_t patchIndex        = patches.size();
-      patches.resize( patchIndex + 1 );
-      PCCPatch& dummyPatch                = patches[patchIndex];
-      dummyPatch.getIndex()               = patchIndex;
-      dummyPatch.getU0()                  = missedPointsPatch.u0_;
-      dummyPatch.getV0()                  = missedPointsPatch.v0_;
-      dummyPatch.getSizeU0()              = missedPointsPatch.sizeU0_;
-      dummyPatch.getSizeV0()              = missedPointsPatch.sizeV0_;
-      dummyPatch.getU1()                  = 0;
-      dummyPatch.getV1()                  = 0;
-      dummyPatch.getD1()                  = 0;
-      dummyPatch.getNormalAxis()          = 0;
-      dummyPatch.getTangentAxis()         = 1;
-      dummyPatch.getBitangentAxis()       = 2;
-      dummyPatch.getOccupancyResolution() = missedPointsPatch.occupancyResolution_;
-      dummyPatch.getOccupancy()           = missedPointsPatch.occupancy_;
-      dummyPatch.getLod()                 = params_.testLevelOfDetail_;
-      dummyPatch.setBestMatchIdx()        = -1;
-      dummyPatch.getPatchOrientation()    = PatchOrientation::DEFAULT;
-      createPatchFrameDataStructure( context, frame, refFrame, i );
-      patches.pop_back();
-
-      ppdu.set2DShiftU( dummyPatch.getU0() );
-      ppdu.set2DShiftU( dummyPatch.getV0() );
-      ppdu.set2DDeltaSizeU( dummyPatch.getSizeU0() );
-      ppdu.set2DDeltaSizeV( dummyPatch.getSizeV0() );
-      pfdu.addPatchMode( frame.getIndex() == 0 ? (uint8_t)I_PCM : (uint8_t)P_PCM );
-      pid.setPCMPatchDataUnit( ppdu );
-      pfdu.addPatchInformationData( pid );
-    } else {
-      createPatchFrameDataStructure( context, frame, refFrame, i );
-    }
+    createPatchFrameDataStructure( context, frame, refFrame, i );
     // psup.setPatchFrameLayerUnit (pflu);
 
     refFrame = frame;
@@ -4060,6 +4023,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
     maxCandidateCount --> this is not used any longer
   */
 
+  pfh.setPatchFrameOrderCntLsb( frameIndex );  
   if ( !sps.getLayerAbsoluteCodingEnabledFlag( 0 ) ) {
     auto& pid = pfdu.getPatchInformationData( 0 );
     auto& pdu = pid.getPatchDataUnit();
@@ -4440,4 +4404,45 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
       }
     }
   }
+
+  
+    if ( ( sps.getLosslessGeo() || params_.lossyMissedPointsPatch_ ) && !sps.getPcmSeparateVideoPresentFlag() ) {
+      /* get pfdu structure */
+      /* crate ppdu, currently ift is a last patch */
+      PatchInformationData pid;
+      PCMPatchDataUnit     ppdu;
+
+      /* iterate patch list with current fraem order */  // this is not correct, need to add functionaliuty to control index and order
+
+      // auto&        patches           = frame.getPatches();
+      auto& missedPointsPatch = frame.getMissedPointsPatch();
+      // const size_t patchIndex        = patches.size();
+      // patches.resize( patchIndex );
+      // PCCPatch& dummyPatch                = patches[patchIndex];
+      // dummyPatch.getIndex()               = patchIndex;
+      // dummyPatch.getU0()                  = missedPointsPatch.u0_;
+      // dummyPatch.getV0()                  = missedPointsPatch.v0_;
+      // dummyPatch.getSizeU0()              = missedPointsPatch.sizeU0_;
+      // dummyPatch.getSizeV0()              = missedPointsPatch.sizeV0_;
+      // dummyPatch.getU1()                  = 0;
+      // dummyPatch.getV1()                  = 0;
+      // dummyPatch.getD1()                  = 0;
+      // dummyPatch.getNormalAxis()          = 0;
+      // dummyPatch.getTangentAxis()         = 1;
+      // dummyPatch.getBitangentAxis()       = 2;
+      // dummyPatch.getOccupancyResolution() = missedPointsPatch.occupancyResolution_;
+      // dummyPatch.getOccupancy()           = missedPointsPatch.occupancy_;
+      // dummyPatch.getLod()                 = params_.testLevelOfDetail_;
+      // dummyPatch.setBestMatchIdx()        = -1;
+      // dummyPatch.getPatchOrientation()    = PatchOrientation::DEFAULT;
+      // patches.pop_back();
+
+      ppdu.set2DShiftU( missedPointsPatch.u0_ );
+      ppdu.set2DShiftU( missedPointsPatch.v0_ );
+      ppdu.set2DDeltaSizeU( missedPointsPatch.sizeU0_ );
+      ppdu.set2DDeltaSizeV( missedPointsPatch.sizeV0_ );
+      pfdu.addPatchMode( frame.getIndex() == 0 ? (uint8_t)I_PCM : (uint8_t)P_PCM );
+      pid.setPCMPatchDataUnit( ppdu );
+      pfdu.addPatchInformationData( pid );
+    }
 }

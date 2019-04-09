@@ -47,31 +47,15 @@ PCCBitstreamDecoder::PCCBitstreamDecoder() {}
 PCCBitstreamDecoder::~PCCBitstreamDecoder() {}
 
 int PCCBitstreamDecoder::decode( PCCBitstream& bitstream, PCCContext& context ) {
-  printf( "Decode start \n" );
-  fflush( stdout );
-
   auto& sps = context.getSps();
   if ( !decompressHeader( context, bitstream ) ) { return 0; }
-
-  printf( "read video bitstream start \n" );
-  fflush( stdout );
   bitstream.read( context.createVideoBitstream( PCCVideoType::OccupancyMap ) );
-
-  printf( "here \n" );
-  fflush( stdout );
   if ( !sps.getLayerAbsoluteCodingEnabledFlag( 1 ) ) {
-    printf( "then \n" );
-    fflush( stdout );
     bitstream.read( context.createVideoBitstream( PCCVideoType::GeometryD0 ) );
     bitstream.read( context.createVideoBitstream( PCCVideoType::GeometryD1 ) );
   } else {
-    printf( "else \n" );
-    fflush( stdout );
     bitstream.read( context.createVideoBitstream( PCCVideoType::Geometry ) );
   }
-  printf( "done \n" );
-  fflush( stdout );
-
   if ( sps.getPcmPatchEnabledFlag() && sps.getPcmSeparateVideoPresentFlag() ) {
     bitstream.read( context.createVideoBitstream( PCCVideoType::GeometryMP ) );
   }
@@ -85,17 +69,12 @@ int PCCBitstreamDecoder::decode( PCCBitstream& bitstream, PCCContext& context ) 
 
   decompressOccupancyMap( context, bitstream );
 
-  printf( "decompressOccupancyMap done \n" );
-  fflush( stdout );
-
   if ( sps.getPcmPatchEnabledFlag() && sps.getPcmSeparateVideoPresentFlag() ) {
     readMissedPointsGeometryNumber( context, bitstream );
   } else if ( sps.getPcmPatchEnabledFlag() && !sps.getPcmSeparateVideoPresentFlag() ) {
     size_t numMissedPts{0};
     for ( auto& frame : context.getFrames() ) { frame.getMissedPointsPatch().numMissedPts_ = bitstream.read<size_t>(); }
   }
-  printf( " here \n" );
-  fflush( stdout );
   if ( sps.getAttributeCount() > 0 ) {
     if ( sps.getPcmPatchEnabledFlag() && context.getSps().getPcmSeparateVideoPresentFlag() ) {
       auto sizeMissedPointsTexture = bitstream.size();

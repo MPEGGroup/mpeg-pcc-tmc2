@@ -52,12 +52,21 @@ PCCBitstreamEncoderNewSyntax::~PCCBitstreamEncoderNewSyntax() {}
 void PCCBitstreamEncoderNewSyntax::setParameters( PCCEncoderParameters params ) { params = params; }
 
 // jkei : are we(??) going to change it to while (...) style later?
+
 int PCCBitstreamEncoderNewSyntax::encode( PCCContext& context, PCCBitstream& bitstream ) {  
+
+  int32_t sizeOccupancyMap = bitstream.size();
+
   vpccUnit( context, bitstream, VPCC_SPS );
   vpccUnit( context, bitstream, VPCC_PSD );
   vpccUnit( context, bitstream, VPCC_OVD );
   vpccUnit( context, bitstream, VPCC_GVD );
   vpccUnit( context, bitstream, VPCC_AVD );
+
+  sizeOccupancyMap = ( bitstream.size() - sizeOccupancyMap )
+          + context.getVideoBitstream( PCCVideoType::OccupancyMap ).naluSize();
+  std::cout << " occupancy map  ->" << sizeOccupancyMap << " B " << std::endl;
+
   return 0;
 }
 
@@ -292,10 +301,10 @@ void PCCBitstreamEncoderNewSyntax::geometryParameterSet( GeometryParameterSet& g
 void PCCBitstreamEncoderNewSyntax::geometrySequenceParams( GeometrySequenceParams& gsp, PCCBitstream& bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   bitstream.write( (uint32_t)gsp.getGeometrySmoothingParamsPresentFlag(), 1 );  // u(1)
-  bitstream.write( (uint32_t)gsp.getGeometryScaleParamsPresentFlag(), 1 );      // u(1)
-  bitstream.write( (uint32_t)gsp.getGeometryOffsetParamsPresentFlag(), 1 );     // u(1)
+  bitstream.write( (uint32_t)gsp.getGeometryScaleParamsPresentFlag()    , 1 );      // u(1)
+  bitstream.write( (uint32_t)gsp.getGeometryOffsetParamsPresentFlag()  , 1 );     // u(1)
   bitstream.write( (uint32_t)gsp.getGeometryRotationParamsPresentFlag(), 1 );   // u(1)
-  bitstream.write( (uint32_t)gsp.getGeometryPointSizeInfoPresentFlag(), 1 );    // u(1)
+  bitstream.write( (uint32_t)gsp.getGeometryPointSizeInfoPresentFlag() , 1 );    // u(1)
   bitstream.write( (uint32_t)gsp.getGeometryPointShapeInfoPresentFlag(), 1 );   // u(1)
   if ( gsp.getGeometrySmoothingParamsPresentFlag() ) {
     bitstream.write( (uint32_t)gsp.getGeometrySmoothingEnabledFlag(), 1 );  // u(8)
@@ -325,6 +334,17 @@ void PCCBitstreamEncoderNewSyntax::geometrySequenceParams( GeometrySequenceParam
       bitstream.write( (uint32_t)gsp.getGeometryPointShapeInfo(), 8 );  // u(8)
     }
   }
+
+  TRACE_BITSTREAM( "  GeometrySmoothingParamsPresentFlag = %d  \n", gsp.getGeometrySmoothingParamsPresentFlag() );
+  TRACE_BITSTREAM( "  GeometryScaleParamsPresentFlag     = %d  \n", gsp.getGeometryScaleParamsPresentFlag()     );
+  TRACE_BITSTREAM( "  GeometryOffsetParamsPresentFlag    = %d  \n", gsp.getGeometryOffsetParamsPresentFlag()   );
+  TRACE_BITSTREAM( "  GeometryRotationParamsPresentFlag  = %d  \n", gsp.getGeometryRotationParamsPresentFlag() );
+  TRACE_BITSTREAM( "  GeometryPointSizeInfoPresentFlag   = %d  \n", gsp.getGeometryPointSizeInfoPresentFlag()  );
+  TRACE_BITSTREAM( "  GeometryPointShapeInfoPresentFlag  = %d  \n", gsp.getGeometryPointShapeInfoPresentFlag() );
+  TRACE_BITSTREAM( "  getGeometrySmoothingEnabledFlag    = %d  \n", gsp.getGeometrySmoothingEnabledFlag() );
+  TRACE_BITSTREAM( "  getGeometrySmoothingGridSize       = %u  \n", gsp.getGeometrySmoothingGridSize() );
+  TRACE_BITSTREAM( "  getGeometrySmoothingThreshold      = %u  \n", gsp.getGeometrySmoothingThreshold() );
+
 }
 
 // 7.3.12 Attribute parameter set syntax
@@ -983,7 +1003,7 @@ void PCCBitstreamEncoderNewSyntax::patchDataUnit(
       pdu.get2DDeltaSizeU(), pdu.get2DDeltaSizeV(), 
       pdu.getProjectionMode(), pdu.getOrientationSwapFlag(),
       pdu.get3DShiftTangentAxis(),pdu.get3DShiftBiTangentAxis(), pdu.get3DShiftNormalAxis() );
-      
+
   TRACE_BITSTREAM_NH( "%s done \n", __func__ );
 }
 

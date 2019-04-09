@@ -494,7 +494,11 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   sps.setLayerAbsoluteCodingEnabledFlag( 0, 0 );
   sps.setLayerAbsoluteCodingEnabledFlag( 1, absoluteD1_ );
   sps.setPcmPatchEnabledFlag(  useAdditionalPointsPatch_ );
+  
+  gps.setGeometryParamsEnabledFlag( flagGeometrySmoothing_ );
   gsp.setGeometrySmoothingParamsPresentFlag( flagGeometrySmoothing_ );
+  gsp.setGeometrySmoothingEnabledFlag( flagGeometrySmoothing_ );
+
   gsp.setGeometrySmoothingGridSize( gridSize_ );
   gsp.setGeometrySmoothingThreshold( thresholdSmoothing_ );
   gsp.setGeometrySmoothingEnabledFlag(  gridSmoothing_ ) ;
