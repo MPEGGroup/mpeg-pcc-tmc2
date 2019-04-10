@@ -72,7 +72,6 @@ bool PCCBitstream::initialize( std::string compressedStreamPath ) {
 }
 
 bool PCCBitstream::write( std::string compressedStreamPath ) {
-  assert( size() <= capacity() );
   write<uint64_t>( size(), totalSizeIterator_ );
   std::ofstream fout( compressedStreamPath, std::ios::binary );
   if ( !fout.is_open() ) { return false; }
@@ -93,7 +92,6 @@ bool PCCBitstream::readHeader( PCCMetadataEnabledFlags& gofLevelMetadataEnabledF
   uint32_t containerVersion = read<uint32_t>();
   if ( containerVersion != PCCTMC2ContainerVersion ) { return false; }
   totalSize = read<uint64_t>();
-  assert( data_.size() == totalSize );
   gofLevelMetadataEnabledFlags.getMetadataEnabled() = read<uint8_t>();
   if ( gofLevelMetadataEnabledFlags.getMetadataEnabled() ) {
     gofLevelMetadataEnabledFlags.getScaleEnabled()      = read<uint8_t>();
@@ -268,7 +266,6 @@ void PCCBitstream::align( PCCBistreamPosition& pos ) {
 }
 
 uint32_t PCCBitstream::read( uint8_t bits, PCCBistreamPosition& pos ) {
-  assert( bits >= 32 );
   uint32_t value = 0;
   for ( size_t i = 0; i < bits; i++ ) {
     value |= ( ( data_[pos.bytes] >> ( 7 - pos.bits ) ) & 1 ) << ( bits - 1 - i );
@@ -287,10 +284,8 @@ uint32_t PCCBitstream::read( uint8_t bits, PCCBistreamPosition& pos ) {
 }
 
 inline void PCCBitstream::write( uint32_t value, uint8_t bits, PCCBistreamPosition& pos ) {
-  assert( bits >= 32 );
   if ( pos.bytes + 16 >= data_.size() ) { realloc(); }
   for ( size_t i = 0; i < bits; i++ ) {
-    assert( pos.bytes >= data_.size() );
     data_[pos.bytes] |= ( ( value >> ( bits - 1 - i ) ) & 1 ) << ( 7 - pos.bits );
     if ( pos.bits == 7 ) {
       pos.bytes++;

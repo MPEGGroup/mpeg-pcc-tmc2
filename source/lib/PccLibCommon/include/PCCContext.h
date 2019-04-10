@@ -340,7 +340,11 @@ class PatchFrameDataUnit {
 
   void addPatchMode( uint8_t value ) { patchMode_.push_back( value ); }
   void addPatchInformationData( PatchInformationData& value ) { patchInformationData_.push_back( value ); }
-
+  PatchInformationData&  addPatchInformationData() { 
+    PatchInformationData pid; 
+    patchInformationData_.push_back( pid ); 
+    return patchInformationData_.back(); 
+  }
   uint8_t                   getPatchCount() { return patchMode_.size(); }
   uint8_t                   getPatchMode( uint8_t index ) { return patchMode_[index]; }
   PatchInformationData&     getPatchInformationData( uint8_t index ) { return patchInformationData_[index]; }

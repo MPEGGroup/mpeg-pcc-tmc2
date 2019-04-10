@@ -236,13 +236,17 @@ static std::string removeFileExtension( const std::string string ) {
   return ( pos != std::string::npos && pos + 4 == string.length() ) ? string.substr( 0, pos ) : string;
 }
 
-static std::string addVideoFormat(
-    const std::string string, const size_t width, const size_t height, const bool yuv420 = true, const std::string pixel = "8" ) {
+static std::string addVideoFormat( const std::string string,
+                                   const size_t      width,
+                                   const size_t      height,
+                                   const bool        yuv420 = true,
+                                   const std::string pixel  = "8" ) {
   size_t      pos      = string.find_last_of( "." );
   std::string filename = string.substr( 0, pos ), extension = string.substr( pos );
   if ( extension == ".yuv" || extension == ".rgb" ) {
     std::stringstream result;
-    result << filename << "_" << width << "x" << height << "_" << pixel << "bit_" << ( extension == ".yuv" && yuv420 ? "p420" : "p444" ) << extension;
+    result << filename << "_" << width << "x" << height << "_" << pixel << "bit_"
+           << ( extension == ".yuv" && yuv420 ? "p420" : "p444" ) << extension;
     return result.str();
   }
   return string;
@@ -273,7 +277,10 @@ static const T PCCFromLittleEndian( const T u ) {
   return ( PCCSystemEndianness() == PCC_BIG_ENDIAN ) ? PCCEndianSwap( u ) : u;
 }
 
-static void PCCDivideRange( const size_t start, const size_t end, const size_t chunckCount, std::vector<size_t>& subRanges ) {
+static void PCCDivideRange( const size_t         start,
+                            const size_t         end,
+                            const size_t         chunckCount,
+                            std::vector<size_t>& subRanges ) {
   const size_t elementCount = end - start;
   if ( elementCount <= chunckCount ) {
     subRanges.resize( elementCount + 1 );
@@ -290,7 +297,7 @@ static void PCCDivideRange( const size_t start, const size_t end, const size_t c
   }
 }
 
-static uint32_t PCCGetNumberOfBitsInFixedLengthRepresentation( uint32_t range ) {
+static uint32_t getFixedLengthCodeBitsCount( uint32_t range ) {
   int count = 0;
   if ( range > 0 ) {
     range -= 1;
@@ -313,10 +320,16 @@ std::string string_format( const char* pFormat, Args... eArgs ) {
 }
 
 static uint32_t convertToUInt( int32_t value ) { return ( value <= 0 ) ? -value << 1 : ( value << 1 ) - 1; }
-static int32_t  convertToInt( uint32_t value ) { return ( value & 1 ) ? -( int32_t )( value >> 1 ) : ( int32_t )( value >> 1 ); }
+static int32_t  convertToInt( uint32_t value ) {
+  return ( value & 1 ) ? -( int32_t )( value >> 1 ) : ( int32_t )( value >> 1 );
+}
 
 template <typename T>
-void printVector( std::vector<T> data, const size_t width, const size_t height, const std::string string, const bool hexa = false ) {
+void printVector( std::vector<T>    data,
+                  const size_t      width,
+                  const size_t      height,
+                  const std::string string,
+                  const bool        hexa = false ) {
   if ( data.size() == 0 ) { data.resize( width * height, 0 ); }
   printf( "%s: %lu %lu \n", string.c_str(), width, height );
   for ( size_t v0 = 0; v0 < height; ++v0 ) {

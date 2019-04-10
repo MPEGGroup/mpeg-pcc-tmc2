@@ -577,20 +577,20 @@ void PCCBitstreamEncoder::compressPatchMetaDataM42195( PCCContext      &context,
   // compressMetadata(frame.getFrameLevelMetadata(), arithmeticEncoder);
 
   const uint8_t bitCountNumPatches =
-      uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(patchCount)));//numMatchedPatches <= patchCount
+      uint8_t(getFixedLengthCodeBitsCount(uint32_t(patchCount)));//numMatchedPatches <= patchCount
   EncodeUInt32(uint32_t(numMatchedPatches), bitCountNumPatches, arithmeticEncoder, bModel0);
   uint8_t flag = 0;
   uint8_t F = 1;  //true if the maximum value comes from the latter part.
   uint8_t A[4] = { 1, 1, 1, 1 };
   uint8_t bitCount[5], topBitCount[5];
-  bitCount   [0] = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(maxU0     + 1)));
-  topBitCount[0] = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(TopNmaxU0 + 1)));
-  bitCount   [1] = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(maxV0     + 1)));
-  topBitCount[1] = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(TopNmaxV0 + 1)));
-  bitCount   [2] = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(maxU1     + 1)));
-  topBitCount[2] = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(TopNmaxU1 + 1)));
-  bitCount   [3] = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(maxV1     + 1)));
-  topBitCount[3] = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(TopNmaxV1 + 1)));
+  bitCount   [0] = uint8_t(getFixedLengthCodeBitsCount(uint32_t(maxU0     + 1)));
+  topBitCount[0] = uint8_t(getFixedLengthCodeBitsCount(uint32_t(TopNmaxU0 + 1)));
+  bitCount   [1] = uint8_t(getFixedLengthCodeBitsCount(uint32_t(maxV0     + 1)));
+  topBitCount[1] = uint8_t(getFixedLengthCodeBitsCount(uint32_t(TopNmaxV0 + 1)));
+  bitCount   [2] = uint8_t(getFixedLengthCodeBitsCount(uint32_t(maxU1     + 1)));
+  topBitCount[2] = uint8_t(getFixedLengthCodeBitsCount(uint32_t(TopNmaxU1 + 1)));
+  bitCount   [3] = uint8_t(getFixedLengthCodeBitsCount(uint32_t(maxV1     + 1)));
+  topBitCount[3] = uint8_t(getFixedLengthCodeBitsCount(uint32_t(TopNmaxV1 + 1)));
   bitCount   [4] = maxBitCountForMinDepth;
 
   for (int i = 0; i < 4; i++) {
@@ -712,7 +712,7 @@ void PCCBitstreamEncoder::compressPatchMetaDataM42195( PCCContext      &context,
     metadata.setMetadataPresent(true);
 
     if (!sps.getLayerAbsoluteCodingEnabledFlag( 1 )  && (patch.getFrameProjectionMode() == 2)) {
-      const uint8_t bitCountProjDir = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(2 + 1)));
+      const uint8_t bitCountProjDir = uint8_t(getFixedLengthCodeBitsCount(uint32_t(2 + 1)));
       EncodeUInt32(uint32_t(patch.getProjectionMode()), bitCountProjDir, arithmeticEncoder, bModel0);
     }
     if ( sps.getLayerAbsoluteCodingEnabledFlag( 1 )  ) { // && context.getSixDirectionMode()
@@ -877,13 +877,13 @@ void PCCBitstreamEncoder::compressOccupancyMap( PCCContext&      context,
 
       maxLod = (std::max)(maxLod, patch.getLod());
     }
-    const uint8_t bitCountU0  = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(maxU0 + 1)));
-    const uint8_t bitCountV0  = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(maxV0 + 1)));
-    const uint8_t bitCountU1  = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(maxU1 + 1)));
-    const uint8_t bitCountV1  = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(maxV1 + 1)));
+    const uint8_t bitCountU0  = uint8_t(getFixedLengthCodeBitsCount(uint32_t(maxU0 + 1)));
+    const uint8_t bitCountV0  = uint8_t(getFixedLengthCodeBitsCount(uint32_t(maxV0 + 1)));
+    const uint8_t bitCountU1  = uint8_t(getFixedLengthCodeBitsCount(uint32_t(maxU1 + 1)));
+    const uint8_t bitCountV1  = uint8_t(getFixedLengthCodeBitsCount(uint32_t(maxV1 + 1)));
     const uint8_t bitCountD1  = maxBitCountForMinDepth;
     const uint8_t bitCountDD  = maxBitCountForMaxDepth;
-    const uint8_t bitCountLod = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(maxLod + 1)));
+    const uint8_t bitCountLod = uint8_t(getFixedLengthCodeBitsCount(uint32_t(maxLod + 1)));
 
     bitstream.write<uint8_t>(bitCountU0);
     bitstream.write<uint8_t>(bitCountV0);
@@ -944,7 +944,7 @@ void PCCBitstreamEncoder::compressOccupancyMap( PCCContext&      context,
 
       EncodeUInt32(uint32_t(patch.getLod()), bitCountLod, arithmeticEncoder, bModel0);
       if (!sps.getLayerAbsoluteCodingEnabledFlag( 1 ) && (patch.getFrameProjectionMode() == 2)) {
-        const uint8_t bitCountProjDir = uint8_t(PCCGetNumberOfBitsInFixedLengthRepresentation(uint32_t(2 + 1)));
+        const uint8_t bitCountProjDir = uint8_t(getFixedLengthCodeBitsCount(uint32_t(2 + 1)));
         EncodeUInt32(uint32_t(patch.getProjectionMode()), bitCountProjDir, arithmeticEncoder, bModel0);
       }
       if ( sps.getLayerAbsoluteCodingEnabledFlag( 1 )  ) { // && context.getSixDirectionMode()

@@ -142,12 +142,10 @@ class PCCBitstream {
     if ( pos.bytes + 16 >= data_.size() ) { realloc(); }
     if ( PCCSystemEndianness() == PCC_LITTLE_ENDIAN ) {
       for ( size_t k = 0; k < sizeof( T ); k++ ) {
-        assert( pos.bytes >= data_.size() );
         data_[pos.bytes++] = source.u8[k];
       }
     } else {
       for ( size_t k = 0; k < sizeof( T ); k++ ) {
-        assert( pos.bytes >= data_.size() );
         data_[pos.bytes++] = source.u8[sizeof( T ) - k - 1];
       }
     }

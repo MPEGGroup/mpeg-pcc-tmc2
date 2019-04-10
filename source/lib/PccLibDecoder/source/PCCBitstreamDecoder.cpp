@@ -554,7 +554,7 @@ void PCCBitstreamDecoder::decompressPatchMetaDataM42195( PCCContext&            
   int64_t       prevSizeU0 = 0;
   int64_t       prevSizeV0 = 0;
   uint32_t      numMatchedPatches;
-  const uint8_t bitMatchedPatchCount = uint8_t( PCCGetNumberOfBitsInFixedLengthRepresentation( uint32_t( patchCount ) ) );
+  const uint8_t bitMatchedPatchCount = uint8_t( getFixedLengthCodeBitsCount( uint32_t( patchCount ) ) );
   numMatchedPatches                  = DecodeUInt32( bitMatchedPatchCount, arithmeticDecoder, bModel0 );  
   frame.getNumMatchedPatches() = numMatchedPatches; 
   F                                  = uint8_t( DecodeUInt32( 1, arithmeticDecoder, bModel0 ) );
@@ -662,7 +662,7 @@ void PCCBitstreamDecoder::decompressPatchMetaDataM42195( PCCContext&            
 
   // Get Bitcount.
   for ( int i = 0; i < 4; i++ ) {
-    if ( A[i] == 0 ) { bitCount[i] = uint8_t( PCCGetNumberOfBitsInFixedLengthRepresentation( uint32_t( topNmax[i] + 1 ) ) ); }
+    if ( A[i] == 0 ) { bitCount[i] = uint8_t( getFixedLengthCodeBitsCount( uint32_t( topNmax[i] + 1 ) ) ); }
   }
 
   for ( size_t patchIndex = numMatchedPatches; patchIndex < patchCount; ++patchIndex ) {
@@ -893,7 +893,7 @@ void PCCBitstreamDecoder::decompressOccupancyMap(
           patch.getProjectionMode() = 1;
         } else if ( patch.getFrameProjectionMode() == 2 ) {
           patch.getProjectionMode()     = 0;
-          const uint8_t bitCountProjDir = uint8_t( PCCGetNumberOfBitsInFixedLengthRepresentation( uint32_t( 2 + 1 ) ) );
+          const uint8_t bitCountProjDir = uint8_t( getFixedLengthCodeBitsCount( uint32_t( 2 + 1 ) ) );
           patch.getProjectionMode()     = DecodeUInt32( bitCountProjDir, arithmeticDecoder, bModel0 );
           std::cout << "patch.getProjectionMode()= " << patch.getProjectionMode() << std::endl;
         } else {
