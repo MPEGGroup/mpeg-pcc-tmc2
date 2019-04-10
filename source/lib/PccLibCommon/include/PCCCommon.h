@@ -63,8 +63,8 @@
 // ******************************************************************* //
 // Trace mode to validate new syntax
 // ******************************************************************* //
-#define BITSTREAM_TRACE
-#define CODEC_TRACE
+// #define BITSTREAM_TRACE
+// #define CODEC_TRACE
 #define BUG_FIX_BITDEPTH
 
 //

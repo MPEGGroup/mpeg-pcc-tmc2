@@ -83,53 +83,46 @@ void PCCCodec::addGridCentroid( PCCPoint3D&               point,
 void PCCCodec::generatePointCloud( PCCGroupOfFrames&                  reconstructs,
                                    PCCContext&                        context,
                                    const GeneratePointCloudParameters params ) {
-#ifdef CODEC_TRACE
-  trace( "Generate point Cloud start \n" );
-  trace( " size_t  occupancyResolution_;            = %lu \n", params.occupancyResolution_ );
-  trace( " size_t  occupancyPrecision_;             = %lu \n", params.occupancyPrecision_ );
-  trace( " bool    flagGeometrySmoothing_;          = %d  \n", params.flagGeometrySmoothing_ );
-  trace( " bool    gridSmoothing_;                  = %d  \n", params.gridSmoothing_ );
-  trace( " size_t  gridSize_;                       = %lu \n", params.gridSize_ );
-  trace( " size_t  neighborCountSmoothing_;         = %lu \n", params.neighborCountSmoothing_ );
-  trace( " double  radius2Smoothing_;               = %f  \n", params.radius2Smoothing_ );
-  trace( " double  radius2BoundaryDetection_;       = %f  \n", params.radius2BoundaryDetection_ );
-  trace( " double  thresholdSmoothing_;             = %f  \n", params.thresholdSmoothing_ );
-  trace( " bool    losslessGeo_;                    = %d  \n", params.losslessGeo_ );
-  trace( " bool    losslessGeo444_;                 = %d  \n", params.losslessGeo444_ );
-  trace( " size_t  nbThread_;                       = %lu \n", params.nbThread_ );
-  trace( " bool    absoluteD1_;                     = %d  \n", params.absoluteD1_ );
-  trace( " size_t  surfaceThickness;                = %lu \n", params.surfaceThickness );
-  trace( " bool    ignoreLod_;                      = %d  \n", params.ignoreLod_ );
-  trace( " bool    flagColorSmoothing_;             = %d  \n", params.flagColorSmoothing_ );
-  trace( " double  thresholdColorSmoothing_;        = %f  \n", params.thresholdColorSmoothing_ );
-  trace( " double  thresholdLocalEntropy_;          = %f  \n", params.thresholdLocalEntropy_ );
-  trace( " double  radius2ColorSmoothing_;          = %f  \n", params.radius2ColorSmoothing_ );
-  trace( " size_t  neighborCountColorSmoothing_;    = %lu \n", params.neighborCountColorSmoothing_ );
-  trace( " bool    enhancedDeltaDepthCode_;         = %d  \n", params.enhancedDeltaDepthCode_ );
-  trace( " bool    removeDuplicatePoints_;          = %d  \n", params.removeDuplicatePoints_ );
-  trace( " bool    oneLayerMode_;                   = %d  \n", params.oneLayerMode_ );
-  trace( " bool    singleLayerPixelInterleaving_;   = %d  \n", params.singleLayerPixelInterleaving_ );
-  trace( " string  path_;                           = %s  \n", params.path_.c_str() );
-  trace( " bool    useAdditionalPointsPatch_;       = %d  \n", params.useAdditionalPointsPatch_ );
-#endif
+  TRACE_CODEC( "Generate point Cloud start \n" );
+  TRACE_CODEC( " size_t  occupancyResolution_;            = %lu \n", params.occupancyResolution_ );
+  TRACE_CODEC( " size_t  occupancyPrecision_;             = %lu \n", params.occupancyPrecision_ );
+  TRACE_CODEC( " bool    flagGeometrySmoothing_;          = %d  \n", params.flagGeometrySmoothing_ );
+  TRACE_CODEC( " bool    gridSmoothing_;                  = %d  \n", params.gridSmoothing_ );
+  TRACE_CODEC( " size_t  gridSize_;                       = %lu \n", params.gridSize_ );
+  TRACE_CODEC( " size_t  neighborCountSmoothing_;         = %lu \n", params.neighborCountSmoothing_ );
+  TRACE_CODEC( " double  radius2Smoothing_;               = %f  \n", params.radius2Smoothing_ );
+  TRACE_CODEC( " double  radius2BoundaryDetection_;       = %f  \n", params.radius2BoundaryDetection_ );
+  TRACE_CODEC( " double  thresholdSmoothing_;             = %f  \n", params.thresholdSmoothing_ );
+  TRACE_CODEC( " bool    losslessGeo_;                    = %d  \n", params.losslessGeo_ );
+  TRACE_CODEC( " bool    losslessGeo444_;                 = %d  \n", params.losslessGeo444_ );
+  TRACE_CODEC( " size_t  nbThread_;                       = %lu \n", params.nbThread_ );
+  TRACE_CODEC( " bool    absoluteD1_;                     = %d  \n", params.absoluteD1_ );
+  TRACE_CODEC( " size_t  surfaceThickness;                = %lu \n", params.surfaceThickness );
+  TRACE_CODEC( " bool    ignoreLod_;                      = %d  \n", params.ignoreLod_ );
+  TRACE_CODEC( " bool    flagColorSmoothing_;             = %d  \n", params.flagColorSmoothing_ );
+  TRACE_CODEC( " double  thresholdColorSmoothing_;        = %f  \n", params.thresholdColorSmoothing_ );
+  TRACE_CODEC( " double  thresholdLocalEntropy_;          = %f  \n", params.thresholdLocalEntropy_ );
+  TRACE_CODEC( " double  radius2ColorSmoothing_;          = %f  \n", params.radius2ColorSmoothing_ );
+  TRACE_CODEC( " size_t  neighborCountColorSmoothing_;    = %lu \n", params.neighborCountColorSmoothing_ );
+  TRACE_CODEC( " bool    enhancedDeltaDepthCode_;         = %d  \n", params.enhancedDeltaDepthCode_ );
+  TRACE_CODEC( " bool    removeDuplicatePoints_;          = %d  \n", params.removeDuplicatePoints_ );
+  TRACE_CODEC( " bool    oneLayerMode_;                   = %d  \n", params.oneLayerMode_ );
+  TRACE_CODEC( " bool    singleLayerPixelInterleaving_;   = %d  \n", params.singleLayerPixelInterleaving_ );
+  TRACE_CODEC( " string  path_;                           = %s  \n", params.path_.c_str() );
+  TRACE_CODEC( " bool    useAdditionalPointsPatch_;       = %d  \n", params.useAdditionalPointsPatch_ );
 
   auto& frames          = context.getFrames();
   auto& videoGeometry   = context.getVideoGeometry();
   auto& videoGeometryD1 = context.getVideoGeometryD1();
 
   for ( size_t i = 0; i < frames.size(); i++ ) {
-#ifdef CODEC_TRACE
-    trace( " Frame %lu / %lu \n", i, frames.size() );
-#endif
+    TRACE_CODEC( " Frame %lu / %lu \n", i, frames.size() );
     std::vector<uint32_t> partition;
     generatePointCloud( reconstructs[i], frames[i], videoGeometry, videoGeometryD1, params, partition );
 
-#ifdef CODEC_TRACE
-    trace( " generatePointCloud create %lu points \n", reconstructs[i].getPointCount() );
-    trace( " params.flagGeometrySmoothing_ = %d \n", params.flagGeometrySmoothing_ );
-    trace( " params.gridSmoothing_         = %d \n", params.gridSmoothing_ );
-
-#endif
+    TRACE_CODEC( " generatePointCloud create %lu points \n", reconstructs[i].getPointCount() );
+    TRACE_CODEC( " params.flagGeometrySmoothing_ = %d \n", params.flagGeometrySmoothing_ );
+    TRACE_CODEC( " params.gridSmoothing_         = %d \n", params.gridSmoothing_ );
     if ( !params.losslessGeo_ && params.flagGeometrySmoothing_ ) {
       if ( params.gridSmoothing_ ) {
         // reset for each GOF
@@ -167,9 +160,7 @@ void PCCCodec::generatePointCloud( PCCGroupOfFrames&                  reconstruc
       }
     }
   }
-#ifdef CODEC_TRACE
-  trace( "Generate point Cloud done \n" );
-#endif
+  TRACE_CODEC( "Generate point Cloud done \n" );
 }
 
 bool PCCCodec::colorPointCloud( PCCGroupOfFrames&                  reconstructs,
@@ -177,9 +168,7 @@ bool PCCCodec::colorPointCloud( PCCGroupOfFrames&                  reconstructs,
                                 const uint8_t                      attributeCount,
                                 const ColorTransform               colorTransform,
                                 const GeneratePointCloudParameters params ) {
-#ifdef CODEC_TRACE
-  trace( "Color point Cloud start \n" );
-#endif
+  TRACE_CODEC( "Color point Cloud start \n" );
   auto& video  = context.getVideoTexture();
   auto& frames = context.getFrames();
   for ( size_t i = 0; i < frames.size(); i++ ) {
@@ -188,9 +177,7 @@ bool PCCCodec::colorPointCloud( PCCGroupOfFrames&                  reconstructs,
     if ( !params.losslessGeo_ && params.flagColorSmoothing_ ) { smoothPointCloudColor( reconstructs[i], params ); }
     if ( colorTransform == COLOR_TRANSFORM_RGB_TO_YCBCR ) { reconstructs[i].convertYUVToRGB(); }
   }
-#ifdef CODEC_TRACE
-  trace( "Color point Cloud done \n" );
-#endif
+  TRACE_CODEC( "Color point Cloud done \n" );
   return true;
 }
 
@@ -948,9 +935,7 @@ void PCCCodec::smoothPointCloudGrid( PCCPointSet3&                      reconstr
                                      const std::vector<uint32_t>&       partition,
                                      const GeneratePointCloudParameters params,
                                      int                                gridWidth ) {
-#ifdef CODEC_TRACE
-  trace( " smoothPointCloudGrid start \n" );
-#endif
+  TRACE_CODEC( " smoothPointCloudGrid start \n" );
   const size_t pointCount = reconstruct.getPointCount();
   const int    gridSize   = (int)params.gridSize_;
   const int    disth      = ( std::max )( gridSize / 2, 1 );
@@ -980,17 +965,13 @@ void PCCCodec::smoothPointCloudGrid( PCCPointSet3&                      reconstr
       }
     }
   }
-#ifdef CODEC_TRACE
-  trace( " smoothPointCloudGrid done \n" );
-#endif
+  TRACE_CODEC( " smoothPointCloudGrid done \n" );
 }
 
 void PCCCodec::smoothPointCloud( PCCPointSet3&                      reconstruct,
                                  const std::vector<uint32_t>&       partition,
                                  const GeneratePointCloudParameters params ) {
-#ifdef CODEC_TRACE
-  trace( " smoothPointCloud start \n" );
-#endif
+  TRACE_CODEC( " smoothPointCloud start \n" );
   const size_t pointCount = reconstruct.getPointCount();
   PCCKdTree    kdtree( reconstruct );
   PCCPointSet3 temp;
@@ -1045,15 +1026,11 @@ void PCCCodec::smoothPointCloud( PCCPointSet3&                      reconstruct,
       reconstruct[i] = temp[i];
     } );
   } );
-#ifdef CODEC_TRACE
-  trace( " smoothPointCloud done \n" );
-#endif
+  TRACE_CODEC( " smoothPointCloud done \n" );
 }
 
 void PCCCodec::smoothPointCloudColor( PCCPointSet3& reconstruct, const GeneratePointCloudParameters params ) {
-#ifdef CODEC_TRACE
-  trace( " smoothPointCloudColor start \n" );
-#endif
+  TRACE_CODEC( " smoothPointCloudColor start \n" );
   const size_t pointCount = reconstruct.getPointCount();
   PCCKdTree    kdtree( reconstruct );
   PCCPointSet3 temp;
@@ -1106,9 +1083,7 @@ void PCCCodec::smoothPointCloudColor( PCCPointSet3& reconstruct, const GenerateP
       }
     } );
   } );
-#ifdef CODEC_TRACE
-  trace( " smoothPointCloudColor done \n" );
-#endif
+  TRACE_CODEC( " smoothPointCloudColor done \n" );
 }
 
 void PCCCodec::createSpecificLayerReconstruct( const PCCPointSet3&                 reconstruct,

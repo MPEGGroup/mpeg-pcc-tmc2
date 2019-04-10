@@ -67,12 +67,12 @@ void PCCContext::allocOneLayerData( const size_t occupancyResolution ) {
 void PCCContext::printVideoBitstream() {
   size_t index = 0;
   printf( "VideoBitstream list: \n" );
-  fflush( stdout );
   for ( auto& value : videoBitstream_ ) {
     printf( "  * %lu / %lu: ", index, videoBitstream_.size() );
     value.trace();
     index++;
   }
+  fflush( stdout );
 }
 
 void PCCContext::printBlockToPatch( const size_t occupancyResolution ) {

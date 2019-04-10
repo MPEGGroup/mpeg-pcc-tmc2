@@ -46,949 +46,1079 @@
 using namespace std;
 using namespace pcc;
 
-PCCBitstreamEncoder::PCCBitstreamEncoder(){
-}
+PCCBitstreamEncoder::PCCBitstreamEncoder() {}
+PCCBitstreamEncoder::~PCCBitstreamEncoder() {}
 
-PCCBitstreamEncoder::~PCCBitstreamEncoder(){
-}
+void PCCBitstreamEncoder::setParameters( PCCEncoderParameters params ) { params = params; }
 
-void PCCBitstreamEncoder::setParameters( PCCEncoderParameters params ) {
-  params_ = params;
-}
-
-int PCCBitstreamEncoder::encode( PCCContext &context, PCCBitstream &bitstream ){
-  
-  auto sizeFrameHeader = bitstream.size();
-  std::cout << "PCCEncoder: compress (start: bitstream = " << bitstream.size() << " / " << bitstream.capacity() << " )" << std::endl;
-  compressHeader( context, bitstream );
-  std::cout << "PCCEncoder: compress (header: bitstream = " << bitstream.size() << " / " << bitstream.capacity() << " )" << std::endl;
-  sizeFrameHeader = bitstream.size() - sizeFrameHeader;
-  std::cout << "frame header info  ->" << sizeFrameHeader << " B " << std::endl;
-  context.printVideoBitstream();
-
-  auto& sps = context.getSps();
-  std::cout << "PCCEncoder: compress (video bitstream start: bitstream = "<< bitstream.size()<<" / "<< bitstream.capacity()<<" )" << std::endl;
-  bitstream.write( context.getVideoBitstream( PCCVideoType::OccupancyMap ) );
-  if (!sps.getLayerAbsoluteCodingEnabledFlag( 1 )) {
-    bitstream.write( context.getVideoBitstream( PCCVideoType::GeometryD0 ) );
-    bitstream.write( context.getVideoBitstream( PCCVideoType::GeometryD1 ) );
-  } else {
-    bitstream.write( context.getVideoBitstream(  PCCVideoType::Geometry ) );
-  }
-  if( sps.getPcmPatchEnabledFlag() && sps.getPcmSeparateVideoPresentFlag()) {
-    bitstream.write( context.getVideoBitstream(  PCCVideoType::GeometryMP ) );
-  }
-  if ( sps.getAttributeCount() > 0 ) {
-    bitstream.write( context.getVideoBitstream( PCCVideoType::Texture ) );
-    if( sps.getPcmPatchEnabledFlag() && sps.getPcmSeparateVideoPresentFlag()) {
-      bitstream.write( context.getVideoBitstream( PCCVideoType::TextureMP ) );
-    }
-  }
-  std::cout << "PCCEncoder: compress (video bitstream done: bitstream = :"<<bitstream.size()<<" / "<< bitstream.capacity()<<" )" << std::endl;
-
-  size_t sizeOccupancyMap = bitstream.size();
-  compressOccupancyMap(context, bitstream);
-
-  std::cout << "PCCEncoder: compress (metadata done: bitstream = "<< bitstream.size()<<" / "<< bitstream.capacity()<<" )" << std::endl;
-  sizeOccupancyMap = ( bitstream.size() - sizeOccupancyMap )
-          + context.getVideoBitstream( PCCVideoType::OccupancyMap ).naluSize();
+int PCCBitstreamEncoder::encode( PCCContext& context, PCCBitstream& bitstream ) {
+  int32_t sizeOccupancyMap = bitstream.size();
+  vpccUnit( context, bitstream, VPCC_SPS );
+  vpccUnit( context, bitstream, VPCC_PSD );
+  vpccUnit( context, bitstream, VPCC_OVD );
+  vpccUnit( context, bitstream, VPCC_GVD );
+  vpccUnit( context, bitstream, VPCC_AVD );
+  sizeOccupancyMap =
+      ( bitstream.size() - sizeOccupancyMap ) + context.getVideoBitstream( PCCVideoType::OccupancyMap ).naluSize();
   std::cout << " occupancy map  ->" << sizeOccupancyMap << " B " << std::endl;
-
-  if ( sps.getPcmPatchEnabledFlag() && sps.getPcmSeparateVideoPresentFlag()) {
-    writeMissedPointsGeometryNumber( context, bitstream );
-  }
-  else if ( sps.getPcmPatchEnabledFlag() && !sps.getPcmSeparateVideoPresentFlag()) {
-    for (auto &frame : context.getFrames()){
-      size_t numMissedPts = frame.getMissedPointsPatch().numMissedPts_;
-      bitstream.write<size_t>(size_t(numMissedPts));
-    }
-  }
-
-  if( sps.getAttributeCount() > 0 ) {
-    if( sps.getPcmPatchEnabledFlag() && sps.getPcmSeparateVideoPresentFlag())  {
-      writeMissedPointsTextureNumber( context, bitstream );
-    }
-  }
-  std::cout << "PCCEncoder: compress (done: bitstream = " << bitstream.size() << " / " << bitstream.capacity() << " )" << std::endl;
   return 0;
 }
 
-void PCCBitstreamEncoder::EncodeUInt32( const uint32_t value,
-                   const uint32_t bitCount,
-                   o3dgc::Arithmetic_Codec &arithmeticEncoder,
-                   o3dgc::Static_Bit_Model &bModel0 ) {
-  uint32_t valueToEncode = PCCToLittleEndian<uint32_t>(value);
-  for (uint32_t i = 0; i < bitCount; ++i) {
-    arithmeticEncoder.encode(valueToEncode & 1, bModel0);
+void PCCBitstreamEncoder::vpccVideoDataUnit( PCCContext& context, PCCBitstream& bitstream, VPCCUnitType vpccUnitType ) {
+  TRACE_BITSTREAM( "%s start \n", __func__ );
+  auto& sps = context.getSps();
+
+  if ( vpccUnitType == VPCC_OVD ) {
+    TRACE_BITSTREAM( "OccupancyMap \n" );
+    bitstream.write( context.getVideoBitstream( PCCVideoType::OccupancyMap ) );
+  } else if ( vpccUnitType == VPCC_GVD ) {
+    if ( !sps.getLayerAbsoluteCodingEnabledFlag( 1 ) ) {
+      bitstream.write( context.getVideoBitstream( PCCVideoType::GeometryD0 ) );
+      bitstream.write( context.getVideoBitstream( PCCVideoType::GeometryD1 ) );
+    } else {
+      TRACE_BITSTREAM( "Geometry \n" );
+      bitstream.write( context.getVideoBitstream( PCCVideoType::Geometry ) );
+    }
+    if ( sps.getPcmPatchEnabledFlag() && sps.getPcmSeparateVideoPresentFlag() ) {
+      bitstream.write( context.getVideoBitstream( PCCVideoType::GeometryMP ) );
+    }
+  } else if ( vpccUnitType == VPCC_AVD ) {
+    if ( sps.getAttributeCount() > 0 ) {
+      TRACE_BITSTREAM( "Texture \n" );
+      bitstream.write( context.getVideoBitstream( PCCVideoType::Texture ) );
+      if ( sps.getPcmPatchEnabledFlag() && sps.getPcmSeparateVideoPresentFlag() ) {
+        bitstream.write( context.getVideoBitstream( PCCVideoType::TextureMP ) );
+      }
+    }
+  }
+  TRACE_BITSTREAM( "%s done \n", __func__ );
+}
+
+void PCCBitstreamEncoder::EncodeUInt32( const uint32_t           value,
+                                        const uint32_t           bitCount,
+                                        o3dgc::Arithmetic_Codec& arithmeticEncoder,
+                                        o3dgc::Static_Bit_Model& bModel0 ) {
+  uint32_t valueToEncode = PCCToLittleEndian<uint32_t>( value );
+  for ( uint32_t i = 0; i < bitCount; ++i ) {
+    arithmeticEncoder.encode( valueToEncode & 1, bModel0 );
     valueToEncode >>= 1;
   }
 }
 
-void PCCBitstreamEncoder::writeMissedPointsGeometryNumber(PCCContext& context, PCCBitstream &bitstream) {
-  size_t maxHeight = 0;
-  size_t MPwidth=context.getMPGeoWidth ();
-  auto& sps = context.getSps();
-  bitstream.write<size_t>(size_t( context.getMPGeoWidth () ) );
-  for (auto &frame : context.getFrames() ) {
-    size_t numofMPs=frame.getMissedPointsPatch().size();
-    if(!sps.getLosslessGeo444()) {
-      numofMPs/=3;
-    }
-    bitstream.write<size_t>(size_t( numofMPs ) );
-    size_t height = (3*numofMPs)/MPwidth+1;
-    size_t heightby8= height/8;
-    if(heightby8*8!=height) {
-      height = (heightby8+1)*8;
-    }
-    maxHeight = (std::max)( maxHeight, height );
+void PCCBitstreamEncoder::EncodeUInt32( const uint32_t           value,
+                                        const uint32_t           bitCount,
+                                        o3dgc::Arithmetic_Codec& arithmeticEncoder,
+                                        o3dgc::Static_Bit_Model& bModel0,
+                                        PCCBitstream&            bitstream ) {
+  uint32_t valueToEncode = PCCToLittleEndian<uint32_t>( value );
+  for ( uint32_t i = 0; i < bitCount; ++i ) {
+    TRACE_BITSTREAM_NH( "CodeUInt32: Bit %u / %u: bit = %u \n", i, bitCount, valueToEncode & 1 );
+    arithmeticEncoder.encode( valueToEncode & 1, bModel0 );
+    valueToEncode >>= 1;
   }
-  assert(maxHeight==context.getMPGeoHeight ());
+  TRACE_BITSTREAM_NH( "CodeUInt32: value = %u \n", value );
 }
 
-void PCCBitstreamEncoder::writeMissedPointsTextureNumber(PCCContext& context, PCCBitstream &bitstream) {
-  size_t maxHeight = 0;
-  size_t MPwidth=context.getMPAttWidth ();
-  bitstream.write<size_t>(size_t( context.getMPAttWidth () ) );
-  for (auto &frame : context.getFrames() ) {
-    size_t numofMPs=frame.getMissedPointsPatch().sizeofcolor();
-    bitstream.write<size_t>(size_t( numofMPs ) );
-    size_t height = (3*numofMPs)/MPwidth+1;
-    size_t heightby8= height/8;
-    if(heightby8*8!=height) {
-      height = (heightby8+1)*8;
-    }
-    maxHeight = (std::max)( maxHeight, height );
-  }
-  assert(maxHeight==context.getMPAttHeight ());
+// 7.3.2 V-PCC unit syntax
+void PCCBitstreamEncoder::vpccUnit( PCCContext& context, PCCBitstream& bitstream, VPCCUnitType vpccUnitType ) {
+  TRACE_BITSTREAM( "%s \n", __func__ );
+  vpccUnitHeader( context, bitstream, vpccUnitType );
+  vpccUnitPayload( context, bitstream, vpccUnitType );
 }
 
-
-int PCCBitstreamEncoder::writeMetadata( const PCCMetadata &metadata, pcc::PCCBitstream &bitstream ) {
-#ifdef BITSTREAM_TRACE
-  bitstream.trace("Metadata start \n" ) ; 
-#endif
-  auto &metadataEnabledFlags = metadata.getMetadataEnabledFlags();
-  if (!metadataEnabledFlags.getMetadataEnabled()) {
-#ifdef BITSTREAM_TRACE
-  bitstream.trace("Metadata done not metadata \n" ) ; 
-#endif
-    return 0;
+// 7.3.3 V-PCC unit header syntax
+void PCCBitstreamEncoder::vpccUnitHeader( PCCContext& context, PCCBitstream& bitstream, VPCCUnitType vpccUnitType ) {
+  TRACE_BITSTREAM( "%s \n", __func__ );
+  auto& vpcc = context.getVPCC();
+  auto& sps  = context.getSps();
+  bitstream.write( vpccUnitType, 5 );  // u(5)
+  if ( vpccUnitType == VPCC_AVD || vpccUnitType == VPCC_GVD || vpccUnitType == VPCC_OVD || vpccUnitType == VPCC_PSD ) {
+    bitstream.write( (uint32_t)vpcc.getSequenceParameterSetId(), 4 );  // u(4)
   }
-  bitstream.write<uint8_t>(metadata.getMetadataPresent());
-  std::cout<<"read/write METADATA TYPE: "<<metadata.getMetadataType()
-      <<" METADATA present: "<<(metadata.getMetadataPresent()==true?1:0)<<std::endl;
-  if (metadata.getMetadataPresent()) {
-    if (metadataEnabledFlags.getScaleEnabled()) {
-      bitstream.write<uint8_t>(metadata.getScalePresent());
-      if (metadata.getScalePresent()) {
-        bitstream.write<PCCVector3U>(metadata.getScale());
-      }
+  if ( vpccUnitType == VPCC_AVD ) {
+    bitstream.write( (uint32_t)vpcc.getAttributeIndex(), 7 );  // u(7)
+    if ( sps.getMultipleLayerStreamsPresentFlag() ) {
+      bitstream.write( (uint32_t)vpcc.getLayerIndex(), 4 );  // u(4)
+      pcmSeparateVideoData( context, bitstream, 11 );
+    } else {
+      pcmSeparateVideoData( context, bitstream, 15 );
     }
-    if (metadataEnabledFlags.getOffsetEnabled()) {
-      bitstream.write<uint8_t>(metadata.getOffsetPresent());
-      if (metadata.getOffsetPresent()) {
-        bitstream.write<PCCVector3I>(metadata.getOffset());
-      }
+  } else if ( vpccUnitType == VPCC_GVD ) {
+    if ( sps.getMultipleLayerStreamsPresentFlag() ) {
+      bitstream.write( vpcc.getLayerIndex(), 4 );  // u(4)
+      pcmSeparateVideoData( context, bitstream, 18 );
+    } else {
+      pcmSeparateVideoData( context, bitstream, 22 );
     }
-    if (metadataEnabledFlags.getRotationEnabled()) {
-      bitstream.write<uint8_t>(metadata.getRotationPresent());
-      if (metadata.getRotationPresent()) {
-        bitstream.write<PCCVector3I>(metadata.getRotation());
-      }
-    }
-    if (metadataEnabledFlags.getPointSizeEnabled()) {
-      bitstream.write<uint8_t>(metadata.getPointSizePresent());
-      if (metadata.getPointSizePresent()) {
-        bitstream.write<uint16_t>(metadata.getPointSize());
-      }
-    }
-    if (metadataEnabledFlags.getPointShapeEnabled()) {
-      bitstream.write<uint8_t>(metadata.getPointShapePresent());
-      if (metadata.getPointShapePresent()) {
-        bitstream.write<uint8_t>(uint8_t(metadata.getPointShape()));
-      }
-    }
+  } else if ( vpccUnitType == VPCC_OVD || vpccUnitType == VPCC_PSD ) {
+    bitstream.write( (uint32_t)0, 23 );  // u(23)
+  } else {
+    bitstream.write( (uint32_t)0, 27 );  // u(27)
   }
-
-  auto &lowerLevelMetadataEnabledFlags = metadata.getLowerLevelMetadataEnabledFlags();
-  bitstream.write<uint8_t>(lowerLevelMetadataEnabledFlags.getMetadataEnabled());
-
-  if (lowerLevelMetadataEnabledFlags.getMetadataEnabled()) {
-    bitstream.write<uint8_t>(lowerLevelMetadataEnabledFlags.getScaleEnabled());
-    bitstream.write<uint8_t>(lowerLevelMetadataEnabledFlags.getOffsetEnabled());
-    bitstream.write<uint8_t>(lowerLevelMetadataEnabledFlags.getRotationEnabled());
-    bitstream.write<uint8_t>(lowerLevelMetadataEnabledFlags.getPointSizeEnabled());
-    bitstream.write<uint8_t>(lowerLevelMetadataEnabledFlags.getPointShapeEnabled());
-#ifdef CE210_MAXDEPTH_EVALUATION
-    bitstream.write<uint8_t>(lowerLevelMetadataEnabledFlags.getMaxDepthEnabled());
-#endif
-  }
-#ifdef BITSTREAM_TRACE
-  bitstream.trace("Metadata done \n" ) ; 
-#endif
-  return 1;
 }
 
-int PCCBitstreamEncoder::compressMetadata(const PCCMetadata &metadata, o3dgc::Arithmetic_Codec &arithmeticEncoder) {
-  auto &metadataEnabingFlags = metadata.getMetadataEnabledFlags();
-  if (!metadataEnabingFlags.getMetadataEnabled()) {
-    return 0;
+// 7.3.4 PCM separate video data syntax
+void PCCBitstreamEncoder::pcmSeparateVideoData( PCCContext& context, PCCBitstream& bitstream, uint8_t bitCount ) {
+  TRACE_BITSTREAM( "%s \n", __func__ );
+  auto& vpcc = context.getVPCC();
+  auto& sps  = context.getSps();
+  if ( sps.getPcmSeparateVideoPresentFlag() && !vpcc.getLayerIndex() ) {
+    bitstream.write( (uint32_t)vpcc.getPCMVideoFlag(), 1 );  // u(1)
+    bitstream.write( (uint32_t)0, bitCount );                // u(bitCount)
+  } else {
+    bitstream.write( (uint32_t)0, bitCount + 1 );  // u(bitCount + 1)
   }
-  static o3dgc::Static_Bit_Model   bModel0;
-  static o3dgc::Adaptive_Bit_Model bModelMetadataPresent;
-  arithmeticEncoder.encode(metadata.getMetadataPresent(), bModelMetadataPresent);
-
-  if (metadata.getMetadataPresent()) {
-    if (metadataEnabingFlags.getScaleEnabled()) {
-      static o3dgc::Adaptive_Bit_Model bModelScalePresent;
-      arithmeticEncoder.encode(metadata.getScalePresent(), bModelScalePresent);
-      if (metadata.getScalePresent()) {
-        EncodeUInt32(uint32_t(metadata.getScale()[0]), 32, arithmeticEncoder, bModel0);
-        EncodeUInt32(uint32_t(metadata.getScale()[1]), 32, arithmeticEncoder, bModel0);
-        EncodeUInt32(uint32_t(metadata.getScale()[2]), 32, arithmeticEncoder, bModel0);
-      }
-    }
-
-    if (metadataEnabingFlags.getOffsetEnabled()) {
-      static o3dgc::Adaptive_Bit_Model bModelOffsetPresent;
-      arithmeticEncoder.encode(metadata.getOffsetPresent(), bModelOffsetPresent);
-      if (metadata.getOffsetPresent()) {
-        EncodeUInt32(o3dgc::IntToUInt(metadata.getOffset()[0]), 32, arithmeticEncoder, bModel0);
-        EncodeUInt32(o3dgc::IntToUInt(metadata.getOffset()[1]), 32, arithmeticEncoder, bModel0);
-        EncodeUInt32(o3dgc::IntToUInt(metadata.getOffset()[2]), 32, arithmeticEncoder, bModel0);
-      }
-    }
-
-    if (metadataEnabingFlags.getRotationEnabled()) {
-      static o3dgc::Adaptive_Bit_Model bModelRotationPresent;
-      arithmeticEncoder.encode(metadata.getRotationPresent(), bModelRotationPresent);
-      if (metadata.getRotationPresent()) {
-        EncodeUInt32(o3dgc::IntToUInt(metadata.getRotation()[0]), 32, arithmeticEncoder, bModel0);
-        EncodeUInt32(o3dgc::IntToUInt(metadata.getRotation()[1]), 32, arithmeticEncoder, bModel0);
-        EncodeUInt32(o3dgc::IntToUInt(metadata.getRotation()[2]), 32, arithmeticEncoder, bModel0);
-      }
-    }
-
-    if (metadataEnabingFlags.getPointSizeEnabled()) {
-      static o3dgc::Adaptive_Bit_Model bModelPointSizePresent;
-      arithmeticEncoder.encode(metadata.getPointSizePresent(), bModelPointSizePresent);
-      if (metadata.getPointSizePresent()) {
-        EncodeUInt32(uint32_t(metadata.getPointSize()), 16, arithmeticEncoder, bModel0);
-      }
-    }
-
-    if (metadataEnabingFlags.getPointShapeEnabled()) {
-      static o3dgc::Adaptive_Bit_Model bModelPointShapePresent;
-      arithmeticEncoder.encode(metadata.getPointShapePresent(), bModelPointShapePresent);
-      if (metadata.getPointShapePresent()) {
-        EncodeUInt32(uint32_t(metadata.getPointShape()), 8, arithmeticEncoder, bModel0);
-      }
-    }
-  }
-
-  auto &lowerLevelMetadataEnabledFlags = metadata.getLowerLevelMetadataEnabledFlags();
-  static o3dgc::Adaptive_Bit_Model bModelLowerLevelMetadataEnabled;
-  arithmeticEncoder.encode(lowerLevelMetadataEnabledFlags.getMetadataEnabled(), bModelLowerLevelMetadataEnabled);
-  //std::cout<<"METADATA lowerLevelMetaData: "<<lowerLevelMetadataEnabledFlags.getMetadataEnabled()<<std::endl;
-  if (lowerLevelMetadataEnabledFlags.getMetadataEnabled()) {
-    static o3dgc::Adaptive_Bit_Model bModelLowerLevelScaleEnabled;
-    arithmeticEncoder.encode(lowerLevelMetadataEnabledFlags.getScaleEnabled(), bModelLowerLevelScaleEnabled);
-
-    static o3dgc::Adaptive_Bit_Model bModelLowerLevelOffsetEnabled;
-    arithmeticEncoder.encode(lowerLevelMetadataEnabledFlags.getOffsetEnabled(), bModelLowerLevelOffsetEnabled);
-
-    static o3dgc::Adaptive_Bit_Model bModelLowerLevelRotationEnabled;
-    arithmeticEncoder.encode(lowerLevelMetadataEnabledFlags.getRotationEnabled(), bModelLowerLevelRotationEnabled);
-
-    static o3dgc::Adaptive_Bit_Model bModelLowerLevelPointSizeEnabled;
-    arithmeticEncoder.encode(lowerLevelMetadataEnabledFlags.getPointSizeEnabled(), bModelLowerLevelPointSizeEnabled);
-
-    static o3dgc::Adaptive_Bit_Model bModelLowerLevelPointShapeEnabled;
-    arithmeticEncoder.encode(lowerLevelMetadataEnabledFlags.getPointShapeEnabled(), bModelLowerLevelPointShapeEnabled);
-
-#ifdef CE210_MAXDEPTH_EVALUATION
-    static o3dgc::Adaptive_Bit_Model bModelLowerLevelMaxDepthEnabled;
-    arithmeticEncoder.encode(lowerLevelMetadataEnabledFlags.getMaxDepthEnabled(), bModelLowerLevelMaxDepthEnabled);
-#endif
-
-  }
-  return 1;
 }
 
-int PCCBitstreamEncoder::compressMetadata(const PCCMetadata &metadata, o3dgc::Arithmetic_Codec &arithmeticEncoder, o3dgc::Static_Bit_Model &bModelMaxDepth0, o3dgc::Adaptive_Bit_Model &bModelMaxDepthDD
-) {
-  auto &metadataEnabingFlags = metadata.getMetadataEnabledFlags();
-  if (!metadataEnabingFlags.getMetadataEnabled()) {
-    return 0;
+// 7.3.5 V-PCC unit payload syntax
+void PCCBitstreamEncoder::vpccUnitPayload( PCCContext& context, PCCBitstream& bitstream, VPCCUnitType vpccUnitType ) {
+  TRACE_BITSTREAM( "%s \n", __func__ );
+  auto& sps  = context.getSps();  // jkei: for future update
+  auto& psdu = context.getPatchSequenceDataUnit();
+  if ( vpccUnitType == VPCC_SPS ) {
+    sequenceParameterSet( sps, bitstream );
+  } else if ( vpccUnitType == VPCC_PSD ) {
+    patchSequenceDataUnit( context, bitstream );
+  } else if ( vpccUnitType == VPCC_OVD || vpccUnitType == VPCC_GVD || vpccUnitType == VPCC_AVD ) {
+    TRACE_BITSTREAM( "vpccUnitType = %d \n", (int32_t)vpccUnitType );
+    vpccVideoDataUnit( context, bitstream, vpccUnitType );
   }
-  static o3dgc::Static_Bit_Model   bModel0;
-  static o3dgc::Adaptive_Bit_Model bModelMetadataPresent;
-  arithmeticEncoder.encode(metadata.getMetadataPresent(), bModelMetadataPresent);
-
-  if (metadata.getMetadataPresent()) {
-
-    if (metadataEnabingFlags.getScaleEnabled()) {
-      static o3dgc::Adaptive_Bit_Model bModelScalePresent;
-      arithmeticEncoder.encode(metadata.getScalePresent(), bModelScalePresent);
-      if (metadata.getScalePresent()) {
-        EncodeUInt32(uint32_t(metadata.getScale()[0]), 32, arithmeticEncoder, bModel0);
-        EncodeUInt32(uint32_t(metadata.getScale()[1]), 32, arithmeticEncoder, bModel0);
-        EncodeUInt32(uint32_t(metadata.getScale()[2]), 32, arithmeticEncoder, bModel0);
-      }
-    }
-
-    if (metadataEnabingFlags.getOffsetEnabled()) {
-      static o3dgc::Adaptive_Bit_Model bModelOffsetPresent;
-      arithmeticEncoder.encode(metadata.getOffsetPresent(), bModelOffsetPresent);
-      if (metadata.getOffsetPresent()) {
-        EncodeUInt32(o3dgc::IntToUInt(metadata.getOffset()[0]), 32, arithmeticEncoder, bModel0);
-        EncodeUInt32(o3dgc::IntToUInt(metadata.getOffset()[1]), 32, arithmeticEncoder, bModel0);
-        EncodeUInt32(o3dgc::IntToUInt(metadata.getOffset()[2]), 32, arithmeticEncoder, bModel0);
-      }
-    }
-
-    if (metadataEnabingFlags.getRotationEnabled()) {
-      static o3dgc::Adaptive_Bit_Model bModelRotationPresent;
-      arithmeticEncoder.encode(metadata.getRotationPresent(), bModelRotationPresent);
-      if (metadata.getRotationPresent()) {
-        EncodeUInt32(o3dgc::IntToUInt(metadata.getRotation()[0]), 32, arithmeticEncoder, bModel0);
-        EncodeUInt32(o3dgc::IntToUInt(metadata.getRotation()[1]), 32, arithmeticEncoder, bModel0);
-        EncodeUInt32(o3dgc::IntToUInt(metadata.getRotation()[2]), 32, arithmeticEncoder, bModel0);
-      }
-    }
-
-    if (metadataEnabingFlags.getPointSizeEnabled()) {
-      static o3dgc::Adaptive_Bit_Model bModelPointSizePresent;
-      arithmeticEncoder.encode(metadata.getPointSizePresent(), bModelPointSizePresent);
-      if (metadata.getPointSizePresent()) {
-        EncodeUInt32(uint32_t(metadata.getPointSize()), 16, arithmeticEncoder, bModel0);
-      }
-    }
-
-    if (metadataEnabingFlags.getPointShapeEnabled()) {
-      static o3dgc::Adaptive_Bit_Model bModelPointShapePresent;
-      arithmeticEncoder.encode(metadata.getPointShapePresent(), bModelPointShapePresent);
-      if (metadata.getPointShapePresent()) {
-        EncodeUInt32(uint32_t(metadata.getPointShape()), 8, arithmeticEncoder, bModel0);
-      }
-    }
-
-#ifdef CE210_MAXDEPTH_EVALUATION
-    if(metadataEnabingFlags.getMaxDepthEnabled()) {
-      const uint8_t maxBitCountForMaxDepth= metadata.getbitCountQDepth();
-      int64_t currentDD=0;
-      if(maxBitCountForMaxDepth==0) { //delta_DD
-        currentDD=metadata.getQMaxDepthInPatch();
-        arithmeticEncoder.ExpGolombEncode(o3dgc::IntToUInt(int32_t(currentDD)),    0, bModelMaxDepth0, bModelMaxDepthDD);
-      } else {
-        currentDD=metadata.getQMaxDepthInPatch();
-        EncodeUInt32(uint32_t(currentDD), maxBitCountForMaxDepth, arithmeticEncoder, bModelMaxDepth0);
-      }
-    }
-#endif
-  }
-
-  if(metadata.getMetadataType()==METADATA_PATCH) {
-    //std::cout<<"lowerLevelFlags: "<<metadata.getLowerLevelMetadataEnabledFlags().getMetadataEnabled()<<std::endl;
-    return 1;
-  }
-
-  auto &lowerLevelMetadataEnabledFlags = metadata.getLowerLevelMetadataEnabledFlags();
-  static o3dgc::Adaptive_Bit_Model bModelLowerLevelMetadataEnabled;
-  arithmeticEncoder.encode(lowerLevelMetadataEnabledFlags.getMetadataEnabled(), bModelLowerLevelMetadataEnabled);
-  std::cout<<"lowerLevelFlags: "<<metadata.getLowerLevelMetadataEnabledFlags().getMetadataEnabled()<<std::endl;
-  if (lowerLevelMetadataEnabledFlags.getMetadataEnabled()) {
-    static o3dgc::Adaptive_Bit_Model bModelLowerLevelScaleEnabled;
-    arithmeticEncoder.encode(lowerLevelMetadataEnabledFlags.getScaleEnabled(), bModelLowerLevelScaleEnabled);
-
-    static o3dgc::Adaptive_Bit_Model bModelLowerLevelOffsetEnabled;
-    arithmeticEncoder.encode(lowerLevelMetadataEnabledFlags.getOffsetEnabled(), bModelLowerLevelOffsetEnabled);
-
-    static o3dgc::Adaptive_Bit_Model bModelLowerLevelRotationEnabled;
-    arithmeticEncoder.encode(lowerLevelMetadataEnabledFlags.getRotationEnabled(), bModelLowerLevelRotationEnabled);
-
-    static o3dgc::Adaptive_Bit_Model bModelLowerLevelPointSizeEnabled;
-    arithmeticEncoder.encode(lowerLevelMetadataEnabledFlags.getPointSizeEnabled(), bModelLowerLevelPointSizeEnabled);
-
-    static o3dgc::Adaptive_Bit_Model bModelLowerLevelPointShapeEnabled;
-    arithmeticEncoder.encode(lowerLevelMetadataEnabledFlags.getPointShapeEnabled(), bModelLowerLevelPointShapeEnabled);
-  }
-  return 1;
 }
 
-int PCCBitstreamEncoder::compressHeader( PCCContext& context, pcc::PCCBitstream& bitstream ) {
-  auto& sps = context.getSps();
-  auto& gps = sps.getGeometryParameterSet();
-  auto& gsp = gps.getGeometrySequenceParams();
-  auto& ops = sps.getOccupancyParameterSet();
-  auto& aps = sps.getAttributeParameterSet( 0 );
-  auto& asp = aps.getAttributeSequenceParams();
-  
-#ifdef BITSTREAM_TRACE
-  bitstream.trace("Header start \n" ) ; 
-#endif
-  bitstream.write<uint8_t>( ( uint8_t )( context.size() ) );
-  if ( !context.size() ) { return 0; }
-  bitstream.write<uint16_t>( uint16_t( sps.getFrameWidth() ) );
-  bitstream.write<uint16_t>( uint16_t( sps.getFrameHeight() ) );
-  bitstream.write<uint8_t>( uint8_t( ops.getOccupancyPackingBlockSize() ) );
-  // bitstream.write<uint8_t>( uint8_t( context.getOccupancyPrecision() ) );
-  //jkei[??] is it changed as intended?
-  
-#ifdef BITSTREAM_TRACE
-  bitstream.trace("Header smooth geo \n" ) ; 
-#endif
-  bitstream.write<uint8_t>( uint8_t( gsp.getGeometrySmoothingParamsPresentFlag() ) );
+// 7.3.6 Sequence parameter set syntax
+void PCCBitstreamEncoder::sequenceParameterSet( SequenceParameterSet& sps, PCCBitstream& bitstream ) {
+  TRACE_BITSTREAM( "%s \n", __func__ );
+  profileTierLevel( sps.getProfileTierLevel(), bitstream );
+  bitstream.write( (uint32_t)sps.getSequenceParameterSetId(), 4 );   // u(4)
+  bitstream.write( (uint32_t)sps.getFrameWidth(), 16 );              // u(16)
+  bitstream.write( (uint32_t)sps.getFrameHeight(), 16 );             // u(16)
+  bitstream.write( (uint32_t)sps.getAvgFrameRatePresentFlag(), 1 );  // u(1)
+  if ( sps.getAvgFrameRatePresentFlag() ) {
+    bitstream.write( (uint32_t)sps.getAvgFrameRate(), 16 );  // u(16)
+  }
+  bitstream.write( (uint32_t)sps.getEnhancedOccupancyMapForDepthFlag(), 1 );  // u(1)
+  bitstream.write( (uint32_t)sps.getLayerCountMinus1(), 4 );                  // u(4)
+  if ( sps.getLayerCountMinus1() > 0 ) {
+    bitstream.write( (uint32_t)sps.getMultipleLayerStreamsPresentFlag(), 1 );  // u(1)
+  }
+  auto layerAbsoluteCodingEnabledFlag = sps.getLayerAbsoluteCodingEnabledFlag( 1 );
+  auto layerPredictorIndexDiff        = sps.getLayerPredictorIndexDiff( 0 );
+  for ( size_t i = 0; i < sps.getLayerCountMinus1(); i++ ) {
+    bitstream.write( (uint32_t)sps.getLayerAbsoluteCodingEnabledFlag( i + 1 ), 1 );  // u(1)
+    if ( ( sps.getLayerAbsoluteCodingEnabledFlag( i + 1 ) == 0 ) ) {
+      if ( i > 0 ) {
+        bitstream.writeUvlc( (uint32_t)sps.getLayerPredictorIndexDiff( i + 1 ) );  // ue(v)
+      }
+    }
+  }
+  TRACE_BITSTREAM( " sps.getLayerCountMinus1() = %lu \n", sps.getLayerCountMinus1() );
+  TRACE_BITSTREAM( " AbsoluteCoding L0 = %lu \n", sps.getLayerAbsoluteCodingEnabledFlag( 0 ) );
+  TRACE_BITSTREAM( " AbsoluteCoding L1 = %lu \n", sps.getLayerAbsoluteCodingEnabledFlag( 1 ) );
+  bitstream.write( (uint32_t)sps.getPcmPatchEnabledFlag(), 1 );  // u(1)
+  if ( sps.getPcmPatchEnabledFlag() ) {
+    bitstream.write( (uint32_t)sps.getPcmSeparateVideoPresentFlag(), 1 );  // u(1)
+  }
+
+  occupancyParameterSet( sps.getOccupancyParameterSet(), bitstream );
+  geometryParameterSet( sps.getGeometryParameterSet(), sps, bitstream );
+  bitstream.write( (uint32_t)sps.getAttributeCount(), 16 );  // u(16)
+  for ( size_t i = 0; i < sps.getAttributeCount(); i++ ) {
+    attributeParameterSet( sps.getAttributeParameterSet( i ), sps, bitstream );
+  }
+  bitstream.write( (uint32_t)sps.getPatchSequenceOrientationEnabledFlag(), 1 );  // u(1)
+  bitstream.write( (uint32_t)sps.getPatchInterPredictionEnabledFlag(), 1 );      // u(1)
+  bitstream.write( (uint32_t)sps.getPixelDeinterleavingFlag(), 1 );              // u(1)
+  bitstream.write( (uint32_t)sps.getPointLocalReconstructionEnabledFlag(), 1 );  // u(1)
+  bitstream.write( (uint32_t)sps.getRemoveDuplicatePointEnabledFlag(), 1 );      // u(1)
+
+  // THE NEXT PARAMETERS ARE NOT IN THE VPCC CD SYNTAX DOCUMENTS AND WILL BE REMOVE
+  bitstream.write( (uint32_t)sps.getLosslessGeo444(), 1 );    // u(1)
+  bitstream.write( (uint32_t)sps.getLosslessGeo(), 1 );       // u(1)
+  bitstream.write( (uint32_t)sps.getLosslessTexture(), 1 );   // u(1)
+  bitstream.write( (uint32_t)sps.getMinLevel(), 8 );          // u(8)
+  bitstream.write( (uint32_t)sps.getSurfaceThickness(), 8 );  // u(8)
+  // THE NEXT PARAMETERS ARE NOT IN THE VPCC CD SYNTAX DOCUMENTS AND WILL BE REMOVE
+
+  byteAlignment( bitstream );
+}
+
+// 7.3.7 Byte alignment syntax
+void PCCBitstreamEncoder::byteAlignment( PCCBitstream& bitstream ) {
+  TRACE_BITSTREAM( "%s \n", __func__ );
+  bitstream.write( 1, 1 );  // f(1): equal to 1
+  while ( !bitstream.byteAligned() ) {
+    bitstream.write( 0, 1 );  // f(1): equal to 0
+  }
+}
+
+// 7.3.8 Profile, tier, and level syntax
+void PCCBitstreamEncoder::profileTierLevel( ProfileTierLevel& ptl, PCCBitstream& bitstream ) {
+  TRACE_BITSTREAM( "%s \n", __func__ );
+  bitstream.write( (uint32_t)ptl.getTierFlag(), 1 );    // u(1)
+  bitstream.write( (uint32_t)ptl.getProfileIdc(), 1 );  // u(7)
+  bitstream.write( (uint32_t)0, 48 );                   // u(48)
+  bitstream.write( (uint32_t)ptl.getLevelIdc(), 8 );    // u(8)
+}
+
+// 7.3.9 Occupancy parameter set syntax
+void PCCBitstreamEncoder::occupancyParameterSet( OccupancyParameterSet& ops, PCCBitstream& bitstream ) {
+  TRACE_BITSTREAM( "%s \n", __func__ );
+  bitstream.write( (uint32_t)ops.getOccupancyCodecId(), 8 );           // u(8)
+  bitstream.write( (uint32_t)ops.getOccupancyPackingBlockSize(), 8 );  // u(8)
+}
+
+// 7.3.10 Geometry parameter set syntax
+void PCCBitstreamEncoder::geometryParameterSet( GeometryParameterSet& gps,
+                                                SequenceParameterSet& sps,
+                                                PCCBitstream&         bitstream ) {
+  TRACE_BITSTREAM( "%s \n", __func__ );
+  bitstream.write( (uint32_t)gps.getGeometryCodecId(), 8 );
+  bitstream.write( (uint32_t)gps.getGeometryNominal2dBitdepthMinus1(), 5 );            // u(5)
+  bitstream.write( ( uint32_t )( gps.getGeometry3dCoordinatesBitdepthMinus1() ), 5 );  // u(5)
+  if ( sps.getPcmSeparateVideoPresentFlag() ) {
+    bitstream.write( (uint32_t)gps.getPcmGeometryCodecId(), 1 );  // u(8)
+  }
+  bitstream.write( (uint32_t)gps.getGeometryParamsEnabledFlag(), 1 );  // u(1)
+  if ( gps.getGeometryParamsEnabledFlag() ) { geometrySequenceParams( gps.getGeometrySequenceParams(), bitstream ); }
+
+  // jkei[??] is it changed as intended?
+  bitstream.write( (uint32_t)gps.getGeometryPatchParamsEnabledFlag(), 1 );  // u(1)
+  if ( gps.getGeometryPatchParamsEnabledFlag() ) {
+    bitstream.write( (uint32_t)gps.getGeometryPatchScaleParamsEnabledFlag(), 1 );     // u(1)
+    bitstream.write( (uint32_t)gps.getGeometryPatchOffsetParamsEnabledFlag(), 1 );    // u(1)
+    bitstream.write( (uint32_t)gps.getGeometryPatchRotationParamsEnabledFlag(), 1 );  // u(1)
+    bitstream.write( (uint32_t)gps.getGeometryPatchPointSizeInfoEnabledFlag(), 1 );   // u(1)
+    bitstream.write( (uint32_t)gps.getGeometryPatchPointShapeInfoEnabledFlag(), 1 );  // u(1)
+  }
+}
+
+// 7.3.11 Geometry sequence metadata syntax
+void PCCBitstreamEncoder::geometrySequenceParams( GeometrySequenceParams& gsp, PCCBitstream& bitstream ) {
+  TRACE_BITSTREAM( "%s \n", __func__ );
+  bitstream.write( (uint32_t)gsp.getGeometrySmoothingParamsPresentFlag(), 1 );  // u(1)
+  bitstream.write( (uint32_t)gsp.getGeometryScaleParamsPresentFlag(), 1 );      // u(1)
+  bitstream.write( (uint32_t)gsp.getGeometryOffsetParamsPresentFlag(), 1 );     // u(1)
+  bitstream.write( (uint32_t)gsp.getGeometryRotationParamsPresentFlag(), 1 );   // u(1)
+  bitstream.write( (uint32_t)gsp.getGeometryPointSizeInfoPresentFlag(), 1 );    // u(1)
+  bitstream.write( (uint32_t)gsp.getGeometryPointShapeInfoPresentFlag(), 1 );   // u(1)
   if ( gsp.getGeometrySmoothingParamsPresentFlag() ) {
-    bitstream.write<uint8_t>( uint8_t( gsp.getGeometrySmoothingEnabledFlag() ) );
-    // if ( context.getGridSmoothing() ) {
-      bitstream.write<uint8_t>( uint8_t( gsp.getGeometrySmoothingGridSize() ) );
-      bitstream.write<uint8_t>( uint8_t( gsp.getGeometrySmoothingThreshold() ) );
-    // } else {
-    //   bitstream.write<uint8_t>( uint8_t( asp.getAttributeSmoothingParamsPresentFlag() ) );
-    //   bitstream.write<uint8_t>( uint8_t( asp.getAttributeSmoothingNeighbourCount() ) );
-    //   bitstream.write<uint8_t>( uint8_t( asp.getAttributeSmoothingRadius2BoundaryDetection() ) );
-    //   bitstream.write<uint8_t>( uint8_t( gsp.getGeometrySmoothingThreshold() ) );
-    // }
+    bitstream.write( (uint32_t)gsp.getGeometrySmoothingEnabledFlag(), 1 );  // u(8)
+    if ( gsp.getGeometrySmoothingEnabledFlag() ) {
+      bitstream.write( (uint32_t)gsp.getGeometrySmoothingGridSize(), 8 );   // u(8)
+      bitstream.write( (uint32_t)gsp.getGeometrySmoothingThreshold(), 8 );  // u(8)
+    }
   }
-#ifdef BITSTREAM_TRACE
-  bitstream.trace("Header general \n" ) ; 
-#endif
-  bitstream.write<uint8_t>( uint8_t( sps.getLosslessGeo() ) );
-  bitstream.write<uint8_t>( uint8_t( sps.getLosslessTexture() ) );
-  bitstream.write<uint8_t>( uint8_t( sps.getAttributeCount() ) );
-  bitstream.write<uint8_t>( uint8_t( sps.getLosslessGeo444() ) );
-  bitstream.write<uint8_t>( uint8_t( sps.getMinLevel() ) );
-  bitstream.write<uint8_t>( uint8_t( sps.getPcmSeparateVideoPresentFlag() ) );
-  bitstream.write<uint8_t>( uint8_t( sps.getLayerAbsoluteCodingEnabledFlag( 1 ) ) );
-  // if ( sps.getLayerAbsoluteCodingEnabledFlag( 1 ) ) {
-  //    bitstream.write<uint8_t>( uint8_t( context.getSixDirectionMode() ) );
-  // }
-#ifdef BITSTREAM_TRACE
-  bitstream.trace("Header Model \n" ) ; 
-#endif
+  if ( gsp.getGeometryScaleParamsPresentFlag() ) {
+    for ( size_t d = 0; d < 3; d++ ) {
+      bitstream.write( (int32_t)gsp.getGeometryScaleOnAxis( d ), 32 );  // u(32)
+    }
+    if ( gsp.getGeometryOffsetParamsPresentFlag() ) {
+      for ( size_t d = 0; d < 3; d++ ) {
+        bitstream.write( convertToUInt( gsp.getGeometryOffsetOnAxis( d ) ), 32 );  // i(32)
+      }
+    }
+    if ( gsp.getGeometryRotationParamsPresentFlag() ) {
+      for ( size_t d = 0; d < 3; d++ ) {
+        bitstream.write( convertToUInt( gsp.getGeometryRotationOnAxis( d ) ), 32 );  // i(32)
+      }
+    }
+    if ( gsp.getGeometryPointSizeInfoPresentFlag() ) {
+      bitstream.write( (uint32_t)gsp.getGeometryPointSizeInfo(), 8 );  // u(8)
+    }
+    if ( gsp.getGeometryPointShapeInfoPresentFlag() ) {
+      bitstream.write( (uint32_t)gsp.getGeometryPointShapeInfo(), 8 );  // u(8)
+    }
+  }
 
-  //bitstream.write<uint8_t>( uint8_t( context.getBinArithCoding() ) );
-// bitstream.write<float>( context.getModelScale() );
-// bitstream.write<float>( context.getModelOrigin()[0] );
-// bitstream.write<float>( context.getModelOrigin()[1] );
-// bitstream.write<float>( context.getModelOrigin()[2] );
+  TRACE_BITSTREAM( "  GeometrySmoothingParamsPresentFlag = %d  \n", gsp.getGeometrySmoothingParamsPresentFlag() );
+  TRACE_BITSTREAM( "  GeometryScaleParamsPresentFlag     = %d  \n", gsp.getGeometryScaleParamsPresentFlag() );
+  TRACE_BITSTREAM( "  GeometryOffsetParamsPresentFlag    = %d  \n", gsp.getGeometryOffsetParamsPresentFlag() );
+  TRACE_BITSTREAM( "  GeometryRotationParamsPresentFlag  = %d  \n", gsp.getGeometryRotationParamsPresentFlag() );
+  TRACE_BITSTREAM( "  GeometryPointSizeInfoPresentFlag   = %d  \n", gsp.getGeometryPointSizeInfoPresentFlag() );
+  TRACE_BITSTREAM( "  GeometryPointShapeInfoPresentFlag  = %d  \n", gsp.getGeometryPointShapeInfoPresentFlag() );
+  TRACE_BITSTREAM( "  getGeometrySmoothingEnabledFlag    = %d  \n", gsp.getGeometrySmoothingEnabledFlag() );
+  TRACE_BITSTREAM( "  getGeometrySmoothingGridSize       = %u  \n", gsp.getGeometrySmoothingGridSize() );
+  TRACE_BITSTREAM( "  getGeometrySmoothingThreshold      = %u  \n", gsp.getGeometrySmoothingThreshold() );
+}
 
-#ifdef BITSTREAM_TRACE
-  bitstream.trace("Header metadata \n" ) ; 
-#endif
-  writeMetadata( context.getGOFLevelMetadata(), bitstream );
+// 7.3.12 Attribute parameter set syntax
+void PCCBitstreamEncoder::attributeParameterSet( AttributeParameterSet& aps,
+                                                 SequenceParameterSet&  sps,
+                                                 PCCBitstream&          bitstream ) {
+  TRACE_BITSTREAM( "%s \n", __func__ );
+  bitstream.write( (uint32_t)aps.getAttributeTypeId(), 4 );           // u(4)
+  bitstream.write( (uint32_t)aps.getAttributeDimensionMinus1(), 8 );  // u(8)
+  bitstream.write( (uint32_t)aps.getAttributeCodecId(), 8 );          // u(8)
+  if ( sps.getPcmSeparateVideoPresentFlag() ) {
+    bitstream.write( (uint32_t)aps.getPcmAttributeCodecId(), 8 );  // u(8)
+  }
+  bitstream.write( (uint32_t)aps.getAttributeParamsEnabledFlag(), 1 );  // u(1)
+  if ( aps.getAttributeParamsEnabledFlag() ) {
+    attributeSequenceParams( aps.getAttributeSequenceParams(), aps.getAttributeDimensionMinus1(), bitstream );
+  }
+  bitstream.write( (uint32_t)aps.getAttributeParamsEnabledFlag(), 1 );  // u(1)
+  if ( aps.getAttributeParamsEnabledFlag() ) {
+    bitstream.write( (uint32_t)aps.getAttributePatchScaleParamsEnabledFlag(), 1 );   // u(1)
+    bitstream.write( (uint32_t)aps.getAttributePatchOffsetParamsEnabledFlag(), 1 );  // u(1)
+  }
+}
 
-#ifdef BITSTREAM_TRACE
-  bitstream.trace("Header smooth attribut \n" ) ; 
-#endif
-  bitstream.write<uint8_t>( uint8_t( asp.getAttributeSmoothingParamsPresentFlag() ) );
+// 7.3.13 Attribute sequence Params syntax
+void PCCBitstreamEncoder::attributeSequenceParams( AttributeSequenceParams& asp,
+                                                   uint8_t                  dimension,
+                                                   PCCBitstream&            bitstream ) {
+  TRACE_BITSTREAM( "%s \n", __func__ );
+  bitstream.write( (uint32_t)asp.getAttributeSmoothingParamsPresentFlag(), 1 );  // u(1)
+  bitstream.write( (uint32_t)asp.getAttributeScaleParamsPresentFlag(), 1 );      // u(1)
+  bitstream.write( (uint32_t)asp.getAttributeOffsetParamsPresentFlag(), 1 );     // u(1)
   if ( asp.getAttributeSmoothingParamsPresentFlag() ) {
-    bitstream.write<uint8_t>( uint8_t( asp.getAttributeSmoothingThreshold() ) );
-    bitstream.write<double>( double( asp.getAttributeSmoothingThresholdLocalEntropy() ) );
-    bitstream.write<uint8_t>( uint8_t( asp.getAttributeSmoothingRadius() ) );
-    bitstream.write<uint8_t>( uint8_t( asp.getAttributeSmoothingNeighbourCount() ) );
+    bitstream.write( (uint32_t)asp.getAttributeSmoothingRadius(), 8 );                    // u(8)
+    bitstream.write( (uint32_t)asp.getAttributeSmoothingNeighbourCount(), 8 );            // u(8)
+    bitstream.write( (uint32_t)asp.getAttributeSmoothingRadius2BoundaryDetection(), 8 );  // u(8)
+    bitstream.write( (uint32_t)asp.getAttributeSmoothingThreshold(), 8 );                 // u(8)
+    bitstream.write( (uint32_t)asp.getAttributeSmoothingThresholdLocalEntropy(), 3 );     // u(3)
   }
-#ifdef BITSTREAM_TRACE
-  bitstream.trace("Header lossless \n" ) ; 
-#endif
-  if ( sps.getLosslessGeo() ) {
-    bitstream.write<uint8_t>( uint8_t( sps.getEnhancedOccupancyMapForDepthFlag() ) );
-    // bitstream.write<uint8_t>( uint8_t( context.getImproveEDD() ) );
+  if ( asp.getAttributeScaleParamsPresentFlag() ) {
+    for ( size_t i = 0; i < dimension; i++ ) {
+      bitstream.write( (uint32_t)asp.getAttributeScale( i ), 32 );  // u(32)
+    }
   }
-  bitstream.write<uint8_t>( uint8_t( sps.getPatchInterPredictionEnabledFlag() ) ); // context.getDeltaCoding() ) );
-  bitstream.write<uint8_t>( uint8_t( sps.getRemoveDuplicatePointEnabledFlag() ) );
-  bitstream.write<uint8_t>( uint8_t( sps.getMultipleLayerStreamsPresentFlag() ) );
-  bitstream.write<uint8_t>( uint8_t( sps.getPixelDeinterleavingFlag() ) );
-  bitstream.write<uint8_t>( uint8_t( sps.getPcmPatchEnabledFlag() ) );
-  // bitstream.write<uint8_t>( uint8_t( context.getGlobalPatchAllocation() ) );
-#ifdef BITSTREAM_TRACE
-  bitstream.trace("Header done \n" ) ; 
-#endif
-  return 1;
+  if ( asp.getAttributeOffsetParamsPresentFlag() ) {
+    for ( size_t i = 0; i < dimension; i++ ) {
+      bitstream.write( convertToUInt( asp.getAttributeOffset( i ) ), 32 );  // i(32)
+    }
+  }
 }
 
-void PCCBitstreamEncoder::compressPatchMetaDataM42195( PCCContext      &context,
-                                                       PCCFrameContext &frame,
-                                                       PCCFrameContext &preFrame,
-                                                       size_t numMatchedPatches,
-                                                       PCCBitstream &bitstream ,
-                                                       o3dgc::Arithmetic_Codec &arithmeticEncoder,
-                                                       o3dgc::Static_Bit_Model &bModel0,
-                                                       uint8_t enable_flexible_patch_flag) {                                                 
-#ifdef BITSTREAM_TRACE
-  bitstream.trace("OccupancyMapM42195 start enable_flexible_patch_flag = %lu \n",enable_flexible_patch_flag ) ; 
-#endif
-  auto&         sps        = context.getSps();
-  auto&         ops        = sps.getOccupancyParameterSet();
-  auto&         patches    = frame.getPatches();
-  auto&         prePatches = preFrame.getPatches();
-  size_t        patchCount = patches.size();
-  size_t        TopNmaxU0 = 0, maxU0 = 0;
-  size_t TopNmaxV0 = 0, maxV0 = 0;
-  size_t TopNmaxU1 = 0, maxU1 = 0;
-  size_t TopNmaxV1 = 0, maxV1 = 0;
-  size_t TopNmaxD1 = 0, maxD1 = 0;
-  size_t TopNmaxDD = 0, maxDD = 0;
-  const size_t minLevel = sps.getMinLevel();
-  const uint8_t maxBitCountForMinDepth=uint8_t(10-gbitCountSize[minLevel]);
-  uint8_t maxAllowedDepthP1 = params_.maxAllowedDepth_+1;
-  uint8_t bitCountDDMax=0; //255
-  while((maxAllowedDepthP1)>>bitCountDDMax) bitCountDDMax++;
-  const uint8_t maxBitCountForMaxDepth=uint8_t(9-gbitCountSize[minLevel]); //20190129
-
-  //get the maximum u0,v0,u1,v1 and d1.
-  for (size_t patchIndex = 0; patchIndex < numMatchedPatches; ++patchIndex) {
-    const auto &patch = patches[patchIndex];
-    TopNmaxU0 = (std::max)(TopNmaxU0, patch.getU0());
-    TopNmaxV0 = (std::max)(TopNmaxV0, patch.getV0());
-    TopNmaxU1 = (std::max)(TopNmaxU1, patch.getU1());
-    TopNmaxV1 = (std::max)(TopNmaxV1, patch.getV1());
-    size_t D1 = patch.getD1()/minLevel;
-    TopNmaxD1 = (std::max)(TopNmaxD1, D1);
-    size_t DD = patch.getSizeD()/minLevel;
-    TopNmaxDD = (std::max)(TopNmaxDD, DD);
+// 7.3.14 Patch sequence data unit syntax
+void PCCBitstreamEncoder::patchSequenceDataUnit( PCCContext& context, PCCBitstream& bitstream ) {
+  TRACE_BITSTREAM( "%s \n", __func__ );
+  auto&  sps           = context.getSps();
+  auto&  psdu          = context.getPatchSequenceDataUnit();
+  size_t psdFrameCount = 0;
+  for ( uint8_t i = 0; i < psdu.getPatchSequenceDataUnitSize(); i++ ) {
+    auto& psup = psdu.getPatchSequenceUnitPayloadElement( i );
+    bitstream.writeUvlc( ( (uint32_t)psup.getUnitType() ) );  // ue(v)
+    TRACE_BITSTREAM( "PSDU %u : type = %u <=> %s \n", i, (uint32_t)psup.getUnitType(), psup.strUnitType().c_str() );
+    patchSequenceUnitPayload( psup, context, bitstream );
+    TRACE_BITSTREAM( "  %lu type = %s frameIndex = %u  \n", i, psup.strUnitType().c_str(), psup.getFrameIndex() );
+    bitstream.write( ( uint32_t )( ( i + 1 ) == psdu.getPatchSequenceDataUnitSize() ), 1 );  // u(1)
+    TRACE_BITSTREAM( " type = %s Frame = %u End = %d \n", psup.strUnitType().c_str(), psup.getFrameIndex(),
+                     ( i + 1 ) == psdu.getPatchSequenceDataUnitSize() );
   }
-  for (size_t patchIndex = numMatchedPatches; patchIndex < patchCount; ++patchIndex) {
-    const auto &patch = patches[patchIndex];
-    maxU0 = (std::max)(maxU0, patch.getU0());
-    maxV0 = (std::max)(maxV0, patch.getV0());
-    maxU1 = (std::max)(maxU1, patch.getU1());
-    maxV1 = (std::max)(maxV1, patch.getV1());
-    size_t D1 = patch.getD1()/minLevel;
-    maxD1 = (std::max)(maxD1, D1);
-    size_t DD = patch.getSizeD()/minLevel;
-    maxDD = (std::max)(maxDD, DD);
-  }
-
-  // bool bBinArithCoding = context.getBinArithCoding() && (!context.getLosslessGeo()) &&
-  //     ( ops.getOccupancyPackingBlockSize() == 16) && (context.getOccupancyPrecision() == 4);
-
-  o3dgc::Adaptive_Bit_Model bModelPatchIndex, bModelU0, bModelV0, bModelU1, bModelV1, bModelD1,bModelIntSizeU0,bModelIntSizeV0;
-  o3dgc::Adaptive_Bit_Model bModelSizeU0, bModelSizeV0, bModelAbsoluteD1;
-  o3dgc::Adaptive_Data_Model orientationModel(4);
-  o3dgc::Adaptive_Bit_Model orientationModel2;
-  o3dgc::Adaptive_Data_Model orientationPatchModel(NumPatchOrientations - 1 + 2);
-  o3dgc::Adaptive_Bit_Model orientationPatchFlagModel2;
-  o3dgc::Adaptive_Bit_Model occupiedModel, interpolateModel, fillingModel;
-  o3dgc::Adaptive_Data_Model minD1Model(3), neighborModel(3);
-
-  //jkei[??] do we need to signal frame metadata here too?
-  // compressMetadata(frame.getFrameLevelMetadata(), arithmeticEncoder);
-
-  const uint8_t bitCountNumPatches =
-      uint8_t(getFixedLengthCodeBitsCount(uint32_t(patchCount)));//numMatchedPatches <= patchCount
-  EncodeUInt32(uint32_t(numMatchedPatches), bitCountNumPatches, arithmeticEncoder, bModel0);
-  uint8_t flag = 0;
-  uint8_t F = 1;  //true if the maximum value comes from the latter part.
-  uint8_t A[4] = { 1, 1, 1, 1 };
-  uint8_t bitCount[5], topBitCount[5];
-  bitCount   [0] = uint8_t(getFixedLengthCodeBitsCount(uint32_t(maxU0     + 1)));
-  topBitCount[0] = uint8_t(getFixedLengthCodeBitsCount(uint32_t(TopNmaxU0 + 1)));
-  bitCount   [1] = uint8_t(getFixedLengthCodeBitsCount(uint32_t(maxV0     + 1)));
-  topBitCount[1] = uint8_t(getFixedLengthCodeBitsCount(uint32_t(TopNmaxV0 + 1)));
-  bitCount   [2] = uint8_t(getFixedLengthCodeBitsCount(uint32_t(maxU1     + 1)));
-  topBitCount[2] = uint8_t(getFixedLengthCodeBitsCount(uint32_t(TopNmaxU1 + 1)));
-  bitCount   [3] = uint8_t(getFixedLengthCodeBitsCount(uint32_t(maxV1     + 1)));
-  topBitCount[3] = uint8_t(getFixedLengthCodeBitsCount(uint32_t(TopNmaxV1 + 1)));
-  bitCount   [4] = maxBitCountForMinDepth;
-
-  for (int i = 0; i < 4; i++) {
-    if (bitCount[i] <= topBitCount[i]) {
-      bitCount[i] = topBitCount[i];
-      A[i] = 0;
-    }
-    flag = flag << 1;
-    flag += A[i];
-  }
-  //Generate F and A.
-  if (flag == 0) { F = 0; }
-  EncodeUInt32(uint32_t(F), 1, arithmeticEncoder, bModel0);
-  if(F){
-    EncodeUInt32(uint32_t(flag), 4, arithmeticEncoder, bModel0);
-    for (int i = 0; i < 4; i++) {
-      if (A[i])  EncodeUInt32(uint32_t(bitCount[i]), 8, arithmeticEncoder, bModel0);
-    }
-  }
-  if (printDetailedInfo) {
-    printf("numPatch:%d(%d), numMatchedPatches:%d, F:%d,A:%d,%d,%d,%d\n",
-           (int)patchCount,(int)bitCountNumPatches, (int)numMatchedPatches, F, A[0], A[1], A[2], A[3]);
-    printf("bitCount:%d,%d,%d,%d,%d\n",
-           (int)bitCount[0], (int)bitCount[1], (int)bitCount[2], (int)bitCount[3], (int)bitCount[4]);
-  }
-  int64_t predIndex = 0;
-  for (size_t patchIndex = 0; patchIndex < numMatchedPatches; ++patchIndex) {
-    const auto &patch    = patches[patchIndex];
-    const auto &prepatch = prePatches[patch.getBestMatchIdx()];
-
-    const int64_t delta_index = patch.getBestMatchIdx() - predIndex;
-    predIndex += (delta_index + 1);
-    const int64_t delta_u0 = static_cast<int64_t>(patch.getU0() - prepatch.getU0());
-    const int64_t delta_v0 = static_cast<int64_t>(patch.getV0() - prepatch.getV0());
-    const int64_t delta_u1 = static_cast<int64_t>(patch.getU1() - prepatch.getU1());
-    const int64_t delta_v1 = static_cast<int64_t>(patch.getV1() - prepatch.getV1());
-    size_t currentD1=patch.getD1();
-    size_t prevD1=prepatch.getD1();
-    if(patch.getProjectionMode()==0) {
-      currentD1=currentD1/minLevel;
-      prevD1=prevD1/minLevel;
-    } else{
-      currentD1=(1024-currentD1)/minLevel;
-      prevD1=(1024-prevD1)/minLevel;
-    }
-    const int64_t delta_d1 = static_cast<int64_t>(currentD1 - prevD1);
-    const int64_t deltaSizeU0 = static_cast<int64_t>(patch.getSizeU0() - prepatch.getSizeU0());
-    const int64_t deltaSizeV0 = static_cast<int64_t>(patch.getSizeV0() - prepatch.getSizeV0());
-
-    arithmeticEncoder.ExpGolombEncode(o3dgc::IntToUInt(int32_t(delta_index)), 0, bModel0, bModelPatchIndex);
-    arithmeticEncoder.ExpGolombEncode(o3dgc::IntToUInt(int32_t(delta_u0)),    0, bModel0, bModelU0);
-    arithmeticEncoder.ExpGolombEncode(o3dgc::IntToUInt(int32_t(delta_v0)),    0, bModel0, bModelV0);
-    arithmeticEncoder.ExpGolombEncode(o3dgc::IntToUInt(int32_t(delta_u1)),    0, bModel0, bModelU1);
-    arithmeticEncoder.ExpGolombEncode(o3dgc::IntToUInt(int32_t(delta_v1)),    0, bModel0, bModelV1);
-    arithmeticEncoder.ExpGolombEncode(o3dgc::IntToUInt(int32_t(delta_d1)),    0, bModel0, bModelD1);
-    arithmeticEncoder.ExpGolombEncode(o3dgc::IntToUInt(int32_t(deltaSizeU0)), 0, bModel0, bModelIntSizeU0);
-    arithmeticEncoder.ExpGolombEncode(o3dgc::IntToUInt(int32_t(deltaSizeV0)), 0, bModel0, bModelIntSizeV0);
-
-    if ( sps.getLayerAbsoluteCodingEnabledFlag( 1 )  ) { // && context.getSixDirectionMode()
-      arithmeticEncoder.encode(patch.getProjectionMode(), bModel0);
-    }
-    
-  }//end of matched patches
-
-  o3dgc::Adaptive_Bit_Model bModelDD;
-  for (size_t patchIndex = 0; patchIndex < numMatchedPatches; ++patchIndex) {
-    const auto &patch    = patches[patchIndex];
-    const auto &prepatch = prePatches[patch.getBestMatchIdx()];
-
-    size_t quantDD=patch.getSizeD()==0?0:((patch.getSizeD()-1)/minLevel +1);
-    size_t prevQDD=patch.getSizeD()==0?0:((prepatch.getSizeD()-1)/minLevel +1);
-
-    const int64_t delta_dd = static_cast<int64_t>(quantDD - prevQDD);
-    auto &patchTemp = patches[patchIndex];
-    PCCMetadata& metadata=patchTemp.getPatchLevelMetadata();
-    metadata.setMetadataPresent(true);
-    metadata.setbitCountQDepth(0);
-#ifdef CE210_MAXDEPTH_EVALUATION
-    metadata.setQMaxDepthInPatch(delta_dd);
-#endif
-    metadata.setIndex(patchIndex);
-    // compressMetadata(metadata, arithmeticEncoder, bModel0, bModelDD);
-  }
-
-  int64_t prevSizeU0 = patches[numMatchedPatches-1].getSizeU0();
-  int64_t prevSizeV0 = patches[numMatchedPatches-1].getSizeV0();
-  for (size_t patchIndex = numMatchedPatches; patchIndex < patchCount; ++patchIndex) {
-    const auto &patch = patches[patchIndex];
-    EncodeUInt32(uint32_t(patch.getU0()), bitCount[0], arithmeticEncoder, bModel0);
-    EncodeUInt32(uint32_t(patch.getV0()), bitCount[1], arithmeticEncoder, bModel0);
-    if (enable_flexible_patch_flag) {
-      bool flexible_patch_present_flag = (patch.getPatchOrientation() != PatchOrientation::DEFAULT);
-      if (flexible_patch_present_flag) {
-        arithmeticEncoder.encode(1, orientationPatchFlagModel2);
-        arithmeticEncoder.encode(patch.getPatchOrientation() - 1, orientationPatchModel);
-      } else {
-        arithmeticEncoder.encode(0, orientationPatchFlagModel2);
-      }
-    }
-    EncodeUInt32(uint32_t(patch.getU1()), bitCount[2], arithmeticEncoder, bModel0);
-    EncodeUInt32(uint32_t(patch.getV1()), bitCount[3], arithmeticEncoder, bModel0);
-    size_t currentD1=patch.getD1();
-    if(patch.getProjectionMode()==0) {
-      currentD1=currentD1/minLevel;
-    } else{
-      currentD1=(1024-currentD1)/minLevel;
-    }
-    EncodeUInt32(uint32_t(currentD1), bitCount[4], arithmeticEncoder, bModel0);
-
-    //maxDepth
-    size_t quantDD=patch.getSizeD()==0?0:((patch.getSizeD()-1)/minLevel +1);
-    auto &patchTemp = patches[patchIndex];
-    PCCMetadata& metadata=patchTemp.getPatchLevelMetadata();
-    metadata.setbitCountQDepth(maxBitCountForMaxDepth);
-#ifdef CE210_MAXDEPTH_EVALUATION
-    metadata.setQMaxDepthInPatch(int64_t(quantDD));
-#endif
-    metadata.setIndex(patchIndex);
-    metadata.setMetadataPresent(true);
-
-    if (!sps.getLayerAbsoluteCodingEnabledFlag( 1 )  && (patch.getFrameProjectionMode() == 2)) {
-      const uint8_t bitCountProjDir = uint8_t(getFixedLengthCodeBitsCount(uint32_t(2 + 1)));
-      EncodeUInt32(uint32_t(patch.getProjectionMode()), bitCountProjDir, arithmeticEncoder, bModel0);
-    }
-    if ( sps.getLayerAbsoluteCodingEnabledFlag( 1 )  ) { // && context.getSixDirectionMode()
-      arithmeticEncoder.encode(patch.getProjectionMode(), bModel0);
-    }
-    const int64_t deltaSizeU0 = static_cast<int64_t>(patch.getSizeU0()) - prevSizeU0;
-    const int64_t deltaSizeV0 = static_cast<int64_t>(patch.getSizeV0()) - prevSizeV0;
-    arithmeticEncoder.ExpGolombEncode(o3dgc::IntToUInt(int32_t(deltaSizeU0)), 0, bModel0, bModelSizeU0);
-    arithmeticEncoder.ExpGolombEncode(o3dgc::IntToUInt(int32_t(deltaSizeV0)), 0, bModel0, bModelSizeV0);
-    prevSizeU0 = patch.getSizeU0();
-    prevSizeV0 = patch.getSizeV0();
-    // if (bBinArithCoding) {
-      if (patch.getNormalAxis() == 0) {
-        arithmeticEncoder.encode(0, orientationModel2);
-      } else if (patch.getNormalAxis() == 1) {
-        arithmeticEncoder.encode(1, orientationModel2);
-        arithmeticEncoder.encode(0, bModel0);
-      } else {
-        arithmeticEncoder.encode(1, orientationModel2);
-        arithmeticEncoder.encode(1, bModel0);
-      }
-    // } else {
-    //   arithmeticEncoder.encode(uint32_t(patch.getNormalAxis()), orientationModel);
-    // }
-    // compressMetadata(patch.getPatchLevelMetadata(), arithmeticEncoder,bModel0, bModelDD);
-  }
-  for (size_t patchIndex = 0; patchIndex < patchCount; ++patchIndex) {
-    const auto &patch    = patches[patchIndex];
-    compressOneLayerData( context, frame, patch, arithmeticEncoder,
-                          occupiedModel, interpolateModel, neighborModel, minD1Model, fillingModel );
-  } //end of matched patches
-#ifdef BITSTREAM_TRACE
-  bitstream.trace("OccupancyMapM42195 done \n" ) ; 
-#endif
+  assert( psdFrameCount == psdu.getFrameCount() );
+  byteAlignment( bitstream );
+  TRACE_BITSTREAM( "%s done \n", __func__ );
 }
 
-void PCCBitstreamEncoder::compressOneLayerData( PCCContext&                 context,
-                                                PCCFrameContext&            frame,
-                                                const PCCPatch&             patch,
-                                                o3dgc::Arithmetic_Codec&    arithmeticEncoder,
-                                                o3dgc::Adaptive_Bit_Model&  occupiedModel,
-                                                o3dgc::Adaptive_Bit_Model&  interpolateModel,
-                                                o3dgc::Adaptive_Data_Model& neighborModel,
-                                                o3dgc::Adaptive_Data_Model& minD1Model,
-                                                o3dgc::Adaptive_Bit_Model&  fillingModel ) {
+// 7.3.15 Patch sequence unit payload syntax
+void PCCBitstreamEncoder::patchSequenceUnitPayload( PatchSequenceUnitPayload& psup,
+                                                    PCCContext&               context,
+                                                    PCCBitstream&             bitstream ) {
+  TRACE_BITSTREAM( "%s \n", __func__ );
+  TRACE_BITSTREAM( " patchSequenceUnitPayload:  type = %u frameIndex = %u\n", psup.getUnitType(),
+                   psup.getFrameIndex() );
   auto& sps = context.getSps();
-  if ( sps.getLayerAbsoluteCodingEnabledFlag( 1 ) && !sps.getMultipleLayerStreamsPresentFlag() ) {
-    auto&        sps                = context.getSps();
-    auto&        ops                = sps.getOccupancyParameterSet();
-    auto&        blockToPatch       = frame.getBlockToPatch();
-    const size_t blockToPatchWidth  = frame.getWidth() / ops.getOccupancyPackingBlockSize();
-    const size_t blockToPatchHeight = frame.getHeight() / ops.getOccupancyPackingBlockSize();
-    auto&        interpolateMap     = frame.getInterpolate();
-    auto&        fillingMap         = frame.getFilling();
-    auto&        minD1Map           = frame.getMinD1();
-    auto&        neighborMap        = frame.getNeighbor();
-    for ( size_t v0 = 0; v0 < patch.getSizeV0(); ++v0 ) {
-      for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {
-        int pos = patch.patchBlock2CanvasBlock((u0), (v0), blockToPatchWidth, blockToPatchHeight);
-        arithmeticEncoder.encode(uint32_t( blockToPatch[ pos ] > 0 ), occupiedModel);
-        if( blockToPatch[ pos ] > 0 ) {
-          arithmeticEncoder.encode(uint32_t(interpolateMap[ pos ]), interpolateModel);
-          if( interpolateMap[ pos ] > 0 ) {
-            uint32_t code = uint32_t( int(neighborMap[ pos ]) - 1 );
-            arithmeticEncoder.encode( code, neighborModel);
-          }
-          arithmeticEncoder.encode(uint32_t(minD1Map[ pos ] ), minD1Model);
-          if( minD1Map[ pos ] > 1 || interpolateMap[ pos ] > 0 ) {
-            arithmeticEncoder.encode( uint32_t(fillingMap[ pos ] ), fillingModel);
-          }
+  if ( psup.getUnitType() == PSD_SPS ) {
+    patchSequenceParameterSet( psup.getPatchSequenceParameterSet(), bitstream );
+  } else if ( psup.getUnitType() == PSD_GPPS ) {
+    geometryPatchParameterSet( psup.getGeometryPatchParameterSet(), psup.getGeometryFrameParameterSet(), bitstream );
+  } else if ( psup.getUnitType() == PSD_APPS ) {
+    auto& psdu = context.getPatchSequenceDataUnit();
+
+    for ( uint16_t attributeIndex = 0; attributeIndex < sps.getAttributeCount(); attributeIndex++ ) {
+      attributePatchParameterSet( psup.getAttributePatchParameterSet( attributeIndex ),
+                                  sps.getAttributeParameterSet( attributeIndex ),
+                                  psdu.getAttributeFrameParameterSet( 0, attributeIndex ), bitstream );
+    }
+  } else if ( psup.getUnitType() == PSD_FPS ) {
+    patchFrameParameterSet( psup.getPatchFrameParameterSet(), sps, bitstream );
+    TRACE_BITSTREAM( " PatchOrientationPresentFlag = %lu \n",
+                     psup.getPatchFrameParameterSet().getPatchOrientationPresentFlag() );
+  } else if ( psup.getUnitType() == PSD_AFPS ) {
+    for ( int attributeIndex = 0; attributeIndex < sps.getAttributeCount(); attributeIndex++ ) {
+      attributeFrameParameterSet( psup.getAttributeFrameParameterSet( attributeIndex ),
+                                  sps.getAttributeParameterSet( attributeIndex ), bitstream );
+    }
+  } else if ( psup.getUnitType() == PSD_GFPS ) {
+    geometryFrameParameterSet( psup.getGeometryFrameParameterSet(), sps.getGeometryParameterSet(), bitstream );
+  } else if ( psup.getUnitType() == PSD_PFLU ) {
+    patchFrameLayerUnit( psup.getPatchFrameLayerUnit(), context, bitstream );
+  }
+}
+
+// 7.3.16 Patch sequence parameter set syntax
+void PCCBitstreamEncoder::patchSequenceParameterSet( PatchSequenceParameterSet& psps, PCCBitstream& bitstream ) {
+  TRACE_BITSTREAM( "%s \n", __func__ );
+  bitstream.writeUvlc( psps.getPatchSequenceParameterSetId() );         // ue(v)
+  bitstream.writeUvlc( psps.getLog2MaxPatchFrameOrderCntLsbMinus4() );  // ue(v)
+  bitstream.writeUvlc( psps.getMaxDecPatchFrameBufferingMinus1() );     // ue(v)
+  bitstream.write( psps.getLongTermRefPatchFramesFlag(), 1 );           // u(1)
+  bitstream.writeUvlc( psps.getNumRefPatchFrameListsInSps() );          // ue(v)
+  for ( size_t i = 0; i < psps.getNumRefPatchFrameListsInSps(); i++ ) {
+    refListStruct( psps.getRefListStruct( i ), psps, bitstream );
+  }
+}
+
+// 7.3.17 Geometry frame parameter set syntax
+void PCCBitstreamEncoder::geometryFrameParameterSet( GeometryFrameParameterSet& gfps,
+                                                     GeometryParameterSet&      gps,
+                                                     PCCBitstream&              bitstream ) {
+  TRACE_BITSTREAM( "%s \n", __func__ );
+  bitstream.writeUvlc( gfps.getGeometryFrameParameterSetId() );  // ue(v)
+  bitstream.writeUvlc( gfps.getPatchSequenceParameterSetId() );  // ue(v)
+  if ( gps.getGeometryParamsEnabledFlag() ) {
+    bitstream.write( (uint32_t)gfps.getOverrideGeometryParamsFlag(), 1 );  // u(1)
+    if ( gfps.getOverrideGeometryParamsFlag() ) { geometryFrameParams( gfps.getGeometryFrameParams(), bitstream ); }
+  }
+  if ( gps.getGeometryPatchParamsEnabledFlag() ) {
+    bitstream.write( (uint32_t)gfps.getOverrideGeometryPatchParamsFlag(), 1 );  // u(1)
+    if ( gfps.getOverrideGeometryPatchParamsFlag() ) {
+      bitstream.write( (uint32_t)gfps.getGeometryPatchScaleParamsEnabledFlag(), 1 );
+      bitstream.write( (uint32_t)gfps.getGeometryPatchOffsetParamsEnabledFlag(), 1 );
+      bitstream.write( (uint32_t)gfps.getGeometryPatchRotationParamsEnabledFlag(), 1 );
+      bitstream.write( (uint32_t)gfps.getGeometryPatchPointSizeInfoEnabledFlag(), 1 );
+      bitstream.write( (uint32_t)gfps.getGeometryPatchPointShapeInfoEnabledFlag(), 1 );
+    }
+  }
+  byteAlignment( bitstream );
+}
+
+// 7.3.18 Geometry frame Params syntax
+void PCCBitstreamEncoder::geometryFrameParams( GeometryFrameParams& gfp, PCCBitstream& bitstream ) {
+  TRACE_BITSTREAM( "%s \n", __func__ );
+  bitstream.write( (uint32_t)gfp.getGeometrySmoothingParamsPresentFlag(), 1 );  // u(1)
+  bitstream.write( (uint32_t)gfp.getGeometryScaleParamsPresentFlag(), 1 );      // u(1)
+  bitstream.write( (uint32_t)gfp.getGeometryOffsetParamsPresentFlag(), 1 );     // u(1)
+  bitstream.write( (uint32_t)gfp.getGeometryRotationParamsPresentFlag(), 1 );   // u(1)
+  bitstream.write( (uint32_t)gfp.getGeometryPointSizeInfoPresentFlag(), 1 );    // u(1)
+  bitstream.write( (uint32_t)gfp.getGeometryPointShapeInfoPresentFlag(), 1 );   // u(1)
+
+  if ( gfp.getGeometrySmoothingParamsPresentFlag() ) {
+    bitstream.write( (uint32_t)gfp.getGeometrySmoothingEnabledFlag(), 1 );
+    if ( gfp.getGeometrySmoothingEnabledFlag() ) {
+      bitstream.write( (uint32_t)gfp.getGeometrySmoothingGridSize(), 8 );
+      bitstream.write( (uint32_t)gfp.getGeometrySmoothingThreshold(), 8 );
+    }
+  }
+  if ( gfp.getGeometryScaleParamsPresentFlag() ) {
+    for ( size_t d = 0; d < 3; d++ ) {
+      bitstream.write( (uint32_t)gfp.getGeometryScaleOnAxis( d ), 32 );  // u(32)
+    }
+  }
+  if ( gfp.getGeometryOffsetParamsPresentFlag() ) {
+    for ( size_t d = 0; d < 3; d++ ) {
+      bitstream.write( convertToUInt( gfp.getGeometryOffsetOnAxis( d ) ), 32 );  // i32
+    }
+  }
+  if ( gfp.getGeometryRotationParamsPresentFlag() ) {
+    for ( size_t d = 0; d < 3; d++ ) {
+      bitstream.write( convertToUInt( gfp.getGeometryRotationOnAxis( d ) ), 32 );  // i32
+    }
+  }
+  if ( gfp.getGeometryPointSizeInfoPresentFlag() ) { bitstream.write( (uint32_t)gfp.getGeometryPointSizeInfo(), 16 ); }
+  if ( gfp.getGeometryPointShapeInfoPresentFlag() ) { bitstream.write( (uint32_t)gfp.getGeometryPointShapeInfo(), 4 ); }
+}
+
+// 7.3.19 Attribute frame parameter set syntax
+void PCCBitstreamEncoder::attributeFrameParameterSet( AttributeFrameParameterSet& afps,
+                                                      AttributeParameterSet&      aps,
+                                                      PCCBitstream&               bitstream ) {
+  TRACE_BITSTREAM( "%s \n", __func__ );
+  // jkei : this is attributeIndex-th afps
+  bitstream.writeUvlc( afps.getAttributeFrameParameterSetId() );  // ue(v)
+  bitstream.writeUvlc( afps.getPatchSequencParameterSetId() );    //  ue(v)
+
+  size_t attributeDimension = aps.getAttributeDimensionMinus1() + 1;
+  if ( aps.getAttributeParamsEnabledFlag() ) {
+    bitstream.write( (uint32_t)afps.getOverrideAttributeParamsFlag(), 1 );  // u(1)
+    if ( afps.getOverrideAttributeParamsFlag() ) {
+      attributeFrameParams( afps.getAttributeFrameParams(), attributeDimension, bitstream );
+    }
+  }
+  if ( aps.getAttributePatchParamsEnabledFlag() ) {
+    bitstream.write( (uint32_t)afps.getOverrideAttributePatchParamsFlag(),
+                     1 );  //    u(1)
+    if ( afps.getOverrideAttributePatchParamsFlag() ) {
+      bitstream.write( (uint32_t)afps.getAttributePatchScaleParamsEnabledFlag(), 1 );   //  u(1)
+      bitstream.write( (uint32_t)afps.getAttributePatchOffsetParamsEnabledFlag(), 1 );  // u(1)
+    }
+  }
+
+  byteAlignment( bitstream );
+}
+
+// 7.3.20 Attribute frame Params syntax
+void PCCBitstreamEncoder::attributeFrameParams( AttributeFrameParams& afp,
+                                                size_t                attributeDimension,
+                                                PCCBitstream&         bitstream ) {
+  TRACE_BITSTREAM( "%s \n", __func__ );
+  bitstream.write( (uint32_t)afp.getAttributeSmoothingParamsPresentFlag(), 1 );  // u(1)
+  bitstream.write( (uint32_t)afp.getAttributeScaleParamsPresentFlag(), 1 );      // u(1)
+  bitstream.write( (uint32_t)afp.getAttributeOffsetParamsPresentFlag(), 1 );     // u(1)
+  if ( afp.getAttributeSmoothingParamsPresentFlag() ) {
+    bitstream.write( (uint32_t)afp.getAttributeSmoothingRadius(), 8 );                    //  u(8)
+    bitstream.write( (uint32_t)afp.getAttributeSmoothingNeighbourCount(), 8 );            //   u(8)
+    bitstream.write( (uint32_t)afp.getAttributeSmoothingRadius2BoundaryDetection(), 8 );  //  u(8)
+    bitstream.write( (uint32_t)afp.getAttributeSmoothingThreshold(), 8 );                 // u(8)
+    bitstream.write( (uint32_t)afp.getAttributeSmoothingThresholdLocalEntropy(), 3 );     // u(3)
+  }
+
+  if ( afp.getAttributeScaleParamsPresentFlag() ) {
+    for ( size_t i = 0; i < attributeDimension; i++ )
+      bitstream.write( (uint32_t)afp.getAttributeScale( i ), 32 );  // u(32)
+  }
+  if ( afp.getAttributeOffsetParamsPresentFlag() ) {
+    for ( size_t i = 0; i < attributeDimension; i++ )
+      bitstream.write( convertToUInt( afp.getAttributeOffset( i ) ), 32 );  // i32
+  }
+}
+
+// 7.3.21 Geometry patch parameter set syntax
+void PCCBitstreamEncoder::geometryPatchParameterSet( GeometryPatchParameterSet& gpps,
+                                                     GeometryFrameParameterSet& gfps,
+                                                     PCCBitstream&              bitstream ) {
+  TRACE_BITSTREAM( "%s \n", __func__ );
+  bitstream.writeUvlc( gpps.getGeometryPatchParameterSetId() );  // ue(v)
+  bitstream.writeUvlc( gpps.getGeometryFrameParameterSetId() );  //  ue(v)
+  if ( gfps.getGeometryPatchScaleParamsEnabledFlag() || gfps.getGeometryPatchOffsetParamsEnabledFlag() ||
+       gfps.getGeometryPatchRotationParamsEnabledFlag() || gfps.getGeometryPatchPointSizeInfoEnabledFlag() ||
+       gfps.getGeometryPatchPointShapeInfoEnabledFlag() ) {
+    bitstream.write( (uint32_t)gpps.getGeometryPatchParamsPresentFlag(), 1 );  // u(1)
+    if ( gpps.getGeometryPatchParamsPresentFlag() )
+      geometryPatchParams( gpps.getGeometryPatchParams(), gfps, bitstream );
+  }
+
+  byteAlignment( bitstream );
+}
+
+// 7.3.22 Geometry patch Params syntax
+void PCCBitstreamEncoder::geometryPatchParams( GeometryPatchParams&       gpp,
+                                               GeometryFrameParameterSet& gfps,
+                                               PCCBitstream&              bitstream ) {
+  TRACE_BITSTREAM( "%s \n", __func__ );
+  if ( gfps.getGeometryPatchScaleParamsEnabledFlag() ) {
+    bitstream.write( (uint32_t)gpp.getGeometryPatchScaleParamsPresentFlag(), 1 );  // u(1)
+    if ( gpp.getGeometryPatchScaleParamsPresentFlag() ) {
+      for ( size_t d = 0; d < 3; d++ ) {
+        bitstream.write( (uint32_t)gpp.getGeometryPatchScaleOnAxis( d ), 32 );  // u(32)
+      }
+    }
+  }
+  if ( gfps.getGeometryPatchOffsetParamsEnabledFlag() ) {
+    bitstream.write( (uint32_t)gpp.getGeometryPatchOffsetParamsPresentFlag(), 1 );  // u(1)
+    if ( gpp.getGeometryPatchOffsetParamsPresentFlag() ) {
+      for ( size_t d = 0; d < 3; d++ ) {
+        bitstream.write( convertToUInt( gpp.getGeometryPatchOffsetOnAxis( d ) ), 32 );  // i32
+      }
+    }
+  }
+  if ( gfps.getGeometryPatchRotationParamsEnabledFlag() ) {
+    bitstream.write( (uint32_t)gpp.getGeometryPatchRotationParamsPresentFlag(), 1 );  // u(1)
+    if ( gpp.getGeometryPatchRotationParamsPresentFlag() ) {
+      for ( size_t d = 0; d < 3; d++ ) {
+        bitstream.write( convertToUInt( gpp.getGeometryPatchRotationOnAxis( d ) ), 32 );  // i(32)
+      }
+    }
+  }
+  if ( gfps.getGeometryPatchPointSizeInfoEnabledFlag() ) {
+    bitstream.write( (uint32_t)gpp.getGeometryPatchPointSizeInfoPresentFlag(), 1 );  // u(1)
+    if ( gpp.getGeometryPatchPointSizeInfoPresentFlag() ) {
+      bitstream.write( (uint32_t)gpp.getGeometryPatchPointSizeInfo(), 16 );  // u(16)
+    }
+  }
+  if ( gfps.getGeometryPatchPointShapeInfoEnabledFlag() ) {
+    bitstream.write( (uint32_t)gpp.getGeometryPatchPointShapeInfoPresentFlag(), 1 );  // u(1)
+    if ( gpp.getGeometryPatchPointShapeInfoPresentFlag() ) {
+      bitstream.write( (uint32_t)gpp.getGeometryPatchPointShapeInfo(), 4 );  // u(14
+    }
+  }
+}
+
+// 7.3.23 Attribute patch parameter set syntax
+void PCCBitstreamEncoder::attributePatchParameterSet( AttributePatchParameterSet& apps,
+                                                      AttributeParameterSet&      aps,
+                                                      AttributeFrameParameterSet& afps,
+                                                      PCCBitstream&               bitstream ) {
+  TRACE_BITSTREAM( "%s \n", __func__ );
+  bitstream.writeUvlc( apps.getAttributePatchParameterSetId() );
+  bitstream.writeUvlc( apps.getAttributeFrameParameterSetId() );
+  size_t attributeDimension = aps.getAttributeDimensionMinus1() + 1;
+  if ( afps.getAttributePatchScaleParamsEnabledFlag() || afps.getAttributePatchOffsetParamsEnabledFlag() ) {
+    bitstream.write( (uint32_t)apps.getAttributePatchParamsPresentFlag(), 1 );  // u(1)
+    if ( apps.getAttributePatchParamsPresentFlag() ) {
+      attributePatchParams( apps.getAttributePatchParams(), afps, attributeDimension, bitstream );
+    }
+  }
+  byteAlignment( bitstream );
+}
+
+// 7.3.24 Attribute patch Params syntax (apps)
+void PCCBitstreamEncoder::attributePatchParams( AttributePatchParams&       app,
+                                                AttributeFrameParameterSet& afps,
+                                                size_t                      dimension,
+                                                PCCBitstream&               bitstream ) {
+  TRACE_BITSTREAM( "%s \n", __func__ );
+  if ( afps.getAttributePatchScaleParamsEnabledFlag() ) {
+    bitstream.write( (uint32_t)app.getAttributePatchScaleParamsPresentFlag(), 1 );  //  u(1)
+    if ( app.getAttributePatchScaleParamsPresentFlag() ) {
+      for ( size_t i = 0; i < dimension; i++ ) {
+        bitstream.write( (uint32_t)app.getAttributePatchScale( i ), 32 );  //  u(32)
+      }
+    }
+  }
+  if ( afps.getAttributePatchOffsetParamsEnabledFlag() ) {
+    bitstream.write( (uint32_t)app.getAttributePatchOffsetParamsPresentFlag(), 1 );  //   u(1)
+    if ( app.getAttributePatchOffsetParamsPresentFlag() ) {
+      for ( size_t i = 0; i < dimension; i++ ) {
+        bitstream.write( convertToUInt( app.getAttributePatchOffset( i ) ), 32 );  // i(32)
+      }
+    }
+  }
+}
+
+// 7.3.25 Patch frame parameter set syntax
+void PCCBitstreamEncoder::patchFrameParameterSet( PatchFrameParameterSet& pfps,
+                                                  SequenceParameterSet&   sps,
+                                                  PCCBitstream&           bitstream ) {
+  TRACE_BITSTREAM( "%s \n", __func__ );
+  bitstream.writeUvlc( pfps.getPatchFrameParameterSetId() );             // ue(v)
+  bitstream.writeUvlc( pfps.getPatchSequenceParameterSetId() );          // ue(v)
+  bitstream.write( pfps.getLocalOverrideGeometryPatchEnableFlag(), 1 );  // u(1)
+  for ( size_t i = 0; i < sps.getAttributeCount(); i++ ) {
+    bitstream.write( pfps.getLocalOverrideAttributePatchEnableFlag( i ), 1 );  // u(1)
+  }
+  bitstream.writeUvlc( pfps.getAdditionalLtPfocLsbLen() );  // ue(v)
+  if ( sps.getPatchSequenceOrientationEnabledFlag() ) {
+    bitstream.write( pfps.getPatchOrientationPresentFlag(), 1 );  // u(1)
+    TRACE_BITSTREAM( "code PatchOrientationPresentFlag = %lu \n", pfps.getPatchOrientationPresentFlag() );
+  } else {
+    TRACE_BITSTREAM( "else PatchOrientationPresentFlag = %lu \n", pfps.getPatchOrientationPresentFlag() );
+  }
+  byteAlignment( bitstream );
+}
+
+// 7.3.26 Patch frame layer unit syntax
+void PCCBitstreamEncoder::patchFrameLayerUnit( PatchFrameLayerUnit& pflu,
+                                               PCCContext&          context,
+                                               PCCBitstream&        bitstream ) {
+  TRACE_BITSTREAM( "%s \n", __func__ );
+  patchFrameHeader( pflu.getPatchFrameHeader(), context, bitstream );
+  patchFrameDataUnit( pflu.getPatchFrameDataUnit(), pflu.getPatchFrameHeader(), context, bitstream );
+}
+
+// 7.3.27 Patch frame header syntax
+void PCCBitstreamEncoder::patchFrameHeader( PatchFrameHeader& pfh, PCCContext& context, PCCBitstream& bitstream ) {
+  TRACE_BITSTREAM( "%s start \n", __func__ );
+  auto& psdu = context.getPatchSequenceDataUnit();
+  auto& psps = psdu.getPatchSequenceParameterSet( pfh.getPatchFrameParameterSetId() );
+
+  bitstream.writeUvlc( pfh.getPatchFrameParameterSetId() );  // ue(v )
+  bitstream.writeUvlc( pfh.getAddress() );                   // u( v )
+  bitstream.writeUvlc( pfh.getType() );                      // u( v )
+  bitstream.writeUvlc( pfh.getPatchFrameOrderCntLsb() );     // u( v )
+
+  TRACE_BITSTREAM( "Id     = %u \n", pfh.getPatchFrameParameterSetId() );
+  TRACE_BITSTREAM( "Adress = %u \n", pfh.getAddress() );
+  TRACE_BITSTREAM( "Type   = %u \n", pfh.getType() );
+  TRACE_BITSTREAM( "POC    = %u \n", pfh.getPatchFrameOrderCntLsb() );
+  TRACE_BITSTREAM( "psps.getNumRefPatchFrameListsInSps() = %lu\n", psps.getNumRefPatchFrameListsInSps() );
+  TRACE_BITSTREAM( "psps.getNumRefPatchFrameListsInSps() = %lu \n", psps.getNumRefPatchFrameListsInSps() );
+
+  if ( psps.getNumRefPatchFrameListsInSps() > 0 ) {
+    bitstream.write( (uint32_t)pfh.getRefPatchFrameListSpsFlag(), 1 );  // u( 1 )
+  }
+  if ( pfh.getRefPatchFrameListSpsFlag() ) {
+    if ( psps.getNumRefPatchFrameListsInSps() > 1 ) {
+      bitstream.writeUvlc( pfh.getRefPatchFrameListIdx() );  // u( v )
+    } else {
+      psps.getRefListStruct( psps.getNumRefPatchFrameListsInSps() );
+    }
+    uint8_t rlsIdx =
+        psps.getNumRefPatchFrameListsInSps() ? pfh.getRefPatchFrameListIdx() : psps.getNumRefPatchFrameListsInSps();
+    size_t numLtrpEntries = 0;
+    for ( size_t i = 0; i < psps.getRefListStruct( rlsIdx ).getNumRefEntries(); i++ ) {
+      if ( !psps.getRefListStruct( rlsIdx ).getStRefPatchFrameFlag( i ) ) { numLtrpEntries++; }
+    }
+
+    for ( size_t j = 0; j < numLtrpEntries; j++ ) {
+      bitstream.write( (uint32_t)pfh.getAdditionalPfocLsbPresentFlag( j ) );  // u( 1 )
+      if ( pfh.getAdditionalPfocLsbPresentFlag( j ) ) {
+        bitstream.writeUvlc( pfh.getAdditionalPfocLsbVal( j ) );  // u( v )
+      }
+    }
+
+    if ( pfh.getType() == P_PATCH_FRAME && psps.getRefListStruct( rlsIdx ).getNumRefEntries() > 1 ) {
+      bitstream.write( (uint32_t)pfh.getNumRefIdxActiveOverrideFlag(), 1 );  // u( 1 )
+      if ( pfh.getNumRefIdxActiveOverrideFlag() ) {
+        bitstream.writeUvlc( pfh.getNumRefIdxActiveMinus1() );  // u( v )
+      }
+    }
+  }
+
+  if ( pfh.getType() == I_PATCH_FRAME ) {
+    bitstream.write( (uint32_t)pfh.getInterPredictPatch2dShiftUBitCountMinus1(), 8 );              // u( 8 )
+    bitstream.write( (uint32_t)pfh.getInterPredictPatch2dShiftVBitCountMinus1(), 8 );              // u( 8 )
+    bitstream.write( (uint32_t)pfh.getInterPredictPatch3dShiftTangentAxisBitCountMinus1(), 8 );    // u( 8 )
+    bitstream.write( (uint32_t)pfh.getInterPredictPatch3dShiftBitangentAxisBitCountMinus1(), 8 );  // u( 8 )
+    bitstream.write( (uint32_t)pfh.getInterPredictPatch3dShiftNormalAxisBitCountMinus1(), 8 );     // u( 8 )
+    bitstream.write( (uint32_t)pfh.getInterPredictPatchLodBitCount(), 8 );                         // u( 8 )
+  } else {
+    bitstream.write( (uint32_t)pfh.getInterPredictPatchBitCountFlag(), 1 );  // u( 1 )
+    if ( pfh.getInterPredictPatchBitCountFlag() ) {
+      bitstream.write( (uint32_t)pfh.getInterPredictPatch2dShiftUBitCountFlag(), 1 );  // u( 1 )
+      if ( pfh.getInterPredictPatch2dShiftUBitCountFlag() ) {
+        bitstream.write( (uint32_t)pfh.getInterPredictPatch2dShiftUBitCountMinus1(), 8 );  // u( 8 )
+      }
+      bitstream.write( (uint32_t)pfh.getInterPredictPatch2dShiftVBitCountFlag(), 1 );  // u( 1 )
+      if ( pfh.getInterPredictPatch2dShiftVBitCountFlag() ) {
+        bitstream.write( (uint32_t)pfh.getInterPredictPatch2dShiftVBitCountMinus1(), 8 );  // u( 8 )
+      }
+      bitstream.write( (uint32_t)pfh.getInterPredictPatch3dShiftTangentAxisBitCountFlag(), 1 );  // u( 1 )
+      if ( pfh.getInterPredictPatch3dShiftTangentAxisBitCountFlag() ) {
+        bitstream.write( (uint32_t)pfh.getInterPredictPatch3dShiftTangentAxisBitCountMinus1(), 8 );  // u( 8 )
+      }
+      bitstream.write( (uint32_t)pfh.getInterPredictPatch3dShiftBitangentAxisBitCountFlag(), 1 );  // u( 1 )
+      if ( pfh.getInterPredictPatch3dShiftBitangentAxisBitCountFlag() ) {
+        bitstream.write( (uint32_t)pfh.getInterPredictPatch3dShiftBitangentAxisBitCountMinus1(), 8 );  // u( 8 )
+      }
+      bitstream.write( (uint32_t)pfh.getInterPredictPatch3dShiftNormalAxisBitCountFlag(), 1 );  // u( 1 )
+      if ( pfh.getInterPredictPatch3dShiftNormalAxisBitCountFlag() ) {
+        bitstream.write( (uint32_t)pfh.getInterPredictPatch3dShiftNormalAxisBitCountMinus1(), 8 );  // u( 8 )
+      }
+      bitstream.write( (uint32_t)pfh.getInterPredictPatchLodBitCountFlag(), 1 );  // u( 1 )
+      if ( pfh.getInterPredictPatchLodBitCountFlag() ) {
+        bitstream.write( (uint32_t)pfh.getInterPredictPatchLodBitCount(), 8 );  // u( 8 )
+      }
+    }
+  }
+
+  TRACE_BITSTREAM( "InterPredictPatchBitCountFlag                          = %d \n",
+                   pfh.getInterPredictPatchBitCountFlag() );
+  TRACE_BITSTREAM( "InterPredictPatch2dShiftUBitCountFlag                  = %d \n",
+                   pfh.getInterPredictPatch2dShiftUBitCountFlag() );
+  TRACE_BITSTREAM( "InterPredictPatch2dShiftVBitCountFlag                  = %d \n",
+                   pfh.getInterPredictPatch2dShiftVBitCountFlag() );
+  TRACE_BITSTREAM( "InterPredictPatch3dShiftTangentAxisBitCountFlag        = %d \n",
+                   pfh.getInterPredictPatch3dShiftTangentAxisBitCountFlag() );
+  TRACE_BITSTREAM( "InterPredictPatch3dShiftBitangentAxisBitCountFlag      = %d \n",
+                   pfh.getInterPredictPatch3dShiftBitangentAxisBitCountFlag() );
+  TRACE_BITSTREAM( "InterPredictPatch3dShiftNormalAxisBitCountFlag         = %d \n",
+                   pfh.getInterPredictPatch3dShiftNormalAxisBitCountFlag() );
+  TRACE_BITSTREAM( "InterPredictPatchLodBitCountFlag                       = %d \n",
+                   pfh.getInterPredictPatchLodBitCountFlag() );
+  TRACE_BITSTREAM( "getInterPredictPatch2dShiftUBitCountMinus1             = %u \n",
+                   pfh.getInterPredictPatch2dShiftUBitCountMinus1() );
+  TRACE_BITSTREAM( "getInterPredictPatch2dShiftVBitCountMinus1             = %u \n",
+                   pfh.getInterPredictPatch2dShiftVBitCountMinus1() );
+  TRACE_BITSTREAM( "getInterPredictPatch3dShiftTangentAxisBitCountMinus1   = %u \n",
+                   pfh.getInterPredictPatch3dShiftTangentAxisBitCountMinus1() );
+  TRACE_BITSTREAM( "getInterPredictPatch3dShiftBitangentAxisBitCountMinus1 = %u \n",
+                   pfh.getInterPredictPatch3dShiftBitangentAxisBitCountMinus1() );
+  TRACE_BITSTREAM( "getInterPredictPatch3dShiftNormalAxisBitCountMinus1    = %u \n",
+                   pfh.getInterPredictPatch3dShiftNormalAxisBitCountMinus1() );
+
+  byteAlignment( bitstream );
+  TRACE_BITSTREAM( "%s done \n", __func__ );
+}
+
+// 7.3.28 Reference list structure syntax
+void PCCBitstreamEncoder::refListStruct( RefListStruct&             rls,
+                                         PatchSequenceParameterSet& psps,
+                                         PCCBitstream&              bitstream ) {
+  TRACE_BITSTREAM( "%s \n", __func__ );
+  bitstream.writeUvlc( rls.getNumRefEntries() );  // ue(v)
+  rls.allocate();
+  for ( size_t i = 0; i < rls.getNumRefEntries(); i++ ) {
+    if ( psps.getLongTermRefPatchFramesFlag() ) {
+      bitstream.write( rls.getStRefPatchFrameFlag( i ), 1 );  // u(1)
+      if ( rls.getStRefPatchFrameFlag( i ) ) {
+        bitstream.writeUvlc( rls.getAbsDeltaPfocSt( i ) );  // ue(v)
+        if ( rls.getAbsDeltaPfocSt( i ) > 0 ) {
+          bitstream.write( rls.getStrpfEntrySignFlag( i ), 1 );  // u(1)
+        } else {
+          bitstream.writeUvlc( rls.getPfocLsbLt( i ) );  // u(v)
         }
       }
     }
   }
 }
 
-void PCCBitstreamEncoder::compressOccupancyMap( PCCContext &context, PCCBitstream& bitstream ){
+// 7.3.29 Patch frame data unit syntax
+void PCCBitstreamEncoder::patchFrameDataUnit( PatchFrameDataUnit& pfdu,
+                                              PatchFrameHeader&   pfh,
+                                              PCCContext&         context,
+                                              PCCBitstream&       bitstream ) {
+  TRACE_BITSTREAM( "%s \n", __func__ );
+  TRACE_BITSTREAM( "patchFrameDataUnit start \n" );
+  TRACE_BITSTREAM( "pfh.getType()        = %lu \n", pfh.getType() );
 
-  size_t sizeFrames = context.getFrames().size();
-  PCCFrameContext preFrame = context.getFrames()[0];
-  auto& sps = context.getSps();
-  for( int i = 0; i < sizeFrames; i++ ){
-    PCCFrameContext &frame = context.getFrames()[i];
-    if ((sps.getLosslessGeo() || params_.lossyMissedPointsPatch_ ) && !sps.getPcmSeparateVideoPresentFlag()) {
-      auto& patches = frame.getPatches();
-      auto& missedPointsPatch = frame.getMissedPointsPatch();
-      const size_t patchIndex = patches.size();
-      patches.resize(patchIndex + 1);
-      PCCPatch &dummyPatch = patches[patchIndex];
-      dummyPatch.getIndex() = patchIndex;
-      dummyPatch.getU0() = missedPointsPatch.u0_;
-      dummyPatch.getV0() = missedPointsPatch.v0_;
-      dummyPatch.getSizeU0() = missedPointsPatch.sizeU0_;
-      dummyPatch.getSizeV0() = missedPointsPatch.sizeV0_;
-      dummyPatch.getU1() = 0;
-      dummyPatch.getV1() = 0;
-      dummyPatch.getD1() = 0;
-      dummyPatch.getNormalAxis() = 0;
-      dummyPatch.getTangentAxis() = 1;
-      dummyPatch.getBitangentAxis() = 2;
-      dummyPatch.getOccupancyResolution() = missedPointsPatch.occupancyResolution_;
-      dummyPatch.getOccupancy() = missedPointsPatch.occupancy_;
-      dummyPatch.getLod() = params_.testLevelOfDetail_;
-      dummyPatch.setBestMatchIdx() = -1;
-      dummyPatch.getPatchOrientation() = PatchOrientation::DEFAULT;
-      compressOccupancyMap( context, frame, bitstream, preFrame, i);
-      patches.pop_back();
-    } else {
-      compressOccupancyMap( context, frame, bitstream, preFrame, i);
-    }
-    preFrame = frame;
-  } 
-}
-
-void PCCBitstreamEncoder::compressOccupancyMap( PCCContext&      context,
-                                                PCCFrameContext& frame,
-                                                PCCBitstream&    bitstream,
-                                                PCCFrameContext& preFrame,
-                                                size_t           frameIndex ) {
-                                                    
-#ifdef BITSTREAM_TRACE
-  bitstream.trace("OccupancyMap start \n" ) ; 
-#endif
- 
-  auto&        sps        = context.getSps();
-  auto&        ops        = sps.getOccupancyParameterSet();
-  auto&        patches    = frame.getPatches();
-  const size_t patchCount = patches.size();
-  bitstream.write<uint32_t>(uint32_t(patchCount));
-  bitstream.write<uint8_t>( uint8_t( params_.maxCandidateCount_));
-
-  if (!sps.getLayerAbsoluteCodingEnabledFlag( 1 )) {
-    bitstream.write<uint8_t>(uint8_t( params_.surfaceThickness_ ) );
-    bitstream.write<uint8_t>(uint8_t( patches[0].getFrameProjectionMode() ) );
-  }
-  const size_t minLevel = sps.getMinLevel();
-  const uint8_t maxBitCountForMinDepth=uint8_t(10-gbitCountSize[minLevel]);
-  const uint8_t maxBitCountForMaxDepth=uint8_t(9-gbitCountSize[minLevel]); //20190129
+  auto&         sps                    = context.getSps();
+  uint8_t       moreAvailablePatchFlag = pfdu.getPatchCount() > 0;
+  const uint8_t bitCountPatchMode      = ( PATCH_FRAME_TYPE( pfh.getType() ) ) == I_PATCH_FRAME ? 1 : 2;
 
   o3dgc::Arithmetic_Codec arithmeticEncoder;
-  o3dgc::Static_Bit_Model bModel0;
-  // bool bBinArithCoding = context.getBinArithCoding() && (!context.getLosslessGeo()) &&
-  //     ( ops.getOccupancyPackingBlockSize() == 16) && (context.getOccupancyPrecision() == 4);
-  uint8_t enable_flexible_patch_flag = ( params_.packingStrategy_ > 0);
-  bitstream.write<uint8_t>(enable_flexible_patch_flag);
-
+  TRACE_BITSTREAM_NH( "start arithmetic coder \n" );
   arithmeticEncoder.set_buffer( 0x00ffffff );
   arithmeticEncoder.start_encoder();
 
-  if((frameIndex == 0)||(! sps.getPatchInterPredictionEnabledFlag() ) ) {  // context.getDeltaCoding()
-    size_t maxU0 = 0;
-    size_t maxV0 = 0;
-    size_t maxU1 = 0;
-    size_t maxV1 = 0;
-    size_t maxLod = 0;
-    for (size_t patchIndex = 0; patchIndex < patchCount; ++patchIndex) {
-      const auto &patch = patches[patchIndex];
-      maxU0 = (std::max)(maxU0, patch.getU0());
-      maxV0 = (std::max)(maxV0, patch.getV0());
-      maxU1 = (std::max)(maxU1, patch.getU1());
-      maxV1 = (std::max)(maxV1, patch.getV1());
+  o3dgc::Static_Bit_Model   bModel;
+  o3dgc::Adaptive_Bit_Model bModelMoreAvailablePatchFlag;
 
-      maxLod = (std::max)(maxLod, patch.getLod());
-    }
-    const uint8_t bitCountU0  = uint8_t(getFixedLengthCodeBitsCount(uint32_t(maxU0 + 1)));
-    const uint8_t bitCountV0  = uint8_t(getFixedLengthCodeBitsCount(uint32_t(maxV0 + 1)));
-    const uint8_t bitCountU1  = uint8_t(getFixedLengthCodeBitsCount(uint32_t(maxU1 + 1)));
-    const uint8_t bitCountV1  = uint8_t(getFixedLengthCodeBitsCount(uint32_t(maxV1 + 1)));
-    const uint8_t bitCountD1  = maxBitCountForMinDepth;
-    const uint8_t bitCountDD  = maxBitCountForMaxDepth;
-    const uint8_t bitCountLod = uint8_t(getFixedLengthCodeBitsCount(uint32_t(maxLod + 1)));
+  arithmeticEncoder.encode( moreAvailablePatchFlag, bModelMoreAvailablePatchFlag );  // ae(v)
+  TRACE_BITSTREAM_NH( "moreAvailablePatchFlag = %d \n", moreAvailablePatchFlag );
 
-    bitstream.write<uint8_t>(bitCountU0);
-    bitstream.write<uint8_t>(bitCountV0);
-    bitstream.write<uint8_t>(bitCountU1);
-    bitstream.write<uint8_t>(bitCountV1);
-
-    bitstream.write<uint8_t>(bitCountLod);
-
-    // compressMetadata(frame.getFrameLevelMetadata(), arithmeticEncoder);
-
-    o3dgc::Adaptive_Bit_Model bModelDD;
-    o3dgc::Static_Bit_Model bModel0;
-    o3dgc::Adaptive_Bit_Model bModelSizeU0, bModelSizeV0, bModelAbsoluteD1;
-    o3dgc::Adaptive_Data_Model orientationModel(4);
-    o3dgc::Adaptive_Bit_Model orientationModel2;
-    o3dgc::Adaptive_Data_Model orientationPatchModel(NumPatchOrientations - 1 + 2);
-    o3dgc::Adaptive_Bit_Model orientationPatchFlagModel2;
-    o3dgc::Adaptive_Bit_Model occupiedModel, interpolateModel, fillingModel;
-    o3dgc::Adaptive_Data_Model minD1Model(3), neighborModel(3);
-    int64_t prevSizeU0 = 0;
-    int64_t prevSizeV0 = 0;
-    for (size_t patchIndex = 0; patchIndex < patchCount; ++patchIndex) {
-      const auto &patch = patches[patchIndex];
-      EncodeUInt32(uint32_t(patch.getU0()), bitCountU0, arithmeticEncoder, bModel0);
-      EncodeUInt32(uint32_t(patch.getV0()), bitCountV0, arithmeticEncoder, bModel0);
-      if (enable_flexible_patch_flag) {
-        bool flexible_patch_present_flag = (patch.getPatchOrientation() != PatchOrientation::DEFAULT);
-        if (flexible_patch_present_flag) {
-          arithmeticEncoder.encode(1, orientationPatchFlagModel2);
-          arithmeticEncoder.encode(patch.getPatchOrientation()-1, orientationPatchModel);
-        } else {
-          arithmeticEncoder.encode(0, orientationPatchFlagModel2);
-        }
-      }
-      EncodeUInt32(uint32_t(patch.getU1()), bitCountU1, arithmeticEncoder, bModel0);
-      EncodeUInt32(uint32_t(patch.getV1()), bitCountV1, arithmeticEncoder, bModel0);
-      size_t D1;
-      if(patch.getProjectionMode()==0) {
-        D1 = patch.getD1()/minLevel;
-      } else {
-        D1=1024-patch.getD1();
-        D1=D1/minLevel;
-      }
-
-      EncodeUInt32(uint32_t(D1), bitCountD1, arithmeticEncoder, bModel0);
-
-      size_t quantDD=patch.getSizeD()==0?0:((patch.getSizeD()-1)/minLevel +1);
-
-      auto &patchTemp = patches[patchIndex];
-      PCCMetadata& metadata=patchTemp.getPatchLevelMetadata();
-      metadata.setbitCountQDepth(bitCountDD);
-#ifdef CE210_MAXDEPTH_EVALUATION
-      metadata.setQMaxDepthInPatch(int64_t(quantDD));
-#endif
-      metadata.setIndex(patchIndex);
-      metadata.setMetadataType(METADATA_PATCH);
-      metadata.setMetadataPresent(true);
-
-      EncodeUInt32(uint32_t(patch.getLod()), bitCountLod, arithmeticEncoder, bModel0);
-      if (!sps.getLayerAbsoluteCodingEnabledFlag( 1 ) && (patch.getFrameProjectionMode() == 2)) {
-        const uint8_t bitCountProjDir = uint8_t(getFixedLengthCodeBitsCount(uint32_t(2 + 1)));
-        EncodeUInt32(uint32_t(patch.getProjectionMode()), bitCountProjDir, arithmeticEncoder, bModel0);
-      }
-      if ( sps.getLayerAbsoluteCodingEnabledFlag( 1 )  ) { // && context.getSixDirectionMode()
-        if (patch.getProjectionMode() == 0) {
-          arithmeticEncoder.encode(0, bModel0);
-        } else {
-          arithmeticEncoder.encode(1, bModel0);
-        }
-      }
-
-      const int64_t deltaSizeU0 = static_cast<int64_t>(patch.getSizeU0()) - prevSizeU0;
-      const int64_t deltaSizeV0 = static_cast<int64_t>(patch.getSizeV0()) - prevSizeV0;
-      arithmeticEncoder.ExpGolombEncode(o3dgc::IntToUInt(int32_t(deltaSizeU0)), 0, bModel0, bModelSizeU0);
-      arithmeticEncoder.ExpGolombEncode(o3dgc::IntToUInt(int32_t(deltaSizeV0)), 0, bModel0, bModelSizeV0);
-      prevSizeU0 = patch.getSizeU0();
-      prevSizeV0 = patch.getSizeV0();
-      // if (bBinArithCoding) {
-        if (patch.getNormalAxis() == 0) {
-          arithmeticEncoder.encode(0, orientationModel2);
-        } else if (patch.getNormalAxis() == 1) {
-          arithmeticEncoder.encode(1, orientationModel2);
-          arithmeticEncoder.encode(0, bModel0);
-        } else {
-          arithmeticEncoder.encode(1, orientationModel2);
-          arithmeticEncoder.encode(1, bModel0);
-        }
-      // } else {
-      //   arithmeticEncoder.encode(uint32_t(patch.getNormalAxis()), orientationModel);
-      // }
-       // compressMetadata( patch.getPatchLevelMetadata(), arithmeticEncoder, bModel0, bModelDD );
-      compressOneLayerData( context, frame, patch, arithmeticEncoder,
-                            occupiedModel, interpolateModel, neighborModel, minD1Model, fillingModel );
-    }
-  } else {
-    size_t numMatchedPatches = frame.getNumMatchedPatches();
-    compressPatchMetaDataM42195( context, frame, preFrame, numMatchedPatches, bitstream,
-                                 arithmeticEncoder, bModel0, enable_flexible_patch_flag);
+  TRACE_BITSTREAM_NH( "bitCountPatchMode = %u \n", bitCountPatchMode );
+  for ( size_t puCount = 0; puCount < pfdu.getPatchCount(); puCount++ ) {
+    EncodeUInt32( uint32_t( pfdu.getPatchMode( puCount ) ), bitCountPatchMode, arithmeticEncoder, bModel,
+                  bitstream );  // ae(v)
+    TRACE_BITSTREAM_NH( "patchMode = %lu \n", pfdu.getPatchMode( puCount ) );
+    patchInformationData( pfdu.getPatchInformationData( puCount ), pfdu.getPatchMode( puCount ), pfh, context,
+                          bitstream, arithmeticEncoder );
+    moreAvailablePatchFlag = !( ( puCount + 1 ) == pfdu.getPatchCount() );
+    arithmeticEncoder.encode( moreAvailablePatchFlag, bModelMoreAvailablePatchFlag );  // ae(v)
+    TRACE_BITSTREAM_NH( "moreAvailablePatchFlag = %d \n", moreAvailablePatchFlag );
+  }
+  if ( sps.getPointLocalReconstructionEnabledFlag() ) {
+    pointLocalReconstruction( pfdu.getPointLocalReconstruction(), context, bitstream, arithmeticEncoder );
   }
   uint32_t compressedBitstreamSize = arithmeticEncoder.stop_encoder();
   bitstream.writeBuffer( arithmeticEncoder.buffer(), compressedBitstreamSize );
-                                                   
-#ifdef BITSTREAM_TRACE
-  bitstream.trace("OccupancyMap done \n" ) ; 
-#endif
 
+  byteAlignment( bitstream );
 }
 
+// 7.3.30 Patch information data syntax
+void PCCBitstreamEncoder::patchInformationData( PatchInformationData&    pid,
+                                                size_t                   patchMode,
+                                                PatchFrameHeader&        pfh,
+                                                PCCContext&              context,
+                                                PCCBitstream&            bitstream,
+                                                o3dgc::Arithmetic_Codec& arithmeticEncoder ) {
+  TRACE_BITSTREAM_NH( "%s start: FrameType = %lu PatchMode = %lu \n", __func__, pfh.getType(), patchMode );
+  auto&                   sps  = context.getSps();
+  auto&                   psdu = context.getPatchSequenceDataUnit();
+  auto&                   pfps = psdu.getPatchFrameParameterSet( pfh.getPatchFrameParameterSetId() );
+  o3dgc::Static_Bit_Model bModel;
+  const uint8_t           bitCountGAppsId = 6;
+
+  if ( ( PATCH_FRAME_TYPE( pfh.getType() ) ) == P_PATCH_FRAME && patchMode == P_SKIP ) {
+    // skip mode.
+    // currently not supported but added it for convenience. Could easily be removed
+  } else if ( ( ( PATCH_FRAME_TYPE( pfh.getType() ) ) == I_PATCH_FRAME && patchMode == I_INTRA ) ||
+              ( ( PATCH_FRAME_TYPE( pfh.getType() ) ) == P_PATCH_FRAME && patchMode == P_INTRA ) ) {
+    if ( pfps.getLocalOverrideGeometryPatchEnableFlag() ) {
+      arithmeticEncoder.encode( pid.getOverrideGeometryPatchFlag(),
+                                bModel );  // ae(v) needs to clarify bypass vs. regular?
+      if ( pid.getOverrideGeometryPatchFlag() ) {
+        EncodeUInt32( uint32_t( pid.getGeometryPatchParameterSetId() ), bitCountGAppsId, arithmeticEncoder,
+                      bModel );  // ae(v)
+
+        TRACE_BITSTREAM_NH( " gppsId = %lu \n", pid.getGeometryPatchParameterSetId() );
+      }
+    }
+    TRACE_BITSTREAM_NH( " sps.getAttributeCount() = %lu \n", sps.getAttributeCount() );
+    TRACE_BITSTREAM_NH( " allocate done %lu \n", sps.getAttributeCount() );
+    for ( int i = 0; i < sps.getAttributeCount(); i++ ) {
+      TRACE_BITSTREAM_NH( " overight flag = %lu \n", pfps.getLocalOverrideAttributePatchEnableFlag( i ) );
+      if ( pfps.getLocalOverrideAttributePatchEnableFlag( i ) ) {
+        arithmeticEncoder.encode( pid.getOverrideAttributePatchFlag( i ),
+                                  bModel );  // ae(v) needs to clarify bypass vs. regular?
+        TRACE_BITSTREAM_NH( " overrideAttributePatchFlag = %lu \n", pid.getOverrideAttributePatchFlag( i ) );
+      }
+      TRACE_BITSTREAM_NH( " overight patch flag = %lu \n", pid.getOverrideAttributePatchFlag( i ) );
+      if ( pid.getOverrideAttributePatchFlag( i ) ) {
+        EncodeUInt32( uint32_t( pid.getAttributePatchParameterSetId( i ) ), bitCountGAppsId, arithmeticEncoder,
+                      bModel );  // ae(v)
+        TRACE_BITSTREAM_NH( " AttributePatchParameterSetId = %lu \n", pid.getAttributePatchParameterSetId( i ) );
+      }
+    }
+
+    auto& pdu = pid.getPatchDataUnit();
+    patchDataUnit( pdu, pfh, context, bitstream, arithmeticEncoder );
+  } else if ( ( PATCH_FRAME_TYPE( pfh.getType() ) ) == P_PATCH_FRAME && patchMode == P_INTER ) {
+    auto& dpdu = pid.getDeltaPatchDataUnit();
+    deltaPatchDataUnit( dpdu, pfh, context, bitstream, arithmeticEncoder );
+  } else if ( ( ( PATCH_FRAME_TYPE( pfh.getType() ) ) == I_PATCH_FRAME && patchMode == I_PCM ) ||
+              ( ( PATCH_FRAME_TYPE( pfh.getType() ) ) == P_PATCH_FRAME && patchMode == P_PCM ) ) {
+    auto& ppdu = pid.getPCMPatchDataUnit();
+    pcmPatchDataUnit( ppdu, pfh, context, bitstream, arithmeticEncoder );
+  }
+
+  TRACE_BITSTREAM_NH( "%s done \n", __func__ );
+}
+
+// 7.3.31 Patch data unit syntax
+void PCCBitstreamEncoder::patchDataUnit( PatchDataUnit&           pdu,
+                                         PatchFrameHeader&        pfh,
+                                         PCCContext&              context,
+                                         PCCBitstream&            bitstream,
+                                         o3dgc::Arithmetic_Codec& arithmeticEncoder ) {
+  TRACE_BITSTREAM_NH( "%s start \n", __func__ );
+
+  o3dgc::Static_Bit_Model    bModel;
+  o3dgc::Adaptive_Bit_Model  bModelIntSizeU0, bModelIntSizeV0, bModelOrientationSwapFlag, bModelProjectionFlag;
+  o3dgc::Adaptive_Data_Model orientationModel( 4 );
+
+  TRACE_BITSTREAM_NH( "BitCount = %lu %lu  \n", pfh.getInterPredictPatch2dShiftUBitCountMinus1(),
+                      pfh.getInterPredictPatch2dShiftVBitCountMinus1() );
+  EncodeUInt32( uint32_t( pdu.get2DShiftU() ), pfh.getInterPredictPatch2dShiftUBitCountMinus1() + 1, arithmeticEncoder,
+                bModel );  // ae(v)
+  EncodeUInt32( uint32_t( pdu.get2DShiftV() ), pfh.getInterPredictPatch2dShiftVBitCountMinus1() + 1, arithmeticEncoder,
+                bModel );  // ae(v)
+
+  arithmeticEncoder.ExpGolombEncode( o3dgc::IntToUInt( int32_t( pdu.get2DDeltaSizeU() ) ), 0, bModel,
+                                     bModelIntSizeU0 );  // The way it is implemented in TM
+  arithmeticEncoder.ExpGolombEncode( o3dgc::IntToUInt( int32_t( pdu.get2DDeltaSizeV() ) ), 0, bModel,
+                                     bModelIntSizeV0 );  // The way it is implemented in TM
+  TRACE_BITSTREAM_NH( "UV = %lu %lu Delta size = %ld %ld \n", pdu.get2DShiftU(), pdu.get2DShiftV(),
+                      pdu.get2DDeltaSizeU(), pdu.get2DDeltaSizeU() );
+  EncodeUInt32( uint32_t( pdu.get3DShiftTangentAxis() ), pfh.getInterPredictPatch3dShiftTangentAxisBitCountMinus1() + 1,
+                arithmeticEncoder,
+                bModel );  // ae(v)
+  EncodeUInt32( uint32_t( pdu.get3DShiftBiTangentAxis() ),
+                pfh.getInterPredictPatch3dShiftBitangentAxisBitCountMinus1() + 1, arithmeticEncoder,
+                bModel );  // ae(v)
+  EncodeUInt32( uint32_t( pdu.get3DShiftNormalAxis() ), pfh.getInterPredictPatch3dShiftNormalAxisBitCountMinus1() + 1,
+                arithmeticEncoder,
+                bModel );  // ae(v)
+
+  TRACE_BITSTREAM_NH( "Axis = %lu %lu  %lu \n", pdu.get3DShiftTangentAxis(), pdu.get3DShiftBiTangentAxis(),
+                      pdu.get3DShiftNormalAxis() );
+  arithmeticEncoder.encode( uint32_t( pdu.getNormalAxis() ), orientationModel );
+  auto& pfps = context.getPatchSequenceDataUnit().getPatchFrameParameterSet( 0 );
+  if ( pfps.getPatchOrientationPresentFlag() ) {
+    arithmeticEncoder.encode( pdu.getOrientationSwapFlag(), bModel );  // v(1)
+  }
+
+  TRACE_BITSTREAM_NH( "getInterPredictPatchLodBitCount = %u \n", pfh.getInterPredictPatchLodBitCount() );
+
+  if ( pfh.getInterPredictPatchLodBitCount() > 0 ) {
+    EncodeUInt32( uint32_t( pdu.getLod() ), pfh.getInterPredictPatchLodBitCount(), arithmeticEncoder,
+                  bModel );  // ae(v)
+
+    TRACE_BITSTREAM_NH( "PatchLod = %lu \n", pdu.getLod() );
+  }
+  bool  projectionFlag = 0;
+  int   i              = 0;
+  auto& sps            = context.getSps();
+  while ( i < sps.getLayerCountMinus1() + 1 && projectionFlag == 0 ) {
+    TRACE_BITSTREAM_NH( " AbsoluteCoding Layer %d =%d \n", i, sps.getLayerAbsoluteCodingEnabledFlag( i ) );
+    projectionFlag = projectionFlag | sps.getLayerAbsoluteCodingEnabledFlag( i );
+    i++;
+  }
+  TRACE_BITSTREAM_NH( "projectionFlag =%d \n", projectionFlag );
+  if ( projectionFlag ) {
+    arithmeticEncoder.encode( pdu.getProjectionMode(), bModelProjectionFlag );  // ae(v)
+    TRACE_BITSTREAM_NH( "projectionMode =%d \n", pdu.getProjectionMode() );
+  }
+
+  TRACE_BITSTREAM_NH( "patch UV %4lu %4lu S=%4ld %4ld P=%lu O=%d A=%lu %lu %lu \n", pdu.get2DShiftU(),
+                      pdu.get2DShiftV(), pdu.get2DDeltaSizeU(), pdu.get2DDeltaSizeV(), pdu.getProjectionMode(),
+                      pdu.getOrientationSwapFlag(), pdu.get3DShiftTangentAxis(), pdu.get3DShiftBiTangentAxis(),
+                      pdu.get3DShiftNormalAxis() );
+
+  TRACE_BITSTREAM_NH( "%s done \n", __func__ );
+}
+
+// 7.3.32  Delta Patch data unit syntax
+void PCCBitstreamEncoder::deltaPatchDataUnit( DeltaPatchDataUnit&      dpdu,
+                                              PatchFrameHeader&        pfh,
+                                              PCCContext&              context,
+                                              PCCBitstream&            bitstream,
+                                              o3dgc::Arithmetic_Codec& arithmeticEncoder ) {
+  TRACE_BITSTREAM_NH( "%s \n", __func__ );
+  o3dgc::Static_Bit_Model   bModel;
+  o3dgc::Adaptive_Bit_Model bModelPatchIdx, bModelPatch2DShiftU, bModelPatch2DShiftV, bModelPatchSizeU,
+      bModelPatchSizeV;
+  o3dgc::Adaptive_Bit_Model bModelPatch3DShiftNorm, bModelPatch3DShiftTan, bModelPatch3DShiftBitan;
+  o3dgc::Adaptive_Bit_Model bModelProjectionFlag;
+
+  arithmeticEncoder.ExpGolombEncode( o3dgc::IntToUInt( int32_t( dpdu.getDeltaPatchIdx() ) ), 0, bModel,
+                                     bModelPatchIdx );
+  arithmeticEncoder.ExpGolombEncode( o3dgc::IntToUInt( int32_t( dpdu.get2DDeltaShiftU() ) ), 0, bModel,
+                                     bModelPatch2DShiftU );
+  arithmeticEncoder.ExpGolombEncode( o3dgc::IntToUInt( int32_t( dpdu.get2DDeltaShiftV() ) ), 0, bModel,
+                                     bModelPatch2DShiftV );
+  arithmeticEncoder.ExpGolombEncode( o3dgc::IntToUInt( int32_t( dpdu.get2DDeltaSizeU() ) ), 0, bModel,
+                                     bModelPatchSizeU );
+  arithmeticEncoder.ExpGolombEncode( o3dgc::IntToUInt( int32_t( dpdu.get2DDeltaSizeV() ) ), 0, bModel,
+                                     bModelPatchSizeV );
+  arithmeticEncoder.ExpGolombEncode( o3dgc::IntToUInt( int32_t( dpdu.get3DDeltaShiftTangentAxis() ) ), 0, bModel,
+                                     bModelPatch3DShiftTan );
+  arithmeticEncoder.ExpGolombEncode( o3dgc::IntToUInt( int32_t( dpdu.get3DDeltaShiftBiTangentAxis() ) ), 0, bModel,
+                                     bModelPatch3DShiftBitan );
+  arithmeticEncoder.ExpGolombEncode( o3dgc::IntToUInt( int32_t( dpdu.get3DDeltaShiftNormalAxis() ) ), 0, bModel,
+                                     bModelPatch3DShiftNorm );
+  bool  projectionFlag = 0;
+  int   i              = 0;
+  auto& sps            = context.getSps();
+  while ( i < sps.getLayerCountMinus1() + 1 && projectionFlag == 0 ) {
+    projectionFlag = projectionFlag | sps.getLayerAbsoluteCodingEnabledFlag( i );
+    i++;
+  }
+  if ( projectionFlag ) { arithmeticEncoder.encode( dpdu.getProjectionMode(), bModelProjectionFlag ); }
+
+  TRACE_BITSTREAM_NH( "DeltaIdx = %u ShiftUV = %ld %ld DeltaSize = %ld %ld Axis = %ld %ld %ld Proj = %d Or = %d \n",
+                      dpdu.getDeltaPatchIdx(), dpdu.get2DDeltaShiftU(), dpdu.get2DDeltaShiftV(), dpdu.get2DDeltaSizeU(),
+                      dpdu.get2DDeltaSizeV(), dpdu.get3DDeltaShiftTangentAxis(), dpdu.get3DDeltaShiftBiTangentAxis(),
+                      dpdu.get3DDeltaShiftNormalAxis(), dpdu.getProjectionMode(), dpdu.getOrientationSwapFlag() );
+}
+
+// 7.3.33 PCM patch data unit syntax
+void PCCBitstreamEncoder::pcmPatchDataUnit( PCMPatchDataUnit&        ppdu,
+                                            PatchFrameHeader&        pfh,
+                                            PCCContext&              context,
+                                            PCCBitstream&            bitstream,
+                                            o3dgc::Arithmetic_Codec& arithmeticEncoder ) {
+  TRACE_BITSTREAM_NH( "%s \n", __func__ );
+
+  o3dgc::Static_Bit_Model   bModel;
+  o3dgc::Adaptive_Bit_Model bModelVideoPCMFlag;
+  o3dgc::Adaptive_Bit_Model bModelIntSizeU, bModelIntSizeV, bModelPcmPoints;
+
+  auto& sps = context.getSps();
+  if ( sps.getPcmSeparateVideoPresentFlag() ) {
+    arithmeticEncoder.encode( ppdu.getPatchInPcmVideoFlag(), bModelVideoPCMFlag );
+  }
+  EncodeUInt32( uint32_t( ppdu.get2DShiftU() ), pfh.getInterPredictPatch2dShiftUBitCountMinus1() + 1, arithmeticEncoder,
+                bModel );  // ae(v)
+  EncodeUInt32( uint32_t( ppdu.get2DShiftV() ), pfh.getInterPredictPatch2dShiftVBitCountMinus1() + 1, arithmeticEncoder,
+                bModel );  // ae(v)
+  arithmeticEncoder.ExpGolombEncode( o3dgc::IntToUInt( int32_t( ppdu.get2DDeltaSizeU() ) ), 0, bModel,
+                                     bModelIntSizeU );  // ae(v)
+  arithmeticEncoder.ExpGolombEncode( o3dgc::IntToUInt( int32_t( ppdu.get2DDeltaSizeV() ) ), 0, bModel,
+                                     bModelIntSizeV );  // ae(v)
+  arithmeticEncoder.ExpGolombEncode( o3dgc::IntToUInt( int32_t( ppdu.getPcmPoints() ) ), 0, bModel,
+                                     bModelPcmPoints );  // ae(v)
+
+  TRACE_BITSTREAM_NH( "UBitCount       = %lu \n", pfh.getInterPredictPatch2dShiftUBitCountMinus1() );
+  TRACE_BITSTREAM_NH( "VBitCount       = %lu \n", pfh.getInterPredictPatch2dShiftVBitCountMinus1() );
+  TRACE_BITSTREAM_NH( "2DShiftU        = %lu \n", ppdu.get2DShiftU() );
+  TRACE_BITSTREAM_NH( "2DShiftV        = %lu \n", ppdu.get2DShiftV() );
+  TRACE_BITSTREAM_NH( "2DDeltaSizeU    = %ld \n", ppdu.get2DDeltaSizeU() );
+  TRACE_BITSTREAM_NH( "2DDeltaSizeV    = %ld \n", ppdu.get2DDeltaSizeV() );
+  TRACE_BITSTREAM_NH( "PcmPoints       = %u  \n", ppdu.getPcmPoints() );
+  TRACE_BITSTREAM_NH( "PatchInPcmVideo = %u  \n", ppdu.getPatchInPcmVideoFlag() );
+}
+
+// 7.3.34 Point local reconstruction syntax
+void PCCBitstreamEncoder::pointLocalReconstruction( PointLocalReconstruction& plr,
+                                                    PCCContext&               context,
+                                                    PCCBitstream&             bitstream,
+                                                    o3dgc::Arithmetic_Codec&  arithmeticEncoder ) {
+  TRACE_BITSTREAM_NH( "%s \n", __func__ );
+  o3dgc::Adaptive_Bit_Model bModelInterpolateFlag, bModelNeighbour, bModelMinDepth, bModelFillingFlag;
+  for ( uint64_t j = 0; j < plr.getBlockToPatchMapHeight(); j++ ) {
+    for ( uint64_t i = 0; i < plr.getBlockToPatchMapWidth(); i++ ) {
+      if ( plr.getBlockToPatchMap( i, j ) >= 0 ) {
+        arithmeticEncoder.encode( plr.getModeInterpolateFlag( i, j ), bModelInterpolateFlag );  // ae(v)
+        if ( plr.getModeInterpolateFlag( i, j ) )
+          arithmeticEncoder.encode( plr.getModeNeighbourMinus1( i, j ), bModelNeighbour );  // ae(v)
+        arithmeticEncoder.encode( plr.getModeMinimumDepthMinus1( i, j ), bModelMinDepth );  // ae(v)
+        if ( ( plr.getModeMinimumDepthMinus1( i, j ) > 0 ) || ( plr.getModeInterpolateFlag( i, j ) ) )
+          arithmeticEncoder.encode( plr.getModeFillingFlag( i, j ), bModelFillingFlag );  // ae(v)
+      }
+    }
+  }
+}

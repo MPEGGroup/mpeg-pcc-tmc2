@@ -45,10 +45,9 @@ struct PCCBistreamPosition {
 };
 class PCCVideoBitstream;
 
-
 #ifdef BITSTREAM_TRACE
-#define TRACE_BITSTREAM_NH( fmt, ... ) bitstream.traceNH( fmt, ##__VA_ARGS__);
-#define TRACE_BITSTREAM( fmt, ... ) bitstream.trace( fmt, ##__VA_ARGS__);
+#define TRACE_BITSTREAM_NH( fmt, ... ) bitstream.traceNH( fmt, ##__VA_ARGS__ );
+#define TRACE_BITSTREAM( fmt, ... ) bitstream.trace( fmt, ##__VA_ARGS__ );
 #else
 #define TRACE_BITSTREAM_NH( fmt, ... ) ;
 #define TRACE_BITSTREAM( fmt, ... ) ;
@@ -63,11 +62,11 @@ class PCCBitstream {
   void initialize( uint64_t capacity ) { data_.resize( capacity, 0 ); }
   bool write( std::string compressedStreamPath );
 
-  uint8_t *           buffer() { return data_.data(); }
-  uint64_t &          size() { return position_.bytes; }
+  uint8_t*            buffer() { return data_.data(); }
+  uint64_t&           size() { return position_.bytes; }
   uint64_t            capacity() { return data_.size(); }
   PCCBistreamPosition getPosition() { return position_; }
-  PCCBitstream &      operator+=( const uint64_t size ) {
+  PCCBitstream&       operator+=( const uint64_t size ) {
     position_.bytes += size;
     return *this;
   }
@@ -75,10 +74,10 @@ class PCCBitstream {
   bool readHeader( PCCMetadataEnabledFlags& gofLevelMetadataEnabledFlags );
   void writeHeader( const PCCMetadataEnabledFlags& gofLevelMetadataEnabledFlags );
 
-  void writeBuffer( const uint8_t *data, const size_t size );
+  void writeBuffer( const uint8_t* data, const size_t size );
   void write( PCCVideoBitstream& videoBitstream );
   void write( uint32_t value, uint8_t bits );
-  
+
   void writeSvlc( int32_t iCode );
   void writeUvlc( uint32_t code );
 
@@ -89,7 +88,6 @@ class PCCBitstream {
 
   bool byteAligned() { return ( position_.bits == 0 ); }
 
-
 #ifdef BITSTREAM_TRACE
   template <typename... Args>
   void trace( const char* pFormat, Args... eArgs ) {
@@ -99,27 +97,25 @@ class PCCBitstream {
       fprintf( output, pFormat, eArgs... );
       fflush( output );
     }
-  }  
-  
+  }
+
   template <typename... Args>
   void traceNH( const char* pFormat, Args... eArgs ) {
     if ( trace_ ) {
       FILE* output = traceFile_ ? traceFile_ : stdout;
-      fprintf( output, "[       -   ]: ");
+      fprintf( output, "[       -   ]: " );
       fprintf( output, pFormat, eArgs... );
       fflush( output );
     }
   }
-  void setTrace( bool trace ){ trace_ = trace; }
-  bool getTrace(){ return trace_; }
+  void setTrace( bool trace ) { trace_ = trace; }
+  bool getTrace() { return trace_; }
   bool openTrace( std::string file ) {
     if ( traceFile_ ) {
       fclose( traceFile_ );
       traceFile_ = NULL;
     }
-    if( ( traceFile_ = fopen( file.c_str(), "w" ) ) == NULL ) {
-      return false;
-    }
+    if ( ( traceFile_ = fopen( file.c_str(), "w" ) ) == NULL ) { return false; }
     return true;
   }
   void closeTrace() {
@@ -130,9 +126,9 @@ class PCCBitstream {
   }
 #endif
 
-  //deprecated 
+  // deprecated
   template <typename T>
-  void write( const T u, PCCBistreamPosition &pos ) {
+  void write( const T u, PCCBistreamPosition& pos ) {
     align( pos );
     union {
       T       u;
@@ -141,20 +137,14 @@ class PCCBitstream {
     source.u = u;
     if ( pos.bytes + 16 >= data_.size() ) { realloc(); }
     if ( PCCSystemEndianness() == PCC_LITTLE_ENDIAN ) {
-      for ( size_t k = 0; k < sizeof( T ); k++ ) {
-        data_[pos.bytes++] = source.u8[k];
-      }
+      for ( size_t k = 0; k < sizeof( T ); k++ ) { data_[pos.bytes++] = source.u8[k]; }
     } else {
-      for ( size_t k = 0; k < sizeof( T ); k++ ) {
-        data_[pos.bytes++] = source.u8[sizeof( T ) - k - 1];
-      }
+      for ( size_t k = 0; k < sizeof( T ); k++ ) { data_[pos.bytes++] = source.u8[sizeof( T ) - k - 1]; }
     }
-#ifdef BITSTREAM_TRACE
-  trace("CodF: %5lu : %4lu \n",sizeof( T ), u ) ; 
-#endif
+    TRACE_BITSTREAM( "CodF: %5lu : %4lu \n", sizeof( T ), u );
   }
   template <typename T>
-  T read( PCCBistreamPosition &pos ) {
+  T read( PCCBistreamPosition& pos ) {
     align( pos );
     union {
       T       u;
@@ -163,14 +153,9 @@ class PCCBitstream {
     if ( PCCSystemEndianness() == PCC_LITTLE_ENDIAN ) {
       for ( size_t k = 0; k < sizeof( T ); k++ ) { dest.u8[k] = data_[pos.bytes++]; }
     } else {
-      for ( size_t k = 0; k < sizeof( T ); k++ ) {
-        dest.u8[sizeof( T ) - k - 1] = data_[pos.bytes++];
-      }
+      for ( size_t k = 0; k < sizeof( T ); k++ ) { dest.u8[sizeof( T ) - k - 1] = data_[pos.bytes++]; }
     }
-  
-#ifdef BITSTREAM_TRACE
-  trace("CodF: %5lu : %4lu \n",sizeof( T ), dest.u ) ; 
-#endif
+    TRACE_BITSTREAM( "CodF: %5lu : %4lu \n", sizeof( T ), dest.u );
     return dest.u;
   }
   template <typename T>
@@ -178,15 +163,15 @@ class PCCBitstream {
     write( u, position_ );
   }
   template <typename T>
-  T read( ) {
-   return read<T>( position_ );
+  T read() {
+    return read<T>( position_ );
   }
   //~deprecated
-private: 
-  uint32_t read( uint8_t bits, PCCBistreamPosition &pos );
-  void write( uint32_t value, uint8_t bits, PCCBistreamPosition &pos );
-  void align();
-  void align( PCCBistreamPosition &pos );
+ private:
+  uint32_t    read( uint8_t bits, PCCBistreamPosition& pos );
+  void        write( uint32_t value, uint8_t bits, PCCBistreamPosition& pos );
+  void        align();
+  void        align( PCCBistreamPosition& pos );
   inline void realloc( const size_t size = 4096 ) {
     const size_t newSize = data_.size() + ( ( ( size / 4096 ) + 1 ) * 4096 );
     data_.resize( newSize );
@@ -197,7 +182,7 @@ private:
   PCCBistreamPosition  totalSizeIterator_;
 
 #ifdef BITSTREAM_TRACE
-  bool trace_;
+  bool  trace_;
   FILE* traceFile_;
 #endif
 };

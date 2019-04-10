@@ -310,8 +310,8 @@ class PatchInformationData {
  private:
   bool                 overrideGeometryPatchFlag_;
   uint8_t              geometryPatchParameterSetId_;
-  std::vector<bool>    overrideAttributePatchFlag_;    // size is number of attributes
-  std::vector<uint8_t> attributePatchParameterSetId_;  // size is number of attributes
+  std::vector<bool>    overrideAttributePatchFlag_;    
+  std::vector<uint8_t> attributePatchParameterSetId_;  
   PatchDataUnit        patchDataUnit_;
   DeltaPatchDataUnit   deltaPatchDataUnit_;
   PCMPatchDataUnit     pcmPatchDataUnit_;
@@ -350,7 +350,6 @@ class PatchFrameDataUnit {
   PatchInformationData&     getPatchInformationData( uint8_t index ) { return patchInformationData_[index]; }
   PointLocalReconstruction& getPointLocalReconstruction() { return pointLocalReconstruction_; }
 
-
   uint8_t  getMatchedPatchCount(){
     uint8_t matchedPatchCount = 0;
     for( auto& v : patchMode_ ){
@@ -364,13 +363,12 @@ class PatchFrameDataUnit {
   void setPatchCount( uint8_t value ) { patchCount_ = value; }  
   void setPatchMode( uint8_t index, uint8_t value ) { patchMode_[index] = value; }
   void setPatchInformationData( uint8_t index, PatchInformationData& value ) { patchInformationData_[index] = value; }
-  // void setPatchInformationData( uint8_t index, PatchInformationData value ) { patchInformationData_[index] = value; }
   void setPointLocalReconstruction( PointLocalReconstruction value ) { pointLocalReconstruction_ = value; }
 
  private:
   uint8_t                           patchCount_;
   std::vector<uint8_t>              patchMode_;
-  std::vector<PatchInformationData> patchInformationData_;  // patchCount_ = size of vector
+  std::vector<PatchInformationData> patchInformationData_;  
   PointLocalReconstruction          pointLocalReconstruction_;
 };
 
@@ -505,8 +503,8 @@ class PatchFrameHeader {
  private:
   uint8_t               frameIndex_;
   uint8_t               patchFrameParameterSetId_;
-  uint8_t               type_;    // this should be enum
-  uint32_t              address_; /*is yet to be defined*/
+  uint8_t               type_;    
+  uint32_t              address_; 
   uint8_t               patchFrameOrderCntLsb_;
   uint8_t               refPatchFrameListIdx_;
   bool                  refPatchFrameListSpsFlag_;
@@ -594,7 +592,7 @@ class PatchFrameParameterSet {
   uint8_t              patchFrameParameterSetId_;
   uint8_t              patchSequenceParameterSetId_;
   uint8_t              geometryPatchFrameParameterSetId_;
-  std::vector<uint8_t> attributePatchFrameParameterSetId_;  // sps_attribute_count size
+  std::vector<uint8_t> attributePatchFrameParameterSetId_;  
   uint8_t              additionalLtPfocLsbLen_;
   bool                 localOverrideGeometryPatchEnableFlag_;
   bool                 patchOrientationPresentFlag_;
@@ -989,7 +987,6 @@ class PatchSequenceParameterSet {
   bool           getLongTermRefPatchFramesFlag() { return longTermRefPatchFramesFlag_; }
   RefListStruct& getRefListStruct( uint8_t index ) { return refListStruct_[index]; }
   uint8_t        getRefListStructSize() { return refListStruct_.size(); }
-  // std::vector<RefListStruct>& getRefListStruct() { return refListStruct_; }
 
   void setPatchSequenceParameterSetId( uint8_t value ) { patchSequenceParameterSetId_ = value; }
   void setLog2MaxPatchFrameOrderCntLsbMinus4( uint8_t value ) { log2MaxPatchFrameOrderCntLsb_ = value; }
@@ -1082,7 +1079,6 @@ class PatchSequenceDataUnit {
     patchSequenceUnitPayload_.push_back( psup );
     return patchSequenceUnitPayload_.back();
   }
-  // void addPatchSequenceUnitPayload( PatchSequenceUnitPayload& value ) { patchSequenceUnitPayload_.push_back(value ) ; }
 
   void addPatchSequenceUnitPayload( const PSDUnitType psdUnitType, const uint8_t index ) {
     patchSequenceUnitPayload_.push_back( PatchSequenceUnitPayload( psdUnitType, index ) );
@@ -1114,22 +1110,7 @@ class PatchSequenceDataUnit {
 
 
   uint8_t getPatchSequenceDataUnitSize() { return patchSequenceUnitPayload_.size(); }
-
-  uint8_t getFrameCount() {
-    // if ( frameCount_ == 0 ) {
-    //   frameCount_ = 0;
-    //   for ( auto& v : patchSequenceUnitPayload_ ) {
-    //     frameCount_ += ( v.getUnitType() == PSD_PFLU );
-    //   }
-    // }
-    return frameCount_;
-  }
-
-  // PatchSequenceUnitPayload& getPatchSequenceUnitPayload( size_t index ) {
-
-  //   return patchSequenceUnitPayload_[index];
-  // }
-
+  uint8_t getFrameCount() { return frameCount_;  }
   PatchSequenceUnitPayload& getPatchSequenceUnitPayloadElement( const uint8_t index ) { return patchSequenceUnitPayload_[index]; }
 
   void printPatchSequenceUnitPayload() {
@@ -1140,13 +1121,6 @@ class PatchSequenceDataUnit {
     }
   }
 
-  // PSD_SPS = 0,  // 00: Patch sequence parameter set
-  // PSD_FPS,      // 01: Patch frame parameter set
-  // PSD_GFPS,     // 02: Geometry frame parameter set
-  // PSD_AFPS,     // 03: Attribute frame parameter set
-  // PSD_GPPS,     // 04: Geometry patch parameter set
-  // PSD_APPS,     // 05: Attribute patch parameter set
-  // PSD_PFLU,     // 06: Patch frame layer unit
   PatchSequenceParameterSet& getPatchSequenceParameterSet( const uint8_t index ) {
     auto& psup = getPatchSequenceUnitPayload( PSD_SPS, index );
     return psup.getPatchSequenceParameterSet();
@@ -1679,12 +1653,12 @@ class SequenceParameterSet {
   bool                               pixelDeinterleavingFlag_;
   bool                               pointLocalReconstructionEnabledFlag_;
   bool                               removeDuplicatePointEnabledFlag_;
-  std::vector<bool>                  layerAbsoluteCodingEnabledFlag_;  // layerCountMinus1_ + 1 size
-  std::vector<size_t>                layerPredictorIndexDiff_;         // layerCountMinus1_ + 1 size
+  std::vector<bool>                  layerAbsoluteCodingEnabledFlag_;  
+  std::vector<size_t>                layerPredictorIndexDiff_;         
   ProfileTierLevel                   profileTierLevel_;
   GeometryParameterSet               geometryParameterSet_;
   OccupancyParameterSet              occupancyParameterSet_;
-  std::vector<AttributeParameterSet> attributeParameterSets_;  // attributeCount_ size
+  std::vector<AttributeParameterSet> attributeParameterSets_;  
 
   // THE NEXT PARAMETERS ARE NOT IN THE VPCC CD SYNTAX DOCUMENTS AND WILL BE REMOVE
  public:
@@ -1749,44 +1723,22 @@ class PCCContext {
   std::vector<PCCFrameContext>& getFrames() { return frames_; }
   PCCFrameContext&              getFrame( int16_t index ) { return frames_[index]; }
   PCCFrameContext&              operator[]( int index ) { return frames_[index]; }
-
-  PCCVideoGeometry&     getVideoGeometry() { return videoGeometry_; }
-  PCCVideoGeometry&     getVideoGeometryD1() { return videoGeometryD1_; }
-  PCCVideoTexture&      getVideoTexture() { return videoTexture_; }
-  PCCVideoOccupancyMap& getVideoOccupancyMap() { return videoOccupancyMap_; }
-  PCCVideoGeometry&     getVideoMPsGeometry() { return videoMPsGeometry_; }
-  PCCVideoTexture&      getVideoMPsTexture() { return videoMPsTexture_; }
-
-  // deprecated, must be removed:
-  // bool&                    getLosslessGeo444() { return losslessGeo444_; }
-  // bool&                    getLosslessGeo() { return losslessGeo_; }
-  // bool&                    getLosslessTexture() { return losslessTexture_; }
-  // uint8_t&                 getMinLevel() { return minLevel_; }
-
-  uint8_t& getOccupancyPrecision() { return occupancyPrecision_; }
-  // bool&                    getNoAttributes() { return noAttributes_; }
-  // bool&                    getGridSmoothing() { return gridSmoothing_; }
-  // bool&                    getAbsoluteD1() { return absoluteD1_; }
-  // bool&                    getBinArithCoding() { return binArithCoding_; }
-  // bool&                    getImproveEDD() { return improveEDD_; }
-  // bool&                    getUse3dmc() { return use3dmc_; }
-  float&             getModelScale() { return modelScale_; }
-  PCCVector3<float>& getModelOrigin() { return modelOrigin_; }
-  // bool&                    getDeltaCoding() { return deltaCoding_; }
-  // bool&                    getSixDirectionMode() { return sixDirectionMode_;
-  // }
-  // bool&                    getUseAdditionalPointsPatch() { return
-  // useAdditionalPointsPatch_; }
-  //  bool&                    getGlobalPatchAllocation() { return
-  // globalPatchAllocation_; }
-  size_t&                  getMPGeoWidth() { return MPGeoWidth_; }
-  size_t&                  getMPGeoHeight() { return MPGeoHeight_; }
-  size_t&                  getMPAttWidth() { return MPAttWidth_; }
-  size_t&                  getMPAttHeight() { return MPAttHeight_; }
-  PCCMetadata&             getGOFLevelMetadata() { return gofLevelMetadata_; }
-  std::vector<SubContext>& getSubContexts() { return subContexts_; }
-  std::vector<unionPatch>& getUnionPatch() { return unionPatch_; }
-  //~ deprecated, must be removed
+  PCCVideoGeometry&             getVideoGeometry() { return videoGeometry_; }
+  PCCVideoGeometry&             getVideoGeometryD1() { return videoGeometryD1_; }
+  PCCVideoTexture&              getVideoTexture() { return videoTexture_; }
+  PCCVideoOccupancyMap&         getVideoOccupancyMap() { return videoOccupancyMap_; }
+  PCCVideoGeometry&             getVideoMPsGeometry() { return videoMPsGeometry_; }
+  PCCVideoTexture&              getVideoMPsTexture() { return videoMPsTexture_; }
+  uint8_t&                      getOccupancyPrecision() { return occupancyPrecision_; }
+  float&                        getModelScale() { return modelScale_; }
+  PCCVector3<float>&            getModelOrigin() { return modelOrigin_; }
+  size_t&                       getMPGeoWidth() { return MPGeoWidth_; }
+  size_t&                       getMPGeoHeight() { return MPGeoHeight_; }
+  size_t&                       getMPAttWidth() { return MPAttWidth_; }
+  size_t&                       getMPAttHeight() { return MPAttHeight_; }
+  PCCMetadata&                  getGOFLevelMetadata() { return gofLevelMetadata_; }
+  std::vector<SubContext>&      getSubContexts() { return subContexts_; }
+  std::vector<unionPatch>&      getUnionPatch() { return unionPatch_; }
 
   PCCVideoBitstream& createVideoBitstream( PCCVideoType type ) {
     videoBitstream_.push_back( PCCVideoBitstream( type ) );
@@ -1818,59 +1770,29 @@ class PCCContext {
   PatchSequenceDataUnit& getPatchSequenceDataUnit() { return patchSequenceDataUnit_; }
 
  private:
-  std::vector<PCCFrameContext> frames_;
-  PCCVideoGeometry             videoGeometry_;
-  PCCVideoGeometry             videoGeometryD1_;
-  PCCVideoTexture              videoTexture_;
-  PCCVideoOccupancyMap         videoOccupancyMap_;
-  PCCVideoGeometry             videoMPsGeometry_;
-  PCCVideoTexture              videoMPsTexture_;
-
-  // JR: read the source code to define the list of the parameters activate by
-  // these parameters
-  // bool                           losslessGeo444_;
-  // bool                           losslessGeo_;
-  // bool                           losslessTexture_;
-  // uint8_t                        minLevel_;
-
-  // deprecated, must be removed:
-  // bool                           sixDirectionMode_;  // always true
-  // bool                           useAdditionalPointsPatch_; // //
-  // sps.getPcmPatchEnabledFlag()
-  //  bool                           globalPatchAllocation_; // remove from
-  // bitstream
-  // bool                        noAttributes_;
-
-  PCCMetadata gofLevelMetadata_;
-
-  // Internale data
-  // bool                           deltaCoding_;  // sps.getPatchInterPredictionEnabledFlag()
-  uint8_t occupancyPrecision_;
-  size_t  MPGeoWidth_;
-  size_t  MPGeoHeight_;
-  size_t  MPAttWidth_;
-  size_t  MPAttHeight_;
-
-  float             modelScale_;
-  PCCVector3<float> modelOrigin_;
-
-  std::vector<SubContext> subContexts_;
-  std::vector<unionPatch> unionPatch_;
-
-  // bool                           gridSmoothing_;  //
-  // sps.getGeometryParameterSet().getGeometrySmoothingEnabledFlag()
-  // bool                           improveEDD_;  // always true  edd param is
-  // sps.getEnhancedOccupancyMapForDepthFlag()
-  // bool                           binArithCoding_;
-  // bool                           absoluteD1_; // sps.getLayerAbsoluteCodingEnabledFlag()
-  // bool                           use3dmc_;
-  //~ deprecated, must be removed
-
-  std::vector<PCCVideoBitstream> videoBitstream_;
-
+  std::vector<PCCFrameContext>      frames_;
+  PCCVideoGeometry                  videoGeometry_;
+  PCCVideoGeometry                  videoGeometryD1_;
+  PCCVideoTexture                   videoTexture_;
+  PCCVideoOccupancyMap              videoOccupancyMap_;
+  PCCVideoGeometry                  videoMPsGeometry_;
+  PCCVideoTexture                   videoMPsTexture_;
+  std::vector<PCCVideoBitstream>    videoBitstream_;
+  PCCMetadata                       gofLevelMetadata_;
   VPCCParameterSet                  vpccParameterSet_;
   PatchSequenceDataUnit             patchSequenceDataUnit_;
   std::vector<SequenceParameterSet> sequenceParameterSets_;
+
+  // Internale data
+  uint8_t                 occupancyPrecision_;
+  size_t                  MPGeoWidth_;
+  size_t                  MPGeoHeight_;
+  size_t                  MPAttWidth_;
+  size_t                  MPAttHeight_;
+  float                   modelScale_;
+  PCCVector3<float>       modelOrigin_;
+  std::vector<SubContext> subContexts_;
+  std::vector<unionPatch> unionPatch_;
 };
 };  // namespace pcc
 

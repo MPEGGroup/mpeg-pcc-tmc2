@@ -39,7 +39,6 @@
 #include "PCCVideoDecoder.h"
 #include "PCCGroupOfFrames.h"
 #include "PCCBitstreamDecoder.h"
-#include "PCCBitstreamDecoderNewSyntax.h"
 #include <tbb/tbb.h>
 #include "PCCDecoder.h"
 
@@ -51,23 +50,15 @@ PCCDecoder::~PCCDecoder() {}
 
 void PCCDecoder::setParameters( PCCDecoderParameters params ) { params_ = params; }
 
-int PCCDecoder::decode( PCCBitstream&     bitstream,
-                        PCCContext&       context,
-                        PCCGroupOfFrames& reconstructs ) {
+int PCCDecoder::decode( PCCBitstream& bitstream, PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   int ret = 0;
   if ( params_.nbThread_ > 0 ) { tbb::task_scheduler_init init( (int)params_.nbThread_ ); }
-#if 0
   PCCBitstreamDecoder bitstreamDecoder;
-#else
-  PCCBitstreamDecoderNewSyntax bitstreamDecoder;
-#endif
 #ifdef BITSTREAM_TRACE
   bitstream.setTrace( true );
-  bitstream.openTrace( removeFileExtension( params_.compressedStreamPath_ ) +
-                       "_prev_syntax_decode.txt" );
+  bitstream.openTrace( removeFileExtension( params_.compressedStreamPath_ ) + "_prev_syntax_decode.txt" );
 #endif
   if ( !bitstreamDecoder.decode( bitstream, context ) ) {
-    printf( "Decoder return 0 => stop decoding \n" );
     return 0;
   }
 #ifdef BITSTREAM_TRACE
@@ -88,8 +79,6 @@ int PCCDecoder::decode( PCCBitstream&     bitstream,
 }
 
 int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
-  printf( "decode start \n" );
-  fflush( stdout );
 #ifdef CODEC_TRACE
   setTrace( true );
   openTrace( removeFileExtension( params_.compressedStreamPath_ ) + "_codec_decode.txt" );
@@ -103,25 +92,18 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   auto&             ops = sps.getOccupancyParameterSet();
   auto&             aps = sps.getAttributeParameterSet( 0 );
   auto&             asp = aps.getAttributeSequenceParams();
-  path << removeFileExtension( params_.compressedStreamPath_ ) << "_dec_GOF"
-       << sps.getSequenceParameterSetId() << "_";
+  path << removeFileExtension( params_.compressedStreamPath_ ) << "_dec_GOF" << sps.getSequenceParameterSetId() << "_";
 
   bool lossyMpp = !sps.getLosslessGeo() && sps.getPcmPatchEnabledFlag();
-  // const size_t nbyteGeo =
-  //     ( context.getLosslessGeo() || ( lossyMpp && !sps.getPcmSeparateVideoPresentFlag() ) )
-  //         ? 2
-  //         : 1;
 
   const size_t frameCountGeometry = sps.getMultipleLayerStreamsPresentFlag() ? 2 : 1;
   const size_t frameCountTexture  = sps.getMultipleLayerStreamsPresentFlag() ? 2 : 1;
 
   auto& videoBitstreamOM = context.getVideoBitstream( PCCVideoType::OccupancyMap );
-  videoDecoder.decompress(
-      context.getVideoOccupancyMap(), path.str(), context.size(), videoBitstreamOM,
-      params_.videoDecoderOccupancyMapPath_, context, params_.keepIntermediateFiles_,
-      ( sps.getLosslessGeo() ? sps.getLosslessGeo444() : false ), false, "", "" );
+  videoDecoder.decompress( context.getVideoOccupancyMap(), path.str(), context.size(), videoBitstreamOM,
+                           params_.videoDecoderOccupancyMapPath_, context, params_.keepIntermediateFiles_,
+                           ( sps.getLosslessGeo() ? sps.getLosslessGeo444() : false ), false, "", "" );
   context.getOccupancyPrecision() = sps.getFrameWidth() / context.getVideoOccupancyMap().getWidth();
-  printf( "compute OccupancyPrecision = %u \n", context.getOccupancyPrecision() );
   generateOccupancyMap( context, context.getOccupancyPrecision() );
 
   if ( !sps.getLayerAbsoluteCodingEnabledFlag( 1 ) ) {
@@ -133,41 +115,33 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
     }
     // Compress D0
     auto& videoBitstreamD0 = context.getVideoBitstream( PCCVideoType::GeometryD0 );
-    videoDecoder.decompress( context.getVideoGeometry(), path.str(), context.size(),
-                             videoBitstreamD0, params_.videoDecoderPath_, context,
-                             params_.keepIntermediateFiles_,
+    videoDecoder.decompress( context.getVideoGeometry(), path.str(), context.size(), videoBitstreamD0,
+                             params_.videoDecoderPath_, context, params_.keepIntermediateFiles_,
                              ( sps.getLosslessGeo() ? sps.getLosslessGeo444() : false ) );
     std::cout << "geometry D0 video ->" << videoBitstreamD0.naluSize() << " B" << std::endl;
 
     // Compress D1
     auto& videoBitstreamD1 = context.getVideoBitstream( PCCVideoType::GeometryD1 );
-    videoDecoder.decompress( context.getVideoGeometryD1(), path.str(), context.size(),
-                             videoBitstreamD1, params_.videoDecoderPath_, context,
-                             params_.keepIntermediateFiles_,
+    videoDecoder.decompress( context.getVideoGeometryD1(), path.str(), context.size(), videoBitstreamD1,
+                             params_.videoDecoderPath_, context, params_.keepIntermediateFiles_,
                              ( sps.getLosslessGeo() ? sps.getLosslessGeo444() : false ) );
     std::cout << "geometry D1 video ->" << videoBitstreamD1.naluSize() << " B" << std::endl;
 
-    std::cout << "geometry video ->" << videoBitstreamD1.naluSize() + videoBitstreamD1.naluSize()
-              << " B" << std::endl;
+    std::cout << "geometry video ->" << videoBitstreamD1.naluSize() + videoBitstreamD1.naluSize() << " B" << std::endl;
   } else {
     auto& videoBitstream = context.getVideoBitstream( PCCVideoType::Geometry );
-    videoDecoder.decompress( context.getVideoGeometry(), path.str(),
-                             context.size() * frameCountGeometry, videoBitstream,
-                             params_.videoDecoderPath_, context, params_.keepIntermediateFiles_,
+    videoDecoder.decompress( context.getVideoGeometry(), path.str(), context.size() * frameCountGeometry,
+                             videoBitstream, params_.videoDecoderPath_, context, params_.keepIntermediateFiles_,
                              sps.getLosslessGeo() & sps.getLosslessGeo444() );
     std::cout << "geometry video ->" << videoBitstream.naluSize() << " B" << std::endl;
   }
 
-  printf( "here \n" );
-  fflush( stdout );
   if ( sps.getPcmPatchEnabledFlag() && sps.getPcmSeparateVideoPresentFlag() ) {
     auto& videoBitstreamMP = context.getVideoBitstream( PCCVideoType::GeometryMP );
-    videoDecoder.decompress( context.getVideoMPsGeometry(), path.str(), context.size(),
-                             videoBitstreamMP, params_.videoDecoderPath_, context,
-                             params_.keepIntermediateFiles_ );
+    videoDecoder.decompress( context.getVideoMPsGeometry(), path.str(), context.size(), videoBitstreamMP,
+                             params_.videoDecoderPath_, context, params_.keepIntermediateFiles_ );
 
-    generateMissedPointsGeometryfromVideo(
-        context, reconstructs );  // 0. geo : decode arithmetic coding part
+    generateMissedPointsGeometryfromVideo( context, reconstructs );  // 0. geo : decode arithmetic coding part
     std::cout << " missed points geometry -> " << videoBitstreamMP.naluSize() << " B " << endl;
 
     // add missed point to reconstructs
@@ -176,78 +150,56 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   bool useAdditionalPointsPatch = sps.getPcmPatchEnabledFlag();
   bool lossyMissedPointsPatch   = !sps.getLosslessGeo() && useAdditionalPointsPatch;
   if ( ( sps.getLosslessGeo() != 0 ) && sps.getEnhancedOccupancyMapForDepthFlag() ) {
-    printf( "lossyMissedPointsPatch = %d \n", lossyMissedPointsPatch );
-    fflush( stdout );
-    printf( "generateBlockToPatchFromOccupancyMap \n" );
-    fflush( stdout );
     generateBlockToPatchFromOccupancyMap( context, sps.getLosslessGeo(), lossyMissedPointsPatch, 0,
                                           ops.getOccupancyPackingBlockSize() );
-    printf( "generateBlockToPatchFromOccupancyMap done \n" );
-    fflush( stdout );
   } else {
-    printf( "generateBlockToPatchFromOccupancyMap \n" );
-    fflush( stdout );
     generateBlockToPatchFromBoundaryBox( context, sps.getLosslessGeo(), lossyMissedPointsPatch, 0,
                                          ops.getOccupancyPackingBlockSize() );
   }
-
-  printf( "done \n" );
-  fflush( stdout );
   GeneratePointCloudParameters generatePointCloudParameters;
-  generatePointCloudParameters.occupancyResolution_   = ops.getOccupancyPackingBlockSize();
-  generatePointCloudParameters.occupancyPrecision_    = context.getOccupancyPrecision();
-  generatePointCloudParameters.flagGeometrySmoothing_ = gsp.getGeometrySmoothingParamsPresentFlag();
-  generatePointCloudParameters.gridSmoothing_         = gsp.getGeometrySmoothingEnabledFlag();
-  generatePointCloudParameters.gridSize_              = gsp.getGeometrySmoothingGridSize();
-  generatePointCloudParameters.neighborCountSmoothing_ = asp.getAttributeSmoothingNeighbourCount();
-  generatePointCloudParameters.radius2Smoothing_       = (double)asp.getAttributeSmoothingRadius();
-  generatePointCloudParameters.radius2BoundaryDetection_ =
-      (double)asp.getAttributeSmoothingRadius2BoundaryDetection();
-  generatePointCloudParameters.thresholdSmoothing_ = (double)gsp.getGeometrySmoothingThreshold();
-  generatePointCloudParameters.losslessGeo_        = sps.getLosslessGeo() != 0;
-  generatePointCloudParameters.losslessGeo444_     = sps.getLosslessGeo444() != 0;
-  generatePointCloudParameters.nbThread_           = params_.nbThread_;
-  generatePointCloudParameters.absoluteD1_         = sps.getLayerAbsoluteCodingEnabledFlag( 1 );
-  generatePointCloudParameters.surfaceThickness    = context[0].getSurfaceThickness();
-  generatePointCloudParameters.ignoreLod_          = true;
-  generatePointCloudParameters.thresholdColorSmoothing_ =
-      (double)asp.getAttributeSmoothingThreshold();
-  generatePointCloudParameters.thresholdLocalEntropy_ =
-      (double)asp.getAttributeSmoothingThresholdLocalEntropy();
-  generatePointCloudParameters.radius2ColorSmoothing_ = (double)asp.getAttributeSmoothingRadius();
-  generatePointCloudParameters.neighborCountColorSmoothing_ =
-      asp.getAttributeSmoothingNeighbourCount();
-  generatePointCloudParameters.flagColorSmoothing_ =
-      (bool)asp.getAttributeSmoothingParamsPresentFlag();
+  generatePointCloudParameters.occupancyResolution_      = ops.getOccupancyPackingBlockSize();
+  generatePointCloudParameters.occupancyPrecision_       = context.getOccupancyPrecision();
+  generatePointCloudParameters.flagGeometrySmoothing_    = gsp.getGeometrySmoothingParamsPresentFlag();
+  generatePointCloudParameters.gridSmoothing_            = gsp.getGeometrySmoothingEnabledFlag();
+  generatePointCloudParameters.gridSize_                 = gsp.getGeometrySmoothingGridSize();
+  generatePointCloudParameters.neighborCountSmoothing_   = asp.getAttributeSmoothingNeighbourCount();
+  generatePointCloudParameters.radius2Smoothing_         = (double)asp.getAttributeSmoothingRadius();
+  generatePointCloudParameters.radius2BoundaryDetection_ = (double)asp.getAttributeSmoothingRadius2BoundaryDetection();
+  generatePointCloudParameters.thresholdSmoothing_       = (double)gsp.getGeometrySmoothingThreshold();
+  generatePointCloudParameters.losslessGeo_              = sps.getLosslessGeo() != 0;
+  generatePointCloudParameters.losslessGeo444_           = sps.getLosslessGeo444() != 0;
+  generatePointCloudParameters.nbThread_                 = params_.nbThread_;
+  generatePointCloudParameters.absoluteD1_               = sps.getLayerAbsoluteCodingEnabledFlag( 1 );
+  generatePointCloudParameters.surfaceThickness          = context[0].getSurfaceThickness();
+  generatePointCloudParameters.ignoreLod_                = true;
+  generatePointCloudParameters.thresholdColorSmoothing_  = (double)asp.getAttributeSmoothingThreshold();
+  generatePointCloudParameters.thresholdLocalEntropy_    = (double)asp.getAttributeSmoothingThresholdLocalEntropy();
+  generatePointCloudParameters.radius2ColorSmoothing_    = (double)asp.getAttributeSmoothingRadius();
+  generatePointCloudParameters.neighborCountColorSmoothing_ = asp.getAttributeSmoothingNeighbourCount();
+  generatePointCloudParameters.flagColorSmoothing_          = (bool)asp.getAttributeSmoothingParamsPresentFlag();
   generatePointCloudParameters.enhancedDeltaDepthCode_ =
       ( ( sps.getLosslessGeo() != 0 ) ? sps.getEnhancedOccupancyMapForDepthFlag() : false );
-  generatePointCloudParameters.removeDuplicatePoints_ = sps.getRemoveDuplicatePointEnabledFlag();
-  generatePointCloudParameters.oneLayerMode_          = !sps.getMultipleLayerStreamsPresentFlag();
+  generatePointCloudParameters.removeDuplicatePoints_        = sps.getRemoveDuplicatePointEnabledFlag();
+  generatePointCloudParameters.oneLayerMode_                 = !sps.getMultipleLayerStreamsPresentFlag();
   generatePointCloudParameters.singleLayerPixelInterleaving_ = sps.getPixelDeinterleavingFlag();
   generatePointCloudParameters.path_                         = path.str();
   generatePointCloudParameters.useAdditionalPointsPatch_     = sps.getPcmPatchEnabledFlag();
-  // generatePointCloudParameters.deltaCoding_                  =
-  // (params_.testLevelOfDetailSignaling_ > 0); // ignore LoD scaling for testing the signaling only
-  // generatePointCloudParameters.sixDirectionMode_             = context.getSixDirectionMode();
-  // generatePointCloudParameters.improveEDD_                   = context.getImproveEDD();
-
+ 
   generatePointCloud( reconstructs, context, generatePointCloudParameters );
 
   if ( sps.getAttributeCount() > 0 ) {
     auto& videoBitstream = context.getVideoBitstream( PCCVideoType::Texture );
-    videoDecoder.decompress(
-        context.getVideoTexture(), path.str(), context.size() * frameCountTexture, videoBitstream,
-        params_.videoDecoderPath_, context, params_.keepIntermediateFiles_,
-        sps.getLosslessTexture() != 0, params_.patchColorSubsampling_,
-        params_.inverseColorSpaceConversionConfig_, params_.colorSpaceConversionPath_ );
+    videoDecoder.decompress( context.getVideoTexture(), path.str(), context.size() * frameCountTexture, videoBitstream,
+                             params_.videoDecoderPath_, context, params_.keepIntermediateFiles_,
+                             sps.getLosslessTexture() != 0, params_.patchColorSubsampling_,
+                             params_.inverseColorSpaceConversionConfig_, params_.colorSpaceConversionPath_ );
     std::cout << "texture video  ->" << videoBitstream.naluSize() << " B" << std::endl;
 
     if ( sps.getPcmPatchEnabledFlag() && sps.getPcmSeparateVideoPresentFlag() ) {
       auto& videoBitstreamMP = context.getVideoBitstream( PCCVideoType::TextureMP );
-      videoDecoder.decompress( context.getVideoMPsTexture(), path.str(), context.size(),
-                               videoBitstreamMP, params_.videoDecoderPath_, context,
-                               params_.keepIntermediateFiles_, sps.getLosslessTexture(), false,
-                               params_.inverseColorSpaceConversionConfig_,
+      videoDecoder.decompress( context.getVideoMPsTexture(), path.str(), context.size(), videoBitstreamMP,
+                               params_.videoDecoderPath_, context, params_.keepIntermediateFiles_,
+                               sps.getLosslessTexture(), false, params_.inverseColorSpaceConversionConfig_,
                                params_.colorSpaceConversionPath_ );
 
       generateMissedPointsTexturefromVideo( context, reconstructs );
@@ -263,56 +215,6 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
 #endif
   return 0;
 }
-
-/* THIS SECTION ADDS PATCH RELATED CALCULATIONS AND GENERATED PFDS */
-/* Vlad part
-void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
-  // TODO
-  size_t numPFDUs = context.getFrames().size();
-  auto   ref      = context.getFrames()[0];
-  auto&  sps      = context.getSps();
-  auto&  psdu     = context.getPatchSequenceDataUnit();  // perhaps I need to allocate this
-
-  RefListStruct refList;
-  refList.allocate();
-  refList.setNumRefEntries( 1 );      // hardcoded allow only 1 reference frame
-  refList.setAbsDeltaPfocSt( 1, 0 );  // hardcoded: allowed previous farme as reference
-
-  // 1. Create sequence of the patch frames
-  for ( size_t i = 0; i < numPFDUs; i++ ) {
-    auto& frame = context.getFrames()[i];
-
-    PatchFrameHeader         pfh;
-    PatchFrameDataUnit       pfdu;
-    PatchFrameLayerUnit      pflu;
-    PatchSequenceUnitPayload psup;
-
-    pflu.setFrameIndex( i );
-
-    for ( size_t k = 0; k < frame.getNumMatchedPatches(); k++ ) {
-      //...
-    }
-
-    frame.getWidth()                                        = sps.getFrameWidth();
-    frame.getHeight()                                       = sps.getFrameHeight();
-    auto& frameLevelMetadataEnabledFlags                    =
-context.getGOFLevelMetadata().getLowerLevelMetadataEnabledFlags();
-    frame.getFrameLevelMetadata().getMetadataEnabledFlags() = frameLevelMetadataEnabledFlags;
-
-    if ( sps.getPcmPatchEnabledFlag() && !sps.getPcmSeparateVideoPresentFlag() ) {
-      if ( !sps.getPcmSeparateVideoPresentFlag() ) {
-        // ...ppdu
-      }
-    }
-  }
-}
-
-void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameContext& frame,
-PCCFrameContext& preFrame, size_t frameIndex ) {
-  // TODO
-}
-Vlad part
-*/
 
 void PCCDecoder::setFrameMetadata( PCCMetadata& metadata, GeometryFrameParameterSet& gfps ) {
   auto& gfp                                 = gfps.getGeometryFrameParams();
@@ -358,9 +260,7 @@ void PCCDecoder::setFrameMetadata( PCCMetadata& metadata, GeometryFrameParameter
     metadataEnabingFlags.getPointSizeEnabled() = gfps.getGeometryPatchPointSizeInfoEnabledFlag();
     if ( gfps.getGeometryPatchPointSizeInfoEnabledFlag() ) {
       metadata.getPointSizePresent() = gfp.getGeometryPointShapeInfoPresentFlag();
-      if ( gfp.getGeometryPointShapeInfoPresentFlag() ) {
-        metadata.getPointSize() = gfp.getGeometryPointSizeInfo();
-      }
+      if ( gfp.getGeometryPointShapeInfoPresentFlag() ) { metadata.getPointSize() = gfp.getGeometryPointSizeInfo(); }
     }
 
     // Point shape
@@ -437,7 +337,7 @@ void PCCDecoder::setPatchMetadata( PCCMetadata& metadata, GeometryPatchParameter
 void PCCDecoder::setPointLocalReconstruction( PCCFrameContext&          frame,
                                               PCCPatch&                 patch,
                                               PointLocalReconstruction& plr,
-                                              size_t occupancyPackingBlockSize ) {
+                                              size_t                    occupancyPackingBlockSize ) {
   auto&  blockToPatch       = frame.getBlockToPatch();
   size_t blockToPatchWidth  = frame.getWidth() / occupancyPackingBlockSize;
   size_t blockToPatchHeight = frame.getHeight() / occupancyPackingBlockSize;
@@ -448,8 +348,7 @@ void PCCDecoder::setPointLocalReconstruction( PCCFrameContext&          frame,
 
   for ( size_t v0 = 0; v0 < patch.getSizeV0(); ++v0 ) {
     for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {
-      int pos =
-          patch.patchBlock2CanvasBlock( ( u0 ), ( v0 ), blockToPatchWidth, blockToPatchHeight );
+      int pos           = patch.patchBlock2CanvasBlock( ( u0 ), ( v0 ), blockToPatchWidth, blockToPatchHeight );
       blockToPatch[pos] = plr.getBlockToPatchMap( u0, v0 );
       if ( blockToPatch[pos] > 0 ) {
         interpolateMap[pos] = plr.getModeInterpolateFlag( u0, v0 );
@@ -458,9 +357,7 @@ void PCCDecoder::setPointLocalReconstruction( PCCFrameContext&          frame,
           neighborMap[pos] = plr.getModeNeighbourMinus1( u0, v0 ) + 1;
         }
         minD1Map[pos] = plr.getModeMinimumDepthMinus1( u0, v0 ) + 1;
-        if ( minD1Map[pos] > 1 || interpolateMap[pos] > 0 ) {
-          fillingMap[pos] = plr.getModeFillingFlag( u0, v0 );
-        }
+        if ( minD1Map[pos] > 1 || interpolateMap[pos] > 0 ) { fillingMap[pos] = plr.getModeFillingFlag( u0, v0 ); }
       }
     }
   }
@@ -470,14 +367,8 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
   TRACE_CODEC( "createPatchFrameDataStructure GOP start \n" );
   auto& sps  = context.getSps();
   auto& psdu = context.getPatchSequenceDataUnit();
-
   context.resize( psdu.getFrameCount() );
-
-  // TRACE_CODEC(" PatchOrientationPresentFlag = %lu \n",
-  //     psdu.getPatchFrameParameterSet( 0 ).getPatchOrientationPresentFlag() );
-
   TRACE_CODEC( "getFrameCount %u \n", psdu.getFrameCount() );
-
   setFrameMetadata( context.getGOFLevelMetadata(), psdu.getGeometryFrameParameterSet( 0 ) );
 
   size_t indexPrevFrame    = 0;
@@ -486,24 +377,19 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
   context.getMPGeoHeight() = 0;
   context.getMPAttHeight() = 0;
   for ( int i = 0; i < psdu.getFrameCount(); i++ ) {
-    auto& frame = context.getFrame( i );
-    auto& frameLevelMetadataEnabledFlags =
-        context.getGOFLevelMetadata().getLowerLevelMetadataEnabledFlags();
-    frame.getIndex()                                        = i;
-    frame.getWidth()                                        = sps.getFrameWidth();
-    frame.getHeight()                                       = sps.getFrameHeight();
+    auto& frame                          = context.getFrame( i );
+    auto& frameLevelMetadataEnabledFlags = context.getGOFLevelMetadata().getLowerLevelMetadataEnabledFlags();
+    frame.getIndex()                     = i;
+    frame.getWidth()                     = sps.getFrameWidth();
+    frame.getHeight()                    = sps.getFrameHeight();
     frame.getFrameLevelMetadata().getMetadataEnabledFlags() = frameLevelMetadataEnabledFlags;
     frame.setLosslessGeo( sps.getLosslessGeo() );
     frame.setLosslessGeo444( sps.getLosslessGeo444() );
     frame.setLosslessTexture( sps.getLosslessTexture() );
     frame.setSurfaceThickness( sps.getSurfaceThickness() );
-
-    // frames[i].setEnhancedDeltaDepth( sps.getEnhancedOccupancyMapForDepthFlag() );
     frame.setUseMissedPointsSeparateVideo( sps.getPcmSeparateVideoPresentFlag() );
     frame.setUseAdditionalPointsPatch( sps.getPcmPatchEnabledFlag() );
-
     createPatchFrameDataStructure( context, frame, context.getFrame( indexPrevFrame ), i );
-
     indexPrevFrame = i;
   }
 }
@@ -544,42 +430,32 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
   frame.allocOneLayerData( ops.getOccupancyPackingBlockSize() );
 
   TRACE_CODEC( "OccupancyPackingBlockSize           = %d \n", ops.getOccupancyPackingBlockSize() );
-  TRACE_CODEC( "PatchSequenceOrientationEnabledFlag = %d \n",
-               sps.getPatchSequenceOrientationEnabledFlag() );
-  TRACE_CODEC( "PatchOrientationPresentFlag         = %d \n",
-               pfps.getPatchOrientationPresentFlag() );
-  TRACE_CODEC( "PatchInterPredictionEnabledFlag     = %d \n",
-               sps.getPatchInterPredictionEnabledFlag() );
+  TRACE_CODEC( "PatchSequenceOrientationEnabledFlag = %d \n", sps.getPatchSequenceOrientationEnabledFlag() );
+  TRACE_CODEC( "PatchOrientationPresentFlag         = %d \n", pfps.getPatchOrientationPresentFlag() );
+  TRACE_CODEC( "PatchInterPredictionEnabledFlag     = %d \n", sps.getPatchInterPredictionEnabledFlag() );
 
   for ( size_t patchIndex = 0; patchIndex < pfdu.getPatchCount(); ++patchIndex ) {
     auto& pid                      = pfdu.getPatchInformationData( patchIndex );
     auto& patch                    = patches[patchIndex];
     patch.getOccupancyResolution() = ops.getOccupancyPackingBlockSize();
-
-    // TRACE_CODEC( "patch %lu / %u: Frame type = %u  Patch mode = %u  \n",
-    //  patchIndex,  pfdu.getPatchCount(), pfh.getType(), pfdu.getPatchMode( patchIndex ) );
-
     if ( ( PATCH_FRAME_TYPE( pfh.getType() ) == I_PATCH_FRAME &&
            PATCH_I_MODE( pfdu.getPatchMode( patchIndex ) ) == I_INTRA ) ||
          ( PATCH_FRAME_TYPE( pfh.getType() ) == P_PATCH_FRAME &&
            PATCH_P_MODE( pfdu.getPatchMode( patchIndex ) ) == P_INTRA ) ) {
       auto& pdu = pid.getPatchDataUnit();
       TRACE_CODEC( "patch %lu / %lu: Intra \n", patchIndex, patches.size() );
-      patch.getU0()         = pdu.get2DShiftU();
-      patch.getV0()         = pdu.get2DShiftV();
-      patch.getU1()         = pdu.get3DShiftTangentAxis();
-      patch.getV1()         = pdu.get3DShiftBiTangentAxis();
-      patch.getLod()        = pdu.getLod();
-      patch.getSizeU0()     = prevSizeU0 + pdu.get2DDeltaSizeU();
-      patch.getSizeV0()     = prevSizeV0 + pdu.get2DDeltaSizeV();
-      patch.getNormalAxis() = pdu.getNormalAxis();
-      patch.getProjectionMode() =
-          sps.getLayerAbsoluteCodingEnabledFlag( 1 ) ? pdu.getProjectionMode() : 0;
-      patch.getPatchOrientation() =
-          pfps.getPatchOrientationPresentFlag() && pdu.getOrientationSwapFlag()
-              ? PatchOrientation::SWAP
-              : PatchOrientation::DEFAULT;
-
+      patch.getU0()               = pdu.get2DShiftU();
+      patch.getV0()               = pdu.get2DShiftV();
+      patch.getU1()               = pdu.get3DShiftTangentAxis();
+      patch.getV1()               = pdu.get3DShiftBiTangentAxis();
+      patch.getLod()              = pdu.getLod();
+      patch.getSizeU0()           = prevSizeU0 + pdu.get2DDeltaSizeU();
+      patch.getSizeV0()           = prevSizeV0 + pdu.get2DDeltaSizeV();
+      patch.getNormalAxis()       = pdu.getNormalAxis();
+      patch.getProjectionMode()   = sps.getLayerAbsoluteCodingEnabledFlag( 1 ) ? pdu.getProjectionMode() : 0;
+      patch.getPatchOrientation() = pfps.getPatchOrientationPresentFlag() && pdu.getOrientationSwapFlag()
+                                        ? PatchOrientation::SWAP
+                                        : PatchOrientation::DEFAULT;
       if ( patch.getProjectionMode() == 0 ) {
         patch.getD1() = (int32_t)pdu.get3DShiftNormalAxis() * minLevel;
       } else {
@@ -608,30 +484,26 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
       TRACE_CODEC( "pdu.get2DDeltaSizeV()         = %ld \n", pdu.get2DDeltaSizeV() );
       TRACE_CODEC( "pdu.getNormalAxis()           = %lu \n", pdu.getNormalAxis() );
       TRACE_CODEC( "patch.getNormalAxis()         = %lu \n", patch.getNormalAxis() );
-      TRACE_CODEC( "patch UV0 %4lu %4lu UV1 %4lu %4lu D1=%4lu S=%4lu %4lu P=%lu O=%lu A=%u%u%u \n",
-                   patch.getU0(), patch.getV0(), patch.getU1(), patch.getV1(), patch.getD1(),
-                   patch.getSizeU0(), patch.getSizeV0(), patch.getProjectionMode(),
-                   patch.getPatchOrientation(), patch.getNormalAxis(), patch.getTangentAxis(),
-                   patch.getBitangentAxis() );
+      TRACE_CODEC( "patch UV0 %4lu %4lu UV1 %4lu %4lu D1=%4lu S=%4lu %4lu P=%lu O=%lu A=%u%u%u \n", patch.getU0(),
+                   patch.getV0(), patch.getU1(), patch.getV1(), patch.getD1(), patch.getSizeU0(), patch.getSizeV0(),
+                   patch.getProjectionMode(), patch.getPatchOrientation(), patch.getNormalAxis(),
+                   patch.getTangentAxis(), patch.getBitangentAxis() );
 
-      auto& patchLevelMetadataEnabledFlags =
-          frame.getFrameLevelMetadata().getLowerLevelMetadataEnabledFlags();
-      auto&         metadata   = patch.getPatchLevelMetadata();
-      const uint8_t bitCountDD = maxBitCountForMaxDepth;
+      auto&         patchLevelMetadataEnabledFlags = frame.getFrameLevelMetadata().getLowerLevelMetadataEnabledFlags();
+      auto&         metadata                       = patch.getPatchLevelMetadata();
+      const uint8_t bitCountDD                     = maxBitCountForMaxDepth;
       metadata.setIndex( patchIndex );
       metadata.setMetadataType( METADATA_PATCH );
       metadata.getMetadataEnabledFlags() = patchLevelMetadataEnabledFlags;
       metadata.setbitCountQDepth( bitCountDD );
 
-      // maxDepth reconstruction
 #ifdef CE210_MAXDEPTH_EVALUATION
       patch.getSizeD() = size_t( patchLevelMetadata.getQMaxDepthInPatch() ) * minLevel;
 #else
       patch.getSizeD()       = minLevel;
 #endif
       setPatchMetadata( metadata, psdu.getGeometryPatchParameterSet( 0 ) );
-      if ( sps.getLayerAbsoluteCodingEnabledFlag( 1 ) &&
-           !sps.getMultipleLayerStreamsPresentFlag() ) {
+      if ( sps.getLayerAbsoluteCodingEnabledFlag( 1 ) && !sps.getMultipleLayerStreamsPresentFlag() ) {
         setPointLocalReconstruction( frame, patch, pfdu.getPointLocalReconstruction(),
                                      ops.getOccupancyPackingBlockSize() );
       }
@@ -650,15 +522,13 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
 
       const auto& prePatch = prePatches[patch.getBestMatchIdx()];
 
-      TRACE_CODEC( "DeltaIdx = %d ShiftUV = %ld %ld ShiftAxis = %ld %ld %ld Size = %ld %ld \n",
-                   dpdu.getDeltaPatchIdx(), dpdu.get2DDeltaShiftU(), dpdu.get2DDeltaShiftV(),
-                   dpdu.get3DDeltaShiftTangentAxis(), dpdu.get3DDeltaShiftBiTangentAxis(),
-                   dpdu.get3DDeltaShiftNormalAxis(), dpdu.get2DDeltaSizeU(),
+      TRACE_CODEC( "DeltaIdx = %d ShiftUV = %ld %ld ShiftAxis = %ld %ld %ld Size = %ld %ld \n", dpdu.getDeltaPatchIdx(),
+                   dpdu.get2DDeltaShiftU(), dpdu.get2DDeltaShiftV(), dpdu.get3DDeltaShiftTangentAxis(),
+                   dpdu.get3DDeltaShiftBiTangentAxis(), dpdu.get3DDeltaShiftNormalAxis(), dpdu.get2DDeltaSizeU(),
                    dpdu.get2DDeltaSizeV() );
 
-      patch.getProjectionMode() = sps.getLayerAbsoluteCodingEnabledFlag( 1 )
-                                      ? static_cast<size_t>( dpdu.getProjectionMode() )
-                                      : 0;
+      patch.getProjectionMode() =
+          sps.getLayerAbsoluteCodingEnabledFlag( 1 ) ? static_cast<size_t>( dpdu.getProjectionMode() ) : 0;
       patch.getU0()               = dpdu.get2DDeltaShiftU() + prePatch.getU0();
       patch.getV0()               = dpdu.get2DDeltaShiftV() + prePatch.getV0();
       patch.getPatchOrientation() = prePatch.getPatchOrientation();
@@ -670,29 +540,24 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
       patch.getTangentAxis()      = prePatch.getTangentAxis();
       patch.getBitangentAxis()    = prePatch.getBitangentAxis();
       if ( patch.getProjectionMode() == 0 ) {
-        patch.getD1() =
-            ( dpdu.get3DDeltaShiftNormalAxis() + ( prePatch.getD1() / minLevel ) ) * minLevel;
+        patch.getD1() = ( dpdu.get3DDeltaShiftNormalAxis() + ( prePatch.getD1() / minLevel ) ) * minLevel;
       } else {
-        patch.getD1() = 1024 - ( dpdu.get3DDeltaShiftNormalAxis() +
-                                 ( ( 1024 - prePatch.getD1() ) / minLevel ) ) *
-                                   minLevel;
+        patch.getD1() =
+            1024 - ( dpdu.get3DDeltaShiftNormalAxis() + ( ( 1024 - prePatch.getD1() ) / minLevel ) ) * minLevel;
       }
       prevSizeU0 = patch.getSizeU0();
       prevSizeV0 = patch.getSizeV0();
-      TRACE_CODEC(
-          "patch Inter UV0 %4lu %4lu UV1 %4lu %4lu D1=%4lu S=%4lu %4lu P=%lu O=%lu A=%u%u%u \n",
-          patch.getU0(), patch.getV0(), patch.getU1(), patch.getV1(), patch.getD1(),
-          patch.getSizeU0(), patch.getSizeV0(), patch.getProjectionMode(),
-          patch.getPatchOrientation(), patch.getNormalAxis(), patch.getTangentAxis(),
-          patch.getBitangentAxis() );
+      TRACE_CODEC( "patch Inter UV0 %4lu %4lu UV1 %4lu %4lu D1=%4lu S=%4lu %4lu P=%lu O=%lu A=%u%u%u \n", patch.getU0(),
+                   patch.getV0(), patch.getU1(), patch.getV1(), patch.getD1(), patch.getSizeU0(), patch.getSizeV0(),
+                   patch.getProjectionMode(), patch.getPatchOrientation(), patch.getNormalAxis(),
+                   patch.getTangentAxis(), patch.getBitangentAxis() );
 
-      auto& patchLevelMetadataEnabledFlags =
-          frame.getFrameLevelMetadata().getLowerLevelMetadataEnabledFlags();
+      auto& patchLevelMetadataEnabledFlags         = frame.getFrameLevelMetadata().getLowerLevelMetadataEnabledFlags();
       auto& patchLevelMetadata                     = patch.getPatchLevelMetadata();
       patchLevelMetadata.getMetadataEnabledFlags() = patchLevelMetadataEnabledFlags;
       patchLevelMetadata.setIndex( patchIndex );
       patchLevelMetadata.setMetadataType( METADATA_PATCH );
-      patchLevelMetadata.setbitCountQDepth( 0 );  // added 20190129
+      patchLevelMetadata.setbitCountQDepth( 0 ); 
       patchLevelMetadata.getMetadataEnabledFlags() = patchLevelMetadataEnabledFlags;
 
 #ifdef CE210_MAXDEPTH_EVALUATION
@@ -705,8 +570,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
       patch.getSizeD() = ( delta_DD + prevDD ) * minLevel;
 
       setPatchMetadata( patchLevelMetadata, psdu.getGeometryPatchParameterSet( 0 ) );
-      if ( sps.getLayerAbsoluteCodingEnabledFlag( 1 ) &&
-           !sps.getMultipleLayerStreamsPresentFlag() ) {
+      if ( sps.getLayerAbsoluteCodingEnabledFlag( 1 ) && !sps.getMultipleLayerStreamsPresentFlag() ) {
         setPointLocalReconstruction( frame, patch, pfdu.getPointLocalReconstruction(),
                                      ops.getOccupancyPackingBlockSize() );
       }
@@ -724,11 +588,10 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
       missedPointsPatch.sizeV0_              = ppdu.get2DDeltaSizeV();
       missedPointsPatch.numMissedPts_        = ppdu.getPcmPoints();
       missedPointsPatch.occupancyResolution_ = ops.getOccupancyPackingBlockSize();
-      // ppdu.setPatchInPcmVideoFlag( sps.getPcmSeparateVideoPresentFlag() );
-      TRACE_CODEC( "PCM :UV = %lu %lu  size = %lu %lu  numPoints = %lu ocmRes = %lu \n",
-                   missedPointsPatch.u0_, missedPointsPatch.v0_, missedPointsPatch.sizeU0_,
-                   missedPointsPatch.sizeV0_, missedPointsPatch.numMissedPts_,
-                   missedPointsPatch.occupancyResolution_ );
+      // ppdu.setPatchInPcmVideoFlag( sps.getPcmSeparateVideoPresentFlag() );      
+      TRACE_CODEC( "PCM :UV = %lu %lu  size = %lu %lu  numPoints = %lu ocmRes = %lu \n", missedPointsPatch.u0_,
+                   missedPointsPatch.v0_, missedPointsPatch.sizeU0_, missedPointsPatch.sizeV0_,
+                   missedPointsPatch.numMissedPts_, missedPointsPatch.occupancyResolution_ );
     } else {
       printf( "Error: unknow frame/patch type \n" );
       TRACE_CODEC( "Error: unknow frame/patch type \n" );

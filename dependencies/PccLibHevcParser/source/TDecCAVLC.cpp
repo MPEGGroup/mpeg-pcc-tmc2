@@ -150,9 +150,7 @@ Void     ParameterSetManagerDecoder::applyPrefetchedPS()
 
 TDecCavlc::TDecCavlc()
 {
-  printf("TDecCavlc constructor \n"); fflush(stdout);
   m_apcSlicePilot = new TComSlice;
-  printf("TDecCavlc done\n"); fflush(stdout);
 }
 
 TDecCavlc::~TDecCavlc()

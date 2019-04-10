@@ -34,7 +34,7 @@
 #include "ArithmeticCodec.h"
 #include "PCCBitstream.h"
 #include "PCCBitstreamEncoder.h"
-#include "PCCBitstreamEncoderNewSyntax.h"
+#include "PCCBitstreamEncoder.h"
 #include "PCCContext.h"
 #include "PCCFrameContext.h"
 #include "PCCPatch.h"
@@ -78,12 +78,12 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources,
   params_.initializeContext( context );
 #ifdef CODEC_TRACE
   setTrace( true );
-  openTrace( removeFileExtension( params_.compressedStreamPath_ ) + "_convertion_encode.txt" );
+  openTrace( removeFileExtension( params_.compressedStreamPath_ ) + "_patch_encode.txt" );
 #endif
 #if 0
   PCCBitstreamEncoder bitstreamEncoder;
 #else
-  PCCBitstreamEncoderNewSyntax bitstreamEncoder;
+  PCCBitstreamEncoder bitstreamEncoder;
   createPatchFrameDataStructure( context );
 #endif
 #ifdef CODEC_TRACE
@@ -92,7 +92,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources,
 
 #ifdef BITSTREAM_TRACE
   bitstream.setTrace( true );
-  bitstream.openTrace( removeFileExtension( params_.compressedStreamPath_ ) + "_prev_syntax_encode.txt" );
+  bitstream.openTrace( removeFileExtension( params_.compressedStreamPath_ ) + "_hls_encode.txt" );
 #endif
   bitstreamEncoder.setParameters( params_ );
   ret |= bitstreamEncoder.encode( context, bitstream );
@@ -113,8 +113,6 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   setTrace( true );
   openTrace( removeFileExtension( params_.compressedStreamPath_ ) + "_codec_encode.txt" );
 #endif
-  printf( "encode trace open \n" );
-  fflush( stdout );
 
   params_.initializeContext( context );
   reconstructs.resize( sources.size() );
@@ -405,12 +403,6 @@ bool PCCEncoder::generateOccupancyMapVideo( const size_t           imageWidth,
                                             const size_t           imageHeight,
                                             std::vector<uint32_t>& occupancyMap,
                                             PCCImageOccupancyMap&  videoFrameOccupancyMap ) {
-  printf( "generateOccupancyMapVideo OcmRes = %lu OcmPrec = %lu \n", params_.occupancyResolution_,
-          params_.occupancyPrecision_ );
-  fflush( stdout );
-  printf( "Picture size = %lu x %lu \n", imageWidth, imageHeight );
-  fflush( stdout );
-
   const size_t   blockSize0  = params_.occupancyResolution_ / params_.occupancyPrecision_;
   const size_t   pointCount0 = blockSize0 * blockSize0;
   vector<bool>   block0;
