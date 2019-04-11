@@ -37,7 +37,7 @@
 
 using namespace pcc;
 
-PCCContext::PCCContext() { sequenceParameterSets_.resize( 1 ); }
+PCCContext::PCCContext() { }
 
 PCCContext::~PCCContext() {
   frames_.clear();

@@ -78,48 +78,28 @@ bool PCCBitstream::write( std::string compressedStreamPath ) {
   return true;
 }
 
-// Must be moved in PccEncoderBitstream and PccDeccoderBitstream.
-bool PCCBitstream::readHeader( PCCMetadataEnabledFlags& gofLevelMetadataEnabledFlags ) {
-  TRACE_BITSTREAM( "Code: header \n" );
+bool PCCBitstream::readHeader() {
+#ifdef BITSTREAM_TRACE
+  trace( "Code: header \n" );
+#endif
   uint64_t totalSize            = 0;
   uint32_t containerMagicNumber = read<uint32_t>();
   if ( containerMagicNumber != PCCTMC2ContainerMagicNumber ) { return false; }
   uint32_t containerVersion = read<uint32_t>();
   if ( containerVersion != PCCTMC2ContainerVersion ) { return false; }
   totalSize                                         = read<uint64_t>();
-  gofLevelMetadataEnabledFlags.getMetadataEnabled() = read<uint8_t>();
-  if ( gofLevelMetadataEnabledFlags.getMetadataEnabled() ) {
-    gofLevelMetadataEnabledFlags.getScaleEnabled()      = read<uint8_t>();
-    gofLevelMetadataEnabledFlags.getOffsetEnabled()     = read<uint8_t>();
-    gofLevelMetadataEnabledFlags.getRotationEnabled()   = read<uint8_t>();
-    gofLevelMetadataEnabledFlags.getPointSizeEnabled()  = read<uint8_t>();
-    gofLevelMetadataEnabledFlags.getPointShapeEnabled() = read<uint8_t>();
-#ifdef CE210_MAXDEPTH_EVALUATION
-    gofLevelMetadataEnabledFlags.setMaxDepthEnabled( read<uint8_t>() );
-#endif
-  }
   return true;
 }
 
-void PCCBitstream::writeHeader( const PCCMetadataEnabledFlags& gofLevelMetadataEnabledFlags ) {
-  TRACE_BITSTREAM( "Code: header \n" );
+void PCCBitstream::writeHeader() {
+#ifdef BITSTREAM_TRACE
+  trace( "Code: header \n" );
+#endif
   write<uint32_t>( PCCTMC2ContainerMagicNumber );
   write<uint32_t>( PCCTMC2ContainerVersion );
   totalSizeIterator_ = getPosition();
   write<uint64_t>( 0 );  // reserved
-  write<uint8_t>( gofLevelMetadataEnabledFlags.getMetadataEnabled() );
-  if ( gofLevelMetadataEnabledFlags.getMetadataEnabled() ) {
-    write<uint8_t>( gofLevelMetadataEnabledFlags.getScaleEnabled() );
-    write<uint8_t>( gofLevelMetadataEnabledFlags.getOffsetEnabled() );
-    write<uint8_t>( gofLevelMetadataEnabledFlags.getRotationEnabled() );
-    write<uint8_t>( gofLevelMetadataEnabledFlags.getPointSizeEnabled() );
-    write<uint8_t>( gofLevelMetadataEnabledFlags.getPointShapeEnabled() );
-#ifdef CE210_MAXDEPTH_EVALUATION
-    write<uint8_t>( gofLevelMetadataEnabledFlags.getMaxDepthEnabled() );
-#endif
-  }
 }
-//~Must be moved in PccEncoderBitstream and PccDeccoderBitstream.
 
 void PCCBitstream::writeUvlc( uint32_t code ) {
 #ifdef BITSTREAM_TRACE
@@ -136,7 +116,7 @@ void PCCBitstream::writeUvlc( uint32_t code ) {
   write( code, ( length + 1 ) >> 1 );
 #ifdef BITSTREAM_TRACE
   trace_ = traceStartingValue;
-  TRACE_BITSTREAM( "Code: Uvlc : %4lu \n", orgCode );
+  trace( "Code: Uvlc : %4lu \n", orgCode );
 #endif
 }
 
@@ -158,14 +138,16 @@ uint32_t PCCBitstream::readUvlc() {
   }
 #ifdef BITSTREAM_TRACE
   trace_ = traceStartingValue;
-  TRACE_BITSTREAM( "Code: Uvlc : %4lu \n", value );
+  trace( "Code: Uvlc : %4lu \n", value );
 #endif
   return value;
 }
 
 void PCCBitstream::writeSvlc( int32_t code ) {
   writeUvlc( ( uint32_t )( code <= 0 ) ? -code << 1 : ( code << 1 ) - 1 );
-  TRACE_BITSTREAM( "Code: Svlc : %4d \n", code );
+#ifdef BITSTREAM_TRACE
+  trace( "Code: Svlc : %4d \n", code );
+#endif
 }
 int32_t PCCBitstream::readSvlc() {
   uint32_t bits = readUvlc();
@@ -179,49 +161,73 @@ int32_t PCCBitstream::readSvlc() {
   return ( bits & 1 ) ? -( int32_t )( bits >> 1 ) : ( int32_t )( bits >> 1 );
 }
 void PCCBitstream::read( PCCVideoBitstream& videoBitstream ) {
-  TRACE_BITSTREAM( "Code: PCCVideoBitstream \n" );
+#ifdef BITSTREAM_TRACE
+  trace( "Code: PCCVideoBitstream \n" );
+#endif
   uint32_t size = read<uint32_t>();
-  TRACE_BITSTREAM( "Code: size = %lu \n", size );
+#ifdef BITSTREAM_TRACE
+  trace( "Code: size = %lu \n", size );
+#endif
   videoBitstream.resize( size );
   memcpy( videoBitstream.buffer(), data_.data() + position_.bytes, size );
   videoBitstream.trace();
   position_.bytes += size;
-  TRACE_BITSTREAM( "Code: data \n" );
+#ifdef BITSTREAM_TRACE
+  trace( "Code: data \n" );
+#endif
 #ifdef BUG_FIX_BITDEPTH
   videoBitstream.setBitdepth( read<uint8_t>() );
-  TRACE_BITSTREAM( "Code: depth = %lu \n", videoBitstream.getBitdepth() );
+#ifdef BITSTREAM_TRACE
+  trace( "Code: depth = %lu \n", videoBitstream.getBitdepth() );
 #endif
-  TRACE_BITSTREAM( "Code: video : %4lu \n", size );
+#endif
+#ifdef BITSTREAM_TRACE
+  trace( "Code: video : %4lu \n", size );
+#endif
 }
 
 void PCCBitstream::write( PCCVideoBitstream& videoBitstream ) {
-  TRACE_BITSTREAM( "Code: PCCVideoBitstream \n" );
+#ifdef BITSTREAM_TRACE
+  trace( "Code: PCCVideoBitstream \n" );
+#endif
   writeBuffer( videoBitstream.buffer(), videoBitstream.size() );
-  TRACE_BITSTREAM( "Code: data \n" );
+#ifdef BITSTREAM_TRACE
+  trace( "Code: data \n" );
+#endif
 #ifdef BUG_FIX_BITDEPTH
   write<uint8_t>( videoBitstream.getBitdepth() );
-  TRACE_BITSTREAM( "Code: depth = %lu \n", videoBitstream.getBitdepth() );
+#ifdef BITSTREAM_TRACE
+  trace( "Code: depth = %lu \n", videoBitstream.getBitdepth() );
+#endif
 #endif
   videoBitstream.trace();
-  TRACE_BITSTREAM( "Code: video : %4lu \n", videoBitstream.size() );
+#ifdef BITSTREAM_TRACE
+  trace( "Code: video : %4lu \n", videoBitstream.size() );
+#endif
 }
 
 void PCCBitstream::writeBuffer( const uint8_t* data, const size_t size ) {
   realloc( size );
   write<uint32_t>( size );
-  TRACE_BITSTREAM( "Code: size = %lu \n", size );
+#ifdef BITSTREAM_TRACE
+  trace( "Code: size = %lu \n", size );
+#endif
   memcpy( data_.data() + position_.bytes, data, size );
   position_.bytes += size;
 }
 
 uint32_t PCCBitstream::read( uint8_t bits ) {
   uint32_t code = read( bits, position_ );
-  TRACE_BITSTREAM( "Code: %5lu : %4lu \n", bits, code );
+#ifdef BITSTREAM_TRACE
+  trace( "Code: %5lu : %4lu \n", bits, code );
+#endif
   return code;
 }
 void PCCBitstream::write( uint32_t value, uint8_t bits ) {
   write( value, bits, position_ );
-  TRACE_BITSTREAM( "Code: %5lu : %4lu \n", bits, value );
+#ifdef BITSTREAM_TRACE
+  trace( "Code: %5lu : %4lu \n", bits, value );
+#endif
 }
 
 void PCCBitstream::align() { align( position_ ); }
@@ -240,7 +246,9 @@ uint32_t PCCBitstream::read( uint8_t bits, PCCBistreamPosition& pos ) {
       pos.bits++;
     }
   }
-  TRACE_BITSTREAM( "      %5lu : %4lu \n", bits, value );
+#ifdef BITSTREAM_TRACE
+  trace( "      %5lu : %4lu \n", bits, value );
+#endif
   return value;
 }
 
@@ -255,5 +263,7 @@ inline void PCCBitstream::write( uint32_t value, uint8_t bits, PCCBistreamPositi
       pos.bits++;
     }
   }
-  TRACE_BITSTREAM( "      %5lu : %4lu  \n", bits, value );
+#ifdef BITSTREAM_TRACE
+  trace( "      %5lu : %4lu  \n", bits, value );
+#endif
 }

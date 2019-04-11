@@ -67,10 +67,8 @@
 // #define CODEC_TRACE
 #define BUG_FIX_BITDEPTH
 
-//
 // #define CE210_MAXDEPTH_EVALUATION
 
-// jkei: patchSequenceUnitPayload
 namespace pcc {
 
 // ******************************************************************* //

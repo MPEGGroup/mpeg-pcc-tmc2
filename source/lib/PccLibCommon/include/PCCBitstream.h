@@ -71,8 +71,8 @@ class PCCBitstream {
     return *this;
   }
 
-  bool readHeader( PCCMetadataEnabledFlags& gofLevelMetadataEnabledFlags );
-  void writeHeader( const PCCMetadataEnabledFlags& gofLevelMetadataEnabledFlags );
+  bool readHeader();
+  void writeHeader();
 
   void writeBuffer( const uint8_t* data, const size_t size );
   void write( PCCVideoBitstream& videoBitstream );
@@ -115,7 +115,7 @@ class PCCBitstream {
       fclose( traceFile_ );
       traceFile_ = NULL;
     }
-    if ( ( traceFile_ = fopen( file.c_str(), "w" ) ) == NULL ) { return false; }
+    if ( ( traceFile_ = fopen( file.c_str(), "w+" ) ) == NULL ) { return false; }
     return true;
   }
   void closeTrace() {
@@ -141,7 +141,9 @@ class PCCBitstream {
     } else {
       for ( size_t k = 0; k < sizeof( T ); k++ ) { data_[pos.bytes++] = source.u8[sizeof( T ) - k - 1]; }
     }
-    TRACE_BITSTREAM( "CodF: %5lu : %4lu \n", sizeof( T ), u );
+#ifdef BITSTREAM_TRACE
+    trace( "CodF: %5lu : %4lu \n", sizeof( T ), u );
+#endif
   }
   template <typename T>
   T read( PCCBistreamPosition& pos ) {
@@ -155,7 +157,10 @@ class PCCBitstream {
     } else {
       for ( size_t k = 0; k < sizeof( T ); k++ ) { dest.u8[sizeof( T ) - k - 1] = data_[pos.bytes++]; }
     }
-    TRACE_BITSTREAM( "CodF: %5lu : %4lu \n", sizeof( T ), dest.u );
+    
+#ifdef BITSTREAM_TRACE
+    trace( "CodF: %5lu : %4lu \n", sizeof( T ), dest.u );
+#endif
     return dest.u;
   }
   template <typename T>

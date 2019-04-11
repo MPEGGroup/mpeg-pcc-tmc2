@@ -73,26 +73,22 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources,
   size_t singleLayerPixelInterleavingOriginal = params_.singleLayerPixelInterleaving_;
   if ( params_.nbThread_ > 0 ) { tbb::task_scheduler_init init( (int)params_.nbThread_ ); }
 
-  ret |= encode( sources, context, reconstructs );
-
   params_.initializeContext( context );
+  ret |= encode( sources, context, reconstructs );
 #ifdef CODEC_TRACE
   setTrace( true );
-  openTrace( removeFileExtension( params_.compressedStreamPath_ ) + "_patch_encode.txt" );
+  openTrace( string_format( "%s_GOF%u_patch_encode.txt", removeFileExtension( params_.compressedStreamPath_ ).c_str(),
+                            context.getSps().getSequenceParameterSetId() ) );
 #endif
-#if 0
-  PCCBitstreamEncoder bitstreamEncoder;
-#else
   PCCBitstreamEncoder bitstreamEncoder;
   createPatchFrameDataStructure( context );
-#endif
 #ifdef CODEC_TRACE
   closeTrace();
 #endif
 
 #ifdef BITSTREAM_TRACE
   bitstream.setTrace( true );
-  bitstream.openTrace( removeFileExtension( params_.compressedStreamPath_ ) + "_hls_encode.txt" );
+  bitstream.openTrace( removeFileExtension( params_.compressedStreamPath_ ) + "_hls_decode.txt" );
 #endif
   bitstreamEncoder.setParameters( params_ );
   ret |= bitstreamEncoder.encode( context, bitstream );
@@ -111,7 +107,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
 
 #ifdef CODEC_TRACE
   setTrace( true );
-  openTrace( removeFileExtension( params_.compressedStreamPath_ ) + "_codec_encode.txt" );
+  openTrace( string_format( "%s_GOF%u_codec_encode.txt", removeFileExtension( params_.compressedStreamPath_ ).c_str(),
+                            context.getSps().getSequenceParameterSetId() ) );
 #endif
 
   params_.initializeContext( context );
@@ -137,7 +134,6 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     frames[i].setLosslessGeo( params_.losslessGeo_ );
     frames[i].setLosslessGeo444( params_.losslessGeo444_ );
     frames[i].setLosslessTexture( params_.losslessTexture_ );
-    // frames[i].setEnhancedDeltaDepth(params_.enhancedDeltaDepthCode_);
     frames[i].setUseAdditionalPointsPatch( params_.losslessGeo_ || params_.lossyMissedPointsPatch_ );
     frames[i].setUseAdditionalPointsPatch( params_.useAdditionalPointsPatch_ );
     frames[i].setUseMissedPointsSeparateVideo( params_.useMissedPointsSeparateVideo_ );
@@ -150,16 +146,12 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   path << removeFileExtension( params_.compressedStreamPath_ ) << "_GOF" << sps.getSequenceParameterSetId() << "_";
 
   generateGeometryVideo( sources, context );
-  // RA mode.
   if ( params_.globalPatchAllocation_ ) { performDataAdaptiveGPAMethod( context ); }
-  // const size_t nbFramesGeometry = params_.oneLayerMode_  ? 1 : 2;
   const size_t nbFramesTexture = params_.oneLayerMode_ ? 1 : 2;
   resizeGeometryVideo( context );
   dilateGeometryVideo( context );
   sps.setFrameWidth( (uint16_t)frames[0].getWidth() );
   sps.setFrameHeight( (uint16_t)frames[0].getHeight() );
-  // auto width  = sps.getFrameWidth ();
-  // auto height = sps.getFrameHeight();
 
   auto& videoBitstream = context.createVideoBitstream( PCCVideoType::OccupancyMap );
   generateOccupancyMapVideo( sources, context );

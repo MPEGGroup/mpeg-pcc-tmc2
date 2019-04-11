@@ -1765,6 +1765,13 @@ class PCCContext {
     }
     fprintf( stderr, "Error: can't find sps[ %lc ] \n", vpccParameterSet_.getSequenceParameterSetId() );
     exit( -1 );
+  } 
+
+  SequenceParameterSet& addSequenceParameterSet( uint8_t index ){
+    SequenceParameterSet sps;
+    sps.setSequenceParameterSetId( index );
+    sequenceParameterSets_.push_back( sps );
+    return sequenceParameterSets_.back();
   }
 
   PatchSequenceDataUnit& getPatchSequenceDataUnit() { return patchSequenceDataUnit_; }

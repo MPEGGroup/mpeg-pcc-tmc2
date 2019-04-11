@@ -56,7 +56,7 @@ int PCCDecoder::decode( PCCBitstream& bitstream, PCCContext& context, PCCGroupOf
   PCCBitstreamDecoder bitstreamDecoder;
 #ifdef BITSTREAM_TRACE
   bitstream.setTrace( true );
-  bitstream.openTrace( removeFileExtension( params_.compressedStreamPath_ ) + "_prev_syntax_decode.txt" );
+  bitstream.openTrace( removeFileExtension( params_.compressedStreamPath_ ) + "_hls_decode.txt" );
 #endif
   if ( !bitstreamDecoder.decode( bitstream, context ) ) {
     return 0;
@@ -67,7 +67,8 @@ int PCCDecoder::decode( PCCBitstream& bitstream, PCCContext& context, PCCGroupOf
 
 #ifdef CODEC_TRACE
   setTrace( true );
-  openTrace( removeFileExtension( params_.compressedStreamPath_ ) + "_convertion_decode.txt" );
+  openTrace( string_format( "%s_GOF%u_patch_decode.txt", removeFileExtension( params_.compressedStreamPath_ ).c_str(),
+                            context.getSps().getSequenceParameterSetId() ) );
 #endif
   createPatchFrameDataStructure( context );
 #ifdef CODEC_TRACE
@@ -79,10 +80,7 @@ int PCCDecoder::decode( PCCBitstream& bitstream, PCCContext& context, PCCGroupOf
 }
 
 int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
-#ifdef CODEC_TRACE
-  setTrace( true );
-  openTrace( removeFileExtension( params_.compressedStreamPath_ ) + "_codec_decode.txt" );
-#endif
+
   reconstructs.resize( context.size() );
   PCCVideoDecoder   videoDecoder;
   std::stringstream path;
@@ -93,7 +91,12 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   auto&             aps = sps.getAttributeParameterSet( 0 );
   auto&             asp = aps.getAttributeSequenceParams();
   path << removeFileExtension( params_.compressedStreamPath_ ) << "_dec_GOF" << sps.getSequenceParameterSetId() << "_";
-
+#ifdef CODEC_TRACE
+  setTrace( true );
+  openTrace( removeFileExtension( params_.compressedStreamPath_ ) + "_codec_decode.txt" );
+  openTrace( string_format( "%s_GOF%u_codec_decode.txt", removeFileExtension( params_.compressedStreamPath_ ).c_str(),
+                            sps.getSequenceParameterSetId() ) );
+#endif
   bool lossyMpp = !sps.getLosslessGeo() && sps.getPcmPatchEnabledFlag();
 
   const size_t frameCountGeometry = sps.getMultipleLayerStreamsPresentFlag() ? 2 : 1;

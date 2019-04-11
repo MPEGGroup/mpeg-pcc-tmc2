@@ -287,19 +287,16 @@ int decompressVideo( const PCCDecoderParameters &decoderParams,
   PCCBitstream bitstream;
   if( ! bitstream.initialize( decoderParams.compressedStreamPath_ ) ) {
     return -1;
-  }
-  PCCMetadataEnabledFlags gofLevelMetadataEnabledFlags;
-  if( ! bitstream.readHeader(gofLevelMetadataEnabledFlags) ) {
+  }  
+  if( ! bitstream.readHeader() ) {
     return -1;
   }
   size_t frameNumber = decoderParams.startFrameNumber_;
-  size_t contextIndex = 0;
   PCCMetrics  metrics;
   PCCChecksum checksum;
   metrics.setParameters( metricsParams );
   checksum.setParameters( metricsParams );
   std::vector<std::vector<uint8_t>> checksumsRec, checksumsDec;
-  // size_t checksumIndex = 0;
   if( metricsParams.computeChecksum_ ) {
     checksum.read( decoderParams.compressedStreamPath_ );
   }
@@ -307,13 +304,7 @@ int decompressVideo( const PCCDecoderParameters &decoderParams,
   decoder.setParameters( decoderParams );
   while ( bitstream.size() < bitstream.capacity()) {
     PCCGroupOfFrames reconstructs;
-    PCCContext context;
-    context.getSps().setSequenceParameterSetId(contextIndex++);
-
-    if (gofLevelMetadataEnabledFlags.getMetadataEnabled()) {
-      auto& gofLevelMetadata = context.getGOFLevelMetadata();
-      gofLevelMetadata.getMetadataEnabledFlags() = gofLevelMetadataEnabledFlags;
-    }
+    PCCContext context;   
     clock.start();
     int ret = decoder.decode( bitstream, context, reconstructs );
     clock.stop();

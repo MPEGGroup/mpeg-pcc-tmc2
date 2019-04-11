@@ -669,24 +669,13 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
   metrics .setParameters( metricsParams );
   checksum.setParameters( metricsParams );
 
-  // Place to get/set default values for gof metadata enabled flags (in sequence level).
-  PCCMetadataEnabledFlags gofLevelMetadataEnabledFlags;
+  // Place to get/set default values for gof metadata enabled flags (in sequence level).  
+  bitstream.writeHeader();
   while (startFrameNumber < endFrameNumber0) {
     const size_t endFrameNumber = min(startFrameNumber + groupOfFramesSize0, endFrameNumber0);
     PCCContext context;
-    context.getSps().setSequenceParameterSetId(contextIndex);
-
-    // Must be moved in PccEncoder.
-    if (gofLevelMetadataEnabledFlags.getMetadataEnabled()) {
-      // Place to get/set gof-level metadata.
-      PCCMetadata gofLevelMetadata;
-      context.getGOFLevelMetadata() = gofLevelMetadata;
-      context.getGOFLevelMetadata().getMetadataEnabledFlags() = gofLevelMetadataEnabledFlags;
-      // Place to get/set frame metadata enabled flags (in gof level).
-      PCCMetadataEnabledFlags frameLevelMetadataEnabledFlags;
-      context.getGOFLevelMetadata().getLowerLevelMetadataEnabledFlags() = frameLevelMetadataEnabledFlags;
-    }
-    //~Must be moved in PccEncoder.
+    context.addSequenceParameterSet( contextIndex );
+    context.getVPCC().setSequenceParameterSetId( contextIndex );    
 
     PCCGroupOfFrames sources, reconstructs;
     if (!sources.load( encoderParams.uncompressedDataPath_, startFrameNumber,
@@ -694,13 +683,6 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
       return -1;
     }
     clock.start();
-
-    if (startFrameNumber == startFrameNumber0) {
-      // const size_t predictedBitstreamSize =
-      //     10000 + 8 * encoderParams.frameCount_ * sources[0].getPointCount();
-      // bitstream.initialize( predictedBitstreamSize );
-      bitstream.writeHeader(gofLevelMetadataEnabledFlags);
-    }
 
     if (encoderParams.testLevelOfDetail_ > 0) {
       const double lodScale = 1.0 / double(1u << encoderParams.testLevelOfDetail_);
