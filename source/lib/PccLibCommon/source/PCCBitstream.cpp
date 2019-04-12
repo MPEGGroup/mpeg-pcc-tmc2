@@ -70,7 +70,7 @@ bool PCCBitstream::initialize( std::string compressedStreamPath ) {
 }
 
 bool PCCBitstream::write( std::string compressedStreamPath ) {
-  write<uint64_t>( size(), totalSizeIterator_ );
+  write( size(), 64,  totalSizeIterator_ );
   std::ofstream fout( compressedStreamPath, std::ios::binary );
   if ( !fout.is_open() ) { return false; }
   fout.write( reinterpret_cast<const char*>( data_.data() ), size() );
@@ -83,11 +83,12 @@ bool PCCBitstream::readHeader() {
   trace( "Code: header \n" );
 #endif
   uint64_t totalSize            = 0;
-  uint32_t containerMagicNumber = read<uint32_t>();
+  uint32_t containerMagicNumber = read( 32 );
   if ( containerMagicNumber != PCCTMC2ContainerMagicNumber ) { return false; }
-  uint32_t containerVersion = read<uint32_t>();
+  uint32_t containerVersion = read( 32 );
   if ( containerVersion != PCCTMC2ContainerVersion ) { return false; }
-  totalSize                                         = read<uint64_t>();
+  totalSize = read( 64 );
+  bitstreamStat_.setHeader( size() );
   return true;
 }
 
@@ -95,76 +96,18 @@ void PCCBitstream::writeHeader() {
 #ifdef BITSTREAM_TRACE
   trace( "Code: header \n" );
 #endif
-  write<uint32_t>( PCCTMC2ContainerMagicNumber );
-  write<uint32_t>( PCCTMC2ContainerVersion );
+  write( PCCTMC2ContainerMagicNumber, 32 );
+  write( PCCTMC2ContainerVersion, 32 );
   totalSizeIterator_ = getPosition();
-  write<uint64_t>( 0 );  // reserved
+  write( 0, 64 );  // reserved
+  bitstreamStat_.setHeader( size() );
 }
 
-void PCCBitstream::writeUvlc( uint32_t code ) {
-#ifdef BITSTREAM_TRACE
-  uint32_t orgCode            = code;
-  bool     traceStartingValue = trace_;
-  trace_                      = false;
-#endif
-  uint32_t length = 1, temp = ++code;
-  while ( 1 != temp ) {
-    temp >>= 1;
-    length += 2;
-  }
-  write( 0, length >> 1 );
-  write( code, ( length + 1 ) >> 1 );
-#ifdef BITSTREAM_TRACE
-  trace_ = traceStartingValue;
-  trace( "Code: Uvlc : %4lu \n", orgCode );
-#endif
-}
-
-uint32_t PCCBitstream::readUvlc() {
-#ifdef BITSTREAM_TRACE
-  bool traceStartingValue = trace_;
-  trace_                  = false;
-#endif
-  uint32_t value = 0, code = 0, length = 0;
-  code = read( 1 );
-  if ( 0 == code ) {
-    length = 0;
-    while ( !( code & 1 ) ) {
-      code = read( 1 );
-      length++;
-    }
-    value = read( length );
-    value += ( 1 << length ) - 1;
-  }
-#ifdef BITSTREAM_TRACE
-  trace_ = traceStartingValue;
-  trace( "Code: Uvlc : %4lu \n", value );
-#endif
-  return value;
-}
-
-void PCCBitstream::writeSvlc( int32_t code ) {
-  writeUvlc( ( uint32_t )( code <= 0 ) ? -code << 1 : ( code << 1 ) - 1 );
-#ifdef BITSTREAM_TRACE
-  trace( "Code: Svlc : %4d \n", code );
-#endif
-}
-int32_t PCCBitstream::readSvlc() {
-  uint32_t bits = readUvlc();
-#ifdef BITSTREAM_TRACE
-  if ( trace_ ) {
-    fprintf( traceFile_ ? traceFile_ : stdout, "Code: Svlc : %4d \n",
-             ( bits & 1 ) ? -( int32_t )( bits >> 1 ) : ( int32_t )( bits >> 1 ) );
-    fflush( stdout );
-  }
-#endif
-  return ( bits & 1 ) ? -( int32_t )( bits >> 1 ) : ( int32_t )( bits >> 1 );
-}
 void PCCBitstream::read( PCCVideoBitstream& videoBitstream ) {
 #ifdef BITSTREAM_TRACE
   trace( "Code: PCCVideoBitstream \n" );
 #endif
-  uint32_t size = read<uint32_t>();
+  uint32_t size = read( 32 );
 #ifdef BITSTREAM_TRACE
   trace( "Code: size = %lu \n", size );
 #endif
@@ -176,7 +119,7 @@ void PCCBitstream::read( PCCVideoBitstream& videoBitstream ) {
   trace( "Code: data \n" );
 #endif
 #ifdef BUG_FIX_BITDEPTH
-  videoBitstream.setBitdepth( read<uint8_t>() );
+  videoBitstream.setBitdepth( read( 8 ) );
 #ifdef BITSTREAM_TRACE
   trace( "Code: depth = %lu \n", videoBitstream.getBitdepth() );
 #endif
@@ -184,6 +127,7 @@ void PCCBitstream::read( PCCVideoBitstream& videoBitstream ) {
 #ifdef BITSTREAM_TRACE
   trace( "Code: video : %4lu \n", size );
 #endif
+  bitstreamStat_.setVideoBinSize( videoBitstream.type(), videoBitstream.size() );
 }
 
 void PCCBitstream::write( PCCVideoBitstream& videoBitstream ) {
@@ -195,12 +139,13 @@ void PCCBitstream::write( PCCVideoBitstream& videoBitstream ) {
   trace( "Code: data \n" );
 #endif
 #ifdef BUG_FIX_BITDEPTH
-  write<uint8_t>( videoBitstream.getBitdepth() );
+  write( videoBitstream.getBitdepth(), 8 );
 #ifdef BITSTREAM_TRACE
   trace( "Code: depth = %lu \n", videoBitstream.getBitdepth() );
 #endif
 #endif
   videoBitstream.trace();
+  bitstreamStat_.setVideoBinSize( videoBitstream.type(), videoBitstream.size() );
 #ifdef BITSTREAM_TRACE
   trace( "Code: video : %4lu \n", videoBitstream.size() );
 #endif
@@ -208,7 +153,7 @@ void PCCBitstream::write( PCCVideoBitstream& videoBitstream ) {
 
 void PCCBitstream::writeBuffer( const uint8_t* data, const size_t size ) {
   realloc( size );
-  write<uint32_t>( size );
+  write( size, 32 );
 #ifdef BITSTREAM_TRACE
   trace( "Code: size = %lu \n", size );
 #endif
@@ -216,54 +161,3 @@ void PCCBitstream::writeBuffer( const uint8_t* data, const size_t size ) {
   position_.bytes += size;
 }
 
-uint32_t PCCBitstream::read( uint8_t bits ) {
-  uint32_t code = read( bits, position_ );
-#ifdef BITSTREAM_TRACE
-  trace( "Code: %5lu : %4lu \n", bits, code );
-#endif
-  return code;
-}
-void PCCBitstream::write( uint32_t value, uint8_t bits ) {
-  write( value, bits, position_ );
-#ifdef BITSTREAM_TRACE
-  trace( "Code: %5lu : %4lu \n", bits, value );
-#endif
-}
-
-void PCCBitstream::align() { align( position_ ); }
-void PCCBitstream::align( PCCBistreamPosition& pos ) {
-  if ( pos.bits != 0 ) { pos.bits = 0, pos.bytes++; }
-}
-
-uint32_t PCCBitstream::read( uint8_t bits, PCCBistreamPosition& pos ) {
-  uint32_t value = 0;
-  for ( size_t i = 0; i < bits; i++ ) {
-    value |= ( ( data_[pos.bytes] >> ( 7 - pos.bits ) ) & 1 ) << ( bits - 1 - i );
-    if ( pos.bits == 7 ) {
-      pos.bytes++;
-      pos.bits = 0;
-    } else {
-      pos.bits++;
-    }
-  }
-#ifdef BITSTREAM_TRACE
-  trace( "      %5lu : %4lu \n", bits, value );
-#endif
-  return value;
-}
-
-inline void PCCBitstream::write( uint32_t value, uint8_t bits, PCCBistreamPosition& pos ) {
-  if ( pos.bytes + 16 >= data_.size() ) { realloc(); }
-  for ( size_t i = 0; i < bits; i++ ) {
-    data_[pos.bytes] |= ( ( value >> ( bits - 1 - i ) ) & 1 ) << ( 7 - pos.bits );
-    if ( pos.bits == 7 ) {
-      pos.bytes++;
-      pos.bits = 0;
-    } else {
-      pos.bits++;
-    }
-  }
-#ifdef BITSTREAM_TRACE
-  trace( "      %5lu : %4lu  \n", bits, value );
-#endif
-}

@@ -84,18 +84,34 @@ class PointLocalReconstruction {
   size_t  getBlockToPatchMapHeight() { return plrBlockToPatchMapHeight_; };
   size_t  getBlockToPatchMapWidth() { return plrBlockToPatchMapWidth_; };
   uint8_t getBlockToPatchMap( size_t x, size_t y ) { return blockToPatchMap_[y * plrBlockToPatchMapWidth_ + x]; }
-  bool    getModeInterpolateFlag( size_t x, size_t y ) { return plrModeInterpolateFlag_[y * plrBlockToPatchMapWidth_ + x]; }
-  uint8_t getModeNeighbourMinus1( size_t x, size_t y ) { return plrModeNeighbourMinus1_[y * plrBlockToPatchMapWidth_ + x]; }
-  uint8_t getModeMinimumDepthMinus1( size_t x, size_t y ) { return plrModeMinimumDepthMinus1_[y * plrBlockToPatchMapWidth_ + y]; }
-  bool    getModeFillingFlag( size_t x, size_t y ) { return plrModeFillingFlag_[y * plrBlockToPatchMapWidth_ + x]; }
+  bool    getModeInterpolateFlag( size_t x, size_t y ) {
+    return plrModeInterpolateFlag_[y * plrBlockToPatchMapWidth_ + x];
+  }
+  uint8_t getModeNeighbourMinus1( size_t x, size_t y ) {
+    return plrModeNeighbourMinus1_[y * plrBlockToPatchMapWidth_ + x];
+  }
+  uint8_t getModeMinimumDepthMinus1( size_t x, size_t y ) {
+    return plrModeMinimumDepthMinus1_[y * plrBlockToPatchMapWidth_ + y];
+  }
+  bool getModeFillingFlag( size_t x, size_t y ) { return plrModeFillingFlag_[y * plrBlockToPatchMapWidth_ + x]; }
 
   void setBlockToPatchMapHeight( size_t value ) { plrBlockToPatchMapHeight_ = value; };
   void setBlockToPatchMapWidth( size_t value ) { plrBlockToPatchMapWidth_ = value; };
-  void setBlockToPatchMap( size_t x, size_t y, uint8_t value ) { blockToPatchMap_[y * plrBlockToPatchMapWidth_ + x] = value; }
-  void setModeInterpolateFlag( size_t x, size_t y, bool value ) { plrModeInterpolateFlag_[y * plrBlockToPatchMapWidth_ + x] = value; }
-  void setModeNeighbourMinus1( size_t x, size_t y, uint8_t value ) { plrModeNeighbourMinus1_[y * plrBlockToPatchMapWidth_ + x] = value; }
-  void setModeMinimumDepthMinus1( size_t x, size_t y, uint8_t value ) { plrModeMinimumDepthMinus1_[y * plrBlockToPatchMapWidth_ + x] = value; }
-  void setModeFillingFlag( size_t x, size_t y, bool value ) { plrModeFillingFlag_[y * plrBlockToPatchMapWidth_ + x] = value; }
+  void setBlockToPatchMap( size_t x, size_t y, uint8_t value ) {
+    blockToPatchMap_[y * plrBlockToPatchMapWidth_ + x] = value;
+  }
+  void setModeInterpolateFlag( size_t x, size_t y, bool value ) {
+    plrModeInterpolateFlag_[y * plrBlockToPatchMapWidth_ + x] = value;
+  }
+  void setModeNeighbourMinus1( size_t x, size_t y, uint8_t value ) {
+    plrModeNeighbourMinus1_[y * plrBlockToPatchMapWidth_ + x] = value;
+  }
+  void setModeMinimumDepthMinus1( size_t x, size_t y, uint8_t value ) {
+    plrModeMinimumDepthMinus1_[y * plrBlockToPatchMapWidth_ + x] = value;
+  }
+  void setModeFillingFlag( size_t x, size_t y, bool value ) {
+    plrModeFillingFlag_[y * plrBlockToPatchMapWidth_ + x] = value;
+  }
 
  private:
   /* internal */
@@ -159,7 +175,7 @@ class DeltaPatchDataUnit {
       dpdu3DDeltaShiftNormalAxis_( 0 ),
       dpduNormalAxis_( PCC_AXIS3_Z ),
       dpduOrientationSwapFlag_( false ),
-      dpduLod_( 1 ),
+      dpduLod_( 0 ),
       dpduProjectionMode_( false ){};
   ~DeltaPatchDataUnit(){};
   DeltaPatchDataUnit& operator=( const DeltaPatchDataUnit& ) = default;
@@ -218,7 +234,7 @@ class PatchDataUnit {
       pdu3DShiftNormalAxis_( 0 ),
       pduNormalAxis_( PCC_AXIS3_Z ),
       pduOrientationSwapFlag_( false ),
-      pduLod_( 1 ),
+      pduLod_( 0 ),
       pduProjectionMode_( false ){};
 
   ~PatchDataUnit(){};
@@ -310,8 +326,8 @@ class PatchInformationData {
  private:
   bool                 overrideGeometryPatchFlag_;
   uint8_t              geometryPatchParameterSetId_;
-  std::vector<bool>    overrideAttributePatchFlag_;    
-  std::vector<uint8_t> attributePatchParameterSetId_;  
+  std::vector<bool>    overrideAttributePatchFlag_;
+  std::vector<uint8_t> attributePatchParameterSetId_;
   PatchDataUnit        patchDataUnit_;
   DeltaPatchDataUnit   deltaPatchDataUnit_;
   PCMPatchDataUnit     pcmPatchDataUnit_;
@@ -340,27 +356,25 @@ class PatchFrameDataUnit {
 
   void addPatchMode( uint8_t value ) { patchMode_.push_back( value ); }
   void addPatchInformationData( PatchInformationData& value ) { patchInformationData_.push_back( value ); }
-  PatchInformationData&  addPatchInformationData() { 
-    PatchInformationData pid; 
-    patchInformationData_.push_back( pid ); 
-    return patchInformationData_.back(); 
+  PatchInformationData& addPatchInformationData() {
+    PatchInformationData pid;
+    patchInformationData_.push_back( pid );
+    return patchInformationData_.back();
   }
   uint8_t                   getPatchCount() { return patchMode_.size(); }
   uint8_t                   getPatchMode( uint8_t index ) { return patchMode_[index]; }
   PatchInformationData&     getPatchInformationData( uint8_t index ) { return patchInformationData_[index]; }
   PointLocalReconstruction& getPointLocalReconstruction() { return pointLocalReconstruction_; }
 
-  uint8_t  getMatchedPatchCount(){
+  uint8_t getMatchedPatchCount() {
     uint8_t matchedPatchCount = 0;
-    for( auto& v : patchMode_ ){
-      if( v == P_INTER ){
-        matchedPatchCount++;
-      }
+    for ( auto& v : patchMode_ ) {
+      if ( v == PATCH_MODE_P_INTER ) { matchedPatchCount++; }
     }
     return matchedPatchCount;
   }
 
-  void setPatchCount( uint8_t value ) { patchCount_ = value; }  
+  void setPatchCount( uint8_t value ) { patchCount_ = value; }
   void setPatchMode( uint8_t index, uint8_t value ) { patchMode_[index] = value; }
   void setPatchInformationData( uint8_t index, PatchInformationData& value ) { patchInformationData_[index] = value; }
   void setPointLocalReconstruction( PointLocalReconstruction value ) { pointLocalReconstruction_ = value; }
@@ -368,7 +382,7 @@ class PatchFrameDataUnit {
  private:
   uint8_t                           patchCount_;
   std::vector<uint8_t>              patchMode_;
-  std::vector<PatchInformationData> patchInformationData_;  
+  std::vector<PatchInformationData> patchInformationData_;
   PointLocalReconstruction          pointLocalReconstruction_;
 };
 
@@ -465,16 +479,24 @@ class PatchFrameHeader {
   bool     getInterPredictPatchBitCountFlag() { return interPredictPatchBitCountFlag_; }
   bool     getInterPredictPatch2dShiftUBitCountFlag() { return interPredictPatch2dShiftUBitCountFlag_; }
   bool     getInterPredictPatch2dShiftVBitCountFlag() { return interPredictPatch2dShiftVBitCountFlag_; }
-  bool     getInterPredictPatch3dShiftTangentAxisBitCountFlag() { return interPredictPatch3dShiftTangentAxisBitCountFlag_; }
-  bool     getInterPredictPatch3dShiftBitangentAxisBitCountFlag() { return interPredictPatch3dShiftBitangentAxisBitCountFlag_; }
-  bool     getInterPredictPatch3dShiftNormalAxisBitCountFlag() { return interPredictPatch3dShiftNormalAxisBitCountFlag_; }
-  bool     getInterPredictPatchLodBitCountFlag() { return interPredictPatchLodBitCountFlag_; }
-  uint8_t  getInterPredictPatch2dShiftUBitCountMinus1() { return interPredictPatch2dShiftUBitCountMinus1_; }
-  uint8_t  getInterPredictPatch2dShiftVBitCountMinus1() { return interPredictPatch2dShiftVBitCountMinus1_; }
-  uint8_t  getInterPredictPatch3dShiftTangentAxisBitCountMinus1() { return interPredictPatch3dShiftTangentAxisBitCountMinus1_; }
-  uint8_t  getInterPredictPatch3dShiftBitangentAxisBitCountMinus1() { return interPredictPatch3dShiftBitangentAxisBitCountMinus1_; }
-  uint8_t  getInterPredictPatch3dShiftNormalAxisBitCountMinus1() { return interPredictPatch3dShiftNormalAxisBitCountMinus1_; }
-  uint8_t  getInterPredictPatchLodBitCount() { return interPredictPatchLodBitCount_; }
+  bool getInterPredictPatch3dShiftTangentAxisBitCountFlag() { return interPredictPatch3dShiftTangentAxisBitCountFlag_; }
+  bool getInterPredictPatch3dShiftBitangentAxisBitCountFlag() {
+    return interPredictPatch3dShiftBitangentAxisBitCountFlag_;
+  }
+  bool getInterPredictPatch3dShiftNormalAxisBitCountFlag() { return interPredictPatch3dShiftNormalAxisBitCountFlag_; }
+  bool getInterPredictPatchLodBitCountFlag() { return interPredictPatchLodBitCountFlag_; }
+  uint8_t getInterPredictPatch2dShiftUBitCountMinus1() { return interPredictPatch2dShiftUBitCountMinus1_; }
+  uint8_t getInterPredictPatch2dShiftVBitCountMinus1() { return interPredictPatch2dShiftVBitCountMinus1_; }
+  uint8_t getInterPredictPatch3dShiftTangentAxisBitCountMinus1() {
+    return interPredictPatch3dShiftTangentAxisBitCountMinus1_;
+  }
+  uint8_t getInterPredictPatch3dShiftBitangentAxisBitCountMinus1() {
+    return interPredictPatch3dShiftBitangentAxisBitCountMinus1_;
+  }
+  uint8_t getInterPredictPatch3dShiftNormalAxisBitCountMinus1() {
+    return interPredictPatch3dShiftNormalAxisBitCountMinus1_;
+  }
+  uint8_t getInterPredictPatchLodBitCount() { return interPredictPatchLodBitCount_; }
 
   void setPatchFrameParameterSetId( uint8_t value ) { patchFrameParameterSetId_ = value; }
   void setAddress( uint8_t value ) { address_ = value; }
@@ -488,23 +510,35 @@ class PatchFrameHeader {
   void setNumRefIdxActiveMinus1( uint8_t value ) { numRefIdxActiveMinus1_ = value; }
   void setInterPredictPatch2dShiftUBitCountMinus1( uint8_t value ) { interPredictPatch2dShiftUBitCountMinus1_ = value; }
   void setInterPredictPatch2dShiftVBitCountMinus1( uint8_t value ) { interPredictPatch2dShiftVBitCountMinus1_ = value; }
-  void setInterPredictPatch3dShiftTangentAxisBitCountMinus1( uint8_t value ) { interPredictPatch3dShiftTangentAxisBitCountMinus1_ = value; }
-  void setInterPredictPatch3dShiftBitangentAxisBitCountMinus1( uint8_t value ) { interPredictPatch3dShiftBitangentAxisBitCountMinus1_ = value; }
-  void setInterPredictPatch3dShiftNormalAxisBitCountMinus1( uint8_t value ) { interPredictPatch3dShiftNormalAxisBitCountMinus1_ = value; }
+  void setInterPredictPatch3dShiftTangentAxisBitCountMinus1( uint8_t value ) {
+    interPredictPatch3dShiftTangentAxisBitCountMinus1_ = value;
+  }
+  void setInterPredictPatch3dShiftBitangentAxisBitCountMinus1( uint8_t value ) {
+    interPredictPatch3dShiftBitangentAxisBitCountMinus1_ = value;
+  }
+  void setInterPredictPatch3dShiftNormalAxisBitCountMinus1( uint8_t value ) {
+    interPredictPatch3dShiftNormalAxisBitCountMinus1_ = value;
+  }
   void setInterPredictPatchLodBitCount( uint8_t value ) { interPredictPatchLodBitCount_ = value; }
   void setInterPredictPatchBitCountFlag( bool value ) { interPredictPatchBitCountFlag_ = value; }
   void setInterPredictPatch2dShiftUBitCountFlag( bool value ) { interPredictPatch2dShiftUBitCountFlag_ = value; }
   void setInterPredictPatch2dShiftVBitCountFlag( bool value ) { interPredictPatch2dShiftVBitCountFlag_ = value; }
-  void setInterPredictPatch3dShiftTangentAxisBitCountFlag( bool value ) { interPredictPatch3dShiftTangentAxisBitCountFlag_ = value; }
-  void setInterPredictPatch3dShiftBitangentAxisBitCountFlag( bool value ) { interPredictPatch3dShiftBitangentAxisBitCountFlag_ = value; }
-  void setInterPredictPatch3dShiftNormalAxisBitCountFlag( bool value ) { interPredictPatch3dShiftNormalAxisBitCountFlag_ = value; }
+  void setInterPredictPatch3dShiftTangentAxisBitCountFlag( bool value ) {
+    interPredictPatch3dShiftTangentAxisBitCountFlag_ = value;
+  }
+  void setInterPredictPatch3dShiftBitangentAxisBitCountFlag( bool value ) {
+    interPredictPatch3dShiftBitangentAxisBitCountFlag_ = value;
+  }
+  void setInterPredictPatch3dShiftNormalAxisBitCountFlag( bool value ) {
+    interPredictPatch3dShiftNormalAxisBitCountFlag_ = value;
+  }
   void setInterPredictPatchLodBitCountFlag( bool value ) { interPredictPatchLodBitCountFlag_ = value; }
 
  private:
   uint8_t               frameIndex_;
   uint8_t               patchFrameParameterSetId_;
-  uint8_t               type_;    
-  uint32_t              address_; 
+  uint8_t               type_;
+  uint32_t              address_;
   uint8_t               patchFrameOrderCntLsb_;
   uint8_t               refPatchFrameListIdx_;
   bool                  refPatchFrameListSpsFlag_;
@@ -575,16 +609,22 @@ class PatchFrameParameterSet {
   uint8_t getGeometryPatchFrameParameterSetId() { return geometryPatchFrameParameterSetId_; }
   uint8_t getAttributePatchFrameParameterSetId( size_t index ) { return attributePatchFrameParameterSetId_[index]; }
   uint8_t getAdditionalLtPfocLsbLen() { return additionalLtPfocLsbLen_; }
-  bool    getLocalOverrideAttributePatchEnableFlag( size_t index ) { return localOverrideAttributePatchEnableFlag_[index]; }
-  bool    getPatchOrientationPresentFlag() { return patchOrientationPresentFlag_; }
-  bool    getLocalOverrideGeometryPatchEnableFlag() { return localOverrideGeometryPatchEnableFlag_; }
+  bool    getLocalOverrideAttributePatchEnableFlag( size_t index ) {
+    return localOverrideAttributePatchEnableFlag_[index];
+  }
+  bool getPatchOrientationPresentFlag() { return patchOrientationPresentFlag_; }
+  bool getLocalOverrideGeometryPatchEnableFlag() { return localOverrideGeometryPatchEnableFlag_; }
 
   void setPatchFrameParameterSetId( uint8_t value ) { patchFrameParameterSetId_ = value; }
   void setPatchSequenceParameterSetId( uint8_t value ) { patchSequenceParameterSetId_ = value; }
   void setGeometryPatchFrameParameterSetId( uint8_t value ) { geometryPatchFrameParameterSetId_ = value; }
-  void setAttributePatchFrameParameterSetId( size_t index, uint8_t value ) { attributePatchFrameParameterSetId_[index] = value; }
+  void setAttributePatchFrameParameterSetId( size_t index, uint8_t value ) {
+    attributePatchFrameParameterSetId_[index] = value;
+  }
   void setAdditionalLtPfocLsbLen( uint8_t value ) { additionalLtPfocLsbLen_ = value; }
-  void setLocalOverrideAttributePatchEnableFlag( size_t index, bool value ) { localOverrideAttributePatchEnableFlag_[index] = value; }
+  void setLocalOverrideAttributePatchEnableFlag( size_t index, bool value ) {
+    localOverrideAttributePatchEnableFlag_[index] = value;
+  }
   void setPatchOrientationPresentFlag( bool value ) { patchOrientationPresentFlag_ = value; }
   void setLocalOverrideGeometryPatchEnableFlag( bool value ) { localOverrideGeometryPatchEnableFlag_ = value; }
 
@@ -592,7 +632,7 @@ class PatchFrameParameterSet {
   uint8_t              patchFrameParameterSetId_;
   uint8_t              patchSequenceParameterSetId_;
   uint8_t              geometryPatchFrameParameterSetId_;
-  std::vector<uint8_t> attributePatchFrameParameterSetId_;  
+  std::vector<uint8_t> attributePatchFrameParameterSetId_;
   uint8_t              additionalLtPfocLsbLen_;
   bool                 localOverrideGeometryPatchEnableFlag_;
   bool                 patchOrientationPresentFlag_;
@@ -602,7 +642,9 @@ class PatchFrameParameterSet {
 // 7.3.24 Attribute patch params syntax (apps)
 class AttributePatchParams {
  public:
-  AttributePatchParams() : attributePatchScaleParamsPresentFlag_( false ), attributePatchOffsetParamsPresentFlag_( false ) {
+  AttributePatchParams() :
+      attributePatchScaleParamsPresentFlag_( false ),
+      attributePatchOffsetParamsPresentFlag_( false ) {
     attributePatchScale_.clear();
     attributePatchOffset_.clear();
   }
@@ -635,7 +677,10 @@ class AttributePatchParams {
 // 7.3.23 Attribute Patch Parameter Set syntax (appss)
 class AttributePatchParameterSet {
  public:
-  AttributePatchParameterSet() : attributePatchParameterSetId_( 0 ), attributeFrameParameterSetId_( 0 ), attributePatchParamsPresentFlag_( false ) {}
+  AttributePatchParameterSet() :
+      attributePatchParameterSetId_( 0 ),
+      attributeFrameParameterSetId_( 0 ),
+      attributePatchParamsPresentFlag_( false ) {}
   AttributePatchParameterSet& operator=( const AttributePatchParameterSet& ) = default;
 
   uint8_t               getAttributePatchParameterSetId() { return attributePatchParameterSetId_; }
@@ -712,7 +757,10 @@ class GeometryPatchParams {
 // 7.3.21 Geometry patch parameter set syntax
 class GeometryPatchParameterSet {
  public:
-  GeometryPatchParameterSet() : geometryPatchParameterSetId_( 0 ), geometryFrameParameterSetId_( 0 ), geometryPatchParamsPresentFlag_( false ) {}
+  GeometryPatchParameterSet() :
+      geometryPatchParameterSetId_( 0 ),
+      geometryFrameParameterSetId_( 0 ),
+      geometryPatchParamsPresentFlag_( false ) {}
   GeometryPatchParameterSet& operator=( const GeometryPatchParameterSet& ) = default;
 
   uint8_t              getGeometryPatchParameterSetId() { return geometryPatchParameterSetId_; }
@@ -771,9 +819,13 @@ class AttributeFrameParams {
   void setAttributeOffsetParamsPresentFlag( bool value ) { attributeOffsetParamsPresentFlag_ = value; }
   void setAttributeSmoothingRadius( uint8_t value ) { attributeSmoothingRadius_ = value; }
   void setAttributeSmoothingNeighbourCount( uint8_t value ) { attributeSmoothingNeighbourCount_ = value; }
-  void setAttributeSmoothingRadius2BoundaryDetection( uint8_t value ) { attributeSmoothingRadius2BoundaryDetection_ = value; }
+  void setAttributeSmoothingRadius2BoundaryDetection( uint8_t value ) {
+    attributeSmoothingRadius2BoundaryDetection_ = value;
+  }
   void setAttributeSmoothingThreshold( uint8_t value ) { attributeSmoothingThreshold_ = value; }
-  void setAttributeSmoothingThresholdLocalEntropy( uint32_t value ) { attributeSmoothingThresholdLocalEntropy_ = value; }
+  void setAttributeSmoothingThresholdLocalEntropy( uint32_t value ) {
+    attributeSmoothingThresholdLocalEntropy_ = value;
+  }
   void setAttributeScale( size_t index, uint32_t value ) { attributeScale_[index] = value; }
   void setAttributeOffset( size_t index, int32_t value ) { attributeOffset_[index] = value; }
   void setDimension( size_t value ) { attributeDimension_ = value; }
@@ -1009,7 +1061,9 @@ class PatchSequenceParameterSet {
 // 7.3.15  Patch sequence unit payload syntax (psup)
 class PatchSequenceUnitPayload {
  public:
-  PatchSequenceUnitPayload( PSDUnitType unitType = PSD_SPS, uint8_t index = 0 ) : unitType_( unitType ), frameIndex_( index ) {}
+  PatchSequenceUnitPayload( PSDUnitType unitType = PSD_SPS, uint8_t index = 0 ) :
+      unitType_( unitType ),
+      frameIndex_( index ) {}
   PatchSequenceUnitPayload& operator=( const PatchSequenceUnitPayload& ) = default;
 
   void init( PSDUnitType unitType, uint8_t index ) {
@@ -1034,24 +1088,36 @@ class PatchSequenceUnitPayload {
   uint8_t                     getFrameIndex() { return frameIndex_; }
   PatchSequenceParameterSet&  getPatchSequenceParameterSet() { return patchSequenceParameterSet_; }
   GeometryPatchParameterSet&  getGeometryPatchParameterSet() { return geometryPatchParameterSet_; }
-  AttributePatchParameterSet& getAttributePatchParameterSet( size_t index ) { return attributePatchParameterSet_[index]; }
+  AttributePatchParameterSet& getAttributePatchParameterSet( size_t index ) {
+    return attributePatchParameterSet_[index];
+  }
   PatchFrameParameterSet&     getPatchFrameParameterSet() { return patchFrameParameterSet_; }
-  AttributeFrameParameterSet& getAttributeFrameParameterSet( size_t index ) { return attributeFrameParameterSet_[index]; }
-  GeometryFrameParameterSet&  getGeometryFrameParameterSet() { return geometryFrameParameterSet_; }
-  PatchFrameLayerUnit&        getPatchFrameLayerUnit() { return patchFrameLayerUnit_; }
+  AttributeFrameParameterSet& getAttributeFrameParameterSet( size_t index ) {
+    return attributeFrameParameterSet_[index];
+  }
+  GeometryFrameParameterSet& getGeometryFrameParameterSet() { return geometryFrameParameterSet_; }
+  PatchFrameLayerUnit&       getPatchFrameLayerUnit() { return patchFrameLayerUnit_; }
 
   void setUnitType( PSDUnitType value ) { unitType_ = value; }
   void setFrameIndex( uint8_t value ) { frameIndex_ = value; }
   void setPatchSequenceParameterSet( PatchSequenceParameterSet value ) { patchSequenceParameterSet_ = value; }
   void setGeometryPatchParameterSet( GeometryPatchParameterSet value ) { geometryPatchParameterSet_ = value; }
-  void setAttributePatchParameterSet( size_t index, AttributePatchParameterSet& value ) { attributePatchParameterSet_[index] = value; }
+  void setAttributePatchParameterSet( size_t index, AttributePatchParameterSet& value ) {
+    attributePatchParameterSet_[index] = value;
+  }
   void setPatchFrameParameterSet( PatchFrameParameterSet value ) { patchFrameParameterSet_ = value; }
-  void setAttributeFrameParameterSet( size_t index, AttributeFrameParameterSet& value ) { attributeFrameParameterSet_[index] = value; }
+  void setAttributeFrameParameterSet( size_t index, AttributeFrameParameterSet& value ) {
+    attributeFrameParameterSet_[index] = value;
+  }
   void setGeometryFrameParameterSet( GeometryFrameParameterSet value ) { geometryFrameParameterSet_ = value; }
   void setPatchFrameLayerUnit( PatchFrameLayerUnit value ) { patchFrameLayerUnit_ = value; }
 
-  void addAttributePatchParameterSet( AttributePatchParameterSet& value ) { attributePatchParameterSet_.push_back( value ); }
-  void addAttributeFrameParameterSet( AttributeFrameParameterSet& value ) { attributeFrameParameterSet_.push_back( value ); }
+  void addAttributePatchParameterSet( AttributePatchParameterSet& value ) {
+    attributePatchParameterSet_.push_back( value );
+  }
+  void addAttributeFrameParameterSet( AttributeFrameParameterSet& value ) {
+    attributeFrameParameterSet_.push_back( value );
+  }
 
  private:
   PSDUnitType                             unitType_;
@@ -1073,7 +1139,7 @@ class PatchSequenceDataUnit {
 
   PatchSequenceDataUnit& operator=( const PatchSequenceDataUnit& ) = default;
 
-  void                      addPatchSequenceUnitPayload( PatchSequenceUnitPayload& value ) { patchSequenceUnitPayload_.push_back( value ); }
+  void addPatchSequenceUnitPayload( PatchSequenceUnitPayload& value ) { patchSequenceUnitPayload_.push_back( value ); }
   PatchSequenceUnitPayload& addPatchSequenceUnitPayload() {
     PatchSequenceUnitPayload psup;
     patchSequenceUnitPayload_.push_back( psup );
@@ -1086,32 +1152,37 @@ class PatchSequenceDataUnit {
 
   void addAttributeFrameParameterSet( AttributeFrameParameterSet& afps, const uint8_t index ) {
     for ( size_t i = 0; i < patchSequenceUnitPayload_.size(); i++ ) {
-      if ( patchSequenceUnitPayload_[i].getUnitType() == PSD_AFPS && patchSequenceUnitPayload_[i].getFrameIndex() == index ) {
-        patchSequenceUnitPayload_[i].addAttributeFrameParameterSet( afps ); ;
-        return ;
+      if ( patchSequenceUnitPayload_[i].getUnitType() == PSD_AFPS &&
+           patchSequenceUnitPayload_[i].getFrameIndex() == index ) {
+        patchSequenceUnitPayload_[i].addAttributeFrameParameterSet( afps );
+        ;
+        return;
       }
     }
-    PatchSequenceUnitPayload psup( PSD_AFPS, index ); 
-    psup.addAttributeFrameParameterSet( afps ); 
+    PatchSequenceUnitPayload psup( PSD_AFPS, index );
+    psup.addAttributeFrameParameterSet( afps );
     patchSequenceUnitPayload_.push_back( psup );
   }
 
   void addAttributePatchParameterSet( AttributePatchParameterSet& apps, const uint8_t index ) {
     for ( size_t i = 0; i < patchSequenceUnitPayload_.size(); i++ ) {
-      if ( patchSequenceUnitPayload_[i].getUnitType() == PSD_APPS && patchSequenceUnitPayload_[i].getFrameIndex() == index ) {
-        patchSequenceUnitPayload_[i].addAttributePatchParameterSet( apps ); ;
-        return ;
+      if ( patchSequenceUnitPayload_[i].getUnitType() == PSD_APPS &&
+           patchSequenceUnitPayload_[i].getFrameIndex() == index ) {
+        patchSequenceUnitPayload_[i].addAttributePatchParameterSet( apps );
+        ;
+        return;
       }
     }
-    PatchSequenceUnitPayload psup( PSD_APPS, index ); 
-    psup.addAttributePatchParameterSet( apps ); 
+    PatchSequenceUnitPayload psup( PSD_APPS, index );
+    psup.addAttributePatchParameterSet( apps );
     patchSequenceUnitPayload_.push_back( psup );
   }
 
-
-  uint8_t getPatchSequenceDataUnitSize() { return patchSequenceUnitPayload_.size(); }
-  uint8_t getFrameCount() { return frameCount_;  }
-  PatchSequenceUnitPayload& getPatchSequenceUnitPayloadElement( const uint8_t index ) { return patchSequenceUnitPayload_[index]; }
+  uint8_t                   getPatchSequenceDataUnitSize() { return patchSequenceUnitPayload_.size(); }
+  uint8_t                   getFrameCount() { return frameCount_; }
+  PatchSequenceUnitPayload& getPatchSequenceUnitPayloadElement( const uint8_t index ) {
+    return patchSequenceUnitPayload_[index];
+  }
 
   void printPatchSequenceUnitPayload() {
     for ( size_t i = 0; i < patchSequenceUnitPayload_.size(); i++ ) {
@@ -1156,20 +1227,21 @@ class PatchSequenceDataUnit {
   }
 
   void setFrameCount( uint8_t frameCount ) { frameCount_ = frameCount; }
-  void setPatchSequenceUnitPayload( size_t index, PatchSequenceUnitPayload& value ) { patchSequenceUnitPayload_[index] = value; }
+  void setPatchSequenceUnitPayload( size_t index, PatchSequenceUnitPayload& value ) {
+    patchSequenceUnitPayload_[index] = value;
+  }
 
  private:
-
-
   PatchSequenceUnitPayload& getPatchSequenceUnitPayload( const PSDUnitType psdUnitType, const uint8_t index ) {
     for ( size_t i = 0; i < patchSequenceUnitPayload_.size(); i++ ) {
-      if ( patchSequenceUnitPayload_[i].getUnitType() == psdUnitType && patchSequenceUnitPayload_[i].getFrameIndex() == index ) {
+      if ( patchSequenceUnitPayload_[i].getUnitType() == psdUnitType &&
+           patchSequenceUnitPayload_[i].getFrameIndex() == index ) {
         return patchSequenceUnitPayload_[i];
       }
     }
     fprintf( stderr, "Error: can't find PatchSequenceUnitPayload of type: %u and index = %u  \n", psdUnitType, index );
   }
-  uint8_t frameCount_;
+  uint8_t                               frameCount_;
   std::vector<PatchSequenceUnitPayload> patchSequenceUnitPayload_;
 };
 
@@ -1231,9 +1303,13 @@ class AttributeSequenceParams {
   void setAttributeOffsetParamsPresentFlag( bool value ) { attributeOffsetParamsPresentFlag_ = value; }
   void setAttributeSmoothingRadius( uint8_t value ) { attributeSmoothingRadius_ = value; }
   void setAttributeSmoothingNeighbourCount( uint8_t value ) { attributeSmoothingNeighbourCount_ = value; }
-  void setAttributeSmoothingRadius2BoundaryDetection( uint8_t value ) { attributeSmoothingRadius2BoundaryDetection_ = value; }
+  void setAttributeSmoothingRadius2BoundaryDetection( uint8_t value ) {
+    attributeSmoothingRadius2BoundaryDetection_ = value;
+  }
   void setAttributeSmoothingThreshold( uint8_t value ) { attributeSmoothingThreshold_ = value; }
-  void setAttributeSmoothingThresholdLocalEntropy( uint32_t value ) { attributeSmoothingThresholdLocalEntropy_ = value; }
+  void setAttributeSmoothingThresholdLocalEntropy( uint32_t value ) {
+    attributeSmoothingThresholdLocalEntropy_ = value;
+  }
   void setAttributeScale( size_t index, uint32_t value ) { attributeScale_[index] = value; }
   void setAttributeOffset( size_t index, uint32_t value ) { attributeOffset_[index] = value; }
 
@@ -1425,17 +1501,17 @@ class GeometryParameterSet {
     geometryPatchPointSizeInfoEnabledFlag_  = patchPointSizeInfoEnabledFlag;
     geometryPatchPointShapeInfoEnabledFlag_ = patchPointShapeInfoEnabledFlag;
   }
-  uint8_t                 getGeometryCodecId() { return geometryCodecId_; }
-  uint8_t                 getGeometryNominal2dBitdepthMinus1() { return geometryNominal2dBitdepthMinus1_; }
-  uint8_t                 getGeometry3dCoordinatesBitdepthMinus1() { return geometry3dCoordinatesBitdepthMinus1_; }
-  uint8_t                 getPcmGeometryCodecId() { return pcmGeometryCodecId_; }
-  bool                    getGeometryParamsEnabledFlag() { return geometryParamsEnabledFlag_; }
-  bool                    getGeometryPatchParamsEnabledFlag() { return geometryPatchParamsEnabledFlag_; }
-  bool                    getGeometryPatchScaleParamsEnabledFlag() { return geometryPatchScaleParamsEnabledFlag_; }
-  bool                    getGeometryPatchOffsetParamsEnabledFlag() { return geometryPatchOffsetParamsEnabledFlag_; }
-  bool                    getGeometryPatchRotationParamsEnabledFlag() { return geometryPatchRotationParamsEnabledFlag_; }
-  bool                    getGeometryPatchPointSizeInfoEnabledFlag() { return geometryPatchPointSizeInfoEnabledFlag_; }
-  bool                    getGeometryPatchPointShapeInfoEnabledFlag() { return geometryPatchPointShapeInfoEnabledFlag_; }
+  uint8_t getGeometryCodecId() { return geometryCodecId_; }
+  uint8_t getGeometryNominal2dBitdepthMinus1() { return geometryNominal2dBitdepthMinus1_; }
+  uint8_t getGeometry3dCoordinatesBitdepthMinus1() { return geometry3dCoordinatesBitdepthMinus1_; }
+  uint8_t getPcmGeometryCodecId() { return pcmGeometryCodecId_; }
+  bool    getGeometryParamsEnabledFlag() { return geometryParamsEnabledFlag_; }
+  bool    getGeometryPatchParamsEnabledFlag() { return geometryPatchParamsEnabledFlag_; }
+  bool    getGeometryPatchScaleParamsEnabledFlag() { return geometryPatchScaleParamsEnabledFlag_; }
+  bool    getGeometryPatchOffsetParamsEnabledFlag() { return geometryPatchOffsetParamsEnabledFlag_; }
+  bool    getGeometryPatchRotationParamsEnabledFlag() { return geometryPatchRotationParamsEnabledFlag_; }
+  bool    getGeometryPatchPointSizeInfoEnabledFlag() { return geometryPatchPointSizeInfoEnabledFlag_; }
+  bool    getGeometryPatchPointShapeInfoEnabledFlag() { return geometryPatchPointShapeInfoEnabledFlag_; }
   GeometrySequenceParams& getGeometrySequenceParams() { return geometrySequenceParams_; }
 
   void setGeometryCodecId( uint8_t value ) { geometryCodecId_ = value; }
@@ -1578,25 +1654,25 @@ class SequenceParameterSet {
     layerAbsoluteCodingEnabledFlag_.resize( layerCountMinus1_ + 1 );
     layerPredictorIndexDiff_.resize( layerCountMinus1_ + 1 );
   }
-  uint32_t               getSequenceParameterSetId() { return sequenceParameterSetId_; }
-  uint16_t               getFrameWidth() { return frameWidth_; }
-  uint16_t               getFrameHeight() { return frameHeight_; }
-  uint16_t               getAvgFrameRate() { return avgFrameRate_; }
-  uint32_t               getLayerCountMinus1() { return layerCountMinus1_; }
-  uint16_t               getAttributeCount() { return attributeCount_; }
-  bool                   getAvgFrameRatePresentFlag() { return avgFrameRatePresentFlag_; }
-  bool                   getEnhancedOccupancyMapForDepthFlag() { return enhancedOccupancyMapForDepthFlag_; }
-  bool                   getMultipleLayerStreamsPresentFlag() { return multipleLayerStreamsPresentFlag_; }
-  bool                   getPcmPatchEnabledFlag() { return pcmPatchEnabledFlag_; }
-  bool                   getPcmSeparateVideoPresentFlag() { return pcmSeparateVideoPresentFlag_; }
-  bool                   getPatchSequenceOrientationEnabledFlag() { return patchSequenceOrientationEnabledFlag_; }
-  bool                   getPatchInterPredictionEnabledFlag() { return patchInterPredictionEnabledFlag_; }
-  bool                   getPixelDeinterleavingFlag() { return pixelDeinterleavingFlag_; }
-  bool                   getPointLocalReconstructionEnabledFlag() { return pointLocalReconstructionEnabledFlag_; }
-  bool                   getRemoveDuplicatePointEnabledFlag() { return removeDuplicatePointEnabledFlag_; }
-  size_t                 getLayerPredictorIndexDiff( size_t index ) { return layerPredictorIndexDiff_[index]; }
-  bool                   getLayerAbsoluteCodingEnabledFlag( size_t index ) { return layerAbsoluteCodingEnabledFlag_[index]; }
-  ProfileTierLevel&      getProfileTierLevel() { return profileTierLevel_; }
+  uint32_t          getSequenceParameterSetId() { return sequenceParameterSetId_; }
+  uint16_t          getFrameWidth() { return frameWidth_; }
+  uint16_t          getFrameHeight() { return frameHeight_; }
+  uint16_t          getAvgFrameRate() { return avgFrameRate_; }
+  uint32_t          getLayerCountMinus1() { return layerCountMinus1_; }
+  uint16_t          getAttributeCount() { return attributeCount_; }
+  bool              getAvgFrameRatePresentFlag() { return avgFrameRatePresentFlag_; }
+  bool              getEnhancedOccupancyMapForDepthFlag() { return enhancedOccupancyMapForDepthFlag_; }
+  bool              getMultipleLayerStreamsPresentFlag() { return multipleLayerStreamsPresentFlag_; }
+  bool              getPcmPatchEnabledFlag() { return pcmPatchEnabledFlag_; }
+  bool              getPcmSeparateVideoPresentFlag() { return pcmSeparateVideoPresentFlag_; }
+  bool              getPatchSequenceOrientationEnabledFlag() { return patchSequenceOrientationEnabledFlag_; }
+  bool              getPatchInterPredictionEnabledFlag() { return patchInterPredictionEnabledFlag_; }
+  bool              getPixelDeinterleavingFlag() { return pixelDeinterleavingFlag_; }
+  bool              getPointLocalReconstructionEnabledFlag() { return pointLocalReconstructionEnabledFlag_; }
+  bool              getRemoveDuplicatePointEnabledFlag() { return removeDuplicatePointEnabledFlag_; }
+  size_t            getLayerPredictorIndexDiff( size_t index ) { return layerPredictorIndexDiff_[index]; }
+  bool              getLayerAbsoluteCodingEnabledFlag( size_t index ) { return layerAbsoluteCodingEnabledFlag_[index]; }
+  ProfileTierLevel& getProfileTierLevel() { return profileTierLevel_; }
   GeometryParameterSet&  getGeometryParameterSet() { return geometryParameterSet_; }
   OccupancyParameterSet& getOccupancyParameterSet() { return occupancyParameterSet_; }
   AttributeParameterSet& getAttributeParameterSet( size_t index ) { return attributeParameterSets_[index]; }
@@ -1621,7 +1697,9 @@ class SequenceParameterSet {
   void setGeometryParameterSet( GeometryParameterSet value ) { geometryParameterSet_ = value; }
   void setOccupancyParameterSet( OccupancyParameterSet value ) { occupancyParameterSet_ = value; }
   void setLayerAbsoluteCodingEnabledFlag( size_t index, bool value ) {
-    if ( layerAbsoluteCodingEnabledFlag_.size() < index + 1 ) { layerAbsoluteCodingEnabledFlag_.resize( index + 1, 0 ); }
+    if ( layerAbsoluteCodingEnabledFlag_.size() < index + 1 ) {
+      layerAbsoluteCodingEnabledFlag_.resize( index + 1, 0 );
+    }
     layerAbsoluteCodingEnabledFlag_[index] = value;
   }
   void setLayerPredictorIndexDiff( size_t index, bool value ) {
@@ -1653,12 +1731,12 @@ class SequenceParameterSet {
   bool                               pixelDeinterleavingFlag_;
   bool                               pointLocalReconstructionEnabledFlag_;
   bool                               removeDuplicatePointEnabledFlag_;
-  std::vector<bool>                  layerAbsoluteCodingEnabledFlag_;  
-  std::vector<size_t>                layerPredictorIndexDiff_;         
+  std::vector<bool>                  layerAbsoluteCodingEnabledFlag_;
+  std::vector<size_t>                layerPredictorIndexDiff_;
   ProfileTierLevel                   profileTierLevel_;
   GeometryParameterSet               geometryParameterSet_;
   OccupancyParameterSet              occupancyParameterSet_;
-  std::vector<AttributeParameterSet> attributeParameterSets_;  
+  std::vector<AttributeParameterSet> attributeParameterSets_;
 
   // THE NEXT PARAMETERS ARE NOT IN THE VPCC CD SYNTAX DOCUMENTS AND WILL BE REMOVE
  public:
@@ -1765,9 +1843,9 @@ class PCCContext {
     }
     fprintf( stderr, "Error: can't find sps[ %lc ] \n", vpccParameterSet_.getSequenceParameterSetId() );
     exit( -1 );
-  } 
+  }
 
-  SequenceParameterSet& addSequenceParameterSet( uint8_t index ){
+  SequenceParameterSet& addSequenceParameterSet( uint8_t index ) {
     SequenceParameterSet sps;
     sps.setSequenceParameterSetId( index );
     sequenceParameterSets_.push_back( sps );

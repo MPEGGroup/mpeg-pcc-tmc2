@@ -144,65 +144,46 @@ class PCCBitstreamEncoder {
 
   // 7.3.15 Patch sequence unit payload syntax
   void patchSequenceUnitPayload( PatchSequenceUnitPayload& patchSequenceUnitPayload,
+                                 PatchSequenceUnitPayload& psupPrevPFLU,
+                                 size_t                    frameIndex,
                                  PCCContext&               context,
                                  PCCBitstream&             bitstream );
 
   // 7.3.16 Patch sequence parameter set syntax
   void patchSequenceParameterSet( PatchSequenceParameterSet& patchSequenceParameterSet, PCCBitstream& bitstream );
-  /**********************************************************************/
-  /* 2019.02.RC4                                                        */
-  /* ISO/IEC 23090-5:2019(E) d19                                        */
+
   // 7.3.17 Geometry frame parameter set syntax
   void geometryFrameParameterSet( GeometryFrameParameterSet& geometryFrameParameterSet,
                                   GeometryParameterSet&      geometryParameterSet,
                                   PCCBitstream&              bitstream );
-  /**********************************************************************/
-  /* 2019.02.RC4                                                        */
-  /* ISO/IEC 23090-5:2019(E) d19                                        */
+
   // 7.3.18  Geometry frame params syntax
   void geometryFrameParams( GeometryFrameParams& geometryFrameParams, PCCBitstream& bitstream );
 
-  /**********************************************************************/
-  /* 2019.02.RC5                                                        */
-  /* ISO/IEC 23090-5:2019(E) d19                                        */
   // 7.3.19 Attribute frame parameter set syntax
   void attributeFrameParameterSet( AttributeFrameParameterSet& attributeFrameParameterSet,
                                    AttributeParameterSet&      attributeParameterSet,
                                    PCCBitstream&               bitstream );
 
-  /**********************************************************************/
-  /* 2019.02.RC5                                                        */
-  /* ISO/IEC 23090-5:2019(E) d19                                        */
   // 7.3.20 Attribute frame params syntax
   void attributeFrameParams( AttributeFrameParams& attributeFrameParams, size_t dimension, PCCBitstream& bitstream );
 
-  /**********************************************************************/
-  /* 2019.02.RC6                                                        */
-  /* ISO/IEC 23090-5:2019(E) d19                                        */
   // 7.3.21 Geometry patch parameter set syntax
   void geometryPatchParameterSet( GeometryPatchParameterSet& geometryPatchParameterSet,
                                   GeometryFrameParameterSet& geometryFrameParameterSet,
                                   PCCBitstream&              bitstream );
 
-  /**********************************************************************/
-  /* 2019.02.RC6                                                        */
-  /* ISO/IEC 23090-5:2019(E) d19                                        */
   // 7.3.22  Geometry patch params syntax
   void geometryPatchParams( GeometryPatchParams&       geometryPatchParams,
                             GeometryFrameParameterSet& geometryFrameParameterSet,
                             PCCBitstream&              bitstream );
 
-  /**********************************************************************/
-  /* 2019.02.RC7                                                        */
-  /* ISO/IEC 23090-5:2019(E) d19                                        */
   // 7.3.23 Attribute patch parameter set syntax
   void attributePatchParameterSet( AttributePatchParameterSet& attributePatchParameterSet,
                                    AttributeParameterSet&      attributeParameterSet,
                                    AttributeFrameParameterSet& attributeFrameParameterSet,
                                    PCCBitstream&               bitstream );
-  /**********************************************************************/
-  /* 2019.02.RC7                                                        */
-  /* ISO/IEC 23090-5:2019(E) d19                                        */
+
   // 7.3.24 Attribute patch params syntax
   void attributePatchParams( AttributePatchParams&       attributePatchParams,
                              AttributeFrameParameterSet& afps,
@@ -215,10 +196,16 @@ class PCCBitstreamEncoder {
                                PCCBitstream&           bitstream );
 
   // 7.3.26 Patch frame layer unit syntax
-  void patchFrameLayerUnit( PatchFrameLayerUnit& patchFrameLayerUnit, PCCContext& context, PCCBitstream& bitstream );
+  void patchFrameLayerUnit( PatchFrameLayerUnit& patchFrameLayerUnit,
+                            PatchFrameLayerUnit& pfluPrev,
+                            PCCContext&          context,
+                            PCCBitstream&        bitstream );
 
   // 7.3.27 Patch frame header syntax
-  void patchFrameHeader( PatchFrameHeader& patchFrameHeader, PCCContext& context, PCCBitstream& bitstream );
+  void patchFrameHeader( PatchFrameHeader& patchFrameHeader,
+                         PatchFrameHeader& pfhPrev,
+                         PCCContext&       context,
+                         PCCBitstream&     bitstream );
 
   // 7.3.28 Reference list structure syntax
   void refListStruct( RefListStruct&             refListStruct,

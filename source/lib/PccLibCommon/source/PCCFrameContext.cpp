@@ -91,20 +91,20 @@ void printVector( std::vector<T>    data,
 }
 
 void PCCFrameContext::printBlockToPatch( const size_t resolution ) {
-  printVector( blockToPatch_, width_ / resolution, height_ / resolution, string_format( "blockToPatch[%d]", index_ ),
+  printVector( blockToPatch_, width_ / resolution, height_ / resolution, stringFormat( "blockToPatch[%d]", index_ ),
                true );
 }
 void PCCFrameContext::printInterpolate( const size_t resolution ) {
-  printVector( interpolate_, width_ / resolution, height_ / resolution, string_format( "interpolate [%d]", index_ ) );
+  printVector( interpolate_, width_ / resolution, height_ / resolution, stringFormat( "interpolate [%d]", index_ ) );
 }
 void PCCFrameContext::printNeightbor( const size_t resolution ) {
-  printVector( neighbor_, width_ / resolution, height_ / resolution, string_format( "neighbor    [%d]", index_ ) );
+  printVector( neighbor_, width_ / resolution, height_ / resolution, stringFormat( "neighbor    [%d]", index_ ) );
 }
 void PCCFrameContext::printMinD1( const size_t resolution ) {
-  printVector( minD1_, width_ / resolution, height_ / resolution, string_format( "minD1       [%d]", index_ ) );
+  printVector( minD1_, width_ / resolution, height_ / resolution, stringFormat( "minD1       [%d]", index_ ) );
 }
 void PCCFrameContext::printFilling( const size_t resolution ) {
-  printVector( filling_, width_ / resolution, height_ / resolution, string_format( "filling     [%d]", index_ ) );
+  printVector( filling_, width_ / resolution, height_ / resolution, stringFormat( "filling     [%d]", index_ ) );
 }
 
 void PCCFrameContext::printOneLayerData( const size_t resolution ) {

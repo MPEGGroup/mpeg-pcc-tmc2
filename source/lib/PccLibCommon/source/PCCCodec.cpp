@@ -166,7 +166,7 @@ void PCCCodec::generatePointCloud( PCCGroupOfFrames&                  reconstruc
 bool PCCCodec::colorPointCloud( PCCGroupOfFrames&                  reconstructs,
                                 PCCContext&                        context,
                                 const uint8_t                      attributeCount,
-                                const ColorTransform               colorTransform,
+                                const PCCColorTransform            colorTransform,
                                 const GeneratePointCloudParameters params ) {
   TRACE_CODEC( "Color point Cloud start \n" );
   auto& video  = context.getVideoTexture();
@@ -545,7 +545,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
                                                          useMissedPointsSeparateVideo, lossyMpp );
                 const size_t pointIndex0 = reconstruct.addPoint( point0 );
                 reconstruct.setColor( pointIndex0, color );
-                if ( PCC_SAVE_POINT_TYPE == 1 ) { reconstruct.setType( pointIndex0, PointType::D0 ); }
+                if ( PCC_SAVE_POINT_TYPE == 1 ) { reconstruct.setType( pointIndex0, POINT_D0 ); }
                 partition.push_back( uint32_t( patchIndex ) );
                 pointToPixel.push_back( PCCVector3<size_t>( x, y, 0 ) );
 
@@ -574,7 +574,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
                   if ( !params.removeDuplicatePoints_ ) {
                     const size_t pointIndex1 = reconstruct.addPoint( point1 );
                     reconstruct.setColor( pointIndex1, color );
-                    if ( PCC_SAVE_POINT_TYPE == 1 ) { reconstruct.setType( pointIndex1, PointType::D1 ); }
+                    if ( PCC_SAVE_POINT_TYPE == 1 ) { reconstruct.setType( pointIndex1, POINT_D1 ); }
                     partition.push_back( uint32_t( patchIndex ) );
                     pointToPixel.push_back( PCCVector3<size_t>( x, y, 1 ) );
                   }
@@ -592,14 +592,14 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
                       if ( !useMissedPointsSeparateVideo ) {
                         pointIndex1 = reconstruct.addPoint( point1 );
                         reconstruct.setColor( pointIndex1, color );
-                        if ( PCC_SAVE_POINT_TYPE == 1 ) { reconstruct.setType( pointIndex1, PointType::InBetween ); }
+                        if ( PCC_SAVE_POINT_TYPE == 1 ) { reconstruct.setType( pointIndex1, POINT_EDD ); }
                         partition.push_back( uint32_t( patchIndex ) );
                       }
                       if ( addedPointCount == 0 ) {
                         if ( useMissedPointsSeparateVideo ) {
                           pointIndex1 = reconstruct.addPoint( point1 );
                           reconstruct.setColor( pointIndex1, color );
-                          if ( PCC_SAVE_POINT_TYPE == 1 ) { reconstruct.setType( pointIndex1, PointType::InBetween ); }
+                          if ( PCC_SAVE_POINT_TYPE == 1 ) { reconstruct.setType( pointIndex1, POINT_EDD ); }
                           partition.push_back( uint32_t( patchIndex ) );
                         }
                         pointToPixel.push_back( PCCVector3<size_t>( x, y, 1 ) );
@@ -638,7 +638,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
                       addedPointCount++;
                     }
                   }  // for each bit of EDD code
-                  if ( PCC_SAVE_POINT_TYPE == 1 ) { reconstruct.setType( pointIndex1, PointType::D1 ); }
+                  if ( PCC_SAVE_POINT_TYPE == 1 ) { reconstruct.setType( pointIndex1, POINT_D1 ); }
                   // Without "Identify boundary points" & "1st Extension boundary region" as EDD code is only for
                   // lossless coding now
                 }       // if (eddCode == 0)
@@ -657,11 +657,9 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
                         if ( params.singleLayerPixelInterleaving_ ) {
                           size_t flag;
                           flag = ( i == 0 ) ? ( x + y ) % 2 : ( i == 1 ) ? ( x + y + 1 ) % 2 : IntermediateLayerIndex;
-                          reconstruct.setType( pointindex_1,
-                                               flag == 0 ? PointType::D0 : flag == 1 ? PointType::D1 : PointType::DF );
+                          reconstruct.setType( pointindex_1, flag == 0 ? POINT_D0 : flag == 1 ? POINT_D1 : POINT_DF );
                         } else {
-                          reconstruct.setType( pointindex_1,
-                                               i == 0 ? PointType::D0 : i == 1 ? PointType::D1 : PointType::DF );
+                          reconstruct.setType( pointindex_1, i == 0 ? POINT_D0 : i == 1 ? POINT_D1 : POINT_DF );
                         }
                       }
                       partition.push_back( uint32_t( patchIndex ) );
@@ -961,7 +959,7 @@ void PCCCodec::smoothPointCloudGrid( PCCPointSet3&                      reconstr
         reconstruct[c][0] = centroid[0];
         reconstruct[c][1] = centroid[1];
         reconstruct[c][2] = centroid[2];
-        if ( PCC_SAVE_POINT_TYPE == 1 ) { reconstruct.setType( c, PointType::Smooth ); }
+        if ( PCC_SAVE_POINT_TYPE == 1 ) { reconstruct.setType( c, POINT_SMOOTH ); }
       }
     }
   }
@@ -1011,7 +1009,7 @@ void PCCCodec::smoothPointCloud( PCCPointSet3&                      reconstruct,
           temp[i][1] = centroid[1];
           temp[i][2] = centroid[2];
           reconstruct.setColor( i, PCCColor3B( 255, 0, 0 ) );
-          if ( PCC_SAVE_POINT_TYPE == 1 ) { reconstruct.setType( i, PointType::Smooth ); }
+          if ( PCC_SAVE_POINT_TYPE == 1 ) { reconstruct.setType( i, POINT_SMOOTH ); }
         } else {
           temp[i] = reconstruct[i];
         }
@@ -1136,7 +1134,7 @@ void PCCCodec::createSubReconstruct( const PCCPointSet3&                 reconst
     const size_t             f        = location[2];
     if ( f < frameCount ) {
       int index = subReconstruct.addPoint( reconstruct[i] );
-      subReconstruct.setType( frameCount, PointType::Unset );
+      subReconstruct.setType( frameCount, POINT_UNSET );
       subPartition.push_back( partition[i] );
       subReconstructIndex.push_back( i );
     }

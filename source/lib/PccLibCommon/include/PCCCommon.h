@@ -60,13 +60,15 @@
 #include <mach/mach.h>
 #endif
 
+
 // ******************************************************************* //
-// Trace mode to validate new syntax
+// Trace modes to validate new syntax
 // ******************************************************************* //
 // #define BITSTREAM_TRACE
 // #define CODEC_TRACE
-#define BUG_FIX_BITDEPTH
 
+
+#define BUG_FIX_BITDEPTH
 // #define CE210_MAXDEPTH_EVALUATION
 
 namespace pcc {
@@ -91,21 +93,29 @@ const uint32_t PCC_UNDEFINED_INDEX         = -1;
 const bool     printDetailedInfo           = false;
 
 enum PCCEndianness { PCC_BIG_ENDIAN = 0, PCC_LITTLE_ENDIAN = 1 };
-enum ColorTransform { COLOR_TRANSFORM_NONE = 0, COLOR_TRANSFORM_RGB_TO_YCBCR = 1 };
+enum PCCColorTransform { COLOR_TRANSFORM_NONE = 0, COLOR_TRANSFORM_RGB_TO_YCBCR = 1 };
 enum PCCAxis3 { PCC_AXIS3_UNDEFINED = -1, PCC_AXIS3_X = 0, PCC_AXIS3_Y = 1, PCC_AXIS3_Z = 2 };
-enum PointType { Unset = 0, D0, D1, DF, Smooth, InBetween };
-enum PCCVideoType { OccupancyMap = 0, Geometry, GeometryD0, GeometryD1, GeometryMP, Texture, TextureMP, Other };
-enum METADATATYPE { METADATA_GOF = 0, METADATA_FRAME, METADATA_PATCH };
-enum PatchOrientation {
-  DEFAULT = 0,
-  SWAP    = 1,
-  ROT180  = 2,
-  ROT270  = 3,
-  MIRROR  = 4,
-  MROT90  = 5,
-  MROT180 = 6,
-  ROT90   = 7,
-  MROT270 = 8
+enum PCCPointType { POINT_UNSET = 0, POINT_D0, POINT_D1, POINT_DF, POINT_SMOOTH, POINT_EDD };
+enum PCCVideoType {
+  VIDEO_OCCUPANCY = 0,
+  VIDEO_GEOMETRY,
+  VIDEO_GEOMETRY_D0,
+  VIDEO_GEOMETRY_D1,
+  VIDEO_GEOMETRY_MP,
+  VIDEO_TEXTURE,
+  VIDEO_TEXTURE_MP
+};
+enum PCCMetadataType { METADATA_GOF = 0, METADATA_FRAME, METADATA_PATCH };
+enum PCCPatchOrientation {
+  PATCH_ORIENTATION_DEFAULT = 0,
+  PATCH_ORIENTATION_SWAP    = 1,
+  PATCH_ORIENTATION_ROT180  = 2,
+  PATCH_ORIENTATION_ROT270  = 3,
+  PATCH_ORIENTATION_MIRROR  = 4,
+  PATCH_ORIENTATION_MROT90  = 5,
+  PATCH_ORIENTATION_MROT180 = 6,
+  PATCH_ORIENTATION_ROT90   = 7,
+  PATCH_ORIENTATION_MROT270 = 8
 };  // switched SWAP with ROT90 positions
 
 enum VPCCUnitType {
@@ -178,13 +188,13 @@ enum PSDUnitType {
   PSD_RSVD_31   // 32: Reserved
 };
 
-enum CODECID { CODEC_HEVC = 0 };
+enum PCCCodecID { CODEC_HEVC = 0 };
 
-enum PATCH_FRAME_TYPE { I_PATCH_FRAME = 0, P_PATCH_FRAME };
+enum PCCPatchFrameType { PATCH_FRAME_I = 0, PATCH_FRAME_P };
 
-enum PATCH_I_MODE { I_INTRA = 0, I_PCM, I_END };
+enum PCCPatchModeI { PATCH_MODE_I_INTRA = 0, PATCH_MODE_I_PCM, PATCH_MODE_I_END };
 
-enum PATCH_P_MODE { P_SKIP = 0, P_INTRA, P_INTER, P_PCM, P_END };
+enum PCCPatchModeP { PATCH_MODE_P_SKIP = 0, PATCH_MODE_P_INTRA, PATCH_MODE_P_INTER, PATCH_MODE_P_PCM, PATCH_MODE_P_END };
 
 const size_t IntermediateLayerIndex = 100;
 const size_t NeighborThreshold      = 4;
@@ -208,13 +218,13 @@ const int32_t InvalidPatchIndex = -1;
 // ******************************************************************* //
 static std::string toString( PCCVideoType type ) {
   switch ( type ) {
-    case PCCVideoType::OccupancyMap: return std::string( "occupancy map video" ); break;
-    case PCCVideoType::Geometry: return std::string( "geometry video" ); break;
-    case PCCVideoType::GeometryD0: return std::string( "geometry D0 video" ); break;
-    case PCCVideoType::GeometryD1: return std::string( "geometry D1 video" ); break;
-    case PCCVideoType::GeometryMP: return std::string( "missed points geometry video" ); break;
-    case PCCVideoType::Texture: return std::string( "texture video " ); break;
-    case PCCVideoType::TextureMP: return std::string( "missed points texture video" ); break;
+    case VIDEO_OCCUPANCY: return std::string( "occupancy map video" ); break;
+    case VIDEO_GEOMETRY: return std::string( "geometry video" ); break;
+    case VIDEO_GEOMETRY_D0: return std::string( "geometry D0 video" ); break;
+    case VIDEO_GEOMETRY_D1: return std::string( "geometry D1 video" ); break;
+    case VIDEO_GEOMETRY_MP: return std::string( "missed points geometry video" ); break;
+    case VIDEO_TEXTURE: return std::string( "texture video " ); break;
+    case VIDEO_TEXTURE_MP: return std::string( "missed points texture video" ); break;
   }
   return std::string( "not supported" );
 }
@@ -265,6 +275,7 @@ static const T PCCEndianSwap( const T u ) {
   for ( size_t k = 0; k < sizeof( T ); k++ ) dest.u8[k] = source.u8[sizeof( T ) - k - 1];
   return dest.u;
 }
+
 template <typename T>
 static const T PCCToLittleEndian( const T u ) {
   return ( PCCSystemEndianness() == PCC_BIG_ENDIAN ) ? PCCEndianSwap( u ) : u;
@@ -308,18 +319,13 @@ static uint32_t getFixedLengthCodeBitsCount( uint32_t range ) {
 }
 
 template <typename... Args>
-std::string string_format( const char* pFormat, Args... eArgs ) {
+std::string stringFormat( const char* pFormat, Args... eArgs ) {
   size_t      iSize = snprintf( NULL, 0, pFormat, eArgs... );
   std::string eBuffer;
   eBuffer.reserve( iSize + 1 );
   eBuffer.resize( iSize );
   snprintf( &eBuffer[0], iSize + 1, pFormat, eArgs... );
   return eBuffer;
-}
-
-static uint32_t convertToUInt( int32_t value ) { return ( value <= 0 ) ? -value << 1 : ( value << 1 ) - 1; }
-static int32_t  convertToInt( uint32_t value ) {
-  return ( value & 1 ) ? -( int32_t )( value >> 1 ) : ( int32_t )( value >> 1 );
 }
 
 template <typename T>

@@ -45,7 +45,7 @@ PCCGroupOfFrames::~PCCGroupOfFrames() {
 }
 
 bool PCCGroupOfFrames::load( const std::string uncompressedDataPath, const size_t startFrameNumber, 
-                            const size_t endFrameNumber, const ColorTransform colorTransform )  {
+                            const size_t endFrameNumber, const PCCColorTransform colorTransform )  {
   char fileName[4096];
   if (endFrameNumber < startFrameNumber) {
     return false;

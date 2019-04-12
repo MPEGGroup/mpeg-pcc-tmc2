@@ -336,7 +336,6 @@ const QualityMetrics QualityMetrics::operator+ ( const QualityMetrics& metric ) 
     result.reflectancePsnr_     = (std::min)( reflectancePsnr_,   metric.reflectancePsnr_ );
   }
   return result;
-
 }
 
 void PCCMetrics::compute( const PCCGroupOfFrames& sources,

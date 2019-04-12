@@ -68,9 +68,9 @@ struct GPAPatchData
     patchOrientation = -1;
   }
 
-  bool isPatchDimensionSwitched()
-  {
-    if ((patchOrientation == PatchOrientation::DEFAULT) || (patchOrientation == PatchOrientation::ROT180) || (patchOrientation == PatchOrientation::MIRROR) || (patchOrientation == PatchOrientation::MROT180))
+  bool isPatchDimensionSwitched() {
+    if ( ( patchOrientation == PATCH_ORIENTATION_DEFAULT ) || ( patchOrientation == PATCH_ORIENTATION_ROT180 ) ||
+         ( patchOrientation == PATCH_ORIENTATION_MIRROR ) || ( patchOrientation == PATCH_ORIENTATION_MROT180 ) )
       return false;
     else
       return true;
@@ -179,39 +179,39 @@ class PCCPatch {
 
   size_t patch2Canvas(const size_t u, const size_t v, size_t canvasStride, size_t canvasHeight, size_t &x, size_t &y) {
     switch( patchOrientation_ ) {
-      case PatchOrientation::DEFAULT:
+      case PATCH_ORIENTATION_DEFAULT:
         x = u + u0_ * occupancyResolution_;
         y = v + v0_ * occupancyResolution_;
         break;
-      case PatchOrientation::ROT90:
+      case PATCH_ORIENTATION_ROT90:
         x = (sizeV0_ * occupancyResolution_ - 1 - v) + u0_ * occupancyResolution_;
         y = u + v0_ * occupancyResolution_;
         break;
-      case  PatchOrientation::ROT180:
+      case  PATCH_ORIENTATION_ROT180:
         x = (sizeU0_ * occupancyResolution_ - 1 - u) + u0_ * occupancyResolution_;
         y = (sizeV0_ * occupancyResolution_ - 1 - v) + v0_ * occupancyResolution_;
         break;
-      case  PatchOrientation::ROT270:
+      case  PATCH_ORIENTATION_ROT270:
         x = v + u0_ * occupancyResolution_;
         y = (sizeU0_ * occupancyResolution_ - 1 - u) + v0_ * occupancyResolution_;
         break;
-      case  PatchOrientation::MIRROR:
+      case  PATCH_ORIENTATION_MIRROR:
         x = (sizeU0_ * occupancyResolution_ - 1 - u) + u0_ * occupancyResolution_;
         y = v + v0_ * occupancyResolution_;
         break;
-      case  PatchOrientation::MROT90:
+      case  PATCH_ORIENTATION_MROT90:
         x = (sizeV0_ * occupancyResolution_ - 1 - v) + u0_ * occupancyResolution_;
         y = (sizeU0_ * occupancyResolution_ - 1 - u) + v0_ * occupancyResolution_;
         break;
-      case  PatchOrientation::MROT180:
+      case  PATCH_ORIENTATION_MROT180:
         x = u + u0_ * occupancyResolution_;
         y = (sizeV0_ * occupancyResolution_ - 1 - v) + v0_ * occupancyResolution_;
         break;
-      case PatchOrientation::MROT270:
+      case PATCH_ORIENTATION_MROT270:
         x = v + u0_ * occupancyResolution_;
         y = u + v0_ * occupancyResolution_;
         break;
-      case PatchOrientation::SWAP://swapAxis
+      case PATCH_ORIENTATION_SWAP://swapAxis
         x = v + u0_ * occupancyResolution_;
         y = u + v0_ * occupancyResolution_;
         break;
@@ -228,39 +228,39 @@ class PCCPatch {
   int patchBlock2CanvasBlock(const size_t uBlk, const size_t vBlk, size_t canvasStrideBlk, size_t canvasHeightBlk) const {
     size_t x, y;
     switch( patchOrientation_ ) {
-      case PatchOrientation::DEFAULT:
+      case PATCH_ORIENTATION_DEFAULT:
         x = uBlk + u0_;
         y = vBlk + v0_;
         break;
-      case   PatchOrientation::ROT90:
+      case   PATCH_ORIENTATION_ROT90:
         x = (sizeV0_ - 1 - vBlk) + u0_;
         y = uBlk + v0_;
         break;
-      case   PatchOrientation::ROT180:
+      case   PATCH_ORIENTATION_ROT180:
         x = (sizeU0_ - 1 - uBlk) + u0_;
         y = (sizeV0_ - 1 - vBlk) + v0_;
         break;
-      case   PatchOrientation::ROT270:
+      case   PATCH_ORIENTATION_ROT270:
         x = vBlk + u0_;
         y = (sizeU0_ - 1 - uBlk) + v0_;
         break;
-      case  PatchOrientation::MIRROR:
+      case  PATCH_ORIENTATION_MIRROR:
         x = (sizeU0_ - 1 - uBlk) + u0_;
         y = vBlk + v0_;
         break;
-      case  PatchOrientation::MROT90:
+      case  PATCH_ORIENTATION_MROT90:
         x = (sizeV0_ - 1 - vBlk) + u0_;
         y = (sizeU0_ - 1 - uBlk) + v0_;
         break;
-      case   PatchOrientation::MROT180:
+      case   PATCH_ORIENTATION_MROT180:
         x = uBlk + u0_;
         y = (sizeV0_ - 1 - vBlk) + v0_;
         break;
-      case   PatchOrientation::MROT270:
+      case   PATCH_ORIENTATION_MROT270:
         x = vBlk + u0_;
         y = uBlk + v0_;
         break;
-      case   PatchOrientation::SWAP://swapAxis
+      case   PATCH_ORIENTATION_SWAP://swapAxis
         x = vBlk + u0_;
         y = uBlk + v0_;
         break;
@@ -390,7 +390,7 @@ class PCCPatch {
     int wasted_space_internal = 0;
     int lambda = 100; //--> bias towards the upper part of the canvas
 
-    if (getPatchOrientation() == PatchOrientation::DEFAULT)
+    if (getPatchOrientation() == PATCH_ORIENTATION_DEFAULT)
     {
       for (int idx = 0; idx < getSizeU0(); idx++) {
         wasted_space_external += getV0() + bottom_horizon[idx] - horizon[getU0() + idx];
@@ -402,7 +402,7 @@ class PCCPatch {
       }
       wasted_space = lambda * getV0() + wasted_space_external + wasted_space_internal;
     }
-    else if (getPatchOrientation() == PatchOrientation::ROT90)
+    else if (getPatchOrientation() == PATCH_ORIENTATION_ROT90)
     {
       for (int idx = 0; idx < getSizeV0(); idx++) {
         wasted_space_external += getV0() + left_horizon[getSizeV0() - 1 - idx] - horizon[getU0() + idx];
@@ -414,7 +414,7 @@ class PCCPatch {
       }
       wasted_space = lambda * getV0() + wasted_space_external + wasted_space_internal;
     }
-    else if (getPatchOrientation() == PatchOrientation::ROT180)
+    else if (getPatchOrientation() == PATCH_ORIENTATION_ROT180)
     {
       for (int idx = 0; idx < getSizeU0(); idx++) {
         wasted_space_external += getV0() + top_horizon[getSizeU0() - 1 - idx] - horizon[getU0() + idx];
@@ -426,7 +426,7 @@ class PCCPatch {
       }
       wasted_space = lambda * getV0() + wasted_space_external + wasted_space_internal;
     }
-    else if (getPatchOrientation() == PatchOrientation::ROT270)
+    else if (getPatchOrientation() == PATCH_ORIENTATION_ROT270)
     {
       for (int idx = 0; idx < getSizeV0(); idx++) {
         wasted_space_external += getV0() + right_horizon[idx] - horizon[getU0() + idx];
@@ -438,7 +438,7 @@ class PCCPatch {
       }
       wasted_space = lambda * getV0() + wasted_space_external + wasted_space_internal;
     }
-    else if (getPatchOrientation() == PatchOrientation::MIRROR)
+    else if (getPatchOrientation() == PATCH_ORIENTATION_MIRROR)
     {
       for (int idx = 0; idx < getSizeU0(); idx++) {
         wasted_space_external += getV0() + bottom_horizon[getSizeU0() - 1 - idx] - horizon[getU0() + idx];
@@ -449,7 +449,7 @@ class PCCPatch {
       }
       wasted_space = lambda * getV0() + wasted_space_external + wasted_space_internal;
     }
-    else if (getPatchOrientation() == PatchOrientation::MROT90)
+    else if (getPatchOrientation() == PATCH_ORIENTATION_MROT90)
     {
       for (int idx = 0; idx < getSizeV0(); idx++) {
         wasted_space_external += getV0() + right_horizon[getSizeV0() - 1 - idx] - horizon[getU0() + idx];
@@ -461,7 +461,7 @@ class PCCPatch {
       }
       wasted_space = lambda * getV0() + wasted_space_external + wasted_space_internal;
     }
-    else if (getPatchOrientation() == PatchOrientation::MROT180)
+    else if (getPatchOrientation() == PATCH_ORIENTATION_MROT180)
     {
       for (int idx = 0; idx < getSizeU0(); idx++) {
         wasted_space_external += getV0() + top_horizon[idx] - horizon[getU0() + idx];
@@ -473,7 +473,7 @@ class PCCPatch {
       }
       wasted_space = lambda * getV0() + wasted_space_external + wasted_space_internal;
     }
-    else if (getPatchOrientation() == PatchOrientation::MROT270)
+    else if (getPatchOrientation() == PATCH_ORIENTATION_MROT270)
     {
       for (int idx = 0; idx < getSizeV0(); idx++) {
         wasted_space_external += getV0() + left_horizon[idx] - horizon[getU0() + idx];
@@ -484,7 +484,7 @@ class PCCPatch {
       }
       wasted_space = lambda * getV0() + wasted_space_external + wasted_space_internal;
     }
-    else if (getPatchOrientation() == PatchOrientation::SWAP)
+    else if (getPatchOrientation() == PATCH_ORIENTATION_SWAP)
     {
       for (int idx = 0; idx < getSizeV0(); idx++) {
         wasted_space_external += getV0() + left_horizon[idx] - horizon[getU0() + idx];
@@ -501,63 +501,63 @@ class PCCPatch {
 
   bool isPatchLocationAboveHorizon(std::vector<int> &horizon, std::vector<int> &top_horizon, std::vector<int> &bottom_horizon, std::vector<int> &right_horizon, std::vector<int> &left_horizon)
   {
-    if (getPatchOrientation() == PatchOrientation::DEFAULT)
+    if (getPatchOrientation() == PATCH_ORIENTATION_DEFAULT)
     {
       for (int idx = 0; idx < getSizeU0(); idx++) {
         if (getV0() + bottom_horizon[idx] < horizon[getU0() + idx])
           return false;
       }
     }
-    else if (getPatchOrientation() == PatchOrientation::ROT90)
+    else if (getPatchOrientation() == PATCH_ORIENTATION_ROT90)
     {
       for (int idx = 0; idx < getSizeV0(); idx++) {
         if (getV0() + left_horizon[getSizeV0() - 1 - idx] < horizon[getU0() + idx])
           return false;
       }
     }
-    else if (getPatchOrientation() == PatchOrientation::ROT180)
+    else if (getPatchOrientation() == PATCH_ORIENTATION_ROT180)
     {
       for (int idx = 0; idx < getSizeU0(); idx++) {
         if (getV0() + top_horizon[getSizeU0() - 1 - idx]  < horizon[getU0() + idx])
           return false;
       }
     }
-    else if (getPatchOrientation() == PatchOrientation::ROT270)
+    else if (getPatchOrientation() == PATCH_ORIENTATION_ROT270)
     {
       for (int idx = 0; idx < getSizeV0(); idx++) {
         if (getV0() + right_horizon[idx] < horizon[getU0() + idx])
           return false;
       }
     }
-    else if (getPatchOrientation() == PatchOrientation::MIRROR)
+    else if (getPatchOrientation() == PATCH_ORIENTATION_MIRROR)
     {
       for (int idx = 0; idx < getSizeU0(); idx++) {
         if (getV0() + bottom_horizon[getSizeU0() - 1 - idx] < horizon[getU0() + idx])
           return false;
       }
     }
-    else if (getPatchOrientation() == PatchOrientation::MROT90)
+    else if (getPatchOrientation() == PATCH_ORIENTATION_MROT90)
     {
       for (int idx = 0; idx < getSizeV0(); idx++) {
         if (getV0() + right_horizon[getSizeV0() - 1 - idx] < horizon[getU0() + idx])
           return false;
       }
     }
-    else if (getPatchOrientation() == PatchOrientation::MROT180)
+    else if (getPatchOrientation() == PATCH_ORIENTATION_MROT180)
     {
       for (int idx = 0; idx < getSizeU0(); idx++) {
         if (getV0() + top_horizon[idx] < horizon[getU0() + idx])
           return false;
       }
     }
-    else if (getPatchOrientation() == PatchOrientation::MROT270)
+    else if (getPatchOrientation() == PATCH_ORIENTATION_MROT270)
     {
       for (int idx = 0; idx < getSizeV0(); idx++) {
         if (getV0() + left_horizon[idx] < horizon[getU0() + idx])
           return false;
       }
     }
-    else if (getPatchOrientation() == PatchOrientation::SWAP)
+    else if (getPatchOrientation() == PATCH_ORIENTATION_SWAP)
     {
       for (int idx = 0; idx < getSizeV0(); idx++) {
         if (getV0() + left_horizon[idx] < horizon[getU0() + idx])
@@ -569,7 +569,7 @@ class PCCPatch {
 
   bool isPatchDimensionSwitched()
   {
-    if ((getPatchOrientation() == PatchOrientation::DEFAULT) || (getPatchOrientation() == PatchOrientation::ROT180) || (getPatchOrientation() == PatchOrientation::MIRROR) || (getPatchOrientation() == PatchOrientation::MROT180))
+    if ((getPatchOrientation() == PATCH_ORIENTATION_DEFAULT) || (getPatchOrientation() == PATCH_ORIENTATION_ROT180) || (getPatchOrientation() == PATCH_ORIENTATION_MIRROR) || (getPatchOrientation() == PATCH_ORIENTATION_MROT180))
       return false;
     else
       return true;
@@ -581,7 +581,7 @@ class PCCPatch {
     size_t best_orientation = getPatchOrientation();
 
     int newVal;
-    if (best_orientation == PatchOrientation::DEFAULT)
+    if (best_orientation == PATCH_ORIENTATION_DEFAULT)
     {
       for (int idx = 0; idx < getSizeU0(); idx++)
       {
@@ -590,7 +590,7 @@ class PCCPatch {
           horizon[best_u + idx] = newVal;
       }
     }
-    else if (best_orientation == PatchOrientation::ROT90)
+    else if (best_orientation == PATCH_ORIENTATION_ROT90)
     {
       for (int idx = 0; idx < getSizeV0(); idx++) {
         newVal = best_v + getSizeU0() - 1 - right_horizon[getSizeV0() - 1 - idx];
@@ -598,7 +598,7 @@ class PCCPatch {
           horizon[best_u + idx] = newVal;
       }
     }
-    else if (best_orientation == PatchOrientation::ROT180)
+    else if (best_orientation == PATCH_ORIENTATION_ROT180)
     {
       for (int idx = 0; idx < getSizeU0(); idx++) {
         newVal = best_v + getSizeV0() - 1 - bottom_horizon[getSizeU0() - 1 - idx];
@@ -606,7 +606,7 @@ class PCCPatch {
           horizon[best_u + idx] = newVal;
       }
     }
-    else if (best_orientation == PatchOrientation::ROT270)
+    else if (best_orientation == PATCH_ORIENTATION_ROT270)
     {
       for (int idx = 0; idx < getSizeV0(); idx++) {
         newVal = best_v + getSizeU0() - 1 - left_horizon[idx];
@@ -614,7 +614,7 @@ class PCCPatch {
           horizon[best_u + idx] = newVal;
       }
     }
-    else if (best_orientation == PatchOrientation::MIRROR)
+    else if (best_orientation == PATCH_ORIENTATION_MIRROR)
     {
       for (int idx = 0; idx < getSizeU0(); idx++) {
         newVal = best_v + getSizeV0() - 1 - top_horizon[getSizeU0() - 1 - idx];
@@ -622,7 +622,7 @@ class PCCPatch {
           horizon[best_u + idx] = newVal;
       }
     }
-    else if (best_orientation == PatchOrientation::MROT90)
+    else if (best_orientation == PATCH_ORIENTATION_MROT90)
     {
       for (int idx = 0; idx < getSizeV0(); idx++) {
         newVal = best_v + getSizeU0() - 1 - left_horizon[getSizeV0() - 1 - idx];
@@ -630,7 +630,7 @@ class PCCPatch {
           horizon[best_u + idx] = newVal;
       }
     }
-    else if (best_orientation == PatchOrientation::MROT180)
+    else if (best_orientation == PATCH_ORIENTATION_MROT180)
     {
       for (int idx = 0; idx < getSizeU0(); idx++) {
         newVal = best_v + getSizeV0() - 1 - bottom_horizon[idx];
@@ -638,7 +638,7 @@ class PCCPatch {
           horizon[best_u + idx] = newVal;
       }
     }
-    else if (best_orientation == PatchOrientation::MROT270)
+    else if (best_orientation == PATCH_ORIENTATION_MROT270)
     {
       for (int idx = 0; idx < getSizeV0(); idx++) {
         newVal = best_v + getSizeU0() - 1 - right_horizon[idx];
@@ -646,7 +646,7 @@ class PCCPatch {
           horizon[best_u + idx] = newVal;
       }
     }
-    else if (best_orientation == PatchOrientation::SWAP)
+    else if (best_orientation == PATCH_ORIENTATION_SWAP)
     {
       for (int idx = 0; idx < getSizeV0(); idx++) {
         newVal = best_v + getSizeU0() - 1 - right_horizon[idx];
@@ -666,39 +666,39 @@ class PCCPatch {
   int patchBlock2CanvasBlockForGPA(const size_t uBlk, const size_t vBlk, size_t canvasStrideBlk, size_t canvasHeightBlk) const {
     size_t x, y;
     switch (curGPAPatchData_.patchOrientation) {
-      case PatchOrientation::DEFAULT:
+      case PATCH_ORIENTATION_DEFAULT:
         x = uBlk + curGPAPatchData_.u0;
         y = vBlk + curGPAPatchData_.v0;
         break;
-      case   PatchOrientation::ROT90:
+      case   PATCH_ORIENTATION_ROT90:
         x = (curGPAPatchData_.sizeV0 - 1 - vBlk) + curGPAPatchData_.u0;
         y = uBlk + curGPAPatchData_.v0;
         break;
-      case   PatchOrientation::ROT180:
+      case   PATCH_ORIENTATION_ROT180:
         x = (curGPAPatchData_.sizeU0 - 1 - uBlk) + curGPAPatchData_.u0;
         y = (curGPAPatchData_.sizeV0 - 1 - vBlk) + curGPAPatchData_.v0;
         break;
-      case   PatchOrientation::ROT270:
+      case   PATCH_ORIENTATION_ROT270:
         x = vBlk + curGPAPatchData_.u0;
         y = (curGPAPatchData_.sizeU0 - 1 - uBlk) + curGPAPatchData_.v0;
         break;
-      case  PatchOrientation::MIRROR:
+      case  PATCH_ORIENTATION_MIRROR:
         x = (curGPAPatchData_.sizeU0 - 1 - uBlk) + curGPAPatchData_.u0;
         y = vBlk + curGPAPatchData_.v0;
         break;
-      case  PatchOrientation::MROT90:
+      case  PATCH_ORIENTATION_MROT90:
         x = (curGPAPatchData_.sizeV0 - 1 - vBlk) + curGPAPatchData_.u0;
         y = (curGPAPatchData_.sizeU0 - 1 - uBlk) + curGPAPatchData_.v0;
         break;
-      case   PatchOrientation::MROT180:
+      case   PATCH_ORIENTATION_MROT180:
         x = uBlk + curGPAPatchData_.u0;
         y = (curGPAPatchData_.sizeV0 - 1 - vBlk) + curGPAPatchData_.v0;
         break;
-      case   PatchOrientation::MROT270:
+      case   PATCH_ORIENTATION_MROT270:
         x = vBlk + curGPAPatchData_.u0;
         y = uBlk + curGPAPatchData_.v0;
         break;
-      case   PatchOrientation::SWAP://swapAxis
+      case   PATCH_ORIENTATION_SWAP://swapAxis
         x = vBlk + curGPAPatchData_.u0;
         y = uBlk + curGPAPatchData_.v0;
         break;

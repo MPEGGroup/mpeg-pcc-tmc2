@@ -36,40 +36,32 @@ using namespace std;
 using namespace pcc;
 using pcc::chrono::StopwatchUserTime;
 
-int main(int argc, char *argv[]) {
-  std::cout << "PccAppEncoder v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MINOR << std::endl
-            << std::endl;
+int main( int argc, char* argv[] ) {
+  std::cout << "PccAppEncoder v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MINOR << std::endl << std::endl;
 
   PCCEncoderParameters encoderParams;
   PCCMetricsParameters metricsParams;
-  if (!parseParameters(argc, argv, encoderParams, metricsParams )) {
-    return -1;
-  }
-  if( encoderParams.nbThread_ > 0 ) {
-    tbb::task_scheduler_init init( (int)encoderParams.nbThread_ );
-  }
+  if ( !parseParameters( argc, argv, encoderParams, metricsParams ) ) { return -1; }
+  if ( encoderParams.nbThread_ > 0 ) { tbb::task_scheduler_init init( (int)encoderParams.nbThread_ ); }
 
   // Timers to count elapsed wall/user time
   pcc::chrono::Stopwatch<std::chrono::steady_clock> clockWall;
-  pcc::chrono::StopwatchUserTime clockUser;
+  pcc::chrono::StopwatchUserTime                    clockUser;
 
   clockWall.start();
   int ret = compressVideo( encoderParams, metricsParams, clockUser );
   clockWall.stop();
 
   using namespace std::chrono;
-  using ms = milliseconds;
-  auto totalWall = duration_cast<ms>(clockWall.count()).count();
-  std::cout << "Processing time (wall): "
-            << ( ret == 0 ? totalWall / 1000.0 : -1 ) << " s\n";
+  using ms       = milliseconds;
+  auto totalWall = duration_cast<ms>( clockWall.count() ).count();
+  std::cout << "Processing time (wall): " << ( ret == 0 ? totalWall / 1000.0 : -1 ) << " s\n";
 
-  auto totalUserSelf = duration_cast<ms>(clockUser.self.count()).count();
-  std::cout << "Processing time (user.self): "
-            << ( ret == 0 ? totalUserSelf / 1000.0 : -1 ) << " s\n";
+  auto totalUserSelf = duration_cast<ms>( clockUser.self.count() ).count();
+  std::cout << "Processing time (user.self): " << ( ret == 0 ? totalUserSelf / 1000.0 : -1 ) << " s\n";
 
-  auto totalUserChild = duration_cast<ms>(clockUser.children.count()).count();
-  std::cout << "Processing time (user.children): "
-            << ( ret == 0 ? totalUserChild / 1000.0 : -1 ) << " s\n";
+  auto totalUserChild = duration_cast<ms>( clockUser.children.count() ).count();
+  std::cout << "Processing time (user.children): " << ( ret == 0 ? totalUserChild / 1000.0 : -1 ) << " s\n";
 
   std::cout << "Peak memory: " << getPeakMemory() << " KB\n";
   return ret;
@@ -79,24 +71,25 @@ int main(int argc, char *argv[]) {
 // :: Command line / config parsing helpers
 
 template <typename T>
-static std::istream &readUInt(std::istream &in, T &val) {
+static std::istream& readUInt( std::istream& in, T& val ) {
   unsigned int tmp;
   in >> tmp;
-  val = T(tmp);
+  val = T( tmp );
   return in;
 }
 
-namespace pcc{
-  static std::istream &operator>>(std::istream &in, ColorTransform &val) { return readUInt(in, val); }
-}
+namespace pcc {
+static std::istream& operator>>( std::istream& in, PCCColorTransform& val ) { return readUInt( in, val ); }
+}  // namespace pcc
 
 //---------------------------------------------------------------------------
 // :: Command line / config parsing
 
-bool parseParameters( int argc, char *argv[],
-                      PCCEncoderParameters& encoderParams
-                      , PCCMetricsParameters& metricsParams ) {
-  namespace po = df::program_options_lite;
+bool parseParameters( int                   argc,
+                      char*                 argv[],
+                      PCCEncoderParameters& encoderParams,
+                      PCCMetricsParameters& metricsParams ) {
+  namespace po    = df::program_options_lite;
   bool print_help = false;
 
   // The definition of the program/config options, along with default values.
@@ -619,106 +612,95 @@ bool parseParameters( int argc, char *argv[],
       "0(undefined), 1(average), 2(weighted average), 3(min), 4(max) neighbors with same geometric distance")
       ;
   // clang-format on
-  po::setDefaults(opts);
-  po::ErrorReporter err;
-  const list<const char *> &argv_unhandled = po::scanArgv(opts, argc, (const char **)argv, err);
+  po::setDefaults( opts );
+  po::ErrorReporter        err;
+  const list<const char*>& argv_unhandled = po::scanArgv( opts, argc, (const char**)argv, err );
 
-  for (const auto arg : argv_unhandled) {
-    err.warn() << "Unhandled argument ignored: " << arg << "\n";
-  }
-   
-  if (argc == 1 || print_help) {
+  for ( const auto arg : argv_unhandled ) { err.warn() << "Unhandled argument ignored: " << arg << "\n"; }
+
+  if ( argc == 1 || print_help ) {
     po::doHelp( std::cout, opts, 78 );
     return false;
   }
   encoderParams.completePath();
   encoderParams.print();
-  if( !encoderParams.check() ) {
-    err.error() << "Input encoder parameters not correct \n";
-  }
+  if ( !encoderParams.check() ) { err.error() << "Input encoder parameters not correct \n"; }
   metricsParams.completePath();
   metricsParams.print();
-  if( !metricsParams.check() ) {
-    err.error() << "Input metrics parameters not correct \n";
-  }
+  if ( !metricsParams.check() ) { err.error() << "Input metrics parameters not correct \n"; }
   metricsParams.startFrameNumber_ = encoderParams.startFrameNumber_;
 
   // report the current configuration (only in the absence of errors so
   // that errors/warnings are more obvious and in the same place).
-  if (err.is_errored) return false;
+  if ( err.is_errored ) return false;
 
   return true;
 }
 
 int compressVideo( const PCCEncoderParameters& encoderParams,
                    const PCCMetricsParameters& metricsParams,
-                   StopwatchUserTime &clock) {
-  const size_t startFrameNumber0 = encoderParams.startFrameNumber_;
-  const size_t endFrameNumber0 = encoderParams.startFrameNumber_ + encoderParams.frameCount_;
-  const size_t groupOfFramesSize0 = (std::max)(size_t(1), encoderParams.groupOfFramesSize_);
-  size_t startFrameNumber = startFrameNumber0;
-  size_t reconstructedFrameNumber = encoderParams.startFrameNumber_;
-  PCCBitstream bitstream;
+                   StopwatchUserTime&          clock ) {
+  const size_t             startFrameNumber0        = encoderParams.startFrameNumber_;
+  const size_t             endFrameNumber0          = encoderParams.startFrameNumber_ + encoderParams.frameCount_;
+  const size_t             groupOfFramesSize0       = ( std::max )( size_t( 1 ), encoderParams.groupOfFramesSize_ );
+  size_t                   startFrameNumber         = startFrameNumber0;
+  size_t                   reconstructedFrameNumber = encoderParams.startFrameNumber_;
+  PCCBitstream             bitstream;
   std::unique_ptr<uint8_t> buffer;
-  size_t contextIndex = 0;
-  PCCEncoder encoder;
+  size_t                   contextIndex = 0;
+  PCCEncoder               encoder;
   encoder.setParameters( encoderParams );
   std::vector<std::vector<uint8_t>> reconstructedChecksums, sourceReorderChecksums, reconstructedReorderChecksums;
-  PCCMetrics metrics;
-  PCCChecksum checksum;
-  metrics .setParameters( metricsParams );
+  PCCMetrics                        metrics;
+  PCCChecksum                       checksum;
+  metrics.setParameters( metricsParams );
   checksum.setParameters( metricsParams );
 
-  // Place to get/set default values for gof metadata enabled flags (in sequence level).  
+  // Place to get/set default values for gof metadata enabled flags (in sequence level).
   bitstream.writeHeader();
-  while (startFrameNumber < endFrameNumber0) {
-    const size_t endFrameNumber = min(startFrameNumber + groupOfFramesSize0, endFrameNumber0);
-    PCCContext context;
+  while ( startFrameNumber < endFrameNumber0 ) {
+    const size_t endFrameNumber = min( startFrameNumber + groupOfFramesSize0, endFrameNumber0 );
+    PCCContext   context;
     context.addSequenceParameterSet( contextIndex );
-    context.getVPCC().setSequenceParameterSetId( contextIndex );    
+    context.getVPCC().setSequenceParameterSetId( contextIndex );
 
     PCCGroupOfFrames sources, reconstructs;
-    if (!sources.load( encoderParams.uncompressedDataPath_, startFrameNumber,
-                       endFrameNumber, encoderParams.colorTransform_ ) ) {
+    if ( !sources.load( encoderParams.uncompressedDataPath_, startFrameNumber, endFrameNumber,
+                        encoderParams.colorTransform_ ) ) {
       return -1;
     }
     clock.start();
 
-    if (encoderParams.testLevelOfDetail_ > 0) {
-      const double lodScale = 1.0 / double(1u << encoderParams.testLevelOfDetail_);
-      for (auto& frame : sources.getFrames()) {
-        for (auto& point : frame.getPositions()) {
-          point *= lodScale;
-        }
+    if ( encoderParams.testLevelOfDetail_ > 0 ) {
+      const double lodScale = 1.0 / double( 1u << encoderParams.testLevelOfDetail_ );
+      for ( auto& frame : sources.getFrames() ) {
+        for ( auto& point : frame.getPositions() ) { point *= lodScale; }
       }
     }
 
-    std::cout << "Compressing group of frames " << contextIndex << ": " << startFrameNumber
-              << " -> " << endFrameNumber << "..." << std::endl;
+    std::cout << "Compressing group of frames " << contextIndex << ": " << startFrameNumber << " -> " << endFrameNumber
+              << "..." << std::endl;
     int ret = encoder.encode( sources, context, bitstream, reconstructs );
     clock.stop();
 
     PCCGroupOfFrames normals;
-    if(  metricsParams.computeMetrics_ ) {
-      if(metricsParams.normalDataPath_ != "" ){
-        if ( !normals.load( metricsParams.normalDataPath_, startFrameNumber,
-                            endFrameNumber, ColorTransform::COLOR_TRANSFORM_NONE ) ) {
+    if ( metricsParams.computeMetrics_ ) {
+      if ( metricsParams.normalDataPath_ != "" ) {
+        if ( !normals.load( metricsParams.normalDataPath_, startFrameNumber, endFrameNumber, COLOR_TRANSFORM_NONE ) ) {
           return -1;
         }
       }
       metrics.compute( sources, reconstructs, normals );
     }
-    if( metricsParams.computeChecksum_) {
-      if( encoderParams.losslessGeo_ && encoderParams.losslessTexture_ ) {
-        checksum.computeSource   ( sources );
+    if ( metricsParams.computeChecksum_ ) {
+      if ( encoderParams.losslessGeo_ && encoderParams.losslessTexture_ ) {
+        checksum.computeSource( sources );
         checksum.computeReordered( reconstructs );
       }
       checksum.computeReconstructed( reconstructs );
     }
-    if (ret) {
-      return ret;
-    }
-    if( !encoderParams.reconstructedDataPath_.empty() ) {
+    if ( ret ) { return ret; }
+    if ( !encoderParams.reconstructedDataPath_.empty() ) {
       reconstructs.write( encoderParams.reconstructedDataPath_, reconstructedFrameNumber );
     }
     sources.clear();
@@ -727,20 +709,15 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
     startFrameNumber = endFrameNumber;
     contextIndex++;
   }
-
+  bitstream.getBitStreamStat().trace();
   std::cout << "Total bitstream size " << bitstream.size() << " B" << std::endl;
   bitstream.write( encoderParams.compressedStreamPath_ );
 
-  if( metricsParams.computeMetrics_ ) {
-    metrics.display();
-  }
+  if ( metricsParams.computeMetrics_ ) { metrics.display(); }
   bool checksumEqual = true;
-  if( metricsParams.computeChecksum_) {
-    if( encoderParams.losslessGeo_ && encoderParams.losslessTexture_ ) {
-      checksumEqual = checksum.compareSrcRec();
-    }
+  if ( metricsParams.computeChecksum_ ) {
+    if ( encoderParams.losslessGeo_ && encoderParams.losslessTexture_ ) { checksumEqual = checksum.compareSrcRec(); }
     checksum.write( encoderParams.compressedStreamPath_ );
   }
   return checksumEqual ? 0 : -1;
 }
-

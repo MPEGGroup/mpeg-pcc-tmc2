@@ -57,7 +57,7 @@ class PCCEncoderParameters {
   std::string         compressedStreamPath_;
   std::string         reconstructedDataPath_;
 
-  ColorTransform      colorTransform_;
+  PCCColorTransform   colorTransform_;
   std::string         colorSpaceConversionPath_;
   std::string         videoEncoderPath_;
   bool                use3dmc_;

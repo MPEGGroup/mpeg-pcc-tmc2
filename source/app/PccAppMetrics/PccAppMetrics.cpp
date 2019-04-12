@@ -83,7 +83,7 @@ static std::istream &readUInt(std::istream &in, T &val) {
 }
 
 namespace pcc{
-  static std::istream &operator>>(std::istream &in, ColorTransform &val) { return readUInt(in, val); }
+  static std::istream &operator>>(std::istream &in, PCCColorTransform &val) { return readUInt(in, val); }
 }
 //---------------------------------------------------------------------------
 // :: Command line / config parsing
@@ -198,14 +198,14 @@ int computeMetrics(const PCCMetricsParameters &metricsParams, StopwatchUserTime 
   metrics.setParameters( metricsParams );
   for(size_t frameIndex = metricsParams.startFrameNumber_; frameIndex <  metricsParams.startFrameNumber_ +  metricsParams.frameCount_; frameIndex++){
     PCCGroupOfFrames sources, reconstructs, normals;
-    if (!sources.load( metricsParams.uncompressedDataPath_, frameIndex, frameIndex + 1, ColorTransform::COLOR_TRANSFORM_NONE ) ) {
+    if (!sources.load( metricsParams.uncompressedDataPath_, frameIndex, frameIndex + 1, COLOR_TRANSFORM_NONE ) ) {
       return -1;
     }
-    if (!reconstructs.load( metricsParams.reconstructedDataPath_, frameIndex, frameIndex + 1, ColorTransform::COLOR_TRANSFORM_NONE ) ) {
+    if (!reconstructs.load( metricsParams.reconstructedDataPath_, frameIndex, frameIndex + 1, COLOR_TRANSFORM_NONE ) ) {
       return -1;
     }
     if( metricsParams.normalDataPath_ != "" ){
-      if (!normals.load( metricsParams.normalDataPath_, frameIndex, frameIndex + 1, ColorTransform::COLOR_TRANSFORM_NONE ) ) {
+      if (!normals.load( metricsParams.normalDataPath_, frameIndex, frameIndex + 1, COLOR_TRANSFORM_NONE ) ) {
         return -1;
       }
     }

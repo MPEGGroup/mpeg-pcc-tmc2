@@ -77,7 +77,7 @@ class PCCBitstreamDecoder {
   PCCBitstreamDecoder();
   ~PCCBitstreamDecoder();
 
-  int decode( PCCBitstream& bitstream, PCCContext& context );
+  int32_t decode( PCCBitstream& bitstream, PCCContext& context );
 
  private:
   uint32_t DecodeUInt32( const uint32_t           bitCount,
@@ -137,6 +137,8 @@ class PCCBitstreamDecoder {
 
   // 7.3.15 Patch sequence unit payload syntax
   void patchSequenceUnitPayload( PatchSequenceUnitPayload& patchSequenceUnitPayload,
+                                 PatchSequenceUnitPayload& psupPrevPFLU,  // it should be a PFLU
+                                 size_t                    frameIndex,
                                  PCCContext&               context,
                                  PCCBitstream&             bitstream );
 
@@ -187,10 +189,16 @@ class PCCBitstreamDecoder {
                                PCCBitstream&           bitstream );
 
   // 7.3.26 Patch frame layer unit syntax
-  void patchFrameLayerUnit( PatchFrameLayerUnit& pflu, PCCContext& context, PCCBitstream& bitstream );
+  void patchFrameLayerUnit( PatchFrameLayerUnit& pflu,
+                            PatchFrameLayerUnit& pfluPrev,
+                            PCCContext&          context,
+                            PCCBitstream&        bitstream );
 
   // 7.3.27 Patch frame header syntax
-  void patchFrameHeader( PatchFrameHeader& pfh, PCCContext& context, PCCBitstream& bitstream );
+  void patchFrameHeader( PatchFrameHeader& pfh,
+                         PatchFrameHeader& pfhPrev,
+                         PCCContext&       context,
+                         PCCBitstream&     bitstream );
 
   // 7.3.28 Reference list structure syntax
   void refListStruct( RefListStruct&             refListStruct,

@@ -106,7 +106,7 @@ class PCCCodec {
   bool colorPointCloud( PCCGroupOfFrames&                  reconstructs,
                         PCCContext&                        context,
                         const uint8_t                      attributeCount,
-                        const ColorTransform               colorTransform,
+                        const PCCColorTransform            colorTransform,
                         const GeneratePointCloudParameters params );
 
   void generateMPsGeometryfromImage( PCCContext&       context,

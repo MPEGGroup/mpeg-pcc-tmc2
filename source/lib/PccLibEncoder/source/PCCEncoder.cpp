@@ -77,8 +77,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources,
   ret |= encode( sources, context, reconstructs );
 #ifdef CODEC_TRACE
   setTrace( true );
-  openTrace( string_format( "%s_GOF%u_patch_encode.txt", removeFileExtension( params_.compressedStreamPath_ ).c_str(),
-                            context.getSps().getSequenceParameterSetId() ) );
+  openTrace( stringFormat( "%s_GOF%u_patch_encode.txt", removeFileExtension( params_.compressedStreamPath_ ).c_str(),
+                           context.getSps().getSequenceParameterSetId() ) );
 #endif
   PCCBitstreamEncoder bitstreamEncoder;
   createPatchFrameDataStructure( context );
@@ -107,8 +107,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
 
 #ifdef CODEC_TRACE
   setTrace( true );
-  openTrace( string_format( "%s_GOF%u_codec_encode.txt", removeFileExtension( params_.compressedStreamPath_ ).c_str(),
-                            context.getSps().getSequenceParameterSetId() ) );
+  openTrace( stringFormat( "%s_GOF%u_codec_encode.txt", removeFileExtension( params_.compressedStreamPath_ ).c_str(),
+                           context.getSps().getSequenceParameterSetId() ) );
 #endif
 
   params_.initializeContext( context );
@@ -153,7 +153,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   sps.setFrameWidth( (uint16_t)frames[0].getWidth() );
   sps.setFrameHeight( (uint16_t)frames[0].getHeight() );
 
-  auto& videoBitstream = context.createVideoBitstream( PCCVideoType::OccupancyMap );
+  auto& videoBitstream = context.createVideoBitstream( VIDEO_OCCUPANCY );
   generateOccupancyMapVideo( sources, context );
   auto& videoOccupancyMap = context.getVideoOccupancyMap();
   videoEncoder.compress( videoOccupancyMap, path.str(), params_.occupancyMapQP_, videoBitstream,
@@ -178,7 +178,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
       std::exit( -1 );
     }
     // Compress geometryD0
-    auto& videoBitstreamD0 = context.createVideoBitstream( PCCVideoType::GeometryD0 );
+    auto& videoBitstreamD0 = context.createVideoBitstream( VIDEO_GEOMETRY_D0 );
     auto& videoGeometry    = context.getVideoGeometry();
     videoEncoder.compress(
         videoGeometry, path.str(), ( params_.geometryQP_ - 1 ), videoBitstreamD0, params_.geometryD0Config_,
@@ -193,7 +193,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     }
 
     // Compress geometryD1
-    auto& videoBitstreamD1 = context.createVideoBitstream( PCCVideoType::GeometryD1 );
+    auto& videoBitstreamD1 = context.createVideoBitstream( VIDEO_GEOMETRY_D1 );
     videoEncoder.compress(
         videoGeometryD1, path.str(), params_.geometryQP_, videoBitstreamD1, params_.geometryD1Config_,
         ( params_.use3dmc_ != 0 ) ? params_.videoEncoderAuxPath_ : params_.videoEncoderPath_, context, nbyteGeo,
@@ -203,7 +203,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     std::cout << "geometry video ->" << sizeGeometryVideo << " B ("
               << ( sizeGeometryVideo * 8.0 ) / ( 2 * frames.size() * pointCount ) << " bpp)" << std::endl;
   } else {
-    auto& videoBitstream = context.createVideoBitstream( PCCVideoType::Geometry );
+    auto& videoBitstream = context.createVideoBitstream( VIDEO_GEOMETRY );
     auto& videoGeometry  = context.getVideoGeometry();
     videoEncoder.compress(
         videoGeometry, path.str(), params_.geometryQP_, videoBitstream,
@@ -213,7 +213,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   }
 
   if ( sps.getPcmPatchEnabledFlag() && sps.getPcmSeparateVideoPresentFlag() ) {
-    auto& videoBitstreamMP = context.createVideoBitstream( PCCVideoType::GeometryMP );
+    auto& videoBitstreamMP = context.createVideoBitstream( VIDEO_GEOMETRY_MP );
     generateMissedPointsGeometryVideo( context, reconstructs );
     auto& videoMPsGeometry = context.getVideoMPsGeometry();
     videoEncoder.compress( videoMPsGeometry, path.str(),
@@ -276,7 +276,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
         if ( params_.textureBGFill_ == 1 ) {
           dilatePullPush( frames[f / nbFramesTexture], videoTexture.getFrame( f ) );
         } else if ( params_.textureBGFill_ == 2 )
-          dilateSparseLinearModel( frames[f / nbFramesTexture], videoTexture.getFrame( f ), f, Texture );
+          dilateSparseLinearModel( frames[f / nbFramesTexture], videoTexture.getFrame( f ), f, VIDEO_TEXTURE );
         else {
           dilate( frames[f / nbFramesTexture], videoTexture.getFrame( f ) );
         }
@@ -316,7 +316,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
       }
     }
 
-    auto& videoBitstream = context.createVideoBitstream( PCCVideoType::Texture );
+    auto& videoBitstream = context.createVideoBitstream( VIDEO_TEXTURE );
     videoEncoder.compress(
         videoTexture, path.str(), params_.textureQP_, videoBitstream,
         params_.oneLayerMode_ ? getEncoderConfig1L( params_.textureConfig_ ) : params_.textureConfig_,
@@ -326,7 +326,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
         params_.colorSpaceConversionPath_ );
 
     if ( params_.useAdditionalPointsPatch_ && sps.getPcmSeparateVideoPresentFlag() ) {
-      auto& videoBitstreamMP = context.createVideoBitstream( PCCVideoType::TextureMP );
+      auto& videoBitstreamMP = context.createVideoBitstream( VIDEO_TEXTURE_MP );
       generateMissedPointsTextureVideo( context, reconstructs );  // 1. texture
       auto& videoMPsTexture = context.getVideoMPsTexture();
       videoEncoder.compress( videoMPsTexture, path.str(), params_.textureQP_, videoBitstreamMP,
@@ -521,7 +521,7 @@ void PCCEncoder::spatialConsistencyPack( PCCFrameContext& frame, PCCFrameContext
     bool  locationFound = false;
     auto& occupancy     = patch.getOccupancy();
     while ( !locationFound ) {
-      patch.getPatchOrientation() = PatchOrientation::DEFAULT;  // only one orientation is allowed
+      patch.getPatchOrientation() = PATCH_ORIENTATION_DEFAULT;  // only one orientation is allowed
       for ( size_t v = 0; v <= occupancySizeV && !locationFound; ++v ) {
         for ( size_t u = 0; u <= occupancySizeU && !locationFound; ++u ) {
           patch.getU0() = u;
@@ -633,18 +633,18 @@ void PCCEncoder::spatialConsistencyPackFlexible( PCCFrameContext& frame, PCCFram
   size_t maxOccupancyRow{0};
 
   // vector<int> orientation_vertical = {
-  // PatchOrientation::DEFAULT,PatchOrientation::ROT90,PatchOrientation::ROT180,
-  // PatchOrientation::ROT270,PatchOrientation::MIRROR,PatchOrientation::MROT180,
-  // PatchOrientation::MROT90,PatchOrientation::MROT270
+  // PATCH_ORIENTATION_DEFAULT,PATCH_ORIENTATION_ROT90,PATCH_ORIENTATION_ROT180,
+  // PATCH_ORIENTATION_ROT270,PATCH_ORIENTATION_MIRROR,PATCH_ORIENTATION_MROT180,
+  // PATCH_ORIENTATION_MROT90,PATCH_ORIENTATION_MROT270
   // };    // favoring vertical orientation vector<int> orientation_horizontal = {
-  // PatchOrientation::ROT90,PatchOrientation::DEFAULT,PatchOrientation::ROT270,
-  // PatchOrientation::ROT180,PatchOrientation::MROT90,PatchOrientation::MROT270,
-  // PatchOrientation::MIRROR,PatchOrientation::MROT180
+  // PATCH_ORIENTATION_ROT90,PATCH_ORIENTATION_DEFAULT,PATCH_ORIENTATION_ROT270,
+  // PATCH_ORIENTATION_ROT180,PATCH_ORIENTATION_MROT90,PATCH_ORIENTATION_MROT270,
+  // PATCH_ORIENTATION_MIRROR,PATCH_ORIENTATION_MROT180
   // };    // favoring horizontal orientations (that should be rotated)
-  vector<int> orientation_vertical   = {PatchOrientation::DEFAULT,
-                                      PatchOrientation::SWAP};  // favoring vertical orientation
+  vector<int> orientation_vertical   = {PATCH_ORIENTATION_DEFAULT,
+                                      PATCH_ORIENTATION_SWAP};  // favoring vertical orientation
   vector<int> orientation_horizontal = {
-      PatchOrientation::SWAP, PatchOrientation::DEFAULT};  // favoring horizontal orientations (that should be rotated)
+      PATCH_ORIENTATION_SWAP, PATCH_ORIENTATION_DEFAULT};  // favoring horizontal orientations (that should be rotated)
   std::vector<bool> occupancyMap;
   occupancyMap.resize( occupancySizeU * occupancySizeV, false );
   for ( auto& patch : patches ) {
@@ -859,10 +859,10 @@ void PCCEncoder::spatialConsistencyPackTetris( PCCFrameContext& frame, PCCFrameC
         }
       } else {
         // vector<int> orientation_values = {
-        // PatchOrientation::DEFAULT,PatchOrientation::ROT90,PatchOrientation::ROT180,PatchOrientation::ROT270,PatchOrientation::MIRROR,PatchOrientation::MROT180,PatchOrientation::MROT90,PatchOrientation::MROT270
+        // PATCH_ORIENTATION_DEFAULT,PATCH_ORIENTATION_ROT90,PATCH_ORIENTATION_ROT180,PATCH_ORIENTATION_ROT270,PATCH_ORIENTATION_MIRROR,PATCH_ORIENTATION_MROT180,PATCH_ORIENTATION_MROT90,PATCH_ORIENTATION_MROT270
         // };    // favoring vertical orientation
-        vector<int> orientation_values = {PatchOrientation::DEFAULT,
-                                          PatchOrientation::SWAP};  // favoring vertical orientation
+        vector<int> orientation_values = {PATCH_ORIENTATION_DEFAULT,
+                                          PATCH_ORIENTATION_SWAP};  // favoring vertical orientation
         // tetris packing
         for ( size_t u = 0; u < occupancySizeU; ++u ) {
           for ( size_t v = 0; v < occupancySizeV; ++v ) {
@@ -965,7 +965,7 @@ void PCCEncoder::pack( PCCFrameContext& frame, int safeguard ) {
     bool  locationFound = false;
     auto& occupancy     = patch.getOccupancy();
     while ( !locationFound ) {
-      patch.getPatchOrientation() = PatchOrientation::DEFAULT;  // only allowed orientation in anchor
+      patch.getPatchOrientation() = PATCH_ORIENTATION_DEFAULT;  // only allowed orientation in anchor
       for ( int v = 0; v <= occupancySizeV && !locationFound; ++v ) {
         for ( int u = 0; u <= occupancySizeU && !locationFound; ++u ) {
           patch.getU0() = u;
@@ -1031,14 +1031,14 @@ void PCCEncoder::packFlexible( PCCFrameContext& frame, int safeguard ) {
 
   std::vector<bool> occupancyMap;
   // vector<int> orientation_vertical = {
-  // PatchOrientation::DEFAULT,PatchOrientation::ROT90,PatchOrientation::ROT180,PatchOrientation::ROT270,PatchOrientation::MIRROR,PatchOrientation::MROT180,PatchOrientation::MROT90,PatchOrientation::MROT270
+  // PATCH_ORIENTATION_DEFAULT,PATCH_ORIENTATION_ROT90,PATCH_ORIENTATION_ROT180,PATCH_ORIENTATION_ROT270,PATCH_ORIENTATION_MIRROR,PATCH_ORIENTATION_MROT180,PATCH_ORIENTATION_MROT90,PATCH_ORIENTATION_MROT270
   // };    // favoring vertical orientation vector<int> orientation_horizontal = {
-  // PatchOrientation::ROT90,PatchOrientation::DEFAULT,PatchOrientation::ROT270,PatchOrientation::ROT180,PatchOrientation::MROT90,PatchOrientation::MROT270,PatchOrientation::MIRROR,PatchOrientation::MROT180
+  // PATCH_ORIENTATION_ROT90,PATCH_ORIENTATION_DEFAULT,PATCH_ORIENTATION_ROT270,PATCH_ORIENTATION_ROT180,PATCH_ORIENTATION_MROT90,PATCH_ORIENTATION_MROT270,PATCH_ORIENTATION_MIRROR,PATCH_ORIENTATION_MROT180
   // };    // favoring horizontal orientations (that should be rotated)
-  vector<int> orientation_vertical   = {PatchOrientation::DEFAULT,
-                                      PatchOrientation::SWAP};  // favoring vertical orientation
+  vector<int> orientation_vertical   = {PATCH_ORIENTATION_DEFAULT,
+                                      PATCH_ORIENTATION_SWAP};  // favoring vertical orientation
   vector<int> orientation_horizontal = {
-      PatchOrientation::SWAP, PatchOrientation::DEFAULT};  // favoring horizontal orientations (that should be rotated)
+      PATCH_ORIENTATION_SWAP, PATCH_ORIENTATION_DEFAULT};  // favoring horizontal orientations (that should be rotated)
   occupancyMap.resize( occupancySizeU * occupancySizeV, false );
   for ( auto& patch : patches ) {
     assert( patch.getSizeU0() <= occupancySizeU );
@@ -1149,11 +1149,11 @@ void PCCEncoder::packTetris( PCCFrameContext& frame, int safeguard ) {
     bool locationFound = false;
     // try to place the patch tetris-style
     // vector<int> orientation_values = {
-    // PatchOrientation::DEFAULT,PatchOrientation::ROT90,PatchOrientation::ROT180,PatchOrientation::ROT270,PatchOrientation::MIRROR,PatchOrientation::MROT180,PatchOrientation::MROT90,PatchOrientation::MROT270
+    // PATCH_ORIENTATION_DEFAULT,PATCH_ORIENTATION_ROT90,PATCH_ORIENTATION_ROT180,PATCH_ORIENTATION_ROT270,PATCH_ORIENTATION_MIRROR,PATCH_ORIENTATION_MROT180,PATCH_ORIENTATION_MROT90,PATCH_ORIENTATION_MROT270
     // };    // favoring vertical orientation
     vector<int> orientation_values = {
-        PatchOrientation::DEFAULT,
-        PatchOrientation::SWAP};  // favoring horizontal orientations (that should be rotated)
+        PATCH_ORIENTATION_DEFAULT,
+        PATCH_ORIENTATION_SWAP};  // favoring horizontal orientations (that should be rotated)
     while ( !locationFound ) {
       int    best_wasted_space = ( std::numeric_limits<int>::max )();
       size_t best_u, best_v;
@@ -1707,13 +1707,13 @@ void PCCEncoder::generateMissedPointsPatch( const PCCPointSet3& source,
               }
               pointsToBeProjected.addPoint( point1 );
             }
-          } 
+          }
         }
       }
     }
   }
-  PCCKdTree kdtreeMissedPoints( pointsToBeProjected );
-  PCCNNResult result;
+  PCCKdTree           kdtreeMissedPoints( pointsToBeProjected );
+  PCCNNResult         result;
   std::vector<size_t> missedPoints;
   missedPoints.resize( 0 );
   for ( size_t i = 0; i < source.getPointCount(); ++i ) {
@@ -2376,7 +2376,7 @@ void PCCEncoder::dilateSparseLinearModel( PCCFrameContext& framecontext,
                                           PCCImage<T, 3>&  image,
                                           int              layerIdx,
                                           PCCVideoType     videoType ) {
-  const size_t   maxChannel        = ( videoType == Texture ) ? 3 : 1;
+  const size_t   maxChannel        = ( videoType == VIDEO_TEXTURE ) ? 3 : 1;
   const int32_t  width             = image.getWidth();
   const int32_t  height            = image.getHeight();
   const int32_t  maxIterationCount = 1024;
@@ -2384,7 +2384,7 @@ void PCCEncoder::dilateSparseLinearModel( PCCFrameContext& framecontext,
   const auto     occupancyMap      = framecontext.getOccupancyMap();
   const int32_t  mask              = ( 1 << 16 ) - 1;
   PaddingContext context;
-  cout << "start padding in dilateSparseLinearModel - layerIdx:" << layerIdx << ", videoType:" << videoType << endl;
+  // cout << "start padding in dilateSparseLinearModel - layerIdx:" << layerIdx << ", videoType:" << videoType << endl;
 
   const int32_t pixelCount = width * height;
   context._invMapping.resize( pixelCount );
@@ -2495,7 +2495,7 @@ void PCCEncoder::dilateSparseLinearModel( PCCFrameContext& framecontext,
       const double betha = r1tr1 / rtr;
       for ( int32_t i = 0; i < emptyPixelCount; ++i ) { p[i] = r[i] + betha * p[i]; }
     }
-    std::cout << it << " -> error = " << error << std::endl;
+    // std::cout << it << " -> error = " << error << std::endl;
 
     for ( int32_t index0 = 0; index0 < emptyPixelCount; ++index0 ) {
       const int32_t pixelLocation = context._invMapping[index0];
@@ -2512,7 +2512,7 @@ void PCCEncoder::dilateSparseLinearModel( PCCFrameContext& framecontext,
     }  // index0
   }
 
-  cout << "dilateSparseLinear: finished" << endl;
+  //  cout << "dilateSparseLinear: finished" << endl;
   return;
 }
 /* pull push filling algorithm */
@@ -3267,10 +3267,10 @@ size_t PCCEncoder::unionPatchGenerationAndPacking( const GlobalPatches& globalPa
   size_t maxOccupancyRow{0};
 
   std::vector<bool> occupancyMap;
-  vector<int>       orientation_vertical   = {PatchOrientation::DEFAULT,
-                                      PatchOrientation::SWAP};  // favoring vertical orientation
+  vector<int>       orientation_vertical   = {PATCH_ORIENTATION_DEFAULT,
+                                      PATCH_ORIENTATION_SWAP};  // favoring vertical orientation
   vector<int>       orientation_horizontal = {
-      PatchOrientation::SWAP, PatchOrientation::DEFAULT};  // favoring horizontal orientations (that should be rotated)
+      PATCH_ORIENTATION_SWAP, PATCH_ORIENTATION_DEFAULT};  // favoring horizontal orientations (that should be rotated)
   occupancyMap.resize( occupancySizeU * occupancySizeV, false );
   for ( unionPatch::iterator iter = unionPatchTemp.begin(); iter != unionPatchTemp.end(); iter++ ) {
     auto& curUnionIndex = iter->first;
@@ -3285,7 +3285,7 @@ size_t PCCEncoder::unionPatchGenerationAndPacking( const GlobalPatches& globalPa
           curPatchUnion.getU0() = u;
           curPatchUnion.getV0() = v;
           if ( params_.packingStrategy_ == 0 ) {
-            curPatchUnion.getPatchOrientation() = PatchOrientation::DEFAULT;
+            curPatchUnion.getPatchOrientation() = PATCH_ORIENTATION_DEFAULT;
             if ( curPatchUnion.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, safeguard ) ) {
               locationFound = true;
               if ( printDetailedInfo ) {
@@ -3380,7 +3380,7 @@ void PCCEncoder::packingFirstFrame( PCCContext& context,
       bool  locationFound = false;
       auto& occupancy     = patch.getOccupancy();
       while ( !locationFound ) {
-        patch.getPatchOrientation() = PatchOrientation::DEFAULT;  // only one orientation is allowed
+        patch.getPatchOrientation() = PATCH_ORIENTATION_DEFAULT;  // only one orientation is allowed
         for ( int v = 0; v <= occupancySizeV && !locationFound; ++v ) {
           for ( int u = 0; u <= occupancySizeU && !locationFound; ++u ) {
             patch.getU0() = u;
@@ -3418,18 +3418,18 @@ void PCCEncoder::packingFirstFrame( PCCContext& context,
     std::cout << "actualImageSizeU " << widthGPA << std::endl;
     std::cout << "actualImageSizeV " << heithGPA << std::endl;
   } else {
-    // vector<int> orientation_vertical = { PatchOrientation::DEFAULT,PatchOrientation::ROT90,
-    // PatchOrientation::ROT180,PatchOrientation::ROT270,PatchOrientation::MIRROR,PatchOrientation::MROT180,
-    // PatchOrientation::MROT90,PatchOrientation::MROT270 };    // favoring vertical orientation
-    // vector<int> orientation_horizontal = { PatchOrientation::ROT90,PatchOrientation::DEFAULT,
-    // PatchOrientation::ROT270,PatchOrientation::ROT180,PatchOrientation::MROT90,PatchOrientation::MROT270,
-    // PatchOrientation::MIRROR,PatchOrientation::MROT180 };    // favoring horizontal orientations
+    // vector<int> orientation_vertical = { PATCH_ORIENTATION_DEFAULT,PATCH_ORIENTATION_ROT90,
+    // PATCH_ORIENTATION_ROT180,PATCH_ORIENTATION_ROT270,PATCH_ORIENTATION_MIRROR,PATCH_ORIENTATION_MROT180,
+    // PATCH_ORIENTATION_MROT90,PATCH_ORIENTATION_MROT270 };    // favoring vertical orientation
+    // vector<int> orientation_horizontal = { PATCH_ORIENTATION_ROT90,PATCH_ORIENTATION_DEFAULT,
+    // PATCH_ORIENTATION_ROT270,PATCH_ORIENTATION_ROT180,PATCH_ORIENTATION_MROT90,PATCH_ORIENTATION_MROT270,
+    // PATCH_ORIENTATION_MIRROR,PATCH_ORIENTATION_MROT180 };    // favoring horizontal orientations
     // (that should be rotated)
-    vector<int> orientation_vertical   = {PatchOrientation::DEFAULT,
-                                        PatchOrientation::SWAP};  // favoring vertical orientation
+    vector<int> orientation_vertical   = {PATCH_ORIENTATION_DEFAULT,
+                                        PATCH_ORIENTATION_SWAP};  // favoring vertical orientation
     vector<int> orientation_horizontal = {
-        PatchOrientation::SWAP,
-        PatchOrientation::DEFAULT};  // favoring horizontal orientations (that should be rotated)
+        PATCH_ORIENTATION_SWAP,
+        PATCH_ORIENTATION_DEFAULT};  // favoring horizontal orientations (that should be rotated)
     std::vector<bool> occupancyMap;
     occupancyMap.resize( occupancySizeU * occupancySizeV, false );
 
@@ -3623,11 +3623,11 @@ void PCCEncoder::performGPAPacking( const SubContext& subContext,
     heightGPA = occupancySizeV * params_.occupancyResolution_;
     size_t maxOccupancyRow{0};
 
-    vector<int> orientation_vertical   = {PatchOrientation::DEFAULT,
-                                        PatchOrientation::SWAP};  // favoring vertical orientation
+    vector<int> orientation_vertical   = {PATCH_ORIENTATION_DEFAULT,
+                                        PATCH_ORIENTATION_SWAP};  // favoring vertical orientation
     vector<int> orientation_horizontal = {
-        PatchOrientation::SWAP,
-        PatchOrientation::DEFAULT};  // favoring horizontal orientations (that should be rotated)
+        PATCH_ORIENTATION_SWAP,
+        PATCH_ORIENTATION_DEFAULT};  // favoring horizontal orientations (that should be rotated)
     std::vector<bool> occupancyMap;
     occupancyMap.resize( occupancySizeU * occupancySizeV, false );
     // !!!packing global matched patch;
@@ -3715,10 +3715,10 @@ void PCCEncoder::packingWithoutRefForFirstFrameNoglobalPatch( PCCPatch&         
                                                               size_t&            heightGPA,
                                                               size_t&            widthGPA,
                                                               size_t             maxOccupancyRow ) {
-  vector<int> orientation_vertical   = {PatchOrientation::DEFAULT,
-                                      PatchOrientation::SWAP};  // favoring vertical orientation
+  vector<int> orientation_vertical   = {PATCH_ORIENTATION_DEFAULT,
+                                      PATCH_ORIENTATION_SWAP};  // favoring vertical orientation
   vector<int> orientation_horizontal = {
-      PatchOrientation::SWAP, PatchOrientation::DEFAULT};  // favoring horizontal orientations (that should be rotated)
+      PATCH_ORIENTATION_SWAP, PATCH_ORIENTATION_DEFAULT};  // favoring horizontal orientations (that should be rotated)
 
   GPAPatchData& preGPAPatchData = patch.getCurGPAPatchData();
 
@@ -3798,10 +3798,10 @@ void PCCEncoder::packingWithRefForFirstFrameNoglobalPatch( PCCPatch&            
                                                            size_t&                     heightGPA,
                                                            size_t&                     widthGPA,
                                                            size_t                      maxOccupancyRow ) {
-  vector<int> orientation_vertical   = {PatchOrientation::DEFAULT,
-                                      PatchOrientation::SWAP};  // favoring vertical orientation
+  vector<int> orientation_vertical   = {PATCH_ORIENTATION_DEFAULT,
+                                      PATCH_ORIENTATION_SWAP};  // favoring vertical orientation
   vector<int> orientation_horizontal = {
-      PatchOrientation::SWAP, PatchOrientation::DEFAULT};  // favoring horizontal orientations (that should be rotated)
+      PATCH_ORIENTATION_SWAP, PATCH_ORIENTATION_DEFAULT};  // favoring horizontal orientations (that should be rotated)
 
   GPAPatchData& preGPAPatchData = patch.getCurGPAPatchData();
 
@@ -4068,7 +4068,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
   psdu.setFrameCount( context.getFrames().size() );
   TRACE_CODEC( "getFrameCount %u \n", psdu.getFrameCount() );
   psdu.addPatchSequenceUnitPayload( PSD_SPS, 0 );
-  auto& psps = psdu.getPatchSequenceParameterSet( 0 );
+  auto&         psps = psdu.getPatchSequenceParameterSet( 0 );
   RefListStruct refList;
   refList.allocate();
   refList.setNumRefEntries( 1 );
@@ -4122,10 +4122,10 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
   pfh.setPatchFrameOrderCntLsb( frameIndex );
   pfps.setPatchOrientationPresentFlag( params_.packingStrategy_ > 0 );
   if ( ( frameIndex == 0 ) || ( !sps.getPatchInterPredictionEnabledFlag() ) ) {
-    pfh.setType( I_PATCH_FRAME );
+    pfh.setType( PATCH_FRAME_I );
     frame.getNumMatchedPatches() = 0;
   } else {
-    pfh.setType( P_PATCH_FRAME );
+    pfh.setType( PATCH_FRAME_P );
   }
 
   TRACE_CODEC( "patches size      = %lu \n", patches.size() );
@@ -4141,9 +4141,10 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
     const auto& refPatch = refPatches[patch.getBestMatchIdx()];
     auto&       pid      = pfdu.addPatchInformationData();
     auto&       dpdu     = pid.getDeltaPatchDataUnit();
-    pfdu.addPatchMode( P_INTER );
+    pid.allocate( sps.getAttributeCount() );
+    pfdu.addPatchMode( PATCH_MODE_P_INTER );
     TRACE_CODEC( "patch %lu / %lu \n", patchIndex, patches.size() );
-    pfdu.setPatchMode( patchIndex, P_INTER );
+    pfdu.setPatchMode( patchIndex, PATCH_MODE_P_INTER );
     dpdu.setDeltaPatchIdx( patch.getBestMatchIdx() - predIndex );
     dpdu.set2DDeltaShiftU( patch.getU0() - refPatch.getU0() );
     dpdu.set2DDeltaShiftV( patch.getV0() - refPatch.getV0() );
@@ -4188,9 +4189,11 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
   for ( size_t patchIndex = frame.getNumMatchedPatches(); patchIndex < patches.size(); patchIndex++ ) {
     const auto& patch = patches[patchIndex];
     auto&       pid   = pfdu.addPatchInformationData();
+    pid.allocate( sps.getAttributeCount() );
     TRACE_CODEC( "patch %lu / %lu: Intra \n", patchIndex, patches.size() );
-    pfdu.addPatchMode( ( ( frameIndex == 0 ) || ( !sps.getPatchInterPredictionEnabledFlag() ) ) ? (uint8_t)I_INTRA
-                                                                                                : (uint8_t)P_INTRA );
+    pfdu.addPatchMode( ( ( frameIndex == 0 ) || ( !sps.getPatchInterPredictionEnabledFlag() ) )
+                           ? (uint8_t)PATCH_MODE_I_INTRA
+                           : (uint8_t)PATCH_MODE_P_INTRA );
     auto& pdu = pid.getPatchDataUnit();
     pdu.set2DShiftU( patch.getU0() );
     pdu.set2DShiftV( patch.getV0() );
@@ -4202,7 +4205,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
     pdu.set2DDeltaSizeU( patch.getSizeU0() - prevSizeU0 );
     pdu.set2DDeltaSizeV( patch.getSizeV0() - prevSizeV0 );
     pdu.setOrientationSwapFlag( pfps.getPatchOrientationPresentFlag() &&
-                                patch.getPatchOrientation() != PatchOrientation::DEFAULT );
+                                patch.getPatchOrientation() != PATCH_ORIENTATION_DEFAULT );
     if ( pdu.getProjectionMode() == 0 ) {
       pdu.set3DShiftNormalAxis( patch.getD1() / minLevel );
     } else {
@@ -4246,6 +4249,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
     auto& pid               = pfdu.addPatchInformationData();
     auto& ppdu              = pid.getPCMPatchDataUnit();
     auto& missedPointsPatch = frame.getMissedPointsPatch();
+    pid.allocate( sps.getAttributeCount() );
     TRACE_CODEC( "patch %lu / %lu: PCM \n", patches.size(), patches.size() );
     ppdu.set2DShiftU( missedPointsPatch.u0_ );
     ppdu.set2DShiftV( missedPointsPatch.v0_ );
@@ -4253,128 +4257,35 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
     ppdu.set2DDeltaSizeV( missedPointsPatch.sizeV0_ );
     ppdu.setPatchInPcmVideoFlag( sps.getPcmSeparateVideoPresentFlag() );
     ppdu.setPcmPoints( missedPointsPatch.numMissedPts_ );
-    pfdu.addPatchMode( ( ( frameIndex == 0 ) || ( !sps.getPatchInterPredictionEnabledFlag() ) ) ? (uint8_t)I_PCM
-                                                                                                : (uint8_t)P_PCM );
+    pfdu.addPatchMode( ( ( frameIndex == 0 ) || ( !sps.getPatchInterPredictionEnabledFlag() ) )
+                           ? (uint8_t)PATCH_MODE_I_PCM
+                           : (uint8_t)PATCH_MODE_P_PCM );
     TRACE_CODEC( "PCM :UV = %lu %lu  size = %lu %lu  numPoints = %lu ocmRes = %lu \n", missedPointsPatch.u0_,
                  missedPointsPatch.v0_, missedPointsPatch.sizeU0_, missedPointsPatch.sizeV0_,
                  missedPointsPatch.numMissedPts_, missedPointsPatch.occupancyResolution_ );
   }
 
   // pfh bitcount
-  if ( ( frameIndex == 0 ) || ( !sps.getPatchInterPredictionEnabledFlag() ) ) {
-    size_t maxU0 = 0, maxV0 = 0, maxU1 = 0, maxV1 = 0, maxLod = 0;
-    for ( size_t patchIndex = 0; patchIndex < pfdu.getPatchCount(); ++patchIndex ) {
-      const auto& patch = patches[patchIndex];
-      maxU0             = ( std::max )( maxU0, patch.getU0() );
-      maxV0             = ( std::max )( maxV0, patch.getV0() );
-      maxU1             = ( std::max )( maxU1, patch.getU1() );
-      maxV1             = ( std::max )( maxV1, patch.getV1() );
-      maxLod            = ( std::max )( maxLod, patch.getLod() );
-    }
-    const uint8_t bitCountU0  = uint8_t( getFixedLengthCodeBitsCount( uint32_t( maxU0 + 1 ) ) );
-    const uint8_t bitCountV0  = uint8_t( getFixedLengthCodeBitsCount( uint32_t( maxV0 + 1 ) ) );
-    const uint8_t bitCountU1  = uint8_t( getFixedLengthCodeBitsCount( uint32_t( maxU1 + 1 ) ) );
-    const uint8_t bitCountV1  = uint8_t( getFixedLengthCodeBitsCount( uint32_t( maxV1 + 1 ) ) );
-    const uint8_t bitCountD1  = maxBitCountForMinDepth;
-    const uint8_t bitCountDD  = maxBitCountForMaxDepth;
-    const uint8_t bitCountLod = uint8_t( getFixedLengthCodeBitsCount( uint32_t( maxLod + 1 ) ) );
-
-    pfh.setInterPredictPatch2dShiftUBitCountMinus1( bitCountU0 - 1 );
-    pfh.setInterPredictPatch2dShiftVBitCountMinus1( bitCountV0 - 1 );
-    pfh.setInterPredictPatch3dShiftTangentAxisBitCountMinus1( bitCountU1 - 1 );
-    pfh.setInterPredictPatch3dShiftBitangentAxisBitCountMinus1( bitCountV1 - 1 );
-    pfh.setInterPredictPatch3dShiftNormalAxisBitCountMinus1( maxBitCountForMinDepth - 1 );
-    pfh.setInterPredictPatchLodBitCount( bitCountLod );
-
-  } else {
-    size_t        TopNmaxU0 = 0, maxU0 = 0;
-    size_t        TopNmaxV0 = 0, maxV0 = 0;
-    size_t        TopNmaxU1 = 0, maxU1 = 0;
-    size_t        TopNmaxV1 = 0, maxV1 = 0;
-    size_t        TopNmaxD1 = 0, maxD1 = 0;
-    size_t        TopNmaxDD = 0, maxDD = 0, maxLod = 0;
-    const size_t  minLevel               = sps.getMinLevel();
-    const uint8_t maxBitCountForMinDepth = uint8_t( 10 - gbitCountSize[minLevel] );
-    uint8_t       maxAllowedDepthP1      = params_.maxAllowedDepth_ + 1;
-    uint8_t       bitCountDDMax          = 0;  // 255
-    while ( ( maxAllowedDepthP1 ) >> bitCountDDMax ) { bitCountDDMax++; }
-    const uint8_t maxBitCountForMaxDepth = uint8_t( 9 - gbitCountSize[minLevel] );
-
-    // get the maximum u0,v0,u1,v1 and d1.
-    for ( size_t patchIndex = 0; patchIndex < frame.getNumMatchedPatches(); ++patchIndex ) {
-      const auto& patch = patches[patchIndex];
-      TopNmaxU0         = ( std::max )( TopNmaxU0, patch.getU0() );
-      TopNmaxV0         = ( std::max )( TopNmaxV0, patch.getV0() );
-      TopNmaxU1         = ( std::max )( TopNmaxU1, patch.getU1() );
-      TopNmaxV1         = ( std::max )( TopNmaxV1, patch.getV1() );
-      size_t D1         = patch.getD1() / minLevel;
-      TopNmaxD1         = ( std::max )( TopNmaxD1, D1 );
-      size_t DD         = patch.getSizeD() / minLevel;
-      TopNmaxDD         = ( std::max )( TopNmaxDD, DD );
-    }
-    for ( size_t patchIndex = frame.getNumMatchedPatches(); patchIndex < pfdu.getPatchCount(); ++patchIndex ) {
-      const auto& patch = patches[patchIndex];
-      maxU0             = ( std::max )( maxU0, patch.getU0() );
-      maxV0             = ( std::max )( maxV0, patch.getV0() );
-      maxU1             = ( std::max )( maxU1, patch.getU1() );
-      maxV1             = ( std::max )( maxV1, patch.getV1() );
-      size_t D1         = patch.getD1() / minLevel;
-      maxD1             = ( std::max )( maxD1, D1 );
-      size_t DD         = patch.getSizeD() / minLevel;
-      maxDD             = ( std::max )( maxDD, DD );
-      maxLod            = ( std::max )( maxLod, patch.getLod() );
-    }
-    uint8_t flag = 0;
-    uint8_t F    = 1;  // true if the maximum value comes from the latter part.
-    uint8_t A[4] = {1, 1, 1, 1};
-
-    uint8_t bitCount[5], topBitCount[5];
-    bitCount[0]               = uint8_t( getFixedLengthCodeBitsCount( uint32_t( maxU0 + 1 ) ) );
-    bitCount[1]               = uint8_t( getFixedLengthCodeBitsCount( uint32_t( maxV0 + 1 ) ) );
-    bitCount[2]               = uint8_t( getFixedLengthCodeBitsCount( uint32_t( maxU1 + 1 ) ) );
-    bitCount[3]               = uint8_t( getFixedLengthCodeBitsCount( uint32_t( maxV1 + 1 ) ) );
-    bitCount[4]               = maxBitCountForMinDepth;
-    topBitCount[0]            = uint8_t( getFixedLengthCodeBitsCount( uint32_t( TopNmaxU0 + 1 ) ) );
-    topBitCount[1]            = uint8_t( getFixedLengthCodeBitsCount( uint32_t( TopNmaxV0 + 1 ) ) );
-    topBitCount[2]            = uint8_t( getFixedLengthCodeBitsCount( uint32_t( TopNmaxU1 + 1 ) ) );
-    topBitCount[3]            = uint8_t( getFixedLengthCodeBitsCount( uint32_t( TopNmaxV1 + 1 ) ) );
-    const uint8_t bitCountLod = uint8_t( getFixedLengthCodeBitsCount( uint32_t( maxLod + 1 ) ) );
-
-    // for ( int i = 0; i < 4; i++ ) {
-    //   if ( bitCount[i] <= topBitCount[i] ) {
-    //     bitCount[i] = topBitCount[i];
-    //     A[i]        = 0;
-    //   }
-    //   flag = flag << 1;
-    //   flag += A[i];
-    // }
-    // // Generate F and A.
-    // if ( flag == 0 ) { F = 0; }
-    pfh.setInterPredictPatchBitCountFlag( true );
-    if ( F ) {
-      pfh.setInterPredictPatch2dShiftUBitCountFlag( A[0] );
-      pfh.setInterPredictPatch2dShiftVBitCountFlag( A[1] );
-      pfh.setInterPredictPatch3dShiftTangentAxisBitCountFlag( A[2] );
-      pfh.setInterPredictPatch3dShiftBitangentAxisBitCountFlag( A[3] );
-      pfh.setInterPredictPatchLodBitCountFlag( A[4] );
-      if ( A[0] ) { pfh.setInterPredictPatch2dShiftUBitCountMinus1( bitCount[0] ); }
-      if ( A[1] ) { pfh.setInterPredictPatch2dShiftVBitCountMinus1( bitCount[1] ); }
-      if ( A[2] ) { pfh.setInterPredictPatch3dShiftTangentAxisBitCountMinus1( bitCount[2] ); }
-      if ( A[3] ) { pfh.setInterPredictPatch3dShiftBitangentAxisBitCountMinus1( bitCount[3] ); }
-      if ( A[4] ) { pfh.setInterPredictPatchLodBitCount( bitCount[4] ); }
-    }
-
-    pfh.setInterPredictPatch2dShiftUBitCountFlag( true );
-    pfh.setInterPredictPatch2dShiftVBitCountFlag( true );
-    pfh.setInterPredictPatch3dShiftTangentAxisBitCountFlag( true );
-    pfh.setInterPredictPatch3dShiftBitangentAxisBitCountFlag( true );
-    pfh.setInterPredictPatch3dShiftNormalAxisBitCountFlag( true );
-    pfh.setInterPredictPatchLodBitCountFlag( false );
-    pfh.setInterPredictPatch2dShiftUBitCountMinus1( bitCount[0] );
-    pfh.setInterPredictPatch2dShiftVBitCountMinus1( bitCount[1] );
-    pfh.setInterPredictPatch3dShiftTangentAxisBitCountMinus1( bitCount[2] );
-    pfh.setInterPredictPatch3dShiftBitangentAxisBitCountMinus1( bitCount[3] );
-    pfh.setInterPredictPatch3dShiftNormalAxisBitCountMinus1( bitCount[4] );
-    pfh.setInterPredictPatchLodBitCount( bitCountLod );
+  size_t maxU0 = 0, maxV0 = 0, maxU1 = 0, maxV1 = 0, maxLod = 0;
+  for ( size_t patchIndex = frame.getNumMatchedPatches(); patchIndex < pfdu.getPatchCount(); ++patchIndex ) {
+    const auto& patch = patches[patchIndex];
+    maxU0             = ( std::max )( maxU0, patch.getU0() );
+    maxV0             = ( std::max )( maxV0, patch.getV0() );
+    maxU1             = ( std::max )( maxU1, patch.getU1() );
+    maxV1             = ( std::max )( maxV1, patch.getV1() );
+    maxLod            = ( std::max )( maxLod, patch.getLod() );
   }
+  const uint8_t bitCountU0  = uint8_t( getFixedLengthCodeBitsCount( uint32_t( maxU0 + 1 ) ) );
+  const uint8_t bitCountV0  = uint8_t( getFixedLengthCodeBitsCount( uint32_t( maxV0 + 1 ) ) );
+  const uint8_t bitCountU1  = uint8_t( getFixedLengthCodeBitsCount( uint32_t( maxU1 + 1 ) ) );
+  const uint8_t bitCountV1  = uint8_t( getFixedLengthCodeBitsCount( uint32_t( maxV1 + 1 ) ) );
+  const uint8_t bitCountD1  = maxBitCountForMinDepth;
+  const uint8_t bitCountDD  = maxBitCountForMaxDepth;
+  const uint8_t bitCountLod = uint8_t( getFixedLengthCodeBitsCount( uint32_t( maxLod + 1 ) ) );
+  pfh.setInterPredictPatch2dShiftUBitCountMinus1( bitCountU0 - 1 );
+  pfh.setInterPredictPatch2dShiftVBitCountMinus1( bitCountV0 - 1 );
+  pfh.setInterPredictPatch3dShiftTangentAxisBitCountMinus1( bitCountU1 - 1 );
+  pfh.setInterPredictPatch3dShiftBitangentAxisBitCountMinus1( bitCountV1 - 1 );
+  pfh.setInterPredictPatch3dShiftNormalAxisBitCountMinus1( bitCountD1 - 1 );
+  pfh.setInterPredictPatchLodBitCount( bitCountLod );
 }

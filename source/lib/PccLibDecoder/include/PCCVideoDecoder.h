@@ -75,17 +75,9 @@ class PCCVideoDecoder {
     size_t        width = 0, height = 0, bitDepth = 0;
     PCCHevcParser hevcParser;
     hevcParser.getVideoSize( bitstream.vector(), width, height, bitDepth );
-    if ( bitstream.type() == PCCVideoType::OccupancyMap || bitstream.type() == PCCVideoType::Texture ||
-         bitstream.type() == PCCVideoType::TextureMP ) {
-      bitDepth = 8;
 #ifdef BUG_FIX_BITDEPTH
-      bitDepth = bitstream.getBitdepth();
+    bitDepth = bitstream.getBitdepth();
 #endif
-    } else {
-#ifdef BUG_FIX_BITDEPTH
-      bitDepth = bitstream.getBitdepth();
-#endif
-    }
     const std::string yuvRecFileName = addVideoFormat( fileName + "_rec" + ( use444CodecIo ? ".rgb" : ".yuv" ), width,
                                                        height, !use444CodecIo, bitDepth == 10 ? "10" : "8" );
     const std::string rgbRecFileName =

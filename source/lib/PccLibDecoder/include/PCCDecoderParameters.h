@@ -46,18 +46,18 @@ class PCCDecoderParameters {
 
   void completePath();
 
-  size_t         startFrameNumber_;
-  std::string    compressedStreamPath_;
-  std::string    reconstructedDataPath_;
-  std::string    videoDecoderPath_;
-  std::string    videoDecoderOccupancyMapPath_;
-  ColorTransform colorTransform_;
-  std::string    colorSpaceConversionPath_;
-  std::string    inverseColorSpaceConversionConfig_;
-  size_t         nbThread_;
-  bool           keepIntermediateFiles_;
-  size_t         testLevelOfDetailSignaling_;
-  bool           patchColorSubsampling_;
+  size_t            startFrameNumber_;
+  std::string       compressedStreamPath_;
+  std::string       reconstructedDataPath_;
+  std::string       videoDecoderPath_;
+  std::string       videoDecoderOccupancyMapPath_;
+  PCCColorTransform colorTransform_;
+  std::string       colorSpaceConversionPath_;
+  std::string       inverseColorSpaceConversionConfig_;
+  size_t            nbThread_;
+  bool              keepIntermediateFiles_;
+  size_t            testLevelOfDetailSignaling_;
+  bool              patchColorSubsampling_;
 };
 
 };  // namespace pcc
