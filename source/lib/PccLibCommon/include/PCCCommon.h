@@ -60,8 +60,9 @@
 #include <mach/mach.h>
 #endif
 
-#define BUGFIX_BETA_BITCOUNT 1
+#define BUGFIX_BITCOUNT 1
 #define BUGFIX_PCM 1
+
 // ******************************************************************* //
 // Trace modes to validate new syntax
 // ******************************************************************* //

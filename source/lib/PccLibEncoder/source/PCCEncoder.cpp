@@ -4257,11 +4257,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
 
   // pfh bitcount
   size_t maxU0 = 0, maxV0 = 0, maxU1 = 0, maxV1 = 0, maxLod = 0;
-#if BUGFIX_BETA_BITCOUNT //in lossless case, pfdu.getPatchCount()>patches.size()
-  for ( size_t patchIndex = frame.getNumMatchedPatches(); patchIndex < patches.size(); ++patchIndex )
-#else
   for ( size_t patchIndex = frame.getNumMatchedPatches(); patchIndex < pfdu.getPatchCount(); ++patchIndex )
-#endif
   {
     const auto& patch = patches[patchIndex];
     maxU0             = ( std::max )( maxU0, patch.getU0() );
@@ -4278,7 +4274,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
   const uint8_t bitCountDD  = maxBitCountForMaxDepth;
   const uint8_t bitCountLod = uint8_t( getFixedLengthCodeBitsCount( uint32_t( maxLod + 1 ) ) );
   
-#if BUGFIX_BETA_BITCOUNT //jkei: to handle the case frame.getNumMatchedPatches()== pfdu.getPatchCount()
+#if BUGFIX_BITCOUNT //jkei: to handle the case frame.getNumMatchedPatches()== pfdu.getPatchCount()
   //bool bIntraPatches= (frame.getNumMatchedPatches()!= pfdu.getPatchCount());
   pfh.setInterPredictPatch2dShiftUBitCountMinus1( bitCountU0>0?(bitCountU0 - 1):0 );
   pfh.setInterPredictPatch2dShiftVBitCountMinus1( bitCountV0>0?(bitCountV0 - 1):0 );
