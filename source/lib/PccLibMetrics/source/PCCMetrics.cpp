@@ -91,7 +91,7 @@ void QualityMetrics::compute( const PCCPointSet3& pointcloudA, const PCCPointSet
 
   psnr_ = params_.resolution_;
   #define NUM_RESULTS 30
-  const size_t num_results = NUM_RESULTS;
+//  const size_t num_results = NUM_RESULTS;
 
   PCCKdTree kdtree( pointcloudB );
   PCCNNResult result;
@@ -292,8 +292,8 @@ void QualityMetrics::print( char code ){
 }
 PCCMetrics::PCCMetrics():
     sourcePoints_          ( 0    ),
-    reconstructPoints_     ( 0    ),
     sourceDuplicates_      ( 0    ),
+    reconstructPoints_     ( 0    ),
     reconstructDuplicates_ ( 0    ) {
 }
 PCCMetrics::~PCCMetrics(){

@@ -171,7 +171,6 @@ void PCCBitstreamDecoder::pcmSeparateVideoData( PCCContext& context, PCCBitstrea
 // 7.3.5 V-PCC unit payload syntax
 void PCCBitstreamDecoder::vpccUnitPayload( PCCContext& context, PCCBitstream& bitstream, VPCCUnitType& vpccUnitType ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
-  auto& psdu = context.getPatchSequenceDataUnit();
   if ( vpccUnitType == VPCC_SPS ) {
     auto& sps = context.addSequenceParameterSet( context.getVPCC().getSequenceParameterSetId() );
     sequenceParameterSet( sps, bitstream );
@@ -394,7 +393,6 @@ void PCCBitstreamDecoder::attributeSequenceParams( AttributeSequenceParams& asp,
 void PCCBitstreamDecoder::patchSequenceDataUnit( PCCContext& context, PCCBitstream& bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   size_t i    = 0;
-  auto&  sps  = context.getSps();
   auto&  psdu = context.getPatchSequenceDataUnit();
   psdu.setFrameCount( 0 );
   size_t psdFrameCount                         = 0;  // psdu.getFrameCount();
@@ -474,7 +472,7 @@ void PCCBitstreamDecoder::patchSequenceUnitPayload( PatchSequenceUnitPayload& ps
     auto& sps = context.getSps();
     geometryFrameParameterSet( psup.getGeometryFrameParameterSet(), sps.getGeometryParameterSet(), bitstream );
   } else if ( psup.getUnitType() == PSD_PFLU ) {
-    assert( psupPrevPFLU.getUnitType() == PSD_PFLU );
+    //assert( psupPrevPFLU.getUnitType() == PSD_PFLU ); //in case of AI or IFRAME
     patchFrameLayerUnit( psup.getPatchFrameLayerUnit(), psupPrevPFLU.getPatchFrameLayerUnit(), context, bitstream );
   }
 }
@@ -829,7 +827,7 @@ void PCCBitstreamDecoder::patchFrameHeader( PatchFrameHeader& pfh,
         pfh.setInterPredictPatchLodBitCount( bitstream.read( 8 ) + 1 );
       }  // u( 8 )
     }
-    // jkei : I don't like it much, mixing parsing and reconsructing...
+    // jkei : DPB later
     if ( !pfh.getInterPredictPatchBitCountFlag() || !pfh.getInterPredictPatch2dShiftUBitCountFlag() ) {
       pfh.setInterPredictPatch2dShiftUBitCountMinus1( pfhPrev.getInterPredictPatch2dShiftUBitCountMinus1() );
     }
@@ -910,7 +908,7 @@ void PCCBitstreamDecoder::patchFrameDataUnit( PatchFrameDataUnit& pfdu,
   TRACE_BITSTREAM( "%s \n", __func__ );
   TRACE_BITSTREAM( "patchFrameDataUnit start \n" );
   TRACE_BITSTREAM( "pfh.getType()        = %lu \n", pfh.getType() );
-  uint8_t                 puCount = -1;
+//  uint8_t                 puCount = -1;
   o3dgc::Arithmetic_Codec arithmeticDecoder;
   uint32_t                compressedBitstreamSize;
   compressedBitstreamSize = bitstream.read( 32 );
@@ -1049,7 +1047,7 @@ void PCCBitstreamDecoder::patchDataUnit( PatchDataUnit&           pdu,
 
   o3dgc::Adaptive_Data_Model orientationModel( 4 );
   pcc::PCCAxis3              normalAxis;
-  // jkei : it should decode 2 bits...
+  
   size_t bit0 = arithmeticDecoder.decode( orientationModel2 );
   if ( bit0 == 0 ) {  // 0
     normalAxis = PCC_AXIS3_X;

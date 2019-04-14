@@ -52,7 +52,7 @@ namespace pcc {
     return (uint64_t)pmc.PeakWorkingSetSize / 1024;
   }
 #elif defined(__APPLE__) && defined(__MACH__)
-  static int getUsedMemory() {
+  static inline int getUsedMemory() {
     struct mach_task_basic_info info;
     mach_msg_type_number_t infoCount = MACH_TASK_BASIC_INFO_COUNT;
     if ( task_info( mach_task_self(), MACH_TASK_BASIC_INFO, (task_info_t)&info, &infoCount ) != KERN_SUCCESS ) {

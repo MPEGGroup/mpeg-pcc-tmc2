@@ -466,6 +466,7 @@ class PatchFrameHeader {
   }
   PatchFrameHeader& operator=( const PatchFrameHeader& ) = default;
 
+  uint8_t getFrameIndex(){ return frameIndex_; }
   uint8_t  getPatchFrameParameterSetId() { return patchFrameParameterSetId_; }
   uint32_t getAddress() { return address_; }
   uint32_t getType() { return type_; }
@@ -498,6 +499,7 @@ class PatchFrameHeader {
   }
   uint8_t getInterPredictPatchLodBitCount() { return interPredictPatchLodBitCount_; }
 
+  void setFrameIndex(uint8_t index){ frameIndex_=index; }
   void setPatchFrameParameterSetId( uint8_t value ) { patchFrameParameterSetId_ = value; }
   void setAddress( uint8_t value ) { address_ = value; }
   void setType( uint8_t value ) { type_ = value; }
@@ -1240,6 +1242,8 @@ class PatchSequenceDataUnit {
       }
     }
     fprintf( stderr, "Error: can't find PatchSequenceUnitPayload of type: %u and index = %u  \n", psdUnitType, index );
+    
+    exit(-1);
   }
   uint8_t                               frameCount_;
   std::vector<PatchSequenceUnitPayload> patchSequenceUnitPayload_;

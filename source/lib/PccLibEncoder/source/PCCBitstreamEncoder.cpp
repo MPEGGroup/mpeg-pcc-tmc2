@@ -171,8 +171,7 @@ void PCCBitstreamEncoder::pcmSeparateVideoData( PCCContext& context, PCCBitstrea
 // 7.3.5 V-PCC unit payload syntax
 void PCCBitstreamEncoder::vpccUnitPayload( PCCContext& context, PCCBitstream& bitstream, VPCCUnitType vpccUnitType ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
-  auto& sps  = context.getSps();  // jkei: for future update
-  auto& psdu = context.getPatchSequenceDataUnit();
+  auto& sps  = context.getSps();
   if ( vpccUnitType == VPCC_SPS ) {
     sequenceParameterSet( sps, bitstream );
   } else if ( vpccUnitType == VPCC_PSD ) {
@@ -199,8 +198,8 @@ void PCCBitstreamEncoder::sequenceParameterSet( SequenceParameterSet& sps, PCCBi
   if ( sps.getLayerCountMinus1() > 0 ) {
     bitstream.write( (uint32_t)sps.getMultipleLayerStreamsPresentFlag(), 1 );  // u(1)
   }
-  auto layerAbsoluteCodingEnabledFlag = sps.getLayerAbsoluteCodingEnabledFlag( 1 );
-  auto layerPredictorIndexDiff        = sps.getLayerPredictorIndexDiff( 0 );
+//  auto layerAbsoluteCodingEnabledFlag = sps.getLayerAbsoluteCodingEnabledFlag( 1 );
+//  auto layerPredictorIndexDiff        = sps.getLayerPredictorIndexDiff( 0 );
   for ( size_t i = 0; i < sps.getLayerCountMinus1(); i++ ) {
     bitstream.write( (uint32_t)sps.getLayerAbsoluteCodingEnabledFlag( i + 1 ), 1 );  // u(1)
     if ( ( sps.getLayerAbsoluteCodingEnabledFlag( i + 1 ) == 0 ) ) {
@@ -279,7 +278,7 @@ void PCCBitstreamEncoder::geometryParameterSet( GeometryParameterSet& gps,
   bitstream.write( (uint32_t)gps.getGeometryParamsEnabledFlag(), 1 );  // u(1)
   if ( gps.getGeometryParamsEnabledFlag() ) { geometrySequenceParams( gps.getGeometrySequenceParams(), bitstream ); }
 
-  // jkei[??] is it changed as intended?
+  
   bitstream.write( (uint32_t)gps.getGeometryPatchParamsEnabledFlag(), 1 );  // u(1)
   if ( gps.getGeometryPatchParamsEnabledFlag() ) {
     bitstream.write( (uint32_t)gps.getGeometryPatchScaleParamsEnabledFlag(), 1 );     // u(1)
@@ -388,8 +387,7 @@ void PCCBitstreamEncoder::attributeSequenceParams( AttributeSequenceParams& asp,
 }
 
 // 7.3.14 Patch sequence data unit syntax
-// jkei : So, I just send 'previous PFLU' like this but hopefully some other way?
-// jkei : if we have(later), more than -1 reference frame, we might need to do something more than this
+// jkei : DPB later
 void PCCBitstreamEncoder::patchSequenceDataUnit( PCCContext& context, PCCBitstream& bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   size_t prevPFLUindex = 0;
@@ -449,7 +447,7 @@ void PCCBitstreamEncoder::patchSequenceUnitPayload( PatchSequenceUnitPayload& ps
   } else if ( psup.getUnitType() == PSD_GFPS ) {
     geometryFrameParameterSet( psup.getGeometryFrameParameterSet(), sps.getGeometryParameterSet(), bitstream );
   } else if ( psup.getUnitType() == PSD_PFLU ) {
-    assert( psupPrevPFLU.getUnitType() == PSD_PFLU );
+    //assert( psupPrevPFLU.getUnitType() == PSD_PFLU ); //in case of AI or IFRAME
     patchFrameLayerUnit( psup.getPatchFrameLayerUnit(), psupPrevPFLU.getPatchFrameLayerUnit(), context, bitstream );
   }
 }
@@ -775,7 +773,7 @@ void PCCBitstreamEncoder::patchFrameHeader( PatchFrameHeader& pfh,
     bitstream.write( (uint32_t)pfh.getInterPredictPatch3dShiftNormalAxisBitCountMinus1(), 8 );     // u( 8 )
     bitstream.write( (uint32_t)pfh.getInterPredictPatchLodBitCount(), 8 );                         // u( 8 )
   } else {
-    // jkei : I don't like it much, mixing parsing and reconsructing...
+    // jkei : DPB later
     bool countFlag[6] = {0, 0, 0, 0, 0, 0};
     bool countSumFlag = 0;
     countFlag[0] =
@@ -1029,7 +1027,7 @@ void PCCBitstreamEncoder::patchDataUnit( PatchDataUnit&           pdu,
     arithmeticEncoder.encode( 0, orientationModel2 );
   } else if ( pdu.getNormalAxis() == PCC_AXIS3_Y ) {
     arithmeticEncoder.encode( 1, orientationModel2 );
-    arithmeticEncoder.encode( 0, bModel );  // jkei : I am not sure about its model
+    arithmeticEncoder.encode( 0, bModel );  //jkei:bModel?
   } else {
     arithmeticEncoder.encode( 1, orientationModel2 );
     arithmeticEncoder.encode( 1, bModel );

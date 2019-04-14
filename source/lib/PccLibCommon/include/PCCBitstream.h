@@ -124,7 +124,7 @@ class PCCBitstreamStat {
     printf( "  Header:                     %9lu B %9lu b\n", header_, header_ * 8 );
     if ( byGOF ) {
       for ( size_t i = 0; i < bitstreamGofStat_.size(); i++ ) {
-        printf( "  GOF %2d: \n", i );
+        printf( "  GOF %2zu: \n", i );
         bitstreamGofStat_[i].trace();
       }
       printf( "  Total: \n" );

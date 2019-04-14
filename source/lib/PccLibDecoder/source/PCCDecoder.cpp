@@ -353,7 +353,6 @@ void PCCDecoder::setPointLocalReconstruction( PCCFrameContext&          frame,
       if ( blockToPatch[pos] > 0 ) {
         interpolateMap[pos] = plr.getModeInterpolateFlag( u0, v0 );
         if ( interpolateMap[pos] > 0 ) {
-          uint32_t code    = static_cast<uint32_t>( int() - 1 );
           neighborMap[pos] = plr.getModeNeighbourMinus1( u0, v0 ) + 1;
         }
         minD1Map[pos] = plr.getModeMinimumDepthMinus1( u0, v0 ) + 1;
@@ -415,14 +414,30 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
   const uint8_t maxBitCountForMinDepth = uint8_t( 10 - gbitCountSize[minLevel] );
   const uint8_t maxBitCountForMaxDepth = uint8_t( 9 - gbitCountSize[minLevel] );
 
+#if BUGFIX_PCM
+  //jkei : it is not a bugfix but this way will be more aligned with the spec. PCM patches can be anywhere in theory
+  size_t numPCMPatches=0;
+  size_t numNonPCMPatch=0;
+  for(size_t patchIdx=0; patchIdx<pfdu.getPatchCount(); patchIdx++)
+  {
+    if(( PCCPatchFrameType( pfh.getType() ) == PATCH_FRAME_I &&
+        PCCPatchModeI( pfdu.getPatchMode( patchIdx ) ) == PATCH_MODE_I_PCM ) ||
+       ( PCCPatchFrameType( pfh.getType() ) == PATCH_FRAME_P &&
+        PCCPatchModeP( pfdu.getPatchMode( patchIdx ) ) == PATCH_MODE_P_PCM )) numPCMPatches++;
+    else numNonPCMPatch++;
+  }
+  patches.resize( numNonPCMPatch );
+#else
   if ( ( PCCPatchFrameType( pfh.getType() ) == PATCH_FRAME_I &&
          PCCPatchModeI( pfdu.getPatchMode( pfdu.getPatchCount() - 1 ) ) == PATCH_MODE_I_PCM ) ||
        ( PCCPatchFrameType( pfh.getType() ) == PATCH_FRAME_P &&
          PCCPatchModeP( pfdu.getPatchMode( pfdu.getPatchCount() - 1 ) ) == PATCH_MODE_P_PCM ) ) {
     patches.resize( (size_t)pfdu.getPatchCount() - 1 );
   } else {
+
     patches.resize( (size_t)pfdu.getPatchCount() );
   }
+#endif
   TRACE_CODEC( "patches size = %lu \n", patches.size() );
 
   frame.getFrameLevelMetadata().setMetadataType( METADATA_FRAME );
@@ -436,12 +451,18 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
 
   for ( size_t patchIndex = 0; patchIndex < pfdu.getPatchCount(); ++patchIndex ) {
     auto& pid                      = pfdu.getPatchInformationData( patchIndex );
+#if !BUGFIX_PCM //jkei : in lossless case, pfdu.getPatchCount()>patch.size()
     auto& patch                    = patches[patchIndex];
     patch.getOccupancyResolution() = ops.getOccupancyPackingBlockSize();
+#endif
     if ( ( PCCPatchFrameType( pfh.getType() ) == PATCH_FRAME_I &&
            PCCPatchModeI( pfdu.getPatchMode( patchIndex ) ) == PATCH_MODE_I_INTRA ) ||
          ( PCCPatchFrameType( pfh.getType() ) == PATCH_FRAME_P &&
            PCCPatchModeP( pfdu.getPatchMode( patchIndex ) ) == PATCH_MODE_P_INTRA ) ) {
+#if BUGFIX_PCM
+      auto& patch                    = patches[patchIndex];
+      patch.getOccupancyResolution() = ops.getOccupancyPackingBlockSize();
+#endif
       auto& pdu = pid.getPatchDataUnit();
       TRACE_CODEC( "patch %lu / %lu: Intra \n", patchIndex, patches.size() );
       patch.getU0()               = pdu.get2DShiftU();
@@ -509,6 +530,10 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
       }
     } else if ( ( PCCPatchFrameType( pfh.getType() ) == PATCH_FRAME_P &&
                   PCCPatchModeP( pfdu.getPatchMode( patchIndex ) ) == PATCH_MODE_P_INTER ) ) {
+#if BUGFIX_PCM
+      auto& patch                    = patches[patchIndex];
+      patch.getOccupancyResolution() = ops.getOccupancyPackingBlockSize();
+#endif
       auto&   dpdu            = pid.getDeltaPatchDataUnit();
       int64_t deltaIndex      = dpdu.getDeltaPatchIdx();
       patch.setBestMatchIdx() = ( size_t )( deltaIndex + predIndex );

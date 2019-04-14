@@ -60,7 +60,8 @@
 #include <mach/mach.h>
 #endif
 
-
+#define BUGFIX_BETA_BITCOUNT 1
+#define BUGFIX_PCM 1
 // ******************************************************************* //
 // Trace modes to validate new syntax
 // ******************************************************************* //
@@ -216,7 +217,7 @@ const int32_t InvalidPatchIndex = -1;
 // ******************************************************************* //
 // Static functions
 // ******************************************************************* //
-static std::string toString( PCCVideoType type ) {
+static inline std::string toString( PCCVideoType type ) {
   switch ( type ) {
     case VIDEO_OCCUPANCY: return std::string( "occupancy map video" ); break;
     case VIDEO_GEOMETRY: return std::string( "geometry video" ); break;
@@ -233,18 +234,18 @@ static bool exist( const std::string& sString ) {
   return ( stat( sString.c_str(), &buffer ) == 0 );
 }
 
-static void removeFile( const std::string string ) {
+static inline void removeFile( const std::string string ) {
   if ( exist( string ) ) {
     if ( remove( string.c_str() ) != 0 ) { std::cout << "Could not remove the file: " << string << std::endl; }
   }
 }
 
-static std::string removeFileExtension( const std::string string ) {
+static inline std::string removeFileExtension( const std::string string ) {
   size_t pos = string.find_last_of( "." );
   return ( pos != std::string::npos && pos + 4 == string.length() ) ? string.substr( 0, pos ) : string;
 }
 
-static std::string addVideoFormat( const std::string string,
+static inline std::string addVideoFormat( const std::string string,
                                    const size_t      width,
                                    const size_t      height,
                                    const bool        yuv420 = true,
@@ -286,7 +287,7 @@ static const T PCCFromLittleEndian( const T u ) {
   return ( PCCSystemEndianness() == PCC_BIG_ENDIAN ) ? PCCEndianSwap( u ) : u;
 }
 
-static void PCCDivideRange( const size_t         start,
+static inline void PCCDivideRange( const size_t         start,
                             const size_t         end,
                             const size_t         chunckCount,
                             std::vector<size_t>& subRanges ) {
@@ -306,7 +307,7 @@ static void PCCDivideRange( const size_t         start,
   }
 }
 
-static uint32_t getFixedLengthCodeBitsCount( uint32_t range ) {
+static inline uint32_t getFixedLengthCodeBitsCount( uint32_t range ) {
   int count = 0;
   if ( range > 0 ) {
     range -= 1;

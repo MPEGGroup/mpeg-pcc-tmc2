@@ -300,7 +300,7 @@ std::vector<PCCPoint3D> PCCCodec::generatePoints( const GeneratePointCloudParame
     const auto   imageWidth         = frame0.getWidth();
     const auto   imageHeight        = frame0.getHeight();
     const size_t blockToPatchWidth  = frame.getWidth() / params.occupancyResolution_;
-    const size_t blockToPatchHeight = frame.getHeight() / params.occupancyResolution_;
+//    const size_t blockToPatchHeight = frame.getHeight() / params.occupancyResolution_;
     double       DepthNeighbors[4]  = {0};
     int          count              = 0;
     double       minimumDepth       = point0[patch.getNormalAxis()];
@@ -538,7 +538,6 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
               size_t       x, y;
               const bool   occupancy = occupancyMap[patch.patch2Canvas( u, v, imageWidth, imageHeight, x, y )] != 0;
               if ( !occupancy ) { continue; }
-              bool addPoint = true;
               if ( params.enhancedDeltaDepthCode_ ) {
                 // D0
                 PCCPoint3D   point0      = patch.generatePoint( u, v, frame0.getValue( 0, x, y ), lodScale,
@@ -855,7 +854,7 @@ bool PCCCodec::gridFiltering( const std::vector<uint32_t>& partition,
   int y2 = y / grid;
   int z2 = z / grid;
 
-  int curIdx = x2 + y2 * w + z2 * w * w;
+//  int curIdx = x2 + y2 * w + z2 * w * w;
 
   int x3 = x % grid;
   int y3 = y % grid;
@@ -1101,11 +1100,11 @@ void PCCCodec::createSpecificLayerReconstruct( const PCCPointSet3&              
   if ( !pointCount || !reconstruct.hasColors() ) { return; }
   for ( size_t i = 0; i < pointCount; ++i ) {
     const PCCVector3<size_t> location = pointToPixel[i];
-    const size_t             x        = location[0];
-    const size_t             y        = location[1];
+//    const size_t             x        = location[0];
+//    const size_t             y        = location[1];
     const size_t             f        = location[2];
     if ( f == frameCount ) {
-      int index = subReconstruct.addPoint( reconstruct[i] );
+      subReconstruct.addPoint( reconstruct[i] );
       subPartition.push_back( partition[i] );
       subReconstructIndex.push_back( i );
     }
@@ -1129,11 +1128,11 @@ void PCCCodec::createSubReconstruct( const PCCPointSet3&                 reconst
   if ( !pointCount || !reconstruct.hasColors() ) { return; }
   for ( size_t i = 0; i < pointCount; ++i ) {
     const PCCVector3<size_t> location = pointToPixel[i];
-    const size_t             x        = location[0];
-    const size_t             y        = location[1];
+//    const size_t             x        = location[0];
+//    const size_t             y        = location[1];
     const size_t             f        = location[2];
     if ( f < frameCount ) {
-      int index = subReconstruct.addPoint( reconstruct[i] );
+      subReconstruct.addPoint( reconstruct[i] );
       subReconstruct.setType( frameCount, POINT_UNSET );
       subPartition.push_back( partition[i] );
       subReconstructIndex.push_back( i );
@@ -1214,7 +1213,7 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
           int index = source.addPoint( reconstruct[i] );
           source.setColor( index, color[i] );
         } else {
-          int index = target.addPoint( reconstruct[i] );
+          target.addPoint( reconstruct[i] );
           targetIndex.push_back( i );
         }
       } else {
@@ -1225,7 +1224,7 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
           int index = source.addPoint( reconstruct[i] );
           source.setColor( index, color[i] );
         } else {
-          int index = target.addPoint( reconstruct[i] );
+          target.addPoint( reconstruct[i] );
           targetIndex.push_back( i );
         }
       }
@@ -1340,7 +1339,6 @@ void PCCCodec::generateMPsTexturefromImage( PCCContext&       context,
 }
 
 void PCCCodec::generateOccupancyMap( PCCContext& context, const size_t occupancyPrecision ) {
-  size_t sizeFrames = context.getFrames().size();
   for ( auto& frame : context.getFrames() ) {
     generateOccupancyMap( frame, context.getVideoOccupancyMap().getFrame( frame.getIndex() ), occupancyPrecision );
   }
@@ -1479,7 +1477,7 @@ void PCCCodec::generateBlockToPatchFromBoundaryBox( PCCFrameContext& frame,
   const size_t blockToPatchHeight = frame.getHeight() / occupancyResolution;
   const size_t blockCount         = blockToPatchWidth * blockToPatchHeight;
   auto&        blockToPatch       = frame.getBlockToPatch();
-  const auto&  occupancyMap       = frame.getOccupancyMap();
+//  const auto&  occupancyMap       = frame.getOccupancyMap();
   blockToPatch.resize( blockCount );
   std::fill( blockToPatch.begin(), blockToPatch.end(), 0 );
   for ( size_t patchIndex = 0; patchIndex < patchCount; ++patchIndex ) {

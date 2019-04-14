@@ -41,7 +41,7 @@ namespace pcc {
 
 class PCCPointSet3 {
  public:
-  PCCPointSet3() : withColors_( false ), withReflectances_ ( false ), withNormals_( false )
+  PCCPointSet3() : withNormals_( false ), withColors_( false ), withReflectances_ ( false )
   {
   }
   PCCPointSet3(const PCCPointSet3 &) = default;
