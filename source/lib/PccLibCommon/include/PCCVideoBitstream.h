@@ -39,37 +39,45 @@ namespace pcc {
 
 class PCCVideoBitstream {
  public:
-  PCCVideoBitstream( PCCVideoType type ) : type_ ( type ) { data_.clear(); }
+  PCCVideoBitstream( PCCVideoType type ) : type_( type ) { data_.clear(); }
   ~PCCVideoBitstream() { data_.clear(); }
 
-  void resize( size_t size ){ data_.resize( size ); }
-  std::vector<uint8_t>& vector  () { return data_; }
-  uint8_t*              buffer  () { return data_.data(); }
-  size_t                size    () { return data_.size(); }
+  void                  resize( size_t size ) { data_.resize( size ); }
+  std::vector<uint8_t>& vector() { return data_; }
+  uint8_t*              buffer() { return data_.data(); }
+  size_t                size() { return data_.size(); }
   size_t                naluSize() { return data_.size() + 4; }
-  PCCVideoType          type    () { return type_; }
+  PCCVideoType          type() { return type_; }
 
-  void trace() {
-    std::cout << toString( type_ ) << " ->" << naluSize() << " B " << std::endl;
-  }
+  void trace() { std::cout << toString( type_ ) << " ->" << size() << " B " << std::endl; }
 
   std::string getExtension() {
-    switch( type_ ) {
-      case PCCVideoType::OccupancyMap: return std::string( "occupancy"  ); break;
-      case PCCVideoType::Geometry    : return std::string( "geometry"   ); break;
-      case PCCVideoType::GeometryD0  : return std::string( "geometryD0" ); break;
-      case PCCVideoType::GeometryD1  : return std::string( "geometryD1" ); break;
-      case PCCVideoType::GeometryMP  : return std::string( "mps_geo"    ); break;
-      case PCCVideoType::Texture     : return std::string( "texture"    ); break;
-      case PCCVideoType::TextureMP   : return std::string( "mps_tex"    ); break;
+    switch ( type_ ) {
+      case VIDEO_OCCUPANCY: return std::string( "occupancy" ); break;
+      case VIDEO_GEOMETRY: return std::string( "geometry" ); break;
+      case VIDEO_GEOMETRY_D0: return std::string( "geometryD0" ); break;
+      case VIDEO_GEOMETRY_D1: return std::string( "geometryD1" ); break;
+      case VIDEO_GEOMETRY_MP: return std::string( "mps_geo" ); break;
+      case VIDEO_TEXTURE: return std::string( "texture" ); break;
+      case VIDEO_TEXTURE_MP: return std::string( "mps_tex" ); break;
     }
     return std::string( "unknown" );
   }
+
  private:
   std::vector<uint8_t> data_;
-  PCCVideoType type_;
+  PCCVideoType         type_;
+
+#ifdef BUG_FIX_BITDEPTH
+ public:
+  uint8_t getBitdepth() { return bitdepth_; }
+  void    setBitdepth( uint8_t bitdepth ) { bitdepth_ = bitdepth; }
+
+ private:
+  uint8_t bitdepth_;
+#endif
 };
 
-}
+}  // namespace pcc
 
 #endif /* PCCBitstream_h */

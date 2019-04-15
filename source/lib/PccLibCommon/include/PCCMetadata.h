@@ -165,8 +165,8 @@ namespace pcc {
     const PCCMetadataEnabledFlags&    getMetadataEnabledFlags()           const { return metadataEnabledFlags_;           }
     const PCCMetadataEnabledFlags&    getLowerLevelMetadataEnabledFlags() const { return lowerLevelMetadataEnabledFlags_; }
 
-    METADATATYPE                      getMetadataType() const {return metadataType_;}
-    void                              setMetadataType(METADATATYPE type){metadataType_=type;}
+    PCCMetadataType                   getMetadataType() const {return metadataType_;}
+    void                              setMetadataType(PCCMetadataType type){metadataType_=type;}
     size_t                            getIndex()              const { return index_;    }
     void                              setIndex(size_t index)        {  index_=index;    }
     uint8_t                           getbitCountQDepth() const{return bitCountQDepth_;}
@@ -196,7 +196,7 @@ namespace pcc {
     PCCMetadataEnabledFlags           lowerLevelMetadataEnabledFlags_;
     uint8_t                           bitCountQDepth_;
     size_t                            index_;
-    METADATATYPE                      metadataType_;
+    PCCMetadataType                   metadataType_;
 #ifdef CE210_MAXDEPTH_EVALUATION
     bool                              maxDepthPresent_;
     int64_t                           maxQDepthInPatch_;

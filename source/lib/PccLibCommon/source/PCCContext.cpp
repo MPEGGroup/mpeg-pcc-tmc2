@@ -37,8 +37,9 @@
 
 using namespace pcc;
 
-PCCContext::PCCContext() : index_( 0 ) {}
-PCCContext::~PCCContext(){
+PCCContext::PCCContext() { }
+
+PCCContext::~PCCContext() {
   frames_.clear();
   videoGeometry_.clear();
   videoTexture_.clear();
@@ -47,34 +48,33 @@ PCCContext::~PCCContext(){
   videoBitstream_.clear();
   subContexts_.clear();
   unionPatch_.clear();
+  sequenceParameterSets_.clear();
 }
 
-void PCCContext::resize( size_t size ) { 
-  frames_.resize( size ); 
-  for(size_t i=0;i<size;i++){ 
+void PCCContext::resize( size_t size ) {
+  frames_.resize( size );
+  for ( size_t i = 0; i < size; i++ ) { 
     frames_[i].getIndex() = i; 
-  } 
+  }
 }
 
 void PCCContext::allocOneLayerData( const size_t occupancyResolution ) {
-  for( auto& frame : frames_ ) {
-    frame.allocOneLayerData( occupancyResolution );
+  for ( auto& frame : frames_ ) { 
+    frame.allocOneLayerData( occupancyResolution ); 
   }
 }
 
 void PCCContext::printVideoBitstream() {
   size_t index = 0;
-  printf("VideoBitstream list: \n"); fflush(stdout);
-  for( auto& value: videoBitstream_ ) {
-    printf("  * %lu / %lu: ",index, videoBitstream_.size());
+  printf( "VideoBitstream list: \n" );
+  for ( auto& value : videoBitstream_ ) {
+    printf( "  * %lu / %lu: ", index, videoBitstream_.size() );
     value.trace();
     index++;
   }
+  fflush( stdout );
 }
 
-void PCCContext::printBlockToPatch( const size_t occupancyResolution ){
-  for( auto& frame : frames_ ) {
-    frame.printBlockToPatch( occupancyResolution );
-  }
+void PCCContext::printBlockToPatch( const size_t occupancyResolution ) {
+  for ( auto& frame : frames_ ) { frame.printBlockToPatch( occupancyResolution ); }
 }
-

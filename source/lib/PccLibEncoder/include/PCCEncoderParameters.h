@@ -57,7 +57,7 @@ class PCCEncoderParameters {
   std::string         compressedStreamPath_;
   std::string         reconstructedDataPath_;
 
-  ColorTransform      colorTransform_;
+  PCCColorTransform   colorTransform_;
   std::string         colorSpaceConversionPath_;
   std::string         videoEncoderPath_;
   bool                use3dmc_;
@@ -170,7 +170,6 @@ class PCCEncoderParameters {
   //visual quality
   bool                patchColorSubsampling_;
   bool                deltaCoding_;
-  bool                sixDirectionMode_;
   bool                surfaceSeparation_;
 
   // Flexible Patch Packing
@@ -178,15 +177,12 @@ class PCCEncoderParameters {
   size_t              textureBGFill_;
   size_t              safeGuardDistance_;
 
-  // Improve EDD
-  bool                improveEDD_;
-
   // Lossy Missed Points Patch
   bool                lossyMissedPointsPatch_;
   double              minNormSumOfInvDist4MPSelection_;
   int                 lossyMppGeoQP_;
-
   bool                useAdditionalPointsPatch_;
+
   //GPA
   bool                globalPatchAllocation_;
 };

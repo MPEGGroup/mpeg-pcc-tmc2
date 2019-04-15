@@ -48,44 +48,41 @@ PCCDecoderParameters::PCCDecoderParameters() {
   keepIntermediateFiles_             = false;
 }
 
-PCCDecoderParameters::~PCCDecoderParameters() {
-}
+PCCDecoderParameters::~PCCDecoderParameters() {}
 void PCCDecoderParameters::print() {
   std::cout << "+ Parameters" << std::endl;
-  std::cout << "\t compressedStreamPath                " << compressedStreamPath_              << std::endl;
-  std::cout << "\t reconstructedDataPath               " << reconstructedDataPath_             << std::endl;
-  std::cout << "\t startFrameNumber                    " << startFrameNumber_                  << std::endl;
-  std::cout << "\t colorTransform                      " << colorTransform_                    << std::endl;
-  std::cout << "\t nbThread                            " << nbThread_                          << std::endl;
-  std::cout << "\t keepIntermediateFiles               " << keepIntermediateFiles_             << std::endl;
+  std::cout << "\t compressedStreamPath                " << compressedStreamPath_ << std::endl;
+  std::cout << "\t reconstructedDataPath               " << reconstructedDataPath_ << std::endl;
+  std::cout << "\t startFrameNumber                    " << startFrameNumber_ << std::endl;
+  std::cout << "\t colorTransform                      " << colorTransform_ << std::endl;
+  std::cout << "\t nbThread                            " << nbThread_ << std::endl;
+  std::cout << "\t keepIntermediateFiles               " << keepIntermediateFiles_ << std::endl;
   std::cout << "\t video encoding" << std::endl;
-  std::cout << "\t   colorSpaceConversionPath          " << colorSpaceConversionPath_          << std::endl;
-  std::cout << "\t   videoDecoderPath                  " << videoDecoderPath_                  << std::endl;
-  std::cout << "\t   videoDecoderOccupancyMapPath      " << videoDecoderOccupancyMapPath_      << std::endl;
+  std::cout << "\t   colorSpaceConversionPath          " << colorSpaceConversionPath_ << std::endl;
+  std::cout << "\t   videoDecoderPath                  " << videoDecoderPath_ << std::endl;
+  std::cout << "\t   videoDecoderOccupancyMapPath      " << videoDecoderOccupancyMapPath_ << std::endl;
   std::cout << "\t   inverseColorSpaceConversionConfig " << inverseColorSpaceConversionConfig_ << std::endl;
-  std::cout << "\t   patchColorSubsampling             " << patchColorSubsampling_             << std::endl;
+  std::cout << "\t   patchColorSubsampling             " << patchColorSubsampling_ << std::endl;
 }
 
-void PCCDecoderParameters::completePath(){
-  if ( videoDecoderOccupancyMapPath_.empty() ||
-      !exist(videoDecoderOccupancyMapPath_ ) ) {
+void PCCDecoderParameters::completePath() {
+  if ( videoDecoderOccupancyMapPath_.empty() || !exist( videoDecoderOccupancyMapPath_ ) ) {
     videoDecoderOccupancyMapPath_ = videoDecoderPath_;
   }
 }
 
 bool PCCDecoderParameters::check() {
   bool ret = true;
-  if (!colorSpaceConversionPath_.empty() &&
-      !inverseColorSpaceConversionConfig_.empty() ) {
+  if ( !colorSpaceConversionPath_.empty() && !inverseColorSpaceConversionConfig_.empty() ) {
     std::cout << "Info: Using external color space conversion" << std::endl;
-    if (colorTransform_ != COLOR_TRANSFORM_NONE) {
+    if ( colorTransform_ != COLOR_TRANSFORM_NONE ) {
       std::cout << "Using external color space conversion requires colorTransform = "
-          "COLOR_TRANSFORM_NONE!\n";
+                   "COLOR_TRANSFORM_NONE!\n";
       colorTransform_ = COLOR_TRANSFORM_NONE;
     }
   } else {
     std::cout << "Info: Using internal color space conversion" << std::endl;
-    colorSpaceConversionPath_ = "";
+    colorSpaceConversionPath_          = "";
     inverseColorSpaceConversionConfig_ = "";
   }
 
@@ -97,27 +94,27 @@ bool PCCDecoderParameters::check() {
     ret = false;
     std::cerr << "colorSpaceConversionPath not set\n";
   }
-  if ( inverseColorSpaceConversionConfig_.empty()) {
+  if ( inverseColorSpaceConversionConfig_.empty() ) {
     ret = false;
     std::cerr << "inverseColorSpaceConversionConfig not set\n";
   }
-  if( !exist( colorSpaceConversionPath_) ) {
+  if ( !exist( colorSpaceConversionPath_ ) ) {
     ret = false;
     std::cerr << "colorSpaceConversionPath not exist\n";
   }
-  if( !exist( inverseColorSpaceConversionConfig_ )) {
+  if ( !exist( inverseColorSpaceConversionConfig_ ) ) {
     ret = false;
     std::cerr << "inverseColorSpaceConversionConfig not exist\n";
   }
-  if( !exist( compressedStreamPath_ ) ) {
+  if ( !exist( compressedStreamPath_ ) ) {
     ret = false;
     std::cerr << "compressedStreamPath not exist\n";
   }
-  if( videoDecoderPath_.empty() ) {
+  if ( videoDecoderPath_.empty() ) {
     ret = false;
     std::cerr << "videoDecoderPath not set\n";
   }
-  if( !exist( videoDecoderPath_ ) ) {
+  if ( !exist( videoDecoderPath_ ) ) {
     ret = false;
     std::cerr << "videoDecoderPath not exist\n";
   }
@@ -125,7 +122,7 @@ bool PCCDecoderParameters::check() {
     ret = false;
     std::cerr << "videoDecoderOccupancyMapPath not set\n";
   }
-  if ( !exist(videoDecoderOccupancyMapPath_ ) ) {
+  if ( !exist( videoDecoderOccupancyMapPath_ ) ) {
     ret = false;
     std::cerr << "videoDecoderOccupancyMapPath not exist\n";
   }

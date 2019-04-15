@@ -399,7 +399,7 @@ bool PCCPointSet3::write( const std::string &fileName, const bool asAscii ) {
   fout.close();
   return true;
 }
-bool PCCPointSet3::read(const std::string &fileName, const bool readNormals ) {
+bool PCCPointSet3::read(const std::string &fileName) {
   std::ifstream ifs(fileName, std::ifstream::in);
   if (!ifs.is_open()) {
     return false;
@@ -545,11 +545,11 @@ bool PCCPointSet3::read(const std::string &fileName, const bool readNormals ) {
       indexG = a;
     } else if (attributeInfo.name == "blue" && attributeInfo.byteCount == 1) {
       indexB = a;
-    } else if (attributeInfo.name == "nx" && attributeInfo.byteCount == 4 && readNormals ) {
+    } else if (attributeInfo.name == "nx" && attributeInfo.byteCount == 4) {
       indexNX = a;
-    } else if (attributeInfo.name == "ny" && attributeInfo.byteCount == 4 && readNormals ) {
+    } else if (attributeInfo.name == "ny" && attributeInfo.byteCount == 4) {
       indexNY = a;
-    } else if (attributeInfo.name == "nz" && attributeInfo.byteCount == 4 && readNormals ) {
+    } else if (attributeInfo.name == "nz" && attributeInfo.byteCount == 4) {
       indexNZ = a;
     } else if ((attributeInfo.name == "reflectance" || attributeInfo.name == "refc") &&
         attributeInfo.byteCount <= 2) {
@@ -1074,5 +1074,4 @@ void PCCPointSet3::scaleNormals( const PCCPointSet3& sourceWithNormal ) {
     }
   }
 }
-
 

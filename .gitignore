@@ -63,3 +63,5 @@ test/*.rgb
 scripts/
 
 log.txt
+
+.vscode/

@@ -34,166 +34,130 @@
 #include "PCCBitstream.h"
 #include "PCCVideoBitstream.h"
 
-using namespace pcc; 
+using namespace pcc;
 
-PCCBitstream::PCCBitstream(){
+PCCBitstream::PCCBitstream() {
   position_.bytes = 0;
-  position_.bits = 0;
+  position_.bits  = 0;
   data_.clear();
+#ifdef BITSTREAM_TRACE
+  trace_     = false;
+  traceFile_ = NULL;
+#endif
 }
-PCCBitstream::~PCCBitstream(){
-  data_.clear();
+
+PCCBitstream::~PCCBitstream() { data_.clear(); }
+
+bool PCCBitstream::initialize( const PCCBitstream& bitstream ) {
+  position_.bytes = 0;
+  position_.bits  = 0;
+  data_.resize( bitstream.data_.size(), 0 );
+  memcpy( data_.data(), bitstream.data_.data(), bitstream.data_.size() );
+  return true;
 }
 
 bool PCCBitstream::initialize( std::string compressedStreamPath ) {
   std::ifstream fin( compressedStreamPath, std::ios::binary );
-  if( !fin.is_open() ) {
-    return false;
-  }
+  if ( !fin.is_open() ) { return false; }
   fin.seekg( 0, std::ios::end );
   uint64_t bitStreamSize = fin.tellg();
   fin.seekg( 0, std::ios::beg );
   initialize( bitStreamSize );
-  fin.read( reinterpret_cast<char *>( data_.data() ), bitStreamSize );
-  if( !fin ) {
-    return false;
-  }
+  fin.read( reinterpret_cast<char*>( data_.data() ), bitStreamSize );
+  if ( !fin ) { return false; }
   fin.close();
   return true;
 }
 
 bool PCCBitstream::write( std::string compressedStreamPath ) {
-  assert(size() <= capacity());
-  write<uint64_t>( size(), totalSizeIterator_ );
+  write( size(), 64,  totalSizeIterator_ );
   std::ofstream fout( compressedStreamPath, std::ios::binary );
-  if (!fout.is_open()) {
-    return false;
-  }
-  fout.write(reinterpret_cast<const char *>(data_.data()), size());
+  if ( !fout.is_open() ) { return false; }
+  fout.write( reinterpret_cast<const char*>( data_.data() ), size() );
   fout.close();
   return true;
 }
 
-bool PCCBitstream::readHeader(PCCMetadataEnabledFlags &gofLevelMetadataEnabledFlags) {
-  uint32_t containerMagicNumber = 0;
-  uint32_t containerVersion = 0;
-  uint64_t totalSize = 0;
-  read<uint32_t>( containerMagicNumber );
-  if (containerMagicNumber != PCCTMC2ContainerMagicNumber) {
-    return false;
-  }
-  read<uint32_t>( containerVersion );
-  if (containerVersion != PCCTMC2ContainerVersion) {
-    return false;
-  }
-  read<uint64_t>( totalSize );
-  assert( data_.size() == totalSize );
-  uint8_t tmp;
-  read<uint8_t>(tmp);
-  gofLevelMetadataEnabledFlags.getMetadataEnabled() = tmp;
-  if (gofLevelMetadataEnabledFlags.getMetadataEnabled()) {
-    read<uint8_t>(tmp);
-    gofLevelMetadataEnabledFlags.getScaleEnabled() = tmp;
-    read<uint8_t>(tmp);
-    gofLevelMetadataEnabledFlags.getOffsetEnabled() = tmp;
-    read<uint8_t>(tmp);
-    gofLevelMetadataEnabledFlags.getRotationEnabled() = tmp;
-    read<uint8_t>(tmp);
-    gofLevelMetadataEnabledFlags.getPointSizeEnabled() = tmp;
-    read<uint8_t>(tmp);
-    gofLevelMetadataEnabledFlags.getPointShapeEnabled() = tmp;
-#ifdef CE210_MAXDEPTH_EVALUATION
-    read<uint8_t>(tmp);
-    gofLevelMetadataEnabledFlags.setMaxDepthEnabled(tmp);
+bool PCCBitstream::readHeader() {
+#ifdef BITSTREAM_TRACE
+  trace( "Code: header \n" );
 #endif
-  }
+  uint64_t totalSize            = 0;
+  uint32_t containerMagicNumber = read( 32 );
+  if ( containerMagicNumber != PCCTMC2ContainerMagicNumber ) { return false; }
+  uint32_t containerVersion = read( 32 );
+  if ( containerVersion != PCCTMC2ContainerVersion ) { return false; }
+  totalSize = read( 64 );
+  bitstreamStat_.setHeader( size() );
   return true;
 }
 
-void PCCBitstream::writeHeader(const PCCMetadataEnabledFlags &gofLevelMetadataEnabledFlags) {
-  write<uint32_t>( PCCTMC2ContainerMagicNumber );
-  write<uint32_t>( PCCTMC2ContainerVersion );
-  totalSizeIterator_ = getPosition();
-  write<uint64_t>( 0 );  // reserved
-  write<uint8_t>(gofLevelMetadataEnabledFlags.getMetadataEnabled());
-  if (gofLevelMetadataEnabledFlags.getMetadataEnabled()) {
-    write<uint8_t>(gofLevelMetadataEnabledFlags.getScaleEnabled());
-    write<uint8_t>(gofLevelMetadataEnabledFlags.getOffsetEnabled());
-    write<uint8_t>(gofLevelMetadataEnabledFlags.getRotationEnabled());
-    write<uint8_t>(gofLevelMetadataEnabledFlags.getPointSizeEnabled());
-    write<uint8_t>(gofLevelMetadataEnabledFlags.getPointShapeEnabled());
-#ifdef CE210_MAXDEPTH_EVALUATION
-    write<uint8_t>(gofLevelMetadataEnabledFlags.getMaxDepthEnabled());
+void PCCBitstream::writeHeader() {
+#ifdef BITSTREAM_TRACE
+  trace( "Code: header \n" );
 #endif
-  }
-}
-
-void PCCBitstream::writeSvlc( int32_t  iCode ) {
-  writeUvlc( (uint32_t)(iCode <= 0) ? -iCode<<1 : (iCode<<1)-1  );
-}
-void PCCBitstream::readSvlc ( int32_t& iCode) { 
-  uint32_t uiBits = 0;
-  readUvlc( uiBits ); 
-  iCode = ( uiBits & 1) ? -(int32_t)(uiBits>>1) : (int32_t)(uiBits>>1); 
+  write( PCCTMC2ContainerMagicNumber, 32 );
+  write( PCCTMC2ContainerVersion, 32 );
+  totalSizeIterator_ = getPosition();
+  write( 0, 64 );  // reserved
+  bitstreamStat_.setHeader( size() );
 }
 
 void PCCBitstream::read( PCCVideoBitstream& videoBitstream ) {
-  uint32_t size = 0;
-  read<uint32_t>(size);
+#ifdef BITSTREAM_TRACE
+  trace( "Code: PCCVideoBitstream \n" );
+#endif
+  uint32_t size = read( 32 );
+#ifdef BITSTREAM_TRACE
+  trace( "Code: size = %lu \n", size );
+#endif
   videoBitstream.resize( size );
   memcpy( videoBitstream.buffer(), data_.data() + position_.bytes, size );
   videoBitstream.trace();
   position_.bytes += size;
+#ifdef BITSTREAM_TRACE
+  trace( "Code: data \n" );
+#endif
+#ifdef BUG_FIX_BITDEPTH
+  videoBitstream.setBitdepth( read( 8 ) );
+#ifdef BITSTREAM_TRACE
+  trace( "Code: depth = %lu \n", videoBitstream.getBitdepth() );
+#endif
+#endif
+#ifdef BITSTREAM_TRACE
+  trace( "Code: video : %4lu \n", size );
+#endif
+  bitstreamStat_.setVideoBinSize( videoBitstream.type(), videoBitstream.size() );
 }
 
 void PCCBitstream::write( PCCVideoBitstream& videoBitstream ) {
-  write( videoBitstream.buffer(), videoBitstream.size() );
+#ifdef BITSTREAM_TRACE
+  trace( "Code: PCCVideoBitstream \n" );
+#endif
+  writeBuffer( videoBitstream.buffer(), videoBitstream.size() );
+#ifdef BITSTREAM_TRACE
+  trace( "Code: data \n" );
+#endif
+#ifdef BUG_FIX_BITDEPTH
+  write( videoBitstream.getBitdepth(), 8 );
+#ifdef BITSTREAM_TRACE
+  trace( "Code: depth = %lu \n", videoBitstream.getBitdepth() );
+#endif
+#endif
   videoBitstream.trace();
+  bitstreamStat_.setVideoBinSize( videoBitstream.type(), videoBitstream.size() );
+#ifdef BITSTREAM_TRACE
+  trace( "Code: video : %4lu \n", videoBitstream.size() );
+#endif
 }
 
-void PCCBitstream::write( const uint8_t* data, const size_t size ) {
+void PCCBitstream::writeBuffer( const uint8_t* data, const size_t size ) {
   realloc( size );
-  write<uint32_t>( size );
+  write( size, 32 );
+#ifdef BITSTREAM_TRACE
+  trace( "Code: size = %lu \n", size );
+#endif
   memcpy( data_.data() + position_.bytes, data, size );
   position_.bytes += size;
-}
-
-void PCCBitstream::read ( uint32_t& value, uint8_t bits ) {
-  read ( value, bits, position_);
-}
-void PCCBitstream::write( uint32_t  value, uint8_t bits ) {
-  write( value, bits, position_);
-}
-void PCCBitstream::align() {
-  align(position_);
-}
-
-void PCCBitstream::align( PCCBistreamPosition & pos ) {
-  if( pos.bits != 0 ) {
-    pos.bits = 0, pos.bytes++;
-  }
-}
-
-void PCCBitstream::read( uint32_t& value, uint8_t bits, PCCBistreamPosition& pos ) {
-  assert( bits >= 32 );
-  value = 0;
-  for(size_t i=0;i<bits;i++) {
-    value |= ( ( data_[ pos.bytes ] >> ( 7 - pos.bits ) ) & 1 ) << ( bits - 1 - i );
-    if( pos.bits == 7 ){ pos.bytes++; pos.bits = 0; } else {  pos.bits++; }
-  }
-}
-
-inline void PCCBitstream::write( uint32_t value, uint8_t bits, PCCBistreamPosition& pos ) {
-  assert( bits >= 32 );
-  if( pos.bytes + 16 >= data_.size() ) { realloc(); }
-  for(size_t i=0;i<bits;i++) {
-    assert( pos.bytes >= data_.size() );
-    data_[ pos.bytes ] |= ( ( value >> (bits - 1 - i )  ) & 1 ) << ( 7 - pos.bits );
-    if( pos.bits == 7 ){
-      pos.bytes++; pos.bits = 0;
-    } else {
-      pos.bits++;
-    }
-  }
 }
 

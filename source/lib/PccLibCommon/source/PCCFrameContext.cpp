@@ -36,95 +36,99 @@
 
 using namespace pcc;
 
-PCCFrameContext::PCCFrameContext() : index_(0), width_(0), height_(0) {
-}
+PCCFrameContext::PCCFrameContext() : index_( 0 ), width_( 0 ), height_( 0 ) {}
 
-PCCFrameContext::~PCCFrameContext(){
-  pointToPixel_        .clear();
-  blockToPatch_        .clear();
-  occupancyMap_        .clear();
-  fullOccupancyMap_    .clear();
-  occupancyMap_        .clear();
-  patches_             .clear();
+PCCFrameContext::~PCCFrameContext() {
+  pointToPixel_.clear();
+  blockToPatch_.clear();
+  occupancyMap_.clear();
+  fullOccupancyMap_.clear();
+  occupancyMap_.clear();
+  patches_.clear();
   srcPointCloudByPatch_.clear();
   srcPointCloudByBlock_.clear();
   recPointCloudByBlock_.clear();
-  for( auto& block: pointToPixelByBlock_ ){
-    block.clear();
-  }
+  for ( auto& block : pointToPixelByBlock_ ) { block.clear(); }
   pointToPixelByBlock_.clear();
-  interpolate_        .clear();
-  filling_            .clear();
-  minD1_              .clear();
-  neighbor_           .clear();
+  interpolate_.clear();
+  filling_.clear();
+  minD1_.clear();
+  neighbor_.clear();
+  numMatchedPatches_ = 0;
 }
 
-void PCCFrameContext::allocOneLayerData( const size_t occupancyResolution ){
+void PCCFrameContext::allocOneLayerData( const size_t occupancyResolution ) {
   const size_t blockCount = ( width_ * height_ ) / ( occupancyResolution * occupancyResolution );
   interpolate_.resize( blockCount, 0 );
-  filling_    .resize( blockCount, 0 );
-  minD1_      .resize( blockCount, 0 );
-  neighbor_   .resize( blockCount, 1 );
+  filling_.resize( blockCount, 0 );
+  minD1_.resize( blockCount, 0 );
+  neighbor_.resize( blockCount, 1 );
   std::fill( interpolate_.begin(), interpolate_.end(), 0 );
-  std::fill( filling_    .begin(), filling_    .end(), 0 );
-  std::fill( minD1_      .begin(), minD1_      .end(), 0 );
-  std::fill( neighbor_   .begin(), neighbor_   .end(), 1 );
+  std::fill( filling_.begin(), filling_.end(), 0 );
+  std::fill( minD1_.begin(), minD1_.end(), 0 );
+  std::fill( neighbor_.begin(), neighbor_.end(), 1 );
 }
 
-
-template<typename T>
-void printVector( std::vector<T> data, const size_t width, const size_t height, const std::string string, const bool hexa = false ) {
-  if( data.size() == 0 ) { data.resize( width * height, 0 ); }
-    printf("%s: %lu %lu \n",string.c_str(), width,height);
-    for (size_t v0 = 0; v0 < height; ++v0) {
-      for (size_t u0 = 0; u0 < width; ++u0) {
-        if( hexa ) { printf("%2x",(int)(data[ v0 * width + u0 ]) ); }
-        else       { printf("%d", (int)(data[ v0 * width + u0 ]) ); }
+template <typename T>
+void printVector( std::vector<T>    data,
+                  const size_t      width,
+                  const size_t      height,
+                  const std::string string,
+                  const bool        hexa = false ) {
+  if ( data.size() == 0 ) { data.resize( width * height, 0 ); }
+  printf( "%s: %lu %lu \n", string.c_str(), width, height );
+  for ( size_t v0 = 0; v0 < height; ++v0 ) {
+    for ( size_t u0 = 0; u0 < width; ++u0 ) {
+      if ( hexa ) {
+        printf( "%2x", (int)( data[v0 * width + u0] ) );
+      } else {
+        printf( "%d", (int)( data[v0 * width + u0] ) );
       }
-      printf("\n"); fflush(stdout);
     }
+    printf( "\n" );
+    fflush( stdout );
+  }
 }
 
-void PCCFrameContext::printBlockToPatch( const size_t resolution ){
-  printVector( blockToPatch_, width_ / resolution, height_ / resolution, string_format( "blockToPatch[%d]", index_), true );
+void PCCFrameContext::printBlockToPatch( const size_t resolution ) {
+  printVector( blockToPatch_, width_ / resolution, height_ / resolution, stringFormat( "blockToPatch[%d]", index_ ),
+               true );
 }
-void PCCFrameContext::printInterpolate( const size_t resolution ){
-  printVector( interpolate_,  width_ / resolution, height_ / resolution, string_format( "interpolate [%d]", index_) );
+void PCCFrameContext::printInterpolate( const size_t resolution ) {
+  printVector( interpolate_, width_ / resolution, height_ / resolution, stringFormat( "interpolate [%d]", index_ ) );
 }
-void PCCFrameContext::printNeightbor( const size_t resolution ){
-  printVector( neighbor_,     width_ / resolution, height_ / resolution, string_format( "neighbor    [%d]", index_) );
+void PCCFrameContext::printNeightbor( const size_t resolution ) {
+  printVector( neighbor_, width_ / resolution, height_ / resolution, stringFormat( "neighbor    [%d]", index_ ) );
 }
-void PCCFrameContext::printMinD1( const size_t resolution ){
-  printVector( minD1_,        width_ / resolution, height_ / resolution, string_format( "minD1       [%d]", index_) );
+void PCCFrameContext::printMinD1( const size_t resolution ) {
+  printVector( minD1_, width_ / resolution, height_ / resolution, stringFormat( "minD1       [%d]", index_ ) );
 }
-void PCCFrameContext::printFilling( const size_t resolution ){
-  printVector( filling_,      width_ / resolution, height_ / resolution, string_format( "filling     [%d]", index_) );
+void PCCFrameContext::printFilling( const size_t resolution ) {
+  printVector( filling_, width_ / resolution, height_ / resolution, stringFormat( "filling     [%d]", index_ ) );
 }
 
-void PCCFrameContext::printOneLayerData( const size_t resolution ){
+void PCCFrameContext::printOneLayerData( const size_t resolution ) {
   printInterpolate( resolution );
-  printNeightbor  ( resolution );
-  printMinD1      ( resolution );
-  printFilling    ( resolution );
+  printNeightbor( resolution );
+  printMinD1( resolution );
+  printFilling( resolution );
 }
 
-
-void PCCFrameContext::printPatch(){
+void PCCFrameContext::printPatch() {
   size_t index = 0;
-  printf("Patch %4lu:", patches_.size());
-  for( auto& patch : patches_ ) {
-    printf("  Patch[%4lu]: ",index++);
+  printf( "Patch %4lu:", patches_.size() );
+  for ( auto& patch : patches_ ) {
+    printf( "  Patch[%4lu]: ", index++ );
     patch.print();
   }
-  fflush(stdout);
+  fflush( stdout );
 }
-void PCCFrameContext::printPatchDecoder(){
+void PCCFrameContext::printPatchDecoder() {
   size_t index = 0;
-  printf("Patch %4lu:", patches_.size());
-  for( auto& patch : patches_ ) {
-    printf("  Patch[%4lu]: ",index++);
+  printf( "Patch %4lu:", patches_.size() );
+  for ( auto& patch : patches_ ) {
+    printf( "  Patch[%4lu]: ", index++ );
     patch.printDecoder();
   }
-  fflush(stdout);
+  fflush( stdout );
 }
-

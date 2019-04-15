@@ -41,7 +41,7 @@ namespace pcc {
 
 class PCCPointSet3 {
  public:
-  PCCPointSet3() : withColors_( false ), withReflectances_ ( false ), withNormals_( false )
+  PCCPointSet3() : withNormals_( false ), withColors_( false ), withReflectances_ ( false )
   {
   }
   PCCPointSet3(const PCCPointSet3 &) = default;
@@ -265,7 +265,7 @@ class PCCPointSet3 {
     return !tokens.empty();
   }
   bool write(const std::string &fileName, const bool asAscii = false ) ;
-  bool read(const std::string &fileName, const bool readNormals = false ) ;
+  bool read(const std::string &fileName) ;
   void convertRGBToYUV() ;
   void convertRGBToYUVClosedLoop() ;
   void convertYUVToRGB() ;

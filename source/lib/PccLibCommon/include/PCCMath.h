@@ -457,21 +457,21 @@ typedef PCCVector3<double>  PCCNormal3D;
 typedef PCCMatrix3<double>  PCCMatrix3D;
 
 
-static PCCVector3D  operator+( const PCCVector3D& a, const PCCPoint3D&  b ) { return PCCVector3D( a[0] + b[0], a[1] + b[1], a[2] + b[2] ); }
-static PCCVector3D  operator+( const PCCPoint3D & a, const PCCVector3D& b ) { return PCCVector3D( a[0] + b[0], a[1] + b[1], a[2] + b[2] ); }
-static PCCVector3D  operator-( const PCCVector3D& a, const PCCPoint3D&  b ) { return PCCVector3D( a[0] - b[0], a[1] - b[1], a[2] - b[2] ); }
-static PCCVector3D  operator-( const PCCPoint3D & a, const PCCVector3D& b ) { return PCCVector3D( a[0] - b[0], a[1] - b[1], a[2] - b[2] ); }
-static double       operator*( const PCCVector3D& a, const PCCVector3D& b ) { return (a[0] * b[0] + a[1] * b[1] + a[2] * b[2]); }
-static double       operator*( const PCCVector3D& a, const PCCPoint3D&  b ) { return (a[0] * b[0] + a[1] * b[1] + a[2] * b[2]); }
-static double       operator*( const PCCPoint3D & a, const PCCVector3D& b ) { return (a[0] * b[0] + a[1] * b[1] + a[2] * b[2]); }
-static PCCVector3D& operator+=(      PCCVector3D &a, const PCCPoint3D&  b ) { a = a + b; return a; }
-static PCCVector3D& operator-=(      PCCVector3D &a, const PCCPoint3D&  b ) { a = a - b; return a; }
+static inline PCCVector3D  operator+( const PCCVector3D& a, const PCCPoint3D&  b ) { return PCCVector3D( a[0] + b[0], a[1] + b[1], a[2] + b[2] ); }
+static inline PCCVector3D  operator+( const PCCPoint3D & a, const PCCVector3D& b ) { return PCCVector3D( a[0] + b[0], a[1] + b[1], a[2] + b[2] ); }
+static inline PCCVector3D  operator-( const PCCVector3D& a, const PCCPoint3D&  b ) { return PCCVector3D( a[0] - b[0], a[1] - b[1], a[2] - b[2] ); }
+static inline PCCVector3D  operator-( const PCCPoint3D & a, const PCCVector3D& b ) { return PCCVector3D( a[0] - b[0], a[1] - b[1], a[2] - b[2] ); }
+static inline double       operator*( const PCCVector3D& a, const PCCVector3D& b ) { return (a[0] * b[0] + a[1] * b[1] + a[2] * b[2]); }
+static inline double       operator*( const PCCVector3D& a, const PCCPoint3D&  b ) { return (a[0] * b[0] + a[1] * b[1] + a[2] * b[2]); }
+static inline double       operator*( const PCCPoint3D & a, const PCCVector3D& b ) { return (a[0] * b[0] + a[1] * b[1] + a[2] * b[2]); }
+static inline PCCVector3D& operator+=(      PCCVector3D &a, const PCCPoint3D&  b ) { a = a + b; return a; }
+static inline PCCVector3D& operator-=(      PCCVector3D &a, const PCCPoint3D&  b ) { a = a - b; return a; }
 
 // Slightly modified version of http://www.melax.com/diag.html?attredirects=0
 // A must be a symmetric matrix.
 // returns Q and D such that
 // Diagonal matrix D = QT * A * Q;  and  A = Q*D*QT
-static void PCCDiagonalize(const PCCMatrix3<double> &A, PCCMatrix3<double> &Q, PCCMatrix3<double> &D) {
+static inline void PCCDiagonalize(const PCCMatrix3<double> &A, PCCMatrix3<double> &Q, PCCMatrix3<double> &D) {
   const int maxsteps = 24;  // certainly wont need that many.
   int k0, k1, k2;
   double o[3], m[3];
