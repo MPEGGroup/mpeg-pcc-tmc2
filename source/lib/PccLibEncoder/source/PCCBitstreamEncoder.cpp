@@ -198,8 +198,6 @@ void PCCBitstreamEncoder::sequenceParameterSet( SequenceParameterSet& sps, PCCBi
   if ( sps.getLayerCountMinus1() > 0 ) {
     bitstream.write( (uint32_t)sps.getMultipleLayerStreamsPresentFlag(), 1 );  // u(1)
   }
-//  auto layerAbsoluteCodingEnabledFlag = sps.getLayerAbsoluteCodingEnabledFlag( 1 );
-//  auto layerPredictorIndexDiff        = sps.getLayerPredictorIndexDiff( 0 );
   for ( size_t i = 0; i < sps.getLayerCountMinus1(); i++ ) {
     bitstream.write( (uint32_t)sps.getLayerAbsoluteCodingEnabledFlag( i + 1 ), 1 );  // u(1)
     if ( ( sps.getLayerAbsoluteCodingEnabledFlag( i + 1 ) == 0 ) ) {
@@ -447,7 +445,6 @@ void PCCBitstreamEncoder::patchSequenceUnitPayload( PatchSequenceUnitPayload& ps
   } else if ( psup.getUnitType() == PSD_GFPS ) {
     geometryFrameParameterSet( psup.getGeometryFrameParameterSet(), sps.getGeometryParameterSet(), bitstream );
   } else if ( psup.getUnitType() == PSD_PFLU ) {
-    //assert( psupPrevPFLU.getUnitType() == PSD_PFLU ); //in case of AI or IFRAME
     patchFrameLayerUnit( psup.getPatchFrameLayerUnit(), psupPrevPFLU.getPatchFrameLayerUnit(), context, bitstream );
   }
 }

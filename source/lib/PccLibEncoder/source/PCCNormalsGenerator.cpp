@@ -69,7 +69,6 @@ void PCCNormalsGenerator3::compute(const PCCPointSet3 &pointCloud, const PCCKdTr
 void PCCNormalsGenerator3::computeNormal(const size_t index, const PCCPointSet3 &pointCloud,
                     const PCCKdTree &kdtree, const PCCNormalsGenerator3Parameters &params,
                     PCCNNResult &nNResult) {
-//  const double radius = params.radiusNormalEstimation_ * params.radiusNormalEstimation_;
   PCCVector3D bary( pointCloud[index][0], pointCloud[index][1], pointCloud[index][2] ), normal(0.0), eigenval(0.0);
   PCCMatrix3D covMat, Q, D;
   kdtree.search( pointCloud[index], params.numberOfNearestNeighborsInNormalEstimation_, nNResult );

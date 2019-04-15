@@ -1127,7 +1127,6 @@ void PCCPatchSegmenter3::refineSegmentation( const PCCPointSet3&         pointCl
     limited.execute( [&] {
       tbb::parallel_for( size_t( 0 ), pointCount, [&]( const size_t i ) {
         const PCCVector3D          normal       = normalsGen.getNormal( i );
-  //      const std::vector<size_t>& neighbors    = adj[i];
         size_t                     clusterIndex = partition[i];
         double                     bestScore    = 0.0;
         const auto&                scoreSmooth  = scoresSmooth[i];

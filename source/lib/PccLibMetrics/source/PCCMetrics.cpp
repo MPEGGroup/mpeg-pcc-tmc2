@@ -90,8 +90,6 @@ void QualityMetrics::compute( const PCCPointSet3& pointcloudA, const PCCPointSet
   sseColor[0] = sseColor[1] = sseColor[2] = 0.0;
 
   psnr_ = params_.resolution_;
-  #define NUM_RESULTS 30
-//  const size_t num_results = NUM_RESULTS;
 
   PCCKdTree kdtree( pointcloudB );
   PCCNNResult result;

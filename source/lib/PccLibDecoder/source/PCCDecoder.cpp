@@ -413,37 +413,25 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
   const size_t  minLevel               = sps.getMinLevel();
   const uint8_t maxBitCountForMinDepth = uint8_t( 10 - gbitCountSize[minLevel] );
   const uint8_t maxBitCountForMaxDepth = uint8_t( 9 - gbitCountSize[minLevel] );
-
-#if BUGFIX_PCM
-  //jkei : it is not a bugfix but this way will be more aligned with the spec. PCM patches can be anywhere in theory
-  size_t numPCMPatches=0;
-  size_t numNonPCMPatch=0;
-  for(size_t patchIdx=0; patchIdx<pfdu.getPatchCount(); patchIdx++)
-  {
-    if(( PCCPatchFrameType( pfh.getType() ) == PATCH_FRAME_I &&
-        PCCPatchModeI( pfdu.getPatchMode( patchIdx ) ) == PATCH_MODE_I_PCM ) ||
-       ( PCCPatchFrameType( pfh.getType() ) == PATCH_FRAME_P &&
-        PCCPatchModeP( pfdu.getPatchMode( patchIdx ) ) == PATCH_MODE_P_PCM )) numPCMPatches++;
-    else numNonPCMPatch++;
+  size_t        numPCMPatches          = 0;
+  size_t        numNonPCMPatch         = 0;
+  for ( size_t patchIdx = 0; patchIdx < pfdu.getPatchCount(); patchIdx++ ) {
+    if ( ( ( PCCPatchFrameType( pfh.getType() ) == PATCH_FRAME_I ) &&
+           ( PCCPatchModeI( pfdu.getPatchMode( patchIdx ) ) == PATCH_MODE_I_PCM ) ) ||
+         ( ( PCCPatchFrameType( pfh.getType() ) == PATCH_FRAME_P  ) &&
+           ( PCCPatchModeP( pfdu.getPatchMode( patchIdx ) ) == PATCH_MODE_P_PCM ) ) ) {
+      numPCMPatches++;
+    } else {
+      numNonPCMPatch++;
+    }
   }
   patches.resize( numNonPCMPatch );
-#else
-  if ( ( PCCPatchFrameType( pfh.getType() ) == PATCH_FRAME_I &&
-         PCCPatchModeI( pfdu.getPatchMode( pfdu.getPatchCount() - 1 ) ) == PATCH_MODE_I_PCM ) ||
-       ( PCCPatchFrameType( pfh.getType() ) == PATCH_FRAME_P &&
-         PCCPatchModeP( pfdu.getPatchMode( pfdu.getPatchCount() - 1 ) ) == PATCH_MODE_P_PCM ) ) {
-    patches.resize( (size_t)pfdu.getPatchCount() - 1 );
-  } else {
-
-    patches.resize( (size_t)pfdu.getPatchCount() );
-  }
-#endif
-  TRACE_CODEC( "patches size = %lu \n", patches.size() );
 
   frame.getFrameLevelMetadata().setMetadataType( METADATA_FRAME );
   frame.getFrameLevelMetadata().setIndex( frame.getIndex() );
   frame.allocOneLayerData( ops.getOccupancyPackingBlockSize() );
 
+  TRACE_CODEC( "patches size = %lu \n", patches.size() );
   TRACE_CODEC( "OccupancyPackingBlockSize           = %d \n", ops.getOccupancyPackingBlockSize() );
   TRACE_CODEC( "PatchSequenceOrientationEnabledFlag = %d \n", sps.getPatchSequenceOrientationEnabledFlag() );
   TRACE_CODEC( "PatchOrientationPresentFlag         = %d \n", pfps.getPatchOrientationPresentFlag() );
@@ -451,20 +439,13 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
 
   for ( size_t patchIndex = 0; patchIndex < pfdu.getPatchCount(); ++patchIndex ) {
     auto& pid                      = pfdu.getPatchInformationData( patchIndex );
-#if !BUGFIX_PCM //jkei : in lossless case, pfdu.getPatchCount()>patch.size()
-    auto& patch                    = patches[patchIndex];
-    patch.getOccupancyResolution() = ops.getOccupancyPackingBlockSize();
-#endif
-    if ( ( PCCPatchFrameType( pfh.getType() ) == PATCH_FRAME_I &&
-           PCCPatchModeI( pfdu.getPatchMode( patchIndex ) ) == PATCH_MODE_I_INTRA ) ||
-         ( PCCPatchFrameType( pfh.getType() ) == PATCH_FRAME_P &&
-           PCCPatchModeP( pfdu.getPatchMode( patchIndex ) ) == PATCH_MODE_P_INTRA ) ) {
-#if BUGFIX_PCM
+    if ( ( ( PCCPatchFrameType( pfh.getType() ) == PATCH_FRAME_I ) &&
+           ( PCCPatchModeI( pfdu.getPatchMode( patchIndex ) ) == PATCH_MODE_I_INTRA ) ) ||
+         ( ( PCCPatchFrameType( pfh.getType() ) == PATCH_FRAME_P ) &&
+           ( PCCPatchModeP( pfdu.getPatchMode( patchIndex ) ) == PATCH_MODE_P_INTRA ) ) ) {
       auto& patch                    = patches[patchIndex];
       patch.getOccupancyResolution() = ops.getOccupancyPackingBlockSize();
-#endif
       auto& pdu = pid.getPatchDataUnit();
-      TRACE_CODEC( "patch %lu / %lu: Intra \n", patchIndex, patches.size() );
       patch.getU0()               = pdu.get2DShiftU();
       patch.getV0()               = pdu.get2DShiftV();
       patch.getU1()               = pdu.get3DShiftTangentAxis();
@@ -477,6 +458,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
       patch.getPatchOrientation() = pfps.getPatchOrientationPresentFlag() && pdu.getOrientationSwapFlag()
                                         ? PATCH_ORIENTATION_SWAP
                                         : PATCH_ORIENTATION_DEFAULT;
+      TRACE_CODEC( "patch %lu / %lu: Intra \n", patchIndex, patches.size() );
       if ( patch.getProjectionMode() == 0 ) {
         patch.getD1() = (int32_t)pdu.get3DShiftNormalAxis() * minLevel;
       } else {
@@ -495,16 +477,6 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
         patch.getTangentAxis()   = 0;
         patch.getBitangentAxis() = 1;
       }
-      TRACE_CODEC( "PatchOrientationPresentFlag   = %d \n", pfps.getPatchOrientationPresentFlag() );
-      TRACE_CODEC( "minLevel                      = %lu \n", minLevel );
-      TRACE_CODEC( "patch.getProjectionMode()     = %lu \n", patch.getProjectionMode() );
-      TRACE_CODEC( "pdu.get3DShiftTangentAxis()   = %lu \n", pdu.get3DShiftTangentAxis() );
-      TRACE_CODEC( "pdu.get3DShiftBiTangentAxis() = %lu \n", pdu.get3DShiftBiTangentAxis() );
-      TRACE_CODEC( "pdu.get3DShiftNormalAxis()    = %lu \n", pdu.get3DShiftNormalAxis() );
-      TRACE_CODEC( "pdu.get2DDeltaSizeU()         = %ld \n", pdu.get2DDeltaSizeU() );
-      TRACE_CODEC( "pdu.get2DDeltaSizeV()         = %ld \n", pdu.get2DDeltaSizeV() );
-      TRACE_CODEC( "pdu.getNormalAxis()           = %lu \n", pdu.getNormalAxis() );
-      TRACE_CODEC( "patch.getNormalAxis()         = %lu \n", patch.getNormalAxis() );
       TRACE_CODEC( "patch UV0 %4lu %4lu UV1 %4lu %4lu D1=%4lu S=%4lu %4lu P=%lu O=%lu A=%u%u%u \n", patch.getU0(),
                    patch.getV0(), patch.getU1(), patch.getV1(), patch.getD1(), patch.getSizeU0(), patch.getSizeV0(),
                    patch.getProjectionMode(), patch.getPatchOrientation(), patch.getNormalAxis(),
@@ -517,7 +489,6 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
       metadata.setMetadataType( METADATA_PATCH );
       metadata.getMetadataEnabledFlags() = patchLevelMetadataEnabledFlags;
       metadata.setbitCountQDepth( bitCountDD );
-
 #ifdef CE210_MAXDEPTH_EVALUATION
       patch.getSizeD() = size_t( patchLevelMetadata.getQMaxDepthInPatch() ) * minLevel;
 #else
@@ -530,30 +501,20 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
       }
     } else if ( ( PCCPatchFrameType( pfh.getType() ) == PATCH_FRAME_P &&
                   PCCPatchModeP( pfdu.getPatchMode( patchIndex ) ) == PATCH_MODE_P_INTER ) ) {
-#if BUGFIX_PCM
       auto& patch                    = patches[patchIndex];
       patch.getOccupancyResolution() = ops.getOccupancyPackingBlockSize();
-#endif
       auto&   dpdu            = pid.getDeltaPatchDataUnit();
       int64_t deltaIndex      = dpdu.getDeltaPatchIdx();
       patch.setBestMatchIdx() = ( size_t )( deltaIndex + predIndex );
       TRACE_CODEC( "patch %lu / %lu: Inter \n", patchIndex, patches.size() );
-
-      TRACE_CODEC( "dpdu.getDeltaPatchIdx() = %d \n", dpdu.getDeltaPatchIdx() );
-      TRACE_CODEC( "patch.getBestMatchIdx() = %d \n", patch.getBestMatchIdx() );
-      TRACE_CODEC( "predIndex               = %d \n", predIndex );
-      TRACE_CODEC( "deltaIndex              = %d \n", deltaIndex );
-      predIndex += ( deltaIndex + 1 );
-
-      const auto& prePatch = prePatches[patch.getBestMatchIdx()];
-
       TRACE_CODEC( "DeltaIdx = %d ShiftUV = %ld %ld ShiftAxis = %ld %ld %ld Size = %ld %ld \n", dpdu.getDeltaPatchIdx(),
                    dpdu.get2DDeltaShiftU(), dpdu.get2DDeltaShiftV(), dpdu.get3DDeltaShiftTangentAxis(),
                    dpdu.get3DDeltaShiftBiTangentAxis(), dpdu.get3DDeltaShiftNormalAxis(), dpdu.get2DDeltaSizeU(),
                    dpdu.get2DDeltaSizeV() );
 
-      patch.getProjectionMode() =
-          sps.getLayerAbsoluteCodingEnabledFlag( 1 ) ? static_cast<size_t>( dpdu.getProjectionMode() ) : 0;
+      predIndex += ( deltaIndex + 1 );
+      const auto& prePatch = prePatches[patch.getBestMatchIdx()];
+      patch.getProjectionMode()   = sps.getLayerAbsoluteCodingEnabledFlag( 1 ) ? (size_t)dpdu.getProjectionMode() : 0;
       patch.getU0()               = dpdu.get2DDeltaShiftU() + prePatch.getU0();
       patch.getV0()               = dpdu.get2DDeltaShiftV() + prePatch.getV0();
       patch.getPatchOrientation() = prePatch.getPatchOrientation();

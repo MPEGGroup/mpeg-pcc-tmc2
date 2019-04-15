@@ -88,7 +88,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources,
 
 #ifdef BITSTREAM_TRACE
   bitstream.setTrace( true );
-  bitstream.openTrace( removeFileExtension( params_.compressedStreamPath_ ) + "_hls_decode.txt" );
+  bitstream.openTrace( removeFileExtension( params_.compressedStreamPath_ ) + "_hls_encode.txt" );
 #endif
   bitstreamEncoder.setParameters( params_ );
   ret |= bitstreamEncoder.encode( context, bitstream );
@@ -1631,9 +1631,8 @@ void PCCEncoder::generateMissedPointsPatch( const PCCPointSet3& source,
   const int16_t infiniteDepth     = ( std::numeric_limits<int16_t>::max )();
   auto&         patches           = frame.getPatches();
   auto&         missedPointsPatch = frame.getMissedPointsPatch();
-  missedPointsPatch.reset();
-//  bool         useOneLayerMode  = params_.oneLayerMode_ || params_.singleLayerPixelInterleaving_;
   bool         sixDirectionFlag = params_.absoluteD1_;
+  missedPointsPatch.reset();
   PCCPointSet3 pointsToBeProjected;
   for ( const auto& patch : patches ) {
     for ( size_t v = 0; v < patch.getSizeV(); ++v ) {
@@ -2078,8 +2077,7 @@ void PCCEncoder::reconstuctionOptimization( PCCFrameContext&                   f
       }
     }
   }
-  size_t       shift;
-  //const size_t layerCount = 2;
+  size_t shift;
   if ( !params.absoluteD1_ ) {
     shift = frame.getIndex();
     if ( video.getFrameCount() < ( shift + 1 ) ) { return; }
@@ -2092,10 +2090,8 @@ void PCCEncoder::reconstuctionOptimization( PCCFrameContext&                   f
   auto&                      fillingMap           = frame.getFilling();
   auto&                      minD1Map             = frame.getMinD1();
   auto&                      neighborMap          = frame.getNeighbor();
-//  const auto&                frame0               = video.getFrame( shift );
   const size_t               imageWidth           = video.getWidth();
   const size_t               imageHeight          = video.getHeight();
-//  std::vector<PCCPointSet3>& srcPointCloudByBlock = frame.getSrcPointCloudByBlock();
   for ( size_t patchIndex = 0; patchIndex < patchCount; ++patchIndex ) {
     const size_t patchIndexPlusOne = patchIndex + 1;
     auto&        patch             = patches[patchIndex];
@@ -3137,7 +3133,6 @@ void PCCEncoder::generateGlobalPatches( PCCContext&    context,
   auto& curPatches = context[frameIndex].getPatches();
   assert( curPatches.size() > 0 );
   for ( GlobalPatches::iterator iter = globalPatchTracks.begin(); iter != globalPatchTracks.end(); iter++ ) {
-//    size_t trackIndex   = iter->first;
     auto&  trackPatches = iter->second;  // !!!< <frameIndex, patchIndex> >;
     if ( trackPatches.empty() ) { continue; }
     const auto& preGlobalPatch = trackPatches[preIndex];
@@ -3264,7 +3259,6 @@ size_t PCCEncoder::unionPatchGenerationAndPacking( const GlobalPatches& globalPa
       PATCH_ORIENTATION_SWAP, PATCH_ORIENTATION_DEFAULT};  // favoring horizontal orientations (that should be rotated)
   occupancyMap.resize( occupancySizeU * occupancySizeV, false );
   for ( unionPatch::iterator iter = unionPatchTemp.begin(); iter != unionPatchTemp.end(); iter++ ) {
-//    auto& curUnionIndex = iter->first;
     auto& curPatchUnion = iter->second;  // [u0, v0] may be modified;
     assert( curPatchUnion.getSizeU0() < occupancySizeU );
     assert( curPatchUnion.getSizeV0() < occupancySizeV );
@@ -4133,7 +4127,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
     auto&       dpdu     = pid.getDeltaPatchDataUnit();
     pid.allocate( sps.getAttributeCount() );
     pfdu.addPatchMode( PATCH_MODE_P_INTER );
-    TRACE_CODEC( "patch %lu / %lu \n", patchIndex, patches.size() );
+    TRACE_CODEC( "patch %lu / %lu: Inter \n", patchIndex, patches.size() );
     pfdu.setPatchMode( patchIndex, PATCH_MODE_P_INTER );
     dpdu.setDeltaPatchIdx( patch.getBestMatchIdx() - predIndex );
     dpdu.set2DDeltaShiftU( patch.getU0() - refPatch.getU0() );
@@ -4149,10 +4143,6 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
     } else {
       dpdu.set3DDeltaShiftNormalAxis( ( 1024 - patch.getD1() ) / minLevel - ( 1024 - refPatch.getD1() ) / minLevel );
     }
-    TRACE_CODEC( "dpdu.getDeltaPatchIdx() = %d \n", dpdu.getDeltaPatchIdx() );
-    TRACE_CODEC( "patch.getBestMatchIdx() = %d \n", patch.getBestMatchIdx() );
-    TRACE_CODEC( "predIndex               = %d \n", predIndex );
-    TRACE_CODEC( "deltaIndex              = %d \n", dpdu.getDeltaPatchIdx() );
     TRACE_CODEC( "DeltaIdx = %d ShiftUV = %ld %ld ShiftAxis = %ld %ld %ld Size = %ld %ld \n", dpdu.getDeltaPatchIdx(),
                  dpdu.get2DDeltaShiftU(), dpdu.get2DDeltaShiftV(), dpdu.get3DDeltaShiftTangentAxis(),
                  dpdu.get3DDeltaShiftBiTangentAxis(), dpdu.get3DDeltaShiftNormalAxis(), dpdu.get2DDeltaSizeU(),
@@ -4203,16 +4193,6 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
     }
     prevSizeU0 = patch.getSizeU0();
     prevSizeV0 = patch.getSizeV0();
-    TRACE_CODEC( "PatchOrientationPresentFlag = %d \n", pfps.getPatchOrientationPresentFlag() );
-    TRACE_CODEC( "minLevel                      = %lu \n", minLevel );
-    TRACE_CODEC( "patch.getProjectionMode()     = %lu \n", patch.getProjectionMode() );
-    TRACE_CODEC( "pdu.get3DShiftTangentAxis()   = %lu \n", pdu.get3DShiftTangentAxis() );
-    TRACE_CODEC( "pdu.get3DShiftBiTangentAxis() = %lu \n", pdu.get3DShiftBiTangentAxis() );
-    TRACE_CODEC( "pdu.get3DShiftNormalAxis()    = %lu \n", pdu.get3DShiftNormalAxis() );
-    TRACE_CODEC( "pdu.get2DDeltaSizeU()         = %ld \n", pdu.get2DDeltaSizeU() );
-    TRACE_CODEC( "pdu.get2DDeltaSizeV()         = %ld \n", pdu.get2DDeltaSizeV() );
-    TRACE_CODEC( "pdu.getNormalAxis()           = %lu \n", pdu.getNormalAxis() );
-    TRACE_CODEC( "patch.getNormalAxis()         = %lu \n", patch.getNormalAxis() );
     TRACE_CODEC( "patch UV0 %4lu %4lu UV1 %4lu %4lu D1=%4lu S=%4lu %4lu P=%lu O=%lu A=%u%u%u \n", patch.getU0(),
                  patch.getV0(), patch.getU1(), patch.getV1(), patch.getD1(), patch.getSizeU0(), patch.getSizeV0(),
                  patch.getProjectionMode(), patch.getPatchOrientation(), patch.getNormalAxis(), patch.getTangentAxis(),
@@ -4257,8 +4237,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
 
   // pfh bitcount
   size_t maxU0 = 0, maxV0 = 0, maxU1 = 0, maxV1 = 0, maxLod = 0;
-  for ( size_t patchIndex = frame.getNumMatchedPatches(); patchIndex < pfdu.getPatchCount(); ++patchIndex )
-  {
+  for ( size_t patchIndex = frame.getNumMatchedPatches(); patchIndex < pfdu.getPatchCount(); ++patchIndex ) {
     const auto& patch = patches[patchIndex];
     maxU0             = ( std::max )( maxU0, patch.getU0() );
     maxV0             = ( std::max )( maxV0, patch.getV0() );
@@ -4274,20 +4253,10 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
   const uint8_t bitCountDD  = maxBitCountForMaxDepth;
   const uint8_t bitCountLod = uint8_t( getFixedLengthCodeBitsCount( uint32_t( maxLod + 1 ) ) );
   
-#if BUGFIX_BITCOUNT //jkei: to handle the case frame.getNumMatchedPatches()== pfdu.getPatchCount()
-  //bool bIntraPatches= (frame.getNumMatchedPatches()!= pfdu.getPatchCount());
   pfh.setInterPredictPatch2dShiftUBitCountMinus1( bitCountU0>0?(bitCountU0 - 1):0 );
   pfh.setInterPredictPatch2dShiftVBitCountMinus1( bitCountV0>0?(bitCountV0 - 1):0 );
   pfh.setInterPredictPatch3dShiftTangentAxisBitCountMinus1( bitCountU1>0?(bitCountU1 - 1):0 );
   pfh.setInterPredictPatch3dShiftBitangentAxisBitCountMinus1( bitCountV1>0?(bitCountV1 - 1):0 );
   pfh.setInterPredictPatch3dShiftNormalAxisBitCountMinus1( bitCountD1>0?(bitCountD1 - 1):0 );
   pfh.setInterPredictPatchLodBitCount( bitCountLod );
-#else
-  pfh.setInterPredictPatch2dShiftUBitCountMinus1( bitCountU0 - 1 );
-  pfh.setInterPredictPatch2dShiftVBitCountMinus1( bitCountV0 - 1 );
-  pfh.setInterPredictPatch3dShiftTangentAxisBitCountMinus1( bitCountU1 - 1 );
-  pfh.setInterPredictPatch3dShiftBitangentAxisBitCountMinus1( bitCountV1 - 1 );
-  pfh.setInterPredictPatch3dShiftNormalAxisBitCountMinus1( bitCountD1 - 1 );
-  pfh.setInterPredictPatchLodBitCount( bitCountLod );
-#endif
 }

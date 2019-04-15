@@ -300,7 +300,6 @@ std::vector<PCCPoint3D> PCCCodec::generatePoints( const GeneratePointCloudParame
     const auto   imageWidth         = frame0.getWidth();
     const auto   imageHeight        = frame0.getHeight();
     const size_t blockToPatchWidth  = frame.getWidth() / params.occupancyResolution_;
-//    const size_t blockToPatchHeight = frame.getHeight() / params.occupancyResolution_;
     double       DepthNeighbors[4]  = {0};
     int          count              = 0;
     double       minimumDepth       = point0[patch.getNormalAxis()];
@@ -854,8 +853,6 @@ bool PCCCodec::gridFiltering( const std::vector<uint32_t>& partition,
   int y2 = y / grid;
   int z2 = z / grid;
 
-//  int curIdx = x2 + y2 * w + z2 * w * w;
-
   int x3 = x % grid;
   int y3 = y % grid;
   int z3 = z % grid;
@@ -1100,8 +1097,6 @@ void PCCCodec::createSpecificLayerReconstruct( const PCCPointSet3&              
   if ( !pointCount || !reconstruct.hasColors() ) { return; }
   for ( size_t i = 0; i < pointCount; ++i ) {
     const PCCVector3<size_t> location = pointToPixel[i];
-//    const size_t             x        = location[0];
-//    const size_t             y        = location[1];
     const size_t             f        = location[2];
     if ( f == frameCount ) {
       subReconstruct.addPoint( reconstruct[i] );
@@ -1128,8 +1123,6 @@ void PCCCodec::createSubReconstruct( const PCCPointSet3&                 reconst
   if ( !pointCount || !reconstruct.hasColors() ) { return; }
   for ( size_t i = 0; i < pointCount; ++i ) {
     const PCCVector3<size_t> location = pointToPixel[i];
-//    const size_t             x        = location[0];
-//    const size_t             y        = location[1];
     const size_t             f        = location[2];
     if ( f < frameCount ) {
       subReconstruct.addPoint( reconstruct[i] );
@@ -1477,7 +1470,6 @@ void PCCCodec::generateBlockToPatchFromBoundaryBox( PCCFrameContext& frame,
   const size_t blockToPatchHeight = frame.getHeight() / occupancyResolution;
   const size_t blockCount         = blockToPatchWidth * blockToPatchHeight;
   auto&        blockToPatch       = frame.getBlockToPatch();
-//  const auto&  occupancyMap       = frame.getOccupancyMap();
   blockToPatch.resize( blockCount );
   std::fill( blockToPatch.begin(), blockToPatch.end(), 0 );
   for ( size_t patchIndex = 0; patchIndex < patchCount; ++patchIndex ) {

@@ -445,6 +445,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   sps.setLayerAbsoluteCodingEnabledFlag( 1, absoluteD1_ );
   sps.setPcmPatchEnabledFlag( useAdditionalPointsPatch_ );
   sps.setPatchInterPredictionEnabledFlag( deltaCoding_ );
+  sps.setSurfaceThickness( surfaceThickness_ );
 
   gps.setGeometryParamsEnabledFlag( flagGeometrySmoothing_ );
 

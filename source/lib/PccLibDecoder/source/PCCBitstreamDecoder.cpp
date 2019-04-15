@@ -472,7 +472,6 @@ void PCCBitstreamDecoder::patchSequenceUnitPayload( PatchSequenceUnitPayload& ps
     auto& sps = context.getSps();
     geometryFrameParameterSet( psup.getGeometryFrameParameterSet(), sps.getGeometryParameterSet(), bitstream );
   } else if ( psup.getUnitType() == PSD_PFLU ) {
-    //assert( psupPrevPFLU.getUnitType() == PSD_PFLU ); //in case of AI or IFRAME
     patchFrameLayerUnit( psup.getPatchFrameLayerUnit(), psupPrevPFLU.getPatchFrameLayerUnit(), context, bitstream );
   }
 }
@@ -908,7 +907,6 @@ void PCCBitstreamDecoder::patchFrameDataUnit( PatchFrameDataUnit& pfdu,
   TRACE_BITSTREAM( "%s \n", __func__ );
   TRACE_BITSTREAM( "patchFrameDataUnit start \n" );
   TRACE_BITSTREAM( "pfh.getType()        = %lu \n", pfh.getType() );
-//  uint8_t                 puCount = -1;
   o3dgc::Arithmetic_Codec arithmeticDecoder;
   uint32_t                compressedBitstreamSize;
   compressedBitstreamSize = bitstream.read( 32 );
@@ -1070,9 +1068,7 @@ void PCCBitstreamDecoder::patchDataUnit( PatchDataUnit&           pdu,
     uint8_t lod = DecodeUInt32( pfh.getInterPredictPatchLodBitCount() + 1, arithmeticDecoder,
                                 bModel );  // ae(v)
     pdu.setLod( lod );
-    TRACE_BITSTREAM_NH( "PatchLod = %lu \n", pdu.getLod() );
   }
-  TRACE_BITSTREAM_NH( "PatchLod = %lu \n", pdu.getLod() );
   bool  projectionFlag = 0;
   int   i              = 0;
   auto& sps            = context.getSps();
@@ -1085,10 +1081,8 @@ void PCCBitstreamDecoder::patchDataUnit( PatchDataUnit&           pdu,
   TRACE_BITSTREAM_NH( "projectionFlag =%d \n", projectionFlag );
 
   if ( projectionFlag ) {
-    pdu.setProjectionMode( arithmeticDecoder.decode( bModelProjectionFlag ) );  // ae(v)
-    TRACE_BITSTREAM_NH( "projectionMode =%d \n", pdu.getProjectionMode() );
+    pdu.setProjectionMode( arithmeticDecoder.decode( bModelProjectionFlag ) );  // ae(v)    
   }
-  TRACE_BITSTREAM_NH( "projectionMode =%d \n", pdu.getProjectionMode() );
   TRACE_BITSTREAM_NH( "patch UV %4lu %4lu S=%4ld %4ld P=%lu O=%d A=%lu %lu %lu \n", pdu.get2DShiftU(),
                       pdu.get2DShiftV(), pdu.get2DDeltaSizeU(), pdu.get2DDeltaSizeV(), pdu.getProjectionMode(),
                       pdu.getOrientationSwapFlag(), pdu.get3DShiftTangentAxis(), pdu.get3DShiftBiTangentAxis(),

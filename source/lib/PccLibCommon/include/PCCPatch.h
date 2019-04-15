@@ -80,11 +80,41 @@ struct GPAPatchData
 
 class PCCPatch {
  public:
-  PCCPatch(){};
+  PCCPatch() :
+      index_( 0 ),
+      u1_( 0 ),
+      v1_( 0 ),
+      d1_( 0 ),
+      sizeD_( 0 ),
+      sizeU_( 0 ),
+      sizeV_( 0 ),
+      u0_( 0 ),
+      v0_( 0 ),
+      sizeU0_( 0 ),
+      sizeV0_( 0 ),
+      occupancyResolution_( 0 ),
+      projectionMode_( 0 ),
+      frameProjectionMode_( 0 ),
+      levelOfDetail_( 0 ),
+      normalAxis_( 0 ),
+      tangentAxis_( 0 ),
+      bitangentAxis_( 0 ),
+      viewId_( 0 ),
+      bestMatchIdx_( 0 ),
+      patchOrientation_( 0 ),
+      isGlobalPatch_( false ) {
+    depth_[0].clear();
+    depth_[1].clear();
+    occupancy_.clear();
+    depthEnhancedDeltaD_.clear();
+    depth0PCidx_.clear();
+  };
   ~PCCPatch(){
     depth_[0].clear();
     depth_[1].clear();
     occupancy_.clear();
+    depthEnhancedDeltaD_.clear();
+    depth0PCidx_.clear();
   };
   size_t&                     getIndex()                     { return index_;                 }
   size_t&                     getU1()                        { return u1_;                    }

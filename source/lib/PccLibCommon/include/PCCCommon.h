@@ -60,9 +60,6 @@
 #include <mach/mach.h>
 #endif
 
-#define BUGFIX_BITCOUNT 1
-#define BUGFIX_PCM 1
-
 // ******************************************************************* //
 // Trace modes to validate new syntax
 // ******************************************************************* //
@@ -268,7 +265,7 @@ static inline PCCEndianness PCCSystemEndianness() {
 }
 
 template <typename T>
-static const T PCCEndianSwap( const T u ) {
+static inline const T PCCEndianSwap( const T u ) {
   union {
     T       u;
     uint8_t u8[sizeof( T )];
@@ -279,12 +276,12 @@ static const T PCCEndianSwap( const T u ) {
 }
 
 template <typename T>
-static const T PCCToLittleEndian( const T u ) {
+static inline const T PCCToLittleEndian( const T u ) {
   return ( PCCSystemEndianness() == PCC_BIG_ENDIAN ) ? PCCEndianSwap( u ) : u;
 }
 
 template <typename T>
-static const T PCCFromLittleEndian( const T u ) {
+static inline const T PCCFromLittleEndian( const T u ) {
   return ( PCCSystemEndianness() == PCC_BIG_ENDIAN ) ? PCCEndianSwap( u ) : u;
 }
 

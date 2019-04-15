@@ -1242,7 +1242,6 @@ class PatchSequenceDataUnit {
       }
     }
     fprintf( stderr, "Error: can't find PatchSequenceUnitPayload of type: %u and index = %u  \n", psdUnitType, index );
-    
     exit(-1);
   }
   uint8_t                               frameCount_;
