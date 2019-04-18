@@ -46,10 +46,8 @@ struct PCCBistreamPosition {
 class PCCVideoBitstream;
 
 #ifdef BITSTREAM_TRACE
-#define TRACE_BITSTREAM_NH( fmt, ... ) bitstream.traceNH( fmt, ##__VA_ARGS__ );
 #define TRACE_BITSTREAM( fmt, ... ) bitstream.trace( fmt, ##__VA_ARGS__ );
 #else
-#define TRACE_BITSTREAM_NH( fmt, ... ) ;
 #define TRACE_BITSTREAM( fmt, ... ) ;
 #endif
 
@@ -174,39 +172,45 @@ class PCCBitstream {
   inline uint32_t read( uint8_t bits ) {
     uint32_t code = read( bits, position_ );
 #ifdef BITSTREAM_TRACE
-    trace( "Code: %5lu : %4lu \n", bits, code );
+    trace( "  CodU[%2u]: %4lu \n", bits, code );
 #endif
     return code;
   }
   void write( uint32_t value, uint8_t bits ) {
     write( value, bits, position_ );
 #ifdef BITSTREAM_TRACE
-    trace( "Code: %5lu : %4lu \n", bits, value );
+    trace( "  CodU[%2u]: %4lu \n", bits, value );
 #endif
   }
 
   inline void writeS( int32_t value, uint8_t bits ) {
     assert( bits > 0 );
     uint32_t code;
-    if ( value >= 0 ) {
-      code = (uint32_t)value;
+    if (value >= 0) {
+      code =  (uint32_t) value;
     } else {
-      code = ~( value ) + 1;
-      code |= ( 1 << 31 );
+      code = (uint32_t) ( value & ((1 << (bits - 1)) - 1)); 
+      code |= (1 << (bits - 1));
     }
     write( code, bits );
+#ifdef BITSTREAM_TRACE
+    trace( "  CodS[%2u]: %4lu \n", bits, value );
+#endif
   }
 
   inline int32_t readS( uint8_t bits ) {
     assert( bits > 0 );
     uint32_t code = read( bits );
     int32_t  value;
-    if ( ( code & ( 1 << ( bits - 1 ) ) ) == 0 ) {
-      value = code;
+    uint32_t midPoint = (1 << (bits -1));
+    if ( code < midPoint) {
+      value =  (int32_t) code;
     } else {
-      code &= ( 1 << ( bits - 1 ) ) - 1;
-      value = ~code + 1;
+      value = (int32_t) code | ~(midPoint - 1);
     }
+#ifdef BITSTREAM_TRACE
+    trace( "  CodS[%2u]: %4lu \n", bits, value );
+#endif
     return value;
   }
 
@@ -225,7 +229,7 @@ class PCCBitstream {
     write( code, ( length + 1 ) >> 1 );
 #ifdef BITSTREAM_TRACE
     trace_ = traceStartingValue;
-    trace( "Code: Uvlc : %4lu \n", orgCode );
+    trace( "  CodeUvlc: %4lu \n", orgCode );
 #endif
   }
 
@@ -247,24 +251,24 @@ class PCCBitstream {
     }
 #ifdef BITSTREAM_TRACE
     trace_ = traceStartingValue;
-    trace( "Code: Uvlc : %4lu \n", value );
+    trace( "  CodeUvlc: %4lu \n", value );
 #endif
     return value;
   }
 
   inline void writeSvlc( int32_t code ) {
-    writeUvlc( ( uint32_t )( code <= 0 ) ? -code << 1 : ( code << 1 ) - 1 );
+    writeUvlc( ( uint32_t )( code <= 0 ? -code << 1 : ( code << 1 ) - 1 ) );
 #ifdef BITSTREAM_TRACE
-    trace( "Code: Svlc : %4d \n", code );
+    trace( "  CodeSvlc: %4d \n", code );
 #endif
   }
 
   inline int32_t readSvlc() {
     uint32_t bits = readUvlc();
 #ifdef BITSTREAM_TRACE
-    trace( "Code: Svlc : %4d \n", ( bits & 1 ) ? -( int32_t )( bits >> 1 ) : ( int32_t )( bits >> 1 ) );
+    trace( "  CodeSvlc: %4d \n",( bits & 1 ) ? ( int32_t )( bits >> 1 ) + 1 : -( int32_t )( bits >> 1 ));
 #endif
-    return ( bits & 1 ) ? -( int32_t )( bits >> 1 ) : ( int32_t )( bits >> 1 );
+    return ( bits & 1 ) ? ( int32_t )( bits >> 1 ) + 1 : -( int32_t )( bits >> 1 );
   }
 
 #ifdef BITSTREAM_TRACE
@@ -273,16 +277,6 @@ class PCCBitstream {
     if ( trace_ ) {
       FILE* output = traceFile_ ? traceFile_ : stdout;
       fprintf( output, "[%6lu - %2u]: ", position_.bytes, position_.bits );
-      fprintf( output, pFormat, eArgs... );
-      fflush( output );
-    }
-  }
-
-  template <typename... Args>
-  void traceNH( const char* pFormat, Args... eArgs ) {
-    if ( trace_ ) {
-      FILE* output = traceFile_ ? traceFile_ : stdout;
-      fprintf( output, "[       -   ]: " );
       fprintf( output, pFormat, eArgs... );
       fflush( output );
     }
@@ -304,10 +298,8 @@ class PCCBitstream {
     }
   }
 #endif
-
  private:
   inline void realloc( const size_t size = 4096 ) { data_.resize( data_.size() + ( ( ( size / 4096 ) + 1 ) * 4096 ) ); }
-
   inline uint32_t read( uint8_t bits, PCCBistreamPosition& pos ) {
     uint32_t value = 0;
     for ( size_t i = 0; i < bits; i++ ) {
@@ -320,7 +312,7 @@ class PCCBitstream {
       }
     }
 #ifdef BITSTREAM_TRACE
-    trace( "      %5lu : %4lu \n", bits, value );
+    // trace( "      %5lu : %4lu \n", bits, value );
 #endif
     return value;
   }
@@ -337,7 +329,7 @@ class PCCBitstream {
       }
     }
 #ifdef BITSTREAM_TRACE
-    trace( "      %5lu : %4lu  \n", bits, value );
+    // trace( "      %5lu : %4lu \n", bits, value );
 #endif
   }
 

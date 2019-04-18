@@ -37,7 +37,6 @@
 #include "PCCDecoderParameters.h"
 #include "PCCCodec.h"
 #include "PCCMath.h"
-#include "ArithmeticCodec.h"
 #include "PCCMetadata.h"
 #include "PCCPatch.h"
 
@@ -48,7 +47,6 @@ class PCCContext;
 class PCCFrameContext;
 class PCCGroupOfFrames; 
 class PCCPatch;
-class Arithmetic_Codec;
 class GeometryFrameParameterSet;
 class GeometryPatchParameterSet;
 class PointLocalReconstruction;

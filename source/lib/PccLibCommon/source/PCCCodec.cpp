@@ -84,32 +84,38 @@ void PCCCodec::generatePointCloud( PCCGroupOfFrames&                  reconstruc
                                    PCCContext&                        context,
                                    const GeneratePointCloudParameters params ) {
   TRACE_CODEC( "Generate point Cloud start \n" );
-  TRACE_CODEC( " size_t  occupancyResolution_;            = %lu \n", params.occupancyResolution_ );
-  TRACE_CODEC( " size_t  occupancyPrecision_;             = %lu \n", params.occupancyPrecision_ );
-  TRACE_CODEC( " bool    flagGeometrySmoothing_;          = %d  \n", params.flagGeometrySmoothing_ );
-  TRACE_CODEC( " bool    gridSmoothing_;                  = %d  \n", params.gridSmoothing_ );
-  TRACE_CODEC( " size_t  gridSize_;                       = %lu \n", params.gridSize_ );
-  TRACE_CODEC( " size_t  neighborCountSmoothing_;         = %lu \n", params.neighborCountSmoothing_ );
-  TRACE_CODEC( " double  radius2Smoothing_;               = %f  \n", params.radius2Smoothing_ );
-  TRACE_CODEC( " double  radius2BoundaryDetection_;       = %f  \n", params.radius2BoundaryDetection_ );
-  TRACE_CODEC( " double  thresholdSmoothing_;             = %f  \n", params.thresholdSmoothing_ );
-  TRACE_CODEC( " bool    losslessGeo_;                    = %d  \n", params.losslessGeo_ );
-  TRACE_CODEC( " bool    losslessGeo444_;                 = %d  \n", params.losslessGeo444_ );
-  TRACE_CODEC( " size_t  nbThread_;                       = %lu \n", params.nbThread_ );
-  TRACE_CODEC( " bool    absoluteD1_;                     = %d  \n", params.absoluteD1_ );
-  TRACE_CODEC( " size_t  surfaceThickness;                = %lu \n", params.surfaceThickness );
-  TRACE_CODEC( " bool    ignoreLod_;                      = %d  \n", params.ignoreLod_ );
-  TRACE_CODEC( " bool    flagColorSmoothing_;             = %d  \n", params.flagColorSmoothing_ );
-  TRACE_CODEC( " double  thresholdColorSmoothing_;        = %f  \n", params.thresholdColorSmoothing_ );
-  TRACE_CODEC( " double  thresholdLocalEntropy_;          = %f  \n", params.thresholdLocalEntropy_ );
-  TRACE_CODEC( " double  radius2ColorSmoothing_;          = %f  \n", params.radius2ColorSmoothing_ );
-  TRACE_CODEC( " size_t  neighborCountColorSmoothing_;    = %lu \n", params.neighborCountColorSmoothing_ );
-  TRACE_CODEC( " bool    enhancedDeltaDepthCode_;         = %d  \n", params.enhancedDeltaDepthCode_ );
-  TRACE_CODEC( " bool    removeDuplicatePoints_;          = %d  \n", params.removeDuplicatePoints_ );
-  TRACE_CODEC( " bool    oneLayerMode_;                   = %d  \n", params.oneLayerMode_ );
-  TRACE_CODEC( " bool    singleLayerPixelInterleaving_;   = %d  \n", params.singleLayerPixelInterleaving_ );
-  TRACE_CODEC( " string  path_;                           = %s  \n", params.path_.c_str() );
-  TRACE_CODEC( " bool    useAdditionalPointsPatch_;       = %d  \n", params.useAdditionalPointsPatch_ );
+  TRACE_CODEC( "  occupancyResolution_            = %lu \n", params.occupancyResolution_ );
+  TRACE_CODEC( "  occupancyPrecision_             = %lu \n", params.occupancyPrecision_ );
+  TRACE_CODEC( "  flagGeometrySmoothing_          = %d  \n", params.flagGeometrySmoothing_ );
+  if ( params.flagGeometrySmoothing_ ) {
+    TRACE_CODEC( "  gridSmoothing_                  = %d  \n", params.gridSmoothing_ );
+    if ( params.gridSmoothing_ ) {
+      TRACE_CODEC( "  gridSize_                       = %lu \n", params.gridSize_ );
+    } else {
+      TRACE_CODEC( "  neighborCountSmoothing_         = %lu \n", params.neighborCountSmoothing_ );
+      TRACE_CODEC( "  radius2Smoothing_               = %f  \n", params.radius2Smoothing_ );
+      TRACE_CODEC( "  radius2BoundaryDetection_       = %f  \n", params.radius2BoundaryDetection_ );
+      TRACE_CODEC( "  thresholdSmoothing_             = %f  \n", params.thresholdSmoothing_ );
+    }
+  }
+  TRACE_CODEC( "  losslessGeo_                    = %d  \n", params.losslessGeo_ );
+  TRACE_CODEC( "  losslessGeo444_                 = %d  \n", params.losslessGeo444_ );
+  TRACE_CODEC( "  nbThread_                       = %lu \n", params.nbThread_ );
+  TRACE_CODEC( "  absoluteD1_                     = %d  \n", params.absoluteD1_ );
+  TRACE_CODEC( "  surfaceThickness                = %lu \n", params.surfaceThickness );
+  TRACE_CODEC( "  ignoreLod_                      = %d  \n", params.ignoreLod_ );
+  TRACE_CODEC( "  flagColorSmoothing_             = %d  \n", params.flagColorSmoothing_ );
+  if ( params.flagColorSmoothing_ ) {
+    TRACE_CODEC( "  thresholdColorSmoothing_        = %f  \n", params.thresholdColorSmoothing_ );
+    TRACE_CODEC( "  thresholdLocalEntropy_          = %f  \n", params.thresholdLocalEntropy_ );
+    TRACE_CODEC( "  radius2ColorSmoothing_          = %f  \n", params.radius2ColorSmoothing_ );
+    TRACE_CODEC( "  neighborCountColorSmoothing_    = %lu \n", params.neighborCountColorSmoothing_ );
+  }
+  TRACE_CODEC( "  enhancedDeltaDepthCode_         = %d  \n", params.enhancedDeltaDepthCode_ );
+  TRACE_CODEC( "  removeDuplicatePoints_          = %d  \n", params.removeDuplicatePoints_ );
+  TRACE_CODEC( "  oneLayerMode_                   = %d  \n", params.oneLayerMode_ );
+  TRACE_CODEC( "  singleLayerPixelInterleaving_   = %d  \n", params.singleLayerPixelInterleaving_ );
+  TRACE_CODEC( "  useAdditionalPointsPatch_       = %d  \n", params.useAdditionalPointsPatch_ );
 
   auto& frames          = context.getFrames();
   auto& videoGeometry   = context.getVideoGeometry();
@@ -121,8 +127,6 @@ void PCCCodec::generatePointCloud( PCCGroupOfFrames&                  reconstruc
     generatePointCloud( reconstructs[i], frames[i], videoGeometry, videoGeometryD1, params, partition );
 
     TRACE_CODEC( " generatePointCloud create %lu points \n", reconstructs[i].getPointCount() );
-    TRACE_CODEC( " params.flagGeometrySmoothing_ = %d \n", params.flagGeometrySmoothing_ );
-    TRACE_CODEC( " params.gridSmoothing_         = %d \n", params.gridSmoothing_ );
     if ( !params.losslessGeo_ && params.flagGeometrySmoothing_ ) {
       if ( params.gridSmoothing_ ) {
         // reset for each GOF
@@ -295,15 +299,15 @@ std::vector<PCCPoint3D> PCCCodec::generatePoints( const GeneratePointCloudParame
   if ( params.singleLayerPixelInterleaving_ ) {
     size_t       patchIndexPlusOne = patchIndex + 1;
     double       depth0, depth1;
-    auto&        occupancyMap       = frame.getOccupancyMap();
-    auto&        blockToPatch       = frame.getBlockToPatch();
-    const auto   imageWidth         = frame0.getWidth();
-    const auto   imageHeight        = frame0.getHeight();
-    const size_t blockToPatchWidth  = frame.getWidth() / params.occupancyResolution_;
-    double       DepthNeighbors[4]  = {0};
-    int          count              = 0;
-    double       minimumDepth       = point0[patch.getNormalAxis()];
-    double       maximumDepth       = point0[patch.getNormalAxis()];
+    auto&        occupancyMap      = frame.getOccupancyMap();
+    auto&        blockToPatch      = frame.getBlockToPatch();
+    const auto   imageWidth        = frame0.getWidth();
+    const auto   imageHeight       = frame0.getHeight();
+    const size_t blockToPatchWidth = frame.getWidth() / params.occupancyResolution_;
+    double       DepthNeighbors[4] = {0};
+    int          count             = 0;
+    double       minimumDepth      = point0[patch.getNormalAxis()];
+    double       maximumDepth      = point0[patch.getNormalAxis()];
     if ( x > 0 && occupancyMap[y * imageWidth + x - 1] ) {
       size_t Temp_u0 = ( x - 1 ) / patch.getOccupancyResolution();
       size_t Temp_v0 = ( y ) / patch.getOccupancyResolution();
@@ -515,12 +519,11 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
 
     TRACE_CODEC( " patch %lu / %lu : size = %lu x %lu points = %lu  \n", patchIndex, patchCount, patch.getSizeU0(),
                  patch.getSizeV0(), reconstruct.getPointCount() );
-    TRACE_CODEC(
-        "P%3lu: 2D=(%2lu,%2lu)*(%2lu,%2lu) 3D(%4lu,%4lu,%4lu)*(%4lu,%4lu,%4lu) A=(%lu,%lu,%lu) Or=%lu P=%lu \n",
-        patchIndex, patch.getU0(), patch.getV0(), patch.getSizeU0(), patch.getSizeV0(), patch.getU1(), patch.getV1(),
-        patch.getD1(), patch.getSizeU0() * patch.getOccupancyResolution(),
-        patch.getSizeV0() * patch.getOccupancyResolution(), patch.getSizeD(), patch.getNormalAxis(),
-        patch.getTangentAxis(), patch.getBitangentAxis(), patch.getPatchOrientation(), patch.getProjectionMode() );
+    TRACE_CODEC( "P%3lu: 2D=(%2lu,%2lu)*(%2lu,%2lu) 3D(%4lu,%4lu,%4lu)*(%4lu,%4lu) A=(%lu,%lu,%lu) Or=%lu P=%lu \n",
+                 patchIndex, patch.getU0(), patch.getV0(), patch.getSizeU0(), patch.getSizeV0(), patch.getU1(),
+                 patch.getV1(), patch.getD1(), patch.getSizeU0() * patch.getOccupancyResolution(),
+                 patch.getSizeV0() * patch.getOccupancyResolution(), patch.getNormalAxis(), patch.getTangentAxis(),
+                 patch.getBitangentAxis(), patch.getPatchOrientation(), patch.getProjectionMode() );
     while ( color[0] == color[1] || color[2] == color[1] || color[2] == color[0] ) {
       color[0] = static_cast<uint8_t>( rand() % 32 ) * 8;
       color[1] = static_cast<uint8_t>( rand() % 32 ) * 8;
@@ -739,7 +742,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
         auto&  missedPointsPatch = frame.getMissedPointsPatch();
         size_t numofMPcolor      = ( params.losslessGeo444_ ) ? missedPointsPatch.size() : missedPointsPatch.size() / 3;
         size_t numofEddSaved     = params.enhancedDeltaDepthCode_ ? missedPointsPatch.numEddSavedPoints_ : 0;
-        missedPointsPatch.resizecolor( numofMPcolor + numofEddSaved );
+        missedPointsPatch.resizeColor( numofMPcolor + numofEddSaved );
         missedPointsPatch.setMPnumbercolor( numofMPcolor + numofEddSaved );
         assert( numEddSavedPoints == numofEddSaved );
       }
@@ -1164,13 +1167,13 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
     bool   lossyMissedPointsPatch       = !losslessGeo && params.useAdditionalPointsPatch_;
     auto&  missedPointsPatch            = frame.getMissedPointsPatch();
     size_t numOfMPColor                 = missedPointsPatch.getMPnumbercolor();
-    size_t numOfMPGeos                  = missedPointsPatch.getMPnumber();
+    size_t numOfMPGeos                  = missedPointsPatch.numMissedPts_;
     size_t numEddSavedPoints            = missedPointsPatch.numEddSavedPoints_;
     size_t pointCount                   = reconstruct.getPointCount();
     if ( ( losslessAtt || lossyMissedPointsPatch ) && useMissedPointsSeparateVideo ) {
       pointCount = reconstruct.getPointCount() - numOfMPGeos - numEddSavedPoints;
       assert( numOfMPColor == ( numEddSavedPoints + numOfMPGeos ) );
-      missedPointsPatch.resizecolor( numOfMPColor );
+      missedPointsPatch.resizeColor( numOfMPColor );
     }
 
     TRACE_CODEC( "useMissedPointsSeparateVideo = %d \n", useMissedPointsSeparateVideo );
@@ -1278,7 +1281,7 @@ void PCCCodec::generateMPsGeometryfromImage( PCCContext&       context,
   auto&  missedPointsPatch = frame.getMissedPointsPatch();
   size_t width             = image.getWidth();
   bool   losslessGeo444    = frame.getLosslessGeo444();
-  size_t numofMPs          = missedPointsPatch.getMPnumber();
+  size_t numofMPs          = missedPointsPatch.numMissedPts_;
   if ( losslessGeo444 ) {
     missedPointsPatch.resize( numofMPs );
   } else {

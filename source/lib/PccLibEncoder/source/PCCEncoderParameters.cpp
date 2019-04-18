@@ -96,7 +96,6 @@ PCCEncoderParameters::PCCEncoderParameters() {
   projectionMode_                         = 0;
   absoluteD1_                             = true;
   constrainedPack_                        = true;
-  binArithCoding_                         = true;
   thresholdColorSmoothing_                = 10.0;
   thresholdLocalEntropy_                  = 4.5;
   radius2ColorSmoothing_                  = 4.0 * 16;
@@ -140,6 +139,9 @@ PCCEncoderParameters::PCCEncoderParameters() {
 PCCEncoderParameters::~PCCEncoderParameters() {}
 
 void PCCEncoderParameters::completePath() {
+  if ( useMissedPointsSeparateVideo_ && !lossyMissedPointsPatch_ && !losslessGeo_ ) {
+    useMissedPointsSeparateVideo_ = false;
+  }
   if ( !uncompressedDataFolder_.empty() ) {
     if ( !uncompressedDataPath_.empty() ) { uncompressedDataPath_ = uncompressedDataFolder_ + uncompressedDataPath_; }
   }
@@ -183,7 +185,6 @@ void PCCEncoderParameters::print() {
   std::cout << "\t keepIntermediateFiles                  " << keepIntermediateFiles_ << std::endl;
   std::cout << "\t absoluteD1                             " << absoluteD1_ << std::endl;
   std::cout << "\t constrainedPack                        " << constrainedPack_ << std::endl;
-  std::cout << "\t binArithCoding                         " << binArithCoding_ << std::endl;
   std::cout << "\t deltaCoding                            " << deltaCoding_ << std::endl;
   std::cout << "\t segmentation" << std::endl;
   std::cout << "\t   nnNormalEstimation                   " << nnNormalEstimation_ << std::endl;
@@ -365,7 +366,6 @@ bool PCCEncoderParameters::check() {
     std::cerr << "WARNING: EDD code doesn't bring any gain when surfaceThickness==1. Please "
                  "consider to increase the value of surfaceThickness.\n";
   }
-
   if ( useMissedPointsSeparateVideo_ ) {
     if ( geometryMPConfig_.empty() || !exist( geometryMPConfig_ ) ) {
       std::cerr << "WARNING: geometryMPConfig_ is set as geometryConfig_ : " << geometryConfig_ << std::endl;
@@ -420,7 +420,6 @@ bool PCCEncoderParameters::check() {
     }
     if ( gridSize_ % 2 == 1 ) { std::cerr << "WARNING: gridSize should be an even number\n"; }
   }
-
   return ret;
 }
 

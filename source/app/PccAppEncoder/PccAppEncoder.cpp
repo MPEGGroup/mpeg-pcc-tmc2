@@ -460,11 +460,6 @@ bool parseParameters( int                   argc,
      encoderParams.constrainedPack_,
      "Temporally consistent patch packing")
 
-    ("binArithCoding",
-     encoderParams.binArithCoding_,
-     encoderParams.binArithCoding_,
-     "Binary arithmetic coding")
-
     // patch sampling resolution
     ("testLevelOfDetail",
      encoderParams.testLevelOfDetail_,

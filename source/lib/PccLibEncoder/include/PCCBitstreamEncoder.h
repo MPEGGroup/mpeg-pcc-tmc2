@@ -36,7 +36,6 @@
 #include "PCCCommon.h"
 #include "PCCEncoderParameters.h"
 #include "PCCCodec.h"
-#include "ArithmeticCodec.h"
 #include "PCCMetadata.h"
 
 #include <map>
@@ -45,7 +44,6 @@ namespace pcc {
 
 class PCCBitstream;
 class PCCContext;
-class Arithmetic_Codec;
 class ProfileTierLevel;
 class SequenceParameterSet;
 class OccupancyParameterSet;
@@ -83,17 +81,6 @@ class PCCBitstreamEncoder {
   int  encode( PCCContext& context, PCCBitstream& bitstream );
   void setParameters( PCCEncoderParameters params );
 
- private:
-  void EncodeUInt32( const uint32_t           value,
-                     const uint32_t           bitCount,
-                     o3dgc::Arithmetic_Codec& arithmeticEncoder,
-                     o3dgc::Static_Bit_Model& bModel0 );
-
-  void EncodeUInt32( const uint32_t           value,
-                     const uint32_t           bitCount,
-                     o3dgc::Arithmetic_Codec& arithmeticEncoder,
-                     o3dgc::Static_Bit_Model& bModel0,
-                     PCCBitstream&            bitstream );
 
   // 7.3.2 V-PCC unit syntax
   void vpccUnit( PCCContext& context, PCCBitstream& bitstream, VPCCUnitType vpccUnitType );
@@ -223,35 +210,30 @@ class PCCBitstreamEncoder {
                              size_t                   patchMode,
                              PatchFrameHeader&        pfh,
                              PCCContext&              context,
-                             PCCBitstream&            bitstream,
-                             o3dgc::Arithmetic_Codec& arithmeticEncoder );
+                             PCCBitstream&            bitstream );
 
   // 7.3.31 Patch data unit syntax
   void patchDataUnit( PatchDataUnit&           pdu,
                       PatchFrameHeader&        pfh,
                       PCCContext&              context,
-                      PCCBitstream&            bitstream,
-                      o3dgc::Arithmetic_Codec& arithmeticEncoder );
+                      PCCBitstream&            bitstream );
 
   // 7.3.32  Delta Patch data unit syntax
   void deltaPatchDataUnit( DeltaPatchDataUnit&      dpdu,
                            PatchFrameHeader&        pfh,
                            PCCContext&              context,
-                           PCCBitstream&            bitstream,
-                           o3dgc::Arithmetic_Codec& arithmeticEncoder );
+                           PCCBitstream&            bitstream );
 
   // 7.3.33 PCM patch data unit syntax
   void pcmPatchDataUnit( PCMPatchDataUnit&        ppdu,
                          PatchFrameHeader&        pfh,
                          PCCContext&              context,
-                         PCCBitstream&            bitstream,
-                         o3dgc::Arithmetic_Codec& arithmeticEncoder );
+                         PCCBitstream&            bitstream );
 
   // 7.3.34 Point local reconstruction syntax
   void pointLocalReconstruction( PointLocalReconstruction& plr,
                                  PCCContext&               context,
-                                 PCCBitstream&             bitstream,
-                                 o3dgc::Arithmetic_Codec&  arithmeticEncoder );
+                                 PCCBitstream&             bitstream );
 
   PCCEncoderParameters params_;
 };

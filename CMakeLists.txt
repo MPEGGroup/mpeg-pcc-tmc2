@@ -15,9 +15,7 @@ ELSE ()
  MESSAGE(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
 ENDIF()
 
-# SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-implicit -Wall -Wformat=0" )
-SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-format-security" )
-
+# SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-function -Wno-implicit -Wno-sign-compare -Wall -Wformat=0" )
 
 SET( CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib )
 SET( CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib )

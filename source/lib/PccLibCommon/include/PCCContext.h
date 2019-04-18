@@ -91,7 +91,7 @@ class PointLocalReconstruction {
     return plrModeNeighbourMinus1_[y * plrBlockToPatchMapWidth_ + x];
   }
   uint8_t getModeMinimumDepthMinus1( size_t x, size_t y ) {
-    return plrModeMinimumDepthMinus1_[y * plrBlockToPatchMapWidth_ + y];
+    return plrModeMinimumDepthMinus1_[y * plrBlockToPatchMapWidth_ + x];
   }
   bool getModeFillingFlag( size_t x, size_t y ) { return plrModeFillingFlag_[y * plrBlockToPatchMapWidth_ + x]; }
 

@@ -36,7 +36,9 @@
 
 using namespace pcc;
 
-PCCFrameContext::PCCFrameContext() : index_( 0 ), width_( 0 ), height_( 0 ) {}
+PCCFrameContext::PCCFrameContext() : index_( 0 ), width_( 0 ), height_( 0 ) {
+  missedPointsPatch_.reset();
+}
 
 PCCFrameContext::~PCCFrameContext() {
   pointToPixel_.clear();

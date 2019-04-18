@@ -152,7 +152,6 @@ class PCCEncoderParameters {
   bool                keepIntermediateFiles_;
   bool                absoluteD1_;
   bool                constrainedPack_;
-  bool                binArithCoding_;
   size_t              projectionMode_;
 
   // dilation

@@ -36,7 +36,6 @@
 #include "PCCCommon.h"
 #include "PCCEncoderParameters.h"
 #include "PCCCodec.h"
-#include "ArithmeticCodec.h"
 #include "PCCMetadata.h"
 
 #include <map>
@@ -65,7 +64,7 @@ typedef pcc::PCCImage<uint8_t,  3> PCCImageOccupancyMap;
 struct PCCPatchSegmenter3Parameters;
 class PCCPatch;
 struct PCCBistreamPosition;
-class Arithmetic_Codec;
+  
   struct SparseMatrixCoefficient {
     int32_t _index;
     double _value;
