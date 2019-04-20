@@ -1322,8 +1322,11 @@ bool PCCEncoder::generateGeometryVideo( const PCCPointSet3&                sourc
   segmenter.setNbThread( params_.nbThread_ );
   segmenter.compute( source, segmenterParams, patches, frame.getSrcPointCloudByPatch(), distanceSrcRec );
   auto& patchLevelMetadataEnabledFlags = frame.getFrameLevelMetadata().getLowerLevelMetadataEnabledFlags();
+
+  if ( params_.occupancyMapRefinement_ ) { refineOccupancyMap( frame ); }
+
   if ( params_.useAdditionalPointsPatch_ ) {
-    generateMissedPointsPatch( source, frame, segmenterParams.useEnhancedDeltaDepthCode );  
+    generateMissedPointsPatch( source, frame, segmenterParams.useEnhancedDeltaDepthCode );
     sortMissedPointsPatch( frame );
   }
   if ( params_.testLevelOfDetail_ > 0 ) {
@@ -1470,6 +1473,103 @@ void PCCEncoder::modifyOccupancyMap( PCCFrameContext&        frame,
     }
   }
   if ( !params_.absoluteD1_ ) { fullOccupancyMap = occupancyMap; }
+}
+
+void PCCEncoder::refineOccupancyMap( PCCFrameContext& frame ) {
+  const size_t  blockSize0     = params_.occupancyResolution_ / params_.occupancyPrecision_;
+  const int16_t infiniteDepth  = ( std::numeric_limits<int16_t>::max )();
+  auto&         patches        = frame.getPatches();
+  const size_t  patchCount     = patches.size();
+  size_t        countRemove4x4 = 0, countRemove16x16 = 0;
+
+  for ( size_t patchIndex = 0; patchIndex < patchCount; ++patchIndex ) {
+    auto& patch = patches[patchIndex];
+    // Count number of points in each block 4x4
+    if ( params_.occupancyPrecision_ > 1 ) {
+      for ( size_t v0 = 0; v0 < patch.getSizeV0(); v0++ ) {
+        for ( size_t u0 = 0; u0 < patch.getSizeU0(); u0++ ) {
+          for ( size_t v1 = 0; v1 < params_.occupancyResolution_; v1 += params_.occupancyPrecision_ ) {
+            for ( size_t u1 = 0; u1 < params_.occupancyResolution_; u1 += params_.occupancyPrecision_ ) {
+              size_t countOccupancyMapBlock4x4 = 0;
+              for ( size_t v2 = 0; v2 < params_.occupancyPrecision_; v2++ ) {
+                const size_t v = v0 * params_.occupancyResolution_ + v1 + v2;
+                if ( v < patch.getSizeV() ) {
+                  for ( size_t u2 = 0; u2 < params_.occupancyPrecision_; u2++ ) {
+                    const size_t u = u0 * params_.occupancyResolution_ + u1 + u2;
+                    if ( u < patch.getSizeU() ) {
+                      const size_t p = v * patch.getSizeU() + u;
+                      if ( patch.getDepth( 0 )[p] < infiniteDepth ) { countOccupancyMapBlock4x4++; }
+                    }
+                  }
+                }
+              }
+              if ( countOccupancyMapBlock4x4 > 0 ) {
+                if ( countOccupancyMapBlock4x4 == 1 ) {
+                  countRemove4x4++;
+                  for ( size_t v2 = 0; v2 < params_.occupancyPrecision_; v2++ ) {
+                    const size_t v = v0 * params_.occupancyResolution_ + v1 + v2;
+                    if ( v < patch.getSizeV() ) {
+                      for ( size_t u2 = 0; u2 < params_.occupancyPrecision_; u2++ ) {
+                        const size_t u = u0 * params_.occupancyResolution_ + u1 + u2;
+                        if ( u < patch.getSizeU() ) {
+                          const size_t p         = v * patch.getSizeU() + u;
+                          patch.getDepth( 0 )[p] = infiniteDepth;
+                          patch.getDepth( 1 )[p] = infiniteDepth;
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    // Count number of points in each block 16x16
+    for ( size_t v0 = 0; v0 < patch.getSizeV0(); v0++ ) {
+      for ( size_t u0 = 0; u0 < patch.getSizeU0(); u0++ ) {
+        size_t countOccupancyMapBlock16x16 = 0;
+        for ( size_t v1 = 0; v1 < params_.occupancyResolution_; ++v1 ) {
+          const size_t v = v0 * params_.occupancyResolution_ + v1;
+          if ( v < patch.getSizeV() ) {
+            for ( size_t u1 = 0; u1 < params_.occupancyResolution_; ++u1 ) {
+              const size_t u = u0 * params_.occupancyResolution_ + u1;
+              if ( u < patch.getSizeU() ) {
+                const size_t p      = v * patch.getSizeU() + u;
+                int16_t      depth0 = patch.getDepth( 0 )[p];
+                if ( depth0 < infiniteDepth ) { countOccupancyMapBlock16x16++; }
+              }
+            }
+          }
+        }
+        if ( countOccupancyMapBlock16x16 == 0 ) {
+          patch.getOccupancy()[v0 * patch.getSizeU0() + u0] = false;
+        } else {
+          if ( countOccupancyMapBlock16x16 < 4 && countOccupancyMapBlock16x16 != 0 ) {
+            countRemove16x16++;
+            patch.getOccupancy()[v0 * patch.getSizeU0() + u0] = false;
+            // remove block 16x16
+            for ( size_t v1 = 0; v1 < params_.occupancyResolution_; ++v1 ) {
+              const size_t v = v0 * params_.occupancyResolution_ + v1;
+              if ( v < patch.getSizeV() ) {
+                for ( size_t u1 = 0; u1 < params_.occupancyResolution_; ++u1 ) {
+                  const size_t u = u0 * params_.occupancyResolution_ + u1;
+                  if ( u < patch.getSizeU() ) {
+                    const size_t p         = v * patch.getSizeU() + u;
+                    patch.getDepth( 0 )[p] = infiniteDepth;
+                    patch.getDepth( 1 )[p] = infiniteDepth;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  printf( "refineOccupancyMap removes %4lu 4x4 blocks and %4lu 16x16 blocks \n", countRemove4x4, countRemove16x16 );
+  fflush( stdout );
 }
 
 void PCCEncoder::remove3DMotionEstimationFiles( std::string path ) {

@@ -67,6 +67,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   occupancyPrecision_                     = 4;
   occupancyMapVideoEncoderConfig_         = {};
   occupancyMapQP_                         = 8;
+  occupancyMapRefinement_                 = false;
   flagGeometrySmoothing_                  = true;
   gridSmoothing_                          = true;
   gridSize_                               = 8;
@@ -240,6 +241,7 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   occupancyPrecision                   " << occupancyPrecision_ << std::endl;
   std::cout << "\t   occupancyMapVideoEncoderConfig       " << occupancyMapVideoEncoderConfig_ << std::endl;
   std::cout << "\t   occupancyMapQP                       " << occupancyMapQP_ << std::endl;
+  std::cout << "\t   occupancyMapRefinement               " << occupancyMapRefinement_ << std::endl;
   std::cout << "\t geometry smoothing" << std::endl;
   std::cout << "\t   flagGeometrySmoothing                " << flagGeometrySmoothing_ << std::endl;
   if ( flagGeometrySmoothing_ ) {

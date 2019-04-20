@@ -260,6 +260,11 @@ bool parseParameters( int                   argc,
      encoderParams.occupancyMapQP_,
      "QP for compression of occupancy map video")
 
+    ("occupancyMapRefinement",
+      encoderParams.occupancyMapRefinement_,
+      encoderParams.occupancyMapRefinement_,
+      "Use occupancy map refinement")
+
     // smoothing
     // NB: various parameters are of the form n * occupancyPrecision**2
 
@@ -516,11 +521,6 @@ bool parseParameters( int                   argc,
       encoderParams.removeDuplicatePoints_,
       "Remove duplicate points( ")
 
-    // ("sixDirectionMode",
-    //   encoderParams.sixDirectionMode_,
-    //   encoderParams.sixDirectionMode_,
-    //   "Use Six Direction Projection mode")
-
     ("surfaceSeparation",
       encoderParams.surfaceSeparation_,
       encoderParams.surfaceSeparation_,
@@ -541,11 +541,6 @@ bool parseParameters( int                   argc,
       encoderParams.textureBGFill_,
       encoderParams.textureBGFill_,
       "Selects the background filling operation for texture only (0: anchor's dilation, 1(default): push-pull algorithm)\n")
-
-    // ("improveEDD",
-    //   encoderParams.improveEDD_,
-    //   encoderParams.improveEDD_,
-    //   "Code EDD code in the occupancy map\n")
 
     //lossy-missed-points patch
     ("lossyMissedPointsPatch",
@@ -573,7 +568,7 @@ bool parseParameters( int                   argc,
       encoderParams.use3dmc_,
       "Use auxilliary information for 3d motion compensation.(0: conventional video coding, 1: 3D motion compensated)\n")
 
-        ;
+    ;
 
    opts.addOptions()
      ("computeChecksum",

@@ -100,6 +100,7 @@ class PCCEncoderParameters {
   size_t              occupancyPrecision_;
   std::string         occupancyMapVideoEncoderConfig_;
   size_t              occupancyMapQP_;
+  bool                occupancyMapRefinement_;
 
   // smoothing
   size_t              neighborCountSmoothing_;

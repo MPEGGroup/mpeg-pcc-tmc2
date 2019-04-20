@@ -186,6 +186,7 @@ private:
   void spatialConsistencyPackTetris(PCCFrameContext & frame, PCCFrameContext & prevFrame, int safeguard = 0);
   void generateOccupancyMap( PCCFrameContext& frameContext );
   void modifyOccupancyMap(PCCFrameContext& frame, const PCCImageGeometry &imageRef, const PCCImageGeometry &image);
+  void refineOccupancyMap( PCCFrameContext &frame );
   void printMap(std::vector<bool> img, const size_t sizeU, const size_t sizeV);
   void printMapTetris(std::vector<bool> img, const size_t sizeU, const size_t sizeV, std::vector<int> horizon);
   void generateIntraImage( PCCFrameContext& frameContext, const size_t depthIndex, PCCImageGeometry &image);
@@ -284,6 +285,7 @@ private:
   void setGeometryPatchParameterSet( PCCMetadata& metadata, GeometryPatchParameterSet& gpps );
 
   void setPointLocalReconstruction( PCCFrameContext& frame, const PCCPatch& patch, PointLocalReconstruction& plr, size_t occupancyPackingBlockSize );
+
 
   PCCEncoderParameters params_;
 };
