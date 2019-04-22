@@ -315,12 +315,6 @@ void PCCDecoder::setPatchMetadata( PCCMetadata& metadata, GeometryPatchParameter
     if ( gpp.getGeometryPatchPointShapeInfoPresentFlag() ) {
       metadata.getPointShape() = static_cast<PointShape>( gpp.getGeometryPatchPointShapeInfo() );
     }
-#ifdef CE210_MAXDEPTH_EVALUATION
-    if ( metadataEnabingFlags.getMaxDepthEnabled() ) {
-      currentDD = metadata.getQMaxDepthInPatch();
-      // TODO: gfp.setGeometryMaxDeltaDepth(currentDD);
-    }
-#endif
   }
   // auto& lowerLevelMetadataEnabledFlags = metadata.getLowerLevelMetadataEnabledFlags();
   // // gfp.set...(lowerLevelMetadataEnabledFlags.getMetadataEnabled())
@@ -415,8 +409,9 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
   int64_t       prevSizeV0             = 0;
   int64_t       predIndex              = 0;
   const size_t  minLevel               = sps.getMinLevel();
-  const uint8_t maxBitCountForMinDepth = uint8_t( 10 - gbitCountSize[minLevel] );
-  const uint8_t maxBitCountForMaxDepth = uint8_t( 9 - gbitCountSize[minLevel] );
+  auto          geometryBitDepth2D     = context.getSps().getGeometryParameterSet().getGeometryNominal2dBitdepthMinus1()+1;
+//  const uint8_t maxBitCountForMaxDepth = uint8_t( geometryBitDepth2D - gbitCountSize[context.getSps().getMinLevel()] + 1 );
+  const size_t  maxValue2D             = 1<<geometryBitDepth2D;
   size_t        numPCMPatches          = 0;
   size_t        numNonPCMPatch         = 0;
   for ( size_t patchIdx = 0; patchIdx < pfdu.getPatchCount(); patchIdx++ ) {
@@ -454,6 +449,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
       patch.getU1()               = pdu.get3DShiftTangentAxis();
       patch.getV1()               = pdu.get3DShiftBiTangentAxis();
       patch.getLod()              = pdu.getLod();
+      patch.getSizeD()            = (pdu.get2DDeltaSizeD() * minLevel)==maxValue2D?(maxValue2D-1):(pdu.get2DDeltaSizeD() * minLevel);
       patch.getSizeU0()           = prevSizeU0 + pdu.get2DDeltaSizeU();
       patch.getSizeV0()           = prevSizeV0 + pdu.get2DDeltaSizeV();
       patch.getNormalAxis()       = pdu.getNormalAxis();
@@ -480,23 +476,16 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
         patch.getTangentAxis()   = 0;
         patch.getBitangentAxis() = 1;
       }
-      TRACE_CODEC( "patch UV0 %4lu %4lu UV1 %4lu %4lu D1=%4lu S=%4lu %4lu P=%lu O=%lu A=%u%u%u Lod = %lu \n", patch.getU0(),
-                   patch.getV0(), patch.getU1(), patch.getV1(), patch.getD1(), patch.getSizeU0(), patch.getSizeV0(),
+      TRACE_CODEC( "patch UV0 %4lu %4lu UV1 %4lu %4lu D1=%4lu S=%4lu %4lu %4lu(%4lu) P=%lu O=%lu A=%u%u%u Lod = %lu \n", patch.getU0(),
+                   patch.getV0(), patch.getU1(), patch.getV1(), patch.getD1(), patch.getSizeU0(), patch.getSizeV0(), patch.getSizeD(), pdu.get2DDeltaSizeD(),
                    patch.getProjectionMode(), patch.getPatchOrientation(), patch.getNormalAxis(),
                    patch.getTangentAxis(), patch.getBitangentAxis(), patch.getLod() );
 
       auto&         patchLevelMetadataEnabledFlags = frame.getFrameLevelMetadata().getLowerLevelMetadataEnabledFlags();
       auto&         metadata                       = patch.getPatchLevelMetadata();
-      const uint8_t bitCountDD                     = maxBitCountForMaxDepth;
       metadata.setIndex( patchIndex );
       metadata.setMetadataType( METADATA_PATCH );
       metadata.getMetadataEnabledFlags() = patchLevelMetadataEnabledFlags;
-      metadata.setbitCountQDepth( bitCountDD );
-#ifdef CE210_MAXDEPTH_EVALUATION
-      patch.getSizeD() = size_t( patchLevelMetadata.getQMaxDepthInPatch() ) * minLevel;
-#else
-      patch.getSizeD()       = minLevel;
-#endif
       setPatchMetadata( metadata, psdu.getGeometryPatchParameterSet( 0 ) );
     } else if ( ( PCCPatchFrameType( pfh.getType() ) == PATCH_FRAME_P &&
                   PCCPatchModeP( pfdu.getPatchMode( patchIndex ) ) == PATCH_MODE_P_INTER ) ) {
@@ -528,33 +517,26 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
         patch.getD1() = ( dpdu.get3DDeltaShiftNormalAxis() + ( prePatch.getD1() / minLevel ) ) * minLevel;
       } else {
         patch.getD1() =
-            1024 - ( dpdu.get3DDeltaShiftNormalAxis() + ( ( 1024 - prePatch.getD1() ) / minLevel ) ) * minLevel;
+        1024 - ( dpdu.get3DDeltaShiftNormalAxis() + ( ( 1024 - prePatch.getD1() ) / minLevel ) ) * minLevel; //jkei : we need to change 1024 to the nominal bitdepth...
       }
+      const int64_t delta_DD = dpdu.get2DDeltaSizeD();
+      size_t prevDD = prePatch.getSizeD() / minLevel;
+      if ( prevDD * minLevel != prePatch.getSizeD() ) { prevDD += 1; }
+      patch.getSizeD() = ( delta_DD + prevDD ) * minLevel;
       patch.getLod() = prePatch.getLod();
       prevSizeU0     = patch.getSizeU0();
       prevSizeV0     = patch.getSizeV0();
 
-      TRACE_CODEC( "patch Inter UV0 %4lu %4lu UV1 %4lu %4lu D1=%4lu S=%4lu %4lu P=%lu O=%lu A=%u%u%u Lod = %lu \n",
-                   patch.getU0(), patch.getV0(), patch.getU1(), patch.getV1(), patch.getD1(), patch.getSizeU0(),
-                   patch.getSizeV0(), patch.getProjectionMode(), patch.getPatchOrientation(), patch.getNormalAxis(),
-                   patch.getTangentAxis(), patch.getBitangentAxis(), patch.getLod() );
+      TRACE_CODEC( "patch Inter UV0 %4lu %4lu UV1 %4lu %4lu D1=%4lu S=%4lu %4lu %4lu(%4lu) P=%lu O=%lu A=%u%u%u Lod = %lu \n",
+                  patch.getU0(), patch.getV0(), patch.getU1(), patch.getV1(), patch.getD1(), patch.getSizeU0(),
+                  patch.getSizeV0(), patch.getSizeD(), dpdu.get2DDeltaSizeD(), patch.getProjectionMode(), patch.getPatchOrientation(), patch.getNormalAxis(),
+                  patch.getTangentAxis(), patch.getBitangentAxis(), patch.getLod() );
 
       auto& patchLevelMetadataEnabledFlags         = frame.getFrameLevelMetadata().getLowerLevelMetadataEnabledFlags();
       auto& patchLevelMetadata                     = patch.getPatchLevelMetadata();
       patchLevelMetadata.getMetadataEnabledFlags() = patchLevelMetadataEnabledFlags;
       patchLevelMetadata.setIndex( patchIndex );
       patchLevelMetadata.setMetadataType( METADATA_PATCH );
-      patchLevelMetadata.setbitCountQDepth( 0 );
-      patchLevelMetadata.getMetadataEnabledFlags() = patchLevelMetadataEnabledFlags;
-
-#ifdef CE210_MAXDEPTH_EVALUATION
-      const int64_t delta_DD = patchLevelMetadata.getQMaxDepthInPatch();
-#else
-      const int64_t delta_DD = 0;
-#endif
-      size_t prevDD = prePatch.getSizeD() / minLevel;
-      if ( prevDD * minLevel != prePatch.getSizeD() ) { prevDD += 1; }
-      patch.getSizeD() = ( delta_DD + prevDD ) * minLevel;
 
       setPatchMetadata( patchLevelMetadata, psdu.getGeometryPatchParameterSet( 0 ) );
     } else if ( ( PCCPatchFrameType( pfh.getType() ) == PATCH_FRAME_I &&

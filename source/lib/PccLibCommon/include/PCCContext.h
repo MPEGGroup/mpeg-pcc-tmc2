@@ -170,6 +170,7 @@ class DeltaPatchDataUnit {
       dpdu2DDeltaShiftV_( 0 ),
       dpdu2DDeltaSizeU_( 0 ),
       dpdu2DDeltaSizeV_( 0 ),
+      dpdu2DDeltaSizeD_( 0 ),
       dpdu3DDeltaShiftTangentAxis_( 0 ),
       dpdu3DDeltaShiftBiTangentAxis_( 0 ),
       dpdu3DDeltaShiftNormalAxis_( 0 ),
@@ -185,6 +186,7 @@ class DeltaPatchDataUnit {
   int64_t  get2DDeltaShiftV() { return dpdu2DDeltaShiftV_; }
   int64_t  get2DDeltaSizeU() { return dpdu2DDeltaSizeU_; }
   int64_t  get2DDeltaSizeV() { return dpdu2DDeltaSizeV_; }
+  int64_t  get2DDeltaSizeD() { return dpdu2DDeltaSizeD_; }
   int64_t  get3DDeltaShiftTangentAxis() { return dpdu3DDeltaShiftTangentAxis_; }
   int64_t  get3DDeltaShiftBiTangentAxis() { return dpdu3DDeltaShiftBiTangentAxis_; }
   int64_t  get3DDeltaShiftNormalAxis() { return dpdu3DDeltaShiftNormalAxis_; }
@@ -198,6 +200,7 @@ class DeltaPatchDataUnit {
   void set2DDeltaShiftV( int64_t value ) { dpdu2DDeltaShiftV_ = value; }
   void set2DDeltaSizeU( int64_t value ) { dpdu2DDeltaSizeU_ = value; }
   void set2DDeltaSizeV( int64_t value ) { dpdu2DDeltaSizeV_ = value; }
+  void set2DDeltaSizeD( int64_t value ) { dpdu2DDeltaSizeD_ = value; }
   void set3DDeltaShiftTangentAxis( int64_t value ) { dpdu3DDeltaShiftTangentAxis_ = value; }
   void set3DDeltaShiftBiTangentAxis( int64_t value ) { dpdu3DDeltaShiftBiTangentAxis_ = value; }
   void set3DDeltaShiftNormalAxis( int64_t value ) { dpdu3DDeltaShiftNormalAxis_ = value; }
@@ -212,6 +215,7 @@ class DeltaPatchDataUnit {
   int64_t  dpdu2DDeltaShiftV_;
   int64_t  dpdu2DDeltaSizeU_;
   int64_t  dpdu2DDeltaSizeV_;
+  int64_t  dpdu2DDeltaSizeD_;
   int64_t  dpdu3DDeltaShiftTangentAxis_;
   int64_t  dpdu3DDeltaShiftBiTangentAxis_;
   int64_t  dpdu3DDeltaShiftNormalAxis_;
@@ -229,6 +233,7 @@ class PatchDataUnit {
       pdu2DShiftV_( 0 ),
       pdu2DDeltaSizeU_( 0 ),
       pdu2DDeltaSizeV_( 0 ),
+      pdu2DDeltaSizeD_( 255 ),
       pdu3DShiftTangentAxis_( 0 ),
       pdu3DShiftBiTangentAxis_( 0 ),
       pdu3DShiftNormalAxis_( 0 ),
@@ -245,6 +250,7 @@ class PatchDataUnit {
   size_t   get2DShiftV() { return pdu2DShiftV_; }
   int64_t  get2DDeltaSizeU() { return pdu2DDeltaSizeU_; }
   int64_t  get2DDeltaSizeV() { return pdu2DDeltaSizeV_; }
+  int64_t  get2DDeltaSizeD() { return pdu2DDeltaSizeD_; }
   size_t   get3DShiftTangentAxis() { return pdu3DShiftTangentAxis_; }
   size_t   get3DShiftBiTangentAxis() { return pdu3DShiftBiTangentAxis_; }
   size_t   get3DShiftNormalAxis() { return pdu3DShiftNormalAxis_; }
@@ -257,6 +263,7 @@ class PatchDataUnit {
   void set2DShiftV( size_t value ) { pdu2DShiftV_ = value; }
   void set2DDeltaSizeU( int64_t value ) { pdu2DDeltaSizeU_ = value; }
   void set2DDeltaSizeV( int64_t value ) { pdu2DDeltaSizeV_ = value; }
+  void set2DDeltaSizeD( int64_t value ) { pdu2DDeltaSizeD_ = value; }
   void set3DShiftTangentAxis( size_t value ) { pdu3DShiftTangentAxis_ = value; }
   void set3DShiftBiTangentAxis( size_t value ) { pdu3DShiftBiTangentAxis_ = value; }
   void set3DShiftNormalAxis( size_t value ) { pdu3DShiftNormalAxis_ = value; }
@@ -270,6 +277,7 @@ class PatchDataUnit {
   size_t   pdu2DShiftV_;
   int64_t  pdu2DDeltaSizeU_;
   int64_t  pdu2DDeltaSizeV_;
+  int64_t  pdu2DDeltaSizeD_;
   size_t   pdu3DShiftTangentAxis_;
   size_t   pdu3DShiftBiTangentAxis_;
   size_t   pdu3DShiftNormalAxis_;
@@ -450,6 +458,7 @@ class PatchFrameHeader {
       numRefIdxActiveMinus1_( 0 ),
       interPredictPatch2dShiftUBitCountMinus1_( 0 ),
       interPredictPatch2dShiftVBitCountMinus1_( 0 ),
+      interPredictPatch2dDeltaSizeDBitCountMinus1_( 0 ),
       interPredictPatch3dShiftTangentAxisBitCountMinus1_( 0 ),
       interPredictPatch3dShiftBitangentAxisBitCountMinus1_( 0 ),
       interPredictPatch3dShiftNormalAxisBitCountMinus1_( 0 ),
@@ -488,6 +497,8 @@ class PatchFrameHeader {
   bool getInterPredictPatchLodBitCountFlag() { return interPredictPatchLodBitCountFlag_; }
   uint8_t getInterPredictPatch2dShiftUBitCountMinus1() { return interPredictPatch2dShiftUBitCountMinus1_; }
   uint8_t getInterPredictPatch2dShiftVBitCountMinus1() { return interPredictPatch2dShiftVBitCountMinus1_; }
+  uint8_t getInterPredictPatch2dDeltaSizeDBitCountMinus1(){
+    return interPredictPatch2dDeltaSizeDBitCountMinus1_; }
   uint8_t getInterPredictPatch3dShiftTangentAxisBitCountMinus1() {
     return interPredictPatch3dShiftTangentAxisBitCountMinus1_;
   }
@@ -510,6 +521,8 @@ class PatchFrameHeader {
   void setAdditionalPfocLsbVal( size_t index, uint32_t value ) { additionalPfocLsbVal_[index] = value; }
   void setNumRefIdxActiveOverrideFlag( bool value ) { numRefIdxActiveOverrideFlag_ = value; }
   void setNumRefIdxActiveMinus1( uint8_t value ) { numRefIdxActiveMinus1_ = value; }
+  void setInterPredictPatch2dDeltaSizeDBitCountMinus1( uint8_t value ){
+    interPredictPatch2dDeltaSizeDBitCountMinus1_ = value; }
   void setInterPredictPatch2dShiftUBitCountMinus1( uint8_t value ) { interPredictPatch2dShiftUBitCountMinus1_ = value; }
   void setInterPredictPatch2dShiftVBitCountMinus1( uint8_t value ) { interPredictPatch2dShiftVBitCountMinus1_ = value; }
   void setInterPredictPatch3dShiftTangentAxisBitCountMinus1( uint8_t value ) {
@@ -550,6 +563,7 @@ class PatchFrameHeader {
   uint8_t               numRefIdxActiveMinus1_;
   uint8_t               interPredictPatch2dShiftUBitCountMinus1_;
   uint8_t               interPredictPatch2dShiftVBitCountMinus1_;
+  uint8_t               interPredictPatch2dDeltaSizeDBitCountMinus1_;
   uint8_t               interPredictPatch3dShiftTangentAxisBitCountMinus1_;
   uint8_t               interPredictPatch3dShiftBitangentAxisBitCountMinus1_;
   uint8_t               interPredictPatch3dShiftNormalAxisBitCountMinus1_;
@@ -1469,8 +1483,8 @@ class GeometryParameterSet {
  public:
   GeometryParameterSet() :
       geometryCodecId_( 0 ),
-      geometryNominal2dBitdepthMinus1_( 0 ),
-      geometry3dCoordinatesBitdepthMinus1_( 0 ),
+      geometryNominal2dBitdepthMinus1_( 7 ),
+      geometry3dCoordinatesBitdepthMinus1_( 9 ),
       pcmGeometryCodecId_( 0 ),
       geometryParamsEnabledFlag_( false ),
       geometryPatchParamsEnabledFlag_( false ),

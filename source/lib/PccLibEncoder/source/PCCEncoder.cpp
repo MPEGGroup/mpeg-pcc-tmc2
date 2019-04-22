@@ -4084,12 +4084,6 @@ void PCCEncoder::setGeometryPatchParameterSet( PCCMetadata& metadata, GeometryPa
     if ( gpp.getGeometryPatchPointShapeInfoPresentFlag() ) {
       gpp.setGeometryPatchPointShapeInfo( metadata.getPointShape() );
     }
-#ifdef CE210_MAXDEPTH_EVALUATION
-    if ( metadataEnabingFlags.getMaxDepthEnabled() ) {
-      currentDD = metadata.getQMaxDepthInPatch();
-      // TODO: gfp.setGeometryMaxDeltaDepth(currentDD);
-    }
-#endif
   }
   // auto& lowerLevelMetadataEnabledFlags = metadata.getLowerLevelMetadataEnabledFlags();
   // // gfp.set...(lowerLevelMetadataEnabledFlags.getMetadataEnabled())
@@ -4197,9 +4191,15 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
   auto&         pfh                    = pflu.getPatchFrameHeader();
   auto&         pfdu                   = pflu.getPatchFrameDataUnit();
   auto&         pfps                   = psdu.getPatchFrameParameterSet( 0 );
-  const size_t  minLevel               = sps.getMinLevel();
+  const size_t  minLevel               = sps.getMinLevel(); //jkei : better to be in GPS
+
+  auto&         gps                    = sps.getGeometryParameterSet();
+  auto          geometryBitDepth2D     = gps.getGeometryNominal2dBitdepthMinus1()+1;
+  const uint8_t maxBitCountForMaxDepth = uint8_t( geometryBitDepth2D - gbitCountSize[minLevel] + 1 ); //8
+  //auto          geometryBitDepth3D     = gps.getGeometry3dCoordinatesBitdepthMinus1()+1;
+  //const uint8_t maxBitCountForMinDepth = uint8_t( geometryBitDepth3D - gbitCountSize[minLevel] ); //10
   const uint8_t maxBitCountForMinDepth = uint8_t( 10 - gbitCountSize[minLevel] );
-  const uint8_t maxBitCountForMaxDepth = uint8_t( 9 - gbitCountSize[minLevel] );  // 20190129
+
   int64_t       prevSizeU0 = 0, prevSizeV0 = 0, predIndex = 0;
   auto&         refPatches = refFrame.getPatches();
   pfdu.setPatchCount( patches.size() );
@@ -4251,18 +4251,18 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
     size_t        quantDD   = patch.getSizeD() == 0 ? 0 : ( ( patch.getSizeD() - 1 ) / minLevel + 1 );
     size_t        prevQDD   = patch.getSizeD() == 0 ? 0 : ( ( refPatch.getSizeD() - 1 ) / minLevel + 1 );
     const int64_t delta_dd  = static_cast<int64_t>( quantDD - prevQDD );
+    dpdu.set2DDeltaSizeD(delta_dd);
     auto&         patchTemp = patches[patchIndex];
     PCCMetadata&  metadata  = patchTemp.getPatchLevelMetadata();
     metadata.setMetadataPresent( true );
-    metadata.setbitCountQDepth( 0 );
     setGeometryFrameParameterSet( metadata, psdu.getGeometryFrameParameterSet( 0 ) );
     prevSizeU0 = patch.getSizeU0();
     prevSizeV0 = patch.getSizeV0();
     predIndex += dpdu.getDeltaPatchIdx() + 1;
-    TRACE_CODEC( "patch Inter UV0 %4lu %4lu UV1 %4lu %4lu D1=%4lu S=%4lu %4lu P=%lu O=%lu A=%u%u%u Lod = %lu \n", patch.getU0(),
-                 patch.getV0(), patch.getU1(), patch.getV1(), patch.getD1(), patch.getSizeU0(), patch.getSizeV0(),
-                 patch.getProjectionMode(), patch.getPatchOrientation(), patch.getNormalAxis(), patch.getTangentAxis(),
-                 patch.getBitangentAxis(), patch.getLod() );
+    TRACE_CODEC( "patch Inter UV0 %4lu %4lu UV1 %4lu %4lu D1=%4lu S=%4lu %4lu %4lu(%4lu) P=%lu O=%lu A=%u%u%u Lod = %lu \n", patch.getU0(),
+                patch.getV0(), patch.getU1(), patch.getV1(), patch.getD1(), patch.getSizeU0(), patch.getSizeV0(), patch.getSizeD(), delta_dd,
+                patch.getProjectionMode(), patch.getPatchOrientation(), patch.getNormalAxis(), patch.getTangentAxis(),
+                patch.getBitangentAxis(), patch.getLod() );
   }
 
   // Intra patches
@@ -4293,17 +4293,17 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
     }
     prevSizeU0 = patch.getSizeU0();
     prevSizeV0 = patch.getSizeV0();
-    TRACE_CODEC( "patch UV0 %4lu %4lu UV1 %4lu %4lu D1=%4lu S=%4lu %4lu P=%lu O=%lu A=%u%u%u Lod = %lu \n", patch.getU0(),
-                 patch.getV0(), patch.getU1(), patch.getV1(), patch.getD1(), patch.getSizeU0(), patch.getSizeV0(),
-                 patch.getProjectionMode(), patch.getPatchOrientation(), patch.getNormalAxis(), patch.getTangentAxis(),
-                 patch.getBitangentAxis(), patch.getLod() );
+
     size_t       quantDD   = patch.getSizeD() == 0 ? 0 : ( ( patch.getSizeD() - 1 ) / minLevel + 1 );
+    pdu.set2DDeltaSizeD(quantDD);
+    TRACE_CODEC( "patch UV0 %4lu %4lu UV1 %4lu %4lu D1=%4lu S=%4lu %4lu %4lu(%4lu) P=%lu O=%lu A=%u%u%u Lod = %lu \n", patch.getU0(),
+                patch.getV0(), patch.getU1(), patch.getV1(), patch.getD1(), patch.getSizeU0(), patch.getSizeV0(), patch.getSizeD(), quantDD,
+                patch.getProjectionMode(), patch.getPatchOrientation(), patch.getNormalAxis(), patch.getTangentAxis(),
+                patch.getBitangentAxis(), patch.getLod() );
+  
     auto&        patchTemp = patches[patchIndex];
     PCCMetadata& metadata  = patchTemp.getPatchLevelMetadata();
-    metadata.setbitCountQDepth( 0 );  // bitCountDD );
-#ifdef CE210_MAXDEPTH_EVALUATION
-    metadata.setQMaxDepthInPatch( int64_t( quantDD ) );
-#endif
+    
     metadata.setIndex( patchIndex );
     metadata.setMetadataType( METADATA_PATCH );
     metadata.setMetadataPresent( true );
@@ -4363,6 +4363,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
 
   pfh.setInterPredictPatch2dShiftUBitCountMinus1( bitCountU0 > 0 ? ( bitCountU0 - 1 ) : 0 );
   pfh.setInterPredictPatch2dShiftVBitCountMinus1( bitCountV0 > 0 ? ( bitCountV0 - 1 ) : 0 );
+  pfh.setInterPredictPatch2dDeltaSizeDBitCountMinus1( bitCountDD );
   pfh.setInterPredictPatch3dShiftTangentAxisBitCountMinus1( bitCountU1 > 0 ? ( bitCountU1 - 1 ) : 0 );
   pfh.setInterPredictPatch3dShiftBitangentAxisBitCountMinus1( bitCountV1 > 0 ? ( bitCountV1 - 1 ) : 0 );
   pfh.setInterPredictPatch3dShiftNormalAxisBitCountMinus1( bitCountD1 > 0 ? ( bitCountD1 - 1 ) : 0 );

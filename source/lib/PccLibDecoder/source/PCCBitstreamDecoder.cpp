@@ -716,10 +716,10 @@ void PCCBitstreamDecoder::patchFrameHeader( PatchFrameHeader& pfh,
   auto& psdu = context.getPatchSequenceDataUnit();
   auto& psps = psdu.getPatchSequenceParameterSet( pfh.getPatchFrameParameterSetId() );
 
-  pfh.setPatchFrameParameterSetId( bitstream.readUvlc() );  // ue( v )
-  pfh.setAddress( bitstream.readUvlc() );                   // ue( v )
-  pfh.setType( bitstream.readUvlc() );                      // ue( v )
-  pfh.setPatchFrameOrderCntLsb( bitstream.readUvlc() );     // ue( v )
+  pfh.setPatchFrameParameterSetId( bitstream.readUvlc() );
+  pfh.setAddress( bitstream.readUvlc() );
+  pfh.setType( bitstream.readUvlc() );
+  pfh.setPatchFrameOrderCntLsb( bitstream.readUvlc() );
 
   TRACE_BITSTREAM( "Id     = %u \n", pfh.getPatchFrameParameterSetId() );
   TRACE_BITSTREAM( "Adress = %u \n", pfh.getAddress() );
@@ -748,14 +748,18 @@ void PCCBitstreamDecoder::patchFrameHeader( PatchFrameHeader& pfh,
       pfh.setAdditionalPfocLsbPresentFlag( j, bitstream.read( 1 ) );  // u( 1 )
       if ( pfh.getAdditionalPfocLsbPresentFlag( j ) ) {
         pfh.setAdditionalPfocLsbVal( j, bitstream.readUvlc() );
-      }  // ue( v )
+      }
     }
 
     if ( pfh.getType() == PATCH_FRAME_P && psps.getRefListStruct( rlsIdx ).getNumRefEntries() > 1 ) {
       pfh.setNumRefIdxActiveOverrideFlag( bitstream.read( 1 ) );                                             // u( 1 )
-      if ( pfh.getNumRefIdxActiveOverrideFlag() ) { pfh.setNumRefIdxActiveMinus1( bitstream.readUvlc() ); }  // ue( v )
+      if ( pfh.getNumRefIdxActiveOverrideFlag() ) { pfh.setNumRefIdxActiveMinus1( bitstream.readUvlc() ); }
     }
   }
+  auto          geometryBitDepth2D     = context.getSps().getGeometryParameterSet().getGeometryNominal2dBitdepthMinus1()+1;
+  const uint8_t maxBitCountForMaxDepth = uint8_t( geometryBitDepth2D - gbitCountSize[context.getSps().getMinLevel()] + 1 ); //8
+  pfh.setInterPredictPatch2dDeltaSizeDBitCountMinus1( maxBitCountForMaxDepth );
+
   if ( pfh.getType() == PATCH_FRAME_I ) {
     pfh.setInterPredictPatch2dShiftUBitCountMinus1( bitstream.read( 8 ) );              // u( 8 )
     pfh.setInterPredictPatch2dShiftVBitCountMinus1( bitstream.read( 8 ) );              // u( 8 )
@@ -948,8 +952,10 @@ void PCCBitstreamDecoder::patchDataUnit( PatchDataUnit&    pdu,
   TRACE_BITSTREAM( "%s \n", __func__ );
   pdu.set2DShiftU( bitstream.read( pfh.getInterPredictPatch2dShiftUBitCountMinus1() + 1 ) );
   pdu.set2DShiftV( bitstream.read( pfh.getInterPredictPatch2dShiftVBitCountMinus1() + 1 ) );
+  pdu.set2DDeltaSizeD( bitstream.read( pfh.getInterPredictPatch2dDeltaSizeDBitCountMinus1() + 1 ) );
   pdu.set2DDeltaSizeU( bitstream.readSvlc() );
   pdu.set2DDeltaSizeV( bitstream.readSvlc() );
+
   pdu.set3DShiftTangentAxis( bitstream.read( pfh.getInterPredictPatch3dShiftTangentAxisBitCountMinus1() + 1 ) );
   pdu.set3DShiftBiTangentAxis( bitstream.read( pfh.getInterPredictPatch3dShiftBitangentAxisBitCountMinus1() + 1 ) );
   pdu.set3DShiftNormalAxis( bitstream.read( pfh.getInterPredictPatch3dShiftNormalAxisBitCountMinus1() + 1 ) );
@@ -984,6 +990,7 @@ void PCCBitstreamDecoder::deltaPatchDataUnit( DeltaPatchDataUnit& dpdu,
   dpdu.set2DDeltaShiftV( bitstream.readSvlc() );
   dpdu.set2DDeltaSizeU( bitstream.readSvlc() );
   dpdu.set2DDeltaSizeV( bitstream.readSvlc() );
+  dpdu.set2DDeltaSizeD( bitstream.readSvlc() );
   dpdu.set3DDeltaShiftTangentAxis( bitstream.readSvlc() );
   dpdu.set3DDeltaShiftBiTangentAxis( bitstream.readSvlc() );
   dpdu.set3DDeltaShiftNormalAxis( bitstream.readSvlc() );

@@ -726,7 +726,9 @@ void PCCBitstreamEncoder::patchFrameHeader( PatchFrameHeader& pfh,
       }
     }
   }
-
+  auto          geometryBitDepth2D     = context.getSps().getGeometryParameterSet().getGeometryNominal2dBitdepthMinus1()+1;
+  const uint8_t maxBitCountForMaxDepth = uint8_t( geometryBitDepth2D - gbitCountSize[context.getSps().getMinLevel()] + 1 ); //8
+  pfh.setInterPredictPatch2dDeltaSizeDBitCountMinus1( maxBitCountForMaxDepth );
   if ( pfh.getType() == PATCH_FRAME_I ) {
     bitstream.write( (uint32_t)pfh.getInterPredictPatch2dShiftUBitCountMinus1(), 8 );              // u( 8 )
     bitstream.write( (uint32_t)pfh.getInterPredictPatch2dShiftVBitCountMinus1(), 8 );              // u( 8 )
@@ -925,6 +927,7 @@ void PCCBitstreamEncoder::patchDataUnit( PatchDataUnit&    pdu,
   TRACE_BITSTREAM( "%s \n", __func__ );
   bitstream.write( uint32_t( pdu.get2DShiftU() ), pfh.getInterPredictPatch2dShiftUBitCountMinus1() + 1 );
   bitstream.write( uint32_t( pdu.get2DShiftV() ), pfh.getInterPredictPatch2dShiftVBitCountMinus1() + 1 );
+  bitstream.write( uint32_t( pdu.get2DDeltaSizeD() ), pfh.getInterPredictPatch2dDeltaSizeDBitCountMinus1() + 1 );
   bitstream.writeSvlc( int32_t( pdu.get2DDeltaSizeU() ) );  // The way it is implemented in TM
   bitstream.writeSvlc( int32_t( pdu.get2DDeltaSizeV() ) );  // The way it is implemented in TM
   bitstream.write( uint32_t( pdu.get3DShiftTangentAxis() ),
@@ -949,10 +952,11 @@ void PCCBitstreamEncoder::patchDataUnit( PatchDataUnit&    pdu,
     i++;
   }
   if ( projectionFlag ) { bitstream.write( pdu.getProjectionMode(), 1 ); }
-  TRACE_BITSTREAM( "Patch => UV %4lu %4lu S=%4ld %4ld P=%lu O=%d A=%lu %lu %lu \n", pdu.get2DShiftU(),
-                   pdu.get2DShiftV(), pdu.get2DDeltaSizeU(), pdu.get2DDeltaSizeV(), pdu.getProjectionMode(),
-                   pdu.getOrientationSwapFlag(), pdu.get3DShiftTangentAxis(), pdu.get3DShiftBiTangentAxis(),
-                   pdu.get3DShiftNormalAxis() );
+
+  TRACE_BITSTREAM( "Patch => UV %4lu %4lu S=%4ld %4ld %4ld P=%lu O=%d A=%lu %lu %lu \n", pdu.get2DShiftU(),
+                  pdu.get2DShiftV(), pdu.get2DDeltaSizeU(), pdu.get2DDeltaSizeV(), pdu.get2DDeltaSizeD(), pdu.getProjectionMode(),
+                  pdu.getOrientationSwapFlag(), pdu.get3DShiftTangentAxis(), pdu.get3DShiftBiTangentAxis(),
+                  pdu.get3DShiftNormalAxis() );
 }
 
 // 7.3.32  Delta Patch data unit syntax
@@ -967,6 +971,7 @@ void PCCBitstreamEncoder::deltaPatchDataUnit( DeltaPatchDataUnit& dpdu,
   bitstream.writeSvlc( int32_t( dpdu.get2DDeltaShiftV() ) );
   bitstream.writeSvlc( int32_t( dpdu.get2DDeltaSizeU() ) );
   bitstream.writeSvlc( int32_t( dpdu.get2DDeltaSizeV() ) );
+  bitstream.writeSvlc( int32_t( dpdu.get2DDeltaSizeD() ) );
   bitstream.writeSvlc( int32_t( dpdu.get3DDeltaShiftTangentAxis() ) );
   bitstream.writeSvlc( int32_t( dpdu.get3DDeltaShiftBiTangentAxis() ) );
   bitstream.writeSvlc( int32_t( dpdu.get3DDeltaShiftNormalAxis() ) );
@@ -977,11 +982,12 @@ void PCCBitstreamEncoder::deltaPatchDataUnit( DeltaPatchDataUnit& dpdu,
     i++;
   }
   if ( projectionFlag ) { bitstream.write( dpdu.getProjectionMode(), 1 ); }
+
   TRACE_BITSTREAM(
-      "DeltaPatch => DeltaIdx = %u ShiftUV = %ld %ld DeltaSize = %ld %ld Axis = %ld %ld %ld Proj = %d Or = %d \n",
-      dpdu.getDeltaPatchIdx(), dpdu.get2DDeltaShiftU(), dpdu.get2DDeltaShiftV(), dpdu.get2DDeltaSizeU(),
-      dpdu.get2DDeltaSizeV(), dpdu.get3DDeltaShiftTangentAxis(), dpdu.get3DDeltaShiftBiTangentAxis(),
-      dpdu.get3DDeltaShiftNormalAxis(), dpdu.getProjectionMode(), dpdu.getOrientationSwapFlag() );
+                  "DeltaPatch => DeltaIdx = %u ShiftUV = %ld %ld DeltaSize = %ld %ld %ld Axis = %ld %ld %ld Proj = %d Or = %d \n",
+                  dpdu.getDeltaPatchIdx(), dpdu.get2DDeltaShiftU(), dpdu.get2DDeltaShiftV(), dpdu.get2DDeltaSizeU(),
+                  dpdu.get2DDeltaSizeV(), dpdu.get2DDeltaSizeD(), dpdu.get3DDeltaShiftTangentAxis(), dpdu.get3DDeltaShiftBiTangentAxis(),
+                  dpdu.get3DDeltaShiftNormalAxis(), dpdu.getProjectionMode(), dpdu.getOrientationSwapFlag() );
 }
 
 // 7.3.33 PCM patch data unit syntax

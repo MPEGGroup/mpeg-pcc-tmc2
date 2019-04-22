@@ -63,11 +63,10 @@
 // ******************************************************************* //
 // Trace modes to validate new syntax
 // ******************************************************************* //
-// #define BITSTREAM_TRACE
-// #define CODEC_TRACE
+ //#define BITSTREAM_TRACE
+ //#define CODEC_TRACE
 
 #define BUG_FIX_BITDEPTH
-// #define CE210_MAXDEPTH_EVALUATION
 
 namespace pcc {
 
