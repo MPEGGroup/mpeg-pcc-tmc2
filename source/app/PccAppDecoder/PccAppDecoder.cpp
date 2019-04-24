@@ -306,8 +306,12 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
       metrics.compute( sources, reconstructs, normals );
       sources.clear();
       normals.clear();
+    } 
+    if ( !decoderParams.reconstructedDataPath_.empty() ) {
+      reconstructs.write( decoderParams.reconstructedDataPath_, frameNumber );
+    } else {
+      frameNumber += reconstructs.size();
     }
-    reconstructs.write( decoderParams.reconstructedDataPath_, frameNumber );
   }
   bitstream.getBitStreamStat().trace();
   if ( metricsParams.computeMetrics_ ) { metrics.display(); }
