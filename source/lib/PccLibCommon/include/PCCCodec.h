@@ -81,6 +81,7 @@ struct GeneratePointCloudParameters {
   bool        flagGeometrySmoothing_;
   bool        flagColorSmoothing_;
   bool        enhancedDeltaDepthCode_;
+  size_t      thresholdLossyOM_;
   bool        removeDuplicatePoints_;
   bool        oneLayerMode_;
   bool        singleLayerPixelInterleaving_;
@@ -123,7 +124,7 @@ class PCCCodec {
 
   void generateMissedPointsTexturefromVideo( PCCContext& context, PCCGroupOfFrames& reconstructs );
 
-  void generateOccupancyMap( PCCContext& context, const size_t occupancyPrecision );
+  void generateOccupancyMap( PCCContext& context, const size_t occupancyPrecision, const size_t thresholdLossyOM );
 
 #ifdef CODEC_TRACE
   template <typename... Args>
@@ -154,7 +155,8 @@ class PCCCodec {
  protected:
   void generateOccupancyMap( PCCFrameContext&            frame,
                              const PCCImageOccupancyMap& videoFrame,
-                             const size_t                occupancyPrecision );
+                             const size_t                occupancyPrecision,
+                             const size_t                thresholdLossyOM );
 
   void generateBlockToPatchFromOccupancyMap( PCCContext&  context,
                                              const bool   losslessGeo,

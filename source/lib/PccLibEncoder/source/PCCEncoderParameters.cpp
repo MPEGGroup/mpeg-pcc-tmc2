@@ -110,6 +110,9 @@ PCCEncoderParameters::PCCEncoderParameters() {
   groupDilation_                          = true;
   textureDilationOffLossless_             = true;
   enhancedDeltaDepthCode_                 = losslessGeo_ ? true : false;
+  offsetLossyOM_                          = 0;
+  thresholdLossyOM_                       = 0;
+  prefilterLossyOM_                       = false;
   patchColorSubsampling_                  = false;
   deltaCoding_                            = true;
 
@@ -244,6 +247,11 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   occupancyMapVideoEncoderConfig       " << occupancyMapVideoEncoderConfig_ << std::endl;
   std::cout << "\t   occupancyMapQP                       " << occupancyMapQP_ << std::endl;
   std::cout << "\t   occupancyMapRefinement               " << occupancyMapRefinement_ << std::endl;
+  std::cout << "\t Lossy occupancy Map coding" << std::endl;
+  std::cout << "\t   Lossy occupancy map offset           " << offsetLossyOM_ << std::endl;
+  std::cout << "\t   Lossy occupancy map threshold        " << thresholdLossyOM_ << std::endl;
+  std::cout << "\t   Lossy occupancy map prefilter        " << prefilterLossyOM_ << std::endl;
+
   std::cout << "\t geometry smoothing" << std::endl;
   std::cout << "\t   flagGeometrySmoothing                " << flagGeometrySmoothing_ << std::endl;
   if ( flagGeometrySmoothing_ ) {
@@ -464,6 +472,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   gsp.setGeometrySmoothingEnabledFlag( gridSmoothing_ );
 
   ops.setOccupancyPackingBlockSize( occupancyResolution_ );
+  ops.setOccupancyLossyThreshold( (size_t) thresholdLossyOM_ );
 
   asp.setAttributeSmoothingParamsPresentFlag( flagColorSmoothing_ );
   asp.setAttributeSmoothingNeighbourCount( neighborCountColorSmoothing_ );
@@ -486,4 +495,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   context.getMPAttWidth()         = 64;
   context.getMPGeoHeight()        = 0;
   context.getMPAttHeight()        = 0;
+  // Lossy occupancy map
+  context.getOffsetLossyOM()      = offsetLossyOM_;
+  context.getPrefilterLossyOM()   = prefilterLossyOM_;
 }

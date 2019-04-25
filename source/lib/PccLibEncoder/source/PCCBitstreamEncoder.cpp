@@ -232,7 +232,9 @@ void PCCBitstreamEncoder::profileTierLevel( ProfileTierLevel& ptl, PCCBitstream&
 void PCCBitstreamEncoder::occupancyParameterSet( OccupancyParameterSet& ops, PCCBitstream& bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   bitstream.write( (uint32_t)ops.getOccupancyCodecId(), 8 );           // u(8)
+  bitstream.write( (uint32_t)ops.getOccupancyLossyThreshold(), 8);     // u(8)
   bitstream.write( (uint32_t)ops.getOccupancyPackingBlockSize(), 8 );  // u(8)
+  TRACE_BITSTREAM( "  OccupancyLossyThreshold = %d  \n", osp.getOccupancyLossyThreshold() );
 }
 
 // 7.3.10 Geometry parameter set syntax

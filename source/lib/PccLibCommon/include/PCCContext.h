@@ -1562,22 +1562,26 @@ class GeometryParameterSet {
 // 7.3.9 Occupancy Parameter Set Syntax
 class OccupancyParameterSet {
  public:
-  OccupancyParameterSet() : occupancyCodecId_( 0 ), occupancyPackingBlockSize_( 0 ) {}
+  OccupancyParameterSet() : occupancyCodecId_( 0 ), occupancyLossyThreshold_( 0 ), occupancyPackingBlockSize_( 0 ) {}
   OccupancyParameterSet& operator=( const OccupancyParameterSet& ) = default;
 
-  void init( uint8_t codecId, uint8_t packingBlockSize ) {
+  void init( uint8_t codecId, uint8_t threshold, uint8_t packingBlockSize ) {
     occupancyCodecId_          = codecId;
+    occupancyLossyThreshold_   = threshold;
     occupancyPackingBlockSize_ = packingBlockSize;
   }
 
   uint8_t getOccupancyCodecId() { return occupancyCodecId_; }
+  uint8_t getOccupancyLossyThreshold() { return occupancyLossyThreshold_; }
   uint8_t getOccupancyPackingBlockSize() { return occupancyPackingBlockSize_; }
 
   void setOccupancyCodecId( uint8_t value ) { occupancyCodecId_ = value; }
+  void setOccupancyLossyThreshold( uint8_t value ) { occupancyLossyThreshold_ = value; }
   void setOccupancyPackingBlockSize( uint8_t value ) { occupancyPackingBlockSize_ = value; }
 
  private:
   uint8_t occupancyCodecId_;
+  uint8_t occupancyLossyThreshold_;
   uint8_t occupancyPackingBlockSize_;
 };
 
@@ -1834,6 +1838,9 @@ class PCCContext {
   PCCMetadata&                  getGOFLevelMetadata() { return gofLevelMetadata_; }
   std::vector<SubContext>&      getSubContexts() { return subContexts_; }
   std::vector<unionPatch>&      getUnionPatch() { return unionPatch_; }
+  // Lossy occupancy map
+  bool&                         getPrefilterLossyOM() { return prefilterLossyOM_; }
+  size_t&                       getOffsetLossyOM() { return offsetLossyOM_; }
 
   PCCVideoBitstream& createVideoBitstream( PCCVideoType type ) {
     videoBitstream_.push_back( PCCVideoBitstream( type ) );
@@ -1895,6 +1902,9 @@ class PCCContext {
   PCCVector3<float>       modelOrigin_;
   std::vector<SubContext> subContexts_;
   std::vector<unionPatch> unionPatch_;
+  // Lossy occupancy map encoder parameter
+  bool                    prefilterLossyOM_;
+  size_t                  offsetLossyOM_;
 };
 };  // namespace pcc
 

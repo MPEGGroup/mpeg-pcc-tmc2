@@ -162,6 +162,11 @@ class PCCEncoderParameters {
   // EDD
   bool                enhancedDeltaDepthCode_;
 
+  // Lossy occupancy Map coding
+  size_t              offsetLossyOM_;
+  size_t              thresholdLossyOM_;
+  bool                prefilterLossyOM_;
+
   // reconstruction
   bool                removeDuplicatePoints_;
   bool                oneLayerMode_;

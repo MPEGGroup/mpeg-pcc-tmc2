@@ -104,7 +104,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
                            params_.videoDecoderOccupancyMapPath_, context, params_.keepIntermediateFiles_,
                            ( sps.getLosslessGeo() ? sps.getLosslessGeo444() : false ), false, "", "" );
   context.getOccupancyPrecision() = sps.getFrameWidth() / context.getVideoOccupancyMap().getWidth();
-  generateOccupancyMap( context, context.getOccupancyPrecision() );
+  generateOccupancyMap( context, context.getOccupancyPrecision(), ops.getOccupancyLossyThreshold() );
 
   if ( !sps.getLayerAbsoluteCodingEnabledFlag( 1 ) ) {
     if ( lossyMpp ) {
@@ -179,6 +179,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   generatePointCloudParameters.flagColorSmoothing_          = (bool)asp.getAttributeSmoothingParamsPresentFlag();
   generatePointCloudParameters.enhancedDeltaDepthCode_ =
       ( ( sps.getLosslessGeo() != 0 ) ? sps.getEnhancedOccupancyMapForDepthFlag() : false );
+  generatePointCloudParameters.thresholdLossyOM_         = (size_t) ops.getOccupancyLossyThreshold();
   generatePointCloudParameters.removeDuplicatePoints_        = sps.getRemoveDuplicatePointEnabledFlag();
   generatePointCloudParameters.oneLayerMode_                 = sps.getPointLocalReconstructionEnabledFlag();
   generatePointCloudParameters.singleLayerPixelInterleaving_ = sps.getPixelDeinterleavingFlag();

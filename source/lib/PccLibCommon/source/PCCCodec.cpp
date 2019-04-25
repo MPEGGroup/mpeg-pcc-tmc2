@@ -1334,22 +1334,29 @@ void PCCCodec::generateMPsTexturefromImage( PCCContext&       context,
   }
 }
 
-void PCCCodec::generateOccupancyMap( PCCContext& context, const size_t occupancyPrecision ) {
+void PCCCodec::generateOccupancyMap( PCCContext& context, const size_t occupancyPrecision, const size_t thresholdLossyOM ) {
   for ( auto& frame : context.getFrames() ) {
-    generateOccupancyMap( frame, context.getVideoOccupancyMap().getFrame( frame.getIndex() ), occupancyPrecision );
+    generateOccupancyMap( frame, context.getVideoOccupancyMap().getFrame( frame.getIndex() ), occupancyPrecision, thresholdLossyOM );
   }
 }
 
 void PCCCodec::generateOccupancyMap( PCCFrameContext&            frame,
                                      const PCCImageOccupancyMap& videoFrame,
-                                     const size_t                occupancyPrecision ) {
+                                     const size_t                occupancyPrecision,
+                                     const size_t                thresholdLossyOM ) {
   auto& width        = frame.getWidth();
   auto& height       = frame.getHeight();
   auto& occupancyMap = frame.getOccupancyMap();
   occupancyMap.resize( width * height, 0 );
   for ( size_t v = 0; v < height; ++v ) {
     for ( size_t u = 0; u < width; ++u ) {
-      occupancyMap[v * width + u] = videoFrame.getValue( 0, u / occupancyPrecision, v / occupancyPrecision );
+      uint8_t pixel = videoFrame.getValue(0, u / occupancyPrecision, v / occupancyPrecision);
+      if (pixel <= thresholdLossyOM) {
+        occupancyMap[v*width + u] = 0;
+      }
+      else {
+        occupancyMap[v*width + u] = 1;
+      }
     }
   }
 }

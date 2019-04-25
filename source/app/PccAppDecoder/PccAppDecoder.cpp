@@ -91,7 +91,7 @@ bool parseParameters( int                   argc,
   namespace po = df::program_options_lite;
 
   bool   print_help = false;
-  size_t ignore;
+  size_t ignore(0);
 
   // The definition of the program/config options, along with default values.
   //
@@ -307,13 +307,15 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
       metrics.compute( sources, reconstructs, normals );
       sources.clear();
       normals.clear();
-    } 
-    if ( !decoderParams.reconstructedDataPath_.empty() ) {
-      reconstructs.write( decoderParams.reconstructedDataPath_, frameNumber );
-    } else {
+    }
+    if (!decoderParams.reconstructedDataPath_.empty()) {
+      reconstructs.write(decoderParams.reconstructedDataPath_, frameNumber);
+    }
+    else {
       frameNumber += reconstructs.size();
     }
   }
+
   bitstream.getBitStreamStat().trace();
   if ( metricsParams.computeMetrics_ ) { metrics.display(); }
   if ( metricsParams.computeChecksum_ ) {

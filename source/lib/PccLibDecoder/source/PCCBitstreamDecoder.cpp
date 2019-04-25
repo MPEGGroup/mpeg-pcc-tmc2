@@ -239,7 +239,9 @@ void PCCBitstreamDecoder::profileTierLevel( ProfileTierLevel& ptl, PCCBitstream&
 void PCCBitstreamDecoder::occupancyParameterSet( OccupancyParameterSet& ops, PCCBitstream& bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   ops.setOccupancyCodecId( bitstream.read( 8 ) );           // u(8)
+  ops.setOccupancyLossyThreshold(bitstream.read(8));        // u(8)
   ops.setOccupancyPackingBlockSize( bitstream.read( 8 ) );  // u(8)
+  TRACE_BITSTREAM( "  OccupancyLossyThreshold = %d  \n", ops.getOccupancyLossyThreshold() );
 }
 
 // 7.3.10 Geometry parameter set syntax

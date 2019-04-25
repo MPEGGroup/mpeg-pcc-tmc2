@@ -491,6 +491,22 @@ bool parseParameters( int                   argc,
       encoderParams.enhancedDeltaDepthCode_,
       "Use enhanced-delta-depth code")
 
+    // Lossy occupancy map coding
+    ("offsetLossyOM",
+      encoderParams.offsetLossyOM_,
+      encoderParams.offsetLossyOM_,
+      "Value to be assigned to non-zero occupancy map positions (default=0)\n")
+
+    ("thresholdLossyOM",
+      encoderParams.thresholdLossyOM_,
+      encoderParams.thresholdLossyOM_,
+      "Threshold for converting non-binary occupancy map to binary (default=0)\n")
+
+    ("prefilterLossyOM",
+      encoderParams.prefilterLossyOM_,
+      encoderParams.prefilterLossyOM_,
+      "Selects whether the occupany map is prefiltered before lossy compression (default=false)\n")
+
     //visual quality
     ("patchColorSubsampling", 
      encoderParams.patchColorSubsampling_, 

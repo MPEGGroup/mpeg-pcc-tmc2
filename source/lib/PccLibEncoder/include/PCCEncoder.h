@@ -142,6 +142,13 @@ private:
                                  std::vector<uint32_t> &occupancyMap,
                                  PCCImageOccupancyMap &videoFrameOccupancyMap);
 
+  template <typename T>
+  T limit(T x, T minVal, T maxVal);
+  void preFilterOccupancyMap(PCCImageOccupancyMap &image, size_t kwidth, size_t kheight);
+  bool modifyOccupancyMap(const PCCGroupOfFrames& sources, PCCContext& context);
+  bool modifyOccupancyMap(const size_t imageWidth, const size_t imageHeight,
+    std::vector<uint32_t> &occupancyMap, PCCImageOccupancyMap &videoFrameOccupancyMap, std::ofstream& ofile);
+
   bool generateGeometryVideo( const PCCGroupOfFrames& sources, PCCContext &context );
   bool resizeGeometryVideo( PCCContext &context );
   bool dilateGeometryVideo( PCCContext &context );

@@ -48,6 +48,11 @@
 #include "PCCChrono.h"
 #include "PCCEncoder.h"
 
+uint64_t changedPixCnt;
+uint64_t changedPixCnt0To1;
+uint64_t changedPixCnt1To0;
+uint64_t pixCnt;
+
 using namespace std;
 using namespace pcc;
 
@@ -159,11 +164,24 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                          params_.occupancyMapVideoEncoderConfig_, params_.videoEncoderOccupancyMapPath_, context, 1,
                          params_.keepIntermediateFiles_ );
 
+  if (params_.offsetLossyOM_ > 0)
+  {
+    changedPixCnt = 0;
+    changedPixCnt0To1 = 0;
+    changedPixCnt1To0 = 0;
+    pixCnt = 0;
+    modifyOccupancyMap(sources, context);
+    std::cout << "Percentage of changed occupancy map values = " << ((float)changedPixCnt * 100.0F / pixCnt) << std::endl;
+    std::cout << "Percentage of changed occupancy map values from 0 to 1 = " << ((float)changedPixCnt0To1 * 100.0F / pixCnt) << std::endl;
+    std::cout << "Percentage of changed occupancy map values from 1 to 0 = " << ((float)changedPixCnt1To0 * 100.0F / pixCnt) << std::endl;
+  }
+
   generateBlockToPatchFromOccupancyMap( context, params_.losslessGeo_, params_.lossyMissedPointsPatch_,
                                         params_.testLevelOfDetail_, params_.occupancyResolution_ );
 
+
   // Group dilation in Geometry
-  if ( params_.groupDilation_ && params_.absoluteD1_ && !params_.oneLayerMode_ ) { geometryGroupDilation( context ); }
+  if (params_.groupDilation_ && params_.absoluteD1_ && !params_.oneLayerMode_) { geometryGroupDilation(context); }
 
   if ( params_.use3dmc_ ) { create3DMotionEstimationFiles( context, path.str() ); }
 
@@ -245,6 +263,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   generatePointCloudParameters.flagColorSmoothing_          = params_.flagColorSmoothing_;
   generatePointCloudParameters.enhancedDeltaDepthCode_ =
       ( params_.losslessGeo_ ? params_.enhancedDeltaDepthCode_ : false );
+  generatePointCloudParameters.thresholdLossyOM_            = params_.thresholdLossyOM_;
   // generatePointCloudParameters.deltaCoding_                  =
   // (params_.testLevelOfDetailSignaling_ > 0);
   generatePointCloudParameters.removeDuplicatePoints_        = params_.removeDuplicatePoints_;
@@ -385,6 +404,47 @@ void PCCEncoder::printMapTetris( std::vector<bool> img,
   std::cout << std::endl;
 }
 
+static const std::vector<int32_t> kernel = { 12, 28, 12, 28, 96, 28, 12, 28, 12 };
+
+template <typename T>
+T PCCEncoder::limit(T x, T minVal, T maxVal)
+{
+  return (x < minVal) ? minVal : (x > maxVal ? maxVal : x);
+}
+
+void PCCEncoder::preFilterOccupancyMap(PCCImageOccupancyMap &image, size_t kwidth, size_t kheight)
+{
+  if (kwidth == 0) kwidth = sqrt(kernel.size());
+  if (kheight == 0) kheight = sqrt(kernel.size());
+
+  const size_t width = image.getWidth();
+  const size_t height = image.getHeight();
+
+  const size_t kCenterW = kwidth / 2;
+  const size_t kCenterH = kheight / 2;
+
+  const auto imageTemp(image);
+  int val;
+  for (size_t v = 0; v < height; v++) {
+    for (size_t u = 0; u < width; u++) {
+      size_t p = v * width + u;
+      val = 0;
+      for (size_t n = 0; n < kheight; n++) {
+        size_t nn = kheight - 1 - n;
+        for (size_t m = 0; m < kwidth; m++) {
+          size_t mm = kwidth - 1 - m;
+          size_t q = nn * kwidth + mm;
+
+          size_t i = limit<int32_t>(int32_t(u + kCenterW - mm), 0, width - 1);
+          size_t j = limit<int32_t>(int32_t(v + kCenterH - nn), 0, height - 1);
+          val += (double)imageTemp.getValue(0, i, j) * kernel[q];
+        }
+      }
+      image.setValue(0, u, v, (uint8_t)(val >> 8));
+    }
+  }
+}
+
 bool PCCEncoder::generateOccupancyMapVideo( const PCCGroupOfFrames& sources, PCCContext& context ) {
   auto& videoOccupancyMap = context.getVideoOccupancyMap();
   bool  ret               = true;
@@ -425,7 +485,7 @@ bool PCCEncoder::generateOccupancyMapVideo( const size_t           imageWidth,
             bool         isFull = false;
             for ( size_t v3 = 0; v3 < params_.occupancyPrecision_ && !isFull; ++v3 ) {
               for ( size_t u3 = 0; u3 < params_.occupancyPrecision_ && !isFull; ++u3 ) {
-                isFull |= occupancyMap[( v2 + v3 ) * imageWidth + u2 + u3] == 1;
+                isFull |= ( occupancyMap[( v2 + v3 ) * imageWidth + u2 + u3] > 0 );
               }
             }
             block0[v1 * blockSize0 + u1] = isFull;
@@ -440,6 +500,9 @@ bool PCCEncoder::generateOccupancyMapVideo( const size_t           imageWidth,
         for ( size_t iterBlockV = 0; iterBlockV < blockSize0; iterBlockV++ ) {
           for ( size_t iterBlockU = 0; iterBlockU < blockSize0; iterBlockU++ ) {
             uint8_t pixel       = block0[iterBlockV * blockSize0 + iterBlockU];
+            if (pixel > 0) {
+              pixel = (params_.offsetLossyOM_ > 0) ? params_.offsetLossyOM_ : 1;
+            }
             size_t  videoFrameU = u0 * blockSize0 + iterBlockU;
             size_t  videoFrameV = v0 * blockSize0 + iterBlockV;
             videoFrameOccupancyMap.setValue( 0, videoFrameU, videoFrameV, pixel );
@@ -459,6 +522,121 @@ bool PCCEncoder::generateOccupancyMapVideo( const size_t           imageWidth,
       }
     }
   }
+
+  if (params_.prefilterLossyOM_)
+  {
+    preFilterOccupancyMap(videoFrameOccupancyMap, 3, 3);
+  }
+
+  return true;
+}
+
+bool PCCEncoder::modifyOccupancyMap(const PCCGroupOfFrames& sources, PCCContext& context) {
+  std::ofstream oFile;
+
+  if (params_.keepIntermediateFiles_) {
+    oFile.open("occupancyMap.rgb", std::ios::binary);
+  }
+
+  auto& videoOccupancyMap = context.getVideoOccupancyMap();
+  bool ret = true;
+  for (size_t f = 0; f < sources.size(); ++f) {
+    auto &contextFrame = context.getFrames()[f];
+    PCCImageOccupancyMap &videoFrame = videoOccupancyMap.getFrame(f);
+    ret &= modifyOccupancyMap(contextFrame.getWidth(), contextFrame.getHeight(), contextFrame.getOccupancyMap(), videoFrame, oFile);
+  }
+
+  if (params_.keepIntermediateFiles_) {
+    oFile.close();
+  }
+
+  return ret;
+}
+
+bool PCCEncoder::modifyOccupancyMap(const size_t imageWidth, const size_t imageHeight,
+  std::vector<uint32_t> &occupancyMap, PCCImageOccupancyMap &videoFrameOccupancyMap, std::ofstream& ofile) {
+  const size_t numSubBlksV = imageHeight / params_.occupancyPrecision_;
+  const size_t numSubBlksH = imageWidth / params_.occupancyPrecision_;
+
+  // const size_t threshold = OM_OFFSET / 2;
+
+  std::vector<uint32_t> newOccupancyMap;
+  newOccupancyMap.resize(imageWidth * imageHeight);
+  char tmpC;
+
+  for (size_t v0 = 0; v0 < numSubBlksV; ++v0) {
+    const size_t v1 = v0 * params_.occupancyPrecision_;
+    for (size_t u0 = 0; u0 < numSubBlksH; ++u0) {
+      const size_t u1 = u0 * params_.occupancyPrecision_;
+      uint8_t pixel = videoFrameOccupancyMap.getValue(0, u0, v0);
+      for (size_t v2 = 0; v2 < params_.occupancyPrecision_; v2++) {
+        for (size_t u2 = 0; u2 < params_.occupancyPrecision_; u2++) {
+          size_t index = (v1 + v2) * imageWidth + u1 + u2;
+          pixCnt++;
+          if (pixel <= params_.thresholdLossyOM_) {
+            newOccupancyMap[index] = 0;
+          }
+          else {
+            newOccupancyMap[index] = 1;
+          }
+
+          if (occupancyMap[index] != newOccupancyMap[index]) {
+            changedPixCnt++;
+            if (occupancyMap[index] == 0) {
+              changedPixCnt0To1++;
+              if (params_.keepIntermediateFiles_)
+              {
+                tmpC = (char)255;
+                ofile.write(&tmpC, 1);
+                tmpC = (char)0;
+                ofile.write(&tmpC, 1);
+                tmpC = (char)0;
+                ofile.write(&tmpC, 1);
+              }
+            }
+            else {
+              changedPixCnt1To0++;
+              if (params_.keepIntermediateFiles_)
+              {
+                tmpC = (char)0;
+                ofile.write(&tmpC, 1);
+                tmpC = (char)255;
+                ofile.write(&tmpC, 1);
+                tmpC = (char)0;
+                ofile.write(&tmpC, 1);
+              }
+            }
+          }
+          else {
+            if (occupancyMap[index] == 0) {
+              if (params_.keepIntermediateFiles_)
+              {
+                tmpC = (char)0;
+                ofile.write(&tmpC, 1);
+                tmpC = (char)0;
+                ofile.write(&tmpC, 1);
+                tmpC = (char)0;
+                ofile.write(&tmpC, 1);
+              }
+            }
+            else {
+              if (params_.keepIntermediateFiles_)
+              {
+                tmpC = (char)255;
+                ofile.write(&tmpC, 1);
+                tmpC = (char)255;
+                ofile.write(&tmpC, 1);
+                tmpC = (char)255;
+                ofile.write(&tmpC, 1);
+              }
+            }
+          }
+          occupancyMap[index] = newOccupancyMap[index];
+        }
+      }
+    }
+  }
+
   return true;
 }
 
