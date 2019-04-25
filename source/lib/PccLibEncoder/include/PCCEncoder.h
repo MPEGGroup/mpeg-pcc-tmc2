@@ -183,7 +183,11 @@ private:
   template <typename T>
   void dilateSmoothedPushPull(PCCFrameContext& frame, PCCImage<T, 3> &image);
   template <typename T>
-  void dilateSparseLinearModel(PCCFrameContext& frame, PCCImage<T, 3> &image, int layerIdx, PCCVideoType videoType);
+  void dilateHarmonicBackgroundFill(PCCFrameContext& frame, PCCImage<T, 3> &image);
+  template <typename T>
+  void CreateCoarseLayer(PCCImage<T, 3> &image, PCCImage<T, 3> &mip, std::vector<uint32_t>& occupancyMap, std::vector<uint32_t> &mipOccupancyMap);
+  template <typename T>
+  void regionFill(PCCImage<T, 3> &image, std::vector<uint32_t>& occupancyMap, PCCImage<T, 3> &imageLowRes);
   void pack( PCCFrameContext& frame, int safeguard = 0  );
   void packFlexible(PCCFrameContext& frame, int safeguard = 0);
   void packTetris(PCCFrameContext & frame, int safeguard = 0);

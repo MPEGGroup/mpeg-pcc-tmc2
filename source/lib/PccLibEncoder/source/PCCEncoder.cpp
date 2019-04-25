@@ -299,8 +299,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
           dilateSmoothedPushPull(frames[f / nbFramesTexture], videoTexture.getFrame(f));
           break;
         case 2:
-          // placeholder for sony's hbf.
-          dilateSparseLinearModel(frames[f / nbFramesTexture], videoTexture.getFrame(f), f, VIDEO_TEXTURE);
+          dilateHarmonicBackgroundFill(frames[f / nbFramesTexture], videoTexture.getFrame(f));
           break;
         default:
           std::cout << "Error: wrong selection for texture padding!" << std::endl;
@@ -2747,150 +2746,242 @@ void PCCEncoder::dilate( PCCFrameContext& frame, PCCImage<T, 3>& image, const PC
   }
 }
 
+/* harmonic background filling algorithm */
+// interpolate using 5-point laplacian inpainting
 template <typename T>
-void PCCEncoder::dilateSparseLinearModel( PCCFrameContext& framecontext,
-                                          PCCImage<T, 3>&  image,
-                                          int              layerIdx,
-                                          PCCVideoType     videoType ) {
-  const size_t   maxChannel        = ( videoType == VIDEO_TEXTURE ) ? 3 : 1;
-  const int32_t  width             = image.getWidth();
-  const int32_t  height            = image.getHeight();
-  const int32_t  maxIterationCount = 1024;
-  const double   maxError          = 0.00001;
-  const auto     occupancyMap      = framecontext.getOccupancyMap();
-  const int32_t  mask              = ( 1 << 16 ) - 1;
-  PaddingContext context;
-  // cout << "start padding in dilateSparseLinearModel - layerIdx:" << layerIdx << ", videoType:" << videoType << endl;
+void PCCEncoder::dilateHarmonicBackgroundFill(PCCFrameContext& frame, PCCImage<T, 3> &image)
+{
+	auto occupancyMapTemp = frame.getOccupancyMap();
+	int i = 0;
+	std::vector<PCCImage<T, 3>> mipVec;
+	std::vector<std::vector<uint32_t>> mipOccupancyMapVec;
+	int miplev = 0;
 
-  const int32_t pixelCount = width * height;
-  context._invMapping.resize( pixelCount );
-  context._mapping.resize( pixelCount );
-  int32_t emptyPixelCount = 0;
-  for ( int32_t yPix = 0; yPix < height; ++yPix ) {
-    for ( int32_t xPix = 0; xPix < width; ++xPix ) {
-      if ( occupancyMap[( yPix * width + xPix )] == 0 ) {
-        const int32_t index                   = emptyPixelCount++;
-        context._mapping[yPix * width + xPix] = index;
-        context._invMapping[index]            = ( yPix << 16 ) + xPix;
-      }
-    }
-  }
-  if ( emptyPixelCount == 0 ) {
-    cout << "emptyPixelCount == 0" << endl;
-    return;
-  } else if ( emptyPixelCount == pixelCount ) {
-    cout << "emptyPixelCount == pixelCount" << endl;
-    for ( int32_t yPix = 0; yPix < height; ++yPix ) {
-      for ( int32_t xPix = 0; xPix < width; ++xPix ) {
-        for ( int ch = 0; ch < maxChannel; ch++ ) image.setValue( ch, xPix, yPix, 128 );
-      }
-    }
-    return;
-  }
+	// create coarse image by dyadic sampling
+	while (1) {
+		mipVec.resize(mipVec.size() + 1);
+		mipOccupancyMapVec.resize(mipOccupancyMapVec.size() + 1);
+		if (miplev > 0)
+			CreateCoarseLayer(mipVec[miplev - 1], mipVec[miplev], mipOccupancyMapVec[miplev - 1], mipOccupancyMapVec[miplev]);
+		else
+			CreateCoarseLayer(image, mipVec[miplev], occupancyMapTemp, mipOccupancyMapVec[miplev]);
 
-  context._invMapping.resize( emptyPixelCount );
-  context._A.resize( emptyPixelCount );
-  for ( int32_t ch = 0; ch < maxChannel; ++ch ) { context._b[ch].resize( emptyPixelCount ); }
-  for ( int32_t index0 = 0; index0 < emptyPixelCount; ++index0 ) {
-    const int32_t pixelLocation = context._invMapping[index0];
-    const int32_t yPix          = pixelLocation >> 16;
-    const int32_t xPix          = pixelLocation & mask;
-    auto&         row           = context._A.getRow( index0 );
-    row._coefficientCount       = 0;
-
-    const int32_t siftY[4] = {-1, 1, 0, 0};
-    const int32_t siftX[4] = {0, 0, -1, 1};
-    for ( int32_t ch = 0; ch < maxChannel; ++ch ) { context._b[ch][index0] = 0.0; }
-    int32_t neighbourCount = 0;
-    for ( int32_t k = 0; k < 4; ++k ) {
-      const int32_t y1 = yPix + siftY[k];
-      const int32_t x1 = xPix + siftX[k];
-      if ( y1 >= 0 && y1 < height && x1 >= 0 && x1 < width ) {
-        ++neighbourCount;
-        if ( occupancyMap[(y1)*width + ( x1 )] == 0 ) {
-          const int32_t localPixelLocation = y1 * width + x1;
-          assert( localPixelLocation < width * height );
-          const int32_t index1 = context._mapping[localPixelLocation];
-          assert( index1 < emptyPixelCount );
-          row.addCofficient( index1, -1.0 );
-        } else {
-          for ( int32_t ch = 0; ch < maxChannel; ++ch ) { context._b[ch][index0] += image.getValue( ch, x1, y1 ); }
-        }
-      }
-    }
-    row.addCofficient( index0, neighbourCount );
-  }
-  const auto& A = context._A;
-  auto&       x = context._x;
-  auto&       p = context._p;
-  auto&       r = context._r;
-  auto&       q = context._q;
-  x.resize( emptyPixelCount );
-  p.resize( emptyPixelCount );
-  r.resize( emptyPixelCount );
-  q.resize( emptyPixelCount );
-  for ( int32_t ch = 0; ch < maxChannel; ++ch ) {
-    const auto& b = context._b[ch];
-
-    for ( int32_t i = 0; i < emptyPixelCount; ++i ) { x[i] = 128.0; }
-    for ( int32_t i = 0; i < emptyPixelCount; ++i ) {
-      const auto& row = A.getRow( i );
-      double      ri  = b[i];
-      for ( int32_t j = 0; j < row._coefficientCount; ++j ) {
-        const auto& coeff = row._coefficients[j];
-        ri -= coeff._value * x[coeff._index];
-      }
-      p[i] = r[i] = ri;
-    }
-
-    double  error = 0.0;
-    int32_t it    = 0;
-    for ( ; it < maxIterationCount; ++it ) {
-      double rtr = 0.0;
-      for ( int32_t i = 0; i < emptyPixelCount; ++i ) { rtr += r[i] * r[i]; }
-      error = sqrt( rtr ) / emptyPixelCount;
-      if ( error < maxError ) { break; }
-      double ptAp = 0.0;
-      for ( int32_t i = 0; i < emptyPixelCount; ++i ) {
-        const auto& row = A.getRow( i );
-        double      sq  = 0.0;
-        for ( int32_t j = 0; j < row._coefficientCount; ++j ) {
-          const auto& coeff = row._coefficients[j];
-          sq += coeff._value * p[coeff._index];
-        }
-        q[i] = sq;
-        ptAp += p[i] * sq;
-      }
-      const double alpha = rtr / ptAp;
-      for ( int32_t i = 0; i < emptyPixelCount; ++i ) {
-        x[i] += alpha * p[i];
-        r[i] -= alpha * q[i];
-      }
-      double r1tr1 = 0.0;
-      for ( int32_t i = 0; i < emptyPixelCount; ++i ) { r1tr1 += r[i] * r[i]; }
-      const double betha = r1tr1 / rtr;
-      for ( int32_t i = 0; i < emptyPixelCount; ++i ) { p[i] = r[i] + betha * p[i]; }
-    }
-    // std::cout << it << " -> error = " << error << std::endl;
-
-    for ( int32_t index0 = 0; index0 < emptyPixelCount; ++index0 ) {
-      const int32_t pixelLocation = context._invMapping[index0];
-      const int32_t yPixOut       = pixelLocation >> 16;
-      const int32_t xPixOut       = pixelLocation & mask;
-      const double  v             = std::round( x[index0] );
-      if ( v >= 255.0 ) {
-        image.setValue( ch, xPixOut, yPixOut, 255 );
-      } else if ( v <= 0.0 ) {
-        image.setValue( ch, xPixOut, yPixOut, 0 );
-      } else {
-        image.setValue( ch, xPixOut, yPixOut, uint8_t( v ) );
-      }
-    }  // index0
-  }
-
-  //  cout << "dilateSparseLinear: finished" << endl;
-  return;
+		if (mipVec[miplev].getWidth() <= 4 || mipVec[miplev].getHeight() <= 4)
+			break;
+		++miplev;
+	}
+	miplev++;
+	// push phase: inpaint laplacian
+	regionFill(mipVec[miplev - 1], mipOccupancyMapVec[miplev - 1], mipVec[miplev - 1]);
+	for (i = miplev - 1; i >= 0; --i) {
+		if (i > 0) {
+			regionFill(mipVec[i - 1], mipOccupancyMapVec[i - 1], mipVec[i]);
+		}
+		else {
+			regionFill(image, occupancyMapTemp, mipVec[i]);
+		}
+	}
 }
+
+template <typename T>
+void PCCEncoder::CreateCoarseLayer(PCCImage<T, 3> &image, PCCImage<T, 3> &mip, std::vector<uint32_t>& occupancyMap, std::vector<uint32_t> &mipOccupancyMap) {
+
+	int dyadicWidth = 1; while (dyadicWidth < image.getWidth()) dyadicWidth *= 2;
+	int dyadicHeight = 1; while (dyadicHeight < image.getHeight()) dyadicHeight *= 2;
+	//allocate the mipmap with half the resolution
+	mip.resize((dyadicWidth / 2), (dyadicHeight / 2));
+	mipOccupancyMap.resize((dyadicWidth / 2)*(dyadicHeight / 2), 0);
+	unsigned char w1, w2, w3, w4;
+	unsigned char val1, val2, val3, val4;
+	int stride = image.getWidth();
+	int newStride = (dyadicWidth / 2);
+	int x, y, i, j;
+	double num[3], den;
+	for (y = 0; y < mip.getHeight(); y++) {
+		for (x = 0; x < mip.getWidth(); x++) {
+			num[0] = 0; num[1] = 0; num[2] = 0;
+			den = 0;
+			for (i = 0; i < 2; i++) {
+				for (j = 0; j < 2; j++) {
+					int row = (2 * y + i) < 0 ? 0 : (2 * y + i) >= image.getHeight() ? image.getHeight() - 1 : (2 * y + i);
+					int column = (2 * x + j) < 0 ? 0 : (2 * x + j) >= image.getWidth() ? image.getWidth() - 1 : (2 * x + j);
+					if (occupancyMap[column + stride * row] == 1)
+					{
+						den++;
+						for (int cc = 0; cc < 3; cc++) {
+							num[cc] += image.getValue(cc, column, row);
+						}
+					}
+				}
+			}
+			if (den > 0)
+			{
+				mipOccupancyMap[x + newStride * y] = 1;
+				for (int cc = 0; cc < 3; cc++) {
+					mip.setValue(cc, x, y, std::round(num[cc] / den));
+				}
+			}
+		}
+	}
+}
+
+template <typename T>
+void PCCEncoder::regionFill(PCCImage<T, 3> &image, std::vector<uint32_t>& occupancyMap, PCCImage<T, 3> &imageLowRes) {
+	int stride = image.getWidth();
+	int numElem = 0;
+	int numSparseElem = 0;
+	std::vector<uint32_t> indexing;
+	indexing.resize(occupancyMap.size());
+	for (int i = 0; i < occupancyMap.size(); i++) {
+		if (occupancyMap[i] == 0) {
+			indexing[i] = numElem;
+			numElem++;
+		}
+	}
+	//create a sparse matrix with the coefficients
+	std::vector<uint32_t> iSparse;
+	std::vector<uint32_t> jSparse;
+	std::vector<double> valSparse;
+	iSparse.resize(numElem * 5);
+	jSparse.resize(numElem * 5);
+	valSparse.resize(numElem * 5);
+	//create an initial solution using the low-resolution
+	std::vector<double> b[3];
+	b[0].resize(numElem); b[1].resize(numElem); b[2].resize(numElem);
+	//fill in the system
+	int idx = 0;
+	int idxSparse = 0;
+	for (int row = 0; row < image.getHeight(); row++) {
+		for (int column = 0; column < image.getWidth(); column++) {
+			if (occupancyMap[column + stride * row] == 0) {
+				int count = 0;
+				b[0][idx] = 0; b[1][idx] = 0; b[2][idx] = 0;
+				for (int i = -1; i < 2; i++) {
+					for (int j = -1; j < 2; j++) {
+						if ((i == j) || (i == -j))
+							continue;
+						if ((column + j < 0) || (column + j > image.getWidth() - 1))
+							continue;
+						if ((row + i < 0) || (row + i > image.getHeight() - 1))
+							continue;
+						count++;
+						if (occupancyMap[column + j + stride * (row + i)] == 1) {
+							b[0][idx] += image.getValue(0, column + j, row + i);
+							b[1][idx] += image.getValue(1, column + j, row + i);
+							b[2][idx] += image.getValue(2, column + j, row + i);
+						}
+						else {
+							iSparse[idxSparse] = idx;
+							jSparse[idxSparse] = indexing[column + j + stride * (row + i)];
+							valSparse[idxSparse] = -1;
+							idxSparse++;
+						}
+					}
+				}
+				//now insert the weight of the center pixel
+				iSparse[idxSparse] = idx;
+				jSparse[idxSparse] = idx;
+				valSparse[idxSparse] = count;
+				idx++;
+				idxSparse++;
+			}
+		}
+	}
+	numSparseElem = idxSparse;
+	//now solve the linear system Ax=b using Gauss-Siedel relaxation, with initial guess coming from the lower resolution
+	std::vector<double> x[3];
+	x[0].resize(numElem); x[1].resize(numElem); x[2].resize(numElem);
+	if (imageLowRes.getWidth() == image.getWidth()) {
+		//low resolution image not provided, let's use for the initialization the mean value of the active pixels
+		double mean[3] = { 0.0, 0.0, 0.0 };
+		idx = 0;
+		for (int row = 0; row < image.getHeight(); row++) {
+			for (int column = 0; column < image.getWidth(); column++) {
+				if (occupancyMap[column + stride * row] == 1) {
+					mean[0] += double(image.getValue(0, column, row));
+					mean[1] += double(image.getValue(1, column, row));
+					mean[2] += double(image.getValue(2, column, row));
+					idx++;
+				}
+			}
+		}
+		mean[0] /= idx;
+		mean[1] /= idx;
+		mean[2] /= idx;
+		idx = 0;
+		for (int row = 0; row < image.getHeight(); row++) {
+			for (int column = 0; column < image.getWidth(); column++) {
+				if (occupancyMap[column + stride * row] == 0) {
+					x[0][idx] = mean[0];
+					x[1][idx] = mean[1];
+					x[2][idx] = mean[2];
+					idx++;
+				}
+			}
+		}
+	}
+	else
+	{
+		idx = 0;
+		for (int row = 0; row < image.getHeight(); row++) {
+			for (int column = 0; column < image.getWidth(); column++) {
+				if (occupancyMap[column + stride * row] == 0) {
+					x[0][idx] = imageLowRes.getValue(0, column / 2, row / 2);
+					x[1][idx] = imageLowRes.getValue(1, column / 2, row / 2);
+					x[2][idx] = imageLowRes.getValue(2, column / 2, row / 2);
+					idx++;
+				}
+			}
+		}
+	}
+	int maxIteration = 1024;
+	double maxError = 0.00001;
+	for (int cc = 0; cc < 3; cc++) {
+		int it = 0;
+		for (; it < maxIteration; it++)
+		{
+			int idxSparse = 0;
+			double error = 0;
+			double val = 0;
+			for (int centerIdx = 0; centerIdx < numElem; centerIdx++) {
+				//add the b result
+				val = b[cc][centerIdx];
+				while ((idxSparse < numSparseElem) && (iSparse[idxSparse] == centerIdx)) {
+					if (valSparse[idxSparse] < 0) {
+						val += x[cc][jSparse[idxSparse]];
+						idxSparse++;
+					}
+					else {
+						//final value
+						val /= valSparse[idxSparse];
+						//accumulate the error
+						error += (val - x[cc][centerIdx])*(val - x[cc][centerIdx]);
+						//update the value
+						x[cc][centerIdx] = val;
+						idxSparse++;
+					}
+				}
+			}
+			error = error / numElem;
+			if (error < maxError) {
+				break;
+			}
+		}
+	}
+	//put the value back in the image
+	idx = 0;
+	for (int row = 0; row < image.getHeight(); row++) {
+		for (int column = 0; column < image.getWidth(); column++) {
+			if (occupancyMap[column + stride * row] == 0) {
+				image.setValue(0, column, row, x[0][idx]);
+				image.setValue(1, column, row, x[1][idx]);
+				image.setValue(2, column, row, x[2][idx]);
+				idx++;
+			}
+		}
+	}
+}
+
 /* pull push filling algorithm */
 template <typename T>
 int PCCEncoder::mean4w( T             p1,
