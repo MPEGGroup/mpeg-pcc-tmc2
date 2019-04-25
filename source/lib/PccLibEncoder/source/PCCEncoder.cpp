@@ -1316,6 +1316,111 @@ void PCCEncoder::packMissedPointsPatch( PCCFrameContext&         frame,
   printMap( newOccupancyMap, occupancySizeU, occupancySizeV );
 }
 
+
+#define MINIMUM_TH_WEIGHT	0.6
+
+struct mypair {
+	int idx;
+	uint32_t value;
+};
+
+bool comp1(const mypair& a, const mypair& b) {
+	return a.value<b.value;
+}
+
+void PCCEncoder::calculate_weight_normal(const PCCPointSet3& source, PCCFrameContext& frame)
+{
+	PCCVector3D weight_value;
+	bool *pj_face = new bool[1024 * 1024 * 3];
+	size_t pointCount = source.getPointCount();
+
+	if (params_.enhancedPP_) {
+
+		for (size_t idx = 0; idx < 1024 * 1024 * 3; idx++) {
+			*(pj_face + idx) = false;
+		}
+
+		const int size_1f = 1024 * 1024;
+		for (size_t idx = 0; idx < pointCount; idx++) {
+			const PCCPoint3D point = source[idx];
+			int x, y;
+			// YZ: 0,3
+			x = int(point[1]);
+			y = int(point[2]);
+			*(pj_face + y * 1024 + x) = true;
+
+			// ZX: 0,3
+			x = int(point[2]);
+			y = int(point[0]);
+			*(pj_face + y * 1024 + x + size_1f) = true;
+
+			// XY: 0,3
+			x = int(point[0]);
+			y = int(point[1]);
+			*(pj_face + y * 1024 + x + size_1f * 2) = true;
+		}
+
+		mypair pj_cnt[3];
+		for (int x = 0; x < 3; x++) {
+			pj_cnt[x].idx = x;
+			pj_cnt[x].value = 0;
+		}
+		for (size_t idx = 0; idx < 1024 * 1024; idx++) {
+			if (*(pj_face + idx) == true) {
+				pj_cnt[0].value = pj_cnt[0].value + 1;
+			}
+
+			if (*(pj_face + idx + size_1f) == true) {
+				pj_cnt[1].value = pj_cnt[1].value + 1;
+			}
+
+			if (*(pj_face + idx + size_1f * 2) == true) {
+				pj_cnt[2].value = pj_cnt[2].value + 1;
+			}
+		}
+
+		std::sort(pj_cnt, pj_cnt + 3, comp1);
+
+		double axis_weight[6];
+		if ((double(pj_cnt[0].value) / double(pj_cnt[2].value)) >= params_.minWeightEPP_)
+		{
+			int idx_t = pj_cnt[0].idx;
+			axis_weight[idx_t] = axis_weight[idx_t + 3] = double(pj_cnt[0].value) / double(pj_cnt[2].value);
+
+			idx_t = pj_cnt[1].idx;
+			axis_weight[idx_t] = axis_weight[idx_t + 3] = double(pj_cnt[1].value) / double(pj_cnt[2].value);
+
+			idx_t = pj_cnt[2].idx;
+			axis_weight[idx_t] = axis_weight[idx_t + 3] = 1.0;
+		}
+		else {
+			int idx_t = pj_cnt[0].idx;
+			double tmpb, tmpa;
+			axis_weight[idx_t] = axis_weight[idx_t + 3] = params_.minWeightEPP_;
+
+			idx_t = pj_cnt[2].idx;
+			axis_weight[idx_t] = axis_weight[idx_t + 3] = 1.0;
+
+			idx_t = pj_cnt[1].idx;
+			tmpb = double(pj_cnt[1].value) / double(pj_cnt[2].value);
+			tmpa = double(pj_cnt[0].value) / double(pj_cnt[2].value);
+
+			axis_weight[idx_t] = axis_weight[idx_t + 3] = params_.minWeightEPP_ + (tmpb - tmpa) / (1.0 - tmpa) * (1 - params_.minWeightEPP_);
+		}
+
+		weight_value[0] = axis_weight[0];
+		weight_value[1] = axis_weight[1];
+		weight_value[2] = axis_weight[2];
+	}
+	else {
+		weight_value[0] = 1.0;
+		weight_value[1] = 1.0;
+		weight_value[2] = 1.0;
+	}
+
+	frame.getWeight_normal() = weight_value;
+}
+
 bool PCCEncoder::generateGeometryVideo( const PCCPointSet3&                source,
                                         PCCFrameContext&                   frame,
                                         const PCCPatchSegmenter3Parameters segmenterParams,
@@ -2105,6 +2210,9 @@ bool PCCEncoder::generateGeometryVideo( const PCCGroupOfFrames& sources, PCCCont
 
   auto& videoGeometry = context.getVideoGeometry();
   auto& frames        = context.getFrames();
+
+  calculate_weight_normal(sources[0], frames[0]);
+  segmenterParams.weight_normal = frames[0].getWeight_normal();
 
   if ( params_.losslessGeo_ || params_.lossyMissedPointsPatch_ ) {
     params_.useAdditionalPointsPatch_ = true;

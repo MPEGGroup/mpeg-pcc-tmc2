@@ -185,6 +185,9 @@ class PCCEncoderParameters {
 
   //GPA
   bool                globalPatchAllocation_;
+
+  bool				  enhancedPP_;
+  double              minWeightEPP_;
 };
 
 }; //~namespace

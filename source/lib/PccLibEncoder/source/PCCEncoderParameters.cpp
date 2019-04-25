@@ -135,6 +135,8 @@ PCCEncoderParameters::PCCEncoderParameters() {
   useAdditionalPointsPatch_        = false;
   globalPatchAllocation_           = false;
   use3dmc_                         = true;
+  enhancedPP_					   = true;
+  minWeightEPP_					   = 0.6;
 }
 
 PCCEncoderParameters::~PCCEncoderParameters() {}
@@ -281,6 +283,8 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   lossyMissedPointsPatch               " << lossyMissedPointsPatch_ << std::endl;
   std::cout << "\t   minNormSumOfInvDist4MPSelection      " << minNormSumOfInvDist4MPSelection_ << std::endl;
   std::cout << "\t   lossyMppGeoQP                        " << lossyMppGeoQP_ << std::endl;
+  std::cout << "\t Enhanced projection plane               " << enhancedPP_ << std::endl;
+
   std::cout << std::endl;
 }
 

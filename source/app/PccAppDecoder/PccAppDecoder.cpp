@@ -238,6 +238,7 @@ bool parseParameters( int                   argc,
      metricsParams.nbThread_,
      "Number of thread used for parallel processing")
 
+	("minNormSumOfInvDist4MPSelection", ignore, ignore, "Ignore parameter")
     ("minimumImageHeight",    ignore, ignore, "Ignore parameter")
     ("flagColorPreSmoothing", ignore, ignore, "Ignore parameter")
     ("surfaceSeparation",     ignore, ignore, "Ignore parameter");

@@ -78,7 +78,7 @@ void PCCPatchSegmenter3::compute( const PCCPointSet3&                 geometry,
 
   std::cout << "  Computing initial segmentation... ";
   std::vector<size_t> partition;
-  initialSegmentation( geometry, normalsGen, orientations, orientationCount, partition );
+  initialSegmentation( geometry, normalsGen, orientations, orientationCount, partition, params.weight_normal);
   std::cout << "[done]" << std::endl;
 
   std::cout << "  Refining segmentation... ";
@@ -105,10 +105,18 @@ void PCCPatchSegmenter3::initialSegmentation( const PCCPointSet3&         geomet
                                               const PCCNormalsGenerator3& normalsGen,
                                               const PCCVector3D*          orientations,
                                               const size_t                orientationCount,
-                                              std::vector<size_t>&        partition ) {
+                                              std::vector<size_t>&        partition, const PCCVector3D axis_weight) {
   assert( orientations );
   const size_t pointCount = geometry.getPointCount();
   partition.resize( pointCount );
+
+  printf("\n [weight] YZ, XZ, XY: %8.5f, %8.5f, %8.5f\n", axis_weight[0], axis_weight[1], axis_weight[2]);
+  double weight_val[6];
+
+  weight_val[0] = weight_val[3] = axis_weight[0];
+  weight_val[1] = weight_val[4] = axis_weight[1];
+  weight_val[2] = weight_val[5] = axis_weight[2];
+
   tbb::task_arena limited( (int)nbThread_ );
   limited.execute( [&] {
     tbb::parallel_for( size_t( 0 ), pointCount, [&]( const size_t i ) {
@@ -116,7 +124,8 @@ void PCCPatchSegmenter3::initialSegmentation( const PCCPointSet3&         geomet
       size_t            clusterIndex = 0;
       double            bestScore    = normal * orientations[0];
       for ( size_t j = 1; j < orientationCount; ++j ) {
-        const double score = normal * orientations[j];
+		  //const double score = normal * orientations[j];
+		  const double score = normal * orientations[j] * weight_val[j];
         if ( score > bestScore ) {
           bestScore    = score;
           clusterIndex = j;

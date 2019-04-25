@@ -223,6 +223,8 @@ private:
                                   const GeneratePointCloudParameters params);
   void presmoothPointCloudColor(PCCPointSet3 &reconstruct, const PCCEncoderParameters params);
 
+  void calculate_weight_normal(const PCCPointSet3& source, PCCFrameContext& frameContext);
+
   // perform data-adaptive GPA method;
   void   performDataAdaptiveGPAMethod(PCCContext& context);
   // start a subContext;

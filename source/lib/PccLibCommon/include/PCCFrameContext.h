@@ -103,6 +103,7 @@ class PCCFrameContext {
   std::vector<bool>&         getFilling() { return filling_; }
   std::vector<size_t>&       getMinD1() { return minD1_; }
   std::vector<size_t>&       getNeighbor() { return neighbor_; }
+  PCCVector3D&		         getWeight_normal() { return weight_normal_; }
 
   void allocOneLayerData( const size_t occupancyResolution );
   void printBlockToPatch( const size_t occupancyResolution );
@@ -158,6 +159,7 @@ class PCCFrameContext {
   PCCGPAFrameSize                              prePCCGPAFrameSize_;
   PCCGPAFrameSize                              curPCCGPAFrameSize_;
   PCCFrameOCPInfo                              ocpGPAInfo_;
+  PCCVector3D								   weight_normal_;
 };
 
 };  // namespace pcc

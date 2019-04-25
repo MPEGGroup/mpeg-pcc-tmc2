@@ -61,6 +61,7 @@ struct PCCPatchSegmenter3Parameters {
   bool   absoluteD1;
   bool   useOneLayermode;
   bool   surfaceSeparation;
+  PCCVector3D weight_normal;
 };
 
 class PCCPatchSegmenter3 {
@@ -80,7 +81,7 @@ class PCCPatchSegmenter3 {
   void initialSegmentation( const PCCPointSet3 &geometry,
                             const PCCNormalsGenerator3 &normalsGen,
                             const PCCVector3D *orientations, const size_t orientationCount,
-                            std::vector<size_t> &partition );
+                            std::vector<size_t> &partition, const PCCVector3D axis_weight);
   void computeAdjacencyInfo( const PCCPointSet3 &pointCloud, const PCCKdTree &kdtree,
                              std::vector<std::vector<size_t>> &adj, const size_t maxNNCount );
   void segmentPatches( const PCCPointSet3 &points, const PCCKdTree &kdtree,

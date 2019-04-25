@@ -568,6 +568,16 @@ bool parseParameters( int                   argc,
       encoderParams.use3dmc_,
       "Use auxilliary information for 3d motion compensation.(0: conventional video coding, 1: 3D motion compensated)\n")
 
+	("enhancedProjectionPlane",
+      encoderParams.enhancedPP_,
+	  encoderParams.enhancedPP_,
+	 "Use enhanced Projection Plane(0: OFF, 1: ON)\n")
+
+	("minWeightEPP",
+      encoderParams.minWeightEPP_,
+	  encoderParams.minWeightEPP_,
+	  "Minimum value\n")
+
     ;
 
    opts.addOptions()
