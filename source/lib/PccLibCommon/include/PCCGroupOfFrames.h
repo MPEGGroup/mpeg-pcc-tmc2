@@ -37,36 +37,39 @@
 #include "PCCCommon.h"
 
 namespace pcc {
-class PCCPointSet3; 
+class PCCPointSet3;
 class PCCGroupOfFrames {
  public:
-   PCCGroupOfFrames();
+  PCCGroupOfFrames();
   ~PCCGroupOfFrames();
 
-  void clear() { frames_.clear(); }
-  size_t size() const { return frames_.size(); }
-  void resize( size_t n ) { frames_.resize( n ); }
-  const PCCPointSet3& operator[](const size_t index) const {
-    assert(index < frames_.size());
+  void                clear() { frames_.clear(); }
+  size_t              size() const { return frames_.size(); }
+  void                resize( size_t n ) { frames_.resize( n ); }
+  const PCCPointSet3& operator[]( const size_t index ) const {
+    assert( index < frames_.size() );
     return frames_[index];
   }
-  PCCPointSet3& operator[](const size_t index) {
-    assert(index < frames_.size());
+  PCCPointSet3& operator[]( const size_t index ) {
+    assert( index < frames_.size() );
     return frames_[index];
-  } 
+  }
   std::vector<PCCPointSet3>& getFrames() { return frames_; }
 
   std::vector<PCCPointSet3>::iterator begin() { return frames_.begin(); }
-  std::vector<PCCPointSet3>::iterator end  () { return frames_.end  (); }
+  std::vector<PCCPointSet3>::iterator end() { return frames_.end(); }
 
-  bool load( const std::string uncompressedDataPath, const size_t startFrameNumber, 
-             const size_t endFrameNumber, const PCCColorTransform colorTransform );
+  bool load( const std::string       uncompressedDataPath,
+             const size_t            startFrameNumber,
+             const size_t            endFrameNumber,
+             const PCCColorTransform colorTransform,
+             const bool              readNormals = false );
 
   bool write( const std::string reconstructedDataPath, size_t& frameNumber );
 
  private:
   std::vector<PCCPointSet3> frames_;
 };
-}
+}  // namespace pcc
 
 #endif /* PCCGroupOfFrames_h */

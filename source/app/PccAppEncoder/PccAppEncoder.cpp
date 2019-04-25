@@ -681,7 +681,8 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
     PCCGroupOfFrames normals;
     if ( metricsParams.computeMetrics_ ) {
       if ( metricsParams.normalDataPath_ != "" ) {
-        if ( !normals.load( metricsParams.normalDataPath_, startFrameNumber, endFrameNumber, COLOR_TRANSFORM_NONE ) ) {
+        if ( !normals.load( metricsParams.normalDataPath_, startFrameNumber, endFrameNumber, COLOR_TRANSFORM_NONE,
+                            true ) ) {
           return -1;
         }
       }

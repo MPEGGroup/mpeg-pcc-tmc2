@@ -299,14 +299,14 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
       }
       if ( metricsParams.normalDataPath_ != "" ) {
         if ( !normals.load( metricsParams.normalDataPath_, frameNumber, frameNumber + reconstructs.size(),
-                            COLOR_TRANSFORM_NONE ) ) {
+                            COLOR_TRANSFORM_NONE, true ) ) {
           return -1;
         }
       }
       metrics.compute( sources, reconstructs, normals );
       sources.clear();
       normals.clear();
-    } 
+    }
     if ( !decoderParams.reconstructedDataPath_.empty() ) {
       reconstructs.write( decoderParams.reconstructedDataPath_, frameNumber );
     } else {
