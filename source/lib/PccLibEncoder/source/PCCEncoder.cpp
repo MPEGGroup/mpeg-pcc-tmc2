@@ -272,12 +272,20 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
         pcc::chrono::Stopwatch<std::chrono::steady_clock> clockPadding;
         clockPadding.start();
 
-        if ( params_.textureBGFill_ == 1 ) {
-          dilatePullPush( frames[f / nbFramesTexture], videoTexture.getFrame( f ) );
-        } else if ( params_.textureBGFill_ == 2 )
-          dilateSparseLinearModel( frames[f / nbFramesTexture], videoTexture.getFrame( f ), f, VIDEO_TEXTURE );
-        else {
-          dilate( frames[f / nbFramesTexture], videoTexture.getFrame( f ) );
+        switch (params_.textureBGFill_) {
+        case 0:
+          dilate(frames[f / nbFramesTexture], videoTexture.getFrame(f));
+          break;
+        case 1:
+          dilateSmoothedPushPull(frames[f / nbFramesTexture], videoTexture.getFrame(f));
+          break;
+        case 2:
+          // placeholder for sony's hbf.
+          dilateSparseLinearModel(frames[f / nbFramesTexture], videoTexture.getFrame(f), f, VIDEO_TEXTURE);
+          break;
+        default:
+          std::cout << "Error: wrong selection for texture padding!" << std::endl;
+          exit(-1);
         }
 
         clockPadding.stop();
@@ -2614,57 +2622,57 @@ int PCCEncoder::mean4w( T             p1,
 
 // Generates a weighted mipmap
 template <typename T>
-void PCCEncoder::pullPushMip( PCCImage<T, 3>&        image,
-                              PCCImage<T, 3>&        mip,
-                              std::vector<uint32_t>& occupancyMap,
-                              std::vector<uint32_t>& mipOccupancyMap ) {
-  // allocate the mipmap with half the resolution
-  mip.resize( ( ( image.getWidth() + 1 ) / 2 ), ( ( image.getHeight() + 1 ) / 2 ) );
-  mipOccupancyMap.resize( ( ( image.getWidth() + 1 ) / 2 ) * ( ( image.getHeight() + 1 ) / 2 ), 0 );
+void PCCEncoder::pushPullMip( const PCCImage<T, 3>& image, PCCImage<T, 3>& mip,
+                              const std::vector<uint32_t>& occupancyMap, std::vector<uint32_t>& mipOccupancyMap ) {
   unsigned char w1, w2, w3, w4;
   unsigned char val1, val2, val3, val4;
-  int           stride    = image.getWidth();
-  int           height    = image.getHeight();
-  int           newStride = ( ( image.getWidth() + 1 ) / 2 );
-  int           x, y;
-  for ( y = 0; y < mip.getHeight(); ++y ) {
-    for ( x = 0; x < mip.getWidth(); ++x ) {
-      if ( occupancyMap[x * 2 + stride * ( y * 2 )] == 0 )
+  const size_t width = image.getWidth();
+  const size_t height = image.getHeight();
+  const size_t newWidth = ((width + 1) >> 1);
+  const size_t newHeight = ((height + 1) >> 1);
+  // allocate the mipmap with half the resolution
+  mip.resize(newWidth, newHeight);
+  mipOccupancyMap.resize(newWidth * newHeight, 0);
+  for (size_t y = 0; y < newHeight; ++y) {
+    const size_t yUp = y << 1;
+    for (size_t x = 0; x < newWidth; ++x) {
+      const size_t xUp = x << 1;
+      if (occupancyMap[xUp + width * yUp] == 0)
         w1 = 0;
       else
         w1 = 255;
-      if ( ( x * 2 + 1 >= stride ) || ( occupancyMap[x * 2 + 1 + stride * ( y * 2 )] == 0 ) )
+      if ((xUp + 1 >= width) || (occupancyMap[xUp + 1 + width * yUp] == 0))
         w2 = 0;
       else
         w2 = 255;
-      if ( ( y * 2 + 1 >= height ) || ( occupancyMap[x * 2 + stride * ( y * 2 + 1 )] == 0 ) )
+      if ((yUp + 1 >= height) || (occupancyMap[xUp + width * (yUp + 1)] == 0))
         w3 = 0;
       else
         w3 = 255;
-      if ( ( x * 2 + 1 >= stride ) || ( y * 2 + 1 >= height ) ||
-           ( occupancyMap[x * 2 + 1 + stride * ( y * 2 + 1 )] == 0 ) )
+      if ((xUp + 1 >= width) || (yUp + 1 >= height) ||
+           (occupancyMap[xUp + 1 + width * (yUp + 1)] == 0))
         w4 = 0;
       else
         w4 = 255;
-      if ( w1 + w2 + w3 + w4 > 0 ) {
-        for ( int cc = 0; cc < 3; cc++ ) {
-          val1 = image.getValue( cc, x * 2, y * 2 );
-          if ( x * 2 + 1 >= stride )
+      if (w1 + w2 + w3 + w4 > 0) {
+        for (int cc = 0; cc < 3; cc++) {
+          val1 = image.getValue(cc, xUp, yUp);
+          if (xUp + 1 >= width)
             val2 = 0;
           else
-            val2 = image.getValue( cc, x * 2 + 1, y * 2 );
-          if ( y * 2 + 1 >= height )
+            val2 = image.getValue(cc, xUp + 1, yUp);
+          if (yUp + 1 >= height)
             val3 = 0;
           else
-            val3 = image.getValue( cc, x * 2, y * 2 + 1 );
-          if ( ( x * 2 + 1 >= stride ) || ( y * 2 + 1 >= height ) )
+            val3 = image.getValue(cc, xUp, yUp + 1);
+          if ((xUp + 1 >= width) || (yUp + 1 >= height))
             val4 = 0;
           else
-            val4 = image.getValue( cc, x * 2 + 1, y * 2 + 1 );
-          T newVal = mean4w( val1, w1, val2, w2, val3, w3, val4, w4 );
-          mip.setValue( cc, x, y, newVal );
+            val4 = image.getValue(cc, xUp + 1, yUp + 1);
+          T newVal = mean4w(val1, w1, val2, w2, val3, w3, val4, w4);
+          mip.setValue(cc, x, y, newVal);
         }
-        mipOccupancyMap[x + newStride * y] = 1;
+        mipOccupancyMap[x + newWidth * y] = 1;
       }
     }
   }
@@ -2672,79 +2680,107 @@ void PCCEncoder::pullPushMip( PCCImage<T, 3>&        image,
 
 // interpolate using mipmap
 template <typename T>
-void PCCEncoder::pullPushFill( PCCImage<T, 3>& image, PCCImage<T, 3>& mip, std::vector<uint32_t>& occupancyMap ) {
-  assert( ( ( image.getWidth() + 1 ) / 2 ) == mip.getWidth() );
-  assert( ( ( image.getHeight() + 1 ) / 2 ) == mip.getHeight() );
-  int           stride = image.getWidth();
+void PCCEncoder::pushPullFill( PCCImage<T, 3>& image, const PCCImage<T, 3>& mip, 
+                               const std::vector<uint32_t>& occupancyMap, int numIters ) {
+  const size_t width = mip.getWidth();
+  const size_t height = mip.getHeight();
+  const size_t widthUp = image.getWidth();
+  const size_t heightUp = image.getHeight();
+  assert(((widthUp + 1) >> 1) == width);
+  assert(((heightUp + 1) >> 1) == height);
   int           x, y, xUp, yUp;
   unsigned char w1, w2, w3, w4;
-  for ( yUp = 0; yUp < image.getHeight(); ++yUp ) {
-    y = yUp / 2;
-    for ( xUp = 0; xUp < image.getWidth(); ++xUp ) {
-      x = xUp / 2;
-      if ( occupancyMap[xUp + stride * yUp] == 0 ) {
-        if ( ( xUp % 2 == 0 ) && ( yUp % 2 == 0 ) ) {
+  for (yUp = 0; yUp < heightUp; ++yUp) {
+    y = yUp >> 1;
+    for (xUp = 0; xUp < widthUp; ++xUp) {
+      x = xUp >> 1;
+      if (occupancyMap[xUp + widthUp * yUp] == 0) {
+        if ((xUp % 2 == 0) && (yUp % 2 == 0)) {
           w1 = 144;
-          w2 = ( x > 0 ? (unsigned char)48 : 0 );
-          w3 = ( y > 0 ? (unsigned char)48 : 0 );
-          w4 = ( ( ( x > 0 ) && ( y > 0 ) ) ? (unsigned char)16 : 0 );
-          for ( int cc = 0; cc < 3; cc++ ) {
-            T val       = mip.getValue( cc, x, y );
-            T valLeft   = ( x > 0 ? mip.getValue( cc, x - 1, y ) : 0 );
-            T valUp     = ( y > 0 ? mip.getValue( cc, x, y - 1 ) : 0 );
-            T valUpLeft = ( ( x > 0 && y > 0 ) ? mip.getValue( cc, x - 1, y - 1 ) : 0 );
-            T newVal    = mean4w( val, w1, valLeft, w2, valUp, w3, valUpLeft, w4 );
-            image.setValue( cc, xUp, yUp, newVal );
+          w2 = (x > 0 ? (unsigned char)48 : 0);
+          w3 = (y > 0 ? (unsigned char)48 : 0);
+          w4 = (((x > 0) && (y > 0)) ? (unsigned char)16 : 0);
+          for (int cc = 0; cc < 3; cc++) {
+            T val       = mip.getValue(cc, x, y);
+            T valLeft   = (x > 0 ? mip.getValue(cc, x - 1, y) : 0);
+            T valUp     = (y > 0 ? mip.getValue(cc, x, y - 1) : 0);
+            T valUpLeft = ((x > 0 && y > 0) ? mip.getValue(cc, x - 1, y - 1) : 0);
+            T newVal    = mean4w(val, w1, valLeft, w2, valUp, w3, valUpLeft, w4);
+            image.setValue(cc, xUp, yUp, newVal);
           }
-        } else if ( ( xUp % 2 == 1 ) && ( yUp % 2 == 0 ) ) {
+        } else if ((xUp % 2 == 1) && (yUp % 2 == 0)) {
           w1 = 144;
-          w2 = ( x < mip.getWidth() - 1 ? (unsigned char)48 : 0 );
-          w3 = ( y > 0 ? (unsigned char)48 : 0 );
-          w4 = ( ( ( x < mip.getWidth() - 1 ) && ( y > 0 ) ) ? (unsigned char)16 : 0 );
-          for ( int cc = 0; cc < 3; cc++ ) {
-            T val        = mip.getValue( cc, x, y );
-            T valRight   = ( x < mip.getWidth() - 1 ? mip.getValue( cc, x + 1, y ) : 0 );
-            T valUp      = ( y > 0 ? mip.getValue( cc, x, y - 1 ) : 0 );
-            T valUpRight = ( ( ( x < mip.getWidth() - 1 ) && ( y > 0 ) ) ? mip.getValue( cc, x + 1, y - 1 ) : 0 );
-            T newVal     = mean4w( val, w1, valRight, w2, valUp, w3, valUpRight, w4 );
-            image.setValue( cc, xUp, yUp, newVal );
+          w2 = (x < width - 1 ? (unsigned char)48 : 0);
+          w3 = (y > 0 ? (unsigned char)48 : 0);
+          w4 = (((x < width - 1) && (y > 0)) ? (unsigned char)16 : 0);
+          for (int cc = 0; cc < 3; cc++) {
+            T val        = mip.getValue(cc, x, y);
+            T valRight   = (x < width - 1 ? mip.getValue(cc, x + 1, y) : 0);
+            T valUp      = (y > 0 ? mip.getValue(cc, x, y - 1) : 0);
+            T valUpRight = (((x < width - 1) && (y > 0)) ? mip.getValue(cc, x + 1, y - 1) : 0);
+            T newVal     = mean4w(val, w1, valRight, w2, valUp, w3, valUpRight, w4);
+            image.setValue(cc, xUp, yUp, newVal);
           }
-        } else if ( ( xUp % 2 == 0 ) && ( yUp % 2 == 1 ) ) {
+        } else if ((xUp % 2 == 0) && (yUp % 2 == 1)) {
           w1 = 144;
-          w2 = ( x > 0 ? (unsigned char)48 : 0 );
-          w3 = ( y < mip.getHeight() - 1 ? (unsigned char)48 : 0 );
-          w4 = ( ( ( x > 0 ) && ( y < mip.getHeight() - 1 ) ) ? (unsigned char)16 : 0 );
-          for ( int cc = 0; cc < 3; cc++ ) {
-            T val         = mip.getValue( cc, x, y );
-            T valLeft     = ( x > 0 ? mip.getValue( cc, x - 1, y ) : 0 );
-            T valDown     = ( ( y < mip.getHeight() - 1 ) ? mip.getValue( cc, x, y + 1 ) : 0 );
-            T valDownLeft = ( ( x > 0 && ( y < mip.getHeight() - 1 ) ) ? mip.getValue( cc, x - 1, y + 1 ) : 0 );
-            T newVal      = mean4w( val, w1, valLeft, w2, valDown, w3, valDownLeft, w4 );
-            image.setValue( cc, xUp, yUp, newVal );
+          w2 = (x > 0 ? (unsigned char)48 : 0);
+          w3 = (y < height - 1 ? (unsigned char)48 : 0);
+          w4 = (((x > 0) && (y < height - 1)) ? (unsigned char)16 : 0);
+          for (int cc = 0; cc < 3; cc++) {
+            T val         = mip.getValue(cc, x, y);
+            T valLeft     = (x > 0 ? mip.getValue(cc, x - 1, y) : 0);
+            T valDown     = ((y < height - 1) ? mip.getValue(cc, x, y + 1) : 0);
+            T valDownLeft = ((x > 0 && (y < height - 1)) ? mip.getValue(cc, x - 1, y + 1) : 0);
+            T newVal      = mean4w(val, w1, valLeft, w2, valDown, w3, valDownLeft, w4);
+            image.setValue(cc, xUp, yUp, newVal);
           }
         } else {
           w1 = 144;
-          w2 = ( x < mip.getWidth() - 1 ? (unsigned char)48 : 0 );
-          w3 = ( y < mip.getHeight() - 1 ? (unsigned char)48 : 0 );
-          w4 = ( ( ( x < mip.getWidth() - 1 ) && ( y < mip.getHeight() - 1 ) ) ? (unsigned char)16 : 0 );
-          for ( int cc = 0; cc < 3; cc++ ) {
-            T val      = mip.getValue( cc, x, y );
-            T valRight = ( x < mip.getWidth() - 1 ? mip.getValue( cc, x + 1, y ) : 0 );
-            T valDown  = ( ( y < mip.getHeight() - 1 ) ? mip.getValue( cc, x, y + 1 ) : 0 );
-            T valDownRight =
-                ( ( ( x < mip.getWidth() - 1 ) && ( y < mip.getHeight() - 1 ) ) ? mip.getValue( cc, x + 1, y + 1 )
-                                                                                : 0 );
-            T newVal = mean4w( val, w1, valRight, w2, valDown, w3, valDownRight, w4 );
-            image.setValue( cc, xUp, yUp, newVal );
+          w2 = (x < width - 1 ? (unsigned char)48 : 0);
+          w3 = (y < height - 1 ? (unsigned char)48 : 0);
+          w4 = (((x < width - 1) && (y < height - 1)) ? (unsigned char)16 : 0);
+          for (int cc = 0; cc < 3; cc++) {
+            T val      = mip.getValue(cc, x, y);
+            T valRight = (x < width - 1 ? mip.getValue(cc, x + 1, y) : 0);
+            T valDown  = ((y < height - 1) ? mip.getValue(cc, x, y + 1) : 0);
+            T valDownRight = (((x < width - 1) && (y < height - 1)) ? 
+              mip.getValue(cc, x + 1, y + 1) : 0);
+            T newVal = mean4w(val, w1, valRight, w2, valDown, w3, valDownRight, w4);
+            image.setValue(cc, xUp, yUp, newVal);
           }
         }
       }
     }
   }
+  auto tmpImage(image);
+  for (size_t n = 0; n < numIters; n++) {
+    for (int y = 0; y < heightUp; y++) {
+      for (int x = 0; x < widthUp; x++) {
+        if (occupancyMap[x + widthUp * y] == 0) {
+          int x1 = (x > 0) ? x - 1 : x;
+          int y1 = (y > 0) ? y - 1 : y;
+          int x2 = (x < widthUp - 1) ? x + 1 : x;
+          int y2 = (y < heightUp - 1) ? y + 1 : y;
+          for (size_t c = 0; c < 3; c++) {
+            int val = image.getValue(c, x1, y1) +
+                      image.getValue(c, x2, y1) +
+                      image.getValue(c, x1, y2) +
+                      image.getValue(c, x2, y2) +
+                      image.getValue(c, x1, y) +
+                      image.getValue(c, x2, y) +
+                      image.getValue(c, x, y1) +
+                      image.getValue(c, x, y2);
+            tmpImage.setValue(c, x, y, (val + 4) >> 3);
+          }
+        }
+      }
+    }
+    swap(image, tmpImage);
+  }
 }
 
 template <typename T>
-void PCCEncoder::dilatePullPush( PCCFrameContext& frame, PCCImage<T, 3>& image ) {
+void PCCEncoder::dilateSmoothedPushPull( PCCFrameContext& frame, PCCImage<T, 3>& image ) {
   auto                               occupancyMapTemp = frame.getOccupancyMap();
   int                                i                = 0;
   std::vector<PCCImage<T, 3>>        mipVec;
@@ -2758,9 +2794,9 @@ void PCCEncoder::dilatePullPush( PCCFrameContext& frame, PCCImage<T, 3>& image )
     mipOccupancyMapVec.resize( mipOccupancyMapVec.size() + 1 );
     div *= 2;
     if ( miplev > 0 ) {
-      pullPushMip( mipVec[miplev - 1], mipVec[miplev], mipOccupancyMapVec[miplev - 1], mipOccupancyMapVec[miplev] );
+      pushPullMip( mipVec[miplev - 1], mipVec[miplev], mipOccupancyMapVec[miplev - 1], mipOccupancyMapVec[miplev] );
     } else {
-      pullPushMip( image, mipVec[miplev], occupancyMapTemp, mipOccupancyMapVec[miplev] );
+      pushPullMip( image, mipVec[miplev], occupancyMapTemp, mipOccupancyMapVec[miplev] );
     }
     if ( mipVec[miplev].getWidth() <= 4 || mipVec[miplev].getHeight() <= 4 ) { break; }
     ++miplev;
@@ -2775,12 +2811,14 @@ void PCCEncoder::dilatePullPush( PCCFrameContext& frame, PCCImage<T, 3>& image )
   }
 #endif
   // push phase: refill
+  int numIters = 4;
   for ( i = miplev - 1; i >= 0; --i ) {
     if ( i > 0 ) {
-      pullPushFill( mipVec[i - 1], mipVec[i], mipOccupancyMapVec[i - 1] );
+      pushPullFill(mipVec[i - 1], mipVec[i], mipOccupancyMapVec[i - 1], numIters);
     } else {
-      pullPushFill( image, mipVec[i], occupancyMapTemp );
+      pushPullFill(image, mipVec[i], occupancyMapTemp, numIters);
     }
+    numIters = (std::min)(numIters + 1, 16);
   }
 #if DEBUG_PATCH
   for ( int k = 0; k < miplev; k++ ) {

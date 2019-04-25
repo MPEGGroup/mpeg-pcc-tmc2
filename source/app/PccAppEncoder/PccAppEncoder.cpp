@@ -540,7 +540,7 @@ bool parseParameters( int                   argc,
     ("textureBGFill",
       encoderParams.textureBGFill_,
       encoderParams.textureBGFill_,
-      "Selects the background filling operation for texture only (0: anchor's dilation, 1(default): push-pull algorithm)\n")
+      "Selects the background filling operation for texture only (0: patch-edge extension, 1(default): smoothed push-pull algorithm), 2: harmonic background filling\n")
 
     //lossy-missed-points patch
     ("lossyMissedPointsPatch",

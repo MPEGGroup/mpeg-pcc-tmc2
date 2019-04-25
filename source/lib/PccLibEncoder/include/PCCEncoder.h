@@ -167,13 +167,14 @@ private:
   template <typename T>
   int mean4w(T p1, unsigned char w1, T p2, unsigned char w2, T p3, unsigned char w3, T p4, unsigned char w4);
   template <typename T>
-  void pullPushMip(PCCImage<T, 3> &image, PCCImage<T, 3> &mip,
-                   std::vector<uint32_t>& occupancyMap,
+  void pushPullMip(const PCCImage<T, 3> &image, PCCImage<T, 3> &mip,
+                   const std::vector<uint32_t>& occupancyMap,
                    std::vector<uint32_t> &mipOccupancyMap);
   template <typename T>
-  void pullPushFill(PCCImage<T, 3> &image, PCCImage<T, 3> &mip, std::vector<uint32_t>& occupancyMap);
+  void pushPullFill( PCCImage<T, 3> &image, const PCCImage<T, 3> &mip, 
+                     const std::vector<uint32_t>& occupancyMap, int numIters );
   template <typename T>
-  void dilatePullPush(PCCFrameContext& frame, PCCImage<T, 3> &image);
+  void dilateSmoothedPushPull(PCCFrameContext& frame, PCCImage<T, 3> &image);
   template <typename T>
   void dilateSparseLinearModel(PCCFrameContext& frame, PCCImage<T, 3> &image, int layerIdx, PCCVideoType videoType);
   void pack( PCCFrameContext& frame, int safeguard = 0  );

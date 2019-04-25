@@ -125,7 +125,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
 
   // Flexible Patch Packing
   packingStrategy_   = 1;
-  textureBGFill_     = 2;
+  textureBGFill_     = 1;
   safeGuardDistance_ = 0;
 
   // lossy missed points patch
