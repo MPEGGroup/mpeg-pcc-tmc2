@@ -594,6 +594,16 @@ bool parseParameters( int                   argc,
 	  encoderParams.minWeightEPP_,
 	  "Minimum value\n")
 
+    ("additionalProjectionPlaneMode",
+     encoderParams.additionalProjectionPlaneMode_, 
+     encoderParams.additionalProjectionPlaneMode_,
+     "additiona Projection Plane Mode 0:none 1:Y-Axis 2:X-Axis 3:Z-Axis 4:All-Axis 5:apply to portion ")
+
+    ("partialAdditionalProjectionPlane",
+     encoderParams.partialAdditionalProjectionPlane_, 
+     encoderParams.partialAdditionalProjectionPlane_,
+     "The value determines the partial point cloud. It's available with only additionalProjectionPlaneMode(5)")
+
     ;
 
    opts.addOptions()

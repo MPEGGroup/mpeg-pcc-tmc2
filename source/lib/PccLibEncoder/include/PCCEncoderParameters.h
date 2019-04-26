@@ -193,6 +193,10 @@ class PCCEncoderParameters {
 
   bool				  enhancedPP_;
   double              minWeightEPP_;
+
+  //Additional Projection Plane
+  int                 additionalProjectionPlaneMode_;
+  double              partialAdditionalProjectionPlane_;
 };
 
 }; //~namespace

@@ -62,6 +62,9 @@ struct PCCPatchSegmenter3Parameters {
   bool   useOneLayermode;
   bool   surfaceSeparation;
   PCCVector3D weight_normal;
+  size_t additionalProjectionPlaneMode;
+  double partialAdditionalProjectionPlane;
+  size_t geometryBitDepth3D;
 };
 
 class PCCPatchSegmenter3 {
@@ -82,6 +85,10 @@ class PCCPatchSegmenter3 {
                             const PCCNormalsGenerator3 &normalsGen,
                             const PCCVector3D *orientations, const size_t orientationCount,
                             std::vector<size_t> &partition, const PCCVector3D axis_weight);
+  void initialSegmentation( const PCCPointSet3 &geometry,
+                            const PCCNormalsGenerator3 &normalsGen,
+                            const PCCVector3D *orientations, const size_t orientationCount,
+                            std::vector<size_t> &partition);
   void computeAdjacencyInfo( const PCCPointSet3 &pointCloud, const PCCKdTree &kdtree,
                              std::vector<std::vector<size_t>> &adj, const size_t maxNNCount );
   void segmentPatches( const PCCPointSet3 &points, const PCCKdTree &kdtree,
@@ -102,7 +109,9 @@ class PCCPatchSegmenter3 {
                        std::vector<PCCPointSet3> &subPointCloud,
                        float& distanceSrcRec,
                        const bool sixDirection,
-                       bool useSurfaceSeparation );
+                       bool useSurfaceSeparation, 
+                       const size_t additionalProjectionPlaneMode,
+                       const size_t geometryBitDepth3D );
 
   void refineSegmentation( const PCCPointSet3 &pointCloud, const PCCKdTree &kdtree,
                            const PCCNormalsGenerator3 &normalsGen,
@@ -116,6 +125,120 @@ class PCCPatchSegmenter3 {
   std::vector<PCCPatch> boxMaxDepths_;  // box depth list
   size_t selectFrameProjectionMode(const PCCPointSet3 &points, const size_t surfaceThickness, const size_t minLevel, const size_t paramProjectionMode);
   void   selectPatchProjectionMode(const PCCPointSet3 &points, size_t frameProjectionMode, std::vector<size_t> &connectedComponent, PCCPatch &patch);
+  void convert(size_t Axis, size_t lod, PCCPoint3D input, PCCPoint3D &output) {
+      size_t shif = (1u << lod) - 1;
+      output = input;
+      if (Axis == 1) { // Additional plane are defined by Y Axis. 
+          output.x() = input.x() + input.z();
+          output.z() = -input.x() + input.z() + shif;
+      }
+      if (Axis == 2){ // Additional plane are defined by X Axis. 
+        output.z() = input.z() + input.y();
+        output.y() = -input.z() + input.y() + shif;
+
+      }
+      if (Axis == 3){
+        output.y() = input.y() + input.x();
+        output.x() = -input.y() + input.x() + shif;
+      }
+  }
+
+  void iconvert(size_t Axis, size_t lod, PCCVector3D input, PCCVector3D &output) {
+      size_t shif = (1u << lod) - 1;
+      //output = input;
+      output.x() = input.x();
+      output.y() = input.y();
+      output.z() = input.z();
+
+      if (Axis == 1) { // Additional plane are defined by Y Axis. 
+          output.x() = input.x() - input.z() + shif;
+          output.x() /= 2.0;
+
+          output.z() = input.x() + input.z() - shif;
+          output.z() /= 2.0;
+      }
+      if (Axis == 2){
+        output.z() = input.z() - input.y() + shif;
+        output.z() /= 2.0;
+
+        output.y() = input.z() + input.y() - shif;
+        output.y() /= 2.0;
+      }  // not implemented yet
+      if (Axis == 3){
+        output.y() = input.y() - input.x() + shif;
+        output.y() /= 2.0;
+
+        output.x() = input.y() + input.x() - shif;
+        output.x() /= 2.0;
+      }
+  }
+
+  PCCVector3D orientations6[6] = {
+      PCCVector3D( 1.0, 0.0, 0.0 ),  PCCVector3D( 0.0, 1.0, 0.0 ),  PCCVector3D( 0.0, 0.0, 1.0 ),
+      PCCVector3D( -1.0, 0.0, 0.0 ), PCCVector3D( 0.0, -1.0, 0.0 ), PCCVector3D( 0.0, 0.0, -1.0 ),
+  };
+  const size_t orientationCount6 = 6;
+  const size_t orientation10Count = 10;
+  PCCVector3D orientations10_XAxis[10] = {
+	  PCCVector3D(1.0, 0.0, 0.0),                 // 0
+	  PCCVector3D(0.0, 1.0, 0.0),                 // 1
+	  PCCVector3D(0.0, 0.0, 1.0),                 // 2
+	  PCCVector3D(-1.0, 0.0, 0.0),                // 3
+	  PCCVector3D(0.0, -1.0, 0.0),                // 4
+	  PCCVector3D(0.0, 0.0, -1.0),                // 5
+	  PCCVector3D(0.0, sqrt(2) / 2,  sqrt(2) / 2),  // 6
+	  PCCVector3D(0.0,-sqrt(2) / 2,  sqrt(2) / 2),  // 7
+	  PCCVector3D(0.0,-sqrt(2) / 2, -sqrt(2) / 2),  // 8
+	  PCCVector3D(0.0, sqrt(2) / 2, -sqrt(2) / 2),  // 9
+  };
+
+  PCCVector3D orientations10_YAxis[10] = {
+	  PCCVector3D(1.0, 0.0, 0.0),                 // 0
+	  PCCVector3D(0.0, 1.0, 0.0),                 // 1
+	  PCCVector3D(0.0, 0.0, 1.0),                 // 2
+	  PCCVector3D(-1.0, 0.0, 0.0),                // 3
+	  PCCVector3D(0.0, -1.0, 0.0),                // 4
+	  PCCVector3D(0.0, 0.0, -1.0),                // 5
+	  PCCVector3D(sqrt(2) / 2,  0.0,  sqrt(2) / 2),  // 6
+	  PCCVector3D(-sqrt(2) / 2,  0.0,  sqrt(2) / 2), // 7
+	  PCCVector3D(-sqrt(2) / 2,  0.0, -sqrt(2) / 2), // 8
+	  PCCVector3D(sqrt(2) / 2,  0.0, -sqrt(2) / 2),  // 9
+  };
+
+  PCCVector3D orientations10_ZAxis[10] = {
+	  PCCVector3D(1.0, 0.0, 0.0),                 // 0
+	  PCCVector3D(0.0, 1.0, 0.0),                 // 1
+	  PCCVector3D(0.0, 0.0, 1.0),                 // 2
+	  PCCVector3D(-1.0, 0.0, 0.0),                // 3
+	  PCCVector3D(0.0, -1.0, 0.0),                // 4
+	  PCCVector3D(0.0, 0.0, -1.0),                // 5
+	  PCCVector3D(sqrt(2) / 2,  sqrt(2) / 2,  0.0),   // 6
+	  PCCVector3D(-sqrt(2) / 2,  sqrt(2) / 2,  0.0),  // 7
+	  PCCVector3D(-sqrt(2) / 2, -sqrt(2) / 2,  0.0),  // 8
+	  PCCVector3D(sqrt(2) / 2, -sqrt(2) / 2,  0.0),   // 9
+  };
+
+  const size_t orientation18Count = 18;
+  PCCVector3D orientations18[18] = {
+	  PCCVector3D(1.0, 0.0, 0.0),                 // 0
+	  PCCVector3D(0.0, 1.0, 0.0),                 // 1
+	  PCCVector3D(0.0, 0.0, 1.0),                 // 2
+	  PCCVector3D(-1.0, 0.0, 0.0),                // 3
+	  PCCVector3D(0.0, -1.0, 0.0),                // 4
+	  PCCVector3D(0.0, 0.0, -1.0),                // 5
+	  PCCVector3D(sqrt(2) / 2,  0.0,  sqrt(2) / 2),  // 6   1
+	  PCCVector3D(-sqrt(2) / 2,  0.0,  sqrt(2) / 2), // 7
+	  PCCVector3D(-sqrt(2) / 2,  0.0, -sqrt(2) / 2), // 8
+	  PCCVector3D(sqrt(2) / 2,  0.0, -sqrt(2) / 2),  // 9
+	  PCCVector3D(0.0, sqrt(2) / 2,  sqrt(2) / 2),  // 10   2
+	  PCCVector3D(0.0,-sqrt(2) / 2,  sqrt(2) / 2),  // 11
+	  PCCVector3D(0.0,-sqrt(2) / 2, -sqrt(2) / 2),  // 12
+	  PCCVector3D(0.0, sqrt(2) / 2, -sqrt(2) / 2),  // 13
+	  PCCVector3D(sqrt(2) / 2,  sqrt(2) / 2,  0.0),   // 14    3
+	  PCCVector3D(-sqrt(2) / 2,  sqrt(2) / 2,  0.0),  // 15
+	  PCCVector3D(-sqrt(2) / 2, -sqrt(2) / 2,  0.0),  // 16
+	  PCCVector3D(sqrt(2) / 2, -sqrt(2) / 2,  0.0),   // 17
+  };
 };
 
 class Rect{

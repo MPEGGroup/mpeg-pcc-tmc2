@@ -87,6 +87,7 @@ struct GeneratePointCloudParameters {
   bool        singleLayerPixelInterleaving_;
   std::string path_;
   bool        useAdditionalPointsPatch_;
+  size_t      geometryBitDepth3D_;
 };
 
 #ifdef CODEC_TRACE

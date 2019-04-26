@@ -205,7 +205,7 @@ private:
   bool predictGeometryFrame( PCCFrameContext& frameContext, const PCCImageGeometry &reference, PCCImageGeometry &image);
   void generateMissedPointsPatch( const PCCPointSet3& source,
                                   PCCFrameContext& frameContext,
-                                  bool useEnhancedDeltaDepthCode);
+                                  bool useEnhancedDeltaDepthCode, size_t geometryBitDepth3D);
 
   void sortMissedPointsPatch(PCCFrameContext& frameContext);
   bool generateGeometryVideo( const PCCPointSet3& source, PCCFrameContext& frameContext,
@@ -299,6 +299,11 @@ private:
   void setGeometryPatchParameterSet( PCCMetadata& metadata, GeometryPatchParameterSet& gpps );
 
   void setPointLocalReconstruction( PCCFrameContext& frame, const PCCPatch& patch, PointLocalReconstruction& plr, size_t occupancyPackingBlockSize );
+
+  void SegmentationPartiallyAddtinalProjectionPlane( const PCCPointSet3& source, PCCFrameContext& frameContext,
+                             const PCCPatchSegmenter3Parameters segmenterParams,
+                             PCCVideoGeometry &videoGeometry, PCCFrameContext &prevFrame,
+                             size_t frameIndex, float& distanceSrcRec );
 
 
   PCCEncoderParameters params_;

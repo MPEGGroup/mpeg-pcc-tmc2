@@ -140,6 +140,9 @@ PCCEncoderParameters::PCCEncoderParameters() {
   use3dmc_                         = true;
   enhancedPP_					   = true;
   minWeightEPP_					   = 0.6;
+
+  additionalProjectionPlaneMode_   = 0;
+  partialAdditionalProjectionPlane_ = 0.00;
 }
 
 PCCEncoderParameters::~PCCEncoderParameters() {}
@@ -292,6 +295,9 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   minNormSumOfInvDist4MPSelection      " << minNormSumOfInvDist4MPSelection_ << std::endl;
   std::cout << "\t   lossyMppGeoQP                        " << lossyMppGeoQP_ << std::endl;
   std::cout << "\t Enhanced projection plane               " << enhancedPP_ << std::endl;
+  std::cout << "\t AdditionalProjectionPlane " << std::endl;
+  std::cout << "\t   additionalProjectionPlaneMode        " << additionalProjectionPlaneMode_ << std::endl;
+  std::cout << "\t   partialAdditionalProjectionPlane     " << partialAdditionalProjectionPlane_ << std::endl;
 
   std::cout << std::endl;
 }
@@ -459,6 +465,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   sps.setPcmPatchEnabledFlag( useAdditionalPointsPatch_ );
   sps.setPatchInterPredictionEnabledFlag( deltaCoding_ );
   sps.setSurfaceThickness( surfaceThickness_ );
+  sps.setProjection45DegreeEnableFlag( additionalProjectionPlaneMode_ > 0 ? 1 : 0 );
 
   gps.setGeometryParamsEnabledFlag( flagGeometrySmoothing_ );
 

@@ -185,6 +185,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   generatePointCloudParameters.singleLayerPixelInterleaving_ = sps.getPixelDeinterleavingFlag();
   generatePointCloudParameters.path_                         = path.str();
   generatePointCloudParameters.useAdditionalPointsPatch_     = sps.getPcmPatchEnabledFlag();
+  generatePointCloudParameters.geometryBitDepth3D_           = sps.getGeometryParameterSet().getGeometry3dCoordinatesBitdepthMinus1()+1;
 
   generatePointCloud( reconstructs, context, generatePointCloudParameters );
 
@@ -458,11 +459,16 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
       patch.getPatchOrientation() = pfps.getPatchOrientationPresentFlag() && pdu.getOrientationSwapFlag()
                                         ? PATCH_ORIENTATION_SWAP
                                         : PATCH_ORIENTATION_DEFAULT;
+      patch.getAxisOfAdditionalPlane() = pdu.get45DegreeProjectionPresentFlag() ? pdu.get45DegreeProjectionRotationAxis() : 0;
       TRACE_CODEC( "patch %lu / %lu: Intra \n", patchIndex, patches.size() );
       if ( patch.getProjectionMode() == 0 ) {
         patch.getD1() = (int32_t)pdu.get3DShiftNormalAxis() * minLevel;
       } else {
+        if (pfps.getProjection45DegreeEnableFlag() == 0) {
         patch.getD1() = 1024 - (int32_t)pdu.get3DShiftNormalAxis() * minLevel;
+        } else {
+          patch.getD1() = 2048 - (int32_t)pdu.get3DShiftNormalAxis() * minLevel;
+        }
       }
       prevSizeU0     = patch.getSizeU0();
       prevSizeV0     = patch.getSizeV0();
@@ -514,11 +520,19 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
       patch.getNormalAxis()       = prePatch.getNormalAxis();
       patch.getTangentAxis()      = prePatch.getTangentAxis();
       patch.getBitangentAxis()    = prePatch.getBitangentAxis();
+      patch.getAxisOfAdditionalPlane() = prePatch.getAxisOfAdditionalPlane();
       if ( patch.getProjectionMode() == 0 ) {
         patch.getD1() = ( dpdu.get3DDeltaShiftNormalAxis() + ( prePatch.getD1() / minLevel ) ) * minLevel;
       } else {
+        if (pfps.getProjection45DegreeEnableFlag() == 0) {
+          patch.getD1() =
+          1024 - ( dpdu.get3DDeltaShiftNormalAxis() + ( ( 1024 - prePatch.getD1() ) / minLevel ) ) * minLevel; //jkei : we need to change 1024 to the nominal bitdepth..
+        }
+        else {
         patch.getD1() =
-        1024 - ( dpdu.get3DDeltaShiftNormalAxis() + ( ( 1024 - prePatch.getD1() ) / minLevel ) ) * minLevel; //jkei : we need to change 1024 to the nominal bitdepth...
+          (1024 << 1) - ( dpdu.get3DDeltaShiftNormalAxis() + ( ( (1024 << 1) - prePatch.getD1() ) / minLevel ) ) * minLevel;
+
+        }
       }
       const int64_t delta_DD = dpdu.get2DDeltaSizeD();
       size_t prevDD = prePatch.getSizeD() / minLevel;

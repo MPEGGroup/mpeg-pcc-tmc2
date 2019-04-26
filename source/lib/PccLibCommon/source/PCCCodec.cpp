@@ -652,7 +652,16 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
                   for ( size_t i = 0; i < createdPoints.size(); i++ ) {
                     if ( ( !params.removeDuplicatePoints_ ) ||
                          ( ( i == 0 ) || ( createdPoints[i] != createdPoints[0] ) ) ) {
-                      const size_t pointindex_1 = reconstruct.addPoint( createdPoints[i] );
+                      size_t pointindex = 0;
+                      if ( patch.getAxisOfAdditionalPlane() == 0 ){
+                        pointindex = reconstruct.addPoint( createdPoints[i] );
+                      }
+                      else {
+                        PCCVector3D tmp;
+                        PCCPatch::InverseRotatePosition45DegreeOnAxis(patch.getAxisOfAdditionalPlane(), params.geometryBitDepth3D_, createdPoints[i], tmp);
+                        pointindex = reconstruct.addPoint(tmp);
+                      }
+                      const size_t pointindex_1 = pointindex;
                       reconstruct.setColor( pointindex_1, color );
                       if ( PCC_SAVE_POINT_TYPE == 1 ) {
                         if ( params.singleLayerPixelInterleaving_ ) {
@@ -1391,6 +1400,7 @@ void PCCCodec::generateBlockToPatchFromOccupancyMap( PCCContext&  context,
       dummyPatch.getLod()                 = testLevelOfDetail;
       dummyPatch.setBestMatchIdx()        = -1;
       dummyPatch.getPatchOrientation()    = 0;
+      dummyPatch.getAxisOfAdditionalPlane() = 0;
       generateBlockToPatchFromOccupancyMap( frame, i, occupancyResolution );
       patches.pop_back();
     } else {
@@ -1463,6 +1473,7 @@ void PCCCodec::generateBlockToPatchFromBoundaryBox( PCCContext&  context,
       dummyPatch.getLod()                 = testLevelOfDetail;
       dummyPatch.setBestMatchIdx()        = -1;
       dummyPatch.getPatchOrientation()    = 0;
+      dummyPatch.getAxisOfAdditionalPlane() = 0;
       generateBlockToPatchFromBoundaryBox( frame, i, occupancyResolution );
       patches.pop_back();
     } else {

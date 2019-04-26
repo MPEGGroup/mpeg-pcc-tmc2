@@ -131,6 +131,7 @@ class PCCPatch {
   std::vector<bool>&    getOccupancy() { return occupancy_; }
   size_t&               getLod() { return levelOfDetail_; }
   PCCMetadata&          getPatchLevelMetadata() { return patchLevelMetadata_; }
+  size_t&               getAxisOfAdditionalPlane()     { return axisOfAdditionalPlane_; }
 
   size_t                      getIndex() const { return index_; }
   size_t                      getU1() const { return u1_; }
@@ -157,6 +158,7 @@ class PCCPatch {
   std::vector<int16_t>&       getDepthEnhancedDeltaD() { return depthEnhancedDeltaD_; }
   const std::vector<int16_t>& getDepthEnhancedDeltaD() const { return depthEnhancedDeltaD_; }
   const PCCMetadata&          getPatchLevelMetadata() const { return patchLevelMetadata_; }
+  const size_t&               getAxisOfAdditionalPlane() const { return axisOfAdditionalPlane_; }
 
   const std::vector<int64_t>& getdepth0pccidx() const { return depth0PCidx_; }
   std::vector<int64_t>&       getdepth0pccidx() { return depth0PCidx_; }
@@ -694,6 +696,35 @@ class PCCPatch {
     return true;
   }
 
+  static void InverseRotatePosition45DegreeOnAxis(size_t Axis, size_t lod, PCCPoint3D input, PCCVector3D &output) {
+    size_t s = (1u << lod) - 1;
+    output.x() = input.x();
+    output.y() = input.y();
+    output.z() = input.z();
+
+    if (Axis == 1){ // projection plane is defined by Y Axis. 
+      output.x() = input.x() - input.z() + s;
+      output.x() /= 2.0;
+
+      output.z() = input.x() + input.z() - s;
+      output.z() /= 2.0;
+    }
+    if (Axis == 2){ // projection plane is defined by X Axis. 
+      output.z() = input.z() - input.y() + s;
+      output.z() /= 2.0;
+
+      output.y() = input.z() + input.y() - s;
+      output.y() /= 2.0;
+    }
+    if (Axis == 3){ // projection plane is defined by Z Axis.
+      output.y() = input.y() - input.x() + s;
+      output.y() /= 2.0;
+
+      output.x() = input.y() + input.x() - s;
+      output.x() /= 2.0;
+    } 
+  }
+
  private:
   size_t               index_;                // patch index
   size_t               u1_;                   // tangential shift
@@ -724,6 +755,7 @@ class PCCPatch {
   GPAPatchData         curGPAPatchData_;
   GPAPatchData         preGPAPatchData_;
   bool                 isGlobalPatch_;
+  size_t               axisOfAdditionalPlane_;
 };
 
 struct PCCMissedPointsPatch {

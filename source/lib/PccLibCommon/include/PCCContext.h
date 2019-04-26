@@ -240,7 +240,9 @@ class PatchDataUnit {
       pduNormalAxis_( PCC_AXIS3_Z ),
       pduOrientationSwapFlag_( false ),
       pduLod_( 0 ),
-      pduProjectionMode_( false ){};
+      pduProjectionMode_( false ),
+      pdu45DegreeProjectionPresentFlag_( false ),
+      pdu45DegreeProjectionRotationAxis_(0){};
 
   ~PatchDataUnit(){};
 
@@ -258,6 +260,8 @@ class PatchDataUnit {
   uint8_t  getOrientationSwapFlag() { return pduOrientationSwapFlag_; }
   uint8_t  getLod() { return pduLod_; }
   bool     getProjectionMode() { return pduProjectionMode_; }
+  bool     get45DegreeProjectionPresentFlag() { return pdu45DegreeProjectionPresentFlag_; }
+  uint8_t  get45DegreeProjectionRotationAxis() { return pdu45DegreeProjectionRotationAxis_; }
 
   void set2DShiftU( size_t value ) { pdu2DShiftU_ = value; }
   void set2DShiftV( size_t value ) { pdu2DShiftV_ = value; }
@@ -271,6 +275,8 @@ class PatchDataUnit {
   void setOrientationSwapFlag( bool value ) { pduOrientationSwapFlag_ = value; }
   void setLod( uint8_t value ) { pduLod_ = value; }
   void setProjectionMode( bool value ) { pduProjectionMode_ = value; }
+  void set45DegreeProjectionPresentFlag(bool value) { pdu45DegreeProjectionPresentFlag_ = value; }
+  void set45DegreeProjectionRotationAxis(uint8_t value) { pdu45DegreeProjectionRotationAxis_ = value; }
 
  private:
   size_t   pdu2DShiftU_;  // sizes need to be determined
@@ -285,6 +291,8 @@ class PatchDataUnit {
   bool     pduOrientationSwapFlag_;
   uint8_t  pduLod_;
   bool     pduProjectionMode_;
+  bool     pdu45DegreeProjectionPresentFlag_;
+  uint8_t  pdu45DegreeProjectionRotationAxis_;
 };
 
 // 7.3.30  Patch information data syntax (pid)
@@ -606,7 +614,8 @@ class PatchFrameParameterSet {
       geometryPatchFrameParameterSetId_( 0 ),
       additionalLtPfocLsbLen_( 0 ),
       localOverrideGeometryPatchEnableFlag_( false ),
-      patchOrientationPresentFlag_( false ) {
+      patchOrientationPresentFlag_( false ),
+      projection45DegreeEnableFlag_( false ) {
     allocatePatchFrame();
   }
   ~PatchFrameParameterSet() {
@@ -630,6 +639,7 @@ class PatchFrameParameterSet {
   }
   bool getPatchOrientationPresentFlag() { return patchOrientationPresentFlag_; }
   bool getLocalOverrideGeometryPatchEnableFlag() { return localOverrideGeometryPatchEnableFlag_; }
+  bool getProjection45DegreeEnableFlag() { return projection45DegreeEnableFlag_;}
 
   void setPatchFrameParameterSetId( uint8_t value ) { patchFrameParameterSetId_ = value; }
   void setPatchSequenceParameterSetId( uint8_t value ) { patchSequenceParameterSetId_ = value; }
@@ -643,6 +653,7 @@ class PatchFrameParameterSet {
   }
   void setPatchOrientationPresentFlag( bool value ) { patchOrientationPresentFlag_ = value; }
   void setLocalOverrideGeometryPatchEnableFlag( bool value ) { localOverrideGeometryPatchEnableFlag_ = value; }
+  void setProjection45DegreeEnableFlag( bool value ) { projection45DegreeEnableFlag_ = value; }
 
  private:
   uint8_t              patchFrameParameterSetId_;
@@ -653,6 +664,7 @@ class PatchFrameParameterSet {
   bool                 localOverrideGeometryPatchEnableFlag_;
   bool                 patchOrientationPresentFlag_;
   std::vector<bool>    localOverrideAttributePatchEnableFlag_;
+  bool                 projection45DegreeEnableFlag_;
 };
 
 // 7.3.24 Attribute patch params syntax (apps)
@@ -1624,7 +1636,8 @@ class SequenceParameterSet {
       patchInterPredictionEnabledFlag_( false ),
       pixelDeinterleavingFlag_( false ),
       pointLocalReconstructionEnabledFlag_( false ),
-      removeDuplicatePointEnabledFlag_( false ) {
+      removeDuplicatePointEnabledFlag_( false ),
+      projection45degreeEnabledFlag_( false ) {
     layerAbsoluteCodingEnabledFlag_.clear();
     layerPredictorIndexDiff_.clear();
   }
@@ -1650,7 +1663,8 @@ class SequenceParameterSet {
                               bool     patchInterPredictionEnabledFlag,
                               bool     pixelDeinterleavingFlag,
                               bool     pointLocalReconstructionEnabledFlag,
-                              bool     removeDuplicatePointEnabledFlag ) {
+                              bool     removeDuplicatePointEnabledFlag,
+                              bool     projection45degreeEnabledFlag ) {
     sequenceParameterSetId_              = sequenceParameterSetId;
     frameWidth_                          = frameWidth;
     frameHeight_                         = frameHeight;
@@ -1667,6 +1681,7 @@ class SequenceParameterSet {
     pixelDeinterleavingFlag_             = pixelDeinterleavingFlag;
     pointLocalReconstructionEnabledFlag_ = pointLocalReconstructionEnabledFlag;
     removeDuplicatePointEnabledFlag_     = removeDuplicatePointEnabledFlag;
+    projection45degreeEnabledFlag_       = projection45degreeEnabledFlag;
     allocate();
   }
 
@@ -1691,6 +1706,7 @@ class SequenceParameterSet {
   bool              getPixelDeinterleavingFlag() { return pixelDeinterleavingFlag_; }
   bool              getPointLocalReconstructionEnabledFlag() { return pointLocalReconstructionEnabledFlag_; }
   bool              getRemoveDuplicatePointEnabledFlag() { return removeDuplicatePointEnabledFlag_; }
+  bool              getProjection45DegreeEnableFlag() { return projection45degreeEnabledFlag_; }
   size_t            getLayerPredictorIndexDiff( size_t index ) { return layerPredictorIndexDiff_[index]; }
   bool              getLayerAbsoluteCodingEnabledFlag( size_t index ) { return layerAbsoluteCodingEnabledFlag_[index]; }
   ProfileTierLevel& getProfileTierLevel() { return profileTierLevel_; }
@@ -1714,6 +1730,7 @@ class SequenceParameterSet {
   void setPixelDeinterleavingFlag( bool value ) { pixelDeinterleavingFlag_ = value; }
   void setPointLocalReconstructionEnabledFlag( bool value ) { pointLocalReconstructionEnabledFlag_ = value; }
   void setRemoveDuplicatePointEnabledFlag( bool value ) { removeDuplicatePointEnabledFlag_ = value; }
+  void setProjection45DegreeEnableFlag( bool value ) { projection45degreeEnabledFlag_ = value; }
   void setProfileTierLevel( ProfileTierLevel value ) { profileTierLevel_ = value; }
   void setGeometryParameterSet( GeometryParameterSet value ) { geometryParameterSet_ = value; }
   void setOccupancyParameterSet( OccupancyParameterSet value ) { occupancyParameterSet_ = value; }
@@ -1752,6 +1769,8 @@ class SequenceParameterSet {
   bool                               pixelDeinterleavingFlag_;
   bool                               pointLocalReconstructionEnabledFlag_;
   bool                               removeDuplicatePointEnabledFlag_;
+  bool                               projection45degreeEnabledFlag_;
+
   std::vector<bool>                  layerAbsoluteCodingEnabledFlag_;
   std::vector<size_t>                layerPredictorIndexDiff_;
   ProfileTierLevel                   profileTierLevel_;

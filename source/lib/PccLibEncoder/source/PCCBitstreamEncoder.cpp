@@ -198,6 +198,7 @@ void PCCBitstreamEncoder::sequenceParameterSet( SequenceParameterSet& sps, PCCBi
   bitstream.write( (uint32_t)sps.getPixelDeinterleavingFlag(), 1 );              // u(1)
   bitstream.write( (uint32_t)sps.getPointLocalReconstructionEnabledFlag(), 1 );  // u(1)
   bitstream.write( (uint32_t)sps.getRemoveDuplicatePointEnabledFlag(), 1 );      // u(1)
+  bitstream.write( (uint32_t)sps.getProjection45DegreeEnableFlag(), 1 );         // u(1)
 
   // THE NEXT PARAMETERS ARE NOT IN THE VPCC CD SYNTAX DOCUMENTS AND WILL BE REMOVE
   bitstream.write( (uint32_t)sps.getLosslessGeo444(), 1 );    // u(1)
@@ -664,6 +665,10 @@ void PCCBitstreamEncoder::patchFrameParameterSet( PatchFrameParameterSet& pfps,
   if ( sps.getPatchSequenceOrientationEnabledFlag() ) {
     bitstream.write( pfps.getPatchOrientationPresentFlag(), 1 );  // u(1)
   }
+  if ( sps.getProjection45DegreeEnableFlag() ) {
+    bitstream.write( pfps.getProjection45DegreeEnableFlag(), 1);  // u(1)
+  }
+
   byteAlignment( bitstream );
 }
 
@@ -685,6 +690,7 @@ void PCCBitstreamEncoder::patchFrameHeader( PatchFrameHeader& pfh,
   TRACE_BITSTREAM( "%s \n", __func__ );
   auto& psdu = context.getPatchSequenceDataUnit();
   auto& psps = psdu.getPatchSequenceParameterSet( pfh.getPatchFrameParameterSetId() );
+  auto& pfps = psdu.getPatchFrameParameterSet( pfh.getPatchFrameParameterSetId() );
 
   bitstream.writeUvlc( pfh.getPatchFrameParameterSetId() );  // ue(v )
   bitstream.writeUvlc( pfh.getAddress() );                   // u( v )
@@ -730,7 +736,14 @@ void PCCBitstreamEncoder::patchFrameHeader( PatchFrameHeader& pfh,
   }
   auto          geometryBitDepth2D     = context.getSps().getGeometryParameterSet().getGeometryNominal2dBitdepthMinus1()+1;
   const uint8_t maxBitCountForMaxDepth = uint8_t( geometryBitDepth2D - gbitCountSize[context.getSps().getMinLevel()] + 1 ); //8
+
+  if( pfps.getProjection45DegreeEnableFlag() == 0){
   pfh.setInterPredictPatch2dDeltaSizeDBitCountMinus1( maxBitCountForMaxDepth );
+  }
+  else {
+    pfh.setInterPredictPatch2dDeltaSizeDBitCountMinus1( maxBitCountForMaxDepth + 1 );
+  }
+
   if ( pfh.getType() == PATCH_FRAME_I ) {
     bitstream.write( (uint32_t)pfh.getInterPredictPatch2dShiftUBitCountMinus1(), 8 );              // u( 8 )
     bitstream.write( (uint32_t)pfh.getInterPredictPatch2dShiftVBitCountMinus1(), 8 );              // u( 8 )
@@ -955,10 +968,17 @@ void PCCBitstreamEncoder::patchDataUnit( PatchDataUnit&    pdu,
   }
   if ( projectionFlag ) { bitstream.write( pdu.getProjectionMode(), 1 ); }
 
-  TRACE_BITSTREAM( "Patch => UV %4lu %4lu S=%4ld %4ld %4ld P=%lu O=%d A=%lu %lu %lu \n", pdu.get2DShiftU(),
+  if ( pfps.getProjection45DegreeEnableFlag() ) {
+    bitstream.write( uint32_t( pdu.get45DegreeProjectionPresentFlag() ), 1 );
+  }
+  if ( pdu.get45DegreeProjectionPresentFlag() ) {
+    bitstream.write( uint32_t( pdu.get45DegreeProjectionRotationAxis() ), 2 );
+  }
+
+  TRACE_BITSTREAM( "Patch => UV %4lu %4lu S=%4ld %4ld %4ld P=%lu O=%d A=%lu %lu %lu P45= %d %d \n ", pdu.get2DShiftU(),
                   pdu.get2DShiftV(), pdu.get2DDeltaSizeU(), pdu.get2DDeltaSizeV(), pdu.get2DDeltaSizeD(), pdu.getProjectionMode(),
                   pdu.getOrientationSwapFlag(), pdu.get3DShiftTangentAxis(), pdu.get3DShiftBiTangentAxis(),
-                  pdu.get3DShiftNormalAxis() );
+                  pdu.get3DShiftNormalAxis(),pdu.get45DegreeProjectionPresentFlag(), pdu.get45DegreeProjectionRotationAxis()  );
 }
 
 // 7.3.32  Delta Patch data unit syntax
