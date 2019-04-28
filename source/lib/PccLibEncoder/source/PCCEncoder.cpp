@@ -817,19 +817,23 @@ void PCCEncoder::spatialConsistencyPackFlexible( PCCFrameContext& frame, PCCFram
   height = occupancySizeV * params_.occupancyResolution_;
   size_t maxOccupancyRow{0};
 
-  // vector<int> orientation_vertical = {
-  // PATCH_ORIENTATION_DEFAULT,PATCH_ORIENTATION_ROT90,PATCH_ORIENTATION_ROT180,
-  // PATCH_ORIENTATION_ROT270,PATCH_ORIENTATION_MIRROR,PATCH_ORIENTATION_MROT180,
-  // PATCH_ORIENTATION_MROT90,PATCH_ORIENTATION_MROT270
-  // };    // favoring vertical orientation vector<int> orientation_horizontal = {
-  // PATCH_ORIENTATION_ROT90,PATCH_ORIENTATION_DEFAULT,PATCH_ORIENTATION_ROT270,
-  // PATCH_ORIENTATION_ROT180,PATCH_ORIENTATION_MROT90,PATCH_ORIENTATION_MROT270,
-  // PATCH_ORIENTATION_MIRROR,PATCH_ORIENTATION_MROT180
-  // };    // favoring horizontal orientations (that should be rotated)
-  vector<int> orientation_vertical   = {PATCH_ORIENTATION_DEFAULT,
-                                      PATCH_ORIENTATION_SWAP};  // favoring vertical orientation
-  vector<int> orientation_horizontal = {
-      PATCH_ORIENTATION_SWAP, PATCH_ORIENTATION_DEFAULT};  // favoring horizontal orientations (that should be rotated)
+  vector<int> orientation_vertical = { PATCH_ORIENTATION_DEFAULT,
+										PATCH_ORIENTATION_SWAP,
+										PATCH_ORIENTATION_ROT180,
+										PATCH_ORIENTATION_MIRROR,
+										PATCH_ORIENTATION_MROT180,
+										PATCH_ORIENTATION_ROT270,
+										PATCH_ORIENTATION_MROT90,
+										PATCH_ORIENTATION_ROT90 };  // favoring vertical orientation
+  vector<int> orientation_horizontal = { PATCH_ORIENTATION_SWAP,
+										PATCH_ORIENTATION_DEFAULT,
+										PATCH_ORIENTATION_ROT270,
+										PATCH_ORIENTATION_MROT90,
+										PATCH_ORIENTATION_ROT90,
+										PATCH_ORIENTATION_ROT180,
+										PATCH_ORIENTATION_MIRROR,
+										PATCH_ORIENTATION_MROT180 };  // favoring horizontal orientations (that should be rotated) 
+  int numOrientations = params_.useEightOrientations_ ? 8 : 2;
   std::vector<bool> occupancyMap;
   occupancyMap.resize( occupancySizeU * occupancySizeV, false );
   for ( auto& patch : patches ) {
@@ -871,7 +875,7 @@ void PCCEncoder::spatialConsistencyPackFlexible( PCCFrameContext& frame, PCCFram
           for ( size_t u = 0; u < occupancySizeU && !locationFound; ++u ) {
             patch.getU0() = u;
             patch.getV0() = v;
-            for ( size_t orientationIdx = 0; orientationIdx < pow( 2, params_.packingStrategy_ ) && !locationFound;
+            for ( size_t orientationIdx = 0; orientationIdx < numOrientations && !locationFound;
                   orientationIdx++ ) {
               if ( patch.getSizeU0() > patch.getSizeV0() ) {
                 patch.getPatchOrientation() = orientation_horizontal[orientationIdx];
@@ -1043,17 +1047,21 @@ void PCCEncoder::spatialConsistencyPackTetris( PCCFrameContext& frame, PCCFrameC
             y += ( ( x >= 0 ) ? -1 : 1 );
         }
       } else {
-        // vector<int> orientation_values = {
-        // PATCH_ORIENTATION_DEFAULT,PATCH_ORIENTATION_ROT90,PATCH_ORIENTATION_ROT180,PATCH_ORIENTATION_ROT270,PATCH_ORIENTATION_MIRROR,PATCH_ORIENTATION_MROT180,PATCH_ORIENTATION_MROT90,PATCH_ORIENTATION_MROT270
-        // };    // favoring vertical orientation
-        vector<int> orientation_values = {PATCH_ORIENTATION_DEFAULT,
-                                          PATCH_ORIENTATION_SWAP};  // favoring vertical orientation
-        // tetris packing
+	    vector<int> orientation_values = { PATCH_ORIENTATION_DEFAULT,
+												PATCH_ORIENTATION_SWAP,
+												PATCH_ORIENTATION_ROT180,
+												PATCH_ORIENTATION_MIRROR,
+												PATCH_ORIENTATION_MROT180,
+												PATCH_ORIENTATION_ROT270,
+												PATCH_ORIENTATION_MROT90,
+												PATCH_ORIENTATION_ROT90 };  // favoring vertical orientation
+		int numOrientations = params_.useEightOrientations_ ? 8 : 2;
+		// tetris packing
         for ( size_t u = 0; u < occupancySizeU; ++u ) {
           for ( size_t v = 0; v < occupancySizeV; ++v ) {
             patch.getU0() = u;
             patch.getV0() = v;
-            for ( size_t orientationIdx = 0; orientationIdx < pow( 2, params_.packingStrategy_ - 1 );
+            for ( size_t orientationIdx = 0; orientationIdx < numOrientations;
                   orientationIdx++ ) {
               patch.getPatchOrientation() = orientation_values[orientationIdx];
               if ( !patch.isPatchLocationAboveHorizon( horizon, top_horizon, bottom_horizon, right_horizon,
@@ -1215,15 +1223,23 @@ void PCCEncoder::packFlexible( PCCFrameContext& frame, int safeguard ) {
   size_t maxOccupancyRow{0};
 
   std::vector<bool> occupancyMap;
-  // vector<int> orientation_vertical = {
-  // PATCH_ORIENTATION_DEFAULT,PATCH_ORIENTATION_ROT90,PATCH_ORIENTATION_ROT180,PATCH_ORIENTATION_ROT270,PATCH_ORIENTATION_MIRROR,PATCH_ORIENTATION_MROT180,PATCH_ORIENTATION_MROT90,PATCH_ORIENTATION_MROT270
-  // };    // favoring vertical orientation vector<int> orientation_horizontal = {
-  // PATCH_ORIENTATION_ROT90,PATCH_ORIENTATION_DEFAULT,PATCH_ORIENTATION_ROT270,PATCH_ORIENTATION_ROT180,PATCH_ORIENTATION_MROT90,PATCH_ORIENTATION_MROT270,PATCH_ORIENTATION_MIRROR,PATCH_ORIENTATION_MROT180
-  // };    // favoring horizontal orientations (that should be rotated)
-  vector<int> orientation_vertical   = {PATCH_ORIENTATION_DEFAULT,
-                                      PATCH_ORIENTATION_SWAP};  // favoring vertical orientation
-  vector<int> orientation_horizontal = {
-      PATCH_ORIENTATION_SWAP, PATCH_ORIENTATION_DEFAULT};  // favoring horizontal orientations (that should be rotated)
+  vector<int> orientation_vertical = { PATCH_ORIENTATION_DEFAULT,
+										PATCH_ORIENTATION_SWAP,
+										PATCH_ORIENTATION_ROT180,
+										PATCH_ORIENTATION_MIRROR,
+										PATCH_ORIENTATION_MROT180,
+										PATCH_ORIENTATION_ROT270,
+										PATCH_ORIENTATION_MROT90,
+										PATCH_ORIENTATION_ROT90 };  // favoring vertical orientation
+  vector<int> orientation_horizontal = { PATCH_ORIENTATION_SWAP,
+										PATCH_ORIENTATION_DEFAULT,
+										PATCH_ORIENTATION_ROT270,
+										PATCH_ORIENTATION_MROT90,
+										PATCH_ORIENTATION_ROT90,
+										PATCH_ORIENTATION_ROT180,
+										PATCH_ORIENTATION_MIRROR,
+										PATCH_ORIENTATION_MROT180 };  // favoring horizontal orientations (that should be rotated) 
+  int numOrientations = params_.useEightOrientations_ ? 8 : 2;
   occupancyMap.resize( occupancySizeU * occupancySizeV, false );
   for ( auto& patch : patches ) {
     assert( patch.getSizeU0() <= occupancySizeU );
@@ -1235,7 +1251,7 @@ void PCCEncoder::packFlexible( PCCFrameContext& frame, int safeguard ) {
         for ( size_t u = 0; u < occupancySizeU && !locationFound; ++u ) {
           patch.getU0() = u;
           patch.getV0() = v;
-          for ( size_t orientationIdx = 0; orientationIdx < pow( 2, params_.packingStrategy_ ) && !locationFound;
+          for ( size_t orientationIdx = 0; orientationIdx < numOrientations && !locationFound;
                 orientationIdx++ ) {
             if ( patch.getSizeU0() > patch.getSizeV0() ) {
               patch.getPatchOrientation() = orientation_horizontal[orientationIdx];
@@ -1333,13 +1349,16 @@ void PCCEncoder::packTetris( PCCFrameContext& frame, int safeguard ) {
 
     bool locationFound = false;
     // try to place the patch tetris-style
-    // vector<int> orientation_values = {
-    // PATCH_ORIENTATION_DEFAULT,PATCH_ORIENTATION_ROT90,PATCH_ORIENTATION_ROT180,PATCH_ORIENTATION_ROT270,PATCH_ORIENTATION_MIRROR,PATCH_ORIENTATION_MROT180,PATCH_ORIENTATION_MROT90,PATCH_ORIENTATION_MROT270
-    // };    // favoring vertical orientation
-    vector<int> orientation_values = {
-        PATCH_ORIENTATION_DEFAULT,
-        PATCH_ORIENTATION_SWAP};  // favoring horizontal orientations (that should be rotated)
-    while ( !locationFound ) {
+	vector<int> orientation_values = { PATCH_ORIENTATION_DEFAULT,
+										  PATCH_ORIENTATION_SWAP,
+										  PATCH_ORIENTATION_ROT180,
+										  PATCH_ORIENTATION_MIRROR,
+										  PATCH_ORIENTATION_MROT180,
+										  PATCH_ORIENTATION_ROT270,
+										  PATCH_ORIENTATION_MROT90,
+										  PATCH_ORIENTATION_ROT90 };  // favoring vertical orientation
+	int numOrientations = params_.useEightOrientations_ ? 8 : 2;
+	while ( !locationFound ) {
       int    best_wasted_space = ( std::numeric_limits<int>::max )();
       size_t best_u, best_v;
       int    best_orientation;
@@ -1347,7 +1366,7 @@ void PCCEncoder::packTetris( PCCFrameContext& frame, int safeguard ) {
         for ( size_t v = 0; v < occupancySizeV; ++v ) {
           patch.getU0() = u;
           patch.getV0() = v;
-          for ( size_t orientationIdx = 0; orientationIdx < pow( 2, params_.packingStrategy_ - 1 ); orientationIdx++ ) {
+          for ( size_t orientationIdx = 0; orientationIdx < numOrientations; orientationIdx++ ) {
             patch.getPatchOrientation() = orientation_values[orientationIdx];
             if ( !patch.isPatchLocationAboveHorizon( horizon, top_horizon, bottom_horizon, right_horizon,
                                                      left_horizon ) ) {
@@ -3807,10 +3826,23 @@ size_t PCCEncoder::unionPatchGenerationAndPacking( const GlobalPatches& globalPa
   size_t maxOccupancyRow{0};
 
   std::vector<bool> occupancyMap;
-  vector<int>       orientation_vertical   = {PATCH_ORIENTATION_DEFAULT,
-                                      PATCH_ORIENTATION_SWAP};  // favoring vertical orientation
-  vector<int>       orientation_horizontal = {
-      PATCH_ORIENTATION_SWAP, PATCH_ORIENTATION_DEFAULT};  // favoring horizontal orientations (that should be rotated)
+  vector<int> orientation_vertical = { PATCH_ORIENTATION_DEFAULT,
+										PATCH_ORIENTATION_SWAP,
+										PATCH_ORIENTATION_ROT180,
+										PATCH_ORIENTATION_MIRROR,
+										PATCH_ORIENTATION_MROT180,
+										PATCH_ORIENTATION_ROT270,
+										PATCH_ORIENTATION_MROT90,
+										PATCH_ORIENTATION_ROT90 };  // favoring vertical orientation
+  vector<int> orientation_horizontal = { PATCH_ORIENTATION_SWAP,
+										PATCH_ORIENTATION_DEFAULT,
+										PATCH_ORIENTATION_ROT270,
+										PATCH_ORIENTATION_MROT90,
+										PATCH_ORIENTATION_ROT90,
+										PATCH_ORIENTATION_ROT180,
+										PATCH_ORIENTATION_MIRROR,
+										PATCH_ORIENTATION_MROT180 };  // favoring horizontal orientations (that should be rotated) 
+  int numOrientations = params_.useEightOrientations_ ? 8 : 2;
   occupancyMap.resize( occupancySizeU * occupancySizeV, false );
   for ( unionPatch::iterator iter = unionPatchTemp.begin(); iter != unionPatchTemp.end(); iter++ ) {
     auto& curPatchUnion = iter->second;  // [u0, v0] may be modified;
@@ -3843,7 +3875,7 @@ size_t PCCEncoder::unionPatchGenerationAndPacking( const GlobalPatches& globalPa
                 }
               }
             } else {
-              for ( size_t orientationIdx = 0; orientationIdx < pow( 2, params_.packingStrategy_ ) && !locationFound;
+              for ( size_t orientationIdx = 0; orientationIdx < numOrientations && !locationFound;
                     orientationIdx++ ) {
                 if ( curPatchUnion.getSizeU0() > curPatchUnion.getSizeV0() ) {
                   curPatchUnion.getPatchOrientation() = orientation_horizontal[orientationIdx];
@@ -3957,19 +3989,25 @@ void PCCEncoder::packingFirstFrame( PCCContext& context,
     std::cout << "actualImageSizeU " << widthGPA << std::endl;
     std::cout << "actualImageSizeV " << heithGPA << std::endl;
   } else {
-    // vector<int> orientation_vertical = { PATCH_ORIENTATION_DEFAULT,PATCH_ORIENTATION_ROT90,
-    // PATCH_ORIENTATION_ROT180,PATCH_ORIENTATION_ROT270,PATCH_ORIENTATION_MIRROR,PATCH_ORIENTATION_MROT180,
-    // PATCH_ORIENTATION_MROT90,PATCH_ORIENTATION_MROT270 };    // favoring vertical orientation
-    // vector<int> orientation_horizontal = { PATCH_ORIENTATION_ROT90,PATCH_ORIENTATION_DEFAULT,
-    // PATCH_ORIENTATION_ROT270,PATCH_ORIENTATION_ROT180,PATCH_ORIENTATION_MROT90,PATCH_ORIENTATION_MROT270,
-    // PATCH_ORIENTATION_MIRROR,PATCH_ORIENTATION_MROT180 };    // favoring horizontal orientations
-    // (that should be rotated)
-    vector<int> orientation_vertical   = {PATCH_ORIENTATION_DEFAULT,
-                                        PATCH_ORIENTATION_SWAP};  // favoring vertical orientation
-    vector<int> orientation_horizontal = {
-        PATCH_ORIENTATION_SWAP,
-        PATCH_ORIENTATION_DEFAULT};  // favoring horizontal orientations (that should be rotated)
-    std::vector<bool> occupancyMap;
+	vector<int> orientation_vertical = { PATCH_ORIENTATION_DEFAULT,
+										  PATCH_ORIENTATION_SWAP,
+										  PATCH_ORIENTATION_ROT180,
+										  PATCH_ORIENTATION_MIRROR,
+										  PATCH_ORIENTATION_MROT180,
+										  PATCH_ORIENTATION_ROT270,
+										  PATCH_ORIENTATION_MROT90,
+										  PATCH_ORIENTATION_ROT90 };  // favoring vertical orientation
+	vector<int> orientation_horizontal = {
+		  PATCH_ORIENTATION_SWAP, PATCH_ORIENTATION_DEFAULT,
+										  PATCH_ORIENTATION_ROT270,
+										  PATCH_ORIENTATION_MROT90,
+										  PATCH_ORIENTATION_ROT90,
+										  PATCH_ORIENTATION_ROT180,
+										  PATCH_ORIENTATION_MIRROR,
+										  PATCH_ORIENTATION_MROT180 };  // favoring horizontal orientations (that should be rotated) 
+    int numOrientations = params_.useEightOrientations_ ? 8 : 2;
+
+	std::vector<bool> occupancyMap;
     occupancyMap.resize( occupancySizeU * occupancySizeV, false );
 
     for ( auto& patch : patches ) {
@@ -4018,7 +4056,7 @@ void PCCEncoder::packingFirstFrame( PCCContext& context,
             for ( size_t u = 0; u < occupancySizeU && !locationFound; ++u ) {
               curGPAPatchData.u0 = u;
               curGPAPatchData.v0 = v;
-              for ( size_t orientationIdx = 0; orientationIdx < pow( 2, params_.packingStrategy_ ) && !locationFound;
+              for ( size_t orientationIdx = 0; orientationIdx < numOrientations && !locationFound;
                     orientationIdx++ ) {
                 if ( curGPAPatchData.sizeU0 > curGPAPatchData.sizeV0 ) {
                   curGPAPatchData.patchOrientation = orientation_horizontal[orientationIdx];
@@ -4255,10 +4293,22 @@ void PCCEncoder::packingWithoutRefForFirstFrameNoglobalPatch( PCCPatch&         
                                                               size_t&            widthGPA,
                                                               size_t             maxOccupancyRow ) {
   vector<int> orientation_vertical   = {PATCH_ORIENTATION_DEFAULT,
-                                      PATCH_ORIENTATION_SWAP};  // favoring vertical orientation
-  vector<int> orientation_horizontal = {
-      PATCH_ORIENTATION_SWAP, PATCH_ORIENTATION_DEFAULT};  // favoring horizontal orientations (that should be rotated)
-
+									    PATCH_ORIENTATION_SWAP,
+									    PATCH_ORIENTATION_ROT180,
+									    PATCH_ORIENTATION_MIRROR,
+									    PATCH_ORIENTATION_MROT180,
+									    PATCH_ORIENTATION_ROT270,
+									    PATCH_ORIENTATION_MROT90,
+									    PATCH_ORIENTATION_ROT90 };  // favoring vertical orientation
+  vector<int> orientation_horizontal = {PATCH_ORIENTATION_SWAP, 
+	                                    PATCH_ORIENTATION_DEFAULT,
+										PATCH_ORIENTATION_ROT270,
+										PATCH_ORIENTATION_MROT90,
+										PATCH_ORIENTATION_ROT90,
+										PATCH_ORIENTATION_ROT180,
+										PATCH_ORIENTATION_MIRROR,
+										PATCH_ORIENTATION_MROT180 };  // favoring horizontal orientations (that should be rotated) 
+  int numOrientations = params_.useEightOrientations_ ? 8 : 2;
   GPAPatchData& preGPAPatchData = patch.getCurGPAPatchData();
 
   assert( preGPAPatchData.sizeU0 <= occupancySizeU );
@@ -4279,7 +4329,7 @@ void PCCEncoder::packingWithoutRefForFirstFrameNoglobalPatch( PCCPatch&         
             }
           }
         } else {  // try several orientation.
-          for ( size_t orientationIdx = 0; orientationIdx < pow( 2, params_.packingStrategy_ ) && !locationFound;
+          for ( size_t orientationIdx = 0; orientationIdx < numOrientations && !locationFound;
                 orientationIdx++ ) {
             if ( patch.getSizeU0() > patch.getSizeV0() ) {
               preGPAPatchData.patchOrientation = orientation_horizontal[orientationIdx];
@@ -4337,10 +4387,23 @@ void PCCEncoder::packingWithRefForFirstFrameNoglobalPatch( PCCPatch&            
                                                            size_t&                     heightGPA,
                                                            size_t&                     widthGPA,
                                                            size_t                      maxOccupancyRow ) {
-  vector<int> orientation_vertical   = {PATCH_ORIENTATION_DEFAULT,
-                                      PATCH_ORIENTATION_SWAP};  // favoring vertical orientation
-  vector<int> orientation_horizontal = {
-      PATCH_ORIENTATION_SWAP, PATCH_ORIENTATION_DEFAULT};  // favoring horizontal orientations (that should be rotated)
+  vector<int> orientation_vertical = { PATCH_ORIENTATION_DEFAULT,
+										  PATCH_ORIENTATION_SWAP,
+										  PATCH_ORIENTATION_ROT180,
+										  PATCH_ORIENTATION_MIRROR,
+										  PATCH_ORIENTATION_MROT180,
+										  PATCH_ORIENTATION_ROT270,
+										  PATCH_ORIENTATION_MROT90,
+										  PATCH_ORIENTATION_ROT90 };  // favoring vertical orientation
+  vector<int> orientation_horizontal = { PATCH_ORIENTATION_SWAP,
+										  PATCH_ORIENTATION_DEFAULT,
+										  PATCH_ORIENTATION_ROT270,
+										  PATCH_ORIENTATION_MROT90,
+										  PATCH_ORIENTATION_ROT90,
+										  PATCH_ORIENTATION_ROT180,
+										  PATCH_ORIENTATION_MIRROR,
+										  PATCH_ORIENTATION_MROT180 };  // favoring horizontal orientations (that should be rotated) 
+  int numOrientations = params_.useEightOrientations_ ? 8 : 2;
 
   GPAPatchData& preGPAPatchData = patch.getCurGPAPatchData();
 
@@ -4395,7 +4458,7 @@ void PCCEncoder::packingWithRefForFirstFrameNoglobalPatch( PCCPatch&            
         for ( size_t u = 0; u < occupancySizeU && !locationFound; ++u ) {
           preGPAPatchData.u0 = u;
           preGPAPatchData.v0 = v;
-          for ( size_t orientationIdx = 0; orientationIdx < pow( 2, params_.packingStrategy_ ) && !locationFound;
+          for ( size_t orientationIdx = 0; orientationIdx < numOrientations && !locationFound;
                 orientationIdx++ ) {
             if ( patch.getSizeU0() > patch.getSizeV0() ) {
               preGPAPatchData.patchOrientation = orientation_horizontal[orientationIdx];
@@ -4614,6 +4677,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
   refList.setNumRefEntries( 1 );
   refList.addAbsDeltaPfocSt( 1 );
   psps.addRefListStruct( refList );
+  psps.setUseEightOrientationsFlag(params_.useEightOrientations_);
   psdu.addPatchSequenceUnitPayload( PSD_FPS, 0 );
   psdu.addPatchSequenceUnitPayload( PSD_GFPS, 0 );
   setGeometryFrameParameterSet( context.getGOFLevelMetadata(), psdu.getGeometryFrameParameterSet( 0 ) );
@@ -4682,7 +4746,6 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
   pfdu.setPatchCount( patches.size() );
   pflu.setFrameIndex( frameIndex );
   pfh.setPatchFrameOrderCntLsb( frameIndex );
-  pfps.setPatchOrientationPresentFlag( params_.packingStrategy_ > 0 );
   if ( ( frameIndex == 0 ) || ( !sps.getPatchInterPredictionEnabledFlag() ) ) {
     pfh.setType( PATCH_FRAME_I );
     frame.getNumMatchedPatches() = 0;
@@ -4692,8 +4755,6 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
 
   TRACE_CODEC( "Patches size                        = %lu \n", patches.size() );
   TRACE_CODEC( "OccupancyPackingBlockSize           = %d \n", ops.getOccupancyPackingBlockSize() );
-  TRACE_CODEC( "PatchSequenceOrientationEnabledFlag = %d \n", sps.getPatchSequenceOrientationEnabledFlag() );
-  TRACE_CODEC( "PatchOrientationPresentFlag         = %d \n", pfps.getPatchOrientationPresentFlag() );
   TRACE_CODEC( "PatchInterPredictionEnabledFlag     = %d \n", sps.getPatchInterPredictionEnabledFlag() );
 
   // Inter patches
@@ -4766,8 +4827,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
     pdu.setNormalAxis( static_cast<pcc::PCCAxis3>( patch.getNormalAxis() ) );
     pdu.set2DDeltaSizeU( patch.getSizeU0() - prevSizeU0 );
     pdu.set2DDeltaSizeV( patch.getSizeV0() - prevSizeV0 );
-    pdu.setOrientationSwapFlag( pfps.getPatchOrientationPresentFlag() &&
-                                patch.getPatchOrientation() != PATCH_ORIENTATION_DEFAULT );
+    pdu.setOrientationIndex(patch.getPatchOrientation());
 
     pdu.set45DegreeProjectionPresentFlag( patch.getAxisOfAdditionalPlane() == 0 ? 0 : 1 );
     pdu.set45DegreeProjectionRotationAxis( patch.getAxisOfAdditionalPlane() );

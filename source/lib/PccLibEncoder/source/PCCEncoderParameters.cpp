@@ -130,6 +130,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   packingStrategy_   = 1;
   textureBGFill_     = 1;
   safeGuardDistance_ = 0;
+  useEightOrientations_ = false;
 
   // lossy missed points patch
   lossyMissedPointsPatch_          = false;
@@ -212,6 +213,7 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   minimumImageWidth                    " << minimumImageWidth_ << std::endl;
   std::cout << "\t   minimumImageHeight                   " << minimumImageHeight_ << std::endl;
   std::cout << "\t   packingStrategy                      " << packingStrategy_ << std::endl;
+  std::cout << "\t   useEightOrientations                 " << useEightOrientations_ << std::endl;
   std::cout << "\t   safeGuardDistance                    " << safeGuardDistance_ << std::endl;
   std::cout << "\t   globalPatchAllocation                " << globalPatchAllocation_ << std::endl;
   std::cout << "\t   textureBGFill                        " << textureBGFill_ << std::endl;

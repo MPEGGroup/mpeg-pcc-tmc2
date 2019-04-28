@@ -277,8 +277,9 @@ class PCCBitstream {
     if ( trace_ ) {
       FILE* output = traceFile_ ? traceFile_ : stdout;
       fprintf( output, "[%6llu - %2u]: ", position_.bytes, position_.bits );
-      fprintf( output, "%s", pFormat, eArgs... );
-      fflush( output );
+	  //fprintf(output, "%s", pFormat, eArgs...);
+	  fprintf(output, pFormat, eArgs...);
+	  fflush( output );
     }
   }
   void setTrace( bool trace ) { trace_ = trace; }

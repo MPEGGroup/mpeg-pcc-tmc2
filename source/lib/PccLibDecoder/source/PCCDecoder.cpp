@@ -433,8 +433,6 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
 
   TRACE_CODEC( "Patches size                        = %lu \n", patches.size() );
   TRACE_CODEC( "OccupancyPackingBlockSize           = %d \n", ops.getOccupancyPackingBlockSize() );
-  TRACE_CODEC( "PatchSequenceOrientationEnabledFlag = %d \n", sps.getPatchSequenceOrientationEnabledFlag() );
-  TRACE_CODEC( "PatchOrientationPresentFlag         = %d \n", pfps.getPatchOrientationPresentFlag() );
   TRACE_CODEC( "PatchInterPredictionEnabledFlag     = %d \n", sps.getPatchInterPredictionEnabledFlag() );
 
   for ( size_t patchIndex = 0; patchIndex < pfdu.getPatchCount(); ++patchIndex ) {
@@ -456,9 +454,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
       patch.getSizeV0()           = prevSizeV0 + pdu.get2DDeltaSizeV();
       patch.getNormalAxis()       = pdu.getNormalAxis();
       patch.getProjectionMode()   = sps.getLayerAbsoluteCodingEnabledFlag( 1 ) ? pdu.getProjectionMode() : 0;
-      patch.getPatchOrientation() = pfps.getPatchOrientationPresentFlag() && pdu.getOrientationSwapFlag()
-                                        ? PATCH_ORIENTATION_SWAP
-                                        : PATCH_ORIENTATION_DEFAULT;
+      patch.getPatchOrientation() = pdu.getOrientationIndex();
       patch.getAxisOfAdditionalPlane() = pdu.get45DegreeProjectionPresentFlag() ? pdu.get45DegreeProjectionRotationAxis() : 0;
       TRACE_CODEC( "patch %lu / %lu: Intra \n", patchIndex, patches.size() );
       if ( patch.getProjectionMode() == 0 ) {

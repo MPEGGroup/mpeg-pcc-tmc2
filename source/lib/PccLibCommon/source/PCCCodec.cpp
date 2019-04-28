@@ -569,8 +569,8 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
                         ( 1 << bits ) - occupancyMap[patch.patch2Canvas( u, v, imageWidth, imageHeight, x, y )];
                     eddCode = symbol | ( 1 << bits );
                   }
-                }
-                PCCPoint3D point1( point0 );
+				}
+				PCCPoint3D point1( point0 );
                 if ( eddCode == 0 ) {
                   if ( !params.removeDuplicatePoints_ ) {
                     const size_t pointIndex1 = reconstruct.addPoint( point1 );
@@ -1364,7 +1364,7 @@ void PCCCodec::generateOccupancyMap( PCCFrameContext&            frame,
         occupancyMap[v*width + u] = 0;
       }
       else {
-        occupancyMap[v*width + u] = 1;
+        occupancyMap[v*width + u] = pixel; //TODO: TEMPORARY FIX FOR LOSSLESS CODING
       }
     }
   }

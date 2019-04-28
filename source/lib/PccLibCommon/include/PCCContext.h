@@ -53,7 +53,9 @@ typedef std::pair<size_t, size_t>                   GlobalPatch;    // [FrameInd
 typedef std::map<size_t, std::vector<GlobalPatch> > GlobalPatches;  // [TrackIndex, <GlobalPatch>]
 typedef std::pair<size_t, size_t>                   SubContext;     // [start, end)
 
-// 7.3.34 Point local reconstruction syntax
+// 7.3.5.22 Supplemental enhancement information message syntax TODO: implement this class
+
+// 7.3.5.21 Point local reconstruction syntax
 class PointLocalReconstruction {
  public:
   PointLocalReconstruction() : plrBlockToPatchMapHeight_( 0 ), plrBlockToPatchMapWidth_( 0 ) {
@@ -125,7 +127,7 @@ class PointLocalReconstruction {
   std::vector<bool>    plrModeFillingFlag_;
 };
 
-// 7.3.33  PCM patch data unit syntax (
+// 7.3.5.20  PCM patch data unit syntax (
 class PCMPatchDataUnit {
  public:
   PCMPatchDataUnit() :
@@ -161,7 +163,7 @@ class PCMPatchDataUnit {
   uint32_t ppduPcmPoints_;
 };
 
-// 7.3.32  Delta Patch data unit syntax
+// 7.3.5.19  Delta Patch data unit syntax
 class DeltaPatchDataUnit {
  public:
   DeltaPatchDataUnit() :
@@ -175,7 +177,6 @@ class DeltaPatchDataUnit {
       dpdu3DDeltaShiftBiTangentAxis_( 0 ),
       dpdu3DDeltaShiftNormalAxis_( 0 ),
       dpduNormalAxis_( PCC_AXIS3_Z ),
-      dpduOrientationSwapFlag_( false ),
       dpduLod_( 0 ),
       dpduProjectionMode_( false ){};
   ~DeltaPatchDataUnit(){};
@@ -191,7 +192,6 @@ class DeltaPatchDataUnit {
   int64_t  get3DDeltaShiftBiTangentAxis() { return dpdu3DDeltaShiftBiTangentAxis_; }
   int64_t  get3DDeltaShiftNormalAxis() { return dpdu3DDeltaShiftNormalAxis_; }
   PCCAxis3 getNormalAxis() { return dpduNormalAxis_; }
-  uint8_t  getOrientationSwapFlag() { return dpduOrientationSwapFlag_; }
   uint8_t  getLod() { return dpduLod_; }
   bool     getProjectionMode() { return dpduProjectionMode_; }
 
@@ -205,7 +205,6 @@ class DeltaPatchDataUnit {
   void set3DDeltaShiftBiTangentAxis( int64_t value ) { dpdu3DDeltaShiftBiTangentAxis_ = value; }
   void set3DDeltaShiftNormalAxis( int64_t value ) { dpdu3DDeltaShiftNormalAxis_ = value; }
   void setNormalAxis( PCCAxis3 value ) { dpduNormalAxis_ = value; }
-  void setOrientationSwapFlag( bool value ) { dpduOrientationSwapFlag_ = value; }
   void setLod( uint8_t value ) { dpduLod_ = value; }
   void setProjectionMode( bool value ) { dpduProjectionMode_ = value; }
 
@@ -220,12 +219,11 @@ class DeltaPatchDataUnit {
   int64_t  dpdu3DDeltaShiftBiTangentAxis_;
   int64_t  dpdu3DDeltaShiftNormalAxis_;
   PCCAxis3 dpduNormalAxis_;
-  bool     dpduOrientationSwapFlag_;
   uint8_t  dpduLod_;
   bool     dpduProjectionMode_;
 };
 
-// 7.3.31  Patch data unit syntax (pdu)
+// 7.3.5.18  Patch data unit syntax (pdu)
 class PatchDataUnit {
  public:
   PatchDataUnit() :
@@ -238,7 +236,7 @@ class PatchDataUnit {
       pdu3DShiftBiTangentAxis_( 0 ),
       pdu3DShiftNormalAxis_( 0 ),
       pduNormalAxis_( PCC_AXIS3_Z ),
-      pduOrientationSwapFlag_( false ),
+      pduOrientationIndex_( 0 ),
       pduLod_( 0 ),
       pduProjectionMode_( false ),
       pdu45DegreeProjectionPresentFlag_( false ),
@@ -257,7 +255,7 @@ class PatchDataUnit {
   size_t   get3DShiftBiTangentAxis() { return pdu3DShiftBiTangentAxis_; }
   size_t   get3DShiftNormalAxis() { return pdu3DShiftNormalAxis_; }
   PCCAxis3 getNormalAxis() { return pduNormalAxis_; }
-  uint8_t  getOrientationSwapFlag() { return pduOrientationSwapFlag_; }
+  uint8_t  getOrientationIndex() { return pduOrientationIndex_; }
   uint8_t  getLod() { return pduLod_; }
   bool     getProjectionMode() { return pduProjectionMode_; }
   bool     get45DegreeProjectionPresentFlag() { return pdu45DegreeProjectionPresentFlag_; }
@@ -272,7 +270,7 @@ class PatchDataUnit {
   void set3DShiftBiTangentAxis( size_t value ) { pdu3DShiftBiTangentAxis_ = value; }
   void set3DShiftNormalAxis( size_t value ) { pdu3DShiftNormalAxis_ = value; }
   void setNormalAxis( PCCAxis3 value ) { pduNormalAxis_ = value; }
-  void setOrientationSwapFlag( bool value ) { pduOrientationSwapFlag_ = value; }
+  void setOrientationIndex(uint8_t value ) { pduOrientationIndex_ = value; }
   void setLod( uint8_t value ) { pduLod_ = value; }
   void setProjectionMode( bool value ) { pduProjectionMode_ = value; }
   void set45DegreeProjectionPresentFlag(bool value) { pdu45DegreeProjectionPresentFlag_ = value; }
@@ -288,14 +286,14 @@ class PatchDataUnit {
   size_t   pdu3DShiftBiTangentAxis_;
   size_t   pdu3DShiftNormalAxis_;
   PCCAxis3 pduNormalAxis_;
-  bool     pduOrientationSwapFlag_;
+  uint8_t  pduOrientationIndex_;
   uint8_t  pduLod_;
   bool     pduProjectionMode_;
   bool     pdu45DegreeProjectionPresentFlag_;
   uint8_t  pdu45DegreeProjectionRotationAxis_;
 };
 
-// 7.3.30  Patch information data syntax (pid)
+// 7.3.5.17  Patch information data syntax (pid)
 class PatchInformationData {
  public:
   PatchInformationData( size_t size = 0 ) { allocate( size ); };
@@ -349,7 +347,7 @@ class PatchInformationData {
   PCMPatchDataUnit     pcmPatchDataUnit_;
 };
 
-// 7.3.29  Patch frame data unit syntax (pfdu)
+// 7.3.5.16  Patch frame data unit syntax (pfdu)
 class PatchFrameDataUnit {
  public:
   PatchFrameDataUnit() {}
@@ -402,7 +400,7 @@ class PatchFrameDataUnit {
   PointLocalReconstruction          pointLocalReconstruction_;
 };
 
-// 7.3.28  Reference list structure syntax
+// 7.3.5.15  Reference list structure syntax
 class RefListStruct {
  public:
   RefListStruct() : numRefEntries_( 0 ) {
@@ -451,7 +449,7 @@ class RefListStruct {
   std::vector<bool>    strpfEntrySignFlag_;
 };
 
-// 7.3.27  Patch frame header syntax (pfh)
+// 7.3.5.14  Patch frame header syntax (pfh) TODO: should we create variables similar to CD text?
 class PatchFrameHeader {
  public:
   PatchFrameHeader() :
@@ -585,7 +583,7 @@ class PatchFrameHeader {
   bool                  interPredictPatchLodBitCountFlag_;
 };
 
-// 7.3.26  Patch frame layer unit syntax
+// 7.3.5.13  Patch frame layer unit syntax
 class PatchFrameLayerUnit {
  public:
   PatchFrameLayerUnit() : frameIndex_( 0 ) {}
@@ -605,7 +603,7 @@ class PatchFrameLayerUnit {
   PatchFrameDataUnit patchFrameDataUnit_;
 };
 
-// 7.3.25  Patch frame parameter set syntax
+// 7.3.5.12  Patch frame parameter set syntax 
 class PatchFrameParameterSet {
  public:
   PatchFrameParameterSet() :
@@ -614,7 +612,6 @@ class PatchFrameParameterSet {
       geometryPatchFrameParameterSetId_( 0 ),
       additionalLtPfocLsbLen_( 0 ),
       localOverrideGeometryPatchEnableFlag_( false ),
-      patchOrientationPresentFlag_( false ),
       projection45DegreeEnableFlag_( false ) {
     allocatePatchFrame();
   }
@@ -637,7 +634,6 @@ class PatchFrameParameterSet {
   bool    getLocalOverrideAttributePatchEnableFlag( size_t index ) {
     return localOverrideAttributePatchEnableFlag_[index];
   }
-  bool getPatchOrientationPresentFlag() { return patchOrientationPresentFlag_; }
   bool getLocalOverrideGeometryPatchEnableFlag() { return localOverrideGeometryPatchEnableFlag_; }
   bool getProjection45DegreeEnableFlag() { return projection45DegreeEnableFlag_;}
 
@@ -651,7 +647,6 @@ class PatchFrameParameterSet {
   void setLocalOverrideAttributePatchEnableFlag( size_t index, bool value ) {
     localOverrideAttributePatchEnableFlag_[index] = value;
   }
-  void setPatchOrientationPresentFlag( bool value ) { patchOrientationPresentFlag_ = value; }
   void setLocalOverrideGeometryPatchEnableFlag( bool value ) { localOverrideGeometryPatchEnableFlag_ = value; }
   void setProjection45DegreeEnableFlag( bool value ) { projection45DegreeEnableFlag_ = value; }
 
@@ -662,12 +657,11 @@ class PatchFrameParameterSet {
   std::vector<uint8_t> attributePatchFrameParameterSetId_;
   uint8_t              additionalLtPfocLsbLen_;
   bool                 localOverrideGeometryPatchEnableFlag_;
-  bool                 patchOrientationPresentFlag_;
   std::vector<bool>    localOverrideAttributePatchEnableFlag_;
   bool                 projection45DegreeEnableFlag_;
 };
 
-// 7.3.24 Attribute patch params syntax (apps)
+// 7.3.5.11 Attribute patch params syntax (apps)
 class AttributePatchParams {
  public:
   AttributePatchParams() :
@@ -702,7 +696,7 @@ class AttributePatchParams {
   std::vector<int32_t>  attributePatchOffset_;
 };
 
-// 7.3.23 Attribute Patch Parameter Set syntax (appss)
+// 7.3.5.10 Attribute Patch Parameter Set syntax (appss) TODO: add attributeDimension_
 class AttributePatchParameterSet {
  public:
   AttributePatchParameterSet() :
@@ -728,7 +722,7 @@ class AttributePatchParameterSet {
   AttributePatchParams attributePatchParams_;
 };
 
-// 7.3.22 Geometry patch params syntax
+// 7.3.5.9 Geometry patch params syntax TODO: rotation should be defined using quaternions (dimension 4)
 class GeometryPatchParams {
  public:
   GeometryPatchParams() :
@@ -782,7 +776,7 @@ class GeometryPatchParams {
   uint32_t geometryPatchPointShapeInfo_;
 };
 
-// 7.3.21 Geometry patch parameter set syntax
+// 7.3.5.8 Geometry patch parameter set syntax
 class GeometryPatchParameterSet {
  public:
   GeometryPatchParameterSet() :
@@ -808,7 +802,7 @@ class GeometryPatchParameterSet {
   GeometryPatchParams geometryPatchParams_;
 };
 
-// 7.3.20 Attribute frame paramS syntax (afp)
+// 7.3.5.7 Attribute frame paramS syntax (afp) TODO: attributeSmoothingParamsPresentFlag_, attributeSmoothingThreshold_, attributeSmoothingThresholdLocalEntropy_ are lists with size attributeDimension; remove attributeSmoothingRadius_, attributeSmoothingNeighbourCount_ and attributeSmoothingRadius2BoundaryDetection_; add attributeSmoothingGridSize_, attributeSmoothingAttributeVariation_ and attributeSmoothingAttributeDifference_ 
 class AttributeFrameParams {
  public:
   AttributeFrameParams() :
@@ -872,7 +866,7 @@ class AttributeFrameParams {
   size_t                attributeDimension_;
 };
 
-// 7.3.19 Attribute frame parameter set syntax
+// 7.3.5.6 Patch frame attribute parameter set syntax TODO: change name of the class from AttributeFrameParameterSet to PatchFrameAttributeParameterSet, remove overrideAttributeParamsFlag_, overrideAttributePatchParamsFlag_
 class AttributeFrameParameterSet {
  public:
   AttributeFrameParameterSet() :
@@ -916,7 +910,7 @@ class AttributeFrameParameterSet {
   AttributeFrameParams attributeFrameParams_;
 };
 
-// 7.3.18 Geometry frame params syntax
+// 7.3.5.5 Geometry frame params syntax TODO: rotation should be defined using quaternions (dimension 4)
 class GeometryFrameParams {
  public:
   GeometryFrameParams() :
@@ -986,7 +980,7 @@ class GeometryFrameParams {
   uint32_t geometryPointShapeInfo_;
 };
 
-// 7.3.17 Geometry frame parameter set syntax
+// 7.3.5.4 Patch frame geometry parameter set syntax TODO: rename class from GeometryFrameParameterSet to PatchFrameGeometryParameterSet, remove geometryParamsEnabledFlag_, overrideGeometryParamsFlag_
 class GeometryFrameParameterSet {
  public:
   GeometryFrameParameterSet() :
@@ -1044,7 +1038,7 @@ class GeometryFrameParameterSet {
   GeometryFrameParams geometryFrameParams_;
 };
 
-// 7.3.16  Patch sequence parameter set syntax (psps)
+// 7.3.5.3  Patch sequence parameter set syntax (psps) TODO: add patchPackingBlockSize
 class PatchSequenceParameterSet {
  public:
   PatchSequenceParameterSet() :
@@ -1052,7 +1046,8 @@ class PatchSequenceParameterSet {
       log2MaxPatchFrameOrderCntLsb_( 0 ),
       maxDecPatchFrameBuffering_( 0 ),
       numRefPatchFrameListsInSps_( 0 ),
-      longTermRefPatchFramesFlag_( false ) {
+      longTermRefPatchFramesFlag_( false ),
+	  useEightOrientationsFlag_( false ) {
     refListStruct_.clear();
   }
   ~PatchSequenceParameterSet() { refListStruct_.clear(); }
@@ -1065,6 +1060,7 @@ class PatchSequenceParameterSet {
   uint8_t        getMaxDecPatchFrameBufferingMinus1() { return maxDecPatchFrameBuffering_; }
   uint8_t        getNumRefPatchFrameListsInSps() { return numRefPatchFrameListsInSps_; }
   bool           getLongTermRefPatchFramesFlag() { return longTermRefPatchFramesFlag_; }
+  bool           getUseEightOrientationsFlag() { return useEightOrientationsFlag_; }
   RefListStruct& getRefListStruct( uint8_t index ) { return refListStruct_[index]; }
   uint8_t        getRefListStructSize() { return refListStruct_.size(); }
 
@@ -1072,7 +1068,8 @@ class PatchSequenceParameterSet {
   void setLog2MaxPatchFrameOrderCntLsbMinus4( uint8_t value ) { log2MaxPatchFrameOrderCntLsb_ = value; }
   void setMaxDecPatchFrameBufferingMinus1( uint8_t value ) { maxDecPatchFrameBuffering_ = value; }
   void setNumRefPatchFrameListsInSps( uint8_t value ) { numRefPatchFrameListsInSps_ = value; }
-  void setLongTermRefPatchFramesFlag( bool value ) { longTermRefPatchFramesFlag_ = value; }
+  void setLongTermRefPatchFramesFlag(bool value) { longTermRefPatchFramesFlag_ = value; }
+  void setUseEightOrientationsFlag(bool value) { useEightOrientationsFlag_ = value; }
   void setRefListStruct( uint8_t index, RefListStruct value ) { refListStruct_[index] = value; }
 
   void addRefListStruct( RefListStruct value ) { refListStruct_.push_back( value ); }
@@ -1083,10 +1080,11 @@ class PatchSequenceParameterSet {
   uint8_t                    maxDecPatchFrameBuffering_;
   uint8_t                    numRefPatchFrameListsInSps_;
   bool                       longTermRefPatchFramesFlag_;
+  bool                       useEightOrientationsFlag_;
   std::vector<RefListStruct> refListStruct_;
 };
 
-// 7.3.15  Patch sequence unit payload syntax (psup)
+// 7.3.5.2  Patch data group unit payload syntax (pdgup) TODO: change name of the class from PatchSequenceUnitPayload to PatchDataGroupUnitPayload, update enum PSDUnitType with values defined in the CD, missing SEI message
 class PatchSequenceUnitPayload {
  public:
   PatchSequenceUnitPayload( PSDUnitType unitType = PSD_SPS, uint8_t index = 0 ) :
@@ -1159,7 +1157,7 @@ class PatchSequenceUnitPayload {
   PatchFrameLayerUnit                     patchFrameLayerUnit_;
 };
 
-// 7.3.14  Patch sequence data unit syntax (psdu)
+// 7.3.5.1  Patch data group unit syntax (pdgu) TODO: change the name of the class from PatchSequenceDataUnit to PatchDataGroupUnit
 class PatchSequenceDataUnit {
  public:
   PatchSequenceDataUnit() : frameCount_( 0 ) { patchSequenceUnitPayload_.clear(); }
@@ -1274,7 +1272,7 @@ class PatchSequenceDataUnit {
   std::vector<PatchSequenceUnitPayload> patchSequenceUnitPayload_;
 };
 
-// 7.3.13 Attribute Sequence Params Syntax (asps)
+// OLD 7.3.13 Attribute Sequence Params Syntax (asps) TODO: remove class, does not exist in CD anymore
 class AttributeSequenceParams {
  public:
   AttributeSequenceParams() :
@@ -1355,7 +1353,7 @@ class AttributeSequenceParams {
   std::vector<int32_t>  attributeOffset_;
 };
 
-// 7.3.12 Attribute Parameter Set Syntax (apss)
+// 7.3.4.5 Attribute Parameter Set Syntax (apss) TODO: add attributeCount, all member variables will be part of lists with size attributeCount, and remove attributePatchScaleParamsEnabledFlag_ and attributePatchOffsetParamsEnabledFlag_
 class AttributeParameterSet {
  public:
   AttributeParameterSet() :
@@ -1402,7 +1400,7 @@ class AttributeParameterSet {
   AttributeSequenceParams attributeSequenceParams_;
 };
 
-// 7.3.11 Geometry Sequence Params Syntax
+// OLD 7.3.11 Geometry Sequence Params Syntax TODO: remove class, does not exist in CD anymore
 class GeometrySequenceParams {
  public:
   GeometrySequenceParams() :
@@ -1490,7 +1488,7 @@ class GeometrySequenceParams {
   uint32_t geometryPointShapeInfo_;
 };
 
-// 7.3.10 Geometry Parameter Set Syntax
+// 7.3.4.4 Geometry Parameter Set Syntax TODO: remove geometryPatchScaleParamsEnabledFlag_, geometryPatchOffsetParamsEnabledFlag_, geometryPatchRotationParamsEnabledFlag_, geometryPatchPointSizeInfoEnabledFlag_, geometryPatchPointShapeInfoEnabledFlag_
 class GeometryParameterSet {
  public:
   GeometryParameterSet() :
@@ -1571,7 +1569,7 @@ class GeometryParameterSet {
   GeometrySequenceParams geometrySequenceParams_;
 };
 
-// 7.3.9 Occupancy Parameter Set Syntax
+// 7.3.4.3 Occupancy Parameter Set Syntax TODO: remove occupancyPackingBlockSize_
 class OccupancyParameterSet {
  public:
   OccupancyParameterSet() : occupancyCodecId_( 0 ), occupancyLossyThreshold_( 0 ), occupancyPackingBlockSize_( 0 ) {}
@@ -1597,7 +1595,7 @@ class OccupancyParameterSet {
   uint8_t occupancyPackingBlockSize_;
 };
 
-// 7.3.8 Profile, Tiere and Level Syntax
+// 7.3.4.2 Profile, Tier and Level Syntax TODO: change profileIdc to profileCodecGroupIdc, missing profilePCCToolsetIdc, profileReconstructionIdc
 class ProfileTierLevel {
  public:
   ProfileTierLevel() : tierFlag_( false ), profileIdc_( 0 ), levelIdc_( 0 ) {}
@@ -1617,7 +1615,7 @@ class ProfileTierLevel {
   uint8_t levelIdc_;
 };
 
-// 7.3.6  Sequence parameter set syntax
+// 7.3.4.1  General Sequence parameter set syntax
 class SequenceParameterSet {
  public:
   SequenceParameterSet() :
@@ -1632,7 +1630,6 @@ class SequenceParameterSet {
       multipleLayerStreamsPresentFlag_( false ),
       pcmPatchEnabledFlag_( false ),
       pcmSeparateVideoPresentFlag_( false ),
-      patchSequenceOrientationEnabledFlag_( false ),
       patchInterPredictionEnabledFlag_( false ),
       pixelDeinterleavingFlag_( false ),
       pointLocalReconstructionEnabledFlag_( false ),
@@ -1676,7 +1673,6 @@ class SequenceParameterSet {
     multipleLayerStreamsPresentFlag_     = multipleLayerStreamsPresentFlag;
     pcmPatchEnabledFlag_                 = pcmPatchEnabledFlag;
     pcmSeparateVideoPresentFlag_         = pcmSeparateVideoPresentFlag;
-    patchSequenceOrientationEnabledFlag_ = patchSequenceOrientationEnabledFlag;
     patchInterPredictionEnabledFlag_     = patchInterPredictionEnabledFlag;
     pixelDeinterleavingFlag_             = pixelDeinterleavingFlag;
     pointLocalReconstructionEnabledFlag_ = pointLocalReconstructionEnabledFlag;
@@ -1701,7 +1697,6 @@ class SequenceParameterSet {
   bool              getMultipleLayerStreamsPresentFlag() { return multipleLayerStreamsPresentFlag_; }
   bool              getPcmPatchEnabledFlag() { return pcmPatchEnabledFlag_; }
   bool              getPcmSeparateVideoPresentFlag() { return pcmSeparateVideoPresentFlag_; }
-  bool              getPatchSequenceOrientationEnabledFlag() { return patchSequenceOrientationEnabledFlag_; }
   bool              getPatchInterPredictionEnabledFlag() { return patchInterPredictionEnabledFlag_; }
   bool              getPixelDeinterleavingFlag() { return pixelDeinterleavingFlag_; }
   bool              getPointLocalReconstructionEnabledFlag() { return pointLocalReconstructionEnabledFlag_; }
@@ -1725,7 +1720,6 @@ class SequenceParameterSet {
   void setMultipleLayerStreamsPresentFlag( bool value ) { multipleLayerStreamsPresentFlag_ = value; }
   void setPcmPatchEnabledFlag( bool value ) { pcmPatchEnabledFlag_ = value; }
   void setPcmSeparateVideoPresentFlag( bool value ) { pcmSeparateVideoPresentFlag_ = value; }
-  void setPatchSequenceOrientationEnabledFlag( bool value ) { patchSequenceOrientationEnabledFlag_ = value; }
   void setPatchInterPredictionEnabledFlag( bool value ) { patchInterPredictionEnabledFlag_ = value; }
   void setPixelDeinterleavingFlag( bool value ) { pixelDeinterleavingFlag_ = value; }
   void setPointLocalReconstructionEnabledFlag( bool value ) { pointLocalReconstructionEnabledFlag_ = value; }
@@ -1764,7 +1758,6 @@ class SequenceParameterSet {
   bool                               multipleLayerStreamsPresentFlag_;
   bool                               pcmPatchEnabledFlag_;
   bool                               pcmSeparateVideoPresentFlag_;
-  bool                               patchSequenceOrientationEnabledFlag_;
   bool                               patchInterPredictionEnabledFlag_;
   bool                               pixelDeinterleavingFlag_;
   bool                               pointLocalReconstructionEnabledFlag_;
@@ -1801,7 +1794,7 @@ class SequenceParameterSet {
   // THE NEXT PARAMETERS ARE NOT IN THE VPCC CD SYNTAX DOCUMENTS AND WILL BE REMOVE
 };
 
-// 7.3.4  PCM separate video data syntax
+// VPCCParameterSet Class TODO: add attributeDimensionIndex_
 class VPCCParameterSet {
  public:
   VPCCParameterSet() : pcmVideoFlag_( false ), sequenceParamterSetId_( 0 ), attributeIndex_( 0 ), layerIndex_( 0 ) {}

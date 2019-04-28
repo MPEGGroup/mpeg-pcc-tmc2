@@ -546,8 +546,13 @@ bool parseParameters( int                   argc,
     ("packingStrategy",
       encoderParams.packingStrategy_,
       encoderParams.packingStrategy_,
-      "Patches packing strategy(0: anchor packing, 1(default): flexible packing with 2 orientations, 2: tetris packing)\n")
+      "Patches packing strategy(0: anchor packing, 1(default): flexible packing, 2: tetris packing)\n")
 
+	("useEightOrientations",
+		encoderParams.useEightOrientations_,
+		encoderParams.useEightOrientations_,
+		"Allow either 2 orientations (0(default): NULL AND SWAP), or 8 orientation (1)\n")
+			
     ("safeGuardDistance",
       encoderParams.safeGuardDistance_,
       encoderParams.safeGuardDistance_,

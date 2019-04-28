@@ -89,7 +89,7 @@ void PCCBitstreamEncoder::vpccVideoDataUnit( PCCContext& context, PCCBitstream& 
   }
 }
 
-// 7.3.2 V-PCC unit syntax
+// 7.3.2.1 General V-PCC unit syntax
 void PCCBitstreamEncoder::vpccUnit( PCCContext& context, PCCBitstream& bitstream, VPCCUnitType vpccUnitType ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   int32_t position = bitstream.size();
@@ -98,7 +98,7 @@ void PCCBitstreamEncoder::vpccUnit( PCCContext& context, PCCBitstream& bitstream
   bitstream.getBitStreamStat().setVpccUnitSize( vpccUnitType, (int32_t)bitstream.size() - position );
 }
 
-// 7.3.3 V-PCC unit header syntax
+// 7.3.2.2 V-PCC unit header syntax TODO: write attributeDimensionIndex_, modify pcmSeparateVideoData parameters for VPCC_AVD case
 void PCCBitstreamEncoder::vpccUnitHeader( PCCContext& context, PCCBitstream& bitstream, VPCCUnitType vpccUnitType ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   auto& vpcc = context.getVPCC();
@@ -129,7 +129,7 @@ void PCCBitstreamEncoder::vpccUnitHeader( PCCContext& context, PCCBitstream& bit
   }
 }
 
-// 7.3.4 PCM separate video data syntax
+// 7.3.2.3 PCM separate video data syntax
 void PCCBitstreamEncoder::pcmSeparateVideoData( PCCContext& context, PCCBitstream& bitstream, uint8_t bitCount ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   auto& vpcc = context.getVPCC();
@@ -142,7 +142,7 @@ void PCCBitstreamEncoder::pcmSeparateVideoData( PCCContext& context, PCCBitstrea
   }
 }
 
-// 7.3.5 V-PCC unit payload syntax
+// 7.3.2.4 V-PCC unit payload syntax
 void PCCBitstreamEncoder::vpccUnitPayload( PCCContext& context, PCCBitstream& bitstream, VPCCUnitType vpccUnitType ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   auto& sps = context.getSps();
@@ -156,7 +156,7 @@ void PCCBitstreamEncoder::vpccUnitPayload( PCCContext& context, PCCBitstream& bi
   }
 }
 
-// 7.3.6 Sequence parameter set syntax
+// 7.3.4.1 General Sequence parameter set syntax TODO: remove sps.setAttributeCount() and loop over attributes
 void PCCBitstreamEncoder::sequenceParameterSet( SequenceParameterSet& sps, PCCBitstream& bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   profileTierLevel( sps.getProfileTierLevel(), bitstream );
@@ -193,7 +193,6 @@ void PCCBitstreamEncoder::sequenceParameterSet( SequenceParameterSet& sps, PCCBi
   for ( size_t i = 0; i < sps.getAttributeCount(); i++ ) {
     attributeParameterSet( sps.getAttributeParameterSet( i ), sps, bitstream );
   }
-  bitstream.write( (uint32_t)sps.getPatchSequenceOrientationEnabledFlag(), 1 );  // u(1)
   bitstream.write( (uint32_t)sps.getPatchInterPredictionEnabledFlag(), 1 );      // u(1)
   bitstream.write( (uint32_t)sps.getPixelDeinterleavingFlag(), 1 );              // u(1)
   bitstream.write( (uint32_t)sps.getPointLocalReconstructionEnabledFlag(), 1 );  // u(1)
@@ -211,7 +210,7 @@ void PCCBitstreamEncoder::sequenceParameterSet( SequenceParameterSet& sps, PCCBi
   byteAlignment( bitstream );
 }
 
-// 7.3.7 Byte alignment syntax
+// 7.3.4.2 Byte alignment syntax
 void PCCBitstreamEncoder::byteAlignment( PCCBitstream& bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   bitstream.write( 1, 1 );  // f(1): equal to 1
@@ -220,7 +219,7 @@ void PCCBitstreamEncoder::byteAlignment( PCCBitstream& bitstream ) {
   }
 }
 
-// 7.3.8 Profile, tier, and level syntax
+// 7.3.4.2 Profile, tier, and level syntax TODO: change profileIdc to profileCodecGroupIdc, missing profilePCCToolsetIdc, profileReconstructionIdc
 void PCCBitstreamEncoder::profileTierLevel( ProfileTierLevel& ptl, PCCBitstream& bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   bitstream.write( (uint32_t)ptl.getTierFlag(), 1 );    // u(1)
@@ -229,16 +228,16 @@ void PCCBitstreamEncoder::profileTierLevel( ProfileTierLevel& ptl, PCCBitstream&
   bitstream.write( (uint32_t)ptl.getLevelIdc(), 8 );    // u(8)
 }
 
-// 7.3.9 Occupancy parameter set syntax
+// 7.3.4.3 Occupancy parameter set syntax TODO: remove ops.getOccupancyPackingBlockSize
 void PCCBitstreamEncoder::occupancyParameterSet( OccupancyParameterSet& ops, PCCBitstream& bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   bitstream.write( (uint32_t)ops.getOccupancyCodecId(), 8 );           // u(8)
   bitstream.write( (uint32_t)ops.getOccupancyLossyThreshold(), 8);     // u(8)
   bitstream.write( (uint32_t)ops.getOccupancyPackingBlockSize(), 8 );  // u(8)
-  TRACE_BITSTREAM( "  OccupancyLossyThreshold = %d  \n", osp.getOccupancyLossyThreshold() );
+  TRACE_BITSTREAM( "  OccupancyLossyThreshold = %d  \n", ops.getOccupancyLossyThreshold() );
 }
 
-// 7.3.10 Geometry parameter set syntax
+// 7.3.4.4 Geometry parameter set syntax TODO: remove gps.getGeometryPatchScaleParamsEnabledFlag, gps.getGeometryPatchOffsetParamsEnabledFlag, gps.getGeometryPatchRotationParamsEnabledFlag, gps.getGeometryPatchPointSizeInfoEnabledFlag, gps.getGeometryPatchPointShapeInfoEnabledFlag
 void PCCBitstreamEncoder::geometryParameterSet( GeometryParameterSet& gps,
                                                 SequenceParameterSet& sps,
                                                 PCCBitstream&         bitstream ) {
@@ -261,7 +260,7 @@ void PCCBitstreamEncoder::geometryParameterSet( GeometryParameterSet& gps,
   }
 }
 
-// 7.3.11 Geometry sequence metadata syntax
+// OLD 7.3.11 Geometry sequence metadata syntax TODO: remove 
 void PCCBitstreamEncoder::geometrySequenceParams( GeometrySequenceParams& gsp, PCCBitstream& bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   bitstream.write( (uint32_t)gsp.getGeometrySmoothingParamsPresentFlag(), 1 );  // u(1)
@@ -309,7 +308,7 @@ void PCCBitstreamEncoder::geometrySequenceParams( GeometrySequenceParams& gsp, P
   TRACE_BITSTREAM( "  getGeometrySmoothingThreshold      = %u  \n", gsp.getGeometrySmoothingThreshold() );
 }
 
-// 7.3.12 Attribute parameter set syntax
+// 7.3.4.5 Attribute parameter set syntax TODO: add aps.getAttributeCount, and loop to receive the parameters per attribute, add condition to aps.getAttributeParamsEnabledFlag and setAttributePatchParamsEnabledFlag, remove attributeSequenceParams(),  aps.getAttributePatchScaleParamsEnabledFlag, aps.getAttributePatchOffsetParamsEnabledFlag, add channel partitions
 void PCCBitstreamEncoder::attributeParameterSet( AttributeParameterSet& aps,
                                                  SequenceParameterSet&  sps,
                                                  PCCBitstream&          bitstream ) {
@@ -331,7 +330,7 @@ void PCCBitstreamEncoder::attributeParameterSet( AttributeParameterSet& aps,
   }
 }
 
-// 7.3.13 Attribute sequence Params syntax
+// OLD 7.3.13 Attribute sequence Params syntax TODO: remove
 void PCCBitstreamEncoder::attributeSequenceParams( AttributeSequenceParams& asp,
                                                    uint8_t                  dimension,
                                                    PCCBitstream&            bitstream ) {
@@ -358,8 +357,7 @@ void PCCBitstreamEncoder::attributeSequenceParams( AttributeSequenceParams& asp,
   }
 }
 
-// 7.3.14 Patch sequence data unit syntax
-// jkei : DPB later
+// 7.3.5.1 General patch data group unit syntax TODO: rename(?)
 void PCCBitstreamEncoder::patchSequenceDataUnit( PCCContext& context, PCCBitstream& bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   size_t prevPFLUindex = 0;
@@ -384,7 +382,7 @@ void PCCBitstreamEncoder::patchSequenceDataUnit( PCCContext& context, PCCBitstre
   byteAlignment( bitstream );
 }
 
-// 7.3.15 Patch sequence unit payload syntax
+// 7.3.5.2 Patch data group unit payload syntax TODO: rename(?), rename enum (PSD_->PDGU_?), remove loop for APPS and AFPS, add PDGU_PREFIX_SEI and PDU_SUFFIX_SEI
 void PCCBitstreamEncoder::patchSequenceUnitPayload( PatchSequenceUnitPayload& psup,
                                                     PatchSequenceUnitPayload& psupPrevPFLU,
                                                     size_t                    frameIndex,
@@ -407,8 +405,6 @@ void PCCBitstreamEncoder::patchSequenceUnitPayload( PatchSequenceUnitPayload& ps
     }
   } else if ( psup.getUnitType() == PSD_FPS ) {
     patchFrameParameterSet( psup.getPatchFrameParameterSet(), sps, bitstream );
-    TRACE_BITSTREAM( " PatchOrientationPresentFlag = %lu \n",
-                     psup.getPatchFrameParameterSet().getPatchOrientationPresentFlag() );
   } else if ( psup.getUnitType() == PSD_AFPS ) {
     for ( int attributeIndex = 0; attributeIndex < sps.getAttributeCount(); attributeIndex++ ) {
       attributeFrameParameterSet( psup.getAttributeFrameParameterSet( attributeIndex ),
@@ -421,7 +417,7 @@ void PCCBitstreamEncoder::patchSequenceUnitPayload( PatchSequenceUnitPayload& ps
   }
 }
 
-// 7.3.16 Patch sequence parameter set syntax
+// 7.3.5.3 Patch sequence parameter set syntax TODO: add psps.setLog2PatchPackingBlockSize u(3), byteAlignment(bitstream) missing
 void PCCBitstreamEncoder::patchSequenceParameterSet( PatchSequenceParameterSet& psps, PCCBitstream& bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   bitstream.writeUvlc( psps.getPatchSequenceParameterSetId() );         // ue(v)
@@ -432,9 +428,10 @@ void PCCBitstreamEncoder::patchSequenceParameterSet( PatchSequenceParameterSet& 
   for ( size_t i = 0; i < psps.getNumRefPatchFrameListsInSps(); i++ ) {
     refListStruct( psps.getRefListStruct( i ), psps, bitstream );
   }
+  bitstream.write(psps.getUseEightOrientationsFlag(), 1);           // u(1)
 }
 
-// 7.3.17 Geometry frame parameter set syntax
+// 7.3.5.4 Patch frame geometry parameter set syntax TODO: rename(?), remove gfps.getOverrideGeometryParamsFlag, gfps.getOverrideGeometryPatchParamsFlag
 void PCCBitstreamEncoder::geometryFrameParameterSet( GeometryFrameParameterSet& gfps,
                                                      GeometryParameterSet&      gps,
                                                      PCCBitstream&              bitstream ) {
@@ -458,7 +455,7 @@ void PCCBitstreamEncoder::geometryFrameParameterSet( GeometryFrameParameterSet& 
   byteAlignment( bitstream );
 }
 
-// 7.3.18 Geometry frame Params syntax
+// 7.3.5.5 Geometry frame Params syntax TODO: gfp.setGeometrySmoothingGridSize wrotes 7 bits only, rotation should use quaternions
 void PCCBitstreamEncoder::geometryFrameParams( GeometryFrameParams& gfp, PCCBitstream& bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   bitstream.write( (uint32_t)gfp.getGeometrySmoothingParamsPresentFlag(), 1 );  // u(1)
@@ -494,7 +491,7 @@ void PCCBitstreamEncoder::geometryFrameParams( GeometryFrameParams& gfp, PCCBits
   if ( gfp.getGeometryPointShapeInfoPresentFlag() ) { bitstream.write( (uint32_t)gfp.getGeometryPointShapeInfo(), 4 ); }
 }
 
-// 7.3.19 Attribute frame parameter set syntax
+// 7.3.5.6 Patch frame attribute parameter set syntax TODO: rename(?), remove afps.getOverrideAttributeParamsFlag, afps.setOverrideAttributePatchParamsFlag
 void PCCBitstreamEncoder::attributeFrameParameterSet( AttributeFrameParameterSet& afps,
                                                       AttributeParameterSet&      aps,
                                                       PCCBitstream&               bitstream ) {
@@ -522,7 +519,7 @@ void PCCBitstreamEncoder::attributeFrameParameterSet( AttributeFrameParameterSet
   byteAlignment( bitstream );
 }
 
-// 7.3.20 Attribute frame Params syntax
+// 7.3.5.7 Attribute frame Params syntax TODO: add attributeDimensions loop, remove afp.getAttributeSmoothingRadius, afp.getAttributeSmoothingNeighbourCount and afp.getAttributeSmoothingRadius2BoundaryDetection, add three missing parameters
 void PCCBitstreamEncoder::attributeFrameParams( AttributeFrameParams& afp,
                                                 size_t                attributeDimension,
                                                 PCCBitstream&         bitstream ) {
@@ -547,7 +544,7 @@ void PCCBitstreamEncoder::attributeFrameParams( AttributeFrameParams& afp,
   }
 }
 
-// 7.3.21 Geometry patch parameter set syntax
+// 7.3.5.8 Geometry patch parameter set syntax 
 void PCCBitstreamEncoder::geometryPatchParameterSet( GeometryPatchParameterSet& gpps,
                                                      GeometryFrameParameterSet& gfps,
                                                      PCCBitstream&              bitstream ) {
@@ -565,7 +562,7 @@ void PCCBitstreamEncoder::geometryPatchParameterSet( GeometryPatchParameterSet& 
   byteAlignment( bitstream );
 }
 
-// 7.3.22 Geometry patch Params syntax
+// 7.3.5.9 Geometry patch Params syntax TODO: rotation should be defined using quaternions (dimension 4)
 void PCCBitstreamEncoder::geometryPatchParams( GeometryPatchParams&       gpp,
                                                GeometryFrameParameterSet& gfps,
                                                PCCBitstream&              bitstream ) {
@@ -582,7 +579,7 @@ void PCCBitstreamEncoder::geometryPatchParams( GeometryPatchParams&       gpp,
     bitstream.write( (uint32_t)gpp.getGeometryPatchOffsetParamsPresentFlag(), 1 );  // u(1)
     if ( gpp.getGeometryPatchOffsetParamsPresentFlag() ) {
       for ( size_t d = 0; d < 3; d++ ) {
-        bitstream.writeS( gpp.getGeometryPatchOffsetOnAxis( d ), 32 );  // i32
+        bitstream.writeS( gpp.getGeometryPatchOffsetOnAxis( d ), 32 );  // i(32)
       }
     }
   }
@@ -608,7 +605,7 @@ void PCCBitstreamEncoder::geometryPatchParams( GeometryPatchParams&       gpp,
   }
 }
 
-// 7.3.23 Attribute patch parameter set syntax
+// 7.3.5.10 Attribute patch parameter set syntax TODO: add apps.setAttributeDimensionMinus1() u(8)
 void PCCBitstreamEncoder::attributePatchParameterSet( AttributePatchParameterSet& apps,
                                                       AttributeParameterSet&      aps,
                                                       AttributeFrameParameterSet& afps,
@@ -626,7 +623,7 @@ void PCCBitstreamEncoder::attributePatchParameterSet( AttributePatchParameterSet
   byteAlignment( bitstream );
 }
 
-// 7.3.24 Attribute patch Params syntax (apps)
+// 7.3.5.11 Attribute patch Params syntax (apps)
 void PCCBitstreamEncoder::attributePatchParams( AttributePatchParams&       app,
                                                 AttributeFrameParameterSet& afps,
                                                 size_t                      dimension,
@@ -650,7 +647,7 @@ void PCCBitstreamEncoder::attributePatchParams( AttributePatchParams&       app,
   }
 }
 
-// 7.3.25 Patch frame parameter set syntax
+// 7.3.5.12 Patch frame parameter set syntax TODO: add pfps.getGeometryPatchFrameParameterSetId and pfps.getAttributePatchFrameParameterSetId[attributeCount], and remove pfps.getLocalOverrideGeometryPatchEnableFlag and pfps.getLocalOverrideAttributePatchEnableFlag
 void PCCBitstreamEncoder::patchFrameParameterSet( PatchFrameParameterSet& pfps,
                                                   SequenceParameterSet&   sps,
                                                   PCCBitstream&           bitstream ) {
@@ -662,9 +659,6 @@ void PCCBitstreamEncoder::patchFrameParameterSet( PatchFrameParameterSet& pfps,
     bitstream.write( pfps.getLocalOverrideAttributePatchEnableFlag( i ), 1 );  // u(1)
   }
   bitstream.writeUvlc( pfps.getAdditionalLtPfocLsbLen() );  // ue(v)
-  if ( sps.getPatchSequenceOrientationEnabledFlag() ) {
-    bitstream.write( pfps.getPatchOrientationPresentFlag(), 1 );  // u(1)
-  }
   if ( sps.getProjection45DegreeEnableFlag() ) {
     bitstream.write( pfps.getProjection45DegreeEnableFlag(), 1);  // u(1)
   }
@@ -672,7 +666,7 @@ void PCCBitstreamEncoder::patchFrameParameterSet( PatchFrameParameterSet& pfps,
   byteAlignment( bitstream );
 }
 
-// 7.3.26 Patch frame layer unit syntax
+// 7.3.5.13 Patch frame layer unit syntax
 void PCCBitstreamEncoder::patchFrameLayerUnit( PatchFrameLayerUnit& pflu,
                                                PatchFrameLayerUnit& pfluPrev,
                                                PCCContext&          context,
@@ -682,7 +676,7 @@ void PCCBitstreamEncoder::patchFrameLayerUnit( PatchFrameLayerUnit& pflu,
   patchFrameDataUnit( pflu.getPatchFrameDataUnit(), pflu.getPatchFrameHeader(), context, bitstream );
 }
 
-// 7.3.27 Patch frame header syntax
+// 7.3.5.14 Patch frame header syntax TODO: difference between ue(v) and u(v)?
 void PCCBitstreamEncoder::patchFrameHeader( PatchFrameHeader& pfh,
                                             PatchFrameHeader& pfhPrev,
                                             PCCContext&       context,
@@ -694,7 +688,7 @@ void PCCBitstreamEncoder::patchFrameHeader( PatchFrameHeader& pfh,
 
   bitstream.writeUvlc( pfh.getPatchFrameParameterSetId() );  // ue(v )
   bitstream.writeUvlc( pfh.getAddress() );                   // u( v )
-  bitstream.writeUvlc( pfh.getType() );                      // u( v )
+  bitstream.writeUvlc( pfh.getType() );                      // ue( v )
   bitstream.writeUvlc( pfh.getPatchFrameOrderCntLsb() );     // u( v )
 
   TRACE_BITSTREAM( "Id     = %u \n", pfh.getPatchFrameParameterSetId() );
@@ -835,7 +829,7 @@ void PCCBitstreamEncoder::patchFrameHeader( PatchFrameHeader& pfh,
   byteAlignment( bitstream );
 }
 
-// 7.3.28 Reference list structure syntax
+// 7.3.5.15 Reference list structure syntax TODO: difference between ue(v) and u(v)?
 void PCCBitstreamEncoder::refListStruct( RefListStruct&             rls,
                                          PatchSequenceParameterSet& psps,
                                          PCCBitstream&              bitstream ) {
@@ -857,7 +851,7 @@ void PCCBitstreamEncoder::refListStruct( RefListStruct&             rls,
   }
 }
 
-// 7.3.29 Patch frame data unit syntax
+// 7.3.5.16 Patch frame data unit syntax TODO: modify loop to use patchMode instead of flag
 void PCCBitstreamEncoder::patchFrameDataUnit( PatchFrameDataUnit& pfdu,
                                               PatchFrameHeader&   pfh,
                                               PCCContext&         context,
@@ -885,7 +879,7 @@ void PCCBitstreamEncoder::patchFrameDataUnit( PatchFrameDataUnit& pfdu,
   byteAlignment( bitstream );
 }
 
-// 7.3.30 Patch information data syntax
+// 7.3.5.17 Patch information data syntax TODO: gppsId and appsId using u(v) instead of ue(v) ?
 void PCCBitstreamEncoder::patchInformationData( PatchInformationData& pid,
                                                 size_t                patchMode,
                                                 PatchFrameHeader&     pfh,
@@ -902,9 +896,9 @@ void PCCBitstreamEncoder::patchInformationData( PatchInformationData& pid,
   } else if ( ( ( PCCPatchFrameType( pfh.getType() ) ) == PATCH_FRAME_I && patchMode == PATCH_MODE_I_INTRA ) ||
               ( ( PCCPatchFrameType( pfh.getType() ) ) == PATCH_FRAME_P && patchMode == PATCH_MODE_P_INTRA ) ) {
     if ( pfps.getLocalOverrideGeometryPatchEnableFlag() ) {
-      bitstream.write( pid.getOverrideGeometryPatchFlag(), 1 );
+      bitstream.write( pid.getOverrideGeometryPatchFlag(), 1 ); // u(1)
       if ( pid.getOverrideGeometryPatchFlag() ) {
-        bitstream.write( uint32_t( pid.getGeometryPatchParameterSetId() ), bitCountGAppsId );
+        bitstream.write( uint32_t( pid.getGeometryPatchParameterSetId() ), bitCountGAppsId ); // ue(v)
         TRACE_BITSTREAM( " gppsId = %lu \n", pid.getGeometryPatchParameterSetId() );
       }
     }
@@ -933,7 +927,7 @@ void PCCBitstreamEncoder::patchInformationData( PatchInformationData& pid,
   }
 }
 
-// 7.3.31 Patch data unit syntax
+// 7.3.5.18 Patch data unit syntax
 void PCCBitstreamEncoder::patchDataUnit( PatchDataUnit&    pdu,
                                          PatchFrameHeader& pfh,
                                          PCCContext&       context,
@@ -955,8 +949,14 @@ void PCCBitstreamEncoder::patchDataUnit( PatchDataUnit&    pdu,
   if ( pdu.getNormalAxis() != PCC_AXIS3_X ) {
     bitstream.write( pdu.getNormalAxis() != PCC_AXIS3_Y, 1 );  // 0.y 1.z
   }
-  auto& pfps = context.getPatchSequenceDataUnit().getPatchFrameParameterSet( 0 );
-  if ( pfps.getPatchOrientationPresentFlag() ) { bitstream.write( pdu.getOrientationSwapFlag(), 1 ); }
+  auto& psdu = context.getPatchSequenceDataUnit();
+  auto& psps = psdu.getPatchSequenceParameterSet(0);
+  if ( psps.getUseEightOrientationsFlag() ) { 
+    bitstream.write(pdu.getOrientationIndex(), 3);
+  }
+  else {
+    bitstream.write(pdu.getOrientationIndex(), 1);
+  }
   if ( pfh.getInterPredictPatchLodBitCount() > 0 ) {
     bitstream.write( uint32_t( pdu.getLod() ), pfh.getInterPredictPatchLodBitCount() );
   }
@@ -968,6 +968,7 @@ void PCCBitstreamEncoder::patchDataUnit( PatchDataUnit&    pdu,
   }
   if ( projectionFlag ) { bitstream.write( pdu.getProjectionMode(), 1 ); }
 
+  auto& pfps = psdu.getPatchFrameParameterSet(0);
   if ( pfps.getProjection45DegreeEnableFlag() ) {
     bitstream.write( uint32_t( pdu.get45DegreeProjectionPresentFlag() ), 1 );
   }
@@ -977,11 +978,11 @@ void PCCBitstreamEncoder::patchDataUnit( PatchDataUnit&    pdu,
 
   TRACE_BITSTREAM( "Patch => UV %4lu %4lu S=%4ld %4ld %4ld P=%lu O=%d A=%lu %lu %lu P45= %d %d \n ", pdu.get2DShiftU(),
                   pdu.get2DShiftV(), pdu.get2DDeltaSizeU(), pdu.get2DDeltaSizeV(), pdu.get2DDeltaSizeD(), pdu.getProjectionMode(),
-                  pdu.getOrientationSwapFlag(), pdu.get3DShiftTangentAxis(), pdu.get3DShiftBiTangentAxis(),
+                  pdu.getOrientationIndex(), pdu.get3DShiftTangentAxis(), pdu.get3DShiftBiTangentAxis(),
                   pdu.get3DShiftNormalAxis(),pdu.get45DegreeProjectionPresentFlag(), pdu.get45DegreeProjectionRotationAxis()  );
 }
 
-// 7.3.32  Delta Patch data unit syntax
+// 7.3.5.19  Delta Patch data unit syntax TODO: Missing 10-projection syntax element?
 void PCCBitstreamEncoder::deltaPatchDataUnit( DeltaPatchDataUnit& dpdu,
                                               PatchFrameHeader&   pfh,
                                               PCCContext&         context,
@@ -1006,13 +1007,13 @@ void PCCBitstreamEncoder::deltaPatchDataUnit( DeltaPatchDataUnit& dpdu,
   if ( projectionFlag ) { bitstream.write( dpdu.getProjectionMode(), 1 ); }
 
   TRACE_BITSTREAM(
-                  "DeltaPatch => DeltaIdx = %u ShiftUV = %ld %ld DeltaSize = %ld %ld %ld Axis = %ld %ld %ld Proj = %d Or = %d \n",
+                  "DeltaPatch => DeltaIdx = %u ShiftUV = %ld %ld DeltaSize = %ld %ld %ld Axis = %ld %ld %ld Proj = %d \n",
                   dpdu.getDeltaPatchIdx(), dpdu.get2DDeltaShiftU(), dpdu.get2DDeltaShiftV(), dpdu.get2DDeltaSizeU(),
                   dpdu.get2DDeltaSizeV(), dpdu.get2DDeltaSizeD(), dpdu.get3DDeltaShiftTangentAxis(), dpdu.get3DDeltaShiftBiTangentAxis(),
-                  dpdu.get3DDeltaShiftNormalAxis(), dpdu.getProjectionMode(), dpdu.getOrientationSwapFlag() );
+                  dpdu.get3DDeltaShiftNormalAxis(), dpdu.getProjectionMode() );
 }
 
-// 7.3.33 PCM patch data unit syntax
+// 7.3.5.20 PCM patch data unit syntax TODO: getPcmPoints is u(v) in CD, but is currently se(v)
 void PCCBitstreamEncoder::pcmPatchDataUnit( PCMPatchDataUnit& ppdu,
                                             PatchFrameHeader& pfh,
                                             PCCContext&       context,
@@ -1031,7 +1032,7 @@ void PCCBitstreamEncoder::pcmPatchDataUnit( PCMPatchDataUnit& ppdu,
                    ppdu.getPcmPoints(), ppdu.getPatchInPcmVideoFlag() );
 }
 
-// 7.3.34 Point local reconstruction syntax
+// 7.3.5.21 Point local reconstruction syntax TODO: remove plr.getBlockToPatchMap
 void PCCBitstreamEncoder::pointLocalReconstruction( PointLocalReconstruction& plr,
                                                     PCCContext&               context,
                                                     PCCBitstream&             bitstream ) {
@@ -1057,3 +1058,5 @@ void PCCBitstreamEncoder::pointLocalReconstruction( PointLocalReconstruction& pl
     }
   }
 }
+
+// 7.3.5.22 Supplemental enhancement information message syntax TODO: implementation missing

@@ -181,6 +181,7 @@ class PCCEncoderParameters {
   size_t              packingStrategy_;
   size_t              textureBGFill_;
   size_t              safeGuardDistance_;
+  bool                useEightOrientations_;
 
   // Lossy Missed Points Patch
   bool                lossyMissedPointsPatch_;
