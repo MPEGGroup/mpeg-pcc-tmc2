@@ -384,10 +384,30 @@ bool PCCEncoderParameters::check() {
     std::cerr << "WARNING: enhancedDeltaDepthCode is only for lossless coding mode for now. Force "
                  "enhancedDeltaDepthCode=FALSE.\n";
   }
+
   if ( enhancedDeltaDepthCode_ && surfaceThickness_ == 1 ) {
     std::cerr << "WARNING: EDD code doesn't bring any gain when surfaceThickness==1. Please "
                  "consider to increase the value of surfaceThickness.\n";
   }
+
+  if (enhancedDeltaDepthCode_ && (thresholdLossyOM_ > 0)) {
+    std::cerr << "WARNING: When using enhanced occupancy map for delta depth, thresholdOccupancyMap should be equal to 0\n";
+    std::cerr << "         Forcing thresholdLossyOM_ to 0\n";
+    thresholdLossyOM_ = 0;
+  }
+
+  if (enhancedDeltaDepthCode_ && (offsetLossyOM_ > 0)) {
+    std::cerr << "WARNING: When using enhanced occupancy map for delta depth, offsetOccupancyMap should be equal to 0\n";
+    std::cerr << "         Forcing offsetLossyOM_ to 0\n";
+    offsetLossyOM_ = 0;
+  }
+
+  if (enhancedDeltaDepthCode_ && (prefilterLossyOM_ == true)) {
+    std::cerr << "WARNING: When using enhanced occupancy map for delta depth, prefilterLossyOM_ should be equal to false\n";
+    std::cerr << "         Forcing prefilterLossyOM_ to false\n";
+    prefilterLossyOM_ = false;
+  }
+
   if ( useMissedPointsSeparateVideo_ ) {
     if ( geometryMPConfig_.empty() || !exist( geometryMPConfig_ ) ) {
       std::cerr << "WARNING: geometryMPConfig_ is set as geometryConfig_ : " << geometryConfig_ << std::endl;

@@ -104,7 +104,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
                            params_.videoDecoderOccupancyMapPath_, context, params_.keepIntermediateFiles_,
                            ( sps.getLosslessGeo() ? sps.getLosslessGeo444() : false ), false, "", "" );
   context.getOccupancyPrecision() = sps.getFrameWidth() / context.getVideoOccupancyMap().getWidth();
-  generateOccupancyMap( context, context.getOccupancyPrecision(), ops.getOccupancyLossyThreshold() );
+  generateOccupancyMap( context, context.getOccupancyPrecision(), ops.getOccupancyLossyThreshold(), sps.getEnhancedOccupancyMapForDepthFlag() );
 
   if ( !sps.getLayerAbsoluteCodingEnabledFlag( 1 ) ) {
     if ( lossyMpp ) {

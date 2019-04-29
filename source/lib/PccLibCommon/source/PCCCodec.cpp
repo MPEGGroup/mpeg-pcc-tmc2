@@ -1343,16 +1343,17 @@ void PCCCodec::generateMPsTexturefromImage( PCCContext&       context,
   }
 }
 
-void PCCCodec::generateOccupancyMap( PCCContext& context, const size_t occupancyPrecision, const size_t thresholdLossyOM ) {
+void PCCCodec::generateOccupancyMap( PCCContext& context, const size_t occupancyPrecision, const size_t thresholdLossyOM, bool enhancedOccupancyMapForDepthFlag ) {
   for ( auto& frame : context.getFrames() ) {
-    generateOccupancyMap( frame, context.getVideoOccupancyMap().getFrame( frame.getIndex() ), occupancyPrecision, thresholdLossyOM );
+    generateOccupancyMap( frame, context.getVideoOccupancyMap().getFrame( frame.getIndex() ), occupancyPrecision, thresholdLossyOM, enhancedOccupancyMapForDepthFlag );
   }
 }
 
 void PCCCodec::generateOccupancyMap( PCCFrameContext&            frame,
                                      const PCCImageOccupancyMap& videoFrame,
                                      const size_t                occupancyPrecision,
-                                     const size_t                thresholdLossyOM ) {
+                                     const size_t                thresholdLossyOM,
+                                     const bool                  enhancedOccupancyMapForDepthFlag ) {
   auto& width        = frame.getWidth();
   auto& height       = frame.getHeight();
   auto& occupancyMap = frame.getOccupancyMap();
@@ -1360,11 +1361,17 @@ void PCCCodec::generateOccupancyMap( PCCFrameContext&            frame,
   for ( size_t v = 0; v < height; ++v ) {
     for ( size_t u = 0; u < width; ++u ) {
       uint8_t pixel = videoFrame.getValue(0, u / occupancyPrecision, v / occupancyPrecision);
-      if (pixel <= thresholdLossyOM) {
-        occupancyMap[v*width + u] = 0;
+      if (!enhancedOccupancyMapForDepthFlag) {
+        if (pixel <= thresholdLossyOM) {
+          occupancyMap[v*width + u] = 0;
+        }
+        else {
+          occupancyMap[v*width + u] = 1;
+        }
       }
-      else {
-        occupancyMap[v*width + u] = pixel; //TODO: TEMPORARY FIX FOR LOSSLESS CODING
+      else
+      {
+        occupancyMap[v*width + u] = pixel;
       }
     }
   }

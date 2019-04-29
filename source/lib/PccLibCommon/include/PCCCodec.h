@@ -125,7 +125,7 @@ class PCCCodec {
 
   void generateMissedPointsTexturefromVideo( PCCContext& context, PCCGroupOfFrames& reconstructs );
 
-  void generateOccupancyMap( PCCContext& context, const size_t occupancyPrecision, const size_t thresholdLossyOM );
+  void generateOccupancyMap( PCCContext& context, const size_t occupancyPrecision, const size_t thresholdLossyOM, bool enhancedOccupancyMapForDepthFlag );
 
 #ifdef CODEC_TRACE
   template <typename... Args>
@@ -157,7 +157,8 @@ class PCCCodec {
   void generateOccupancyMap( PCCFrameContext&            frame,
                              const PCCImageOccupancyMap& videoFrame,
                              const size_t                occupancyPrecision,
-                             const size_t                thresholdLossyOM );
+                             const size_t                thresholdLossyOM,
+                             const bool                  enhancedOccupancyMapForDepthFlag );
 
   void generateBlockToPatchFromOccupancyMap( PCCContext&  context,
                                              const bool   losslessGeo,
