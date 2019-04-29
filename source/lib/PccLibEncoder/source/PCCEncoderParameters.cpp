@@ -36,6 +36,11 @@
 #include "PCCFrameContext.h"
 using namespace pcc;
 
+const std::vector<PointLocalReconstructionMode> g_pointLocalReconstructionMode = {
+    {0, 0, 0, 1}, {1, 0, 0, 1}, {1, 1, 0, 1}, {1, 0, 0, 2}, {1, 1, 0, 2},
+    {0, 0, 1, 1}, {1, 0, 1, 1}, {1, 1, 1, 1}, {1, 0, 1, 2}, {1, 1, 1, 2},
+};
+
 PCCEncoderParameters::PCCEncoderParameters() {
   uncompressedDataPath_                   = {};
   compressedStreamPath_                   = {};
@@ -119,6 +124,8 @@ PCCEncoderParameters::PCCEncoderParameters() {
   // reconstruction
   removeDuplicatePoints_        = true;
   oneLayerMode_                 = false;
+  nbPlrmMode_                   = 0;
+  patchSize_                    = 0;
   singleLayerPixelInterleaving_ = false;
   surfaceSeparation_ = false;
   
@@ -290,6 +297,8 @@ void PCCEncoderParameters::print() {
   std::cout << "\t Reconstruction " << std::endl;
   std::cout << "\t   removeDuplicatePoints                " << removeDuplicatePoints_ << std::endl;
   std::cout << "\t   oneLayerMode                         " << oneLayerMode_ << std::endl;
+  std::cout << "\t     nbPlrmMode                         " << nbPlrmMode_ << std::endl;
+  std::cout << "\t     patchSize                          " << patchSize_ << std::endl;
   std::cout << "\t   singleLayerPixelInterleaving         " << singleLayerPixelInterleaving_ << std::endl;
   std::cout << "\t surface Separation                     " << surfaceSeparation_ << std::endl;
   std::cout << "\t Lossy missed points patch" << std::endl;
@@ -524,6 +533,11 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   context.getMPAttWidth()         = 64;
   context.getMPGeoHeight()        = 0;
   context.getMPAttHeight()        = 0;
+
+  size_t numPlrm = ( std::max )( (size_t)1, ( std::min )( nbPlrmMode_, g_pointLocalReconstructionMode.size() ) );
+  for ( size_t i = 0; i < numPlrm; i++ ) {
+    context.addPointLocalReconstructionMode( g_pointLocalReconstructionMode[i] );
+  }
   // Lossy occupancy map
   context.getOffsetLossyOM()      = offsetLossyOM_;
   context.getPrefilterLossyOM()   = prefilterLossyOM_;

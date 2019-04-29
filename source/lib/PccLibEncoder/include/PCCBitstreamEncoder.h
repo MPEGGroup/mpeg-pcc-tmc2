@@ -68,10 +68,11 @@ class PatchInformationData;
 class PatchDataUnit;
 class DeltaPatchDataUnit;
 class PCMPatchDataUnit;
-class PointLocalReconstruction;
 class GeometryParameterSet;
 class AttributeSequenceParams;
 class AttributeFrameParams;
+class PointLocalReconstruction;
+class PointLocalReconstructionData;
 
 class PCCBitstreamEncoder {
  public:
@@ -96,11 +97,11 @@ class PCCBitstreamEncoder {
 
   void vpccVideoDataUnit( PCCContext& context, PCCBitstream& bitstream, VPCCUnitType vpccUnitType );
 
-  // 7.3.4.1 General Sequence parameter set syntax
-  void sequenceParameterSet( SequenceParameterSet& sequenceParameterSet, PCCBitstream& bitstream );
-
-  // 7.3.4.2 Byte alignment syntax
+  // 7.3.3	Byte alignment syntax
   void byteAlignment( PCCBitstream& bitstream );
+
+  // 7.3.4.1 General Sequence parameter set syntax
+  void sequenceParameterSet( SequenceParameterSet& sequenceParameterSet, PCCContext& context, PCCBitstream& bitstream );
 
   // 7.3.4.2 Profile, tier, and level
   void profileTierLevel( ProfileTierLevel& profileTierLevel, PCCBitstream& bitstream );
@@ -121,7 +122,7 @@ class PCCBitstreamEncoder {
                               SequenceParameterSet&  sequenceParameterSet,
                               PCCBitstream&          bitstream );
 
-  // OLD 7.3.13 Attribute sequence Params
+  // OLD 7.3.13 Attribute sequence Params TODO: remove
   void attributeSequenceParams( AttributeSequenceParams& attributeSequenceParams,
                                 uint8_t                  dimension,
                                 PCCBitstream&            bitstream );
@@ -230,10 +231,9 @@ class PCCBitstreamEncoder {
                          PCCContext&              context,
                          PCCBitstream&            bitstream );
 
-  // 7.3.5.21 Point local reconstruction syntax 
-  void pointLocalReconstruction( PointLocalReconstruction& plr,
-                                 PCCContext&               context,
-                                 PCCBitstream&             bitstream );
+  // 7.3.5.21 Point local reconstruction syntax
+  void pointLocalReconstruction( PointLocalReconstruction& plr, PCCContext& context, PCCBitstream& bitstream );
+  void pointLocalReconstructionData( PointLocalReconstructionData& plrd, PCCContext& context, PCCBitstream& bitstream );
 
   // 7.3.5.22 Supplemental enhancement information message syntax TODO: declaration missing
 

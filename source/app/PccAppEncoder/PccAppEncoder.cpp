@@ -589,6 +589,17 @@ bool parseParameters( int                   argc,
       encoderParams.use3dmc_,
       "Use auxilliary information for 3d motion compensation.(0: conventional video coding, 1: 3D motion compensated)\n")
 
+    ("nbPlrmMode",
+        encoderParams.nbPlrmMode_,
+        encoderParams.nbPlrmMode_,
+        "Number of PLR mode")
+
+    ("patchSize",
+        encoderParams.patchSize_,
+        encoderParams.patchSize_,
+        "Size of Patch for PLR")
+
+
 	("enhancedProjectionPlane",
       encoderParams.enhancedPP_,
 	  encoderParams.enhancedPP_,

@@ -170,6 +170,8 @@ class PCCEncoderParameters {
   // reconstruction
   bool                removeDuplicatePoints_;
   bool                oneLayerMode_;
+  size_t              patchSize_;
+  size_t              nbPlrmMode_;
   bool                singleLayerPixelInterleaving_;
 
   //visual quality

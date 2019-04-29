@@ -49,7 +49,8 @@ class PCCContext;
 class PCCFrameContext;
 class GeometryFrameParameterSet;
 class GeometryPatchParameterSet;
-class PointLocalReconstruction;
+class SequenceParameterSet; 
+class PointLocalReconstructionData;
 
 template <typename T, size_t N>
 class PCCVideo;
@@ -226,12 +227,13 @@ private:
   void create3DMotionEstimationFiles( PCCContext& context, std::string path );
   void remove3DMotionEstimationFiles( std::string path );
 
-  void reconstuctionOptimization( PCCContext& context,
-                                  const GeneratePointCloudParameters params );
-  void reconstuctionOptimization( PCCFrameContext &frame,
-                                  const PCCVideoGeometry &video,
-                                  const PCCVideoGeometry &videoD1,
-                                  const GeneratePointCloudParameters params);
+  void pointLocalReconstructionSearch( PCCContext& context, const GeneratePointCloudParameters params );
+  void pointLocalReconstructionSearch( PCCContext&                        context,
+                                       PCCFrameContext&                   frame,
+                                       const PCCVideoGeometry&            video,
+                                       const PCCVideoGeometry&            videoD1,
+                                       const GeneratePointCloudParameters params );
+
   void presmoothPointCloudColor(PCCPointSet3 &reconstruct, const PCCEncoderParameters params);
 
   void calculate_weight_normal(const PCCPointSet3& source, PCCFrameContext& frameContext);
@@ -298,7 +300,13 @@ private:
   void setGeometryFrameParameterSet( PCCMetadata& metadata, GeometryFrameParameterSet& gfps );
   void setGeometryPatchParameterSet( PCCMetadata& metadata, GeometryPatchParameterSet& gpps );
 
-  void setPointLocalReconstruction( PCCFrameContext& frame, const PCCPatch& patch, PointLocalReconstruction& plr, size_t occupancyPackingBlockSize );
+  void setPointLocalReconstruction( PCCContext& context, SequenceParameterSet& sps );
+
+  void setPointLocalReconstructionData( PCCFrameContext&              frame,
+                                        const PCCPatch&               patch,
+                                        PointLocalReconstructionData& plrd,
+                                        size_t                        occupancyPackingBlockSize,
+                                        size_t                        patchIndex );
 
   void SegmentationPartiallyAddtinalProjectionPlane( const PCCPointSet3& source, PCCFrameContext& frameContext,
                              const PCCPatchSegmenter3Parameters segmenterParams,

@@ -69,6 +69,8 @@ class PatchInformationData;
 class PatchDataUnit;
 class DeltaPatchDataUnit;
 class PCMPatchDataUnit;
+class PointLocalReconstruction; 
+class PointLocalReconstructionData; 
 
 class PCCBitstreamDecoder {
  public:
@@ -94,7 +96,7 @@ class PCCBitstreamDecoder {
   void vpccVideoDataUnit( PCCContext& context, PCCBitstream& bitstream, VPCCUnitType& vpccUnitType );
 
   // 7.3.4.1 General Sequence parameter set syntax
-  void sequenceParameterSet( SequenceParameterSet& sequenceParameterSet, PCCBitstream& bitstream );
+  void sequenceParameterSet( SequenceParameterSet& sequenceParameterSet, PCCContext& context, PCCBitstream& bitstream );
 
   // 7.3.4.2 Byte alignment syntax
   void byteAlignment( PCCBitstream& bitstream );
@@ -228,9 +230,12 @@ class PCCBitstreamDecoder {
                          PCCBitstream&            bitstream );
 
   // 7.3.5.21 Point local reconstruction syntax
-  void pointLocalReconstruction( PointLocalReconstruction& plr,
-                                 PCCContext&               context,
-                                 PCCBitstream&             bitstream );
+  void pointLocalReconstruction( PointLocalReconstruction& plr, PCCContext& context, PCCBitstream& bitstream );
+  void pointLocalReconstructionData( PointLocalReconstructionData& plrd, PCCContext& context, PCCBitstream& bitstream );
+
+  int32_t prevPatchSizeU_;
+  int32_t prevPatchSizeV_;
+  int32_t predPatchIndex_;
 
   // 7.3.5.22 Supplemental enhancement information message syntax TODO: declaration missing
 };

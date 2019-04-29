@@ -55,76 +55,101 @@ typedef std::pair<size_t, size_t>                   SubContext;     // [start, e
 
 // 7.3.5.22 Supplemental enhancement information message syntax TODO: implement this class
 
-// 7.3.5.21 Point local reconstruction syntax
+// 7.3.34' Point local reconstruction syntax
 class PointLocalReconstruction {
  public:
-  PointLocalReconstruction() : plrBlockToPatchMapHeight_( 0 ), plrBlockToPatchMapWidth_( 0 ) {
-    blockToPatchMap_.clear();
-    plrModeInterpolateFlag_.clear();
-    plrModeNeighbourMinus1_.clear();
-    plrModeMinimumDepthMinus1_.clear();
-    plrModeFillingFlag_.clear();
+  PointLocalReconstruction() : plrlNumberOfModesMinus1_( 0 ), plrBlockThresholdPerPatchMinus1_( 0 ) {
+    plrlMinimumDepth_.clear();
+    plrlNeighbourMinus1_.clear();
+    plrlInterpolateFlag_.clear();
+    plrlFillingFlag_.clear();
   };
   ~PointLocalReconstruction() {
-    blockToPatchMap_.clear();
-    plrModeInterpolateFlag_.clear();
-    plrModeNeighbourMinus1_.clear();
-    plrModeMinimumDepthMinus1_.clear();
-    plrModeFillingFlag_.clear();
+    plrlMinimumDepth_.clear();
+    plrlNeighbourMinus1_.clear();
+    plrlInterpolateFlag_.clear();
+    plrlFillingFlag_.clear();
   };
 
   PointLocalReconstruction& operator=( const PointLocalReconstruction& ) = default;
 
   void allocate() {
-    size_t size = plrBlockToPatchMapWidth_ * plrBlockToPatchMapHeight_;
-    blockToPatchMap_.resize( size, 0 );
-    plrModeInterpolateFlag_.resize( size, 0 );
-    plrModeNeighbourMinus1_.resize( size, 0 );
-    plrModeMinimumDepthMinus1_.resize( size, 0 );
-    plrModeFillingFlag_.resize( size, 0 );
+    plrlMinimumDepth_.resize( plrlNumberOfModesMinus1_ + 1, 0 );
+    plrlNeighbourMinus1_.resize( plrlNumberOfModesMinus1_ + 1, 0 );
+    plrlInterpolateFlag_.resize( plrlNumberOfModesMinus1_ + 1, false );
+    plrlFillingFlag_.resize( plrlNumberOfModesMinus1_ + 1, false );
   }
-  size_t  getBlockToPatchMapHeight() { return plrBlockToPatchMapHeight_; };
-  size_t  getBlockToPatchMapWidth() { return plrBlockToPatchMapWidth_; };
-  uint8_t getBlockToPatchMap( size_t x, size_t y ) { return blockToPatchMap_[y * plrBlockToPatchMapWidth_ + x]; }
-  bool    getModeInterpolateFlag( size_t x, size_t y ) {
-    return plrModeInterpolateFlag_[y * plrBlockToPatchMapWidth_ + x];
-  }
-  uint8_t getModeNeighbourMinus1( size_t x, size_t y ) {
-    return plrModeNeighbourMinus1_[y * plrBlockToPatchMapWidth_ + x];
-  }
-  uint8_t getModeMinimumDepthMinus1( size_t x, size_t y ) {
-    return plrModeMinimumDepthMinus1_[y * plrBlockToPatchMapWidth_ + x];
-  }
-  bool getModeFillingFlag( size_t x, size_t y ) { return plrModeFillingFlag_[y * plrBlockToPatchMapWidth_ + x]; }
 
-  void setBlockToPatchMapHeight( size_t value ) { plrBlockToPatchMapHeight_ = value; };
-  void setBlockToPatchMapWidth( size_t value ) { plrBlockToPatchMapWidth_ = value; };
-  void setBlockToPatchMap( size_t x, size_t y, uint8_t value ) {
-    blockToPatchMap_[y * plrBlockToPatchMapWidth_ + x] = value;
-  }
-  void setModeInterpolateFlag( size_t x, size_t y, bool value ) {
-    plrModeInterpolateFlag_[y * plrBlockToPatchMapWidth_ + x] = value;
-  }
-  void setModeNeighbourMinus1( size_t x, size_t y, uint8_t value ) {
-    plrModeNeighbourMinus1_[y * plrBlockToPatchMapWidth_ + x] = value;
-  }
-  void setModeMinimumDepthMinus1( size_t x, size_t y, uint8_t value ) {
-    plrModeMinimumDepthMinus1_[y * plrBlockToPatchMapWidth_ + x] = value;
-  }
-  void setModeFillingFlag( size_t x, size_t y, bool value ) {
-    plrModeFillingFlag_[y * plrBlockToPatchMapWidth_ + x] = value;
-  }
+  uint8_t getPlrlNumberOfModesMinus1() { return plrlNumberOfModesMinus1_; }
+  uint8_t getPlrBlockThresholdPerPatchMinus1() { return plrBlockThresholdPerPatchMinus1_; }
+  uint8_t getPlrlMinimumDepth( size_t index ) { return plrlMinimumDepth_[index]; }
+  uint8_t getPlrlNeighbourMinus1( size_t index ) { return plrlNeighbourMinus1_[index]; }
+  bool    getPlrlInterpolateFlag( size_t index ) { return plrlInterpolateFlag_[index]; }
+  bool    getPlrlFillingFlag( size_t index ) { return plrlFillingFlag_[index]; }
+
+  void setPlrlNumberOfModesMinus1( uint8_t value ) { plrlNumberOfModesMinus1_ = value; }
+  void setPlrBlockThresholdPerPatchMinus1( uint8_t value ) { plrBlockThresholdPerPatchMinus1_ = value; }
+  void setPlrlMinimumDepth( size_t index, uint8_t value ) { plrlMinimumDepth_[index] = value; }
+  void setPlrlNeighbourMinus1( size_t index, uint8_t value ) { plrlNeighbourMinus1_[index] = value; }
+  void setPlrlInterpolateFlag( size_t index, bool value ) { plrlInterpolateFlag_[index] = value; }
+  void setPlrlFillingFlag( size_t index, bool value ) { plrlFillingFlag_[index] = value; }
 
  private:
-  /* internal */
-  size_t plrBlockToPatchMapHeight_;
-  size_t plrBlockToPatchMapWidth_;
-  /* syntax */
-  std::vector<uint8_t> blockToPatchMap_;  // size is plrBlockToPatchMapHeight_ * plrBlockToPatchMapWidth_
-  std::vector<bool>    plrModeInterpolateFlag_;
-  std::vector<uint8_t> plrModeNeighbourMinus1_;
-  std::vector<uint8_t> plrModeMinimumDepthMinus1_;
-  std::vector<bool>    plrModeFillingFlag_;
+  uint8_t              plrlNumberOfModesMinus1_;
+  uint8_t              plrBlockThresholdPerPatchMinus1_;
+  std::vector<uint8_t> plrlMinimumDepth_;
+  std::vector<uint8_t> plrlNeighbourMinus1_;
+  std::vector<bool>    plrlInterpolateFlag_;
+  std::vector<bool>    plrlFillingFlag_;
+};
+
+// 7.3.34 Point local reconstruction data syntax
+class PointLocalReconstructionData {
+ public:
+  PointLocalReconstructionData() :
+      plrBlockToPatchMapHeight_( 0 ),
+      plrBlockToPatchMapWidth_( 0 ),
+      plrLevelFlag_( 0 ),
+      plrPresentFlag_( false ),
+      plrModeMinus1_( 0 ) {
+    plrBlockPresentFlag_.clear();
+    plrBlockModeMinus1_.clear();
+  };
+  ~PointLocalReconstructionData() {
+    plrBlockPresentFlag_.clear();
+    plrBlockModeMinus1_.clear();
+  };
+
+  PointLocalReconstructionData& operator=( const PointLocalReconstructionData& ) = default;
+
+  void allocate( size_t plrBlockToPatchMapWidth, size_t plrBlockToPatchMapHeight ) {
+    plrBlockToPatchMapWidth_  = plrBlockToPatchMapWidth;
+    plrBlockToPatchMapHeight_ = plrBlockToPatchMapHeight;
+    plrBlockPresentFlag_.resize( plrBlockToPatchMapWidth_ * plrBlockToPatchMapHeight_, false );
+    plrBlockModeMinus1_.resize( plrBlockToPatchMapWidth_ * plrBlockToPatchMapHeight_, 0 );
+  }
+  size_t  getPlrBlockToPatchMapHeight() { return plrBlockToPatchMapHeight_; }
+  size_t  getPlrBlockToPatchMapWidth() { return plrBlockToPatchMapWidth_; }
+  bool    getPlrLevelFlag() { return plrLevelFlag_; }
+  bool    getPlrPresentFlag() { return plrPresentFlag_; }
+  uint8_t getPlrModeMinus1() { return plrModeMinus1_; }
+  bool    getPlrBlockPresentFlag( size_t index ) { return plrBlockPresentFlag_[index]; }
+  uint8_t getPlrBlockModeMinus1( size_t index ) { return plrBlockModeMinus1_[index]; }
+
+  void setPlrLevelFlag( bool value ) { plrLevelFlag_ = value; }
+  void setPlrPresentFlag( bool value ) { plrPresentFlag_ = value; }
+  void setPlrModeMinus1( uint8_t value ) { plrModeMinus1_ = value; }
+  void setPlrBlockPresentFlag( size_t index, bool value ) { plrBlockPresentFlag_[index] = value; }
+  void setPlrBlockModeMinus1( size_t index, uint8_t value ) { plrBlockModeMinus1_[index] = value; }
+
+ private:
+  size_t               plrBlockToPatchMapHeight_;
+  size_t               plrBlockToPatchMapWidth_;
+  bool                 plrLevelFlag_;
+  bool                 plrPresentFlag_;
+  uint8_t              plrModeMinus1_;
+  std::vector<bool>    plrBlockPresentFlag_;
+  std::vector<uint8_t> plrBlockModeMinus1_;
 };
 
 // 7.3.5.20  PCM patch data unit syntax (
@@ -182,18 +207,19 @@ class DeltaPatchDataUnit {
   ~DeltaPatchDataUnit(){};
   DeltaPatchDataUnit& operator=( const DeltaPatchDataUnit& ) = default;
 
-  uint8_t  getDeltaPatchIdx() { return dpduPatchIndex_; }
-  int64_t  get2DDeltaShiftU() { return dpdu2DDeltaShiftU_; }
-  int64_t  get2DDeltaShiftV() { return dpdu2DDeltaShiftV_; }
-  int64_t  get2DDeltaSizeU() { return dpdu2DDeltaSizeU_; }
-  int64_t  get2DDeltaSizeV() { return dpdu2DDeltaSizeV_; }
-  int64_t  get2DDeltaSizeD() { return dpdu2DDeltaSizeD_; }
-  int64_t  get3DDeltaShiftTangentAxis() { return dpdu3DDeltaShiftTangentAxis_; }
-  int64_t  get3DDeltaShiftBiTangentAxis() { return dpdu3DDeltaShiftBiTangentAxis_; }
-  int64_t  get3DDeltaShiftNormalAxis() { return dpdu3DDeltaShiftNormalAxis_; }
-  PCCAxis3 getNormalAxis() { return dpduNormalAxis_; }
-  uint8_t  getLod() { return dpduLod_; }
-  bool     getProjectionMode() { return dpduProjectionMode_; }
+  uint8_t                       getDeltaPatchIdx() { return dpduPatchIndex_; }
+  int64_t                       get2DDeltaShiftU() { return dpdu2DDeltaShiftU_; }
+  int64_t                       get2DDeltaShiftV() { return dpdu2DDeltaShiftV_; }
+  int64_t                       get2DDeltaSizeU() { return dpdu2DDeltaSizeU_; }
+  int64_t                       get2DDeltaSizeV() { return dpdu2DDeltaSizeV_; }
+  int64_t                       get2DDeltaSizeD() { return dpdu2DDeltaSizeD_; }
+  int64_t                       get3DDeltaShiftTangentAxis() { return dpdu3DDeltaShiftTangentAxis_; }
+  int64_t                       get3DDeltaShiftBiTangentAxis() { return dpdu3DDeltaShiftBiTangentAxis_; }
+  int64_t                       get3DDeltaShiftNormalAxis() { return dpdu3DDeltaShiftNormalAxis_; }
+  PCCAxis3                      getNormalAxis() { return dpduNormalAxis_; }
+  uint8_t                       getLod() { return dpduLod_; }
+  bool                          getProjectionMode() { return dpduProjectionMode_; }
+  PointLocalReconstructionData& getPointLocalReconstructionData() { return pointLocalReconstructionData_; }
 
   void setDeltaPatchIdx( uint8_t value ) { dpduPatchIndex_ = value; }
   void set2DDeltaShiftU( int64_t value ) { dpdu2DDeltaShiftU_ = value; }
@@ -207,20 +233,22 @@ class DeltaPatchDataUnit {
   void setNormalAxis( PCCAxis3 value ) { dpduNormalAxis_ = value; }
   void setLod( uint8_t value ) { dpduLod_ = value; }
   void setProjectionMode( bool value ) { dpduProjectionMode_ = value; }
+  void setPointLocalReconstructionData( PointLocalReconstructionData value ) { pointLocalReconstructionData_ = value; }
 
  private:
-  uint8_t  dpduPatchIndex_;
-  int64_t  dpdu2DDeltaShiftU_;  // sizes need to be determined
-  int64_t  dpdu2DDeltaShiftV_;
-  int64_t  dpdu2DDeltaSizeU_;
-  int64_t  dpdu2DDeltaSizeV_;
-  int64_t  dpdu2DDeltaSizeD_;
-  int64_t  dpdu3DDeltaShiftTangentAxis_;
-  int64_t  dpdu3DDeltaShiftBiTangentAxis_;
-  int64_t  dpdu3DDeltaShiftNormalAxis_;
-  PCCAxis3 dpduNormalAxis_;
-  uint8_t  dpduLod_;
-  bool     dpduProjectionMode_;
+  uint8_t                      dpduPatchIndex_;
+  int64_t                      dpdu2DDeltaShiftU_;  // sizes need to be determined
+  int64_t                      dpdu2DDeltaShiftV_;
+  int64_t                      dpdu2DDeltaSizeU_;
+  int64_t                      dpdu2DDeltaSizeV_;
+  int64_t                      dpdu2DDeltaSizeD_;
+  int64_t                      dpdu3DDeltaShiftTangentAxis_;
+  int64_t                      dpdu3DDeltaShiftBiTangentAxis_;
+  int64_t                      dpdu3DDeltaShiftNormalAxis_;
+  PCCAxis3                     dpduNormalAxis_;
+  uint8_t                      dpduLod_;
+  bool                         dpduProjectionMode_;
+  PointLocalReconstructionData pointLocalReconstructionData_;
 };
 
 // 7.3.5.18  Patch data unit syntax (pdu)
@@ -240,26 +268,27 @@ class PatchDataUnit {
       pduLod_( 0 ),
       pduProjectionMode_( false ),
       pdu45DegreeProjectionPresentFlag_( false ),
-      pdu45DegreeProjectionRotationAxis_(0){};
+      pdu45DegreeProjectionRotationAxis_( 0 ){};
 
   ~PatchDataUnit(){};
 
   PatchDataUnit& operator=( const PatchDataUnit& ) = default;
 
-  size_t   get2DShiftU() { return pdu2DShiftU_; }
-  size_t   get2DShiftV() { return pdu2DShiftV_; }
-  int64_t  get2DDeltaSizeU() { return pdu2DDeltaSizeU_; }
-  int64_t  get2DDeltaSizeV() { return pdu2DDeltaSizeV_; }
-  int64_t  get2DDeltaSizeD() { return pdu2DDeltaSizeD_; }
-  size_t   get3DShiftTangentAxis() { return pdu3DShiftTangentAxis_; }
-  size_t   get3DShiftBiTangentAxis() { return pdu3DShiftBiTangentAxis_; }
-  size_t   get3DShiftNormalAxis() { return pdu3DShiftNormalAxis_; }
-  PCCAxis3 getNormalAxis() { return pduNormalAxis_; }
-  uint8_t  getOrientationIndex() { return pduOrientationIndex_; }
-  uint8_t  getLod() { return pduLod_; }
-  bool     getProjectionMode() { return pduProjectionMode_; }
-  bool     get45DegreeProjectionPresentFlag() { return pdu45DegreeProjectionPresentFlag_; }
-  uint8_t  get45DegreeProjectionRotationAxis() { return pdu45DegreeProjectionRotationAxis_; }
+  size_t                        get2DShiftU() { return pdu2DShiftU_; }
+  size_t                        get2DShiftV() { return pdu2DShiftV_; }
+  int64_t                       get2DDeltaSizeU() { return pdu2DDeltaSizeU_; }
+  int64_t                       get2DDeltaSizeV() { return pdu2DDeltaSizeV_; }
+  int64_t                       get2DDeltaSizeD() { return pdu2DDeltaSizeD_; }
+  size_t                        get3DShiftTangentAxis() { return pdu3DShiftTangentAxis_; }
+  size_t                        get3DShiftBiTangentAxis() { return pdu3DShiftBiTangentAxis_; }
+  size_t                        get3DShiftNormalAxis() { return pdu3DShiftNormalAxis_; }
+  PCCAxis3                      getNormalAxis() { return pduNormalAxis_; }
+  uint8_t                       getOrientationIndex() { return pduOrientationIndex_; }
+  uint8_t                       getLod() { return pduLod_; }
+  bool                          getProjectionMode() { return pduProjectionMode_; }
+  PointLocalReconstructionData& getPointLocalReconstructionData() { return pointLocalReconstructionData_; }
+  bool                          get45DegreeProjectionPresentFlag() { return pdu45DegreeProjectionPresentFlag_; }
+  uint8_t                       get45DegreeProjectionRotationAxis() { return pdu45DegreeProjectionRotationAxis_; }
 
   void set2DShiftU( size_t value ) { pdu2DShiftU_ = value; }
   void set2DShiftV( size_t value ) { pdu2DShiftV_ = value; }
@@ -270,27 +299,29 @@ class PatchDataUnit {
   void set3DShiftBiTangentAxis( size_t value ) { pdu3DShiftBiTangentAxis_ = value; }
   void set3DShiftNormalAxis( size_t value ) { pdu3DShiftNormalAxis_ = value; }
   void setNormalAxis( PCCAxis3 value ) { pduNormalAxis_ = value; }
-  void setOrientationIndex(uint8_t value ) { pduOrientationIndex_ = value; }
+  void setOrientationIndex( uint8_t value ) { pduOrientationIndex_ = value; }
   void setLod( uint8_t value ) { pduLod_ = value; }
   void setProjectionMode( bool value ) { pduProjectionMode_ = value; }
-  void set45DegreeProjectionPresentFlag(bool value) { pdu45DegreeProjectionPresentFlag_ = value; }
-  void set45DegreeProjectionRotationAxis(uint8_t value) { pdu45DegreeProjectionRotationAxis_ = value; }
+  void setPointLocalReconstructionData( PointLocalReconstructionData value ) { pointLocalReconstructionData_ = value; }
+  void set45DegreeProjectionPresentFlag( bool value ) { pdu45DegreeProjectionPresentFlag_ = value; }
+  void set45DegreeProjectionRotationAxis( uint8_t value ) { pdu45DegreeProjectionRotationAxis_ = value; }
 
  private:
-  size_t   pdu2DShiftU_;  // sizes need to be determined
-  size_t   pdu2DShiftV_;
-  int64_t  pdu2DDeltaSizeU_;
-  int64_t  pdu2DDeltaSizeV_;
-  int64_t  pdu2DDeltaSizeD_;
-  size_t   pdu3DShiftTangentAxis_;
-  size_t   pdu3DShiftBiTangentAxis_;
-  size_t   pdu3DShiftNormalAxis_;
-  PCCAxis3 pduNormalAxis_;
-  uint8_t  pduOrientationIndex_;
-  uint8_t  pduLod_;
-  bool     pduProjectionMode_;
-  bool     pdu45DegreeProjectionPresentFlag_;
-  uint8_t  pdu45DegreeProjectionRotationAxis_;
+  size_t                       pdu2DShiftU_;  // sizes need to be determined
+  size_t                       pdu2DShiftV_;
+  int64_t                      pdu2DDeltaSizeU_;
+  int64_t                      pdu2DDeltaSizeV_;
+  int64_t                      pdu2DDeltaSizeD_;
+  size_t                       pdu3DShiftTangentAxis_;
+  size_t                       pdu3DShiftBiTangentAxis_;
+  size_t                       pdu3DShiftNormalAxis_;
+  PCCAxis3                     pduNormalAxis_;
+  uint8_t                      pduOrientationIndex_;
+  uint8_t                      pduLod_;
+  bool                         pduProjectionMode_;
+  PointLocalReconstructionData pointLocalReconstructionData_;
+  bool                         pdu45DegreeProjectionPresentFlag_;
+  uint8_t                      pdu45DegreeProjectionRotationAxis_;
 };
 
 // 7.3.5.17  Patch information data syntax (pid)
@@ -375,10 +406,9 @@ class PatchFrameDataUnit {
     patchInformationData_.push_back( pid );
     return patchInformationData_.back();
   }
-  uint8_t                   getPatchCount() { return patchMode_.size(); }
-  uint8_t                   getPatchMode( uint8_t index ) { return patchMode_[index]; }
-  PatchInformationData&     getPatchInformationData( uint8_t index ) { return patchInformationData_[index]; }
-  PointLocalReconstruction& getPointLocalReconstruction() { return pointLocalReconstruction_; }
+  uint8_t               getPatchCount() { return patchMode_.size(); }
+  uint8_t               getPatchMode( uint8_t index ) { return patchMode_[index]; }
+  PatchInformationData& getPatchInformationData( uint8_t index ) { return patchInformationData_[index]; }
 
   uint8_t getMatchedPatchCount() {
     uint8_t matchedPatchCount = 0;
@@ -391,13 +421,11 @@ class PatchFrameDataUnit {
   void setPatchCount( uint8_t value ) { patchCount_ = value; }
   void setPatchMode( uint8_t index, uint8_t value ) { patchMode_[index] = value; }
   void setPatchInformationData( uint8_t index, PatchInformationData& value ) { patchInformationData_[index] = value; }
-  void setPointLocalReconstruction( PointLocalReconstruction value ) { pointLocalReconstruction_ = value; }
 
  private:
   uint8_t                           patchCount_;
   std::vector<uint8_t>              patchMode_;
   std::vector<PatchInformationData> patchInformationData_;
-  PointLocalReconstruction          pointLocalReconstruction_;
 };
 
 // 7.3.5.15  Reference list structure syntax
@@ -481,7 +509,7 @@ class PatchFrameHeader {
   }
   PatchFrameHeader& operator=( const PatchFrameHeader& ) = default;
 
-  uint8_t getFrameIndex(){ return frameIndex_; }
+  uint8_t  getFrameIndex() { return frameIndex_; }
   uint8_t  getPatchFrameParameterSetId() { return patchFrameParameterSetId_; }
   uint32_t getAddress() { return address_; }
   uint32_t getType() { return type_; }
@@ -503,8 +531,7 @@ class PatchFrameHeader {
   bool getInterPredictPatchLodBitCountFlag() { return interPredictPatchLodBitCountFlag_; }
   uint8_t getInterPredictPatch2dShiftUBitCountMinus1() { return interPredictPatch2dShiftUBitCountMinus1_; }
   uint8_t getInterPredictPatch2dShiftVBitCountMinus1() { return interPredictPatch2dShiftVBitCountMinus1_; }
-  uint8_t getInterPredictPatch2dDeltaSizeDBitCountMinus1(){
-    return interPredictPatch2dDeltaSizeDBitCountMinus1_; }
+  uint8_t getInterPredictPatch2dDeltaSizeDBitCountMinus1() { return interPredictPatch2dDeltaSizeDBitCountMinus1_; }
   uint8_t getInterPredictPatch3dShiftTangentAxisBitCountMinus1() {
     return interPredictPatch3dShiftTangentAxisBitCountMinus1_;
   }
@@ -516,7 +543,7 @@ class PatchFrameHeader {
   }
   uint8_t getInterPredictPatchLodBitCount() { return interPredictPatchLodBitCount_; }
 
-  void setFrameIndex(uint8_t index){ frameIndex_=index; }
+  void setFrameIndex( uint8_t index ) { frameIndex_ = index; }
   void setPatchFrameParameterSetId( uint8_t value ) { patchFrameParameterSetId_ = value; }
   void setAddress( uint8_t value ) { address_ = value; }
   void setType( uint8_t value ) { type_ = value; }
@@ -527,8 +554,9 @@ class PatchFrameHeader {
   void setAdditionalPfocLsbVal( size_t index, uint32_t value ) { additionalPfocLsbVal_[index] = value; }
   void setNumRefIdxActiveOverrideFlag( bool value ) { numRefIdxActiveOverrideFlag_ = value; }
   void setNumRefIdxActiveMinus1( uint8_t value ) { numRefIdxActiveMinus1_ = value; }
-  void setInterPredictPatch2dDeltaSizeDBitCountMinus1( uint8_t value ){
-    interPredictPatch2dDeltaSizeDBitCountMinus1_ = value; }
+  void setInterPredictPatch2dDeltaSizeDBitCountMinus1( uint8_t value ) {
+    interPredictPatch2dDeltaSizeDBitCountMinus1_ = value;
+  }
   void setInterPredictPatch2dShiftUBitCountMinus1( uint8_t value ) { interPredictPatch2dShiftUBitCountMinus1_ = value; }
   void setInterPredictPatch2dShiftVBitCountMinus1( uint8_t value ) { interPredictPatch2dShiftVBitCountMinus1_ = value; }
   void setInterPredictPatch3dShiftTangentAxisBitCountMinus1( uint8_t value ) {
@@ -603,7 +631,7 @@ class PatchFrameLayerUnit {
   PatchFrameDataUnit patchFrameDataUnit_;
 };
 
-// 7.3.5.12  Patch frame parameter set syntax 
+// 7.3.5.12  Patch frame parameter set syntax
 class PatchFrameParameterSet {
  public:
   PatchFrameParameterSet() :
@@ -635,7 +663,7 @@ class PatchFrameParameterSet {
     return localOverrideAttributePatchEnableFlag_[index];
   }
   bool getLocalOverrideGeometryPatchEnableFlag() { return localOverrideGeometryPatchEnableFlag_; }
-  bool getProjection45DegreeEnableFlag() { return projection45DegreeEnableFlag_;}
+  bool getProjection45DegreeEnableFlag() { return projection45DegreeEnableFlag_; }
 
   void setPatchFrameParameterSetId( uint8_t value ) { patchFrameParameterSetId_ = value; }
   void setPatchSequenceParameterSetId( uint8_t value ) { patchSequenceParameterSetId_ = value; }
@@ -802,7 +830,10 @@ class GeometryPatchParameterSet {
   GeometryPatchParams geometryPatchParams_;
 };
 
-// 7.3.5.7 Attribute frame paramS syntax (afp) TODO: attributeSmoothingParamsPresentFlag_, attributeSmoothingThreshold_, attributeSmoothingThresholdLocalEntropy_ are lists with size attributeDimension; remove attributeSmoothingRadius_, attributeSmoothingNeighbourCount_ and attributeSmoothingRadius2BoundaryDetection_; add attributeSmoothingGridSize_, attributeSmoothingAttributeVariation_ and attributeSmoothingAttributeDifference_ 
+// 7.3.5.7 Attribute frame paramS syntax (afp) TODO: attributeSmoothingParamsPresentFlag_, attributeSmoothingThreshold_,
+// attributeSmoothingThresholdLocalEntropy_ are lists with size attributeDimension; remove attributeSmoothingRadius_,
+// attributeSmoothingNeighbourCount_ and attributeSmoothingRadius2BoundaryDetection_; add attributeSmoothingGridSize_,
+// attributeSmoothingAttributeVariation_ and attributeSmoothingAttributeDifference_
 class AttributeFrameParams {
  public:
   AttributeFrameParams() :
@@ -866,7 +897,8 @@ class AttributeFrameParams {
   size_t                attributeDimension_;
 };
 
-// 7.3.5.6 Patch frame attribute parameter set syntax TODO: change name of the class from AttributeFrameParameterSet to PatchFrameAttributeParameterSet, remove overrideAttributeParamsFlag_, overrideAttributePatchParamsFlag_
+// 7.3.5.6 Patch frame attribute parameter set syntax TODO: change name of the class from AttributeFrameParameterSet to
+// PatchFrameAttributeParameterSet, remove overrideAttributeParamsFlag_, overrideAttributePatchParamsFlag_
 class AttributeFrameParameterSet {
  public:
   AttributeFrameParameterSet() :
@@ -980,7 +1012,8 @@ class GeometryFrameParams {
   uint32_t geometryPointShapeInfo_;
 };
 
-// 7.3.5.4 Patch frame geometry parameter set syntax TODO: rename class from GeometryFrameParameterSet to PatchFrameGeometryParameterSet, remove geometryParamsEnabledFlag_, overrideGeometryParamsFlag_
+// 7.3.5.4 Patch frame geometry parameter set syntax TODO: rename class from GeometryFrameParameterSet to
+// PatchFrameGeometryParameterSet, remove geometryParamsEnabledFlag_, overrideGeometryParamsFlag_
 class GeometryFrameParameterSet {
  public:
   GeometryFrameParameterSet() :
@@ -1047,7 +1080,7 @@ class PatchSequenceParameterSet {
       maxDecPatchFrameBuffering_( 0 ),
       numRefPatchFrameListsInSps_( 0 ),
       longTermRefPatchFramesFlag_( false ),
-	  useEightOrientationsFlag_( false ) {
+      useEightOrientationsFlag_( false ) {
     refListStruct_.clear();
   }
   ~PatchSequenceParameterSet() { refListStruct_.clear(); }
@@ -1068,8 +1101,8 @@ class PatchSequenceParameterSet {
   void setLog2MaxPatchFrameOrderCntLsbMinus4( uint8_t value ) { log2MaxPatchFrameOrderCntLsb_ = value; }
   void setMaxDecPatchFrameBufferingMinus1( uint8_t value ) { maxDecPatchFrameBuffering_ = value; }
   void setNumRefPatchFrameListsInSps( uint8_t value ) { numRefPatchFrameListsInSps_ = value; }
-  void setLongTermRefPatchFramesFlag(bool value) { longTermRefPatchFramesFlag_ = value; }
-  void setUseEightOrientationsFlag(bool value) { useEightOrientationsFlag_ = value; }
+  void setLongTermRefPatchFramesFlag( bool value ) { longTermRefPatchFramesFlag_ = value; }
+  void setUseEightOrientationsFlag( bool value ) { useEightOrientationsFlag_ = value; }
   void setRefListStruct( uint8_t index, RefListStruct value ) { refListStruct_[index] = value; }
 
   void addRefListStruct( RefListStruct value ) { refListStruct_.push_back( value ); }
@@ -1084,7 +1117,8 @@ class PatchSequenceParameterSet {
   std::vector<RefListStruct> refListStruct_;
 };
 
-// 7.3.5.2  Patch data group unit payload syntax (pdgup) TODO: change name of the class from PatchSequenceUnitPayload to PatchDataGroupUnitPayload, update enum PSDUnitType with values defined in the CD, missing SEI message
+// 7.3.5.2  Patch data group unit payload syntax (pdgup) TODO: change name of the class from PatchSequenceUnitPayload to
+// PatchDataGroupUnitPayload, update enum PSDUnitType with values defined in the CD, missing SEI message
 class PatchSequenceUnitPayload {
  public:
   PatchSequenceUnitPayload( PSDUnitType unitType = PSD_SPS, uint8_t index = 0 ) :
@@ -1157,7 +1191,8 @@ class PatchSequenceUnitPayload {
   PatchFrameLayerUnit                     patchFrameLayerUnit_;
 };
 
-// 7.3.5.1  Patch data group unit syntax (pdgu) TODO: change the name of the class from PatchSequenceDataUnit to PatchDataGroupUnit
+// 7.3.5.1  Patch data group unit syntax (pdgu) TODO: change the name of the class from PatchSequenceDataUnit to
+// PatchDataGroupUnit
 class PatchSequenceDataUnit {
  public:
   PatchSequenceDataUnit() : frameCount_( 0 ) { patchSequenceUnitPayload_.clear(); }
@@ -1208,6 +1243,11 @@ class PatchSequenceDataUnit {
   uint8_t                   getFrameCount() { return frameCount_; }
   PatchSequenceUnitPayload& getPatchSequenceUnitPayloadElement( const uint8_t index ) {
     return patchSequenceUnitPayload_[index];
+  }
+
+  PatchSequenceUnitPayload& getPatchSequenceUnitPayloadPreviousFrame() {
+    return patchSequenceUnitPayload_.size() == 1 ? patchSequenceUnitPayload_[0]
+                                                 : patchSequenceUnitPayload_[patchSequenceUnitPayload_.size() - 2];
   }
 
   void printPatchSequenceUnitPayload() {
@@ -1266,7 +1306,7 @@ class PatchSequenceDataUnit {
       }
     }
     fprintf( stderr, "Error: can't find PatchSequenceUnitPayload of type: %u and index = %u  \n", psdUnitType, index );
-    exit(-1);
+    exit( -1 );
   }
   uint8_t                               frameCount_;
   std::vector<PatchSequenceUnitPayload> patchSequenceUnitPayload_;
@@ -1353,7 +1393,8 @@ class AttributeSequenceParams {
   std::vector<int32_t>  attributeOffset_;
 };
 
-// 7.3.4.5 Attribute Parameter Set Syntax (apss) TODO: add attributeCount, all member variables will be part of lists with size attributeCount, and remove attributePatchScaleParamsEnabledFlag_ and attributePatchOffsetParamsEnabledFlag_
+// 7.3.4.5 Attribute Parameter Set Syntax (apss) TODO: add attributeCount, all member variables will be part of lists
+// with size attributeCount, and remove attributePatchScaleParamsEnabledFlag_ and attributePatchOffsetParamsEnabledFlag_
 class AttributeParameterSet {
  public:
   AttributeParameterSet() :
@@ -1488,7 +1529,9 @@ class GeometrySequenceParams {
   uint32_t geometryPointShapeInfo_;
 };
 
-// 7.3.4.4 Geometry Parameter Set Syntax TODO: remove geometryPatchScaleParamsEnabledFlag_, geometryPatchOffsetParamsEnabledFlag_, geometryPatchRotationParamsEnabledFlag_, geometryPatchPointSizeInfoEnabledFlag_, geometryPatchPointShapeInfoEnabledFlag_
+// 7.3.4.4 Geometry Parameter Set Syntax TODO: remove geometryPatchScaleParamsEnabledFlag_,
+// geometryPatchOffsetParamsEnabledFlag_, geometryPatchRotationParamsEnabledFlag_,
+// geometryPatchPointSizeInfoEnabledFlag_, geometryPatchPointShapeInfoEnabledFlag_
 class GeometryParameterSet {
  public:
   GeometryParameterSet() :
@@ -1595,7 +1638,8 @@ class OccupancyParameterSet {
   uint8_t occupancyPackingBlockSize_;
 };
 
-// 7.3.4.2 Profile, Tier and Level Syntax TODO: change profileIdc to profileCodecGroupIdc, missing profilePCCToolsetIdc, profileReconstructionIdc
+// 7.3.4.2 Profile, Tier and Level Syntax TODO: change profileIdc to profileCodecGroupIdc, missing profilePCCToolsetIdc,
+// profileReconstructionIdc
 class ProfileTierLevel {
  public:
   ProfileTierLevel() : tierFlag_( false ), profileIdc_( 0 ), levelIdc_( 0 ) {}
@@ -1705,9 +1749,10 @@ class SequenceParameterSet {
   size_t            getLayerPredictorIndexDiff( size_t index ) { return layerPredictorIndexDiff_[index]; }
   bool              getLayerAbsoluteCodingEnabledFlag( size_t index ) { return layerAbsoluteCodingEnabledFlag_[index]; }
   ProfileTierLevel& getProfileTierLevel() { return profileTierLevel_; }
-  GeometryParameterSet&  getGeometryParameterSet() { return geometryParameterSet_; }
-  OccupancyParameterSet& getOccupancyParameterSet() { return occupancyParameterSet_; }
-  AttributeParameterSet& getAttributeParameterSet( size_t index ) { return attributeParameterSets_[index]; }
+  GeometryParameterSet&     getGeometryParameterSet() { return geometryParameterSet_; }
+  OccupancyParameterSet&    getOccupancyParameterSet() { return occupancyParameterSet_; }
+  AttributeParameterSet&    getAttributeParameterSet( size_t index ) { return attributeParameterSets_[index]; }
+  PointLocalReconstruction& getPointLocalReconstruction() { return pointLocalReconstruction_; }
 
   void setSequenceParameterSetId( uint32_t value ) { sequenceParameterSetId_ = value; }
   void setFrameWidth( uint16_t value ) { frameWidth_ = value; }
@@ -1747,22 +1792,22 @@ class SequenceParameterSet {
   void addLayerPredictorIndexDiff( bool value ) { layerPredictorIndexDiff_.push_back( value ); }
 
  private:
-  uint32_t                           sequenceParameterSetId_;
-  uint16_t                           frameWidth_;
-  uint16_t                           frameHeight_;
-  uint16_t                           avgFrameRate_;
-  uint32_t                           layerCountMinus1_;
-  uint16_t                           attributeCount_;
-  bool                               avgFrameRatePresentFlag_;
-  bool                               enhancedOccupancyMapForDepthFlag_;
-  bool                               multipleLayerStreamsPresentFlag_;
-  bool                               pcmPatchEnabledFlag_;
-  bool                               pcmSeparateVideoPresentFlag_;
-  bool                               patchInterPredictionEnabledFlag_;
-  bool                               pixelDeinterleavingFlag_;
-  bool                               pointLocalReconstructionEnabledFlag_;
-  bool                               removeDuplicatePointEnabledFlag_;
-  bool                               projection45degreeEnabledFlag_;
+  uint32_t sequenceParameterSetId_;
+  uint16_t frameWidth_;
+  uint16_t frameHeight_;
+  uint16_t avgFrameRate_;
+  uint32_t layerCountMinus1_;
+  uint16_t attributeCount_;
+  bool     avgFrameRatePresentFlag_;
+  bool     enhancedOccupancyMapForDepthFlag_;
+  bool     multipleLayerStreamsPresentFlag_;
+  bool     pcmPatchEnabledFlag_;
+  bool     pcmSeparateVideoPresentFlag_;
+  bool     patchInterPredictionEnabledFlag_;
+  bool     pixelDeinterleavingFlag_;
+  bool     pointLocalReconstructionEnabledFlag_;
+  bool     removeDuplicatePointEnabledFlag_;
+  bool     projection45degreeEnabledFlag_;
 
   std::vector<bool>                  layerAbsoluteCodingEnabledFlag_;
   std::vector<size_t>                layerPredictorIndexDiff_;
@@ -1770,6 +1815,7 @@ class SequenceParameterSet {
   GeometryParameterSet               geometryParameterSet_;
   OccupancyParameterSet              occupancyParameterSet_;
   std::vector<AttributeParameterSet> attributeParameterSets_;
+  PointLocalReconstruction           pointLocalReconstruction_;
 
   // THE NEXT PARAMETERS ARE NOT IN THE VPCC CD SYNTAX DOCUMENTS AND WILL BE REMOVE
  public:
@@ -1820,6 +1866,13 @@ class VPCCParameterSet {
   uint8_t layerIndex_;
 };
 
+typedef struct PointLocalReconstructionMode {
+  bool    interpolate_;
+  bool    filling_;
+  uint8_t minD1_;
+  uint8_t neighbor_;
+} PointLocalReconstructionMode;
+
 class PCCContext {
  public:
   PCCContext();
@@ -1851,8 +1904,8 @@ class PCCContext {
   std::vector<SubContext>&      getSubContexts() { return subContexts_; }
   std::vector<unionPatch>&      getUnionPatch() { return unionPatch_; }
   // Lossy occupancy map
-  bool&                         getPrefilterLossyOM() { return prefilterLossyOM_; }
-  size_t&                       getOffsetLossyOM() { return offsetLossyOM_; }
+  bool&   getPrefilterLossyOM() { return prefilterLossyOM_; }
+  size_t& getOffsetLossyOM() { return offsetLossyOM_; }
 
   PCCVideoBitstream& createVideoBitstream( PCCVideoType type ) {
     videoBitstream_.push_back( PCCVideoBitstream( type ) );
@@ -1869,7 +1922,7 @@ class PCCContext {
     exit( -1 );
   }
 
-  void                  allocOneLayerData( const size_t occupancyResolution );
+  void                  allocOneLayerData();
   void                  printVideoBitstream();
   void                  printBlockToPatch( const size_t occupancyResolution );
   VPCCParameterSet&     getVPCC() { return vpccParameterSet_; }
@@ -1890,6 +1943,14 @@ class PCCContext {
 
   PatchSequenceDataUnit& getPatchSequenceDataUnit() { return patchSequenceDataUnit_; }
 
+  void addPointLocalReconstructionMode( const PointLocalReconstructionMode& mode ) {
+    pointLocalReconstructionMode_.push_back( mode );
+  }
+  PointLocalReconstructionMode& getPointLocalReconstructionMode( size_t index ) {
+    return pointLocalReconstructionMode_[index];
+  }
+  size_t getPointLocalReconstructionModeNumber() { return pointLocalReconstructionMode_.size(); }
+
  private:
   std::vector<PCCFrameContext>      frames_;
   PCCVideoGeometry                  videoGeometry_;
@@ -1905,18 +1966,19 @@ class PCCContext {
   std::vector<SequenceParameterSet> sequenceParameterSets_;
 
   // Internale data
-  uint8_t                 occupancyPrecision_;
-  size_t                  MPGeoWidth_;
-  size_t                  MPGeoHeight_;
-  size_t                  MPAttWidth_;
-  size_t                  MPAttHeight_;
-  float                   modelScale_;
-  PCCVector3<float>       modelOrigin_;
-  std::vector<SubContext> subContexts_;
-  std::vector<unionPatch> unionPatch_;
+  uint8_t                                   occupancyPrecision_;
+  size_t                                    MPGeoWidth_;
+  size_t                                    MPGeoHeight_;
+  size_t                                    MPAttWidth_;
+  size_t                                    MPAttHeight_;
+  float                                     modelScale_;
+  PCCVector3<float>                         modelOrigin_;
+  std::vector<SubContext>                   subContexts_;
+  std::vector<unionPatch>                   unionPatch_;
+  std::vector<PointLocalReconstructionMode> pointLocalReconstructionMode_;
   // Lossy occupancy map encoder parameter
-  bool                    prefilterLossyOM_;
-  size_t                  offsetLossyOM_;
+  bool   prefilterLossyOM_;
+  size_t offsetLossyOM_;
 };
 };  // namespace pcc
 

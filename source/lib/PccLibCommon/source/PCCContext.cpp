@@ -58,10 +58,8 @@ void PCCContext::resize( size_t size ) {
   }
 }
 
-void PCCContext::allocOneLayerData( const size_t occupancyResolution ) {
-  for ( auto& frame : frames_ ) { 
-    frame.allocOneLayerData( occupancyResolution ); 
-  }
+void PCCContext::allocOneLayerData() {
+  for ( auto& frame : frames_ ) { frame.allocOneLayerData(); }
 }
 
 void PCCContext::printVideoBitstream() {

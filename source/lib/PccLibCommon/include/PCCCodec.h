@@ -87,6 +87,7 @@ struct GeneratePointCloudParameters {
   bool        singleLayerPixelInterleaving_;
   std::string path_;
   bool        useAdditionalPointsPatch_;
+  size_t      nbPlrmMode_;
   size_t      geometryBitDepth3D_;
 };
 
@@ -125,7 +126,10 @@ class PCCCodec {
 
   void generateMissedPointsTexturefromVideo( PCCContext& context, PCCGroupOfFrames& reconstructs );
 
-  void generateOccupancyMap( PCCContext& context, const size_t occupancyPrecision, const size_t thresholdLossyOM, bool enhancedOccupancyMapForDepthFlag );
+  void generateOccupancyMap( PCCContext&  context,
+                             const size_t occupancyPrecision,
+                             const size_t thresholdLossyOM,
+                             bool         enhancedOccupancyMapForDepthFlag );
 
 #ifdef CODEC_TRACE
   template <typename... Args>
@@ -136,6 +140,29 @@ class PCCCodec {
       fflush( output );
     }
   }
+
+  template <typename T>
+  void traceVector( std::vector<T>    data,
+                    const size_t      width,
+                    const size_t      height,
+                    const std::string string,
+                    const bool        hexa = false ) {
+    if ( trace_ ) {
+      if ( data.size() == 0 ) { data.resize( width * height, 0 ); }
+      trace( "%s: %lu %lu \n", string.c_str(), width, height );
+      for ( size_t v0 = 0; v0 < height; ++v0 ) {
+        for ( size_t u0 = 0; u0 < width; ++u0 ) {
+          if ( hexa ) {
+            trace( "%2x", (int)( data[v0 * width + u0] ) );
+          } else {
+            trace( "%3d", (int)( data[v0 * width + u0] ) );
+          }
+        }
+        trace( "\n" );
+      }
+    }
+  }
+
   void setTrace( bool trace ) { trace_ = trace; }
   bool getTrace() { return trace_; }
   bool openTrace( std::string file ) {
@@ -221,6 +248,7 @@ class PCCCodec {
 
  private:
   void generatePointCloud( PCCPointSet3&                      reconstruct,
+                           PCCContext&                        context,
                            PCCFrameContext&                   frame,
                            const PCCVideoGeometry&            video,
                            const PCCVideoGeometry&            videoD1,

@@ -330,34 +330,62 @@ void PCCDecoder::setPatchMetadata( PCCMetadata& metadata, GeometryPatchParameter
   // }
 }
 
-void PCCDecoder::setPointLocalReconstruction( PCCFrameContext&          frame,
-                                              PCCPatch&                 patch,
-                                              PointLocalReconstruction& plr,
-                                              size_t                    occupancyPackingBlockSize ) {
-  size_t blockToPatchWidth  = frame.getWidth() / occupancyPackingBlockSize;
-  size_t blockToPatchHeight = frame.getHeight() / occupancyPackingBlockSize;
-  auto&  interpolateMap     = frame.getInterpolate();
-  auto&  fillingMap         = frame.getFilling();
-  auto&  minD1Map           = frame.getMinD1();
-  auto&  neighborMap        = frame.getNeighbor();
+void PCCDecoder::setPointLocalReconstruction( PCCContext& context, SequenceParameterSet& sps ) {
+  auto&                        plr  = sps.getPointLocalReconstruction();
+  PointLocalReconstructionMode mode = {0, 0, 0, 1};
+  context.addPointLocalReconstructionMode( mode );
+  for ( size_t i = 0; i < plr.getPlrlNumberOfModesMinus1(); i++ ) {
+    mode.interpolate_ = plr.getPlrlInterpolateFlag( i );
+    mode.filling_     = plr.getPlrlFillingFlag( i );
+    mode.minD1_       = plr.getPlrlMinimumDepth( i );
+    mode.neighbor_    = plr.getPlrlNeighbourMinus1( i ) + 1;
+    context.addPointLocalReconstructionMode( mode );
+  }
+  for ( size_t i = 0; i < context.getPointLocalReconstructionModeNumber(); i++ ) {
+    auto& mode = context.getPointLocalReconstructionMode( i );
+    TRACE_CODEC( "PlrmMode[%u]: Inter = %d Fill = %d minD1 = %u neighbor = %u \n", i, mode.interpolate_, mode.filling_,
+                 mode.minD1_, mode.neighbor_ );
+  }
+}
 
-  TRACE_CODEC("WxH=%lux%lu\n", blockToPatchWidth, blockToPatchHeight); fflush(stdout);
-  for ( size_t v0 = 0; v0 < blockToPatchHeight; ++v0 ) {
-    for ( size_t u0 = 0; u0 < blockToPatchWidth; ++u0 ) {
-      int pos = v0 * blockToPatchWidth + u0;
-      if ( plr.getBlockToPatchMap( u0, v0 ) > 0 ) {
-        interpolateMap[pos] = plr.getModeInterpolateFlag( u0, v0 );
-        if ( interpolateMap[pos] > 0 ) {
-          neighborMap[pos] = plr.getModeNeighbourMinus1( u0, v0 ) + 1;
+void PCCDecoder::setPointLocalReconstructionData( PCCFrameContext&              frame,
+                                                  PCCPatch&                     patch,
+                                                  PointLocalReconstructionData& plrd,
+                                                  size_t                        occupancyPackingBlockSize ) {
+  patch.allocOneLayerData();
+  TRACE_CODEC( "WxH = %lu x %lu \n", plrd.getPlrBlockToPatchMapWidth(), plrd.getPlrBlockToPatchMapHeight() );
+  patch.getPointLocalReconstructionLevel() = plrd.getPlrLevelFlag();
+  TRACE_CODEC( "  LevelFlag = %d \n", plrd.getPlrLevelFlag() );
+  if ( plrd.getPlrLevelFlag() ) {
+    if ( plrd.getPlrPresentFlag() ) {
+      patch.getPointLocalReconstructionMode() = plrd.getPlrModeMinus1() + 1;
+    } else {
+      patch.getPointLocalReconstructionMode() = 0;
+    }
+    TRACE_CODEC( "  ModePatch: Present = %d ModeMinus1 = %2d \n", plrd.getPlrPresentFlag(),
+                 plrd.getPlrPresentFlag() ? (int32_t)plrd.getPlrModeMinus1() : -1 );
+  } else {
+    for ( size_t v0 = 0; v0 < plrd.getPlrBlockToPatchMapHeight(); ++v0 ) {
+      for ( size_t u0 = 0; u0 < plrd.getPlrBlockToPatchMapWidth(); ++u0 ) {
+        size_t index = v0 * plrd.getPlrBlockToPatchMapWidth() + u0;
+        int    pos   = patch.patchBlock2CanvasBlock( ( u0 ), ( v0 ), plrd.getPlrBlockToPatchMapWidth(),
+                                                plrd.getPlrBlockToPatchMapHeight() );
+        if ( plrd.getPlrBlockPresentFlag( index ) ) {
+          patch.getPointLocalReconstructionMode( u0, v0 ) = plrd.getPlrBlockModeMinus1( index ) + 1;
+        } else {
+          patch.getPointLocalReconstructionMode( u0, v0 ) = 0;
         }
-        minD1Map[pos] = plr.getModeMinimumDepthMinus1( u0, v0 );
-        if ( minD1Map[pos] > 1 || interpolateMap[pos] > 0 ) { fillingMap[pos] = plr.getModeFillingFlag( u0, v0 ); }
+        TRACE_CODEC( "  Mode[%3u]: Present = %d ModeMinus1 = %2d \n", index, plrd.getPlrBlockPresentFlag( index ),
+                     plrd.getPlrBlockPresentFlag( index ) ? (int32_t)plrd.getPlrBlockModeMinus1( index ) : -1 );
       }
-      TRACE_CODEC( " %4lu %4lu = Block = %4u plr = %d %u %u %d patch = %d %lu %lu %d \n",
-                   u0, v0, plr.getBlockToPatchMap( u0, v0 ), plr.getModeInterpolateFlag( u0, v0 ),
-                   plr.getModeNeighbourMinus1( u0, v0 ), plr.getModeMinimumDepthMinus1( u0, v0 ),
-                   plr.getModeFillingFlag( u0, v0 ), (int32_t)(interpolateMap[pos]), neighborMap[pos], minD1Map[pos],
-                   (int32_t)(fillingMap[pos]) );
+    }
+  }
+  for ( size_t v0 = 0; v0 < patch.getSizeV0(); ++v0 ) {
+    for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {
+      TRACE_CODEC( "Block[ %2lu %2lu <=> %4lu ] / [ %2lu %2lu ]: Level = %d Present = %d mode = %lu \n", u0, v0,
+                   v0 * patch.getSizeU0() + u0, patch.getSizeU0(), patch.getSizeV0(),
+                   patch.getPointLocalReconstructionLevel(), plrd.getPlrBlockPresentFlag( v0 * patch.getSizeU0() + u0 ),
+                   patch.getPointLocalReconstructionMode( u0, v0 ) );
     }
   }
 }
@@ -369,7 +397,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
   context.resize( psdu.getFrameCount() );
   TRACE_CODEC( "getFrameCount %u \n", psdu.getFrameCount() );
   setFrameMetadata( context.getGOFLevelMetadata(), psdu.getGeometryFrameParameterSet( 0 ) );
-
+  setPointLocalReconstruction( context, sps );
   size_t indexPrevFrame    = 0;
   context.getMPGeoWidth()  = 64;
   context.getMPAttWidth()  = 64;
@@ -429,10 +457,11 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
   patches.resize( numNonPCMPatch );
   frame.getFrameLevelMetadata().setMetadataType( METADATA_FRAME );
   frame.getFrameLevelMetadata().setIndex( frame.getIndex() );
-  frame.allocOneLayerData( ops.getOccupancyPackingBlockSize() );
 
   TRACE_CODEC( "Patches size                        = %lu \n", patches.size() );
   TRACE_CODEC( "OccupancyPackingBlockSize           = %d \n", ops.getOccupancyPackingBlockSize() );
+  // TRACE_CODEC( "PatchSequenceOrientationEnabledFlag = %d \n", sps.getPatchSequenceOrientationEnabledFlag() );
+  // TRACE_CODEC( "PatchOrientationPresentFlag         = %d \n", pfps.getPatchOrientationPresentFlag() );
   TRACE_CODEC( "PatchInterPredictionEnabledFlag     = %d \n", sps.getPatchInterPredictionEnabledFlag() );
 
   for ( size_t patchIndex = 0; patchIndex < pfdu.getPatchCount(); ++patchIndex ) {
@@ -490,6 +519,11 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
       metadata.setMetadataType( METADATA_PATCH );
       metadata.getMetadataEnabledFlags() = patchLevelMetadataEnabledFlags;
       setPatchMetadata( metadata, psdu.getGeometryPatchParameterSet( 0 ) );
+      patch.allocOneLayerData();
+      if ( sps.getPointLocalReconstructionEnabledFlag() ) {
+        setPointLocalReconstructionData( frame, patch, pdu.getPointLocalReconstructionData(),
+                                         ops.getOccupancyPackingBlockSize() );
+      }
     } else if ( ( PCCPatchFrameType( pfh.getType() ) == PATCH_FRAME_P &&
                   PCCPatchModeP( pfdu.getPatchMode( patchIndex ) ) == PATCH_MODE_P_INTER ) ) {
       auto& patch                    = patches[patchIndex];
@@ -550,6 +584,11 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
       patchLevelMetadata.setMetadataType( METADATA_PATCH );
 
       setPatchMetadata( patchLevelMetadata, psdu.getGeometryPatchParameterSet( 0 ) );
+      patch.allocOneLayerData();
+      if ( sps.getPointLocalReconstructionEnabledFlag() ) {
+        setPointLocalReconstructionData( frame, patch, dpdu.getPointLocalReconstructionData(),
+                                         ops.getOccupancyPackingBlockSize() );
+      }
     } else if ( ( PCCPatchFrameType( pfh.getType() ) == PATCH_FRAME_I &&
                   PCCPatchModeI( pfdu.getPatchMode( patchIndex ) ) == PATCH_MODE_I_PCM ) ||
                 ( PCCPatchFrameType( pfh.getType() ) == PATCH_FRAME_P &&
@@ -573,8 +612,4 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
       TRACE_CODEC( "Error: unknow frame/patch type \n" );
     }
   }   
-  if ( sps.getPointLocalReconstructionEnabledFlag() ) {
-    setPointLocalReconstruction( frame, patches[0], pfdu.getPointLocalReconstruction(),
-                                ops.getOccupancyPackingBlockSize() );
-  }
 }

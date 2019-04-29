@@ -49,7 +49,8 @@ class PCCGroupOfFrames;
 class PCCPatch;
 class GeometryFrameParameterSet;
 class GeometryPatchParameterSet;
-class PointLocalReconstruction;
+class SequenceParameterSet;
+class PointLocalReconstructionData;
 
 template <typename T, size_t N>
 class PCCImage;
@@ -77,7 +78,11 @@ class PCCDecoder : public PCCCodec {
   void setFrameMetadata( PCCMetadata& metadata, GeometryFrameParameterSet& gfps );
   void setPatchMetadata( PCCMetadata& metadata, GeometryPatchParameterSet& gpps );
 
-  void setPointLocalReconstruction( PCCFrameContext& frame, PCCPatch& patch, PointLocalReconstruction& plr, size_t occupancyPackingBlockSize );
+  void setPointLocalReconstruction( PCCContext& context, SequenceParameterSet& sps );
+  void setPointLocalReconstructionData( PCCFrameContext&              frame,
+                                        PCCPatch&                     patch,
+                                        PointLocalReconstructionData& plrd,
+                                        size_t                        occupancyPackingBlockSize );
 
   PCCDecoderParameters params_;
 };

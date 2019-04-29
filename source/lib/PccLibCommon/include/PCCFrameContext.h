@@ -56,7 +56,7 @@ class PCCFrameContext {
  public:
   PCCFrameContext();
   ~PCCFrameContext();
-  
+
   size_t&                          getIndex() { return index_; }
   size_t&                          getWidth() { return width_; }
   size_t&                          getHeight() { return height_; }
@@ -94,24 +94,19 @@ class PCCFrameContext {
   const size_t getSurfaceThickness() { return surfaceThickness_; }
   void         setSurfaceThickness( size_t surfaceThickness ) { surfaceThickness_ = surfaceThickness; }
   const bool   getUseAdditionalPointsPatch() { return useAdditionalPointsPatch_; }
-  void         setUseAdditionalPointsPatch( bool useAdditionalPointsPatch ) { useAdditionalPointsPatch_ = useAdditionalPointsPatch; }
+  void         setUseAdditionalPointsPatch( bool useAdditionalPointsPatch ) {
+    useAdditionalPointsPatch_ = useAdditionalPointsPatch;
+  }
 
   std::vector<PCCPointSet3>& getSrcPointCloudByPatch() { return srcPointCloudByPatch_; }
   PCCPointSet3&              getSrcPointCloudByPatch( size_t patchIndex ) { return srcPointCloudByPatch_[patchIndex]; }
   std::vector<PCCPointSet3>& getSrcPointCloudByBlock() { return srcPointCloudByBlock_; }
-  std::vector<bool>&         getInterpolate() { return interpolate_; }
-  std::vector<bool>&         getFilling() { return filling_; }
-  std::vector<size_t>&       getMinD1() { return minD1_; }
-  std::vector<size_t>&       getNeighbor() { return neighbor_; }
-  PCCVector3D&		         getWeight_normal() { return weight_normal_; }
+  PCCVector3D&               getWeight_normal() { return weight_normal_; }
 
-  void allocOneLayerData( const size_t occupancyResolution );
+  uint8_t& getPointLocalReconstructionNumber() { return pointLocalReconstructionNumber_; }
+  void     allocOneLayerData();
+
   void printBlockToPatch( const size_t occupancyResolution );
-  void printOneLayerData( const size_t occupancyResolution );
-  void printInterpolate( const size_t occupancyResolution );
-  void printNeightbor( const size_t occupancyResolution );
-  void printMinD1( const size_t occupancyResolution );
-  void printFilling( const size_t occupancyResolution );
 
   void printPatch();
   void printPatchDecoder();
@@ -121,26 +116,26 @@ class PCCFrameContext {
   PCCFrameOCPInfo& getPCCOCPGPAInfo() { return ocpGPAInfo_; }
 
  private:
-  size_t                                       index_;
-  bool                                         losslessGeo_;
-  bool                                         losslessGeo444_;
-  bool                                         losslessTexture_;
+  size_t index_;
+  bool   losslessGeo_;
+  bool   losslessGeo444_;
+  bool   losslessTexture_;
   // bool                                      enhancedDeltaDepth_;  // sps.getEnhancedOccupancyMapForDepthFlag()
-  // Deprecated data 
-  
+  // Deprecated data
+
   // Internal data
-  size_t                                       numMatchedPatches_;
-  size_t                                       surfaceThickness_;
-  size_t                                       width_;     //sps.getFrameWidth()
-  size_t                                       height_;    //sps.getFrameHeight()
-  bool                                         useMissedPointsSeparateVideo_;
-  bool                                         useAdditionalPointsPatch_;
-  
-  size_t                                       MPGeoWidth_;
-  size_t                                       MPGeoHeight_;
-  size_t                                       MPAttWidth_;
-  size_t                                       MPAttHeight_;
-  
+  size_t numMatchedPatches_;
+  size_t surfaceThickness_;
+  size_t width_;   // sps.getFrameWidth()
+  size_t height_;  // sps.getFrameHeight()
+  bool   useMissedPointsSeparateVideo_;
+  bool   useAdditionalPointsPatch_;
+
+  size_t MPGeoWidth_;
+  size_t MPGeoHeight_;
+  size_t MPAttWidth_;
+  size_t MPAttHeight_;
+
   std::vector<PCCVector3<size_t>>              pointToPixel_;
   std::vector<size_t>                          blockToPatch_;
   std::vector<uint32_t>                        occupancyMap_;
@@ -152,14 +147,11 @@ class PCCFrameContext {
   std::vector<PCCPointSet3>                    srcPointCloudByBlock_;
   std::vector<PCCPointSet3>                    recPointCloudByBlock_;
   std::vector<std::vector<PCCVector3<size_t>>> pointToPixelByBlock_;
-  std::vector<bool>                            interpolate_;
-  std::vector<bool>                            filling_;
-  std::vector<size_t>                          minD1_;
-  std::vector<size_t>                          neighbor_;
+  uint8_t                                      pointLocalReconstructionNumber_;
   PCCGPAFrameSize                              prePCCGPAFrameSize_;
   PCCGPAFrameSize                              curPCCGPAFrameSize_;
   PCCFrameOCPInfo                              ocpGPAInfo_;
-  PCCVector3D								   weight_normal_;
+  PCCVector3D                                  weight_normal_;
 };
 
 };  // namespace pcc

@@ -124,7 +124,7 @@ void PCCCodec::generatePointCloud( PCCGroupOfFrames&                  reconstruc
   for ( size_t i = 0; i < frames.size(); i++ ) {
     TRACE_CODEC( " Frame %lu / %lu \n", i, frames.size() );
     std::vector<uint32_t> partition;
-    generatePointCloud( reconstructs[i], frames[i], videoGeometry, videoGeometryD1, params, partition );
+    generatePointCloud( reconstructs[i], context, frames[i], videoGeometry, videoGeometryD1, params, partition );
 
     TRACE_CODEC( " generatePointCloud create %lu points \n", reconstructs[i].getPointCount() );
     if ( !params.losslessGeo_ && params.flagGeometrySmoothing_ ) {
@@ -456,6 +456,7 @@ std::vector<PCCPoint3D> PCCCodec::generatePoints( const GeneratePointCloudParame
 }
 
 void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruct,
+                                   PCCContext&                        context,
                                    PCCFrameContext&                   frame,
                                    const PCCVideoGeometry&            video,
                                    const PCCVideoGeometry&            videoD1,
@@ -469,6 +470,8 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
   partition.resize( 0 );
   pointToPixel.resize( 0 );
   reconstruct.clear();
+
+  TRACE_CODEC( "Frame %lu in generatePointCloud \n", frame.getIndex() );
 
   bool         useMissedPointsSeparateVideo = frame.getUseMissedPointsSeparateVideo();
   bool         lossyMpp                     = !params.losslessGeo_ && params.useAdditionalPointsPatch_;
@@ -517,13 +520,13 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
     const double lodScale          = params.ignoreLod_ ? 1.0 : double( 1u << patch.getLod() );
     PCCColor3B   color( uint8_t( 0 ) );
 
-    TRACE_CODEC( " patch %lu / %lu : size = %lu x %lu points = %lu  \n", patchIndex, patchCount, patch.getSizeU0(),
-                 patch.getSizeV0(), reconstruct.getPointCount() );
-    TRACE_CODEC( "P%3lu: 2D=(%2lu,%2lu)*(%2lu,%2lu) 3D(%4lu,%4lu,%4lu)*(%4lu,%4lu) A=(%lu,%lu,%lu) Or=%lu P=%lu \n",
-                 patchIndex, patch.getU0(), patch.getV0(), patch.getSizeU0(), patch.getSizeV0(), patch.getU1(),
-                 patch.getV1(), patch.getD1(), patch.getSizeU0() * patch.getOccupancyResolution(),
-                 patch.getSizeV0() * patch.getOccupancyResolution(), patch.getNormalAxis(), patch.getTangentAxis(),
-                 patch.getBitangentAxis(), patch.getPatchOrientation(), patch.getProjectionMode() );
+    TRACE_CODEC(
+        "P%2lu/%2lu: 2D=(%2lu,%2lu)*(%2lu,%2lu) 3D(%4lu,%4lu,%4lu)*(%4lu,%4lu) A=(%lu,%lu,%lu) Or=%lu P=%lu => %lu \n",
+        patchIndex, patchCount, patch.getU0(), patch.getV0(), patch.getSizeU0(), patch.getSizeV0(), patch.getU1(),
+        patch.getV1(), patch.getD1(), patch.getSizeU0() * patch.getOccupancyResolution(),
+        patch.getSizeV0() * patch.getOccupancyResolution(), patch.getNormalAxis(), patch.getTangentAxis(),
+        patch.getBitangentAxis(), patch.getPatchOrientation(), patch.getProjectionMode(), reconstruct.getPointCount() );
+
     while ( color[0] == color[1] || color[2] == color[1] || color[2] == color[0] ) {
       color[0] = static_cast<uint8_t>( rand() % 32 ) * 8;
       color[1] = static_cast<uint8_t>( rand() % 32 ) * 8;
@@ -644,10 +647,10 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
                   // lossless coding now
                 }       // if (eddCode == 0)
               } else {  // not params.enhancedDeltaDepthCode_
-                auto createdPoints =
-                    generatePoints( params, frame, video, videoD1, shift, patchIndex, u, v, x, y,
-                                    frame.getInterpolate()[blockIndex], frame.getFilling()[blockIndex],
-                                    frame.getMinD1()[blockIndex], frame.getNeighbor()[blockIndex], lodScale );
+                auto& mode = context.getPointLocalReconstructionMode( patch.getPointLocalReconstructionMode( u0, v0 ) );
+                auto  createdPoints =
+                    generatePoints( params, frame, video, videoD1, shift, patchIndex, u, v, x, y, mode.interpolate_,
+                                    mode.filling_, mode.minD1_, mode.neighbor_, lodScale );
                 if ( createdPoints.size() > 0 ) {
                   for ( size_t i = 0; i < createdPoints.size(); i++ ) {
                     if ( ( !params.removeDuplicatePoints_ ) ||

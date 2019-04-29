@@ -148,7 +148,7 @@ void PCCBitstreamEncoder::vpccUnitPayload( PCCContext& context, PCCBitstream& bi
   auto& sps = context.getSps();
   TRACE_BITSTREAM( "vpccUnitType = %d \n", (int32_t)vpccUnitType );
   if ( vpccUnitType == VPCC_SPS ) {
-    sequenceParameterSet( sps, bitstream );
+    sequenceParameterSet( sps, context, bitstream );
   } else if ( vpccUnitType == VPCC_PSD ) {
     patchSequenceDataUnit( context, bitstream );
   } else if ( vpccUnitType == VPCC_OVD || vpccUnitType == VPCC_GVD || vpccUnitType == VPCC_AVD ) {
@@ -157,7 +157,7 @@ void PCCBitstreamEncoder::vpccUnitPayload( PCCContext& context, PCCBitstream& bi
 }
 
 // 7.3.4.1 General Sequence parameter set syntax TODO: remove sps.setAttributeCount() and loop over attributes
-void PCCBitstreamEncoder::sequenceParameterSet( SequenceParameterSet& sps, PCCBitstream& bitstream ) {
+void PCCBitstreamEncoder::sequenceParameterSet( SequenceParameterSet& sps, PCCContext& context, PCCBitstream& bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   profileTierLevel( sps.getProfileTierLevel(), bitstream );
   bitstream.write( (uint32_t)sps.getSequenceParameterSetId(), 4 );   // u(4)
@@ -196,6 +196,9 @@ void PCCBitstreamEncoder::sequenceParameterSet( SequenceParameterSet& sps, PCCBi
   bitstream.write( (uint32_t)sps.getPatchInterPredictionEnabledFlag(), 1 );      // u(1)
   bitstream.write( (uint32_t)sps.getPixelDeinterleavingFlag(), 1 );              // u(1)
   bitstream.write( (uint32_t)sps.getPointLocalReconstructionEnabledFlag(), 1 );  // u(1)
+  if ( sps.getPointLocalReconstructionEnabledFlag() ) {
+    pointLocalReconstruction( sps.getPointLocalReconstruction(), context, bitstream );
+  }
   bitstream.write( (uint32_t)sps.getRemoveDuplicatePointEnabledFlag(), 1 );      // u(1)
   bitstream.write( (uint32_t)sps.getProjection45DegreeEnableFlag(), 1 );         // u(1)
 
@@ -873,9 +876,6 @@ void PCCBitstreamEncoder::patchFrameDataUnit( PatchFrameDataUnit& pfdu,
     bitstream.write( moreAvailablePatchFlag, 1 );  // ae(v)
     TRACE_BITSTREAM( "moreAvailablePatchFlag = %d \n", moreAvailablePatchFlag );
   }
-  if ( sps.getPointLocalReconstructionEnabledFlag() ) {
-    pointLocalReconstruction( pfdu.getPointLocalReconstruction(), context, bitstream );
-  }
   byteAlignment( bitstream );
 }
 
@@ -967,7 +967,9 @@ void PCCBitstreamEncoder::patchDataUnit( PatchDataUnit&    pdu,
     i++;
   }
   if ( projectionFlag ) { bitstream.write( pdu.getProjectionMode(), 1 ); }
-
+  if( sps.getPointLocalReconstructionEnabledFlag() ) {
+    pointLocalReconstructionData( pdu.getPointLocalReconstructionData(), context, bitstream );
+  }
   auto& pfps = psdu.getPatchFrameParameterSet(0);
   if ( pfps.getProjection45DegreeEnableFlag() ) {
     bitstream.write( uint32_t( pdu.get45DegreeProjectionPresentFlag() ), 1 );
@@ -1005,7 +1007,9 @@ void PCCBitstreamEncoder::deltaPatchDataUnit( DeltaPatchDataUnit& dpdu,
     i++;
   }
   if ( projectionFlag ) { bitstream.write( dpdu.getProjectionMode(), 1 ); }
-
+  if ( sps.getPointLocalReconstructionEnabledFlag() ) {
+    pointLocalReconstructionData( dpdu.getPointLocalReconstructionData(), context, bitstream );
+  }
   TRACE_BITSTREAM(
                   "DeltaPatch => DeltaIdx = %u ShiftUV = %ld %ld DeltaSize = %ld %ld %ld Axis = %ld %ld %ld Proj = %d \n",
                   dpdu.getDeltaPatchIdx(), dpdu.get2DDeltaShiftU(), dpdu.get2DDeltaShiftV(), dpdu.get2DDeltaSizeU(),
@@ -1032,31 +1036,67 @@ void PCCBitstreamEncoder::pcmPatchDataUnit( PCMPatchDataUnit& ppdu,
                    ppdu.getPcmPoints(), ppdu.getPatchInPcmVideoFlag() );
 }
 
-// 7.3.5.21 Point local reconstruction syntax TODO: remove plr.getBlockToPatchMap
+// 7.3.5.21 Point local reconstruction syntax
 void PCCBitstreamEncoder::pointLocalReconstruction( PointLocalReconstruction& plr,
                                                     PCCContext&               context,
                                                     PCCBitstream&             bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
-  TRACE_BITSTREAM( "WxH= %lu x %lu\n", plr.getBlockToPatchMapWidth(), plr.getBlockToPatchMapHeight() );
-  for ( uint64_t j = 0; j < plr.getBlockToPatchMapHeight(); j++ ) {
-    for ( uint64_t i = 0; i < plr.getBlockToPatchMapWidth(); i++ ) {
-      bitstream.write( plr.getBlockToPatchMap( i, j ), 1 );
-      if ( plr.getBlockToPatchMap( i, j ) >= 0 ) {
-        bitstream.write( plr.getModeInterpolateFlag( i, j ), 1 );
-        TRACE_BITSTREAM( "ModeInterpolateFlag    (%lu, %lu) = %lu \n", i, j, plr.getModeInterpolateFlag( i, j ) );
-        if ( plr.getModeInterpolateFlag( i, j ) ) {
-          bitstream.writeUvlc( plr.getModeNeighbourMinus1( i, j ) );
-          TRACE_BITSTREAM( "ModeNeighbourMinus1    (%lu, %lu) = %lu \n", i, j, plr.getModeNeighbourMinus1( i, j ) );
-        }
-        bitstream.writeUvlc( plr.getModeMinimumDepthMinus1( i, j ) );
-        TRACE_BITSTREAM( "ModeMinimumDepthMinus1 (%lu, %lu) = %lu \n", i, j, plr.getModeMinimumDepthMinus1( i, j ) );
-        if ( ( plr.getModeMinimumDepthMinus1( i, j ) > 0 ) || ( plr.getModeInterpolateFlag( i, j ) ) ) {
-          bitstream.write( plr.getModeFillingFlag( i, j ), 1 );
-          TRACE_BITSTREAM( "ModeFillingFlag        (%lu, %lu) = %lu \n", i, j, plr.getModeFillingFlag( i, j ) );
-        }
-      }
-    }
+  bitstream.write( uint32_t( plr.getPlrlNumberOfModesMinus1() ), 4 );
+  TRACE_BITSTREAM( "  NumberOfModesMinus1 = %u \n", plr.getPlrlNumberOfModesMinus1() );
+  for ( size_t i = 0; i <= plr.getPlrlNumberOfModesMinus1(); i++ ) {
+    bitstream.write( uint32_t( plr.getPlrlInterpolateFlag( i ) ), 1 );
+    bitstream.write( uint32_t( plr.getPlrlFillingFlag( i ) ), 1 );
+    bitstream.write( uint32_t( plr.getPlrlMinimumDepth( i ) ), 2 );
+    bitstream.write( uint32_t( plr.getPlrlNeighbourMinus1( i ) ), 2 );
+    TRACE_BITSTREAM( "  Mode[%lu] = I = %d F = %d D = %u N = %u \n", i, plr.getPlrlInterpolateFlag( i ),
+                     plr.getPlrlFillingFlag( i ), plr.getPlrlMinimumDepth( i ), plr.getPlrlNeighbourMinus1( i ) );
   }
+  bitstream.writeUvlc( uint32_t( plr.getPlrBlockThresholdPerPatchMinus1() ) );
+  TRACE_BITSTREAM( "  BlockThresholdPerPatchMinus1 = %u \n", plr.getPlrBlockThresholdPerPatchMinus1() );
 }
 
-// 7.3.5.22 Supplemental enhancement information message syntax TODO: implementation missing
+void PCCBitstreamEncoder::pointLocalReconstructionData( PointLocalReconstructionData& plrd,
+                                                        PCCContext&                   context,
+                                                        PCCBitstream&                 bitstream ) {
+  auto& plr = context.getSps().getPointLocalReconstruction();
+  TRACE_BITSTREAM( "%s \n", __func__ );
+  TRACE_BITSTREAM( "WxH= %lu x %lu \n", plrd.getPlrBlockToPatchMapWidth(), plrd.getPlrBlockToPatchMapHeight() );
+
+  const size_t  blockCount   = plrd.getPlrBlockToPatchMapWidth() * plrd.getPlrBlockToPatchMapHeight();
+  const uint8_t bitCountMode = uint8_t( getFixedLengthCodeBitsCount( uint32_t( plr.getPlrlNumberOfModesMinus1() ) ) );
+  TRACE_BITSTREAM( "  bitCountMode = %u \n", bitCountMode );
+
+  if ( blockCount > plr.getPlrBlockThresholdPerPatchMinus1() + 1 ) {
+    bitstream.write( uint32_t( plrd.getPlrLevelFlag() ), 1 );
+  }
+  TRACE_BITSTREAM( "  LevelFlag = %u \n", plrd.getPlrLevelFlag() );
+  if ( plrd.getPlrLevelFlag() ) {
+    bitstream.write( uint32_t( plrd.getPlrPresentFlag() ), 1 );
+    if ( plrd.getPlrPresentFlag() ) { bitstream.write( uint32_t( plrd.getPlrModeMinus1() ), bitCountMode ); }
+    TRACE_BITSTREAM( "  ModePatch: Present = %d ModeMinus1 = %d \n", plrd.getPlrPresentFlag(),
+                     plrd.getPlrPresentFlag() ? (int32_t)plrd.getPlrModeMinus1() : -1 );
+  } else {
+    for ( size_t i = 0; i < blockCount; i++ ) {
+      bitstream.write( uint32_t( plrd.getPlrBlockPresentFlag( i ) ), 1 );
+      if ( plrd.getPlrBlockPresentFlag( i ) ) {
+        bitstream.write( uint32_t( plrd.getPlrBlockModeMinus1( i ) ), bitCountMode );
+      }
+      TRACE_BITSTREAM( "  Mode[ %4lu / %4lu ]: Present = %d ModeMinus1 = %d \n", i, blockCount,
+                       plrd.getPlrBlockPresentFlag( i ),
+                       plrd.getPlrBlockPresentFlag( i ) ? plrd.getPlrBlockModeMinus1( i ) : -1 );
+    }
+  }
+#ifdef BITSTREAM_TRACE
+  for ( size_t v0 = 0; v0 < plrd.getPlrBlockToPatchMapHeight(); ++v0 ) {
+    for ( size_t u0 = 0; u0 < plrd.getPlrBlockToPatchMapWidth(); ++u0 ) {
+      size_t i = v0 * plrd.getPlrBlockToPatchMapWidth() + u0;
+      TRACE_BITSTREAM( "Patch Block[ %2lu %2lu <=> %4lu ] / [ %2lu %2lu ] Level = %d Present = %d Mode = %d \n", u0, v0,
+                       i, plrd.getPlrBlockToPatchMapWidth(), plrd.getPlrBlockToPatchMapHeight(), plrd.getPlrLevelFlag(),
+                       plrd.getPlrLevelFlag() ? plrd.getPlrPresentFlag() : plrd.getPlrBlockPresentFlag( i ),
+                       plrd.getPlrLevelFlag()
+                           ? plrd.getPlrPresentFlag() ? (int32_t)plrd.getPlrModeMinus1() : -1
+                           : plrd.getPlrBlockPresentFlag( i ) ? plrd.getPlrBlockModeMinus1( i ) : -1 );
+    }
+  }
+#endif
+}

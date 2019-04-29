@@ -100,14 +100,16 @@ class PCCPatch {
     occupancy_.clear();
     depthEnhancedDeltaD_.clear();
     depth0PCidx_.clear();
-  };
+    pointLocalReconstructionModeByBlock_.clear();
+  }
   ~PCCPatch() {
     depth_[0].clear();
     depth_[1].clear();
     occupancy_.clear();
     depthEnhancedDeltaD_.clear();
     depth0PCidx_.clear();
-  };
+    pointLocalReconstructionModeByBlock_.clear();
+  }
   size_t&               getIndex() { return index_; }
   size_t&               getU1() { return u1_; }
   size_t&               getV1() { return v1_; }
@@ -696,7 +698,30 @@ class PCCPatch {
     return true;
   }
 
-  static void InverseRotatePosition45DegreeOnAxis(size_t Axis, size_t lod, PCCPoint3D input, PCCVector3D &output) {
+  void allocOneLayerData() {
+    pointLocalReconstructionLevel_       = 0;
+    pointLocalReconstructionModeByPatch_ = 0;
+    pointLocalReconstructionModeByBlock_.resize( sizeU0_ * sizeV0_, 0 );
+    std::fill( pointLocalReconstructionModeByBlock_.begin(), pointLocalReconstructionModeByBlock_.end(), 0 );
+  }
+  uint8_t& getPointLocalReconstructionLevel() { return pointLocalReconstructionLevel_; }
+  uint8_t  getPointLocalReconstructionLevel() const { return pointLocalReconstructionLevel_; }
+  uint8_t& getPointLocalReconstructionMode( const size_t u = 0, const size_t v = 0 ) {
+    if ( pointLocalReconstructionLevel_ == 1 ) {
+      return pointLocalReconstructionModeByPatch_;
+    } else {
+      return pointLocalReconstructionModeByBlock_[v * sizeU0_ + u];
+    }
+  }
+  uint8_t getPointLocalReconstructionMode( const size_t u = 0, const size_t v = 0 ) const {
+    if ( pointLocalReconstructionLevel_ == 1 ) {
+      return pointLocalReconstructionModeByPatch_;
+    } else {
+      return pointLocalReconstructionModeByBlock_[v * sizeU0_ + u];
+    }
+  }
+
+  static void InverseRotatePosition45DegreeOnAxis( size_t Axis, size_t lod, PCCPoint3D input, PCCVector3D& output ) {
     size_t s = (1u << lod) - 1;
     output.x() = input.x();
     output.y() = input.y();
@@ -751,6 +776,9 @@ class PCCPatch {
   std::vector<int16_t> depthEnhancedDeltaD_;  // Enhanced delta depht
   std::vector<int64_t> depth0PCidx_;          // for Surface separation
   size_t               patchOrientation_;     // patch orientation in canvas atlas
+  uint8_t              pointLocalReconstructionLevel_;
+  uint8_t              pointLocalReconstructionModeByPatch_;
+  std::vector<uint8_t> pointLocalReconstructionModeByBlock_;
   PCCMetadata          patchLevelMetadata_;
   GPAPatchData         curGPAPatchData_;
   GPAPatchData         preGPAPatchData_;
