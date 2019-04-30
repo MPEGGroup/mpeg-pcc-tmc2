@@ -276,22 +276,22 @@ bool parseParameters( int                   argc,
     ("neighborCountSmoothing",
      encoderParams.neighborCountSmoothing_,
      encoderParams.neighborCountSmoothing_,
-     "todo(kmammou)")
+     "Neighbor count smoothing")
 
     ("radius2Smoothing",
      encoderParams.radius2Smoothing_,
      encoderParams.radius2Smoothing_,
-     "todo(kmammou)")
+     "Radius to smoothing")
 
     ("radius2BoundaryDetection",
      encoderParams.radius2BoundaryDetection_,
      encoderParams.radius2BoundaryDetection_,
-     "todo(kmammou)")
+     "Radius to boundary detection")
 
     ("thresholdSmoothing",
      encoderParams.thresholdSmoothing_,
      encoderParams.thresholdSmoothing_,
-     "todo(kmammou)")
+     "Threshold smoothing")
 
     //grid smoothing (m44705 CE2.17)
     ("gridSmoothing",
@@ -360,7 +360,7 @@ bool parseParameters( int                   argc,
     ("bestColorSearchRange",
      encoderParams.bestColorSearchRange_,
      encoderParams.bestColorSearchRange_,
-     "todo(kmammou)")
+     "Best color search range")
 
     // video encoding
     ("videoEncoderPath",

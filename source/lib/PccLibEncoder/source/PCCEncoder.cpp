@@ -237,30 +237,29 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                            params_.keepIntermediateFiles_ );
     if ( params_.lossyMissedPointsPatch_ ) { generateMissedPointsGeometryfromVideo( context, reconstructs ); }
   }
-
+  auto&                        gps = sps.getGeometryParameterSet();
   GeneratePointCloudParameters generatePointCloudParameters;
-  generatePointCloudParameters.occupancyResolution_         = params_.occupancyResolution_;
-  generatePointCloudParameters.occupancyPrecision_          = params_.occupancyPrecision_;
-  generatePointCloudParameters.flagGeometrySmoothing_       = params_.flagGeometrySmoothing_;
-  generatePointCloudParameters.gridSmoothing_               = params_.gridSmoothing_;
-  generatePointCloudParameters.gridSize_                    = params_.gridSize_;
-  generatePointCloudParameters.neighborCountSmoothing_      = params_.neighborCountSmoothing_;
-  generatePointCloudParameters.radius2Smoothing_            = params_.radius2Smoothing_;
-  generatePointCloudParameters.radius2BoundaryDetection_    = params_.radius2BoundaryDetection_;
-  generatePointCloudParameters.thresholdSmoothing_          = params_.thresholdSmoothing_;
-  generatePointCloudParameters.losslessGeo_                 = params_.losslessGeo_;
-  generatePointCloudParameters.losslessGeo444_              = params_.losslessGeo444_;
-  generatePointCloudParameters.nbThread_                    = params_.nbThread_;
-  generatePointCloudParameters.absoluteD1_                  = params_.absoluteD1_;
-  generatePointCloudParameters.surfaceThickness             = params_.surfaceThickness_;
-  generatePointCloudParameters.ignoreLod_                   = true;
-  generatePointCloudParameters.thresholdColorSmoothing_     = params_.thresholdColorSmoothing_;
-  generatePointCloudParameters.thresholdLocalEntropy_       = params_.thresholdLocalEntropy_;
-  generatePointCloudParameters.radius2ColorSmoothing_       = params_.radius2ColorSmoothing_;
-  generatePointCloudParameters.neighborCountColorSmoothing_ = params_.neighborCountColorSmoothing_;
-  generatePointCloudParameters.flagColorSmoothing_          = params_.flagColorSmoothing_;
-  generatePointCloudParameters.enhancedDeltaDepthCode_ =
-      ( params_.losslessGeo_ ? params_.enhancedDeltaDepthCode_ : false );
+  generatePointCloudParameters.occupancyResolution_          = params_.occupancyResolution_;
+  generatePointCloudParameters.occupancyPrecision_           = params_.occupancyPrecision_;
+  generatePointCloudParameters.flagGeometrySmoothing_        = params_.flagGeometrySmoothing_;
+  generatePointCloudParameters.gridSmoothing_                = params_.gridSmoothing_;
+  generatePointCloudParameters.gridSize_                     = params_.gridSize_;
+  generatePointCloudParameters.neighborCountSmoothing_       = params_.neighborCountSmoothing_;
+  generatePointCloudParameters.radius2Smoothing_             = params_.radius2Smoothing_;
+  generatePointCloudParameters.radius2BoundaryDetection_     = params_.radius2BoundaryDetection_;
+  generatePointCloudParameters.thresholdSmoothing_           = params_.thresholdSmoothing_;
+  generatePointCloudParameters.losslessGeo_                  = params_.losslessGeo_;
+  generatePointCloudParameters.losslessGeo444_               = params_.losslessGeo444_;
+  generatePointCloudParameters.nbThread_                     = params_.nbThread_;
+  generatePointCloudParameters.absoluteD1_                   = params_.absoluteD1_;
+  generatePointCloudParameters.surfaceThickness_             = params_.surfaceThickness_;
+  generatePointCloudParameters.ignoreLod_                    = true;
+  generatePointCloudParameters.thresholdColorSmoothing_      = params_.thresholdColorSmoothing_;
+  generatePointCloudParameters.thresholdLocalEntropy_        = params_.thresholdLocalEntropy_;
+  generatePointCloudParameters.radius2ColorSmoothing_        = params_.radius2ColorSmoothing_;
+  generatePointCloudParameters.neighborCountColorSmoothing_  = params_.neighborCountColorSmoothing_;
+  generatePointCloudParameters.flagColorSmoothing_           = params_.flagColorSmoothing_;
+  generatePointCloudParameters.enhancedDeltaDepthCode_       = params_.losslessGeo_ && params_.enhancedDeltaDepthCode_;
   generatePointCloudParameters.thresholdLossyOM_             = params_.thresholdLossyOM_;
   generatePointCloudParameters.removeDuplicatePoints_        = params_.removeDuplicatePoints_;
   generatePointCloudParameters.oneLayerMode_                 = params_.oneLayerMode_;
@@ -268,8 +267,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   generatePointCloudParameters.path_                         = path.str();
   generatePointCloudParameters.useAdditionalPointsPatch_     = params_.useAdditionalPointsPatch_;
   generatePointCloudParameters.nbPlrmMode_                   = params_.nbPlrmMode_;
-  generatePointCloudParameters.geometryBitDepth3D_ =
-      sps.getGeometryParameterSet().getGeometry3dCoordinatesBitdepthMinus1() + 1;
+  generatePointCloudParameters.geometryBitDepth3D_           = gps.getGeometry3dCoordinatesBitdepthMinus1() + 1;
 
   context.allocOneLayerData();
   if ( params_.absoluteD1_ && params_.oneLayerMode_ && !params_.singleLayerPixelInterleaving_ ) {
@@ -5024,13 +5022,13 @@ void PCCEncoder::SegmentationPartiallyAddtinalProjectionPlane( const PCCPointSet
       }
     }
     int Id = 0;
-    if (max_x - min_x > max_y - min_y)
+    if ( max_x - min_x > max_y - min_y ) {
       Id = 1;
-    else
+    } else {
       Id = 2;
+    }
 
-    if (Id == 1 && max_z - min_z > max_x - min_x)
-      Id = 3;
+    if ( Id == 1 && max_z - min_z > max_x - min_x ) { Id = 3; }
 
     if (Id == 2 && max_z - min_z > max_y - min_y)
       Id = 3;

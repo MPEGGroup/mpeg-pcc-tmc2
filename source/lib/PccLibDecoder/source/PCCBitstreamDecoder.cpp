@@ -971,11 +971,10 @@ void PCCBitstreamDecoder::patchDataUnit( PatchDataUnit&    pdu,
   pdu.setNormalAxis( bitstream.read( 1 ) ? bitstream.read( 1 ) ? PCC_AXIS3_Z : PCC_AXIS3_Y : PCC_AXIS3_X );
   auto& psdu = context.getPatchSequenceDataUnit();
   auto& psps = psdu.getPatchSequenceParameterSet(0);
-  if ( psps.getUseEightOrientationsFlag() ) { 
-	  pdu.setOrientationIndex( bitstream.read( 3 ) ); // u(3)
-  }
-  else {
-	  pdu.setOrientationIndex(bitstream.read(1)); // u(1)
+  if ( psps.getUseEightOrientationsFlag() ) {
+    pdu.setOrientationIndex( bitstream.read( 3 ) );  // u(3)
+  } else {
+    pdu.setOrientationIndex( bitstream.read( 1 ) );  // u(1)
   }
   if ( pfh.getInterPredictPatchLodBitCount() > 0 ) {
     pdu.setLod( bitstream.read( pfh.getInterPredictPatchLodBitCount() ) ); // u(v)
@@ -1083,7 +1082,7 @@ void PCCBitstreamDecoder::pcmPatchDataUnit( PCMPatchDataUnit& ppdu,
                    ppdu.getPcmPoints(), ppdu.getPatchInPcmVideoFlag() );
 }
 
-// 7.3.5.21 Point local reconstruction syntax TODO: remove plr.setBlockToPatchMap
+// 7.3.5.21 Point local reconstruction syntax 
 void PCCBitstreamDecoder::pointLocalReconstruction( PointLocalReconstruction& plr,
                                                     PCCContext&               context,
                                                     PCCBitstream&             bitstream ) {
