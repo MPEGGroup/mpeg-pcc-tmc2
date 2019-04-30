@@ -840,7 +840,6 @@ void PCCBitstreamDecoder::patchFrameHeader( PatchFrameHeader& pfh,
   if (pfh.getPcm3dShiftBitCountPresentFlag()) {
     pfh.setPcm3dShiftAxisBitCountMinus1(
       bitstream.read(gps.getGeometry3dCoordinatesBitdepthMinus1()));  //  
-    printf("gps.getGeometry3dCoordinatesBitdepthMinus1() = %d \n", gps.getGeometry3dCoordinatesBitdepthMinus1());
   }
 }
   TRACE_BITSTREAM(
