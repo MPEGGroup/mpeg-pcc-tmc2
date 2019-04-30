@@ -62,6 +62,7 @@ int PCCDecoder::decode( PCCBitstream& bitstream, PCCContext& context, PCCGroupOf
 #ifdef BITSTREAM_TRACE
   bitstream.closeTrace();
 #endif
+  printf("bitstreamDecoder.decode OK \n ");
 
 #ifdef CODEC_TRACE
   setTrace( true );
@@ -100,12 +101,14 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   const size_t frameCountTexture  = sps.getPointLocalReconstructionEnabledFlag() ? 1 : 2;
 
   auto& videoBitstreamOM = context.getVideoBitstream( VIDEO_OCCUPANCY );
+  printf("videoDecoder.decompress occupancyMap in \n");
   videoDecoder.decompress( context.getVideoOccupancyMap(), path.str(), context.size(), videoBitstreamOM,
                            params_.videoDecoderOccupancyMapPath_, context, params_.keepIntermediateFiles_,
                            ( sps.getLosslessGeo() ? sps.getLosslessGeo444() : false ), false, "", "" );
   context.getOccupancyPrecision() = sps.getFrameWidth() / context.getVideoOccupancyMap().getWidth();
+  printf("generateOccupancyMap in \n");
   generateOccupancyMap( context, context.getOccupancyPrecision(), ops.getOccupancyLossyThreshold(), sps.getEnhancedOccupancyMapForDepthFlag() );
-
+  printf("generateOccupancyMap done \n");
   if ( !sps.getLayerAbsoluteCodingEnabledFlag( 1 ) ) {
     if ( lossyMpp ) {
       std::cout << "ERROR! Lossy-missed-points-patch code not implemented when absoluteD_ = 0 as "
@@ -391,11 +394,13 @@ void PCCDecoder::setPointLocalReconstructionData( PCCFrameContext&              
 }
 
 void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
-  TRACE_CODEC( "createPatchFrameDataStructure GOP start \n" );
+  TRACE_CODEC("createPatchFrameDataStructure GOP start \n");
+  printf("createPatchFrameDataStructure GOP start \n");
   auto& sps  = context.getSps();
   auto& psdu = context.getPatchSequenceDataUnit();
   context.resize( psdu.getFrameCount() );
-  TRACE_CODEC( "getFrameCount %u \n", psdu.getFrameCount() );
+  TRACE_CODEC("getFrameCount %u \n", psdu.getFrameCount());
+  printf("getFrameCount %u \n", psdu.getFrameCount());
   setFrameMetadata( context.getGOFLevelMetadata(), psdu.getGeometryFrameParameterSet( 0 ) );
   setPointLocalReconstruction( context, sps );
   size_t indexPrevFrame    = 0;
@@ -425,8 +430,10 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
                                                 PCCFrameContext& frame,
                                                 PCCFrameContext& preFrame,
                                                 size_t           frameIndex ) {
-  TRACE_CODEC( "createPatchFrameDataStructure Frame %lu \n", frame.getIndex() );
+  TRACE_CODEC("createPatchFrameDataStructure Frame %lu \n", frame.getIndex());
+  printf("createPatchFrameDataStructure Frame %lu \n", frame.getIndex());
   auto&         sps                    = context.getSps();
+  auto&        gps        = context.getSps().getGeometryParameterSet();
   auto&         psdu                   = context.getPatchSequenceDataUnit();
   auto&         ops                    = sps.getOccupancyParameterSet();
   auto&         pflu                   = psdu.getPatchFrameLayerUnit( frameIndex );
@@ -435,6 +442,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
   auto&         pfps                   = psdu.getPatchFrameParameterSet( 0 );
   auto&         patches                = frame.getPatches();
   auto&         prePatches             = preFrame.getPatches();
+  auto&        pcmPatches = frame.getMissedPointsPatches();
   int64_t       prevSizeU0             = 0;
   int64_t       prevSizeV0             = 0;
   int64_t       predIndex              = 0;
@@ -442,6 +450,10 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
   auto          geometryBitDepth2D     = context.getSps().getGeometryParameterSet().getGeometryNominal2dBitdepthMinus1()+1;
 //  const uint8_t maxBitCountForMaxDepth = uint8_t( geometryBitDepth2D - gbitCountSize[context.getSps().getMinLevel()] + 1 );
   const size_t  maxValue2D             = 1<<geometryBitDepth2D;
+
+  //yo- const uint8_t maxBitCountForMinDepth = uint8_t((gps.getGeometry3dCoordinatesBitdepthMinus1() + 1) - gbitCountSize[minLevel]);
+  //yo- const uint8_t maxBitCountForMaxDepth = uint8_t(gps.getGeometry3dCoordinatesBitdepthMinus1() - gbitCountSize[minLevel]);
+
   size_t        numPCMPatches          = 0;
   size_t        numNonPCMPatch         = 0;
   for ( size_t patchIdx = 0; patchIdx < pfdu.getPatchCount(); patchIdx++ ) {
@@ -455,15 +467,18 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
     }
   }
   patches.resize( numNonPCMPatch );
+  pcmPatches.resize(numPCMPatches);
   frame.getFrameLevelMetadata().setMetadataType( METADATA_FRAME );
   frame.getFrameLevelMetadata().setIndex( frame.getIndex() );
 
-  TRACE_CODEC( "Patches size                        = %lu \n", patches.size() );
-  TRACE_CODEC( "OccupancyPackingBlockSize           = %d \n", ops.getOccupancyPackingBlockSize() );
+  TRACE_CODEC("Patches size                        = %lu \n", patches.size());
+  TRACE_CODEC("OccupancyPackingBlockSize           = %d \n", ops.getOccupancyPackingBlockSize());
+  printf("Patches size                        = %lu \n", patches.size());
+  printf("OccupancyPackingBlockSize           = %d \n", ops.getOccupancyPackingBlockSize());
   // TRACE_CODEC( "PatchSequenceOrientationEnabledFlag = %d \n", sps.getPatchSequenceOrientationEnabledFlag() );
   // TRACE_CODEC( "PatchOrientationPresentFlag         = %d \n", pfps.getPatchOrientationPresentFlag() );
   TRACE_CODEC( "PatchInterPredictionEnabledFlag     = %d \n", sps.getPatchInterPredictionEnabledFlag() );
-
+  size_t totalNumberOfMps = 0;  
   for ( size_t patchIndex = 0; patchIndex < pfdu.getPatchCount(); ++patchIndex ) {
     auto& pid                      = pfdu.getPatchInformationData( patchIndex );
     if ( ( ( PCCPatchFrameType( pfh.getType() ) == PATCH_FRAME_I ) &&
@@ -485,14 +500,16 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
       patch.getProjectionMode()   = sps.getLayerAbsoluteCodingEnabledFlag( 1 ) ? pdu.getProjectionMode() : 0;
       patch.getPatchOrientation() = pdu.getOrientationIndex();
       patch.getAxisOfAdditionalPlane() = pdu.get45DegreeProjectionPresentFlag() ? pdu.get45DegreeProjectionRotationAxis() : 0;
-      TRACE_CODEC( "patch %lu / %lu: Intra \n", patchIndex, patches.size() );
+      TRACE_CODEC("patch %lu / %lu: Intra \n", patchIndex, patches.size());
+      printf("patch %lu / %lu: Intra \n", patchIndex, patches.size());
+      const size_t max3DCoordinate = 1 << (gps.getGeometry3dCoordinatesBitdepthMinus1() + 1);
       if ( patch.getProjectionMode() == 0 ) {
         patch.getD1() = (int32_t)pdu.get3DShiftNormalAxis() * minLevel;
       } else {
         if (pfps.getProjection45DegreeEnableFlag() == 0) {
-        patch.getD1() = 1024 - (int32_t)pdu.get3DShiftNormalAxis() * minLevel;
+        patch.getD1() = max3DCoordinate - (int32_t)pdu.get3DShiftNormalAxis() * minLevel;
         } else {
-          patch.getD1() = 2048 - (int32_t)pdu.get3DShiftNormalAxis() * minLevel;
+          patch.getD1() = max3DCoordinate - (int32_t)pdu.get3DShiftNormalAxis() * minLevel;
         }
       }
       prevSizeU0     = patch.getSizeU0();
@@ -551,16 +568,17 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
       patch.getTangentAxis()      = prePatch.getTangentAxis();
       patch.getBitangentAxis()    = prePatch.getBitangentAxis();
       patch.getAxisOfAdditionalPlane() = prePatch.getAxisOfAdditionalPlane();
+      const size_t max3DCoordinate = 1 << (gps.getGeometry3dCoordinatesBitdepthMinus1() + 1);      
       if ( patch.getProjectionMode() == 0 ) {
         patch.getD1() = ( dpdu.get3DDeltaShiftNormalAxis() + ( prePatch.getD1() / minLevel ) ) * minLevel;
       } else {
         if (pfps.getProjection45DegreeEnableFlag() == 0) {
           patch.getD1() =
-          1024 - ( dpdu.get3DDeltaShiftNormalAxis() + ( ( 1024 - prePatch.getD1() ) / minLevel ) ) * minLevel; //jkei : we need to change 1024 to the nominal bitdepth..
+          max3DCoordinate - ( dpdu.get3DDeltaShiftNormalAxis() + ( ( max3DCoordinate - prePatch.getD1() ) / minLevel ) ) * minLevel; //jkei : we need to change 1024 to the nominal bitdepth..
         }
         else {
         patch.getD1() =
-          (1024 << 1) - ( dpdu.get3DDeltaShiftNormalAxis() + ( ( (1024 << 1) - prePatch.getD1() ) / minLevel ) ) * minLevel;
+          (max3DCoordinate << 1) - ( dpdu.get3DDeltaShiftNormalAxis() + ( ( (max3DCoordinate << 1) - prePatch.getD1() ) / minLevel ) ) * minLevel;
 
         }
       }
@@ -596,20 +614,36 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
       TRACE_CODEC( "patch %lu / %lu: PCM \n", patchIndex, patches.size() );
 
       auto& ppdu                             = pid.getPCMPatchDataUnit();
-      auto& missedPointsPatch                = frame.getMissedPointsPatch();
+      printf("(patchIndex, numNonPCMPatch)=(%d, %d) \n", patchIndex, numNonPCMPatch);
+      auto&  missedPointsPatch  = pcmPatches[patchIndex - numNonPCMPatch];  
       missedPointsPatch.u0_                  = ppdu.get2DShiftU();
       missedPointsPatch.v0_                  = ppdu.get2DShiftV();
       missedPointsPatch.sizeU0_              = ppdu.get2DDeltaSizeU();
       missedPointsPatch.sizeV0_              = ppdu.get2DDeltaSizeV();
-      missedPointsPatch.numMissedPts_        = ppdu.getPcmPoints();
+      if (pfh.getPcm3dShiftBitCountPresentFlag()) {
+        missedPointsPatch.u1_ = ppdu.get3DShiftTangentAxis();
+        missedPointsPatch.v1_ = ppdu.get3DShiftBiTangentAxis();
+        missedPointsPatch.d1_ = ppdu.get3DShiftNormalAxis();
+      }
+      else {
+        const size_t pcmU1V1D1Level = 2 << (gps.getGeometryNominal2dBitdepthMinus1());
+        missedPointsPatch.u1_ = ppdu.get3DShiftTangentAxis() * pcmU1V1D1Level;
+        missedPointsPatch.v1_ = ppdu.get3DShiftBiTangentAxis() * pcmU1V1D1Level;
+        missedPointsPatch.d1_ = ppdu.get3DShiftNormalAxis() * pcmU1V1D1Level;
+      }
+
+      missedPointsPatch.setNumberOfMps( ppdu.getPcmPoints() );
       missedPointsPatch.occupancyResolution_ = ops.getOccupancyPackingBlockSize();
+      totalNumberOfMps += missedPointsPatch.getNumberOfMps();  
       // ppdu.setPatchInPcmVideoFlag( sps.getPcmSeparateVideoPresentFlag() );
-      TRACE_CODEC( "PCM :UV = %lu %lu  size = %lu %lu  numPoints = %lu ocmRes = %lu \n", missedPointsPatch.u0_,
-                   missedPointsPatch.v0_, missedPointsPatch.sizeU0_, missedPointsPatch.sizeV0_,
-                   missedPointsPatch.numMissedPts_, missedPointsPatch.occupancyResolution_ );
+      TRACE_CODEC( "PCM :UV = %lu %lu  size = %lu %lu  uvd1 = %lu %lu %lu numPoints = %lu ocmRes = %lu \n",
+                   missedPointsPatch.u0_, missedPointsPatch.v0_, missedPointsPatch.sizeU0_, missedPointsPatch.sizeV0_,
+                   missedPointsPatch.u1_, missedPointsPatch.v1_, missedPointsPatch.d1_, missedPointsPatch.numberOfMps_,
+                   missedPointsPatch.occupancyResolution_ );
     } else {
       printf( "Error: unknow frame/patch type \n" );
       TRACE_CODEC( "Error: unknow frame/patch type \n" );
     }
-  }   
+  }
+  frame.setTotalNumberOfMissedPoints( totalNumberOfMps );   
 }

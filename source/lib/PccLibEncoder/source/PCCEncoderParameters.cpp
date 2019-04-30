@@ -148,7 +148,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   use3dmc_                         = true;
   enhancedPP_					   = true;
   minWeightEPP_					   = 0.6;
-
+  geometry3dCoordinatesBitdepth_ = 10;
   additionalProjectionPlaneMode_   = 0;
   partialAdditionalProjectionPlane_ = 0.00;
 }
@@ -500,7 +500,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
 
   gps.setGeometryParamsEnabledFlag( flagGeometrySmoothing_ );
 
-  gps.setGeometry3dCoordinatesBitdepthMinus1( 9 ); //jkei : do we have any input parameter for this??
+  //yo- gps.setGeometry3dCoordinatesBitdepthMinus1( 9 ); //jkei : do we have any input parameter for this??
   gps.setGeometryNominal2dBitdepthMinus1( getFixedLengthCodeBitsCount(maxAllowedDepth_+1) -1 );
 
   gsp.setGeometrySmoothingParamsPresentFlag( flagGeometrySmoothing_ );
@@ -508,7 +508,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   gsp.setGeometrySmoothingGridSize( gridSize_ );
   gsp.setGeometrySmoothingThreshold( thresholdSmoothing_ );
   gsp.setGeometrySmoothingEnabledFlag( gridSmoothing_ );
-
+  gps.setGeometry3dCoordinatesBitdepthMinus1(uint8_t(geometry3dCoordinatesBitdepth_ - 1));
   ops.setOccupancyPackingBlockSize( occupancyResolution_ );
   ops.setOccupancyLossyThreshold( (size_t) thresholdLossyOM_ );
 

@@ -237,6 +237,9 @@ class PCCPointSet3 {
   }
   PCCPoint3D computeCentroid() const;
   PCCBox3D computeBoundingBox() const;
+  bool isBboxEmpty(PCCBox3D bbox) const;
+  bool isMissedBboxEmpty(std::vector<size_t> missedPoints, PCCBox3D bbox) const;
+  int fillMissedPointsBbox(std::vector<size_t> missedPoints, PCCBox3D bbox, std::vector<size_t> &bboxMissedPoints) const;
 
   static bool compareSeparators(char aChar, const char *const sep) {
     int i = 0;
@@ -265,7 +268,7 @@ class PCCPointSet3 {
     return !tokens.empty();
   }
   bool write(const std::string &fileName, const bool asAscii = false ) ;
-  bool read(const std::string &fileName) ;
+  bool read( const std::string& fileName, const bool readNormals = false );
   void convertRGBToYUV() ;
   void convertRGBToYUVClosedLoop() ;
   void convertYUVToRGB() ;

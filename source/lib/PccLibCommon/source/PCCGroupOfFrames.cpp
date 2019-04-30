@@ -44,25 +44,24 @@ PCCGroupOfFrames::~PCCGroupOfFrames() {
   frames_.clear();
 }
 
-bool PCCGroupOfFrames::load( const std::string uncompressedDataPath, const size_t startFrameNumber, 
-                            const size_t endFrameNumber, const PCCColorTransform colorTransform )  {
+bool PCCGroupOfFrames::load( const std::string       uncompressedDataPath,
+                             const size_t            startFrameNumber,
+                             const size_t            endFrameNumber,
+                             const PCCColorTransform colorTransform,
+                             const bool              readNormals ) {
   char fileName[4096];
-  if (endFrameNumber < startFrameNumber) {
-    return false;
-  }
+  if ( endFrameNumber < startFrameNumber ) { return false; }
   const size_t frameCount = endFrameNumber - startFrameNumber;
   frames_.resize( frameCount );
   for (size_t frameNumber = startFrameNumber; frameNumber < endFrameNumber; ++frameNumber) {
     sprintf(fileName, uncompressedDataPath.c_str(), frameNumber);
     auto &pointSet = frames_[frameNumber - startFrameNumber];
     pointSet.resize(0);
-    if (!pointSet.read(fileName)) {
+    if ( !pointSet.read( fileName, readNormals ) ) {
       std::cout << "Error: can't open " << fileName << std::endl;
       return false;
     }
-    if ( colorTransform == COLOR_TRANSFORM_RGB_TO_YCBCR ) {
-      pointSet.convertRGBToYUV();
-    }
+    if ( colorTransform == COLOR_TRANSFORM_RGB_TO_YCBCR ) { pointSet.convertRGBToYUV(); }
   }
   return true;
 }
@@ -71,9 +70,7 @@ bool PCCGroupOfFrames::write( const std::string reconstructedDataPath, size_t& f
   char fileName[ 4096 ];
   for( auto &pointSet : frames_ ) {
     sprintf( fileName, reconstructedDataPath.c_str(), frameNumber++ );
-    if( !pointSet.write( fileName, true ) ) {
-      return false;
-    }
+    if ( !pointSet.write( fileName, true ) ) { return false; }
   }
   return true;
 }

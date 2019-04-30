@@ -70,6 +70,7 @@ class PCCEncoderParameters {
   size_t              nbThread_;
 
   size_t              frameCount_;
+  size_t              geometry3dCoordinatesBitdepth_;
   size_t              groupOfFramesSize_;
   std::string         uncompressedDataPath_;
 

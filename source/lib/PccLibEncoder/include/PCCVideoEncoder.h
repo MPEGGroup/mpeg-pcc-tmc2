@@ -358,7 +358,9 @@ class PCCVideoEncoder {
           << " --SourceWidth=" << width << " --SourceHeight=" << height << " --ConformanceWindowMode=1 "
           << " --FramesToBeEncoded=" << frameCount << " --BitstreamFile=" << binFileName
           << " --ReconFile=" << recYuvFileName << " --QP=" << qp;
-
+      if (PCCMpsPatch8bits) {
+        cmd << " --InternalBitDepth=8";
+      }      
       // If depth==10 ensure InternalBitDepth == InputBitDepth.
       // Otherwise for lossy cases rely on video encoder config files to set InternalBitDepth ( for Main10 video
       // encoders)

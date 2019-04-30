@@ -688,6 +688,8 @@ void PCCBitstreamEncoder::patchFrameHeader( PatchFrameHeader& pfh,
   auto& psdu = context.getPatchSequenceDataUnit();
   auto& psps = psdu.getPatchSequenceParameterSet( pfh.getPatchFrameParameterSetId() );
   auto& pfps = psdu.getPatchFrameParameterSet( pfh.getPatchFrameParameterSetId() );
+  auto& gps = context.getSps().getGeometryParameterSet();
+  auto& sps = context.getSps();
 
   bitstream.writeUvlc( pfh.getPatchFrameParameterSetId() );  // ue(v )
   bitstream.writeUvlc( pfh.getAddress() );                   // u( v )
@@ -819,16 +821,25 @@ void PCCBitstreamEncoder::patchFrameHeader( PatchFrameHeader& pfh,
       }
     }
   }
-  TRACE_BITSTREAM( "InterPredictPatchBitCount Flag %d %d %d %d %d %d %d Count = %u %u %u %u %u %u \n",
+  if (sps.getPcmPatchEnabledFlag()) {
+    bitstream.write((uint32_t)pfh.getPcm3dShiftBitCountPresentFlag(), 1);  // u( 1 )
+    if (pfh.getPcm3dShiftBitCountPresentFlag()) {
+      //bitstream.write((uint32_t)pfh.getPcm3dShiftAxisBitCountMinus1(), 11);
+      bitstream.write((uint32_t)pfh.getPcm3dShiftAxisBitCountMinus1(), gps.getGeometry3dCoordinatesBitdepthMinus1());
+      printf("gps.getGeometry3dCoordinatesBitdepthMinus1() = %d \n", gps.getGeometry3dCoordinatesBitdepthMinus1());
+    }
+  }
+  TRACE_BITSTREAM( "InterPredictPatchBitCount Flag %d %d %d %d %d %d %d %d Count = %u %u %u %u %u %u %u \n",
                    pfh.getInterPredictPatchBitCountFlag(), pfh.getInterPredictPatch2dShiftUBitCountFlag(),
                    pfh.getInterPredictPatch2dShiftVBitCountFlag(),
                    pfh.getInterPredictPatch3dShiftTangentAxisBitCountFlag(),
                    pfh.getInterPredictPatch3dShiftBitangentAxisBitCountFlag(),
-                   pfh.getInterPredictPatch3dShiftNormalAxisBitCountFlag(), pfh.getInterPredictPatchLodBitCountFlag(),
+                   pfh.getInterPredictPatch3dShiftNormalAxisBitCountFlag(), pfh.getInterPredictPatchLodBitCountFlag(), pfh.getPcm3dShiftBitCountPresentFlag(),
                    pfh.getInterPredictPatch2dShiftUBitCountMinus1(), pfh.getInterPredictPatch2dShiftVBitCountMinus1(),
                    pfh.getInterPredictPatch3dShiftTangentAxisBitCountMinus1(),
                    pfh.getInterPredictPatch3dShiftBitangentAxisBitCountMinus1(),
-                   pfh.getInterPredictPatch3dShiftNormalAxisBitCountMinus1(), pfh.getInterPredictPatchLodBitCount() );
+                   pfh.getInterPredictPatch3dShiftNormalAxisBitCountMinus1(), pfh.getInterPredictPatchLodBitCount(), 
+                    pfh.getPcm3dShiftAxisBitCountMinus1());
   byteAlignment( bitstream );
 }
 
@@ -1025,15 +1036,34 @@ void PCCBitstreamEncoder::pcmPatchDataUnit( PCMPatchDataUnit& ppdu,
   TRACE_BITSTREAM( "%s \n", __func__ );
 
   auto& sps = context.getSps();
+  auto& gps = context.getSps().getGeometryParameterSet();
   if ( sps.getPcmSeparateVideoPresentFlag() ) { bitstream.write( ppdu.getPatchInPcmVideoFlag(), 1 ); }
   bitstream.write( uint32_t( ppdu.get2DShiftU() ), pfh.getInterPredictPatch2dShiftUBitCountMinus1() + 1 );
   bitstream.write( uint32_t( ppdu.get2DShiftV() ), pfh.getInterPredictPatch2dShiftVBitCountMinus1() + 1 );
   bitstream.writeSvlc( int32_t( ppdu.get2DDeltaSizeU() ) );
   bitstream.writeSvlc( int32_t( ppdu.get2DDeltaSizeV() ) );
+
+  if (pfh.getPcm3dShiftBitCountPresentFlag()) {
+    bitstream.write(uint32_t(ppdu.get3DShiftTangentAxis()),
+      pfh.getPcm3dShiftAxisBitCountMinus1() + 1);
+    bitstream.write(uint32_t(ppdu.get3DShiftBiTangentAxis()),
+      pfh.getPcm3dShiftAxisBitCountMinus1() + 1);
+    bitstream.write(uint32_t(ppdu.get3DShiftNormalAxis()),
+      pfh.getPcm3dShiftAxisBitCountMinus1() + 1);
+  }
+  else {
+    size_t bitCountPcmU1V1D1 = gps.getGeometry3dCoordinatesBitdepthMinus1()  - gps.getGeometryNominal2dBitdepthMinus1();
+    bitstream.write(uint32_t(ppdu.get3DShiftTangentAxis()),      bitCountPcmU1V1D1);
+    bitstream.write(uint32_t(ppdu.get3DShiftBiTangentAxis()),    bitCountPcmU1V1D1);
+    bitstream.write(uint32_t(ppdu.get3DShiftNormalAxis()),       bitCountPcmU1V1D1);
+  }
+
   bitstream.writeSvlc( int32_t( ppdu.getPcmPoints() ) );
-  TRACE_BITSTREAM( "PCM Patch => UV %4lu %4lu S=%4ld %4ld NumPcmPoints=%lu PatchInPcmVideoFlag=%d \n",
+  TRACE_BITSTREAM( "PCM Patch => UV %4lu %4lu  S=%4ld %4ld  UVD1=4ld %4ld %4ld NumPcmPoints=%lu PatchInPcmVideoFlag=%d \n",
                    ppdu.get2DShiftU(), ppdu.get2DShiftV(), ppdu.get2DDeltaSizeU(), ppdu.get2DDeltaSizeV(),
+                   ppdu.get3DShiftBiTangentAxis(), ppdu.get3DShiftBiTangentAxis(), ppdu.get3DShiftNormalAxis(),
                    ppdu.getPcmPoints(), ppdu.getPatchInPcmVideoFlag() );
+  printf("(ppdu.getPcmPoints(), ppdu.getPatchInPcmVideoFlag()= ( %d, %d) \n", ppdu.getPcmPoints(), ppdu.getPatchInPcmVideoFlag());
 }
 
 // 7.3.5.21 Point local reconstruction syntax

@@ -458,6 +458,15 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
       frameProjectionMode = selectFrameProjectionMode( points, surfaceThickness, minLevel, paramProjectionMode );
     }
   }
+  PCCBox3D inputBbox = points.computeBoundingBox();
+  uint16_t max_coord = (std::max)((std::max)(uint16_t(inputBbox.max_.x()), uint16_t(inputBbox.max_.y())), uint16_t(inputBbox.max_.z()));
+  uint16_t maxD = 1023;
+  if ((max_coord >= 1024) && (max_coord <= 2047))
+    maxD = 2047;
+  else if (max_coord >= 2048) maxD = 4095;
+
+
+  std::cout << "(max_coord,maxd) = (" << max_coord << ", " << maxD << ")" << std::endl;
 
   while ( !missedPoints.empty() ) {
     std::vector<size_t> fifo;
@@ -865,9 +874,9 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
                 comp_depth0 = depth0 - patch.getD1();
               }
               patch.getDepthEnhancedDeltaD()[p] |= 1 << ( deltaD - 1 );
-              if ( ( comp_depth0 + patch.getDepthEnhancedDeltaD()[p] ) > 1023 ) {
+              if ( ( comp_depth0 + patch.getDepthEnhancedDeltaD()[p] ) > maxD) {
                 patch.getDepthEnhancedDeltaD()[p] = oldEDDCode;
-                std::cout << "(D0 + EDD-Code) > 1023. Data overflow observed (assume using 10bit coding). Temporary "
+                std::cout << "(D0 + EDD-Code) > maxD. Data overflow observed (assume using 10bit coding). Temporary "
                              "solution: the corresponding inbetween or Depth1 point will be regarded as missing point. "
                              "To be improved if this happens a lot...\n";
               }
@@ -944,9 +953,9 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
                     comp_depth0 = depth0 - patch.getD1();
                   }
                   patch.getDepthEnhancedDeltaD()[p] |= 1 << ( deltaD - 1 );
-                  if ( ( comp_depth0 + patch.getDepthEnhancedDeltaD()[p] ) > 1023 ) {
+                  if ( ( comp_depth0 + patch.getDepthEnhancedDeltaD()[p] ) > maxD) {
                     patch.getDepthEnhancedDeltaD()[p] = oldEDDCode;
-                    std::cout << "(D0 + EDD-Code) > 1023. Data overflow observed (assume using 10bit coding). "
+                    std::cout << "(D0 + EDD-Code) > maxD. Data overflow observed (assume using 10bit coding). "
                                  "Temporary solution: the corresponding inbetween or Depth1 point will be regarded as "
                                  "missing point. To be improved if this happens a lot...\n";
                   }
@@ -1002,9 +1011,9 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
               }
               patch.getDepthEnhancedDeltaD()[p] |= 1 << ( deltaD - 1 );
               if ( ( !sixDirection && ( comp_depth0 - patch.getDepthEnhancedDeltaD()[p] ) < 0 ) ||
-                   ( sixDirection && ( comp_depth0 + patch.getDepthEnhancedDeltaD()[p] ) > 1023 ) ) {
+                   ( sixDirection && ( comp_depth0 + patch.getDepthEnhancedDeltaD()[p] ) > maxD) ) {
                 patch.getDepthEnhancedDeltaD()[p] = oldEDDCode;
-                std::cout << "(D0 + EDD-Code) > 1023. Data overflow observed (assume using 10bit coding). Temporary "
+                std::cout << "(D0 + EDD-Code) > maxD. Data overflow observed (assume using 10bit coding). Temporary "
                              "solution: the corresponding inbetween or Depth1 point will be regarded as missing point. "
                              "To be improved if this happens a lot...\n";
               }
@@ -1069,9 +1078,9 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
                   }
                   patch.getDepthEnhancedDeltaD()[p] |= 1 << ( deltaD - 1 );
                   if ( ( !sixDirection && ( comp_depth0 - patch.getDepthEnhancedDeltaD()[p] ) < 0 ) ||
-                       ( sixDirection && ( comp_depth0 + patch.getDepthEnhancedDeltaD()[p] ) > 1023 ) ) {
+                       ( sixDirection && ( comp_depth0 + patch.getDepthEnhancedDeltaD()[p] ) > maxD) ) {
                     patch.getDepthEnhancedDeltaD()[p] = oldEDDCode;
-                    std::cout << "(D0 + EDD-Code) > 1023. Data overflow observed (assume using 10bit coding). "
+                    std::cout << "(D0 + EDD-Code) > maxD. Data overflow observed (assume using 10bit coding). "
                                  "Temporary solution: the corresponding inbetween or Depth1 point will be regarded as "
                                  "missing point. To be improved if this happens a lot...\n";
                   }

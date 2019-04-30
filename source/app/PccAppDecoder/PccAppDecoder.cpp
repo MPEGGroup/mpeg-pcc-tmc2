@@ -300,7 +300,7 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
       }
       if ( metricsParams.normalDataPath_ != "" ) {
         if ( !normals.load( metricsParams.normalDataPath_, frameNumber, frameNumber + reconstructs.size(),
-                            COLOR_TRANSFORM_NONE ) ) {
+                            COLOR_TRANSFORM_NONE, true ) ) {
           return -1;
         }
       }
@@ -310,8 +310,7 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
     }
     if (!decoderParams.reconstructedDataPath_.empty()) {
       reconstructs.write(decoderParams.reconstructedDataPath_, frameNumber);
-    }
-    else {
+    } else {
       frameNumber += reconstructs.size();
     }
   }

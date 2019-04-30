@@ -66,9 +66,24 @@ class PCCFrameContext {
   std::vector<uint32_t>&           getOccupancyMap() { return occupancyMap_; }
   std::vector<uint32_t>&           getFullOccupancyMap() { return fullOccupancyMap_; }
   std::vector<PCCPatch>&           getPatches() { return patches_; }
-  PCCMissedPointsPatch&            getMissedPointsPatch() { return missedPointsPatch_; }
   PCCMetadata&                     getFrameLevelMetadata() { return frameLevelMetadata_; }
   const PCCPatch&                  getPatch( size_t index ) const { return patches_[index]; }
+  const size_t                     getNumberOfEddPoints() { return NumberOfEddPoints_; }
+  void setNumberOfEddPoints( size_t numberOfEddPoints ) { NumberOfEddPoints_ = numberOfEddPoints; }
+  std::vector<PCCMissedPointsPatch>& getMissedPointsPatches() { return missedPointsPatches_; }
+  PCCMissedPointsPatch&              getMissedPointsPatch( int index ) { return missedPointsPatches_[index]; }
+  std::vector<size_t>&               getNumberOfMissedPoints() { return numberOfMissedPoints_; };
+  size_t                             getNumberOfMissedPoints( int index ) { return numberOfMissedPoints_[index]; }
+  void         setNumberOfMissedPoints( int index, size_t value ) { numberOfMissedPoints_[index] = value; }
+  const size_t getNumberOfMissedPointsPatches() { return missedPointsPatches_.size(); }
+  void         setNumberOfMissedPointsPatches( size_t numberOfMissedPointsPatch ) {
+    numberOfMissedPointsPatches_ = numberOfMissedPointsPatch;
+  }
+
+  const size_t getTotalNumberOfMissedPoints() { return totalNumberOfMissedPoints_; }
+  void         setTotalNumberOfMissedPoints( size_t totalNumberOfMissedPoints ) {
+    totalNumberOfMissedPoints_ = totalNumberOfMissedPoints;
+  }
 
   const size_t getMPGeoWidth() { return MPGeoWidth_; }
   const size_t getMPGeoHeight() { return MPGeoHeight_; }
@@ -114,6 +129,9 @@ class PCCFrameContext {
   PCCGPAFrameSize& getPrePCCGPAFrameSize() { return prePCCGPAFrameSize_; }
   PCCGPAFrameSize& getCurPCCGPAFrameSize() { return curPCCGPAFrameSize_; }
   PCCFrameOCPInfo& getPCCOCPGPAInfo() { return ocpGPAInfo_; }
+#if ( PCCSepatareEddColors == 1 )
+  std::vector<PCCColor3B>& getEddColorsMap() { return eddColorsMap_; }
+#endif
 
  private:
   size_t index_;
@@ -140,8 +158,16 @@ class PCCFrameContext {
   std::vector<size_t>                          blockToPatch_;
   std::vector<uint32_t>                        occupancyMap_;
   std::vector<uint32_t>                        fullOccupancyMap_;
+#if ( PCCSepatareEddColors == 1 )
+  std::vector<PCCColor3B> eddColorsMap_;
+#endif
   std::vector<PCCPatch>                        patches_;
-  PCCMissedPointsPatch                         missedPointsPatch_;
+  std::vector<PCCMissedPointsPatch> missedPointsPatches_;
+  std::vector<size_t>               numberOfMissedPoints_;
+  size_t                            numberOfMissedPointsPatches_;
+  size_t                            totalNumberOfMissedPoints_;
+  size_t                            NumberOfEddPoints_;
+
   PCCMetadata                                  frameLevelMetadata_;
   std::vector<PCCPointSet3>                    srcPointCloudByPatch_;
   std::vector<PCCPointSet3>                    srcPointCloudByBlock_;

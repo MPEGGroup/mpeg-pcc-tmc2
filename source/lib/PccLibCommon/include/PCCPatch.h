@@ -787,13 +787,15 @@ class PCCPatch {
 };
 
 struct PCCMissedPointsPatch {
+  size_t u1_;                      // tangential shift
+  size_t v1_;                      // bitangential shift
+  size_t d1_;                      // depth shift
   size_t                sizeU_;
   size_t                sizeV_;
   size_t                u0_;
   size_t                v0_;
   size_t                sizeV0_;
   size_t                sizeU0_;
-  size_t                numMissedPts_;
   size_t                occupancyResolution_;
   std::vector<bool>     occupancy_;
   std::vector<uint16_t> x_;
@@ -802,18 +804,15 @@ struct PCCMissedPointsPatch {
   std::vector<uint16_t> r_;
   std::vector<uint16_t> g_;
   std::vector<uint16_t> b_;
-  size_t                numEddSavedPoints_;
-  size_t                MPnumber_;
-  size_t                MPnumbercolor_;
+
+  size_t numberOfEddPoints_;
+  size_t numberOfMps_;
+  size_t numberOfMpsColors_;
+
+
+  //GPA.
   size_t                preV0_;
   size_t                tempV0_;
-
-  const size_t size() { return x_.size(); }
-  const size_t sizeColor() { return r_.size(); }
-  void         setMPnumber( size_t numofMPs ) { MPnumber_ = numofMPs; }
-  void         setMPnumbercolor( size_t numofMPs ) { MPnumbercolor_ = numofMPs; }
-  const size_t getMPnumber() { return MPnumber_; }
-  const size_t getMPnumbercolor() { return MPnumbercolor_; }
 
   void resize( const size_t size ) {
     x_.resize( size );
@@ -825,6 +824,15 @@ struct PCCMissedPointsPatch {
     y_.resize( size, val );
     z_.resize( size, val );
   }
+
+  const size_t size() { return x_.size(); }
+
+  const size_t sizeofcolor() { return r_.size();}
+  void         setNumberOfMps(size_t numberOfMPs) { numberOfMps_ = numberOfMPs; }
+  void         setNumberOfMpsColors(size_t numberOfMpsColors) { numberOfMpsColors_ = numberOfMpsColors; }
+  const size_t getNumberOfMps() { return numberOfMps_; }
+  const size_t getNumberOfMpsColors() { return numberOfMpsColors_; }
+
   void resizeColor( const size_t size ) {
     r_.resize( size );
     g_.resize( size );
@@ -842,11 +850,10 @@ struct PCCMissedPointsPatch {
     v0_                  = 0;
     sizeV0_              = 0;
     sizeU0_              = 0;
-    numMissedPts_        = 0;
     occupancyResolution_ = 0;
-    numEddSavedPoints_   = 0;
-    MPnumber_            = 0;
-    MPnumbercolor_       = 0;
+    numberOfEddPoints_   = 0;  
+    numberOfMps_         = 0;
+    numberOfMpsColors_   = 0; 
     preV0_               = 0;
     tempV0_              = 0;
     occupancy_.resize( 0 );

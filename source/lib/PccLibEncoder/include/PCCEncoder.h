@@ -192,7 +192,7 @@ private:
   void pack( PCCFrameContext& frame, int safeguard = 0  );
   void packFlexible(PCCFrameContext& frame, int safeguard = 0);
   void packTetris(PCCFrameContext & frame, int safeguard = 0);
-  void packMissedPointsPatch( PCCFrameContext& frame, const std::vector<bool> &occupancyMap, size_t &width, 
+  void packMissedPointsPatch(PCCFrameContext& frame, std::vector<bool> &occupancyMap, size_t &width,
                               size_t &height, size_t occupancySizeU, size_t occupancySizeV, size_t maxOccupancyRow);
   void spatialConsistencyPack(PCCFrameContext& frame, PCCFrameContext &prevFrame, int safeguard = 0 );
   void spatialConsistencyPackFlexible(PCCFrameContext& frame, PCCFrameContext &prevFrame, int safeguard = 0);
@@ -206,9 +206,10 @@ private:
   bool predictGeometryFrame( PCCFrameContext& frameContext, const PCCImageGeometry &reference, PCCImageGeometry &image);
   void generateMissedPointsPatch( const PCCPointSet3& source,
                                   PCCFrameContext& frameContext,
-                                  bool useEnhancedDeltaDepthCode, size_t geometryBitDepth3D);
+                                  bool useEnhancedDeltaDepthCode);
 
-  void sortMissedPointsPatch(PCCFrameContext& frameContext);
+  void sortMissedPointsPatch(PCCFrameContext& frameContext, size_t index);
+
   bool generateGeometryVideo( const PCCPointSet3& source, PCCFrameContext& frameContext,
                              const PCCPatchSegmenter3Parameters segmenterParams,
                              PCCVideoGeometry &videoGeometry, PCCFrameContext &prevFrame,

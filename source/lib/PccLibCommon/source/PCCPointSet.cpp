@@ -310,6 +310,46 @@ void PCCPointSet3::swap( PCCPointSet3& newPointcloud ) {
   types_       .swap( newPointcloud.types_        );
   normals_     .swap( newPointcloud.normals_      );
 }
+bool PCCPointSet3::isBboxEmpty(PCCBox3D bbox) const {
+  const size_t pointCount = getPointCount();
+  for (size_t i = 0; i < pointCount; ++i) {
+    const PCCPoint3D &pt = (*this)[i];
+    if ((pt[0] >= bbox.min_[0] && pt[0] <= bbox.max_[0]) &&
+      (pt[1] >= bbox.min_[1] && pt[1] <= bbox.max_[1]) &&
+      (pt[2] >= bbox.min_[2] && pt[2] <= bbox.max_[2])) {
+      return false;
+    }
+  }
+  return true;
+}
+
+int PCCPointSet3::fillMissedPointsBbox(std::vector<size_t> missedPoints, PCCBox3D bbox, std::vector<size_t> &bboxMissedPoints) const {
+  const size_t MissedPointCount = missedPoints.size();
+
+  for (size_t i = 0; i < MissedPointCount; ++i) {
+    const PCCPoint3D &pt = (*this)[missedPoints[i]];
+    if ((pt[0] >= bbox.min_[0] && pt[0] <= bbox.max_[0]) &&
+      (pt[1] >= bbox.min_[1] && pt[1] <= bbox.max_[1]) &&
+      (pt[2] >= bbox.min_[2] && pt[2] <= bbox.max_[2])) {
+      bboxMissedPoints.push_back(missedPoints[i]);
+    }
+  }
+  return bboxMissedPoints.size();
+}
+
+bool PCCPointSet3::isMissedBboxEmpty(std::vector<size_t> missedPoints, PCCBox3D bbox) const {
+  const size_t MissedPointCount = missedPoints.size();
+
+  for (size_t i = 0; i < MissedPointCount; ++i) {
+    const PCCPoint3D &pt = (*this)[missedPoints[i]];
+    if ((pt[0] >= bbox.min_[0] && pt[0] <= bbox.max_[0]) &&
+      (pt[1] >= bbox.min_[1] && pt[1] <= bbox.max_[1]) &&
+      (pt[2] >= bbox.min_[2] && pt[2] <= bbox.max_[2])) {
+      return false;
+    }
+  }
+  return true;
+}
 
 bool PCCPointSet3::write( const std::string &fileName, const bool asAscii ) {
   std::ofstream fout(fileName, std::ofstream::out);
@@ -399,11 +439,9 @@ bool PCCPointSet3::write( const std::string &fileName, const bool asAscii ) {
   fout.close();
   return true;
 }
-bool PCCPointSet3::read(const std::string &fileName) {
+bool PCCPointSet3::read( const std::string& fileName, const bool readNormals ) {
   std::ifstream ifs(fileName, std::ifstream::in);
-  if (!ifs.is_open()) {
-    return false;
-  }
+  if ( !ifs.is_open() ) { return false; }
   enum AttributeType {
     ATTRIBUTE_TYPE_FLOAT64 = 0,
     ATTRIBUTE_TYPE_FLOAT32 = 1,
@@ -446,9 +484,7 @@ bool PCCPointSet3::read(const std::string &fileName) {
     }
     ifs.getline(tmp, MAX_BUFFER_SIZE);
     getTokens(tmp, sep, tokens);
-    if (tokens.empty() || tokens[0] == "comment") {
-      continue;
-    }
+    if ( tokens.empty() || tokens[0] == "comment" ) { continue; }
     if (tokens[0] == "format") {
       if (tokens.size() != 3) {
         std::cout << "Error: corrupted format info!" << std::endl;
@@ -530,14 +566,11 @@ bool PCCPointSet3::read(const std::string &fileName) {
   const size_t attributeCount = attributesInfo.size();
   for (size_t a = 0; a < attributeCount; ++a) {
     const auto &attributeInfo = attributesInfo[a];
-    if (attributeInfo.name == "x" &&
-        (attributeInfo.byteCount == 8 || attributeInfo.byteCount == 4)) {
+    if ( attributeInfo.name == "x" && ( attributeInfo.byteCount == 8 || attributeInfo.byteCount == 4 ) ) {
       indexX = a;
-    } else if (attributeInfo.name == "y" &&
-        (attributeInfo.byteCount == 8 || attributeInfo.byteCount == 4)) {
+    } else if ( attributeInfo.name == "y" && ( attributeInfo.byteCount == 8 || attributeInfo.byteCount == 4 ) ) {
       indexY = a;
-    } else if (attributeInfo.name == "z" &&
-        (attributeInfo.byteCount == 8 || attributeInfo.byteCount == 4)) {
+    } else if ( attributeInfo.name == "z" && ( attributeInfo.byteCount == 8 || attributeInfo.byteCount == 4 ) ) {
       indexZ = a;
     } else if (attributeInfo.name == "red" && attributeInfo.byteCount == 1) {
       indexR = a;
@@ -545,27 +578,24 @@ bool PCCPointSet3::read(const std::string &fileName) {
       indexG = a;
     } else if (attributeInfo.name == "blue" && attributeInfo.byteCount == 1) {
       indexB = a;
-    } else if (attributeInfo.name == "nx" && attributeInfo.byteCount == 4) {
+    } else if ( attributeInfo.name == "nx" && attributeInfo.byteCount == 4 && readNormals ) {
       indexNX = a;
-    } else if (attributeInfo.name == "ny" && attributeInfo.byteCount == 4) {
+    } else if ( attributeInfo.name == "ny" && attributeInfo.byteCount == 4 && readNormals ) {
       indexNY = a;
-    } else if (attributeInfo.name == "nz" && attributeInfo.byteCount == 4) {
+    } else if ( attributeInfo.name == "nz" && attributeInfo.byteCount == 4 && readNormals ) {
       indexNZ = a;
     } else if ((attributeInfo.name == "reflectance" || attributeInfo.name == "refc") &&
         attributeInfo.byteCount <= 2) {
       indexReflectance = a;
     }
   }
-  if (indexX == PCC_UNDEFINED_INDEX || indexY == PCC_UNDEFINED_INDEX ||
-      indexZ == PCC_UNDEFINED_INDEX) {
+  if ( indexX == PCC_UNDEFINED_INDEX || indexY == PCC_UNDEFINED_INDEX || indexZ == PCC_UNDEFINED_INDEX ) {
     std::cout << "Error: missing coordinates!" << std::endl;
     return false;
   }
-  withColors_ = indexR != PCC_UNDEFINED_INDEX && indexG != PCC_UNDEFINED_INDEX &&
-      indexB != PCC_UNDEFINED_INDEX;
+  withColors_       = indexR != PCC_UNDEFINED_INDEX && indexG != PCC_UNDEFINED_INDEX && indexB != PCC_UNDEFINED_INDEX;
   withReflectances_ = indexReflectance != PCC_UNDEFINED_INDEX;
-  withNormals_ = indexNX != PCC_UNDEFINED_INDEX && indexNY != PCC_UNDEFINED_INDEX &&
-      indexNZ != PCC_UNDEFINED_INDEX;
+  withNormals_ = indexNX != PCC_UNDEFINED_INDEX && indexNY != PCC_UNDEFINED_INDEX && indexNZ != PCC_UNDEFINED_INDEX;
   resize(pointCount);
   if (isAscii) {
     size_t pointCounter = 0;

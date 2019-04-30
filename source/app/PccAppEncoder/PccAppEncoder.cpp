@@ -55,15 +55,15 @@ int main( int argc, char* argv[] ) {
   using namespace std::chrono;
   using ms       = milliseconds;
   auto totalWall = duration_cast<ms>( clockWall.count() ).count();
-  std::cout << "Processing time (wall): " << ( ret == 0 ? totalWall / 1000.0 : -1 ) << " s\n";
+  std::cout << "Processing time (wall): " << (ret == 0 ? totalWall / 1000.0 : -1) << " s\n"; cout.flush();
 
   auto totalUserSelf = duration_cast<ms>( clockUser.self.count() ).count();
-  std::cout << "Processing time (user.self): " << ( ret == 0 ? totalUserSelf / 1000.0 : -1 ) << " s\n";
+  std::cout << "Processing time (user.self): " << ( ret == 0 ? totalUserSelf / 1000.0 : -1 ) << " s\n"; cout.flush();
 
   auto totalUserChild = duration_cast<ms>( clockUser.children.count() ).count();
-  std::cout << "Processing time (user.children): " << ( ret == 0 ? totalUserChild / 1000.0 : -1 ) << " s\n";
+  std::cout << "Processing time (user.children): " << ( ret == 0 ? totalUserChild / 1000.0 : -1 ) << " s\n"; cout.flush();
 
-  std::cout << "Peak memory: " << getPeakMemory() << " KB\n";
+  std::cout << "Peak memory: " << getPeakMemory() << " KB\n"; cout.flush();
   return ret;
 }
 
@@ -140,6 +140,11 @@ bool parseParameters( int                   argc,
      encoderParams.frameCount_,
      encoderParams.frameCount_,
      "Number of frames to encode")
+
+    ("geometry3dCoordinatesBitdepth",
+     encoderParams.geometry3dCoordinatesBitdepth_,
+     encoderParams.geometry3dCoordinatesBitdepth_,
+     "bitdepth of the 3D coordinates od the iput frames")
 
     ("groupOfFramesSize",
      encoderParams.groupOfFramesSize_,
@@ -728,7 +733,9 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
     PCCGroupOfFrames normals;
     if ( metricsParams.computeMetrics_ ) {
       if ( metricsParams.normalDataPath_ != "" ) {
-        if ( !normals.load( metricsParams.normalDataPath_, startFrameNumber, endFrameNumber, COLOR_TRANSFORM_NONE ) ) {
+
+        if ( !normals.load( metricsParams.normalDataPath_, startFrameNumber, endFrameNumber, COLOR_TRANSFORM_NONE,
+                            true ) ) {
           return -1;
         }
       }
@@ -752,7 +759,7 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
     contextIndex++;
   }
   bitstream.getBitStreamStat().trace();
-  std::cout << "Total bitstream size " << bitstream.size() << " B" << std::endl;
+  std::cout << "Total bitstream size " << bitstream.size() << " B" << std::endl; cout.flush();
   bitstream.write( encoderParams.compressedStreamPath_ );
 
   if ( metricsParams.computeMetrics_ ) { metrics.display(); }

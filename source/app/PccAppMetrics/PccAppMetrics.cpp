@@ -196,16 +196,18 @@ int computeMetrics(const PCCMetricsParameters &metricsParams, StopwatchUserTime 
   size_t contextIndex = 0;
   PCCMetrics metrics;
   metrics.setParameters( metricsParams );
-  for(size_t frameIndex = metricsParams.startFrameNumber_; frameIndex <  metricsParams.startFrameNumber_ +  metricsParams.frameCount_; frameIndex++){
+  for ( size_t frameIndex = metricsParams.startFrameNumber_;
+        frameIndex < metricsParams.startFrameNumber_ + metricsParams.frameCount_; frameIndex++ ) {
     PCCGroupOfFrames sources, reconstructs, normals;
     if (!sources.load( metricsParams.uncompressedDataPath_, frameIndex, frameIndex + 1, COLOR_TRANSFORM_NONE ) ) {
       return -1;
     }
-    if (!reconstructs.load( metricsParams.reconstructedDataPath_, frameIndex, frameIndex + 1, COLOR_TRANSFORM_NONE ) ) {
+    if ( !reconstructs.load( metricsParams.reconstructedDataPath_, frameIndex, frameIndex + 1,
+                             COLOR_TRANSFORM_NONE ) ) {
       return -1;
     }
     if( metricsParams.normalDataPath_ != "" ){
-      if (!normals.load( metricsParams.normalDataPath_, frameIndex, frameIndex + 1, COLOR_TRANSFORM_NONE ) ) {
+      if ( !normals.load( metricsParams.normalDataPath_, frameIndex, frameIndex + 1, COLOR_TRANSFORM_NONE, true ) ) {
         return -1;
       }
     }

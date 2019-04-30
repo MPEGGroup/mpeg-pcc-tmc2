@@ -161,6 +161,9 @@ class PCMPatchDataUnit {
       ppdu2DShiftV_( 0 ),
       ppdu2DDeltaSizeU_( 0 ),
       ppdu2DDeltaSizeV_( 0 ),
+      ppdu3DShiftTangentAxis_( 0 ),
+      ppdu3DShiftBiTangentAxis_( 0 ),
+      ppdu3DShiftNormalAxis_( 0 ),
       ppduPcmPoints_( 0 ){};
   ~PCMPatchDataUnit(){};
   PCMPatchDataUnit& operator=( const PCMPatchDataUnit& ) = default;
@@ -170,6 +173,9 @@ class PCMPatchDataUnit {
   size_t   get2DShiftV() { return ppdu2DShiftV_; }
   int64_t  get2DDeltaSizeU() { return ppdu2DDeltaSizeU_; }
   int64_t  get2DDeltaSizeV() { return ppdu2DDeltaSizeV_; }
+  size_t   get3DShiftTangentAxis() { return ppdu3DShiftTangentAxis_; }
+  size_t   get3DShiftBiTangentAxis() { return ppdu3DShiftBiTangentAxis_; }
+  size_t   get3DShiftNormalAxis() { return ppdu3DShiftNormalAxis_; }
   uint32_t getPcmPoints() { return ppduPcmPoints_; }
 
   void setPatchInPcmVideoFlag( bool value ) { ppduPatchInPcmVideoFlag_ = value; }
@@ -177,6 +183,9 @@ class PCMPatchDataUnit {
   void set2DShiftV( size_t value ) { ppdu2DShiftV_ = value; }
   void set2DDeltaSizeU( int64_t value ) { ppdu2DDeltaSizeU_ = value; }
   void set2DDeltaSizeV( int64_t value ) { ppdu2DDeltaSizeV_ = value; }
+  void set3DShiftTangentAxis( size_t value ) { ppdu3DShiftTangentAxis_ = value; }
+  void set3DShiftBiTangentAxis( size_t value ) { ppdu3DShiftBiTangentAxis_ = value; }
+  void set3DShiftNormalAxis( size_t value ) { ppdu3DShiftNormalAxis_ = value; }
   void setPcmPoints( uint32_t value ) { ppduPcmPoints_ = value; }
 
  private:
@@ -185,6 +194,10 @@ class PCMPatchDataUnit {
   size_t   ppdu2DShiftV_;
   int64_t  ppdu2DDeltaSizeU_;
   int64_t  ppdu2DDeltaSizeV_;
+  size_t  ppdu3DShiftTangentAxis_;
+  size_t  ppdu3DShiftBiTangentAxis_;
+  size_t  ppdu3DShiftNormalAxis_;
+
   uint32_t ppduPcmPoints_;
 };
 
@@ -503,6 +516,8 @@ class PatchFrameHeader {
       interPredictPatch3dShiftTangentAxisBitCountFlag_( false ),
       interPredictPatch3dShiftBitangentAxisBitCountFlag_( false ),
       interPredictPatch3dShiftNormalAxisBitCountFlag_( false ),
+      pcm3dShiftBitCountPresentFlag_(true),
+      pcm3dShiftAxisBitCountMinus1_(10),
       interPredictPatchLodBitCountFlag_( false ) {
     additionalPfocLsbPresentFlag_.resize( 1, 0 );
     additionalPfocLsbVal_.resize( 1, 0 );
@@ -541,6 +556,15 @@ class PatchFrameHeader {
   uint8_t getInterPredictPatch3dShiftNormalAxisBitCountMinus1() {
     return interPredictPatch3dShiftNormalAxisBitCountMinus1_;
   }
+  uint8_t getPcm3dShiftAxisBitCountMinus1() {
+    return pcm3dShiftAxisBitCountMinus1_;
+  }
+  bool getPcm3dShiftBitCountPresentFlag() { return pcm3dShiftBitCountPresentFlag_; }
+
+  
+
+  
+
   uint8_t getInterPredictPatchLodBitCount() { return interPredictPatchLodBitCount_; }
 
   void setFrameIndex( uint8_t index ) { frameIndex_ = index; }
@@ -568,6 +592,14 @@ class PatchFrameHeader {
   void setInterPredictPatch3dShiftNormalAxisBitCountMinus1( uint8_t value ) {
     interPredictPatch3dShiftNormalAxisBitCountMinus1_ = value;
   }
+  void setPcm3dShiftAxisBitCountMinus1(uint8_t value) {
+    pcm3dShiftAxisBitCountMinus1_ = value;
+  }
+  
+  void setPcm3dShiftBitCountPresentFlag(uint8_t value) {
+      pcm3dShiftBitCountPresentFlag_ = value;
+  }
+
   void setInterPredictPatchLodBitCount( uint8_t value ) { interPredictPatchLodBitCount_ = value; }
   void setInterPredictPatchBitCountFlag( bool value ) { interPredictPatchBitCountFlag_ = value; }
   void setInterPredictPatch2dShiftUBitCountFlag( bool value ) { interPredictPatch2dShiftUBitCountFlag_ = value; }
@@ -601,6 +633,10 @@ class PatchFrameHeader {
   uint8_t               interPredictPatch3dShiftTangentAxisBitCountMinus1_;
   uint8_t               interPredictPatch3dShiftBitangentAxisBitCountMinus1_;
   uint8_t               interPredictPatch3dShiftNormalAxisBitCountMinus1_;
+  uint8_t               pcm3dShiftAxisBitCountMinus1_;
+  bool                  pcm3dShiftBitCountPresentFlag_; 
+
+
   uint8_t               interPredictPatchLodBitCount_;
   bool                  interPredictPatchBitCountFlag_;
   bool                  interPredictPatch2dShiftUBitCountFlag_;
@@ -1536,7 +1572,7 @@ class GeometryParameterSet {
  public:
   GeometryParameterSet() :
       geometryCodecId_( 0 ),
-      geometryNominal2dBitdepthMinus1_( 7 ),
+      geometryNominal2dBitdepthMinus1_( 10 ),
       geometry3dCoordinatesBitdepthMinus1_( 9 ),
       pcmGeometryCodecId_( 0 ),
       geometryParamsEnabledFlag_( false ),

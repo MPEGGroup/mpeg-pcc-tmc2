@@ -63,10 +63,15 @@
 // ******************************************************************* //
 // Trace modes to validate new syntax
 // ******************************************************************* //
-// #define BITSTREAM_TRACE
-// #define CODEC_TRACE
+#define BITSTREAM_TRACE
+#define CODEC_TRACE
 
 #define BUG_FIX_BITDEPTH
+// ******************************************************************* //
+// Technicolor flags  for CE2_22
+// ******************************************************************* //
+#define TCH_ConsistencyPackFlexible_Fix 1
+static const size_t PCCMpsPatch8bits = 0;
 
 namespace pcc {
 
