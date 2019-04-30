@@ -1494,10 +1494,6 @@ void PCCEncoder::packMissedPointsPatch( PCCFrameContext&         frame,
     }
     missedPointsPatch.u0_ = patch.getU0();
     missedPointsPatch.v0_ = patch.getV0();
-    printf( "mpsPatch::(index,missedPointsPatch.size(), numberOfMps)=( %d, %d, %d);\n", i, missedPointsPatch.size(),
-            missedPointsPatch.getNumberOfMps() );
-    printf( "mpsPatch::(U0,V0,SizeU0, SizeV0, SizeU, SizeV)=(%d, %d, %d, %d, %d, %d);\n", patch.getU0(), patch.getV0(),
-            patch.getSizeU0(), patch.getSizeV0(), patch.getSizeU(), patch.getSizeV() );
 
   const int16_t infiniteValue = ( std::numeric_limits<int16_t>::max )();
   missedPointsPatch.resize( missedPointsPatch.sizeU_ * missedPointsPatch.sizeV_, infiniteValue );
@@ -1762,19 +1758,16 @@ void PCCEncoder::generateOccupancyMap( PCCFrameContext& frame ) {
 
   if ( !frame.getUseMissedPointsSeparateVideo() ) {
     size_t numberOfMpsPatches = frame.getNumberOfMissedPointsPatches();
-    printf( "generateOccupancyMap :: numberOfMpsPatches = %d \n", numberOfMpsPatches );
     for ( int i = 0; i < numberOfMpsPatches; i++ ) {
       auto&        missedPointsPatch = frame.getMissedPointsPatch( i );
     const size_t v0                = missedPointsPatch.v0_ * missedPointsPatch.occupancyResolution_;
     const size_t u0                = missedPointsPatch.u0_ * missedPointsPatch.occupancyResolution_;
-      printf( "generateOccupancyMap:: missedPointsPatch.size() = %d \n", missedPointsPatch.size() );
-      printf( "generateOccupancyMap:: missedPointsPatch.getNumberOfMps() = %d \n", missedPointsPatch.getNumberOfMps() );
     if ( missedPointsPatch.size() ) {
       for ( size_t v = 0; v < missedPointsPatch.sizeV_; ++v ) {
         for ( size_t u = 0; u < missedPointsPatch.sizeU_; ++u ) {
           const size_t p = v * missedPointsPatch.sizeU_ + u;
           if ( missedPointsPatch.x_[p] < infiniteDepth ) {
-              // yo-if (p < missedPointsPatch.getNumberOfMps()) {
+              // if (p < missedPointsPatch.getNumberOfMps()) {
             const size_t x = ( u0 + u );
             const size_t y = ( v0 + v );
             assert( x < width && y < height );
@@ -2250,7 +2243,6 @@ void PCCEncoder::generateMissedPointsPatch( const PCCPointSet3& source,
                     << bboxMps.min_.z() << ", " << bboxMps.max_.x() << ", " << bboxMps.max_.y() << ", "
                     << bboxMps.max_.z() << ") " << std::endl;
           numberOfMissedPatches++;
-          // yo- to be checked frame.setNumberOfMissedPointsPatches( numberOfMissedPatches );
           std::cout << "bboxMps::numberOfMissedPatches = " << frame.getNumberOfMissedPointsPatches() << std::endl;
           auto&                mpsPatches = frame.getMissedPointsPatches();
           PCCMissedPointsPatch missedPointsPatch;
@@ -2272,7 +2264,6 @@ void PCCEncoder::generateMissedPointsPatch( const PCCPointSet3& source,
           missedPointsPatch.d1_                  = size_t( bboxMps.min_.z() );
           missedPointsPatch.occupancy_.resize( 0 );
           missedPointsPatch.setNumberOfMps( mps );
-          printf( "generateMissedPointsPatch :: missedPointsPatch = %d \n", missedPointsPatch.getNumberOfMps() );
   if ( params_.losslessGeo444_ ) {
             missedPointsPatch.resize( 3 * mps );
             for ( auto i = 0; i < mps; ++i ) {
@@ -2483,15 +2474,16 @@ void PCCEncoder::generateMPsGeometryImage( PCCContext& context, PCCFrameContext&
           }
         }
       }
-      //yo- lastZ = missedPointsPatch.x_[2 * numofMPs + i];
+      //yo- ??????
+      lastZ = missedPointsPatch.x_[2 * numberOfMps + i];
     }
 
-    // dilate with the last z value
-    //yo- if ( !losslessGeo ) {  // lossy missed points patch and 4:2:0 frame format
-    //yo-   for ( size_t i = 3 * numofMPs; i < width * height; ++i ) {
-    //yo-     image.setValue( 0, i % width, i / width, static_cast<uint16_t>( lastZ ) );
-    //yo-   }
-    //yo- }
+    // dilate with the last z value //yo-????
+    if ( !losslessGeo ) {  // lossy missed points patch and 4:2:0 frame format
+      for ( size_t i = 3 * numberOfMps; i < width * pcmHeight; ++i ) {
+        image.setValue( 0, i % pcmWidth, i / pcmWidth, static_cast<uint16_t>( lastZ ) );
+      }
+    }
   }
 }
 
@@ -2645,8 +2637,11 @@ bool PCCEncoder::generateGeometryVideo( const PCCGroupOfFrames& sources, PCCCont
   auto& videoGeometry = context.getVideoGeometry();
   auto& frames        = context.getFrames();
 
-  //yo- calculate_weight_normal(sources[0], frames[0]);
-  //yo- segmenterParams.weight_normal = frames[0].getWeight_normal();
+  //yo- if (params_.additionalProjectionPlaneMode_ == 0) {
+  if (0) {
+      calculate_weight_normal(sources[0], frames[0]);
+    segmenterParams.weight_normal = frames[0].getWeight_normal();
+  }
 
   if ( params_.losslessGeo_ || params_.lossyMissedPointsPatch_ ) {
     params_.useAdditionalPointsPatch_ = true;
@@ -5024,10 +5019,10 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
     maxBitCountForMinDepthTmp +=1;
   }
 
-  const uint8_t maxBitCountForMaxDepth = maxBitCountForMaxDepthTmp;
-  const uint8_t maxBitCountForMinDepth = maxBitCountForMinDepthTmp;
-  //yo- const uint8_t maxBitCountForMinDepth = uint8_t(gps.getGeometry3dCoordinatesBitdepthMinus1() + 1 - gbitCountSize[minLevel]);
-  //yo- const uint8_t maxBitCountForMaxDepth = uint8_t(gps.getGeometry3dCoordinatesBitdepthMinus1() - gbitCountSize[minLevel]);
+  // const uint8_t maxBitCountForMaxDepth = maxBitCountForMaxDepthTmp;
+  // const uint8_t maxBitCountForMinDepth = maxBitCountForMinDepthTmp;
+  const uint8_t maxBitCountForMinDepth = uint8_t(gps.getGeometry3dCoordinatesBitdepthMinus1() + 1 - gbitCountSize[minLevel]);
+  const uint8_t maxBitCountForMaxDepth = uint8_t(gps.getGeometry3dCoordinatesBitdepthMinus1() - gbitCountSize[minLevel]);
 
   int64_t       prevSizeU0 = 0, prevSizeV0 = 0, predIndex = 0;
   auto&         refPatches = refFrame.getPatches();

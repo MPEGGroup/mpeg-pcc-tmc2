@@ -500,7 +500,6 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
 
   gps.setGeometryParamsEnabledFlag( flagGeometrySmoothing_ );
 
-  //yo- gps.setGeometry3dCoordinatesBitdepthMinus1( 9 ); //jkei : do we have any input parameter for this??
   gps.setGeometryNominal2dBitdepthMinus1( getFixedLengthCodeBitsCount(maxAllowedDepth_+1) -1 );
 
   gsp.setGeometrySmoothingParamsPresentFlag( flagGeometrySmoothing_ );

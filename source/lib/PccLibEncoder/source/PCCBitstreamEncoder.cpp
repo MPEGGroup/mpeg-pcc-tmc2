@@ -826,7 +826,6 @@ void PCCBitstreamEncoder::patchFrameHeader( PatchFrameHeader& pfh,
     if (pfh.getPcm3dShiftBitCountPresentFlag()) {
       //bitstream.write((uint32_t)pfh.getPcm3dShiftAxisBitCountMinus1(), 11);
       bitstream.write((uint32_t)pfh.getPcm3dShiftAxisBitCountMinus1(), gps.getGeometry3dCoordinatesBitdepthMinus1());
-      printf("gps.getGeometry3dCoordinatesBitdepthMinus1() = %d \n", gps.getGeometry3dCoordinatesBitdepthMinus1());
     }
   }
   TRACE_BITSTREAM( "InterPredictPatchBitCount Flag %d %d %d %d %d %d %d %d Count = %u %u %u %u %u %u %u \n",
@@ -1063,7 +1062,6 @@ void PCCBitstreamEncoder::pcmPatchDataUnit( PCMPatchDataUnit& ppdu,
                    ppdu.get2DShiftU(), ppdu.get2DShiftV(), ppdu.get2DDeltaSizeU(), ppdu.get2DDeltaSizeV(),
                    ppdu.get3DShiftBiTangentAxis(), ppdu.get3DShiftBiTangentAxis(), ppdu.get3DShiftNormalAxis(),
                    ppdu.getPcmPoints(), ppdu.getPatchInPcmVideoFlag() );
-  printf("(ppdu.getPcmPoints(), ppdu.getPatchInPcmVideoFlag()= ( %d, %d) \n", ppdu.getPcmPoints(), ppdu.getPatchInPcmVideoFlag());
 }
 
 // 7.3.5.21 Point local reconstruction syntax
