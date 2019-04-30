@@ -440,19 +440,19 @@ bool PCCPointSet3::write( const std::string &fileName, const bool asAscii ) {
   return true;
 }
 bool PCCPointSet3::read( const std::string& fileName, const bool readNormals ) {
-  std::ifstream ifs(fileName, std::ifstream::in);
+  std::ifstream ifs( fileName, std::ifstream::in );
   if ( !ifs.is_open() ) { return false; }
   enum AttributeType {
     ATTRIBUTE_TYPE_FLOAT64 = 0,
     ATTRIBUTE_TYPE_FLOAT32 = 1,
-    ATTRIBUTE_TYPE_UINT64 = 2,
-    ATTRIBUTE_TYPE_UINT32 = 3,
-    ATTRIBUTE_TYPE_UINT16 = 4,
-    ATTRIBUTE_TYPE_UINT8 = 5,
-    ATTRIBUTE_TYPE_INT64 = 6,
-    ATTRIBUTE_TYPE_INT32 = 7,
-    ATTRIBUTE_TYPE_INT16 = 8,
-    ATTRIBUTE_TYPE_INT8 = 9,
+    ATTRIBUTE_TYPE_UINT64  = 2,
+    ATTRIBUTE_TYPE_UINT32  = 3,
+    ATTRIBUTE_TYPE_UINT16  = 4,
+    ATTRIBUTE_TYPE_UINT8   = 5,
+    ATTRIBUTE_TYPE_INT64   = 6,
+    ATTRIBUTE_TYPE_INT32   = 7,
+    ATTRIBUTE_TYPE_INT16   = 8,
+    ATTRIBUTE_TYPE_INT8    = 9,
   };
   struct AttributeInfo {
     std::string name;
@@ -461,90 +461,90 @@ bool PCCPointSet3::read( const std::string& fileName, const bool readNormals ) {
   };
 
   std::vector<AttributeInfo> attributesInfo;
-  attributesInfo.reserve(16);
-  const size_t MAX_BUFFER_SIZE = 4096;
-  char tmp[MAX_BUFFER_SIZE];
-  const char *sep = " \t\r";
+  attributesInfo.reserve( 16 );
+  const size_t             MAX_BUFFER_SIZE = 4096;
+  char                     tmp[MAX_BUFFER_SIZE];
+  const char*              sep = " \t\r";
   std::vector<std::string> tokens;
 
-  ifs.getline(tmp, MAX_BUFFER_SIZE);
-  getTokens(tmp, sep, tokens);
-  if (tokens.empty() || tokens[0] != "ply") {
+  ifs.getline( tmp, MAX_BUFFER_SIZE );
+  getTokens( tmp, sep, tokens );
+  if ( tokens.empty() || tokens[0] != "ply" ) {
     std::cout << "Error: corrupted file!" << std::endl;
     return false;
   }
-  bool isAscii = false;
-  double version = 1.0;
-  size_t pointCount = 0;
-  bool isVertexProperty = true;
-  while (1) {
-    if (ifs.eof()) {
+  bool   isAscii          = false;
+  double version          = 1.0;
+  size_t pointCount       = 0;
+  bool   isVertexProperty = true;
+  while ( 1 ) {
+    if ( ifs.eof() ) {
       std::cout << "Error: corrupted header!" << std::endl;
       return false;
     }
-    ifs.getline(tmp, MAX_BUFFER_SIZE);
-    getTokens(tmp, sep, tokens);
+    ifs.getline( tmp, MAX_BUFFER_SIZE );
+    getTokens( tmp, sep, tokens );
     if ( tokens.empty() || tokens[0] == "comment" ) { continue; }
-    if (tokens[0] == "format") {
-      if (tokens.size() != 3) {
+    if ( tokens[0] == "format" ) {
+      if ( tokens.size() != 3 ) {
         std::cout << "Error: corrupted format info!" << std::endl;
         return false;
       }
       isAscii = tokens[1] == "ascii";
-      version = atof(tokens[2].c_str());
-    } else if (tokens[0] == "element") {
-      if (tokens.size() != 3) {
+      version = atof( tokens[2].c_str() );
+    } else if ( tokens[0] == "element" ) {
+      if ( tokens.size() != 3 ) {
         std::cout << "Error: corrupted element info!" << std::endl;
         return false;
       }
-      if (tokens[1] == "vertex") {
-        pointCount = atoi(tokens[2].c_str());
+      if ( tokens[1] == "vertex" ) {
+        pointCount = atoi( tokens[2].c_str() );
       } else {
         isVertexProperty = false;
       }
-    } else if (tokens[0] == "property" && isVertexProperty) {
-      if (tokens.size() != 3) {
+    } else if ( tokens[0] == "property" && isVertexProperty ) {
+      if ( tokens.size() != 3 ) {
         std::cout << "Error: corrupted property info!" << std::endl;
         return false;
       }
-      const std::string &propertyType = tokens[1];
-      const std::string &propertyName = tokens[2];
-      const size_t attributeIndex = attributesInfo.size();
-      attributesInfo.resize(attributeIndex + 1);
-      AttributeInfo &attributeInfo = attributesInfo[attributeIndex];
-      attributeInfo.name = propertyName;
-      if (propertyType == "float64") {
-        attributeInfo.type = ATTRIBUTE_TYPE_FLOAT64;
+      const std::string& propertyType   = tokens[1];
+      const std::string& propertyName   = tokens[2];
+      const size_t       attributeIndex = attributesInfo.size();
+      attributesInfo.resize( attributeIndex + 1 );
+      AttributeInfo& attributeInfo = attributesInfo[attributeIndex];
+      attributeInfo.name           = propertyName;
+      if ( propertyType == "float64" ) {
+        attributeInfo.type      = ATTRIBUTE_TYPE_FLOAT64;
         attributeInfo.byteCount = 8;
-      } else if (propertyType == "float" || propertyType == "float32") {
-        attributeInfo.type = ATTRIBUTE_TYPE_FLOAT32;
+      } else if ( propertyType == "float" || propertyType == "float32" ) {
+        attributeInfo.type      = ATTRIBUTE_TYPE_FLOAT32;
         attributeInfo.byteCount = 4;
-      } else if (propertyType == "uint64") {
-        attributeInfo.type = ATTRIBUTE_TYPE_UINT64;
+      } else if ( propertyType == "uint64" ) {
+        attributeInfo.type      = ATTRIBUTE_TYPE_UINT64;
         attributeInfo.byteCount = 8;
-      } else if (propertyType == "uint32") {
-        attributeInfo.type = ATTRIBUTE_TYPE_UINT32;
+      } else if ( propertyType == "uint32" ) {
+        attributeInfo.type      = ATTRIBUTE_TYPE_UINT32;
         attributeInfo.byteCount = 4;
-      } else if (propertyType == "uint16") {
-        attributeInfo.type = ATTRIBUTE_TYPE_UINT16;
+      } else if ( propertyType == "uint16" ) {
+        attributeInfo.type      = ATTRIBUTE_TYPE_UINT16;
         attributeInfo.byteCount = 2;
-      } else if (propertyType == "uchar" || propertyType == "uint8") {
-        attributeInfo.type = ATTRIBUTE_TYPE_UINT8;
+      } else if ( propertyType == "uchar" || propertyType == "uint8" ) {
+        attributeInfo.type      = ATTRIBUTE_TYPE_UINT8;
         attributeInfo.byteCount = 1;
-      } else if (propertyType == "int64") {
-        attributeInfo.type = ATTRIBUTE_TYPE_INT64;
+      } else if ( propertyType == "int64" ) {
+        attributeInfo.type      = ATTRIBUTE_TYPE_INT64;
         attributeInfo.byteCount = 8;
-      } else if (propertyType == "int32") {
-        attributeInfo.type = ATTRIBUTE_TYPE_INT32;
+      } else if ( propertyType == "int32" ) {
+        attributeInfo.type      = ATTRIBUTE_TYPE_INT32;
         attributeInfo.byteCount = 4;
-      } else if (propertyType == "int16") {
-        attributeInfo.type = ATTRIBUTE_TYPE_INT16;
+      } else if ( propertyType == "int16" ) {
+        attributeInfo.type      = ATTRIBUTE_TYPE_INT16;
         attributeInfo.byteCount = 2;
-      } else if (propertyType == "char" || propertyType == "int8") {
-        attributeInfo.type = ATTRIBUTE_TYPE_INT8;
+      } else if ( propertyType == "char" || propertyType == "int8" ) {
+        attributeInfo.type      = ATTRIBUTE_TYPE_INT8;
         attributeInfo.byteCount = 1;
       }
-    } else if (tokens[0] == "end_header") {
+    } else if ( tokens[0] == "end_header" ) {
       break;
     }
   }
@@ -553,30 +553,30 @@ bool PCCPointSet3::read( const std::string& fileName, const bool readNormals ) {
     return false;
   }
 
-  size_t indexX           = PCC_UNDEFINED_INDEX;
-  size_t indexY           = PCC_UNDEFINED_INDEX;
-  size_t indexZ           = PCC_UNDEFINED_INDEX;
-  size_t indexR           = PCC_UNDEFINED_INDEX;
-  size_t indexG           = PCC_UNDEFINED_INDEX;
-  size_t indexB           = PCC_UNDEFINED_INDEX;
-  size_t indexReflectance = PCC_UNDEFINED_INDEX;
-  size_t indexNX          = PCC_UNDEFINED_INDEX;
-  size_t indexNY          = PCC_UNDEFINED_INDEX;
-  size_t indexNZ          = PCC_UNDEFINED_INDEX;
-  const size_t attributeCount = attributesInfo.size();
-  for (size_t a = 0; a < attributeCount; ++a) {
-    const auto &attributeInfo = attributesInfo[a];
+  size_t       indexX           = PCC_UNDEFINED_INDEX;
+  size_t       indexY           = PCC_UNDEFINED_INDEX;
+  size_t       indexZ           = PCC_UNDEFINED_INDEX;
+  size_t       indexR           = PCC_UNDEFINED_INDEX;
+  size_t       indexG           = PCC_UNDEFINED_INDEX;
+  size_t       indexB           = PCC_UNDEFINED_INDEX;
+  size_t       indexReflectance = PCC_UNDEFINED_INDEX;
+  size_t       indexNX          = PCC_UNDEFINED_INDEX;
+  size_t       indexNY          = PCC_UNDEFINED_INDEX;
+  size_t       indexNZ          = PCC_UNDEFINED_INDEX;
+  const size_t attributeCount   = attributesInfo.size();
+  for ( size_t a = 0; a < attributeCount; ++a ) {
+    const auto& attributeInfo = attributesInfo[a];
     if ( attributeInfo.name == "x" && ( attributeInfo.byteCount == 8 || attributeInfo.byteCount == 4 ) ) {
       indexX = a;
     } else if ( attributeInfo.name == "y" && ( attributeInfo.byteCount == 8 || attributeInfo.byteCount == 4 ) ) {
       indexY = a;
     } else if ( attributeInfo.name == "z" && ( attributeInfo.byteCount == 8 || attributeInfo.byteCount == 4 ) ) {
       indexZ = a;
-    } else if (attributeInfo.name == "red" && attributeInfo.byteCount == 1) {
+    } else if ( attributeInfo.name == "red" && attributeInfo.byteCount == 1 ) {
       indexR = a;
-    } else if (attributeInfo.name == "green" && attributeInfo.byteCount == 1) {
+    } else if ( attributeInfo.name == "green" && attributeInfo.byteCount == 1 ) {
       indexG = a;
-    } else if (attributeInfo.name == "blue" && attributeInfo.byteCount == 1) {
+    } else if ( attributeInfo.name == "blue" && attributeInfo.byteCount == 1 ) {
       indexB = a;
     } else if ( attributeInfo.name == "nx" && attributeInfo.byteCount == 4 && readNormals ) {
       indexNX = a;
@@ -584,8 +584,8 @@ bool PCCPointSet3::read( const std::string& fileName, const bool readNormals ) {
       indexNY = a;
     } else if ( attributeInfo.name == "nz" && attributeInfo.byteCount == 4 && readNormals ) {
       indexNZ = a;
-    } else if ((attributeInfo.name == "reflectance" || attributeInfo.name == "refc") &&
-        attributeInfo.byteCount <= 2) {
+    } else if ( ( attributeInfo.name == "reflectance" || attributeInfo.name == "refc" ) &&
+                attributeInfo.byteCount <= 2 ) {
       indexReflectance = a;
     }
   }
@@ -596,8 +596,8 @@ bool PCCPointSet3::read( const std::string& fileName, const bool readNormals ) {
   withColors_       = indexR != PCC_UNDEFINED_INDEX && indexG != PCC_UNDEFINED_INDEX && indexB != PCC_UNDEFINED_INDEX;
   withReflectances_ = indexReflectance != PCC_UNDEFINED_INDEX;
   withNormals_ = indexNX != PCC_UNDEFINED_INDEX && indexNY != PCC_UNDEFINED_INDEX && indexNZ != PCC_UNDEFINED_INDEX;
-  resize(pointCount);
-  if (isAscii) {
+  resize( pointCount );
+  if ( isAscii ) {
     size_t pointCounter = 0;
     while (!ifs.eof() && pointCounter < pointCount) {
       ifs.getline(tmp, MAX_BUFFER_SIZE);

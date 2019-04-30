@@ -72,6 +72,7 @@
 // ******************************************************************* //
 #define TCH_ConsistencyPackFlexible_Fix 1
 static const size_t PCCMpsPatch8bits = 0;
+static const size_t PCCSepatareEddColors = 1;
 
 namespace pcc {
 

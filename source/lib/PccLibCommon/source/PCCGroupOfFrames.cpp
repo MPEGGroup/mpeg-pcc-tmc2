@@ -53,10 +53,10 @@ bool PCCGroupOfFrames::load( const std::string       uncompressedDataPath,
   if ( endFrameNumber < startFrameNumber ) { return false; }
   const size_t frameCount = endFrameNumber - startFrameNumber;
   frames_.resize( frameCount );
-  for (size_t frameNumber = startFrameNumber; frameNumber < endFrameNumber; ++frameNumber) {
-    sprintf(fileName, uncompressedDataPath.c_str(), frameNumber);
-    auto &pointSet = frames_[frameNumber - startFrameNumber];
-    pointSet.resize(0);
+  for ( size_t frameNumber = startFrameNumber; frameNumber < endFrameNumber; ++frameNumber ) {
+    sprintf( fileName, uncompressedDataPath.c_str(), frameNumber );
+    auto& pointSet = frames_[frameNumber - startFrameNumber];
+    pointSet.resize( 0 );
     if ( !pointSet.read( fileName, readNormals ) ) {
       std::cout << "Error: can't open " << fileName << std::endl;
       return false;
@@ -67,8 +67,8 @@ bool PCCGroupOfFrames::load( const std::string       uncompressedDataPath,
 }
 
 bool PCCGroupOfFrames::write( const std::string reconstructedDataPath, size_t& frameNumber ) {
-  char fileName[ 4096 ];
-  for( auto &pointSet : frames_ ) {
+  char fileName[4096];
+  for ( auto& pointSet : frames_ ) {
     sprintf( fileName, reconstructedDataPath.c_str(), frameNumber++ );
     if ( !pointSet.write( fileName, true ) ) { return false; }
   }

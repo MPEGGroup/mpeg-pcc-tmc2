@@ -205,29 +205,23 @@ class PCCBitstreamDecoder {
                            PCCBitstream&       bitstream );
 
   // 7.3.5.17 Patch information data syntax
-  void patchInformationData( PatchInformationData&    pid,
-                             size_t                   patchMode,
-                             PatchFrameHeader&        pfh,
-                             PCCContext&              context,
-                             PCCBitstream&            bitstream );
+  void patchInformationData( PatchInformationData& pid,
+                             size_t                patchMode,
+                             PatchFrameHeader&     pfh,
+                             PCCContext&           context,
+                             PCCBitstream&         bitstream );
 
   // 7.3.5.18 Patch data unit syntax
-  void patchDataUnit( PatchDataUnit&           pdu,
-                      PatchFrameHeader&        pfh,
-                      PCCContext&              context,
-                      PCCBitstream&            bitstream );
+  void patchDataUnit( PatchDataUnit& pdu, PatchFrameHeader& pfh, PCCContext& context, PCCBitstream& bitstream );
 
   // 7.3.5.19  Delta Patch data unit syntax
-  void deltaPatchDataUnit( DeltaPatchDataUnit&      dpdu,
-                           PatchFrameHeader&        pfh,
-                           PCCContext&              context,
-                           PCCBitstream&            bitstream );
+  void deltaPatchDataUnit( DeltaPatchDataUnit& dpdu,
+                           PatchFrameHeader&   pfh,
+                           PCCContext&         context,
+                           PCCBitstream&       bitstream );
 
   // 7.3.5.20 PCM patch data unit syntax
-  void pcmPatchDataUnit( PCMPatchDataUnit&        ppdu,
-                         PatchFrameHeader&        pfh,
-                         PCCContext&              context,
-                         PCCBitstream&            bitstream );
+  void pcmPatchDataUnit( PCMPatchDataUnit& ppdu, PatchFrameHeader& pfh, PCCContext& context, PCCBitstream& bitstream );
 
   // 7.3.5.21 Point local reconstruction syntax
   void pointLocalReconstruction( PointLocalReconstruction& plr, PCCContext& context, PCCBitstream& bitstream );

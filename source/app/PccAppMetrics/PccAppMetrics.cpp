@@ -191,22 +191,22 @@ bool parseParameters(int argc, char *argv[], PCCMetricsParameters& metricsParams
   return true;
 }
 
-int computeMetrics(const PCCMetricsParameters &metricsParams, StopwatchUserTime &clock) {
-  size_t frameNumber = metricsParams.startFrameNumber_;
-  size_t contextIndex = 0;
+int computeMetrics( const PCCMetricsParameters& metricsParams, StopwatchUserTime& clock ) {
+  size_t     frameNumber  = metricsParams.startFrameNumber_;
+  size_t     contextIndex = 0;
   PCCMetrics metrics;
   metrics.setParameters( metricsParams );
   for ( size_t frameIndex = metricsParams.startFrameNumber_;
         frameIndex < metricsParams.startFrameNumber_ + metricsParams.frameCount_; frameIndex++ ) {
     PCCGroupOfFrames sources, reconstructs, normals;
-    if (!sources.load( metricsParams.uncompressedDataPath_, frameIndex, frameIndex + 1, COLOR_TRANSFORM_NONE ) ) {
+    if ( !sources.load( metricsParams.uncompressedDataPath_, frameIndex, frameIndex + 1, COLOR_TRANSFORM_NONE ) ) {
       return -1;
     }
     if ( !reconstructs.load( metricsParams.reconstructedDataPath_, frameIndex, frameIndex + 1,
                              COLOR_TRANSFORM_NONE ) ) {
       return -1;
     }
-    if( metricsParams.normalDataPath_ != "" ){
+    if ( metricsParams.normalDataPath_ != "" ) {
       if ( !normals.load( metricsParams.normalDataPath_, frameIndex, frameIndex + 1, COLOR_TRANSFORM_NONE, true ) ) {
         return -1;
       }

@@ -91,7 +91,7 @@ bool parseParameters( int                   argc,
   namespace po = df::program_options_lite;
 
   bool   print_help = false;
-  size_t ignore(0);
+  size_t ignore;
 
   // The definition of the program/config options, along with default values.
   //
@@ -238,7 +238,6 @@ bool parseParameters( int                   argc,
      metricsParams.nbThread_,
      "Number of thread used for parallel processing")
 
-	("minNormSumOfInvDist4MPSelection", ignore, ignore, "Ignore parameter")
     ("minimumImageHeight",    ignore, ignore, "Ignore parameter")
     ("flagColorPreSmoothing", ignore, ignore, "Ignore parameter")
     ("surfaceSeparation",     ignore, ignore, "Ignore parameter");
@@ -314,7 +313,6 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
       frameNumber += reconstructs.size();
     }
   }
-
   bitstream.getBitStreamStat().trace();
   if ( metricsParams.computeMetrics_ ) { metrics.display(); }
   if ( metricsParams.computeChecksum_ ) {

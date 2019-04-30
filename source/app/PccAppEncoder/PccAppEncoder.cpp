@@ -55,15 +55,15 @@ int main( int argc, char* argv[] ) {
   using namespace std::chrono;
   using ms       = milliseconds;
   auto totalWall = duration_cast<ms>( clockWall.count() ).count();
-  std::cout << "Processing time (wall): " << (ret == 0 ? totalWall / 1000.0 : -1) << " s\n"; cout.flush();
+  std::cout << "Processing time (wall): " << ( ret == 0 ? totalWall / 1000.0 : -1 ) << " s\n";
 
   auto totalUserSelf = duration_cast<ms>( clockUser.self.count() ).count();
-  std::cout << "Processing time (user.self): " << ( ret == 0 ? totalUserSelf / 1000.0 : -1 ) << " s\n"; cout.flush();
+  std::cout << "Processing time (user.self): " << ( ret == 0 ? totalUserSelf / 1000.0 : -1 ) << " s\n";
 
   auto totalUserChild = duration_cast<ms>( clockUser.children.count() ).count();
-  std::cout << "Processing time (user.children): " << ( ret == 0 ? totalUserChild / 1000.0 : -1 ) << " s\n"; cout.flush();
+  std::cout << "Processing time (user.children): " << ( ret == 0 ? totalUserChild / 1000.0 : -1 ) << " s\n";
 
-  std::cout << "Peak memory: " << getPeakMemory() << " KB\n"; cout.flush();
+  std::cout << "Peak memory: " << getPeakMemory() << " KB\n";
   return ret;
 }
 
@@ -281,22 +281,22 @@ bool parseParameters( int                   argc,
     ("neighborCountSmoothing",
      encoderParams.neighborCountSmoothing_,
      encoderParams.neighborCountSmoothing_,
-     "todo(kmammou)")
+     "Neighbor count smoothing")
 
     ("radius2Smoothing",
      encoderParams.radius2Smoothing_,
      encoderParams.radius2Smoothing_,
-     "todo(kmammou)")
+     "Radius to smoothing")
 
     ("radius2BoundaryDetection",
      encoderParams.radius2BoundaryDetection_,
      encoderParams.radius2BoundaryDetection_,
-     "todo(kmammou)")
+     "Radius to boundary detection")
 
     ("thresholdSmoothing",
      encoderParams.thresholdSmoothing_,
      encoderParams.thresholdSmoothing_,
-     "todo(kmammou)")
+     "Threshold smoothing")
 
     //grid smoothing (m44705 CE2.17)
     ("gridSmoothing",
@@ -365,7 +365,7 @@ bool parseParameters( int                   argc,
     ("bestColorSearchRange",
      encoderParams.bestColorSearchRange_,
      encoderParams.bestColorSearchRange_,
-     "todo(kmammou)")
+     "Best color search range")
 
     // video encoding
     ("videoEncoderPath",
@@ -733,7 +733,6 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
     PCCGroupOfFrames normals;
     if ( metricsParams.computeMetrics_ ) {
       if ( metricsParams.normalDataPath_ != "" ) {
-
         if ( !normals.load( metricsParams.normalDataPath_, startFrameNumber, endFrameNumber, COLOR_TRANSFORM_NONE,
                             true ) ) {
           return -1;
@@ -759,7 +758,7 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
     contextIndex++;
   }
   bitstream.getBitStreamStat().trace();
-  std::cout << "Total bitstream size " << bitstream.size() << " B" << std::endl; cout.flush();
+  std::cout << "Total bitstream size " << bitstream.size() << " B" << std::endl;
   bitstream.write( encoderParams.compressedStreamPath_ );
 
   if ( metricsParams.computeMetrics_ ) { metrics.display(); }

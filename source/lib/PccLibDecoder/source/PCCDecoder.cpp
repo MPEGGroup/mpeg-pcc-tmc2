@@ -142,9 +142,6 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
 
     generateMissedPointsGeometryfromVideo( context, reconstructs );
     std::cout << " missed points geometry -> " << videoBitstreamMP.naluSize() << " B " << endl;
-
-    // add missed point to reconstructs
-    // fillMissedPoints(reconstructs, context, 0, params_.colorTransform_); //0. geo
   }
   bool useAdditionalPointsPatch = sps.getPcmPatchEnabledFlag();
   bool lossyMissedPointsPatch   = !sps.getLosslessGeo() && useAdditionalPointsPatch;
@@ -156,35 +153,35 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
                                          ops.getOccupancyPackingBlockSize() );
   }
   GeneratePointCloudParameters generatePointCloudParameters;
-  generatePointCloudParameters.occupancyResolution_      = ops.getOccupancyPackingBlockSize();
-  generatePointCloudParameters.occupancyPrecision_       = context.getOccupancyPrecision();
-  generatePointCloudParameters.flagGeometrySmoothing_    = gsp.getGeometrySmoothingParamsPresentFlag();
-  generatePointCloudParameters.gridSmoothing_            = gsp.getGeometrySmoothingEnabledFlag();
-  generatePointCloudParameters.gridSize_                 = gsp.getGeometrySmoothingGridSize();
-  generatePointCloudParameters.neighborCountSmoothing_   = asp.getAttributeSmoothingNeighbourCount();
-  generatePointCloudParameters.radius2Smoothing_         = (double)asp.getAttributeSmoothingRadius();
-  generatePointCloudParameters.radius2BoundaryDetection_ = (double)asp.getAttributeSmoothingRadius2BoundaryDetection();
-  generatePointCloudParameters.thresholdSmoothing_       = (double)gsp.getGeometrySmoothingThreshold();
-  generatePointCloudParameters.losslessGeo_              = sps.getLosslessGeo() != 0;
-  generatePointCloudParameters.losslessGeo444_           = sps.getLosslessGeo444() != 0;
-  generatePointCloudParameters.nbThread_                 = params_.nbThread_;
-  generatePointCloudParameters.absoluteD1_               = sps.getLayerAbsoluteCodingEnabledFlag( 1 );
-  generatePointCloudParameters.surfaceThickness          = context[0].getSurfaceThickness();
-  generatePointCloudParameters.ignoreLod_                = true;
-  generatePointCloudParameters.thresholdColorSmoothing_  = (double)asp.getAttributeSmoothingThreshold();
-  generatePointCloudParameters.thresholdLocalEntropy_    = (double)asp.getAttributeSmoothingThresholdLocalEntropy();
-  generatePointCloudParameters.radius2ColorSmoothing_    = (double)asp.getAttributeSmoothingRadius();
-  generatePointCloudParameters.neighborCountColorSmoothing_ = asp.getAttributeSmoothingNeighbourCount();
-  generatePointCloudParameters.flagColorSmoothing_          = (bool)asp.getAttributeSmoothingParamsPresentFlag();
-  generatePointCloudParameters.enhancedDeltaDepthCode_ =
-      ( ( sps.getLosslessGeo() != 0 ) ? sps.getEnhancedOccupancyMapForDepthFlag() : false );
-  generatePointCloudParameters.thresholdLossyOM_         = (size_t) ops.getOccupancyLossyThreshold();
+  generatePointCloudParameters.occupancyResolution_          = ops.getOccupancyPackingBlockSize();
+  generatePointCloudParameters.occupancyPrecision_           = context.getOccupancyPrecision();
+  generatePointCloudParameters.flagGeometrySmoothing_        = gsp.getGeometrySmoothingParamsPresentFlag();
+  generatePointCloudParameters.gridSmoothing_                = gsp.getGeometrySmoothingEnabledFlag();
+  generatePointCloudParameters.gridSize_                     = gsp.getGeometrySmoothingGridSize();
+  generatePointCloudParameters.neighborCountSmoothing_       = asp.getAttributeSmoothingNeighbourCount();
+  generatePointCloudParameters.radius2Smoothing_             = asp.getAttributeSmoothingRadius();
+  generatePointCloudParameters.radius2BoundaryDetection_     = asp.getAttributeSmoothingRadius2BoundaryDetection();
+  generatePointCloudParameters.thresholdSmoothing_           = gsp.getGeometrySmoothingThreshold();
+  generatePointCloudParameters.losslessGeo_                  = sps.getLosslessGeo() != 0;
+  generatePointCloudParameters.losslessGeo444_               = sps.getLosslessGeo444() != 0;
+  generatePointCloudParameters.nbThread_                     = params_.nbThread_;
+  generatePointCloudParameters.absoluteD1_                   = sps.getLayerAbsoluteCodingEnabledFlag( 1 );
+  generatePointCloudParameters.surfaceThickness_             = context[0].getSurfaceThickness();
+  generatePointCloudParameters.ignoreLod_                    = true;
+  generatePointCloudParameters.thresholdColorSmoothing_      = asp.getAttributeSmoothingThreshold();
+  generatePointCloudParameters.thresholdLocalEntropy_        = asp.getAttributeSmoothingThresholdLocalEntropy();
+  generatePointCloudParameters.radius2ColorSmoothing_        = asp.getAttributeSmoothingRadius();
+  generatePointCloudParameters.neighborCountColorSmoothing_  = asp.getAttributeSmoothingNeighbourCount();
+  generatePointCloudParameters.flagColorSmoothing_           = (bool)asp.getAttributeSmoothingParamsPresentFlag();
+  generatePointCloudParameters.thresholdLossyOM_             = (size_t)ops.getOccupancyLossyThreshold();
   generatePointCloudParameters.removeDuplicatePoints_        = sps.getRemoveDuplicatePointEnabledFlag();
   generatePointCloudParameters.oneLayerMode_                 = sps.getPointLocalReconstructionEnabledFlag();
   generatePointCloudParameters.singleLayerPixelInterleaving_ = sps.getPixelDeinterleavingFlag();
   generatePointCloudParameters.path_                         = path.str();
   generatePointCloudParameters.useAdditionalPointsPatch_     = sps.getPcmPatchEnabledFlag();
-  generatePointCloudParameters.geometryBitDepth3D_           = sps.getGeometryParameterSet().getGeometry3dCoordinatesBitdepthMinus1()+1;
+  generatePointCloudParameters.geometryBitDepth3D_           = gps.getGeometry3dCoordinatesBitdepthMinus1() + 1;
+  generatePointCloudParameters.enhancedDeltaDepthCode_ =
+      sps.getLosslessGeo() & sps.getEnhancedOccupancyMapForDepthFlag();
 
   generatePointCloud( reconstructs, context, generatePointCloudParameters );
 
@@ -390,11 +387,11 @@ void PCCDecoder::setPointLocalReconstructionData( PCCFrameContext&              
 }
 
 void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
-  TRACE_CODEC("createPatchFrameDataStructure GOP start \n");
+  TRACE_CODEC( "createPatchFrameDataStructure GOP start \n" );
   auto& sps  = context.getSps();
   auto& psdu = context.getPatchSequenceDataUnit();
   context.resize( psdu.getFrameCount() );
-  TRACE_CODEC("getFrameCount %u \n", psdu.getFrameCount());
+  TRACE_CODEC( "getFrameCount %u \n", psdu.getFrameCount() );
   setFrameMetadata( context.getGOFLevelMetadata(), psdu.getGeometryFrameParameterSet( 0 ) );
   setPointLocalReconstruction( context, sps );
   size_t indexPrevFrame    = 0;
@@ -424,7 +421,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
                                                 PCCFrameContext& frame,
                                                 PCCFrameContext& preFrame,
                                                 size_t           frameIndex ) {
-  TRACE_CODEC("createPatchFrameDataStructure Frame %lu \n", frame.getIndex());
+  TRACE_CODEC( "createPatchFrameDataStructure Frame %lu \n", frame.getIndex() );
   auto&         sps                    = context.getSps();
   auto&        gps        = context.getSps().getGeometryParameterSet();
   auto&         psdu                   = context.getPatchSequenceDataUnit();

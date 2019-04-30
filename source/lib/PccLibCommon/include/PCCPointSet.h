@@ -267,11 +267,11 @@ class PCCPointSet3 {
     if (!buf.empty()) tokens.push_back(buf);
     return !tokens.empty();
   }
-  bool write(const std::string &fileName, const bool asAscii = false ) ;
+  bool write( const std::string& fileName, const bool asAscii = false );
   bool read( const std::string& fileName, const bool readNormals = false );
-  void convertRGBToYUV() ;
-  void convertRGBToYUVClosedLoop() ;
-  void convertYUVToRGB() ;
+  void convertRGBToYUV();
+  void convertRGBToYUVClosedLoop();
+  void convertYUVToRGB();
 
   void removeDuplicate();
   void distanceGeo     ( const PCCPointSet3& pointcloud,  float& distPAB, float& distPBA  ) const;

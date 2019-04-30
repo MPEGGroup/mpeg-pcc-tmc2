@@ -53,7 +53,21 @@ typedef std::pair<size_t, size_t>                   GlobalPatch;    // [FrameInd
 typedef std::map<size_t, std::vector<GlobalPatch> > GlobalPatches;  // [TrackIndex, <GlobalPatch>]
 typedef std::pair<size_t, size_t>                   SubContext;     // [start, end)
 
-// 7.3.5.22 Supplemental enhancement information message syntax TODO: implement this class
+// 7.3.5.22 Supplemental enhancement information message syntax 
+class SupplementalEnhancementInformationMessage {
+ public:
+  SupplementalEnhancementInformationMessage() {}
+  ~SupplementalEnhancementInformationMessage() {}
+  SupplementalEnhancementInformationMessage& operator=( const SupplementalEnhancementInformationMessage& ) = default;
+
+  uint8_t getSmPayloadTypeByte() { return smPayloadTypeByte_; }
+  uint8_t getSmPayloadSizeByte() { return smPayloadSizeByte_; }
+  void    setSmPayloadTypeByte( uint8_t value ) { smPayloadTypeByte_ = value; }
+  void    setSmPayloadSizeByte( uint8_t value ) { smPayloadSizeByte_ = value; }
+ private:
+  size_t smPayloadTypeByte_;
+  size_t smPayloadSizeByte_;
+};
 
 // 7.3.34' Point local reconstruction syntax
 class PointLocalReconstruction {
@@ -1868,10 +1882,10 @@ class SequenceParameterSet {
   void setSurfaceThickness( size_t surfaceThickness ) { surfaceThickness_ = surfaceThickness; }
 
  private:
-  size_t  surfaceThickness_;
   bool    losslessGeo444_;
   bool    losslessGeo_;
   bool    losslessTexture_;
+  size_t  surfaceThickness_;
   uint8_t minLevel_;
   // THE NEXT PARAMETERS ARE NOT IN THE VPCC CD SYNTAX DOCUMENTS AND WILL BE REMOVE
 };

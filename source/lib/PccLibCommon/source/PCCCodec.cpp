@@ -102,7 +102,7 @@ void PCCCodec::generatePointCloud( PCCGroupOfFrames&                  reconstruc
   TRACE_CODEC( "  losslessGeo444_                 = %d  \n", params.losslessGeo444_ );
   TRACE_CODEC( "  nbThread_                       = %lu \n", params.nbThread_ );
   TRACE_CODEC( "  absoluteD1_                     = %d  \n", params.absoluteD1_ );
-  TRACE_CODEC( "  surfaceThickness                = %lu \n", params.surfaceThickness );
+  TRACE_CODEC( "  surfaceThickness                = %lu \n", params.surfaceThickness_ );
   TRACE_CODEC( "  ignoreLod_                      = %d  \n", params.ignoreLod_ );
   TRACE_CODEC( "  flagColorSmoothing_             = %d  \n", params.flagColorSmoothing_ );
   if ( params.flagColorSmoothing_ ) {
@@ -369,10 +369,10 @@ std::vector<PCCPoint3D> PCCCodec::generatePoints( const GeneratePointCloudParame
       PCCPoint3D interpolateD0( point0 );
       if ( patch.getProjectionMode() == 0 ) {
         interpolateD0[patch.getNormalAxis()] =
-            round( ( std::min )( ( std::max )( minimumDepth, depth1 - params.surfaceThickness ), depth1 ) );
+            round( ( std::min )( ( std::max )( minimumDepth, depth1 - params.surfaceThickness_ ), depth1 ) );
       } else {
         interpolateD0[patch.getNormalAxis()] =
-            round( ( std::max )( ( std::min )( maximumDepth, depth1 + params.surfaceThickness ), depth1 ) );
+            round( ( std::max )( ( std::min )( maximumDepth, depth1 + params.surfaceThickness_ ), depth1 ) );
       }
       depth0 = interpolateD0[patch.getNormalAxis()];
       createdPoints.push_back( interpolateD0 );
@@ -382,12 +382,12 @@ std::vector<PCCPoint3D> PCCCodec::generatePoints( const GeneratePointCloudParame
       if ( patch.getProjectionMode() == 0 ) {
         interpolateD1[patch.getNormalAxis()] = round( ( std::max )(
             ( std::min )( ( DepthNeighbors[0] + DepthNeighbors[1] + DepthNeighbors[2] + DepthNeighbors[3] ) / count,
-                          depth0 + params.surfaceThickness ),
+                          depth0 + params.surfaceThickness_ ),
             depth0 ) );
       } else {
         interpolateD1[patch.getNormalAxis()] = round( ( std::min )(
             ( std::max )( ( DepthNeighbors[0] + DepthNeighbors[1] + DepthNeighbors[2] + DepthNeighbors[3] ) / count,
-                          depth0 - params.surfaceThickness ),
+                          depth0 - params.surfaceThickness_ ),
             depth0 ) );
       }
       depth1 = interpolateD1[patch.getNormalAxis()];
