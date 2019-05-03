@@ -433,24 +433,22 @@ class PatchFrameDataUnit {
     patchInformationData_.push_back( pid );
     return patchInformationData_.back();
   }
-  uint8_t               getPatchCount() { return patchMode_.size(); }
-  uint8_t               getPatchMode( uint8_t index ) { return patchMode_[index]; }
-  PatchInformationData& getPatchInformationData( uint8_t index ) { return patchInformationData_[index]; }
-
-  uint8_t getMatchedPatchCount() {
-    uint8_t matchedPatchCount = 0;
+  size_t                getPatchCount() { return patchMode_.size(); }
+  uint8_t               getPatchMode( size_t index ) { return patchMode_[index]; }
+  PatchInformationData& getPatchInformationData( size_t index ) { return patchInformationData_[index]; }
+  size_t getMatchedPatchCount() {
+    size_t matchedPatchCount = 0;
     for ( auto& v : patchMode_ ) {
       if ( v == PATCH_MODE_P_INTER ) { matchedPatchCount++; }
     }
     return matchedPatchCount;
   }
-
-  void setPatchCount( uint8_t value ) { patchCount_ = value; }
-  void setPatchMode( uint8_t index, uint8_t value ) { patchMode_[index] = value; }
-  void setPatchInformationData( uint8_t index, PatchInformationData& value ) { patchInformationData_[index] = value; }
+  void setPatchCount( size_t value ) { patchCount_ = value; }
+  void setPatchMode( size_t index, uint8_t value ) { patchMode_[index] = value; }
+  void setPatchInformationData( size_t index, PatchInformationData& value ) { patchInformationData_[index] = value; }
 
  private:
-  uint8_t                           patchCount_;
+  size_t                           patchCount_;
   std::vector<uint8_t>              patchMode_;
   std::vector<PatchInformationData> patchInformationData_;
 };
@@ -530,9 +528,10 @@ class PatchFrameHeader {
       interPredictPatch3dShiftTangentAxisBitCountFlag_( false ),
       interPredictPatch3dShiftBitangentAxisBitCountFlag_( false ),
       interPredictPatch3dShiftNormalAxisBitCountFlag_( false ),
-      pcm3dShiftBitCountPresentFlag_(true),
-      pcm3dShiftAxisBitCountMinus1_(10),
-      interPredictPatchLodBitCountFlag_( false ) {
+      interPredictPatchLodBitCountFlag_( false ),
+      pcm3dShiftAxisBitCountMinus1_( 10 ),
+      pcm3dShiftBitCountPresentFlag_( true )
+  {
     additionalPfocLsbPresentFlag_.resize( 1, 0 );
     additionalPfocLsbVal_.resize( 1, 0 );
   }
@@ -647,10 +646,6 @@ class PatchFrameHeader {
   uint8_t               interPredictPatch3dShiftTangentAxisBitCountMinus1_;
   uint8_t               interPredictPatch3dShiftBitangentAxisBitCountMinus1_;
   uint8_t               interPredictPatch3dShiftNormalAxisBitCountMinus1_;
-  uint8_t               pcm3dShiftAxisBitCountMinus1_;
-  bool                  pcm3dShiftBitCountPresentFlag_; 
-
-
   uint8_t               interPredictPatchLodBitCount_;
   bool                  interPredictPatchBitCountFlag_;
   bool                  interPredictPatch2dShiftUBitCountFlag_;
@@ -659,6 +654,9 @@ class PatchFrameHeader {
   bool                  interPredictPatch3dShiftBitangentAxisBitCountFlag_;
   bool                  interPredictPatch3dShiftNormalAxisBitCountFlag_;
   bool                  interPredictPatchLodBitCountFlag_;
+  uint8_t               pcm3dShiftAxisBitCountMinus1_;
+  bool                  pcm3dShiftBitCountPresentFlag_;
+
 };
 
 // 7.3.5.13  Patch frame layer unit syntax

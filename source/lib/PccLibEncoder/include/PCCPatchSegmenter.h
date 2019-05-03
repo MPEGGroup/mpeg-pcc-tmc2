@@ -178,7 +178,7 @@ class PCCPatchSegmenter3 {
       PCCVector3D( -1.0, 0.0, 0.0 ), PCCVector3D( 0.0, -1.0, 0.0 ), PCCVector3D( 0.0, 0.0, -1.0 ),
   };
   const size_t orientationCount6 = 6;
-  const size_t orientation10Count = 10;
+//  const size_t orientation10Count = 10;
   PCCVector3D orientations10_XAxis[10] = {
 	  PCCVector3D(1.0, 0.0, 0.0),                 // 0
 	  PCCVector3D(0.0, 1.0, 0.0),                 // 1
@@ -218,7 +218,7 @@ class PCCPatchSegmenter3 {
 	  PCCVector3D(sqrt(2) / 2, -sqrt(2) / 2,  0.0),   // 9
   };
 
-  const size_t orientation18Count = 18;
+//  const size_t orientation18Count = 18;
   PCCVector3D orientations18[18] = {
 	  PCCVector3D(1.0, 0.0, 0.0),                 // 0
 	  PCCVector3D(0.0, 1.0, 0.0),                 // 1

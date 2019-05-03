@@ -754,7 +754,6 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
       if ( frame.getLosslessTexture() || lossyMpp ) {
         TRACE_CODEC( " lossyMpp \n" );
         // secure the size of rgb in missedpointpatch
-        size_t numberOfMpsPatches = frame.getNumberOfMissedPointsPatches();
         size_t numofEddSaved      = params.enhancedDeltaDepthCode_ ? frame.getNumberOfEddPoints() : 0;
         size_t numofMPcolors      = frame.getTotalNumberOfMissedPoints();
 
@@ -768,7 +767,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
       TRACE_CODEC( " Add points from missedPointsPatch \n" );
       // Add points from missedPointsPatch
       size_t numberOfMpsPatches = frame.getNumberOfMissedPointsPatches();
-      printf( "generatepointCloud :: numberOfMpsPatches = %d \n", numberOfMpsPatches );
+      printf( "generatepointCloud :: numberOfMpsPatches = %zu \n", numberOfMpsPatches );
         for ( int i = 0; i < numberOfMpsPatches; i++ ) {
         auto& missedPointsPatch = frame.getMissedPointsPatch( i );
 
@@ -779,11 +778,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
         // size_t numMissedPts = missedPointsPatch.numMissedPts_;
         size_t numMissedPts = missedPointsPatch.getNumberOfMps();  // numMissedPts_;
 
-      size_t occupancySizeU          = blockToPatchWidth;
       size_t ores                    = missedPointsPatch.occupancyResolution_;
-      size_t factor                  = params.losslessGeo444_ ? 1 : 3;
-        size_t missedPointsPatchBlocks =
-            static_cast<size_t>( ceil( double( numMissedPts * factor ) / ( ores * ores ) ) );
       missedPointsPatch.sizeV_ = missedPointsPatch.sizeV0_ * ores;
         missedPointsPatch.sizeU_ = missedPointsPatch.sizeU0_ * ores;
 
@@ -1190,7 +1185,6 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
     bool   losslessAtt                  = frame.getLosslessTexture();
     bool   losslessGeo                  = frame.getLosslessGeo();
     bool   lossyMissedPointsPatch       = !losslessGeo && params.useAdditionalPointsPatch_;
-    auto& missedPointsPatch            = frame.getMissedPointsPatch( 0 );
     numOfMPGeos                        = frame.getTotalNumberOfMissedPoints();
     numberOfEddPoints                  = frame.getNumberOfEddPoints();
     numberOfMpsAndEddColors            = numOfMPGeos + numberOfEddPoints;
@@ -1324,10 +1318,6 @@ void PCCCodec::generateMPsGeometryfromImage( PCCContext&       context,
                                              size_t            frameIndex ) {
   auto&  videoMPsGeometry  = context.getVideoMPsGeometry();
   auto&  image             = videoMPsGeometry.getFrame( frameIndex );
-  size_t width             = image.getWidth();
-  size_t mpsOrg           = 0;
-
-  bool   losslessGeo444    = frame.getLosslessGeo444();
   size_t numberOfMpsPatches = frame.getNumberOfMissedPointsPatches();
   for ( int i = 0; i < numberOfMpsPatches; i++ ) {
     auto&        missedPointsPatch = frame.getMissedPointsPatch( i );
@@ -1382,7 +1372,6 @@ void PCCCodec::generateMPsTexturefromImage( PCCContext&       context,
   size_t        numberOfEddPoints = frame.getNumberOfEddPoints();
   size_t        numOfMPGeos       = frame.getTotalNumberOfMissedPoints();
   const size_t  sizeofMPcolors    = numOfMPGeos + numberOfEddPoints;
-  const int16_t infiniteDepth     = ( std::numeric_limits<int16_t>::max )();
 #if ( PCCSepatareEddColors == 1 )
   size_t numberOfMpsPatches = frame.getNumberOfMissedPointsPatches();
 

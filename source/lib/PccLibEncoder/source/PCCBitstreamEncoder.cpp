@@ -871,7 +871,6 @@ void PCCBitstreamEncoder::patchFrameDataUnit( PatchFrameDataUnit& pfdu,
                                               PCCBitstream&       bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   TRACE_BITSTREAM( "pfh.getType()        = %lu \n", pfh.getType() );
-  auto&         sps                    = context.getSps();
   uint8_t       moreAvailablePatchFlag = pfdu.getPatchCount() > 0;
   const uint8_t bitCountPatchMode      = ( PCCPatchFrameType( pfh.getType() ) ) == PATCH_FRAME_I ? 1 : 2;
   bitstream.write( moreAvailablePatchFlag, 1 );

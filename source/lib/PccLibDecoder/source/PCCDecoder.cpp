@@ -364,8 +364,6 @@ void PCCDecoder::setPointLocalReconstructionData( PCCFrameContext&              
     for ( size_t v0 = 0; v0 < plrd.getPlrBlockToPatchMapHeight(); ++v0 ) {
       for ( size_t u0 = 0; u0 < plrd.getPlrBlockToPatchMapWidth(); ++u0 ) {
         size_t index = v0 * plrd.getPlrBlockToPatchMapWidth() + u0;
-        int    pos   = patch.patchBlock2CanvasBlock( ( u0 ), ( v0 ), plrd.getPlrBlockToPatchMapWidth(),
-                                                plrd.getPlrBlockToPatchMapHeight() );
         if ( plrd.getPlrBlockPresentFlag( index ) ) {
           patch.getPointLocalReconstructionMode( u0, v0 ) = plrd.getPlrBlockModeMinus1( index ) + 1;
         } else {

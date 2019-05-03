@@ -1332,9 +1332,9 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
           }
         }
       }
-      std::cout << "\t\t Patch " << patchIndex << " -> (d1, u1,v1) = (" << patch.getD1() << ", " << patch.getU1()
-                << ", " << patch.getV1() << ") (dd, du,dv) = (" << patch.getSizeD() << ", " << patch.getSizeU() << ","
-                << patch.getSizeV() << "), Direction: " << patch.getProjectionMode() << std::endl;
+      std::cout << "\t\t Patch " << patchIndex << " ->(d1,u1,v1)=( " << patch.getD1() << " , " << patch.getU1()
+                << " , " << patch.getV1() << " )(dd,du,dv)=( " << patch.getSizeD() << " , " << patch.getSizeU() << " , "
+                << patch.getSizeV() << " ),Normal: "<< size_t(patch.getNormalAxis()) << " Direction: " << patch.getProjectionMode() << std::endl;
     }
     PCCKdTree kdtreeResampled( resampled );
     missedPoints.resize( 0 );

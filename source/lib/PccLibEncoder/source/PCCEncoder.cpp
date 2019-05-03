@@ -424,7 +424,6 @@ void PCCEncoder::preFilterOccupancyMap(PCCImageOccupancyMap &image, size_t kwidt
   int val;
   for (size_t v = 0; v < height; v++) {
     for (size_t u = 0; u < width; u++) {
-      size_t p = v * width + u;
       val = 0;
       for (size_t n = 0; n < kheight; n++) {
         size_t nn = kheight - 1 - n;
@@ -1449,11 +1448,7 @@ void PCCEncoder::packMissedPointsPatch( PCCFrameContext&         frame,
                                         size_t                   occupancySizeV,
                                         size_t                   maxOccupancyRow ) {
   size_t numberOfMpsPatches        = frame.getNumberOfMissedPointsPatches();
-  size_t missedPointsPatchesBlocks = 0;
-
   size_t safeguard = 0;
-  size_t v         = 0;
-  size_t pcmHeight = 0;
   for ( int i = 0; i < numberOfMpsPatches; i++ ) {
     auto&  missedPointsPatch       = frame.getMissedPointsPatch( i );
   size_t missedPointsPatchBlocks = static_cast<size_t>(
@@ -1813,7 +1808,6 @@ void PCCEncoder::modifyOccupancyMap( PCCFrameContext&        frame,
 }
 
 void PCCEncoder::refineOccupancyMap( PCCFrameContext& frame ) {
-  const size_t  blockSize0     = params_.occupancyResolution_ / params_.occupancyPrecision_;
   const int16_t infiniteDepth  = ( std::numeric_limits<int16_t>::max )();
   auto&         patches        = frame.getPatches();
   const size_t  patchCount     = patches.size();
@@ -2202,7 +2196,6 @@ void PCCEncoder::generateMissedPointsPatch( const PCCPointSet3& source,
   frame.setTotalNumberOfMissedPoints( missedPoints.size() );
   std::cout << "missedPoints.size() = " << missedPoints.size() << std::endl;
   PCCBox3D inputBbox = source.computeBoundingBox();
-  uint16_t box_index = 0;
   if ( 1 ) {
     inputBbox.min_.x() = 0;
     inputBbox.min_.y() = 0;
@@ -2214,7 +2207,6 @@ void PCCEncoder::generateMissedPointsPatch( const PCCPointSet3& source,
   std::cout << "input boundinBox::(max_x, max_y, max_z) = (" << inputBbox.max_.x() << ", " << inputBbox.max_.y() << ", "
             << inputBbox.max_.z() << ");" << std::endl;
 
-  bool     isBoxEmpty = true;
   PCCBox3D bboxMps;
   double   mpsBoxSize = 1024.;
   if ( PCCMpsPatch8bits == 1 ) mpsBoxSize = 256.;
@@ -2423,16 +2415,8 @@ void PCCEncoder::generateMissedPointsTextureVideo( PCCContext& context, PCCGroup
 }
 
 void PCCEncoder::generateMPsGeometryImage( PCCContext& context, PCCFrameContext& frame, PCCImageGeometry& image ) {
-  bool  losslessGeo444    = frame.getLosslessGeo444();
   bool  losslessGeo       = frame.getLosslessGeo();
-
-  size_t mpsHeight[64];
-  size_t mpsOverallHeight = 0;
-  size_t totalNumberOfMps = 0;
-  size_t maxHeight        = 0;
-
   size_t width  = frame.getMPGeoWidth();
-
 
   const int16_t     infiniteDepth = ( std::numeric_limits<int16_t>::max )();
   std::vector<bool> pcmOccupancyMap;
@@ -2494,7 +2478,6 @@ void PCCEncoder::generateMPsTextureImage( PCCContext&         context,
   size_t        numberOfEddPoints = frame.getNumberOfEddPoints();
   size_t        numOfMPGeos       = frame.getTotalNumberOfMissedPoints();
   const size_t  sizeofMPcolors    = numOfMPGeos + numberOfEddPoints;
-  const int16_t infiniteDepth     = ( std::numeric_limits<int16_t>::max )();
 
   size_t       width             = frame.getMPAttWidth();
 
@@ -2714,7 +2697,6 @@ void PCCEncoder::pointLocalReconstructionSearch( PCCContext&                    
     }
   }
   size_t       shift;
-  const size_t layerCount = 2;
   if ( !params.absoluteD1_ ) {
     shift = frame.getIndex();
     if ( video.getFrameCount() < ( shift + 1 ) ) { return; }
@@ -2724,10 +2706,8 @@ void PCCEncoder::pointLocalReconstructionSearch( PCCContext&                    
   }
   const size_t               patchCount           = patches.size();
   size_t                     nbOfOptimizationMode = context.getPointLocalReconstructionModeNumber();
-  const auto&                frame0               = video.getFrame( shift );
   const size_t               imageWidth           = video.getWidth();
   const size_t               imageHeight          = video.getHeight();
-  std::vector<PCCPointSet3>& srcPointCloudByBlock = frame.getSrcPointCloudByBlock();
   for ( size_t patchIndex = 0; patchIndex < patchCount; ++patchIndex ) {
     const size_t patchIndexPlusOne = patchIndex + 1;
     auto&        patch             = patches[patchIndex];
@@ -3085,8 +3065,6 @@ void PCCEncoder::CreateCoarseLayer(PCCImage<T, 3> &image, PCCImage<T, 3> &mip, s
 	//allocate the mipmap with half the resolution
 	mip.resize((dyadicWidth / 2), (dyadicHeight / 2));
 	mipOccupancyMap.resize((dyadicWidth / 2)*(dyadicHeight / 2), 0);
-	unsigned char w1, w2, w3, w4;
-	unsigned char val1, val2, val3, val4;
 	int stride = image.getWidth();
 	int newStride = (dyadicWidth / 2);
 	int x, y, i, j;
@@ -5251,7 +5229,6 @@ void PCCEncoder::SegmentationPartiallyAddtinalProjectionPlane( const PCCPointSet
     int min_z = min_x;
     int max_z = -1;
 
-    PCCBox3D boundingBox;
     for (size_t i = 0; i < source.getPointCount(); i++) {
       PCCPoint3D point = source[i];
 
