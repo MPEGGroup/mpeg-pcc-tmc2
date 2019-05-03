@@ -416,6 +416,7 @@ void PCCBitstreamEncoder::patchSequenceUnitPayload( PatchSequenceUnitPayload& ps
   } else if ( psup.getUnitType() == PSD_GFPS ) {
     geometryFrameParameterSet( psup.getGeometryFrameParameterSet(), sps.getGeometryParameterSet(), bitstream );
   } else if ( psup.getUnitType() == PSD_PFLU ) {
+    //psup.getPatchFrameLayerUnit().setFrameIndex(frameIndex);
     patchFrameLayerUnit( psup.getPatchFrameLayerUnit(), psupPrevPFLU.getPatchFrameLayerUnit(), context, bitstream );
   }
 }
@@ -675,6 +676,8 @@ void PCCBitstreamEncoder::patchFrameLayerUnit( PatchFrameLayerUnit& pflu,
                                                PCCContext&          context,
                                                PCCBitstream&        bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
+  pflu.getPatchFrameHeader().setFrameIndex(pflu.getFrameIndex());
+  pflu.getPatchFrameDataUnit().setFrameIndex(pflu.getFrameIndex());
   patchFrameHeader( pflu.getPatchFrameHeader(), pfluPrev.getPatchFrameHeader(), context, bitstream );
   patchFrameDataUnit( pflu.getPatchFrameDataUnit(), pflu.getPatchFrameHeader(), context, bitstream );
 }
@@ -879,6 +882,8 @@ void PCCBitstreamEncoder::patchFrameDataUnit( PatchFrameDataUnit& pfdu,
   for ( size_t puCount = 0; puCount < pfdu.getPatchCount(); puCount++ ) {
     bitstream.write( uint32_t( pfdu.getPatchMode( puCount ) ), bitCountPatchMode );
     TRACE_BITSTREAM( "patchMode = %lu \n", pfdu.getPatchMode( puCount ) );
+    pfdu.getPatchInformationData( puCount ).setFrameIndex(pfdu.getFrameIndex());
+    pfdu.getPatchInformationData( puCount ).setPatchIndex(puCount);
     patchInformationData( pfdu.getPatchInformationData( puCount ), pfdu.getPatchMode( puCount ), pfh, context,
                           bitstream );
     moreAvailablePatchFlag = !( ( puCount + 1 ) == pfdu.getPatchCount() );
@@ -925,13 +930,19 @@ void PCCBitstreamEncoder::patchInformationData( PatchInformationData& pid,
       }
     }
     auto& pdu = pid.getPatchDataUnit();
+    pdu.setPduFrameIndex(pid.getFrameIndex());
+    pdu.setPduPatchIndex(pid.getPatchIndex());
     patchDataUnit( pdu, pfh, context, bitstream );
   } else if ( ( PCCPatchFrameType( pfh.getType() ) ) == PATCH_FRAME_P && patchMode == PATCH_MODE_P_INTER ) {
     auto& dpdu = pid.getDeltaPatchDataUnit();
+    dpdu.setDpduFrameIndex(pid.getFrameIndex());
+    dpdu.setDpduPatchIndex(pid.getPatchIndex());
     deltaPatchDataUnit( dpdu, pfh, context, bitstream );
   } else if ( ( ( PCCPatchFrameType( pfh.getType() ) ) == PATCH_FRAME_I && patchMode == PATCH_MODE_I_PCM ) ||
               ( ( PCCPatchFrameType( pfh.getType() ) ) == PATCH_FRAME_P && patchMode == PATCH_MODE_P_PCM ) ) {
     auto& ppdu = pid.getPCMPatchDataUnit();
+    ppdu.setPpduFrameIndex(pid.getFrameIndex());
+    ppdu.setPpduPatchIndex(pid.getPatchIndex());
     pcmPatchDataUnit( ppdu, pfh, context, bitstream );
   }
 }
@@ -954,10 +965,8 @@ void PCCBitstreamEncoder::patchDataUnit( PatchDataUnit&    pdu,
                    pfh.getInterPredictPatch3dShiftBitangentAxisBitCountMinus1() + 1 );
   bitstream.write( uint32_t( pdu.get3DShiftNormalAxis() ),
                    pfh.getInterPredictPatch3dShiftNormalAxisBitCountMinus1() + 1 );
-  bitstream.write( pdu.getNormalAxis() != PCC_AXIS3_X, 1 );  // 0.x 10.y 11.z
-  if ( pdu.getNormalAxis() != PCC_AXIS3_X ) {
-    bitstream.write( pdu.getNormalAxis() != PCC_AXIS3_Y, 1 );  // 0.y 1.z
-  }
+
+  bitstream.write( uint32_t(pdu.getProjectPlane()), 3 );  // 0,1,2(near 0,1,2) 3,4,5(far 0,1,2)
   auto& psdu = context.getPatchSequenceDataUnit();
   auto& psps = psdu.getPatchSequenceParameterSet(0);
   if ( psps.getUseEightOrientationsFlag() ) { 
@@ -969,13 +978,6 @@ void PCCBitstreamEncoder::patchDataUnit( PatchDataUnit&    pdu,
   if ( pfh.getInterPredictPatchLodBitCount() > 0 ) {
     bitstream.write( uint32_t( pdu.getLod() ), pfh.getInterPredictPatchLodBitCount() );
   }
-  bool    projectionFlag = 0;
-  int32_t i              = 0;
-  while ( i < sps.getLayerCountMinus1() + 1 && projectionFlag == 0 ) {
-    projectionFlag = projectionFlag | sps.getLayerAbsoluteCodingEnabledFlag( i );
-    i++;
-  }
-  if ( projectionFlag ) { bitstream.write( pdu.getProjectionMode(), 1 ); }
   if( sps.getPointLocalReconstructionEnabledFlag() ) {
     pointLocalReconstructionData( pdu.getPointLocalReconstructionData(), context, bitstream );
   }
@@ -988,9 +990,11 @@ void PCCBitstreamEncoder::patchDataUnit( PatchDataUnit&    pdu,
   }
 
   TRACE_BITSTREAM( "Patch => UV %4lu %4lu S=%4ld %4ld %4ld P=%lu O=%d A=%lu %lu %lu P45= %d %d \n ", pdu.get2DShiftU(),
-                  pdu.get2DShiftV(), pdu.get2DDeltaSizeU(), pdu.get2DDeltaSizeV(), pdu.get2DDeltaSizeD(), pdu.getProjectionMode(),
+                  pdu.get2DShiftV(), pdu.get2DDeltaSizeU(), pdu.get2DDeltaSizeV(), pdu.get2DDeltaSizeD(),
+                  pdu.getProjectPlane(),
                   pdu.getOrientationIndex(), pdu.get3DShiftTangentAxis(), pdu.get3DShiftBiTangentAxis(),
                   pdu.get3DShiftNormalAxis(),pdu.get45DegreeProjectionPresentFlag(), pdu.get45DegreeProjectionRotationAxis()  );
+
 }
 
 // 7.3.5.19  Delta Patch data unit syntax TODO: Missing 10-projection syntax element?
@@ -1009,21 +1013,15 @@ void PCCBitstreamEncoder::deltaPatchDataUnit( DeltaPatchDataUnit& dpdu,
   bitstream.writeSvlc( int32_t( dpdu.get3DDeltaShiftTangentAxis() ) );
   bitstream.writeSvlc( int32_t( dpdu.get3DDeltaShiftBiTangentAxis() ) );
   bitstream.writeSvlc( int32_t( dpdu.get3DDeltaShiftNormalAxis() ) );
-  bool    projectionFlag = 0;
-  int32_t i              = 0;
-  while ( i < sps.getLayerCountMinus1() + 1 && projectionFlag == 0 ) {
-    projectionFlag = projectionFlag | sps.getLayerAbsoluteCodingEnabledFlag( i );
-    i++;
-  }
-  if ( projectionFlag ) { bitstream.write( dpdu.getProjectionMode(), 1 ); }
   if ( sps.getPointLocalReconstructionEnabledFlag() ) {
     pointLocalReconstructionData( dpdu.getPointLocalReconstructionData(), context, bitstream );
   }
+
   TRACE_BITSTREAM(
-                  "DeltaPatch => DeltaIdx = %u ShiftUV = %ld %ld DeltaSize = %ld %ld %ld Axis = %ld %ld %ld Proj = %d \n",
+                  "DeltaPatch => DeltaIdx = %u ShiftUV = %ld %ld DeltaSize = %ld %ld %ld Axis = %ld %ld %ld \n",
                   dpdu.getDeltaPatchIdx(), dpdu.get2DDeltaShiftU(), dpdu.get2DDeltaShiftV(), dpdu.get2DDeltaSizeU(),
                   dpdu.get2DDeltaSizeV(), dpdu.get2DDeltaSizeD(), dpdu.get3DDeltaShiftTangentAxis(), dpdu.get3DDeltaShiftBiTangentAxis(),
-                  dpdu.get3DDeltaShiftNormalAxis(), dpdu.getProjectionMode() );
+                  dpdu.get3DDeltaShiftNormalAxis() );
 }
 
 // 7.3.5.20 PCM patch data unit syntax TODO: getPcmPoints is u(v) in CD, but is currently se(v)

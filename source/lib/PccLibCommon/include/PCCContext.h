@@ -178,7 +178,10 @@ class PCMPatchDataUnit {
       ppdu3DShiftTangentAxis_( 0 ),
       ppdu3DShiftBiTangentAxis_( 0 ),
       ppdu3DShiftNormalAxis_( 0 ),
-      ppduPcmPoints_( 0 ){};
+      ppduPcmPoints_( 0 ),
+  ppduPatchIndex_(0),
+  ppduFrameIndex_(0)
+  {};
   ~PCMPatchDataUnit(){};
   PCMPatchDataUnit& operator=( const PCMPatchDataUnit& ) = default;
 
@@ -191,7 +194,10 @@ class PCMPatchDataUnit {
   size_t   get3DShiftBiTangentAxis() { return ppdu3DShiftBiTangentAxis_; }
   size_t   get3DShiftNormalAxis() { return ppdu3DShiftNormalAxis_; }
   uint32_t getPcmPoints() { return ppduPcmPoints_; }
-
+  size_t getPpduPatchIndex() { return ppduPatchIndex_; }
+  size_t getPpduFrameIndex() { return ppduFrameIndex_; }
+  void setPpduPatchIndex(size_t value) { ppduPatchIndex_=value; }
+  void setPpduFrameIndex(size_t value) { ppduFrameIndex_=value; }
   void setPatchInPcmVideoFlag( bool value ) { ppduPatchInPcmVideoFlag_ = value; }
   void set2DShiftU( size_t value ) { ppdu2DShiftU_ = value; }
   void set2DShiftV( size_t value ) { ppdu2DShiftV_ = value; }
@@ -211,15 +217,16 @@ class PCMPatchDataUnit {
   size_t  ppdu3DShiftTangentAxis_;
   size_t  ppdu3DShiftBiTangentAxis_;
   size_t  ppdu3DShiftNormalAxis_;
-
   uint32_t ppduPcmPoints_;
+  size_t ppduPatchIndex_;
+  size_t ppduFrameIndex_;
 };
 
 // 7.3.5.19  Delta Patch data unit syntax
 class DeltaPatchDataUnit {
  public:
   DeltaPatchDataUnit() :
-      dpduPatchIndex_( 0 ),
+      dpdutDeltaPatchIndex_( 0 ),
       dpdu2DDeltaShiftU_( 0 ),
       dpdu2DDeltaShiftV_( 0 ),
       dpdu2DDeltaSizeU_( 0 ),
@@ -228,13 +235,14 @@ class DeltaPatchDataUnit {
       dpdu3DDeltaShiftTangentAxis_( 0 ),
       dpdu3DDeltaShiftBiTangentAxis_( 0 ),
       dpdu3DDeltaShiftNormalAxis_( 0 ),
-      dpduNormalAxis_( PCC_AXIS3_Z ),
+      dpduProjectPlane_(pcc::PCCAxis6(0)),
       dpduLod_( 0 ),
-      dpduProjectionMode_( false ){};
+  dpduPatchIndex_(0),
+  dpduFrameIndex_(0)
+  {};
   ~DeltaPatchDataUnit(){};
   DeltaPatchDataUnit& operator=( const DeltaPatchDataUnit& ) = default;
-
-  uint8_t                       getDeltaPatchIdx() { return dpduPatchIndex_; }
+  int64_t                       getDeltaPatchIdx() { return dpdutDeltaPatchIndex_; }
   int64_t                       get2DDeltaShiftU() { return dpdu2DDeltaShiftU_; }
   int64_t                       get2DDeltaShiftV() { return dpdu2DDeltaShiftV_; }
   int64_t                       get2DDeltaSizeU() { return dpdu2DDeltaSizeU_; }
@@ -243,12 +251,14 @@ class DeltaPatchDataUnit {
   int64_t                       get3DDeltaShiftTangentAxis() { return dpdu3DDeltaShiftTangentAxis_; }
   int64_t                       get3DDeltaShiftBiTangentAxis() { return dpdu3DDeltaShiftBiTangentAxis_; }
   int64_t                       get3DDeltaShiftNormalAxis() { return dpdu3DDeltaShiftNormalAxis_; }
-  PCCAxis3                      getNormalAxis() { return dpduNormalAxis_; }
+  PCCAxis6                      getProjectPlane() { return dpduProjectPlane_; }
   uint8_t                       getLod() { return dpduLod_; }
-  bool                          getProjectionMode() { return dpduProjectionMode_; }
   PointLocalReconstructionData& getPointLocalReconstructionData() { return pointLocalReconstructionData_; }
-
-  void setDeltaPatchIdx( uint8_t value ) { dpduPatchIndex_ = value; }
+  size_t getDpduPatchIndex() { return dpduPatchIndex_; }
+  size_t getDpduFrameIndex() { return dpduFrameIndex_; }
+  void setDpduPatchIndex(size_t value) { dpduPatchIndex_=value; }
+  void setDpduFrameIndex(size_t value) { dpduFrameIndex_=value; }
+  void setDeltaPatchIdx( int64_t value ) { dpdutDeltaPatchIndex_ = value; }
   void set2DDeltaShiftU( int64_t value ) { dpdu2DDeltaShiftU_ = value; }
   void set2DDeltaShiftV( int64_t value ) { dpdu2DDeltaShiftV_ = value; }
   void set2DDeltaSizeU( int64_t value ) { dpdu2DDeltaSizeU_ = value; }
@@ -257,13 +267,12 @@ class DeltaPatchDataUnit {
   void set3DDeltaShiftTangentAxis( int64_t value ) { dpdu3DDeltaShiftTangentAxis_ = value; }
   void set3DDeltaShiftBiTangentAxis( int64_t value ) { dpdu3DDeltaShiftBiTangentAxis_ = value; }
   void set3DDeltaShiftNormalAxis( int64_t value ) { dpdu3DDeltaShiftNormalAxis_ = value; }
-  void setNormalAxis( PCCAxis3 value ) { dpduNormalAxis_ = value; }
+  void setProjectPlane(PCCAxis6 value) { dpduProjectPlane_ = value; }
   void setLod( uint8_t value ) { dpduLod_ = value; }
-  void setProjectionMode( bool value ) { dpduProjectionMode_ = value; }
   void setPointLocalReconstructionData( PointLocalReconstructionData value ) { pointLocalReconstructionData_ = value; }
 
  private:
-  uint8_t                      dpduPatchIndex_;
+  int64_t                      dpdutDeltaPatchIndex_;
   int64_t                      dpdu2DDeltaShiftU_;  // sizes need to be determined
   int64_t                      dpdu2DDeltaShiftV_;
   int64_t                      dpdu2DDeltaSizeU_;
@@ -272,9 +281,10 @@ class DeltaPatchDataUnit {
   int64_t                      dpdu3DDeltaShiftTangentAxis_;
   int64_t                      dpdu3DDeltaShiftBiTangentAxis_;
   int64_t                      dpdu3DDeltaShiftNormalAxis_;
-  PCCAxis3                     dpduNormalAxis_;
+  PCCAxis6                     dpduProjectPlane_;
   uint8_t                      dpduLod_;
-  bool                         dpduProjectionMode_;
+  size_t dpduPatchIndex_;
+  size_t dpduFrameIndex_;
   PointLocalReconstructionData pointLocalReconstructionData_;
 };
 
@@ -290,12 +300,14 @@ class PatchDataUnit {
       pdu3DShiftTangentAxis_( 0 ),
       pdu3DShiftBiTangentAxis_( 0 ),
       pdu3DShiftNormalAxis_( 0 ),
-      pduNormalAxis_( PCC_AXIS3_Z ),
+      pduProjectPlane_( pcc::PCCAxis6(0) ),
       pduOrientationIndex_( 0 ),
       pduLod_( 0 ),
-      pduProjectionMode_( false ),
       pdu45DegreeProjectionPresentFlag_( false ),
-      pdu45DegreeProjectionRotationAxis_( 0 ){};
+      pdu45DegreeProjectionRotationAxis_( 0 ),
+      pduPatchIndex_(0),
+      pduFrameIndex_(0)
+  {};
 
   ~PatchDataUnit(){};
 
@@ -309,14 +321,16 @@ class PatchDataUnit {
   size_t                        get3DShiftTangentAxis() { return pdu3DShiftTangentAxis_; }
   size_t                        get3DShiftBiTangentAxis() { return pdu3DShiftBiTangentAxis_; }
   size_t                        get3DShiftNormalAxis() { return pdu3DShiftNormalAxis_; }
-  PCCAxis3                      getNormalAxis() { return pduNormalAxis_; }
+  PCCAxis6                      getProjectPlane() { return pduProjectPlane_; }
   uint8_t                       getOrientationIndex() { return pduOrientationIndex_; }
   uint8_t                       getLod() { return pduLod_; }
-  bool                          getProjectionMode() { return pduProjectionMode_; }
   PointLocalReconstructionData& getPointLocalReconstructionData() { return pointLocalReconstructionData_; }
   bool                          get45DegreeProjectionPresentFlag() { return pdu45DegreeProjectionPresentFlag_; }
   uint8_t                       get45DegreeProjectionRotationAxis() { return pdu45DegreeProjectionRotationAxis_; }
-
+  size_t getPduPatchIndex() { return pduPatchIndex_; }
+  size_t getPduFrameIndex() { return pduFrameIndex_; }
+  void setPduPatchIndex(size_t value) { pduPatchIndex_=value; }
+  void setPduFrameIndex(size_t value) { pduFrameIndex_=value; }
   void set2DShiftU( size_t value ) { pdu2DShiftU_ = value; }
   void set2DShiftV( size_t value ) { pdu2DShiftV_ = value; }
   void set2DDeltaSizeU( int64_t value ) { pdu2DDeltaSizeU_ = value; }
@@ -325,10 +339,9 @@ class PatchDataUnit {
   void set3DShiftTangentAxis( size_t value ) { pdu3DShiftTangentAxis_ = value; }
   void set3DShiftBiTangentAxis( size_t value ) { pdu3DShiftBiTangentAxis_ = value; }
   void set3DShiftNormalAxis( size_t value ) { pdu3DShiftNormalAxis_ = value; }
-  void setNormalAxis( PCCAxis3 value ) { pduNormalAxis_ = value; }
+  void setProjectPlane(PCCAxis6 value) { pduProjectPlane_ = value; }
   void setOrientationIndex( uint8_t value ) { pduOrientationIndex_ = value; }
   void setLod( uint8_t value ) { pduLod_ = value; }
-  void setProjectionMode( bool value ) { pduProjectionMode_ = value; }
   void setPointLocalReconstructionData( PointLocalReconstructionData value ) { pointLocalReconstructionData_ = value; }
   void set45DegreeProjectionPresentFlag( bool value ) { pdu45DegreeProjectionPresentFlag_ = value; }
   void set45DegreeProjectionRotationAxis( uint8_t value ) { pdu45DegreeProjectionRotationAxis_ = value; }
@@ -342,13 +355,15 @@ class PatchDataUnit {
   size_t                       pdu3DShiftTangentAxis_;
   size_t                       pdu3DShiftBiTangentAxis_;
   size_t                       pdu3DShiftNormalAxis_;
-  PCCAxis3                     pduNormalAxis_;
+  PCCAxis6                     pduProjectPlane_;
   uint8_t                      pduOrientationIndex_;
   uint8_t                      pduLod_;
-  bool                         pduProjectionMode_;
   PointLocalReconstructionData pointLocalReconstructionData_;
   bool                         pdu45DegreeProjectionPresentFlag_;
   uint8_t                      pdu45DegreeProjectionRotationAxis_;
+  size_t                       pduPatchIndex_;
+  size_t                       pduFrameIndex_;
+
 };
 
 // 7.3.5.17  Patch information data syntax (pid)
@@ -386,7 +401,11 @@ class PatchInformationData {
   PatchDataUnit&      getPatchDataUnit() { return patchDataUnit_; }
   DeltaPatchDataUnit& getDeltaPatchDataUnit() { return deltaPatchDataUnit_; }
   PCMPatchDataUnit&   getPCMPatchDataUnit() { return pcmPatchDataUnit_; }
-
+  size_t getFrameIndex(){ return frameIndex_;}
+  size_t getPatchIndex(){ return patchIndex_;}
+  
+  void setFrameIndex(size_t value){ frameIndex_=value; }
+  void setPatchIndex(size_t value){ patchIndex_=value; }
   void setOverrideGeometryPatchFlag( bool value ) { overrideGeometryPatchFlag_ = value; }
   void setGeometryPatchParameterSetId( uint8_t value ) { geometryPatchParameterSetId_ = value; }
   void setOverrideAttributePatchFlag( size_t index, bool value ) { overrideAttributePatchFlag_[index] = value; }
@@ -396,6 +415,8 @@ class PatchInformationData {
   void setPCMPatchDataUnit( PCMPatchDataUnit& dataUnit ) { pcmPatchDataUnit_ = dataUnit; }
 
  private:
+  size_t               frameIndex_;
+  size_t               patchIndex_;
   bool                 overrideGeometryPatchFlag_;
   uint8_t              geometryPatchParameterSetId_;
   std::vector<bool>    overrideAttributePatchFlag_;
@@ -443,12 +464,16 @@ class PatchFrameDataUnit {
     }
     return matchedPatchCount;
   }
+
+  size_t getFrameIndex(){ return frameIndex_;}
+  void setFrameIndex(size_t value){ frameIndex_=value; }
   void setPatchCount( size_t value ) { patchCount_ = value; }
   void setPatchMode( size_t index, uint8_t value ) { patchMode_[index] = value; }
   void setPatchInformationData( size_t index, PatchInformationData& value ) { patchInformationData_[index] = value; }
 
  private:
-  size_t                           patchCount_;
+  size_t                            frameIndex_;
+  size_t                            patchCount_;
   std::vector<uint8_t>              patchMode_;
   std::vector<PatchInformationData> patchInformationData_;
 };
@@ -573,11 +598,6 @@ class PatchFrameHeader {
     return pcm3dShiftAxisBitCountMinus1_;
   }
   bool getPcm3dShiftBitCountPresentFlag() { return pcm3dShiftBitCountPresentFlag_; }
-
-  
-
-  
-
   uint8_t getInterPredictPatchLodBitCount() { return interPredictPatchLodBitCount_; }
 
   void setFrameIndex( uint8_t index ) { frameIndex_ = index; }

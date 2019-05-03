@@ -5033,7 +5033,6 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
     dpdu.set3DDeltaShiftBiTangentAxis( patch.getV1() - refPatch.getV1() );
     dpdu.set2DDeltaSizeU( patch.getSizeU0() - refPatch.getSizeU0() );
     dpdu.set2DDeltaSizeV( patch.getSizeV0() - refPatch.getSizeV0() );
-    dpdu.setProjectionMode( patch.getProjectionMode() );
     dpdu.setLod( patch.getLod() );
     const size_t max3DCoordinate = 1 << (gps.getGeometry3dCoordinatesBitdepthMinus1() + 1);
     if ( patch.getProjectionMode() == 0 ) {
@@ -5084,11 +5083,10 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
     auto& pdu = pid.getPatchDataUnit();
     pdu.set2DShiftU( patch.getU0() );
     pdu.set2DShiftV( patch.getV0() );
-    pdu.setProjectionMode( patch.getProjectionMode() );
     pdu.setLod( patch.getLod() );
     pdu.set3DShiftTangentAxis( patch.getU1() );
     pdu.set3DShiftBiTangentAxis( patch.getV1() );
-    pdu.setNormalAxis( static_cast<pcc::PCCAxis3>( patch.getNormalAxis() ) );
+    pdu.setProjectPlane( static_cast<pcc::PCCAxis6>( patch.getProjectionMode()*3+size_t(patch.getNormalAxis()) ) );
     pdu.set2DDeltaSizeU( patch.getSizeU0() - prevSizeU0 );
     pdu.set2DDeltaSizeV( patch.getSizeV0() - prevSizeV0 );
     pdu.setOrientationIndex(patch.getPatchOrientation());
@@ -5097,7 +5095,8 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
     pdu.set45DegreeProjectionRotationAxis( patch.getAxisOfAdditionalPlane() );
 
     const size_t max3DCoordinate = 1 << (gps.getGeometry3dCoordinatesBitdepthMinus1() + 1);
-    if ( pdu.getProjectionMode() == 0 ) {
+    if ( pdu.getProjectPlane() < 3 )
+    {
       pdu.set3DShiftNormalAxis( patch.getD1() / minLevel );
     } else {
       if (pfps.getProjection45DegreeEnableFlag() == 0) {
@@ -5106,8 +5105,6 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
         pdu.set3DShiftNormalAxis( ( (max3DCoordinate << 1) - patch.getD1() ) / minLevel );
       }
     }
-
-
 
     prevSizeU0 = patch.getSizeU0();
     prevSizeV0 = patch.getSizeV0();
@@ -5207,6 +5204,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
   pfh.setPcm3dShiftAxisBitCountMinus1( gps.getGeometry3dCoordinatesBitdepthMinus1() );
 
   pfh.setInterPredictPatchLodBitCount( bitCountLod );
+
 }
 
 

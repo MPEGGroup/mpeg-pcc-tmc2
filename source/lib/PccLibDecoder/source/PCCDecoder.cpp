@@ -478,8 +478,9 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
       patch.getSizeD()            = (pdu.get2DDeltaSizeD() * minLevel)==maxValue2D?(maxValue2D-1):(pdu.get2DDeltaSizeD() * minLevel);
       patch.getSizeU0()           = prevSizeU0 + pdu.get2DDeltaSizeU();
       patch.getSizeV0()           = prevSizeV0 + pdu.get2DDeltaSizeV();
-      patch.getNormalAxis()       = pdu.getNormalAxis();
-      patch.getProjectionMode()   = sps.getLayerAbsoluteCodingEnabledFlag( 1 ) ? pdu.getProjectionMode() : 0;
+
+     patch.getNormalAxis()       = size_t(pdu.getProjectPlane())%3;
+     patch.getProjectionMode()   = size_t(pdu.getProjectPlane())<3?0:1;
       patch.getPatchOrientation() = pdu.getOrientationIndex();
       patch.getAxisOfAdditionalPlane() = pdu.get45DegreeProjectionPresentFlag() ? pdu.get45DegreeProjectionRotationAxis() : 0;
       TRACE_CODEC("patch %lu / %lu: Intra \n", patchIndex, patches.size());
@@ -537,7 +538,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
 
       predIndex += ( deltaIndex + 1 );
       const auto& prePatch = prePatches[patch.getBestMatchIdx()];
-      patch.getProjectionMode()   = sps.getLayerAbsoluteCodingEnabledFlag( 1 ) ? (size_t)dpdu.getProjectionMode() : 0;
+      patch.getProjectionMode()   = prePatch.getProjectionMode();
       patch.getU0()               = dpdu.get2DDeltaShiftU() + prePatch.getU0();
       patch.getV0()               = dpdu.get2DDeltaShiftV() + prePatch.getV0();
       patch.getPatchOrientation() = prePatch.getPatchOrientation();
@@ -625,5 +626,6 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
       TRACE_CODEC( "Error: unknow frame/patch type \n" );
     }
   }
+
   frame.setTotalNumberOfMissedPoints( totalNumberOfMps );   
 }

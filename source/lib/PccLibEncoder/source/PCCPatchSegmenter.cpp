@@ -408,7 +408,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
                                          const bool                 createSubPointCloud,
                                          std::vector<PCCPointSet3>& subPointCloud,
                                          float&                     distanceSrcRec,
-                                         const bool                 sixDirection,
+                                         const bool                 sixDirection, //params.absoluteD1
                                          bool                       useSurfaceSeparation ,
                                          const size_t               additionalProjectionAxis,
                                          const size_t               geometryBitDepth3D ) {

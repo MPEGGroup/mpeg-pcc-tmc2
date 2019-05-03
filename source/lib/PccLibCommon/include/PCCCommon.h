@@ -63,8 +63,8 @@
 // ******************************************************************* //
 // Trace modes to validate new syntax
 // ******************************************************************* //
-#define BITSTREAM_TRACE
-#define CODEC_TRACE
+//#define BITSTREAM_TRACE
+//#define CODEC_TRACE
 
 #define BUG_FIX_BITDEPTH
 // ******************************************************************* //
@@ -97,6 +97,8 @@ const bool     printDetailedInfo           = false;
 
 enum PCCEndianness { PCC_BIG_ENDIAN = 0, PCC_LITTLE_ENDIAN = 1 };
 enum PCCColorTransform { COLOR_TRANSFORM_NONE = 0, COLOR_TRANSFORM_RGB_TO_YCBCR = 1 };
+enum PCCAxis6{PCC_AXIS6_UNDEFINED = -1, PCC_AXIS6_X_NEAR = 0, PCC_AXIS6_Y_NEAR = 1, PCC_AXIS6_Z_NEAR = 2,
+    PCC_AXIS6_X_FAR = 3, PCC_AXIS6_Y_FAR = 4, PCC_AXIS6_Z_FAR = 5};
 enum PCCAxis3 { PCC_AXIS3_UNDEFINED = -1, PCC_AXIS3_X = 0, PCC_AXIS3_Y = 1, PCC_AXIS3_Z = 2 };
 enum PCCPointType { POINT_UNSET = 0, POINT_D0, POINT_D1, POINT_DF, POINT_SMOOTH, POINT_EDD };
 enum PCCVideoType {
