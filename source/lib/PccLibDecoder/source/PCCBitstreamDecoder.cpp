@@ -772,7 +772,7 @@ void PCCBitstreamDecoder::patchFrameHeader( PatchFrameHeader& pfh,
   }
   auto          geometryBitDepth2D     = context.getSps().getGeometryParameterSet().getGeometryNominal2dBitdepthMinus1()+1;
   const uint8_t maxBitCountForMaxDepth = uint8_t( geometryBitDepth2D - gbitCountSize[context.getSps().getMinLevel()] + 1 ); //8
-
+  
   if( pfps.getProjection45DegreeEnableFlag() == 0){
   pfh.setInterPredictPatch2dDeltaSizeDBitCountMinus1( maxBitCountForMaxDepth );
   }

@@ -1534,36 +1534,40 @@ bool comp1(const mypair& a, const mypair& b) {
 	return a.value<b.value;
 }
 
-void PCCEncoder::calculate_weight_normal(const PCCPointSet3& source, PCCFrameContext& frame)
+void PCCEncoder::calculate_weight_normal(PCCContext& context, const PCCPointSet3& source, PCCFrameContext& frame)
 {
+  auto&         gps                    = context.getSps().getGeometryParameterSet();
+  size_t geometryBitDepth3D   = gps.getGeometry3dCoordinatesBitdepthMinus1()+1;
+  size_t maxValue = 2<<geometryBitDepth3D;
+
 	PCCVector3D weight_value;
-	bool *pj_face = new bool[1024 * 1024 * 3];
+	bool *pj_face = new bool[maxValue * maxValue * 3];
 	size_t pointCount = source.getPointCount();
 
 	if (params_.enhancedPP_) {
 
-		for (size_t idx = 0; idx < 1024 * 1024 * 3; idx++) {
+		for (size_t idx = 0; idx < maxValue * maxValue * 3; idx++) {
 			*(pj_face + idx) = false;
 		}
 
-		const int size_1f = 1024 * 1024;
+		const int size_1f = maxValue * maxValue;
 		for (size_t idx = 0; idx < pointCount; idx++) {
 			const PCCPoint3D point = source[idx];
 			int x, y;
 			// YZ: 0,3
 			x = int(point[1]);
 			y = int(point[2]);
-			*(pj_face + y * 1024 + x) = true;
+			*(pj_face + y * maxValue + x) = true;
 
 			// ZX: 0,3
 			x = int(point[2]);
 			y = int(point[0]);
-			*(pj_face + y * 1024 + x + size_1f) = true;
+			*(pj_face + y * maxValue + x + size_1f) = true;
 
 			// XY: 0,3
 			x = int(point[0]);
 			y = int(point[1]);
-			*(pj_face + y * 1024 + x + size_1f * 2) = true;
+			*(pj_face + y * maxValue + x + size_1f * 2) = true;
 		}
 
 		mypair pj_cnt[3];
@@ -1571,7 +1575,7 @@ void PCCEncoder::calculate_weight_normal(const PCCPointSet3& source, PCCFrameCon
 			pj_cnt[x].idx = x;
 			pj_cnt[x].value = 0;
 		}
-		for (size_t idx = 0; idx < 1024 * 1024; idx++) {
+		for (size_t idx = 0; idx < maxValue * maxValue; idx++) {
 			if (*(pj_face + idx) == true) {
 				pj_cnt[0].value = pj_cnt[0].value + 1;
 			}
@@ -2617,10 +2621,9 @@ bool PCCEncoder::generateGeometryVideo( const PCCGroupOfFrames& sources, PCCCont
   auto& videoGeometry = context.getVideoGeometry();
   auto& frames        = context.getFrames();
 
-  // if (params_.additionalProjectionPlaneMode_ == 0) {
-  if (0) {
+  if (params_.additionalProjectionPlaneMode_ == 0) {
     //tch => this code scraches the encoder with 11 bits contents (geometry)
-    calculate_weight_normal(sources[0], frames[0]);
+    calculate_weight_normal(context, sources[0], frames[0]);
     segmenterParams.weight_normal = frames[0].getWeight_normal();
   }
 
