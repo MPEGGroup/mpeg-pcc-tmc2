@@ -3879,7 +3879,7 @@ void PCCEncoder::performDataAdaptiveGPAMethod( PCCContext& context ) {
         context[j].getPrePCCGPAFrameSize() = context[j].getCurPCCGPAFrameSize();
         assert( !curPatches.empty() );
         for ( auto& curPatch : curPatches ) { curPatch.getPreGPAPatchData() = curPatch.getCurGPAPatchData(); }
-        if ( context[j].getMissedPointsPatch( 0 ).size() > 0 && !context[j].getUseMissedPointsSeparateVideo() ) {
+        if ( context[j].getMissedPointsPatches().size() > 0 && !context[j].getUseMissedPointsSeparateVideo() ) {
           context[j].getMissedPointsPatch( 0 ).preV0_ = context[j].getMissedPointsPatch( 0 ).tempV0_;
         }
       }
@@ -3931,10 +3931,12 @@ void PCCEncoder::initializeSubContext( PCCFrameContext& frameContext,
 void PCCEncoder::clearCurrentGPAPatchDataInfor( PCCContext& context, SubContext& subContext ) {
   // clear current information;
   for ( size_t j = subContext.first; j < subContext.second; ++j ) {
-    auto& curPatches                          = context[j].getPatches();
-    context[j].getMissedPointsPatch(0).tempV0_ = 0;
+    auto& curPatches = context[j].getPatches();
     assert( !curPatches.empty() );
     for ( auto& curPatch : curPatches ) { curPatch.getCurGPAPatchData().initialize(); }
+    if(!context[j].getMissedPointsPatches().empty())
+      for(auto missedPointsPatch : context[j].getMissedPointsPatches())
+        missedPointsPatch.tempV0_ = 0;
   }
 }
 void PCCEncoder::generateGlobalPatches( PCCContext&    context,
@@ -4053,7 +4055,7 @@ size_t PCCEncoder::unionPatchGenerationAndPacking( const GlobalPatches& globalPa
 
   // 2. unionPatch packing;
   size_t occupancySizeU = params_.minimumImageWidth_ / params_.occupancyResolution_;
-  size_t occupancySizeV = ( std::max )( unionPatchTemp[0].getSizeV0(), unionPatchTemp[0].getSizeU0() );
+  size_t occupancySizeV = 0; //GPA_HARMONIZATION
   for ( unionPatch::const_iterator iter = unionPatchTemp.begin(); iter != unionPatchTemp.end(); iter++ ) {
     const auto& curPatchUnion = iter->second;
     occupancySizeU            = std::max<size_t>( occupancySizeU, curPatchUnion.getSizeU0() + 1 );
@@ -4218,7 +4220,7 @@ void PCCEncoder::packingFirstFrame( PCCContext& context,
       maxOccupancyRow = ( std::max )( maxOccupancyRow, ( patch.getV0() + patch.getSizeV0() ) );
     }
 
-    if ( frame.getMissedPointsPatch( 0 ).size() > 0 && !frame.getUseMissedPointsSeparateVideo() ) {
+    if ( frame.getMissedPointsPatches().size() > 0 && !frame.getUseMissedPointsSeparateVideo() ) {
       packMissedPointsPatch( frame, occupancyMap, widthGPA, heithGPA, occupancySizeU, occupancySizeV, maxOccupancyRow );
       frame.getMissedPointsPatch( 0 ).preV0_ = frame.getMissedPointsPatch( 0 ).v0_;
     } else {
@@ -4245,7 +4247,7 @@ void PCCEncoder::packingFirstFrame( PCCContext& context,
 										  PATCH_ORIENTATION_MROT180 };  // favoring horizontal orientations (that should be rotated) 
     int numOrientations = params_.useEightOrientations_ ? 8 : 2;
 
-	std::vector<bool> occupancyMap;
+    std::vector<bool> occupancyMap;
     occupancyMap.resize( occupancySizeU * occupancySizeV, false );
 
     for ( auto& patch : patches ) {
@@ -4338,7 +4340,7 @@ void PCCEncoder::packingFirstFrame( PCCContext& context,
       }
     }
 
-    if ( frame.getMissedPointsPatch( 0 ).size() > 0 && !frame.getUseMissedPointsSeparateVideo() ) {
+    if ( frame.getMissedPointsPatches().size() > 0 && !frame.getUseMissedPointsSeparateVideo() ) {
       packMissedPointsPatch( frame, occupancyMap, widthGPA, heithGPA, occupancySizeU, occupancySizeV, maxOccupancyRow );
       frame.getMissedPointsPatch( 0 ).preV0_ = frame.getMissedPointsPatch( 0 ).v0_;
     } else {
@@ -4354,6 +4356,7 @@ void PCCEncoder::updatePatchInformation( PCCContext& context, SubContext& subCon
 
   for ( size_t frameIndex = subContext.first; frameIndex < subContext.second; ++frameIndex ) {
     PCCFrameContext& frame = context[frameIndex];
+    frame.getGlobalPatchCount() = 0; //GPA_HARMONIZATION
 
     frame.getWidth()  = frame.getPrePCCGPAFrameSize().widthGPA_;
     frame.getHeight() = frame.getPrePCCGPAFrameSize().heightGPA_;
@@ -4367,13 +4370,133 @@ void PCCEncoder::updatePatchInformation( PCCContext& context, SubContext& subCon
       curPatch.getV0()               = preGPAPatchData.v0;
       curPatch.getPatchOrientation() = preGPAPatchData.patchOrientation;
       curPatch.getIsGlobalPatch()    = preGPAPatchData.isGlobalPatch;
+  // GPA_HARMONIZATION Begin --------------------------------------
+      if (curPatch.getIsGlobalPatch()) {
+        frame.getGlobalPatchCount() = frame.getGlobalPatchCount() + 1;
+      }
+  // GPA_HARMONIZATION End ----------------------------------------
     }
 
     // update missedPoint patch infor.
-    if ( frame.getMissedPointsPatch( 0 ).size() > 0 && !frame.getUseMissedPointsSeparateVideo() ) {
+    if ( frame.getMissedPointsPatches().size() > 0 && !frame.getUseMissedPointsSeparateVideo() ) {
       frame.getMissedPointsPatch( 0 ).v0_ = frame.getMissedPointsPatch( 0 ).preV0_;
     }
   }
+
+// GPA_HARMONIZATION Begin  --------------------------------------
+  //no need to update single frame.
+  if (subContext.second - subContext.first == 1) { //only one frame
+    //Reset bestMatchIndex for the first frame.
+    PCCFrameContext& frame = context[subContext.first];
+    auto&curPatches = frame.getPatches();
+    for (auto&patch : curPatches) {
+      patch.setBestMatchIdx() = InvalidPatchIndex;
+    }
+    frame.getNumMatchedPatches() = 0;
+    return;
+  }
+
+  int globalPatchCount = 0;
+  for (size_t frameIndex = subContext.first; frameIndex < subContext.second; frameIndex++) {
+    PCCFrameContext& frame = context[frameIndex];
+    auto& curPatches = frame.getPatches();
+    for (size_t index = 0; index < curPatches.size(); index++) {
+      curPatches[index].getIndex() = index;
+    }
+    //reorder the patches.
+    vector<PCCPatch> reorderPatches = curPatches;
+    globalPatchCount = frame.getGlobalPatchCount();
+    std::cout << "frameIndex: " << frameIndex << " patchCount:" << reorderPatches.size();
+    std::cout << " frame.getGlobalPatchCount() = " << globalPatchCount << std::endl;
+
+    curPatches.clear();
+    curPatches.resize(0);
+    if (frameIndex == subContext.first) {
+      for (auto& patch : reorderPatches) {
+        if (patch.getIsGlobalPatch()) {
+          curPatches.emplace_back(patch);
+        }
+      }
+      for (auto& patch : reorderPatches) {
+        if (!patch.getIsGlobalPatch()) {
+          curPatches.emplace_back(patch);
+        }
+      }
+    }
+    else {
+      //get global patch.
+      for (int32_t index = 0; index < context[frameIndex - 1].getPatches().size(); index++) {
+        for (auto& patch : reorderPatches) {
+          if ((index == patch.getBestMatchIdx()) && (patch.getIsGlobalPatch())) {
+            curPatches.emplace_back(patch);
+            break;
+          }
+        }
+      }
+      //get non-global patch. 
+      for (auto& patch : reorderPatches) {
+        if (!patch.getIsGlobalPatch()) {
+          curPatches.emplace_back(patch);
+        }
+      }
+    }
+  }
+
+  //adjust index.
+  for (size_t frameIndex = subContext.first; frameIndex < subContext.second; frameIndex++) {
+    auto& curPatches = context[frameIndex].getPatches();
+    //global patch.
+    for (int32_t index = 0; index < globalPatchCount; index++) {
+      if (frameIndex > subContext.first) {
+        curPatches[index].setBestMatchIdx() = index;
+      }
+      curPatches[index].getIndex() = index;
+    }
+    if (frameIndex == subContext.second - 1) {
+      for (int32_t index = globalPatchCount; index < curPatches.size(); index++) {
+        curPatches[index].getIndex() = index;
+      }
+      continue;
+    }
+
+    //non-global patches.
+    auto &nextPatches = context[frameIndex + 1].getPatches();
+    std::vector<bool> updated;
+    updated.resize(nextPatches.size(), false);
+    for (int32_t index = globalPatchCount; index < curPatches.size(); index++) {
+      for (int32_t i = globalPatchCount; i < nextPatches.size(); i++) {
+        if (((int32_t)curPatches[index].getIndex() == nextPatches[i].getBestMatchIdx()) && (updated[i] == false)) {
+          nextPatches[i].setBestMatchIdx() = index;
+          updated[i] = true;
+          break;
+        }
+      }
+      curPatches[index].getIndex() = (size_t)index;
+      std::cout << "[" << frameIndex << ":" << index << " ," << curPatches[index].getBestMatchIdx() << "] ";
+    }
+  }
+
+  //Reset bestMatchIndex for the first frame.
+  PCCFrameContext& frame = context[subContext.first];
+  auto&            curPatches = frame.getPatches();
+  for (auto&patch : curPatches) {
+    patch.setBestMatchIdx() = InvalidPatchIndex;
+  }
+  frame.getNumMatchedPatches() = 0;
+
+  //Other frames in the current subContext
+  for (size_t frameIndex = subContext.first + 1; frameIndex < subContext.second; frameIndex++) {
+    auto& curPatches = context[frameIndex].getPatches();
+    size_t numMatchedPatches = globalPatchCount;
+    for (int32_t index = globalPatchCount; index < curPatches.size(); index++) {
+      if (curPatches[index].getBestMatchIdx() != InvalidPatchIndex) 
+        numMatchedPatches ++;
+    }
+    context[frameIndex].getNumMatchedPatches() = numMatchedPatches;
+  }
+
+// GPA_HARMONIZATION End ----------------------------------------
+
   return;
 }
 
@@ -4500,7 +4623,7 @@ void PCCEncoder::performGPAPacking( const SubContext& subContext,
       }
     }
 
-    if ( curFrameContext.getMissedPointsPatch( 0 ).size() > 0 && !curFrameContext.getUseMissedPointsSeparateVideo() ) {
+    if ( curFrameContext.getMissedPointsPatches().size() > 0 && !curFrameContext.getUseMissedPointsSeparateVideo() ) {
       packMissedPointsPatch( curFrameContext, occupancyMap, widthGPA, heightGPA, occupancySizeU, occupancySizeV,
                              maxOccupancyRow );
       curFrameContext.getMissedPointsPatch( 0 ).tempV0_ = curFrameContext.getMissedPointsPatch( 0 ).v0_;
@@ -4529,7 +4652,7 @@ void PCCEncoder::packingWithoutRefForFirstFrameNoglobalPatch( PCCPatch&         
                                                               std::vector<bool>& occupancyMap,
                                                               size_t&            heightGPA,
                                                               size_t&            widthGPA,
-                                                              size_t             maxOccupancyRow ) {
+                                                              size_t&            maxOccupancyRow ) { //GPA_HAMONIZATION, the whole function has been changed
   vector<int> orientation_vertical   = {PATCH_ORIENTATION_DEFAULT,
 									    PATCH_ORIENTATION_SWAP,
 									    PATCH_ORIENTATION_ROT180,
@@ -4547,22 +4670,22 @@ void PCCEncoder::packingWithoutRefForFirstFrameNoglobalPatch( PCCPatch&         
 										PATCH_ORIENTATION_MIRROR,
 										PATCH_ORIENTATION_MROT180 };  // favoring horizontal orientations (that should be rotated) 
   int numOrientations = params_.useEightOrientations_ ? 8 : 2;
-  GPAPatchData& preGPAPatchData = patch.getCurGPAPatchData();
+  GPAPatchData& curGPAPatchData = patch.getCurGPAPatchData(); //GPAPatchData& preGPAPatchData = patch.getCurGPAPatchData();
 
-  assert( preGPAPatchData.sizeU0 <= occupancySizeU );
-  assert( preGPAPatchData.sizeV0 <= occupancySizeV );
+  assert( curGPAPatchData.sizeU0 <= occupancySizeU );
+  assert( curGPAPatchData.sizeV0 <= occupancySizeV );
   bool  locationFound = false;
   auto& occupancy     = patch.getOccupancy();
   while ( !locationFound ) {
     for ( size_t v = 0; v < occupancySizeV && !locationFound; ++v ) {
       for ( size_t u = 0; u < occupancySizeU && !locationFound; ++u ) {
-        preGPAPatchData.u0 = u;
-        preGPAPatchData.v0 = v;
+        curGPAPatchData.u0 = u;
+        curGPAPatchData.v0 = v;
         if ( params_.packingStrategy_ == 0 ) {
           if ( patch.checkFitPatchCanvasForGPA( occupancyMap, occupancySizeU, occupancySizeV, safeguard ) ) {
             locationFound = true;
             if ( printDetailedInfo ) {
-              std::cout << "Orientation " << preGPAPatchData.patchOrientation << " selected for Patch: [" << icount
+              std::cout << "Orientation " << curGPAPatchData.patchOrientation << " selected for Patch: [" << icount //preGPAPatchData->curXXXX
                         << "] in the position (" << u << "," << v << ")" << std::endl;
             }
           }
@@ -4570,15 +4693,15 @@ void PCCEncoder::packingWithoutRefForFirstFrameNoglobalPatch( PCCPatch&         
           for ( size_t orientationIdx = 0; orientationIdx < numOrientations && !locationFound;
                 orientationIdx++ ) {
             if ( patch.getSizeU0() > patch.getSizeV0() ) {
-              preGPAPatchData.patchOrientation = orientation_horizontal[orientationIdx];
+              curGPAPatchData.patchOrientation = orientation_horizontal[orientationIdx];
             } else {
-              preGPAPatchData.patchOrientation = orientation_vertical[orientationIdx];
+              curGPAPatchData.patchOrientation = orientation_vertical[orientationIdx];
             }
             if ( patch.checkFitPatchCanvasForGPA( occupancyMap, occupancySizeU, occupancySizeV, safeguard ) ) {
               locationFound = true;
               if ( printDetailedInfo ) {
-                std::cout << "Orientation " << preGPAPatchData.patchOrientation << "selected for Patch: [" << icount
-                          << "] in the position (" << preGPAPatchData.u0 << "," << preGPAPatchData.v0 << ")"
+                std::cout << "Orientation " << curGPAPatchData.patchOrientation << "selected for Patch: [" << icount
+                          << "] in the position (" << curGPAPatchData.u0 << "," << curGPAPatchData.v0 << ")"
                           << std::endl;
               }
             }
@@ -4593,24 +4716,24 @@ void PCCEncoder::packingWithoutRefForFirstFrameNoglobalPatch( PCCPatch&         
     }
   }
   // update occupancy.
-  for ( size_t v0 = 0; v0 < preGPAPatchData.sizeV0; ++v0 ) {
-    for ( size_t u0 = 0; u0 < preGPAPatchData.sizeU0; ++u0 ) {
+  for ( size_t v0 = 0; v0 < curGPAPatchData.sizeV0; ++v0 ) {
+    for ( size_t u0 = 0; u0 < curGPAPatchData.sizeU0; ++u0 ) {
       int coord           = patch.patchBlock2CanvasBlockForGPA( u0, v0, occupancySizeU, occupancySizeV );
       occupancyMap[coord] = occupancyMap[coord] || occupancy[v0 * patch.getSizeU0() + u0];
     }
   }
-  if ( !( preGPAPatchData.isPatchDimensionSwitched() ) ) {
+  if ( !( curGPAPatchData.isPatchDimensionSwitched() ) ) {
     heightGPA =
-        ( std::max )( heightGPA, ( preGPAPatchData.v0 + preGPAPatchData.sizeV0 ) * patch.getOccupancyResolution() );
+        ( std::max )( heightGPA, ( curGPAPatchData.v0 + curGPAPatchData.sizeV0 ) * patch.getOccupancyResolution() );
     widthGPA =
-        ( std::max )( widthGPA, ( preGPAPatchData.u0 + preGPAPatchData.sizeU0 ) * patch.getOccupancyResolution() );
-    maxOccupancyRow = ( std::max )( maxOccupancyRow, ( preGPAPatchData.v0 + preGPAPatchData.sizeV0 ) );
+        ( std::max )( widthGPA, ( curGPAPatchData.u0 + curGPAPatchData.sizeU0 ) * patch.getOccupancyResolution() );
+    maxOccupancyRow = ( std::max )( maxOccupancyRow, ( curGPAPatchData.v0 + curGPAPatchData.sizeV0 ) );
   } else {
     heightGPA =
-        ( std::max )( heightGPA, ( preGPAPatchData.v0 + preGPAPatchData.sizeU0 ) * patch.getOccupancyResolution() );
+        ( std::max )( heightGPA, ( curGPAPatchData.v0 + curGPAPatchData.sizeU0 ) * patch.getOccupancyResolution() );
     widthGPA =
-        ( std::max )( widthGPA, ( preGPAPatchData.u0 + preGPAPatchData.sizeV0 ) * patch.getOccupancyResolution() );
-    maxOccupancyRow = ( std::max )( maxOccupancyRow, ( preGPAPatchData.v0 + preGPAPatchData.sizeU0 ) );
+        ( std::max )( widthGPA, ( curGPAPatchData.u0 + curGPAPatchData.sizeV0 ) * patch.getOccupancyResolution() );
+    maxOccupancyRow = ( std::max )( maxOccupancyRow, ( curGPAPatchData.v0 + curGPAPatchData.sizeU0 ) );
   }
 }
 void PCCEncoder::packingWithRefForFirstFrameNoglobalPatch( PCCPatch&                   patch,
@@ -4624,7 +4747,7 @@ void PCCEncoder::packingWithRefForFirstFrameNoglobalPatch( PCCPatch&            
                                                            std::vector<bool>&          occupancyMap,
                                                            size_t&                     heightGPA,
                                                            size_t&                     widthGPA,
-                                                           size_t                      maxOccupancyRow ) {
+                                                           size_t&                      maxOccupancyRow ) { //GPA_HARMONIZATION
   vector<int> orientation_vertical = { PATCH_ORIENTATION_DEFAULT,
 										  PATCH_ORIENTATION_SWAP,
 										  PATCH_ORIENTATION_ROT180,
@@ -4643,33 +4766,33 @@ void PCCEncoder::packingWithRefForFirstFrameNoglobalPatch( PCCPatch&            
 										  PATCH_ORIENTATION_MROT180 };  // favoring horizontal orientations (that should be rotated) 
   int numOrientations = params_.useEightOrientations_ ? 8 : 2;
 
-  GPAPatchData& preGPAPatchData = patch.getCurGPAPatchData();
+  GPAPatchData& curGPAPatchData = patch.getCurGPAPatchData(); //GPA_HARMONIZATION
 
-  assert( preGPAPatchData.sizeU0 <= occupancySizeU );
-  assert( preGPAPatchData.sizeV0 <= occupancySizeV );
+  assert( curGPAPatchData.sizeU0 <= occupancySizeU );
+  assert( curGPAPatchData.sizeV0 <= occupancySizeV );
   bool  locationFound = false;
   auto& occupancy     = patch.getOccupancy();
   while ( !locationFound ) {
     if ( patch.getBestMatchIdx() != InvalidPatchIndex ) {
       PCCPatch prePatch = prePatches[patch.getBestMatchIdx()];
       if ( i == startFrameIndex ) {
-        preGPAPatchData.patchOrientation = prePatch.getPatchOrientation();
+        curGPAPatchData.patchOrientation = prePatch.getPatchOrientation();
         // try to place on the same position as the matched patch
-        preGPAPatchData.u0 = prePatch.getU0();
-        preGPAPatchData.v0 = prePatch.getV0();
+        curGPAPatchData.u0 = prePatch.getU0();
+        curGPAPatchData.v0 = prePatch.getV0();
       } else {
-        preGPAPatchData.patchOrientation = prePatch.getCurGPAPatchData().patchOrientation;
+        curGPAPatchData.patchOrientation = prePatch.getCurGPAPatchData().patchOrientation;
         // try to place on the same position as the matched patch
-        preGPAPatchData.u0 = prePatch.getCurGPAPatchData().u0;
-        preGPAPatchData.v0 = prePatch.getCurGPAPatchData().v0;
+        curGPAPatchData.u0 = prePatch.getCurGPAPatchData().u0;
+        curGPAPatchData.v0 = prePatch.getCurGPAPatchData().v0;
       }
-      if ( preGPAPatchData.patchOrientation == -1 ) { assert( preGPAPatchData.patchOrientation != -1 ); }
+      if ( curGPAPatchData.patchOrientation == -1 ) { assert( curGPAPatchData.patchOrientation != -1 ); }
 
       if ( patch.checkFitPatchCanvasForGPA( occupancyMap, occupancySizeU, occupancySizeV, safeguard ) ) {
         locationFound = true;
         if ( printDetailedInfo ) {
-          std::cout << "Maintained TempGPA.orientation " << preGPAPatchData.patchOrientation << " for patch[" << icount
-                    << "] in the same position (" << preGPAPatchData.u0 << "," << preGPAPatchData.v0 << ")"
+          std::cout << "Maintained TempGPA.orientation " << curGPAPatchData.patchOrientation << " for patch[" << icount
+                    << "] in the same position (" << curGPAPatchData.u0 << "," << curGPAPatchData.v0 << ")"
                     << std::endl;
         }
       }
@@ -4677,15 +4800,15 @@ void PCCEncoder::packingWithRefForFirstFrameNoglobalPatch( PCCPatch&            
       // if the patch couldn't fit, try to fit the patch in the top left position
       for ( int v = 0; v <= occupancySizeV && !locationFound; ++v ) {
         for ( int u = 0; u <= occupancySizeU && !locationFound; ++u ) {
-          preGPAPatchData.u0 = u;
-          preGPAPatchData.v0 = v;
+          curGPAPatchData.u0 = u;
+          curGPAPatchData.v0 = v;
           if ( patch.checkFitPatchCanvasForGPA( occupancyMap, occupancySizeU, occupancySizeV,
                                                 safeguard ) ) {  // !!! function overload for GPA;
             locationFound = true;
             if ( printDetailedInfo ) {
-              std::cout << "Maintained TempGPA.orientation " << preGPAPatchData.patchOrientation
-                        << " for unmatched patch[" << icount << "] in the position (" << preGPAPatchData.u0 << ","
-                        << preGPAPatchData.v0 << ")" << std::endl;
+              std::cout << "Maintained TempGPA.orientation " << curGPAPatchData.patchOrientation
+                        << " for unmatched patch[" << icount << "] in the position (" << curGPAPatchData.u0 << ","
+                        << curGPAPatchData.v0 << ")" << std::endl;
             }
           }
         }
@@ -4694,21 +4817,21 @@ void PCCEncoder::packingWithRefForFirstFrameNoglobalPatch( PCCPatch&            
       // best effort
       for ( size_t v = 0; v < occupancySizeV && !locationFound; ++v ) {
         for ( size_t u = 0; u < occupancySizeU && !locationFound; ++u ) {
-          preGPAPatchData.u0 = u;
-          preGPAPatchData.v0 = v;
+          curGPAPatchData.u0 = u;
+          curGPAPatchData.v0 = v;
           for ( size_t orientationIdx = 0; orientationIdx < numOrientations && !locationFound;
                 orientationIdx++ ) {
             if ( patch.getSizeU0() > patch.getSizeV0() ) {
-              preGPAPatchData.patchOrientation = orientation_horizontal[orientationIdx];
+              curGPAPatchData.patchOrientation = orientation_horizontal[orientationIdx];
             } else {
-              preGPAPatchData.patchOrientation = orientation_vertical[orientationIdx];
+              curGPAPatchData.patchOrientation = orientation_vertical[orientationIdx];
             }
             if ( patch.checkFitPatchCanvasForGPA( occupancyMap, occupancySizeU, occupancySizeV, safeguard ) ) {
               locationFound = true;
               if ( printDetailedInfo ) {
-                std::cout << "Maintained TempGPA.orientation " << preGPAPatchData.patchOrientation
-                          << " for unmatched patch[" << icount << "] in the position (" << preGPAPatchData.u0 << ","
-                          << preGPAPatchData.v0 << ")" << std::endl;
+                std::cout << "Maintained TempGPA.orientation " << curGPAPatchData.patchOrientation
+                          << " for unmatched patch[" << icount << "] in the position (" << curGPAPatchData.u0 << ","
+                          << curGPAPatchData.v0 << ")" << std::endl;
               }
             }
           }
@@ -4721,24 +4844,24 @@ void PCCEncoder::packingWithRefForFirstFrameNoglobalPatch( PCCPatch&            
       if ( printDetailedInfo ) { std::cout << "Increase occupancySizeV " << occupancySizeV << std::endl; }
     }
   }
-  for ( size_t v0 = 0; v0 < preGPAPatchData.sizeV0; ++v0 ) {
-    for ( size_t u0 = 0; u0 < preGPAPatchData.sizeU0; ++u0 ) {
+  for ( size_t v0 = 0; v0 < curGPAPatchData.sizeV0; ++v0 ) {
+    for ( size_t u0 = 0; u0 < curGPAPatchData.sizeU0; ++u0 ) {
       int coord           = patch.patchBlock2CanvasBlockForGPA( u0, v0, occupancySizeU, occupancySizeV );
-      occupancyMap[coord] = occupancyMap[coord] || occupancy[v0 * preGPAPatchData.sizeU0 + u0];
+      occupancyMap[coord] = occupancyMap[coord] || occupancy[v0 * curGPAPatchData.sizeU0 + u0];
     }
   }
-  if ( !( preGPAPatchData.isPatchDimensionSwitched() ) ) {
+  if ( !( curGPAPatchData.isPatchDimensionSwitched() ) ) {
     heightGPA =
-        ( std::max )( heightGPA, ( preGPAPatchData.v0 + preGPAPatchData.sizeV0 ) * patch.getOccupancyResolution() );
+        ( std::max )( heightGPA, ( curGPAPatchData.v0 + curGPAPatchData.sizeV0 ) * patch.getOccupancyResolution() );
     widthGPA =
-        ( std::max )( widthGPA, ( preGPAPatchData.u0 + preGPAPatchData.sizeU0 ) * patch.getOccupancyResolution() );
-    maxOccupancyRow = ( std::max )( maxOccupancyRow, ( preGPAPatchData.v0 + preGPAPatchData.sizeV0 ) );
+        ( std::max )( widthGPA, ( curGPAPatchData.u0 + curGPAPatchData.sizeU0 ) * patch.getOccupancyResolution() );
+    maxOccupancyRow = ( std::max )( maxOccupancyRow, ( curGPAPatchData.v0 + curGPAPatchData.sizeV0 ) );
   } else {
     heightGPA =
-        ( std::max )( heightGPA, ( preGPAPatchData.v0 + preGPAPatchData.sizeU0 ) * patch.getOccupancyResolution() );
+        ( std::max )( heightGPA, ( curGPAPatchData.v0 + curGPAPatchData.sizeU0 ) * patch.getOccupancyResolution() );
     widthGPA =
-        ( std::max )( widthGPA, ( preGPAPatchData.u0 + preGPAPatchData.sizeV0 ) * patch.getOccupancyResolution() );
-    maxOccupancyRow = ( std::max )( maxOccupancyRow, ( preGPAPatchData.v0 + preGPAPatchData.sizeU0 ) );
+        ( std::max )( widthGPA, ( curGPAPatchData.u0 + curGPAPatchData.sizeV0 ) * patch.getOccupancyResolution() );
+    maxOccupancyRow = ( std::max )( maxOccupancyRow, ( curGPAPatchData.v0 + curGPAPatchData.sizeU0 ) );
   }
 }
 
@@ -5008,7 +5131,8 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
   pfdu.setPatchCount( patches.size() );
   pflu.setFrameIndex( frameIndex );
   pfh.setPatchFrameOrderCntLsb( frameIndex );
-  if ( ( frameIndex == 0 ) || ( !sps.getPatchInterPredictionEnabledFlag() ) ) {
+  if ( ( frameIndex == 0 ) || ( !sps.getPatchInterPredictionEnabledFlag() ) 
+        || ( patches[0].getBestMatchIdx() == InvalidPatchIndex) ) { //GPA_HARMONIZATION. Inter patch first, then Intra patch.
     pfh.setType( PATCH_FRAME_I );
     frame.getNumMatchedPatches() = 0;
   } else {
@@ -5080,7 +5204,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
     auto&       pid   = pfdu.addPatchInformationData();
     pid.allocate( sps.getAttributeCount() );
     TRACE_CODEC( "patch %lu / %lu: Intra \n", patchIndex, patches.size() );
-    pfdu.addPatchMode( ( ( frameIndex == 0 ) || ( !sps.getPatchInterPredictionEnabledFlag() ) )
+    pfdu.addPatchMode( ( ( frameIndex == 0 ) || ( !sps.getPatchInterPredictionEnabledFlag() ) || ( patches[0].getBestMatchIdx() == InvalidPatchIndex ) ) //GPA_HARMONIZATION
                            ? (uint8_t)PATCH_MODE_I_INTRA
                            : (uint8_t)PATCH_MODE_P_INTRA );
     auto& pdu = pid.getPatchDataUnit();

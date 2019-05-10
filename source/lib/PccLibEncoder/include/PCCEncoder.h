@@ -283,7 +283,7 @@ private:
                                                     std::vector<bool> & occupancyMap,
                                                     size_t& heightGPA,
                                                     size_t& widthGPA,
-                                                    size_t maxOccupancyRow);
+                                                    size_t& maxOccupancyRow); //GPA_HARMONIZATION
 
   void packingWithRefForFirstFrameNoglobalPatch( PCCPatch& patch,
                                                  const std::vector<PCCPatch> prePatches,
@@ -296,7 +296,7 @@ private:
                                                  std::vector<bool> & occupancyMap,
                                                  size_t& heightGPA,
                                                  size_t& widthGPA,
-                                                 size_t maxOccupancyRow);
+                                                 size_t& maxOccupancyRow); //GPA_HARMONIZATION
 
   void setGeometryFrameParameterSet( PCCMetadata& metadata, GeometryFrameParameterSet& gfps );
   void setGeometryPatchParameterSet( PCCMetadata& metadata, GeometryPatchParameterSet& gpps );

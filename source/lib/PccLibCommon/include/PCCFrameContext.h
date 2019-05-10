@@ -132,6 +132,7 @@ class PCCFrameContext {
 #if ( PCCSepatareEddColors == 1 )
   std::vector<PCCColor3B>& getEddColorsMap() { return eddColorsMap_; }
 #endif
+  size_t&          getGlobalPatchCount() { return globalPatchCount_; } // GPA_HARMONIZATION
 
  private:
   size_t index_;
@@ -178,6 +179,7 @@ class PCCFrameContext {
   PCCGPAFrameSize                              curPCCGPAFrameSize_;
   PCCFrameOCPInfo                              ocpGPAInfo_;
   PCCVector3D                                  weight_normal_;
+  size_t                                       globalPatchCount_; // GPA_HARMONIZATION
 };
 
 };  // namespace pcc
