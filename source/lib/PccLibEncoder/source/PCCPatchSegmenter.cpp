@@ -196,7 +196,7 @@ size_t PCCPatchSegmenter3::selectFrameProjectionMode( const PCCPointSet3& points
                                                       const size_t        minLevel,
                                                       const size_t        paramProjectionMode ) {
   const int16_t infiniteDepth       = ( std::numeric_limits<int16_t>::max )();
-  const size_t  boxSize             = size_t( 1024 );
+  const size_t  boxSize             = size_t( 2047 );
   size_t        frameProjectionMode = 0;
   // allocate patch cube
   boxMinDepths_.resize( 3 );
@@ -336,7 +336,7 @@ void PCCPatchSegmenter3::selectPatchProjectionMode( const PCCPointSet3&  points,
                                                     size_t               frameProjectionMode,
                                                     std::vector<size_t>& connectedComponent,
                                                     PCCPatch&            patch ) {
-  const size_t boxSize = size_t( 1024 );
+  const size_t boxSize = size_t( 2047 );
   if ( frameProjectionMode == 0 ) {
     patch.getProjectionMode()      = 0;  // min for all patches
     patch.getFrameProjectionMode() = 0;

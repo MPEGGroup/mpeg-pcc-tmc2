@@ -1055,7 +1055,7 @@ void PCCBitstreamEncoder::pcmPatchDataUnit( PCMPatchDataUnit& ppdu,
   }
 
   bitstream.writeSvlc( int32_t( ppdu.getPcmPoints() ) );
-  TRACE_BITSTREAM( "PCM Patch => UV %4lu %4lu  S=%4ld %4ld  UVD1=4ld %4ld %4ld NumPcmPoints=%lu PatchInPcmVideoFlag=%d \n",
+  TRACE_BITSTREAM( "PCM Patch => UV %4lu %4lu  S=%4ld %4ld  UVD1=%4ld %4ld %4ld NumPcmPoints=%lu PatchInPcmVideoFlag=%d \n",
                    ppdu.get2DShiftU(), ppdu.get2DShiftV(), ppdu.get2DDeltaSizeU(), ppdu.get2DDeltaSizeV(),
                    ppdu.get3DShiftBiTangentAxis(), ppdu.get3DShiftBiTangentAxis(), ppdu.get3DShiftNormalAxis(),
                    ppdu.getPcmPoints(), ppdu.getPatchInPcmVideoFlag() );

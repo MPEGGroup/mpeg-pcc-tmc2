@@ -865,6 +865,10 @@ void PCCEncoder::spatialConsistencyPackFlexible( PCCFrameContext& frame, PCCFram
             }
           }
         }
+#if TCH_ConsistencyPackFlexible_Fix == 1
+        if (!locationFound)
+          patch.setBestMatchIdx() = -1;
+#endif
       } else {
         // best effort
         for ( size_t v = 0; v < occupancySizeV && !locationFound; ++v ) {
@@ -1538,7 +1542,7 @@ void PCCEncoder::calculate_weight_normal(PCCContext& context, const PCCPointSet3
 {
   auto&         gps                    = context.getSps().getGeometryParameterSet();
   size_t geometryBitDepth3D   = gps.getGeometry3dCoordinatesBitdepthMinus1()+1;
-  size_t maxValue = 2<<geometryBitDepth3D;
+  size_t maxValue = 1<<geometryBitDepth3D;
 
 	PCCVector3D weight_value;
 	bool *pj_face = new bool[maxValue * maxValue * 3];

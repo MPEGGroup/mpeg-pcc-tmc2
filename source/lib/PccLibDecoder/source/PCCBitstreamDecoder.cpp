@@ -1019,8 +1019,8 @@ void PCCBitstreamDecoder::patchDataUnit( PatchDataUnit&    pdu,
   else {
     pdu.set45DegreeProjectionRotationAxis( 0 );
   }
-  TRACE_BITSTREAM("Patch => UV %4lu %4lu S=%4ld %4ld %4ld O=%d A=%lu %lu %lu P45= %d %d \n ", pdu.get2DShiftU(),
-	  pdu.get2DShiftV(), pdu.get2DDeltaSizeU(), pdu.get2DDeltaSizeV(), pdu.get2DDeltaSizeD(),
+  TRACE_BITSTREAM("Patch => UV %4lu %4lu S=%4ld %4ld %4ld P=%zu O=%d A=%lu %lu %lu P45= %d %d \n ", pdu.get2DShiftU(),
+	  pdu.get2DShiftV(), pdu.get2DDeltaSizeU(), pdu.get2DDeltaSizeV(), pdu.get2DDeltaSizeD(), (size_t)pdu.getProjectPlane(),
 	  pdu.getOrientationIndex(), pdu.get3DShiftTangentAxis(), pdu.get3DShiftBiTangentAxis(),
 	  pdu.get3DShiftNormalAxis(), pdu.get45DegreeProjectionPresentFlag(), pdu.get45DegreeProjectionRotationAxis());
 
@@ -1101,7 +1101,7 @@ void PCCBitstreamDecoder::pcmPatchDataUnit( PCMPatchDataUnit& ppdu,
   }
   ppdu.setPcmPoints( bitstream.readSvlc() );
   TRACE_BITSTREAM(
-      "PCM Patch => UV %4lu %4lu  S=%4ld %4ld  UVD1=4ld %4ld %4ld NumPcmPoints=%lu PatchInPcmVideoFlag=%d \n",
+      "PCM Patch => UV %4lu %4lu  S=%4ld %4ld  UVD1=%4ld %4ld %4ld NumPcmPoints=%lu PatchInPcmVideoFlag=%d \n",
                    ppdu.get2DShiftU(), ppdu.get2DShiftV(), ppdu.get2DDeltaSizeU(), ppdu.get2DDeltaSizeV(),
       ppdu.get3DShiftBiTangentAxis(), ppdu.get3DShiftBiTangentAxis(), ppdu.get3DShiftNormalAxis(), ppdu.getPcmPoints(),
       ppdu.getPatchInPcmVideoFlag() );
