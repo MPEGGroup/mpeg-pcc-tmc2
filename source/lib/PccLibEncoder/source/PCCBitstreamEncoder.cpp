@@ -705,6 +705,7 @@ void PCCBitstreamEncoder::patchFrameHeader( PatchFrameHeader& pfh,
   TRACE_BITSTREAM( "POC    = %u \n", pfh.getPatchFrameOrderCntLsb() );
   TRACE_BITSTREAM( "psps.getNumRefPatchFrameListsInSps() = %lu\n", psps.getNumRefPatchFrameListsInSps() );
   TRACE_BITSTREAM( "psps.getNumRefPatchFrameListsInSps() = %lu \n", psps.getNumRefPatchFrameListsInSps() );
+  TRACE_BITSTREAM( "gps.getGeometry3dCoordinatesBitdepthMinus1() = %lu \n", gps.getGeometry3dCoordinatesBitdepthMinus1() );
 
   if ( psps.getNumRefPatchFrameListsInSps() > 0 ) {
     bitstream.write( (uint32_t)pfh.getRefPatchFrameListSpsFlag(), 1 );  // u( 1 )
@@ -828,7 +829,7 @@ void PCCBitstreamEncoder::patchFrameHeader( PatchFrameHeader& pfh,
     bitstream.write((uint32_t)pfh.getPcm3dShiftBitCountPresentFlag(), 1);  // u( 1 )
     if (pfh.getPcm3dShiftBitCountPresentFlag()) {
       //bitstream.write((uint32_t)pfh.getPcm3dShiftAxisBitCountMinus1(), 11);
-      bitstream.write((uint32_t)pfh.getPcm3dShiftAxisBitCountMinus1(), gps.getGeometry3dCoordinatesBitdepthMinus1());
+      bitstream.write((uint32_t)pfh.getPcm3dShiftAxisBitCountMinus1(), gps.getGeometry3dCoordinatesBitdepthMinus1() + 1 );
     }
   }
   TRACE_BITSTREAM( "InterPredictPatchBitCount Flag %d %d %d %d %d %d %d %d Count = %u %u %u %u %u %u %u \n",
@@ -1018,10 +1019,10 @@ void PCCBitstreamEncoder::deltaPatchDataUnit( DeltaPatchDataUnit& dpdu,
   }
 
   TRACE_BITSTREAM(
-                  "DeltaPatch => DeltaIdx = %u ShiftUV = %ld %ld DeltaSize = %ld %ld %ld Axis = %ld %ld %ld \n",
-                  dpdu.getDeltaPatchIdx(), dpdu.get2DDeltaShiftU(), dpdu.get2DDeltaShiftV(), dpdu.get2DDeltaSizeU(),
-                  dpdu.get2DDeltaSizeV(), dpdu.get2DDeltaSizeD(), dpdu.get3DDeltaShiftTangentAxis(), dpdu.get3DDeltaShiftBiTangentAxis(),
-                  dpdu.get3DDeltaShiftNormalAxis() );
+      "%zu frame %zu DeltaPatch => DeltaIdx = %d ShiftUV = %ld %ld DeltaSize = %ld %ld %ld Axis = %ld %ld %ld\n",
+      dpdu.getDpduFrameIndex(), dpdu.getDpduPatchIndex(), dpdu.getDeltaPatchIdx(), dpdu.get2DDeltaShiftU(),
+      dpdu.get2DDeltaShiftV(), dpdu.get2DDeltaSizeU(), dpdu.get2DDeltaSizeV(), dpdu.get2DDeltaSizeD(),
+      dpdu.get3DDeltaShiftTangentAxis(), dpdu.get3DDeltaShiftBiTangentAxis(), dpdu.get3DDeltaShiftNormalAxis() );
 }
 
 // 7.3.5.20 PCM patch data unit syntax TODO: getPcmPoints is u(v) in CD, but is currently se(v)

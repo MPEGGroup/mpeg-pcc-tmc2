@@ -701,7 +701,6 @@ void PCCBitstreamDecoder::patchFrameParameterSet( PatchFrameParameterSet& pfps,
     pfps.setProjection45DegreeEnableFlag( false );
   }
 
-
   byteAlignment( bitstream );
 }
 
@@ -741,6 +740,7 @@ void PCCBitstreamDecoder::patchFrameHeader( PatchFrameHeader& pfh,
   TRACE_BITSTREAM( "POC    = %u \n", pfh.getPatchFrameOrderCntLsb() );
   TRACE_BITSTREAM( "psps.getNumRefPatchFrameListsInSps() = %lu\n", psps.getNumRefPatchFrameListsInSps() );
   TRACE_BITSTREAM( "psps.getNumRefPatchFrameListsInSps() = %lu \n", psps.getNumRefPatchFrameListsInSps() );
+  TRACE_BITSTREAM( "gps.getGeometry3dCoordinatesBitdepthMinus1() = %lu \n", gps.getGeometry3dCoordinatesBitdepthMinus1() );
 
   if ( psps.getNumRefPatchFrameListsInSps() > 0 ) {
     pfh.setRefPatchFrameListSpsFlag( bitstream.read( 1 ) );  // u( 1 )
@@ -837,25 +837,27 @@ void PCCBitstreamDecoder::patchFrameHeader( PatchFrameHeader& pfh,
       pfh.setInterPredictPatchLodBitCount( pfhPrev.getInterPredictPatchLodBitCount() );
     }
   }
-  //sps_pcm_patch_enabled_flag
-  if (sps.getPcmPatchEnabledFlag()) {
-  pfh.setPcm3dShiftBitCountPresentFlag(bitstream.read(1));  // u( 1 )
-  if (pfh.getPcm3dShiftBitCountPresentFlag()) {
+  // sps_pcm_patch_enabled_flag
+  if ( sps.getPcmPatchEnabledFlag() ) {
+    pfh.setPcm3dShiftBitCountPresentFlag( bitstream.read( 1 ) );  // u( 1 )
+    if ( pfh.getPcm3dShiftBitCountPresentFlag() ) {
     pfh.setPcm3dShiftAxisBitCountMinus1(
-      bitstream.read(gps.getGeometry3dCoordinatesBitdepthMinus1()));  //  
+      bitstream.read( gps.getGeometry3dCoordinatesBitdepthMinus1() + 1 ) );  //
+    }
   }
-}
-  TRACE_BITSTREAM(
-      "InterPredictPatchBitCount Flag %d %d %d %d %d %d %d %d Count = %u %u %u %u %u %u %u \n",
+  TRACE_BITSTREAM( "InterPredictPatchBitCount Flag %d %d %d %d %d %d %d %d Count = %u %u %u %u %u %u %u \n",
                    pfh.getInterPredictPatchBitCountFlag(), pfh.getInterPredictPatch2dShiftUBitCountFlag(),
-      pfh.getInterPredictPatch2dShiftVBitCountFlag(), pfh.getInterPredictPatch3dShiftTangentAxisBitCountFlag(),
+                   pfh.getInterPredictPatch2dShiftVBitCountFlag(),
+                   pfh.getInterPredictPatch3dShiftTangentAxisBitCountFlag(),
                    pfh.getInterPredictPatch3dShiftBitangentAxisBitCountFlag(),
                    pfh.getInterPredictPatch3dShiftNormalAxisBitCountFlag(), pfh.getInterPredictPatchLodBitCountFlag(),
-      pfh.getPcm3dShiftBitCountPresentFlag(), pfh.getInterPredictPatch2dShiftUBitCountMinus1(),
-      pfh.getInterPredictPatch2dShiftVBitCountMinus1(), pfh.getInterPredictPatch3dShiftTangentAxisBitCountMinus1(),
+                   pfh.getPcm3dShiftBitCountPresentFlag(),
+
+                   pfh.getInterPredictPatch2dShiftUBitCountMinus1(), pfh.getInterPredictPatch2dShiftVBitCountMinus1(),
+                   pfh.getInterPredictPatch3dShiftTangentAxisBitCountMinus1(),
                    pfh.getInterPredictPatch3dShiftBitangentAxisBitCountMinus1(),
-      pfh.getInterPredictPatch3dShiftNormalAxisBitCountMinus1(), pfh.getInterPredictPatchLodBitCount(),
-      pfh.getPcm3dShiftAxisBitCountMinus1() );
+                   pfh.getInterPredictPatch3dShiftNormalAxisBitCountMinus1(), pfh.getInterPredictPatchLodBitCount(),
+                   pfh.getPcm3dShiftAxisBitCountMinus1() );
   byteAlignment( bitstream );
 }
 
@@ -1069,11 +1071,10 @@ void PCCBitstreamDecoder::deltaPatchDataUnit( DeltaPatchDataUnit& dpdu,
   }
 
   TRACE_BITSTREAM(
-      "%zu frame %zu DeltaPatch => DeltaIdx = %u ShiftUV = %ld %ld DeltaSize = %ld %ld Axis = %ld %ld %ld\n",
-      dpdu.getDpduFrameIndex(), dpdu.getDpduPatchIndex(),
-      dpdu.getDeltaPatchIdx(), dpdu.get2DDeltaShiftU(), dpdu.get2DDeltaShiftV(), dpdu.get2DDeltaSizeU(),
-      dpdu.get2DDeltaSizeV(), dpdu.get3DDeltaShiftTangentAxis(), dpdu.get3DDeltaShiftBiTangentAxis(),
-      dpdu.get3DDeltaShiftNormalAxis() );
+      "%zu frame %zu DeltaPatch => DeltaIdx = %d ShiftUV = %ld %ld DeltaSize = %ld %ld %ld Axis = %ld %ld %ld\n",
+      dpdu.getDpduFrameIndex(), dpdu.getDpduPatchIndex(), dpdu.getDeltaPatchIdx(), dpdu.get2DDeltaShiftU(),
+      dpdu.get2DDeltaShiftV(), dpdu.get2DDeltaSizeU(), dpdu.get2DDeltaSizeV(), dpdu.get2DDeltaSizeD(),
+      dpdu.get3DDeltaShiftTangentAxis(), dpdu.get3DDeltaShiftBiTangentAxis(), dpdu.get3DDeltaShiftNormalAxis() );
 }
 
 // 7.3.5.20 PCM patch data unit syntax TODO: setPcmPoints is u(v) in CD, but is currently se(v)

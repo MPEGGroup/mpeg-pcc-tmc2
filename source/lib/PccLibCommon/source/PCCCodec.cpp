@@ -1207,8 +1207,10 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
     TRACE_CODEC( "losslessAtt                  = %d \n", losslessAtt );
     TRACE_CODEC( "losslessGeo                  = %d \n", losslessGeo );
     TRACE_CODEC( "lossyMissedPointsPatch       = %d \n", lossyMissedPointsPatch );
-    TRACE_CODEC( "numberOfMpsAndEddColors      = %lu \n", numberOfMpsAndEddColors );
-    TRACE_CODEC( "numberOfEddPoints             = %lu \n", numberOfEddPoints );
+    if ( params.enhancedDeltaDepthCode_ ) {
+      TRACE_CODEC( "numberOfMpsAndEddColors      = %lu \n", numberOfMpsAndEddColors );
+      TRACE_CODEC( "numberOfEddPoints             = %lu \n", numberOfEddPoints );
+    }
     TRACE_CODEC( "numOfMPGeos                  = %lu \n", numOfMPGeos );
     TRACE_CODEC( "pointCount                   = %lu \n", pointCount );
     TRACE_CODEC( "oneLayerMode                 = %d \n", params.oneLayerMode_ );

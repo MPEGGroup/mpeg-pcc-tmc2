@@ -554,7 +554,7 @@ class PatchFrameHeader {
       interPredictPatch3dShiftBitangentAxisBitCountFlag_( false ),
       interPredictPatch3dShiftNormalAxisBitCountFlag_( false ),
       interPredictPatchLodBitCountFlag_( false ),
-      pcm3dShiftAxisBitCountMinus1_( 10 ),
+      pcm3dShiftAxisBitCountMinus1_( 9 ),
       pcm3dShiftBitCountPresentFlag_( true )
   {
     additionalPfocLsbPresentFlag_.resize( 1, 0 );
