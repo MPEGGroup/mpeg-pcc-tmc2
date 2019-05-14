@@ -832,8 +832,10 @@ class GeometryPatchParams {
     for ( size_t d = 0; d < 3; d++ ) {
       geometryPatchScaleOnAxis_[d]    = 0;  // u(32)
       geometryPatchOffsetOnAxis_[d]   = 0;  // i(32)
-      geometryPatchRotationOnAxis_[d] = 0;  // i(32)
     }
+   for ( size_t d = 0; d < 4; d++ ) {
+     geometryPatchRotationXYZW_[d] = 0;  // i(32)
+   }
   }
   GeometryPatchParams& operator=( const GeometryPatchParams& ) = default;
 
@@ -844,7 +846,7 @@ class GeometryPatchParams {
   bool     getGeometryPatchPointShapeInfoPresentFlag() { return geometryPatchPointShapeInfoPresentFlag_; }
   uint32_t getGeometryPatchScaleOnAxis( size_t index ) { return geometryPatchScaleOnAxis_[index]; }
   int32_t  getGeometryPatchOffsetOnAxis( size_t index ) { return geometryPatchOffsetOnAxis_[index]; }
-  int32_t  getGeometryPatchRotationOnAxis( size_t index ) { return geometryPatchRotationOnAxis_[index]; }
+  int32_t  getGeometryPatchRotationQuaternion( size_t index ) { return geometryPatchRotationXYZW_[index]; }
   uint16_t getGeometryPatchPointSizeInfo() { return geometryPatchPointSizeInfo_; }
   uint32_t getGeometryPatchPointShapeInfo() { return geometryPatchPointShapeInfo_; }
 
@@ -855,7 +857,7 @@ class GeometryPatchParams {
   void setGeometryPatchPointShapeInfoPresentFlag( bool value ) { geometryPatchPointShapeInfoPresentFlag_ = value; }
   void setGeometryPatchScaleOnAxis( size_t index, uint32_t value ) { geometryPatchScaleOnAxis_[index] = value; }
   void setGeometryPatchOffsetOnAxis( size_t index, int32_t value ) { geometryPatchOffsetOnAxis_[index] = value; }
-  void setGeometryPatchRotationOnAxis( size_t index, int32_t value ) { geometryPatchRotationOnAxis_[index] = value; }
+  void setGeometryPatchRotationQuaternion( size_t index, int32_t value ) { geometryPatchRotationXYZW_[index] = value; }
   void setGeometryPatchPointSizeInfo( uint16_t value ) { geometryPatchPointSizeInfo_ = value; }
   void setGeometryPatchPointShapeInfo( uint32_t value ) { geometryPatchPointShapeInfo_ = value; }
 
@@ -867,7 +869,7 @@ class GeometryPatchParams {
   bool     geometryPatchPointShapeInfoPresentFlag_;
   uint32_t geometryPatchScaleOnAxis_[3];
   int32_t  geometryPatchOffsetOnAxis_[3];
-  int32_t  geometryPatchRotationOnAxis_[3];
+  int32_t  geometryPatchRotationXYZW_[4];
   uint16_t geometryPatchPointSizeInfo_;
   uint32_t geometryPatchPointShapeInfo_;
 };
@@ -1028,7 +1030,9 @@ class GeometryFrameParams {
     for ( uint8_t i = 0; i < 3; i++ ) {
       geometryScaleOnAxis_[i]    = 0;
       geometryOffsetOnAxis_[i]   = 0;
-      geometryRotationOnAxis_[i] = 0;
+    }
+    for ( uint8_t i = 0; i < 4; i++ ) {
+     geometryRotationXYZW_[i] = 0;
     }
   }
   GeometryFrameParams& operator=( const GeometryFrameParams& ) = default;
@@ -1044,7 +1048,7 @@ class GeometryFrameParams {
   uint8_t  getGeometrySmoothingThreshold() { return geometrySmoothingThreshold_; }
   uint32_t getGeometryScaleOnAxis( size_t index ) { return geometryScaleOnAxis_[index]; }
   int32_t  getGeometryOffsetOnAxis( size_t index ) { return geometryOffsetOnAxis_[index]; }
-  int32_t  getGeometryRotationOnAxis( size_t index ) { return geometryRotationOnAxis_[index]; }
+  int32_t  getGeometryRotationQuaternion( size_t index ) { return geometryRotationXYZW_[index]; }
   uint16_t getGeometryPointSizeInfo() { return geometryPointSizeInfo_; }
   uint32_t getGeometryPointShapeInfo() { return geometryPointShapeInfo_; }
 
@@ -1059,7 +1063,7 @@ class GeometryFrameParams {
   void setGeometrySmoothingThreshold( uint8_t value ) { geometrySmoothingThreshold_ = value; }
   void setGeometryScaleOnAxis( size_t index, uint32_t value ) { geometryScaleOnAxis_[index] = value; }
   void setGeometryOffsetOnAxis( size_t index, int32_t value ) { geometryOffsetOnAxis_[index] = value; }
-  void setGeometryRotationOnAxis( size_t index, int32_t value ) { geometryRotationOnAxis_[index] = value; }
+  void setGeometryRotationQuaternion( size_t index, int32_t value ) { geometryRotationXYZW_[index] = value; }
   void setGeometryPointSizeInfo( uint16_t value ) { geometryPointSizeInfo_ = value; }
   void setGeometryPointShapeInfo( uint32_t value ) { geometryPointShapeInfo_ = value; }
 
@@ -1075,7 +1079,7 @@ class GeometryFrameParams {
   uint8_t  geometrySmoothingThreshold_;
   uint32_t geometryScaleOnAxis_[3];
   int32_t  geometryOffsetOnAxis_[3];
-  int32_t  geometryRotationOnAxis_[3];
+  int32_t  geometryRotationXYZW_[4];
   uint16_t geometryPointSizeInfo_;
   uint32_t geometryPointShapeInfo_;
 };
@@ -1527,8 +1531,11 @@ class GeometrySequenceParams {
     for ( uint8_t i = 0; i < 3; i++ ) {
       geometryScaleOnAxis_[i]    = 0;
       geometryOffsetOnAxis_[i]   = 0;
-      geometryRotationOnAxis_[i] = 0;
     }
+   for ( uint8_t i = 0; i < 4; i++ ) {
+      geometryRotationXYZW_[i] = 0;
+   }
+        
   }
   GeometrySequenceParams& operator=( const GeometrySequenceParams& ) = default;
   void                    init( bool    smoothingParamsPresentFlag,
@@ -1561,7 +1568,7 @@ class GeometrySequenceParams {
   uint8_t  getGeometrySmoothingThreshold() { return geometrySmoothingThreshold_; }
   uint32_t getGeometryScaleOnAxis( int index ) { return geometryScaleOnAxis_[index]; }
   int32_t  getGeometryOffsetOnAxis( int index ) { return geometryOffsetOnAxis_[index]; }
-  int32_t  getGeometryRotationOnAxis( int index ) { return geometryRotationOnAxis_[index]; }
+  int32_t  getGeometryRotationQuaternion( int index ) { return geometryRotationXYZW_[index]; }
   uint16_t getGeometryPointSizeInfo() { return geometryPointSizeInfo_; }
   uint32_t getGeometryPointShapeInfo() { return geometryPointShapeInfo_; }
 
@@ -1576,7 +1583,7 @@ class GeometrySequenceParams {
   void setGeometrySmoothingThreshold( uint8_t value ) { geometrySmoothingThreshold_ = value; }
   void setGeometryScaleOnAxis( int index, uint32_t value ) { geometryScaleOnAxis_[index] = value; }
   void setGeometryOffsetOnAxis( int index, int32_t value ) { geometryOffsetOnAxis_[index] = value; }
-  void setGeometryRotationOnAxis( int index, int32_t value ) { geometryRotationOnAxis_[index] = value; }
+  void setGeometryRotationQuaternion( int index, int32_t value ) { geometryRotationXYZW_[index] = value; }
   void setGeometryPointSizeInfo( uint16_t value ) { geometryPointSizeInfo_ = value; }
   void setGeometryPointShapeInfo( uint32_t value ) { geometryPointShapeInfo_ = value; }
 
@@ -1592,7 +1599,7 @@ class GeometrySequenceParams {
   uint8_t  geometrySmoothingThreshold_;
   uint32_t geometryScaleOnAxis_[3];
   int32_t  geometryOffsetOnAxis_[3];
-  int32_t  geometryRotationOnAxis_[3];
+  int32_t  geometryRotationXYZW_[4];
   uint16_t geometryPointSizeInfo_;
   uint32_t geometryPointShapeInfo_;
 };
@@ -1989,7 +1996,7 @@ class PCCContext {
     fflush( stdout );
     exit( -1 );
   }
-
+  
   void                  allocOneLayerData();
   void                  printVideoBitstream();
   void                  printBlockToPatch( const size_t occupancyResolution );
@@ -2018,7 +2025,8 @@ class PCCContext {
     return pointLocalReconstructionMode_[index];
   }
   size_t getPointLocalReconstructionModeNumber() { return pointLocalReconstructionMode_.size(); }
-
+  size_t getGeometry3dCoordinatesBitdepth() {return geometry3dCoordinatesBitdepth_;}
+  void setGeometry3dCoordinatesBitdepth(size_t value){geometry3dCoordinatesBitdepth_=value;}
  private:
   std::vector<PCCFrameContext>      frames_;
   PCCVideoGeometry                  videoGeometry_;
@@ -2047,6 +2055,7 @@ class PCCContext {
   // Lossy occupancy map encoder parameter
   bool   prefilterLossyOM_;
   size_t offsetLossyOM_;
+  size_t geometry3dCoordinatesBitdepth_;
 };
 };  // namespace pcc
 

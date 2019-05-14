@@ -298,8 +298,8 @@ void PCCBitstreamDecoder::geometrySequenceParams( GeometrySequenceParams& gsp, P
       }
     }
     if ( gsp.getGeometryRotationParamsPresentFlag() ) {
-      for ( size_t d = 0; d < 3; d++ ) {
-        gsp.setGeometryRotationOnAxis( d, bitstream.readS( 32 ) );  // i(32)
+      for ( size_t d = 0; d < 4; d++ ) {
+        gsp.setGeometryRotationQuaternion( d, bitstream.readS( 32 ) );  // i(32)
       }
     }
     if ( gsp.getGeometryPointSizeInfoPresentFlag() ) {
@@ -521,8 +521,8 @@ void PCCBitstreamDecoder::geometryFrameParams( GeometryFrameParams& gfp, PCCBits
     }
   }
   if ( gfp.getGeometryRotationParamsPresentFlag() ) {
-    for ( size_t d = 0; d < 3; d++ ) {
-      gfp.setGeometryRotationOnAxis( d, bitstream.readS( 32 ) );  // i(32)
+    for ( size_t d = 0; d < 4; d++ ) {
+      gfp.setGeometryRotationQuaternion( d, bitstream.readS( 32 ) );  // i(32)
     }
   }
   if ( gfp.getGeometryPointSizeInfoPresentFlag() ) {
@@ -621,8 +621,8 @@ void PCCBitstreamDecoder::geometryPatchParams( GeometryPatchParams&       gpp,
   if ( gfps.getGeometryPatchRotationParamsEnabledFlag() ) {
     gpp.setGeometryPatchRotationParamsPresentFlag( bitstream.read( 1 ) );  // u(1)
     if ( gpp.getGeometryPatchRotationParamsPresentFlag() ) {
-      for ( size_t d = 0; d < 3; d++ ) {
-        gpp.setGeometryPatchRotationOnAxis( d, bitstream.readS( 32 ) );  // i(32)
+      for ( size_t d = 0; d < 4; d++ ) {
+        gpp.setGeometryPatchRotationQuaternion( d, bitstream.readS( 32 ) );  // i(32)
       }
     }
   }

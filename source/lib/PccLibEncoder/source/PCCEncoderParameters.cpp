@@ -532,7 +532,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   context.getMPAttWidth()         = 64;
   context.getMPGeoHeight()        = 0;
   context.getMPAttHeight()        = 0;
-
+  context.setGeometry3dCoordinatesBitdepth( geometry3dCoordinatesBitdepth_);
   size_t numPlrm = ( std::max )( (size_t)1, ( std::min )( nbPlrmMode_, g_pointLocalReconstructionMode.size() ) );
   for ( size_t i = 0; i < numPlrm; i++ ) {
     context.addPointLocalReconstructionMode( g_pointLocalReconstructionMode[i] );

@@ -129,6 +129,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
       // Place to get/set patch metadata enabled flags (in frame level).
       PCCMetadataEnabledFlags patchLevelMetadataEnabledFlags;
       frames[i].getFrameLevelMetadata().getLowerLevelMetadataEnabledFlags() = patchLevelMetadataEnabledFlags;
+      
     }
   }
 
@@ -139,6 +140,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     frames[i].setUseAdditionalPointsPatch( params_.losslessGeo_ || params_.lossyMissedPointsPatch_ );
     frames[i].setUseAdditionalPointsPatch( params_.useAdditionalPointsPatch_ );
     frames[i].setUseMissedPointsSeparateVideo( params_.useMissedPointsSeparateVideo_ );
+    frames[i].setGeometry3dCoordinatesBitdepth(context.getGeometry3dCoordinatesBitdepth());
   }
 
   PCCVideoEncoder       videoEncoder;
@@ -866,7 +868,7 @@ void PCCEncoder::spatialConsistencyPackFlexible( PCCFrameContext& frame, PCCFram
           }
         }
 #ifdef TCH_CONSITENCY_PACK_FLEXIBLE_FIX
-        if (!locationFound){
+        if (!locationFound && (frame.getGeometry3dCoordinatesBitdepth() > 10)){
           patch.setBestMatchIdx() = -1;
         }
 #endif
@@ -4912,9 +4914,10 @@ void PCCEncoder::setGeometryFrameParameterSet( PCCMetadata& metadata, GeometryFr
     if ( gfps.getGeometryPatchRotationParamsEnabledFlag() ) {
       gfp.setGeometryRotationParamsPresentFlag( metadataEnabingFlags.getRotationEnabled() );
       if ( gfp.getGeometryRotationParamsPresentFlag() ) {
-        gfp.setGeometryRotationOnAxis( 0, metadata.getRotation()[0] );
-        gfp.setGeometryRotationOnAxis( 1, metadata.getRotation()[1] );
-        gfp.setGeometryRotationOnAxis( 2, metadata.getRotation()[2] );
+        gfp.setGeometryRotationQuaternion( 0, metadata.getRotation()[0] );
+        gfp.setGeometryRotationQuaternion( 1, metadata.getRotation()[1] );
+        gfp.setGeometryRotationQuaternion( 2, metadata.getRotation()[2] );
+        gfp.setGeometryRotationQuaternion( 3, 0 ); //jkei:??
       }
     }
 
@@ -4959,9 +4962,10 @@ void PCCEncoder::setGeometryPatchParameterSet( PCCMetadata& metadata, GeometryPa
     // Rotation
     gpp.setGeometryPatchRotationParamsPresentFlag( metadataEnabingFlags.getRotationEnabled() );
     if ( gpp.getGeometryPatchRotationParamsPresentFlag() ) {
-      gpp.setGeometryPatchRotationOnAxis( 0, metadata.getRotation()[0] );
-      gpp.setGeometryPatchRotationOnAxis( 1, metadata.getRotation()[1] );
-      gpp.setGeometryPatchRotationOnAxis( 2, metadata.getRotation()[2] );
+      gpp.setGeometryPatchRotationQuaternion( 0, metadata.getRotation()[0] );
+      gpp.setGeometryPatchRotationQuaternion( 1, metadata.getRotation()[1] );
+      gpp.setGeometryPatchRotationQuaternion( 2, metadata.getRotation()[2] );
+      gpp.setGeometryPatchRotationQuaternion( 3, 0 ); //jkei:??
     }
 
     // Point size

@@ -71,7 +71,7 @@
 // ******************************************************************* //
 // Technicolor flags for CE2_22
 // ******************************************************************* //
-// #define TCH_CONSITENCY_PACK_FLEXIBLE_FIX   
+#define TCH_CONSITENCY_PACK_FLEXIBLE_FIX   
 
 static const size_t PCCMpsPatch8bits = 0;
 static const size_t PCCSepatareEddColors = 1;

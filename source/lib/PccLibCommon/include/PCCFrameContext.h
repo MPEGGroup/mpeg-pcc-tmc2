@@ -133,7 +133,8 @@ class PCCFrameContext {
   std::vector<PCCColor3B>& getEddColorsMap() { return eddColorsMap_; }
 #endif
   size_t&          getGlobalPatchCount() { return globalPatchCount_; } // GPA_HARMONIZATION
-
+  size_t getGeometry3dCoordinatesBitdepth(){ return geometry3dCoordinatesBitdepth_;}
+  void setGeometry3dCoordinatesBitdepth(size_t value){geometry3dCoordinatesBitdepth_=value;}
  private:
   size_t index_;
   bool   losslessGeo_;
@@ -180,6 +181,7 @@ class PCCFrameContext {
   PCCFrameOCPInfo                              ocpGPAInfo_;
   PCCVector3D                                  weight_normal_;
   size_t                                       globalPatchCount_; // GPA_HARMONIZATION
+  size_t geometry3dCoordinatesBitdepth_;
 };
 
 };  // namespace pcc

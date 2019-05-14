@@ -248,9 +248,10 @@ void PCCDecoder::setFrameMetadata( PCCMetadata& metadata, GeometryFrameParameter
     if ( gfps.getGeometryPatchRotationParamsEnabledFlag() ) {
       metadataEnabingFlags.getRotationEnabled() = gfp.getGeometryRotationParamsPresentFlag();
       if ( gfp.getGeometryRotationParamsPresentFlag() ) {
-        metadata.getRotation()[0] = gfp.getGeometryRotationOnAxis( 0 );
-        metadata.getRotation()[1] = gfp.getGeometryRotationOnAxis( 1 );
-        metadata.getRotation()[2] = gfp.getGeometryRotationOnAxis( 2 );
+        metadata.getRotation()[0] = gfp.getGeometryRotationQuaternion( 0 );
+        metadata.getRotation()[1] = gfp.getGeometryRotationQuaternion( 1 );
+        metadata.getRotation()[2] = gfp.getGeometryRotationQuaternion( 2 );
+        //metadata.getRotation()[3] = gfp.getGeometryRotationQuaternion( 3 );
       }
     }
 
@@ -297,9 +298,10 @@ void PCCDecoder::setPatchMetadata( PCCMetadata& metadata, GeometryPatchParameter
     // Rotation
     metadataEnabingFlags.getRotationEnabled() = gpp.getGeometryPatchRotationParamsPresentFlag();
     if ( gpp.getGeometryPatchRotationParamsPresentFlag() ) {
-      metadata.getRotation()[0] = gpp.getGeometryPatchRotationOnAxis( 0 );
-      metadata.getRotation()[1] = gpp.getGeometryPatchRotationOnAxis( 1 );
-      metadata.getRotation()[2] = gpp.getGeometryPatchRotationOnAxis( 2 );
+      metadata.getRotation()[0] = gpp.getGeometryPatchRotationQuaternion( 0 );
+      metadata.getRotation()[1] = gpp.getGeometryPatchRotationQuaternion( 1 );
+      metadata.getRotation()[2] = gpp.getGeometryPatchRotationQuaternion( 2 );
+      //metadata.getRotation()[3] = gpp.getGeometryPatchRotationQuaternion( 3 ); 
     }
 
     // Point size
