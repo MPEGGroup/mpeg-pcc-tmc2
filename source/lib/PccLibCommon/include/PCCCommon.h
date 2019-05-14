@@ -76,6 +76,12 @@
 static const size_t PCCMpsPatch8bits = 0;
 static const size_t PCCSepatareEddColors = 1;
 
+#define LAST_PATCH_HLS (1)
+#if LAST_PATCH_HLS
+#define LAST_PATCH_HLS_DEC (1)
+#define LAST_PATCH_HLS_ENC (0)
+#endif
+
 namespace pcc {
 
 // ******************************************************************* //
@@ -199,9 +205,11 @@ enum PCCCodecID { CODEC_HEVC = 0 };
 
 enum PCCPatchFrameType { PATCH_FRAME_I = 0, PATCH_FRAME_P };
 
-enum PCCPatchModeI { PATCH_MODE_I_INTRA = 0, PATCH_MODE_I_PCM, PATCH_MODE_I_END };
+enum PCCPatchModeI { PATCH_MODE_I_INTRA = 0, PATCH_MODE_I_PCM, PATCH_MODE_I_END = 14 };
 
-enum PCCPatchModeP { PATCH_MODE_P_SKIP = 0, PATCH_MODE_P_INTRA, PATCH_MODE_P_INTER, PATCH_MODE_P_PCM, PATCH_MODE_P_END };
+enum PCCPatchModeP { PATCH_MODE_P_SKIP = 0, PATCH_MODE_P_INTRA, PATCH_MODE_P_INTER, PATCH_MODE_P_PCM, PATCH_MODE_P_END = 14 };
+
+enum PCCPatchType { P_TYPE_INTRA = 0, P_TYPE_INTER, P_TYPE_SKIP, P_TYPE_END };
 
 const size_t IntermediateLayerIndex = 100;
 const size_t NeighborThreshold      = 4;

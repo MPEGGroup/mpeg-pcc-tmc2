@@ -442,6 +442,24 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
 
   size_t        numPCMPatches          = 0;
   size_t        numNonPCMPatch         = 0;
+#if LAST_PATCH_HLS_DEC
+  size_t patchIdx = 0;
+  while ( ( ( PCCPatchFrameType( pfh.getType() ) == PATCH_FRAME_I ) &&
+    ( PCCPatchModeI( pfdu.getPatchMode( patchIdx ) ) != (uint8_t)PATCH_MODE_I_END ) ) ||
+             ( ( PCCPatchFrameType( pfh.getType() ) == PATCH_FRAME_P  ) &&
+             ( PCCPatchModeP( pfdu.getPatchMode( patchIdx ) ) != (uint8_t)PATCH_MODE_P_END ) ) ) {
+
+    if ( ( ( PCCPatchFrameType( pfh.getType() ) == PATCH_FRAME_I ) &&
+      ( PCCPatchModeI( pfdu.getPatchMode( patchIdx ) ) == (uint8_t)PATCH_MODE_I_PCM ) ) ||
+         ( ( PCCPatchFrameType( pfh.getType() ) == PATCH_FRAME_P  ) &&
+         ( PCCPatchModeP( pfdu.getPatchMode( patchIdx ) ) == (uint8_t)PATCH_MODE_P_PCM ) ) ) {
+      numPCMPatches++;
+    } else {
+      numNonPCMPatch++;
+    }
+    patchIdx++;
+  }
+#else
   for ( size_t patchIdx = 0; patchIdx < pfdu.getPatchCount(); patchIdx++ ) {
     if ( ( ( PCCPatchFrameType( pfh.getType() ) == PATCH_FRAME_I ) &&
            ( PCCPatchModeI( pfdu.getPatchMode( patchIdx ) ) == PATCH_MODE_I_PCM ) ) ||
@@ -452,23 +470,32 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
       numNonPCMPatch++;
     }
   }
+#endif
   patches.resize( numNonPCMPatch );
   pcmPatches.resize(numPCMPatches);
   frame.getFrameLevelMetadata().setMetadataType( METADATA_FRAME );
   frame.getFrameLevelMetadata().setIndex( frame.getIndex() );
 
-  TRACE_CODEC("Patches size                        = %lu \n", patches.size());
-  TRACE_CODEC("OccupancyPackingBlockSize           = %d \n", ops.getOccupancyPackingBlockSize());
+  TRACE_CODEC( "Patches size                        = %lu \n", patches.size() );
+  TRACE_CODEC( "OccupancyPackingBlockSize           = %d \n", ops.getOccupancyPackingBlockSize() );
   // TRACE_CODEC( "PatchSequenceOrientationEnabledFlag = %d \n", sps.getPatchSequenceOrientationEnabledFlag() );
   // TRACE_CODEC( "PatchOrientationPresentFlag         = %d \n", pfps.getPatchOrientationPresentFlag() );
   TRACE_CODEC( "PatchInterPredictionEnabledFlag     = %d \n", sps.getPatchInterPredictionEnabledFlag() );
   size_t totalNumberOfMps = 0;  
+#if LAST_PATCH_HLS_DEC
+  size_t patchIndex = 0;
+  while ( ( ( PCCPatchFrameType( pfh.getType() ) == PATCH_FRAME_I ) &&
+    ( PCCPatchModeI( pfdu.getPatchMode( patchIndex ) ) != (uint8_t)PATCH_MODE_I_END ) ) ||
+          ( ( PCCPatchFrameType( pfh.getType() ) == PATCH_FRAME_P  ) &&
+          ( PCCPatchModeP( pfdu.getPatchMode( patchIndex ) ) != (uint8_t)PATCH_MODE_P_END ) ) ) {
+#else
   for ( size_t patchIndex = 0; patchIndex < pfdu.getPatchCount(); ++patchIndex ) {
+#endif
     auto& pid                      = pfdu.getPatchInformationData( patchIndex );
     if ( ( ( PCCPatchFrameType( pfh.getType() ) == PATCH_FRAME_I ) &&
-           ( PCCPatchModeI( pfdu.getPatchMode( patchIndex ) ) == PATCH_MODE_I_INTRA ) ) ||
+           ( PCCPatchModeI( pfdu.getPatchMode( patchIndex ) ) == (uint8_t)PATCH_MODE_I_INTRA ) ) ||
          ( ( PCCPatchFrameType( pfh.getType() ) == PATCH_FRAME_P ) &&
-           ( PCCPatchModeP( pfdu.getPatchMode( patchIndex ) ) == PATCH_MODE_P_INTRA ) ) ) {
+           ( PCCPatchModeP( pfdu.getPatchMode( patchIndex ) ) == (uint8_t)PATCH_MODE_P_INTRA ) ) ) {
       auto& patch                    = patches[patchIndex];
       patch.getOccupancyResolution() = ops.getOccupancyPackingBlockSize();
       auto& pdu = pid.getPatchDataUnit();
@@ -485,7 +512,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
      patch.getProjectionMode()   = size_t(pdu.getProjectPlane())<3?0:1;
       patch.getPatchOrientation() = pdu.getOrientationIndex();
       patch.getAxisOfAdditionalPlane() = pdu.get45DegreeProjectionPresentFlag() ? pdu.get45DegreeProjectionRotationAxis() : 0;
-      TRACE_CODEC("patch %lu / %lu: Intra \n", patchIndex, patches.size());
+      TRACE_CODEC( "patch %lu / %lu: Intra \n", patchIndex, patches.size() );
       const size_t max3DCoordinate = 1 << (gps.getGeometry3dCoordinatesBitdepthMinus1() + 1);
       if ( patch.getProjectionMode() == 0 ) {
         patch.getD1() = (int32_t)pdu.get3DShiftNormalAxis() * minLevel;
@@ -564,9 +591,9 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
         patch.getD1() = ( dpdu.get3DDeltaShiftNormalAxis() + ( prePatch.getD1() / minLevel ) ) * minLevel;
       } else {
         if (pfps.getProjection45DegreeEnableFlag() == 0) {
-          patch.getD1() =
+        patch.getD1() =
           max3DCoordinate - ( dpdu.get3DDeltaShiftNormalAxis() + ( ( max3DCoordinate - prePatch.getD1() ) / minLevel ) ) * minLevel; //jkei : we need to change 1024 to the nominal bitdepth..
-        }
+      }
         else {
         patch.getD1() =
           (max3DCoordinate << 1) - ( dpdu.get3DDeltaShiftNormalAxis() + ( ( (max3DCoordinate << 1) - prePatch.getD1() ) / minLevel ) ) * minLevel;
@@ -603,13 +630,13 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
                                          ops.getOccupancyPackingBlockSize() );
       }
     } else if ( ( PCCPatchFrameType( pfh.getType() ) == PATCH_FRAME_I &&
-                  PCCPatchModeI( pfdu.getPatchMode( patchIndex ) ) == PATCH_MODE_I_PCM ) ||
+                  PCCPatchModeI( pfdu.getPatchMode( patchIndex ) ) == (uint8_t)PATCH_MODE_I_PCM ) ||
                 ( PCCPatchFrameType( pfh.getType() ) == PATCH_FRAME_P &&
-                  PCCPatchModeP( pfdu.getPatchMode( patchIndex ) ) == PATCH_MODE_P_PCM ) ) {
+                  PCCPatchModeP( pfdu.getPatchMode( patchIndex ) ) == (uint8_t)PATCH_MODE_P_PCM ) ) {
       TRACE_CODEC( "patch %lu / %lu: PCM \n", patchIndex, patches.size() );
 
       auto& ppdu                             = pid.getPCMPatchDataUnit();
-      auto&  missedPointsPatch  = pcmPatches[patchIndex - numNonPCMPatch];  
+      auto& missedPointsPatch                = pcmPatches[patchIndex - numNonPCMPatch];  
       missedPointsPatch.u0_                  = ppdu.get2DShiftU();
       missedPointsPatch.v0_                  = ppdu.get2DShiftV();
       missedPointsPatch.sizeU0_              = ppdu.get2DDeltaSizeU();
@@ -634,11 +661,19 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
                    missedPointsPatch.u0_, missedPointsPatch.v0_, missedPointsPatch.sizeU0_, missedPointsPatch.sizeV0_,
                    missedPointsPatch.u1_, missedPointsPatch.v1_, missedPointsPatch.d1_, missedPointsPatch.numberOfMps_,
                    missedPointsPatch.occupancyResolution_ );
+    } else  if ( ( PCCPatchFrameType( pfh.getType() ) == PATCH_FRAME_I &&
+                 PCCPatchModeP( pfdu.getPatchMode( patchIndex ) ) == (uint8_t)PATCH_MODE_I_END ) || 
+                 ( PCCPatchFrameType( pfh.getType() ) == PATCH_FRAME_P &&
+                 PCCPatchModeP( pfdu.getPatchMode( patchIndex ) ) == (uint8_t)PATCH_MODE_P_END ) ) {
+      break;
     } else {
       printf( "Error: unknow frame/patch type \n" );
       TRACE_CODEC( "Error: unknow frame/patch type \n" );
     }
-  }
+#if LAST_PATCH_HLS_DEC
+    patchIndex++;
+#endif
+  }   
 
   frame.setTotalNumberOfMissedPoints( totalNumberOfMps );   
 }

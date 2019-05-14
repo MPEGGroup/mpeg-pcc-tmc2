@@ -875,21 +875,29 @@ void PCCBitstreamEncoder::patchFrameDataUnit( PatchFrameDataUnit& pfdu,
                                               PCCBitstream&       bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   TRACE_BITSTREAM( "pfh.getType()        = %lu \n", pfh.getType() );
+#if !LAST_PATCH_HLS
   uint8_t       moreAvailablePatchFlag = pfdu.getPatchCount() > 0;
   const uint8_t bitCountPatchMode      = ( PCCPatchFrameType( pfh.getType() ) ) == PATCH_FRAME_I ? 1 : 2;
   bitstream.write( moreAvailablePatchFlag, 1 );
   TRACE_BITSTREAM( "moreAvailablePatchFlag = %d \n", moreAvailablePatchFlag );
   TRACE_BITSTREAM( "bitCountPatchMode = %u \n", bitCountPatchMode );
+#endif
   for ( size_t puCount = 0; puCount < pfdu.getPatchCount(); puCount++ ) {
+#if LAST_PATCH_HLS
+    bitstream.writeSvlc( uint32_t( pfdu.getPatchMode( puCount ) ) );
+#else
     bitstream.write( uint32_t( pfdu.getPatchMode( puCount ) ), bitCountPatchMode );
+#endif
     TRACE_BITSTREAM( "patchMode = %lu \n", pfdu.getPatchMode( puCount ) );
     pfdu.getPatchInformationData( puCount ).setFrameIndex(pfdu.getFrameIndex());
     pfdu.getPatchInformationData( puCount ).setPatchIndex(puCount);
     patchInformationData( pfdu.getPatchInformationData( puCount ), pfdu.getPatchMode( puCount ), pfh, context,
                           bitstream );
+#if !LAST_PATCH_HLS
     moreAvailablePatchFlag = !( ( puCount + 1 ) == pfdu.getPatchCount() );
     bitstream.write( moreAvailablePatchFlag, 1 );  // ae(v)
     TRACE_BITSTREAM( "moreAvailablePatchFlag = %d \n", moreAvailablePatchFlag );
+#endif
   }
   byteAlignment( bitstream );
 }
@@ -1019,6 +1027,7 @@ void PCCBitstreamEncoder::deltaPatchDataUnit( DeltaPatchDataUnit& dpdu,
   }
 
   TRACE_BITSTREAM(
+
       "%zu frame %zu DeltaPatch => DeltaIdx = %d ShiftUV = %ld %ld DeltaSize = %ld %ld %ld Axis = %ld %ld %ld\n",
       dpdu.getDpduFrameIndex(), dpdu.getDpduPatchIndex(), dpdu.getDeltaPatchIdx(), dpdu.get2DDeltaShiftU(),
       dpdu.get2DDeltaShiftV(), dpdu.get2DDeltaSizeU(), dpdu.get2DDeltaSizeV(), dpdu.get2DDeltaSizeD(),

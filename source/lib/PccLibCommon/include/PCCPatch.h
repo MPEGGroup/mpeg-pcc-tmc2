@@ -94,14 +94,18 @@ class PCCPatch {
       viewId_( 0 ),
       bestMatchIdx_( 0 ),
       patchOrientation_( 0 ),
-      isGlobalPatch_( false ) {
+      isGlobalPatch_( false )
+#if LAST_PATCH_HLS
+      , patchType_( PATCH_MODE_I_INTRA ) 
+#endif
+  {
     depth_[0].clear();
     depth_[1].clear();
     occupancy_.clear();
     depthEnhancedDeltaD_.clear();
     depth0PCidx_.clear();
     pointLocalReconstructionModeByBlock_.clear();
-  }
+  };
   ~PCCPatch() {
     depth_[0].clear();
     depth_[1].clear();
@@ -109,7 +113,7 @@ class PCCPatch {
     depthEnhancedDeltaD_.clear();
     depth0PCidx_.clear();
     pointLocalReconstructionModeByBlock_.clear();
-  }
+  };
   size_t&               getIndex() { return index_; }
   size_t&               getU1() { return u1_; }
   size_t&               getV1() { return v1_; }
@@ -123,6 +127,10 @@ class PCCPatch {
   size_t&               getSizeV0() { return sizeV0_; }
   size_t&               setViewId() { return viewId_; }
   int32_t&              setBestMatchIdx() { return bestMatchIdx_; }
+#if LAST_PATCH_HLS
+  uint8_t               getPatchType() const { return patchType_; }
+  void                  setPatchType( uint8_t value ){ patchType_ = value; }
+#endif
   size_t&               getOccupancyResolution() { return occupancyResolution_; }
   size_t&               getProjectionMode() { return projectionMode_; }
   size_t&               getFrameProjectionMode() { return frameProjectionMode_; }
@@ -784,6 +792,9 @@ class PCCPatch {
   GPAPatchData         preGPAPatchData_;
   bool                 isGlobalPatch_;
   size_t               axisOfAdditionalPlane_;
+#if LAST_PATCH_HLS
+  uint8_t              patchType_;
+#endif
 };
 
 struct PCCMissedPointsPatch {

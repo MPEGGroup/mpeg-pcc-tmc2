@@ -513,6 +513,9 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
       if ( createSubPointCloud ) { subPointCloud.resize( patchIndex + 1 ); }
       PCCPatch& patch           = patches[patchIndex];
       patch.getIndex()          = patchIndex;
+#if LAST_PATCH_HLS
+      patch.setPatchType( (uint8_t) P_TYPE_INTRA );
+#endif
       const size_t clusterIndex = partition[connectedComponent[0]];
       bIsAdditionalProjectionPlane = false;
       patch.getAxisOfAdditionalPlane() = 0;

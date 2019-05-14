@@ -565,7 +565,7 @@ class PatchFrameHeader {
   uint8_t  getFrameIndex() { return frameIndex_; }
   uint8_t  getPatchFrameParameterSetId() { return patchFrameParameterSetId_; }
   uint32_t getAddress() { return address_; }
-  uint32_t getType() { return type_; }
+  uint8_t  getType() { return type_; }
   uint8_t  getPatchFrameOrderCntLsb() { return patchFrameOrderCntLsb_; }
   bool     getRefPatchFrameListSpsFlag() { return refPatchFrameListSpsFlag_; }
   uint8_t  getRefPatchFrameListIdx() { return refPatchFrameListIdx_; }
