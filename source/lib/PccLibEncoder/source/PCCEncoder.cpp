@@ -682,7 +682,7 @@ void PCCEncoder::spatialConsistencyPack( PCCFrameContext& frame, PCCFrameContext
   }
 
   // generate new patch order.
-  /*vector<PCCPatch> */newOrderPatches = matchedPatches;
+  newOrderPatches = matchedPatches;
   for ( auto patch : patches ) {
     assert( patch.getSizeU0() <= occupancySizeU );
     assert( patch.getSizeV0() <= occupancySizeV );
@@ -894,6 +894,11 @@ void PCCEncoder::spatialConsistencyPackFlexible( PCCFrameContext& frame, PCCFram
             }
           }
         }
+#ifdef TCH_CONSITENCY_PACK_FLEXIBLE_FIX
+        if (!locationFound){
+          patch.setBestMatchIdx() = -1;
+        }
+#endif
       } else {
         // best effort
         for ( size_t v = 0; v < occupancySizeV && !locationFound; ++v ) {
@@ -1611,7 +1616,7 @@ void PCCEncoder::calculate_weight_normal(PCCContext& context, const PCCPointSet3
 {
   auto&         gps                    = context.getSps().getGeometryParameterSet();
   size_t geometryBitDepth3D   = gps.getGeometry3dCoordinatesBitdepthMinus1()+1;
-  size_t maxValue = 2<<geometryBitDepth3D;
+  size_t maxValue = 1<<geometryBitDepth3D;
 
 	PCCVector3D weight_value;
 	bool *pj_face = new bool[maxValue * maxValue * 3];
@@ -5243,7 +5248,7 @@ uint8_t patchIndex = 0;
 #endif
       TRACE_CODEC( "patch %lu / %lu: Inter \n", patchIndex, patches.size() );
       pfdu.setPatchMode( patchIndex, PATCH_MODE_P_INTER );
-      dpdu.setDeltaPatchIdx( patch.getBestMatchIdx() - predIndex );
+    dpdu.setDeltaPatchIdx( (int64_t)patch.getBestMatchIdx() - predIndex );
       dpdu.set2DDeltaShiftU( patch.getU0() - refPatch.getU0() );
       dpdu.set2DDeltaShiftV( patch.getV0() - refPatch.getV0() );
       dpdu.set3DDeltaShiftTangentAxis( patch.getU1() - refPatch.getU1() );
@@ -5262,15 +5267,24 @@ uint8_t patchIndex = 0;
           dpdu.set3DDeltaShiftNormalAxis( ( (max3DCoordinate << 1) - patch.getD1() ) / minLevel - ( (max3DCoordinate << 1) - refPatch.getD1() ) / minLevel );
         }
       }
-      TRACE_CODEC( "DeltaIdx = %d ShiftUV = %ld %ld ShiftAxis = %ld %ld %ld Size = %ld %ld Lod = %lu \n", dpdu.getDeltaPatchIdx(),
-                   dpdu.get2DDeltaShiftU(), dpdu.get2DDeltaShiftV(), dpdu.get3DDeltaShiftTangentAxis(),
-                   dpdu.get3DDeltaShiftBiTangentAxis(), dpdu.get3DDeltaShiftNormalAxis(), dpdu.get2DDeltaSizeU(),
-                   dpdu.get2DDeltaSizeV(), dpdu.getLod() );
       
+
       size_t        quantDD   = patch.getSizeD() == 0 ? 0 : ( ( patch.getSizeD() - 1 ) / minLevel + 1 );
-      size_t        prevQDD   = patch.getSizeD() == 0 ? 0 : ( ( refPatch.getSizeD() - 1 ) / minLevel + 1 );
-      const int64_t delta_dd  = static_cast<int64_t>( quantDD - prevQDD );
+    size_t        prevQDD   = refPatch.getSizeD() == 0 ? 0 : ( ( refPatch.getSizeD() - 1 ) / minLevel + 1 );
+    const int64_t delta_dd  = ( (int64_t)quantDD ) - ((int64_t) prevQDD );
       dpdu.set2DDeltaSizeD(delta_dd);
+
+    TRACE_CODEC(
+        "DeltaIdx = %d ShiftUV = %ld %ld ShiftAxis = %ld %ld %ld Size = %ld %ld %ld Lod = %lu Idx = %ld + %ld = %ld \n",
+        dpdu.getDeltaPatchIdx(), dpdu.get2DDeltaShiftU(), dpdu.get2DDeltaShiftV(), dpdu.get3DDeltaShiftTangentAxis(),
+        dpdu.get3DDeltaShiftBiTangentAxis(), dpdu.get3DDeltaShiftNormalAxis(), dpdu.get2DDeltaSizeU(),
+        dpdu.get2DDeltaSizeV(), dpdu.get2DDeltaSizeD(), dpdu.getLod(), dpdu.getDeltaPatchIdx(), predIndex,
+        patch.getBestMatchIdx() );
+
+    TRACE_CODEC( "PrevPatch Idx = %lu UV0 = %lu %lu  UV1 = %lu %lu Size = %lu %lu %lu \n", patch.getBestMatchIdx(),
+                 refPatch.getU0(), refPatch.getV0(), refPatch.getU1(), refPatch.getV1(), refPatch.getSizeU0(),
+                 refPatch.getSizeV0(), refPatch.getSizeD() );
+
       auto&         patchTemp = patches[patchIndex];
       PCCMetadata&  metadata  = patchTemp.getPatchLevelMetadata();
       metadata.setMetadataPresent( true );
@@ -5282,10 +5296,13 @@ uint8_t patchIndex = 0;
       prevSizeU0 = patch.getSizeU0();
       prevSizeV0 = patch.getSizeV0();
       predIndex += dpdu.getDeltaPatchIdx() + 1;
-      TRACE_CODEC( "patch Inter UV0 %4lu %4lu UV1 %4lu %4lu D1=%4lu S=%4lu %4lu %4lu(%4lu) P=%lu O=%lu A=%u%u%u Lod = %lu \n", patch.getU0(),
-                  patch.getV0(), patch.getU1(), patch.getV1(), patch.getD1(), patch.getSizeU0(), patch.getSizeV0(), patch.getSizeD(), delta_dd,
-                   patch.getProjectionMode(), patch.getPatchOrientation(), patch.getNormalAxis(), patch.getTangentAxis(),
-                   patch.getBitangentAxis(), patch.getLod() );
+    TRACE_CODEC(
+        "patch Inter UV0 %4lu %4lu UV1 %4lu %4lu D1=%4lu S=%4lu %4lu %4lu from DeltaSize = %4ld %4ld %4ld P=%lu O=%lu "
+        "A=%u%u%u Lod = %lu \n",
+        patch.getU0(), patch.getV0(), patch.getU1(), patch.getV1(), patch.getD1(), patch.getSizeU0(), patch.getSizeV0(),
+        patch.getSizeD(), dpdu.get2DDeltaSizeU(), dpdu.get2DDeltaSizeV(), dpdu.get2DDeltaSizeD(),
+        patch.getProjectionMode(), patch.getPatchOrientation(), patch.getNormalAxis(), patch.getTangentAxis(),
+        patch.getBitangentAxis(), patch.getLod() );
   }
 #if LAST_PATCH_HLS_ENC
     else if ( pType == PATCH_MODE_I_INTRA || pType == PATCH_MODE_P_INTRA ) {
