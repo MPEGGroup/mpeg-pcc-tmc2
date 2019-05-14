@@ -91,7 +91,7 @@ bool parseParameters( int                   argc,
   namespace po = df::program_options_lite;
 
   bool   print_help = false;
-  size_t ignore;
+  size_t ignore = 1024;
 
   // The definition of the program/config options, along with default values.
   //

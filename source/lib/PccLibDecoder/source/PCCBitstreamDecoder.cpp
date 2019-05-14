@@ -772,7 +772,7 @@ void PCCBitstreamDecoder::patchFrameHeader( PatchFrameHeader& pfh,
   }
   auto          geometryBitDepth2D     = context.getSps().getGeometryParameterSet().getGeometryNominal2dBitdepthMinus1()+1;
   const uint8_t maxBitCountForMaxDepth = uint8_t( geometryBitDepth2D - gbitCountSize[context.getSps().getMinLevel()] + 1 ); //8
-  
+
   if( pfps.getProjection45DegreeEnableFlag() == 0){
   pfh.setInterPredictPatch2dDeltaSizeDBitCountMinus1( maxBitCountForMaxDepth );
   }
@@ -888,17 +888,31 @@ void PCCBitstreamDecoder::patchFrameDataUnit( PatchFrameDataUnit& pfdu,
                                               PCCBitstream&       bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   TRACE_BITSTREAM( "pfh.getType()        = %lu \n", pfh.getType() );
+#if LAST_PATCH_HLS
+  bool moreAvailablePatchFlag = true;
+#else
   bool moreAvailablePatchFlag = bitstream.read( 1 );
   TRACE_BITSTREAM( "moreAvailablePatchFlag = %d \n", moreAvailablePatchFlag );
+#endif
   pfdu.init();
+#if !LAST_PATCH_HLS
   const uint8_t bitCountPatchMode = ( PCCPatchFrameType( pfh.getType() ) ) == PATCH_FRAME_I ? 1 : 2;
   TRACE_BITSTREAM( "bitCountPatchMode = %u \n", bitCountPatchMode );
+#endif
   prevPatchSizeU_ = 0;
   prevPatchSizeV_ = 0;
   predPatchIndex_ = 0;
   size_t patchIndex=0;
   while ( moreAvailablePatchFlag ) {
+#if LAST_PATCH_HLS
+    uint8_t patchMode = bitstream.readSvlc( );
+    if ( ((PCCPatchFrameType( pfh.getType() )) == PATCH_FRAME_I) && (patchMode == PATCH_MODE_I_END) ||
+      ((PCCPatchFrameType( pfh.getType() )) == PATCH_FRAME_P) && (patchMode == PATCH_MODE_P_END) ) {
+      moreAvailablePatchFlag = false;
+    }
+#else
     uint8_t patchMode = bitstream.read( bitCountPatchMode );
+#endif
     TRACE_BITSTREAM( "patchMode = %lu \n", patchMode );
     pfdu.addPatchMode( patchMode );
     auto& pid = pfdu.addPatchInformationData();
@@ -906,8 +920,10 @@ void PCCBitstreamDecoder::patchFrameDataUnit( PatchFrameDataUnit& pfdu,
     pid.setPatchIndex(patchIndex);
     patchIndex++;
     patchInformationData( pid, patchMode, pfh, context, bitstream );
+#if !LAST_PATCH_HLS
     moreAvailablePatchFlag = bitstream.read( 1 );
     TRACE_BITSTREAM( "moreAvailablePatchFlag = %d \n", moreAvailablePatchFlag );
+#endif
   }
   byteAlignment( bitstream );
 }
@@ -1019,10 +1035,11 @@ void PCCBitstreamDecoder::patchDataUnit( PatchDataUnit&    pdu,
   else {
     pdu.set45DegreeProjectionRotationAxis( 0 );
   }
-  TRACE_BITSTREAM("Patch => UV %4lu %4lu S=%4ld %4ld %4ld O=%d A=%lu %lu %lu P45= %d %d \n ", pdu.get2DShiftU(),
-	  pdu.get2DShiftV(), pdu.get2DDeltaSizeU(), pdu.get2DDeltaSizeV(), pdu.get2DDeltaSizeD(),
-	  pdu.getOrientationIndex(), pdu.get3DShiftTangentAxis(), pdu.get3DShiftBiTangentAxis(),
-	  pdu.get3DShiftNormalAxis(), pdu.get45DegreeProjectionPresentFlag(), pdu.get45DegreeProjectionRotationAxis());
+  TRACE_BITSTREAM( "Patch => UV %4lu %4lu S=%4ld %4ld %4ld P=%lu O=%d A=%lu %lu %lu P45= %d %d \n ", pdu.get2DShiftU(),
+                   pdu.get2DShiftV(), pdu.get2DDeltaSizeU(), pdu.get2DDeltaSizeV(), pdu.get2DDeltaSizeD(),
+                   pdu.getProjectPlane(),
+                   pdu.getOrientationIndex(), pdu.get3DShiftTangentAxis(), pdu.get3DShiftBiTangentAxis(),
+                   pdu.get3DShiftNormalAxis(),pdu.get45DegreeProjectionPresentFlag(), pdu.get45DegreeProjectionRotationAxis()  );
 
 }
 
@@ -1102,7 +1119,7 @@ void PCCBitstreamDecoder::pcmPatchDataUnit( PCMPatchDataUnit& ppdu,
   ppdu.setPcmPoints( bitstream.readSvlc() );
   TRACE_BITSTREAM(
       "PCM Patch => UV %4lu %4lu  S=%4ld %4ld  UVD1=4ld %4ld %4ld NumPcmPoints=%lu PatchInPcmVideoFlag=%d \n",
-                   ppdu.get2DShiftU(), ppdu.get2DShiftV(), ppdu.get2DDeltaSizeU(), ppdu.get2DDeltaSizeV(),
+      ppdu.get2DShiftU(), ppdu.get2DShiftV(), ppdu.get2DDeltaSizeU(), ppdu.get2DDeltaSizeV(),
       ppdu.get3DShiftBiTangentAxis(), ppdu.get3DShiftBiTangentAxis(), ppdu.get3DShiftNormalAxis(), ppdu.getPcmPoints(),
       ppdu.getPatchInPcmVideoFlag() );
 }
