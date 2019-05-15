@@ -210,7 +210,7 @@ void PCCBitstreamDecoder::sequenceParameterSet( SequenceParameterSet& sps,
     pointLocalReconstruction( sps.getPointLocalReconstruction(), context, bitstream );
   }
   sps.setRemoveDuplicatePointEnabledFlag( bitstream.read( 1 ) );      // u(1)
-  sps.setProjection45DegreeEnableFlag( bitstream.read( 1 ) );         // u(1)
+  sps.setProjection45Degreeenabledflag( bitstream.read( 1 ) );         // u(1)
 
   // THE NEXT PARAMETERS ARE NOT IN THE VPCC CD SYNTAX DOCUMENTS AND WILL BE REMOVE
   sps.setLosslessGeo444( bitstream.read( 1 ) );    // u(1)
@@ -258,7 +258,8 @@ void PCCBitstreamDecoder::geometryParameterSet( GeometryParameterSet& gps,
   gps.setGeometryNominal2dBitdepthMinus1( bitstream.read( 5 ) );      // u(5)
   gps.setGeometry3dCoordinatesBitdepthMinus1( bitstream.read( 5 ) );  // u(5)
   if ( sps.getPcmSeparateVideoPresentFlag() ) {
-    gps.setPcmGeometryCodecId( bitstream.read( 1 ) );  // u(8)
+    //gps.setPcmGeometryCodecId( bitstream.read( 1 ) );  // u(8)
+    gps.setPcmGeometryCodecId( bitstream.read( 8 ) );  // u(8)
   }
   gps.setGeometryParamsEnabledFlag( bitstream.read( 1 ) );  // u(1)
   if ( gps.getGeometryParamsEnabledFlag() ) { geometrySequenceParams( gps.getGeometrySequenceParams(), bitstream ); }
@@ -351,11 +352,18 @@ void PCCBitstreamDecoder::attributeSequenceParams( AttributeSequenceParams& asp,
   asp.setAttributeScaleParamsPresentFlag( bitstream.read( 1 ) );      // u(1)
   asp.setAttributeOffsetParamsPresentFlag( bitstream.read( 1 ) );     // u(1)
   if ( asp.getAttributeSmoothingParamsPresentFlag() ) {
+    asp.setAttributeGridSmoothingEnabledFlag( bitstream.read( 1 ) );  // u(8)
     asp.setAttributeSmoothingRadius( bitstream.read( 8 ) );                    // u(8)
     asp.setAttributeSmoothingNeighbourCount( bitstream.read( 8 ) );            // u(8)
     asp.setAttributeSmoothingRadius2BoundaryDetection( bitstream.read( 8 ) );  // u(8)
     asp.setAttributeSmoothingThreshold( bitstream.read( 8 ) );                 // u(8)
-    asp.setAttributeSmoothingThresholdLocalEntropy( bitstream.read( 8 ) );     // u(3)
+    if ( asp.getAttributeGridSmoothingEnabledFlag() ) {
+      asp.setAttributeSmoothingThresholdColorDifference( bitstream.read( 8 ) );  // u(8)
+      asp.setAttributeSmoothingThresholdColorVariation( bitstream.read( 8 ) );   // u(8)
+     // asp.setAttributeSmoothingThresholdLocalEntropy( bitstream.read( 8 ) );     // HN: corrected
+      asp.setAttributeSmoothingThresholdLocalEntropy( bitstream.read( 3 ) );  // u(3)
+      asp.setAttributeSmoothingGridSize( bitstream.read( 8 ) );                  // u(8)
+    }
   }
   if ( asp.getAttributeScaleParamsPresentFlag() ) {
     for ( size_t i = 0; i < dimension; i++ ) {
@@ -566,11 +574,17 @@ void PCCBitstreamDecoder::attributeFrameParams( AttributeFrameParams& afp,
   afp.setAttributeScaleParamsPresentFlag( bitstream.read( 1 ) );      // u(1)
   afp.setAttributeOffsetParamsPresentFlag( bitstream.read( 1 ) );     // u(1)
   if ( afp.getAttributeSmoothingParamsPresentFlag() ) {
+    afp.setAttributeGridSmoothingEnabledFlag( bitstream.read( 1 ) );  // u(1)
     afp.setAttributeSmoothingRadius( bitstream.read( 8 ) );                    // u(8)
     afp.setAttributeSmoothingNeighbourCount( bitstream.read( 8 ) );            // u(8)
     afp.setAttributeSmoothingRadius2BoundaryDetection( bitstream.read( 8 ) );  // u(8)
     afp.setAttributeSmoothingThreshold( bitstream.read( 8 ) );                 // u(8)
-    afp.setAttributeSmoothingThresholdLocalEntropy( bitstream.read( 3 ) );     // u(3)
+    if ( afp.getAttributeGridSmoothingEnabledFlag() ) {
+      afp.setAttributeSmoothingThresholdColorDifference( bitstream.read( 8 ) );  // u(8)
+      afp.setAttributeSmoothingThresholdColorVariation( bitstream.read( 8 ) );   // u(8)
+      afp.setAttributeSmoothingThresholdLocalEntropy( bitstream.read( 3 ) );     // u(3)
+      afp.setAttributeSmoothingGridSize( bitstream.read( 8 ) );                  // u(8)
+    }
   }
   if ( afp.getAttributeScaleParamsPresentFlag() ) {
     for ( size_t i = 0; i < attributeDimension; i++ ) afp.setAttributeScale( i, bitstream.read( 32 ) );  // u32
@@ -682,23 +696,23 @@ void PCCBitstreamDecoder::attributePatchParams( AttributePatchParams&       app,
   }
 }
 
-// 7.3.5.12 Patch frame parameter set syntax TODO: add pfps.setGeometryPatchFrameParameterSetId and pfps.setAttributePatchFrameParameterSetId[attributeCount], and remove pfps.setLocalOverrideGeometryPatchEnableFlag and pfps.setLocalOverrideAttributePatchEnableFlag
+// 7.3.5.12 Patch frame parameter set syntax TODO: add pfps.setGeometryPatchFrameParameterSetId and pfps.setAttributePatchFrameParameterSetId[attributeCount], and remove pfps.setLocalOverrideGeometryPatchenabledflag and pfps.setLocalOverrideAttributePatchenabledflag
 void PCCBitstreamDecoder::patchFrameParameterSet( PatchFrameParameterSet& pfps,
                                                   SequenceParameterSet&   sps,
                                                   PCCBitstream&           bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   pfps.setPatchFrameParameterSetId( bitstream.readUvlc() );             // ue(v)
   pfps.setPatchSequenceParameterSetId( bitstream.readUvlc() );          // ue(v)
-  pfps.setLocalOverrideGeometryPatchEnableFlag( bitstream.read( 1 ) );  // u(1)
+  pfps.setLocalOverrideGeometryPatchenabledflag( bitstream.read( 1 ) );  // u(1)
   for ( size_t i = 0; i < sps.getAttributeCount(); i++ ) {
-    pfps.setLocalOverrideAttributePatchEnableFlag( i, bitstream.read( 1 ) );  // u(1)
+    pfps.setLocalOverrideAttributePatchenabledflag( i, bitstream.read( 1 ) );  // u(1)
   }
   pfps.setAdditionalLtPfocLsbLen( bitstream.readUvlc() );  // ue(v)
-  if (sps.getProjection45DegreeEnableFlag()) {
-    pfps.setProjection45DegreeEnableFlag( bitstream.read( 1 ) );  // u(1)
+  if (sps.getProjection45Degreeenabledflag()) {
+    pfps.setProjection45Degreeenabledflag( bitstream.read( 1 ) );  // u(1)
   }
   else {
-    pfps.setProjection45DegreeEnableFlag( false );
+    pfps.setProjection45Degreeenabledflag( false );
   }
 
   byteAlignment( bitstream );
@@ -773,7 +787,7 @@ void PCCBitstreamDecoder::patchFrameHeader( PatchFrameHeader& pfh,
   auto          geometryBitDepth2D     = context.getSps().getGeometryParameterSet().getGeometryNominal2dBitdepthMinus1()+1;
   const uint8_t maxBitCountForMaxDepth = uint8_t( geometryBitDepth2D - gbitCountSize[context.getSps().getMinLevel()] + 1 ); //8
 
-  if( pfps.getProjection45DegreeEnableFlag() == 0){
+  if( pfps.getProjection45Degreeenabledflag() == 0){
   pfh.setInterPredictPatch2dDeltaSizeDBitCountMinus1( maxBitCountForMaxDepth );
   }
   else {
@@ -946,7 +960,7 @@ void PCCBitstreamDecoder::patchInformationData( PatchInformationData& pid,
     // skip mode: currently not supported but added it for convenience. Could easily be removed
   } else if ( ( ( PCCPatchFrameType( pfh.getType() ) ) == PATCH_FRAME_I && patchMode == PATCH_MODE_I_INTRA ) ||
               ( ( PCCPatchFrameType( pfh.getType() ) ) == PATCH_FRAME_P && patchMode == PATCH_MODE_P_INTRA ) ) {
-    if ( pfps.getLocalOverrideGeometryPatchEnableFlag() ) {
+    if ( pfps.getLocalOverrideGeometryPatchenabledflag() ) {
       const bool overrideGeometryPatchFlag = bitstream.read( 1 );  // u(1)
       pid.setOverrideGeometryPatchFlag( overrideGeometryPatchFlag );
       if ( pid.getOverrideGeometryPatchFlag() ) {
@@ -958,8 +972,8 @@ void PCCBitstreamDecoder::patchInformationData( PatchInformationData& pid,
     TRACE_BITSTREAM( " sps.getAttributeCount() = %lu \n", sps.getAttributeCount() );
     pfps.allocatePatchFrame( sps.getAttributeCount() );
     for ( int i = 0; i < sps.getAttributeCount(); i++ ) {
-      TRACE_BITSTREAM( " overight flag = %lu \n", pfps.getLocalOverrideAttributePatchEnableFlag( i ) );
-      if ( pfps.getLocalOverrideAttributePatchEnableFlag( i ) ) {
+      TRACE_BITSTREAM( " overight flag = %lu \n", pfps.getLocalOverrideAttributePatchenabledflag( i ) );
+      if ( pfps.getLocalOverrideAttributePatchenabledflag( i ) ) {
         const bool overrideAttributePatchFlag = bitstream.read( 1 ); // u(1)
         TRACE_BITSTREAM( " overrideAttributePatchFlag = %lu \n", overrideAttributePatchFlag );
         pid.addOverrideAttributePatchFlag( overrideAttributePatchFlag );
@@ -1028,7 +1042,7 @@ void PCCBitstreamDecoder::patchDataUnit( PatchDataUnit&    pdu,
     prevPatchSizeV_ += pdu.get2DDeltaSizeV();
   }
   auto& pfps = psdu.getPatchFrameParameterSet(0);
-  if ( pfps.getProjection45DegreeEnableFlag() ) {
+  if ( pfps.getProjection45Degreeenabledflag() ) {
     pdu.set45DegreeProjectionPresentFlag( bitstream.read( 1 ) ); // u(1)
   }
   if (pdu.get45DegreeProjectionPresentFlag()) {

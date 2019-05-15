@@ -141,10 +141,10 @@ bool parseParameters( int                   argc,
      encoderParams.frameCount_,
      "Number of frames to encode")
 
-    ("geometry3dCoordinatesBitdepth",
+    /*("geometry3dCoordinatesBitdepth",
      encoderParams.geometry3dCoordinatesBitdepth_,
      encoderParams.geometry3dCoordinatesBitdepth_,
-     "bitdepth of the 3D coordinates od the iput frames")
+     "bitdepth of the 3D coordinates od the iput frames")*/
 
     ("groupOfFramesSize",
      encoderParams.groupOfFramesSize_,
@@ -314,6 +314,26 @@ bool parseParameters( int                   argc,
      encoderParams.thresholdColorSmoothing_,
      encoderParams.thresholdColorSmoothing_,
      "Threshold of color smoothing")
+
+    ("gridColorSmoothing",
+      encoderParams.gridColorSmoothing_,
+      encoderParams.gridColorSmoothing_,
+      "Enable low complexity color smoothing")
+
+	("cgridSize", 
+      encoderParams.cgridSize_,
+      encoderParams.cgridSize_, 
+      "grid size for the color smoothing")
+
+    ("thresholdColorDifference",
+     encoderParams.thresholdColorDifference_,
+     encoderParams.thresholdColorDifference_,
+     "Threshold of color difference between cells")
+
+    ("thresholdColorVariation",
+     encoderParams.thresholdColorVariation_,
+     encoderParams.thresholdColorVariation_,
+     "Threshold of color variation in cells")
 
     ("thresholdLocalEntropy",
      encoderParams.thresholdLocalEntropy_,
@@ -594,6 +614,11 @@ bool parseParameters( int                   argc,
       encoderParams.use3dmc_,
       "Use auxilliary information for 3d motion compensation.(0: conventional video coding, 1: 3D motion compensated)\n")
 
+   ("geometry3dCoordinatesBitdepth", 
+      encoderParams.geometry3dCoordinatesBitdepth_,
+      encoderParams.geometry3dCoordinatesBitdepth_, 
+      "Bit depth of geomtery 3D coordinates")
+   
     ("nbPlrmMode",
         encoderParams.nbPlrmMode_,
         encoderParams.nbPlrmMode_,

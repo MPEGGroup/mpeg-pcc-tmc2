@@ -103,10 +103,14 @@ PCCEncoderParameters::PCCEncoderParameters() {
   absoluteD1_                             = true;
   constrainedPack_                        = true;
   thresholdColorSmoothing_                = 10.0;
-  thresholdLocalEntropy_                  = 4.5;
+  thresholdColorDifference_               = 100.0;
+  thresholdColorVariation_                = 10.0;
+  thresholdLocalEntropy_                  = 4.0;
   radius2ColorSmoothing_                  = 4.0 * 16;
   neighborCountColorSmoothing_            = 4 * 16;
   flagColorSmoothing_                     = false;
+  gridColorSmoothing_                     = false;
+  cgridSize_                              = 4;
   thresholdColorPreSmoothing_             = 10.0;
   thresholdColorPreSmoothingLocalEntropy_ = 4.5;
   radius2ColorPreSmoothing_               = 4.0 * 16;
@@ -279,11 +283,22 @@ void PCCEncoderParameters::print() {
     }
   }
   std::cout << "\t color smoothing" << std::endl;
-  std::cout << "\t   thresholdColorSmoothing              " << thresholdColorSmoothing_ << std::endl;
-  std::cout << "\t   thresholdLocalEntropy                " << thresholdLocalEntropy_ << std::endl;
-  std::cout << "\t   radius2ColorSmoothing                " << radius2ColorSmoothing_ << std::endl;
-  std::cout << "\t   neighborCountColorSmoothing          " << neighborCountColorSmoothing_ << std::endl;
   std::cout << "\t   flagColorSmoothing                   " << flagColorSmoothing_ << std::endl;
+  if ( flagColorSmoothing_ ) {
+    std::cout << "\t   gridColorSmoothing                     " << gridColorSmoothing_ << std::endl;
+    if ( gridColorSmoothing_ ) {
+      std::cout << "\t   thresholdColorSmoothing              " << thresholdColorSmoothing_ << std::endl;
+      std::cout << "\t   thresholdColorDifference             " << thresholdColorDifference_ << std::endl;
+      std::cout << "\t   thresholdColorVariation              " << thresholdColorVariation_ << std::endl;
+      std::cout << "\t   thresholdLocalEntropy                " << thresholdLocalEntropy_ << std::endl;
+      std::cout << "\t   cgridSize                            " << cgridSize_ << std::endl;
+    } else {
+      std::cout << "\t   thresholdColorSmoothing              " << thresholdColorSmoothing_ << std::endl;
+      std::cout << "\t   thresholdLocalEntropy                " << thresholdLocalEntropy_ << std::endl;
+      std::cout << "\t   radius2ColorSmoothing                " << radius2ColorSmoothing_ << std::endl;
+      std::cout << "\t   neighborCountColorSmoothing          " << neighborCountColorSmoothing_ << std::endl;
+    }
+  }
   std::cout << "\t color pre-smoothing" << std::endl;
   std::cout << "\t   thresholdColorPreSmoothing           " << thresholdColorSmoothing_ << std::endl;
   std::cout << "\t   thresholdColorPreSmoothingLocalEntropy " << thresholdColorPreSmoothingLocalEntropy_ << std::endl;
@@ -309,7 +324,8 @@ void PCCEncoderParameters::print() {
   std::cout << "\t AdditionalProjectionPlane " << std::endl;
   std::cout << "\t   additionalProjectionPlaneMode        " << additionalProjectionPlaneMode_ << std::endl;
   std::cout << "\t   partialAdditionalProjectionPlane     " << partialAdditionalProjectionPlane_ << std::endl;
-
+  std::cout << "\t Geometry 3D coordinates bitdepth" << std::endl;
+  std::cout << "\t   geometry3dCoordinatesBitdepth  "<< geometry3dCoordinatesBitdepth_ << std::endl;
   std::cout << std::endl;
 }
 
@@ -471,6 +487,13 @@ bool PCCEncoderParameters::check() {
     }
     if ( gridSize_ % 2 == 1 ) { std::cerr << "WARNING: gridSize should be an even number\n"; }
   }
+	if ( flagColorSmoothing_ && gridColorSmoothing_ ) {
+      if ( cgridSize_ == 0 ) {
+        ret = false;
+        std::cerr << "color gridSize shall be greater than 0. \n";
+      }
+      if ( cgridSize_ % 2 == 1 ) { std::cerr << "WARNING: color gridSize should be an even number\n"; }
+    }
   return ret;
 }
 
@@ -496,11 +519,12 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   sps.setPcmPatchEnabledFlag( useAdditionalPointsPatch_ );
   sps.setPatchInterPredictionEnabledFlag( deltaCoding_ );
   sps.setSurfaceThickness( surfaceThickness_ );
-  sps.setProjection45DegreeEnableFlag( additionalProjectionPlaneMode_ > 0 ? 1 : 0 );
+  sps.setProjection45Degreeenabledflag( additionalProjectionPlaneMode_ > 0 ? 1 : 0 );
 
   gps.setGeometryParamsEnabledFlag( flagGeometrySmoothing_ );
 
-  gps.setGeometryNominal2dBitdepthMinus1( getFixedLengthCodeBitsCount(maxAllowedDepth_+1) -1 );
+   
+    gps.setGeometryNominal2dBitdepthMinus1( getFixedLengthCodeBitsCount( maxAllowedDepth_ + 1 ) - 1 );
 
   gsp.setGeometrySmoothingParamsPresentFlag( flagGeometrySmoothing_ );
   gsp.setGeometrySmoothingEnabledFlag( flagGeometrySmoothing_ );
@@ -510,12 +534,18 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   gps.setGeometry3dCoordinatesBitdepthMinus1(uint8_t(geometry3dCoordinatesBitdepth_ - 1));
   ops.setOccupancyPackingBlockSize( occupancyResolution_ );
   ops.setOccupancyLossyThreshold( (size_t) thresholdLossyOM_ );
+  
+  aps.setAttributeParamsEnabledFlag( flagColorSmoothing_ );
 
   asp.setAttributeSmoothingParamsPresentFlag( flagColorSmoothing_ );
+  asp.setAttributeGridSmoothingEnabledFlag( gridColorSmoothing_ );
+  asp.setAttributeSmoothingGridSize( cgridSize_ );
   asp.setAttributeSmoothingNeighbourCount( neighborCountColorSmoothing_ );
   asp.setAttributeSmoothingRadius( radius2ColorSmoothing_ );
   asp.setAttributeSmoothingRadius2BoundaryDetection( radius2BoundaryDetection_ );
   asp.setAttributeSmoothingThreshold( thresholdColorSmoothing_ );
+  asp.setAttributeSmoothingThresholdColorDifference( thresholdColorDifference_ );
+  asp.setAttributeSmoothingThresholdColorVariation( thresholdColorVariation_ );
   asp.setAttributeSmoothingThresholdLocalEntropy( thresholdLocalEntropy_ );
 
   // deprecated

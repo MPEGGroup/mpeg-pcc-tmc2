@@ -114,9 +114,13 @@ class PCCEncoderParameters {
 
   // color smoothing
   double              thresholdColorSmoothing_;
+  double              thresholdColorDifference_;
+  double              thresholdColorVariation_;
   double              thresholdLocalEntropy_;
   double              radius2ColorSmoothing_;
   size_t              neighborCountColorSmoothing_;
+  bool                gridColorSmoothing_;
+  size_t              cgridSize_;
   bool                flagColorSmoothing_;
 
   // color pre-smoothing
@@ -201,6 +205,8 @@ class PCCEncoderParameters {
   //Additional Projection Plane
   int                 additionalProjectionPlaneMode_;
   double              partialAdditionalProjectionPlane_;
+  
+ // size_t              geometry3dCoordinatesBitdepth_;
 };
 
 }; //~namespace

@@ -84,6 +84,18 @@ class PCCPointSet3 {
     assert(index < boundaryPointTypes_.size());
     boundaryPointTypes_[index] = BoundaryPointType;
   }
+  uint16_t getPointPatchIndex( const size_t index ) const {
+    assert( index < pointPatchIndexes_.size() );
+    return pointPatchIndexes_[index];
+  }
+  uint16_t& getPointPatchIndex( const size_t index ) {
+    assert( index < pointPatchIndexes_.size() );
+    return pointPatchIndexes_[index];
+  }
+  void setPointPatchIndex( const size_t index, const uint32_t PointPatchIndex ) {
+    assert( index < pointPatchIndexes_.size() );
+    pointPatchIndexes_[index] = PointPatchIndex;
+  }
   uint16_t getReflectance(const size_t index) const {
     assert(index < reflectances_.size() && withReflectances_);
     return reflectances_[index];
@@ -162,6 +174,7 @@ class PCCPointSet3 {
       normals_.resize(size);
     }
     boundaryPointTypes_.resize(size);
+    pointPatchIndexes_.resize( size );
   }
   void reserve(const size_t size) {
     positions_.reserve(size);
@@ -175,6 +188,7 @@ class PCCPointSet3 {
       types_.reserve( size );
     }
     boundaryPointTypes_.reserve(size);
+    pointPatchIndexes_.reserve( size );
   }
   void clear() {
     positions_.clear();
@@ -184,6 +198,7 @@ class PCCPointSet3 {
       types_.clear();
     }
     boundaryPointTypes_.clear();
+    pointPatchIndexes_.clear();
     normals_.clear();
   }
   size_t addPoint(const PCCPoint3D &position) {
@@ -319,6 +334,7 @@ class PCCPointSet3 {
   std::vector<PCCColor3B>  colors_;
   std::vector<uint16_t>    reflectances_;
   std::vector<uint16_t>    boundaryPointTypes_;
+  std::vector<uint16_t>    pointPatchIndexes_;
   std::vector<uint8_t>     types_;
   std::vector<PCCNormal3D> normals_;
   bool                     withNormals_;

@@ -169,6 +169,10 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   generatePointCloudParameters.surfaceThickness_             = context[0].getSurfaceThickness();
   generatePointCloudParameters.ignoreLod_                    = true;
   generatePointCloudParameters.thresholdColorSmoothing_      = asp.getAttributeSmoothingThreshold();
+  generatePointCloudParameters.gridColorSmoothing_           = asp.getAttributeGridSmoothingEnabledFlag();
+  generatePointCloudParameters.cgridSize_                    = asp.getAttributeSmoothingGridSize();
+  generatePointCloudParameters.thresholdColorDifference_     = asp.getAttributeSmoothingThresholdColorDifference();
+  generatePointCloudParameters.thresholdColorVariation_      = asp.getAttributeSmoothingThresholdColorVariation();
   generatePointCloudParameters.thresholdLocalEntropy_        = asp.getAttributeSmoothingThresholdLocalEntropy();
   generatePointCloudParameters.radius2ColorSmoothing_        = asp.getAttributeSmoothingRadius();
   generatePointCloudParameters.neighborCountColorSmoothing_  = asp.getAttributeSmoothingNeighbourCount();
@@ -179,6 +183,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   generatePointCloudParameters.singleLayerPixelInterleaving_ = sps.getPixelDeinterleavingFlag();
   generatePointCloudParameters.path_                         = path.str();
   generatePointCloudParameters.useAdditionalPointsPatch_     = sps.getPcmPatchEnabledFlag();
+  generatePointCloudParameters.geometry3dCoordinatesBitdepth_ = gps.getGeometry3dCoordinatesBitdepthMinus1() + 1;
   generatePointCloudParameters.geometryBitDepth3D_           = gps.getGeometry3dCoordinatesBitdepthMinus1() + 1;
   generatePointCloudParameters.enhancedDeltaDepthCode_ =
       sps.getLosslessGeo() & sps.getEnhancedOccupancyMapForDepthFlag();
@@ -517,7 +522,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
       if ( patch.getProjectionMode() == 0 ) {
         patch.getD1() = (int32_t)pdu.get3DShiftNormalAxis() * minLevel;
       } else {
-        if (pfps.getProjection45DegreeEnableFlag() == 0) {
+        if (pfps.getProjection45Degreeenabledflag() == 0) {
         patch.getD1() = max3DCoordinate - (int32_t)pdu.get3DShiftNormalAxis() * minLevel;
         } else {
           patch.getD1() = max3DCoordinate - (int32_t)pdu.get3DShiftNormalAxis() * minLevel;
@@ -590,7 +595,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
       if ( patch.getProjectionMode() == 0 ) {
         patch.getD1() = ( dpdu.get3DDeltaShiftNormalAxis() + ( prePatch.getD1() / minLevel ) ) * minLevel;
       } else {
-        if (pfps.getProjection45DegreeEnableFlag() == 0) {
+        if (pfps.getProjection45Degreeenabledflag() == 0) {
         patch.getD1() =
           max3DCoordinate - ( dpdu.get3DDeltaShiftNormalAxis() + ( ( max3DCoordinate - prePatch.getD1() ) / minLevel ) ) * minLevel; //jkei : we need to change 1024 to the nominal bitdepth..
       }

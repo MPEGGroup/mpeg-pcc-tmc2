@@ -260,15 +260,20 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   generatePointCloudParameters.surfaceThickness_             = params_.surfaceThickness_;
   generatePointCloudParameters.ignoreLod_                    = true;
   generatePointCloudParameters.thresholdColorSmoothing_      = params_.thresholdColorSmoothing_;
+  generatePointCloudParameters.thresholdColorDifference_    = params_.thresholdColorDifference_;
+  generatePointCloudParameters.thresholdColorVariation_     = params_.thresholdColorVariation_;
   generatePointCloudParameters.thresholdLocalEntropy_        = params_.thresholdLocalEntropy_;
   generatePointCloudParameters.radius2ColorSmoothing_        = params_.radius2ColorSmoothing_;
   generatePointCloudParameters.neighborCountColorSmoothing_  = params_.neighborCountColorSmoothing_;
   generatePointCloudParameters.flagColorSmoothing_           = params_.flagColorSmoothing_;
+  generatePointCloudParameters.gridColorSmoothing_          = params_.gridColorSmoothing_;
+  generatePointCloudParameters.cgridSize_                   = params_.cgridSize_;
   generatePointCloudParameters.enhancedDeltaDepthCode_       = params_.losslessGeo_ && params_.enhancedDeltaDepthCode_;
   generatePointCloudParameters.thresholdLossyOM_             = params_.thresholdLossyOM_;
   generatePointCloudParameters.removeDuplicatePoints_        = params_.removeDuplicatePoints_;
   generatePointCloudParameters.oneLayerMode_                 = params_.oneLayerMode_;
   generatePointCloudParameters.singleLayerPixelInterleaving_ = params_.singleLayerPixelInterleaving_;
+  generatePointCloudParameters.geometry3dCoordinatesBitdepth_ = params_.geometry3dCoordinatesBitdepth_;
   generatePointCloudParameters.path_                         = path.str();
   generatePointCloudParameters.useAdditionalPointsPatch_     = params_.useAdditionalPointsPatch_;
   generatePointCloudParameters.nbPlrmMode_                   = params_.nbPlrmMode_;
@@ -5194,11 +5199,11 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
   //auto          geometryBitDepth3D     = gps.getGeometry3dCoordinatesBitdepthMinus1()+1;
   //const uint8_t maxBitCountForMinDepth = uint8_t( geometryBitDepth3D - gbitCountSize[minLevel] ); //10
   maxBitCountForMinDepthTmp = uint8_t(10 - gbitCountSize[minLevel]);
-  if (sps.getProjection45DegreeEnableFlag()) {
-    pfps.setProjection45DegreeEnableFlag(1);
+  if (sps.getProjection45Degreeenabledflag()) {
+    pfps.setProjection45Degreeenabledflag(1);
   }
 
-  if (pfps.getProjection45DegreeEnableFlag() == 1) {
+  if (pfps.getProjection45Degreeenabledflag() == 1) {
     maxBitCountForMaxDepthTmp +=1;
     maxBitCountForMinDepthTmp +=1;
   }
@@ -5264,7 +5269,7 @@ uint8_t patchIndex = 0;
       if ( patch.getProjectionMode() == 0 ) {
         dpdu.set3DDeltaShiftNormalAxis( ( patch.getD1() / minLevel ) - ( refPatch.getD1() / minLevel ) );
       } else {
-        if (pfps.getProjection45DegreeEnableFlag() == 0) {
+        if (pfps.getProjection45Degreeenabledflag() == 0) {
           dpdu.set3DDeltaShiftNormalAxis( ( max3DCoordinate - patch.getD1() ) / minLevel - ( max3DCoordinate - refPatch.getD1() ) / minLevel );
       }
         else {
@@ -5346,7 +5351,7 @@ uint8_t patchIndex = 0;
     {
       pdu.set3DShiftNormalAxis( patch.getD1() / minLevel );
     } else {
-      if (pfps.getProjection45DegreeEnableFlag() == 0) {
+      if (pfps.getProjection45Degreeenabledflag() == 0) {
         pdu.set3DShiftNormalAxis( ( max3DCoordinate - patch.getD1() ) / minLevel );
       } else {
         pdu.set3DShiftNormalAxis( ( (max3DCoordinate << 1) - patch.getD1() ) / minLevel );

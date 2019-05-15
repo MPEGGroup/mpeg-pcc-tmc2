@@ -707,18 +707,18 @@ class PatchFrameParameterSet {
       patchSequenceParameterSetId_( 0 ),
       geometryPatchFrameParameterSetId_( 0 ),
       additionalLtPfocLsbLen_( 0 ),
-      localOverrideGeometryPatchEnableFlag_( false ),
-      projection45DegreeEnableFlag_( false ) {
+      localOverrideGeometryPatchenabledflag_( false ),
+      projection45Degreeenabledflag_( false ) {
     allocatePatchFrame();
   }
   ~PatchFrameParameterSet() {
-    localOverrideAttributePatchEnableFlag_.clear();
+    localOverrideAttributePatchenabledflag_.clear();
     attributePatchFrameParameterSetId_.clear();
   }
   PatchFrameParameterSet& operator=( const PatchFrameParameterSet& ) = default;
 
   void allocatePatchFrame( size_t size = 255 ) {
-    localOverrideAttributePatchEnableFlag_.resize( size, false );
+    localOverrideAttributePatchenabledflag_.resize( size, false );
     attributePatchFrameParameterSetId_.resize( size, 0 );
   }
 
@@ -727,11 +727,11 @@ class PatchFrameParameterSet {
   uint8_t getGeometryPatchFrameParameterSetId() { return geometryPatchFrameParameterSetId_; }
   uint8_t getAttributePatchFrameParameterSetId( size_t index ) { return attributePatchFrameParameterSetId_[index]; }
   uint8_t getAdditionalLtPfocLsbLen() { return additionalLtPfocLsbLen_; }
-  bool    getLocalOverrideAttributePatchEnableFlag( size_t index ) {
-    return localOverrideAttributePatchEnableFlag_[index];
+  bool    getLocalOverrideAttributePatchenabledflag( size_t index ) {
+    return localOverrideAttributePatchenabledflag_[index];
   }
-  bool getLocalOverrideGeometryPatchEnableFlag() { return localOverrideGeometryPatchEnableFlag_; }
-  bool getProjection45DegreeEnableFlag() { return projection45DegreeEnableFlag_; }
+  bool getLocalOverrideGeometryPatchenabledflag() { return localOverrideGeometryPatchenabledflag_; }
+  bool getProjection45Degreeenabledflag() { return projection45Degreeenabledflag_; }
 
   void setPatchFrameParameterSetId( uint8_t value ) { patchFrameParameterSetId_ = value; }
   void setPatchSequenceParameterSetId( uint8_t value ) { patchSequenceParameterSetId_ = value; }
@@ -740,11 +740,11 @@ class PatchFrameParameterSet {
     attributePatchFrameParameterSetId_[index] = value;
   }
   void setAdditionalLtPfocLsbLen( uint8_t value ) { additionalLtPfocLsbLen_ = value; }
-  void setLocalOverrideAttributePatchEnableFlag( size_t index, bool value ) {
-    localOverrideAttributePatchEnableFlag_[index] = value;
+  void setLocalOverrideAttributePatchenabledflag( size_t index, bool value ) {
+    localOverrideAttributePatchenabledflag_[index] = value;
   }
-  void setLocalOverrideGeometryPatchEnableFlag( bool value ) { localOverrideGeometryPatchEnableFlag_ = value; }
-  void setProjection45DegreeEnableFlag( bool value ) { projection45DegreeEnableFlag_ = value; }
+  void setLocalOverrideGeometryPatchenabledflag( bool value ) { localOverrideGeometryPatchenabledflag_ = value; }
+  void setProjection45Degreeenabledflag( bool value ) { projection45Degreeenabledflag_ = value; }
 
  private:
   uint8_t              patchFrameParameterSetId_;
@@ -752,9 +752,9 @@ class PatchFrameParameterSet {
   uint8_t              geometryPatchFrameParameterSetId_;
   std::vector<uint8_t> attributePatchFrameParameterSetId_;
   uint8_t              additionalLtPfocLsbLen_;
-  bool                 localOverrideGeometryPatchEnableFlag_;
-  std::vector<bool>    localOverrideAttributePatchEnableFlag_;
-  bool                 projection45DegreeEnableFlag_;
+  bool                 localOverrideGeometryPatchenabledflag_;
+  std::vector<bool>    localOverrideAttributePatchenabledflag_;
+  bool                 projection45Degreeenabledflag_;
 };
 
 // 7.3.5.11 Attribute patch params syntax (apps)
@@ -908,12 +908,16 @@ class AttributeFrameParams {
  public:
   AttributeFrameParams() :
       attributeSmoothingParamsPresentFlag_( false ),
+      AttributeGridSmoothingEnabledFlag_( false ),
+      attributeSmoothingGridSize_( 0 ),
       attributeScaleParamsPresentFlag_( false ),
       attributeOffsetParamsPresentFlag_( false ),
       attributeSmoothingRadius_( 0 ),
       attributeSmoothingNeighbourCount_( 0 ),
       attributeSmoothingRadius2BoundaryDetection_( 0 ),
       attributeSmoothingThreshold_( 0 ),
+      attributeSmoothingThresholdColorDifference_( 0 ),
+      attributeSmoothingThresholdColorVariation_( 0 ),
       attributeSmoothingThresholdLocalEntropy_( 0 ),
       attributeDimension_( 0 ) {
     attributeScale_.clear();
@@ -927,17 +931,23 @@ class AttributeFrameParams {
   }
 
   bool     getAttributeSmoothingParamsPresentFlag() { return attributeSmoothingParamsPresentFlag_; }
+  bool     getAttributeGridSmoothingEnabledFlag() { return AttributeGridSmoothingEnabledFlag_; }
+  uint8_t  getAttributeSmoothingGridSize() { return attributeSmoothingGridSize_; }
   bool     getAttributeScaleParamsPresentFlag() { return attributeScaleParamsPresentFlag_; }
   bool     getAttributeOffsetParamsPresentFlag() { return attributeOffsetParamsPresentFlag_; }
   uint8_t  getAttributeSmoothingRadius() { return attributeSmoothingRadius_; }
   uint8_t  getAttributeSmoothingNeighbourCount() { return attributeSmoothingNeighbourCount_; }
   uint8_t  getAttributeSmoothingRadius2BoundaryDetection() { return attributeSmoothingRadius2BoundaryDetection_; }
   uint8_t  getAttributeSmoothingThreshold() { return attributeSmoothingThreshold_; }
+  uint8_t  getAttributeSmoothingThresholdColorDifference() { return attributeSmoothingThresholdColorDifference_; }
+  uint8_t  getAttributeSmoothingThresholdColorVariation() { return attributeSmoothingThresholdColorVariation_; }
   uint32_t getAttributeSmoothingThresholdLocalEntropy() { return attributeSmoothingThresholdLocalEntropy_; }
   uint32_t getAttributeScale( size_t index ) { return attributeScale_[index]; }
   int32_t  getAttributeOffset( size_t index ) { return attributeOffset_[index]; }
 
   void setAttributeSmoothingParamsPresentFlag( bool value ) { attributeSmoothingParamsPresentFlag_ = value; }
+  void setAttributeGridSmoothingEnabledFlag( bool value ) { AttributeGridSmoothingEnabledFlag_ = value; }
+  void setAttributeSmoothingGridSize( uint8_t value ) { attributeSmoothingGridSize_ = value; }
   void setAttributeScaleParamsPresentFlag( bool value ) { attributeScaleParamsPresentFlag_ = value; }
   void setAttributeOffsetParamsPresentFlag( bool value ) { attributeOffsetParamsPresentFlag_ = value; }
   void setAttributeSmoothingRadius( uint8_t value ) { attributeSmoothingRadius_ = value; }
@@ -946,6 +956,11 @@ class AttributeFrameParams {
     attributeSmoothingRadius2BoundaryDetection_ = value;
   }
   void setAttributeSmoothingThreshold( uint8_t value ) { attributeSmoothingThreshold_ = value; }
+  void setAttributeSmoothingThresholdColorDifference( uint8_t value ) { 
+	attributeSmoothingThresholdColorDifference_ = value; }
+  void setAttributeSmoothingThresholdColorVariation( uint8_t value ) {
+    attributeSmoothingThresholdColorVariation_ = value;
+  }
   void setAttributeSmoothingThresholdLocalEntropy( uint32_t value ) {
     attributeSmoothingThresholdLocalEntropy_ = value;
   }
@@ -955,12 +970,16 @@ class AttributeFrameParams {
 
  private:
   bool                  attributeSmoothingParamsPresentFlag_;
+  bool                  AttributeGridSmoothingEnabledFlag_; 
+  uint8_t               attributeSmoothingGridSize_; 
   bool                  attributeScaleParamsPresentFlag_;
   bool                  attributeOffsetParamsPresentFlag_;
   uint8_t               attributeSmoothingRadius_;
   uint8_t               attributeSmoothingNeighbourCount_;
   uint8_t               attributeSmoothingRadius2BoundaryDetection_;
   uint8_t               attributeSmoothingThreshold_;
+  uint8_t               attributeSmoothingThresholdColorDifference_;
+  uint8_t               attributeSmoothingThresholdColorVariation_;
   uint32_t              attributeSmoothingThresholdLocalEntropy_;
   std::vector<uint32_t> attributeScale_;
   std::vector<int32_t>  attributeOffset_;
@@ -1389,12 +1408,16 @@ class AttributeSequenceParams {
  public:
   AttributeSequenceParams() :
       attributeSmoothingParamsPresentFlag_( false ),
+      AttributeGridSmoothingEnabledFlag_( false ),
+      attributeSmoothingGridSize_( 0 ),
       attributeScaleParamsPresentFlag_( false ),
       attributeOffsetParamsPresentFlag_( false ),
       attributeSmoothingRadius_( 0 ),
       attributeSmoothingNeighbourCount_( 0 ),
       attributeSmoothingRadius2BoundaryDetection_( 0 ),
       attributeSmoothingThreshold_( 0 ),
+      attributeSmoothingThresholdColorDifference_( 0 ),
+      attributeSmoothingThresholdColorVariation_( 0 ),
       attributeSmoothingThresholdLocalEntropy_( 0 ) {
     attributeScale_.clear();
     attributeOffset_.clear();
@@ -1408,36 +1431,50 @@ class AttributeSequenceParams {
   void addAttributeScale( uint32_t value ) { attributeScale_.push_back( value ); }
   void addAttributeOffset( int32_t value ) { attributeOffset_.push_back( value ); }
 
-  void init( bool     smoothingParamsPresentFlag,
-             bool     scaleParamsPresentFlag,
-             bool     offsetParamsPresentFlag,
-             uint8_t  smoothingRadius,
-             uint8_t  smoothingNeighbourCount,
-             uint8_t  smoothingRadius2BoundaryDetection,
-             uint8_t  smoothingThreshold,
-             uint32_t smoothingThresholdLocalEntropy ) {
-    attributeSmoothingParamsPresentFlag_        = smoothingParamsPresentFlag;
-    attributeScaleParamsPresentFlag_            = scaleParamsPresentFlag;
-    attributeOffsetParamsPresentFlag_           = offsetParamsPresentFlag;
-    attributeSmoothingRadius_                   = smoothingRadius;
-    attributeSmoothingNeighbourCount_           = smoothingNeighbourCount;
-    attributeSmoothingRadius2BoundaryDetection_ = smoothingRadius2BoundaryDetection;
-    attributeSmoothingThreshold_                = smoothingThreshold;
-    attributeSmoothingThresholdLocalEntropy_    = smoothingThresholdLocalEntropy;
+  void init( bool     attributeSmoothingParamsPresentFlag,
+             bool     AttributeGridSmoothingEnabledFlag,
+             uint8_t  attributeSmoothingGridSize,
+             bool     attributeScaleParamsPresentFlag,
+             bool     attributeOffsetParamsPresentFlag,
+             uint8_t  attributeSmoothingRadius,
+             uint8_t  attributeSmoothingNeighbourCount,
+             uint8_t  attributeSmoothingRadius2BoundaryDetection,
+             uint8_t  attributeSmoothingThreshold,
+             uint8_t  attributeSmoothingThresholdColorDifference,
+             uint8_t  attributeSmoothingThresholdColorVariation,
+             uint32_t attributeSmoothingThresholdLocalEntropy ) {
+    attributeSmoothingParamsPresentFlag_        = attributeSmoothingParamsPresentFlag;
+    AttributeGridSmoothingEnabledFlag_          = AttributeGridSmoothingEnabledFlag;
+    attributeSmoothingGridSize_                 = attributeSmoothingGridSize;
+    attributeScaleParamsPresentFlag_            = attributeScaleParamsPresentFlag;
+    attributeOffsetParamsPresentFlag_           = attributeOffsetParamsPresentFlag;
+    attributeSmoothingRadius_                   = attributeSmoothingRadius;
+    attributeSmoothingNeighbourCount_           = attributeSmoothingNeighbourCount;
+    attributeSmoothingRadius2BoundaryDetection_ = attributeSmoothingRadius2BoundaryDetection;
+    attributeSmoothingThreshold_                = attributeSmoothingThreshold;
+    attributeSmoothingThresholdColorDifference_ = attributeSmoothingThresholdColorDifference;
+    attributeSmoothingThresholdColorVariation_  = attributeSmoothingThresholdColorVariation;
+    attributeSmoothingThresholdLocalEntropy_    = attributeSmoothingThresholdLocalEntropy;
   }
 
   bool     getAttributeSmoothingParamsPresentFlag() { return attributeSmoothingParamsPresentFlag_; }
+  bool     getAttributeGridSmoothingEnabledFlag() { return AttributeGridSmoothingEnabledFlag_; }
+  uint8_t  getAttributeSmoothingGridSize() { return attributeSmoothingGridSize_; }
   bool     getAttributeScaleParamsPresentFlag() { return attributeScaleParamsPresentFlag_; }
   bool     getAttributeOffsetParamsPresentFlag() { return attributeOffsetParamsPresentFlag_; }
   uint8_t  getAttributeSmoothingRadius() { return attributeSmoothingRadius_; }
   uint8_t  getAttributeSmoothingNeighbourCount() { return attributeSmoothingNeighbourCount_; }
   uint8_t  getAttributeSmoothingRadius2BoundaryDetection() { return attributeSmoothingRadius2BoundaryDetection_; }
   uint8_t  getAttributeSmoothingThreshold() { return attributeSmoothingThreshold_; }
+  uint8_t  getAttributeSmoothingThresholdColorDifference() { return attributeSmoothingThresholdColorDifference_; }
+  uint8_t  getAttributeSmoothingThresholdColorVariation() { return attributeSmoothingThresholdColorVariation_; }
   uint32_t getAttributeSmoothingThresholdLocalEntropy() { return attributeSmoothingThresholdLocalEntropy_; }
   uint32_t getAttributeScale( size_t index ) { return attributeScale_[index]; }
   int32_t  getAttributeOffset( size_t index ) { return attributeOffset_[index]; }
 
   void setAttributeSmoothingParamsPresentFlag( bool value ) { attributeSmoothingParamsPresentFlag_ = value; }
+  void setAttributeGridSmoothingEnabledFlag( bool value ) { AttributeGridSmoothingEnabledFlag_ = value; }
+  void setAttributeSmoothingGridSize( uint8_t value ) { attributeSmoothingGridSize_ = value; }
   void setAttributeScaleParamsPresentFlag( bool value ) { attributeScaleParamsPresentFlag_ = value; }
   void setAttributeOffsetParamsPresentFlag( bool value ) { attributeOffsetParamsPresentFlag_ = value; }
   void setAttributeSmoothingRadius( uint8_t value ) { attributeSmoothingRadius_ = value; }
@@ -1446,6 +1483,8 @@ class AttributeSequenceParams {
     attributeSmoothingRadius2BoundaryDetection_ = value;
   }
   void setAttributeSmoothingThreshold( uint8_t value ) { attributeSmoothingThreshold_ = value; }
+  void setAttributeSmoothingThresholdColorDifference( uint8_t value ) { attributeSmoothingThresholdColorDifference_ = value; }
+  void setAttributeSmoothingThresholdColorVariation( uint8_t value ) { attributeSmoothingThresholdColorVariation_ = value; }
   void setAttributeSmoothingThresholdLocalEntropy( uint32_t value ) {
     attributeSmoothingThresholdLocalEntropy_ = value;
   }
@@ -1454,12 +1493,16 @@ class AttributeSequenceParams {
 
  private:
   bool                  attributeSmoothingParamsPresentFlag_;
+  bool                  AttributeGridSmoothingEnabledFlag_;
+  uint8_t               attributeSmoothingGridSize_;  
   bool                  attributeScaleParamsPresentFlag_;
   bool                  attributeOffsetParamsPresentFlag_;
   uint8_t               attributeSmoothingRadius_;
   uint8_t               attributeSmoothingNeighbourCount_;
   uint8_t               attributeSmoothingRadius2BoundaryDetection_;
   uint8_t               attributeSmoothingThreshold_;
+  uint8_t               attributeSmoothingThresholdColorDifference_;
+  uint8_t               attributeSmoothingThresholdColorVariation_;
   uint32_t              attributeSmoothingThresholdLocalEntropy_;
   std::vector<uint32_t> attributeScale_;
   std::vector<int32_t>  attributeOffset_;
@@ -1523,7 +1566,7 @@ class GeometrySequenceParams {
       geometryRotationParamsPresentFlag_( false ),
       geometryPointSizeInfoPresentFlag_( false ),
       geometryPointShapeInfoPresentFlag_( false ),
-      geometrySmoothingEnableFlag_( false ),
+      geometrySmoothingenabledflag_( false ),
       geometrySmoothingGridSize_( 0 ),
       geometrySmoothingThreshold_( 0 ),
       geometryPointSizeInfo_( 0 ),
@@ -1544,7 +1587,7 @@ class GeometrySequenceParams {
                                 bool    rotationParamsPresentFlag,
                                 bool    pointSizeInfoPresentFlag,
                                 bool    pointShapeInfoPresentFlag,
-                                bool    smoothingEnableFlag,
+                                bool    smoothingenabledflag,
                                 uint8_t smoothingGridSize,
                                 uint8_t smoothingThreshold ) {
     geometrySmoothingParamsPresentFlag_ = smoothingParamsPresentFlag;
@@ -1553,7 +1596,7 @@ class GeometrySequenceParams {
     geometryRotationParamsPresentFlag_  = rotationParamsPresentFlag;
     geometryPointSizeInfoPresentFlag_   = pointSizeInfoPresentFlag;
     geometryPointShapeInfoPresentFlag_  = pointShapeInfoPresentFlag;
-    geometrySmoothingEnableFlag_        = smoothingEnableFlag;
+    geometrySmoothingenabledflag_        = smoothingenabledflag;
     geometrySmoothingGridSize_          = smoothingGridSize;
     geometrySmoothingThreshold_         = smoothingThreshold;
   }
@@ -1563,7 +1606,7 @@ class GeometrySequenceParams {
   bool     getGeometryRotationParamsPresentFlag() { return geometryRotationParamsPresentFlag_; }
   bool     getGeometryPointSizeInfoPresentFlag() { return geometryPointSizeInfoPresentFlag_; }
   bool     getGeometryPointShapeInfoPresentFlag() { return geometryPointShapeInfoPresentFlag_; }
-  bool     getGeometrySmoothingEnabledFlag() { return geometrySmoothingEnableFlag_; }
+  bool     getGeometrySmoothingEnabledFlag() { return geometrySmoothingenabledflag_; }
   uint8_t  getGeometrySmoothingGridSize() { return geometrySmoothingGridSize_; }
   uint8_t  getGeometrySmoothingThreshold() { return geometrySmoothingThreshold_; }
   uint32_t getGeometryScaleOnAxis( int index ) { return geometryScaleOnAxis_[index]; }
@@ -1578,7 +1621,7 @@ class GeometrySequenceParams {
   void setGeometryRotationParamsPresentFlag( bool value ) { geometryRotationParamsPresentFlag_ = value; }
   void setGeometryPointSizeInfoPresentFlag( bool value ) { geometryPointSizeInfoPresentFlag_ = value; }
   void setGeometryPointShapeInfoPresentFlag( bool value ) { geometryPointShapeInfoPresentFlag_ = value; }
-  void setGeometrySmoothingEnabledFlag( bool value ) { geometrySmoothingEnableFlag_ = value; }
+  void setGeometrySmoothingEnabledFlag( bool value ) { geometrySmoothingenabledflag_ = value; }
   void setGeometrySmoothingGridSize( uint8_t value ) { geometrySmoothingGridSize_ = value; }
   void setGeometrySmoothingThreshold( uint8_t value ) { geometrySmoothingThreshold_ = value; }
   void setGeometryScaleOnAxis( int index, uint32_t value ) { geometryScaleOnAxis_[index] = value; }
@@ -1594,7 +1637,7 @@ class GeometrySequenceParams {
   bool     geometryRotationParamsPresentFlag_;
   bool     geometryPointSizeInfoPresentFlag_;
   bool     geometryPointShapeInfoPresentFlag_;
-  bool     geometrySmoothingEnableFlag_;
+  bool     geometrySmoothingenabledflag_;
   uint8_t  geometrySmoothingGridSize_;
   uint8_t  geometrySmoothingThreshold_;
   uint32_t geometryScaleOnAxis_[3];
@@ -1820,7 +1863,7 @@ class SequenceParameterSet {
   bool              getPixelDeinterleavingFlag() { return pixelDeinterleavingFlag_; }
   bool              getPointLocalReconstructionEnabledFlag() { return pointLocalReconstructionEnabledFlag_; }
   bool              getRemoveDuplicatePointEnabledFlag() { return removeDuplicatePointEnabledFlag_; }
-  bool              getProjection45DegreeEnableFlag() { return projection45degreeEnabledFlag_; }
+  bool              getProjection45Degreeenabledflag() { return projection45degreeEnabledFlag_; }
   size_t            getLayerPredictorIndexDiff( size_t index ) { return layerPredictorIndexDiff_[index]; }
   bool              getLayerAbsoluteCodingEnabledFlag( size_t index ) { return layerAbsoluteCodingEnabledFlag_[index]; }
   ProfileTierLevel& getProfileTierLevel() { return profileTierLevel_; }
@@ -1844,7 +1887,7 @@ class SequenceParameterSet {
   void setPixelDeinterleavingFlag( bool value ) { pixelDeinterleavingFlag_ = value; }
   void setPointLocalReconstructionEnabledFlag( bool value ) { pointLocalReconstructionEnabledFlag_ = value; }
   void setRemoveDuplicatePointEnabledFlag( bool value ) { removeDuplicatePointEnabledFlag_ = value; }
-  void setProjection45DegreeEnableFlag( bool value ) { projection45degreeEnabledFlag_ = value; }
+  void setProjection45Degreeenabledflag( bool value ) { projection45degreeEnabledFlag_ = value; }
   void setProfileTierLevel( ProfileTierLevel value ) { profileTierLevel_ = value; }
   void setGeometryParameterSet( GeometryParameterSet value ) { geometryParameterSet_ = value; }
   void setOccupancyParameterSet( OccupancyParameterSet value ) { occupancyParameterSet_ = value; }

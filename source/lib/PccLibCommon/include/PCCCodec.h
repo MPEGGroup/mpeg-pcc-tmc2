@@ -74,7 +74,11 @@ struct GeneratePointCloudParameters {
   bool        absoluteD1_;
   size_t      surfaceThickness_;
   bool        ignoreLod_;
-  double      thresholdColorSmoothing_;
+  double      thresholdColorSmoothing_;  
+  bool        gridColorSmoothing_;
+  size_t      cgridSize_;
+  double      thresholdColorDifference_;
+  double      thresholdColorVariation_;
   double      thresholdLocalEntropy_;
   double      radius2ColorSmoothing_;
   size_t      neighborCountColorSmoothing_;
@@ -89,6 +93,7 @@ struct GeneratePointCloudParameters {
   bool        useAdditionalPointsPatch_;
   size_t      nbPlrmMode_;
   size_t      geometryBitDepth3D_;
+  size_t      geometry3dCoordinatesBitdepth_;
 };
 
 #ifdef CODEC_TRACE
@@ -246,6 +251,25 @@ class PCCCodec {
     return s;
   }
 
+   inline double median( std::vector<uint8_t>& Data, int N ) {
+    float med    = 0;
+    int   a      = 0;
+    int   b      = 0;
+    float newMed = 0;
+    if ( N % 2 == 0 ) a = N / 2;
+    b      = ( N / 2 ) - 1;
+    med    = int( Data.at( a ) ) + Data.at( b );
+    newMed = ( med / 2 );
+
+    return double( newMed );
+  }
+
+  inline double mean( std::vector<uint8_t>& Data, int N ) {
+    double s = 0.0;
+    for ( size_t i = 0; i < N; ++i ) { s += double( Data[i] ); }
+    return s / double( N );
+  }
+
  private:
   void generatePointCloud( PCCPointSet3&                      reconstruct,
                            PCCContext&                        context,
@@ -304,6 +328,29 @@ class PCCCodec {
                         int                       gridSize,
                         int                       gridWidth );
 
+  void addGridColorCentroid( PCCPoint3D&                        point,
+                             PCCVector3D&                       color,
+                             int                                patchIdx,
+                             std::vector<int>&                  color_gcnt,
+                             std::vector<PCCVector3D>&          color_center_grid,
+                             std::vector<int>&                  color_gpartition,
+                             std::vector<bool>&                 color_doSmooth,
+                             int                                cgrid,
+                             std::vector<std::vector<uint8_t>>& CS_glum,
+                             const GeneratePointCloudParameters params );
+
+  bool GridFilteringColor( PCCPoint3D&               curPos,
+                           PCCVector3D&              color_centroid,
+                           int&                      color_cnt,
+                           std::vector<int>&         color_gcnt,
+                           std::vector<PCCVector3D>& color_center_grid,
+                           std::vector<bool>&        color_doSmooth,
+                           int                       grid,
+                           PCCVector3D&              curPosColor,
+                           const GeneratePointCloudParameters params );
+
+  void smoothPointCloudColorLC( PCCPointSet3& reconstruct, const GeneratePointCloudParameters params );
+  
   bool gridFiltering( const std::vector<uint32_t>& partition,
                       PCCPointSet3&                pointCloud,
                       PCCPoint3D&                  curPos,
@@ -337,6 +384,12 @@ class PCCCodec {
   std::vector<PCCVector3D> center_grid_;
   std::vector<bool>        doSmooth_;
   std::vector<int>         gpartition_;
+
+  std::vector<int>                  CS_color_gcnt_;
+  std::vector<PCCVector3D>          CS_color_center_grid_;
+  std::vector<bool>                 CS_color_doSmooth_;
+  std::vector<int>                  CS_color_gpartition_;
+  std::vector<std::vector<uint8_t>> CS_gLum_;
 
 #ifdef CODEC_TRACE
   bool  trace_;
