@@ -183,10 +183,7 @@ class PCCFrameContext {
   PCCFrameOCPInfo                              ocpGPAInfo_;
   PCCVector3D                                  weight_normal_;
   size_t                                       globalPatchCount_; // GPA_HARMONIZATION
-<<<<<<< HEAD
-  size_t geometry3dCoordinatesBitdepth_;
-=======
->>>>>>> a3b1aaccf13d2e8a0fa4cb77d91afce9f7de19a4
+  size_t                                       geometry3dCoordinatesBitdepth_;
 };
 
 };  // namespace pcc
