@@ -63,6 +63,7 @@ class PCCVideoDecoder {
                    PCCVideoBitstream& bitstream,
                    const std::string& decoderPath,
                    PCCContext&        contexts,
+                   size_t             bitDepth, 
                    const bool         keepIntermediateFiles             = false,
                    const bool         use444CodecIo                     = false,
                    const bool         patchColorSubsampling             = false,
@@ -72,9 +73,9 @@ class PCCVideoDecoder {
     const std::string fileName    = path + type;
     const std::string binFileName = fileName + ".bin";
 
-    size_t        width = 0, height = 0, bitDepth = 0;
+    size_t        width = 0, height = 0;
     PCCHevcParser hevcParser;
-    hevcParser.getVideoSize( bitstream.vector(), width, height, bitDepth );
+    hevcParser.getVideoSize( bitstream.vector(), width, height );
 #ifdef BUG_FIX_BITDEPTH
     bitDepth = bitstream.getBitdepth();
 #endif

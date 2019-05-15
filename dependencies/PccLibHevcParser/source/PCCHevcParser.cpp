@@ -98,14 +98,8 @@ PCCHevcParser::~PCCHevcParser() {
   pps_.clear();
 }
 
-void PCCHevcParser::getVideoSize( const std::vector<uint8_t>& buffer,
-                                  size_t& width, 
-                                  size_t& height, 
-                                  size_t& bitdepth ) {
-  setBuffer( buffer,
-            width, 
-            height, 
-            bitdepth );
+void PCCHevcParser::getVideoSize( const std::vector<uint8_t>& buffer, size_t& width, size_t& height ) {
+  setBuffer( buffer, width, height );
 }
 void PCCHevcParser::display() {
   int    poc = 0;
@@ -155,26 +149,21 @@ void PCCHevcParser::createNalu( const size_t frameIndex,
   }
 }
 
-void PCCHevcParser::setBuffer( const std::vector<uint8_t>& buffer,
-                                size_t& width, 
-                                size_t& height, 
-                                size_t& bitdepth ) {
-  const int   size = (int)buffer.size();
-  const uint8_t* data = buffer.data();
-  TDecCavlc* decCavlc = new TDecCavlc();
-  int nalNumber              =  0;
-  int index                  =  0;
-  int startCodeSize          =  4;
-  int frameIndex             = -1;
-  int maxPocFound            = -1;
-  int sequencePoc            =  0;
-  int previousNaluLayerIndex = -1;
-  int currentPoc             =  0;
-  for( Int i=startCodeSize;i<=size;i++) {
-    if( i == size ||
-        ( ( data[i+0] == 0x00 ) && ( data[i+1] == 0x00 ) &&
-          ( ( ( data[i+2] == 0x00 ) && ( data[i+3] == 0x01 ) ) ||
-              ( data[i+2] == 0x01 ) ) ) ) {
+void PCCHevcParser::setBuffer( const std::vector<uint8_t>& buffer, size_t& width, size_t& height ) {
+  const int      size                   = (int)buffer.size();
+  const uint8_t* data                   = buffer.data();
+  TDecCavlc*     decCavlc               = new TDecCavlc();
+  int            nalNumber              = 0;
+  int            index                  = 0;
+  int            startCodeSize          = 4;
+  int            frameIndex             = -1;
+  int            maxPocFound            = -1;
+  int            sequencePoc            = 0;
+  int            previousNaluLayerIndex = -1;
+  int            currentPoc             = 0;
+  for ( Int i = startCodeSize; i <= size; i++ ) {
+    if ( i == size || ( ( data[i + 0] == 0x00 ) && ( data[i + 1] == 0x00 ) &&
+                        ( ( ( data[i + 2] == 0x00 ) && ( data[i + 3] == 0x01 ) ) || ( data[i + 2] == 0x01 ) ) ) ) {
       int iNalType       = (   ( data[ index + startCodeSize     ] ) &  126 )>> 1 ;
       int iLayer         = ( ( ( data[ index + startCodeSize     ] ) &  1 ) << 6 ) +
                            ( ( ( data[ index + startCodeSize + 1 ] ) &  248 ) >> 3 );
@@ -190,7 +179,7 @@ void PCCHevcParser::setBuffer( const std::vector<uint8_t>& buffer,
           decCavlc->parseSps( iLayer ); 
           width    = decCavlc->getSPS(iLayer)->getOutputWidth();
           height   = decCavlc->getSPS(iLayer)->getOutputHeight();
-          bitdepth = decCavlc->getSPS(iLayer)->getBitDepthY();
+          // bitdepth = decCavlc->getSPS(iLayer)->getBitDepthY();
          break;
         case NAL_UNIT_PPS: decCavlc->parsePps( iLayer );  break;
 

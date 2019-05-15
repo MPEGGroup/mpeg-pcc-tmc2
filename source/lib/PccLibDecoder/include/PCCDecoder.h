@@ -47,7 +47,7 @@ class PCCContext;
 class PCCFrameContext;
 class PCCGroupOfFrames; 
 class PCCPatch;
-class GeometryFrameParameterSet;
+class PatchFrameGeometryParameterSet;
 class GeometryPatchParameterSet;
 class SequenceParameterSet;
 class PointLocalReconstructionData;
@@ -75,7 +75,7 @@ class PCCDecoder : public PCCCodec {
  private:
   int  decode( PCCContext &context, PCCGroupOfFrames& reconstruct );
 
-  void setFrameMetadata( PCCMetadata& metadata, GeometryFrameParameterSet& gfps );
+  void setFrameMetadata( PCCMetadata& metadata, PatchFrameGeometryParameterSet& gfps );
   void setPatchMetadata( PCCMetadata& metadata, GeometryPatchParameterSet& gpps );
 
   void setPointLocalReconstruction( PCCContext& context, SequenceParameterSet& sps );

@@ -43,18 +43,14 @@ private:
 };
 
 class PCCHevcParser {
-public:
-  PCCHevcParser ();
+ public:
+  PCCHevcParser();
   ~PCCHevcParser();
-  void getVideoSize( const std::vector<uint8_t>& buffer, size_t& width, size_t& height, size_t& bitdepth ); 
+  void getVideoSize( const std::vector<uint8_t>& buffer, size_t& width, size_t& height );
   void display();
 
-private:
-  void setBuffer ( const std::vector<uint8_t>& buffer,
-                   size_t& width, 
-                   size_t& height, 
-                   size_t& bitdepth );
-
+ private:
+  void setBuffer( const std::vector<uint8_t>& buffer, size_t& width, size_t& height );
   void createNalu( const std::vector<uint8_t>& buffer, const size_t pos, const size_t size );
   void createNalu( const size_t frameIndex,
                    const std::vector<uint8_t>& buffer,

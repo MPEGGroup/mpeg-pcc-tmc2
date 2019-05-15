@@ -47,7 +47,7 @@ class PCCGroupOfFrames;
 class PCCBitstream;
 class PCCContext;
 class PCCFrameContext;
-class GeometryFrameParameterSet;
+class PatchFrameGeometryParameterSet;
 class GeometryPatchParameterSet;
 class SequenceParameterSet; 
 class PointLocalReconstructionData;
@@ -298,7 +298,7 @@ private:
                                                  size_t& widthGPA,
                                                  size_t& maxOccupancyRow); //GPA_HARMONIZATION
 
-  void setGeometryFrameParameterSet( PCCMetadata& metadata, GeometryFrameParameterSet& gfps );
+  void setPatchFrameGeometryParameterSet( PCCMetadata& metadata, PatchFrameGeometryParameterSet& gfps );
   void setGeometryPatchParameterSet( PCCMetadata& metadata, GeometryPatchParameterSet& gpps );
 
   void setPointLocalReconstruction( PCCContext& context, SequenceParameterSet& sps );

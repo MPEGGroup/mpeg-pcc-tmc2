@@ -141,11 +141,6 @@ bool parseParameters( int                   argc,
      encoderParams.frameCount_,
      "Number of frames to encode")
 
-    /*("geometry3dCoordinatesBitdepth",
-     encoderParams.geometry3dCoordinatesBitdepth_,
-     encoderParams.geometry3dCoordinatesBitdepth_,
-     "bitdepth of the 3D coordinates od the iput frames")*/
-
     ("groupOfFramesSize",
      encoderParams.groupOfFramesSize_,
      encoderParams.groupOfFramesSize_,

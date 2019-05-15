@@ -72,7 +72,6 @@ class PCCVideoBitstream {
  public:
   uint8_t getBitdepth() { return bitdepth_; }
   void    setBitdepth( uint8_t bitdepth ) { bitdepth_ = bitdepth; }
-
  private:
   uint8_t bitdepth_;
 #endif

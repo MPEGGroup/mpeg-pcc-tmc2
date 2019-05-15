@@ -66,7 +66,7 @@
 // #define BITSTREAM_TRACE
 // #define CODEC_TRACE
 
-#define BUG_FIX_BITDEPTH
+// #define BUG_FIX_BITDEPTH
 
 // ******************************************************************* //
 // Technicolor flags for CE2_22
@@ -166,39 +166,39 @@ enum VPCCUnitType {
   VPCC_RSVD_31   // 32: Reserved
 };
 
-enum PSDUnitType {
-  PSD_SPS = 0,  // 00: Patch sequence parameter set
-  PSD_FPS,      // 01: Patch frame parameter set
-  PSD_GFPS,     // 02: Geometry frame parameter set
-  PSD_AFPS,     // 03: Attribute frame parameter set
-  PSD_GPPS,     // 04: Geometry patch parameter set
-  PSD_APPS,     // 05: Attribute patch parameter set
-  PSD_PFLU,     // 06: Patch frame layer unit
-  PSD_RSVD_07,  // 07: Reserved
-  PSD_RSVD_08,  // 08: Reserved
-  PSD_RSVD_09,  // 09: Reserved
-  PSD_RSVD_10,  // 10: Reserved
-  PSD_RSVD_11,  // 11: Reserved
-  PSD_RSVD_12,  // 12: Reserved
-  PSD_RSVD_13,  // 13: Reserved
-  PSD_RSVD_14,  // 14: Reserved
-  PSD_RSVD_15,  // 15: Reserved
-  PSD_RSVD_16,  // 16: Reserved
-  PSD_RSVD_17,  // 17: Reserved
-  PSD_RSVD_18,  // 18: Reserved
-  PSD_RSVD_19,  // 19: Reserved
-  PSD_RSVD_20,  // 20: Reserved
-  PSD_RSVD_21,  // 21: Reserved
-  PSD_RSVD_22,  // 22: Reserved
-  PSD_RSVD_23,  // 23: Reserved
-  PSD_RSVD_24,  // 24: Reserved
-  PSD_RSVD_25,  // 25: Reserved
-  PSD_RSVD_26,  // 26: Reserved
-  PSD_RSVD_27,  // 27: Reserved
-  PSD_RSVD_28,  // 28: Reserved
-  PSD_RSVD_29,  // 29: Reserved
-  PSD_RSVD_30,  // 30: Reserved
-  PSD_RSVD_31   // 32: Reserved
+enum PDGUnitType {
+  PDG_PSPS = 0,     // 00: Patch sequence parameter set
+  PDG_PFPS,         // 01: Patch frame parameter set
+  PDG_PFGPS,        // 02: Patch frame geometry parameter set
+  PDG_PFAPS,        // 03: Patch frame attribute parameter set
+  PDG_GPPS,         // 04: Geometry patch parameter set
+  PDG_APPS,         // 05: Attribute patch parameter set
+  PDG_PTGLU,        // 06: Patch tile group layer unit
+  PDG_PREFIX_SEI,   // 07: Prefix SEI message
+  PDG_SUFFIX_SEI,   // 08: Suffix SEI message
+  PDG_RSVD_09,      // 09: Reserved
+  PDG_RSVD_10,      // 10: Reserved
+  PDG_RSVD_11,      // 11: Reserved
+  PDG_RSVD_12,      // 12: Reserved
+  PDG_RSVD_13,      // 13: Reserved
+  PDG_RSVD_14,      // 14: Reserved
+  PDG_RSVD_15,      // 15: Reserved
+  PDG_RSVD_16,      // 16: Reserved
+  PDG_RSVD_17,      // 17: Reserved
+  PDG_RSVD_18,      // 18: Reserved
+  PDG_RSVD_19,      // 19: Reserved
+  PDG_RSVD_20,      // 20: Reserved
+  PDG_RSVD_21,      // 21: Reserved
+  PDG_RSVD_22,      // 22: Reserved
+  PDG_RSVD_23,      // 23: Reserved
+  PDG_RSVD_24,      // 24: Reserved
+  PDG_RSVD_25,      // 25: Reserved
+  PDG_RSVD_26,      // 26: Reserved
+  PDG_RSVD_27,      // 27: Reserved
+  PDG_RSVD_28,      // 28: Reserved
+  PDG_RSVD_29,      // 29: Reserved
+  PDG_RSVD_30,      // 30: Reserved
+  PDG_RSVD_31       // 32: Reserved
 };
 
 enum PCCCodecID { CODEC_HEVC = 0 };
@@ -362,6 +362,20 @@ void printVector( std::vector<T>    data,
     printf( "\n" );
     fflush( stdout );
   }
+}
+
+static const std::string strUnitType( PDGUnitType unitType ) {
+  switch ( unitType ) {
+    case PDG_PSPS : return std::string( "PDG_PSPS " ); break;
+    case PDG_PFPS : return std::string( "PDG_PFPS " ); break;
+    case PDG_PFGPS: return std::string( "PDG_PFGPS" ); break;
+    case PDG_PFAPS: return std::string( "PDG_PFAPS" ); break;
+    case PDG_GPPS : return std::string( "PDG_GPPS " ); break;
+    case PDG_APPS : return std::string( "PDG_APPS " ); break;
+    case PDG_PTGLU: return std::string( "PDG_PTGLU" ); break;
+    default: break;
+  }
+  return std::string( "ERROR" );
 }
 
 }  // namespace pcc

@@ -498,55 +498,66 @@ bool PCCEncoderParameters::check() {
 }
 
 void PCCEncoderParameters::initializeContext( PCCContext& context ) {
-  auto& sps = context.getSps();
-  auto& gps = sps.getGeometryParameterSet();
-  auto& gsp = gps.getGeometrySequenceParams();
-  auto& ops = sps.getOccupancyParameterSet();
-  sps.setAttributeCount( 1 );
+  auto& sps   = context.getSps();
+  auto& pdg   = context.getPatchDataGroup();
+  auto& ai    = sps.getAttributeInformation();
+  auto& oi    = sps.getOccupancyInformation();
+  auto& gi    = sps.getGeometryInformation();
+  auto& psps  = pdg.getPatchSequenceParameterSet( 0 );
+  auto& pfgps = pdg.getPatchFrameGeometryParameterSet( 0 );
+  auto& pfaps = pdg.getPatchFrameAttributeParameterSet( 0 );
+  auto& gfp   = pfgps.getGeometryFrameParams();
+  auto& afp   = pfaps.getAttributeFrameParams();
+
+  context.setOccupancyPackingBlockSize( occupancyResolution_ );
+
   sps.setLayerCountMinus1( 1 );
   sps.allocate();
-  auto& aps = sps.getAttributeParameterSet( 0 );
-  auto& asp = aps.getAttributeSequenceParams();
-
   sps.setPcmSeparateVideoPresentFlag( useMissedPointsSeparateVideo_ );
   sps.setEnhancedOccupancyMapForDepthFlag( enhancedDeltaDepthCode_ );
   sps.setPixelDeinterleavingFlag( singleLayerPixelInterleaving_ );
   sps.setMultipleLayerStreamsPresentFlag( !oneLayerMode_ );
   sps.setRemoveDuplicatePointEnabledFlag( removeDuplicatePoints_ );
-  sps.setAttributeCount( noAttributes_ ? 0 : 1 );
   sps.setLayerAbsoluteCodingEnabledFlag( 0, 0 );
   sps.setLayerAbsoluteCodingEnabledFlag( 1, absoluteD1_ );
   sps.setPcmPatchEnabledFlag( useAdditionalPointsPatch_ );
   sps.setPatchInterPredictionEnabledFlag( deltaCoding_ );
   sps.setSurfaceThickness( surfaceThickness_ );
-  sps.setProjection45Degreeenabledflag( additionalProjectionPlaneMode_ > 0 ? 1 : 0 );
+  sps.setProjection45DegreeEnableFlag( additionalProjectionPlaneMode_ > 0 ? 1 : 0 );
 
-  gps.setGeometryParamsEnabledFlag( flagGeometrySmoothing_ );
+  ai.setAttributeCount( noAttributes_ ? 0 : 1 );
+  ai.allocate();
+  ai.setAttributeParamsEnabledFlag( flagColorSmoothing_ );
+  ai.setAttributeDimensionMinus1( 0, noAttributes_ ? 0 : 3 ); 
+  ai.setAttributeNominal2dBitdepthMinus1( 0, 7 );
 
-   
-    gps.setGeometryNominal2dBitdepthMinus1( getFixedLengthCodeBitsCount( maxAllowedDepth_ + 1 ) - 1 );
+  oi.setLossyOccupancyMapCompressionThreshold( (size_t) thresholdLossyOM_ );  
+ 
+  gi.setGeometryParamsEnabledFlag( flagGeometrySmoothing_ );
+  gi.setGeometry3dCoordinatesBitdepthMinus1(uint8_t(geometry3dCoordinatesBitdepth_ - 1));
 
-  gsp.setGeometrySmoothingParamsPresentFlag( flagGeometrySmoothing_ );
-  gsp.setGeometrySmoothingEnabledFlag( flagGeometrySmoothing_ );
-  gsp.setGeometrySmoothingGridSize( gridSize_ );
-  gsp.setGeometrySmoothingThreshold( thresholdSmoothing_ );
-  gsp.setGeometrySmoothingEnabledFlag( gridSmoothing_ );
-  gps.setGeometry3dCoordinatesBitdepthMinus1(uint8_t(geometry3dCoordinatesBitdepth_ - 1));
-  ops.setOccupancyPackingBlockSize( occupancyResolution_ );
-  ops.setOccupancyLossyThreshold( (size_t) thresholdLossyOM_ );
+  size_t nbitsGeo = ( !PCCMpsPatch8bits  ) && ( losslessGeo_ || ( lossyMissedPointsPatch_ && !sps.getPcmSeparateVideoPresentFlag() ) ) ? 10 : 8;
+  gi.setGeometryNominal2dBitdepthMinus1( nbitsGeo - 1 );
+  printf("gi.getGeometryNominal2dBitdepthMinus1() = %lu \n",gi.getGeometryNominal2dBitdepthMinus1() );
   
-  aps.setAttributeParamsEnabledFlag( flagColorSmoothing_ );
+  psps.setLog2PatchPackingBlockSize( std::log2( occupancyResolution_ ) );
 
-  asp.setAttributeSmoothingParamsPresentFlag( flagColorSmoothing_ );
-  asp.setAttributeGridSmoothingEnabledFlag( gridColorSmoothing_ );
-  asp.setAttributeSmoothingGridSize( cgridSize_ );
-  asp.setAttributeSmoothingNeighbourCount( neighborCountColorSmoothing_ );
-  asp.setAttributeSmoothingRadius( radius2ColorSmoothing_ );
-  asp.setAttributeSmoothingRadius2BoundaryDetection( radius2BoundaryDetection_ );
-  asp.setAttributeSmoothingThreshold( thresholdColorSmoothing_ );
-  asp.setAttributeSmoothingThresholdColorDifference( thresholdColorDifference_ );
-  asp.setAttributeSmoothingThresholdColorVariation( thresholdColorVariation_ );
-  asp.setAttributeSmoothingThresholdLocalEntropy( thresholdLocalEntropy_ );
+  gfp.setGeometrySmoothingParamsPresentFlag( flagGeometrySmoothing_ );
+  gfp.setGeometrySmoothingEnabledFlag( flagGeometrySmoothing_ );
+  gfp.setGeometrySmoothingGridSize( gridSize_ );
+  gfp.setGeometrySmoothingThreshold( thresholdSmoothing_ );
+  gfp.setGeometrySmoothingEnabledFlag( gridSmoothing_ );
+
+  afp.setAttributeSmoothingParamsPresentFlag( flagColorSmoothing_ );
+  afp.setAttributeGridSmoothingEnabledFlag( gridColorSmoothing_ );
+  afp.setAttributeSmoothingGridSize( cgridSize_ );
+  afp.setAttributeSmoothingNeighbourCount( neighborCountColorSmoothing_ );
+  afp.setAttributeSmoothingRadius( radius2ColorSmoothing_ );
+  afp.setAttributeSmoothingRadius2BoundaryDetection( radius2BoundaryDetection_ );
+  afp.setAttributeSmoothingThreshold( thresholdColorSmoothing_ );
+  afp.setAttributeSmoothingThresholdColorDifference( thresholdColorDifference_ );
+  afp.setAttributeSmoothingThresholdColorVariation( thresholdColorVariation_ );
+  afp.setAttributeSmoothingThresholdLocalEntropy( thresholdLocalEntropy_ );
 
   // deprecated
   sps.setLosslessGeo444( losslessGeo444_ );
@@ -555,13 +566,14 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   sps.setMinLevel( minLevel_ );
 
   // Encoder only data
-  context.getOccupancyPrecision() = occupancyPrecision_;
-  context.getModelScale()         = modelScale_;
-  context.getModelOrigin()        = modelOrigin_;
-  context.getMPGeoWidth()         = 64;
-  context.getMPAttWidth()         = 64;
-  context.getMPGeoHeight()        = 0;
-  context.getMPAttHeight()        = 0;
+  context.setOccupancyPrecision( occupancyPrecision_ );
+  context.setOccupancyPackingBlockSize( occupancyResolution_ );
+  context.setModelScale( modelScale_ );
+  context.setModelOrigin( modelOrigin_ );
+  context.setMPGeoWidth( 64 );
+  context.setMPAttWidth( 64 );
+  context.setMPGeoHeight( 0 );
+  context.setMPAttHeight( 0 );
   context.setGeometry3dCoordinatesBitdepth( geometry3dCoordinatesBitdepth_);
   size_t numPlrm = ( std::max )( (size_t)1, ( std::min )( nbPlrmMode_, g_pointLocalReconstructionMode.size() ) );
   for ( size_t i = 0; i < numPlrm; i++ ) {
