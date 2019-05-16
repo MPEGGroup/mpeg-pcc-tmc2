@@ -180,7 +180,8 @@ class PCCPatch {
   inline double generateNormalCoordinate( const uint16_t depth,
                                           const double   lodScale,
                                           const bool     useMppSepVid,
-                                          const bool     lossyMpp ) const {
+                                          const bool     lossyMpp,
+										  const bool     absoluteD1	) const {
     double coord = 0;
     if ( lossyMpp && !useMppSepVid ) {  // support lossy missed points patch in same video frame, re-shift depth values
                                         // to store in 10-bit video frame
@@ -191,7 +192,7 @@ class PCCPatch {
         if ( tmp_depth > 0 ) { coord = tmp_depth * lodScale; }
       }
     } else {
-      if ( projectionMode_ == 0 ) {
+      if ( projectionMode_ == 0 || !absoluteD1) {
         coord = ( (double)depth + (double)d1_ ) * lodScale;
       } else {
         double tmp_depth = double( d1_ ) - double( depth );
@@ -206,9 +207,10 @@ class PCCPatch {
                             const uint16_t depth,
                             const double   lodScale,
                             const bool     useMppSepVid,
-                            const bool     lossyMpp ) const {
+                            const bool     lossyMpp,
+							const bool     absoluteD1 ) const {
     PCCPoint3D point0;
-    point0[normalAxis_]    = generateNormalCoordinate( depth, lodScale, useMppSepVid, lossyMpp );
+    point0[normalAxis_]    = generateNormalCoordinate( depth, lodScale, useMppSepVid, lossyMpp, absoluteD1 );
     point0[tangentAxis_]   = ( double( u ) + u1_ ) * lodScale;
     point0[bitangentAxis_] = ( double( v ) + v1_ ) * lodScale;
     return point0;

@@ -5132,7 +5132,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
       dpdu.set2DDeltaSizeV( patch.getSizeV0() - refPatch.getSizeV0() );
       dpdu.setLod( patch.getLod() );
       const size_t max3DCoordinate = 1 << ( gi.getGeometry3dCoordinatesBitdepthMinus1() + 1 );
-      if ( patch.getProjectionMode() == 0 ) {
+    if ( patch.getProjectionMode() == 0 || !params_.absoluteD1_) {
         dpdu.set3DDeltaShiftNormalAxis( ( patch.getD1() / minLevel ) - ( refPatch.getD1() / minLevel ) );
       } else {
         if ( pfps.getProjection45DegreeEnableFlag() == 0 ) {
@@ -5217,7 +5217,8 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
       pdu.set45DegreeProjectionRotationAxis( patch.getAxisOfAdditionalPlane() );
 
       const size_t max3DCoordinate = 1 << ( gi.getGeometry3dCoordinatesBitdepthMinus1() + 1 );
-      if ( pdu.getProjectPlane() < 3 ) {
+    if ( pdu.getProjectPlane() < 3 || !params_.absoluteD1_)
+    {
         pdu.set3DShiftNormalAxis( patch.getD1() / minLevel );
       } else {
         if ( pfps.getProjection45DegreeEnableFlag() == 0 ) {

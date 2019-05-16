@@ -530,7 +530,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
       patch.getAxisOfAdditionalPlane() = pdu.get45DegreeProjectionPresentFlag() ? pdu.get45DegreeProjectionRotationAxis() : 0;
       TRACE_CODEC( "patch %lu / %lu: Intra \n", patchIndex, patches.size() );
       const size_t max3DCoordinate = 1 << (gi.getGeometry3dCoordinatesBitdepthMinus1() + 1);
-      if ( patch.getProjectionMode() == 0 ) {
+      if ( patch.getProjectionMode() == 0 || !sps.getLayerAbsoluteCodingEnabledFlag(1) ) {
         patch.getD1() = (int32_t)pdu.get3DShiftNormalAxis() * minLevel;
       } else {
         if (pfps.getProjection45DegreeEnableFlag() == 0) {
@@ -603,7 +603,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
       patch.getBitangentAxis()    = prePatch.getBitangentAxis();
       patch.getAxisOfAdditionalPlane() = prePatch.getAxisOfAdditionalPlane();
       const size_t max3DCoordinate = 1 << (gi.getGeometry3dCoordinatesBitdepthMinus1() + 1);      
-      if ( patch.getProjectionMode() == 0 ) {
+      if ( patch.getProjectionMode() == 0 || !sps.getLayerAbsoluteCodingEnabledFlag(1) ) {
         patch.getD1() = ( dpdu.get3DDeltaShiftNormalAxis() + ( prePatch.getD1() / minLevel ) ) * minLevel;
       } else {
         if (pfps.getProjection45DegreeEnableFlag() == 0) {
