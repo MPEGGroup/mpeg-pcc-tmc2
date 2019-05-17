@@ -48,7 +48,7 @@ class PCCVideoBitstream;
 #ifdef BITSTREAM_TRACE
 #define TRACE_BITSTREAM( fmt, ... ) bitstream.trace( fmt, ##__VA_ARGS__ );
 #else
-#define TRACE_BITSTREAM( fmt, ... ) ;
+#define TRACE_BITSTREAM( fmt, ... )
 #endif
 
 class PCCBitstreamGofStat {
@@ -186,11 +186,11 @@ class PCCBitstream {
   inline void writeS( int32_t value, uint8_t bits ) {
     assert( bits > 0 );
     uint32_t code;
-    if (value >= 0) {
-      code =  (uint32_t) value;
+    if ( value >= 0 ) {
+      code = (uint32_t)value;
     } else {
-      code = (uint32_t) ( value & ((1 << (bits - 1)) - 1)); 
-      code |= (1 << (bits - 1));
+      code = ( uint32_t )( value & ( ( 1 << ( bits - 1 ) ) - 1 ) );
+      code |= ( 1 << ( bits - 1 ) );
     }
     write( code, bits );
 #ifdef BITSTREAM_TRACE
@@ -202,11 +202,11 @@ class PCCBitstream {
     assert( bits > 0 );
     uint32_t code = read( bits );
     int32_t  value;
-    uint32_t midPoint = (1 << (bits -1));
-    if ( code < midPoint) {
-      value =  (int32_t) code;
+    uint32_t midPoint = ( 1 << ( bits - 1 ) );
+    if ( code < midPoint ) {
+      value = (int32_t)code;
     } else {
-      value = (int32_t) code | ~(midPoint - 1);
+      value = (int32_t)code | ~( midPoint - 1 );
     }
 #ifdef BITSTREAM_TRACE
     trace( "  CodS[%2u]: %4lu \n", bits, value );
@@ -266,7 +266,7 @@ class PCCBitstream {
   inline int32_t readSvlc() {
     uint32_t bits = readUvlc();
 #ifdef BITSTREAM_TRACE
-    trace( "  CodeSvlc: %4d \n",( bits & 1 ) ? ( int32_t )( bits >> 1 ) + 1 : -( int32_t )( bits >> 1 ));
+    trace( "  CodeSvlc: %4d \n", ( bits & 1 ) ? ( int32_t )( bits >> 1 ) + 1 : -( int32_t )( bits >> 1 ) );
 #endif
     return ( bits & 1 ) ? ( int32_t )( bits >> 1 ) + 1 : -( int32_t )( bits >> 1 );
   }
@@ -278,7 +278,6 @@ class PCCBitstream {
       FILE* output = traceFile_ ? traceFile_ : stdout;
       fprintf( output, "[%6llu - %2u]: ", position_.bytes, position_.bits );
       fflush( output );
-      // fprintf(output, "%s", pFormat, eArgs...);
       fprintf( output, pFormat, eArgs... );
       fflush( output );
     }
@@ -313,9 +312,6 @@ class PCCBitstream {
         pos.bits++;
       }
     }
-#ifdef BITSTREAM_TRACE
-    // trace( "      %5lu : %4lu \n", bits, value );
-#endif
     return value;
   }
 
@@ -330,9 +326,6 @@ class PCCBitstream {
         pos.bits++;
       }
     }
-#ifdef BITSTREAM_TRACE
-    // trace( "      %5lu : %4lu \n", bits, value );
-#endif
   }
 
   std::vector<uint8_t> data_;

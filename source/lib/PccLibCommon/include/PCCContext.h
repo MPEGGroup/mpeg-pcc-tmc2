@@ -101,13 +101,12 @@ class PointLocalReconstructionInformation {
   uint8_t getPlrlNeighbourMinus1( size_t index ) { return plrlNeighbourMinus1_[index]; }
   bool    getPlrlInterpolateFlag( size_t index ) { return plrlInterpolateFlag_[index]; }
   bool    getPlrlFillingFlag( size_t index ) { return plrlFillingFlag_[index]; }
-
-  void setPlrlNumberOfModesMinus1( uint8_t value ) { plrlNumberOfModesMinus1_ = value; }
-  void setPlrBlockThresholdPerPatchMinus1( uint8_t value ) { plrBlockThresholdPerPatchMinus1_ = value; }
-  void setPlrlMinimumDepth( size_t index, uint8_t value ) { plrlMinimumDepth_[index] = value; }
-  void setPlrlNeighbourMinus1( size_t index, uint8_t value ) { plrlNeighbourMinus1_[index] = value; }
-  void setPlrlInterpolateFlag( size_t index, bool value ) { plrlInterpolateFlag_[index] = value; }
-  void setPlrlFillingFlag( size_t index, bool value ) { plrlFillingFlag_[index] = value; }
+  void    setPlrlNumberOfModesMinus1( uint8_t value ) { plrlNumberOfModesMinus1_ = value; }
+  void    setPlrBlockThresholdPerPatchMinus1( uint8_t value ) { plrBlockThresholdPerPatchMinus1_ = value; }
+  void    setPlrlMinimumDepth( size_t index, uint8_t value ) { plrlMinimumDepth_[index] = value; }
+  void    setPlrlNeighbourMinus1( size_t index, uint8_t value ) { plrlNeighbourMinus1_[index] = value; }
+  void    setPlrlInterpolateFlag( size_t index, bool value ) { plrlInterpolateFlag_[index] = value; }
+  void    setPlrlFillingFlag( size_t index, bool value ) { plrlFillingFlag_[index] = value; }
 
  private:
   uint8_t              plrlNumberOfModesMinus1_;
@@ -231,10 +230,10 @@ class DeltaPatchDataUnit {
       dpdu2DDeltaShiftV_( 0 ),
       dpdu2DDeltaSizeU_( 0 ),
       dpdu2DDeltaSizeV_( 0 ),
-      dpdu2DDeltaSizeD_( 0 ),
       dpdu3DDeltaShiftTangentAxis_( 0 ),
       dpdu3DDeltaShiftBiTangentAxis_( 0 ),
-      dpdu3DDeltaShiftNormalAxis_( 0 ),
+      dpdu3DDeltaShiftMinNormalAxis_( 0 ),
+      dpdu3DShiftDeltaMaxNormalAxis_( 0 ),
       dpduProjectPlane_( pcc::PCCAxis6( 0 ) ),
       dpduLod_( 0 ),
       dpduPatchIndex_( 0 ),
@@ -246,10 +245,10 @@ class DeltaPatchDataUnit {
   int64_t                       get2DDeltaShiftV() { return dpdu2DDeltaShiftV_; }
   int64_t                       get2DDeltaSizeU() { return dpdu2DDeltaSizeU_; }
   int64_t                       get2DDeltaSizeV() { return dpdu2DDeltaSizeV_; }
-  int64_t                       get2DDeltaSizeD() { return dpdu2DDeltaSizeD_; }
   int64_t                       get3DDeltaShiftTangentAxis() { return dpdu3DDeltaShiftTangentAxis_; }
   int64_t                       get3DDeltaShiftBiTangentAxis() { return dpdu3DDeltaShiftBiTangentAxis_; }
-  int64_t                       get3DDeltaShiftNormalAxis() { return dpdu3DDeltaShiftNormalAxis_; }
+  int64_t                       get3DDeltaShiftMinNormalAxis() { return dpdu3DDeltaShiftMinNormalAxis_; }
+  int64_t                       get3DShiftDeltaMaxNormalAxis() { return dpdu3DShiftDeltaMaxNormalAxis_; }
   PCCAxis6                      getProjectPlane() { return dpduProjectPlane_; }
   uint8_t                       getLod() { return dpduLod_; }
   PointLocalReconstructionData& getPointLocalReconstructionData() { return pointLocalReconstructionData_; }
@@ -262,24 +261,24 @@ class DeltaPatchDataUnit {
   void                          set2DDeltaShiftV( int64_t value ) { dpdu2DDeltaShiftV_ = value; }
   void                          set2DDeltaSizeU( int64_t value ) { dpdu2DDeltaSizeU_ = value; }
   void                          set2DDeltaSizeV( int64_t value ) { dpdu2DDeltaSizeV_ = value; }
-  void                          set2DDeltaSizeD( int64_t value ) { dpdu2DDeltaSizeD_ = value; }
   void                          set3DDeltaShiftTangentAxis( int64_t value ) { dpdu3DDeltaShiftTangentAxis_ = value; }
   void set3DDeltaShiftBiTangentAxis( int64_t value ) { dpdu3DDeltaShiftBiTangentAxis_ = value; }
-  void set3DDeltaShiftNormalAxis( int64_t value ) { dpdu3DDeltaShiftNormalAxis_ = value; }
+  void set3DDeltaShiftMinNormalAxis( int64_t value ) { dpdu3DDeltaShiftMinNormalAxis_ = value; }
+  void set3DShiftDeltaMaxNormalAxis( int64_t value ) { dpdu3DShiftDeltaMaxNormalAxis_ = value; }
   void setProjectPlane( PCCAxis6 value ) { dpduProjectPlane_ = value; }
   void setLod( uint8_t value ) { dpduLod_ = value; }
   void setPointLocalReconstructionData( PointLocalReconstructionData value ) { pointLocalReconstructionData_ = value; }
 
  private:
   int64_t                      dpdutDeltaPatchIndex_;
-  int64_t                      dpdu2DDeltaShiftU_;  // sizes need to be determined
+  int64_t                      dpdu2DDeltaShiftU_;  
   int64_t                      dpdu2DDeltaShiftV_;
   int64_t                      dpdu2DDeltaSizeU_;
   int64_t                      dpdu2DDeltaSizeV_;
-  int64_t                      dpdu2DDeltaSizeD_;
   int64_t                      dpdu3DDeltaShiftTangentAxis_;
   int64_t                      dpdu3DDeltaShiftBiTangentAxis_;
-  int64_t                      dpdu3DDeltaShiftNormalAxis_;
+  int64_t                      dpdu3DDeltaShiftMinNormalAxis_;
+  int64_t                      dpdu3DShiftDeltaMaxNormalAxis_;
   PCCAxis6                     dpduProjectPlane_;
   uint8_t                      dpduLod_;
   size_t                       dpduPatchIndex_;
@@ -291,14 +290,14 @@ class DeltaPatchDataUnit {
 class PatchDataUnit {
  public:
   PatchDataUnit() :
-      pdu2DShiftU_( 0 ),  // sizes need to be determined
+      pdu2DShiftU_( 0 ), 
       pdu2DShiftV_( 0 ),
       pdu2DDeltaSizeU_( 0 ),
       pdu2DDeltaSizeV_( 0 ),
-      pdu2DDeltaSizeD_( 255 ),
       pdu3DShiftTangentAxis_( 0 ),
       pdu3DShiftBiTangentAxis_( 0 ),
-      pdu3DShiftNormalAxis_( 0 ),
+      pdu3DShiftMinNormalAxis_( 0 ),
+      pdu3DShiftDeltaMaxNormalAxis_( 255 ),
       pduProjectPlane_( pcc::PCCAxis6( 0 ) ),
       pduOrientationIndex_( 0 ),
       pduLod_( 0 ),
@@ -306,8 +305,7 @@ class PatchDataUnit {
       pdu45DegreeProjectionRotationAxis_( 0 ),
       pduPatchIndex_( 0 ),
       pduFrameIndex_( 0 ){};
-
-  ~PatchDataUnit(){};
+  ~PatchDataUnit(){  };
 
   PatchDataUnit& operator=( const PatchDataUnit& ) = default;
 
@@ -315,10 +313,10 @@ class PatchDataUnit {
   size_t                        get2DShiftV() { return pdu2DShiftV_; }
   int64_t                       get2DDeltaSizeU() { return pdu2DDeltaSizeU_; }
   int64_t                       get2DDeltaSizeV() { return pdu2DDeltaSizeV_; }
-  int64_t                       get2DDeltaSizeD() { return pdu2DDeltaSizeD_; }
   size_t                        get3DShiftTangentAxis() { return pdu3DShiftTangentAxis_; }
   size_t                        get3DShiftBiTangentAxis() { return pdu3DShiftBiTangentAxis_; }
-  size_t                        get3DShiftNormalAxis() { return pdu3DShiftNormalAxis_; }
+  size_t                        get3DShiftMinNormalAxis() { return pdu3DShiftMinNormalAxis_; }
+  size_t                        get3DShiftDeltaMaxNormalAxis() { return pdu3DShiftDeltaMaxNormalAxis_; }
   PCCAxis6                      getProjectPlane() { return pduProjectPlane_; }
   uint8_t                       getOrientationIndex() { return pduOrientationIndex_; }
   uint8_t                       getLod() { return pduLod_; }
@@ -333,10 +331,10 @@ class PatchDataUnit {
   void                          set2DShiftV( size_t value ) { pdu2DShiftV_ = value; }
   void                          set2DDeltaSizeU( int64_t value ) { pdu2DDeltaSizeU_ = value; }
   void                          set2DDeltaSizeV( int64_t value ) { pdu2DDeltaSizeV_ = value; }
-  void                          set2DDeltaSizeD( int64_t value ) { pdu2DDeltaSizeD_ = value; }
   void                          set3DShiftTangentAxis( size_t value ) { pdu3DShiftTangentAxis_ = value; }
   void                          set3DShiftBiTangentAxis( size_t value ) { pdu3DShiftBiTangentAxis_ = value; }
-  void                          set3DShiftNormalAxis( size_t value ) { pdu3DShiftNormalAxis_ = value; }
+  void                          set3DShiftMinNormalAxis( size_t value ) { pdu3DShiftMinNormalAxis_ = value; }
+  void                          set3DShiftDeltaMaxNormalAxis( size_t value ) { pdu3DShiftDeltaMaxNormalAxis_ = value; }
   void                          setProjectPlane( PCCAxis6 value ) { pduProjectPlane_ = value; }
   void                          setOrientationIndex( uint8_t value ) { pduOrientationIndex_ = value; }
   void                          setLod( uint8_t value ) { pduLod_ = value; }
@@ -349,10 +347,10 @@ class PatchDataUnit {
   size_t                       pdu2DShiftV_;
   int64_t                      pdu2DDeltaSizeU_;
   int64_t                      pdu2DDeltaSizeV_;
-  int64_t                      pdu2DDeltaSizeD_;
   size_t                       pdu3DShiftTangentAxis_;
   size_t                       pdu3DShiftBiTangentAxis_;
-  size_t                       pdu3DShiftNormalAxis_;
+  size_t                       pdu3DShiftMinNormalAxis_;
+  size_t                       pdu3DShiftDeltaMaxNormalAxis_;
   PCCAxis6                     pduProjectPlane_;
   uint8_t                      pduOrientationIndex_;
   uint8_t                      pduLod_;
@@ -430,20 +428,19 @@ class PatchTileGroupDataUnit {
     patchMode_.clear();
     patchInformationData_.clear();
   }
+  PatchTileGroupDataUnit& operator=( const PatchTileGroupDataUnit& ) = default;
+
   void init() {
     patchMode_.clear();
     patchInformationData_.clear();
   }
-  void allocatePatch( uint8_t pCount ) {
-    if ( pCount ) {
-      patchMode_.resize( pCount );
-      patchInformationData_.resize( pCount );
-    }
+  void allocate( size_t size ) {
+    patchMode_.resize( size );
+    patchInformationData_.resize( size );
   }
 
-  PatchTileGroupDataUnit& operator=( const PatchTileGroupDataUnit& ) = default;
-
   void addPatchMode( uint8_t value ) { patchMode_.push_back( value ); }
+
   void addPatchInformationData( PatchInformationData& value ) { patchInformationData_.push_back( value ); }
   PatchInformationData& addPatchInformationData() {
     PatchInformationData pid;
@@ -523,7 +520,7 @@ class RefListStruct {
   std::vector<bool>    strpfEntrySignFlag_;
 };
 
-// 7.3.5.14  Patch frame header syntax (ptgh) TODO: should we create variables similar to CD text?
+// 7.3.5.14  Patch frame header syntax (ptgh) 
 class PatchTileGroupHeader {
  public:
   PatchTileGroupHeader() :
@@ -555,6 +552,12 @@ class PatchTileGroupHeader {
     additionalPfocLsbPresentFlag_.resize( 1, 0 );
     additionalPfocLsbVal_.resize( 1, 0 );
   }
+
+  ~PatchTileGroupHeader() {
+    additionalPfocLsbPresentFlag_.clear();
+    additionalPfocLsbVal_.clear();
+  }
+
   PatchTileGroupHeader& operator=( const PatchTileGroupHeader& ) = default;
 
   uint8_t  getFrameIndex() { return frameIndex_; }
@@ -592,6 +595,8 @@ class PatchTileGroupHeader {
   uint8_t getPcm3dShiftAxisBitCountMinus1() { return pcm3dShiftAxisBitCountMinus1_; }
   bool    getPcm3dShiftBitCountPresentFlag() { return pcm3dShiftBitCountPresentFlag_; }
   uint8_t getInterPredictPatchLodBitCount() { return interPredictPatchLodBitCount_; }
+  uint8_t getNormalAxisMinValueQuantizer() { return normalAxisMinValueQuantizer_; }
+  uint8_t getNormalAxisMaxDeltaValueQuantizer() { return normalAxisMaxDeltaValueQuantizer_; }
 
   void setFrameIndex( uint8_t index ) { frameIndex_ = index; }
   void setPatchFrameParameterSetId( uint8_t value ) { patchFrameParameterSetId_ = value; }
@@ -619,9 +624,7 @@ class PatchTileGroupHeader {
     interPredictPatch3dShiftNormalAxisBitCountMinus1_ = value;
   }
   void setPcm3dShiftAxisBitCountMinus1( uint8_t value ) { pcm3dShiftAxisBitCountMinus1_ = value; }
-
   void setPcm3dShiftBitCountPresentFlag( uint8_t value ) { pcm3dShiftBitCountPresentFlag_ = value; }
-
   void setInterPredictPatchLodBitCount( uint8_t value ) { interPredictPatchLodBitCount_ = value; }
   void setInterPredictPatchBitCountFlag( bool value ) { interPredictPatchBitCountFlag_ = value; }
   void setInterPredictPatch2dShiftUBitCountFlag( bool value ) { interPredictPatch2dShiftUBitCountFlag_ = value; }
@@ -636,6 +639,8 @@ class PatchTileGroupHeader {
     interPredictPatch3dShiftNormalAxisBitCountFlag_ = value;
   }
   void setInterPredictPatchLodBitCountFlag( bool value ) { interPredictPatchLodBitCountFlag_ = value; }
+  void setNormalAxisMinValueQuantizer( uint8_t value ) { normalAxisMinValueQuantizer_ = value; }
+  void setNormalAxisMaxDeltaValueQuantizer( uint8_t value ) { normalAxisMaxDeltaValueQuantizer_ = value; }
 
  private:
   uint8_t               frameIndex_;
@@ -649,6 +654,8 @@ class PatchTileGroupHeader {
   std::vector<uint32_t> additionalPfocLsbVal_;
   bool                  numRefIdxActiveOverrideFlag_;
   uint8_t               numRefIdxActiveMinus1_;
+  uint8_t               normalAxisMinValueQuantizer_;
+  uint8_t               normalAxisMaxDeltaValueQuantizer_;
   uint8_t               interPredictPatch2dShiftUBitCountMinus1_;
   uint8_t               interPredictPatch2dShiftVBitCountMinus1_;
   uint8_t               interPredictPatch2dDeltaSizeDBitCountMinus1_;
@@ -671,6 +678,8 @@ class PatchTileGroupHeader {
 class PatchTileGroupLayerUnit {
  public:
   PatchTileGroupLayerUnit() : frameIndex_( 0 ) {}
+  ~PatchTileGroupLayerUnit() {}
+
   PatchTileGroupLayerUnit& operator=( const PatchTileGroupLayerUnit& ) = default;
 
   uint8_t                 getFrameIndex() { return frameIndex_; }
@@ -687,6 +696,108 @@ class PatchTileGroupLayerUnit {
   PatchTileGroupDataUnit patchTileGroupDataUnit_;
 };
 
+class PatchFrameTileInformation {
+ public:
+  PatchFrameTileInformation() :
+      singleTileInPatchFrameFlag_( 0 ),
+      uniformTileSpacingFlag_( 0 ),
+      numTileColumnsMinus1_( 0 ),
+      numTileRowsMinus1_( 0 ),
+      singleTilePerTileGroupFlag_( 0 ),
+      numTileGroupsInPatchFrameMinus1_( 0 ),
+      signalledTileGroupIdFlag_( 0 ),
+      signalledTileGroupIdLengthMinus1_( 0 ) {
+    tileColumnWidthMinus1_.resize( 1, 0 );
+    tileRowHeightMinus1_.resize( 1, 0 );
+    topLeftTileIdx_.resize( 1, 0 );
+    bottomRightTileIdxDelta_.resize( 1, 0 );
+    tileGroupId_.resize( 1, 0 );
+  }
+  ~PatchFrameTileInformation() {
+    tileColumnWidthMinus1_.clear();
+    tileRowHeightMinus1_.clear();
+    topLeftTileIdx_.clear();
+    bottomRightTileIdxDelta_.clear();
+    tileGroupId_.clear();
+  };
+
+  PatchFrameTileInformation& operator=( const PatchFrameTileInformation& ) = default;
+
+  bool     getSingleTileInPatchFrameFlag() { return singleTileInPatchFrameFlag_; }
+  bool     getUniformTileSpacingFlag() { return uniformTileSpacingFlag_; }
+  uint32_t getNumTileColumnsMinus1() { return numTileColumnsMinus1_; }
+  uint32_t getNumTileRowsMinus1() { return numTileRowsMinus1_; }
+  uint32_t getSingleTilePerTileGroupFlag() { return singleTilePerTileGroupFlag_; }
+  uint32_t getNumTileGroupsInPatchFrameMinus1() { return numTileGroupsInPatchFrameMinus1_; }
+  bool     getSignalledTileGroupIdFlag() { return signalledTileGroupIdFlag_; }
+  uint32_t getSignalledTileGroupIdLengthMinus1() { return signalledTileGroupIdLengthMinus1_; }
+  uint32_t getTileColumnWidthMinus1( size_t index ) { return tileColumnWidthMinus1_[index]; }
+  uint32_t getTileRowHeightMinus1( size_t index ) { return tileRowHeightMinus1_[index]; }
+  uint32_t getTopLeftTileIdx( size_t index ) { return topLeftTileIdx_[index]; }
+  uint32_t getBottomRightTileIdxDelta( size_t index ) { return bottomRightTileIdxDelta_[index]; }
+  uint32_t getTileGroupId( size_t index ) { return tileGroupId_[index]; }
+
+  void setSingleTileInPatchFrameFlag( bool value ) { singleTileInPatchFrameFlag_ = value; }
+  void setUniformTileSpacingFlag( bool value ) { uniformTileSpacingFlag_ = value; }
+  void setNumTileColumnsMinus1( uint32_t value ) { numTileColumnsMinus1_ = value; }
+  void setNumTileRowsMinus1( uint32_t value ) { numTileRowsMinus1_ = value; }
+  void setSingleTilePerTileGroupFlag( uint32_t value ) { singleTilePerTileGroupFlag_ = value; }
+  void setNumTileGroupsInPatchFrameMinus1( uint32_t value ) { numTileGroupsInPatchFrameMinus1_ = value; }
+  void setSignalledTileGroupIdFlag( bool value ) { signalledTileGroupIdFlag_ = value; }
+  void setSignalledTileGroupIdLengthMinus1( uint32_t value ) { signalledTileGroupIdLengthMinus1_ = value; }
+
+  void setTileColumnWidthMinus1( size_t index, uint32_t value ) {
+    if ( index == ( tileColumnWidthMinus1_.size() ) )
+      tileColumnWidthMinus1_.resize( tileColumnWidthMinus1_.size() + 1 );
+    else if ( index > tileColumnWidthMinus1_.size() )
+      assert( 0 );
+    tileColumnWidthMinus1_[index] = value;
+  }
+  void setTileRowHeightMinus1( size_t index, uint32_t value ) {
+    if ( index == ( tileRowHeightMinus1_.size() ) )
+      tileRowHeightMinus1_.resize( tileRowHeightMinus1_.size() + 1 );
+    else if ( index > tileRowHeightMinus1_.size() )
+      assert( 0 );
+    tileRowHeightMinus1_[index] = value;
+  }
+  void setTopLeftTileIdx( size_t index, uint32_t value ) {
+    if ( index == ( topLeftTileIdx_.size() ) )
+      topLeftTileIdx_.resize( topLeftTileIdx_.size() + 1 );
+    else if ( index > topLeftTileIdx_.size() )
+      assert( 0 );
+    topLeftTileIdx_[index] = value;
+  }
+  void setBottomRightTileIdxDelta( size_t index, uint32_t value ) {
+    if ( index == ( bottomRightTileIdxDelta_.size() ) )
+      bottomRightTileIdxDelta_.resize( bottomRightTileIdxDelta_.size() + 1 );
+    else if ( index > bottomRightTileIdxDelta_.size() )
+      assert( 0 );
+    bottomRightTileIdxDelta_[index] = value;
+  }
+  void setTileGroupId( size_t index, uint32_t value ) {
+    if ( index == ( tileGroupId_.size() ) )
+      tileGroupId_.resize( tileGroupId_.size() + 1 );
+    else if ( index > tileGroupId_.size() )
+      assert( 0 );
+    tileGroupId_[index] = value;
+  }
+
+ private:
+  bool                  singleTileInPatchFrameFlag_;
+  bool                  uniformTileSpacingFlag_;
+  uint32_t              numTileColumnsMinus1_;
+  uint32_t              numTileRowsMinus1_;
+  uint32_t              singleTilePerTileGroupFlag_;
+  uint32_t              numTileGroupsInPatchFrameMinus1_;
+  bool                  signalledTileGroupIdFlag_;
+  uint32_t              signalledTileGroupIdLengthMinus1_;
+  std::vector<uint32_t> tileColumnWidthMinus1_;
+  std::vector<uint32_t> tileRowHeightMinus1_;
+  std::vector<uint32_t> topLeftTileIdx_;
+  std::vector<uint32_t> bottomRightTileIdxDelta_;
+  std::vector<uint32_t> tileGroupId_;
+};
+
 // 7.3.5.12  Patch frame parameter set syntax
 class PatchFrameParameterSet {
  public:
@@ -696,16 +807,14 @@ class PatchFrameParameterSet {
       geometryPatchFrameParameterSetId_( 0 ),
       additionalLtPfocLsbLen_( 0 ),
       localOverrideGeometryPatchEnableFlag_( false ),
-      projection45DegreeEnableFlag_( false ) {
-    allocatePatchFrame();
-  }
+      projection45DegreeEnableFlag_( false ) {}
   ~PatchFrameParameterSet() {
     localOverrideAttributePatchEnableFlag_.clear();
     attributePatchFrameParameterSetId_.clear();
   }
   PatchFrameParameterSet& operator=( const PatchFrameParameterSet& ) = default;
 
-  void allocatePatchFrame( size_t size = 255 ) {
+  void allocate( size_t size = 255 ) {
     localOverrideAttributePatchEnableFlag_.resize( size, false );
     attributePatchFrameParameterSetId_.resize( size, 0 );
   }
@@ -718,11 +827,11 @@ class PatchFrameParameterSet {
   bool    getLocalOverrideAttributePatchEnableFlag( size_t index ) {
     return localOverrideAttributePatchEnableFlag_[index];
   }
-  bool getLocalOverrideGeometryPatchEnableFlag() { return localOverrideGeometryPatchEnableFlag_; }
-  bool getProjection45DegreeEnableFlag() { return projection45DegreeEnableFlag_; }
-
-  void setPatchFrameParameterSetId( uint8_t value ) { patchFrameParameterSetId_ = value; }
-  void setPatchSequenceParameterSetId( uint8_t value ) { patchSequenceParameterSetId_ = value; }
+  bool                       getLocalOverrideGeometryPatchEnableFlag() { return localOverrideGeometryPatchEnableFlag_; }
+  bool                       getProjection45DegreeEnableFlag() { return projection45DegreeEnableFlag_; }
+  PatchFrameTileInformation& getPatchFrameTileInformation() { return patchFrameTileInformation_; }
+  void                       setPatchFrameParameterSetId( uint8_t value ) { patchFrameParameterSetId_ = value; }
+  void                       setPatchSequenceParameterSetId( uint8_t value ) { patchSequenceParameterSetId_ = value; }
   void setGeometryPatchFrameParameterSetId( uint8_t value ) { geometryPatchFrameParameterSetId_ = value; }
   void setAttributePatchFrameParameterSetId( size_t index, uint8_t value ) {
     attributePatchFrameParameterSetId_[index] = value;
@@ -733,16 +842,18 @@ class PatchFrameParameterSet {
   }
   void setLocalOverrideGeometryPatchEnableFlag( bool value ) { localOverrideGeometryPatchEnableFlag_ = value; }
   void setProjection45DegreeEnableFlag( bool value ) { projection45DegreeEnableFlag_ = value; }
+  void setPatchFrameTileInformation( PatchFrameTileInformation value ) { patchFrameTileInformation_ = value; }
 
  private:
-  uint8_t              patchFrameParameterSetId_;
-  uint8_t              patchSequenceParameterSetId_;
-  uint8_t              geometryPatchFrameParameterSetId_;
-  std::vector<uint8_t> attributePatchFrameParameterSetId_;
-  uint8_t              additionalLtPfocLsbLen_;
-  bool                 localOverrideGeometryPatchEnableFlag_;
-  std::vector<bool>    localOverrideAttributePatchEnableFlag_;
-  bool                 projection45DegreeEnableFlag_;
+  uint8_t                   patchFrameParameterSetId_;
+  uint8_t                   patchSequenceParameterSetId_;
+  uint8_t                   geometryPatchFrameParameterSetId_;
+  std::vector<uint8_t>      attributePatchFrameParameterSetId_;
+  uint8_t                   additionalLtPfocLsbLen_;
+  bool                      localOverrideGeometryPatchEnableFlag_;
+  std::vector<bool>         localOverrideAttributePatchEnableFlag_;
+  bool                      projection45DegreeEnableFlag_;
+  PatchFrameTileInformation patchFrameTileInformation_;
 };
 
 // 7.3.5.11 Attribute patch params syntax (apps)
@@ -780,33 +891,37 @@ class AttributePatchParams {
   std::vector<int32_t>  attributePatchOffset_;
 };
 
-// 7.3.5.10 Attribute Patch Parameter Set syntax (appss) TODO: add attributeDimension_
+// 7.3.5.10 Attribute Patch Parameter Set syntax (appss) 
 class AttributePatchParameterSet {
  public:
   AttributePatchParameterSet() :
       attributePatchParameterSetId_( 0 ),
       patchFrameAttributeParameterSetId_( 0 ),
+      attributeDimensionMinus1_( 0 ),
       attributePatchParamsPresentFlag_( false ) {}
+  ~AttributePatchParameterSet() {}
   AttributePatchParameterSet& operator=( const AttributePatchParameterSet& ) = default;
 
   uint8_t               getAttributePatchParameterSetId() { return attributePatchParameterSetId_; }
   uint8_t               getPatchFrameAttributeParameterSetId() { return patchFrameAttributeParameterSetId_; }
   bool                  getAttributePatchParamsPresentFlag() { return attributePatchParamsPresentFlag_; }
   AttributePatchParams& getAttributePatchParams() { return attributePatchParams_; }
-
-  void setAttributePatchParameterSetId( uint8_t value ) { attributePatchParameterSetId_ = value; }
+  uint8_t               getAttributeDimensionMinus1() { return attributeDimensionMinus1_; }
+  void                  setAttributePatchParameterSetId( uint8_t value ) { attributePatchParameterSetId_ = value; }
   void setPatchFrameAttributeParameterSetId( uint8_t value ) { patchFrameAttributeParameterSetId_ = value; }
   void setAttributePatchParamsPresentFlag( bool value ) { attributePatchParamsPresentFlag_ = value; }
   void setAttributePatchParams( AttributePatchParams value ) { attributePatchParams_ = value; }
+  void setAttributeDimensionMinus1( uint8_t value ) { attributeDimensionMinus1_ = value; }
 
  private:
   uint8_t              attributePatchParameterSetId_;
   uint8_t              patchFrameAttributeParameterSetId_;
+  uint8_t              attributeDimensionMinus1_;
   bool                 attributePatchParamsPresentFlag_;
   AttributePatchParams attributePatchParams_;
 };
 
-// 7.3.5.9 Geometry patch params syntax TODO: rotation should be defined using quaternions (dimension 4)
+// 7.3.5.9 Geometry patch params syntax 
 class GeometryPatchParams {
  public:
   GeometryPatchParams() :
@@ -825,6 +940,8 @@ class GeometryPatchParams {
       geometryPatchRotationXYZW_[d] = 0;  // i(32)
     }
   }
+  ~GeometryPatchParams() {}
+
   GeometryPatchParams& operator=( const GeometryPatchParams& ) = default;
 
   bool     getGeometryPatchScaleParamsPresentFlag() { return geometryPatchScaleParamsPresentFlag_; }
@@ -869,6 +986,7 @@ class GeometryPatchParameterSet {
       geometryPatchParameterSetId_( 0 ),
       patchFrameGeometryParameterSetId_( 0 ),
       geometryPatchParamsPresentFlag_( false ) {}
+  ~GeometryPatchParameterSet() {}
   GeometryPatchParameterSet& operator=( const GeometryPatchParameterSet& ) = default;
 
   uint8_t              getGeometryPatchParameterSetId() { return geometryPatchParameterSetId_; }
@@ -888,91 +1006,110 @@ class GeometryPatchParameterSet {
   GeometryPatchParams geometryPatchParams_;
 };
 
-// 7.3.5.7 Attribute frame paramS syntax (afp) TODO: attributeSmoothingParamsPresentFlag_, attributeSmoothingThreshold_,
-// attributeSmoothingThresholdLocalEntropy_ are lists with size attributeDimension; remove attributeSmoothingRadius_,
-// attributeSmoothingNeighbourCount_ and attributeSmoothingRadius2BoundaryDetection_; add attributeSmoothingGridSize_,
-// attributeSmoothingAttributeVariation_ and attributeSmoothingAttributeDifference_
+// 7.3.5.7 Attribute frame paramS syntax (afp)
 class AttributeFrameParams {
  public:
   AttributeFrameParams() :
       attributeSmoothingParamsPresentFlag_( false ),
-      AttributeGridSmoothingEnabledFlag_( false ),
-      attributeSmoothingGridSize_( 0 ),
       attributeScaleParamsPresentFlag_( false ),
-      attributeOffsetParamsPresentFlag_( false ),
-      attributeSmoothingRadius_( 0 ),
-      attributeSmoothingNeighbourCount_( 0 ),
-      attributeSmoothingRadius2BoundaryDetection_( 0 ),
-      attributeSmoothingThreshold_( 0 ),
-      attributeSmoothingThresholdColorDifference_( 0 ),
-      attributeSmoothingThresholdColorVariation_( 0 ),
-      attributeSmoothingThresholdLocalEntropy_( 0 ),
-      attributeDimension_( 0 ) {
+      attributeOffsetParamsPresentFlag_( false ) {
     attributeScale_.clear();
     attributeOffset_.clear();
+    attributeSmoothingParamsPresentFlag_.clear();
+    attributeSmoothingGridSizeMinus2_.clear();
+    attributeSmoothingThreshold_.clear();
+    attributeSmoothingThresholdAttributeDifference_.clear();
+    attributeSmoothingThresholdAttributeVariation_.clear();
+    attributeSmoothingLocalEntropyThreshold_.clear();
   }
+  ~AttributeFrameParams() {
+    attributeScale_.clear();
+    attributeOffset_.clear();
+    attributeSmoothingParamsPresentFlag_.clear();
+    attributeSmoothingGridSizeMinus2_.clear();
+    attributeSmoothingThreshold_.clear();
+    attributeSmoothingThresholdAttributeDifference_.clear();
+    attributeSmoothingThresholdAttributeVariation_.clear();
+    attributeSmoothingLocalEntropyThreshold_.clear();
+  }
+
   AttributeFrameParams& operator=( const AttributeFrameParams& ) = default;
 
   void allocate( size_t size ) {
     attributeScale_.resize( size, 0 );
     attributeOffset_.resize( size, 0 );
+    attributeSmoothingParamsPresentFlag_.resize( size, 0 );
+    attributeSmoothingGridSizeMinus2_.resize( size, 0 );
+    attributeSmoothingThreshold_.resize( size, 0 );
+    attributeSmoothingThresholdAttributeDifference_.resize( size, 0 );
+    attributeSmoothingThresholdAttributeVariation_.resize( size, 0 );
+    attributeSmoothingLocalEntropyThreshold_.resize( size, 0 );
   }
 
-  bool     getAttributeSmoothingParamsPresentFlag() { return attributeSmoothingParamsPresentFlag_; }
-  bool     getAttributeGridSmoothingEnabledFlag() { return AttributeGridSmoothingEnabledFlag_; }
-  uint8_t  getAttributeSmoothingGridSize() { return attributeSmoothingGridSize_; }
+  bool    getAttributeSmoothingParamsPresentFlag( size_t index ) { return attributeSmoothingParamsPresentFlag_[index]; }
+  uint8_t getAttributeSmoothingGridSizeMinus2( size_t index ) { return attributeSmoothingGridSizeMinus2_[index]; }
+  uint8_t getAttributeSmoothingThreshold( size_t index ) { return attributeSmoothingThreshold_[index]; }
+  uint32_t getAttributeSmoothingLocalEntropyThreshold( size_t index ) {
+    return attributeSmoothingLocalEntropyThreshold_[index];
+  }
+  uint8_t getAttributeSmoothingThresholdAttributeDifference( size_t index ) {
+    return attributeSmoothingThresholdAttributeDifference_[index];
+  }
+  uint8_t getAttributeSmoothingThresholdAttributeVariation( size_t index ) {
+    return attributeSmoothingThresholdAttributeVariation_[index];
+  }
   bool     getAttributeScaleParamsPresentFlag() { return attributeScaleParamsPresentFlag_; }
   bool     getAttributeOffsetParamsPresentFlag() { return attributeOffsetParamsPresentFlag_; }
-  uint8_t  getAttributeSmoothingRadius() { return attributeSmoothingRadius_; }
-  uint8_t  getAttributeSmoothingNeighbourCount() { return attributeSmoothingNeighbourCount_; }
-  uint8_t  getAttributeSmoothingRadius2BoundaryDetection() { return attributeSmoothingRadius2BoundaryDetection_; }
-  uint8_t  getAttributeSmoothingThreshold() { return attributeSmoothingThreshold_; }
-  uint8_t  getAttributeSmoothingThresholdColorDifference() { return attributeSmoothingThresholdColorDifference_; }
-  uint8_t  getAttributeSmoothingThresholdColorVariation() { return attributeSmoothingThresholdColorVariation_; }
-  uint32_t getAttributeSmoothingThresholdLocalEntropy() { return attributeSmoothingThresholdLocalEntropy_; }
   uint32_t getAttributeScale( size_t index ) { return attributeScale_[index]; }
   int32_t  getAttributeOffset( size_t index ) { return attributeOffset_[index]; }
 
-  void setAttributeSmoothingParamsPresentFlag( bool value ) { attributeSmoothingParamsPresentFlag_ = value; }
-  void setAttributeGridSmoothingEnabledFlag( bool value ) { AttributeGridSmoothingEnabledFlag_ = value; }
-  void setAttributeSmoothingGridSize( uint8_t value ) { attributeSmoothingGridSize_ = value; }
+  void setAttributeSmoothingParamsPresentFlag( std::vector<bool> value ) {
+    attributeSmoothingParamsPresentFlag_ = value;
+  }
+  void setAttributeSmoothingGridSize( std::vector<uint8_t> value ) { attributeSmoothingGridSizeMinus2_ = value; }
+  void setAttributeSmoothingThreshold( std::vector<uint8_t> value ) { attributeSmoothingThreshold_ = value; }
+  void setAttributeSmoothingLocalEntropyThreshold( std::vector<uint32_t> value ) {
+    attributeSmoothingLocalEntropyThreshold_ = value;
+  }
+  void setAttributeSmoothingThresholdAttributeDifference( std::vector<uint8_t> value ) {
+    attributeSmoothingThresholdAttributeDifference_ = value;
+  }
+  void setAttributeSmoothingThresholdAttributeVariation( std::vector<uint8_t> value ) {
+    attributeSmoothingThresholdAttributeVariation_ = value;
+  }
+
+  void setAttributeSmoothingParamsPresentFlag( size_t index, bool value ) {
+    attributeSmoothingParamsPresentFlag_[index] = value;
+  }
+  void setAttributeSmoothingGridSizeMinus2( size_t index, uint8_t value ) {
+    attributeSmoothingGridSizeMinus2_[index] = value;
+  }
+  void setAttributeSmoothingThreshold( size_t index, uint8_t value ) { attributeSmoothingThreshold_[index] = value; }
+  void setAttributeSmoothingLocalEntropyThreshold( size_t index, uint32_t value ) {
+    attributeSmoothingLocalEntropyThreshold_[index] = value;
+  }
+  void setAttributeSmoothingThresholdAttributeDifference( size_t index, uint8_t value ) {
+    attributeSmoothingThresholdAttributeDifference_[index] = value;
+  }
+  void setAttributeSmoothingThresholdAttributeVariation( size_t index, uint8_t value ) {
+    attributeSmoothingThresholdAttributeVariation_[index] = value;
+  }
   void setAttributeScaleParamsPresentFlag( bool value ) { attributeScaleParamsPresentFlag_ = value; }
   void setAttributeOffsetParamsPresentFlag( bool value ) { attributeOffsetParamsPresentFlag_ = value; }
-  void setAttributeSmoothingRadius( uint8_t value ) { attributeSmoothingRadius_ = value; }
-  void setAttributeSmoothingNeighbourCount( uint8_t value ) { attributeSmoothingNeighbourCount_ = value; }
-  void setAttributeSmoothingRadius2BoundaryDetection( uint8_t value ) {
-    attributeSmoothingRadius2BoundaryDetection_ = value;
-  }
-  void setAttributeSmoothingThreshold( uint8_t value ) { attributeSmoothingThreshold_ = value; }
-  void setAttributeSmoothingThresholdColorDifference( uint8_t value ) {
-    attributeSmoothingThresholdColorDifference_ = value;
-  }
-  void setAttributeSmoothingThresholdColorVariation( uint8_t value ) {
-    attributeSmoothingThresholdColorVariation_ = value;
-  }
-  void setAttributeSmoothingThresholdLocalEntropy( uint32_t value ) {
-    attributeSmoothingThresholdLocalEntropy_ = value;
-  }
   void setAttributeScale( size_t index, uint32_t value ) { attributeScale_[index] = value; }
   void setAttributeOffset( size_t index, int32_t value ) { attributeOffset_[index] = value; }
-  void setDimension( size_t value ) { attributeDimension_ = value; }
 
  private:
-  bool                  attributeSmoothingParamsPresentFlag_;
-  bool                  AttributeGridSmoothingEnabledFlag_;
-  uint8_t               attributeSmoothingGridSize_;
+  std::vector<bool>     attributeSmoothingParamsPresentFlag_;
+  std::vector<uint8_t>  attributeSmoothingGridSizeMinus2_;
+  std::vector<uint8_t>  attributeSmoothingThreshold_;
+  std::vector<uint32_t> attributeSmoothingLocalEntropyThreshold_;
+  std::vector<uint8_t>  attributeSmoothingThresholdAttributeVariation_;
+  std::vector<uint8_t>  attributeSmoothingThresholdAttributeDifference_;
   bool                  attributeScaleParamsPresentFlag_;
   bool                  attributeOffsetParamsPresentFlag_;
-  uint8_t               attributeSmoothingRadius_;
-  uint8_t               attributeSmoothingNeighbourCount_;
-  uint8_t               attributeSmoothingRadius2BoundaryDetection_;
-  uint8_t               attributeSmoothingThreshold_;
-  uint8_t               attributeSmoothingThresholdColorDifference_;
-  uint8_t               attributeSmoothingThresholdColorVariation_;
-  uint32_t              attributeSmoothingThresholdLocalEntropy_;
   std::vector<uint32_t> attributeScale_;
   std::vector<int32_t>  attributeOffset_;
-  size_t                attributeDimension_;
 };
 
 // 7.3.5.6 Patch frame attribute parameter set syntax
@@ -983,9 +1120,10 @@ class PatchFrameAttributeParameterSet {
       patchSequencParameterSetId_( 0 ),
       attributeDimensionMinus1_( 3 ),
       attributePatchScaleParamsEnabledFlag_( false ),
-      attributePatchOffsetParamsEnabledFlag_( false ) {
-    attributeFrameParams_.setDimension( attributeDimensionMinus1_ + 1 );
-  }
+      attributePatchOffsetParamsEnabledFlag_( false ) {}
+
+  ~PatchFrameAttributeParameterSet() {}
+
   PatchFrameAttributeParameterSet& operator=( const PatchFrameAttributeParameterSet& ) = default;
 
   uint8_t               getPatchFrameAttributeParameterSetId() { return patchFrameAttributeParameterSetId_; }
@@ -1011,7 +1149,7 @@ class PatchFrameAttributeParameterSet {
   AttributeFrameParams attributeFrameParams_;
 };
 
-// 7.3.5.5 Geometry frame params syntax TODO: rotation should be defined using quaternions (dimension 4)
+// 7.3.5.5 Geometry frame params syntax 
 class GeometryFrameParams {
  public:
   GeometryFrameParams() :
@@ -1022,7 +1160,7 @@ class GeometryFrameParams {
       geometryPointSizeInfoPresentFlag_( false ),
       geometryPointShapeInfoPresentFlag_( false ),
       geometrySmoothingEnabledFlag_( false ),
-      geometrySmoothingGridSize_( 0 ),
+      geometrySmoothingGridSizeMinus2_( 0 ),
       geometrySmoothingThreshold_( 0 ),
       geometryPointSizeInfo_( 0 ),
       geometryPointShapeInfo_( 0 ) {
@@ -1032,6 +1170,7 @@ class GeometryFrameParams {
     }
     for ( uint8_t i = 0; i < 4; i++ ) { geometryRotationXYZW_[i] = 0; }
   }
+  ~GeometryFrameParams() {}
   GeometryFrameParams& operator=( const GeometryFrameParams& ) = default;
 
   bool     getGeometrySmoothingParamsPresentFlag() { return geometrySmoothingParamsPresentFlag_; }
@@ -1041,7 +1180,7 @@ class GeometryFrameParams {
   bool     getGeometryPointSizeInfoPresentFlag() { return geometryPointSizeInfoPresentFlag_; }
   bool     getGeometryPointShapeInfoPresentFlag() { return geometryPointShapeInfoPresentFlag_; }
   bool     getGeometrySmoothingEnabledFlag() { return geometrySmoothingEnabledFlag_; }
-  uint8_t  getGeometrySmoothingGridSize() { return geometrySmoothingGridSize_; }
+  uint8_t  getGeometrySmoothingGridSizeMinus2() { return geometrySmoothingGridSizeMinus2_; }
   uint8_t  getGeometrySmoothingThreshold() { return geometrySmoothingThreshold_; }
   uint32_t getGeometryScaleOnAxis( size_t index ) { return geometryScaleOnAxis_[index]; }
   int32_t  getGeometryOffsetOnAxis( size_t index ) { return geometryOffsetOnAxis_[index]; }
@@ -1056,7 +1195,7 @@ class GeometryFrameParams {
   void setGeometryPointSizeInfoPresentFlag( bool value ) { geometryPointSizeInfoPresentFlag_ = value; }
   void setGeometryPointShapeInfoPresentFlag( bool value ) { geometryPointShapeInfoPresentFlag_ = value; }
   void setGeometrySmoothingEnabledFlag( bool value ) { geometrySmoothingEnabledFlag_ = value; }
-  void setGeometrySmoothingGridSize( uint8_t value ) { geometrySmoothingGridSize_ = value; }
+  void setGeometrySmoothingGridSizeMinus2( uint8_t value ) { geometrySmoothingGridSizeMinus2_ = value; }
   void setGeometrySmoothingThreshold( uint8_t value ) { geometrySmoothingThreshold_ = value; }
   void setGeometryScaleOnAxis( size_t index, uint32_t value ) { geometryScaleOnAxis_[index] = value; }
   void setGeometryOffsetOnAxis( size_t index, int32_t value ) { geometryOffsetOnAxis_[index] = value; }
@@ -1072,7 +1211,7 @@ class GeometryFrameParams {
   bool     geometryPointSizeInfoPresentFlag_;
   bool     geometryPointShapeInfoPresentFlag_;
   bool     geometrySmoothingEnabledFlag_;
-  uint8_t  geometrySmoothingGridSize_;
+  uint8_t  geometrySmoothingGridSizeMinus2_;
   uint8_t  geometrySmoothingThreshold_;
   uint32_t geometryScaleOnAxis_[3];
   int32_t  geometryOffsetOnAxis_[3];
@@ -1094,6 +1233,7 @@ class PatchFrameGeometryParameterSet {
       geometryPatchPointSizeInfoEnabledFlag_( false ),
       geometryPatchPointShapeInfoEnabledFlag_( false ) {}
 
+  ~PatchFrameGeometryParameterSet() {}
   PatchFrameGeometryParameterSet& operator=( const PatchFrameGeometryParameterSet& ) = default;
 
   uint8_t              getPatchFrameGeometryParameterSetId() { return patchFrameGeometryParameterSetId_; }
@@ -1131,7 +1271,7 @@ class PatchFrameGeometryParameterSet {
   GeometryFrameParams geometryFrameParams_;
 };
 
-// 7.3.5.3  Patch sequence parameter set syntax (psps) TODO: add patchPackingBlockSize
+// 7.3.5.3  Patch sequence parameter set syntax (psps) 
 class PatchSequenceParameterSet {
  public:
   PatchSequenceParameterSet() :
@@ -1173,8 +1313,12 @@ class PatchSequenceParameterSet {
   void setNormalAxisLimitsQuantizationEnableFlag( bool value ) { normalAxisLimitsQuantizationEnableFlag_ = value; }
   void setNormalAxisMaxDeltaValueEnableFlag( bool value ) { normalAxisMaxDeltaValueEnableFlag_ = value; }
   void setRefListStruct( uint8_t index, RefListStruct value ) { refListStruct_[index] = value; }
-
   void addRefListStruct( RefListStruct value ) { refListStruct_.push_back( value ); }
+  RefListStruct& addRefListStruct() {
+    RefListStruct refListStruct;
+    refListStruct_.push_back( refListStruct );
+    return refListStruct_.back();
+  }
 
  private:
   uint8_t patchSequenceParameterSetId_;
@@ -1190,25 +1334,39 @@ class PatchSequenceParameterSet {
   std::vector<RefListStruct> refListStruct_;
 };
 
-class SeiMessage {
+class SeiPayload {
  public:
-  SeiMessage() {}
-  ~SeiMessage() {}
-  SeiMessage& operator=( const SeiMessage& ) = default;
-
- private:
+  SeiPayload() {}
+  ~SeiPayload() {}
+  SeiPayload& operator=( const SeiPayload& ) = default;
 };
 
-// 7.3.5.2  Patch data group unit payload syntax (pdgup) 
+class SeiMessage {
+ public:
+  SeiMessage() : payloadTypeByte_( 0 ), payloadSizeByte_( 0 ) { seiPayload_.clear(); }
+  ~SeiMessage() { seiPayload_.clear(); }
+  SeiMessage& operator=( const SeiMessage& ) = default;
+  uint8_t     getPayloadTypeByte() { return payloadTypeByte_; }
+  uint8_t     getPayloadSizeByte() { return payloadSizeByte_; }
+  void        setPayloadTypeByte( uint8_t value ) { payloadTypeByte_ = value; }
+  void        setPayloadSizeByte( uint8_t value ) { payloadSizeByte_ = value; }
+
+ private:
+  uint8_t                 payloadTypeByte_;
+  uint8_t                 payloadSizeByte_;
+  std::vector<SeiPayload> seiPayload_;
+};
+
+// 7.3.5.2  Patch data group unit payload syntax (pdgup)
 class PatchDataGroup {
  public:
   PatchDataGroup() {}
   ~PatchDataGroup() {
     patchTileGroupLayerUnit_.clear();
-    seiMessage_.clear();
+    seiMessageSuffix_.clear();
+    seiMessagePrefix_.clear();
   }
-  PatchDataGroup& operator=( const PatchDataGroup& ) = default;
-
+  PatchDataGroup&             operator=( const PatchDataGroup& ) = default;
   PatchSequenceParameterSet&  getPatchSequenceParameterSet( size_t index ) { return patchSequenceParameterSet_[index]; }
   GeometryPatchParameterSet&  getGeometryPatchParameterSet( size_t index ) { return geometryPatchParameterSet_[index]; }
   AttributePatchParameterSet& getAttributePatchParameterSet( size_t index ) {
@@ -1222,7 +1380,25 @@ class PatchDataGroup {
     return patchFrameGeometryParameterSet_[index];
   }
   PatchTileGroupLayerUnit& getPatchTileGroupLayerUnit( size_t index ) { return patchTileGroupLayerUnit_[index]; }
-
+  std::vector<SeiMessage>& getSeiMessagePrefix() { return seiMessagePrefix_; }
+  std::vector<SeiMessage>& getSeiMessageSuffix() { return seiMessageSuffix_; }
+  SeiMessage&              getSeiMessagePrefix( size_t index ) { return seiMessagePrefix_[index]; }
+  SeiMessage&              getSeiMessageSuffix( size_t index ) { return seiMessageSuffix_[index]; }
+  size_t                   getPatchTileGroupLayerUnitSize() { return patchTileGroupLayerUnit_.size(); }
+  size_t                   getSeiMessagePrefixSize() { return seiMessagePrefix_.size(); }
+  size_t                   getSeiMessageSuffixSize() { return seiMessageSuffix_.size(); }
+  size_t                   getPatchSequenceParameterSetSize() { return patchSequenceParameterSetSize_; }
+  size_t                   getGeometryPatchParameterSetSize() { return geometryPatchParameterSetSize_; }
+  size_t                   getAttributePatchParameterSetSize() { return attributePatchParameterSetSize_; }
+  size_t                   getPatchFrameParameterSetSize() { return patchFrameParameterSetSize_; }
+  size_t                   getPatchFrameAttributeParameterSetSize() { return patchFrameAttributeParameterSetSize_; }
+  size_t                   getPatchFrameGeometryParameterSetSize() { return patchFrameGeometryParameterSetSize_; }
+  void                     setPatchSequenceParameterSetSize( size_t value ) { patchSequenceParameterSetSize_ = value; }
+  void                     setGeometryPatchParameterSetSize( size_t value ) { geometryPatchParameterSetSize_ = value; }
+  void setAttributePatchParameterSetSize( size_t value ) { attributePatchParameterSetSize_ = value; }
+  void setPatchFrameParameterSetSize( size_t value ) { patchFrameParameterSetSize_ = value; }
+  void setPatchFrameAttributeParameterSetSize( size_t value ) { patchFrameAttributeParameterSetSize_ = value; }
+  void setPatchFrameGeometryParameterSetSize( size_t value ) { patchFrameGeometryParameterSetSize_ = value; }
   void setPatchSequenceParameterSet( size_t index, PatchSequenceParameterSet value ) {
     patchSequenceParameterSet_[index] = value;
   }
@@ -1246,14 +1422,16 @@ class PatchDataGroup {
     patchTileGroupLayerUnit_.push_back( patchTileGroupLayerUnit );
     return patchTileGroupLayerUnit_.back();
   }
-  SeiMessage& addSeiMessage() {
+  SeiMessage& addSeiMessagePrefix() {
     SeiMessage seiMessage;
-    seiMessage_.push_back( seiMessage );
-    return seiMessage_.back();
+    seiMessagePrefix_.push_back( seiMessage );
+    return seiMessagePrefix_.back();
   }
-
-  const size_t getPatchTileGroupLayerUnitSize() { return patchTileGroupLayerUnit_.size(); }
-  const size_t getSeiMessageSize() { return seiMessage_.size(); }
+  SeiMessage& addSeiMessageSuffix() {
+    SeiMessage seiMessage;
+    seiMessageSuffix_.push_back( seiMessage );
+    return seiMessageSuffix_.back();
+  }
 
  private:
   PatchSequenceParameterSet            patchSequenceParameterSet_[16];
@@ -1263,7 +1441,14 @@ class PatchDataGroup {
   PatchFrameAttributeParameterSet      patchFrameAttributeParameterSet_[64];
   PatchFrameGeometryParameterSet       patchFrameGeometryParameterSet_[64];
   std::vector<PatchTileGroupLayerUnit> patchTileGroupLayerUnit_;
-  std::vector<SeiMessage>              seiMessage_;
+  std::vector<SeiMessage>              seiMessagePrefix_;
+  std::vector<SeiMessage>              seiMessageSuffix_;
+  size_t                               patchSequenceParameterSetSize_;
+  size_t                               geometryPatchParameterSetSize_;
+  size_t                               attributePatchParameterSetSize_;
+  size_t                               patchFrameParameterSetSize_;
+  size_t                               patchFrameAttributeParameterSetSize_;
+  size_t                               patchFrameGeometryParameterSetSize_;
 };
 
 class AttributeInformation {
@@ -1294,7 +1479,6 @@ class AttributeInformation {
     attributeNominal2dBitdepthMinus1_.resize( attributeCount_, 0 );
     attributePartitionChannelsMinus1_.resize( attributeCount_ );
   }
-
   uint8_t getAttributeCount() { return attributeCount_; }
   uint8_t getAttributeParamsEnabledFlag() { return attributeParamsEnabledFlag_; }
   uint8_t getAttributePatchParamsEnabledFlag() { return attributePatchParamsEnabledFlag_; }
@@ -1305,11 +1489,12 @@ class AttributeInformation {
   uint8_t getAttributeDimensionMinus1( uint32_t index ) { return attributeDimensionMinus1_[index]; }
   uint8_t getAttributeDimensionPartitionsMinus1( uint32_t index ) { return attributeDimensionPartitionsMinus1_[index]; }
   uint8_t getAttributeNominal2dBitdepthMinus1( uint32_t index ) { return attributeNominal2dBitdepthMinus1_[index]; }
-  uint8_t getAttributePartitionChannelsMinus1( uint32_t i, uint32_t j ) {
-    if ( j >= attributePartitionChannelsMinus1_[i].size() ) { attributePartitionChannelsMinus1_[i].resize( j + 1, 0 ); }
-    return attributePartitionChannelsMinus1_[i][j];
+  uint8_t getAttributePartitionChannelsMinus1( uint32_t index, uint32_t j ) {
+    if ( j >= attributePartitionChannelsMinus1_[index].size() ) {
+      attributePartitionChannelsMinus1_[index].resize( j + 1, 0 );
+    }
+    return attributePartitionChannelsMinus1_[index][j];
   }
-
   void setAttributeCount( uint8_t value ) { attributeCount_ = value; }
   void setAttributeParamsEnabledFlag( bool value ) { attributeParamsEnabledFlag_ = value; }
   void setAttributePatchParamsEnabledFlag( bool value ) { attributePatchParamsEnabledFlag_ = value; }
@@ -1324,9 +1509,11 @@ class AttributeInformation {
   void setAttributeNominal2dBitdepthMinus1( uint32_t index, uint8_t value ) {
     attributeNominal2dBitdepthMinus1_[index] = value;
   }
-  void setAttributePartitionChannelsMinus1( uint32_t i, uint32_t j, uint8_t value ) {
-    if ( j >= attributePartitionChannelsMinus1_[i].size() ) { attributePartitionChannelsMinus1_[i].resize( j + 1, 0 ); }
-    attributePartitionChannelsMinus1_[i][j] = value;
+  void setAttributePartitionChannelsMinus1( uint32_t index, uint32_t j, uint8_t value ) {
+    if ( j >= attributePartitionChannelsMinus1_[index].size() ) {
+      attributePartitionChannelsMinus1_[index].resize( j + 1, 0 );
+    }
+    attributePartitionChannelsMinus1_[index][j] = value;
   }
 
  private:
@@ -1352,6 +1539,7 @@ class GeometryInformation {
       geometry3dCoordinatesBitdepthMinus1_( 9 ),
       pcmGeometryCodecId_( 0 ),
       geometryParamsEnabledFlag_( false ) {}
+  ~GeometryInformation() {}
   GeometryInformation& operator=( const GeometryInformation& ) = default;
 
   void init( uint8_t codecId,
@@ -1397,18 +1585,16 @@ class GeometryInformation {
 class OccupancyInformation {
  public:
   OccupancyInformation() : occupancyCodecId_( 0 ), lossyOccupancyMapCompressionThreshold_( 0 ) {}
+  ~OccupancyInformation() {}
   OccupancyInformation& operator=( const OccupancyInformation& ) = default;
-
-  void init( uint8_t codecId, uint8_t threshold, uint8_t packingBlockSize ) {
+  void                  init( uint8_t codecId, uint8_t threshold, uint8_t packingBlockSize ) {
     occupancyCodecId_                      = codecId;
     lossyOccupancyMapCompressionThreshold_ = threshold;
   }
-
   uint8_t getOccupancyCodecId() { return occupancyCodecId_; }
   uint8_t getLossyOccupancyMapCompressionThreshold() { return lossyOccupancyMapCompressionThreshold_; }
-
-  void setOccupancyCodecId( uint8_t value ) { occupancyCodecId_ = value; }
-  void setLossyOccupancyMapCompressionThreshold( uint8_t value ) { lossyOccupancyMapCompressionThreshold_ = value; }
+  void    setOccupancyCodecId( uint8_t value ) { occupancyCodecId_ = value; }
+  void    setLossyOccupancyMapCompressionThreshold( uint8_t value ) { lossyOccupancyMapCompressionThreshold_ = value; }
 
  private:
   uint8_t occupancyCodecId_;
@@ -1424,19 +1610,18 @@ class ProfileTierLevel {
       profilePccToolsetIdc_( 0 ),
       profileReconctructionIdc_( 0 ),
       levelIdc_( 0 ) {}
+  ~ProfileTierLevel() {}
   ProfileTierLevel& operator=( const ProfileTierLevel& ) = default;
-
-  bool    getTierFlag() { return tierFlag_; }
-  uint8_t getProfileCodecGroupIdc() { return profileCodecGroupIdc_; }
-  uint8_t getProfilePccToolsetIdc() { return profilePccToolsetIdc_; }
-  uint8_t getProfileReconctructionIdc() { return profileReconctructionIdc_; }
-  uint8_t getLevelIdc() { return levelIdc_; }
-
-  void setTierFlag( bool value ) { tierFlag_ = value; }
-  void setProfileCodecGroupIdc( uint8_t value ) { profileCodecGroupIdc_ = value; }
-  void setProfilePccToolsetIdc( uint8_t value ) { profilePccToolsetIdc_ = value; }
-  void setProfileReconctructionIdc( uint8_t value ) { profileReconctructionIdc_ = value; }
-  void setLevelIdc( uint8_t value ) { levelIdc_ = value; }
+  bool              getTierFlag() { return tierFlag_; }
+  uint8_t           getProfileCodecGroupIdc() { return profileCodecGroupIdc_; }
+  uint8_t           getProfilePccToolsetIdc() { return profilePccToolsetIdc_; }
+  uint8_t           getProfileReconctructionIdc() { return profileReconctructionIdc_; }
+  uint8_t           getLevelIdc() { return levelIdc_; }
+  void              setTierFlag( bool value ) { tierFlag_ = value; }
+  void              setProfileCodecGroupIdc( uint8_t value ) { profileCodecGroupIdc_ = value; }
+  void              setProfilePccToolsetIdc( uint8_t value ) { profilePccToolsetIdc_ = value; }
+  void              setProfileReconctructionIdc( uint8_t value ) { profileReconctructionIdc_ = value; }
+  void              setLevelIdc( uint8_t value ) { levelIdc_ = value; }
 
  private:
   bool    tierFlag_;
@@ -1469,7 +1654,6 @@ class SequenceParameterSet {
     layerAbsoluteCodingEnabledFlag_.clear();
     layerPredictorIndexDiff_.clear();
   }
-
   ~SequenceParameterSet() {
     layerAbsoluteCodingEnabledFlag_.clear();
     layerPredictorIndexDiff_.clear();
@@ -1608,12 +1792,11 @@ class SequenceParameterSet {
   bool    getLosslessTexture() { return losslessTexture_; }
   uint8_t getMinLevel() { return minLevel_; }
   size_t  getSurfaceThickness() { return surfaceThickness_; }
-
-  void setLosslessGeo444( bool losslessGeo444 ) { losslessGeo444_ = losslessGeo444; }
-  void setLosslessGeo( bool losslessGeo ) { losslessGeo_ = losslessGeo; }
-  void setLosslessTexture( bool losslessTexture ) { losslessTexture_ = losslessTexture; }
-  void setMinLevel( uint8_t minLevel ) { minLevel_ = minLevel; }
-  void setSurfaceThickness( size_t surfaceThickness ) { surfaceThickness_ = surfaceThickness; }
+  void    setLosslessGeo444( bool losslessGeo444 ) { losslessGeo444_ = losslessGeo444; }
+  void    setLosslessGeo( bool losslessGeo ) { losslessGeo_ = losslessGeo; }
+  void    setLosslessTexture( bool losslessTexture ) { losslessTexture_ = losslessTexture; }
+  void    setMinLevel( uint8_t minLevel ) { minLevel_ = minLevel; }
+  void    setSurfaceThickness( size_t surfaceThickness ) { surfaceThickness_ = surfaceThickness; }
 
  private:
   bool    losslessGeo444_;
@@ -1624,7 +1807,7 @@ class SequenceParameterSet {
   // THE NEXT PARAMETERS ARE NOT IN THE VPCC CD SYNTAX DOCUMENTS AND WILL BE REMOVE
 };
 
-// VPCCParameterSet Class TODO: add attributeDimensionIndex_
+// VPCCParameterSet Class 
 class VPCCParameterSet {
  public:
   VPCCParameterSet() :
@@ -1634,21 +1817,21 @@ class VPCCParameterSet {
       attributeDimensionIndex_( 0 ),
       layerIndex_( 0 ),
       pcmVideoFlag_( false ) {}
+
+  ~VPCCParameterSet() {}
   VPCCParameterSet& operator=( const VPCCParameterSet& ) = default;
-
-  uint8_t getUnitType() { return unitType_; }
-  uint8_t getSequenceParameterSetId() { return sequenceParamterSetId_; }
-  uint8_t getAttributeIndex() { return attributeIndex_; }
-  uint8_t getAttributeDimensionIndex() { return attributeDimensionIndex_; }
-  uint8_t getLayerIndex() { return layerIndex_; }
-  bool    getPCMVideoFlag() { return pcmVideoFlag_; }
-
-  void setUnitType( uint8_t value ) { unitType_ = value; }
-  void setSequenceParameterSetId( uint8_t value ) { sequenceParamterSetId_ = value; }
-  void setAttributeIndex( uint8_t value ) { attributeIndex_ = value; }
-  void setAttributeDimensionIndex( uint8_t value ) { attributeDimensionIndex_ = value; }
-  void setLayerIndex( uint8_t value ) { layerIndex_ = value; }
-  void setPCMVideoFlag( bool value ) { pcmVideoFlag_ = value; }
+  uint8_t           getUnitType() { return unitType_; }
+  uint8_t           getSequenceParameterSetId() { return sequenceParamterSetId_; }
+  uint8_t           getAttributeIndex() { return attributeIndex_; }
+  uint8_t           getAttributeDimensionIndex() { return attributeDimensionIndex_; }
+  uint8_t           getLayerIndex() { return layerIndex_; }
+  bool              getPCMVideoFlag() { return pcmVideoFlag_; }
+  void              setUnitType( uint8_t value ) { unitType_ = value; }
+  void              setSequenceParameterSetId( uint8_t value ) { sequenceParamterSetId_ = value; }
+  void              setAttributeIndex( uint8_t value ) { attributeIndex_ = value; }
+  void              setAttributeDimensionIndex( uint8_t value ) { attributeDimensionIndex_ = value; }
+  void              setLayerIndex( uint8_t value ) { layerIndex_ = value; }
+  void              setPCMVideoFlag( bool value ) { pcmVideoFlag_ = value; }
 
  private:
   uint8_t unitType_;
@@ -1697,8 +1880,8 @@ class PCCContext {
   PCCMetadata&                  getGOFLevelMetadata() { return gofLevelMetadata_; }
   std::vector<SubContext>&      getSubContexts() { return subContexts_; }
   std::vector<unionPatch>&      getUnionPatch() { return unionPatch_; }
-  bool&                         getPrefilterLossyOM() { return prefilterLossyOM_; }  // Lossy occupancy map
-  size_t&                       getOffsetLossyOM() { return offsetLossyOM_; }        // Lossy occupancy map
+  bool&                         getPrefilterLossyOM() { return prefilterLossyOM_; }
+  size_t&                       getOffsetLossyOM() { return offsetLossyOM_; }
   size_t                        getGeometry3dCoordinatesBitdepth() { return geometry3dCoordinatesBitdepth_; }
   void                          setOccupancyPrecision( uint8_t value ) { occupancyPrecision_ = value; }
   void                          setOccupancyPackingBlockSize( uint8_t value ) { occupancyPackingBlockSize_ = value; }
@@ -1757,20 +1940,18 @@ class PCCContext {
   size_t getPointLocalReconstructionModeNumber() { return pointLocalReconstructionMode_.size(); }
 
  private:
-  std::vector<PCCFrameContext>      frames_;
-  PCCVideoGeometry                  videoGeometry_;
-  PCCVideoGeometry                  videoGeometryD1_;
-  PCCVideoTexture                   videoTexture_;
-  PCCVideoOccupancyMap              videoOccupancyMap_;
-  PCCVideoGeometry                  videoMPsGeometry_;
-  PCCVideoTexture                   videoMPsTexture_;
-  std::vector<PCCVideoBitstream>    videoBitstream_;
-  PCCMetadata                       gofLevelMetadata_;
-  VPCCParameterSet                  vpccParameterSet_;
-  PatchDataGroup                    patchSequenceDataUnit_;
-  std::vector<SequenceParameterSet> sequenceParameterSets_;
-
-  // Internale data
+  std::vector<PCCFrameContext>              frames_;
+  PCCVideoGeometry                          videoGeometry_;
+  PCCVideoGeometry                          videoGeometryD1_;
+  PCCVideoTexture                           videoTexture_;
+  PCCVideoOccupancyMap                      videoOccupancyMap_;
+  PCCVideoGeometry                          videoMPsGeometry_;
+  PCCVideoTexture                           videoMPsTexture_;
+  std::vector<PCCVideoBitstream>            videoBitstream_;
+  PCCMetadata                               gofLevelMetadata_;
+  VPCCParameterSet                          vpccParameterSet_;
+  PatchDataGroup                            patchSequenceDataUnit_;
+  std::vector<SequenceParameterSet>         sequenceParameterSets_;
   uint8_t                                   occupancyPrecision_;
   uint8_t                                   occupancyPackingBlockSize_;
   size_t                                    MPGeoWidth_;
@@ -1782,10 +1963,9 @@ class PCCContext {
   std::vector<SubContext>                   subContexts_;
   std::vector<unionPatch>                   unionPatch_;
   std::vector<PointLocalReconstructionMode> pointLocalReconstructionMode_;
-  // Lossy occupancy map encoder parameter
-  bool   prefilterLossyOM_;
-  size_t offsetLossyOM_;
-  size_t geometry3dCoordinatesBitdepth_;
+  bool                                      prefilterLossyOM_;
+  size_t                                    offsetLossyOM_;
+  size_t                                    geometry3dCoordinatesBitdepth_;
 };
 };  // namespace pcc
 

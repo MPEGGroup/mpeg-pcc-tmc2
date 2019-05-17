@@ -70,7 +70,6 @@ class PCCEncoderParameters {
   size_t              nbThread_;
 
   size_t              frameCount_;
-  size_t              geometry3dCoordinatesBitdepth_;
   size_t              groupOfFramesSize_;
   std::string         uncompressedDataPath_;
 
@@ -198,15 +197,18 @@ class PCCEncoderParameters {
 
   //GPA
   bool                globalPatchAllocation_;
-
+  
+  // EDD
   bool				  enhancedPP_;
   double              minWeightEPP_;
 
   //Additional Projection Plane
   int                 additionalProjectionPlaneMode_;
   double              partialAdditionalProjectionPlane_;
-  
- // size_t              geometry3dCoordinatesBitdepth_;
+
+  // 3D and 2D bit depths
+  size_t              geometry3dCoordinatesBitdepth_;
+  size_t              geometryNominal2dBitdepth_;
 };
 
 }; //~namespace

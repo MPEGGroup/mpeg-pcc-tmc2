@@ -19,7 +19,7 @@ for i in "$@"
 do  
   case "$i" in
     doc|Doc|doc|doc\/      ) make -C ${CURDIR}/doc/; exit;;
-    debug|Debug|DEBUG      ) MODE=Debug; CMAKE_FLAGS="$CMAKE_FLAGS-DCMAKE_C_FLAGS=\"-g2\" -DCMAKE_CXX_FLAGS=\"-g2\" ";;
+    debug|Debug|DEBUG      ) MODE=Debug; CMAKE_FLAGS="$CMAKE_FLAGS-DCMAKE_C_FLAGS=\"-g3\" -DCMAKE_CXX_FLAGS=\"-g3\" ";;
     release|Release|RELEASE) MODE=Release;;
     *                      ) echo "ERROR: arguments \"$i\" not supported: option = [debug|release]"; exit -1;;
   esac

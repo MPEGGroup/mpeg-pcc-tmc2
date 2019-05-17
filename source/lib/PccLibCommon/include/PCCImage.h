@@ -41,266 +41,236 @@ template <typename T, size_t N>
 class PCCImage {
  public:
   PCCImage() : width_( 0 ), height_( 0 ) {}
-  PCCImage(const PCCImage &) = default;
-  PCCImage &operator=(const PCCImage &rhs) = default;
-  ~PCCImage() = default;
+  PCCImage( const PCCImage& ) = default;
+  PCCImage& operator=( const PCCImage& rhs ) = default;
+  ~PCCImage()                                = default;
 
-  void clear(){
-    for (auto &channel : channels_) {
-      channel.clear();
-    }
+  void clear() {
+    for ( auto& channel : channels_ ) { channel.clear(); }
   }
   size_t getWidth() const { return width_; }
   size_t getHeight() const { return height_; }
-  size_t getDepth() const { return sizeof(T) * 8; }
+  size_t getDepth() const { return sizeof( T ) * 8; }
   size_t getChannelCount() const { return N; }
 
-  void set(const T value = 0) {
-    for (auto &channel : channels_) {
-      for (auto &p : channel) {
-        p = value;
-      }
+  void set( const T value = 0 ) {
+    for ( auto& channel : channels_ ) {
+      for ( auto& p : channel ) { p = value; }
     }
   }
-  void resize(const size_t sizeU0, const size_t sizeV0) {
-    width_  = sizeU0;
-    height_ = sizeV0;
+  void resize( const size_t sizeU0, const size_t sizeV0 ) {
+    width_            = sizeU0;
+    height_           = sizeV0;
     const size_t size = sizeU0 * sizeV0;
-    for (auto &channel : channels_) {
-      channel.resize(size);
-    }
+    for ( auto& channel : channels_ ) { channel.resize( size ); }
   }
-  bool write420(std::ofstream &outfile, const size_t nbyte) const {
-    if (!outfile.good()) {
-      return false;
-    }
-    if (nbyte == 1) {
+  bool write420( std::ofstream& outfile, const size_t nbyte ) const {
+    if ( !outfile.good() ) { return false; }
+    if ( nbyte == 1 ) {
       std::vector<uint8_t> channels[N];
-      for (size_t i = 0; i < N; i++) {
-        channels[i].resize(channels_[i].size());
-        copy(channels_[i].begin(), channels_[i].end(), channels[i].begin());
+      for ( size_t i = 0; i < N; i++ ) {
+        channels[i].resize( channels_[i].size() );
+        copy( channels_[i].begin(), channels_[i].end(), channels[i].begin() );
       }
-      outfile.write((const char *)(channels[0].data()), width_ * height_);
+      outfile.write( (const char*)( channels[0].data() ), width_ * height_ );
       std::vector<uint8_t> chroma;
-      const size_t width2 = width_ / 2;
-      const size_t byteCount2 = width2;
-      chroma.resize(width2);
-      for (size_t c = 1; c < N; ++c) {
-        const auto &channel = channels[c];
-        for (size_t y = 0; y < height_; y += 2) {
-          const uint8_t *const buffer1 = channel.data() + y * width_;
-          const uint8_t *const buffer2 = buffer1 + width_;
-          for (size_t x = 0; x < width_; x += 2) {
-            const size_t x2 = x / 2;
+      const size_t         width2     = width_ / 2;
+      const size_t         byteCount2 = width2;
+      chroma.resize( width2 );
+      for ( size_t c = 1; c < N; ++c ) {
+        const auto& channel = channels[c];
+        for ( size_t y = 0; y < height_; y += 2 ) {
+          const uint8_t* const buffer1 = channel.data() + y * width_;
+          const uint8_t* const buffer2 = buffer1 + width_;
+          for ( size_t x = 0; x < width_; x += 2 ) {
+            const size_t   x2  = x / 2;
             const uint64_t sum = buffer1[x] + buffer1[x + 1] + buffer2[x] + buffer2[x + 1];
-            chroma[x2] = uint8_t((sum + 2) / 4);
+            chroma[x2]         = uint8_t( ( sum + 2 ) / 4 );
           }
-          outfile.write((const char *)(chroma.data()), byteCount2);
+          outfile.write( (const char*)( chroma.data() ), byteCount2 );
         }
       }
     } else {
-      outfile.write((const char *)(channels_[0].data()), width_ * height_ * sizeof(T));
+      outfile.write( (const char*)( channels_[0].data() ), width_ * height_ * sizeof( T ) );
       std::vector<T> chroma;
-      const size_t width2 = width_ / 2;
-      const size_t byteCount2 = width2 * sizeof(T);
-      chroma.resize(width2);
-      for (size_t c = 1; c < N; ++c) {
-        const auto &channel = channels_[c];
-        for (size_t y = 0; y < height_; y += 2) {
-          const T *const buffer1 = channel.data() + y * width_;
-          const T *const buffer2 = buffer1 + width_;
-          for (size_t x = 0; x < width_; x += 2) {
-            const size_t x2 = x / 2;
+      const size_t   width2     = width_ / 2;
+      const size_t   byteCount2 = width2 * sizeof( T );
+      chroma.resize( width2 );
+      for ( size_t c = 1; c < N; ++c ) {
+        const auto& channel = channels_[c];
+        for ( size_t y = 0; y < height_; y += 2 ) {
+          const T* const buffer1 = channel.data() + y * width_;
+          const T* const buffer2 = buffer1 + width_;
+          for ( size_t x = 0; x < width_; x += 2 ) {
+            const size_t   x2  = x / 2;
             const uint64_t sum = buffer1[x] + buffer1[x + 1] + buffer2[x] + buffer2[x + 1];
-            chroma[x2] = T((sum + 2) / 4);
+            chroma[x2]         = T( ( sum + 2 ) / 4 );
           }
-          outfile.write((const char *)(chroma.data()), byteCount2);
+          outfile.write( (const char*)( chroma.data() ), byteCount2 );
         }
       }
     }
     return true;
   }
-  bool write(std::ofstream &outfile, const size_t nbyte) const {
-    if (!outfile.good()) {
-      return false;
-    }
-    if (nbyte == 1) {
+  bool write( std::ofstream& outfile, const size_t nbyte ) const {
+    if ( !outfile.good() ) { return false; }
+    if ( nbyte == 1 ) {
       std::vector<uint8_t> channels[N];
-      for (size_t i = 0; i < N; i++) {
-        channels[i].resize(channels_[i].size());
-        copy(channels_[i].begin(), channels_[i].end(), channels[i].begin());
+      for ( size_t i = 0; i < N; i++ ) {
+        channels[i].resize( channels_[i].size() );
+        copy( channels_[i].begin(), channels_[i].end(), channels[i].begin() );
       }
       const size_t byteCount = width_ * height_;
-      for (const auto &channel : channels) {
-        outfile.write((const char *)(channel.data()), byteCount);
-      }
+      for ( const auto& channel : channels ) { outfile.write( (const char*)( channel.data() ), byteCount ); }
     } else {
-      const size_t byteCount = width_ * height_ * sizeof(T);
-      for (const auto &channel : channels_) {
-        outfile.write((const char *)(channel.data()), byteCount);
-      }
+      const size_t byteCount = width_ * height_ * sizeof( T );
+      for ( const auto& channel : channels_ ) { outfile.write( (const char*)( channel.data() ), byteCount ); }
     }
     return true;
   }
-  bool write(const std::string fileName, const size_t nbyte) const {
-    std::ofstream outfile(fileName, std::ios::binary);
-    if (write(outfile, nbyte)) {
+  bool write( const std::string fileName, const size_t nbyte ) const {
+    std::ofstream outfile( fileName, std::ios::binary );
+    if ( write( outfile, nbyte ) ) {
       outfile.close();
       return true;
     }
     return false;
   }
-  bool read420(std::ifstream &infile, const size_t sizeU0, const size_t sizeV0, const size_t nbyte) {
-    if (!infile.good()) {
-      return false;
-    }
-    resize(sizeU0, sizeV0);
-    if (nbyte == 1) {
+  bool read420( std::ifstream& infile, const size_t sizeU0, const size_t sizeV0, const size_t nbyte ) {
+    if ( !infile.good() ) { return false; }
+    resize( sizeU0, sizeV0 );
+    if ( nbyte == 1 ) {
       std::vector<uint8_t> channels[N];
-      for (size_t i = 0; i < N; i++) {
-        channels[i].resize(channels_[i].size());
-      }
-      infile.read((char *)(channels[0].data()), width_ * height_);
+      for ( size_t i = 0; i < N; i++ ) { channels[i].resize( channels_[i].size() ); }
+      infile.read( (char*)( channels[0].data() ), width_ * height_ );
       std::vector<uint8_t> chroma;
-      const size_t width2 = width_ / 2;
-      const size_t byteCount1 = width_;
-      const size_t byteCount2 = width2;
-      chroma.resize(width2);
-      for (size_t c = 1; c < N; ++c) {
-        auto &channel = channels[c];
-        for (size_t y = 0; y < height_; y += 2) {
-          infile.read((char *)(chroma.data()), byteCount2);
-          uint8_t *const buffer1 = channel.data() + y * width_;
-          uint8_t *const buffer2 = buffer1 + width_;
-          for (size_t x2 = 0; x2 < width2; ++x2) {
-            const size_t x = x2 * 2;
+      const size_t         width2     = width_ / 2;
+      const size_t         byteCount1 = width_;
+      const size_t         byteCount2 = width2;
+      chroma.resize( width2 );
+      for ( size_t c = 1; c < N; ++c ) {
+        auto& channel = channels[c];
+        for ( size_t y = 0; y < height_; y += 2 ) {
+          infile.read( (char*)( chroma.data() ), byteCount2 );
+          uint8_t* const buffer1 = channel.data() + y * width_;
+          uint8_t* const buffer2 = buffer1 + width_;
+          for ( size_t x2 = 0; x2 < width2; ++x2 ) {
+            const size_t  x     = x2 * 2;
             const uint8_t value = chroma[x2];
-            buffer1[x] = value;
-            buffer1[x + 1] = value;
+            buffer1[x]          = value;
+            buffer1[x + 1]      = value;
           }
-          memcpy((char *)buffer2, (char *)buffer1, byteCount1);
+          memcpy( (char*)buffer2, (char*)buffer1, byteCount1 );
         }
       }
-      for (size_t i = 0; i < N; i++) {
-        copy(channels[i].begin(), channels[i].end(), channels_[i].begin());
-      }
+      for ( size_t i = 0; i < N; i++ ) { copy( channels[i].begin(), channels[i].end(), channels_[i].begin() ); }
     } else {
-      infile.read((char *)(channels_[0].data()), width_ * height_ * sizeof(T));
+      infile.read( (char*)( channels_[0].data() ), width_ * height_ * sizeof( T ) );
       std::vector<T> chroma;
-      const size_t width2 = width_ / 2;
-      const size_t byteCount1 = width_ * sizeof(T);
-      const size_t byteCount2 = width2 * sizeof(T);
-      chroma.resize(width2);
-      for (size_t c = 1; c < N; ++c) {
-        auto &channel = channels_[c];
-        for (size_t y = 0; y < height_; y += 2) {
-          infile.read((char *)(chroma.data()), byteCount2);
-          T *const buffer1 = channel.data() + y * width_;
-          T *const buffer2 = buffer1 + width_;
-          for (size_t x2 = 0; x2 < width2; ++x2) {
-            const size_t x = x2 * 2;
-            const T value = chroma[x2];
-            buffer1[x] = value;
-            buffer1[x + 1] = value;
+      const size_t   width2     = width_ / 2;
+      const size_t   byteCount1 = width_ * sizeof( T );
+      const size_t   byteCount2 = width2 * sizeof( T );
+      chroma.resize( width2 );
+      for ( size_t c = 1; c < N; ++c ) {
+        auto& channel = channels_[c];
+        for ( size_t y = 0; y < height_; y += 2 ) {
+          infile.read( (char*)( chroma.data() ), byteCount2 );
+          T* const buffer1 = channel.data() + y * width_;
+          T* const buffer2 = buffer1 + width_;
+          for ( size_t x2 = 0; x2 < width2; ++x2 ) {
+            const size_t x     = x2 * 2;
+            const T      value = chroma[x2];
+            buffer1[x]         = value;
+            buffer1[x + 1]     = value;
           }
-          memcpy((char *)buffer2, (char *)buffer1, byteCount1);
+          memcpy( (char*)buffer2, (char*)buffer1, byteCount1 );
         }
       }
     }
     return true;
   }
-  bool read(std::ifstream &infile, const size_t sizeU0, const size_t sizeV0, const size_t nbyte) {
-    if (!infile.good()) {
-      return false;
-    }
-    resize(sizeU0, sizeV0);
-    if (nbyte == 1) {
+  bool read( std::ifstream& infile, const size_t sizeU0, const size_t sizeV0, const size_t nbyte ) {
+    if ( !infile.good() ) { return false; }
+    resize( sizeU0, sizeV0 );
+    if ( nbyte == 1 ) {
       std::vector<uint8_t> channels[N];
-      for (size_t i = 0; i < N; i++) {
-        channels[i].resize(channels_[i].size());
-      }
+      for ( size_t i = 0; i < N; i++ ) { channels[i].resize( channels_[i].size() ); }
       const size_t byteCount = width_ * height_;
-      for (auto &channel : channels) {
-        infile.read((char *)(channel.data()), byteCount);
-      }
-      for (size_t i = 0; i < N; i++) {
-        copy(channels[i].begin(), channels[i].end(), channels_[i].begin());
-      }
-    }
-    else {
-      const size_t byteCount = width_ * height_ * sizeof(T);
-      for (auto &channel : channels_) {
-        infile.read((char *)(channel.data()), byteCount);
-      }
+      for ( auto& channel : channels ) { infile.read( (char*)( channel.data() ), byteCount ); }
+      for ( size_t i = 0; i < N; i++ ) { copy( channels[i].begin(), channels[i].end(), channels_[i].begin() ); }
+    } else {
+      const size_t byteCount = width_ * height_ * sizeof( T );
+      for ( auto& channel : channels_ ) { infile.read( (char*)( channel.data() ), byteCount ); }
     }
     return true;
   }
-  bool read(const std::string fileName, const size_t sizeU0, const size_t sizeV0, const size_t nbyte) {
-    std::ifstream infile(fileName, std::ios::binary);
-    if (read(infile, sizeU0, sizeV0, nbyte)) {
+  bool read( const std::string fileName, const size_t sizeU0, const size_t sizeV0, const size_t nbyte ) {
+    std::ifstream infile( fileName, std::ios::binary );
+    if ( read( infile, sizeU0, sizeV0, nbyte ) ) {
       infile.close();
       return true;
     }
     return false;
   }
-  void setValue(const size_t channelIndex, const size_t u, const size_t v, const T value) {
-    assert(channelIndex < N && u < width_ && v < height_);
+  void setValue( const size_t channelIndex, const size_t u, const size_t v, const T value ) {
+    assert( channelIndex < N && u < width_ && v < height_ );
     channels_[channelIndex][v * width_ + u] = value;
   }
-  T getValue(const size_t channelIndex, const size_t u, const size_t v) const {
-    assert(channelIndex < N && u < width_ && v < height_);
+  T getValue( const size_t channelIndex, const size_t u, const size_t v ) const {
+    assert( channelIndex < N && u < width_ && v < height_ );
     return channels_[channelIndex][v * width_ + u];
   }
-  T &getValue(const size_t channelIndex, const size_t u, const size_t v) {
-    assert(channelIndex < N && u < width_ && v < height_);
+  T& getValue( const size_t channelIndex, const size_t u, const size_t v ) {
+    assert( channelIndex < N && u < width_ && v < height_ );
     return channels_[channelIndex][v * width_ + u];
   }
-  static const size_t MaxValue = (std::numeric_limits<T>::max)();
-  static const size_t HalfMaxValue = (MaxValue + 1) / 2;
+  static const size_t MaxValue     = ( std::numeric_limits<T>::max )();
+  static const size_t HalfMaxValue = ( MaxValue + 1 ) / 2;
 
-  bool write420(const std::string fileName, const size_t nbyte) const {
-    std::ofstream outfile(fileName, std::ios::binary);
-    if (write420(outfile, nbyte)) {
+  bool write420( const std::string fileName, const size_t nbyte ) const {
+    std::ofstream outfile( fileName, std::ios::binary );
+    if ( write420( outfile, nbyte ) ) {
       outfile.close();
       return true;
     }
     return false;
-  }  
-  bool read420(const std::string fileName, const size_t sizeU0, const size_t sizeV0, const size_t nbyte) {
-    std::ifstream infile(fileName, std::ios::binary);
-    if (read420(infile, sizeU0, sizeV0, nbyte)) {
+  }
+  bool read420( const std::string fileName, const size_t sizeU0, const size_t sizeV0, const size_t nbyte ) {
+    std::ifstream infile( fileName, std::ios::binary );
+    if ( read420( infile, sizeU0, sizeV0, nbyte ) ) {
       infile.close();
       return true;
     }
     return false;
-  } 
-  bool copyBlock(size_t top, size_t left, size_t width, size_t height, PCCImage& block) {
-    assert(top >= 0 && left >= 0 && (width + left) < width_ && (height + top) < height_);
-    for (size_t cc = 0; cc < N; cc++) {
-      for (size_t i = top; i < top + height; i++) {
-        for (size_t j = left; j < left + width; j++) {
-          block.setValue(cc, (j - left), (i - top), getValue(cc, j, i));
+  }
+  bool copyBlock( size_t top, size_t left, size_t width, size_t height, PCCImage& block ) {
+    assert( top >= 0 && left >= 0 && ( width + left ) < width_ && ( height + top ) < height_ );
+    for ( size_t cc = 0; cc < N; cc++ ) {
+      for ( size_t i = top; i < top + height; i++ ) {
+        for ( size_t j = left; j < left + width; j++ ) {
+          block.setValue( cc, ( j - left ), ( i - top ), getValue( cc, j, i ) );
         }
       }
     }
     return true;
   }
-  bool setBlock(size_t top, size_t left, PCCImage& block) {
-    assert(top >= 0 && left >= 0 && (block.getWidth() + left) < width_ && (block.getHeight() + top) < height_);
-    for (size_t cc = 0; cc < N; cc++) {
-      for (size_t i = top; i < top + block.getHeight(); i++) {
-        for (size_t j = left; j < left + block.getWidth(); j++) {
-          setValue(cc, j, i, block.getValue(cc, (j - left), (i - top)));
+  bool setBlock( size_t top, size_t left, PCCImage& block ) {
+    assert( top >= 0 && left >= 0 && ( block.getWidth() + left ) < width_ && ( block.getHeight() + top ) < height_ );
+    for ( size_t cc = 0; cc < N; cc++ ) {
+      for ( size_t i = top; i < top + block.getHeight(); i++ ) {
+        for ( size_t j = left; j < left + block.getWidth(); j++ ) {
+          setValue( cc, j, i, block.getValue( cc, ( j - left ), ( i - top ) ) );
         }
       }
     }
     return true;
   }
+
  private:
-  size_t width_;
-  size_t height_;
+  size_t         width_;
+  size_t         height_;
   std::vector<T> channels_[N];
 };
-}
+}  // namespace pcc
 
 #endif /* PCCImage_h */

@@ -60,26 +60,21 @@ PCCFrameContext::~PCCFrameContext() {
   blockToPatch_.clear();
   occupancyMap_.clear();
   fullOccupancyMap_.clear();
-  occupancyMap_.clear();
   patches_.clear();
   srcPointCloudByPatch_.clear();
   srcPointCloudByBlock_.clear();
   recPointCloudByBlock_.clear();
   for ( auto& block : pointToPixelByBlock_ ) { block.clear(); }
   pointToPixelByBlock_.clear();
-  numMatchedPatches_ = 0;
-  pointLocalReconstructionNumber_ = 0;
 }
 
 void PCCFrameContext::allocOneLayerData() {
   for ( auto& patch : patches_ ) { patch.allocOneLayerData(); }
 }
-
 void PCCFrameContext::printBlockToPatch( const size_t resolution ) {
   printVector( blockToPatch_, width_ / resolution, height_ / resolution, stringFormat( "blockToPatch[%d]", index_ ),
                true );
 }
-
 void PCCFrameContext::printPatch() {
   size_t index = 0;
   printf( "Patch %4lu:", patches_.size() );

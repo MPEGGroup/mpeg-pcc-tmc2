@@ -67,14 +67,6 @@ class PCCVideoBitstream {
  private:
   std::vector<uint8_t> data_;
   PCCVideoType         type_;
-
-#ifdef BUG_FIX_BITDEPTH
- public:
-  uint8_t getBitdepth() { return bitdepth_; }
-  void    setBitdepth( uint8_t bitdepth ) { bitdepth_ = bitdepth; }
- private:
-  uint8_t bitdepth_;
-#endif
 };
 
 }  // namespace pcc

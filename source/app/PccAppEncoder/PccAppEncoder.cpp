@@ -613,6 +613,11 @@ bool parseParameters( int                   argc,
       encoderParams.geometry3dCoordinatesBitdepth_,
       encoderParams.geometry3dCoordinatesBitdepth_, 
       "Bit depth of geomtery 3D coordinates")
+
+   ("geometryNominal2dBitdepth", 
+      encoderParams.geometryNominal2dBitdepth_,
+      encoderParams.geometryNominal2dBitdepth_, 
+      "Bit depth of geometry 2D")
    
     ("nbPlrmMode",
         encoderParams.nbPlrmMode_,
@@ -624,16 +629,15 @@ bool parseParameters( int                   argc,
         encoderParams.patchSize_,
         "Size of Patch for PLR")
 
-
-	("enhancedProjectionPlane",
+	  ("enhancedProjectionPlane",
       encoderParams.enhancedPP_,
-	  encoderParams.enhancedPP_,
-	 "Use enhanced Projection Plane(0: OFF, 1: ON)\n")
+	    encoderParams.enhancedPP_,
+	    "Use enhanced Projection Plane(0: OFF, 1: ON)\n")
 
-	("minWeightEPP",
+	  ("minWeightEPP",
       encoderParams.minWeightEPP_,
-	  encoderParams.minWeightEPP_,
-	  "Minimum value\n")
+	    encoderParams.minWeightEPP_,
+	    "Minimum value\n")
 
     ("additionalProjectionPlaneMode",
      encoderParams.additionalProjectionPlaneMode_, 

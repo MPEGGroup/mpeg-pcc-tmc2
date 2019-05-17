@@ -72,7 +72,9 @@ class AttributeSequenceParams;
 class AttributeFrameParams;
 class PointLocalReconstructionInformation;
 class PointLocalReconstructionData;
-
+class SeiMessage;
+class PatchFrameTileInformation;
+  
 class PCCBitstreamEncoder {
  public:
   PCCBitstreamEncoder();
@@ -117,23 +119,10 @@ class PCCBitstreamEncoder {
                              SequenceParameterSet& sequenceParameterSet,
                              PCCBitstream&         bitstream );
 
-  // // OLD 7.3.11 Geometry sequence metadata syntax TODO: remove
-  // void geometrySequenceParams( GeometrySequenceParams& geometrySequenceParams, PCCBitstream& bitstream );
-
-  // // 7.3.4.5 Attribute parameter set syntax
-  // void attributeParameterSet( AttributeParameterSet& attributeParameterSet,
-  //                             SequenceParameterSet&  sequenceParameterSet,
-  //                             PCCBitstream&          bitstream );
-
-  // // OLD 7.3.13 Attribute sequence Params TODO: remove
-  // void attributeSequenceParams( AttributeSequenceParams& attributeSequenceParams,
-  //                               uint8_t                  dimension,
-  //                               PCCBitstream&            bitstream );
-
-  // 7.3.5.1 General patch data group unit syntax TODO: rename(?)
+  // 7.3.5.1 General patch data group unit syntax 
   void patchDataGroup( PCCContext& context, PCCBitstream& bitstream );
-
-  // 7.3.5.2 Patch data group uni t payload syntax TODO: rename(?)
+  
+  // 7.3.5.2 Patch data group uni t payload syntax 
   void patchDataGroupUnitPayload( PatchDataGroup& patchDataGroup,
                                   PDGUnitType     unitType,
                                   size_t          index,
@@ -146,7 +135,7 @@ class PCCBitstreamEncoder {
                                                       size_t                index,
                                                       PCCBitstream& bitstream );
 
-  // 7.3.5.4 Patch frame geometry parameter set syntax TODO: rename(?)
+  // 7.3.5.4 Patch frame geometry parameter set syntax 
   void patchFrameGeometryParameterSet( PatchDataGroup&       pdg,
                                                       size_t                index,
                                                       SequenceParameterSet&           sequenceParameterSet,
@@ -155,7 +144,7 @@ class PCCBitstreamEncoder {
   // 7.3.5.5 Geometry frame Params syntax
   void geometryFrameParams( GeometryFrameParams& geometryFrameParams, PCCBitstream& bitstream );
 
-  // 7.3.5.6 Patch frame attribute parameter set syntax TODO: rename(?)
+  // 7.3.5.6 Patch frame attribute parameter set syntax 
   void patchFrameAttributeParameterSet( PatchDataGroup&       pdg,
                                                       size_t                index,
                                                        SequenceParameterSet&            sequenceParameterSet,
@@ -186,9 +175,13 @@ class PCCBitstreamEncoder {
 
   // 7.3.5.12 Patch frame parameter set syntax
   void patchFrameParameterSet( PatchDataGroup&       pdg,
-                                                      size_t                index,
-                                                       SequenceParameterSet&   sequenceParameterSet,
+                               size_t                index,
+                               SequenceParameterSet&   sequenceParameterSet,
                                PCCBitstream&           bitstream );
+
+  void patchFrameTileInformation(PatchFrameTileInformation& pfti,
+                                 SequenceParameterSet&     sps,
+                                 PCCBitstream&   bitstream );
 
   // 7.3.5.13 Patch frame layer unit syntax
   void patchTileGroupLayerUnit(PatchDataGroup&       pdg,
@@ -215,6 +208,7 @@ class PCCBitstreamEncoder {
 
   // 7.3.5.17 Patch information data syntax
   void patchInformationData( PatchInformationData& pid,
+                             size_t patchIndex,
                              size_t                patchMode,
                              PatchTileGroupHeader& ptgh,
                              PCCContext&           context,
@@ -241,8 +235,9 @@ class PCCBitstreamEncoder {
                                             PCCBitstream&                        bitstream );
   void pointLocalReconstructionData( PointLocalReconstructionData& plrd, PCCContext& context, PCCBitstream& bitstream );
 
-  // 7.3.5.22 Supplemental enhancement information message syntax TODO: declaration missing
-
+  // 7.3.5.22 Supplemental enhancement information message syntax 
+  void seiMessage( PatchDataGroup& pdg, size_t index, PCCContext& context, PCCBitstream& bitstream );
+  
   PCCEncoderParameters params_;
 };
 

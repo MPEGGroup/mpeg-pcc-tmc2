@@ -357,10 +357,8 @@ class PCCVideoEncoder {
           << " --FrameSkip=0 "
           << " --SourceWidth=" << width << " --SourceHeight=" << height << " --ConformanceWindowMode=1 "
           << " --FramesToBeEncoded=" << frameCount << " --BitstreamFile=" << binFileName
-          << " --ReconFile=" << recYuvFileName << " --QP=" << qp;
-      if (PCCMpsPatch8bits) {
-        cmd << " --InternalBitDepth=8";
-      }      
+          << " --ReconFile=" << recYuvFileName << " --QP=" << qp;      
+      // cmd << " --InternalBitDepth=8"; 
       // If depth==10 ensure InternalBitDepth == InputBitDepth.
       // Otherwise for lossy cases rely on video encoder config files to set InternalBitDepth ( for Main10 video
       // encoders)
@@ -414,9 +412,6 @@ class PCCVideoEncoder {
       removeFile( recYuvFileName );
       removeFile( recRgbFileName );
     }
-#ifdef BUG_FIX_BITDEPTH
-    bitstream.setBitdepth( nbyte == 2 ? 10 : 8 );
-#endif
     return true;
   }
 

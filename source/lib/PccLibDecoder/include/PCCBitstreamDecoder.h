@@ -57,6 +57,7 @@ class PatchFrameAttributeParameterSet;
 class GeometryPatchParameterSet;
 class GeometryPatchParams;
 class AttributePatchParameterSet;
+class AttributeFrameParams;
 class AttributePatchParams;
 class GeometryFrameParams;
 class PatchTileGroupLayerUnit;
@@ -68,8 +69,10 @@ class PatchInformationData;
 class PatchDataUnit;
 class DeltaPatchDataUnit;
 class PCMPatchDataUnit;
-class PointLocalReconstructionInformation; 
-class PointLocalReconstructionData; 
+class PointLocalReconstructionInformation;
+class PointLocalReconstructionData;
+class SeiMessage;
+class PatchFrameTileInformation;
 
 class PCCBitstreamDecoder {
  public:
@@ -79,7 +82,6 @@ class PCCBitstreamDecoder {
   int32_t decode( PCCBitstream& bitstream, PCCContext& context );
 
  private:
-
   // 7.3.2.1 General V-PCC unit syntax
   void vpccUnit( PCCContext& context, PCCBitstream& bitstream, VPCCUnitType& vpccUnitType );
 
@@ -107,46 +109,30 @@ class PCCBitstreamDecoder {
   void occupancyInformation( OccupancyInformation& occupancyInformation, PCCBitstream& bitstream );
 
   // 7.3.4.4 Geometry parameter set syntax
-  void geometryInformation( GeometryInformation& geometryInformation,
-                             SequenceParameterSet& sequenceParameterSet,
-                             PCCBitstream&         bitstream );
-
-  // OLD 7.3.11 Geometry sequence Params syntax TODO: remove
-  // void geometrySequenceParams( GeometrySequenceParams& geometrySequenceParams, PCCBitstream& bitstream );
+  void geometryInformation( GeometryInformation&  geometryInformation,
+                            SequenceParameterSet& sequenceParameterSet,
+                            PCCBitstream&         bitstream );
 
   // 7.3.4.5 Attribute parameter set syntax
   void attributeInformation( AttributeInformation& attributeInformation,
-                              SequenceParameterSet&  sequenceParameterSet,
-                              PCCBitstream&          bitstream );
+                             SequenceParameterSet& sequenceParameterSet,
+                             PCCBitstream&         bitstream );
 
-
-  // // OLD 7.3.11 Geometry sequence Params syntax TODO: remove
-  // void geometrySequenceParams( GeometrySequenceParams& geometrySequenceParams, PCCBitstream& bitstream );
-
-  // // 7.3.4.5 Attribute parameter set syntax
-  // void attributeParameterSet( AttributeParameterSet& attributeParameterSet,
-  //                             SequenceParameterSet&  sequenceParameterSet,
-  //                             PCCBitstream&          bitstream );
-
-  // // OLD 7.3.13 Attribute sequence Params syntax
-  // void attributeSequenceParams( AttributeSequenceParams& attributeSequenceParams,
-  //                               uint8_t                  dimension,
-  //                               PCCBitstream&            bitstream );
-
-  // 7.3.5.1 General patch data group unit syntax TODO: rename(?)
+  // 7.3.5.1 General patch data group unit syntax  
   void patchDataGroup( PCCContext& context, PCCBitstream& bitstream );
 
-  // 7.3.5.2 Patch data group unit payload syntax TODO: rename(?)
+  // 7.3.5.2 Patch data group unit payload syntax 
   void patchDataGroupUnitPayload( PatchDataGroup& patchDataGroup,
                                   PDGUnitType     unitType,
                                   size_t          frameIndex,
                                   PCCContext&     context,
                                   PCCBitstream&   bitstream );
 
+
   // 7.3.5.3 Patch sequence parameter set syntax
   void patchSequenceParameterSet( PatchDataGroup& pdg, PCCBitstream& bitstream );
 
-  // 7.3.5.4 Patch frame geometry parameter set syntax TODO: rename(?)
+  // 7.3.5.4 Patch frame geometry parameter set syntax 
   void patchFrameGeometryParameterSet( PatchDataGroup&       patchDataGroup,
                                        SequenceParameterSet& sequenceParameterSet,
                                        PCCBitstream&         bitstream );
@@ -154,7 +140,7 @@ class PCCBitstreamDecoder {
   // 7.3.5.5 Geometry frame Params syntax
   void geometryFrameParams( GeometryFrameParams& geometryFrameParams, PCCBitstream& bitstream );
 
-  // 7.3.5.6 Patch frame attribute parameter set syntax TODO: rename(?)
+  // 7.3.5.6 Patch frame attribute parameter set syntax 
   void patchFrameAttributeParameterSet( PatchDataGroup&       patchDataGroup,
                                         SequenceParameterSet& sequenceParameterSet,
                                         PCCBitstream&         bitstream );
@@ -172,7 +158,7 @@ class PCCBitstreamDecoder {
 
   // 7.3.5.10 Attribute patch parameter set syntax
   void attributePatchParameterSet( PatchDataGroup&       patchDataGroup,
-                               SequenceParameterSet& sequenceParameterSet,
+                                   SequenceParameterSet& sequenceParameterSet,
                                    PCCBitstream&         bitstream );
 
   // 7.3.5.11 Attribute patch Params syntax
@@ -186,6 +172,8 @@ class PCCBitstreamDecoder {
                                SequenceParameterSet& sequenceParameterSet,
                                PCCBitstream&         bitstream );
 
+  void patchFrameTileInformation( PatchFrameTileInformation& pfti, SequenceParameterSet& sps, PCCBitstream& bitstream );
+
   // 7.3.5.13 Patch frame layer unit syntax
   void patchTileGroupLayerUnit( PatchDataGroup& pdg,
                                 uint32_t        frameIndex,
@@ -194,9 +182,9 @@ class PCCBitstreamDecoder {
 
   // 7.3.5.14 Patch frame header syntax
   void patchTileGroupHeader( PatchTileGroupHeader& ptgh,
-                         PatchTileGroupHeader& pfhPrev,
-                         PCCContext&       context,
-                         PCCBitstream&     bitstream );
+                             PatchTileGroupHeader& pfhPrev,
+                             PCCContext&           context,
+                             PCCBitstream&         bitstream );
 
   // 7.3.5.15 Reference list structure syntax
   void refListStruct( RefListStruct&             refListStruct,
@@ -205,14 +193,14 @@ class PCCBitstreamDecoder {
 
   // 7.3.5.16 Patch frame data unit syntax
   void patchTileGroupDataUnit( PatchTileGroupDataUnit& ptgdu,
-                           PatchTileGroupHeader&   ptgh,
-                           PCCContext&         context,
-                           PCCBitstream&       bitstream );
+                               PatchTileGroupHeader&   ptgh,
+                               PCCContext&             context,
+                               PCCBitstream&           bitstream );
 
   // 7.3.5.17 Patch information data syntax
   void patchInformationData( PatchInformationData& pid,
                              size_t                patchMode,
-                             PatchTileGroupHeader&     ptgh,
+                             PatchTileGroupHeader& ptgh,
                              PCCContext&           context,
                              PCCBitstream&         bitstream );
 
@@ -220,13 +208,16 @@ class PCCBitstreamDecoder {
   void patchDataUnit( PatchDataUnit& pdu, PatchTileGroupHeader& ptgh, PCCContext& context, PCCBitstream& bitstream );
 
   // 7.3.5.19  Delta Patch data unit syntax
-  void deltaPatchDataUnit( DeltaPatchDataUnit& dpdu,
-                           PatchTileGroupHeader&   ptgh,
-                           PCCContext&         context,
-                           PCCBitstream&       bitstream );
+  void deltaPatchDataUnit( DeltaPatchDataUnit&   dpdu,
+                           PatchTileGroupHeader& ptgh,
+                           PCCContext&           context,
+                           PCCBitstream&         bitstream );
 
   // 7.3.5.20 PCM patch data unit syntax
-  void pcmPatchDataUnit( PCMPatchDataUnit& ppdu, PatchTileGroupHeader& ptgh, PCCContext& context, PCCBitstream& bitstream );
+  void pcmPatchDataUnit( PCMPatchDataUnit&     ppdu,
+                         PatchTileGroupHeader& ptgh,
+                         PCCContext&           context,
+                         PCCBitstream&         bitstream );
 
   // 7.3.5.21 Point local reconstruction syntax
   void pointLocalReconstructionInformation( PointLocalReconstructionInformation& plri,
@@ -234,12 +225,14 @@ class PCCBitstreamDecoder {
                                             PCCBitstream&                        bitstream );
   void pointLocalReconstructionData( PointLocalReconstructionData& plrd, PCCContext& context, PCCBitstream& bitstream );
 
+
+  // 7.3.5.22 Supplemental enhancement information message syntax 
+  void seiMessage( PatchDataGroup& pdg, PCCContext& context, PCCBitstream& bitstream );
+  
   int32_t prevPatchSizeU_;
   int32_t prevPatchSizeV_;
   int32_t predPatchIndex_;
   int32_t predFramePatchTileGroupLayerUnitIndex_;
-
-  // 7.3.5.22 Supplemental enhancement information message syntax TODO: declaration missing
 };
 
 };  // namespace pcc

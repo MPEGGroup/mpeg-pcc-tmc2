@@ -51,27 +51,23 @@ void PCCPatchSegmenter3::compute( const PCCPointSet3&                 geometry,
                                   std::vector<PCCPatch>&              patches,
                                   std::vector<PCCPointSet3>&          subPointCloud,
                                   float&                              distanceSrcRec ) {
-  PCCVector3D *orientations = 0;
-  size_t orientationCount = 0;
-  if (params.additionalProjectionPlaneMode == 0){
-	  orientations = orientations6;
-	  orientationCount = orientationCount6;
-  }
-  else if (params.additionalProjectionPlaneMode == 1){
-	  orientations = orientations10_YAxis;
-	  orientationCount = 10;
-  }
-  else if (params.additionalProjectionPlaneMode == 2){
-	  orientations = orientations10_XAxis;
-	  orientationCount = 10;
-  }
-  else if (params.additionalProjectionPlaneMode == 3){
-	  orientations = orientations10_ZAxis;
-	  orientationCount = 10;
-  }
-  else if (params.additionalProjectionPlaneMode == 4){
-	  orientations = orientations18;
-	  orientationCount = 18;
+  PCCVector3D* orientations     = 0;
+  size_t       orientationCount = 0;
+  if ( params.additionalProjectionPlaneMode == 0 ) {
+    orientations     = orientations6;
+    orientationCount = orientationCount6;
+  } else if ( params.additionalProjectionPlaneMode == 1 ) {
+    orientations     = orientations10_YAxis;
+    orientationCount = 10;
+  } else if ( params.additionalProjectionPlaneMode == 2 ) {
+    orientations     = orientations10_XAxis;
+    orientationCount = 10;
+  } else if ( params.additionalProjectionPlaneMode == 3 ) {
+    orientations     = orientations10_ZAxis;
+    orientationCount = 10;
+  } else if ( params.additionalProjectionPlaneMode == 4 ) {
+    orientations     = orientations18;
+    orientationCount = 18;
   }
   std::cout << "  Computing normals for original point cloud... ";
   PCCKdTree                            kdtree( geometry );
@@ -95,11 +91,10 @@ void PCCPatchSegmenter3::compute( const PCCPointSet3&                 geometry,
 
   std::cout << "  Computing initial segmentation... ";
   std::vector<size_t> partition;
-  if (params.additionalProjectionPlaneMode == 0){  
-    initialSegmentation( geometry, normalsGen, orientations, orientationCount, partition, params.weight_normal);
-  }
-  else{
-    initialSegmentation( geometry, normalsGen, orientations, orientationCount, partition); // flat weight
+  if ( params.additionalProjectionPlaneMode == 0 ) {
+    initialSegmentation( geometry, normalsGen, orientations, orientationCount, partition, params.weightNormal );
+  } else {
+    initialSegmentation( geometry, normalsGen, orientations, orientationCount, partition );  // flat weight
   }
   std::cout << "[done]" << std::endl;
 
@@ -119,7 +114,8 @@ void PCCPatchSegmenter3::compute( const PCCPointSet3&                 geometry,
                   params.maxAllowedDist2MissedPointsSelection, params.surfaceThickness, params.maxAllowedDepth,
                   params.minLevel, partition, patches, patchPartition, resampledPatchPartition, missedPoints, resampled,
                   params.projectionMode, params.useEnhancedDeltaDepthCode, params.useOneLayermode, subPointCloud,
-                  distanceSrcRec, params.absoluteD1, params.surfaceSeparation,params.additionalProjectionPlaneMode,params.geometryBitDepth3D );
+                  distanceSrcRec, params.absoluteD1, params.surfaceSeparation, params.additionalProjectionPlaneMode,
+                  params.geometryBitDepth3D );
   std::cout << "[done]" << std::endl;
 }
 
@@ -127,33 +123,29 @@ void PCCPatchSegmenter3::initialSegmentation( const PCCPointSet3&         geomet
                                               const PCCNormalsGenerator3& normalsGen,
                                               const PCCVector3D*          orientations,
                                               const size_t                orientationCount,
-                                              std::vector<size_t>&        partition) {
-
+                                              std::vector<size_t>&        partition ) {
   PCCVector3D axis_weight;
   axis_weight[0] = axis_weight[1] = axis_weight[2] = 1.0f;
-  initialSegmentation(geometry, normalsGen, orientations, orientationCount, partition, axis_weight);
-
+  initialSegmentation( geometry, normalsGen, orientations, orientationCount, partition, axis_weight );
 }
 void PCCPatchSegmenter3::initialSegmentation( const PCCPointSet3&         geometry,
                                               const PCCNormalsGenerator3& normalsGen,
                                               const PCCVector3D*          orientations,
                                               const size_t                orientationCount,
-                                              std::vector<size_t>&        partition, const PCCVector3D axis_weight) {
+                                              std::vector<size_t>&        partition,
+                                              const PCCVector3D           axis_weight ) {
   assert( orientations );
   const size_t pointCount = geometry.getPointCount();
   partition.resize( pointCount );
 
-  printf("\n [weight] YZ, XZ, XY: %8.5f, %8.5f, %8.5f\n", axis_weight[0], axis_weight[1], axis_weight[2]);
+  printf( "\n [weight] YZ, XZ, XY: %8.5f, %8.5f, %8.5f\n", axis_weight[0], axis_weight[1], axis_weight[2] );
   double weight_val[18];
 
   int i;
-  for (i=0; i<18; i++){
-    weight_val[i] = 1.0f;
-  }
+  for ( i = 0; i < 18; i++ ) { weight_val[i] = 1.0f; }
   weight_val[0] = weight_val[3] = axis_weight[0];
   weight_val[1] = weight_val[4] = axis_weight[1];
   weight_val[2] = weight_val[5] = axis_weight[2];
-
 
   tbb::task_arena limited( (int)nbThread_ );
   limited.execute( [&] {
@@ -162,8 +154,8 @@ void PCCPatchSegmenter3::initialSegmentation( const PCCPointSet3&         geomet
       size_t            clusterIndex = 0;
       double            bestScore    = normal * orientations[0];
       for ( size_t j = 1; j < orientationCount; ++j ) {
-		  //const double score = normal * orientations[j];
-		  const double score = normal * orientations[j] * weight_val[j];
+        // const double score = normal * orientations[j];
+        const double score = normal * orientations[j] * weight_val[j];
         if ( score > bestScore ) {
           bestScore    = score;
           clusterIndex = j;
@@ -408,11 +400,10 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
                                          const bool                 createSubPointCloud,
                                          std::vector<PCCPointSet3>& subPointCloud,
                                          float&                     distanceSrcRec,
-                                         const bool                 sixDirection, //params.absoluteD1
-                                         bool                       useSurfaceSeparation ,
-                                         const size_t               additionalProjectionAxis,
-                                         const size_t               geometryBitDepth3D ) {
-
+                                         const bool   sixDirection,  // params.absoluteD1
+                                         bool         useSurfaceSeparation,
+                                         const size_t additionalProjectionAxis,
+                                         const size_t geometryBitDepth3D ) {
   const size_t pointCount = points.getPointCount();
   patchPartition.resize( pointCount, 0 );
   resampledPatchPartition.reserve( pointCount );
@@ -458,16 +449,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
       frameProjectionMode = selectFrameProjectionMode( points, surfaceThickness, minLevel, paramProjectionMode );
     }
   }
-  PCCBox3D inputBbox = points.computeBoundingBox();
-  uint16_t max_coord = (std::max)((std::max)(uint16_t(inputBbox.max_.x()), uint16_t(inputBbox.max_.y())), uint16_t(inputBbox.max_.z()));
-  uint16_t maxD = 1023;
-  if ((max_coord >= 1024) && (max_coord <= 2047))
-    maxD = 2047;
-  else if (max_coord >= 2048) maxD = 4095;
-
-
-  std::cout << "(max_coord,maxd) = (" << max_coord << ", " << maxD << ")" << std::endl;
-
+  uint16_t maxD = pow( 2, geometryBitDepth3D );
   while ( !missedPoints.empty() ) {
     std::vector<size_t> fifo;
     fifo.reserve( pointCount );
@@ -511,13 +493,11 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
       const size_t patchIndex = patches.size();
       patches.resize( patchIndex + 1 );
       if ( createSubPointCloud ) { subPointCloud.resize( patchIndex + 1 ); }
-      PCCPatch& patch           = patches[patchIndex];
-      patch.getIndex()          = patchIndex;
-#if LAST_PATCH_HLS
-      patch.setPatchType( (uint8_t) P_TYPE_INTRA );
-#endif
-      const size_t clusterIndex = partition[connectedComponent[0]];
-      bIsAdditionalProjectionPlane = false;
+      PCCPatch& patch  = patches[patchIndex];
+      patch.getIndex() = patchIndex;
+      patch.setPatchType( (uint8_t)P_TYPE_INTRA );
+      const size_t clusterIndex        = partition[connectedComponent[0]];
+      bIsAdditionalProjectionPlane     = false;
       patch.getAxisOfAdditionalPlane() = 0;
       if ( clusterIndex == 0 || clusterIndex == 3 ) {
         patch.getNormalAxis()    = 0;
@@ -527,92 +507,79 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
         patch.getNormalAxis()    = 1;
         patch.getTangentAxis()   = 2;
         patch.getBitangentAxis() = 0;
-      } else if (clusterIndex == 2 || clusterIndex == 5) {
-        patch.getNormalAxis() = 2;
-        patch.getTangentAxis() = 0;
-        patch.getBitangentAxis() = 1;
-      }
-      else if (additionalProjectionAxis == 1) { // Y Axis
-        bIsAdditionalProjectionPlane = true;
-        patch.getAxisOfAdditionalPlane() = additionalProjectionAxis;  // Y Axis         
-        if (clusterIndex == 6 || clusterIndex == 8) {// 6->0 : 8->3
-          patch.getNormalAxis() = 0;
-          patch.getTangentAxis() = 2;
-          patch.getBitangentAxis() = 1;
-        }
-        else if (clusterIndex == 7 || clusterIndex == 9) {// 7->2 : 9->5
-          patch.getNormalAxis() = 2;
-          patch.getTangentAxis() = 0;
-          patch.getBitangentAxis() = 1;
-        }
-      }
-      else if (additionalProjectionAxis == 2) { // X Axis
-        bIsAdditionalProjectionPlane = true;
-        patch.getAxisOfAdditionalPlane() = additionalProjectionAxis;  // X Axis  
-        if (clusterIndex == 6 || clusterIndex == 8) {  // 6->2 : 8->5
-          patch.getNormalAxis() = 2;
-          patch.getTangentAxis() = 0;
-          patch.getBitangentAxis() = 1;
-        }
-        else if (clusterIndex == 7 || clusterIndex == 9) {  // 7->1 : 9->4
-          patch.getNormalAxis() = 1;
-          patch.getTangentAxis() = 2;
-          patch.getBitangentAxis() = 0;
-        }
-      }
-      else if (additionalProjectionAxis == 3) { // Z Axis
-        bIsAdditionalProjectionPlane = true;
-        patch.getAxisOfAdditionalPlane() = additionalProjectionAxis;  // Y Zxis  
-        if (clusterIndex == 6 || clusterIndex == 8) {  // 6->0 : 8->3
-          patch.getNormalAxis() = 1;
-          patch.getTangentAxis() = 2;
-          patch.getBitangentAxis() = 0;
-        }
-        else if (clusterIndex == 7 || clusterIndex == 9) {  // 7->2 : 9->1
-          patch.getNormalAxis() = 0;
-          patch.getTangentAxis() = 2;
-          patch.getBitangentAxis() = 1;
-        }
-      }
-      else if (additionalProjectionAxis == 4) { // All
-        bIsAdditionalProjectionPlane = true;
-        if (clusterIndex == 6 || clusterIndex == 8) {  // 6->0 : 8->3
-          patch.getAxisOfAdditionalPlane() = 1;  // Y Axis  
-          patch.getNormalAxis() = 0;
-          patch.getTangentAxis() = 2;
-          patch.getBitangentAxis() = 1;
-        }
-        else if (clusterIndex == 7 || clusterIndex == 9) {  // 7->2 : 9->1
-          patch.getAxisOfAdditionalPlane() = 1;  // Y Axis  
-          patch.getNormalAxis() = 2;
-          patch.getTangentAxis() = 0;
-          patch.getBitangentAxis() = 1;
-        }
-        else 		if (clusterIndex == 10 || clusterIndex == 12) {  // 6->2 : 8->5
-          patch.getAxisOfAdditionalPlane() = 2;  // X Axis  
+      } else if ( clusterIndex == 2 || clusterIndex == 5 ) {
         patch.getNormalAxis()    = 2;
         patch.getTangentAxis()   = 0;
         patch.getBitangentAxis() = 1;
-      }
-        else if (clusterIndex == 11 || clusterIndex == 13) {  // 7->1 : 9->4
-          patch.getAxisOfAdditionalPlane() = 2;  // X Axis  
-          patch.getNormalAxis() = 1;
-          patch.getTangentAxis() = 2;
-          patch.getBitangentAxis() = 0;
-        }
-        else if (clusterIndex == 14 || clusterIndex == 16) {  // 6->0 : 8->3
-          patch.getAxisOfAdditionalPlane() = 3;  // Z Axis  
-          patch.getNormalAxis() = 1;
-          patch.getTangentAxis() = 2;
-          patch.getBitangentAxis() = 0;
-        }
-        else if (clusterIndex == 15 || clusterIndex == 17) {  // 7->2 : 9->1
-          patch.getAxisOfAdditionalPlane() = 3;  // Z Axis 
-          patch.getNormalAxis() = 0;
-          patch.getTangentAxis() = 2;
+      } else if ( additionalProjectionAxis == 1 ) {  // Y Axis
+        bIsAdditionalProjectionPlane     = true;
+        patch.getAxisOfAdditionalPlane() = additionalProjectionAxis;  // Y Axis
+        if ( clusterIndex == 6 || clusterIndex == 8 ) {               // 6->0 : 8->3
+          patch.getNormalAxis()    = 0;
+          patch.getTangentAxis()   = 2;
+          patch.getBitangentAxis() = 1;
+        } else if ( clusterIndex == 7 || clusterIndex == 9 ) {  // 7->2 : 9->5
+          patch.getNormalAxis()    = 2;
+          patch.getTangentAxis()   = 0;
           patch.getBitangentAxis() = 1;
         }
-
+      } else if ( additionalProjectionAxis == 2 ) {  // X Axis
+        bIsAdditionalProjectionPlane     = true;
+        patch.getAxisOfAdditionalPlane() = additionalProjectionAxis;  // X Axis
+        if ( clusterIndex == 6 || clusterIndex == 8 ) {               // 6->2 : 8->5
+          patch.getNormalAxis()    = 2;
+          patch.getTangentAxis()   = 0;
+          patch.getBitangentAxis() = 1;
+        } else if ( clusterIndex == 7 || clusterIndex == 9 ) {  // 7->1 : 9->4
+          patch.getNormalAxis()    = 1;
+          patch.getTangentAxis()   = 2;
+          patch.getBitangentAxis() = 0;
+        }
+      } else if ( additionalProjectionAxis == 3 ) {  // Z Axis
+        bIsAdditionalProjectionPlane     = true;
+        patch.getAxisOfAdditionalPlane() = additionalProjectionAxis;  // Y Zxis
+        if ( clusterIndex == 6 || clusterIndex == 8 ) {               // 6->0 : 8->3
+          patch.getNormalAxis()    = 1;
+          patch.getTangentAxis()   = 2;
+          patch.getBitangentAxis() = 0;
+        } else if ( clusterIndex == 7 || clusterIndex == 9 ) {  // 7->2 : 9->1
+          patch.getNormalAxis()    = 0;
+          patch.getTangentAxis()   = 2;
+          patch.getBitangentAxis() = 1;
+        }
+      } else if ( additionalProjectionAxis == 4 ) {  // All
+        bIsAdditionalProjectionPlane = true;
+        if ( clusterIndex == 6 || clusterIndex == 8 ) {  // 6->0 : 8->3
+          patch.getAxisOfAdditionalPlane() = 1;          // Y Axis
+          patch.getNormalAxis()            = 0;
+          patch.getTangentAxis()           = 2;
+          patch.getBitangentAxis()         = 1;
+        } else if ( clusterIndex == 7 || clusterIndex == 9 ) {  // 7->2 : 9->1
+          patch.getAxisOfAdditionalPlane() = 1;                 // Y Axis
+          patch.getNormalAxis()            = 2;
+          patch.getTangentAxis()           = 0;
+          patch.getBitangentAxis()         = 1;
+        } else if ( clusterIndex == 10 || clusterIndex == 12 ) {  // 6->2 : 8->5
+          patch.getAxisOfAdditionalPlane() = 2;                   // X Axis
+          patch.getNormalAxis()            = 2;
+          patch.getTangentAxis()           = 0;
+          patch.getBitangentAxis()         = 1;
+        } else if ( clusterIndex == 11 || clusterIndex == 13 ) {  // 7->1 : 9->4
+          patch.getAxisOfAdditionalPlane() = 2;                   // X Axis
+          patch.getNormalAxis()            = 1;
+          patch.getTangentAxis()           = 2;
+          patch.getBitangentAxis()         = 0;
+        } else if ( clusterIndex == 14 || clusterIndex == 16 ) {  // 6->0 : 8->3
+          patch.getAxisOfAdditionalPlane() = 3;                   // Z Axis
+          patch.getNormalAxis()            = 1;
+          patch.getTangentAxis()           = 2;
+          patch.getBitangentAxis()         = 0;
+        } else if ( clusterIndex == 15 || clusterIndex == 17 ) {  // 7->2 : 9->1
+          patch.getAxisOfAdditionalPlane() = 3;                   // Z Axis
+          patch.getNormalAxis()            = 0;
+          patch.getTangentAxis()           = 2;
+          patch.getBitangentAxis()         = 1;
+        }
       }
 
       patch.setViewId()       = clusterIndex;
@@ -628,11 +595,9 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
           patch.getProjectionMode() = 1;
         }
         // for additional projection plane
-        if (clusterIndex == 6 || clusterIndex == 7 ) {
-          patch.getProjectionMode() = 0;
-        }
+        if ( clusterIndex == 6 || clusterIndex == 7 ) { patch.getProjectionMode() = 0; }
         // for additional projection plane
-        if (clusterIndex == 10 || clusterIndex == 11 || clusterIndex == 14 || clusterIndex == 15) {
+        if ( clusterIndex == 10 || clusterIndex == 11 || clusterIndex == 14 || clusterIndex == 15 ) {
           patch.getProjectionMode() = 0;
         }
       }
@@ -643,13 +608,13 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
         boundingBox.max_[k] = points[connectedComponent[0]][k];
       }
       for ( const auto i : connectedComponent ) {
-        patchPartition[i] = patchIndex + 1;
-        PCCPoint3D   pointTmp = points[i];
-        if (bIsAdditionalProjectionPlane) {
+        patchPartition[i]   = patchIndex + 1;
+        PCCPoint3D pointTmp = points[i];
+        if ( bIsAdditionalProjectionPlane ) {
           auto& input = pointTmp;
-          convert(patch.getAxisOfAdditionalPlane(), geometryBitDepth3D, input, pointTmp);
+          convert( patch.getAxisOfAdditionalPlane(), geometryBitDepth3D, input, pointTmp );
         }
-        const auto&   point = pointTmp;
+        const auto& point = pointTmp;
         for ( size_t k = 0; k < 3; ++k ) {
           if ( point[k] < boundingBox.min_[k] ) { boundingBox.min_[k] = floor( point[k] ); }
           if ( point[k] > boundingBox.max_[k] ) { boundingBox.max_[k] = ceil( point[k] ); }
@@ -691,10 +656,10 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
       if ( !sixDirection ) { selectPatchProjectionMode( points, frameProjectionMode, connectedComponent, patch ); }
 
       for ( const auto i : connectedComponent ) {
-        PCCPoint3D   pointTmp = points[i];
-        if (bIsAdditionalProjectionPlane) {
+        PCCPoint3D pointTmp = points[i];
+        if ( bIsAdditionalProjectionPlane ) {
           auto& input = pointTmp;
-          convert(patch.getAxisOfAdditionalPlane(), geometryBitDepth3D, input, pointTmp);
+          convert( patch.getAxisOfAdditionalPlane(), geometryBitDepth3D, input, pointTmp );
         }
         const auto&   point = pointTmp;
         const int16_t d     = int16_t( round( point[patch.getNormalAxis()] ) );
@@ -847,16 +812,16 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
       if ( patch.getProjectionMode() == 0 ) {  // min
         if ( !useSurfaceSeparation ) {
           for ( const auto i : connectedComponent ) {
-            PCCPoint3D   pointTmp = points[i];
-            if (bIsAdditionalProjectionPlane) {
+            PCCPoint3D pointTmp = points[i];
+            if ( bIsAdditionalProjectionPlane ) {
               auto& input = pointTmp;
-              convert(patch.getAxisOfAdditionalPlane(), geometryBitDepth3D, input, pointTmp);
+              convert( patch.getAxisOfAdditionalPlane(), geometryBitDepth3D, input, pointTmp );
             }
-            const auto&   point = pointTmp;
+            const auto& point = pointTmp;
 
-            const int16_t d     = int16_t( round( point[patch.getNormalAxis()] ) );
-            const size_t  u     = size_t( round( point[patch.getTangentAxis()] - patch.getU1() ) );
-            const size_t  v     = size_t( round( point[patch.getBitangentAxis()] - patch.getV1() ) );
+            const int16_t d = int16_t( round( point[patch.getNormalAxis()] ) );
+            const size_t  u = size_t( round( point[patch.getTangentAxis()] - patch.getU1() ) );
+            const size_t  v = size_t( round( point[patch.getBitangentAxis()] - patch.getV1() ) );
             assert( u >= 0 && u < patch.getSizeU() );
             assert( v >= 0 && v < patch.getSizeV() );
             const size_t  p      = v * patch.getSizeU() + u;
@@ -877,7 +842,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
                 comp_depth0 = depth0 - patch.getD1();
               }
               patch.getDepthEnhancedDeltaD()[p] |= 1 << ( deltaD - 1 );
-              if ( ( comp_depth0 + patch.getDepthEnhancedDeltaD()[p] ) > maxD) {
+              if ( ( comp_depth0 + patch.getDepthEnhancedDeltaD()[p] ) > maxD ) {
                 patch.getDepthEnhancedDeltaD()[p] = oldEDDCode;
                 std::cout << "(D0 + EDD-Code) > maxD. Data overflow observed (assume using 10bit coding). Temporary "
                              "solution: the corresponding inbetween or Depth1 point will be regarded as missing point. "
@@ -900,10 +865,10 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
 
             if ( err_flag == true ) { proc_d1_select_flag = false; }
             for ( const auto i : connectedComponent ) {
-              PCCPoint3D   pointTmp = points[i];
-              if (bIsAdditionalProjectionPlane) {
-                 auto& input = pointTmp;
-                 convert(patch.getAxisOfAdditionalPlane(), geometryBitDepth3D, input, pointTmp);
+              PCCPoint3D pointTmp = points[i];
+              if ( bIsAdditionalProjectionPlane ) {
+                auto& input = pointTmp;
+                convert( patch.getAxisOfAdditionalPlane(), geometryBitDepth3D, input, pointTmp );
               }
               const auto&   point = pointTmp;
               const int16_t d     = int16_t( round( point[patch.getNormalAxis()] ) );
@@ -956,7 +921,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
                     comp_depth0 = depth0 - patch.getD1();
                   }
                   patch.getDepthEnhancedDeltaD()[p] |= 1 << ( deltaD - 1 );
-                  if ( ( comp_depth0 + patch.getDepthEnhancedDeltaD()[p] ) > maxD) {
+                  if ( ( comp_depth0 + patch.getDepthEnhancedDeltaD()[p] ) > maxD ) {
                     patch.getDepthEnhancedDeltaD()[p] = oldEDDCode;
                     std::cout << "(D0 + EDD-Code) > maxD. Data overflow observed (assume using 10bit coding). "
                                  "Temporary solution: the corresponding inbetween or Depth1 point will be regarded as "
@@ -985,10 +950,10 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
       } else {  // else ( patch.getProjectionMode() == 0 )
         if ( !useSurfaceSeparation ) {
           for ( const auto i : connectedComponent ) {
-            PCCPoint3D   pointTmp = points[i];
-            if (bIsAdditionalProjectionPlane) {
+            PCCPoint3D pointTmp = points[i];
+            if ( bIsAdditionalProjectionPlane ) {
               auto& input = pointTmp;
-              convert(patch.getAxisOfAdditionalPlane(), geometryBitDepth3D, input, pointTmp);
+              convert( patch.getAxisOfAdditionalPlane(), geometryBitDepth3D, input, pointTmp );
             }
             const auto&   point = pointTmp;
             const int16_t d     = int16_t( round( point[patch.getNormalAxis()] ) );
@@ -1014,7 +979,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
               }
               patch.getDepthEnhancedDeltaD()[p] |= 1 << ( deltaD - 1 );
               if ( ( !sixDirection && ( comp_depth0 - patch.getDepthEnhancedDeltaD()[p] ) < 0 ) ||
-                   ( sixDirection && ( comp_depth0 + patch.getDepthEnhancedDeltaD()[p] ) > maxD) ) {
+                   ( sixDirection && ( comp_depth0 + patch.getDepthEnhancedDeltaD()[p] ) > maxD ) ) {
                 patch.getDepthEnhancedDeltaD()[p] = oldEDDCode;
                 std::cout << "(D0 + EDD-Code) > maxD. Data overflow observed (assume using 10bit coding). Temporary "
                              "solution: the corresponding inbetween or Depth1 point will be regarded as missing point. "
@@ -1035,10 +1000,10 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
             if ( err_flag == true ) { proc_d1_select_flag = false; }
 
             for ( const auto i : connectedComponent ) {
-              PCCPoint3D   pointTmp = points[i];
-              if (bIsAdditionalProjectionPlane) {
+              PCCPoint3D pointTmp = points[i];
+              if ( bIsAdditionalProjectionPlane ) {
                 auto& input = pointTmp;
-                convert(patch.getAxisOfAdditionalPlane(), geometryBitDepth3D, input, pointTmp);
+                convert( patch.getAxisOfAdditionalPlane(), geometryBitDepth3D, input, pointTmp );
               }
               const auto&   point = pointTmp;
               const int16_t d     = int16_t( round( point[patch.getNormalAxis()] ) );
@@ -1081,7 +1046,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
                   }
                   patch.getDepthEnhancedDeltaD()[p] |= 1 << ( deltaD - 1 );
                   if ( ( !sixDirection && ( comp_depth0 - patch.getDepthEnhancedDeltaD()[p] ) < 0 ) ||
-                       ( sixDirection && ( comp_depth0 + patch.getDepthEnhancedDeltaD()[p] ) > maxD) ) {
+                       ( sixDirection && ( comp_depth0 + patch.getDepthEnhancedDeltaD()[p] ) > maxD ) ) {
                     patch.getDepthEnhancedDeltaD()[p] = oldEDDCode;
                     std::cout << "(D0 + EDD-Code) > maxD. Data overflow observed (assume using 10bit coding). "
                                  "Temporary solution: the corresponding inbetween or Depth1 point will be regarded as "
@@ -1106,15 +1071,12 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
         }
       }  // fi ( patch.getProjectionMode() == 0 )
       if ( !sixDirection && patch.getProjectionMode() == 1 ) {
-        // patch.getD1() = (size_t)(std::max)(int(0), int(patch.getD1() - int(surfaceThickness)));
-        // jkei[??] is it as intended?
         size_t quatnizedSurfaceThickness = size_t( double( surfaceThickness ) / double( minLevel ) + 0.5 ) * minLevel;
         if ( patch.getD1() < quatnizedSurfaceThickness )
           patch.getD1() = 0;
         else
           patch.getD1() = patch.getD1() - quatnizedSurfaceThickness;
       }
-
       patch.getSizeD() = 0;
 
       PCCPointSet3 rec;
@@ -1142,15 +1104,14 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
               point[patch.getTangentAxis()]   = double( u ) + patch.getU1();
               point[patch.getBitangentAxis()] = double( v ) + patch.getV1();
 
-              if (bIsAdditionalProjectionPlane) {
+              if ( bIsAdditionalProjectionPlane ) {
                 PCCVector3D point_tmp;
-                auto& input = point;
-                iconvert(patch.getAxisOfAdditionalPlane(), geometryBitDepth3D, input, point_tmp);
-                resampled.addPoint(point_tmp);
+                auto&       input = point;
+                iconvert( patch.getAxisOfAdditionalPlane(), geometryBitDepth3D, input, point_tmp );
+                resampled.addPoint( point_tmp );
                 resampledPatchPartition.push_back( patchIndex );
-                if (createSubPointCloud) { rec.addPoint(point_tmp); }
-              }
-              else {
+                if ( createSubPointCloud ) { rec.addPoint( point_tmp ); }
+              } else {
                 resampled.addPoint( (const PCCVector3D)point );
                 resampledPatchPartition.push_back( patchIndex );
                 if ( createSubPointCloud ) { rec.addPoint( point ); }
@@ -1178,16 +1139,15 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
                 }       // if( patch.getDepthEnhancedDeltaD()[p] != 0) )
               } else {  // if(useEnhancedDeltaDepthCode)
                 point[patch.getNormalAxis()] = double( patch.getDepth( 1 )[p] + patch.getD1() );
-                if (bIsAdditionalProjectionPlane) {
+                if ( bIsAdditionalProjectionPlane ) {
                   PCCVector3D point_tmp;
-                  auto& input = point;
-                  iconvert(patch.getAxisOfAdditionalPlane(), geometryBitDepth3D, input, point_tmp);
-                  resampled.addPoint(point_tmp);
-                  resampledPatchPartition.push_back(patchIndex);
-                  assert(abs(patch.getDepth(1)[p] - patch.getDepth(0)[p]) <= int(surfaceThickness));
-                  if (createSubPointCloud) { rec.addPoint(point_tmp); }
-                }
-                else {
+                  auto&       input = point;
+                  iconvert( patch.getAxisOfAdditionalPlane(), geometryBitDepth3D, input, point_tmp );
+                  resampled.addPoint( point_tmp );
+                  resampledPatchPartition.push_back( patchIndex );
+                  assert( abs( patch.getDepth( 1 )[p] - patch.getDepth( 0 )[p] ) <= int( surfaceThickness ) );
+                  if ( createSubPointCloud ) { rec.addPoint( point_tmp ); }
+                } else {
                   resampled.addPoint( point );
                   resampledPatchPartition.push_back( patchIndex );
                   assert( abs( patch.getDepth( 1 )[p] - patch.getDepth( 0 )[p] ) <= int( surfaceThickness ) );
@@ -1224,17 +1184,17 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
               point[patch.getNormalAxis()]    = double( depth0_1 );
               point[patch.getTangentAxis()]   = double( u ) + patch.getU1();
               point[patch.getBitangentAxis()] = double( v ) + patch.getV1();
-              if (bIsAdditionalProjectionPlane) {
+              if ( bIsAdditionalProjectionPlane ) {
                 PCCVector3D point_tmp;
-                auto& input = point;
-                iconvert(patch.getAxisOfAdditionalPlane(), geometryBitDepth3D, input, point_tmp);
-                resampled.addPoint(point_tmp);
-                resampledPatchPartition.push_back(patchIndex);
-                if (createSubPointCloud) { rec.addPoint(point_tmp); }
+                auto&       input = point;
+                iconvert( patch.getAxisOfAdditionalPlane(), geometryBitDepth3D, input, point_tmp );
+                resampled.addPoint( point_tmp );
+                resampledPatchPartition.push_back( patchIndex );
+                if ( createSubPointCloud ) { rec.addPoint( point_tmp ); }
               } else {
-                resampled.addPoint(point);
-                resampledPatchPartition.push_back(patchIndex);
-                if (createSubPointCloud) { rec.addPoint(point); }
+                resampled.addPoint( point );
+                resampledPatchPartition.push_back( patchIndex );
+                if ( createSubPointCloud ) { rec.addPoint( point ); }
               }
               if ( createSubPointCloud ) { rec.addPoint( point ); }
 
@@ -1254,18 +1214,17 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
                 }       // if( patch.getDepthEnhancedDeltaD()[p] != 0) )
               } else {  // if(useEnhancedDeltaDepthCode)
                 point[patch.getNormalAxis()] = double( depth1_1 );
-                if (bIsAdditionalProjectionPlane) {
+                if ( bIsAdditionalProjectionPlane ) {
                   PCCVector3D point_tmp;
-                  auto& input = point;
-                  iconvert(patch.getAxisOfAdditionalPlane(), geometryBitDepth3D, input, point_tmp);
-                  resampled.addPoint(point_tmp);
-                  resampledPatchPartition.push_back(patchIndex);
-                  if (createSubPointCloud) { rec.addPoint(point_tmp); }
-                }
-                else {
-                  resampled.addPoint(point);
-                  resampledPatchPartition.push_back(patchIndex);
-                  if (createSubPointCloud) { rec.addPoint(point); }
+                  auto&       input = point;
+                  iconvert( patch.getAxisOfAdditionalPlane(), geometryBitDepth3D, input, point_tmp );
+                  resampled.addPoint( point_tmp );
+                  resampledPatchPartition.push_back( patchIndex );
+                  if ( createSubPointCloud ) { rec.addPoint( point_tmp ); }
+                } else {
+                  resampled.addPoint( point );
+                  resampledPatchPartition.push_back( patchIndex );
+                  if ( createSubPointCloud ) { rec.addPoint( point ); }
                 }
                 assert( abs( patch.getDepth( 0 )[p] - patch.getDepth( 1 )[p] ) <= int( surfaceThickness ) );
 
@@ -1283,18 +1242,17 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
 
       if ( createSubPointCloud ) {
         PCCPointSet3 testSrc, testRec;
-        for ( const auto i : connectedComponent ) { 
-          if (bIsAdditionalProjectionPlane) {
+        for ( const auto i : connectedComponent ) {
+          if ( bIsAdditionalProjectionPlane ) {
             PCCVector3D input;
             input.x() = points[i].x();
             input.y() = points[i].y();
             input.z() = points[i].z();
             PCCVector3D point_tmp;
-            iconvert(patch.getAxisOfAdditionalPlane(), geometryBitDepth3D, input, point_tmp);
-            testSrc.addPoint(point_tmp, points.getColor(i));
-          }
-          else {
-            testSrc.addPoint(points[i], points.getColor(i));
+            iconvert( patch.getAxisOfAdditionalPlane(), geometryBitDepth3D, input, point_tmp );
+            testSrc.addPoint( point_tmp, points.getColor( i ) );
+          } else {
+            testSrc.addPoint( points[i], points.getColor( i ) );
           }
         }
         for ( const auto& p : rec.getPositions() ) { testRec.addPoint( p ); }
@@ -1319,25 +1277,25 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
         for ( const auto i : connectedComponent ) {
           kdtreeRec.search( points[i], 1, result );
           const double dist2 = result.dist( 0 );
-          if ( dist2 <= maxAllowedDist2MissedPointsSelection ) { 
-            if (bIsAdditionalProjectionPlane) {
+          if ( dist2 <= maxAllowedDist2MissedPointsSelection ) {
+            if ( bIsAdditionalProjectionPlane ) {
               PCCVector3D input;
               input.x() = points[i].x();
               input.y() = points[i].y();
               input.z() = points[i].z();
               PCCVector3D point_tmp;
-              iconvert(patch.getAxisOfAdditionalPlane(), geometryBitDepth3D, input, point_tmp);
-              sub.addPoint(point_tmp, points.getColor(i));
-            }
-            else {
-              sub.addPoint(points[i], points.getColor(i));
+              iconvert( patch.getAxisOfAdditionalPlane(), geometryBitDepth3D, input, point_tmp );
+              sub.addPoint( point_tmp, points.getColor( i ) );
+            } else {
+              sub.addPoint( points[i], points.getColor( i ) );
             }
           }
         }
       }
-      std::cout << "\t\t Patch " << patchIndex << " ->(d1,u1,v1)=( " << patch.getD1() << " , " << patch.getU1()
-                << " , " << patch.getV1() << " )(dd,du,dv)=( " << patch.getSizeD() << " , " << patch.getSizeU() << " , "
-                << patch.getSizeV() << " ),Normal: "<< size_t(patch.getNormalAxis()) << " Direction: " << patch.getProjectionMode() << std::endl;
+      std::cout << "\t\t Patch " << patchIndex << " ->(d1,u1,v1)=( " << patch.getD1() << " , " << patch.getU1() << " , "
+                << patch.getV1() << " )(dd,du,dv)=( " << patch.getSizeD() << " , " << patch.getSizeU() << " , "
+                << patch.getSizeV() << " ),Normal: " << size_t( patch.getNormalAxis() )
+                << " Direction: " << patch.getProjectionMode() << std::endl;
     }
     PCCKdTree kdtreeResampled( resampled );
     missedPoints.resize( 0 );
@@ -1380,10 +1338,10 @@ void PCCPatchSegmenter3::refineSegmentation( const PCCPointSet3&         pointCl
     } );
     limited.execute( [&] {
       tbb::parallel_for( size_t( 0 ), pointCount, [&]( const size_t i ) {
-        const PCCVector3D          normal       = normalsGen.getNormal( i );
-        size_t                     clusterIndex = partition[i];
-        double                     bestScore    = 0.0;
-        const auto&                scoreSmooth  = scoresSmooth[i];
+        const PCCVector3D normal       = normalsGen.getNormal( i );
+        size_t            clusterIndex = partition[i];
+        double            bestScore    = 0.0;
+        const auto&       scoreSmooth  = scoresSmooth[i];
         for ( size_t j = 0; j < orientationCount; ++j ) {
           const double scoreNormal = normal * orientations[j];
           const double score       = scoreNormal + weight * scoreSmooth[j];

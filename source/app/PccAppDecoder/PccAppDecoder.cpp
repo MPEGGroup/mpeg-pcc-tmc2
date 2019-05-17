@@ -307,8 +307,8 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
       sources.clear();
       normals.clear();
     }
-    if (!decoderParams.reconstructedDataPath_.empty()) {
-      reconstructs.write(decoderParams.reconstructedDataPath_, frameNumber);
+    if ( !decoderParams.reconstructedDataPath_.empty() ) {
+      reconstructs.write( decoderParams.reconstructedDataPath_, frameNumber );
     } else {
       frameNumber += reconstructs.size();
     }

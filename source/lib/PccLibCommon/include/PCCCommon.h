@@ -60,27 +60,12 @@
 #include <mach/mach.h>
 #endif
 
+#define D32_UPDATE_UV 0
 // ******************************************************************* //
 // Trace modes to validate new syntax
 // ******************************************************************* //
 // #define BITSTREAM_TRACE
 // #define CODEC_TRACE
-
-// #define BUG_FIX_BITDEPTH
-
-// ******************************************************************* //
-// Technicolor flags for CE2_22
-// ******************************************************************* //
-#define TCH_CONSITENCY_PACK_FLEXIBLE_FIX   
-
-static const size_t PCCMpsPatch8bits = 0;
-static const size_t PCCSepatareEddColors = 1;
-
-#define LAST_PATCH_HLS (1)
-#if LAST_PATCH_HLS
-#define LAST_PATCH_HLS_DEC (1)
-#define LAST_PATCH_HLS_ENC (0)
-#endif
 
 namespace pcc {
 
@@ -364,7 +349,7 @@ void printVector( std::vector<T>    data,
   }
 }
 
-static const std::string strUnitType( PDGUnitType unitType ) {
+static inline const std::string strUnitType( PDGUnitType unitType ) {
   switch ( unitType ) {
     case PDG_PSPS : return std::string( "PDG_PSPS " ); break;
     case PDG_PFPS : return std::string( "PDG_PFPS " ); break;

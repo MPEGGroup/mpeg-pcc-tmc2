@@ -70,7 +70,7 @@ bool PCCBitstream::initialize( std::string compressedStreamPath ) {
 }
 
 bool PCCBitstream::write( std::string compressedStreamPath ) {
-  write( size(), 64,  totalSizeIterator_ );
+  write( size(), 64, totalSizeIterator_ );
   std::ofstream fout( compressedStreamPath, std::ios::binary );
   if ( !fout.is_open() ) { return false; }
   fout.write( reinterpret_cast<const char*>( data_.data() ), size() );
@@ -116,15 +116,6 @@ void PCCBitstream::read( PCCVideoBitstream& videoBitstream ) {
   videoBitstream.trace();
   position_.bytes += size;
 #ifdef BITSTREAM_TRACE
-  trace( "Code: data \n" );
-#endif
-#ifdef BUG_FIX_BITDEPTH
-  videoBitstream.setBitdepth( read( 8 ) );
-#ifdef BITSTREAM_TRACE
-  trace( "Code: depth = %lu \n", videoBitstream.getBitdepth() );
-#endif
-#endif
-#ifdef BITSTREAM_TRACE
   trace( "Code: video : %4lu \n", size );
 #endif
   bitstreamStat_.setVideoBinSize( videoBitstream.type(), videoBitstream.size() );
@@ -135,15 +126,6 @@ void PCCBitstream::write( PCCVideoBitstream& videoBitstream ) {
   trace( "Code: PCCVideoBitstream \n" );
 #endif
   writeBuffer( videoBitstream.buffer(), videoBitstream.size() );
-#ifdef BITSTREAM_TRACE
-  trace( "Code: data \n" );
-#endif
-#ifdef BUG_FIX_BITDEPTH
-  write( videoBitstream.getBitdepth(), 8 );
-#ifdef BITSTREAM_TRACE
-  trace( "Code: depth = %lu \n", videoBitstream.getBitdepth() );
-#endif
-#endif
   videoBitstream.trace();
   bitstreamStat_.setVideoBinSize( videoBitstream.type(), videoBitstream.size() );
 #ifdef BITSTREAM_TRACE
@@ -160,4 +142,3 @@ void PCCBitstream::writeBuffer( const uint8_t* data, const size_t size ) {
   memcpy( data_.data() + position_.bytes, data, size );
   position_.bytes += size;
 }
-

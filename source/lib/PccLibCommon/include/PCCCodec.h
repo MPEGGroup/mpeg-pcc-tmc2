@@ -74,7 +74,7 @@ struct GeneratePointCloudParameters {
   bool        absoluteD1_;
   size_t      surfaceThickness_;
   bool        ignoreLod_;
-  double      thresholdColorSmoothing_;  
+  double      thresholdColorSmoothing_;
   bool        gridColorSmoothing_;
   size_t      cgridSize_;
   double      thresholdColorDifference_;
@@ -251,7 +251,7 @@ class PCCCodec {
     return s;
   }
 
-   inline double median( std::vector<uint8_t>& Data, int N ) {
+  inline double median( std::vector<uint8_t>& Data, int N ) {
     float med    = 0;
     int   a      = 0;
     int   b      = 0;
@@ -339,18 +339,18 @@ class PCCCodec {
                              std::vector<std::vector<uint8_t>>& CS_glum,
                              const GeneratePointCloudParameters params );
 
-  bool GridFilteringColor( PCCPoint3D&               curPos,
-                           PCCVector3D&              color_centroid,
-                           int&                      color_cnt,
-                           std::vector<int>&         color_gcnt,
-                           std::vector<PCCVector3D>& color_center_grid,
-                           std::vector<bool>&        color_doSmooth,
-                           int                       grid,
-                           PCCVector3D&              curPosColor,
+  bool GridFilteringColor( PCCPoint3D&                        curPos,
+                           PCCVector3D&                       color_centroid,
+                           int&                               color_cnt,
+                           std::vector<int>&                  color_gcnt,
+                           std::vector<PCCVector3D>&          color_center_grid,
+                           std::vector<bool>&                 color_doSmooth,
+                           int                                grid,
+                           PCCVector3D&                       curPosColor,
                            const GeneratePointCloudParameters params );
 
   void smoothPointCloudColorLC( PCCPointSet3& reconstruct, const GeneratePointCloudParameters params );
-  
+
   bool gridFiltering( const std::vector<uint32_t>& partition,
                       PCCPointSet3&                pointCloud,
                       PCCPoint3D&                  curPos,
@@ -394,6 +394,11 @@ class PCCCodec {
 #ifdef CODEC_TRACE
   bool  trace_;
   FILE* traceFile_;
+#else
+#ifdef BITSTREAM_TRACE
+  bool  trace_;
+  FILE* traceFile_;
+#endif
 #endif
 };
 

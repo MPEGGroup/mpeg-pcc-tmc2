@@ -94,11 +94,8 @@ class PCCPatch {
       viewId_( 0 ),
       bestMatchIdx_( 0 ),
       patchOrientation_( 0 ),
-      isGlobalPatch_( false )
-#if LAST_PATCH_HLS
-      , patchType_( PATCH_MODE_I_INTRA ) 
-#endif
-  {
+      isGlobalPatch_( false ),
+      patchType_( PATCH_MODE_I_INTRA ) {
     depth_[0].clear();
     depth_[1].clear();
     occupancy_.clear();
@@ -127,10 +124,8 @@ class PCCPatch {
   size_t&               getSizeV0() { return sizeV0_; }
   size_t&               setViewId() { return viewId_; }
   int32_t&              setBestMatchIdx() { return bestMatchIdx_; }
-#if LAST_PATCH_HLS
   uint8_t               getPatchType() const { return patchType_; }
   void                  setPatchType( uint8_t value ){ patchType_ = value; }
-#endif
   size_t&               getOccupancyResolution() { return occupancyResolution_; }
   size_t&               getProjectionMode() { return projectionMode_; }
   size_t&               getFrameProjectionMode() { return frameProjectionMode_; }
@@ -180,7 +175,8 @@ class PCCPatch {
   inline double generateNormalCoordinate( const uint16_t depth,
                                           const double   lodScale,
                                           const bool     useMppSepVid,
-                                          const bool     lossyMpp ) const {
+                                          const bool     lossyMpp,
+										  const bool     absoluteD1	) const {
     double coord = 0;
     if ( lossyMpp && !useMppSepVid ) {  // support lossy missed points patch in same video frame, re-shift depth values
                                         // to store in 10-bit video frame
@@ -191,7 +187,7 @@ class PCCPatch {
         if ( tmp_depth > 0 ) { coord = tmp_depth * lodScale; }
       }
     } else {
-      if ( projectionMode_ == 0 ) {
+      if ( projectionMode_ == 0 || !absoluteD1) {
         coord = ( (double)depth + (double)d1_ ) * lodScale;
       } else {
         double tmp_depth = double( d1_ ) - double( depth );
@@ -206,9 +202,10 @@ class PCCPatch {
                             const uint16_t depth,
                             const double   lodScale,
                             const bool     useMppSepVid,
-                            const bool     lossyMpp ) const {
+                            const bool     lossyMpp,
+							const bool     absoluteD1 ) const {
     PCCPoint3D point0;
-    point0[normalAxis_]    = generateNormalCoordinate( depth, lodScale, useMppSepVid, lossyMpp );
+    point0[normalAxis_]    = generateNormalCoordinate( depth, lodScale, useMppSepVid, lossyMpp, absoluteD1 );
     point0[tangentAxis_]   = ( double( u ) + u1_ ) * lodScale;
     point0[bitangentAxis_] = ( double( v ) + v1_ ) * lodScale;
     return point0;
@@ -792,9 +789,7 @@ class PCCPatch {
   GPAPatchData         preGPAPatchData_;
   bool                 isGlobalPatch_;
   size_t               axisOfAdditionalPlane_;
-#if LAST_PATCH_HLS
   uint8_t              patchType_;
-#endif
 };
 
 struct PCCMissedPointsPatch {
