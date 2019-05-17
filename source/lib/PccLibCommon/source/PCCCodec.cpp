@@ -189,10 +189,12 @@ bool PCCCodec::colorPointCloud( PCCGroupOfFrames&                  reconstructs,
   //const int w = pow( 2, params.geometry3dCoordinatesBitdepth_ ) / cgrid;
   const int w = pow( 2, params.geometryBitDepth3D_ ) / cgrid;
 
-  CS_color_center_grid_.resize( w * w * w );
-  CS_color_gcnt_.resize( w * w * w );
-  CS_color_gpartition_.resize( w * w * w );
-  CS_color_doSmooth_.resize( w * w * w );
+  if ( !params.losslessGeo_ && params.flagColorSmoothing_ && params.gridColorSmoothing_ ) {
+    CS_color_center_grid_.resize( w * w * w );
+    CS_color_gcnt_.resize( w * w * w );
+    CS_color_gpartition_.resize( w * w * w );
+    CS_color_doSmooth_.resize( w * w * w );
+  }
   for ( size_t i = 0; i < frames.size(); i++ ) {
     const size_t frameCount = video.getFrameCount() / frames.size();
     colorPointCloud( reconstructs[i], frames[i], video, attributeCount, params, frameCount );
