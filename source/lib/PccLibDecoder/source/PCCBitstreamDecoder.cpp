@@ -670,36 +670,16 @@ void PCCBitstreamDecoder::patchFrameTileInformation( PatchFrameTileInformation& 
 
     pfti.setNumTileGroupsInPatchFrameMinus1( bitstream.readUvlc() );  // ue(v)
     for ( size_t i = 0; i <= pfti.getNumTileGroupsInPatchFrameMinus1(); i++ ) {
-#if D32_UPDATE_UV
-      if ( i > 0 ) {
-        pfti.setTopLeftTileIdx(
-            i, bitstream.read( log2NumTilesInPatchFrame ) );  // u(v) : Ceil( Log2( NumTilesInPatchFrame )
-      }
-#else
       if ( i > 0 ) { pfti.setTopLeftTileIdx( i, bitstream.readUvlc() ); }  // u(v) : Ceil( Log2( NumTilesInPatchFrame )
-#endif
-#if D32_UPDATE_UV
-      size_t log2NumTilesInPatchFrameMinusTLTileIdx =
-          size_t( log2( NumTilesInPatchFrame - pfti.getTopLeftTileIdx( i ) ) + 1 );
-      pfti.setBottomRightTileIdxDelta(
-          i, bitstream.read( log2NumTilesInPatchFrameMinusTLTileIdx ) );  // u(v) : Ceil( Log2( NumTilesInPatchFrame −
-                                                                          // pfti_top_left_tile_idx[ i ] ) )
-#else
       pfti.setBottomRightTileIdxDelta(
           i, bitstream.readUvlc() );  // u(v) : Ceil( Log2( NumTilesInPatchFrame − pfti_top_left_tile_idx[ i ] ) )
-#endif
     }
   }
   pfti.setSignalledTileGroupIdFlag( bitstream.read( 1 ) );  // u(1)
   if ( pfti.getSignalledTileGroupIdFlag() ) {
     pfti.setSignalledTileGroupIdLengthMinus1( bitstream.readUvlc() );  // ue(v)
     for ( size_t i = 0; i <= pfti.getSignalledTileGroupIdLengthMinus1(); i++ ) {
-#if D32_UPDATE_UV
-      pfti.setTileGroupId( i, bitstream.read( pfti.getSignalledTileGroupIdLengthMinus1() +
-                                              1 ) );  // u(v) : pfti_signalled_tile_group_id_length_minus1 + 1  bits
-#else
       pfti.setTileGroupId( i, bitstream.readUvlc() );  // u(v) : pfti_signalled_tile_group_id_length_minus1 + 1  bits
-#endif
       // When not present, the value of pfti_tile_group_id[ i ] is inferred to be equal to i, for each i in the range of
       // 0 to pfti_num_tile_groups_in_patch_frame_minus1, inclusive.
     }
