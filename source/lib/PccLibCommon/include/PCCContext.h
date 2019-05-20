@@ -53,7 +53,7 @@ typedef std::pair<size_t, size_t>                  GlobalPatch;    // [FrameInde
 typedef std::map<size_t, std::vector<GlobalPatch>> GlobalPatches;  // [TrackIndex, <GlobalPatch>]
 typedef std::pair<size_t, size_t>                  SubContext;     // [start, end)
 
-// 7.3.5.22 Supplemental enhancement information message syntax
+// 7.3.7 Supplemental enhancement information message syntax
 class SupplementalEnhancementInformationMessage {
  public:
   SupplementalEnhancementInformationMessage() {}
@@ -70,7 +70,7 @@ class SupplementalEnhancementInformationMessage {
   size_t smPayloadSizeByte_;
 };
 
-// 7.3.34' Point local reconstruction syntax
+// 7.3.4.6 Point local reconstruction syntax
 class PointLocalReconstructionInformation {
  public:
   PointLocalReconstructionInformation() : plrlNumberOfModesMinus1_( 0 ), plrBlockThresholdPerPatchMinus1_( 0 ) {
@@ -117,7 +117,7 @@ class PointLocalReconstructionInformation {
   std::vector<bool>    plrlFillingFlag_;
 };
 
-// 7.3.34 Point local reconstruction data syntax
+// 7.6.6 Point local reconstruction data syntax
 class PointLocalReconstructionData {
  public:
   PointLocalReconstructionData() :
@@ -166,7 +166,7 @@ class PointLocalReconstructionData {
   std::vector<uint8_t> plrBlockModeMinus1_;
 };
 
-// 7.3.5.20  PCM patch data unit syntax (
+// 7.3.6.5  PCM patch data unit syntax (
 class PCMPatchDataUnit {
  public:
   PCMPatchDataUnit() :
@@ -221,7 +221,7 @@ class PCMPatchDataUnit {
   size_t   ppduFrameIndex_;
 };
 
-// 7.3.5.19  Delta Patch data unit syntax
+// 7.3.6.4  Delta Patch data unit syntax
 class DeltaPatchDataUnit {
  public:
   DeltaPatchDataUnit() :
@@ -286,7 +286,7 @@ class DeltaPatchDataUnit {
   PointLocalReconstructionData pointLocalReconstructionData_;
 };
 
-// 7.3.5.18  Patch data unit syntax (pdu)
+// 7.3.6.3  Patch data unit syntax (pdu)
 class PatchDataUnit {
  public:
   PatchDataUnit() :
@@ -361,7 +361,7 @@ class PatchDataUnit {
   size_t                       pduFrameIndex_;
 };
 
-// 7.3.5.17  Patch information data syntax (pid)
+// 7.3.6.2  Patch information data syntax (pid)
 class PatchInformationData {
  public:
   PatchInformationData( size_t size = 0 ) { allocate( size ); };
@@ -420,7 +420,7 @@ class PatchInformationData {
   PCMPatchDataUnit     pcmPatchDataUnit_;
 };
 
-// 7.3.5.16  Patch frame data unit syntax (ptgdu)
+// 7.3.6  Patch frame data unit syntax (ptgdu)
 class PatchTileGroupDataUnit {
  public:
   PatchTileGroupDataUnit() {}
@@ -469,7 +469,7 @@ class PatchTileGroupDataUnit {
   std::vector<PatchInformationData> patchInformationData_;
 };
 
-// 7.3.5.15  Reference list structure syntax
+// 7.3.5.16  Reference list structure syntax
 class RefListStruct {
  public:
   RefListStruct() : numRefEntries_( 0 ) {
@@ -518,7 +518,7 @@ class RefListStruct {
   std::vector<bool>    strpfEntrySignFlag_;
 };
 
-// 7.3.5.14  Patch frame header syntax (ptgh)
+// 7.3.5.15  Patch tile group header syntax (ptgh)
 class PatchTileGroupHeader {
  public:
   PatchTileGroupHeader() :
@@ -672,7 +672,7 @@ class PatchTileGroupHeader {
   bool                  pcm3dShiftBitCountPresentFlag_;
 };
 
-// 7.3.5.13  Patch frame layer unit syntax
+// 7.3.5.14  Patch tile group layer unit syntax
 class PatchTileGroupLayerUnit {
  public:
   PatchTileGroupLayerUnit() : frameIndex_( 0 ) {}
@@ -1536,7 +1536,8 @@ class GeometryInformation {
       geometryNominal2dBitdepthMinus1_( 10 ),
       geometry3dCoordinatesBitdepthMinus1_( 9 ),
       pcmGeometryCodecId_( 0 ),
-      geometryParamsEnabledFlag_( false ) {}
+      geometryParamsEnabledFlag_( false ),
+      geometryPatchParamsEnabledFlag_(false) {}
   ~GeometryInformation() {}
   GeometryInformation& operator=( const GeometryInformation& ) = default;
 
@@ -1556,6 +1557,7 @@ class GeometryInformation {
     geometry3dCoordinatesBitdepthMinus1_ = coordinatesBitdepthMinus1;
     pcmGeometryCodecId_                  = pcmGeometryCodecId;
     geometryParamsEnabledFlag_           = paramsEnabledFlag;
+    geometryPatchParamsEnabledFlag_      = patchParamsEnabledFlag;
   }
   uint8_t getGeometryCodecId() { return geometryCodecId_; }
   uint8_t getGeometryNominal2dBitdepthMinus1() { return geometryNominal2dBitdepthMinus1_; }

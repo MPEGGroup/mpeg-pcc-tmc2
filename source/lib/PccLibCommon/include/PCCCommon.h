@@ -124,7 +124,7 @@ enum PCCPatchOrientation {
 
 enum VPCCUnitType {
   VPCC_SPS = 0,  // 0: Sequence parameter set
-  VPCC_PSD,      // 1: Patch Sequence Data
+  VPCC_PDG,      // 1: Patch Data Group
   VPCC_OVD,      // 2: Occupancy Video Data
   VPCC_GVD,      // 3: Geometry Video Data
   VPCC_AVD,      // 4: Attribute Video Data

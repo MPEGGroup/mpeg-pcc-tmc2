@@ -49,7 +49,7 @@ int32_t PCCBitstreamDecoder::decode( PCCBitstream& bitstream, PCCContext& contex
   bitstream.getBitStreamStat().newGOF();
   VPCCUnitType vpccUnitType;
   vpccUnit( context, bitstream, vpccUnitType );  // VPCC_SPS
-  vpccUnit( context, bitstream, vpccUnitType );  // VPCC_PSD
+  vpccUnit( context, bitstream, vpccUnitType );  // VPCC_PDG
   vpccUnit( context, bitstream, vpccUnitType );  // VPCC_OVD
   vpccUnit( context, bitstream, vpccUnitType );  // VPCC_GVD
   vpccUnit( context, bitstream, vpccUnitType );  // VPCC_AVD
@@ -103,7 +103,7 @@ void PCCBitstreamDecoder::vpccUnitHeader( PCCContext& context, PCCBitstream& bit
   TRACE_BITSTREAM( "%s \n", __func__ );
   auto& vpcc   = context.getVPCC();
   vpccUnitType = (VPCCUnitType)bitstream.read( 5 );  // u(5)
-  if ( vpccUnitType == VPCC_AVD || vpccUnitType == VPCC_GVD || vpccUnitType == VPCC_OVD || vpccUnitType == VPCC_PSD ) {
+  if ( vpccUnitType == VPCC_AVD || vpccUnitType == VPCC_GVD || vpccUnitType == VPCC_OVD || vpccUnitType == VPCC_PDG ) {
     vpcc.setSequenceParameterSetId( bitstream.read( 4 ) );  // u(4)
   }
   if ( vpccUnitType == VPCC_AVD ) {
@@ -124,7 +124,7 @@ void PCCBitstreamDecoder::vpccUnitHeader( PCCContext& context, PCCBitstream& bit
     } else {
       pcmSeparateVideoData( context, bitstream, 22 );
     }
-  } else if ( vpccUnitType == VPCC_OVD || vpccUnitType == VPCC_PSD ) {
+  } else if ( vpccUnitType == VPCC_OVD || vpccUnitType == VPCC_PDG ) {
     bitstream.read( 23 );  // u(23)
   } else {
     bitstream.read( 27 );  // u(27)
@@ -151,7 +151,7 @@ void PCCBitstreamDecoder::vpccUnitPayload( PCCContext& context, PCCBitstream& bi
   if ( vpccUnitType == VPCC_SPS ) {
     auto& sps = context.addSequenceParameterSet( context.getVPCC().getSequenceParameterSetId() );
     sequenceParameterSet( sps, context, bitstream );
-  } else if ( vpccUnitType == VPCC_PSD ) {
+  } else if ( vpccUnitType == VPCC_PDG ) {
     patchDataGroup( context, bitstream );
   } else if ( vpccUnitType == VPCC_OVD || vpccUnitType == VPCC_GVD || vpccUnitType == VPCC_AVD ) {
     vpccVideoDataUnit( context, bitstream, vpccUnitType );
@@ -231,7 +231,6 @@ void PCCBitstreamDecoder::sequenceParameterSet( SequenceParameterSet& sps,
 }
 
 // 7.3.4.2 Profile, tier, and level syntax
-// profilePCCToolsetIdc, profileReconstructionIdc
 void PCCBitstreamDecoder::profileTierLevel( ProfileTierLevel& ptl, PCCBitstream& bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   ptl.setTierFlag( bitstream.read( 1 ) );                  // u(1)
@@ -247,7 +246,6 @@ void PCCBitstreamDecoder::occupancyInformation( OccupancyInformation& oi, PCCBit
   TRACE_BITSTREAM( "%s \n", __func__ );
   oi.setOccupancyCodecId( bitstream.read( 8 ) );                       // u(8)
   oi.setLossyOccupancyMapCompressionThreshold( bitstream.read( 8 ) );  // u(8)
-  // oi.setOccupancyPackingBlockSize( bitstream.read( 8 ) );  // u(8)
   TRACE_BITSTREAM( "  OccupancyLossyThreshold = %d  \n", oi.getLossyOccupancyMapCompressionThreshold() );
 }
 
@@ -308,6 +306,26 @@ void PCCBitstreamDecoder::attributeInformation( AttributeInformation& ai,
   }
 }
 
+// 7.3.4.6 Point local reconstruction information syntax
+void PCCBitstreamDecoder::pointLocalReconstructionInformation(PointLocalReconstructionInformation& plri,
+	PCCContext&                          context,
+	PCCBitstream&                        bitstream) {
+	TRACE_BITSTREAM("%s \n", __func__);
+	plri.setPlrlNumberOfModesMinus1(bitstream.read(4));                                    //u(4)
+	TRACE_BITSTREAM("  NumberOfModesMinus1 = %u \n", plri.getPlrlNumberOfModesMinus1());
+	plri.allocate();
+	for (size_t i = 0; i <= plri.getPlrlNumberOfModesMinus1(); i++) {
+		plri.setPlrlInterpolateFlag(i, bitstream.read(1));                                 //u(1)
+		plri.setPlrlFillingFlag(i, bitstream.read(1));                                     //u(1)
+		plri.setPlrlMinimumDepth(i, bitstream.read(2));                                    //u(2)
+		plri.setPlrlNeighbourMinus1(i, bitstream.read(2));                                 //u(2)
+		TRACE_BITSTREAM("  Mode[%lu] = I = %d F = %d D = %u N = %u \n", i, plri.getPlrlInterpolateFlag(i),
+			plri.getPlrlFillingFlag(i), plri.getPlrlMinimumDepth(i), plri.getPlrlNeighbourMinus1(i));
+	}
+	plri.setPlrBlockThresholdPerPatchMinus1(bitstream.readUvlc());                         //ue(v)
+	TRACE_BITSTREAM("  BlockThresholdPerPatchMinus1 = %u \n", plri.getPlrBlockThresholdPerPatchMinus1());
+}
+
 // 7.3.5.1 General patch data group unit syntax
 void PCCBitstreamDecoder::patchDataGroup( PCCContext& context, PCCBitstream& bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
@@ -361,7 +379,7 @@ void PCCBitstreamDecoder::patchSequenceParameterSet( PatchDataGroup& pdg, PCCBit
   RefListStruct rls;
   psps.addRefListStruct( rls );
   psps.setPatchSequenceParameterSetId( index );
-  psps.setLog2PatchPackingBlockSize( bitstream.read( 3 ) );            // u(1)
+  psps.setLog2PatchPackingBlockSize( bitstream.read( 3 ) );            // u(3)
   psps.setLog2MaxPatchFrameOrderCntLsbMinus4( bitstream.readUvlc() );  // ue(v)
   psps.setMaxDecPatchFrameBufferingMinus1( bitstream.readUvlc() );     // ue(v)
   psps.setLongTermRefPatchFramesFlag( bitstream.read( 1 ) );           // u(1)
@@ -427,7 +445,7 @@ void PCCBitstreamDecoder::geometryFrameParams( GeometryFrameParams& gfp, PCCBits
   }
   if ( gfp.getGeometryRotationParamsPresentFlag() ) {
     for ( size_t d = 0; d < 4; d++ ) {
-      gfp.setGeometryRotationQuaternion( d, bitstream.readS( 32 ) );  // i(32)
+      gfp.setGeometryRotationQuaternion( d, bitstream.readS( 32 ) );  // i(32) -> TODO: This should be i(16) according to the CD
     }
   }
   if ( gfp.getGeometryPointSizeInfoPresentFlag() ) {
@@ -539,7 +557,7 @@ void PCCBitstreamDecoder::geometryPatchParams( GeometryPatchParams&            g
     gpp.setGeometryPatchRotationParamsPresentFlag( bitstream.read( 1 ) );  // u(1)
     if ( gpp.getGeometryPatchRotationParamsPresentFlag() ) {
       for ( size_t d = 0; d < 4; d++ ) {
-        gpp.setGeometryPatchRotationQuaternion( d, bitstream.readS( 32 ) );  // i(32)
+        gpp.setGeometryPatchRotationQuaternion( d, bitstream.readS( 32 ) );  // i(32) -> TODO: i(16) according to the CD
       }
     }
   }
@@ -692,7 +710,7 @@ void PCCBitstreamDecoder::patchFrameTileInformation( PatchFrameTileInformation& 
   }
 }
 
-// 7.3.5.14(d32) patchTileGroupLayerUnit <- 7.3.5.13 Patch frame layer unit syntax
+// 7.3.5.14 Patch tile group layer unit syntax
 void PCCBitstreamDecoder::patchTileGroupLayerUnit( PatchDataGroup& pdg,
                                                    uint32_t        frameIndex,
                                                    PCCContext&     context,
@@ -710,7 +728,7 @@ void PCCBitstreamDecoder::patchTileGroupLayerUnit( PatchDataGroup& pdg,
   patchTileGroupDataUnit( ptgdu, ptgh, context, bitstream );
 }
 
-// 7.3.5.14 Patch frame header syntax
+// 7.3.5.15 Patch tile group header syntax
 void PCCBitstreamDecoder::patchTileGroupHeader( PatchTileGroupHeader& ptgh,
                                                 PatchTileGroupHeader& pfhPrev,
                                                 PCCContext&           context,
@@ -869,7 +887,7 @@ void PCCBitstreamDecoder::patchTileGroupHeader( PatchTileGroupHeader& ptgh,
   byteAlignment( bitstream );
 }
 
-// 7.3.5.15 Reference list structure syntax
+// 7.3.5.16 Reference list structure syntax
 void PCCBitstreamDecoder::refListStruct( RefListStruct&             rls,
                                          PatchSequenceParameterSet& psps,
                                          PCCBitstream&              bitstream ) {
@@ -895,7 +913,7 @@ void PCCBitstreamDecoder::refListStruct( RefListStruct&             rls,
   TRACE_BITSTREAM( "%s done \n", __func__ );
 }
 
-// 7.3.5.16 Patch frame data unit syntax
+// 7.3.6.1 General patch tile group data unit syntax
 void PCCBitstreamDecoder::patchTileGroupDataUnit( PatchTileGroupDataUnit& ptgdu,
                                                   PatchTileGroupHeader&   ptgh,
                                                   PCCContext&             context,
@@ -926,7 +944,7 @@ void PCCBitstreamDecoder::patchTileGroupDataUnit( PatchTileGroupDataUnit& ptgdu,
   byteAlignment( bitstream );
 }
 
-// 7.3.5.17 Patch information data syntax
+// 7.3.6.2 Patch information data syntax
 void PCCBitstreamDecoder::patchInformationData( PatchInformationData& pid,
                                                 size_t                patchMode,
                                                 PatchTileGroupHeader& ptgh,
@@ -986,7 +1004,7 @@ void PCCBitstreamDecoder::patchInformationData( PatchInformationData& pid,
   }
 }
 
-// 7.3.5.18 Patch data unit syntax
+// 7.3.6.3 Patch data unit syntax
 void PCCBitstreamDecoder::patchDataUnit( PatchDataUnit&        pdu,
                                          PatchTileGroupHeader& ptgh,
                                          PCCContext&           context,
@@ -1049,7 +1067,7 @@ void PCCBitstreamDecoder::patchDataUnit( PatchDataUnit&        pdu,
                    pdu.get45DegreeProjectionRotationAxis() );
 }
 
-// 7.3.5.19  Delta Patch data unit syntax
+// 7.3.6.4  Delta Patch data unit syntax
 void PCCBitstreamDecoder::deltaPatchDataUnit( DeltaPatchDataUnit&   dpdu,
                                               PatchTileGroupHeader& ptgh,
                                               PCCContext&           context,
@@ -1106,7 +1124,7 @@ void PCCBitstreamDecoder::deltaPatchDataUnit( DeltaPatchDataUnit&   dpdu,
       dpdu.get3DDeltaShiftBiTangentAxis(), dpdu.get3DDeltaShiftMinNormalAxis() );
 }
 
-// 7.3.5.20 PCM patch data unit syntax
+// 7.3.6.5 PCM patch data unit syntax
 void PCCBitstreamDecoder::pcmPatchDataUnit( PCMPatchDataUnit&     ppdu,
                                             PatchTileGroupHeader& ptgh,
                                             PCCContext&           context,
@@ -1130,26 +1148,8 @@ void PCCBitstreamDecoder::pcmPatchDataUnit( PCMPatchDataUnit&     ppdu,
       ppdu.getPatchInPcmVideoFlag() );
 }
 
-// 7.3.5.21 Point local reconstruction syntax
-void PCCBitstreamDecoder::pointLocalReconstructionInformation( PointLocalReconstructionInformation& plri,
-                                                               PCCContext&                          context,
-                                                               PCCBitstream&                        bitstream ) {
-  TRACE_BITSTREAM( "%s \n", __func__ );
-  plri.setPlrlNumberOfModesMinus1( bitstream.read( 4 ) );
-  TRACE_BITSTREAM( "  NumberOfModesMinus1 = %u \n", plri.getPlrlNumberOfModesMinus1() );
-  plri.allocate();
-  for ( size_t i = 0; i <= plri.getPlrlNumberOfModesMinus1(); i++ ) {
-    plri.setPlrlInterpolateFlag( i, bitstream.read( 1 ) );
-    plri.setPlrlFillingFlag( i, bitstream.read( 1 ) );
-    plri.setPlrlMinimumDepth( i, bitstream.read( 2 ) );
-    plri.setPlrlNeighbourMinus1( i, bitstream.read( 2 ) );
-    TRACE_BITSTREAM( "  Mode[%lu] = I = %d F = %d D = %u N = %u \n", i, plri.getPlrlInterpolateFlag( i ),
-                     plri.getPlrlFillingFlag( i ), plri.getPlrlMinimumDepth( i ), plri.getPlrlNeighbourMinus1( i ) );
-  }
-  plri.setPlrBlockThresholdPerPatchMinus1( bitstream.readUvlc() );
-  TRACE_BITSTREAM( "  BlockThresholdPerPatchMinus1 = %u \n", plri.getPlrBlockThresholdPerPatchMinus1() );
-}
 
+// 7.3.6.6 Point local reconstruction data syntax
 void PCCBitstreamDecoder::pointLocalReconstructionData( PointLocalReconstructionData& plrd,
                                                         PCCContext&                   context,
                                                         PCCBitstream&                 bitstream ) {
@@ -1195,5 +1195,5 @@ void PCCBitstreamDecoder::pointLocalReconstructionData( PointLocalReconstruction
   }
 }
 
-// 7.3.5.22 Supplemental enhancement information message syntax
+// 7.3.5.22 Supplemental enhancement information message syntax TODO: Implement
 void PCCBitstreamDecoder::seiMessage( PatchDataGroup& pdg, PCCContext& context, PCCBitstream& bitstream ) {}
