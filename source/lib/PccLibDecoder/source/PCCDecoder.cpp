@@ -579,7 +579,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
       const int64_t delta_DD = dpdu.get3DShiftDeltaMaxNormalAxis();
       size_t        prevDD   = prePatch.getSizeD() / minLevel;
       if ( prevDD * minLevel != prePatch.getSizeD() ) { prevDD += 1; }
-      patch.getSizeD() = ( std::min )( ( delta_DD + prevDD ) * minLevel, (size_t)255 );
+	  patch.getSizeD() = (std::min)(size_t((delta_DD + prevDD) * minLevel), (size_t)255);
       patch.getLod()   = prePatch.getLod();
       prevSizeU0       = patch.getSizeU0();
       prevSizeV0       = patch.getSizeV0();

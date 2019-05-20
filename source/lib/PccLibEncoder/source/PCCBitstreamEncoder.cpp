@@ -53,7 +53,7 @@ void PCCBitstreamEncoder::setParameters( PCCEncoderParameters params ) { params_
 int PCCBitstreamEncoder::encode( PCCContext& context, PCCBitstream& bitstream ) {
   bitstream.getBitStreamStat().newGOF();
   vpccUnit( context, bitstream, VPCC_SPS );
-  vpccUnit( context, bitstream, VPCC_PSD );
+  vpccUnit( context, bitstream, VPCC_PDG );
   vpccUnit( context, bitstream, VPCC_OVD );
   vpccUnit( context, bitstream, VPCC_GVD );
   vpccUnit( context, bitstream, VPCC_AVD );
@@ -105,7 +105,7 @@ void PCCBitstreamEncoder::vpccUnitHeader( PCCContext& context, PCCBitstream& bit
   auto& vpcc = context.getVPCC();
   auto& sps  = context.getSps();
   bitstream.write( vpccUnitType, 5 );  // u(5)
-  if ( vpccUnitType == VPCC_AVD || vpccUnitType == VPCC_GVD || vpccUnitType == VPCC_OVD || vpccUnitType == VPCC_PSD ) {
+  if ( vpccUnitType == VPCC_AVD || vpccUnitType == VPCC_GVD || vpccUnitType == VPCC_OVD || vpccUnitType == VPCC_PDG ) {
     bitstream.write( (uint32_t)vpcc.getSequenceParameterSetId(), 4 );  // u(4)
   }
   if ( vpccUnitType == VPCC_AVD ) {
@@ -124,7 +124,7 @@ void PCCBitstreamEncoder::vpccUnitHeader( PCCContext& context, PCCBitstream& bit
     } else {
       pcmSeparateVideoData( context, bitstream, 22 );
     }
-  } else if ( vpccUnitType == VPCC_OVD || vpccUnitType == VPCC_PSD ) {
+  } else if ( vpccUnitType == VPCC_OVD || vpccUnitType == VPCC_PDG ) {
     bitstream.write( (uint32_t)0, 23 );  // u(23)
   } else {
     bitstream.write( (uint32_t)0, 27 );  // u(27)

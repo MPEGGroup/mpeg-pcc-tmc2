@@ -84,7 +84,7 @@ class PCCBitstreamGofStat {
 
   void trace() {
     printf( "    vpccUnitSize[ VPCC_SPS ]: %9lu B %9lu b\n", vpccUnitSize_[VPCC_SPS], vpccUnitSize_[VPCC_SPS] * 8 );
-    printf( "    vpccUnitSize[ VPCC_PDG ]: %9lu B %9lu b\n", vpccUnitSize_[VPCC_PSD], vpccUnitSize_[VPCC_PSD] * 8 );
+    printf( "    vpccUnitSize[ VPCC_PDG ]: %9lu B %9lu b\n", vpccUnitSize_[VPCC_PDG], vpccUnitSize_[VPCC_PDG] * 8 );
     printf( "    vpccUnitSize[ VPCC_OVD ]: %9lu B %9lu b ( Ocm video = %9lu B )\n", vpccUnitSize_[VPCC_OVD],
             vpccUnitSize_[VPCC_OVD] * 8, videoBinSize_[VIDEO_OCCUPANCY] );
     printf( "    vpccUnitSize[ VPCC_GVD ]: %9lu B %9lu b ( Geo video = %9lu B + %9lu B + %9lu B + %9lu B )\n",
