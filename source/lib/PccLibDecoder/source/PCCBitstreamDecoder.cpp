@@ -311,8 +311,8 @@ void PCCBitstreamDecoder::attributeInformation( AttributeInformation& ai,
 // 7.3.5.1 General patch data group unit syntax
 void PCCBitstreamDecoder::patchDataGroup( PCCContext& context, PCCBitstream& bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
-  size_t i   = 0;
-  auto&  pdg = context.getPatchDataGroup();
+  size_t i                               = 0;
+  auto&  pdg                             = context.getPatchDataGroup();
   size_t frameCount                      = 0;
   size_t prevFrameindex                  = 0;
   predFramePatchTileGroupLayerUnitIndex_ = -1;
@@ -665,21 +665,27 @@ void PCCBitstreamDecoder::patchFrameTileInformation( PatchFrameTileInformation& 
 
   pfti.setSingleTilePerTileGroupFlag( bitstream.read( 1 ) );  //  u(1)
   if ( !pfti.getSingleTilePerTileGroupFlag() ) {
-    size_t NumTilesInPatchFrame     = ( pfti.getNumTileColumnsMinus1() + 1 ) * ( pfti.getNumTileRowsMinus1() + 1 );
-    size_t log2NumTilesInPatchFrame = size_t( log2( NumTilesInPatchFrame ) + 1 );
+    uint32_t NumTilesInPatchFrame     = ( pfti.getNumTileColumnsMinus1() + 1 ) * ( pfti.getNumTileRowsMinus1() + 1 );
+    uint32_t log2NumTilesInPatchFrame = uint32_t( log2( NumTilesInPatchFrame ) + 1 );
 
     pfti.setNumTileGroupsInPatchFrameMinus1( bitstream.readUvlc() );  // ue(v)
     for ( size_t i = 0; i <= pfti.getNumTileGroupsInPatchFrameMinus1(); i++ ) {
-      if ( i > 0 ) { pfti.setTopLeftTileIdx( i, bitstream.readUvlc() ); }  // u(v) : Ceil( Log2( NumTilesInPatchFrame )
+      uint8_t bitCount = getFixedLengthCodeBitsCount( NumTilesInPatchFrame + 1 );
+      if ( i > 0 ) {
+        pfti.setTopLeftTileIdx( i, bitstream.read( bitCount ) );
+      }  // u(v) : Ceil( Log2( NumTilesInPatchFrame )
+      bitCount = getFixedLengthCodeBitsCount( NumTilesInPatchFrame - pfti.getTopLeftTileIdx( i ) + 1 );
       pfti.setBottomRightTileIdxDelta(
-          i, bitstream.readUvlc() );  // u(v) : Ceil( Log2( NumTilesInPatchFrame − pfti_top_left_tile_idx[ i ] ) )
+          i, bitstream.read( bitCount ) );  // u(v) : Ceil( Log2( NumTilesInPatchFrame − pfti_top_left_tile_idx[ i ] ) )
     }
   }
   pfti.setSignalledTileGroupIdFlag( bitstream.read( 1 ) );  // u(1)
   if ( pfti.getSignalledTileGroupIdFlag() ) {
     pfti.setSignalledTileGroupIdLengthMinus1( bitstream.readUvlc() );  // ue(v)
     for ( size_t i = 0; i <= pfti.getSignalledTileGroupIdLengthMinus1(); i++ ) {
-      pfti.setTileGroupId( i, bitstream.readUvlc() );  // u(v) : pfti_signalled_tile_group_id_length_minus1 + 1  bits
+      uint8_t bitCount = pfti.getSignalledTileGroupIdLengthMinus1() + 1;
+      pfti.setTileGroupId( i,
+                           bitstream.read( bitCount ) );  // u(v) : pfti_signalled_tile_group_id_length_minus1 + 1  bits
       // When not present, the value of pfti_tile_group_id[ i ] is inferred to be equal to i, for each i in the range of
       // 0 to pfti_num_tile_groups_in_patch_frame_minus1, inclusive.
     }
@@ -715,16 +721,18 @@ void PCCBitstreamDecoder::patchTileGroupHeader( PatchTileGroupHeader& ptgh,
   auto&    pdg       = context.getPatchDataGroup();
   uint32_t pfpsIndex = bitstream.readUvlc();  // ue(v)
   ptgh.setPatchFrameParameterSetId( pfpsIndex );
-  auto& pfps = pdg.getPatchFrameParameterSet( ptgh.getPatchFrameParameterSetId() );
-  auto& psps = pdg.getPatchSequenceParameterSet( pfps.getPatchSequenceParameterSetId() );
-  ptgh.setAddress( bitstream.readUvlc() );  // u(v)
+  auto&   pfps     = pdg.getPatchFrameParameterSet( ptgh.getPatchFrameParameterSetId() );
+  auto&   psps     = pdg.getPatchSequenceParameterSet( pfps.getPatchSequenceParameterSetId() );
+  auto&   pfti     = pfps.getPatchFrameTileInformation();
+  uint8_t bitCount = pfti.getSignalledTileGroupIdLengthMinus1() + 1;
+  ptgh.setAddress( bitstream.read( bitCount ) );
   // The length of ptgh_address is pfti_signalled_tile_group_id_length_minus1 + 1 bits.
   // If pfti_signalled_tile_group_id_flag is equal to 0, the value of ptgh_address shall be in the range of 0 to
   // pfti_num_tile_groups_in_patch_frame_minus1, inclusive. Otherwise, the value of ptgh_address shall be in the range
   // of 0 to 2( pfti_signalled_tile_group_id_length_minus1 + 1 ) − 1, inclusive.
-
-  ptgh.setType( bitstream.readUvlc() );                   // ue(v)
-  ptgh.setPatchFrameOrderCntLsb( bitstream.readUvlc() );  // u(v)
+  ptgh.setType( bitstream.readUvlc() );  // ue(v)
+  bitCount = psps.getLog2MaxPatchFrameOrderCntLsbMinus4() + 4;
+  ptgh.setPatchFrameOrderCntLsb( bitstream.read( bitCount ) );  // u(v)
   // The length of the ptgh_patch_frm_order_cnt_lsb syntax element is equal to
   // psps_log2_max_patch_frame_order_cnt_lsb_minus4 + 4 bits. The value of the ptgh_patch_frm_order_cnt_lsb shall be in
   // the range of 0 to MaxPatchFrmOrderCntLsb − 1, inclusive.
@@ -743,8 +751,9 @@ void PCCBitstreamDecoder::patchTileGroupHeader( PatchTileGroupHeader& ptgh,
   }
   if ( ptgh.getRefPatchFrameListSpsFlag() ) {
     if ( psps.getNumRefPatchFrameListsInPsps() > 1 ) {
+      bitCount = getFixedLengthCodeBitsCount( psps.getNumRefPatchFrameListsInPsps() + 1 );
       ptgh.setRefPatchFrameListIdx(
-          bitstream.readUvlc() );  // u( v ) :Ceil( Log2( psps_num_ref_patch_frame_lists_in_psps ) )
+          bitstream.read( bitCount ) );  // u( v ) :Ceil( Log2( psps_num_ref_patch_frame_lists_in_psps ) )
     }
   } else {
     auto& rls = psps.addRefListStruct();
@@ -760,7 +769,8 @@ void PCCBitstreamDecoder::patchTileGroupHeader( PatchTileGroupHeader& ptgh,
   for ( size_t j = 0; j < numLtrpEntries; j++ ) {
     ptgh.setAdditionalPfocLsbPresentFlag( j, bitstream.read( 1 ) );  // u( 1 )
     if ( ptgh.getAdditionalPfocLsbPresentFlag( j ) ) {
-      ptgh.setAdditionalPfocLsbVal( j, bitstream.readUvlc() );  // u(v) : pfps_additional_lt_pfoc_lsb_len
+      uint8_t bitCount = pfps.getAdditionalLtPfocLsbLen();
+      ptgh.setAdditionalPfocLsbVal( j, bitstream.read( bitCount ) );  // u(v) : pfps_additional_lt_pfoc_lsb_len
     }
   }
 
@@ -770,9 +780,9 @@ void PCCBitstreamDecoder::patchTileGroupHeader( PatchTileGroupHeader& ptgh,
     ptgh.setNormalAxisMinValueQuantizer( bitstream.read( 5 ) );
     if ( psps.getNormalAxisMaxDeltaValueEnableFlag() ) ptgh.setNormalAxisMaxDeltaValueQuantizer( bitstream.read( 5 ) );
   }
-  auto          geometryBitDepth2D = context.getSps().getGeometryInformation().getGeometryNominal2dBitdepthMinus1() + 1;
-  const uint8_t maxBitCountForMinDepth = uint8_t( geometryBitDepth2D - ptgh.getNormalAxisMinValueQuantizer() + 1 );
-  const uint8_t maxBitCountForMaxDepth = uint8_t( geometryBitDepth2D - ptgh.getNormalAxisMaxDeltaValueQuantizer() + 1 );
+
+  const uint8_t maxBitCountForMinDepth = uint8_t( gi.getGeometry3dCoordinatesBitdepthMinus1() );
+  const uint8_t maxBitCountForMaxDepth = uint8_t( gi.getGeometry3dCoordinatesBitdepthMinus1() );
   // min
   ptgh.setInterPredictPatch3dShiftNormalAxisBitCountMinus1( maxBitCountForMinDepth );
 
@@ -875,8 +885,9 @@ void PCCBitstreamDecoder::refListStruct( RefListStruct&             rls,
         if ( rls.getAbsDeltaPfocSt( i ) > 0 ) {
           rls.setStrpfEntrySignFlag( i, bitstream.read( 1 ) );  // u(1)
         } else {
-          rls.setPfocLsbLt( i,
-                            bitstream.readUvlc() );  // u(v) : psps_log2_max_patch_frame_order_cnt_lsb_minus4  + 4 bits
+          uint8_t bitCount = psps.getLog2MaxPatchFrameOrderCntLsbMinus4() + 4;
+          rls.setPfocLsbLt(
+              i, bitstream.read( bitCount ) );  // u(v) : psps_log2_max_patch_frame_order_cnt_lsb_minus4  + 4 bits
         }
       }
     }
@@ -941,7 +952,7 @@ void PCCBitstreamDecoder::patchInformationData( PatchInformationData& pid,
     TRACE_BITSTREAM( " ai.getAttributeCount() = %lu \n", ai.getAttributeCount() );
     pfps.allocate( ai.getAttributeCount() );
     for ( int i = 0; i < ai.getAttributeCount(); i++ ) {
-      TRACE_BITSTREAM( " overight flag = %lu \n", pfps.getLocalOverrideAttributePatchEnableFlag( i ) );
+      TRACE_BITSTREAM( " override flag = %lu \n", pfps.getLocalOverrideAttributePatchEnableFlag( i ) );
       if ( pfps.getLocalOverrideAttributePatchEnableFlag( i ) ) {
         const bool overrideAttributePatchFlag = bitstream.read( 1 );  // u(1)
         TRACE_BITSTREAM( " overrideAttributePatchFlag = %lu \n", overrideAttributePatchFlag );
@@ -949,7 +960,7 @@ void PCCBitstreamDecoder::patchInformationData( PatchInformationData& pid,
       } else {
         pid.addOverrideAttributePatchFlag( false );
       }
-      TRACE_BITSTREAM( " overight patch flag = %lu \n", pid.getOverrideAttributePatchFlag( i ) );
+      TRACE_BITSTREAM( " override attribute patch flag = %lu \n", pid.getOverrideAttributePatchFlag( i ) );
       if ( pid.getOverrideAttributePatchFlag( i ) ) {
         pid.addAttributePatchParameterSetId( bitstream.readUvlc() );  // ue(v)
         TRACE_BITSTREAM( " AttributePatchParameterSetId = %lu \n", pid.getAttributePatchParameterSetId( i ) );
@@ -996,7 +1007,7 @@ void PCCBitstreamDecoder::patchDataUnit( PatchDataUnit&        pdu,
       bitstream.read( ptgh.getInterPredictPatch3dShiftTangentAxisBitCountMinus1() + 1 ) );  // u(v)
   pdu.set3DShiftBiTangentAxis(
       bitstream.read( ptgh.getInterPredictPatch3dShiftBitangentAxisBitCountMinus1() + 1 ) );         // u(v)
-  pdu.set3DShiftMinNormalAxis( bitstream.read( gi.getGeometry3dCoordinatesBitdepthMinus1() + 1 ) );  // u(v)
+  pdu.set3DShiftMinNormalAxis( bitstream.read( ptgh.getInterPredictPatch3dShiftNormalAxisBitCountMinus1() + 1) ); // u(v)
   if ( psps.getNormalAxisMaxDeltaValueEnableFlag() ) {
     pdu.set3DShiftDeltaMaxNormalAxis(
         bitstream.read( ptgh.getInterPredictPatch2dDeltaSizeDBitCountMinus1() + 1 ) );  // u(v)
@@ -1051,7 +1062,7 @@ void PCCBitstreamDecoder::deltaPatchDataUnit( DeltaPatchDataUnit&   dpdu,
   auto& psps = context.getPatchDataGroup().getPatchSequenceParameterSet( pfpsPatchSequenceParameterSetId );
 
   TRACE_BITSTREAM( "%s \n", __func__ );
-  dpdu.setDeltaPatchIdx( bitstream.readSvlc() );              // se(v) 
+  dpdu.setDeltaPatchIdx( bitstream.readSvlc() );              // se(v)
   dpdu.set2DDeltaShiftU( bitstream.readSvlc() );              // se(v)
   dpdu.set2DDeltaShiftV( bitstream.readSvlc() );              // se(v)
   dpdu.set2DDeltaSizeU( bitstream.readSvlc() );               // se(v)

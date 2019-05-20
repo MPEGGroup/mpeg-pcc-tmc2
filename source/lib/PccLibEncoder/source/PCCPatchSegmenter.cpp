@@ -400,10 +400,10 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
                                          const bool                 createSubPointCloud,
                                          std::vector<PCCPointSet3>& subPointCloud,
                                          float&                     distanceSrcRec,
-                                         const bool   sixDirection,  // params.absoluteD1
-                                         bool         useSurfaceSeparation,
-                                         const size_t additionalProjectionAxis,
-                                         const size_t geometryBitDepth3D ) {
+                                         const bool                 sixDirection,  // params.absoluteD1
+                                         bool                       useSurfaceSeparation,
+                                         const size_t               additionalProjectionAxis,
+                                         const size_t               geometryBitDepth3D ) {
   const size_t pointCount = points.getPointCount();
   patchPartition.resize( pointCount, 0 );
   resampledPatchPartition.reserve( pointCount );
@@ -449,7 +449,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
       frameProjectionMode = selectFrameProjectionMode( points, surfaceThickness, minLevel, paramProjectionMode );
     }
   }
-  uint16_t maxD = pow( 2, geometryBitDepth3D );
+  uint16_t maxD = 1 << geometryBitDepth3D;
   while ( !missedPoints.empty() ) {
     std::vector<size_t> fifo;
     fifo.reserve( pointCount );

@@ -89,8 +89,15 @@ const bool     printDetailedInfo           = false;
 
 enum PCCEndianness { PCC_BIG_ENDIAN = 0, PCC_LITTLE_ENDIAN = 1 };
 enum PCCColorTransform { COLOR_TRANSFORM_NONE = 0, COLOR_TRANSFORM_RGB_TO_YCBCR = 1 };
-enum PCCAxis6{PCC_AXIS6_UNDEFINED = -1, PCC_AXIS6_X_NEAR = 0, PCC_AXIS6_Y_NEAR = 1, PCC_AXIS6_Z_NEAR = 2,
-    PCC_AXIS6_X_FAR = 3, PCC_AXIS6_Y_FAR = 4, PCC_AXIS6_Z_FAR = 5};
+enum PCCAxis6 {
+  PCC_AXIS6_UNDEFINED = -1,
+  PCC_AXIS6_X_NEAR    = 0,
+  PCC_AXIS6_Y_NEAR    = 1,
+  PCC_AXIS6_Z_NEAR    = 2,
+  PCC_AXIS6_X_FAR     = 3,
+  PCC_AXIS6_Y_FAR     = 4,
+  PCC_AXIS6_Z_FAR     = 5
+};
 enum PCCAxis3 { PCC_AXIS3_UNDEFINED = -1, PCC_AXIS3_X = 0, PCC_AXIS3_Y = 1, PCC_AXIS3_Z = 2 };
 enum PCCPointType { POINT_UNSET = 0, POINT_D0, POINT_D1, POINT_DF, POINT_SMOOTH, POINT_EDD };
 enum PCCVideoType {
@@ -151,38 +158,38 @@ enum VPCCUnitType {
 };
 
 enum PDGUnitType {
-  PDG_PSPS = 0,     // 00: Patch sequence parameter set
-  PDG_PFPS,         // 01: Patch frame parameter set
-  PDG_PFGPS,        // 02: Patch frame geometry parameter set
-  PDG_PFAPS,        // 03: Patch frame attribute parameter set
-  PDG_GPPS,         // 04: Geometry patch parameter set
-  PDG_APPS,         // 05: Attribute patch parameter set
-  PDG_PTGLU,        // 06: Patch tile group layer unit
-  PDG_PREFIX_SEI,   // 07: Prefix SEI message
-  PDG_SUFFIX_SEI,   // 08: Suffix SEI message
-  PDG_RSVD_09,      // 09: Reserved
-  PDG_RSVD_10,      // 10: Reserved
-  PDG_RSVD_11,      // 11: Reserved
-  PDG_RSVD_12,      // 12: Reserved
-  PDG_RSVD_13,      // 13: Reserved
-  PDG_RSVD_14,      // 14: Reserved
-  PDG_RSVD_15,      // 15: Reserved
-  PDG_RSVD_16,      // 16: Reserved
-  PDG_RSVD_17,      // 17: Reserved
-  PDG_RSVD_18,      // 18: Reserved
-  PDG_RSVD_19,      // 19: Reserved
-  PDG_RSVD_20,      // 20: Reserved
-  PDG_RSVD_21,      // 21: Reserved
-  PDG_RSVD_22,      // 22: Reserved
-  PDG_RSVD_23,      // 23: Reserved
-  PDG_RSVD_24,      // 24: Reserved
-  PDG_RSVD_25,      // 25: Reserved
-  PDG_RSVD_26,      // 26: Reserved
-  PDG_RSVD_27,      // 27: Reserved
-  PDG_RSVD_28,      // 28: Reserved
-  PDG_RSVD_29,      // 29: Reserved
-  PDG_RSVD_30,      // 30: Reserved
-  PDG_RSVD_31       // 32: Reserved
+  PDG_PSPS = 0,    // 00: Patch sequence parameter set
+  PDG_PFPS,        // 01: Patch frame parameter set
+  PDG_PFGPS,       // 02: Patch frame geometry parameter set
+  PDG_PFAPS,       // 03: Patch frame attribute parameter set
+  PDG_GPPS,        // 04: Geometry patch parameter set
+  PDG_APPS,        // 05: Attribute patch parameter set
+  PDG_PTGLU,       // 06: Patch tile group layer unit
+  PDG_PREFIX_SEI,  // 07: Prefix SEI message
+  PDG_SUFFIX_SEI,  // 08: Suffix SEI message
+  PDG_RSVD_09,     // 09: Reserved
+  PDG_RSVD_10,     // 10: Reserved
+  PDG_RSVD_11,     // 11: Reserved
+  PDG_RSVD_12,     // 12: Reserved
+  PDG_RSVD_13,     // 13: Reserved
+  PDG_RSVD_14,     // 14: Reserved
+  PDG_RSVD_15,     // 15: Reserved
+  PDG_RSVD_16,     // 16: Reserved
+  PDG_RSVD_17,     // 17: Reserved
+  PDG_RSVD_18,     // 18: Reserved
+  PDG_RSVD_19,     // 19: Reserved
+  PDG_RSVD_20,     // 20: Reserved
+  PDG_RSVD_21,     // 21: Reserved
+  PDG_RSVD_22,     // 22: Reserved
+  PDG_RSVD_23,     // 23: Reserved
+  PDG_RSVD_24,     // 24: Reserved
+  PDG_RSVD_25,     // 25: Reserved
+  PDG_RSVD_26,     // 26: Reserved
+  PDG_RSVD_27,     // 27: Reserved
+  PDG_RSVD_28,     // 28: Reserved
+  PDG_RSVD_29,     // 29: Reserved
+  PDG_RSVD_30,     // 30: Reserved
+  PDG_RSVD_31      // 32: Reserved
 };
 
 enum PCCCodecID { CODEC_HEVC = 0 };
@@ -191,7 +198,13 @@ enum PCCPatchFrameType { PATCH_FRAME_I = 0, PATCH_FRAME_P };
 
 enum PCCPatchModeI { PATCH_MODE_I_INTRA = 0, PATCH_MODE_I_PCM, PATCH_MODE_I_END = 14 };
 
-enum PCCPatchModeP { PATCH_MODE_P_SKIP = 0, PATCH_MODE_P_INTRA, PATCH_MODE_P_INTER, PATCH_MODE_P_PCM, PATCH_MODE_P_END = 14 };
+enum PCCPatchModeP {
+  PATCH_MODE_P_SKIP = 0,
+  PATCH_MODE_P_INTRA,
+  PATCH_MODE_P_INTER,
+  PATCH_MODE_P_PCM,
+  PATCH_MODE_P_END = 14
+};
 
 enum PCCPatchType { P_TYPE_INTRA = 0, P_TYPE_INTER, P_TYPE_SKIP, P_TYPE_END };
 
@@ -215,6 +228,7 @@ const int32_t InvalidPatchIndex = -1;
 // ******************************************************************* //
 // Static functions
 // ******************************************************************* //
+
 static inline std::string toString( PCCVideoType type ) {
   switch ( type ) {
     case VIDEO_OCCUPANCY: return std::string( "occupancy map video" ); break;
@@ -244,10 +258,10 @@ static inline std::string removeFileExtension( const std::string string ) {
 }
 
 static inline std::string addVideoFormat( const std::string string,
-                                   const size_t      width,
-                                   const size_t      height,
-                                   const bool        yuv420 = true,
-                                   const std::string pixel  = "8" ) {
+                                          const size_t      width,
+                                          const size_t      height,
+                                          const bool        yuv420 = true,
+                                          const std::string pixel  = "8" ) {
   size_t      pos      = string.find_last_of( "." );
   std::string filename = string.substr( 0, pos ), extension = string.substr( pos );
   if ( extension == ".yuv" || extension == ".rgb" ) {
@@ -286,9 +300,9 @@ static inline const T PCCFromLittleEndian( const T u ) {
 }
 
 static inline void PCCDivideRange( const size_t         start,
-                            const size_t         end,
-                            const size_t         chunckCount,
-                            std::vector<size_t>& subRanges ) {
+                                   const size_t         end,
+                                   const size_t         chunckCount,
+                                   std::vector<size_t>& subRanges ) {
   const size_t elementCount = end - start;
   if ( elementCount <= chunckCount ) {
     subRanges.resize( elementCount + 1 );
@@ -350,12 +364,12 @@ void printVector( std::vector<T>    data,
 
 static inline const std::string strUnitType( PDGUnitType unitType ) {
   switch ( unitType ) {
-    case PDG_PSPS : return std::string( "PDG_PSPS " ); break;
-    case PDG_PFPS : return std::string( "PDG_PFPS " ); break;
+    case PDG_PSPS: return std::string( "PDG_PSPS " ); break;
+    case PDG_PFPS: return std::string( "PDG_PFPS " ); break;
     case PDG_PFGPS: return std::string( "PDG_PFGPS" ); break;
     case PDG_PFAPS: return std::string( "PDG_PFAPS" ); break;
-    case PDG_GPPS : return std::string( "PDG_GPPS " ); break;
-    case PDG_APPS : return std::string( "PDG_APPS " ); break;
+    case PDG_GPPS: return std::string( "PDG_GPPS " ); break;
+    case PDG_APPS: return std::string( "PDG_APPS " ); break;
     case PDG_PTGLU: return std::string( "PDG_PTGLU" ); break;
     default: break;
   }

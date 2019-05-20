@@ -186,7 +186,7 @@ bool PCCCodec::colorPointCloud( PCCGroupOfFrames&                  reconstructs,
   auto&     frames = context.getFrames();
   const int cgrid  = params.occupancyPrecision_;
   // const int w      = SMOOTH_POINT_CLOUD_MAX_SIZE / cgrid;
-  //const int w = pow( 2, params.geometry3dCoordinatesBitdepth_ ) / cgrid;
+  // const int w = pow( 2, params.geometry3dCoordinatesBitdepth_ ) / cgrid;
   const int w = pow( 2, params.geometryBitDepth3D_ ) / cgrid;
 
   if ( !params.losslessGeo_ && params.flagColorSmoothing_ && params.gridColorSmoothing_ ) {
@@ -200,7 +200,6 @@ bool PCCCodec::colorPointCloud( PCCGroupOfFrames&                  reconstructs,
     colorPointCloud( reconstructs[i], frames[i], video, attributeCount, params, frameCount );
 
     if ( !params.losslessGeo_ && params.flagColorSmoothing_ ) {
-
       if ( params.gridColorSmoothing_ ) {  // Fast Color Smoothing
         std::fill( CS_color_center_grid_.begin(), CS_color_center_grid_.end(), 0 );
         std::fill( CS_color_gcnt_.begin(), CS_color_gcnt_.end(), 0 );
@@ -600,7 +599,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
               if ( params.enhancedDeltaDepthCode_ ) {
                 // D0
                 PCCPoint3D   point0      = patch.generatePoint( u, v, frame0.getValue( 0, x, y ), lodScale,
-                                                         useMissedPointsSeparateVideo, lossyMpp, params.absoluteD1_);
+                                                         useMissedPointsSeparateVideo, lossyMpp, params.absoluteD1_ );
                 const size_t pointIndex0 = reconstruct.addPoint( point0 );
                 reconstruct.setPointPatchIndex( pointIndex0, patchIndex );
                 reconstruct.setColor( pointIndex0, color );
@@ -627,8 +626,8 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
                         ( 1 << bits ) - occupancyMap[patch.patch2Canvas( u, v, imageWidth, imageHeight, x, y )];
                     eddCode = symbol | ( 1 << bits );
                   }
-				}
-				PCCPoint3D point1( point0 );
+                }
+                PCCPoint3D point1( point0 );
                 if ( eddCode == 0 ) {
                   if ( !params.removeDuplicatePoints_ ) {
                     const size_t pointIndex1 = reconstruct.addPoint( point1 );
@@ -714,15 +713,15 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
                     if ( ( !params.removeDuplicatePoints_ ) ||
                          ( ( i == 0 ) || ( createdPoints[i] != createdPoints[0] ) ) ) {
                       size_t pointindex = 0;
-                      if ( patch.getAxisOfAdditionalPlane() == 0 ){
+                      if ( patch.getAxisOfAdditionalPlane() == 0 ) {
                         pointindex = reconstruct.addPoint( createdPoints[i] );
                         reconstruct.setPointPatchIndex( pointindex, patchIndex );
-                      }
-                      else {
+                      } else {
                         PCCVector3D tmp;
-                        PCCPatch::InverseRotatePosition45DegreeOnAxis(patch.getAxisOfAdditionalPlane(), params.geometryBitDepth3D_, createdPoints[i], tmp);
-                        pointindex = reconstruct.addPoint(tmp);
-						reconstruct.setPointPatchIndex( pointindex, patchIndex );
+                        PCCPatch::InverseRotatePosition45DegreeOnAxis(
+                            patch.getAxisOfAdditionalPlane(), params.geometryBitDepth3D_, createdPoints[i], tmp );
+                        pointindex = reconstruct.addPoint( tmp );
+                        reconstruct.setPointPatchIndex( pointindex, patchIndex );
                       }
                       const size_t pointindex_1 = pointindex;
                       reconstruct.setColor( pointindex_1, color );
@@ -746,7 +745,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
                             x, y, i == 0 ? 0 : i == 1 ? IntermediateLayerIndex : IntermediateLayerIndex + 1 ) );
                       } else {
                         pointToPixel.push_back( PCCVector3<size_t>( x, y, i < 2 ? i : IntermediateLayerIndex + 1 ) );
-                      } 
+                      }
                     }
                   }
                 }
@@ -786,38 +785,38 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
       for ( int j = 0; j < numberOfMpsPatches; j++ ) {
         auto&  missedPointsPatch = frame.getMissedPointsPatch( j );
         size_t sizeofMPs         = missedPointsPatch.getNumberOfMps();
-      if ( params.losslessGeo444_ ) {
+        if ( params.losslessGeo444_ ) {
           for ( int i = 0; i < sizeofMPs; i++ ) {
             PCCVector3D point0;
             point0[0]               = missedPointsPatch.x_[i] + missedPointsPatch.u1_;
             point0[1]               = missedPointsPatch.y_[i] + missedPointsPatch.v1_;
             point0[2]               = missedPointsPatch.z_[i] + missedPointsPatch.d1_;
-          const size_t pointIndex = reconstruct.addPoint( point0 );
-          reconstruct.setPointPatchIndex( pointIndex, patchIndex );
-          reconstruct.setColor( pointIndex, missedPointsColor );
-          partition.push_back( uint32_t( patchIndex ) );
-        }
-      } else {  // else losslessGeo444_
-        assert( missedPointsPatch.size() % 3 == 0 );
+            const size_t pointIndex = reconstruct.addPoint( point0 );
+            reconstruct.setPointPatchIndex( pointIndex, patchIndex );
+            reconstruct.setColor( pointIndex, missedPointsColor );
+            partition.push_back( uint32_t( patchIndex ) );
+          }
+        } else {  // else losslessGeo444_
+          assert( missedPointsPatch.size() % 3 == 0 );
 
-        for ( int i = 0; i < sizeofMPs; i++ ) {
+          for ( int i = 0; i < sizeofMPs; i++ ) {
             PCCVector3D point0;
             point0[0]               = missedPointsPatch.x_[i] + missedPointsPatch.u1_;
             point0[1]               = missedPointsPatch.x_[i + sizeofMPs] + missedPointsPatch.v1_;
             point0[2]               = missedPointsPatch.x_[i + 2 * sizeofMPs] + missedPointsPatch.d1_;
-          const size_t pointIndex = reconstruct.addPoint( point0 );
-          reconstruct.setPointPatchIndex( pointIndex, patchIndex );
-          reconstruct.setColor( pointIndex, missedPointsColor );
-          partition.push_back( uint32_t( patchIndex ) );
-        }
-      }  // fi losslessGeo444_
+            const size_t pointIndex = reconstruct.addPoint( point0 );
+            reconstruct.setPointPatchIndex( pointIndex, patchIndex );
+            reconstruct.setColor( pointIndex, missedPointsColor );
+            partition.push_back( uint32_t( patchIndex ) );
+          }
+        }  // fi losslessGeo444_
       }
 
       if ( frame.getLosslessTexture() || lossyMpp ) {
         TRACE_CODEC( " lossyMpp \n" );
         // secure the size of rgb in missedpointpatch
-        size_t numofEddSaved      = params.enhancedDeltaDepthCode_ ? frame.getNumberOfEddPoints() : 0;
-        size_t numofMPcolors      = frame.getTotalNumberOfMissedPoints();
+        size_t numofEddSaved = params.enhancedDeltaDepthCode_ ? frame.getNumberOfEddPoints() : 0;
+        size_t numofMPcolors = frame.getTotalNumberOfMissedPoints();
 
         auto& missedPointsPatch = frame.getMissedPointsPatch( 0 );
         missedPointsPatch.setNumberOfMpsColors( numofMPcolors + numofEddSaved );
@@ -830,83 +829,83 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
       // Add points from missedPointsPatch
       size_t numberOfMpsPatches = frame.getNumberOfMissedPointsPatches();
       printf( "generatepointCloud :: numberOfMpsPatches = %zu \n", numberOfMpsPatches );
-        for ( int i = 0; i < numberOfMpsPatches; i++ ) {
+      for ( int i = 0; i < numberOfMpsPatches; i++ ) {
         auto& missedPointsPatch = frame.getMissedPointsPatch( i );
 
-      PCCColor3B missedPointsColor( uint8_t( 0 ) );
-      missedPointsColor[0]           = 0;
-      missedPointsColor[1]           = 255;
-      missedPointsColor[2]           = 255;
+        PCCColor3B missedPointsColor( uint8_t( 0 ) );
+        missedPointsColor[0] = 0;
+        missedPointsColor[1] = 255;
+        missedPointsColor[2] = 255;
         // size_t numMissedPts = missedPointsPatch.numMissedPts_;
         size_t numMissedPts = missedPointsPatch.getNumberOfMps();  // numMissedPts_;
 
-      size_t ores                    = missedPointsPatch.occupancyResolution_;
-      missedPointsPatch.sizeV_ = missedPointsPatch.sizeV0_ * ores;
+        size_t ores              = missedPointsPatch.occupancyResolution_;
+        missedPointsPatch.sizeV_ = missedPointsPatch.sizeV0_ * ores;
         missedPointsPatch.sizeU_ = missedPointsPatch.sizeU0_ * ores;
 
-      if ( params.losslessGeo_ && params.losslessGeo444_ ) {
-        for ( size_t v0 = 0; v0 < missedPointsPatch.sizeV0_; ++v0 ) {
-          for ( size_t u0 = 0; u0 < missedPointsPatch.sizeU0_; ++u0 ) {
-            for ( size_t v1 = 0; v1 < missedPointsPatch.occupancyResolution_; ++v1 ) {
-              const size_t v = v0 * missedPointsPatch.occupancyResolution_ + v1;
-              for ( size_t u1 = 0; u1 < missedPointsPatch.occupancyResolution_; ++u1 ) {
-                const size_t u         = u0 * missedPointsPatch.occupancyResolution_ + u1;
-                const size_t x         = missedPointsPatch.u0_ * missedPointsPatch.occupancyResolution_ + u;
-                const size_t y         = missedPointsPatch.v0_ * missedPointsPatch.occupancyResolution_ + v;
-                const bool   occupancy = occupancyMap[y * imageWidth + x] != 0;
-                if ( !occupancy ) { continue; }
-                PCCPoint3D point0;
+        if ( params.losslessGeo_ && params.losslessGeo444_ ) {
+          for ( size_t v0 = 0; v0 < missedPointsPatch.sizeV0_; ++v0 ) {
+            for ( size_t u0 = 0; u0 < missedPointsPatch.sizeU0_; ++u0 ) {
+              for ( size_t v1 = 0; v1 < missedPointsPatch.occupancyResolution_; ++v1 ) {
+                const size_t v = v0 * missedPointsPatch.occupancyResolution_ + v1;
+                for ( size_t u1 = 0; u1 < missedPointsPatch.occupancyResolution_; ++u1 ) {
+                  const size_t u         = u0 * missedPointsPatch.occupancyResolution_ + u1;
+                  const size_t x         = missedPointsPatch.u0_ * missedPointsPatch.occupancyResolution_ + u;
+                  const size_t y         = missedPointsPatch.v0_ * missedPointsPatch.occupancyResolution_ + v;
+                  const bool   occupancy = occupancyMap[y * imageWidth + x] != 0;
+                  if ( !occupancy ) { continue; }
+                  PCCPoint3D point0;
                   point0[0] = double( frame0.getValue( 0, x, y ) ) + missedPointsPatch.u1_;
                   point0[1] = double( frame0.getValue( 1, x, y ) ) + missedPointsPatch.v1_;
                   point0[2] = double( frame0.getValue( 2, x, y ) ) + missedPointsPatch.d1_;
 
-                const size_t pointIndex = reconstruct.addPoint( point0 );
+                  const size_t pointIndex = reconstruct.addPoint( point0 );
+                  reconstruct.setPointPatchIndex( pointIndex, patchIndex );
+                  reconstruct.setColor( pointIndex, missedPointsColor );
+                  for ( size_t f = 0; f < layerCount; ++f ) {
+                    partition.push_back( uint32_t( patchIndex ) );
+                    pointToPixel.push_back( PCCVector3<size_t>( x, y, f ) );
+                  }
+                }
+              }
+            }
+          }
+        } else if ( params.losslessGeo_ || lossyMpp ) {
+          std::vector<PCCPoint3D> missedPoints;
+          missedPoints.resize( numMissedPts );
+          size_t       numMissedPointsAdded{0};
+          const size_t v0 = missedPointsPatch.v0_ * missedPointsPatch.occupancyResolution_;
+          const size_t u0 = missedPointsPatch.u0_ * missedPointsPatch.occupancyResolution_;
+          for ( size_t v = 0; v < missedPointsPatch.sizeV_; ++v ) {
+            for ( size_t u = 0; u < missedPointsPatch.sizeU_; ++u ) {
+              const size_t x = ( u0 + u );
+              const size_t y = ( v0 + v );
+              if ( numMissedPointsAdded < numMissedPts ) {
+                missedPoints[numMissedPointsAdded][0] = double( frame0.getValue( 0, x, y ) + missedPointsPatch.u1_ );
+              } else if ( numMissedPts <= numMissedPointsAdded && numMissedPointsAdded < 2 * numMissedPts ) {
+                missedPoints[numMissedPointsAdded - numMissedPts][1] =
+                    double( frame0.getValue( 0, x, y ) + missedPointsPatch.v1_ );
+              } else if ( 2 * numMissedPts <= numMissedPointsAdded && numMissedPointsAdded < 3 * numMissedPts ) {
+                missedPoints[numMissedPointsAdded - 2 * numMissedPts][2] =
+                    double( frame0.getValue( 0, x, y ) + missedPointsPatch.d1_ );
+              }
+              numMissedPointsAdded++;
+            }  // u
+          }    // v
+          size_t counter{0};
+          for ( size_t v = 0; v < missedPointsPatch.sizeV_; ++v ) {
+            for ( size_t u = 0; u < missedPointsPatch.sizeU_; ++u ) {
+              const size_t x = ( u0 + u );
+              const size_t y = ( v0 + v );
+              if ( counter < numMissedPts ) {
+                const size_t pointIndex = reconstruct.addPoint( missedPoints[counter] );
                 reconstruct.setPointPatchIndex( pointIndex, patchIndex );
                 reconstruct.setColor( pointIndex, missedPointsColor );
                 for ( size_t f = 0; f < layerCount; ++f ) {
                   partition.push_back( uint32_t( patchIndex ) );
                   pointToPixel.push_back( PCCVector3<size_t>( x, y, f ) );
                 }
-              }
-            }
-          }
-        }
-      } else if ( params.losslessGeo_ || lossyMpp ) {
-        std::vector<PCCPoint3D> missedPoints;
-        missedPoints.resize( numMissedPts );
-        size_t       numMissedPointsAdded{0};
-        const size_t v0 = missedPointsPatch.v0_ * missedPointsPatch.occupancyResolution_;
-        const size_t u0 = missedPointsPatch.u0_ * missedPointsPatch.occupancyResolution_;
-        for ( size_t v = 0; v < missedPointsPatch.sizeV_; ++v ) {
-          for ( size_t u = 0; u < missedPointsPatch.sizeU_; ++u ) {
-            const size_t x = ( u0 + u );
-            const size_t y = ( v0 + v );
-            if ( numMissedPointsAdded < numMissedPts ) {
-                missedPoints[numMissedPointsAdded][0] = double( frame0.getValue( 0, x, y ) + missedPointsPatch.u1_ );
-            } else if ( numMissedPts <= numMissedPointsAdded && numMissedPointsAdded < 2 * numMissedPts ) {
-                missedPoints[numMissedPointsAdded - numMissedPts][1] =
-                    double( frame0.getValue( 0, x, y ) + missedPointsPatch.v1_ );
-            } else if ( 2 * numMissedPts <= numMissedPointsAdded && numMissedPointsAdded < 3 * numMissedPts ) {
-                missedPoints[numMissedPointsAdded - 2 * numMissedPts][2] =
-                    double( frame0.getValue( 0, x, y ) + missedPointsPatch.d1_ );
-            }
-            numMissedPointsAdded++;
-          }  // u
-        }    // v
-        size_t counter{0};
-        for ( size_t v = 0; v < missedPointsPatch.sizeV_; ++v ) {
-          for ( size_t u = 0; u < missedPointsPatch.sizeU_; ++u ) {
-            const size_t x = ( u0 + u );
-            const size_t y = ( v0 + v );
-            if ( counter < numMissedPts ) {
-              const size_t pointIndex = reconstruct.addPoint( missedPoints[counter] );
-              reconstruct.setPointPatchIndex( pointIndex, patchIndex );
-              reconstruct.setColor( pointIndex, missedPointsColor );
-              for ( size_t f = 0; f < layerCount; ++f ) {
-                partition.push_back( uint32_t( patchIndex ) );
-                pointToPixel.push_back( PCCVector3<size_t>( x, y, f ) );
-              }
-              counter++;
+                counter++;
               }
             }
           }
@@ -1129,8 +1128,8 @@ void PCCCodec::smoothPointCloud( PCCPointSet3&                      reconstruct,
 
 void PCCCodec::smoothPointCloudColor( PCCPointSet3& reconstruct, const GeneratePointCloudParameters params ) {
   TRACE_CODEC( " smoothPointCloudColor start \n" );
-  const size_t pointCount = reconstruct.getPointCount();
-  PCCKdTree    kdtree( reconstruct );
+  const size_t            pointCount = reconstruct.getPointCount();
+  PCCKdTree               kdtree( reconstruct );
   std::vector<PCCColor3B> temp;
   temp.resize( pointCount );
 
@@ -1168,7 +1167,7 @@ void PCCCodec::smoothPointCloudColor( PCCPointSet3& reconstruct, const GenerateP
         }
 
         PCCColor3B color;
-        
+
         if ( otherClusterPointCount ) {
           for ( size_t k = 0; k < 3; ++k ) {
             centroid[k] = double( int64_t( centroid[k] + ( neighborCount / 2 ) ) / neighborCount );
@@ -1179,20 +1178,18 @@ void PCCCodec::smoothPointCloudColor( PCCPointSet3& reconstruct, const GenerateP
           PCCColor3B colorQP         = reconstruct.getColor( i );
           double     distToCentroid2 = 0;
           for ( size_t k = 0; k < 3; ++k ) { distToCentroid2 += abs( centroid[k] - double( colorQP[k] ) ); }
-          if ( distToCentroid2 >= double( params.thresholdColorSmoothing_ ) && H < 4.5  ) {
+          if ( distToCentroid2 >= double( params.thresholdColorSmoothing_ ) && H < 4.5 ) {
             color[0] = uint8_t( centroid[0] );
             color[1] = uint8_t( centroid[1] );
             color[2] = uint8_t( centroid[2] );
-             temp[i] = color;
-          } 
-        } 
+            temp[i]  = color;
+          }
+        }
       }
     } );
   } );
   limited.execute( [&] {
-    tbb::parallel_for( size_t( 0 ), pointCount, [&]( const size_t i ) {
-      reconstruct.setColor( i, temp[i] );
-    } );
+    tbb::parallel_for( size_t( 0 ), pointCount, [&]( const size_t i ) { reconstruct.setColor( i, temp[i] ); } );
   } );
 }
 
@@ -1206,7 +1203,7 @@ void PCCCodec::addGridColorCentroid( PCCPoint3D&                        point,
                                      int                                cgrid,
                                      std::vector<std::vector<uint8_t>>& CS_glum,
                                      const GeneratePointCloudParameters params ) {
- const int w = pow( 2, params.geometryBitDepth3D_) / cgrid;
+  const int w = pow( 2, params.geometryBitDepth3D_ ) / cgrid;
 
   int x   = point.x() / cgrid;
   int y   = point.y() / cgrid;
@@ -1235,7 +1232,7 @@ bool PCCCodec::GridFilteringColor( PCCPoint3D&                        curPos,
                                    int                                cgrid,
                                    PCCVector3D&                       curPosColor,
                                    const GeneratePointCloudParameters params ) {
-  const int w = pow( 2, params.geometryBitDepth3D_ ) / cgrid;
+  const int w                      = pow( 2, params.geometryBitDepth3D_ ) / cgrid;
   bool      otherClusterPointCount = false;
   int       x                      = curPos.x();
   int       y                      = curPos.y();
@@ -1290,8 +1287,6 @@ bool PCCCodec::GridFilteringColor( PCCPoint3D&                        curPos,
   if ( color_gcnt[idx[0][0][0]] > 0 ) {
     color_centroid3[0][0][0] = color_center_grid[idx[0][0][0]] / double( color_gcnt[idx[0][0][0]] );
     cnt0                     = color_gcnt[idx[0][0][0]];
-    double meanY             = 0;
-    double medianY           = 0;
     if ( color_gcnt[idx[0][0][0]] > 1 ) {
       double meanY   = mean( CS_gLum_[idx[0][0][0]], int( color_gcnt[idx[0][0][0]] ) );
       double medianY = median( CS_gLum_[idx[0][0][0]], int( color_gcnt[idx[0][0][0]] ) );
@@ -1316,8 +1311,6 @@ bool PCCCodec::GridFilteringColor( PCCPoint3D&                        curPos,
                 double( color_gcnt[idx[0][0][1]] );
 
     if ( abs( Y0 - Y1 ) > yThresh ) { color_centroid3[0][0][1] = curPosColor; }
-    double meanY   = 0;
-    double medianY = 0;
     if ( color_gcnt[idx[0][0][1]] > 1 ) {
       double meanY   = mean( CS_gLum_[idx[0][0][1]], int( color_gcnt[idx[0][0][1]] ) );
       double medianY = median( CS_gLum_[idx[0][0][1]], int( color_gcnt[idx[0][0][1]] ) );
@@ -1334,8 +1327,6 @@ bool PCCCodec::GridFilteringColor( PCCPoint3D&                        curPos,
                 double( color_gcnt[idx[0][1][0]] );
 
     if ( abs( Y0 - Y2 ) > yThresh ) { color_centroid3[0][1][0] = curPosColor; }
-    double meanY   = 0;
-    double medianY = 0;
     if ( color_gcnt[idx[0][1][0]] > 1 ) {
       double meanY   = mean( CS_gLum_[idx[0][1][0]], int( color_gcnt[idx[0][1][0]] ) );
       double medianY = median( CS_gLum_[idx[0][1][0]], int( color_gcnt[idx[0][1][0]] ) );
@@ -1352,8 +1343,6 @@ bool PCCCodec::GridFilteringColor( PCCPoint3D&                        curPos,
                 double( color_gcnt[idx[0][1][1]] );
 
     if ( abs( Y0 - Y3 ) > yThresh ) { color_centroid3[0][1][1] = curPosColor; }
-    double meanY   = 0;
-    double medianY = 0;
     if ( color_gcnt[idx[0][1][1]] > 1 ) {
       double meanY   = mean( CS_gLum_[idx[0][1][1]], int( color_gcnt[idx[0][1][1]] ) );
       double medianY = median( CS_gLum_[idx[0][1][1]], int( color_gcnt[idx[0][1][1]] ) );
@@ -1370,8 +1359,6 @@ bool PCCCodec::GridFilteringColor( PCCPoint3D&                        curPos,
                 double( color_gcnt[idx[1][0][0]] );
 
     if ( abs( Y0 - Y4 ) > yThresh ) { color_centroid3[1][0][0] = curPosColor; }
-    double meanY   = 0;
-    double medianY = 0;
     if ( color_gcnt[idx[1][0][0]] > 1 ) {
       double meanY   = mean( CS_gLum_[idx[1][0][0]], int( color_gcnt[idx[1][0][0]] ) );
       double medianY = median( CS_gLum_[idx[1][0][0]], int( color_gcnt[idx[1][0][0]] ) );
@@ -1388,8 +1375,6 @@ bool PCCCodec::GridFilteringColor( PCCPoint3D&                        curPos,
                 double( color_gcnt[idx[1][0][1]] );
 
     if ( abs( Y0 - Y5 ) > yThresh ) { color_centroid3[1][0][1] = curPosColor; }
-    double meanY   = 0;
-    double medianY = 0;
     if ( color_gcnt[idx[1][0][1]] > 1 ) {
       double meanY   = mean( CS_gLum_[idx[1][0][1]], int( color_gcnt[idx[1][0][1]] ) );
       double medianY = median( CS_gLum_[idx[1][0][1]], int( color_gcnt[idx[1][0][1]] ) );
@@ -1406,8 +1391,6 @@ bool PCCCodec::GridFilteringColor( PCCPoint3D&                        curPos,
                 double( color_gcnt[idx[1][1][0]] );
 
     if ( abs( Y0 - Y6 ) > yThresh ) { color_centroid3[1][1][0] = curPosColor; }
-    double meanY   = 0;
-    double medianY = 0;
     if ( color_gcnt[idx[1][1][0]] > 1 ) {
       double meanY   = mean( CS_gLum_[idx[1][1][0]], int( color_gcnt[idx[1][1][0]] ) );
       double medianY = median( CS_gLum_[idx[1][1][0]], int( color_gcnt[idx[1][1][0]] ) );
@@ -1424,8 +1407,6 @@ bool PCCCodec::GridFilteringColor( PCCPoint3D&                        curPos,
                 double( color_gcnt[idx[1][1][1]] );
 
     if ( abs( Y0 - Y7 ) > yThresh ) { color_centroid3[1][1][1] = curPosColor; }
-    double meanY   = 0;
-    double medianY = 0;
     if ( color_gcnt[idx[1][1][1]] > 1 ) {
       double meanY   = mean( CS_gLum_[idx[1][1][1]], int( color_gcnt[idx[1][1][1]] ) );
       double medianY = median( CS_gLum_[idx[1][1][1]], int( color_gcnt[idx[1][1][1]] ) );
@@ -1458,8 +1439,8 @@ bool PCCCodec::GridFilteringColor( PCCPoint3D&                        curPos,
 
 void PCCCodec::smoothPointCloudColorLC( PCCPointSet3& reconstruct, const GeneratePointCloudParameters params ) {
   const size_t pointCount = reconstruct.getPointCount();
-  const int cgrid = params.cgridSize_;
-  const int disth    = ( std::max )( cgrid / 2, 1 );
+  const int    cgrid      = params.cgridSize_;
+  const int    disth      = ( std::max )( cgrid / 2, 1 );
 
   for ( int i = 0; i < pointCount; i++ ) {
     PCCPoint3D curPos = reconstruct[i];
@@ -1469,7 +1450,7 @@ void PCCCodec::smoothPointCloudColorLC( PCCPointSet3& reconstruct, const Generat
 
     int pcMaxSize = pow( 2, params.geometryBitDepth3D_ );
     if ( x < disth || y < disth || z < disth || pcMaxSize <= x + disth || pcMaxSize <= y + disth ||
-             pcMaxSize <= z + disth ) {
+         pcMaxSize <= z + disth ) {
       continue;
     }
 
@@ -1490,8 +1471,9 @@ void PCCCodec::smoothPointCloudColorLC( PCCPointSet3& reconstruct, const Generat
     curPosColor[1] = double( color[1] );
     curPosColor[2] = double( color[2] );
     if ( reconstruct.getBoundaryPointType( i ) == 1 ) {
-	  otherClusterPointCount = GridFilteringColor( curPos, color_centroid, color_cnt, CS_color_gcnt_,
-                                                   CS_color_center_grid_, CS_color_doSmooth_, cgrid, curPosColor, params );
+      otherClusterPointCount =
+          GridFilteringColor( curPos, color_centroid, color_cnt, CS_color_gcnt_, CS_color_center_grid_,
+                              CS_color_doSmooth_, cgrid, curPosColor, params );
     }
 
     if ( otherClusterPointCount ) {
@@ -1507,7 +1489,7 @@ void PCCCodec::smoothPointCloudColorLC( PCCPointSet3& reconstruct, const Generat
           0.2126 * double( curPosColor[0] ) + 0.7152 * double( curPosColor[1] ) + 0.0722 * double( curPosColor[2] );
 
       distToCentroid2 = abs( Ycent - Ycur ) * 10.;
-     if ( distToCentroid2 >= params.thresholdColorSmoothing_ ) {
+      if ( distToCentroid2 >= params.thresholdColorSmoothing_ ) {
         double H = entropy( CS_gLum_[idx], int( CS_color_gcnt_[idx] ) );
         if ( H < params.thresholdLocalEntropy_ ) {
           PCCColor3B color;
@@ -1600,16 +1582,16 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
       for ( size_t c = 0; c < 3; ++c ) { color[c] = static_cast<uint8_t>( 127 ); }
     }
   } else {
-    auto&  pointToPixel                 = frame.getPointToPixel();
-    auto&  color                        = reconstruct.getColors();
-    bool   useMissedPointsSeparateVideo = frame.getUseMissedPointsSeparateVideo();
-    bool   losslessAtt                  = frame.getLosslessTexture();
-    bool   losslessGeo                  = frame.getLosslessGeo();
-    bool   lossyMissedPointsPatch       = !losslessGeo && params.useAdditionalPointsPatch_;
+    auto& pointToPixel                 = frame.getPointToPixel();
+    auto& color                        = reconstruct.getColors();
+    bool  useMissedPointsSeparateVideo = frame.getUseMissedPointsSeparateVideo();
+    bool  losslessAtt                  = frame.getLosslessTexture();
+    bool  losslessGeo                  = frame.getLosslessGeo();
+    bool  lossyMissedPointsPatch       = !losslessGeo && params.useAdditionalPointsPatch_;
     numOfMPGeos                        = frame.getTotalNumberOfMissedPoints();
     numberOfEddPoints                  = frame.getNumberOfEddPoints();
     numberOfMpsAndEddColors            = numOfMPGeos + numberOfEddPoints;
-    size_t pointCount                   = reconstruct.getPointCount();
+    size_t pointCount                  = reconstruct.getPointCount();
     if ( ( losslessAtt || lossyMissedPointsPatch ) && useMissedPointsSeparateVideo ) {
       auto& missedPointsPatch = frame.getMissedPointsPatch( 0 );
 
@@ -1739,8 +1721,8 @@ void PCCCodec::generateMPsGeometryfromImage( PCCContext&       context,
                                              PCCFrameContext&  frame,
                                              PCCGroupOfFrames& reconstructs,
                                              size_t            frameIndex ) {
-  auto&  videoMPsGeometry  = context.getVideoMPsGeometry();
-  auto&  image             = videoMPsGeometry.getFrame( frameIndex );
+  auto&  videoMPsGeometry   = context.getVideoMPsGeometry();
+  auto&  image              = videoMPsGeometry.getFrame( frameIndex );
   size_t numberOfMpsPatches = frame.getNumberOfMissedPointsPatches();
   for ( int i = 0; i < numberOfMpsPatches; i++ ) {
     auto&        missedPointsPatch = frame.getMissedPointsPatch( i );
@@ -1757,11 +1739,11 @@ void PCCCodec::generateMPsGeometryfromImage( PCCContext&       context,
         if ( p < numberOfMps ) {
           const size_t x = ( u0 + u );
           const size_t y = ( v0 + v );
-    if ( frame.getLosslessGeo444() ) {
+          if ( frame.getLosslessGeo444() ) {
             missedPointsPatch.x_[p] = image.getValue( 0, x, y );
             missedPointsPatch.y_[p] = image.getValue( 1, x, y );
             missedPointsPatch.z_[p] = image.getValue( 2, x, y );
-    } else {
+          } else {
             missedPointsPatch.x_[p] = image.getValue( 0, x, y );
           }
         }
@@ -1789,12 +1771,12 @@ void PCCCodec::generateMPsTexturefromImage( PCCContext&       context,
                                             PCCFrameContext&  frame,
                                             PCCGroupOfFrames& reconstructs,
                                             size_t            frameIndex ) {
-  auto&  videoMPsTexture   = context.getVideoMPsTexture();
-  auto&  image             = videoMPsTexture.getFrame( frameIndex );
-  size_t        width             = context.getMPAttWidth();
-  size_t        numberOfEddPoints = frame.getNumberOfEddPoints();
-  size_t        numOfMPGeos       = frame.getTotalNumberOfMissedPoints();
-  const size_t  sizeofMPcolors    = numOfMPGeos + numberOfEddPoints;
+  auto&        videoMPsTexture   = context.getVideoMPsTexture();
+  auto&        image             = videoMPsTexture.getFrame( frameIndex );
+  size_t       width             = context.getMPAttWidth();
+  size_t       numberOfEddPoints = frame.getNumberOfEddPoints();
+  size_t       numOfMPGeos       = frame.getTotalNumberOfMissedPoints();
+  const size_t sizeofMPcolors    = numOfMPGeos + numberOfEddPoints;
 #if ( PCCSepatareEddColors == 1 )
   size_t numberOfMpsPatches = frame.getNumberOfMissedPointsPatches();
 
@@ -1843,9 +1825,13 @@ void PCCCodec::generateMPsTexturefromImage( PCCContext&       context,
 #endif
 }
 
-void PCCCodec::generateOccupancyMap( PCCContext& context, const size_t occupancyPrecision, const size_t thresholdLossyOM, bool enhancedOccupancyMapForDepthFlag ) {
+void PCCCodec::generateOccupancyMap( PCCContext&  context,
+                                     const size_t occupancyPrecision,
+                                     const size_t thresholdLossyOM,
+                                     bool         enhancedOccupancyMapForDepthFlag ) {
   for ( auto& frame : context.getFrames() ) {
-    generateOccupancyMap( frame, context.getVideoOccupancyMap().getFrame( frame.getIndex() ), occupancyPrecision, thresholdLossyOM, enhancedOccupancyMapForDepthFlag );
+    generateOccupancyMap( frame, context.getVideoOccupancyMap().getFrame( frame.getIndex() ), occupancyPrecision,
+                          thresholdLossyOM, enhancedOccupancyMapForDepthFlag );
   }
 }
 
@@ -1860,18 +1846,15 @@ void PCCCodec::generateOccupancyMap( PCCFrameContext&            frame,
   occupancyMap.resize( width * height, 0 );
   for ( size_t v = 0; v < height; ++v ) {
     for ( size_t u = 0; u < width; ++u ) {
-      uint8_t pixel = videoFrame.getValue(0, u / occupancyPrecision, v / occupancyPrecision);
-      if (!enhancedOccupancyMapForDepthFlag) {
-        if (pixel <= thresholdLossyOM) {
-          occupancyMap[v*width + u] = 0;
+      uint8_t pixel = videoFrame.getValue( 0, u / occupancyPrecision, v / occupancyPrecision );
+      if ( !enhancedOccupancyMapForDepthFlag ) {
+        if ( pixel <= thresholdLossyOM ) {
+          occupancyMap[v * width + u] = 0;
+        } else {
+          occupancyMap[v * width + u] = 1;
         }
-        else {
-          occupancyMap[v*width + u] = 1;
-        }
-      }
-      else
-      {
-        occupancyMap[v*width + u] = pixel;
+      } else {
+        occupancyMap[v * width + u] = pixel;
       }
     }
   }
@@ -1885,7 +1868,7 @@ void PCCCodec::generateBlockToPatchFromOccupancyMap( PCCContext&  context,
   size_t sizeFrames = context.getFrames().size();
   for ( int i = 0; i < sizeFrames; i++ ) {
     PCCFrameContext& frame = context.getFrames()[i];
-      generateBlockToPatchFromOccupancyMap( frame, i, occupancyResolution );
+    generateBlockToPatchFromOccupancyMap( frame, i, occupancyResolution );
   }
 }
 
@@ -1931,7 +1914,7 @@ void PCCCodec::generateBlockToPatchFromBoundaryBox( PCCContext&  context,
   size_t sizeFrames = context.getFrames().size();
   for ( int i = 0; i < sizeFrames; i++ ) {
     PCCFrameContext& frame = context.getFrames()[i];
-      generateBlockToPatchFromBoundaryBox( frame, i, occupancyResolution );
+    generateBlockToPatchFromBoundaryBox( frame, i, occupancyResolution );
   }
 }
 

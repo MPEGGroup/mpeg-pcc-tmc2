@@ -271,7 +271,7 @@ class DeltaPatchDataUnit {
 
  private:
   int64_t                      dpdutDeltaPatchIndex_;
-  int64_t                      dpdu2DDeltaShiftU_;  
+  int64_t                      dpdu2DDeltaShiftU_;
   int64_t                      dpdu2DDeltaShiftV_;
   int64_t                      dpdu2DDeltaSizeU_;
   int64_t                      dpdu2DDeltaSizeV_;
@@ -290,7 +290,7 @@ class DeltaPatchDataUnit {
 class PatchDataUnit {
  public:
   PatchDataUnit() :
-      pdu2DShiftU_( 0 ), 
+      pdu2DShiftU_( 0 ),
       pdu2DShiftV_( 0 ),
       pdu2DDeltaSizeU_( 0 ),
       pdu2DDeltaSizeV_( 0 ),
@@ -305,7 +305,7 @@ class PatchDataUnit {
       pdu45DegreeProjectionRotationAxis_( 0 ),
       pduPatchIndex_( 0 ),
       pduFrameIndex_( 0 ){};
-  ~PatchDataUnit(){  };
+  ~PatchDataUnit(){};
 
   PatchDataUnit& operator=( const PatchDataUnit& ) = default;
 
@@ -438,9 +438,7 @@ class PatchTileGroupDataUnit {
     patchMode_.resize( size );
     patchInformationData_.resize( size );
   }
-
   void addPatchMode( uint8_t value ) { patchMode_.push_back( value ); }
-
   void addPatchInformationData( PatchInformationData& value ) { patchInformationData_.push_back( value ); }
   PatchInformationData& addPatchInformationData() {
     PatchInformationData pid;
@@ -466,8 +464,8 @@ class PatchTileGroupDataUnit {
 
  private:
   size_t                            frameIndex_;
-  size_t                            patchCount_;
   std::vector<uint8_t>              patchMode_;
+  size_t                            patchCount_;
   std::vector<PatchInformationData> patchInformationData_;
 };
 
@@ -520,7 +518,7 @@ class RefListStruct {
   std::vector<bool>    strpfEntrySignFlag_;
 };
 
-// 7.3.5.14  Patch frame header syntax (ptgh) 
+// 7.3.5.14  Patch frame header syntax (ptgh)
 class PatchTileGroupHeader {
  public:
   PatchTileGroupHeader() :
@@ -891,7 +889,7 @@ class AttributePatchParams {
   std::vector<int32_t>  attributePatchOffset_;
 };
 
-// 7.3.5.10 Attribute Patch Parameter Set syntax (appss) 
+// 7.3.5.10 Attribute Patch Parameter Set syntax (appss)
 class AttributePatchParameterSet {
  public:
   AttributePatchParameterSet() :
@@ -921,7 +919,7 @@ class AttributePatchParameterSet {
   AttributePatchParams attributePatchParams_;
 };
 
-// 7.3.5.9 Geometry patch params syntax 
+// 7.3.5.9 Geometry patch params syntax
 class GeometryPatchParams {
  public:
   GeometryPatchParams() :
@@ -1149,7 +1147,7 @@ class PatchFrameAttributeParameterSet {
   AttributeFrameParams attributeFrameParams_;
 };
 
-// 7.3.5.5 Geometry frame params syntax 
+// 7.3.5.5 Geometry frame params syntax
 class GeometryFrameParams {
  public:
   GeometryFrameParams() :
@@ -1271,7 +1269,7 @@ class PatchFrameGeometryParameterSet {
   GeometryFrameParams geometryFrameParams_;
 };
 
-// 7.3.5.3  Patch sequence parameter set syntax (psps) 
+// 7.3.5.3  Patch sequence parameter set syntax (psps)
 class PatchSequenceParameterSet {
  public:
   PatchSequenceParameterSet() :
@@ -1807,7 +1805,7 @@ class SequenceParameterSet {
   // THE NEXT PARAMETERS ARE NOT IN THE VPCC CD SYNTAX DOCUMENTS AND WILL BE REMOVE
 };
 
-// VPCCParameterSet Class 
+// VPCCParameterSet Class
 class VPCCParameterSet {
  public:
   VPCCParameterSet() :
