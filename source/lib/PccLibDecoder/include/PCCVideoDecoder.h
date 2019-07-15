@@ -68,7 +68,8 @@ class PCCVideoDecoder {
                    const bool         use444CodecIo                     = false,
                    const bool         patchColorSubsampling             = false,
                    const std::string& inverseColorSpaceConversionConfig = "",
-                   const std::string& colorSpaceConversionPath          = "" ) {
+                   const std::string& colorSpaceConversionPath          = "",
+                   const size_t       upsamplingFilter                  = 0 ) {
     const std::string type        = bitstream.getExtension();
     const std::string fileName    = path + type;
     const std::string binFileName = fileName + ".bin";
@@ -101,7 +102,7 @@ class PCCVideoDecoder {
       std::cout << "Error: can't run system command!" << std::endl;
       return false;
     }
-    if ( inverseColorSpaceConversionConfig.empty() || colorSpaceConversionPath.empty() || use444CodecIo ) {
+    if ( inverseColorSpaceConversionConfig.empty() || use444CodecIo ) {
       if ( use444CodecIo ) {
         if ( !video.read( yuvRecFileName, width, height, frameCount, bitDepth == 8 ? 1 : 2 ) ) { return false; }
       } else {
@@ -304,20 +305,27 @@ class PCCVideoDecoder {
             const std::string rgbRecFileNamePatch = addVideoFormat( fileName + "_tmp.rgb", patch_width, patch_height );
             const std::string yuvRecFileNamePatch =
                 addVideoFormat( fileName + "_tmp.yuv", patch_width, patch_height, true );
-            if ( !tmpImage.write420( yuvRecFileNamePatch, bitDepth == 8 ? 1 : 2 ) ) { return false; }
-            std::stringstream cmd;
-            cmd << colorSpaceConversionPath << " -f " << inverseColorSpaceConversionConfig << " -p SourceFile=\""
-                << yuvRecFileNamePatch << "\" -p OutputFile=\"" << rgbRecFileNamePatch
-                << "\" -p SourceWidth=" << patch_width << " -p SourceHeight=" << patch_height << " -p NumberOfFrames=1";
-            std::cout << cmd.str() << '\n';
-            if ( pcc::system( cmd.str().c_str() ) ) {
-              std::cout << "Error: can't run system command!" << std::endl;
-              return false;
+            if ( !tmpImage.write420( yuvRecFileNamePatch, bitDepth == 8 ? 1 : 2 ) ) { return false; }            
+            if ( colorSpaceConversionPath.empty() ) {              
+              tmpImage.read420( yuvRecFileNamePatch, width, height, bitDepth == 8 ? 1 : 2, true, upsamplingFilter );
+              if ( !keepIntermediateFiles ) { tmpImage.write( rgbRecFileNamePatch, bitDepth == 8 ? 1 : 2 ); }
+            } else {
+              std::stringstream cmd;
+              cmd << colorSpaceConversionPath << " -f " << inverseColorSpaceConversionConfig << " -p SourceFile=\""
+                  << yuvRecFileNamePatch << "\" -p OutputFile=\"" << rgbRecFileNamePatch
+                  << "\" -p SourceWidth=" << patch_width << " -p SourceHeight=" << patch_height << " -p NumberOfFrames=1";
+              std::cout << cmd.str() << '\n';
+              if ( pcc::system( cmd.str().c_str() ) ) {
+                std::cout << "Error: can't run system command!" << std::endl;
+                return false;
+              }
+              tmpImage.read( rgbRecFileNamePatch, patch_width, patch_height, bitDepth == 8 ? 1 : 2 );
             }
-            tmpImage.read( rgbRecFileNamePatch, patch_width, patch_height, bitDepth == 8 ? 1 : 2 );
             // removing intermediate files
-            remove( rgbRecFileNamePatch.c_str() );
-            remove( yuvRecFileNamePatch.c_str() );
+            if ( !keepIntermediateFiles ) {
+              removeFile( rgbRecFileNamePatch );
+              removeFile( yuvRecFileNamePatch );
+            }
             // substitute the pixels in the output image for compression
             for ( size_t i = 0; i < patch_height; i++ ) {
               for ( size_t j = 0; j < patch_width; j++ ) {
@@ -334,16 +342,21 @@ class PCCVideoDecoder {
           }
         }
       } else {
-        std::stringstream cmd;
-        cmd << colorSpaceConversionPath << " -f " << inverseColorSpaceConversionConfig << " -p SourceFile=\""
-            << yuvRecFileName << "\" -p OutputFile=\"" << rgbRecFileName << "\" -p SourceWidth=" << width
-            << " -p SourceHeight=" << height << " -p NumberOfFrames=" << frameCount;
-        std::cout << cmd.str() << '\n';
-        if ( pcc::system( cmd.str().c_str() ) ) {
-          std::cout << "Error: can't run system command!" << std::endl;
-          return false;
+        if ( colorSpaceConversionPath.empty() ) {
+          video.read420( yuvRecFileName, width, height, frameCount, bitDepth == 8 ? 1 : 2, true, upsamplingFilter );
+          if ( !keepIntermediateFiles ) { video.write( rgbRecFileName, bitDepth == 8 ? 1 : 2 ); }
+        } else {
+          std::stringstream cmd;
+          cmd << colorSpaceConversionPath << " -f " << inverseColorSpaceConversionConfig << " -p SourceFile=\""
+              << yuvRecFileName << "\" -p OutputFile=\"" << rgbRecFileName << "\" -p SourceWidth=" << width
+              << " -p SourceHeight=" << height << " -p NumberOfFrames=" << frameCount;
+          std::cout << cmd.str() << '\n';
+          if ( pcc::system( cmd.str().c_str() ) ) {
+            std::cout << "Error: can't run system command!" << std::endl;
+            return false;
+          }
+          if ( !video.read( rgbRecFileName, width, height, frameCount, bitDepth == 8 ? 1 : 2 ) ) { return false; }
         }
-        if ( !video.read( rgbRecFileName, width, height, frameCount, bitDepth == 8 ? 1 : 2 ) ) { return false; }
       }
     }
     if ( !keepIntermediateFiles ) {

@@ -334,17 +334,12 @@ void PCCEncoderParameters::print() {
 
 bool PCCEncoderParameters::check() {
   bool ret = true;
-  if ( !colorSpaceConversionPath_.empty() && !inverseColorSpaceConversionConfig_.empty() &&
-       !colorSpaceConversionConfig_.empty() ) {
+  if ( !inverseColorSpaceConversionConfig_.empty() && !colorSpaceConversionConfig_.empty() ) {
     std::cout << "Info: Using external color space conversion" << std::endl;
     if ( colorTransform_ != COLOR_TRANSFORM_NONE ) {
       std::cerr << "Using external color space conversion requires colorTransform = "
                    "COLOR_TRANSFORM_NONE!\n";
       colorTransform_ = COLOR_TRANSFORM_NONE;
-    }
-    if ( !exist( colorSpaceConversionPath_ ) ) {
-      ret = false;
-      std::cerr << "colorSpaceConversionPath not exist\n";
     }
     if ( !exist( colorSpaceConversionConfig_ ) ) {
       ret = false;

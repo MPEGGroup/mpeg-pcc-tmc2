@@ -9,7 +9,7 @@
 #include <vector>
 using namespace std;
 
-#include "../include/PCCHevcParser.h"
+#include "PCCHevcParser.h"
 #include "TDecCAVLC.h"
 
 const char* getNaluType( int iNaluType ) {
@@ -176,13 +176,13 @@ void PCCHevcParser::setBuffer( const std::vector<uint8_t>& buffer, size_t& width
       switch ( iNalType ) {
         case NAL_UNIT_VPS:                                break;
         case NAL_UNIT_SPS: 
-          decCavlc->parseSps( iLayer ); 
-          width    = decCavlc->getSPS(iLayer)->getOutputWidth();
-          height   = decCavlc->getSPS(iLayer)->getOutputHeight();
+          decCavlc->parseSPS( decCavlc->getSPS() ); 
+          width    = decCavlc->getSPS()->getOutputWidth();
+          height   = decCavlc->getSPS()->getOutputHeight();
           // bitdepth = decCavlc->getSPS(iLayer)->getBitDepthY();
          break;
-        case NAL_UNIT_PPS: decCavlc->parsePps( iLayer );  break;
-
+         /*
+        case NAL_UNIT_PPS: decCavlc->parsePPS( decCavlc->getPPS());  break;
         case NAL_UNIT_CODED_SLICE_TRAIL_N:
         case NAL_UNIT_CODED_SLICE_TRAIL_R:
         case NAL_UNIT_CODED_SLICE_TSA_N:
@@ -217,6 +217,7 @@ void PCCHevcParser::setBuffer( const std::vector<uint8_t>& buffer, size_t& width
           }
           previousNaluLayerIndex = iLayer;
           currentPoc = sequencePoc + iPoc;
+          */
       }
       createNalu( currentPoc, buffer, index, i - index );
       nalNumber++;

@@ -59,9 +59,9 @@ The next command line encodes one streams:
   --colorTransform=0 \
   --configurationFolder=./cfg/ \
   --uncompressedDataFolder=./People/ \
-  --colorSpaceConversionPath=./external/HDRTools/bin/HDRConvert \
-  --videoEncoderPath=./external/HM-16.18+SCM-8.7/bin/TAppEncoderHighBitDepthStatic \
-  --videoEncoderOccupancyMapPath=./external/HM-16.18+SCM-8.7/bin/TAppEncoderHighBitDepthStatic \
+  --colorSpaceConversionPath=HDRConvert \
+  --videoEncoderPath=TAppEncoderHighBitDepthStatic \
+  --videoEncoderOccupancyMapPath=TAppEncoderHighBitDepthStatic \
   --compressedStreamPath=./S22C2AI_queen/S22C2AIR01_queen.bin \
   --frameCount=32
 ```
@@ -83,10 +83,8 @@ The next command line decodes one streams:
   --startFrameNumber=0000 \
   --compressedStreamPath=./S22C2AI_queen/S22C2AIR01_queen.bin \
   --reconstructedDataPath=./S22C2AI_queen/S22C2AIR01_queen_dec_%04d.ply \
-  --videoDecoderPath=
-              ./external/HM-16.18+SCM-8.7/bin/TAppDecoderHighBitDepthStatic \
-  --videoDecoderOccupancyMapPath=\
-              ./external/HM-16.18+SCM-8.7/bin/TAppDecoderHighBitDepthStatic \
+  --videoDecoderPath=TAppDecoderHighBitDepthStatic \
+  --videoDecoderOccupancyMapPath=TAppDecoderHighBitDepthStatic \
   --colorSpaceConversionPath=./external/HDRTools/bin/HDRConvert \
   --inverseColorSpaceConversionConfig=./cfg/hdrconvert/yuv420torgb444.cfg \
   --nbThread=1 \
@@ -116,7 +114,7 @@ command line:
 
 ```
 ../bin/PccAppMetrics \
-  --uncompressedDataPath=./People/8i/8iVFBv2/longdress/Ply/longdress_vox10_1051.ply \
+  --uncompressedDataPath=longdress_vox10_1051.ply \
   --reconstructedDataPath=./S26C2AIR01_longdress_dec_1051.ply \
   --normalDataPath=./People/8i/longdress_n/longdress_vox10_1051_n.ply \
   --resolution=1023 \

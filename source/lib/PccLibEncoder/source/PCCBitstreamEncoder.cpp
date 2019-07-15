@@ -302,7 +302,7 @@ void PCCBitstreamEncoder::pointLocalReconstructionInformation(PointLocalReconstr
 	TRACE_BITSTREAM("%s \n", __func__);
 	bitstream.write(uint32_t(plri.getPlrlNumberOfModesMinus1()), 4); //u(4)
 	TRACE_BITSTREAM("  NumberOfModesMinus1 = %u \n", plri.getPlrlNumberOfModesMinus1());
-	for (size_t i = 0; i <= plri.getPlrlNumberOfModesMinus1(); i++) {
+	for (size_t i = 0; i < plri.getPlrlNumberOfModesMinus1(); i++) {
 		bitstream.write(uint32_t(plri.getPlrlInterpolateFlag(i)), 1); //u(1)
 		bitstream.write(uint32_t(plri.getPlrlFillingFlag(i)), 1);     //u(1)
 		bitstream.write(uint32_t(plri.getPlrlMinimumDepth(i)), 2);    //u(2)

@@ -134,8 +134,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     frames[i].setLosslessGeo( params_.losslessGeo_ );
     frames[i].setLosslessGeo444( params_.losslessGeo444_ );
     frames[i].setLosslessTexture( params_.losslessTexture_ );
-    frames[i].setUseAdditionalPointsPatch( params_.losslessGeo_ || params_.lossyMissedPointsPatch_ );
-    frames[i].setUseAdditionalPointsPatch( params_.useAdditionalPointsPatch_ );
+    frames[i].setUseAdditionalPointsPatch( params_.losslessGeo_ || params_.lossyMissedPointsPatch_ ||
+                                           params_.useAdditionalPointsPatch_ );
     frames[i].setUseMissedPointsSeparateVideo( params_.useMissedPointsSeparateVideo_ );
     frames[i].setGeometry3dCoordinatesBitdepth( context.getGeometry3dCoordinatesBitdepth() );
   }
@@ -198,7 +198,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     videoEncoder.compress(
         videoGeometry, path.str(), ( params_.geometryQP_ - 1 ), videoBitstreamD0, params_.geometryD0Config_,
         ( params_.use3dmc_ != 0 ) ? params_.videoEncoderAuxPath_ : params_.videoEncoderPath_, context, nbyteGeo,
-        params_.keepIntermediateFiles_, params_.losslessGeo_ && params_.losslessGeo444_, false, params_.use3dmc_ );
+        params_.keepIntermediateFiles_, params_.losslessGeo_ && params_.losslessGeo444_, false, params_.use3dmc_,
+        params_.lossyMissedPointsPatch_ || params_.useMissedPointsSeparateVideo_ );
 
     // Form differential video geometryD1
     auto& videoGeometryD1 = context.getVideoGeometryD1();
@@ -212,7 +213,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     videoEncoder.compress(
         videoGeometryD1, path.str(), params_.geometryQP_, videoBitstreamD1, params_.geometryD1Config_,
         ( params_.use3dmc_ != 0 ) ? params_.videoEncoderAuxPath_ : params_.videoEncoderPath_, context, nbyteGeo,
-        params_.keepIntermediateFiles_, params_.losslessGeo_ && params_.losslessGeo444_, false, params_.use3dmc_ );
+        params_.keepIntermediateFiles_, params_.losslessGeo_ && params_.losslessGeo444_, false, params_.use3dmc_,
+        params_.lossyMissedPointsPatch_ || params_.useMissedPointsSeparateVideo_ );
 
     auto sizeGeometryVideo = videoBitstreamD0.naluSize() + videoBitstreamD1.naluSize();
     std::cout << "geometry video ->" << sizeGeometryVideo << " B ("
@@ -224,7 +226,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
         videoGeometry, path.str(), params_.geometryQP_, videoBitstream,
         params_.oneLayerMode_ ? getEncoderConfig1L( params_.geometryConfig_ ) : params_.geometryConfig_,
         ( params_.use3dmc_ != 0 ) ? params_.videoEncoderAuxPath_ : params_.videoEncoderPath_, context, nbyteGeo,
-        params_.keepIntermediateFiles_, params_.losslessGeo_ && params_.losslessGeo444_, false, params_.use3dmc_ );
+        params_.keepIntermediateFiles_, params_.losslessGeo_ && params_.losslessGeo444_, false, params_.use3dmc_,
+        params_.lossyMissedPointsPatch_ || params_.useMissedPointsSeparateVideo_ );
   }
 
   if ( sps.getPcmPatchEnabledFlag() && sps.getPcmSeparateVideoPresentFlag() ) {
@@ -339,18 +342,18 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
         params_.oneLayerMode_ ? getEncoderConfig1L( params_.textureConfig_ ) : params_.textureConfig_,
         ( params_.use3dmc_ != 0 ) ? params_.videoEncoderAuxPath_ : params_.videoEncoderPath_, context, 1,
         params_.keepIntermediateFiles_, params_.losslessTexture_, params_.patchColorSubsampling_, params_.use3dmc_,
-        params_.colorSpaceConversionConfig_, params_.inverseColorSpaceConversionConfig_,
-        params_.colorSpaceConversionPath_ );
+        params_.lossyMissedPointsPatch_ || params_.useMissedPointsSeparateVideo_, params_.colorSpaceConversionConfig_,
+        params_.inverseColorSpaceConversionConfig_, params_.colorSpaceConversionPath_ );
 
     if ( params_.useAdditionalPointsPatch_ && sps.getPcmSeparateVideoPresentFlag() ) {
       auto& videoBitstreamMP = context.createVideoBitstream( VIDEO_TEXTURE_MP );
       generateMissedPointsTextureVideo( context, reconstructs );  // 1. texture
       auto& videoMPsTexture = context.getVideoMPsTexture();
-      videoEncoder.compress( videoMPsTexture, path.str(), params_.textureQP_, videoBitstreamMP,
-                             params_.textureMPConfig_, params_.videoEncoderPath_, context, 1,
-                             params_.keepIntermediateFiles_, params_.losslessTexture_, false, false,
-                             params_.colorSpaceConversionConfig_, params_.inverseColorSpaceConversionConfig_,
-                             params_.colorSpaceConversionPath_ );
+      videoEncoder.compress(
+          videoMPsTexture, path.str(), params_.textureQP_, videoBitstreamMP, params_.textureMPConfig_,
+          params_.videoEncoderPath_, context, 1, params_.keepIntermediateFiles_, params_.losslessTexture_, false, false,
+          params_.lossyMissedPointsPatch_ || params_.useMissedPointsSeparateVideo_, params_.colorSpaceConversionConfig_,
+          params_.inverseColorSpaceConversionConfig_, params_.colorSpaceConversionPath_ );
 
       if ( params_.lossyMissedPointsPatch_ ) { generateMissedPointsTexturefromVideo( context, reconstructs ); }
     }
@@ -2202,9 +2205,11 @@ void PCCEncoder::generateMissedPointsPatch( const PCCPointSet3& source,
             << inputBbox.max_.z() << ");" << std::endl;
 
   PCCBox3D bboxMps;
-  double   mpsBoxSize = double( 1 << params_.geometryNominal2dBitdepth_ );
-  bboxMps.min_        = inputBbox.min_;
-  bboxMps.max_        = inputBbox.min_;
+  double   mpsBoxSize = double( 1024 );
+  if ( !params_.lossyMissedPointsPatch_ ){ mpsBoxSize = double( 1 << params_.geometryNominal2dBitdepth_ ); }
+
+  bboxMps.min_ = inputBbox.min_;
+  bboxMps.max_ = inputBbox.min_;
   bboxMps.max_.x() += mpsBoxSize;
   bboxMps.max_.y() += mpsBoxSize;
   bboxMps.max_.z() += mpsBoxSize;
@@ -2453,7 +2458,8 @@ void PCCEncoder::generateMPsGeometryImage( PCCContext& context, PCCFrameContext&
     }
 
     // dilate with the last z value
-    if ( !losslessGeo ) {  // lossy missed points patch and 4:2:0 frame format
+    if ( !losslessGeo ) { 
+			// lossy missed points patch and 4:2:0 frame format
       for ( size_t i = 3 * numberOfMps; i < width * pcmHeight; ++i ) {
         image.setValue( 0, i % pcmWidth, i / pcmWidth, static_cast<uint16_t>( lastZ ) );
       }

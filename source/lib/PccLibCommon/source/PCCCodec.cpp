@@ -913,24 +913,26 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
       }
     }  // fi :useMissedPointsSeparateVideo
   }    // fi : useAdditionalPointsPatch
+  if ( !params.losslessGeo_ ) {
+    //// identify first boundary layer
+    size_t pointCount = reconstruct.getPointCount() - frame.getTotalNumberOfMissedPoints();
+    assert( pointCount == pointToPixel.size() );
+    for ( size_t i = 0; i < pointCount; ++i ) {
+      const PCCVector3<size_t> location = pointToPixel[i];
+      const size_t             x        = location[0];
+      const size_t             y        = location[1];
+      if ( occupancyMap[y * imageWidth + x] != 0 )
+        identifyBoundaryPointsLayer1( occupancyMap, x, y, imageWidth, imageHeight, i, BPflag, reconstruct );
+    }
 
-  //// identify first boundary layer
-  const size_t pointCount = reconstruct.getPointCount();
-  for ( size_t i = 0; i < pointCount; ++i ) {
-    const PCCVector3<size_t> location = pointToPixel[i];
-    const size_t             x        = location[0];
-    const size_t             y        = location[1];
-    if ( occupancyMap[y * imageWidth + x] != 0 )
-      identifyBoundaryPointsLayer1( occupancyMap, x, y, imageWidth, imageHeight, i, BPflag, reconstruct );
-  }
-
-  //// identify second boundary layer
-  for ( size_t i = 0; i < pointCount; ++i ) {
-    const PCCVector3<size_t> location = pointToPixel[i];
-    const size_t             x        = location[0];
-    const size_t             y        = location[1];
-    if ( occupancyMap[y * imageWidth + x] != 0 )
-      identifyBoundaryPointsLayer2( occupancyMap, x, y, imageWidth, imageHeight, i, BPflag, reconstruct );
+    //// identify second boundary layer
+    for ( size_t i = 0; i < pointCount; ++i ) {
+      const PCCVector3<size_t> location = pointToPixel[i];
+      const size_t             x        = location[0];
+      const size_t             y        = location[1];
+      if ( occupancyMap[y * imageWidth + x] != 0 )
+        identifyBoundaryPointsLayer2( occupancyMap, x, y, imageWidth, imageHeight, i, BPflag, reconstruct );
+    }
   }
   TRACE_CODEC( " end point = %lu  \n", reconstruct.getPointCount() );
 }
@@ -1599,7 +1601,7 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
       numberOfEddPoints       = frame.getNumberOfEddPoints();
       numberOfMpsAndEddColors = numOfMPGeos + numberOfEddPoints;
 
-      if ( useMissedPointsSeparateVideo && losslessAtt ) {
+      if ( useMissedPointsSeparateVideo && ( losslessAtt || lossyMissedPointsPatch ) ) {
         pointCount = reconstruct.getPointCount() - numOfMPGeos - numberOfEddPoints;
         assert( numberOfMpsAndEddColors == ( numberOfEddPoints + numOfMPGeos ) );
         missedPointsPatch.resizeColor( numberOfMpsAndEddColors );
@@ -1665,33 +1667,14 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
         reconstruct.setColor( targetIndex[i], target.getColor( i ) );
       }
     }
-
     if ( ( losslessAtt || lossyMissedPointsPatch ) && useMissedPointsSeparateVideo ) {
-      if ( params.enhancedDeltaDepthCode_ ) {
-#if ( PCCSepatareEddColors == 1 )
-        auto& eddColorsMap = frame.getEddColorsMap();
-        for ( size_t i = 0; i < numberOfEddPoints; ++i ) { color[pointCount + i] = eddColorsMap[i]; }
-        pointCount += numberOfEddPoints;
-        size_t numberOfMpsPatches = frame.getNumberOfMissedPointsPatches();
-        for ( int i = 0; i < numberOfMpsPatches; i++ ) {
-          auto&  missedPointsPatch = frame.getMissedPointsPatch( i );
-          size_t numberOfMps       = missedPointsPatch.getNumberOfMps();
-          for ( size_t j = 0; j < numberOfMps; ++j ) {
-            color[pointCount + j][0] = (uint8_t)missedPointsPatch.r_[j];
-            color[pointCount + j][1] = (uint8_t)missedPointsPatch.g_[j];
-            color[pointCount + j][2] = (uint8_t)missedPointsPatch.b_[j];
-          }
-          pointCount += numberOfMps;
-        }
-#else
+
         auto& missedPointsPatch = frame.getMissedPointsPatch( 0 );
         for ( size_t i = 0; i < numberOfMpsAndEddColors; ++i ) {
           color[pointCount + i][0] = (uint8_t)missedPointsPatch.r_[i];
           color[pointCount + i][1] = (uint8_t)missedPointsPatch.g_[i];
           color[pointCount + i][2] = (uint8_t)missedPointsPatch.b_[i];
         }
-#endif
-      }
     }
   }  // noAtt
   TRACE_CODEC( " colorPointCloud done \n" );

@@ -1,9 +1,9 @@
 /* The copyright in this software is being made available under the BSD
  * License, included below. This software may be subject to other third party
  * and contributor rights, including patent rights, and no such rights are
- * granted under this license.  
+ * granted under this license.
  *
- * Copyright (c) 2010-2014, ITU/ISO/IEC
+ * Copyright (c) 2010-2017, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,22 +42,16 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
-#include "TypeDef.h"
 #include "CommonDef.h"
 #include "TComSlice.h"
-
-#if Q0048_CGS_3D_ASYMLUT
-#include "TCom3DAsymLUT.h"
-#endif
-
+#include "TComBitStream.h"
+#include "SEI.h"
 // #include "TDecEntropy.h"
 // #include "SyntaxElementParser.h"
 
-#if Q0048_CGS_3D_ASYMLUT
-class TCom3DAsymLUT;
-#endif
 //! \ingroup TLibDecoder
 //! \{
+
 
 class Reader
 {
@@ -120,6 +114,13 @@ public:
     }
   }
   UInt  getNumBitsRead() { return m_iReadBits; }
+  Bool isAlign() { return ( m_iReadBits  % 8 ) == 0; }
+
+  void align(){
+    while(!isAlign()){
+      read(1);
+    }
+  }
 private:
   Int read( Int iBits )
   {
@@ -192,174 +193,138 @@ private:
   Int  m_iZeroNum;
 };
 
-
-class ParameterSetManagerDecoder:public ParameterSetManager
-{
-public:
-  ParameterSetManagerDecoder();
-  virtual ~ParameterSetManagerDecoder();
-  Void     storePrefetchedVPS(TComVPS *vps)  { m_vpsBuffer.storePS( vps->getVPSId(), vps); };
-  TComVPS* getPrefetchedVPS  (Int vpsId);
-  Void     storePrefetchedSPS(TComSPS *sps)  { m_spsBuffer.storePS( sps->getSPSId(), sps); };
-  TComSPS* getPrefetchedSPS  (Int spsId);
-  Void     storePrefetchedPPS(TComPPS *pps)  { m_ppsBuffer.storePS( pps->getPPSId(), pps); };
-  TComPPS* getPrefetchedPPS  (Int ppsId);
-  Void     applyPrefetchedPS();
-
-private:
-#if SVC_EXTENSION
-  static ParameterSetMap<TComVPS> m_vpsBuffer;
-#else
-  ParameterSetMap<TComVPS> m_vpsBuffer;
-#endif
-  ParameterSetMap<TComSPS> m_spsBuffer;
-  ParameterSetMap<TComPPS> m_ppsBuffer;
-};
-
-
 // ====================================================================================================================
 // Class definition
 // ====================================================================================================================
 
 /// CAVLC decoder class
-class TDecCavlc // : public SyntaxElementParser, public TDecEntropyIf
+class TDecCavlc //: public SyntaxElementParser, public TDecEntropyIf
 {
 public:
   TDecCavlc();
   virtual ~TDecCavlc();
-  
-
-  void setBuffer( UChar* pBuffer, int iSize  ) { m_eReader.setBuffer( pBuffer, iSize ); }
-
-  void parseVps();
-  void parseSps( int iLayerIndex );
-  void parsePps( int iLayerIndex );
-  int parseSliceHeader( int iLayerIndex, NalUnitType iNaluType, int iTemporalIndex );
+  void setBuffer( UChar* pBuffer, int iSize  ) { m_pcBitstream.setBuffer( pBuffer, iSize ); }
 
 protected:
-  void  parseShortTermRefPicSet            (TComSPS* pcSPS, TComReferencePictureSet* pcRPS, Int idx);
+
+  Void  parseShortTermRefPicSet            (TComSPS* pcSPS, TComReferencePictureSet* pcRPS, Int idx);
+
+
+#if RExt__DECODER_DEBUG_BIT_STATISTICS || ENC_DEC_TRACE
+Void xReadCode (UInt uiLength, UInt& rValue, const TChar *pSymbolName)
+#else
+Void xReadCode (UInt uiLength, UInt& rValue)
+#endif
+{
+  assert ( uiLength > 0 );
+  m_pcBitstream.readCode (uiLength, rValue);
+
+}
 
 #if !TRACE_DEBUG
-  #define READ_CODE(length, code, name )  m_eReader.readCode( length, code );
-  #define READ_UVLC(        code, name )  m_eReader.readUvlc(         code );
-  #define READ_SVLC(        code, name )  m_eReader.readSvlc(         code );
-  #define READ_FLAG(        code, name )  m_eReader.readFlag(         code );
+  #define READ_CODE(length, code, name )  m_pcBitstream.readCode( length, code );
+  #define READ_UVLC(        code, name )  m_pcBitstream.readUvlc(         code );
+  #define READ_SVLC(        code, name )  m_pcBitstream.readSvlc(         code );
+  #define READ_FLAG(        code, name )  m_pcBitstream.readFlag(         code );
 #else
-  #define READ_CODE(length, code, name )  m_eReader.readCode( length, code ); printf("READ_CODE(%2d) = %6d : %s \n",length,code,name); fflush(stdout);
-  #define READ_UVLC(        code, name )  m_eReader.readUvlc(         code ); printf("READ_UVLC()   = %6d : %s \n",       code,name);  fflush(stdout);
-  #define READ_SVLC(        code, name )  m_eReader.readSvlc(         code ); printf("READ_SVLC()   = %6d : %s \n",       code,name);  fflush(stdout);
-  #define READ_FLAG(        code, name )  m_eReader.readFlag(         code ); printf("READ_FLAG()   = %6d : %s \n",       code,name);  fflush(stdout);
+  #define READ_CODE(length, code, name )  m_pcBitstream.readCode( length, code ); printf("READ_CODE(%2d) = %6d : %s \n",length,code,name); fflush(stdout);
+  #define READ_UVLC(        code, name )  m_pcBitstream.readUvlc(         code ); printf("READ_UVLC()   = %6d : %s \n",       code,name);  fflush(stdout);
+  #define READ_SVLC(        code, name )  m_pcBitstream.readSvlc(         code ); printf("READ_SVLC()   = %6d : %s \n",       code,name);  fflush(stdout);
+  #define READ_FLAG(        code, name )  m_pcBitstream.readFlag(         code ); printf("READ_FLAG()   = %6d : %s \n",       code,name);  fflush(stdout);
 #endif
 
+
+#define READ_CODE_CHK(length, code, name, minValIncl, maxValIncl) m_pcBitstream.readCode( length, code )
+#define READ_UVLC_CHK(        code, name, minValIncl, maxValIncl) m_pcBitstream.readUvlc(         code )
+#define READ_SVLC_CHK(        code, name, minValIncl, maxValIncl) m_pcBitstream.readSvlc(         code )
+#define READ_FLAG_CHK(        code, name, minValIncl, maxValIncl) m_pcBitstream.readFlag(         code )
+
+Void xReadRbspTrailingBits()
+{
+  UInt bit;
+  READ_FLAG( bit, "rbsp_stop_one_bit");
+  assert (bit==1);
+  Int cnt = 0;
+  while (m_pcBitstream.isAlign())
+  {
+    READ_FLAG( bit, "rbsp_alignment_zero_bit");
+    assert (bit==0);
+    cnt++;
+  }
+  assert(cnt<8);
+}
 public:
+
   /// rest entropy coder by intial QP and IDC in CABAC
-  // Void  resetEntropy        ( TComSlice* /*pcSlice*/  )     { assert(0); };
+  Void  resetEntropy        ( TComSlice* /*pcSlice*/  )     { assert(0); };
   // Void  setBitstream        ( TComInputBitstream* p )   { m_pcBitstream = p; }
   Void  parseTransformSubdivFlag( UInt& ruiSubdivFlag, UInt uiLog2TransformBlockSize );
-  // Void  parseQtCbf          ( TComDataCU* pcCU, UInt uiAbsPartIdx, TextType eType, UInt uiTrDepth, UInt uiDepth );
-  // Void  parseQtRootCbf      ( UInt uiAbsPartIdx, UInt& uiQtRootCbf );
-  Void  parseVPS            ( );
-#if SVC_EXTENSION
-  Void  parseVPSExtension   ( TComVPS* pcVPS );
-  Void  defaultVPSExtension ( TComVPS* pcVPS );
-  Void  parseVPSVUI         ( TComVPS* pcVPS );
-  Void  defaultVPSVUI       ( TComVPS* pcVPS );
-#if REPN_FORMAT_IN_VPS
-  Void  parseRepFormat      ( RepFormat *repFormat, RepFormat *repFormatPrev );
-#endif
-#if VPS_DPB_SIZE_TABLE
-  Void  parseVpsDpbSizeTable( TComVPS *vps );
-#endif
-#if VPS_VUI_BSP_HRD_PARAMS
-  Void  parseVpsVuiBspHrdParams( TComVPS *vps );
-#endif
-#if SPS_DPB_PARAMS
-  Void  parseSPS            ( TComSPS* pcSPS ); // it should be removed after macro clean up
-#else
-  Void  parseSPS            ( TComSPS* pcSPS, ParameterSetManagerDecoder *parameterSetManager );
-#endif
-  Void  parseSPSExtension    ( TComSPS* pcSPS );
-#else //SVC_EXTENSION
+  Void  parseQtCbf          ( class TComTU &rTu, const ComponentID compID, const Bool lowestLevel );
+  Void  parseQtRootCbf      ( UInt uiAbsPartIdx, UInt& uiQtRootCbf );
+  Void  parseVPS            ( TComVPS* pcVPS );
   Void  parseSPS            ( TComSPS* pcSPS );
-#endif //SVC_EXTENSION
-  Void  parsePPS            (
-#if Q0048_CGS_3D_ASYMLUT
-    TCom3DAsymLUT * pc3DAsymLUT , Int nLayerID
-#endif
-    );
+  Void  parsePPS            ( TComPPS* pcPPS );
   Void  parseVUI            ( TComVUI* pcVUI, TComSPS* pcSPS );
-  // Void  parseSEI            ( SEIMessages& );
+  Void  parseSEI            ( SEIMessages& );
   Void  parsePTL            ( TComPTL *rpcPTL, Bool profilePresentFlag, Int maxNumSubLayersMinus1 );
-  Void  parseProfileTier    ( ProfileTierLevel *ptl);
-  Void  parseHrdParameters  ( TComHRD *hrd, Bool cprms_present_flag, UInt tempLevelHigh);
-
-  Void  parseSliceHeader    ( TComSlice*& rpcSlice,  ParameterSetManagerDecoder *parameterSetManager);
-
+  Void  parseProfileTier    (ProfileTierLevel *ptl, const Bool bIsSubLayer);
+  Void  parseHrdParameters  (TComHRD *hrd, Bool cprms_present_flag, UInt tempLevelHigh);
+  Void  parseSliceHeader    ( TComSlice* pcSlice, ParameterSetManager *parameterSetManager, const Int prevTid0POC);
   Void  parseTerminatingBit ( UInt& ruiBit );
-  
-  Void  parseMVPIdx         ( Int& riMVPIdx );
-  
-  //Void  parseSkipFlag       ( TComDataCU* pcCU, UInt uiAbsPartIdx, UInt uiDepth );
-  //Void  parseCUTransquantBypassFlag( TComDataCU* pcCU, UInt uiAbsPartIdx, UInt uiDepth );
-  //Void parseMergeFlag       ( TComDataCU* pcCU, UInt uiAbsPartIdx, UInt uiDepth, UInt uiPUIdx );
-  //Void parseMergeIndex      ( TComDataCU* pcCU, UInt& ruiMergeIndex );
-  //Void parseSplitFlag       ( TComDataCU* pcCU, UInt uiAbsPartIdx, UInt uiDepth );
-  //Void parsePartSize        ( TComDataCU* pcCU, UInt uiAbsPartIdx, UInt uiDepth );
-  //Void parsePredMode        ( TComDataCU* pcCU, UInt uiAbsPartIdx, UInt uiDepth );
+  Void  parseRemainingBytes ( Bool noTrailingBytesExpected );
+/*
+  Void parseMVPIdx          ( Int& riMVPIdx );
 
-  //  Void parseIntraDirLumaAng ( TComDataCU* pcCU, UInt uiAbsPartIdx, UInt uiDepth );
-  //
-  //  Void parseIntraDirChroma  ( TComDataCU* pcCU, UInt uiAbsPartIdx, UInt uiDepth );
-  //
-  //  Void parseInterDir        ( TComDataCU* pcCU, UInt& ruiInterDir, UInt uiAbsPartIdx );
-  //  Void parseRefFrmIdx       ( TComDataCU* pcCU, Int& riRefFrmIdx,  RefPicList eRefList );
-  //  Void parseMvd             ( TComDataCU* pcCU, UInt uiAbsPartAddr,UInt uiPartIdx,    UInt uiDepth, RefPicList eRefList );
-  //
-  //  Void parseDeltaQP         ( TComDataCU* pcCU, UInt uiAbsPartIdx, UInt uiDepth );
-  //  Void parseCoeffNxN        ( TComDataCU* pcCU, TCoeff* pcCoef, UInt uiAbsPartIdx, UInt uiWidth, UInt uiHeight, UInt uiDepth, TextType eTType );
-  //  Void parseTransformSkipFlags( TComDataCU* pcCU, UInt uiAbsPartIdx, UInt width, UInt height, UInt uiDepth, TextType eTType);
-  //
-  //  Void parseIPCMInfo        ( TComDataCU* pcCU, UInt uiAbsPartIdx, UInt uiDepth);
+  Void parseSkipFlag        ( TComDataCU* pcCU, UInt uiAbsPartIdx, UInt uiDepth );
+  Void parseCUTransquantBypassFlag( TComDataCU* pcCU, UInt uiAbsPartIdx, UInt uiDepth );
+  Void parseColourTransformFlag  ( Bool& flag );
+  Void parsePaletteModeFlag      ( TComDataCU* pcCU, UInt uiAbsPartIdx, UInt uiDepth );
+  Void parsePaletteModeSyntax    ( TComDataCU* pcCU, UInt uiAbsPartIdx, UInt uiDepth, UInt uiNumComp, Bool& bCodeDQP, Bool& codeChromaQpAdj );
+  Void parseScanRotationModeFlag ( TComDataCU* pcCU, UInt uiAbsPartIdx, UInt uiDepth );
+  Void parseScanTraverseModeFlag ( TComDataCU* pcCU, UInt uiAbsPartIdx, UInt uiDepth );
+  Void parseMergeFlag       ( TComDataCU* pcCU, UInt uiAbsPartIdx, UInt uiDepth, UInt uiPUIdx );
+  Void parseMergeIndex      ( TComDataCU* pcCU, UInt& ruiMergeIndex );
+  Void parseSplitFlag       ( TComDataCU* pcCU, UInt uiAbsPartIdx, UInt uiDepth );
+  Void parsePartSize        ( TComDataCU* pcCU, UInt uiAbsPartIdx, UInt uiDepth );
+  Void parsePredMode        ( TComDataCU* pcCU, UInt uiAbsPartIdx, UInt uiDepth );
 
-//  Void updateContextTables  ( SliceType /*eSliceType*/, Int /*iQp*/ ) { return; }
+  Void parseIntraDirLumaAng ( TComDataCU* pcCU, UInt uiAbsPartIdx, UInt uiDepth );
+  Void parseIntraDirChroma  ( TComDataCU* pcCU, UInt uiAbsPartIdx, UInt uiDepth );
 
-  Void xParsePredWeightTable ( TComSlice* pcSlice );
+  Void parseInterDir        ( TComDataCU* pcCU, UInt& ruiInterDir, UInt uiAbsPartIdx );
+  Void parseRefFrmIdx       ( TComDataCU* pcCU, Int& riRefFrmIdx, RefPicList eRefList );
+  Void parseMvd             ( TComDataCU* pcCU, UInt uiAbsPartAddr,UInt uiPartIdx,    UInt uiDepth, RefPicList eRefList );
+
+  Void parseCrossComponentPrediction( class TComTU &rTu, ComponentID compID );
+
+  Void parseDeltaQP         ( TComDataCU* pcCU, UInt uiAbsPartIdx, UInt uiDepth );
+  Void parseChromaQpAdjustment( TComDataCU* cu, UInt absPartIdx, UInt depth);
+
+  Void parseCoeffNxN        ( class TComTU &rTu, ComponentID compID );
+
+  Void parseTransformSkipFlags ( class TComTU &rTu, ComponentID component );
+
+  Void parseIPCMInfo        ( TComDataCU* pcCU, UInt uiAbsPartIdx, UInt uiDepth);
+
+*/
+  Void xParsePredWeightTable ( TComSlice* pcSlice, const TComSPS *sps );
   Void  parseScalingList     ( TComScalingList* scalingList );
   Void xDecodeScalingList    ( TComScalingList *scalingList, UInt sizeId, UInt listId);
-
-  
- TComPPS* getPPS( int32_t layerIndex ){ return &m_pPPS[ layerIndex ]; }
- TComSPS* getSPS( int32_t layerIndex ){ return &m_pSPS[ layerIndex ]; }
+/*
+  Void  parseExplicitRdpcmMode( TComTU &rTu, ComponentID compID );
+*/
+ TComPPS* getPPS(){ return &m_pPPS[ 0 ]; }
+ TComSPS* getSPS(){ return &m_pSPS[ 0 ]; }
  
 protected:
   Bool  xMoreRbspData();
 
-#if Q0048_CGS_3D_ASYMLUT
-  Void xParse3DAsymLUT( TCom3DAsymLUT * pc3DAsymLUT );
-  Void xParse3DAsymLUTOctant( TCom3DAsymLUT * pc3DAsymLUT , Int nDepth , Int yIdx , Int uIdx , Int vIdx , Int nLength );
-#if R0151_CGS_3D_ASYMLUT_IMPROVE
-#if R0300_CGS_RES_COEFF_CODING
-  Void xReadParam( Int& param, Int flc_bits );
-#else
-  Void xReadParam( Int& param );
-#endif
-#endif
-#endif
-
-
-private:
-
   TComVPS         m_pVPS[MAX_NUM_VPS];
   TComPPS         m_pPPS[MAX_NUM_PPS];
   TComSPS         m_pSPS[MAX_NUM_SPS];
-
-  Reader          m_eReader;
-  TCom3DAsymLUT   m_c3DAsymLUTPPS;
-  ParameterSetManagerDecoder m_parameterSetManagerDecoder;  // storage for parameter sets
-  TComSlice*              m_apcSlicePilot;
+  Reader          m_pcBitstream;
 };
 
 //! \}
 
 #endif // !defined(AFX_TDECCAVLC_H__9732DD64_59B0_4A41_B29E_1A5B18821EAD__INCLUDED_)
-

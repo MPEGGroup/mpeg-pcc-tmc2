@@ -8,11 +8,11 @@ repository:
    <http://mpegx.int-evry.fr/software/MPEG/PCC/TM/mpeg-pcc-tmc2>
 
 Each released version may be identified by a version control system tag in
-the form `release-v5.0`.
+the form `release-v6.0`.
 
 An example:
 
-```console
+```console 
 $ git clone http://mpegx.int-evry.fr/software/MPEG/PCC/mpeg-pcc-tmc2.git
 $ cd mpeg-pcc-tmc2
 ```
@@ -22,7 +22,7 @@ $ cd mpeg-pcc-tmc2
 > release.  The build system uses the version control system to accurately
 > identify the version being built.
 
-Building
+Building 
 ------- 
 
 The codec is supported on Linux, OSX and Windows platforms.  The build

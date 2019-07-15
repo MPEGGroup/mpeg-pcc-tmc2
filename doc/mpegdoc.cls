@@ -48,7 +48,9 @@
 \RequirePackage{datetime}
 \renewcommand{\dateseparator}{-}
 \newdateformat{MPEG@yyyymmdddate}{%
-	\THEYEAR\dateseparator\twodigit{\THEMONTH}\dateseparator\twodigit{\THEDAY}}
+ % \THEYEAR\dateseparator\twodigit{\THEMONTH}\dateseparator\twodigit{\THEDAY}}
+  2019-05-18}
+
 
 % all pages only have a footer
 \RequirePackage{fancyhdr}
@@ -79,7 +81,7 @@
 }
 
 \RequirePackage{array}
-
+  
 \RequirePackage{ifthen}
 \newcounter{mpeg@author@column}
 \newcommand{\@mpeg@switch@author@column}{%

@@ -196,7 +196,7 @@ namespace nanoflann
 		/** PairType will be typically: std::pair<IndexType,DistanceType> */
 		template <typename PairType>
 		inline bool operator()(const PairType &p1, const PairType &p2) const {
-			return p1.second < p2.second;
+			return ( ( p1.second == p2.second ) ? ( p1.first < p2.first ) : (p1.second < p2.second ) );
 		}
 	};
 

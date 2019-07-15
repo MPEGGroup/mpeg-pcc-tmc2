@@ -73,7 +73,7 @@ void PCCDecoderParameters::completePath() {
 
 bool PCCDecoderParameters::check() {
   bool ret = true;
-  if ( !colorSpaceConversionPath_.empty() && !inverseColorSpaceConversionConfig_.empty() ) {
+  if ( !inverseColorSpaceConversionConfig_.empty() ) {
     std::cout << "Info: Using external color space conversion" << std::endl;
     if ( colorTransform_ != COLOR_TRANSFORM_NONE ) {
       std::cout << "Using external color space conversion requires colorTransform = "
@@ -90,17 +90,9 @@ bool PCCDecoderParameters::check() {
     ret = false;
     std::cerr << "compressedStreamPath not set\n";
   }
-  if ( colorSpaceConversionPath_.empty() ) {
-    ret = false;
-    std::cerr << "colorSpaceConversionPath not set\n";
-  }
   if ( inverseColorSpaceConversionConfig_.empty() ) {
     ret = false;
     std::cerr << "inverseColorSpaceConversionConfig not set\n";
-  }
-  if ( !exist( colorSpaceConversionPath_ ) ) {
-    ret = false;
-    std::cerr << "colorSpaceConversionPath not exist\n";
   }
   if ( !exist( inverseColorSpaceConversionConfig_ ) ) {
     ret = false;

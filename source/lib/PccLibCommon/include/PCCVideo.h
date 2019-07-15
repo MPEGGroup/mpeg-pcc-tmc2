@@ -80,11 +80,26 @@ class PCCVideo {
     }
     return false;
   }
-  bool write420(std::ofstream &outfile, const size_t nbyte) const {
-    for (const auto &frame : frames_) {
-      if (!frame.write420(outfile, nbyte)) {
-        return false;
-      }
+
+  bool write420( std::ofstream& outfile, const size_t nbyte, bool convert, const size_t filter ) const {
+    for ( const auto& frame : frames_ ) {
+      if ( !frame.write420( outfile, nbyte, convert, filter ) ) { return false; }
+    }
+    return true;
+  }
+
+  bool write420( const std::string fileName, const size_t nbyte, const bool convert, const size_t filter ) {
+    std::ofstream outfile( fileName, std::ios::binary );
+    if ( write420( outfile, nbyte, convert, filter ) ) {
+      outfile.close();
+      return true;
+    }
+    return false;
+  }
+
+  bool write420( std::ofstream& outfile, const size_t nbyte ) const {
+    for ( const auto& frame : frames_ ) {
+      if ( !frame.write420( outfile, nbyte ) ) { return false; }
     }
     return true;
   }
@@ -115,18 +130,50 @@ class PCCVideo {
     }
     return false;
   }
-  bool read420(std::ifstream &infile, const size_t sizeU0, const size_t sizeV0,
-               const size_t frameCount, const size_t nbyte) {
-    frames_.resize(frameCount);
-    for (auto &frame : frames_) {
-      if (!frame.read420(infile, sizeU0, sizeV0, nbyte)) {
-        return false;
-      }
+  bool read420( std::ifstream& infile,
+                const size_t   sizeU0,
+                const size_t   sizeV0,
+                const size_t   frameCount,
+                const size_t   nbyte,
+                const bool     convert,
+                const size_t   filter ) {
+    frames_.resize( frameCount );
+    for ( auto& frame : frames_ ) {
+      if ( !frame.read420( infile, sizeU0, sizeV0, nbyte, convert, filter ) ) { return false; }
     }
     return true;
   }
-  bool read420(const std::string fileName, const size_t sizeU0, const size_t sizeV0, 
-               const size_t frameCount, const size_t nbyte) {
+  bool read420( const std::string fileName,
+                const size_t      sizeU0,
+                const size_t      sizeV0,
+                const size_t      frameCount,
+                const size_t      nbyte,
+                bool              convert,
+                const int         filter ) {
+    std::ifstream infile( fileName, std::ios::binary );
+    if ( read420( infile, sizeU0, sizeV0, frameCount, nbyte, convert, filter ) ) {
+      infile.close();
+      return true;
+    }
+    return false;
+  }
+
+  bool read420( std::ifstream& infile,
+                const size_t   sizeU0,
+                const size_t   sizeV0,
+                const size_t   frameCount,
+                const size_t   nbyte ) {
+    frames_.resize( frameCount );
+    for ( auto& frame : frames_ ) {
+      if ( !frame.read420( infile, sizeU0, sizeV0, nbyte ) ) { return false; }
+    }
+    return true;
+  }
+  bool read420( const std::string fileName,
+                const size_t      sizeU0,
+                const size_t      sizeV0,
+                const size_t      frameCount,
+                const size_t      nbyte ) {
     std::ifstream infile(fileName, std::ios::binary);
     if (read420(infile, sizeU0, sizeV0, frameCount, nbyte)) {
       infile.close();

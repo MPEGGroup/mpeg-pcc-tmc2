@@ -314,7 +314,7 @@ void PCCBitstreamDecoder::pointLocalReconstructionInformation(PointLocalReconstr
 	plri.setPlrlNumberOfModesMinus1(bitstream.read(4));                                    //u(4)
 	TRACE_BITSTREAM("  NumberOfModesMinus1 = %u \n", plri.getPlrlNumberOfModesMinus1());
 	plri.allocate();
-	for (size_t i = 0; i <= plri.getPlrlNumberOfModesMinus1(); i++) {
+	for (size_t i = 0; i < plri.getPlrlNumberOfModesMinus1(); i++) {
 		plri.setPlrlInterpolateFlag(i, bitstream.read(1));                                 //u(1)
 		plri.setPlrlFillingFlag(i, bitstream.read(1));                                     //u(1)
 		plri.setPlrlMinimumDepth(i, bitstream.read(2));                                    //u(2)

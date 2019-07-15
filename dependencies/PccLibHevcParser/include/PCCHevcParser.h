@@ -2,7 +2,6 @@
 #define _PCC_HEVC_PARSER_H_
 
 #include "CommonDef.h"
-#include "TypeDef.h"
 #include "TComSlice.h"
 #include "TDecCAVLC.h"
 

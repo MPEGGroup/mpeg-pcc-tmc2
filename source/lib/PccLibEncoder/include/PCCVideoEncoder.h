@@ -63,9 +63,12 @@ class PCCVideoEncoder {
                  const bool         use444CodecIo                     = false,
                  const bool         patchColorSubsampling             = false,
                  const bool         use3dmv                           = false,
+                 const bool         forceInternalBitDepth             = false,
                  const std::string& colorSpaceConversionConfig        = "",
                  const std::string& inverseColorSpaceConversionConfig = "",
-                 const std::string& colorSpaceConversionPath          = "" ) {
+                 const std::string& colorSpaceConversionPath          = "",
+                 const size_t       downsamplingFilter                = 4,
+                 const size_t       upsamplingFilter                  = 0 ) {
     auto& frames = video.getFrames();
     if ( frames.empty() ) { return false; }
     const size_t width      = frames[0].getWidth();
@@ -90,12 +93,14 @@ class PCCVideoEncoder {
     const std::string recRgbFileName =
         addVideoFormat( fileName + "_rec" + ".rgb", width, height, !use444CodecIo, nbyte == 2 ? "10" : "8" );
 
-    const bool yuvVideo = colorSpaceConversionConfig.empty() || colorSpaceConversionPath.empty() || use444CodecIo;
-
+    const bool yuvVideo = colorSpaceConversionConfig.empty() || use444CodecIo;
+    printf("Encoder convert : yuvVideo = %d colorSpaceConversionConfig = %s \n",yuvVideo,colorSpaceConversionConfig.c_str());
+    printf("Encoder convert : colorSpaceConversionPath = %s \n",colorSpaceConversionPath.c_str());
     if ( yuvVideo ) {
       if ( use444CodecIo ) {
         if ( !video.write( srcYuvFileName, nbyte ) ) { return false; }
       } else {
+        printf("Encoder convert : write420 without conversion \n" );
         if ( !video.write420( srcYuvFileName, nbyte ) ) { return false; }
       }
     } else {
@@ -292,21 +297,29 @@ class PCCVideoEncoder {
             // perform downsampling
             const std::string rgbFileNameTmp = addVideoFormat( fileName + "_tmp.rgb", patch_width, patch_height );
             const std::string yuvFileNameTmp = addVideoFormat( fileName + "_tmp.yuv", patch_width, patch_height, true );
-            if ( !tmpImage.write( rgbFileNameTmp, nbyte ) ) { return false; }
-            std::stringstream cmd;
-            cmd << colorSpaceConversionPath << " -f " << colorSpaceConversionConfig << " -p SourceFile=\""
-                << rgbFileNameTmp << "\" -p OutputFile=\"" << yuvFileNameTmp << "\" -p SourceWidth=" << patch_width
-                << " -p SourceHeight=" << patch_height << " -p NumberOfFrames=" << video.getFrameCount();
 
-            std::cout << cmd.str() << '\n';
-            if ( pcc::system( cmd.str().c_str() ) ) {
-              std::cout << "Error: can't run system command!" << std::endl;
-              return false;
+            if ( !tmpImage.write( rgbFileNameTmp, nbyte ) ) { return false; }
+            if( colorSpaceConversionPath.empty() ){               
+              tmpImage.read420( yuvFileNameTmp, width, height, nbyte, true, upsamplingFilter );              
+            }else{
+              std::stringstream cmd;
+              cmd << colorSpaceConversionPath << " -f " << colorSpaceConversionConfig << " -p SourceFile=\""
+                  << rgbFileNameTmp << "\" -p OutputFile=\"" << yuvFileNameTmp << "\" -p SourceWidth=" << patch_width
+                  << " -p SourceHeight=" << patch_height << " -p NumberOfFrames=" << video.getFrameCount();
+
+              std::cout << cmd.str() << '\n';
+              if ( pcc::system( cmd.str().c_str() ) ) {
+                std::cout << "Error: can't run system command!" << std::endl;
+                return false;
+              }
+              tmpImage.read420( yuvFileNameTmp, patch_width, patch_height, nbyte );
             }
-            tmpImage.read420( yuvFileNameTmp, patch_width, patch_height, nbyte );
+
             // removing intermediate files
-            remove( rgbFileNameTmp.c_str() );
-            remove( yuvFileNameTmp.c_str() );
+            if ( !keepIntermediateFiles ) {
+              removeFile( rgbFileNameTmp );
+              removeFile( yuvFileNameTmp );
+            }
             // substitute the pixels in the output image for compression
             for ( size_t i = 0; i < patch_height; i++ ) {
               for ( size_t j = 0; j < patch_width; j++ ) {
@@ -325,16 +338,23 @@ class PCCVideoEncoder {
         // saving the video
         video420.write420( srcYuvFileName, nbyte );
       } else {
-        if ( !video.write( srcRgbFileName, nbyte ) ) { return false; }
-        std::stringstream cmd;
-        cmd << colorSpaceConversionPath << " -f " << colorSpaceConversionConfig << " -p SourceFile=\"" << srcRgbFileName
-            << "\""
-            << " -p OutputFile=\"" << srcYuvFileName << "\""
-            << " -p SourceWidth=" << width << " -p SourceHeight=" << height << " -p NumberOfFrames=" << frameCount;
-        std::cout << cmd.str() << '\n';
-        if ( pcc::system( cmd.str().c_str() ) ) {
-          std::cout << "Error: can't run system command!" << std::endl;
-          return false;
+        if ( colorSpaceConversionPath.empty() ) {
+          printf("Encoder convert : write420 with conversion \n" );
+          // if ( keepIntermediateFiles ) { video.write( srcRgbFileName, nbyte ); }
+          if ( !video.write420( srcYuvFileName, nbyte, true, downsamplingFilter ) ) { return false; }
+        } else {
+          printf("Encoder convert : write + hdrtools conversion \n" );
+          if ( !video.write( srcRgbFileName, nbyte ) ) { return false; }
+          std::stringstream cmd;
+          cmd << colorSpaceConversionPath << " -f " << colorSpaceConversionConfig << " -p SourceFile=\""
+              << srcRgbFileName << "\""
+              << " -p OutputFile=\"" << srcYuvFileName << "\""
+              << " -p SourceWidth=" << width << " -p SourceHeight=" << height << " -p NumberOfFrames=" << frameCount;
+          std::cout << cmd.str() << '\n';
+          if ( pcc::system( cmd.str().c_str() ) ) {
+            std::cout << "Error: can't run system command!" << std::endl;
+            return false;
+          }
         }
       }
     }
@@ -342,7 +362,8 @@ class PCCVideoEncoder {
     std::stringstream cmd;
     if ( use444CodecIo ) {
       cmd << encoderPath << " -c " << encoderConfig << " -i " << srcYuvFileName << " --InputBitDepth=" << depth
-          << " --InternalBitDepth=" << depth << " --InputChromaFormat=" << format << " --FrameRate=30 "
+          << " --InternalBitDepth=" << depth << " --InternalBitDepthC=" << depth << " --InputChromaFormat=" << format
+          << " --FrameRate=30 "
           << " --FrameSkip=0 "
           << " --SourceWidth=" << width << " --SourceHeight=" << height << " --ConformanceWindowMode=1 "
           << " --FramesToBeEncoded=" << frameCount << " --BitstreamFile=" << binFileName
@@ -358,12 +379,14 @@ class PCCVideoEncoder {
           << " --SourceWidth=" << width << " --SourceHeight=" << height << " --ConformanceWindowMode=1 "
           << " --FramesToBeEncoded=" << frameCount << " --BitstreamFile=" << binFileName
           << " --ReconFile=" << recYuvFileName << " --QP=" << qp;      
-      // cmd << " --InternalBitDepth=8"; 
+      if( forceInternalBitDepth ) {
+        cmd << " --InternalBitDepth=" << depth << " --InternalBitDepthC=" << depth;  
+      }
       // If depth==10 ensure InternalBitDepth == InputBitDepth.
       // Otherwise for lossy cases rely on video encoder config files to set InternalBitDepth ( for Main10 video
       // encoders)
       if ( depth == 10 ) {
-        cmd << " --InternalBitDepth=" << depth;
+        cmd << " --InternalBitDepth=" << depth << " --InternalBitDepthC=" << depth;
         cmd << " --OutputBitDepth=" << depth;  // to support lossy missed points patch in the same video frame
       }
       if ( use3dmv ) {
@@ -393,17 +416,22 @@ class PCCVideoEncoder {
         video.read420( recYuvFileName, width, height, frameCount, nbyte );
       }
     } else {
-      std::stringstream cmd;
-      cmd << colorSpaceConversionPath << " -f " << inverseColorSpaceConversionConfig << " -p SourceFile=\""
-          << recYuvFileName << "\""
-          << " -p OutputFile=\"" << recRgbFileName << "\""
-          << " -p SourceWidth=" << width << " -p SourceHeight=" << height << " -p NumberOfFrames=" << frameCount;
-      std::cout << cmd.str() << '\n';
-      if ( int ret = pcc::system( cmd.str().c_str() ) ) {
-        std::cout << "Error: can't run system command!" << std::endl;
-        return ret;
+      if ( colorSpaceConversionPath.empty() ) {
+        video.read420( recYuvFileName, width, height, frameCount, nbyte, true, upsamplingFilter );
+        if ( !keepIntermediateFiles ) { video.write( recRgbFileName, nbyte ); }
+      } else {
+        std::stringstream cmd;
+        cmd << colorSpaceConversionPath << " -f " << inverseColorSpaceConversionConfig << " -p SourceFile=\""
+            << recYuvFileName << "\""
+            << " -p OutputFile=\"" << recRgbFileName << "\""
+            << " -p SourceWidth=" << width << " -p SourceHeight=" << height << " -p NumberOfFrames=" << frameCount;
+        std::cout << cmd.str() << '\n';
+        if ( int ret = pcc::system( cmd.str().c_str() ) ) {
+          std::cout << "Error: can't run system command!" << std::endl;
+          return ret;
+        }
+        video.read( recRgbFileName, width, height, frameCount, nbyte );
       }
-      video.read( recRgbFileName, width, height, frameCount, nbyte );
     }
     if ( !keepIntermediateFiles ) {
       removeFile( binFileName );

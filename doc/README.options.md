@@ -55,8 +55,8 @@ The next tables shows the parameters of the encoder, decoder and metrics program
 --iterationCountRefineSegmentation=100        & Number of iterations performed during      \\ 
                                               & segmentation refinement                    \\ \hline
 --occupancyResolution=16                      & Resolution T of the occupancy map          \\ \hline
---minPointCountPerCCPatchSegmentation=16      &  Minimum number of points for a            \\ 
-                                              & connected component to be retained as      \\ 
+--minPointCountPerCCPatch                     &  Minimum number of points for a            \\ 
+     \ \ \ \ \ \ Segmentation=16              & connected component to be retained as      \\ 
                                               & a patch                                    \\ \hline
 --maxNNCountPatchSegmentation=16              & Number of nearest neighbors used           \\ 
                                               & during connected components                \\ \hline
@@ -135,17 +135,49 @@ The next tables shows the parameters of the encoder, decoder and metrics program
                                               & patch (all frames)                         \\ \hline
 --oneLayerMode=0                              & Use one layer mode                         \\ \hline
 --singleLayerPixelInterleaving=0              & Use single layer pixel interleaving        \\ \hline
+--removeDuplicatePoints=1                     & Remove duplicate points                    \\ \hline
 --sixDirectionMode=1                          & Use Six Direction Projection mode          \\ \hline
---surfaceSeparation=0                         & surface separation                         \\ \hline
---packingStrategy=1                           & Patches packing strategy(0: anchor         \\ 
-                                              & packing, 1/2/3(default): flexible          \\ 
-                                              & packing with 2, 4, or 8 orientations)      \\ \hline
+--surfaceSeparation=0                         & surface separation                         \\ \hline    
+--packingStrategy=1                           & Patches packing strategy                   \\ 
+                                              & (0: anchor packing, 1(default): flexible   \\ 
+                                              & packing, 2: tetris packing)                \\ \hline
+--useEightOrientations=0                      & Allow either 2 orientations (0(default):   \\ 
+                                              & NULL AND SWAP), or 8 orientation (1)       \\ \hline
 --safeGuardDistance=0                         & Number of empty blocks that must exist     \\ 
                                               & between the patches (default=1)            \\ \hline
 --textureBGFill=1                             & Selects the background filling operation   \\ 
-                                              & for texture only (0: anchor's dilation,    \\ 
-                                              & 1(default): push-pull algorithm)           \\ \hline\hline
-                                              
+                                              & for texture only (0: patch-edge extension, \\ 
+                                              & 1(default): smoothed push-pull algorithm), \\ 
+                                              & 2: harmonic background filling             \\ \hline
+--lossyMissedPointsPatch=0                    & Lossy missed points patch(0: no lossy      \\ 
+                                              & missed points patch, 1: enable lossy       \\ 
+                                              & missed points  patch (default=0)           \\ \hline
+--minNormSumOfInvDist4MP                      & Minimum normalized sum of inverse distance \\ 
+     \ \ \ \ \ \ Selection=0.35               & for missed points selection: double value  \\ 
+                                              & between 0.0 and 1.0 (default=0.35)         \\ \hline
+--lossyMppGeoQP=4                             & QP value for geometry in lossy missed      \\ 
+                                              & points patch (default=4)                   \\ \hline
+--globalPatchAllocation=0                     & Global temporally consistent patch         \\ 
+                                              & allocation.                                \\ 
+                                              & (0: anchor's packing method(default),      \\ 
+                                              & 1: gpa algorithm)                          \\ \hline
+--apply3dMotionCompensation=1                 & Use auxilliary information for 3d motion   \\ 
+                                              & compensation.(0: conventional video coding,\\ 
+                                              & 1: 3D motion compensated)                  \\ \hline
+--geometry3dCoordinatesBitdepth=10            & Bit depth of geomtery 3D coordinates       \\ \hline
+--geometryNominal2dBitdepth=8                 & Bit depth of geometry 2D                   \\ \hline
+--nbPlrmMode=0                                & Number of PLR mode                         \\ \hline
+--patchSize=0                                 & Size of Patch for PLR                      \\ \hline
+--enhancedProjectionPlane=1                   & Use enhanced Projection Plane              \\ 
+                                              & (0: OFF, 1: ON)                            \\ \hline
+--minWeightEPP=0.6                            & Minimum value                              \\ \hline
+--additionalProjectionPlaneMode=0             & additiona Projection Plane Mode 0:none     \\ 
+                                              & 1:Y-Axis 2:X-Axis 3:Z-Axis 4:All-Axis      \\
+                                              & 5:apply to portion                         \\ \hline
+--partialAdditionalProjectionPlane=0          & The value determines the partial point     \\ 
+                                              & cloud. It's available with only            \\ 
+                                              & additionalProjectionPlaneMode(5)           \\ \hline\hline
+
 {\bf Metrics }                                &                                            \\ \hline\hline
 --computeChecksum=1                           & Compute checksum                           \\ \hline
 --computeMetrics=1                            & Compute metrics                            \\ \hline
