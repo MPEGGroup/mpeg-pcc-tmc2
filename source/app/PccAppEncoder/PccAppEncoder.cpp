@@ -542,10 +542,15 @@ bool parseParameters( int                   argc,
       encoderParams.projectionMode_,
       "projectionMode - 0:min; 1:max;  2:adaptive frame & patch; 3:adaptive patch (all frames)")
 
-    ("oneLayerMode",
-      encoderParams.oneLayerMode_,
-      encoderParams.oneLayerMode_,
-      "Use one layer mode")
+    ("pointLocalReconstruction",
+      encoderParams.pointLocalReconstruction_,
+      encoderParams.pointLocalReconstruction_,
+      "Use point local reconstruction")
+
+	  ("layerCountMinus1",
+      encoderParams.layerCountMinus1_,
+      encoderParams.layerCountMinus1_,
+      "Numbers of layers (rename to maps?)")
 
     ("singleLayerPixelInterleaving",
       encoderParams.singleLayerPixelInterleaving_,
@@ -620,8 +625,8 @@ bool parseParameters( int                   argc,
       "Bit depth of geometry 2D")
    
     ("nbPlrmMode",
-        encoderParams.nbPlrmMode_,
-        encoderParams.nbPlrmMode_,
+        encoderParams.plrlNumberOfModes_,
+        encoderParams.plrlNumberOfModes_,
         "Number of PLR mode")
 
     ("patchSize",

@@ -108,7 +108,7 @@ void PCCCodec::generatePointCloud( PCCGroupOfFrames&                  reconstruc
   if ( params.flagColorSmoothing_ ) {
     TRACE_CODEC( "  gridColorSmoothing_           = %d  \n", params.gridColorSmoothing_ );
     if ( params.gridColorSmoothing_ ) {
-      TRACE_CODEC( "  cgridSize_                  = %lu \n", params.cgridSize_ );
+      TRACE_CODEC( "  cgridSize_                      = %lu \n", params.cgridSize_ );
       TRACE_CODEC( "  thresholdColorSmoothing_        = %f  \n", params.thresholdColorSmoothing_ );
       TRACE_CODEC( "  thresholdColorDifference_       = %f  \n", params.thresholdColorDifference_ );
       TRACE_CODEC( "  thresholdColorVariation_        = %f  \n", params.thresholdColorVariation_ );
@@ -122,8 +122,9 @@ void PCCCodec::generatePointCloud( PCCGroupOfFrames&                  reconstruc
   }
   TRACE_CODEC( "  enhancedDeltaDepthCode_         = %d  \n", params.enhancedDeltaDepthCode_ );
   TRACE_CODEC( "  removeDuplicatePoints_          = %d  \n", params.removeDuplicatePoints_ );
-  TRACE_CODEC( "  oneLayerMode_                   = %d  \n", params.oneLayerMode_ );
-  TRACE_CODEC( "  singleLayerPixelInterleaving_   = %d  \n", params.singleLayerPixelInterleaving_ );
+  TRACE_CODEC( "  pointLocalReconstruction_                       = %d  \n", params.pointLocalReconstruction_ );
+  TRACE_CODEC( "  layerCountMinus1_               = %d  \n", params.layerCountMinus1_ );
+  TRACE_CODEC( "  singleLayerPixelInterleaving    = %d  \n", params.singleLayerPixelInterleaving_ );
   TRACE_CODEC( "  useAdditionalPointsPatch_       = %d  \n", params.useAdditionalPointsPatch_ );
 
   auto& frames          = context.getFrames();
@@ -196,8 +197,7 @@ bool PCCCodec::colorPointCloud( PCCGroupOfFrames&                  reconstructs,
     CS_color_doSmooth_.resize( w * w * w );
   }
   for ( size_t i = 0; i < frames.size(); i++ ) {
-    const size_t frameCount = video.getFrameCount() / frames.size();
-    colorPointCloud( reconstructs[i], frames[i], video, attributeCount, params, frameCount );
+    colorPointCloud( reconstructs[i], frames[i], video, attributeCount, params );
 
     if ( !params.losslessGeo_ && params.flagColorSmoothing_ ) {
       if ( params.gridColorSmoothing_ ) {  // Fast Color Smoothing
@@ -454,7 +454,7 @@ std::vector<PCCPoint3D> PCCCodec::generatePoints( const GeneratePointCloudParame
       createdPoints.push_back( fillPoint );
     }
   } else {
-    if ( params.oneLayerMode_ ) {
+    if ( params.pointLocalReconstruction_ ) {
       int deltaDepth = 0;
       if ( interpolate ) {
         deltaDepth =
@@ -479,33 +479,26 @@ std::vector<PCCPoint3D> PCCCodec::generatePoints( const GeneratePointCloudParame
           }
         }
       }
-    } else {  // else (oneLayerMode)
-      if ( !params.absoluteD1_ ) {
-        PCCPoint3D  point1( point0 );
-        const auto& frame1 = videoD1.getFrame( shift );
-        if ( patch.getProjectionMode() == 0 ) {
-          point1[patch.getNormalAxis()] += frame1.getValue( 0, x, y ) * lodScale;
-        } else {
-          point1[patch.getNormalAxis()] -= frame1.getValue( 0, x, y ) * lodScale;
-        }
-        createdPoints.push_back( point1 );
-      } else {
-        const auto& frame1 = video.getFrame( 1 + shift );
-        auto        point1 = patch.generatePoint( u, v, frame1.getValue( 0, x, y ), lodScale, useMppSepVid, lossyMpp,
-                                           params.absoluteD1_ );
-        createdPoints.push_back( point1 );
-        if ( ( filling == 1 ) ) {
-          size_t xmin = ( std::min )( point0[patch.getNormalAxis()], point1[patch.getNormalAxis()] );
-          size_t xmax = ( std::max )( point0[patch.getNormalAxis()], point1[patch.getNormalAxis()] );
-          for ( size_t value = xmin + 1; value < xmax; ++value ) {
-            PCCPoint3D pointFill( point0 );
-            pointFill[patch.getNormalAxis()] = double( value );
-            createdPoints.push_back( pointFill );
+    } else {  // else (pointLocalReconstruction)
+      if ( params.layerCountMinus1_ > 0 ) {
+        if ( !params.absoluteD1_ ) {
+          PCCPoint3D  point1( point0 );
+          const auto& frame1 = videoD1.getFrame( shift );
+          if ( patch.getProjectionMode() == 0 ) {
+            point1[patch.getNormalAxis()] += frame1.getValue( 0, x, y ) * lodScale;
+          } else {
+            point1[patch.getNormalAxis()] -= frame1.getValue( 0, x, y ) * lodScale;
           }
-        }
-      }  // else !abosluteD1
-    }    // fi (oneLayerMode)
-  }      // fi (!params.singleLayerPixelInterleaving_ )
+          createdPoints.push_back( point1 );
+        } else {
+          const auto& frame1 = video.getFrame( 1 + shift );
+          auto        point1 = patch.generatePoint( u, v, frame1.getValue( 0, x, y ), lodScale, useMppSepVid, lossyMpp,
+                                             params.absoluteD1_ );
+          createdPoints.push_back( point1 );
+        }  // else !absoluteD1
+      }    // if ( params.layerCountMinus1_ > 0 ) {
+    }      // fi (pointLocalReconstruction)
+  }        // fi (!params.singleLayerPixelInterleaving_ )
   return createdPoints;
 }
 
@@ -548,14 +541,16 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
   const size_t nPixelInBlockNum          = params.occupancyResolution_ * params.occupancyResolution_;
 
   size_t       shift;
-  const size_t layerCount = ( params.oneLayerMode_ && params.singleLayerPixelInterleaving_ ) ? 1 : 2;
+  const size_t layerCount = params.layerCountMinus1_ + 1;
+  TRACE_CODEC( " layerCount                       = %d \n", layerCount );
   if ( !params.absoluteD1_ ) {
     shift = frame.getIndex();
     if ( video.getFrameCount() < ( shift + 1 ) ) { return; }
   } else {
-    shift = frame.getIndex() * ( params.oneLayerMode_ ? 1 : 2 );
-    if ( video.getFrameCount() < ( shift + ( params.oneLayerMode_ ? 1 : 2 ) ) ) { return; }
+    shift = frame.getIndex() * layerCount;
+    if ( video.getFrameCount() < ( shift + layerCount ) ) { return; }
   }
+  TRACE_CODEC( " shift                            = %d \n", shift );
   const auto&           frame0      = video.getFrame( shift );
   const size_t          imageWidth  = video.getWidth();
   const size_t          imageHeight = video.getHeight();
@@ -704,6 +699,10 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
                   // lossless coding now
                 }       // if (eddCode == 0)
               } else {  // not params.enhancedDeltaDepthCode_
+                // TRACE_CODEC("generatePoints %4lu %4lu => %4lu %4lu => %4lu %4lu \n",u0, v0, u,v,x,y);
+                // TRACE_CODEC(" patch.getPointLocalReconstructionMode( u0, v0 ) = %lu \n",
+                // patch.getPointLocalReconstructionMode( u0, v0 ));
+
                 auto& mode = context.getPointLocalReconstructionMode( patch.getPointLocalReconstructionMode( u0, v0 ) );
                 auto  createdPoints =
                     generatePoints( params, frame, video, videoD1, shift, patchIndex, u, v, x, y, mode.interpolate_,
@@ -740,7 +739,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
                             x, y,
                             i == 0 ? ( ( size_t )( x + y ) % 2 )
                                    : i == 1 ? ( ( size_t )( x + y + 1 ) % 2 ) : IntermediateLayerIndex ) );
-                      } else if ( params.oneLayerMode_ ) {
+                      } else if ( params.pointLocalReconstruction_ ) {
                         pointToPixel.push_back( PCCVector3<size_t>(
                             x, y, i == 0 ? 0 : i == 1 ? IntermediateLayerIndex : IntermediateLayerIndex + 1 ) );
                       } else {
@@ -1573,12 +1572,12 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
                                 PCCFrameContext&                    frame,
                                 const PCCVideoTexture&              video,
                                 const uint8_t                       attributeCount,
-                                const GeneratePointCloudParameters& params,
-                                const size_t                        frameCount ) {
+                                const GeneratePointCloudParameters& params ) {
   TRACE_CODEC( " colorPointCloud start \n" );
-  size_t numberOfMpsAndEddColors = 0;
-  size_t numOfMPGeos             = 0;
-  size_t numberOfEddPoints       = 0;
+  const size_t frameCount              = params.layerCountMinus1_ + 1;
+  size_t       numberOfMpsAndEddColors = 0;
+  size_t       numOfMPGeos             = 0;
+  size_t       numberOfEddPoints       = 0;
   if ( attributeCount == 0 ) {
     for ( auto& color : reconstruct.getColors() ) {
       for ( size_t c = 0; c < 3; ++c ) { color[c] = static_cast<uint8_t>( 127 ); }
@@ -1614,11 +1613,11 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
     TRACE_CODEC( "lossyMissedPointsPatch       = %d \n", lossyMissedPointsPatch );
     if ( params.enhancedDeltaDepthCode_ ) {
       TRACE_CODEC( "numberOfMpsAndEddColors      = %lu \n", numberOfMpsAndEddColors );
-      TRACE_CODEC( "numberOfEddPoints             = %lu \n", numberOfEddPoints );
+      TRACE_CODEC( "numberOfEddPoints            = %lu \n", numberOfEddPoints );
     }
     TRACE_CODEC( "numOfMPGeos                  = %lu \n", numOfMPGeos );
     TRACE_CODEC( "pointCount                   = %lu \n", pointCount );
-    TRACE_CODEC( "oneLayerMode                 = %d \n", params.oneLayerMode_ );
+    TRACE_CODEC( "pointLocalReconstruction     = %d \n", params.pointLocalReconstruction_ );
     TRACE_CODEC( "singleLayerPixelInterleaving = %d \n", params.singleLayerPixelInterleaving_ );
     TRACE_CODEC( "enhancedDeltaDepthCode       = %d \n", params.enhancedDeltaDepthCode_ );
 
@@ -1637,7 +1636,7 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
       const size_t             x        = location[0];
       const size_t             y        = location[1];
       const size_t             f        = location[2];
-      if ( params.oneLayerMode_ && params.singleLayerPixelInterleaving_ ) {
+      if ( params.singleLayerPixelInterleaving_ ) {
         if ( ( f == 0 && ( x + y ) % 2 == 0 ) | ( f == 1 && ( x + y ) % 2 == 1 ) ) {
           const auto& frame = video.getFrame( shift );
           for ( size_t c = 0; c < 3; ++c ) { color[i][c] = frame.getValue( c, x, y ); }
@@ -1648,9 +1647,8 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
           targetIndex.push_back( i );
         }
       } else {
-        if ( ( f < frameCount ) || ( !params.oneLayerMode_ && f == IntermediateLayerIndex ) ) {
-          const auto& frame =
-              video.getFrame( shift + ( ( !params.oneLayerMode_ && f == IntermediateLayerIndex ) ? 1 : f ) );
+        if ( f < frameCount ) {
+          const auto& frame = video.getFrame( shift + f );
           for ( size_t c = 0; c < 3; ++c ) { color[i][c] = frame.getValue( c, x, y ); }
           int index = source.addPoint( reconstruct[i] );
           source.setColor( index, color[i] );
@@ -1668,13 +1666,12 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
       }
     }
     if ( ( losslessAtt || lossyMissedPointsPatch ) && useMissedPointsSeparateVideo ) {
-
-        auto& missedPointsPatch = frame.getMissedPointsPatch( 0 );
-        for ( size_t i = 0; i < numberOfMpsAndEddColors; ++i ) {
-          color[pointCount + i][0] = (uint8_t)missedPointsPatch.r_[i];
-          color[pointCount + i][1] = (uint8_t)missedPointsPatch.g_[i];
-          color[pointCount + i][2] = (uint8_t)missedPointsPatch.b_[i];
-        }
+      auto& missedPointsPatch = frame.getMissedPointsPatch( 0 );
+      for ( size_t i = 0; i < numberOfMpsAndEddColors; ++i ) {
+        color[pointCount + i][0] = (uint8_t)missedPointsPatch.r_[i];
+        color[pointCount + i][1] = (uint8_t)missedPointsPatch.g_[i];
+        color[pointCount + i][2] = (uint8_t)missedPointsPatch.b_[i];
+      }
     }
   }  // noAtt
   TRACE_CODEC( " colorPointCloud done \n" );

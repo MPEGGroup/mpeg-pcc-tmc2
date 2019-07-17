@@ -124,12 +124,13 @@ PCCEncoderParameters::PCCEncoderParameters() {
   prefilterLossyOM_                       = false;
   patchColorSubsampling_                  = false;
   deltaCoding_                            = true;
+  layerCountMinus1_                       = 1;
 
   // reconstruction
   removeDuplicatePoints_        = true;
-  oneLayerMode_                 = false;
-  nbPlrmMode_                   = 0;
-  patchSize_                    = 0;
+  pointLocalReconstruction_     = false;
+  plrlNumberOfModes_            = 6;
+  patchSize_                    = 9;
   singleLayerPixelInterleaving_ = false;
   surfaceSeparation_            = false;
 
@@ -203,6 +204,7 @@ void PCCEncoderParameters::print() {
   std::cout << "\t compressedStreamPath                     " << compressedStreamPath_ << std::endl;
   std::cout << "\t reconstructedDataPath                    " << reconstructedDataPath_ << std::endl;
   std::cout << "\t frameCount                               " << frameCount_ << std::endl;
+  std::cout << "\t layerCountMinus1                          " << layerCountMinus1_ << std::endl;
   std::cout << "\t startFrameNumber                         " << startFrameNumber_ << std::endl;
   std::cout << "\t groupOfFramesSize                        " << groupOfFramesSize_ << std::endl;
   std::cout << "\t colorTransform                           " << colorTransform_ << std::endl;
@@ -285,7 +287,7 @@ void PCCEncoderParameters::print() {
     }
   }
   std::cout << "\t color smoothing" << std::endl;
-  std::cout << "\t   flagColorSmoothing                     " << flagColorSmoothing_ << std::endl;
+  std::cout << "\t   flagColorSmoothing                       " << flagColorSmoothing_ << std::endl;
   if ( flagColorSmoothing_ ) {
     std::cout << "\t   gridColorSmoothing                       " << gridColorSmoothing_ << std::endl;
     if ( gridColorSmoothing_ ) {
@@ -313,8 +315,8 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   patchColorSubsampling                  " << patchColorSubsampling_ << std::endl;
   std::cout << "\t Reconstruction " << std::endl;
   std::cout << "\t   removeDuplicatePoints                  " << removeDuplicatePoints_ << std::endl;
-  std::cout << "\t   oneLayerMode                           " << oneLayerMode_ << std::endl;
-  std::cout << "\t     nbPlrmMode                           " << nbPlrmMode_ << std::endl;
+  std::cout << "\t   pointLocalReconstruction               " << pointLocalReconstruction_ << std::endl;
+  std::cout << "\t     plrlNumberOfModes                    " << plrlNumberOfModes_ << std::endl;
   std::cout << "\t     patchSize                            " << patchSize_ << std::endl;
   std::cout << "\t   singleLayerPixelInterleaving           " << singleLayerPixelInterleaving_ << std::endl;
   std::cout << "\t surface Separation                       " << surfaceSeparation_ << std::endl;
@@ -447,22 +449,32 @@ bool PCCEncoderParameters::check() {
     }
   }
 
-  if ( losslessGeo_ && oneLayerMode_ ) {
-    oneLayerMode_ = false;
-    std::cerr << "WARNING: oneLayerMode_ is only for lossy coding mode for now. Force "
-                 "oneLayerMode=FALSE.\n";
+  if ( losslessGeo_ ) {
+    if ( pointLocalReconstruction_ ) {
+      pointLocalReconstruction_ = false;
+      std::cerr << "WARNING: pointLocalReconstruction_ is only for lossy coding mode for now. Force "
+                   "pointLocalReconstruction=FALSE.\n";
+    }
+    if ( singleLayerPixelInterleaving_ ) {
+      singleLayerPixelInterleaving_ = false;
+      std::cerr << "WARNING: singleLayerPixelInterleaving is only for lossy coding mode for now. "
+                   "Force singleLayerPixelInterleaving=FALSE.\n";
+    }
   }
 
-  if ( losslessGeo_ && singleLayerPixelInterleaving_ ) {
-    singleLayerPixelInterleaving_ = false;
-    std::cerr << "WARNING: singleLayerPixelInterleaving is only for lossy coding mode for now. "
-                 "Force singleLayerPixelInterleaving=FALSE.\n";
+  if ( singleLayerPixelInterleaving_ && pointLocalReconstruction_ ) {
+    ret = false;
+    std::cerr << "Pixel Interleaving and Point local reconstruction cna't be use in the same time.\n";
   }
 
-  if ( singleLayerPixelInterleaving_ ) {
-    if ( !oneLayerMode_ ) {
-      oneLayerMode_ = true;
-      std::cerr << "Pixel Interleaving is built on single layer coding. Force oneLayerMode=TRUE.\n";
+  if ( layerCountMinus1_ != 0 ) {
+    if ( singleLayerPixelInterleaving_ ) {
+      ret = false;
+      std::cerr << "Pixel Interleaving is built on one layer coding. Force layerCountMinus1_ = 0.\n";
+    }
+    if ( pointLocalReconstruction_ ) {
+      ret = false;
+      std::cerr << "Point local reconstruction is built on one layer coding. Force layerCountMinus1_ = 0.\n";
     }
   }
 
@@ -514,15 +526,20 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
 
   context.setOccupancyPackingBlockSize( occupancyResolution_ );
 
-  sps.setLayerCountMinus1( 1 );
+  sps.setLayerCountMinus1( layerCountMinus1_ );
   sps.allocate();
   sps.setPcmSeparateVideoPresentFlag( useMissedPointsSeparateVideo_ );
   sps.setEnhancedOccupancyMapForDepthFlag( enhancedDeltaDepthCode_ );
   sps.setPixelDeinterleavingFlag( singleLayerPixelInterleaving_ );
-  sps.setMultipleLayerStreamsPresentFlag( !oneLayerMode_ );
+  sps.setMultipleLayerStreamsPresentFlag( layerCountMinus1_ != 0 );
   sps.setRemoveDuplicatePointEnabledFlag( removeDuplicatePoints_ );
-  sps.setLayerAbsoluteCodingEnabledFlag( 0, 0 );
-  sps.setLayerAbsoluteCodingEnabledFlag( 1, absoluteD1_ );
+  for ( size_t i = 0; i < layerCountMinus1_ + 1; i++ ) {
+    if ( i == 0 ) {
+      sps.setLayerAbsoluteCodingEnabledFlag( i, 1 );
+    } else {
+      sps.setLayerAbsoluteCodingEnabledFlag( i, absoluteD1_ );
+    }
+  }
   sps.setPcmPatchEnabledFlag( useAdditionalPointsPatch_ );
   sps.setPatchInterPredictionEnabledFlag( deltaCoding_ );
   sps.setSurfaceThickness( surfaceThickness_ );
@@ -581,7 +598,10 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   context.setMPGeoHeight( 0 );
   context.setMPAttHeight( 0 );
   context.setGeometry3dCoordinatesBitdepth( geometry3dCoordinatesBitdepth_ );
-  size_t numPlrm = ( std::max )( (size_t)1, ( std::min )( nbPlrmMode_, g_pointLocalReconstructionMode.size() ) );
+  size_t numPlrm =
+      pointLocalReconstruction_
+          ? ( std::max )( (size_t)1, ( std::min )( plrlNumberOfModes_, g_pointLocalReconstructionMode.size() ) )
+          : 1;
   for ( size_t i = 0; i < numPlrm; i++ ) {
     context.addPointLocalReconstructionMode( g_pointLocalReconstructionMode[i] );
   }

@@ -59,7 +59,7 @@ struct PCCPatchSegmenter3Parameters {
   size_t      projectionMode;
   bool        useEnhancedDeltaDepthCode;
   bool        absoluteD1;
-  bool        useOneLayermode;
+  bool        createSubPointCloud;
   bool        surfaceSeparation;
   PCCVector3D weightNormal;
   size_t      additionalProjectionPlaneMode;

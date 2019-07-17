@@ -67,7 +67,7 @@ void PCCBitstreamDecoder::vpccVideoDataUnit( PCCContext&   context,
   } else if ( vpccUnitType == VPCC_GVD ) {
     TRACE_BITSTREAM( "Geometry \n" );
     auto& sps = context.getSps();
-    if ( !sps.getLayerAbsoluteCodingEnabledFlag( 1 ) ) {
+    if ( sps.getLayerCountMinus1() > 0 && !sps.getLayerAbsoluteCodingEnabledFlag( 1 ) ) {
       bitstream.read( context.createVideoBitstream( VIDEO_GEOMETRY_D0 ) );
       bitstream.read( context.createVideoBitstream( VIDEO_GEOMETRY_D1 ) );
     } else {
@@ -187,6 +187,8 @@ void PCCBitstreamDecoder::sequenceParameterSet( SequenceParameterSet& sps,
     sps.setMultipleLayerStreamsPresentFlag( bitstream.read( 1 ) );  // u(1)
   }
   sps.allocate();
+
+  sps.setLayerAbsoluteCodingEnabledFlag( 0, 1 );
   for ( size_t i = 0; i < sps.getLayerCountMinus1(); i++ ) {
     sps.setLayerAbsoluteCodingEnabledFlag( i + 1, bitstream.read( 1 ) );  // u(1)
     if ( ( sps.getLayerAbsoluteCodingEnabledFlag( i + 1 ) == 0 ) ) {
@@ -197,10 +199,12 @@ void PCCBitstreamDecoder::sequenceParameterSet( SequenceParameterSet& sps,
       }
     }
   }
-
+#ifdef BITSTREAM_TRACE
   TRACE_BITSTREAM( " LayerCountMinus1  = %lu \n", sps.getLayerCountMinus1() );
-  TRACE_BITSTREAM( " AbsoluteCoding L0 = %lu \n", sps.getLayerAbsoluteCodingEnabledFlag( 0 ) );
-  TRACE_BITSTREAM( " AbsoluteCoding L1 = %lu \n", sps.getLayerAbsoluteCodingEnabledFlag( 1 ) );
+  for ( size_t i = 0; i < sps.getLayerCountMinus1() + 1; i++ ) {
+    TRACE_BITSTREAM( " AbsoluteCoding L%lu = %lu \n", i, sps.getLayerAbsoluteCodingEnabledFlag( i ) );
+  }
+#endif
 
   sps.setPcmPatchEnabledFlag( bitstream.read( 1 ) );  // u(1)
   if ( sps.getPcmPatchEnabledFlag() ) {
@@ -307,23 +311,23 @@ void PCCBitstreamDecoder::attributeInformation( AttributeInformation& ai,
 }
 
 // 7.3.4.6 Point local reconstruction information syntax
-void PCCBitstreamDecoder::pointLocalReconstructionInformation(PointLocalReconstructionInformation& plri,
-	PCCContext&                          context,
-	PCCBitstream&                        bitstream) {
-	TRACE_BITSTREAM("%s \n", __func__);
-	plri.setPlrlNumberOfModesMinus1(bitstream.read(4));                                    //u(4)
-	TRACE_BITSTREAM("  NumberOfModesMinus1 = %u \n", plri.getPlrlNumberOfModesMinus1());
-	plri.allocate();
-	for (size_t i = 0; i < plri.getPlrlNumberOfModesMinus1(); i++) {
-		plri.setPlrlInterpolateFlag(i, bitstream.read(1));                                 //u(1)
-		plri.setPlrlFillingFlag(i, bitstream.read(1));                                     //u(1)
-		plri.setPlrlMinimumDepth(i, bitstream.read(2));                                    //u(2)
-		plri.setPlrlNeighbourMinus1(i, bitstream.read(2));                                 //u(2)
-		TRACE_BITSTREAM("  Mode[%lu] = I = %d F = %d D = %u N = %u \n", i, plri.getPlrlInterpolateFlag(i),
-			plri.getPlrlFillingFlag(i), plri.getPlrlMinimumDepth(i), plri.getPlrlNeighbourMinus1(i));
-	}
-	plri.setPlrBlockThresholdPerPatchMinus1(bitstream.readUvlc());                         //ue(v)
-	TRACE_BITSTREAM("  BlockThresholdPerPatchMinus1 = %u \n", plri.getPlrBlockThresholdPerPatchMinus1());
+void PCCBitstreamDecoder::pointLocalReconstructionInformation( PointLocalReconstructionInformation& plri,
+                                                               PCCContext&                          context,
+                                                               PCCBitstream&                        bitstream ) {
+  TRACE_BITSTREAM( "%s \n", __func__ );
+  plri.setPlrlNumberOfModesMinus1( bitstream.read( 4 ) );  // u(4)
+  TRACE_BITSTREAM( "  NumberOfModesMinus1 = %u \n", plri.getPlrlNumberOfModesMinus1() );
+  plri.allocate();
+  for ( size_t i = 0; i < plri.getPlrlNumberOfModesMinus1(); i++ ) {
+    plri.setPlrlInterpolateFlag( i, bitstream.read( 1 ) );  // u(1)
+    plri.setPlrlFillingFlag( i, bitstream.read( 1 ) );      // u(1)
+    plri.setPlrlMinimumDepth( i, bitstream.read( 2 ) );     // u(2)
+    plri.setPlrlNeighbourMinus1( i, bitstream.read( 2 ) );  // u(2)
+    TRACE_BITSTREAM( "  Mode[%lu] = I = %d F = %d D = %u N = %u \n", i, plri.getPlrlInterpolateFlag( i ),
+                     plri.getPlrlFillingFlag( i ), plri.getPlrlMinimumDepth( i ), plri.getPlrlNeighbourMinus1( i ) );
+  }
+  plri.setPlrBlockThresholdPerPatchMinus1( bitstream.readUvlc() );  // ue(v)
+  TRACE_BITSTREAM( "  BlockThresholdPerPatchMinus1 = %u \n", plri.getPlrBlockThresholdPerPatchMinus1() );
 }
 
 // 7.3.5.1 General patch data group unit syntax
@@ -445,7 +449,8 @@ void PCCBitstreamDecoder::geometryFrameParams( GeometryFrameParams& gfp, PCCBits
   }
   if ( gfp.getGeometryRotationParamsPresentFlag() ) {
     for ( size_t d = 0; d < 4; d++ ) {
-      gfp.setGeometryRotationQuaternion( d, bitstream.readS( 32 ) );  // i(32) -> TODO: This should be i(16) according to the CD
+      gfp.setGeometryRotationQuaternion(
+          d, bitstream.readS( 32 ) );  // i(32) -> TODO: This should be i(16) according to the CD
     }
   }
   if ( gfp.getGeometryPointSizeInfoPresentFlag() ) {
@@ -1024,8 +1029,9 @@ void PCCBitstreamDecoder::patchDataUnit( PatchDataUnit&        pdu,
   pdu.set3DShiftTangentAxis(
       bitstream.read( ptgh.getInterPredictPatch3dShiftTangentAxisBitCountMinus1() + 1 ) );  // u(v)
   pdu.set3DShiftBiTangentAxis(
-      bitstream.read( ptgh.getInterPredictPatch3dShiftBitangentAxisBitCountMinus1() + 1 ) );         // u(v)
-  pdu.set3DShiftMinNormalAxis( bitstream.read( ptgh.getInterPredictPatch3dShiftNormalAxisBitCountMinus1() + 1) ); // u(v)
+      bitstream.read( ptgh.getInterPredictPatch3dShiftBitangentAxisBitCountMinus1() + 1 ) );  // u(v)
+  pdu.set3DShiftMinNormalAxis(
+      bitstream.read( ptgh.getInterPredictPatch3dShiftNormalAxisBitCountMinus1() + 1 ) );  // u(v)
   if ( psps.getNormalAxisMaxDeltaValueEnableFlag() ) {
     pdu.set3DShiftDeltaMaxNormalAxis(
         bitstream.read( ptgh.getInterPredictPatch2dDeltaSizeDBitCountMinus1() + 1 ) );  // u(v)
@@ -1147,7 +1153,6 @@ void PCCBitstreamDecoder::pcmPatchDataUnit( PCMPatchDataUnit&     ppdu,
       ppdu.get3DShiftBiTangentAxis(), ppdu.get3DShiftBiTangentAxis(), ppdu.get3DShiftNormalAxis(), ppdu.getPcmPoints(),
       ppdu.getPatchInPcmVideoFlag() );
 }
-
 
 // 7.3.6.6 Point local reconstruction data syntax
 void PCCBitstreamDecoder::pointLocalReconstructionData( PointLocalReconstructionData& plrd,

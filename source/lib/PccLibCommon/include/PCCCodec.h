@@ -87,11 +87,12 @@ struct GeneratePointCloudParameters {
   bool        enhancedDeltaDepthCode_;
   size_t      thresholdLossyOM_;
   bool        removeDuplicatePoints_;
-  bool        oneLayerMode_;
+  size_t      layerCountMinus1_;
+  bool        pointLocalReconstruction_;
   bool        singleLayerPixelInterleaving_;
   std::string path_;
   bool        useAdditionalPointsPatch_;
-  size_t      nbPlrmMode_;
+  size_t      plrlNumberOfModes_;
   size_t      geometryBitDepth3D_;
   size_t      geometry3dCoordinatesBitdepth_;
 };
@@ -309,8 +310,7 @@ class PCCCodec {
                         PCCFrameContext&                    frame,
                         const PCCVideoTexture&              video,
                         const uint8_t                       attributeCount,
-                        const GeneratePointCloudParameters& params,
-                        const size_t                        frameCount );
+                        const GeneratePointCloudParameters& params );
 
   void smoothPointCloudColor( PCCPointSet3& reconstruct, const GeneratePointCloudParameters params );
 

@@ -1698,7 +1698,7 @@ class SequenceParameterSet {
   }
 
   void allocate() {
-    layerAbsoluteCodingEnabledFlag_.resize( layerCountMinus1_ + 1 );
+    layerAbsoluteCodingEnabledFlag_.resize( layerCountMinus1_ + 1, 1 );
     layerPredictorIndexDiff_.resize( layerCountMinus1_ + 1 );
   }
   uint32_t          getSequenceParameterSetId() { return sequenceParameterSetId_; }
@@ -1748,7 +1748,7 @@ class SequenceParameterSet {
   void setOccupancyInformation( OccupancyInformation value ) { occupancyInformation_ = value; }
   void setLayerAbsoluteCodingEnabledFlag( size_t index, bool value ) {
     if ( layerAbsoluteCodingEnabledFlag_.size() < index + 1 ) {
-      layerAbsoluteCodingEnabledFlag_.resize( index + 1, 0 );
+      layerAbsoluteCodingEnabledFlag_.resize( index + 1, 1 );
     }
     layerAbsoluteCodingEnabledFlag_[index] = value;
   }

@@ -113,7 +113,7 @@ void PCCPatchSegmenter3::compute( const PCCPointSet3&                 geometry,
                   params.occupancyResolution, params.maxAllowedDist2MissedPointsDetection,
                   params.maxAllowedDist2MissedPointsSelection, params.surfaceThickness, params.maxAllowedDepth,
                   params.minLevel, partition, patches, patchPartition, resampledPatchPartition, missedPoints, resampled,
-                  params.projectionMode, params.useEnhancedDeltaDepthCode, params.useOneLayermode, subPointCloud,
+                  params.projectionMode, params.useEnhancedDeltaDepthCode, params.createSubPointCloud, subPointCloud,
                   distanceSrcRec, params.absoluteD1, params.surfaceSeparation, params.additionalProjectionPlaneMode,
                   params.geometryBitDepth3D );
   std::cout << "[done]" << std::endl;

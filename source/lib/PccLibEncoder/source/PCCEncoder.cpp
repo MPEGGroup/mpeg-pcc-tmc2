@@ -73,7 +73,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources,
                         PCCBitstream&           bitstream,
                         PCCGroupOfFrames&       reconstructs ) {
   int    ret                                  = 0;
-  size_t oneLayerModeOriginal                 = params_.oneLayerMode_;
+  size_t pointLocalReconstructionOriginal     = params_.pointLocalReconstruction_;
+  size_t layerCountMinus1Original             = params_.layerCountMinus1_;
   size_t singleLayerPixelInterleavingOriginal = params_.singleLayerPixelInterleaving_;
   if ( params_.nbThread_ > 0 ) { tbb::task_scheduler_init init( (int)params_.nbThread_ ); }
 
@@ -99,7 +100,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources,
 #ifdef BITSTREAM_TRACE
   bitstream.closeTrace();
 #endif
-  params_.oneLayerMode_                 = oneLayerModeOriginal;
+  params_.pointLocalReconstruction_     = pointLocalReconstructionOriginal;
+  params_.layerCountMinus1_             = layerCountMinus1Original;
   params_.singleLayerPixelInterleaving_ = singleLayerPixelInterleavingOriginal;
   return ret;
 }
@@ -149,7 +151,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
 
   generateGeometryVideo( sources, context );
   if ( params_.globalPatchAllocation_ ) { performDataAdaptiveGPAMethod( context ); }
-  const size_t nbFramesTexture = params_.oneLayerMode_ ? 1 : 2;
+  const size_t nbFramesTexture = params_.layerCountMinus1_ + 1;
   resizeGeometryVideo( context );
   dilateGeometryVideo( context );
   sps.setFrameWidth( (uint16_t)frames[0].getWidth() );
@@ -180,7 +182,9 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                                         params_.testLevelOfDetail_, params_.occupancyResolution_ );
 
   // Group dilation in Geometry
-  if ( params_.groupDilation_ && params_.absoluteD1_ && !params_.oneLayerMode_ ) { geometryGroupDilation( context ); }
+  if ( params_.groupDilation_ && params_.absoluteD1_ && params_.layerCountMinus1_ > 0 ) {
+    geometryGroupDilation( context );
+  }
 
   if ( params_.use3dmc_ ) { create3DMotionEstimationFiles( context, path.str() ); }
 
@@ -224,7 +228,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     auto& videoGeometry  = context.getVideoGeometry();
     videoEncoder.compress(
         videoGeometry, path.str(), params_.geometryQP_, videoBitstream,
-        params_.oneLayerMode_ ? getEncoderConfig1L( params_.geometryConfig_ ) : params_.geometryConfig_,
+        params_.layerCountMinus1_ == 0 ? getEncoderConfig1L( params_.geometryConfig_ ) : params_.geometryConfig_,
         ( params_.use3dmc_ != 0 ) ? params_.videoEncoderAuxPath_ : params_.videoEncoderPath_, context, nbyteGeo,
         params_.keepIntermediateFiles_, params_.losslessGeo_ && params_.losslessGeo444_, false, params_.use3dmc_,
         params_.lossyMissedPointsPatch_ || params_.useMissedPointsSeparateVideo_ );
@@ -254,7 +258,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   generatePointCloudParameters.losslessGeo_                   = params_.losslessGeo_;
   generatePointCloudParameters.losslessGeo444_                = params_.losslessGeo444_;
   generatePointCloudParameters.nbThread_                      = params_.nbThread_;
-  generatePointCloudParameters.absoluteD1_                    = params_.absoluteD1_;
+  generatePointCloudParameters.absoluteD1_                    = params_.layerCountMinus1_ == 0 || params_.absoluteD1_;
   generatePointCloudParameters.surfaceThickness_              = params_.surfaceThickness_;
   generatePointCloudParameters.ignoreLod_                     = true;
   generatePointCloudParameters.thresholdColorSmoothing_       = params_.thresholdColorSmoothing_;
@@ -269,18 +273,17 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   generatePointCloudParameters.enhancedDeltaDepthCode_        = params_.losslessGeo_ && params_.enhancedDeltaDepthCode_;
   generatePointCloudParameters.thresholdLossyOM_              = params_.thresholdLossyOM_;
   generatePointCloudParameters.removeDuplicatePoints_         = params_.removeDuplicatePoints_;
-  generatePointCloudParameters.oneLayerMode_                  = params_.oneLayerMode_;
+  generatePointCloudParameters.pointLocalReconstruction_      = params_.pointLocalReconstruction_;
+  generatePointCloudParameters.layerCountMinus1_              = params_.layerCountMinus1_;
   generatePointCloudParameters.singleLayerPixelInterleaving_  = params_.singleLayerPixelInterleaving_;
   generatePointCloudParameters.geometry3dCoordinatesBitdepth_ = params_.geometry3dCoordinatesBitdepth_;
   generatePointCloudParameters.path_                          = path.str();
   generatePointCloudParameters.useAdditionalPointsPatch_      = params_.useAdditionalPointsPatch_;
-  generatePointCloudParameters.nbPlrmMode_                    = params_.nbPlrmMode_;
+  generatePointCloudParameters.plrlNumberOfModes_             = params_.plrlNumberOfModes_;
   generatePointCloudParameters.geometryBitDepth3D_            = gi.getGeometry3dCoordinatesBitdepthMinus1() + 1;
 
   context.allocOneLayerData();
-  if ( params_.absoluteD1_ && params_.oneLayerMode_ && !params_.singleLayerPixelInterleaving_ ) {
-    pointLocalReconstructionSearch( context, generatePointCloudParameters );
-  }
+  if ( params_.pointLocalReconstruction_ ) { pointLocalReconstructionSearch( context, generatePointCloudParameters ); }
   generatePointCloud( reconstructs, context, generatePointCloudParameters );
 
   if ( ai.getAttributeCount() > 0 ) {
@@ -307,7 +310,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
         std::cout << "Processing time (Padding " << f << "): " << totalPaddingTime / 1000.0 << " s\n";
 
         if ( ( params_.groupDilation_ == true ) && ( ( f & 0x1 ) == 1 ) ) {
-          if ( !params_.oneLayerMode_ ) {
+          if ( params_.layerCountMinus1_ > 0 ) {
             // Group dilation in texture
             auto&    frame        = frames[f / 2];
             auto&    occupancyMap = frame.getOccupancyMap();
@@ -339,7 +342,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     auto& videoBitstream = context.createVideoBitstream( VIDEO_TEXTURE );
     videoEncoder.compress(
         videoTexture, path.str(), params_.textureQP_, videoBitstream,
-        params_.oneLayerMode_ ? getEncoderConfig1L( params_.textureConfig_ ) : params_.textureConfig_,
+        params_.layerCountMinus1_ == 0 ? getEncoderConfig1L( params_.textureConfig_ ) : params_.textureConfig_,
         ( params_.use3dmc_ != 0 ) ? params_.videoEncoderAuxPath_ : params_.videoEncoderPath_, context, 1,
         params_.keepIntermediateFiles_, params_.losslessTexture_, params_.patchColorSubsampling_, params_.use3dmc_,
         params_.lossyMissedPointsPatch_ || params_.useMissedPointsSeparateVideo_, params_.colorSpaceConversionConfig_,
@@ -2206,7 +2209,7 @@ void PCCEncoder::generateMissedPointsPatch( const PCCPointSet3& source,
 
   PCCBox3D bboxMps;
   double   mpsBoxSize = double( 1024 );
-  if ( !params_.lossyMissedPointsPatch_ ){ mpsBoxSize = double( 1 << params_.geometryNominal2dBitdepth_ ); }
+  if ( !params_.lossyMissedPointsPatch_ ) { mpsBoxSize = double( 1 << params_.geometryNominal2dBitdepth_ ); }
 
   bboxMps.min_ = inputBbox.min_;
   bboxMps.max_ = inputBbox.min_;
@@ -2458,8 +2461,8 @@ void PCCEncoder::generateMPsGeometryImage( PCCContext& context, PCCFrameContext&
     }
 
     // dilate with the last z value
-    if ( !losslessGeo ) { 
-			// lossy missed points patch and 4:2:0 frame format
+    if ( !losslessGeo ) {
+      // lossy missed points patch and 4:2:0 frame format
       for ( size_t i = 3 * numberOfMps; i < width * pcmHeight; ++i ) {
         image.setValue( 0, i % pcmWidth, i / pcmWidth, static_cast<uint16_t>( lastZ ) );
       }
@@ -2533,11 +2536,11 @@ bool PCCEncoder::generateGeometryVideo( const PCCGroupOfFrames& sources, PCCCont
   segmenterParams.projectionMode                       = params_.projectionMode_;
   segmenterParams.useEnhancedDeltaDepthCode            = params_.losslessGeo_ ? params_.enhancedDeltaDepthCode_ : false;
   segmenterParams.absoluteD1                           = params_.absoluteD1_;
-  segmenterParams.useOneLayermode                      = params_.oneLayerMode_ || params_.singleLayerPixelInterleaving_;
-  segmenterParams.surfaceSeparation                    = params_.surfaceSeparation_;
-  segmenterParams.additionalProjectionPlaneMode        = params_.additionalProjectionPlaneMode_;
-  segmenterParams.partialAdditionalProjectionPlane     = params_.partialAdditionalProjectionPlane_;
-  segmenterParams.geometryBitDepth3D                   = gi.getGeometry3dCoordinatesBitdepthMinus1() + 1;
+  segmenterParams.createSubPointCloud = params_.pointLocalReconstruction_ || params_.singleLayerPixelInterleaving_;
+  segmenterParams.surfaceSeparation   = params_.surfaceSeparation_;
+  segmenterParams.additionalProjectionPlaneMode    = params_.additionalProjectionPlaneMode_;
+  segmenterParams.partialAdditionalProjectionPlane = params_.partialAdditionalProjectionPlane_;
+  segmenterParams.geometryBitDepth3D               = gi.getGeometry3dCoordinatesBitdepthMinus1() + 1;
   if ( params_.additionalProjectionPlaneMode_ == 0 ) {
     // tch => this code scraches the encoder with 11 bits contents (geometry)
     calculateWeightNormal( context, sources[0], frames[0] );
@@ -2560,11 +2563,16 @@ bool PCCEncoder::generateGeometryVideo( const PCCGroupOfFrames& sources, PCCCont
     }
     sumDistanceSrcRec += distanceSrcRec;
   }
-  if ( params_.oneLayerMode_ ) {
+  if ( params_.pointLocalReconstruction_ || params_.singleLayerPixelInterleaving_ ) {
     const float distanceSrcRec = sumDistanceSrcRec / (float)frames.size();
     if ( distanceSrcRec >= 250.f ) {
-      params_.oneLayerMode_ = false;
-      if ( params_.singleLayerPixelInterleaving_ ) { params_.singleLayerPixelInterleaving_ = false; }
+      params_.pointLocalReconstruction_     = false;
+      params_.layerCountMinus1_             = 1;
+      params_.singleLayerPixelInterleaving_ = false;
+      sps.setLayerCountMinus1( params_.layerCountMinus1_ );
+      sps.allocate();
+      sps.setLayerAbsoluteCodingEnabledFlag( 1, params_.absoluteD1_ );
+      sps.setPixelDeinterleavingFlag( params_.singleLayerPixelInterleaving_ );
     }
   }
   return res;
@@ -2621,8 +2629,8 @@ void PCCEncoder::pointLocalReconstructionSearch( PCCContext&                    
     shift = frame.getIndex();
     if ( video.getFrameCount() < ( shift + 1 ) ) { return; }
   } else {
-    shift = frame.getIndex() * ( params.oneLayerMode_ ? 1 : 2 );
-    if ( video.getFrameCount() < ( shift + ( params.oneLayerMode_ ? 1 : 2 ) ) ) { return; }
+    shift = frame.getIndex() * ( params.layerCountMinus1_ + 1 );
+    if ( video.getFrameCount() < ( shift + ( params.layerCountMinus1_ + 1 ) ) ) { return; }
   }
   const size_t patchCount           = patches.size();
   size_t       nbOfOptimizationMode = context.getPointLocalReconstructionModeNumber();
@@ -2779,7 +2787,7 @@ bool PCCEncoder::dilateGeometryVideo( PCCContext& context ) {
       }
       dilate( frame, videoGeometry.getFrame( shift ) );
     } else {
-      const size_t nbFrames = params_.oneLayerMode_ ? 1 : 2;
+      const size_t nbFrames = params_.layerCountMinus1_ + 1;
       videoGeometry.resize( shift + nbFrames );
       if ( params_.enhancedDeltaDepthCode_ ) {
         auto& frame1 = videoGeometry.getFrame( shift );
@@ -2795,7 +2803,7 @@ bool PCCEncoder::dilateGeometryVideo( PCCContext& context ) {
         // if (params_.improveEDD_)
         modifyOccupancyMap( frame, frame1, frame2 );
       } else {
-        if ( params_.oneLayerMode_ && params_.singleLayerPixelInterleaving_ ) {
+        if ( params_.singleLayerPixelInterleaving_ ) {
           auto& frame1 = videoGeometry.getFrame( shift );
           generateIntraImage( frame, 0, frame1 );
           dilate( frame, frame1 );
@@ -3468,8 +3476,8 @@ bool PCCEncoder::generateTextureVideo( const PCCGroupOfFrames&    sources,
     auto& frame = frames[i];
     // assert( frame.getWidth() == context.getWidth() && frame.getHeight() == context.getHeight() );
     frame.setLosslessTexture( sps.getLosslessTexture() );
-    size_t nbFrame = params_.oneLayerMode_ ? 1 : 2;
-    if ( params_.oneLayerMode_ && !params_.singleLayerPixelInterleaving_ ) {
+    size_t nbFrame = params_.layerCountMinus1_ + 1;
+    if ( params_.pointLocalReconstruction_ ) {
       // create sub reconstruct point cloud
       PCCPointSet3   subReconstruct;
       vector<size_t> subReconstructIndex;
@@ -3478,8 +3486,7 @@ bool PCCEncoder::generateTextureVideo( const PCCGroupOfFrames&    sources,
       size_t numPointSub = 0, numPoint = reconstructs[i].getPointCount();
       auto&  pointToPixel = frame.getPointToPixel();
       for ( size_t j = 0; j < numPoint; j++ ) {
-        if ( pointToPixel[j][2] < nbFrame ||
-             ( !params_.oneLayerMode_ && pointToPixel[j][2] == IntermediateLayerIndex ) ) {
+        if ( pointToPixel[j][2] < nbFrame ) {
           numPointSub++;
           subReconstruct.addPoint( reconstructs[i][j] );
           subReconstructIndex.push_back( j );
@@ -3544,11 +3551,8 @@ bool PCCEncoder::generateTextureVideo( const PCCPointSet3& reconstruct,
     image.set( 0 );
   }
 
-  std::vector<bool> mapD1;
-  if ( !params_.oneLayerMode_ ) { mapD1.resize( frame.getWidth() * frame.getHeight(), false ); }
-
   std::vector<bool> markT1;
-  if ( !params_.oneLayerMode_ && params_.removeDuplicatePoints_ ) {
+  if ( params_.layerCountMinus1_ > 0 && params_.removeDuplicatePoints_ ) {
     const size_t size = frame.getWidth() * frame.getHeight();
     markT1.resize( size );
     for ( size_t i = 0; i < size; i++ ) { markT1[i] = false; }
@@ -3560,7 +3564,7 @@ bool PCCEncoder::generateTextureVideo( const PCCPointSet3& reconstruct,
     const size_t             u        = location[0];
     const size_t             v        = location[1];
     const size_t             f        = location[2];
-    if ( params_.oneLayerMode_ && params_.singleLayerPixelInterleaving_ ) {
+    if ( params_.singleLayerPixelInterleaving_ ) {
       if ( ( f == 0 && ( ( u + v ) % 2 == 0 ) ) || ( f == 1 && ( ( u + v ) % 2 == 1 ) ) ) {
         auto& image = video.getFrame( shift );
         image.setValue( 0, u, v, color[0] );
@@ -3574,7 +3578,7 @@ bool PCCEncoder::generateTextureVideo( const PCCPointSet3& reconstruct,
         image.setValue( 1, u, v, color[1] );
         image.setValue( 2, u, v, color[2] );
       }
-      if ( !params_.oneLayerMode_ && params_.removeDuplicatePoints_ ) {
+      if ( params_.layerCountMinus1_ > 0 && params_.removeDuplicatePoints_ ) {
         if ( f == 0 ) {
           if ( !markT1[v * frame.getWidth() + u] ) {
             auto& image1 = video.getFrame( 1 + shift );
@@ -4599,7 +4603,7 @@ void PCCEncoder::packingWithRefForFirstFrameNoglobalPatch( PCCPatch&            
       PATCH_ORIENTATION_MIRROR, PATCH_ORIENTATION_MROT180};           // favoring horizontal orientations (that should be
                                                              // rotated)
   int32_t numOrientations = params_.useEightOrientations_ ? 8 : 2;
-  GPAPatchData& curGPAPatchData = patch.getCurGPAPatchData();  // GPA_HARMONIZATION
+  GPAPatchData&curGPAPatchData = patch.getCurGPAPatchData();  // GPA_HARMONIZATION
 
   assert( curGPAPatchData.sizeU0 <= occupancySizeU );
   assert( curGPAPatchData.sizeV0 <= occupancySizeV );
@@ -4805,7 +4809,7 @@ void PCCEncoder::setGeometryPatchParameterSet( PCCMetadata& metadata, GeometryPa
 void PCCEncoder::setPointLocalReconstruction( PCCContext& context, SequenceParameterSet& sps ) {
   sps.setPointLocalReconstructionEnabledFlag( 1 );
   auto& plr = sps.getPointLocalReconstructionInformation();
-  plr.setPlrlNumberOfModesMinus1( params_.nbPlrmMode_ - 1 );
+  plr.setPlrlNumberOfModesMinus1( params_.plrlNumberOfModes_ - 1 );
   plr.setPlrBlockThresholdPerPatchMinus1( params_.patchSize_ - 1 );
   plr.allocate();
   for ( size_t i = 0; i < plr.getPlrlNumberOfModesMinus1() + 1; i++ ) {
@@ -4881,7 +4885,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
   psps.addRefListStruct( refList );
   psps.setUseEightOrientationsFlag( params_.useEightOrientations_ );
   setPatchFrameGeometryParameterSet( context.getGOFLevelMetadata(), pdg.getPatchFrameGeometryParameterSet( 0 ) );
-  if ( params_.oneLayerMode_ ) { setPointLocalReconstruction( context, sps ); }
+  if ( params_.pointLocalReconstruction_ ) { setPointLocalReconstruction( context, sps ); }
   PCCFrameContext& refFrame = context.getFrame( 0 );
   for ( size_t i = 0; i < frameCount; i++ ) {
     PCCFrameContext& frame = context.getFrame( i );

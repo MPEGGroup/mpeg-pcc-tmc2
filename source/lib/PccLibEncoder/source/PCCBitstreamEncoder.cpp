@@ -69,7 +69,7 @@ void PCCBitstreamEncoder::vpccVideoDataUnit( PCCContext& context, PCCBitstream& 
     bitstream.write( context.getVideoBitstream( VIDEO_OCCUPANCY ) );
   } else if ( vpccUnitType == VPCC_GVD ) {
     TRACE_BITSTREAM( "Geometry \n" );
-    if ( !sps.getLayerAbsoluteCodingEnabledFlag( 1 ) ) {
+    if ( sps.getLayerCountMinus1() > 0 && !sps.getLayerAbsoluteCodingEnabledFlag( 1 ) ) {
       bitstream.write( context.getVideoBitstream( VIDEO_GEOMETRY_D0 ) );
       bitstream.write( context.getVideoBitstream( VIDEO_GEOMETRY_D1 ) );
     } else {
@@ -193,9 +193,12 @@ void PCCBitstreamEncoder::sequenceParameterSet( SequenceParameterSet& sps,
       }
     }
   }
+#ifdef BITSTREAM_TRACE
   TRACE_BITSTREAM( " LayerCountMinus1  = %lu \n", sps.getLayerCountMinus1() );
-  TRACE_BITSTREAM( " AbsoluteCoding L0 = %lu \n", sps.getLayerAbsoluteCodingEnabledFlag( 0 ) );
-  TRACE_BITSTREAM( " AbsoluteCoding L1 = %lu \n", sps.getLayerAbsoluteCodingEnabledFlag( 1 ) );
+  for ( size_t i = 0; i < sps.getLayerCountMinus1() + 1; i++ ) {
+    TRACE_BITSTREAM( " AbsoluteCoding L%lu = %lu \n", i, sps.getLayerAbsoluteCodingEnabledFlag( i ) );
+  }
+#endif
   bitstream.write( (uint32_t)sps.getPcmPatchEnabledFlag(), 1 );  // u(1)
   if ( sps.getPcmPatchEnabledFlag() ) {
     bitstream.write( (uint32_t)sps.getPcmSeparateVideoPresentFlag(), 1 );  // u(1)

@@ -100,8 +100,8 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
 #endif
   bool lossyMpp = !sps.getLosslessGeo() && sps.getPcmPatchEnabledFlag();
 
-  const size_t frameCountGeometry = sps.getPointLocalReconstructionEnabledFlag() ? 1 : 2;
-  const size_t frameCountTexture  = sps.getPointLocalReconstructionEnabledFlag() ? 1 : 2;
+  const size_t frameCountGeometry = sps.getLayerCountMinus1() + 1;
+  const size_t frameCountTexture  = sps.getLayerCountMinus1() + 1;
 
   auto& videoBitstreamOM = context.getVideoBitstream( VIDEO_OCCUPANCY );
   videoDecoder.decompress( context.getVideoOccupancyMap(), path.str(), context.size(), videoBitstreamOM,
@@ -110,7 +110,8 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   context.setOccupancyPrecision( sps.getFrameWidth() / context.getVideoOccupancyMap().getWidth() );
   generateOccupancyMap( context, context.getOccupancyPrecision(), oi.getLossyOccupancyMapCompressionThreshold(),
                         sps.getEnhancedOccupancyMapForDepthFlag() );
-  if ( !sps.getLayerAbsoluteCodingEnabledFlag( 1 ) ) {
+
+  if ( sps.getLayerCountMinus1() > 0 && !sps.getLayerAbsoluteCodingEnabledFlag( 1 ) ) {
     if ( lossyMpp ) {
       std::cout << "ERROR! Lossy-missed-points-patch code not implemented when absoluteD_ = 0 as "
                    "of now. Exiting ..."
@@ -173,9 +174,10 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   generatePointCloudParameters.losslessGeo_              = sps.getLosslessGeo() != 0;
   generatePointCloudParameters.losslessGeo444_           = sps.getLosslessGeo444() != 0;
   generatePointCloudParameters.nbThread_                 = params_.nbThread_;
-  generatePointCloudParameters.absoluteD1_               = sps.getLayerAbsoluteCodingEnabledFlag( 1 );
-  generatePointCloudParameters.surfaceThickness_         = context[0].getSurfaceThickness();
-  generatePointCloudParameters.ignoreLod_                = true;
+  generatePointCloudParameters.absoluteD1_ =
+      sps.getLayerCountMinus1() == 0 || sps.getLayerAbsoluteCodingEnabledFlag( 1 );
+  generatePointCloudParameters.surfaceThickness_ = context[0].getSurfaceThickness();
+  generatePointCloudParameters.ignoreLod_        = true;
   if ( ai.getAttributeParamsEnabledFlag() ) {
     generatePointCloudParameters.thresholdColorSmoothing_  = afp.getAttributeSmoothingThreshold( 0 );
     generatePointCloudParameters.gridColorSmoothing_       = afp.getAttributeSmoothingParamsPresentFlag( 0 );
@@ -196,7 +198,8 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   generatePointCloudParameters.flagColorSmoothing_            = afp.getAttributeSmoothingParamsPresentFlag( 0 );
   generatePointCloudParameters.thresholdLossyOM_              = (size_t)oi.getLossyOccupancyMapCompressionThreshold();
   generatePointCloudParameters.removeDuplicatePoints_         = sps.getRemoveDuplicatePointEnabledFlag();
-  generatePointCloudParameters.oneLayerMode_                  = sps.getPointLocalReconstructionEnabledFlag();
+  generatePointCloudParameters.pointLocalReconstruction_      = sps.getPointLocalReconstructionEnabledFlag();
+  generatePointCloudParameters.layerCountMinus1_              = sps.getLayerCountMinus1();
   generatePointCloudParameters.singleLayerPixelInterleaving_  = sps.getPixelDeinterleavingFlag();
   generatePointCloudParameters.path_                          = path.str();
   generatePointCloudParameters.useAdditionalPointsPatch_      = sps.getPcmPatchEnabledFlag();
@@ -490,7 +493,8 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
           pdu.get45DegreeProjectionPresentFlag() ? pdu.get45DegreeProjectionRotationAxis() : 0;
       TRACE_CODEC( "patch %lu / %lu: Intra \n", patchIndex, patches.size() );
       const size_t max3DCoordinate = 1 << ( gi.getGeometry3dCoordinatesBitdepthMinus1() + 1 );
-      if ( patch.getProjectionMode() == 0 || !sps.getLayerAbsoluteCodingEnabledFlag( 1 ) ) {
+      if ( patch.getProjectionMode() == 0 ||
+           ( sps.getLayerCountMinus1() > 0 && !sps.getLayerAbsoluteCodingEnabledFlag( 1 ) ) ) {
         patch.getD1() = (int32_t)pdu.get3DShiftMinNormalAxis() * minLevel;
       } else {
         if ( pfps.getProjection45DegreeEnableFlag() == 0 ) {
@@ -562,7 +566,8 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
       patch.getBitangentAxis()         = prePatch.getBitangentAxis();
       patch.getAxisOfAdditionalPlane() = prePatch.getAxisOfAdditionalPlane();
       const size_t max3DCoordinate     = 1 << ( gi.getGeometry3dCoordinatesBitdepthMinus1() + 1 );
-      if ( patch.getProjectionMode() == 0 || !sps.getLayerAbsoluteCodingEnabledFlag( 1 ) ) {
+      if ( patch.getProjectionMode() == 0 ||
+           ( sps.getLayerCountMinus1() > 0 && !sps.getLayerAbsoluteCodingEnabledFlag( 1 ) ) ) {
         patch.getD1() = ( dpdu.get3DDeltaShiftMinNormalAxis() + ( prePatch.getD1() / minLevel ) ) * minLevel;
       } else {
         if ( pfps.getProjection45DegreeEnableFlag() == 0 ) {
@@ -579,7 +584,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
       const int64_t delta_DD = dpdu.get3DShiftDeltaMaxNormalAxis();
       size_t        prevDD   = prePatch.getSizeD() / minLevel;
       if ( prevDD * minLevel != prePatch.getSizeD() ) { prevDD += 1; }
-	  patch.getSizeD() = (std::min)(size_t((delta_DD + prevDD) * minLevel), (size_t)255);
+      patch.getSizeD() = ( std::min )( size_t( ( delta_DD + prevDD ) * minLevel ), (size_t)255 );
       patch.getLod()   = prePatch.getLod();
       prevSizeU0       = patch.getSizeU0();
       prevSizeV0       = patch.getSizeV0();
