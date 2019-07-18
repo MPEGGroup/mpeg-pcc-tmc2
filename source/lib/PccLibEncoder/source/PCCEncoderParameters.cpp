@@ -119,6 +119,8 @@ PCCEncoderParameters::PCCEncoderParameters() {
   groupDilation_                          = true;
   textureDilationOffLossless_             = true;
   enhancedDeltaDepthCode_                 = losslessGeo_ ? true : false;
+  EOMFixBitCount_                         = 2;
+  EOMTexturePatch_                        = true;
   offsetLossyOM_                          = 0;
   thresholdLossyOM_                       = 0;
   prefilterLossyOM_                       = false;
@@ -267,6 +269,8 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   occupancyPrecision                     " << occupancyPrecision_ << std::endl;
   std::cout << "\t   occupancyMapVideoEncoderConfig         " << occupancyMapVideoEncoderConfig_ << std::endl;
   std::cout << "\t   occupancyMapQP                         " << occupancyMapQP_ << std::endl;
+  std::cout << "\t   EOMFixBitCount                         " << EOMFixBitCount_ << std::endl;
+  std::cout << "\t   EOMTexturePatch                        " << EOMTexturePatch_ << std::endl;
   std::cout << "\t   occupancyMapRefinement                 " << occupancyMapRefinement_ << std::endl;
   std::cout << "\t Lossy occupancy Map coding" << std::endl;
   std::cout << "\t   Lossy occupancy map offset             " << offsetLossyOM_ << std::endl;
@@ -404,12 +408,17 @@ bool PCCEncoderParameters::check() {
     std::cerr << "When absoultD1 is false, geometryConfig_ should be empty\n";
   }
 
+
   if ( !losslessGeo_ && enhancedDeltaDepthCode_ ) {
     enhancedDeltaDepthCode_ = false;
     std::cerr << "WARNING: enhancedDeltaDepthCode is only for lossless coding mode for now. Force "
                  "enhancedDeltaDepthCode=FALSE.\n";
   }
-
+  if ( !enhancedDeltaDepthCode_ ) {   
+    std::cerr << "WARNING: EOMTexturePatch is only for enhancedDeltaDepthCode coding mode for now. Force "
+                 "EOMTexturePatch=FALSE.\n";
+    EOMTexturePatch_ = false; 
+  }
   if ( enhancedDeltaDepthCode_ && surfaceThickness_ == 1 ) {
     std::cerr << "WARNING: EDD code doesn't bring any gain when surfaceThickness==1. Please "
                  "consider to increase the value of surfaceThickness.\n";
@@ -507,6 +516,10 @@ bool PCCEncoderParameters::check() {
     }
     if ( cgridSize_ % 2 == 1 ) { std::cerr << "WARNING: color gridSize should be an even number\n"; }
   }
+  if ( EOMFixBitCount_ < 1 ) {
+    ret = false;
+    std::cerr << "EOMFixBitCount shall be greater than 0. \n";
+  }
   return ret;
 }
 
@@ -530,6 +543,10 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   sps.allocate();
   sps.setPcmSeparateVideoPresentFlag( useMissedPointsSeparateVideo_ );
   sps.setEnhancedOccupancyMapForDepthFlag( enhancedDeltaDepthCode_ );
+  if( sps.getEnhancedOccupancyMapForDepthFlag() ){
+    sps.setEOMFixBitCount( EOMFixBitCount_ );
+    sps.setEOMTexturePatch( EOMTexturePatch_ );
+  }
   sps.setPixelDeinterleavingFlag( singleLayerPixelInterleaving_ );
   sps.setMultipleLayerStreamsPresentFlag( layerCountMinus1_ != 0 );
   sps.setRemoveDuplicatePointEnabledFlag( removeDuplicatePoints_ );

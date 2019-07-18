@@ -50,6 +50,8 @@ struct PCCPatchSegmenter3Parameters {
   size_t      minPointCountPerCCPatchSegmentation;
   size_t      maxNNCountPatchSegmentation;
   size_t      surfaceThickness;
+  size_t      EOMFixBitCount;
+  bool        EOMSingleLayerMode;
   size_t      minLevel;
   size_t      maxAllowedDepth;
   double      maxAllowedDist2MissedPointsDetection;
@@ -103,6 +105,8 @@ class PCCPatchSegmenter3 {
                        const size_t               occupancyResolution,
                        const double               maxAllowedDist2MissedPointsDetection,
                        const double               maxAllowedDist2MissedPointsSelection,
+                       const bool                 EOMSingleLayerMode,
+                       const size_t               EOMFixBitCount,
                        const size_t               surfaceThickness,
                        const size_t               maxAllowedDepth,
                        const size_t               minLevel,

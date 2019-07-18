@@ -260,6 +260,22 @@ bool parseParameters( int                   argc,
      encoderParams.occupancyMapQP_,
      "QP for compression of occupancy map video")
 
+    //EDD code
+    ("enhancedDeltaDepthCode",
+      encoderParams.enhancedDeltaDepthCode_,
+      encoderParams.enhancedDeltaDepthCode_,
+      "Use enhanced-delta-depth code")
+
+    ("EOMFixBitCount",
+     encoderParams.EOMFixBitCount_,
+     encoderParams.EOMFixBitCount_,
+     "enhanced occupancy map fixed bit count")
+
+    ("EOMTexturePatch",
+      encoderParams.EOMTexturePatch_,
+      encoderParams.EOMTexturePatch_,
+      "enhanced occupancy map texture in 1 patch")
+
     ("occupancyMapRefinement",
       encoderParams.occupancyMapRefinement_,
       encoderParams.occupancyMapRefinement_,
@@ -504,12 +520,6 @@ bool parseParameters( int                   argc,
       encoderParams.textureDilationOffLossless_,
       encoderParams.textureDilationOffLossless_,
       "Group Dilation")
-
-    //EDD code
-    ("enhancedDeltaDepthCode",
-      encoderParams.enhancedDeltaDepthCode_,
-      encoderParams.enhancedDeltaDepthCode_,
-      "Use enhanced-delta-depth code")
 
     // Lossy occupancy map coding
     ("offsetLossyOM",

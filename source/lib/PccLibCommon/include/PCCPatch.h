@@ -792,6 +792,29 @@ class PCCPatch {
   uint8_t              patchType_;
 };
 
+struct PCCEDDInfosPerPatch {
+  size_t patchIdx_;
+  size_t numOfEddPoints_;
+  size_t offset_;
+};
+
+struct PCCEDDPointsPatch {
+  size_t u0_;
+  size_t v0_;
+  size_t                sizeU_;
+  size_t                sizeV_;
+  size_t numOfEddSet_;                // number of patch
+  size_t occupancyResolution_;
+  std::vector<PCCEDDInfosPerPatch> infosEddPerSet_;
+  std::vector<uint16_t> x_;
+  std::vector<uint16_t> y_;
+  std::vector<uint16_t> z_;
+
+  std::vector<uint16_t> r_;
+  std::vector<uint16_t> g_;
+  std::vector<uint16_t> b_;
+};
+
 struct PCCMissedPointsPatch {
   size_t u1_;                      // tangential shift
   size_t v1_;                      // bitangential shift

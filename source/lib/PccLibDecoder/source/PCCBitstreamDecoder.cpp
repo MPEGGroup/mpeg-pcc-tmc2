@@ -183,6 +183,12 @@ void PCCBitstreamDecoder::sequenceParameterSet( SequenceParameterSet& sps,
   }
   sps.setEnhancedOccupancyMapForDepthFlag( bitstream.read( 1 ) );  // u(1)
   sps.setLayerCountMinus1( bitstream.read( 4 ) );                  // u(4)
+  if ( sps.getEnhancedOccupancyMapForDepthFlag() ) {
+    if ( sps.getLayerCountMinus1() == 0 ) {
+      sps.setEOMFixBitCount( bitstream.read( 4 ) );  // u(4)
+    }
+    sps.setEOMTexturePatch( bitstream.read( 1 ) );  // u(1)
+  }
   if ( sps.getLayerCountMinus1() > 0 ) {
     sps.setMultipleLayerStreamsPresentFlag( bitstream.read( 1 ) );  // u(1)
   }
@@ -869,6 +875,12 @@ void PCCBitstreamDecoder::patchTileGroupHeader( PatchTileGroupHeader& ptgh,
       ptgh.setInterPredictPatchLodBitCount( pfhPrev.getInterPredictPatchLodBitCount() );
     }
   }
+  if ( sps.getEnhancedOccupancyMapForDepthFlag() && sps.getEOMTexturePatch() ) {
+    ptgh.setEOMPatch2dSizeUBitCountMinus1( bitstream.read( 8 ) );  // u( 8 )
+    ptgh.setEOMPatch2dSizeVBitCountMinus1( bitstream.read( 8 ) );  // u( 8 )
+    ptgh.setEOMPatchNbPatchBitCountMinus1( bitstream.read( 8 ) );  // u( 8 )
+    ptgh.setEOMPatchMaxEPBitCountMinus1( bitstream.read( 8 ) );    // u( 8 )
+  }
   // sps_pcm_patch_enabled_flag
   if ( sps.getPcmPatchEnabledFlag() ) {
     ptgh.setPcm3dShiftBitCountPresentFlag( bitstream.read( 1 ) );  // u( 1 )
@@ -1006,6 +1018,10 @@ void PCCBitstreamDecoder::patchInformationData( PatchInformationData& pid,
     ppdu.setPpduFrameIndex( pid.getFrameIndex() );
     ppdu.setPpduPatchIndex( pid.getPatchIndex() );
     pcmPatchDataUnit( ppdu, ptgh, context, bitstream );
+  } else if ( ( ( PCCPatchFrameType( ptgh.getType() ) ) == PATCH_FRAME_I && patchMode == PATCH_MODE_I_EOM ) ||
+              ( ( PCCPatchFrameType( ptgh.getType() ) ) == PATCH_FRAME_P && patchMode == PATCH_MODE_P_EOM ) ) {
+    auto& epdu = pid.getEOMPatchDataUnit();
+    eomPatchDataUnit( epdu, ptgh, context, bitstream );
   }
 }
 
@@ -1152,6 +1168,27 @@ void PCCBitstreamDecoder::pcmPatchDataUnit( PCMPatchDataUnit&     ppdu,
       ppdu.get2DShiftU(), ppdu.get2DShiftV(), ppdu.get2DDeltaSizeU(), ppdu.get2DDeltaSizeV(),
       ppdu.get3DShiftBiTangentAxis(), ppdu.get3DShiftBiTangentAxis(), ppdu.get3DShiftNormalAxis(), ppdu.getPcmPoints(),
       ppdu.getPatchInPcmVideoFlag() );
+}
+
+// 7.3.6.x EOM patch data unit syntax
+void PCCBitstreamDecoder::eomPatchDataUnit( EOMPatchDataUnit&     epdu,
+                                            PatchTileGroupHeader& ptgh,
+                                            PCCContext&           context,
+                                            PCCBitstream&         bitstream ) {
+  TRACE_BITSTREAM( "%s \n", __func__ );
+  epdu.set2DShiftU( bitstream.read( ptgh.getInterPredictPatch2dShiftUBitCountMinus1() + 1 ) );  // u(v)
+  epdu.set2DShiftV( bitstream.read( ptgh.getInterPredictPatch2dShiftVBitCountMinus1() + 1 ) );  // u(v)
+  epdu.set2DDeltaSizeU( bitstream.read( ptgh.getEOMPatch2dSizeUBitCountMinus1() + 1 ) );        // u(v)
+  epdu.set2DDeltaSizeV( bitstream.read( ptgh.getEOMPatch2dSizeVBitCountMinus1() + 1 ) );        // u(v)
+  epdu.setEpduCountMinus1( bitstream.read( ptgh.getEOMPatchNbPatchBitCountMinus1() + 1 ) );     // u(v)
+
+  for ( size_t i = 0; i <= epdu.getEpduCountMinus1(); i++ ) {
+    uint32_t eomPoint = bitstream.read( ptgh.getEOMPatchMaxEPBitCountMinus1() + 1 );
+    // printf("eomPoint %d\n", eomPoint);
+    epdu.setEomPoints( eomPoint );  // u(v)
+  }
+  TRACE_BITSTREAM( "EOM Patch => UV %4lu %4lu  S=%4ld %4ld EpduCountMinus1=%lu \n", epdu.get2DShiftU(),
+                   epdu.get2DShiftV(), epdu.get2DDeltaSizeU(), epdu.get2DDeltaSizeV(), epdu.getEpduCountMinus1() );
 }
 
 // 7.3.6.6 Point local reconstruction data syntax

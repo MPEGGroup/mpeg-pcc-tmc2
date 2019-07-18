@@ -69,6 +69,7 @@ class PatchInformationData;
 class PatchDataUnit;
 class DeltaPatchDataUnit;
 class PCMPatchDataUnit;
+class EOMPatchDataUnit;
 class PointLocalReconstructionInformation;
 class PointLocalReconstructionData;
 class SeiMessage;
@@ -218,6 +219,12 @@ class PCCBitstreamDecoder {
                          PatchTileGroupHeader& ptgh,
                          PCCContext&           context,
                          PCCBitstream&         bitstream );
+
+  // 7.3.5.x EOM patch data unit syntax
+  void eomPatchDataUnit(EOMPatchDataUnit&     epdu,
+                        PatchTileGroupHeader& ptgh,
+                        PCCContext&           context,
+                        PCCBitstream&         bitstream);
 
   // 7.3.5.21 Point local reconstruction syntax
   void pointLocalReconstructionInformation( PointLocalReconstructionInformation& plri,

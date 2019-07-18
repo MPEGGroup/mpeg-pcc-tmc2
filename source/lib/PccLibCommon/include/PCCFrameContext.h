@@ -94,6 +94,7 @@ class PCCFrameContext {
   PCCFrameOCPInfo&           getPCCOCPGPAInfo() { return ocpGPAInfo_; }
   size_t&                    getGlobalPatchCount() { return globalPatchCount_; }  
   size_t                     getGeometry3dCoordinatesBitdepth() { return geometry3dCoordinatesBitdepth_; }
+  PCCEDDPointsPatch&         getEDDdPointsPatch() { return eddPointsPatch_; }
 
   void setMPGeoWidth( size_t width ) { MPGeoWidth_ = width; }
   void setMPGeoHeight( size_t height ) { MPGeoHeight_ = height; }
@@ -152,6 +153,7 @@ class PCCFrameContext {
   PCCGPAFrameSize                              curPCCGPAFrameSize_;
   PCCFrameOCPInfo                              ocpGPAInfo_;
   PCCVector3D                                  weightNormal_;
+  PCCEDDPointsPatch                            eddPointsPatch_;
 };
 
 };  // namespace pcc

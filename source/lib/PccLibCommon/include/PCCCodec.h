@@ -85,6 +85,8 @@ struct GeneratePointCloudParameters {
   bool        flagGeometrySmoothing_;
   bool        flagColorSmoothing_;
   bool        enhancedDeltaDepthCode_;
+  size_t      EOMFixBitCount_;
+  bool        EOMTexturePatch_;
   size_t      thresholdLossyOM_;
   bool        removeDuplicatePoints_;
   size_t      layerCountMinus1_;

@@ -204,11 +204,16 @@ class PCCEncoder : public PCCCodec {
                               size_t             occupancySizeU,
                               size_t             occupancySizeV,
                               size_t             maxOccupancyRow );
+  void packEOMTexturePointsPatch( PCCFrameContext &frame,
+                                  std::vector<bool> &occupancyMap, size_t &width,
+                                  size_t &height, size_t occupancySizeU, size_t occupancySizeV,
+                                  size_t maxOccupancyRow );
   void spatialConsistencyPack( PCCFrameContext& frame, PCCFrameContext& prevFrame, int safeguard = 0 );
   void spatialConsistencyPackFlexible( PCCFrameContext& frame, PCCFrameContext& prevFrame, int safeguard = 0 );
   void spatialConsistencyPackTetris( PCCFrameContext& frame, PCCFrameContext& prevFrame, int safeguard = 0 );
   void generateOccupancyMap( PCCFrameContext& frameContext );
   void modifyOccupancyMap( PCCFrameContext& frame, const PCCImageGeometry& imageRef, const PCCImageGeometry& image );
+  void modifyOccupancyMap1L(PCCFrameContext& frame, PCCImageGeometry &imageRef);
   void refineOccupancyMap( PCCFrameContext& frame );
   void printMap( std::vector<bool> img, const size_t sizeU, const size_t sizeV );
   void printMapTetris( std::vector<bool> img, const size_t sizeU, const size_t sizeV, std::vector<int> horizon );

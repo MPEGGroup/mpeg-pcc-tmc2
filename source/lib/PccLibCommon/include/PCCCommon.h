@@ -196,13 +196,14 @@ enum PCCCodecID { CODEC_HEVC = 0 };
 
 enum PCCPatchFrameType { PATCH_FRAME_I = 0, PATCH_FRAME_P };
 
-enum PCCPatchModeI { PATCH_MODE_I_INTRA = 0, PATCH_MODE_I_PCM, PATCH_MODE_I_END = 14 };
+enum PCCPatchModeI { PATCH_MODE_I_INTRA = 0, PATCH_MODE_I_PCM, PATCH_MODE_I_EOM, PATCH_MODE_I_END = 14 };
 
 enum PCCPatchModeP {
   PATCH_MODE_P_SKIP = 0,
   PATCH_MODE_P_INTRA,
   PATCH_MODE_P_INTER,
   PATCH_MODE_P_PCM,
+  PATCH_MODE_P_EOM,
   PATCH_MODE_P_END = 14
 };
 
@@ -228,6 +229,15 @@ const int32_t InvalidPatchIndex = -1;
 // ******************************************************************* //
 // Static functions
 // ******************************************************************* //
+
+static unsigned int getMaxBit(int16_t h)
+{
+  int maxBit = 0;
+  for (int n = 0; n <= 16; n++)
+    if (h & (1 << n))
+      maxBit = (std::max)(maxBit, n + 1);
+  return maxBit;
+}
 
 static inline std::string toString( PCCVideoType type ) {
   switch ( type ) {

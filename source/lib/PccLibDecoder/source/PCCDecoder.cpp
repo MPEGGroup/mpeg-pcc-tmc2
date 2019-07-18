@@ -203,10 +203,15 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   generatePointCloudParameters.singleLayerPixelInterleaving_  = sps.getPixelDeinterleavingFlag();
   generatePointCloudParameters.path_                          = path.str();
   generatePointCloudParameters.useAdditionalPointsPatch_      = sps.getPcmPatchEnabledFlag();
-  generatePointCloudParameters.geometry3dCoordinatesBitdepth_ = gi.getGeometry3dCoordinatesBitdepthMinus1() + 1;
-  generatePointCloudParameters.geometryBitDepth3D_            = gi.getGeometry3dCoordinatesBitdepthMinus1() + 1;
   generatePointCloudParameters.enhancedDeltaDepthCode_ =
       sps.getLosslessGeo() & sps.getEnhancedOccupancyMapForDepthFlag();
+  generatePointCloudParameters.EOMFixBitCount_ = sps.getEOMFixBitCount();
+  
+  generatePointCloudParameters.EOMTexturePatch_ =
+      generatePointCloudParameters.enhancedDeltaDepthCode_ && sps.getEOMTexturePatch();
+
+  generatePointCloudParameters.geometry3dCoordinatesBitdepth_ = gi.getGeometry3dCoordinatesBitdepthMinus1() + 1;
+  generatePointCloudParameters.geometryBitDepth3D_            = gi.getGeometry3dCoordinatesBitdepthMinus1() + 1;
   generatePointCloud( reconstructs, context, generatePointCloudParameters );
 
   if ( ai.getAttributeCount() > 0 ) {
@@ -459,6 +464,12 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
       numPCMPatches++;
   }
   numNonPCMPatch = patchCount - numPCMPatches;
+printf("numNonPCMPatch = %d \n",numNonPCMPatch);
+printf("sps.getEOMTexturePatch() = %d \n",sps.getEOMTexturePatch());
+  if ( sps.getEOMTexturePatch() ) {
+    numNonPCMPatch -= 1;
+printf(" => numNonPCMPatch -1 => %d \n",numNonPCMPatch);
+  }
   patches.resize( numNonPCMPatch );
   pcmPatches.resize( numPCMPatches );
   frame.getFrameLevelMetadata().setMetadataType( METADATA_FRAME );
@@ -636,6 +647,25 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
                    missedPointsPatch.u0_, missedPointsPatch.v0_, missedPointsPatch.sizeU0_, missedPointsPatch.sizeV0_,
                    missedPointsPatch.u1_, missedPointsPatch.v1_, missedPointsPatch.d1_, missedPointsPatch.numberOfMps_,
                    missedPointsPatch.occupancyResolution_ );
+    } else if ( ( PCCPatchFrameType( ptgh.getType() ) == PATCH_FRAME_I &&
+                  PCCPatchModeI( ptgdu.getPatchMode( patchIndex ) ) == (uint8_t)PATCH_MODE_I_EOM ) ||
+                ( PCCPatchFrameType( ptgh.getType() ) == PATCH_FRAME_P &&
+                  PCCPatchModeP( ptgdu.getPatchMode( patchIndex ) ) == (uint8_t)PATCH_MODE_P_EOM ) ) {
+      TRACE_CODEC( "patch %lu / %lu: EOM \n", patchIndex, patches.size() );
+
+      auto& epdu            = pid.getEOMPatchDataUnit();
+      auto& eomPatch        = frame.getEDDdPointsPatch();
+      eomPatch.u0_          = epdu.get2DShiftU();
+      eomPatch.v0_          = epdu.get2DShiftV();
+      eomPatch.sizeU_       = epdu.get2DDeltaSizeU();
+      eomPatch.sizeV_       = epdu.get2DDeltaSizeV();
+      eomPatch.numOfEddSet_ = epdu.getEpduCountMinus1() + 1;
+
+      for ( size_t i = 0; i < eomPatch.numOfEddSet_; i++ ) {
+        PCCEDDInfosPerPatch eddInfos;
+        eddInfos.numOfEddPoints_ = epdu.getEomPoints()[i];
+        eomPatch.infosEddPerSet_.push_back( eddInfos );
+      }
     } else if ( ( PCCPatchFrameType( ptgh.getType() ) == PATCH_FRAME_I &&
                   PCCPatchModeP( ptgdu.getPatchMode( patchIndex ) ) == (uint8_t)PATCH_MODE_I_END ) ||
                 ( PCCPatchFrameType( ptgh.getType() ) == PATCH_FRAME_P &&

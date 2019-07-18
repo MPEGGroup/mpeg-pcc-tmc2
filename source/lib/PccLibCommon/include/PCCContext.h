@@ -221,6 +221,35 @@ class PCMPatchDataUnit {
   size_t   ppduFrameIndex_;
 };
 
+// 7.3.6.x  EOM patch data unit syntax (
+class EOMPatchDataUnit {
+ public:
+  EOMPatchDataUnit() : epdu2DShiftU_( 0 ), epdu2DShiftV_( 0 ), epdu2DDeltaSizeU_( 0 ), epdu2DDeltaSizeV_( 0 ){};
+  ~EOMPatchDataUnit(){};
+  EOMPatchDataUnit& operator=( const EOMPatchDataUnit& ) = default;
+
+  size_t              get2DShiftU() { return epdu2DShiftU_; }
+  size_t              get2DShiftV() { return epdu2DShiftV_; }
+  int64_t             get2DDeltaSizeU() { return epdu2DDeltaSizeU_; }
+  int64_t             get2DDeltaSizeV() { return epdu2DDeltaSizeV_; }
+  int64_t             getEpduCountMinus1() { return epduCountMinus1_; }
+  std::vector<size_t> getEomPoints() { return eomPoints_; }
+  void                setEpduCountMinus1( size_t value ) { epduCountMinus1_ = value; }
+  void                set2DShiftU( size_t value ) { epdu2DShiftU_ = value; }
+  void                set2DShiftV( size_t value ) { epdu2DShiftV_ = value; }
+  void                set2DDeltaSizeU( int64_t value ) { epdu2DDeltaSizeU_ = value; }
+  void                set2DDeltaSizeV( int64_t value ) { epdu2DDeltaSizeV_ = value; }
+  void                setEomPoints( int64_t value ) { eomPoints_.push_back( value ); }
+
+ private:
+  size_t              epdu2DShiftU_;
+  size_t              epdu2DShiftV_;
+  int64_t             epdu2DDeltaSizeU_;
+  int64_t             epdu2DDeltaSizeV_;
+  uint32_t            epduCountMinus1_;
+  std::vector<size_t> eomPoints_;
+};
+
 // 7.3.6.4  Delta Patch data unit syntax
 class DeltaPatchDataUnit {
  public:
@@ -394,6 +423,7 @@ class PatchInformationData {
   uint8_t             getAttributePatchParameterSetId( size_t index ) { return attributePatchParameterSetId_[index]; }
   PatchDataUnit&      getPatchDataUnit() { return patchDataUnit_; }
   DeltaPatchDataUnit& getDeltaPatchDataUnit() { return deltaPatchDataUnit_; }
+  EOMPatchDataUnit&   getEOMPatchDataUnit() { return eomPatchDataUnit_; }
   PCMPatchDataUnit&   getPCMPatchDataUnit() { return pcmPatchDataUnit_; }
   size_t              getFrameIndex() { return frameIndex_; }
   size_t              getPatchIndex() { return patchIndex_; }
@@ -418,6 +448,7 @@ class PatchInformationData {
   PatchDataUnit        patchDataUnit_;
   DeltaPatchDataUnit   deltaPatchDataUnit_;
   PCMPatchDataUnit     pcmPatchDataUnit_;
+  EOMPatchDataUnit     eomPatchDataUnit_;
 };
 
 // 7.3.6  Patch frame data unit syntax (ptgdu)
@@ -640,6 +671,20 @@ class PatchTileGroupHeader {
   void setNormalAxisMinValueQuantizer( uint8_t value ) { normalAxisMinValueQuantizer_ = value; }
   void setNormalAxisMaxDeltaValueQuantizer( uint8_t value ) { normalAxisMaxDeltaValueQuantizer_ = value; }
 
+  uint8_t getEOMPatch2dShiftUBitCountMinus1() { return eomPatch2dShiftUBitCountMinus1_; }
+  uint8_t getEOMPatch2dShiftVBitCountMinus1() { return eomPatch2dShiftVBitCountMinus1_; }
+  uint8_t getEOMPatch2dSizeUBitCountMinus1() { return eomPatch2dSizeUBitCountMinus1_; }
+  uint8_t getEOMPatch2dSizeVBitCountMinus1() { return eomPatch2dSizeVBitCountMinus1_; }
+  uint8_t getEOMPatchNbPatchBitCountMinus1() { return eomPatchNbPatchBitCountMinus1_; }
+  uint8_t getEOMPatchMaxEPBitCountMinus1() { return eomPatchMaxEPBitCountMinus1_; }
+
+  void setEOMPatch2dShiftUBitCountMinus1( uint8_t value ) { eomPatch2dShiftUBitCountMinus1_ = value; }
+  void setEOMPatch2dShiftVBitCountMinus1( uint8_t value ) { eomPatch2dShiftVBitCountMinus1_ = value; }
+  void setEOMPatch2dSizeUBitCountMinus1( uint8_t value ) { eomPatch2dSizeUBitCountMinus1_ = value; }
+  void setEOMPatch2dSizeVBitCountMinus1( uint8_t value ) { eomPatch2dSizeVBitCountMinus1_ = value; }
+  void setEOMPatchNbPatchBitCountMinus1( uint8_t value ) { eomPatchNbPatchBitCountMinus1_ = value; }
+  void setEOMPatchMaxEPBitCountMinus1( uint8_t value ) { eomPatchMaxEPBitCountMinus1_ = value; }
+
  private:
   uint8_t               frameIndex_;
   uint8_t               patchFrameParameterSetId_;
@@ -670,6 +715,12 @@ class PatchTileGroupHeader {
   bool                  interPredictPatchLodBitCountFlag_;
   uint8_t               pcm3dShiftAxisBitCountMinus1_;
   bool                  pcm3dShiftBitCountPresentFlag_;
+  uint8_t               eomPatch2dShiftUBitCountMinus1_;
+  uint8_t               eomPatch2dShiftVBitCountMinus1_;
+  uint8_t               eomPatch2dSizeUBitCountMinus1_;
+  uint8_t               eomPatch2dSizeVBitCountMinus1_;
+  uint8_t               eomPatchNbPatchBitCountMinus1_;
+  uint8_t               eomPatchMaxEPBitCountMinus1_;
 };
 
 // 7.3.5.14  Patch tile group layer unit syntax
@@ -1537,7 +1588,7 @@ class GeometryInformation {
       geometry3dCoordinatesBitdepthMinus1_( 9 ),
       pcmGeometryCodecId_( 0 ),
       geometryParamsEnabledFlag_( false ),
-      geometryPatchParamsEnabledFlag_(false) {}
+      geometryPatchParamsEnabledFlag_( false ) {}
   ~GeometryInformation() {}
   GeometryInformation& operator=( const GeometryInformation& ) = default;
 
@@ -1642,6 +1693,8 @@ class SequenceParameterSet {
       layerCountMinus1_( 0 ),
       avgFrameRatePresentFlag_( false ),
       enhancedOccupancyMapForDepthFlag_( false ),
+      EOMFixBitCount_( 2 ),
+      EOMTexturePatch_( false ),
       multipleLayerStreamsPresentFlag_( false ),
       pcmPatchEnabledFlag_( false ),
       pcmSeparateVideoPresentFlag_( false ),
@@ -1708,6 +1761,8 @@ class SequenceParameterSet {
   uint32_t          getLayerCountMinus1() { return layerCountMinus1_; }
   bool              getAvgFrameRatePresentFlag() { return avgFrameRatePresentFlag_; }
   bool              getEnhancedOccupancyMapForDepthFlag() { return enhancedOccupancyMapForDepthFlag_; }
+  size_t            getEOMFixBitCount() { return EOMFixBitCount_; }
+  bool              getEOMTexturePatch() { return EOMTexturePatch_; }
   bool              getMultipleLayerStreamsPresentFlag() { return multipleLayerStreamsPresentFlag_; }
   bool              getPcmPatchEnabledFlag() { return pcmPatchEnabledFlag_; }
   bool              getPcmSeparateVideoPresentFlag() { return pcmSeparateVideoPresentFlag_; }
@@ -1734,6 +1789,8 @@ class SequenceParameterSet {
   void setLayerCountMinus1( uint32_t value ) { layerCountMinus1_ = value; }
   void setAvgFrameRatePresentFlag( bool value ) { avgFrameRatePresentFlag_ = value; }
   void setEnhancedOccupancyMapForDepthFlag( bool value ) { enhancedOccupancyMapForDepthFlag_ = value; }
+  void setEOMFixBitCount( size_t value ) { EOMFixBitCount_ = value; }
+  void setEOMTexturePatch( bool value ) { EOMTexturePatch_ = value; }
   void setMultipleLayerStreamsPresentFlag( bool value ) { multipleLayerStreamsPresentFlag_ = value; }
   void setPcmPatchEnabledFlag( bool value ) { pcmPatchEnabledFlag_ = value; }
   void setPcmSeparateVideoPresentFlag( bool value ) { pcmSeparateVideoPresentFlag_ = value; }
@@ -1768,6 +1825,8 @@ class SequenceParameterSet {
   uint32_t                            layerCountMinus1_;
   bool                                avgFrameRatePresentFlag_;
   bool                                enhancedOccupancyMapForDepthFlag_;
+  size_t                              EOMFixBitCount_;
+  bool                                EOMTexturePatch_;
   bool                                multipleLayerStreamsPresentFlag_;
   bool                                pcmPatchEnabledFlag_;
   bool                                pcmSeparateVideoPresentFlag_;
@@ -1899,6 +1958,8 @@ class PCCContext {
     videoBitstream_.push_back( PCCVideoBitstream( type ) );
     return videoBitstream_.back();
   }
+  bool&              getSingleLayerMode() { return singleLayerMode_; }
+  size_t&            getEOMFixBitCount() { return EOMFixBitCount_; }
   size_t             getVideoBitstreamCount() { return videoBitstream_.size(); }
   PCCVideoBitstream& getVideoBitstream( size_t index ) { return videoBitstream_[index]; }
   PCCVideoBitstream& getVideoBitstream( PCCVideoType type ) {
@@ -1966,6 +2027,8 @@ class PCCContext {
   bool                                      prefilterLossyOM_;
   size_t                                    offsetLossyOM_;
   size_t                                    geometry3dCoordinatesBitdepth_;
+  size_t                                    EOMFixBitCount_;
+  bool                                      singleLayerMode_;
 };
 };  // namespace pcc
 
