@@ -82,8 +82,11 @@ class PCCEncoderParameters {
 
   // segmentation
   size_t nnNormalEstimation_;
+  bool   gridBasedRefineSegmentation_;
   size_t maxNNCountRefineSegmentation_;
   size_t iterationCountRefineSegmentation_;
+  size_t voxelDimensionRefineSegmentation_;
+  size_t searchRadiusRefineSegmentation_;
   size_t occupancyResolution_;
   size_t minPointCountPerCCPatchSegmentation_;
   size_t maxNNCountPatchSegmentation_;

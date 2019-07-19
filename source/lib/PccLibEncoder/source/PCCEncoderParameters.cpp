@@ -55,8 +55,11 @@ PCCEncoderParameters::PCCEncoderParameters() {
   colorSpaceConversionConfig_             = {};
   inverseColorSpaceConversionConfig_      = {};
   nnNormalEstimation_                     = 16;
-  maxNNCountRefineSegmentation_           = 256;
-  iterationCountRefineSegmentation_       = 100;
+  gridBasedRefineSegmentation_            = true;
+  maxNNCountRefineSegmentation_           = gridBasedRefineSegmentation_ ? 1024 : 256;
+  iterationCountRefineSegmentation_       = gridBasedRefineSegmentation_ ? 10   : 100;
+  voxelDimensionRefineSegmentation_       = 4;
+  searchRadiusRefineSegmentation_         = 192;
   occupancyResolution_                    = 16;
   minPointCountPerCCPatchSegmentation_    = 16;
   maxNNCountPatchSegmentation_            = 16;
@@ -217,8 +220,11 @@ void PCCEncoderParameters::print() {
   std::cout << "\t deltaCoding                              " << deltaCoding_ << std::endl;
   std::cout << "\t segmentation" << std::endl;
   std::cout << "\t   nnNormalEstimation                     " << nnNormalEstimation_ << std::endl;
+  std::cout << "\t   gridBasedRefineSegmentation            " << gridBasedRefineSegmentation_ << std::endl;
   std::cout << "\t   maxNNCountRefineSegmentation           " << maxNNCountRefineSegmentation_ << std::endl;
   std::cout << "\t   iterationCountRefineSegmentation       " << iterationCountRefineSegmentation_ << std::endl;
+  std::cout << "\t   voxelDimensionRefineSegmentation       " << voxelDimensionRefineSegmentation_ << std::endl;
+  std::cout << "\t   searchRadiusRefineSegmentation         " << searchRadiusRefineSegmentation_ << std::endl;
   std::cout << "\t   occupancyResolution                    " << occupancyResolution_ << std::endl;
   std::cout << "\t   minPointCountPerCCPatchSegmentation    " << minPointCountPerCCPatchSegmentation_ << std::endl;
   std::cout << "\t   maxNNCountPatchSegmentation            " << maxNNCountPatchSegmentation_ << std::endl;

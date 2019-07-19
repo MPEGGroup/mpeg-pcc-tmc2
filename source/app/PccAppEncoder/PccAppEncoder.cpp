@@ -173,6 +173,11 @@ bool parseParameters( int                   argc,
      encoderParams.nnNormalEstimation_,
      "Number of points used for normal estimation")
 
+    ("gridBasedRefineSegmentation",
+     encoderParams.gridBasedRefineSegmentation_,
+     encoderParams.gridBasedRefineSegmentation_,
+     "Use grid-based approach for segmentation refinement")
+
     ("maxNNCountRefineSegmentation",
      encoderParams.maxNNCountRefineSegmentation_,
      encoderParams.maxNNCountRefineSegmentation_,
@@ -183,6 +188,16 @@ bool parseParameters( int                   argc,
      encoderParams.iterationCountRefineSegmentation_,
      "Number of iterations performed during segmentation refinement")
 
+    ("voxelDimensionRefineSegmentation",
+     encoderParams.voxelDimensionRefineSegmentation_,
+     encoderParams.voxelDimensionRefineSegmentation_,
+     "Voxel dimension for segmentation refinement (must be a power of 2)")
+
+    ("searchRadiusRefineSegmentation",
+     encoderParams.searchRadiusRefineSegmentation_,
+     encoderParams.searchRadiusRefineSegmentation_,
+     "Search radius for segmentation refinement")
+	 
     ("occupancyResolution",
      encoderParams.occupancyResolution_,
      encoderParams.occupancyResolution_,

@@ -2651,8 +2651,11 @@ bool PCCEncoder::generateGeometryVideo( const PCCGroupOfFrames& sources, PCCCont
   auto&                        videoGeometry           = context.getVideoGeometry();
   auto&                        frames                  = context.getFrames();
   segmenterParams.nnNormalEstimation                   = params_.nnNormalEstimation_;
+  segmenterParams.gridBasedRefineSegmentation          = params_.gridBasedRefineSegmentation_;
   segmenterParams.maxNNCountRefineSegmentation         = params_.maxNNCountRefineSegmentation_;
   segmenterParams.iterationCountRefineSegmentation     = params_.iterationCountRefineSegmentation_;
+  segmenterParams.voxelDimensionRefineSegmentation     = params_.voxelDimensionRefineSegmentation_;
+  segmenterParams.searchRadiusRefineSegmentation       = params_.searchRadiusRefineSegmentation_;
   segmenterParams.occupancyResolution                  = params_.occupancyResolution_;
   segmenterParams.minPointCountPerCCPatchSegmentation  = params_.minPointCountPerCCPatchSegmentation_;
   segmenterParams.maxNNCountPatchSegmentation          = params_.maxNNCountPatchSegmentation_;

@@ -98,9 +98,18 @@ void PCCPatchSegmenter3::compute( const PCCPointSet3&                 geometry,
   }
   std::cout << "[done]" << std::endl;
 
-  std::cout << "  Refining segmentation... ";
-  refineSegmentation( geometry, kdtree, normalsGen, orientations, orientationCount, params.maxNNCountRefineSegmentation,
-                      params.lambdaRefineSegmentation, params.iterationCountRefineSegmentation, partition );
+  if (params.gridBasedRefineSegmentation) {
+    std::cout << "  Refining segmentation (grid-based)... ";
+    refineSegmentationGridBased( geometry, normalsGen, orientations, orientationCount,
+                                 params.maxNNCountRefineSegmentation, params.lambdaRefineSegmentation,
+                                 params.iterationCountRefineSegmentation, params.voxelDimensionRefineSegmentation,
+                                 params.searchRadiusRefineSegmentation, partition);
+  } 
+  else {
+    std::cout << "  Refining segmentation... ";
+    refineSegmentation( geometry, kdtree, normalsGen, orientations, orientationCount, params.maxNNCountRefineSegmentation,
+                        params.lambdaRefineSegmentation, params.iterationCountRefineSegmentation, partition );
+  }
   std::cout << "[done]" << std::endl;
 
   std::cout << "  Patch segmentation... ";
@@ -184,6 +193,28 @@ void PCCPatchSegmenter3::computeAdjacencyInfo( const PCCPointSet3&              
     } );
   } );
 }
+
+void PCCPatchSegmenter3::computeAdjacencyInfoInRadius( const PCCPointSet3&               pointCloud,
+                                                       const PCCKdTree&                  kdtree,
+                                                       std::vector<std::vector<size_t>>& adj,
+                                                       const size_t                      maxNNCount, 
+                                                       const size_t                      radius ) {
+  const size_t pointCount = pointCloud.getPointCount();
+  adj.resize(pointCount);
+  tbb::task_arena limited((int)nbThread_);
+  limited.execute([&] {
+    tbb::parallel_for(size_t(0), pointCount, [&](const size_t i) {
+      PCCNNResult result;
+      kdtree.searchRadius(pointCloud[i], maxNNCount, radius, result);
+      std::vector<size_t> &neighbors = adj[i];
+      neighbors.resize(result.count());
+      for (size_t j = 0; j < result.count(); ++j) {
+        neighbors[j] = result.indices(j);
+      }
+    });
+  });
+}
+
 size_t PCCPatchSegmenter3::selectFrameProjectionMode( const PCCPointSet3& points,
                                                       const size_t        surfaceThickness,
                                                       const size_t        minLevel,
@@ -1602,6 +1633,121 @@ void PCCPatchSegmenter3::refineSegmentation( const PCCPointSet3&         pointCl
   }
   for ( auto& vector : scoresSmooth ) { vector.clear(); }
   scoresSmooth.clear();
+}
+
+void PCCPatchSegmenter3::refineSegmentationGridBased( const PCCPointSet3&         pointCloud,
+                                                      const PCCNormalsGenerator3& normalsGen,
+                                                      const PCCVector3D*          orientations, 
+                                                      const size_t                orientationCount,
+                                                      const size_t                maxNNCount, 
+                                                      const double                lambda,
+                                                      const size_t                iterationCount, 
+                                                      const size_t                voxDim, 
+                                                      const size_t                searchRadius, 
+                                                      std::vector<size_t>&        partition ) {
+  const size_t pointCount = pointCloud.getPointCount();
+  auto geoMax = pointCloud[0][0];
+  for (size_t i = 0; i < pointCount; i++) {
+    const auto &pos = pointCloud[i];
+    geoMax = (std::max)(geoMax, pos[0]);
+    geoMax = (std::max)(geoMax, pos[1]);
+    geoMax = (std::max)(geoMax, pos[2]);
+  }
+  size_t geoRange = 1;
+  for (size_t i = geoMax - 1; i; i >>= 1, geoRange <<= 1);
+  size_t voxDimShift, gridDimShift, i;
+  for (voxDimShift = 0, i = voxDim; i > 1; voxDimShift++, i >>= 1);
+  const size_t gridDim = geoRange >> voxDimShift;
+  for (gridDimShift = 0, i = gridDim; i > 1; gridDimShift++, i >>= 1);
+  const size_t gridDimShiftSqr = gridDimShift << 1;
+  const size_t voxDimHalf = voxDim >> 1;
+
+  struct voxelType {
+    std::vector<size_t> pointIndices;
+    std::vector<size_t> scoreSmooth;
+
+    size_t pointCount;
+    void init(size_t cap, size_t orientationCount) {
+      pointIndices.reserve(cap);
+      scoreSmooth.resize(orientationCount, 0);
+      pointCount = 0;
+    }
+  };
+  auto subToInd = [&](size_t x, size_t y, size_t z) {
+    return x + (y << gridDimShift) + (z << gridDimShiftSqr);
+  };
+
+  PCCPointSet3 gridCenters;
+  std::unordered_map<size_t, voxelType> grid;
+  for (size_t i = 0; i < pointCount; i++) {
+    const auto &pos = pointCloud[i];
+    const size_t x0 = (((size_t)pos[0] + voxDimHalf) >> voxDimShift);
+    const size_t y0 = (((size_t)pos[1] + voxDimHalf) >> voxDimShift);
+    const size_t z0 = (((size_t)pos[2] + voxDimHalf) >> voxDimShift);
+    size_t p = subToInd(x0, y0, z0);
+    if (!grid.count(p)) {
+      grid[p].init(64, orientationCount);
+      gridCenters.addPoint(PCCVector3D(x0, y0, z0));
+    }
+    auto &voxel = grid[p];
+    voxel.pointIndices.push_back(i);
+    voxel.pointCount++;
+  }
+
+  PCCKdTree kdtree(gridCenters);
+  const size_t voxSearchRadius = searchRadius >> voxDimShift;
+  const size_t maxNeighborCount = (std::numeric_limits<int16_t>::max)();
+  std::vector<std::vector<size_t>> adj(gridCenters.getPointCount());
+  computeAdjacencyInfoInRadius(gridCenters, kdtree, adj, maxNeighborCount, voxSearchRadius);
+
+  std::vector<size_t> tmpPartition(pointCount);
+  for (size_t n = 0; n < iterationCount; n++) {
+    for (auto &gridElm : grid) {
+      auto &voxel = gridElm.second;
+      std::fill(voxel.scoreSmooth.begin(), voxel.scoreSmooth.end(), 0);
+      for (auto &j : voxel.pointIndices) {
+        voxel.scoreSmooth[partition[j]]++;
+      }
+    }
+    /*tbb::task_arena limited((int)nbThread_);
+    limited.execute([&] {
+      tbb::parallel_for(size_t(0), gridCenters.getPointCount(), [&](const size_t i) {*/
+    for (size_t i = 0; i < gridCenters.getPointCount(); i++) {
+      auto &pos = gridCenters[i];
+      size_t p = subToInd(pos[0], pos[1], pos[2]);
+      std::vector<size_t> scoreSmooth(orientationCount, 0);
+      size_t nnPointCount = 0;
+      for (auto &j : adj[i]) {
+        auto &pos = gridCenters[j];
+        size_t q = subToInd(pos[0], pos[1], pos[2]);
+        /*std::transform(scoreSmooth.begin(), scoreSmooth.end(), grid[q].scoreSmooth.begin(),
+          scoreSmooth.begin(), std::plus<size_t>());*/
+        for (size_t k = 0; k < orientationCount; k++) {
+          scoreSmooth[k] += grid[q].scoreSmooth[k];
+        }
+        nnPointCount += grid[q].pointCount;
+        if (nnPointCount >= maxNNCount)
+          break;
+      }
+      const double weight = lambda / nnPointCount;
+      for (auto &j : grid[p].pointIndices) {
+        const PCCVector3D normal = normalsGen.getNormal(j);
+        size_t clusterIndex = partition[j];
+        double bestScore = 0.0;
+        for (size_t k = 0; k < orientationCount; k++) {
+          const double scoreNormal = normal * orientations[k];
+          const double score = scoreNormal + weight * scoreSmooth[k];
+          if (score > bestScore) {
+            bestScore = score;
+            clusterIndex = k;
+          }
+        }
+        tmpPartition[j] = clusterIndex;
+      }
+    }/*);
+  });*/
+    swap(tmpPartition, partition);
+  }
 }
 
 float pcc::computeIOU( Rect a, Rect b ) {

@@ -44,8 +44,11 @@ class PCCPatch;
 
 struct PCCPatchSegmenter3Parameters {
   size_t      nnNormalEstimation;
+  bool        gridBasedRefineSegmentation;
   size_t      maxNNCountRefineSegmentation;
   size_t      iterationCountRefineSegmentation;
+  size_t      voxelDimensionRefineSegmentation;
+  size_t      searchRadiusRefineSegmentation;
   size_t      occupancyResolution;
   size_t      minPointCountPerCCPatchSegmentation;
   size_t      maxNNCountPatchSegmentation;
@@ -98,6 +101,11 @@ class PCCPatchSegmenter3 {
                              const PCCKdTree&                  kdtree,
                              std::vector<std::vector<size_t>>& adj,
                              const size_t                      maxNNCount );
+
+  void computeAdjacencyInfoInRadius( const PCCPointSet3 &pointCloud, const PCCKdTree &kdtree,
+                                     std::vector<std::vector<size_t>> &adj, const size_t maxNNCount, 
+                                     const size_t radius );
+
   void segmentPatches( const PCCPointSet3&        points,
                        const PCCKdTree&           kdtree,
                        const size_t               maxNNCount,
@@ -135,6 +143,13 @@ class PCCPatchSegmenter3 {
                            const double                lambda,
                            const size_t                iterationCount,
                            std::vector<size_t>&        partition );
+
+  void refineSegmentationGridBased( const PCCPointSet3 &pointCloud,
+                                    const PCCNormalsGenerator3 &normalsGen,
+                                    const PCCVector3D *orientations, const size_t orientationCount,
+                                    const size_t maxNNCount, const double lambda,
+                                    const size_t iterationCount, const size_t voxelDimensionRefineSegmentation,
+                                    const size_t searchRadiusRefineSegmentation, std::vector<size_t> &partition );
 
  private:
   size_t                nbThread_;
