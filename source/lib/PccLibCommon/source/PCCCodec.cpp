@@ -240,12 +240,14 @@ int PCCCodec::getDeltaNeighbors( const PCCImageGeometry& frame,
                                  const bool              projectionMode,
                                  const double            lodScale ) {
   int    deltaMax = 0;
-  double dOrg     = patch.generateNormalCoordinate( frame.getValue( 0, xOrg, yOrg ), lodScale, false, false, true );
+  //double dOrg     = patch.generateNormalCoordinate( frame.getValue( 0, xOrg, yOrg ), lodScale, false, false, true );
+  double dOrg     = patch.generateNormalCoordinate( frame.getValue( 0, xOrg, yOrg ), 1.0, false, false, true );
   for ( int x = ( std::max )( 0, xOrg - neighboring ); x <= ( std::min )( xOrg + neighboring, (int)frame.getWidth() );
         x += 1 ) {
     for ( int y = ( std::max )( 0, yOrg - neighboring );
           y <= ( std::min )( yOrg + neighboring, (int)frame.getHeight() ); y += 1 ) {
-      double dLoc  = patch.generateNormalCoordinate( frame.getValue( 0, x, y ), lodScale, false, false, true );
+      //double dLoc  = patch.generateNormalCoordinate( frame.getValue( 0, x, y ), lodScale, false, false, true );
+      double dLoc  = patch.generateNormalCoordinate( frame.getValue( 0, x, y ), 1.0, false, false, true );
       int    delta = (int)( dLoc - dOrg );
       if ( patch.getProjectionMode() == 0 ) {
         if ( delta <= threshold && delta > deltaMax ) { deltaMax = delta; }
@@ -368,9 +370,11 @@ std::vector<PCCPoint3D> PCCCodec::generatePoints( const GeneratePointCloudParame
       size_t Temp_v0 = ( y ) / patch.getOccupancyResolution();
       if ( blockToPatch[(Temp_v0)*blockToPatchWidth + Temp_u0] == patchIndexPlusOne ) {
         if ( patch.getProjectionMode() == 0 ) {
-          DepthNeighbors[0] = double( frame0.getValue( 0, x - 1, y ) + patch.getD1() ) * lodScale;
+          //DepthNeighbors[0] = double( frame0.getValue( 0, x - 1, y ) + patch.getD1() ) * lodScale;
+          DepthNeighbors[0] = double( frame0.getValue( 0, x - 1, y ) + patch.getD1() );
         } else {
-          DepthNeighbors[0] = double( patch.getD1() - frame0.getValue( 0, x - 1, y ) ) * lodScale;
+          //DepthNeighbors[0] = double( patch.getD1() - frame0.getValue( 0, x - 1, y ) ) * lodScale;
+          DepthNeighbors[0] = double( patch.getD1() - frame0.getValue( 0, x - 1, y ) );
         }
         count++;
         if ( DepthNeighbors[0] < minimumDepth ) { minimumDepth = DepthNeighbors[0]; }
@@ -382,9 +386,11 @@ std::vector<PCCPoint3D> PCCCodec::generatePoints( const GeneratePointCloudParame
       size_t Temp_v0 = ( y ) / patch.getOccupancyResolution();
       if ( blockToPatch[(Temp_v0)*blockToPatchWidth + Temp_u0] == patchIndexPlusOne ) {
         if ( patch.getProjectionMode() == 0 ) {
-          DepthNeighbors[1] = double( frame0.getValue( 0, x + 1, y ) + patch.getD1() ) * lodScale;
+          //DepthNeighbors[1] = double( frame0.getValue( 0, x + 1, y ) + patch.getD1() ) * lodScale;
+          DepthNeighbors[1] = double( frame0.getValue( 0, x + 1, y ) + patch.getD1() );
         } else {
-          DepthNeighbors[1] = double( patch.getD1() - frame0.getValue( 0, x + 1, y ) ) * lodScale;
+          //DepthNeighbors[1] = double( patch.getD1() - frame0.getValue( 0, x + 1, y ) ) * lodScale;
+          DepthNeighbors[1] = double( patch.getD1() - frame0.getValue( 0, x + 1, y ) );
         }
         count++;
         if ( DepthNeighbors[1] < minimumDepth ) { minimumDepth = DepthNeighbors[1]; }
@@ -396,9 +402,11 @@ std::vector<PCCPoint3D> PCCCodec::generatePoints( const GeneratePointCloudParame
       size_t Temp_v0 = ( y - 1 ) / patch.getOccupancyResolution();
       if ( blockToPatch[(Temp_v0)*blockToPatchWidth + Temp_u0] == patchIndexPlusOne ) {
         if ( patch.getProjectionMode() == 0 ) {
-          DepthNeighbors[2] = double( frame0.getValue( 0, x, y - 1 ) + patch.getD1() ) * lodScale;
+          //DepthNeighbors[2] = double( frame0.getValue( 0, x, y - 1 ) + patch.getD1() ) * lodScale;
+          DepthNeighbors[2] = double( frame0.getValue( 0, x, y - 1 ) + patch.getD1() );
         } else {
-          DepthNeighbors[2] = double( patch.getD1() - frame0.getValue( 0, x, y - 1 ) ) * lodScale;
+          //DepthNeighbors[2] = double( patch.getD1() - frame0.getValue( 0, x, y - 1 ) ) * lodScale;
+          DepthNeighbors[2] = double( patch.getD1() - frame0.getValue( 0, x, y - 1 ) );
         }
         count++;
         if ( DepthNeighbors[2] < minimumDepth ) { minimumDepth = DepthNeighbors[2]; }
@@ -410,9 +418,11 @@ std::vector<PCCPoint3D> PCCCodec::generatePoints( const GeneratePointCloudParame
       size_t Temp_v0 = ( y + 1 ) / patch.getOccupancyResolution();
       if ( blockToPatch[(Temp_v0)*blockToPatchWidth + Temp_u0] == patchIndexPlusOne ) {
         if ( patch.getProjectionMode() == 0 ) {
-          DepthNeighbors[3] = double( frame0.getValue( 0, x, y + 1 ) + patch.getD1() ) * lodScale;
+          //DepthNeighbors[3] = double( frame0.getValue( 0, x, y + 1 ) + patch.getD1() ) * lodScale;
+          DepthNeighbors[3] = double( frame0.getValue( 0, x, y + 1 ) + patch.getD1() );
         } else {
-          DepthNeighbors[3] = double( patch.getD1() - frame0.getValue( 0, x, y + 1 ) ) * lodScale;
+          //DepthNeighbors[3] = double( patch.getD1() - frame0.getValue( 0, x, y + 1 ) ) * lodScale;
+          DepthNeighbors[3] = double( patch.getD1() - frame0.getValue( 0, x, y + 1 ) );
         }
         count++;
         if ( DepthNeighbors[3] < minimumDepth ) { minimumDepth = DepthNeighbors[3]; }
@@ -487,9 +497,11 @@ std::vector<PCCPoint3D> PCCCodec::generatePoints( const GeneratePointCloudParame
           PCCPoint3D  point1( point0 );
           const auto& frame1 = videoD1.getFrame( shift );
           if ( patch.getProjectionMode() == 0 ) {
-            point1[patch.getNormalAxis()] += frame1.getValue( 0, x, y ) * lodScale;
+            //point1[patch.getNormalAxis()] += frame1.getValue( 0, x, y ) * lodScale;
+            point1[patch.getNormalAxis()] += frame1.getValue( 0, x, y );
           } else {
-            point1[patch.getNormalAxis()] -= frame1.getValue( 0, x, y ) * lodScale;
+            //point1[patch.getNormalAxis()] -= frame1.getValue( 0, x, y ) * lodScale;
+            point1[patch.getNormalAxis()] -= frame1.getValue( 0, x, y );
           }
           createdPoints.push_back( point1 );
         } else {

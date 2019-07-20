@@ -204,10 +204,15 @@ class PCCPatch {
                             const bool     useMppSepVid,
                             const bool     lossyMpp,
 							const bool     absoluteD1 ) const {
-    PCCPoint3D point0;
-    point0[normalAxis_]    = generateNormalCoordinate( depth, lodScale, useMppSepVid, lossyMpp, absoluteD1 );
-    point0[tangentAxis_]   = ( double( u ) + u1_ ) * lodScale;
-    point0[bitangentAxis_] = ( double( v ) + v1_ ) * lodScale;
+    const size_t nu = double( u ) * (double)lodScale;
+    const size_t nv = double( v ) * (double)lodScale;
+	PCCPoint3D point0;
+    //point0[normalAxis_]    = generateNormalCoordinate( depth, lodScale, useMppSepVid, lossyMpp, absoluteD1 );
+    //point0[tangentAxis_]   = ( double( u ) + u1_ );
+    //point0[bitangentAxis_] = ( double( v ) + v1_ );
+    point0[normalAxis_]    = generateNormalCoordinate( depth, 1.0, useMppSepVid, lossyMpp, absoluteD1 );
+    point0[tangentAxis_]   = ( double( nu ) + u1_ );
+    point0[bitangentAxis_] = ( double( nv ) + v1_ );
     return point0;
   }
 

@@ -162,7 +162,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   auto& videoOccupancyMap = context.getVideoOccupancyMap();
   videoEncoder.compress( videoOccupancyMap, path.str(), params_.occupancyMapQP_, videoBitstream,
                          params_.occupancyMapVideoEncoderConfig_, params_.videoEncoderOccupancyMapPath_, context,
-                         params_.keepIntermediateFiles_, false, ( params_.EOMFixBitCount_ <= 8 ) ? 1 : 2  );
+                         params_.keepIntermediateFiles_, false, ( params_.EOMFixBitCount_ <= 8 ) ? 1 : 2 );
 
   if ( params_.offsetLossyOM_ > 0 ) {
     changedPixCnt     = 0;
@@ -201,9 +201,9 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     auto& videoGeometry    = context.getVideoGeometry();
     videoEncoder.compress(
         videoGeometry, path.str(), ( params_.geometryQP_ - 1 ), videoBitstreamD0, params_.geometryD0Config_,
-        ( params_.use3dmc_ != 0 ) ? params_.videoEncoderAuxPath_ : params_.videoEncoderPath_, context, 
-        params_.keepIntermediateFiles_, params_.losslessGeo_ && params_.losslessGeo444_, nbyteGeo,false, params_.use3dmc_,
-        params_.lossyMissedPointsPatch_ || params_.useMissedPointsSeparateVideo_ );
+        ( params_.use3dmc_ != 0 ) ? params_.videoEncoderAuxPath_ : params_.videoEncoderPath_, context,
+        params_.keepIntermediateFiles_, params_.losslessGeo_ && params_.losslessGeo444_, nbyteGeo, false,
+        params_.use3dmc_, params_.lossyMissedPointsPatch_ || params_.useMissedPointsSeparateVideo_ );
 
     // Form differential video geometryD1
     auto& videoGeometryD1 = context.getVideoGeometryD1();
@@ -217,8 +217,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     videoEncoder.compress(
         videoGeometryD1, path.str(), params_.geometryQP_, videoBitstreamD1, params_.geometryD1Config_,
         ( params_.use3dmc_ != 0 ) ? params_.videoEncoderAuxPath_ : params_.videoEncoderPath_, context,
-        params_.keepIntermediateFiles_, params_.losslessGeo_ && params_.losslessGeo444_,  nbyteGeo, false, params_.use3dmc_,
-        params_.lossyMissedPointsPatch_ || params_.useMissedPointsSeparateVideo_ );
+        params_.keepIntermediateFiles_, params_.losslessGeo_ && params_.losslessGeo444_, nbyteGeo, false,
+        params_.use3dmc_, params_.lossyMissedPointsPatch_ || params_.useMissedPointsSeparateVideo_ );
 
     auto sizeGeometryVideo = videoBitstreamD0.naluSize() + videoBitstreamD1.naluSize();
     std::cout << "geometry video ->" << sizeGeometryVideo << " B ("
@@ -229,9 +229,9 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     videoEncoder.compress(
         videoGeometry, path.str(), params_.geometryQP_, videoBitstream,
         params_.layerCountMinus1_ == 0 ? getEncoderConfig1L( params_.geometryConfig_ ) : params_.geometryConfig_,
-        ( params_.use3dmc_ != 0 ) ? params_.videoEncoderAuxPath_ : params_.videoEncoderPath_, context, 
-        params_.keepIntermediateFiles_, params_.losslessGeo_ && params_.losslessGeo444_, nbyteGeo, false, params_.use3dmc_,
-        params_.lossyMissedPointsPatch_ || params_.useMissedPointsSeparateVideo_ );
+        ( params_.use3dmc_ != 0 ) ? params_.videoEncoderAuxPath_ : params_.videoEncoderPath_, context,
+        params_.keepIntermediateFiles_, params_.losslessGeo_ && params_.losslessGeo444_, nbyteGeo, false,
+        params_.use3dmc_, params_.lossyMissedPointsPatch_ || params_.useMissedPointsSeparateVideo_ );
   }
 
   if ( sps.getPcmPatchEnabledFlag() && sps.getPcmSeparateVideoPresentFlag() ) {
@@ -240,7 +240,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     auto& videoMPsGeometry = context.getVideoMPsGeometry();
     videoEncoder.compress( videoMPsGeometry, path.str(),
                            params_.lossyMissedPointsPatch_ ? params_.lossyMppGeoQP_ : params_.geometryQP_,
-                           videoBitstreamMP, params_.geometryMPConfig_, params_.videoEncoderPath_, context, 
+                           videoBitstreamMP, params_.geometryMPConfig_, params_.videoEncoderPath_, context,
                            params_.keepIntermediateFiles_, false, 2 );
     if ( params_.lossyMissedPointsPatch_ ) { generateMissedPointsGeometryfromVideo( context, reconstructs ); }
   }
@@ -260,7 +260,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   generatePointCloudParameters.nbThread_                      = params_.nbThread_;
   generatePointCloudParameters.absoluteD1_                    = params_.layerCountMinus1_ == 0 || params_.absoluteD1_;
   generatePointCloudParameters.surfaceThickness_              = params_.surfaceThickness_;
-  generatePointCloudParameters.ignoreLod_                     = true;
+  generatePointCloudParameters.ignoreLod_                     = false;
   generatePointCloudParameters.thresholdColorSmoothing_       = params_.thresholdColorSmoothing_;
   generatePointCloudParameters.thresholdColorDifference_      = params_.thresholdColorDifference_;
   generatePointCloudParameters.thresholdColorVariation_       = params_.thresholdColorVariation_;
@@ -346,7 +346,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     videoEncoder.compress(
         videoTexture, path.str(), params_.textureQP_, videoBitstream,
         params_.layerCountMinus1_ == 0 ? getEncoderConfig1L( params_.textureConfig_ ) : params_.textureConfig_,
-        ( params_.use3dmc_ != 0 ) ? params_.videoEncoderAuxPath_ : params_.videoEncoderPath_, context, 
+        ( params_.use3dmc_ != 0 ) ? params_.videoEncoderAuxPath_ : params_.videoEncoderPath_, context,
         params_.keepIntermediateFiles_, params_.losslessTexture_, 1, params_.patchColorSubsampling_, params_.use3dmc_,
         params_.lossyMissedPointsPatch_ || params_.useMissedPointsSeparateVideo_, params_.colorSpaceConversionConfig_,
         params_.inverseColorSpaceConversionConfig_, params_.colorSpaceConversionPath_ );
@@ -357,7 +357,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
       auto& videoMPsTexture = context.getVideoMPsTexture();
       videoEncoder.compress(
           videoMPsTexture, path.str(), params_.textureQP_, videoBitstreamMP, params_.textureMPConfig_,
-          params_.videoEncoderPath_, context, params_.keepIntermediateFiles_, params_.losslessTexture_,  1, false, false,
+          params_.videoEncoderPath_, context, params_.keepIntermediateFiles_, params_.losslessTexture_, 1, false, false,
           params_.lossyMissedPointsPatch_ || params_.useMissedPointsSeparateVideo_, params_.colorSpaceConversionConfig_,
           params_.inverseColorSpaceConversionConfig_, params_.colorSpaceConversionPath_ );
 
@@ -2294,6 +2294,7 @@ void PCCEncoder::generateMissedPointsPatch( const PCCPointSet3& source,
     if ( dist2 > 0.0 ) { missedPoints.push_back( i ); }
   }
   size_t numMissedPts = missedPoints.size();
+
   if ( params_.lossyMissedPointsPatch_ ) {
     // Settings for selecting/pruning points.
     const size_t maxNeighborCount                      = 16;
@@ -2675,6 +2676,8 @@ bool PCCEncoder::generateGeometryVideo( const PCCGroupOfFrames& sources, PCCCont
   segmenterParams.geometryBitDepth3D               = gi.getGeometry3dCoordinatesBitdepthMinus1() + 1;
   segmenterParams.EOMFixBitCount                   = params_.EOMFixBitCount_;
   segmenterParams.EOMSingleLayerMode = params_.enhancedDeltaDepthCode_ && ( params_.layerCountMinus1_ == 0 );
+  segmenterParams.testLevelOfDetail  = params_.testLevelOfDetail_;
+
   if ( params_.additionalProjectionPlaneMode_ == 0 ) {
     calculateWeightNormal( context, sources[0], frames[0] );
     segmenterParams.weightNormal = frames[0].getWeightNormal();
@@ -4742,12 +4745,12 @@ void PCCEncoder::packingWithRefForFirstFrameNoglobalPatch( PCCPatch&            
       PATCH_ORIENTATION_MIRROR, PATCH_ORIENTATION_MROT180};           // favoring horizontal orientations (that should be
                                                              // rotated)
   int32_t numOrientations = params_.useEightOrientations_ ? 8 : 2;
-  GPAPatchData&curGPAPatchData     = patch.getCurGPAPatchData();  // GPA_HARMONIZATION
+  GPAPatchData&curGPAPatchData = patch.getCurGPAPatchData();  // GPA_HARMONIZATION
 
   assert( curGPAPatchData.sizeU0 <= occupancySizeU );
   assert( curGPAPatchData.sizeV0 <= occupancySizeV );
   bool locationFound = false;
-  auto&occupancy      = patch.getOccupancy();
+  auto&occupancy     = patch.getOccupancy();
   while ( !locationFound ) {
     if ( patch.getBestMatchIdx() != InvalidPatchIndex ) {
       PCCPatch prePatch = prePatches[patch.getBestMatchIdx()];

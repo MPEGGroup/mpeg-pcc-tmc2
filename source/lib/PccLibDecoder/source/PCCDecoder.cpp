@@ -177,7 +177,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   generatePointCloudParameters.absoluteD1_ =
       sps.getLayerCountMinus1() == 0 || sps.getLayerAbsoluteCodingEnabledFlag( 1 );
   generatePointCloudParameters.surfaceThickness_ = context[0].getSurfaceThickness();
-  generatePointCloudParameters.ignoreLod_        = true;
+  generatePointCloudParameters.ignoreLod_        = false;
   if ( ai.getAttributeParamsEnabledFlag() ) {
     generatePointCloudParameters.thresholdColorSmoothing_  = afp.getAttributeSmoothingThreshold( 0 );
     generatePointCloudParameters.gridColorSmoothing_       = afp.getAttributeSmoothingParamsPresentFlag( 0 );

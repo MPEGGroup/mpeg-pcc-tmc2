@@ -70,6 +70,7 @@ struct PCCPatchSegmenter3Parameters {
   size_t      additionalProjectionPlaneMode;
   double      partialAdditionalProjectionPlane;
   size_t      geometryBitDepth3D;
+  size_t      testLevelOfDetail;
 };
 
 class PCCPatchSegmenter3 {
@@ -132,7 +133,8 @@ class PCCPatchSegmenter3 {
                        const bool                 sixDirection,
                        bool                       useSurfaceSeparation,
                        const size_t               additionalProjectionPlaneMode,
-                       const size_t               geometryBitDepth3D );
+                       const size_t               geometryBitDepth3D, 
+					   const size_t               testLevelOfDetail );
 
   void refineSegmentation( const PCCPointSet3&         pointCloud,
                            const PCCKdTree&            kdtree,

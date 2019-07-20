@@ -521,6 +521,7 @@ bool parseParameters( int                   argc,
      encoderParams.testLevelOfDetail_,
      encoderParams.testLevelOfDetail_,
      "Force non-zero level of detail for testing")
+
     ("testLevelOfDetailSignaling",
      encoderParams.testLevelOfDetailSignaling_,
      encoderParams.testLevelOfDetailSignaling_,
@@ -723,6 +724,9 @@ bool parseParameters( int                   argc,
     po::doHelp( std::cout, opts, 78 );
     return false;
   }
+
+  if ( encoderParams.losslessGeo_ ) { encoderParams.testLevelOfDetail_ = 0; }
+
   encoderParams.completePath();
   encoderParams.print();
   if ( !encoderParams.check() ) { err.error() << "Input encoder parameters not correct \n"; }
@@ -774,9 +778,9 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
 
     if ( encoderParams.testLevelOfDetail_ > 0 ) {
       const double lodScale = 1.0 / double( 1u << encoderParams.testLevelOfDetail_ );
-      for ( auto& frame : sources.getFrames() ) {
-        for ( auto& point : frame.getPositions() ) { point *= lodScale; }
-      }
+      //for ( auto& frame : sources.getFrames() ) {
+      //  for ( auto& point : frame.getPositions() ) { point *= lodScale; }
+      //}
     }
 
     std::cout << "Compressing group of frames " << contextIndex << ": " << startFrameNumber << " -> " << endFrameNumber
