@@ -642,8 +642,8 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
 
       PCCBox3D boundingBox;
       for ( size_t k = 0; k < 3; ++k ) {
-        boundingBox.min_[k] = points[connectedComponent[0]][k];
-        boundingBox.max_[k] = points[connectedComponent[0]][k];
+        boundingBox.min_[k] = ( std::numeric_limits<double>::max )();
+        boundingBox.max_[k] = 0;
       }
       for ( const auto i : connectedComponent ) {
         patchPartition[i]   = patchIndex + 1;

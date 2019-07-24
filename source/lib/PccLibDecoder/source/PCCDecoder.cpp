@@ -511,7 +511,7 @@ printf(" => numNonPCMPatch -1 => %d \n",numNonPCMPatch);
         if ( pfps.getProjection45DegreeEnableFlag() == 0 ) {
           patch.getD1() = max3DCoordinate - (int32_t)pdu.get3DShiftMinNormalAxis() * minLevel;
         } else {
-          patch.getD1() = max3DCoordinate - (int32_t)pdu.get3DShiftMinNormalAxis() * minLevel;
+          patch.getD1() = ( max3DCoordinate << 1 ) - (int32_t)pdu.get3DShiftMinNormalAxis() * minLevel;
         }
       }
       prevSizeU0     = patch.getSizeU0();
