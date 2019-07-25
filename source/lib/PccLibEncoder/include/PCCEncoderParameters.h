@@ -116,6 +116,9 @@ class PCCEncoderParameters {
   size_t gridSize_;
   bool   flagGeometrySmoothing_;
 
+  // Patch Expansion (m47772, CE2.12)
+  bool patchExpansion_;
+
   // color smoothing
   double thresholdColorSmoothing_;
   double thresholdColorDifference_;

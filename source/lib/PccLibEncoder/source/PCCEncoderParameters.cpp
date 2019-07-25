@@ -77,6 +77,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   occupancyMapQP_                         = 8;
   occupancyMapRefinement_                 = false;
   flagGeometrySmoothing_                  = true;
+  patchExpansion_                         = false;
   gridSmoothing_                          = true;
   gridSize_                               = 8;
   neighborCountSmoothing_                 = 4 * 16;
@@ -296,6 +297,7 @@ void PCCEncoderParameters::print() {
       std::cout << "\t   thresholdSmoothing                     " << thresholdSmoothing_ << std::endl;
     }
   }
+  std::cout << "\t   patchExpansion                         " << patchExpansion_ << std::endl;
   std::cout << "\t color smoothing" << std::endl;
   std::cout << "\t   flagColorSmoothing                       " << flagColorSmoothing_ << std::endl;
   if ( flagColorSmoothing_ ) {

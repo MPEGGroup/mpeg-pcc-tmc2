@@ -71,6 +71,7 @@ struct PCCPatchSegmenter3Parameters {
   double      partialAdditionalProjectionPlane;
   size_t      geometryBitDepth3D;
   size_t      testLevelOfDetail;
+  bool        patchExpansion;
 };
 
 class PCCPatchSegmenter3 {
@@ -103,9 +104,17 @@ class PCCPatchSegmenter3 {
                              std::vector<std::vector<size_t>>& adj,
                              const size_t                      maxNNCount );
 
-  void computeAdjacencyInfoInRadius( const PCCPointSet3 &pointCloud, const PCCKdTree &kdtree,
-                                     std::vector<std::vector<size_t>> &adj, const size_t maxNNCount, 
-                                     const size_t radius );
+  void computeAdjacencyInfoDist( const PCCPointSet3&               pointCloud,
+                                 const PCCKdTree&                  kdtree,
+                                 std::vector<std::vector<size_t>>& adj,
+                                 std::vector<std::vector<double>>& adjDist,
+                                 const size_t                      maxNNCount );
+
+  void computeAdjacencyInfoInRadius( const PCCPointSet3&               pointCloud,
+                                     const PCCKdTree&                  kdtree,
+                                     std::vector<std::vector<size_t>>& adj,
+                                     const size_t                      maxNNCount,
+                                     const size_t                      radius );
 
   void segmentPatches( const PCCPointSet3&        points,
                        const PCCKdTree&           kdtree,
@@ -133,8 +142,9 @@ class PCCPatchSegmenter3 {
                        const bool                 sixDirection,
                        bool                       useSurfaceSeparation,
                        const size_t               additionalProjectionPlaneMode,
-                       const size_t               geometryBitDepth3D, 
-					   const size_t               testLevelOfDetail );
+                       const size_t               geometryBitDepth3D,
+                       const size_t               testLevelOfDetail,
+                       bool                       patchExpansionEnabled );
 
   void refineSegmentation( const PCCPointSet3&         pointCloud,
                            const PCCKdTree&            kdtree,
@@ -146,12 +156,16 @@ class PCCPatchSegmenter3 {
                            const size_t                iterationCount,
                            std::vector<size_t>&        partition );
 
-  void refineSegmentationGridBased( const PCCPointSet3 &pointCloud,
-                                    const PCCNormalsGenerator3 &normalsGen,
-                                    const PCCVector3D *orientations, const size_t orientationCount,
-                                    const size_t maxNNCount, const double lambda,
-                                    const size_t iterationCount, const size_t voxelDimensionRefineSegmentation,
-                                    const size_t searchRadiusRefineSegmentation, std::vector<size_t> &partition );
+  void refineSegmentationGridBased( const PCCPointSet3&         pointCloud,
+                                    const PCCNormalsGenerator3& normalsGen,
+                                    const PCCVector3D*          orientations,
+                                    const size_t                orientationCount,
+                                    const size_t                maxNNCount,
+                                    const double                lambda,
+                                    const size_t                iterationCount,
+                                    const size_t                voxelDimensionRefineSegmentation,
+                                    const size_t                searchRadiusRefineSegmentation,
+                                    std::vector<size_t>&        partition );
 
  private:
   size_t                nbThread_;

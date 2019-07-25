@@ -2677,6 +2677,7 @@ bool PCCEncoder::generateGeometryVideo( const PCCGroupOfFrames& sources, PCCCont
   segmenterParams.EOMFixBitCount                   = params_.EOMFixBitCount_;
   segmenterParams.EOMSingleLayerMode = params_.enhancedDeltaDepthCode_ && ( params_.layerCountMinus1_ == 0 );
   segmenterParams.testLevelOfDetail  = params_.testLevelOfDetail_;
+  segmenterParams.patchExpansion                   = params_.patchExpansion_;
 
   if ( params_.additionalProjectionPlaneMode_ == 0 || params_.additionalProjectionPlaneMode_ == 5 ) {
     calculateWeightNormal( context, sources[0], frames[0] );

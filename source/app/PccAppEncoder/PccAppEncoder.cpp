@@ -324,6 +324,12 @@ bool parseParameters( int                   argc,
      encoderParams.thresholdSmoothing_,
      "Threshold smoothing")
 
+    // Patch Expansion (m47772 CE2.12)
+	  ("patchExpansion",
+  	 encoderParams.patchExpansion_,
+	   encoderParams.patchExpansion_,
+	   "Use occupancy map refinement")
+
     //grid smoothing (m44705 CE2.17)
     ("gridSmoothing",
       encoderParams.gridSmoothing_,
@@ -778,7 +784,7 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
 
     if ( encoderParams.testLevelOfDetail_ > 0 ) {
       const double lodScale = 1.0 / double( 1u << encoderParams.testLevelOfDetail_ );
-      //for ( auto& frame : sources.getFrames() ) {
+      // for ( auto& frame : sources.getFrames() ) {
       //  for ( auto& point : frame.getPositions() ) { point *= lodScale; }
       //}
     }
@@ -789,16 +795,15 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
     clock.stop();
 
     PCCGroupOfFrames normals;
-    bool bRunMetric=true;
+    bool             bRunMetric = true;
     if ( metricsParams.computeMetrics_ ) {
       if ( metricsParams.normalDataPath_ != "" ) {
         if ( !normals.load( metricsParams.normalDataPath_, startFrameNumber, endFrameNumber, COLOR_TRANSFORM_NONE,
                             true ) ) {
-          bRunMetric=false;
+          bRunMetric = false;
         }
       }
-      if(bRunMetric)
-        metrics.compute( sources, reconstructs, normals );
+      if ( bRunMetric ) metrics.compute( sources, reconstructs, normals );
     }
     if ( metricsParams.computeChecksum_ ) {
       if ( encoderParams.losslessGeo_ && encoderParams.losslessTexture_ ) {
