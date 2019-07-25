@@ -211,6 +211,10 @@ class PCCEncoder : public PCCCodec {
   void spatialConsistencyPack( PCCFrameContext& frame, PCCFrameContext& prevFrame, int safeguard = 0 );
   void spatialConsistencyPackFlexible( PCCFrameContext& frame, PCCFrameContext& prevFrame, int safeguard = 0 );
   void spatialConsistencyPackTetris( PCCFrameContext& frame, PCCFrameContext& prevFrame, int safeguard = 0 );
+  //GTP
+  void findMatchesForGlobalTetrisPacking(PCCFrameContext & frame, PCCFrameContext & prevFrame);
+  void doGlobalTetrisPacking(PCCContext & context);
+
   void generateOccupancyMap( PCCFrameContext& frameContext );
   void modifyOccupancyMap( PCCFrameContext& frame, const PCCImageGeometry& imageRef, const PCCImageGeometry& image );
   void modifyOccupancyMap1L(PCCFrameContext& frame, PCCImageGeometry &imageRef);

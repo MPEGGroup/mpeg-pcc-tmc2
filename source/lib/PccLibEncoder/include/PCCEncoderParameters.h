@@ -204,7 +204,11 @@ class PCCEncoderParameters {
   bool   useAdditionalPointsPatch_;
 
   // GPA
-  bool globalPatchAllocation_;
+  int globalPatchAllocation_;
+  // GTP
+  int globalPackingStrategyGOF_;
+  bool globalPackingStrategyReset_;
+  double globalPackingStrategyThreshold_;
 
   // EDD
   bool   enhancedPP_;

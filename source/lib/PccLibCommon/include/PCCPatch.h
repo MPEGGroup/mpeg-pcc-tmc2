@@ -92,7 +92,7 @@ class PCCPatch {
       tangentAxis_( 0 ),
       bitangentAxis_( 0 ),
       viewId_( 0 ),
-      bestMatchIdx_( 0 ),
+      bestMatchIdx_( InvalidPatchIndex ),
       patchOrientation_( 0 ),
       isGlobalPatch_( false ),
       patchType_( PATCH_MODE_I_INTRA ) {

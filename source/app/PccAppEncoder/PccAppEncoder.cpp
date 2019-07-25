@@ -639,7 +639,22 @@ bool parseParameters( int                   argc,
     ("globalPatchAllocation",
       encoderParams.globalPatchAllocation_,
       encoderParams.globalPatchAllocation_,
-      "Global temporally consistent patch allocation.(0: anchor's packing method(default), 1: gpa algorithm)\n")
+      "Global temporally consistent patch allocation.(0: anchor's packing method(default), 1: gpa algorithm, 2: gtp algorithm)\n")
+
+    ("globalPackingStrategyGOF",
+      encoderParams.globalPackingStrategyGOF_,
+      encoderParams.globalPackingStrategyGOF_,
+      "Number of frames to pack globally (0:(entire GOF))\n")
+
+    ("globalPackingStrategyReset",
+      encoderParams.globalPackingStrategyReset_,
+      encoderParams.globalPackingStrategyReset_,
+      "Remove the reference to the previous frame (0(default), 1)\n")
+
+    ("globalPackingStrategyThreshold",
+      encoderParams.globalPackingStrategyThreshold_,
+      encoderParams.globalPackingStrategyThreshold_,
+      "matched patches area ratio threshold (decides if connections are valid or not, 0(default))\n")
 
     ("apply3dMotionCompensation",
       encoderParams.use3dmc_,

@@ -155,7 +155,12 @@ PCCEncoderParameters::PCCEncoderParameters() {
   minNormSumOfInvDist4MPSelection_  = 0.35;
   lossyMppGeoQP_                    = 4;
   useAdditionalPointsPatch_         = false;
-  globalPatchAllocation_            = false;
+  //GPA
+  globalPatchAllocation_            = 0;
+  //GTP
+  globalPackingStrategyGOF_         = 0;
+  globalPackingStrategyReset_       = false;
+  globalPackingStrategyThreshold_   = 0;
   use3dmc_                          = true;
   enhancedPP_                       = true;
   minWeightEPP_                     = 0.6;
@@ -242,6 +247,11 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   useEightOrientations                   " << useEightOrientations_ << std::endl;
   std::cout << "\t   safeGuardDistance                      " << safeGuardDistance_ << std::endl;
   std::cout << "\t   globalPatchAllocation                  " << globalPatchAllocation_ << std::endl;
+  if (globalPatchAllocation_ == 2) {
+	  std::cout << "\t   globalPackingStrategyGOF           " << geometryD0Config_ << std::endl;
+	  std::cout << "\t   globalPackingStrategyReset         " << geometryD1Config_ << std::endl;
+	  std::cout << "\t   globalPackingStrategyThreshold     " << geometryD1Config_ << std::endl;
+  }
   std::cout << "\t   textureBGFill                          " << textureBGFill_ << std::endl;
   std::cout << "\t video encoding" << std::endl;
   std::cout << "\t   geometryQP                             " << geometryQP_ << std::endl;
