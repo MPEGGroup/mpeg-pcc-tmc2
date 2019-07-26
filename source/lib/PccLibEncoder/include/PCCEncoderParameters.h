@@ -209,6 +209,8 @@ class PCCEncoderParameters {
   int globalPackingStrategyGOF_;
   bool globalPackingStrategyReset_;
   double globalPackingStrategyThreshold_;
+	//low delay encoding
+	bool   lowDelayEncoding_;
 
   // EDD
   bool   enhancedPP_;

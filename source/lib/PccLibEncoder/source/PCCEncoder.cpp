@@ -701,7 +701,7 @@ void PCCEncoder::spatialConsistencyPack( PCCFrameContext& frame, PCCFrameContext
         for ( size_t u = 0; u <= occupancySizeU && !locationFound; ++u ) {
           patch.getU0() = u;
           patch.getV0() = v;
-          if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, safeguard ) ) {
+          if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_, safeguard ) ) {
             locationFound = true;
           }
         }
@@ -715,6 +715,9 @@ void PCCEncoder::spatialConsistencyPack( PCCFrameContext& frame, PCCFrameContext
       const size_t v = patch.getV0() + v0;
       for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {
         const size_t u = patch.getU0() + u0;
+				if (params_.lowDelayEncoding_)
+					occupancyMap[v * occupancySizeU + u] = true;
+				else
         occupancyMap[v * occupancySizeU + u] =
             occupancyMap[v * occupancySizeU + u] || occupancy[v0 * patch.getSizeU0() + u0];
       }
@@ -846,7 +849,7 @@ void PCCEncoder::spatialConsistencyPackFlexible( PCCFrameContext& frame, PCCFram
         // try to place on the same position as the matched patch
         patch.getU0() = prevPatches[patch.getBestMatchIdx()].getU0();
         patch.getV0() = prevPatches[patch.getBestMatchIdx()].getV0();
-        if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV ) ) {
+        if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_ ) ) {
           locationFound = true;
           if ( printDetailedInfo ) {
             std::cout << "Maintained orientation " << patch.getPatchOrientation() << " for matched patch "
@@ -859,7 +862,7 @@ void PCCEncoder::spatialConsistencyPackFlexible( PCCFrameContext& frame, PCCFram
           for ( int u = 0; u <= occupancySizeU && !locationFound; ++u ) {
             patch.getU0() = u;
             patch.getV0() = v;
-            if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, safeguard ) ) {
+            if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_, safeguard ) ) {
               locationFound = true;
               if ( printDetailedInfo ) {
                 std::cout << "Maintained orientation " << patch.getPatchOrientation() << " for matched patch "
@@ -880,7 +883,7 @@ void PCCEncoder::spatialConsistencyPackFlexible( PCCFrameContext& frame, PCCFram
               } else {
                 patch.getPatchOrientation() = orientation_vertical[orientationIdx];
               }
-              if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, safeguard ) ) {
+              if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_, safeguard ) ) {
                 locationFound = true;
                 if ( printDetailedInfo ) {
                   std::cout << "Orientation " << patch.getPatchOrientation() << " selected for unmatched patch "
@@ -899,6 +902,9 @@ void PCCEncoder::spatialConsistencyPackFlexible( PCCFrameContext& frame, PCCFram
     for ( size_t v0 = 0; v0 < patch.getSizeV0(); ++v0 ) {
       for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {
         int coord           = patch.patchBlock2CanvasBlock( u0, v0, occupancySizeU, occupancySizeV );
+				if (params_.lowDelayEncoding_)
+					occupancyMap[coord] = true;
+				else
         occupancyMap[coord] = occupancyMap[coord] || occupancy[v0 * patch.getSizeU0() + u0];
       }
     }
@@ -1042,7 +1048,7 @@ void PCCEncoder::spatialConsistencyPackTetris( PCCFrameContext& frame, PCCFrameC
           if ( xp >= 0 && xp < occupancySizeU && yp >= 0 && yp < occupancySizeV ) {
             patch.getU0() = xp;
             patch.getV0() = yp;
-            if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, safeguard ) ) {
+            if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_, safeguard ) ) {
               locationFound = true;
               best_u        = xp;
               best_v        = yp;
@@ -1076,7 +1082,7 @@ void PCCEncoder::spatialConsistencyPackTetris( PCCFrameContext& frame, PCCFrameC
                             << std::endl;
                 continue;
               }
-              if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, safeguard ) ) {
+              if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_, safeguard ) ) {
                 // now calculate the wasted space
                 int wasted_space =
                     patch.calculate_wasted_space( horizon, top_horizon, bottom_horizon, right_horizon, left_horizon );
@@ -1116,6 +1122,9 @@ void PCCEncoder::spatialConsistencyPackTetris( PCCFrameContext& frame, PCCFrameC
     for ( size_t v0 = 0; v0 < patch.getSizeV0(); ++v0 ) {
       for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {
         int coord           = patch.patchBlock2CanvasBlock( u0, v0, occupancySizeU, occupancySizeV );
+				if (params_.lowDelayEncoding_)
+					occupancyMap[coord] = true;
+				else
         occupancyMap[coord] = occupancyMap[coord] || occupancy[v0 * patch.getSizeU0() + u0];
       }
     }
@@ -1564,7 +1573,7 @@ void PCCEncoder::doGlobalTetrisPacking(PCCContext &context)
 							curGlobalElem.getU0() = previousGlobalElem.getU0() + (curGlobalElem.getV1() - previousGlobalElem.getV1()) / curPatchElem.elem->getOccupancyResolution();
 							curGlobalElem.getV0() = previousGlobalElem.getV0() + (curGlobalElem.getU1() - previousGlobalElem.getU1()) / curPatchElem.elem->getOccupancyResolution();
 						}
-						if (curGlobalElem.checkFitPatchCanvas(occupancyMap, occupancySizeU, occupancySizeV)) {
+						if (curGlobalElem.checkFitPatchCanvas(occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_)) {
 							locationFound = true;
 							if (params_.packingStrategy_ == 2) {
 								//saving the best position for tetris packing
@@ -1636,7 +1645,7 @@ void PCCEncoder::doGlobalTetrisPacking(PCCContext &context)
 											continue;
 										}
 									}
-									if (curGlobalElem.checkFitPatchCanvas(occupancyMap, occupancySizeU, occupancySizeV)) {
+									if (curGlobalElem.checkFitPatchCanvas(occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_)) {
 										if (params_.packingStrategy_ == 2) {
 											//now calculate the wasted space
 											int wasted_space = curGlobalElem.calculate_wasted_space(horizon, top_horizon, bottom_horizon, right_horizon, left_horizon);
@@ -1741,6 +1750,9 @@ void PCCEncoder::doGlobalTetrisPacking(PCCContext &context)
 				for (size_t v0 = 0; v0 < curGlobalElem.getSizeV0(); ++v0) {
 					for (size_t u0 = 0; u0 < curGlobalElem.getSizeU0(); ++u0) {
 						int coord = curGlobalElem.patchBlock2CanvasBlock(u0, v0, occupancySizeU, occupancySizeV);
+						if (params_.lowDelayEncoding_)
+							occupancyMap[coord] = true;
+						else
 						occupancyMap[coord] = occupancyMap[coord] || occupancy[v0 * curGlobalElem.getSizeU0() + u0];
 
 					}
@@ -1809,7 +1821,7 @@ void PCCEncoder::pack( PCCFrameContext& frame, int safeguard ) {
         for ( int u = 0; u <= occupancySizeU && !locationFound; ++u ) {
           patch.getU0() = u;
           patch.getV0() = v;
-          if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, safeguard ) ) {
+          if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_, safeguard ) ) {
             locationFound = true;
           }
         }
@@ -1823,6 +1835,9 @@ void PCCEncoder::pack( PCCFrameContext& frame, int safeguard ) {
       const size_t v = patch.getV0() + v0;
       for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {
         const size_t u = patch.getU0() + u0;
+				if (params_.lowDelayEncoding_)
+					occupancyMap[v * occupancySizeU + u] = true;
+				else
         occupancyMap[v * occupancySizeU + u] =
             occupancyMap[v * occupancySizeU + u] || occupancy[v0 * patch.getSizeU0() + u0];
       }
@@ -1907,7 +1922,7 @@ void PCCEncoder::packFlexible( PCCFrameContext& frame, int safeguard ) {
             } else {
               patch.getPatchOrientation() = orientation_vertical[orientationIdx];
             }
-            if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, safeguard ) ) {
+            if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_, safeguard ) ) {
               locationFound = true;
               if ( printDetailedInfo ) {
                 std::cout << "Orientation " << patch.getPatchOrientation() << " selected for patch " << patch.getIndex()
@@ -1925,6 +1940,9 @@ void PCCEncoder::packFlexible( PCCFrameContext& frame, int safeguard ) {
     for ( size_t v0 = 0; v0 < patch.getSizeV0(); ++v0 ) {
       for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {
         int coord           = patch.patchBlock2CanvasBlock( u0, v0, occupancySizeU, occupancySizeV );
+				if (params_.lowDelayEncoding_)
+					occupancyMap[coord] = true;
+				else
         occupancyMap[coord] = occupancyMap[coord] || occupancy[v0 * patch.getSizeU0() + u0];
       }
     }
@@ -2033,7 +2051,7 @@ void PCCEncoder::packTetris( PCCFrameContext& frame, int safeguard ) {
             }
             if ( printDetailedInfo )
               std::cout << "(" << u << "," << v << "|" << patch.getPatchOrientation() << ")" << std::endl;
-            if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, safeguard ) ) {
+            if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_, safeguard ) ) {
               // now calculate the wasted space
               int wasted_space =
                   patch.calculate_wasted_space( horizon, top_horizon, bottom_horizon, right_horizon, left_horizon );
@@ -2075,6 +2093,9 @@ void PCCEncoder::packTetris( PCCFrameContext& frame, int safeguard ) {
     for ( size_t v0 = 0; v0 < patch.getSizeV0(); ++v0 ) {
       for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {
         int coord           = patch.patchBlock2CanvasBlock( u0, v0, occupancySizeU, occupancySizeV );
+				if (params_.lowDelayEncoding_)
+					occupancyMap[coord] = true;
+				else
         occupancyMap[coord] = occupancyMap[coord] || occupancy[v0 * patch.getSizeU0() + u0];
       }
     }
@@ -2180,25 +2201,8 @@ void PCCEncoder::packMissedPointsPatch( PCCFrameContext&   frame,
     patch.getSizeV()  = missedPointsPatch.sizeV_;
     assert( patch.getSizeU0() <= occupancySizeU );
     assert( patch.getSizeV0() <= occupancySizeV );
-    bool locationFound = false;
-    while ( !locationFound ) {
-      patch.getPatchOrientation() = PATCH_ORIENTATION_DEFAULT;  // only allowed orientation in anchor
-      for ( int v = maxOccupancyRow; v <= occupancySizeV && !locationFound; ++v ) {
-        for ( int u = 0; u <= occupancySizeU && !locationFound; ++u ) {
-          patch.getU0() = u;
-          patch.getV0() = v;
-          if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, safeguard ) ) {
-            locationFound = true;
-          }
-        }
-      }
-      if ( !locationFound ) {
-        occupancySizeV *= 2;
-        occupancyMap.resize( occupancySizeU * occupancySizeV );
-      }
-    }
-    missedPointsPatch.u0_ = patch.getU0();
-    missedPointsPatch.v0_ = patch.getV0();
+		std::vector<bool>& patchOccupancy = patch.getOccupancy();
+		patchOccupancy.resize(missedPointsPatch.sizeU0_ * missedPointsPatch.sizeV0_, false);
 
     const int16_t infiniteValue = ( std::numeric_limits<int16_t>::max )();
     missedPointsPatch.resize( missedPointsPatch.sizeU_ * missedPointsPatch.sizeV_, infiniteValue );
@@ -2215,14 +2219,39 @@ void PCCEncoder::packMissedPointsPatch( PCCFrameContext&   frame,
           assert( u0 >= 0 && u0 < missedPointsPatch.sizeU0_ );
           assert( v0 >= 0 && v0 < missedPointsPatch.sizeV0_ );
           missedPointPatchOccupancy[p0] = true;
+					patchOccupancy[p0] = true;
         }
       }
     }
+
+		//now placing the missed point patch in the atlas
+    bool locationFound = false;
+    while ( !locationFound ) {
+      patch.getPatchOrientation() = PATCH_ORIENTATION_DEFAULT;  // only allowed orientation in anchor
+      for ( int v = maxOccupancyRow; v <= occupancySizeV && !locationFound; ++v ) {
+        for ( int u = 0; u <= occupancySizeU && !locationFound; ++u ) {
+          patch.getU0() = u;
+          patch.getV0() = v;
+          if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_, safeguard ) ) {
+            locationFound = true;
+          }
+        }
+      }
+      if ( !locationFound ) {
+        occupancySizeV *= 2;
+        occupancyMap.resize( occupancySizeU * occupancySizeV );
+      }
+    }
+    missedPointsPatch.u0_ = patch.getU0();
+    missedPointsPatch.v0_ = patch.getV0();
 
     for ( size_t v0 = 0; v0 < missedPointsPatch.sizeV0_; ++v0 ) {
       const size_t v = missedPointsPatch.v0_ + v0;
       for ( size_t u0 = 0; u0 < missedPointsPatch.sizeU0_; ++u0 ) {
         const size_t u = missedPointsPatch.u0_ + u0;
+				if (params_.lowDelayEncoding_)
+					occupancyMap[v * occupancySizeU + u] = true;
+				else
         occupancyMap[v * occupancySizeU + u] =
             occupancyMap[v * occupancySizeU + u] || missedPointPatchOccupancy[v0 * missedPointsPatch.sizeU0_ + u0];
       }
@@ -4756,7 +4785,7 @@ size_t PCCEncoder::unionPatchGenerationAndPacking( const GlobalPatches& globalPa
           curPatchUnion.getV0() = v;
           if ( params_.packingStrategy_ == 0 ) {
             curPatchUnion.getPatchOrientation() = PATCH_ORIENTATION_DEFAULT;
-            if ( curPatchUnion.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, safeguard ) ) {
+            if ( curPatchUnion.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_, safeguard ) ) {
               locationFound = true;
               if ( printDetailedInfo ) {
                 std::cout << "Orientation " << curPatchUnion.getPatchOrientation() << " selected for unionPatch "
@@ -4766,7 +4795,7 @@ size_t PCCEncoder::unionPatchGenerationAndPacking( const GlobalPatches& globalPa
           } else {
             if ( useRefFrame && ( curPatchUnion.getPatchOrientation() != -1 ) ) {
               // already knonw Patch Orientation. just try.
-              if ( curPatchUnion.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, safeguard ) ) {
+              if ( curPatchUnion.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_, safeguard ) ) {
                 locationFound = true;
                 if ( printDetailedInfo ) {
                   std::cout << "location u0,v0 selected for unionPatch " << curPatchUnion.getIndex() << " (" << u << ","
@@ -4780,7 +4809,7 @@ size_t PCCEncoder::unionPatchGenerationAndPacking( const GlobalPatches& globalPa
                 } else {
                   curPatchUnion.getPatchOrientation() = orientation_vertical[orientationIdx];
                 }
-                if ( curPatchUnion.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, safeguard ) ) {
+                if ( curPatchUnion.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_, safeguard ) ) {
                   locationFound = true;
                   if ( printDetailedInfo ) {
                     std::cout << "Orientation " << curPatchUnion.getPatchOrientation() << " selected for unionPatch "
@@ -4800,6 +4829,9 @@ size_t PCCEncoder::unionPatchGenerationAndPacking( const GlobalPatches& globalPa
     for ( size_t v0 = 0; v0 < curPatchUnion.getSizeV0(); ++v0 ) {
       for ( size_t u0 = 0; u0 < curPatchUnion.getSizeU0(); ++u0 ) {
         int coord           = curPatchUnion.patchBlock2CanvasBlock( u0, v0, occupancySizeU, occupancySizeV );
+				if (params_.lowDelayEncoding_)
+					occupancyMap[coord] = true;
+				else
         occupancyMap[coord] = occupancyMap[coord] || occupancy[v0 * curPatchUnion.getSizeU0() + u0];
       }
     }
@@ -4854,7 +4886,7 @@ void PCCEncoder::packingFirstFrame( PCCContext& context,
           for ( int u = 0; u <= occupancySizeU && !locationFound; ++u ) {
             patch.getU0() = u;
             patch.getV0() = v;
-            if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, safeguard ) ) {
+            if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_, safeguard ) ) {
               locationFound = true;
             }
           }
@@ -4868,6 +4900,9 @@ void PCCEncoder::packingFirstFrame( PCCContext& context,
         const size_t v = patch.getV0() + v0;
         for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {
           const size_t u = patch.getU0() + u0;
+					if (params_.lowDelayEncoding_)
+						occupancyMap[v * occupancySizeU + u] = true;
+					else
           occupancyMap[v * occupancySizeU + u] =
               occupancyMap[v * occupancySizeU + u] || occupancy[v0 * patch.getSizeU0() + u0];
         }
@@ -4919,7 +4954,7 @@ void PCCEncoder::packingFirstFrame( PCCContext& context,
           // try to place on the same position as the matched patch
           curGPAPatchData.u0 = prevPatches[patch.getBestMatchIdx()].getU0();
           curGPAPatchData.v0 = prevPatches[patch.getBestMatchIdx()].getV0();
-          if ( patch.checkFitPatchCanvasForGPA( occupancyMap, occupancySizeU, occupancySizeV ) ) {
+          if ( patch.checkFitPatchCanvasForGPA( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_ ) ) {
             locationFound = true;
             if ( printDetailedInfo ) {
               std::cout << "Maintained orientation " << curGPAPatchData.patchOrientation
@@ -4932,7 +4967,7 @@ void PCCEncoder::packingFirstFrame( PCCContext& context,
             for ( int u = 0; u <= occupancySizeU && !locationFound; ++u ) {
               curGPAPatchData.u0 = u;
               curGPAPatchData.v0 = v;
-              if ( patch.checkFitPatchCanvasForGPA( occupancyMap, occupancySizeU, occupancySizeV, safeguard ) ) {
+              if ( patch.checkFitPatchCanvasForGPA( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_, safeguard ) ) {
                 locationFound = true;
                 if ( printDetailedInfo ) {
                   std::cout << "Maintained orientation " << curGPAPatchData.patchOrientation << " for matched patch:("
@@ -4953,7 +4988,7 @@ void PCCEncoder::packingFirstFrame( PCCContext& context,
                 } else {
                   curGPAPatchData.patchOrientation = orientation_vertical[orientationIdx];
                 }
-                if ( patch.checkFitPatchCanvasForGPA( occupancyMap, occupancySizeU, occupancySizeV, safeguard ) ) {
+                if ( patch.checkFitPatchCanvasForGPA( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_, safeguard ) ) {
                   locationFound = true;
                   if ( printDetailedInfo ) {
                     std::cout << "Orientation " << curGPAPatchData.patchOrientation << " selected for unmatched patch:("
@@ -4972,6 +5007,9 @@ void PCCEncoder::packingFirstFrame( PCCContext& context,
       for ( size_t v0 = 0; v0 < curGPAPatchData.sizeV0; ++v0 ) {
         for ( size_t u0 = 0; u0 < curGPAPatchData.sizeU0; ++u0 ) {
           int coord           = patch.patchBlock2CanvasBlockForGPA( u0, v0, occupancySizeU, occupancySizeV );
+					if (params_.lowDelayEncoding_)
+						occupancyMap[coord] = true;
+					else
           occupancyMap[coord] = occupancyMap[coord] || occupancy[v0 * patch.getSizeU0() + u0];
         }
       }
@@ -5216,6 +5254,9 @@ void PCCEncoder::performGPAPacking( const SubContext& subContext,
         for ( size_t v0 = 0; v0 < curGPAPatchData.sizeV0; ++v0 ) {
           for ( size_t u0 = 0; u0 < curGPAPatchData.sizeU0; ++u0 ) {
             int coord           = patch.patchBlock2CanvasBlockForGPA( u0, v0, occupancySizeU, occupancySizeV );
+						if (params_.lowDelayEncoding_)
+							occupancyMap[coord] = true;
+						else
             occupancyMap[coord] = occupancyMap[coord] || curGPAPatchData.occupancy[v0 * curGPAPatchData.sizeU0 + u0];
           }
         }
@@ -5307,7 +5348,7 @@ void PCCEncoder::packingWithoutRefForFirstFrameNoglobalPatch(
         curGPAPatchData.u0 = u;
         curGPAPatchData.v0 = v;
         if ( params_.packingStrategy_ == 0 ) {
-          if ( patch.checkFitPatchCanvasForGPA( occupancyMap, occupancySizeU, occupancySizeV, safeguard ) ) {
+          if ( patch.checkFitPatchCanvasForGPA( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_, safeguard ) ) {
             locationFound = true;
             if ( printDetailedInfo ) {
               std::cout << "Orientation " << curGPAPatchData.patchOrientation << " selected for Patch: ["
@@ -5322,7 +5363,7 @@ void PCCEncoder::packingWithoutRefForFirstFrameNoglobalPatch(
             } else {
               curGPAPatchData.patchOrientation = orientation_vertical[orientationIdx];
             }
-            if ( patch.checkFitPatchCanvasForGPA( occupancyMap, occupancySizeU, occupancySizeV, safeguard ) ) {
+            if ( patch.checkFitPatchCanvasForGPA( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_, safeguard ) ) {
               locationFound = true;
               if ( printDetailedInfo ) {
                 std::cout << "Orientation " << curGPAPatchData.patchOrientation << "selected for Patch: [" << icount
@@ -5344,6 +5385,9 @@ void PCCEncoder::packingWithoutRefForFirstFrameNoglobalPatch(
   for ( size_t v0 = 0; v0 < curGPAPatchData.sizeV0; ++v0 ) {
     for ( size_t u0 = 0; u0 < curGPAPatchData.sizeU0; ++u0 ) {
       int coord           = patch.patchBlock2CanvasBlockForGPA( u0, v0, occupancySizeU, occupancySizeV );
+			if (params_.lowDelayEncoding_)
+				occupancyMap[coord] = true;
+			else
       occupancyMap[coord] = occupancyMap[coord] || occupancy[v0 * patch.getSizeU0() + u0];
     }
   }
@@ -5405,7 +5449,7 @@ void PCCEncoder::packingWithRefForFirstFrameNoglobalPatch( PCCPatch&            
       }
       if ( curGPAPatchData.patchOrientation == -1 ) { assert( curGPAPatchData.patchOrientation != -1 ); }
 
-      if ( patch.checkFitPatchCanvasForGPA( occupancyMap, occupancySizeU, occupancySizeV, safeguard ) ) {
+      if ( patch.checkFitPatchCanvasForGPA( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_, safeguard ) ) {
         locationFound = true;
         if ( printDetailedInfo ) {
           std::cout << "Maintained TempGPA.orientation " << curGPAPatchData.patchOrientation << " for patch[" << icount
@@ -5420,7 +5464,7 @@ void PCCEncoder::packingWithRefForFirstFrameNoglobalPatch( PCCPatch&            
           curGPAPatchData.u0 = u;
           curGPAPatchData.v0 = v;
           if ( patch.checkFitPatchCanvasForGPA( occupancyMap, occupancySizeU, occupancySizeV,
-                                                safeguard ) ) {  // !!! function overload for GPA;
+                                                params_.lowDelayEncoding_, safeguard ) ) {  // !!! function overload for GPA;
             locationFound = true;
             if ( printDetailedInfo ) {
               std::cout << "Maintained TempGPA.orientation " << curGPAPatchData.patchOrientation
@@ -5442,7 +5486,7 @@ void PCCEncoder::packingWithRefForFirstFrameNoglobalPatch( PCCPatch&            
             } else {
               curGPAPatchData.patchOrientation = orientation_vertical[orientationIdx];
             }
-            if ( patch.checkFitPatchCanvasForGPA( occupancyMap, occupancySizeU, occupancySizeV, safeguard ) ) {
+            if ( patch.checkFitPatchCanvasForGPA( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_, safeguard ) ) {
               locationFound = true;
               if ( printDetailedInfo ) {
                 std::cout << "Maintained TempGPA.orientation " << curGPAPatchData.patchOrientation
@@ -5463,6 +5507,9 @@ void PCCEncoder::packingWithRefForFirstFrameNoglobalPatch( PCCPatch&            
   for ( size_t v0 = 0; v0 < curGPAPatchData.sizeV0; ++v0 ) {
     for ( size_t u0 = 0; u0 < curGPAPatchData.sizeU0; ++u0 ) {
       int coord           = patch.patchBlock2CanvasBlockForGPA( u0, v0, occupancySizeU, occupancySizeV );
+			if (params_.lowDelayEncoding_)
+				occupancyMap[coord] = true;
+			else
       occupancyMap[coord] = occupancyMap[coord] || occupancy[v0 * curGPAPatchData.sizeU0 + u0];
     }
   }

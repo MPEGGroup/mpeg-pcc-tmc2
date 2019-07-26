@@ -656,6 +656,11 @@ bool parseParameters( int                   argc,
       encoderParams.globalPackingStrategyThreshold_,
       "matched patches area ratio threshold (decides if connections are valid or not, 0(default))\n")
 
+    ("lowDelayEncoding",
+	    encoderParams.lowDelayEncoding_,
+	    encoderParams.lowDelayEncoding_,
+	    "Low Delay encoding (0(default): do nothing, 1: does not allow overlap of patches bounding boxes for low delay encoding)\n")
+
     ("apply3dMotionCompensation",
       encoderParams.use3dmc_,
       encoderParams.use3dmc_,

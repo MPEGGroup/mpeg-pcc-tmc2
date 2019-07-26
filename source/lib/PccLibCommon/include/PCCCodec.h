@@ -201,7 +201,8 @@ class PCCCodec {
                                              const size_t testLevelOfDetail,
                                              const size_t occupancyResolution );
 
-  void generateBlockToPatchFromOccupancyMap( PCCFrameContext& frame,
+  void generateBlockToPatchFromOccupancyMap( PCCContext&  context,
+                                             PCCFrameContext& frame,
                                              size_t           frameIndex,
                                              const size_t     occupancyResolution );
 
@@ -211,7 +212,8 @@ class PCCCodec {
                                             const size_t testLevelOfDetail,
                                             const size_t occupancyResolution );
 
-  void generateBlockToPatchFromBoundaryBox( PCCFrameContext& frame,
+  void generateBlockToPatchFromBoundaryBox( PCCContext&  context,
+                                            PCCFrameContext& frame,
                                             size_t           frameIndex,
                                             const size_t     occupancyResolution );
 

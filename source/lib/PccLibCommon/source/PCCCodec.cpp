@@ -1952,11 +1952,12 @@ void PCCCodec::generateBlockToPatchFromOccupancyMap( PCCContext&  context,
   size_t sizeFrames = context.getFrames().size();
   for ( int i = 0; i < sizeFrames; i++ ) {
     PCCFrameContext& frame = context.getFrames()[i];
-    generateBlockToPatchFromOccupancyMap( frame, i, occupancyResolution );
+    generateBlockToPatchFromOccupancyMap( context, frame, i, occupancyResolution );
   }
 }
 
-void PCCCodec::generateBlockToPatchFromOccupancyMap( PCCFrameContext& frame,
+void PCCCodec::generateBlockToPatchFromOccupancyMap( PCCContext&  context,
+                                                     PCCFrameContext& frame,
                                                      size_t           frameIndex,
                                                      const size_t     occupancyResolution ) {
   auto&        patches            = frame.getPatches();
@@ -1984,7 +1985,9 @@ void PCCCodec::generateBlockToPatchFromOccupancyMap( PCCFrameContext& frame,
                 ( occupancyMap[patch.patch2Canvas( u, v, frame.getWidth(), frame.getHeight(), x, y )] != 0 );
           }  // u1
         }    // v1
-        if ( nonZeroPixel > 0 ) { blockToPatch[blockIndex] = patchIndex + 1; }
+        if ( nonZeroPixel > 0 ) {
+					if ( (context.getSps().getPatchPrecedenceOrderFlag()==0) || blockToPatch[blockIndex] == 0 ) { blockToPatch[blockIndex] = patchIndex + 1; }
+				}
       }  // u0
     }    // v0
   }      // patch
@@ -1998,11 +2001,12 @@ void PCCCodec::generateBlockToPatchFromBoundaryBox( PCCContext&  context,
   size_t sizeFrames = context.getFrames().size();
   for ( int i = 0; i < sizeFrames; i++ ) {
     PCCFrameContext& frame = context.getFrames()[i];
-    generateBlockToPatchFromBoundaryBox( frame, i, occupancyResolution );
+    generateBlockToPatchFromBoundaryBox( context, frame, i, occupancyResolution );
   }
 }
 
-void PCCCodec::generateBlockToPatchFromBoundaryBox( PCCFrameContext& frame,
+void PCCCodec::generateBlockToPatchFromBoundaryBox( PCCContext&  context,
+                                                    PCCFrameContext& frame,
                                                     size_t           frameIndex,
                                                     const size_t     occupancyResolution ) {
   auto&        patches            = frame.getPatches();
@@ -2018,7 +2022,7 @@ void PCCCodec::generateBlockToPatchFromBoundaryBox( PCCFrameContext& frame,
     for ( size_t v0 = 0; v0 < patch.getSizeV0(); ++v0 ) {
       for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {
         const size_t blockIndex  = patch.patchBlock2CanvasBlock( u0, v0, blockToPatchWidth, blockToPatchHeight );
-        blockToPatch[blockIndex] = patchIndex + 1;
+        if ( (context.getSps().getPatchPrecedenceOrderFlag() == 0) || blockToPatch[blockIndex] == 0 ) { blockToPatch[blockIndex] = patchIndex + 1; }
       }  // u0
     }    // v0
   }      // patch

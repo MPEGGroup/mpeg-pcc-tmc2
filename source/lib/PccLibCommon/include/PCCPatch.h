@@ -324,6 +324,7 @@ class PCCPatch {
   bool checkFitPatchCanvas( std::vector<bool> canvas,
                             size_t            canvasStrideBlk,
                             size_t            canvasHeightBlk,
+                            bool              bPrecedence,
                             int               safeguard = 0 ) {
     for ( size_t v0 = 0; v0 < getSizeV0(); ++v0 ) {
       for ( size_t u0 = 0; u0 < getSizeU0(); ++u0 ) {
@@ -332,11 +333,20 @@ class PCCPatch {
             int pos = patchBlock2CanvasBlock( u0 + deltaX, v0 + deltaY, canvasStrideBlk, canvasHeightBlk );
             if ( pos < 0 ) {
               return false;
-            } else if ( canvas[pos] ) {
+						}
+						else {
+							if (bPrecedence) {
+								if (canvas[pos] && occupancy_[u0 + getSizeU0() * v0]) {
+									return false;
+								}
+							} else {
+								if (canvas[pos]) {
               return false;
             }
           }
         }
+      }
+    }
       }
     }
     return true;
@@ -689,6 +699,7 @@ class PCCPatch {
   bool checkFitPatchCanvasForGPA( std::vector<bool> canvas,
                                   size_t            canvasStrideBlk,
                                   size_t            canvasHeightBlk,
+                                  bool              bPrecedence,
                                   int               safeguard = 0 ) {
     for ( size_t v0 = 0; v0 < curGPAPatchData_.sizeV0; ++v0 ) {
       for ( size_t u0 = 0; u0 < curGPAPatchData_.sizeU0; ++u0 ) {
@@ -697,9 +708,18 @@ class PCCPatch {
             int pos = patchBlock2CanvasBlockForGPA( u0 + deltaX, v0 + deltaY, canvasStrideBlk, canvasHeightBlk );
             if ( pos < 0 ) {
               return false;
-            } else if ( canvas[pos] ) {
+						}
+						else {
+							if (bPrecedence) {
+								if (canvas[pos] && occupancy_[u0 + getSizeU0() * v0]) {
+									return false;
+								}
+							} else {
+								if (canvas[pos]) {
               return false;
             }
+							}
+						}
           }
         }
       }

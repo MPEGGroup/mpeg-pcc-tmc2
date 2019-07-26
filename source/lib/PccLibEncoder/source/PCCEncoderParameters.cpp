@@ -149,6 +149,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   textureBGFill_        = 1;
   safeGuardDistance_    = 0;
   useEightOrientations_ = false;
+  lowDelayEncoding_ = false;
 
   // lossy missed points patch
   lossyMissedPointsPatch_           = false;
@@ -252,6 +253,7 @@ void PCCEncoderParameters::print() {
 	  std::cout << "\t   globalPackingStrategyReset         " << geometryD1Config_ << std::endl;
 	  std::cout << "\t   globalPackingStrategyThreshold     " << geometryD1Config_ << std::endl;
   }
+  std::cout << "\t   lowDelayEncoding                       " << lowDelayEncoding_ << std::endl;
   std::cout << "\t   textureBGFill                          " << textureBGFill_ << std::endl;
   std::cout << "\t video encoding" << std::endl;
   std::cout << "\t   geometryQP                             " << geometryQP_ << std::endl;
@@ -579,6 +581,10 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   sps.setPatchInterPredictionEnabledFlag( deltaCoding_ );
   sps.setSurfaceThickness( surfaceThickness_ );
   sps.setProjection45DegreeEnableFlag( additionalProjectionPlaneMode_ > 0 ? 1 : 0 );
+	if(lowDelayEncoding_)
+		sps.setPatchPrecedenceOrderFlag( 1 ); //low delay coding requires patch precedence set to 1
+	else
+		sps.setPatchPrecedenceOrderFlag( 0 ); 
 
   ai.setAttributeCount( noAttributes_ ? 0 : 1 );
   ai.allocate();
