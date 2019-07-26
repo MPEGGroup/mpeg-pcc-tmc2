@@ -211,6 +211,8 @@ class PCCEncoderParameters {
   double globalPackingStrategyThreshold_;
 	//low delay encoding
 	bool   lowDelayEncoding_;
+	//3D geometry padding
+	size_t geometryPadding_;
 
   // EDD
   bool   enhancedPP_;

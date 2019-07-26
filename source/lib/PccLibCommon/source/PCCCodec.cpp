@@ -132,11 +132,12 @@ void PCCCodec::generatePointCloud( PCCGroupOfFrames&                  reconstruc
   auto& frames          = context.getFrames();
   auto& videoGeometry   = context.getVideoGeometry();
   auto& videoGeometryD1 = context.getVideoGeometryD1();
+	auto &videoOccupancyMap = context.getVideoOccupancyMap();
 
   for ( size_t i = 0; i < frames.size(); i++ ) {
     TRACE_CODEC( " Frame %lu / %lu \n", i, frames.size() );
     std::vector<uint32_t> partition;
-    generatePointCloud( reconstructs[i], context, frames[i], videoGeometry, videoGeometryD1, params, partition );
+    generatePointCloud( reconstructs[i], context, frames[i], videoGeometry, videoGeometryD1, videoOccupancyMap, params, partition );
 
     TRACE_CODEC( " generatePointCloud create %lu points \n", reconstructs[i].getPointCount() );
     if ( !params.losslessGeo_ && params.flagGeometrySmoothing_ ) {
@@ -521,13 +522,24 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
                                    PCCFrameContext&                   frame,
                                    const PCCVideoGeometry&            video,
                                    const PCCVideoGeometry&            videoD1,
+	                                 const PCCVideoOccupancyMap&        videoOM,
                                    const GeneratePointCloudParameters params,
                                    std::vector<uint32_t>&             partition ) {
   TRACE_CODEC( "generatePointCloud F = %lu start \n", frame.getIndex() );
   auto& patches      = frame.getPatches();
   auto& pointToPixel = frame.getPointToPixel();
   auto& blockToPatch = frame.getBlockToPatch();
+	//point cloud occupancy map upscaling from video using nearest neighbor
   auto& occupancyMap = frame.getOccupancyMap();
+	auto& width = frame.getWidth();
+	auto& height = frame.getHeight();
+	occupancyMap.resize(width * height, 0);
+	for (size_t v = 0; v < height; ++v) {
+		for (size_t u = 0; u < width; ++u) {
+			occupancyMap[v*width + u] = videoOM.getFrame(frame.getIndex()).getValue(0, u / params.occupancyPrecision_, v / params.occupancyPrecision_);
+		}
+	}
+
   partition.resize( 0 );
   pointToPixel.resize( 0 );
   reconstruct.clear();
@@ -2026,4 +2038,54 @@ void PCCCodec::generateBlockToPatchFromBoundaryBox( PCCContext&  context,
       }  // u0
     }    // v0
   }      // patch
+}
+
+void PCCCodec::generateBlockToPatchFromOccupancyMapVideo(PCCContext&  context,
+	const bool   losslessGeo,
+	const bool   lossyMissedPointsPatch,
+	const size_t testLevelOfDetail,
+	const size_t occupancyResolution,
+	const size_t occupancyPrecision) {
+	size_t sizeFrames = context.getFrames().size();
+	for (int i = 0; i < sizeFrames; i++) {
+		PCCFrameContext& frame = context.getFrames()[i];
+		PCCImageOccupancyMap &occupancyImage = context.getVideoOccupancyMap().getFrame(i);
+		generateBlockToPatchFromOccupancyMapVideo(frame, occupancyImage, i, occupancyResolution, occupancyPrecision);
+	}
+}
+
+void PCCCodec::generateBlockToPatchFromOccupancyMapVideo(PCCFrameContext& frame, 
+	PCCImageOccupancyMap &occupancyMapImage,
+	size_t           frameIndex,
+	const size_t     occupancyResolution, 
+	const size_t occupancyPrecision) {
+	auto&        patches = frame.getPatches();
+	const size_t patchCount = patches.size();
+	const size_t blockToPatchWidth = frame.getWidth() / occupancyResolution;
+	const size_t blockToPatchHeight = frame.getHeight() / occupancyResolution;
+	const size_t blockCount = blockToPatchWidth * blockToPatchHeight;
+	auto&        blockToPatch = frame.getBlockToPatch();
+	//const auto&  occupancyMap = frame.getOccupancyMap();
+	blockToPatch.resize(blockCount);
+	std::fill(blockToPatch.begin(), blockToPatch.end(), 0);
+	for (size_t patchIndex = 0; patchIndex < patchCount; ++patchIndex) {
+		auto&  patch = patches[patchIndex];
+		size_t nonZeroPixel = 0;
+		for (size_t v0 = 0; v0 < patch.getSizeV0(); ++v0) {
+			for (size_t u0 = 0; u0 < patch.getSizeU0(); ++u0) {
+				const size_t blockIndex = patch.patchBlock2CanvasBlock(u0, v0, blockToPatchWidth, blockToPatchHeight);
+				nonZeroPixel = 0;
+				for (size_t v1 = 0; v1 < patch.getOccupancyResolution(); ++v1) {
+					const size_t v = v0 * patch.getOccupancyResolution() + v1;
+					for (size_t u1 = 0; u1 < patch.getOccupancyResolution(); ++u1) {
+						const size_t u = u0 * patch.getOccupancyResolution() + u1;
+						size_t       x, y;
+						patch.patch2Canvas(u, v, frame.getWidth(), frame.getHeight(), x, y);
+						nonZeroPixel += (occupancyMapImage.getValue(0, x / occupancyPrecision, y / occupancyPrecision) != 0);
+					}  // u1
+				}    // v1
+				if (nonZeroPixel > 0) { blockToPatch[blockIndex] = patchIndex + 1; }
+			}  // u0
+		}    // v0
+	}      // patch
 }

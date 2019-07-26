@@ -150,6 +150,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   safeGuardDistance_    = 0;
   useEightOrientations_ = false;
   lowDelayEncoding_ = false;
+	geometryPadding_ = false;
 
   // lossy missed points patch
   lossyMissedPointsPatch_           = false;
@@ -255,6 +256,7 @@ void PCCEncoderParameters::print() {
   }
   std::cout << "\t   lowDelayEncoding                       " << lowDelayEncoding_ << std::endl;
   std::cout << "\t   textureBGFill                          " << textureBGFill_ << std::endl;
+	std::cout << "\t   geometryPadding                        " << geometryPadding_ << std::endl;
   std::cout << "\t video encoding" << std::endl;
   std::cout << "\t   geometryQP                             " << geometryQP_ << std::endl;
   std::cout << "\t   textureQP                              " << textureQP_ << std::endl;

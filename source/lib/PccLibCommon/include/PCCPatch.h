@@ -216,6 +216,54 @@ class PCCPatch {
     return point0;
   }
 
+	PCCPoint3D canvasTo3D(const size_t x, const size_t y, const uint16_t depth, const double lodScale, const bool useMppSepVid, const bool lossyMpp, const bool absoluteD1) const {
+		  PCCPoint3D point0;
+		  size_t u, v;
+		  switch (patchOrientation_) {
+		  case PATCH_ORIENTATION_DEFAULT:
+			  u = x - u0_ * occupancyResolution_;
+			  v = y - v0_ * occupancyResolution_;
+			  break;
+		  case PATCH_ORIENTATION_ROT90:
+			  v = (sizeV0_ * occupancyResolution_ - 1 - (x - u0_ * occupancyResolution_));
+			  u = y - v0_ * occupancyResolution_;
+			  break;
+		  case  PATCH_ORIENTATION_ROT180:
+			  u = (sizeU0_ * occupancyResolution_ - 1 - (x - u0_ * occupancyResolution_));
+			  v = (sizeV0_ * occupancyResolution_ - 1 - (y - v0_ * occupancyResolution_));
+			  break;
+		  case  PATCH_ORIENTATION_ROT270:
+			  v = x - u0_ * occupancyResolution_;
+			  u = (sizeU0_ * occupancyResolution_ - 1 - (y - v0_ * occupancyResolution_));
+			  break;
+		  case  PATCH_ORIENTATION_MIRROR:
+			  u = (sizeU0_ * occupancyResolution_ - 1 - (x - u0_ * occupancyResolution_));
+			  v = y - v0_ * occupancyResolution_;
+			  break;
+		  case  PATCH_ORIENTATION_MROT90:
+			  v = (sizeV0_ * occupancyResolution_ - 1 - (x - u0_ * occupancyResolution_));
+			  u = (sizeU0_ * occupancyResolution_ - 1 - (y - v0_ * occupancyResolution_));
+			  break;
+		  case  PATCH_ORIENTATION_MROT180:
+			  u = x - u0_ * occupancyResolution_;
+			  v = (sizeV0_ * occupancyResolution_ - 1 - (y - v0_ * occupancyResolution_));
+			  break;
+		  case PATCH_ORIENTATION_MROT270:
+			  v = x - u0_ * occupancyResolution_;
+			  u = y - v0_ * occupancyResolution_;
+			  break;
+		  case PATCH_ORIENTATION_SWAP://swapAxis
+			  v = x - u0_ * occupancyResolution_;
+			  u = y - v0_ * occupancyResolution_;
+			  break;
+		  default: assert(0); break;
+		  }
+		  point0[normalAxis_] = generateNormalCoordinate(depth, lodScale, useMppSepVid, lossyMpp, absoluteD1);
+		  point0[tangentAxis_] = (double(u) + u1_) * lodScale;
+		  point0[bitangentAxis_] = (double(v) + v1_) * lodScale;
+		  return point0;
+	  }
+
   size_t patch2Canvas( const size_t u,
                        const size_t v,
                        size_t       canvasStride,

@@ -149,15 +149,20 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   auto&             ai  = sps.getAttributeInformation();
   path << removeFileExtension( params_.compressedStreamPath_ ) << "_GOF" << sps.getSequenceParameterSetId() << "_";
 
+  //GENERATE GEOMETRY VIDEO
   generateGeometryVideo( sources, context );
   if (params_.globalPatchAllocation_ == 1) { performDataAdaptiveGPAMethod(context); }
   if (params_.globalPatchAllocation_ == 2) { doGlobalTetrisPacking(context); }
   const size_t nbFramesTexture = params_.layerCountMinus1_ + 1;
   resizeGeometryVideo( context );
-  dilateGeometryVideo( context );
+  //dilateGeometryVideo( context );
   sps.setFrameWidth( (uint16_t)frames[0].getWidth() );
   sps.setFrameHeight( (uint16_t)frames[0].getHeight() );
 
+	//GENERATE OCCUPANCY MAP
+  generateOccupancyMap(context);
+
+	//ENCODE OCCUPANCY MAP
   auto& videoBitstream = context.createVideoBitstream( VIDEO_OCCUPANCY );
   generateOccupancyMapVideo( sources, context );
   auto& videoOccupancyMap = context.getVideoOccupancyMap();
@@ -179,15 +184,19 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
               << ( (float)changedPixCnt1To0 * 100.0F / pixCnt ) << std::endl;
   }
 
-  generateBlockToPatchFromOccupancyMap( context, params_.losslessGeo_, params_.lossyMissedPointsPatch_,
-                                        params_.testLevelOfDetail_, params_.occupancyResolution_ );
+  generateBlockToPatchFromOccupancyMapVideo(context, params_.losslessGeo_, params_.lossyMissedPointsPatch_,
+	  params_.testLevelOfDetail_, params_.occupancyResolution_, params_.occupancyPrecision_);
+
+	//GEOMETRY IMAGE PADDING
+  dilateGeometryVideo(sources, context);
 
   // Group dilation in Geometry
   if ( params_.groupDilation_ && params_.absoluteD1_ && params_.layerCountMinus1_ > 0 ) {
     geometryGroupDilation( context );
   }
 
-  if ( params_.use3dmc_ ) { create3DMotionEstimationFiles( context, path.str() ); }
+	//ENCODE GEOMETRY IMAGE
+  if ( params_.use3dmc_ ) { create3DMotionEstimationFiles( sources, context, path.str() ); }
 
   size_t nbyteGeo = params_.geometryNominal2dBitdepth_ == 8 ? 1 : 2;
   if ( !params_.absoluteD1_ ) {
@@ -245,6 +254,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                            params_.keepIntermediateFiles_, false, 2 );
     if ( params_.lossyMissedPointsPatch_ ) { generateMissedPointsGeometryfromVideo( context, reconstructs ); }
   }
+
+	//RECONSTRUCT POINT CLOUD GEOMETRY
   auto&                        gi = sps.getGeometryInformation();
   GeneratePointCloudParameters generatePointCloudParameters;
   generatePointCloudParameters.occupancyResolution_           = params_.occupancyResolution_;
@@ -291,11 +302,13 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   generatePointCloud( reconstructs, context, generatePointCloudParameters );
 
   if ( ai.getAttributeCount() > 0 ) {
+		//GENERATE ATTRIBUTE
     generateTextureVideo( sources, reconstructs, context, params_ );
     auto&        videoTexture      = context.getVideoTexture();
     const size_t textureFrameCount = nbFramesTexture * frames.size();
     assert( textureFrameCount == videoTexture.getFrameCount() );
     if ( !( params_.losslessGeo_ && params_.textureDilationOffLossless_ ) ) {
+			//ATTRIBUTE IMAGE PADDING
       for ( size_t f = 0; f < textureFrameCount; ++f ) {
         using namespace std::chrono;
         pcc::chrono::Stopwatch<std::chrono::steady_clock> clockPadding;
@@ -343,6 +356,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
       }
     }
 
+		//ENCODE ATTRIBUTRE IMAGE
     auto& videoBitstream = context.createVideoBitstream( VIDEO_TEXTURE );
     videoEncoder.compress(
         videoTexture, path.str(), params_.textureQP_, videoBitstream,
@@ -366,6 +380,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     }
   }
 
+	//RECOLOR RECONSTRUCTED POINT CLOUD
   colorPointCloud( reconstructs, context, ai.getAttributeCount(), params_.colorTransform_,
                    generatePointCloudParameters );
 
@@ -488,11 +503,11 @@ bool PCCEncoder::generateOccupancyMapVideo( const size_t           imageWidth,
             }
             block0[v1 * blockSize0 + u1] = isFull;
             fullCount += isFull;
-            for ( size_t v3 = 0; v3 < params_.occupancyPrecision_; ++v3 ) {
+            /*for ( size_t v3 = 0; v3 < params_.occupancyPrecision_; ++v3 ) {
               for ( size_t u3 = 0; u3 < params_.occupancyPrecision_; ++u3 ) {
-                occupancyMap[( v2 + v3 ) * imageWidth + u2 + u3] = isFull;
-              }
+                occupancyMap[( v2 + v3 ) * imageWidth + u2 + u3] = isFull; -> does not update the occupancy map, this will be done somewhere else 
             }
+            }*/ 
           }
         }
         for ( size_t iterBlockV = 0; iterBlockV < blockSize0; iterBlockV++ ) {
@@ -624,6 +639,43 @@ bool PCCEncoder::modifyOccupancyMap( const size_t           imageWidth,
 
   return true;
 }
+
+void PCCEncoder::modifyOccupancyMap(PCCFrameContext& frame) {
+	auto& occupancyMap = frame.getOccupancyMap();
+	auto& fullOccupancyMap = frame.getFullOccupancyMap();
+	auto& width = frame.getWidth();
+	auto& height = frame.getHeight();
+	occupancyMap.resize(width * height, 0);
+	if (!params_.absoluteD1_)
+		fullOccupancyMap.resize(width * height, 0);
+	const int16_t infiniteDepth = (std::numeric_limits<int16_t>::max)();
+	for (auto &patch : frame.getPatches()) {
+		const size_t v0 = patch.getV0() * patch.getOccupancyResolution();
+		const size_t u0 = patch.getU0() * patch.getOccupancyResolution();
+		for (size_t v = 0; v < patch.getSizeV(); ++v) {
+			for (size_t u = 0; u < patch.getSizeU(); ++u) {
+				const size_t p = v * patch.getSizeU() + u;
+				const int16_t d = patch.getDepth(0)[p];
+				const int16_t eddCode = patch.getDepthEnhancedDeltaD()[p];
+				size_t x, y;
+				auto indx = patch.patch2Canvas(u, v, width, height, x, y);
+				assert(x < width && y < height);
+				const size_t d0 = d;
+				const size_t d1 = patch.getDepth(1)[p];
+				if ((d < infiniteDepth) && (occupancyMap[indx] == 1) && ((d1 - d0) > 1)) {
+					uint16_t bits = d1 - d0 - 1;
+					uint16_t eddExtract = eddCode & (~((~0) << bits));
+					uint16_t symbol = (((1 << bits) - 1) - eddExtract);
+					occupancyMap[indx] += symbol;
+				}
+			}
+		}
+	}
+	if (!params_.absoluteD1_) {
+		fullOccupancyMap = occupancyMap;
+	}
+}
+
 
 void PCCEncoder::spatialConsistencyPack( PCCFrameContext& frame, PCCFrameContext& prevFrame, int safeguard ) {
   auto& width       = frame.getWidth();
@@ -2438,18 +2490,19 @@ bool PCCEncoder::generateGeometryVideo( const PCCPointSet3&                sourc
 
 void PCCEncoder::geometryGroupDilation( PCCContext& context ) {
   auto& videoGeometry = context.getVideoGeometry();
+	auto videoOccupancyMap = context.getVideoOccupancyMap();
   auto& frames        = context.getFrames();
   for ( size_t f = 0; f < frames.size(); ++f ) {
     auto& frame        = frames[f];
     auto& width        = frame.getWidth();
     auto& height       = frame.getHeight();
-    auto& occupancyMap = frame.getOccupancyMap();
+		auto& occupancyMap = videoOccupancyMap.getFrame(f);
     auto& frame1       = videoGeometry.getFrame( 2 * f );
     auto& frame2       = videoGeometry.getFrame( 2 * f + 1 );
     for ( size_t y = 0; y < height; y++ ) {
       for ( size_t x = 0; x < width; x++ ) {
         const size_t pos = y * width + x;
-        if ( occupancyMap[pos] == 0 ) {
+        if (occupancyMap.getValue(0, x / params_.occupancyPrecision_, y / params_.occupancyPrecision_) == 0) {
           uint32_t avg =
               ( ( (uint32_t)frame1.getValue( 0, x, y ) ) + ( (uint32_t)frame2.getValue( 0, x, y ) ) + 1 ) >> 1;
           frame1.setValue( 0, x, y, (uint16_t)avg );
@@ -2458,6 +2511,16 @@ void PCCEncoder::geometryGroupDilation( PCCContext& context ) {
       }
     }
   }
+}
+
+bool PCCEncoder::generateOccupancyMap(PCCContext &context) {
+	for (auto &frame : context.getFrames()) {
+		generateOccupancyMap(frame);
+		if (params_.absoluteD1_ && params_.enhancedDeltaDepthCode_) {
+			modifyOccupancyMap(frame);
+		}
+	}
+	return true;
 }
 
 void PCCEncoder::generateOccupancyMap( PCCFrameContext& frame ) {
@@ -2684,19 +2747,31 @@ void PCCEncoder::remove3DMotionEstimationFiles( std::string path ) {
   removeFile( path + "blockToPatch.txt" );
 }
 
-void PCCEncoder::create3DMotionEstimationFiles( PCCContext& context, std::string path ) {
+void PCCEncoder::create3DMotionEstimationFiles(const PCCGroupOfFrames& sources, PCCContext& context, std::string path ) {
   FILE* occupancyFile    = fopen( ( path + "occupancy.txt" ).c_str(), "wb" );
   FILE* patchInfoFile    = fopen( ( path + "patchInfo.txt" ).c_str(), "wb" );
   FILE* blockToPatchFile = fopen( ( path + "blockToPatch.txt" ).c_str(), "wb" );
 
-  for ( auto& frame : context.getFrames() ) {
+	for ( size_t frIdx = 0; frIdx < sources.size(); ++frIdx) {
+		auto&        frame              = context.getFrame(frIdx);
+		auto&        occupancyMapImage  = context.getVideoOccupancyMap().getFrame(frIdx);
     auto&        patches            = frame.getPatches();
     auto&        occupancyMap       = frame.getOccupancyMap();
     auto&        blockToPatch       = frame.getBlockToPatch();
     const size_t blockToPatchWidth  = frame.getWidth() / params_.occupancyResolution_;
     const size_t blockToPatchHeight = frame.getHeight() / params_.occupancyResolution_;
     fwrite( &blockToPatch[0], sizeof( size_t ), blockToPatchHeight * blockToPatchWidth, blockToPatchFile );
-    fwrite( &occupancyMap[0], sizeof( uint32_t ), frame.getHeight() * frame.getWidth(), occupancyFile );
+    //fwrite( &occupancyMap[0], sizeof( uint32_t ), frame.getHeight() * frame.getWidth(), occupancyFile );
+		uint32_t zeroVal = 0;
+		uint32_t oneVal = 1;
+		for (int y = 0; y < frame.getHeight(); y++) {
+			for (int x = 0; x < frame.getWidth(); x++) {
+				if(occupancyMapImage.getValue(0, x / params_.occupancyPrecision_, y / params_.occupancyPrecision_) > 0)
+					fwrite(&oneVal, sizeof(uint32_t), 1, occupancyFile);
+				else
+					fwrite(&zeroVal, sizeof(uint32_t), 1, occupancyFile);
+			}
+		}
     const size_t numPatches = patches.size();
     fwrite( &numPatches, sizeof( size_t ), 1, patchInfoFile );
     for ( const auto& patch : patches ) {
@@ -3572,53 +3647,55 @@ bool PCCEncoder::resizeGeometryVideo( PCCContext& context ) {
   return true;
 }
 
-bool PCCEncoder::dilateGeometryVideo( PCCContext& context ) {
+bool PCCEncoder::dilateGeometryVideo(const PCCGroupOfFrames& sources, PCCContext& context) {
   auto& videoGeometry   = context.getVideoGeometry();
   auto& videoGeometryD1 = context.getVideoGeometryD1();
-  for ( auto& frame : context.getFrames() ) {
-    generateOccupancyMap( frame );
+	auto& videoOccupancyMap = context.getVideoOccupancyMap();
+	auto &frames = context.getFrames();
+	for (size_t i = 0; i < frames.size(); i++) {
     const size_t shift = videoGeometry.getFrameCount();
     if ( !params_.absoluteD1_ ) {
       videoGeometry.resize( shift + 1 );
       videoGeometryD1.resize( shift + 1 );
       auto& frame1 = videoGeometry.getFrame( shift );
-      generateIntraImage( frame, 0, frame1 );
+      generateIntraImage( frames[i], 0, frame1 );
       auto& frame2 = videoGeometryD1.getFrame( shift );
       if ( params_.enhancedDeltaDepthCode_ ) {
-        generateIntraEnhancedDeltaDepthImage( frame, frame1, frame2 );
+        generateIntraEnhancedDeltaDepthImage( frames[i], frame1, frame2 );
       } else {
-        generateIntraImage( frame, 1, frame2 );
+        generateIntraImage( frames[i], 1, frame2 );
       }
-      dilate( frame, videoGeometry.getFrame( shift ) );
+			dilate_3DPadding(sources[i], frames[i], videoGeometry.getFrame(shift), videoOccupancyMap.getFrame(i));
     } else {
       const size_t nbFrames = params_.layerCountMinus1_ + 1;
       videoGeometry.resize( shift + nbFrames );
       if ( params_.enhancedDeltaDepthCode_ ) {
         auto& frame1 = videoGeometry.getFrame( shift );
-        generateIntraImage( frame, 0, frame1 );
+        generateIntraImage( frames[i], 0, frame1 );
         if ( params_.layerCountMinus1_ == 0 ) {
-          dilate( frame, videoGeometry.getFrame( shift ) );
-          modifyOccupancyMap1L( frame, frame1 );
+          dilate( frames[i], videoGeometry.getFrame( shift ) );
+          modifyOccupancyMap1L( frames[i], frame1 );
         } else {
           auto& frame2 = videoGeometry.getFrame( shift + 1 );
           // if (params_.improveEDD_) {
-          generateIntraImage( frame, 1, frame2 );
+          generateIntraImage( frames[i], 1, frame2 );
           // }else{
           //   generateIntraEnhancedDeltaDepthImage(frame, frame1, frame2);
           // }
-          dilate( frame, videoGeometry.getFrame( shift ) );
-          dilate( frame, videoGeometry.getFrame( shift + 1 ) );
+					dilate_3DPadding(sources[i], frames[i], videoGeometry.getFrame(shift), videoOccupancyMap.getFrame(i));
+					dilate_3DPadding(sources[i], frames[i], videoGeometry.getFrame(shift + 1), videoOccupancyMap.getFrame(i));
+
           // if (params_.improveEDD_)
-          modifyOccupancyMap( frame, frame1, frame2 );
+          modifyOccupancyMap( frames[i], frame1, frame2 );
         }
       } else {
         if ( params_.singleLayerPixelInterleaving_ ) {
           auto& frame1 = videoGeometry.getFrame( shift );
-          generateIntraImage( frame, 0, frame1 );
-          dilate( frame, frame1 );
+          generateIntraImage( frames[i], 0, frame1 );
+          dilate( frames[i], frame1 );
           PCCImageGeometry frame2;
-          generateIntraImage( frame, 1, frame2 );
-          dilate( frame, frame2 );
+          generateIntraImage( frames[i], 1, frame2 );
+					dilate_3DPadding(sources[i], frames[i], frame2, videoOccupancyMap.getFrame(i));
           for ( size_t x = 0; x < frame1.getWidth(); x++ ) {
             for ( size_t y = 0; y < frame1.getHeight(); y++ ) {
               if ( ( x + y ) % 2 == 1 ) { frame1.setValue( 0, x, y, frame2.getValue( 0, x, y ) ); }
@@ -3627,8 +3704,8 @@ bool PCCEncoder::dilateGeometryVideo( PCCContext& context ) {
         } else {
           for ( size_t f = 0; f < nbFrames; ++f ) {
             auto& frame1 = videoGeometry.getFrame( shift + f );
-            generateIntraImage( frame, f, frame1 );
-            dilate( frame, videoGeometry.getFrame( shift + f ) );
+            generateIntraImage( frames[i], f, frame1 );
+            dilate_3DPadding(sources[i], frames[i], videoGeometry.getFrame(shift + f), videoOccupancyMap.getFrame(i));
           }
         }
       }
@@ -3757,6 +3834,242 @@ void PCCEncoder::dilate( PCCFrameContext& frame, PCCImage<T, 3>& image, const PC
       }
     }
   }
+}
+
+//3D geometry padding
+size_t PCCEncoder::adjust_depth_3DPadding(size_t x, size_t y, uint16_t mean_val, PCCImageGeometry &image, PCCKdTree &kdtree, PCCFrameContext& frame) {
+	bool useMissedPointsSeparateVideo = frame.getUseMissedPointsSeparateVideo();
+	bool useAdditionalPointsPatch = frame.getUseAdditionalPointsPatch();
+	bool lossyMpp = !params_.losslessGeo_ && useAdditionalPointsPatch;
+	bool absoluteD1 = params_.absoluteD1_;
+	auto& blockToPatch = frame.getBlockToPatch();
+	auto& patches = frame.getPatches();
+	size_t block_addr = (y / params_.occupancyResolution_)*(image.getWidth() / params_.occupancyResolution_) + x / params_.occupancyResolution_;
+	size_t patchIndex = blockToPatch[block_addr];
+	auto &patch = patches[patchIndex - 1];
+	const double lodScale = true ? 1.0 : double(1u << patch.getLod());
+	size_t distance = (std::numeric_limits<int16_t>::max)();
+	//testing the mean value
+	PCCNNResult result_mean;
+	PCCPoint3D point_mean = patch.canvasTo3D(x, y, mean_val, lodScale, useMissedPointsSeparateVideo, lossyMpp, absoluteD1);
+	kdtree.search(point_mean, 1, result_mean);
+	const double dist2_mean = result_mean.dist(0);
+	if (dist2_mean < distance) {
+		image.setValue(0, x, y, mean_val);
+		image.setValue(1, x, y, 0);
+		image.setValue(2, x, y, 0);
+		distance = dist2_mean;
+	}
+	if (distance != 0) {
+		//the mean value does not belong to the point cloud, so let's search for a nearby value and see if it is better than the mean.
+		size_t deltadepth = 8;
+		if (mean_val < deltadepth) {
+			deltadepth = mean_val;
+		}
+		if (mean_val + deltadepth > params_.maxAllowedDepth_) {
+			deltadepth = params_.maxAllowedDepth_ - mean_val;
+		}
+		for (uint16_t depth = 1; depth < deltadepth; depth++) {
+			PCCPoint3D point = patch.canvasTo3D(x, y, mean_val + depth, lodScale, useMissedPointsSeparateVideo, lossyMpp, absoluteD1);
+			//now find the distance between the point and the original point cloud
+			PCCNNResult result;
+			kdtree.search(point, 1, result);
+			const double dist2 = result.dist(0);
+			if (dist2 < distance) {
+				image.setValue(0, x, y, mean_val + depth);
+				image.setValue(1, x, y, 0);
+				image.setValue(2, x, y, 0);
+				distance = dist2;
+			}
+			PCCPoint3D point_neg = patch.canvasTo3D(x, y, mean_val - depth, lodScale, useMissedPointsSeparateVideo, lossyMpp, absoluteD1);
+			//now find the distance between the point and the original point cloud
+			PCCNNResult result_neg;
+			kdtree.search(point_neg, 1, result_neg);
+			const double dist2_neg = result_neg.dist(0);
+			if (dist2_neg < distance) {
+				image.setValue(0, x, y, mean_val - depth);
+				image.setValue(1, x, y, 0);
+				image.setValue(2, x, y, 0);
+				distance = dist2_neg;
+			}
+		}
+	}
+	return 1;
+}
+
+void PCCEncoder::dilate_3DPadding(const PCCPointSet3& source, PCCFrameContext& frame, PCCImageGeometry &image, PCCImageOccupancyMap &occupancyMap, const PCCImageGeometry *reference) {
+	const size_t pixelBlockCount = params_.occupancyResolution_ * params_.occupancyResolution_;
+	const size_t occupancyMapSizeU = image.getWidth() / params_.occupancyResolution_;
+	const size_t occupancyMapSizeV = image.getHeight() / params_.occupancyResolution_;
+	const int64_t neighbors[4][2] = { { 0, -1 },{ -1, 0 },{ 1, 0 },{ 0, 1 } };
+	const size_t MAX_OCCUPANCY_RESOLUTION = 64;
+	assert(params_.occupancyResolution_ <= MAX_OCCUPANCY_RESOLUTION);
+	size_t count[MAX_OCCUPANCY_RESOLUTION][MAX_OCCUPANCY_RESOLUTION];
+	PCCVector3<int32_t> values[MAX_OCCUPANCY_RESOLUTION][MAX_OCCUPANCY_RESOLUTION];
+
+	std::vector<uint32_t> occupancyMapTemp;
+	auto& occupancyMapOriginal = frame.getOccupancyMap();
+	auto& blockToPatch = frame.getBlockToPatch();
+	auto& patches = frame.getPatches();
+	occupancyMapTemp.resize(image.getWidth()*image.getHeight(), 0);
+	const int16_t infiniteDepth = (std::numeric_limits<int16_t>::max)();
+	PCCKdTree kdtree(source);
+	//fill in positions that are added to the sequence, because of occupancyMap video coding
+	for (size_t y_OM = 0; y_OM < occupancyMap.getHeight(); ++y_OM) {
+		for (size_t x_OM = 0; x_OM < occupancyMap.getWidth(); ++x_OM) {
+			if (occupancyMap.getValue(0, x_OM, y_OM) >= 1) {
+				//this is an area that has active values, update the temporary occupancy Map struture, and store the mean value in this area
+				uint16_t mean_val = 0;
+				size_t count = 0;
+				for (size_t j = 0; j < params_.occupancyPrecision_; j++) {
+					size_t y = y_OM * params_.occupancyPrecision_ + j;
+					for (size_t i = 0; i < params_.occupancyPrecision_; i++) {
+						size_t x = x_OM * params_.occupancyPrecision_ + i;
+						if (occupancyMapOriginal[y * image.getWidth() + x] != 0) {
+							mean_val += image.getValue(0, x, y);
+							count++;
+						}
+					}
+				}
+				mean_val /= count;
+				//now fill in the missing positions with depth values searched in 3D space
+				for (size_t j = 0; j < params_.occupancyPrecision_; j++) {
+					size_t y = y_OM * params_.occupancyPrecision_ + j;
+					for (size_t i = 0; i < params_.occupancyPrecision_; i++) {
+						size_t x = x_OM * params_.occupancyPrecision_ + i;
+						//if depth value is undefined, this position will be added, find the best value
+						if (occupancyMapOriginal[y * image.getWidth() + x] == 0) {
+							//try to find the best value to approximate this new point to the original point cloud
+							//get the patch information
+							if (params_.geometryPadding_ == 1)
+							occupancyMapTemp[y * image.getWidth() + x] = adjust_depth_3DPadding(x, y, mean_val, image, kdtree, frame);
+							else
+								occupancyMapTemp[y * image.getWidth() + x] = 0;
+						}
+						else
+							occupancyMapTemp[y * image.getWidth() + x] = 1;
+					}
+				}
+			}
+		}
+	}
+
+	//now continue adding the pixels with the previous dilation approach                                                                                                                 
+	for (size_t v1 = 0; v1 < occupancyMapSizeV; ++v1) {
+		const int64_t v0 = v1 * params_.occupancyResolution_;
+		for (size_t u1 = 0; u1 < occupancyMapSizeU; ++u1) {
+			const int64_t u0 = u1 * params_.occupancyResolution_;
+			size_t nonZeroPixelCount = 0;
+			for (size_t v2 = 0; v2 < params_.occupancyResolution_; ++v2) {
+				for (size_t u2 = 0; u2 < params_.occupancyResolution_; ++u2) {
+					const int64_t x0 = u0 + u2;
+					const int64_t y0 = v0 + v2;
+					assert(x0 < int64_t(image.getWidth()) && y0 < int64_t(image.getHeight()));
+					const size_t location0 = y0 * image.getWidth() + x0;
+					if (params_.enhancedDeltaDepthCode_) {
+						nonZeroPixelCount += (occupancyMapTemp[location0] > 0);
+					}
+					else {
+						nonZeroPixelCount += (occupancyMapTemp[location0] == 1);
+					}
+				}
+			}
+			if (!nonZeroPixelCount) {
+				if (reference) {
+					for (size_t v2 = 0; v2 < params_.occupancyResolution_; ++v2) {
+						for (size_t u2 = 0; u2 < params_.occupancyResolution_; ++u2) {
+							const size_t x0 = u0 + u2;
+							const size_t y0 = v0 + v2;
+							image.setValue(0, x0, y0, reference->getValue(0, x0, y0));
+							image.setValue(1, x0, y0, reference->getValue(1, x0, y0));
+							image.setValue(2, x0, y0, reference->getValue(2, x0, y0));
+						}
+					}
+				}
+				else if (u1 > 0) {
+					for (size_t v2 = 0; v2 < params_.occupancyResolution_; ++v2) {
+						for (size_t u2 = 0; u2 < params_.occupancyResolution_; ++u2) {
+							const size_t x0 = u0 + u2;
+							const size_t y0 = v0 + v2;
+							assert(x0 > 0);
+							const size_t x1 = x0 - 1;
+							image.setValue(0, x0, y0, image.getValue(0, x1, y0));
+							image.setValue(1, x0, y0, image.getValue(1, x1, y0));
+							image.setValue(2, x0, y0, image.getValue(2, x1, y0));
+						}
+					}
+				}
+				else if (v1 > 0) {
+					for (size_t v2 = 0; v2 < params_.occupancyResolution_; ++v2) {
+						for (size_t u2 = 0; u2 < params_.occupancyResolution_; ++u2) {
+							const size_t x0 = u0 + u2;
+							const size_t y0 = v0 + v2;
+							assert(y0 > 0);
+							const size_t y1 = y0 - 1;
+							image.setValue(0, x0, y0, image.getValue(0, x0, y1));
+							image.setValue(1, x0, y0, image.getValue(1, x0, y1));
+							image.setValue(2, x0, y0, image.getValue(2, x0, y1));
+						}
+					}
+				}
+				continue;
+			}
+			for (size_t v2 = 0; v2 < params_.occupancyResolution_; ++v2) {
+				for (size_t u2 = 0; u2 < params_.occupancyResolution_; ++u2) {
+					values[v2][u2] = 0;
+					count[v2][u2] = 0UL;
+				}
+			}
+			uint32_t iteration = 1;
+			while (nonZeroPixelCount < pixelBlockCount) {
+				for (size_t v2 = 0; v2 < params_.occupancyResolution_; ++v2) {
+					for (size_t u2 = 0; u2 < params_.occupancyResolution_; ++u2) {
+						const int64_t x0 = u0 + u2;
+						const int64_t y0 = v0 + v2;
+						assert(x0 < int64_t(image.getWidth()) && y0 < int64_t(image.getHeight()));
+						const size_t location0 = y0 * image.getWidth() + x0;
+						if (occupancyMapTemp[location0] == iteration) {
+							for (size_t n = 0; n < 4; ++n) {
+								const int64_t x1 = x0 + neighbors[n][0];
+								const int64_t y1 = y0 + neighbors[n][1];
+								const size_t location1 = y1 * image.getWidth() + x1;
+								if (x1 >= u0 && x1 < int64_t(u0 + params_.occupancyResolution_) && y1 >= v0 &&
+									y1 < int64_t(v0 + params_.occupancyResolution_) && occupancyMapTemp[location1] == 0) {
+									const int64_t u3 = u2 + neighbors[n][0];
+									const int64_t v3 = v2 + neighbors[n][1];
+									assert(u3 >= 0 && u3 < int64_t(params_.occupancyResolution_));
+									assert(v3 >= 0 && v3 < int64_t(params_.occupancyResolution_));
+									for (size_t k = 0; k < 3; ++k) {
+										values[v3][u3][k] += image.getValue(k, x0, y0);
+									}
+									++count[v3][u3];
+								}
+							}
+						}
+					}
+				}
+				for (size_t v2 = 0; v2 < params_.occupancyResolution_; ++v2) {
+					for (size_t u2 = 0; u2 < params_.occupancyResolution_; ++u2) {
+						if (count[v2][u2]) {
+							++nonZeroPixelCount;
+							const size_t x0 = u0 + u2;
+							const size_t y0 = v0 + v2;
+							const size_t location0 = y0 * image.getWidth() + x0;
+							const size_t c = count[v2][u2];
+							const size_t c2 = c / 2;
+							occupancyMapTemp[location0] = iteration + 1;
+							for (size_t k = 0; k < 3; ++k) {
+								image.setValue(k, x0, y0, uint16_t((values[v2][u2][k] + c2) / c));
+							}
+							values[v2][u2] = 0;
+							count[v2][u2] = 0UL;
+						}
+					}
+				}
+				++iteration;
+			}
+		}
+	}
 }
 
 /* harmonic background filling algorithm */

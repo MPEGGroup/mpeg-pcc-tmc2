@@ -38,6 +38,7 @@
 #include "PCCImage.h"
 #include "PCCMath.h"
 #include "PCCVideo.h"
+#include "PCCContext.h"
 
 namespace pcc {
 class PCCPatch;
@@ -217,6 +218,19 @@ class PCCCodec {
                                             size_t           frameIndex,
                                             const size_t     occupancyResolution );
 
+	void generateBlockToPatchFromOccupancyMapVideo( PCCContext & context, 
+													                        const bool losslessGeo, 
+													                        const bool lossyMissedPointsPatch, 
+													                        const size_t testLevelOfDetail, 
+													                        const size_t occupancyResolution, 
+													                        const size_t occupancyPrecision);
+	
+	void generateBlockToPatchFromOccupancyMapVideo( PCCFrameContext & frame, 
+													                        PCCImageOccupancyMap & occupancyMapImage,
+													                        size_t frameIndex, 
+													                        const size_t occupancyResolution, 
+													                        const size_t occupancyPrecision);
+
   int getDeltaNeighbors( const PCCImageGeometry& frame,
                          const PCCPatch&         patch,
                          const int               xOrg,
@@ -281,6 +295,7 @@ class PCCCodec {
                            PCCFrameContext&                   frame,
                            const PCCVideoGeometry&            video,
                            const PCCVideoGeometry&            videoD1,
+		                       const PCCVideoOccupancyMap&        videoOM,
                            const GeneratePointCloudParameters params,
                            std::vector<uint32_t>&             partition );
 

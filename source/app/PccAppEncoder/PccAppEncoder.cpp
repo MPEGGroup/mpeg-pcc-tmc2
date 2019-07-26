@@ -661,6 +661,11 @@ bool parseParameters( int                   argc,
 	    encoderParams.lowDelayEncoding_,
 	    "Low Delay encoding (0(default): do nothing, 1: does not allow overlap of patches bounding boxes for low delay encoding)\n")
 
+    ("geometryPadding",
+	    encoderParams.geometryPadding_,
+		  encoderParams.geometryPadding_,
+		  "Selects the background filling operation for geometry (0: anchor, 1(default): 3D geometry padding\n")
+
     ("apply3dMotionCompensation",
       encoderParams.use3dmc_,
       encoderParams.use3dmc_,

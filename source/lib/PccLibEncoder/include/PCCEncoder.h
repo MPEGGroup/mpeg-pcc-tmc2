@@ -37,6 +37,7 @@
 #include "PCCEncoderParameters.h"
 #include "PCCCodec.h"
 #include "PCCMetadata.h"
+#include "PCCKdTree.h"
 
 #include <map>
 
@@ -151,7 +152,7 @@ class PCCEncoder : public PCCCodec {
 
   bool generateGeometryVideo( const PCCGroupOfFrames& sources, PCCContext& context );
   bool resizeGeometryVideo( PCCContext& context );
-  bool dilateGeometryVideo( PCCContext& context );
+  bool dilateGeometryVideo(const PCCGroupOfFrames & sources, PCCContext & context);
 
   bool generateTextureVideo( const PCCGroupOfFrames&    sources,
                              PCCGroupOfFrames&          reconstruct,
@@ -170,6 +171,12 @@ class PCCEncoder : public PCCCodec {
 
   template <typename T>
   void dilate( PCCFrameContext& frame, PCCImage<T, 3>& image, const PCCImage<T, 3>* reference = nullptr );
+	//3D geometry padding
+  void dilate_3DPadding(const PCCPointSet3 & source, PCCFrameContext & frame, PCCImageGeometry &image, PCCImageOccupancyMap &occupancyMap, const PCCImageGeometry* reference = nullptr);
+  size_t adjust_depth_3DPadding(size_t x, size_t y, uint16_t mean_val, PCCImageGeometry & image, PCCKdTree & kdtree, PCCFrameContext & frame);
+  bool generateOccupancyMap(PCCContext & context);
+	void modifyOccupancyMap(PCCFrameContext & frame);
+
   // Push-pull background filling
   template <typename T>
   int mean4w( T p1, unsigned char w1, T p2, unsigned char w2, T p3, unsigned char w3, T p4, unsigned char w4 );
@@ -250,7 +257,7 @@ class PCCEncoder : public PCCCodec {
 
   void geometryGroupDilation( PCCContext& context );
 
-  void create3DMotionEstimationFiles( PCCContext& context, std::string path );
+  void create3DMotionEstimationFiles(const PCCGroupOfFrames& sources, PCCContext& context, std::string path );
   void remove3DMotionEstimationFiles( std::string path );
 
   void pointLocalReconstructionSearch( PCCContext& context, const GeneratePointCloudParameters params );
