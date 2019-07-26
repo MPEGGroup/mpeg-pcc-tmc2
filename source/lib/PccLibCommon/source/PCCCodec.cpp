@@ -2050,15 +2050,16 @@ void PCCCodec::generateBlockToPatchFromOccupancyMapVideo(PCCContext&  context,
 	for (int i = 0; i < sizeFrames; i++) {
 		PCCFrameContext& frame = context.getFrames()[i];
 		PCCImageOccupancyMap &occupancyImage = context.getVideoOccupancyMap().getFrame(i);
-		generateBlockToPatchFromOccupancyMapVideo(frame, occupancyImage, i, occupancyResolution, occupancyPrecision);
+		generateBlockToPatchFromOccupancyMapVideo(context, frame, occupancyImage, i, occupancyResolution, occupancyPrecision);
 	}
 }
 
-void PCCCodec::generateBlockToPatchFromOccupancyMapVideo(PCCFrameContext& frame, 
-	PCCImageOccupancyMap &occupancyMapImage,
-	size_t           frameIndex,
-	const size_t     occupancyResolution, 
-	const size_t occupancyPrecision) {
+void PCCCodec::generateBlockToPatchFromOccupancyMapVideo( PCCContext&  context,
+                                                          PCCFrameContext& frame, 
+                                                          PCCImageOccupancyMap &occupancyMapImage,
+                                                          size_t           frameIndex,
+                                                          const size_t     occupancyResolution, 
+                                                          const size_t occupancyPrecision) {
 	auto&        patches = frame.getPatches();
 	const size_t patchCount = patches.size();
 	const size_t blockToPatchWidth = frame.getWidth() / occupancyResolution;
@@ -2084,7 +2085,9 @@ void PCCCodec::generateBlockToPatchFromOccupancyMapVideo(PCCFrameContext& frame,
 						nonZeroPixel += (occupancyMapImage.getValue(0, x / occupancyPrecision, y / occupancyPrecision) != 0);
 					}  // u1
 				}    // v1
-				if (nonZeroPixel > 0) { blockToPatch[blockIndex] = patchIndex + 1; }
+				if (nonZeroPixel > 0) { 
+                                  if ((context.getSps().getPatchPrecedenceOrderFlag() == 0) || blockToPatch[blockIndex] == 0) { blockToPatch[blockIndex] = patchIndex + 1; } 
+                                }
 			}  // u0
 		}    // v0
 	}      // patch
