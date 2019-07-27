@@ -201,8 +201,8 @@ class PCCEncoder : public PCCCodec {
                           std::vector<uint32_t>& mipOccupancyMap );
   template <typename T>
   void regionFill( PCCImage<T, 3>& image, std::vector<uint32_t>& occupancyMap, PCCImage<T, 3>& imageLowRes );
-  void pack( PCCFrameContext& frame, int safeguard = 0 );
-  void packFlexible( PCCFrameContext& frame, int safeguard = 0 );
+  void pack( PCCFrameContext& frame, int safeguard = 0, bool enablePointCloudPartitioning = false );  
+  void packFlexible( PCCFrameContext& frame, int safeguard = 0, bool enablePointCloudPartitioning = false );
   void packTetris( PCCFrameContext& frame, int safeguard = 0 );
   void packMissedPointsPatch( PCCFrameContext&   frame,
                               std::vector<bool>& occupancyMap,
@@ -215,8 +215,14 @@ class PCCEncoder : public PCCCodec {
                                   std::vector<bool> &occupancyMap, size_t &width,
                                   size_t &height, size_t occupancySizeU, size_t occupancySizeV,
                                   size_t maxOccupancyRow );
-  void spatialConsistencyPack( PCCFrameContext& frame, PCCFrameContext& prevFrame, int safeguard = 0 );
-  void spatialConsistencyPackFlexible( PCCFrameContext& frame, PCCFrameContext& prevFrame, int safeguard = 0 );
+  void spatialConsistencyPack( PCCFrameContext& frame,
+                               PCCFrameContext& prevFrame,
+                               int              safeguard                    = 0,
+                               bool             enablePointCloudPartitioning = false );
+  void spatialConsistencyPackFlexible( PCCFrameContext& frame,
+                                       PCCFrameContext& prevFrame,
+                                       int              safeguard                    = 0,
+                                       bool             enablePointCloudPartitioning = false );
   void spatialConsistencyPackTetris( PCCFrameContext& frame, PCCFrameContext& prevFrame, int safeguard = 0 );
   //GTP
   void findMatchesForGlobalTetrisPacking(PCCFrameContext & frame, PCCFrameContext & prevFrame);
@@ -237,6 +243,9 @@ class PCCEncoder : public PCCCodec {
                                   bool                useEnhancedDeltaDepthCode );
 
   void sortMissedPointsPatch( PCCFrameContext& frameContext, size_t index );
+  void            sortMissedPointsPatchMorton( PCCFrameContext& frameContext, size_t index );
+  inline uint64_t mortonAddr( const int32_t x, const int32_t y, const int32_t z );
+  uint64_t        mortonAddr( const PCCPoint3D& vec, int depth );
 
   bool generateGeometryVideo( const PCCPointSet3&                source,
                               PCCFrameContext&                   frameContext,

@@ -59,7 +59,10 @@ public:
   inline double&  dist( size_t index ) { return dist_[index]; }
   inline size_t* indices() { return indices_.data(); }
   inline double*  dist() { return dist_.data(); }
-private:
+  inline void pop_dist() { dist_.pop_back(); };
+  inline void pop_indices() { indices_.pop_back(); };
+  inline void dec_count() { --count_; }
+ private:
   size_t count_;
   std::vector<size_t>  indices_;
   std::vector<double>   dist_;

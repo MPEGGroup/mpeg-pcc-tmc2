@@ -35,6 +35,7 @@
 #define PCCPatchSegmenter_h
 
 #include "PCCCommon.h"
+#include <set>
 
 namespace pcc {
 
@@ -43,35 +44,47 @@ class PCCKdTree;
 class PCCPatch;
 
 struct PCCPatchSegmenter3Parameters {
-  size_t      nnNormalEstimation;
-  bool        gridBasedRefineSegmentation;
-  size_t      maxNNCountRefineSegmentation;
-  size_t      iterationCountRefineSegmentation;
-  size_t      voxelDimensionRefineSegmentation;
-  size_t      searchRadiusRefineSegmentation;
-  size_t      occupancyResolution;
-  size_t      minPointCountPerCCPatchSegmentation;
-  size_t      maxNNCountPatchSegmentation;
-  size_t      surfaceThickness;
-  size_t      EOMFixBitCount;
-  bool        EOMSingleLayerMode;
-  size_t      minLevel;
-  size_t      maxAllowedDepth;
-  double      maxAllowedDist2MissedPointsDetection;
-  double      maxAllowedDist2MissedPointsSelection;
-  double      lambdaRefineSegmentation;
-  size_t      levelOfDetail;
-  size_t      projectionMode;
-  bool        useEnhancedDeltaDepthCode;
-  bool        absoluteD1;
-  bool        createSubPointCloud;
-  bool        surfaceSeparation;
-  PCCVector3D weightNormal;
-  size_t      additionalProjectionPlaneMode;
-  double      partialAdditionalProjectionPlane;
-  size_t      geometryBitDepth3D;
-  size_t      testLevelOfDetail;
-  bool        patchExpansion;
+  size_t           nnNormalEstimation;
+  bool             gridBasedRefineSegmentation;
+  size_t           maxNNCountRefineSegmentation;
+  size_t           iterationCountRefineSegmentation;
+  size_t           voxelDimensionRefineSegmentation;
+  size_t           searchRadiusRefineSegmentation;
+  size_t           occupancyResolution;
+  size_t           minPointCountPerCCPatchSegmentation;
+  size_t           maxNNCountPatchSegmentation;
+  size_t           surfaceThickness;
+  size_t           EOMFixBitCount;
+  bool             EOMSingleLayerMode;
+  size_t           minLevel;
+  size_t           maxAllowedDepth;
+  double           maxAllowedDist2MissedPointsDetection;
+  double           maxAllowedDist2MissedPointsSelection;
+  double           lambdaRefineSegmentation;
+  size_t           levelOfDetail;
+  size_t           projectionMode;
+  bool             useEnhancedDeltaDepthCode;
+  bool             absoluteD1;
+  bool             createSubPointCloud;
+  bool             surfaceSeparation;
+  PCCVector3D      weightNormal;
+  size_t           additionalProjectionPlaneMode;
+  double           partialAdditionalProjectionPlane;
+  size_t           geometryBitDepth3D;
+  size_t           testLevelOfDetail;
+  bool             patchExpansion;
+  bool             enablePointCloudPartitioning;
+  std::vector<int> roiBoundingBoxMinX;
+  std::vector<int> roiBoundingBoxMaxX;
+  std::vector<int> roiBoundingBoxMinY;
+  std::vector<int> roiBoundingBoxMaxY;
+  std::vector<int> roiBoundingBoxMinZ;
+  std::vector<int> roiBoundingBoxMaxZ;
+  int              numTilesHor;
+  double           tileHeightToWidthRatio;
+  int              numCutsAlong1stLongestAxis;
+  int              numCutsAlong2ndLongestAxis;
+  int              numCutsAlong3rdLongestAxis;
 };
 
 class PCCPatchSegmenter3 {
@@ -144,7 +157,17 @@ class PCCPatchSegmenter3 {
                        const size_t               additionalProjectionPlaneMode,
                        const size_t               geometryBitDepth3D,
                        const size_t               testLevelOfDetail,
-                       bool                       patchExpansionEnabled );
+                       bool                       patchExpansionEnabled,
+                       bool                       enablePointCloudPartitioning,
+                       std::vector<int>&          roiBoundingBoxMinX,
+                       std::vector<int>&          roiBoundingBoxMaxX,
+                       std::vector<int>&          roiBoundingBoxMinY,
+                       std::vector<int>&          roiBoundingBoxMaxY,
+                       std::vector<int>&          roiBoundingBoxMinZ,
+                       std::vector<int>&          roiBoundingBoxMaxZ,
+                       int                        numCutsAlong1stLongestAxis,
+                       int                        numCutsAlong2ndLongestAxis,
+                       int                        numCutsAlong3rdLongestAxis );
 
   void refineSegmentation( const PCCPointSet3&         pointCloud,
                            const PCCKdTree&            kdtree,

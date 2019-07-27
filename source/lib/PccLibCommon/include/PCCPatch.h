@@ -167,6 +167,8 @@ class PCCPatch {
 
   const std::vector<int64_t>& getdepth0pccidx() const { return depth0PCidx_; }
   std::vector<int64_t>&       getdepth0pccidx() { return depth0PCidx_; }
+  bool&                       getIsRoiPatch() { return isRoiPatch_; }
+  size_t&                     getRoiIndex() { return roiIndex_; }
   // Flexible Patch Orientation
   size_t&       getPatchOrientation() { return patchOrientation_; }
   size_t        getPatchOrientation() const { return patchOrientation_; }
@@ -320,7 +322,8 @@ class PCCPatch {
   int patchBlock2CanvasBlock( const size_t uBlk,
                               const size_t vBlk,
                               size_t       canvasStrideBlk,
-                              size_t       canvasHeightBlk ) const {
+                              size_t       canvasHeightBlk,
+                              const Tile   tile = Tile() ) const {
     size_t x, y;
     switch ( patchOrientation_ ) {
       case PATCH_ORIENTATION_DEFAULT:
@@ -366,6 +369,12 @@ class PCCPatch {
     if ( y < 0 ) return -1;
     if ( x >= canvasStrideBlk ) return -1;
     if ( y >= canvasHeightBlk ) return -1;
+    if ( tile.minU != -1 ) {
+      if ( x < tile.minU ) return -1;
+      if ( y < tile.minV ) return -1;
+      if ( x > tile.maxU ) return -1;
+      if ( y > tile.maxV ) return -1;
+    }
     return ( x + canvasStrideBlk * y );
   }
 
@@ -373,12 +382,14 @@ class PCCPatch {
                             size_t            canvasStrideBlk,
                             size_t            canvasHeightBlk,
                             bool              bPrecedence,
-                            int               safeguard = 0 ) {
+                            int               safeguard = 0,
+                            const Tile        tile      = Tile() ) {
     for ( size_t v0 = 0; v0 < getSizeV0(); ++v0 ) {
       for ( size_t u0 = 0; u0 < getSizeU0(); ++u0 ) {
         for ( int deltaY = -safeguard; deltaY < safeguard + 1; deltaY++ ) {
           for ( int deltaX = -safeguard; deltaX < safeguard + 1; deltaX++ ) {
-            int pos = patchBlock2CanvasBlock( u0 + deltaX, v0 + deltaY, canvasStrideBlk, canvasHeightBlk );
+            int pos = patchBlock2CanvasBlock( u0 + deltaX, v0 + deltaY, canvasStrideBlk, canvasHeightBlk,
+                                              tile );
             if ( pos < 0 ) {
               return false;
 						}
@@ -863,6 +874,8 @@ class PCCPatch {
   bool                 isGlobalPatch_;
   size_t               axisOfAdditionalPlane_;
   uint8_t              patchType_;
+  bool                 isRoiPatch_;
+  size_t               roiIndex_;
 };
 
 struct PCCEDDInfosPerPatch {

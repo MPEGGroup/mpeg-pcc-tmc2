@@ -139,6 +139,19 @@ class PCCEncoderParameters {
 
   // coloring
   size_t bestColorSearchRange_;
+  // Improved color transfer
+  int    numNeighborsColorTransferFwd_;
+  int    numNeighborsColorTransferBwd_;
+  bool   useDistWeightedAverageFwd_;
+  bool   useDistWeightedAverageBwd_;
+  bool   skipAvgIfIdenticalSourcePointPresentFwd_;
+  bool   skipAvgIfIdenticalSourcePointPresentBwd_;
+  double distOffsetFwd_;
+  double distOffsetBwd_;
+  double maxGeometryDist2Fwd_;
+  double maxGeometryDist2Bwd_;
+  double maxColorDist2Fwd_;
+  double maxColorDist2Bwd_;
 
   // lossless
   bool noAttributes_;
@@ -225,6 +238,24 @@ class PCCEncoderParameters {
   // 3D and 2D bit depths
   size_t geometry3dCoordinatesBitdepth_;
   size_t geometryNominal2dBitdepth_;
+
+  // Partitions and tiles
+  bool             enablePointCloudPartitioning_;
+  std::vector<int> roiBoundingBoxMinX_;
+  std::vector<int> roiBoundingBoxMaxX_;
+  std::vector<int> roiBoundingBoxMinY_;
+  std::vector<int> roiBoundingBoxMaxY_;
+  std::vector<int> roiBoundingBoxMinZ_;
+  std::vector<int> roiBoundingBoxMaxZ_;
+  int              numTilesHor_;
+  double           tileHeightToWidthRatio_;
+  int              numCutsAlong1stLongestAxis_;
+  int              numCutsAlong2ndLongestAxis_;
+  int              numCutsAlong3rdLongestAxis_;
+  int              numROIs_;
+
+  // Sort missed points by Morton code
+  bool             mortonOrderSortMissedPoints_;
 };
 
 };  // namespace pcc

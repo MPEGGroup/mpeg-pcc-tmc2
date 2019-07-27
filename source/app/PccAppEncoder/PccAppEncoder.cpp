@@ -418,6 +418,66 @@ bool parseParameters( int                   argc,
      encoderParams.bestColorSearchRange_,
      encoderParams.bestColorSearchRange_,
      "Best color search range")
+    // Improved color transfer (m49367 CE2.17)
+    ("numNeighborsColorTransferFwd",
+    encoderParams.numNeighborsColorTransferFwd_,
+    encoderParams.numNeighborsColorTransferFwd_,
+    "Number of neighbors creating Fwd list")
+
+    ("numNeighborsColorTransferBwd",
+    encoderParams.numNeighborsColorTransferBwd_,
+    encoderParams.numNeighborsColorTransferBwd_,
+    "Number of neighbors creating Bwd list")
+
+    ("useDistWeightedAverageFwd",
+    encoderParams.useDistWeightedAverageFwd_,
+    encoderParams.useDistWeightedAverageFwd_,
+    "Distance weighted average for Fwd list")
+
+    ("useDistWeightedAverageBwd",
+    encoderParams.useDistWeightedAverageBwd_,
+    encoderParams.useDistWeightedAverageBwd_,
+    "Distance weighted average for Bwd list")
+
+    ("skipAvgIfIdenticalSourcePointPresentFwd",
+    encoderParams.skipAvgIfIdenticalSourcePointPresentFwd_,
+    encoderParams.skipAvgIfIdenticalSourcePointPresentFwd_,
+    "Skip avgeraging if target is identical to a Fwd point")
+
+    ("skipAvgIfIdenticalSourcePointPresentBwd",
+    encoderParams.skipAvgIfIdenticalSourcePointPresentBwd_,
+    encoderParams.skipAvgIfIdenticalSourcePointPresentBwd_,
+    "Skip avgeraging if target is identical to a Bwd point")
+
+    ("distOffsetFwd",
+    encoderParams.distOffsetFwd_,
+    encoderParams.distOffsetFwd_,
+    "Distance offset to avoid infinite weight")
+
+    ("distOffsetBwd",
+    encoderParams.distOffsetBwd_,
+    encoderParams.distOffsetBwd_,
+    "Distance offset to avoid infinite weight")
+
+    ("maxGeometryDist2Fwd",
+    encoderParams.maxGeometryDist2Fwd_,
+    encoderParams.maxGeometryDist2Fwd_,
+    "Maximum allowed distance for a Fwd point")
+
+    ("maxGeometryDist2Bwd",
+    encoderParams.maxGeometryDist2Bwd_,
+    encoderParams.maxGeometryDist2Bwd_,
+    "Maximum allowed distance for a Bwd point")
+
+    ("maxColorDist2Fwd",
+    encoderParams.maxColorDist2Fwd_,
+    encoderParams.maxColorDist2Fwd_,
+    "Maximum allowed pari-wise color distance for Fwd list")
+
+    ("maxColorDist2Bwd",
+    encoderParams.maxColorDist2Bwd_,
+    encoderParams.maxColorDist2Bwd_,
+    "Maximum allowed pari-wise color distance for Bwd list")
 
     // video encoding
     ("videoEncoderPath",
@@ -710,7 +770,21 @@ bool parseParameters( int                   argc,
      encoderParams.partialAdditionalProjectionPlane_, 
      encoderParams.partialAdditionalProjectionPlane_,
      "The value determines the partial point cloud. It's available with only additionalProjectionPlaneMode(5)")
-
+    // Point cloud partitions (ROIs) and tiles (m47804 CE2.19)    
+    ("enablePointCloudPartitioning", encoderParams.enablePointCloudPartitioning_, encoderParams.enablePointCloudPartitioning_, " ")
+    ("roiBoundingBoxMinX"          , encoderParams.roiBoundingBoxMinX_, encoderParams.roiBoundingBoxMinX_, " ")
+    ("roiBoundingBoxMaxX"          , encoderParams.roiBoundingBoxMaxX_, encoderParams.roiBoundingBoxMaxX_, " ")
+    ("roiBoundingBoxMinY"          , encoderParams.roiBoundingBoxMinY_, encoderParams.roiBoundingBoxMinY_, " ")
+    ("roiBoundingBoxMaxY"          , encoderParams.roiBoundingBoxMaxY_, encoderParams.roiBoundingBoxMaxY_, " ")
+    ("roiBoundingBoxMinZ"          , encoderParams.roiBoundingBoxMinZ_, encoderParams.roiBoundingBoxMinZ_, " ")
+    ("roiBoundingBoxMaxZ"          , encoderParams.roiBoundingBoxMaxZ_, encoderParams.roiBoundingBoxMaxZ_, " ")
+    ("numTilesHor"                 , encoderParams.numTilesHor_, encoderParams.numTilesHor_, " ")
+    ("tileHeightToWidthRatio"      , encoderParams.tileHeightToWidthRatio_, encoderParams.tileHeightToWidthRatio_, " ")
+    ("numCutsAlong1stLongestAxis"  , encoderParams.numCutsAlong1stLongestAxis_, encoderParams.numCutsAlong1stLongestAxis_, " ")
+    ("numCutsAlong2ndLongestAxis"  , encoderParams.numCutsAlong2ndLongestAxis_, encoderParams.numCutsAlong2ndLongestAxis_, " ")
+    ("numCutsAlong3rdLongestAxis"  , encoderParams.numCutsAlong3rdLongestAxis_, encoderParams.numCutsAlong3rdLongestAxis_, " ")
+    // Sort missed points by Morton code (m49363 CE2.25)
+    ("mortonOrderSortMissedPoints" , encoderParams.mortonOrderSortMissedPoints_, encoderParams.mortonOrderSortMissedPoints_, " ")
     ;
 
    opts.addOptions()
@@ -757,6 +831,13 @@ bool parseParameters( int                   argc,
   }
 
   if ( encoderParams.losslessGeo_ ) { encoderParams.testLevelOfDetail_ = 0; }
+  
+  if ( encoderParams.enablePointCloudPartitioning_ && encoderParams.patchExpansion_ ) {
+    err.error() << "Point cloud partitioning does not currently support patch expansion. \n";
+  }
+  if ( encoderParams.enablePointCloudPartitioning_ && encoderParams.globalPatchAllocation_ ) {
+    err.error() << "Point cloud partitioning does not currently support global patch allocation. \n";
+  }
 
   encoderParams.completePath();
   encoderParams.print();

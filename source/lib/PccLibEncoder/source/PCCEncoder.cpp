@@ -149,20 +149,20 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   auto&             ai  = sps.getAttributeInformation();
   path << removeFileExtension( params_.compressedStreamPath_ ) << "_GOF" << sps.getSequenceParameterSetId() << "_";
 
-  //GENERATE GEOMETRY VIDEO
+  // GENERATE GEOMETRY VIDEO
   generateGeometryVideo( sources, context );
-  if (params_.globalPatchAllocation_ == 1) { performDataAdaptiveGPAMethod(context); }
-  if (params_.globalPatchAllocation_ == 2) { doGlobalTetrisPacking(context); }
+  if ( params_.globalPatchAllocation_ == 1 ) { performDataAdaptiveGPAMethod( context ); }
+  if ( params_.globalPatchAllocation_ == 2 ) { doGlobalTetrisPacking( context ); }
   const size_t nbFramesTexture = params_.layerCountMinus1_ + 1;
   resizeGeometryVideo( context );
-  //dilateGeometryVideo( context );
+  // dilateGeometryVideo( context );
   sps.setFrameWidth( (uint16_t)frames[0].getWidth() );
   sps.setFrameHeight( (uint16_t)frames[0].getHeight() );
 
-	//GENERATE OCCUPANCY MAP
-  generateOccupancyMap(context);
+  // GENERATE OCCUPANCY MAP
+  generateOccupancyMap( context );
 
-	//ENCODE OCCUPANCY MAP
+  // ENCODE OCCUPANCY MAP
   auto& videoBitstream = context.createVideoBitstream( VIDEO_OCCUPANCY );
   generateOccupancyMapVideo( sources, context );
   auto& videoOccupancyMap = context.getVideoOccupancyMap();
@@ -184,18 +184,19 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
               << ( (float)changedPixCnt1To0 * 100.0F / pixCnt ) << std::endl;
   }
 
-  generateBlockToPatchFromOccupancyMapVideo(context, params_.losslessGeo_, params_.lossyMissedPointsPatch_,
-	  params_.testLevelOfDetail_, params_.occupancyResolution_, params_.occupancyPrecision_);
+  generateBlockToPatchFromOccupancyMapVideo( context, params_.losslessGeo_, params_.lossyMissedPointsPatch_,
+                                             params_.testLevelOfDetail_, params_.occupancyResolution_,
+                                             params_.occupancyPrecision_ );
 
-	//GEOMETRY IMAGE PADDING
-  dilateGeometryVideo(sources, context);
+  // GEOMETRY IMAGE PADDING
+  dilateGeometryVideo( sources, context );
 
   // Group dilation in Geometry
   if ( params_.groupDilation_ && params_.absoluteD1_ && params_.layerCountMinus1_ > 0 ) {
     geometryGroupDilation( context );
   }
 
-	//ENCODE GEOMETRY IMAGE
+  // ENCODE GEOMETRY IMAGE
   if ( params_.use3dmc_ ) { create3DMotionEstimationFiles( sources, context, path.str() ); }
 
   size_t nbyteGeo = params_.geometryNominal2dBitdepth_ == 8 ? 1 : 2;
@@ -255,7 +256,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     if ( params_.lossyMissedPointsPatch_ ) { generateMissedPointsGeometryfromVideo( context, reconstructs ); }
   }
 
-	//RECONSTRUCT POINT CLOUD GEOMETRY
+  // RECONSTRUCT POINT CLOUD GEOMETRY
   auto&                        gi = sps.getGeometryInformation();
   GeneratePointCloudParameters generatePointCloudParameters;
   generatePointCloudParameters.occupancyResolution_           = params_.occupancyResolution_;
@@ -302,13 +303,13 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   generatePointCloud( reconstructs, context, generatePointCloudParameters );
 
   if ( ai.getAttributeCount() > 0 ) {
-		//GENERATE ATTRIBUTE
+    // GENERATE ATTRIBUTE
     generateTextureVideo( sources, reconstructs, context, params_ );
     auto&        videoTexture      = context.getVideoTexture();
     const size_t textureFrameCount = nbFramesTexture * frames.size();
     assert( textureFrameCount == videoTexture.getFrameCount() );
     if ( !( params_.losslessGeo_ && params_.textureDilationOffLossless_ ) ) {
-			//ATTRIBUTE IMAGE PADDING
+      // ATTRIBUTE IMAGE PADDING
       for ( size_t f = 0; f < textureFrameCount; ++f ) {
         using namespace std::chrono;
         pcc::chrono::Stopwatch<std::chrono::steady_clock> clockPadding;
@@ -356,7 +357,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
       }
     }
 
-		//ENCODE ATTRIBUTRE IMAGE
+    // ENCODE ATTRIBUTRE IMAGE
     auto& videoBitstream = context.createVideoBitstream( VIDEO_TEXTURE );
     videoEncoder.compress(
         videoTexture, path.str(), params_.textureQP_, videoBitstream,
@@ -380,7 +381,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     }
   }
 
-	//RECOLOR RECONSTRUCTED POINT CLOUD
+  // RECOLOR RECONSTRUCTED POINT CLOUD
   colorPointCloud( reconstructs, context, ai.getAttributeCount(), params_.colorTransform_,
                    generatePointCloudParameters );
 
@@ -505,9 +506,10 @@ bool PCCEncoder::generateOccupancyMapVideo( const size_t           imageWidth,
             fullCount += isFull;
             /*for ( size_t v3 = 0; v3 < params_.occupancyPrecision_; ++v3 ) {
               for ( size_t u3 = 0; u3 < params_.occupancyPrecision_; ++u3 ) {
-                occupancyMap[( v2 + v3 ) * imageWidth + u2 + u3] = isFull; -> does not update the occupancy map, this will be done somewhere else 
+                occupancyMap[( v2 + v3 ) * imageWidth + u2 + u3] = isFull; -> does not update the occupancy map, this
+            will be done somewhere else
             }
-            }*/ 
+            }*/
           }
         }
         for ( size_t iterBlockV = 0; iterBlockV < blockSize0; iterBlockV++ ) {
@@ -640,44 +642,43 @@ bool PCCEncoder::modifyOccupancyMap( const size_t           imageWidth,
   return true;
 }
 
-void PCCEncoder::modifyOccupancyMap(PCCFrameContext& frame) {
-	auto& occupancyMap = frame.getOccupancyMap();
-	auto& fullOccupancyMap = frame.getFullOccupancyMap();
-	auto& width = frame.getWidth();
-	auto& height = frame.getHeight();
-	occupancyMap.resize(width * height, 0);
-	if (!params_.absoluteD1_)
-		fullOccupancyMap.resize(width * height, 0);
-	const int16_t infiniteDepth = (std::numeric_limits<int16_t>::max)();
-	for (auto &patch : frame.getPatches()) {
-		const size_t v0 = patch.getV0() * patch.getOccupancyResolution();
-		const size_t u0 = patch.getU0() * patch.getOccupancyResolution();
-		for (size_t v = 0; v < patch.getSizeV(); ++v) {
-			for (size_t u = 0; u < patch.getSizeU(); ++u) {
-				const size_t p = v * patch.getSizeU() + u;
-				const int16_t d = patch.getDepth(0)[p];
-				const int16_t eddCode = patch.getDepthEnhancedDeltaD()[p];
-				size_t x, y;
-				auto indx = patch.patch2Canvas(u, v, width, height, x, y);
-				assert(x < width && y < height);
-				const size_t d0 = d;
-				const size_t d1 = patch.getDepth(1)[p];
-				if ((d < infiniteDepth) && (occupancyMap[indx] == 1) && ((d1 - d0) > 1)) {
-					uint16_t bits = d1 - d0 - 1;
-					uint16_t eddExtract = eddCode & (~((~0) << bits));
-					uint16_t symbol = (((1 << bits) - 1) - eddExtract);
-					occupancyMap[indx] += symbol;
-				}
-			}
-		}
-	}
-	if (!params_.absoluteD1_) {
-		fullOccupancyMap = occupancyMap;
-	}
+void PCCEncoder::modifyOccupancyMap( PCCFrameContext& frame ) {
+  auto& occupancyMap     = frame.getOccupancyMap();
+  auto& fullOccupancyMap = frame.getFullOccupancyMap();
+  auto& width            = frame.getWidth();
+  auto& height           = frame.getHeight();
+  occupancyMap.resize( width * height, 0 );
+  if ( !params_.absoluteD1_ ) fullOccupancyMap.resize( width * height, 0 );
+  const int16_t infiniteDepth = ( std::numeric_limits<int16_t>::max )();
+  for ( auto& patch : frame.getPatches() ) {
+    const size_t v0 = patch.getV0() * patch.getOccupancyResolution();
+    const size_t u0 = patch.getU0() * patch.getOccupancyResolution();
+    for ( size_t v = 0; v < patch.getSizeV(); ++v ) {
+      for ( size_t u = 0; u < patch.getSizeU(); ++u ) {
+        const size_t  p       = v * patch.getSizeU() + u;
+        const int16_t d       = patch.getDepth( 0 )[p];
+        const int16_t eddCode = patch.getDepthEnhancedDeltaD()[p];
+        size_t        x, y;
+        auto          indx = patch.patch2Canvas( u, v, width, height, x, y );
+        assert( x < width && y < height );
+        const size_t d0 = d;
+        const size_t d1 = patch.getDepth( 1 )[p];
+        if ( ( d < infiniteDepth ) && ( occupancyMap[indx] == 1 ) && ( ( d1 - d0 ) > 1 ) ) {
+          uint16_t bits       = d1 - d0 - 1;
+          uint16_t eddExtract = eddCode & ( ~( ( ~0 ) << bits ) );
+          uint16_t symbol     = ( ( ( 1 << bits ) - 1 ) - eddExtract );
+          occupancyMap[indx] += symbol;
+        }
+      }
+    }
+  }
+  if ( !params_.absoluteD1_ ) { fullOccupancyMap = occupancyMap; }
 }
 
-
-void PCCEncoder::spatialConsistencyPack( PCCFrameContext& frame, PCCFrameContext& prevFrame, int safeguard ) {
+void PCCEncoder::spatialConsistencyPack( PCCFrameContext& frame,
+                                         PCCFrameContext& prevFrame,
+                                         int              safeguard,
+                                         bool             enablePointCloudPartitioning ) {
   auto& width       = frame.getWidth();
   auto& height      = frame.getHeight();
   auto& patches     = frame.getPatches();
@@ -736,49 +737,145 @@ void PCCEncoder::spatialConsistencyPack( PCCFrameContext& frame, PCCFrameContext
   patches = newOrderPatches;
   for ( auto& patch : patches ) { occupancySizeU = ( std::max )( occupancySizeU, patch.getSizeU0() + 1 ); }
 
+  int numTilesHor = params_.numTilesHor_;
+  int tileWidth   = occupancySizeU / numTilesHor;
+  int tileHeight  = int( tileWidth * params_.tileHeightToWidthRatio_ );
+  std::cout << "tile width  = " << tileWidth << std::endl;
+  std::cout << "tile height = " << tileHeight << std::endl;
+  occupancySizeV = ( occupancySizeV >= tileHeight ) ? occupancySizeV : tileHeight;
+
   width  = occupancySizeU * params_.occupancyResolution_;
   height = occupancySizeV * params_.occupancyResolution_;
   size_t maxOccupancyRow{0};
 
   std::vector<bool> occupancyMap;
   occupancyMap.resize( occupancySizeU * occupancySizeV, false );
-  for ( auto& patch : patches ) {
-    assert( patch.getSizeU0() <= occupancySizeU );
-    assert( patch.getSizeV0() <= occupancySizeV );
-    bool  locationFound = false;
-    auto& occupancy     = patch.getOccupancy();
-    while ( !locationFound ) {
-      patch.getPatchOrientation() = PATCH_ORIENTATION_DEFAULT;  // only one orientation is allowed
-      for ( size_t v = 0; v <= occupancySizeV && !locationFound; ++v ) {
-        for ( size_t u = 0; u <= occupancySizeU && !locationFound; ++u ) {
-          patch.getU0() = u;
-          patch.getV0() = v;
-          if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_, safeguard ) ) {
-            locationFound = true;
+  if ( !enablePointCloudPartitioning ) {
+    for ( auto& patch : patches ) {
+      assert( patch.getSizeU0() <= occupancySizeU );
+      assert( patch.getSizeV0() <= occupancySizeV );
+      bool  locationFound = false;
+      auto& occupancy     = patch.getOccupancy();
+      while ( !locationFound ) {
+        patch.getPatchOrientation() = PATCH_ORIENTATION_DEFAULT;  // only one orientation is allowed
+        for ( size_t v = 0; v <= occupancySizeV && !locationFound; ++v ) {
+          for ( size_t u = 0; u <= occupancySizeU && !locationFound; ++u ) {
+            patch.getU0() = u;
+            patch.getV0() = v;
+            if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_,
+                                            safeguard ) ) {
+              locationFound = true;
+            }
           }
         }
+        if ( !locationFound ) {
+          occupancySizeV *= 2;
+          occupancyMap.resize( occupancySizeU * occupancySizeV );
+        }
       }
-      if ( !locationFound ) {
-        occupancySizeV *= 2;
-        occupancyMap.resize( occupancySizeU * occupancySizeV );
+      for ( size_t v0 = 0; v0 < patch.getSizeV0(); ++v0 ) {
+        const size_t v = patch.getV0() + v0;
+        for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {
+          const size_t u = patch.getU0() + u0;
+          if ( params_.lowDelayEncoding_ )
+            occupancyMap[v * occupancySizeU + u] = true;
+          else
+            occupancyMap[v * occupancySizeU + u] =
+                occupancyMap[v * occupancySizeU + u] || occupancy[v0 * patch.getSizeU0() + u0];
+        }
       }
-    }
-    for ( size_t v0 = 0; v0 < patch.getSizeV0(); ++v0 ) {
-      const size_t v = patch.getV0() + v0;
-      for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {
-        const size_t u = patch.getU0() + u0;
-				if (params_.lowDelayEncoding_)
-					occupancyMap[v * occupancySizeU + u] = true;
-				else
-        occupancyMap[v * occupancySizeU + u] =
-            occupancyMap[v * occupancySizeU + u] || occupancy[v0 * patch.getSizeU0() + u0];
-      }
-    }
 
-    height          = ( std::max )( height, ( patch.getV0() + patch.getSizeV0() ) * patch.getOccupancyResolution() );
-    width           = ( std::max )( width, ( patch.getU0() + patch.getSizeU0() ) * patch.getOccupancyResolution() );
-    maxOccupancyRow = ( std::max )( maxOccupancyRow, ( patch.getV0() + patch.getSizeV0() ) );
-    // print(occupancyMap, occupancySizeU, occupancySizeV);
+      height          = ( std::max )( height, ( patch.getV0() + patch.getSizeV0() ) * patch.getOccupancyResolution() );
+      width           = ( std::max )( width, ( patch.getU0() + patch.getSizeU0() ) * patch.getOccupancyResolution() );
+      maxOccupancyRow = ( std::max )( maxOccupancyRow, ( patch.getV0() + patch.getSizeV0() ) );
+      // print(occupancyMap, occupancySizeU, occupancySizeV);
+    }
+  } else {
+    std::vector<Tile> tilesNotAvailable;
+    int               numROIs                        = params_.numROIs_;
+    int               lastOccupiedTileIndex          = -1;
+    int               lastOccupiedTileIndexByPrevROI = -1;
+    int               numTilesAvailable;
+    // loop over ROIs
+    for ( size_t roiIndex = 0; roiIndex < numROIs; ++roiIndex ) {
+      tilesNotAvailable.clear();
+      if ( roiIndex > 0 ) {
+        lastOccupiedTileIndexByPrevROI = lastOccupiedTileIndex;
+        for ( int tileIndex = 0; tileIndex <= lastOccupiedTileIndexByPrevROI; ++tileIndex ) {
+          Tile tile;
+          tile.minU = ( tileIndex % numTilesHor ) * tileWidth;
+          tile.minV = ( tileIndex / numTilesHor ) * tileHeight;
+          tile.maxU = tile.minU + tileWidth - 1;
+          tile.maxV = tile.minV + tileHeight - 1;
+          tilesNotAvailable.push_back( tile );
+        }
+      }
+      // loop over patches of current ROI
+      for ( auto& patch : patches ) {
+        if ( roiIndex != patch.getRoiIndex() ) { continue; }
+        assert( patch.getSizeU0() <= occupancySizeU );
+        assert( patch.getSizeV0() <= occupancySizeV );
+        bool  locationFound = false;
+        auto& occupancy     = patch.getOccupancy();
+        while ( !locationFound ) {
+          patch.getPatchOrientation() = PATCH_ORIENTATION_DEFAULT;  // only one orientation is allowed
+          numTilesAvailable           = ceil( double( occupancySizeV ) / double( tileHeight ) ) * numTilesHor;
+          for ( int tileIndex = lastOccupiedTileIndexByPrevROI + 1; tileIndex < numTilesAvailable && !locationFound;
+                ++tileIndex ) {
+            Tile tile;
+            tile.minU = ( tileIndex % numTilesHor ) * tileWidth;
+            tile.maxU = tile.minU + tileWidth - 1;
+            tile.minV = ( tileIndex / numTilesHor ) * tileHeight;
+            tile.maxV = tile.minV + tileHeight - 1;
+            for ( size_t v = 0; v <= occupancySizeV && !locationFound; ++v ) {
+              for ( size_t u = 0; u <= occupancySizeU && !locationFound; ++u ) {
+                patch.getU0()        = u;
+                patch.getV0()        = v;
+                bool tileIsAvailable = true;
+                if ( roiIndex > 0 ) {
+                  for ( auto& tile : tilesNotAvailable ) {
+                    if ( ( tile.minU <= u && u <= tile.maxU ) && ( tile.minV <= v && v <= tile.maxV ) &&
+                         ( !locationFound ) ) {
+                      tileIsAvailable = false;
+                      break;
+                    }
+                  }
+                }
+                if ( tileIsAvailable ) {
+                  if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV,
+                                                  params_.lowDelayEncoding_, safeguard, tile ) ) {
+                    locationFound = true;
+                    if ( tileIndex > lastOccupiedTileIndex ) { lastOccupiedTileIndex = tileIndex; }
+                    std::cout << "ROI-" << roiIndex + 1 << " patch-" << patch.getIndex() << " fitted in tile-"
+                              << tileIndex + 1 << "/" << numTilesAvailable << "-----[" << tile.minU << "," << tile.maxU
+                              << "][" << tile.minV << "," << tile.maxV << "]"
+                              << " +-+-+-+-+-(NOT MATCHED patch)-+-+-+-+-+" << std::endl;
+                  }
+                }
+              }
+            }
+          }
+          if ( !locationFound ) {
+            occupancySizeV *= 2;
+            occupancyMap.resize( occupancySizeU * occupancySizeV );
+          }
+        }
+        for ( size_t v0 = 0; v0 < patch.getSizeV0(); ++v0 ) {
+          const size_t v = patch.getV0() + v0;
+          for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {
+            const size_t u = patch.getU0() + u0;
+            occupancyMap[v * occupancySizeU + u] =
+                occupancyMap[v * occupancySizeU + u] || occupancy[v0 * patch.getSizeU0() + u0];
+          }
+        }
+
+        height = ( std::max )( height, ( patch.getV0() + patch.getSizeV0() ) * patch.getOccupancyResolution() );
+        width  = ( std::max )( width, ( patch.getU0() + patch.getSizeU0() ) * patch.getOccupancyResolution() );
+        maxOccupancyRow = ( std::max )( maxOccupancyRow, ( patch.getV0() + patch.getSizeV0() ) );
+        // print(occupancyMap, occupancySizeU, occupancySizeV);
+      }  // patch loop
+      printMap( occupancyMap, occupancySizeU, occupancySizeV );
+    }  // ROI loop
   }
 
   if ( frame.getNumberOfMissedPointsPatches() > 0 && !frame.getUseMissedPointsSeparateVideo() ) {
@@ -801,7 +898,10 @@ void PCCEncoder::spatialConsistencyPack( PCCFrameContext& frame, PCCFrameContext
   std::cout << "actualImageSizeV " << height << std::endl;
 }
 
-void PCCEncoder::spatialConsistencyPackFlexible( PCCFrameContext& frame, PCCFrameContext& prevFrame, int safeguard ) {
+void PCCEncoder::spatialConsistencyPackFlexible( PCCFrameContext& frame,
+                                                 PCCFrameContext& prevFrame,
+                                                 int              safeguard,
+                                                 bool             enablePointCloudPartitioning ) {
   auto& width   = frame.getWidth();
   auto& height  = frame.getHeight();
   auto& patches = frame.getPatches();
@@ -874,6 +974,13 @@ void PCCEncoder::spatialConsistencyPackFlexible( PCCFrameContext& frame, PCCFram
 
   for ( auto& patch : patches ) { occupancySizeU = ( std::max )( occupancySizeU, patch.getSizeU0() + 1 ); }
 
+  int numTilesHor = params_.numTilesHor_;
+  int tileWidth   = occupancySizeU / numTilesHor;
+  int tileHeight  = int( tileWidth * params_.tileHeightToWidthRatio_ );
+  std::cout << "tile width  = " << tileWidth << std::endl;
+  std::cout << "tile height = " << tileHeight << std::endl;
+  occupancySizeV = ( occupancySizeV >= tileHeight ) ? occupancySizeV : tileHeight;
+
   width  = occupancySizeU * params_.occupancyResolution_;
   height = occupancySizeV * params_.occupancyResolution_;
   size_t maxOccupancyRow{0};
@@ -890,85 +997,270 @@ void PCCEncoder::spatialConsistencyPackFlexible( PCCFrameContext& frame, PCCFram
   int               numOrientations = params_.useEightOrientations_ ? 8 : 2;
   std::vector<bool> occupancyMap;
   occupancyMap.resize( occupancySizeU * occupancySizeV, false );
-  for ( auto& patch : patches ) {
-    assert( patch.getSizeU0() <= occupancySizeU );
-    assert( patch.getSizeV0() <= occupancySizeV );
-    bool  locationFound = false;
-    auto& occupancy     = patch.getOccupancy();
-    while ( !locationFound ) {
-      if ( patch.getBestMatchIdx() != InvalidPatchIndex ) {
-        patch.getPatchOrientation() = prevPatches[patch.getBestMatchIdx()].getPatchOrientation();
-        // try to place on the same position as the matched patch
-        patch.getU0() = prevPatches[patch.getBestMatchIdx()].getU0();
-        patch.getV0() = prevPatches[patch.getBestMatchIdx()].getV0();
-        if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_ ) ) {
-          locationFound = true;
-          if ( printDetailedInfo ) {
-            std::cout << "Maintained orientation " << patch.getPatchOrientation() << " for matched patch "
-                      << patch.getIndex() << " in the same position (" << patch.getU0() << "," << patch.getV0() << ")"
-                      << std::endl;
-          }
-        }
-        // if the patch couldn't fit, try to fit the patch in the top left position
-        for ( int v = 0; v <= occupancySizeV && !locationFound; ++v ) {
-          for ( int u = 0; u <= occupancySizeU && !locationFound; ++u ) {
-            patch.getU0() = u;
-            patch.getV0() = v;
-            if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_, safeguard ) ) {
-              locationFound = true;
-              if ( printDetailedInfo ) {
-                std::cout << "Maintained orientation " << patch.getPatchOrientation() << " for matched patch "
-                          << patch.getIndex() << " (" << u << "," << v << ")" << std::endl;
-              }
+  if ( !params_.enablePointCloudPartitioning_ ) {
+    for ( auto& patch : patches ) {
+      assert( patch.getSizeU0() <= occupancySizeU );
+      assert( patch.getSizeV0() <= occupancySizeV );
+      bool  locationFound = false;
+      auto& occupancy     = patch.getOccupancy();
+      while ( !locationFound ) {
+        if ( patch.getBestMatchIdx() != InvalidPatchIndex ) {
+          patch.getPatchOrientation() = prevPatches[patch.getBestMatchIdx()].getPatchOrientation();
+          // try to place on the same position as the matched patch
+          patch.getU0() = prevPatches[patch.getBestMatchIdx()].getU0();
+          patch.getV0() = prevPatches[patch.getBestMatchIdx()].getV0();
+          if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_ ) ) {
+            locationFound = true;
+            if ( printDetailedInfo ) {
+              std::cout << "Maintained orientation " << patch.getPatchOrientation() << " for matched patch "
+                        << patch.getIndex() << " in the same position (" << patch.getU0() << "," << patch.getV0() << ")"
+                        << std::endl;
             }
           }
-        }
-      } else {
-        // best effort
-        for ( size_t v = 0; v < occupancySizeV && !locationFound; ++v ) {
-          for ( size_t u = 0; u < occupancySizeU && !locationFound; ++u ) {
-            patch.getU0() = u;
-            patch.getV0() = v;
-            for ( size_t orientationIdx = 0; orientationIdx < numOrientations && !locationFound; orientationIdx++ ) {
-              if ( patch.getSizeU0() > patch.getSizeV0() ) {
-                patch.getPatchOrientation() = orientation_horizontal[orientationIdx];
-              } else {
-                patch.getPatchOrientation() = orientation_vertical[orientationIdx];
-              }
-              if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_, safeguard ) ) {
+          // if the patch couldn't fit, try to fit the patch in the top left position
+          for ( int v = 0; v <= occupancySizeV && !locationFound; ++v ) {
+            for ( int u = 0; u <= occupancySizeU && !locationFound; ++u ) {
+              patch.getU0() = u;
+              patch.getV0() = v;
+              if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_,
+                                              safeguard ) ) {
                 locationFound = true;
                 if ( printDetailedInfo ) {
-                  std::cout << "Orientation " << patch.getPatchOrientation() << " selected for unmatched patch "
+                  std::cout << "Maintained orientation " << patch.getPatchOrientation() << " for matched patch "
                             << patch.getIndex() << " (" << u << "," << v << ")" << std::endl;
                 }
               }
             }
           }
+        } else {
+          // best effort
+          for ( size_t v = 0; v < occupancySizeV && !locationFound; ++v ) {
+            for ( size_t u = 0; u < occupancySizeU && !locationFound; ++u ) {
+              patch.getU0() = u;
+              patch.getV0() = v;
+              for ( size_t orientationIdx = 0; orientationIdx < numOrientations && !locationFound; orientationIdx++ ) {
+                if ( patch.getSizeU0() > patch.getSizeV0() ) {
+                  patch.getPatchOrientation() = orientation_horizontal[orientationIdx];
+                } else {
+                  patch.getPatchOrientation() = orientation_vertical[orientationIdx];
+                }
+                if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_,
+                                                safeguard ) ) {
+                  locationFound = true;
+                  if ( printDetailedInfo ) {
+                    std::cout << "Orientation " << patch.getPatchOrientation() << " selected for unmatched patch "
+                              << patch.getIndex() << " (" << u << "," << v << ")" << std::endl;
+                  }
+                }
+              }
+            }
+          }
+        }
+        if ( !locationFound ) {
+          occupancySizeV *= 2;
+          occupancyMap.resize( occupancySizeU * occupancySizeV );
         }
       }
-      if ( !locationFound ) {
-        occupancySizeV *= 2;
-        occupancyMap.resize( occupancySizeU * occupancySizeV );
+      for ( size_t v0 = 0; v0 < patch.getSizeV0(); ++v0 ) {
+        for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {
+          int coord = patch.patchBlock2CanvasBlock( u0, v0, occupancySizeU, occupancySizeV );
+          if ( params_.lowDelayEncoding_ )
+            occupancyMap[coord] = true;
+          else
+            occupancyMap[coord] = occupancyMap[coord] || occupancy[v0 * patch.getSizeU0() + u0];
+        }
+      }
+      if ( !( patch.isPatchDimensionSwitched() ) ) {
+        height = ( std::max )( height, ( patch.getV0() + patch.getSizeV0() ) * patch.getOccupancyResolution() );
+        width  = ( std::max )( width, ( patch.getU0() + patch.getSizeU0() ) * patch.getOccupancyResolution() );
+        maxOccupancyRow = ( std::max )( maxOccupancyRow, ( patch.getV0() + patch.getSizeV0() ) );
+      } else {
+        height = ( std::max )( height, ( patch.getV0() + patch.getSizeU0() ) * patch.getOccupancyResolution() );
+        width  = ( std::max )( width, ( patch.getU0() + patch.getSizeV0() ) * patch.getOccupancyResolution() );
+        maxOccupancyRow = ( std::max )( maxOccupancyRow, ( patch.getV0() + patch.getSizeU0() ) );
       }
     }
-    for ( size_t v0 = 0; v0 < patch.getSizeV0(); ++v0 ) {
-      for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {
-        int coord           = patch.patchBlock2CanvasBlock( u0, v0, occupancySizeU, occupancySizeV );
-				if (params_.lowDelayEncoding_)
-					occupancyMap[coord] = true;
-				else
-        occupancyMap[coord] = occupancyMap[coord] || occupancy[v0 * patch.getSizeU0() + u0];
+  } else {
+    std::vector<Tile> tilesNotAvailable;
+    int               numROIs                        = params_.numROIs_;
+    int               lastOccupiedTileIndex          = -1;
+    int               lastOccupiedTileIndexByPrevROI = -1;
+    int               numTilesAvailable;
+    // loop over ROIs
+    for ( size_t roiIndex = 0; roiIndex < numROIs; ++roiIndex ) {
+      tilesNotAvailable.clear();
+      if ( roiIndex > 0 ) {
+        lastOccupiedTileIndexByPrevROI = lastOccupiedTileIndex;
+        for ( int tileIndex = 0; tileIndex <= lastOccupiedTileIndexByPrevROI; ++tileIndex ) {
+          Tile tile;
+          tile.minU = ( tileIndex % numTilesHor ) * tileWidth;
+          tile.minV = ( tileIndex / numTilesHor ) * tileHeight;
+          tile.maxU = tile.minU + tileWidth - 1;
+          tile.maxV = tile.minV + tileHeight - 1;
+          tilesNotAvailable.push_back( tile );
+        }
       }
-    }
-    if ( !( patch.isPatchDimensionSwitched() ) ) {
-      height          = ( std::max )( height, ( patch.getV0() + patch.getSizeV0() ) * patch.getOccupancyResolution() );
-      width           = ( std::max )( width, ( patch.getU0() + patch.getSizeU0() ) * patch.getOccupancyResolution() );
-      maxOccupancyRow = ( std::max )( maxOccupancyRow, ( patch.getV0() + patch.getSizeV0() ) );
-    } else {
-      height          = ( std::max )( height, ( patch.getV0() + patch.getSizeU0() ) * patch.getOccupancyResolution() );
-      width           = ( std::max )( width, ( patch.getU0() + patch.getSizeV0() ) * patch.getOccupancyResolution() );
-      maxOccupancyRow = ( std::max )( maxOccupancyRow, ( patch.getV0() + patch.getSizeU0() ) );
-    }
+      // loop over patches of current ROI
+      for ( auto& patch : patches ) {
+        if ( roiIndex != patch.getRoiIndex() ) { continue; }
+        assert( patch.getSizeU0() <= occupancySizeU );
+        assert( patch.getSizeV0() <= occupancySizeV );
+        bool  locationFound = false;
+        auto& occupancy     = patch.getOccupancy();
+        while ( !locationFound ) {
+          if ( patch.getBestMatchIdx() != InvalidPatchIndex ) {
+            patch.getPatchOrientation() = prevPatches[patch.getBestMatchIdx()].getPatchOrientation();
+            // try to place on the same position as the matched patch
+            patch.getU0() = prevPatches[patch.getBestMatchIdx()].getU0();
+            patch.getV0() = prevPatches[patch.getBestMatchIdx()].getV0();
+            // try to place the matched patch into the tiles occupied by the current ROI so far
+            int firstTileIndexOfCurrentROI;
+            int lastTileIndexOfCurrentROI;
+            if ( lastOccupiedTileIndex == -1 ) {
+              firstTileIndexOfCurrentROI = 0;
+              lastTileIndexOfCurrentROI  = 0;
+            } else {
+              firstTileIndexOfCurrentROI = lastOccupiedTileIndexByPrevROI + 1;
+              lastTileIndexOfCurrentROI  = lastOccupiedTileIndex;
+            }
+            //
+            for ( int tileIndex = firstTileIndexOfCurrentROI; tileIndex <= lastTileIndexOfCurrentROI && !locationFound;
+                  ++tileIndex ) {
+              Tile tile;
+              tile.minU = ( tileIndex % numTilesHor ) * tileWidth;
+              tile.maxU = tile.minU + tileWidth - 1;
+              tile.minV = ( tileIndex / numTilesHor ) * tileHeight;
+              tile.maxV = tile.minV + tileHeight - 1;
+
+              if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_,
+                                              safeguard, tile ) ) {
+                locationFound = true;
+                std::cout << "ROI-" << roiIndex + 1 << " patch-" << patch.getIndex() << " fitted in tile-"
+                          << tileIndex + 1 << "/" << numTilesAvailable << "-----[" << tile.minU << "," << tile.maxU
+                          << "][" << tile.minV << "," << tile.maxV << "]"
+                          << " +-+-+-+-+-(MATCHED patch placed on the same position)-+-+-+-+-+" << std::endl;
+                if ( printDetailedInfo ) {
+                  std::cout << "Maintained orientation " << patch.getPatchOrientation() << " for matched patch "
+                            << patch.getIndex() << " in the same position (" << patch.getU0() << "," << patch.getV0()
+                            << ")" << std::endl;
+                }
+              }
+            }
+            // if the patch couldn't fit, try to fit the patch in the top left position
+            numTilesAvailable = ceil( double( occupancySizeV ) / double( tileHeight ) ) * numTilesHor;
+            for ( int tileIndex = lastOccupiedTileIndexByPrevROI + 1; tileIndex < numTilesAvailable && !locationFound;
+                  ++tileIndex ) {
+              Tile tile;
+              tile.minU = ( tileIndex % numTilesHor ) * tileWidth;
+              tile.maxU = tile.minU + tileWidth - 1;
+              tile.minV = ( tileIndex / numTilesHor ) * tileHeight;
+              tile.maxV = tile.minV + tileHeight - 1;
+              for ( int v = 0; v <= occupancySizeV && !locationFound; ++v ) {
+                for ( int u = 0; u <= occupancySizeU && !locationFound; ++u ) {
+                  patch.getU0()        = u;
+                  patch.getV0()        = v;
+                  bool tileIsAvailable = true;
+                  if ( roiIndex > 0 ) {
+                    for ( auto& tile : tilesNotAvailable ) {
+                      if ( ( tile.minU <= u && u <= tile.maxU ) && ( tile.minV <= v && v <= tile.maxV ) &&
+                           ( !locationFound ) ) {
+                        tileIsAvailable = false;
+                        break;
+                      }
+                    }
+                  }
+                  if ( tileIsAvailable ) {
+                    if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV,
+                                                    params_.lowDelayEncoding_, safeguard, tile ) ) {
+                      locationFound = true;
+                      if ( tileIndex > lastOccupiedTileIndex ) { lastOccupiedTileIndex = tileIndex; }
+                      std::cout << "ROI-" << roiIndex + 1 << " patch-" << patch.getIndex() << " fitted in tile-"
+                                << tileIndex + 1 << "/" << numTilesAvailable << "-----[" << tile.minU << ","
+                                << tile.maxU << "][" << tile.minV << "," << tile.maxV << "]"
+                                << " +-+-+-+-+-(MATCHED patch NOT placed on the same position)-+-+-+-+-+" << std::endl;
+                      if ( printDetailedInfo ) {
+                        std::cout << "Maintained orientation " << patch.getPatchOrientation() << " for matched patch "
+                                  << patch.getIndex() << " (" << u << "," << v << ")" << std::endl;
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          } else {
+            // best effort
+            numTilesAvailable = ceil( double( occupancySizeV ) / double( tileHeight ) ) * numTilesHor;
+            for ( int tileIndex = lastOccupiedTileIndexByPrevROI + 1; tileIndex < numTilesAvailable && !locationFound;
+                  ++tileIndex ) {
+              Tile tile;
+              tile.minU = ( tileIndex % numTilesHor ) * tileWidth;
+              tile.maxU = tile.minU + tileWidth - 1;
+              tile.minV = ( tileIndex / numTilesHor ) * tileHeight;
+              tile.maxV = tile.minV + tileHeight - 1;
+              for ( size_t v = 0; v < occupancySizeV && !locationFound; ++v ) {
+                for ( size_t u = 0; u < occupancySizeU && !locationFound; ++u ) {
+                  patch.getU0()        = u;
+                  patch.getV0()        = v;
+                  bool tileIsAvailable = true;
+                  if ( roiIndex > 0 ) {
+                    for ( auto& tile : tilesNotAvailable ) {
+                      if ( ( tile.minU <= u && u <= tile.maxU ) && ( tile.minV <= v && v <= tile.maxV ) &&
+                           ( !locationFound ) ) {
+                        tileIsAvailable = false;
+                        break;
+                      }
+                    }
+                  }
+                  if ( tileIsAvailable ) {
+                    for ( size_t orientationIdx = 0; orientationIdx < numOrientations && !locationFound;
+                          orientationIdx++ ) {
+                      if ( patch.getSizeU0() > patch.getSizeV0() ) {
+                        patch.getPatchOrientation() = orientation_horizontal[orientationIdx];
+                      } else {
+                        patch.getPatchOrientation() = orientation_vertical[orientationIdx];
+                      }
+                      if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV,
+                                                      params_.lowDelayEncoding_, safeguard, tile ) ) {
+                        locationFound = true;
+                        if ( tileIndex > lastOccupiedTileIndex ) { lastOccupiedTileIndex = tileIndex; }
+                        std::cout << "ROI-" << roiIndex + 1 << " patch-" << patch.getIndex() << " fitted in tile-"
+                                  << tileIndex + 1 << "/" << numTilesAvailable << "-----[" << tile.minU << ","
+                                  << tile.maxU << "][" << tile.minV << "," << tile.maxV << "]"
+                                  << " +-+-+-+-+-(NOT MATCHED patch)-+-+-+-+-+" << std::endl;
+                        if ( printDetailedInfo ) {
+                          std::cout << "Orientation " << patch.getPatchOrientation() << " selected for unmatched patch "
+                                    << patch.getIndex() << " (" << u << "," << v << ")" << std::endl;
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+          if ( !locationFound ) {
+            occupancySizeV *= 2;
+            occupancyMap.resize( occupancySizeU * occupancySizeV );
+          }
+        }  // while loop
+        for ( size_t v0 = 0; v0 < patch.getSizeV0(); ++v0 ) {
+          for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {
+            int coord           = patch.patchBlock2CanvasBlock( u0, v0, occupancySizeU, occupancySizeV );
+            occupancyMap[coord] = occupancyMap[coord] || occupancy[v0 * patch.getSizeU0() + u0];
+          }
+        }
+        if ( !( patch.isPatchDimensionSwitched() ) ) {
+          height = ( std::max )( height, ( patch.getV0() + patch.getSizeV0() ) * patch.getOccupancyResolution() );
+          width  = ( std::max )( width, ( patch.getU0() + patch.getSizeU0() ) * patch.getOccupancyResolution() );
+          maxOccupancyRow = ( std::max )( maxOccupancyRow, ( patch.getV0() + patch.getSizeV0() ) );
+        } else {
+          height = ( std::max )( height, ( patch.getV0() + patch.getSizeU0() ) * patch.getOccupancyResolution() );
+          width  = ( std::max )( width, ( patch.getU0() + patch.getSizeV0() ) * patch.getOccupancyResolution() );
+          maxOccupancyRow = ( std::max )( maxOccupancyRow, ( patch.getV0() + patch.getSizeU0() ) );
+        }
+      }  // patch loop
+      printMap( occupancyMap, occupancySizeU, occupancySizeV );
+    }  // ROI loop
   }
 
   if ( frame.getNumberOfMissedPointsPatches() > 0 && !frame.getUseMissedPointsSeparateVideo() ) {
@@ -1100,7 +1392,8 @@ void PCCEncoder::spatialConsistencyPackTetris( PCCFrameContext& frame, PCCFrameC
           if ( xp >= 0 && xp < occupancySizeU && yp >= 0 && yp < occupancySizeV ) {
             patch.getU0() = xp;
             patch.getV0() = yp;
-            if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_, safeguard ) ) {
+            if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_,
+                                            safeguard ) ) {
               locationFound = true;
               best_u        = xp;
               best_v        = yp;
@@ -1134,7 +1427,8 @@ void PCCEncoder::spatialConsistencyPackTetris( PCCFrameContext& frame, PCCFrameC
                             << std::endl;
                 continue;
               }
-              if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_, safeguard ) ) {
+              if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_,
+                                              safeguard ) ) {
                 // now calculate the wasted space
                 int wasted_space =
                     patch.calculate_wasted_space( horizon, top_horizon, bottom_horizon, right_horizon, left_horizon );
@@ -1173,11 +1467,11 @@ void PCCEncoder::spatialConsistencyPackTetris( PCCFrameContext& frame, PCCFrameC
     }
     for ( size_t v0 = 0; v0 < patch.getSizeV0(); ++v0 ) {
       for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {
-        int coord           = patch.patchBlock2CanvasBlock( u0, v0, occupancySizeU, occupancySizeV );
-				if (params_.lowDelayEncoding_)
-					occupancyMap[coord] = true;
-				else
-        occupancyMap[coord] = occupancyMap[coord] || occupancy[v0 * patch.getSizeU0() + u0];
+        int coord = patch.patchBlock2CanvasBlock( u0, v0, occupancySizeU, occupancySizeV );
+        if ( params_.lowDelayEncoding_ )
+          occupancyMap[coord] = true;
+        else
+          occupancyMap[coord] = occupancyMap[coord] || occupancy[v0 * patch.getSizeU0() + u0];
       }
     }
     if ( !( patch.isPatchDimensionSwitched() ) ) {
@@ -1213,639 +1507,718 @@ void PCCEncoder::spatialConsistencyPackTetris( PCCFrameContext& frame, PCCFrameC
 }
 
 // GTP - GLOBAL PATCH PACKING
-void PCCEncoder::findMatchesForGlobalTetrisPacking(PCCFrameContext& frame, PCCFrameContext &prevFrame) {
+void PCCEncoder::findMatchesForGlobalTetrisPacking( PCCFrameContext& frame, PCCFrameContext& prevFrame ) {
+  auto& patches     = frame.getPatches();
+  auto& prevPatches = prevFrame.getPatches();
+  if ( patches.empty() ) { return; }
+  // sort the patches so that the first match is done with the largest patch first.
+  std::sort( patches.begin(), patches.end(), []( PCCPatch& a, PCCPatch& b ) { return a.gt( b ); } );
 
-	auto& patches = frame.getPatches();
-	auto& prevPatches = prevFrame.getPatches();
-	if (patches.empty()) {
-		return;
-	}
-	//sort the patches so that the first match is done with the largest patch first.
-	std::sort(patches.begin(), patches.end(), [](PCCPatch& a, PCCPatch& b) { return a.gt(b); });
+  if ( &frame == &prevFrame ) {
+    if ( printDetailedInfo ) {
+      for ( int patchIdx = 0; patchIdx < patches.size(); patchIdx++ ) {
+        auto& patch = patches[patchIdx];
+        std::cout << "Sorted Patch[" << patchIdx << "]->";
+        patch.getU0() = 0;
+        patch.getV0() = 0;
+        patch.print();
+      }
+    }
+    // no point in doing matching, this is the same frame
+    return;
+  }
 
-	if (&frame == &prevFrame) {
-		if (printDetailedInfo) {
-			for (int patchIdx = 0; patchIdx < patches.size(); patchIdx++) {
-				auto &patch = patches[patchIdx];
-				std::cout << "Sorted Patch[" << patchIdx << "]->";
-				patch.getU0() = 0;
-				patch.getV0() = 0;
-				patch.print();
-			}
-		}
-		//no point in doing matching, this is the same frame
-		return;
-	}
+  vector<PCCPatch> matchedPatches;
+  int              id = 0;
+  matchedPatches.clear();
+  float thresholdIOU = 0.2f;
+  // main loop.
+  for ( auto& patch : prevPatches ) {
+    id++;
+    float maxIou  = 0.0f;
+    int   bestIdx = -1, cId = 0;
+    for ( auto& cpatch : patches ) {
+      if ( ( patch.getViewId() == cpatch.getViewId() ) && ( cpatch.getBestMatchIdx() == InvalidPatchIndex ) ) {
+        Rect  rect  = Rect( patch.getU1(), patch.getV1(), patch.getSizeU(), patch.getSizeV() );
+        Rect  crect = Rect( cpatch.getU1(), cpatch.getV1(), cpatch.getSizeU(), cpatch.getSizeV() );
+        float iou   = computeIOU( rect, crect );
+        if ( iou > maxIou ) {
+          maxIou  = iou;
+          bestIdx = cId;
+        }
+      }  // end of if (patch.viewId == cpatch.viewId).
+      cId++;
+    }
+    if ( maxIou > thresholdIOU ) {
+      // checking the size of the matched patches
+      auto&  curPatch = patches[bestIdx];
+      double area1    = curPatch.getSizeU0() * curPatch.getSizeV0();
+      double area2    = patch.getSizeU0() * patch.getSizeV0();
+      if ( ( ( area1 / area2 ) < params_.globalPackingStrategyThreshold_ ) ||
+           ( ( area2 / area1 ) < params_.globalPackingStrategyThreshold_ ) ) {
+        // this seems like an unlike mismatch, will break the chain here
+        if ( printDetailedInfo ) {
+          std::cout << "Removing the match because areas are too different:" << std::endl;
+          std::cout << "elem.ID =" << curPatch.getIndex() << std::endl;
+          std::cout << "elem.sizeU0 =" << curPatch.getSizeU0() << std::endl;
+          std::cout << "elem.sizeV0 =" << curPatch.getSizeV0() << std::endl;
+          std::cout << "area =" << area1 << std::endl;
+          std::cout << "previous_elem.ID =" << patch.getIndex() << std::endl;
+          std::cout << "elem.sizeU0 =" << patch.getSizeU0() << std::endl;
+          std::cout << "elem.sizeV0 =" << patch.getSizeV0() << std::endl;
+          std::cout << "area =" << area2 << std::endl;
+        }
+      } else {
+        // store the best match index
+        patches[bestIdx].setBestMatchIdx() = id - 1;  // the matched patch id in previous frame.
+        matchedPatches.push_back( patches[bestIdx] );
+      }
+    }
+  }
+  frame.getNumMatchedPatches() = matchedPatches.size();
 
-	vector<PCCPatch> matchedPatches;
-	int id = 0;
-	matchedPatches.clear();
-	float thresholdIOU = 0.2f;
-	//main loop.
-	for (auto &patch : prevPatches) {
-		id++;
-		float maxIou = 0.0f;
-		int bestIdx = -1, cId = 0;
-		for (auto &cpatch : patches) {
-			if ((patch.getViewId() == cpatch.getViewId()) && (cpatch.getBestMatchIdx() == InvalidPatchIndex)) {
-				Rect rect = Rect(patch.getU1(), patch.getV1(), patch.getSizeU(), patch.getSizeV());
-				Rect crect = Rect(cpatch.getU1(), cpatch.getV1(), cpatch.getSizeU(), cpatch.getSizeV());
-				float iou = computeIOU(rect, crect);
-				if (iou > maxIou) {
-					maxIou = iou;
-					bestIdx = cId;
-				}
-			}//end of if (patch.viewId == cpatch.viewId).
-			cId++;
-		}
-		if (maxIou > thresholdIOU) {
-			//checking the size of the matched patches
-			auto& curPatch = patches[bestIdx];
-			double area1 = curPatch.getSizeU0()*curPatch.getSizeV0();
-			double area2 = patch.getSizeU0()*patch.getSizeV0();
-			if (((area1 / area2) < params_.globalPackingStrategyThreshold_) || ((area2 / area1) < params_.globalPackingStrategyThreshold_)) {
-				//this seems like an unlike mismatch, will break the chain here
-				if (printDetailedInfo) {
-					std::cout << "Removing the match because areas are too different:" << std::endl;
-					std::cout << "elem.ID =" << curPatch.getIndex() << std::endl;
-					std::cout << "elem.sizeU0 =" << curPatch.getSizeU0() << std::endl;
-					std::cout << "elem.sizeV0 =" << curPatch.getSizeV0() << std::endl;
-					std::cout << "area =" << area1 << std::endl;
-					std::cout << "previous_elem.ID =" << patch.getIndex() << std::endl;
-					std::cout << "elem.sizeU0 =" << patch.getSizeU0() << std::endl;
-					std::cout << "elem.sizeV0 =" << patch.getSizeV0() << std::endl;
-					std::cout << "area =" << area2 << std::endl;
-				}
-			}
-			else
-			{
-				//store the best match index
-				patches[bestIdx].setBestMatchIdx() = id - 1; //the matched patch id in previous frame.
-				matchedPatches.push_back(patches[bestIdx]);
-			}
-		}
-	}
-	frame.getNumMatchedPatches() = matchedPatches.size();
+  vector<PCCPatch> newOrderPatches = matchedPatches;
+  for ( auto patch : patches ) {
+    if ( patch.getBestMatchIdx() == InvalidPatchIndex ) { newOrderPatches.push_back( patch ); }
+  }
+  frame.getNumMatchedPatches() = matchedPatches.size();
 
-	vector<PCCPatch> newOrderPatches = matchedPatches;
-	for (auto patch : patches) {
-		if (patch.getBestMatchIdx() == InvalidPatchIndex) {
-			newOrderPatches.push_back(patch);
-		}
-	}
-	frame.getNumMatchedPatches() = matchedPatches.size();
-
-	patches = newOrderPatches;
-	if (printDetailedInfo) {
-		for (int patchIdx = 0; patchIdx < patches.size(); patchIdx++) {
-			auto &patch = patches[patchIdx];
-			if (patchIdx < frame.getNumMatchedPatches())
-				std::cout << "Matched (refPatch[" << patches[patchIdx].getBestMatchIdx() << "]=" << prevPatches[patches[patchIdx].getBestMatchIdx()].getIndex() << ") Patch[" << patchIdx << "]->";
-			else
-				std::cout << "Unmatched Patch[" << patchIdx << "]->";
-			patch.getU0() = 0;
-			patch.getV0() = 0;
-			patch.print();
-		}
-	}
-
+  patches = newOrderPatches;
+  if ( printDetailedInfo ) {
+    for ( int patchIdx = 0; patchIdx < patches.size(); patchIdx++ ) {
+      auto& patch = patches[patchIdx];
+      if ( patchIdx < frame.getNumMatchedPatches() )
+        std::cout << "Matched (refPatch[" << patches[patchIdx].getBestMatchIdx()
+                  << "]=" << prevPatches[patches[patchIdx].getBestMatchIdx()].getIndex() << ") Patch[" << patchIdx
+                  << "]->";
+      else
+        std::cout << "Unmatched Patch[" << patchIdx << "]->";
+      patch.getU0() = 0;
+      patch.getV0() = 0;
+      patch.print();
+    }
+  }
 }
 
-void PCCEncoder::doGlobalTetrisPacking(PCCContext &context)
-{
-	struct doubleLinkedPatchElement
-	{
-		pcc::PCCPatch* elem;
-		int32_t nextElemPos;
-		int32_t prevElemPos;
-		int32_t weight;
-		pcc::PCCPatch globalElem;
-		std::vector<bool> globalOccupancyMap;
+void PCCEncoder::doGlobalTetrisPacking( PCCContext& context ) {
+  struct doubleLinkedPatchElement {
+    pcc::PCCPatch*    elem;
+    int32_t           nextElemPos;
+    int32_t           prevElemPos;
+    int32_t           weight;
+    pcc::PCCPatch     globalElem;
+    std::vector<bool> globalOccupancyMap;
 
-		doubleLinkedPatchElement() : elem(nullptr), nextElemPos(-1), prevElemPos(-1), weight(0) {}
-		doubleLinkedPatchElement(pcc::PCCPatch* patch) : elem(patch), nextElemPos(-1), prevElemPos(patch->getBestMatchIdx()), weight(patch->getBestMatchIdx() >= 0 ? 1 : 0) {}
-		bool gt(const doubleLinkedPatchElement &rhs) {
-			//setting the largest dimension
-			if (weight > rhs.weight) {
-				return true;
-			}
-			else {
-				if (weight < rhs.weight) {
-					return false;
-				}
-				else
-					return elem->gt(rhs.elem[0]);
-			}
-		}
-		bool gt2(const doubleLinkedPatchElement &rhs) {
-			//setting the largest dimension
-			float volume = weight * (globalOccupancyMap.size());
-			float volume_right = rhs.weight * (rhs.globalOccupancyMap.size());
-			if (volume > volume_right) {
-				return true;
-			}
-			else {
-				if (volume < volume_right) {
-					return false;
-				}
-				else
-					return elem->gt(rhs.elem[0]);
-			}
-		}
-	};
+    doubleLinkedPatchElement() : elem( nullptr ), nextElemPos( -1 ), prevElemPos( -1 ), weight( 0 ) {}
+    doubleLinkedPatchElement( pcc::PCCPatch* patch ) :
+        elem( patch ),
+        nextElemPos( -1 ),
+        prevElemPos( patch->getBestMatchIdx() ),
+        weight( patch->getBestMatchIdx() >= 0 ? 1 : 0 ) {}
+    bool gt( const doubleLinkedPatchElement& rhs ) {
+      // setting the largest dimension
+      if ( weight > rhs.weight ) {
+        return true;
+      } else {
+        if ( weight < rhs.weight ) {
+          return false;
+        } else
+          return elem->gt( rhs.elem[0] );
+      }
+    }
+    bool gt2( const doubleLinkedPatchElement& rhs ) {
+      // setting the largest dimension
+      float volume       = weight * ( globalOccupancyMap.size() );
+      float volume_right = rhs.weight * ( rhs.globalOccupancyMap.size() );
+      if ( volume > volume_right ) {
+        return true;
+      } else {
+        if ( volume < volume_right ) {
+          return false;
+        } else
+          return elem->gt( rhs.elem[0] );
+      }
+    }
+  };
 
-	std::vector<std::vector<doubleLinkedPatchElement>> patchMatrix;
-	std::vector<std::vector<int32_t>> patchMatrixSortedIndexes;
+  std::vector<std::vector<doubleLinkedPatchElement>> patchMatrix;
+  std::vector<std::vector<int32_t>>                  patchMatrixSortedIndexes;
 
-	//creating the doubled linked list
-	patchMatrix.resize(context.size());
-	patchMatrixSortedIndexes.resize(context.size());
-	auto& frames = context.getFrames();
-	int gofSize = (params_.globalPackingStrategyGOF_ == 0) ? frames.size() : params_.globalPackingStrategyGOF_;
-	int numGof = (frames.size() + gofSize / 2) / gofSize;
-	for (int gofIdx = 0; gofIdx < numGof; gofIdx++) {
-		int frStart = (gofIdx)*(gofSize);
-		int frEnd = (gofIdx + 1)*(gofSize);
-		if (gofIdx + 1 == numGof)
-			frEnd = frames.size();
-		for (size_t frameIdx = frStart; frameIdx < frEnd; frameIdx++) {
-			auto& patches = frames[frameIdx].getPatches();
-			patchMatrix[frameIdx].resize(patches.size());
-			patchMatrixSortedIndexes[frameIdx].resize(patches.size());
-			for (size_t patchIdx = 0; patchIdx < patches.size(); patchIdx++) {
-				doubleLinkedPatchElement elem(&patches[patchIdx]);
-				if (frameIdx == frStart)
-				{
-					elem.prevElemPos = -1; //break the link between GOFs
-					if (params_.globalPackingStrategyReset_)
-					{
-						elem.elem->setBestMatchIdx() = InvalidPatchIndex;
-					}
-				}
-				patchMatrix[frameIdx][patchIdx] = elem;
-				patchMatrixSortedIndexes[frameIdx][patchIdx] = patchIdx;
-			}
-		}
-		//now go from back to front and update the nextElemPos and the weight
-		for (int frameIdx = frEnd - 1; frameIdx >= frStart; frameIdx--) {
-			for (size_t patchIdx = 0; patchIdx < patchMatrix[frameIdx].size(); patchIdx++) {
-				//update the list
-				if (patchMatrix[frameIdx][patchIdx].prevElemPos >= 0)
-					patchMatrix[frameIdx - 1][patchMatrix[frameIdx][patchIdx].prevElemPos].nextElemPos = patchIdx;
-				//update the weight, the global occupancy map, and the patch size
-				if (patchMatrix[frameIdx][patchIdx].nextElemPos >= 0)
-				{
-					//new weight
-					patchMatrix[frameIdx][patchIdx].weight += patchMatrix[frameIdx + 1][patchMatrix[frameIdx][patchIdx].nextElemPos].weight + 1;
-					//new occupancy map
-					size_t curU1 = patchMatrix[frameIdx][patchIdx].elem->getU1();
-					size_t curV1 = patchMatrix[frameIdx][patchIdx].elem->getV1();
-					size_t curSizeU0 = patchMatrix[frameIdx][patchIdx].elem->getSizeU0();
-					size_t curSizeV0 = patchMatrix[frameIdx][patchIdx].elem->getSizeV0();
-					size_t curOccupancyResolution = patchMatrix[frameIdx][patchIdx].elem->getOccupancyResolution();
+  // creating the doubled linked list
+  patchMatrix.resize( context.size() );
+  patchMatrixSortedIndexes.resize( context.size() );
+  auto& frames  = context.getFrames();
+  int   gofSize = ( params_.globalPackingStrategyGOF_ == 0 ) ? frames.size() : params_.globalPackingStrategyGOF_;
+  int   numGof  = ( frames.size() + gofSize / 2 ) / gofSize;
+  for ( int gofIdx = 0; gofIdx < numGof; gofIdx++ ) {
+    int frStart = ( gofIdx ) * ( gofSize );
+    int frEnd   = ( gofIdx + 1 ) * ( gofSize );
+    if ( gofIdx + 1 == numGof ) frEnd = frames.size();
+    for ( size_t frameIdx = frStart; frameIdx < frEnd; frameIdx++ ) {
+      auto& patches = frames[frameIdx].getPatches();
+      patchMatrix[frameIdx].resize( patches.size() );
+      patchMatrixSortedIndexes[frameIdx].resize( patches.size() );
+      for ( size_t patchIdx = 0; patchIdx < patches.size(); patchIdx++ ) {
+        doubleLinkedPatchElement elem( &patches[patchIdx] );
+        if ( frameIdx == frStart ) {
+          elem.prevElemPos = -1;  // break the link between GOFs
+          if ( params_.globalPackingStrategyReset_ ) { elem.elem->setBestMatchIdx() = InvalidPatchIndex; }
+        }
+        patchMatrix[frameIdx][patchIdx]              = elem;
+        patchMatrixSortedIndexes[frameIdx][patchIdx] = patchIdx;
+      }
+    }
+    // now go from back to front and update the nextElemPos and the weight
+    for ( int frameIdx = frEnd - 1; frameIdx >= frStart; frameIdx-- ) {
+      for ( size_t patchIdx = 0; patchIdx < patchMatrix[frameIdx].size(); patchIdx++ ) {
+        // update the list
+        if ( patchMatrix[frameIdx][patchIdx].prevElemPos >= 0 )
+          patchMatrix[frameIdx - 1][patchMatrix[frameIdx][patchIdx].prevElemPos].nextElemPos = patchIdx;
+        // update the weight, the global occupancy map, and the patch size
+        if ( patchMatrix[frameIdx][patchIdx].nextElemPos >= 0 ) {
+          // new weight
+          patchMatrix[frameIdx][patchIdx].weight +=
+              patchMatrix[frameIdx + 1][patchMatrix[frameIdx][patchIdx].nextElemPos].weight + 1;
+          // new occupancy map
+          size_t curU1                  = patchMatrix[frameIdx][patchIdx].elem->getU1();
+          size_t curV1                  = patchMatrix[frameIdx][patchIdx].elem->getV1();
+          size_t curSizeU0              = patchMatrix[frameIdx][patchIdx].elem->getSizeU0();
+          size_t curSizeV0              = patchMatrix[frameIdx][patchIdx].elem->getSizeV0();
+          size_t curOccupancyResolution = patchMatrix[frameIdx][patchIdx].elem->getOccupancyResolution();
 
-					auto& nextGlobalElem = patchMatrix[frameIdx + 1][patchMatrix[frameIdx][patchIdx].nextElemPos].globalElem;
-					size_t nextU1 = nextGlobalElem.getU1();
-					size_t nextV1 = nextGlobalElem.getV1();
-					size_t nextSizeU0 = nextGlobalElem.getSizeU0();
-					size_t nextSizeV0 = nextGlobalElem.getSizeV0();
-					size_t nextOccupancyResolution = curOccupancyResolution;
+          auto&  nextGlobalElem = patchMatrix[frameIdx + 1][patchMatrix[frameIdx][patchIdx].nextElemPos].globalElem;
+          size_t nextU1         = nextGlobalElem.getU1();
+          size_t nextV1         = nextGlobalElem.getV1();
+          size_t nextSizeU0     = nextGlobalElem.getSizeU0();
+          size_t nextSizeV0     = nextGlobalElem.getSizeV0();
+          size_t nextOccupancyResolution = curOccupancyResolution;
 
-					auto& curGlobalElem = patchMatrix[frameIdx][patchIdx].globalElem;
-					curGlobalElem.getU1() = min(curU1, nextU1);
-					curGlobalElem.getV1() = min(curV1, nextV1);
+          auto& curGlobalElem   = patchMatrix[frameIdx][patchIdx].globalElem;
+          curGlobalElem.getU1() = min( curU1, nextU1 );
+          curGlobalElem.getV1() = min( curV1, nextV1 );
 
-					curGlobalElem.getSizeU0() = (max((curSizeU0 - 1)*curOccupancyResolution + curU1, (nextSizeU0 - 1)*nextOccupancyResolution + nextU1) - curGlobalElem.getU1()) / curOccupancyResolution + 1;
-					curGlobalElem.getSizeV0() = (max((curSizeV0 - 1)*curOccupancyResolution + curV1, (nextSizeV0 - 1)*nextOccupancyResolution + nextV1) - curGlobalElem.getV1()) / curOccupancyResolution + 1;
+          curGlobalElem.getSizeU0() = ( max( ( curSizeU0 - 1 ) * curOccupancyResolution + curU1,
+                                             ( nextSizeU0 - 1 ) * nextOccupancyResolution + nextU1 ) -
+                                        curGlobalElem.getU1() ) /
+                                          curOccupancyResolution +
+                                      1;
+          curGlobalElem.getSizeV0() = ( max( ( curSizeV0 - 1 ) * curOccupancyResolution + curV1,
+                                             ( nextSizeV0 - 1 ) * nextOccupancyResolution + nextV1 ) -
+                                        curGlobalElem.getV1() ) /
+                                          curOccupancyResolution +
+                                      1;
 
-					curGlobalElem.getOccupancy().resize(curGlobalElem.getSizeU0() * curGlobalElem.getSizeV0(), false);
-					//copy the global occupancy map from next patch
-					for (size_t v = 0; v < nextSizeV0; v++) {
-						for (size_t u = 0; u < nextSizeU0; u++) {
-							size_t posGlobal = (nextU1 - curGlobalElem.getU1()) / curOccupancyResolution + u + curGlobalElem.getSizeU0() * (v + (nextV1 - curGlobalElem.getV1()) / curOccupancyResolution);
-							size_t posNext = u + nextSizeU0 * (v);
-							curGlobalElem.getOccupancy()[posGlobal] = nextGlobalElem.getOccupancy()[posNext];
-						}
-					}
-					//copy the global occupancy map from current patch
-					for (size_t v = 0; v < curSizeV0; v++) {
-						for (size_t u = 0; u < curSizeU0; u++) {
-							size_t posGlobal = (curU1 - curGlobalElem.getU1()) / curOccupancyResolution + u + curGlobalElem.getSizeU0() * (v + (curV1 - curGlobalElem.getV1()) / curOccupancyResolution);
-							size_t posCur = u + curSizeU0 * (v);
-							curGlobalElem.getOccupancy()[posGlobal] = curGlobalElem.getOccupancy()[posGlobal] || patchMatrix[frameIdx][patchIdx].elem->getOccupancy()[posCur];
-						}
-					}
-					curGlobalElem.getOccupancyResolution() = curOccupancyResolution;
+          curGlobalElem.getOccupancy().resize( curGlobalElem.getSizeU0() * curGlobalElem.getSizeV0(), false );
+          // copy the global occupancy map from next patch
+          for ( size_t v = 0; v < nextSizeV0; v++ ) {
+            for ( size_t u = 0; u < nextSizeU0; u++ ) {
+              size_t posGlobal =
+                  ( nextU1 - curGlobalElem.getU1() ) / curOccupancyResolution + u +
+                  curGlobalElem.getSizeU0() * ( v + ( nextV1 - curGlobalElem.getV1() ) / curOccupancyResolution );
+              size_t posNext                          = u + nextSizeU0 * ( v );
+              curGlobalElem.getOccupancy()[posGlobal] = nextGlobalElem.getOccupancy()[posNext];
+            }
+          }
+          // copy the global occupancy map from current patch
+          for ( size_t v = 0; v < curSizeV0; v++ ) {
+            for ( size_t u = 0; u < curSizeU0; u++ ) {
+              size_t posGlobal =
+                  ( curU1 - curGlobalElem.getU1() ) / curOccupancyResolution + u +
+                  curGlobalElem.getSizeU0() * ( v + ( curV1 - curGlobalElem.getV1() ) / curOccupancyResolution );
+              size_t posCur                           = u + curSizeU0 * ( v );
+              curGlobalElem.getOccupancy()[posGlobal] = curGlobalElem.getOccupancy()[posGlobal] ||
+                                                        patchMatrix[frameIdx][patchIdx].elem->getOccupancy()[posCur];
+            }
+          }
+          curGlobalElem.getOccupancyResolution() = curOccupancyResolution;
 
-					if (printDetailedInfo) {
-						std::cout << "Next Global Element" << std::endl;
-						std::cout << "patchMatrix[" << frameIdx + 1 << "][" << patchMatrix[frameIdx][patchIdx].nextElemPos << "].globalElem.U1 =" << nextU1 << std::endl;
-						std::cout << "patchMatrix[" << frameIdx + 1 << "][" << patchMatrix[frameIdx][patchIdx].nextElemPos << "].globalElem.V1 =" << nextV1 << std::endl;
-						printMap(nextGlobalElem.getOccupancy(), nextGlobalElem.getSizeU0(), nextGlobalElem.getSizeV0());
+          if ( printDetailedInfo ) {
+            std::cout << "Next Global Element" << std::endl;
+            std::cout << "patchMatrix[" << frameIdx + 1 << "][" << patchMatrix[frameIdx][patchIdx].nextElemPos
+                      << "].globalElem.U1 =" << nextU1 << std::endl;
+            std::cout << "patchMatrix[" << frameIdx + 1 << "][" << patchMatrix[frameIdx][patchIdx].nextElemPos
+                      << "].globalElem.V1 =" << nextV1 << std::endl;
+            printMap( nextGlobalElem.getOccupancy(), nextGlobalElem.getSizeU0(), nextGlobalElem.getSizeV0() );
 
-						std::cout << "Current Element" << std::endl;
-						std::cout << "patchMatrix[" << frameIdx << "][" << patchIdx << "].elem.ID =" << patchMatrix[frameIdx][patchIdx].elem->getIndex() << std::endl;
-						std::cout << "patchMatrix[" << frameIdx << "][" << patchIdx << "].elem.U1 =" << patchMatrix[frameIdx][patchIdx].elem->getU1() << std::endl;
-						std::cout << "patchMatrix[" << frameIdx << "][" << patchIdx << "].elem.V1 =" << patchMatrix[frameIdx][patchIdx].elem->getV1() << std::endl;
-						printMap(patchMatrix[frameIdx][patchIdx].elem->getOccupancy(), patchMatrix[frameIdx][patchIdx].elem->getSizeU0(), patchMatrix[frameIdx][patchIdx].elem->getSizeV0());
+            std::cout << "Current Element" << std::endl;
+            std::cout << "patchMatrix[" << frameIdx << "][" << patchIdx
+                      << "].elem.ID =" << patchMatrix[frameIdx][patchIdx].elem->getIndex() << std::endl;
+            std::cout << "patchMatrix[" << frameIdx << "][" << patchIdx
+                      << "].elem.U1 =" << patchMatrix[frameIdx][patchIdx].elem->getU1() << std::endl;
+            std::cout << "patchMatrix[" << frameIdx << "][" << patchIdx
+                      << "].elem.V1 =" << patchMatrix[frameIdx][patchIdx].elem->getV1() << std::endl;
+            printMap( patchMatrix[frameIdx][patchIdx].elem->getOccupancy(),
+                      patchMatrix[frameIdx][patchIdx].elem->getSizeU0(),
+                      patchMatrix[frameIdx][patchIdx].elem->getSizeV0() );
 
-						std::cout << "Current Global Element" << std::endl;
-						std::cout << "patchMatrix[" << frameIdx << "][" << patchIdx << "].weight =" << patchMatrix[frameIdx][patchIdx].weight << std::endl;
-						std::cout << "patchMatrix[" << frameIdx << "][" << patchIdx << "].nextElemPos =" << patchMatrix[frameIdx][patchIdx].nextElemPos << std::endl;
-						std::cout << "patchMatrix[" << frameIdx << "][" << patchIdx << "].prevElemPos =" << patchMatrix[frameIdx][patchIdx].prevElemPos << std::endl;
-						std::cout << "patchMatrix[" << frameIdx << "][" << patchIdx << "].globalElem.getU1 =" << patchMatrix[frameIdx][patchIdx].globalElem.getU1() << std::endl;
-						std::cout << "patchMatrix[" << frameIdx << "][" << patchIdx << "].globalElem.getV1 =" << patchMatrix[frameIdx][patchIdx].globalElem.getV1() << std::endl;
-						printMap(patchMatrix[frameIdx][patchIdx].globalElem.getOccupancy(), patchMatrix[frameIdx][patchIdx].globalElem.getSizeU0(), patchMatrix[frameIdx][patchIdx].globalElem.getSizeV0());
-					}
+            std::cout << "Current Global Element" << std::endl;
+            std::cout << "patchMatrix[" << frameIdx << "][" << patchIdx
+                      << "].weight =" << patchMatrix[frameIdx][patchIdx].weight << std::endl;
+            std::cout << "patchMatrix[" << frameIdx << "][" << patchIdx
+                      << "].nextElemPos =" << patchMatrix[frameIdx][patchIdx].nextElemPos << std::endl;
+            std::cout << "patchMatrix[" << frameIdx << "][" << patchIdx
+                      << "].prevElemPos =" << patchMatrix[frameIdx][patchIdx].prevElemPos << std::endl;
+            std::cout << "patchMatrix[" << frameIdx << "][" << patchIdx
+                      << "].globalElem.getU1 =" << patchMatrix[frameIdx][patchIdx].globalElem.getU1() << std::endl;
+            std::cout << "patchMatrix[" << frameIdx << "][" << patchIdx
+                      << "].globalElem.getV1 =" << patchMatrix[frameIdx][patchIdx].globalElem.getV1() << std::endl;
+            printMap( patchMatrix[frameIdx][patchIdx].globalElem.getOccupancy(),
+                      patchMatrix[frameIdx][patchIdx].globalElem.getSizeU0(),
+                      patchMatrix[frameIdx][patchIdx].globalElem.getSizeV0() );
+          }
 
-				}
-				else
-				{
-					//first element in the chain, global parameters are equal to current element
-					auto& curGlobalElem = patchMatrix[frameIdx][patchIdx].globalElem;
-					curGlobalElem.getU1() = patchMatrix[frameIdx][patchIdx].elem->getU1();
-					curGlobalElem.getV1() = patchMatrix[frameIdx][patchIdx].elem->getV1();
+        } else {
+          // first element in the chain, global parameters are equal to current element
+          auto& curGlobalElem   = patchMatrix[frameIdx][patchIdx].globalElem;
+          curGlobalElem.getU1() = patchMatrix[frameIdx][patchIdx].elem->getU1();
+          curGlobalElem.getV1() = patchMatrix[frameIdx][patchIdx].elem->getV1();
 
-					curGlobalElem.getSizeU0() = patchMatrix[frameIdx][patchIdx].elem->getSizeU0();
-					curGlobalElem.getSizeV0() = patchMatrix[frameIdx][patchIdx].elem->getSizeV0();
+          curGlobalElem.getSizeU0() = patchMatrix[frameIdx][patchIdx].elem->getSizeU0();
+          curGlobalElem.getSizeV0() = patchMatrix[frameIdx][patchIdx].elem->getSizeV0();
 
-					curGlobalElem.getOccupancy().resize(curGlobalElem.getSizeU0() * curGlobalElem.getSizeV0());
-					//copy the global occupancy map from current patch
-					size_t curSizeU0 = patchMatrix[frameIdx][patchIdx].elem->getSizeU0();
-					size_t curSizeV0 = patchMatrix[frameIdx][patchIdx].elem->getSizeV0();
-					for (size_t v = 0; v < curSizeV0; v++) {
-						for (size_t u = 0; u < curSizeU0; u++) {
-							size_t posCur = u + curSizeU0 * (v);
-							patchMatrix[frameIdx][patchIdx].globalElem.getOccupancy()[posCur] = patchMatrix[frameIdx][patchIdx].elem->getOccupancy()[posCur];
-						}
-					}
-					curGlobalElem.getOccupancyResolution() = patchMatrix[frameIdx][patchIdx].elem->getOccupancyResolution();
-					if (printDetailedInfo) {
-						std::cout << "patchMatrix[" << frameIdx << "][" << patchIdx << "].elem.ID =" << patchMatrix[frameIdx][patchIdx].elem->getIndex() << std::endl;
-						std::cout << "patchMatrix[" << frameIdx << "][" << patchIdx << "].elem.U1 =" << patchMatrix[frameIdx][patchIdx].elem->getU1() << std::endl;
-						std::cout << "patchMatrix[" << frameIdx << "][" << patchIdx << "].elem.V1 =" << patchMatrix[frameIdx][patchIdx].elem->getV1() << std::endl;
-						std::cout << "patchMatrix[" << frameIdx << "][" << patchIdx << "].elem.sizeU0 =" << patchMatrix[frameIdx][patchIdx].elem->getSizeU0() << std::endl;
-						std::cout << "patchMatrix[" << frameIdx << "][" << patchIdx << "].elem.sizeV0 =" << patchMatrix[frameIdx][patchIdx].elem->getSizeV0() << std::endl;
-						std::cout << "patchMatrix[" << frameIdx << "][" << patchIdx << "].weight =" << patchMatrix[frameIdx][patchIdx].weight << std::endl;
-						std::cout << "patchMatrix[" << frameIdx << "][" << patchIdx << "].nextElemPos =" << patchMatrix[frameIdx][patchIdx].nextElemPos << std::endl;
-						std::cout << "patchMatrix[" << frameIdx << "][" << patchIdx << "].prevElemPos =" << patchMatrix[frameIdx][patchIdx].prevElemPos << std::endl;
-						std::cout << "patchMatrix[" << frameIdx << "][" << patchIdx << "].globalElem.getU1 =" << patchMatrix[frameIdx][patchIdx].globalElem.getU1() << std::endl;
-						std::cout << "patchMatrix[" << frameIdx << "][" << patchIdx << "].globalElem.getV1 =" << patchMatrix[frameIdx][patchIdx].globalElem.getV1() << std::endl;
-						printMap(patchMatrix[frameIdx][patchIdx].globalElem.getOccupancy(), patchMatrix[frameIdx][patchIdx].globalElem.getSizeU0(), patchMatrix[frameIdx][patchIdx].globalElem.getSizeV0());
-					}
-				}
-			}
-		}
-		//packing for each frame
-		size_t occupancySizeU = params_.minimumImageWidth_ / params_.occupancyResolution_;
-		size_t occupancySizeV = (std::max)(patchMatrix[0][0].elem->getSizeU0(), patchMatrix[0][0].elem->getSizeV0());
-		for (size_t frameIdx = frStart; frameIdx < frEnd; frameIdx++) {
-			auto& width = frames[frameIdx].getWidth();
-			auto& height = frames[frameIdx].getHeight();
-			//sorting the list
-			vector<PCCPatch> sortedPatches;
-			auto& patchUnsorted = patchMatrix[frameIdx];
-			if (frameIdx == frStart) {
-				sort(patchMatrixSortedIndexes[frameIdx].begin(), patchMatrixSortedIndexes[frameIdx].end(), [&patchUnsorted](size_t i1, size_t i2) {return patchUnsorted[i1].gt(patchUnsorted[i2]); });
-				if (printDetailedInfo) {
-					for (int patchIdx = 0; patchIdx < patchMatrixSortedIndexes[frameIdx].size(); patchIdx++) {
-						auto &patch = patchMatrix[frameIdx][patchMatrixSortedIndexes[frameIdx][patchIdx]];
-						std::cout << " New order Patch[" << patchIdx << "]->[" << patchMatrixSortedIndexes[frameIdx][patchIdx] << "] (" << patchMatrix[frameIdx][patchMatrixSortedIndexes[frameIdx][patchIdx]].weight << "):";
-						patch.elem->print();
-					}
-				}
-			}
-			else {
-				//have to maintain the same order of the matched patches from previous frame
-				//now sort the rest of the list according to the sort function of the class
-				if (frames[frameIdx].getNumMatchedPatches() != patchMatrixSortedIndexes[frameIdx].size())
-					sort(patchMatrixSortedIndexes[frameIdx].begin() + frames[frameIdx].getNumMatchedPatches(), patchMatrixSortedIndexes[frameIdx].end(), [&patchUnsorted](size_t i1, size_t i2) {return patchUnsorted[i1].gt(patchUnsorted[i2]); });
-				if (printDetailedInfo) {
-					for (int patchIdx = 0; patchIdx < frames[frameIdx].getNumMatchedPatches(); patchIdx++) {
-						auto &patch = patchMatrix[frameIdx][patchMatrixSortedIndexes[frameIdx][patchIdx]];
-						std::cout << " New order Matched (" << patch.prevElemPos << ") Patch[" << patchIdx << "]->[" << patchMatrixSortedIndexes[frameIdx][patchIdx] << "] (" << patch.weight << "):";
-						patch.elem->print();
-					}
-					for (int patchIdx = frames[frameIdx].getNumMatchedPatches(); patchIdx < patchMatrixSortedIndexes[frameIdx].size(); patchIdx++) {
-						auto &patch = patchMatrix[frameIdx][patchMatrixSortedIndexes[frameIdx][patchIdx]];
-						std::cout << " New order Unmatched Patch[" << patchIdx << "]->[" << patchMatrixSortedIndexes[frameIdx][patchIdx] << "] (" << patch.weight << "):";
-						patch.elem->print();
-					}
-				}
-			}
-			size_t maxOccupancyRow{ 0 };
+          curGlobalElem.getOccupancy().resize( curGlobalElem.getSizeU0() * curGlobalElem.getSizeV0() );
+          // copy the global occupancy map from current patch
+          size_t curSizeU0 = patchMatrix[frameIdx][patchIdx].elem->getSizeU0();
+          size_t curSizeV0 = patchMatrix[frameIdx][patchIdx].elem->getSizeV0();
+          for ( size_t v = 0; v < curSizeV0; v++ ) {
+            for ( size_t u = 0; u < curSizeU0; u++ ) {
+              size_t posCur = u + curSizeU0 * ( v );
+              patchMatrix[frameIdx][patchIdx].globalElem.getOccupancy()[posCur] =
+                  patchMatrix[frameIdx][patchIdx].elem->getOccupancy()[posCur];
+            }
+          }
+          curGlobalElem.getOccupancyResolution() = patchMatrix[frameIdx][patchIdx].elem->getOccupancyResolution();
+          if ( printDetailedInfo ) {
+            std::cout << "patchMatrix[" << frameIdx << "][" << patchIdx
+                      << "].elem.ID =" << patchMatrix[frameIdx][patchIdx].elem->getIndex() << std::endl;
+            std::cout << "patchMatrix[" << frameIdx << "][" << patchIdx
+                      << "].elem.U1 =" << patchMatrix[frameIdx][patchIdx].elem->getU1() << std::endl;
+            std::cout << "patchMatrix[" << frameIdx << "][" << patchIdx
+                      << "].elem.V1 =" << patchMatrix[frameIdx][patchIdx].elem->getV1() << std::endl;
+            std::cout << "patchMatrix[" << frameIdx << "][" << patchIdx
+                      << "].elem.sizeU0 =" << patchMatrix[frameIdx][patchIdx].elem->getSizeU0() << std::endl;
+            std::cout << "patchMatrix[" << frameIdx << "][" << patchIdx
+                      << "].elem.sizeV0 =" << patchMatrix[frameIdx][patchIdx].elem->getSizeV0() << std::endl;
+            std::cout << "patchMatrix[" << frameIdx << "][" << patchIdx
+                      << "].weight =" << patchMatrix[frameIdx][patchIdx].weight << std::endl;
+            std::cout << "patchMatrix[" << frameIdx << "][" << patchIdx
+                      << "].nextElemPos =" << patchMatrix[frameIdx][patchIdx].nextElemPos << std::endl;
+            std::cout << "patchMatrix[" << frameIdx << "][" << patchIdx
+                      << "].prevElemPos =" << patchMatrix[frameIdx][patchIdx].prevElemPos << std::endl;
+            std::cout << "patchMatrix[" << frameIdx << "][" << patchIdx
+                      << "].globalElem.getU1 =" << patchMatrix[frameIdx][patchIdx].globalElem.getU1() << std::endl;
+            std::cout << "patchMatrix[" << frameIdx << "][" << patchIdx
+                      << "].globalElem.getV1 =" << patchMatrix[frameIdx][patchIdx].globalElem.getV1() << std::endl;
+            printMap( patchMatrix[frameIdx][patchIdx].globalElem.getOccupancy(),
+                      patchMatrix[frameIdx][patchIdx].globalElem.getSizeU0(),
+                      patchMatrix[frameIdx][patchIdx].globalElem.getSizeV0() );
+          }
+        }
+      }
+    }
+    // packing for each frame
+    size_t occupancySizeU = params_.minimumImageWidth_ / params_.occupancyResolution_;
+    size_t occupancySizeV = ( std::max )( patchMatrix[0][0].elem->getSizeU0(), patchMatrix[0][0].elem->getSizeV0() );
+    for ( size_t frameIdx = frStart; frameIdx < frEnd; frameIdx++ ) {
+      auto& width  = frames[frameIdx].getWidth();
+      auto& height = frames[frameIdx].getHeight();
+      // sorting the list
+      vector<PCCPatch> sortedPatches;
+      auto&            patchUnsorted = patchMatrix[frameIdx];
+      if ( frameIdx == frStart ) {
+        sort( patchMatrixSortedIndexes[frameIdx].begin(), patchMatrixSortedIndexes[frameIdx].end(),
+              [&patchUnsorted]( size_t i1, size_t i2 ) { return patchUnsorted[i1].gt( patchUnsorted[i2] ); } );
+        if ( printDetailedInfo ) {
+          for ( int patchIdx = 0; patchIdx < patchMatrixSortedIndexes[frameIdx].size(); patchIdx++ ) {
+            auto& patch = patchMatrix[frameIdx][patchMatrixSortedIndexes[frameIdx][patchIdx]];
+            std::cout << " New order Patch[" << patchIdx << "]->[" << patchMatrixSortedIndexes[frameIdx][patchIdx]
+                      << "] (" << patchMatrix[frameIdx][patchMatrixSortedIndexes[frameIdx][patchIdx]].weight << "):";
+            patch.elem->print();
+          }
+        }
+      } else {
+        // have to maintain the same order of the matched patches from previous frame
+        // now sort the rest of the list according to the sort function of the class
+        if ( frames[frameIdx].getNumMatchedPatches() != patchMatrixSortedIndexes[frameIdx].size() )
+          sort( patchMatrixSortedIndexes[frameIdx].begin() + frames[frameIdx].getNumMatchedPatches(),
+                patchMatrixSortedIndexes[frameIdx].end(),
+                [&patchUnsorted]( size_t i1, size_t i2 ) { return patchUnsorted[i1].gt( patchUnsorted[i2] ); } );
+        if ( printDetailedInfo ) {
+          for ( int patchIdx = 0; patchIdx < frames[frameIdx].getNumMatchedPatches(); patchIdx++ ) {
+            auto& patch = patchMatrix[frameIdx][patchMatrixSortedIndexes[frameIdx][patchIdx]];
+            std::cout << " New order Matched (" << patch.prevElemPos << ") Patch[" << patchIdx << "]->["
+                      << patchMatrixSortedIndexes[frameIdx][patchIdx] << "] (" << patch.weight << "):";
+            patch.elem->print();
+          }
+          for ( int patchIdx = frames[frameIdx].getNumMatchedPatches();
+                patchIdx < patchMatrixSortedIndexes[frameIdx].size(); patchIdx++ ) {
+            auto& patch = patchMatrix[frameIdx][patchMatrixSortedIndexes[frameIdx][patchIdx]];
+            std::cout << " New order Unmatched Patch[" << patchIdx << "]->["
+                      << patchMatrixSortedIndexes[frameIdx][patchIdx] << "] (" << patch.weight << "):";
+            patch.elem->print();
+          }
+        }
+      }
+      size_t maxOccupancyRow{0};
 
-			vector<int> orientation_vertical;
-			vector<int> orientation_horizontal;
-			int numOrientations;
-			std::vector<int> horizon;
-			if (params_.packingStrategy_ == 0) {
-				orientation_vertical.resize(1);
-				orientation_vertical = { PATCH_ORIENTATION_DEFAULT };
-				orientation_horizontal.resize(1);
-				orientation_horizontal = { PATCH_ORIENTATION_DEFAULT };
-				numOrientations = 1;
-			}
-			else {
-				if (params_.packingStrategy_ == 1) {
-					orientation_vertical.resize(8);
-					orientation_vertical = {
-				  PATCH_ORIENTATION_DEFAULT, PATCH_ORIENTATION_SWAP,    PATCH_ORIENTATION_ROT180,
-				  PATCH_ORIENTATION_MIRROR,  PATCH_ORIENTATION_MROT180, PATCH_ORIENTATION_ROT270,
-				  PATCH_ORIENTATION_MROT90,  PATCH_ORIENTATION_ROT90 };  // favoring vertical orientation
-					orientation_horizontal.resize(8);
-					orientation_horizontal = {
-				  PATCH_ORIENTATION_SWAP,   PATCH_ORIENTATION_DEFAULT, PATCH_ORIENTATION_ROT270,
-				  PATCH_ORIENTATION_MROT90, PATCH_ORIENTATION_ROT90,   PATCH_ORIENTATION_ROT180,
-						  PATCH_ORIENTATION_MIRROR, PATCH_ORIENTATION_MROT180 };  // favoring horizontal orientations (that should be rotated)
-					numOrientations = params_.useEightOrientations_ ? 8 : 2;
-				}
-				else {
-					if (params_.packingStrategy_ == 2) {
-						orientation_vertical.resize(8);
-						orientation_vertical = { PATCH_ORIENTATION_DEFAULT,
-								  PATCH_ORIENTATION_SWAP,
-								  PATCH_ORIENTATION_ROT180,
-								  PATCH_ORIENTATION_MIRROR,
-								  PATCH_ORIENTATION_MROT180,
-								  PATCH_ORIENTATION_ROT270,
-								  PATCH_ORIENTATION_MROT90,
-								  PATCH_ORIENTATION_ROT90 };
-						orientation_horizontal.resize(8);
-						orientation_horizontal = { PATCH_ORIENTATION_DEFAULT,
-								  PATCH_ORIENTATION_SWAP,
-								  PATCH_ORIENTATION_ROT180,
-								  PATCH_ORIENTATION_MIRROR,
-								  PATCH_ORIENTATION_MROT180,
-								  PATCH_ORIENTATION_ROT270,
-								  PATCH_ORIENTATION_MROT90,
-								  PATCH_ORIENTATION_ROT90 };
-						numOrientations = params_.useEightOrientations_ ? 8 : 2;
-						horizon.resize(occupancySizeU, 0);
-					}
-				}
-			}
-			std::vector<bool> occupancyMap;
-			occupancyMap.resize(occupancySizeU * occupancySizeV, false);
-			int indNextMatchedPatch = 0;
-			//patch loop
-			for (int patchIdx = 0; patchIdx < patchMatrixSortedIndexes[frameIdx].size(); patchIdx++) {
-				if (printDetailedInfo) {
-					std::cout << "Processing patchMatrix[" << frameIdx << "][" << patchMatrixSortedIndexes[frameIdx][patchIdx] << "]" << std::endl;
-				}
-				auto& curPatchElem = patchMatrix[frameIdx][patchMatrixSortedIndexes[frameIdx][patchIdx]];
-				auto& curGlobalElem = curPatchElem.globalElem;
-				assert(curPatchElem.elem->getSizeU0() <= occupancySizeU);
-				assert(curPatchElem.elem->getSizeV0() <= occupancySizeV);
-				bool locationFound = false;
-				auto& occupancy = curGlobalElem.getOccupancy();
+      vector<int>      orientation_vertical;
+      vector<int>      orientation_horizontal;
+      int              numOrientations;
+      std::vector<int> horizon;
+      if ( params_.packingStrategy_ == 0 ) {
+        orientation_vertical.resize( 1 );
+        orientation_vertical = {PATCH_ORIENTATION_DEFAULT};
+        orientation_horizontal.resize( 1 );
+        orientation_horizontal = {PATCH_ORIENTATION_DEFAULT};
+        numOrientations        = 1;
+      } else {
+        if ( params_.packingStrategy_ == 1 ) {
+          orientation_vertical.resize( 8 );
+          orientation_vertical = {PATCH_ORIENTATION_DEFAULT, PATCH_ORIENTATION_SWAP,    PATCH_ORIENTATION_ROT180,
+                                  PATCH_ORIENTATION_MIRROR,  PATCH_ORIENTATION_MROT180, PATCH_ORIENTATION_ROT270,
+                                  PATCH_ORIENTATION_MROT90,  PATCH_ORIENTATION_ROT90};  // favoring vertical orientation
+          orientation_horizontal.resize( 8 );
+          orientation_horizontal = {
+              PATCH_ORIENTATION_SWAP,   PATCH_ORIENTATION_DEFAULT, PATCH_ORIENTATION_ROT270,
+              PATCH_ORIENTATION_MROT90, PATCH_ORIENTATION_ROT90,   PATCH_ORIENTATION_ROT180,
+              PATCH_ORIENTATION_MIRROR, PATCH_ORIENTATION_MROT180};  // favoring horizontal orientations (that should be
+                                                                     // rotated)
+          numOrientations = params_.useEightOrientations_ ? 8 : 2;
+        } else {
+          if ( params_.packingStrategy_ == 2 ) {
+            orientation_vertical.resize( 8 );
+            orientation_vertical = {PATCH_ORIENTATION_DEFAULT, PATCH_ORIENTATION_SWAP,    PATCH_ORIENTATION_ROT180,
+                                    PATCH_ORIENTATION_MIRROR,  PATCH_ORIENTATION_MROT180, PATCH_ORIENTATION_ROT270,
+                                    PATCH_ORIENTATION_MROT90,  PATCH_ORIENTATION_ROT90};
+            orientation_horizontal.resize( 8 );
+            orientation_horizontal = {PATCH_ORIENTATION_DEFAULT, PATCH_ORIENTATION_SWAP,    PATCH_ORIENTATION_ROT180,
+                                      PATCH_ORIENTATION_MIRROR,  PATCH_ORIENTATION_MROT180, PATCH_ORIENTATION_ROT270,
+                                      PATCH_ORIENTATION_MROT90,  PATCH_ORIENTATION_ROT90};
+            numOrientations        = params_.useEightOrientations_ ? 8 : 2;
+            horizon.resize( occupancySizeU, 0 );
+          }
+        }
+      }
+      std::vector<bool> occupancyMap;
+      occupancyMap.resize( occupancySizeU * occupancySizeV, false );
+      int indNextMatchedPatch = 0;
+      // patch loop
+      for ( int patchIdx = 0; patchIdx < patchMatrixSortedIndexes[frameIdx].size(); patchIdx++ ) {
+        if ( printDetailedInfo ) {
+          std::cout << "Processing patchMatrix[" << frameIdx << "][" << patchMatrixSortedIndexes[frameIdx][patchIdx]
+                    << "]" << std::endl;
+        }
+        auto& curPatchElem  = patchMatrix[frameIdx][patchMatrixSortedIndexes[frameIdx][patchIdx]];
+        auto& curGlobalElem = curPatchElem.globalElem;
+        assert( curPatchElem.elem->getSizeU0() <= occupancySizeU );
+        assert( curPatchElem.elem->getSizeV0() <= occupancySizeV );
+        bool  locationFound = false;
+        auto& occupancy     = curGlobalElem.getOccupancy();
 
-				std::vector<int> top_horizon;
-				std::vector<int> bottom_horizon;
-				std::vector<int> right_horizon;
-				std::vector<int> left_horizon;
-				if (params_.packingStrategy_ == 2) {
-					//getting the horizons using the rotation 0 position
-					curGlobalElem.get_patch_horizons(top_horizon, bottom_horizon, right_horizon, left_horizon);
-				}
+        std::vector<int> top_horizon;
+        std::vector<int> bottom_horizon;
+        std::vector<int> right_horizon;
+        std::vector<int> left_horizon;
+        if ( params_.packingStrategy_ == 2 ) {
+          // getting the horizons using the rotation 0 position
+          curGlobalElem.get_patch_horizons( top_horizon, bottom_horizon, right_horizon, left_horizon );
+        }
 
-				while (!locationFound) {
-					int best_wasted_space = (std::numeric_limits<int>::max)();
-					size_t best_u, best_v;
-					int best_orientation;
-					if (curPatchElem.prevElemPos != InvalidPatchIndex) {
-						//try to place on the same position as the matched global patch, with the same orientation
-						auto& previousGlobalElem = patchMatrix[frameIdx - 1][curPatchElem.prevElemPos].globalElem;
-						curGlobalElem.getPatchOrientation() = previousGlobalElem.getPatchOrientation();
-						if (!(curGlobalElem.isPatchDimensionSwitched())) {
-							curGlobalElem.getU0() = previousGlobalElem.getU0() + (curGlobalElem.getU1() - previousGlobalElem.getU1()) / curPatchElem.elem->getOccupancyResolution();
-							curGlobalElem.getV0() = previousGlobalElem.getV0() + (curGlobalElem.getV1() - previousGlobalElem.getV1()) / curPatchElem.elem->getOccupancyResolution();
-						}
-						else {
-							curGlobalElem.getU0() = previousGlobalElem.getU0() + (curGlobalElem.getV1() - previousGlobalElem.getV1()) / curPatchElem.elem->getOccupancyResolution();
-							curGlobalElem.getV0() = previousGlobalElem.getV0() + (curGlobalElem.getU1() - previousGlobalElem.getU1()) / curPatchElem.elem->getOccupancyResolution();
-						}
-						if (curGlobalElem.checkFitPatchCanvas(occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_)) {
-							locationFound = true;
-							if (params_.packingStrategy_ == 2) {
-								//saving the best position for tetris packing
-								best_u = curGlobalElem.getU0();
-								best_v = curGlobalElem.getV0();
-								best_orientation = curGlobalElem.getPatchOrientation();
-							}
-							//now put the local patch in the relative position
-							if (!(curGlobalElem.isPatchDimensionSwitched())) {
-								curPatchElem.elem->getU0() = curGlobalElem.getU0() + (curPatchElem.elem->getU1() - curGlobalElem.getU1()) / curPatchElem.elem->getOccupancyResolution();
-								curPatchElem.elem->getV0() = curGlobalElem.getV0() + (curPatchElem.elem->getV1() - curGlobalElem.getV1()) / curPatchElem.elem->getOccupancyResolution();
-							}
-							else {
-								curPatchElem.elem->getU0() = curGlobalElem.getU0() + (curPatchElem.elem->getV1() - curGlobalElem.getV1()) / curPatchElem.elem->getOccupancyResolution();
-								curPatchElem.elem->getV0() = curGlobalElem.getV0() + (curPatchElem.elem->getU1() - curGlobalElem.getU1()) / curPatchElem.elem->getOccupancyResolution();
-							}
-							curPatchElem.elem->getPatchOrientation() = curGlobalElem.getPatchOrientation();
-							curPatchElem.elem->setBestMatchIdx() = std::distance(patchMatrixSortedIndexes[frameIdx - 1].begin(), std::find(patchMatrixSortedIndexes[frameIdx - 1].begin(), patchMatrixSortedIndexes[frameIdx - 1].end(), curPatchElem.prevElemPos));
-							if (params_.packingStrategy_ != 2) {
-								//if it is not tetris packing, we can save the position in the list
-								sortedPatches.push_back(*curPatchElem.elem);
-								if (printDetailedInfo) {
-									std::cout << "Patch[" << curPatchElem.elem->getIndex() << "] maintained orientation " << curPatchElem.elem->getPatchOrientation() << " for matched patch[" << curPatchElem.elem->getBestMatchIdx() << "] in the position (" << curPatchElem.elem->getU0() << "," << curPatchElem.elem->getV0() << ")" << std::endl;
-								}
-								//if the element is the prediction of a patch in the next frame, store the current order for the next frame, to maintain the sequence
-								if (curPatchElem.nextElemPos >= 0)
-									patchMatrixSortedIndexes[frameIdx + 1][indNextMatchedPatch++] = curPatchElem.nextElemPos;
-							}
-						}
-						else
-						{
-							std::cout << "Could not fit the global patch in the canvas, at position (" << curGlobalElem.getU0() << "," << curGlobalElem.getV0() << ") and orientation " << curGlobalElem.getPatchOrientation() << " something went wrong " << std::endl;
-							if (printDetailedInfo) {
-								printMap(occupancyMap, occupancySizeU, occupancySizeV);
-								printMap(occupancy, curGlobalElem.getSizeU0(), curGlobalElem.getSizeV0());
-							}
+        while ( !locationFound ) {
+          int    best_wasted_space = ( std::numeric_limits<int>::max )();
+          size_t best_u, best_v;
+          int    best_orientation;
+          if ( curPatchElem.prevElemPos != InvalidPatchIndex ) {
+            // try to place on the same position as the matched global patch, with the same orientation
+            auto& previousGlobalElem            = patchMatrix[frameIdx - 1][curPatchElem.prevElemPos].globalElem;
+            curGlobalElem.getPatchOrientation() = previousGlobalElem.getPatchOrientation();
+            if ( !( curGlobalElem.isPatchDimensionSwitched() ) ) {
+              curGlobalElem.getU0() =
+                  previousGlobalElem.getU0() +
+                  ( curGlobalElem.getU1() - previousGlobalElem.getU1() ) / curPatchElem.elem->getOccupancyResolution();
+              curGlobalElem.getV0() =
+                  previousGlobalElem.getV0() +
+                  ( curGlobalElem.getV1() - previousGlobalElem.getV1() ) / curPatchElem.elem->getOccupancyResolution();
+            } else {
+              curGlobalElem.getU0() =
+                  previousGlobalElem.getU0() +
+                  ( curGlobalElem.getV1() - previousGlobalElem.getV1() ) / curPatchElem.elem->getOccupancyResolution();
+              curGlobalElem.getV0() =
+                  previousGlobalElem.getV0() +
+                  ( curGlobalElem.getU1() - previousGlobalElem.getU1() ) / curPatchElem.elem->getOccupancyResolution();
+            }
+            if ( curGlobalElem.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV,
+                                                    params_.lowDelayEncoding_ ) ) {
+              locationFound = true;
+              if ( params_.packingStrategy_ == 2 ) {
+                // saving the best position for tetris packing
+                best_u           = curGlobalElem.getU0();
+                best_v           = curGlobalElem.getV0();
+                best_orientation = curGlobalElem.getPatchOrientation();
+              }
+              // now put the local patch in the relative position
+              if ( !( curGlobalElem.isPatchDimensionSwitched() ) ) {
+                curPatchElem.elem->getU0() =
+                    curGlobalElem.getU0() + ( curPatchElem.elem->getU1() - curGlobalElem.getU1() ) /
+                                                curPatchElem.elem->getOccupancyResolution();
+                curPatchElem.elem->getV0() =
+                    curGlobalElem.getV0() + ( curPatchElem.elem->getV1() - curGlobalElem.getV1() ) /
+                                                curPatchElem.elem->getOccupancyResolution();
+              } else {
+                curPatchElem.elem->getU0() =
+                    curGlobalElem.getU0() + ( curPatchElem.elem->getV1() - curGlobalElem.getV1() ) /
+                                                curPatchElem.elem->getOccupancyResolution();
+                curPatchElem.elem->getV0() =
+                    curGlobalElem.getV0() + ( curPatchElem.elem->getU1() - curGlobalElem.getU1() ) /
+                                                curPatchElem.elem->getOccupancyResolution();
+              }
+              curPatchElem.elem->getPatchOrientation() = curGlobalElem.getPatchOrientation();
+              curPatchElem.elem->setBestMatchIdx() =
+                  std::distance( patchMatrixSortedIndexes[frameIdx - 1].begin(),
+                                 std::find( patchMatrixSortedIndexes[frameIdx - 1].begin(),
+                                            patchMatrixSortedIndexes[frameIdx - 1].end(), curPatchElem.prevElemPos ) );
+              if ( params_.packingStrategy_ != 2 ) {
+                // if it is not tetris packing, we can save the position in the list
+                sortedPatches.push_back( *curPatchElem.elem );
+                if ( printDetailedInfo ) {
+                  std::cout << "Patch[" << curPatchElem.elem->getIndex() << "] maintained orientation "
+                            << curPatchElem.elem->getPatchOrientation() << " for matched patch["
+                            << curPatchElem.elem->getBestMatchIdx() << "] in the position ("
+                            << curPatchElem.elem->getU0() << "," << curPatchElem.elem->getV0() << ")" << std::endl;
+                }
+                // if the element is the prediction of a patch in the next frame, store the current order for the next
+                // frame, to maintain the sequence
+                if ( curPatchElem.nextElemPos >= 0 )
+                  patchMatrixSortedIndexes[frameIdx + 1][indNextMatchedPatch++] = curPatchElem.nextElemPos;
+              }
+            } else {
+              std::cout << "Could not fit the global patch in the canvas, at position (" << curGlobalElem.getU0() << ","
+                        << curGlobalElem.getV0() << ") and orientation " << curGlobalElem.getPatchOrientation()
+                        << " something went wrong " << std::endl;
+              if ( printDetailedInfo ) {
+                printMap( occupancyMap, occupancySizeU, occupancySizeV );
+                printMap( occupancy, curGlobalElem.getSizeU0(), curGlobalElem.getSizeV0() );
+              }
+            }
+          } else {
+            if ( curPatchElem.elem->getBestMatchIdx() != InvalidPatchIndex ) {
+              // this is a matched patch, but the first element of the list,
+              if ( printDetailedInfo ) {
+                std::cout << "Reference moved from position prevList[" << curPatchElem.elem->getBestMatchIdx() << "] ";
+              }
+              int32_t matchedIdx = std::distance(
+                  patchMatrixSortedIndexes[frameIdx - 1].begin(),
+                  std::find( patchMatrixSortedIndexes[frameIdx - 1].begin(),
+                             patchMatrixSortedIndexes[frameIdx - 1].end(), curPatchElem.elem->getBestMatchIdx() ) );
+              if ( printDetailedInfo ) {
+                std::cout << "to position sortedPrevList[" << matchedIdx
+                          << "]=" << patchMatrix[frameIdx - 1][matchedIdx].elem->getIndex() << std::endl;
+              }
+              // the orientation MUST be maintained,  but it can be placed anywhere
+              curGlobalElem.getPatchOrientation() = patchMatrix[frameIdx - 1][matchedIdx].elem->getPatchOrientation();
+            }
+            // best effort
+            for ( size_t v = 0; v < occupancySizeV && ( ( params_.packingStrategy_ == 2 ) || !locationFound ); ++v ) {
+              for ( size_t u = 0; u < occupancySizeU && ( ( params_.packingStrategy_ == 2 ) || !locationFound ); ++u ) {
+                curGlobalElem.getU0() = u;
+                curGlobalElem.getV0() = v;
+                for ( size_t orientationIdx = 0;
+                      orientationIdx < numOrientations && ( ( params_.packingStrategy_ == 2 ) || !locationFound );
+                      orientationIdx++ ) {
+                  if ( curPatchElem.elem->getBestMatchIdx() == InvalidPatchIndex ) {
+                    if ( curGlobalElem.getSizeU0() > curGlobalElem.getSizeV0() ) {
+                      curGlobalElem.getPatchOrientation() = orientation_horizontal[orientationIdx];
+                    } else {
+                      curGlobalElem.getPatchOrientation() = orientation_vertical[orientationIdx];
+                    }
+                  }
+                  if ( params_.packingStrategy_ == 2 ) {
+                    if ( !curGlobalElem.isPatchLocationAboveHorizon( horizon, top_horizon, bottom_horizon,
+                                                                     right_horizon, left_horizon ) ) {
+                      continue;
+                    }
+                  }
+                  if ( curGlobalElem.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV,
+                                                          params_.lowDelayEncoding_ ) ) {
+                    if ( params_.packingStrategy_ == 2 ) {
+                      // now calculate the wasted space
+                      int wasted_space = curGlobalElem.calculate_wasted_space( horizon, top_horizon, bottom_horizon,
+                                                                               right_horizon, left_horizon );
+                      if ( wasted_space < best_wasted_space ) {
+                        best_wasted_space = wasted_space;
+                        best_u            = u;
+                        best_v            = v;
+                        best_orientation  = curGlobalElem.getPatchOrientation();
+                        locationFound     = true;
+                      }
+                    } else {
+                      locationFound = true;
+                      if ( !( curGlobalElem.isPatchDimensionSwitched() ) ) {
+                        curPatchElem.elem->getU0() =
+                            curGlobalElem.getU0() + ( curPatchElem.elem->getU1() - curGlobalElem.getU1() ) /
+                                                        curPatchElem.elem->getOccupancyResolution();
+                        curPatchElem.elem->getV0() =
+                            curGlobalElem.getV0() + ( curPatchElem.elem->getV1() - curGlobalElem.getV1() ) /
+                                                        curPatchElem.elem->getOccupancyResolution();
+                      } else {
+                        curPatchElem.elem->getU0() =
+                            curGlobalElem.getU0() + ( curPatchElem.elem->getV1() - curGlobalElem.getV1() ) /
+                                                        curPatchElem.elem->getOccupancyResolution();
+                        curPatchElem.elem->getV0() =
+                            curGlobalElem.getV0() + ( curPatchElem.elem->getU1() - curGlobalElem.getU1() ) /
+                                                        curPatchElem.elem->getOccupancyResolution();
+                      }
+                      curPatchElem.elem->getPatchOrientation() = curGlobalElem.getPatchOrientation();
+                      if ( curPatchElem.elem->getBestMatchIdx() >= 0 )
+                        curPatchElem.elem->setBestMatchIdx() =
+                            std::distance( patchMatrixSortedIndexes[frameIdx - 1].begin(),
+                                           std::find( patchMatrixSortedIndexes[frameIdx - 1].begin(),
+                                                      patchMatrixSortedIndexes[frameIdx - 1].end(),
+                                                      curPatchElem.elem->getBestMatchIdx() ) );
+                      sortedPatches.push_back( *curPatchElem.elem );
+                      if ( printDetailedInfo ) {
+                        if ( curPatchElem.elem->getBestMatchIdx() >= 0 )
+                          std::cout << "Orientation " << curPatchElem.elem->getPatchOrientation()
+                                    << " maintained for matched patch " << curPatchElem.elem->getIndex() << " ("
+                                    << curPatchElem.elem->getU0() << "," << curPatchElem.elem->getV0()
+                                    << ") -> matchedPatch[" << curPatchElem.elem->getBestMatchIdx() << "]="
+                                    << patchMatrix[frameIdx - 1][curPatchElem.elem->getBestMatchIdx()].elem->getIndex()
+                                    << std::endl;
+                        else
+                          std::cout << "Orientation " << curPatchElem.elem->getPatchOrientation()
+                                    << " selected for unmatched patch " << curPatchElem.elem->getIndex() << " ("
+                                    << curPatchElem.elem->getU0() << "," << curPatchElem.elem->getV0() << ")"
+                                    << std::endl;
+                      }
+                      // if the element is the prediction of a patch in the next frame, store the current order for the
+                      // next frame, to maintain the sequence
+                      if ( curPatchElem.nextElemPos >= 0 ) {
+                        if ( printDetailedInfo ) {
+                          std::cout << "Changing patchMatrixSortedIndexes[" << frameIdx + 1 << "]["
+                                    << curPatchElem.nextElemPos << "] ("
+                                    << patchMatrixSortedIndexes[frameIdx + 1][curPatchElem.nextElemPos] << ") ->";
+                        }
+                        patchMatrixSortedIndexes[frameIdx + 1][indNextMatchedPatch++] = curPatchElem.nextElemPos;
+                        if ( printDetailedInfo ) {
+                          std::cout << "(" << patchMatrixSortedIndexes[frameIdx + 1][curPatchElem.nextElemPos] << ")"
+                                    << std::endl;
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+          if ( !locationFound ) {
+            occupancySizeV *= 2;
+            occupancyMap.resize( occupancySizeU * occupancySizeV );
+            if ( printDetailedInfo ) {
+              std::cout << "Increasing the canvas size (" << occupancySizeU << "," << occupancySizeV << ")"
+                        << std::endl;
+            }
+          } else {
+            if ( params_.packingStrategy_ == 2 ) {
+              curGlobalElem.getU0()               = best_u;
+              curGlobalElem.getV0()               = best_v;
+              curGlobalElem.getPatchOrientation() = best_orientation;
+              if ( printDetailedInfo )
+                std::cout << "Selected position (" << best_u << "," << best_v << ") and orientation "
+                          << best_orientation << std::endl;
+              if ( !( curGlobalElem.isPatchDimensionSwitched() ) ) {
+                curPatchElem.elem->getU0() =
+                    curGlobalElem.getU0() + ( curPatchElem.elem->getU1() - curGlobalElem.getU1() ) /
+                                                curPatchElem.elem->getOccupancyResolution();
+                curPatchElem.elem->getV0() =
+                    curGlobalElem.getV0() + ( curPatchElem.elem->getV1() - curGlobalElem.getV1() ) /
+                                                curPatchElem.elem->getOccupancyResolution();
+              } else {
+                curPatchElem.elem->getU0() =
+                    curGlobalElem.getU0() + ( curPatchElem.elem->getV1() - curGlobalElem.getV1() ) /
+                                                curPatchElem.elem->getOccupancyResolution();
+                curPatchElem.elem->getV0() =
+                    curGlobalElem.getV0() + ( curPatchElem.elem->getU1() - curGlobalElem.getU1() ) /
+                                                curPatchElem.elem->getOccupancyResolution();
+              }
+              curPatchElem.elem->getPatchOrientation() = curGlobalElem.getPatchOrientation();
+              sortedPatches.push_back( *curPatchElem.elem );
+              if ( printDetailedInfo ) {
+                std::cout << "Orientation " << curPatchElem.elem->getPatchOrientation()
+                          << " selected for unmatched patch " << curPatchElem.elem->getIndex() << " ("
+                          << curPatchElem.elem->getU0() << "," << curPatchElem.elem->getV0() << ")" << std::endl;
+              }
+              // if the element is the prediction of a patch in the next frame, store the current order for the next
+              // frame, to maintain the sequence
+              if ( curPatchElem.nextElemPos >= 0 ) {
+                if ( printDetailedInfo ) {
+                  std::cout << "Changing patchMatrixSortedIndexes[" << frameIdx + 1 << "][" << curPatchElem.nextElemPos
+                            << "] (" << patchMatrixSortedIndexes[frameIdx + 1][curPatchElem.nextElemPos] << ") ->";
+                }
+                patchMatrixSortedIndexes[frameIdx + 1][indNextMatchedPatch++] = curPatchElem.nextElemPos;
+                if ( printDetailedInfo ) {
+                  std::cout << "(" << patchMatrixSortedIndexes[frameIdx + 1][curPatchElem.nextElemPos] << ")"
+                            << std::endl;
+                }
+              }
+              // update the horizon
+              curGlobalElem.update_horizon( horizon, top_horizon, bottom_horizon, right_horizon, left_horizon );
+              // debugging
+              if ( printDetailedInfo ) {
+                std::cout << "New Horizon :[";
+                for ( int i = 0; i < occupancySizeU; i++ ) { std::cout << horizon[i] << ","; }
+                std::cout << "]" << std::endl;
+              }
+            }
+          }
+        }
+        for ( size_t v0 = 0; v0 < curGlobalElem.getSizeV0(); ++v0 ) {
+          for ( size_t u0 = 0; u0 < curGlobalElem.getSizeU0(); ++u0 ) {
+            int coord = curGlobalElem.patchBlock2CanvasBlock( u0, v0, occupancySizeU, occupancySizeV );
+            if ( params_.lowDelayEncoding_ )
+              occupancyMap[coord] = true;
+            else
+              occupancyMap[coord] = occupancyMap[coord] || occupancy[v0 * curGlobalElem.getSizeU0() + u0];
+          }
+        }
+        if ( !( curGlobalElem.isPatchDimensionSwitched() ) ) {
+          height = ( std::max )(
+              height, ( curGlobalElem.getV0() + curGlobalElem.getSizeV0() ) * curGlobalElem.getOccupancyResolution() );
+          width = ( std::max )(
+              width, ( curGlobalElem.getU0() + curGlobalElem.getSizeU0() ) * curGlobalElem.getOccupancyResolution() );
+          maxOccupancyRow = ( std::max )( maxOccupancyRow, ( curGlobalElem.getV0() + curGlobalElem.getSizeV0() ) );
+        } else {
+          height = ( std::max )(
+              height, ( curGlobalElem.getV0() + curGlobalElem.getSizeU0() ) * curGlobalElem.getOccupancyResolution() );
+          width = ( std::max )(
+              width, ( curGlobalElem.getU0() + curGlobalElem.getSizeV0() ) * curGlobalElem.getOccupancyResolution() );
+          maxOccupancyRow = ( std::max )( maxOccupancyRow, ( curGlobalElem.getV0() + curGlobalElem.getSizeU0() ) );
+        }
 
-						}
-					}
-					else {
-						if (curPatchElem.elem->getBestMatchIdx() != InvalidPatchIndex) {
-							//this is a matched patch, but the first element of the list, 
-							if (printDetailedInfo) {
-								std::cout << "Reference moved from position prevList[" << curPatchElem.elem->getBestMatchIdx() << "] ";
-							}
-							int32_t matchedIdx = std::distance(patchMatrixSortedIndexes[frameIdx - 1].begin(), std::find(patchMatrixSortedIndexes[frameIdx - 1].begin(), patchMatrixSortedIndexes[frameIdx - 1].end(), curPatchElem.elem->getBestMatchIdx()));
-							if (printDetailedInfo) {
-								std::cout << "to position sortedPrevList[" << matchedIdx << "]=" << patchMatrix[frameIdx - 1][matchedIdx].elem->getIndex() << std::endl;
-							}
-							//the orientation MUST be maintained,  but it can be placed anywhere
-							curGlobalElem.getPatchOrientation() = patchMatrix[frameIdx - 1][matchedIdx].elem->getPatchOrientation();
-						}
-						//best effort
-						for (size_t v = 0; v < occupancySizeV && ((params_.packingStrategy_ == 2) || !locationFound); ++v) {
-							for (size_t u = 0; u < occupancySizeU && ((params_.packingStrategy_ == 2) || !locationFound); ++u) {
-								curGlobalElem.getU0() = u;
-								curGlobalElem.getV0() = v;
-								for (size_t orientationIdx = 0; orientationIdx < numOrientations && ((params_.packingStrategy_ == 2) || !locationFound); orientationIdx++) {
-									if (curPatchElem.elem->getBestMatchIdx() == InvalidPatchIndex) {
-										if (curGlobalElem.getSizeU0() > curGlobalElem.getSizeV0()) {
-											curGlobalElem.getPatchOrientation() = orientation_horizontal[orientationIdx];
-										}
-										else {
-											curGlobalElem.getPatchOrientation() = orientation_vertical[orientationIdx];
-										}
-									}
-									if (params_.packingStrategy_ == 2) {
-										if (!curGlobalElem.isPatchLocationAboveHorizon(horizon, top_horizon, bottom_horizon, right_horizon, left_horizon)) {
-											continue;
-										}
-									}
-									if (curGlobalElem.checkFitPatchCanvas(occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_)) {
-										if (params_.packingStrategy_ == 2) {
-											//now calculate the wasted space
-											int wasted_space = curGlobalElem.calculate_wasted_space(horizon, top_horizon, bottom_horizon, right_horizon, left_horizon);
-											if (wasted_space < best_wasted_space) {
-												best_wasted_space = wasted_space;
-												best_u = u;
-												best_v = v;
-												best_orientation = curGlobalElem.getPatchOrientation();
-												locationFound = true;
-											}
-										}
-										else
-										{
-											locationFound = true;
-											if (!(curGlobalElem.isPatchDimensionSwitched())) {
-												curPatchElem.elem->getU0() = curGlobalElem.getU0() + (curPatchElem.elem->getU1() - curGlobalElem.getU1()) / curPatchElem.elem->getOccupancyResolution();
-												curPatchElem.elem->getV0() = curGlobalElem.getV0() + (curPatchElem.elem->getV1() - curGlobalElem.getV1()) / curPatchElem.elem->getOccupancyResolution();
-											}
-											else {
-												curPatchElem.elem->getU0() = curGlobalElem.getU0() + (curPatchElem.elem->getV1() - curGlobalElem.getV1()) / curPatchElem.elem->getOccupancyResolution();
-												curPatchElem.elem->getV0() = curGlobalElem.getV0() + (curPatchElem.elem->getU1() - curGlobalElem.getU1()) / curPatchElem.elem->getOccupancyResolution();
-											}
-											curPatchElem.elem->getPatchOrientation() = curGlobalElem.getPatchOrientation();
-											if (curPatchElem.elem->getBestMatchIdx() >= 0)
-												curPatchElem.elem->setBestMatchIdx() = std::distance(patchMatrixSortedIndexes[frameIdx - 1].begin(), std::find(patchMatrixSortedIndexes[frameIdx - 1].begin(), patchMatrixSortedIndexes[frameIdx - 1].end(), curPatchElem.elem->getBestMatchIdx()));
-											sortedPatches.push_back(*curPatchElem.elem);
-											if (printDetailedInfo) {
-												if (curPatchElem.elem->getBestMatchIdx() >= 0)
-													std::cout << "Orientation " << curPatchElem.elem->getPatchOrientation() << " maintained for matched patch " << curPatchElem.elem->getIndex() << " (" << curPatchElem.elem->getU0() << "," << curPatchElem.elem->getV0() << ") -> matchedPatch[" << curPatchElem.elem->getBestMatchIdx() << "]=" << patchMatrix[frameIdx - 1][curPatchElem.elem->getBestMatchIdx()].elem->getIndex() << std::endl;
-												else
-													std::cout << "Orientation " << curPatchElem.elem->getPatchOrientation() << " selected for unmatched patch " << curPatchElem.elem->getIndex() << " (" << curPatchElem.elem->getU0() << "," << curPatchElem.elem->getV0() << ")" << std::endl;
-											}
-											//if the element is the prediction of a patch in the next frame, store the current order for the next frame, to maintain the sequence
-											if (curPatchElem.nextElemPos >= 0)
-											{
-												if (printDetailedInfo) {
-													std::cout << "Changing patchMatrixSortedIndexes[" << frameIdx + 1 << "][" << curPatchElem.nextElemPos << "] (" << patchMatrixSortedIndexes[frameIdx + 1][curPatchElem.nextElemPos] << ") ->";
-												}
-												patchMatrixSortedIndexes[frameIdx + 1][indNextMatchedPatch++] = curPatchElem.nextElemPos;
-												if (printDetailedInfo) {
-													std::cout << "(" << patchMatrixSortedIndexes[frameIdx + 1][curPatchElem.nextElemPos] << ")" << std::endl;
-												}
-											}
-										}
-									}
-								}
-							}
-						}
-					}
-					if (!locationFound) {
-						occupancySizeV *= 2;
-						occupancyMap.resize(occupancySizeU * occupancySizeV);
-						if (printDetailedInfo) {
-							std::cout << "Increasing the canvas size (" << occupancySizeU << "," << occupancySizeV << ")" << std::endl;
-						}
-					}
-					else
-					{
-						if (params_.packingStrategy_ == 2) {
-							curGlobalElem.getU0() = best_u;
-							curGlobalElem.getV0() = best_v;
-							curGlobalElem.getPatchOrientation() = best_orientation;
-							if (printDetailedInfo)
-								std::cout << "Selected position (" << best_u << "," << best_v << ") and orientation " << best_orientation << std::endl;
-							if (!(curGlobalElem.isPatchDimensionSwitched())) {
-								curPatchElem.elem->getU0() = curGlobalElem.getU0() + (curPatchElem.elem->getU1() - curGlobalElem.getU1()) / curPatchElem.elem->getOccupancyResolution();
-								curPatchElem.elem->getV0() = curGlobalElem.getV0() + (curPatchElem.elem->getV1() - curGlobalElem.getV1()) / curPatchElem.elem->getOccupancyResolution();
-							}
-							else {
-								curPatchElem.elem->getU0() = curGlobalElem.getU0() + (curPatchElem.elem->getV1() - curGlobalElem.getV1()) / curPatchElem.elem->getOccupancyResolution();
-								curPatchElem.elem->getV0() = curGlobalElem.getV0() + (curPatchElem.elem->getU1() - curGlobalElem.getU1()) / curPatchElem.elem->getOccupancyResolution();
-							}
-							curPatchElem.elem->getPatchOrientation() = curGlobalElem.getPatchOrientation();
-							sortedPatches.push_back(*curPatchElem.elem);
-							if (printDetailedInfo) {
-								std::cout << "Orientation " << curPatchElem.elem->getPatchOrientation() << " selected for unmatched patch " << curPatchElem.elem->getIndex() << " (" << curPatchElem.elem->getU0() << "," << curPatchElem.elem->getV0() << ")" << std::endl;
-							}
-							//if the element is the prediction of a patch in the next frame, store the current order for the next frame, to maintain the sequence
-							if (curPatchElem.nextElemPos >= 0)
-							{
-								if (printDetailedInfo) {
-									std::cout << "Changing patchMatrixSortedIndexes[" << frameIdx + 1 << "][" << curPatchElem.nextElemPos << "] (" << patchMatrixSortedIndexes[frameIdx + 1][curPatchElem.nextElemPos] << ") ->";
-								}
-								patchMatrixSortedIndexes[frameIdx + 1][indNextMatchedPatch++] = curPatchElem.nextElemPos;
-								if (printDetailedInfo) {
-									std::cout << "(" << patchMatrixSortedIndexes[frameIdx + 1][curPatchElem.nextElemPos] << ")" << std::endl;
-								}
-							}
-							//update the horizon
-							curGlobalElem.update_horizon(horizon, top_horizon, bottom_horizon, right_horizon, left_horizon);
-							//debugging
-							if (printDetailedInfo) {
-								std::cout << "New Horizon :[";
-								for (int i = 0; i < occupancySizeU; i++) {
-									std::cout << horizon[i] << ",";
-								}
-								std::cout << "]" << std::endl;
-							}
-						}
-					}
-				}
-				for (size_t v0 = 0; v0 < curGlobalElem.getSizeV0(); ++v0) {
-					for (size_t u0 = 0; u0 < curGlobalElem.getSizeU0(); ++u0) {
-						int coord = curGlobalElem.patchBlock2CanvasBlock(u0, v0, occupancySizeU, occupancySizeV);
-						if (params_.lowDelayEncoding_)
-							occupancyMap[coord] = true;
-						else
-						occupancyMap[coord] = occupancyMap[coord] || occupancy[v0 * curGlobalElem.getSizeU0() + u0];
+        if ( printDetailedInfo ) {
+          if ( params_.packingStrategy_ != 2 ) {
+            printMap( occupancyMap, occupancySizeU, occupancySizeV );
+          } else {
+            printMapTetris( occupancyMap, occupancySizeU, occupancySizeV, horizon );
+          }
+        }
+      }
+      // update the sorted list of patches
+      frames[frameIdx].getPatches() = sortedPatches;
 
-					}
-				}
-				if (!(curGlobalElem.isPatchDimensionSwitched())) {
-					height = (std::max)(height, (curGlobalElem.getV0() + curGlobalElem.getSizeV0()) * curGlobalElem.getOccupancyResolution());
-					width = (std::max)(width, (curGlobalElem.getU0() + curGlobalElem.getSizeU0()) * curGlobalElem.getOccupancyResolution());
-					maxOccupancyRow = (std::max)(maxOccupancyRow, (curGlobalElem.getV0() + curGlobalElem.getSizeV0()));
-				}
-				else {
-					height = (std::max)(height, (curGlobalElem.getV0() + curGlobalElem.getSizeU0()) * curGlobalElem.getOccupancyResolution());
-					width = (std::max)(width, (curGlobalElem.getU0() + curGlobalElem.getSizeV0()) * curGlobalElem.getOccupancyResolution());
-					maxOccupancyRow = (std::max)(maxOccupancyRow, (curGlobalElem.getV0() + curGlobalElem.getSizeU0()));
-				}
-
-				if (printDetailedInfo) {
-					if (params_.packingStrategy_ != 2) {
-						printMap(occupancyMap, occupancySizeU, occupancySizeV);
-					}
-					else {
-						printMapTetris(occupancyMap, occupancySizeU, occupancySizeV, horizon);
-					}
-				}
-			}
-			//update the sorted list of patches
-			frames[frameIdx].getPatches() = sortedPatches;
-
-			if (frames[frameIdx].getNumberOfMissedPointsPatches() > 0 && !frames[frameIdx].getUseMissedPointsSeparateVideo()) {
-				packMissedPointsPatch(frames[frameIdx], occupancyMap, width, height, occupancySizeU, occupancySizeV, maxOccupancyRow);
-			}
-			else {
-				if (printDetailedInfo) { printMap(occupancyMap, occupancySizeU, occupancySizeV); }
-			}
-			std::cout << "actualImageSizeU " << width << std::endl;
-			std::cout << "actualImageSizeV " << height << std::endl;
-		}
-	}
+      if ( frames[frameIdx].getNumberOfMissedPointsPatches() > 0 &&
+           !frames[frameIdx].getUseMissedPointsSeparateVideo() ) {
+        packMissedPointsPatch( frames[frameIdx], occupancyMap, width, height, occupancySizeU, occupancySizeV,
+                               maxOccupancyRow );
+      } else {
+        if ( printDetailedInfo ) { printMap( occupancyMap, occupancySizeU, occupancySizeV ); }
+      }
+      std::cout << "actualImageSizeU " << width << std::endl;
+      std::cout << "actualImageSizeV " << height << std::endl;
+    }
+  }
 }
 
-
-void PCCEncoder::pack( PCCFrameContext& frame, int safeguard ) {
+void PCCEncoder::pack( PCCFrameContext& frame, int safeguard, bool enablePointCloudPartitioning ) {
   auto& width   = frame.getWidth();
   auto& height  = frame.getHeight();
   auto& patches = frame.getPatches();
@@ -1856,49 +2229,143 @@ void PCCEncoder::pack( PCCFrameContext& frame, int safeguard ) {
       ( std::max )( params_.minimumImageHeight_ / params_.occupancyResolution_, patches[0].getSizeV0() );
   for ( auto& patch : patches ) { occupancySizeU = ( std::max )( occupancySizeU, patch.getSizeU0() + 1 ); }
 
+  int numROIs     = params_.numROIs_;
+  int numTilesHor = params_.numTilesHor_;
+  int tileWidth   = occupancySizeU / numTilesHor;
+  int tileHeight  = int( tileWidth * params_.tileHeightToWidthRatio_ );
+  std::cout << "tile width  = " << tileWidth << std::endl;
+  std::cout << "tile height = " << tileHeight << std::endl;
+  occupancySizeV = ( occupancySizeV >= tileHeight ) ? occupancySizeV : tileHeight;
+
   width  = occupancySizeU * params_.occupancyResolution_;
   height = occupancySizeV * params_.occupancyResolution_;
   size_t maxOccupancyRow{0};
 
   std::vector<bool> occupancyMap;
   occupancyMap.resize( occupancySizeU * occupancySizeV, false );
-  for ( auto& patch : patches ) {
-    assert( patch.getSizeU0() <= occupancySizeU );
-    assert( patch.getSizeV0() <= occupancySizeV );
-    bool  locationFound = false;
-    auto& occupancy     = patch.getOccupancy();
-    while ( !locationFound ) {
-      patch.getPatchOrientation() = PATCH_ORIENTATION_DEFAULT;  // only allowed orientation in anchor
-      for ( int v = 0; v <= occupancySizeV && !locationFound; ++v ) {
-        for ( int u = 0; u <= occupancySizeU && !locationFound; ++u ) {
-          patch.getU0() = u;
-          patch.getV0() = v;
-          if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_, safeguard ) ) {
-            locationFound = true;
+  if ( !enablePointCloudPartitioning ) {
+    for ( auto& patch : patches ) {
+      assert( patch.getSizeU0() <= occupancySizeU );
+      assert( patch.getSizeV0() <= occupancySizeV );
+      bool  locationFound = false;
+      auto& occupancy     = patch.getOccupancy();
+      while ( !locationFound ) {
+        patch.getPatchOrientation() = PATCH_ORIENTATION_DEFAULT;  // only allowed orientation in anchor
+        for ( int v = 0; v <= occupancySizeV && !locationFound; ++v ) {
+          for ( int u = 0; u <= occupancySizeU && !locationFound; ++u ) {
+            patch.getU0() = u;
+            patch.getV0() = v;
+            if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_,
+                                            safeguard ) ) {
+              locationFound = true;
+            }
           }
         }
+        if ( !locationFound ) {
+          occupancySizeV *= 2;
+          occupancyMap.resize( occupancySizeU * occupancySizeV );
+        }
       }
-      if ( !locationFound ) {
-        occupancySizeV *= 2;
-        occupancyMap.resize( occupancySizeU * occupancySizeV );
+      for ( size_t v0 = 0; v0 < patch.getSizeV0(); ++v0 ) {
+        const size_t v = patch.getV0() + v0;
+        for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {
+          const size_t u = patch.getU0() + u0;
+          if ( params_.lowDelayEncoding_ )
+            occupancyMap[v * occupancySizeU + u] = true;
+          else
+            occupancyMap[v * occupancySizeU + u] =
+                occupancyMap[v * occupancySizeU + u] || occupancy[v0 * patch.getSizeU0() + u0];
+        }
       }
-    }
-    for ( size_t v0 = 0; v0 < patch.getSizeV0(); ++v0 ) {
-      const size_t v = patch.getV0() + v0;
-      for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {
-        const size_t u = patch.getU0() + u0;
-				if (params_.lowDelayEncoding_)
-					occupancyMap[v * occupancySizeU + u] = true;
-				else
-        occupancyMap[v * occupancySizeU + u] =
-            occupancyMap[v * occupancySizeU + u] || occupancy[v0 * patch.getSizeU0() + u0];
-      }
-    }
 
-    height          = ( std::max )( height, ( patch.getV0() + patch.getSizeV0() ) * patch.getOccupancyResolution() );
-    width           = ( std::max )( width, ( patch.getU0() + patch.getSizeU0() ) * patch.getOccupancyResolution() );
-    maxOccupancyRow = ( std::max )( maxOccupancyRow, ( patch.getV0() + patch.getSizeV0() ) );
-    // print(occupancyMap, occupancySizeU, occupancySizeV);
+      height          = ( std::max )( height, ( patch.getV0() + patch.getSizeV0() ) * patch.getOccupancyResolution() );
+      width           = ( std::max )( width, ( patch.getU0() + patch.getSizeU0() ) * patch.getOccupancyResolution() );
+      maxOccupancyRow = ( std::max )( maxOccupancyRow, ( patch.getV0() + patch.getSizeV0() ) );
+      // print(occupancyMap, occupancySizeU, occupancySizeV);
+    }
+  } else {
+    std::vector<Tile> tilesNotAvailable;  // set of all tiles occupied by prev ROIs of current ROI
+    int               lastOccupiedTileIndex          = -1;
+    int               lastOccupiedTileIndexByPrevROI = -1;
+    // loop over ROIs
+    for ( int roiIndex = 0; roiIndex < numROIs; ++roiIndex ) {
+      tilesNotAvailable.clear();
+      if ( roiIndex > 0 ) {
+        lastOccupiedTileIndexByPrevROI = lastOccupiedTileIndex;
+        for ( int tileIndex = 0; tileIndex <= lastOccupiedTileIndexByPrevROI; ++tileIndex ) {
+          Tile tile;
+          tile.minU = ( tileIndex % numTilesHor ) * tileWidth;
+          tile.minV = ( tileIndex / numTilesHor ) * tileHeight;
+          tile.maxU = tile.minU + tileWidth - 1;
+          tile.maxV = tile.minV + tileHeight - 1;
+          tilesNotAvailable.push_back( tile );
+        }
+      }
+      // loop over patches of current ROI
+      for ( auto& patch : patches ) {
+        if ( roiIndex != patch.getRoiIndex() ) { continue; }
+        assert( patch.getSizeU0() <= occupancySizeU );
+        assert( patch.getSizeV0() <= occupancySizeV );
+        bool  locationFound = false;
+        auto& occupancy     = patch.getOccupancy();
+        while ( !locationFound ) {
+          patch.getPatchOrientation() = PATCH_ORIENTATION_DEFAULT;  // only allowed orientation in anchor
+          int numTilesAvailable       = ceil( double( occupancySizeV ) / double( tileHeight ) ) * numTilesHor;
+          for ( int tileIndex = lastOccupiedTileIndexByPrevROI + 1; tileIndex < numTilesAvailable && !locationFound;
+                ++tileIndex ) {
+            Tile tile;
+            tile.minU = ( tileIndex % numTilesHor ) * tileWidth;
+            tile.maxU = tile.minU + tileWidth - 1;
+            tile.minV = ( tileIndex / numTilesHor ) * tileHeight;
+            tile.maxV = tile.minV + tileHeight - 1;
+            for ( int v = 0; v <= occupancySizeV && !locationFound; ++v ) {
+              for ( int u = 0; u <= occupancySizeU && !locationFound; ++u ) {
+                patch.getU0()        = u;
+                patch.getV0()        = v;
+                bool tileIsAvailable = true;
+                if ( roiIndex > 0 ) {
+                  for ( auto& tile : tilesNotAvailable ) {
+                    if ( ( tile.minU <= u && u <= tile.maxU ) && ( tile.minV <= v && v <= tile.maxV ) &&
+                         ( !locationFound ) ) {
+                      tileIsAvailable = false;
+                      break;
+                    }
+                  }
+                }
+                if ( tileIsAvailable ) {
+                  if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV,
+                                                  params_.lowDelayEncoding_, safeguard, tile ) ) {
+                    locationFound = true;
+                    if ( tileIndex > lastOccupiedTileIndex ) { lastOccupiedTileIndex = tileIndex; }
+                    std::cout << "ROI-" << roiIndex + 1 << " patch-" << patch.getIndex() << " fitted in tile-"
+                              << tileIndex + 1 << "/" << numTilesAvailable << "-----[" << tile.minU << "," << tile.maxU
+                              << "][" << tile.minV << "," << tile.maxV << "]" << std::endl;
+                  }
+                }
+              }
+            }
+          }
+          if ( !locationFound ) {
+            occupancySizeV *= 2;
+            occupancyMap.resize( occupancySizeU * occupancySizeV );
+          }
+        }
+        for ( size_t v0 = 0; v0 < patch.getSizeV0(); ++v0 ) {
+          const size_t v = patch.getV0() + v0;
+          for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {
+            const size_t u = patch.getU0() + u0;
+            occupancyMap[v * occupancySizeU + u] =
+                occupancyMap[v * occupancySizeU + u] || occupancy[v0 * patch.getSizeU0() + u0];
+          }
+        }
+
+        height = ( std::max )( height, ( patch.getV0() + patch.getSizeV0() ) * patch.getOccupancyResolution() );
+        width  = ( std::max )( width, ( patch.getU0() + patch.getSizeU0() ) * patch.getOccupancyResolution() );
+        maxOccupancyRow = ( std::max )( maxOccupancyRow, ( patch.getV0() + patch.getSizeV0() ) );
+        // print(occupancyMap, occupancySizeU, occupancySizeV);
+      }  // patch loop
+      printMap( occupancyMap, occupancySizeU, occupancySizeV );
+    }  // ROI loop
   }
 
   if ( frame.getNumberOfMissedPointsPatches() > 0 && !frame.getUseMissedPointsSeparateVideo() ) {
@@ -1921,7 +2388,9 @@ void PCCEncoder::pack( PCCFrameContext& frame, int safeguard ) {
   std::cout << "actualImageSizeV " << height << std::endl;
 }
 
-void PCCEncoder::packFlexible( PCCFrameContext& frame, int safeguard ) {
+void PCCEncoder::packFlexible( PCCFrameContext& frame,
+                               int              safeguard,
+                               bool             enablePointCloudPartitioning ) {
   auto& width   = frame.getWidth();
   auto& height  = frame.getHeight();
   auto& patches = frame.getPatches();
@@ -1942,6 +2411,14 @@ void PCCEncoder::packFlexible( PCCFrameContext& frame, int safeguard ) {
   size_t occupancySizeV = ( std::max )( patches[0].getSizeV0(), patches[0].getSizeU0() );
   for ( auto& patch : patches ) { occupancySizeU = ( std::max )( occupancySizeU, patch.getSizeU0() + 1 ); }
 
+  int numROIs     = params_.numROIs_;
+  int numTilesHor = params_.numTilesHor_;
+  int tileWidth   = occupancySizeU / numTilesHor;
+  int tileHeight  = int( tileWidth * params_.tileHeightToWidthRatio_ );
+  std::cout << "tile width  = " << tileWidth << std::endl;
+  std::cout << "tile height = " << tileHeight << std::endl;
+  occupancySizeV = ( occupancySizeV >= tileHeight ) ? occupancySizeV : tileHeight;
+
   width  = occupancySizeU * params_.occupancyResolution_;
   height = occupancySizeV * params_.occupancyResolution_;
   size_t maxOccupancyRow{0};
@@ -1958,56 +2435,157 @@ void PCCEncoder::packFlexible( PCCFrameContext& frame, int safeguard ) {
                                                              // rotated)
   int numOrientations = params_.useEightOrientations_ ? 8 : 2;
   occupancyMap.resize( occupancySizeU * occupancySizeV, false );
-  for ( auto& patch : patches ) {
-    assert( patch.getSizeU0() <= occupancySizeU );
-    assert( patch.getSizeV0() <= occupancySizeV );
-    bool  locationFound = false;
-    auto& occupancy     = patch.getOccupancy();
-    while ( !locationFound ) {
-      for ( size_t v = 0; v < occupancySizeV && !locationFound; ++v ) {
-        for ( size_t u = 0; u < occupancySizeU && !locationFound; ++u ) {
-          patch.getU0() = u;
-          patch.getV0() = v;
-          for ( size_t orientationIdx = 0; orientationIdx < numOrientations && !locationFound; orientationIdx++ ) {
-            if ( patch.getSizeU0() > patch.getSizeV0() ) {
-              patch.getPatchOrientation() = orientation_horizontal[orientationIdx];
-            } else {
-              patch.getPatchOrientation() = orientation_vertical[orientationIdx];
-            }
-            if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_, safeguard ) ) {
-              locationFound = true;
-              if ( printDetailedInfo ) {
-                std::cout << "Orientation " << patch.getPatchOrientation() << " selected for patch " << patch.getIndex()
-                          << " (" << u << "," << v << ")" << std::endl;
+  if ( !params_.enablePointCloudPartitioning_ ) {
+    for ( auto& patch : patches ) {
+      assert( patch.getSizeU0() <= occupancySizeU );
+      assert( patch.getSizeV0() <= occupancySizeV );
+      bool  locationFound = false;
+      auto& occupancy     = patch.getOccupancy();
+      while ( !locationFound ) {
+        for ( size_t v = 0; v < occupancySizeV && !locationFound; ++v ) {
+          for ( size_t u = 0; u < occupancySizeU && !locationFound; ++u ) {
+            patch.getU0() = u;
+            patch.getV0() = v;
+            for ( size_t orientationIdx = 0; orientationIdx < numOrientations && !locationFound; orientationIdx++ ) {
+              if ( patch.getSizeU0() > patch.getSizeV0() ) {
+                patch.getPatchOrientation() = orientation_horizontal[orientationIdx];
+              } else {
+                patch.getPatchOrientation() = orientation_vertical[orientationIdx];
+              }
+              if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_,
+                                              safeguard ) ) {
+                locationFound = true;
+                if ( printDetailedInfo ) {
+                  std::cout << "Orientation " << patch.getPatchOrientation() << " selected for patch "
+                            << patch.getIndex() << " (" << u << "," << v << ")" << std::endl;
+                }
               }
             }
           }
         }
+        if ( !locationFound ) {
+          occupancySizeV *= 2;
+          occupancyMap.resize( occupancySizeU * occupancySizeV );
+        }
       }
-      if ( !locationFound ) {
-        occupancySizeV *= 2;
-        occupancyMap.resize( occupancySizeU * occupancySizeV );
+      for ( size_t v0 = 0; v0 < patch.getSizeV0(); ++v0 ) {
+        for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {
+          int coord = patch.patchBlock2CanvasBlock( u0, v0, occupancySizeU, occupancySizeV );
+          if ( params_.lowDelayEncoding_ )
+            occupancyMap[coord] = true;
+          else
+            occupancyMap[coord] = occupancyMap[coord] || occupancy[v0 * patch.getSizeU0() + u0];
+        }
       }
-    }
-    for ( size_t v0 = 0; v0 < patch.getSizeV0(); ++v0 ) {
-      for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {
-        int coord           = patch.patchBlock2CanvasBlock( u0, v0, occupancySizeU, occupancySizeV );
-				if (params_.lowDelayEncoding_)
-					occupancyMap[coord] = true;
-				else
-        occupancyMap[coord] = occupancyMap[coord] || occupancy[v0 * patch.getSizeU0() + u0];
-      }
-    }
 
-    if ( !( patch.isPatchDimensionSwitched() ) ) {
-      height          = ( std::max )( height, ( patch.getV0() + patch.getSizeV0() ) * patch.getOccupancyResolution() );
-      width           = ( std::max )( width, ( patch.getU0() + patch.getSizeU0() ) * patch.getOccupancyResolution() );
-      maxOccupancyRow = ( std::max )( maxOccupancyRow, ( patch.getV0() + patch.getSizeV0() ) );
-    } else {
-      height          = ( std::max )( height, ( patch.getV0() + patch.getSizeU0() ) * patch.getOccupancyResolution() );
-      width           = ( std::max )( width, ( patch.getU0() + patch.getSizeV0() ) * patch.getOccupancyResolution() );
-      maxOccupancyRow = ( std::max )( maxOccupancyRow, ( patch.getV0() + patch.getSizeU0() ) );
+      if ( !( patch.isPatchDimensionSwitched() ) ) {
+        height = ( std::max )( height, ( patch.getV0() + patch.getSizeV0() ) * patch.getOccupancyResolution() );
+        width  = ( std::max )( width, ( patch.getU0() + patch.getSizeU0() ) * patch.getOccupancyResolution() );
+        maxOccupancyRow = ( std::max )( maxOccupancyRow, ( patch.getV0() + patch.getSizeV0() ) );
+      } else {
+        height = ( std::max )( height, ( patch.getV0() + patch.getSizeU0() ) * patch.getOccupancyResolution() );
+        width  = ( std::max )( width, ( patch.getU0() + patch.getSizeV0() ) * patch.getOccupancyResolution() );
+        maxOccupancyRow = ( std::max )( maxOccupancyRow, ( patch.getV0() + patch.getSizeU0() ) );
+      }
     }
+  } else {
+    std::vector<Tile> tilesNotAvailable;  // set of all tiles occupied by prev ROIs of current ROI
+    int               lastOccupiedTileIndex          = -1;
+    int               lastOccupiedTileIndexByPrevROI = -1;
+    // loop over ROIs
+    for ( int roiIndex = 0; roiIndex < numROIs; ++roiIndex ) {
+      tilesNotAvailable.clear();
+      if ( roiIndex > 0 ) {
+        lastOccupiedTileIndexByPrevROI = lastOccupiedTileIndex;
+        for ( int tileIndex = 0; tileIndex <= lastOccupiedTileIndexByPrevROI; ++tileIndex ) {
+          Tile tile;
+          tile.minU = ( tileIndex % numTilesHor ) * tileWidth;
+          tile.minV = ( tileIndex / numTilesHor ) * tileHeight;
+          tile.maxU = tile.minU + tileWidth - 1;
+          tile.maxV = tile.minV + tileHeight - 1;
+          tilesNotAvailable.push_back( tile );
+        }
+      }
+      // loop over patches of current ROI
+      for ( auto& patch : patches ) {
+        if ( roiIndex != patch.getRoiIndex() ) { continue; }
+        assert( patch.getSizeU0() <= occupancySizeU );
+        assert( patch.getSizeV0() <= occupancySizeV );
+        bool  locationFound = false;
+        auto& occupancy     = patch.getOccupancy();
+        // fit patch in available tiles (i.e., tiles not occupied by previous ROIs)
+        while ( !locationFound ) {
+          int numTilesAvailable = ceil( double( occupancySizeV ) / double( tileHeight ) ) * numTilesHor;
+          for ( int tileIndex = lastOccupiedTileIndexByPrevROI + 1; tileIndex < numTilesAvailable && !locationFound;
+                ++tileIndex ) {
+            Tile tile;
+            tile.minU = ( tileIndex % numTilesHor ) * tileWidth;
+            tile.maxU = tile.minU + tileWidth - 1;
+            tile.minV = ( tileIndex / numTilesHor ) * tileHeight;
+            tile.maxV = tile.minV + tileHeight - 1;
+            for ( size_t v = 0; v < occupancySizeV && !locationFound; ++v ) {
+              for ( size_t u = 0; u < occupancySizeU && !locationFound; ++u ) {
+                patch.getU0()        = u;
+                patch.getV0()        = v;
+                bool tileIsAvailable = true;
+                if ( roiIndex > 0 ) {
+                  for ( auto& tile : tilesNotAvailable ) {
+                    if ( ( tile.minU <= u && u <= tile.maxU ) && ( tile.minV <= v && v <= tile.maxV ) &&
+                         ( !locationFound ) ) {
+                      tileIsAvailable = false;
+                      break;
+                    }
+                  }
+                }
+                if ( tileIsAvailable ) {
+                  for ( size_t orientationIdx = 0; orientationIdx < numOrientations && !locationFound;
+                        orientationIdx++ ) {
+                    if ( patch.getSizeU0() > patch.getSizeV0() ) {
+                      patch.getPatchOrientation() = orientation_horizontal[orientationIdx];
+                    } else {
+                      patch.getPatchOrientation() = orientation_vertical[orientationIdx];
+                    }
+                    if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV,
+                                                    params_.lowDelayEncoding_, safeguard, tile ) ) {
+                      locationFound = true;
+                      if ( tileIndex > lastOccupiedTileIndex ) { lastOccupiedTileIndex = tileIndex; }
+                      std::cout << "ROI-" << roiIndex + 1 << " patch-" << patch.getIndex() << " fitted in tile-"
+                                << tileIndex + 1 << "/" << numTilesAvailable << "-----[" << tile.minU << ","
+                                << tile.maxU << "][" << tile.minV << "," << tile.maxV << "]" << std::endl;
+                      if ( printDetailedInfo ) {
+                        std::cout << "Orientation " << patch.getPatchOrientation() << " selected for patch "
+                                  << patch.getIndex() << " (" << u << "," << v << ")" << std::endl;
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+          if ( !locationFound ) {
+            occupancySizeV *= 2;
+            occupancyMap.resize( occupancySizeU * occupancySizeV );
+          }
+        }  // while loop
+        for ( size_t v0 = 0; v0 < patch.getSizeV0(); ++v0 ) {
+          for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {
+            int coord           = patch.patchBlock2CanvasBlock( u0, v0, occupancySizeU, occupancySizeV );
+            occupancyMap[coord] = occupancyMap[coord] || occupancy[v0 * patch.getSizeU0() + u0];
+          }
+        }
+
+        if ( !( patch.isPatchDimensionSwitched() ) ) {
+          height = ( std::max )( height, ( patch.getV0() + patch.getSizeV0() ) * patch.getOccupancyResolution() );
+          width  = ( std::max )( width, ( patch.getU0() + patch.getSizeU0() ) * patch.getOccupancyResolution() );
+          maxOccupancyRow = ( std::max )( maxOccupancyRow, ( patch.getV0() + patch.getSizeV0() ) );
+        } else {
+          height = ( std::max )( height, ( patch.getV0() + patch.getSizeU0() ) * patch.getOccupancyResolution() );
+          width  = ( std::max )( width, ( patch.getU0() + patch.getSizeV0() ) * patch.getOccupancyResolution() );
+          maxOccupancyRow = ( std::max )( maxOccupancyRow, ( patch.getV0() + patch.getSizeU0() ) );
+        }
+      }  // patch loop
+      printMap( occupancyMap, occupancySizeU, occupancySizeV );
+    }  // ROI loop
   }
 
   if ( frame.getNumberOfMissedPointsPatches() > 0 && !frame.getUseMissedPointsSeparateVideo() ) {
@@ -2103,7 +2681,8 @@ void PCCEncoder::packTetris( PCCFrameContext& frame, int safeguard ) {
             }
             if ( printDetailedInfo )
               std::cout << "(" << u << "," << v << "|" << patch.getPatchOrientation() << ")" << std::endl;
-            if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_, safeguard ) ) {
+            if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_,
+                                            safeguard ) ) {
               // now calculate the wasted space
               int wasted_space =
                   patch.calculate_wasted_space( horizon, top_horizon, bottom_horizon, right_horizon, left_horizon );
@@ -2144,11 +2723,11 @@ void PCCEncoder::packTetris( PCCFrameContext& frame, int safeguard ) {
     }
     for ( size_t v0 = 0; v0 < patch.getSizeV0(); ++v0 ) {
       for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {
-        int coord           = patch.patchBlock2CanvasBlock( u0, v0, occupancySizeU, occupancySizeV );
-				if (params_.lowDelayEncoding_)
-					occupancyMap[coord] = true;
-				else
-        occupancyMap[coord] = occupancyMap[coord] || occupancy[v0 * patch.getSizeU0() + u0];
+        int coord = patch.patchBlock2CanvasBlock( u0, v0, occupancySizeU, occupancySizeV );
+        if ( params_.lowDelayEncoding_ )
+          occupancyMap[coord] = true;
+        else
+          occupancyMap[coord] = occupancyMap[coord] || occupancy[v0 * patch.getSizeU0() + u0];
       }
     }
     if ( !( patch.isPatchDimensionSwitched() ) ) {
@@ -2253,8 +2832,8 @@ void PCCEncoder::packMissedPointsPatch( PCCFrameContext&   frame,
     patch.getSizeV()  = missedPointsPatch.sizeV_;
     assert( patch.getSizeU0() <= occupancySizeU );
     assert( patch.getSizeV0() <= occupancySizeV );
-		std::vector<bool>& patchOccupancy = patch.getOccupancy();
-		patchOccupancy.resize(missedPointsPatch.sizeU0_ * missedPointsPatch.sizeV0_, false);
+    std::vector<bool>& patchOccupancy = patch.getOccupancy();
+    patchOccupancy.resize( missedPointsPatch.sizeU0_ * missedPointsPatch.sizeV0_, false );
 
     const int16_t infiniteValue = ( std::numeric_limits<int16_t>::max )();
     missedPointsPatch.resize( missedPointsPatch.sizeU_ * missedPointsPatch.sizeV_, infiniteValue );
@@ -2271,12 +2850,12 @@ void PCCEncoder::packMissedPointsPatch( PCCFrameContext&   frame,
           assert( u0 >= 0 && u0 < missedPointsPatch.sizeU0_ );
           assert( v0 >= 0 && v0 < missedPointsPatch.sizeV0_ );
           missedPointPatchOccupancy[p0] = true;
-					patchOccupancy[p0] = true;
+          patchOccupancy[p0]            = true;
         }
       }
     }
 
-		//now placing the missed point patch in the atlas
+    // now placing the missed point patch in the atlas
     bool locationFound = false;
     while ( !locationFound ) {
       patch.getPatchOrientation() = PATCH_ORIENTATION_DEFAULT;  // only allowed orientation in anchor
@@ -2284,7 +2863,8 @@ void PCCEncoder::packMissedPointsPatch( PCCFrameContext&   frame,
         for ( int u = 0; u <= occupancySizeU && !locationFound; ++u ) {
           patch.getU0() = u;
           patch.getV0() = v;
-          if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_, safeguard ) ) {
+          if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_,
+                                          safeguard ) ) {
             locationFound = true;
           }
         }
@@ -2301,11 +2881,11 @@ void PCCEncoder::packMissedPointsPatch( PCCFrameContext&   frame,
       const size_t v = missedPointsPatch.v0_ + v0;
       for ( size_t u0 = 0; u0 < missedPointsPatch.sizeU0_; ++u0 ) {
         const size_t u = missedPointsPatch.u0_ + u0;
-				if (params_.lowDelayEncoding_)
-					occupancyMap[v * occupancySizeU + u] = true;
-				else
-        occupancyMap[v * occupancySizeU + u] =
-            occupancyMap[v * occupancySizeU + u] || missedPointPatchOccupancy[v0 * missedPointsPatch.sizeU0_ + u0];
+        if ( params_.lowDelayEncoding_ )
+          occupancyMap[v * occupancySizeU + u] = true;
+        else
+          occupancyMap[v * occupancySizeU + u] =
+              occupancyMap[v * occupancySizeU + u] || missedPointPatchOccupancy[v0 * missedPointsPatch.sizeU0_ + u0];
       }
       height = ( std::max )( height, ( patch.getV0() + patch.getSizeV0() ) * params_.occupancyResolution_ );
     }
@@ -2434,7 +3014,13 @@ bool PCCEncoder::generateGeometryVideo( const PCCPointSet3&                sourc
   if ( params_.useAdditionalPointsPatch_ ) {
     generateMissedPointsPatch( source, frame,
                                segmenterParams.useEnhancedDeltaDepthCode );  // useEnhancedDeltaDepthCode for EDD code
-    for ( int i = 0; i < frame.getNumberOfMissedPointsPatches(); i++ ) { sortMissedPointsPatch( frame, i ); }
+    for ( int i = 0; i < frame.getNumberOfMissedPointsPatches(); i++ ) {      
+      if ( params_.mortonOrderSortMissedPoints_ ) {
+        sortMissedPointsPatchMorton( frame, i );
+      } else {
+        sortMissedPointsPatch( frame, i );
+      }
+    }
   }
   if ( params_.testLevelOfDetail_ > 0 ) {
     for ( size_t i = 0; i < patches.size(); i++ ) { patches[i].getLod() = params_.testLevelOfDetail_; }
@@ -2446,29 +3032,33 @@ bool PCCEncoder::generateGeometryVideo( const PCCPointSet3&                sourc
   }
   if ( params_.packingStrategy_ == 0 ) {
     if ( ( frameIndex == 0 ) || ( !params_.constrainedPack_ ) ) {
-      pack( frame, params_.safeGuardDistance_ );
+      pack( frame, params_.safeGuardDistance_, params_.enablePointCloudPartitioning_ );
     } else {
-      spatialConsistencyPack( frame, prevFrame, params_.safeGuardDistance_ );
+      spatialConsistencyPack( frame, prevFrame, params_.safeGuardDistance_,
+                              params_.enablePointCloudPartitioning_ );
     }
   } else {
     if ( params_.packingStrategy_ == 1 ) {
       if ( ( frameIndex == 0 ) || ( !params_.constrainedPack_ ) ) {
-        packFlexible( frame, params_.safeGuardDistance_ );
+        packFlexible( frame, params_.safeGuardDistance_, params_.enablePointCloudPartitioning_ );
       } else {
-        if (params_.globalPatchAllocation_ == 2)
-          findMatchesForGlobalTetrisPacking(frame, prevFrame); //this could also be a different prevFrame, it depends on the prediction structure
+        if ( params_.globalPatchAllocation_ == 2 )
+          findMatchesForGlobalTetrisPacking(
+              frame, prevFrame );  // this could also be a different prevFrame, it depends on the prediction structure
         else
-        spatialConsistencyPackFlexible( frame, prevFrame, params_.safeGuardDistance_ );
+          spatialConsistencyPackFlexible( frame, prevFrame, params_.safeGuardDistance_,
+                                          params_.enablePointCloudPartitioning_ );
       }
     } else {
       if ( params_.packingStrategy_ == 2 ) {
         if ( ( frameIndex == 0 ) || ( !params_.constrainedPack_ ) ) {
           packTetris( frame, params_.safeGuardDistance_ );
         } else {
-          if (params_.globalPatchAllocation_ == 2)
-            findMatchesForGlobalTetrisPacking(frame, prevFrame); //this could also be a different prevFrame, it depends on the prediction structure
+          if ( params_.globalPatchAllocation_ == 2 )
+            findMatchesForGlobalTetrisPacking(
+                frame, prevFrame );  // this could also be a different prevFrame, it depends on the prediction structure
           else
-          spatialConsistencyPackTetris( frame, prevFrame, params_.safeGuardDistance_ );
+            spatialConsistencyPackTetris( frame, prevFrame, params_.safeGuardDistance_ );
         }
       }
     }
@@ -2489,20 +3079,20 @@ bool PCCEncoder::generateGeometryVideo( const PCCPointSet3&                sourc
 }
 
 void PCCEncoder::geometryGroupDilation( PCCContext& context ) {
-  auto& videoGeometry = context.getVideoGeometry();
-	auto videoOccupancyMap = context.getVideoOccupancyMap();
-  auto& frames        = context.getFrames();
+  auto& videoGeometry     = context.getVideoGeometry();
+  auto  videoOccupancyMap = context.getVideoOccupancyMap();
+  auto& frames            = context.getFrames();
   for ( size_t f = 0; f < frames.size(); ++f ) {
     auto& frame        = frames[f];
     auto& width        = frame.getWidth();
     auto& height       = frame.getHeight();
-		auto& occupancyMap = videoOccupancyMap.getFrame(f);
+    auto& occupancyMap = videoOccupancyMap.getFrame( f );
     auto& frame1       = videoGeometry.getFrame( 2 * f );
     auto& frame2       = videoGeometry.getFrame( 2 * f + 1 );
     for ( size_t y = 0; y < height; y++ ) {
       for ( size_t x = 0; x < width; x++ ) {
         const size_t pos = y * width + x;
-        if (occupancyMap.getValue(0, x / params_.occupancyPrecision_, y / params_.occupancyPrecision_) == 0) {
+        if ( occupancyMap.getValue( 0, x / params_.occupancyPrecision_, y / params_.occupancyPrecision_ ) == 0 ) {
           uint32_t avg =
               ( ( (uint32_t)frame1.getValue( 0, x, y ) ) + ( (uint32_t)frame2.getValue( 0, x, y ) ) + 1 ) >> 1;
           frame1.setValue( 0, x, y, (uint16_t)avg );
@@ -2513,14 +3103,12 @@ void PCCEncoder::geometryGroupDilation( PCCContext& context ) {
   }
 }
 
-bool PCCEncoder::generateOccupancyMap(PCCContext &context) {
-	for (auto &frame : context.getFrames()) {
-		generateOccupancyMap(frame);
-		if (params_.absoluteD1_ && params_.enhancedDeltaDepthCode_) {
-			modifyOccupancyMap(frame);
-		}
-	}
-	return true;
+bool PCCEncoder::generateOccupancyMap( PCCContext& context ) {
+  for ( auto& frame : context.getFrames() ) {
+    generateOccupancyMap( frame );
+    if ( params_.absoluteD1_ && params_.enhancedDeltaDepthCode_ ) { modifyOccupancyMap( frame ); }
+  }
+  return true;
 }
 
 void PCCEncoder::generateOccupancyMap( PCCFrameContext& frame ) {
@@ -2747,31 +3335,33 @@ void PCCEncoder::remove3DMotionEstimationFiles( std::string path ) {
   removeFile( path + "blockToPatch.txt" );
 }
 
-void PCCEncoder::create3DMotionEstimationFiles(const PCCGroupOfFrames& sources, PCCContext& context, std::string path ) {
+void PCCEncoder::create3DMotionEstimationFiles( const PCCGroupOfFrames& sources,
+                                                PCCContext&             context,
+                                                std::string             path ) {
   FILE* occupancyFile    = fopen( ( path + "occupancy.txt" ).c_str(), "wb" );
   FILE* patchInfoFile    = fopen( ( path + "patchInfo.txt" ).c_str(), "wb" );
   FILE* blockToPatchFile = fopen( ( path + "blockToPatch.txt" ).c_str(), "wb" );
 
-	for ( size_t frIdx = 0; frIdx < sources.size(); ++frIdx) {
-		auto&        frame              = context.getFrame(frIdx);
-		auto&        occupancyMapImage  = context.getVideoOccupancyMap().getFrame(frIdx);
+  for ( size_t frIdx = 0; frIdx < sources.size(); ++frIdx ) {
+    auto&        frame              = context.getFrame( frIdx );
+    auto&        occupancyMapImage  = context.getVideoOccupancyMap().getFrame( frIdx );
     auto&        patches            = frame.getPatches();
     auto&        occupancyMap       = frame.getOccupancyMap();
     auto&        blockToPatch       = frame.getBlockToPatch();
     const size_t blockToPatchWidth  = frame.getWidth() / params_.occupancyResolution_;
     const size_t blockToPatchHeight = frame.getHeight() / params_.occupancyResolution_;
     fwrite( &blockToPatch[0], sizeof( size_t ), blockToPatchHeight * blockToPatchWidth, blockToPatchFile );
-    //fwrite( &occupancyMap[0], sizeof( uint32_t ), frame.getHeight() * frame.getWidth(), occupancyFile );
-		uint32_t zeroVal = 0;
-		uint32_t oneVal = 1;
-		for (int y = 0; y < frame.getHeight(); y++) {
-			for (int x = 0; x < frame.getWidth(); x++) {
-				if(occupancyMapImage.getValue(0, x / params_.occupancyPrecision_, y / params_.occupancyPrecision_) > 0)
-					fwrite(&oneVal, sizeof(uint32_t), 1, occupancyFile);
-				else
-					fwrite(&zeroVal, sizeof(uint32_t), 1, occupancyFile);
-			}
-		}
+    // fwrite( &occupancyMap[0], sizeof( uint32_t ), frame.getHeight() * frame.getWidth(), occupancyFile );
+    uint32_t zeroVal = 0;
+    uint32_t oneVal  = 1;
+    for ( int y = 0; y < frame.getHeight(); y++ ) {
+      for ( int x = 0; x < frame.getWidth(); x++ ) {
+        if ( occupancyMapImage.getValue( 0, x / params_.occupancyPrecision_, y / params_.occupancyPrecision_ ) > 0 )
+          fwrite( &oneVal, sizeof( uint32_t ), 1, occupancyFile );
+        else
+          fwrite( &zeroVal, sizeof( uint32_t ), 1, occupancyFile );
+      }
+    }
     const size_t numPatches = patches.size();
     fwrite( &numPatches, sizeof( size_t ), 1, patchInfoFile );
     for ( const auto& patch : patches ) {
@@ -3153,6 +3743,44 @@ void PCCEncoder::generateMissedPointsPatch( const PCCPointSet3& source,
   }
 }
 
+void PCCEncoder::sortMissedPointsPatchMorton( PCCFrameContext& frame, size_t index ) {
+  auto&        missedPointsPatch    = frame.getMissedPointsPatch( index );
+  const size_t maxNeighborCount     = 5;
+  const size_t neighborSearchRadius = 5 * 5;
+  size_t       numMissedPts         = missedPointsPatch.getNumberOfMps();
+  if ( numMissedPts ) {
+    PCCPointSet3 missedPointSet;
+    missedPointSet.resize( numMissedPts );
+    for ( size_t i = 0; i < numMissedPts; i++ ) {
+      missedPointSet[i] = params_.losslessGeo444_
+                              ? PCCPoint3D( missedPointsPatch.x_[i], missedPointsPatch.y_[i], missedPointsPatch.z_[i] )
+                              : PCCPoint3D( missedPointsPatch.x_[i], missedPointsPatch.x_[i + numMissedPts],
+                                            missedPointsPatch.x_[i + numMissedPts * 2] );
+    }
+    // calc Morton code of missedPointSet
+    std::vector<std::pair<uint64_t, PCCPoint3D>> mortonPoint;
+    mortonPoint.resize( numMissedPts );
+    for ( size_t i = 0; i < numMissedPts; ++i ) {
+      mortonPoint[i].first  = mortonAddr( missedPointSet[i], 0 );
+      mortonPoint[i].second = missedPointSet[i];
+    }
+    // sort points according to their Morton codes
+    std::sort( mortonPoint.begin(), mortonPoint.end() );
+    for ( size_t i = 0; i < numMissedPts; ++i ) {
+      const PCCPoint3D missedPoint = mortonPoint[i].second;
+      if ( params_.losslessGeo444_ ) {
+        missedPointsPatch.x_[i] = static_cast<uint16_t>( missedPoint.x() );
+        missedPointsPatch.y_[i] = static_cast<uint16_t>( missedPoint.y() );
+        missedPointsPatch.z_[i] = static_cast<uint16_t>( missedPoint.z() );
+      } else {
+        missedPointsPatch.x_[i]                    = static_cast<uint16_t>( missedPoint.x() );
+        missedPointsPatch.x_[i + numMissedPts]     = static_cast<uint16_t>( missedPoint.y() );
+        missedPointsPatch.x_[i + numMissedPts * 2] = static_cast<uint16_t>( missedPoint.z() );
+      }
+    }
+  }
+}
+
 void PCCEncoder::sortMissedPointsPatch( PCCFrameContext& frame, size_t index ) {
   auto&        missedPointsPatch    = frame.getMissedPointsPatch( index );
   const size_t maxNeighborCount     = 5;
@@ -3418,7 +4046,19 @@ bool PCCEncoder::generateGeometryVideo( const PCCGroupOfFrames& sources, PCCCont
   segmenterParams.EOMFixBitCount                   = params_.EOMFixBitCount_;
   segmenterParams.EOMSingleLayerMode = params_.enhancedDeltaDepthCode_ && ( params_.layerCountMinus1_ == 0 );
   segmenterParams.testLevelOfDetail  = params_.testLevelOfDetail_;
-  segmenterParams.patchExpansion                   = params_.patchExpansion_;
+  segmenterParams.patchExpansion     = params_.patchExpansion_;
+  segmenterParams.enablePointCloudPartitioning = params_.enablePointCloudPartitioning_;
+  segmenterParams.roiBoundingBoxMinX           = params_.roiBoundingBoxMinX_;
+  segmenterParams.roiBoundingBoxMaxX           = params_.roiBoundingBoxMaxX_;
+  segmenterParams.roiBoundingBoxMinY           = params_.roiBoundingBoxMinY_;
+  segmenterParams.roiBoundingBoxMaxY           = params_.roiBoundingBoxMaxY_;
+  segmenterParams.roiBoundingBoxMinZ           = params_.roiBoundingBoxMinZ_;
+  segmenterParams.roiBoundingBoxMaxZ           = params_.roiBoundingBoxMaxZ_;
+  segmenterParams.numTilesHor                  = params_.numTilesHor_;
+  segmenterParams.tileHeightToWidthRatio       = params_.tileHeightToWidthRatio_;
+  segmenterParams.numCutsAlong1stLongestAxis   = params_.numCutsAlong1stLongestAxis_;
+  segmenterParams.numCutsAlong2ndLongestAxis   = params_.numCutsAlong2ndLongestAxis_;
+  segmenterParams.numCutsAlong3rdLongestAxis   = params_.numCutsAlong3rdLongestAxis_;
 
   if ( params_.additionalProjectionPlaneMode_ == 0 || params_.additionalProjectionPlaneMode_ == 5 ) {
     calculateWeightNormal( context, sources[0], frames[0] );
@@ -3647,12 +4287,12 @@ bool PCCEncoder::resizeGeometryVideo( PCCContext& context ) {
   return true;
 }
 
-bool PCCEncoder::dilateGeometryVideo(const PCCGroupOfFrames& sources, PCCContext& context) {
-  auto& videoGeometry   = context.getVideoGeometry();
-  auto& videoGeometryD1 = context.getVideoGeometryD1();
-	auto& videoOccupancyMap = context.getVideoOccupancyMap();
-	auto &frames = context.getFrames();
-	for (size_t i = 0; i < frames.size(); i++) {
+bool PCCEncoder::dilateGeometryVideo( const PCCGroupOfFrames& sources, PCCContext& context ) {
+  auto& videoGeometry     = context.getVideoGeometry();
+  auto& videoGeometryD1   = context.getVideoGeometryD1();
+  auto& videoOccupancyMap = context.getVideoOccupancyMap();
+  auto& frames            = context.getFrames();
+  for ( size_t i = 0; i < frames.size(); i++ ) {
     const size_t shift = videoGeometry.getFrameCount();
     if ( !params_.absoluteD1_ ) {
       videoGeometry.resize( shift + 1 );
@@ -3665,7 +4305,7 @@ bool PCCEncoder::dilateGeometryVideo(const PCCGroupOfFrames& sources, PCCContext
       } else {
         generateIntraImage( frames[i], 1, frame2 );
       }
-			dilate_3DPadding(sources[i], frames[i], videoGeometry.getFrame(shift), videoOccupancyMap.getFrame(i));
+      dilate_3DPadding( sources[i], frames[i], videoGeometry.getFrame( shift ), videoOccupancyMap.getFrame( i ) );
     } else {
       const size_t nbFrames = params_.layerCountMinus1_ + 1;
       videoGeometry.resize( shift + nbFrames );
@@ -3682,8 +4322,9 @@ bool PCCEncoder::dilateGeometryVideo(const PCCGroupOfFrames& sources, PCCContext
           // }else{
           //   generateIntraEnhancedDeltaDepthImage(frame, frame1, frame2);
           // }
-					dilate_3DPadding(sources[i], frames[i], videoGeometry.getFrame(shift), videoOccupancyMap.getFrame(i));
-					dilate_3DPadding(sources[i], frames[i], videoGeometry.getFrame(shift + 1), videoOccupancyMap.getFrame(i));
+          dilate_3DPadding( sources[i], frames[i], videoGeometry.getFrame( shift ), videoOccupancyMap.getFrame( i ) );
+          dilate_3DPadding( sources[i], frames[i], videoGeometry.getFrame( shift + 1 ),
+                            videoOccupancyMap.getFrame( i ) );
 
           // if (params_.improveEDD_)
           modifyOccupancyMap( frames[i], frame1, frame2 );
@@ -3695,7 +4336,7 @@ bool PCCEncoder::dilateGeometryVideo(const PCCGroupOfFrames& sources, PCCContext
           dilate( frames[i], frame1 );
           PCCImageGeometry frame2;
           generateIntraImage( frames[i], 1, frame2 );
-					dilate_3DPadding(sources[i], frames[i], frame2, videoOccupancyMap.getFrame(i));
+          dilate_3DPadding( sources[i], frames[i], frame2, videoOccupancyMap.getFrame( i ) );
           for ( size_t x = 0; x < frame1.getWidth(); x++ ) {
             for ( size_t y = 0; y < frame1.getHeight(); y++ ) {
               if ( ( x + y ) % 2 == 1 ) { frame1.setValue( 0, x, y, frame2.getValue( 0, x, y ) ); }
@@ -3705,7 +4346,8 @@ bool PCCEncoder::dilateGeometryVideo(const PCCGroupOfFrames& sources, PCCContext
           for ( size_t f = 0; f < nbFrames; ++f ) {
             auto& frame1 = videoGeometry.getFrame( shift + f );
             generateIntraImage( frames[i], f, frame1 );
-            dilate_3DPadding(sources[i], frames[i], videoGeometry.getFrame(shift + f), videoOccupancyMap.getFrame(i));
+            dilate_3DPadding( sources[i], frames[i], videoGeometry.getFrame( shift + f ),
+                              videoOccupancyMap.getFrame( i ) );
           }
         }
       }
@@ -3836,240 +4478,246 @@ void PCCEncoder::dilate( PCCFrameContext& frame, PCCImage<T, 3>& image, const PC
   }
 }
 
-//3D geometry padding
-size_t PCCEncoder::adjust_depth_3DPadding(size_t x, size_t y, uint16_t mean_val, PCCImageGeometry &image, PCCKdTree &kdtree, PCCFrameContext& frame) {
-	bool useMissedPointsSeparateVideo = frame.getUseMissedPointsSeparateVideo();
-	bool useAdditionalPointsPatch = frame.getUseAdditionalPointsPatch();
-	bool lossyMpp = !params_.losslessGeo_ && useAdditionalPointsPatch;
-	bool absoluteD1 = params_.absoluteD1_;
-	auto& blockToPatch = frame.getBlockToPatch();
-	auto& patches = frame.getPatches();
-	size_t block_addr = (y / params_.occupancyResolution_)*(image.getWidth() / params_.occupancyResolution_) + x / params_.occupancyResolution_;
-	size_t patchIndex = blockToPatch[block_addr];
-	auto &patch = patches[patchIndex - 1];
-	const double lodScale = true ? 1.0 : double(1u << patch.getLod());
-	size_t distance = (std::numeric_limits<int16_t>::max)();
-	//testing the mean value
-	PCCNNResult result_mean;
-	PCCPoint3D point_mean = patch.canvasTo3D(x, y, mean_val, lodScale, useMissedPointsSeparateVideo, lossyMpp, absoluteD1);
-	kdtree.search(point_mean, 1, result_mean);
-	const double dist2_mean = result_mean.dist(0);
-	if (dist2_mean < distance) {
-		image.setValue(0, x, y, mean_val);
-		image.setValue(1, x, y, 0);
-		image.setValue(2, x, y, 0);
-		distance = dist2_mean;
-	}
-	if (distance != 0) {
-		//the mean value does not belong to the point cloud, so let's search for a nearby value and see if it is better than the mean.
-		size_t deltadepth = 8;
-		if (mean_val < deltadepth) {
-			deltadepth = mean_val;
-		}
-		if (mean_val + deltadepth > params_.maxAllowedDepth_) {
-			deltadepth = params_.maxAllowedDepth_ - mean_val;
-		}
-		for (uint16_t depth = 1; depth < deltadepth; depth++) {
-			PCCPoint3D point = patch.canvasTo3D(x, y, mean_val + depth, lodScale, useMissedPointsSeparateVideo, lossyMpp, absoluteD1);
-			//now find the distance between the point and the original point cloud
-			PCCNNResult result;
-			kdtree.search(point, 1, result);
-			const double dist2 = result.dist(0);
-			if (dist2 < distance) {
-				image.setValue(0, x, y, mean_val + depth);
-				image.setValue(1, x, y, 0);
-				image.setValue(2, x, y, 0);
-				distance = dist2;
-			}
-			PCCPoint3D point_neg = patch.canvasTo3D(x, y, mean_val - depth, lodScale, useMissedPointsSeparateVideo, lossyMpp, absoluteD1);
-			//now find the distance between the point and the original point cloud
-			PCCNNResult result_neg;
-			kdtree.search(point_neg, 1, result_neg);
-			const double dist2_neg = result_neg.dist(0);
-			if (dist2_neg < distance) {
-				image.setValue(0, x, y, mean_val - depth);
-				image.setValue(1, x, y, 0);
-				image.setValue(2, x, y, 0);
-				distance = dist2_neg;
-			}
-		}
-	}
-	return 1;
+// 3D geometry padding
+size_t PCCEncoder::adjust_depth_3DPadding( size_t            x,
+                                           size_t            y,
+                                           uint16_t          mean_val,
+                                           PCCImageGeometry& image,
+                                           PCCKdTree&        kdtree,
+                                           PCCFrameContext&  frame ) {
+  bool   useMissedPointsSeparateVideo = frame.getUseMissedPointsSeparateVideo();
+  bool   useAdditionalPointsPatch     = frame.getUseAdditionalPointsPatch();
+  bool   lossyMpp                     = !params_.losslessGeo_ && useAdditionalPointsPatch;
+  bool   absoluteD1                   = params_.absoluteD1_;
+  auto&  blockToPatch                 = frame.getBlockToPatch();
+  auto&  patches                      = frame.getPatches();
+  size_t block_addr = ( y / params_.occupancyResolution_ ) * ( image.getWidth() / params_.occupancyResolution_ ) +
+                      x / params_.occupancyResolution_;
+  size_t       patchIndex = blockToPatch[block_addr];
+  auto&        patch      = patches[patchIndex - 1];
+  const double lodScale   = true ? 1.0 : double( 1u << patch.getLod() );
+  size_t       distance   = ( std::numeric_limits<int16_t>::max )();
+  // testing the mean value
+  PCCNNResult result_mean;
+  PCCPoint3D  point_mean =
+      patch.canvasTo3D( x, y, mean_val, lodScale, useMissedPointsSeparateVideo, lossyMpp, absoluteD1 );
+  kdtree.search( point_mean, 1, result_mean );
+  const double dist2_mean = result_mean.dist( 0 );
+  if ( dist2_mean < distance ) {
+    image.setValue( 0, x, y, mean_val );
+    image.setValue( 1, x, y, 0 );
+    image.setValue( 2, x, y, 0 );
+    distance = dist2_mean;
+  }
+  if ( distance != 0 ) {
+    // the mean value does not belong to the point cloud, so let's search for a nearby value and see if it is better
+    // than the mean.
+    size_t deltadepth = 8;
+    if ( mean_val < deltadepth ) { deltadepth = mean_val; }
+    if ( mean_val + deltadepth > params_.maxAllowedDepth_ ) { deltadepth = params_.maxAllowedDepth_ - mean_val; }
+    for ( uint16_t depth = 1; depth < deltadepth; depth++ ) {
+      PCCPoint3D point =
+          patch.canvasTo3D( x, y, mean_val + depth, lodScale, useMissedPointsSeparateVideo, lossyMpp, absoluteD1 );
+      // now find the distance between the point and the original point cloud
+      PCCNNResult result;
+      kdtree.search( point, 1, result );
+      const double dist2 = result.dist( 0 );
+      if ( dist2 < distance ) {
+        image.setValue( 0, x, y, mean_val + depth );
+        image.setValue( 1, x, y, 0 );
+        image.setValue( 2, x, y, 0 );
+        distance = dist2;
+      }
+      PCCPoint3D point_neg =
+          patch.canvasTo3D( x, y, mean_val - depth, lodScale, useMissedPointsSeparateVideo, lossyMpp, absoluteD1 );
+      // now find the distance between the point and the original point cloud
+      PCCNNResult result_neg;
+      kdtree.search( point_neg, 1, result_neg );
+      const double dist2_neg = result_neg.dist( 0 );
+      if ( dist2_neg < distance ) {
+        image.setValue( 0, x, y, mean_val - depth );
+        image.setValue( 1, x, y, 0 );
+        image.setValue( 2, x, y, 0 );
+        distance = dist2_neg;
+      }
+    }
+  }
+  return 1;
 }
 
-void PCCEncoder::dilate_3DPadding(const PCCPointSet3& source, PCCFrameContext& frame, PCCImageGeometry &image, PCCImageOccupancyMap &occupancyMap, const PCCImageGeometry *reference) {
-	const size_t pixelBlockCount = params_.occupancyResolution_ * params_.occupancyResolution_;
-	const size_t occupancyMapSizeU = image.getWidth() / params_.occupancyResolution_;
-	const size_t occupancyMapSizeV = image.getHeight() / params_.occupancyResolution_;
-	const int64_t neighbors[4][2] = { { 0, -1 },{ -1, 0 },{ 1, 0 },{ 0, 1 } };
-	const size_t MAX_OCCUPANCY_RESOLUTION = 64;
-	assert(params_.occupancyResolution_ <= MAX_OCCUPANCY_RESOLUTION);
-	size_t count[MAX_OCCUPANCY_RESOLUTION][MAX_OCCUPANCY_RESOLUTION];
-	PCCVector3<int32_t> values[MAX_OCCUPANCY_RESOLUTION][MAX_OCCUPANCY_RESOLUTION];
+void PCCEncoder::dilate_3DPadding( const PCCPointSet3&     source,
+                                   PCCFrameContext&        frame,
+                                   PCCImageGeometry&       image,
+                                   PCCImageOccupancyMap&   occupancyMap,
+                                   const PCCImageGeometry* reference ) {
+  const size_t  pixelBlockCount          = params_.occupancyResolution_ * params_.occupancyResolution_;
+  const size_t  occupancyMapSizeU        = image.getWidth() / params_.occupancyResolution_;
+  const size_t  occupancyMapSizeV        = image.getHeight() / params_.occupancyResolution_;
+  const int64_t neighbors[4][2]          = {{0, -1}, {-1, 0}, {1, 0}, {0, 1}};
+  const size_t  MAX_OCCUPANCY_RESOLUTION = 64;
+  assert( params_.occupancyResolution_ <= MAX_OCCUPANCY_RESOLUTION );
+  size_t              count[MAX_OCCUPANCY_RESOLUTION][MAX_OCCUPANCY_RESOLUTION];
+  PCCVector3<int32_t> values[MAX_OCCUPANCY_RESOLUTION][MAX_OCCUPANCY_RESOLUTION];
 
-	std::vector<uint32_t> occupancyMapTemp;
-	auto& occupancyMapOriginal = frame.getOccupancyMap();
-	auto& blockToPatch = frame.getBlockToPatch();
-	auto& patches = frame.getPatches();
-	occupancyMapTemp.resize(image.getWidth()*image.getHeight(), 0);
-	const int16_t infiniteDepth = (std::numeric_limits<int16_t>::max)();
-	PCCKdTree kdtree(source);
-	//fill in positions that are added to the sequence, because of occupancyMap video coding
-	for (size_t y_OM = 0; y_OM < occupancyMap.getHeight(); ++y_OM) {
-		for (size_t x_OM = 0; x_OM < occupancyMap.getWidth(); ++x_OM) {
-			if (occupancyMap.getValue(0, x_OM, y_OM) >= 1) {
-				//this is an area that has active values, update the temporary occupancy Map struture, and store the mean value in this area
-				uint16_t mean_val = 0;
-				size_t count = 0;
-				for (size_t j = 0; j < params_.occupancyPrecision_; j++) {
-					size_t y = y_OM * params_.occupancyPrecision_ + j;
-					for (size_t i = 0; i < params_.occupancyPrecision_; i++) {
-						size_t x = x_OM * params_.occupancyPrecision_ + i;
-						if (occupancyMapOriginal[y * image.getWidth() + x] != 0) {
-							mean_val += image.getValue(0, x, y);
-							count++;
-						}
-					}
-				}
-				mean_val /= count;
-				//now fill in the missing positions with depth values searched in 3D space
-				for (size_t j = 0; j < params_.occupancyPrecision_; j++) {
-					size_t y = y_OM * params_.occupancyPrecision_ + j;
-					for (size_t i = 0; i < params_.occupancyPrecision_; i++) {
-						size_t x = x_OM * params_.occupancyPrecision_ + i;
-						//if depth value is undefined, this position will be added, find the best value
-						if (occupancyMapOriginal[y * image.getWidth() + x] == 0) {
-							//try to find the best value to approximate this new point to the original point cloud
-							//get the patch information
-							if (params_.geometryPadding_ == 1)
-							occupancyMapTemp[y * image.getWidth() + x] = adjust_depth_3DPadding(x, y, mean_val, image, kdtree, frame);
-							else
-								occupancyMapTemp[y * image.getWidth() + x] = 0;
-						}
-						else
-							occupancyMapTemp[y * image.getWidth() + x] = 1;
-					}
-				}
-			}
-		}
-	}
+  std::vector<uint32_t> occupancyMapTemp;
+  auto&                 occupancyMapOriginal = frame.getOccupancyMap();
+  auto&                 blockToPatch         = frame.getBlockToPatch();
+  auto&                 patches              = frame.getPatches();
+  occupancyMapTemp.resize( image.getWidth() * image.getHeight(), 0 );
+  const int16_t infiniteDepth = ( std::numeric_limits<int16_t>::max )();
+  PCCKdTree     kdtree( source );
+  // fill in positions that are added to the sequence, because of occupancyMap video coding
+  for ( size_t y_OM = 0; y_OM < occupancyMap.getHeight(); ++y_OM ) {
+    for ( size_t x_OM = 0; x_OM < occupancyMap.getWidth(); ++x_OM ) {
+      if ( occupancyMap.getValue( 0, x_OM, y_OM ) >= 1 ) {
+        // this is an area that has active values, update the temporary occupancy Map struture, and store the mean value
+        // in this area
+        uint16_t mean_val = 0;
+        size_t   count    = 0;
+        for ( size_t j = 0; j < params_.occupancyPrecision_; j++ ) {
+          size_t y = y_OM * params_.occupancyPrecision_ + j;
+          for ( size_t i = 0; i < params_.occupancyPrecision_; i++ ) {
+            size_t x = x_OM * params_.occupancyPrecision_ + i;
+            if ( occupancyMapOriginal[y * image.getWidth() + x] != 0 ) {
+              mean_val += image.getValue( 0, x, y );
+              count++;
+            }
+          }
+        }
+        mean_val /= count;
+        // now fill in the missing positions with depth values searched in 3D space
+        for ( size_t j = 0; j < params_.occupancyPrecision_; j++ ) {
+          size_t y = y_OM * params_.occupancyPrecision_ + j;
+          for ( size_t i = 0; i < params_.occupancyPrecision_; i++ ) {
+            size_t x = x_OM * params_.occupancyPrecision_ + i;
+            // if depth value is undefined, this position will be added, find the best value
+            if ( occupancyMapOriginal[y * image.getWidth() + x] == 0 ) {
+              // try to find the best value to approximate this new point to the original point cloud
+              // get the patch information
+              if ( params_.geometryPadding_ == 1 )
+                occupancyMapTemp[y * image.getWidth() + x] =
+                    adjust_depth_3DPadding( x, y, mean_val, image, kdtree, frame );
+              else
+                occupancyMapTemp[y * image.getWidth() + x] = 0;
+            } else
+              occupancyMapTemp[y * image.getWidth() + x] = 1;
+          }
+        }
+      }
+    }
+  }
 
-	//now continue adding the pixels with the previous dilation approach                                                                                                                 
-	for (size_t v1 = 0; v1 < occupancyMapSizeV; ++v1) {
-		const int64_t v0 = v1 * params_.occupancyResolution_;
-		for (size_t u1 = 0; u1 < occupancyMapSizeU; ++u1) {
-			const int64_t u0 = u1 * params_.occupancyResolution_;
-			size_t nonZeroPixelCount = 0;
-			for (size_t v2 = 0; v2 < params_.occupancyResolution_; ++v2) {
-				for (size_t u2 = 0; u2 < params_.occupancyResolution_; ++u2) {
-					const int64_t x0 = u0 + u2;
-					const int64_t y0 = v0 + v2;
-					assert(x0 < int64_t(image.getWidth()) && y0 < int64_t(image.getHeight()));
-					const size_t location0 = y0 * image.getWidth() + x0;
-					if (params_.enhancedDeltaDepthCode_) {
-						nonZeroPixelCount += (occupancyMapTemp[location0] > 0);
-					}
-					else {
-						nonZeroPixelCount += (occupancyMapTemp[location0] == 1);
-					}
-				}
-			}
-			if (!nonZeroPixelCount) {
-				if (reference) {
-					for (size_t v2 = 0; v2 < params_.occupancyResolution_; ++v2) {
-						for (size_t u2 = 0; u2 < params_.occupancyResolution_; ++u2) {
-							const size_t x0 = u0 + u2;
-							const size_t y0 = v0 + v2;
-							image.setValue(0, x0, y0, reference->getValue(0, x0, y0));
-							image.setValue(1, x0, y0, reference->getValue(1, x0, y0));
-							image.setValue(2, x0, y0, reference->getValue(2, x0, y0));
-						}
-					}
-				}
-				else if (u1 > 0) {
-					for (size_t v2 = 0; v2 < params_.occupancyResolution_; ++v2) {
-						for (size_t u2 = 0; u2 < params_.occupancyResolution_; ++u2) {
-							const size_t x0 = u0 + u2;
-							const size_t y0 = v0 + v2;
-							assert(x0 > 0);
-							const size_t x1 = x0 - 1;
-							image.setValue(0, x0, y0, image.getValue(0, x1, y0));
-							image.setValue(1, x0, y0, image.getValue(1, x1, y0));
-							image.setValue(2, x0, y0, image.getValue(2, x1, y0));
-						}
-					}
-				}
-				else if (v1 > 0) {
-					for (size_t v2 = 0; v2 < params_.occupancyResolution_; ++v2) {
-						for (size_t u2 = 0; u2 < params_.occupancyResolution_; ++u2) {
-							const size_t x0 = u0 + u2;
-							const size_t y0 = v0 + v2;
-							assert(y0 > 0);
-							const size_t y1 = y0 - 1;
-							image.setValue(0, x0, y0, image.getValue(0, x0, y1));
-							image.setValue(1, x0, y0, image.getValue(1, x0, y1));
-							image.setValue(2, x0, y0, image.getValue(2, x0, y1));
-						}
-					}
-				}
-				continue;
-			}
-			for (size_t v2 = 0; v2 < params_.occupancyResolution_; ++v2) {
-				for (size_t u2 = 0; u2 < params_.occupancyResolution_; ++u2) {
-					values[v2][u2] = 0;
-					count[v2][u2] = 0UL;
-				}
-			}
-			uint32_t iteration = 1;
-			while (nonZeroPixelCount < pixelBlockCount) {
-				for (size_t v2 = 0; v2 < params_.occupancyResolution_; ++v2) {
-					for (size_t u2 = 0; u2 < params_.occupancyResolution_; ++u2) {
-						const int64_t x0 = u0 + u2;
-						const int64_t y0 = v0 + v2;
-						assert(x0 < int64_t(image.getWidth()) && y0 < int64_t(image.getHeight()));
-						const size_t location0 = y0 * image.getWidth() + x0;
-						if (occupancyMapTemp[location0] == iteration) {
-							for (size_t n = 0; n < 4; ++n) {
-								const int64_t x1 = x0 + neighbors[n][0];
-								const int64_t y1 = y0 + neighbors[n][1];
-								const size_t location1 = y1 * image.getWidth() + x1;
-								if (x1 >= u0 && x1 < int64_t(u0 + params_.occupancyResolution_) && y1 >= v0 &&
-									y1 < int64_t(v0 + params_.occupancyResolution_) && occupancyMapTemp[location1] == 0) {
-									const int64_t u3 = u2 + neighbors[n][0];
-									const int64_t v3 = v2 + neighbors[n][1];
-									assert(u3 >= 0 && u3 < int64_t(params_.occupancyResolution_));
-									assert(v3 >= 0 && v3 < int64_t(params_.occupancyResolution_));
-									for (size_t k = 0; k < 3; ++k) {
-										values[v3][u3][k] += image.getValue(k, x0, y0);
-									}
-									++count[v3][u3];
-								}
-							}
-						}
-					}
-				}
-				for (size_t v2 = 0; v2 < params_.occupancyResolution_; ++v2) {
-					for (size_t u2 = 0; u2 < params_.occupancyResolution_; ++u2) {
-						if (count[v2][u2]) {
-							++nonZeroPixelCount;
-							const size_t x0 = u0 + u2;
-							const size_t y0 = v0 + v2;
-							const size_t location0 = y0 * image.getWidth() + x0;
-							const size_t c = count[v2][u2];
-							const size_t c2 = c / 2;
-							occupancyMapTemp[location0] = iteration + 1;
-							for (size_t k = 0; k < 3; ++k) {
-								image.setValue(k, x0, y0, uint16_t((values[v2][u2][k] + c2) / c));
-							}
-							values[v2][u2] = 0;
-							count[v2][u2] = 0UL;
-						}
-					}
-				}
-				++iteration;
-			}
-		}
-	}
+  // now continue adding the pixels with the previous dilation approach
+  for ( size_t v1 = 0; v1 < occupancyMapSizeV; ++v1 ) {
+    const int64_t v0 = v1 * params_.occupancyResolution_;
+    for ( size_t u1 = 0; u1 < occupancyMapSizeU; ++u1 ) {
+      const int64_t u0                = u1 * params_.occupancyResolution_;
+      size_t        nonZeroPixelCount = 0;
+      for ( size_t v2 = 0; v2 < params_.occupancyResolution_; ++v2 ) {
+        for ( size_t u2 = 0; u2 < params_.occupancyResolution_; ++u2 ) {
+          const int64_t x0 = u0 + u2;
+          const int64_t y0 = v0 + v2;
+          assert( x0 < int64_t( image.getWidth() ) && y0 < int64_t( image.getHeight() ) );
+          const size_t location0 = y0 * image.getWidth() + x0;
+          if ( params_.enhancedDeltaDepthCode_ ) {
+            nonZeroPixelCount += ( occupancyMapTemp[location0] > 0 );
+          } else {
+            nonZeroPixelCount += ( occupancyMapTemp[location0] == 1 );
+          }
+        }
+      }
+      if ( !nonZeroPixelCount ) {
+        if ( reference ) {
+          for ( size_t v2 = 0; v2 < params_.occupancyResolution_; ++v2 ) {
+            for ( size_t u2 = 0; u2 < params_.occupancyResolution_; ++u2 ) {
+              const size_t x0 = u0 + u2;
+              const size_t y0 = v0 + v2;
+              image.setValue( 0, x0, y0, reference->getValue( 0, x0, y0 ) );
+              image.setValue( 1, x0, y0, reference->getValue( 1, x0, y0 ) );
+              image.setValue( 2, x0, y0, reference->getValue( 2, x0, y0 ) );
+            }
+          }
+        } else if ( u1 > 0 ) {
+          for ( size_t v2 = 0; v2 < params_.occupancyResolution_; ++v2 ) {
+            for ( size_t u2 = 0; u2 < params_.occupancyResolution_; ++u2 ) {
+              const size_t x0 = u0 + u2;
+              const size_t y0 = v0 + v2;
+              assert( x0 > 0 );
+              const size_t x1 = x0 - 1;
+              image.setValue( 0, x0, y0, image.getValue( 0, x1, y0 ) );
+              image.setValue( 1, x0, y0, image.getValue( 1, x1, y0 ) );
+              image.setValue( 2, x0, y0, image.getValue( 2, x1, y0 ) );
+            }
+          }
+        } else if ( v1 > 0 ) {
+          for ( size_t v2 = 0; v2 < params_.occupancyResolution_; ++v2 ) {
+            for ( size_t u2 = 0; u2 < params_.occupancyResolution_; ++u2 ) {
+              const size_t x0 = u0 + u2;
+              const size_t y0 = v0 + v2;
+              assert( y0 > 0 );
+              const size_t y1 = y0 - 1;
+              image.setValue( 0, x0, y0, image.getValue( 0, x0, y1 ) );
+              image.setValue( 1, x0, y0, image.getValue( 1, x0, y1 ) );
+              image.setValue( 2, x0, y0, image.getValue( 2, x0, y1 ) );
+            }
+          }
+        }
+        continue;
+      }
+      for ( size_t v2 = 0; v2 < params_.occupancyResolution_; ++v2 ) {
+        for ( size_t u2 = 0; u2 < params_.occupancyResolution_; ++u2 ) {
+          values[v2][u2] = 0;
+          count[v2][u2]  = 0UL;
+        }
+      }
+      uint32_t iteration = 1;
+      while ( nonZeroPixelCount < pixelBlockCount ) {
+        for ( size_t v2 = 0; v2 < params_.occupancyResolution_; ++v2 ) {
+          for ( size_t u2 = 0; u2 < params_.occupancyResolution_; ++u2 ) {
+            const int64_t x0 = u0 + u2;
+            const int64_t y0 = v0 + v2;
+            assert( x0 < int64_t( image.getWidth() ) && y0 < int64_t( image.getHeight() ) );
+            const size_t location0 = y0 * image.getWidth() + x0;
+            if ( occupancyMapTemp[location0] == iteration ) {
+              for ( size_t n = 0; n < 4; ++n ) {
+                const int64_t x1        = x0 + neighbors[n][0];
+                const int64_t y1        = y0 + neighbors[n][1];
+                const size_t  location1 = y1 * image.getWidth() + x1;
+                if ( x1 >= u0 && x1 < int64_t( u0 + params_.occupancyResolution_ ) && y1 >= v0 &&
+                     y1 < int64_t( v0 + params_.occupancyResolution_ ) && occupancyMapTemp[location1] == 0 ) {
+                  const int64_t u3 = u2 + neighbors[n][0];
+                  const int64_t v3 = v2 + neighbors[n][1];
+                  assert( u3 >= 0 && u3 < int64_t( params_.occupancyResolution_ ) );
+                  assert( v3 >= 0 && v3 < int64_t( params_.occupancyResolution_ ) );
+                  for ( size_t k = 0; k < 3; ++k ) { values[v3][u3][k] += image.getValue( k, x0, y0 ); }
+                  ++count[v3][u3];
+                }
+              }
+            }
+          }
+        }
+        for ( size_t v2 = 0; v2 < params_.occupancyResolution_; ++v2 ) {
+          for ( size_t u2 = 0; u2 < params_.occupancyResolution_; ++u2 ) {
+            if ( count[v2][u2] ) {
+              ++nonZeroPixelCount;
+              const size_t x0             = u0 + u2;
+              const size_t y0             = v0 + v2;
+              const size_t location0      = y0 * image.getWidth() + x0;
+              const size_t c              = count[v2][u2];
+              const size_t c2             = c / 2;
+              occupancyMapTemp[location0] = iteration + 1;
+              for ( size_t k = 0; k < 3; ++k ) {
+                image.setValue( k, x0, y0, uint16_t( ( values[v2][u2][k] + c2 ) / c ) );
+              }
+              values[v2][u2] = 0;
+              count[v2][u2]  = 0UL;
+            }
+          }
+        }
+        ++iteration;
+      }
+    }
+  }
 }
 
 /* harmonic background filling algorithm */
@@ -4616,7 +5264,12 @@ bool PCCEncoder::generateTextureVideo( const PCCGroupOfFrames&    sources,
       }
       subReconstruct.resize( numPointSub );
       sources[i].transfertColors( subReconstruct, int32_t( params_.bestColorSearchRange_ ),
-                                  params_.losslessTexture_ == 1 );
+                                  params_.losslessTexture_ == 1, params_.numNeighborsColorTransferFwd_,
+                                  params_.numNeighborsColorTransferBwd_, params_.useDistWeightedAverageFwd_,
+                                  params_.useDistWeightedAverageBwd_, params_.skipAvgIfIdenticalSourcePointPresentFwd_,
+                                  params_.skipAvgIfIdenticalSourcePointPresentBwd_, params_.distOffsetFwd_,
+                                  params_.distOffsetBwd_, params_.maxGeometryDist2Fwd_, params_.maxGeometryDist2Bwd_,
+                                  params_.maxColorDist2Fwd_, params_.maxColorDist2Bwd_ );
 
       for ( size_t j = 0; j < numPointSub; j++ ) {
         reconstructs[i].setColor( subReconstructIndex[j], subReconstruct.getColor( j ) );
@@ -4631,7 +5284,12 @@ bool PCCEncoder::generateTextureVideo( const PCCGroupOfFrames&    sources,
       }
     } else {
       sources[i].transfertColors( reconstructs[i], int32_t( params_.bestColorSearchRange_ ),
-                                  params_.losslessTexture_ == 1 );
+                                  params_.losslessTexture_ == 1, params_.numNeighborsColorTransferFwd_,
+                                  params_.numNeighborsColorTransferBwd_, params_.useDistWeightedAverageFwd_,
+                                  params_.useDistWeightedAverageBwd_, params_.skipAvgIfIdenticalSourcePointPresentFwd_,
+                                  params_.skipAvgIfIdenticalSourcePointPresentBwd_, params_.distOffsetFwd_,
+                                  params_.distOffsetBwd_, params_.maxGeometryDist2Fwd_, params_.maxGeometryDist2Bwd_,
+                                  params_.maxColorDist2Fwd_, params_.maxColorDist2Bwd_ );
       // color pre-smoothing
       if ( !params_.losslessGeo_ && params_.flagColorPreSmoothing_ ) {
         presmoothPointCloudColor( reconstructs[i], params );
@@ -5098,7 +5756,8 @@ size_t PCCEncoder::unionPatchGenerationAndPacking( const GlobalPatches& globalPa
           curPatchUnion.getV0() = v;
           if ( params_.packingStrategy_ == 0 ) {
             curPatchUnion.getPatchOrientation() = PATCH_ORIENTATION_DEFAULT;
-            if ( curPatchUnion.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_, safeguard ) ) {
+            if ( curPatchUnion.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV,
+                                                    params_.lowDelayEncoding_, safeguard ) ) {
               locationFound = true;
               if ( printDetailedInfo ) {
                 std::cout << "Orientation " << curPatchUnion.getPatchOrientation() << " selected for unionPatch "
@@ -5108,7 +5767,8 @@ size_t PCCEncoder::unionPatchGenerationAndPacking( const GlobalPatches& globalPa
           } else {
             if ( useRefFrame && ( curPatchUnion.getPatchOrientation() != -1 ) ) {
               // already knonw Patch Orientation. just try.
-              if ( curPatchUnion.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_, safeguard ) ) {
+              if ( curPatchUnion.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV,
+                                                      params_.lowDelayEncoding_, safeguard ) ) {
                 locationFound = true;
                 if ( printDetailedInfo ) {
                   std::cout << "location u0,v0 selected for unionPatch " << curPatchUnion.getIndex() << " (" << u << ","
@@ -5122,7 +5782,8 @@ size_t PCCEncoder::unionPatchGenerationAndPacking( const GlobalPatches& globalPa
                 } else {
                   curPatchUnion.getPatchOrientation() = orientation_vertical[orientationIdx];
                 }
-                if ( curPatchUnion.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_, safeguard ) ) {
+                if ( curPatchUnion.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV,
+                                                        params_.lowDelayEncoding_, safeguard ) ) {
                   locationFound = true;
                   if ( printDetailedInfo ) {
                     std::cout << "Orientation " << curPatchUnion.getPatchOrientation() << " selected for unionPatch "
@@ -5141,11 +5802,11 @@ size_t PCCEncoder::unionPatchGenerationAndPacking( const GlobalPatches& globalPa
     }
     for ( size_t v0 = 0; v0 < curPatchUnion.getSizeV0(); ++v0 ) {
       for ( size_t u0 = 0; u0 < curPatchUnion.getSizeU0(); ++u0 ) {
-        int coord           = curPatchUnion.patchBlock2CanvasBlock( u0, v0, occupancySizeU, occupancySizeV );
-				if (params_.lowDelayEncoding_)
-					occupancyMap[coord] = true;
-				else
-        occupancyMap[coord] = occupancyMap[coord] || occupancy[v0 * curPatchUnion.getSizeU0() + u0];
+        int coord = curPatchUnion.patchBlock2CanvasBlock( u0, v0, occupancySizeU, occupancySizeV );
+        if ( params_.lowDelayEncoding_ )
+          occupancyMap[coord] = true;
+        else
+          occupancyMap[coord] = occupancyMap[coord] || occupancy[v0 * curPatchUnion.getSizeU0() + u0];
       }
     }
 
@@ -5199,7 +5860,8 @@ void PCCEncoder::packingFirstFrame( PCCContext& context,
           for ( int u = 0; u <= occupancySizeU && !locationFound; ++u ) {
             patch.getU0() = u;
             patch.getV0() = v;
-            if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_, safeguard ) ) {
+            if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_,
+                                            safeguard ) ) {
               locationFound = true;
             }
           }
@@ -5213,11 +5875,11 @@ void PCCEncoder::packingFirstFrame( PCCContext& context,
         const size_t v = patch.getV0() + v0;
         for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {
           const size_t u = patch.getU0() + u0;
-					if (params_.lowDelayEncoding_)
-						occupancyMap[v * occupancySizeU + u] = true;
-					else
-          occupancyMap[v * occupancySizeU + u] =
-              occupancyMap[v * occupancySizeU + u] || occupancy[v0 * patch.getSizeU0() + u0];
+          if ( params_.lowDelayEncoding_ )
+            occupancyMap[v * occupancySizeU + u] = true;
+          else
+            occupancyMap[v * occupancySizeU + u] =
+                occupancyMap[v * occupancySizeU + u] || occupancy[v0 * patch.getSizeU0() + u0];
         }
       }
 
@@ -5267,7 +5929,8 @@ void PCCEncoder::packingFirstFrame( PCCContext& context,
           // try to place on the same position as the matched patch
           curGPAPatchData.u0 = prevPatches[patch.getBestMatchIdx()].getU0();
           curGPAPatchData.v0 = prevPatches[patch.getBestMatchIdx()].getV0();
-          if ( patch.checkFitPatchCanvasForGPA( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_ ) ) {
+          if ( patch.checkFitPatchCanvasForGPA( occupancyMap, occupancySizeU, occupancySizeV,
+                                                params_.lowDelayEncoding_ ) ) {
             locationFound = true;
             if ( printDetailedInfo ) {
               std::cout << "Maintained orientation " << curGPAPatchData.patchOrientation
@@ -5280,7 +5943,8 @@ void PCCEncoder::packingFirstFrame( PCCContext& context,
             for ( int u = 0; u <= occupancySizeU && !locationFound; ++u ) {
               curGPAPatchData.u0 = u;
               curGPAPatchData.v0 = v;
-              if ( patch.checkFitPatchCanvasForGPA( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_, safeguard ) ) {
+              if ( patch.checkFitPatchCanvasForGPA( occupancyMap, occupancySizeU, occupancySizeV,
+                                                    params_.lowDelayEncoding_, safeguard ) ) {
                 locationFound = true;
                 if ( printDetailedInfo ) {
                   std::cout << "Maintained orientation " << curGPAPatchData.patchOrientation << " for matched patch:("
@@ -5301,7 +5965,8 @@ void PCCEncoder::packingFirstFrame( PCCContext& context,
                 } else {
                   curGPAPatchData.patchOrientation = orientation_vertical[orientationIdx];
                 }
-                if ( patch.checkFitPatchCanvasForGPA( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_, safeguard ) ) {
+                if ( patch.checkFitPatchCanvasForGPA( occupancyMap, occupancySizeU, occupancySizeV,
+                                                      params_.lowDelayEncoding_, safeguard ) ) {
                   locationFound = true;
                   if ( printDetailedInfo ) {
                     std::cout << "Orientation " << curGPAPatchData.patchOrientation << " selected for unmatched patch:("
@@ -5319,11 +5984,11 @@ void PCCEncoder::packingFirstFrame( PCCContext& context,
       }
       for ( size_t v0 = 0; v0 < curGPAPatchData.sizeV0; ++v0 ) {
         for ( size_t u0 = 0; u0 < curGPAPatchData.sizeU0; ++u0 ) {
-          int coord           = patch.patchBlock2CanvasBlockForGPA( u0, v0, occupancySizeU, occupancySizeV );
-					if (params_.lowDelayEncoding_)
-						occupancyMap[coord] = true;
-					else
-          occupancyMap[coord] = occupancyMap[coord] || occupancy[v0 * patch.getSizeU0() + u0];
+          int coord = patch.patchBlock2CanvasBlockForGPA( u0, v0, occupancySizeU, occupancySizeV );
+          if ( params_.lowDelayEncoding_ )
+            occupancyMap[coord] = true;
+          else
+            occupancyMap[coord] = occupancyMap[coord] || occupancy[v0 * patch.getSizeU0() + u0];
         }
       }
       if ( !( curGPAPatchData.isPatchDimensionSwitched() ) ) {
@@ -5566,11 +6231,11 @@ void PCCEncoder::performGPAPacking( const SubContext& subContext,
         }
         for ( size_t v0 = 0; v0 < curGPAPatchData.sizeV0; ++v0 ) {
           for ( size_t u0 = 0; u0 < curGPAPatchData.sizeU0; ++u0 ) {
-            int coord           = patch.patchBlock2CanvasBlockForGPA( u0, v0, occupancySizeU, occupancySizeV );
-						if (params_.lowDelayEncoding_)
-							occupancyMap[coord] = true;
-						else
-            occupancyMap[coord] = occupancyMap[coord] || curGPAPatchData.occupancy[v0 * curGPAPatchData.sizeU0 + u0];
+            int coord = patch.patchBlock2CanvasBlockForGPA( u0, v0, occupancySizeU, occupancySizeV );
+            if ( params_.lowDelayEncoding_ )
+              occupancyMap[coord] = true;
+            else
+              occupancyMap[coord] = occupancyMap[coord] || curGPAPatchData.occupancy[v0 * curGPAPatchData.sizeU0 + u0];
           }
         }
         if ( !( curGPAPatchData.isPatchDimensionSwitched() ) ) {
@@ -5661,7 +6326,8 @@ void PCCEncoder::packingWithoutRefForFirstFrameNoglobalPatch(
         curGPAPatchData.u0 = u;
         curGPAPatchData.v0 = v;
         if ( params_.packingStrategy_ == 0 ) {
-          if ( patch.checkFitPatchCanvasForGPA( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_, safeguard ) ) {
+          if ( patch.checkFitPatchCanvasForGPA( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_,
+                                                safeguard ) ) {
             locationFound = true;
             if ( printDetailedInfo ) {
               std::cout << "Orientation " << curGPAPatchData.patchOrientation << " selected for Patch: ["
@@ -5676,7 +6342,8 @@ void PCCEncoder::packingWithoutRefForFirstFrameNoglobalPatch(
             } else {
               curGPAPatchData.patchOrientation = orientation_vertical[orientationIdx];
             }
-            if ( patch.checkFitPatchCanvasForGPA( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_, safeguard ) ) {
+            if ( patch.checkFitPatchCanvasForGPA( occupancyMap, occupancySizeU, occupancySizeV,
+                                                  params_.lowDelayEncoding_, safeguard ) ) {
               locationFound = true;
               if ( printDetailedInfo ) {
                 std::cout << "Orientation " << curGPAPatchData.patchOrientation << "selected for Patch: [" << icount
@@ -5697,11 +6364,11 @@ void PCCEncoder::packingWithoutRefForFirstFrameNoglobalPatch(
   // update occupancy.
   for ( size_t v0 = 0; v0 < curGPAPatchData.sizeV0; ++v0 ) {
     for ( size_t u0 = 0; u0 < curGPAPatchData.sizeU0; ++u0 ) {
-      int coord           = patch.patchBlock2CanvasBlockForGPA( u0, v0, occupancySizeU, occupancySizeV );
-			if (params_.lowDelayEncoding_)
-				occupancyMap[coord] = true;
-			else
-      occupancyMap[coord] = occupancyMap[coord] || occupancy[v0 * patch.getSizeU0() + u0];
+      int coord = patch.patchBlock2CanvasBlockForGPA( u0, v0, occupancySizeU, occupancySizeV );
+      if ( params_.lowDelayEncoding_ )
+        occupancyMap[coord] = true;
+      else
+        occupancyMap[coord] = occupancyMap[coord] || occupancy[v0 * patch.getSizeU0() + u0];
     }
   }
   if ( !( curGPAPatchData.isPatchDimensionSwitched() ) ) {
@@ -5740,12 +6407,12 @@ void PCCEncoder::packingWithRefForFirstFrameNoglobalPatch( PCCPatch&            
       PATCH_ORIENTATION_MIRROR, PATCH_ORIENTATION_MROT180};           // favoring horizontal orientations (that should be
                                                              // rotated)
   int32_t numOrientations = params_.useEightOrientations_ ? 8 : 2;
-  GPAPatchData&curGPAPatchData = patch.getCurGPAPatchData();  // GPA_HARMONIZATION
+  GPAPatchData&curGPAPatchData     = patch.getCurGPAPatchData();  // GPA_HARMONIZATION
 
   assert( curGPAPatchData.sizeU0 <= occupancySizeU );
   assert( curGPAPatchData.sizeV0 <= occupancySizeV );
   bool locationFound = false;
-  auto&occupancy     = patch.getOccupancy();
+  auto&occupancy      = patch.getOccupancy();
   while ( !locationFound ) {
     if ( patch.getBestMatchIdx() != InvalidPatchIndex ) {
       PCCPatch prePatch = prePatches[patch.getBestMatchIdx()];
@@ -5762,7 +6429,8 @@ void PCCEncoder::packingWithRefForFirstFrameNoglobalPatch( PCCPatch&            
       }
       if ( curGPAPatchData.patchOrientation == -1 ) { assert( curGPAPatchData.patchOrientation != -1 ); }
 
-      if ( patch.checkFitPatchCanvasForGPA( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_, safeguard ) ) {
+      if ( patch.checkFitPatchCanvasForGPA( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_,
+                                            safeguard ) ) {
         locationFound = true;
         if ( printDetailedInfo ) {
           std::cout << "Maintained TempGPA.orientation " << curGPAPatchData.patchOrientation << " for patch[" << icount
@@ -5776,8 +6444,8 @@ void PCCEncoder::packingWithRefForFirstFrameNoglobalPatch( PCCPatch&            
         for ( int u = 0; u <= occupancySizeU && !locationFound; ++u ) {
           curGPAPatchData.u0 = u;
           curGPAPatchData.v0 = v;
-          if ( patch.checkFitPatchCanvasForGPA( occupancyMap, occupancySizeU, occupancySizeV,
-                                                params_.lowDelayEncoding_, safeguard ) ) {  // !!! function overload for GPA;
+          if ( patch.checkFitPatchCanvasForGPA( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_,
+                                                safeguard ) ) {  // !!! function overload for GPA;
             locationFound = true;
             if ( printDetailedInfo ) {
               std::cout << "Maintained TempGPA.orientation " << curGPAPatchData.patchOrientation
@@ -5799,7 +6467,8 @@ void PCCEncoder::packingWithRefForFirstFrameNoglobalPatch( PCCPatch&            
             } else {
               curGPAPatchData.patchOrientation = orientation_vertical[orientationIdx];
             }
-            if ( patch.checkFitPatchCanvasForGPA( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_, safeguard ) ) {
+            if ( patch.checkFitPatchCanvasForGPA( occupancyMap, occupancySizeU, occupancySizeV,
+                                                  params_.lowDelayEncoding_, safeguard ) ) {
               locationFound = true;
               if ( printDetailedInfo ) {
                 std::cout << "Maintained TempGPA.orientation " << curGPAPatchData.patchOrientation
@@ -5819,11 +6488,11 @@ void PCCEncoder::packingWithRefForFirstFrameNoglobalPatch( PCCPatch&            
   }
   for ( size_t v0 = 0; v0 < curGPAPatchData.sizeV0; ++v0 ) {
     for ( size_t u0 = 0; u0 < curGPAPatchData.sizeU0; ++u0 ) {
-      int coord           = patch.patchBlock2CanvasBlockForGPA( u0, v0, occupancySizeU, occupancySizeV );
-			if (params_.lowDelayEncoding_)
-				occupancyMap[coord] = true;
-			else
-      occupancyMap[coord] = occupancyMap[coord] || occupancy[v0 * curGPAPatchData.sizeU0 + u0];
+      int coord = patch.patchBlock2CanvasBlockForGPA( u0, v0, occupancySizeU, occupancySizeV );
+      if ( params_.lowDelayEncoding_ )
+        occupancyMap[coord] = true;
+      else
+        occupancyMap[coord] = occupancyMap[coord] || occupancy[v0 * curGPAPatchData.sizeU0 + u0];
     }
   }
   if ( !( curGPAPatchData.isPatchDimensionSwitched() ) ) {
@@ -6075,21 +6744,26 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
 #endif
   ptglu.setFrameIndex( frameIndex );
   ptgh.setPatchFrameOrderCntLsb( frameIndex );
-  if ( ( frameIndex == 0 ) || ( !sps.getPatchInterPredictionEnabledFlag() ) ) {  
+  if ( ( frameIndex == 0 ) || ( !sps.getPatchInterPredictionEnabledFlag() ) ) {
     ptgh.setType( PATCH_FRAME_I );
-    for (size_t patchIndex = 0; patchIndex < patches.size(); patchIndex++) { patches[patchIndex].setBestMatchIdx() = InvalidPatchIndex;	} // all patches will be intra coded
+    for ( size_t patchIndex = 0; patchIndex < patches.size(); patchIndex++ ) {
+      patches[patchIndex].setBestMatchIdx() = InvalidPatchIndex;
+    }  // all patches will be intra coded
     frame.getNumMatchedPatches() = 0;
   } else {
-    //check if at least one frame is using a reference
+    // check if at least one frame is using a reference
     bool isPFrame = false;
-    for (size_t patchIndex = 0; patchIndex < patches.size() && !isPFrame; patchIndex++) {
-      if (patches[patchIndex].getBestMatchIdx() != InvalidPatchIndex) { isPFrame = true; break; }
+    for ( size_t patchIndex = 0; patchIndex < patches.size() && !isPFrame; patchIndex++ ) {
+      if ( patches[patchIndex].getBestMatchIdx() != InvalidPatchIndex ) {
+        isPFrame = true;
+        break;
+      }
     }
-    if (isPFrame) {
-    ptgh.setType( PATCH_FRAME_P );
+    if ( isPFrame ) {
+      ptgh.setType( PATCH_FRAME_P );
     } else {
-      ptgh.setType(PATCH_FRAME_I);
-      frame.getNumMatchedPatches() = 0; //this should not be necessary?
+      ptgh.setType( PATCH_FRAME_I );
+      frame.getNumMatchedPatches() = 0;  // this should not be necessary?
     }
   }
 
@@ -6097,127 +6771,126 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
   TRACE_CODEC( "PatchInterPredictionEnabledFlag     = %d \n", sps.getPatchInterPredictionEnabledFlag() );
 
   // all patches
-  for (size_t patchIndex = 0; patchIndex < patches.size(); patchIndex++) {
-    const auto& patch    = patches[patchIndex];
-		if (patch.getBestMatchIdx() != InvalidPatchIndex) {
-			// INTER patches
-    const auto& refPatch = refPatches[patch.getBestMatchIdx()];
-    auto&       pid      = ptgdu.addPatchInformationData();
-    auto&       dpdu     = pid.getDeltaPatchDataUnit();
-    pid.allocate( ai.getAttributeCount() );
-    ptgdu.addPatchMode( PATCH_MODE_P_INTER );
-    TRACE_CODEC( "patch %lu / %lu: Inter \n", patchIndex, patches.size() );
-    ptgdu.setPatchMode( patchIndex, PATCH_MODE_P_INTER );
-    dpdu.setDeltaPatchIdx( (int64_t)patch.getBestMatchIdx() - predIndex );
-    dpdu.set2DDeltaShiftU( patch.getU0() - refPatch.getU0() );
-    dpdu.set2DDeltaShiftV( patch.getV0() - refPatch.getV0() );
-    dpdu.set3DDeltaShiftTangentAxis( patch.getU1() - refPatch.getU1() );
-    dpdu.set3DDeltaShiftBiTangentAxis( patch.getV1() - refPatch.getV1() );
-    dpdu.set2DDeltaSizeU( patch.getSizeU0() - refPatch.getSizeU0() );
-    dpdu.set2DDeltaSizeV( patch.getSizeV0() - refPatch.getSizeV0() );
-    dpdu.setLod( patch.getLod() );
-    const size_t max3DCoordinate = 1 << ( gi.getGeometry3dCoordinatesBitdepthMinus1() + 1 );
-    if ( patch.getProjectionMode() == 0 || !params_.absoluteD1_ ) {
-      dpdu.set3DDeltaShiftMinNormalAxis( ( patch.getD1() / minLevel ) - ( refPatch.getD1() / minLevel ) );
-    } else {
-      if ( pfps.getProjection45DegreeEnableFlag() == 0 ) {
-        dpdu.set3DDeltaShiftMinNormalAxis( ( max3DCoordinate - patch.getD1() ) / minLevel -
-                                           ( max3DCoordinate - refPatch.getD1() ) / minLevel );
+  for ( size_t patchIndex = 0; patchIndex < patches.size(); patchIndex++ ) {
+    const auto& patch = patches[patchIndex];
+    if ( patch.getBestMatchIdx() != InvalidPatchIndex ) {
+      // INTER patches
+      const auto& refPatch = refPatches[patch.getBestMatchIdx()];
+      auto&       pid      = ptgdu.addPatchInformationData();
+      auto&       dpdu     = pid.getDeltaPatchDataUnit();
+      pid.allocate( ai.getAttributeCount() );
+      ptgdu.addPatchMode( PATCH_MODE_P_INTER );
+      TRACE_CODEC( "patch %lu / %lu: Inter \n", patchIndex, patches.size() );
+      ptgdu.setPatchMode( patchIndex, PATCH_MODE_P_INTER );
+      dpdu.setDeltaPatchIdx( (int64_t)patch.getBestMatchIdx() - predIndex );
+      dpdu.set2DDeltaShiftU( patch.getU0() - refPatch.getU0() );
+      dpdu.set2DDeltaShiftV( patch.getV0() - refPatch.getV0() );
+      dpdu.set3DDeltaShiftTangentAxis( patch.getU1() - refPatch.getU1() );
+      dpdu.set3DDeltaShiftBiTangentAxis( patch.getV1() - refPatch.getV1() );
+      dpdu.set2DDeltaSizeU( patch.getSizeU0() - refPatch.getSizeU0() );
+      dpdu.set2DDeltaSizeV( patch.getSizeV0() - refPatch.getSizeV0() );
+      dpdu.setLod( patch.getLod() );
+      const size_t max3DCoordinate = 1 << ( gi.getGeometry3dCoordinatesBitdepthMinus1() + 1 );
+      if ( patch.getProjectionMode() == 0 || !params_.absoluteD1_ ) {
+        dpdu.set3DDeltaShiftMinNormalAxis( ( patch.getD1() / minLevel ) - ( refPatch.getD1() / minLevel ) );
       } else {
-        dpdu.set3DDeltaShiftMinNormalAxis( ( ( max3DCoordinate << 1 ) - patch.getD1() ) / minLevel -
-                                           ( ( max3DCoordinate << 1 ) - refPatch.getD1() ) / minLevel );
+        if ( pfps.getProjection45DegreeEnableFlag() == 0 ) {
+          dpdu.set3DDeltaShiftMinNormalAxis( ( max3DCoordinate - patch.getD1() ) / minLevel -
+                                             ( max3DCoordinate - refPatch.getD1() ) / minLevel );
+        } else {
+          dpdu.set3DDeltaShiftMinNormalAxis( ( ( max3DCoordinate << 1 ) - patch.getD1() ) / minLevel -
+                                             ( ( max3DCoordinate << 1 ) - refPatch.getD1() ) / minLevel );
+        }
       }
-    }
 
-    size_t        quantDD  = patch.getSizeD() == 0 ? 0 : ( ( patch.getSizeD() - 1 ) / minLevel + 1 );
-    size_t        prevQDD  = refPatch.getSizeD() == 0 ? 0 : ( ( refPatch.getSizeD() - 1 ) / minLevel + 1 );
-    const int64_t delta_dd = ( (int64_t)quantDD ) - ( (int64_t)prevQDD );
-    dpdu.set3DShiftDeltaMaxNormalAxis( delta_dd );
-    TRACE_CODEC(
-        "DeltaIdx = %d ShiftUV = %ld %ld ShiftAxis = %ld %ld %ld Size = %ld %ld Lod = %u Idx = %ld + %ld = %zu "
-        "\n",
-        dpdu.getDeltaPatchIdx(), dpdu.get2DDeltaShiftU(), dpdu.get2DDeltaShiftV(), dpdu.get3DDeltaShiftTangentAxis(),
-        dpdu.get3DDeltaShiftBiTangentAxis(), dpdu.get3DDeltaShiftMinNormalAxis(), dpdu.get2DDeltaSizeU(),
-        dpdu.get2DDeltaSizeV(), dpdu.getLod(), dpdu.getDeltaPatchIdx(), predIndex, (size_t)patch.getBestMatchIdx() );
+      size_t        quantDD  = patch.getSizeD() == 0 ? 0 : ( ( patch.getSizeD() - 1 ) / minLevel + 1 );
+      size_t        prevQDD  = refPatch.getSizeD() == 0 ? 0 : ( ( refPatch.getSizeD() - 1 ) / minLevel + 1 );
+      const int64_t delta_dd = ( (int64_t)quantDD ) - ( (int64_t)prevQDD );
+      dpdu.set3DShiftDeltaMaxNormalAxis( delta_dd );
+      TRACE_CODEC(
+          "DeltaIdx = %d ShiftUV = %ld %ld ShiftAxis = %ld %ld %ld Size = %ld %ld Lod = %u Idx = %ld + %ld = %zu "
+          "\n",
+          dpdu.getDeltaPatchIdx(), dpdu.get2DDeltaShiftU(), dpdu.get2DDeltaShiftV(), dpdu.get3DDeltaShiftTangentAxis(),
+          dpdu.get3DDeltaShiftBiTangentAxis(), dpdu.get3DDeltaShiftMinNormalAxis(), dpdu.get2DDeltaSizeU(),
+          dpdu.get2DDeltaSizeV(), dpdu.getLod(), dpdu.getDeltaPatchIdx(), predIndex, (size_t)patch.getBestMatchIdx() );
 
-    TRACE_CODEC( "PrevPatch Idx = %lu UV0 = %lu %lu  UV1 = %lu %lu Size = %lu %lu %lu \n", patch.getBestMatchIdx(),
-                 refPatch.getU0(), refPatch.getV0(), refPatch.getU1(), refPatch.getV1(), refPatch.getSizeU0(),
-                 refPatch.getSizeV0(), refPatch.getSizeD() );
+      TRACE_CODEC( "PrevPatch Idx = %lu UV0 = %lu %lu  UV1 = %lu %lu Size = %lu %lu %lu \n", patch.getBestMatchIdx(),
+                   refPatch.getU0(), refPatch.getV0(), refPatch.getU1(), refPatch.getV1(), refPatch.getSizeU0(),
+                   refPatch.getSizeV0(), refPatch.getSizeD() );
 
-    auto&        patchTemp = patches[patchIndex];
-    PCCMetadata& metadata  = patchTemp.getPatchLevelMetadata();
-    metadata.setMetadataPresent( true );
-    setPatchFrameGeometryParameterSet( metadata, pdg.getPatchFrameGeometryParameterSet( 0 ) );
-    if ( sps.getPointLocalReconstructionEnabledFlag() ) {
-      setPointLocalReconstructionData( frame, patch, dpdu.getPointLocalReconstructionData(),
-                                       context.getOccupancyPackingBlockSize(), patchIndex );
-    }
-    prevSizeU0 = patch.getSizeU0();
-    prevSizeV0 = patch.getSizeV0();
-    predIndex += dpdu.getDeltaPatchIdx() + 1;
-    TRACE_CODEC(
-        "patch Inter UV0 %4lu %4lu UV1 %4lu %4lu D1=%4lu S=%4lu %4lu %4lu from DeltaSize = %4ld %4ld P=%lu "
-        "O=%lu "
-        "A=%u%u%u Lod = %lu \n",
-        patch.getU0(), patch.getV0(), patch.getU1(), patch.getV1(), patch.getD1(), patch.getSizeU0(), patch.getSizeV0(),
-        patch.getSizeD(), dpdu.get2DDeltaSizeU(), dpdu.get2DDeltaSizeV(), patch.getProjectionMode(),
-        patch.getPatchOrientation(), patch.getNormalAxis(), patch.getTangentAxis(), patch.getBitangentAxis(),
-        patch.getLod() );
-		} else {
+      auto&        patchTemp = patches[patchIndex];
+      PCCMetadata& metadata  = patchTemp.getPatchLevelMetadata();
+      metadata.setMetadataPresent( true );
+      setPatchFrameGeometryParameterSet( metadata, pdg.getPatchFrameGeometryParameterSet( 0 ) );
+      if ( sps.getPointLocalReconstructionEnabledFlag() ) {
+        setPointLocalReconstructionData( frame, patch, dpdu.getPointLocalReconstructionData(),
+                                         context.getOccupancyPackingBlockSize(), patchIndex );
+      }
+      prevSizeU0 = patch.getSizeU0();
+      prevSizeV0 = patch.getSizeV0();
+      predIndex += dpdu.getDeltaPatchIdx() + 1;
+      TRACE_CODEC(
+          "patch Inter UV0 %4lu %4lu UV1 %4lu %4lu D1=%4lu S=%4lu %4lu %4lu from DeltaSize = %4ld %4ld P=%lu "
+          "O=%lu "
+          "A=%u%u%u Lod = %lu \n",
+          patch.getU0(), patch.getV0(), patch.getU1(), patch.getV1(), patch.getD1(), patch.getSizeU0(),
+          patch.getSizeV0(), patch.getSizeD(), dpdu.get2DDeltaSizeU(), dpdu.get2DDeltaSizeV(),
+          patch.getProjectionMode(), patch.getPatchOrientation(), patch.getNormalAxis(), patch.getTangentAxis(),
+          patch.getBitangentAxis(), patch.getLod() );
+    } else {
       // INTRA patches
-    auto&       pid   = ptgdu.addPatchInformationData();
-    pid.allocate( ai.getAttributeCount() );
-    TRACE_CODEC( "patch %lu / %lu: Intra \n", patchIndex, patches.size() );
-    ptgdu.addPatchMode( ( ( frameIndex == 0 ) || ( !sps.getPatchInterPredictionEnabledFlag() ) ||
-                          ( patches[0].getBestMatchIdx() == InvalidPatchIndex ) )  // GPA_HARMONIZATION
-                            ? (uint8_t)PATCH_MODE_I_INTRA
-                            : (uint8_t)PATCH_MODE_P_INTRA );
-    auto& pdu = pid.getPatchDataUnit();
-    pdu.set2DShiftU( patch.getU0() );
-    pdu.set2DShiftV( patch.getV0() );
-    pdu.setLod( patch.getLod() );
-    pdu.set3DShiftTangentAxis( patch.getU1() );
-    pdu.set3DShiftBiTangentAxis( patch.getV1() );
-    pdu.setProjectPlane(
-        static_cast<pcc::PCCAxis6>( patch.getProjectionMode() * 3 + size_t( patch.getNormalAxis() ) ) );
-    pdu.set2DDeltaSizeU( patch.getSizeU0() - prevSizeU0 );
-    pdu.set2DDeltaSizeV( patch.getSizeV0() - prevSizeV0 );
-    pdu.setOrientationIndex( patch.getPatchOrientation() );
-    pdu.set45DegreeProjectionPresentFlag( patch.getAxisOfAdditionalPlane() == 0 ? 0 : 1 );
-    pdu.set45DegreeProjectionRotationAxis( patch.getAxisOfAdditionalPlane() );
-    const size_t max3DCoordinate = 1 << ( gi.getGeometry3dCoordinatesBitdepthMinus1() + 1 );
-    if ( pdu.getProjectPlane() < 3 || !params_.absoluteD1_ ) {
-      pdu.set3DShiftMinNormalAxis( patch.getD1() / minLevel );
-    } else {
-      if ( pfps.getProjection45DegreeEnableFlag() == 0 ) {
-        pdu.set3DShiftMinNormalAxis( ( max3DCoordinate - patch.getD1() ) / minLevel );
+      auto& pid = ptgdu.addPatchInformationData();
+      pid.allocate( ai.getAttributeCount() );
+      TRACE_CODEC( "patch %lu / %lu: Intra \n", patchIndex, patches.size() );
+      ptgdu.addPatchMode( ( ( frameIndex == 0 ) || ( !sps.getPatchInterPredictionEnabledFlag() ) ||
+                            ( patches[0].getBestMatchIdx() == InvalidPatchIndex ) )  // GPA_HARMONIZATION
+                              ? (uint8_t)PATCH_MODE_I_INTRA
+                              : (uint8_t)PATCH_MODE_P_INTRA );
+      auto& pdu = pid.getPatchDataUnit();
+      pdu.set2DShiftU( patch.getU0() );
+      pdu.set2DShiftV( patch.getV0() );
+      pdu.setLod( patch.getLod() );
+      pdu.set3DShiftTangentAxis( patch.getU1() );
+      pdu.set3DShiftBiTangentAxis( patch.getV1() );
+      pdu.setProjectPlane(
+          static_cast<pcc::PCCAxis6>( patch.getProjectionMode() * 3 + size_t( patch.getNormalAxis() ) ) );
+      pdu.set2DDeltaSizeU( patch.getSizeU0() - prevSizeU0 );
+      pdu.set2DDeltaSizeV( patch.getSizeV0() - prevSizeV0 );
+      pdu.setOrientationIndex( patch.getPatchOrientation() );
+      pdu.set45DegreeProjectionPresentFlag( patch.getAxisOfAdditionalPlane() == 0 ? 0 : 1 );
+      pdu.set45DegreeProjectionRotationAxis( patch.getAxisOfAdditionalPlane() );
+      const size_t max3DCoordinate = 1 << ( gi.getGeometry3dCoordinatesBitdepthMinus1() + 1 );
+      if ( pdu.getProjectPlane() < 3 || !params_.absoluteD1_ ) {
+        pdu.set3DShiftMinNormalAxis( patch.getD1() / minLevel );
       } else {
-        pdu.set3DShiftMinNormalAxis( ( ( max3DCoordinate << 1 ) - patch.getD1() ) / minLevel );
+        if ( pfps.getProjection45DegreeEnableFlag() == 0 ) {
+          pdu.set3DShiftMinNormalAxis( ( max3DCoordinate - patch.getD1() ) / minLevel );
+        } else {
+          pdu.set3DShiftMinNormalAxis( ( ( max3DCoordinate << 1 ) - patch.getD1() ) / minLevel );
+        }
+      }
+      prevSizeU0     = patch.getSizeU0();
+      prevSizeV0     = patch.getSizeV0();
+      size_t quantDD = patch.getSizeD() == 0 ? 0 : ( ( patch.getSizeD() - 1 ) / minLevel + 1 );
+      pdu.set3DShiftDeltaMaxNormalAxis( quantDD );
+      TRACE_CODEC( "patch UV0 %4lu %4lu UV1 %4lu %4lu D1=%4lu S=%4lu %4lu %4lu(%4lu) P=%lu O=%lu A=%u%u%u Lod = %lu \n",
+                   patch.getU0(), patch.getV0(), patch.getU1(), patch.getV1(), patch.getD1(), patch.getSizeU0(),
+                   patch.getSizeV0(), patch.getSizeD(), quantDD, patch.getProjectionMode(), patch.getPatchOrientation(),
+                   patch.getNormalAxis(), patch.getTangentAxis(), patch.getBitangentAxis(), patch.getLod() );
+
+      auto&        patchTemp = patches[patchIndex];
+      PCCMetadata& metadata  = patchTemp.getPatchLevelMetadata();
+
+      metadata.setIndex( patchIndex );
+      metadata.setMetadataType( METADATA_PATCH );
+      metadata.setMetadataPresent( true );
+      setGeometryPatchParameterSet( metadata, pdg.getGeometryPatchParameterSet( 0 ) );
+      if ( sps.getPointLocalReconstructionEnabledFlag() ) {
+        setPointLocalReconstructionData( frame, patch, pdu.getPointLocalReconstructionData(),
+                                         context.getOccupancyPackingBlockSize(), patchIndex );
       }
     }
-    prevSizeU0     = patch.getSizeU0();
-    prevSizeV0     = patch.getSizeV0();
-    size_t quantDD = patch.getSizeD() == 0 ? 0 : ( ( patch.getSizeD() - 1 ) / minLevel + 1 );
-    pdu.set3DShiftDeltaMaxNormalAxis( quantDD );
-    TRACE_CODEC( "patch UV0 %4lu %4lu UV1 %4lu %4lu D1=%4lu S=%4lu %4lu %4lu(%4lu) P=%lu O=%lu A=%u%u%u Lod = %lu \n",
-                 patch.getU0(), patch.getV0(), patch.getU1(), patch.getV1(), patch.getD1(), patch.getSizeU0(),
-                 patch.getSizeV0(), patch.getSizeD(), quantDD, patch.getProjectionMode(), patch.getPatchOrientation(),
-                 patch.getNormalAxis(), patch.getTangentAxis(), patch.getBitangentAxis(), patch.getLod() );
-
-    auto&        patchTemp = patches[patchIndex];
-    PCCMetadata& metadata  = patchTemp.getPatchLevelMetadata();
-
-    metadata.setIndex( patchIndex );
-    metadata.setMetadataType( METADATA_PATCH );
-    metadata.setMetadataPresent( true );
-    setGeometryPatchParameterSet( metadata, pdg.getGeometryPatchParameterSet( 0 ) );
-    if ( sps.getPointLocalReconstructionEnabledFlag() ) {
-      setPointLocalReconstructionData( frame, patch, pdu.getPointLocalReconstructionData(),
-                                       context.getOccupancyPackingBlockSize(), patchIndex );
-    }
   }
-  }
-
 
   if ( ( sps.getLosslessGeo() || params_.lossyMissedPointsPatch_ ) ) {
     size_t numberOfPcmPatches = frame.getNumberOfMissedPointsPatches();
@@ -6292,13 +6965,13 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
   size_t maxU0 = 0, maxV0 = 0, maxU1 = 0, maxV1 = 0, maxLod = 0;
   for ( size_t patchIndex = 0; patchIndex < patches.size(); ++patchIndex ) {
     const auto& patch = patches[patchIndex];
-		if (patch.getBestMatchIdx() == InvalidPatchIndex) {
-    maxU0             = ( std::max )( maxU0, patch.getU0() );
-    maxV0             = ( std::max )( maxV0, patch.getV0() );
-    maxU1             = ( std::max )( maxU1, patch.getU1() );
-    maxV1             = ( std::max )( maxV1, patch.getV1() );
-    maxLod            = ( std::max )( maxLod, patch.getLod() );
-		}
+    if ( patch.getBestMatchIdx() == InvalidPatchIndex ) {
+      maxU0  = ( std::max )( maxU0, patch.getU0() );
+      maxV0  = ( std::max )( maxV0, patch.getV0() );
+      maxU1  = ( std::max )( maxU1, patch.getU1() );
+      maxV1  = ( std::max )( maxV1, patch.getV1() );
+      maxLod = ( std::max )( maxLod, patch.getLod() );
+    }
   }
   if ( ( sps.getLosslessGeo() || params_.lossyMissedPointsPatch_ ) ) {
     auto&  pcmPatches         = frame.getMissedPointsPatches();
@@ -6460,4 +7133,113 @@ void PCCEncoder::SegmentationPartiallyAddtinalProjectionPlane( const PCCPointSet
   patches.reserve( Orthogonal.size() + Additional.size() );
   std::copy( Orthogonal.begin(), Orthogonal.end(), std::back_inserter( patches ) );
   std::copy( Additional.begin(), Additional.end(), std::back_inserter( patches ) );
+}
+
+// Morton
+const uint32_t kMortonCode256Z[256] = {
+    0x00000000, 0x00000001, 0x00000008, 0x00000009, 0x00000040, 0x00000041, 0x00000048, 0x00000049, 0x00000200,
+    0x00000201, 0x00000208, 0x00000209, 0x00000240, 0x00000241, 0x00000248, 0x00000249, 0x00001000, 0x00001001,
+    0x00001008, 0x00001009, 0x00001040, 0x00001041, 0x00001048, 0x00001049, 0x00001200, 0x00001201, 0x00001208,
+    0x00001209, 0x00001240, 0x00001241, 0x00001248, 0x00001249, 0x00008000, 0x00008001, 0x00008008, 0x00008009,
+    0x00008040, 0x00008041, 0x00008048, 0x00008049, 0x00008200, 0x00008201, 0x00008208, 0x00008209, 0x00008240,
+    0x00008241, 0x00008248, 0x00008249, 0x00009000, 0x00009001, 0x00009008, 0x00009009, 0x00009040, 0x00009041,
+    0x00009048, 0x00009049, 0x00009200, 0x00009201, 0x00009208, 0x00009209, 0x00009240, 0x00009241, 0x00009248,
+    0x00009249, 0x00040000, 0x00040001, 0x00040008, 0x00040009, 0x00040040, 0x00040041, 0x00040048, 0x00040049,
+    0x00040200, 0x00040201, 0x00040208, 0x00040209, 0x00040240, 0x00040241, 0x00040248, 0x00040249, 0x00041000,
+    0x00041001, 0x00041008, 0x00041009, 0x00041040, 0x00041041, 0x00041048, 0x00041049, 0x00041200, 0x00041201,
+    0x00041208, 0x00041209, 0x00041240, 0x00041241, 0x00041248, 0x00041249, 0x00048000, 0x00048001, 0x00048008,
+    0x00048009, 0x00048040, 0x00048041, 0x00048048, 0x00048049, 0x00048200, 0x00048201, 0x00048208, 0x00048209,
+    0x00048240, 0x00048241, 0x00048248, 0x00048249, 0x00049000, 0x00049001, 0x00049008, 0x00049009, 0x00049040,
+    0x00049041, 0x00049048, 0x00049049, 0x00049200, 0x00049201, 0x00049208, 0x00049209, 0x00049240, 0x00049241,
+    0x00049248, 0x00049249, 0x00200000, 0x00200001, 0x00200008, 0x00200009, 0x00200040, 0x00200041, 0x00200048,
+    0x00200049, 0x00200200, 0x00200201, 0x00200208, 0x00200209, 0x00200240, 0x00200241, 0x00200248, 0x00200249,
+    0x00201000, 0x00201001, 0x00201008, 0x00201009, 0x00201040, 0x00201041, 0x00201048, 0x00201049, 0x00201200,
+    0x00201201, 0x00201208, 0x00201209, 0x00201240, 0x00201241, 0x00201248, 0x00201249, 0x00208000, 0x00208001,
+    0x00208008, 0x00208009, 0x00208040, 0x00208041, 0x00208048, 0x00208049, 0x00208200, 0x00208201, 0x00208208,
+    0x00208209, 0x00208240, 0x00208241, 0x00208248, 0x00208249, 0x00209000, 0x00209001, 0x00209008, 0x00209009,
+    0x00209040, 0x00209041, 0x00209048, 0x00209049, 0x00209200, 0x00209201, 0x00209208, 0x00209209, 0x00209240,
+    0x00209241, 0x00209248, 0x00209249, 0x00240000, 0x00240001, 0x00240008, 0x00240009, 0x00240040, 0x00240041,
+    0x00240048, 0x00240049, 0x00240200, 0x00240201, 0x00240208, 0x00240209, 0x00240240, 0x00240241, 0x00240248,
+    0x00240249, 0x00241000, 0x00241001, 0x00241008, 0x00241009, 0x00241040, 0x00241041, 0x00241048, 0x00241049,
+    0x00241200, 0x00241201, 0x00241208, 0x00241209, 0x00241240, 0x00241241, 0x00241248, 0x00241249, 0x00248000,
+    0x00248001, 0x00248008, 0x00248009, 0x00248040, 0x00248041, 0x00248048, 0x00248049, 0x00248200, 0x00248201,
+    0x00248208, 0x00248209, 0x00248240, 0x00248241, 0x00248248, 0x00248249, 0x00249000, 0x00249001, 0x00249008,
+    0x00249009, 0x00249040, 0x00249041, 0x00249048, 0x00249049, 0x00249200, 0x00249201, 0x00249208, 0x00249209,
+    0x00249240, 0x00249241, 0x00249248, 0x00249249};
+
+const uint32_t kMortonCode256Y[256] = {
+    0x00000000, 0x00000002, 0x00000010, 0x00000012, 0x00000080, 0x00000082, 0x00000090, 0x00000092, 0x00000400,
+    0x00000402, 0x00000410, 0x00000412, 0x00000480, 0x00000482, 0x00000490, 0x00000492, 0x00002000, 0x00002002,
+    0x00002010, 0x00002012, 0x00002080, 0x00002082, 0x00002090, 0x00002092, 0x00002400, 0x00002402, 0x00002410,
+    0x00002412, 0x00002480, 0x00002482, 0x00002490, 0x00002492, 0x00010000, 0x00010002, 0x00010010, 0x00010012,
+    0x00010080, 0x00010082, 0x00010090, 0x00010092, 0x00010400, 0x00010402, 0x00010410, 0x00010412, 0x00010480,
+    0x00010482, 0x00010490, 0x00010492, 0x00012000, 0x00012002, 0x00012010, 0x00012012, 0x00012080, 0x00012082,
+    0x00012090, 0x00012092, 0x00012400, 0x00012402, 0x00012410, 0x00012412, 0x00012480, 0x00012482, 0x00012490,
+    0x00012492, 0x00080000, 0x00080002, 0x00080010, 0x00080012, 0x00080080, 0x00080082, 0x00080090, 0x00080092,
+    0x00080400, 0x00080402, 0x00080410, 0x00080412, 0x00080480, 0x00080482, 0x00080490, 0x00080492, 0x00082000,
+    0x00082002, 0x00082010, 0x00082012, 0x00082080, 0x00082082, 0x00082090, 0x00082092, 0x00082400, 0x00082402,
+    0x00082410, 0x00082412, 0x00082480, 0x00082482, 0x00082490, 0x00082492, 0x00090000, 0x00090002, 0x00090010,
+    0x00090012, 0x00090080, 0x00090082, 0x00090090, 0x00090092, 0x00090400, 0x00090402, 0x00090410, 0x00090412,
+    0x00090480, 0x00090482, 0x00090490, 0x00090492, 0x00092000, 0x00092002, 0x00092010, 0x00092012, 0x00092080,
+    0x00092082, 0x00092090, 0x00092092, 0x00092400, 0x00092402, 0x00092410, 0x00092412, 0x00092480, 0x00092482,
+    0x00092490, 0x00092492, 0x00400000, 0x00400002, 0x00400010, 0x00400012, 0x00400080, 0x00400082, 0x00400090,
+    0x00400092, 0x00400400, 0x00400402, 0x00400410, 0x00400412, 0x00400480, 0x00400482, 0x00400490, 0x00400492,
+    0x00402000, 0x00402002, 0x00402010, 0x00402012, 0x00402080, 0x00402082, 0x00402090, 0x00402092, 0x00402400,
+    0x00402402, 0x00402410, 0x00402412, 0x00402480, 0x00402482, 0x00402490, 0x00402492, 0x00410000, 0x00410002,
+    0x00410010, 0x00410012, 0x00410080, 0x00410082, 0x00410090, 0x00410092, 0x00410400, 0x00410402, 0x00410410,
+    0x00410412, 0x00410480, 0x00410482, 0x00410490, 0x00410492, 0x00412000, 0x00412002, 0x00412010, 0x00412012,
+    0x00412080, 0x00412082, 0x00412090, 0x00412092, 0x00412400, 0x00412402, 0x00412410, 0x00412412, 0x00412480,
+    0x00412482, 0x00412490, 0x00412492, 0x00480000, 0x00480002, 0x00480010, 0x00480012, 0x00480080, 0x00480082,
+    0x00480090, 0x00480092, 0x00480400, 0x00480402, 0x00480410, 0x00480412, 0x00480480, 0x00480482, 0x00480490,
+    0x00480492, 0x00482000, 0x00482002, 0x00482010, 0x00482012, 0x00482080, 0x00482082, 0x00482090, 0x00482092,
+    0x00482400, 0x00482402, 0x00482410, 0x00482412, 0x00482480, 0x00482482, 0x00482490, 0x00482492, 0x00490000,
+    0x00490002, 0x00490010, 0x00490012, 0x00490080, 0x00490082, 0x00490090, 0x00490092, 0x00490400, 0x00490402,
+    0x00490410, 0x00490412, 0x00490480, 0x00490482, 0x00490490, 0x00490492, 0x00492000, 0x00492002, 0x00492010,
+    0x00492012, 0x00492080, 0x00492082, 0x00492090, 0x00492092, 0x00492400, 0x00492402, 0x00492410, 0x00492412,
+    0x00492480, 0x00492482, 0x00492490, 0x00492492};
+
+const uint32_t kMortonCode256X[256] = {
+    0x00000000, 0x00000004, 0x00000020, 0x00000024, 0x00000100, 0x00000104, 0x00000120, 0x00000124, 0x00000800,
+    0x00000804, 0x00000820, 0x00000824, 0x00000900, 0x00000904, 0x00000920, 0x00000924, 0x00004000, 0x00004004,
+    0x00004020, 0x00004024, 0x00004100, 0x00004104, 0x00004120, 0x00004124, 0x00004800, 0x00004804, 0x00004820,
+    0x00004824, 0x00004900, 0x00004904, 0x00004920, 0x00004924, 0x00020000, 0x00020004, 0x00020020, 0x00020024,
+    0x00020100, 0x00020104, 0x00020120, 0x00020124, 0x00020800, 0x00020804, 0x00020820, 0x00020824, 0x00020900,
+    0x00020904, 0x00020920, 0x00020924, 0x00024000, 0x00024004, 0x00024020, 0x00024024, 0x00024100, 0x00024104,
+    0x00024120, 0x00024124, 0x00024800, 0x00024804, 0x00024820, 0x00024824, 0x00024900, 0x00024904, 0x00024920,
+    0x00024924, 0x00100000, 0x00100004, 0x00100020, 0x00100024, 0x00100100, 0x00100104, 0x00100120, 0x00100124,
+    0x00100800, 0x00100804, 0x00100820, 0x00100824, 0x00100900, 0x00100904, 0x00100920, 0x00100924, 0x00104000,
+    0x00104004, 0x00104020, 0x00104024, 0x00104100, 0x00104104, 0x00104120, 0x00104124, 0x00104800, 0x00104804,
+    0x00104820, 0x00104824, 0x00104900, 0x00104904, 0x00104920, 0x00104924, 0x00120000, 0x00120004, 0x00120020,
+    0x00120024, 0x00120100, 0x00120104, 0x00120120, 0x00120124, 0x00120800, 0x00120804, 0x00120820, 0x00120824,
+    0x00120900, 0x00120904, 0x00120920, 0x00120924, 0x00124000, 0x00124004, 0x00124020, 0x00124024, 0x00124100,
+    0x00124104, 0x00124120, 0x00124124, 0x00124800, 0x00124804, 0x00124820, 0x00124824, 0x00124900, 0x00124904,
+    0x00124920, 0x00124924, 0x00800000, 0x00800004, 0x00800020, 0x00800024, 0x00800100, 0x00800104, 0x00800120,
+    0x00800124, 0x00800800, 0x00800804, 0x00800820, 0x00800824, 0x00800900, 0x00800904, 0x00800920, 0x00800924,
+    0x00804000, 0x00804004, 0x00804020, 0x00804024, 0x00804100, 0x00804104, 0x00804120, 0x00804124, 0x00804800,
+    0x00804804, 0x00804820, 0x00804824, 0x00804900, 0x00804904, 0x00804920, 0x00804924, 0x00820000, 0x00820004,
+    0x00820020, 0x00820024, 0x00820100, 0x00820104, 0x00820120, 0x00820124, 0x00820800, 0x00820804, 0x00820820,
+    0x00820824, 0x00820900, 0x00820904, 0x00820920, 0x00820924, 0x00824000, 0x00824004, 0x00824020, 0x00824024,
+    0x00824100, 0x00824104, 0x00824120, 0x00824124, 0x00824800, 0x00824804, 0x00824820, 0x00824824, 0x00824900,
+    0x00824904, 0x00824920, 0x00824924, 0x00900000, 0x00900004, 0x00900020, 0x00900024, 0x00900100, 0x00900104,
+    0x00900120, 0x00900124, 0x00900800, 0x00900804, 0x00900820, 0x00900824, 0x00900900, 0x00900904, 0x00900920,
+    0x00900924, 0x00904000, 0x00904004, 0x00904020, 0x00904024, 0x00904100, 0x00904104, 0x00904120, 0x00904124,
+    0x00904800, 0x00904804, 0x00904820, 0x00904824, 0x00904900, 0x00904904, 0x00904920, 0x00904924, 0x00920000,
+    0x00920004, 0x00920020, 0x00920024, 0x00920100, 0x00920104, 0x00920120, 0x00920124, 0x00920800, 0x00920804,
+    0x00920820, 0x00920824, 0x00920900, 0x00920904, 0x00920920, 0x00920924, 0x00924000, 0x00924004, 0x00924020,
+    0x00924024, 0x00924100, 0x00924104, 0x00924120, 0x00924124, 0x00924800, 0x00924804, 0x00924820, 0x00924824,
+    0x00924900, 0x00924904, 0x00924920, 0x00924924};
+
+inline uint64_t PCCEncoder::mortonAddr( const int32_t x, const int32_t y, const int32_t z ) {
+  uint64_t answer =
+      kMortonCode256X[( x >> 16 ) & 0xFF] | kMortonCode256Y[( y >> 16 ) & 0xFF] | kMortonCode256Z[( z >> 16 ) & 0xFF];
+  answer = answer << 24 | kMortonCode256X[( x >> 8 ) & 0xFF] | kMortonCode256Y[( y >> 8 ) & 0xFF] |
+           kMortonCode256Z[( z >> 8 ) & 0xFF];
+  answer = answer << 24 | kMortonCode256X[x & 0xFF] | kMortonCode256Y[y & 0xFF] | kMortonCode256Z[z & 0xFF];
+  return answer;
+}
+uint64_t PCCEncoder::mortonAddr( const PCCPoint3D& vec, int depth ) {
+  int x = int( vec.x() ) >> depth;
+  int y = int( vec.y() ) >> depth;
+  int z = int( vec.z() ) >> depth;
+  return mortonAddr( x, y, z );
 }

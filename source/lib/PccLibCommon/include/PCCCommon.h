@@ -386,6 +386,15 @@ static inline const std::string strUnitType( PDGUnitType unitType ) {
   return std::string( "ERROR" );
 }
 
+using Range = std::pair<int, int>;
+struct Tile {
+  int minU;
+  int maxU;
+  int minV;
+  int maxV;
+  Tile() : minU( -1 ), maxU( -1 ), minV( -1 ), maxV( -1 ){};
+};
+
 }  // namespace pcc
 
 #endif /* PCCTMC2Common_h */

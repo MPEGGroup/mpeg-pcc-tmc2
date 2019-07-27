@@ -42,95 +42,107 @@ const std::vector<PointLocalReconstructionMode> g_pointLocalReconstructionMode =
 };
 
 PCCEncoderParameters::PCCEncoderParameters() {
-  uncompressedDataPath_                   = {};
-  compressedStreamPath_                   = {};
-  reconstructedDataPath_                  = {};
-  configurationFolder_                    = {};
-  uncompressedDataFolder_                 = {};
-  startFrameNumber_                       = 0;
-  frameCount_                             = 300;
-  groupOfFramesSize_                      = 32;
-  colorTransform_                         = COLOR_TRANSFORM_RGB_TO_YCBCR;
-  colorSpaceConversionPath_               = {};
-  colorSpaceConversionConfig_             = {};
-  inverseColorSpaceConversionConfig_      = {};
-  nnNormalEstimation_                     = 16;
-  gridBasedRefineSegmentation_            = true;
-  maxNNCountRefineSegmentation_           = gridBasedRefineSegmentation_ ? 1024 : 256;
-  iterationCountRefineSegmentation_       = gridBasedRefineSegmentation_ ? 10   : 100;
-  voxelDimensionRefineSegmentation_       = 4;
-  searchRadiusRefineSegmentation_         = 192;
-  occupancyResolution_                    = 16;
-  minPointCountPerCCPatchSegmentation_    = 16;
-  maxNNCountPatchSegmentation_            = 16;
-  surfaceThickness_                       = 4;
-  minLevel_                               = 64;  // fix value
-  maxAllowedDepth_                        = 255;
-  maxAllowedDist2MissedPointsDetection_   = 9.0;
-  maxAllowedDist2MissedPointsSelection_   = 1.0;
-  lambdaRefineSegmentation_               = 3.0;
-  minimumImageWidth_                      = 1280;
-  minimumImageHeight_                     = 1280;
-  maxCandidateCount_                      = 4;
-  occupancyPrecision_                     = 4;
-  occupancyMapVideoEncoderConfig_         = {};
-  occupancyMapQP_                         = 8;
-  occupancyMapRefinement_                 = false;
-  flagGeometrySmoothing_                  = true;
-  patchExpansion_                         = false;
-  gridSmoothing_                          = true;
-  gridSize_                               = 8;
-  neighborCountSmoothing_                 = 4 * 16;
-  radius2Smoothing_                       = 4.0 * 16;
-  radius2BoundaryDetection_               = 4.0 * 16;
-  thresholdSmoothing_                     = 64.0;
-  bestColorSearchRange_                   = 0;
-  videoEncoderPath_                       = {};
-  videoEncoderAuxPath_                    = {};
-  videoEncoderOccupancyMapPath_           = {};
-  geometryQP_                             = 28;
-  textureQP_                              = 43;
-  geometryConfig_                         = {};
-  geometryD0Config_                       = {};
-  geometryD1Config_                       = {};
-  textureConfig_                          = {};
-  losslessGeo_                            = false;
-  losslessTexture_                        = false;
-  noAttributes_                           = false;
-  losslessGeo444_                         = false;
-  useMissedPointsSeparateVideo_           = false;
-  geometryMPConfig_                       = {};
-  textureMPConfig_                        = {};
-  nbThread_                               = 1;
-  keepIntermediateFiles_                  = false;
-  projectionMode_                         = 0;
-  absoluteD1_                             = true;
-  constrainedPack_                        = true;
-  thresholdColorSmoothing_                = 10.0;
-  thresholdColorDifference_               = 100.0;
-  thresholdColorVariation_                = 10.0;
-  thresholdLocalEntropy_                  = 4.0;
-  radius2ColorSmoothing_                  = 4.0 * 16;
-  neighborCountColorSmoothing_            = 4 * 16;
-  flagColorSmoothing_                     = false;
-  gridColorSmoothing_                     = false;
-  cgridSize_                              = 4;
-  thresholdColorPreSmoothing_             = 10.0;
-  thresholdColorPreSmoothingLocalEntropy_ = 4.5;
-  radius2ColorPreSmoothing_               = 4.0 * 16;
-  neighborCountColorPreSmoothing_         = 4 * 16;
-  flagColorPreSmoothing_                  = true;
-  groupDilation_                          = true;
-  textureDilationOffLossless_             = true;
-  enhancedDeltaDepthCode_                 = losslessGeo_ ? true : false;
-  EOMFixBitCount_                         = 2;
-  EOMTexturePatch_                        = true;
-  offsetLossyOM_                          = 0;
-  thresholdLossyOM_                       = 0;
-  prefilterLossyOM_                       = false;
-  patchColorSubsampling_                  = false;
-  deltaCoding_                            = true;
-  layerCountMinus1_                       = 1;
+  uncompressedDataPath_                    = {};
+  compressedStreamPath_                    = {};
+  reconstructedDataPath_                   = {};
+  configurationFolder_                     = {};
+  uncompressedDataFolder_                  = {};
+  startFrameNumber_                        = 0;
+  frameCount_                              = 300;
+  groupOfFramesSize_                       = 32;
+  colorTransform_                          = COLOR_TRANSFORM_RGB_TO_YCBCR;
+  colorSpaceConversionPath_                = {};
+  colorSpaceConversionConfig_              = {};
+  inverseColorSpaceConversionConfig_       = {};
+  nnNormalEstimation_                      = 16;
+  gridBasedRefineSegmentation_             = true;
+  maxNNCountRefineSegmentation_            = gridBasedRefineSegmentation_ ? 1024 : 256;
+  iterationCountRefineSegmentation_        = gridBasedRefineSegmentation_ ? 10 : 100;
+  voxelDimensionRefineSegmentation_        = 4;
+  searchRadiusRefineSegmentation_          = 192;
+  occupancyResolution_                     = 16;
+  minPointCountPerCCPatchSegmentation_     = 16;
+  maxNNCountPatchSegmentation_             = 16;
+  surfaceThickness_                        = 4;
+  minLevel_                                = 64;  // fix value
+  maxAllowedDepth_                         = 255;
+  maxAllowedDist2MissedPointsDetection_    = 9.0;
+  maxAllowedDist2MissedPointsSelection_    = 1.0;
+  lambdaRefineSegmentation_                = 3.0;
+  minimumImageWidth_                       = 1280;
+  minimumImageHeight_                      = 1280;
+  maxCandidateCount_                       = 4;
+  occupancyPrecision_                      = 4;
+  occupancyMapVideoEncoderConfig_          = {};
+  occupancyMapQP_                          = 8;
+  occupancyMapRefinement_                  = false;
+  flagGeometrySmoothing_                   = true;
+  patchExpansion_                          = false;
+  gridSmoothing_                           = true;
+  gridSize_                                = 8;
+  neighborCountSmoothing_                  = 4 * 16;
+  radius2Smoothing_                        = 4.0 * 16;
+  radius2BoundaryDetection_                = 4.0 * 16;
+  thresholdSmoothing_                      = 64.0;
+  bestColorSearchRange_                    = 0;
+  numNeighborsColorTransferFwd_            = 1;
+  numNeighborsColorTransferBwd_            = 1;
+  useDistWeightedAverageFwd_               = true;
+  useDistWeightedAverageBwd_               = true;
+  skipAvgIfIdenticalSourcePointPresentFwd_ = false;
+  skipAvgIfIdenticalSourcePointPresentBwd_ = false;
+  distOffsetFwd_                           = 0.0001;
+  distOffsetBwd_                           = 0.0001;
+  maxGeometryDist2Fwd_                     = 10000.0;
+  maxGeometryDist2Bwd_                     = 10000.0;
+  maxColorDist2Fwd_                        = 10000.0;
+  maxColorDist2Bwd_                        = 10000.0;
+  videoEncoderPath_                        = {};
+  videoEncoderAuxPath_                     = {};
+  videoEncoderOccupancyMapPath_            = {};
+  geometryQP_                              = 28;
+  textureQP_                               = 43;
+  geometryConfig_                          = {};
+  geometryD0Config_                        = {};
+  geometryD1Config_                        = {};
+  textureConfig_                           = {};
+  losslessGeo_                             = false;
+  losslessTexture_                         = false;
+  noAttributes_                            = false;
+  losslessGeo444_                          = false;
+  useMissedPointsSeparateVideo_            = false;
+  geometryMPConfig_                        = {};
+  textureMPConfig_                         = {};
+  nbThread_                                = 1;
+  keepIntermediateFiles_                   = false;
+  projectionMode_                          = 0;
+  absoluteD1_                              = true;
+  constrainedPack_                         = true;
+  thresholdColorSmoothing_                 = 10.0;
+  thresholdColorDifference_                = 100.0;
+  thresholdColorVariation_                 = 10.0;
+  thresholdLocalEntropy_                   = 4.0;
+  radius2ColorSmoothing_                   = 4.0 * 16;
+  neighborCountColorSmoothing_             = 4 * 16;
+  flagColorSmoothing_                      = false;
+  gridColorSmoothing_                      = false;
+  cgridSize_                               = 4;
+  thresholdColorPreSmoothing_              = 10.0;
+  thresholdColorPreSmoothingLocalEntropy_  = 4.5;
+  radius2ColorPreSmoothing_                = 4.0 * 16;
+  neighborCountColorPreSmoothing_          = 4 * 16;
+  flagColorPreSmoothing_                   = true;
+  groupDilation_                           = true;
+  textureDilationOffLossless_              = true;
+  enhancedDeltaDepthCode_                  = losslessGeo_ ? true : false;
+  EOMFixBitCount_                          = 2;
+  EOMTexturePatch_                         = true;
+  offsetLossyOM_                           = 0;
+  thresholdLossyOM_                        = 0;
+  prefilterLossyOM_                        = false;
+  patchColorSubsampling_                   = false;
+  deltaCoding_                             = true;
+  layerCountMinus1_                        = 1;
 
   // reconstruction
   removeDuplicatePoints_        = true;
@@ -173,6 +185,14 @@ PCCEncoderParameters::PCCEncoderParameters() {
   // 3D and 2D bit depths
   geometry3dCoordinatesBitdepth_ = 10;
   geometryNominal2dBitdepth_     = 8;
+
+  // Partitions and tiles
+  enablePointCloudPartitioning_ = false;
+  numTilesHor_                  = 2;
+  tileHeightToWidthRatio_       = 1;
+
+  // Sort missed points by Morton code
+  mortonOrderSortMissedPoints_  = false;
 }
 
 PCCEncoderParameters::~PCCEncoderParameters() {}
@@ -336,7 +356,19 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   neighborCountColorPreSmoothing         " << neighborCountColorPreSmoothing_ << std::endl;
   std::cout << "\t   flagColorPreSmoothing                  " << flagColorPreSmoothing_ << std::endl;
   std::cout << "\t coloring" << std::endl;
-  std::cout << "\t   bestColorSearchRange                   " << bestColorSearchRange_ << std::endl;
+  std::cout << "\t   bestColorSearchRange                   " << bestColorSearchRange_ << std::endl;  
+  std::cout << "\t   numNeighborsColorTransferFwd           " << numNeighborsColorTransferFwd_ << std::endl;
+  std::cout << "\t   numNeighborsColorTransferBwd           " << numNeighborsColorTransferBwd_ << std::endl;
+  std::cout << "\t   useDistWeightedAverageFwd              " << useDistWeightedAverageFwd_ << std::endl;
+  std::cout << "\t   useDistWeightedAverageBwd              " << useDistWeightedAverageBwd_ << std::endl;
+  std::cout << "\t   skipAvgIfIdenticalSourcePointPresentFwd " << skipAvgIfIdenticalSourcePointPresentFwd_ << std::endl;
+  std::cout << "\t   skipAvgIfIdenticalSourcePointPresentBwd " << skipAvgIfIdenticalSourcePointPresentBwd_ << std::endl;
+  std::cout << "\t   distOffsetFwd                          " << distOffsetFwd_ << std::endl;
+  std::cout << "\t   distOffsetBwd                          " << distOffsetBwd_ << std::endl;
+  std::cout << "\t   geometryDist2ThresholdFwd              " << maxGeometryDist2Fwd_ << std::endl;
+  std::cout << "\t   geometryDist2ThresholdBwd              " << maxGeometryDist2Bwd_ << std::endl;
+  std::cout << "\t   maxColorDist2Fwd                       " << maxColorDist2Fwd_ << std::endl;
+  std::cout << "\t   maxColorDist2Bwd                       " << maxColorDist2Bwd_ << std::endl;
   std::cout << "\t   projectionMode                         " << projectionMode_ << std::endl;
   std::cout << "\t   patchColorSubsampling                  " << patchColorSubsampling_ << std::endl;
   std::cout << "\t Reconstruction " << std::endl;
@@ -350,6 +382,8 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   lossyMissedPointsPatch                 " << lossyMissedPointsPatch_ << std::endl;
   std::cout << "\t   minNormSumOfInvDist4MPSelection        " << minNormSumOfInvDist4MPSelection_ << std::endl;
   std::cout << "\t   lossyMppGeoQP                          " << lossyMppGeoQP_ << std::endl;
+  std::cout << "\t Missed points sorting                    " << std::endl;
+  std::cout << "\t   mortonOrderSortMissedPoints            " << mortonOrderSortMissedPoints_ << std::endl;
   std::cout << "\t Enhanced projection plane                " << enhancedPP_ << std::endl;
   std::cout << "\t AdditionalProjectionPlane                " << std::endl;
   std::cout << "\t   additionalProjectionPlaneMode          " << additionalProjectionPlaneMode_ << std::endl;
@@ -357,6 +391,50 @@ void PCCEncoderParameters::print() {
   std::cout << "\t Geometry 2D and 3D bitdepths             " << std::endl;
   std::cout << "\t   geometry3dCoordinatesBitdepth          " << geometry3dCoordinatesBitdepth_ << std::endl;
   std::cout << "\t   geometryNominal2dBitdepth              " << geometryNominal2dBitdepth_ << std::endl;
+  std::cout << "\t Point cloud partitions and tiles         " << std::endl;
+  std::cout << "\t   enablePointCloudPartitioning           " << enablePointCloudPartitioning_ << std::endl;
+  if (enablePointCloudPartitioning_) {
+    auto printVector = [](std::vector<int> &vec) {
+      for (int i = 0; i < vec.size(); ++i) {
+        std::cout << vec[i];
+        if (i < vec.size() - 1) {
+          std::cout << ",";
+        }
+      }
+      std::cout << std::endl;
+    };
+    std::cout << "\t   roiBoundingBoxMinX                     ";   printVector(roiBoundingBoxMinX_);
+    std::cout << "\t   roiBoundingBoxMaxX                     ";   printVector(roiBoundingBoxMaxX_);
+    std::cout << "\t   roiBoundingBoxMinY                     ";   printVector(roiBoundingBoxMinY_);
+    std::cout << "\t   roiBoundingBoxMaxY                     ";   printVector(roiBoundingBoxMaxY_);
+    std::cout << "\t   roiBoundingBoxMinZ                     ";   printVector(roiBoundingBoxMinZ_);
+    std::cout << "\t   roiBoundingBoxMaxZ                     ";   printVector(roiBoundingBoxMaxZ_);
+    std::cout << "\t   numTilesHor                            " << numTilesHor_                         << std::endl;
+    std::cout << "\t   tileHeightToWidthRatio                 " << tileHeightToWidthRatio_              << std::endl;
+    std::cout << "\t   numCutsAlong1stLongestAxis             " << numCutsAlong1stLongestAxis_          << std::endl;
+    std::cout << "\t   numCutsAlong2ndLongestAxis             " << numCutsAlong2ndLongestAxis_          << std::endl;
+    std::cout << "\t   numCutsAlong3rdLongestAxis             " << numCutsAlong3rdLongestAxis_          << std::endl;
+    std::vector<size_t> vecSizes = {roiBoundingBoxMinX_.size(), roiBoundingBoxMaxX_.size(),
+                                    roiBoundingBoxMinY_.size(), roiBoundingBoxMaxY_.size(),
+                                    roiBoundingBoxMinZ_.size(), roiBoundingBoxMaxZ_.size()};
+    for (int i = 0; i < vecSizes.size(); ++i) {
+      if (vecSizes[i] != vecSizes[0]) {
+        std::cerr
+            << "All the 6 arrays roiBoundingBox[Min-Max][X-Y-Z] must have the same number of elements."
+            << std::endl;
+        std::exit(EXIT_FAILURE);
+      }
+    }
+    numROIs_ = int(roiBoundingBoxMinX_.size());
+    for (int i = 0; i < roiBoundingBoxMinX_.size(); ++i) {
+      if (!(roiBoundingBoxMinX_[i] < roiBoundingBoxMaxX_[i]) ||
+          !(roiBoundingBoxMinY_[i] < roiBoundingBoxMaxY_[i]) ||
+          !(roiBoundingBoxMinZ_[i] < roiBoundingBoxMaxZ_[i])) {
+        std::cerr << "ROI min/max values are not correct." << std::endl;
+        std::exit(EXIT_FAILURE);
+      }
+    }
+  }
   std::cout << std::endl;
 }
 

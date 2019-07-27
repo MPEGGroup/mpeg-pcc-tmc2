@@ -152,8 +152,22 @@ class PCCPointSet3 {
     withNormals_ = false;
     normals_.resize(0);
   }
-  bool transfertColors( PCCPointSet3 &target, const int32_t searchRange,
-                        const bool losslessTexture = false ) const;
+  
+  bool transfertColors( PCCPointSet3& target,
+                        const int32_t searchRange,
+                        const bool    losslessTexture                         = false,
+                        const int     numNeighborsColorTransferFwd            = 1,
+                        const int     numNeighborsColorTransferBwd            = 1,
+                        const bool    useDistWeightedAverageFwd               = true,
+                        const bool    useDistWeightedAverageBwd               = true,
+                        const bool    skipAvgIfIdenticalSourcePointPresentFwd = true,
+                        const bool    skipAvgIfIdenticalSourcePointPresentBwd = true,
+                        const double  distOffsetFwd                           = 0.0001,
+                        const double  distOffsetBwd                           = 0.0001,
+                        double        maxGeometryDist2Fwd                     = 10000.0,
+                        double        maxGeometryDist2Bwd                     = 10000.0,
+                        double        maxColorDist2Fwd                        = 10000.0,
+                        double        maxColorDist2Bwd                        = 10000.0 ) const;
   bool transfertColorSimple( PCCPointSet3 &target,
                              const double bestColorSearchStep = 0.1 );
   bool transfertColorWeight( PCCPointSet3 &target,

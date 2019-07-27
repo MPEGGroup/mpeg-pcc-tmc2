@@ -236,6 +236,16 @@ struct PCCBox3 {
            min_.y() <= box.max_.y() && max_.z() >= box.min_.z() && min_.z() <= box.max_.z();
   }
 
+  bool fullyContains( const PCCBox3& box ) {
+    return max_.x() >= box.max_.x() && min_.x() <= box.min_.x() && max_.y() >= box.max_.y() &&
+           min_.y() <= box.min_.y() && max_.z() >= box.max_.z() && min_.z() <= box.min_.z();
+  }
+
+  bool fullyContains( const PCCVector3<int16_t> point ) const {
+    return max_.x() >= point.x() && min_.x() <= point.x() && max_.y() >= point.y() && min_.y() <= point.y() &&
+           max_.z() >= point.z() && min_.z() <= point.z();
+  }
+
   friend std::ostream& operator<<( std::ostream& os, const PCCBox3& box ) {
     os << box.min_[0] << " " << box.min_[1] << " " << box.min_[2] << " " << box.max_[0] << " " << box.max_[1] << " "
        << box.max_[2] << std::endl;
