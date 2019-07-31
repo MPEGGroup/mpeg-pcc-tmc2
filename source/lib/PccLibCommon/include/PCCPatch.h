@@ -86,7 +86,6 @@ class PCCPatch {
       sizeV0_( 0 ),
       occupancyResolution_( 0 ),
       projectionMode_( 0 ),
-      frameProjectionMode_( 0 ),
       levelOfDetail_( 0 ),
       normalAxis_( 0 ),
       tangentAxis_( 0 ),
@@ -128,7 +127,6 @@ class PCCPatch {
   void                  setPatchType( uint8_t value ){ patchType_ = value; }
   size_t&               getOccupancyResolution() { return occupancyResolution_; }
   size_t&               getProjectionMode() { return projectionMode_; }
-  size_t&               getFrameProjectionMode() { return frameProjectionMode_; }
   size_t&               getNormalAxis() { return normalAxis_; }
   size_t&               getTangentAxis() { return tangentAxis_; }
   size_t&               getBitangentAxis() { return bitangentAxis_; }
@@ -151,7 +149,6 @@ class PCCPatch {
   size_t                      getSizeV0() const { return sizeV0_; }
   size_t                      getOccupancyResolution() const { return occupancyResolution_; }
   size_t                      getProjectionMode() const { return projectionMode_; }
-  size_t                      getFrameProjectionMode() const { return frameProjectionMode_; }
   size_t                      getNormalAxis() const { return normalAxis_; }
   size_t                      getTangentAxis() const { return tangentAxis_; }
   size_t                      getBitangentAxis() const { return bitangentAxis_; }
@@ -177,8 +174,7 @@ class PCCPatch {
   inline double generateNormalCoordinate( const uint16_t depth,
                                           const double   lodScale,
                                           const bool     useMppSepVid,
-                                          const bool     lossyMpp,
-										  const bool     absoluteD1	) const {
+                                          const bool     lossyMpp ) const {
     double coord = 0;
     if ( lossyMpp && !useMppSepVid ) {  // support lossy missed points patch in same video frame, re-shift depth values
                                         // to store in 10-bit video frame
@@ -189,7 +185,7 @@ class PCCPatch {
         if ( tmp_depth > 0 ) { coord = tmp_depth * lodScale; }
       }
     } else {
-      if ( projectionMode_ == 0 || !absoluteD1) {
+      if ( projectionMode_ == 0 ) {
         coord = ( (double)depth + (double)d1_ ) * lodScale;
       } else {
         double tmp_depth = double( d1_ ) - double( depth );
@@ -204,15 +200,14 @@ class PCCPatch {
                             const uint16_t depth,
                             const double   lodScale,
                             const bool     useMppSepVid,
-                            const bool     lossyMpp,
-							const bool     absoluteD1 ) const {
+                            const bool     lossyMpp ) const {
     const size_t nu = double( u ) * (double)lodScale;
     const size_t nv = double( v ) * (double)lodScale;
 	PCCPoint3D point0;
     //point0[normalAxis_]    = generateNormalCoordinate( depth, lodScale, useMppSepVid, lossyMpp, absoluteD1 );
     //point0[tangentAxis_]   = ( double( u ) + u1_ );
     //point0[bitangentAxis_] = ( double( v ) + v1_ );
-    point0[normalAxis_]    = generateNormalCoordinate( depth, 1.0, useMppSepVid, lossyMpp, absoluteD1 );
+    point0[normalAxis_]    = generateNormalCoordinate( depth, 1.0, useMppSepVid, lossyMpp );
     point0[tangentAxis_]   = ( double( nu ) + u1_ );
     point0[bitangentAxis_] = ( double( nv ) + v1_ );
     return point0;
@@ -260,7 +255,7 @@ class PCCPatch {
 			  break;
 		  default: assert(0); break;
 		  }
-		  point0[normalAxis_] = generateNormalCoordinate(depth, lodScale, useMppSepVid, lossyMpp, absoluteD1);
+		  point0[normalAxis_] = generateNormalCoordinate(depth, lodScale, useMppSepVid, lossyMpp);
 		  point0[tangentAxis_] = (double(u) + u1_) * lodScale;
 		  point0[bitangentAxis_] = (double(v) + v1_) * lodScale;
 		  return point0;
@@ -853,7 +848,6 @@ class PCCPatch {
   size_t               sizeV0_;               // size of occupancy map
   size_t               occupancyResolution_;  // occupancy map resolution
   size_t               projectionMode_;       // 0: related to the min depth value; 1: related to the max value
-  size_t               frameProjectionMode_;  // 0: fixed projection mode(all patches use 0), 1: variable mode
   size_t               levelOfDetail_;        // level of detail, i.e., patch sampling resolution
   size_t               normalAxis_;           // x
   size_t               tangentAxis_;          // y

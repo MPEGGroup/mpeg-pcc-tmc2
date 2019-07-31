@@ -62,7 +62,6 @@ struct PCCPatchSegmenter3Parameters {
   double           maxAllowedDist2MissedPointsSelection;
   double           lambdaRefineSegmentation;
   size_t           levelOfDetail;
-  size_t           projectionMode;
   bool             useEnhancedDeltaDepthCode;
   bool             absoluteD1;
   bool             createSubPointCloud;
@@ -147,12 +146,11 @@ class PCCPatchSegmenter3 {
                        std::vector<size_t>&       resampledPatchPartition,
                        std::vector<size_t>        missedPoints,
                        PCCPointSet3&              resampled,
-                       const size_t               paramProjectionMode,
                        bool                       useEnhancedDeltaDepthCode,
                        const bool                 createSubPointCloud,
                        std::vector<PCCPointSet3>& subPointCloud,
                        float&                     distanceSrcRec,
-                       const bool                 sixDirection,
+                       const bool                 absoluteD1,
                        bool                       useSurfaceSeparation,
                        const size_t               additionalProjectionPlaneMode,
                        const size_t               geometryBitDepth3D,
@@ -194,14 +192,7 @@ class PCCPatchSegmenter3 {
   size_t                nbThread_;
   std::vector<PCCPatch> boxMinDepths_;  // box depth list
   std::vector<PCCPatch> boxMaxDepths_;  // box depth list
-  size_t                selectFrameProjectionMode( const PCCPointSet3& points,
-                                                   const size_t        surfaceThickness,
-                                                   const size_t        minLevel,
-                                                   const size_t        paramProjectionMode );
-  void                  selectPatchProjectionMode( const PCCPointSet3&  points,
-                                                   size_t               frameProjectionMode,
-                                                   std::vector<size_t>& connectedComponent,
-                                                   PCCPatch&            patch );
+
   void                  convert( size_t Axis, size_t lod, PCCPoint3D input, PCCPoint3D& output ) {
     size_t shif = ( 1u << lod ) - 1;
     output      = input;

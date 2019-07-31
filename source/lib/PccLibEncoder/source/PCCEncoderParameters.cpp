@@ -115,7 +115,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   textureMPConfig_                         = {};
   nbThread_                                = 1;
   keepIntermediateFiles_                   = false;
-  projectionMode_                          = 0;
+
   absoluteD1_                              = true;
   constrainedPack_                         = true;
   thresholdColorSmoothing_                 = 10.0;
@@ -369,7 +369,6 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   geometryDist2ThresholdBwd              " << maxGeometryDist2Bwd_ << std::endl;
   std::cout << "\t   maxColorDist2Fwd                       " << maxColorDist2Fwd_ << std::endl;
   std::cout << "\t   maxColorDist2Bwd                       " << maxColorDist2Bwd_ << std::endl;
-  std::cout << "\t   projectionMode                         " << projectionMode_ << std::endl;
   std::cout << "\t   patchColorSubsampling                  " << patchColorSubsampling_ << std::endl;
   std::cout << "\t Reconstruction " << std::endl;
   std::cout << "\t   removeDuplicatePoints                  " << removeDuplicatePoints_ << std::endl;

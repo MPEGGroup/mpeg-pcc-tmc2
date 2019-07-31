@@ -207,6 +207,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                 << std::endl;
       std::exit( -1 );
     }
+	
     // Compress geometryD0
     auto& videoBitstreamD0 = context.createVideoBitstream( VIDEO_GEOMETRY_D0 );
     auto& videoGeometry    = context.getVideoGeometry();
@@ -3448,47 +3449,63 @@ void PCCEncoder::generateIntraImage( PCCFrameContext& frame, const size_t depthI
   }
 }
 
-bool PCCEncoder::predictGeometryFrame( PCCFrameContext&        frame,
-                                       const PCCImageGeometry& reference,
-                                       PCCImageGeometry&       image ) {
-  assert( reference.getWidth() == image.getWidth() );
-  assert( reference.getHeight() == image.getHeight() );
-  const size_t refWidth            = reference.getWidth();
-  const size_t refHeight           = reference.getHeight();
-  auto&        occupancyMap        = frame.getFullOccupancyMap();
-  size_t       occupancyResolution = params_.occupancyResolution_;
+bool PCCEncoder::predictGeometryFrame(PCCFrameContext&        frame,
+	const PCCImageGeometry& reference,
+	PCCImageGeometry&       image) {
+	assert(reference.getWidth() == image.getWidth());
+	assert(reference.getHeight() == image.getHeight());
 
-  for ( size_t y = 0; y < refHeight; ++y ) {
-    for ( size_t x = 0; x < refWidth; ++x ) {
-      const size_t pos1 = y * refWidth + x;
-      if ( occupancyMap[pos1] == 1 ) {
-        for ( size_t c = 0; c < 1; ++c ) {
-          // for (size_t c = 0; c < 3; ++c) {
-          const uint16_t value1 = static_cast<uint16_t>( image.getValue( c, x, y ) );
-          const uint16_t value0 = static_cast<uint16_t>( reference.getValue( c, x, y ) );
-          size_t p = ( ( y / occupancyResolution ) * ( refWidth / occupancyResolution ) ) + ( x / occupancyResolution );
-          size_t patchIndex = frame.getBlockToPatch()[p] - 1;
-          auto   patch      = frame.getPatches()[patchIndex];
+	auto& patches = frame.getPatches();
+	auto& blockToPatch = frame.getBlockToPatch();
+	auto& occupancyMap = frame.getFullOccupancyMap();
 
-          int_least32_t delta = 0;
-          if ( patch.getProjectionMode() == 0 ) {
-            delta = (int_least32_t)value1 - (int_least32_t)value0;
-            if ( delta < 0 ) { delta = 0; }
-            if ( !params_.losslessGeo_ && delta > 9 ) { delta = 9; }
-            image.setValue( c, x, y, (uint8_t)delta );
-          } else {
-            delta = (int_least32_t)value0 - (int_least32_t)value1;
-            if ( delta < 0 ) { delta = 0; }
-            if ( !params_.losslessGeo_ && delta > 9 ) {  // no clipping for lossless coding
-              delta = 9;
-            }
-            image.setValue( c, x, y, (uint8_t)delta );
-          }
-        }
-      }
-    }
-  }
-  return true;
+	const size_t imageWidth = reference.getWidth();
+	const size_t imageHeight = reference.getHeight();
+
+	const size_t blockToPatchWidth = frame.getWidth() / params_.occupancyResolution_;
+	const size_t blockToPatchHeight = frame.getHeight() / params_.occupancyResolution_;
+
+	const size_t patchCount = patches.size();
+	size_t patchIndex{ 0 };
+
+	for (patchIndex = 0; patchIndex < patchCount; ++patchIndex) {
+		const size_t patchIndexPlusOne = patchIndex + 1;
+		auto &patch = patches[patchIndex];
+
+		for (size_t v0 = 0; v0 < patch.getSizeV0(); ++v0) {
+			for (size_t u0 = 0; u0 < patch.getSizeU0(); ++u0) {
+				const size_t blockIndex = patch.patchBlock2CanvasBlock(u0, v0, blockToPatchWidth, blockToPatchHeight);
+				if (blockToPatch[blockIndex] == patchIndexPlusOne) {
+					for (size_t v1 = 0; v1 < patch.getOccupancyResolution(); ++v1) {
+						const size_t v = v0 * patch.getOccupancyResolution() + v1;
+						for (size_t u1 = 0; u1 < patch.getOccupancyResolution(); ++u1) {
+							const size_t u = u0 * patch.getOccupancyResolution() + u1;
+							size_t x, y;
+							patch.patch2Canvas(u, v, imageWidth, imageHeight, x, y);
+							const bool occupancy = occupancyMap[y*imageWidth + x] != 0;
+							if (!occupancy) {
+								continue;
+							}
+							const uint16_t value1 = static_cast<uint16_t>(image.getValue(0, x, y));
+							const uint16_t value0 = static_cast<uint16_t>(reference.getValue(0, x, y));
+							int_least32_t delta = 0;
+
+							delta = (int_least32_t)value1 - (int_least32_t)value0;
+							if (delta < 0) {
+								delta = 0;
+							}
+							if (!params_.losslessGeo_ && delta > 9) {
+								delta = 9;
+							}
+							image.setValue(0, x, y, (uint8_t)delta);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return true;
 }
 
 void PCCEncoder::generateMissedPointsPatch( const PCCPointSet3& source,
@@ -3496,7 +3513,6 @@ void PCCEncoder::generateMissedPointsPatch( const PCCPointSet3& source,
                                             bool                useEnhancedDeltaDepthCode ) {
   const int16_t infiniteDepth    = ( std::numeric_limits<int16_t>::max )();
   auto&         patches          = frame.getPatches();
-  bool          sixDirectionFlag = params_.absoluteD1_;
 
   const size_t geometry3dCoordinatesBitdepth = params_.geometry3dCoordinatesBitdepth_;
 
@@ -3508,15 +3524,13 @@ void PCCEncoder::generateMissedPointsPatch( const PCCPointSet3& source,
         const size_t depth0 = patch.getDepth( 0 )[p];
         if ( depth0 < infiniteDepth ) {
           PCCPoint3D point0;
-          if ( !sixDirectionFlag ) {
-            point0[patch.getNormalAxis()] = double( depth0 ) + patch.getD1();
+
+          if ( patch.getProjectionMode() == 0 ) {
+            point0[patch.getNormalAxis()] = double( depth0 + patch.getD1() );
           } else {
-            if ( patch.getProjectionMode() == 0 ) {
-              point0[patch.getNormalAxis()] = double( depth0 + patch.getD1() );
-            } else {
-              point0[patch.getNormalAxis()] = double( patch.getD1() - depth0 );
-            }
+            point0[patch.getNormalAxis()] = double( patch.getD1() - depth0 );
           }
+
           point0[patch.getTangentAxis()]   = double( u ) + patch.getU1();
           point0[patch.getBitangentAxis()] = double( v ) + patch.getV1();
           if ( patch.getAxisOfAdditionalPlane() != 0 ) {
@@ -3541,30 +3555,17 @@ void PCCEncoder::generateMissedPointsPatch( const PCCPointSet3& source,
                   if ( params_.layerCountMinus1_ == 0 ) {
                     depth1 = depth0;
                     if ( params_.layerCountMinus1_ > 0 ) { depth1 = patch.getDepth( 1 )[p]; }
-                    if ( !sixDirectionFlag ) {
-                      if ( patch.getProjectionMode() == 0 ) {
-                        if ( params_.layerCountMinus1_ > 0 && depth0 + nDeltaDCur >= depth1 ) { nDeltaDCur++; }
-                      } else {
-                        if ( params_.layerCountMinus1_ > 0 && depth0 - nDeltaDCur <= depth1 ) { nDeltaDCur++; }
-                      }
-                    } else {
-                      if ( params_.layerCountMinus1_ > 0 && depth0 + nDeltaDCur >= depth1 ) { nDeltaDCur++; }
-                    }
+
+                    if ( params_.layerCountMinus1_ > 0 && depth0 + nDeltaDCur >= depth1 ) { nDeltaDCur++; }
+
                   } else {
                     depth1 = patch.getDepth( 1 )[p];
                   }
-                  if ( !sixDirectionFlag ) {
-                    if ( patch.getProjectionMode() == 0 ) {
-                      point1[patch.getNormalAxis()] = double( depth0 + patch.getD1() + nDeltaDCur );
-                    } else {
-                      point1[patch.getNormalAxis()] = double( depth0 + patch.getD1() - nDeltaDCur );
-                    }
+
+                  if ( patch.getProjectionMode() == 0 ) {
+                    point1[patch.getNormalAxis()] = double( depth0 + patch.getD1() + nDeltaDCur );
                   } else {
-                    if ( patch.getProjectionMode() == 0 ) {
-                      point1[patch.getNormalAxis()] = double( depth0 + patch.getD1() + nDeltaDCur );
-                    } else {
-                      point1[patch.getNormalAxis()] = double( patch.getD1() - depth0 - nDeltaDCur );
-                    }
+                    point1[patch.getNormalAxis()] = double( patch.getD1() - depth0 - nDeltaDCur );
                   }
                   pointsToBeProjected.addPoint( point1 );
                 }
@@ -3572,44 +3573,24 @@ void PCCEncoder::generateMissedPointsPatch( const PCCPointSet3& source,
             }    // if( patch.getDepthEnhancedDeltaD()[p] != 0) )
           } else {
             const size_t depth1 = patch.getDepth( 1 )[p];
-            if ( !sixDirectionFlag ) {
-              if ( ( ( depth1 > depth0 ) && ( patch.getProjectionMode() == 0 ) ) ||
-                   ( ( depth1 < depth0 ) && ( patch.getProjectionMode() == 1 ) ) ) {
-                PCCPoint3D point1;
-                point1[patch.getNormalAxis()]    = double( depth1 ) + patch.getD1();
-                point1[patch.getTangentAxis()]   = double( u ) + patch.getU1();
-                point1[patch.getBitangentAxis()] = double( v ) + patch.getV1();
-                if ( patch.getAxisOfAdditionalPlane() != 0 ) {
-                  PCCPoint3D  input = point1;
-                  PCCVector3D tmp2;
-                  PCCPatch::InverseRotatePosition45DegreeOnAxis( patch.getAxisOfAdditionalPlane(),
-                                                                 geometry3dCoordinatesBitdepth, input, tmp2 );
-                  point1.x() = tmp2.x();
-                  point1.y() = tmp2.y();
-                  point1.z() = tmp2.z();
-                }
-                pointsToBeProjected.addPoint( point1 );
-              }
+            PCCPoint3D point1;
+            point1[patch.getTangentAxis()]   = double( u ) + patch.getU1();
+            point1[patch.getBitangentAxis()] = double( v ) + patch.getV1();
+            if ( patch.getProjectionMode() == 0 ) {
+              point1[patch.getNormalAxis()] = double( depth1 ) + patch.getD1();
             } else {
-              PCCPoint3D point1;
-              point1[patch.getTangentAxis()]   = double( u ) + patch.getU1();
-              point1[patch.getBitangentAxis()] = double( v ) + patch.getV1();
-              if ( patch.getProjectionMode() == 0 ) {
-                point1[patch.getNormalAxis()] = double( depth1 ) + patch.getD1();
-              } else {
-                point1[patch.getNormalAxis()] = double( patch.getD1() ) - double( depth1 );
-              }
-              if ( patch.getAxisOfAdditionalPlane() != 0 ) {
-                PCCPoint3D  input = point1;
-                PCCVector3D tmp3;
-                PCCPatch::InverseRotatePosition45DegreeOnAxis( patch.getAxisOfAdditionalPlane(),
-                                                               geometry3dCoordinatesBitdepth, input, tmp3 );
-                point1.x() = tmp3.x();
-                point1.y() = tmp3.y();
-                point1.z() = tmp3.z();
-              }
-              pointsToBeProjected.addPoint( point1 );
+              point1[patch.getNormalAxis()] = double( patch.getD1() ) - double( depth1 );
             }
+            if ( patch.getAxisOfAdditionalPlane() != 0 ) {
+              PCCPoint3D  input = point1;
+              PCCVector3D tmp3;
+              PCCPatch::InverseRotatePosition45DegreeOnAxis( patch.getAxisOfAdditionalPlane(),
+                                                               geometry3dCoordinatesBitdepth, input, tmp3 );
+              point1.x() = tmp3.x();
+              point1.y() = tmp3.y();
+              point1.z() = tmp3.z();
+            }
+            pointsToBeProjected.addPoint( point1 );
           }
         }
       }
@@ -4035,7 +4016,6 @@ bool PCCEncoder::generateGeometryVideo( const PCCGroupOfFrames& sources, PCCCont
   segmenterParams.maxAllowedDist2MissedPointsDetection = params_.maxAllowedDist2MissedPointsDetection_;
   segmenterParams.maxAllowedDist2MissedPointsSelection = params_.maxAllowedDist2MissedPointsSelection_;
   segmenterParams.lambdaRefineSegmentation             = params_.lambdaRefineSegmentation_;
-  segmenterParams.projectionMode                       = params_.projectionMode_;
   segmenterParams.useEnhancedDeltaDepthCode            = params_.losslessGeo_ ? params_.enhancedDeltaDepthCode_ : false;
   segmenterParams.absoluteD1                           = params_.absoluteD1_;
   segmenterParams.createSubPointCloud = params_.pointLocalReconstruction_ || params_.singleLayerPixelInterleaving_;

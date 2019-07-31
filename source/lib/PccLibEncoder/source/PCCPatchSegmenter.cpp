@@ -123,7 +123,7 @@ void PCCPatchSegmenter3::compute( const PCCPointSet3&                 geometry,
       params.occupancyResolution, params.maxAllowedDist2MissedPointsDetection,
       params.maxAllowedDist2MissedPointsSelection, params.EOMSingleLayerMode, params.EOMFixBitCount,
       params.surfaceThickness, params.maxAllowedDepth, params.minLevel, partition, patches, patchPartition,
-      resampledPatchPartition, missedPoints, resampled, params.projectionMode, params.useEnhancedDeltaDepthCode,
+      resampledPatchPartition, missedPoints, resampled, params.useEnhancedDeltaDepthCode,
       params.createSubPointCloud, subPointCloud, distanceSrcRec, params.absoluteD1, params.surfaceSeparation,
       params.additionalProjectionPlaneMode, params.geometryBitDepth3D, params.testLevelOfDetail, params.patchExpansion,
       params.enablePointCloudPartitioning, const_cast<PCCPatchSegmenter3Parameters&>( params ).roiBoundingBoxMinX,
@@ -247,201 +247,7 @@ void PCCPatchSegmenter3::computeAdjacencyInfoDist( const PCCPointSet3&          
   } );
 }
 
-size_t PCCPatchSegmenter3::selectFrameProjectionMode( const PCCPointSet3& points,
-                                                      const size_t        surfaceThickness,
-                                                      const size_t        minLevel,
-                                                      const size_t        paramProjectionMode ) {
-  const int16_t infiniteDepth       = ( std::numeric_limits<int16_t>::max )();
-  const size_t  boxSize             = size_t( 2047 );
-  size_t        frameProjectionMode = 0;
-  // allocate patch cube
-  boxMinDepths_.resize( 3 );
-  boxMaxDepths_.resize( 3 );
-  for ( auto& plan : boxMinDepths_ ) {
-    plan.getSizeU() = boxSize;
-    plan.getSizeV() = boxSize;
-    plan.getSizeD() = boxSize;
-    plan.getD1()    = ( std::numeric_limits<int16_t>::max )();
-    plan.getU1()    = size_t( 0 );
-    plan.getV1()    = size_t( 0 );
-    plan.getDepth( 0 ).resize( plan.getSizeU() * plan.getSizeV(), infiniteDepth );
-    plan.getDepth( 1 ).resize( plan.getSizeU() * plan.getSizeV(), 0 );
-  }
-  for ( auto& plan : boxMaxDepths_ ) {
-    plan.getSizeU() = boxSize;
-    plan.getSizeV() = boxSize;
-    plan.getSizeD() = boxSize;
-    plan.getD1()    = ( std::numeric_limits<int16_t>::max )();
-    plan.getU1()    = size_t( 0 );
-    plan.getV1()    = size_t( 0 );
-    plan.getDepth( 0 ).resize( plan.getSizeU() * plan.getSizeV(), 0 );
-    plan.getDepth( 1 ).resize( plan.getSizeU() * plan.getSizeV(), infiniteDepth );
-  }
-  boxMinDepths_[0].getNormalAxis()    = 0;  // min depth  projection along x axis towards (z,y) plan
-  boxMinDepths_[0].getTangentAxis()   = 2;
-  boxMinDepths_[0].getBitangentAxis() = 1;
 
-  boxMinDepths_[1].getNormalAxis()    = 1;  //  min depth projection along y axis towards (z,x) plan
-  boxMinDepths_[1].getTangentAxis()   = 2;
-  boxMinDepths_[1].getBitangentAxis() = 0;
-
-  boxMinDepths_[2].getNormalAxis()    = 2;  //  min depth projection along z axis towards (x,y) plan
-  boxMinDepths_[2].getTangentAxis()   = 0;
-  boxMinDepths_[2].getBitangentAxis() = 1;
-
-  boxMaxDepths_[0].getNormalAxis()    = 0;  //  max depth projection along x axis towards (z,y) plan
-  boxMaxDepths_[0].getTangentAxis()   = 2;
-  boxMaxDepths_[0].getBitangentAxis() = 1;
-
-  boxMaxDepths_[1].getNormalAxis()    = 1;  //  max depth projection along y axis towards (z,x) plan
-  boxMaxDepths_[1].getTangentAxis()   = 2;
-  boxMaxDepths_[1].getBitangentAxis() = 0;
-
-  boxMaxDepths_[2].getNormalAxis()    = 2;  //  max depth projection along z axis towards (x,y) plan
-  boxMaxDepths_[2].getTangentAxis()   = 0;
-  boxMaxDepths_[2].getBitangentAxis() = 1;
-
-  // projection keeping the minimum depth
-  for ( auto& plan : boxMinDepths_ ) {
-    std::fill( plan.getDepth( 0 ).begin(), plan.getDepth( 0 ).end(), infiniteDepth );
-    for ( int i = 0; i < points.getPointCount(); i++ ) {
-      const auto&   point = points[i];
-      const int16_t d     = int16_t( round( point[plan.getNormalAxis()] ) );
-      const size_t  u     = size_t( round( point[plan.getTangentAxis()] - plan.getU1() ) );
-      const size_t  v     = size_t( round( point[plan.getBitangentAxis()] - plan.getV1() ) );
-      assert( u >= 0 && u < plan.getSizeU() );
-      assert( v >= 0 && v < plan.getSizeV() );
-      const size_t p = v * plan.getSizeU() + u;
-      if ( plan.getDepth( 0 )[p] > d ) {
-        plan.getDepth( 0 )[p] = d;
-        plan.getD1()          = ( std::min )( plan.getD1(), size_t( minLevel * ( d / minLevel ) ) );
-      }
-    }
-  }
-  // projection keeping the maximum depth
-  for ( auto& plan : boxMaxDepths_ ) {
-    std::fill( plan.getDepth( 0 ).begin(), plan.getDepth( 0 ).end(), 0 );
-    for ( int i = 0; i < points.getPointCount(); i++ ) {
-      const auto&   point = points[i];
-      const int16_t d     = int16_t( round( point[plan.getNormalAxis()] ) );
-      const size_t  u     = size_t( round( point[plan.getTangentAxis()] - plan.getU1() ) );
-      const size_t  v     = size_t( round( point[plan.getBitangentAxis()] - plan.getV1() ) );
-      assert( u >= 0 && u < plan.getSizeU() );
-      assert( v >= 0 && v < plan.getSizeV() );
-      const size_t p = v * plan.getSizeU() + u;
-      if ( plan.getDepth( 0 )[p] < d ) {
-        plan.getDepth( 0 )[p] = d;
-        plan.getD1()          = ( std::max )( plan.getD1(), size_t( minLevel * ( d / minLevel ) ) );
-      }
-    }
-  }
-
-  // find a global criterion to apply or not the adaptive selection of the projection direction at patch level
-  // compute depth1
-  for ( auto& plan : boxMinDepths_ ) {
-    plan.getDepth( 1 ) = plan.getDepth( 0 );
-    for ( int i = 0; i < points.getPointCount(); i++ ) {
-      const auto&   point = points[i];
-      const int16_t d     = int16_t( round( point[plan.getNormalAxis()] ) );
-      const int64_t u     = int64_t( round( point[plan.getTangentAxis()] - plan.getU1() ) );
-      const int64_t v     = int64_t( round( point[plan.getBitangentAxis()] - plan.getV1() ) );
-      if ( u < 0 || u >= plan.getSizeU() )
-        std::cout << " u < 0 || u >= plan.getSizeU() ! (u,v,d) = (" << u << "," << v << "," << d << ")." << std::endl;
-      if ( v < 0 || v >= plan.getSizeV() )
-        std::cout << " u < 0 || u >= plan.getSizeV() ! (u,v,d) = (" << u << "," << v << "," << d << ")." << std::endl;
-      assert( u >= 0 && u < plan.getSizeU() );
-      assert( v >= 0 && v < plan.getSizeV() );
-      const size_t  p      = v * plan.getSizeU() + u;
-      const int16_t depth0 = plan.getDepth( 0 )[p];
-
-      if ( depth0 < infiniteDepth && ( d - depth0 ) <= int16_t( surfaceThickness ) && d > plan.getDepth( 1 )[p] ) {
-        plan.getDepth( 1 )[p] = d;
-      }
-    }
-  }
-
-  size_t cptD0[3];
-  size_t cptD1[3];
-  size_t j = 0;
-  for ( auto& plan : boxMinDepths_ ) {
-    cptD0[j] = 0;
-    cptD1[j] = 0;
-    for ( int i = 0; i < plan.getSizeU() * plan.getSizeV(); i++ ) {
-      if ( plan.getDepth( 0 )[i] < infiniteDepth ) { cptD0[j]++; }
-      if ( plan.getDepth( 0 )[i] < infiniteDepth && plan.getDepth( 0 )[i] != plan.getDepth( 1 )[i] ) { cptD1[j]++; }
-    }
-    j++;
-  }
-
-  double ratioD1D0          = double( cptD1[0] + cptD1[1] + cptD1[2] ) / double( cptD0[0] + cptD0[1] + cptD0[2] );
-  double ratioD1D0Threshold = 0.8;
-  if ( paramProjectionMode == 3 ) {
-    ratioD1D0Threshold = 0.0;
-  } else if ( paramProjectionMode == 2 ) {
-    if ( ratioD1D0 < ratioD1D0Threshold ) {
-      frameProjectionMode = 0;  // min for all patches
-    } else {
-      frameProjectionMode = 2;  // adaptive projection mode at patch level
-    }
-  } else if ( paramProjectionMode == 3 ) {
-    frameProjectionMode = 2;  // adaptive projection mode at patch level
-  }
-  return frameProjectionMode;
-}
-void PCCPatchSegmenter3::selectPatchProjectionMode( const PCCPointSet3&  points,
-                                                    size_t               frameProjectionMode,
-                                                    std::vector<size_t>& connectedComponent,
-                                                    PCCPatch&            patch ) {
-  const size_t boxSize = size_t( 2047 );
-  if ( frameProjectionMode == 0 ) {
-    patch.getProjectionMode()      = 0;  // min for all patches
-    patch.getFrameProjectionMode() = 0;
-  } else if ( frameProjectionMode == 1 ) {
-    patch.getProjectionMode()      = 1;  // max for all patches
-    patch.getFrameProjectionMode() = 1;
-  } else if ( ( frameProjectionMode == 2 ) || ( frameProjectionMode == 4 ) ) {
-    // selection of projectionMode per patch
-    patch.getFrameProjectionMode() = 2;
-    uint16_t cptMinD0[3]           = {0, 0, 0};
-    uint16_t cptMaxD0[3]           = {0, 0, 0};
-    for ( const auto i : connectedComponent ) {
-      const auto&   point = points[i];
-      const int16_t d     = int16_t( round( point[patch.getNormalAxis()] ) );
-      const size_t  u     = size_t( round( point[patch.getTangentAxis()] ) );
-      const size_t  v     = size_t( round( point[patch.getBitangentAxis()] ) );
-      assert( u >= 0 && u < patch.getSizeU() );
-      assert( v >= 0 && v < patch.getSizeV() );
-      assert( d >= 0 );
-      const size_t p = v * boxSize + u;
-      if ( boxMinDepths_[patch.getNormalAxis()].getDepth( 0 )[p] == d ) { cptMinD0[patch.getNormalAxis()]++; }
-      if ( boxMaxDepths_[patch.getNormalAxis()].getDepth( 0 )[p] == d ) { cptMaxD0[patch.getNormalAxis()]++; }
-    }
-
-    // select best projection's mode
-#define PROJ_MODE_IMPROVEMENT 0
-#if PROJ_MODE_IMPROVEMENT == 1
-    size_t patchSize = patch.getSizeU() * patch.getSizeV();
-    if ( patch.getViewId() >= 3 ) {
-      patch.getProjectionMode() = 1;
-      if ( cptMinD0[patch.getNormalAxis()] - cptMaxD0[patch.getNormalAxis()] >= 0 ) { patch.getProjectionMode() = 0; }
-    } else {
-      patch.getProjectionMode() = 0;
-      if ( cptMaxD0[patch.getNormalAxis()] - cptMinD0[patch.getNormalAxis()] >= 0 ) {
-          patch.getProjectionMode() = 1;
-        }
-    }
-    // std::cout << "(dir, cptMinD0, cptMinD1, projMode) = ( " <<
-#else
-    if ( cptMinD0[patch.getNormalAxis()] >= cptMaxD0[patch.getNormalAxis()] ) {
-      patch.getProjectionMode() = 0;
-    } else {
-      patch.getProjectionMode() = 1;
-    }
-#endif
-  }
-
-  if ( patch.getProjectionMode() == 1 ) { patch.getDepth( 1 ).resize( patch.getSizeU() * patch.getSizeV(), 0 ); }
-}
 
 void printChunk( const std::vector<std::pair<int, int>>& chunk ) {
   std::vector<std::string> axisName{"x -> ", "y -> ", "z -> "};
@@ -470,12 +276,11 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
                                          std::vector<size_t>&       resampledPatchPartition,
                                          std::vector<size_t>        missedPoints,
                                          PCCPointSet3&              resampled,
-                                         const size_t               paramProjectionMode,
                                          bool                       useEnhancedDeltaDepthCode,
                                          const bool                 createSubPointCloud,
                                          std::vector<PCCPointSet3>& subPointCloud,
                                          float&                     distanceSrcRec,
-                                         const bool                 sixDirection,  // params.absoluteD1
+                                         const bool                 absoluteD1,
                                          bool                       useSurfaceSeparation,
                                          const size_t               additionalProjectionAxis,
                                          const size_t               geometryBitDepth3D,
@@ -703,17 +508,6 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
   double meanPAB = 0.0, meanYAB = 0.0, meanUAB = 0.0, meanVAB = 0.0;
   double meanPBA = 0.0, meanYBA = 0.0, meanUBA = 0.0, meanVBA = 0.0;
   size_t testSrcNum = 0, testRecNum = 0;
-
-  size_t frameProjectionMode = 0;
-  if ( !sixDirection ) {
-    if ( paramProjectionMode == 0 ) {
-      frameProjectionMode = 0;  // max for all patches
-    } else if ( paramProjectionMode == 1 ) {
-      frameProjectionMode = 1;  // max for all patches
-    } else {
-      frameProjectionMode = selectFrameProjectionMode( points, surfaceThickness, minLevel, paramProjectionMode );
-    }
-  }
   size_t   numberOfEDDD = 0;
   uint16_t maxD         = 1 << geometryBitDepth3D;
   while ( !missedPoints.empty() ) {
@@ -924,13 +718,14 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
       patch.getPreGPAPatchData().initialize();
       patch.getCurGPAPatchData().initialize();
 
-      if ( sixDirection ) {
-        if ( clusterIndex <= 2 ) {
-          patch.getProjectionMode() = 0;
-        } else {
-          patch.getProjectionMode() = 1;
-        }
-        // for additional projection plane
+      if ( clusterIndex <= 2 ) {
+        patch.getProjectionMode() = 0;
+      } else {
+        patch.getProjectionMode() = 1;
+      }
+
+	  if (absoluteD1) {
+		// for additional projection plane
         if ( clusterIndex == 6 || clusterIndex == 7 ) { patch.getProjectionMode() = 0; }
         // for additional projection plane
         if ( clusterIndex == 10 || clusterIndex == 11 || clusterIndex == 14 || clusterIndex == 15 ) {
@@ -1013,15 +808,12 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
       patch.getU1()    = size_t( boundingBox.min_[patch.getTangentAxis()] );
       patch.getV1()    = size_t( boundingBox.min_[patch.getBitangentAxis()] );
 
-      if ( !sixDirection ) {
+      if ( patch.getProjectionMode() == 0 ) {
         patch.getD1() = infiniteDepth;
       } else {
-        if ( patch.getProjectionMode() == 0 ) {
-          patch.getD1() = infiniteDepth;
-        } else {
-          patch.getD1() = 0;
-        }
+        patch.getD1() = 0;
       }
+
       patch.getDepth( 0 ).resize( patch.getSizeU() * patch.getSizeV(), infiniteDepth );
       if ( useSurfaceSeparation ) {
         patch.getdepth0pccidx().resize( patch.getSizeU() * patch.getSizeV(), infinitenumber );
@@ -1034,7 +826,6 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
       patch.getOccupancyResolution() = occupancyResolution;
       patch.getSizeU0()              = 0;
       patch.getSizeV0()              = 0;
-      if ( !sixDirection ) { selectPatchProjectionMode( points, frameProjectionMode, connectedComponent, patch ); }
 
       for ( const auto i : connectedComponent ) {
         PCCPoint3D pointTmp = points[i];
@@ -1061,20 +852,20 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
             patch.getD1()     = value * minLevel;
           }
         } else {  // max
-          if ( !sixDirection ) {
-            if ( patch.getDepth( 1 )[p] < d ) {  // getDepth(1) is used to store the max value
-              patch.getDepth( 1 )[p] = d;
-              patch.getDepth( 0 )[p] = d;
-              if ( useSurfaceSeparation ) { patch.getdepth0pccidx()[p] = i; }
-              patch.getSizeU0() = ( std::max )( patch.getSizeU0(), u / patch.getOccupancyResolution() );
-              patch.getSizeV0() = ( std::max )( patch.getSizeV0(), v / patch.getOccupancyResolution() );
-              patch.getD1()     = ( std::min )( patch.getD1(), size_t( d ) );
-              size_t value      = patch.getD1();  // patch.getD1();
-              value             = ( value / minLevel );
-              patch.getD1()     = value * minLevel;
-            }
+          if ( patch.getDepth( 0 )[p] == infiniteDepth ) {
+            patch.getDepth( 0 )[p] = d;
+            if ( useSurfaceSeparation ) patch.getdepth0pccidx()[p] = i;
+            patch.getSizeU0() = ( std::max )( patch.getSizeU0(), u / patch.getOccupancyResolution() );
+            patch.getSizeV0() = ( std::max )( patch.getSizeV0(), v / patch.getOccupancyResolution() );
+            patch.getD1()     = ( std::max )( patch.getD1(), size_t( d ) );
+            size_t value      = size_t( patch.getD1() / minLevel );
+            if ( value * minLevel < patch.getD1() )
+              patch.getD1() = ( 1 + value ) * minLevel;
+            else
+              patch.getD1() = value * minLevel;
+            // std::cout<<"~~~~~~"<<value<<" -> "<<patch.getD1()<<std::endl;
           } else {
-            if ( patch.getDepth( 0 )[p] == infiniteDepth ) {
+            if ( patch.getDepth( 0 )[p] < d ) {
               patch.getDepth( 0 )[p] = d;
               if ( useSurfaceSeparation ) patch.getdepth0pccidx()[p] = i;
               patch.getSizeU0() = ( std::max )( patch.getSizeU0(), u / patch.getOccupancyResolution() );
@@ -1085,21 +876,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
                 patch.getD1() = ( 1 + value ) * minLevel;
               else
                 patch.getD1() = value * minLevel;
-              // std::cout<<"~~~~~~"<<value<<" -> "<<patch.getD1()<<std::endl;
-            } else {
-              if ( patch.getDepth( 0 )[p] < d ) {
-                patch.getDepth( 0 )[p] = d;
-                if ( useSurfaceSeparation ) patch.getdepth0pccidx()[p] = i;
-                patch.getSizeU0() = ( std::max )( patch.getSizeU0(), u / patch.getOccupancyResolution() );
-                patch.getSizeV0() = ( std::max )( patch.getSizeV0(), v / patch.getOccupancyResolution() );
-                patch.getD1()     = ( std::max )( patch.getD1(), size_t( d ) );
-                size_t value      = size_t( patch.getD1() / minLevel );
-                if ( value * minLevel < patch.getD1() )
-                  patch.getD1() = ( 1 + value ) * minLevel;
-                else
-                  patch.getD1() = value * minLevel;
-                // std::cout<<"*******"<<value<<" -> "<<patch.getD1()<<std::endl;
-              }
+              // std::cout<<"*******"<<value<<" -> "<<patch.getD1()<<std::endl;
             }
           }
         }
@@ -1163,24 +940,18 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
             const size_t  v0       = v / patch.getOccupancyResolution();
             const size_t  p0       = v0 * patch.getSizeU0() + u0;
             const int16_t maxDepth = maxPerBlock[p0];
-            if ( !sixDirection ) {
-              if ( ( maxDepth - depth0 > 32 ) || ( depth0 + surfaceThickness > patch.getD1() + maxAllowedDepth ) ) {
-                patch.getDepth( 0 )[p] = infiniteDepth;
-                if ( useSurfaceSeparation ) { patch.getdepth0pccidx()[p] = infinitenumber; }
-              }
+
+            if ( maxDepth < 0 ) {
+              patch.getDepth( 0 )[p] = infiniteDepth;
+              if ( useSurfaceSeparation ) { patch.getdepth0pccidx()[p] = infinitenumber; }
             } else {
-              if ( maxDepth < 0 ) {
-                patch.getDepth( 0 )[p] = infiniteDepth;
-                if ( useSurfaceSeparation ) { patch.getdepth0pccidx()[p] = infinitenumber; }
-              } else {
-                if ( depth0 != infiniteDepth ) {
-                  int16_t tmp_a = maxDepth - depth0;
-                  int16_t tmp_b = depth0 - int16_t( surfaceThickness );
-                  int16_t tmp_c = int16_t( patch.getD1() ) - int16_t( maxAllowedDepth );
-                  if ( ( tmp_a > 32 ) || ( tmp_b < tmp_c ) ) {
-                    patch.getDepth( 0 )[p] = infiniteDepth;
-                    if ( useSurfaceSeparation ) patch.getdepth0pccidx()[p] = infinitenumber;
-                  }
+              if ( depth0 != infiniteDepth ) {
+                int16_t tmp_a = maxDepth - depth0;
+                int16_t tmp_b = depth0 - int16_t( surfaceThickness );
+                int16_t tmp_c = int16_t( patch.getD1() ) - int16_t( maxAllowedDepth );
+                if ( ( tmp_a > 32 ) || ( tmp_b < tmp_c ) ) {
+                  patch.getDepth( 0 )[p] = infiniteDepth;
+                  if ( useSurfaceSeparation ) patch.getdepth0pccidx()[p] = infinitenumber;
                 }
               }
             }
@@ -1207,13 +978,11 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
                 const uint16_t oldEDDCode = patch.getDepthEnhancedDeltaD()[p];
                 uint16_t       deltaD     = d - depth0;
                 int            comp_depth0;
-                if ( !sixDirection ) {
-                  comp_depth0 = depth0;
-                } else {
-                  comp_depth0 = depth0 - patch.getD1();
-                }
+
+                comp_depth0 = depth0 - patch.getD1();
+
                 patch.getDepthEnhancedDeltaD()[p] |= 1 << ( deltaD - 1 );
-                if ( ( comp_depth0 + patch.getDepthEnhancedDeltaD()[p] ) > 1023 ) {
+                if ( ( comp_depth0 + patch.getDepthEnhancedDeltaD()[p] ) > 1023) {
                   patch.getDepthEnhancedDeltaD()[p] = oldEDDCode;
                   std::cout << "(D0 + EDD-Code) > 1023. Data overflow observed (assume using 10bit coding). "
                                "Temporary solution: the corresponding inbetween or Depth1 point will be regarded as "
@@ -1249,11 +1018,9 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
                     const uint16_t oldEDDCode = patch.getDepthEnhancedDeltaD()[p];
                     uint16_t       deltaD     = d - depth0;
                     int            comp_depth0;
-                    if ( !sixDirection ) {
-                      comp_depth0 = depth0;
-                    } else {
-                      comp_depth0 = depth0 - patch.getD1();
-                    }
+
+                    comp_depth0 = depth0 - patch.getD1();
+
                     patch.getDepthEnhancedDeltaD()[p] |= 1 << ( deltaD - 1 );
                     if ( ( comp_depth0 + patch.getDepthEnhancedDeltaD()[p] ) > 1023 ) {
                       patch.getDepthEnhancedDeltaD()[p] = oldEDDCode;
@@ -1294,14 +1061,11 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
                 const uint16_t oldEDDCode = patch.getDepthEnhancedDeltaD()[p];
                 uint16_t       deltaD     = depth0 - d;
                 int            comp_depth0;
-                if ( !sixDirection ) {
-                  comp_depth0 = depth0;
-                } else {
-                  comp_depth0 = patch.getD1() - depth0;
-                }
+
+                comp_depth0 = patch.getD1() - depth0;
+
                 patch.getDepthEnhancedDeltaD()[p] |= 1 << ( deltaD - 1 );
-                if ( ( !sixDirection && ( comp_depth0 - patch.getDepthEnhancedDeltaD()[p] ) < 0 ) ||
-                     ( sixDirection && ( comp_depth0 + patch.getDepthEnhancedDeltaD()[p] ) > 1023 ) ) {
+                if ( ( comp_depth0 + patch.getDepthEnhancedDeltaD()[p] ) > 1023 ) {
                   patch.getDepthEnhancedDeltaD()[p] = oldEDDCode;
                   std::cout << "(D0 + EDD-Code) > 1023. Data overflow observed (assume using 10bit coding). "
                                "Temporary solution: the corresponding inbetween or Depth1 point will be regarded as "
@@ -1338,14 +1102,11 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
                     const uint16_t oldEDDCode = patch.getDepthEnhancedDeltaD()[p];
                     uint16_t       deltaD     = depth0 - d;
                     int            comp_depth0;
-                    if ( !sixDirection ) {
-                      comp_depth0 = depth0;
-                    } else {
-                      comp_depth0 = patch.getD1() - depth0;
-                    }
+
+                    comp_depth0 = patch.getD1() - depth0;
+
                     patch.getDepthEnhancedDeltaD()[p] |= 1 << ( deltaD - 1 );
-                    if ( ( !sixDirection && ( comp_depth0 - patch.getDepthEnhancedDeltaD()[p] ) < 0 ) ||
-                         ( sixDirection && ( comp_depth0 + patch.getDepthEnhancedDeltaD()[p] ) > 1023 ) ) {
+                    if ( ( comp_depth0 + patch.getDepthEnhancedDeltaD()[p] ) > 1023 ) {
                       patch.getDepthEnhancedDeltaD()[p] = oldEDDCode;
                       std::cout << "(D0 + EDD-Code) > 1023. Data overflow observed (assume using 10bit coding). "
                                    "Temporary solution: the corresponding inbetween or Depth1 point will be regarded "
@@ -1399,11 +1160,9 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
                 const uint16_t oldEDDCode = patch.getDepthEnhancedDeltaD()[p];
                 const uint16_t deltaD     = d - depth0;
                 int            comp_depth0;
-                if ( !sixDirection ) {
-                  comp_depth0 = depth0;
-                } else {
-                  comp_depth0 = depth0 - patch.getD1();
-                }
+
+                comp_depth0 = depth0 - patch.getD1();
+
                 patch.getDepthEnhancedDeltaD()[p] |= 1 << ( deltaD - 1 );
                 if ( ( comp_depth0 + patch.getDepthEnhancedDeltaD()[p] ) > maxD ) {
                   patch.getDepthEnhancedDeltaD()[p] = oldEDDCode;
@@ -1479,16 +1238,14 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
                     const uint16_t oldEDDCode = patch.getDepthEnhancedDeltaD()[p];
                     const uint16_t deltaD     = d - depth0;
                     int            comp_depth0;
-                    if ( !sixDirection ) {
-                      comp_depth0 = depth0;
-                    } else {
-                      comp_depth0 = depth0 - patch.getD1();
-                    }
+
+                    comp_depth0 = depth0 - patch.getD1();
+
                     patch.getDepthEnhancedDeltaD()[p] |= 1 << ( deltaD - 1 );
-                    if ( ( comp_depth0 + patch.getDepthEnhancedDeltaD()[p] ) > maxD ) {
+                    if ( ( comp_depth0 + patch.getDepthEnhancedDeltaD()[p] ) > 1023 ) {
                       patch.getDepthEnhancedDeltaD()[p] = oldEDDCode;
                       std::cout
-                          << "(D0 + EDD-Code) > maxD. Data overflow observed (assume using 10bit coding). "
+                          << "(D0 + EDD-Code) > 1023. Data overflow observed (assume using 10bit coding). "
                              "Temporary solution: the corresponding inbetween or Depth1 point will be regarded as "
                              "missing point. To be improved if this happens a lot...\n";
                     }
@@ -1537,17 +1294,14 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
                 const uint16_t oldEDDCode = patch.getDepthEnhancedDeltaD()[p];
                 const uint16_t deltaD     = depth0 - d;
                 int            comp_depth0;
-                if ( !sixDirection ) {
-                  comp_depth0 = depth0;
-                } else {
-                  comp_depth0 = patch.getD1() - depth0;
-                }
+
+                comp_depth0 = patch.getD1() - depth0;
+
                 patch.getDepthEnhancedDeltaD()[p] |= 1 << ( deltaD - 1 );
-                if ( ( !sixDirection && ( comp_depth0 - patch.getDepthEnhancedDeltaD()[p] ) < 0 ) ||
-                     ( sixDirection && ( comp_depth0 + patch.getDepthEnhancedDeltaD()[p] ) > maxD ) ) {
+                if ( ( comp_depth0 + patch.getDepthEnhancedDeltaD()[p] ) > 1023 ) {
                   patch.getDepthEnhancedDeltaD()[p] = oldEDDCode;
                   std::cout
-                      << "(D0 + EDD-Code) > maxD. Data overflow observed (assume using 10bit coding). Temporary "
+                      << "(D0 + EDD-Code) > 1023. Data overflow observed (assume using 10bit coding). Temporary "
                          "solution: the corresponding inbetween or Depth1 point will be regarded as missing point. "
                          "To be improved if this happens a lot...\n";
                 }
@@ -1605,17 +1359,14 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
                     const uint16_t oldEDDCode = patch.getDepthEnhancedDeltaD()[p];
                     const uint16_t deltaD     = depth0 - d;
                     int            comp_depth0;
-                    if ( !sixDirection ) {
-                      comp_depth0 = depth0;
-                    } else {
-                      comp_depth0 = patch.getD1() - depth0;
-                    }
+
+                    comp_depth0 = patch.getD1() - depth0;
+
                     patch.getDepthEnhancedDeltaD()[p] |= 1 << ( deltaD - 1 );
-                    if ( ( !sixDirection && ( comp_depth0 - patch.getDepthEnhancedDeltaD()[p] ) < 0 ) ||
-                         ( sixDirection && ( comp_depth0 + patch.getDepthEnhancedDeltaD()[p] ) > maxD ) ) {
+                    if (( comp_depth0 + patch.getDepthEnhancedDeltaD()[p] ) > 1023) {
                       patch.getDepthEnhancedDeltaD()[p] = oldEDDCode;
                       std::cout
-                          << "(D0 + EDD-Code) > maxD. Data overflow observed (assume using 10bit coding). "
+                          << "(D0 + EDD-Code) > 1023. Data overflow observed (assume using 10bit coding). "
                              "Temporary solution: the corresponding inbetween or Depth1 point will be regarded as "
                              "missing point. To be improved if this happens a lot...\n";
                     }
@@ -1638,18 +1389,12 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
           }
         }  // fi ( patch.getProjectionMode() == 0 )
       }
-      if ( !sixDirection && patch.getProjectionMode() == 1 ) {
-        size_t quatnizedSurfaceThickness = size_t( double( surfaceThickness ) / double( minLevel ) + 0.5 ) * minLevel;
-        if ( patch.getD1() < quatnizedSurfaceThickness )
-          patch.getD1() = 0;
-        else
-          patch.getD1() = patch.getD1() - quatnizedSurfaceThickness;
-      }
+
       patch.getSizeD() = 0;
 
       PCCPointSet3 rec;
       rec.resize( 0 );
-      if ( !sixDirection || ( sixDirection && patch.getProjectionMode() == 0 ) ) {
+      if ( patch.getProjectionMode() == 0 ) {
         for ( size_t v = 0; v < patch.getSizeV(); ++v ) {
           for ( size_t u = 0; u < patch.getSizeU(); ++u ) {
             const size_t p      = v * patch.getSizeU() + u;
@@ -1697,15 +1442,9 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
                       if ( patch.getDepthEnhancedDeltaD()[p] & ( 1 << i ) ) {
                         new_EDD |= ( 1 << i );
                         uint16_t nDeltaDCur = ( i + 1 );
-                        if ( !sixDirection ) {
-                          if ( patch.getProjectionMode() == 0 ) {
-                            pointEDD[patch.getNormalAxis()] = double( depth0 + patch.getD1() + nDeltaDCur );
-                          } else {
-                            pointEDD[patch.getNormalAxis()] = double( depth0 + patch.getD1() - nDeltaDCur );
-                          }
-                        } else {
-                          pointEDD[patch.getNormalAxis()] = double( depth0 + patch.getD1() + nDeltaDCur );
-                        }
+
+                        pointEDD[patch.getNormalAxis()] = double( depth0 + patch.getD1() + nDeltaDCur );
+
                         if ( pointEDD[patch.getNormalAxis()] != point[patch.getNormalAxis()] ) {
                           resampled.addPoint( pointEDD );
                           resampledPatchPartition.push_back( patchIndex );
@@ -1718,15 +1457,9 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
                     for ( uint16_t i = 0; i < surfaceThickness; i++ ) {
                       if ( patch.getDepthEnhancedDeltaD()[p] & ( 1 << i ) ) {
                         uint16_t nDeltaDCur = ( i + 1 );
-                        if ( !sixDirection ) {
-                          if ( patch.getProjectionMode() == 0 ) {
-                            point[patch.getNormalAxis()] = double( depth0 + patch.getD1() + nDeltaDCur );
-                          } else {
-                            point[patch.getNormalAxis()] = double( depth0 + patch.getD1() - nDeltaDCur );
-                          }
-                        } else {
-                          point[patch.getNormalAxis()] = double( depth0 + patch.getD1() + nDeltaDCur );
-                        }
+
+                        point[patch.getNormalAxis()] = double( depth0 + patch.getD1() + nDeltaDCur );
+
                         resampled.addPoint( point );
                         resampledPatchPartition.push_back( patchIndex );
                       }
@@ -1749,16 +1482,16 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
                   assert( abs( patch.getDepth( 1 )[p] - patch.getDepth( 0 )[p] ) <= int( surfaceThickness ) );
                   if ( createSubPointCloud ) { rec.addPoint( point ); }
                 }
-                if ( sixDirection ) {
-                  int16_t depth1 = patch.getDepth( 1 )[p];
-                  patch.getSizeD() =
-                      ( std::max )( patch.getSizeD(), static_cast<size_t>( depth1 ) );  // compute max depth
-                }
+
+                int16_t depth1 = patch.getDepth( 1 )[p];
+                patch.getSizeD() =
+                    ( std::max )( patch.getSizeD(), static_cast<size_t>( depth1 ) );  // compute max depth
+
               }  // if(useEnhancedDeltaDepthCode)
             }
           }
         }
-      } else if ( sixDirection ) {
+      } else {
         for ( size_t v = 0; v < patch.getSizeV(); ++v ) {
           for ( size_t u = 0; u < patch.getSizeU(); ++u ) {
             const size_t p        = v * patch.getSizeU() + u;
@@ -1874,14 +1607,11 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
         std::vector<int16_t>().swap( patch.getDepthEnhancedDeltaD() );
         std::vector<bool>().swap( patch.getOccupancy() );
 
-        if ( !sixDirection ) {
+
+        if ( patch.getProjectionMode() == 0 ) {
           patch.getD1() = infiniteDepth;
         } else {
-          if ( patch.getProjectionMode() == 0 ) {
-            patch.getD1() = infiniteDepth;
-          } else {
-            patch.getD1() = 0;
-          }
+          patch.getD1() = 0;
         }
 
         patch.getDepth( 0 ).resize( finalSizeU * finalSizeV, infiniteDepth );
@@ -1892,7 +1622,6 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
         patch.getOccupancyResolution() = occupancyResolution;
         patch.getSizeU0()              = 0;
         patch.getSizeV0()              = 0;
-        if ( !sixDirection ) { selectPatchProjectionMode( points, frameProjectionMode, connectedComponent, patch ); }
 
         std::vector<std::vector<bool>> checkPoint( patch.getSizeV(), std::vector<bool>( patch.getSizeU(), false ) );
         // std::vector<size_t>            indexVector;
@@ -1937,20 +1666,20 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
                 patch.getD1()     = value * minLevel;
               }
             } else {  // max
-              if ( !sixDirection ) {
-                if ( patch.getDepth( 1 )[np] < d ) {  // getDepth(1) is used to store the max value
-                  patch.getDepth( 1 )[np] = d;
-                  patch.getDepth( 0 )[np] = d;
-                  if ( useSurfaceSeparation ) { patch.getdepth0pccidx()[np] = i; }
-                  patch.getSizeU0() = ( std::max )( patch.getSizeU0(), nu / patch.getOccupancyResolution() );
-                  patch.getSizeV0() = ( std::max )( patch.getSizeV0(), nv / patch.getOccupancyResolution() );
-                  patch.getD1()     = ( std::min )( patch.getD1(), size_t( d ) );
-                  size_t value      = patch.getD1();  // patch.getD1();
-                  value             = ( value / minLevel );
-                  patch.getD1()     = value * minLevel;
-                }
+              if ( patch.getDepth( 0 )[np] == infiniteDepth ) {
+                patch.getDepth( 0 )[np] = d;
+                if ( useSurfaceSeparation ) patch.getdepth0pccidx()[np] = i;
+                patch.getSizeU0() = ( std::max )( patch.getSizeU0(), nu / patch.getOccupancyResolution() );
+                patch.getSizeV0() = ( std::max )( patch.getSizeV0(), nv / patch.getOccupancyResolution() );
+                patch.getD1()     = ( std::max )( patch.getD1(), size_t( d ) );
+                size_t value      = size_t( patch.getD1() / minLevel );
+                if ( value * minLevel < patch.getD1() )
+                  patch.getD1() = ( 1 + value ) * minLevel;
+                else
+                  patch.getD1() = value * minLevel;
+                // std::cout<<"~~~~~~"<<value<<" -> "<<patch.getD1()<<std::endl;
               } else {
-                if ( patch.getDepth( 0 )[np] == infiniteDepth ) {
+                if ( patch.getDepth( 0 )[np] < d ) {
                   patch.getDepth( 0 )[np] = d;
                   if ( useSurfaceSeparation ) patch.getdepth0pccidx()[np] = i;
                   patch.getSizeU0() = ( std::max )( patch.getSizeU0(), nu / patch.getOccupancyResolution() );
@@ -1961,21 +1690,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
                     patch.getD1() = ( 1 + value ) * minLevel;
                   else
                     patch.getD1() = value * minLevel;
-                  // std::cout<<"~~~~~~"<<value<<" -> "<<patch.getD1()<<std::endl;
-                } else {
-                  if ( patch.getDepth( 0 )[np] < d ) {
-                    patch.getDepth( 0 )[np] = d;
-                    if ( useSurfaceSeparation ) patch.getdepth0pccidx()[np] = i;
-                    patch.getSizeU0() = ( std::max )( patch.getSizeU0(), nu / patch.getOccupancyResolution() );
-                    patch.getSizeV0() = ( std::max )( patch.getSizeV0(), nv / patch.getOccupancyResolution() );
-                    patch.getD1()     = ( std::max )( patch.getD1(), size_t( d ) );
-                    size_t value      = size_t( patch.getD1() / minLevel );
-                    if ( value * minLevel < patch.getD1() )
-                      patch.getD1() = ( 1 + value ) * minLevel;
-                    else
-                      patch.getD1() = value * minLevel;
-                    // std::cout<<"*******"<<value<<" -> "<<patch.getD1()<<std::endl;
-                  }
+                  // std::cout<<"*******"<<value<<" -> "<<patch.getD1()<<std::endl;
                 }
               }
             }
@@ -2040,24 +1755,17 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
               const size_t  v0       = v / patch.getOccupancyResolution();
               const size_t  p0       = v0 * patch.getSizeU0() + u0;
               const int16_t maxDepth = maxPerBlock[p0];
-              if ( !sixDirection ) {
-                if ( ( maxDepth - depth0 > 32 ) || ( depth0 + surfaceThickness > patch.getD1() + maxAllowedDepth ) ) {
-                  patch.getDepth( 0 )[p] = infiniteDepth;
-                  if ( useSurfaceSeparation ) { patch.getdepth0pccidx()[p] = infinitenumber; }
-                }
+              if ( maxDepth < 0 ) {
+                patch.getDepth( 0 )[p] = infiniteDepth;
+                if ( useSurfaceSeparation ) { patch.getdepth0pccidx()[p] = infinitenumber; }
               } else {
-                if ( maxDepth < 0 ) {
-                  patch.getDepth( 0 )[p] = infiniteDepth;
-                  if ( useSurfaceSeparation ) { patch.getdepth0pccidx()[p] = infinitenumber; }
-                } else {
-                  if ( depth0 != infiniteDepth ) {
-                    int16_t tmp_a = maxDepth - depth0;
-                    int16_t tmp_b = depth0 - int16_t( surfaceThickness );
-                    int16_t tmp_c = int16_t( patch.getD1() ) - int16_t( maxAllowedDepth );
-                    if ( ( tmp_a > 32 ) || ( tmp_b < tmp_c ) ) {
-                      patch.getDepth( 0 )[p] = infiniteDepth;
-                      if ( useSurfaceSeparation ) patch.getdepth0pccidx()[p] = infinitenumber;
-                    }
+                if ( depth0 != infiniteDepth ) {
+                  int16_t tmp_a = maxDepth - depth0;
+                  int16_t tmp_b = depth0 - int16_t( surfaceThickness );
+                  int16_t tmp_c = int16_t( patch.getD1() ) - int16_t( maxAllowedDepth );
+                  if ( ( tmp_a > 32 ) || ( tmp_b < tmp_c ) ) {
+                    patch.getDepth( 0 )[p] = infiniteDepth;
+                    if ( useSurfaceSeparation ) patch.getdepth0pccidx()[p] = infinitenumber;
                   }
                 }
               }
@@ -2088,11 +1796,9 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
                     const uint16_t oldEDDCode = patch.getDepthEnhancedDeltaD()[np];
                     uint16_t       deltaD     = d - depth0;
                     int            comp_depth0;
-                    if ( !sixDirection ) {
-                      comp_depth0 = depth0;
-                    } else {
-                      comp_depth0 = depth0 - patch.getD1();
-                    }
+
+                    comp_depth0 = depth0 - patch.getD1();
+
                     patch.getDepthEnhancedDeltaD()[np] |= 1 << ( deltaD - 1 );
                     if ( ( comp_depth0 + patch.getDepthEnhancedDeltaD()[np] ) > 1023 ) {
                       patch.getDepthEnhancedDeltaD()[np] = oldEDDCode;
@@ -2137,11 +1843,9 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
                         const uint16_t oldEDDCode = patch.getDepthEnhancedDeltaD()[np];
                         uint16_t       deltaD     = d - depth0;
                         int            comp_depth0;
-                        if ( !sixDirection ) {
-                          comp_depth0 = depth0;
-                        } else {
-                          comp_depth0 = depth0 - patch.getD1();
-                        }
+
+                        comp_depth0 = depth0 - patch.getD1();
+
                         patch.getDepthEnhancedDeltaD()[np] |= 1 << ( deltaD - 1 );
                         if ( ( comp_depth0 + patch.getDepthEnhancedDeltaD()[np] ) > 1023 ) {
                           patch.getDepthEnhancedDeltaD()[np] = oldEDDCode;
@@ -2189,14 +1893,11 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
                     const uint16_t oldEDDCode = patch.getDepthEnhancedDeltaD()[np];
                     uint16_t       deltaD     = depth0 - d;
                     int            comp_depth0;
-                    if ( !sixDirection ) {
-                      comp_depth0 = depth0;
-                    } else {
-                      comp_depth0 = patch.getD1() - depth0;
-                    }
+
+                    comp_depth0 = patch.getD1() - depth0;
+
                     patch.getDepthEnhancedDeltaD()[np] |= 1 << ( deltaD - 1 );
-                    if ( ( !sixDirection && ( comp_depth0 - patch.getDepthEnhancedDeltaD()[np] ) < 0 ) ||
-                         ( sixDirection && ( comp_depth0 + patch.getDepthEnhancedDeltaD()[np] ) > 1023 ) ) {
+                    if (( comp_depth0 + patch.getDepthEnhancedDeltaD()[np] ) > 1023 ) {
                       patch.getDepthEnhancedDeltaD()[np] = oldEDDCode;
                       std::cout
                           << "(D0 + EDD-Code) > 1023. Data overflow observed (assume using 10bit coding). "
@@ -2240,14 +1941,11 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
                         const uint16_t oldEDDCode = patch.getDepthEnhancedDeltaD()[np];
                         uint16_t       deltaD     = depth0 - d;
                         int            comp_depth0;
-                        if ( !sixDirection ) {
-                          comp_depth0 = depth0;
-                        } else {
-                          comp_depth0 = patch.getD1() - depth0;
-                        }
+
+                        comp_depth0 = patch.getD1() - depth0;
+
                         patch.getDepthEnhancedDeltaD()[np] |= 1 << ( deltaD - 1 );
-                        if ( ( !sixDirection && ( comp_depth0 - patch.getDepthEnhancedDeltaD()[np] ) < 0 ) ||
-                             ( sixDirection && ( comp_depth0 + patch.getDepthEnhancedDeltaD()[np] ) > 1023 ) ) {
+                        if ( ( comp_depth0 + patch.getDepthEnhancedDeltaD()[np] ) > 1023 ) {
                           patch.getDepthEnhancedDeltaD()[np] = oldEDDCode;
                           std::cout
                               << "(D0 + EDD-Code) > 1023. Data overflow observed (assume using 10bit coding). "
@@ -2308,16 +2006,14 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
                     const uint16_t oldEDDCode = patch.getDepthEnhancedDeltaD()[np];
                     const uint16_t deltaD     = d - depth0;
                     int            comp_depth0;
-                    if ( !sixDirection ) {
-                      comp_depth0 = depth0;
-                    } else {
-                      comp_depth0 = depth0 - patch.getD1();
-                    }
+
+                    comp_depth0 = depth0 - patch.getD1();
+
                     patch.getDepthEnhancedDeltaD()[np] |= 1 << ( deltaD - 1 );
-                    if ( ( comp_depth0 + patch.getDepthEnhancedDeltaD()[np] ) > maxD ) {
+                    if ( ( comp_depth0 + patch.getDepthEnhancedDeltaD()[np] ) > 1023 ) {
                       patch.getDepthEnhancedDeltaD()[np] = oldEDDCode;
                       std::cout
-                          << "(D0 + EDD-Code) > maxD. Data overflow observed (assume using 10bit coding). Temporary "
+                          << "(D0 + EDD-Code) > 1023. Data overflow observed (assume using 10bit coding). Temporary "
                              "solution: the corresponding inbetween or Depth1 point will be regarded as missing point. "
                              "To be improved if this happens a lot...\n";
                     }
@@ -2395,13 +2091,11 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
                         const uint16_t oldEDDCode = patch.getDepthEnhancedDeltaD()[np];
                         const uint16_t deltaD     = d - depth0;
                         int            comp_depth0;
-                        if ( !sixDirection ) {
-                          comp_depth0 = depth0;
-                        } else {
-                          comp_depth0 = depth0 - patch.getD1();
-                        }
+
+						comp_depth0 = depth0 - patch.getD1();
+
                         patch.getDepthEnhancedDeltaD()[np] |= 1 << ( deltaD - 1 );
-                        if ( ( comp_depth0 + patch.getDepthEnhancedDeltaD()[np] ) > maxD ) {
+                        if ( ( comp_depth0 + patch.getDepthEnhancedDeltaD()[np] ) > 1023 ) {
                           patch.getDepthEnhancedDeltaD()[np] = oldEDDCode;
                           std::cout
                               << "(D0 + EDD-Code) > maxD. Data overflow observed (assume using 10bit coding). "
@@ -2460,17 +2154,14 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
                     const uint16_t oldEDDCode = patch.getDepthEnhancedDeltaD()[np];
                     const uint16_t deltaD     = depth0 - d;
                     int            comp_depth0;
-                    if ( !sixDirection ) {
-                      comp_depth0 = depth0;
-                    } else {
-                      comp_depth0 = patch.getD1() - depth0;
-                    }
+
+					comp_depth0 = patch.getD1() - depth0;
+
                     patch.getDepthEnhancedDeltaD()[np] |= 1 << ( deltaD - 1 );
-                    if ( ( !sixDirection && ( comp_depth0 - patch.getDepthEnhancedDeltaD()[np] ) < 0 ) ||
-                         ( sixDirection && ( comp_depth0 + patch.getDepthEnhancedDeltaD()[np] ) > maxD ) ) {
+                    if ( ( comp_depth0 + patch.getDepthEnhancedDeltaD()[np] ) > 1023 ) {
                       patch.getDepthEnhancedDeltaD()[np] = oldEDDCode;
                       std::cout
-                          << "(D0 + EDD-Code) > maxD. Data overflow observed (assume using 10bit coding). Temporary "
+                          << "(D0 + EDD-Code) > 1023. Data overflow observed (assume using 10bit coding). Temporary "
                              "solution: the corresponding inbetween or Depth1 point will be regarded as missing point. "
                              "To be improved if this happens a lot...\n";
                     }
@@ -2534,17 +2225,14 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
                         const uint16_t oldEDDCode = patch.getDepthEnhancedDeltaD()[np];
                         const uint16_t deltaD     = depth0 - d;
                         int            comp_depth0;
-                        if ( !sixDirection ) {
-                          comp_depth0 = depth0;
-                        } else {
-                          comp_depth0 = patch.getD1() - depth0;
-                        }
+
+                        comp_depth0 = patch.getD1() - depth0;
+
                         patch.getDepthEnhancedDeltaD()[np] |= 1 << ( deltaD - 1 );
-                        if ( ( !sixDirection && ( comp_depth0 - patch.getDepthEnhancedDeltaD()[np] ) < 0 ) ||
-                             ( sixDirection && ( comp_depth0 + patch.getDepthEnhancedDeltaD()[np] ) > maxD ) ) {
+                        if ( ( comp_depth0 + patch.getDepthEnhancedDeltaD()[np] ) > 1023 ) {
                           patch.getDepthEnhancedDeltaD()[np] = oldEDDCode;
                           std::cout
-                              << "(D0 + EDD-Code) > maxD. Data overflow observed (assume using 10bit coding). "
+                              << "(D0 + EDD-Code) > 1023. Data overflow observed (assume using 10bit coding). "
                                  "Temporary solution: the corresponding inbetween or Depth1 point will be regarded as "
                                  "missing point. To be improved if this happens a lot...\n";
                         }
@@ -2569,13 +2257,6 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
           }  // fi ( patch.getProjectionMode() == 0 )
         }
 
-        if ( !sixDirection && patch.getProjectionMode() == 1 ) {
-          size_t quatnizedSurfaceThickness = size_t( double( surfaceThickness ) / double( minLevel ) + 0.5 ) * minLevel;
-          if ( patch.getD1() < quatnizedSurfaceThickness )
-            patch.getD1() = 0;
-          else
-            patch.getD1() = patch.getD1() - quatnizedSurfaceThickness;
-        }
         patch.getSizeD() = 0;
 
         patch.getSizeU() = finalSizeU;
@@ -2584,7 +2265,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
         for ( size_t i = 0; i < originalSizeV; i++ ) checkPoint[i].clear();
         checkPoint.clear();
 
-        if ( !sixDirection || ( sixDirection && patch.getProjectionMode() == 0 ) ) {
+        if ( patch.getProjectionMode() == 0 ) {
           for ( size_t v = 0; v < patch.getSizeV(); ++v ) {
             for ( size_t u = 0; u < patch.getSizeU(); ++u ) {
               const size_t p      = v * patch.getSizeU() + u;
@@ -2607,16 +2288,15 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
 
                 if ( useEnhancedDeltaDepthCode ) {
                 } else {  // if(useEnhancedDeltaDepthCode)
-                  if ( sixDirection ) {
-                    int16_t depth1 = patch.getDepth( 1 )[p];
-                    patch.getSizeD() =
-                        ( std::max )( patch.getSizeD(), static_cast<size_t>( depth1 ) );  // compute max depth
-                  }
-                }  // if(useEnhancedDeltaDepthCode)
-              }
+                  int16_t depth1 = patch.getDepth( 1 )[p];
+                  patch.getSizeD() =
+                      ( std::max )( patch.getSizeD(), static_cast<size_t>( depth1 ) );  // compute max depth
+                }
+              }  // if(useEnhancedDeltaDepthCode)
             }
           }
-        } else if ( sixDirection ) {
+        } else {
+
           for ( size_t v = 0; v < patch.getSizeV(); ++v ) {
             for ( size_t u = 0; u < patch.getSizeU(); ++u ) {
               const size_t p        = v * patch.getSizeU() + u;

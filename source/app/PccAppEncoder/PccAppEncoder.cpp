@@ -629,11 +629,6 @@ bool parseParameters( int                   argc,
      encoderParams.deltaCoding_,
      "Delta meta-data coding")
 
-    ("projectionMode",
-      encoderParams.projectionMode_,
-      encoderParams.projectionMode_,
-      "projectionMode - 0:min; 1:max;  2:adaptive frame & patch; 3:adaptive patch (all frames)")
-
     ("pointLocalReconstruction",
       encoderParams.pointLocalReconstruction_,
       encoderParams.pointLocalReconstruction_,
