@@ -316,6 +316,10 @@ void PCCCodec::identifyBoundaryPointsLayer1( const std::vector<uint32_t>& occupa
         reconstruct.setBoundaryPointType( pointindex, static_cast<uint16_t>( 1 ) );
       }
     }
+	if (y == 0 || y == imageHeight - 1 || x == 0 || x == imageWidth - 1) {
+	  BPflag[y * imageWidth + x] = 1;
+	  reconstruct.setBoundaryPointType(pointindex, static_cast<uint16_t>(1));
+	}
   }
 }
 
