@@ -281,14 +281,14 @@ int PCCCodec::getDeltaNeighbors( const PCCImageGeometry& frame,
   return deltaMax;
 }
 
-void PCCCodec::identifyBoundaryPointsLayer1( const std::vector<uint32_t>& occupancyMap,
-                                             const size_t                 x,
-                                             const size_t                 y,
-                                             const size_t                 imageWidth,
-                                             const size_t                 imageHeight,
-                                             const size_t                 pointindex,
-                                             std::vector<uint32_t>&       BPflag,
-                                             PCCPointSet3&                reconstruct ) {
+void PCCCodec::identifyBoundaryPoints( const std::vector<uint32_t>& occupancyMap,
+                                       const size_t                 x,
+                                       const size_t                 y,
+                                       const size_t                 imageWidth,
+                                       const size_t                 imageHeight,
+                                       const size_t                 pointindex,
+                                       std::vector<uint32_t>&       BPflag,
+                                       PCCPointSet3&                reconstruct ) {
   if ( occupancyMap[y * imageWidth + x] != 0 ) {
     if ( y > 0 && y < imageHeight - 1 ) {
       if ( occupancyMap[( y - 1 ) * imageWidth + x] == 0 || occupancyMap[( y + 1 ) * imageWidth + x] == 0 ) {
@@ -296,61 +296,48 @@ void PCCCodec::identifyBoundaryPointsLayer1( const std::vector<uint32_t>& occupa
         reconstruct.setBoundaryPointType( pointindex, static_cast<uint16_t>( 1 ) );
       }
     }
-    if ( x > 0 && x < imageWidth - 1 ) {
+    if ( x > 0 && x < imageWidth - 1 && reconstruct.getBoundaryPointType( pointindex ) != 1 ) {
       if ( occupancyMap[y * imageWidth + ( x + 1 )] == 0 || occupancyMap[y * imageWidth + ( x - 1 )] == 0 ) {
         BPflag[y * imageWidth + x] = 1;
         reconstruct.setBoundaryPointType( pointindex, static_cast<uint16_t>( 1 ) );
       }
     }
-    if ( y > 0 && y < imageHeight - 1 && x > 0 ) {
+    if ( y > 0 && y < imageHeight - 1 && x > 0 && reconstruct.getBoundaryPointType( pointindex ) != 1 ) {
       if ( occupancyMap[( y - 1 ) * imageWidth + ( x - 1 )] == 0 ||
            occupancyMap[( y + 1 ) * imageWidth + ( x - 1 )] == 0 ) {
         BPflag[y * imageWidth + x] = 1;
         reconstruct.setBoundaryPointType( pointindex, static_cast<uint16_t>( 1 ) );
       }
     }
-    if ( y > 0 && y < imageHeight - 1 && x < imageWidth - 1 ) {
+    if ( y > 0 && y < imageHeight - 1 && x < imageWidth - 1 && reconstruct.getBoundaryPointType( pointindex ) != 1 ) {
       if ( occupancyMap[( y - 1 ) * imageWidth + ( x + 1 )] == 0 ||
            occupancyMap[( y + 1 ) * imageWidth + ( x + 1 )] == 0 ) {
         BPflag[y * imageWidth + x] = 1;
         reconstruct.setBoundaryPointType( pointindex, static_cast<uint16_t>( 1 ) );
       }
     }
-	if (y == 0 || y == imageHeight - 1 || x == 0 || x == imageWidth - 1) {
-	  BPflag[y * imageWidth + x] = 1;
-	  reconstruct.setBoundaryPointType(pointindex, static_cast<uint16_t>(1));
-	}
+    if ( y == 0 || y == imageHeight - 1 || x == 0 || x == imageWidth - 1 ) {
+      BPflag[y * imageWidth + x] = 1;
+      reconstruct.setBoundaryPointType( pointindex, static_cast<uint16_t>( 1 ) );
+    }
   }
-}
-
-void PCCCodec::identifyBoundaryPointsLayer2( const std::vector<uint32_t>& occupancyMap,
-                                             const size_t                 x,
-                                             const size_t                 y,
-                                             const size_t                 imageWidth,
-                                             const size_t                 imageHeight,
-                                             const size_t                 pointindex,
-                                             std::vector<uint32_t>&       BPflag,
-                                             PCCPointSet3&                reconstruct ) {
-  if ( occupancyMap[y * imageWidth + x] != 0 && BPflag[y * imageWidth + x] != 1 ) {
-    if ( y > 0 && y < imageHeight - 1 ) {
-      if ( BPflag[( y - 1 ) * imageWidth + x] == 1 || BPflag[( y + 1 ) * imageWidth + x] == 1 ) {
-        reconstruct.setBoundaryPointType( pointindex, static_cast<uint16_t>( 1 ) );
+  ////////////// second layer
+  if ( occupancyMap[y * imageWidth + x] && reconstruct.getBoundaryPointType( pointindex ) != 1 ) {
+    for ( int ix = -2; ix <= 2; ++ix ) {
+      for ( int iy = -2; iy <= 2; ++iy ) {
+        if ( abs( int( ix ) ) > 1 || abs( int( iy ) ) > 1 ) {
+          if ( ( y + iy ) >= 0 && ( y + iy ) < imageHeight && ( x + ix ) >= 0 && ( x + ix ) < imageWidth ) {
+            if ( occupancyMap[( y + iy ) * imageWidth + ( x + ix )] == 0 ) {
+              reconstruct.setBoundaryPointType( pointindex, static_cast<uint16_t>( 1 ) );
+              ix = 4;
+              iy = 4;
+            }
+          }
+        }
       }
     }
-    if ( x > 0 && x < imageWidth - 1 ) {
-      if ( BPflag[y * imageWidth + ( x + 1 )] == 1 || BPflag[y * imageWidth + ( x - 1 )] == 1 ) {
-        reconstruct.setBoundaryPointType( pointindex, static_cast<uint16_t>( 1 ) );
-      }
-    }
-    if ( y > 0 && y < imageHeight - 1 && x > 0 ) {
-      if ( BPflag[( y - 1 ) * imageWidth + ( x - 1 )] == 1 || BPflag[( y + 1 ) * imageWidth + ( x - 1 )] == 1 ) {
-        reconstruct.setBoundaryPointType( pointindex, static_cast<uint16_t>( 1 ) );
-      }
-    }
-    if ( y > 0 && y < imageHeight - 1 && x < imageWidth - 1 ) {
-      if ( BPflag[( y - 1 ) * imageWidth + ( x + 1 )] == 1 || BPflag[( y + 1 ) * imageWidth + ( x + 1 )] == 1 ) {
-        reconstruct.setBoundaryPointType( pointindex, static_cast<uint16_t>( 1 ) );
-      }
+    if ( y == 1 || y == imageHeight - 2 || x == 1 || x == imageWidth - 2 ) {
+      reconstruct.setBoundaryPointType( pointindex, static_cast<uint16_t>( 1 ) );
     }
   }
 }
@@ -1052,7 +1039,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
     }  // fi :useMissedPointsSeparateVideo
   }    // fi : useAdditionalPointsPatch
   if ( !params.losslessGeo_ ) {
-    //// identify first boundary layer
+
     size_t pointCount = reconstruct.getPointCount() - frame.getTotalNumberOfMissedPoints();
     assert( pointCount == pointToPixel.size() );
     for ( size_t i = 0; i < pointCount; ++i ) {
@@ -1060,16 +1047,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
       const size_t             x        = location[0];
       const size_t             y        = location[1];
       if ( occupancyMap[y * imageWidth + x] != 0 )
-        identifyBoundaryPointsLayer1( occupancyMap, x, y, imageWidth, imageHeight, i, BPflag, reconstruct );
-    }
-
-    //// identify second boundary layer
-    for ( size_t i = 0; i < pointCount; ++i ) {
-      const PCCVector3<size_t> location = pointToPixel[i];
-      const size_t             x        = location[0];
-      const size_t             y        = location[1];
-      if ( occupancyMap[y * imageWidth + x] != 0 )
-        identifyBoundaryPointsLayer2( occupancyMap, x, y, imageWidth, imageHeight, i, BPflag, reconstruct );
+         identifyBoundaryPoints( occupancyMap, x, y, imageWidth, imageHeight, i, BPflag, reconstruct );
     }
   }
   TRACE_CODEC( " end point = %lu  \n", reconstruct.getPointCount() );

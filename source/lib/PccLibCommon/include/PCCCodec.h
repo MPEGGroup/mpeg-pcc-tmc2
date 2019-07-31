@@ -382,23 +382,15 @@ class PCCCodec {
                       int                          gridSize,
                       int                          gridWidth );
 
-  void identifyBoundaryPointsLayer1( const std::vector<uint32_t>& occupancyMap,
-                                     const size_t                 x,
-                                     const size_t                 y,
-                                     const size_t                 imageWidth,
-                                     const size_t                 imageHeight,
-                                     const size_t                 pointindex_1,
-                                     std::vector<uint32_t>&       PBflag,
-                                     PCCPointSet3&                reconstruct );
-
-  void identifyBoundaryPointsLayer2( const std::vector<uint32_t>& occupancyMap,
-                                     const size_t                 x,
-                                     const size_t                 y,
-                                     const size_t                 imageWidth,
-                                     const size_t                 imageHeight,
-                                     const size_t                 pointindex,
-                                     std::vector<uint32_t>&       PBflag,
-                                     PCCPointSet3&                reconstruct );
+ 
+  void identifyBoundaryPoints( const std::vector<uint32_t>& occupancyMap,
+                               const size_t                 x,
+                               const size_t                 y,
+                               const size_t                 imageWidth,
+                               const size_t                 imageHeight,
+                               const size_t                 pointindex_1,
+                               std::vector<uint32_t>&       PBflag,
+                               PCCPointSet3&                reconstruct );
 
   std::vector<int>         gcnt_;
   std::vector<PCCVector3D> center_grid_;
