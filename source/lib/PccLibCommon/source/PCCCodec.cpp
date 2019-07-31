@@ -228,6 +228,26 @@ bool PCCCodec::colorPointCloud( PCCGroupOfFrames&                  reconstructs,
     }
     if ( colorTransform == COLOR_TRANSFORM_RGB_TO_YCBCR ) { reconstructs[i].convertYUVToRGB(); }
   }
+
+  CS_color_center_grid_.resize(0);
+  CS_color_center_grid_.shrink_to_fit();
+  CS_color_gcnt_.resize(0);
+  CS_color_gcnt_.shrink_to_fit();
+  CS_color_gpartition_.resize(0);
+  CS_color_gpartition_.shrink_to_fit();
+  CS_color_doSmooth_.resize(0);
+  CS_color_doSmooth_.shrink_to_fit();
+  CS_gLum_.resize(0);
+  CS_gLum_.shrink_to_fit();
+  center_grid_.resize(0);
+  center_grid_.shrink_to_fit();
+  gcnt_.resize(0);
+  gcnt_.shrink_to_fit();
+  gpartition_.resize(0);
+  gpartition_.shrink_to_fit();
+  doSmooth_.resize(0);
+  doSmooth_.shrink_to_fit();
+
   TRACE_CODEC( "Color point Cloud done \n" );
   return true;
 }
@@ -1606,15 +1626,12 @@ void PCCCodec::smoothPointCloudColorLC( PCCPointSet3& reconstruct, const Generat
 
       distToCentroid2 = abs( Ycent - Ycur ) * 10.;
       if ( distToCentroid2 >= params.thresholdColorSmoothing_ ) {
-        double H = entropy( CS_gLum_[idx], int( CS_color_gcnt_[idx] ) );
-        if ( H < params.thresholdLocalEntropy_ ) {
-          PCCColor3B color;
+		  PCCColor3B color;
           color[0] = uint8_t( color_centroid[0] );
           color[1] = uint8_t( color_centroid[1] );
           color[2] = uint8_t( color_centroid[2] );
 
           reconstruct.setColor( i, color );
-        }
       }
     }
   }

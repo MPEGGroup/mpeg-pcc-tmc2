@@ -120,7 +120,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   constrainedPack_                         = true;
   thresholdColorSmoothing_                 = 10.0;
   thresholdColorDifference_                = 100.0;
-  thresholdColorVariation_                 = 10.0;
+  thresholdColorVariation_                 = 6.0;
   thresholdLocalEntropy_                   = 4.0;
   radius2ColorSmoothing_                   = 4.0 * 16;
   neighborCountColorSmoothing_             = 4 * 16;
