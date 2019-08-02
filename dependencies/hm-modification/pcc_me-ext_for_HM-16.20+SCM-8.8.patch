@@ -1,0 +1,642 @@
+Index: source/App/TAppEncoder/TAppEncCfg.cpp
+===================================================================
+--- source/App/TAppEncoder/TAppEncCfg.cpp	(revision 4998)
++++ source/App/TAppEncoder/TAppEncCfg.cpp	(working copy)
+@@ -786,6 +786,12 @@
+   ("InputPathPrefix,-ipp",                            inputPathPrefix,                             string(""), "pathname to prepend to input filename")
+   ("BitstreamFile,b",                                 m_bitstreamFileName,                         string(""), "Bitstream output file name")
+   ("ReconFile,o",                                     m_reconFileName,                             string(""), "Reconstructed YUV output file name")
++#if PATCH_BASED_MVP || PCC_ME_EXT
++  ("UsePccMotionEstimation",                          m_usePCCExt,                                      false, "Use modified motion estimation for PCC content")
++	  ("BlockToPatchFile",                            m_blockToPatchFileName,                      string(""), "Input block to patch file name")
++	  ("OccupancyMapFile",                            m_occupancyMapFileName,                      string(""), "Input occupancy map file name")
++	  ("PatchInfoFile",                               m_patchInfoFileName,                         string(""), "Input patch info file name")
++#endif
+   ("SourceWidth,-wdt",                                m_iSourceWidth,                                       0, "Source picture width")
+   ("SourceHeight,-hgt",                               m_iSourceHeight,                                      0, "Source picture height")
+   ("InputBitDepth",                                   m_inputBitDepth[CHANNEL_TYPE_LUMA],                   8, "Bit-depth of input file")
+@@ -3083,6 +3089,14 @@
+   printf("Input          File                    : %s\n", m_inputFileName.c_str()          );
+   printf("Bitstream      File                    : %s\n", m_bitstreamFileName.c_str()      );
+   printf("Reconstruction File                    : %s\n", m_reconFileName.c_str()          );
++#if PATCH_BASED_MVP || PCC_ME_EXT
++  printf("PCCExt                                 : %s\n", (m_usePCCExt ? "Enabled" : "Disabled"));
++  if (m_usePCCExt) {
++	  printf("BlockToPatch   File                    : %s\n", (m_blockToPatchFileName.c_str()));
++	  printf("OccupancyMap   File                    : %s\n", (m_occupancyMapFileName.c_str()));
++	  printf("PatchInfo      File                    : %s\n", (m_patchInfoFileName.c_str()));
++  }
++#endif
+   printf("Real     Format                        : %dx%d %gHz\n", m_iSourceWidth - m_confWinLeft - m_confWinRight, m_iSourceHeight - m_confWinTop - m_confWinBottom, (Double)m_iFrameRate/m_temporalSubsampleRatio );
+   printf("Internal Format                        : %dx%d %gHz\n", m_iSourceWidth, m_iSourceHeight, (Double)m_iFrameRate/m_temporalSubsampleRatio );
+   printf("Sequence PSNR output                   : %s\n", (m_printMSEBasedSequencePSNR ? "Linear average, MSE-based" : "Linear average only") );
+Index: source/App/TAppEncoder/TAppEncCfg.h
+===================================================================
+--- source/App/TAppEncoder/TAppEncCfg.h	(revision 4998)
++++ source/App/TAppEncoder/TAppEncCfg.h	(working copy)
+@@ -72,7 +72,12 @@
+   std::string m_inputFileName;                                ///< source file name
+   std::string m_bitstreamFileName;                            ///< output bitstream file
+   std::string m_reconFileName;                                ///< output reconstruction file
+-
++#if PCC_ME_EXT
++  Bool        m_usePCCExt;
++  std::string m_blockToPatchFileName;
++  std::string m_occupancyMapFileName;
++  std::string m_patchInfoFileName;
++#endif
+   // Lambda modifiers
+   Double    m_adLambdaModifier[ MAX_TLAYER ];                 ///< Lambda modifier array for each temporal layer
+   std::vector<Double> m_adIntraLambdaModifier;                ///< Lambda modifier for Intra pictures, one for each temporal layer. If size>temporalLayer, then use [temporalLayer], else if size>0, use [size()-1], else use m_adLambdaModifier.
+Index: source/App/TAppEncoder/TAppEncTop.cpp
+===================================================================
+--- source/App/TAppEncoder/TAppEncTop.cpp	(revision 4998)
++++ source/App/TAppEncoder/TAppEncTop.cpp	(working copy)
+@@ -87,6 +87,15 @@
+   }
+   m_cTEncTop.setVPS(&vps);
+ 
++#if PCC_ME_EXT
++  m_cTEncTop.setUsePCCExt(m_usePCCExt);
++  if (m_usePCCExt) {
++	m_cTEncTop.setBlockToPatchFileName(m_blockToPatchFileName);
++	m_cTEncTop.setOccupancyMapFileName(m_occupancyMapFileName);
++	//m_cTencTop.setPatchInfoFileName                                 ( m_patchInfoFileName );
++  }
++#endif
++
+   m_cTEncTop.setProfile                                           ( m_profile);
+   m_cTEncTop.setLevel                                             ( m_levelTier, m_level);
+   m_cTEncTop.setProgressiveSourceFlag                             ( m_progressiveSourceFlag);
+@@ -605,6 +614,51 @@
+   xCreateLib();
+   xInitLib(m_isField);
+ 
++#if PCC_ME_EXT
++  if (m_usePCCExt)
++  {
++	  printf("\nReading the aux info files\n");
++	  FILE* patchFile = NULL;
++	  patchFile = fopen(m_patchInfoFileName.c_str(), "rb");
++
++	  for (Int i = 0; i < PCC_ME_EXT_MAX_NUM_FRAMES; i++)
++	  {
++		  long long readSize = fread(&g_numPatches[i], sizeof(long long), 1, patchFile);
++
++		  if (readSize != 1 && readSize != 0)
++		  {
++			  printf("error: Wrong Patch data group file");
++		  }
++
++		  for (Int patchIdx = 0; patchIdx < g_numPatches[i]; patchIdx++)
++		  {
++			  readSize = fread(&g_projectionIndex[i][patchIdx], sizeof(long long), 1, patchFile);
++
++			  if (readSize != 1)
++			  {
++				  printf("error: Wrong Auxiliary data format");
++			  }
++
++			  readSize = fread(g_patch2DInfo[i][patchIdx], sizeof(long long), 4, patchFile);
++
++			  if (readSize != 4)
++			  {
++				  printf("error: Wrong Auxiliary data format");
++			  }
++
++			  readSize = fread(g_patch3DInfo[i][patchIdx], sizeof(long long), 3, patchFile);
++
++			  if (readSize != 3)
++			  {
++				  printf("error: Wrong Auxiliary data format");
++			  }
++		  }
++	  }
++
++	  fclose(patchFile);
++  }
++#endif
++
+   printChromaFormat();
+ 
+   // main encoder loop
+Index: source/Lib/TLibCommon/Debug.cpp
+===================================================================
+--- source/Lib/TLibCommon/Debug.cpp	(revision 4998)
++++ source/Lib/TLibCommon/Debug.cpp	(working copy)
+@@ -182,6 +182,7 @@
+   PRINT_CONSTANT(O0043_BEST_EFFORT_DECODING,                                        settingNameWidth, settingValueWidth);
+ 
+   PRINT_CONSTANT(ME_ENABLE_ROUNDING_OF_MVS,                                         settingNameWidth, settingValueWidth);
++  PRINT_CONSTANT(PCC_ME_EXT,                                                        settingNameWidth, settingValueWidth);
+ 
+   //------------------------------------------------
+ 
+Index: source/Lib/TLibCommon/TComPattern.cpp
+===================================================================
+--- source/Lib/TLibCommon/TComPattern.cpp	(revision 4998)
++++ source/Lib/TLibCommon/TComPattern.cpp	(working copy)
+@@ -84,7 +84,12 @@
+                               Int stride,
+                               Int bitDepthLuma,
+                               Int roiPosX,
+-                              Int roiPosY)
++                              Int roiPosY
++#if PCC_ME_EXT
++	                        , Int refIdx,
++	                          RefPicList refPicList
++#endif
++                              )
+ #else
+ Void TComPattern::initPattern (Pel* piY,
+                                Int roiWidth,
+@@ -98,6 +103,10 @@
+   m_roiHeight = roiHeight;
+   m_patternStride = stride;
+   m_bitDepth = bitDepthLuma;
++#if PCC_ME_EXT
++  m_refIdx = refIdx;
++  m_refPicList = refPicList;
++#endif
+ #if MCTS_ENC_CHECK
+   m_roiPosX       = roiPosX;
+   m_roiPosY       = roiPosY;
+Index: source/Lib/TLibCommon/TComPattern.h
+===================================================================
+--- source/Lib/TLibCommon/TComPattern.h	(revision 4998)
++++ source/Lib/TLibCommon/TComPattern.h	(working copy)
+@@ -61,6 +61,11 @@
+   Int   m_patternStride;
+   Int   m_bitDepth;
+ 
++#if PCC_ME_EXT
++  Int   m_refIdx;
++  RefPicList m_refPicList;
++#endif
++
+ #if MCTS_ENC_CHECK  
+   Int   m_roiPosX;
+   Int   m_roiPosY;
+@@ -76,6 +81,12 @@
+   Int   getROIYHeight() const     { return m_roiHeight;      }
+   Int   getPatternLStride() const { return m_patternStride;  }
+   Int   getBitDepthY() const      { return m_bitDepth;       }
++
++#if PCC_ME_EXT
++  Int   getRefIndex() const       { return m_refIdx;         }
++  RefPicList getRefPicList() const { return m_refPicList;    }
++#endif
++
+ #if MCTS_ENC_CHECK
+   Int   getROIYPosX() const       { return m_roiPosX; }
+   Int   getROIYPosY() const       { return m_roiPosY; }
+@@ -101,6 +112,10 @@
+   , m_roiHeight(0)
+   , m_patternStride(0)
+   , m_bitDepth(0)
++#if PCC_ME_EXT
++  , m_refIdx(0)
++  , m_refPicList(REF_PIC_LIST_X)
++#endif
+ #if MCTS_ENC_CHECK
+   , m_roiPosX(0)
+   , m_roiPosY(0)
+@@ -118,7 +133,11 @@
+ 
+   /// set parameters from Pel buffers for accessing neighbouring pixels
+ #if MCTS_ENC_CHECK
++#if PCC_ME_EXT
++  Void initPattern(Pel* piY, Int roiWidth, Int roiHeight, Int stride, Int bitDepthLuma, Int roiPosX, Int roiPosY, Int refIdx = 0, RefPicList refPicList = REF_PIC_LIST_X);
++#else
+   Void initPattern(Pel* piY, Int roiWidth, Int roiHeight, Int stride, Int bitDepthLuma, Int roiPosX, Int roiPosY);
++#endif
+   Void setTileBorders(Int tileLeftTopPelPosX, Int tileLeftTopPelPosY, Int tileRightBottomPelPosX, Int tileRightBottomPelPosY);
+ #else
+   Void initPattern(Pel* piY, Int roiWidth, Int roiHeight, Int stride, Int bitDepthLuma);
+Index: source/Lib/TLibCommon/TComPic.cpp
+===================================================================
+--- source/Lib/TLibCommon/TComPic.cpp	(revision 4998)
++++ source/Lib/TLibCommon/TComPic.cpp	(working copy)
+@@ -63,6 +63,10 @@
+   {
+     m_apcPicYuv[i]      = NULL;
+   }
++#if PCC_ME_EXT
++  m_blockToPatch        = NULL;
++  m_occupancyMap        = NULL;
++#endif
+ }
+ 
+ TComPic::~TComPic()
+@@ -105,6 +109,13 @@
+   }
+ #endif
+ 
++#if PATCH_BASED_MVP || PCC_ME_EXT
++  {
++	  m_blockToPatch = new long long[iWidth / 16 * iHeight / 16];
++	  m_occupancyMap = new Int[iWidth * iHeight];
++  }
++#endif
++
+   // there are no SEI messages associated with this picture initially
+   if (m_SEIs.size() > 0)
+   {
+@@ -212,6 +223,14 @@
+     m_apcPicYuvCSC = NULL;
+   }
+ 
++#if PATCH_BASED_MVP || PCC_ME_EXT
++  delete m_blockToPatch;
++  m_blockToPatch = NULL;
++
++  delete m_occupancyMap;
++  m_occupancyMap = NULL;
++#endif
++
+   deleteSEIs(m_SEIs);
+ }
+ 
+Index: source/Lib/TLibCommon/TComPic.h
+===================================================================
+--- source/Lib/TLibCommon/TComPic.h	(revision 4998)
++++ source/Lib/TLibCommon/TComPic.h	(working copy)
+@@ -70,6 +70,10 @@
+ 
+   TComPicYuv*           m_pcPicYuvPred;           //  Prediction
+   TComPicYuv*           m_pcPicYuvResi;           //  Residual
++#if PATCH_BASED_MVP || PCC_ME_EXT
++  long long*            m_blockToPatch;
++  Int*                  m_occupancyMap;
++#endif
+   Bool                  m_bReconstructed;
+   Bool                  m_bNeededForOutput;
+   UInt                  m_uiCurrSliceIdx;         // Index of current slice
+@@ -91,6 +95,11 @@
+   TComPic();
+   virtual ~TComPic();
+ 
++#if PATCH_BASED_MVP || PCC_ME_EXT
++  long long*    getBlockToPatch() const { return m_blockToPatch; }
++  Int*          getOccupancyMap() const { return m_occupancyMap; }
++#endif
++
+ #if REDUCED_ENCODER_MEMORY
+   Void          create( const TComSPS &sps, const TComPPS &pps, const Bool bCreateEncoderSourcePicYuv, const Bool bCreateForImmediateReconstruction );
+   Void          prepareForEncoderSourcePicYuv();
+Index: source/Lib/TLibCommon/TComRdCost.h
+===================================================================
+--- source/Lib/TLibCommon/TComRdCost.h	(revision 4998)
++++ source/Lib/TLibCommon/TComRdCost.h	(working copy)
+@@ -138,6 +138,9 @@
+   Double calcRdCost( Double numBits, Double distortion, DFunc eDFunc = DF_DEFAULT );
+ 
+   Void    setDistortionWeight  ( const ComponentID compID, const Double distortionWeight ) { m_distortionWeight[compID] = distortionWeight; }
++#if PCC_ME_EXT
++  Double  getDistortionWeight(const ComponentID compID) { return m_distortionWeight[compID]; }
++#endif
+   Void    setLambda      ( Double dLambda, const BitDepths &bitDepths );
+   Void    setFrameLambda ( Double dLambda ) { m_dFrameLambda = dLambda; }
+ 
+Index: source/Lib/TLibCommon/TComRom.cpp
+===================================================================
+--- source/Lib/TLibCommon/TComRom.cpp	(revision 4998)
++++ source/Lib/TLibCommon/TComRom.cpp	(working copy)
+@@ -760,4 +760,13 @@
+ const UInt g_scalingListSize   [SCALING_LIST_SIZE_NUM] = {16,64,256,1024};
+ const UInt g_scalingListSizeX  [SCALING_LIST_SIZE_NUM] = { 4, 8, 16,  32};
+ 
++#if PCC_ME_EXT
++long long g_numPatches[PCC_ME_EXT_MAX_NUM_FRAMES];
++long long g_projectionIndex[PCC_ME_EXT_MAX_NUM_FRAMES][PCC_ME_EXT_MAX_NUM_PATCHES];
++long long g_patch2DInfo[PCC_ME_EXT_MAX_NUM_FRAMES][PCC_ME_EXT_MAX_NUM_PATCHES][4];  // u0, v0, sizeU0, sizeV0
++long long g_patch3DInfo[PCC_ME_EXT_MAX_NUM_FRAMES][PCC_ME_EXT_MAX_NUM_PATCHES][3];  // d1, u1, v1
++
++Bool g_patchesChange[PCC_ME_EXT_MAX_NUM_PATCHES];
++#endif
++
+ //! \}
+Index: source/Lib/TLibCommon/TComRom.h
+===================================================================
+--- source/Lib/TLibCommon/TComRom.h	(revision 4998)
++++ source/Lib/TLibCommon/TComRom.h	(working copy)
+@@ -174,6 +174,15 @@
+ 
+ extern UChar g_ucMsbP1Idx[256];
+ extern UChar g_getMsbP1Idx(UInt uiVal);
++
++#if PATCH_BASED_MVP || PCC_ME_EXT
++extern long long g_numPatches[PCC_ME_EXT_MAX_NUM_FRAMES];
++extern long long g_projectionIndex[PCC_ME_EXT_MAX_NUM_FRAMES][PCC_ME_EXT_MAX_NUM_PATCHES];
++extern long long g_patch2DInfo[PCC_ME_EXT_MAX_NUM_FRAMES][PCC_ME_EXT_MAX_NUM_PATCHES][4];  // u0, v0, sizeU0, sizeV0
++extern long long g_patch3DInfo[PCC_ME_EXT_MAX_NUM_FRAMES][PCC_ME_EXT_MAX_NUM_PATCHES][3];  // d1, u1, v1
++extern Bool g_patchesChange[PCC_ME_EXT_MAX_NUM_PATCHES];
++#endif
++
+ //! \}
+ 
+ #endif  //__TCOMROM__
+Index: source/Lib/TLibCommon/TypeDef.h
+===================================================================
+--- source/Lib/TLibCommon/TypeDef.h	(revision 4998)
++++ source/Lib/TLibCommon/TypeDef.h	(working copy)
+@@ -49,6 +49,14 @@
+ //! \ingroup TLibCommon
+ //! \{
+ 
++#define PCC_ME_EXT                                        1
++
++#if PCC_ME_EXT
++#define PCC_ME_EXT_MAX_NUM_FRAMES                         600
++#define PCC_ME_EXT_MAX_NUM_PATCHES                        1000
++#define PCC_ME_NUM_LAYERS_ACTIVE                          2
++#endif
++
+ // ====================================================================================================================
+ // Debugging
+ // ====================================================================================================================
+@@ -141,7 +149,7 @@
+ 
+ // This can be enabled by the makefile
+ #ifndef RExt__HIGH_BIT_DEPTH_SUPPORT
+-#define RExt__HIGH_BIT_DEPTH_SUPPORT                      0 ///< 0 (default) use data type definitions for 8-10 bit video, 1 = use larger data types to allow for up to 16-bit video (originally developed as part of N0188)
++#define RExt__HIGH_BIT_DEPTH_SUPPORT                      1 ///< 0 (default) use data type definitions for 8-10 bit video, 1 = use larger data types to allow for up to 16-bit video (originally developed as part of N0188)
+ #endif
+ 
+ #if defined __SSE2__ || defined __AVX2__ || defined __AVX__ || defined _M_AMD64 || defined _M_X64
+Index: source/Lib/TLibEncoder/TEncCfg.h
+===================================================================
+--- source/Lib/TLibEncoder/TEncCfg.h	(revision 4998)
++++ source/Lib/TLibEncoder/TEncCfg.h	(working copy)
+@@ -131,6 +131,12 @@
+ };
+ 
+ protected:
++#if PCC_ME_EXT
++	std::string m_blockToPatchFileName;
++	std::string m_occupancyFileName;
++	Bool        m_usePCCExt;
++	//std::string m_patchInfoFileName;
++#endif
+   //==== File I/O ========
+   Int       m_iFrameRate;
+   Int       m_FrameSkip;
+@@ -559,6 +565,17 @@
+   virtual ~TEncCfg()
+   {}
+ 
++#if PCC_ME_EXT
++  Void setBlockToPatchFileName(std::string blockToPatchFileName) { m_blockToPatchFileName = blockToPatchFileName; }
++  std::string getBlockToPatchFileName() { return m_blockToPatchFileName; }
++
++  Void setOccupancyMapFileName(std::string occupancyMapFileName) { m_occupancyFileName = occupancyMapFileName; }
++  std::string getOccupancyMapFileName() { return m_occupancyFileName; }
++
++  Void setUsePCCExt(Bool value) { m_usePCCExt = value; }
++  Bool getUsePCCExt()         const { return m_usePCCExt; }
++#endif
++
+   Void setProfile(Profile::Name profile) { m_profile = profile; }
+   Void setLevel(Level::Tier tier, Level::Name level) { m_levelTier = tier; m_level = level; }
+ 
+Index: source/Lib/TLibEncoder/TEncGOP.cpp
+===================================================================
+--- source/Lib/TLibEncoder/TEncGOP.cpp	(revision 4998)
++++ source/Lib/TLibEncoder/TEncGOP.cpp	(working copy)
+@@ -1197,7 +1197,11 @@
+ // ====================================================================================================================
+ Void TEncGOP::compressGOP( Int iPOCLast, Int iNumPicRcvd, TComList<TComPic*>& rcListPic,
+                            TComList<TComPicYuv*>& rcListPicYuvRecOut, std::list<AccessUnit>& accessUnitsInGOP,
++#if PCC_ME_EXT
++	                       Bool isField, Bool isTff, const InputColourSpaceConversion snr_conversion, const TEncAnalyze::OutputLogControl &outputLogCtrl, Bool usePccME)
++#else
+                            Bool isField, Bool isTff, const InputColourSpaceConversion snr_conversion, const TEncAnalyze::OutputLogControl &outputLogCtrl )
++#endif
+ {
+   // TODO: Split this function up.
+ 
+@@ -1757,6 +1761,52 @@
+       for(UInt nextCtuTsAddr = 0; nextCtuTsAddr < numberOfCtusInFrame; )
+       {
+         m_pcSliceEncoder->precompressSlice( pcPic );
++#if PCC_ME_EXT
++		if (pcSlice->getPOC() % PCC_ME_NUM_LAYERS_ACTIVE == 0 && usePccME)
++		{
++			//printf("\nPCC ME ACTIVE\n");
++			Int picWidth = pcPic->getPicYuvRec()->getWidth(COMPONENT_Y);
++			Int picHeight = pcPic->getPicYuvRec()->getHeight(COMPONENT_Y);
++
++			Int blockToPatchWidth = picWidth / 16;
++			Int blockToPatchHeight = picHeight / 16;
++
++			Int currPOC = pcSlice->getPOC() / PCC_ME_NUM_LAYERS_ACTIVE;
++			long long offset = (long long)currPOC * blockToPatchWidth * blockToPatchHeight;
++
++			std::string blockToPatchFileName = m_pcEncTop->getBlockToPatchFileName();
++			FILE* blockToPatchFile = NULL;
++			blockToPatchFile = fopen(blockToPatchFileName.c_str(), "rb");
++			fseek(blockToPatchFile, offset * sizeof(long long), SEEK_SET);
++			long long* blockToPatch = pcPic->getBlockToPatch();
++			size_t readSize = fread(blockToPatch, sizeof(long long), blockToPatchWidth * blockToPatchHeight, blockToPatchFile);
++			if (readSize != blockToPatchWidth * blockToPatchHeight)
++			{
++				printf("error: Resolution does not match");
++			}
++			fclose(blockToPatchFile);
++
++			offset = (long long)currPOC * picWidth * picHeight;
++			std::string occupancyMapFileName = m_pcEncTop->getOccupancyMapFileName();
++			FILE* occupancyMapFile = NULL;
++			occupancyMapFile = fopen(occupancyMapFileName.c_str(), "rb");
++			fseek(occupancyMapFile, offset * sizeof(Int), SEEK_SET);
++			Int* occupancyMap = pcPic->getOccupancyMap();
++			readSize = fread(occupancyMap, sizeof(Int), picWidth * picHeight, occupancyMapFile);
++			if (readSize != picWidth * picHeight)
++			{
++				printf("error: Resolution does not match");
++			}
++			fclose(occupancyMapFile);
++		}
++		if (usePccME)
++		{
++			for (Int i = 0; i < PCC_ME_EXT_MAX_NUM_PATCHES; i++)
++			{
++				g_patchesChange[i] = true;
++			}
++		}
++#endif
+         m_pcSliceEncoder->compressSlice   ( pcPic, false, false );
+ 
+         const UInt curSliceSegmentEnd = pcSlice->getSliceSegmentCurEndCtuTsAddr();
+Index: source/Lib/TLibEncoder/TEncGOP.h
+===================================================================
+--- source/Lib/TLibEncoder/TEncGOP.h	(revision 4998)
++++ source/Lib/TLibEncoder/TEncGOP.h	(working copy)
+@@ -168,7 +168,11 @@
+ 
+   Void  init        ( TEncTop* pcTEncTop );
+   Void  compressGOP ( Int iPOCLast, Int iNumPicRcvd, TComList<TComPic*>& rcListPic, TComList<TComPicYuv*>& rcListPicYuvRec,
++#if PCC_ME_EXT
++	                 std::list<AccessUnit>& accessUnitsInGOP, Bool isField, Bool isTff, const InputColourSpaceConversion snr_conversion, const TEncAnalyze::OutputLogControl &outputLogCtrl, Bool m_usePCCExt);
++#else
+                      std::list<AccessUnit>& accessUnitsInGOP, Bool isField, Bool isTff, const InputColourSpaceConversion snr_conversion, const TEncAnalyze::OutputLogControl &outputLogCtrl );
++#endif
+   Void  xAttachSliceDataToNalUnit (OutputNALUnit& rNalu, TComOutputBitstream* pcBitstreamRedirect);
+ 
+ 
+Index: source/Lib/TLibEncoder/TEncSearch.cpp
+===================================================================
+--- source/Lib/TLibEncoder/TEncSearch.cpp	(revision 4998)
++++ source/Lib/TLibEncoder/TEncSearch.cpp	(working copy)
+@@ -4080,8 +4080,15 @@
+                         iRoiHeight,
+                         pcYuv->getStride(COMPONENT_Y),
+                         pcCU->getSlice()->getSPS()->getBitDepth(CHANNEL_TYPE_LUMA),
++#if PCC_ME_EXT
+                         roiPosX,
++                        roiPosY,
++                        iRefIdxPred,
++                        eRefPicList);
++#else
++                        roiPosX,
+                         roiPosY);
++#endif
+   xInitTileBorders(pcCU, &cPattern);
+ #else
+   cPattern.initPattern( pcYuv->getAddr  ( COMPONENT_Y, uiPartAddr ),
+@@ -4397,6 +4404,105 @@
+   // set rcMv (Median predictor) as start point and as best point
+   xTZSearchHelp( pcPatternKey, cStruct, rcMv.getHor(), rcMv.getVer(), 0, 0 );
+ 
++#if PCC_ME_EXT
++  if (m_pcEncCfg->getUsePCCExt()) {
++    Int xCoor = pcPatternKey->getROIYPosX() + pcPatternKey->getROIYWidth() / PCC_ME_NUM_LAYERS_ACTIVE;
++    Int yCoor = pcPatternKey->getROIYPosY() + pcPatternKey->getROIYHeight() / PCC_ME_NUM_LAYERS_ACTIVE;
++  
++    Int picWidth = pcCU->getSlice()->getSPS()->getPicWidthInLumaSamples();
++    Int occupancyResolution = 16;
++    Int blockToPatchWidth = picWidth / occupancyResolution;
++  
++    Int* occupancyMap = pcCU->getPic()->getOccupancyMap();
++    long long* blockToPatch = pcCU->getPic()->getBlockToPatch();
++  
++    if (pcCU->getSlice()->getPOC() % 2 == 0 && occupancyMap[yCoor * picWidth + xCoor])
++    {
++  	  Int xBlockIndex = xCoor / occupancyResolution;
++  	  Int yBlockIndex = yCoor / occupancyResolution;
++  
++  	  Int patchIndex = blockToPatch[yBlockIndex * blockToPatchWidth + xBlockIndex] - 1;          // should be minus 1
++  	  Int frameIndex = pcCU->getSlice()->getPOC() / PCC_ME_NUM_LAYERS_ACTIVE;
++  
++  	  // current 3D coordinate derivation
++  	  Int projectIndex = g_projectionIndex[frameIndex][patchIndex];
++  
++  	  Int patchD1 = g_patch3DInfo[frameIndex][patchIndex][0];
++  	  Int patchU1 = g_patch3DInfo[frameIndex][patchIndex][1];
++  	  Int patchV1 = g_patch3DInfo[frameIndex][patchIndex][2];
++  
++  	  Int patchU0 = g_patch2DInfo[frameIndex][patchIndex][0];
++  	  Int patchV0 = g_patch2DInfo[frameIndex][patchIndex][1];
++  
++  	  Int xCoor3D = patchU1 + (xCoor - patchU0 * occupancyResolution);
++  	  Int yCoor3D = patchV1 + (yCoor - patchV0 * occupancyResolution);
++  
++  
++  	  RefPicList eRefPicList = pcPatternKey->getRefPicList();
++  	  Int refIdx = pcPatternKey->getRefIndex();
++  
++  	  // find the suitable patch in the reference frame
++  	  Int refPOC = pcCU->getSlice()->getRefPOC(eRefPicList, refIdx);
++  	  Int refFrameIndex = refPOC / 2;
++  	  Int refNumPatches = g_numPatches[refFrameIndex];
++  
++  	  Int bestPatchIndex = 0;
++  	  Int bestDist = MAX_INT;
++  	  for (Int refPatchIdx = 0; refPatchIdx < refNumPatches; refPatchIdx++)
++  	  {
++  	    Int refProjectionIndex = g_projectionIndex[refFrameIndex][refPatchIdx];
++  	  
++  	    if (refProjectionIndex != projectIndex)
++  	    {
++  	  	  continue;
++  	    }
++  	  
++  	    Int refPatchU1 = g_patch3DInfo[refFrameIndex][refPatchIdx][1];
++  	    Int refPatchV1 = g_patch3DInfo[refFrameIndex][refPatchIdx][2];
++  	  
++  	    Int refPatchSizeU0 = g_patch2DInfo[refFrameIndex][refPatchIdx][2];
++  	    Int refPatchSizeV0 = g_patch2DInfo[refFrameIndex][refPatchIdx][3];
++	  
++	    Int refPatch3DEndU1 = refPatchU1 + refPatchSizeU0 * occupancyResolution - 1;
++	    Int refPatch3DEndV1 = refPatchV1 + refPatchSizeV0 * occupancyResolution - 1;
++	  
++	    Bool xCond = (xCoor3D >= refPatchU1 && xCoor3D <= refPatch3DEndU1);
++	    Bool yCond = (yCoor3D >= refPatchV1 && yCoor3D <= refPatch3DEndV1);
++	  
++	    if (xCond && yCond)
++	    {
++	  	  Int refPatchD1 = g_patch3DInfo[refFrameIndex][refPatchIdx][0];
++	  	  Int patchDist = abs(patchD1 - refPatchD1);
++	  
++	  	  if (patchDist < bestDist)
++	  	  {
++	  	    bestDist = patchDist;
++	  	    bestPatchIndex = refPatchIdx;
++	  	  }
++	    }
++	  }
++
++	  Int diff3DU = g_patch3DInfo[frameIndex][patchIndex][1] - g_patch3DInfo[refFrameIndex][bestPatchIndex][1];
++	  Int diff3DV = g_patch3DInfo[frameIndex][patchIndex][2] - g_patch3DInfo[refFrameIndex][bestPatchIndex][2];
++
++	  Int diff2DU = (g_patch2DInfo[refFrameIndex][bestPatchIndex][0] - g_patch2DInfo[frameIndex][patchIndex][0]) * occupancyResolution;
++	  Int diff2DV = (g_patch2DInfo[refFrameIndex][bestPatchIndex][1] - g_patch2DInfo[frameIndex][patchIndex][1]) * occupancyResolution;
++
++	  Int diffTotalU = diff3DU + diff2DU;
++	  Int diffTotalV = diff3DV + diff2DV;
++
++	  TComMv startMV(diffTotalU << 2, diffTotalV << 2);
++	  pcCU->clipMv(startMV);
++#if ME_ENABLE_ROUNDING_OF_MVS
++	  startMV.divideByPowerOf2(2);
++#else
++	  startMV >>= 2;
++#endif
++	  xTZSearchHelp(pcPatternKey, cStruct, startMV.getHor(), startMV.getVer(), 0, 0);
++	}
++  }
++#endif
++
+   // test whether one of PRED_A, PRED_B, PRED_C MV is better start point than Median predictor
+   if ( bTestOtherPredictedMV )
+   {
+Index: source/Lib/TLibEncoder/TEncTop.cpp
+===================================================================
+--- source/Lib/TLibEncoder/TEncTop.cpp	(revision 4998)
++++ source/Lib/TLibEncoder/TEncTop.cpp	(working copy)
+@@ -362,7 +362,12 @@
+   }
+ 
+   // compress GOP
++#if PCC_ME_EXT
++  if (m_usePCCExt) printf("\n\tPCC ME GOP #1 ACTIVE\n");
++  m_cGOPEncoder.compressGOP(m_iPOCLast, m_iNumPicRcvd, m_cListPic, rcListPicYuvRecOut, accessUnitsOut, false, false, snrCSC, getOutputLogControl(), m_usePCCExt);
++#else
+   m_cGOPEncoder.compressGOP(m_iPOCLast, m_iNumPicRcvd, m_cListPic, rcListPicYuvRecOut, accessUnitsOut, false, false, snrCSC, getOutputLogControl());
++#endif
+ 
+   if ( m_RCEnableRateControl )
+   {
+@@ -466,7 +471,12 @@
+     if ( m_iNumPicRcvd && ((flush&&fieldNum==1) || (m_iPOCLast/2)==0 || m_iNumPicRcvd==m_iGOPSize ) )
+     {
+       // compress GOP
++#if PCC_ME_EXT
++      if (m_usePCCExt) printf("\n\tPCC ME GOP #2 ACTIVE\n");
++	  m_cGOPEncoder.compressGOP(m_iPOCLast, m_iNumPicRcvd, m_cListPic, rcListPicYuvRecOut, accessUnitsOut, false, false, snrCSC, getOutputLogControl(), m_usePCCExt);
++#else
+       m_cGOPEncoder.compressGOP(m_iPOCLast, m_iNumPicRcvd, m_cListPic, rcListPicYuvRecOut, accessUnitsOut, true, isTff, snrCSC, getOutputLogControl());
++#endif
+       iNumEncoded += m_iNumPicRcvd;
+       m_uiNumAllPicCoded += m_iNumPicRcvd;
+       m_iNumPicRcvd = 0;

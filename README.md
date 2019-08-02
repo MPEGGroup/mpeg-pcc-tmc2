@@ -27,7 +27,7 @@ Bash scripts can be use to build mpeg-pcc-tmc2 project:
 ### External dependencies
 
 The external dependencies must be download and build: 
-- HM-16.18+SCM-8.7 
+- HM-16.20+SCM-8.8 (apply  pcc_me-ext_for_HM-16.20+SCM-8.8.patch on it stored in \dependencies\hm-modification ).
 - HDRTools
 - pcc_distortion
 

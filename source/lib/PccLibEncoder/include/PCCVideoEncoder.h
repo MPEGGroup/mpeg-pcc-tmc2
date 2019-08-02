@@ -371,7 +371,7 @@ class PCCVideoEncoder {
           << " --FramesToBeEncoded=" << frameCount << " --BitstreamFile=" << binFileName
           << " --ReconFile=" << recYuvFileName << " --QP=" << qp << " --InputColourSpaceConvert=RGBtoGBR";
       if ( use3dmv ) {
-        cmd << " --BlockToPatchFile=" << blockToPatchFileName << " --OccupancyMapFile=" << occupancyMapFileName
+        cmd << " --UsePccMotionEstimation=1 --BlockToPatchFile=" << blockToPatchFileName << " --OccupancyMapFile=" << occupancyMapFileName
             << " --PatchInfoFile=" << patchInfoFileName;
       }
     } else {
@@ -389,7 +389,7 @@ class PCCVideoEncoder {
       cmd << " --OutputBitDepth=" << depth;
       cmd << " --OutputBitDepthC=" << depth;
       if ( use3dmv ) {
-        cmd << " --BlockToPatchFile=" << blockToPatchFileName << " --OccupancyMapFile=" << occupancyMapFileName
+        cmd << " --UsePccMotionEstimation=1 --BlockToPatchFile=" << blockToPatchFileName << " --OccupancyMapFile=" << occupancyMapFileName
             << " --PatchInfoFile=" << patchInfoFileName;
       }
     }
