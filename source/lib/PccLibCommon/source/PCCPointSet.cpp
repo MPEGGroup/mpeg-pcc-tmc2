@@ -827,7 +827,7 @@ bool PCCPointSet3::transfertColors( PCCPointSet3& target,
       }
     }
     if ( !isDone ) {
-      int nNN = result.count();
+      int nNN = (int)result.count();
       while ( nNN > 0 && !isDone ) {
         if ( nNN == 1 ) {
           refinedColors1[index] = source.getColor( result.indices( 0 ) );
@@ -922,9 +922,9 @@ bool PCCPointSet3::transfertColors( PCCPointSet3& target,
         }
       }
       if ( !isDone ) {
-        int nNN = colorsDists2.size();
+        int nNN = (int)colorsDists2.size();
         while ( nNN > 0 && !isDone ) {
-          nNN = colorsDists2.size();
+          nNN = (int)colorsDists2.size();
           if ( nNN == 1 ) {
             auto temp = colorsDists2[0];
             colorsDists2.clear();

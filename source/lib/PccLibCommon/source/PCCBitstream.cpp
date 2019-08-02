@@ -70,7 +70,7 @@ bool PCCBitstream::initialize( std::string compressedStreamPath ) {
 }
 
 bool PCCBitstream::write( std::string compressedStreamPath ) {
-  write( size(), 64, totalSizeIterator_ );
+  write( (int32_t) size(), 64, totalSizeIterator_ );
   std::ofstream fout( compressedStreamPath, std::ios::binary );
   if ( !fout.is_open() ) { return false; }
   fout.write( reinterpret_cast<const char*>( data_.data() ), size() );
@@ -135,7 +135,7 @@ void PCCBitstream::write( PCCVideoBitstream& videoBitstream ) {
 
 void PCCBitstream::writeBuffer( const uint8_t* data, const size_t size ) {
   realloc( size );
-  write( size, 32 );
+  write( (int32_t) size, 32 );
 #ifdef BITSTREAM_TRACE
   trace( "Code: size = %lu \n", size );
 #endif

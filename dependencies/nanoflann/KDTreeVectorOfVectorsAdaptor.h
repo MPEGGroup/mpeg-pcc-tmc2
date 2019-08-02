@@ -81,7 +81,7 @@ struct KDTreeVectorOfVectorsAdaptor {
   /// Constructor: takes a const ref to the vector of vectors object with the data points
   KDTreeVectorOfVectorsAdaptor(const int dimensionality, const VectorOfVectorsType &mat,
                                const int leaf_max_size = 10)
-      : m_data(mat), index( NULL ) {
+      : index( NULL ), m_data(mat)  {
     // assert(mat.size()!=0 && mat[0].size()!=0);
     // const size_t dims = mat[0].size();
     // if (DIM>0 && static_cast<int>(dims)!=DIM)

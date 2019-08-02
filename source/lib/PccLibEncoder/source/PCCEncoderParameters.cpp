@@ -65,7 +65,6 @@ PCCEncoderParameters::PCCEncoderParameters() {
   maxNNCountPatchSegmentation_             = 16;
   surfaceThickness_                        = 4;
   minLevel_                                = 64;  // fix value
-  maxAllowedDepth_                         = 255;
   maxAllowedDist2MissedPointsDetection_    = 9.0;
   maxAllowedDist2MissedPointsSelection_    = 1.0;
   lambdaRefineSegmentation_                = 3.0;
@@ -107,7 +106,6 @@ PCCEncoderParameters::PCCEncoderParameters() {
   geometryD1Config_                        = {};
   textureConfig_                           = {};
   losslessGeo_                             = false;
-  losslessTexture_                         = false;
   noAttributes_                            = false;
   losslessGeo444_                          = false;
   useMissedPointsSeparateVideo_            = false;
@@ -134,7 +132,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   flagColorPreSmoothing_                   = true;
   groupDilation_                           = true;
   textureDilationOffLossless_              = true;
-  enhancedDeltaDepthCode_                  = losslessGeo_ ? true : false;
+  enhancedDeltaDepthCode_                  = false;
   EOMFixBitCount_                          = 2;
   EOMTexturePatch_                         = true;
   offsetLossyOM_                           = 0;
@@ -168,7 +166,6 @@ PCCEncoderParameters::PCCEncoderParameters() {
   lossyMissedPointsPatch_           = false;
   minNormSumOfInvDist4MPSelection_  = 0.35;
   lossyMppGeoQP_                    = 4;
-  useAdditionalPointsPatch_         = false;
   //GPA
   globalPatchAllocation_            = 0;
   //GTP
@@ -198,9 +195,6 @@ PCCEncoderParameters::PCCEncoderParameters() {
 PCCEncoderParameters::~PCCEncoderParameters() {}
 
 void PCCEncoderParameters::completePath() {
-  if ( useMissedPointsSeparateVideo_ && !lossyMissedPointsPatch_ && !losslessGeo_ ) {
-    useMissedPointsSeparateVideo_ = false;
-  }
   if ( !uncompressedDataFolder_.empty() ) {
     if ( !uncompressedDataPath_.empty() ) { uncompressedDataPath_ = uncompressedDataFolder_ + uncompressedDataPath_; }
   }
@@ -228,9 +222,8 @@ void PCCEncoderParameters::completePath() {
 void PCCEncoderParameters::print() {
   std::cout << "+ Parameters" << std::endl;
   std::cout << "\t losslessGeo                              " << losslessGeo_ << std::endl;
-  std::cout << "\t losslessTexture                          " << losslessTexture_ << std::endl;
   std::cout << "\t noAttributes                             " << noAttributes_ << std::endl;
-  std::cout << "\t losslessGeo444                           " << losslessGeo444_ << std::endl;
+  std::cout << "\t PCM Geometry Colour Plane                " << ( losslessGeo444_ ?"444":"420" ) << std::endl;
   std::cout << "\t enhancedDeltaDepthCode                   " << enhancedDeltaDepthCode_ << std::endl;
   std::cout << "\t useMissedPointsSeparateVideo             " << useMissedPointsSeparateVideo_ << std::endl;
   std::cout << "\t uncompressedDataPath                     " << uncompressedDataPath_ << std::endl;
@@ -261,7 +254,6 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   maxAllowedDist2MissedPointsSelection " << maxAllowedDist2MissedPointsSelection_ << std::endl;
   std::cout << "\t   lambdaRefineSegmentation               " << lambdaRefineSegmentation_ << std::endl;
   std::cout << "\t   depthQuantizationStep                  " << minLevel_ << std::endl;
-  std::cout << "\t   maxAllowedDepth                        " << maxAllowedDepth_ << std::endl;
   std::cout << "\t packing" << std::endl;
   std::cout << "\t   minimumImageWidth                      " << minimumImageWidth_ << std::endl;
   std::cout << "\t   minimumImageHeight                     " << minimumImageHeight_ << std::endl;
@@ -294,8 +286,6 @@ void PCCEncoderParameters::print() {
   if ( useMissedPointsSeparateVideo_ ) {
     if ( losslessGeo_ ) {
       std::cout << "\t geometryMPConfig                          " << geometryMPConfig_ << std::endl;
-    }
-    if ( losslessTexture_ ) {
       std::cout << "\t textureMPConfig                            " << textureMPConfig_ << std::endl;
     }
   }
@@ -508,11 +498,6 @@ bool PCCEncoderParameters::check() {
   }
 
 
-  if ( !losslessGeo_ && enhancedDeltaDepthCode_ ) {
-    enhancedDeltaDepthCode_ = false;
-    std::cerr << "WARNING: enhancedDeltaDepthCode is only for lossless coding mode for now. Force "
-                 "enhancedDeltaDepthCode=FALSE.\n";
-  }
   if ( !enhancedDeltaDepthCode_ ) {   
     std::cerr << "WARNING: EOMTexturePatch is only for enhancedDeltaDepthCode coding mode for now. Force "
                  "EOMTexturePatch=FALSE.\n";
@@ -638,7 +623,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
 
   context.setOccupancyPackingBlockSize( occupancyResolution_ );
 
-  sps.setLayerCountMinus1( layerCountMinus1_ );
+  sps.setLayerCountMinus1( (uint32_t)layerCountMinus1_ );
   sps.allocate();
   sps.setPcmSeparateVideoPresentFlag( useMissedPointsSeparateVideo_ );
   sps.setEnhancedOccupancyMapForDepthFlag( enhancedDeltaDepthCode_ );
@@ -656,7 +641,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
       sps.setLayerAbsoluteCodingEnabledFlag( i, absoluteD1_ );
     }
   }
-  sps.setPcmPatchEnabledFlag( useAdditionalPointsPatch_ );
+  sps.setPcmPatchEnabledFlag( losslessGeo_ || lossyMissedPointsPatch_);
   sps.setPatchInterPredictionEnabledFlag( deltaCoding_ );
   sps.setSurfaceThickness( surfaceThickness_ );
   sps.setProjection45DegreeEnableFlag( additionalProjectionPlaneMode_ > 0 ? 1 : 0 );
@@ -705,9 +690,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   // deprecated
   sps.setLosslessGeo444( losslessGeo444_ );
   sps.setLosslessGeo( losslessGeo_ );
-  sps.setLosslessTexture( losslessTexture_ );
   sps.setMinLevel( minLevel_ );
-
   // Encoder only data
   context.setOccupancyPrecision( occupancyPrecision_ );
   context.setOccupancyPackingBlockSize( occupancyResolution_ );
@@ -728,4 +711,6 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   // Lossy occupancy map
   context.getOffsetLossyOM()    = offsetLossyOM_;
   context.getPrefilterLossyOM() = prefilterLossyOM_;
+  
 }
+

@@ -58,17 +58,19 @@ class PCCVideoEncoder {
                  const std::string& encoderConfig,
                  const std::string& encoderPath,
                  PCCContext&        contexts,
-                 const bool         keepIntermediateFiles             = false,
-                 const bool         use444CodecIo                     = false,
-                 const size_t       nbyte                             = 1,
-                 const bool         patchColorSubsampling             = false,
-                 const bool         use3dmv                           = false,
-                 const bool         forceInternalBitDepth             = false,
-                 const std::string& colorSpaceConversionConfig        = "",
-                 const std::string& inverseColorSpaceConversionConfig = "",
-                 const std::string& colorSpaceConversionPath          = "",
-                 const size_t       downsamplingFilter                = 4,
-                 const size_t       upsamplingFilter                  = 0 ) {
+                const size_t       nbyte                             ,
+                const bool         use444CodecIo                     ,
+                const bool         use3dmv                           ,
+                const size_t       internalBitDepth                  ,
+                const bool         useConversion                     ,
+                const bool         keepIntermediateFiles             = false,
+                const std::string& colorSpaceConversionConfig        = "",
+                const std::string& inverseColorSpaceConversionConfig = "",
+                const std::string& colorSpaceConversionPath          = "",
+                const size_t       downsamplingFilter                = 4,
+                const size_t       upsamplingFilter                  = 0,
+                const bool         patchColorSubsampling             = false
+                ) {
     auto& frames = video.getFrames();
     if ( frames.empty() ) { return false; }
     const size_t width      = frames[0].getWidth();
@@ -110,7 +112,7 @@ class PCCVideoEncoder {
         video420.resize( video.getFrameCount() );
         for ( size_t frNum = 0; frNum < video.getFrameCount(); frNum++ ) {
           // context variable, contains the patch information
-          auto& context = contexts[frNum / 2];
+          auto& context = contexts[ (int)(frNum / 2)];
           // full resolution image (already filled by previous dilation
           auto& refImage = video.getFrame( frNum );
           // image that will contain the per-patch chroma sub-sampled image
@@ -168,50 +170,50 @@ class PCCVideoEncoder {
                   std::vector<int> neighborIdx( 4, -1 );
                   std::vector<int> neighborDistance( 4, ( std::numeric_limits<int>::max )() );
                   // looking for the neighboring block to the left of the current block
-                  searchIndex = j;
+                  searchIndex = (int)j;
                   while ( searchIndex >= 0 ) {
                     if ( context.getBlockToPatch()[( i + patch_top / occupancyResolution ) *
                                                        ( width / occupancyResolution ) +
                                                    searchIndex + patch_left / occupancyResolution] == patchIdx ) {
                       neighborIdx[0]      = searchIndex;
-                      neighborDistance[0] = j - searchIndex;
+                      neighborDistance[0] = (int)j - searchIndex;
                       searchIndex         = 0;
                     }
                     searchIndex--;
                   }
                   // looking for the neighboring block to the right of the current block
-                  searchIndex = j;
+                  searchIndex = (int)j;
                   while ( searchIndex < patch_width / occupancyResolution ) {
                     if ( context.getBlockToPatch()[( i + patch_top / occupancyResolution ) *
                                                        ( width / occupancyResolution ) +
                                                    searchIndex + patch_left / occupancyResolution] == patchIdx ) {
                       neighborIdx[1]      = searchIndex;
-                      neighborDistance[1] = searchIndex - j;
-                      searchIndex         = patch_width / occupancyResolution;
+                      neighborDistance[1] = searchIndex - (int)j;
+                      searchIndex         = (int)patch_width / occupancyResolution;
                     }
                     searchIndex++;
                   }
                   // looking for the neighboring block above the current block
-                  searchIndex = i;
+                  searchIndex = (int)i;
                   while ( searchIndex >= 0 ) {
                     if ( context.getBlockToPatch()[( searchIndex + patch_top / occupancyResolution ) *
                                                        ( width / occupancyResolution ) +
                                                    j + patch_left / occupancyResolution] == patchIdx ) {
                       neighborIdx[2]      = searchIndex;
-                      neighborDistance[2] = i - searchIndex;
+                      neighborDistance[2] = (int)i - searchIndex;
                       searchIndex         = 0;
                     }
                     searchIndex--;
                   }
                   // looking for the neighboring block below the current block
-                  searchIndex = i;
+                  searchIndex = (int)i;
                   while ( searchIndex < patch_height / occupancyResolution ) {
                     if ( context.getBlockToPatch()[( searchIndex + patch_top / occupancyResolution ) *
                                                        ( width / occupancyResolution ) +
                                                    j + patch_left / occupancyResolution] == patchIdx ) {
                       neighborIdx[3]      = searchIndex;
-                      neighborDistance[3] = searchIndex - i;
-                      searchIndex         = patch_height / occupancyResolution;
+                      neighborDistance[3] = searchIndex - (int)i;
+                      searchIndex         = (int)patch_height / occupancyResolution;
                     }
                     searchIndex++;
                   }
@@ -378,17 +380,14 @@ class PCCVideoEncoder {
           << " --FrameSkip=0 "
           << " --SourceWidth=" << width << " --SourceHeight=" << height << " --ConformanceWindowMode=1 "
           << " --FramesToBeEncoded=" << frameCount << " --BitstreamFile=" << binFileName
-          << " --ReconFile=" << recYuvFileName << " --QP=" << qp;      
-      if( forceInternalBitDepth ) {
-        cmd << " --InternalBitDepth=" << depth << " --InternalBitDepthC=" << depth;  
+          << " --ReconFile=" << recYuvFileName << " --QP=" << qp;
+
+      if(internalBitDepth!=0){
+        cmd << " --InternalBitDepth=" << internalBitDepth << " --InternalBitDepthC=" << internalBitDepth;
       }
-      // If depth==10 ensure InternalBitDepth == InputBitDepth.
-      // Otherwise for lossy cases rely on video encoder config files to set InternalBitDepth ( for Main10 video
-      // encoders)
-      if ( depth == 10 ) {
-        cmd << " --InternalBitDepth=" << depth << " --InternalBitDepthC=" << depth;
-        cmd << " --OutputBitDepth=" << depth;  // to support lossy missed points patch in the same video frame
-      }
+
+      cmd << " --OutputBitDepth=" << depth;
+      cmd << " --OutputBitDepthC=" << depth;
       if ( use3dmv ) {
         cmd << " --BlockToPatchFile=" << blockToPatchFileName << " --OccupancyMapFile=" << occupancyMapFileName
             << " --PatchInfoFile=" << patchInfoFileName;

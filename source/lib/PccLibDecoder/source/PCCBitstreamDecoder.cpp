@@ -231,9 +231,14 @@ void PCCBitstreamDecoder::sequenceParameterSet( SequenceParameterSet& sps,
   sps.setPatchPrecedenceOrderFlag( bitstream.read( 1 ) );         // u(1)
 
   // THE NEXT PARAMETERS ARE NOT IN THE VPCC CD SYNTAX DOCUMENTS AND WILL BE REMOVE
+#ifdef BITSTREAM_TRACE
+  bitstream.trace( "  Depreciated1\n" );
+#endif
   sps.setLosslessGeo444( bitstream.read( 1 ) );    // u(1)
   sps.setLosslessGeo( bitstream.read( 1 ) );       // u(1)
-  sps.setLosslessTexture( bitstream.read( 1 ) );   // u(1)
+#ifdef BITSTREAM_TRACE
+  bitstream.trace( "  Depreciated2\n" );
+#endif
   sps.setMinLevel( bitstream.read( 8 ) );          // u(8)
   sps.setSurfaceThickness( bitstream.read( 8 ) );  // u(8)
   // THE NEXT PARAMETERS ARE NOT IN THE VPCC CD SYNTAX DOCUMENTS AND WILL BE REMOVE
@@ -695,7 +700,6 @@ void PCCBitstreamDecoder::patchFrameTileInformation( PatchFrameTileInformation& 
   pfti.setSingleTilePerTileGroupFlag( bitstream.read( 1 ) );  //  u(1)
   if ( !pfti.getSingleTilePerTileGroupFlag() ) {
     uint32_t NumTilesInPatchFrame     = ( pfti.getNumTileColumnsMinus1() + 1 ) * ( pfti.getNumTileRowsMinus1() + 1 );
-    uint32_t log2NumTilesInPatchFrame = uint32_t( log2( NumTilesInPatchFrame ) + 1 );
 
     pfti.setNumTileGroupsInPatchFrameMinus1( bitstream.readUvlc() );  // ue(v)
     for ( size_t i = 0; i <= pfti.getNumTileGroupsInPatchFrameMinus1(); i++ ) {
@@ -876,8 +880,6 @@ void PCCBitstreamDecoder::patchTileGroupHeader( PatchTileGroupHeader& ptgh,
     }
   }
   if ( sps.getEnhancedOccupancyMapForDepthFlag() && sps.getEOMTexturePatch() ) {
-    ptgh.setEOMPatch2dSizeUBitCountMinus1( bitstream.read( 8 ) );  // u( 8 )
-    ptgh.setEOMPatch2dSizeVBitCountMinus1( bitstream.read( 8 ) );  // u( 8 )
     ptgh.setEOMPatchNbPatchBitCountMinus1( bitstream.read( 8 ) );  // u( 8 )
     ptgh.setEOMPatchMaxEPBitCountMinus1( bitstream.read( 8 ) );    // u( 8 )
   }
@@ -937,7 +939,6 @@ void PCCBitstreamDecoder::patchTileGroupDataUnit( PatchTileGroupDataUnit& ptgdu,
                                                   PCCBitstream&           bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   TRACE_BITSTREAM( "ptgh.getType()        = %lu \n", ptgh.getType() );
-
   ptgdu.init();
   prevPatchSizeU_   = 0;
   prevPatchSizeV_   = 0;
@@ -949,8 +950,7 @@ void PCCBitstreamDecoder::patchTileGroupDataUnit( PatchTileGroupDataUnit& ptgdu,
   TRACE_BITSTREAM( "patchMode = %lu \n", patchMode );
   while ( !( ( ( tileGroupType == PATCH_FRAME_I ) && ( patchMode == PATCH_MODE_I_END ) ) ||
              ( ( tileGroupType == PATCH_FRAME_P ) && ( patchMode == PATCH_MODE_P_END ) ) ) ) {
-    ptgdu.addPatchMode( patchMode );
-    auto& pid = ptgdu.addPatchInformationData();
+    auto& pid = ptgdu.addPatchInformationData( patchMode );
     pid.setFrameIndex( ptgdu.getFrameIndex() );
     pid.setPatchIndex( patchIndex );
     patchIndex++;
@@ -958,6 +958,7 @@ void PCCBitstreamDecoder::patchTileGroupDataUnit( PatchTileGroupDataUnit& ptgdu,
     patchMode = bitstream.readUvlc();  // ue(v)
     TRACE_BITSTREAM( "patchMode = %lu \n", patchMode );
   }
+  TRACE_BITSTREAM( "ptgdu.getPatchCount() = %lu \n", ptgdu.getPatchCount() );
   byteAlignment( bitstream );
 }
 
@@ -1031,7 +1032,6 @@ void PCCBitstreamDecoder::patchDataUnit( PatchDataUnit&        pdu,
                                          PCCContext&           context,
                                          PCCBitstream&         bitstream ) {
   auto& sps                          = context.getSps();
-  auto& gi                           = sps.getGeometryInformation();
   auto  ptghPatchFrameParameterSetId = ptgh.getPatchFrameParameterSetId();
   auto& pfps = context.getPatchDataGroup().getPatchFrameParameterSet( ptghPatchFrameParameterSetId );
   auto  pfpsPatchSequenceParameterSetId = pfps.getPatchSequenceParameterSetId();
@@ -1178,13 +1178,12 @@ void PCCBitstreamDecoder::eomPatchDataUnit( EOMPatchDataUnit&     epdu,
   TRACE_BITSTREAM( "%s \n", __func__ );
   epdu.set2DShiftU( bitstream.read( ptgh.getInterPredictPatch2dShiftUBitCountMinus1() + 1 ) );  // u(v)
   epdu.set2DShiftV( bitstream.read( ptgh.getInterPredictPatch2dShiftVBitCountMinus1() + 1 ) );  // u(v)
-  epdu.set2DDeltaSizeU( bitstream.read( ptgh.getEOMPatch2dSizeUBitCountMinus1() + 1 ) );        // u(v)
-  epdu.set2DDeltaSizeV( bitstream.read( ptgh.getEOMPatch2dSizeVBitCountMinus1() + 1 ) );        // u(v)
+  epdu.set2DDeltaSizeU( bitstream.readSvlc() );                                                 // se(v)
+  epdu.set2DDeltaSizeV( bitstream.readSvlc() );                                                 // se(v)
   epdu.setEpduCountMinus1( bitstream.read( ptgh.getEOMPatchNbPatchBitCountMinus1() + 1 ) );     // u(v)
 
   for ( size_t i = 0; i <= epdu.getEpduCountMinus1(); i++ ) {
     uint32_t eomPoint = bitstream.read( ptgh.getEOMPatchMaxEPBitCountMinus1() + 1 );
-    // printf("eomPoint %d\n", eomPoint);
     epdu.setEomPoints( eomPoint );  // u(v)
   }
   TRACE_BITSTREAM( "EOM Patch => UV %4lu %4lu  S=%4ld %4ld EpduCountMinus1=%lu \n", epdu.get2DShiftU(),
@@ -1224,6 +1223,7 @@ void PCCBitstreamDecoder::pointLocalReconstructionData( PointLocalReconstruction
                        plrd.getPlrBlockPresentFlag( i ) ? plrd.getPlrBlockModeMinus1( i ) : -1 );
     }
   }
+#ifdef BITSTREAM_TRACE
   for ( size_t v0 = 0; v0 < plrd.getPlrBlockToPatchMapHeight(); ++v0 ) {
     for ( size_t u0 = 0; u0 < plrd.getPlrBlockToPatchMapWidth(); ++u0 ) {
       size_t i = v0 * plrd.getPlrBlockToPatchMapWidth() + u0;
@@ -1235,6 +1235,7 @@ void PCCBitstreamDecoder::pointLocalReconstructionData( PointLocalReconstruction
                            : plrd.getPlrBlockPresentFlag( i ) ? plrd.getPlrBlockModeMinus1( i ) : -1 );
     }
   }
+#endif
 }
 
 // 7.3.5.22 Supplemental enhancement information message syntax TODO: Implement

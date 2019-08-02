@@ -222,16 +222,11 @@ bool parseParameters( int                   argc,
    encoderParams.minLevel_,
    encoderParams.minLevel_,
    "minimum level for patches")
-  
-    ("maxAllowedDepth",
-     encoderParams.maxAllowedDepth_,
-     encoderParams.maxAllowedDepth_,
-     "Maximum depth per patch")
 
-    ("maxAllowedDist2MissedPointsDetection",
-     encoderParams.maxAllowedDist2MissedPointsDetection_,
-     encoderParams.maxAllowedDist2MissedPointsDetection_,
-     "Maximum distance for a point to be ignored during missed point detection")
+  ("maxAllowedDist2MissedPointsDetection",
+   encoderParams.maxAllowedDist2MissedPointsDetection_,
+   encoderParams.maxAllowedDist2MissedPointsDetection_,
+   "Maximum distance for a point to be ignored during missed point detection")
 
     ("maxAllowedDist2MissedPointsSelection",
      encoderParams.maxAllowedDist2MissedPointsSelection_,
@@ -530,12 +525,6 @@ bool parseParameters( int                   argc,
      encoderParams.losslessGeo_,
      encoderParams.losslessGeo_,
      "Enable lossless encoding of geometry\n")
-
-    ("losslessTexture",
-     encoderParams.losslessTexture_,
-     encoderParams.losslessTexture_,
-     "Enable lossless encoding of texture\n")
-
     ("noAttributes",
      encoderParams.noAttributes_,
      encoderParams.noAttributes_,
@@ -735,7 +724,7 @@ bool parseParameters( int                   argc,
       encoderParams.geometryNominal2dBitdepth_,
       encoderParams.geometryNominal2dBitdepth_, 
       "Bit depth of geometry 2D")
-   
+  
     ("nbPlrmMode",
         encoderParams.plrlNumberOfModes_,
         encoderParams.plrlNumberOfModes_,
@@ -883,13 +872,6 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
     }
     clock.start();
 
-    if ( encoderParams.testLevelOfDetail_ > 0 ) {
-      const double lodScale = 1.0 / double( 1u << encoderParams.testLevelOfDetail_ );
-      // for ( auto& frame : sources.getFrames() ) {
-      //  for ( auto& point : frame.getPositions() ) { point *= lodScale; }
-      //}
-    }
-
     std::cout << "Compressing group of frames " << contextIndex << ": " << startFrameNumber << " -> " << endFrameNumber
               << "..." << std::endl;
     int ret = encoder.encode( sources, context, bitstream, reconstructs );
@@ -907,7 +889,8 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
       if ( bRunMetric ) metrics.compute( sources, reconstructs, normals );
     }
     if ( metricsParams.computeChecksum_ ) {
-      if ( encoderParams.losslessGeo_ && encoderParams.losslessTexture_ ) {
+      if ( encoderParams.losslessGeo_ )
+      {
         checksum.computeSource( sources );
         checksum.computeReordered( reconstructs );
       }
@@ -930,7 +913,8 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
   if ( metricsParams.computeMetrics_ ) { metrics.display(); }
   bool checksumEqual = true;
   if ( metricsParams.computeChecksum_ ) {
-    if ( encoderParams.losslessGeo_ && encoderParams.losslessTexture_ ) { checksumEqual = checksum.compareSrcRec(); }
+    if ( encoderParams.losslessGeo_ )
+    { checksumEqual = checksum.compareSrcRec(); }
     checksum.write( encoderParams.compressedStreamPath_ );
   }
   return checksumEqual ? 0 : -1;

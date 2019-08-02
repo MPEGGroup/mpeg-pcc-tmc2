@@ -47,7 +47,6 @@ class PCCEncoderParameters {
   bool check();
   void completePath();
   void initializeContext( PCCContext& context );
-
   size_t startFrameNumber_;
 
   std::string configurationFolder_;
@@ -77,8 +76,8 @@ class PCCEncoderParameters {
   size_t minimumImageHeight_;
 
   // video encoding
-  size_t geometryQP_;
-  size_t textureQP_;
+  int geometryQP_;
+  int textureQP_;
 
   // segmentation
   size_t nnNormalEstimation_;
@@ -92,7 +91,6 @@ class PCCEncoderParameters {
   size_t maxNNCountPatchSegmentation_;
   size_t surfaceThickness_;
   size_t minLevel_;  // 8,16,32,64
-  size_t maxAllowedDepth_;
   double maxAllowedDist2MissedPointsDetection_;
   double maxAllowedDist2MissedPointsSelection_;
   double lambdaRefineSegmentation_;
@@ -156,7 +154,6 @@ class PCCEncoderParameters {
   // lossless
   bool noAttributes_;
   bool losslessGeo_;
-  bool losslessTexture_;
   bool losslessGeo444_;
 
   // missed points video
@@ -213,7 +210,6 @@ class PCCEncoderParameters {
   bool   lossyMissedPointsPatch_;
   double minNormSumOfInvDist4MPSelection_;
   int    lossyMppGeoQP_;
-  bool   useAdditionalPointsPatch_;
 
   // GPA
   int globalPatchAllocation_;

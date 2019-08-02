@@ -53,7 +53,7 @@ PCCContext::~PCCContext() {
 
 void PCCContext::resize( size_t size ) {
   frames_.resize( size );
-  for ( size_t i = 0; i < size; i++ ) { frames_[i].getIndex() = i; }
+  for ( size_t i = 0; i < size; i++ ) { frames_[i].setIndex(i); }
 }
 
 void PCCContext::allocOneLayerData() {

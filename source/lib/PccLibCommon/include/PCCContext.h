@@ -234,7 +234,7 @@ class EOMPatchDataUnit {
   int64_t             get2DDeltaSizeV() { return epdu2DDeltaSizeV_; }
   int64_t             getEpduCountMinus1() { return epduCountMinus1_; }
   std::vector<size_t> getEomPoints() { return eomPoints_; }
-  void                setEpduCountMinus1( size_t value ) { epduCountMinus1_ = value; }
+  void                setEpduCountMinus1( uint32_t value ) { epduCountMinus1_ = value; }
   void                set2DShiftU( size_t value ) { epdu2DShiftU_ = value; }
   void                set2DShiftV( size_t value ) { epdu2DShiftV_ = value; }
   void                set2DDeltaSizeU( int64_t value ) { epdu2DDeltaSizeU_ = value; }
@@ -427,7 +427,9 @@ class PatchInformationData {
   PCMPatchDataUnit&   getPCMPatchDataUnit() { return pcmPatchDataUnit_; }
   size_t              getFrameIndex() { return frameIndex_; }
   size_t              getPatchIndex() { return patchIndex_; }
-
+  uint8_t             getPatchMode() { return patchMode_; }
+  
+  void setPatchMode(uint8_t value) { patchMode_=value; }
   void setFrameIndex( size_t value ) { frameIndex_ = value; }
   void setPatchIndex( size_t value ) { patchIndex_ = value; }
   void setOverrideGeometryPatchFlag( bool value ) { overrideGeometryPatchFlag_ = value; }
@@ -441,6 +443,7 @@ class PatchInformationData {
  private:
   size_t               frameIndex_;
   size_t               patchIndex_;
+  uint8_t              patchMode_;
   bool                 overrideGeometryPatchFlag_;
   uint8_t              geometryPatchParameterSetId_;
   std::vector<bool>    overrideAttributePatchFlag_;
@@ -456,33 +459,32 @@ class PatchTileGroupDataUnit {
  public:
   PatchTileGroupDataUnit() {}
   ~PatchTileGroupDataUnit() {
-    patchMode_.clear();
     patchInformationData_.clear();
   }
   PatchTileGroupDataUnit& operator=( const PatchTileGroupDataUnit& ) = default;
 
   void init() {
-    patchMode_.clear();
     patchInformationData_.clear();
   }
   void allocate( size_t size ) {
-    patchMode_.resize( size );
     patchInformationData_.resize( size );
   }
-  void addPatchMode( uint8_t value ) { patchMode_.push_back( value ); }
+
   void addPatchInformationData( PatchInformationData& value ) { patchInformationData_.push_back( value ); }
-  PatchInformationData& addPatchInformationData() {
+  PatchInformationData& addPatchInformationData(uint8_t patchMode) {
     PatchInformationData pid;
+    pid.setPatchMode(patchMode);
     patchInformationData_.push_back( pid );
     return patchInformationData_.back();
   }
-  size_t                getPatchCount() { return patchMode_.size(); }
-  uint8_t               getPatchMode( size_t index ) { return patchMode_[index]; }
+  uint8_t               getPatchMode( size_t index ) { return patchInformationData_[index].getPatchMode(); }
+  uint8_t               getPatchCount() { return patchInformationData_.size(); }
   PatchInformationData& getPatchInformationData( size_t index ) { return patchInformationData_[index]; }
+  std::vector<PatchInformationData>& getPatchInformationData() { return patchInformationData_; }
   size_t                getMatchedPatchCount() {
     size_t matchedPatchCount = 0;
-    for ( auto& v : patchMode_ ) {
-      if ( v == PATCH_MODE_P_INTER ) { matchedPatchCount++; }
+    for ( auto& v : patchInformationData_ ) {
+      if ( v.getPatchMode() == PATCH_MODE_P_INTER ) { matchedPatchCount++; }
     }
     return matchedPatchCount;
   }
@@ -490,12 +492,10 @@ class PatchTileGroupDataUnit {
   size_t getFrameIndex() { return frameIndex_; }
   void   setFrameIndex( size_t value ) { frameIndex_ = value; }
   void   setPatchCount( size_t value ) { patchCount_ = value; }
-  void   setPatchMode( size_t index, uint8_t value ) { patchMode_[index] = value; }
   void   setPatchInformationData( size_t index, PatchInformationData& value ) { patchInformationData_[index] = value; }
 
  private:
   size_t                            frameIndex_;
-  std::vector<uint8_t>              patchMode_;
   size_t                            patchCount_;
   std::vector<PatchInformationData> patchInformationData_;
 };
@@ -577,7 +577,9 @@ class PatchTileGroupHeader {
       interPredictPatch3dShiftNormalAxisBitCountFlag_( false ),
       interPredictPatchLodBitCountFlag_( false ),
       pcm3dShiftAxisBitCountMinus1_( 9 ),
-      pcm3dShiftBitCountPresentFlag_( true ) {
+      pcm3dShiftBitCountPresentFlag_( true ),
+      eomPatchNbPatchBitCountMinus1_( 0 ),
+      eomPatchMaxEPBitCountMinus1_( 0 ) {
     additionalPfocLsbPresentFlag_.resize( 1, 0 );
     additionalPfocLsbVal_.resize( 1, 0 );
   }
@@ -671,17 +673,9 @@ class PatchTileGroupHeader {
   void setNormalAxisMinValueQuantizer( uint8_t value ) { normalAxisMinValueQuantizer_ = value; }
   void setNormalAxisMaxDeltaValueQuantizer( uint8_t value ) { normalAxisMaxDeltaValueQuantizer_ = value; }
 
-  uint8_t getEOMPatch2dShiftUBitCountMinus1() { return eomPatch2dShiftUBitCountMinus1_; }
-  uint8_t getEOMPatch2dShiftVBitCountMinus1() { return eomPatch2dShiftVBitCountMinus1_; }
-  uint8_t getEOMPatch2dSizeUBitCountMinus1() { return eomPatch2dSizeUBitCountMinus1_; }
-  uint8_t getEOMPatch2dSizeVBitCountMinus1() { return eomPatch2dSizeVBitCountMinus1_; }
   uint8_t getEOMPatchNbPatchBitCountMinus1() { return eomPatchNbPatchBitCountMinus1_; }
   uint8_t getEOMPatchMaxEPBitCountMinus1() { return eomPatchMaxEPBitCountMinus1_; }
 
-  void setEOMPatch2dShiftUBitCountMinus1( uint8_t value ) { eomPatch2dShiftUBitCountMinus1_ = value; }
-  void setEOMPatch2dShiftVBitCountMinus1( uint8_t value ) { eomPatch2dShiftVBitCountMinus1_ = value; }
-  void setEOMPatch2dSizeUBitCountMinus1( uint8_t value ) { eomPatch2dSizeUBitCountMinus1_ = value; }
-  void setEOMPatch2dSizeVBitCountMinus1( uint8_t value ) { eomPatch2dSizeVBitCountMinus1_ = value; }
   void setEOMPatchNbPatchBitCountMinus1( uint8_t value ) { eomPatchNbPatchBitCountMinus1_ = value; }
   void setEOMPatchMaxEPBitCountMinus1( uint8_t value ) { eomPatchMaxEPBitCountMinus1_ = value; }
 
@@ -715,10 +709,6 @@ class PatchTileGroupHeader {
   bool                  interPredictPatchLodBitCountFlag_;
   uint8_t               pcm3dShiftAxisBitCountMinus1_;
   bool                  pcm3dShiftBitCountPresentFlag_;
-  uint8_t               eomPatch2dShiftUBitCountMinus1_;
-  uint8_t               eomPatch2dShiftVBitCountMinus1_;
-  uint8_t               eomPatch2dSizeUBitCountMinus1_;
-  uint8_t               eomPatch2dSizeVBitCountMinus1_;
   uint8_t               eomPatchNbPatchBitCountMinus1_;
   uint8_t               eomPatchMaxEPBitCountMinus1_;
 };
@@ -1848,19 +1838,16 @@ class SequenceParameterSet {
  public:
   bool    getLosslessGeo444() { return losslessGeo444_; }
   bool    getLosslessGeo() { return losslessGeo_; }
-  bool    getLosslessTexture() { return losslessTexture_; }
   uint8_t getMinLevel() { return minLevel_; }
   size_t  getSurfaceThickness() { return surfaceThickness_; }
   void    setLosslessGeo444( bool losslessGeo444 ) { losslessGeo444_ = losslessGeo444; }
   void    setLosslessGeo( bool losslessGeo ) { losslessGeo_ = losslessGeo; }
-  void    setLosslessTexture( bool losslessTexture ) { losslessTexture_ = losslessTexture; }
   void    setMinLevel( uint8_t minLevel ) { minLevel_ = minLevel; }
   void    setSurfaceThickness( size_t surfaceThickness ) { surfaceThickness_ = surfaceThickness; }
 
  private:
   bool    losslessGeo444_;
   bool    losslessGeo_;
-  bool    losslessTexture_;
   size_t  surfaceThickness_;
   uint8_t minLevel_;
   // THE NEXT PARAMETERS ARE NOT IN THE VPCC CD SYNTAX DOCUMENTS AND WILL BE REMOVE

@@ -425,8 +425,7 @@ class ChromaSampler {
                                        const int                 j0 ) const {
     const float scale    = 1.0f / ( (float)( 1 << ( (int)filter.horizontal_.shift_ ) ) );
     const float offset   = 0.00000000;
-    const int   shift    = 0;
-    const int   position = ( filter.horizontal_.data_.size() - 1 ) >> 1;
+    const int   position = int( filter.horizontal_.data_.size() - 1 ) >> 1;
     double      value    = 0;
     for ( int j = 0; j < (int)filter.horizontal_.data_.size(); j++ ) {
       value +=
@@ -440,10 +439,9 @@ class ChromaSampler {
                                      const int                 height,
                                      const int                 i0,
                                      const int                 j0 ) const {
-    const float shift    = filter.horizontal_.shift_ + filter.vertical_.shift_;
     const float offset   = 0;
     const float scale    = 1.0f / ( (float)( 1 << ( (int)filter.vertical_.shift_ ) ) );
-    const int   position = ( filter.vertical_.data_.size() - 1 ) >> 1;
+    const int   position = int( filter.vertical_.data_.size() - 1 ) >> 1;
     ;
     double value = 0;
     for ( int i = 0; i < (int)filter.vertical_.data_.size(); i++ ) {
@@ -461,8 +459,7 @@ class ChromaSampler {
                                     const int                 j0 ) const {
     const float scale    = 1.0f / ( (float)( 1 << ( (int)filter.vertical0_.shift_ ) ) );
     const float offset   = 0.00000000;
-    const int   shift    = 0;
-    const int   position = ( filter.vertical0_.data_.size() + 1 ) >> 1;
+    const int   position = int( filter.vertical0_.data_.size() + 1 ) >> 1;
     float       value    = 0;
     for ( int i = 0; i < (int)filter.vertical0_.data_.size(); i++ ) {
       value += filter.vertical0_.data_[i] * (float)( im[clamp( i0 + i - position, 0, height - 1 ) * width + j0] );
@@ -477,8 +474,7 @@ class ChromaSampler {
                                     int                       j0 ) const {
     const float scale    = 1.0f / ( (float)( 1 << ( (int)filter.vertical1_.shift_ ) ) );
     const float offset   = 0.00000000;
-    const int   shift    = 0;
-    const int   position = ( filter.vertical1_.data_.size() + 1 ) >> 1;
+    const int   position = int( filter.vertical1_.data_.size() + 1 ) >> 1;
     float       value    = 0;
     for ( int i = 0; i < (int)filter.vertical1_.data_.size(); i++ ) {
       value += filter.vertical1_.data_[i] * (float)( im[clamp( i0 + i - position, 0, height - 1 ) * width + j0] );
@@ -493,8 +489,7 @@ class ChromaSampler {
                                       int                       j0 ) const {
     const float scale    = 1.0f / ( (float)( 1 << ( (int)filter.horizontal0_.shift_ ) ) );
     const float offset   = 0.00000000;
-    const int   shift    = filter.horizontal0_.shift_ + filter.vertical0_.shift_;
-    const int   position = ( filter.horizontal0_.data_.size() + 1 ) >> 1;
+    const int   position = int( filter.horizontal0_.data_.size() + 1 ) >> 1;
     float       value    = 0;
     for ( int j = 0; j < (int)filter.horizontal0_.data_.size(); j++ ) {
       value += filter.horizontal0_.data_[j] * (float)( im[i0 * width + clamp( j0 + j - position, 0, width - 1 )] );
@@ -509,8 +504,7 @@ class ChromaSampler {
                                       int                       j0 ) const {
     const float scale    = 1.0f / ( (float)( 1 << ( (int)filter.horizontal1_.shift_ ) ) );
     const float offset   = 0.00000000;
-    const int   shift    = filter.horizontal1_.shift_ + filter.vertical1_.shift_;
-    const int   position = ( filter.horizontal1_.data_.size() + 1 ) >> 1;
+    const int   position = int( filter.horizontal1_.data_.size() + 1 ) >> 1;
     float       value    = 0;
     for ( int j = 0; j < (int)filter.horizontal1_.data_.size(); j++ ) {
       value += filter.horizontal1_.data_[j] * (float)( im[i0 * width + clamp( j0 + j - position, 0, width - 1 )] );
@@ -547,7 +541,7 @@ class PCCImage {
     for ( auto& channel : channels_ ) { channel.resize( size ); }
   }
   bool write420( std::ofstream& outfile, const size_t nbyte, bool convert = false, const size_t filter = 4 ) const {
-    if ( !outfile.good() ) { return false; }
+    if ( !outfile.good() ) { return false; } //jkei : do we need to make it more general?? 
     if ( convert ) {
       std::vector<float> RGB444[3], YUV444[3], YUV420[3];
       std::vector<T>     YUV420T[3];
@@ -557,8 +551,8 @@ class PCCImage {
       RGBtoFloatRGB( channels_[2], RGB444[2], nbyte );
       convertRGBToYUV( RGB444[0], RGB444[1], RGB444[2], YUV444[0], YUV444[1], YUV444[2] );
       copy( YUV444[0], YUV420[0] );
-      chromaSampler.downsampling( YUV444[1], YUV420[1], width_, height_, nbyte == 1 ? 255 : 1023, filter );
-      chromaSampler.downsampling( YUV444[2], YUV420[2], width_, height_, nbyte == 1 ? 255 : 1023, filter );
+      chromaSampler.downsampling( YUV444[1], YUV420[1], (int)width_, (int)height_, nbyte == 1 ? 255 : 1023, filter );
+      chromaSampler.downsampling( YUV444[2], YUV420[2], (int)width_, (int)height_, nbyte == 1 ? 255 : 1023, filter );
       floatYUVToYUV( YUV420[0], YUV420T[0], 0, nbyte );
       floatYUVToYUV( YUV420[1], YUV420T[1], 1, nbyte );
       floatYUVToYUV( YUV420[2], YUV420T[2], 1, nbyte );

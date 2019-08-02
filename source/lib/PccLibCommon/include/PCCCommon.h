@@ -209,7 +209,10 @@ enum PCCPatchModeP {
 
 enum PCCPatchType { P_TYPE_INTRA = 0, P_TYPE_INTER, P_TYPE_SKIP, P_TYPE_END };
 
+  enum { COLOURFORMAT420=0, COLOURFORMAT444 = 1};
+
 const size_t IntermediateLayerIndex = 100;
+const size_t eddLayerIndex          = 10;
 const size_t NeighborThreshold      = 4;
 const size_t NumPatchOrientations   = 8;
 const size_t gbitCountSize[]        = {
@@ -230,7 +233,7 @@ const int32_t InvalidPatchIndex = -1;
 // Static functions
 // ******************************************************************* //
 
-static unsigned int getMaxBit(int16_t h)
+static inline unsigned int getMaxBit(int16_t h)
 {
   int maxBit = 0;
   for (int n = 0; n <= 16; n++)

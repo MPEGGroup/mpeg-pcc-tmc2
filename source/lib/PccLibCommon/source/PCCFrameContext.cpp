@@ -37,23 +37,28 @@
 using namespace pcc;
 
 PCCFrameContext::PCCFrameContext() :
-    index_( 0 ),
-    losslessGeo_( false ),
-    losslessGeo444_( false ),
-    losslessTexture_( false ),
-    numMatchedPatches_( 0 ),
-    surfaceThickness_( 0 ),
-    width_( 0 ),
-    height_( 0 ),
-    useMissedPointsSeparateVideo_( false ),
-    useAdditionalPointsPatch_( false ),
-    MPGeoWidth_( 0 ),
-    MPGeoHeight_( 0 ),
-    MPAttWidth_( 0 ),
-    MPAttHeight_( 0 ),
-    numberOfMissedPointsPatches_( 0 ),
-    totalNumberOfMissedPoints_( 0 ),
-    NumberOfEddPoints_( 0 ) {}
+  index_( 0 ),
+  numMatchedPatches_( 0 ),
+  surfaceThickness_( 0 ),
+  width_( 0 ),
+  height_( 0 ),
+  MPGeoWidth_( 0 ),
+  MPGeoHeight_( 0 ),
+  MPAttWidth_( 0 ),
+  MPAttHeight_( 0 ),
+  numberOfMissedPointsPatches_( 0 ),
+  totalNumberOfMissedPoints_( 0 ),
+  NumberOfEddPoints_( 0 ),
+  globalPatchCount_( 0 ),
+  geometry3dCoordinatesBitdepth_( 10 ),
+  pointLocalReconstructionNumber_( 0 ),
+  losslessGeo_( false ),
+  losslessGeo444_( false ),
+  useMissedPointsSeparateVideo_( false ),
+  pcmPatchEnabledFlag_(false),
+  geometry2dNorminalBitdepth_(8)
+{
+}
 
 PCCFrameContext::~PCCFrameContext() {
   pointToPixel_.clear();

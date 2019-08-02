@@ -69,12 +69,10 @@ struct GeneratePointCloudParameters {
   double      radius2Smoothing_;
   double      radius2BoundaryDetection_;
   double      thresholdSmoothing_;
-  bool        losslessGeo_;
-  bool        losslessGeo444_;
+  size_t      pcmPointColorFormat_;
   size_t      nbThread_;
   bool        absoluteD1_;
   size_t      surfaceThickness_;
-  bool        ignoreLod_;
   double      thresholdColorSmoothing_;
   bool        gridColorSmoothing_;
   size_t      cgridSize_;
@@ -197,9 +195,6 @@ class PCCCodec {
                              const bool                  enhancedOccupancyMapForDepthFlag );
 
   void generateBlockToPatchFromOccupancyMap( PCCContext&  context,
-                                             const bool   losslessGeo,
-                                             const bool   lossyMissedPointsPatch,
-                                             const size_t testLevelOfDetail,
                                              const size_t occupancyResolution );
 
   void generateBlockToPatchFromOccupancyMap( PCCContext&  context,
@@ -208,9 +203,6 @@ class PCCCodec {
                                              const size_t     occupancyResolution );
 
   void generateBlockToPatchFromBoundaryBox( PCCContext&  context,
-                                            const bool   losslessGeo,
-                                            const bool   lossyMissedPointsPatch,
-                                            const size_t testLevelOfDetail,
                                             const size_t occupancyResolution );
 
   void generateBlockToPatchFromBoundaryBox( PCCContext&  context,

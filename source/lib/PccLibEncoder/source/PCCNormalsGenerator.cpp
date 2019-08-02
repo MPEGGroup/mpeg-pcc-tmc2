@@ -247,7 +247,7 @@ void PCCNormalsGenerator3::addNeighbors( const uint32_t      current,
   PCCWeightedEdge newEdge;
   uint32_t        index;
   for ( size_t i = 0; i < nNResult.count(); ++i ) {
-    index = nNResult.indices( i );
+    index = (uint32_t)nNResult.indices( i );
     if ( !visited_[index] ) {
       newEdge.weight_ = fabs( normals_[current] * normals_[index] );
       newEdge.end_    = index;

@@ -428,7 +428,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
         }
       }
 
-      numChunks = chunks.size();
+      numChunks = (int)chunks.size();
 
       for ( int i = 0; i < numChunks; ++i ) {
         std::cout << "Chunk " << i << " : " << std::endl;
@@ -713,7 +713,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
       }
 
       patch.setViewId()       = clusterIndex;
-      patch.setBestMatchIdx() = -1;
+      patch.setBestMatchIdx( InvalidPatchIndex );
 
       patch.getPreGPAPatchData().initialize();
       patch.getCurGPAPatchData().initialize();
@@ -1429,7 +1429,6 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
                 resampledPatchPartition.push_back( patchIndex );
                 if ( createSubPointCloud ) { rec.addPoint( point ); }
               }
-              int16_t depth1 = depth0;
               if ( !EOMSingleLayerMode ) { patch.getDepth( 1 )[p] -= int16_t( patch.getD1() ); }
 
               if ( useEnhancedDeltaDepthCode ) {
@@ -1462,6 +1461,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
 
                         resampled.addPoint( point );
                         resampledPatchPartition.push_back( patchIndex );
+                        eddsPerPatch++;
                       }
                     }  // for each i
                   }
@@ -1526,7 +1526,6 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
                 if ( createSubPointCloud ) { rec.addPoint( point ); }
               }
               if ( createSubPointCloud ) { rec.addPoint( point ); }
-              int16_t depth1   = depth0;
               int16_t depth1_1 = 0;
               if ( !EOMSingleLayerMode ) {
                 depth1_1               = patch.getDepth( 1 )[p];
@@ -1559,6 +1558,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
                         point[patch.getNormalAxis()] = double( patch.getD1() - depth0 - nDeltaDCur );
                         resampled.addPoint( point );
                         resampledPatchPartition.push_back( patchIndex );
+                        eddsPerPatch++;
                       }
                     }   // for each i
                   }     // if( patch.getDepthEnhancedDeltaD()[p] != 0) )
@@ -1627,7 +1627,6 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
         // std::vector<size_t>            indexVector;
         for ( size_t v = 0; v < originalSizeV; v++ ) {
           for ( size_t u = 0; u < originalSizeU; u++ ) {
-            const size_t p = v * originalSizeU + u;
             if ( u % lodScale == 0 && v % lodScale == 0 ) {
               checkPoint[v][u] = true;
               // indexVector.push_back( p );
@@ -1647,7 +1646,6 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
           const size_t  v     = size_t( round( point[patch.getBitangentAxis()] - patch.getV1() ) );
           assert( u >= 0 && u < patch.getSizeU() );
           assert( v >= 0 && v < patch.getSizeV() );
-          const size_t p = v * patch.getSizeU() + u;
 
           if ( checkPoint[v][u] == true ) {
             const size_t nu = round( u / (double)lodScale );
@@ -1784,7 +1782,6 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
                 const size_t  v     = size_t( round( point[patch.getBitangentAxis()] - patch.getV1() ) );
                 assert( u >= 0 && u < patch.getSizeU() );
                 assert( v >= 0 && v < patch.getSizeV() );
-                const size_t p = v * patch.getSizeU() + u;
 
                 if ( checkPoint[v][u] == true ) {
                   const size_t  nu     = round( u / (double)lodScale );
@@ -1828,7 +1825,6 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
                   const size_t  v     = size_t( round( point[patch.getBitangentAxis()] - patch.getV1() ) );
                   assert( u >= 0 && u < patch.getSizeU() );
                   assert( v >= 0 && v < patch.getSizeV() );
-                  const size_t p = v * patch.getSizeU() + u;
 
                   if ( checkPoint[v][u] == true ) {
                     const size_t  nu     = round( u / (double)lodScale );
@@ -1881,7 +1877,6 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
                 const size_t  v     = size_t( round( point[patch.getBitangentAxis()] - patch.getV1() ) );
                 assert( u >= 0 && u < patch.getSizeU() );
                 assert( v >= 0 && v < patch.getSizeV() );
-                const size_t p = v * patch.getSizeU() + u;
 
                 if ( checkPoint[v][u] == true ) {
                   const size_t  nu     = round( u / (double)lodScale );
@@ -1926,7 +1921,6 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
                   const size_t  v     = size_t( round( point[patch.getBitangentAxis()] - patch.getV1() ) );
                   assert( u >= 0 && u < patch.getSizeU() );
                   assert( v >= 0 && v < patch.getSizeV() );
-                  const size_t p = v * patch.getSizeU() + u;
 
                   if ( checkPoint[v][u] == true ) {
                     const size_t  nu     = round( u / (double)lodScale );
@@ -1989,7 +1983,6 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
                 const size_t  v = size_t( round( point[patch.getBitangentAxis()] - patch.getV1() ) );
                 assert( u >= 0 && u < patch.getSizeU() );
                 assert( v >= 0 && v < patch.getSizeV() );
-                const size_t p = v * patch.getSizeU() + u;
 
                 if ( checkPoint[v][u] == true ) {
                   const size_t  nu     = round( u / (double)lodScale );
@@ -2046,7 +2039,6 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
                   const size_t  v     = size_t( round( point[patch.getBitangentAxis()] - patch.getV1() ) );
                   assert( u >= 0 && u < patch.getSizeU() );
                   assert( v >= 0 && v < patch.getSizeV() );
-                  const size_t p = v * patch.getSizeU() + u;
 
                   if ( checkPoint[v][u] == true ) {
                     const size_t  nu     = round( u / (double)lodScale );
@@ -2137,7 +2129,6 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
                 const size_t  v     = size_t( round( point[patch.getBitangentAxis()] - patch.getV1() ) );
                 assert( u >= 0 && u < patch.getSizeU() );
                 assert( v >= 0 && v < patch.getSizeV() );
-                const size_t p = v * patch.getSizeU() + u;
 
                 if ( checkPoint[v][u] == true ) {
                   const size_t  nu     = round( u / (double)lodScale );
@@ -2192,7 +2183,6 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
                   const size_t  v     = size_t( round( point[patch.getBitangentAxis()] - patch.getV1() ) );
                   assert( u >= 0 && u < patch.getSizeU() );
                   assert( v >= 0 && v < patch.getSizeV() );
-                  const size_t p = v * patch.getSizeU() + u;
 
                   if ( checkPoint[v][u] == true ) {
                     const size_t  nu     = round( u / (double)lodScale );
@@ -2283,7 +2273,6 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
                 assert( u0 >= 0 && u0 < patch.getSizeU0() );
                 assert( v0 >= 0 && v0 < patch.getSizeV0() );
                 patch.getOccupancy()[p0] = true;
-                int16_t depth1           = depth0;
                 if ( !EOMSingleLayerMode ) { patch.getDepth( 1 )[p] -= int16_t( patch.getD1() ); }
 
                 if ( useEnhancedDeltaDepthCode ) {
@@ -2314,7 +2303,6 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
                 assert( u0 >= 0 && u0 < patch.getSizeU0() );
                 assert( v0 >= 0 && v0 < patch.getSizeV0() );
                 patch.getOccupancy()[p0] = true;
-                int16_t depth1           = depth0;
                 int16_t depth1_1         = 0;
                 if ( !EOMSingleLayerMode ) {
                   depth1_1               = patch.getDepth( 1 )[p];

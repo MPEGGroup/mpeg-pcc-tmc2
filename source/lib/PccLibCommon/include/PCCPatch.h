@@ -111,6 +111,7 @@ class PCCPatch {
     pointLocalReconstructionModeByBlock_.clear();
   };
   size_t&               getIndex() { return index_; }
+  size_t&               getOriginalIndex() { return originalIndex_; }
   size_t&               getU1() { return u1_; }
   size_t&               getV1() { return v1_; }
   size_t&               getD1() { return d1_; }
@@ -122,7 +123,8 @@ class PCCPatch {
   size_t&               getSizeU0() { return sizeU0_; }
   size_t&               getSizeV0() { return sizeV0_; }
   size_t&               setViewId() { return viewId_; }
-  int32_t&              setBestMatchIdx() { return bestMatchIdx_; }
+//  int32_t&              setBestMatchIdx() { return bestMatchIdx_; }
+  void                  setBestMatchIdx(int32_t value) { bestMatchIdx_=value; }
   uint8_t               getPatchType() const { return patchType_; }
   void                  setPatchType( uint8_t value ){ patchType_ = value; }
   size_t&               getOccupancyResolution() { return occupancyResolution_; }
@@ -137,6 +139,7 @@ class PCCPatch {
   size_t&               getAxisOfAdditionalPlane()     { return axisOfAdditionalPlane_; }
 
   size_t                      getIndex() const { return index_; }
+  size_t                      getOriginalIndex() const { return originalIndex_; }
   size_t                      getU1() const { return u1_; }
   size_t                      getV1() const { return v1_; }
   size_t                      getD1() const { return d1_; }
@@ -172,25 +175,13 @@ class PCCPatch {
   bool&         getIsGlobalPatch() { return isGlobalPatch_; }
   bool          getIsGlobalPatch() const { return isGlobalPatch_; }
   inline double generateNormalCoordinate( const uint16_t depth,
-                                          const double   lodScale,
-                                          const bool     useMppSepVid,
-                                          const bool     lossyMpp ) const {
+                                          const double   lodScale) const {
     double coord = 0;
-    if ( lossyMpp && !useMppSepVid ) {  // support lossy missed points patch in same video frame, re-shift depth values
-                                        // to store in 10-bit video frame
-      if ( projectionMode_ == 0 ) {
-        coord = ( (double)( depth >> 2 ) + (double)d1_ ) * lodScale;
-      } else {
-        double tmp_depth = double( d1_ ) - double( depth >> 2 );
-        if ( tmp_depth > 0 ) { coord = tmp_depth * lodScale; }
-      }
+    if ( projectionMode_ == 0 ) {
+      coord = ( (double)depth + (double)d1_ ) * lodScale;
     } else {
-      if ( projectionMode_ == 0 ) {
-        coord = ( (double)depth + (double)d1_ ) * lodScale;
-      } else {
-        double tmp_depth = double( d1_ ) - double( depth );
-        if ( tmp_depth > 0 ) { coord = tmp_depth * lodScale; }
-      }
+      double tmp_depth = double( d1_ ) - double( depth );
+      if ( tmp_depth > 0 ) { coord = tmp_depth * lodScale; }
     }
     return coord;
   }
@@ -198,24 +189,22 @@ class PCCPatch {
   PCCPoint3D generatePoint( const size_t   u,
                             const size_t   v,
                             const uint16_t depth,
-                            const double   lodScale,
-                            const bool     useMppSepVid,
-                            const bool     lossyMpp ) const {
+                            const double   lodScale ) const {
     const size_t nu = double( u ) * (double)lodScale;
     const size_t nv = double( v ) * (double)lodScale;
-	PCCPoint3D point0;
+  PCCPoint3D point0;
     //point0[normalAxis_]    = generateNormalCoordinate( depth, lodScale, useMppSepVid, lossyMpp, absoluteD1 );
     //point0[tangentAxis_]   = ( double( u ) + u1_ );
     //point0[bitangentAxis_] = ( double( v ) + v1_ );
-    point0[normalAxis_]    = generateNormalCoordinate( depth, 1.0, useMppSepVid, lossyMpp );
+    point0[normalAxis_]    = generateNormalCoordinate( depth, 1.0 );
     point0[tangentAxis_]   = ( double( nu ) + u1_ );
     point0[bitangentAxis_] = ( double( nv ) + v1_ );
     return point0;
   }
 
-	PCCPoint3D canvasTo3D(const size_t x, const size_t y, const uint16_t depth, const double lodScale, const bool useMppSepVid, const bool lossyMpp, const bool absoluteD1) const {
+	PCCPoint3D canvasTo3D(const size_t x, const size_t y, const uint16_t depth, const double lodScale ) const {
 		  PCCPoint3D point0;
-		  size_t u, v;
+		  size_t u=0, v=0;
 		  switch (patchOrientation_) {
 		  case PATCH_ORIENTATION_DEFAULT:
 			  u = x - u0_ * occupancyResolution_;
@@ -255,7 +244,7 @@ class PCCPatch {
 			  break;
 		  default: assert(0); break;
 		  }
-		  point0[normalAxis_] = generateNormalCoordinate(depth, lodScale, useMppSepVid, lossyMpp);
+      point0[normalAxis_] = generateNormalCoordinate(depth, lodScale);
 		  point0[tangentAxis_] = (double(u) + u1_) * lodScale;
 		  point0[bitangentAxis_] = (double(v) + v1_) * lodScale;
 		  return point0;
@@ -370,7 +359,7 @@ class PCCPatch {
       if ( x > tile.maxU ) return -1;
       if ( y > tile.maxV ) return -1;
     }
-    return ( x + canvasStrideBlk * y );
+    return  int( x + canvasStrideBlk * y );
   }
 
   bool checkFitPatchCanvas( std::vector<bool> canvas,
@@ -506,25 +495,25 @@ class PCCPatch {
           if ( !occupancy_[idx2 * getSizeU0() + idx] ) wasted_space_internal++;
         }
       }
-      wasted_space = lambda * getV0() + wasted_space_external + wasted_space_internal;
+      wasted_space = int (lambda * getV0() + wasted_space_external + wasted_space_internal);
     } else if ( getPatchOrientation() == PATCH_ORIENTATION_ROT90 ) {
       for ( int idx = 0; idx < getSizeV0(); idx++ ) {
         wasted_space_external += getV0() + left_horizon[getSizeV0() - 1 - idx] - horizon[getU0() + idx];
         // calculating internal wasted space
-        for ( int idx2 = getSizeU0() - 1 - right_horizon[idx]; idx2 >= left_horizon[idx]; idx2-- ) {
+        for ( int idx2 = int (getSizeU0() - 1 - right_horizon[idx]); idx2 >= left_horizon[idx]; idx2-- ) {
           if ( !occupancy_[idx * getSizeU0() + idx2] ) wasted_space_internal++;
         }
       }
-      wasted_space = lambda * getV0() + wasted_space_external + wasted_space_internal;
+      wasted_space = int( lambda * getV0() + wasted_space_external + wasted_space_internal);
     } else if ( getPatchOrientation() == PATCH_ORIENTATION_ROT180 ) {
       for ( int idx = 0; idx < getSizeU0(); idx++ ) {
         wasted_space_external += getV0() + top_horizon[getSizeU0() - 1 - idx] - horizon[getU0() + idx];
         // calculating internal wasted space
-        for ( int idx2 = getSizeV0() - 1 - top_horizon[idx]; idx2 >= bottom_horizon[idx]; idx2-- ) {
+        for ( int idx2 = int(getSizeV0() - 1 - top_horizon[idx]); idx2 >= bottom_horizon[idx]; idx2-- ) {
           if ( !occupancy_[idx2 * getSizeU0() + idx] ) wasted_space_internal++;
         }
       }
-      wasted_space = lambda * getV0() + wasted_space_external + wasted_space_internal;
+      wasted_space = int(lambda * getV0() + wasted_space_external + wasted_space_internal);
     } else if ( getPatchOrientation() == PATCH_ORIENTATION_ROT270 ) {
       for ( int idx = 0; idx < getSizeV0(); idx++ ) {
         wasted_space_external += getV0() + right_horizon[idx] - horizon[getU0() + idx];
@@ -533,7 +522,7 @@ class PCCPatch {
           if ( !occupancy_[idx * getSizeU0() + idx2] ) wasted_space_internal++;
         }
       }
-      wasted_space = lambda * getV0() + wasted_space_external + wasted_space_internal;
+      wasted_space = int(lambda * getV0() + wasted_space_external + wasted_space_internal);
     } else if ( getPatchOrientation() == PATCH_ORIENTATION_MIRROR ) {
       for ( int idx = 0; idx < getSizeU0(); idx++ ) {
         wasted_space_external += getV0() + bottom_horizon[getSizeU0() - 1 - idx] - horizon[getU0() + idx];
@@ -541,7 +530,7 @@ class PCCPatch {
           if ( !occupancy_[idx2 * getSizeU0() + idx] ) wasted_space_internal++;
         }
       }
-      wasted_space = lambda * getV0() + wasted_space_external + wasted_space_internal;
+      wasted_space = int(lambda * getV0() + wasted_space_external + wasted_space_internal);
     } else if ( getPatchOrientation() == PATCH_ORIENTATION_MROT90 ) {
       for ( int idx = 0; idx < getSizeV0(); idx++ ) {
         wasted_space_external += getV0() + right_horizon[getSizeV0() - 1 - idx] - horizon[getU0() + idx];
@@ -550,32 +539,32 @@ class PCCPatch {
           if ( !occupancy_[idx * getSizeU0() + idx2] ) wasted_space_internal++;
         }
       }
-      wasted_space = lambda * getV0() + wasted_space_external + wasted_space_internal;
+      wasted_space = int(lambda * getV0() + wasted_space_external + wasted_space_internal);
     } else if ( getPatchOrientation() == PATCH_ORIENTATION_MROT180 ) {
       for ( int idx = 0; idx < getSizeU0(); idx++ ) {
         wasted_space_external += getV0() + top_horizon[idx] - horizon[getU0() + idx];
         // calculating internal wasted space
-        for ( int idx2 = getSizeV0() - 1 - top_horizon[idx]; idx2 >= bottom_horizon[idx]; idx2-- ) {
+        for ( int idx2 = int(getSizeV0() - 1 - top_horizon[idx]); idx2 >= bottom_horizon[idx]; idx2-- ) {
           if ( !occupancy_[idx2 * getSizeU0() + idx] ) wasted_space_internal++;
         }
       }
-      wasted_space = lambda * getV0() + wasted_space_external + wasted_space_internal;
+      wasted_space = int(lambda * getV0() + wasted_space_external + wasted_space_internal);
     } else if ( getPatchOrientation() == PATCH_ORIENTATION_MROT270 ) {
       for ( int idx = 0; idx < getSizeV0(); idx++ ) {
         wasted_space_external += getV0() + left_horizon[idx] - horizon[getU0() + idx];
-        for ( int idx2 = getSizeU0() - 1 - left_horizon[idx]; idx2 >= right_horizon[idx]; idx2-- ) {
+        for ( int idx2 = int(getSizeU0() - 1 - left_horizon[idx]); idx2 >= right_horizon[idx]; idx2-- ) {
           if ( !occupancy_[idx * getSizeU0() + idx2] ) wasted_space_internal++;
         }
       }
-      wasted_space = lambda * getV0() + wasted_space_external + wasted_space_internal;
+      wasted_space = int(lambda * getV0() + wasted_space_external + wasted_space_internal);
     } else if ( getPatchOrientation() == PATCH_ORIENTATION_SWAP ) {
       for ( int idx = 0; idx < getSizeV0(); idx++ ) {
         wasted_space_external += getV0() + left_horizon[idx] - horizon[getU0() + idx];
-        for ( int idx2 = getSizeU0() - 1 - left_horizon[idx]; idx2 >= right_horizon[idx]; idx2-- ) {
+        for ( int idx2 = int(getSizeU0() - 1 - left_horizon[idx]); idx2 >= right_horizon[idx]; idx2-- ) {
           if ( !occupancy_[idx * getSizeU0() + idx2] ) wasted_space_internal++;
         }
       }
-      wasted_space = lambda * getV0() + wasted_space_external + wasted_space_internal;
+      wasted_space = int(lambda * getV0() + wasted_space_external + wasted_space_internal);
     }
     return wasted_space;
   }
@@ -646,47 +635,47 @@ class PCCPatch {
     int    newVal;
     if ( best_orientation == PATCH_ORIENTATION_DEFAULT ) {
       for ( int idx = 0; idx < getSizeU0(); idx++ ) {
-        newVal = best_v + getSizeV0() - 1 - top_horizon[idx];
+        newVal = int(best_v + getSizeV0() - 1 - top_horizon[idx]);
         if ( newVal > horizon[best_u + idx] ) horizon[best_u + idx] = newVal;
       }
     } else if ( best_orientation == PATCH_ORIENTATION_ROT90 ) {
       for ( int idx = 0; idx < getSizeV0(); idx++ ) {
-        newVal = best_v + getSizeU0() - 1 - right_horizon[getSizeV0() - 1 - idx];
+        newVal = int(best_v + getSizeU0() - 1 - right_horizon[getSizeV0() - 1 - idx]);
         if ( newVal > horizon[best_u + idx] ) horizon[best_u + idx] = newVal;
       }
     } else if ( best_orientation == PATCH_ORIENTATION_ROT180 ) {
       for ( int idx = 0; idx < getSizeU0(); idx++ ) {
-        newVal = best_v + getSizeV0() - 1 - bottom_horizon[getSizeU0() - 1 - idx];
+        newVal = int(best_v + getSizeV0() - 1 - bottom_horizon[getSizeU0() - 1 - idx]);
         if ( newVal > horizon[best_u + idx] ) horizon[best_u + idx] = newVal;
       }
     } else if ( best_orientation == PATCH_ORIENTATION_ROT270 ) {
       for ( int idx = 0; idx < getSizeV0(); idx++ ) {
-        newVal = best_v + getSizeU0() - 1 - left_horizon[idx];
+        newVal = int(best_v + getSizeU0() - 1 - left_horizon[idx]);
         if ( newVal > horizon[best_u + idx] ) horizon[best_u + idx] = newVal;
       }
     } else if ( best_orientation == PATCH_ORIENTATION_MIRROR ) {
       for ( int idx = 0; idx < getSizeU0(); idx++ ) {
-        newVal = best_v + getSizeV0() - 1 - top_horizon[getSizeU0() - 1 - idx];
+        newVal = int(best_v + getSizeV0() - 1 - top_horizon[getSizeU0() - 1 - idx]);
         if ( newVal > horizon[best_u + idx] ) horizon[best_u + idx] = newVal;
       }
     } else if ( best_orientation == PATCH_ORIENTATION_MROT90 ) {
       for ( int idx = 0; idx < getSizeV0(); idx++ ) {
-        newVal = best_v + getSizeU0() - 1 - left_horizon[getSizeV0() - 1 - idx];
+        newVal = int(best_v + getSizeU0() - 1 - left_horizon[getSizeV0() - 1 - idx]);
         if ( newVal > horizon[best_u + idx] ) horizon[best_u + idx] = newVal;
       }
     } else if ( best_orientation == PATCH_ORIENTATION_MROT180 ) {
       for ( int idx = 0; idx < getSizeU0(); idx++ ) {
-        newVal = best_v + getSizeV0() - 1 - bottom_horizon[idx];
+        newVal = int(best_v + getSizeV0() - 1 - bottom_horizon[idx]);
         if ( newVal > horizon[best_u + idx] ) horizon[best_u + idx] = newVal;
       }
     } else if ( best_orientation == PATCH_ORIENTATION_MROT270 ) {
       for ( int idx = 0; idx < getSizeV0(); idx++ ) {
-        newVal = best_v + getSizeU0() - 1 - right_horizon[idx];
+        newVal = int(best_v + getSizeU0() - 1 - right_horizon[idx]);
         if ( newVal > horizon[best_u + idx] ) horizon[best_u + idx] = newVal;
       }
     } else if ( best_orientation == PATCH_ORIENTATION_SWAP ) {
       for ( int idx = 0; idx < getSizeV0(); idx++ ) {
-        newVal = best_v + getSizeU0() - 1 - right_horizon[idx];
+        newVal = int(best_v + getSizeU0() - 1 - right_horizon[idx]);
         if ( newVal > horizon[best_u + idx] ) horizon[best_u + idx] = newVal;
       }
     }
@@ -747,7 +736,7 @@ class PCCPatch {
     if ( y < 0 ) return -1;
     if ( x >= canvasStrideBlk ) return -1;
     if ( y >= canvasHeightBlk ) return -1;
-    return ( x + canvasStrideBlk * y );
+    return int( x + canvasStrideBlk * y );
   }
 
   bool checkFitPatchCanvasForGPA( std::vector<bool> canvas,
@@ -836,6 +825,7 @@ class PCCPatch {
 
  private:
   size_t               index_;                // patch index
+  size_t               originalIndex_;        // patch original index
   size_t               u1_;                   // tangential shift
   size_t               v1_;                   // bitangential shift
   size_t               d1_;                   // depth shift
