@@ -6054,7 +6054,12 @@ void PCCEncoder::packingFirstFrame( PCCContext& context,
       }
     } else {
       if ( printDetailedInfo ) { printMap( occupancyMap, occupancySizeU, occupancySizeV ); }
+    }  
+    if ( params_.enhancedDeltaDepthCode_ && params_.EOMTexturePatch_ ) {
+      packEOMTexturePointsPatch( frame, occupancyMap, widthGPA, heithGPA, occupancySizeU, occupancySizeV, maxOccupancyRow );
     }
+    if ( printDetailedInfo ) { printMap( occupancyMap, occupancySizeU, occupancySizeV ); }
+   
     std::cout << "actualImageSizeU " << widthGPA << std::endl;
     std::cout << "actualImageSizeV " << heithGPA << std::endl;
   }
@@ -6329,6 +6334,10 @@ void PCCEncoder::performGPAPacking( const SubContext& subContext,
     } else {
       if ( printDetailedInfo ) { printMap( occupancyMap, occupancySizeU, occupancySizeV ); }
     }
+    if ( params_.enhancedDeltaDepthCode_ && params_.EOMTexturePatch_ ) {
+      packEOMTexturePointsPatch( curFrameContext, occupancyMap, widthGPA, heightGPA, occupancySizeU, occupancySizeV, maxOccupancyRow );
+    }
+    if ( printDetailedInfo ) { printMap( occupancyMap, occupancySizeU, occupancySizeV ); }
 
     // determination......;
     if ( heightGPA > params_.minimumImageHeight_ ) {

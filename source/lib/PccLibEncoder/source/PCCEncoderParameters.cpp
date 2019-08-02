@@ -497,6 +497,32 @@ bool PCCEncoderParameters::check() {
     std::cerr << "When absoultD1 is false, geometryConfig_ should be empty\n";
   }
 
+  if ( losslessGeo_ ) {
+    if( layerCountMinus1_ == 0  ) {
+      layerCountMinus1_ = 1; 
+      std::cerr << "WARNING: layerCountMinus1_ is only for lossy coding mode for now. Force "
+                   "layerCountMinus1_=1.\n";
+    }
+    if ( pointLocalReconstruction_ ) {
+      pointLocalReconstruction_ = false;
+      std::cerr << "WARNING: pointLocalReconstruction_ is only for lossy coding mode for now. Force "
+                   "pointLocalReconstruction=FALSE.\n";
+    }
+    if ( singleLayerPixelInterleaving_ ) {
+      singleLayerPixelInterleaving_ = false;
+      std::cerr << "WARNING: singleLayerPixelInterleaving is only for lossy coding mode for now. "
+                   "Force singleLayerPixelInterleaving=FALSE.\n";
+    }
+    if( lossyMissedPointsPatch_ ) {
+      lossyMissedPointsPatch_ = false; 
+      std::cerr << "WARNING: lossyMissedPointsPatch_ is only for lossy coding mode for now. "
+                   "Force lossyMissedPointsPatch_=FALSE.\n";
+    }
+  } else {     
+    enhancedDeltaDepthCode_ = false;
+    std::cerr << "WARNING: pointLocalReconstruction_ is only for lossless coding mode for now. Force "
+                  "enhancedDeltaDepthCode_=FALSE.\n";
+  }
 
   if ( !enhancedDeltaDepthCode_ ) {   
     std::cerr << "WARNING: EOMTexturePatch is only for enhancedDeltaDepthCode coding mode for now. Force "
@@ -529,6 +555,11 @@ bool PCCEncoderParameters::check() {
     prefilterLossyOM_ = false;
   }
 
+  if( useMissedPointsSeparateVideo_ && !lossyMissedPointsPatch_ && !losslessGeo_ ) {
+    useMissedPointsSeparateVideo_ = false; 
+    std::cerr << "WARNING: useMissedPointsSeparateVideo_ is for lossy coding mode if lossyMissedPointsPatch_. Force "
+                  "useMissedPointsSeparateVideo_=false.\n";
+  }
   if ( useMissedPointsSeparateVideo_ ) {
     if ( geometryMPConfig_.empty() || !exist( geometryMPConfig_ ) ) {
       std::cerr << "WARNING: geometryMPConfig_ is set as geometryConfig_ : " << geometryConfig_ << std::endl;
@@ -539,19 +570,6 @@ bool PCCEncoderParameters::check() {
     if ( textureMPConfig_.empty() || !exist( textureMPConfig_ ) ) {
       std::cerr << "WARNING: textureMPConfig_ is set as textureConfig_ : " << textureConfig_ << std::endl;
       textureMPConfig_ = textureConfig_;
-    }
-  }
-
-  if ( losslessGeo_ ) {
-    if ( pointLocalReconstruction_ ) {
-      pointLocalReconstruction_ = false;
-      std::cerr << "WARNING: pointLocalReconstruction_ is only for lossy coding mode for now. Force "
-                   "pointLocalReconstruction=FALSE.\n";
-    }
-    if ( singleLayerPixelInterleaving_ ) {
-      singleLayerPixelInterleaving_ = false;
-      std::cerr << "WARNING: singleLayerPixelInterleaving is only for lossy coding mode for now. "
-                   "Force singleLayerPixelInterleaving=FALSE.\n";
     }
   }
 
