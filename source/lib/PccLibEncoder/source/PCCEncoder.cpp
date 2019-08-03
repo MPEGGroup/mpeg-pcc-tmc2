@@ -2257,9 +2257,11 @@ void PCCEncoder::doGlobalTetrisPacking( PCCContext& context ) {
            !frames[frameIdx].getUseMissedPointsSeparateVideo() ) {
         packMissedPointsPatch( frames[frameIdx], occupancyMap, width, height, occupancySizeU, occupancySizeV,
                                maxOccupancyRow );
-      } else {
-        if ( printDetailedInfo ) { printMap( occupancyMap, occupancySizeU, occupancySizeV ); }
       }
+      if ( params_.enhancedDeltaDepthCode_ && params_.EOMTexturePatch_ ) {
+        packEOMTexturePointsPatch( frames[frameIdx], occupancyMap, width, height, occupancySizeU, occupancySizeV, maxOccupancyRow );
+      }
+      if ( printDetailedInfo ) { printMap( occupancyMap, occupancySizeU, occupancySizeV ); }
       std::cout << "actualImageSizeU " << width << std::endl;
       std::cout << "actualImageSizeV " << height << std::endl;
     }
