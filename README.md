@@ -28,6 +28,11 @@ Bash scripts can be use to build mpeg-pcc-tmc2 project:
 
 The external dependencies must be download and build: 
 - HM-16.20+SCM-8.8 (apply  pcc_me-ext_for_HM-16.20+SCM-8.8.patch on it stored in \dependencies\hm-modification ).
+   
+   svn checkout https://hevc.hhi.fraunhofer.de/svn/svn_HEVCSoftware/tags/HM-16.20+SCM-8.8/ external/HM-16.20+SCM-8.8-3DMC;    
+   cd external/HM-16.20+SCM-8.8-3DMC
+   svn patch ../../tmc2_r7.0/dependencies/hm-modification/pcc_me-ext_for_HM-16.20+SCM-8.8.patch 
+   
 - HDRTools
 - pcc_distortion
 

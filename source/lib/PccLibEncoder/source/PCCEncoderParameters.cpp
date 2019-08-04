@@ -506,12 +506,12 @@ bool PCCEncoderParameters::check() {
     if ( pointLocalReconstruction_ ) {
       pointLocalReconstruction_ = false;
       std::cerr << "WARNING: pointLocalReconstruction_ is only for lossy coding mode for now. Force "
-                   "pointLocalReconstruction=FALSE.\n";
+                   "pointLocalReconstruction_=FALSE.\n";
     }
     if ( singleLayerPixelInterleaving_ ) {
       singleLayerPixelInterleaving_ = false;
       std::cerr << "WARNING: singleLayerPixelInterleaving is only for lossy coding mode for now. "
-                   "Force singleLayerPixelInterleaving=FALSE.\n";
+                   "Force singleLayerPixelInterleaving_=FALSE.\n";
     }
     if( lossyMissedPointsPatch_ ) {
       lossyMissedPointsPatch_ = false; 
@@ -519,15 +519,17 @@ bool PCCEncoderParameters::check() {
                    "Force lossyMissedPointsPatch_=FALSE.\n";
     }
   } else {     
-    enhancedDeltaDepthCode_ = false;
-    std::cerr << "WARNING: pointLocalReconstruction_ is only for lossless coding mode for now. Force "
-                  "enhancedDeltaDepthCode_=FALSE.\n";
+    if( enhancedDeltaDepthCode_ ) {
+      enhancedDeltaDepthCode_ = false;
+      std::cerr << "WARNING: enhancedDeltaDepthCode_ is only for lossless coding mode for now. Force "
+                    "enhancedDeltaDepthCode_=FALSE.\n";
+    }
   }
 
-  if ( !enhancedDeltaDepthCode_ ) {   
-    std::cerr << "WARNING: EOMTexturePatch is only for enhancedDeltaDepthCode coding mode for now. Force "
-                 "EOMTexturePatch=FALSE.\n";
+  if ( !enhancedDeltaDepthCode_ && EOMTexturePatch_ ) {   
     EOMTexturePatch_ = false; 
+    std::cerr << "WARNING: EOMTexturePatch_ is only for enhancedDeltaDepthCode coding mode for now. Force "
+                 "EOMTexturePatch=FALSE.\n";
   }
   if ( enhancedDeltaDepthCode_ && surfaceThickness_ == 1 ) {
     std::cerr << "WARNING: EDD code doesn't bring any gain when surfaceThickness==1. Please "
