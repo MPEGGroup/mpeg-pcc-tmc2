@@ -126,6 +126,6 @@ command line:
   --inputNorm=./People/8i/longdress_n/longdress_vox10_1051_n.ply \ 
   --color=1 \
   --resolution= 1023  
-```
+``` 
 
 The two softwares give the same results.

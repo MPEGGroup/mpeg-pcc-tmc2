@@ -2,7 +2,7 @@
 all: mpeg-pcc-tmc2-sw-manual.pdf
 
 clean:
-	rm -rf *.log *.pdf *.toc *.out *.blg $(patsubst %.md,%.tex,$(MD_SRC))
+	rm -rf *.log mpeg-pcc-tmc2-sw-manual.pdf *.toc *.out *.blg $(patsubst %.md,%.tex,$(MD_SRC))
 
 MD_SRC=\
 	README.about.md \
