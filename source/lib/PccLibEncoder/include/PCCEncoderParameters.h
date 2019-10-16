@@ -251,6 +251,7 @@ class PCCEncoderParameters {
 
   // Sort missed points by Morton code
   bool             mortonOrderSortMissedPoints_;
+  size_t           textureMPSeparateVideoWidth_;
 };
 
 };  // namespace pcc

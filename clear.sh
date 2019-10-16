@@ -7,5 +7,6 @@ rm -rf \
   ${CURDIR}/bin/ \
   ${CURDIR}/lib/ \
   ${CURDIR}/build/ \
+  ${CURDIR}/dependencies/papi/ \
   ${CURDIR}/CMakeCache.txt \
   ${CURDIR}/CMakeFiles/ 

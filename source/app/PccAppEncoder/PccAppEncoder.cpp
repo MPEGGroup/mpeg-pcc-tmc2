@@ -540,6 +540,11 @@ bool parseParameters( int                   argc,
      encoderParams.useMissedPointsSeparateVideo_,
      "compress missed point with video codec")
 
+    ("textureMPSeparateVideoWidth",
+      encoderParams.textureMPSeparateVideoWidth_,
+      encoderParams.textureMPSeparateVideoWidth_,
+      "Width of the MP's texture in separate video")
+
     ("geometryMPConfig",
      encoderParams.geometryMPConfig_,
      encoderParams.geometryMPConfig_,

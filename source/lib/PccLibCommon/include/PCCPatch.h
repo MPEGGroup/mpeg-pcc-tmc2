@@ -926,7 +926,7 @@ struct PCCMissedPointsPatch {
 
   const size_t size() { return x_.size(); }
 
-  const size_t sizeofcolor() { return r_.size();}
+  const size_t sizeOfColor() { return r_.size();}
   void         setNumberOfMps(size_t numberOfMPs) { numberOfMps_ = numberOfMPs; }
   void         setNumberOfMpsColors(size_t numberOfMpsColors) { numberOfMpsColors_ = numberOfMpsColors; }
   const size_t getNumberOfMps() { return numberOfMps_; }

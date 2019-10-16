@@ -21,6 +21,8 @@ do
     doc|Doc|doc|doc\/      ) make -C ${CURDIR}/doc/; exit;;
     debug|Debug|DEBUG      ) MODE=Debug; CMAKE_FLAGS="$CMAKE_FLAGS-DCMAKE_C_FLAGS=\"-g3\" -DCMAKE_CXX_FLAGS=\"-g3\" ";;
     release|Release|RELEASE) MODE=Release;;
+    profiling|Profiling|PROFILING) CMAKE_FLAGS="$CMAKE_FLAGS -DENABLE_PAPI_PROFILING=ON ";;
+    verbose|VERBOSE        )       CMD=VERBOSE=1;;
     *                      ) echo "ERROR: arguments \"$i\" not supported: option = [debug|release]"; exit -1;;
   esac
 done

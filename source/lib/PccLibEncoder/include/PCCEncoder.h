@@ -229,8 +229,11 @@ class PCCEncoder : public PCCCodec {
   void doGlobalTetrisPacking(PCCContext & context);
 
   void generateOccupancyMap( PCCFrameContext& frameContext );
+#if NO_PCM_INOCM
+  bool modifyOccupancyMap( PCCContext& context );
+#endif
   void modifyOccupancyMap( PCCFrameContext& frame, const PCCImageGeometry& imageRef, const PCCImageGeometry& image );
-  void modifyOccupancyMap1L(PCCFrameContext& frame, PCCImageGeometry &imageRef);
+  void modifyOccupancyMap1L(PCCFrameContext& frame );
   void refineOccupancyMap( PCCFrameContext& frame );
   void printMap( std::vector<bool> img, const size_t sizeU, const size_t sizeV );
   void printMapTetris( std::vector<bool> img, const size_t sizeU, const size_t sizeV, std::vector<int> horizon );

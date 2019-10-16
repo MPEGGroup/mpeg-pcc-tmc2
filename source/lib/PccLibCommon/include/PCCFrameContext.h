@@ -59,6 +59,10 @@ class PCCFrameContext {
   std::vector<PCCVector3<size_t>>&   getPointToPixel() { return pointToPixel_; }
   std::vector<size_t>&               getBlockToPatch() { return blockToPatch_; }
   std::vector<uint32_t>&             getOccupancyMap() { return occupancyMap_; }
+
+#if NO_PCM_INOCM
+  std::vector<uint32_t>             copyOccupancyMap() { return occupancyMap_; }
+#endif
   std::vector<uint32_t>&             getFullOccupancyMap() { return fullOccupancyMap_; }
   std::vector<PCCPatch>&             getPatches() { return patches_; }
   PCCMetadata&                       getFrameLevelMetadata() { return frameLevelMetadata_; }
@@ -66,6 +70,8 @@ class PCCFrameContext {
   std::vector<PCCMissedPointsPatch>& getMissedPointsPatches() { return missedPointsPatches_; }
   PCCMissedPointsPatch&              getMissedPointsPatch( size_t index ) { return missedPointsPatches_[index]; }
   std::vector<size_t>&               getNumberOfMissedPoints() { return numberOfMissedPoints_; };
+  std::vector<PCCColor3B>&           getMpsTextures() { return mpsTextures_; };
+  std::vector<PCCColor3B>&           getEddTextures() { return eddTextures_; };
 
         size_t&                       getWidth() { return width_; }
         size_t&                       getHeight() { return height_; }
@@ -155,6 +161,8 @@ class PCCFrameContext {
   std::vector<PCCPatch>                        patches_;
   std::vector<PCCMissedPointsPatch>            missedPointsPatches_;
   std::vector<size_t>                          numberOfMissedPoints_;
+  std::vector<PCCColor3B>                      mpsTextures_; 
+  std::vector<PCCColor3B>                      eddTextures_; 
   PCCMetadata                                  frameLevelMetadata_;
   std::vector<PCCPointSet3>                    srcPointCloudByPatch_;
   std::vector<PCCPointSet3>                    srcPointCloudByBlock_;

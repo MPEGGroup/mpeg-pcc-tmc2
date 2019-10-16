@@ -59,6 +59,12 @@
 #include <sys/resource.h>
 #include <mach/mach.h>
 #endif
+#ifdef ENABLE_PAPI_PROFILING
+  #include <papi.h>
+  #include "PCCChrono.h"
+#endif 
+
+#define NO_PCM_INOCM 0
 
 // ******************************************************************* //
 // Trace modes to validate new syntax
@@ -398,6 +404,55 @@ struct Tile {
   Tile() : minU( -1 ), maxU( -1 ), minV( -1 ), maxV( -1 ){};
 };
 
+#ifdef ENABLE_PAPI_PROFILING
+#define ERROR_RETURN( retval )                                              \
+  fprintf( stderr, "Error %d %s:line %d: \n", retval, __FILE__, __LINE__ ); \
+  exit( retval );
+
+static void initPapiProfiler() {
+  int  retval;
+  char errstring[PAPI_MAX_STR_LEN];
+  if ( ( retval = PAPI_library_init( PAPI_VER_CURRENT ) ) != PAPI_VER_CURRENT ) { ERROR_RETURN( retval ); }
+  return;
+}
+
+static void createPapiEvent( int& EventSet ) {
+  EventSet = PAPI_NULL;
+  int retval, number = 0;
+  if ( ( retval = PAPI_create_eventset( &EventSet ) ) != PAPI_OK ) { ERROR_RETURN( retval ); }
+  if ( ( retval = PAPI_add_event( EventSet, PAPI_TOT_INS ) ) != PAPI_OK ) { ERROR_RETURN( retval ); }
+  if ( ( retval = PAPI_add_event( EventSet, PAPI_TOT_CYC ) ) != PAPI_OK ) { ERROR_RETURN( retval ); }
+  if ( ( retval = PAPI_add_event( EventSet, PAPI_L2_TCA ) ) != PAPI_OK ) { ERROR_RETURN( retval ); }
+  if ( ( retval = PAPI_add_event( EventSet, PAPI_L3_TCA ) ) != PAPI_OK ) { ERROR_RETURN( retval ); }
+  if ( ( retval = PAPI_add_event( EventSet, PAPI_L1_DCM ) ) != PAPI_OK ) { ERROR_RETURN( retval ); }
+  if ( ( retval = PAPI_add_event( EventSet, PAPI_L2_DCM ) ) != PAPI_OK ) { ERROR_RETURN( retval ); }
+  if ( ( retval = PAPI_list_events( EventSet, NULL, &number ) ) != PAPI_OK ) { ERROR_RETURN( retval ); }
+  return;
+}
+
+#define PAPI_PROFILING_INITIALIZE                          \
+  int       EventSet = PAPI_NULL;                          \
+  int       retval;                                        \
+  long long values[16];                                    \
+  createPapiEvent( EventSet );                             \
+  pcc::chrono::Stopwatch<std::chrono::steady_clock> clock; \
+  clock.reset();                                           \
+  clock.start();                                           \
+  if ( ( retval = PAPI_start( EventSet ) ) != PAPI_OK ) { ERROR_RETURN( retval ); }
+
+#define PAPI_PROFILING_RESULTS                                                                    \
+  clock.stop();                                                                                   \
+  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>( clock.count() ).count(); \
+  if ( ( retval = PAPI_read( EventSet, values ) ) != PAPI_OK ) { ERROR_RETURN( retval ); }        \
+  printf( "PAPI: number of instructions           : %lld \n", values[0] );                        \
+  printf( "PAPI: number of cycles                 : %lld \n", values[1] );                        \
+  printf( "PAPI: number of L2 cache memory access : %lld \n", values[2] );                        \
+  printf( "PAPI: number of L3 cache memory access : %lld \n", values[3] );                        \
+  printf( "PAPI: number of L1 cache misses        : %lld \n", values[4] );                        \
+  printf( "PAPI: number of L2 cache misses        : %lld \n", values[5] );                        \
+  printf( "PAPI: Processing time (wall)           : %lld \n", duration );
+
+#endif
 }  // namespace pcc
 
 #endif /* PCCTMC2Common_h */

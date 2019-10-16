@@ -45,7 +45,11 @@
 using namespace pcc;
 using namespace std;
 
-PCCDecoder::PCCDecoder() {}
+PCCDecoder::PCCDecoder() {
+#ifdef ENABLE_PAPI_PROFILING
+  initPapiProfiler();
+#endif 
+}
 PCCDecoder::~PCCDecoder() {}
 
 void PCCDecoder::setParameters( PCCDecoderParameters params ) { params_ = params; }
@@ -226,6 +230,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
                                sps.getLosslessGeo(),
                                false,
                                params_.inverseColorSpaceConversionConfig_, params_.colorSpaceConversionPath_ );
+      printf( "call generateMissedPointsTexturefromVideo \n" );
       generateMissedPointsTexturefromVideo( context, reconstructs );
       std::cout << " missed points texture -> " << videoBitstreamMP.naluSize() << " B" << endl;
     }
@@ -413,7 +418,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
   setPointLocalReconstruction( context, sps );
   size_t indexPrevFrame = 0;
   context.setMPGeoWidth( 64 );
-  context.setMPAttWidth( 64 );
+  context.setMPAttWidth( 0 );
   context.setMPGeoHeight( 0 );
   context.setMPAttHeight( 0 );
   for ( int i = 0; i < pdg.getPatchTileGroupLayerUnitSize(); i++ ) {

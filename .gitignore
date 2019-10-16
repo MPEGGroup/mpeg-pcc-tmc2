@@ -36,6 +36,7 @@ mvsc/
 build/
 bin/
 !dependencies/tbb/build/
+dependencies/papi
 Debug
 Release
 CMakeFiles

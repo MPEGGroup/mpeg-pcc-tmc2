@@ -190,6 +190,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
 
   // Sort missed points by Morton code
   mortonOrderSortMissedPoints_  = false;
+  textureMPSeparateVideoWidth_ = 64;
 }
 
 PCCEncoderParameters::~PCCEncoderParameters() {}
@@ -226,6 +227,7 @@ void PCCEncoderParameters::print() {
   std::cout << "\t PCM Geometry Colour Plane                " << ( losslessGeo444_ ?"444":"420" ) << std::endl;
   std::cout << "\t enhancedDeltaDepthCode                   " << enhancedDeltaDepthCode_ << std::endl;
   std::cout << "\t useMissedPointsSeparateVideo             " << useMissedPointsSeparateVideo_ << std::endl;
+  std::cout << "\t textureMPSeparateVideoWidth              " << textureMPSeparateVideoWidth_ << std::endl;
   std::cout << "\t uncompressedDataPath                     " << uncompressedDataPath_ << std::endl;
   std::cout << "\t compressedStreamPath                     " << compressedStreamPath_ << std::endl;
   std::cout << "\t reconstructedDataPath                    " << reconstructedDataPath_ << std::endl;
@@ -499,9 +501,9 @@ bool PCCEncoderParameters::check() {
 
   if ( losslessGeo_ ) {
     if( layerCountMinus1_ == 0  ) {
-      layerCountMinus1_ = 1; 
-      std::cerr << "WARNING: layerCountMinus1_ is only for lossy coding mode for now. Force "
-                   "layerCountMinus1_=1.\n";
+      //layerCountMinus1_ = 1; 
+      //std::cerr << "WARNING: layerCountMinus1_ is only for lossy coding mode for now. Force "
+      //             "layerCountMinus1_=1.\n";
     }
     if ( pointLocalReconstruction_ ) {
       pointLocalReconstruction_ = false;
@@ -563,6 +565,14 @@ bool PCCEncoderParameters::check() {
                   "useMissedPointsSeparateVideo_=false.\n";
   }
   if ( useMissedPointsSeparateVideo_ ) {
+    if ( textureMPSeparateVideoWidth_ % 64 ) {
+      ret = false;
+      std::cerr << "textureMPSeparateVideoWidth_ must be multiple of 64.\n";
+    }
+    if ( singleLayerPixelInterleaving_ ) {
+      ret = false;
+      std::cerr << "Pixel Interleaving is built on one layer coding. Force layerCountMinus1_ = 0.\n";
+    }
     if ( geometryMPConfig_.empty() || !exist( geometryMPConfig_ ) ) {
       std::cerr << "WARNING: geometryMPConfig_ is set as geometryConfig_ : " << geometryConfig_ << std::endl;
       geometryMPConfig_ = geometryConfig_;
@@ -716,8 +726,8 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   context.setOccupancyPackingBlockSize( occupancyResolution_ );
   context.setModelScale( modelScale_ );
   context.setModelOrigin( modelOrigin_ );
-  context.setMPGeoWidth( 64 );
-  context.setMPAttWidth( 64 );
+  context.setMPGeoWidth( textureMPSeparateVideoWidth_ );
+  context.setMPAttWidth( textureMPSeparateVideoWidth_ );
   context.setMPGeoHeight( 0 );
   context.setMPAttHeight( 0 );
   context.setGeometry3dCoordinatesBitdepth( geometry3dCoordinatesBitdepth_ );

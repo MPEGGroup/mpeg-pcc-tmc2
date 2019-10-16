@@ -529,6 +529,7 @@ class PCCImage {
   size_t getDepth() const { return sizeof( T ) * 8; }
   size_t getChannelCount() const { return N; }
 
+  const std::vector<T>& getChannel( size_t index ) const { return channels_[index]; }
   void set( const T value = 0 ) {
     for ( auto& channel : channels_ ) {
       for ( auto& p : channel ) { p = value; }
