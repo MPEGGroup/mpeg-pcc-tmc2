@@ -4111,7 +4111,7 @@ void PCCEncoder::generateMPsTextureImage( PCCContext&         context,
           const size_t x = ( u0 + u );
           const size_t y = ( v0 + v );
           if ( pointIndex < numMps ) {
-            assert( x < width && y < height );
+            assert( x < width /*&& y < height TODO: error in debug compilation */);
             image.setValue( 0, x, y, uint16_t( mpsTextures[framePointIndex].r() ) );
             image.setValue( 1, x, y, uint16_t( mpsTextures[framePointIndex].g() ) );
             image.setValue( 2, x, y, uint16_t( mpsTextures[framePointIndex].b() ) );

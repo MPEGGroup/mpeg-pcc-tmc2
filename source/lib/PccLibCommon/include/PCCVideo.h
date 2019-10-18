@@ -185,6 +185,12 @@ class PCCVideo {
   size_t getHeight() const { return frames_.empty() ? 0 : frames_[0].getHeight(); }
   size_t getFrameCount() const { return frames_.size(); }
 
+	void convertBitdepth(uint8_t bitdepthInput, uint8_t bitdepthOutput, bool msbAlignFlag) {
+    for ( auto& frame : frames_ ) {
+			frame.convertBitdepth(bitdepthInput, bitdepthOutput, msbAlignFlag);
+    }
+	}
+
  private:
   std::vector<PCCImage<T, N> > frames_;
 };

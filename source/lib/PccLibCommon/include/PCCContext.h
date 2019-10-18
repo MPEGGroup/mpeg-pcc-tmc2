@@ -1495,8 +1495,7 @@ class AttributeInformation {
   AttributeInformation() :
       attributeCount_( 0 ),
       attributeParamsEnabledFlag_( false ),
-      attributePatchParamsEnabledFlag_( false ),
-      attributeMSBAlignFlag_( false ) {}
+      attributePatchParamsEnabledFlag_( false ){}
   ~AttributeInformation() {
     attributeTypeId_.clear();
     attributeCodecId_.clear();
@@ -1504,6 +1503,7 @@ class AttributeInformation {
     attributeDimensionMinus1_.clear();
     attributeDimensionPartitionsMinus1_.clear();
     attributeNominal2dBitdepthMinus1_.clear();
+    attributeMSBAlignFlag_.clear();
     for ( auto& value : attributePartitionChannelsMinus1_ ) { value.clear(); }
     attributePartitionChannelsMinus1_.clear();
   }
@@ -1516,12 +1516,13 @@ class AttributeInformation {
     attributeDimensionMinus1_.resize( attributeCount_, 0 );
     attributeDimensionPartitionsMinus1_.resize( attributeCount_, 0 );
     attributeNominal2dBitdepthMinus1_.resize( attributeCount_, 0 );
+    attributeMSBAlignFlag_.resize( attributeCount_, 0 );
     attributePartitionChannelsMinus1_.resize( attributeCount_ );
   }
   uint8_t getAttributeCount() { return attributeCount_; }
   uint8_t getAttributeParamsEnabledFlag() { return attributeParamsEnabledFlag_; }
   uint8_t getAttributePatchParamsEnabledFlag() { return attributePatchParamsEnabledFlag_; }
-  uint8_t getAttributeMSBAlignFlag() { return attributeMSBAlignFlag_; }
+  uint8_t getAttributeMSBAlignFlag( uint32_t index ) { return attributeMSBAlignFlag_[index]; }
   uint8_t getAttributeTypeId( uint32_t index ) { return attributeTypeId_[index]; }
   uint8_t getAttributeCodecId( uint32_t index ) { return attributeCodecId_[index]; };
   uint8_t getPcmAttributeCodecId( uint32_t index ) { return pcmAttributeCodecId_[index]; }
@@ -1537,7 +1538,7 @@ class AttributeInformation {
   void setAttributeCount( uint8_t value ) { attributeCount_ = value; }
   void setAttributeParamsEnabledFlag( bool value ) { attributeParamsEnabledFlag_ = value; }
   void setAttributePatchParamsEnabledFlag( bool value ) { attributePatchParamsEnabledFlag_ = value; }
-  void setAttributeMSBAlignFlag( bool value ) { attributeMSBAlignFlag_ = value; }
+  void setAttributeMSBAlignFlag( uint32_t index, bool value ) { attributeMSBAlignFlag_[index] = value; }
   void setAttributeTypeId( uint32_t index, uint8_t value ) { attributeTypeId_[index] = value; }
   void setAttributeCodecId( uint32_t index, uint8_t value ) { attributeCodecId_[index] = value; };
   void setPcmAttributeCodecId( uint32_t index, uint8_t value ) { pcmAttributeCodecId_[index] = value; }
@@ -1557,16 +1558,17 @@ class AttributeInformation {
 
  private:
   uint8_t                           attributeCount_;
-  bool                              attributeParamsEnabledFlag_;
-  bool                              attributePatchParamsEnabledFlag_;
-  bool                              attributeMSBAlignFlag_;
   std::vector<uint8_t>              attributeTypeId_;
   std::vector<uint8_t>              attributeCodecId_;
-  std::vector<uint8_t>              pcmAttributeCodecId_;
+  std::vector<uint8_t>              pcmAttributeCodecId_; //TODO: rename to rawAttributeCodecId_?
+	//std::vector<bool>              attributeMapAbsoluteCodingEnableFlag_; //TODO: missing
   std::vector<uint8_t>              attributeDimensionMinus1_;
   std::vector<uint8_t>              attributeDimensionPartitionsMinus1_;
-  std::vector<uint8_t>              attributeNominal2dBitdepthMinus1_;
   std::vector<std::vector<uint8_t>> attributePartitionChannelsMinus1_;
+  std::vector<uint8_t>              attributeNominal2dBitdepthMinus1_;
+  std::vector<bool>                 attributeMSBAlignFlag_; 
+  bool                              attributeParamsEnabledFlag_; //TODO: remove?
+  bool                              attributePatchParamsEnabledFlag_; //TODO: remove?
 };
 
 // 7.3.4.4 Geometry information Syntax
@@ -1575,6 +1577,7 @@ class GeometryInformation {
   GeometryInformation() :
       geometryCodecId_( 0 ),
       geometryNominal2dBitdepthMinus1_( 10 ),
+		  geometryMSBAlignFlag_( false ),
       geometry3dCoordinatesBitdepthMinus1_( 9 ),
       pcmGeometryCodecId_( 0 ),
       geometryParamsEnabledFlag_( false ),
@@ -1584,17 +1587,14 @@ class GeometryInformation {
 
   void init( uint8_t codecId,
              uint8_t nominal2dBitdepthMinus1,
+		         bool    msbAlignFlag,
              uint8_t coordinatesBitdepthMinus1,
              uint8_t pcmGeometryCodecId,
              bool    paramsEnabledFlag,
-             bool    patchParamsEnabledFlag,
-             bool    patchScaleParamsEnabledFlag,
-             bool    patchOffsetParamsEnabledFlag,
-             bool    patchRotationParamsEnabledFlag,
-             bool    patchPointSizeInfoEnabledFlag,
-             bool    patchPointShapeInfoEnabledFlag ) {
+             bool    patchParamsEnabledFlag) {
     geometryCodecId_                     = codecId;
     geometryNominal2dBitdepthMinus1_     = nominal2dBitdepthMinus1;
+    geometryMSBAlignFlag_                = msbAlignFlag;
     geometry3dCoordinatesBitdepthMinus1_ = coordinatesBitdepthMinus1;
     pcmGeometryCodecId_                  = pcmGeometryCodecId;
     geometryParamsEnabledFlag_           = paramsEnabledFlag;
@@ -1602,12 +1602,14 @@ class GeometryInformation {
   }
   uint8_t getGeometryCodecId() { return geometryCodecId_; }
   uint8_t getGeometryNominal2dBitdepthMinus1() { return geometryNominal2dBitdepthMinus1_; }
+  bool    getGeometryMSBAlignFlag() { return geometryMSBAlignFlag_; }
   uint8_t getGeometry3dCoordinatesBitdepthMinus1() { return geometry3dCoordinatesBitdepthMinus1_; }
   uint8_t getPcmGeometryCodecId() { return pcmGeometryCodecId_; }
   bool    getGeometryParamsEnabledFlag() { return geometryParamsEnabledFlag_; }
   bool    getGeometryPatchParamsEnabledFlag() { return geometryPatchParamsEnabledFlag_; }
   void    setGeometryCodecId( uint8_t value ) { geometryCodecId_ = value; }
   void    setGeometryNominal2dBitdepthMinus1( uint8_t value ) { geometryNominal2dBitdepthMinus1_ = value; }
+  void    setGeometryMSBAlignFlag( bool value ) { geometryMSBAlignFlag_ = value; }
   void    setGeometry3dCoordinatesBitdepthMinus1( uint8_t value ) { geometry3dCoordinatesBitdepthMinus1_ = value; }
   void    setPcmGeometryCodecId( uint8_t value ) { pcmGeometryCodecId_ = value; }
   void    setGeometryParamsEnabledFlag( bool value ) { geometryParamsEnabledFlag_ = value; }
@@ -1616,6 +1618,7 @@ class GeometryInformation {
  private:
   uint8_t geometryCodecId_;
   uint8_t geometryNominal2dBitdepthMinus1_;
+  bool    geometryMSBAlignFlag_;
   uint8_t geometry3dCoordinatesBitdepthMinus1_;
   uint8_t pcmGeometryCodecId_;
   bool    geometryParamsEnabledFlag_;
@@ -1625,21 +1628,32 @@ class GeometryInformation {
 // 7.3.4.3 Occupancy information Set Syntax
 class OccupancyInformation {
  public:
-  OccupancyInformation() : occupancyCodecId_( 0 ), lossyOccupancyMapCompressionThreshold_( 0 ) {}
+  OccupancyInformation() : occupancyCodecId_( 0 ), 
+		lossyOccupancyMapCompressionThreshold_( 0 ),
+	  occupancyNominal2DBitdepthMinus1_( 10 ),
+	  occupancyMSBAlignFlag_( false ){}
   ~OccupancyInformation() {}
   OccupancyInformation& operator=( const OccupancyInformation& ) = default;
-  void                  init( uint8_t codecId, uint8_t threshold, uint8_t packingBlockSize ) {
+  void                  init( uint8_t codecId, uint8_t threshold, uint8_t nominal2DBitdepth, bool msbAlignFlag ) {
     occupancyCodecId_                      = codecId;
     lossyOccupancyMapCompressionThreshold_ = threshold;
+    occupancyNominal2DBitdepthMinus1_ = nominal2DBitdepth;
+    occupancyMSBAlignFlag_ = msbAlignFlag;
   }
   uint8_t getOccupancyCodecId() { return occupancyCodecId_; }
   uint8_t getLossyOccupancyMapCompressionThreshold() { return lossyOccupancyMapCompressionThreshold_; }
+  uint8_t getOccupancyNominal2DBitdepthMinus1() { return occupancyNominal2DBitdepthMinus1_; }
+  bool    getOccupancyMSBAlignFlag() { return occupancyMSBAlignFlag_; }
   void    setOccupancyCodecId( uint8_t value ) { occupancyCodecId_ = value; }
   void    setLossyOccupancyMapCompressionThreshold( uint8_t value ) { lossyOccupancyMapCompressionThreshold_ = value; }
+  void    setOccupancyNominal2DBitdepthMinus1( uint8_t value ) { occupancyNominal2DBitdepthMinus1_ = value; }
+  void    setOccupancyMSBAlignFlag( bool value ) { occupancyMSBAlignFlag_ = value; }
 
  private:
   uint8_t occupancyCodecId_;
   uint8_t lossyOccupancyMapCompressionThreshold_;
+  uint8_t occupancyNominal2DBitdepthMinus1_;
+  bool    occupancyMSBAlignFlag_;
 };
 
 // 7.3.4.2 Profile, Tier and Level Syntax
@@ -1672,7 +1686,7 @@ class ProfileTierLevel {
   uint8_t levelIdc_;
 };
 
-// 7.3.4.1  General Sequence parameter set syntax
+// 7.3.4.1  V-PCC Sequence parameter set syntax
 class SequenceParameterSet {
  public:
   SequenceParameterSet() :
@@ -1808,31 +1822,38 @@ class SequenceParameterSet {
   void addLayerPredictorIndexDiff( bool value ) { layerPredictorIndexDiff_.push_back( value ); }
 
  private:
+  ProfileTierLevel                    profileTierLevel_;
   uint32_t                            sequenceParameterSetId_;
+	//uint8_t                             atlasCountMinus1_;
+	//TODO: variables below must become vectors with atlasCountMinus1_ + 1 positions
   uint16_t                            frameWidth_;
   uint16_t                            frameHeight_;
-  uint16_t                            avgFrameRate_;
-  uint32_t                            layerCountMinus1_;
-  bool                                avgFrameRatePresentFlag_;
-  bool                                enhancedOccupancyMapForDepthFlag_;
-  size_t                              EOMFixBitCount_;
-  bool                                EOMTexturePatch_;
-  bool                                multipleLayerStreamsPresentFlag_;
-  bool                                pcmPatchEnabledFlag_;
-  bool                                pcmSeparateVideoPresentFlag_;
-  bool                                patchInterPredictionEnabledFlag_;
-  bool                                pixelDeinterleavingFlag_;
-  bool                                pointLocalReconstructionEnabledFlag_;
-  bool                                removeDuplicatePointEnabledFlag_;
-  bool                                projection45degreeEnabledFlag_;
-  bool                                patchPrecedenceOrderFlag_;
-  std::vector<bool>                   layerAbsoluteCodingEnabledFlag_;
-  std::vector<size_t>                 layerPredictorIndexDiff_;
-  ProfileTierLevel                    profileTierLevel_;
+  uint32_t                            layerCountMinus1_; // TODO: rename to mapCountMinus1_?
+  bool                                multipleLayerStreamsPresentFlag_; // TODO: rename to multipleMapStreamsPresentFlag_?
+  std::vector<bool>                   layerAbsoluteCodingEnabledFlag_; // TODO: rename to mapAbsoluteCodingEnableFlag_?
+  std::vector<size_t>                 layerPredictorIndexDiff_; // TODO: rename to mapPredictorIndexDiff_?
+  bool                                pcmPatchEnabledFlag_; // TODO: rename to rawPatchEnabledFlag_?
+  bool                                pcmSeparateVideoPresentFlag_; // TODO: rename to rawSeparateVideoPresentFlag_?
   GeometryInformation                 geometryInformation_;
   OccupancyInformation                occupancyInformation_;
   AttributeInformation                attributeInformation_;
-  PointLocalReconstructionInformation pointLocalReconstructionInformation_;
+	//bool                                extensionPresentFlag_;
+	//size_t                              extensionLength_;
+	//std::vector<uint8_t>                extensionDataByte_;
+
+	//TODO: syntax elements not present in DIS text
+  uint16_t                            avgFrameRate_; // TODO: remove?
+  bool                                avgFrameRatePresentFlag_; // TODO: remove?
+  bool                                enhancedOccupancyMapForDepthFlag_; // TODO: remove?
+  size_t                              EOMFixBitCount_; // TODO: remove?
+  bool                                EOMTexturePatch_; // TODO: remove?
+  bool                                patchInterPredictionEnabledFlag_; // TODO: remove?
+  bool                                pixelDeinterleavingFlag_; // TODO: remove?
+  bool                                pointLocalReconstructionEnabledFlag_; // TODO: remove?
+  bool                                removeDuplicatePointEnabledFlag_; // TODO: remove?
+  bool                                projection45degreeEnabledFlag_; // TODO: remove?
+  bool                                patchPrecedenceOrderFlag_; // TODO: remove?
+  PointLocalReconstructionInformation pointLocalReconstructionInformation_; // TODO: remove?
 
   // THE NEXT PARAMETERS ARE NOT IN THE VPCC CD SYNTAX DOCUMENTS AND WILL BE REMOVE
  public:
@@ -1882,10 +1903,11 @@ class VPCCParameterSet {
  private:
   uint8_t unitType_;
   uint8_t sequenceParamterSetId_;
+	// TODO: add atlasId?
   uint8_t attributeIndex_;
   uint8_t attributeDimensionIndex_;
-  uint8_t layerIndex_;
-  bool    pcmVideoFlag_;
+  uint8_t layerIndex_; //TODO: rename to mapIndex?
+  bool    pcmVideoFlag_; // TODO: rename to rawVideoFlag?
 };
 
 typedef struct PointLocalReconstructionMode {

@@ -805,6 +805,61 @@ class PCCImage {
     return true;
   }
 
+	void convertBitdepth(uint8_t bitdepthInput, uint8_t bitdepthOutput, bool msbAlignFlag) {
+		if (bitdepthInput > sizeof(T) * 8)
+		{
+			std::cout << "Wrong bitdepth input parameter (" << bitdepthInput << " > " << sizeof(T) * 8 << ")" << std::endl;
+			exit(-1);
+		}
+		if (bitdepthOutput > sizeof(T) * 8)
+		{
+			std::cout << "Wrong bitdepth output parameter (" << bitdepthOutput << " > " << sizeof(T) * 8 << ")" << std::endl;
+			exit(-1);
+		}
+		int bitDiff = (int)bitdepthInput - (int)bitdepthOutput;
+		if (bitDiff >= 0)
+		{
+			if (msbAlignFlag)
+			{
+				for (size_t cc = 0; cc < N; cc++) {
+					for (size_t h = 0; h < height_; h++) {
+						for (size_t w = 0; w < width_; w++) {
+							setValue(cc, w, h, (getValue(cc, w, h) >> bitDiff));
+						}
+					}
+				}
+			}
+			else 
+			{
+				for (size_t cc = 0; cc < N; cc++) {
+					for (size_t h = 0; h < height_; h++) {
+						for (size_t w = 0; w < width_; w++) {
+							setValue(cc, w, h, tMin(getValue(cc, w, h), (T)((1<< bitdepthOutput)-1) ) );
+						}
+					}
+				}
+			}
+		}
+		else
+		{
+			if (msbAlignFlag)
+			{
+				for (size_t cc = 0; cc < N; cc++) {
+					for (size_t h = 0; h < height_; h++) {
+						for (size_t w = 0; w < width_; w++) {
+							setValue(cc, w, h, (getValue(cc, w, h) << (-bitDiff)));
+						}
+					}
+				}
+			}
+			else
+			{
+				//do nothing, the vaue is correct
+			}
+		}
+	}
+
+
  private:
   T      clamp( T v, T a, T b ) const { return ( ( v < a ) ? a : ( ( v > b ) ? b : v ) ); }
   int    clamp( int v, int a, int b ) const { return ( ( v < a ) ? a : ( ( v > b ) ? b : v ) ); }
@@ -839,6 +894,7 @@ class PCCImage {
       V[i] = (float)( (double)clamp( 0.500000 * R[i] - 0.454153 * G[i] - 0.045847 * B[i], -0.5, 0.5 ) );
     }
   }
+  static inline T tMin( T a, T b ) { return ( ( a ) < ( b ) ) ? ( a ) : ( b ); }
   static inline float fMin( float a, float b ) { return ( ( a ) < ( b ) ) ? ( a ) : ( b ); }
   static inline float fMax( float a, float b ) { return ( ( a ) > ( b ) ) ? ( a ) : ( b ); }
   static inline float fClip( float x, float low, float high ) { return fMin( fMax( x, low ), high ); }

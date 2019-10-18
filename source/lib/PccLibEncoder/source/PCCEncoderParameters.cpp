@@ -685,16 +685,20 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   ai.setAttributeParamsEnabledFlag( flagColorSmoothing_ );
   ai.setAttributeDimensionMinus1( 0, noAttributes_ ? 0 : 2 );
   ai.setAttributeNominal2dBitdepthMinus1( 0, 7 );
+  ai.setAttributeMSBAlignFlag( 0, false );
 
   pfps.allocate( ai.getAttributeCount() );
   pfti.setSingleTileInPatchFrameFlag( true );
   pfti.setSingleTilePerTileGroupFlag( true );
 
   oi.setLossyOccupancyMapCompressionThreshold( (size_t)thresholdLossyOM_ );
+  oi.setOccupancyNominal2DBitdepthMinus1(7);
+  oi.setOccupancyMSBAlignFlag( false );
 
   gi.setGeometryParamsEnabledFlag( flagGeometrySmoothing_ );
   gi.setGeometry3dCoordinatesBitdepthMinus1( uint8_t( geometry3dCoordinatesBitdepth_ - 1 ) );
   gi.setGeometryNominal2dBitdepthMinus1( uint8_t( geometryNominal2dBitdepth_ - 1 ) );
+  gi.setGeometryMSBAlignFlag( false );
 
   psps.setLog2PatchPackingBlockSize( std::log2( occupancyResolution_ ) );
   psps.setNormalAxisLimitsQuantizationEnableFlag( true );

@@ -107,10 +107,14 @@ void PCCBitstreamEncoder::vpccUnitHeader( PCCContext& context, PCCBitstream& bit
   bitstream.write( vpccUnitType, 5 );  // u(5)
   if ( vpccUnitType == VPCC_AVD || vpccUnitType == VPCC_GVD || vpccUnitType == VPCC_OVD || vpccUnitType == VPCC_PDG ) {
     bitstream.write( (uint32_t)vpcc.getSequenceParameterSetId(), 4 );  // u(4)
+		// u(6) TODO: vuh_atlas_ID 
   }
   if ( vpccUnitType == VPCC_AVD ) {
     bitstream.write( (uint32_t)vpcc.getAttributeIndex(), 7 );           // u(7)
     bitstream.write( (uint32_t)vpcc.getAttributeDimensionIndex(), 7 );  // u(7)
+		// u(4) TODO: vuh_map_index
+		// u(1) TODO: vuh_raw_video_flag
+		// TODO: remove pcmSeparateVideoData below
     if ( sps.getMultipleLayerStreamsPresentFlag() ) {
       bitstream.write( (uint32_t)vpcc.getLayerIndex(), 4 );  // u(4)
       pcmSeparateVideoData( context, bitstream, 4 );
@@ -118,6 +122,10 @@ void PCCBitstreamEncoder::vpccUnitHeader( PCCContext& context, PCCBitstream& bit
       pcmSeparateVideoData( context, bitstream, 8 );
     }
   } else if ( vpccUnitType == VPCC_GVD ) {
+		// u(4) TODO: vuh_map_index
+		// u(1) TODO: vuh_raw_video_flag
+		// u(12) TODO: vuh_reserved_zero_flag
+		// TODO: remove pcmSeparateVideoData below
     if ( sps.getMultipleLayerStreamsPresentFlag() ) {
       bitstream.write( vpcc.getLayerIndex(), 4 );  // u(4)
       pcmSeparateVideoData( context, bitstream, 18 );
@@ -125,13 +133,13 @@ void PCCBitstreamEncoder::vpccUnitHeader( PCCContext& context, PCCBitstream& bit
       pcmSeparateVideoData( context, bitstream, 22 );
     }
   } else if ( vpccUnitType == VPCC_OVD || vpccUnitType == VPCC_PDG ) {
-    bitstream.write( (uint32_t)0, 23 );  // u(23)
+    bitstream.write( (uint32_t)0, 23 );  // u(23) TODO -> change to u(17)
   } else {
     bitstream.write( (uint32_t)0, 27 );  // u(27)
   }
 }
 
-// 7.3.2.3 PCM separate video data syntax
+// 7.3.2.3 PCM separate video data syntax TODO: remove this
 void PCCBitstreamEncoder::pcmSeparateVideoData( PCCContext& context, PCCBitstream& bitstream, uint8_t bitCount ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   auto& vpcc = context.getVPCC();
@@ -144,17 +152,17 @@ void PCCBitstreamEncoder::pcmSeparateVideoData( PCCContext& context, PCCBitstrea
   }
 }
 
-// 7.3.2.4 V-PCC unit payload syntax
+// 7.3.2.3 V-PCC unit payload syntax
 void PCCBitstreamEncoder::vpccUnitPayload( PCCContext& context, PCCBitstream& bitstream, VPCCUnitType vpccUnitType ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   auto& sps = context.getSps();
   TRACE_BITSTREAM( "vpccUnitType = %d \n", (int32_t)vpccUnitType );
   if ( vpccUnitType == VPCC_SPS ) {
-    sequenceParameterSet( sps, context, bitstream );
+    sequenceParameterSet( sps, context, bitstream ); // TODO: rename vpccParameterSet?
   } else if ( vpccUnitType == VPCC_PDG ) {
-    patchDataGroup( context, bitstream );
+    patchDataGroup( context, bitstream ); //TODO: rename atlasSubStream?
   } else if ( vpccUnitType == VPCC_OVD || vpccUnitType == VPCC_GVD || vpccUnitType == VPCC_AVD ) {
-    vpccVideoDataUnit( context, bitstream, vpccUnitType );
+    vpccVideoDataUnit( context, bitstream, vpccUnitType ); // TODO: rename videoSubStream?
   }
 }
 
@@ -167,34 +175,37 @@ void PCCBitstreamEncoder::byteAlignment( PCCBitstream& bitstream ) {
   }
 }
 
-// 7.3.4.1 General Sequence parameter set syntax
+// 7.3.4.1 General V-PCC parameter set syntax
 void PCCBitstreamEncoder::sequenceParameterSet( SequenceParameterSet& sps,
                                                 PCCContext&           context,
                                                 PCCBitstream&         bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   profileTierLevel( sps.getProfileTierLevel(), bitstream );
   bitstream.write( (uint32_t)sps.getSequenceParameterSetId(), 4 );   // u(4)
+	//u(6) TODO: vps_atlas_count_minus1
+	//for(int j=0; j < vps_atlas_count_minus1+1; j++){ 
   bitstream.write( (uint32_t)sps.getFrameWidth(), 16 );              // u(16)
   bitstream.write( (uint32_t)sps.getFrameHeight(), 16 );             // u(16)
-  bitstream.write( (uint32_t)sps.getAvgFrameRatePresentFlag(), 1 );  // u(1)
-  if ( sps.getAvgFrameRatePresentFlag() ) {
-    bitstream.write( (uint32_t)sps.getAvgFrameRate(), 16 );  // u(16)
-  }
-  bitstream.write( (uint32_t)sps.getEnhancedOccupancyMapForDepthFlag(), 1 );  // u(1)
+  bitstream.write( (uint32_t)sps.getAvgFrameRatePresentFlag(), 1 );  // u(1) TODO: remove?
+  if ( sps.getAvgFrameRatePresentFlag() ) { // TODO: remove?
+    bitstream.write( (uint32_t)sps.getAvgFrameRate(), 16 );  // u(16) TODO: remove?
+  } // TODO: remove?
+  bitstream.write( (uint32_t)sps.getEnhancedOccupancyMapForDepthFlag(), 1 );  // u(1) TODO: remove?
   bitstream.write( (uint32_t)sps.getLayerCountMinus1(), 4 );                  // u(4)
-  if ( sps.getEnhancedOccupancyMapForDepthFlag() ) {
-    if ( sps.getLayerCountMinus1() == 0 ) {
-      bitstream.write( (uint32_t)sps.getEOMFixBitCount(), 4 );  // u(4)
-    }
-    bitstream.write( (uint32_t)sps.getEOMTexturePatch(), 1 );  // u(1)
-  }
+  if ( sps.getEnhancedOccupancyMapForDepthFlag() ) {// TODO: remove?
+    if ( sps.getLayerCountMinus1() == 0 ) {// TODO: remove?
+      bitstream.write( (uint32_t)sps.getEOMFixBitCount(), 4 );  // u(4) TODO: remove?
+    }// TODO: remove?
+    bitstream.write( (uint32_t)sps.getEOMTexturePatch(), 1 );  // u(1) TODO: remove?
+  }// TODO: remove?
   if ( sps.getLayerCountMinus1() > 0 ) {
     bitstream.write( (uint32_t)sps.getMultipleLayerStreamsPresentFlag(), 1 );  // u(1)
   }
+	//TODO: align for loop with DIS text
   for ( size_t i = 0; i < sps.getLayerCountMinus1(); i++ ) {
     bitstream.write( (uint32_t)sps.getLayerAbsoluteCodingEnabledFlag( i + 1 ), 1 );  // u(1)
     if ( ( sps.getLayerAbsoluteCodingEnabledFlag( i + 1 ) == 0 ) ) {
-      if ( i > 0 ) {
+      if ( i > 0 ) { //TODO: in DIS, this is always true???
         bitstream.writeUvlc( (uint32_t)sps.getLayerPredictorIndexDiff( i + 1 ) );  // ue(v)
       }
     }
@@ -205,35 +216,42 @@ void PCCBitstreamEncoder::sequenceParameterSet( SequenceParameterSet& sps,
     TRACE_BITSTREAM( " AbsoluteCoding L%lu = %lu \n", i, sps.getLayerAbsoluteCodingEnabledFlag( i ) );
   }
 #endif
-  bitstream.write( (uint32_t)sps.getPcmPatchEnabledFlag(), 1 );  // u(1)
+  bitstream.write( (uint32_t)sps.getPcmPatchEnabledFlag(), 1 );  // u(1) TODO: change to rawPatchEnabledFlag?
   if ( sps.getPcmPatchEnabledFlag() ) {
-    bitstream.write( (uint32_t)sps.getPcmSeparateVideoPresentFlag(), 1 );  // u(1)
+    bitstream.write( (uint32_t)sps.getPcmSeparateVideoPresentFlag(), 1 );  // u(1) TODO: change to rawSeparateVideoPresentFlag?
   }
   occupancyInformation( sps.getOccupancyInformation(), bitstream );
   geometryInformation( sps.getGeometryInformation(), sps, bitstream );
   attributeInformation( sps.getAttributeInformation(), sps, bitstream );
-
-  bitstream.write( (uint32_t)sps.getPatchInterPredictionEnabledFlag(), 1 );      // u(1)
-  bitstream.write( (uint32_t)sps.getPixelDeinterleavingFlag(), 1 );              // u(1)
-  bitstream.write( (uint32_t)sps.getPointLocalReconstructionEnabledFlag(), 1 );  // u(1)
-  if ( sps.getPointLocalReconstructionEnabledFlag() ) {
-    pointLocalReconstructionInformation( sps.getPointLocalReconstructionInformation(), context, bitstream );
-  }
-  bitstream.write( (uint32_t)sps.getRemoveDuplicatePointEnabledFlag(), 1 );  // u(1)
-  bitstream.write( (uint32_t)sps.getProjection45DegreeEnableFlag(), 1 );     // u(1)
-  bitstream.write( (uint32_t)sps.getPatchPrecedenceOrderFlag(), 1 );         // u(1)
+	//} //end of atlas information
+	//u(1) TODO: vps_extension_present_flag
+	//if(vps_extension_present_flag)
+	//  ue(v) vps_extension_length
+	//  for(int j=0; j<vps_extension_length+1;j++){
+	//    u(8) vps_extension_data_byte
+	//  }
+	//}
+  bitstream.write( (uint32_t)sps.getPatchInterPredictionEnabledFlag(), 1 );      // u(1) TODO: remove?
+  bitstream.write( (uint32_t)sps.getPixelDeinterleavingFlag(), 1 );              // u(1) TODO: remove?
+  bitstream.write( (uint32_t)sps.getPointLocalReconstructionEnabledFlag(), 1 );  // u(1) TODO: remove?
+  if ( sps.getPointLocalReconstructionEnabledFlag() ) {// TODO: remove?
+    pointLocalReconstructionInformation( sps.getPointLocalReconstructionInformation(), context, bitstream );// TODO: remove?
+  }// TODO: remove?
+  bitstream.write( (uint32_t)sps.getRemoveDuplicatePointEnabledFlag(), 1 );  // u(1) TODO: remove?
+  bitstream.write( (uint32_t)sps.getProjection45DegreeEnableFlag(), 1 );     // u(1) TODO: remove?
+  bitstream.write( (uint32_t)sps.getPatchPrecedenceOrderFlag(), 1 );         // u(1) TODO: remove?
 
   // THE NEXT PARAMETERS ARE NOT IN THE VPCC CD SYNTAX DOCUMENTS AND WILL BE REMOVE
 #ifdef BITSTREAM_TRACE
   bitstream.trace( "  Depreciated1\n" );
 #endif
-  bitstream.write( (uint32_t)sps.getLosslessGeo444(), 1 );    // u(1)
-  bitstream.write( (uint32_t)sps.getLosslessGeo(), 1 );       // u(1)
+  bitstream.write( (uint32_t)sps.getLosslessGeo444(), 1 );    // u(1) TODO: remove?
+  bitstream.write( (uint32_t)sps.getLosslessGeo(), 1 );       // u(1) TODO: remove?
 #ifdef BITSTREAM_TRACE
   bitstream.trace( "  Depreciated2\n" );
 #endif
-  bitstream.write( (uint32_t)sps.getMinLevel(), 8 );          // u(8)
-  bitstream.write( (uint32_t)sps.getSurfaceThickness(), 8 );  // u(8)
+  bitstream.write( (uint32_t)sps.getMinLevel(), 8 );          // u(8) TODO: remove?
+  bitstream.write( (uint32_t)sps.getSurfaceThickness(), 8 );  // u(8) TODO: remove?
   // THE NEXT PARAMETERS ARE NOT IN THE VPCC CD SYNTAX DOCUMENTS AND WILL BE REMOVE
 
   byteAlignment( bitstream );
@@ -255,6 +273,8 @@ void PCCBitstreamEncoder::occupancyInformation( OccupancyInformation& oi, PCCBit
   TRACE_BITSTREAM( "%s \n", __func__ );
   bitstream.write( (uint32_t)oi.getOccupancyCodecId(), 8 );                       // u(8)
   bitstream.write( (uint32_t)oi.getLossyOccupancyMapCompressionThreshold(), 8 );  // u(8)
+  bitstream.write( (uint32_t)oi.getOccupancyNominal2DBitdepthMinus1(), 5 );       // u(5)
+  bitstream.write( (uint32_t)oi.getOccupancyMSBAlignFlag(), 1 );                  // u(1)
   TRACE_BITSTREAM( "  OccupancyLossyThreshold = %d  \n", oi.getLossyOccupancyMapCompressionThreshold() );
 }
 
@@ -265,6 +285,7 @@ void PCCBitstreamEncoder::geometryInformation( GeometryInformation&  gi,
   TRACE_BITSTREAM( "%s \n", __func__ );
   bitstream.write( (uint32_t)gi.getGeometryCodecId(), 8 );                            // u(8)
   bitstream.write( (uint32_t)gi.getGeometryNominal2dBitdepthMinus1(), 5 );            // u(5)
+  bitstream.write( (uint32_t)gi.getGeometryMSBAlignFlag(), 1 );            // u(1)
   bitstream.write( ( uint32_t )( gi.getGeometry3dCoordinatesBitdepthMinus1() ), 5 );  // u(5)
   if ( sps.getPcmSeparateVideoPresentFlag() ) {
     bitstream.write( (uint32_t)gi.getPcmGeometryCodecId(), 8 );  // u(8)
@@ -286,11 +307,15 @@ void PCCBitstreamEncoder::attributeInformation( AttributeInformation& ai,
     bitstream.write( (uint32_t)ai.getAttributeTypeId( i ), 4 );   // u(4)
     bitstream.write( (uint32_t)ai.getAttributeCodecId( i ), 8 );  // u(8)
     if ( sps.getPcmSeparateVideoPresentFlag() ) {
-      bitstream.write( (uint32_t)ai.getPcmAttributeCodecId( i ), 8 );  // u(8)
+      bitstream.write( (uint32_t)ai.getPcmAttributeCodecId( i ), 8 );  // u(8) TODO: rename to rawAttributeCodecId?
     }
-    bitstream.write( (uint32_t)ai.getAttributeDimensionMinus1( i ), 8 );  // u(8)
+		//TODO:
+		//for(int j=0; j< vps_map_count_minus1[atlasId];j++){
+		//  if(vps_map_absolute_coding_enabled_flag[atlasId][j]==0)
+		// u(1) ai.getAttributeMapAbsoluteCodingEnabledFlag(atlasId, i, j)
+    bitstream.write( (uint32_t)ai.getAttributeDimensionMinus1( i ), 6 );  // u(6)
     if ( ai.getAttributeDimensionMinus1( i ) > 0 ) {
-      bitstream.write( (uint32_t)ai.getAttributeDimensionPartitionsMinus1( i ), 7 );  // u(7)
+      bitstream.write( (uint32_t)ai.getAttributeDimensionPartitionsMinus1( i ), 6 );  // u(6) 
       int32_t remainingDimensions = ai.getAttributeDimensionMinus1( i );
       int32_t k                   = ai.getAttributeDimensionPartitionsMinus1( i );
       for ( int32_t j = 0; j < k; j++ ) {
@@ -301,11 +326,11 @@ void PCCBitstreamEncoder::attributeInformation( AttributeInformation& ai,
       }
     }
     bitstream.write( (uint32_t)ai.getAttributeNominal2dBitdepthMinus1( i ), 5 );  // u(5)
+    bitstream.write( (uint32_t)ai.getAttributeMSBAlignFlag( i ), 1 );            // u(1) 
   }
   if ( ai.getAttributeCount() > 0 ) {
-    bitstream.write( (uint32_t)ai.getAttributeParamsEnabledFlag(), 1 );       // u(1)
-    bitstream.write( (uint32_t)ai.getAttributePatchParamsEnabledFlag(), 1 );  // u(1)
-    bitstream.write( (uint32_t)ai.getAttributeMSBAlignFlag(), 1 );            // u(1)
+    bitstream.write( (uint32_t)ai.getAttributeParamsEnabledFlag(), 1 );       // u(1) TODO: remove?
+    bitstream.write( (uint32_t)ai.getAttributePatchParamsEnabledFlag(), 1 );  // u(1) TODO: remove?
   }
 }
 
