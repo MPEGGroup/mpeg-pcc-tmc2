@@ -241,6 +241,7 @@ class PCCEncoder : public PCCCodec {
   bool predictGeometryFrame( PCCFrameContext&        frameContext,
                              const PCCImageGeometry& reference,
                              PCCImageGeometry&       image );
+  void generateEomPatch(const PCCPointSet3& source, PCCFrameContext& frame);
   void generateMissedPointsPatch( const PCCPointSet3& source,
                                   PCCFrameContext&    frameContext,
                                   bool                useEnhancedDeltaDepthCode );

@@ -1149,15 +1149,16 @@ void PCCBitstreamEncoder::eomPatchDataUnit( EOMPatchDataUnit&     epdu,
   bitstream.write( uint32_t( epdu.get2DShiftV() ), ptgh.getInterPredictPatch2dShiftVBitCountMinus1() + 1 );  // u(v)
   bitstream.writeSvlc( int32_t( epdu.get2DDeltaSizeU() ) );                                                  // se(v)
   bitstream.writeSvlc( int32_t( epdu.get2DDeltaSizeV() ) );                                                  // se(v)
-
-  bitstream.write( uint32_t( epdu.getEpduCountMinus1() ), ptgh.getEOMPatchNbPatchBitCountMinus1() + 1 );     // u(v)
-
-  const auto& eomp = epdu.getEomPoints();
-  for ( size_t i = 0; i <= epdu.getEpduCountMinus1(); i++ ) {
-    bitstream.write( uint32_t( eomp[i] ), ptgh.getEOMPatchMaxEPBitCountMinus1() + 1 );  // u(v)
+  bitstream.write(uint32_t(epdu.getEpduAssociatedPatchesCountMinus1()), 8); //max255
+  for(size_t cnt=0; cnt<epdu.getEpduAssociatedPatchesCountMinus1()+1; cnt++)
+  {
+    bitstream.write(uint32_t(epdu.getEpduAssociatedPatches()[cnt]), 8);
+    bitstream.writeUvlc( uint32_t( epdu.getEpduEomPointsPerPatch()[cnt] ) );
   }
-  TRACE_BITSTREAM( "EOM Patch => UV %4lu %4lu  S=%4ld %4ld EpduCountMinus1=%lu \n", epdu.get2DShiftU(),
-                   epdu.get2DShiftV(), epdu.get2DDeltaSizeU(), epdu.get2DDeltaSizeV(), epdu.getEpduCountMinus1() );
+  TRACE_BITSTREAM( "EOM Patch => UV %4lu %4lu  N=%4ld\n", epdu.get2DShiftU(),
+                  epdu.get2DShiftV(), epdu.getEpduAssociatedPatchesCountMinus1()+1);
+  for(size_t cnt=0; cnt<epdu.getEpduAssociatedPatchesCountMinus1()+1; cnt++)
+    TRACE_BITSTREAM( "%4ld, %4ld\n", epdu.getEpduAssociatedPatches()[cnt], epdu.getEpduEomPointsPerPatch()[cnt]);
 }
 
 // 7.3.6.6 Point local reconstruction data syntax

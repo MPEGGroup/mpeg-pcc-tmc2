@@ -981,8 +981,10 @@ void PCCEncoder::spatialConsistencyPackFlexible( PCCFrameContext& frame,
 
   // main loop.
   for ( auto& patch : prevPatches ) {
+#if 0
     assert( patch.getSizeU0() <= occupancySizeU );
     assert( patch.getSizeV0() <= occupancySizeV );
+#endif
     id++;
     float maxIou  = 0.0f;
     int   bestIdx = -1, cId = 0;
@@ -2837,30 +2839,29 @@ void PCCEncoder::packEOMTexturePointsPatch( PCCFrameContext&   frame,
                                             size_t             maxOccupancyRow ) {
   assert( width == frame.getWidth() );
   assert( height == frame.getHeight() );
-  size_t numOfEddpoints = 0;
-  for ( auto& patch : frame.getPatches() ) {
-    for ( size_t v = 0; v < patch.getSizeV(); ++v ) {
-      for ( size_t u = 0; u < patch.getSizeU(); ++u ) {
-        const size_t p       = v * patch.getSizeU() + u;
-        int16_t      eddCode = patch.getDepthEnhancedDeltaD()[p];
-        if ( eddCode ) {
-          uint16_t nbBits = 0;
-          for ( uint16_t i = 0; i < 10; i++ ) {
-            if ( eddCode & ( 1 << i ) ) nbBits++;
-          }
-          if ( params_.layerCountMinus1_ > 0 ) nbBits--;  // don't count d1
-          numOfEddpoints += nbBits;
-        }
-      }
-    }
+ 
+  auto& eomPatches =frame.getEomPatches();
+  size_t lastHeight = height;
+  for(size_t i=0; i<eomPatches.size(); i++){
+    size_t eddPointsPatchBlocks  = static_cast<size_t>( ceil( double( eomPatches[i].eddCount_ ) / ( params_.occupancyResolution_ * params_.occupancyResolution_ ) ) );
+    size_t eddPointsPatchBlocksV = static_cast<size_t>( ceil( double( eddPointsPatchBlocks ) / occupancySizeU ) );
+    
+    occupancySizeV += eddPointsPatchBlocksV;
+    
+    eomPatches[i].u0_ = 0;
+    eomPatches[i].v0_ = lastHeight/params_.occupancyResolution_;
+    eomPatches[i].sizeU_=eddPointsPatchBlocks/eddPointsPatchBlocksV;
+    eomPatches[i].sizeV_=eddPointsPatchBlocksV;
+#if 1
+    printf("packEOMTexturePointsPatch[%zu]: eomPatch[0]: %zu,%zu(block) (%zux%zu)(block), #EDD:%zu\n", i, eomPatches[i].u0_, eomPatches[i].v0_, eomPatches[i].sizeU_, eomPatches[i].sizeV_, eomPatches[i].eddCount_);
+#endif
+    
+    lastHeight +=eomPatches[i].sizeV_*params_.occupancyResolution_;
   }
-  size_t eddPointsPatchBlocks = static_cast<size_t>(
-      ceil( double( numOfEddpoints ) / ( params_.occupancyResolution_ * params_.occupancyResolution_ ) ) );
-  size_t eddPointsPatchBlocksV = static_cast<size_t>( ceil( double( eddPointsPatchBlocks ) / occupancySizeU ) );
-
-  occupancySizeV += eddPointsPatchBlocksV;
+  
   occupancyMap.resize( occupancySizeU * occupancySizeV );
-  height += eddPointsPatchBlocksV * params_.occupancyResolution_;
+  height = lastHeight;
+
 }
 
 void PCCEncoder::packMissedPointsPatch( PCCFrameContext&   frame,
@@ -3080,6 +3081,11 @@ bool PCCEncoder::generateGeometryVideo( const PCCPointSet3&                sourc
       }
     }
   }
+
+  if(params_.enhancedDeltaDepthCode_){
+    generateEomPatch(source, frame);
+  }
+
   if ( params_.testLevelOfDetail_ > 0 ) {
     for ( size_t i = 0; i < patches.size(); i++ ) { patches[i].getLod() = params_.testLevelOfDetail_; }
   } else if ( params_.testLevelOfDetailSignaling_ > 0 ) {  // generate semi-random levels of detail for testing
@@ -3604,6 +3610,37 @@ bool PCCEncoder::predictGeometryFrame(PCCFrameContext&        frame,
 	return true;
 }
 
+void PCCEncoder::generateEomPatch(const PCCPointSet3& source, PCCFrameContext& frame){
+  auto& eomPatches = frame.getEomPatches();
+  eomPatches.resize(1);
+  size_t patchCount=frame.getPatches().size();
+  size_t totalEddCount=0;
+  for(size_t patchIdx=0; patchIdx<patchCount; patchIdx++ ){
+    
+    auto& patch = frame.getPatches()[patchIdx];
+    size_t eddCountPerPatch=0;
+    totalEddCount +=patch.getEddCount();
+    for ( size_t v = 0; v < patch.getSizeV(); ++v ) {
+      for ( size_t u = 0; u < patch.getSizeU(); ++u ) {
+        const size_t p       = v * patch.getSizeU() + u;
+        int16_t      eddCode = patch.getDepthEnhancedDeltaD()[p];
+        if ( eddCode ) {
+          uint16_t nbBits = 0;
+          for ( uint16_t i = 0; i < 10; i++ ) {
+            if ( eddCode & ( 1 << i ) ) nbBits++;
+          }
+          if ( params_.layerCountMinus1_ > 0 ) nbBits--;  // don't count d1
+          eddCountPerPatch+= nbBits;
+        }
+      }
+    }
+    eomPatches[0].memberPatches.push_back(patchIdx);
+    eomPatches[0].eddCountPerPatch.push_back(patch.getEddCount());
+    assert(patch.getEddCount()==eddCountPerPatch);
+  }
+    eomPatches[0].eddCount_ = totalEddCount;
+}
+
 void PCCEncoder::generateMissedPointsPatch( const PCCPointSet3& source,
                                             PCCFrameContext&    frame,
                                             bool                useEnhancedDeltaDepthCode ) {
@@ -3926,7 +3963,7 @@ void PCCEncoder::generateMissedPointsGeometryVideo( PCCContext& context, PCCGrou
     frame.setLosslessGeo( sps.getLosslessGeo() );
     frame.setLosslessGeo444( sps.getLosslessGeo444() );
     frame.setMPGeoWidth( context.getMPGeoWidth() );
-    printf( "generateMissedPointsGeometryVideo::context.getMPGeoWidth() = %d \n", context.getMPGeoWidth() );
+    printf( "generateMissedPointsGeometryVideo::context.getMPGeoWidth() = %zu \n", context.getMPGeoWidth() );
     frame.setMPGeoHeight( 0 );
     // frame.setEnhancedDeltaDepth( sps.getEnhancedOccupancyMapForDepthFlag());
     generateMPsGeometryImage( context, frame, videoMPsGeometry.getFrame( shift ) );
@@ -4019,7 +4056,7 @@ void PCCEncoder::generateMPsGeometryImage( PCCContext& context, PCCFrameContext&
     const size_t v0                = missedPointsPatch.v0_ * missedPointsPatch.occupancyResolution_;
     const size_t u0                = missedPointsPatch.u0_ * missedPointsPatch.occupancyResolution_;
     size_t       numberOfMps       = missedPointsPatch.getNumberOfMps();
-    printf( "generateMPsGeometryImage:: (u0,v0,sizeU,sizeU) = (%d,%d,%d,%d) \n", u0, v0, missedPointsPatch.sizeU_,
+    printf( "generateMPsGeometryImage:: (u0,v0,sizeU,sizeU) = (%zu,%zu,%zu,%zu) \n", u0, v0, missedPointsPatch.sizeU_,
             missedPointsPatch.sizeV_ );
 
     if ( params_.losslessGeo444_ ){
@@ -4066,7 +4103,7 @@ void PCCEncoder::generateMPsTextureImage( PCCContext&         context,
                                           const PCCPointSet3& reconstruct ) {
   bool         losslessAtt       = frame.getLosslessGeo();
   size_t numberOfMpsPatches        = frame.getNumberOfMissedPointsPatches();
-  size_t       numberOfEddPoints = frame.getNumberOfEddPoints();
+  size_t       numberOfEddPoints = frame.getTotalNumberOfEddPoints();
   size_t       numOfMPGeos       = frame.getTotalNumberOfMissedPoints();
   size_t nPixelInCurrentBlockCount = 0;
   size_t heightEDD                 = 0;
@@ -4103,15 +4140,15 @@ void PCCEncoder::generateMPsTextureImage( PCCContext&         context,
       size_t       numMps            = missedPointsPatch.getNumberOfMps();
       const size_t v0                = missedPointsPatch.v0_ * missedPointsPatch.occupancyResolution_;
       const size_t u0                = missedPointsPatch.u0_ * missedPointsPatch.occupancyResolution_;
-      printf( "generateMPsTextureImage:: (u0,v0,sizeU,sizeU) = (%d,%d,%d,%d) \n", u0, v0, missedPointsPatch.sizeU_,
+      printf( "generateMPsTextureImage:: (u0,v0,sizeU,sizeU) = (%zu,%zu,%zu,%zu) \n", u0, v0, missedPointsPatch.sizeU_,
               missedPointsPatch.sizeV_ );
       for ( size_t v = 0; v < missedPointsPatch.sizeV_; ++v ) {
         for ( size_t u = 0; u < missedPointsPatch.sizeU_; ++u ) {
-          const size_t p = v * missedPointsPatch.sizeU_ + u;
+//          const size_t p = v * missedPointsPatch.sizeU_ + u;
           const size_t x = ( u0 + u );
           const size_t y = ( v0 + v );
           if ( pointIndex < numMps ) {
-            assert( x < width /*&& y < height TODO: error in debug compilation */);
+            assert( x < width && y < heightMP );
             image.setValue( 0, x, y, uint16_t( mpsTextures[framePointIndex].r() ) );
             image.setValue( 1, x, y, uint16_t( mpsTextures[framePointIndex].g() ) );
             image.setValue( 2, x, y, uint16_t( mpsTextures[framePointIndex].b() ) );
@@ -4124,48 +4161,47 @@ void PCCEncoder::generateMPsTextureImage( PCCContext&         context,
   }
 
   if ( numberOfEddPoints != 0 ) {
-    auto& eddPointsPatch = frame.getEDDdPointsPatch();
-    printf( "eddPointsPatch.occupancyResolution_  = %d \n", eddPointsPatch.occupancyResolution_ );
-    heightEDD         = numberOfEddPoints / width + 1;
-    size_t heightby16 = heightEDD / 16;
-    if ( heightby16 * 16 != heightEDD ) { heightEDD = ( heightby16 + 1 ) * 16; }
-
-    eddPointsPatch.u0_                        = 0;
-    eddPointsPatch.v0_                        = heightMP;
-    eddPointsPatch.sizeU_                     = width;
-    eddPointsPatch.sizeV_                     = numberOfEddPoints / width;
-    eddPointsPatch.infosEddPerSet_[0].offset_ = 0;
-    for ( size_t k = 0; k < eddPointsPatch.numOfEddSet_ - 1; k++ ) {
-      eddPointsPatch.infosEddPerSet_[k + 1].offset_ = eddPointsPatch.infosEddPerSet_[k].numOfEddPoints_;
-    }
-    image.resize( width, heightMP + heightEDD );
-    std::vector<PCCColor3B>& eddTextures = frame.getEddTextures();
-
-    for ( size_t k = 0; k < numberOfEddPoints; k++ ) {
-      size_t nBlock = k / 256;
-      size_t uBlock = nBlock % ( width / 16 );
-      size_t vBlock = nBlock / ( width / 16 );
-      xx            = uBlock * 16 + ( nPixelInCurrentBlockCount % 16 );
-      yy            = vBlock * 16 + ( nPixelInCurrentBlockCount / 16 ) + heightMP;
-      ++nPixelInCurrentBlockCount;
-      if ( nPixelInCurrentBlockCount >= 256 ) nPixelInCurrentBlockCount = 0;
-
-      assert( yy < heightMP + heightEDD );
-      image.setValue( 0, xx, yy, eddTextures[k].r() );
-      image.setValue( 1, xx, yy, eddTextures[k].g() );
-      image.setValue( 2, xx, yy, eddTextures[k].b() );
-      avgR = avgR + double( eddTextures[k].r() ) / numberOfEddPoints;
-      avgG = avgG + double( eddTextures[k].g() ) / numberOfEddPoints;
-      avgB = avgB + double( eddTextures[k].b() ) / numberOfEddPoints;
-  }
-  if ( !losslessAtt ) {
-      for ( size_t k = numOfMPGeos; k < width * heightMP; ++k ) {
-        xx = k % width;
-        yy = k / width;
-      image.setValue( 0, xx, yy, static_cast<uint8_t>( avgR ) );
-      image.setValue( 1, xx, yy, static_cast<uint8_t>( avgG ) );
-      image.setValue( 2, xx, yy, static_cast<uint8_t>( avgB ) );
+    size_t eddPatchOffset=0;
+    for(auto& eddPointsPatch : frame.getEomPatches())
+    {
+      heightEDD         = eddPointsPatch.eddCount_ / width + 1;
+      size_t heightby16 = heightEDD / 16;
+      if ( heightby16 * 16 != heightEDD ) { heightEDD = ( heightby16 + 1 ) * 16; }
+      
+      eddPointsPatch.u0_                        = 0;
+      eddPointsPatch.v0_                        = heightMP;
+      eddPointsPatch.sizeU_                     = width;
+      eddPointsPatch.sizeV_                     = eddPointsPatch.eddCount_ / width;
+      image.resize( width, heightMP + heightEDD );
+      std::vector<PCCColor3B>& eddTextures = frame.getEddTextures();
+      
+      for ( size_t k = 0; k < eddPointsPatch.eddCount_; k++ ) {
+        size_t nBlock = k / 256;
+        size_t uBlock = nBlock % ( width / 16 );
+        size_t vBlock = nBlock / ( width / 16 );
+        xx            = uBlock * 16 + ( nPixelInCurrentBlockCount % 16 );
+        yy            = vBlock * 16 + ( nPixelInCurrentBlockCount / 16 ) + heightMP;
+        ++nPixelInCurrentBlockCount;
+        if ( nPixelInCurrentBlockCount >= 256 ) nPixelInCurrentBlockCount = 0;
+        
+        assert( yy < heightMP + heightEDD );
+        image.setValue( 0, xx, yy, eddTextures[k+eddPatchOffset].r() );
+        image.setValue( 1, xx, yy, eddTextures[k+eddPatchOffset].g() );
+        image.setValue( 2, xx, yy, eddTextures[k+eddPatchOffset].b() );
+        avgR = avgR + double( eddTextures[k+eddPatchOffset].r() ) / eddPointsPatch.eddCount_;
+        avgG = avgG + double( eddTextures[k+eddPatchOffset].g() ) / eddPointsPatch.eddCount_;
+        avgB = avgB + double( eddTextures[k+eddPatchOffset].b() ) / eddPointsPatch.eddCount_;
       }
+      if ( !losslessAtt ) {
+        for ( size_t k = numOfMPGeos; k < width * heightMP; ++k ) {
+          xx = k % width;
+          yy = k / width;
+          image.setValue( 0, xx, yy, static_cast<uint8_t>( avgR ) );
+          image.setValue( 1, xx, yy, static_cast<uint8_t>( avgG ) );
+          image.setValue( 2, xx, yy, static_cast<uint8_t>( avgB ) );
+        }
+      }
+      eddPatchOffset+=eddPointsPatch.eddCount_;
     }
   }
 }
@@ -4634,9 +4670,6 @@ size_t PCCEncoder::adjust_depth_3DPadding( size_t            x,
                                            PCCImageGeometry& image,
                                            PCCKdTree&        kdtree,
                                            PCCFrameContext&  frame ) {
-  bool   useMissedPointsSeparateVideo = frame.getUseMissedPointsSeparateVideo();
-  bool   lossyMpp                     = !params_.losslessGeo_ && frame.getPcmPatchEnabledFlag();
-  bool   absoluteD1                   = params_.absoluteD1_;
   auto&  blockToPatch                 = frame.getBlockToPatch();
   auto&  patches                      = frame.getPatches();
   size_t block_addr = ( y / params_.occupancyResolution_ ) * ( image.getWidth() / params_.occupancyResolution_ ) +
@@ -5385,7 +5418,6 @@ bool PCCEncoder::generateTextureVideo( const PCCGroupOfFrames&    sources,
   auto& frames       = context.getFrames();
   auto& videoTexture = context.getVideoTexture();
   bool  ret          = true;
-  auto& sps          = context.getSps();
   for ( size_t i = 0; i < frames.size(); i++ ) {
     auto& frame = frames[i];
     // assert( frame.getWidth() == context.getWidth() && frame.getHeight() == context.getHeight() );
@@ -5452,13 +5484,12 @@ bool PCCEncoder::generateTextureVideo( const PCCPointSet3& reconstruct,
   bool   losslessAtt                  = frame.getLosslessGeo();
   bool   losslessGeo                  = frame.getLosslessGeo();
   bool   lossyMissedPointsPatch       = frame.getPcmPatchEnabledFlag() && ( !losslessGeo );
-
-  size_t numberOfEddPoints            = frame.getNumberOfEddPoints();
+  size_t numberOfEddPoints = frame.getTotalNumberOfEddPoints();
   size_t numOfMPGeos                  = frame.getTotalNumberOfMissedPoints();
   size_t pointCount                   = reconstruct.getPointCount();
   if ( ( losslessAtt || lossyMissedPointsPatch ) && useMissedPointsSeparateVideo ) {
-    pointCount = reconstruct.getPointCount() - numOfMPGeos - numberOfEddPoints;
-    }
+    pointCount                   = frame.getTotalNumberOfRegularPoints();
+  }
   if ( !pointCount || !reconstruct.hasColors() ) { return false; }
 
   const size_t shift = video.getFrameCount();
@@ -6909,6 +6940,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
   auto&   refPatches = refFrame.getPatches();
 
   TRACE_CODEC( "Patches size                        = %lu \n", patches.size() );
+  TRACE_CODEC( "non-regular Patches(pcm, eom)     = %lu, %lu \n", frame.getMissedPointsPatches().size(), frame.getEomPatches().size() );
   ptglu.setFrameIndex( frameIndex );
   ptgh.setPatchFrameOrderCntLsb( frameIndex );
   
@@ -7059,7 +7091,8 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
       auto& pid      = ptgdu.addPatchInformationData( patchType );
       auto& ppdu              = pid.getPCMPatchDataUnit();
       pid.allocate( ai.getAttributeCount() );
-      TRACE_CODEC( "patch %lu / %lu: PCM \n", patches.size(), patches.size() );
+      size_t totalPatchCount = patches.size()+numberOfPcmPatches+frame.getEomPatches().size();
+      TRACE_CODEC( "patch %lu / %lu: PCM \n", patches.size()+mpsPatchIndex, totalPatchCount );
       ppdu.set2DShiftU( missedPointsPatch.u0_ );
       ppdu.set2DShiftV( missedPointsPatch.v0_ );
       ppdu.set2DDeltaSizeU( missedPointsPatch.sizeU0_ );
@@ -7083,34 +7116,33 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
     }
   }
   if ( params_.enhancedDeltaDepthCode_ && params_.EOMTexturePatch_ ) {
-    auto& eomPatch = frame.getEDDdPointsPatch();
-    uint8_t patchType =
-        ( ptgh.getType() == (uint8_t)PATCH_FRAME_I ) ? (uint8_t)PATCH_MODE_I_EOM : (uint8_t)PATCH_MODE_P_EOM;
-    auto& pid      = ptgdu.addPatchInformationData( patchType );
-    auto& epdu     = pid.getEOMPatchDataUnit();
-    pid.allocate( ai.getAttributeCount() );
-    TRACE_CODEC( "patch %lu / %lu: EOM \n", patches.size(), patches.size() );
-    epdu.set2DShiftU( eomPatch.u0_ );
-    epdu.set2DShiftV( eomPatch.v0_ );
-    epdu.set2DDeltaSizeU( eomPatch.sizeU_ );
-    epdu.set2DDeltaSizeV( eomPatch.sizeV_ );
-    epdu.setEpduCountMinus1( eomPatch.infosEddPerSet_.size() - 1 );
-    size_t maxEP = 0;
-    for ( size_t i = 0; i <= epdu.getEpduCountMinus1(); i++ ) {
-      auto& numOfEddPoints = eomPatch.infosEddPerSet_[i].numOfEddPoints_;
-      epdu.setEomPoints( numOfEddPoints );
-      maxEP = ( std::max )( maxEP, numOfEddPoints );
+    size_t numberOfEomPatches = frame.getEomPatches().size();
+    for ( size_t eomPatchIndex = 0; eomPatchIndex < numberOfEomPatches; ++eomPatchIndex ) {
+      auto& eomPatch = frame.getEomPatches()[eomPatchIndex];
+      uint8_t patchType = (ptgh.getType() == (uint8_t)PATCH_FRAME_I ) ? (uint8_t)PATCH_MODE_I_EOM : (uint8_t)PATCH_MODE_P_EOM ;
+      auto& pid      = ptgdu.addPatchInformationData( patchType );
+      auto& epdu     = pid.getEOMPatchDataUnit();
+      pid.allocate( ai.getAttributeCount() );
+#if defined(BITSTREAM_TRACE) || defined(CODEC_TRACE)
+      size_t totalPatchCount = patches.size()+pcmPatches.size()+numberOfEomPatches;
+      TRACE_CODEC( "patch %lu / %lu: EOM \n", patches.size()+pcmPatches.size()+eomPatchIndex, totalPatchCount );
+#endif
+      epdu.set2DShiftU( eomPatch.u0_ );
+      epdu.set2DShiftV( eomPatch.v0_ );
+      epdu.set2DDeltaSizeU( eomPatch.sizeU_ );
+      epdu.set2DDeltaSizeV( eomPatch.sizeV_ );
+      epdu.setEpduAssociatedPatchesCountMinus1(eomPatch.memberPatches.size()-1);
+      for(size_t i=0; i<eomPatch.memberPatches.size();i++){
+        epdu.setEpduAssociatedPatches(eomPatch.memberPatches[i], i);
+        epdu.setEpduEomPointsPerPatch(eomPatch.eddCountPerPatch[i], i); //jkei: do we want minus1?
+      }
+      TRACE_CODEC( "EOM: U0V0 %lu,%lu\tSizeU0V0 %lu,%lu\tN= %lu,%lu\n", eomPatch.u0_ , eomPatch.v0_,
+                  eomPatch.sizeU_,eomPatch.sizeV_, eomPatch.memberPatches.size(), eomPatch.eddCount_);
+      for(size_t i=0; i<eomPatch.memberPatches.size();i++)
+      {
+        TRACE_CODEC( "%lu, %lu\n", eomPatch.memberPatches[i], eomPatch.eddCountPerPatch[i]);
+      }
     }
-//    const uint8_t bitCountSU0 = uint8_t( getFixedLengthCodeBitsCount( uint32_t( eomPatch.sizeU_ + 1 ) ) );
-//    const uint8_t bitCountSV0 = uint8_t( getFixedLengthCodeBitsCount( uint32_t( eomPatch.sizeV_ + 1 ) ) );
-    const uint8_t bitCountMinus1 =
-        uint8_t( getFixedLengthCodeBitsCount( uint32_t( eomPatch.infosEddPerSet_.size() ) ) );
-    const uint8_t bitCountMAXEP = uint8_t( getFixedLengthCodeBitsCount( uint32_t( maxEP + 1 ) ) );
-    ptgh.setEOMPatchNbPatchBitCountMinus1( bitCountMinus1 > 0 ? ( bitCountMinus1 - 1 ) : 0 );
-    ptgh.setEOMPatchMaxEPBitCountMinus1( bitCountMAXEP > 0 ? ( bitCountMAXEP - 1 ) : 0 );
-    
-    TRACE_CODEC( "U0V0 %lu,%lu\tSizeUV %lu,%lu\tCountMinus1 %lu\n", eomPatch.u0_, eomPatch.v0_, eomPatch.sizeU_,
-                 eomPatch.sizeV_, eomPatch.infosEddPerSet_.size() - 1 );
   }
   TRACE_CODEC( "patch %lu / %lu: end \n", patches.size(), patches.size() );
   uint8_t patchType =
@@ -7142,9 +7174,10 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
     }
   }
   if ( params_.enhancedDeltaDepthCode_ && params_.EOMTexturePatch_ ) {
-    auto& eomPatch = frame.getEDDdPointsPatch();
-    maxU0          = ( std::max )( maxU0, eomPatch.u0_ );
-    maxV0          = ( std::max )( maxV0, eomPatch.v0_ );
+    for(auto& eomPatch : frame.getEomPatches()){
+      maxU0          = ( std::max )( maxU0, eomPatch.u0_ );
+      maxV0          = ( std::max )( maxV0, eomPatch.v0_ );
+    }
   }
   const uint8_t bitCountU0  = uint8_t( getFixedLengthCodeBitsCount( uint32_t( maxU0 + 1 ) ) );
   const uint8_t bitCountV0  = uint8_t( getFixedLengthCodeBitsCount( uint32_t( maxV0 + 1 ) ) );

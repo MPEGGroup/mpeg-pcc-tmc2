@@ -36,6 +36,7 @@
 
 #include "PCCCommon.h"
 #include "PCCMetadata.h"
+#include "PCCPointSet.h"
 
 namespace pcc {
 
@@ -94,6 +95,9 @@ class PCCPatch {
       bestMatchIdx_( InvalidPatchIndex ),
       patchOrientation_( 0 ),
       isGlobalPatch_( false ),
+      d0Count_(0),
+      eddCount_(0),
+      eddandD1Count_(0),
       patchType_( PATCH_MODE_I_INTRA ) {
     depth_[0].clear();
     depth_[1].clear();
@@ -110,6 +114,13 @@ class PCCPatch {
     depth0PCidx_.clear();
     pointLocalReconstructionModeByBlock_.clear();
   };
+  size_t getEddCount() {return eddCount_;}
+  void setEddCount(size_t value){eddCount_=value;}
+  size_t getEddandD1Count(){return eddandD1Count_;}
+  void setEddandD1Count(size_t value){eddandD1Count_=value;}
+  size_t getD0Count(){return d0Count_;}
+  void setD0Count(size_t value){d0Count_=value;}
+  
   size_t&               getIndex() { return index_; }
   size_t&               getOriginalIndex() { return originalIndex_; }
   size_t&               getU1() { return u1_; }
@@ -857,32 +868,23 @@ class PCCPatch {
   GPAPatchData         preGPAPatchData_;
   bool                 isGlobalPatch_;
   size_t               axisOfAdditionalPlane_;
+  size_t d0Count_;
+  size_t eddCount_;
+  size_t eddandD1Count_;
   uint8_t              patchType_;
   bool                 isRoiPatch_;
   size_t               roiIndex_;
 };
 
-struct PCCEDDInfosPerPatch {
-  size_t patchIdx_;
-  size_t numOfEddPoints_;
-  size_t offset_;
-};
-
-struct PCCEDDPointsPatch {
-  size_t u0_;
-  size_t v0_;
+struct PCCEomPatch {
+  size_t                u0_;
+  size_t                v0_;
   size_t                sizeU_;
   size_t                sizeV_;
-  size_t numOfEddSet_;                // number of patch
-  size_t occupancyResolution_;
-  std::vector<PCCEDDInfosPerPatch> infosEddPerSet_;
-  std::vector<uint16_t> x_;
-  std::vector<uint16_t> y_;
-  std::vector<uint16_t> z_;
-
-  std::vector<uint16_t> r_;
-  std::vector<uint16_t> g_;
-  std::vector<uint16_t> b_;
+  size_t                eddCount_; //in this EomPatch
+  //size_t patchCount_;
+  std::vector<size_t> memberPatches;
+   std::vector<size_t> eddCountPerPatch;
 };
 
 struct PCCMissedPointsPatch {

@@ -60,6 +60,9 @@ class PCCPointSet3 {
     assert(index < positions_.size());
     positions_[index] = position;
   }
+  std::vector<PCCColor3B>& getColor() {
+    return colors_;
+  }
   PCCColor3B getColor(const size_t index) const {
     assert(index < colors_.size() && withColors_);
     return colors_[index];

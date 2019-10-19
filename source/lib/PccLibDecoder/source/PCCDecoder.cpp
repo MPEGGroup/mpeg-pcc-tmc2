@@ -467,32 +467,38 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
   auto&             patches        = frame.getPatches();
   auto&             prePatches     = preFrame.getPatches();
   auto&             pcmPatches     = frame.getMissedPointsPatches();
+  auto&             eomPatches     = frame.getEomPatches();
   int64_t           prevSizeU0     = 0;
   int64_t           prevSizeV0     = 0;
   int64_t           predIndex      = 0;
   const size_t      minLevel       = sps.getMinLevel();
   size_t            numPCMPatches  = 0;
   size_t            numNonPCMPatch = 0;
+  size_t numEomPatch=0;
   PCCPatchFrameType patchFrameType = PCCPatchFrameType( ptgh.getType() );
   size_t            patchCount     = ptgdu.getPatchCount();
   for ( size_t i = 0; i < patchCount; i++ ) {
     if ( ( patchFrameType == PATCH_FRAME_I && PCCPatchModeI( ptgdu.getPatchMode( i ) ) == PATCH_MODE_I_PCM ) ||
          ( patchFrameType == PATCH_FRAME_P && PCCPatchModeP( ptgdu.getPatchMode( i ) ) == PATCH_MODE_P_PCM ) )
       numPCMPatches++;
+    else if(( patchFrameType == PATCH_FRAME_I && PCCPatchModeI( ptgdu.getPatchMode( i ) ) == PATCH_MODE_I_EOM ) ||
+            ( patchFrameType == PATCH_FRAME_P && PCCPatchModeP( ptgdu.getPatchMode( i ) ) == PATCH_MODE_P_EOM ) ){
+      numEomPatch++;
+    }
   }
-  numNonPCMPatch = patchCount - numPCMPatches;
+  numNonPCMPatch = patchCount - numPCMPatches - numEomPatch;
   printf("numNonPCMPatch = %zu \n",numNonPCMPatch);
-printf("sps.getEOMTexturePatch() = %d \n",sps.getEOMTexturePatch());
-  if ( sps.getEOMTexturePatch() ) {
-    numNonPCMPatch -= 1;
-    printf(" => numNonPCMPatch -1 => %zu \n",numNonPCMPatch);
-  }
+  printf("sps.getEOMTexturePatch() = %d \n",sps.getEOMTexturePatch());
+  eomPatches.reserve(numEomPatch);
   patches.resize( numNonPCMPatch );
   pcmPatches.resize( numPCMPatches );
   frame.getFrameLevelMetadata().setMetadataType( METADATA_FRAME );
   frame.getFrameLevelMetadata().setIndex( frame.getIndex() );
 
   TRACE_CODEC( "Patches size                        = %lu \n", patches.size() );
+  TRACE_CODEC( "non-regular Patches(pcm, eom)     = %lu, %lu \n",
+              frame.getMissedPointsPatches().size(),
+              frame.getEomPatches().size() );
   TRACE_CODEC( "OccupancyPackingBlockSize           = %d \n", context.getOccupancyPackingBlockSize() );
   TRACE_CODEC( "PatchInterPredictionEnabledFlag     = %d \n", sps.getPatchInterPredictionEnabledFlag() );
   size_t totalNumberOfMps = 0;
@@ -668,21 +674,29 @@ printf("sps.getEOMTexturePatch() = %d \n",sps.getEOMTexturePatch());
                   PCCPatchModeI( ptgdu.getPatchMode( patchIndex ) ) == (uint8_t)PATCH_MODE_I_EOM ) ||
                 ( PCCPatchFrameType( ptgh.getType() ) == PATCH_FRAME_P &&
                   PCCPatchModeP( ptgdu.getPatchMode( patchIndex ) ) == (uint8_t)PATCH_MODE_P_EOM ) ) {
-      TRACE_CODEC( "patch %lu / %lu: EOM \n", patchIndex, patches.size() );
-
+      TRACE_CODEC( "patch %lu / %lu: EOM \n", patchIndex, patchCount );
       auto& epdu            = pid.getEOMPatchDataUnit();
-      auto& eomPatch        = frame.getEDDdPointsPatch();
-      eomPatch.u0_          = epdu.get2DShiftU();
-      eomPatch.v0_          = epdu.get2DShiftV();
+      auto& eomPatches        = frame.getEomPatches();
+      PCCEomPatch eomPatch;
+      eomPatch.u0_ =epdu.get2DShiftU();
+      eomPatch.v0_ = epdu.get2DShiftV();
       eomPatch.sizeU_       = epdu.get2DDeltaSizeU();
       eomPatch.sizeV_       = epdu.get2DDeltaSizeV();
-      eomPatch.numOfEddSet_ = epdu.getEpduCountMinus1() + 1;
-
-      for ( size_t i = 0; i < eomPatch.numOfEddSet_; i++ ) {
-        PCCEDDInfosPerPatch eddInfos;
-        eddInfos.numOfEddPoints_ = epdu.getEomPoints()[i];
-        eomPatch.infosEddPerSet_.push_back( eddInfos );
+      eomPatch.memberPatches.resize(epdu.getEpduAssociatedPatchesCountMinus1()+1);
+      eomPatch.eddCountPerPatch.resize(epdu.getEpduAssociatedPatchesCountMinus1()+1);
+      eomPatch.eddCount_=0;
+      for(size_t i=0; i<eomPatch.memberPatches.size();i++){
+        eomPatch.memberPatches[i] = epdu.getEpduAssociatedPatches(i);
+        eomPatch.eddCountPerPatch[i] = epdu.getEpduEomPointsPerPatch(i);
+        eomPatch.eddCount_ += eomPatch.eddCountPerPatch[i];
       }
+      eomPatches.push_back(eomPatch);
+      TRACE_CODEC( "EOM: U0V0 %lu,%lu\tSizeU0V0 %lu,%lu\tN= %lu,%lu\n", eomPatch.u0_ , eomPatch.v0_,
+                  eomPatch.sizeU_,eomPatch.sizeV_, eomPatch.memberPatches.size(), eomPatch.eddCount_);
+      for(size_t i=0; i<eomPatch.memberPatches.size();i++){
+        TRACE_CODEC( "%lu, %lu\n", eomPatch.memberPatches[i], eomPatch.eddCountPerPatch[i] );}
+      TRACE_CODEC( "\n");
+
     } else if ( ( PCCPatchFrameType( ptgh.getType() ) == PATCH_FRAME_I &&
                   PCCPatchModeP( ptgdu.getPatchMode( patchIndex ) ) == (uint8_t)PATCH_MODE_I_END ) ||
                 ( PCCPatchFrameType( ptgh.getType() ) == PATCH_FRAME_P &&

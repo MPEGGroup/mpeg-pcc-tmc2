@@ -65,13 +65,14 @@
 #endif 
 
 #define NO_PCM_INOCM 0
+#define BUGFIX_FIRSTEDDatT1 1
 
 // ******************************************************************* //
 // Trace modes to validate new syntax
 // ******************************************************************* //
 // #define BITSTREAM_TRACE
 // #define CODEC_TRACE
-
+//ENABLE_LAST_PATCH
 namespace pcc {
 
 // ******************************************************************* //

@@ -224,7 +224,16 @@ class PCMPatchDataUnit {
 // 7.3.6.x  EOM patch data unit syntax (
 class EOMPatchDataUnit {
  public:
-  EOMPatchDataUnit() : epdu2DShiftU_( 0 ), epdu2DShiftV_( 0 ), epdu2DDeltaSizeU_( 0 ), epdu2DDeltaSizeV_( 0 ){};
+  EOMPatchDataUnit() :
+  epdu2DShiftU_( 0 ),
+  epdu2DShiftV_( 0 ),
+  epdu2DDeltaSizeU_( 0 ),
+  epdu2DDeltaSizeV_( 0 ),
+  epduAssociatedPatcheCountMinus1_(0)
+  {
+    epduAssociatedPatches_.clear();
+    epduEomPointsPerPatch_.clear();
+  };
   ~EOMPatchDataUnit(){};
   EOMPatchDataUnit& operator=( const EOMPatchDataUnit& ) = default;
 
@@ -232,22 +241,32 @@ class EOMPatchDataUnit {
   size_t              get2DShiftV() { return epdu2DShiftV_; }
   int64_t             get2DDeltaSizeU() { return epdu2DDeltaSizeU_; }
   int64_t             get2DDeltaSizeV() { return epdu2DDeltaSizeV_; }
-  int64_t             getEpduCountMinus1() { return epduCountMinus1_; }
-  std::vector<size_t> getEomPoints() { return eomPoints_; }
-  void                setEpduCountMinus1( uint32_t value ) { epduCountMinus1_ = value; }
+  int64_t             getEpduAssociatedPatchesCountMinus1() { return epduAssociatedPatcheCountMinus1_; }
+  std::vector<size_t>&  getEpduAssociatedPatches() {return epduAssociatedPatches_;}
+  size_t  getEpduAssociatedPatches(size_t index) {return epduAssociatedPatches_[index];}
+  std::vector<size_t> getEpduEomPointsPerPatch() { return epduEomPointsPerPatch_; }
+  size_t  getEpduEomPointsPerPatch(size_t index) {return epduEomPointsPerPatch_[index];}
+  
+  void                setEpduAssociatedPatchesCountMinus1( uint32_t value ) { epduAssociatedPatcheCountMinus1_ = value;
+    epduAssociatedPatches_.resize(epduAssociatedPatcheCountMinus1_+1);
+    epduEomPointsPerPatch_.resize(epduAssociatedPatcheCountMinus1_+1);
+  }
+  void setEpduAssociatedPatches(size_t value, size_t index) {epduAssociatedPatches_[index]=value;}
+  void setEpduEomPointsPerPatch(size_t value, size_t index)   {epduEomPointsPerPatch_[index]=value;}
+  
   void                set2DShiftU( size_t value ) { epdu2DShiftU_ = value; }
   void                set2DShiftV( size_t value ) { epdu2DShiftV_ = value; }
   void                set2DDeltaSizeU( int64_t value ) { epdu2DDeltaSizeU_ = value; }
   void                set2DDeltaSizeV( int64_t value ) { epdu2DDeltaSizeV_ = value; }
-  void                setEomPoints( int64_t value ) { eomPoints_.push_back( value ); }
 
  private:
   size_t              epdu2DShiftU_;
   size_t              epdu2DShiftV_;
   int64_t             epdu2DDeltaSizeU_;
   int64_t             epdu2DDeltaSizeV_;
-  uint32_t            epduCountMinus1_;
-  std::vector<size_t> eomPoints_;
+  size_t              epduAssociatedPatcheCountMinus1_;
+  std::vector<size_t> epduAssociatedPatches_;
+  std::vector<size_t> epduEomPointsPerPatch_;
 };
 
 // 7.3.6.4  Delta Patch data unit syntax
