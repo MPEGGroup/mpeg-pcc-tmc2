@@ -61,7 +61,6 @@ struct PCCPatchSegmenter3Parameters {
   double           maxAllowedDist2MissedPointsDetection;
   double           maxAllowedDist2MissedPointsSelection;
   double           lambdaRefineSegmentation;
-  size_t           levelOfDetail;
   bool             useEnhancedDeltaDepthCode;
   bool             absoluteD1;
   bool             createSubPointCloud;
@@ -127,7 +126,48 @@ class PCCPatchSegmenter3 {
                                      std::vector<std::vector<size_t>>& adj,
                                      const size_t                      maxNNCount,
                                      const size_t                      radius );
-
+  void quantizedPointsPatchModification( const PCCPointSet3&        points,
+                                                            PCCPatch& patch, //current patch
+                                                            bool bIsAdditionalProjectionPlane,
+                                                            const double            Threshold_Color_Error,
+                                                            std::vector<PCCColor3B>& frame_pcc_color,
+                                                            std::vector<size_t>& connectedComponent,
+                                                            const size_t               minPointCountPerCC,
+                                                            const size_t               occupancyResolution,
+                                                            const double               maxAllowedDist2MissedPointsDetection,
+                                                            const double               maxAllowedDist2MissedPointsSelection,
+                                                            const bool                 EOMSingleLayerMode,
+                                                            const size_t               EOMFixBitCount,
+                                                            const size_t               surfaceThickness,
+                                                            const size_t               maxAllowedDepth,
+                                                            const size_t               minLevel,
+                                                            const std::vector<size_t>& partition,
+                                                            std::vector<PCCPatch>&     patches,
+                                                            std::vector<size_t>&       patchPartition,
+                                                            std::vector<size_t>&       resampledPatchPartition,
+                                                            std::vector<size_t>        missedPoints,
+                                                            PCCPointSet3&              resampled,
+                                                            bool                       useEnhancedDeltaDepthCode,
+                                                            const bool                 createSubPointCloud,
+                                                            std::vector<PCCPointSet3>& subPointCloud,
+                                                            float&                     distanceSrcRec,
+                                                            const bool                 absoluteD1,
+                                                            bool                       useSurfaceSeparation,
+                                                            const size_t               additionalProjectionAxis,
+                                                            const size_t               geometryBitDepth3D,
+                                                            const size_t               testLevelOfDetail,
+                                                            bool                       patchExpansionEnabled,
+                                                            bool                       enablePointCloudPartitioning,
+                                                            std::vector<int>&          roiBoundingBoxMinX,
+                                                            std::vector<int>&          roiBoundingBoxMaxX,
+                                                            std::vector<int>&          roiBoundingBoxMinY,
+                                                            std::vector<int>&          roiBoundingBoxMaxY,
+                                                            std::vector<int>&          roiBoundingBoxMinZ,
+                                                            std::vector<int>&          roiBoundingBoxMaxZ,
+                                                            int                        numCutsAlong1stLongestAxis,
+                                                            int                        numCutsAlong2ndLongestAxis,
+                                                            int                        numCutsAlong3rdLongestAxis);
+  
   void segmentPatches( const PCCPointSet3&        points,
                        const PCCKdTree&           kdtree,
                        const size_t               maxNNCount,

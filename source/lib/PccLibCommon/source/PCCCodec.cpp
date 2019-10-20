@@ -261,17 +261,15 @@ int PCCCodec::getDeltaNeighbors( const PCCImageGeometry& frame,
                                  const int               yOrg,
                                  const int               neighboring,
                                  const int               threshold,
-                                 const bool              projectionMode,
-                                 const double            lodScale ) {
+                                 const bool              projectionMode)
+{
   int    deltaMax = 0;
-//  double dOrg     = patch.generateNormalCoordinate( frame.getValue( 0, xOrg, yOrg ), lodScale );
-  double dOrg     = patch.generateNormalCoordinate( frame.getValue( 0, xOrg, yOrg ), 1.0 );
+  double dOrg     = patch.generateNormalCoordinate( frame.getValue( 0, xOrg, yOrg ));
   for ( int x = ( std::max )( 0, xOrg - neighboring ); x <= ( std::min )( xOrg + neighboring, (int)frame.getWidth() );
         x += 1 ) {
     for ( int y = ( std::max )( 0, yOrg - neighboring );
           y <= ( std::min )( yOrg + neighboring, (int)frame.getHeight() ); y += 1 ) {
-//      double dLoc  = patch.generateNormalCoordinate( frame.getValue( 0, x, y ), lodScale );
-      double dLoc  = patch.generateNormalCoordinate( frame.getValue( 0, x, y ), 1.0 );
+      double dLoc  = patch.generateNormalCoordinate( frame.getValue( 0, x, y ));
       int    delta = (int)( dLoc - dOrg );
       if ( patch.getProjectionMode() == 0 ) {
         if ( delta <= threshold && delta > deltaMax ) { deltaMax = delta; }
@@ -358,13 +356,12 @@ std::vector<PCCPoint3D> PCCCodec::generatePoints( const GeneratePointCloudParame
                                                   const bool                          interpolate,
                                                   const bool                          filling,
                                                   const size_t                        minD1,
-                                                  const size_t                        neighbor,
-                                                  const double                        lodScale ) {
+                                                  const size_t                        neighbor)
+{
   const auto&             patch        = frame.getPatch( patchIndex );
   auto&                   frame0       = video.getFrame( shift );
   std::vector<PCCPoint3D> createdPoints;
-  auto                    point0 = patch.generatePoint( u, v, frame0.getValue( 0, x, y ), lodScale );
-
+  auto                    point0 = patch.generatePoint( u, v, frame0.getValue( 0, x, y ));
   createdPoints.push_back( point0 );
   if ( params.singleLayerPixelInterleaving_ ) {
     size_t       patchIndexPlusOne = patchIndex + 1;
@@ -483,7 +480,7 @@ std::vector<PCCPoint3D> PCCCodec::generatePoints( const GeneratePointCloudParame
       int deltaDepth = 0;
       if ( interpolate ) {
         deltaDepth =
-            getDeltaNeighbors( frame0, patch, x, y, neighbor, NeighborThreshold, patch.getProjectionMode(), lodScale );
+            getDeltaNeighbors( frame0, patch, x, y, neighbor, NeighborThreshold, patch.getProjectionMode());
       }
       if ( patch.getProjectionMode() == 0 ) {
         deltaDepth = ( std::max )( deltaDepth, (int)minD1 );
@@ -519,7 +516,7 @@ std::vector<PCCPoint3D> PCCCodec::generatePoints( const GeneratePointCloudParame
           createdPoints.push_back( point1 );
         } else {
           const auto& frame1 = video.getFrame( 1 + shift );
-          auto        point1 = patch.generatePoint( u, v, frame1.getValue( 0, x, y ), lodScale );
+          auto        point1 = patch.generatePoint( u, v, frame1.getValue( 0, x, y ));
           createdPoints.push_back( point1 );
         }  // else !absoluteD1
       }    // if ( params.layerCountMinus1_ > 0 ) {
@@ -595,7 +592,6 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
   for ( patchIndex = 0; patchIndex < patchCount; ++patchIndex ) {
     const size_t patchIndexPlusOne = patchIndex + 1;
     auto&        patch             = patches[patchIndex];
-    const double lodScale          = double( 1u << patch.getLod() );
     PCCColor3B   color( uint8_t( 0 ) );
 
     TRACE_CODEC(
@@ -623,7 +619,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
               if ( !occupancy ) { continue; }
               if ( params.enhancedDeltaDepthCode_ ) {
                 // D0
-                PCCPoint3D   point0      = patch.generatePoint( u, v, frame0.getValue( 0, x, y ), lodScale );
+                PCCPoint3D   point0      = patch.generatePoint( u, v, frame0.getValue( 0, x, y ));
                 const size_t pointIndex0 = reconstruct.addPoint( point0 );
                 reconstruct.setPointPatchIndex( pointIndex0, patchIndex );
                 reconstruct.setColor( pointIndex0, color );
@@ -715,7 +711,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
                 auto& mode = context.getPointLocalReconstructionMode( patch.getPointLocalReconstructionMode( u0, v0 ) );
                 auto  createdPoints =
                     generatePoints( params, frame, video, videoD1, shift, patchIndex, u, v, x, y, mode.interpolate_,
-                                    mode.filling_, mode.minD1_, mode.neighbor_, lodScale );
+                                    mode.filling_, mode.minD1_, mode.neighbor_);
                 if ( createdPoints.size() > 0 ) {
                   for ( size_t i = 0; i < createdPoints.size(); i++ ) {
                     if ( ( !params.removeDuplicatePoints_ ) ||
@@ -803,10 +799,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
           occupancyMap[vv * imageWidth + uu] = 1;  // occupied
         }
       }
-#if JKEI_TEST
-      printf("!!!!!!!#$##$#$# %d eomPatch :%zu,%zu\t %zu patches, %zu points\n", j,u0Eom, v0Eom, numPatchesInEddPatches, eomPatch.eddCount_ );
-#endif
-      
+
       TRACE_CODEC("%d eomPatch :%zu,%zu\t %zu patches, %zu points\n", j,u0Eom, v0Eom, numPatchesInEddPatches, eomPatch.eddCount_ );
     }
     frame.setTotalNumberOfEddPoints( totalEddPointsInFrame );
@@ -945,7 +938,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
 
   if ( params.flagGeometrySmoothing_ )
   {
-    //// identify first boundary layer
+    // identify first boundary layer
     if(useMissedPointsSeparateVideo)
       assert( (reconstruct.getPointCount() - frame.getTotalNumberOfMissedPoints() )== pointToPixel.size() );
     else
@@ -1960,7 +1953,6 @@ void PCCCodec::generateBlockToPatchFromBoundaryBox( PCCContext&  context,
 void PCCCodec::generateBlockToPatchFromOccupancyMapVideo(PCCContext&  context,
 	const bool   losslessGeo,
 	const bool   lossyMissedPointsPatch,
-	const size_t testLevelOfDetail,
 	const size_t occupancyResolution,
 	const size_t occupancyPrecision) {
 	size_t sizeFrames = context.getFrames().size();

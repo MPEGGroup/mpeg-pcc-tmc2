@@ -283,7 +283,6 @@ class DeltaPatchDataUnit {
       dpdu3DDeltaShiftMinNormalAxis_( 0 ),
       dpdu3DShiftDeltaMaxNormalAxis_( 0 ),
       dpduProjectPlane_( pcc::PCCAxis6( 0 ) ),
-      dpduLod_( 0 ),
       dpduPatchIndex_( 0 ),
       dpduFrameIndex_( 0 ){};
   ~DeltaPatchDataUnit(){};
@@ -298,7 +297,6 @@ class DeltaPatchDataUnit {
   int64_t                       get3DDeltaShiftMinNormalAxis() { return dpdu3DDeltaShiftMinNormalAxis_; }
   int64_t                       get3DShiftDeltaMaxNormalAxis() { return dpdu3DShiftDeltaMaxNormalAxis_; }
   PCCAxis6                      getProjectPlane() { return dpduProjectPlane_; }
-  uint8_t                       getLod() { return dpduLod_; }
   PointLocalReconstructionData& getPointLocalReconstructionData() { return pointLocalReconstructionData_; }
   size_t                        getDpduPatchIndex() { return dpduPatchIndex_; }
   size_t                        getDpduFrameIndex() { return dpduFrameIndex_; }
@@ -314,7 +312,6 @@ class DeltaPatchDataUnit {
   void set3DDeltaShiftMinNormalAxis( int64_t value ) { dpdu3DDeltaShiftMinNormalAxis_ = value; }
   void set3DShiftDeltaMaxNormalAxis( int64_t value ) { dpdu3DShiftDeltaMaxNormalAxis_ = value; }
   void setProjectPlane( PCCAxis6 value ) { dpduProjectPlane_ = value; }
-  void setLod( uint8_t value ) { dpduLod_ = value; }
   void setPointLocalReconstructionData( PointLocalReconstructionData value ) { pointLocalReconstructionData_ = value; }
 
  private:
@@ -328,7 +325,6 @@ class DeltaPatchDataUnit {
   int64_t                      dpdu3DDeltaShiftMinNormalAxis_;
   int64_t                      dpdu3DShiftDeltaMaxNormalAxis_;
   PCCAxis6                     dpduProjectPlane_;
-  uint8_t                      dpduLod_;
   size_t                       dpduPatchIndex_;
   size_t                       dpduFrameIndex_;
   PointLocalReconstructionData pointLocalReconstructionData_;
@@ -348,7 +344,9 @@ class PatchDataUnit {
       pdu3DShiftDeltaMaxNormalAxis_( 255 ),
       pduProjectPlane_( pcc::PCCAxis6( 0 ) ),
       pduOrientationIndex_( 0 ),
-      pduLod_( 0 ),
+      pduLodEnableFlag_( false),
+      pduLodScaleXminus1_( 0 ),
+      pduLodScaleY_( 0 ),
       pdu45DegreeProjectionPresentFlag_( false ),
       pdu45DegreeProjectionRotationAxis_( 0 ),
       pduPatchIndex_( 0 ),
@@ -367,7 +365,9 @@ class PatchDataUnit {
   size_t                        get3DShiftDeltaMaxNormalAxis() { return pdu3DShiftDeltaMaxNormalAxis_; }
   PCCAxis6                      getProjectPlane() { return pduProjectPlane_; }
   uint8_t                       getOrientationIndex() { return pduOrientationIndex_; }
-  uint8_t                       getLod() { return pduLod_; }
+  bool                         getLodEnableFlag  () { return pduLodEnableFlag_;}
+  uint8_t                      getLodScaleXminus1() { return pduLodScaleXminus1_;}
+  uint8_t                      getLodScaleY      () { return pduLodScaleY_;}
   PointLocalReconstructionData& getPointLocalReconstructionData() { return pointLocalReconstructionData_; }
   bool                          get45DegreeProjectionPresentFlag() { return pdu45DegreeProjectionPresentFlag_; }
   uint8_t                       get45DegreeProjectionRotationAxis() { return pdu45DegreeProjectionRotationAxis_; }
@@ -385,7 +385,9 @@ class PatchDataUnit {
   void                          set3DShiftDeltaMaxNormalAxis( size_t value ) { pdu3DShiftDeltaMaxNormalAxis_ = value; }
   void                          setProjectPlane( PCCAxis6 value ) { pduProjectPlane_ = value; }
   void                          setOrientationIndex( uint8_t value ) { pduOrientationIndex_ = value; }
-  void                          setLod( uint8_t value ) { pduLod_ = value; }
+  void                          setLodEnableFlag  (bool    value ) { pduLodEnableFlag_ = value; }
+  void                          setLodScaleXminus1(uint8_t value ) { pduLodScaleXminus1_ = value; }
+  void                          setLodScaleY      (uint8_t value ) { pduLodScaleY_ = value; }
   void setPointLocalReconstructionData( PointLocalReconstructionData value ) { pointLocalReconstructionData_ = value; }
   void set45DegreeProjectionPresentFlag( bool value ) { pdu45DegreeProjectionPresentFlag_ = value; }
   void set45DegreeProjectionRotationAxis( uint8_t value ) { pdu45DegreeProjectionRotationAxis_ = value; }
@@ -401,7 +403,9 @@ class PatchDataUnit {
   size_t                       pdu3DShiftDeltaMaxNormalAxis_;
   PCCAxis6                     pduProjectPlane_;
   uint8_t                      pduOrientationIndex_;
-  uint8_t                      pduLod_;
+  bool                         pduLodEnableFlag_;
+  uint8_t                      pduLodScaleXminus1_;
+  uint8_t                      pduLodScaleY_;
   PointLocalReconstructionData pointLocalReconstructionData_;
   bool                         pdu45DegreeProjectionPresentFlag_;
   uint8_t                      pdu45DegreeProjectionRotationAxis_;
@@ -865,7 +869,9 @@ class PatchFrameParameterSet {
       geometryPatchFrameParameterSetId_( 0 ),
       additionalLtPfocLsbLen_( 0 ),
       localOverrideGeometryPatchEnableFlag_( false ),
-      projection45DegreeEnableFlag_( false ) {}
+      projection45DegreeEnableFlag_( false )
+  , lodModeEnableFlag_ ( false )
+  {}
   ~PatchFrameParameterSet() {
     localOverrideAttributePatchEnableFlag_.clear();
     attributePatchFrameParameterSetId_.clear();
@@ -876,6 +882,8 @@ class PatchFrameParameterSet {
     localOverrideAttributePatchEnableFlag_.resize( size, false );
     attributePatchFrameParameterSetId_.resize( size, 0 );
   }
+  bool getLodModeEnableFlag() { return lodModeEnableFlag_;}
+  void setLodModeEnableFlag(bool value) { lodModeEnableFlag_=value;}
 
   uint8_t getPatchFrameParameterSetId() { return patchFrameParameterSetId_; }
   uint8_t getPatchSequenceParameterSetId() { return patchSequenceParameterSetId_; }
@@ -911,6 +919,7 @@ class PatchFrameParameterSet {
   bool                      localOverrideGeometryPatchEnableFlag_;
   std::vector<bool>         localOverrideAttributePatchEnableFlag_;
   bool                      projection45DegreeEnableFlag_;
+  bool lodModeEnableFlag_;
   PatchFrameTileInformation patchFrameTileInformation_;
 };
 

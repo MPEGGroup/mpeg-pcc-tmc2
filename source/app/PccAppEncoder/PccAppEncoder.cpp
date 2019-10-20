@@ -576,17 +576,20 @@ bool parseParameters( int                   argc,
      encoderParams.constrainedPack_,
      "Temporally consistent patch packing")
 
-    // patch sampling resolution
-    ("testLevelOfDetail",
-     encoderParams.testLevelOfDetail_,
-     encoderParams.testLevelOfDetail_,
-     "Force non-zero level of detail for testing")
-
-    ("testLevelOfDetailSignaling",
-     encoderParams.testLevelOfDetailSignaling_,
-     encoderParams.testLevelOfDetailSignaling_,
-     "Test the patch resolution signaling with pseudo-random values")
-
+  ("levelOfDetailX",
+   encoderParams.levelOfDetailX_,
+   encoderParams.levelOfDetailX_,
+   "levelOfDetail : X axis in 2D space (should be greater than 1)")
+  ("levelOfDetailY",
+   encoderParams.levelOfDetailY_,
+   encoderParams.levelOfDetailY_,
+   "levelOfDetail : Y axis in 2D space (should be greater than 1)")
+  
+  ("testLevelOfDetail",
+   encoderParams.testLevelOfDetail_,
+   encoderParams.testLevelOfDetail_,
+   "testLevelOfDetail : 1.scaling in 3D space")
+  
     ("groupDilation",
       encoderParams.groupDilation_,
       encoderParams.groupDilation_,
@@ -819,8 +822,20 @@ bool parseParameters( int                   argc,
     return false;
   }
 
-  if ( encoderParams.losslessGeo_ ) { encoderParams.testLevelOfDetail_ = 0; }
-  
+  if ( (encoderParams.levelOfDetailX_==0 || encoderParams.levelOfDetailY_==0) )
+  {
+    if(encoderParams.levelOfDetailX_==0)  encoderParams.levelOfDetailX_=1;
+    if(encoderParams.levelOfDetailY_==0)  encoderParams.levelOfDetailY_=1;
+    err.error() << "levelOfDetailX and levelOfDetailY should be greater than 1. levelOfDetailX="<<encoderParams.levelOfDetailX_<<"., levelOfDetailY="<<encoderParams.levelOfDetailY_<<
+    std::endl;
+  }
+
+  if ( encoderParams.losslessGeo_ &&
+      (encoderParams.levelOfDetailX_>1 || encoderParams.levelOfDetailY_>1) ) {
+    encoderParams.levelOfDetailX_= 1;
+    encoderParams.levelOfDetailY_=1;
+    err.error() << "scaling is not allowed in lossless case\n";
+  }
   if ( encoderParams.enablePointCloudPartitioning_ && encoderParams.patchExpansion_ ) {
     err.error() << "Point cloud partitioning does not currently support patch expansion. \n";
   }

@@ -56,7 +56,6 @@ class PCCDecoderParameters {
   std::string       inverseColorSpaceConversionConfig_;
   size_t            nbThread_;
   bool              keepIntermediateFiles_;
-  size_t            testLevelOfDetailSignaling_;
   bool              patchColorSubsampling_;
 };
 

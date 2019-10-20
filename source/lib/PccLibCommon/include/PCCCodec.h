@@ -212,8 +212,7 @@ class PCCCodec {
 
   void generateBlockToPatchFromOccupancyMapVideo( PCCContext & context, 
 			                          const bool losslessGeo, 
-			                          const bool lossyMissedPointsPatch, 
-			                          const size_t testLevelOfDetail, 
+			                          const bool lossyMissedPointsPatch,
 			                          const size_t occupancyResolution, 
 			                          const size_t occupancyPrecision);
 	
@@ -230,8 +229,7 @@ class PCCCodec {
                          const int               yOrg,
                          const int               neighboring,
                          const int               threshold,
-                         const bool              projectionMode,
-                         const double            lodScale );
+                         const bool              projectionMode);
 
   std::vector<PCCPoint3D> generatePoints( const GeneratePointCloudParameters& params,
                                           PCCFrameContext&                    frame,
@@ -246,9 +244,7 @@ class PCCCodec {
                                           const bool                          interpolate,
                                           const bool                          filling,
                                           const size_t                        minD1,
-                                          const size_t                        neighbor,
-                                          const double                        lodScale );
-
+                                          const size_t                        neighbor);
   inline double entropy( std::vector<uint8_t>& Data, int N ) {
     std::vector<size_t> count;
     count.resize( 256, 0 );

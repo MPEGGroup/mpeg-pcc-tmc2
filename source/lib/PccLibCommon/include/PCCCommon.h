@@ -89,6 +89,9 @@ static const uint8_t PCC_SAVE_POINT_TYPE = 0;  // Save point information in reco
 // ******************************************************************* //
 // Common constants
 // ******************************************************************* //
+const int16_t infiniteDepth  = ( std::numeric_limits<int16_t>::max )();
+const int64_t infinitenumber = ( std::numeric_limits<int64_t>::max )();
+
 const uint32_t PCCTMC2ContainerMagicNumber = 23021981;
 const uint32_t PCCTMC2ContainerVersion     = 1;
 const uint32_t PCC_UNDEFINED_INDEX         = -1;

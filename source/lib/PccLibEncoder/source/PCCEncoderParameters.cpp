@@ -151,9 +151,10 @@ PCCEncoderParameters::PCCEncoderParameters() {
   surfaceSeparation_            = false;
 
   // level of detail
-  testLevelOfDetail_          = 0;
-  testLevelOfDetailSignaling_ = 0;
-
+  levelOfDetailX_ = 1;
+  levelOfDetailY_ = 1;
+  testLevelOfDetail_= 0;
+  
   // Flexible Patch Packing
   packingStrategy_      = 1;
   textureBGFill_        = 1;
@@ -688,6 +689,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   ai.setAttributeMSBAlignFlag( 0, false );
 
   pfps.allocate( ai.getAttributeCount() );
+  pfps.setLodModeEnableFlag( (levelOfDetailX_>1&&levelOfDetailY_>1) || !(levelOfDetailX_==1&&levelOfDetailY_==1) );
   pfti.setSingleTileInPatchFrameFlag( true );
   pfti.setSingleTilePerTileGroupFlag( true );
 

@@ -251,6 +251,8 @@ class PCCEncoder : public PCCCodec {
   inline uint64_t mortonAddr( const int32_t x, const int32_t y, const int32_t z );
   uint64_t        mortonAddr( const PCCPoint3D& vec, int depth );
 
+  bool generateScaledGeometry(const PCCPointSet3&                source,
+                              PCCFrameContext&                   frame);
   bool generateGeometryVideo( const PCCPointSet3&                source,
                               PCCFrameContext&                   frameContext,
                               const PCCPatchSegmenter3Parameters segmenterParams,

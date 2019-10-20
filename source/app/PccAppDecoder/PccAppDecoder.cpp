@@ -160,12 +160,6 @@ bool parseParameters( int                   argc,
      decoderParams.keepIntermediateFiles_,
      "Keep intermediate files: RGB, YUV and bin")
 
-    // patch sampling resolution testing
-    ("testLevelOfDetailSignaling",
-    decoderParams.testLevelOfDetailSignaling_,
-    (size_t)0,
-    "Disable patch sampling resolution scaling; use in conjunction with same parameter in encoder")
-
     //visual quality
     ("patchColorSubsampling", 
      decoderParams.patchColorSubsampling_,

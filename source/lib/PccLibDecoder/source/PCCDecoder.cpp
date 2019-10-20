@@ -499,6 +499,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
   TRACE_CODEC( "non-regular Patches(pcm, eom)     = %lu, %lu \n",
               frame.getMissedPointsPatches().size(),
               frame.getEomPatches().size() );
+  TRACE_CODEC( "patchFrame Type                     = %lu (0.Intra 1.Inter)\n", ptgh.getType() );
   TRACE_CODEC( "OccupancyPackingBlockSize           = %d \n", context.getOccupancyPackingBlockSize() );
   TRACE_CODEC( "PatchInterPredictionEnabledFlag     = %d \n", sps.getPatchInterPredictionEnabledFlag() );
   size_t totalNumberOfMps = 0;
@@ -516,7 +517,18 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
       patch.getV0()                  = pdu.get2DShiftV();
       patch.getU1()                  = pdu.get3DShiftTangentAxis();
       patch.getV1()                  = pdu.get3DShiftBiTangentAxis();
-      patch.getLod()                 = pdu.getLod();
+
+      bool lodEnableFlag = pdu.getLodEnableFlag();
+      if(lodEnableFlag) {
+        //PatchLoDScaleX[ p ] = pdu_lod_enable_flag[ p ] ? pdu_lod_scale_x_minus1[ p ] + 1: 1
+        //PatchLoDScaleY[ p ] = pdu_lod_enable_flag[ p ] ? (pdu_lod_scale_y[ p ] + (pdu_lod_scale_x_minus1[ p ] > 0) ? 1 : 2) : 1
+        patch.setLodScaleX( pdu.getLodScaleXminus1() + 1);
+        patch.setLodScaleY( pdu.getLodScaleY() + (patch.getLodScaleX()>1?1:2) );
+      }
+      else{
+        patch.setLodScaleX(1);
+        patch.setLodScaleY(1);
+      }
       patch.getSizeD()               = ( std::min )( pdu.get3DShiftDeltaMaxNormalAxis() * minLevel, (size_t)255 );
       patch.getSizeU0()              = prevSizeU0 + pdu.get2DDeltaSizeU();
       patch.getSizeV0()              = prevSizeV0 + pdu.get2DDeltaSizeV();
@@ -539,7 +551,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
       }
       prevSizeU0     = patch.getSizeU0();
       prevSizeV0     = patch.getSizeV0();
-      patch.getLod() = pdu.getLod();
+
       if ( patch.getNormalAxis() == 0 ) {
         patch.getTangentAxis()   = 2;
         patch.getBitangentAxis() = 1;
@@ -550,12 +562,11 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
         patch.getTangentAxis()   = 0;
         patch.getBitangentAxis() = 1;
       }
-      TRACE_CODEC( "patch UV0 %4lu %4lu UV1 %4lu %4lu D1=%4lu S=%4lu %4lu %4lu(%4lu) P=%lu O=%lu A=%u%u%u Lod = %lu \n",
+      TRACE_CODEC( "patch UV0 %4lu %4lu UV1 %4lu %4lu D1=%4lu S=%4lu %4lu %4lu(%4lu) P=%lu O=%lu A=%u%u%u Lod =(%zu) %lu,%lu \n",
                    patch.getU0(), patch.getV0(), patch.getU1(), patch.getV1(), patch.getD1(), patch.getSizeU0(),
                    patch.getSizeV0(), patch.getSizeD(), pdu.get3DShiftDeltaMaxNormalAxis(), patch.getProjectionMode(),
                    patch.getPatchOrientation(), patch.getNormalAxis(), patch.getTangentAxis(), patch.getBitangentAxis(),
-                   patch.getLod() );
-
+                   (size_t)lodEnableFlag, patch.getLodScaleX(), patch.getLodScaleY() );
       auto& patchLevelMetadataEnabledFlags = frame.getFrameLevelMetadata().getLowerLevelMetadataEnabledFlags();
       auto& metadata                       = patch.getPatchLevelMetadata();
       metadata.setIndex( patchIndex );
@@ -574,19 +585,20 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
       auto& dpdu                     = pid.getDeltaPatchDataUnit();
       patch.setBestMatchIdx( ( int32_t )( dpdu.getDeltaPatchIdx() + predIndex ) );
       TRACE_CODEC( "patch %lu / %lu: Inter \n", patchIndex, patches.size() );
+
       TRACE_CODEC(
-          "DeltaIdx = %d ShiftUV = %ld %ld ShiftAxis = %ld %ld %ld Size = %ld %ld Lod = %u Idx = %ld + %ld = %zu "
-          "\n",
+          "DPDU:DeltaIdx = %d ShiftUV = %ld %ld ShiftAxis = %ld %ld %ld Size = %ld %ld Idx = %ld + %ld = %zu \n",
           dpdu.getDeltaPatchIdx(), dpdu.get2DDeltaShiftU(), dpdu.get2DDeltaShiftV(), dpdu.get3DDeltaShiftTangentAxis(),
           dpdu.get3DDeltaShiftBiTangentAxis(), dpdu.get3DDeltaShiftMinNormalAxis(), dpdu.get2DDeltaSizeU(),
-          dpdu.get2DDeltaSizeV(), dpdu.getLod(), dpdu.getDeltaPatchIdx(), predIndex, (size_t)patch.getBestMatchIdx() );
+          dpdu.get2DDeltaSizeV(), dpdu.getDeltaPatchIdx(), predIndex, (size_t)patch.getBestMatchIdx() );
 
       predIndex += dpdu.getDeltaPatchIdx() + 1;
       const auto& prePatch = prePatches[patch.getBestMatchIdx()];
 
-      TRACE_CODEC( "PrevPatch Idx = %lu UV0 = %lu %lu  UV1 = %lu %lu Size = %lu %lu %lu \n", patch.getBestMatchIdx(),
+      TRACE_CODEC( "PrevPatch: Idx = %lu UV0 = %lu %lu  UV1 = %lu %lu Size = %lu %lu %lu  Lod = %u,%u\n", patch.getBestMatchIdx(),
                    prePatch.getU0(), prePatch.getV0(), prePatch.getU1(), prePatch.getV1(), prePatch.getSizeU0(),
-                   prePatch.getSizeV0(), prePatch.getSizeD() );
+                   prePatch.getSizeV0(), prePatch.getSizeD(), prePatch.getLodScaleX(), prePatch.getLodScaleY() );
+
       patch.getProjectionMode()        = prePatch.getProjectionMode();
       patch.getU0()                    = dpdu.get2DDeltaShiftU() + prePatch.getU0();
       patch.getV0()                    = dpdu.get2DDeltaShiftV() + prePatch.getV0();
@@ -619,17 +631,18 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
       size_t        prevDD   = prePatch.getSizeD() / minLevel;
       if ( prevDD * minLevel != prePatch.getSizeD() ) { prevDD += 1; }
       patch.getSizeD() = ( std::min )( size_t( ( delta_DD + prevDD ) * minLevel ), (size_t)255 );
-      patch.getLod()   = prePatch.getLod();
+      patch.setLodScaleX(prePatch.getLodScaleX());
+      patch.setLodScaleY(prePatch.getLodScaleY());
       prevSizeU0       = patch.getSizeU0();
       prevSizeV0       = patch.getSizeV0();
+
       TRACE_CODEC(
           "patch Inter UV0 %4lu %4lu UV1 %4lu %4lu D1=%4lu S=%4lu %4lu %4lu from DeltaSize = "
-          "%4ld %4ld P=%lu O=%lu A=%u%u%u Lod = %lu \n",
+          "%4ld %4ld P=%lu O=%lu A=%u%u%u Lod = %lu,%lu \n",
           patch.getU0(), patch.getV0(), patch.getU1(), patch.getV1(), patch.getD1(), patch.getSizeU0(),
           patch.getSizeV0(), patch.getSizeD(), dpdu.get2DDeltaSizeU(), dpdu.get2DDeltaSizeV(),
           patch.getProjectionMode(), patch.getPatchOrientation(), patch.getNormalAxis(), patch.getTangentAxis(),
-          patch.getBitangentAxis(), patch.getLod() );
-
+          patch.getBitangentAxis(), patch.getLodScaleX(),patch.getLodScaleY() );
       auto& patchLevelMetadataEnabledFlags         = frame.getFrameLevelMetadata().getLowerLevelMetadataEnabledFlags();
       auto& patchLevelMetadata                     = patch.getPatchLevelMetadata();
       patchLevelMetadata.getMetadataEnabledFlags() = patchLevelMetadataEnabledFlags;

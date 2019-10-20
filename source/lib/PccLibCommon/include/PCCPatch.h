@@ -87,7 +87,8 @@ class PCCPatch {
       sizeV0_( 0 ),
       occupancyResolution_( 0 ),
       projectionMode_( 0 ),
-      levelOfDetail_( 0 ),
+      levelOfDetailX_( 1 ),
+      levelOfDetailY_( 1 ),
       normalAxis_( 0 ),
       tangentAxis_( 0 ),
       bitangentAxis_( 0 ),
@@ -145,7 +146,13 @@ class PCCPatch {
   size_t&               getBitangentAxis() { return bitangentAxis_; }
   std::vector<int16_t>& getDepth( int i ) { return depth_[i]; }
   std::vector<bool>&    getOccupancy() { return occupancy_; }
-  size_t&               getLod() { return levelOfDetail_; }
+  size_t               getLodScaleX() { return levelOfDetailX_; }
+  size_t               getLodScaleY() { return levelOfDetailY_; }
+  size_t               getLodScaleX() const { return levelOfDetailX_; }
+  size_t               getLodScaleY() const { return levelOfDetailY_; }
+
+  void               setLodScaleX(size_t value) { levelOfDetailX_=value; }
+  void               setLodScaleY(size_t value) { levelOfDetailY_=value; }
   PCCMetadata&          getPatchLevelMetadata() { return patchLevelMetadata_; }
   size_t&               getAxisOfAdditionalPlane()     { return axisOfAdditionalPlane_; }
 
@@ -170,7 +177,6 @@ class PCCPatch {
   int32_t                     getBestMatchIdx() const { return bestMatchIdx_; }
   const std::vector<int16_t>& getDepth( int i ) const { return depth_[i]; }
   const std::vector<bool>&    getOccupancy() const { return occupancy_; }
-  size_t                      getLod() const { return levelOfDetail_; }
   std::vector<int16_t>&       getDepthEnhancedDeltaD() { return depthEnhancedDeltaD_; }
   const std::vector<int16_t>& getDepthEnhancedDeltaD() const { return depthEnhancedDeltaD_; }
   const PCCMetadata&          getPatchLevelMetadata() const { return patchLevelMetadata_; }
@@ -185,35 +191,31 @@ class PCCPatch {
   size_t        getPatchOrientation() const { return patchOrientation_; }
   bool&         getIsGlobalPatch() { return isGlobalPatch_; }
   bool          getIsGlobalPatch() const { return isGlobalPatch_; }
-  inline double generateNormalCoordinate( const uint16_t depth,
-                                          const double   lodScale) const {
+
+  inline double generateNormalCoordinate( const uint16_t depth) const{
     double coord = 0;
     if ( projectionMode_ == 0 ) {
-      coord = ( (double)depth + (double)d1_ ) * lodScale;
+      coord = ( (double)depth + (double)d1_ );
     } else {
       double tmp_depth = double( d1_ ) - double( depth );
-      if ( tmp_depth > 0 ) { coord = tmp_depth * lodScale; }
+      if ( tmp_depth > 0 ) { coord = tmp_depth; }
     }
     return coord;
   }
 
+  
   PCCPoint3D generatePoint( const size_t   u,
                             const size_t   v,
-                            const uint16_t depth,
-                            const double   lodScale ) const {
-    const size_t nu = double( u ) * (double)lodScale;
-    const size_t nv = double( v ) * (double)lodScale;
-  PCCPoint3D point0;
-    //point0[normalAxis_]    = generateNormalCoordinate( depth, lodScale, useMppSepVid, lossyMpp, absoluteD1 );
-    //point0[tangentAxis_]   = ( double( u ) + u1_ );
-    //point0[bitangentAxis_] = ( double( v ) + v1_ );
-    point0[normalAxis_]    = generateNormalCoordinate( depth, 1.0 );
-    point0[tangentAxis_]   = ( double( nu ) + u1_ );
-    point0[bitangentAxis_] = ( double( nv ) + v1_ );
+                            const uint16_t depth) const
+  {
+    PCCPoint3D point0;
+    point0[normalAxis_]    = generateNormalCoordinate(depth);
+    point0[tangentAxis_]   = ( double( u ) * (double)levelOfDetailX_ + u1_ );
+    point0[bitangentAxis_] = ( double( v ) * (double)levelOfDetailY_ + v1_ );
     return point0;
   }
 
-	PCCPoint3D canvasTo3D(const size_t x, const size_t y, const uint16_t depth, const double lodScale ) const {
+  PCCPoint3D canvasTo3D(const size_t x, const size_t y, const uint16_t depth ) const {
 		  PCCPoint3D point0;
 		  size_t u=0, v=0;
 		  switch (patchOrientation_) {
@@ -255,9 +257,9 @@ class PCCPatch {
 			  break;
 		  default: assert(0); break;
 		  }
-      point0[normalAxis_] = generateNormalCoordinate(depth, lodScale);
-		  point0[tangentAxis_] = (double(u) + u1_) * lodScale;
-		  point0[bitangentAxis_] = (double(v) + v1_) * lodScale;
+      point0[normalAxis_] = generateNormalCoordinate(depth);
+      point0[tangentAxis_] = (double(u) * levelOfDetailX_ + u1_);
+      point0[bitangentAxis_] = (double(v) * levelOfDetailY_ + v1_);
 		  return point0;
 	  }
 
@@ -849,7 +851,8 @@ class PCCPatch {
   size_t               sizeV0_;               // size of occupancy map
   size_t               occupancyResolution_;  // occupancy map resolution
   size_t               projectionMode_;       // 0: related to the min depth value; 1: related to the max value
-  size_t               levelOfDetail_;        // level of detail, i.e., patch sampling resolution
+  size_t               levelOfDetailX_;
+  size_t               levelOfDetailY_;
   size_t               normalAxis_;           // x
   size_t               tangentAxis_;          // y
   size_t               bitangentAxis_;        // z

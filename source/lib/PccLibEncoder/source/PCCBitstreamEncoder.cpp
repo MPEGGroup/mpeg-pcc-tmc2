@@ -673,7 +673,7 @@ void PCCBitstreamEncoder::patchFrameParameterSet( PatchDataGroup&       pdg,
   if ( sps.getProjection45DegreeEnableFlag() ) {
     bitstream.write( pfps.getProjection45DegreeEnableFlag(), 1 );  // u(1)
   }
-
+  bitstream.write( pfps.getLodModeEnableFlag(), 1 );  // u(1)
   byteAlignment( bitstream );
 }
 
@@ -1062,8 +1062,12 @@ void PCCBitstreamEncoder::patchDataUnit( PatchDataUnit&        pdu,
   } else {
     bitstream.write( pdu.getOrientationIndex(), 1 );  // u(1)
   }
-  if ( ptgh.getInterPredictPatchLodBitCount() > 0 ) {
-    bitstream.write( uint32_t( pdu.getLod() ), ptgh.getInterPredictPatchLodBitCount() );  // u(v)
+  if ( pfps.getLodModeEnableFlag()) {
+    bitstream.write( uint32_t( pdu.getLodEnableFlag() ), 1 );  // u(1) //    pdu.setLodEnableFlag(bitstream.read( 1 ) ); //u1
+    if( pdu.getLodEnableFlag() ) {
+      bitstream.writeUvlc( uint32_t( pdu.getLodScaleXminus1() ));
+      bitstream.writeUvlc( uint32_t( pdu.getLodScaleY() ));
+    }
   }
   if ( pfps.getProjection45DegreeEnableFlag() ) {
     bitstream.write( uint32_t( pdu.get45DegreeProjectionPresentFlag() ), 1 );  // u(1)
@@ -1075,11 +1079,11 @@ void PCCBitstreamEncoder::patchDataUnit( PatchDataUnit&        pdu,
   if ( sps.getPointLocalReconstructionEnabledFlag() ) {
     pointLocalReconstructionData( pdu.getPointLocalReconstructionData(), context, bitstream );
   }
-  TRACE_BITSTREAM( "Patch(%zu/%zu) => UV %4lu %4lu S=%4ld %4ld P=%lu O=%d A=%lu %lu %lu P45= %d %d \n ",
+  TRACE_BITSTREAM( "Patch(%zu/%zu) => UV %4lu %4lu S=%4ld %4ld P=%lu O=%d A=%lu %lu %lu P45= %d %d lod=(%lu) %lu %lu\n ",
                    pdu.getPduPatchIndex(), pdu.getPduFrameIndex(), pdu.get2DShiftU(), pdu.get2DShiftV(),
                    pdu.get2DDeltaSizeU(), pdu.get2DDeltaSizeV(), pdu.getProjectPlane(), pdu.getOrientationIndex(),
                    pdu.get3DShiftTangentAxis(), pdu.get3DShiftBiTangentAxis(), pdu.get3DShiftMinNormalAxis(),
-                   pdu.get45DegreeProjectionPresentFlag(), pdu.get45DegreeProjectionRotationAxis() );
+                   pdu.get45DegreeProjectionPresentFlag(), pdu.get45DegreeProjectionRotationAxis(),  pdu.getLodEnableFlag(), pdu.getLodScaleXminus1(), pdu.getLodScaleY());
 }
 
 // 7.3.6.4  Delta Patch data unit syntax TODO: Missing 10-projection syntax element?

@@ -696,6 +696,7 @@ void PCCBitstreamDecoder::patchFrameParameterSet( PatchDataGroup&       pdg,
   } else {
     pfps.setProjection45DegreeEnableFlag( false );
   }
+  pfps.setLodModeEnableFlag(bitstream.read( 1 ) );  // u(1)
   byteAlignment( bitstream );
 }
 
@@ -1086,8 +1087,12 @@ void PCCBitstreamDecoder::patchDataUnit( PatchDataUnit&        pdu,
   } else {
     pdu.setOrientationIndex( bitstream.read( 1 ) );  // u(1)
   }
-  if ( ptgh.getInterPredictPatchLodBitCount() > 0 ) {
-    pdu.setLod( bitstream.read( ptgh.getInterPredictPatchLodBitCount() ) );  // u(v)
+  if ( pfps.getLodModeEnableFlag()) {
+    pdu.setLodEnableFlag(bitstream.read( 1 ) ); //u1
+    if( pdu.getLodEnableFlag() ) {
+      pdu.setLodScaleXminus1( uint8_t( bitstream.readUvlc()) ); //uev
+      pdu.setLodScaleY( uint8_t( bitstream.readUvlc()) ); //uev
+    }
   }
   // auto& pfps = pdg.getPatchFrameParameterSet( 0 );
   if ( pfps.getProjection45DegreeEnableFlag() ) {
@@ -1105,12 +1110,14 @@ void PCCBitstreamDecoder::patchDataUnit( PatchDataUnit&        pdu,
     prevPatchSizeU_ += pdu.get2DDeltaSizeU();
     prevPatchSizeV_ += pdu.get2DDeltaSizeV();
   }
-  TRACE_BITSTREAM( "Patch(%zu/%zu) => UV %4lu %4lu S=%4ld %4ld P=%zu O=%d A=%lu %lu %lu P45= %d %d \n ",
+  TRACE_BITSTREAM( "Patch(%zu/%zu) => UV %4lu %4lu S=%4ld %4ld P=%zu O=%d A=%lu %lu %lu P45= %d %d lod=(%lu) %lu %lu\n ",
                    pdu.getPduPatchIndex(), pdu.getPduFrameIndex(), pdu.get2DShiftU(), pdu.get2DShiftV(),
                    pdu.get2DDeltaSizeU(), pdu.get2DDeltaSizeV(), (size_t)pdu.getProjectPlane(),
                    pdu.getOrientationIndex(), pdu.get3DShiftTangentAxis(), pdu.get3DShiftBiTangentAxis(),
                    pdu.get3DShiftMinNormalAxis(), pdu.get45DegreeProjectionPresentFlag(),
-                   pdu.get45DegreeProjectionRotationAxis() );
+                   pdu.get45DegreeProjectionRotationAxis(),
+                   pdu.getLodEnableFlag(),pdu.getLodScaleXminus1(),pdu.getLodScaleY()
+                  );
 }
 
 // 7.3.6.4  Delta Patch data unit syntax
@@ -1134,7 +1141,6 @@ void PCCBitstreamDecoder::deltaPatchDataUnit( DeltaPatchDataUnit&   dpdu,
   dpdu.set3DDeltaShiftTangentAxis( bitstream.readSvlc() );    // se(v)
   dpdu.set3DDeltaShiftBiTangentAxis( bitstream.readSvlc() );  // se(v)
   dpdu.set3DDeltaShiftMinNormalAxis( bitstream.readSvlc() );  // se(v)
-  dpdu.setLod( 0 );                                           // it will be copied from prevPatch
   if ( psps.getNormalAxisMaxDeltaValueEnableFlag() ) {
     dpdu.set3DShiftDeltaMaxNormalAxis( bitstream.readSvlc() );  // se(v)
   }
