@@ -175,6 +175,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   GeneratePointCloudParameters generatePointCloudParameters;
   generatePointCloudParameters.occupancyResolution_      = context.getOccupancyPackingBlockSize();
   generatePointCloudParameters.occupancyPrecision_       = context.getOccupancyPrecision();
+  generatePointCloudParameters.postprocessSmoothing_     = params_.postprocessSmoothing_;
   generatePointCloudParameters.flagGeometrySmoothing_    = gfp.getGeometrySmoothingParamsPresentFlag();
   generatePointCloudParameters.gridSmoothing_            = gfp.getGeometrySmoothingEnabledFlag();
   generatePointCloudParameters.gridSize_                 = gfp.getGeometrySmoothingGridSizeMinus2() + 2;
@@ -220,8 +221,10 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
 
   generatePointCloudParameters.geometry3dCoordinatesBitdepth_ = gi.getGeometry3dCoordinatesBitdepthMinus1() + 1;
   generatePointCloudParameters.geometryBitDepth3D_            = gi.getGeometry3dCoordinatesBitdepthMinus1() + 1;
-  generatePointCloud( reconstructs, context, generatePointCloudParameters );
 
+  std::vector<std::vector<uint32_t>> partitions;
+  generatePointCloud( reconstructs, context, generatePointCloudParameters, partitions );
+  
   if ( ai.getAttributeCount() > 0 ) {
 		int decodedBitdepthAttribute = ai.getAttributeNominal2dBitdepthMinus1(0) + 1;
     auto& videoBitstream = context.getVideoBitstream( VIDEO_TEXTURE );
@@ -251,6 +254,27 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   }
   colorPointCloud( reconstructs, context, ai.getAttributeCount(), params_.colorTransform_,
                    generatePointCloudParameters );
+
+  //  Generate a buffer to keep unsmoothed geometry, then do geometry smoothing and transfer followed by color smoothing
+  if ( generatePointCloudParameters.postprocessSmoothing_ ) {
+    PCCGroupOfFrames tempFrameBuffer;
+    auto&     frames = context.getFrames();
+    tempFrameBuffer.resize( reconstructs.size() );
+    for (size_t i = 0; i < frames.size(); i++) {
+      tempFrameBuffer[i] = reconstructs[i];
+    }
+    smoothPointCloudPostprocess( reconstructs, context, params_.colorTransform_, generatePointCloudParameters, partitions );
+    for (size_t i = 0; i < frames.size(); i++) {
+      tempFrameBuffer[i].transferColors( reconstructs[i], int32_t( 0 ),
+                                        sps.getLosslessGeo() == 1, 8, 1, 1, 1, 1, 0, 4, 4, 1000, 1000, 1000, 1000 ); //jkie: make it general
+      //These are different attribute transfer functions
+      //tempFrameBuffer[i].transferColorWeight( reconstructs[i], 0.1);
+      //tempFrameBuffer[i].transferColors     ( reconstructs[i], int32_t( 0 ), sps.getLosslessGeo() == 1 );
+    }
+    //    This function does the color smoothing that is usually done in colorPointCloud
+    colorSmoothing(reconstructs, context, params_.colorTransform_, generatePointCloudParameters);
+  }
+
 #ifdef CODEC_TRACE
   setTrace( false );
   closeTrace();
@@ -499,7 +523,6 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
   TRACE_CODEC( "non-regular Patches(pcm, eom)     = %lu, %lu \n",
               frame.getMissedPointsPatches().size(),
               frame.getEomPatches().size() );
-  TRACE_CODEC( "patchFrame Type                     = %lu (0.Intra 1.Inter)\n", ptgh.getType() );
   TRACE_CODEC( "OccupancyPackingBlockSize           = %d \n", context.getOccupancyPackingBlockSize() );
   TRACE_CODEC( "PatchInterPredictionEnabledFlag     = %d \n", sps.getPatchInterPredictionEnabledFlag() );
   size_t totalNumberOfMps = 0;

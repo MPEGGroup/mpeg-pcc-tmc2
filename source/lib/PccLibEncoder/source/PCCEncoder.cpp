@@ -306,6 +306,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   GeneratePointCloudParameters generatePointCloudParameters;
   generatePointCloudParameters.occupancyResolution_           = params_.occupancyResolution_;
   generatePointCloudParameters.occupancyPrecision_            = params_.occupancyPrecision_;
+  generatePointCloudParameters.postprocessSmoothing_          = params_.postprocessSmoothing_;
   generatePointCloudParameters.flagGeometrySmoothing_         = params_.flagGeometrySmoothing_;
   generatePointCloudParameters.gridSmoothing_                 = params_.gridSmoothing_;
   generatePointCloudParameters.gridSize_                      = params_.gridSize_;
@@ -346,9 +347,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   if ( params_.pointLocalReconstruction_ ) { pointLocalReconstructionSearch( context, generatePointCloudParameters ); }
 
   std::cout<<"generating Point Cloud starts"<<std::endl;
-
-  generatePointCloud( reconstructs, context, generatePointCloudParameters );
-
+  std::vector<std::vector<uint32_t>> partitions;
+  generatePointCloud( reconstructs, context, generatePointCloudParameters, partitions );
   if ( ai.getAttributeCount() > 0 ) {
     // GENERATE ATTRIBUTE
     generateTextureVideo( sources, reconstructs, context, params_ );
@@ -450,6 +450,27 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   colorPointCloud( reconstructs, context, ai.getAttributeCount(), params_.colorTransform_,
                    generatePointCloudParameters );
 
+     //  Generate a buffer to keep unsmoothed geometry, then do geometry smoothing and transfer followed by color smoothing
+  if ( generatePointCloudParameters.postprocessSmoothing_ ) {
+    PCCGroupOfFrames tempFrameBuffer;
+    auto&     frames = context.getFrames();
+    tempFrameBuffer.resize( reconstructs.size() );
+    for (size_t i = 0; i < frames.size(); i++) {
+      tempFrameBuffer[i] = reconstructs[i];
+    }
+    smoothPointCloudPostprocess( reconstructs, context, params_.colorTransform_, generatePointCloudParameters, partitions );
+    for (size_t i = 0; i < frames.size(); i++) {
+      //      The parameters for the attribute transfer are still fixed (may wish to make them user input/more flexible)
+      tempFrameBuffer[i].transferColors( reconstructs[i], int32_t( 0 ),
+                                        sps.getLosslessGeo() == 1, 8, 1, 1, 1, 1, 0, 4, 4, 1000, 1000, 1000, 1000 );
+      // These are different attribute transfer functions
+      // tempFrameBuffer[i].transferColorWeight( reconstructs[i], 0.1);
+      // tempFrameBuffer[i].transferColors     ( reconstructs[i], int32_t( 0 ), sps.getLosslessGeo() == 1 );
+    }
+    //    This function does the color smoothing that is usually done in colorPointCloud
+    colorSmoothing(reconstructs, context, params_.colorTransform_, generatePointCloudParameters);
+  }
+  
   if ( !params_.keepIntermediateFiles_ && params_.use3dmc_ ) { remove3DMotionEstimationFiles( path.str() ); }
 #ifdef CODEC_TRACE
   setTrace( false );
@@ -5506,7 +5527,7 @@ bool PCCEncoder::generateTextureVideo( const PCCGroupOfFrames&    sources,
         }
       }
       subReconstruct.resize( numPointSub );
-      sources[i].transfertColors( subReconstruct, int32_t( params_.bestColorSearchRange_ ), params_.losslessGeo_ == 1,
+      sources[i].transferColors( subReconstruct, int32_t( params_.bestColorSearchRange_ ), params_.losslessGeo_ == 1,
                                   params_.numNeighborsColorTransferFwd_, params_.numNeighborsColorTransferBwd_,
                                   params_.useDistWeightedAverageFwd_, params_.useDistWeightedAverageBwd_,
                                   params_.skipAvgIfIdenticalSourcePointPresentFwd_,
@@ -5526,7 +5547,7 @@ bool PCCEncoder::generateTextureVideo( const PCCGroupOfFrames&    sources,
         }
       }
     } else {
-      sources[i].transfertColors( reconstructs[i], int32_t( params_.bestColorSearchRange_ ), params_.losslessGeo_ == 1,
+      sources[i].transferColors( reconstructs[i], int32_t( params_.bestColorSearchRange_ ), params_.losslessGeo_ == 1,
                                   params_.numNeighborsColorTransferFwd_, params_.numNeighborsColorTransferBwd_,
                                   params_.useDistWeightedAverageFwd_, params_.useDistWeightedAverageBwd_,
                                   params_.skipAvgIfIdenticalSourcePointPresentFwd_,

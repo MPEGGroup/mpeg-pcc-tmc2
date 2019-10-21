@@ -75,6 +75,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   occupancyMapVideoEncoderConfig_          = {};
   occupancyMapQP_                          = 8;
   occupancyMapRefinement_                  = false;
+  postprocessSmoothing_                    = true;
   flagGeometrySmoothing_                   = true;
   patchExpansion_                          = false;
   gridSmoothing_                           = true;
@@ -310,7 +311,8 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   Lossy occupancy map offset             " << offsetLossyOM_ << std::endl;
   std::cout << "\t   Lossy occupancy map threshold          " << thresholdLossyOM_ << std::endl;
   std::cout << "\t   Lossy occupancy map prefilter          " << prefilterLossyOM_ << std::endl;
-  std::cout << "\t geometry smoothing" << std::endl;
+  std::cout << "\t   postprocessSmoothing                   " << postprocessSmoothing_ << std::endl;
+  std::cout << "\t   geometry smoothing                     " << std::endl;
   std::cout << "\t   flagGeometrySmoothing                  " << flagGeometrySmoothing_ << std::endl;
   if ( flagGeometrySmoothing_ ) {
     std::cout << "\t   gridSmoothing                          " << gridSmoothing_ << std::endl;

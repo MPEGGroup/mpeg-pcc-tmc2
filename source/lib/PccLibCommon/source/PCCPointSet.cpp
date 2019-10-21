@@ -736,8 +736,13 @@ void PCCPointSet3::convertRGBToYUV() {  // BT709
     const uint8_t g = color[1];
     const uint8_t b = color[2];
     const double y = std::round(0.212600 * r + 0.715200 * g + 0.072200 * b);
+#if POSTSMOOTHING_RGB2YUV
+    const double u = std::round(-0.1146 * r - 0.3854 * g + 0.500000 * b + 128.0);
+    const double v = std::round(0.500000 * r - 0.4542 * g - 0.0458 * b + 128.0);
+#else
     const double u = std::round(-0.114572 * r - 0.385428 * g + 0.500000 * b + 128.0);
     const double v = std::round(0.500000 * r - 0.454153 * g - 0.045847 * b + 128.0);
+#endif
     assert(y >= 0.0 && y <= 255.0 && u >= 0.0 && u <= 255.0 && v >= 0.0 && v <= 255.0);
     color[0] = static_cast<uint8_t>(y);
     color[1] = static_cast<uint8_t>(u);
@@ -773,7 +778,7 @@ void PCCPointSet3::convertYUVToRGB() {  // BT709
   }
 }
 
-bool PCCPointSet3::transfertColors( PCCPointSet3& target,
+bool PCCPointSet3::transferColors( PCCPointSet3& target,
                                     const int32_t searchRange,
                                     const bool    losslessTexture,
                                     const int     numNeighborsColorTransferFwd,
@@ -842,7 +847,7 @@ bool PCCPointSet3::transfertColors( PCCPointSet3& target,
           }
           double maxColorDist2 = std::numeric_limits<double>::min();
           for ( int i = 0; i < nNN; ++i ) {
-            for ( int j = 0; j < nNN; ++j ) {
+            for ( int j = i+1; j < nNN; ++j ) {
               const double dist2 = ( colors[i] - colors[j] ).getNorm2();
               if ( dist2 > maxColorDist2 ) { maxColorDist2 = dist2; }
             }
@@ -941,7 +946,7 @@ bool PCCPointSet3::transfertColors( PCCPointSet3& target,
             }
             double maxColorDist2 = std::numeric_limits<double>::min();
             for ( int i = 0; i < nNN; ++i ) {
-              for ( int j = 0; j < nNN; ++j ) {
+              for ( int j = i+1; j < nNN; ++j ) {
                 const double dist2 = ( colors[i] - colors[j] ).getNorm2();
                 if ( dist2 > maxColorDist2 ) { maxColorDist2 = dist2; }
               }
@@ -1047,11 +1052,87 @@ bool PCCPointSet3::transfertColors( PCCPointSet3& target,
       }
     }
   }
+    return true;
+  }
+    
+bool PCCPointSet3::transferColors( PCCPointSet3 &target, const int32_t searchRange, const bool losslessTexture ) const {
+  const auto& source = *this;
+  const size_t pointCountSource = source.getPointCount();
+  const size_t pointCountTarget = target.getPointCount();
+  if (!pointCountSource || !pointCountTarget || !source.hasColors()) {
+    return false;
+  }
+  
+  PCCKdTree kdtreeTarget( target ), kdtreeSource( source );
+  target.addColors();
+  std::vector<PCCColor3B> refinedColors1;
+  std::vector<std::vector<PCCColor3B>> refinedColors2;
+  refinedColors1.resize(pointCountTarget);
+  refinedColors2.resize(pointCountTarget);
+  const size_t num_results = 1;
+  PCCNNResult result;
+  //  Find THE closest point in reconstruction to each source point
+  for (size_t index = 0; index < pointCountTarget; ++index) {
+    kdtreeSource.search( target[index], num_results, result );
+    refinedColors1[index] = source.getColor( result.indices(0));
+  }
+  //  Find points in source that are closest to point in reconstruction
+  for (size_t index = 0; index < pointCountSource; ++index) {
+    const PCCColor3B color = source.getColor(index);
+    kdtreeTarget.search( source[index], num_results, result );
+    refinedColors2[result.indices(0)].push_back(color);
+  }
+  
+  for (size_t index = 0; index < pointCountTarget; ++index) {
+    const PCCColor3B color1 = refinedColors1[index];
+    const std::vector<PCCColor3B> &colors2 = refinedColors2[index];
+    if (colors2.empty() || losslessTexture) {
+      target.setColor(index, color1);
+    } else {
+      const double H = double(colors2.size());
+      const PCCVector3D centroid1(color1[0], color1[1], color1[2]);
+      PCCVector3D centroid2(0.0);
+      for (const auto color2 : colors2) {
+        for (size_t k = 0; k < 3; ++k) {
+          centroid2[k] += color2[k];
+        }
+      }
+      centroid2 /= H;
+      
+      double D2 = 0.0;
+      for (const auto color2 : colors2) {
+        for (size_t k = 0; k < 3; ++k) {
+          const double d2 = centroid2[k] - color2[k];
+          D2 += d2 * d2;
+        }
+      }
+      //      const double r = double(pointCountTarget) / double(pointCountSource);
+      const double delta2 = (centroid2 - centroid1).getNorm2();
+      const double eps = 0.000001;
+      
+      const bool fixWeight = 1; // m42538
+      if (fixWeight || delta2 > eps) {  // centroid2 != centroid1
+        double w = 0.0;
+        
+        const double oneMinusW = 1.0 - w;
+        PCCVector3D color0;
+        for (size_t k = 0; k < 3; ++k) {
+          color0[k] = PCCClip(round(w * centroid1[k] + oneMinusW * centroid2[k]), 0.0, 255.0);
+        }
+        PCCVector3D bestColor(color0);
+        target.setColor( index, PCCColor3B( uint8_t(bestColor[0]),
+                                           uint8_t(bestColor[1]),
+                                           uint8_t(bestColor[2])));
+      } else {  // centroid2 == centroid1
+        target.setColor(index, color1);
+      }
+    }
+  }
   return true;
 }
 
 
-bool PCCPointSet3::transfertColorSimple( PCCPointSet3 &target,
+bool PCCPointSet3::transferColorSimple( PCCPointSet3 &target,
                                        const double bestColorSearchStep ) {
   const auto& source = *this;
   const size_t pointCountSource = source.getPointCount();
@@ -1132,8 +1213,9 @@ bool PCCPointSet3::transfertColorSimple( PCCPointSet3 &target,
   return true;
 }
 
-bool PCCPointSet3::transfertColorWeight( PCCPointSet3 &target,
-                                       const double bestColorSearchStep ) {
+bool PCCPointSet3::transferColorWeight( PCCPointSet3 &target,
+                                       const double bestColorSearchStep )
+{
   const auto& source = *this;
   const size_t pointCountSource = source.getPointCount();
   const size_t pointCountTarget = target.getPointCount();

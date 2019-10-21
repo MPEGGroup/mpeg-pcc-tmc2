@@ -81,6 +81,7 @@ struct GeneratePointCloudParameters {
   double      thresholdLocalEntropy_;
   double      radius2ColorSmoothing_;
   size_t      neighborCountColorSmoothing_;
+  bool        postprocessSmoothing_;
   bool        flagGeometrySmoothing_;
   bool        flagColorSmoothing_;
   bool        enhancedDeltaDepthCode_;
@@ -111,13 +112,25 @@ class PCCCodec {
 
   void generatePointCloud( PCCGroupOfFrames&                  reconstructs,
                            PCCContext&                        context,
-                           const GeneratePointCloudParameters params );
+                           const GeneratePointCloudParameters params,
+                           std::vector<std::vector<uint32_t>>&  partitions );
 
   bool colorPointCloud( PCCGroupOfFrames&                  reconstructs,
                         PCCContext&                        context,
                         const uint8_t                      attributeCount,
                         const PCCColorTransform            colorTransform,
                         const GeneratePointCloudParameters params );
+
+  void smoothPointCloudPostprocess( PCCGroupOfFrames&                    reconstructs,
+                                    PCCContext&                          context,
+                                    const PCCColorTransform              colorTransform,
+                                    const GeneratePointCloudParameters   params,
+                                    std::vector<std::vector<uint32_t>>&  partitions );
+ 
+  void colorSmoothing( PCCGroupOfFrames&                  reconstructs,
+                       PCCContext&                        context,
+                       const PCCColorTransform            colorTransform,
+                       const GeneratePointCloudParameters params  );
 
   void generateMPsGeometryfromImage( PCCContext&       context,
                                      PCCFrameContext&  frame,
@@ -370,7 +383,19 @@ class PCCCodec {
                       int                          gridSize,
                       int                          gridWidth );
 
- 
+  bool gridFilteringTransfer( const std::vector<uint32_t>& partition,
+                              PCCPointSet3&                pointCloud,
+                              PCCPoint3D&                  curPos,
+                              PCCVector3D&                 centroid,
+                              int&                         cnt,
+                              std::vector<int>&            gcnt,
+                              std::vector<PCCVector3D>&    center_grid,
+                              std::vector<bool>&           doSmooth,
+                              int                          gridSize,
+                              int                          gridWidth,
+                              std::vector<PCCVector3D>&    color_grid,
+                              PCCVector3D&                 color );
+
   void identifyBoundaryPoints( const std::vector<uint32_t>& occupancyMap,
                                const size_t                 x,
                                const size_t                 y,

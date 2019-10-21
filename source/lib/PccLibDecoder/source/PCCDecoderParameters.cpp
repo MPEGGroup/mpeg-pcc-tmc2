@@ -46,6 +46,7 @@ PCCDecoderParameters::PCCDecoderParameters() {
   videoDecoderOccupancyMapPath_      = {};
   nbThread_                          = 1;
   keepIntermediateFiles_             = false;
+  postprocessSmoothing_              = true;
 }
 
 PCCDecoderParameters::~PCCDecoderParameters() {}

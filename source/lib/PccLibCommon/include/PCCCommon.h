@@ -66,6 +66,7 @@
 
 #define NO_PCM_INOCM 0
 #define BUGFIX_FIRSTEDDatT1 1
+#define POSTSMOOTHING_RGB2YUV 0
 
 // ******************************************************************* //
 // Trace modes to validate new syntax

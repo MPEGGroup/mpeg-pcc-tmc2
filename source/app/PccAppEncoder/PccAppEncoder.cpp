@@ -293,11 +293,15 @@ bool parseParameters( int                   argc,
 
     // smoothing
     // NB: various parameters are of the form n * occupancyPrecision**2
-
-    ("flagGeometrySmoothing",
-      encoderParams.flagGeometrySmoothing_,
-      encoderParams.flagGeometrySmoothing_,
-      "Enable geometry smoothing\n")
+  ("postprocessSmoothing",
+   encoderParams.postprocessSmoothing_,
+   encoderParams.postprocessSmoothing_,
+   "Exclude geometry smoothing from attribute transfer\n")
+  
+  ("flagGeometrySmoothing",
+   encoderParams.flagGeometrySmoothing_,
+   encoderParams.flagGeometrySmoothing_,
+   "Enable geometry smoothing\n")
 
     ("neighborCountSmoothing",
      encoderParams.neighborCountSmoothing_,

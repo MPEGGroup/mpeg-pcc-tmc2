@@ -2431,7 +2431,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
           }
         }
         for ( const auto& p : rec.getPositions() ) { testRec.addPoint( p ); }
-        testSrc.transfertColorSimple( testRec );
+        testSrc.transferColorSimple( testRec );
         float distPAB, distPBA, distYAB, distYBA, distUAB, distUBA, distVAB, distVBA;
         testRec.removeDuplicate();
         testSrc.distanceGeoColor( testRec, distPAB, distPBA, distYAB, distYBA, distUAB, distUBA, distVAB, distVBA );

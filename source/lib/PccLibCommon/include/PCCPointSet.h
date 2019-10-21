@@ -155,8 +155,8 @@ class PCCPointSet3 {
     withNormals_ = false;
     normals_.resize(0);
   }
-  
-  bool transfertColors( PCCPointSet3& target,
+
+  bool transferColors( PCCPointSet3& target,
                         const int32_t searchRange,
                         const bool    losslessTexture                         = false,
                         const int     numNeighborsColorTransferFwd            = 1,
@@ -171,9 +171,15 @@ class PCCPointSet3 {
                         double        maxGeometryDist2Bwd                     = 10000.0,
                         double        maxColorDist2Fwd                        = 10000.0,
                         double        maxColorDist2Bwd                        = 10000.0 ) const;
-  bool transfertColorSimple( PCCPointSet3 &target,
+  
+  bool transferColors     ( PCCPointSet3 &target,
+                             const int32_t searchRange,
+                             const bool losslessTexture ) const;
+  
+  bool transferColorSimple( PCCPointSet3 &target,
                              const double bestColorSearchStep = 0.1 );
-  bool transfertColorWeight( PCCPointSet3 &target,
+  
+  bool transferColorWeight( PCCPointSet3 &target,
                              const double bestColorSearchStep = 0.1 );
 
   size_t getPointCount() const { return positions_.size(); }

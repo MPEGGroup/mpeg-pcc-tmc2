@@ -82,10 +82,13 @@ void PCCCodec::addGridCentroid( PCCPoint3D&               point,
 
 void PCCCodec::generatePointCloud( PCCGroupOfFrames&                  reconstructs,
                                    PCCContext&                        context,
-                                   const GeneratePointCloudParameters params ) {
+                                   const GeneratePointCloudParameters params,
+                                   std::vector<std::vector<uint32_t>>&  partitions ) //jkei: do we need this?
+{
   TRACE_CODEC( "Generate point Cloud start \n" );
   TRACE_CODEC( "  occupancyResolution_            = %lu \n", params.occupancyResolution_ );
   TRACE_CODEC( "  occupancyPrecision_             = %lu \n", params.occupancyPrecision_ );
+  TRACE_CODEC( "  postprocessSmoothing_           = %d  \n", params.postprocessSmoothing_ );
   TRACE_CODEC( "  flagGeometrySmoothing_          = %d  \n", params.flagGeometrySmoothing_ );
   if ( params.flagGeometrySmoothing_ ) {
     TRACE_CODEC( "  gridSmoothing_                  = %d  \n", params.gridSmoothing_ );
@@ -141,7 +144,7 @@ void PCCCodec::generatePointCloud( PCCGroupOfFrames&                  reconstruc
     generatePointCloud( reconstructs[i], context, frames[i], videoGeometry, videoGeometryD1, videoOccupancyMap, params, partition );
 
     TRACE_CODEC( " generatePointCloud create %lu points \n", reconstructs[i].getPointCount() );
-    if ( params.flagGeometrySmoothing_ ) {
+    if ( params.flagGeometrySmoothing_ && !params.postprocessSmoothing_ ) {
       if ( params.gridSmoothing_ ) {
         // reset for each GOF
         PCCInt16Box3D boundingBox;
@@ -177,6 +180,7 @@ void PCCCodec::generatePointCloud( PCCGroupOfFrames&                  reconstruc
         smoothPointCloud( reconstructs[i], partition, params );
       }
     }
+    partitions.push_back( partition );
   }
 #ifdef ENABLE_PAPI_PROFILING
   PAPI_PROFILING_RESULTS;
@@ -196,7 +200,9 @@ bool PCCCodec::colorPointCloud( PCCGroupOfFrames&                  reconstructs,
   // const int w      = SMOOTH_POINT_CLOUD_MAX_SIZE / cgrid;
   // const int w = pow( 2, params.geometry3dCoordinatesBitdepth_ ) / cgrid;
   const int w = pow( 2, params.geometryBitDepth3D_ ) / cgrid;
-  if ( params.flagColorSmoothing_ && params.gridColorSmoothing_ ) {
+  //  only do color smoothing here, when in-loop geometry smoothing is applied (otherwise it is done later to do it after the attribute transfer)
+  if ( params.flagColorSmoothing_ && params.gridColorSmoothing_ && !params.postprocessSmoothing_ )
+  {
     CS_color_center_grid_.resize( w * w * w );
     CS_color_gcnt_.resize( w * w * w );
     CS_color_gpartition_.resize( w * w * w );
@@ -204,7 +210,123 @@ bool PCCCodec::colorPointCloud( PCCGroupOfFrames&                  reconstructs,
   }
   for ( size_t i = 0; i < frames.size(); i++ ) {
     colorPointCloud( reconstructs[i], frames[i], video, attributeCount, params );
+    if ( !params.postprocessSmoothing_ ) {
+      if ( params.flagColorSmoothing_ )
+      {
+        if ( params.gridColorSmoothing_ ) {  // Fast Color Smoothing
+          std::fill( CS_color_center_grid_.begin(), CS_color_center_grid_.end(), 0 );
+          std::fill( CS_color_gcnt_.begin(), CS_color_gcnt_.end(), 0 );
+          std::fill( CS_color_gpartition_.begin(), CS_color_gpartition_.end(), 0 );
+          std::fill( CS_color_doSmooth_.begin(), CS_color_doSmooth_.end(), 0 );
+          
+          CS_gLum_.clear();
+          CS_gLum_.resize( w * w * w );
+          
+          for ( int k = 0; k < reconstructs[i].getPointCount(); k++ ) {
+            PCCColor3B  color = reconstructs[i].getColor( k );
+            PCCVector3D clr;
+            for ( size_t c = 0; c < 3; ++c ) { clr[c] = double( color[c] ); }
+            const size_t patchIndexPlusOne = reconstructs[i].getPointPatchIndex( k ) + 1;
+            
+            addGridColorCentroid( reconstructs[i][k], clr, patchIndexPlusOne, CS_color_gcnt_, CS_color_center_grid_,
+                                 CS_color_gpartition_, CS_color_doSmooth_, cgrid, CS_gLum_, params );
+          }
+          smoothPointCloudColorLC( reconstructs[i], params );
+        } else {
+          smoothPointCloudColor( reconstructs[i], params );
+        }
+      }
+      if ( colorTransform == COLOR_TRANSFORM_RGB_TO_YCBCR ) { reconstructs[i].convertYUVToRGB(); }
+      
+      CS_color_center_grid_.resize(0);
+      CS_color_center_grid_.shrink_to_fit();
+      CS_color_gcnt_.resize(0);
+      CS_color_gcnt_.shrink_to_fit();
+      CS_color_gpartition_.resize(0);
+      CS_color_gpartition_.shrink_to_fit();
+      CS_color_doSmooth_.resize(0);
+      CS_color_doSmooth_.shrink_to_fit();
+      CS_gLum_.resize(0);
+      CS_gLum_.shrink_to_fit();
+      center_grid_.resize(0);
+      center_grid_.shrink_to_fit();
+      gcnt_.resize(0);
+      gcnt_.shrink_to_fit();
+      gpartition_.resize(0);
+      gpartition_.shrink_to_fit();
+      doSmooth_.resize(0);
+      doSmooth_.shrink_to_fit();
+    }
+  }
+  
+  TRACE_CODEC( "Color point Cloud done \n" );
+  return true;
+}
 
+void PCCCodec::smoothPointCloudPostprocess( PCCGroupOfFrames&                    reconstructs,
+                                           PCCContext&                          context,
+                                           const PCCColorTransform              colorTransform,
+                                           const GeneratePointCloudParameters   params,
+                                           std::vector<std::vector<uint32_t>>&  partitions ) {
+  auto&     frames = context.getFrames();
+  for ( size_t i = 0; i < frames.size(); i++ ) {
+    std::vector<uint32_t> partition = partitions[i];
+    if ( params.flagGeometrySmoothing_ )
+    {
+      if ( params.gridSmoothing_ ) {
+        // reset for each GOF
+        PCCInt16Box3D boundingBox;
+        boundingBox.min_ = boundingBox.max_ = reconstructs[i][0];
+        for ( int j = 0; j < reconstructs[i].getPointCount(); j++ ) {
+          const PCCPoint3D point = reconstructs[i][j];
+          for ( size_t k = 0; k < 3; ++k ) {
+            if ( point[k] < boundingBox.min_[k] ) { boundingBox.min_[k] = floor( point[k] ); }
+            if ( point[k] > boundingBox.max_[k] ) { boundingBox.max_[k] = ceil( point[k] ); }
+          }
+        }
+        
+        int maxSize = ( std::max )( ( std::max )( boundingBox.max_.x(), boundingBox.max_.y() ), boundingBox.max_.z() );
+        
+        const int w = ( maxSize + (int)params.gridSize_ - 1 ) / ( (int)params.gridSize_ );
+        center_grid_.resize( w * w * w );
+        gcnt_.resize( w * w * w );
+        gpartition_.resize( w * w * w );
+        doSmooth_.resize( w * w * w );
+        
+        int size = (int)gcnt_.size();
+        gcnt_.resize( 0 );
+        gcnt_.resize( size, 0 );
+        for ( int j = 0; j < reconstructs[i].getPointCount(); j++ ) {
+          addGridCentroid( reconstructs[i][j], partition[j] + 1, gcnt_, center_grid_, gpartition_, doSmooth_,
+                          (int)params.gridSize_, w );
+        }
+        for ( int i = 0; i < gcnt_.size(); i++ ) {
+          if ( gcnt_[i] ) { center_grid_[i] /= gcnt_[i]; }
+        }
+        smoothPointCloudGrid( reconstructs[i], partition, params, w );
+      } else {
+        smoothPointCloud( reconstructs[i], partition, params );
+      }
+    }
+  }
+}
+
+void PCCCodec::colorSmoothing( PCCGroupOfFrames&                  reconstructs,
+                              PCCContext&                        context,
+                              const PCCColorTransform            colorTransform,
+                              const GeneratePointCloudParameters params  ) {
+  
+  auto&     frames = context.getFrames();
+  const int cgrid  = params.occupancyPrecision_;
+  const int w = pow( 2, params.geometryBitDepth3D_ ) / cgrid;
+  if ( params.flagColorSmoothing_ && params.gridColorSmoothing_ ) {
+    CS_color_center_grid_.resize( w * w * w );
+    CS_color_gcnt_.resize( w * w * w );
+    CS_color_gpartition_.resize( w * w * w );
+    CS_color_doSmooth_.resize( w * w * w );
+  }
+  for ( size_t i = 0; i < frames.size(); i++ ) {
+    //    colorPointCloud( reconstructs[i], frames[i], video, attributeCount, params );
     if ( params.flagColorSmoothing_ ) {
       if ( params.gridColorSmoothing_ ) {  // Fast Color Smoothing
         std::fill( CS_color_center_grid_.begin(), CS_color_center_grid_.end(), 0 );
@@ -230,29 +352,27 @@ bool PCCCodec::colorPointCloud( PCCGroupOfFrames&                  reconstructs,
       }
     }
     if ( colorTransform == COLOR_TRANSFORM_RGB_TO_YCBCR ) { reconstructs[i].convertYUVToRGB(); }
-  }
-
-  CS_color_center_grid_.resize(0);
-  CS_color_center_grid_.shrink_to_fit();
-  CS_color_gcnt_.resize(0);
-  CS_color_gcnt_.shrink_to_fit();
-  CS_color_gpartition_.resize(0);
-  CS_color_gpartition_.shrink_to_fit();
-  CS_color_doSmooth_.resize(0);
-  CS_color_doSmooth_.shrink_to_fit();
-  CS_gLum_.resize(0);
-  CS_gLum_.shrink_to_fit();
-  center_grid_.resize(0);
-  center_grid_.shrink_to_fit();
-  gcnt_.resize(0);
-  gcnt_.shrink_to_fit();
-  gpartition_.resize(0);
-  gpartition_.shrink_to_fit();
-  doSmooth_.resize(0);
-  doSmooth_.shrink_to_fit();
-
+    CS_color_center_grid_.resize(0);
+    CS_color_center_grid_.shrink_to_fit();
+    CS_color_gcnt_.resize(0);
+    CS_color_gcnt_.shrink_to_fit();
+    CS_color_gpartition_.resize(0);
+    CS_color_gpartition_.shrink_to_fit();
+    CS_color_doSmooth_.resize(0);
+    CS_color_doSmooth_.shrink_to_fit();
+    CS_gLum_.resize(0);
+    CS_gLum_.shrink_to_fit();
+    center_grid_.resize(0);
+    center_grid_.shrink_to_fit();
+    gcnt_.resize(0);
+    gcnt_.shrink_to_fit();
+    gpartition_.resize(0);
+    gpartition_.shrink_to_fit();
+    doSmooth_.resize(0);
+    doSmooth_.shrink_to_fit();
+  } //per frame
   TRACE_CODEC( "Color point Cloud done \n" );
-  return true;
+  
 }
 
 int PCCCodec::getDeltaNeighbors( const PCCImageGeometry& frame,
@@ -1048,6 +1168,138 @@ bool PCCCodec::gridFiltering( const std::vector<uint32_t>& partition,
   return otherClusterPointCount;
 }
 
+bool PCCCodec::gridFilteringTransfer( const std::vector<uint32_t>& partition,
+                                      PCCPointSet3&                pointCloud,
+                                      PCCPoint3D&                  curPoint,
+                                      PCCVector3D&                 centroid,
+                                      int&                         cnt,
+                                      std::vector<int>&            gcnt,
+                                      std::vector<PCCVector3D>&    center_grid,
+                                      std::vector<bool>&           doSmooth,
+                                      int                          grid,
+                                      int                          gridWidth,
+                                      std::vector<PCCVector3D>&    color_grid,
+                                      PCCVector3D&                 color ) {
+  const int w                      = gridWidth;
+  bool      otherClusterPointCount = false;
+  
+  int x = curPoint.x();
+  int y = curPoint.y();
+  int z = curPoint.z();
+  
+  int x2 = x / grid;
+  int y2 = y / grid;
+  int z2 = z / grid;
+  
+  int x3 = x % grid;
+  int y3 = y % grid;
+  int z3 = z % grid;
+  
+  int sx = x2 + ( ( x3 < grid / 2 ) ? -1 : 0 );
+  int sy = y2 + ( ( y3 < grid / 2 ) ? -1 : 0 );
+  int sz = z2 + ( ( z3 < grid / 2 ) ? -1 : 0 );
+  
+  int sx2 = sx * grid;
+  int sy2 = sy * grid;
+  int sz2 = sz * grid;
+  
+  int wx = ( x - sx2 - grid / 2 ) * 2 + 1;
+  int wy = ( y - sy2 - grid / 2 ) * 2 + 1;
+  int wz = ( z - sz2 - grid / 2 ) * 2 + 1;
+  
+  int idx[2][2][2];
+  for ( int dz = 0; dz < 2; dz++ ) {
+    for ( int dy = 0; dy < 2; dy++ ) {
+      for ( int dx = 0; dx < 2; dx++ ) {
+        int x3          = sx + dx;
+        int y3          = sy + dy;
+        int z3          = sz + dz;
+        int tmp         = x3 + y3 * w + z3 * w * w;
+        idx[dz][dy][dx] = tmp;
+        if ( doSmooth[tmp] && gcnt[tmp] ) { otherClusterPointCount = true; }
+      }
+    }
+  }
+  
+  if ( !otherClusterPointCount ) { return otherClusterPointCount; }
+  PCCVector3D centroid3[2][2][2] = {};
+  PCCVector3D curVector( x, y, z );
+//  double      dist[2][2][2] = {};
+//  double      inv_dist_sum = 0;
+//  int         count_sum = 0;
+  int         grid2  = grid * 2;
+  
+  centroid3[0][0][0] = gcnt[idx[0][0][0]] > 0 ? center_grid[idx[0][0][0]] : curVector;
+  centroid3[0][0][1] = gcnt[idx[0][0][1]] > 0 ? center_grid[idx[0][0][1]] : curVector;
+  centroid3[0][1][0] = gcnt[idx[0][1][0]] > 0 ? center_grid[idx[0][1][0]] : curVector;
+  centroid3[0][1][1] = gcnt[idx[0][1][1]] > 0 ? center_grid[idx[0][1][1]] : curVector;
+  centroid3[1][0][0] = gcnt[idx[1][0][0]] > 0 ? center_grid[idx[1][0][0]] : curVector;
+  centroid3[1][0][1] = gcnt[idx[1][0][1]] > 0 ? center_grid[idx[1][0][1]] : curVector;
+  centroid3[1][1][0] = gcnt[idx[1][1][0]] > 0 ? center_grid[idx[1][1][0]] : curVector;
+  centroid3[1][1][1] = gcnt[idx[1][1][1]] > 0 ? center_grid[idx[1][1][1]] : curVector;
+  
+//  dist[0][0][0] = (centroid3[0][0][0] - curVector).getNorm2();
+//  dist[0][0][1] = (centroid3[0][0][1] - curVector).getNorm2();
+//  dist[0][1][0] = (centroid3[0][1][0] - curVector).getNorm2();
+//  dist[0][1][1] = (centroid3[0][1][1] - curVector).getNorm2();
+//  dist[1][0][0] = (centroid3[1][0][0] - curVector).getNorm2();
+//  dist[1][0][1] = (centroid3[1][0][1] - curVector).getNorm2();
+//  dist[1][1][0] = (centroid3[1][1][0] - curVector).getNorm2();
+//  dist[1][1][1] = (centroid3[1][1][1] - curVector).getNorm2();
+//
+//  inv_dist_sum += gcnt[idx[0][0][0]] > 0 ? 1/dist[0][0][0] : 0;
+//  inv_dist_sum += gcnt[idx[0][0][1]] > 0 ? 1/dist[0][0][1] : 0;
+//  inv_dist_sum += gcnt[idx[0][1][0]] > 0 ? 1/dist[0][1][0] : 0;
+//  inv_dist_sum += gcnt[idx[0][1][1]] > 0 ? 1/dist[0][1][1] : 0;
+//  inv_dist_sum += gcnt[idx[1][0][0]] > 0 ? 1/dist[1][0][0] : 0;
+//  inv_dist_sum += gcnt[idx[1][0][1]] > 0 ? 1/dist[1][0][1] : 0;
+//  inv_dist_sum += gcnt[idx[1][1][0]] > 0 ? 1/dist[1][1][0] : 0;
+//  inv_dist_sum += gcnt[idx[1][1][1]] > 0 ? 1/dist[1][1][1] : 0;
+//
+//  count_sum     = gcnt[idx[0][0][0]] + gcnt[idx[0][0][1]] + gcnt[idx[0][1][0]] + gcnt[idx[0][1][1]] + gcnt[idx[1][0][0]] + gcnt[idx[1][0][1]] + gcnt[idx[1][1][0]] + gcnt[idx[1][1][1]];
+//
+//  PCCVector3D zero_color( 0,0,0 );
+//
+//  color += gcnt[idx[0][0][0]] > 0 ? (1/dist[0][0][0]) * CS_color_center_grid_[idx[0][0][0]] : zero_color;
+//  color += gcnt[idx[0][0][1]] > 0 ? (1/dist[0][0][1]) * CS_color_center_grid_[idx[0][0][1]] : zero_color;
+//  color += gcnt[idx[0][1][0]] > 0 ? (1/dist[0][1][0]) * CS_color_center_grid_[idx[0][1][0]] : zero_color;
+//  color += gcnt[idx[0][1][1]] > 0 ? (1/dist[0][1][1]) * CS_color_center_grid_[idx[0][1][1]] : zero_color;
+//  color += gcnt[idx[1][0][0]] > 0 ? (1/dist[1][0][0]) * CS_color_center_grid_[idx[1][0][0]] : zero_color;
+//  color += gcnt[idx[1][0][1]] > 0 ? (1/dist[1][0][1]) * CS_color_center_grid_[idx[1][0][1]] : zero_color;
+//  color += gcnt[idx[1][1][0]] > 0 ? (1/dist[1][1][0]) * CS_color_center_grid_[idx[1][1][0]] : zero_color;
+//  color += gcnt[idx[1][1][1]] > 0 ? (1/dist[1][1][1]) * CS_color_center_grid_[idx[1][1][1]] : zero_color;
+//
+//  color = 7 * color / (count_sum * inv_dist_sum);
+  
+  centroid3[0][0][0] = ( grid2 - wx ) * ( grid2 - wy ) * ( grid2 - wz ) * centroid3[0][0][0];
+  centroid3[0][0][1] = ( wx ) * ( grid2 - wy ) * ( grid2 - wz ) * centroid3[0][0][1];
+  centroid3[0][1][0] = ( grid2 - wx ) * ( wy ) * ( grid2 - wz ) * centroid3[0][1][0];
+  centroid3[0][1][1] = ( wx ) * ( wy ) * ( grid2 - wz ) * centroid3[0][1][1];
+  centroid3[1][0][0] = ( grid2 - wx ) * ( grid2 - wy ) * (wz)*centroid3[1][0][0];
+  centroid3[1][0][1] = ( wx ) * ( grid2 - wy ) * (wz) * centroid3[1][0][1];
+  centroid3[1][1][0] = ( grid2 - wx ) * ( wy ) * (wz) * centroid3[1][1][0];
+  centroid3[1][1][1] = ( wx ) * ( wy ) * (wz) * centroid3[1][1][1];
+  
+  PCCVector3D centroid4;
+  centroid4 = centroid3[0][0][0] + centroid3[0][0][1] + centroid3[0][1][0] + centroid3[0][1][1] + centroid3[1][0][0] +
+              centroid3[1][0][1] + centroid3[1][1][0] + centroid3[1][1][1];
+  centroid4 /= grid2 * grid2 * grid2;
+  
+  cnt = 0;
+  cnt += ( grid2 - wx ) * ( grid2 - wy ) * ( grid2 - wz ) * gcnt[idx[0][0][0]];
+  cnt += ( wx ) * ( grid2 - wy ) * ( grid2 - wz ) * gcnt[idx[0][0][1]];
+  cnt += ( grid2 - wx ) * ( wy ) * ( grid2 - wz ) * gcnt[idx[0][1][0]];
+  cnt += ( wx ) * ( wy ) * ( grid2 - wz ) * gcnt[idx[0][1][1]];
+  cnt += ( grid2 - wx ) * ( grid2 - wy ) * (wz)*gcnt[idx[1][0][0]];
+  cnt += ( wx ) * ( grid2 - wy ) * (wz)*gcnt[idx[1][0][1]];
+  cnt += ( grid2 - wx ) * ( wy ) * (wz)*gcnt[idx[1][1][0]];
+  cnt += ( wx ) * ( wy ) * (wz)*gcnt[idx[1][1][1]];
+  cnt /= grid2 * grid2 * grid2;
+  
+  centroid = centroid4 * cnt;
+  return otherClusterPointCount;
+}
+
 void PCCCodec::smoothPointCloudGrid( PCCPointSet3&                      reconstruct,
                                      const std::vector<uint32_t>&       partition,
                                      const GeneratePointCloudParameters params,
@@ -1066,6 +1318,7 @@ void PCCCodec::smoothPointCloudGrid( PCCPointSet3&                      reconstr
     PCCVector3D centroid( 0.0 ), curVector( x, y, z );
     int         cnt                    = 0;
     bool        otherClusterPointCount = false;
+    PCCVector3D color( 0,0,0 );
     if ( reconstruct.getBoundaryPointType( c ) == 1 ) {
       otherClusterPointCount = gridFiltering( partition, reconstruct, curPoint, centroid, cnt, gcnt_, center_grid_,
                                               doSmooth_, gridSize, gridWidth );
@@ -1116,10 +1369,10 @@ void PCCCodec::smoothPointCloud( PCCPointSet3&                      reconstruct,
         if ( reconstruct.getBoundaryPointType( i ) == 1 ) {
           reconstruct.setBoundaryPointType( i, static_cast<uint16_t>( 2 ) );
         }
-        const PCCVector3D sclaedPoint =
+        const PCCVector3D scaledPoint =
             double( neighborCount ) * PCCVector3D( reconstruct[i][0], reconstruct[i][1], reconstruct[i][2] );
         const double distToCentroid2 =
-            int64_t( ( centroid - sclaedPoint ).getNorm2() + ( neighborCount / 2.0 ) ) / double( neighborCount );
+            int64_t( ( centroid - scaledPoint ).getNorm2() + ( neighborCount / 2.0 ) ) / double( neighborCount );
         for ( size_t k = 0; k < 3; ++k ) {
           centroid[k] = double( int64_t( ( centroid[k] + ( neighborCount / 2 ) ) / neighborCount ) );
         }
@@ -1666,7 +1919,7 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
     }
 
     if ( target.getPointCount() > 0 ) {
-      source.transfertColorWeight( target );
+      source.transferColorWeight( target );
       for ( size_t i = 0; i < target.getPointCount(); ++i ) {
         reconstruct.setColor( targetIndex[i], target.getColor( i ) );
       }
