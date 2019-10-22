@@ -792,7 +792,9 @@ bool PCCPointSet3::transferColors( PCCPointSet3& target,
                                     double        maxGeometryDist2Fwd,
                                     double        maxGeometryDist2Bwd,
                                     double        maxColorDist2Fwd,
-                                    double        maxColorDist2Bwd ) const {
+                                    double        maxColorDist2Bwd,
+                                    const bool    excludeColorOutlier,
+                                    const double  thresholdColorOutlierDist ) const {
   const auto&  source           = *this;
   const size_t pointCountSource = source.getPointCount();
   const size_t pointCountTarget = target.getPointCount();
@@ -862,6 +864,28 @@ bool PCCPointSet3::transferColors( PCCPointSet3& target,
                 sumWeights += weight;
               }
               refinedColor /= sumWeights;
+              if ( excludeColorOutlier ) {
+                PCCVector3D excludeOutlierRefinedColor( 0.0 );
+                size_t excludeCount = 0;
+                sumWeights = 0.0;
+                for ( int i = 0; i < nNN; ++i ) {
+                  double dist = 0.0;
+                  PCCColor3B tmpColor = source.getColor( result.indices( i ) );
+                  PCCVector3D sourceColor( tmpColor[0], tmpColor[1], tmpColor[2] );
+                  dist = ( sourceColor - refinedColor ).getNorm2();
+                  if ( dist > thresholdColorOutlierDist * thresholdColorOutlierDist ) { 
+                    excludeCount += 1;
+                    continue;
+                  }
+                  const double weight = 1 / ( result.dist( i ) + distOffsetFwd );
+                  for ( int k = 0; k < 3; ++k ) { excludeOutlierRefinedColor[k] += source.getColor( result.indices( i ) )[k] * weight; }
+                  sumWeights += weight;
+                }
+              
+                if ( excludeCount != nNN && excludeCount != 0) {
+                  refinedColor = excludeOutlierRefinedColor / sumWeights;
+                }
+              }
             } else {
               for ( int i = 0; i < nNN; ++i ) {
                 for ( int k = 0; k < 3; ++k ) { refinedColor[k] += source.getColor( result.indices( i ) )[k]; }
@@ -961,6 +985,27 @@ bool PCCPointSet3::transferColors( PCCPointSet3& target,
                   sumWeights += weight;
                 }
                 centroid2 /= sumWeights;
+                if ( excludeColorOutlier ) {
+                  PCCVector3D excludeOutlierCentroid2( 0.0 );
+                  size_t excludeCount = 0;
+                  sumWeights = 0.0;
+                  for ( int i = 0; i < colorsDists2.size(); ++i ) {
+                    double dist = 0.0;
+                    PCCVector3D sourceColor( colorsDists2[i].color[0], colorsDists2[i].color[1], colorsDists2[i].color[2] );
+                    dist = ( sourceColor - centroid2 ).getNorm2();
+                    if ( dist > thresholdColorOutlierDist * thresholdColorOutlierDist ) { 
+                      excludeCount += 1;
+                      continue;
+                    }
+                    const double weight = 1 / ( sqrt( colorsDists2[i].dist ) + distOffsetBwd );
+                    for ( size_t k = 0; k < 3; ++k ) { excludeOutlierCentroid2[k] += ( colorsDists2[i].color[k] * weight ); }
+                    sumWeights += weight;
+                  }
+
+                  if ( excludeCount != nNN && excludeCount != 0 ) {
+                    centroid2 = excludeOutlierCentroid2 / sumWeights;
+                  }
+                }
               } else {
                 for ( auto& coldist : colorsDists2 ) {
                   for ( int k = 0; k < 3; ++k ) { centroid2[k] += coldist.color[k]; }

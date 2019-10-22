@@ -63,7 +63,8 @@ class PCCDecoderParameters {
   //  attribute transfer
   // coloring
   size_t bestColorSearchRange_;
-  // Improved color transfeint    numNeighborsColorTransferFwd_;
+  // Improved color transfe
+  int    numNeighborsColorTransferFwd_;
   int    numNeighborsColorTransferBwd_;
   bool   useDistWeightedAverageFwd_;
   bool   useDistWeightedAverageBwd_;
@@ -75,6 +76,9 @@ class PCCDecoderParameters {
   double maxGeometryDist2Bwd_;
   double maxColorDist2Fwd_;
   double maxColorDist2Bwd_;
+  // Exclude color outliers
+  bool   excludeColorOutlier_;
+  double thresholdColorOutlierDist_;
 
 };
 

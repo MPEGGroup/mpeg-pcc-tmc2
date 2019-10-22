@@ -477,6 +477,16 @@ bool parseParameters( int                   argc,
     encoderParams.maxColorDist2Bwd_,
     encoderParams.maxColorDist2Bwd_,
     "Maximum allowed pari-wise color distance for Bwd list")
+	
+    ("excludeColorOutlier",
+    encoderParams.excludeColorOutlier_,
+    encoderParams.excludeColorOutlier_,
+    "Exclude color outliers from the NN set")
+
+    ("thresholdColorOutlierDist",
+    encoderParams.thresholdColorOutlierDist_,
+    encoderParams.thresholdColorOutlierDist_,
+    "Threshold of color distance to exclude outliers from the NN set")
 
     // video encoding
     ("videoEncoderPath",

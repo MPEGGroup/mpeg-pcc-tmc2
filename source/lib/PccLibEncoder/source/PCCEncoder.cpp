@@ -462,7 +462,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     for (size_t i = 0; i < frames.size(); i++) {
       //      The parameters for the attribute transfer are still fixed (may wish to make them user input/more flexible)
       tempFrameBuffer[i].transferColors( reconstructs[i], int32_t( 0 ),
-                                        sps.getLosslessGeo() == 1, 8, 1, 1, 1, 1, 0, 4, 4, 1000, 1000, 1000, 1000 );
+                                        sps.getLosslessGeo() == 1, 8, 1, 1, 1, 1, 0, 4, 4, 1000, 1000, 1000, 1000,
+                                        params_.excludeColorOutlier_, 10.0 );
       // These are different attribute transfer functions
       // tempFrameBuffer[i].transferColorWeight( reconstructs[i], 0.1);
       // tempFrameBuffer[i].transferColors     ( reconstructs[i], int32_t( 0 ), sps.getLosslessGeo() == 1 );
@@ -5533,7 +5534,8 @@ bool PCCEncoder::generateTextureVideo( const PCCGroupOfFrames&    sources,
                                   params_.skipAvgIfIdenticalSourcePointPresentFwd_,
                                   params_.skipAvgIfIdenticalSourcePointPresentBwd_, params_.distOffsetFwd_,
                                   params_.distOffsetBwd_, params_.maxGeometryDist2Fwd_, params_.maxGeometryDist2Bwd_,
-                                  params_.maxColorDist2Fwd_, params_.maxColorDist2Bwd_ );
+                                  params_.maxColorDist2Fwd_, params_.maxColorDist2Bwd_,
+                                  params_.excludeColorOutlier_, params_.thresholdColorOutlierDist_ );
 
       for ( size_t j = 0; j < numPointSub; j++ ) {
         reconstructs[i].setColor( subReconstructIndex[j], subReconstruct.getColor( j ) );
@@ -5553,7 +5555,8 @@ bool PCCEncoder::generateTextureVideo( const PCCGroupOfFrames&    sources,
                                   params_.skipAvgIfIdenticalSourcePointPresentFwd_,
                                   params_.skipAvgIfIdenticalSourcePointPresentBwd_, params_.distOffsetFwd_,
                                   params_.distOffsetBwd_, params_.maxGeometryDist2Fwd_, params_.maxGeometryDist2Bwd_,
-                                  params_.maxColorDist2Fwd_, params_.maxColorDist2Bwd_ );
+                                  params_.maxColorDist2Fwd_, params_.maxColorDist2Bwd_,
+                                  params_.excludeColorOutlier_, params_.thresholdColorOutlierDist_ );
       // color pre-smoothing
       if ( !params_.losslessGeo_ && params_.flagColorPreSmoothing_ ) {
         presmoothPointCloudColor( reconstructs[i], params );

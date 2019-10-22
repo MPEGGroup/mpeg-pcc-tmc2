@@ -97,6 +97,8 @@ PCCEncoderParameters::PCCEncoderParameters() {
   maxGeometryDist2Bwd_                     = 10000.0;
   maxColorDist2Fwd_                        = 10000.0;
   maxColorDist2Bwd_                        = 10000.0;
+  excludeColorOutlier_                     = false;
+  thresholdColorOutlierDist_               = 10.0;
   videoEncoderPath_                        = {};
   videoEncoderAuxPath_                     = {};
   videoEncoderOccupancyMapPath_            = {};
@@ -365,6 +367,10 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   maxColorDist2Fwd                       " << maxColorDist2Fwd_ << std::endl;
   std::cout << "\t   maxColorDist2Bwd                       " << maxColorDist2Bwd_ << std::endl;
   std::cout << "\t   patchColorSubsampling                  " << patchColorSubsampling_ << std::endl;
+  std::cout << "\t   excludeColorOutlier                    " << excludeColorOutlier_ << std::endl;
+  if ( excludeColorOutlier_ ) {
+    std::cout << "\t     thresholdColorOutlierDist              " << thresholdColorOutlierDist_ << std::endl;
+  }
   std::cout << "\t Reconstruction " << std::endl;
   std::cout << "\t   removeDuplicatePoints                  " << removeDuplicatePoints_ << std::endl;
   std::cout << "\t   pointLocalReconstruction               " << pointLocalReconstruction_ << std::endl;
