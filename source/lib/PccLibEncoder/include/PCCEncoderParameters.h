@@ -204,6 +204,9 @@ class PCCEncoderParameters {
   bool patchColorSubsampling_;
   bool deltaCoding_;
   bool surfaceSeparation_;
+  bool   highGradientSeparation_;
+  double minGradient_;
+  size_t minNumHighGradientPoints_;
 
   // Flexible Patch Packing
   size_t packingStrategy_;

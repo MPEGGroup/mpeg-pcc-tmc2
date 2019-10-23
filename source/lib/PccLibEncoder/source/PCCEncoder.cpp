@@ -462,8 +462,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     for (size_t i = 0; i < frames.size(); i++) {
       //      The parameters for the attribute transfer are still fixed (may wish to make them user input/more flexible)
       tempFrameBuffer[i].transferColors( reconstructs[i], int32_t( 0 ),
-                                        sps.getLosslessGeo() == 1, 8, 1, 1, 1, 1, 0, 4, 4, 1000, 1000, 1000, 1000,
-                                        params_.excludeColorOutlier_, 10.0 );
+                                        sps.getLosslessGeo() == 1, 8, 1, 1, 1, 1, 0, 4, 4, 1000, 1000, 1000, 1000, false, 10.0 );
       // These are different attribute transfer functions
       // tempFrameBuffer[i].transferColorWeight( reconstructs[i], 0.1);
       // tempFrameBuffer[i].transferColors     ( reconstructs[i], int32_t( 0 ), sps.getLosslessGeo() == 1 );
@@ -4332,6 +4331,9 @@ bool PCCEncoder::generateGeometryVideo( const PCCGroupOfFrames& sources, PCCCont
   segmenterParams.EOMSingleLayerMode = params_.enhancedDeltaDepthCode_ && ( params_.layerCountMinus1_ == 0 );
   segmenterParams.testLevelOfDetail  = params_.testLevelOfDetail_;
   segmenterParams.patchExpansion     = params_.patchExpansion_;
+  segmenterParams.highGradientSeparation       = params_.highGradientSeparation_;
+  segmenterParams.minGradient                  = params_.minGradient_;
+  segmenterParams.minNumHighGradientPoints     = params_.minNumHighGradientPoints_;
   segmenterParams.enablePointCloudPartitioning = params_.enablePointCloudPartitioning_;
   segmenterParams.roiBoundingBoxMinX           = params_.roiBoundingBoxMinX_;
   segmenterParams.roiBoundingBoxMaxX           = params_.roiBoundingBoxMaxX_;

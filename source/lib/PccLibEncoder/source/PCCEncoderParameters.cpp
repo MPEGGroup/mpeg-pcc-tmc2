@@ -195,6 +195,11 @@ PCCEncoderParameters::PCCEncoderParameters() {
   // Sort missed points by Morton code
   mortonOrderSortMissedPoints_  = false;
   textureMPSeparateVideoWidth_ = 64;
+  
+  // Separate high gradient points
+  highGradientSeparation_   = false;
+  minGradient_              = 15.0;
+  minNumHighGradientPoints_ = 256;
 }
 
 PCCEncoderParameters::~PCCEncoderParameters() {}
@@ -236,7 +241,7 @@ void PCCEncoderParameters::print() {
   std::cout << "\t compressedStreamPath                     " << compressedStreamPath_ << std::endl;
   std::cout << "\t reconstructedDataPath                    " << reconstructedDataPath_ << std::endl;
   std::cout << "\t frameCount                               " << frameCount_ << std::endl;
-  std::cout << "\t layerCountMinus1                          " << layerCountMinus1_ << std::endl;
+  std::cout << "\t layerCountMinus1                         " << layerCountMinus1_ << std::endl;
   std::cout << "\t startFrameNumber                         " << startFrameNumber_ << std::endl;
   std::cout << "\t groupOfFramesSize                        " << groupOfFramesSize_ << std::endl;
   std::cout << "\t colorTransform                           " << colorTransform_ << std::endl;
@@ -260,6 +265,11 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   maxAllowedDist2MissedPointsSelection " << maxAllowedDist2MissedPointsSelection_ << std::endl;
   std::cout << "\t   lambdaRefineSegmentation               " << lambdaRefineSegmentation_ << std::endl;
   std::cout << "\t   depthQuantizationStep                  " << minLevel_ << std::endl;
+  std::cout << "\t   highGradientSeparation                 " << highGradientSeparation_ << std::endl;
+  if ( highGradientSeparation_ ) {
+    std::cout << "\t     minGradient                          " << minGradient_ << std::endl;
+    std::cout << "\t     minNumHighGradientPoints             " << minNumHighGradientPoints_ << std::endl;
+  }
   std::cout << "\t packing" << std::endl;
   std::cout << "\t   minimumImageWidth                      " << minimumImageWidth_ << std::endl;
   std::cout << "\t   minimumImageHeight                     " << minimumImageHeight_ << std::endl;
@@ -369,7 +379,7 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   patchColorSubsampling                  " << patchColorSubsampling_ << std::endl;
   std::cout << "\t   excludeColorOutlier                    " << excludeColorOutlier_ << std::endl;
   if ( excludeColorOutlier_ ) {
-    std::cout << "\t     thresholdColorOutlierDist              " << thresholdColorOutlierDist_ << std::endl;
+    std::cout << "\t     thresholdColorOutlierDist            " << thresholdColorOutlierDist_ << std::endl;
   }
   std::cout << "\t Reconstruction " << std::endl;
   std::cout << "\t   removeDuplicatePoints                  " << removeDuplicatePoints_ << std::endl;

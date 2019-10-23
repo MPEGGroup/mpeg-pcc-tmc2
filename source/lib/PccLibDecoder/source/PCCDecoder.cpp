@@ -266,8 +266,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
     smoothPointCloudPostprocess( reconstructs, context, params_.colorTransform_, generatePointCloudParameters, partitions );
     for (size_t i = 0; i < frames.size(); i++) {
       tempFrameBuffer[i].transferColors( reconstructs[i], int32_t( 0 ),
-                                        sps.getLosslessGeo() == 1, 8, 1, 1, 1, 1, 0, 4, 4, 1000, 1000, 1000, 1000,
-                                        params_.excludeColorOutlier_, 10.0 ); //jkie: make it general
+                                        sps.getLosslessGeo() == 1, 8, 1, 1, 1, 1, 0, 4, 4, 1000, 1000, 1000, 1000, false, 10.0 ); //jkie: make it general
       //These are different attribute transfer functions
       //tempFrameBuffer[i].transferColorWeight( reconstructs[i], 0.1);
       //tempFrameBuffer[i].transferColors     ( reconstructs[i], int32_t( 0 ), sps.getLosslessGeo() == 1 );

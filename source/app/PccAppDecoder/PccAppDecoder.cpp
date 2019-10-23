@@ -160,11 +160,6 @@ bool parseParameters( int                   argc,
      decoderParams.postprocessSmoothing_,
      "Exclude geometry smoothing from attribute transfer")
   
-    ("excludeColorOutlier",
-     decoderParams.excludeColorOutlier_,
-     decoderParams.excludeColorOutlier_,
-     "Exclude color outliers from the NN set")
-  
     ("keepIntermediateFiles",
      decoderParams.keepIntermediateFiles_,
      decoderParams.keepIntermediateFiles_,

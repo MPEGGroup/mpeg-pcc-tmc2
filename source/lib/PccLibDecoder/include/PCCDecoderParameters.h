@@ -76,9 +76,6 @@ class PCCDecoderParameters {
   double maxGeometryDist2Bwd_;
   double maxColorDist2Fwd_;
   double maxColorDist2Bwd_;
-  // Exclude color outliers
-  bool   excludeColorOutlier_;
-  double thresholdColorOutlierDist_;
 
 };
 
