@@ -174,7 +174,7 @@ class PCCPointSet3 {
                         const bool    excludeColorOutlier                     = false,
                         const double  thresholdColorOutlierDist               = 10.0 ) const;
   
-  bool transferColors     ( PCCPointSet3 &target,
+  bool transferColorsFilter3( PCCPointSet3 &target,
                              const int32_t searchRange,
                              const bool losslessTexture ) const;
   

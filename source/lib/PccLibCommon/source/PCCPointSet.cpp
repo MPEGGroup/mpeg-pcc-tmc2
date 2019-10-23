@@ -1100,7 +1100,7 @@ bool PCCPointSet3::transferColors( PCCPointSet3& target,
     return true;
   }
     
-bool PCCPointSet3::transferColors( PCCPointSet3 &target, const int32_t searchRange, const bool losslessTexture ) const {
+bool PCCPointSet3::transferColorsFilter3( PCCPointSet3 &target, const int32_t searchRange, const bool losslessTexture ) const {
   const auto& source = *this;
   const size_t pointCountSource = source.getPointCount();
   const size_t pointCountTarget = target.getPointCount();

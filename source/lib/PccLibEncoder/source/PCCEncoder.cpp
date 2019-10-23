@@ -306,7 +306,6 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   GeneratePointCloudParameters generatePointCloudParameters;
   generatePointCloudParameters.occupancyResolution_           = params_.occupancyResolution_;
   generatePointCloudParameters.occupancyPrecision_            = params_.occupancyPrecision_;
-  generatePointCloudParameters.postprocessSmoothing_          = params_.postprocessSmoothing_;
   generatePointCloudParameters.flagGeometrySmoothing_         = params_.flagGeometrySmoothing_;
   generatePointCloudParameters.gridSmoothing_                 = params_.gridSmoothing_;
   generatePointCloudParameters.gridSize_                      = params_.gridSize_;
@@ -451,9 +450,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                    generatePointCloudParameters );
 
      //  Generate a buffer to keep unsmoothed geometry, then do geometry smoothing and transfer followed by color smoothing
-  if ( generatePointCloudParameters.postprocessSmoothing_ ) {
     PCCGroupOfFrames tempFrameBuffer;
-    auto&     frames = context.getFrames();
     tempFrameBuffer.resize( reconstructs.size() );
     for (size_t i = 0; i < frames.size(); i++) {
       tempFrameBuffer[i] = reconstructs[i];
@@ -461,15 +458,21 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     smoothPointCloudPostprocess( reconstructs, context, params_.colorTransform_, generatePointCloudParameters, partitions );
     for (size_t i = 0; i < frames.size(); i++) {
       //      The parameters for the attribute transfer are still fixed (may wish to make them user input/more flexible)
-      tempFrameBuffer[i].transferColors( reconstructs[i], int32_t( 0 ),
-                                        sps.getLosslessGeo() == 1, 8, 1, 1, 1, 1, 0, 4, 4, 1000, 1000, 1000, 1000, false, 10.0 );
       // These are different attribute transfer functions
-      // tempFrameBuffer[i].transferColorWeight( reconstructs[i], 0.1);
-      // tempFrameBuffer[i].transferColors     ( reconstructs[i], int32_t( 0 ), sps.getLosslessGeo() == 1 );
+      if ( params_.postprocessSmoothingFilter_==1) {
+        tempFrameBuffer[i].transferColors( reconstructs[i], int32_t( 0 ),
+                                          sps.getLosslessGeo() == 1, 8, 1, 1, 1, 1, 0, 4, 4, 1000, 1000, 1000, 1000 );
+      }
+      else if ( params_.postprocessSmoothingFilter_==2) {
+        
+        tempFrameBuffer[i].transferColorWeight( reconstructs[i], 0.1);
+      }
+      else if ( params_.postprocessSmoothingFilter_==3) {
+        tempFrameBuffer[i].transferColorsFilter3     ( reconstructs[i], int32_t( 0 ), sps.getLosslessGeo() == 1 );
+      }
     }
     //    This function does the color smoothing that is usually done in colorPointCloud
     colorSmoothing(reconstructs, context, params_.colorTransform_, generatePointCloudParameters);
-  }
   
   if ( !params_.keepIntermediateFiles_ && params_.use3dmc_ ) { remove3DMotionEstimationFiles( path.str() ); }
 #ifdef CODEC_TRACE

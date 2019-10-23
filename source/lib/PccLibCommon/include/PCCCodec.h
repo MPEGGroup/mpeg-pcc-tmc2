@@ -81,7 +81,6 @@ struct GeneratePointCloudParameters {
   double      thresholdLocalEntropy_;
   double      radius2ColorSmoothing_;
   size_t      neighborCountColorSmoothing_;
-  bool        postprocessSmoothing_;
   bool        flagGeometrySmoothing_;
   bool        flagColorSmoothing_;
   bool        enhancedDeltaDepthCode_;

@@ -113,7 +113,7 @@ class PCCEncoderParameters {
   bool   gridSmoothing_;
   size_t gridSize_;
   bool   flagGeometrySmoothing_;
-  bool   postprocessSmoothing_;
+  size_t postprocessSmoothingFilter_;
 
   // Patch Expansion (m47772, CE2.12)
   bool patchExpansion_;

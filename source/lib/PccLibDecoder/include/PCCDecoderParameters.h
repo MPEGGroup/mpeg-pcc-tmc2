@@ -58,7 +58,7 @@ class PCCDecoderParameters {
   bool              keepIntermediateFiles_;
   bool              patchColorSubsampling_;
   
-  bool              postprocessSmoothing_;
+  size_t            postprocessSmoothingFilter_;
   
   //  attribute transfer
   // coloring

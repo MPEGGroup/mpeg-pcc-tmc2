@@ -88,7 +88,6 @@ void PCCCodec::generatePointCloud( PCCGroupOfFrames&                  reconstruc
   TRACE_CODEC( "Generate point Cloud start \n" );
   TRACE_CODEC( "  occupancyResolution_            = %lu \n", params.occupancyResolution_ );
   TRACE_CODEC( "  occupancyPrecision_             = %lu \n", params.occupancyPrecision_ );
-  TRACE_CODEC( "  postprocessSmoothing_           = %d  \n", params.postprocessSmoothing_ );
   TRACE_CODEC( "  flagGeometrySmoothing_          = %d  \n", params.flagGeometrySmoothing_ );
   if ( params.flagGeometrySmoothing_ ) {
     TRACE_CODEC( "  gridSmoothing_                  = %d  \n", params.gridSmoothing_ );
@@ -144,42 +143,6 @@ void PCCCodec::generatePointCloud( PCCGroupOfFrames&                  reconstruc
     generatePointCloud( reconstructs[i], context, frames[i], videoGeometry, videoGeometryD1, videoOccupancyMap, params, partition );
 
     TRACE_CODEC( " generatePointCloud create %lu points \n", reconstructs[i].getPointCount() );
-    if ( params.flagGeometrySmoothing_ && !params.postprocessSmoothing_ ) {
-      if ( params.gridSmoothing_ ) {
-        // reset for each GOF
-        PCCInt16Box3D boundingBox;
-        boundingBox.min_ = boundingBox.max_ = reconstructs[i][0];
-        for ( int j = 0; j < reconstructs[i].getPointCount(); j++ ) {
-          const PCCPoint3D point = reconstructs[i][j];
-          for ( size_t k = 0; k < 3; ++k ) {
-            if ( point[k] < boundingBox.min_[k] ) { boundingBox.min_[k] = floor( point[k] ); }
-            if ( point[k] > boundingBox.max_[k] ) { boundingBox.max_[k] = ceil( point[k] ); }
-          }
-        }
-
-        int maxSize = ( std::max )( ( std::max )( boundingBox.max_.x(), boundingBox.max_.y() ), boundingBox.max_.z() );
-
-        const int w = ( maxSize + (int)params.gridSize_ - 1 ) / ( (int)params.gridSize_ );
-        center_grid_.resize( w * w * w );
-        gcnt_.resize( w * w * w );
-        gpartition_.resize( w * w * w );
-        doSmooth_.resize( w * w * w );
-
-        int size = (int)gcnt_.size();
-        gcnt_.resize( 0 );
-        gcnt_.resize( size, 0 );
-        for ( int j = 0; j < reconstructs[i].getPointCount(); j++ ) {
-          addGridCentroid( reconstructs[i][j], partition[j] + 1, gcnt_, center_grid_, gpartition_, doSmooth_,
-                           (int)params.gridSize_, w );
-        }
-        for ( int i = 0; i < gcnt_.size(); i++ ) {
-          if ( gcnt_[i] ) { center_grid_[i] /= gcnt_[i]; }
-        }
-        smoothPointCloudGrid( reconstructs[i], partition, params, w );
-      } else {
-        smoothPointCloud( reconstructs[i], partition, params );
-      }
-    }
     partitions.push_back( partition );
   }
 #ifdef ENABLE_PAPI_PROFILING
@@ -196,67 +159,9 @@ bool PCCCodec::colorPointCloud( PCCGroupOfFrames&                  reconstructs,
   TRACE_CODEC( "Color point Cloud start \n" );
   auto&     video  = context.getVideoTexture();
   auto&     frames = context.getFrames();
-  const int cgrid  = params.occupancyPrecision_;
-  // const int w      = SMOOTH_POINT_CLOUD_MAX_SIZE / cgrid;
-  // const int w = pow( 2, params.geometry3dCoordinatesBitdepth_ ) / cgrid;
-  const int w = pow( 2, params.geometryBitDepth3D_ ) / cgrid;
-  //  only do color smoothing here, when in-loop geometry smoothing is applied (otherwise it is done later to do it after the attribute transfer)
-  if ( params.flagColorSmoothing_ && params.gridColorSmoothing_ && !params.postprocessSmoothing_ )
-  {
-    CS_color_center_grid_.resize( w * w * w );
-    CS_color_gcnt_.resize( w * w * w );
-    CS_color_gpartition_.resize( w * w * w );
-    CS_color_doSmooth_.resize( w * w * w );
-  }
+  
   for ( size_t i = 0; i < frames.size(); i++ ) {
     colorPointCloud( reconstructs[i], frames[i], video, attributeCount, params );
-    if ( !params.postprocessSmoothing_ ) {
-      if ( params.flagColorSmoothing_ )
-      {
-        if ( params.gridColorSmoothing_ ) {  // Fast Color Smoothing
-          std::fill( CS_color_center_grid_.begin(), CS_color_center_grid_.end(), 0 );
-          std::fill( CS_color_gcnt_.begin(), CS_color_gcnt_.end(), 0 );
-          std::fill( CS_color_gpartition_.begin(), CS_color_gpartition_.end(), 0 );
-          std::fill( CS_color_doSmooth_.begin(), CS_color_doSmooth_.end(), 0 );
-          
-          CS_gLum_.clear();
-          CS_gLum_.resize( w * w * w );
-          
-          for ( int k = 0; k < reconstructs[i].getPointCount(); k++ ) {
-            PCCColor3B  color = reconstructs[i].getColor( k );
-            PCCVector3D clr;
-            for ( size_t c = 0; c < 3; ++c ) { clr[c] = double( color[c] ); }
-            const size_t patchIndexPlusOne = reconstructs[i].getPointPatchIndex( k ) + 1;
-            
-            addGridColorCentroid( reconstructs[i][k], clr, patchIndexPlusOne, CS_color_gcnt_, CS_color_center_grid_,
-                                 CS_color_gpartition_, CS_color_doSmooth_, cgrid, CS_gLum_, params );
-          }
-          smoothPointCloudColorLC( reconstructs[i], params );
-        } else {
-          smoothPointCloudColor( reconstructs[i], params );
-        }
-      }
-      if ( colorTransform == COLOR_TRANSFORM_RGB_TO_YCBCR ) { reconstructs[i].convertYUVToRGB(); }
-      
-      CS_color_center_grid_.resize(0);
-      CS_color_center_grid_.shrink_to_fit();
-      CS_color_gcnt_.resize(0);
-      CS_color_gcnt_.shrink_to_fit();
-      CS_color_gpartition_.resize(0);
-      CS_color_gpartition_.shrink_to_fit();
-      CS_color_doSmooth_.resize(0);
-      CS_color_doSmooth_.shrink_to_fit();
-      CS_gLum_.resize(0);
-      CS_gLum_.shrink_to_fit();
-      center_grid_.resize(0);
-      center_grid_.shrink_to_fit();
-      gcnt_.resize(0);
-      gcnt_.shrink_to_fit();
-      gpartition_.resize(0);
-      gpartition_.shrink_to_fit();
-      doSmooth_.resize(0);
-      doSmooth_.shrink_to_fit();
-    }
   }
   
   TRACE_CODEC( "Color point Cloud done \n" );

@@ -155,9 +155,9 @@ bool parseParameters( int                   argc,
      decoderParams.nbThread_,
      "Number of thread used for parallel processing")
   
-    ("postprocessSmoothing",
-     decoderParams.postprocessSmoothing_,
-     decoderParams.postprocessSmoothing_,
+    ("postprocessSmoothingFilterType",
+     decoderParams.postprocessSmoothingFilter_,
+     decoderParams.postprocessSmoothingFilter_,
      "Exclude geometry smoothing from attribute transfer")
   
     ("keepIntermediateFiles",
