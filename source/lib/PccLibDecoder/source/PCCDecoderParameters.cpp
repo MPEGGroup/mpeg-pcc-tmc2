@@ -47,7 +47,6 @@ PCCDecoderParameters::PCCDecoderParameters() {
   nbThread_                          = 1;
   keepIntermediateFiles_             = false;
   postprocessSmoothingFilter_        = 0;
-  excludeColorOutlier_               = false;
 }
 
 PCCDecoderParameters::~PCCDecoderParameters() {}
