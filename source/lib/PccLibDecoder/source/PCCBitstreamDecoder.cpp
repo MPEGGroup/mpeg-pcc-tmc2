@@ -471,6 +471,12 @@ void PCCBitstreamDecoder::geometryFrameParams( GeometryFrameParams& gfp, PCCBits
       gfp.setGeometrySmoothingGridSizeMinus2( bitstream.read( 7 ) );  // u(7)
       gfp.setGeometrySmoothingThreshold( bitstream.read( 8 ) );       // u(8)
     }
+    gfp.setGeometryPatchBlockFilteringEnableFlag( bitstream.read( 1 ) );  // u(1)
+    if ( gfp.getGeometryPatchBlockFilteringEnableFlag() ) {
+      gfp.setGeometryPatchBlockFilteringLog2ThresholdMinus1( bitstream.read( 2 ) );  // u(2)
+      gfp.setGeometryPatchBlockFilteringPassesCountMinus1( bitstream.read( 2 ) );    // u(2)
+      gfp.setGeometryPatchBlockFilteringFilterSizeMinus1( bitstream.read( 3 ) );     // u(3)
+    }
   }
   if ( gfp.getGeometryScaleParamsPresentFlag() ) {
     for ( size_t d = 0; d < 3; d++ ) {

@@ -68,11 +68,13 @@
 #define BUGFIX_FIRSTEDDatT1 1
 #define POSTSMOOTHING_RGB2YUV 0
 
+#define PATCH_BLOCK_FILTERING 
+
 // ******************************************************************* //
 // Trace modes to validate new syntax
 // ******************************************************************* //
-// #define BITSTREAM_TRACE
-// #define CODEC_TRACE
+#define BITSTREAM_TRACE
+#define CODEC_TRACE
 //ENABLE_LAST_PATCH
 namespace pcc {
 

@@ -254,6 +254,12 @@ class PCCEncoderParameters {
   // Sort missed points by Morton code
   bool             mortonOrderSortMissedPoints_;
   size_t           textureMPSeparateVideoWidth_;
+
+  // Patch block filtering
+  bool    pbfEnableFlag_;
+  int16_t pbfPassesCount_;
+  int16_t pbfFilterSize_;
+  int16_t pbfLog2Threshold_;
 };
 
 };  // namespace pcc

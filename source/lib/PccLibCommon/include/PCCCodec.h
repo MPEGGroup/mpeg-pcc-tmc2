@@ -97,6 +97,11 @@ struct GeneratePointCloudParameters {
   size_t      plrlNumberOfModes_;
   size_t      geometryBitDepth3D_;
   size_t      geometry3dCoordinatesBitdepth_;
+  bool        pbfEnableFlag_;
+  int16_t     pbfPassesCount_;
+  int16_t     pbfFilterSize_;
+  int16_t     pbfLog2Threshold_;
+  bool        updateOccupancyMap_;
 };
 
 #ifdef CODEC_TRACE

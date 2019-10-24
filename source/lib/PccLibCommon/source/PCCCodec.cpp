@@ -101,7 +101,7 @@ void PCCCodec::generatePointCloud( PCCGroupOfFrames&                  reconstruc
       TRACE_CODEC( "  thresholdSmoothing_             = %f  \n", params.thresholdSmoothing_ );
     }
   }
-  TRACE_CODEC( "  pcmPointColorFormat_                = %d  \n", params.pcmPointColorFormat_ );
+  TRACE_CODEC( "  pcmPointColorFormat_            = %d  \n", params.pcmPointColorFormat_ );
   TRACE_CODEC( "  nbThread_                       = %lu \n", params.nbThread_ );
   TRACE_CODEC( "  absoluteD1_                     = %d  \n", params.absoluteD1_ );
   TRACE_CODEC( "  surfaceThickness                = %lu \n", params.surfaceThickness_ );
@@ -125,15 +125,22 @@ void PCCCodec::generatePointCloud( PCCGroupOfFrames&                  reconstruc
   TRACE_CODEC( "  EOMFixBitCount_                 = %d  \n", params.EOMFixBitCount_ );
   TRACE_CODEC( "  EOMTexturePatch_                = %d  \n", params.EOMTexturePatch_ );
   TRACE_CODEC( "  removeDuplicatePoints_          = %d  \n", params.removeDuplicatePoints_ );
-  TRACE_CODEC( "  pointLocalReconstruction_                       = %d  \n", params.pointLocalReconstruction_ );
+  TRACE_CODEC( "  pointLocalReconstruction_       = %d  \n", params.pointLocalReconstruction_ );
   TRACE_CODEC( "  layerCountMinus1_               = %d  \n", params.layerCountMinus1_ );
   TRACE_CODEC( "  singleLayerPixelInterleaving    = %d  \n", params.singleLayerPixelInterleaving_ );
   TRACE_CODEC( "  useAdditionalPointsPatch_       = %d  \n", params.useAdditionalPointsPatch_ );
 
-  auto& frames          = context.getFrames();
-  auto& videoGeometry   = context.getVideoGeometry();
-  auto& videoGeometryD1 = context.getVideoGeometryD1();
-	auto &videoOccupancyMap = context.getVideoOccupancyMap();
+#ifdef PATCH_BLOCK_FILTERING
+  TRACE_CODEC( "  PBF   \n" );
+  TRACE_CODEC( "    pbfEnableFlag_                = %d \n", params.pbfEnableFlag_ );
+  TRACE_CODEC( "    pbfPassesCount_               = %d \n", params.pbfPassesCount_ );
+  TRACE_CODEC( "    pbfFilterSize_                = %d \n", params.pbfFilterSize_ );
+  TRACE_CODEC( "    pbfLog2Threshold_             = %d \n", params.pbfLog2Threshold_ );
+#endif
+  auto& frames            = context.getFrames();
+  auto& videoGeometry     = context.getVideoGeometry();
+  auto& videoGeometryD1   = context.getVideoGeometryD1();
+  auto& videoOccupancyMap = context.getVideoOccupancyMap();
 
 #ifdef ENABLE_PAPI_PROFILING
   PAPI_PROFILING_INITIALIZE;
@@ -141,10 +148,31 @@ void PCCCodec::generatePointCloud( PCCGroupOfFrames&                  reconstruc
   for ( size_t i = 0; i < frames.size(); i++ ) {
     TRACE_CODEC( " Frame %lu / %lu \n", i, frames.size() );
     std::vector<uint32_t> partition;
+#ifdef PATCH_BLOCK_FILTERING
+    if ( params.flagGeometrySmoothing_ && params.pbfEnableFlag_ ) {
+      PatchBlockFiltering patchBlockFiltering;
+      patchBlockFiltering.setPatches( &( frames[i].getPatches() ) );
+      patchBlockFiltering.setBlockToPatch( &( frames[i].getBlockToPatch() ) );
+      patchBlockFiltering.setOccupancyMapEncoder( &( frames[i].getOccupancyMap() ) );
+      patchBlockFiltering.setOccupancyMapVideo(
+          &( context.getVideoOccupancyMap().getFrame( frames[i].getIndex() ).getChannel( 0 ) ) );
+      patchBlockFiltering.setGeometryVideo(
+          &( videoGeometry.getFrame( frames[i].getIndex() * ( params.layerCountMinus1_ + 1 ) ).getChannel( 0 ) ) );
+      patchBlockFiltering.patchBorderFiltering(
+          frames[i].getWidth(), frames[i].getHeight(), params.occupancyResolution_, params.occupancyPrecision_,
+          !params.enhancedDeltaDepthCode_ ? params.thresholdLossyOM_ : 0, 
+          params.pbfPassesCount_, params.pbfFilterSize_,  params.pbfLog2Threshold_ );
+      if ( params.updateOccupancyMap_ ) {  // requiere by encoder processes
+        patchBlockFiltering.updateOccupancyMap( frames[i].getOccupancyMapUpdate(), frames[i].getWidth(),
+                                                frames[i].getHeight(), params.occupancyResolution_ );
+      }
+      patchBlockFiltering.clearPatchBlockFiltering();
+    }
+#endif
     generatePointCloud( reconstructs[i], context, frames[i], videoGeometry, videoGeometryD1, videoOccupancyMap, params, partition );
 
     TRACE_CODEC( " generatePointCloud create %lu points \n", reconstructs[i].getPointCount() );
-    if ( params.flagGeometrySmoothing_ && !params.postprocessSmoothing_ ) {
+    if ( params.flagGeometrySmoothing_ && !params.pbfEnableFlag_ && !params.postprocessSmoothing_ ) {
       if ( params.gridSmoothing_ ) {
         // reset for each GOF
         PCCInt16Box3D boundingBox;
@@ -481,7 +509,12 @@ std::vector<PCCPoint3D> PCCCodec::generatePoints( const GeneratePointCloudParame
   const auto&             patch        = frame.getPatch( patchIndex );
   auto&                   frame0       = video.getFrame( shift );
   std::vector<PCCPoint3D> createdPoints;
-  auto                    point0 = patch.generatePoint( u, v, frame0.getValue( 0, x, y ));
+  PCCPoint3D              point0;
+  if ( params.pbfEnableFlag_ ) {
+    point0 = patch.generatePoint( u, v, (const int16_t)patch.getDepthMap( u, v ) );
+  } else {
+    point0 = patch.generatePoint( u, v, frame0.getValue( 0, x, y ) );
+  }
   createdPoints.push_back( point0 );
   if ( params.singleLayerPixelInterleaving_ ) {
     size_t       patchIndexPlusOne = patchIndex + 1;
@@ -659,16 +692,17 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
   auto& blockToPatch = frame.getBlockToPatch();
 	//point cloud occupancy map upscaling from video using nearest neighbor
   auto& occupancyMap = frame.getOccupancyMap();
-	auto width = frame.getWidth();
-	auto height = frame.getHeight();
-	occupancyMap.resize(width * height, 0);
-	for (size_t v = 0; v < height; ++v) {
-		for (size_t u = 0; u < width; ++u) {
-      occupancyMap[v * width + u] = videoOM.getFrame( frame.getIndex() )
-                                        .getValue( 0, u / params.occupancyPrecision_, v / params.occupancyPrecision_ );
-		}
-	}
-
+  if( !params.pbfEnableFlag_ ) {
+	  auto width = frame.getWidth();
+	  auto height = frame.getHeight();
+	  occupancyMap.resize(width * height, 0);
+	  for (size_t v = 0; v < height; ++v) {
+		  for (size_t u = 0; u < width; ++u) {
+        occupancyMap[v * width + u] = videoOM.getFrame( frame.getIndex() )
+                                          .getValue( 0, u / params.occupancyPrecision_, v / params.occupancyPrecision_ );
+		  }
+	  }
+  }
   partition.resize( 0 );
   pointToPixel.resize( 0 );
   reconstruct.clear();
@@ -696,7 +730,9 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
   const size_t          imageWidth  = video.getWidth();
   const size_t          imageHeight = video.getHeight();
   std::vector<uint32_t> BPflag;
-  BPflag.resize( imageWidth * imageHeight, 0 );
+  if( !params.pbfEnableFlag_ ) {
+    BPflag.resize( imageWidth * imageHeight, 0 );
+  }
 
   const size_t blockToPatchWidth  = frame.getWidth() / params.occupancyResolution_;
   const size_t blockToPatchHeight = frame.getHeight() / params.occupancyResolution_;
@@ -735,7 +771,14 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
             for ( size_t u1 = 0; u1 < patch.getOccupancyResolution(); ++u1 ) {
               const size_t u = u0 * patch.getOccupancyResolution() + u1;
               size_t       x, y;
-              const bool   occupancy = occupancyMap[patch.patch2Canvas( u, v, imageWidth, imageHeight, x, y )] != 0;
+
+              bool occupancy = false;
+              size_t canvasIndex = patch.patch2Canvas( u, v, imageWidth, imageHeight, x, y );
+              if ( params.pbfEnableFlag_ ) {
+                occupancy = patch.getOccupancyMap( u, v ) != 0;
+              } else {
+                occupancy = occupancyMap[canvasIndex] != 0;
+              }
               if ( !occupancy ) { continue; }
               if ( params.enhancedDeltaDepthCode_ ) {
                 // D0
@@ -1056,7 +1099,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
     }  // fi :useMissedPointsSeparateVideo
   }    // fi : useAdditionalPointsPatch
 
-  if ( params.flagGeometrySmoothing_ )
+  if ( params.flagGeometrySmoothing_ && !params.pbfEnableFlag_ )
   {
     // identify first boundary layer
     if(useMissedPointsSeparateVideo)

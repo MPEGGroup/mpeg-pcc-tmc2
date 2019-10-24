@@ -342,6 +342,11 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   generatePointCloudParameters.EOMFixBitCount_                = params_.EOMFixBitCount_;
   generatePointCloudParameters.EOMTexturePatch_ =
       generatePointCloudParameters.enhancedDeltaDepthCode_ && params_.EOMTexturePatch_;
+  generatePointCloudParameters.pbfEnableFlag_      = params_.pbfEnableFlag_;
+  generatePointCloudParameters.pbfFilterSize_      = params_.pbfFilterSize_;
+  generatePointCloudParameters.pbfPassesCount_     = params_.pbfPassesCount_;
+  generatePointCloudParameters.pbfLog2Threshold_   = params_.pbfLog2Threshold_;
+  generatePointCloudParameters.updateOccupancyMap_ = true;
 
   context.allocOneLayerData();
   if ( params_.pointLocalReconstruction_ ) { pointLocalReconstructionSearch( context, generatePointCloudParameters ); }
@@ -378,9 +383,9 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
           if ( params_.layerCountMinus1_ > 0 ) {
             // Group dilation in texture
             auto&    frame        = frames[f / 2];
-            auto&    occupancyMap = frame.getOccupancyMap();
-            auto    width        = frame.getWidth();
-            auto    height       = frame.getHeight();
+            auto&    occupancyMap = params_.pbfEnableFlag_ ? frame.getOccupancyMapUpdate() : frame.getOccupancyMap();
+            auto     width        = frame.getWidth();
+            auto     height       = frame.getHeight();
             auto&    frame1       = videoTexture.getFrame( f - 1 );
             auto&    frame2       = videoTexture.getFrame( f );
             uint8_t  tmp_d0, tmp_d1;
@@ -4633,11 +4638,11 @@ bool PCCEncoder::dilateGeometryVideo( const PCCGroupOfFrames& sources, PCCContex
 
 template <typename T>
 void PCCEncoder::dilate( PCCFrameContext& frame, PCCImage<T, 3>& image, const PCCImage<T, 3>* reference ) {
-  auto          occupancyMapTemp         = frame.getOccupancyMap();
-  const size_t  pixelBlockCount          = params_.occupancyResolution_ * params_.occupancyResolution_;
-  const size_t  occupancyMapSizeU        = image.getWidth() / params_.occupancyResolution_;
-  const size_t  occupancyMapSizeV        = image.getHeight() / params_.occupancyResolution_;
-  const int64_t neighbors[4][2]          = {{0, -1}, {-1, 0}, {1, 0}, {0, 1}};
+  auto          occupancyMapTemp  = params_.pbfEnableFlag_ ? frame.getOccupancyMapUpdate() : frame.getOccupancyMap();
+  const size_t  pixelBlockCount   = params_.occupancyResolution_ * params_.occupancyResolution_;
+  const size_t  occupancyMapSizeU = image.getWidth() / params_.occupancyResolution_;
+  const size_t  occupancyMapSizeV = image.getHeight() / params_.occupancyResolution_;
+  const int64_t neighbors[4][2]   = {{0, -1}, {-1, 0}, {1, 0}, {0, 1}};
   const size_t  MAX_OCCUPANCY_RESOLUTION = 64;
   assert( params_.occupancyResolution_ <= MAX_OCCUPANCY_RESOLUTION );
   size_t              count[MAX_OCCUPANCY_RESOLUTION][MAX_OCCUPANCY_RESOLUTION];
@@ -4989,8 +4994,8 @@ void PCCEncoder::dilate_3DPadding( const PCCPointSet3&     source,
 // interpolate using 5-point laplacian inpainting
 template <typename T>
 void PCCEncoder::dilateHarmonicBackgroundFill( PCCFrameContext& frame, PCCImage<T, 3>& image ) {
-  auto                               occupancyMapTemp = frame.getOccupancyMap();
-  int                                i                = 0;
+  auto occupancyMapTemp = params_.pbfEnableFlag_ ? frame.getOccupancyMapUpdate() : frame.getOccupancyMap();
+  int  i                = 0;
   std::vector<PCCImage<T, 3>>        mipVec;
   std::vector<std::vector<uint32_t>> mipOccupancyMapVec;
   int                                miplev = 0;
@@ -5387,8 +5392,8 @@ void PCCEncoder::pushPullFill( PCCImage<T, 3>&              image,
 
 template <typename T>
 void PCCEncoder::dilateSmoothedPushPull( PCCFrameContext& frame, PCCImage<T, 3>& image ) {
-  auto                               occupancyMapTemp = frame.getOccupancyMap();
-  int                                i                = 0;
+  auto occupancyMapTemp = params_.pbfEnableFlag_ ? frame.getOccupancyMapUpdate() : frame.getOccupancyMap();
+  int  i                = 0;
   std::vector<PCCImage<T, 3>>        mipVec;
   std::vector<std::vector<uint32_t>> mipOccupancyMapVec;
   int                                div    = 2;

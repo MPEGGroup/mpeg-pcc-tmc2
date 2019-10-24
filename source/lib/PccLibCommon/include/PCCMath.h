@@ -231,6 +231,16 @@ struct PCCBox3 {
     return box;
   }
 
+  #ifdef PATCH_BLOCK_FILTERING
+  inline void add( const PCCVector3<T>& point ) {
+    if ( min_[0] > point[0] ) { min_[0] = point[0]; }
+    if ( min_[1] > point[1] ) { min_[1] = point[1]; }
+    if ( min_[2] > point[2] ) { min_[2] = point[2]; }
+    if ( max_[0] < point[0] ) { max_[0] = point[0]; }
+    if ( max_[1] < point[1] ) { max_[1] = point[1]; }
+    if ( max_[2] < point[2] ) { max_[2] = point[2]; }    
+  }
+  #endif
   bool intersects( const PCCBox3& box ) {
     return max_.x() >= box.min_.x() && min_.x() <= box.max_.x() && max_.y() >= box.min_.y() &&
            min_.y() <= box.max_.y() && max_.z() >= box.min_.z() && min_.z() <= box.max_.z();

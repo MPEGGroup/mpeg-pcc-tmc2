@@ -66,6 +66,10 @@ class PCCFrameContext {
   std::vector<uint32_t>&             getFullOccupancyMap() { return fullOccupancyMap_; }
   std::vector<PCCPatch>&             getPatches() { return patches_; }
   PCCMetadata&                       getFrameLevelMetadata() { return frameLevelMetadata_; }
+#ifdef PATCH_BLOCK_FILTERING
+  std::vector<uint32_t>&  getOccupancyMapUpdate() { return occupancyMapUpdate_; }
+#endif
+  PCCPatch&                          getPatch( size_t index ) { return patches_[index]; }
   const PCCPatch&                    getPatch( size_t index ) const { return patches_[index]; }
   std::vector<PCCMissedPointsPatch>& getMissedPointsPatches() { return missedPointsPatches_; }
   PCCMissedPointsPatch&              getMissedPointsPatch( size_t index ) { return missedPointsPatches_[index]; }
@@ -176,7 +180,10 @@ class PCCFrameContext {
   PCCGPAFrameSize                              curPCCGPAFrameSize_;
   PCCFrameOCPInfo                              ocpGPAInfo_;
   PCCVector3D                                  weightNormal_;
-  std::vector<PCCEomPatch> eomPatches_;
+  std::vector<PCCEomPatch>                     eomPatches_;
+#ifdef PATCH_BLOCK_FILTERING
+  std::vector<uint32_t> occupancyMapUpdate_;
+#endif
 
 };
 

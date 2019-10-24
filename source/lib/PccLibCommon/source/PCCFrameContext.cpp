@@ -72,6 +72,9 @@ PCCFrameContext::~PCCFrameContext() {
   recPointCloudByBlock_.clear();
   for ( auto& block : pointToPixelByBlock_ ) { block.clear(); }
   pointToPixelByBlock_.clear();
+#ifdef PATCH_BLOCK_FILTERING
+  occupancyMapUpdate_ .clear();  
+#endif
 }
 
 void PCCFrameContext::allocOneLayerData() {

@@ -1227,10 +1227,14 @@ class GeometryFrameParams {
       geometryPointSizeInfoPresentFlag_( false ),
       geometryPointShapeInfoPresentFlag_( false ),
       geometrySmoothingEnabledFlag_( false ),
+      geometryPatchBlockFilteringEnableFlag_( false ),
       geometrySmoothingGridSizeMinus2_( 0 ),
       geometrySmoothingThreshold_( 0 ),
       geometryPointSizeInfo_( 0 ),
-      geometryPointShapeInfo_( 0 ) {
+      geometryPointShapeInfo_( 0 ),
+      geometryPatchBlockFilteringPassesCountMinus1_( 0 ),
+      geometryPatchBlockFilteringFilterSizeMinus1_( 0 ),
+      geometryPatchBlockFilteringLog2ThresholdMinus1_( 0 ) {
     for ( uint8_t i = 0; i < 3; i++ ) {
       geometryScaleOnAxis_[i]  = 0;
       geometryOffsetOnAxis_[i] = 0;
@@ -1247,6 +1251,7 @@ class GeometryFrameParams {
   bool     getGeometryPointSizeInfoPresentFlag() { return geometryPointSizeInfoPresentFlag_; }
   bool     getGeometryPointShapeInfoPresentFlag() { return geometryPointShapeInfoPresentFlag_; }
   bool     getGeometrySmoothingEnabledFlag() { return geometrySmoothingEnabledFlag_; }
+  bool     getGeometryPatchBlockFilteringEnableFlag() { return geometryPatchBlockFilteringEnableFlag_; }
   uint8_t  getGeometrySmoothingGridSizeMinus2() { return geometrySmoothingGridSizeMinus2_; }
   uint8_t  getGeometrySmoothingThreshold() { return geometrySmoothingThreshold_; }
   uint32_t getGeometryScaleOnAxis( size_t index ) { return geometryScaleOnAxis_[index]; }
@@ -1254,6 +1259,9 @@ class GeometryFrameParams {
   int32_t  getGeometryRotationQuaternion( size_t index ) { return geometryRotationXYZW_[index]; }
   uint16_t getGeometryPointSizeInfo() { return geometryPointSizeInfo_; }
   uint32_t getGeometryPointShapeInfo() { return geometryPointShapeInfo_; }
+  uint32_t getGeometryPatchBlockFilteringPassesCountMinus1() { return geometryPatchBlockFilteringPassesCountMinus1_; }
+  uint32_t getGeometryPatchBlockFilteringFilterSizeMinus1() { return geometryPatchBlockFilteringFilterSizeMinus1_; }
+  uint32_t getGeometryPatchBlockFilteringLog2ThresholdMinus1() { return geometryPatchBlockFilteringLog2ThresholdMinus1_; }
 
   void setGeometrySmoothingParamsPresentFlag( bool value ) { geometrySmoothingParamsPresentFlag_ = value; }
   void setGeometryScaleParamsPresentFlag( bool value ) { geometryScaleParamsPresentFlag_ = value; }
@@ -1262,6 +1270,7 @@ class GeometryFrameParams {
   void setGeometryPointSizeInfoPresentFlag( bool value ) { geometryPointSizeInfoPresentFlag_ = value; }
   void setGeometryPointShapeInfoPresentFlag( bool value ) { geometryPointShapeInfoPresentFlag_ = value; }
   void setGeometrySmoothingEnabledFlag( bool value ) { geometrySmoothingEnabledFlag_ = value; }
+  void setGeometryPatchBlockFilteringEnableFlag( bool value ) { geometryPatchBlockFilteringEnableFlag_ = value; }
   void setGeometrySmoothingGridSizeMinus2( uint8_t value ) { geometrySmoothingGridSizeMinus2_ = value; }
   void setGeometrySmoothingThreshold( uint8_t value ) { geometrySmoothingThreshold_ = value; }
   void setGeometryScaleOnAxis( size_t index, uint32_t value ) { geometryScaleOnAxis_[index] = value; }
@@ -1269,6 +1278,9 @@ class GeometryFrameParams {
   void setGeometryRotationQuaternion( size_t index, int32_t value ) { geometryRotationXYZW_[index] = value; }
   void setGeometryPointSizeInfo( uint16_t value ) { geometryPointSizeInfo_ = value; }
   void setGeometryPointShapeInfo( uint32_t value ) { geometryPointShapeInfo_ = value; }
+  void setGeometryPatchBlockFilteringPassesCountMinus1( uint8_t value ) { geometryPatchBlockFilteringPassesCountMinus1_ = value; }
+  void setGeometryPatchBlockFilteringFilterSizeMinus1( uint8_t value ) { geometryPatchBlockFilteringFilterSizeMinus1_ = value; }
+  void setGeometryPatchBlockFilteringLog2ThresholdMinus1( uint8_t value ) { geometryPatchBlockFilteringLog2ThresholdMinus1_ = value; }
 
  private:
   bool     geometrySmoothingParamsPresentFlag_;
@@ -1278,6 +1290,7 @@ class GeometryFrameParams {
   bool     geometryPointSizeInfoPresentFlag_;
   bool     geometryPointShapeInfoPresentFlag_;
   bool     geometrySmoothingEnabledFlag_;
+  bool     geometryPatchBlockFilteringEnableFlag_;
   uint8_t  geometrySmoothingGridSizeMinus2_;
   uint8_t  geometrySmoothingThreshold_;
   uint32_t geometryScaleOnAxis_[3];
@@ -1285,6 +1298,9 @@ class GeometryFrameParams {
   int32_t  geometryRotationXYZW_[4];
   uint16_t geometryPointSizeInfo_;
   uint32_t geometryPointShapeInfo_;
+  uint8_t  geometryPatchBlockFilteringPassesCountMinus1_;
+  uint8_t  geometryPatchBlockFilteringFilterSizeMinus1_;
+  uint8_t  geometryPatchBlockFilteringLog2ThresholdMinus1_;
 };
 
 // 7.3.5.4 Patch frame geometry parameter set syntax

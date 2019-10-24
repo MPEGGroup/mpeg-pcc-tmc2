@@ -102,7 +102,6 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
                            sps.getSequenceParameterSetId() ) );
 #endif
   bool lossyMpp = !sps.getLosslessGeo() && sps.getPcmPatchEnabledFlag();
-
   const size_t frameCountGeometry = sps.getLayerCountMinus1() + 1;
   const size_t frameCountTexture  = sps.getLayerCountMinus1() + 1;
 
@@ -114,8 +113,10 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
 	//converting the decoded bitdepth to the nominal bitdepth
 	context.getVideoOccupancyMap().convertBitdepth(decodedBitDepthOM, oi.getOccupancyNominal2DBitdepthMinus1() + 1, oi.getOccupancyMSBAlignFlag());
   context.setOccupancyPrecision( sps.getFrameWidth() / context.getVideoOccupancyMap().getWidth() );
-  generateOccupancyMap( context, context.getOccupancyPrecision(), oi.getLossyOccupancyMapCompressionThreshold(),
-                        sps.getEnhancedOccupancyMapForDepthFlag() );
+  if( !gfp.getGeometryPatchBlockFilteringEnableFlag() ) {
+    generateOccupancyMap( context, context.getOccupancyPrecision(), oi.getLossyOccupancyMapCompressionThreshold(),
+                          sps.getEnhancedOccupancyMapForDepthFlag() );
+  }
 
   if ( sps.getLayerCountMinus1() > 0 && !sps.getLayerAbsoluteCodingEnabledFlag( 1 ) ) {
     if ( lossyMpp ) {
@@ -167,7 +168,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
     generateMissedPointsGeometryfromVideo( context, reconstructs );
     std::cout << " missed points geometry -> " << videoBitstreamMP.naluSize() << " B " << endl;
   }
-  if ( sps.getEnhancedOccupancyMapForDepthFlag() ) {
+  if ( sps.getEnhancedOccupancyMapForDepthFlag() && !gfp.getGeometryPatchBlockFilteringEnableFlag() ) {
     generateBlockToPatchFromOccupancyMap( context, context.getOccupancyPackingBlockSize() );
   } else {
     generateBlockToPatchFromBoundaryBox( context, context.getOccupancyPackingBlockSize() );
@@ -214,13 +215,16 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   generatePointCloudParameters.path_                          = path.str();
   generatePointCloudParameters.useAdditionalPointsPatch_      = sps.getPcmPatchEnabledFlag();
   generatePointCloudParameters.enhancedDeltaDepthCode_        = sps.getEnhancedOccupancyMapForDepthFlag();
-  generatePointCloudParameters.EOMFixBitCount_ = sps.getEOMFixBitCount();
-  
+  generatePointCloudParameters.EOMFixBitCount_                = sps.getEOMFixBitCount();
   generatePointCloudParameters.EOMTexturePatch_ =
       generatePointCloudParameters.enhancedDeltaDepthCode_ && sps.getEOMTexturePatch();
-
   generatePointCloudParameters.geometry3dCoordinatesBitdepth_ = gi.getGeometry3dCoordinatesBitdepthMinus1() + 1;
   generatePointCloudParameters.geometryBitDepth3D_            = gi.getGeometry3dCoordinatesBitdepthMinus1() + 1;
+  generatePointCloudParameters.pbfEnableFlag_                 = gfp.getGeometryPatchBlockFilteringEnableFlag();
+  generatePointCloudParameters.pbfPassesCount_     = gfp.getGeometryPatchBlockFilteringPassesCountMinus1() + 1;
+  generatePointCloudParameters.pbfFilterSize_      = gfp.getGeometryPatchBlockFilteringFilterSizeMinus1() + 1;
+  generatePointCloudParameters.pbfLog2Threshold_   = gfp.getGeometryPatchBlockFilteringLog2ThresholdMinus1() + 1;
+  generatePointCloudParameters.updateOccupancyMap_ = false;
 
   std::vector<std::vector<uint32_t>> partitions;
   generatePointCloud( reconstructs, context, generatePointCloudParameters, partitions );

@@ -448,12 +448,17 @@ void PCCBitstreamEncoder::geometryFrameParams( GeometryFrameParams& gfp, PCCBits
   bitstream.write( (uint32_t)gfp.getGeometryRotationParamsPresentFlag(), 1 );   // u(1)
   bitstream.write( (uint32_t)gfp.getGeometryPointSizeInfoPresentFlag(), 1 );    // u(1)
   bitstream.write( (uint32_t)gfp.getGeometryPointShapeInfoPresentFlag(), 1 );   // u(1)
-
   if ( gfp.getGeometrySmoothingParamsPresentFlag() ) {
     bitstream.write( (uint32_t)gfp.getGeometrySmoothingEnabledFlag(), 1 );  // u(1)
     if ( gfp.getGeometrySmoothingEnabledFlag() ) {
       bitstream.write( (uint32_t)gfp.getGeometrySmoothingGridSizeMinus2(), 7 );  // u(7)
       bitstream.write( (uint32_t)gfp.getGeometrySmoothingThreshold(), 8 );       // u(8)
+    }
+    bitstream.write( (uint32_t)gfp.getGeometryPatchBlockFilteringEnableFlag(), 1 );  // u(1)
+    if ( gfp.getGeometryPatchBlockFilteringEnableFlag() ) {
+      bitstream.write( (uint32_t)gfp.getGeometryPatchBlockFilteringLog2ThresholdMinus1(), 2 );  // u(2)
+      bitstream.write( (uint32_t)gfp.getGeometryPatchBlockFilteringPassesCountMinus1(), 2 );    // u(3)
+      bitstream.write( (uint32_t)gfp.getGeometryPatchBlockFilteringFilterSizeMinus1(), 3 );     // u(3)
     }
   }
   if ( gfp.getGeometryScaleParamsPresentFlag() ) {

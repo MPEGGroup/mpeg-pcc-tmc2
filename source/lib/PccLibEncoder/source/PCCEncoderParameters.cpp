@@ -193,6 +193,12 @@ PCCEncoderParameters::PCCEncoderParameters() {
   // Sort missed points by Morton code
   mortonOrderSortMissedPoints_  = false;
   textureMPSeparateVideoWidth_ = 64;
+
+  // Patch border filtering
+  pbfEnableFlag_    = 0;
+  pbfPassesCount_   = 0;
+  pbfFilterSize_    = 0;
+  pbfLog2Threshold_ = 3;
 }
 
 PCCEncoderParameters::~PCCEncoderParameters() {}
@@ -429,6 +435,11 @@ void PCCEncoderParameters::print() {
       }
     }
   }
+  std::cout << "\t Patch block filtering" << std::endl;
+  std::cout << "\t   pbfEnableFlag                          " << pbfEnableFlag_ << std::endl;
+  std::cout << "\t   pbfPassesCount                         " << pbfPassesCount_ << std::endl;
+  std::cout << "\t   pbfFilterSize                          " << pbfFilterSize_ << std::endl;
+  std::cout << "\t   pbfLog2Threshold                       " << pbfLog2Threshold_ << std::endl;
   std::cout << std::endl;
 }
 
@@ -503,6 +514,7 @@ bool PCCEncoderParameters::check() {
   }
 
   if ( losslessGeo_ ) {
+    pbfEnableFlag_ = false;
     if( layerCountMinus1_ == 0  ) {
       //layerCountMinus1_ = 1; 
       //std::cerr << "WARNING: layerCountMinus1_ is only for lossy coding mode for now. Force "
@@ -619,12 +631,18 @@ bool PCCEncoderParameters::check() {
     }
   }
 
-  if ( flagGeometrySmoothing_ && gridSmoothing_ ) {
-    if ( gridSize_ == 0 ) {
-      ret = false;
-      std::cerr << "gridSize shall be greater than 0. \n";
+  if ( flagGeometrySmoothing_ ) {
+    if ( gridSmoothing_ ) {
+      if ( gridSize_ == 0 ) {
+        ret = false;
+        std::cerr << "gridSize shall be greater than 0. \n";
+      }
+      if ( gridSize_ % 2 == 1 ) { std::cerr << "WARNING: gridSize should be an even number\n"; }
     }
-    if ( gridSize_ % 2 == 1 ) { std::cerr << "WARNING: gridSize should be an even number\n"; }
+    if ( pbfEnableFlag_ ) {
+      if ( !pbfPassesCount_ ) { pbfPassesCount_ = occupancyPrecision_ <= 2 ? 1 : occupancyPrecision_ == 4 ? 2 : 4; }
+      if ( !pbfFilterSize_ ) { pbfFilterSize_ = occupancyPrecision_; }
+    }
   }
   if ( flagColorSmoothing_ && gridColorSmoothing_ ) {
     if ( cgridSize_ == 0 ) {
@@ -713,6 +731,10 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   gfp.setGeometrySmoothingGridSizeMinus2( gridSize_ - 2 );
   gfp.setGeometrySmoothingThreshold( thresholdSmoothing_ );
   gfp.setGeometrySmoothingEnabledFlag( gridSmoothing_ );
+  gfp.setGeometryPatchBlockFilteringEnableFlag( pbfEnableFlag_ );
+  gfp.setGeometryPatchBlockFilteringPassesCountMinus1( pbfPassesCount_ - 1 );
+  gfp.setGeometryPatchBlockFilteringFilterSizeMinus1( pbfFilterSize_  - 1 );
+  gfp.setGeometryPatchBlockFilteringLog2ThresholdMinus1( pbfLog2Threshold_ - 1 );
 
   pfaps.setAttributeDimensionMinus1( 2 );
   afp.allocate( pfaps.getAttributeDimensionMinus1() + 1 );

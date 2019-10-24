@@ -780,8 +780,12 @@ bool parseParameters( int                   argc,
     ("numCutsAlong2ndLongestAxis"  , encoderParams.numCutsAlong2ndLongestAxis_, encoderParams.numCutsAlong2ndLongestAxis_, " ")
     ("numCutsAlong3rdLongestAxis"  , encoderParams.numCutsAlong3rdLongestAxis_, encoderParams.numCutsAlong3rdLongestAxis_, " ")
     // Sort missed points by Morton code (m49363 CE2.25)
-    ("mortonOrderSortMissedPoints" , encoderParams.mortonOrderSortMissedPoints_, encoderParams.mortonOrderSortMissedPoints_, " ")
-    ;
+    ("mortonOrderSortMissedPoints" , encoderParams.mortonOrderSortMissedPoints_, encoderParams.mortonOrderSortMissedPoints_, " ") 
+    // Patch block filtering
+    ("pbfEnableFlag", encoderParams.pbfEnableFlag_, encoderParams.pbfEnableFlag_, " enable patch block filtering \n")
+    ("pbfFilterSize", encoderParams.pbfFilterSize_, encoderParams.pbfFilterSize_, "pbfFilterSize \n")
+    ("pbfPassesCount", encoderParams.pbfPassesCount_, encoderParams.pbfPassesCount_, "pbfPassesCount \n")
+    ("pbfLog2Threshold", encoderParams.pbfLog2Threshold_, encoderParams.pbfLog2Threshold_, "pbfLog2Threshold \n");
 
    opts.addOptions()
      ("computeChecksum",
