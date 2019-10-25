@@ -75,7 +75,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   occupancyMapVideoEncoderConfig_          = {};
   occupancyMapQP_                          = 8;
   occupancyMapRefinement_                  = false;
-  postprocessSmoothing_                    = true;
+  postprocessSmoothingFilter_              = 1;
   flagGeometrySmoothing_                   = true;
   patchExpansion_                          = false;
   gridSmoothing_                           = true;
@@ -97,6 +97,8 @@ PCCEncoderParameters::PCCEncoderParameters() {
   maxGeometryDist2Bwd_                     = 10000.0;
   maxColorDist2Fwd_                        = 10000.0;
   maxColorDist2Bwd_                        = 10000.0;
+  excludeColorOutlier_                     = false;
+  thresholdColorOutlierDist_               = 10.0;
   videoEncoderPath_                        = {};
   videoEncoderAuxPath_                     = {};
   videoEncoderOccupancyMapPath_            = {};
@@ -193,12 +195,17 @@ PCCEncoderParameters::PCCEncoderParameters() {
   // Sort missed points by Morton code
   mortonOrderSortMissedPoints_  = false;
   textureMPSeparateVideoWidth_ = 64;
+  
+  // Separate high gradient points
+  highGradientSeparation_   = false;
+  minGradient_              = 15.0;
+  minNumHighGradientPoints_ = 256;
 
   // Patch border filtering
   pbfEnableFlag_    = 0;
   pbfPassesCount_   = 0;
   pbfFilterSize_    = 0;
-  pbfLog2Threshold_ = 3;
+  pbfLog2Threshold_ = 2;
 }
 
 PCCEncoderParameters::~PCCEncoderParameters() {}
@@ -264,6 +271,11 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   maxAllowedDist2MissedPointsSelection " << maxAllowedDist2MissedPointsSelection_ << std::endl;
   std::cout << "\t   lambdaRefineSegmentation               " << lambdaRefineSegmentation_ << std::endl;
   std::cout << "\t   depthQuantizationStep                  " << minLevel_ << std::endl;
+  std::cout << "\t   highGradientSeparation                 " << highGradientSeparation_ << std::endl;
+  if ( highGradientSeparation_ ) {
+    std::cout << "\t     minGradient                          " << minGradient_ << std::endl;
+    std::cout << "\t     minNumHighGradientPoints             " << minNumHighGradientPoints_ << std::endl;
+  }
   std::cout << "\t packing" << std::endl;
   std::cout << "\t   minimumImageWidth                      " << minimumImageWidth_ << std::endl;
   std::cout << "\t   minimumImageHeight                     " << minimumImageHeight_ << std::endl;
@@ -317,7 +329,7 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   Lossy occupancy map offset             " << offsetLossyOM_ << std::endl;
   std::cout << "\t   Lossy occupancy map threshold          " << thresholdLossyOM_ << std::endl;
   std::cout << "\t   Lossy occupancy map prefilter          " << prefilterLossyOM_ << std::endl;
-  std::cout << "\t   postprocessSmoothing                   " << postprocessSmoothing_ << std::endl;
+  std::cout << "\t   postprocessSmoothingFilter             " << postprocessSmoothingFilter_ << std::endl;
   std::cout << "\t   geometry smoothing                     " << std::endl;
   std::cout << "\t   flagGeometrySmoothing                  " << flagGeometrySmoothing_ << std::endl;
   if ( flagGeometrySmoothing_ ) {
@@ -371,6 +383,10 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   maxColorDist2Fwd                       " << maxColorDist2Fwd_ << std::endl;
   std::cout << "\t   maxColorDist2Bwd                       " << maxColorDist2Bwd_ << std::endl;
   std::cout << "\t   patchColorSubsampling                  " << patchColorSubsampling_ << std::endl;
+  std::cout << "\t   excludeColorOutlier                    " << excludeColorOutlier_ << std::endl;
+  if ( excludeColorOutlier_ ) {
+    std::cout << "\t     thresholdColorOutlierDist            " << thresholdColorOutlierDist_ << std::endl;
+  }
   std::cout << "\t Reconstruction " << std::endl;
   std::cout << "\t   removeDuplicatePoints                  " << removeDuplicatePoints_ << std::endl;
   std::cout << "\t   pointLocalReconstruction               " << pointLocalReconstruction_ << std::endl;
@@ -632,16 +648,17 @@ bool PCCEncoderParameters::check() {
   }
 
   if ( flagGeometrySmoothing_ ) {
+    if ( pbfEnableFlag_ ) {
+      gridSmoothing_ = false;
+      if ( !pbfPassesCount_ ) { pbfPassesCount_ = occupancyPrecision_ <= 2 ? 1 : occupancyPrecision_ == 4 ? 2 : 4; }
+      if ( !pbfFilterSize_ ) { pbfFilterSize_ = occupancyPrecision_; }
+    }
     if ( gridSmoothing_ ) {
       if ( gridSize_ == 0 ) {
         ret = false;
         std::cerr << "gridSize shall be greater than 0. \n";
       }
       if ( gridSize_ % 2 == 1 ) { std::cerr << "WARNING: gridSize should be an even number\n"; }
-    }
-    if ( pbfEnableFlag_ ) {
-      if ( !pbfPassesCount_ ) { pbfPassesCount_ = occupancyPrecision_ <= 2 ? 1 : occupancyPrecision_ == 4 ? 2 : 4; }
-      if ( !pbfFilterSize_ ) { pbfFilterSize_ = occupancyPrecision_; }
     }
   }
   if ( flagColorSmoothing_ && gridColorSmoothing_ ) {

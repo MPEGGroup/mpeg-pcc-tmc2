@@ -170,9 +170,11 @@ class PCCPointSet3 {
                         double        maxGeometryDist2Fwd                     = 10000.0,
                         double        maxGeometryDist2Bwd                     = 10000.0,
                         double        maxColorDist2Fwd                        = 10000.0,
-                        double        maxColorDist2Bwd                        = 10000.0 ) const;
+                        double        maxColorDist2Bwd                        = 10000.0,
+                        const bool    excludeColorOutlier                     = false,
+                        const double  thresholdColorOutlierDist               = 10.0 ) const;
   
-  bool transferColors     ( PCCPointSet3 &target,
+  bool transferColorsFilter3( PCCPointSet3 &target,
                              const int32_t searchRange,
                              const bool losslessTexture ) const;
   

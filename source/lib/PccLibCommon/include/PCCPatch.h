@@ -71,15 +71,6 @@ struct GPAPatchData {
   }
 };
 
-#ifdef PATCH_BLOCK_FILTERING
-
-#define TRACE_PBF 
-#ifdef TRACE_PBF 
-  static int32_t g_numberBorderPoints = 0;
-  static int32_t g_numberCandiatedPoints = 0;
-  static int32_t g_numberProjectedPoints = 0;
-  static int32_t g_numberSmoothPoints = 0;
-#endif
 static const std::vector<uint8_t> g_orientation = {
     0, 0, 6, 0, 0, 0, 0, 6, 4, 0, 0, 5, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 7, 7, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 4, 0, 5, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 5, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -88,32 +79,8 @@ static const std::vector<uint8_t> g_orientation = {
     0, 0, 7, 7, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 7, 0, 0, 0, 0, 0, 0,
     0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 3, 3, 0, 3, 0, 0, 0, 4, 1, 0, 0, 0, 1, 0, 1, 0, 2, 3, 0, 0, 1, 2, 0, 0};
-static const int8_t g_dilate[8][2]  = {{1, 0}, {1, 1}, {0, 1}, {-1, 1}, {-1, 0}, {-1, -1}, {0, -1}, {1, -1}};
+static const int8_t g_dilate[8][2] = {{1, 0}, {1, 1}, {0, 1}, {-1, 1}, {-1, 0}, {-1, -1}, {0, -1}, {1, -1}};
 
-class PCCFillPoint3D {
- public:
-  PCCFillPoint3D( PCCPoint3D point, int16_t x0, int16_t y0, int16_t x1, int16_t y1, float scale ) :
-      point_( point ),
-      x0_( x0 ),
-      y0_( y0 ),
-      x1_( x1 ),
-      y1_( y1 ),
-      scale_( scale ) {}
-  PCCPoint3D& getPoint() { return point_; }
-  int16_t&    getX0() { return x0_; }
-  int16_t&    getY0() { return y0_; }
-  int16_t&    getX1() { return x1_; }
-  int16_t&    getY1() { return y1_; }
-  float&      getScale() { return scale_; }
- private:
-  PCCPoint3D point_;
-  int16_t    x0_;
-  int16_t    y0_;
-  int16_t    x1_;
-  int16_t    y1_;
-  float      scale_;
-};
-#endif
 class PCCPatch {
  public:
   PCCPatch() :
@@ -139,9 +106,9 @@ class PCCPatch {
       bestMatchIdx_( InvalidPatchIndex ),
       patchOrientation_( 0 ),
       isGlobalPatch_( false ),
-      d0Count_(0),
-      eddCount_(0),
-      eddandD1Count_(0),
+      d0Count_( 0 ),
+      eddCount_( 0 ),
+      eddandD1Count_( 0 ),
       patchType_( PATCH_MODE_I_INTRA ) {
     depth_[0].clear();
     depth_[1].clear();
@@ -166,47 +133,43 @@ class PCCPatch {
     neighboringPatches_.clear();
     depthMap_.clear();
   };
-  size_t getEddCount() {return eddCount_;}
-  void setEddCount(size_t value){eddCount_=value;}
-  size_t getEddandD1Count(){return eddandD1Count_;}
-  void setEddandD1Count(size_t value){eddandD1Count_=value;}
-  size_t getD0Count(){return d0Count_;}
-  void setD0Count(size_t value){d0Count_=value;}
-  
-  size_t&               getIndex() { return index_; }
-  size_t&               getOriginalIndex() { return originalIndex_; }
-  size_t&               getU1() { return u1_; }
-  size_t&               getV1() { return v1_; }
-  size_t&               getD1() { return d1_; }
-  size_t&               getSizeD() { return sizeD_; }
-  size_t&               getSizeU() { return sizeU_; }
-  size_t&               getSizeV() { return sizeV_; }
-  size_t&               getU0() { return u0_; }
-  size_t&               getV0() { return v0_; }
-  size_t&               getSizeU0() { return sizeU0_; }
-  size_t&               getSizeV0() { return sizeV0_; }
-  size_t&               setViewId() { return viewId_; }
-//  int32_t&              setBestMatchIdx() { return bestMatchIdx_; }
-  void                  setBestMatchIdx(int32_t value) { bestMatchIdx_=value; }
-  uint8_t               getPatchType() const { return patchType_; }
-  void                  setPatchType( uint8_t value ){ patchType_ = value; }
-  size_t&               getOccupancyResolution() { return occupancyResolution_; }
-  size_t&               getProjectionMode() { return projectionMode_; }
-  size_t&               getNormalAxis() { return normalAxis_; }
-  size_t&               getTangentAxis() { return tangentAxis_; }
-  size_t&               getBitangentAxis() { return bitangentAxis_; }
-  std::vector<int16_t>& getDepth( int i ) { return depth_[i]; }
-  std::vector<bool>&    getOccupancy() { return occupancy_; }
-  size_t               getLodScaleX() { return levelOfDetailX_; }
-  size_t               getLodScaleY() { return levelOfDetailY_; }
-  size_t               getLodScaleX() const { return levelOfDetailX_; }
-  size_t               getLodScaleY() const { return levelOfDetailY_; }
-
-  void               setLodScaleX(size_t value) { levelOfDetailX_=value; }
-  void               setLodScaleY(size_t value) { levelOfDetailY_=value; }
-  PCCMetadata&          getPatchLevelMetadata() { return patchLevelMetadata_; }
-  size_t&               getAxisOfAdditionalPlane()     { return axisOfAdditionalPlane_; }
-
+  size_t                      getEddCount() { return eddCount_; }
+  void                        setEddCount( size_t value ) { eddCount_ = value; }
+  size_t                      getEddandD1Count() { return eddandD1Count_; }
+  void                        setEddandD1Count( size_t value ) { eddandD1Count_ = value; }
+  size_t                      getD0Count() { return d0Count_; }
+  void                        setD0Count( size_t value ) { d0Count_ = value; }
+  size_t&                     getIndex() { return index_; }
+  size_t&                     getOriginalIndex() { return originalIndex_; }
+  size_t&                     getU1() { return u1_; }
+  size_t&                     getV1() { return v1_; }
+  size_t&                     getD1() { return d1_; }
+  size_t&                     getSizeD() { return sizeD_; }
+  size_t&                     getSizeU() { return sizeU_; }
+  size_t&                     getSizeV() { return sizeV_; }
+  size_t&                     getU0() { return u0_; }
+  size_t&                     getV0() { return v0_; }
+  size_t&                     getSizeU0() { return sizeU0_; }
+  size_t&                     getSizeV0() { return sizeV0_; }
+  size_t&                     setViewId() { return viewId_; }
+  void                        setBestMatchIdx( int32_t value ) { bestMatchIdx_ = value; }
+  uint8_t                     getPatchType() const { return patchType_; }
+  void                        setPatchType( uint8_t value ) { patchType_ = value; }
+  size_t&                     getOccupancyResolution() { return occupancyResolution_; }
+  size_t&                     getProjectionMode() { return projectionMode_; }
+  size_t&                     getNormalAxis() { return normalAxis_; }
+  size_t&                     getTangentAxis() { return tangentAxis_; }
+  size_t&                     getBitangentAxis() { return bitangentAxis_; }
+  std::vector<int16_t>&       getDepth( int i ) { return depth_[i]; }
+  std::vector<bool>&          getOccupancy() { return occupancy_; }
+  size_t                      getLodScaleX() { return levelOfDetailX_; }
+  size_t                      getLodScaleY() { return levelOfDetailY_; }
+  size_t                      getLodScaleX() const { return levelOfDetailX_; }
+  size_t                      getLodScaleY() const { return levelOfDetailY_; }
+  void                        setLodScaleX( size_t value ) { levelOfDetailX_ = value; }
+  void                        setLodScaleY( size_t value ) { levelOfDetailY_ = value; }
+  PCCMetadata&                getPatchLevelMetadata() { return patchLevelMetadata_; }
+  size_t&                     getAxisOfAdditionalPlane() { return axisOfAdditionalPlane_; }
   size_t                      getIndex() const { return index_; }
   size_t                      getOriginalIndex() const { return originalIndex_; }
   size_t                      getU1() const { return u1_; }
@@ -232,18 +195,17 @@ class PCCPatch {
   const std::vector<int16_t>& getDepthEnhancedDeltaD() const { return depthEnhancedDeltaD_; }
   const PCCMetadata&          getPatchLevelMetadata() const { return patchLevelMetadata_; }
   const size_t&               getAxisOfAdditionalPlane() const { return axisOfAdditionalPlane_; }
-
   const std::vector<int64_t>& getdepth0pccidx() const { return depth0PCidx_; }
   std::vector<int64_t>&       getdepth0pccidx() { return depth0PCidx_; }
   bool&                       getIsRoiPatch() { return isRoiPatch_; }
   size_t&                     getRoiIndex() { return roiIndex_; }
   // Flexible Patch Orientation
-  size_t&       getPatchOrientation() { return patchOrientation_; }
-  size_t        getPatchOrientation() const { return patchOrientation_; }
-  bool&         getIsGlobalPatch() { return isGlobalPatch_; }
-  bool          getIsGlobalPatch() const { return isGlobalPatch_; }
+  size_t& getPatchOrientation() { return patchOrientation_; }
+  size_t  getPatchOrientation() const { return patchOrientation_; }
+  bool&   getIsGlobalPatch() { return isGlobalPatch_; }
+  bool    getIsGlobalPatch() const { return isGlobalPatch_; }
 
-  inline double generateNormalCoordinate( const uint16_t depth) const{
+  inline double generateNormalCoordinate( const uint16_t depth ) const {
     double coord = 0;
     if ( projectionMode_ == 0 ) {
       coord = ( (double)depth + (double)d1_ );
@@ -254,65 +216,61 @@ class PCCPatch {
     return coord;
   }
 
-  
-  PCCPoint3D generatePoint( const size_t   u,
-                            const size_t   v,
-                            const uint16_t depth) const
-  {
+  PCCPoint3D generatePoint( const size_t u, const size_t v, const uint16_t depth ) const {
     PCCPoint3D point0;
-    point0[normalAxis_]    = generateNormalCoordinate(depth);
+    point0[normalAxis_]    = generateNormalCoordinate( depth );
     point0[tangentAxis_]   = ( double( u ) * (double)levelOfDetailX_ + u1_ );
     point0[bitangentAxis_] = ( double( v ) * (double)levelOfDetailY_ + v1_ );
     return point0;
   }
 
-  PCCPoint3D canvasTo3D(const size_t x, const size_t y, const uint16_t depth ) const {
-		  PCCPoint3D point0;
-		  size_t u=0, v=0;
-		  switch (patchOrientation_) {
-		  case PATCH_ORIENTATION_DEFAULT:
-			  u = x - u0_ * occupancyResolution_;
-			  v = y - v0_ * occupancyResolution_;
-			  break;
-		  case PATCH_ORIENTATION_ROT90:
-			  v = (sizeV0_ * occupancyResolution_ - 1 - (x - u0_ * occupancyResolution_));
-			  u = y - v0_ * occupancyResolution_;
-			  break;
-		  case  PATCH_ORIENTATION_ROT180:
-			  u = (sizeU0_ * occupancyResolution_ - 1 - (x - u0_ * occupancyResolution_));
-			  v = (sizeV0_ * occupancyResolution_ - 1 - (y - v0_ * occupancyResolution_));
-			  break;
-		  case  PATCH_ORIENTATION_ROT270:
-			  v = x - u0_ * occupancyResolution_;
-			  u = (sizeU0_ * occupancyResolution_ - 1 - (y - v0_ * occupancyResolution_));
-			  break;
-		  case  PATCH_ORIENTATION_MIRROR:
-			  u = (sizeU0_ * occupancyResolution_ - 1 - (x - u0_ * occupancyResolution_));
-			  v = y - v0_ * occupancyResolution_;
-			  break;
-		  case  PATCH_ORIENTATION_MROT90:
-			  v = (sizeV0_ * occupancyResolution_ - 1 - (x - u0_ * occupancyResolution_));
-			  u = (sizeU0_ * occupancyResolution_ - 1 - (y - v0_ * occupancyResolution_));
-			  break;
-		  case  PATCH_ORIENTATION_MROT180:
-			  u = x - u0_ * occupancyResolution_;
-			  v = (sizeV0_ * occupancyResolution_ - 1 - (y - v0_ * occupancyResolution_));
-			  break;
-		  case PATCH_ORIENTATION_MROT270:
-			  v = x - u0_ * occupancyResolution_;
-			  u = y - v0_ * occupancyResolution_;
-			  break;
-		  case PATCH_ORIENTATION_SWAP://swapAxis
-			  v = x - u0_ * occupancyResolution_;
-			  u = y - v0_ * occupancyResolution_;
-			  break;
-		  default: assert(0); break;
-		  }
-      point0[normalAxis_] = generateNormalCoordinate(depth);
-      point0[tangentAxis_] = (double(u) * levelOfDetailX_ + u1_);
-      point0[bitangentAxis_] = (double(v) * levelOfDetailY_ + v1_);
-		  return point0;
-	  }
+  PCCPoint3D canvasTo3D( const size_t x, const size_t y, const uint16_t depth ) const {
+    PCCPoint3D point0;
+    size_t     u = 0, v = 0;
+    switch ( patchOrientation_ ) {
+      case PATCH_ORIENTATION_DEFAULT:
+        u = x - u0_ * occupancyResolution_;
+        v = y - v0_ * occupancyResolution_;
+        break;
+      case PATCH_ORIENTATION_ROT90:
+        v = ( sizeV0_ * occupancyResolution_ - 1 - ( x - u0_ * occupancyResolution_ ) );
+        u = y - v0_ * occupancyResolution_;
+        break;
+      case PATCH_ORIENTATION_ROT180:
+        u = ( sizeU0_ * occupancyResolution_ - 1 - ( x - u0_ * occupancyResolution_ ) );
+        v = ( sizeV0_ * occupancyResolution_ - 1 - ( y - v0_ * occupancyResolution_ ) );
+        break;
+      case PATCH_ORIENTATION_ROT270:
+        v = x - u0_ * occupancyResolution_;
+        u = ( sizeU0_ * occupancyResolution_ - 1 - ( y - v0_ * occupancyResolution_ ) );
+        break;
+      case PATCH_ORIENTATION_MIRROR:
+        u = ( sizeU0_ * occupancyResolution_ - 1 - ( x - u0_ * occupancyResolution_ ) );
+        v = y - v0_ * occupancyResolution_;
+        break;
+      case PATCH_ORIENTATION_MROT90:
+        v = ( sizeV0_ * occupancyResolution_ - 1 - ( x - u0_ * occupancyResolution_ ) );
+        u = ( sizeU0_ * occupancyResolution_ - 1 - ( y - v0_ * occupancyResolution_ ) );
+        break;
+      case PATCH_ORIENTATION_MROT180:
+        u = x - u0_ * occupancyResolution_;
+        v = ( sizeV0_ * occupancyResolution_ - 1 - ( y - v0_ * occupancyResolution_ ) );
+        break;
+      case PATCH_ORIENTATION_MROT270:
+        v = x - u0_ * occupancyResolution_;
+        u = y - v0_ * occupancyResolution_;
+        break;
+      case PATCH_ORIENTATION_SWAP:  // swapAxis
+        v = x - u0_ * occupancyResolution_;
+        u = y - v0_ * occupancyResolution_;
+        break;
+      default: assert( 0 ); break;
+    }
+    point0[normalAxis_]    = generateNormalCoordinate( depth );
+    point0[tangentAxis_]   = ( double( u ) * levelOfDetailX_ + u1_ );
+    point0[bitangentAxis_] = ( double( v ) * levelOfDetailY_ + v1_ );
+    return point0;
+  }
 
   size_t patch2Canvas( const size_t u,
                        const size_t v,
@@ -423,7 +381,7 @@ class PCCPatch {
       if ( x > tile.maxU ) return -1;
       if ( y > tile.maxV ) return -1;
     }
-    return  int( x + canvasStrideBlk * y );
+    return int( x + canvasStrideBlk * y );
   }
 
   bool checkFitPatchCanvas( std::vector<bool> canvas,
@@ -436,24 +394,18 @@ class PCCPatch {
       for ( size_t u0 = 0; u0 < getSizeU0(); ++u0 ) {
         for ( int deltaY = -safeguard; deltaY < safeguard + 1; deltaY++ ) {
           for ( int deltaX = -safeguard; deltaX < safeguard + 1; deltaX++ ) {
-            int pos = patchBlock2CanvasBlock( u0 + deltaX, v0 + deltaY, canvasStrideBlk, canvasHeightBlk,
-                                              tile );
+            int pos = patchBlock2CanvasBlock( u0 + deltaX, v0 + deltaY, canvasStrideBlk, canvasHeightBlk, tile );
             if ( pos < 0 ) {
               return false;
-						}
-						else {
-							if (bPrecedence) {
-								if (canvas[pos] && occupancy_[u0 + getSizeU0() * v0]) {
-									return false;
-								}
-							} else {
-								if (canvas[pos]) {
-              return false;
+            } else {
+              if ( bPrecedence ) {
+                if ( canvas[pos] && occupancy_[u0 + getSizeU0() * v0] ) { return false; }
+              } else {
+                if ( canvas[pos] ) { return false; }
+              }
             }
           }
         }
-      }
-    }
       }
     }
     return true;
@@ -559,25 +511,25 @@ class PCCPatch {
           if ( !occupancy_[idx2 * getSizeU0() + idx] ) wasted_space_internal++;
         }
       }
-      wasted_space = int (lambda * getV0() + wasted_space_external + wasted_space_internal);
+      wasted_space = int( lambda * getV0() + wasted_space_external + wasted_space_internal );
     } else if ( getPatchOrientation() == PATCH_ORIENTATION_ROT90 ) {
       for ( int idx = 0; idx < getSizeV0(); idx++ ) {
         wasted_space_external += getV0() + left_horizon[getSizeV0() - 1 - idx] - horizon[getU0() + idx];
         // calculating internal wasted space
-        for ( int idx2 = int (getSizeU0() - 1 - right_horizon[idx]); idx2 >= left_horizon[idx]; idx2-- ) {
+        for ( int idx2 = int( getSizeU0() - 1 - right_horizon[idx] ); idx2 >= left_horizon[idx]; idx2-- ) {
           if ( !occupancy_[idx * getSizeU0() + idx2] ) wasted_space_internal++;
         }
       }
-      wasted_space = int( lambda * getV0() + wasted_space_external + wasted_space_internal);
+      wasted_space = int( lambda * getV0() + wasted_space_external + wasted_space_internal );
     } else if ( getPatchOrientation() == PATCH_ORIENTATION_ROT180 ) {
       for ( int idx = 0; idx < getSizeU0(); idx++ ) {
         wasted_space_external += getV0() + top_horizon[getSizeU0() - 1 - idx] - horizon[getU0() + idx];
         // calculating internal wasted space
-        for ( int idx2 = int(getSizeV0() - 1 - top_horizon[idx]); idx2 >= bottom_horizon[idx]; idx2-- ) {
+        for ( int idx2 = int( getSizeV0() - 1 - top_horizon[idx] ); idx2 >= bottom_horizon[idx]; idx2-- ) {
           if ( !occupancy_[idx2 * getSizeU0() + idx] ) wasted_space_internal++;
         }
       }
-      wasted_space = int(lambda * getV0() + wasted_space_external + wasted_space_internal);
+      wasted_space = int( lambda * getV0() + wasted_space_external + wasted_space_internal );
     } else if ( getPatchOrientation() == PATCH_ORIENTATION_ROT270 ) {
       for ( int idx = 0; idx < getSizeV0(); idx++ ) {
         wasted_space_external += getV0() + right_horizon[idx] - horizon[getU0() + idx];
@@ -586,7 +538,7 @@ class PCCPatch {
           if ( !occupancy_[idx * getSizeU0() + idx2] ) wasted_space_internal++;
         }
       }
-      wasted_space = int(lambda * getV0() + wasted_space_external + wasted_space_internal);
+      wasted_space = int( lambda * getV0() + wasted_space_external + wasted_space_internal );
     } else if ( getPatchOrientation() == PATCH_ORIENTATION_MIRROR ) {
       for ( int idx = 0; idx < getSizeU0(); idx++ ) {
         wasted_space_external += getV0() + bottom_horizon[getSizeU0() - 1 - idx] - horizon[getU0() + idx];
@@ -594,7 +546,7 @@ class PCCPatch {
           if ( !occupancy_[idx2 * getSizeU0() + idx] ) wasted_space_internal++;
         }
       }
-      wasted_space = int(lambda * getV0() + wasted_space_external + wasted_space_internal);
+      wasted_space = int( lambda * getV0() + wasted_space_external + wasted_space_internal );
     } else if ( getPatchOrientation() == PATCH_ORIENTATION_MROT90 ) {
       for ( int idx = 0; idx < getSizeV0(); idx++ ) {
         wasted_space_external += getV0() + right_horizon[getSizeV0() - 1 - idx] - horizon[getU0() + idx];
@@ -603,32 +555,32 @@ class PCCPatch {
           if ( !occupancy_[idx * getSizeU0() + idx2] ) wasted_space_internal++;
         }
       }
-      wasted_space = int(lambda * getV0() + wasted_space_external + wasted_space_internal);
+      wasted_space = int( lambda * getV0() + wasted_space_external + wasted_space_internal );
     } else if ( getPatchOrientation() == PATCH_ORIENTATION_MROT180 ) {
       for ( int idx = 0; idx < getSizeU0(); idx++ ) {
         wasted_space_external += getV0() + top_horizon[idx] - horizon[getU0() + idx];
         // calculating internal wasted space
-        for ( int idx2 = int(getSizeV0() - 1 - top_horizon[idx]); idx2 >= bottom_horizon[idx]; idx2-- ) {
+        for ( int idx2 = int( getSizeV0() - 1 - top_horizon[idx] ); idx2 >= bottom_horizon[idx]; idx2-- ) {
           if ( !occupancy_[idx2 * getSizeU0() + idx] ) wasted_space_internal++;
         }
       }
-      wasted_space = int(lambda * getV0() + wasted_space_external + wasted_space_internal);
+      wasted_space = int( lambda * getV0() + wasted_space_external + wasted_space_internal );
     } else if ( getPatchOrientation() == PATCH_ORIENTATION_MROT270 ) {
       for ( int idx = 0; idx < getSizeV0(); idx++ ) {
         wasted_space_external += getV0() + left_horizon[idx] - horizon[getU0() + idx];
-        for ( int idx2 = int(getSizeU0() - 1 - left_horizon[idx]); idx2 >= right_horizon[idx]; idx2-- ) {
+        for ( int idx2 = int( getSizeU0() - 1 - left_horizon[idx] ); idx2 >= right_horizon[idx]; idx2-- ) {
           if ( !occupancy_[idx * getSizeU0() + idx2] ) wasted_space_internal++;
         }
       }
-      wasted_space = int(lambda * getV0() + wasted_space_external + wasted_space_internal);
+      wasted_space = int( lambda * getV0() + wasted_space_external + wasted_space_internal );
     } else if ( getPatchOrientation() == PATCH_ORIENTATION_SWAP ) {
       for ( int idx = 0; idx < getSizeV0(); idx++ ) {
         wasted_space_external += getV0() + left_horizon[idx] - horizon[getU0() + idx];
-        for ( int idx2 = int(getSizeU0() - 1 - left_horizon[idx]); idx2 >= right_horizon[idx]; idx2-- ) {
+        for ( int idx2 = int( getSizeU0() - 1 - left_horizon[idx] ); idx2 >= right_horizon[idx]; idx2-- ) {
           if ( !occupancy_[idx * getSizeU0() + idx2] ) wasted_space_internal++;
         }
       }
-      wasted_space = int(lambda * getV0() + wasted_space_external + wasted_space_internal);
+      wasted_space = int( lambda * getV0() + wasted_space_external + wasted_space_internal );
     }
     return wasted_space;
   }
@@ -699,47 +651,47 @@ class PCCPatch {
     int    newVal;
     if ( best_orientation == PATCH_ORIENTATION_DEFAULT ) {
       for ( int idx = 0; idx < getSizeU0(); idx++ ) {
-        newVal = int(best_v + getSizeV0() - 1 - top_horizon[idx]);
+        newVal = int( best_v + getSizeV0() - 1 - top_horizon[idx] );
         if ( newVal > horizon[best_u + idx] ) horizon[best_u + idx] = newVal;
       }
     } else if ( best_orientation == PATCH_ORIENTATION_ROT90 ) {
       for ( int idx = 0; idx < getSizeV0(); idx++ ) {
-        newVal = int(best_v + getSizeU0() - 1 - right_horizon[getSizeV0() - 1 - idx]);
+        newVal = int( best_v + getSizeU0() - 1 - right_horizon[getSizeV0() - 1 - idx] );
         if ( newVal > horizon[best_u + idx] ) horizon[best_u + idx] = newVal;
       }
     } else if ( best_orientation == PATCH_ORIENTATION_ROT180 ) {
       for ( int idx = 0; idx < getSizeU0(); idx++ ) {
-        newVal = int(best_v + getSizeV0() - 1 - bottom_horizon[getSizeU0() - 1 - idx]);
+        newVal = int( best_v + getSizeV0() - 1 - bottom_horizon[getSizeU0() - 1 - idx] );
         if ( newVal > horizon[best_u + idx] ) horizon[best_u + idx] = newVal;
       }
     } else if ( best_orientation == PATCH_ORIENTATION_ROT270 ) {
       for ( int idx = 0; idx < getSizeV0(); idx++ ) {
-        newVal = int(best_v + getSizeU0() - 1 - left_horizon[idx]);
+        newVal = int( best_v + getSizeU0() - 1 - left_horizon[idx] );
         if ( newVal > horizon[best_u + idx] ) horizon[best_u + idx] = newVal;
       }
     } else if ( best_orientation == PATCH_ORIENTATION_MIRROR ) {
       for ( int idx = 0; idx < getSizeU0(); idx++ ) {
-        newVal = int(best_v + getSizeV0() - 1 - top_horizon[getSizeU0() - 1 - idx]);
+        newVal = int( best_v + getSizeV0() - 1 - top_horizon[getSizeU0() - 1 - idx] );
         if ( newVal > horizon[best_u + idx] ) horizon[best_u + idx] = newVal;
       }
     } else if ( best_orientation == PATCH_ORIENTATION_MROT90 ) {
       for ( int idx = 0; idx < getSizeV0(); idx++ ) {
-        newVal = int(best_v + getSizeU0() - 1 - left_horizon[getSizeV0() - 1 - idx]);
+        newVal = int( best_v + getSizeU0() - 1 - left_horizon[getSizeV0() - 1 - idx] );
         if ( newVal > horizon[best_u + idx] ) horizon[best_u + idx] = newVal;
       }
     } else if ( best_orientation == PATCH_ORIENTATION_MROT180 ) {
       for ( int idx = 0; idx < getSizeU0(); idx++ ) {
-        newVal = int(best_v + getSizeV0() - 1 - bottom_horizon[idx]);
+        newVal = int( best_v + getSizeV0() - 1 - bottom_horizon[idx] );
         if ( newVal > horizon[best_u + idx] ) horizon[best_u + idx] = newVal;
       }
     } else if ( best_orientation == PATCH_ORIENTATION_MROT270 ) {
       for ( int idx = 0; idx < getSizeV0(); idx++ ) {
-        newVal = int(best_v + getSizeU0() - 1 - right_horizon[idx]);
+        newVal = int( best_v + getSizeU0() - 1 - right_horizon[idx] );
         if ( newVal > horizon[best_u + idx] ) horizon[best_u + idx] = newVal;
       }
     } else if ( best_orientation == PATCH_ORIENTATION_SWAP ) {
       for ( int idx = 0; idx < getSizeV0(); idx++ ) {
-        newVal = int(best_v + getSizeU0() - 1 - right_horizon[idx]);
+        newVal = int( best_v + getSizeU0() - 1 - right_horizon[idx] );
         if ( newVal > horizon[best_u + idx] ) horizon[best_u + idx] = newVal;
       }
     }
@@ -815,18 +767,13 @@ class PCCPatch {
             int pos = patchBlock2CanvasBlockForGPA( u0 + deltaX, v0 + deltaY, canvasStrideBlk, canvasHeightBlk );
             if ( pos < 0 ) {
               return false;
-						}
-						else {
-							if (bPrecedence) {
-								if (canvas[pos] && occupancy_[u0 + getSizeU0() * v0]) {
-									return false;
-								}
-							} else {
-								if (canvas[pos]) {
-              return false;
+            } else {
+              if ( bPrecedence ) {
+                if ( canvas[pos] && occupancy_[u0 + getSizeU0() * v0] ) { return false; }
+              } else {
+                if ( canvas[pos] ) { return false; }
+              }
             }
-							}
-						}
           }
         }
       }
@@ -859,35 +806,33 @@ class PCCPatch {
   }
 
   static void InverseRotatePosition45DegreeOnAxis( size_t Axis, size_t lod, PCCPoint3D input, PCCVector3D& output ) {
-    size_t s = (1u << lod) - 1;
+    size_t s   = ( 1u << lod ) - 1;
     output.x() = input.x();
     output.y() = input.y();
     output.z() = input.z();
 
-    if (Axis == 1){ // projection plane is defined by Y Axis. 
+    if ( Axis == 1 ) {  // projection plane is defined by Y Axis.
       output.x() = input.x() - input.z() + s;
       output.x() /= 2.0;
 
       output.z() = input.x() + input.z() - s;
       output.z() /= 2.0;
     }
-    if (Axis == 2){ // projection plane is defined by X Axis. 
+    if ( Axis == 2 ) {  // projection plane is defined by X Axis.
       output.z() = input.z() - input.y() + s;
       output.z() /= 2.0;
 
       output.y() = input.z() + input.y() - s;
       output.y() /= 2.0;
     }
-    if (Axis == 3){ // projection plane is defined by Z Axis.
+    if ( Axis == 3 ) {  // projection plane is defined by Z Axis.
       output.y() = input.y() - input.x() + s;
       output.y() /= 2.0;
 
       output.x() = input.y() + input.x() - s;
       output.x() /= 2.0;
-    } 
+    }
   }
-
-#ifdef PATCH_BLOCK_FILTERING
 
 #define OCC( tl, t, tr, l, v, r, bl, b, br ) \
   ( ( tl << 7 ) | ( t << 6 ) | ( tr << 5 ) | ( l << 4 ) | ( r << 3 ) | ( bl << 2 ) | ( b << 1 ) | ( br ) )
@@ -1003,18 +948,19 @@ class PCCPatch {
                      const int32_t                threhold ) {
     border_                 = occupancyPrecision >= 8 ? 16 : 8;
     const int16_t undefined = ( std::numeric_limits<int16_t>::max )();
-    depthMapWidth_  = sizeU0_ * occupancyResolution_ + 2 * border_;
-    depthMapHeight_ = sizeV0_ * occupancyResolution_ + 2 * border_;
-    depthMap_.resize( depthMapWidth_ * depthMapHeight_, 0 ); 
-    occupancyMap_.resize( depthMapWidth_ * depthMapHeight_,  0 );
+    depthMapWidth_          = sizeU0_ * occupancyResolution_ + 2 * border_;
+    depthMapHeight_         = sizeV0_ * occupancyResolution_ + 2 * border_;
+    depthMap_.resize( depthMapWidth_ * depthMapHeight_, 0 );
+    occupancyMap_.resize( depthMapWidth_ * depthMapHeight_, 0 );
     const int32_t patchIndexPlusOne  = indexCopy_ + 1;
     const auto    ocmWidth           = width / occupancyPrecision;
     const int32_t blockToPatchWidth  = width / occupancyResolution_;
     const int32_t blockToPatchHeight = height / occupancyResolution_;
     const int32_t occupancyResByPres = occupancyResolution_ / occupancyPrecision;
-    const int32_t shiftPrecision     = occupancyPrecision == 1 ? 0 : occupancyPrecision == 2 ? 1 : occupancyPrecision == 4 ? 2 : 3;
-    uint8_t*      ocm                = occupancyMap_.data() + border_ + depthMapWidth_ * border_;
-    int16_t*      depth              = depthMap_.data() + border_ + depthMapWidth_ * border_;
+    const int32_t shiftPrecision =
+        occupancyPrecision == 1 ? 0 : occupancyPrecision == 2 ? 1 : occupancyPrecision == 4 ? 2 : 3;
+    uint8_t* ocm   = occupancyMap_.data() + border_ + depthMapWidth_ * border_;
+    int16_t* depth = depthMap_.data() + border_ + depthMapWidth_ * border_;
 
     for ( int32_t v0 = 0; v0 < sizeV0_; ++v0 ) {
       for ( int32_t u0 = 0; u0 < sizeU0_; ++u0 ) {
@@ -1037,23 +983,15 @@ class PCCPatch {
         }
       }
     }
-    // #if 1
-    //     //if( indexCopy_  20 )
-    //     {
-    //       printf("Patch %4d %4d \n",sizeU0_,sizeV0_);
-    //       printVector( depthMap_,      depthMapWidth_, depthMapHeight_, "depth" );
-    //       printVector( occupancyMap_,  depthMapWidth_, depthMapHeight_, "OCM" );
-    //     }
-    //   #endif
   }
 
   void generateBorderPoints3D() {
-    const int32_t        w = depthMapWidth_;
+    const int32_t w   = depthMapWidth_;
     boundingBox_.min_ = PCCPoint3D( ( std::numeric_limits<int16_t>::max )() );
     boundingBox_.max_ = PCCPoint3D( ( std::numeric_limits<int16_t>::min )() );
-    int32_t c = border_ + border_ * w; 
-    for ( int32_t v = 0; v < sizeV0_ * occupancyResolution_; v++, c+=border_ << 1 ) {
-      for ( int32_t u = 0; u < sizeU0_ * occupancyResolution_; u++,c++ ) {
+    int32_t c         = border_ + border_ * w;
+    for ( int32_t v = 0; v < sizeV0_ * occupancyResolution_; v++, c += border_ << 1 ) {
+      for ( int32_t u = 0; u < sizeU0_ * occupancyResolution_; u++, c++ ) {
         if ( ( occupancyMap_[c] ) &&
              ( ( !occupancyMap_[c - 1] ) || ( !occupancyMap_[c + 1] ) || ( !occupancyMap_[c - w] ) ||
                ( !occupancyMap_[c + w] ) || ( !occupancyMap_[c - 2] ) || ( !occupancyMap_[c + 2] ) ||
@@ -1062,33 +1000,29 @@ class PCCPatch {
           auto point = generatePoint( u, v, depthMap_[border_ + ( v + border_ ) * w + u] );
           borderPoints_.push_back( point );
           boundingBox_.add( point );
-#ifdef TRACE_PBF 
-          g_numberBorderPoints++;
-#endif
         }
       }
     }
   }
 
-  inline int16_t                      getDepthMapWidth() { return depthMapWidth_; }
-  inline int16_t                      getDepthMapHeight() { return depthMapHeight_; }
-  inline int16_t                      getBorder() { return border_; }
-  inline std::vector<uint8_t>&        getOccupancyMap() { return occupancyMap_; }
-  inline std::vector<size_t>&         getNeighboringPatches() { return neighboringPatches_; }
-  inline const int16_t                getDepthMap( size_t u, size_t v ) const {
+  inline int16_t               getDepthMapWidth() { return depthMapWidth_; }
+  inline int16_t               getDepthMapHeight() { return depthMapHeight_; }
+  inline int16_t               getBorder() { return border_; }
+  inline std::vector<uint8_t>& getOccupancyMap() { return occupancyMap_; }
+  inline std::vector<size_t>&  getNeighboringPatches() { return neighboringPatches_; }
+  inline const int16_t         getDepthMap( size_t u, size_t v ) const {
     return depthMap_[( v + border_ ) * depthMapWidth_ + u + border_];
   }
   inline const int16_t getOccupancyMap( size_t u, size_t v ) const {
     return occupancyMap_[( v + border_ ) * depthMapWidth_ + u + border_];
   }
-    inline int16_t generateDepth( PCCPoint3D point ) const {
+  inline int16_t generateDepth( PCCPoint3D point ) const {
     return projectionMode_ == 0 ? point[normalAxis_] - d1_ : d1_ - point[normalAxis_];
   }
   inline bool intersects( PCCPatch& other ) { return boundingBox_.intersects( other.boundingBox_ ); }
-  inline void clearBorderPoints3D() { borderPoints_.clear(); }
-  inline void clearNeighboringPatches() { neighboringPatches_.clear(); }
-  inline void clearPatchBlockFilteringData() {    
-    occupancyMap_.clear();
+  inline void clearPatchBlockFilteringData() {
+    borderPoints_.clear();
+    neighboringPatches_.clear();
     depthMap_.clear();
   }
 
@@ -1111,13 +1045,7 @@ class PCCPatch {
     const int32_t shift = ( -v1_ + border_ ) * depthMapWidth_ - u1_ + border_;
     for ( auto& i : neighboringPatches_ ) {
       for ( auto& point : patches[i].borderPoints_ ) {
-#ifdef TRACE_PBF
-        g_numberCandiatedPoints++;
-#endif
         if ( boundingBox.contains( point ) ) {
-#ifdef TRACE_PBF
-          g_numberProjectedPoints++;
-#endif
           int32_t       d = generateDepth( point );
           const int32_t c = shift + point[bitangentAxis_] * depthMapWidth_ + point[tangentAxis_];
           if ( abs( d - depthMap_[c] ) <= threshold ) {
@@ -1142,7 +1070,7 @@ class PCCPatch {
             } else if ( numNeigblor == 4 ) {
               dst[c] = 1;
             } else {
-              float         sumE = 0, sumP = 0;  
+              float         sumE = 0, sumP = 0;
               int32_t       count  = 0;
               const int8_t  orX    = ORIENTATION( src, c, depthMapWidth_ );
               const int8_t  orY    = ( orX + 2 ) % 8;
@@ -1151,10 +1079,10 @@ class PCCPatch {
               const int32_t shiftX = dX[0] + dX[1] * depthMapWidth_;
               const int32_t shiftY = dY[0] + dY[1] * depthMapWidth_;
               const int32_t dE     = depthMap_[c - shiftX];
-              const int32_t dP  = depthMap_[c];
-              int32_t       cx  = c - localWindowSizeU * shiftX - localWindowSizeV * shiftY;
-              int32_t       du1 = -localWindowSizeU * dX[0] + -localWindowSizeV * dY[0];
-              int32_t       dv1 = -localWindowSizeU * dX[1] + -localWindowSizeV * dY[1];
+              const int32_t dP     = depthMap_[c];
+              int32_t       cx     = c - localWindowSizeU * shiftX - localWindowSizeV * shiftY;
+              int32_t       du1    = -localWindowSizeU * dX[0] + -localWindowSizeV * dY[0];
+              int32_t       dv1    = -localWindowSizeU * dX[1] + -localWindowSizeV * dY[1];
               for ( int32_t dx = -localWindowSizeU; dx <= localWindowSizeU;
                     dx++, cx += shiftX, du1 += dX[0], dv1 += dX[1] ) {
                 for ( int32_t dy = -localWindowSizeV, cn = cx, du = du1, dv = dv1; dy <= localWindowSizeV;
@@ -1168,9 +1096,6 @@ class PCCPatch {
                 }
               }
               dst[c] = ( ( count == 0 ) || ( sumE >= sumP ) );
-#ifdef TRACE_PBF 
-            if( ( ( count == 0 ) || ( sumE >= sumP ) ) ) { g_numberSmoothPoints++; }
-#endif
             }
           }
         }
@@ -1179,66 +1104,62 @@ class PCCPatch {
     if ( passesCount % 2 == 1 ) { memcpy( occupancyMap_.data(), newOccupancyMap.data(), size * sizeof( uint8_t ) ); }
   }
 
-
-#endif
  private:
-  size_t               index_;                // patch index
-  size_t               originalIndex_;        // patch original index
-  size_t               u1_;                   // tangential shift
-  size_t               v1_;                   // bitangential shift
-  size_t               d1_;                   // depth shift
-  size_t               sizeD_;                // size for depth
-  size_t               sizeU_;                // size for depth
-  size_t               sizeV_;                // size for depth
-  size_t               u0_;                   // location in packed image
-  size_t               v0_;                   // location in packed image
-  size_t               sizeU0_;               // size of occupancy map
-  size_t               sizeV0_;               // size of occupancy map
-  size_t               occupancyResolution_;  // occupancy map resolution
-  size_t               projectionMode_;       // 0: related to the min depth value; 1: related to the max value
-  size_t               levelOfDetailX_;
-  size_t               levelOfDetailY_;
-  size_t               normalAxis_;           // x
-  size_t               tangentAxis_;          // y
-  size_t               bitangentAxis_;        // z
-  std::vector<int16_t> depth_[2];             // depth
-  std::vector<bool>    occupancy_;            // occupancy map
-  size_t               viewId_;               // viewId in [0,1,2,3,4,5]
-  int32_t              bestMatchIdx_;         // index of matched patch from pre-frame patch.
-  std::vector<int16_t> depthEnhancedDeltaD_;  // Enhanced delta depht
-  std::vector<int64_t> depth0PCidx_;          // for Surface separation
-  size_t               patchOrientation_;     // patch orientation in canvas atlas
-  uint8_t              pointLocalReconstructionLevel_;
-  uint8_t              pointLocalReconstructionModeByPatch_;
-  std::vector<uint8_t> pointLocalReconstructionModeByBlock_;
-  PCCMetadata          patchLevelMetadata_;
-  GPAPatchData         curGPAPatchData_;
-  GPAPatchData         preGPAPatchData_;
-  bool                 isGlobalPatch_;
-  size_t               axisOfAdditionalPlane_;
-  size_t d0Count_;
-  size_t eddCount_;
-  size_t eddandD1Count_;
-  uint8_t              patchType_;
-  bool                 isRoiPatch_;
-  size_t               roiIndex_;
-#ifdef PATCH_BLOCK_FILTERING
-  size_t                      indexCopy_;           // patch index
-  PCCInt16Box3D               boundingBox_;         // 3D bouding box of patch
-  int16_t                     border_;              // Size of the depht Map (width + 2 border)
-  int16_t                     depthMapWidth_;       // Size of the depht Map (width + 2 border)
-  int16_t                     depthMapHeight_;      // Size of the depht Map (width + 2 border)
-  std::vector<size_t>         neighboringPatches_;  // List of neighboring patch index
-  std::vector<int16_t>        depthMap_;            // Depth map
-  std::vector<uint8_t>        occupancyMap_;        // Occupancy map
-  std::vector<PCCPoint3D>     borderPoints_;        // 3D points created from borders of the patch
-#endif
+  size_t                  index_;                // patch index
+  size_t                  originalIndex_;        // patch original index
+  size_t                  u1_;                   // tangential shift
+  size_t                  v1_;                   // bitangential shift
+  size_t                  d1_;                   // depth shift
+  size_t                  sizeD_;                // size for depth
+  size_t                  sizeU_;                // size for depth
+  size_t                  sizeV_;                // size for depth
+  size_t                  u0_;                   // location in packed image
+  size_t                  v0_;                   // location in packed image
+  size_t                  sizeU0_;               // size of occupancy map
+  size_t                  sizeV0_;               // size of occupancy map
+  size_t                  occupancyResolution_;  // occupancy map resolution
+  size_t                  projectionMode_;       // 0: related to the min depth value; 1: related to the max value
+  size_t                  levelOfDetailX_;
+  size_t                  levelOfDetailY_;
+  size_t                  normalAxis_;           // x
+  size_t                  tangentAxis_;          // y
+  size_t                  bitangentAxis_;        // z
+  std::vector<int16_t>    depth_[2];             // depth
+  std::vector<bool>       occupancy_;            // occupancy map
+  size_t                  viewId_;               // viewId in [0,1,2,3,4,5]
+  int32_t                 bestMatchIdx_;         // index of matched patch from pre-frame patch.
+  std::vector<int16_t>    depthEnhancedDeltaD_;  // Enhanced delta depht
+  std::vector<int64_t>    depth0PCidx_;          // for Surface separation
+  size_t                  patchOrientation_;     // patch orientation in canvas atlas
+  uint8_t                 pointLocalReconstructionLevel_;
+  uint8_t                 pointLocalReconstructionModeByPatch_;
+  std::vector<uint8_t>    pointLocalReconstructionModeByBlock_;
+  PCCMetadata             patchLevelMetadata_;
+  GPAPatchData            curGPAPatchData_;
+  GPAPatchData            preGPAPatchData_;
+  bool                    isGlobalPatch_;
+  size_t                  axisOfAdditionalPlane_;
+  size_t                  d0Count_;
+  size_t                  eddCount_;
+  size_t                  eddandD1Count_;
+  uint8_t                 patchType_;
+  bool                    isRoiPatch_;
+  size_t                  roiIndex_;
+  size_t                  indexCopy_;           // patch index
+  PCCInt16Box3D           boundingBox_;         // 3D bouding box of patch
+  int16_t                 border_;              // Size of the depht Map (width + 2 border)
+  int16_t                 depthMapWidth_;       // Size of the depht Map (width + 2 border)
+  int16_t                 depthMapHeight_;      // Size of the depht Map (width + 2 border)
+  std::vector<size_t>     neighboringPatches_;  // List of neighboring patch index
+  std::vector<int16_t>    depthMap_;            // Depth map
+  std::vector<uint8_t>    occupancyMap_;        // Occupancy map
+  std::vector<PCCPoint3D> borderPoints_;        // 3D points created from borders of the patch
 };
-#ifdef PATCH_BLOCK_FILTERING
+
 class PatchBlockFiltering {
  public:
-  PatchBlockFiltering(){}
-  ~PatchBlockFiltering() { clearPatchBlockFiltering(); }
+  PatchBlockFiltering() {}
+  ~PatchBlockFiltering() {}
 
   inline void setPatches( std::vector<PCCPatch>* patches ) { patches_ = patches; }
   inline void setBlockToPatch( std::vector<size_t>* value ) { blockToPatch_ = value; }
@@ -1253,13 +1174,7 @@ class PatchBlockFiltering {
                              size_t thresholdLossyOM,
                              int8_t passesCount,
                              int8_t filterSize,
-                             int8_t log2Threshold ) {   
-#ifdef TRACE_PBF 
-     g_numberBorderPoints = 0;
-     g_numberCandiatedPoints = 0;
-     g_numberSmoothPoints = 0;
-     g_numberProjectedPoints = 0;
-#endif
+                             int8_t log2Threshold ) {
     // Generate border points
     for ( size_t patchIndex = 0; patchIndex < patches_->size(); patchIndex++ ) {
       auto& patch = patches_->at( patchIndex );
@@ -1275,56 +1190,9 @@ class PatchBlockFiltering {
         }
       }
     }
-    
     // Filtering;
-    for ( auto& patch : *patches_ ) {
-      patch.filtering(  passesCount, filterSize, log2Threshold, *patches_ );
-    }
-    for ( auto& patch : *patches_ ) { patch.clearBorderPoints3D(); }    
-
-#ifdef TRACE_PBF 
-  printf("EVAL: numberBorderPoints    = %d  \n", g_numberBorderPoints );
-  printf("EVAL: numberCandiatedPoints = %d  \n", g_numberCandiatedPoints);
-  printf("EVAL: numberProjectedPoints = %d  \n", g_numberProjectedPoints);
-  printf("EVAL: numSmoothPoints       = %d  \n", g_numberSmoothPoints);
-#endif
-  }
-
-  void updateOccupancyMap( std::vector<uint32_t>& occupancyMapUpdate,
-                           size_t                 imageWidth,
-                           const size_t           imageHeight,
-                           const size_t           occupancyResolution ) {
-    occupancyMapUpdate.clear();
-    occupancyMapUpdate.resize( occupancyMapEncoder_->size(), 0 );
-    const size_t blockToPatchWidth  = imageWidth / occupancyResolution;
-    const size_t blockToPatchHeight = imageHeight / occupancyResolution;
-    const size_t patchCount         = patches_->size();
-    for ( size_t patchIndex = 0; patchIndex < patchCount; ++patchIndex ) {
-      const size_t   patchIndexPlusOne = patchIndex + 1;
-      auto&          patch             = patches_->at( patchIndex );
-      const int16_t  border            = patch.getBorder();
-      const int16_t  w                 = patch.getDepthMapWidth();
-      const uint8_t* ocuppancyMap      = patch.getOccupancyMap().data();
-      for ( size_t v0 = 0; v0 < patch.getSizeV0(); ++v0 ) {
-        for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {
-          const size_t blockIndex = patch.patchBlock2CanvasBlock( u0, v0, blockToPatchWidth, blockToPatchHeight );
-          if ( blockToPatch_->at( blockIndex ) == patchIndexPlusOne ) {
-            for ( size_t v1 = 0; v1 < occupancyResolution; ++v1 ) {
-              const size_t v = v0 * occupancyResolution + v1;
-              for ( size_t u1 = 0; u1 < occupancyResolution; ++u1 ) {
-                const size_t u = u0 * occupancyResolution + u1;
-                size_t       x, y;
-                size_t       coord        = patch.patch2Canvas( u, v, imageWidth, imageHeight, x, y );
-                occupancyMapUpdate[coord] = ocuppancyMap[ ( v + border ) * w + u + border ];
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-  inline void clearPatchBlockFiltering() {
-    for ( auto& patch : *patches_ ) { patch.clearNeighboringPatches(); }
+    for ( auto& patch : *patches_ ) { patch.filtering( passesCount, filterSize, log2Threshold, *patches_ ); }
+    for ( auto& patch : *patches_ ) { patch.clearPatchBlockFilteringData(); }
   }
 
  private:
@@ -1334,7 +1202,6 @@ class PatchBlockFiltering {
   const std::vector<uint8_t>*  occupancyMapVideo_;
   const std::vector<uint16_t>* geometryVideo_;
 };
-#endif
 
 struct PCCEDDInfosPerPatch {
   size_t patchIdx_;
@@ -1343,20 +1210,20 @@ struct PCCEDDInfosPerPatch {
 };
 
 struct PCCEomPatch {
-  size_t                u0_;
-  size_t                v0_;
-  size_t                sizeU_;
-  size_t                sizeV_;
-  size_t                eddCount_; //in this EomPatch
-  //size_t patchCount_;
+  size_t u0_;
+  size_t v0_;
+  size_t sizeU_;
+  size_t sizeV_;
+  size_t eddCount_;  // in this EomPatch
+  // size_t patchCount_;
   std::vector<size_t> memberPatches;
-   std::vector<size_t> eddCountPerPatch;
+  std::vector<size_t> eddCountPerPatch;
 };
 
 struct PCCMissedPointsPatch {
-  size_t u1_;                      // tangential shift
-  size_t v1_;                      // bitangential shift
-  size_t d1_;                      // depth shift
+  size_t                u1_;  // tangential shift
+  size_t                v1_;  // bitangential shift
+  size_t                d1_;  // depth shift
   size_t                sizeU_;
   size_t                sizeV_;
   size_t                u0_;
@@ -1376,10 +1243,9 @@ struct PCCMissedPointsPatch {
   size_t numberOfMps_;
   size_t numberOfMpsColors_;
 
-
-  //GPA.
-  size_t                preV0_;
-  size_t                tempV0_;
+  // GPA.
+  size_t preV0_;
+  size_t tempV0_;
 
   void resize( const size_t size ) {
     x_.resize( size );
@@ -1394,9 +1260,9 @@ struct PCCMissedPointsPatch {
 
   const size_t size() { return x_.size(); }
 
-  const size_t sizeOfColor() { return r_.size();}
-  void         setNumberOfMps(size_t numberOfMPs) { numberOfMps_ = numberOfMPs; }
-  void         setNumberOfMpsColors(size_t numberOfMpsColors) { numberOfMpsColors_ = numberOfMpsColors; }
+  const size_t sizeOfColor() { return r_.size(); }
+  void         setNumberOfMps( size_t numberOfMPs ) { numberOfMps_ = numberOfMPs; }
+  void         setNumberOfMpsColors( size_t numberOfMpsColors ) { numberOfMpsColors_ = numberOfMpsColors; }
   const size_t getNumberOfMps() { return numberOfMps_; }
   const size_t getNumberOfMpsColors() { return numberOfMpsColors_; }
 
@@ -1418,9 +1284,9 @@ struct PCCMissedPointsPatch {
     sizeV0_              = 0;
     sizeU0_              = 0;
     occupancyResolution_ = 0;
-    numberOfEddPoints_   = 0;  
+    numberOfEddPoints_   = 0;
     numberOfMps_         = 0;
-    numberOfMpsColors_   = 0; 
+    numberOfMpsColors_   = 0;
     preV0_               = 0;
     tempV0_              = 0;
     occupancy_.resize( 0 );

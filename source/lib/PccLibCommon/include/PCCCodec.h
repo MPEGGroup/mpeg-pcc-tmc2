@@ -81,7 +81,6 @@ struct GeneratePointCloudParameters {
   double      thresholdLocalEntropy_;
   double      radius2ColorSmoothing_;
   size_t      neighborCountColorSmoothing_;
-  bool        postprocessSmoothing_;
   bool        flagGeometrySmoothing_;
   bool        flagColorSmoothing_;
   bool        enhancedDeltaDepthCode_;
@@ -101,7 +100,6 @@ struct GeneratePointCloudParameters {
   int16_t     pbfPassesCount_;
   int16_t     pbfFilterSize_;
   int16_t     pbfLog2Threshold_;
-  bool        updateOccupancyMap_;
 };
 
 #ifdef CODEC_TRACE
@@ -115,10 +113,10 @@ class PCCCodec {
   PCCCodec();
   ~PCCCodec();
 
-  void generatePointCloud( PCCGroupOfFrames&                  reconstructs,
-                           PCCContext&                        context,
-                           const GeneratePointCloudParameters params,
-                           std::vector<std::vector<uint32_t>>&  partitions );
+  void generatePointCloud( PCCGroupOfFrames&                   reconstructs,
+                           PCCContext&                         context,
+                           const GeneratePointCloudParameters  params,
+                           std::vector<std::vector<uint32_t>>& partitions );
 
   bool colorPointCloud( PCCGroupOfFrames&                  reconstructs,
                         PCCContext&                        context,
@@ -126,16 +124,16 @@ class PCCCodec {
                         const PCCColorTransform            colorTransform,
                         const GeneratePointCloudParameters params );
 
-  void smoothPointCloudPostprocess( PCCGroupOfFrames&                    reconstructs,
-                                    PCCContext&                          context,
-                                    const PCCColorTransform              colorTransform,
-                                    const GeneratePointCloudParameters   params,
-                                    std::vector<std::vector<uint32_t>>&  partitions );
- 
+  void smoothPointCloudPostprocess( PCCGroupOfFrames&                   reconstructs,
+                                    PCCContext&                         context,
+                                    const PCCColorTransform             colorTransform,
+                                    const GeneratePointCloudParameters  params,
+                                    std::vector<std::vector<uint32_t>>& partitions );
+
   void colorSmoothing( PCCGroupOfFrames&                  reconstructs,
                        PCCContext&                        context,
                        const PCCColorTransform            colorTransform,
-                       const GeneratePointCloudParameters params  );
+                       const GeneratePointCloudParameters params );
 
   void generateMPsGeometryfromImage( PCCContext&       context,
                                      PCCFrameContext&  frame,
@@ -212,34 +210,32 @@ class PCCCodec {
                              const size_t                thresholdLossyOM,
                              const bool                  enhancedOccupancyMapForDepthFlag );
 
-  void generateBlockToPatchFromOccupancyMap( PCCContext&  context,
-                                             const size_t occupancyResolution );
+  void generateBlockToPatchFromOccupancyMap( PCCContext& context, const size_t occupancyResolution );
 
-  void generateBlockToPatchFromOccupancyMap( PCCContext&  context,
+  void generateBlockToPatchFromOccupancyMap( PCCContext&      context,
                                              PCCFrameContext& frame,
                                              size_t           frameIndex,
                                              const size_t     occupancyResolution );
 
-  void generateBlockToPatchFromBoundaryBox( PCCContext&  context,
-                                            const size_t occupancyResolution );
+  void generateBlockToPatchFromBoundaryBox( PCCContext& context, const size_t occupancyResolution );
 
-  void generateBlockToPatchFromBoundaryBox( PCCContext&  context,
+  void generateBlockToPatchFromBoundaryBox( PCCContext&      context,
                                             PCCFrameContext& frame,
                                             size_t           frameIndex,
                                             const size_t     occupancyResolution );
 
-  void generateBlockToPatchFromOccupancyMapVideo( PCCContext & context, 
-			                          const bool losslessGeo, 
-			                          const bool lossyMissedPointsPatch,
-			                          const size_t occupancyResolution, 
-			                          const size_t occupancyPrecision);
-	
-  void generateBlockToPatchFromOccupancyMapVideo( PCCContext & context,
-                                                  PCCFrameContext & frame, 
-						  PCCImageOccupancyMap & occupancyMapImage,
-						  size_t frameIndex, 
-						  const size_t occupancyResolution, 
-						  const size_t occupancyPrecision);
+  void generateBlockToPatchFromOccupancyMapVideo( PCCContext&  context,
+                                                  const bool   losslessGeo,
+                                                  const bool   lossyMissedPointsPatch,
+                                                  const size_t occupancyResolution,
+                                                  const size_t occupancyPrecision );
+
+  void generateBlockToPatchFromOccupancyMapVideo( PCCContext&           context,
+                                                  PCCFrameContext&      frame,
+                                                  PCCImageOccupancyMap& occupancyMapImage,
+                                                  size_t                frameIndex,
+                                                  const size_t          occupancyResolution,
+                                                  const size_t          occupancyPrecision );
 
   int getDeltaNeighbors( const PCCImageGeometry& frame,
                          const PCCPatch&         patch,
@@ -247,7 +243,7 @@ class PCCCodec {
                          const int               yOrg,
                          const int               neighboring,
                          const int               threshold,
-                         const bool              projectionMode);
+                         const bool              projectionMode );
 
   std::vector<PCCPoint3D> generatePoints( const GeneratePointCloudParameters& params,
                                           PCCFrameContext&                    frame,
@@ -262,8 +258,8 @@ class PCCCodec {
                                           const bool                          interpolate,
                                           const bool                          filling,
                                           const size_t                        minD1,
-                                          const size_t                        neighbor);
-  inline double entropy( std::vector<uint8_t>& Data, int N ) {
+                                          const size_t                        neighbor );
+  inline double           entropy( std::vector<uint8_t>& Data, int N ) {
     std::vector<size_t> count;
     count.resize( 256, 0 );
     for ( size_t i = 0; i < N; ++i ) { ++count[size_t( Data[i] )]; }
@@ -302,7 +298,7 @@ class PCCCodec {
                            PCCFrameContext&                   frame,
                            const PCCVideoGeometry&            video,
                            const PCCVideoGeometry&            videoD1,
-		                       const PCCVideoOccupancyMap&        videoOM,
+                           const PCCVideoOccupancyMap&        videoOM,
                            const GeneratePointCloudParameters params,
                            std::vector<uint32_t>&             partition );
 

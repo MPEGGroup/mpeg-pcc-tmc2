@@ -126,7 +126,9 @@ void PCCPatchSegmenter3::compute( const PCCPointSet3&                 geometry,
       resampledPatchPartition, missedPoints, resampled, params.useEnhancedDeltaDepthCode,
       params.createSubPointCloud, subPointCloud, distanceSrcRec, params.absoluteD1, params.surfaceSeparation,
       params.additionalProjectionPlaneMode, params.geometryBitDepth3D, params.testLevelOfDetail, params.patchExpansion,
-      params.enablePointCloudPartitioning, const_cast<PCCPatchSegmenter3Parameters&>( params ).roiBoundingBoxMinX,
+      params.highGradientSeparation, params.minGradient, params.minNumHighGradientPoints, normalsGen, orientations, orientationCount,
+      params.enablePointCloudPartitioning, 
+      const_cast<PCCPatchSegmenter3Parameters&>( params ).roiBoundingBoxMinX,
       const_cast<PCCPatchSegmenter3Parameters&>( params ).roiBoundingBoxMaxX,
       const_cast<PCCPatchSegmenter3Parameters&>( params ).roiBoundingBoxMinY,
       const_cast<PCCPatchSegmenter3Parameters&>( params ).roiBoundingBoxMaxY,
@@ -1033,44 +1035,50 @@ void PCCPatchSegmenter3::quantizedPointsPatchModification( const PCCPointSet3&  
     }
   }
 }
-void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
-                                         const PCCKdTree&           kdtree,
-                                         const size_t               maxNNCount,
-                                         const size_t               minPointCountPerCC,
-                                         const size_t               occupancyResolution,
-                                         const double               maxAllowedDist2MissedPointsDetection,
-                                         const double               maxAllowedDist2MissedPointsSelection,
-                                         const bool                 EOMSingleLayerMode,
-                                         const size_t               EOMFixBitCount,
-                                         const size_t               surfaceThickness,
-                                         const size_t               maxAllowedDepth,
-                                         const size_t               minLevel,
-                                         const std::vector<size_t>& partition,
-                                         std::vector<PCCPatch>&     patches,
-                                         std::vector<size_t>&       patchPartition,
-                                         std::vector<size_t>&       resampledPatchPartition,
-                                         std::vector<size_t>        missedPoints,
-                                         PCCPointSet3&              resampled,
-                                         bool                       useEnhancedDeltaDepthCode,
-                                         const bool                 createSubPointCloud,
-                                         std::vector<PCCPointSet3>& subPointCloud,
-                                         float&                     distanceSrcRec,
-                                         const bool                 absoluteD1,
-                                         bool                       useSurfaceSeparation,
-                                         const size_t               additionalProjectionAxis,
-                                         const size_t               geometryBitDepth3D,
-                                         const size_t               testLevelOfDetail,
-                                         bool                       patchExpansionEnabled,
-                                         bool                       enablePointCloudPartitioning,
-                                         std::vector<int>&          roiBoundingBoxMinX,
-                                         std::vector<int>&          roiBoundingBoxMaxX,
-                                         std::vector<int>&          roiBoundingBoxMinY,
-                                         std::vector<int>&          roiBoundingBoxMaxY,
-                                         std::vector<int>&          roiBoundingBoxMinZ,
-                                         std::vector<int>&          roiBoundingBoxMaxZ,
-                                         int                        numCutsAlong1stLongestAxis,
-                                         int                        numCutsAlong2ndLongestAxis,
-                                         int                        numCutsAlong3rdLongestAxis ) {
+void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
+                                         const PCCKdTree&            kdtree,
+                                         const size_t                maxNNCount,
+                                         const size_t                minPointCountPerCC,
+                                         const size_t                occupancyResolution,
+                                         const double                maxAllowedDist2MissedPointsDetection,
+                                         const double                maxAllowedDist2MissedPointsSelection,
+                                         const bool                  EOMSingleLayerMode,
+                                         const size_t                EOMFixBitCount,
+                                         const size_t                surfaceThickness,
+                                         const size_t                maxAllowedDepth,
+                                         const size_t                minLevel,
+                                         std::vector<size_t>&        partition,
+                                         std::vector<PCCPatch>&      patches,
+                                         std::vector<size_t>&        patchPartition,
+                                         std::vector<size_t>&        resampledPatchPartition,
+                                         std::vector<size_t>         missedPoints,
+                                         PCCPointSet3&               resampled,
+                                         bool                        useEnhancedDeltaDepthCode,
+                                         const bool                  createSubPointCloud,
+                                         std::vector<PCCPointSet3>&  subPointCloud,
+                                         float&                      distanceSrcRec,
+                                         const bool                  absoluteD1,
+                                         bool                        useSurfaceSeparation,
+                                         const size_t                additionalProjectionAxis,
+                                         const size_t                geometryBitDepth3D,
+                                         const size_t                testLevelOfDetail,
+                                         bool                        patchExpansionEnabled,
+                                         const bool                  highGradientSeparation,
+                                         const double                minGradient,
+                                         const size_t                minNumHighGradientPoints,
+                                         const PCCNormalsGenerator3& normalsGen,
+                                         const PCCVector3D*          orientations,
+                                         const size_t                orientationCount,
+                                         bool                        enablePointCloudPartitioning,
+                                         std::vector<int>&           roiBoundingBoxMinX,
+                                         std::vector<int>&           roiBoundingBoxMaxX,
+                                         std::vector<int>&           roiBoundingBoxMinY,
+                                         std::vector<int>&           roiBoundingBoxMaxY,
+                                         std::vector<int>&           roiBoundingBoxMinZ,
+                                         std::vector<int>&           roiBoundingBoxMaxZ,
+                                         int                         numCutsAlong1stLongestAxis,
+                                         int                         numCutsAlong2ndLongestAxis,
+                                         int                         numCutsAlong3rdLongestAxis ) {
   const size_t pointCount = points.getPointCount();
   patchPartition.resize( pointCount, 0 );
   resampledPatchPartition.reserve( pointCount );
@@ -1386,6 +1394,11 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&        points,
       std::cout << "[done]" << std::endl;
     }
     if ( connectedComponents.empty() ) { break; }
+    if ( highGradientSeparation ) {
+      separateHighGradientPoints( points, additionalProjectionAxis, absoluteD1, normalsGen, orientations, orientationCount,
+                                  surfaceThickness, geometryBitDepth3D, minGradient, minNumHighGradientPoints,
+                                  partition, adj, connectedComponents );
+    }
     if ( patchExpansionEnabled ) {
       std::sort( connectedComponents.begin(), connectedComponents.end(),
                  []( const std::vector<size_t>& a, const std::vector<size_t>& b ) {
@@ -2681,4 +2694,452 @@ float pcc::computeIOU( Rect a, Rect b ) {
   int   unionArea        = a.area() + b.area() - intersectionArea;
   iou                    = (float)intersectionArea / unionArea;
   return iou;
+}
+
+void PCCPatchSegmenter3::separateHighGradientPoints( const PCCPointSet3&               points,
+                                                     const size_t                      additionalProjectionAxis,
+                                                     const bool                        absoluteD1,
+                                                     const PCCNormalsGenerator3&       normalsGen,
+                                                     const PCCVector3D*                orientations,
+                                                     const size_t                      orientationCount,
+                                                     const size_t                      surfaceThickness,
+                                                     const size_t                      geometryBitDepth3D,
+                                                     const double                      minGradient,
+                                                     const size_t                      minNumHighGradientPoints,
+                                                     std::vector<size_t>&              partition,
+                                                     std::vector<std::vector<size_t>>& adj,
+                                                     std::vector<std::vector<size_t>>& connectedComponents ) {
+  //detect and remove high gradient points
+  std::vector<std::vector<size_t>> highGradientConnectedComponents;
+  size_t idx = 0;
+  for ( auto& connectedComponent : connectedComponents ) {
+    PCCPatch patch;
+    patch.getIndex() = idx++;
+    std::vector<bool> isComponentRemoved;
+    isComponentRemoved.resize( connectedComponent.size(), false );
+    bool bIsAdditionalProjectionPlane;
+    determinePatchOrientation( additionalProjectionAxis, absoluteD1, bIsAdditionalProjectionPlane, patch, partition, connectedComponent );
+    generatePatchD0( points, geometryBitDepth3D, bIsAdditionalProjectionPlane, patch, connectedComponent );
+    calculateGradient( points, connectedComponent, normalsGen, orientations, orientationCount, partition[connectedComponent[0]],
+                       surfaceThickness, geometryBitDepth3D, bIsAdditionalProjectionPlane, minGradient, minNumHighGradientPoints,
+                       patch, adj, highGradientConnectedComponents, isComponentRemoved );
+
+    //remove high gradient components from CC
+    std::vector<size_t> tmpConnectedComponent;
+    for ( size_t i = 0; i < connectedComponent.size(); ++i ) {
+      if ( !isComponentRemoved[i] ) tmpConnectedComponent.push_back( connectedComponent[i] );
+    }
+    swap( connectedComponent, tmpConnectedComponent );
+  }
+
+  //try to join other CC
+  std::vector<size_t> patchPartition;
+  patchPartition.resize( points.getPointCount(), 0 );
+  for ( size_t i = 0; i < connectedComponents.size(); ++i ) {
+    auto& connectedComponent = connectedComponents[i];
+    for ( const auto j : connectedComponent ) patchPartition[j] = i + 1;
+  }
+  
+  std::vector<size_t> highGradientCCPartition;
+  highGradientCCPartition.resize( highGradientConnectedComponents.size(), 0 );
+  std::vector<size_t> highGradientPartition;
+  highGradientPartition.resize( highGradientConnectedComponents.size(), 0 );
+  for ( size_t i = 0; i < highGradientConnectedComponents.size(); ++i ) {
+    auto& highGradientConnectedComponent = highGradientConnectedComponents[i];
+    PCCVector3D normalSum( 0.0f ); 
+    for ( const auto j : highGradientConnectedComponent ) normalSum += normalsGen.getNormal( j );
+
+    double bestScore = 0.0;
+    const size_t orgPartition = partition[highGradientConnectedComponent[0]];
+    for ( size_t k = 0; k < orientationCount; ++k ) {
+      if ( orgPartition < 6 ) {
+        if ( k < 6 && ( k % 3 ) == ( orgPartition % 3 ) ) continue;
+      } else {
+        if ( orgPartition < 10 ) {
+          if ( k >= 6 && k < 10 && ( k == orgPartition || k + 2 == orgPartition || k == orgPartition + 2 ) ) continue;
+        } else if ( orgPartition < 14 ) {
+          if ( k >= 10 && k < 14 && ( k == orgPartition || k + 2 == orgPartition || k == orgPartition + 2 ) ) continue;
+        } else {
+          if ( k >= 14 && ( k == orgPartition || k + 2 == orgPartition || k == orgPartition + 2 ) ) continue;
+        }
+      }
+      const double score = normalSum * orientations[k];
+      if ( score > bestScore ) {
+        bestScore = score;
+        highGradientPartition[i] = k;
+      }
+    }
+
+    for ( const auto j : highGradientConnectedComponent ) {
+      for ( const auto n : adj[j] ) {
+        if ( patchPartition[n] != 0 ) {
+          if ( ( partition[n] < 6 && highGradientPartition[i] < 6 && ( highGradientPartition[i] % 3 ) == ( partition[n] % 3 ) )
+            || ( partition[n] >= 6 && partition[n] < 10 && highGradientPartition[i] >= 6 && highGradientPartition[i] < 10 && ( highGradientPartition[i] % 2 ) == ( partition[n] % 2 ) )
+            || ( partition[n] >= 10 && partition[n] < 14 && highGradientPartition[i] >= 10 && highGradientPartition[i] < 14 && ( highGradientPartition[i] % 2 ) == ( partition[n] % 2 ) )
+            || ( partition[n] >= 14 && highGradientPartition[i] >= 14 && ( highGradientPartition[i] % 2 ) == ( partition[n] % 2 ) ) ) {
+            highGradientCCPartition[i] = patchPartition[n];
+            break;
+          }
+        }
+      }
+      if ( highGradientCCPartition[i] != 0 ) break;
+    }
+  }
+
+  for ( size_t i = 0; i < highGradientConnectedComponents.size(); ++i ) {
+    auto& highGradientConnectedComponent = highGradientConnectedComponents[i];
+    if ( highGradientCCPartition[i] != 0 ) {
+      const size_t newCCIdx = highGradientCCPartition[i] - 1;
+      connectedComponents[newCCIdx].insert( connectedComponents[newCCIdx].end(), highGradientConnectedComponent.begin(), highGradientConnectedComponent.end() );
+      const size_t newPartition = partition[connectedComponents[newCCIdx][0]];
+      for ( const auto j : highGradientConnectedComponent ) {
+        partition[j] = newPartition;
+      }
+    } else {
+      for ( const auto j : highGradientConnectedComponent ) {
+        partition[j] = highGradientPartition[i];
+      }
+      connectedComponents.push_back( highGradientConnectedComponent );
+    }
+  }
+}
+
+void PCCPatchSegmenter3::determinePatchOrientation( const size_t         additionalProjectionAxis,
+                                                    const bool           absoluteD1,
+                                                    bool&                bIsAdditionalProjectionPlane,
+                                                    PCCPatch&            patch,
+                                                    std::vector<size_t>& partition,
+                                                    std::vector<size_t>& connectedComponent ) {
+  const size_t clusterIndex         = partition[connectedComponent[0]];
+  bIsAdditionalProjectionPlane = false;
+  patch.getAxisOfAdditionalPlane()  = 0;
+  if ( clusterIndex == 0 || clusterIndex == 3 ) {
+    patch.getNormalAxis()    = 0;
+    patch.getTangentAxis()   = 2;
+    patch.getBitangentAxis() = 1;
+  } else if ( clusterIndex == 1 || clusterIndex == 4 ) {
+    patch.getNormalAxis()    = 1;
+    patch.getTangentAxis()   = 2;
+    patch.getBitangentAxis() = 0;
+  } else if ( clusterIndex == 2 || clusterIndex == 5 ) {
+    patch.getNormalAxis()    = 2;
+    patch.getTangentAxis()   = 0;
+    patch.getBitangentAxis() = 1;
+  } else if ( additionalProjectionAxis == 1 ) {  // Y Axis
+    bIsAdditionalProjectionPlane     = true;
+    patch.getAxisOfAdditionalPlane() = additionalProjectionAxis;  // Y Axis
+    if ( clusterIndex == 6 || clusterIndex == 8 ) {               // 6->0 : 8->3
+      patch.getNormalAxis()    = 0;
+      patch.getTangentAxis()   = 2;
+      patch.getBitangentAxis() = 1;
+    } else if ( clusterIndex == 7 || clusterIndex == 9 ) {  // 7->2 : 9->5
+      patch.getNormalAxis()    = 2;
+      patch.getTangentAxis()   = 0;
+      patch.getBitangentAxis() = 1;
+    }
+  } else if ( additionalProjectionAxis == 2 ) {  // X Axis
+    bIsAdditionalProjectionPlane     = true;
+    patch.getAxisOfAdditionalPlane() = additionalProjectionAxis;  // X Axis
+    if ( clusterIndex == 6 || clusterIndex == 8 ) {               // 6->2 : 8->5
+      patch.getNormalAxis()    = 2;
+      patch.getTangentAxis()   = 0;
+      patch.getBitangentAxis() = 1;
+    } else if ( clusterIndex == 7 || clusterIndex == 9 ) {  // 7->1 : 9->4
+      patch.getNormalAxis()    = 1;
+      patch.getTangentAxis()   = 2;
+      patch.getBitangentAxis() = 0;
+    }
+  } else if ( additionalProjectionAxis == 3 ) {  // Z Axis
+    bIsAdditionalProjectionPlane     = true;
+    patch.getAxisOfAdditionalPlane() = additionalProjectionAxis;  // Y Zxis
+    if ( clusterIndex == 6 || clusterIndex == 8 ) {               // 6->0 : 8->3
+      patch.getNormalAxis()    = 1;
+      patch.getTangentAxis()   = 2;
+      patch.getBitangentAxis() = 0;
+    } else if ( clusterIndex == 7 || clusterIndex == 9 ) {  // 7->2 : 9->1
+      patch.getNormalAxis()    = 0;
+      patch.getTangentAxis()   = 2;
+      patch.getBitangentAxis() = 1;
+    }
+  } else if ( additionalProjectionAxis == 4 ) {  // All
+    bIsAdditionalProjectionPlane = true;
+    if ( clusterIndex == 6 || clusterIndex == 8 ) {  // 6->0 : 8->3
+      patch.getAxisOfAdditionalPlane() = 1;          // Y Axis
+      patch.getNormalAxis()            = 0;
+      patch.getTangentAxis()           = 2;
+      patch.getBitangentAxis()         = 1;
+    } else if ( clusterIndex == 7 || clusterIndex == 9 ) {  // 7->2 : 9->1
+      patch.getAxisOfAdditionalPlane() = 1;                 // Y Axis
+      patch.getNormalAxis()            = 2;
+      patch.getTangentAxis()           = 0;
+      patch.getBitangentAxis()         = 1;
+    } else if ( clusterIndex == 10 || clusterIndex == 12 ) {  // 6->2 : 8->5
+      patch.getAxisOfAdditionalPlane() = 2;                   // X Axis
+      patch.getNormalAxis()            = 2;
+      patch.getTangentAxis()           = 0;
+      patch.getBitangentAxis()         = 1;
+    } else if ( clusterIndex == 11 || clusterIndex == 13 ) {  // 7->1 : 9->4
+      patch.getAxisOfAdditionalPlane() = 2;                   // X Axis
+      patch.getNormalAxis()            = 1;
+      patch.getTangentAxis()           = 2;
+      patch.getBitangentAxis()         = 0;
+    } else if ( clusterIndex == 14 || clusterIndex == 16 ) {  // 6->0 : 8->3
+      patch.getAxisOfAdditionalPlane() = 3;                   // Z Axis
+      patch.getNormalAxis()            = 1;
+      patch.getTangentAxis()           = 2;
+      patch.getBitangentAxis()         = 0;
+    } else if ( clusterIndex == 15 || clusterIndex == 17 ) {  // 7->2 : 9->1
+      patch.getAxisOfAdditionalPlane() = 3;                   // Z Axis
+      patch.getNormalAxis()            = 0;
+      patch.getTangentAxis()           = 2;
+      patch.getBitangentAxis()         = 1;
+    }
+  }
+
+  patch.setViewId()       = clusterIndex;
+
+  if ( clusterIndex <= 2 ) {
+    patch.getProjectionMode() = 0;
+  } else {
+    patch.getProjectionMode() = 1;
+  }
+
+	if ( absoluteD1 ) {
+	// for additional projection plane
+    if ( clusterIndex == 6 || clusterIndex == 7 ) { patch.getProjectionMode() = 0; }
+    // for additional projection plane
+    if ( clusterIndex == 10 || clusterIndex == 11 || clusterIndex == 14 || clusterIndex == 15 ) {
+      patch.getProjectionMode() = 0;
+    }
+  }
+}
+
+void PCCPatchSegmenter3::generatePatchD0( const PCCPointSet3&  points,
+                                          const size_t         geometryBitDepth3D,
+                                          const bool           bIsAdditionalProjectionPlane,
+                                          PCCPatch&            patch,
+                                          std::vector<size_t>& connectedComponent ) {
+
+  PCCBox3D boundingBox;
+  for ( size_t k = 0; k < 3; ++k ) {
+    boundingBox.min_[k] = ( std::numeric_limits<double>::max )();
+    boundingBox.max_[k] = 0;
+  }
+  for ( const auto i : connectedComponent ) {
+    PCCPoint3D pointTmp = points[i];
+    if ( bIsAdditionalProjectionPlane ) {
+      auto& input = pointTmp;
+      convert( patch.getAxisOfAdditionalPlane(), geometryBitDepth3D, input, pointTmp );
+    }
+    const auto& point = pointTmp;
+    for ( size_t k = 0; k < 3; ++k ) {
+      if ( point[k] < boundingBox.min_[k] ) { boundingBox.min_[k] = floor( point[k] ); }
+      if ( point[k] > boundingBox.max_[k] ) { boundingBox.max_[k] = ceil( point[k] ); }
+    }
+  }
+
+  const int16_t infiniteDepth  = ( std::numeric_limits<int16_t>::max )();
+
+  patch.getSizeU() = 1 + size_t( round( boundingBox.max_[patch.getTangentAxis()] ) -
+                                  floor( boundingBox.min_[patch.getTangentAxis()] ) );
+  patch.getSizeV() = 1 + size_t( round( boundingBox.max_[patch.getBitangentAxis()] ) -
+                                  floor( boundingBox.min_[patch.getBitangentAxis()] ) );
+  patch.getU1()    = size_t( boundingBox.min_[patch.getTangentAxis()] );
+  patch.getV1()    = size_t( boundingBox.min_[patch.getBitangentAxis()] );
+
+  patch.getDepth( 0 ).resize( patch.getSizeU() * patch.getSizeV(), infiniteDepth );
+
+  for ( const auto i : connectedComponent ) {
+    PCCPoint3D pointTmp = points[i];
+    if ( bIsAdditionalProjectionPlane ) {
+      auto& input = pointTmp;
+      convert( patch.getAxisOfAdditionalPlane(), geometryBitDepth3D, input, pointTmp );
+    }
+    const auto&   point = pointTmp;
+    const int16_t d     = int16_t( round( point[patch.getNormalAxis()] ) );
+    const size_t  u     = size_t( round( point[patch.getTangentAxis()] - patch.getU1() ) );
+    const size_t  v     = size_t( round( point[patch.getBitangentAxis()] - patch.getV1() ) );
+    assert( u >= 0 && u < patch.getSizeU() );
+    assert( v >= 0 && v < patch.getSizeV() );
+    const size_t p = v * patch.getSizeU() + u;
+    if ( patch.getProjectionMode() == 0 ) {  // min
+      if ( patch.getDepth( 0 )[p] > d ) patch.getDepth( 0 )[p] = d;
+    } else {  // max
+      if ( patch.getDepth( 0 )[p] == infiniteDepth ) {
+        patch.getDepth( 0 )[p] = d;
+      } else {
+        if ( patch.getDepth( 0 )[p] < d ) patch.getDepth( 0 )[p] = d;
+      }
+    }
+  }
+}
+
+void PCCPatchSegmenter3::calculateGradient( const PCCPointSet3&               points,
+                                            const std::vector<size_t>&        connectedComponent,
+                                            const PCCNormalsGenerator3&       normalsGen,
+                                            const PCCVector3D*                orientations,
+                                            const size_t                      orientationCount,
+                                            const size_t                      orgPartitionIdx,
+                                            const size_t                      surfaceThickness,
+                                            const size_t                      geometryBitDepth3D,
+                                            const bool                        bIsAdditionalProjectionPlane,
+                                            const double                      minGradient,
+                                            const size_t                      minNumHighGradientPoints,
+                                            PCCPatch&                         patch,
+                                            std::vector<std::vector<size_t>>& adj,
+                                            std::vector<std::vector<size_t>>& highGradientConnectedComponents,
+                                            std::vector<bool>&                isRemoved ) {
+  /* for the case that the xyz components of a normal are the same: 
+       sqrt( nx^2 + ny^2 + nz^2 ) = 1, where nx = ny = nz = 0.577 */
+  const double normalThreshold = 0.577;
+
+  const int16_t infiniteDepth = ( std::numeric_limits<int16_t>::max )();
+  
+  std::vector<double> Gmag;
+  Gmag.resize( patch.getSizeU() * patch.getSizeV(), 0 );
+  int patchWidth = int( patch.getSizeU() );
+  int patchHeight = int( patch.getSizeV() );
+  for ( int v = 0; v < patchHeight; ++v ) {
+    for ( int u = 0; u < patchWidth; ++u ) {
+      const size_t p = v * patchWidth + u;
+      const int16_t depth0 = patch.getDepth( 0 )[p];
+      if ( depth0 < infiniteDepth ) {
+        int16_t Gx = 0, Gy = 0;
+        
+        int16_t depth[8];
+        depth[0] = ( u != 0 && v != 0 && patch.getDepth( 0 )[(v - 1) * patchWidth + u - 1] < infiniteDepth ) ? patch.getDepth( 0 )[(v - 1) * patchWidth + u - 1] : depth0;
+        depth[1] = ( v != 0 && patch.getDepth( 0 )[(v - 1) * patchWidth + u] < infiniteDepth) ? patch.getDepth( 0 )[(v - 1) * patchWidth + u] : depth0;
+        depth[2] = ( u != patchWidth - 1 && v != 0 && patch.getDepth( 0 )[(v - 1) * patchWidth + u + 1] < infiniteDepth) ? patch.getDepth( 0 )[(v - 1) * patchWidth + u + 1] : depth0;
+        depth[3] = ( u != 0 && patch.getDepth( 0 )[ v * patchWidth + u - 1] < infiniteDepth) ? patch.getDepth( 0 )[v * patchWidth + u - 1] : depth0;
+        depth[4] = ( u != patchWidth - 1 && patch.getDepth( 0 )[v * patchWidth + u + 1] < infiniteDepth) ? patch.getDepth( 0 )[v * patchWidth + u + 1] : depth0;
+        depth[5] = ( u != 0 && v != patchHeight - 1 && patch.getDepth( 0 )[(v + 1) * patchWidth + u - 1] < infiniteDepth) ? patch.getDepth( 0 )[(v + 1) * patchWidth + u - 1] : depth0;
+        depth[6] = ( v != patchHeight - 1 && patch.getDepth( 0 )[(v + 1) * patchWidth + u] < infiniteDepth) ? patch.getDepth( 0 )[(v + 1) * patchWidth + u] : depth0;
+        depth[7] = ( u != patchWidth - 1 && v != patchHeight - 1 && patch.getDepth( 0 )[(v + 1) * patchWidth + u + 1] < infiniteDepth) ? patch.getDepth( 0 )[(v + 1) * patchWidth + u + 1] : depth0;
+
+        /* Sobel operator for x-axis
+            1  0 -1
+            2  0 -2
+            1  0 -1   */
+        Gx += depth[0];
+        Gx += 2 * depth[3];
+        Gx += depth[5];
+        Gx -= depth[2];
+        Gx -= 2 * depth[4];
+        Gx -= depth[7];
+        
+        /* Sobel operator for y-axis
+            1  2  1
+            0  0  0
+           -1 -2 -1   */
+        Gy += depth[0];
+        Gy += 2 * depth[1];
+        Gy += depth[2];
+        Gy -= depth[5];
+        Gy -= 2 * depth[6];
+        Gy -= depth[7];
+
+        Gmag[p] = sqrt( double( Gx * Gx + Gy * Gy ) );
+      }
+    }
+  }
+
+  std::vector<bool> highGradientMap;
+  highGradientMap.resize( patch.getSizeU() * patch.getSizeV(), false );
+  for ( size_t v = 0; v < patch.getSizeV(); ++v ) {
+    for ( size_t u = 0; u < patch.getSizeU(); ++u ) {
+      const size_t p = v * patch.getSizeU() + u;
+      if ( Gmag[p] > minGradient )
+        highGradientMap[p] = true;
+    }
+  }
+
+  //dilate  
+  std::vector<bool> tmpHighGradientMap( highGradientMap );
+  for ( size_t iteration = 0; iteration < 3; ++iteration ) {
+    for ( size_t v = 0; v < patch.getSizeV(); ++v ) {
+      for ( size_t u = 0; u < patch.getSizeU(); ++u ) {
+        const size_t p = v * patch.getSizeU() + u;
+        if ( !highGradientMap[p] ) {
+          size_t cnt = 0;
+          if ( u > 0 && highGradientMap[p - 1] ) cnt++;
+          if ( u < patch.getSizeU() - 1 && highGradientMap[p + 1] ) cnt++;
+          if ( v > 0 && highGradientMap[p - patch.getSizeU()] ) cnt++;
+          if ( v < patch.getSizeV() - 1 && highGradientMap[p + patch.getSizeU()] ) cnt++;
+          if ( cnt >= 2 && Gmag[p] > minGradient / 2.0 )
+            tmpHighGradientMap[p] = true;
+        }
+      }
+    }
+    highGradientMap = tmpHighGradientMap;
+  }
+  
+  //determine candidate points to be separated: points close to the D0 layer, or the normal does not point to the projection plane
+  std::vector<bool> flags;
+  flags.resize( points.getPointCount() , false );
+  for ( size_t i = 0; i < connectedComponent.size(); ++i ) {
+    const size_t  idx   = connectedComponent[i];
+    PCCPoint3D pointTmp = points[idx];
+    if ( bIsAdditionalProjectionPlane ) {
+      auto& input = pointTmp;
+      convert( patch.getAxisOfAdditionalPlane(), geometryBitDepth3D, input, pointTmp );
+    }
+    const auto&   point = pointTmp;
+    const int16_t d     = int16_t( round( point[patch.getNormalAxis()] ) );
+    const size_t  u     = size_t( round( point[patch.getTangentAxis()] - patch.getU1() ) );
+    const size_t  v     = size_t( round( point[patch.getBitangentAxis()] - patch.getV1() ) );
+    const size_t  p     = v * patch.getSizeU() + u;
+    if ( highGradientMap[p] ) {
+      const double score = normalsGen.getNormal( idx ) * orientations[orgPartitionIdx];
+      if ( fabs( d - patch.getDepth( 0 )[p] ) <= surfaceThickness || score <= normalThreshold ) {
+        flags[idx] = true;
+        isRemoved[i] = true;
+      }
+    }
+  }
+  
+  //connect high gradient points
+  std::vector<size_t> fifo;
+  for ( const auto i : connectedComponent ) {
+    if ( flags[i] ) {
+      double bestScore = 0.0;
+      size_t clusterIndex = orgPartitionIdx;
+      const PCCVector3D normal = normalsGen.getNormal( i );
+      for ( size_t k = 0; k < orientationCount; ++k ) {
+        const double score = normal * orientations[k];
+        if ( score > bestScore ) {
+          bestScore    = score;
+          clusterIndex = k;
+        }
+      }
+      if ( clusterIndex == orgPartitionIdx ) continue;
+      flags[i] = false;
+      fifo.push_back( i );
+      std::vector<size_t> highGradientGroup;
+      highGradientGroup.push_back( i );
+      while ( !fifo.empty() ) {
+        const size_t current = fifo.back();
+        fifo.pop_back();
+        for ( const auto n : adj[current] ) {
+          const double score = normalsGen.getNormal( n ) * orientations[clusterIndex];
+          if ( flags[n] && score > normalThreshold ) {
+            flags[n] = false;
+            fifo.push_back( n );
+            highGradientGroup.push_back( n );
+          }
+        }
+      }
+      if ( highGradientGroup.size() > minNumHighGradientPoints ) {
+        highGradientConnectedComponents.push_back( highGradientGroup );
+      } else {
+        for ( const auto j : highGradientGroup )
+          flags[j] = true;
+      }
+    }
+  }
+
+  for ( size_t i = 0; i < connectedComponent.size(); ++i ) {
+    if ( flags[connectedComponent[i]] ) {
+      isRemoved[i] = false;
+    }
+  }
 }

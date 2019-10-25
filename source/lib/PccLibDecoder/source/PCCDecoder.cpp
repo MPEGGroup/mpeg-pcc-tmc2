@@ -176,7 +176,6 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   GeneratePointCloudParameters generatePointCloudParameters;
   generatePointCloudParameters.occupancyResolution_      = context.getOccupancyPackingBlockSize();
   generatePointCloudParameters.occupancyPrecision_       = context.getOccupancyPrecision();
-  generatePointCloudParameters.postprocessSmoothing_     = params_.postprocessSmoothing_;
   generatePointCloudParameters.flagGeometrySmoothing_    = gfp.getGeometrySmoothingParamsPresentFlag();
   generatePointCloudParameters.gridSmoothing_            = gfp.getGeometrySmoothingEnabledFlag();
   generatePointCloudParameters.gridSize_                 = gfp.getGeometrySmoothingGridSizeMinus2() + 2;
@@ -224,7 +223,6 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   generatePointCloudParameters.pbfPassesCount_     = gfp.getGeometryPatchBlockFilteringPassesCountMinus1() + 1;
   generatePointCloudParameters.pbfFilterSize_      = gfp.getGeometryPatchBlockFilteringFilterSizeMinus1() + 1;
   generatePointCloudParameters.pbfLog2Threshold_   = gfp.getGeometryPatchBlockFilteringLog2ThresholdMinus1() + 1;
-  generatePointCloudParameters.updateOccupancyMap_ = false;
 
   std::vector<std::vector<uint32_t>> partitions;
   generatePointCloud( reconstructs, context, generatePointCloudParameters, partitions );
@@ -260,25 +258,31 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
                    generatePointCloudParameters );
 
   //  Generate a buffer to keep unsmoothed geometry, then do geometry smoothing and transfer followed by color smoothing
-  if ( generatePointCloudParameters.postprocessSmoothing_ ) {
-    PCCGroupOfFrames tempFrameBuffer;
-    auto&     frames = context.getFrames();
-    tempFrameBuffer.resize( reconstructs.size() );
-    for (size_t i = 0; i < frames.size(); i++) {
-      tempFrameBuffer[i] = reconstructs[i];
+  if ( generatePointCloudParameters.flagGeometrySmoothing_ ) {
+    if ( generatePointCloudParameters.gridSmoothing_ ) {
+      PCCGroupOfFrames tempFrameBuffer;
+      auto&            frames = context.getFrames();
+      tempFrameBuffer.resize( reconstructs.size() );
+      for ( size_t i = 0; i < frames.size(); i++ ) { tempFrameBuffer[i] = reconstructs[i]; }
+      smoothPointCloudPostprocess( reconstructs, context, params_.colorTransform_, generatePointCloudParameters,
+                                   partitions );
+      for ( size_t i = 0; i < frames.size(); i++ ) {
+        // These are different attribute transfer functions
+        if ( params_.postprocessSmoothingFilter_ == 1 ) {
+          tempFrameBuffer[i].transferColors( reconstructs[i], int32_t( 0 ), sps.getLosslessGeo() == 1, 8, 1, 1, 1, 1, 0,
+                                             4, 4, 1000, 1000, 1000, 1000 );  // jkie: make it general
+        } else if ( params_.postprocessSmoothingFilter_ == 2 ) {
+          tempFrameBuffer[i].transferColorWeight( reconstructs[i], 0.1 );
+        } else if ( params_.postprocessSmoothingFilter_ == 3 ) {
+          tempFrameBuffer[i].transferColorsFilter3( reconstructs[i], int32_t( 0 ), sps.getLosslessGeo() == 1 );
+        }
+      }
     }
-    smoothPointCloudPostprocess( reconstructs, context, params_.colorTransform_, generatePointCloudParameters, partitions );
-    for (size_t i = 0; i < frames.size(); i++) {
-      tempFrameBuffer[i].transferColors( reconstructs[i], int32_t( 0 ),
-                                        sps.getLosslessGeo() == 1, 8, 1, 1, 1, 1, 0, 4, 4, 1000, 1000, 1000, 1000 ); //jkie: make it general
-      //These are different attribute transfer functions
-      //tempFrameBuffer[i].transferColorWeight( reconstructs[i], 0.1);
-      //tempFrameBuffer[i].transferColors     ( reconstructs[i], int32_t( 0 ), sps.getLosslessGeo() == 1 );
-    }
-    //    This function does the color smoothing that is usually done in colorPointCloud
-    colorSmoothing(reconstructs, context, params_.colorTransform_, generatePointCloudParameters);
   }
-
+  //    This function does the color smoothing that is usually done in colorPointCloud
+  if ( generatePointCloudParameters.flagColorSmoothing_ ) {
+    colorSmoothing( reconstructs, context, params_.colorTransform_, generatePointCloudParameters );
+  }  
 #ifdef CODEC_TRACE
   setTrace( false );
   closeTrace();

@@ -113,7 +113,7 @@ class PCCEncoderParameters {
   bool   gridSmoothing_;
   size_t gridSize_;
   bool   flagGeometrySmoothing_;
-  bool   postprocessSmoothing_;
+  size_t postprocessSmoothingFilter_;
 
   // Patch Expansion (m47772, CE2.12)
   bool patchExpansion_;
@@ -151,6 +151,9 @@ class PCCEncoderParameters {
   double maxGeometryDist2Bwd_;
   double maxColorDist2Fwd_;
   double maxColorDist2Bwd_;
+  // Exclude color outliers
+  bool   excludeColorOutlier_;
+  double thresholdColorOutlierDist_;
 
   // lossless
   bool noAttributes_;
@@ -201,6 +204,9 @@ class PCCEncoderParameters {
   bool patchColorSubsampling_;
   bool deltaCoding_;
   bool surfaceSeparation_;
+  bool   highGradientSeparation_;
+  double minGradient_;
+  size_t minNumHighGradientPoints_;
 
   // Flexible Patch Packing
   size_t packingStrategy_;

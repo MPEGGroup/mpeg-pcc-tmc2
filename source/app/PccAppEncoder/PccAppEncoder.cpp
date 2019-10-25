@@ -293,9 +293,9 @@ bool parseParameters( int                   argc,
 
     // smoothing
     // NB: various parameters are of the form n * occupancyPrecision**2
-  ("postprocessSmoothing",
-   encoderParams.postprocessSmoothing_,
-   encoderParams.postprocessSmoothing_,
+  ("postprocessSmoothingFilterType",
+   encoderParams.postprocessSmoothingFilter_,
+   encoderParams.postprocessSmoothingFilter_,
    "Exclude geometry smoothing from attribute transfer\n")
   
   ("flagGeometrySmoothing",
@@ -477,6 +477,16 @@ bool parseParameters( int                   argc,
     encoderParams.maxColorDist2Bwd_,
     encoderParams.maxColorDist2Bwd_,
     "Maximum allowed pari-wise color distance for Bwd list")
+	
+    ("excludeColorOutlier",
+    encoderParams.excludeColorOutlier_,
+    encoderParams.excludeColorOutlier_,
+    "Exclude color outliers from the NN set")
+
+    ("thresholdColorOutlierDist",
+    encoderParams.thresholdColorOutlierDist_,
+    encoderParams.thresholdColorOutlierDist_,
+    "Threshold of color distance to exclude outliers from the NN set")
 
     // video encoding
     ("videoEncoderPath",
@@ -654,6 +664,22 @@ bool parseParameters( int                   argc,
       encoderParams.surfaceSeparation_,
       encoderParams.surfaceSeparation_,
       "surface separation")
+      
+    //high gradient separation
+    ("highGradientSeparation",
+      encoderParams.highGradientSeparation_,
+      encoderParams.highGradientSeparation_,
+      "Separate high gradient points from a patch")
+
+    ("minGradient",
+      encoderParams.minGradient_,
+      encoderParams.minGradient_,
+      "Minimun gradient for a point to be separated")
+
+    ("minNumHighGradientPoints",
+      encoderParams.minNumHighGradientPoints_,
+      encoderParams.minNumHighGradientPoints_,
+      "Minimum number of connected high gradient points to be separated from a patch")
 
     //flexible packing + safeguard + push-pull
     ("packingStrategy",
