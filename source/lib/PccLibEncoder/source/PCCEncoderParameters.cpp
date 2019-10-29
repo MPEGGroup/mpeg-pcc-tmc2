@@ -143,14 +143,14 @@ PCCEncoderParameters::PCCEncoderParameters() {
   prefilterLossyOM_                        = false;
   patchColorSubsampling_                   = false;
   deltaCoding_                             = true;
-  layerCountMinus1_                        = 1;
+  mapCountMinus1_                        = 1;
 
   // reconstruction
   removeDuplicatePoints_        = true;
   pointLocalReconstruction_     = false;
   plrlNumberOfModes_            = 6;
   patchSize_                    = 9;
-  singleLayerPixelInterleaving_ = false;
+  singleMapPixelInterleaving_ = false;
   surfaceSeparation_            = false;
 
   // level of detail
@@ -239,7 +239,7 @@ void PCCEncoderParameters::print() {
   std::cout << "+ Parameters" << std::endl;
   std::cout << "\t losslessGeo                              " << losslessGeo_ << std::endl;
   std::cout << "\t noAttributes                             " << noAttributes_ << std::endl;
-  std::cout << "\t PCM Geometry Colour Plane                " << ( losslessGeo444_ ?"444":"420" ) << std::endl;
+  std::cout << "\t raw Geometry Colour Plane                " << ( losslessGeo444_ ?"444":"420" ) << std::endl;
   std::cout << "\t enhancedDeltaDepthCode                   " << enhancedDeltaDepthCode_ << std::endl;
   std::cout << "\t useMissedPointsSeparateVideo             " << useMissedPointsSeparateVideo_ << std::endl;
   std::cout << "\t textureMPSeparateVideoWidth              " << textureMPSeparateVideoWidth_ << std::endl;
@@ -247,7 +247,7 @@ void PCCEncoderParameters::print() {
   std::cout << "\t compressedStreamPath                     " << compressedStreamPath_ << std::endl;
   std::cout << "\t reconstructedDataPath                    " << reconstructedDataPath_ << std::endl;
   std::cout << "\t frameCount                               " << frameCount_ << std::endl;
-  std::cout << "\t layerCountMinus1                          " << layerCountMinus1_ << std::endl;
+  std::cout << "\t mapCountMinus1                          " << mapCountMinus1_ << std::endl;
   std::cout << "\t startFrameNumber                         " << startFrameNumber_ << std::endl;
   std::cout << "\t groupOfFramesSize                        " << groupOfFramesSize_ << std::endl;
   std::cout << "\t colorTransform                           " << colorTransform_ << std::endl;
@@ -392,7 +392,7 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   pointLocalReconstruction               " << pointLocalReconstruction_ << std::endl;
   std::cout << "\t     plrlNumberOfModes                    " << plrlNumberOfModes_ << std::endl;
   std::cout << "\t     patchSize                            " << patchSize_ << std::endl;
-  std::cout << "\t   singleLayerPixelInterleaving           " << singleLayerPixelInterleaving_ << std::endl;
+  std::cout << "\t   singleLayerPixelInterleaving           " << singleMapPixelInterleaving_ << std::endl;
   std::cout << "\t surface Separation                       " << surfaceSeparation_ << std::endl;
   std::cout << "\t Lossy missed points patch                " << std::endl;
   std::cout << "\t   lossyMissedPointsPatch                 " << lossyMissedPointsPatch_ << std::endl;
@@ -531,20 +531,20 @@ bool PCCEncoderParameters::check() {
 
   if ( losslessGeo_ ) {
     pbfEnableFlag_ = false;
-    if( layerCountMinus1_ == 0  ) {
-      //layerCountMinus1_ = 1; 
-      //std::cerr << "WARNING: layerCountMinus1_ is only for lossy coding mode for now. Force "
-      //             "layerCountMinus1_=1.\n";
+    if( mapCountMinus1_ == 0  ) {
+      //mapCountMinus1_ = 1; 
+      //std::cerr << "WARNING: mapCountMinus1_ is only for lossy coding mode for now. Force "
+      //             "mapCountMinus1_=1.\n";
     }
     if ( pointLocalReconstruction_ ) {
       pointLocalReconstruction_ = false;
       std::cerr << "WARNING: pointLocalReconstruction_ is only for lossy coding mode for now. Force "
                    "pointLocalReconstruction_=FALSE.\n";
     }
-    if ( singleLayerPixelInterleaving_ ) {
-      singleLayerPixelInterleaving_ = false;
+    if ( singleMapPixelInterleaving_ ) {
+      singleMapPixelInterleaving_ = false;
       std::cerr << "WARNING: singleLayerPixelInterleaving is only for lossy coding mode for now. "
-                   "Force singleLayerPixelInterleaving_=FALSE.\n";
+                   "Force singleMapPixelInterleaving_=FALSE.\n";
     }
     if( lossyMissedPointsPatch_ ) {
       lossyMissedPointsPatch_ = false; 
@@ -600,9 +600,9 @@ bool PCCEncoderParameters::check() {
       ret = false;
       std::cerr << "textureMPSeparateVideoWidth_ must be multiple of 64.\n";
     }
-    if ( singleLayerPixelInterleaving_ ) {
+    if ( singleMapPixelInterleaving_ ) {
       ret = false;
-      std::cerr << "Pixel Interleaving is built on one layer coding. Force layerCountMinus1_ = 0.\n";
+      std::cerr << "Pixel Interleaving is built on one layer coding. Force mapCountMinus1_ = 0.\n";
     }
     if ( geometryMPConfig_.empty() || !exist( geometryMPConfig_ ) ) {
       std::cerr << "WARNING: geometryMPConfig_ is set as geometryConfig_ : " << geometryConfig_ << std::endl;
@@ -616,19 +616,19 @@ bool PCCEncoderParameters::check() {
     }
   }
 
-  if ( singleLayerPixelInterleaving_ && pointLocalReconstruction_ ) {
+  if ( singleMapPixelInterleaving_ && pointLocalReconstruction_ ) {
     ret = false;
     std::cerr << "Pixel Interleaving and Point local reconstruction cna't be use in the same time.\n";
   }
 
-  if ( layerCountMinus1_ != 0 ) {
-    if ( singleLayerPixelInterleaving_ ) {
+  if ( mapCountMinus1_ != 0 ) {
+    if ( singleMapPixelInterleaving_ ) {
       ret = false;
-      std::cerr << "Pixel Interleaving is built on one layer coding. Force layerCountMinus1_ = 0.\n";
+      std::cerr << "Pixel Interleaving is built on one layer coding. Force mapCountMinus1_ = 0.\n";
     }
     if ( pointLocalReconstruction_ ) {
       ret = false;
-      std::cerr << "Point local reconstruction is built on one layer coding. Force layerCountMinus1_ = 0.\n";
+      std::cerr << "Point local reconstruction is built on one layer coding. Force mapCountMinus1_ = 0.\n";
     }
   }
 
@@ -677,11 +677,15 @@ bool PCCEncoderParameters::check() {
 
 void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   auto& sps   = context.getSps();
+  sps.allocateAltas();
   auto& pdg   = context.getPatchDataGroup();
-  auto& ai    = sps.getAttributeInformation();
-  auto& oi    = sps.getOccupancyInformation();
-  auto& gi    = sps.getGeometryInformation();
-  auto& psps  = pdg.getPatchSequenceParameterSet( 0 );
+  size_t atlasIndex = 0;
+
+  printf("Encoder Param \n"); fflush(stdout);
+  auto& ai    = sps.getAttributeInformation(atlasIndex);
+  auto& oi    = sps.getOccupancyInformation(atlasIndex);
+  auto& gi    = sps.getGeometryInformation(atlasIndex);
+  auto& psps  = pdg.getPatchVpccParameterSet( 0 );
   auto& pfgps = pdg.getPatchFrameGeometryParameterSet( 0 );
   auto& pfaps = pdg.getPatchFrameAttributeParameterSet( 0 );
   auto& gfp   = pfgps.getGeometryFrameParams();
@@ -691,32 +695,33 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
 
   context.setOccupancyPackingBlockSize( occupancyResolution_ );
 
-  sps.setLayerCountMinus1( (uint32_t)layerCountMinus1_ );
-  sps.allocate();
-  sps.setPcmSeparateVideoPresentFlag( useMissedPointsSeparateVideo_ );
+  sps.setMapCountMinus1( atlasIndex,  (uint32_t)mapCountMinus1_ );
+  sps.setMultipleMapStreamsPresentFlag(atlasIndex,  mapCountMinus1_ != 0 );
+  sps.setRawSeparateVideoPresentFlag( atlasIndex, useMissedPointsSeparateVideo_ );
+  sps.setRawPatchEnabledFlag( atlasIndex, losslessGeo_ || lossyMissedPointsPatch_);
+  for ( size_t i = 0; i < mapCountMinus1_ + 1; i++ ) {
+    if ( i == 0 ) {
+      sps.setMapAbsoluteCodingEnableFlag(  atlasIndex, i, 1 );
+    } else {
+      sps.setMapAbsoluteCodingEnableFlag( atlasIndex, i, absoluteD1_ );
+    }
+  }
+
   sps.setEnhancedOccupancyMapForDepthFlag( enhancedDeltaDepthCode_ );
   if( sps.getEnhancedOccupancyMapForDepthFlag() ){
     sps.setEOMFixBitCount( EOMFixBitCount_ );
     sps.setEOMTexturePatch( EOMTexturePatch_ );
   }
-  sps.setPixelDeinterleavingFlag( singleLayerPixelInterleaving_ );
-  sps.setMultipleLayerStreamsPresentFlag( layerCountMinus1_ != 0 );
+  sps.setPixelDeinterleavingFlag( singleMapPixelInterleaving_ );
   sps.setRemoveDuplicatePointEnabledFlag( removeDuplicatePoints_ );
-  for ( size_t i = 0; i < layerCountMinus1_ + 1; i++ ) {
-    if ( i == 0 ) {
-      sps.setLayerAbsoluteCodingEnabledFlag( i, 1 );
-    } else {
-      sps.setLayerAbsoluteCodingEnabledFlag( i, absoluteD1_ );
-    }
-  }
-  sps.setPcmPatchEnabledFlag( losslessGeo_ || lossyMissedPointsPatch_);
   sps.setPatchInterPredictionEnabledFlag( deltaCoding_ );
   sps.setSurfaceThickness( surfaceThickness_ );
   sps.setProjection45DegreeEnableFlag( additionalProjectionPlaneMode_ > 0 ? 1 : 0 );
-	if(lowDelayEncoding_)
+	if(lowDelayEncoding_){ 
 		sps.setPatchPrecedenceOrderFlag( 1 ); //low delay coding requires patch precedence set to 1
-	else
+  }else{
 		sps.setPatchPrecedenceOrderFlag( 0 ); 
+  }
 
   ai.setAttributeCount( noAttributes_ ? 0 : 1 );
   ai.allocate();

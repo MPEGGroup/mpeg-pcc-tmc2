@@ -56,7 +56,7 @@ PCCFrameContext::PCCFrameContext() :
     losslessGeo_( false ),
     losslessGeo444_( false ),
     useMissedPointsSeparateVideo_( false ),
-    pcmPatchEnabledFlag_( false ),
+    rawPatchEnabledFlag_( false ),
     geometry2dNorminalBitdepth_( 8 ) {}
 
 PCCFrameContext::~PCCFrameContext() {

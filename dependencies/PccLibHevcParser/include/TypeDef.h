@@ -258,19 +258,19 @@ typedef       UInt            Distortion;        ///< distortion measurement
 // Enumeration
 // ====================================================================================================================
 
-enum RDPCMMode
+enum RDRawMode
 {
-  RDPCM_OFF             = 0,
-  RDPCM_HOR             = 1,
-  RDPCM_VER             = 2,
-  NUMBER_OF_RDPCM_MODES = 3
+  RDRaw_OFF             = 0,
+  RDRaw_HOR             = 1,
+  RDRaw_VER             = 2,
+  NUMBER_OF_RDRaw_MODES = 3
 };
 
-enum RDPCMSignallingMode
+enum RDRawSignallingMode
 {
-  RDPCM_SIGNAL_IMPLICIT            = 0,
-  RDPCM_SIGNAL_EXPLICIT            = 1,
-  NUMBER_OF_RDPCM_SIGNALLING_MODES = 2
+  RDRaw_SIGNAL_IMPLICIT            = 0,
+  RDRaw_SIGNAL_EXPLICIT            = 1,
+  NUMBER_OF_RDRaw_SIGNALLING_MODES = 2
 };
 
 /// supported slice type

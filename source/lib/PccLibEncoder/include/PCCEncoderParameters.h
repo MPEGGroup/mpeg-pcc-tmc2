@@ -94,7 +94,7 @@ class PCCEncoderParameters {
   double maxAllowedDist2MissedPointsDetection_;
   double maxAllowedDist2MissedPointsSelection_;
   double lambdaRefineSegmentation_;
-  size_t layerCountMinus1_;
+  size_t mapCountMinus1_;
 
   // occupancy map encoding
   size_t      maxCandidateCount_;
@@ -198,7 +198,7 @@ class PCCEncoderParameters {
   bool   pointLocalReconstruction_;
   size_t patchSize_;
   size_t plrlNumberOfModes_;
-  bool   singleLayerPixelInterleaving_;
+  bool   singleMapPixelInterleaving_;
 
   // visual quality
   bool patchColorSubsampling_;

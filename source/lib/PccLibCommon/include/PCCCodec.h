@@ -69,7 +69,7 @@ struct GeneratePointCloudParameters {
   double      radius2Smoothing_;
   double      radius2BoundaryDetection_;
   double      thresholdSmoothing_;
-  size_t      pcmPointColorFormat_;
+  size_t      rawPointColorFormat_;
   size_t      nbThread_;
   bool        absoluteD1_;
   size_t      surfaceThickness_;
@@ -88,9 +88,9 @@ struct GeneratePointCloudParameters {
   bool        EOMTexturePatch_;
   size_t      thresholdLossyOM_;
   bool        removeDuplicatePoints_;
-  size_t      layerCountMinus1_;
+  size_t      mapCountMinus1_;
   bool        pointLocalReconstruction_;
-  bool        singleLayerPixelInterleaving_;
+  bool        singleMapPixelInterleaving_;
   std::string path_;
   bool        useAdditionalPointsPatch_;
   size_t      plrlNumberOfModes_;

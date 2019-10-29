@@ -1741,7 +1741,7 @@ TComSPSRExt::TComSPSRExt()
  , m_persistentRiceAdaptationEnabledFlag(false)
  , m_cabacBypassAlignmentEnabledFlag    (false)
 {
-  for (UInt signallingModeIndex = 0; signallingModeIndex < NUMBER_OF_RDPCM_SIGNALLING_MODES; signallingModeIndex++)
+  for (UInt signallingModeIndex = 0; signallingModeIndex < NUMBER_OF_RDRaw_SIGNALLING_MODES; signallingModeIndex++)
   {
     m_rdpcmEnabledFlag[signallingModeIndex] = false;
   }
@@ -1776,10 +1776,10 @@ TComSPS::TComSPS()
 , m_uiQuadtreeTUMaxDepthInter (  0)
 , m_uiQuadtreeTUMaxDepthIntra (  0)
 // Tool list
-, m_usePCM                    (false)
+, m_useRaw                    (false)
 , m_pcmLog2MaxSize            (  5)
-, m_uiPCMLog2MinSize          (  7)
-, m_bPCMFilterDisableFlag     (false)
+, m_uiRawLog2MinSize          (  7)
+, m_bRawFilterDisableFlag     (false)
 , m_uiBitsForPOC              (  8)
 , m_numLongTermRefPicSPS      (  0)
 , m_uiMaxTrSize               ( 32)

@@ -46,12 +46,12 @@ namespace pcc {
 class PCCBitstream;
 class PCCContext;
 class ProfileTierLevel;
-class SequenceParameterSet;
+class VpccParameterSet;
 class OccupancyInformation;
 class GeometryInformation;
 class AttributeInformation;
 class PatchDataGroup;
-class PatchSequenceParameterSet;
+class PatchVpccParameterSet;
 class PatchFrameGeometryParameterSet;
 class PatchFrameAttributeParameterSet;
 class GeometryPatchParameterSet;
@@ -68,7 +68,7 @@ class PatchTileGroupDataUnit;
 class PatchInformationData;
 class PatchDataUnit;
 class DeltaPatchDataUnit;
-class PCMPatchDataUnit;
+class RawPatchDataUnit;
 class EOMPatchDataUnit;
 class PointLocalReconstructionInformation;
 class PointLocalReconstructionData;
@@ -89,16 +89,16 @@ class PCCBitstreamDecoder {
   // 7.3.2.2 V-PCC unit header syntax
   void vpccUnitHeader( PCCContext& context, PCCBitstream& bitstream, VPCCUnitType& vpccUnitType );
 
-  // 7.3.2.3 PCM separate video data syntax
+  // 7.3.2.3 raw separate video data syntax
   void pcmSeparateVideoData( PCCContext& context, PCCBitstream& bitstream, uint8_t bitCount );
 
   // 7.3.2.4 V-PCC unit payload syntax
   void vpccUnitPayload( PCCContext& context, PCCBitstream& bitstream, VPCCUnitType& vpccUnitType );
 
-  void vpccVideoDataUnit( PCCContext& context, PCCBitstream& bitstream, VPCCUnitType& vpccUnitType );
+  void videoSubStream( PCCContext& context, PCCBitstream& bitstream, VPCCUnitType& vpccUnitType );
 
   // 7.3.4.1 General Sequence parameter set syntax
-  void sequenceParameterSet( SequenceParameterSet& sequenceParameterSet, PCCContext& context, PCCBitstream& bitstream );
+  void vpccParameterSet( VpccParameterSet& vpccParameterSet, PCCContext& context, PCCBitstream& bitstream );
 
   // 7.3.4.2 Byte alignment syntax
   void byteAlignment( PCCBitstream& bitstream );
@@ -111,19 +111,19 @@ class PCCBitstreamDecoder {
 
   // 7.3.4.4 Geometry parameter set syntax
   void geometryInformation( GeometryInformation&  geometryInformation,
-                            SequenceParameterSet& sequenceParameterSet,
+                            VpccParameterSet& vpccParameterSet,
                             PCCBitstream&         bitstream );
 
   // 7.3.4.5 Attribute parameter set syntax
   void attributeInformation( AttributeInformation& attributeInformation,
-                             SequenceParameterSet& sequenceParameterSet,
+                             VpccParameterSet& vpccParameterSet,
                              PCCBitstream&         bitstream );
 
   // 7.3.5.1 General patch data group unit syntax  
-  void patchDataGroup( PCCContext& context, PCCBitstream& bitstream );
+  void atlasSubStream( PCCContext& context, PCCBitstream& bitstream );
 
   // 7.3.5.2 Patch data group unit payload syntax 
-  void patchDataGroupUnitPayload( PatchDataGroup& patchDataGroup,
+  void atlasSubStreamUnitPayload( PatchDataGroup& atlasSubStream,
                                   PDGUnitType     unitType,
                                   size_t          frameIndex,
                                   PCCContext&     context,
@@ -131,26 +131,26 @@ class PCCBitstreamDecoder {
 
 
   // 7.3.5.3 Patch sequence parameter set syntax
-  void patchSequenceParameterSet( PatchDataGroup& pdg, PCCBitstream& bitstream );
+  void patchVpccParameterSet( PatchDataGroup& pdg, PCCBitstream& bitstream );
 
   // 7.3.5.4 Patch frame geometry parameter set syntax 
-  void patchFrameGeometryParameterSet( PatchDataGroup&       patchDataGroup,
-                                       SequenceParameterSet& sequenceParameterSet,
+  void patchFrameGeometryParameterSet( PatchDataGroup&       atlasSubStream,
+                                       VpccParameterSet& vpccParameterSet,
                                        PCCBitstream&         bitstream );
 
   // 7.3.5.5 Geometry frame Params syntax
   void geometryFrameParams( GeometryFrameParams& geometryFrameParams, PCCBitstream& bitstream );
 
   // 7.3.5.6 Patch frame attribute parameter set syntax 
-  void patchFrameAttributeParameterSet( PatchDataGroup&       patchDataGroup,
-                                        SequenceParameterSet& sequenceParameterSet,
+  void patchFrameAttributeParameterSet( PatchDataGroup&       atlasSubStream,
+                                        VpccParameterSet& vpccParameterSet,
                                         PCCBitstream&         bitstream );
 
   // 7.3.5.7 Attribute frame Params syntax
   void attributeFrameParams( AttributeFrameParams& attributeFrameParams, size_t dimension, PCCBitstream& bitstream );
 
   // 7.3.5.8 Geometry patch parameter set syntax
-  void geometryPatchParameterSet( PatchDataGroup& patchDataGroup, PCCBitstream& bitstream );
+  void geometryPatchParameterSet( PatchDataGroup& atlasSubStream, PCCBitstream& bitstream );
 
   // 7.3.5.9 Geometry patch Params
   void geometryPatchParams( GeometryPatchParams&            geometryPatchParams,
@@ -158,8 +158,8 @@ class PCCBitstreamDecoder {
                             PCCBitstream&                   bitstream );
 
   // 7.3.5.10 Attribute patch parameter set syntax
-  void attributePatchParameterSet( PatchDataGroup&       patchDataGroup,
-                                   SequenceParameterSet& sequenceParameterSet,
+  void attributePatchParameterSet( PatchDataGroup&       atlasSubStream,
+                                   VpccParameterSet& vpccParameterSet,
                                    PCCBitstream&         bitstream );
 
   // 7.3.5.11 Attribute patch Params syntax
@@ -169,11 +169,11 @@ class PCCBitstreamDecoder {
                              PCCBitstream&                    bitstream );
 
   // 7.3.5.12 Patch frame parameter set syntax
-  void patchFrameParameterSet( PatchDataGroup&       patchDataGroup,
-                               SequenceParameterSet& sequenceParameterSet,
+  void patchFrameParameterSet( PatchDataGroup&       atlasSubStream,
+                               VpccParameterSet& vpccParameterSet,
                                PCCBitstream&         bitstream );
 
-  void patchFrameTileInformation( PatchFrameTileInformation& pfti, SequenceParameterSet& sps, PCCBitstream& bitstream );
+  void patchFrameTileInformation( PatchFrameTileInformation& pfti, VpccParameterSet& sps, PCCBitstream& bitstream );
 
   // 7.3.5.13 Patch frame layer unit syntax
   void patchTileGroupLayerUnit( PatchDataGroup& pdg,
@@ -189,7 +189,7 @@ class PCCBitstreamDecoder {
 
   // 7.3.5.15 Reference list structure syntax
   void refListStruct( RefListStruct&             refListStruct,
-                      PatchSequenceParameterSet& patchSequenceParameterSet,
+                      PatchVpccParameterSet& patchVpccParameterSet,
                       PCCBitstream&              bitstream );
 
   // 7.3.5.16 Patch frame data unit syntax
@@ -214,8 +214,8 @@ class PCCBitstreamDecoder {
                            PCCContext&           context,
                            PCCBitstream&         bitstream );
 
-  // 7.3.5.20 PCM patch data unit syntax
-  void pcmPatchDataUnit( PCMPatchDataUnit&     ppdu,
+  // 7.3.5.20 raw patch data unit syntax
+  void pcmPatchDataUnit( RawPatchDataUnit&     ppdu,
                          PatchTileGroupHeader& ptgh,
                          PCCContext&           context,
                          PCCBitstream&         bitstream );

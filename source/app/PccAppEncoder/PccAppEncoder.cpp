@@ -645,14 +645,14 @@ bool parseParameters( int                   argc,
       encoderParams.pointLocalReconstruction_,
       "Use point local reconstruction")
 
-	  ("layerCountMinus1",
-      encoderParams.layerCountMinus1_,
-      encoderParams.layerCountMinus1_,
+	  ("mapCountMinus1",
+      encoderParams.mapCountMinus1_,
+      encoderParams.mapCountMinus1_,
       "Numbers of layers (rename to maps?)")
 
     ("singleLayerPixelInterleaving",
-      encoderParams.singleLayerPixelInterleaving_,
-      encoderParams.singleLayerPixelInterleaving_,
+      encoderParams.singleMapPixelInterleaving_,
+      encoderParams.singleMapPixelInterleaving_,
       "Use single layer pixel interleaving")
 
     ("removeDuplicatePoints",
@@ -916,8 +916,8 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
   while ( startFrameNumber < endFrameNumber0 ) {
     const size_t endFrameNumber = min( startFrameNumber + groupOfFramesSize0, endFrameNumber0 );
     PCCContext   context;
-    context.addSequenceParameterSet( contextIndex );
-    context.getVPCC().setSequenceParameterSetId( contextIndex );
+    context.addVpccParameterSet( contextIndex );
+    context.getVPCC().setVpccParameterSetId( contextIndex );
 
     PCCGroupOfFrames sources, reconstructs;
     if ( !sources.load( encoderParams.uncompressedDataPath_, startFrameNumber, endFrameNumber,

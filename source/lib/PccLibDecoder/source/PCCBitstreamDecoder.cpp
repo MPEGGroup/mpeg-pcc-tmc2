@@ -30,7 +30,6 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 #include "PCCCommon.h"
 #include "PCCVideoBitstream.h"
 #include "PCCBitstream.h"
@@ -48,8 +47,8 @@ PCCBitstreamDecoder::~PCCBitstreamDecoder() {}
 int32_t PCCBitstreamDecoder::decode( PCCBitstream& bitstream, PCCContext& context ) {
   bitstream.getBitStreamStat().newGOF();
   VPCCUnitType vpccUnitType;
-  vpccUnit( context, bitstream, vpccUnitType );  // VPCC_SPS
-  vpccUnit( context, bitstream, vpccUnitType );  // VPCC_PDG
+  vpccUnit( context, bitstream, vpccUnitType );  // VPCC_VPS
+  vpccUnit( context, bitstream, vpccUnitType );  // VPCC_AD
   vpccUnit( context, bitstream, vpccUnitType );  // VPCC_OVD
   vpccUnit( context, bitstream, vpccUnitType );  // VPCC_GVD
   vpccUnit( context, bitstream, vpccUnitType );  // VPCC_AVD
@@ -57,31 +56,32 @@ int32_t PCCBitstreamDecoder::decode( PCCBitstream& bitstream, PCCContext& contex
   return 1;
 }
 
-void PCCBitstreamDecoder::vpccVideoDataUnit( PCCContext&   context,
+void PCCBitstreamDecoder::videoSubStream( PCCContext&   context,
                                              PCCBitstream& bitstream,
                                              VPCCUnitType& vpccUnitType ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
+  size_t atlasIndex = 0;
   if ( vpccUnitType == VPCC_OVD ) {
     TRACE_BITSTREAM( "OccupancyMap \n" );
     bitstream.read( context.createVideoBitstream( VIDEO_OCCUPANCY ) );
   } else if ( vpccUnitType == VPCC_GVD ) {
     TRACE_BITSTREAM( "Geometry \n" );
     auto& sps = context.getSps();
-    if ( sps.getLayerCountMinus1() > 0 && !sps.getLayerAbsoluteCodingEnabledFlag( 1 ) ) {
+    if ( sps.getMapCountMinus1(atlasIndex) > 0 && !sps.getMapAbsoluteCodingEnableFlag( atlasIndex, 1 ) ) {
       bitstream.read( context.createVideoBitstream( VIDEO_GEOMETRY_D0 ) );
       bitstream.read( context.createVideoBitstream( VIDEO_GEOMETRY_D1 ) );
     } else {
       bitstream.read( context.createVideoBitstream( VIDEO_GEOMETRY ) );
     }
-    if ( sps.getPcmPatchEnabledFlag() && sps.getPcmSeparateVideoPresentFlag() ) {
+    if ( sps.getRawPatchEnabledFlag(atlasIndex) && sps.getRawSeparateVideoPresentFlag(atlasIndex) ) {
       bitstream.read( context.createVideoBitstream( VIDEO_GEOMETRY_MP ) );
     }
   } else if ( vpccUnitType == VPCC_AVD ) {
     auto& sps = context.getSps();
-    if ( sps.getAttributeInformation().getAttributeCount() > 0 ) {
+    if ( sps.getAttributeInformation(atlasIndex).getAttributeCount() > 0 ) {
       TRACE_BITSTREAM( "Texture \n" );
       bitstream.read( context.createVideoBitstream( VIDEO_TEXTURE ) );
-      if ( sps.getPcmPatchEnabledFlag() && sps.getPcmSeparateVideoPresentFlag() ) {
+      if ( sps.getRawPatchEnabledFlag(atlasIndex) && sps.getRawSeparateVideoPresentFlag(atlasIndex) ) {
         bitstream.read( context.createVideoBitstream( VIDEO_TEXTURE_MP ) );
       }
     }
@@ -103,52 +103,25 @@ void PCCBitstreamDecoder::vpccUnitHeader( PCCContext& context, PCCBitstream& bit
   TRACE_BITSTREAM( "%s \n", __func__ );
   auto& vpcc   = context.getVPCC();
   vpccUnitType = (VPCCUnitType)bitstream.read( 5 );  // u(5)
-  if ( vpccUnitType == VPCC_AVD || vpccUnitType == VPCC_GVD || vpccUnitType == VPCC_OVD || vpccUnitType == VPCC_PDG ) {
-    vpcc.setSequenceParameterSetId( bitstream.read( 4 ) );  // u(4)
-		// u(6) TODO: vuh_atlas_ID 
+  if ( vpccUnitType == VPCC_AVD || vpccUnitType == VPCC_GVD || vpccUnitType == VPCC_OVD || vpccUnitType == VPCC_AD ) {
+    vpcc.setVpccParameterSetId( bitstream.read( 4 ) );  // u(4)
+    vpcc.setAtlasId( bitstream.read( 6 ) );                 // u(6)
   }
   if ( vpccUnitType == VPCC_AVD ) {
     auto& sps = context.getSps();
     vpcc.setAttributeIndex( bitstream.read( 7 ) );           // u(7)
-    vpcc.setAttributeDimensionIndex( bitstream.read( 7 ) );  // u(7)
-		// u(4) TODO: vuh_map_index
-		// u(1) TODO: vuh_raw_video_flag
-		// TODO: remove pcmSeparateVideoData below
-    if ( sps.getMultipleLayerStreamsPresentFlag() ) {
-      vpcc.setLayerIndex( bitstream.read( 4 ) );  // u(4)
-      pcmSeparateVideoData( context, bitstream, 4 );
-    } else {
-      pcmSeparateVideoData( context, bitstream, 8 );
-    }
+    vpcc.setAttributeDimensionIndex( bitstream.read( 5 ) );  // u(5)
+    vpcc.setMapIndex( bitstream.read( 4 ) );                 // u(4)
+    vpcc.setRawVideoFlag( bitstream.read( 1 ) );             // u(1)
   } else if ( vpccUnitType == VPCC_GVD ) {
     auto& sps = context.getSps();
-		// u(4) TODO: vuh_map_index
-		// u(1) TODO: vuh_raw_video_flag
-		// u(12) TODO: vuh_reserved_zero_flag
-		// TODO: remove pcmSeparateVideoData below
-    if ( sps.getMultipleLayerStreamsPresentFlag() ) {
-      vpcc.setLayerIndex( bitstream.read( 4 ) );  // u(4)
-      pcmSeparateVideoData( context, bitstream, 18 );
-    } else {
-      pcmSeparateVideoData( context, bitstream, 22 );
-    }
-  } else if ( vpccUnitType == VPCC_OVD || vpccUnitType == VPCC_PDG ) {
-    bitstream.read( 23 );  // u(23) TODO -> change to u(17)
+    vpcc.setMapIndex( bitstream.read( 4 ) );      // u(4)
+    vpcc.setRawVideoFlag( bitstream.read( 1 ) );  // u(1)
+    bitstream.read( 12 );                         // u(12)
+  } else if ( vpccUnitType == VPCC_OVD || vpccUnitType == VPCC_AD ) {
+    bitstream.read( 17 );  // u(17)
   } else {
     bitstream.read( 27 );  // u(27)
-  }
-}
-
-// 7.3.2.3 PCM separate video data syntax - TODO: remove this
-void PCCBitstreamDecoder::pcmSeparateVideoData( PCCContext& context, PCCBitstream& bitstream, uint8_t bitCount ) {
-  TRACE_BITSTREAM( "%s \n", __func__ );
-  auto& vpcc = context.getVPCC();
-  auto& sps  = context.getSps();
-  if ( sps.getPcmSeparateVideoPresentFlag() && !vpcc.getLayerIndex() ) {
-    vpcc.setPCMVideoFlag( bitstream.read( 1 ) );  // u(1)
-    bitstream.read( bitCount );                   // u(bitCount)
-  } else {
-    bitstream.read( bitCount + 1 );  // u(bitCount + 1)
   }
 }
 
@@ -156,13 +129,13 @@ void PCCBitstreamDecoder::pcmSeparateVideoData( PCCContext& context, PCCBitstrea
 void PCCBitstreamDecoder::vpccUnitPayload( PCCContext& context, PCCBitstream& bitstream, VPCCUnitType& vpccUnitType ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   TRACE_BITSTREAM( "vpccUnitType = %d \n", (int32_t)vpccUnitType );
-  if ( vpccUnitType == VPCC_SPS ) {
-    auto& sps = context.addSequenceParameterSet( context.getVPCC().getSequenceParameterSetId() );
-    sequenceParameterSet( sps, context, bitstream );// TODO: rename vpccParameterSet?
-  } else if ( vpccUnitType == VPCC_PDG ) {
-    patchDataGroup( context, bitstream );//TODO: rename atlasSubStream?
+  if ( vpccUnitType == VPCC_VPS ) {
+    auto& sps = context.addVpccParameterSet( context.getVPCC().getVpccParameterSetId() );
+    vpccParameterSet( sps, context, bitstream );
+  } else if ( vpccUnitType == VPCC_AD ) {
+    atlasSubStream( context, bitstream );
   } else if ( vpccUnitType == VPCC_OVD || vpccUnitType == VPCC_GVD || vpccUnitType == VPCC_AVD ) {
-    vpccVideoDataUnit( context, bitstream, vpccUnitType );// TODO: rename videoSubStream?
+    videoSubStream( context, bitstream, vpccUnitType );
   }
 }
 
@@ -176,68 +149,76 @@ void PCCBitstreamDecoder::byteAlignment( PCCBitstream& bitstream ) {
 }
 
 // 7.3.4.1 General V-PCC parameter set syntax
-void PCCBitstreamDecoder::sequenceParameterSet( SequenceParameterSet& sps,
+void PCCBitstreamDecoder::vpccParameterSet( VpccParameterSet& sps,
                                                 PCCContext&           context,
                                                 PCCBitstream&         bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
 
   profileTierLevel( sps.getProfileTierLevel(), bitstream );
-  sps.setSequenceParameterSetId( bitstream.read( 4 ) );   // u(4)
-	//u(6) TODO: vps_atlas_count_minus1
-	//for(int j=0; j < vps_atlas_count_minus1+1; j++){ 
-  sps.setFrameWidth( bitstream.read( 16 ) );              // u(16)
-  sps.setFrameHeight( bitstream.read( 16 ) );             // u(16)
-  sps.setAvgFrameRatePresentFlag( bitstream.read( 1 ) );  // u(1) TODO: remove?
-  if ( sps.getAvgFrameRatePresentFlag() ) {// TODO: remove?
-    sps.setAvgFrameRate( bitstream.read( 16 ) );  // u(16) TODO: remove?
-  }// TODO: remove?
-  sps.setEnhancedOccupancyMapForDepthFlag( bitstream.read( 1 ) );  // u(1) TODO: remove?
-  sps.setLayerCountMinus1( bitstream.read( 4 ) );                  // u(4)
-  if ( sps.getEnhancedOccupancyMapForDepthFlag() ) {// TODO: remove?
-    if ( sps.getLayerCountMinus1() == 0 ) {// TODO: remove?
-      sps.setEOMFixBitCount( bitstream.read( 4 ) );  // u(4) TODO: remove?
-    }// TODO: remove?
-    sps.setEOMTexturePatch( bitstream.read( 1 ) );  // u(1) TODO: remove?
-  }// TODO: remove?
-  if ( sps.getLayerCountMinus1() > 0 ) {
-    sps.setMultipleLayerStreamsPresentFlag( bitstream.read( 1 ) );  // u(1)
-  }
-  sps.allocate();
-
-  sps.setLayerAbsoluteCodingEnabledFlag( 0, 1 );
-	//TODO: align for loop with DIS text
-  for ( size_t i = 0; i < sps.getLayerCountMinus1(); i++ ) {
-    sps.setLayerAbsoluteCodingEnabledFlag( i + 1, bitstream.read( 1 ) );  // u(1)
-    if ( ( sps.getLayerAbsoluteCodingEnabledFlag( i + 1 ) == 0 ) ) {
-      if ( i > 0 ) { //TODO: in DIS, this is always true???
-        sps.setLayerPredictorIndexDiff( i + 1, bitstream.readUvlc() );  // ue(v)
+  sps.setVpccParameterSetId( bitstream.read( 4 ) );  // u(4)
+  sps.setAtlasCountMinus1( bitstream.read( 6 ) );    // u(6)
+  sps.allocateAltas();
+  for ( int j = 0; j < sps.getAtlasCountMinus1() + 1; j++ ) {
+    TRACE_BITSTREAM( "Atlas = %lu \n", j );
+    sps.setFrameWidth( j, bitstream.read( 16 ) );     // u(16)
+    sps.setFrameHeight( j, bitstream.read( 16 ) );    // u(16)
+    sps.setMapCountMinus1( j, bitstream.read( 4 ) );  // u(4)
+    TRACE_BITSTREAM( " MapCountMinus1 = %lu \n", sps.getMapCountMinus1( j ) );
+    sps.allocateMap( j );
+    if ( sps.getMapCountMinus1( j ) > 0 ) {       
+      sps.setMultipleMapStreamsPresentFlag( j, bitstream.read( 1 ) );  // u(1)
+      TRACE_BITSTREAM( "MultipleMapStreamsPresentFlag = %lu \n", sps.getMultipleMapStreamsPresentFlag( j ) );
+    }
+    sps.setMapAbsoluteCodingEnableFlag( j, 0, 1 );
+    for ( size_t i = 1; i <= sps.getMapCountMinus1( j ); i++ ) {
+      if ( sps.getMultipleMapStreamsPresentFlag( j ) ) {
+        sps.setMapAbsoluteCodingEnableFlag( j, i, bitstream.read( 1 ) );  // u(1)
       } else {
-        sps.setLayerPredictorIndexDiff( i + 1, 0 );
+        sps.setMapAbsoluteCodingEnableFlag( j, i, 1 );
       }
+      if ( sps.getMapAbsoluteCodingEnableFlag( j, i ) == 0 ) {
+        if ( i > 0 ) {
+          sps.setMapPredictorIndexDiff( j, i, bitstream.readUvlc() );  // ue(v)
+        } else {
+          sps.setMapPredictorIndexDiff( j, i, 0 );
+        }
+      }
+    }    
+    sps.setRawPatchEnabledFlag( j, bitstream.read( 1 ) );  // u(1)
+    TRACE_BITSTREAM( "RawPatchEnabledFlag = %lu \n", sps.getRawPatchEnabledFlag( j ) );
+    if ( sps.getRawPatchEnabledFlag( j ) ) {
+      sps.setRawSeparateVideoPresentFlag( j, bitstream.read( 1 ) );  // u(1)
+      TRACE_BITSTREAM( "RawSeparateVideoPresentFlag = %lu \n", sps.getRawSeparateVideoPresentFlag( j ) );
+    }
+#ifdef BITSTREAM_TRACE
+    for ( size_t i = 0; i < sps.getMapCountMinus1( j ) + 1; i++ ) {
+      TRACE_BITSTREAM( "AbsoluteCoding L%lu = %lu \n", i, sps.getMapAbsoluteCodingEnableFlag( j, i ) );
+    }
+#endif
+    occupancyInformation( sps.getOccupancyInformation( j ), bitstream );
+    geometryInformation( sps.getGeometryInformation( j ), sps, bitstream );
+    attributeInformation( sps.getAttributeInformation( j ), sps, bitstream );
+  }
+
+  sps.setExtensionPresentFlag( bitstream.read( 1 ) );  // u(1)
+  if ( sps.getExtensionPresentFlag() ) {
+    sps.setExtensionLength( bitstream.readUvlc() );  // ue(v)
+    sps.allocateExtensionDataByte();
+    for( size_t i=0;i<sps.getExtensionLength();i++){
+      sps.setExtensionDataByte( i, bitstream.read( 8 ) ); // u(8)
     }
   }
-#ifdef BITSTREAM_TRACE
-  TRACE_BITSTREAM( " LayerCountMinus1  = %lu \n", sps.getLayerCountMinus1() );
-  for ( size_t i = 0; i < sps.getLayerCountMinus1() + 1; i++ ) {
-    TRACE_BITSTREAM( " AbsoluteCoding L%lu = %lu \n", i, sps.getLayerAbsoluteCodingEnabledFlag( i ) );
-  }
-#endif
 
-  sps.setPcmPatchEnabledFlag( bitstream.read( 1 ) );  // u(1) TODO: change to rawPatchEnabledFlag?
-  if ( sps.getPcmPatchEnabledFlag() ) {
-    sps.setPcmSeparateVideoPresentFlag( bitstream.read( 1 ) );  // u(1) TODO: change to rawSeparateVideoPresentFlag?
-  }
-  occupancyInformation( sps.getOccupancyInformation(), bitstream );
-  geometryInformation( sps.getGeometryInformation(), sps, bitstream );
-  attributeInformation( sps.getAttributeInformation(), sps, bitstream );
-	//} //end of atlas information
-	//u(1) TODO: vps_extension_present_flag
-	//if(vps_extension_present_flag)
-	//  ue(v) vps_extension_length
-	//  for(int j=0; j<vps_extension_length+1;j++){
-	//    u(8) vps_extension_data_byte
-	//  }
-	//}
+  // THE NEXT PARAMETERS ARE NOT IN THE VPCC CD SYNTAX DOCUMENTS AND WILL BE REMOVE
+#ifdef BITSTREAM_TRACE
+  bitstream.trace( "  Depreciated1\n" );
+#endif
+  sps.setLosslessGeo444( bitstream.read( 1 ) );    // u(1) TODO: remove?
+  sps.setLosslessGeo( bitstream.read( 1 ) );       // u(1) TODO: remove?
+
+  sps.setMinLevel( bitstream.read( 8 ) );          // u(8) TODO: remove?
+  sps.setSurfaceThickness( bitstream.read( 8 ) );  // u(8) TODO: remove?
+  
   sps.setPatchInterPredictionEnabledFlag( bitstream.read( 1 ) );      // u(1) TODO: remove?
   sps.setPixelDeinterleavingFlag( bitstream.read( 1 ) );              // u(1) TODO: remove?
   sps.setPointLocalReconstructionEnabledFlag( bitstream.read( 1 ) );  // u(1) TODO: remove?
@@ -247,18 +228,9 @@ void PCCBitstreamDecoder::sequenceParameterSet( SequenceParameterSet& sps,
   sps.setRemoveDuplicatePointEnabledFlag( bitstream.read( 1 ) );  // u(1) TODO: remove?
   sps.setProjection45DegreeEnableFlag( bitstream.read( 1 ) );     // u(1) TODO: remove?
   sps.setPatchPrecedenceOrderFlag( bitstream.read( 1 ) );         // u(1) TODO: remove?
-
-  // THE NEXT PARAMETERS ARE NOT IN THE VPCC CD SYNTAX DOCUMENTS AND WILL BE REMOVE
-#ifdef BITSTREAM_TRACE
-  bitstream.trace( "  Depreciated1\n" );
-#endif
-  sps.setLosslessGeo444( bitstream.read( 1 ) );    // u(1) TODO: remove?
-  sps.setLosslessGeo( bitstream.read( 1 ) );       // u(1) TODO: remove?
 #ifdef BITSTREAM_TRACE
   bitstream.trace( "  Depreciated2\n" );
 #endif
-  sps.setMinLevel( bitstream.read( 8 ) );          // u(8) TODO: remove?
-  sps.setSurfaceThickness( bitstream.read( 8 ) );  // u(8) TODO: remove?
   // THE NEXT PARAMETERS ARE NOT IN THE VPCC CD SYNTAX DOCUMENTS AND WILL BE REMOVE
   byteAlignment( bitstream );
 }
@@ -286,42 +258,49 @@ void PCCBitstreamDecoder::occupancyInformation( OccupancyInformation& oi, PCCBit
 
 // 7.3.4.4 Geometry parameter set syntax
 void PCCBitstreamDecoder::geometryInformation( GeometryInformation&  gi,
-                                               SequenceParameterSet& sps,
+                                               VpccParameterSet& sps,
                                                PCCBitstream&         bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
+  size_t atlasIndex = 0;
   gi.setGeometryCodecId( bitstream.read( 8 ) );                      // u(8)
   gi.setGeometryNominal2dBitdepthMinus1( bitstream.read( 5 ) );      // u(5)
-  gi.setGeometryMSBAlignFlag( bitstream.read( 1 ) );                  // u(1)
+  gi.setGeometryMSBAlignFlag( bitstream.read( 1 ) );                 // u(1)
   gi.setGeometry3dCoordinatesBitdepthMinus1( bitstream.read( 5 ) );  // u(5)
-  if ( sps.getPcmSeparateVideoPresentFlag() ) {
-    gi.setPcmGeometryCodecId( bitstream.read( 8 ) );  // u(8)
+  if ( sps.getRawSeparateVideoPresentFlag( atlasIndex ) ) {
+    gi.setRawGeometryCodecId( bitstream.read( 8 ) );  // u(8)
   }
+
+  // JR TODO:  Remove
   gi.setGeometryParamsEnabledFlag( bitstream.read( 1 ) );       // u(1) TODO: remove?
   gi.setGeometryPatchParamsEnabledFlag( bitstream.read( 1 ) );  // u(1) TODO: remove?
-
   TRACE_BITSTREAM( "GeometryParamsEnabledFlag = %d \n", gi.getGeometryParamsEnabledFlag() );
   TRACE_BITSTREAM( "GeometryPatchParamsEnabledFlag = %d \n", gi.getGeometryPatchParamsEnabledFlag() );
 }
 
 // 7.3.4.5 Attribute information
 void PCCBitstreamDecoder::attributeInformation( AttributeInformation& ai,
-                                                SequenceParameterSet& sps,
+                                                VpccParameterSet& sps,
                                                 PCCBitstream&         bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
+  size_t atlasIndex = 0; 
   ai.setAttributeCount( bitstream.read( 7 ) );  // u(7)
   TRACE_BITSTREAM( "AttributeCount = %u  \n", ai.getAttributeCount() );
   ai.allocate();
   for ( size_t i = 0; i < ai.getAttributeCount(); i++ ) {
     ai.setAttributeTypeId( i, bitstream.read( 4 ) );   // u(4)
     ai.setAttributeCodecId( i, bitstream.read( 8 ) );  // u(8)
-    if ( sps.getPcmSeparateVideoPresentFlag() ) {
-      ai.setPcmAttributeCodecId( i, bitstream.read( 8 ) );  // u(8) TODO: rename to rawAttributeCodecId?
+    if ( sps.getRawSeparateVideoPresentFlag(atlasIndex) ) {
+      ai.setRawAttributeCodecId( i, bitstream.read( 8 ) );  // u(8) 
     }
-		//TODO:
-		//for(int j=0; j< vps_map_count_minus1[atlasId];j++){
-		//  if(vps_map_absolute_coding_enabled_flag[atlasId][j]==0)
-		// u(1) ai.getAttributeMapAbsoluteCodingEnabledFlag(atlasId, i, j)
+    for ( int32_t j = 0; j < sps.getMapCountMinus1( atlasIndex ); j++ ) {
+      if ( sps.getMapAbsoluteCodingEnableFlag( atlasIndex, j ) == 0 ) {
+        ai.setAttributeMapAbsoluteCodingEnabledFlag( i, bitstream.read( 1 ) );  // u(1)
+      }
+    }
     ai.setAttributeDimensionMinus1( i, bitstream.read( 6 ) );  // u(6)
+
+    // JR was here => Jungsun your turn... 
+
     if ( ai.getAttributeDimensionMinus1( i ) > 0 ) {
       ai.setAttributeDimensionPartitionsMinus1( i, bitstream.read( 6 ) );  // u(6)
       int32_t remainingDimensions = ai.getAttributeDimensionMinus1( i );
@@ -342,6 +321,20 @@ void PCCBitstreamDecoder::attributeInformation( AttributeInformation& ai,
   if ( ai.getAttributeCount() > 0 ) {
     ai.setAttributeParamsEnabledFlag( bitstream.read( 1 ) );       // u(1) TODO: remove?
     ai.setAttributePatchParamsEnabledFlag( bitstream.read( 1 ) );  // u(1) TODO: remove?
+  }
+}
+
+// 7.3.2.3 raw separate video data syntax - TODO: remove this
+void PCCBitstreamDecoder::pcmSeparateVideoData( PCCContext& context, PCCBitstream& bitstream, uint8_t bitCount ) {
+  TRACE_BITSTREAM( "%s \n", __func__ );
+  auto& vpcc = context.getVPCC();
+  auto& sps  = context.getSps();
+  size_t atlasIndex = 0;
+  if ( sps.getRawSeparateVideoPresentFlag( atlasIndex ) && !vpcc.getMapIndex() ) {
+    vpcc.setRawVideoFlag( bitstream.read( 1 ) );  // u(1)
+    bitstream.read( bitCount );                   // u(bitCount)
+  } else {
+    bitstream.read( bitCount + 1 );  // u(bitCount + 1)
   }
 }
 
@@ -366,7 +359,7 @@ void PCCBitstreamDecoder::pointLocalReconstructionInformation( PointLocalReconst
 }
 
 // 7.3.5.1 General patch data group unit syntax
-void PCCBitstreamDecoder::patchDataGroup( PCCContext& context, PCCBitstream& bitstream ) {
+void PCCBitstreamDecoder::atlasSubStream( PCCContext& context, PCCBitstream& bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   size_t i                               = 0;
   auto&  pdg                             = context.getPatchDataGroup();
@@ -376,7 +369,7 @@ void PCCBitstreamDecoder::patchDataGroup( PCCContext& context, PCCBitstream& bit
   do {
     PDGUnitType unitType = (PDGUnitType)bitstream.readUvlc();  // ue(v)
     TRACE_BITSTREAM( "%s (%u): frame = %u \n", strUnitType( unitType ).c_str(), (uint32_t)unitType, frameCount );
-    patchDataGroupUnitPayload( pdg, unitType, frameCount, context, bitstream );
+    atlasSubStreamUnitPayload( pdg, unitType, frameCount, context, bitstream );
     if ( unitType == PDG_PTGLU ) {
       frameCount++;
       prevFrameindex = i;
@@ -388,7 +381,7 @@ void PCCBitstreamDecoder::patchDataGroup( PCCContext& context, PCCBitstream& bit
 }
 
 // 7.3.5.2 Patch data group unit payload syntax
-void PCCBitstreamDecoder::patchDataGroupUnitPayload( PatchDataGroup& pdg,
+void PCCBitstreamDecoder::atlasSubStreamUnitPayload( PatchDataGroup& pdg,
                                                      PDGUnitType     unitType,
                                                      size_t          frameIndex,
                                                      PCCContext&     context,
@@ -397,7 +390,7 @@ void PCCBitstreamDecoder::patchDataGroupUnitPayload( PatchDataGroup& pdg,
   TRACE_BITSTREAM( "  type = %u frameIndex = %u \n", (uint8_t)unitType, frameIndex );
   auto& sps = context.getSps();
   switch ( unitType ) {
-    case PDG_PSPS: patchSequenceParameterSet( pdg, bitstream ); break;
+    case PDG_PSPS: patchVpccParameterSet( pdg, bitstream ); break;
     case PDG_GPPS: geometryPatchParameterSet( pdg, bitstream ); break;
     case PDG_APPS: attributePatchParameterSet( pdg, sps, bitstream ); break;
     case PDG_PFPS: patchFrameParameterSet( pdg, sps, bitstream ); break;
@@ -411,13 +404,13 @@ void PCCBitstreamDecoder::patchDataGroupUnitPayload( PatchDataGroup& pdg,
 }
 
 // 7.3.5.3 Patch sequence parameter set syntax
-void PCCBitstreamDecoder::patchSequenceParameterSet( PatchDataGroup& pdg, PCCBitstream& bitstream ) {
+void PCCBitstreamDecoder::patchVpccParameterSet( PatchDataGroup& pdg, PCCBitstream& bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   uint32_t      index = bitstream.readUvlc();  // ue(v)
-  auto&         psps  = pdg.getPatchSequenceParameterSet( index );
+  auto&         psps  = pdg.getPatchVpccParameterSet( index );
   RefListStruct rls;
   psps.addRefListStruct( rls );
-  psps.setPatchSequenceParameterSetId( index );
+  psps.setPatchVpccParameterSetId( index );
   psps.setLog2PatchPackingBlockSize( bitstream.read( 3 ) );            // u(3)
   psps.setLog2MaxPatchFrameOrderCntLsbMinus4( bitstream.readUvlc() );  // ue(v)
   psps.setMaxDecPatchFrameBufferingMinus1( bitstream.readUvlc() );     // ue(v)
@@ -434,15 +427,16 @@ void PCCBitstreamDecoder::patchSequenceParameterSet( PatchDataGroup& pdg, PCCBit
 
 // 7.3.5.4 Patch frame geometry parameter set syntax
 void PCCBitstreamDecoder::patchFrameGeometryParameterSet( PatchDataGroup&       pdg,
-                                                          SequenceParameterSet& sps,
+                                                          VpccParameterSet& sps,
                                                           PCCBitstream&         bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
-  auto&    gi         = sps.getGeometryInformation();
+  size_t                       altasIndex              = 0;
+  auto&    gi         = sps.getGeometryInformation(altasIndex);
   uint32_t pfgpsIndex = bitstream.readUvlc();  // ue(v)
   uint32_t pspsIndex  = bitstream.readUvlc();  // ue(v)
   auto&    pfgps      = pdg.getPatchFrameGeometryParameterSet( pfgpsIndex );
   pfgps.setPatchFrameGeometryParameterSetId( pfgpsIndex );
-  pfgps.setPatchSequenceParameterSetId( pspsIndex );
+  pfgps.setPatchVpccParameterSetId( pspsIndex );
   TRACE_BITSTREAM( "GeometryParamsEnabledFlag = %d \n", gi.getGeometryParamsEnabledFlag() );
   if ( gi.getGeometryParamsEnabledFlag() ) { geometryFrameParams( pfgps.getGeometryFrameParams(), bitstream ); }
   TRACE_BITSTREAM( "GeometryPatchParamsEnabledFlag = %d \n", gi.getGeometryPatchParamsEnabledFlag() );
@@ -504,14 +498,15 @@ void PCCBitstreamDecoder::geometryFrameParams( GeometryFrameParams& gfp, PCCBits
 
 // 7.3.5.6 Patch frame attribute parameter set syntax
 void PCCBitstreamDecoder::patchFrameAttributeParameterSet( PatchDataGroup&       pdg,
-                                                           SequenceParameterSet& sps,
+                                                           VpccParameterSet& sps,
                                                            PCCBitstream&         bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
-  auto&    ai         = sps.getAttributeInformation();
+  size_t atlasIndex = 0;
+  auto&    ai         = sps.getAttributeInformation( atlasIndex );
   uint32_t pfapsIndex = bitstream.readUvlc();  // ue(v)
   uint32_t pspsIndex  = bitstream.readUvlc();  // ue(v)
   auto&    pfaps      = pdg.getPatchFrameAttributeParameterSet( pfapsIndex );
-  // auto&    psps       = pdg.getPatchSequenceParameterSet( pfapsIndex );
+  // auto&    psps       = pdg.getPatchVpccParameterSet( pfapsIndex );
   pfaps.setPatchFrameAttributeParameterSetId( pfapsIndex );
   pfaps.setPatchSequencParameterSetId( pspsIndex );
   TRACE_BITSTREAM( "PatchFrameAttributeParameterSetId = %u  \n", pfaps.getPatchFrameAttributeParameterSetId() );
@@ -623,7 +618,7 @@ void PCCBitstreamDecoder::geometryPatchParams( GeometryPatchParams&            g
 
 // 7.3.5.10 Attribute patch parameter set syntax
 void PCCBitstreamDecoder::attributePatchParameterSet( PatchDataGroup&       pdg,
-                                                      SequenceParameterSet& sps,
+                                                      VpccParameterSet& sps,
                                                       PCCBitstream&         bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   // auto&    ai         = sps.getAttributeInformation();
@@ -671,17 +666,18 @@ void PCCBitstreamDecoder::attributePatchParams( AttributePatchParams&           
 
 // 7.3.5.12 Patch frame parameter set syntax
 void PCCBitstreamDecoder::patchFrameParameterSet( PatchDataGroup&       pdg,
-                                                  SequenceParameterSet& sps,
+                                                  VpccParameterSet& sps,
                                                   PCCBitstream&         bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
-  auto&    ai         = sps.getAttributeInformation();
+  size_t atlasIndex = 0;
+  auto&    ai         = sps.getAttributeInformation(atlasIndex);
   uint32_t pfpsIndex  = bitstream.readUvlc();  // ue(v)
   uint32_t pspsIndex  = bitstream.readUvlc();  // ue(v)
   uint32_t gpfpsIndex = bitstream.readUvlc();  // ue(v)
   auto&    pfps       = pdg.getPatchFrameParameterSet( pfpsIndex );
-  // auto&    psps      = pdg.getPatchSequenceParameterSet( pspsIndex );
+  // auto&    psps      = pdg.getPatchVpccParameterSet( pspsIndex );
   pfps.setPatchFrameParameterSetId( pfpsIndex );
-  pfps.setPatchSequenceParameterSetId( pspsIndex );
+  pfps.setPatchVpccParameterSetId( pspsIndex );
   pfps.setGeometryPatchFrameParameterSetId( gpfpsIndex );
   TRACE_BITSTREAM( " ai.getAttributeCount() = %u \n", ai.getAttributeCount() );
 
@@ -707,7 +703,7 @@ void PCCBitstreamDecoder::patchFrameParameterSet( PatchDataGroup&       pdg,
 }
 
 void PCCBitstreamDecoder::patchFrameTileInformation( PatchFrameTileInformation& pfti,
-                                                     SequenceParameterSet&      sps,
+                                                     VpccParameterSet&      sps,
                                                      PCCBitstream&              bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   pfti.setSingleTileInPatchFrameFlag( bitstream.read( 1 ) );  // u(1)
@@ -780,13 +776,14 @@ void PCCBitstreamDecoder::patchTileGroupHeader( PatchTileGroupHeader& ptgh,
                                                 PCCContext&           context,
                                                 PCCBitstream&         bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
-  auto&    sps       = context.getSps();
-  auto&    gi        = sps.getGeometryInformation();
-  auto&    pdg       = context.getPatchDataGroup();
-  uint32_t pfpsIndex = bitstream.readUvlc();  // ue(v)
+  auto&    sps        = context.getSps();
+  size_t   atlasIndex = 0;
+  auto&    gi         = sps.getGeometryInformation( atlasIndex );
+  auto&    pdg        = context.getPatchDataGroup();
+  uint32_t pfpsIndex  = bitstream.readUvlc();  // ue(v)
   ptgh.setPatchFrameParameterSetId( pfpsIndex );
   auto&   pfps     = pdg.getPatchFrameParameterSet( ptgh.getPatchFrameParameterSetId() );
-  auto&   psps     = pdg.getPatchSequenceParameterSet( pfps.getPatchSequenceParameterSetId() );
+  auto&   psps     = pdg.getPatchVpccParameterSet( pfps.getPatchVpccParameterSetId() );
   auto&   pfti     = pfps.getPatchFrameTileInformation();
   uint8_t bitCount = pfti.getSignalledTileGroupIdLengthMinus1() + 1;
   ptgh.setAddress( bitstream.read( bitCount ) );
@@ -914,15 +911,16 @@ void PCCBitstreamDecoder::patchTileGroupHeader( PatchTileGroupHeader& ptgh,
     ptgh.setEOMPatchNbPatchBitCountMinus1( bitstream.read( 8 ) );  // u( 8 )
     ptgh.setEOMPatchMaxEPBitCountMinus1( bitstream.read( 8 ) );    // u( 8 )
   }
+  TRACE_BITSTREAM("RawPatchEnabledFlag = %d \n", sps.getRawPatchEnabledFlag(atlasIndex) );
+  if ( sps.getRawPatchEnabledFlag(atlasIndex) ) {
   // sps_pcm_patch_enabled_flag
-  if ( sps.getPcmPatchEnabledFlag() ) {
-    ptgh.setPcm3dShiftBitCountPresentFlag( bitstream.read( 1 ) );  // u( 1 )
-    if ( ptgh.getPcm3dShiftBitCountPresentFlag() ) {
-      ptgh.setPcm3dShiftAxisBitCountMinus1( bitstream.read( gi.getGeometry3dCoordinatesBitdepthMinus1() + 1 ) );  //
+    ptgh.setRaw3dShiftBitCountPresentFlag( bitstream.read( 1 ) );  // u( 1 )
+    if ( ptgh.getRaw3dShiftBitCountPresentFlag() ) {
+      ptgh.setRaw3dShiftAxisBitCountMinus1( bitstream.read( gi.getGeometry3dCoordinatesBitdepthMinus1() + 1 ) );  //
     }
   } else {
     size_t bitCountPcmU1V1D1 = gi.getGeometry3dCoordinatesBitdepthMinus1() - gi.getGeometryNominal2dBitdepthMinus1();
-    ptgh.setPcm3dShiftAxisBitCountMinus1( bitCountPcmU1V1D1 - 1 );
+    ptgh.setRaw3dShiftAxisBitCountMinus1( bitCountPcmU1V1D1 - 1 );
   }
 
   TRACE_BITSTREAM(
@@ -930,16 +928,16 @@ void PCCBitstreamDecoder::patchTileGroupHeader( PatchTileGroupHeader& ptgh,
       ptgh.getInterPredictPatchBitCountFlag(), ptgh.getInterPredictPatch2dShiftUBitCountFlag(),
       ptgh.getInterPredictPatch2dShiftVBitCountFlag(), ptgh.getInterPredictPatch3dShiftTangentAxisBitCountFlag(),
       ptgh.getInterPredictPatch3dShiftBitangentAxisBitCountFlag(), ptgh.getInterPredictPatchLodBitCountFlag(),
-      ptgh.getPcm3dShiftBitCountPresentFlag(), ptgh.getInterPredictPatch2dShiftUBitCountMinus1(),
+      ptgh.getRaw3dShiftBitCountPresentFlag(), ptgh.getInterPredictPatch2dShiftUBitCountMinus1(),
       ptgh.getInterPredictPatch2dShiftVBitCountMinus1(), ptgh.getInterPredictPatch3dShiftTangentAxisBitCountMinus1(),
       ptgh.getInterPredictPatch3dShiftBitangentAxisBitCountMinus1(), ptgh.getInterPredictPatchLodBitCount(),
-      ptgh.getPcm3dShiftAxisBitCountMinus1() );
+      ptgh.getRaw3dShiftAxisBitCountMinus1() );
   byteAlignment( bitstream );
 }
 
 // 7.3.5.16 Reference list structure syntax
 void PCCBitstreamDecoder::refListStruct( RefListStruct&             rls,
-                                         PatchSequenceParameterSet& psps,
+                                         PatchVpccParameterSet& psps,
                                          PCCBitstream&              bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   rls.setNumRefEntries( bitstream.readUvlc() );  // ue(v)
@@ -1001,7 +999,8 @@ void PCCBitstreamDecoder::patchInformationData( PatchInformationData& pid,
                                                 PCCBitstream&         bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   auto& sps  = context.getSps();
-  auto& ai   = sps.getAttributeInformation();
+  size_t atlasIndex = 0;
+  auto& ai   = sps.getAttributeInformation(atlasIndex);
   auto& pdg  = context.getPatchDataGroup();
   auto& pfps = pdg.getPatchFrameParameterSet( ptgh.getPatchFrameParameterSetId() );
   pid.allocate( ai.getAttributeCount() );
@@ -1044,9 +1043,9 @@ void PCCBitstreamDecoder::patchInformationData( PatchInformationData& pid,
     dpdu.setDpduFrameIndex( pid.getFrameIndex() );
     dpdu.setDpduPatchIndex( pid.getPatchIndex() );
     deltaPatchDataUnit( dpdu, ptgh, context, bitstream );
-  } else if ( ( ( PCCPatchFrameType( ptgh.getType() ) ) == PATCH_FRAME_I && patchMode == PATCH_MODE_I_PCM ) ||
-              ( ( PCCPatchFrameType( ptgh.getType() ) ) == PATCH_FRAME_P && patchMode == PATCH_MODE_P_PCM ) ) {
-    auto& ppdu = pid.getPCMPatchDataUnit();
+  } else if ( ( ( PCCPatchFrameType( ptgh.getType() ) ) == PATCH_FRAME_I && patchMode == PATCH_MODE_I_Raw ) ||
+              ( ( PCCPatchFrameType( ptgh.getType() ) ) == PATCH_FRAME_P && patchMode == PATCH_MODE_P_Raw ) ) {
+    auto& ppdu = pid.getRawPatchDataUnit();
     ppdu.setPpduFrameIndex( pid.getFrameIndex() );
     ppdu.setPpduPatchIndex( pid.getPatchIndex() );
     pcmPatchDataUnit( ppdu, ptgh, context, bitstream );
@@ -1065,8 +1064,8 @@ void PCCBitstreamDecoder::patchDataUnit( PatchDataUnit&        pdu,
   auto& sps                          = context.getSps();
   auto  ptghPatchFrameParameterSetId = ptgh.getPatchFrameParameterSetId();
   auto& pfps = context.getPatchDataGroup().getPatchFrameParameterSet( ptghPatchFrameParameterSetId );
-  auto  pfpsPatchSequenceParameterSetId = pfps.getPatchSequenceParameterSetId();
-  auto& psps = context.getPatchDataGroup().getPatchSequenceParameterSet( pfpsPatchSequenceParameterSetId );
+  auto  pfpsPatchVpccParameterSetId = pfps.getPatchVpccParameterSetId();
+  auto& psps = context.getPatchDataGroup().getPatchVpccParameterSet( pfpsPatchVpccParameterSetId );
 
   TRACE_BITSTREAM( "%s \n", __func__ );
   pdu.set2DShiftU( bitstream.read( ptgh.getInterPredictPatch2dShiftUBitCountMinus1() + 1 ) );  // u(v)
@@ -1135,8 +1134,8 @@ void PCCBitstreamDecoder::deltaPatchDataUnit( DeltaPatchDataUnit&   dpdu,
 
   auto  ptghPatchFrameParameterSetId = ptgh.getPatchFrameParameterSetId();
   auto& pfps = context.getPatchDataGroup().getPatchFrameParameterSet( ptghPatchFrameParameterSetId );
-  auto  pfpsPatchSequenceParameterSetId = pfps.getPatchSequenceParameterSetId();
-  auto& psps = context.getPatchDataGroup().getPatchSequenceParameterSet( pfpsPatchSequenceParameterSetId );
+  auto  pfpsPatchVpccParameterSetId = pfps.getPatchVpccParameterSetId();
+  auto& psps = context.getPatchDataGroup().getPatchVpccParameterSet( pfpsPatchVpccParameterSetId );
 
   TRACE_BITSTREAM( "%s \n", __func__ );
   dpdu.setDeltaPatchIdx( bitstream.readSvlc() );              // se(v)
@@ -1182,28 +1181,29 @@ void PCCBitstreamDecoder::deltaPatchDataUnit( DeltaPatchDataUnit&   dpdu,
       dpdu.get3DDeltaShiftBiTangentAxis(), dpdu.get3DDeltaShiftMinNormalAxis() );
 }
 
-// 7.3.6.5 PCM patch data unit syntax
-void PCCBitstreamDecoder::pcmPatchDataUnit( PCMPatchDataUnit&     ppdu,
+// 7.3.6.5 raw patch data unit syntax
+void PCCBitstreamDecoder::pcmPatchDataUnit( RawPatchDataUnit&     ppdu,
                                             PatchTileGroupHeader& ptgh,
                                             PCCContext&           context,
                                             PCCBitstream&         bitstream ) {
   auto& sps = context.getSps();
   TRACE_BITSTREAM( "%s \n", __func__ );
-  if ( sps.getPcmSeparateVideoPresentFlag() ) { ppdu.setPatchInPcmVideoFlag( bitstream.read( 1 ) ); }  // u(1)
+  size_t atlasIndex = 0;
+  if ( sps.getRawSeparateVideoPresentFlag(atlasIndex) ) { ppdu.setPatchInRawVideoFlag( bitstream.read( 1 ) ); }  // u(1)
   ppdu.set2DShiftU( bitstream.read( ptgh.getInterPredictPatch2dShiftUBitCountMinus1() + 1 ) );         // u(v)
   ppdu.set2DShiftV( bitstream.read( ptgh.getInterPredictPatch2dShiftVBitCountMinus1() + 1 ) );         // u(v)
   ppdu.set2DDeltaSizeU( bitstream.readSvlc() );                                                        // se(v)
   ppdu.set2DDeltaSizeV( bitstream.readSvlc() );                                                        // se(v)
-  ppdu.set3DShiftTangentAxis( bitstream.read( ptgh.getPcm3dShiftAxisBitCountMinus1() + 1 ) );          // u(v)
-  ppdu.set3DShiftBiTangentAxis( bitstream.read( ptgh.getPcm3dShiftAxisBitCountMinus1() + 1 ) );        // u(v)
-  ppdu.set3DShiftNormalAxis( bitstream.read( ptgh.getPcm3dShiftAxisBitCountMinus1() + 1 ) );           // u(v)
+  ppdu.set3DShiftTangentAxis( bitstream.read( ptgh.getRaw3dShiftAxisBitCountMinus1() + 1 ) );          // u(v)
+  ppdu.set3DShiftBiTangentAxis( bitstream.read( ptgh.getRaw3dShiftAxisBitCountMinus1() + 1 ) );        // u(v)
+  ppdu.set3DShiftNormalAxis( bitstream.read( ptgh.getRaw3dShiftAxisBitCountMinus1() + 1 ) );           // u(v)
 
-  ppdu.setPcmPoints( bitstream.readUvlc() );
+  ppdu.setRawPoints( bitstream.readUvlc() );
   TRACE_BITSTREAM(
-      "PCM Patch => UV %4lu %4lu  S=%4ld %4ld  UVD1=%4ld %4ld %4ld NumPcmPoints=%lu PatchInPcmVideoFlag=%d \n",
+      "Raw Patch => UV %4lu %4lu  S=%4ld %4ld  UVD1=%4ld %4ld %4ld NumPcmPoints=%lu PatchInRawVideoFlag=%d \n",
       ppdu.get2DShiftU(), ppdu.get2DShiftV(), ppdu.get2DDeltaSizeU(), ppdu.get2DDeltaSizeV(),
-      ppdu.get3DShiftBiTangentAxis(), ppdu.get3DShiftBiTangentAxis(), ppdu.get3DShiftNormalAxis(), ppdu.getPcmPoints(),
-      ppdu.getPatchInPcmVideoFlag() );
+      ppdu.get3DShiftBiTangentAxis(), ppdu.get3DShiftBiTangentAxis(), ppdu.get3DShiftNormalAxis(), ppdu.getRawPoints(),
+      ppdu.getPatchInRawVideoFlag() );
 }
 
 // 7.3.6.x EOM patch data unit syntax

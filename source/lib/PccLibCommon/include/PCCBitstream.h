@@ -71,7 +71,7 @@ class PCCBitstreamGofStat {
     return *this;
   }
   size_t getTotal() {
-    return vpccUnitSize_[VPCC_SPS] + vpccUnitSize_[VPCC_PDG] + vpccUnitSize_[VPCC_OVD] + vpccUnitSize_[VPCC_GVD] +
+    return vpccUnitSize_[VPCC_VPS] + vpccUnitSize_[VPCC_AD] + vpccUnitSize_[VPCC_OVD] + vpccUnitSize_[VPCC_GVD] +
            vpccUnitSize_[VPCC_AVD];
   }
 
@@ -83,8 +83,8 @@ class PCCBitstreamGofStat {
   size_t getTotalMetadata() { return getTotal() - getTotalGeometry() - getTotalTexture(); }
 
   void trace() {
-    printf( "    vpccUnitSize[ VPCC_SPS ]: %9lu B %9lu b\n", vpccUnitSize_[VPCC_SPS], vpccUnitSize_[VPCC_SPS] * 8 );
-    printf( "    vpccUnitSize[ VPCC_PDG ]: %9lu B %9lu b\n", vpccUnitSize_[VPCC_PDG], vpccUnitSize_[VPCC_PDG] * 8 );
+    printf( "    vpccUnitSize[ VPCC_VPS ]: %9lu B %9lu b\n", vpccUnitSize_[VPCC_VPS], vpccUnitSize_[VPCC_VPS] * 8 );
+    printf( "    vpccUnitSize[ VPCC_AD ]: %9lu B %9lu b\n", vpccUnitSize_[VPCC_AD], vpccUnitSize_[VPCC_AD] * 8 );
     printf( "    vpccUnitSize[ VPCC_OVD ]: %9lu B %9lu b ( Ocm video = %9lu B )\n", vpccUnitSize_[VPCC_OVD],
             vpccUnitSize_[VPCC_OVD] * 8, videoBinSize_[VIDEO_OCCUPANCY] );
     printf( "    vpccUnitSize[ VPCC_GVD ]: %9lu B %9lu b ( Geo video = %9lu B + %9lu B + %9lu B + %9lu B )\n",
@@ -276,7 +276,7 @@ class PCCBitstream {
   void trace( const char* pFormat, Args... eArgs ) {
     if ( trace_ ) {
       FILE* output = traceFile_ ? traceFile_ : stdout;
-      fprintf( output, "[%6llu - %2u]: ", position_.bytes, position_.bits );
+      fprintf( output, "[%6lu - %2u]: ", position_.bytes, position_.bits );
       fflush( output );
       fprintf( output, pFormat, eArgs... );
       fflush( output );

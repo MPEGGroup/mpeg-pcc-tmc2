@@ -60,7 +60,7 @@ class PCCFrameContext {
   std::vector<size_t>&             getBlockToPatch() { return blockToPatch_; }
   std::vector<uint32_t>&           getOccupancyMap() { return occupancyMap_; }
 
-#if NO_PCM_INOCM
+#if NO_Raw_INOCM
   std::vector<uint32_t> copyOccupancyMap() { return occupancyMap_; }
 #endif
   std::vector<uint32_t>&             getFullOccupancyMap() { return fullOccupancyMap_; }
@@ -89,7 +89,7 @@ class PCCFrameContext {
   const bool                         getLosslessGeo() { return losslessGeo_; }
   const bool                         getLosslessGeo444() { return losslessGeo444_; }
   bool                               getUseMissedPointsSeparateVideo() { return useMissedPointsSeparateVideo_; }
-  const bool                         getPcmPatchEnabledFlag() { return pcmPatchEnabledFlag_; }
+  const bool                         getRawPatchEnabledFlag() { return rawPatchEnabledFlag_; }
   const size_t                       getMaxDepth() { return maxDepth_; }
   void                               setMaxDepth( size_t value ) { maxDepth_ = value; }
   size_t                             getGeometry2dNorminalBitdepth() { return geometry2dNorminalBitdepth_; }
@@ -121,7 +121,7 @@ class PCCFrameContext {
   void setNumberOfMissedPointsPatches( size_t numPoints ) { numberOfMissedPointsPatches_ = numPoints; }
   void setTotalNumberOfMissedPoints( size_t numPoints ) { totalNumberOfMissedPoints_ = numPoints; }
   void setGeometry3dCoordinatesBitdepth( size_t value ) { geometry3dCoordinatesBitdepth_ = value; }
-  void setPcmPatchEnabledFlag( bool value ) { pcmPatchEnabledFlag_ = value; }
+  void setRawPatchEnabledFlag( bool value ) { rawPatchEnabledFlag_ = value; }
   void setGeometry2dNorminalBitdepth( size_t value ) { geometry2dNorminalBitdepth_ = value; }
   void setNumMatchedPatches( size_t value ) { numMatchedPatches_ = value; }
 
@@ -154,7 +154,7 @@ class PCCFrameContext {
   bool                                         losslessGeo_;
   bool                                         losslessGeo444_;
   bool                                         useMissedPointsSeparateVideo_;
-  bool                                         pcmPatchEnabledFlag_;
+  bool                                         rawPatchEnabledFlag_;
   size_t                                       geometry2dNorminalBitdepth_;
   size_t                                       maxDepth_;
   std::vector<PCCVector3<size_t>>              pointToPixel_;

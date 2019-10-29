@@ -50,7 +50,7 @@ class PCCContext;
 class PCCFrameContext;
 class PatchFrameGeometryParameterSet;
 class GeometryPatchParameterSet;
-class SequenceParameterSet;
+class VpccParameterSet;
 class PointLocalReconstructionData;
 
 template <typename T, size_t N>
@@ -229,7 +229,7 @@ class PCCEncoder : public PCCCodec {
   void doGlobalTetrisPacking(PCCContext & context);
 
   void generateOccupancyMap( PCCFrameContext& frameContext );
-#if NO_PCM_INOCM
+#if NO_Raw_INOCM
   bool modifyOccupancyMap( PCCContext& context );
 #endif
   void modifyOccupancyMap( PCCFrameContext& frame, const PCCImageGeometry& imageRef, const PCCImageGeometry& image );
@@ -352,7 +352,7 @@ class PCCEncoder : public PCCCodec {
   void setPatchFrameGeometryParameterSet( PCCMetadata& metadata, PatchFrameGeometryParameterSet& gfps );
   void setGeometryPatchParameterSet( PCCMetadata& metadata, GeometryPatchParameterSet& gpps );
 
-  void setPointLocalReconstruction( PCCContext& context, SequenceParameterSet& sps );
+  void setPointLocalReconstruction( PCCContext& context, VpccParameterSet& sps );
 
   void setPointLocalReconstructionData( PCCFrameContext&              frame,
                                         const PCCPatch&               patch,

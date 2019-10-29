@@ -48,7 +48,7 @@ PCCContext::~PCCContext() {
   videoBitstream_.clear();
   subContexts_.clear();
   unionPatch_.clear();
-  sequenceParameterSets_.clear();
+  vpccParameterSets_.clear();
 }
 
 void PCCContext::resize( size_t size ) {
