@@ -74,8 +74,8 @@ class AttributeFrameParams;
 class PointLocalReconstructionInformation;
 class PointLocalReconstructionData;
 class SeiMessage;
-class PatchFrameTileInformation;
-  
+class AtlasFrameTileInformation;
+
 class PCCBitstreamEncoder {
  public:
   PCCBitstreamEncoder();
@@ -180,10 +180,10 @@ class PCCBitstreamEncoder {
                                VpccParameterSet&   vpccParameterSet,
                                PCCBitstream&           bitstream );
 
-  void patchFrameTileInformation(PatchFrameTileInformation& pfti,
+  void atlasFrameTileInformation(AtlasFrameTileInformation& pfti,
                                  VpccParameterSet&     sps,
                                  PCCBitstream&   bitstream );
-
+  
   // 7.3.5.13 Patch frame layer unit syntax
   void patchTileGroupLayerUnit(PatchDataGroup&       pdg,
                                                       size_t                index,

@@ -691,7 +691,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   auto& gfp   = pfgps.getGeometryFrameParams();
   auto& afp   = pfaps.getAttributeFrameParams();
   auto& pfps  = pdg.getPatchFrameParameterSet( 0 );
-  auto& pfti  = pfps.getPatchFrameTileInformation();
+  auto& pfti  = pfps.getAtlasFrameTileInformation();
 
   context.setOccupancyPackingBlockSize( occupancyResolution_ );
 
@@ -732,7 +732,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
 
   pfps.allocate( ai.getAttributeCount() );
   pfps.setLodModeEnableFlag( (levelOfDetailX_>1&&levelOfDetailY_>1) || !(levelOfDetailX_==1&&levelOfDetailY_==1) );
-  pfti.setSingleTileInPatchFrameFlag( true );
+  pfti.setSingleTileInAtlasFrameFlag( true );
   pfti.setSingleTilePerTileGroupFlag( true );
 
   oi.setLossyOccupancyMapCompressionThreshold( (size_t)thresholdLossyOM_ );

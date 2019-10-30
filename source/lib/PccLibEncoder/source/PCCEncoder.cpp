@@ -7158,11 +7158,10 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
 
       pdu.set3DShiftTangentAxis( patch.getU1() );
       pdu.set3DShiftBiTangentAxis( patch.getV1() );
-      pdu.setProjectPlane(
-          static_cast<pcc::PCCAxis6>( patch.getProjectionMode() * 3 + size_t( patch.getNormalAxis() ) ) );
+      pdu.setProjectPlane( patch.getProjectionMode() * 3 + size_t( patch.getNormalAxis() ) );
       pdu.set2DDeltaSizeU( patch.getSizeU0() - prevSizeU0 );
       pdu.set2DDeltaSizeV( patch.getSizeV0() - prevSizeV0 );
-      pdu.setOrientationIndex( patch.getPatchOrientation() );
+      pdu.setPduOrientationIndex( patch.getPatchOrientation() );
       pdu.set45DegreeProjectionPresentFlag( patch.getAxisOfAdditionalPlane() == 0 ? 0 : 1 );
       pdu.set45DegreeProjectionRotationAxis( patch.getAxisOfAdditionalPlane() );
       const size_t max3DCoordinate = 1 << ( gi.getGeometry3dCoordinatesBitdepthMinus1() + 1 );
@@ -7239,7 +7238,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
       auto& eomPatch = frame.getEomPatches()[eomPatchIndex];
       uint8_t patchType = (ptgh.getType() == (uint8_t)PATCH_FRAME_I ) ? (uint8_t)PATCH_MODE_I_EOM : (uint8_t)PATCH_MODE_P_EOM ;
       auto& pid      = ptgdu.addPatchInformationData( patchType );
-      auto& epdu     = pid.getEOMPatchDataUnit();
+      auto& epdu     = pid.getEomPatchDataUnit();
       pid.allocate( ai.getAttributeCount() );
 #if defined(BITSTREAM_TRACE) || defined(CODEC_TRACE)
       size_t totalPatchCount = patches.size()+pcmPatches.size()+numberOfEomPatches;

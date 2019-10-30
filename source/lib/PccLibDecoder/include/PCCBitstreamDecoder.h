@@ -73,7 +73,7 @@ class EOMPatchDataUnit;
 class PointLocalReconstructionInformation;
 class PointLocalReconstructionData;
 class SeiMessage;
-class PatchFrameTileInformation;
+class AtlasFrameTileInformation;
 
 class PCCBitstreamDecoder {
  public:
@@ -173,7 +173,7 @@ class PCCBitstreamDecoder {
                                VpccParameterSet& vpccParameterSet,
                                PCCBitstream&         bitstream );
 
-  void patchFrameTileInformation( PatchFrameTileInformation& pfti, VpccParameterSet& sps, PCCBitstream& bitstream );
+  void atlasFrameTileInformation( AtlasFrameTileInformation& pfti, VpccParameterSet& sps, PCCBitstream& bitstream );
 
   // 7.3.5.13 Patch frame layer unit syntax
   void patchTileGroupLayerUnit( PatchDataGroup& pdg,

@@ -662,7 +662,7 @@ void PCCBitstreamEncoder::patchFrameParameterSet( PatchDataGroup&       pdg,
   for ( size_t i = 0; i < ai.getAttributeCount(); i++ ) {
     bitstream.writeUvlc( pfps.getAttributePatchFrameParameterSetId( i ) );  // ue(v)
   }
-  patchFrameTileInformation( pfps.getPatchFrameTileInformation(), sps, bitstream );
+  atlasFrameTileInformation( pfps.getAtlasFrameTileInformation(), sps, bitstream );
 
   bitstream.write( pfps.getLocalOverrideGeometryPatchEnableFlag(), 1 );  // u(1)
   for ( size_t i = 0; i < ai.getAttributeCount(); i++ ) {
@@ -676,12 +676,13 @@ void PCCBitstreamEncoder::patchFrameParameterSet( PatchDataGroup&       pdg,
   byteAlignment( bitstream );
 }
 
-void PCCBitstreamEncoder::patchFrameTileInformation( PatchFrameTileInformation& pfti,
+void PCCBitstreamEncoder::atlasFrameTileInformation(
+                                                    AtlasFrameTileInformation& pfti,
                                                      VpccParameterSet&      sps,
                                                      PCCBitstream&              bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
-  bitstream.write( pfti.getSingleTileInPatchFrameFlag(), 1 );  // u(1)
-  if ( !pfti.getSingleTileInPatchFrameFlag() ) {
+  bitstream.write( pfti.getSingleTileInAtlasFrameFlag(), 1 );  // u(1)
+  if ( !pfti.getSingleTileInAtlasFrameFlag() ) {
     bitstream.write( pfti.getUniformTileSpacingFlag(), 1 );  // u(1)
     if ( pfti.getUniformTileSpacingFlag() ) {
       bitstream.writeUvlc( pfti.getTileColumnWidthMinus1( 0 ) );  //  ue(v)
@@ -701,8 +702,8 @@ void PCCBitstreamEncoder::patchFrameTileInformation( PatchFrameTileInformation& 
   bitstream.write( pfti.getSingleTilePerTileGroupFlag(), 1 );  //  u(1)
   if ( !pfti.getSingleTilePerTileGroupFlag() ) {
     uint32_t NumTilesInPatchFrame     = ( pfti.getNumTileColumnsMinus1() + 1 ) * ( pfti.getNumTileRowsMinus1() + 1 );
-    bitstream.writeUvlc( pfti.getNumTileGroupsInPatchFrameMinus1() );  // ue(v)
-    for ( size_t i = 0; i <= pfti.getNumTileGroupsInPatchFrameMinus1(); i++ ) {
+    bitstream.writeUvlc( pfti.getNumTileGroupsInAtlasFrameMinus1() );  // ue(v)
+    for ( size_t i = 0; i <= pfti.getNumTileGroupsInAtlasFrameMinus1(); i++ ) {
       uint8_t bitCount = getFixedLengthCodeBitsCount( NumTilesInPatchFrame + 1 );
       if ( i > 0 ) {
         bitstream.write( pfti.getTopLeftTileIdx( i ), bitCount );
@@ -750,7 +751,7 @@ void PCCBitstreamEncoder::patchTileGroupHeader( PatchTileGroupHeader& ptgh,
   auto& sps  = context.getSps();
 
   bitstream.writeUvlc( ptgh.getPatchFrameParameterSetId() );  // ue(v )
-  auto&   pfti     = pfps.getPatchFrameTileInformation();
+  auto&   pfti     = pfps.getAtlasFrameTileInformation();
   uint8_t bitCount = pfti.getSignalledTileGroupIdLengthMinus1() + 1;
   bitstream.write( ptgh.getAddress(), bitCount );  // u(v)
   // The length of ptgh_address is pfti_signalled_tile_group_id_length_minus1 + 1 bits.
@@ -789,7 +790,7 @@ void PCCBitstreamEncoder::patchTileGroupHeader( PatchTileGroupHeader& ptgh,
       psps.getNumRefPatchFrameListsInPsps() ? ptgh.getRefPatchFrameListIdx() : psps.getNumRefPatchFrameListsInPsps();
   size_t numLtrpEntries = 0;
   for ( size_t i = 0; i < psps.getRefListStruct( rlsIdx ).getNumRefEntries(); i++ ) {
-    if ( !psps.getRefListStruct( rlsIdx ).getStRefPatchFrameFlag( i ) ) { numLtrpEntries++; }
+    if ( !psps.getRefListStruct( rlsIdx ).getStRefAtalsFrameFlag( i ) ) { numLtrpEntries++; }
   }
 
   for ( size_t j = 0; j < numLtrpEntries; j++ ) {                               // numLtrpEntries=numLtrPatchFrmEntries
@@ -933,14 +934,14 @@ void PCCBitstreamEncoder::refListStruct( RefListStruct&             rls,
   rls.allocate();
   for ( size_t i = 0; i < rls.getNumRefEntries(); i++ ) {
     if ( psps.getLongTermRefPatchFramesFlag() ) {
-      bitstream.write( rls.getStRefPatchFrameFlag( i ), 1 );  // u(1)
-      if ( rls.getStRefPatchFrameFlag( i ) ) {
+      bitstream.write( rls.getStRefAtalsFrameFlag( i ), 1 );  // u(1)
+      if ( rls.getStRefAtalsFrameFlag( i ) ) {
         bitstream.writeUvlc( rls.getAbsDeltaPfocSt( i ) );  // ue(v)
         if ( rls.getAbsDeltaPfocSt( i ) > 0 ) {
           bitstream.write( rls.getStrpfEntrySignFlag( i ), 1 );  // u(1)
         } else {
           uint8_t bitCount = psps.getLog2MaxPatchFrameOrderCntLsbMinus4() + 4;
-          bitstream.write( rls.getPfocLsbLt( i ),
+          bitstream.write( rls.getAfocLsbLt( i ),
                            bitCount );  // u(v) psps_log2_max_patch_frame_order_cnt_lsb_minus4  + 4 bits
         }
       }
@@ -1019,12 +1020,12 @@ void PCCBitstreamEncoder::patchInformationData( PatchInformationData& pid,
   } else if ( ( ( PCCPatchFrameType( ptgh.getType() ) ) == PATCH_FRAME_I && patchMode == PATCH_MODE_I_Raw ) ||
               ( ( PCCPatchFrameType( ptgh.getType() ) ) == PATCH_FRAME_P && patchMode == PATCH_MODE_P_Raw ) ) {
     auto& ppdu = pid.getRawPatchDataUnit();
-    ppdu.setPpduFrameIndex( pid.getFrameIndex() );
-    ppdu.setPpduPatchIndex( pid.getPatchIndex() );
+    ppdu.setFrameIndex( pid.getFrameIndex() );
+    ppdu.setPatchIndex( pid.getPatchIndex() );
     pcmPatchDataUnit( ppdu, ptgh, context, bitstream );
   } else if ( ( ( PCCPatchFrameType( ptgh.getType() ) ) == PATCH_FRAME_I && patchMode == PATCH_MODE_I_EOM ) ||
               ( ( PCCPatchFrameType( ptgh.getType() ) ) == PATCH_FRAME_P && patchMode == PATCH_MODE_P_EOM ) ) {
-    auto& epdu = pid.getEOMPatchDataUnit();
+    auto& epdu = pid.getEomPatchDataUnit();
     eomPatchDataUnit( epdu, ptgh, context, bitstream );
   }
 }
@@ -1060,9 +1061,9 @@ void PCCBitstreamEncoder::patchDataUnit( PatchDataUnit&        pdu,
                    (size_t)ptgh.getInterPredictPatch2dDeltaSizeDBitCountMinus1() );
   bitstream.write( uint32_t( pdu.getProjectPlane() ), 3 );  // u(3) 0,1,2(near 0,1,2)
   if ( psps.getUseEightOrientationsFlag() ) {
-    bitstream.write( pdu.getOrientationIndex(), 3 );  // u(3)
+    bitstream.write( pdu.getPduOrientationIndex(), 3 );  // u(3)
   } else {
-    bitstream.write( pdu.getOrientationIndex(), 1 );  // u(1)
+    bitstream.write( pdu.getPduOrientationIndex(), 1 );  // u(1)
   }
   if ( pfps.getLodModeEnableFlag()) {
     bitstream.write( uint32_t( pdu.getLodEnableFlag() ), 1 );  // u(1) //    pdu.setLodEnableFlag(bitstream.read( 1 ) ); //u1
@@ -1083,7 +1084,7 @@ void PCCBitstreamEncoder::patchDataUnit( PatchDataUnit&        pdu,
   }
   TRACE_BITSTREAM( "Patch(%zu/%zu) => UV %4lu %4lu S=%4ld %4ld P=%lu O=%d A=%lu %lu %lu P45= %d %d lod=(%lu) %lu %lu\n ",
                    pdu.getPduPatchIndex(), pdu.getPduFrameIndex(), pdu.get2DShiftU(), pdu.get2DShiftV(),
-                   pdu.get2DDeltaSizeU(), pdu.get2DDeltaSizeV(), pdu.getProjectPlane(), pdu.getOrientationIndex(),
+                   pdu.get2DDeltaSizeU(), pdu.get2DDeltaSizeV(), pdu.getProjectPlane(), pdu.getPduOrientationIndex(),
                    pdu.get3DShiftTangentAxis(), pdu.get3DShiftBiTangentAxis(), pdu.get3DShiftMinNormalAxis(),
                    pdu.get45DegreeProjectionPresentFlag(), pdu.get45DegreeProjectionRotationAxis(),  pdu.getLodEnableFlag(), pdu.getLodScaleXminus1(), pdu.getLodScaleY());
 }

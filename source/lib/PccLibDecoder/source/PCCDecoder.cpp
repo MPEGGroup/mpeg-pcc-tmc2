@@ -568,7 +568,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
       patch.getSizeV0()              = prevSizeV0 + pdu.get2DDeltaSizeV();
       patch.getNormalAxis()          = size_t( pdu.getProjectPlane() ) % 3;
       patch.getProjectionMode()      = size_t( pdu.getProjectPlane() ) < 3 ? 0 : 1;
-      patch.getPatchOrientation()    = pdu.getOrientationIndex();
+      patch.getPatchOrientation()    = pdu.getPduOrientationIndex();
       patch.getAxisOfAdditionalPlane() =
           pdu.get45DegreeProjectionPresentFlag() ? pdu.get45DegreeProjectionRotationAxis() : 0;
       TRACE_CODEC( "patch %lu / %lu: Intra \n", patchIndex, patches.size() );
@@ -722,7 +722,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
                 ( PCCPatchFrameType( ptgh.getType() ) == PATCH_FRAME_P &&
                   PCCPatchModeP( ptgdu.getPatchMode( patchIndex ) ) == (uint8_t)PATCH_MODE_P_EOM ) ) {
       TRACE_CODEC( "patch %lu / %lu: EOM \n", patchIndex, patchCount );
-      auto& epdu            = pid.getEOMPatchDataUnit();
+      auto& epdu            = pid.getEomPatchDataUnit();
       auto& eomPatches        = frame.getEomPatches();
       PCCEomPatch eomPatch;
       eomPatch.u0_ =epdu.get2DShiftU();
