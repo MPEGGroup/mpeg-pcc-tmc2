@@ -48,6 +48,9 @@ using namespace pcc;
 PCCBitstreamEncoder::PCCBitstreamEncoder() {}
 PCCBitstreamEncoder::~PCCBitstreamEncoder() {}
 
+void PCCBitstreamEncoder::rbspRailingBits() {  }  // TODO
+bool PCCBitstreamEncoder::moreRbspData() { return false; }  // TODO
+
 void PCCBitstreamEncoder::setParameters( PCCEncoderParameters params ) { params_ = params; }
 
 int PCCBitstreamEncoder::encode( PCCContext& context, PCCBitstream& bitstream ) {
@@ -289,8 +292,6 @@ void PCCBitstreamEncoder::attributeInformation( AttributeInformation& ai,
     }
     bitstream.write( (uint32_t)ai.getAttributeDimensionMinus1( i ), 6 );  // u(6)
 
-    // JR was here => Jungsun your turn... 
-
     if ( ai.getAttributeDimensionMinus1( i ) > 0 ) {
       bitstream.write( (uint32_t)ai.getAttributeDimensionPartitionsMinus1( i ), 6 );  // u(6) 
       int32_t remainingDimensions = ai.getAttributeDimensionMinus1( i );
@@ -303,45 +304,107 @@ void PCCBitstreamEncoder::attributeInformation( AttributeInformation& ai,
       }
     }
     bitstream.write( (uint32_t)ai.getAttributeNominal2dBitdepthMinus1( i ), 5 );  // u(5)
-    bitstream.write( (uint32_t)ai.getAttributeMSBAlignFlag( i ), 1 );            // u(1) 
   }
   if ( ai.getAttributeCount() > 0 ) {
-    bitstream.write( (uint32_t)ai.getAttributeParamsEnabledFlag(), 1 );       // u(1) TODO: remove?
-    bitstream.write( (uint32_t)ai.getAttributePatchParamsEnabledFlag(), 1 );  // u(1) TODO: remove?
+    bitstream.write( (uint32_t)ai.getAttributeMSBAlignFlag(), 1 );            // u(1) 
+    // bitstream.write( (uint32_t)ai.getAttributeParamsEnabledFlag(), 1 );       // u(1) TODO: remove?
+    // bitstream.write( (uint32_t)ai.getAttributePatchParamsEnabledFlag(), 1 );  // u(1) TODO: remove?
   }
 }
 
-// 7.3.2.3 raw separate video data syntax TODO: remove this
-void PCCBitstreamEncoder::pcmSeparateVideoData( PCCContext& context, PCCBitstream& bitstream, uint8_t bitCount ) {
-  TRACE_BITSTREAM( "%s \n", __func__ );
-  auto& vpcc = context.getVPCC();
-  auto& sps  = context.getSps();
-  size_t atlasIndex = 0;
-  if ( sps.getRawSeparateVideoPresentFlag(atlasIndex) && !vpcc.getMapIndex() ) {
-    bitstream.write( (uint32_t)vpcc.getRawVideoFlag(), 1 );  // u(1)
-    bitstream.write( (uint32_t)0, bitCount );                // u(bitCount)
-  } else {
-    bitstream.write( (uint32_t)0, bitCount + 1 );  // u(bitCount + 1)
+
+// 7.3.6.1 Atlas sequence parameter set RBSP
+void PCCBitstreamEncoder::atlasSequenceParameterSetRBSP( AtlasSequenceParameterSetRBSP& asps,
+                                                         PCCContext&                    context,
+                                                         PCCBitstream&                  bitstream ) {
+  bitstream.writeUvlc( (uint32_t)asps.getAltasSequenceParameterSetId() ) ;  // ue(v)     
+  bitstream.write( (uint32_t)asps.getFrameWidth(), 16 );  // u(16)
+  bitstream.write( (uint32_t)asps.getFrameHeight(), 16 );  // u(16)
+  bitstream.write( (uint32_t) asps.getLog2PatchPackingBlockSize(),  3  );  // u(3)
+  bitstream.writeUvlc( (uint32_t)asps.getLog2MaxAtlasFrameOrderCntLsbMinus4() );  // ue(v)
+  bitstream.writeUvlc( (uint32_t)asps.getMaxDecAtlasFrameBufferingMinus1() );  // ue(v)
+  bitstream.write( (uint32_t)asps.getLongTermRefAtlasFramesFlag(),  1 );  // u(1)
+  bitstream.writeUvlc( (uint32_t)asps.getNumRefAtlasFrameListsInAsps() );  // ue(v)  
+  for ( size_t i = 0; i < asps.getNumRefAtlasFrameListsInAsps(); i++ ) {
+    refListStruct( asps.getRefListStruct( i ), asps, bitstream );
   }
+  bitstream.write( (uint32_t)asps.getLongTermRefAtlasFramesFlag(),  1 );  // u(1)
+  bitstream.write( (uint32_t)asps.get45DegreeProjectionPatchPresentFlag(),  1 );  // u(1)
+  bitstream.write( (uint32_t)asps.getNormalAxisLimitsQuantizationEnabledFlag(),  1 );  // u(1)
+  bitstream.write( (uint32_t)asps.getNormalAxisMaxDeltaValueEnabledFlag(),  1 );  // u(1)
+  bitstream.write( (uint32_t)asps.getRemoveDuplicatePointEnabledFlag(),  1 );  // u(1)
+  bitstream.write( (uint32_t)asps.getPixelDeinterleavingFlag(),  1 );  // u(1)
+  bitstream.write( (uint32_t)asps.getPatchPrecedenceOrderFlag(),  1 );  // u(1)
+  bitstream.write( (uint32_t)asps.getPatchSizeQuantizerPresentFlag(),  1 );  // u(1)
+  bitstream.write( (uint32_t)asps.getEnhancedOccupancyMapForDepthFlag(),  1 );  // u(1)
+  bitstream.write( (uint32_t)asps.getPointLocalReconstructionEnabledFlag(),  1 );  // u(1)
+
+  bitstream.write( (uint32_t)asps.getMapCountMinus1(),  4 );  // u(4)
+  if( asps.getEnhancedOccupancyMapForDepthFlag() && asps.getMapCountMinus1() == 0 ){  
+    bitstream.write( (uint32_t)asps.getEnhancedOccupancyMapFixBitCountMinus1(),  4 );  // u(4)
+  }
+  if( asps.getPointLocalReconstructionEnabledFlag() ){
+    asps.allocatePointLocalReconstructionInformation();
+    pointLocalReconstructionInformation( asps, context, bitstream ); 
+  }
+  if( asps.getPixelDeinterleavingFlag() || asps.getPointLocalReconstructionEnabledFlag() ){
+    bitstream.write( (uint32_t)asps.getSurfaceThicknessMinus1(), 8 );  // u(8)
+  }
+   bitstream.write( (uint32_t)asps.getVuiParametersPresentFlag(), 1 );  // u(1)
+  if( asps.getVuiParametersPresentFlag() ){
+    vuiParameters(); // TODO
+  }
+  bitstream.write( (uint32_t)asps.getExtensionPresentFlag(), 1 );  // u(1)
+  if( asps.getExtensionPresentFlag() ){
+    while( moreRbspData() ){
+      bitstream.write( (uint32_t)asps.getExtensionPresentFlag(), 1 );  // u(1)    
+    }
+  }
+  rbspRailingBits();
 }
 
-// 7.3.4.6 Point local reconstruction information syntax
+// 7.3.4.6 Point local reconstruction information syntax (OLD)
 void PCCBitstreamEncoder::pointLocalReconstructionInformation( PointLocalReconstructionInformation& plri,
                                                                PCCContext&                          context,
                                                                PCCBitstream&                        bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
-  bitstream.write( uint32_t( plri.getPlrlNumberOfModesMinus1() ), 4 );  // u(4)
-  TRACE_BITSTREAM( "  NumberOfModesMinus1 = %u \n", plri.getPlrlNumberOfModesMinus1() );
-  for ( size_t i = 0; i < plri.getPlrlNumberOfModesMinus1(); i++ ) {
-    bitstream.write( uint32_t( plri.getPlrlInterpolateFlag( i ) ), 1 );  // u(1)
-    bitstream.write( uint32_t( plri.getPlrlFillingFlag( i ) ), 1 );      // u(1)
-    bitstream.write( uint32_t( plri.getPlrlMinimumDepth( i ) ), 2 );     // u(2)
-    bitstream.write( uint32_t( plri.getPlrlNeighbourMinus1( i ) ), 2 );  // u(2)
-    TRACE_BITSTREAM( "  Mode[%lu] = I = %d F = %d D = %u N = %u \n", i, plri.getPlrlInterpolateFlag( i ),
-                     plri.getPlrlFillingFlag( i ), plri.getPlrlMinimumDepth( i ), plri.getPlrlNeighbourMinus1( i ) );
+  bitstream.write( uint32_t( plri.getNumberOfModesMinus1() ), 4 );  // u(4)
+  TRACE_BITSTREAM( "  NumberOfModesMinus1 = %u \n", plri.getNumberOfModesMinus1() );
+  for ( size_t i = 0; i < plri.getNumberOfModesMinus1(); i++ ) {
+    bitstream.write( uint32_t( plri.getInterpolateFlag( i ) ), 1 );  // u(1)
+    bitstream.write( uint32_t( plri.getFillingFlag( i ) ), 1 );      // u(1)
+    bitstream.write( uint32_t( plri.getMinimumDepth( i ) ), 2 );     // u(2)
+    bitstream.write( uint32_t( plri.getNeighbourMinus1( i ) ), 2 );  // u(2)
+    TRACE_BITSTREAM( "  Mode[%lu] = I = %d F = %d D = %u N = %u \n", i, plri.getInterpolateFlag( i ),
+                     plri.getFillingFlag( i ), plri.getMinimumDepth( i ), plri.getNeighbourMinus1( i ) );
   }
-  bitstream.writeUvlc( uint32_t( plri.getPlrBlockThresholdPerPatchMinus1() ) );  // ue(v)
-  TRACE_BITSTREAM( "  BlockThresholdPerPatchMinus1 = %u \n", plri.getPlrBlockThresholdPerPatchMinus1() );
+  bitstream.writeUvlc( uint32_t( plri.getBlockThresholdPerPatchMinus1() ) );  // ue(v)
+  TRACE_BITSTREAM( "  BlockThresholdPerPatchMinus1 = %u \n", plri.getBlockThresholdPerPatchMinus1() );
+}
+
+// 7.3.4.6 Point local reconstruction information syntax (NEW)
+void PCCBitstreamEncoder::pointLocalReconstructionInformation( AtlasSequenceParameterSetRBSP& asps,
+                                                               PCCContext&                    context,
+                                                               PCCBitstream&                  bitstream ) {
+  TRACE_BITSTREAM( "%s \n", __func__ );  
+  for( size_t j = 0; j < asps.getMapCountMinus1() + 1 ; j ++ ) { 
+    auto& plri = asps.getPointLocalReconstructionInformation( j );
+    bitstream.write( (uint32_t) plri.getMapEnabledFlag(), 1  );  // u(1)
+    if( plri.getMapEnabledFlag() ) {
+      bitstream.write( uint32_t( plri.getNumberOfModesMinus1() ), 4 );  // u(4)
+      TRACE_BITSTREAM( "  NumberOfModesMinus1 = %u \n", plri.getNumberOfModesMinus1() );
+      for ( size_t i = 0; i < plri.getNumberOfModesMinus1(); i++ ) {
+        bitstream.write( (uint32_t) plri.getInterpolateFlag( i ), 1 );  // u(1)
+        bitstream.write( (uint32_t) plri.getFillingFlag( i ), 1 );      // u(1)
+        bitstream.write( (uint32_t) plri.getMinimumDepth( i ), 2 );     // u(2)
+        bitstream.write( (uint32_t) plri.getNeighbourMinus1( i ), 2 );  // u(2)
+        TRACE_BITSTREAM( "  Mode[%lu] = I = %d F = %d D = %u N = %u \n", i, plri.getInterpolateFlag( i ),
+                        plri.getFillingFlag( i ), plri.getMinimumDepth( i ), plri.getNeighbourMinus1( i ) );
+      }
+      bitstream.write( (uint32_t) plri.getBlockThresholdPerPatchMinus1(), 6 );  // u(6)
+      TRACE_BITSTREAM( "  BlockThresholdPerPatchMinus1 = %u \n", plri.getBlockThresholdPerPatchMinus1() );
+    }
+  }
 }
 
 // 7.3.5.1 General patch data group unit syntax
@@ -924,7 +987,7 @@ void PCCBitstreamEncoder::patchTileGroupHeader( PatchTileGroupHeader& ptgh,
   byteAlignment( bitstream );
 }
 
-// 7.3.5.16 Reference list structure syntax
+// 7.3.5.16 Reference list structure syntax (OLD)
 void PCCBitstreamEncoder::refListStruct( RefListStruct&             rls,
                                          PatchVpccParameterSet& psps,
                                          PCCBitstream&              bitstream ) {
@@ -941,6 +1004,31 @@ void PCCBitstreamEncoder::refListStruct( RefListStruct&             rls,
           bitstream.write( rls.getStrpfEntrySignFlag( i ), 1 );  // u(1)
         } else {
           uint8_t bitCount = psps.getLog2MaxPatchFrameOrderCntLsbMinus4() + 4;
+          bitstream.write( rls.getAfocLsbLt( i ),
+                           bitCount );  // u(v) psps_log2_max_patch_frame_order_cnt_lsb_minus4  + 4 bits
+        }
+      }
+    }
+  }
+  TRACE_BITSTREAM( "%s done \n", __func__ );
+}
+// 7.3.5.16 Reference list structure syntax (NEW)
+void PCCBitstreamEncoder::refListStruct( RefListStruct&                 rls,
+                                         AtlasSequenceParameterSetRBSP& asps,
+                                         PCCBitstream&                  bitstream ) {
+  TRACE_BITSTREAM( "%s \n", __func__ );
+  bitstream.writeUvlc( rls.getNumRefEntries() );  // ue(v)
+  TRACE_BITSTREAM( "NumRefEntries = %lu  \n", rls.getNumRefEntries() );
+  rls.allocate();
+  for ( size_t i = 0; i < rls.getNumRefEntries(); i++ ) {
+    if ( asps.getLongTermRefAtlasFramesFlag() ) {
+      bitstream.write( rls.getStRefAtalsFrameFlag( i ), 1 );  // u(1)
+      if ( rls.getStRefAtalsFrameFlag( i ) ) {
+        bitstream.writeUvlc( rls.getAbsDeltaPfocSt( i ) );  // ue(v)
+        if ( rls.getAbsDeltaPfocSt( i ) > 0 ) {
+          bitstream.write( rls.getStrpfEntrySignFlag( i ), 1 );  // u(1)
+        } else {
+          uint8_t bitCount = asps.getLog2MaxAtlasFrameOrderCntLsbMinus4() + 4;
           bitstream.write( rls.getAfocLsbLt( i ),
                            bitCount );  // u(v) psps_log2_max_patch_frame_order_cnt_lsb_minus4  + 4 bits
         }
@@ -1177,42 +1265,42 @@ void PCCBitstreamEncoder::pointLocalReconstructionData( PointLocalReconstruction
                                                         PCCBitstream&                 bitstream ) {
   auto& plri = context.getSps().getPointLocalReconstructionInformation();
   TRACE_BITSTREAM( "%s \n", __func__ );
-  TRACE_BITSTREAM( "WxH= %lu x %lu \n", plrd.getPlrBlockToPatchMapWidth(), plrd.getPlrBlockToPatchMapHeight() );
+  TRACE_BITSTREAM( "WxH= %lu x %lu \n", plrd.getBlockToPatchMapWidth(), plrd.getBlockToPatchMapHeight() );
 
-  const size_t  blockCount   = plrd.getPlrBlockToPatchMapWidth() * plrd.getPlrBlockToPatchMapHeight();
-  const uint8_t bitCountMode = uint8_t( getFixedLengthCodeBitsCount( uint32_t( plri.getPlrlNumberOfModesMinus1() ) ) );
+  const size_t  blockCount   = plrd.getBlockToPatchMapWidth() * plrd.getBlockToPatchMapHeight();
+  const uint8_t bitCountMode = uint8_t( getFixedLengthCodeBitsCount( uint32_t( plri.getNumberOfModesMinus1() ) ) );
   TRACE_BITSTREAM( "  bitCountMode = %u \n", bitCountMode );
 
-  if ( blockCount > plri.getPlrBlockThresholdPerPatchMinus1() + 1 ) {
-    bitstream.write( uint32_t( plrd.getPlrLevelFlag() ), 1 );  // u(1)
+  if ( blockCount > plri.getBlockThresholdPerPatchMinus1() + 1 ) {
+    bitstream.write( uint32_t( plrd.getLevelFlag() ), 1 );  // u(1)
   }
-  TRACE_BITSTREAM( "  LevelFlag = %u \n", plrd.getPlrLevelFlag() );
-  if ( plrd.getPlrLevelFlag() ) {
-    bitstream.write( uint32_t( plrd.getPlrPresentFlag() ), 1 );                                                // u(1)
-    if ( plrd.getPlrPresentFlag() ) { bitstream.write( uint32_t( plrd.getPlrModeMinus1() ), bitCountMode ); }  // u(v)
-    TRACE_BITSTREAM( "  ModePatch: Present = %d ModeMinus1 = %d \n", plrd.getPlrPresentFlag(),
-                     plrd.getPlrPresentFlag() ? (int32_t)plrd.getPlrModeMinus1() : -1 );
+  TRACE_BITSTREAM( "  LevelFlag = %u \n", plrd.getLevelFlag() );
+  if ( plrd.getLevelFlag() ) {
+    bitstream.write( uint32_t( plrd.getPresentFlag() ), 1 );                                                // u(1)
+    if ( plrd.getPresentFlag() ) { bitstream.write( uint32_t( plrd.getModeMinus1() ), bitCountMode ); }  // u(v)
+    TRACE_BITSTREAM( "  ModePatch: Present = %d ModeMinus1 = %d \n", plrd.getPresentFlag(),
+                     plrd.getPresentFlag() ? (int32_t)plrd.getModeMinus1() : -1 );
   } else {
     for ( size_t i = 0; i < blockCount; i++ ) {
-      bitstream.write( uint32_t( plrd.getPlrBlockPresentFlag( i ) ), 1 );  // u(1)
-      if ( plrd.getPlrBlockPresentFlag( i ) ) {
-        bitstream.write( uint32_t( plrd.getPlrBlockModeMinus1( i ) ), bitCountMode );  // u(v)
+      bitstream.write( uint32_t( plrd.getBlockPresentFlag( i ) ), 1 );  // u(1)
+      if ( plrd.getBlockPresentFlag( i ) ) {
+        bitstream.write( uint32_t( plrd.getBlockModeMinus1( i ) ), bitCountMode );  // u(v)
       }
       TRACE_BITSTREAM( "  Mode[ %4lu / %4lu ]: Present = %d ModeMinus1 = %d \n", i, blockCount,
-                       plrd.getPlrBlockPresentFlag( i ),
-                       plrd.getPlrBlockPresentFlag( i ) ? plrd.getPlrBlockModeMinus1( i ) : -1 );
+                       plrd.getBlockPresentFlag( i ),
+                       plrd.getBlockPresentFlag( i ) ? plrd.getBlockModeMinus1( i ) : -1 );
     }
   }
 #ifdef BITSTREAM_TRACE
-  for ( size_t v0 = 0; v0 < plrd.getPlrBlockToPatchMapHeight(); ++v0 ) {
-    for ( size_t u0 = 0; u0 < plrd.getPlrBlockToPatchMapWidth(); ++u0 ) {
-      size_t i = v0 * plrd.getPlrBlockToPatchMapWidth() + u0;
+  for ( size_t v0 = 0; v0 < plrd.getBlockToPatchMapHeight(); ++v0 ) {
+    for ( size_t u0 = 0; u0 < plrd.getBlockToPatchMapWidth(); ++u0 ) {
+      size_t i = v0 * plrd.getBlockToPatchMapWidth() + u0;
       TRACE_BITSTREAM( "Patch Block[ %2lu %2lu <=> %4lu ] / [ %2lu %2lu ] Level = %d Present = %d Mode = %d \n", u0, v0,
-                       i, plrd.getPlrBlockToPatchMapWidth(), plrd.getPlrBlockToPatchMapHeight(), plrd.getPlrLevelFlag(),
-                       plrd.getPlrLevelFlag() ? plrd.getPlrPresentFlag() : plrd.getPlrBlockPresentFlag( i ),
-                       plrd.getPlrLevelFlag()
-                           ? plrd.getPlrPresentFlag() ? (int32_t)plrd.getPlrModeMinus1() : -1
-                           : plrd.getPlrBlockPresentFlag( i ) ? plrd.getPlrBlockModeMinus1( i ) : -1 );
+                       i, plrd.getBlockToPatchMapWidth(), plrd.getBlockToPatchMapHeight(), plrd.getLevelFlag(),
+                       plrd.getLevelFlag() ? plrd.getPresentFlag() : plrd.getBlockPresentFlag( i ),
+                       plrd.getLevelFlag()
+                           ? plrd.getPresentFlag() ? (int32_t)plrd.getModeMinus1() : -1
+                           : plrd.getBlockPresentFlag( i ) ? plrd.getBlockModeMinus1( i ) : -1 );
     }
   }
 #endif
@@ -1223,3 +1311,108 @@ void PCCBitstreamEncoder::seiMessage( PatchDataGroup& pdg,
                                       size_t          index,
                                       PCCContext&     context,
                                       PCCBitstream&   bitstream ) {}
+
+
+// JR TODO: continue
+
+// C.2 Sample stream NAL unit syntax and semantics
+// C.2.1 Sample stream NAL header syntax
+void PCCBitstreamEncoder::sampleStreamNalHeader(  PCCBitstream& bitstream, SampleStreamNalUnit& sampleStreamNalUnit ) {
+  bitstream.write( uint32_t( sampleStreamNalUnit.getUnitSizePrecisionBytesMinus1() ), 3 ); // u(3)
+  bitstream.write( 0, 5 ); // u(5)  
+}
+
+// C.2.2 Sample stream NAL unit syntax
+void PCCBitstreamEncoder::sampleStreamNalUnit( PCCBitstream& bitstream, SampleStreamNalUnit& sampleStreamNalUnit, NalUnit& nalu ) {  
+  bitstream.write( uint32_t( nalu.getNalUnitSize() ), sampleStreamNalUnit.getUnitSizePrecisionBytesMinus1() + 1 ); // u(v)  
+  nalUnit( bitstream, nalu );
+}
+ 
+// 7.3.5 NAL unit syntax
+// 7.3.5.1 General NAL unit syntax
+void PCCBitstreamEncoder::nalUnit( PCCBitstream& bitstream, NalUnit& nalUnit ) {
+  nalUnitHeader( bitstream, nalUnit );
+  for( size_t i = 0; i < nalUnit.getNalUnitSize() - 2; i++ ) {
+    bitstream.write( uint32_t( nalUnit.getNalUnitData( i ) ), 8 ); // b(8)
+  }
+}
+
+// 7.3.5.2 NAL unit header syntax
+void PCCBitstreamEncoder::nalUnitHeader( PCCBitstream& bitstream, NalUnit& nalUnit ) {
+  bitstream.write( 0, 1 ); // f(1)
+  bitstream.write( uint32_t( nalUnit.getUnitType() ), 6 ); // u(6)
+  bitstream.write( uint32_t( nalUnit.getLayerId() ), 6 ); // u(6)
+  bitstream.write( uint32_t( nalUnit.getTemporalyIdPlus1() ), 3 ); // u(3)
+}
+
+
+// F.2.1 VUI parameters syntax
+void PCCBitstreamEncoder::vuiParameters( ) {
+  // vui_timing_info_present_flag //   u(1)
+  // if( vui_timing_info_present_flag ) {
+  //   vui_num_units_in_tick // u(32)
+  //   vui_time_scale // u(32)
+  //   vui_poc_proportional_to_timing_flag // u(1)
+  //   if( vui_poc_proportional_to_timing_flag ) {
+  //     vui_num_ticks_poc_diff_one_minus1 // ue(v)
+  //   }
+  //   vui_hrd_parameters_present_flag   // u(1)
+  //   if( vui_hrd_parameters_present_flag ){
+  //     hrdParameters()
+  //   }
+  // }
+}
+// F.2.2 HRD parameters syntax
+void PCCBitstreamEncoder::hrdParameters( ) {
+  // hrd_nal_parameters_present_flag // u(1)
+  // hrd_acl_parameters_present_flag // u(1)
+  // if( hrd_nal_parameters_present_flag | | hrd_acl_parameters_present_flag ){
+  //   hrd_bit_rate_scale // u(4)
+  //   hrd_cab_size_scale // u(4)
+  //   hrd_initial_cab_removal_delay_length_minus1 // u(5)
+  //   hrd_au_cab_removal_delay_length_minus1 // u(5)
+  //   hrd_dab_output_delay_length_minus1  // u(5)
+  // }
+  // maxNumSubLayersMinus1 = 0
+  // for( i = 0; i <= maxNumSubLayersMinus1; i++ ) {
+  //   hrd_fixed_atlas_rate_general_flag[ i ] // u(1)
+  // if( !hrd_fixed_atlas_rate_general_flag[ i ] )
+  //   hrd_fixed_atlas_rate_within_cas_flag[ i ] // u(1)
+  // if( hrd_fixed_atlas_rate_within_cas_flag[ i ] )
+  //   hrd_elemental_duration_in_tc_minus1[ i ] // ue(v)
+  // else
+  //   hrd_low_delay_flag[ i ] // u(1)
+  // if( !hrd_low_delay_flag[ i ] )
+  //   hrd_cab_cnt_minus1[ i ] // ue(v)
+  // if( hrd_nal_parameters_present_flag )
+  //   hrd_sub_layer_parameters( 0, i )
+  // if( hrd_acl_parameters_present_flag )
+  //   hrd_sub_layer_parameters( 1, i )
+  // }
+}
+
+// F.2.3 Sub-layer HRD parameters syntax
+void PCCBitstreamEncoder::hrdSubLayerParameters() {
+  // for( i = 0; i <= CabCnt; i++ ) {
+  //  hrd_bit_rate_value_minus1[ type ][ i ] // ue(v)
+  //  hrd_cab_size_value_minus1[ type ][ i ]  // ue(v)
+  //  hrd_cbr_flag[ type ][ i ] // u(1)
+  // }
+}
+
+
+// JR TODO: Remove
+
+// 7.3.2.3 raw separate video data syntax TODO: remove this
+void PCCBitstreamEncoder::pcmSeparateVideoData( PCCContext& context, PCCBitstream& bitstream, uint8_t bitCount ) {
+  TRACE_BITSTREAM( "%s \n", __func__ );
+  auto& vpcc = context.getVPCC();
+  auto& sps  = context.getSps();
+  size_t atlasIndex = 0;
+  if ( sps.getRawSeparateVideoPresentFlag(atlasIndex) && !vpcc.getMapIndex() ) {
+    bitstream.write( (uint32_t)vpcc.getRawVideoFlag(), 1 );  // u(1)
+    bitstream.write( (uint32_t)0, bitCount );                // u(bitCount)
+  } else {
+    bitstream.write( (uint32_t)0, bitCount + 1 );  // u(bitCount + 1)
+  }
+}

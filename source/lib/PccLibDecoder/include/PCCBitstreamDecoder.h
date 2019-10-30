@@ -74,6 +74,8 @@ class PointLocalReconstructionInformation;
 class PointLocalReconstructionData;
 class SeiMessage;
 class AtlasFrameTileInformation;
+class SampleStreamNalUnit;
+class NalUnit;
 
 class PCCBitstreamDecoder {
  public:
@@ -83,25 +85,26 @@ class PCCBitstreamDecoder {
   int32_t decode( PCCBitstream& bitstream, PCCContext& context );
 
  private:
+ 
+  void rbspRailingBits();  // TODO
+  bool moreRbspData() ;  // TODO
+
   // 7.3.2.1 General V-PCC unit syntax
   void vpccUnit( PCCContext& context, PCCBitstream& bitstream, VPCCUnitType& vpccUnitType );
 
   // 7.3.2.2 V-PCC unit header syntax
   void vpccUnitHeader( PCCContext& context, PCCBitstream& bitstream, VPCCUnitType& vpccUnitType );
 
-  // 7.3.2.3 raw separate video data syntax
-  void pcmSeparateVideoData( PCCContext& context, PCCBitstream& bitstream, uint8_t bitCount );
-
-  // 7.3.2.4 V-PCC unit payload syntax
+  // 7.3.2.3 V-PCC unit payload syntax
   void vpccUnitPayload( PCCContext& context, PCCBitstream& bitstream, VPCCUnitType& vpccUnitType );
 
   void videoSubStream( PCCContext& context, PCCBitstream& bitstream, VPCCUnitType& vpccUnitType );
 
+  // 7.3.3 Byte alignment syntax
+  void byteAlignment( PCCBitstream& bitstream );
+
   // 7.3.4.1 General Sequence parameter set syntax
   void vpccParameterSet( VpccParameterSet& vpccParameterSet, PCCContext& context, PCCBitstream& bitstream );
-
-  // 7.3.4.2 Byte alignment syntax
-  void byteAlignment( PCCBitstream& bitstream );
 
   // 7.3.4.2 Profile, tier, and level syntax
   void profileTierLevel( ProfileTierLevel& profileTierLevel, PCCBitstream& bitstream );
@@ -173,6 +176,11 @@ class PCCBitstreamDecoder {
                                VpccParameterSet& vpccParameterSet,
                                PCCBitstream&         bitstream );
 
+  // 7.3.6.1 Atlas sequence parameter set RBSP
+void atlasSequenceParameterSetRBSP( AtlasSequenceParameterSetRBSP& asps,
+                                                         PCCContext&                    context,
+                                                         PCCBitstream&                  bitstream );
+
   void atlasFrameTileInformation( AtlasFrameTileInformation& pfti, VpccParameterSet& sps, PCCBitstream& bitstream );
 
   // 7.3.5.13 Patch frame layer unit syntax
@@ -187,10 +195,16 @@ class PCCBitstreamDecoder {
                              PCCContext&           context,
                              PCCBitstream&         bitstream );
 
-  // 7.3.5.15 Reference list structure syntax
+  // 7.3.5.15 Reference list structure syntax (OLD)
   void refListStruct( RefListStruct&             refListStruct,
                       PatchVpccParameterSet& patchVpccParameterSet,
                       PCCBitstream&              bitstream );
+
+                      
+  // 7.3.5.15 Reference list structure syntax (NEW)
+void  refListStruct( RefListStruct&             rls,
+                    AtlasSequenceParameterSetRBSP& asps,
+                    PCCBitstream&              bitstream );
 
   // 7.3.5.16 Patch frame data unit syntax
   void patchTileGroupDataUnit( PatchTileGroupDataUnit& ptgdu,
@@ -226,16 +240,48 @@ class PCCBitstreamDecoder {
                         PCCContext&           context,
                         PCCBitstream&         bitstream);
 
-  // 7.3.5.21 Point local reconstruction syntax
+  // 7.3.5.21 Point local reconstruction syntax (OLD)
   void pointLocalReconstructionInformation( PointLocalReconstructionInformation& plri,
                                             PCCContext&                          context,
                                             PCCBitstream&                        bitstream );
+
+  // 7.3.5.21 Point local reconstruction syntax (NEW)
+  void pointLocalReconstructionInformation( AtlasSequenceParameterSetRBSP& asps,
+                                            PCCContext&                    context,
+                                            PCCBitstream&                  bitstream );
+                                            
   void pointLocalReconstructionData( PointLocalReconstructionData& plrd, PCCContext& context, PCCBitstream& bitstream );
 
 
   // 7.3.5.22 Supplemental enhancement information message syntax 
   void seiMessage( PatchDataGroup& pdg, PCCContext& context, PCCBitstream& bitstream );
-  
+
+
+// JR TODO: continue
+
+  // C.2 Sample stream NAL unit syntax and semantics
+  // C.2.1 Sample stream NAL header syntax
+  void sampleStreamNalHeader(  PCCBitstream& bitstream, SampleStreamNalUnit& sampleStreamNalUnit );
+  // C.2.2 Sample stream NAL unit syntax
+  void sampleStreamNalUnit( PCCBitstream& bitstream, SampleStreamNalUnit& sampleStreamNalUnit ) ;
+  // 7.3.5 NAL unit syntax
+  // 7.3.5.1 General NAL unit syntax
+  void nalUnit( PCCBitstream& bitstream, NalUnit& nalUnit );
+  // 7.3.5.2 NAL unit header syntax
+  void nalUnitHeader( PCCBitstream& bitstream, NalUnit& nalUnit );
+
+  // F.2.1 VUI parameters syntax
+  void vuiParameters( ) ;
+  // F.2.2 HRD parameters syntax
+  void hrdParameters( ) ;
+  // F.2.3 Sub-layer HRD parameters syntax
+  void hrdSubLayerParameters();
+
+// JR TODO: remove 
+  // 7.3.2.3 raw separate video data syntax - TODO: remove this
+  void pcmSeparateVideoData( PCCContext& context, PCCBitstream& bitstream, uint8_t bitCount );
+
+
   int32_t prevPatchSizeU_;
   int32_t prevPatchSizeV_;
   int32_t predPatchIndex_;

@@ -6932,15 +6932,15 @@ void PCCEncoder::setGeometryPatchParameterSet( PCCMetadata& metadata, GeometryPa
 void PCCEncoder::setPointLocalReconstruction( PCCContext& context, VpccParameterSet& sps ) {
   sps.setPointLocalReconstructionEnabledFlag( 1 );
   auto& plr = sps.getPointLocalReconstructionInformation();
-  plr.setPlrlNumberOfModesMinus1( params_.plrlNumberOfModes_ - 1 );
-  plr.setPlrBlockThresholdPerPatchMinus1( params_.patchSize_ - 1 );
+  plr.setNumberOfModesMinus1( params_.plrlNumberOfModes_ - 1 );
+  plr.setBlockThresholdPerPatchMinus1( params_.patchSize_ - 1 );
   plr.allocate();
-  for ( size_t i = 0; i < plr.getPlrlNumberOfModesMinus1() + 1; i++ ) {
+  for ( size_t i = 0; i < plr.getNumberOfModesMinus1() + 1; i++ ) {
     auto& mode = context.getPointLocalReconstructionMode( i + 1 );
-    plr.setPlrlInterpolateFlag( i, mode.interpolate_ );
-    plr.setPlrlFillingFlag( i, mode.filling_ );
-    plr.setPlrlMinimumDepth( i, mode.minD1_ );
-    plr.setPlrlNeighbourMinus1( i, mode.neighbor_ - 1 );
+    plr.setInterpolateFlag( i, mode.interpolate_ );
+    plr.setFillingFlag( i, mode.filling_ );
+    plr.setMinimumDepth( i, mode.minD1_ );
+    plr.setNeighbourMinus1( i, mode.neighbor_ - 1 );
   }
 #ifdef CODEC_TRACE
   for ( size_t i = 0; i < context.getPointLocalReconstructionModeNumber(); i++ ) {
@@ -6959,26 +6959,26 @@ void PCCEncoder::setPointLocalReconstructionData( PCCFrameContext&              
   plrd.allocate( patch.getSizeU0(), patch.getSizeV0() );
   const size_t blockToPatchWidth  = frame.getWidth() / params_.occupancyResolution_;
   const size_t blockToPatchHeight = frame.getHeight() / params_.occupancyResolution_;
-  TRACE_CODEC( "WxH = %lu x %lu \n", plrd.getPlrBlockToPatchMapWidth(), plrd.getPlrBlockToPatchMapHeight() );
-  plrd.setPlrLevelFlag( patch.getPointLocalReconstructionLevel() );
-  TRACE_CODEC( "  LevelFlag = %d \n", plrd.getPlrLevelFlag() );
-  if ( plrd.getPlrLevelFlag() ) {
-    plrd.setPlrPresentFlag( patch.getPointLocalReconstructionMode() > 0 );
-    plrd.setPlrModeMinus1( patch.getPointLocalReconstructionMode() - 1 );
-    TRACE_CODEC( "  ModePatch: Present = %d ModeMinus1 = %2d \n", plrd.getPlrPresentFlag(),
-                 plrd.getPlrPresentFlag() ? (int32_t)plrd.getPlrModeMinus1() : -1 );
+  TRACE_CODEC( "WxH = %lu x %lu \n", plrd.getBlockToPatchMapWidth(), plrd.getBlockToPatchMapHeight() );
+  plrd.setLevelFlag( patch.getPointLocalReconstructionLevel() );
+  TRACE_CODEC( "  LevelFlag = %d \n", plrd.getLevelFlag() );
+  if ( plrd.getLevelFlag() ) {
+    plrd.setPresentFlag( patch.getPointLocalReconstructionMode() > 0 );
+    plrd.setModeMinus1( patch.getPointLocalReconstructionMode() - 1 );
+    TRACE_CODEC( "  ModePatch: Present = %d ModeMinus1 = %2d \n", plrd.getPresentFlag(),
+                 plrd.getPresentFlag() ? (int32_t)plrd.getModeMinus1() : -1 );
   } else {
     auto& blockToPatch = frame.getBlockToPatch();
-    for ( size_t v0 = 0; v0 < plrd.getPlrBlockToPatchMapHeight(); ++v0 ) {
-      for ( size_t u0 = 0; u0 < plrd.getPlrBlockToPatchMapWidth(); ++u0 ) {
-        size_t index = v0 * plrd.getPlrBlockToPatchMapWidth() + u0;
+    for ( size_t v0 = 0; v0 < plrd.getBlockToPatchMapHeight(); ++v0 ) {
+      for ( size_t u0 = 0; u0 < plrd.getBlockToPatchMapWidth(); ++u0 ) {
+        size_t index = v0 * plrd.getBlockToPatchMapWidth() + u0;
         int    pos   = patch.patchBlock2CanvasBlock( ( u0 ), ( v0 ), blockToPatchWidth, blockToPatchHeight );
         bool   occupied =
             ( blockToPatch[pos] == patchIndex + 1 ) && ( patch.getPointLocalReconstructionMode( u0, v0 ) > 0 );
-        plrd.setPlrBlockPresentFlag( index, occupied );
-        if ( occupied ) { plrd.setPlrBlockModeMinus1( index, patch.getPointLocalReconstructionMode( u0, v0 ) - 1 ); }
-        TRACE_CODEC( "  Mode[%3u]: Present = %d ModeMinus1 = %2d \n", index, plrd.getPlrBlockPresentFlag( index ),
-                     plrd.getPlrBlockPresentFlag( index ) ? (int32_t)plrd.getPlrBlockModeMinus1( index ) : -1 );
+        plrd.setBlockPresentFlag( index, occupied );
+        if ( occupied ) { plrd.setBlockModeMinus1( index, patch.getPointLocalReconstructionMode( u0, v0 ) - 1 ); }
+        TRACE_CODEC( "  Mode[%3u]: Present = %d ModeMinus1 = %2d \n", index, plrd.getBlockPresentFlag( index ),
+                     plrd.getBlockPresentFlag( index ) ? (int32_t)plrd.getBlockModeMinus1( index ) : -1 );
       }
     }
   }
@@ -6987,7 +6987,7 @@ void PCCEncoder::setPointLocalReconstructionData( PCCFrameContext&              
     for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {
       TRACE_CODEC( "Block[ %2lu %2lu <=> %4lu ] / [ %2lu %2lu ]: Level = %d Present = %d mode = %lu \n", u0, v0,
                    v0 * patch.getSizeU0() + u0, patch.getSizeU0(), patch.getSizeV0(),
-                   patch.getPointLocalReconstructionLevel(), plrd.getPlrBlockPresentFlag( v0 * patch.getSizeU0() + u0 ),
+                   patch.getPointLocalReconstructionLevel(), plrd.getBlockPresentFlag( v0 * patch.getSizeU0() + u0 ),
                    patch.getPointLocalReconstructionMode( u0, v0 ) );
     }
   }

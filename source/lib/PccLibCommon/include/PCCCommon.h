@@ -240,10 +240,76 @@ const size_t gbitCountSize[]        = {
 
 const int32_t InvalidPatchIndex = -1;
 
+enum NaUnitType {  // Name, Content of NAL unit and RBSP syntax structure NAL unit type class
+  NAL_TRAIL = 0,     // 0: Coded tile group of a non-TSA, non STSA trailing atlas frame atlas_tile_group_layer_rbsp() ACL
+  NAL_TSA,           // 1: Coded tile group of a TSA atlas frame, atlas_tile_group_layer_rbsp() ACL
+  NAL_STSA,          // 2: Coded tile group of a STSA atlas frame, atlas_tile_group_layer_rbsp() ACL
+  NAL_RADL,          // 3: Coded tile group of a RADL atlas frame, atlas_tile_group_layer_rbsp() ACL
+  NAL_RASL,          // 4: Coded tile group of a RASL atlas frame, atlas_tile_group_layer_rbsp() ACL
+  NAL_SKIP,          // 5: Coded tile group of a skipped atlas frame, atlas_tile_group_layer_rbsp() ACL
+  NAL_RSV_ACL_6,     // 6: Reserved non-IRAP ACL NAL unit types ACL
+  NAL_RSV_ACL_7,     // 7: Reserved non-IRAP ACL NAL unit types ACL
+  NAL_RSV_ACL_8,     // 8: Reserved non-IRAP ACL NAL unit types ACL
+  NAL_RSV_ACL_9,     // 9: Reserved non-IRAP ACL NAL unit types ACL
+  NAL_BLA_W_LP,      //10: Coded tile group of a BLA atlas frame, atlas_tile_group_layer_rbsp() ACL
+  NAL_BLA_W_RADL,    //11: Coded tile group of a BLA atlas frame, atlas_tile_group_layer_rbsp() ACL
+  NAL_BLA_N_LP,      //12: Coded tile group of a BLA atlas frame, atlas_tile_group_layer_rbsp() ACL
+  NAL_GBLA_W_LP,     //13: Coded tile group of a GBLA atlas frame, atlas_tile_group_layer_rbsp() ACL
+  NAL_GBLA_W_RADL,   //14: Coded tile group of a GBLA atlas frame, atlas_tile_group_layer_rbsp() ACL
+  NAL_GBLA_N_LP,     //15: Coded tile group of a GBLA atlas frame, atlas_tile_group_layer_rbsp() ACL
+  NAL_IDR_W_RADL,    //16: Coded tile group of an IDR atlas frame, atlas_tile_group_layer_rbsp() ACL
+  NAL_IDR_N_LP,      //17: Coded tile group of an IDR atlas frame, atlas_tile_group_layer_rbsp() ACL
+  NAL_GIDR_W_RADL,   //18: Coded tile group of a GIDR atlas frame, atlas_tile_group_layer_rbsp() ACL
+  NAL_GIDR_N_LP,     //19: Coded tile group of a GIDR atlas frame, atlas_tile_group_layer_rbsp() ACL
+  NAL_CRA,           //20: Coded tile group of a CRA atlas frame, atlas_tile_group_layer_rbsp() ACL
+  NAL_GCRA,          //21: Coded tile group of a GCRA atlas frame, atlas_tile_group_layer_rbsp() ACL
+  NAL_IRAP_ACL_22,   //22: Reserved IRAP ACL NAL unit types ACL
+  NAL_IRAP_ACL_23,   //23: Reserved IRAP ACL NAL unit types ACL
+  NAL_RSV_ACL_24,    //24: Reserved non-IRAP ACL NAL unit types ACL
+  NAL_RSV_ACL_25,    //25: Reserved non-IRAP ACL NAL unit types ACL
+  NAL_RSV_ACL_26,    //26: Reserved non-IRAP ACL NAL unit types ACL
+  NAL_RSV_ACL_27,    //27: Reserved non-IRAP ACL NAL unit types ACL
+  NAL_RSV_ACL_28,    //28: Reserved non-IRAP ACL NAL unit types ACL
+  NAL_RSV_ACL_29,    //29: Reserved non-IRAP ACL NAL unit types ACL
+  NAL_RSV_ACL_30,    //30: Reserved non-IRAP ACL NAL unit types ACL
+  NAL_RSV_ACL_31,    //31: Reserved non-IRAP ACL NAL unit types ACL
+  NAL_ASPS,          //32: Atlas sequence parameter set atlas_sequence_parameter_set_rbsp() non-ACL
+  NAL_AFPS,          // 33: Atlas frame parameter set atlas_frame_parameter_set_rbsp() non-ACL
+  NAL_AUD,           //34: Access unit delimiter access_unit_delimiter_rbsp() non-ACL
+  NAL_VPCC_AUD,      //35: V-PCC access unit delimiter access_unit_delimiter_rbsp() non-ACL
+  NAL_EOS,           //36: End of sequence end_of_seq_rbsp() non-ACL
+  NAL_EOB,           //37! End of bitstream end_of_atlas_substream_rbsp() non-ACL
+  NAL_FD,            //38: Filler filler_data_rbsp() non-ACL
+  NAL_PREFIX_SEI,    //39: Supplemental enhancement information sei_rbsp() non-ACL
+  NAL_SUFFIX_SEI,    //40: Supplemental enhancement information sei_rbsp() non-ACL
+  NAL_RSV_NACL_41,   //42: Reserved non-ACL NAL unit types non-ACL
+  NAL_RSV_NACL_42,   //42: Reserved non-ACL NAL unit types non-ACL
+  NAL_RSV_NACL_43,   //43: Reserved non-ACL NAL unit types non-ACL
+  NAL_RSV_NACL_44,   //44: Reserved non-ACL NAL unit types non-ACL
+  NAL_RSV_NACL_45,   //45: Reserved non-ACL NAL unit types non-ACL
+  NAL_RSV_NACL_46,   //46: Reserved non-ACL NAL unit types non-ACL
+  NAL_RSV_NACL_47,   //47: Reserved non-ACL NAL unit types non-ACL
+  NAL_UNSPEC_48,     //48: Unspecified non-ACL NAL unit types non-ACL
+  NAL_UNSPEC_49,     //49: Unspecified non-ACL NAL unit types non-ACL
+  NAL_UNSPEC_50,     //50: Unspecified non-ACL NAL unit types non-ACL
+  NAL_UNSPEC_51,     //51: Unspecified non-ACL NAL unit types non-ACL
+  NAL_UNSPEC_52,     //52: Unspecified non-ACL NAL unit types non-ACL
+  NAL_UNSPEC_53,     //53: Unspecified non-ACL NAL unit types non-ACL
+  NAL_UNSPEC_54,     //54: Unspecified non-ACL NAL unit types non-ACL
+  NAL_UNSPEC_55,     //55: Unspecified non-ACL NAL unit types non-ACL
+  NAL_UNSPEC_56,     //56: Unspecified non-ACL NAL unit types non-ACL
+  NAL_UNSPEC_57,     //57: Unspecified non-ACL NAL unit types non-ACL
+  NAL_UNSPEC_58,     //58: Unspecified non-ACL NAL unit types non-ACL
+  NAL_UNSPEC_59,     //59: Unspecified non-ACL NAL unit types non-ACL
+  NAL_UNSPEC_60,     //60: Unspecified non-ACL NAL unit types non-ACL
+  NAL_UNSPEC_61,     //61: Unspecified non-ACL NAL unit types non-ACL
+  NAL_UNSPEC_62,     //62: Unspecified non-ACL NAL unit types non-ACL
+  NAL_UNSPEC_63      //63: Unspecified non-ACL NAL unit types non-ACL
+};
+
 // ******************************************************************* //
 // Static functions
 // ******************************************************************* //
-
 static inline unsigned int getMaxBit(int16_t h)
 {
   int maxBit = 0;

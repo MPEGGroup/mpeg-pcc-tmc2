@@ -725,10 +725,10 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
 
   ai.setAttributeCount( noAttributes_ ? 0 : 1 );
   ai.allocate();
-  ai.setAttributeParamsEnabledFlag( flagColorSmoothing_ );
+  // ai.setAttributeParamsEnabledFlag( flagColorSmoothing_ );
   ai.setAttributeDimensionMinus1( 0, noAttributes_ ? 0 : 2 );
   ai.setAttributeNominal2dBitdepthMinus1( 0, 7 );
-  ai.setAttributeMSBAlignFlag( 0, false );
+  ai.setAttributeMSBAlignFlag( false );
 
   pfps.allocate( ai.getAttributeCount() );
   pfps.setLodModeEnableFlag( (levelOfDetailX_>1&&levelOfDetailY_>1) || !(levelOfDetailX_==1&&levelOfDetailY_==1) );

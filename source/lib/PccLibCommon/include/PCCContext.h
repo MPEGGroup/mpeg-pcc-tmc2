@@ -53,6 +53,53 @@ typedef std::pair<size_t, size_t>                  GlobalPatch;    // [FrameInde
 typedef std::map<size_t, std::vector<GlobalPatch>> GlobalPatches;  // [TrackIndex, <GlobalPatch>]
 typedef std::pair<size_t, size_t>                  SubContext;     // [start, end)
 
+// 7.3.5 NAL unit syntax
+class NalUnit {
+  public: 
+    NalUnit(){}
+    ~NalUnit(){ nalUnitData_.clear(); }
+    void allocate(){
+      nalUnitData_.resize( nalUnitSize_ - 2, 0 ); 
+    }
+    uint8_t getUnitType(){ return unitType_; }   
+    uint8_t getLayerId(){ return layerId_; }   
+    uint8_t getTemporalyIdPlus1(){ return temporalyIdPlus1; }   
+    size_t  getNalUnitSize(){ return nalUnitSize_; }   
+    uint8_t getNalUnitData( size_t index ){ return nalUnitData_[index]; }
+    std::vector<uint8_t>& getNalUnitData(){ return nalUnitData_; }
+
+    void setUnitType(uint8_t value ) { layerId_ = value; }
+    void setLayerId(uint8_t value ) { nalUnitSize_ = value; }
+    void setTemporalyIdPlus1(uint8_t value ) { temporalyIdPlus1 = value; }
+    void setNalUnitSize(size_t value ) { nalUnitSize_ = value; }        
+    void setNalUnitData( size_t index, uint8_t data ){ nalUnitData_[index] = data ; }
+  private: 
+    uint8_t unitType_;
+    uint8_t layerId_; 
+    uint8_t temporalyIdPlus1;
+    size_t nalUnitSize_; 
+    std::vector<uint8_t> nalUnitData_;
+};
+
+// C.2 Sample stream NAL unit syntax and semantics
+class SampleStreamNalUnit{
+  public: 
+    SampleStreamNalUnit(){}
+    ~SampleStreamNalUnit(){nalUnit_.clear(); }  
+    NalUnit& addNalUnit(){ 
+      nalUnit_.resize( nalUnit_.size() + 1 );
+      return nalUnit_.back();
+    }
+    std::vector<NalUnit>& getNalUnit(){ return nalUnit_; }
+    NalUnit& getNalUnit( size_t index) {return nalUnit_[index]; }
+    size_t getNalUnitCount(){ return nalUnit_.size(); }
+    uint8_t getUnitSizePrecisionBytesMinus1() { return unitSizePrecisionBytesMinus1_; }
+    void setUnitSizePrecisionBytesMinus1(uint8_t value ) { unitSizePrecisionBytesMinus1_ = value; }
+  private: 
+    uint8_t unitSizePrecisionBytesMinus1_;
+    std::vector<NalUnit> nalUnit_;
+};
+
 // 7.3.7 Supplemental enhancement information message syntax
 class SupplementalEnhancementInformationMessage {
  public:
@@ -73,97 +120,99 @@ class SupplementalEnhancementInformationMessage {
 // 7.3.4.6 Point local reconstruction syntax
 class PointLocalReconstructionInformation {
  public:
-  PointLocalReconstructionInformation() : plrlNumberOfModesMinus1_( 0 ), plrBlockThresholdPerPatchMinus1_( 0 ) {
-    plrlMinimumDepth_.clear();
-    plrlNeighbourMinus1_.clear();
-    plrlInterpolateFlag_.clear();
-    plrlFillingFlag_.clear();
+  PointLocalReconstructionInformation() : numberOfModesMinus1_( 0 ), blockThresholdPerPatchMinus1_( 0 ) {
+    minimumDepth_.clear();
+    neighbourMinus1_.clear();
+    interpolateFlag_.clear();
+    fillingFlag_.clear();
   };
   ~PointLocalReconstructionInformation() {
-    plrlMinimumDepth_.clear();
-    plrlNeighbourMinus1_.clear();
-    plrlInterpolateFlag_.clear();
-    plrlFillingFlag_.clear();
+    minimumDepth_.clear();
+    neighbourMinus1_.clear();
+    interpolateFlag_.clear();
+    fillingFlag_.clear();
   };
 
   PointLocalReconstructionInformation& operator=( const PointLocalReconstructionInformation& ) = default;
 
   void allocate() {
-    plrlMinimumDepth_.resize( plrlNumberOfModesMinus1_ + 1, 0 );
-    plrlNeighbourMinus1_.resize( plrlNumberOfModesMinus1_ + 1, 0 );
-    plrlInterpolateFlag_.resize( plrlNumberOfModesMinus1_ + 1, false );
-    plrlFillingFlag_.resize( plrlNumberOfModesMinus1_ + 1, false );
+    minimumDepth_.resize(    numberOfModesMinus1_ + 1, 0 );
+    neighbourMinus1_.resize( numberOfModesMinus1_ + 1, 0 );
+    interpolateFlag_.resize( numberOfModesMinus1_ + 1, false );
+    fillingFlag_.resize(     numberOfModesMinus1_ + 1, false );
   }
-
-  uint8_t getPlrlNumberOfModesMinus1() { return plrlNumberOfModesMinus1_; }
-  uint8_t getPlrBlockThresholdPerPatchMinus1() { return plrBlockThresholdPerPatchMinus1_; }
-  uint8_t getPlrlMinimumDepth( size_t index ) { return plrlMinimumDepth_[index]; }
-  uint8_t getPlrlNeighbourMinus1( size_t index ) { return plrlNeighbourMinus1_[index]; }
-  bool    getPlrlInterpolateFlag( size_t index ) { return plrlInterpolateFlag_[index]; }
-  bool    getPlrlFillingFlag( size_t index ) { return plrlFillingFlag_[index]; }
-  void    setPlrlNumberOfModesMinus1( uint8_t value ) { plrlNumberOfModesMinus1_ = value; }
-  void    setPlrBlockThresholdPerPatchMinus1( uint8_t value ) { plrBlockThresholdPerPatchMinus1_ = value; }
-  void    setPlrlMinimumDepth( size_t index, uint8_t value ) { plrlMinimumDepth_[index] = value; }
-  void    setPlrlNeighbourMinus1( size_t index, uint8_t value ) { plrlNeighbourMinus1_[index] = value; }
-  void    setPlrlInterpolateFlag( size_t index, bool value ) { plrlInterpolateFlag_[index] = value; }
-  void    setPlrlFillingFlag( size_t index, bool value ) { plrlFillingFlag_[index] = value; }
+  bool    getMapEnabledFlag() { return mapEnabledFlag_; }
+  uint8_t getNumberOfModesMinus1() { return numberOfModesMinus1_; }
+  uint8_t getBlockThresholdPerPatchMinus1() { return blockThresholdPerPatchMinus1_; }
+  uint8_t getMinimumDepth( size_t index ) { return minimumDepth_[index]; }
+  uint8_t getNeighbourMinus1( size_t index ) { return neighbourMinus1_[index]; }
+  bool    getInterpolateFlag( size_t index ) { return interpolateFlag_[index]; }
+  bool    getFillingFlag( size_t index ) { return fillingFlag_[index]; }
+  void    setMapEnabledFlag( bool value ) { mapEnabledFlag_ = value; }
+  void    setNumberOfModesMinus1( uint8_t value ) { numberOfModesMinus1_ = value; }
+  void    setBlockThresholdPerPatchMinus1( uint8_t value ) { blockThresholdPerPatchMinus1_ = value; }
+  void    setMinimumDepth( size_t index, uint8_t value ) { minimumDepth_[index] = value; }
+  void    setNeighbourMinus1( size_t index, uint8_t value ) { neighbourMinus1_[index] = value; }
+  void    setInterpolateFlag( size_t index, bool value ) { interpolateFlag_[index] = value; }
+  void    setFillingFlag( size_t index, bool value ) { fillingFlag_[index] = value; }
 
  private:
-  uint8_t              plrlNumberOfModesMinus1_;
-  uint8_t              plrBlockThresholdPerPatchMinus1_;
-  std::vector<uint8_t> plrlMinimumDepth_;
-  std::vector<uint8_t> plrlNeighbourMinus1_;
-  std::vector<bool>    plrlInterpolateFlag_;
-  std::vector<bool>    plrlFillingFlag_;
+  bool                 mapEnabledFlag_;
+  uint8_t              numberOfModesMinus1_;
+  uint8_t              blockThresholdPerPatchMinus1_;
+  std::vector<uint8_t> minimumDepth_;
+  std::vector<uint8_t> neighbourMinus1_;
+  std::vector<bool>    interpolateFlag_;
+  std::vector<bool>    fillingFlag_;
 };
 
 // 7.6.6 Point local reconstruction data syntax : jkei: need to be updated!
 class PointLocalReconstructionData {
  public:
   PointLocalReconstructionData() :
-      plrBlockToPatchMapHeight_( 0 ),
-      plrBlockToPatchMapWidth_( 0 ),
-      plrLevelFlag_( 0 ),
-      plrPresentFlag_( false ),
-      plrModeMinus1_( 0 ) {
-    plrBlockPresentFlag_.clear();
-    plrBlockModeMinus1_.clear();
+      blockToPatchMapHeight_( 0 ),
+      blockToPatchMapWidth_( 0 ),
+      levelFlag_( 0 ),
+      presentFlag_( false ),
+      modeMinus1_( 0 ) {
+    blockPresentFlag_.clear();
+    blockModeMinus1_.clear();
   };
   ~PointLocalReconstructionData() {
-    plrBlockPresentFlag_.clear();
-    plrBlockModeMinus1_.clear();
+    blockPresentFlag_.clear();
+    blockModeMinus1_.clear();
   };
 
   PointLocalReconstructionData& operator=( const PointLocalReconstructionData& ) = default;
 
-  void allocate( size_t plrBlockToPatchMapWidth, size_t plrBlockToPatchMapHeight ) {
-    plrBlockToPatchMapWidth_  = plrBlockToPatchMapWidth;
-    plrBlockToPatchMapHeight_ = plrBlockToPatchMapHeight;
-    plrBlockPresentFlag_.resize( plrBlockToPatchMapWidth_ * plrBlockToPatchMapHeight_, false );
-    plrBlockModeMinus1_.resize( plrBlockToPatchMapWidth_ * plrBlockToPatchMapHeight_, 0 );
+  void allocate( size_t blockToPatchMapWidth, size_t blockToPatchMapHeight ) {
+    blockToPatchMapWidth_  = blockToPatchMapWidth;
+    blockToPatchMapHeight_ = blockToPatchMapHeight;
+    blockPresentFlag_.resize( blockToPatchMapWidth_ * blockToPatchMapHeight_, false );
+    blockModeMinus1_.resize( blockToPatchMapWidth_ * blockToPatchMapHeight_, 0 );
   }
-  size_t  getPlrBlockToPatchMapHeight() { return plrBlockToPatchMapHeight_; }
-  size_t  getPlrBlockToPatchMapWidth() { return plrBlockToPatchMapWidth_; }
-  bool    getPlrLevelFlag() { return plrLevelFlag_; }
-  bool    getPlrPresentFlag() { return plrPresentFlag_; }
-  uint8_t getPlrModeMinus1() { return plrModeMinus1_; }
-  bool    getPlrBlockPresentFlag( size_t index ) { return plrBlockPresentFlag_[index]; }
-  uint8_t getPlrBlockModeMinus1( size_t index ) { return plrBlockModeMinus1_[index]; }
+  size_t  getBlockToPatchMapHeight() { return blockToPatchMapHeight_; }
+  size_t  getBlockToPatchMapWidth() { return blockToPatchMapWidth_; }
+  bool    getLevelFlag() { return levelFlag_; }
+  bool    getPresentFlag() { return presentFlag_; }
+  uint8_t getModeMinus1() { return modeMinus1_; }
+  bool    getBlockPresentFlag( size_t index ) { return blockPresentFlag_[index]; }
+  uint8_t getBlockModeMinus1( size_t index ) { return blockModeMinus1_[index]; }
 
-  void setPlrLevelFlag( bool value ) { plrLevelFlag_ = value; }
-  void setPlrPresentFlag( bool value ) { plrPresentFlag_ = value; }
-  void setPlrModeMinus1( uint8_t value ) { plrModeMinus1_ = value; }
-  void setPlrBlockPresentFlag( size_t index, bool value ) { plrBlockPresentFlag_[index] = value; }
-  void setPlrBlockModeMinus1( size_t index, uint8_t value ) { plrBlockModeMinus1_[index] = value; }
+  void setLevelFlag( bool value ) { levelFlag_ = value; }
+  void setPresentFlag( bool value ) { presentFlag_ = value; }
+  void setModeMinus1( uint8_t value ) { modeMinus1_ = value; }
+  void setBlockPresentFlag( size_t index, bool value ) { blockPresentFlag_[index] = value; }
+  void setBlockModeMinus1( size_t index, uint8_t value ) { blockModeMinus1_[index] = value; }
 
  private:
-  size_t               plrBlockToPatchMapHeight_;
-  size_t               plrBlockToPatchMapWidth_;
-  bool                 plrLevelFlag_;
-  bool                 plrPresentFlag_;
-  uint8_t              plrModeMinus1_;
-  std::vector<bool>    plrBlockPresentFlag_;
-  std::vector<uint8_t> plrBlockModeMinus1_;
+  size_t               blockToPatchMapHeight_;
+  size_t               blockToPatchMapWidth_;
+  bool                 levelFlag_;
+  bool                 presentFlag_;
+  uint8_t              modeMinus1_;
+  std::vector<bool>    blockPresentFlag_;
+  std::vector<uint8_t> blockModeMinus1_;
 };
 
 //jkei : Here to ln1420(AtlasFrameParameterSetRbsp) updated (please check PST.oct29th)
@@ -1276,6 +1325,7 @@ class AtlasFrameTileInformation {
   std::vector<uint32_t> bottomRightTileIdxDelta_;
   std::vector<uint32_t> tileGroupId_;
 };
+
 //7.3.6.3  Atlas frame parameter set RBSP syntax
 class AtlasFrameParameterSetRbsp{
  public:
@@ -1354,6 +1404,7 @@ class AtlasFrameParameterSetRbsp{
   bool    afpsLodModeEnableFlag_;
   AtlasFrameTileInformation atlasFrameTileInformation_;
 };
+
 // 7.3.5.12  Patch frame parameter set syntax (jkei: remove and replace it with AtlasFrameParameterSetRbsp
 class PatchFrameParameterSet {
  public:
@@ -2013,7 +2064,7 @@ class PatchDataGroup {
   }
 
  private:
-  PatchVpccParameterSet            patchVpccParameterSet_[16];
+  PatchVpccParameterSet                patchVpccParameterSet_[16];
   GeometryPatchParameterSet            geometryPatchParameterSet_[64];
   AttributePatchParameterSet           attributePatchParameterSet_[64];
   PatchFrameParameterSet               patchFrameParameterSet_[64];
@@ -2035,8 +2086,11 @@ class AttributeInformation {
  public:
   AttributeInformation() :
       attributeCount_( 0 ),
-      attributeParamsEnabledFlag_( false ),
-      attributePatchParamsEnabledFlag_( false ){}
+      attributeMSBAlignFlag_( false )
+      // JR TODO: remove
+      , attributeParamsEnabledFlag_( false )
+      , attributePatchParamsEnabledFlag_( false )
+      {}
   ~AttributeInformation() {
     attributeTypeId_.clear();
     attributeCodecId_.clear();
@@ -2044,7 +2098,6 @@ class AttributeInformation {
     attributeDimensionMinus1_.clear();
     attributeDimensionPartitionsMinus1_.clear();
     attributeNominal2dBitdepthMinus1_.clear();
-    attributeMSBAlignFlag_.clear();
     for ( auto& value : attributePartitionChannelsMinus1_ ) { value.clear(); }
     attributePartitionChannelsMinus1_.clear();
     attributeMapAbsoluteCodingEnabledFlag_.clear();
@@ -2058,14 +2111,11 @@ class AttributeInformation {
     attributeDimensionMinus1_.resize( attributeCount_, 0 );
     attributeDimensionPartitionsMinus1_.resize( attributeCount_, 0 );
     attributeNominal2dBitdepthMinus1_.resize( attributeCount_, 0 );
-    attributeMSBAlignFlag_.resize( attributeCount_, 0 );
     attributePartitionChannelsMinus1_.resize( attributeCount_ );
     attributeMapAbsoluteCodingEnabledFlag_.resize( attributeCount_ );
   }
   uint8_t getAttributeCount() { return attributeCount_; }
-  uint8_t getAttributeParamsEnabledFlag() { return attributeParamsEnabledFlag_; }
-  uint8_t getAttributePatchParamsEnabledFlag() { return attributePatchParamsEnabledFlag_; }
-  uint8_t getAttributeMSBAlignFlag( uint32_t index ) { return attributeMSBAlignFlag_[index]; }
+  bool    getAttributeMSBAlignFlag() { return attributeMSBAlignFlag_; }
   uint8_t getAttributeTypeId( uint32_t index ) { return attributeTypeId_[index]; }
   uint8_t getAttributeCodecId( uint32_t index ) { return attributeCodecId_[index]; };
   uint8_t getRawAttributeCodecId( uint32_t index ) { return rawAttributeCodecId_[index]; }
@@ -2081,11 +2131,8 @@ class AttributeInformation {
   uint8_t getAttributeMapAbsoluteCodingEnabledFlag( uint32_t index ) {
     return attributeMapAbsoluteCodingEnabledFlag_[index];
   }
-
   void setAttributeCount( uint8_t value ) { attributeCount_ = value; }
-  void setAttributeParamsEnabledFlag( bool value ) { attributeParamsEnabledFlag_ = value; }
-  void setAttributePatchParamsEnabledFlag( bool value ) { attributePatchParamsEnabledFlag_ = value; }
-  void setAttributeMSBAlignFlag( uint32_t index, bool value ) { attributeMSBAlignFlag_[index] = value; }
+  void setAttributeMSBAlignFlag( bool value ) { attributeMSBAlignFlag_ = value; }
   void setAttributeTypeId( uint32_t index, uint8_t value ) { attributeTypeId_[index] = value; }
   void setAttributeCodecId( uint32_t index, uint8_t value ) { attributeCodecId_[index] = value; };
   void setRawAttributeCodecId( uint32_t index, uint8_t value ) { rawAttributeCodecId_[index] = value; }
@@ -2104,6 +2151,11 @@ class AttributeInformation {
   }
  void setAttributeMapAbsoluteCodingEnabledFlag( uint32_t index, uint8_t value ) { attributeMapAbsoluteCodingEnabledFlag_[index] = value; }
   
+  // JR TODO: remove
+  uint8_t getAttributeParamsEnabledFlag() { return attributeParamsEnabledFlag_; }
+  uint8_t getAttributePatchParamsEnabledFlag() { return attributePatchParamsEnabledFlag_; }
+  void setAttributeParamsEnabledFlag( bool value ) { attributeParamsEnabledFlag_ = value; }
+  void setAttributePatchParamsEnabledFlag( bool value ) { attributePatchParamsEnabledFlag_ = value; }
  private:
   uint8_t                           attributeCount_;
   std::vector<uint8_t>              attributeTypeId_;
@@ -2114,7 +2166,7 @@ class AttributeInformation {
   std::vector<uint8_t>              attributeDimensionPartitionsMinus1_;
   std::vector<std::vector<uint8_t>> attributePartitionChannelsMinus1_;
   std::vector<uint8_t>              attributeNominal2dBitdepthMinus1_;
-  std::vector<bool>                 attributeMSBAlignFlag_; 
+  bool                              attributeMSBAlignFlag_; 
   // JR TODO: remove
   bool                              attributeParamsEnabledFlag_; //TODO: remove?
   bool                              attributePatchParamsEnabledFlag_; //TODO: remove?
@@ -2236,6 +2288,142 @@ class ProfileTierLevel {
   uint8_t profilePccToolsetIdc_;
   uint8_t profileReconctructionIdc_;
   uint8_t levelIdc_;
+};
+
+// 7.3.6 Atlas sequence, frame, and tile group parameter set syntax
+// 7.3.6.1 Atlas sequence parameter set RBSP
+class AtlasSequenceParameterSetRBSP{
+  public:
+  AtlasSequenceParameterSetRBSP() :
+    altasSequenceParameterSetId_                 ( 0 ),
+    frameWidth_                                  ( 0 ),
+    frameHeight_                                 ( 0 ),
+    log2PatchPackingBlockSize_                   ( 0 ),
+    log2MaxAtlasFrameOrderCntLsbMinus4_          ( 0 ),
+    maxDecAtlasFrameBufferingMinus1_             ( 0 ),
+    numRefAtlasFrameListsInAsps_                 ( 0 ),
+    mapCountMinus1_                              ( 0 ),
+    enhancedOccupancyMapFixBitCountMinus1_       ( 0 ),
+    surfaceThicknessMinus1_                      ( 0 ),
+    longTermRefAtlasFramesFlag_                  ( false ),
+    useEightOientationsFlag_                     ( false ),
+    degree45ProjectionPatchPresentFlag_          ( false ),
+    normalAxisLimitsQuantizationEnabledFlag_     ( false ),
+    normalAxisMaxDeltaValueEnabledFlag_          ( false ),
+    removeDuplicatePointEnabledFlag_             ( false ),
+    pixelDeinterleavingFlag_                     ( false ),
+    patchPrecedenceOrderFlag_                    ( false ),
+    patchSizeQuantizerPresentFlag_               ( false ),
+    enhancedOccupancyMapForDepthFlag_            ( false ),
+    pointLocalReconstructionEnabledFlag_         ( false ),
+    vuiParametersPresentFlag_                    ( false ),
+    extensionPresentFlag_                        ( false ),
+    extensionDataFlag_                           ( false )
+  {}
+  ~AtlasSequenceParameterSetRBSP(){ 
+    refListStruct_.clear(); 
+    pointLocalReconstructionInformation_.clear(); 
+  }
+
+  AtlasSequenceParameterSetRBSP& operator=( const AtlasSequenceParameterSetRBSP& ) = default;
+
+  void           allocateRefListStruct() { refListStruct_.resize( numRefAtlasFrameListsInAsps_ ); }
+  void           allocatePointLocalReconstructionInformation() { pointLocalReconstructionInformation_.resize( mapCountMinus1_ + 1 ); }
+  uint8_t getAltasSequenceParameterSetId              () { return altasSequenceParameterSetId_;                  }
+  uint8_t getFrameWidth                               () { return frameWidth_;                                   }
+  uint8_t getFrameHeight                              () { return frameHeight_;                                  }
+  uint8_t getLog2PatchPackingBlockSize                () { return log2PatchPackingBlockSize_;                    }
+  uint8_t getLog2MaxAtlasFrameOrderCntLsbMinus4       () { return log2MaxAtlasFrameOrderCntLsbMinus4_;           }
+  uint8_t getMaxDecAtlasFrameBufferingMinus1          () { return maxDecAtlasFrameBufferingMinus1_;              }
+  uint8_t getNumRefAtlasFrameListsInAsps              () { return numRefAtlasFrameListsInAsps_;                  }
+  uint8_t getMapCountMinus1                           () { return mapCountMinus1_;                               }
+  uint8_t getEnhancedOccupancyMapFixBitCountMinus1    () { return enhancedOccupancyMapFixBitCountMinus1_;        }
+  uint8_t getSurfaceThicknessMinus1                   () { return surfaceThicknessMinus1_;                       }
+  bool    getLongTermRefAtlasFramesFlag               () { return longTermRefAtlasFramesFlag_;                   }
+  bool    getUseEightOientationsFlag                  () { return useEightOientationsFlag_;                      }
+  bool    get45DegreeProjectionPatchPresentFlag       () { return degree45ProjectionPatchPresentFlag_;           }
+  bool    getNormalAxisLimitsQuantizationEnabledFlag  () { return normalAxisLimitsQuantizationEnabledFlag_;      }
+  bool    getNormalAxisMaxDeltaValueEnabledFlag       () { return normalAxisMaxDeltaValueEnabledFlag_;           }
+  bool    getRemoveDuplicatePointEnabledFlag          () { return removeDuplicatePointEnabledFlag_;              }
+  bool    getPixelDeinterleavingFlag                  () { return pixelDeinterleavingFlag_;                      }
+  bool    getPatchPrecedenceOrderFlag                 () { return patchPrecedenceOrderFlag_;                     }
+  bool    getPatchSizeQuantizerPresentFlag            () { return patchSizeQuantizerPresentFlag_;                }
+  bool    getEnhancedOccupancyMapForDepthFlag         () { return enhancedOccupancyMapForDepthFlag_;             }
+  bool    getPointLocalReconstructionEnabledFlag      () { return pointLocalReconstructionEnabledFlag_;          }
+  bool    getVuiParametersPresentFlag                 () { return vuiParametersPresentFlag_;                     }
+  bool    getExtensionPresentFlag                     () { return extensionPresentFlag_;                         }
+  bool    getExtensionDataFlag                        () { return extensionDataFlag_;                            }
+
+  void setAltasSequenceParameterSetId              (uint8_t value ) { altasSequenceParameterSetId_ = value;                  }
+  void setFrameWidth                               (uint8_t value ) { frameWidth_ = value;                                   }
+  void setFrameHeight                              (uint8_t value ) { frameHeight_ = value;                                  }
+  void setLog2PatchPackingBlockSize                (uint8_t value ) { log2PatchPackingBlockSize_ = value;                   }
+  void setLog2MaxAtlasFrameOrderCntLsbMinus4       (uint8_t value ) { log2MaxAtlasFrameOrderCntLsbMinus4_ = value;           }
+  void setMaxDecAtlasFrameBufferingMinus1          (uint8_t value ) { maxDecAtlasFrameBufferingMinus1_ = value;              }
+  void setNumRefAtlasFrameListsInAsps              (uint8_t value ) { numRefAtlasFrameListsInAsps_ = value;                  }
+  void setMapCountMinus1                           (uint8_t value ) { mapCountMinus1_ = value;                               }
+  void setEnhancedOccupancyMapFixBitCountMinus1    (uint8_t value ) { enhancedOccupancyMapFixBitCountMinus1_ = value;        }
+  void setSurfaceThicknessMinus1                   (uint8_t value ) { surfaceThicknessMinus1_ = value;                       }
+  void setLongTermRefAtlasFramesFlag               (bool    value ) { longTermRefAtlasFramesFlag_ = value;                   }
+  void setUseEightOientationsFlag                  (bool    value ) { useEightOientationsFlag_ = value;                      }
+  void set45DegreeProjectionPatchPresentFlag       (bool    value ) { degree45ProjectionPatchPresentFlag_ = value;           }
+  void setNormalAxisLimitsQuantizationEnabledFlag  (bool    value ) { normalAxisLimitsQuantizationEnabledFlag_ = value;      }
+  void setNormalAxisMaxDeltaValueEnabledFlag       (bool    value ) { normalAxisMaxDeltaValueEnabledFlag_ = value;           }
+  void setRemoveDuplicatePointEnabledFlag          (bool    value ) { removeDuplicatePointEnabledFlag_ = value;              }
+  void setPixelDeinterleavingFlag                  (bool    value ) { pixelDeinterleavingFlag_ = value;                      }
+  void setPatchPrecedenceOrderFlag                 (bool    value ) { patchPrecedenceOrderFlag_ = value;                     }
+  void setPatchSizeQuantizerPresentFlag            (bool    value ) { patchSizeQuantizerPresentFlag_ = value;                }
+  void setEnhancedOccupancyMapForDepthFlag         (bool    value ) { enhancedOccupancyMapForDepthFlag_ = value;             }
+  void setPointLocalReconstructionEnabledFlag      (bool    value ) { pointLocalReconstructionEnabledFlag_ = value;          }
+  void setVuiParametersPresentFlag                 (bool    value ) { vuiParametersPresentFlag_ = value;                     }
+  void setExtensionPresentFlag                     (bool    value ) { extensionPresentFlag_ = value;                         }
+  void setExtensionDataFlag                        (bool    value ) { extensionDataFlag_ = value;                            }
+
+  RefListStruct& getRefListStruct( uint8_t index ) { return refListStruct_[index]; }
+  void addRefListStruct( RefListStruct value ) { refListStruct_.push_back( value ); }
+  RefListStruct& addRefListStruct() {
+    RefListStruct refListStruct;
+    refListStruct_.push_back( refListStruct );
+    return refListStruct_.back();
+  } 
+  PointLocalReconstructionInformation& getPointLocalReconstructionInformation( uint8_t index ) { return pointLocalReconstructionInformation_[index]; }
+  void addPointLocalReconstructionInformation( PointLocalReconstructionInformation value ) {
+     pointLocalReconstructionInformation_.push_back( value ); 
+  }
+   PointLocalReconstructionInformation& addPointLocalReconstructionInformation() {
+    PointLocalReconstructionInformation plri;
+    pointLocalReconstructionInformation_.push_back( plri );
+    return pointLocalReconstructionInformation_.back();
+  }
+  private:
+ 
+  uint8_t altasSequenceParameterSetId_;
+  uint8_t frameWidth_;
+  uint8_t frameHeight_;
+  uint8_t log2PatchPackingBlockSize_;
+  uint8_t log2MaxAtlasFrameOrderCntLsbMinus4_;
+  uint8_t maxDecAtlasFrameBufferingMinus1_;
+  uint8_t numRefAtlasFrameListsInAsps_;
+  uint8_t mapCountMinus1_;
+  uint8_t enhancedOccupancyMapFixBitCountMinus1_;
+  uint8_t surfaceThicknessMinus1_;
+  bool    longTermRefAtlasFramesFlag_;
+  bool    useEightOientationsFlag_;
+  bool    degree45ProjectionPatchPresentFlag_;
+  bool    normalAxisLimitsQuantizationEnabledFlag_;
+  bool    normalAxisMaxDeltaValueEnabledFlag_;
+  bool    removeDuplicatePointEnabledFlag_;
+  bool    pixelDeinterleavingFlag_;
+  bool    patchPrecedenceOrderFlag_;
+  bool    patchSizeQuantizerPresentFlag_;
+  bool    enhancedOccupancyMapForDepthFlag_;
+  bool    pointLocalReconstructionEnabledFlag_;
+  bool    vuiParametersPresentFlag_;
+  bool    extensionPresentFlag_;
+  bool    extensionDataFlag_;
+
+  std::vector<RefListStruct> refListStruct_;
+  std::vector<PointLocalReconstructionInformation> pointLocalReconstructionInformation_;    
 };
 
 // 7.3.4.1  V-PCC Sequence parameter set syntax

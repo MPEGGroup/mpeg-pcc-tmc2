@@ -237,7 +237,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
                              sps.getLosslessGeo()!=0,
                              params_.patchColorSubsampling_, params_.inverseColorSpaceConversionConfig_,
                              params_.colorSpaceConversionPath_ );
-		context.getVideoTexture().convertBitdepth(decodedBitdepthAttribute, ai.getAttributeNominal2dBitdepthMinus1( 0 ) + 1, ai.getAttributeMSBAlignFlag( 0 ));
+		context.getVideoTexture().convertBitdepth(decodedBitdepthAttribute, ai.getAttributeNominal2dBitdepthMinus1( 0 ) + 1, ai.getAttributeMSBAlignFlag());
     std::cout << "texture video  ->" << videoBitstream.naluSize() << " B" << std::endl;
 
     if ( sps.getRawPatchEnabledFlag(atlasIndex) && sps.getRawSeparateVideoPresentFlag(atlasIndex) ) {
@@ -249,7 +249,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
                                sps.getLosslessGeo(),
                                false,
                                params_.inverseColorSpaceConversionConfig_, params_.colorSpaceConversionPath_ );
-		  context.getVideoTexture().convertBitdepth(decodedBitdepthAttributeMP, ai.getAttributeNominal2dBitdepthMinus1( 0 ) + 1, ai.getAttributeMSBAlignFlag( 0 ));
+		  context.getVideoTexture().convertBitdepth(decodedBitdepthAttributeMP, ai.getAttributeNominal2dBitdepthMinus1( 0 ) + 1, ai.getAttributeMSBAlignFlag());
       printf( "call generateMissedPointsTexturefromVideo \n" );
       generateMissedPointsTexturefromVideo( context, reconstructs );
       std::cout << " missed points texture -> " << videoBitstreamMP.naluSize() << " B" << endl;
@@ -395,11 +395,11 @@ void PCCDecoder::setPointLocalReconstruction( PCCContext& context, VpccParameter
   auto&                        plri = sps.getPointLocalReconstructionInformation();
   PointLocalReconstructionMode mode = {0, 0, 0, 1};
   context.addPointLocalReconstructionMode( mode );
-  for ( size_t i = 0; i < plri.getPlrlNumberOfModesMinus1(); i++ ) {
-    mode.interpolate_ = plri.getPlrlInterpolateFlag( i );
-    mode.filling_     = plri.getPlrlFillingFlag( i );
-    mode.minD1_       = plri.getPlrlMinimumDepth( i );
-    mode.neighbor_    = plri.getPlrlNeighbourMinus1( i ) + 1;
+  for ( size_t i = 0; i < plri.getNumberOfModesMinus1(); i++ ) {
+    mode.interpolate_ = plri.getInterpolateFlag( i );
+    mode.filling_     = plri.getFillingFlag( i );
+    mode.minD1_       = plri.getMinimumDepth( i );
+    mode.neighbor_    = plri.getNeighbourMinus1( i ) + 1;
     context.addPointLocalReconstructionMode( mode );
   }
 #ifdef CODEC_TRACE
@@ -416,28 +416,28 @@ void PCCDecoder::setPointLocalReconstructionData( PCCFrameContext&              
                                                   PointLocalReconstructionData& plrd,
                                                   size_t                        occupancyPackingBlockSize ) {
   patch.allocOneLayerData();
-  TRACE_CODEC( "WxH = %lu x %lu \n", plrd.getPlrBlockToPatchMapWidth(), plrd.getPlrBlockToPatchMapHeight() );
-  patch.getPointLocalReconstructionLevel() = plrd.getPlrLevelFlag();
-  TRACE_CODEC( "  LevelFlag = %d \n", plrd.getPlrLevelFlag() );
-  if ( plrd.getPlrLevelFlag() ) {
-    if ( plrd.getPlrPresentFlag() ) {
-      patch.getPointLocalReconstructionMode() = plrd.getPlrModeMinus1() + 1;
+  TRACE_CODEC( "WxH = %lu x %lu \n", plrd.getBlockToPatchMapWidth(), plrd.getBlockToPatchMapHeight() );
+  patch.getPointLocalReconstructionLevel() = plrd.getLevelFlag();
+  TRACE_CODEC( "  LevelFlag = %d \n", plrd.getLevelFlag() );
+  if ( plrd.getLevelFlag() ) {
+    if ( plrd.getPresentFlag() ) {
+      patch.getPointLocalReconstructionMode() = plrd.getModeMinus1() + 1;
     } else {
       patch.getPointLocalReconstructionMode() = 0;
     }
-    TRACE_CODEC( "  ModePatch: Present = %d ModeMinus1 = %2d \n", plrd.getPlrPresentFlag(),
-                 plrd.getPlrPresentFlag() ? (int32_t)plrd.getPlrModeMinus1() : -1 );
+    TRACE_CODEC( "  ModePatch: Present = %d ModeMinus1 = %2d \n", plrd.getPresentFlag(),
+                 plrd.getPresentFlag() ? (int32_t)plrd.getModeMinus1() : -1 );
   } else {
-    for ( size_t v0 = 0; v0 < plrd.getPlrBlockToPatchMapHeight(); ++v0 ) {
-      for ( size_t u0 = 0; u0 < plrd.getPlrBlockToPatchMapWidth(); ++u0 ) {
-        size_t index = v0 * plrd.getPlrBlockToPatchMapWidth() + u0;
-        if ( plrd.getPlrBlockPresentFlag( index ) ) {
-          patch.getPointLocalReconstructionMode( u0, v0 ) = plrd.getPlrBlockModeMinus1( index ) + 1;
+    for ( size_t v0 = 0; v0 < plrd.getBlockToPatchMapHeight(); ++v0 ) {
+      for ( size_t u0 = 0; u0 < plrd.getBlockToPatchMapWidth(); ++u0 ) {
+        size_t index = v0 * plrd.getBlockToPatchMapWidth() + u0;
+        if ( plrd.getBlockPresentFlag( index ) ) {
+          patch.getPointLocalReconstructionMode( u0, v0 ) = plrd.getBlockModeMinus1( index ) + 1;
         } else {
           patch.getPointLocalReconstructionMode( u0, v0 ) = 0;
         }
-        TRACE_CODEC( "  Mode[%3u]: Present = %d ModeMinus1 = %2d \n", index, plrd.getPlrBlockPresentFlag( index ),
-                     plrd.getPlrBlockPresentFlag( index ) ? (int32_t)plrd.getPlrBlockModeMinus1( index ) : -1 );
+        TRACE_CODEC( "  Mode[%3u]: Present = %d ModeMinus1 = %2d \n", index, plrd.getBlockPresentFlag( index ),
+                     plrd.getBlockPresentFlag( index ) ? (int32_t)plrd.getBlockModeMinus1( index ) : -1 );
       }
     }
   }
@@ -446,7 +446,7 @@ void PCCDecoder::setPointLocalReconstructionData( PCCFrameContext&              
     for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {
       TRACE_CODEC( "Block[ %2lu %2lu <=> %4lu ] / [ %2lu %2lu ]: Level = %d Present = %d mode = %lu \n", u0, v0,
                    v0 * patch.getSizeU0() + u0, patch.getSizeU0(), patch.getSizeV0(),
-                   patch.getPointLocalReconstructionLevel(), plrd.getPlrBlockPresentFlag( v0 * patch.getSizeU0() + u0 ),
+                   patch.getPointLocalReconstructionLevel(), plrd.getBlockPresentFlag( v0 * patch.getSizeU0() + u0 ),
                    patch.getPointLocalReconstructionMode( u0, v0 ) );
     }
   }
