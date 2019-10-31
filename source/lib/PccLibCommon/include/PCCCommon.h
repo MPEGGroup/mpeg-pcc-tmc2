@@ -37,7 +37,8 @@
 #include <assert.h>
 #include <chrono>
 #include <cmath>
-#include <vector>
+#include <vector> 
+#include <list>
 #include <fstream>
 #include <iostream>
 #include <iomanip>
@@ -275,7 +276,7 @@ enum NaUnitType {  // Name, Content of NAL unit and RBSP syntax structure NAL un
   NAL_RSV_ACL_30,    //30: Reserved non-IRAP ACL NAL unit types ACL
   NAL_RSV_ACL_31,    //31: Reserved non-IRAP ACL NAL unit types ACL
   NAL_ASPS,          //32: Atlas sequence parameter set atlas_sequence_parameter_set_rbsp() non-ACL
-  NAL_AFPS,          // 33: Atlas frame parameter set atlas_frame_parameter_set_rbsp() non-ACL
+  NAL_AFPS,          //33: Atlas frame parameter set atlas_frame_parameter_set_rbsp() non-ACL
   NAL_AUD,           //34: Access unit delimiter access_unit_delimiter_rbsp() non-ACL
   NAL_VPCC_AUD,      //35: V-PCC access unit delimiter access_unit_delimiter_rbsp() non-ACL
   NAL_EOS,           //36: End of sequence end_of_seq_rbsp() non-ACL
@@ -300,12 +301,21 @@ enum NaUnitType {  // Name, Content of NAL unit and RBSP syntax structure NAL un
   NAL_UNSPEC_55,     //55: Unspecified non-ACL NAL unit types non-ACL
   NAL_UNSPEC_56,     //56: Unspecified non-ACL NAL unit types non-ACL
   NAL_UNSPEC_57,     //57: Unspecified non-ACL NAL unit types non-ACL
-  NAL_UNSPEC_58,     //58: Unspecified non-ACL NAL unit types non-ACL
+   NAL_UNSPEC_58,     //58: Unspecified non-ACL NAL unit types non-ACL
+#if 0
   NAL_UNSPEC_59,     //59: Unspecified non-ACL NAL unit types non-ACL
   NAL_UNSPEC_60,     //60: Unspecified non-ACL NAL unit types non-ACL
   NAL_UNSPEC_61,     //61: Unspecified non-ACL NAL unit types non-ACL
   NAL_UNSPEC_62,     //62: Unspecified non-ACL NAL unit types non-ACL
   NAL_UNSPEC_63      //63: Unspecified non-ACL NAL unit types non-ACL
+#else
+  // JR: hack to transmit vppc unit in nal unit ( Must be rewrite when the spec will be well understood :-) )
+  NAL_VPCC_VPS,      //59: Sequence parameter set
+  NAL_VPCC_AD,       //60: Patch Data Group
+  NAL_VPCC_OVD,      //61: Occupancy Video Data
+  NAL_VPCC_GVD,      //63: Geometry Video Data
+  NAL_VPCC_AVD,      //63: Attribute Video Data
+#endif
 };
 
 // ******************************************************************* //

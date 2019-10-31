@@ -45,6 +45,7 @@
 #include "PCCFrameContext.h"
 #include "PCCBitstream.h"
 #include "PCCGroupOfFrames.h"
+#include "PCCBitstreamDecoder.h"
 #include "PCCDecoderParameters.h"
 #include "PCCMetricsParameters.h"
 #include <program_options_lite.h>

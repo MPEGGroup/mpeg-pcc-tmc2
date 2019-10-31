@@ -900,7 +900,7 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
   const size_t             groupOfFramesSize0       = ( std::max )( size_t( 1 ), encoderParams.groupOfFramesSize_ );
   size_t                   startFrameNumber         = startFrameNumber0;
   size_t                   reconstructedFrameNumber = encoderParams.startFrameNumber_;
-  PCCBitstream             bitstream;
+  
   std::unique_ptr<uint8_t> buffer;
   size_t                   contextIndex = 0;
   PCCEncoder               encoder;
@@ -911,11 +911,13 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
   metrics.setParameters( metricsParams );
   checksum.setParameters( metricsParams );
 
+  PCCBitstreamStat bitstreamStat;
+  SampleStreamNalUnit ssnu; 
   // Place to get/set default values for gof metadata enabled flags (in sequence level).
-  bitstream.writeHeader();
   while ( startFrameNumber < endFrameNumber0 ) {
     const size_t endFrameNumber = min( startFrameNumber + groupOfFramesSize0, endFrameNumber0 );
     PCCContext   context;
+    context.setBitstreamStat( bitstreamStat );
     context.addVpccParameterSet( contextIndex );
     context.getVPCC().setVpccParameterSetId( contextIndex );
 
@@ -928,7 +930,7 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
 
     std::cout << "Compressing group of frames " << contextIndex << ": " << startFrameNumber << " -> " << endFrameNumber
               << "..." << std::endl;
-    int ret = encoder.encode( sources, context, bitstream, reconstructs );
+    int ret = encoder.encode( sources, context, ssnu, reconstructs );
     clock.stop();
 
     PCCGroupOfFrames normals;
@@ -960,7 +962,13 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
     startFrameNumber = endFrameNumber;
     contextIndex++;
   }
-  bitstream.getBitStreamStat().trace();
+  PCCBitstream bitstream;
+  bitstream.writeHeader();  // JR TODO: must be removed?
+  bitstreamStat.setHeader( bitstream.size() );
+  PCCBitstreamEncoder bitstreamEncoder;
+  bitstreamEncoder.write( ssnu, bitstream );
+  
+  bitstreamStat.trace();
   std::cout << "Total bitstream size " << bitstream.size() << " B" << std::endl;
   bitstream.write( encoderParams.compressedStreamPath_ );
 

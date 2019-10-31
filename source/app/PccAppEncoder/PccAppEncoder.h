@@ -46,6 +46,7 @@
 #include "PCCBitstream.h"
 #include "PCCGroupOfFrames.h"
 #include "PCCEncoderParameters.h"
+#include "PCCBitstreamEncoder.h"
 #include "PCCMetricsParameters.h"
 #include <program_options_lite.h>
 #include <tbb/tbb.h>

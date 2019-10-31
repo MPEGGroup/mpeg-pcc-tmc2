@@ -118,6 +118,12 @@ class PCCEncoder : public PCCCodec {
   ~PCCEncoder();
   void setParameters( PCCEncoderParameters params );
 
+  // JR: NEW
+  int encode( const PCCGroupOfFrames& sources,
+              PCCContext&             context,
+              SampleStreamNalUnit&    ssnu,
+              PCCGroupOfFrames&       reconstructs );
+  // JR: NEW
   int encode( const PCCGroupOfFrames& sources,
               PCCContext&             context,
               PCCBitstream&           bitstream,

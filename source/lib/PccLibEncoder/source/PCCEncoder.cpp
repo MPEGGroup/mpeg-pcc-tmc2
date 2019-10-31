@@ -72,6 +72,48 @@ PCCEncoder::~PCCEncoder() {}
 
 void PCCEncoder::setParameters( PCCEncoderParameters params ) { params_ = params; }
 
+
+
+// JR: NEW
+int PCCEncoder::encode( const PCCGroupOfFrames& sources,
+                        PCCContext&             context,
+                        SampleStreamNalUnit&    ssnu,
+                        PCCGroupOfFrames&       reconstructs ) {
+  int    ret                                  = 0;
+  size_t pointLocalReconstructionOriginal     = params_.pointLocalReconstruction_;
+  size_t layerCountMinus1Original             = params_.mapCountMinus1_;
+  size_t singleLayerPixelInterleavingOriginal = params_.singleMapPixelInterleaving_;
+  if ( params_.nbThread_ > 0 ) { tbb::task_scheduler_init init( (int)params_.nbThread_ ); }
+
+  size_t atlasIndex = 0;
+  params_.initializeContext( context );
+  printf("Encoder start \n"); fflush(stdout);
+  ret |= encode( sources, context, reconstructs );
+  PCCBitstreamEncoder bitstreamEncoder;
+  createPatchFrameDataStructure( context );
+#ifdef CODEC_TRACE
+  closeTrace();
+#endif
+
+#ifdef BITSTREAM_TRACE
+  PCCBitstream bitstream; 
+  bitstream.setTrace( true );
+  bitstream.openTrace( removeFileExtension( params_.compressedStreamPath_ ) + "_hls_encode.txt" );
+  bitstreamEncoder.setTraceFile( bitstream.getTraceFile() ); 
+#endif
+  bitstreamEncoder.setParameters( params_ );
+  ret |= bitstreamEncoder.encode( context, ssnu );
+#ifdef BITSTREAM_TRACE
+  bitstreamEncoder.setTraceFile( NULL ); 
+  bitstream.closeTrace();
+#endif
+
+  params_.pointLocalReconstruction_     = pointLocalReconstructionOriginal;
+  params_.mapCountMinus1_             = layerCountMinus1Original;
+  params_.singleMapPixelInterleaving_ = singleLayerPixelInterleavingOriginal;
+  return ret;
+}
+// JR: OLD 
 int PCCEncoder::encode( const PCCGroupOfFrames& sources,
                         PCCContext&             context,
                         PCCBitstream&           bitstream,

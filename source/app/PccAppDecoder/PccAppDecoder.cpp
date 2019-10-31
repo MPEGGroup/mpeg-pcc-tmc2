@@ -271,8 +271,10 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
                      const PCCMetricsParameters& metricsParams,
                      StopwatchUserTime&          clock ) {
   PCCBitstream bitstream;
+  PCCBitstreamStat bitstreamStat;
   if ( !bitstream.initialize( decoderParams.compressedStreamPath_ ) ) { return -1; }
-  if ( !bitstream.readHeader() ) { return -1; }
+  if ( !bitstream.readHeader() ) { return -1; }  // JR TODO: must be remove? 
+  bitstreamStat.setHeader( bitstream.size() );
   size_t      frameNumber = decoderParams.startFrameNumber_;
   PCCMetrics  metrics;
   PCCChecksum checksum;
@@ -282,11 +284,17 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
   if ( metricsParams.computeChecksum_ ) { checksum.read( decoderParams.compressedStreamPath_ ); }
   PCCDecoder decoder;
   decoder.setParameters( decoderParams );
-  while ( bitstream.size() < bitstream.capacity() ) {
+
+  SampleStreamNalUnit ssnu;
+  PCCBitstreamDecoder bitstreamDecoder;
+  bitstreamDecoder.read( bitstream, ssnu );
+
+  while ( ssnu.getNalUnitCount() > 0 ) {
     PCCGroupOfFrames reconstructs;
     PCCContext       context;
+    context.setBitstreamStat( bitstreamStat );
     clock.start();
-    int ret = decoder.decode( bitstream, context, reconstructs );
+    int ret = decoder.decode( ssnu, context, reconstructs );
     clock.stop();
     if ( ret ) { return ret; }
     if ( metricsParams.computeChecksum_ ) { checksum.computeDecoded( reconstructs ); }
@@ -312,7 +320,7 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
       frameNumber += reconstructs.size();
     }
   }
-  bitstream.getBitStreamStat().trace();
+  bitstreamStat.trace();
   if ( metricsParams.computeMetrics_ ) { metrics.display(); }
   if ( metricsParams.computeChecksum_ ) {
     if ( !checksum.compareRecDec() ) { return -1; }

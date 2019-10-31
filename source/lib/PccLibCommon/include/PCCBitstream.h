@@ -149,11 +149,13 @@ class PCCBitstream {
  public:
   PCCBitstream();
   ~PCCBitstream();
+  
+  bool                initialize( std::vector<uint8_t>& data );
   bool                initialize( const PCCBitstream& bitstream );
   bool                initialize( std::string compressedStreamPath );
   void                initialize( uint64_t capacity ) { data_.resize( capacity, 0 ); }
   bool                write( std::string compressedStreamPath );
-  uint8_t*            buffer() { return data_.data(); }
+  uint8_t*            buffer() { return data_.data(); }  
   uint64_t&           size() { return position_.bytes; }
   uint64_t            capacity() { return data_.size(); }
   PCCBistreamPosition getPosition() { return position_; }
@@ -161,13 +163,14 @@ class PCCBitstream {
     position_.bytes += size;
     return *this;
   }
-  PCCBitstreamStat& getBitStreamStat() { return bitstreamStat_; }
+  // PCCBitstreamStat& getBitstreamStat() { return bitstreamStat_; }
   void              writeHeader();
   void              writeBuffer( const uint8_t* data, const size_t size );
   void              write( PCCVideoBitstream& videoBitstream );
   bool              readHeader();
   void              read( PCCVideoBitstream& videoBitstream );
   bool              byteAligned() { return ( position_.bits == 0 ); }
+  bool              moreData() { return position_.bytes < data_.size(); }
 
   inline uint32_t read( uint8_t bits ) {
     uint32_t code = read( bits, position_ );
@@ -283,6 +286,9 @@ class PCCBitstream {
     }
   }
   void setTrace( bool trace ) { trace_ = trace; }
+  void setTraceFile( FILE* traceFile ) { traceFile_ = traceFile; }
+  FILE* getTraceFile() { return traceFile_; }
+
   bool getTrace() { return trace_; }
   bool openTrace( std::string file ) {
     if ( traceFile_ ) {
@@ -331,7 +337,7 @@ class PCCBitstream {
   std::vector<uint8_t> data_;
   PCCBistreamPosition  position_;
   PCCBistreamPosition  totalSizeIterator_;
-  PCCBitstreamStat     bitstreamStat_;
+  // PCCBitstreamStat     bitstreamStat_;
 
 #ifdef BITSTREAM_TRACE
   bool  trace_;

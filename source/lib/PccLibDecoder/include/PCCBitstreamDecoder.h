@@ -89,10 +89,19 @@ class PCCBitstreamDecoder {
   PCCBitstreamDecoder();
   ~PCCBitstreamDecoder();
 
+  // JR: OLD
   int32_t decode( PCCBitstream& bitstream, PCCContext& context );
 
+  // JR: NEW
+  void    read( PCCBitstream& bitstream, SampleStreamNalUnit& ssnu );
+  int32_t decode( SampleStreamNalUnit& ssnu, PCCContext& context );
+
+#ifdef BITSTREAM_TRACE  
+  void setTraceFile( FILE* traceFile ){
+    traceFile_ = traceFile;
+  }
+#endif
  private:
- 
   // 7.3.2.1 General V-PCC unit syntax
   void vpccUnit( PCCContext& context, PCCBitstream& bitstream, VPCCUnitType& vpccUnitType );
 
@@ -117,93 +126,109 @@ class PCCBitstreamDecoder {
   void occupancyInformation( OccupancyInformation& occupancyInformation, PCCBitstream& bitstream );
 
   // 7.3.4.4 Geometry parameter set syntax
-  void geometryInformation( GeometryInformation&  geometryInformation,
-                            VpccParameterSet& vpccParameterSet,
-                            PCCBitstream&         bitstream );
+  void geometryInformation( GeometryInformation& geometryInformation,
+                            VpccParameterSet&    vpccParameterSet,
+                            PCCBitstream&        bitstream );
 
   // 7.3.4.5 Attribute parameter set syntax
   void attributeInformation( AttributeInformation& attributeInformation,
-                             VpccParameterSet& vpccParameterSet,
+                             VpccParameterSet&     vpccParameterSet,
                              PCCBitstream&         bitstream );
 
-  //jkei: newly added RBSP syntax
-  //TODO: fill the functions
+  // jkei: newly added RBSP syntax
+  // TODO: fill the functions
   bool moreRbspData( PCCBitstream& bitstream );
   void rbspTrailingBits( PCCBitstream& bitstream );
-  //7.3.5.1  General NAL unit syntax
-  //7.3.5.2  NAL unit header syntax
-  //7.3.6.1  Atlas sequence parameter set RBSP syntax
-  void atlasSequenceParameterSetRBSP(AtlasSequenceParameterSetRBSP& asps, PCCContext& context, PCCBitstream& bitstream );
-  //7.3.6.2  Point local reconstruction information syntax (NEW, comes from below)
+  // 7.3.5.1  General NAL unit syntax
+  // 7.3.5.2  NAL unit header syntax
+  // 7.3.6.1  Atlas sequence parameter set RBSP syntax
+  void atlasSequenceParameterSetRBSP( AtlasSequenceParameterSetRBSP& asps,
+                                      PCCContext&                    context,
+                                      PCCBitstream&                  bitstream );
+  // 7.3.6.2  Point local reconstruction information syntax (NEW, comes from below)
   void pointLocalReconstructionInformation( AtlasSequenceParameterSetRBSP& asps,
                                             PCCContext&                    context,
                                             PCCBitstream&                  bitstream );
-  
-  //7.3.6.3  Atlas frame parameter set RBSP syntax
-  void atlasFrameParameterSetRbsp    (AtlasFrameParameterSetRbsp& afps, PCCContext& context, PCCBitstream& bitstream );
-  
-  //7.3.6.4  Atlas frame tile information syntax
+
+  // 7.3.6.3  Atlas frame parameter set RBSP syntax
+  void atlasFrameParameterSetRbsp( AtlasFrameParameterSetRbsp& afps, PCCContext& context, PCCBitstream& bitstream );
+
+  // 7.3.6.4  Atlas frame tile information syntax
   void atlasFrameTileInformation( AtlasFrameTileInformation& pfti, VpccParameterSet& sps, PCCBitstream& bitstream );
-  
-  //7.3.6.5  Supplemental enhancement information RBSP syntax
-  void seiRbsp (PCCContext& context, PCCBitstream& bitstream );
-  //7.3.6.6  Access unit delimiter RBSP syntax
-  void auDelimiterRbsp(AccessUnitDelimiterRbsp& audrbsp, PCCContext& context, PCCBitstream& bitstream);
-  //7.3.6.7  End of sequence RBSP syntax
-  void eoSeqeuenceRbsp(EndOfSequenceRbsp& eosbsp, PCCContext& context, PCCBitstream& bitstream);
-  //7.3.6.8  End of bitstream RBSP syntax
-  void eoBitstreamRbsp(EndOfBitstreamRbsp& eobrbsp, PCCContext& context, PCCBitstream& bitstream);
-  //7.3.6.9  Filler data RBSP syntax
-  void fillerDataRbsp(FillerDataRbsp& fdrbsp, PCCContext& context, PCCBitstream& bitstream);
-  
-  //7.3.6.10  Atlas tile group layer RBSP syntax = patchTileGroupLayerUnit
-  void atlasTileGroupLayerRbsp (AtlasTileGroupLayerRbsp& atgl, PCCContext& context, PCCBitstream& bitstream );
-  
-  //7.3.6.11  Atlas tile group header syntax
-  void atlasTileGroupHeader(AtlasTileGroupHeader& atgh, PCCContext& context, PCCBitstream& bitstream );
-  
-  //7.3.6.12  Reference list structure syntax
-  void  refListStruct( RefListStruct&             rls,
-                      AtlasSequenceParameterSetRBSP& asps,
-                      PCCBitstream&              bitstream );
-  //7.3.7.1  General atlas tile group data unit syntax =patchTileGroupDataUnit
-  void atlasTileGroupDataUnit(AtlasTileGroupDataUnit& atgdu, AtlasTileGroupHeader& atgh, PCCContext& context, PCCBitstream& bitstream);
-  
-  //7.3.7.2  Patch information data syntax
+
+  // 7.3.6.5  Supplemental enhancement information RBSP syntax
+  void seiRbsp( PCCContext& context, PCCBitstream& bitstream );
+  // 7.3.6.6  Access unit delimiter RBSP syntax
+  void auDelimiterRbsp( AccessUnitDelimiterRbsp& audrbsp, PCCContext& context, PCCBitstream& bitstream );
+  // 7.3.6.7  End of sequence RBSP syntax
+  void endOfSequenceRbsp( EndOfSequenceRbsp& eosbsp, PCCContext& context, PCCBitstream& bitstream );
+  // 7.3.6.8  End of bitstream RBSP syntax
+  void endOfBitstreamRbsp( EndOfBitstreamRbsp& eobrbsp, PCCContext& context, PCCBitstream& bitstream );
+  // 7.3.6.9  Filler data RBSP syntax
+  void fillerDataRbsp( FillerDataRbsp& fdrbsp, PCCContext& context, PCCBitstream& bitstream );
+
+  // 7.3.6.10  Atlas tile group layer RBSP syntax = patchTileGroupLayerUnit
+  void atlasTileGroupLayerRbsp( AtlasTileGroupLayerRbsp& atgl, PCCContext& context, PCCBitstream& bitstream );
+
+  // 7.3.6.11  Atlas tile group header syntax
+  void atlasTileGroupHeader( AtlasTileGroupHeader& atgh, PCCContext& context, PCCBitstream& bitstream );
+
+  // 7.3.6.12  Reference list structure syntax
+  void refListStruct( RefListStruct& rls, AtlasSequenceParameterSetRBSP& asps, PCCBitstream& bitstream );
+  // 7.3.7.1  General atlas tile group data unit syntax =patchTileGroupDataUnit
+  void atlasTileGroupDataUnit( AtlasTileGroupDataUnit& atgdu,
+                               AtlasTileGroupHeader&   atgh,
+                               PCCContext&             context,
+                               PCCBitstream&           bitstream );
+
+  // 7.3.7.2  Patch information data syntax
   void patchInformationData( PatchInformationData& pid,
                              size_t                patchMode,
                              AtlasTileGroupHeader& atgh,
                              PCCContext&           context,
                              PCCBitstream&         bitstream );
-  
-  //7.3.7.3  Patch data unit syntax : AtlasTileGroupHeader instead of PatchTileGroupHeader
+
+  // 7.3.7.3  Patch data unit syntax : AtlasTileGroupHeader instead of PatchTileGroupHeader
   void patchDataUnit( PatchDataUnit& pdu, AtlasTileGroupHeader& atgh, PCCContext& context, PCCBitstream& bitstream );
 
-  //7.3.7.4  Skip patch data unit syntax
-  void skipPatchDataUnit( SkipPatchDataUnit& spdu, AtlasTileGroupHeader& atgh, PCCContext& context, PCCBitstream& bitstream );
-  
-  //7.3.7.5  Merge patch data unit syntax
-  void mergePatchDataUnit(MergePatchDataUnit& mpdu, AtlasTileGroupHeader& atgh, PCCContext& context, PCCBitstream& bitstream);
-  
-  //7.3.7.6  Inter patch data unit syntax
-  void interPatchDataUnit( InterPatchDataUnit& ipdu, AtlasTileGroupHeader& atgh, PCCContext& context, PCCBitstream& bitstream);
-  
-  //7.3.7.7  Raw patch data unit syntax
-  void rawPatchDataUnit( RawPatchDataUnit& rpdu, AtlasTileGroupHeader& ptgh, PCCContext& context, PCCBitstream& bitstream );
-  //7.3.7.8  EOM patch data unit syntax
-  void eomPatchDataUnit( EOMPatchDataUnit& epdu, AtlasTileGroupHeader& ptgh, PCCContext& context, PCCBitstream& bitstream );
-  
-  //7.3.7.9  Point local reconstruction data syntax
+  // 7.3.7.4  Skip patch data unit syntax
+  void skipPatchDataUnit( SkipPatchDataUnit&    spdu,
+                          AtlasTileGroupHeader& atgh,
+                          PCCContext&           context,
+                          PCCBitstream&         bitstream );
+
+  // 7.3.7.5  Merge patch data unit syntax
+  void mergePatchDataUnit( MergePatchDataUnit&   mpdu,
+                           AtlasTileGroupHeader& atgh,
+                           PCCContext&           context,
+                           PCCBitstream&         bitstream );
+
+  // 7.3.7.6  Inter patch data unit syntax
+  void interPatchDataUnit( InterPatchDataUnit&   ipdu,
+                           AtlasTileGroupHeader& atgh,
+                           PCCContext&           context,
+                           PCCBitstream&         bitstream );
+
+  // 7.3.7.7  Raw patch data unit syntax
+  void rawPatchDataUnit( RawPatchDataUnit&     rpdu,
+                         AtlasTileGroupHeader& ptgh,
+                         PCCContext&           context,
+                         PCCBitstream&         bitstream );
+  // 7.3.7.8  EOM patch data unit syntax
+  void eomPatchDataUnit( EOMPatchDataUnit&     epdu,
+                         AtlasTileGroupHeader& ptgh,
+                         PCCContext&           context,
+                         PCCBitstream&         bitstream );
+
+  // 7.3.7.9  Point local reconstruction data syntax
   void pointLocalReconstructionData( PointLocalReconstructionData& plrd, PCCContext& context, PCCBitstream& bitstream );
-  
-  //7.3.8  Supplemental enhancement information message syntax
+
+  // 7.3.8  Supplemental enhancement information message syntax
   void seiMessage( PatchDataGroup& pdg, PCCContext& context, PCCBitstream& bitstream );
-  
-  //jkei: <------- added up to this pointOLD PST.Oct30th
-  
-  
-  
-  //jkei: OLD--->
+
+  // jkei: <------- added up to this pointOLD PST.Oct30th
+
+  // jkei: OLD--->
   // 7.3.5.1 General patch data group unit syntax
   void atlasSubStream( PCCContext& context, PCCBitstream& bitstream );
 
@@ -217,18 +242,18 @@ class PCCBitstreamDecoder {
   // 7.3.5.3 Patch sequence parameter set syntax
   void patchVpccParameterSet( PatchDataGroup& pdg, PCCBitstream& bitstream );
 
-  // 7.3.5.4 Patch frame geometry parameter set syntax 
-  void patchFrameGeometryParameterSet( PatchDataGroup&       atlasSubStream,
+  // 7.3.5.4 Patch frame geometry parameter set syntax
+  void patchFrameGeometryParameterSet( PatchDataGroup&   atlasSubStream,
                                        VpccParameterSet& vpccParameterSet,
-                                       PCCBitstream&         bitstream );
+                                       PCCBitstream&     bitstream );
 
   // 7.3.5.5 Geometry frame Params syntax
   void geometryFrameParams( GeometryFrameParams& geometryFrameParams, PCCBitstream& bitstream );
 
-  // 7.3.5.6 Patch frame attribute parameter set syntax 
-  void patchFrameAttributeParameterSet( PatchDataGroup&       atlasSubStream,
+  // 7.3.5.6 Patch frame attribute parameter set syntax
+  void patchFrameAttributeParameterSet( PatchDataGroup&   atlasSubStream,
                                         VpccParameterSet& vpccParameterSet,
-                                        PCCBitstream&         bitstream );
+                                        PCCBitstream&     bitstream );
 
   // 7.3.5.7 Attribute frame Params syntax
   void attributeFrameParams( AttributeFrameParams& attributeFrameParams, size_t dimension, PCCBitstream& bitstream );
@@ -242,9 +267,9 @@ class PCCBitstreamDecoder {
                             PCCBitstream&                   bitstream );
 
   // 7.3.5.10 Attribute patch parameter set syntax
-  void attributePatchParameterSet( PatchDataGroup&       atlasSubStream,
+  void attributePatchParameterSet( PatchDataGroup&   atlasSubStream,
                                    VpccParameterSet& vpccParameterSet,
-                                   PCCBitstream&         bitstream );
+                                   PCCBitstream&     bitstream );
 
   // 7.3.5.11 Attribute patch Params syntax
   void attributePatchParams( AttributePatchParams&            attributePatchParams,
@@ -253,9 +278,9 @@ class PCCBitstreamDecoder {
                              PCCBitstream&                    bitstream );
 
   // 7.3.5.12 Patch frame parameter set syntax
-  void patchFrameParameterSet( PatchDataGroup&       atlasSubStream,
+  void patchFrameParameterSet( PatchDataGroup&   atlasSubStream,
                                VpccParameterSet& vpccParameterSet,
-                               PCCBitstream&         bitstream );
+                               PCCBitstream&     bitstream );
 
   // 7.3.5.13 Patch frame layer unit syntax
   void patchTileGroupLayerUnit( PatchDataGroup& pdg,
@@ -270,15 +295,14 @@ class PCCBitstreamDecoder {
                              PCCBitstream&         bitstream );
 
   // 7.3.5.15 Reference list structure syntax (OLD)
-  void refListStruct( RefListStruct&             refListStruct,
+  void refListStruct( RefListStruct&         refListStruct,
                       PatchVpccParameterSet& patchVpccParameterSet,
-                      PCCBitstream&              bitstream );
+                      PCCBitstream&          bitstream );
 
-                      
   // 7.3.5.15 Reference list structure syntax (NEW: jkei: this went up)
-//void  refListStruct( RefListStruct&             rls,
-//                    AtlasSequenceParameterSetRBSP& asps,
-//                    PCCBitstream&              bitstream );
+  // void  refListStruct( RefListStruct&             rls,
+  //                    AtlasSequenceParameterSetRBSP& asps,
+  //                    PCCBitstream&              bitstream );
 
   // 7.3.5.16 Patch frame data unit syntax
   void patchTileGroupDataUnit( PatchTileGroupDataUnit& ptgdu,
@@ -309,10 +333,10 @@ class PCCBitstreamDecoder {
                          PCCBitstream&         bitstream );
 
   // 7.3.5.x EOM patch data unit syntax
-  void eomPatchDataUnit(EOMPatchDataUnit&     epdu,
-                        PatchTileGroupHeader& ptgh,
-                        PCCContext&           context,
-                        PCCBitstream&         bitstream);
+  void eomPatchDataUnit( EOMPatchDataUnit&     epdu,
+                         PatchTileGroupHeader& ptgh,
+                         PCCContext&           context,
+                         PCCBitstream&         bitstream );
 
   // 7.3.5.21 Point local reconstruction syntax (OLD)
   void pointLocalReconstructionInformation( PointLocalReconstructionInformation& plri,
@@ -320,24 +344,23 @@ class PCCBitstreamDecoder {
                                             PCCBitstream&                        bitstream );
 
   // 7.3.5.21 Point local reconstruction syntax (NEW jkei: this went up)
-//  void pointLocalReconstructionInformation( AtlasSequenceParameterSetRBSP& asps,
-//                                            PCCContext&                    context,
-//                                            PCCBitstream&                  bitstream );
-//
-//  void pointLocalReconstructionData( PointLocalReconstructionData& plrd, PCCContext& context, PCCBitstream& bitstream );
-
+  //  void pointLocalReconstructionInformation( AtlasSequenceParameterSetRBSP& asps,
+  //                                            PCCContext&                    context,
+  //                                            PCCBitstream&                  bitstream );
+  //
+  //  void pointLocalReconstructionData( PointLocalReconstructionData& plrd, PCCContext& context, PCCBitstream&
+  //  bitstream );
 
   // 7.3.5.22 Supplemental enhancement information message syntax (jkei: this went up)
-  //void seiMessage( PatchDataGroup& pdg, PCCContext& context, PCCBitstream& bitstream );
+  // void seiMessage( PatchDataGroup& pdg, PCCContext& context, PCCBitstream& bitstream );
 
-
-// JR TODO: continue
+  // JR TODO: continue
 
   // C.2 Sample stream NAL unit syntax and semantics
   // C.2.1 Sample stream NAL header syntax
-  void sampleStreamNalHeader(  PCCBitstream& bitstream, SampleStreamNalUnit& sampleStreamNalUnit );
+  void sampleStreamVpccHeader( PCCBitstream& bitstream, SampleStreamNalUnit& sampleStreamNalUnit );
   // C.2.2 Sample stream NAL unit syntax
-  void sampleStreamNalUnit( PCCBitstream& bitstream, SampleStreamNalUnit& sampleStreamNalUnit ) ;
+  void sampleStreamNalUnit( PCCBitstream& bitstream, SampleStreamNalUnit& sampleStreamNalUnit );
   // 7.3.5 NAL unit syntax
   // 7.3.5.1 General NAL unit syntax
   void nalUnit( PCCBitstream& bitstream, NalUnit& nalUnit );
@@ -345,21 +368,24 @@ class PCCBitstreamDecoder {
   void nalUnitHeader( PCCBitstream& bitstream, NalUnit& nalUnit );
 
   // F.2.1 VUI parameters syntax
-  void vuiParameters( ) ;
+  void vuiParameters();
   // F.2.2 HRD parameters syntax
-  void hrdParameters( ) ;
+  void hrdParameters();
   // F.2.3 Sub-layer HRD parameters syntax
   void hrdSubLayerParameters();
 
-// JR TODO: remove 
+  // JR TODO: remove
   // 7.3.2.3 raw separate video data syntax - TODO: remove this
   void pcmSeparateVideoData( PCCContext& context, PCCBitstream& bitstream, uint8_t bitCount );
-
 
   int32_t prevPatchSizeU_;
   int32_t prevPatchSizeV_;
   int32_t predPatchIndex_;
   int32_t predFramePatchTileGroupLayerUnitIndex_;
+
+#ifdef BITSTREAM_TRACE  
+  FILE* traceFile_; 
+#endif
 };
 
 };  // namespace pcc

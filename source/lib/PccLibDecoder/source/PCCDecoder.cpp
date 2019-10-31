@@ -54,6 +54,36 @@ PCCDecoder::~PCCDecoder() {}
 
 void PCCDecoder::setParameters( PCCDecoderParameters params ) { params_ = params; }
 
+// JR: NEW
+int PCCDecoder::decode( SampleStreamNalUnit& ssnu, PCCContext& context, PCCGroupOfFrames& reconstructs ) {
+  int ret = 0;
+  if ( params_.nbThread_ > 0 ) { tbb::task_scheduler_init init( (int)params_.nbThread_ ); }
+  PCCBitstreamDecoder bitstreamDecoder;
+#ifdef BITSTREAM_TRACE  
+  PCCBitstream bitstream; 
+  bitstream.setTrace( true );
+  bitstream.openTrace( removeFileExtension( params_.compressedStreamPath_ ) + "_hls_decode.txt" );
+  bitstreamDecoder.setTraceFile( bitstream.getTraceFile() ); 
+#endif
+  if ( !bitstreamDecoder.decode( ssnu, context ) ) { return 0; }
+#ifdef BITSTREAM_TRACE
+  bitstream.closeTrace();
+#endif
+
+#ifdef CODEC_TRACE
+  setTrace( true );
+  openTrace( stringFormat( "%s_GOF%u_patch_decode.txt", removeFileExtension( params_.compressedStreamPath_ ).c_str(),
+                           context.getSps().getVpccParameterSetId() ) );
+#endif
+  createPatchFrameDataStructure( context );
+#ifdef CODEC_TRACE
+  closeTrace();
+#endif
+  ret |= decode( context, reconstructs );
+  return ret;
+}
+
+// JR: OLD
 int PCCDecoder::decode( PCCBitstream& bitstream, PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   int ret = 0;
   if ( params_.nbThread_ > 0 ) { tbb::task_scheduler_init init( (int)params_.nbThread_ ); }
