@@ -220,10 +220,10 @@ class PointLocalReconstructionData {
 class EOMPatchDataUnit { //jkei: EOM or Eom?
  public:
   EOMPatchDataUnit() :
-  epdu2DShiftU_( 0 ),
-  epdu2DShiftV_( 0 ),
-  epdu2DDeltaSizeU_( 0 ),
-  epdu2DDeltaSizeV_( 0 ),
+  epdu2dPosX_( 0 ),
+  epdu2dPosY_( 0 ),
+  epdu2dDeltaSizeX_( 0 ),
+  epdu2dDeltaSizeY_( 0 ),
   epduAssociatedPatcheCountMinus1_(0),
   epduPatchIndex_( 0 ),
   epduFrameIndex_( 0 )
@@ -234,10 +234,10 @@ class EOMPatchDataUnit { //jkei: EOM or Eom?
   ~EOMPatchDataUnit(){};
   EOMPatchDataUnit& operator=( const EOMPatchDataUnit& ) = default;
 
-  size_t              get2DShiftU() { return epdu2DShiftU_; }
-  size_t              get2DShiftV() { return epdu2DShiftV_; }
-  int64_t             get2DDeltaSizeU() { return epdu2DDeltaSizeU_; }
-  int64_t             get2DDeltaSizeV() { return epdu2DDeltaSizeV_; }
+  size_t              getEpdu2dPosX() { return epdu2dPosX_; }
+  size_t              getEpdu2dPosY() { return epdu2dPosY_; }
+  int64_t             getEpdu2dDeltaSizeX() { return epdu2dDeltaSizeX_; }
+  int64_t             getEpdu2dDeltaSizeY() { return epdu2dDeltaSizeY_; }
   int64_t             getEpduAssociatedPatchesCountMinus1() { return epduAssociatedPatcheCountMinus1_; }
   std::vector<size_t>&  getEpduAssociatedPatches() {return epduAssociatedPatches_;}
   size_t  getEpduAssociatedPatches(size_t index) {return epduAssociatedPatches_[index];}
@@ -255,16 +255,16 @@ class EOMPatchDataUnit { //jkei: EOM or Eom?
   void setEpduAssociatedPatches(size_t value, size_t index) {epduAssociatedPatches_[index]=value;}
   void setEpduEomPointsPerPatch(size_t value, size_t index)   {epduEomPointsPerPatch_[index]=value;}
   
-  void                set2DShiftU( size_t value ) { epdu2DShiftU_ = value; }
-  void                set2DShiftV( size_t value ) { epdu2DShiftV_ = value; }
-  void                set2DDeltaSizeU( int64_t value ) { epdu2DDeltaSizeU_ = value; }
-  void                set2DDeltaSizeV( int64_t value ) { epdu2DDeltaSizeV_ = value; }
+  void                setEpdu2dPosX( size_t value ) { epdu2dPosX_ = value; }
+  void                setEpdu2dPosY( size_t value ) { epdu2dPosY_ = value; }
+  void                setEpdu2dDeltaSizeX( int64_t value ) { epdu2dDeltaSizeX_ = value; }
+  void                setEpdu2dDeltaSizeY( int64_t value ) { epdu2dDeltaSizeY_ = value; }
 
  private:
-  size_t              epdu2DShiftU_;
-  size_t              epdu2DShiftV_;
-  int64_t             epdu2DDeltaSizeU_;
-  int64_t             epdu2DDeltaSizeV_;
+  size_t              epdu2dPosX_;
+  size_t              epdu2dPosY_;
+  int64_t             epdu2dDeltaSizeX_;
+  int64_t             epdu2dDeltaSizeY_;
   size_t              epduAssociatedPatcheCountMinus1_;
   size_t epduPatchIndex_;
   size_t epduFrameIndex_;
@@ -277,51 +277,51 @@ class RawPatchDataUnit {
  public:
   RawPatchDataUnit() :
       rpduPatchInRawVideoFlag_( false ),
-      rpdu2DShiftU_( 0 ),
-      rpdu2DShiftV_( 0 ),
-      rpdu2DDeltaSizeU_( 0 ),
-      rpdu2DDeltaSizeV_( 0 ),
-      rpdu3DShiftTangentAxis_( 0 ),
-      rpdu3DShiftBiTangentAxis_( 0 ),
-      rpdu3DShiftNormalAxis_( 0 ),
+      rpdu2dPosX_( 0 ),
+      rpdu2dPosY_( 0 ),
+      rpdu2dDeltaSizeX_( 0 ),
+      rpdu2dDeltaSizeY_( 0 ),
+      rpdu3dPosX_( 0 ),
+      rpdu3dPosY_( 0 ),
+      rpdu3dPosZ_( 0 ),
       rpduRawPoints_( 0 ),
       rpduPatchIndex_( 0 ),
       rpduFrameIndex_( 0 ) {}
   ~RawPatchDataUnit(){}
   RawPatchDataUnit& operator=( const RawPatchDataUnit& ) = default;
 
-  bool     getPatchInRawVideoFlag() { return rpduPatchInRawVideoFlag_; }
-  size_t   get2DShiftU() { return rpdu2DShiftU_; }
-  size_t   get2DShiftV() { return rpdu2DShiftV_; }
-  int64_t  get2DDeltaSizeU() { return rpdu2DDeltaSizeU_; }
-  int64_t  get2DDeltaSizeV() { return rpdu2DDeltaSizeV_; }
-  size_t   get3DShiftTangentAxis() { return rpdu3DShiftTangentAxis_; }
-  size_t   get3DShiftBiTangentAxis() { return rpdu3DShiftBiTangentAxis_; }
-  size_t   get3DShiftNormalAxis() { return rpdu3DShiftNormalAxis_; }
-  uint32_t getRawPoints() { return rpduRawPoints_; }
+  bool     getRpduPatchInRawVideoFlag() { return rpduPatchInRawVideoFlag_; }
+  size_t   getRpdu2dPosX() { return rpdu2dPosX_; }
+  size_t   getRpdu2dPosY() { return rpdu2dPosY_; }
+  int64_t  getRpdu2dDeltaSizeX() { return rpdu2dDeltaSizeX_; }
+  int64_t  getRpdu2dDeltaSizeY() { return rpdu2dDeltaSizeY_; }
+  size_t   getRpdu3dPosX() { return rpdu3dPosX_; }
+  size_t   getRpdu3dPosY() { return rpdu3dPosY_; }
+  size_t   getRpdu3dPosZ() { return rpdu3dPosZ_; }
+  uint32_t getRpduRawPoints() { return rpduRawPoints_; }
   size_t   getPatchIndex() { return rpduPatchIndex_; }
   size_t   getFrameIndex() { return rpduFrameIndex_; }
   void     setPatchIndex( size_t value ) { rpduPatchIndex_ = value; }
   void     setFrameIndex( size_t value ) { rpduFrameIndex_ = value; }
-  void     setPatchInRawVideoFlag( bool value ) { rpduPatchInRawVideoFlag_ = value; }
-  void     set2DShiftU( size_t value ) { rpdu2DShiftU_ = value; }
-  void     set2DShiftV( size_t value ) { rpdu2DShiftV_ = value; }
-  void     set2DDeltaSizeU( int64_t value ) { rpdu2DDeltaSizeU_ = value; }
-  void     set2DDeltaSizeV( int64_t value ) { rpdu2DDeltaSizeV_ = value; }
-  void     set3DShiftTangentAxis( size_t value ) { rpdu3DShiftTangentAxis_ = value; }
-  void     set3DShiftBiTangentAxis( size_t value ) { rpdu3DShiftBiTangentAxis_ = value; }
-  void     set3DShiftNormalAxis( size_t value ) { rpdu3DShiftNormalAxis_ = value; }
-  void     setRawPoints( uint32_t value ) { rpduRawPoints_ = value; }
+  void     setRpduPatchInRawVideoFlag( bool value ) { rpduPatchInRawVideoFlag_ = value; }
+  void     setRpdu2dPosX( size_t value ) { rpdu2dPosX_ = value; }
+  void     setRpdu2dPosY( size_t value ) { rpdu2dPosY_ = value; }
+  void     setRpdu2dDeltaSizeX( int64_t value ) { rpdu2dDeltaSizeX_ = value; }
+  void     setRpdu2dDeltaSizeY( int64_t value ) { rpdu2dDeltaSizeY_ = value; }
+  void     setRpdu3dPosX( size_t value ) { rpdu3dPosX_ = value; }
+  void     setRpdu3dPosY( size_t value ) { rpdu3dPosY_ = value; }
+  void     setRpdu3dPosZ( size_t value ) { rpdu3dPosZ_ = value; }
+  void     setRpduRawPoints( uint32_t value ) { rpduRawPoints_ = value; }
 
  private:
   bool     rpduPatchInRawVideoFlag_;
-  size_t   rpdu2DShiftU_;
-  size_t   rpdu2DShiftV_;
-  int64_t  rpdu2DDeltaSizeU_;
-  int64_t  rpdu2DDeltaSizeV_;
-  size_t   rpdu3DShiftTangentAxis_;
-  size_t   rpdu3DShiftBiTangentAxis_;
-  size_t   rpdu3DShiftNormalAxis_;
+  size_t   rpdu2dPosX_;
+  size_t   rpdu2dPosY_;
+  int64_t  rpdu2dDeltaSizeX_;
+  int64_t  rpdu2dDeltaSizeY_;
+  size_t   rpdu3dPosX_;
+  size_t   rpdu3dPosY_;
+  size_t   rpdu3dPosZ_;
   uint32_t rpduRawPoints_;
   size_t   rpduPatchIndex_;
   size_t   rpduFrameIndex_;
@@ -332,7 +332,7 @@ class InterPatchDataUnit {
  public:
   InterPatchDataUnit() :
   ipduRefIndex_( 0 ),
-  ipdupatchIndex_( 0 ),
+  ipduRefpatchIndex_( 0 ),
   ipdu2dPosX_( 0 ),
   ipdu2dPosY_( 0 ),
   ipdu2dDeltaSizeX_( 0 ),
@@ -348,7 +348,7 @@ class InterPatchDataUnit {
   
   PointLocalReconstructionData& getPointLocalReconstructionData() { return pointLocalReconstructionData_; }
   int64_t getIpduRefIndex() { return ipduRefIndex_; }
-  int64_t getIpdupatchIndex() { return ipdupatchIndex_; }
+  int64_t getIpduRefPatchIndex() { return ipduRefpatchIndex_; }
   int64_t getIpdu2dPosX() { return ipdu2dPosX_; }
   int64_t getIpdu2dPosY() { return ipdu2dPosY_; }
   int64_t getIpdu2dDeltaSizeX() { return ipdu2dDeltaSizeX_; }
@@ -359,7 +359,7 @@ class InterPatchDataUnit {
   int64_t getIpdu3dPosDeltaMaxZ() { return ipdu3dPosDeltaMaxZ_; }
   
   void setIpduRefIndex( int64_t value ) { ipduRefIndex_ = value; }
-  void setIpdupatchIndex( int64_t value ) { ipdupatchIndex_ = value; }
+  void setIpduRefPatchIndex( int64_t value ) { ipduRefpatchIndex_ = value; }
   void setIpdu2dPosX( int64_t value ) { ipdu2dPosX_ = value; }
   void setIpdu2dPosY( int64_t value ) { ipdu2dPosY_ = value; }
   void setIpdu2dDeltaSizeX( int64_t value ) { ipdu2dDeltaSizeX_ = value; }
@@ -378,7 +378,7 @@ class InterPatchDataUnit {
 
  private:
   int64_t ipduRefIndex_;
-  int64_t ipdupatchIndex_;
+  int64_t ipduRefpatchIndex_;
   int64_t ipdu2dPosX_;
   int64_t ipdu2dPosY_;
   int64_t ipdu2dDeltaSizeX_;
@@ -606,30 +606,30 @@ class PatchDataUnit {
   void                          setLodScaleY      (uint8_t value ) { pduLodScaleY_ = value; }
   void setPointLocalReconstructionData( PointLocalReconstructionData value ) { pointLocalReconstructionData_ = value; }
 
-  //jkei: remove these ones later..
-   size_t                        get2DShiftU() { return pdu2dPosX_; }
-   size_t                        get2DShiftV() { return pdu2dPosY_; }
-   int64_t                       get2DDeltaSizeU() { return pdu2dDeltaSizeX_; }
-   int64_t                       get2DDeltaSizeV() { return pdu2dDeltaSizeY_; }
-   size_t                        get3DShiftTangentAxis() { return pdu3dPosX_; }
-   size_t                        get3DShiftBiTangentAxis() { return pdu3dPosY_; }
-   size_t                        get3DShiftMinNormalAxis() { return pdu3dPosMinZ_; }
-   size_t                        get3DShiftDeltaMaxNormalAxis() { return pdu3dPosDeltaMaxZ_; }
-   size_t                      getProjectPlane() { return pduProjectionId_; }
+//jkei: remove these ones later..
+//   size_t                        get2DShiftU() { return pdu2dPosX_; }
+//   size_t                        get2DShiftV() { return pdu2dPosY_; }
+//   int64_t                       get2DDeltaSizeU() { return pdu2dDeltaSizeX_; }
+//   int64_t                       get2DDeltaSizeV() { return pdu2dDeltaSizeY_; }
+//   size_t                        get3DShiftTangentAxis() { return pdu3dPosX_; }
+//   size_t                        get3DShiftBiTangentAxis() { return pdu3dPosY_; }
+//   size_t                        get3DShiftMinNormalAxis() { return pdu3dPosMinZ_; }
+//   size_t                        get3DShiftDeltaMaxNormalAxis() { return pdu3dPosDeltaMaxZ_; }
+   size_t                        getProjectPlane() { return pduProjectionId_; }
    bool                          get45DegreeProjectionPresentFlag() { return pdu45DegreeProjectionPresentFlag_; }
    uint8_t                       get45DegreeProjectionRotationAxis() { return pdu45DegreeProjectionRotationAxis_; }
-   size_t                        getPduPatchIndex() { return pduPatchIndex_; }
-   size_t                        getPduFrameIndex() { return pduFrameIndex_; }
-   void                          setPduPatchIndex( size_t value ) { pduPatchIndex_ = value; }
-   void                          setPduFrameIndex( size_t value ) { pduFrameIndex_ = value; }
-   void                          set2DShiftU( size_t value ) { pdu2dPosX_ = value; }
-   void                          set2DShiftV( size_t value ) { pdu2dPosY_ = value; }
-   void                          set2DDeltaSizeU( int64_t value ) { pdu2dDeltaSizeX_ = value; }
-   void                          set2DDeltaSizeV( int64_t value ) { pdu2dDeltaSizeY_ = value; }
-   void                          set3DShiftTangentAxis( size_t value ) { pdu3dPosX_ = value; }
-   void                          set3DShiftBiTangentAxis( size_t value ) { pdu3dPosY_ = value; }
-   void                          set3DShiftMinNormalAxis( size_t value ) { pdu3dPosMinZ_ = value; }
-   void                          set3DShiftDeltaMaxNormalAxis( size_t value ) { pdu3dPosDeltaMaxZ_ = value; }
+//   size_t                        getPduPatchIndex() { return pduPatchIndex_; }
+//   size_t                        getPduFrameIndex() { return pduFrameIndex_; }
+//   void                          setPduPatchIndex( size_t value ) { pduPatchIndex_ = value; }
+//   void                          setPduFrameIndex( size_t value ) { pduFrameIndex_ = value; }
+//   void                          set2DShiftU( size_t value ) { pdu2dPosX_ = value; }
+//   void                          set2DShiftV( size_t value ) { pdu2dPosY_ = value; }
+//   void                          set2DDeltaSizeU( int64_t value ) { pdu2dDeltaSizeX_ = value; }
+//   void                          set2DDeltaSizeV( int64_t value ) { pdu2dDeltaSizeY_ = value; }
+//   void                          set3DShiftTangentAxis( size_t value ) { pdu3dPosX_ = value; }
+//   void                          set3DShiftBiTangentAxis( size_t value ) { pdu3dPosY_ = value; }
+//   void                          set3DShiftMinNormalAxis( size_t value ) { pdu3dPosMinZ_ = value; }
+//   void                          set3DShiftDeltaMaxNormalAxis( size_t value ) { pdu3dPosDeltaMaxZ_ = value; }
    void                          setProjectPlane( size_t value ) { pduProjectionId_ = value; }
    void set45DegreeProjectionPresentFlag( bool value ) { pdu45DegreeProjectionPresentFlag_ = value; }
    void set45DegreeProjectionRotationAxis( uint8_t value ) { pdu45DegreeProjectionRotationAxis_ = value; }
@@ -900,6 +900,8 @@ public:
   atghRefAtlasFrameListIdx_( 0 ),
   atghPosMinZQuantizer_( 0 ),
   atghPosDeltaMaxZQuantizer_( 0 ),
+  atghPatchSizeXinfoQuantizer_( 0 ),
+  atghPatchSizeYinfoQuantizer_( 0 ),
   atghRaw3dPosAxisBitCountMinus1_( 0 ),
   atghNumRefIdxActiveOverrideFlag_( 0 ),
   atghNumRefdxActiveMinus1_( 0 ){
@@ -934,9 +936,16 @@ public:
   uint8_t  getAtghRefAtlasFrameListIdx() { return atghRefAtlasFrameListIdx_; }
   uint8_t  getAtghPosMinZQuantizer() { return atghPosMinZQuantizer_; }
   uint8_t  getAtghPosDeltaMaxZQuantizer() { return atghPosDeltaMaxZQuantizer_; }
+  uint8_t  getAtghPatchSizeXinfoQuantizer(){ return atghPatchSizeXinfoQuantizer_;}
+  uint8_t  getAtghPatchSizeYinfoQuantizer(){ return atghPatchSizeYinfoQuantizer_;}
+  
   uint8_t  getAtghRaw3dPosAxisBitCountMinus1() { return atghRaw3dPosAxisBitCountMinus1_; }
   bool     getAtghNumRefIdxActiveOverrideFlag() { return atghNumRefIdxActiveOverrideFlag_; }
   uint8_t  getAtghNumRefdxActiveMinus1() { return atghNumRefdxActiveMinus1_; }
+  std::vector<bool>& getAtghAdditionalAfocLsbPresentFlag(){ return atghAdditionalAfocLsbPresentFlag_; }
+  std::vector<uint8_t>& getAtghAdditionalAfocLsbVal(){ return atghAdditionalAfocLsbVal_; }
+  bool getAtghAdditionalAfocLsbPresentFlag(size_t idx){ return atghAdditionalAfocLsbPresentFlag_[idx]; }
+  uint8_t getAtghAdditionalAfocLsbVal(size_t idx){ return atghAdditionalAfocLsbVal_[idx]; }
   
   void setAtghAtlasFrameParameterSetId( uint8_t value ) { atghAtlasFrameParameterSetId_ = value; }
   void setAtghAddress( uint32_t value ) { atghAddress_ = value; }
@@ -946,9 +955,16 @@ public:
   void setAtghRefAtlasFrameListIdx( uint8_t value ) { atghRefAtlasFrameListIdx_ = value; }
   void setAtghPosMinZQuantizer( uint8_t value ) { atghPosMinZQuantizer_ = value; }
   void setAtghPosDeltaMaxZQuantizer( uint8_t value ) { atghPosDeltaMaxZQuantizer_ = value; }
+  void setAtghPatchSizeXinfoQuantizer(uint8_t value){ atghPatchSizeXinfoQuantizer_=value;}
+  void setAtghPatchSizeYinfoQuantizer(uint8_t value){ atghPatchSizeYinfoQuantizer_=value;}
+  
   void setAtghRaw3dPosAxisBitCountMinus1( uint8_t value ) { atghRaw3dPosAxisBitCountMinus1_ = value; }
   void setAtghNumRefIdxActiveOverrideFlag( bool value ) { atghNumRefIdxActiveOverrideFlag_ = value; }
   void setAtghNumRefdxActiveMinus1( uint8_t value ) { atghNumRefdxActiveMinus1_ = value; }
+  void setAtghAdditionalAfocLsbPresentFlag(std::vector<bool>& value){atghAdditionalAfocLsbPresentFlag_= value;}
+  void setAtghAdditionalAfocLsbVal(std::vector<uint8_t>& value){atghAdditionalAfocLsbVal_= value;}
+  void setAtghAdditionalAfocLsbPresentFlag(size_t idx, bool value){atghAdditionalAfocLsbPresentFlag_[idx]= value;}
+  void setAtghAdditionalAfocLsbVal(size_t idx, uint8_t value){atghAdditionalAfocLsbVal_[idx]= value;}
   
 private:
   uint8_t   atghFrameIndex_;
@@ -960,6 +976,8 @@ private:
   uint8_t   atghRefAtlasFrameListIdx_;
   uint8_t   atghPosMinZQuantizer_;
   uint8_t   atghPosDeltaMaxZQuantizer_;
+  uint8_t   atghPatchSizeXinfoQuantizer_;
+  uint8_t   atghPatchSizeYinfoQuantizer_;
   uint8_t   atghRaw3dPosAxisBitCountMinus1_;
   bool      atghNumRefIdxActiveOverrideFlag_;
   uint8_t   atghNumRefdxActiveMinus1_;
@@ -978,16 +996,16 @@ class AtlasTileGroupLayerRbsp{
   AtlasTileGroupLayerRbsp& operator=( const AtlasTileGroupLayerRbsp& ) = default;
 
   uint8_t                 getFrameIndex() { return frameIndex_; }
-  AtlasTileGroupHeader&   getPatchTileGroupHeader() { return atlasTileGroupHeader_; }
-  AtlasTileGroupDataUnit& getPatchTileGroupDataUnit() { return atlasTileGroupDataUnit_; }
+  AtlasTileGroupHeader&   getAtlasTileGroupHeader() { return atlasTileGroupHeader_; }
+  AtlasTileGroupDataUnit& getAtlasTileGroupDataUnit() { return atlasTileGroupDataUnit_; }
 
   void setFrameIndex( uint8_t value ) { frameIndex_ = value; }
-  void setPatchTileGroupHeader( AtlasTileGroupHeader value ) { atlasTileGroupHeader_ = value; }
-  void setPatchTileGroupDataUnit( AtlasTileGroupDataUnit value ) { atlasTileGroupDataUnit_ = value; }
+  void setAtlasTileGroupHeader( AtlasTileGroupHeader value ) { atlasTileGroupHeader_ = value; }
+  void setAtlasTileGroupDataUnit( AtlasTileGroupDataUnit value ) { atlasTileGroupDataUnit_ = value; }
 
  private:
   uint8_t                frameIndex_;
-  AtlasTileGroupHeader atlasTileGroupHeader_;
+  AtlasTileGroupHeader   atlasTileGroupHeader_;
   AtlasTileGroupDataUnit atlasTileGroupDataUnit_;
 };
 
@@ -1353,8 +1371,8 @@ class AtlasFrameParameterSetRbsp{
   bool getLodModeEnableFlag() { return afpsLodModeEnableFlag_;}
   void setLodModeEnableFlag(bool value) { afpsLodModeEnableFlag_=value;}
   
-  uint8_t getPatchFrameParameterSetId() { return afpsAtlasFrameParameterSetId_; }
-  uint8_t getPatchVpccParameterSetId() { return afpsAtlasSequenceParameterSetId_; }
+  uint8_t getAtlasFrameParameterSetId() { return afpsAtlasFrameParameterSetId_; }
+  uint8_t getAtlasSequenceParameterSetId() { return afpsAtlasSequenceParameterSetId_; }
   uint8_t getAfpsNumRefIdxDefaultActiveMinus1() { return afpsNumRefIdxDefaultActiveMinus1_; }
   uint8_t getAfpsAdditionalLtAfocLsbLen() { return afpsAdditionalLtAfocLsbLen_; }
   uint8_t getAfps2dPosXBitCountMinus1() { return afps2dPosXBitCountMinus1_; }
@@ -1368,8 +1386,8 @@ class AtlasFrameParameterSetRbsp{
   uint8_t getAfpsExtensionPresentFlag() { return afpsExtensionPresentFlag_; }
   bool    getAfpsExtensionDataFlag() { return afpsExtensionDataFlag_; }
 
-  void setPatchFrameParameterSetId(uint8_t value) { afpsAtlasFrameParameterSetId_=value; }
-  void setPatchVpccParameterSetId(uint8_t value) { afpsAtlasSequenceParameterSetId_=value; }
+  void setAtlasFrameParameterSetId(uint8_t value) { afpsAtlasFrameParameterSetId_=value; }
+  void setAtlasSequenceParameterSetId(uint8_t value) { afpsAtlasSequenceParameterSetId_=value; }
   void setAfpsNumRefIdxDefaultActiveMinus1( uint8_t value ) { afpsNumRefIdxDefaultActiveMinus1_ = value; }
   void setAfpsAdditionalLtAfocLsbLen( uint8_t value ) { afpsAdditionalLtAfocLsbLen_ = value; }
   void setAfps2dPosXBitCountMinus1( uint8_t value ) { afps2dPosXBitCountMinus1_ = value; }

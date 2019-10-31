@@ -7145,8 +7145,8 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
       pid.allocate( ai.getAttributeCount() );
       TRACE_CODEC( "patch %lu / %lu: Intra \n", patchIndex, patches.size() );
       auto& pdu = pid.getPatchDataUnit();
-      pdu.set2DShiftU( patch.getU0() );
-      pdu.set2DShiftV( patch.getV0() );
+      pdu.setPdu2dPosX( patch.getU0() );
+      pdu.setPdu2dPosY( patch.getV0() );
       bool lodEnableFlag = (patch.getLodScaleX()>1 || patch.getLodScaleY()>1);
       //PatchLoDScaleX[ p ] = pdu_lod_enable_flag[ p ] ? pdu_lod_scale_x_minus1[ p ] + 1: 1
       //PatchLoDScaleY[ p ] = pdu_lod_enable_flag[ p ] ? (pdu_lod_scale_y[ p ] + (pdu_lod_scale_x_minus1[ p ] > 0) ? 1 : 2) : 1
@@ -7156,34 +7156,33 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
         pdu.setLodScaleY(patch.getLodScaleY() - (patch.getLodScaleX()>1?1:2) );
       }
 
-      pdu.set3DShiftTangentAxis( patch.getU1() );
-      pdu.set3DShiftBiTangentAxis( patch.getV1() );
+      pdu.setPdu3dPosX( patch.getU1() );
+      pdu.setPdu3dPosY( patch.getV1() );
       pdu.setProjectPlane( patch.getProjectionMode() * 3 + size_t( patch.getNormalAxis() ) );
-      pdu.set2DDeltaSizeU( patch.getSizeU0() - prevSizeU0 );
-      pdu.set2DDeltaSizeV( patch.getSizeV0() - prevSizeV0 );
+      pdu.setPdu2dDeltaSizeX( patch.getSizeU0() - prevSizeU0 );
+      pdu.setPdu2dDeltaSizeY( patch.getSizeV0() - prevSizeV0 );
       pdu.setPduOrientationIndex( patch.getPatchOrientation() );
       pdu.set45DegreeProjectionPresentFlag( patch.getAxisOfAdditionalPlane() == 0 ? 0 : 1 );
       pdu.set45DegreeProjectionRotationAxis( patch.getAxisOfAdditionalPlane() );
       const size_t max3DCoordinate = 1 << ( gi.getGeometry3dCoordinatesBitdepthMinus1() + 1 );
       if ( pdu.getProjectPlane() < 3 || !params_.absoluteD1_ ) {
-        pdu.set3DShiftMinNormalAxis( patch.getD1() / minLevel );
+        pdu.setPdu3dPosMinZ( patch.getD1() / minLevel );
       } else {
         if ( pfps.getProjection45DegreeEnableFlag() == 0 ) {
-          pdu.set3DShiftMinNormalAxis( ( max3DCoordinate - patch.getD1() ) / minLevel );
+          pdu.setPdu3dPosMinZ( ( max3DCoordinate - patch.getD1() ) / minLevel );
         } else {
-          pdu.set3DShiftMinNormalAxis( ( ( max3DCoordinate << 1 ) - patch.getD1() ) / minLevel );
+          pdu.setPdu3dPosMinZ( ( ( max3DCoordinate << 1 ) - patch.getD1() ) / minLevel );
         }
       }
       prevSizeU0     = patch.getSizeU0();
       prevSizeV0     = patch.getSizeV0();
       size_t quantDD = patch.getSizeD() == 0 ? 0 : ( ( patch.getSizeD() - 1 ) / minLevel + 1 );
-      pdu.set3DShiftDeltaMaxNormalAxis( quantDD );
+      pdu.setPdu3dPosDeltaMaxZ( quantDD );
       TRACE_CODEC( "patch UV0 %4lu %4lu UV1 %4lu %4lu D1=%4lu S=%4lu %4lu %4lu(%4lu) P=%lu O=%lu A=%u%u%u Lod =(%zu) %lu,%lu \n",
-                  patch.getU0(), patch.getV0(), patch.getU1(), patch.getV1(), patch.getD1(), patch.getSizeU0(),
-                  patch.getSizeV0(), patch.getSizeD(), pdu.get3DShiftDeltaMaxNormalAxis(), patch.getProjectionMode(),
-                  patch.getPatchOrientation(), patch.getNormalAxis(), patch.getTangentAxis(), patch.getBitangentAxis(),
-                  (size_t)lodEnableFlag,
-                  patch.getLodScaleX(), patch.getLodScaleY() );
+                   patch.getU0(), patch.getV0(), patch.getU1(), patch.getV1(), patch.getD1(), patch.getSizeU0(),
+                   patch.getSizeV0(), patch.getSizeD(), pdu.getPdu3dPosDeltaMaxZ(), patch.getProjectionMode(),
+                   patch.getPatchOrientation(), patch.getNormalAxis(), patch.getTangentAxis(), patch.getBitangentAxis(),
+                   (size_t)lodEnableFlag, patch.getLodScaleX(), patch.getLodScaleY() );
 
       auto&        patchTemp = patches[patchIndex];
       PCCMetadata& metadata  = patchTemp.getPatchLevelMetadata();
@@ -7210,22 +7209,22 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
       pid.allocate( ai.getAttributeCount() );
       size_t totalPatchCount = patches.size()+numberOfPcmPatches+frame.getEomPatches().size();
       TRACE_CODEC( "patch %lu / %lu: raw \n", patches.size()+mpsPatchIndex, totalPatchCount );
-      ppdu.set2DShiftU( missedPointsPatch.u0_ );
-      ppdu.set2DShiftV( missedPointsPatch.v0_ );
-      ppdu.set2DDeltaSizeU( missedPointsPatch.sizeU0_ );
-      ppdu.set2DDeltaSizeV( missedPointsPatch.sizeV0_ );
+      ppdu.setRpdu2dPosX( missedPointsPatch.u0_ );
+      ppdu.setRpdu2dPosY( missedPointsPatch.v0_ );
+      ppdu.setRpdu2dDeltaSizeX( missedPointsPatch.sizeU0_ );
+      ppdu.setRpdu2dDeltaSizeY( missedPointsPatch.sizeV0_ );
       if ( ptgh.getRaw3dShiftBitCountPresentFlag() ) {
-        ppdu.set3DShiftTangentAxis( missedPointsPatch.u1_ );
-        ppdu.set3DShiftBiTangentAxis( missedPointsPatch.v1_ );
-        ppdu.set3DShiftNormalAxis( missedPointsPatch.d1_ );
+        ppdu.setRpdu3dPosX( missedPointsPatch.u1_ );
+        ppdu.setRpdu3dPosY( missedPointsPatch.v1_ );
+        ppdu.setRpdu3dPosZ( missedPointsPatch.d1_ );
       } else {
         const size_t pcmU1V1D1Level = 1 << ( gi.getGeometryNominal2dBitdepthMinus1() );
-        ppdu.set3DShiftTangentAxis( missedPointsPatch.u1_ / pcmU1V1D1Level );
-        ppdu.set3DShiftBiTangentAxis( missedPointsPatch.v1_ / pcmU1V1D1Level );
-        ppdu.set3DShiftNormalAxis( missedPointsPatch.d1_ / pcmU1V1D1Level );
+        ppdu.setRpdu3dPosX( missedPointsPatch.u1_ / pcmU1V1D1Level );
+        ppdu.setRpdu3dPosY( missedPointsPatch.v1_ / pcmU1V1D1Level );
+        ppdu.setRpdu3dPosZ( missedPointsPatch.d1_ / pcmU1V1D1Level );
       }
-      ppdu.setPatchInRawVideoFlag( sps.getRawSeparateVideoPresentFlag( 0 ) );
-      ppdu.setRawPoints( missedPointsPatch.getNumberOfMps() );
+      ppdu.setRpduPatchInRawVideoFlag( sps.getRawSeparateVideoPresentFlag( 0 ) );
+      ppdu.setRpduRawPoints( missedPointsPatch.getNumberOfMps() );
       TRACE_CODEC( "Raw :UV = %lu %lu  size = %lu %lu  uvd1 = %lu %lu %lu numPoints = %lu ocmRes = %lu \n",
                    missedPointsPatch.u0_, missedPointsPatch.v0_, missedPointsPatch.sizeU0_, missedPointsPatch.sizeV0_,
                    missedPointsPatch.u1_, missedPointsPatch.v1_, missedPointsPatch.d1_,
@@ -7244,10 +7243,10 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
       size_t totalPatchCount = patches.size()+pcmPatches.size()+numberOfEomPatches;
       TRACE_CODEC( "patch %lu / %lu: EOM \n", patches.size()+pcmPatches.size()+eomPatchIndex, totalPatchCount );
 #endif
-      epdu.set2DShiftU( eomPatch.u0_ );
-      epdu.set2DShiftV( eomPatch.v0_ );
-      epdu.set2DDeltaSizeU( eomPatch.sizeU_ );
-      epdu.set2DDeltaSizeV( eomPatch.sizeV_ );
+      epdu.setEpdu2dPosX( eomPatch.u0_ );
+      epdu.setEpdu2dPosY( eomPatch.v0_ );
+      epdu.setEpdu2dDeltaSizeX( eomPatch.sizeU_ );
+      epdu.setEpdu2dDeltaSizeY( eomPatch.sizeV_ );
       epdu.setEpduAssociatedPatchesCountMinus1(eomPatch.memberPatches.size()-1);
       for(size_t i=0; i<eomPatch.memberPatches.size();i++){
         epdu.setEpduAssociatedPatches(eomPatch.memberPatches[i], i);

@@ -213,14 +213,15 @@ enum PCCPatchModeP {
   PATCH_MODE_P_SKIP = 0,
   PATCH_MODE_P_INTRA,
   PATCH_MODE_P_INTER,
+  PATCH_MODE_P_MERGE,
   PATCH_MODE_P_Raw,
   PATCH_MODE_P_EOM,
   PATCH_MODE_P_END = 14
 };
 
 enum PCCPatchType { P_TYPE_INTRA = 0, P_TYPE_INTER, P_TYPE_SKIP, P_TYPE_END };
-
-  enum { COLOURFORMAT420=0, COLOURFORMAT444 = 1};
+enum PCCTILEGROUP { P_TILE_GRP = 0, SKIP_TILE_GRP, I_TILE_GRP};
+enum { COLOURFORMAT420=0, COLOURFORMAT444 = 1};
 
 const size_t IntermediateLayerIndex = 100;
 const size_t eddLayerIndex          = 10;
