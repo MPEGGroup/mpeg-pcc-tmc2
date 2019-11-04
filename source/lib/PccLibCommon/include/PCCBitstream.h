@@ -35,7 +35,7 @@
 #define PCCBitstream_h
 
 #include "PCCCommon.h"
-#include "PCCMetadata.h"
+//#include "PCCMetadata.h"
 
 namespace pcc {
 
@@ -159,6 +159,7 @@ class PCCBitstream {
   uint64_t&           size() { return position_.bytes; }
   uint64_t            capacity() { return data_.size(); }
   PCCBistreamPosition getPosition() { return position_; }
+	void                setPosition( PCCBistreamPosition& val ) { position_ = val; }
   PCCBitstream&       operator+=( const uint64_t size ) {
     position_.bytes += size;
     return *this;

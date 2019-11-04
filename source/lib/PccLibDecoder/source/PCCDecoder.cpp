@@ -55,7 +55,7 @@ PCCDecoder::~PCCDecoder() {}
 void PCCDecoder::setParameters( PCCDecoderParameters params ) { params_ = params; }
 
 // JR: NEW
-int PCCDecoder::decode( SampleStreamNalUnit& ssnu, PCCContext& context, PCCGroupOfFrames& reconstructs ) {
+int PCCDecoder::decode( /*SampleStreamNalUnit& ssnu*/SampleStreamVpccUnit& ssvpccu, PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   int ret = 0;
   if ( params_.nbThread_ > 0 ) { tbb::task_scheduler_init init( (int)params_.nbThread_ ); }
   PCCBitstreamDecoder bitstreamDecoder;
@@ -65,7 +65,7 @@ int PCCDecoder::decode( SampleStreamNalUnit& ssnu, PCCContext& context, PCCGroup
   bitstream.openTrace( removeFileExtension( params_.compressedStreamPath_ ) + "_hls_decode.txt" );
   bitstreamDecoder.setTraceFile( bitstream.getTraceFile() ); 
 #endif
-  if ( !bitstreamDecoder.decode( ssnu, context ) ) { return 0; }
+  if ( !bitstreamDecoder.decode( /*ssnu*/ ssvpccu, context ) ) { return 0; }
 #ifdef BITSTREAM_TRACE
   bitstream.closeTrace();
 #endif
@@ -492,7 +492,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
   context.setOccupancyPackingBlockSize( pow( 2, psps.getLog2PatchPackingBlockSize() ) );
   context.resize( pdg.getPatchTileGroupLayerUnitSize() );
   TRACE_CODEC( "frameCount = %u \n", pdg.getPatchTileGroupLayerUnitSize() );
-  setFrameMetadata( context.getGOFLevelMetadata(), pdg.getPatchFrameGeometryParameterSet( 0 ) );
+
   setPointLocalReconstruction( context, sps );
   size_t indexPrevFrame = 0;
   context.setMPGeoWidth( 64 );
@@ -501,11 +501,10 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
   context.setMPAttHeight( 0 );
   for ( int i = 0; i < pdg.getPatchTileGroupLayerUnitSize(); i++ ) {
     auto& frame                          = context.getFrame( i );
-    auto& frameLevelMetadataEnabledFlags = context.getGOFLevelMetadata().getLowerLevelMetadataEnabledFlags();
+
     frame.setIndex( i );
     frame.setWidth( sps.getFrameWidth(atlasIndex) );
     frame.setHeight( sps.getFrameHeight(atlasIndex) );
-    frame.getFrameLevelMetadata().getMetadataEnabledFlags() = frameLevelMetadataEnabledFlags;
     frame.setLosslessGeo( sps.getLosslessGeo() );
     frame.setLosslessGeo444( sps.getLosslessGeo444() );
     frame.setSurfaceThickness( sps.getSurfaceThickness() );
@@ -557,8 +556,6 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
   eomPatches.reserve(numEomPatch);
   patches.resize( numNonRawPatch );
   pcmPatches.resize( numRawPatches );
-  frame.getFrameLevelMetadata().setMetadataType( METADATA_FRAME );
-  frame.getFrameLevelMetadata().setIndex( frame.getIndex() );
 
   TRACE_CODEC( "Patches size                        = %lu \n", patches.size() );
   TRACE_CODEC( "non-regular Patches(pcm, eom)     = %lu, %lu \n",
@@ -631,12 +628,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
                    patch.getSizeV0(), patch.getSizeD(), pdu.getPdu3dPosDeltaMaxZ(), patch.getProjectionMode(),
                    patch.getPatchOrientation(), patch.getNormalAxis(), patch.getTangentAxis(), patch.getBitangentAxis(),
                    (size_t)lodEnableFlag, patch.getLodScaleX(), patch.getLodScaleY() );
-      auto& patchLevelMetadataEnabledFlags = frame.getFrameLevelMetadata().getLowerLevelMetadataEnabledFlags();
-      auto& metadata                       = patch.getPatchLevelMetadata();
-      metadata.setIndex( patchIndex );
-      metadata.setMetadataType( METADATA_PATCH );
-      metadata.getMetadataEnabledFlags() = patchLevelMetadataEnabledFlags;
-      setPatchMetadata( metadata, pdg.getGeometryPatchParameterSet( 0 ) );
+
       patch.allocOneLayerData();
       if ( sps.getPointLocalReconstructionEnabledFlag() ) {
         setPointLocalReconstructionData( frame, patch, pdu.getPointLocalReconstructionData(),
@@ -646,57 +638,59 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
                   PCCPatchModeP( ptgdu.getPatchMode( patchIndex ) ) == PATCH_MODE_P_INTER ) ) {
       auto& patch                    = patches[patchIndex];
       patch.getOccupancyResolution() = context.getOccupancyPackingBlockSize();
-      auto& dpdu                     = pid.getDeltaPatchDataUnit();
-      patch.setBestMatchIdx( ( int32_t )( dpdu.getDeltaPatchIdx() + predIndex ) );
+      auto& ipdu                     = pid.getInterPatchDataUnit();
+      
       TRACE_CODEC( "patch %lu / %lu: Inter \n", patchIndex, patches.size() );
+      TRACE_CODEC("IPDU: refAtlasFrame= %d refPatchIdx = %d pos2DXY = %ld %ld pos3DXYZW = %ld %ld %ld %ld size2D = %ld %ld \n",
+                  ipdu.getIpduRefIndex(), ipdu.getIpduRefPatchIndex(),
+                  ipdu.getIpdu2dPosX(), ipdu.getIpdu2dPosY(),
+                  ipdu.getIpdu3dPosX(), ipdu.getIpdu3dPosY(),ipdu.getIpdu3dPosMinZ(), ipdu.getIpdu3dPosDeltaMaxZ(),
+                  ipdu.getIpdu2dDeltaSizeX(), ipdu.getIpdu2dDeltaSizeY());
 
-      TRACE_CODEC(
-          "DPDU:DeltaIdx = %d ShiftUV = %ld %ld ShiftAxis = %ld %ld %ld Size = %ld %ld Idx = %ld + %ld = %zu \n",
-          dpdu.getDeltaPatchIdx(), dpdu.get2DDeltaShiftU(), dpdu.get2DDeltaShiftV(), dpdu.get3DDeltaShiftTangentAxis(),
-          dpdu.get3DDeltaShiftBiTangentAxis(), dpdu.get3DDeltaShiftMinNormalAxis(), dpdu.get2DDeltaSizeU(),
-          dpdu.get2DDeltaSizeV(), dpdu.getDeltaPatchIdx(), predIndex, (size_t)patch.getBestMatchIdx() );
+      
+      
+      
+      patch.setBestMatchIdx( ( int32_t )( ipdu.getIpduRefPatchIndex() + predIndex ) );
+      predIndex += ipdu.getIpduRefPatchIndex() + 1;
+      const auto& refPatch = prePatches[patch.getBestMatchIdx()];
+      TRACE_CODEC( "\trefPatch: Idx = %lu UV0 = %lu %lu  UV1 = %lu %lu Size = %lu %lu %lu  Lod = %u,%u\n", patch.getBestMatchIdx(),
+                          refPatch.getU0(), refPatch.getV0(), refPatch.getU1(), refPatch.getV1(), refPatch.getSizeU0(),
+                          refPatch.getSizeV0(), refPatch.getSizeD(), refPatch.getLodScaleX(), refPatch.getLodScaleY() );
 
-      predIndex += dpdu.getDeltaPatchIdx() + 1;
-      const auto& prePatch = prePatches[patch.getBestMatchIdx()];
-
-      TRACE_CODEC( "PrevPatch: Idx = %lu UV0 = %lu %lu  UV1 = %lu %lu Size = %lu %lu %lu  Lod = %u,%u\n", patch.getBestMatchIdx(),
-                   prePatch.getU0(), prePatch.getV0(), prePatch.getU1(), prePatch.getV1(), prePatch.getSizeU0(),
-                   prePatch.getSizeV0(), prePatch.getSizeD(), prePatch.getLodScaleX(), prePatch.getLodScaleY() );
-
-      patch.getProjectionMode()        = prePatch.getProjectionMode();
-      patch.getU0()                    = dpdu.get2DDeltaShiftU() + prePatch.getU0();
-      patch.getV0()                    = dpdu.get2DDeltaShiftV() + prePatch.getV0();
-      patch.getPatchOrientation()      = prePatch.getPatchOrientation();
-      patch.getU1()                    = dpdu.get3DDeltaShiftTangentAxis() + prePatch.getU1();
-      patch.getV1()                    = dpdu.get3DDeltaShiftBiTangentAxis() + prePatch.getV1();
-      patch.getSizeU0()                = dpdu.get2DDeltaSizeU() + prePatch.getSizeU0();
-      patch.getSizeV0()                = dpdu.get2DDeltaSizeV() + prePatch.getSizeV0();
-      patch.getNormalAxis()            = prePatch.getNormalAxis();
-      patch.getTangentAxis()           = prePatch.getTangentAxis();
-      patch.getBitangentAxis()         = prePatch.getBitangentAxis();
-      patch.getAxisOfAdditionalPlane() = prePatch.getAxisOfAdditionalPlane();
+      patch.getProjectionMode()        = refPatch.getProjectionMode();
+      patch.getU0()                    = ipdu.getIpdu2dPosX() + refPatch.getU0();
+      patch.getV0()                    = ipdu.getIpdu2dPosY() + refPatch.getV0();
+      patch.getPatchOrientation()      = refPatch.getPatchOrientation();
+      patch.getU1()                    = ipdu.getIpdu3dPosX() + refPatch.getU1();
+      patch.getV1()                    = ipdu.getIpdu3dPosY() + refPatch.getV1();
+      patch.getSizeU0()                = ipdu.getIpdu2dDeltaSizeX() + refPatch.getSizeU0();
+      patch.getSizeV0()                = ipdu.getIpdu2dDeltaSizeY() + refPatch.getSizeV0();
+      patch.getNormalAxis()            = refPatch.getNormalAxis();
+      patch.getTangentAxis()           = refPatch.getTangentAxis();
+      patch.getBitangentAxis()         = refPatch.getBitangentAxis();
+      patch.getAxisOfAdditionalPlane() = refPatch.getAxisOfAdditionalPlane();
       const size_t max3DCoordinate     = 1 << ( gi.getGeometry3dCoordinatesBitdepthMinus1() + 1 );
       if ( patch.getProjectionMode() == 0 ||
            ( sps.getMapCountMinus1(atlasIndex ) > 0 && !sps.getMapAbsoluteCodingEnableFlag( atlasIndex, 1 ) ) ) {
-        patch.getD1() = ( dpdu.get3DDeltaShiftMinNormalAxis() + ( prePatch.getD1() / minLevel ) ) * minLevel;
+        patch.getD1() = ( ipdu.getIpdu3dPosMinZ() + ( refPatch.getD1() / minLevel ) ) * minLevel;
       } else {
         if ( pfps.getProjection45DegreeEnableFlag() == 0 ) {
-          patch.getD1() = max3DCoordinate - ( dpdu.get3DDeltaShiftMinNormalAxis() +
-                                              ( ( max3DCoordinate - prePatch.getD1() ) / minLevel ) ) *
+          patch.getD1() = max3DCoordinate - ( ipdu.getIpdu3dPosMinZ() +
+                                              ( ( max3DCoordinate - refPatch.getD1() ) / minLevel ) ) *
                                                 minLevel;
         } else {
           patch.getD1() =
               ( max3DCoordinate << 1 ) -
-              ( dpdu.get3DDeltaShiftMinNormalAxis() + ( ( ( max3DCoordinate << 1 ) - prePatch.getD1() ) / minLevel ) ) *
+              ( ipdu.getIpdu3dPosMinZ() + ( ( ( max3DCoordinate << 1 ) - refPatch.getD1() ) / minLevel ) ) *
                   minLevel;
         }
       }
-      const int64_t delta_DD = dpdu.get3DShiftDeltaMaxNormalAxis();
-      size_t        prevDD   = prePatch.getSizeD() / minLevel;
-      if ( prevDD * minLevel != prePatch.getSizeD() ) { prevDD += 1; }
+      const int64_t delta_DD = ipdu.getIpdu3dPosDeltaMaxZ();
+      size_t        prevDD   = refPatch.getSizeD() / minLevel;
+      if ( prevDD * minLevel != refPatch.getSizeD() ) { prevDD += 1; }
       patch.getSizeD() = ( std::min )( size_t( ( delta_DD + prevDD ) * minLevel ), (size_t)255 );
-      patch.setLodScaleX(prePatch.getLodScaleX());
-      patch.setLodScaleY(prePatch.getLodScaleY());
+      patch.setLodScaleX(refPatch.getLodScaleX());
+      patch.setLodScaleY(refPatch.getLodScaleY());
       prevSizeU0       = patch.getSizeU0();
       prevSizeV0       = patch.getSizeV0();
 
@@ -704,18 +698,13 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
           "patch Inter UV0 %4lu %4lu UV1 %4lu %4lu D1=%4lu S=%4lu %4lu %4lu from DeltaSize = "
           "%4ld %4ld P=%lu O=%lu A=%u%u%u Lod = %lu,%lu \n",
           patch.getU0(), patch.getV0(), patch.getU1(), patch.getV1(), patch.getD1(), patch.getSizeU0(),
-          patch.getSizeV0(), patch.getSizeD(), dpdu.get2DDeltaSizeU(), dpdu.get2DDeltaSizeV(),
+          patch.getSizeV0(), patch.getSizeD(), ipdu.getIpdu2dDeltaSizeX(), ipdu.getIpdu2dDeltaSizeY(),
           patch.getProjectionMode(), patch.getPatchOrientation(), patch.getNormalAxis(), patch.getTangentAxis(),
           patch.getBitangentAxis(), patch.getLodScaleX(),patch.getLodScaleY() );
-      auto& patchLevelMetadataEnabledFlags         = frame.getFrameLevelMetadata().getLowerLevelMetadataEnabledFlags();
-      auto& patchLevelMetadata                     = patch.getPatchLevelMetadata();
-      patchLevelMetadata.getMetadataEnabledFlags() = patchLevelMetadataEnabledFlags;
-      patchLevelMetadata.setIndex( patchIndex );
-      patchLevelMetadata.setMetadataType( METADATA_PATCH );
-      setPatchMetadata( patchLevelMetadata, pdg.getGeometryPatchParameterSet( 0 ) );
+
       patch.allocOneLayerData();
       if ( sps.getPointLocalReconstructionEnabledFlag() ) {
-        setPointLocalReconstructionData( frame, patch, dpdu.getPointLocalReconstructionData(),
+        setPointLocalReconstructionData( frame, patch, ipdu.getPointLocalReconstructionData(),
                                          context.getOccupancyPackingBlockSize() );
       }
     } else if ( ( PCCPatchFrameType( ptgh.getType() ) == PATCH_FRAME_I &&

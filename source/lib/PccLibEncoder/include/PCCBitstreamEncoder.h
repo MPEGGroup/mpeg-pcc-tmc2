@@ -36,7 +36,7 @@
 #include "PCCCommon.h"
 #include "PCCEncoderParameters.h"
 #include "PCCCodec.h"
-#include "PCCMetadata.h"
+//#include "PCCMetadata.h"
 
 #include <map>
 
@@ -73,7 +73,6 @@ class PatchDataUnit;
 class InterPatchDataUnit;
 class MergePatchDataUnit;
 class SkipPatchDataUnit;
-class DeltaPatchDataUnit_removed;
 class RawPatchDataUnit;
 class EOMPatchDataUnit;
 class AttributeSequenceParams;
@@ -97,6 +96,12 @@ class PCCBitstreamEncoder {
   int write( SampleStreamNalUnit& ssnu, PCCBitstream& bitstream );
   int encode( PCCContext& context, SampleStreamNalUnit& ssnu );
 
+	
+  // DBG: NEW
+  int writeSampleStream( SampleStreamVpccUnit& ssvpccu, PCCBitstream& bitstream );
+	int writeUnitStream(VpccUnitStream & vpccus, PCCBitstream & bitstream);
+	int encode(PCCContext & context, VpccUnitStream & vpccus);
+
   void setParameters( PCCEncoderParameters params );
 
 #ifdef BITSTREAM_TRACE  
@@ -106,7 +111,8 @@ class PCCBitstreamEncoder {
 #endif
  private:
   // 7.3.2.1 General V-PCC unit syntax
-  void vpccUnit( PCCContext& context, PCCBitstream& bitstream, VPCCUnitType vpccUnitType );
+	void vpccUnit(PCCBitstream & bitstream, VpccUnit & vpccUnit, int32_t numBytesInVPCCUnit);
+	void vpccUnit( PCCContext& context, PCCBitstream& bitstream, VPCCUnitType vpccUnitType );
 
   // 7.3.2.2 V-PCC unit header syntax
   void vpccUnitHeader( PCCContext& context, PCCBitstream& bitstream, VPCCUnitType vpccUnitType );
@@ -142,8 +148,14 @@ class PCCBitstreamEncoder {
   // TODO: fill the functions
   bool moreRbspData( PCCBitstream& bitstream );
   void rbspTrailingBits( PCCBitstream& bitstream );
-  // 7.3.5.1  General NAL unit syntax
-  // 7.3.5.2  NAL unit header syntax
+
+	// 7.3.5 NAL unit syntax
+  // 7.3.5.1 General NAL unit syntax
+  void nalUnit( PCCBitstream& bitstream, NalUnit& nalUnit );
+  // 7.3.5.2 NAL unit header syntax
+  void nalUnitHeader( PCCBitstream& bitstream, NalUnit& nalUnit );
+
+	// 7.3.5.2  NAL unit header syntax
   // 7.3.6.1  Atlas sequence parameter set RBSP syntax
   void atlasSequenceParameterSetRBSP( AtlasSequenceParameterSetRBSP& asps,
                                       PCCContext&                    context,
@@ -230,10 +242,11 @@ class PCCBitstreamEncoder {
   void seiMessage( PatchDataGroup& pdg, PCCContext& context, PCCBitstream& bitstream );
 
   // jkei: <------- added up to this pointOLD PST.Oct30th
-
+  void atlasSubStream( PCCContext& context, PCCBitstream& bitstream );
+  // jkei: <------- added up to this pointOLD PST.Nov1st
   // jkei: OLD--->
   // 7.3.5.1 General patch data group unit syntax
-  void atlasSubStream( PCCContext& context, PCCBitstream& bitstream );
+  void atlasSubStream_old( PCCContext& context, PCCBitstream& bitstream );
 
   // 7.3.5.2 Patch data group uni t payload syntax
   void atlasSubStreamUnitPayload( PatchDataGroup& atlasSubStream,
@@ -335,7 +348,7 @@ class PCCBitstreamEncoder {
   void patchDataUnit( PatchDataUnit& pdu, PatchTileGroupHeader& ptgh, PCCContext& context, PCCBitstream& bitstream );
 
   // 7.3.5.19  Delta Patch data unit
-  void deltaPatchDataUnit( DeltaPatchDataUnit&   dpdu,
+  void deltaPatchDataUnit( InterPatchDataUnit&   dpdu,
                            PatchTileGroupHeader& ptgh,
                            PCCContext&           context,
                            PCCBitstream&         bitstream );
@@ -370,17 +383,18 @@ class PCCBitstreamEncoder {
 
   // JR TODO: continue
 
-  // C.2 Sample stream NAL unit syntax and semantics
+  // B.2 Sample stream V-PCC unit syntax and semantics
+  // B.2.1 Sample stream V-PCC header syntax
+  void sampleStreamVpccHeader( PCCBitstream& bitstream, SampleStreamVpccUnit& sampleStreamVpccUnit );
+  // B.2.2 Sample stream NAL unit syntax
+  void sampleStreamVpccUnit( PCCBitstream& bitstream, SampleStreamVpccUnit& sampleStreamVpccUnit, VpccUnit& vpccUnit );
+ 
+	// C.2 Sample stream NAL unit syntax and semantics
   // C.2.1 Sample stream NAL header syntax
-  void sampleStreamVpccHeader( PCCBitstream& bitstream, SampleStreamNalUnit& sampleStreamNalUnit );
+  void sampleStreamNalHeader( PCCBitstream& bitstream, SampleStreamNalUnit& sampleStreamNalUnit );
   // C.2.2 Sample stream NAL unit syntax
   void sampleStreamNalUnit( PCCBitstream& bitstream, SampleStreamNalUnit& sampleStreamNalUnit, NalUnit& nalUnit );
-  // 7.3.5 NAL unit syntax
-  // 7.3.5.1 General NAL unit syntax
-  void nalUnit( PCCBitstream& bitstream, NalUnit& nalUnit );
-  // 7.3.5.2 NAL unit header syntax
-  void nalUnitHeader( PCCBitstream& bitstream, NalUnit& nalUnit );
-
+  
   // F.2.1 VUI parameters syntax
   void vuiParameters();
   // F.2.2 HRD parameters syntax

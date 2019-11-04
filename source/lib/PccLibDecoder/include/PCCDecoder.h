@@ -65,7 +65,7 @@ class PCCDecoder : public PCCCodec {
   int decode( PCCBitstream &bitstream, PCCContext &context, PCCGroupOfFrames& reconstruct );
   
   // JR: NEW
-  int decode( SampleStreamNalUnit& ssnu, PCCContext& context, PCCGroupOfFrames& reconstructs );
+  int decode( /*SampleStreamNalUnit& ssnu*/SampleStreamVpccUnit & ssvpccu, PCCContext& context, PCCGroupOfFrames& reconstructs );
 
   void setParameters( PCCDecoderParameters value );
 

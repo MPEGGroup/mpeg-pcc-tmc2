@@ -35,7 +35,7 @@
 #define PCCPatch_h
 
 #include "PCCCommon.h"
-#include "PCCMetadata.h"
+//#include "PCCMetadata.h"
 #include "PCCPointSet.h"
 
 namespace pcc {
@@ -168,7 +168,6 @@ class PCCPatch {
   size_t                      getLodScaleY() const { return levelOfDetailY_; }
   void                        setLodScaleX( size_t value ) { levelOfDetailX_ = value; }
   void                        setLodScaleY( size_t value ) { levelOfDetailY_ = value; }
-  PCCMetadata&                getPatchLevelMetadata() { return patchLevelMetadata_; }
   size_t&                     getAxisOfAdditionalPlane() { return axisOfAdditionalPlane_; }
   size_t                      getIndex() const { return index_; }
   size_t                      getOriginalIndex() const { return originalIndex_; }
@@ -193,7 +192,6 @@ class PCCPatch {
   const std::vector<bool>&    getOccupancy() const { return occupancy_; }
   std::vector<int16_t>&       getDepthEnhancedDeltaD() { return depthEnhancedDeltaD_; }
   const std::vector<int16_t>& getDepthEnhancedDeltaD() const { return depthEnhancedDeltaD_; }
-  const PCCMetadata&          getPatchLevelMetadata() const { return patchLevelMetadata_; }
   const size_t&               getAxisOfAdditionalPlane() const { return axisOfAdditionalPlane_; }
   const std::vector<int64_t>& getdepth0pccidx() const { return depth0PCidx_; }
   std::vector<int64_t>&       getdepth0pccidx() { return depth0PCidx_; }
@@ -870,7 +868,7 @@ class PCCPatch {
         break;
       case PATCH_ORIENTATION_ROT90:
         for ( int32_t j = 0, v = v2; j < occupancyPrecision; j++, v++, depth += depthMapWidth_ ) {
-          int32_t x = ( sizeV0_ * occupancyResolution_ - 1 - v ) + x0;
+          int32_t x = int32_t(( sizeV0_ * occupancyResolution_ - 1 - v ) + x0);
           for ( int32_t i = 0, u = u2; i < occupancyPrecision; i++, u++ ) {
             int32_t y = u + y0;
             depth[u]  = geometryVideo[x + width * y];
@@ -890,7 +888,7 @@ class PCCPatch {
         for ( int32_t j = 0, v = v2; j < occupancyPrecision; j++, v++, depth += depthMapWidth_ ) {
           int32_t x = v + x0;
           for ( int32_t i = 0, u = u2; i < occupancyPrecision; i++, u++ ) {
-            int32_t y = ( sizeU0_ * occupancyResolution_ - 1 - u ) + y0;
+            int32_t y = int32_t(( sizeU0_ * occupancyResolution_ - 1 - u ) + y0);
             depth[u]  = geometryVideo[x + width * y];
           }
         }
@@ -915,7 +913,7 @@ class PCCPatch {
         break;
       case PATCH_ORIENTATION_MROT180:
         for ( int32_t j = 0, v = v2; j < occupancyPrecision; j++, v++, depth += depthMapWidth_ ) {
-          int32_t y = ( sizeV0_ * occupancyResolution_ - 1 - v ) + y0;
+          int32_t y = int32_t(( sizeV0_ * occupancyResolution_ - 1 - v ) + y0);
           for ( int32_t i = 0, u = u2; i < occupancyPrecision; i++, u++ ) {
             int32_t x = u + x0;
             depth[u]  = geometryVideo[x + width * y];
@@ -947,7 +945,6 @@ class PCCPatch {
                      const int32_t                occupancyPrecision,
                      const int32_t                threhold ) {
     border_                 = occupancyPrecision >= 8 ? 16 : 8;
-    const int16_t undefined = ( std::numeric_limits<int16_t>::max )();
     depthMapWidth_          = sizeU0_ * occupancyResolution_ + 2 * border_;
     depthMapHeight_         = sizeV0_ * occupancyResolution_ + 2 * border_;
     depthMap_.resize( depthMapWidth_ * depthMapHeight_, 0 );
@@ -1042,7 +1039,7 @@ class PCCPatch {
     neighborDepth.resize( size, undefined );
     boundingBox.min_ -= PCCPoint3D( 8 );
     boundingBox.max_ += PCCPoint3D( 8 );
-    const int32_t shift = ( -v1_ + border_ ) * depthMapWidth_ - u1_ + border_;
+    const int32_t shift = int32_t(( -v1_ + border_ ) * depthMapWidth_ - u1_ + border_ );
     for ( auto& i : neighboringPatches_ ) {
       for ( auto& point : patches[i].borderPoints_ ) {
         if ( boundingBox.contains( point ) ) {
@@ -1134,7 +1131,6 @@ class PCCPatch {
   uint8_t                 pointLocalReconstructionLevel_;
   uint8_t                 pointLocalReconstructionModeByPatch_;
   std::vector<uint8_t>    pointLocalReconstructionModeByBlock_;
-  PCCMetadata             patchLevelMetadata_;
   GPAPatchData            curGPAPatchData_;
   GPAPatchData            preGPAPatchData_;
   bool                    isGlobalPatch_;

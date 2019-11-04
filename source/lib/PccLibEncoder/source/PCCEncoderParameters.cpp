@@ -206,6 +206,12 @@ PCCEncoderParameters::PCCEncoderParameters() {
   pbfPassesCount_   = 0;
   pbfFilterSize_    = 0;
   pbfLog2Threshold_ = 2;
+  
+  patchPrecedenceOrderFlag_ =  false;
+  maxNumRefPatchList_ = 1;
+  maxNumRefAtlasFrame_ = 1;
+
+  //qunatizer;
 }
 
 PCCEncoderParameters::~PCCEncoderParameters() {}
@@ -288,6 +294,7 @@ void PCCEncoderParameters::print() {
 	  std::cout << "\t   globalPackingStrategyReset         " << geometryD1Config_ << std::endl;
 	  std::cout << "\t   globalPackingStrategyThreshold     " << geometryD1Config_ << std::endl;
   }
+  std::cout << "\t   patchPrecedencOrder                   " << patchPrecedenceOrderFlag_ << std::endl;
   std::cout << "\t   lowDelayEncoding                       " << lowDelayEncoding_ << std::endl;
   std::cout << "\t   textureBGFill                          " << textureBGFill_ << std::endl;
 	std::cout << "\t   geometryPadding                        " << geometryPadding_ << std::endl;
@@ -456,6 +463,8 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   pbfPassesCount                         " << pbfPassesCount_ << std::endl;
   std::cout << "\t   pbfFilterSize                          " << pbfFilterSize_ << std::endl;
   std::cout << "\t   pbfLog2Threshold                       " << pbfLog2Threshold_ << std::endl;
+  
+  
   std::cout << std::endl;
 }
 
@@ -693,10 +702,13 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   auto& pfps  = pdg.getPatchFrameParameterSet( 0 );
   auto& pfti  = pfps.getAtlasFrameTileInformation();
 
+  auto& asps  = context.addAtlasSequenceParameterSet(0);
+  auto& afps  = context.addAtlasFrameParameterSet(0);
+
   context.setOccupancyPackingBlockSize( occupancyResolution_ );
 
   sps.setMapCountMinus1( atlasIndex,  (uint32_t)mapCountMinus1_ );
-  sps.setMultipleMapStreamsPresentFlag(atlasIndex,  mapCountMinus1_ != 0 );
+  sps.setMultipleMapStreamsPresentFlag(atlasIndex,  /*mapCountMinus1_ != 0*/ !absoluteD1_ );
   sps.setRawSeparateVideoPresentFlag( atlasIndex, useMissedPointsSeparateVideo_ );
   sps.setRawPatchEnabledFlag( atlasIndex, losslessGeo_ || lossyMissedPointsPatch_);
   for ( size_t i = 0; i < mapCountMinus1_ + 1; i++ ) {
@@ -717,11 +729,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   sps.setPatchInterPredictionEnabledFlag( deltaCoding_ );
   sps.setSurfaceThickness( surfaceThickness_ );
   sps.setProjection45DegreeEnableFlag( additionalProjectionPlaneMode_ > 0 ? 1 : 0 );
-	if(lowDelayEncoding_){ 
-		sps.setPatchPrecedenceOrderFlag( 1 ); //low delay coding requires patch precedence set to 1
-  }else{
-		sps.setPatchPrecedenceOrderFlag( 0 ); 
-  }
+  sps.setPatchPrecedenceOrderFlag( patchPrecedenceOrderFlag_ ); //low delay coding
 
   ai.setAttributeCount( noAttributes_ ? 0 : 1 );
   ai.allocate();
@@ -730,6 +738,45 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   ai.setAttributeNominal2dBitdepthMinus1( 0, 7 );
   ai.setAttributeMSBAlignFlag( false );
 
+  //asps.setFrameWidth( minimumImageWidth_ );
+  //asps.setFrameHeight( minimumImageHeight_);
+  asps.setLog2PatchPackingBlockSize( std::log2( occupancyResolution_ )  );
+  asps.setLog2MaxAtlasFrameOrderCntLsbMinus4( 4 );
+  asps.setMaxDecAtlasFrameBufferingMinus1( 0 ) ;
+  asps.setNumRefAtlasFrameListsInAsps( maxNumRefAtlasFrame_ ); //jkei: let's update when multireference is implemented
+  asps.setMapCountMinus1( mapCountMinus1_ );
+  asps.setEnhancedOccupancyMapFixBitCountMinus1( EOMFixBitCount_-1 ) ;
+  asps.setSurfaceThicknessMinus1( surfaceThickness_-1 );
+  asps.setLongTermRefAtlasFramesFlag( 0 );
+  asps.setUseEightOrientationsFlag( useEightOrientations_ );
+  asps.set45DegreeProjectionPatchPresentFlag( additionalProjectionPlaneMode_ > 0 ? 1 : 0 );
+  asps.setNormalAxisLimitsQuantizationEnabledFlag( 1 );
+  asps.setNormalAxisMaxDeltaValueEnabledFlag( 1 );
+  asps.setRemoveDuplicatePointEnabledFlag( removeDuplicatePoints_ );
+  asps.setPixelDeinterleavingFlag( singleMapPixelInterleaving_ ) ;
+  asps.setPatchPrecedenceOrderFlag( patchPrecedenceOrderFlag_ );
+  asps.setPatchSizeQuantizerPresentFlag( 0 );
+  asps.setEnhancedOccupancyMapForDepthFlag( enhancedDeltaDepthCode_ ) ;
+  asps.setPointLocalReconstructionEnabledFlag( pointLocalReconstruction_ );
+  asps.setVuiParametersPresentFlag( 0 );
+  asps.setExtensionPresentFlag( 0 );
+  asps.setExtensionDataFlag( 0 );
+  
+  //auto& afps  = context.addAtalsFrameParameterSet(0);
+  afps.setAtlasSequenceParameterSetId( 0 );
+  afps.setAfpsNumRefIdxDefaultActiveMinus1( 0 ); //jkei: let's update when multireference is implemented
+  afps.setAfpsAdditionalLtAfocLsbLen( 4  );
+  afps.setAfps2dPosXBitCountMinus1( 0 );
+  afps.setAfps2dPosYBitCountMinus1( 0 );
+  afps.setAfps3dPosXBitCountMinus1( 0 );
+  afps.setAfps3dPosYBitCountMinus1( 0 );
+  afps.setAfpsOverrideEomForDepthFlag( 0 );
+  afps.setAfpsEomNumberOfPatchBitCountMinus1( 0 );
+  afps.setAfpsEomMaxBitCountMinus1( 0 );
+  afps.setAfpsRaw3dPosBitCountExplicitModeFlag( 0 );
+  afps.setAfpsExtensionPresentFlag( 0 );
+  afps.setAfpsExtensionDataFlag( 0 );
+  
   pfps.allocate( ai.getAttributeCount() );
   pfps.setLodModeEnableFlag( (levelOfDetailX_>1&&levelOfDetailY_>1) || !(levelOfDetailX_==1&&levelOfDetailY_==1) );
   pfti.setSingleTileInAtlasFrameFlag( true );

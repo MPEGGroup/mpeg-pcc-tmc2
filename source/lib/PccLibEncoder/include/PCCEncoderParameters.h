@@ -266,6 +266,12 @@ class PCCEncoderParameters {
   int16_t pbfPassesCount_;
   int16_t pbfFilterSize_;
   int16_t pbfLog2Threshold_;
+  
+  //
+  bool patchPrecedenceOrderFlag_;
+  size_t maxNumRefPatchList_;
+  size_t maxNumRefAtlasFrame_;
+
 };
 
 };  // namespace pcc

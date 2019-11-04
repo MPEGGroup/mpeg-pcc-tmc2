@@ -36,7 +36,7 @@
 #include "PCCCommon.h"
 #include "PCCEncoderParameters.h"
 #include "PCCCodec.h"
-#include "PCCMetadata.h"
+//#include "PCCMetadata.h"
 #include "PCCKdTree.h"
 
 #include <map>
@@ -121,7 +121,7 @@ class PCCEncoder : public PCCCodec {
   // JR: NEW
   int encode( const PCCGroupOfFrames& sources,
               PCCContext&             context,
-              SampleStreamNalUnit&    ssnu,
+              /*SampleStreamNalUnit&    ssnu,*/ VpccUnitStream& vpccus,
               PCCGroupOfFrames&       reconstructs );
   // JR: NEW
   int encode( const PCCGroupOfFrames& sources,

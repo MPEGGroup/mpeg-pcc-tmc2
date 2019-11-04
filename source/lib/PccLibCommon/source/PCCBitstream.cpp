@@ -63,6 +63,7 @@ bool PCCBitstream::initialize( std::vector<uint8_t>& data  ) {
   memcpy( data_.data(), data.data(), data.size() );
   return true;
 }
+
 bool PCCBitstream::initialize( std::string compressedStreamPath ) {
   std::ifstream fin( compressedStreamPath, std::ios::binary );
   if ( !fin.is_open() ) { return false; }

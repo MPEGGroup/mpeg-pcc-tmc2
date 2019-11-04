@@ -285,16 +285,18 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
   PCCDecoder decoder;
   decoder.setParameters( decoderParams );
 
-  SampleStreamNalUnit ssnu;
+  //SampleStreamNalUnit ssnu;
+  SampleStreamVpccUnit ssvpccu;
   PCCBitstreamDecoder bitstreamDecoder;
-  bitstreamDecoder.read( bitstream, ssnu );
+  //bitstreamDecoder.read( bitstream, ssnu);
+	bitstreamDecoder.readSampleStream(bitstream, ssvpccu);
 
-  while ( ssnu.getNalUnitCount() > 0 ) {
+  while ( /*ssnu.getNalUnitCount()*/ ssvpccu.getVpccUnitCount() > 0 ) {
     PCCGroupOfFrames reconstructs;
     PCCContext       context;
     context.setBitstreamStat( bitstreamStat );
     clock.start();
-    int ret = decoder.decode( ssnu, context, reconstructs );
+    int ret = decoder.decode( /*ssnu*/ ssvpccu, context, reconstructs );
     clock.stop();
     if ( ret ) { return ret; }
     if ( metricsParams.computeChecksum_ ) { checksum.computeDecoded( reconstructs ); }

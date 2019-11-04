@@ -640,6 +640,16 @@ bool parseParameters( int                   argc,
      encoderParams.deltaCoding_,
      "Delta meta-data coding")
 
+  ("maxNumRefPatchList", //
+   encoderParams.maxNumRefPatchList_,
+   encoderParams.maxNumRefPatchList_,
+   "maximum Number of Reference Patch list, default: 1")
+  
+  ("maxNumRefAtlasFrame",
+   encoderParams.maxNumRefAtlasFrame_,
+   encoderParams.maxNumRefAtlasFrame_,
+   "maximum Number of Reference Atlas Frame per list, default: 1")
+
     ("pointLocalReconstruction",
       encoderParams.pointLocalReconstruction_,
       encoderParams.pointLocalReconstruction_,
@@ -737,6 +747,11 @@ bool parseParameters( int                   argc,
       encoderParams.globalPackingStrategyThreshold_,
       encoderParams.globalPackingStrategyThreshold_,
       "matched patches area ratio threshold (decides if connections are valid or not, 0(default))\n")
+
+  ("patchPrecedenceOrder",
+   encoderParams.patchPrecedenceOrderFlag_,
+   encoderParams.patchPrecedenceOrderFlag_,
+   "Order of patches\n")
 
     ("lowDelayEncoding",
 	    encoderParams.lowDelayEncoding_,
@@ -877,6 +892,10 @@ bool parseParameters( int                   argc,
     err.error() << "Point cloud partitioning does not currently support global patch allocation. \n";
   }
 
+  if(encoderParams.patchPrecedenceOrderFlag_==0 && encoderParams.lowDelayEncoding_){
+    encoderParams.lowDelayEncoding_=0;
+    err.error() << "Low Delay Encoding can be used only when patchPrecendenceOrder is enabled. lowDelayEncoding_ is set 0\n";
+  }
   encoderParams.completePath();
   encoderParams.print();
   if ( !encoderParams.check() ) { err.error() << "Input encoder parameters not correct \n"; }
@@ -912,7 +931,8 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
   checksum.setParameters( metricsParams );
 
   PCCBitstreamStat bitstreamStat;
-  SampleStreamNalUnit ssnu; 
+  //SampleStreamNalUnit ssnu; 
+	SampleStreamVpccUnit ssvpccu;
   // Place to get/set default values for gof metadata enabled flags (in sequence level).
   while ( startFrameNumber < endFrameNumber0 ) {
     const size_t endFrameNumber = min( startFrameNumber + groupOfFramesSize0, endFrameNumber0 );
@@ -930,7 +950,7 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
 
     std::cout << "Compressing group of frames " << contextIndex << ": " << startFrameNumber << " -> " << endFrameNumber
               << "..." << std::endl;
-    int ret = encoder.encode( sources, context, ssnu, reconstructs );
+    int ret = encoder.encode( sources, context, /*ssnu*/ ssvpccu, reconstructs );
     clock.stop();
 
     PCCGroupOfFrames normals;
@@ -966,7 +986,8 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
   bitstream.writeHeader();  // JR TODO: must be removed?
   bitstreamStat.setHeader( bitstream.size() );
   PCCBitstreamEncoder bitstreamEncoder;
-  bitstreamEncoder.write( ssnu, bitstream );
+  //bitstreamEncoder.write( ssnu, bitstream );
+	bitstreamEncoder.writeSampleStream(ssvpccu, bitstream);
   
   bitstreamStat.trace();
   std::cout << "Total bitstream size " << bitstream.size() << " B" << std::endl;

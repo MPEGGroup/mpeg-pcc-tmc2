@@ -74,7 +74,6 @@ class PatchDataUnit;
 class InterPatchDataUnit;
 class MergePatchDataUnit;
 class SkipPatchDataUnit;
-class DeltaPatchDataUnit;
 class RawPatchDataUnit;
 class EOMPatchDataUnit;
 class PointLocalReconstructionInformation;
@@ -93,8 +92,13 @@ class PCCBitstreamDecoder {
   int32_t decode( PCCBitstream& bitstream, PCCContext& context );
 
   // JR: NEW
-  void    read( PCCBitstream& bitstream, SampleStreamNalUnit& ssnu );
+  void read( PCCBitstream& bitstream, SampleStreamNalUnit& ssnu );
   int32_t decode( SampleStreamNalUnit& ssnu, PCCContext& context );
+	
+	// DBG: NEW
+	void readSampleStream(PCCBitstream & bitstream, SampleStreamVpccUnit& ssvpccu);
+	void readUnitStream(PCCBitstream& bitstream, PCCContext& context, VpccUnitStream& vpccus);
+	int32_t decode( VpccUnitStream& vpccus, PCCContext& context );
 
 #ifdef BITSTREAM_TRACE  
   void setTraceFile( FILE* traceFile ){
@@ -227,10 +231,12 @@ class PCCBitstreamDecoder {
   void seiMessage( PatchDataGroup& pdg, PCCContext& context, PCCBitstream& bitstream );
 
   // jkei: <------- added up to this pointOLD PST.Oct30th
+  void atlasSubStream( PCCContext& context, PCCBitstream& bitstream );
+  // jkei: <------- added up to this pointOLD PST.Nov1st
 
   // jkei: OLD--->
   // 7.3.5.1 General patch data group unit syntax
-  void atlasSubStream( PCCContext& context, PCCBitstream& bitstream );
+  void atlasSubStream_old( PCCContext& context, PCCBitstream& bitstream );
 
   // 7.3.5.2 Patch data group unit payload syntax
   void atlasSubStreamUnitPayload( PatchDataGroup& atlasSubStream,
@@ -321,7 +327,7 @@ class PCCBitstreamDecoder {
   void patchDataUnit( PatchDataUnit& pdu, PatchTileGroupHeader& ptgh, PCCContext& context, PCCBitstream& bitstream );
 
   // 7.3.5.19  Delta Patch data unit syntax
-  void deltaPatchDataUnit( DeltaPatchDataUnit&   dpdu,
+  void deltaPatchDataUnit( InterPatchDataUnit&   ipdu,
                            PatchTileGroupHeader& ptgh,
                            PCCContext&           context,
                            PCCBitstream&         bitstream );
@@ -355,10 +361,16 @@ class PCCBitstreamDecoder {
   // void seiMessage( PatchDataGroup& pdg, PCCContext& context, PCCBitstream& bitstream );
 
   // JR TODO: continue
+  //jkei : added PST:Nov1st
+  //B.2  Sample stream V-PCC unit syntax and semantics
+  //B.2.1  Sample stream V-PCC header syntax
+  void sampleStreamVpccHeader( PCCBitstream& bitstream, SampleStreamVpccUnit& ssvpccu );
+  // B.2.2  Sample stream V-PCC unit syntax
+  void sampleStreamVpccUnit( PCCBitstream& bitstream, SampleStreamVpccUnit& ssvpccu );
 
   // C.2 Sample stream NAL unit syntax and semantics
   // C.2.1 Sample stream NAL header syntax
-  void sampleStreamVpccHeader( PCCBitstream& bitstream, SampleStreamNalUnit& sampleStreamNalUnit );
+  void sampleStreamNalHeader( PCCBitstream& bitstream, SampleStreamNalUnit& sampleStreamNalUnit );
   // C.2.2 Sample stream NAL unit syntax
   void sampleStreamNalUnit( PCCBitstream& bitstream, SampleStreamNalUnit& sampleStreamNalUnit );
   // 7.3.5 NAL unit syntax

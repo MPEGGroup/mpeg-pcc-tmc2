@@ -74,10 +74,10 @@ void PCCEncoder::setParameters( PCCEncoderParameters params ) { params_ = params
 
 
 
-// JR: NEW
+// JR: NEW -> DBG: changed from NAL to V-PCC units
 int PCCEncoder::encode( const PCCGroupOfFrames& sources,
                         PCCContext&             context,
-                        SampleStreamNalUnit&    ssnu,
+                        /*SampleStreamNalUnit&    ssnu,*/VpccUnitStream& vpccus,
                         PCCGroupOfFrames&       reconstructs ) {
   int    ret                                  = 0;
   size_t pointLocalReconstructionOriginal     = params_.pointLocalReconstruction_;
@@ -102,7 +102,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources,
   bitstreamEncoder.setTraceFile( bitstream.getTraceFile() ); 
 #endif
   bitstreamEncoder.setParameters( params_ );
-  ret |= bitstreamEncoder.encode( context, ssnu );
+  ret |= bitstreamEncoder.encode( context, /*ssnu*/ vpccus );
 #ifdef BITSTREAM_TRACE
   bitstreamEncoder.setTraceFile( NULL ); 
   bitstream.closeTrace();
@@ -113,6 +113,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources,
   params_.singleMapPixelInterleaving_ = singleLayerPixelInterleavingOriginal;
   return ret;
 }
+
 // JR: OLD 
 int PCCEncoder::encode( const PCCGroupOfFrames& sources,
                         PCCContext&             context,
@@ -166,20 +167,6 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   reconstructs.resize( sources.size() );
   context.resize( sources.size() );
   auto& frames                         = context.getFrames();
-  auto& frameLevelMetadataEnabledFlags = context.getGOFLevelMetadata().getLowerLevelMetadataEnabledFlags();
-  if ( frameLevelMetadataEnabledFlags.getMetadataEnabled() ) {
-    for ( size_t i = 0; i < frames.size(); i++ ) {
-      // Place to get/set frame-level metadata.
-      PCCMetadata frameLevelMetadata;
-      frameLevelMetadata.setMetadataType( METADATA_FRAME );
-      frames[i].getFrameLevelMetadata() = frameLevelMetadata;
-      frames[i].getFrameLevelMetadata().setIndex( i );
-      frames[i].getFrameLevelMetadata().getMetadataEnabledFlags() = frameLevelMetadataEnabledFlags;
-      // Place to get/set patch metadata enabled flags (in frame level).
-      PCCMetadataEnabledFlags patchLevelMetadataEnabledFlags;
-      frames[i].getFrameLevelMetadata().getLowerLevelMetadataEnabledFlags() = patchLevelMetadataEnabledFlags;
-    }
-  }
 
   for ( size_t i = 0; i < frames.size(); i++ ) {
     frames[i].setLosslessGeo( params_.losslessGeo_ );
@@ -391,7 +378,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   std::vector<std::vector<uint32_t>> partitions;
   generatePointCloud( reconstructs, context, generatePointCloudParameters, partitions );  
   if ( ai.getAttributeCount() > 0 ) {
-    // GENERATE ATTRIBUTE
+    // GENERATE ATTRIBUTE - texture only????
     generateTextureVideo( sources, reconstructs, context, params_ );
     auto&        videoTexture      = context.getVideoTexture();
     const size_t textureFrameCount = nbFramesTexture * frames.size();
@@ -445,7 +432,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
       }
     }
 
-    // ENCODE ATTRIBUTRE IMAGE
+    // ENCODE ATTRIBUTE IMAGE
+		// attribute is always being encoded as one single file, but maps could be encoded separately????
     auto& videoBitstream = context.createVideoBitstream( VIDEO_TEXTURE );
     const size_t nbyteAtt = 1;
     videoEncoder.compress(
@@ -3221,8 +3209,6 @@ bool PCCEncoder::generateGeometryVideo( const PCCPointSet3&                sourc
     generateScaledGeometry(source, frame);
   }
   
-  auto& patches                        = frame.getPatches();
-  auto& patchLevelMetadataEnabledFlags = frame.getFrameLevelMetadata().getLowerLevelMetadataEnabledFlags();
 
   if ( params_.occupancyMapRefinement_ ) { refineOccupancyMap( frame ); }
   if( frame.getRawPatchEnabledFlag()) {
@@ -3271,18 +3257,6 @@ bool PCCEncoder::generateGeometryVideo( const PCCPointSet3&                sourc
             spatialConsistencyPackTetris( frame, prevFrame, params_.safeGuardDistance_ );
         }
       }
-    }
-  }
-  if ( patchLevelMetadataEnabledFlags.getMetadataEnabled() ) {
-    for ( size_t i = 0; i < patches.size(); i++ ) {
-      // Place to get/set patch-level metadata.
-      PCCMetadata patchLevelMetadata;
-      patchLevelMetadata.setMetadataPresent( true );
-      patchLevelMetadataEnabledFlags.setMetadataEnabled( true );
-      patchLevelMetadata.setMetadataType( METADATA_PATCH );
-      patchLevelMetadata.getLowerLevelMetadataEnabledFlags().setMetadataEnabled( false );
-      patches[i].getPatchLevelMetadata()                           = patchLevelMetadata;
-      patches[i].getPatchLevelMetadata().getMetadataEnabledFlags() = patchLevelMetadataEnabledFlags;
     }
   }
   return true;
@@ -7049,7 +7023,6 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
   refList.addAbsDeltaPfocSt( 1 );
   psps.addRefListStruct( refList );
   psps.setUseEightOrientationsFlag( params_.useEightOrientations_ );
-  setPatchFrameGeometryParameterSet( context.getGOFLevelMetadata(), pdg.getPatchFrameGeometryParameterSet( 0 ) );
   if ( params_.pointLocalReconstruction_ ) { setPointLocalReconstruction( context, sps ); }
   PCCFrameContext& refFrame = context.getFrame( 0 );
   for ( size_t i = 0; i < frameCount; i++ ) {
@@ -7125,24 +7098,25 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
       const auto& refPatch = refPatches[patch.getBestMatchIdx()];
       auto&       pid      = ptgdu.addPatchInformationData( (uint8_t)PATCH_MODE_P_INTER);
       TRACE_CODEC( "patch %lu / %lu: Inter \n", patchIndex, patches.size() );
-      auto&       dpdu     = pid.getDeltaPatchDataUnit();
-      pid.allocate( ai.getAttributeCount() );
-      dpdu.setDeltaPatchIdx( (int64_t)patch.getBestMatchIdx() - predIndex );
-      dpdu.set2DDeltaShiftU( patch.getU0() - refPatch.getU0() );
-      dpdu.set2DDeltaShiftV( patch.getV0() - refPatch.getV0() );
-      dpdu.set3DDeltaShiftTangentAxis( patch.getU1() - refPatch.getU1() );
-      dpdu.set3DDeltaShiftBiTangentAxis( patch.getV1() - refPatch.getV1() );
-      dpdu.set2DDeltaSizeU( patch.getSizeU0() - refPatch.getSizeU0() );
-      dpdu.set2DDeltaSizeV( patch.getSizeV0() - refPatch.getSizeV0() );
+      auto&       ipdu     = pid.getInterPatchDataUnit();
+      //ipdu.setIpduRefIndex( patch.getRefAtalsFrameIndex() );
+      ipdu.setIpduRefPatchIndex( (int64_t)patch.getBestMatchIdx() - predIndex );
+      ipdu.setIpdu2dPosX( patch.getU0() - refPatch.getU0() );
+      ipdu.setIpdu2dPosY( patch.getV0() - refPatch.getV0() );
+      ipdu.setIpdu2dDeltaSizeX( patch.getSizeU0() - refPatch.getSizeU0() );
+      ipdu.setIpdu2dDeltaSizeY( patch.getSizeV0() - refPatch.getSizeV0() );
+      ipdu.setIpdu3dPosX( patch.getU1() - refPatch.getU1() );
+      ipdu.setIpdu3dPosY( patch.getV1() - refPatch.getV1() );
+      
       const size_t max3DCoordinate = 1 << ( gi.getGeometry3dCoordinatesBitdepthMinus1() + 1 );
       if ( patch.getProjectionMode() == 0 || !params_.absoluteD1_ ) {
-        dpdu.set3DDeltaShiftMinNormalAxis( ( patch.getD1() / minLevel ) - ( refPatch.getD1() / minLevel ) );
+        ipdu.setIpdu3dPosMinZ( ( patch.getD1() / minLevel ) - ( refPatch.getD1() / minLevel ) );
       } else {
         if ( pfps.getProjection45DegreeEnableFlag() == 0 ) {
-          dpdu.set3DDeltaShiftMinNormalAxis( ( max3DCoordinate - patch.getD1() ) / minLevel -
+          ipdu.setIpdu3dPosMinZ( ( max3DCoordinate - patch.getD1() ) / minLevel -
                                              ( max3DCoordinate - refPatch.getD1() ) / minLevel );
         } else {
-          dpdu.set3DDeltaShiftMinNormalAxis( ( ( max3DCoordinate << 1 ) - patch.getD1() ) / minLevel -
+          ipdu.setIpdu3dPosMinZ( ( ( max3DCoordinate << 1 ) - patch.getD1() ) / minLevel -
                                              ( ( max3DCoordinate << 1 ) - refPatch.getD1() ) / minLevel );
         }
       }
@@ -7150,32 +7124,29 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
       size_t        quantDD  = patch.getSizeD() == 0 ? 0 : ( ( patch.getSizeD() - 1 ) / minLevel + 1 );
       size_t        prevQDD  = refPatch.getSizeD() == 0 ? 0 : ( ( refPatch.getSizeD() - 1 ) / minLevel + 1 );
       const int64_t delta_dd = ( (int64_t)quantDD ) - ( (int64_t)prevQDD );
-      dpdu.set3DShiftDeltaMaxNormalAxis( delta_dd );
-      TRACE_CODEC(
-                  "DPDU:DeltaIdx = %d ShiftUV = %ld %ld ShiftAxis = %ld %ld %ld Size = %ld %ld Idx = %ld + %ld = %zu \n",
-                  dpdu.getDeltaPatchIdx(), dpdu.get2DDeltaShiftU(), dpdu.get2DDeltaShiftV(), dpdu.get3DDeltaShiftTangentAxis(),
-                  dpdu.get3DDeltaShiftBiTangentAxis(), dpdu.get3DDeltaShiftMinNormalAxis(), dpdu.get2DDeltaSizeU(),
-                  dpdu.get2DDeltaSizeV(), dpdu.getDeltaPatchIdx(), predIndex, (size_t)patch.getBestMatchIdx() );
-     TRACE_CODEC( "PrevPatch: Idx = %lu UV0 = %lu %lu  UV1 = %lu %lu Size = %lu %lu %lu  Lod = %u,%u\n", patch.getBestMatchIdx(),
+      ipdu.setIpdu3dPosDeltaMaxZ( delta_dd );
+      TRACE_CODEC("IPDU: refAtlasFrame= %d refPatchIdx = %d pos2DXY = %ld %ld pos3DXYZW = %ld %ld %ld %ld size2D = %ld %ld \n",
+                  ipdu.getIpduRefIndex(), ipdu.getIpduRefPatchIndex(),
+                  ipdu.getIpdu2dPosX(), ipdu.getIpdu2dPosY(),
+                  ipdu.getIpdu3dPosX(), ipdu.getIpdu3dPosY(),ipdu.getIpdu3dPosMinZ(), ipdu.getIpdu3dPosDeltaMaxZ(),
+                  ipdu.getIpdu2dDeltaSizeX(), ipdu.getIpdu2dDeltaSizeY());
+     TRACE_CODEC( "\trefPatch: Idx = %lu UV0 = %lu %lu  UV1 = %lu %lu Size = %lu %lu %lu  Lod = %u,%u\n", patch.getBestMatchIdx(),
                          refPatch.getU0(), refPatch.getV0(), refPatch.getU1(), refPatch.getV1(), refPatch.getSizeU0(),
                          refPatch.getSizeV0(), refPatch.getSizeD(), refPatch.getLodScaleX(), refPatch.getLodScaleY() );
 
-      auto&        patchTemp = patches[patchIndex];
-      PCCMetadata& metadata  = patchTemp.getPatchLevelMetadata();
-      metadata.setMetadataPresent( true );
-      setPatchFrameGeometryParameterSet( metadata, pdg.getPatchFrameGeometryParameterSet( 0 ) );
       if ( sps.getPointLocalReconstructionEnabledFlag() ) {
-        setPointLocalReconstructionData( frame, patch, dpdu.getPointLocalReconstructionData(),
+        setPointLocalReconstructionData( frame, patch, ipdu.getPointLocalReconstructionData(),
                                          context.getOccupancyPackingBlockSize(), patchIndex );
       }
       prevSizeU0 = patch.getSizeU0();
       prevSizeV0 = patch.getSizeV0();
-      predIndex += dpdu.getDeltaPatchIdx() + 1;
+      predIndex += ipdu.getIpduRefPatchIndex() + 1;
       TRACE_CODEC(
-                  "patch Inter UV0 %4lu %4lu UV1 %4lu %4lu D1=%4lu S=%4lu %4lu %4lu from DeltaSize = "
+                  "patch(Inter)%zu: UV0 %4lu %4lu UV1 %4lu %4lu D1=%4lu S=%4lu %4lu %4lu from DeltaSize = "
                   "%4ld %4ld P=%lu O=%lu A=%u%u%u Lod = %lu,%lu \n",
+                  patchIndex,
                   patch.getU0(), patch.getV0(), patch.getU1(), patch.getV1(), patch.getD1(), patch.getSizeU0(),
-                  patch.getSizeV0(), patch.getSizeD(), dpdu.get2DDeltaSizeU(), dpdu.get2DDeltaSizeV(),
+                  patch.getSizeV0(), patch.getSizeD(), ipdu.getIpdu2dDeltaSizeX(), ipdu.getIpdu2dDeltaSizeY(),
                   patch.getProjectionMode(), patch.getPatchOrientation(), patch.getNormalAxis(), patch.getTangentAxis(),
                   patch.getBitangentAxis(), patch.getLodScaleX(),patch.getLodScaleY() );
 
@@ -7184,7 +7155,6 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
       uint8_t patchType =
           ( ptgh.getType() == (uint8_t)PATCH_FRAME_I ) ? (uint8_t)PATCH_MODE_I_INTRA : (uint8_t)PATCH_MODE_P_INTRA;
       auto&       pid      = ptgdu.addPatchInformationData( patchType );
-      pid.allocate( ai.getAttributeCount() );
       TRACE_CODEC( "patch %lu / %lu: Intra \n", patchIndex, patches.size() );
       auto& pdu = pid.getPatchDataUnit();
       pdu.setPdu2dPosX( patch.getU0() );
@@ -7226,13 +7196,6 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
                    patch.getPatchOrientation(), patch.getNormalAxis(), patch.getTangentAxis(), patch.getBitangentAxis(),
                    (size_t)lodEnableFlag, patch.getLodScaleX(), patch.getLodScaleY() );
 
-      auto&        patchTemp = patches[patchIndex];
-      PCCMetadata& metadata  = patchTemp.getPatchLevelMetadata();
-
-      metadata.setIndex( patchIndex );
-      metadata.setMetadataType( METADATA_PATCH );
-      metadata.setMetadataPresent( true );
-      setGeometryPatchParameterSet( metadata, pdg.getGeometryPatchParameterSet( 0 ) );
       if ( sps.getPointLocalReconstructionEnabledFlag() ) {
         setPointLocalReconstructionData( frame, patch, pdu.getPointLocalReconstructionData(),
                                          context.getOccupancyPackingBlockSize(), patchIndex );
@@ -7248,7 +7211,6 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
           ( ptgh.getType() == (uint8_t)PATCH_FRAME_I ) ? (uint8_t)PATCH_MODE_I_Raw : (uint8_t)PATCH_MODE_P_Raw;
       auto& pid      = ptgdu.addPatchInformationData( patchType );
       auto& ppdu              = pid.getRawPatchDataUnit();
-      pid.allocate( ai.getAttributeCount() );
       size_t totalPatchCount = patches.size()+numberOfPcmPatches+frame.getEomPatches().size();
       TRACE_CODEC( "patch %lu / %lu: raw \n", patches.size()+mpsPatchIndex, totalPatchCount );
       ppdu.setRpdu2dPosX( missedPointsPatch.u0_ );
@@ -7280,7 +7242,6 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
       uint8_t patchType = (ptgh.getType() == (uint8_t)PATCH_FRAME_I ) ? (uint8_t)PATCH_MODE_I_EOM : (uint8_t)PATCH_MODE_P_EOM ;
       auto& pid      = ptgdu.addPatchInformationData( patchType );
       auto& epdu     = pid.getEomPatchDataUnit();
-      pid.allocate( ai.getAttributeCount() );
 #if defined(BITSTREAM_TRACE) || defined(CODEC_TRACE)
       size_t totalPatchCount = patches.size()+pcmPatches.size()+numberOfEomPatches;
       TRACE_CODEC( "patch %lu / %lu: EOM \n", patches.size()+pcmPatches.size()+eomPatchIndex, totalPatchCount );
@@ -7306,7 +7267,6 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
   uint8_t patchType =
       ( ptgh.getType() == (uint8_t)PATCH_FRAME_I ) ? (uint8_t)PATCH_MODE_I_END : (uint8_t)PATCH_MODE_P_END;
   auto& pid = ptgdu.addPatchInformationData( patchType );
-  pid.allocate( ai.getAttributeCount() );
 
   // ptgh bitcount
   size_t maxU0 = 0, maxV0 = 0, maxU1 = 0, maxV1 = 0, maxLod = 0;

@@ -35,7 +35,7 @@
 
 #include "PCCCommon.h"
 #include "PCCVideo.h"
-#include "PCCMetadata.h"
+#include "PCCMetadata.h" //jkei: when it is disabled, PCCVector3 is not found!
 #include "PCCVideoBitstream.h"
 #include <map>
 
@@ -54,6 +54,33 @@ typedef std::map<size_t, std::vector<GlobalPatch>> GlobalPatches;  // [TrackInde
 typedef std::pair<size_t, size_t>                  SubContext;     // [start, end)
 
 class PCCBitstreamStat; 
+
+// 7.3.2 V-PCC unit syntax
+class VpccUnit {
+ public:
+  VpccUnit() {}
+  ~VpccUnit() { vpccUnitData_.clear(); }
+
+  void                  setVpccUnitSize( size_t value ) { vpccUnitSize_ = value; }
+  size_t                getVpccUnitSize() { return vpccUnitSize_; }
+
+	void                  setVpccUnitData( size_t index, uint8_t data ) { vpccUnitData_[index] = data; }
+  uint8_t               getVpccUnitData( size_t index ) { return vpccUnitData_[index]; }
+  std::vector<uint8_t>& getVpccUnitData() { return vpccUnitData_; }
+  
+	void allocate() { vpccUnitData_.resize( vpccUnitSize_, 0 ); }
+  void initialize( size_t size, uint8_t* data ) {
+    vpccUnitSize_      = size;
+    if( size > 0 ) {
+      vpccUnitData_.resize( size, 0 );
+      memcpy( vpccUnitData_.data(), data, size * sizeof( uint8_t ) );
+    }
+  }
+
+ private:
+  size_t               vpccUnitSize_;
+  std::vector<uint8_t> vpccUnitData_;
+};
 
 // 7.3.5 NAL unit syntax
 class NalUnit {
@@ -115,6 +142,34 @@ class SampleStreamNalUnit {
   std::list<NalUnit> nalUnit_;
 };
 
+// 6.1 V-PCC bistreams format
+class VpccUnitStream {
+ public:
+  VpccUnitStream() { }
+  ~VpccUnitStream() { vpccUnits_.clear(); }
+  VpccUnit& addVpccUnit() {
+    vpccUnits_.resize( vpccUnits_.size() + 1 );
+    return vpccUnits_.back();
+  }
+  void                  popFront() { vpccUnits_.pop_front(); }
+  VpccUnit&             front() { return *(vpccUnits_.begin()); }
+  std::list<VpccUnit>&  getVpccUnit() { return vpccUnits_; }
+  size_t                getVpccUnitCount() { return vpccUnits_.size(); }
+  VpccUnit&             getLastVpccUnit() { return vpccUnits_.back(); }
+ private:
+  std::list<VpccUnit>   vpccUnits_;
+};
+// B.2 Sample stream V-PCC unit syntax and semantics
+class SampleStreamVpccUnit : public VpccUnitStream {
+ public:
+  SampleStreamVpccUnit() : unitSizePrecisionBytesMinus1_ ( 0 ) { }
+  ~SampleStreamVpccUnit() { }
+  uint8_t               getUnitSizePrecisionBytesMinus1() { return unitSizePrecisionBytesMinus1_; }
+  void                  setUnitSizePrecisionBytesMinus1( uint8_t value ) { unitSizePrecisionBytesMinus1_ = value; }
+ private:
+  uint8_t              unitSizePrecisionBytesMinus1_;
+};
+
 // 7.3.7 Supplemental enhancement information message syntax
 class SupplementalEnhancementInformationMessage {
  public:
@@ -132,56 +187,33 @@ class SupplementalEnhancementInformationMessage {
   size_t smPayloadSizeByte_;
 };
 
-// 7.3.4.6 Point local reconstruction syntax
-class PointLocalReconstructionInformation {
+
+// E.2.1	General SEI message syntax
+class SeiPayload {
  public:
-  PointLocalReconstructionInformation() : numberOfModesMinus1_( 0 ), blockThresholdPerPatchMinus1_( 0 ) {
-    minimumDepth_.clear();
-    neighbourMinus1_.clear();
-    interpolateFlag_.clear();
-    fillingFlag_.clear();
-  };
-  ~PointLocalReconstructionInformation() {
-    minimumDepth_.clear();
-    neighbourMinus1_.clear();
-    interpolateFlag_.clear();
-    fillingFlag_.clear();
-  };
-
-  PointLocalReconstructionInformation& operator=( const PointLocalReconstructionInformation& ) = default;
-
-  void allocate() {
-    minimumDepth_.resize( numberOfModesMinus1_ + 1, 0 );
-    neighbourMinus1_.resize( numberOfModesMinus1_ + 1, 0 );
-    interpolateFlag_.resize( numberOfModesMinus1_ + 1, false );
-    fillingFlag_.resize( numberOfModesMinus1_ + 1, false );
-  }
-  bool    getMapEnabledFlag() { return mapEnabledFlag_; }
-  uint8_t getNumberOfModesMinus1() { return numberOfModesMinus1_; }
-  uint8_t getBlockThresholdPerPatchMinus1() { return blockThresholdPerPatchMinus1_; }
-  uint8_t getMinimumDepth( size_t index ) { return minimumDepth_[index]; }
-  uint8_t getNeighbourMinus1( size_t index ) { return neighbourMinus1_[index]; }
-  bool    getInterpolateFlag( size_t index ) { return interpolateFlag_[index]; }
-  bool    getFillingFlag( size_t index ) { return fillingFlag_[index]; }
-  void    setMapEnabledFlag( bool value ) { mapEnabledFlag_ = value; }
-  void    setNumberOfModesMinus1( uint8_t value ) { numberOfModesMinus1_ = value; }
-  void    setBlockThresholdPerPatchMinus1( uint8_t value ) { blockThresholdPerPatchMinus1_ = value; }
-  void    setMinimumDepth( size_t index, uint8_t value ) { minimumDepth_[index] = value; }
-  void    setNeighbourMinus1( size_t index, uint8_t value ) { neighbourMinus1_[index] = value; }
-  void    setInterpolateFlag( size_t index, bool value ) { interpolateFlag_[index] = value; }
-  void    setFillingFlag( size_t index, bool value ) { fillingFlag_[index] = value; }
-
- private:
-  bool                 mapEnabledFlag_;
-  uint8_t              numberOfModesMinus1_;
-  uint8_t              blockThresholdPerPatchMinus1_;
-  std::vector<uint8_t> minimumDepth_;
-  std::vector<uint8_t> neighbourMinus1_;
-  std::vector<bool>    interpolateFlag_;
-  std::vector<bool>    fillingFlag_;
+  SeiPayload() {}
+  ~SeiPayload() {}
+  SeiPayload& operator=( const SeiPayload& ) = default;
 };
 
-// 7.6.6 Point local reconstruction data syntax : jkei: need to be updated!
+// 7.3.8	Supplemental enhancement information message syntax
+class SeiMessage {
+ public:
+  SeiMessage() : payloadTypeByte_( 0 ), payloadSizeByte_( 0 ) { seiPayload_.clear(); }
+  ~SeiMessage() { seiPayload_.clear(); }
+  SeiMessage& operator=( const SeiMessage& ) = default;
+  uint8_t     getPayloadTypeByte() { return payloadTypeByte_; }
+  uint8_t     getPayloadSizeByte() { return payloadSizeByte_; }
+  void        setPayloadTypeByte( uint8_t value ) { payloadTypeByte_ = value; }
+  void        setPayloadSizeByte( uint8_t value ) { payloadSizeByte_ = value; }
+
+ private:
+  uint8_t                 payloadTypeByte_;
+  uint8_t                 payloadSizeByte_;
+  std::vector<SeiPayload> seiPayload_;
+};
+
+// 7.3.7.9 Point local reconstruction data syntax : jkei: need to be updated!
 class PointLocalReconstructionData {
  public:
   PointLocalReconstructionData() :
@@ -495,67 +527,6 @@ class SkipPatchDataUnit {
   size_t spduFrameIndex_;
 };
 
-// 7.3.6.4  Delta Patch data unit syntax(jkei: need to be removed)
-class DeltaPatchDataUnit {
- public:
-  DeltaPatchDataUnit() :
-      dpdutDeltaPatchIndex_( 0 ),
-      dpdu2DDeltaShiftU_( 0 ),
-      dpdu2DDeltaShiftV_( 0 ),
-      dpdu2DDeltaSizeU_( 0 ),
-      dpdu2DDeltaSizeV_( 0 ),
-      dpdu3DDeltaShiftTangentAxis_( 0 ),
-      dpdu3DDeltaShiftBiTangentAxis_( 0 ),
-      dpdu3DDeltaShiftMinNormalAxis_( 0 ),
-      dpdu3DShiftDeltaMaxNormalAxis_( 0 ),
-      dpduProjectPlane_( pcc::PCCAxis6( 0 ) ),
-      dpduPatchIndex_( 0 ),
-      dpduFrameIndex_( 0 ){};
-  ~DeltaPatchDataUnit(){};
-  DeltaPatchDataUnit&           operator=( const DeltaPatchDataUnit& ) = default;
-  int64_t                       getDeltaPatchIdx() { return dpdutDeltaPatchIndex_; }
-  int64_t                       get2DDeltaShiftU() { return dpdu2DDeltaShiftU_; }
-  int64_t                       get2DDeltaShiftV() { return dpdu2DDeltaShiftV_; }
-  int64_t                       get2DDeltaSizeU() { return dpdu2DDeltaSizeU_; }
-  int64_t                       get2DDeltaSizeV() { return dpdu2DDeltaSizeV_; }
-  int64_t                       get3DDeltaShiftTangentAxis() { return dpdu3DDeltaShiftTangentAxis_; }
-  int64_t                       get3DDeltaShiftBiTangentAxis() { return dpdu3DDeltaShiftBiTangentAxis_; }
-  int64_t                       get3DDeltaShiftMinNormalAxis() { return dpdu3DDeltaShiftMinNormalAxis_; }
-  int64_t                       get3DShiftDeltaMaxNormalAxis() { return dpdu3DShiftDeltaMaxNormalAxis_; }
-  PCCAxis6                      getProjectPlane() { return dpduProjectPlane_; }
-  PointLocalReconstructionData& getPointLocalReconstructionData() { return pointLocalReconstructionData_; }
-  size_t                        getDpduPatchIndex() { return dpduPatchIndex_; }
-  size_t                        getDpduFrameIndex() { return dpduFrameIndex_; }
-  void                          setDpduPatchIndex( size_t value ) { dpduPatchIndex_ = value; }
-  void                          setDpduFrameIndex( size_t value ) { dpduFrameIndex_ = value; }
-  void                          setDeltaPatchIdx( int64_t value ) { dpdutDeltaPatchIndex_ = value; }
-  void                          set2DDeltaShiftU( int64_t value ) { dpdu2DDeltaShiftU_ = value; }
-  void                          set2DDeltaShiftV( int64_t value ) { dpdu2DDeltaShiftV_ = value; }
-  void                          set2DDeltaSizeU( int64_t value ) { dpdu2DDeltaSizeU_ = value; }
-  void                          set2DDeltaSizeV( int64_t value ) { dpdu2DDeltaSizeV_ = value; }
-  void                          set3DDeltaShiftTangentAxis( int64_t value ) { dpdu3DDeltaShiftTangentAxis_ = value; }
-  void set3DDeltaShiftBiTangentAxis( int64_t value ) { dpdu3DDeltaShiftBiTangentAxis_ = value; }
-  void set3DDeltaShiftMinNormalAxis( int64_t value ) { dpdu3DDeltaShiftMinNormalAxis_ = value; }
-  void set3DShiftDeltaMaxNormalAxis( int64_t value ) { dpdu3DShiftDeltaMaxNormalAxis_ = value; }
-  void setProjectPlane( PCCAxis6 value ) { dpduProjectPlane_ = value; }
-  void setPointLocalReconstructionData( PointLocalReconstructionData value ) { pointLocalReconstructionData_ = value; }
-
- private:
-  int64_t                      dpdutDeltaPatchIndex_;
-  int64_t                      dpdu2DDeltaShiftU_;
-  int64_t                      dpdu2DDeltaShiftV_;
-  int64_t                      dpdu2DDeltaSizeU_;
-  int64_t                      dpdu2DDeltaSizeV_;
-  int64_t                      dpdu3DDeltaShiftTangentAxis_;
-  int64_t                      dpdu3DDeltaShiftBiTangentAxis_;
-  int64_t                      dpdu3DDeltaShiftMinNormalAxis_;
-  int64_t                      dpdu3DShiftDeltaMaxNormalAxis_;
-  PCCAxis6                     dpduProjectPlane_;
-  size_t                       dpduPatchIndex_;
-  size_t                       dpduFrameIndex_;
-  PointLocalReconstructionData pointLocalReconstructionData_;
-};
-
 // 7.3.7.3  Patch data unit syntax (jkei: updated)
 class PatchDataUnit {
  public:
@@ -670,7 +641,7 @@ class PatchDataUnit {
   /////////////
 };
 
-// 7.3.6.2  Patch information data syntax (pid) : jkei : updated
+// 7.3.7.2  Patch information data syntax (pid) : jkei : updated
 class PatchInformationData {
  public:
   PatchInformationData(){};
@@ -698,40 +669,6 @@ class PatchInformationData {
   void   setFrameIndex( size_t value ) { frameIndex_ = value; }
   void   setPatchIndex( size_t value ) { patchIndex_ = value; }
 
-  // jkei: remove these ones
-  //  PatchInformationData( size_t size = 0 ) { allocate( size ); };
-  //  ~PatchInformationData() {
-  //    overrideAttributePatchFlag_.clear();
-  //    attributePatchParameterSetId_.clear();
-  //  };
-  void init() {
-    overrideGeometryPatchFlag_ = false;
-    overrideAttributePatchFlag_.clear();
-    geometryPatchParameterSetId_ = 0;
-    attributePatchParameterSetId_.clear();
-  }
-  void allocate( size_t size ) {
-    if ( size ) {
-      overrideAttributePatchFlag_.resize( size, false );
-      attributePatchParameterSetId_.resize( size, 0 );
-    }
-  }
-  void addOverrideAttributePatchFlag( bool value ) { overrideAttributePatchFlag_.push_back( value ); }
-  void addAttributePatchParameterSetId( uint8_t value ) { attributePatchParameterSetId_.push_back( value ); }
-
-  bool                getOverrideGeometryPatchFlag() { return overrideGeometryPatchFlag_; }
-  uint8_t             getGeometryPatchParameterSetId() { return geometryPatchParameterSetId_; }
-  bool                getOverrideAttributePatchFlag( size_t index ) { return overrideAttributePatchFlag_[index]; }
-  uint8_t             getAttributePatchParameterSetId( size_t index ) { return attributePatchParameterSetId_[index]; }
-  DeltaPatchDataUnit& getDeltaPatchDataUnit() { return deltaPatchDataUnit_; }
-
-  void setOverrideGeometryPatchFlag( bool value ) { overrideGeometryPatchFlag_ = value; }
-  void setGeometryPatchParameterSetId( uint8_t value ) { geometryPatchParameterSetId_ = value; }
-  void setOverrideAttributePatchFlag( size_t index, bool value ) { overrideAttributePatchFlag_[index] = value; }
-  void setAttributePatchParameterSetId( size_t index, uint8_t value ) { attributePatchParameterSetId_[index] = value; }
-  void setDeltaPatchDataUnit( DeltaPatchDataUnit& dataUnit ) { deltaPatchDataUnit_ = dataUnit; }
-  //////
-
  private:
   size_t             frameIndex_;
   size_t             patchIndex_;
@@ -743,12 +680,6 @@ class PatchInformationData {
   RawPatchDataUnit   rawPatchyDataUnit_;
   EOMPatchDataUnit   eomPatchDataUnit_;
 
-  // jkei : remove these ones
-  DeltaPatchDataUnit   deltaPatchDataUnit_;
-  bool                 overrideGeometryPatchFlag_;
-  uint8_t              geometryPatchParameterSetId_;
-  std::vector<bool>    overrideAttributePatchFlag_;
-  std::vector<uint8_t> attributePatchParameterSetId_;
 };
 
 // 7.3.7.1  General atlas tile group data unit syntax (jkei: newly added, same as ptgdu but atgduPatchMode_. do we need
@@ -794,46 +725,6 @@ class AtlasTileGroupDataUnit {
   size_t                            frameIndex_;
   size_t                            patchCount_;
   size_t                            atgduPatchMode_;
-  std::vector<PatchInformationData> patchInformationData_;
-};
-
-// 7.3.6  Patch frame data unit syntax (ptgdu) : jkei : replace this one with ATGDU
-class PatchTileGroupDataUnit {
- public:
-  PatchTileGroupDataUnit() {}
-  ~PatchTileGroupDataUnit() { patchInformationData_.clear(); }
-  PatchTileGroupDataUnit& operator=( const PatchTileGroupDataUnit& ) = default;
-
-  void init() { patchInformationData_.clear(); }
-  void allocate( size_t size ) { patchInformationData_.resize( size ); }
-
-  void addPatchInformationData( PatchInformationData& value ) { patchInformationData_.push_back( value ); }
-  PatchInformationData& addPatchInformationData( uint8_t patchMode ) {
-    PatchInformationData pid;
-    pid.setPatchMode( patchMode );
-    patchInformationData_.push_back( pid );
-    return patchInformationData_.back();
-  }
-  uint8_t               getPatchMode( size_t index ) { return patchInformationData_[index].getPatchMode(); }
-  uint8_t               getPatchCount() { return patchInformationData_.size(); }
-  PatchInformationData& getPatchInformationData( size_t index ) { return patchInformationData_[index]; }
-  std::vector<PatchInformationData>& getPatchInformationData() { return patchInformationData_; }
-  size_t                             getMatchedPatchCount() {
-    size_t matchedPatchCount = 0;
-    for ( auto& v : patchInformationData_ ) {
-      if ( v.getPatchMode() == PATCH_MODE_P_INTER ) { matchedPatchCount++; }
-    }
-    return matchedPatchCount;
-  }
-
-  size_t getFrameIndex() { return frameIndex_; }
-  void   setFrameIndex( size_t value ) { frameIndex_ = value; }
-  void   setPatchCount( size_t value ) { patchCount_ = value; }
-  void   setPatchInformationData( size_t index, PatchInformationData& value ) { patchInformationData_[index] = value; }
-
- private:
-  size_t                            frameIndex_;
-  size_t                            patchCount_;
   std::vector<PatchInformationData> patchInformationData_;
 };
 
@@ -885,6 +776,7 @@ class RefListStruct {
   std::vector<bool>    stRefAtlasFrameFlag_;
   std::vector<bool>    strpfEntrySignFlag_;
 };
+
 // 7.3.6.11  Atlas tile group header syntax (jkei : newly added. )
 class AtlasTileGroupHeader {
  public:
@@ -1016,6 +908,7 @@ class FillerDataRbsp {
 
  private:
 };
+
 // 7.3.6.8  End of bitstream RBSP syntax
 class EndOfBitstreamRbsp {
  public:
@@ -1025,6 +918,7 @@ class EndOfBitstreamRbsp {
 
  private:
 };
+
 // 7.3.6.7  End of sequence RBSP syntax
 class EndOfSequenceRbsp {
  public:
@@ -1034,6 +928,7 @@ class EndOfSequenceRbsp {
 
  private:
 };
+
 // 7.3.6.6  Access unit delimiter RBSP syntax
 class AccessUnitDelimiterRbsp {
  public:
@@ -1046,192 +941,16 @@ class AccessUnitDelimiterRbsp {
  private:
   uint8_t aframeType_;
 };
+
 // 7.3.6.5  Supplemental enhancement information RBSP syntax
-
-// 7.3.7.1  Patch tile group header syntax (ptgh) (jkei: replce this with Atlas tile group header)
-class PatchTileGroupHeader {
+class SupplementalEnhancementInformationRbsp {
  public:
-  PatchTileGroupHeader() :
-      frameIndex_( 0 ),
-      patchFrameParameterSetId_( 0 ),
-      type_( 0 ),
-      address_( 0 ),
-      patchFrameOrderCntLsb_( 0 ),
-      refPatchFrameListIdx_( 0 ),
-      refPatchFrameListSpsFlag_( 0 ),
-      numRefIdxActiveOverrideFlag_( false ),
-      numRefIdxActiveMinus1_( 0 ),
-      interPredictPatch2dShiftUBitCountMinus1_( 0 ),
-      interPredictPatch2dShiftVBitCountMinus1_( 0 ),
-      interPredictPatch2dDeltaSizeDBitCountMinus1_( 0 ),
-      interPredictPatch3dShiftTangentAxisBitCountMinus1_( 0 ),
-      interPredictPatch3dShiftBitangentAxisBitCountMinus1_( 0 ),
-      interPredictPatch3dShiftNormalAxisBitCountMinus1_( 0 ),
-      interPredictPatchLodBitCount_( 0 ),
-      interPredictPatchBitCountFlag_( false ),
-      interPredictPatch2dShiftUBitCountFlag_( false ),
-      interPredictPatch2dShiftVBitCountFlag_( false ),
-      interPredictPatch3dShiftTangentAxisBitCountFlag_( false ),
-      interPredictPatch3dShiftBitangentAxisBitCountFlag_( false ),
-      interPredictPatch3dShiftNormalAxisBitCountFlag_( false ),
-      interPredictPatchLodBitCountFlag_( false ),
-      raw3dShiftAxisBitCountMinus1_( 9 ),
-      raw3dShiftBitCountPresentFlag_( true ),
-      eomPatchNbPatchBitCountMinus1_( 0 ),
-      eomPatchMaxEPBitCountMinus1_( 0 ) {
-    additionalPfocLsbPresentFlag_.resize( 1, 0 );
-    additionalPfocLsbVal_.resize( 1, 0 );
-  }
-
-  ~PatchTileGroupHeader() {
-    additionalPfocLsbPresentFlag_.clear();
-    additionalPfocLsbVal_.clear();
-  }
-
-  PatchTileGroupHeader& operator=( const PatchTileGroupHeader& ) = default;
-
-  uint8_t  getFrameIndex() { return frameIndex_; }
-  uint8_t  getPatchFrameParameterSetId() { return patchFrameParameterSetId_; }
-  uint32_t getAddress() { return address_; }
-  uint8_t  getType() { return type_; }
-  uint8_t  getPatchFrameOrderCntLsb() { return patchFrameOrderCntLsb_; }
-  bool     getRefPatchFrameListSpsFlag() { return refPatchFrameListSpsFlag_; }
-  uint8_t  getRefPatchFrameListIdx() { return refPatchFrameListIdx_; }
-  bool     getAdditionalPfocLsbPresentFlag( size_t index ) { return additionalPfocLsbPresentFlag_[index]; }
-  uint32_t getAdditionalPfocLsbVal( size_t index ) { return additionalPfocLsbVal_[index]; }
-  bool     getNumRefIdxActiveOverrideFlag() { return numRefIdxActiveOverrideFlag_; }
-  uint8_t  getNumRefIdxActiveMinus1() { return numRefIdxActiveMinus1_; }
-  bool     getInterPredictPatchBitCountFlag() { return interPredictPatchBitCountFlag_; }
-  bool     getInterPredictPatch2dShiftUBitCountFlag() { return interPredictPatch2dShiftUBitCountFlag_; }
-  bool     getInterPredictPatch2dShiftVBitCountFlag() { return interPredictPatch2dShiftVBitCountFlag_; }
-  bool getInterPredictPatch3dShiftTangentAxisBitCountFlag() { return interPredictPatch3dShiftTangentAxisBitCountFlag_; }
-  bool getInterPredictPatch3dShiftBitangentAxisBitCountFlag() {
-    return interPredictPatch3dShiftBitangentAxisBitCountFlag_;
-  }
-  bool getInterPredictPatch3dShiftNormalAxisBitCountFlag() { return interPredictPatch3dShiftNormalAxisBitCountFlag_; }
-  bool getInterPredictPatchLodBitCountFlag() { return interPredictPatchLodBitCountFlag_; }
-  uint8_t getInterPredictPatch2dShiftUBitCountMinus1() { return interPredictPatch2dShiftUBitCountMinus1_; }
-  uint8_t getInterPredictPatch2dShiftVBitCountMinus1() { return interPredictPatch2dShiftVBitCountMinus1_; }
-  uint8_t getInterPredictPatch2dDeltaSizeDBitCountMinus1() { return interPredictPatch2dDeltaSizeDBitCountMinus1_; }
-  uint8_t getInterPredictPatch3dShiftTangentAxisBitCountMinus1() {
-    return interPredictPatch3dShiftTangentAxisBitCountMinus1_;
-  }
-  uint8_t getInterPredictPatch3dShiftBitangentAxisBitCountMinus1() {
-    return interPredictPatch3dShiftBitangentAxisBitCountMinus1_;
-  }
-  uint8_t getInterPredictPatch3dShiftNormalAxisBitCountMinus1() {
-    return interPredictPatch3dShiftNormalAxisBitCountMinus1_;
-  }
-  uint8_t getRaw3dShiftAxisBitCountMinus1() { return raw3dShiftAxisBitCountMinus1_; }
-  bool    getRaw3dShiftBitCountPresentFlag() { return raw3dShiftBitCountPresentFlag_; }
-  uint8_t getInterPredictPatchLodBitCount() { return interPredictPatchLodBitCount_; }
-  uint8_t getNormalAxisMinValueQuantizer() { return normalAxisMinValueQuantizer_; }
-  uint8_t getNormalAxisMaxDeltaValueQuantizer() { return normalAxisMaxDeltaValueQuantizer_; }
-
-  void setFrameIndex( uint8_t index ) { frameIndex_ = index; }
-  void setPatchFrameParameterSetId( uint8_t value ) { patchFrameParameterSetId_ = value; }
-  void setAddress( uint8_t value ) { address_ = value; }
-  void setType( uint8_t value ) { type_ = value; }
-  void setPatchFrameOrderCntLsb( uint8_t value ) { patchFrameOrderCntLsb_ = value; }
-  void setRefPatchFrameListSpsFlag( bool value ) { refPatchFrameListSpsFlag_ = value; }
-  void setRefPatchFrameListIdx( uint8_t value ) { refPatchFrameListIdx_ = value; }
-  void setAdditionalPfocLsbPresentFlag( size_t index, bool value ) { additionalPfocLsbPresentFlag_[index] = value; }
-  void setAdditionalPfocLsbVal( size_t index, uint32_t value ) { additionalPfocLsbVal_[index] = value; }
-  void setNumRefIdxActiveOverrideFlag( bool value ) { numRefIdxActiveOverrideFlag_ = value; }
-  void setNumRefIdxActiveMinus1( uint8_t value ) { numRefIdxActiveMinus1_ = value; }
-  void setInterPredictPatch2dDeltaSizeDBitCountMinus1( uint8_t value ) {
-    interPredictPatch2dDeltaSizeDBitCountMinus1_ = value;
-  }
-  void setInterPredictPatch2dShiftUBitCountMinus1( uint8_t value ) { interPredictPatch2dShiftUBitCountMinus1_ = value; }
-  void setInterPredictPatch2dShiftVBitCountMinus1( uint8_t value ) { interPredictPatch2dShiftVBitCountMinus1_ = value; }
-  void setInterPredictPatch3dShiftTangentAxisBitCountMinus1( uint8_t value ) {
-    interPredictPatch3dShiftTangentAxisBitCountMinus1_ = value;
-  }
-  void setInterPredictPatch3dShiftBitangentAxisBitCountMinus1( uint8_t value ) {
-    interPredictPatch3dShiftBitangentAxisBitCountMinus1_ = value;
-  }
-  void setInterPredictPatch3dShiftNormalAxisBitCountMinus1( uint8_t value ) {
-    interPredictPatch3dShiftNormalAxisBitCountMinus1_ = value;
-  }
-  void setRaw3dShiftAxisBitCountMinus1( uint8_t value ) { raw3dShiftAxisBitCountMinus1_ = value; }
-  void setRaw3dShiftBitCountPresentFlag( uint8_t value ) { raw3dShiftBitCountPresentFlag_ = value; }
-  void setInterPredictPatchLodBitCount( uint8_t value ) { interPredictPatchLodBitCount_ = value; }
-  void setInterPredictPatchBitCountFlag( bool value ) { interPredictPatchBitCountFlag_ = value; }
-  void setInterPredictPatch2dShiftUBitCountFlag( bool value ) { interPredictPatch2dShiftUBitCountFlag_ = value; }
-  void setInterPredictPatch2dShiftVBitCountFlag( bool value ) { interPredictPatch2dShiftVBitCountFlag_ = value; }
-  void setInterPredictPatch3dShiftTangentAxisBitCountFlag( bool value ) {
-    interPredictPatch3dShiftTangentAxisBitCountFlag_ = value;
-  }
-  void setInterPredictPatch3dShiftBitangentAxisBitCountFlag( bool value ) {
-    interPredictPatch3dShiftBitangentAxisBitCountFlag_ = value;
-  }
-  void setInterPredictPatch3dShiftNormalAxisBitCountFlag( bool value ) {
-    interPredictPatch3dShiftNormalAxisBitCountFlag_ = value;
-  }
-  void setInterPredictPatchLodBitCountFlag( bool value ) { interPredictPatchLodBitCountFlag_ = value; }
-  void setNormalAxisMinValueQuantizer( uint8_t value ) { normalAxisMinValueQuantizer_ = value; }
-  void setNormalAxisMaxDeltaValueQuantizer( uint8_t value ) { normalAxisMaxDeltaValueQuantizer_ = value; }
-
-  uint8_t getEOMPatchNbPatchBitCountMinus1() { return eomPatchNbPatchBitCountMinus1_; }
-  uint8_t getEOMPatchMaxEPBitCountMinus1() { return eomPatchMaxEPBitCountMinus1_; }
-
-  void setEOMPatchNbPatchBitCountMinus1( uint8_t value ) { eomPatchNbPatchBitCountMinus1_ = value; }
-  void setEOMPatchMaxEPBitCountMinus1( uint8_t value ) { eomPatchMaxEPBitCountMinus1_ = value; }
+  SupplementalEnhancementInformationRbsp() {}
+  ~SupplementalEnhancementInformationRbsp() {}
+  SupplementalEnhancementInformationRbsp& operator=( const SupplementalEnhancementInformationRbsp& ) = default;
 
  private:
-  uint8_t               frameIndex_;
-  uint8_t               patchFrameParameterSetId_;
-  uint8_t               type_;
-  uint32_t              address_;
-  uint8_t               patchFrameOrderCntLsb_;
-  uint8_t               refPatchFrameListIdx_;
-  bool                  refPatchFrameListSpsFlag_;
-  std::vector<bool>     additionalPfocLsbPresentFlag_;
-  std::vector<uint32_t> additionalPfocLsbVal_;
-  bool                  numRefIdxActiveOverrideFlag_;
-  uint8_t               numRefIdxActiveMinus1_;
-  uint8_t               normalAxisMinValueQuantizer_;
-  uint8_t               normalAxisMaxDeltaValueQuantizer_;
-  uint8_t               interPredictPatch2dShiftUBitCountMinus1_;
-  uint8_t               interPredictPatch2dShiftVBitCountMinus1_;
-  uint8_t               interPredictPatch2dDeltaSizeDBitCountMinus1_;
-  uint8_t               interPredictPatch3dShiftTangentAxisBitCountMinus1_;
-  uint8_t               interPredictPatch3dShiftBitangentAxisBitCountMinus1_;
-  uint8_t               interPredictPatch3dShiftNormalAxisBitCountMinus1_;
-  uint8_t               interPredictPatchLodBitCount_;
-  bool                  interPredictPatchBitCountFlag_;
-  bool                  interPredictPatch2dShiftUBitCountFlag_;
-  bool                  interPredictPatch2dShiftVBitCountFlag_;
-  bool                  interPredictPatch3dShiftTangentAxisBitCountFlag_;
-  bool                  interPredictPatch3dShiftBitangentAxisBitCountFlag_;
-  bool                  interPredictPatch3dShiftNormalAxisBitCountFlag_;
-  bool                  interPredictPatchLodBitCountFlag_;
-  uint8_t               raw3dShiftAxisBitCountMinus1_;
-  bool                  raw3dShiftBitCountPresentFlag_;
-  uint8_t               eomPatchNbPatchBitCountMinus1_;
-  uint8_t               eomPatchMaxEPBitCountMinus1_;
-};
-
-// 7.3.5.14  Patch tile group layer unit syntax (jkei: remove and replace with AtlasTileGroupLayerRbsp)
-class PatchTileGroupLayerUnit {
- public:
-  PatchTileGroupLayerUnit() : frameIndex_( 0 ) {}
-  ~PatchTileGroupLayerUnit() {}
-
-  PatchTileGroupLayerUnit& operator=( const PatchTileGroupLayerUnit& ) = default;
-
-  uint8_t                 getFrameIndex() { return frameIndex_; }
-  PatchTileGroupHeader&   getPatchTileGroupHeader() { return patchTileGroupHeader_; }
-  PatchTileGroupDataUnit& getPatchTileGroupDataUnit() { return patchTileGroupDataUnit_; }
-
-  void setFrameIndex( uint8_t value ) { frameIndex_ = value; }
-  void setPatchTileGroupHeader( PatchTileGroupHeader value ) { patchTileGroupHeader_ = value; }
-  void setPatchTileGroupDataUnit( PatchTileGroupDataUnit value ) { patchTileGroupDataUnit_ = value; }
-
- private:
-  uint8_t                frameIndex_;
-  PatchTileGroupHeader   patchTileGroupHeader_;
-  PatchTileGroupDataUnit patchTileGroupDataUnit_;
+	 SeiMessage seiMessage_;
 };
 
 // 7.3.6.4  Atlas frame tile information syntax (jkei: PatchFrameTileInformation is renamed )
@@ -1400,704 +1119,213 @@ class AtlasFrameParameterSetRbsp {
  private:
   uint8_t                   afpsAtlasFrameParameterSetId_;
   uint8_t                   afpsAtlasSequenceParameterSetId_;
+  AtlasFrameTileInformation atlasFrameTileInformation_;
   uint8_t                   afpsNumRefIdxDefaultActiveMinus1_;
   uint8_t                   afpsAdditionalLtAfocLsbLen_;
   uint8_t                   afps2dPosXBitCountMinus1_;
   uint8_t                   afps2dPosYBitCountMinus1_;
   uint8_t                   afps3dPosXBitCountMinus1_;
   uint8_t                   afps3dPosYBitCountMinus1_;
+  bool                      afpsLodModeEnableFlag_; // TODO: remove?
+  uint8_t                   afpsLodBitCount_; //DBG added
   bool                      afpsOverrideEomForDepthFlag_;
   uint8_t                   afpsEomNumberOfPatchBitCountMinus1_;
   uint8_t                   afpsEomMaxBitCountMinus1_;
   bool                      afpsRaw3dPosBitCountExplicitModeFlag_;
   uint8_t                   afpsExtensionPresentFlag_;
   bool                      afpsExtensionDataFlag_;
-  bool                      afpsLodModeEnableFlag_;
-  AtlasFrameTileInformation atlasFrameTileInformation_;
 };
 
-// 7.3.5.12  Patch frame parameter set syntax (jkei: remove and replace it with AtlasFrameParameterSetRbsp
-class PatchFrameParameterSet {
+// 7.3.6.2 Point local reconstruction information syntax
+class PointLocalReconstructionInformation {
  public:
-  PatchFrameParameterSet() :
-      patchFrameParameterSetId_( 0 ),
-      patchVpccParameterSetId_( 0 ),
-      geometryPatchFrameParameterSetId_( 0 ),
-      additionalLtPfocLsbLen_( 0 ),
-      localOverrideGeometryPatchEnableFlag_( false ),
-      projection45DegreeEnableFlag_( false ),
-      lodModeEnableFlag_( false ) {}
-  ~PatchFrameParameterSet() {
-    localOverrideAttributePatchEnableFlag_.clear();
-    attributePatchFrameParameterSetId_.clear();
-  }
-  PatchFrameParameterSet& operator=( const PatchFrameParameterSet& ) = default;
+  PointLocalReconstructionInformation() : numberOfModesMinus1_( 0 ), blockThresholdPerPatchMinus1_( 0 ) {
+    minimumDepth_.clear();
+    neighbourMinus1_.clear();
+    interpolateFlag_.clear();
+    fillingFlag_.clear();
+  };
+  ~PointLocalReconstructionInformation() {
+    minimumDepth_.clear();
+    neighbourMinus1_.clear();
+    interpolateFlag_.clear();
+    fillingFlag_.clear();
+  };
 
-  void allocate( size_t size = 255 ) {
-    localOverrideAttributePatchEnableFlag_.resize( size, false );
-    attributePatchFrameParameterSetId_.resize( size, 0 );
-  }
-  bool getLodModeEnableFlag() { return lodModeEnableFlag_; }
-  void setLodModeEnableFlag( bool value ) { lodModeEnableFlag_ = value; }
+  PointLocalReconstructionInformation& operator=( const PointLocalReconstructionInformation& ) = default;
 
-  uint8_t getPatchFrameParameterSetId() { return patchFrameParameterSetId_; }
-  uint8_t getPatchVpccParameterSetId() { return patchVpccParameterSetId_; }
-  uint8_t getGeometryPatchFrameParameterSetId() { return geometryPatchFrameParameterSetId_; }
-  uint8_t getAttributePatchFrameParameterSetId( size_t index ) { return attributePatchFrameParameterSetId_[index]; }
-  uint8_t getAdditionalLtPfocLsbLen() { return additionalLtPfocLsbLen_; }
-  bool    getLocalOverrideAttributePatchEnableFlag( size_t index ) {
-    return localOverrideAttributePatchEnableFlag_[index];
+  void allocate() {
+    minimumDepth_.resize( numberOfModesMinus1_ + 1, 0 );
+    neighbourMinus1_.resize( numberOfModesMinus1_ + 1, 0 );
+    interpolateFlag_.resize( numberOfModesMinus1_ + 1, false );
+    fillingFlag_.resize( numberOfModesMinus1_ + 1, false );
   }
-  bool                       getLocalOverrideGeometryPatchEnableFlag() { return localOverrideGeometryPatchEnableFlag_; }
-  bool                       getProjection45DegreeEnableFlag() { return projection45DegreeEnableFlag_; }
-  AtlasFrameTileInformation& getAtlasFrameTileInformation() { return atlasFrameTileInformation_; }
-  void                       setPatchFrameParameterSetId( uint8_t value ) { patchFrameParameterSetId_ = value; }
-  void                       setPatchVpccParameterSetId( uint8_t value ) { patchVpccParameterSetId_ = value; }
-  void setGeometryPatchFrameParameterSetId( uint8_t value ) { geometryPatchFrameParameterSetId_ = value; }
-  void setAttributePatchFrameParameterSetId( size_t index, uint8_t value ) {
-    attributePatchFrameParameterSetId_[index] = value;
-  }
-  void setAdditionalLtPfocLsbLen( uint8_t value ) { additionalLtPfocLsbLen_ = value; }
-  void setLocalOverrideAttributePatchEnableFlag( size_t index, bool value ) {
-    localOverrideAttributePatchEnableFlag_[index] = value;
-  }
-  void setLocalOverrideGeometryPatchEnableFlag( bool value ) { localOverrideGeometryPatchEnableFlag_ = value; }
-  void setProjection45DegreeEnableFlag( bool value ) { projection45DegreeEnableFlag_ = value; }
-  void setAtlasFrameTileInformation( AtlasFrameTileInformation value ) { atlasFrameTileInformation_ = value; }
+  bool    getMapEnabledFlag() { return mapEnabledFlag_; }
+  uint8_t getNumberOfModesMinus1() { return numberOfModesMinus1_; }
+  uint8_t getBlockThresholdPerPatchMinus1() { return blockThresholdPerPatchMinus1_; }
+  uint8_t getMinimumDepth( size_t index ) { return minimumDepth_[index]; }
+  uint8_t getNeighbourMinus1( size_t index ) { return neighbourMinus1_[index]; }
+  bool    getInterpolateFlag( size_t index ) { return interpolateFlag_[index]; }
+  bool    getFillingFlag( size_t index ) { return fillingFlag_[index]; }
+  void    setMapEnabledFlag( bool value ) { mapEnabledFlag_ = value; }
+  void    setNumberOfModesMinus1( uint8_t value ) { numberOfModesMinus1_ = value; }
+  void    setBlockThresholdPerPatchMinus1( uint8_t value ) { blockThresholdPerPatchMinus1_ = value; }
+  void    setMinimumDepth( size_t index, uint8_t value ) { minimumDepth_[index] = value; }
+  void    setNeighbourMinus1( size_t index, uint8_t value ) { neighbourMinus1_[index] = value; }
+  void    setInterpolateFlag( size_t index, bool value ) { interpolateFlag_[index] = value; }
+  void    setFillingFlag( size_t index, bool value ) { fillingFlag_[index] = value; }
 
  private:
-  uint8_t                   patchFrameParameterSetId_;
-  uint8_t                   patchVpccParameterSetId_;
-  uint8_t                   geometryPatchFrameParameterSetId_;
-  std::vector<uint8_t>      attributePatchFrameParameterSetId_;
-  uint8_t                   additionalLtPfocLsbLen_;
-  bool                      localOverrideGeometryPatchEnableFlag_;
-  std::vector<bool>         localOverrideAttributePatchEnableFlag_;
-  bool                      projection45DegreeEnableFlag_;
-  bool                      lodModeEnableFlag_;
-  AtlasFrameTileInformation atlasFrameTileInformation_;
+  bool                 mapEnabledFlag_;
+  uint8_t              numberOfModesMinus1_;
+  std::vector<bool>    interpolateFlag_;
+  std::vector<bool>    fillingFlag_;
+  std::vector<uint8_t> minimumDepth_;
+  std::vector<uint8_t> neighbourMinus1_;
+  uint8_t              blockThresholdPerPatchMinus1_;
 };
 
-// jkei: updatd to this point (PST.oct29th)
-
-// 7.3.5.11 Attribute patch params syntax (apps)
-class AttributePatchParams {
+// 7.3.6.1 Atlas sequence parameter set RBSP
+class AtlasSequenceParameterSetRBSP {
  public:
-  AttributePatchParams() :
-      attributePatchScaleParamsPresentFlag_( false ),
-      attributePatchOffsetParamsPresentFlag_( false ) {
-    attributePatchScale_.clear();
-    attributePatchOffset_.clear();
-  }
-  ~AttributePatchParams() {
-    attributePatchScale_.clear();
-    attributePatchOffset_.clear();
-  }
-  void allocate( size_t size = 255 ) {
-    attributePatchScale_.resize( size, 0 );
-    attributePatchOffset_.resize( size, 0 );
-  }
-  AttributePatchParams& operator=( const AttributePatchParams& ) = default;
-  bool                  getAttributePatchScaleParamsPresentFlag() { return attributePatchScaleParamsPresentFlag_; }
-  bool                  getAttributePatchOffsetParamsPresentFlag() { return attributePatchOffsetParamsPresentFlag_; }
-  uint32_t              getAttributePatchScale( size_t index ) { return attributePatchScale_[index]; }
-  int32_t               getAttributePatchOffset( size_t index ) { return attributePatchOffset_[index]; }
-
-  void setAttributePatchScaleParamsPresentFlag( bool value ) { attributePatchScaleParamsPresentFlag_ = value; }
-  void setAttributePatchOffsetParamsPresentFlag( bool value ) { attributePatchOffsetParamsPresentFlag_ = value; }
-  void setAttributePatchScale( size_t index, uint32_t value ) { attributePatchScale_[index] = value; }
-  void setAttributePatchOffset( size_t index, int32_t value ) { attributePatchOffset_[index] = value; }
-
- private:
-  bool                  attributePatchScaleParamsPresentFlag_;
-  std::vector<uint32_t> attributePatchScale_;
-  bool                  attributePatchOffsetParamsPresentFlag_;
-  std::vector<int32_t>  attributePatchOffset_;
-};
-
-// 7.3.5.10 Attribute Patch Parameter Set syntax (appss)
-class AttributePatchParameterSet {
- public:
-  AttributePatchParameterSet() :
-      attributePatchParameterSetId_( 0 ),
-      patchFrameAttributeParameterSetId_( 0 ),
-      attributeDimensionMinus1_( 0 ),
-      attributePatchParamsPresentFlag_( false ) {}
-  ~AttributePatchParameterSet() {}
-  AttributePatchParameterSet& operator=( const AttributePatchParameterSet& ) = default;
-
-  uint8_t               getAttributePatchParameterSetId() { return attributePatchParameterSetId_; }
-  uint8_t               getPatchFrameAttributeParameterSetId() { return patchFrameAttributeParameterSetId_; }
-  bool                  getAttributePatchParamsPresentFlag() { return attributePatchParamsPresentFlag_; }
-  AttributePatchParams& getAttributePatchParams() { return attributePatchParams_; }
-  uint8_t               getAttributeDimensionMinus1() { return attributeDimensionMinus1_; }
-  void                  setAttributePatchParameterSetId( uint8_t value ) { attributePatchParameterSetId_ = value; }
-  void setPatchFrameAttributeParameterSetId( uint8_t value ) { patchFrameAttributeParameterSetId_ = value; }
-  void setAttributePatchParamsPresentFlag( bool value ) { attributePatchParamsPresentFlag_ = value; }
-  void setAttributePatchParams( AttributePatchParams value ) { attributePatchParams_ = value; }
-  void setAttributeDimensionMinus1( uint8_t value ) { attributeDimensionMinus1_ = value; }
-
- private:
-  uint8_t              attributePatchParameterSetId_;
-  uint8_t              patchFrameAttributeParameterSetId_;
-  uint8_t              attributeDimensionMinus1_;
-  bool                 attributePatchParamsPresentFlag_;
-  AttributePatchParams attributePatchParams_;
-};
-
-// 7.3.5.9 Geometry patch params syntax
-class GeometryPatchParams {
- public:
-  GeometryPatchParams() :
-      geometryPatchScaleParamsPresentFlag_( false ),
-      geometryPatchOffsetParamsPresentFlag_( false ),
-      geometryPatchRotationParamsPresentFlag_( false ),
-      geometryPatchPointSizeInfoPresentFlag_( false ),
-      geometryPatchPointShapeInfoPresentFlag_( false ),
-      geometryPatchPointSizeInfo_( 0 ),
-      geometryPatchPointShapeInfo_( 0 ) {
-    for ( size_t d = 0; d < 3; d++ ) {
-      geometryPatchScaleOnAxis_[d]  = 0;  // u(32)
-      geometryPatchOffsetOnAxis_[d] = 0;  // i(32)
-    }
-    for ( size_t d = 0; d < 4; d++ ) {
-      geometryPatchRotationXYZW_[d] = 0;  // i(32)
-    }
-  }
-  ~GeometryPatchParams() {}
-
-  GeometryPatchParams& operator=( const GeometryPatchParams& ) = default;
-
-  bool     getGeometryPatchScaleParamsPresentFlag() { return geometryPatchScaleParamsPresentFlag_; }
-  bool     getGeometryPatchOffsetParamsPresentFlag() { return geometryPatchOffsetParamsPresentFlag_; }
-  bool     getGeometryPatchRotationParamsPresentFlag() { return geometryPatchRotationParamsPresentFlag_; }
-  bool     getGeometryPatchPointSizeInfoPresentFlag() { return geometryPatchPointSizeInfoPresentFlag_; }
-  bool     getGeometryPatchPointShapeInfoPresentFlag() { return geometryPatchPointShapeInfoPresentFlag_; }
-  uint32_t getGeometryPatchScaleOnAxis( size_t index ) { return geometryPatchScaleOnAxis_[index]; }
-  int32_t  getGeometryPatchOffsetOnAxis( size_t index ) { return geometryPatchOffsetOnAxis_[index]; }
-  int32_t  getGeometryPatchRotationQuaternion( size_t index ) { return geometryPatchRotationXYZW_[index]; }
-  uint16_t getGeometryPatchPointSizeInfo() { return geometryPatchPointSizeInfo_; }
-  uint32_t getGeometryPatchPointShapeInfo() { return geometryPatchPointShapeInfo_; }
-
-  void setGeometryPatchScaleParamsPresentFlag( bool value ) { geometryPatchScaleParamsPresentFlag_ = value; }
-  void setGeometryPatchOffsetParamsPresentFlag( bool value ) { geometryPatchOffsetParamsPresentFlag_ = value; }
-  void setGeometryPatchRotationParamsPresentFlag( bool value ) { geometryPatchRotationParamsPresentFlag_ = value; }
-  void setGeometryPatchPointSizeInfoPresentFlag( bool value ) { geometryPatchPointSizeInfoPresentFlag_ = value; }
-  void setGeometryPatchPointShapeInfoPresentFlag( bool value ) { geometryPatchPointShapeInfoPresentFlag_ = value; }
-  void setGeometryPatchScaleOnAxis( size_t index, uint32_t value ) { geometryPatchScaleOnAxis_[index] = value; }
-  void setGeometryPatchOffsetOnAxis( size_t index, int32_t value ) { geometryPatchOffsetOnAxis_[index] = value; }
-  void setGeometryPatchRotationQuaternion( size_t index, int32_t value ) { geometryPatchRotationXYZW_[index] = value; }
-  void setGeometryPatchPointSizeInfo( uint16_t value ) { geometryPatchPointSizeInfo_ = value; }
-  void setGeometryPatchPointShapeInfo( uint32_t value ) { geometryPatchPointShapeInfo_ = value; }
-
- private:
-  bool     geometryPatchScaleParamsPresentFlag_;
-  bool     geometryPatchOffsetParamsPresentFlag_;
-  bool     geometryPatchRotationParamsPresentFlag_;
-  bool     geometryPatchPointSizeInfoPresentFlag_;
-  bool     geometryPatchPointShapeInfoPresentFlag_;
-  uint32_t geometryPatchScaleOnAxis_[3];
-  int32_t  geometryPatchOffsetOnAxis_[3];
-  int32_t  geometryPatchRotationXYZW_[4];
-  uint16_t geometryPatchPointSizeInfo_;
-  uint32_t geometryPatchPointShapeInfo_;
-};
-
-// 7.3.5.8 Geometry patch parameter set syntax
-class GeometryPatchParameterSet {
- public:
-  GeometryPatchParameterSet() :
-      geometryPatchParameterSetId_( 0 ),
-      patchFrameGeometryParameterSetId_( 0 ),
-      geometryPatchParamsPresentFlag_( false ) {}
-  ~GeometryPatchParameterSet() {}
-  GeometryPatchParameterSet& operator=( const GeometryPatchParameterSet& ) = default;
-
-  uint8_t              getGeometryPatchParameterSetId() { return geometryPatchParameterSetId_; }
-  uint8_t              getPatchFrameGeometryParameterSetId() { return patchFrameGeometryParameterSetId_; }
-  bool                 getGeometryPatchParamsPresentFlag() { return geometryPatchParamsPresentFlag_; }
-  GeometryPatchParams& getGeometryPatchParams() { return geometryPatchParams_; }
-
-  void setGeometryPatchParameterSetId( uint8_t value ) { geometryPatchParameterSetId_ = value; }
-  void setPatchFrameGeometryParameterSetId( uint8_t value ) { patchFrameGeometryParameterSetId_ = value; }
-  void setGeometryPatchParamsPresentFlag( bool value ) { geometryPatchParamsPresentFlag_ = value; }
-  void setGeometryPatchParams( GeometryPatchParams value ) { geometryPatchParams_ = value; }
-
- private:
-  uint8_t             geometryPatchParameterSetId_;
-  uint8_t             patchFrameGeometryParameterSetId_;
-  bool                geometryPatchParamsPresentFlag_;
-  GeometryPatchParams geometryPatchParams_;
-};
-
-// 7.3.5.7 Attribute frame paramS syntax (afp)
-class AttributeFrameParams {
- public:
-  AttributeFrameParams() :
-      attributeSmoothingParamsPresentFlag_( false ),
-      attributeScaleParamsPresentFlag_( false ),
-      attributeOffsetParamsPresentFlag_( false ) {
-    attributeScale_.clear();
-    attributeOffset_.clear();
-    attributeSmoothingParamsPresentFlag_.clear();
-    attributeSmoothingGridSizeMinus2_.clear();
-    attributeSmoothingThreshold_.clear();
-    attributeSmoothingThresholdAttributeDifference_.clear();
-    attributeSmoothingThresholdAttributeVariation_.clear();
-    attributeSmoothingLocalEntropyThreshold_.clear();
-  }
-  ~AttributeFrameParams() {
-    attributeScale_.clear();
-    attributeOffset_.clear();
-    attributeSmoothingParamsPresentFlag_.clear();
-    attributeSmoothingGridSizeMinus2_.clear();
-    attributeSmoothingThreshold_.clear();
-    attributeSmoothingThresholdAttributeDifference_.clear();
-    attributeSmoothingThresholdAttributeVariation_.clear();
-    attributeSmoothingLocalEntropyThreshold_.clear();
-  }
-
-  AttributeFrameParams& operator=( const AttributeFrameParams& ) = default;
-
-  void allocate( size_t size ) {
-    attributeScale_.resize( size, 0 );
-    attributeOffset_.resize( size, 0 );
-    attributeSmoothingParamsPresentFlag_.resize( size, 0 );
-    attributeSmoothingGridSizeMinus2_.resize( size, 0 );
-    attributeSmoothingThreshold_.resize( size, 0 );
-    attributeSmoothingThresholdAttributeDifference_.resize( size, 0 );
-    attributeSmoothingThresholdAttributeVariation_.resize( size, 0 );
-    attributeSmoothingLocalEntropyThreshold_.resize( size, 0 );
-  }
-
-  bool    getAttributeSmoothingParamsPresentFlag( size_t index ) { return attributeSmoothingParamsPresentFlag_[index]; }
-  uint8_t getAttributeSmoothingGridSizeMinus2( size_t index ) { return attributeSmoothingGridSizeMinus2_[index]; }
-  uint8_t getAttributeSmoothingThreshold( size_t index ) { return attributeSmoothingThreshold_[index]; }
-  uint32_t getAttributeSmoothingLocalEntropyThreshold( size_t index ) {
-    return attributeSmoothingLocalEntropyThreshold_[index];
-  }
-  uint8_t getAttributeSmoothingThresholdAttributeDifference( size_t index ) {
-    return attributeSmoothingThresholdAttributeDifference_[index];
-  }
-  uint8_t getAttributeSmoothingThresholdAttributeVariation( size_t index ) {
-    return attributeSmoothingThresholdAttributeVariation_[index];
-  }
-  bool     getAttributeScaleParamsPresentFlag() { return attributeScaleParamsPresentFlag_; }
-  bool     getAttributeOffsetParamsPresentFlag() { return attributeOffsetParamsPresentFlag_; }
-  uint32_t getAttributeScale( size_t index ) { return attributeScale_[index]; }
-  int32_t  getAttributeOffset( size_t index ) { return attributeOffset_[index]; }
-
-  void setAttributeSmoothingParamsPresentFlag( std::vector<bool> value ) {
-    attributeSmoothingParamsPresentFlag_ = value;
-  }
-  void setAttributeSmoothingGridSize( std::vector<uint8_t> value ) { attributeSmoothingGridSizeMinus2_ = value; }
-  void setAttributeSmoothingThreshold( std::vector<uint8_t> value ) { attributeSmoothingThreshold_ = value; }
-  void setAttributeSmoothingLocalEntropyThreshold( std::vector<uint32_t> value ) {
-    attributeSmoothingLocalEntropyThreshold_ = value;
-  }
-  void setAttributeSmoothingThresholdAttributeDifference( std::vector<uint8_t> value ) {
-    attributeSmoothingThresholdAttributeDifference_ = value;
-  }
-  void setAttributeSmoothingThresholdAttributeVariation( std::vector<uint8_t> value ) {
-    attributeSmoothingThresholdAttributeVariation_ = value;
-  }
-
-  void setAttributeSmoothingParamsPresentFlag( size_t index, bool value ) {
-    attributeSmoothingParamsPresentFlag_[index] = value;
-  }
-  void setAttributeSmoothingGridSizeMinus2( size_t index, uint8_t value ) {
-    attributeSmoothingGridSizeMinus2_[index] = value;
-  }
-  void setAttributeSmoothingThreshold( size_t index, uint8_t value ) { attributeSmoothingThreshold_[index] = value; }
-  void setAttributeSmoothingLocalEntropyThreshold( size_t index, uint32_t value ) {
-    attributeSmoothingLocalEntropyThreshold_[index] = value;
-  }
-  void setAttributeSmoothingThresholdAttributeDifference( size_t index, uint8_t value ) {
-    attributeSmoothingThresholdAttributeDifference_[index] = value;
-  }
-  void setAttributeSmoothingThresholdAttributeVariation( size_t index, uint8_t value ) {
-    attributeSmoothingThresholdAttributeVariation_[index] = value;
-  }
-  void setAttributeScaleParamsPresentFlag( bool value ) { attributeScaleParamsPresentFlag_ = value; }
-  void setAttributeOffsetParamsPresentFlag( bool value ) { attributeOffsetParamsPresentFlag_ = value; }
-  void setAttributeScale( size_t index, uint32_t value ) { attributeScale_[index] = value; }
-  void setAttributeOffset( size_t index, int32_t value ) { attributeOffset_[index] = value; }
-
- private:
-  std::vector<bool>     attributeSmoothingParamsPresentFlag_;
-  std::vector<uint8_t>  attributeSmoothingGridSizeMinus2_;
-  std::vector<uint8_t>  attributeSmoothingThreshold_;
-  std::vector<uint32_t> attributeSmoothingLocalEntropyThreshold_;
-  std::vector<uint8_t>  attributeSmoothingThresholdAttributeVariation_;
-  std::vector<uint8_t>  attributeSmoothingThresholdAttributeDifference_;
-  bool                  attributeScaleParamsPresentFlag_;
-  bool                  attributeOffsetParamsPresentFlag_;
-  std::vector<uint32_t> attributeScale_;
-  std::vector<int32_t>  attributeOffset_;
-};
-
-// 7.3.5.6 Patch frame attribute parameter set syntax
-class PatchFrameAttributeParameterSet {
- public:
-  PatchFrameAttributeParameterSet() :
-      patchFrameAttributeParameterSetId_( 0 ),
-      patchSequencParameterSetId_( 0 ),
-      attributeDimensionMinus1_( 3 ),
-      attributePatchScaleParamsEnabledFlag_( false ),
-      attributePatchOffsetParamsEnabledFlag_( false ) {}
-
-  ~PatchFrameAttributeParameterSet() {}
-
-  PatchFrameAttributeParameterSet& operator=( const PatchFrameAttributeParameterSet& ) = default;
-
-  uint8_t               getPatchFrameAttributeParameterSetId() { return patchFrameAttributeParameterSetId_; }
-  uint8_t               getPatchSequencParameterSetId() { return patchSequencParameterSetId_; }
-  uint8_t               getAttributeDimensionMinus1() { return attributeDimensionMinus1_; }
-  bool                  getAttributePatchScaleParamsEnabledFlag() { return attributePatchScaleParamsEnabledFlag_; }
-  bool                  getAttributePatchOffsetParamsEnabledFlag() { return attributePatchOffsetParamsEnabledFlag_; }
-  AttributeFrameParams& getAttributeFrameParams() { return attributeFrameParams_; }
-
-  void setPatchFrameAttributeParameterSetId( uint8_t value ) { patchFrameAttributeParameterSetId_ = value; }
-  void setPatchSequencParameterSetId( uint8_t value ) { patchSequencParameterSetId_ = value; }
-  void setAttributeDimensionMinus1( uint8_t value ) { attributeDimensionMinus1_ = value; }
-  void setAttributePatchScaleParamsEnabledFlag( bool value ) { attributePatchScaleParamsEnabledFlag_ = value; }
-  void setAttributePatchOffsetParamsEnabledFlag( bool value ) { attributePatchOffsetParamsEnabledFlag_ = value; }
-  void setAttributeFrameParams( AttributeFrameParams value ) { attributeFrameParams_ = value; }
-
- private:
-  uint8_t              patchFrameAttributeParameterSetId_;
-  uint8_t              patchSequencParameterSetId_;
-  uint8_t              attributeDimensionMinus1_;
-  bool                 attributePatchScaleParamsEnabledFlag_;
-  bool                 attributePatchOffsetParamsEnabledFlag_;
-  AttributeFrameParams attributeFrameParams_;
-};
-
-// 7.3.5.5 Geometry frame params syntax
-class GeometryFrameParams {
- public:
-  GeometryFrameParams() :
-      geometrySmoothingParamsPresentFlag_( false ),
-      geometryScaleParamsPresentFlag_( false ),
-      geometryOffsetParamsPresentFlag_( false ),
-      geometryRotationParamsPresentFlag_( false ),
-      geometryPointSizeInfoPresentFlag_( false ),
-      geometryPointShapeInfoPresentFlag_( false ),
-      geometrySmoothingEnabledFlag_( false ),
-      geometryPatchBlockFilteringEnableFlag_( false ),
-      geometrySmoothingGridSizeMinus2_( 0 ),
-      geometrySmoothingThreshold_( 0 ),
-      geometryPointSizeInfo_( 0 ),
-      geometryPointShapeInfo_( 0 ),
-      geometryPatchBlockFilteringPassesCountMinus1_( 0 ),
-      geometryPatchBlockFilteringFilterSizeMinus1_( 0 ),
-      geometryPatchBlockFilteringLog2ThresholdMinus1_( 0 ) {
-    for ( uint8_t i = 0; i < 3; i++ ) {
-      geometryScaleOnAxis_[i]  = 0;
-      geometryOffsetOnAxis_[i] = 0;
-    }
-    for ( uint8_t i = 0; i < 4; i++ ) { geometryRotationXYZW_[i] = 0; }
-  }
-  ~GeometryFrameParams() {}
-  GeometryFrameParams& operator=( const GeometryFrameParams& ) = default;
-
-  bool     getGeometrySmoothingParamsPresentFlag() { return geometrySmoothingParamsPresentFlag_; }
-  bool     getGeometryScaleParamsPresentFlag() { return geometryScaleParamsPresentFlag_; }
-  bool     getGeometryOffsetParamsPresentFlag() { return geometryOffsetParamsPresentFlag_; }
-  bool     getGeometryRotationParamsPresentFlag() { return geometryRotationParamsPresentFlag_; }
-  bool     getGeometryPointSizeInfoPresentFlag() { return geometryPointSizeInfoPresentFlag_; }
-  bool     getGeometryPointShapeInfoPresentFlag() { return geometryPointShapeInfoPresentFlag_; }
-  bool     getGeometrySmoothingEnabledFlag() { return geometrySmoothingEnabledFlag_; }
-  bool     getGeometryPatchBlockFilteringEnableFlag() { return geometryPatchBlockFilteringEnableFlag_; }
-  uint8_t  getGeometrySmoothingGridSizeMinus2() { return geometrySmoothingGridSizeMinus2_; }
-  uint8_t  getGeometrySmoothingThreshold() { return geometrySmoothingThreshold_; }
-  uint32_t getGeometryScaleOnAxis( size_t index ) { return geometryScaleOnAxis_[index]; }
-  int32_t  getGeometryOffsetOnAxis( size_t index ) { return geometryOffsetOnAxis_[index]; }
-  int32_t  getGeometryRotationQuaternion( size_t index ) { return geometryRotationXYZW_[index]; }
-  uint16_t getGeometryPointSizeInfo() { return geometryPointSizeInfo_; }
-  uint32_t getGeometryPointShapeInfo() { return geometryPointShapeInfo_; }
-  uint32_t getGeometryPatchBlockFilteringPassesCountMinus1() { return geometryPatchBlockFilteringPassesCountMinus1_; }
-  uint32_t getGeometryPatchBlockFilteringFilterSizeMinus1() { return geometryPatchBlockFilteringFilterSizeMinus1_; }
-  uint32_t getGeometryPatchBlockFilteringLog2ThresholdMinus1() {
-    return geometryPatchBlockFilteringLog2ThresholdMinus1_;
-  }
-
-  void setGeometrySmoothingParamsPresentFlag( bool value ) { geometrySmoothingParamsPresentFlag_ = value; }
-  void setGeometryScaleParamsPresentFlag( bool value ) { geometryScaleParamsPresentFlag_ = value; }
-  void setGeometryOffsetParamsPresentFlag( bool value ) { geometryOffsetParamsPresentFlag_ = value; }
-  void setGeometryRotationParamsPresentFlag( bool value ) { geometryRotationParamsPresentFlag_ = value; }
-  void setGeometryPointSizeInfoPresentFlag( bool value ) { geometryPointSizeInfoPresentFlag_ = value; }
-  void setGeometryPointShapeInfoPresentFlag( bool value ) { geometryPointShapeInfoPresentFlag_ = value; }
-  void setGeometrySmoothingEnabledFlag( bool value ) { geometrySmoothingEnabledFlag_ = value; }
-  void setGeometryPatchBlockFilteringEnableFlag( bool value ) { geometryPatchBlockFilteringEnableFlag_ = value; }
-  void setGeometrySmoothingGridSizeMinus2( uint8_t value ) { geometrySmoothingGridSizeMinus2_ = value; }
-  void setGeometrySmoothingThreshold( uint8_t value ) { geometrySmoothingThreshold_ = value; }
-  void setGeometryScaleOnAxis( size_t index, uint32_t value ) { geometryScaleOnAxis_[index] = value; }
-  void setGeometryOffsetOnAxis( size_t index, int32_t value ) { geometryOffsetOnAxis_[index] = value; }
-  void setGeometryRotationQuaternion( size_t index, int32_t value ) { geometryRotationXYZW_[index] = value; }
-  void setGeometryPointSizeInfo( uint16_t value ) { geometryPointSizeInfo_ = value; }
-  void setGeometryPointShapeInfo( uint32_t value ) { geometryPointShapeInfo_ = value; }
-  void setGeometryPatchBlockFilteringPassesCountMinus1( uint8_t value ) {
-    geometryPatchBlockFilteringPassesCountMinus1_ = value;
-  }
-  void setGeometryPatchBlockFilteringFilterSizeMinus1( uint8_t value ) {
-    geometryPatchBlockFilteringFilterSizeMinus1_ = value;
-  }
-  void setGeometryPatchBlockFilteringLog2ThresholdMinus1( uint8_t value ) {
-    geometryPatchBlockFilteringLog2ThresholdMinus1_ = value;
-  }
-
- private:
-  bool     geometrySmoothingParamsPresentFlag_;
-  bool     geometryScaleParamsPresentFlag_;
-  bool     geometryOffsetParamsPresentFlag_;
-  bool     geometryRotationParamsPresentFlag_;
-  bool     geometryPointSizeInfoPresentFlag_;
-  bool     geometryPointShapeInfoPresentFlag_;
-  bool     geometrySmoothingEnabledFlag_;
-  bool     geometryPatchBlockFilteringEnableFlag_;
-  uint8_t  geometrySmoothingGridSizeMinus2_;
-  uint8_t  geometrySmoothingThreshold_;
-  uint32_t geometryScaleOnAxis_[3];
-  int32_t  geometryOffsetOnAxis_[3];
-  int32_t  geometryRotationXYZW_[4];
-  uint16_t geometryPointSizeInfo_;
-  uint32_t geometryPointShapeInfo_;
-  uint8_t  geometryPatchBlockFilteringPassesCountMinus1_;
-  uint8_t  geometryPatchBlockFilteringFilterSizeMinus1_;
-  uint8_t  geometryPatchBlockFilteringLog2ThresholdMinus1_;
-};
-
-// 7.3.5.4 Patch frame geometry parameter set syntax
-class PatchFrameGeometryParameterSet {
- public:
-  PatchFrameGeometryParameterSet() :
-      patchFrameGeometryParameterSetId_( 0 ),
-      patchVpccParameterSetId_( 0 ),
-      geometryPatchParamsEnabledFlag_( false ),
-      geometryPatchScaleParamsEnabledFlag_( false ),
-      geometryPatchOffsetParamsEnabledFlag_( false ),
-      geometryPatchRotationParamsEnabledFlag_( false ),
-      geometryPatchPointSizeInfoEnabledFlag_( false ),
-      geometryPatchPointShapeInfoEnabledFlag_( false ) {}
-
-  ~PatchFrameGeometryParameterSet() {}
-  PatchFrameGeometryParameterSet& operator=( const PatchFrameGeometryParameterSet& ) = default;
-
-  uint8_t              getPatchFrameGeometryParameterSetId() { return patchFrameGeometryParameterSetId_; }
-  uint8_t              getPatchVpccParameterSetId() { return patchVpccParameterSetId_; }
-  bool                 getGeometryPatchParamsEnabledFlag() { return geometryPatchParamsEnabledFlag_; }
-  bool                 getOverrideGeometryPatchParamsFlag() { return overrideGeometryPatchParamsFlag_; }
-  bool                 getGeometryPatchScaleParamsEnabledFlag() { return geometryPatchScaleParamsEnabledFlag_; }
-  bool                 getGeometryPatchOffsetParamsEnabledFlag() { return geometryPatchOffsetParamsEnabledFlag_; }
-  bool                 getGeometryPatchRotationParamsEnabledFlag() { return geometryPatchRotationParamsEnabledFlag_; }
-  bool                 getGeometryPatchPointSizeInfoEnabledFlag() { return geometryPatchPointSizeInfoEnabledFlag_; }
-  bool                 getGeometryPatchPointShapeInfoEnabledFlag() { return geometryPatchPointShapeInfoEnabledFlag_; }
-  GeometryFrameParams& getGeometryFrameParams() { return geometryFrameParams_; }
-
-  void setPatchFrameGeometryParameterSetId( uint8_t value ) { patchFrameGeometryParameterSetId_ = value; }
-  void setPatchVpccParameterSetId( uint8_t value ) { patchVpccParameterSetId_ = value; }
-  void setGeometryPatchParamsEnabledFlag( bool value ) { geometryPatchParamsEnabledFlag_ = value; }
-  void setOverrideGeometryPatchParamsFlag( bool value ) { overrideGeometryPatchParamsFlag_ = value; }
-  void setGeometryPatchScaleParamsEnabledFlag( bool value ) { geometryPatchScaleParamsEnabledFlag_ = value; }
-  void setGeometryPatchOffsetParamsEnabledFlag( bool value ) { geometryPatchOffsetParamsEnabledFlag_ = value; }
-  void setGeometryPatchRotationParamsEnabledFlag( bool value ) { geometryPatchRotationParamsEnabledFlag_ = value; }
-  void setGeometryPatchPointSizeInfoEnabledFlag( bool value ) { geometryPatchPointSizeInfoEnabledFlag_ = value; }
-  void setGeometryPatchPointShapeInfoEnabledFlag( bool value ) { geometryPatchPointShapeInfoEnabledFlag_ = value; }
-  void setGeometryFrameParams( GeometryFrameParams value ) { geometryFrameParams_ = value; }
-
- private:
-  uint8_t             patchFrameGeometryParameterSetId_;
-  uint8_t             patchVpccParameterSetId_;
-  bool                geometryPatchParamsEnabledFlag_;
-  bool                overrideGeometryPatchParamsFlag_;
-  bool                geometryPatchScaleParamsEnabledFlag_;
-  bool                geometryPatchOffsetParamsEnabledFlag_;
-  bool                geometryPatchRotationParamsEnabledFlag_;
-  bool                geometryPatchPointSizeInfoEnabledFlag_;
-  bool                geometryPatchPointShapeInfoEnabledFlag_;
-  GeometryFrameParams geometryFrameParams_;
-};
-
-// 7.3.5.3  Patch sequence parameter set syntax (psps)
-class PatchVpccParameterSet {
- public:
-  PatchVpccParameterSet() :
-      patchVpccParameterSetId_( 0 ),
+  AtlasSequenceParameterSetRBSP() :
+      altasSequenceParameterSetId_( 0 ),
+      frameWidth_( 0 ),
+      frameHeight_( 0 ),
       log2PatchPackingBlockSize_( 0 ),
-      log2MaxPatchFrameOrderCntLsb_( 0 ),
-      maxDecPatchFrameBufferingMinus1_( 0 ),
-      numRefPatchFrameListsInPsps_( 0 ),
-      longTermRefPatchFramesFlag_( false ),
+      log2MaxAtlasFrameOrderCntLsbMinus4_( 0 ),
+      maxDecAtlasFrameBufferingMinus1_( 0 ),
+      numRefAtlasFrameListsInAsps_( 0 ),
+      mapCountMinus1_( 0 ),
+      enhancedOccupancyMapFixBitCountMinus1_( 0 ),
+      surfaceThicknessMinus1_( 0 ),
+      longTermRefAtlasFramesFlag_( false ),
       useEightOrientationsFlag_( false ),
-      normalAxisLimitsQuantizationEnableFlag_( false ),
-      normalAxisMaxDeltaValueEnableFlag_( false ) {
+      degree45ProjectionPatchPresentFlag_( false ),
+      normalAxisLimitsQuantizationEnabledFlag_( false ),
+      normalAxisMaxDeltaValueEnabledFlag_( false ),
+      removeDuplicatePointEnabledFlag_( false ),
+      pixelDeinterleavingFlag_( false ),
+      patchPrecedenceOrderFlag_( false ),
+      patchSizeQuantizerPresentFlag_( false ),
+      enhancedOccupancyMapForDepthFlag_( false ),
+      pointLocalReconstructionEnabledFlag_( false ),
+      vuiParametersPresentFlag_( false ),
+      extensionPresentFlag_( false ),
+      extensionDataFlag_( false ) {}
+  ~AtlasSequenceParameterSetRBSP() {
     refListStruct_.clear();
+    pointLocalReconstructionInformation_.clear();
   }
-  ~PatchVpccParameterSet() { refListStruct_.clear(); }
 
-  PatchVpccParameterSet& operator=( const PatchVpccParameterSet& ) = default;
+  AtlasSequenceParameterSetRBSP& operator=( const AtlasSequenceParameterSetRBSP& ) = default;
 
-  void           allocate( size_t size ) { refListStruct_.resize( size ); }
-  uint8_t        getPatchVpccParameterSetId() { return patchVpccParameterSetId_; }
-  uint8_t        getLog2PatchPackingBlockSize() { return log2PatchPackingBlockSize_; }
-  uint8_t        getLog2MaxPatchFrameOrderCntLsbMinus4() { return log2MaxPatchFrameOrderCntLsb_; }
-  uint8_t        getMaxDecPatchFrameBufferingMinus1() { return maxDecPatchFrameBufferingMinus1_; }
-  uint8_t        getNumRefPatchFrameListsInPsps() { return numRefPatchFrameListsInPsps_; }
-  bool           getLongTermRefPatchFramesFlag() { return longTermRefPatchFramesFlag_; }
-  bool           getUseEightOrientationsFlag() { return useEightOrientationsFlag_; }
-  bool           getNormalAxisLimitsQuantizationEnableFlag() { return normalAxisLimitsQuantizationEnableFlag_; }
-  bool           getNormalAxisMaxDeltaValueEnableFlag() { return normalAxisMaxDeltaValueEnableFlag_; }
-  RefListStruct& getRefListStruct( uint8_t index ) { return refListStruct_[index]; }
-  uint8_t        getRefListStructSize() { return refListStruct_.size(); }
+  void allocateRefListStruct() { refListStruct_.resize( numRefAtlasFrameListsInAsps_ ); }
+  void allocatePointLocalReconstructionInformation() {
+    pointLocalReconstructionInformation_.resize( mapCountMinus1_ + 1 );
+  }
+  uint8_t getAltasSequenceParameterSetId() { return altasSequenceParameterSetId_; }
+  uint8_t getFrameWidth() { return frameWidth_; }
+  uint8_t getFrameHeight() { return frameHeight_; }
+  uint8_t getLog2PatchPackingBlockSize() { return log2PatchPackingBlockSize_; }
+  uint8_t getLog2MaxAtlasFrameOrderCntLsbMinus4() { return log2MaxAtlasFrameOrderCntLsbMinus4_; }
+  uint8_t getMaxDecAtlasFrameBufferingMinus1() { return maxDecAtlasFrameBufferingMinus1_; }
+  uint8_t getNumRefAtlasFrameListsInAsps() { return numRefAtlasFrameListsInAsps_; }
+  uint8_t getMapCountMinus1() { return mapCountMinus1_; }
+  uint8_t getEnhancedOccupancyMapFixBitCountMinus1() { return enhancedOccupancyMapFixBitCountMinus1_; }
+  uint8_t getSurfaceThicknessMinus1() { return surfaceThicknessMinus1_; }
+  bool    getLongTermRefAtlasFramesFlag() { return longTermRefAtlasFramesFlag_; }
+  bool    getUseEightOrientationsFlag() { return useEightOrientationsFlag_; }
+  bool    get45DegreeProjectionPatchPresentFlag() { return degree45ProjectionPatchPresentFlag_; }
+  bool    getNormalAxisLimitsQuantizationEnabledFlag() { return normalAxisLimitsQuantizationEnabledFlag_; }
+  bool    getNormalAxisMaxDeltaValueEnabledFlag() { return normalAxisMaxDeltaValueEnabledFlag_; }
+  bool    getRemoveDuplicatePointEnabledFlag() { return removeDuplicatePointEnabledFlag_; }
+  bool    getPixelDeinterleavingFlag() { return pixelDeinterleavingFlag_; }
+  bool    getPatchPrecedenceOrderFlag() { return patchPrecedenceOrderFlag_; }
+  bool    getPatchSizeQuantizerPresentFlag() { return patchSizeQuantizerPresentFlag_; }
+  bool    getEnhancedOccupancyMapForDepthFlag() { return enhancedOccupancyMapForDepthFlag_; }
+  bool    getPointLocalReconstructionEnabledFlag() { return pointLocalReconstructionEnabledFlag_; }
+  bool    getVuiParametersPresentFlag() { return vuiParametersPresentFlag_; }
+  bool    getExtensionPresentFlag() { return extensionPresentFlag_; }
+  bool    getExtensionDataFlag() { return extensionDataFlag_; }
 
-  void setPatchVpccParameterSetId( uint8_t value ) { patchVpccParameterSetId_ = value; }
+  void setAltasSequenceParameterSetId( uint8_t value ) { altasSequenceParameterSetId_ = value; }
+  void setFrameWidth( uint8_t value ) { frameWidth_ = value; }
+  void setFrameHeight( uint8_t value ) { frameHeight_ = value; }
   void setLog2PatchPackingBlockSize( uint8_t value ) { log2PatchPackingBlockSize_ = value; }
-  void setLog2MaxPatchFrameOrderCntLsbMinus4( uint8_t value ) { log2MaxPatchFrameOrderCntLsb_ = value; }
-  void setMaxDecPatchFrameBufferingMinus1( uint8_t value ) { maxDecPatchFrameBufferingMinus1_ = value; }
-  void setNumRefPatchFrameListsInPsps( uint8_t value ) { numRefPatchFrameListsInPsps_ = value; }
-  void setLongTermRefPatchFramesFlag( bool value ) { longTermRefPatchFramesFlag_ = value; }
+  void setLog2MaxAtlasFrameOrderCntLsbMinus4( uint8_t value ) { log2MaxAtlasFrameOrderCntLsbMinus4_ = value; }
+  void setMaxDecAtlasFrameBufferingMinus1( uint8_t value ) { maxDecAtlasFrameBufferingMinus1_ = value; }
+  void setNumRefAtlasFrameListsInAsps( uint8_t value ) { numRefAtlasFrameListsInAsps_ = value; }
+  void setMapCountMinus1( uint8_t value ) { mapCountMinus1_ = value; }
+  void setEnhancedOccupancyMapFixBitCountMinus1( uint8_t value ) { enhancedOccupancyMapFixBitCountMinus1_ = value; }
+  void setSurfaceThicknessMinus1( uint8_t value ) { surfaceThicknessMinus1_ = value; }
+  void setLongTermRefAtlasFramesFlag( bool value ) { longTermRefAtlasFramesFlag_ = value; }
   void setUseEightOrientationsFlag( bool value ) { useEightOrientationsFlag_ = value; }
-  void setNormalAxisLimitsQuantizationEnableFlag( bool value ) { normalAxisLimitsQuantizationEnableFlag_ = value; }
-  void setNormalAxisMaxDeltaValueEnableFlag( bool value ) { normalAxisMaxDeltaValueEnableFlag_ = value; }
-  void setRefListStruct( uint8_t index, RefListStruct value ) { refListStruct_[index] = value; }
-  void addRefListStruct( RefListStruct value ) { refListStruct_.push_back( value ); }
+  void set45DegreeProjectionPatchPresentFlag( bool value ) { degree45ProjectionPatchPresentFlag_ = value; }
+  void setNormalAxisLimitsQuantizationEnabledFlag( bool value ) { normalAxisLimitsQuantizationEnabledFlag_ = value; }
+  void setNormalAxisMaxDeltaValueEnabledFlag( bool value ) { normalAxisMaxDeltaValueEnabledFlag_ = value; }
+  void setRemoveDuplicatePointEnabledFlag( bool value ) { removeDuplicatePointEnabledFlag_ = value; }
+  void setPixelDeinterleavingFlag( bool value ) { pixelDeinterleavingFlag_ = value; }
+  void setPatchPrecedenceOrderFlag( bool value ) { patchPrecedenceOrderFlag_ = value; }
+  void setPatchSizeQuantizerPresentFlag( bool value ) { patchSizeQuantizerPresentFlag_ = value; }
+  void setEnhancedOccupancyMapForDepthFlag( bool value ) { enhancedOccupancyMapForDepthFlag_ = value; }
+  void setPointLocalReconstructionEnabledFlag( bool value ) { pointLocalReconstructionEnabledFlag_ = value; }
+  void setVuiParametersPresentFlag( bool value ) { vuiParametersPresentFlag_ = value; }
+  void setExtensionPresentFlag( bool value ) { extensionPresentFlag_ = value; }
+  void setExtensionDataFlag( bool value ) { extensionDataFlag_ = value; }
+
+  RefListStruct& getRefListStruct( uint8_t index ) { return refListStruct_[index]; }
+  void           addRefListStruct( RefListStruct value ) { refListStruct_.push_back( value ); }
   RefListStruct& addRefListStruct() {
     RefListStruct refListStruct;
     refListStruct_.push_back( refListStruct );
     return refListStruct_.back();
   }
+  PointLocalReconstructionInformation& getPointLocalReconstructionInformation( uint8_t index ) {
+    return pointLocalReconstructionInformation_[index];
+  }
+  void addPointLocalReconstructionInformation( PointLocalReconstructionInformation value ) {
+    pointLocalReconstructionInformation_.push_back( value );
+  }
+  PointLocalReconstructionInformation& addPointLocalReconstructionInformation() {
+    PointLocalReconstructionInformation plri;
+    pointLocalReconstructionInformation_.push_back( plri );
+    return pointLocalReconstructionInformation_.back();
+  }
 
  private:
-  uint8_t patchVpccParameterSetId_;
-  uint8_t log2PatchPackingBlockSize_;
-  uint8_t log2MaxPatchFrameOrderCntLsb_;
-  uint8_t maxDecPatchFrameBufferingMinus1_;
-  uint8_t numRefPatchFrameListsInPsps_;
-  bool    longTermRefPatchFramesFlag_;
-  bool    useEightOrientationsFlag_;
-  bool    normalAxisLimitsQuantizationEnableFlag_;
-  bool    normalAxisMaxDeltaValueEnableFlag_;
-
+  uint8_t  altasSequenceParameterSetId_;
+  uint16_t frameWidth_; 
+  uint16_t frameHeight_;
+  uint8_t  log2PatchPackingBlockSize_;
+  uint8_t  log2MaxAtlasFrameOrderCntLsbMinus4_;
+  uint8_t  maxDecAtlasFrameBufferingMinus1_;
+  bool     longTermRefAtlasFramesFlag_;
+  uint8_t  numRefAtlasFrameListsInAsps_;
   std::vector<RefListStruct> refListStruct_;
+  bool     useEightOrientationsFlag_;
+  bool     degree45ProjectionPatchPresentFlag_;
+  bool     normalAxisLimitsQuantizationEnabledFlag_;
+  bool     normalAxisMaxDeltaValueEnabledFlag_;
+  bool     removeDuplicatePointEnabledFlag_;
+  bool     pixelDeinterleavingFlag_;
+  bool     patchPrecedenceOrderFlag_;
+  bool     patchSizeQuantizerPresentFlag_;
+  bool     enhancedOccupancyMapForDepthFlag_;
+  bool     pointLocalReconstructionEnabledFlag_;
+  uint8_t  mapCountMinus1_;
+  uint8_t  enhancedOccupancyMapFixBitCountMinus1_;
+  std::vector<PointLocalReconstructionInformation> pointLocalReconstructionInformation_;
+  uint8_t  surfaceThicknessMinus1_;
+  bool     vuiParametersPresentFlag_;
+  bool     extensionPresentFlag_;
+  bool     extensionDataFlag_;
+
 };
 
-class SeiPayload {
- public:
-  SeiPayload() {}
-  ~SeiPayload() {}
-  SeiPayload& operator=( const SeiPayload& ) = default;
-};
+// 7.3.6	Atlas sequence, frame, and tile group parameter set syntax
 
-class SeiMessage {
- public:
-  SeiMessage() : payloadTypeByte_( 0 ), payloadSizeByte_( 0 ) { seiPayload_.clear(); }
-  ~SeiMessage() { seiPayload_.clear(); }
-  SeiMessage& operator=( const SeiMessage& ) = default;
-  uint8_t     getPayloadTypeByte() { return payloadTypeByte_; }
-  uint8_t     getPayloadSizeByte() { return payloadSizeByte_; }
-  void        setPayloadTypeByte( uint8_t value ) { payloadTypeByte_ = value; }
-  void        setPayloadSizeByte( uint8_t value ) { payloadSizeByte_ = value; }
-
- private:
-  uint8_t                 payloadTypeByte_;
-  uint8_t                 payloadSizeByte_;
-  std::vector<SeiPayload> seiPayload_;
-};
-
-// 7.3.5.2  Patch data group unit payload syntax (pdgup)
-class PatchDataGroup {
- public:
-  PatchDataGroup() {}
-  ~PatchDataGroup() {
-    patchTileGroupLayerUnit_.clear();
-    seiMessageSuffix_.clear();
-    seiMessagePrefix_.clear();
-  }
-  PatchDataGroup&             operator=( const PatchDataGroup& ) = default;
-  PatchVpccParameterSet&      getPatchVpccParameterSet( size_t index ) { return patchVpccParameterSet_[index]; }
-  GeometryPatchParameterSet&  getGeometryPatchParameterSet( size_t index ) { return geometryPatchParameterSet_[index]; }
-  AttributePatchParameterSet& getAttributePatchParameterSet( size_t index ) {
-    return attributePatchParameterSet_[index];
-  }
-  PatchFrameParameterSet&          getPatchFrameParameterSet( size_t index ) { return patchFrameParameterSet_[index]; }
-  PatchFrameAttributeParameterSet& getPatchFrameAttributeParameterSet( size_t index ) {
-    return patchFrameAttributeParameterSet_[index];
-  }
-  PatchFrameGeometryParameterSet& getPatchFrameGeometryParameterSet( size_t index ) {
-    return patchFrameGeometryParameterSet_[index];
-  }
-  PatchTileGroupLayerUnit& getPatchTileGroupLayerUnit( size_t index ) { return patchTileGroupLayerUnit_[index]; }
-  std::vector<SeiMessage>& getSeiMessagePrefix() { return seiMessagePrefix_; }
-  std::vector<SeiMessage>& getSeiMessageSuffix() { return seiMessageSuffix_; }
-  SeiMessage&              getSeiMessagePrefix( size_t index ) { return seiMessagePrefix_[index]; }
-  SeiMessage&              getSeiMessageSuffix( size_t index ) { return seiMessageSuffix_[index]; }
-  size_t                   getPatchTileGroupLayerUnitSize() { return patchTileGroupLayerUnit_.size(); }
-  size_t                   getSeiMessagePrefixSize() { return seiMessagePrefix_.size(); }
-  size_t                   getSeiMessageSuffixSize() { return seiMessageSuffix_.size(); }
-  size_t                   getPatchVpccParameterSetSize() { return patchVpccParameterSetSize_; }
-  size_t                   getGeometryPatchParameterSetSize() { return geometryPatchParameterSetSize_; }
-  size_t                   getAttributePatchParameterSetSize() { return attributePatchParameterSetSize_; }
-  size_t                   getPatchFrameParameterSetSize() { return patchFrameParameterSetSize_; }
-  size_t                   getPatchFrameAttributeParameterSetSize() { return patchFrameAttributeParameterSetSize_; }
-  size_t                   getPatchFrameGeometryParameterSetSize() { return patchFrameGeometryParameterSetSize_; }
-  void                     setPatchVpccParameterSetSize( size_t value ) { patchVpccParameterSetSize_ = value; }
-  void                     setGeometryPatchParameterSetSize( size_t value ) { geometryPatchParameterSetSize_ = value; }
-  void setAttributePatchParameterSetSize( size_t value ) { attributePatchParameterSetSize_ = value; }
-  void setPatchFrameParameterSetSize( size_t value ) { patchFrameParameterSetSize_ = value; }
-  void setPatchFrameAttributeParameterSetSize( size_t value ) { patchFrameAttributeParameterSetSize_ = value; }
-  void setPatchFrameGeometryParameterSetSize( size_t value ) { patchFrameGeometryParameterSetSize_ = value; }
-  void setPatchVpccParameterSet( size_t index, PatchVpccParameterSet value ) { patchVpccParameterSet_[index] = value; }
-  void setGeometryPatchParameterSet( size_t index, GeometryPatchParameterSet value ) {
-    geometryPatchParameterSet_[index] = value;
-  }
-  void setAttributePatchParameterSet( size_t index, AttributePatchParameterSet& value ) {
-    attributePatchParameterSet_[index] = value;
-  }
-  void setPatchFrameParameterSet( size_t index, PatchFrameParameterSet value ) {
-    patchFrameParameterSet_[index] = value;
-  }
-  void setPatchFrameAttributeParameterSet( size_t index, PatchFrameAttributeParameterSet& value ) {
-    patchFrameAttributeParameterSet_[index] = value;
-  }
-  void setPatchFrameGeometryParameterSet( size_t index, PatchFrameGeometryParameterSet value ) {
-    patchFrameGeometryParameterSet_[index] = value;
-  }
-  PatchTileGroupLayerUnit& addPatchTileGroupLayerUnit() {
-    PatchTileGroupLayerUnit patchTileGroupLayerUnit;
-    patchTileGroupLayerUnit_.push_back( patchTileGroupLayerUnit );
-    return patchTileGroupLayerUnit_.back();
-  }
-  SeiMessage& addSeiMessagePrefix() {
-    SeiMessage seiMessage;
-    seiMessagePrefix_.push_back( seiMessage );
-    return seiMessagePrefix_.back();
-  }
-  SeiMessage& addSeiMessageSuffix() {
-    SeiMessage seiMessage;
-    seiMessageSuffix_.push_back( seiMessage );
-    return seiMessageSuffix_.back();
-  }
-
- private:
-  PatchVpccParameterSet                patchVpccParameterSet_[16];
-  GeometryPatchParameterSet            geometryPatchParameterSet_[64];
-  AttributePatchParameterSet           attributePatchParameterSet_[64];
-  PatchFrameParameterSet               patchFrameParameterSet_[64];
-  PatchFrameAttributeParameterSet      patchFrameAttributeParameterSet_[64];
-  PatchFrameGeometryParameterSet       patchFrameGeometryParameterSet_[64];
-  std::vector<PatchTileGroupLayerUnit> patchTileGroupLayerUnit_;
-  std::vector<SeiMessage>              seiMessagePrefix_;
-  std::vector<SeiMessage>              seiMessageSuffix_;
-  size_t                               patchVpccParameterSetSize_;
-  size_t                               geometryPatchParameterSetSize_;
-  size_t                               attributePatchParameterSetSize_;
-  size_t                               patchFrameParameterSetSize_;
-  size_t                               patchFrameAttributeParameterSetSize_;
-  size_t                               patchFrameGeometryParameterSetSize_;
-};
-
-// jkei: Here to bottom : updated (CES.oct29th)
+// 7.3.4.5 Attribute information Syntax
 class AttributeInformation {
  public:
   AttributeInformation() :
@@ -2310,146 +1538,7 @@ class ProfileTierLevel {
   uint8_t levelIdc_;
 };
 
-// 7.3.6 Atlas sequence, frame, and tile group parameter set syntax
-// 7.3.6.1 Atlas sequence parameter set RBSP
-class AtlasSequenceParameterSetRBSP {
- public:
-  AtlasSequenceParameterSetRBSP() :
-      altasSequenceParameterSetId_( 0 ),
-      frameWidth_( 0 ),
-      frameHeight_( 0 ),
-      log2PatchPackingBlockSize_( 0 ),
-      log2MaxAtlasFrameOrderCntLsbMinus4_( 0 ),
-      maxDecAtlasFrameBufferingMinus1_( 0 ),
-      numRefAtlasFrameListsInAsps_( 0 ),
-      mapCountMinus1_( 0 ),
-      enhancedOccupancyMapFixBitCountMinus1_( 0 ),
-      surfaceThicknessMinus1_( 0 ),
-      longTermRefAtlasFramesFlag_( false ),
-      useEightOientationsFlag_( false ),
-      degree45ProjectionPatchPresentFlag_( false ),
-      normalAxisLimitsQuantizationEnabledFlag_( false ),
-      normalAxisMaxDeltaValueEnabledFlag_( false ),
-      removeDuplicatePointEnabledFlag_( false ),
-      pixelDeinterleavingFlag_( false ),
-      patchPrecedenceOrderFlag_( false ),
-      patchSizeQuantizerPresentFlag_( false ),
-      enhancedOccupancyMapForDepthFlag_( false ),
-      pointLocalReconstructionEnabledFlag_( false ),
-      vuiParametersPresentFlag_( false ),
-      extensionPresentFlag_( false ),
-      extensionDataFlag_( false ) {}
-  ~AtlasSequenceParameterSetRBSP() {
-    refListStruct_.clear();
-    pointLocalReconstructionInformation_.clear();
-  }
-
-  AtlasSequenceParameterSetRBSP& operator=( const AtlasSequenceParameterSetRBSP& ) = default;
-
-  void allocateRefListStruct() { refListStruct_.resize( numRefAtlasFrameListsInAsps_ ); }
-  void allocatePointLocalReconstructionInformation() {
-    pointLocalReconstructionInformation_.resize( mapCountMinus1_ + 1 );
-  }
-  uint8_t getAltasSequenceParameterSetId() { return altasSequenceParameterSetId_; }
-  uint8_t getFrameWidth() { return frameWidth_; }
-  uint8_t getFrameHeight() { return frameHeight_; }
-  uint8_t getLog2PatchPackingBlockSize() { return log2PatchPackingBlockSize_; }
-  uint8_t getLog2MaxAtlasFrameOrderCntLsbMinus4() { return log2MaxAtlasFrameOrderCntLsbMinus4_; }
-  uint8_t getMaxDecAtlasFrameBufferingMinus1() { return maxDecAtlasFrameBufferingMinus1_; }
-  uint8_t getNumRefAtlasFrameListsInAsps() { return numRefAtlasFrameListsInAsps_; }
-  uint8_t getMapCountMinus1() { return mapCountMinus1_; }
-  uint8_t getEnhancedOccupancyMapFixBitCountMinus1() { return enhancedOccupancyMapFixBitCountMinus1_; }
-  uint8_t getSurfaceThicknessMinus1() { return surfaceThicknessMinus1_; }
-  bool    getLongTermRefAtlasFramesFlag() { return longTermRefAtlasFramesFlag_; }
-  bool    getUseEightOientationsFlag() { return useEightOientationsFlag_; }
-  bool    get45DegreeProjectionPatchPresentFlag() { return degree45ProjectionPatchPresentFlag_; }
-  bool    getNormalAxisLimitsQuantizationEnabledFlag() { return normalAxisLimitsQuantizationEnabledFlag_; }
-  bool    getNormalAxisMaxDeltaValueEnabledFlag() { return normalAxisMaxDeltaValueEnabledFlag_; }
-  bool    getRemoveDuplicatePointEnabledFlag() { return removeDuplicatePointEnabledFlag_; }
-  bool    getPixelDeinterleavingFlag() { return pixelDeinterleavingFlag_; }
-  bool    getPatchPrecedenceOrderFlag() { return patchPrecedenceOrderFlag_; }
-  bool    getPatchSizeQuantizerPresentFlag() { return patchSizeQuantizerPresentFlag_; }
-  bool    getEnhancedOccupancyMapForDepthFlag() { return enhancedOccupancyMapForDepthFlag_; }
-  bool    getPointLocalReconstructionEnabledFlag() { return pointLocalReconstructionEnabledFlag_; }
-  bool    getVuiParametersPresentFlag() { return vuiParametersPresentFlag_; }
-  bool    getExtensionPresentFlag() { return extensionPresentFlag_; }
-  bool    getExtensionDataFlag() { return extensionDataFlag_; }
-
-  void setAltasSequenceParameterSetId( uint8_t value ) { altasSequenceParameterSetId_ = value; }
-  void setFrameWidth( uint8_t value ) { frameWidth_ = value; }
-  void setFrameHeight( uint8_t value ) { frameHeight_ = value; }
-  void setLog2PatchPackingBlockSize( uint8_t value ) { log2PatchPackingBlockSize_ = value; }
-  void setLog2MaxAtlasFrameOrderCntLsbMinus4( uint8_t value ) { log2MaxAtlasFrameOrderCntLsbMinus4_ = value; }
-  void setMaxDecAtlasFrameBufferingMinus1( uint8_t value ) { maxDecAtlasFrameBufferingMinus1_ = value; }
-  void setNumRefAtlasFrameListsInAsps( uint8_t value ) { numRefAtlasFrameListsInAsps_ = value; }
-  void setMapCountMinus1( uint8_t value ) { mapCountMinus1_ = value; }
-  void setEnhancedOccupancyMapFixBitCountMinus1( uint8_t value ) { enhancedOccupancyMapFixBitCountMinus1_ = value; }
-  void setSurfaceThicknessMinus1( uint8_t value ) { surfaceThicknessMinus1_ = value; }
-  void setLongTermRefAtlasFramesFlag( bool value ) { longTermRefAtlasFramesFlag_ = value; }
-  void setUseEightOientationsFlag( bool value ) { useEightOientationsFlag_ = value; }
-  void set45DegreeProjectionPatchPresentFlag( bool value ) { degree45ProjectionPatchPresentFlag_ = value; }
-  void setNormalAxisLimitsQuantizationEnabledFlag( bool value ) { normalAxisLimitsQuantizationEnabledFlag_ = value; }
-  void setNormalAxisMaxDeltaValueEnabledFlag( bool value ) { normalAxisMaxDeltaValueEnabledFlag_ = value; }
-  void setRemoveDuplicatePointEnabledFlag( bool value ) { removeDuplicatePointEnabledFlag_ = value; }
-  void setPixelDeinterleavingFlag( bool value ) { pixelDeinterleavingFlag_ = value; }
-  void setPatchPrecedenceOrderFlag( bool value ) { patchPrecedenceOrderFlag_ = value; }
-  void setPatchSizeQuantizerPresentFlag( bool value ) { patchSizeQuantizerPresentFlag_ = value; }
-  void setEnhancedOccupancyMapForDepthFlag( bool value ) { enhancedOccupancyMapForDepthFlag_ = value; }
-  void setPointLocalReconstructionEnabledFlag( bool value ) { pointLocalReconstructionEnabledFlag_ = value; }
-  void setVuiParametersPresentFlag( bool value ) { vuiParametersPresentFlag_ = value; }
-  void setExtensionPresentFlag( bool value ) { extensionPresentFlag_ = value; }
-  void setExtensionDataFlag( bool value ) { extensionDataFlag_ = value; }
-
-  RefListStruct& getRefListStruct( uint8_t index ) { return refListStruct_[index]; }
-  void           addRefListStruct( RefListStruct value ) { refListStruct_.push_back( value ); }
-  RefListStruct& addRefListStruct() {
-    RefListStruct refListStruct;
-    refListStruct_.push_back( refListStruct );
-    return refListStruct_.back();
-  }
-  PointLocalReconstructionInformation& getPointLocalReconstructionInformation( uint8_t index ) {
-    return pointLocalReconstructionInformation_[index];
-  }
-  void addPointLocalReconstructionInformation( PointLocalReconstructionInformation value ) {
-    pointLocalReconstructionInformation_.push_back( value );
-  }
-  PointLocalReconstructionInformation& addPointLocalReconstructionInformation() {
-    PointLocalReconstructionInformation plri;
-    pointLocalReconstructionInformation_.push_back( plri );
-    return pointLocalReconstructionInformation_.back();
-  }
-
- private:
-  uint8_t altasSequenceParameterSetId_;
-  uint8_t frameWidth_;
-  uint8_t frameHeight_;
-  uint8_t log2PatchPackingBlockSize_;
-  uint8_t log2MaxAtlasFrameOrderCntLsbMinus4_;
-  uint8_t maxDecAtlasFrameBufferingMinus1_;
-  uint8_t numRefAtlasFrameListsInAsps_;
-  uint8_t mapCountMinus1_;
-  uint8_t enhancedOccupancyMapFixBitCountMinus1_;
-  uint8_t surfaceThicknessMinus1_;
-  bool    longTermRefAtlasFramesFlag_;
-  bool    useEightOientationsFlag_;
-  bool    degree45ProjectionPatchPresentFlag_;
-  bool    normalAxisLimitsQuantizationEnabledFlag_;
-  bool    normalAxisMaxDeltaValueEnabledFlag_;
-  bool    removeDuplicatePointEnabledFlag_;
-  bool    pixelDeinterleavingFlag_;
-  bool    patchPrecedenceOrderFlag_;
-  bool    patchSizeQuantizerPresentFlag_;
-  bool    enhancedOccupancyMapForDepthFlag_;
-  bool    pointLocalReconstructionEnabledFlag_;
-  bool    vuiParametersPresentFlag_;
-  bool    extensionPresentFlag_;
-  bool    extensionDataFlag_;
-
-  std::vector<RefListStruct>                       refListStruct_;
-  std::vector<PointLocalReconstructionInformation> pointLocalReconstructionInformation_;
-};
-
-// 7.3.4.1  V-PCC Sequence parameter set syntax
+// 7.3.4.1  General V-PCC Sequence parameter set syntax
 class VpccParameterSet {
  public:
   VpccParameterSet() :
@@ -2689,6 +1778,8 @@ class VpccParameterSet {
   // THE NEXT PARAMETERS ARE NOT IN THE VPCC CD SYNTAX DOCUMENTS AND WILL BE REMOVE
 };
 
+// 7.3.4  Sequence parameter set syntax
+
 // VPCCParameterSet Class
 class VPCCParameterSet {
  public:
@@ -2703,14 +1794,14 @@ class VPCCParameterSet {
 
   ~VPCCParameterSet() {}
   VPCCParameterSet& operator=( const VPCCParameterSet& ) = default;
-  uint8_t           getNalUnitType() { return unitType_; }
+  uint8_t           getVpccUnitType() { return unitType_; }
   uint8_t           getVpccParameterSetId() { return sequenceParamterSetId_; }
   uint8_t           getAtlasId() { return atlasId_; }
   uint8_t           getAttributeIndex() { return attributeIndex_; }
   uint8_t           getAttributeDimensionIndex() { return attributeDimensionIndex_; }
   uint8_t           getMapIndex() { return mapIndex_; }
   bool              getRawVideoFlag() { return rawVideoFlag_; }
-  void              setNalUnitType( uint8_t value ) { unitType_ = value; }
+  void              setVpccUnitType( uint8_t value ) { unitType_ = value; }
   void              setVpccParameterSetId( uint8_t value ) { sequenceParamterSetId_ = value; }
   void              setAtlasId( uint8_t value ) { atlasId_ = value; }
   void              setAttributeIndex( uint8_t value ) { attributeIndex_ = value; }
@@ -2735,6 +1826,875 @@ typedef struct PointLocalReconstructionMode {
   uint8_t neighbor_;
 } PointLocalReconstructionMode;
 
+// 7.3.7.1  Patch tile group header syntax (ptgh) (jkei: replce this with Atlas tile group header) -> TODO: REMOVE
+class PatchTileGroupHeader {
+ public:
+  PatchTileGroupHeader() :
+      frameIndex_( 0 ),
+      patchFrameParameterSetId_( 0 ),
+      type_( 0 ),
+      address_( 0 ),
+      patchFrameOrderCntLsb_( 0 ),
+      refPatchFrameListIdx_( 0 ),
+      refPatchFrameListSpsFlag_( 0 ),
+      numRefIdxActiveOverrideFlag_( false ),
+      numRefIdxActiveMinus1_( 0 ),
+      interPredictPatch2dShiftUBitCountMinus1_( 0 ),
+      interPredictPatch2dShiftVBitCountMinus1_( 0 ),
+      interPredictPatch2dDeltaSizeDBitCountMinus1_( 0 ),
+      interPredictPatch3dShiftTangentAxisBitCountMinus1_( 0 ),
+      interPredictPatch3dShiftBitangentAxisBitCountMinus1_( 0 ),
+      interPredictPatch3dShiftNormalAxisBitCountMinus1_( 0 ),
+      interPredictPatchLodBitCount_( 0 ),
+      interPredictPatchBitCountFlag_( false ),
+      interPredictPatch2dShiftUBitCountFlag_( false ),
+      interPredictPatch2dShiftVBitCountFlag_( false ),
+      interPredictPatch3dShiftTangentAxisBitCountFlag_( false ),
+      interPredictPatch3dShiftBitangentAxisBitCountFlag_( false ),
+      interPredictPatch3dShiftNormalAxisBitCountFlag_( false ),
+      interPredictPatchLodBitCountFlag_( false ),
+      raw3dShiftAxisBitCountMinus1_( 9 ),
+      raw3dShiftBitCountPresentFlag_( true ),
+      eomPatchNbPatchBitCountMinus1_( 0 ),
+      eomPatchMaxEPBitCountMinus1_( 0 ) {
+    additionalPfocLsbPresentFlag_.resize( 1, 0 );
+    additionalPfocLsbVal_.resize( 1, 0 );
+  }
+
+  ~PatchTileGroupHeader() {
+    additionalPfocLsbPresentFlag_.clear();
+    additionalPfocLsbVal_.clear();
+  }
+
+  PatchTileGroupHeader& operator=( const PatchTileGroupHeader& ) = default;
+
+  uint8_t  getFrameIndex() { return frameIndex_; }
+  uint8_t  getPatchFrameParameterSetId() { return patchFrameParameterSetId_; }
+  uint32_t getAddress() { return address_; }
+  uint8_t  getType() { return type_; }
+  uint8_t  getPatchFrameOrderCntLsb() { return patchFrameOrderCntLsb_; }
+  bool     getRefPatchFrameListSpsFlag() { return refPatchFrameListSpsFlag_; }
+  uint8_t  getRefPatchFrameListIdx() { return refPatchFrameListIdx_; }
+  bool     getAdditionalPfocLsbPresentFlag( size_t index ) { return additionalPfocLsbPresentFlag_[index]; }
+  uint32_t getAdditionalPfocLsbVal( size_t index ) { return additionalPfocLsbVal_[index]; }
+  bool     getNumRefIdxActiveOverrideFlag() { return numRefIdxActiveOverrideFlag_; }
+  uint8_t  getNumRefIdxActiveMinus1() { return numRefIdxActiveMinus1_; }
+  bool     getInterPredictPatchBitCountFlag() { return interPredictPatchBitCountFlag_; }
+  bool     getInterPredictPatch2dShiftUBitCountFlag() { return interPredictPatch2dShiftUBitCountFlag_; }
+  bool     getInterPredictPatch2dShiftVBitCountFlag() { return interPredictPatch2dShiftVBitCountFlag_; }
+  bool getInterPredictPatch3dShiftTangentAxisBitCountFlag() { return interPredictPatch3dShiftTangentAxisBitCountFlag_; }
+  bool getInterPredictPatch3dShiftBitangentAxisBitCountFlag() {
+    return interPredictPatch3dShiftBitangentAxisBitCountFlag_;
+  }
+  bool getInterPredictPatch3dShiftNormalAxisBitCountFlag() { return interPredictPatch3dShiftNormalAxisBitCountFlag_; }
+  bool getInterPredictPatchLodBitCountFlag() { return interPredictPatchLodBitCountFlag_; }
+  uint8_t getInterPredictPatch2dShiftUBitCountMinus1() { return interPredictPatch2dShiftUBitCountMinus1_; }
+  uint8_t getInterPredictPatch2dShiftVBitCountMinus1() { return interPredictPatch2dShiftVBitCountMinus1_; }
+  uint8_t getInterPredictPatch2dDeltaSizeDBitCountMinus1() { return interPredictPatch2dDeltaSizeDBitCountMinus1_; }
+  uint8_t getInterPredictPatch3dShiftTangentAxisBitCountMinus1() {
+    return interPredictPatch3dShiftTangentAxisBitCountMinus1_;
+  }
+  uint8_t getInterPredictPatch3dShiftBitangentAxisBitCountMinus1() {
+    return interPredictPatch3dShiftBitangentAxisBitCountMinus1_;
+  }
+  uint8_t getInterPredictPatch3dShiftNormalAxisBitCountMinus1() {
+    return interPredictPatch3dShiftNormalAxisBitCountMinus1_;
+  }
+  uint8_t getRaw3dShiftAxisBitCountMinus1() { return raw3dShiftAxisBitCountMinus1_; }
+  bool    getRaw3dShiftBitCountPresentFlag() { return raw3dShiftBitCountPresentFlag_; }
+  uint8_t getInterPredictPatchLodBitCount() { return interPredictPatchLodBitCount_; }
+  uint8_t getNormalAxisMinValueQuantizer() { return normalAxisMinValueQuantizer_; }
+  uint8_t getNormalAxisMaxDeltaValueQuantizer() { return normalAxisMaxDeltaValueQuantizer_; }
+
+  void setFrameIndex( uint8_t index ) { frameIndex_ = index; }
+  void setPatchFrameParameterSetId( uint8_t value ) { patchFrameParameterSetId_ = value; }
+  void setAddress( uint8_t value ) { address_ = value; }
+  void setType( uint8_t value ) { type_ = value; }
+  void setPatchFrameOrderCntLsb( uint8_t value ) { patchFrameOrderCntLsb_ = value; }
+  void setRefPatchFrameListSpsFlag( bool value ) { refPatchFrameListSpsFlag_ = value; }
+  void setRefPatchFrameListIdx( uint8_t value ) { refPatchFrameListIdx_ = value; }
+  void setAdditionalPfocLsbPresentFlag( size_t index, bool value ) { additionalPfocLsbPresentFlag_[index] = value; }
+  void setAdditionalPfocLsbVal( size_t index, uint32_t value ) { additionalPfocLsbVal_[index] = value; }
+  void setNumRefIdxActiveOverrideFlag( bool value ) { numRefIdxActiveOverrideFlag_ = value; }
+  void setNumRefIdxActiveMinus1( uint8_t value ) { numRefIdxActiveMinus1_ = value; }
+  void setInterPredictPatch2dDeltaSizeDBitCountMinus1( uint8_t value ) {
+    interPredictPatch2dDeltaSizeDBitCountMinus1_ = value;
+  }
+  void setInterPredictPatch2dShiftUBitCountMinus1( uint8_t value ) { interPredictPatch2dShiftUBitCountMinus1_ = value; }
+  void setInterPredictPatch2dShiftVBitCountMinus1( uint8_t value ) { interPredictPatch2dShiftVBitCountMinus1_ = value; }
+  void setInterPredictPatch3dShiftTangentAxisBitCountMinus1( uint8_t value ) {
+    interPredictPatch3dShiftTangentAxisBitCountMinus1_ = value;
+  }
+  void setInterPredictPatch3dShiftBitangentAxisBitCountMinus1( uint8_t value ) {
+    interPredictPatch3dShiftBitangentAxisBitCountMinus1_ = value;
+  }
+  void setInterPredictPatch3dShiftNormalAxisBitCountMinus1( uint8_t value ) {
+    interPredictPatch3dShiftNormalAxisBitCountMinus1_ = value;
+  }
+  void setRaw3dShiftAxisBitCountMinus1( uint8_t value ) { raw3dShiftAxisBitCountMinus1_ = value; }
+  void setRaw3dShiftBitCountPresentFlag( uint8_t value ) { raw3dShiftBitCountPresentFlag_ = value; }
+  void setInterPredictPatchLodBitCount( uint8_t value ) { interPredictPatchLodBitCount_ = value; }
+  void setInterPredictPatchBitCountFlag( bool value ) { interPredictPatchBitCountFlag_ = value; }
+  void setInterPredictPatch2dShiftUBitCountFlag( bool value ) { interPredictPatch2dShiftUBitCountFlag_ = value; }
+  void setInterPredictPatch2dShiftVBitCountFlag( bool value ) { interPredictPatch2dShiftVBitCountFlag_ = value; }
+  void setInterPredictPatch3dShiftTangentAxisBitCountFlag( bool value ) {
+    interPredictPatch3dShiftTangentAxisBitCountFlag_ = value;
+  }
+  void setInterPredictPatch3dShiftBitangentAxisBitCountFlag( bool value ) {
+    interPredictPatch3dShiftBitangentAxisBitCountFlag_ = value;
+  }
+  void setInterPredictPatch3dShiftNormalAxisBitCountFlag( bool value ) {
+    interPredictPatch3dShiftNormalAxisBitCountFlag_ = value;
+  }
+  void setInterPredictPatchLodBitCountFlag( bool value ) { interPredictPatchLodBitCountFlag_ = value; }
+  void setNormalAxisMinValueQuantizer( uint8_t value ) { normalAxisMinValueQuantizer_ = value; }
+  void setNormalAxisMaxDeltaValueQuantizer( uint8_t value ) { normalAxisMaxDeltaValueQuantizer_ = value; }
+
+  uint8_t getEOMPatchNbPatchBitCountMinus1() { return eomPatchNbPatchBitCountMinus1_; }
+  uint8_t getEOMPatchMaxEPBitCountMinus1() { return eomPatchMaxEPBitCountMinus1_; }
+
+  void setEOMPatchNbPatchBitCountMinus1( uint8_t value ) { eomPatchNbPatchBitCountMinus1_ = value; }
+  void setEOMPatchMaxEPBitCountMinus1( uint8_t value ) { eomPatchMaxEPBitCountMinus1_ = value; }
+
+ private:
+  uint8_t               frameIndex_;
+  uint8_t               patchFrameParameterSetId_;
+  uint8_t               type_;
+  uint32_t              address_;
+  uint8_t               patchFrameOrderCntLsb_;
+  uint8_t               refPatchFrameListIdx_;
+  bool                  refPatchFrameListSpsFlag_;
+  std::vector<bool>     additionalPfocLsbPresentFlag_;
+  std::vector<uint32_t> additionalPfocLsbVal_;
+  bool                  numRefIdxActiveOverrideFlag_;
+  uint8_t               numRefIdxActiveMinus1_;
+  uint8_t               normalAxisMinValueQuantizer_;
+  uint8_t               normalAxisMaxDeltaValueQuantizer_;
+  uint8_t               interPredictPatch2dShiftUBitCountMinus1_;
+  uint8_t               interPredictPatch2dShiftVBitCountMinus1_;
+  uint8_t               interPredictPatch2dDeltaSizeDBitCountMinus1_;
+  uint8_t               interPredictPatch3dShiftTangentAxisBitCountMinus1_;
+  uint8_t               interPredictPatch3dShiftBitangentAxisBitCountMinus1_;
+  uint8_t               interPredictPatch3dShiftNormalAxisBitCountMinus1_;
+  uint8_t               interPredictPatchLodBitCount_;
+  bool                  interPredictPatchBitCountFlag_;
+  bool                  interPredictPatch2dShiftUBitCountFlag_;
+  bool                  interPredictPatch2dShiftVBitCountFlag_;
+  bool                  interPredictPatch3dShiftTangentAxisBitCountFlag_;
+  bool                  interPredictPatch3dShiftBitangentAxisBitCountFlag_;
+  bool                  interPredictPatch3dShiftNormalAxisBitCountFlag_;
+  bool                  interPredictPatchLodBitCountFlag_;
+  uint8_t               raw3dShiftAxisBitCountMinus1_;
+  bool                  raw3dShiftBitCountPresentFlag_;
+  uint8_t               eomPatchNbPatchBitCountMinus1_;
+  uint8_t               eomPatchMaxEPBitCountMinus1_;
+};
+// 7.3.6  Patch frame data unit syntax (ptgdu) : jkei : replace this one with ATGDU -> TODO: REMOVE
+class PatchTileGroupDataUnit {
+ public:
+  PatchTileGroupDataUnit() {}
+  ~PatchTileGroupDataUnit() { patchInformationData_.clear(); }
+  PatchTileGroupDataUnit& operator=( const PatchTileGroupDataUnit& ) = default;
+
+  void init() { patchInformationData_.clear(); }
+  void allocate( size_t size ) { patchInformationData_.resize( size ); }
+
+  void addPatchInformationData( PatchInformationData& value ) { patchInformationData_.push_back( value ); }
+  PatchInformationData& addPatchInformationData( uint8_t patchMode ) {
+    PatchInformationData pid;
+    pid.setPatchMode( patchMode );
+    patchInformationData_.push_back( pid );
+    return patchInformationData_.back();
+  }
+  uint8_t               getPatchMode( size_t index ) { return patchInformationData_[index].getPatchMode(); }
+  uint8_t               getPatchCount() { return patchInformationData_.size(); }
+  PatchInformationData& getPatchInformationData( size_t index ) { return patchInformationData_[index]; }
+  std::vector<PatchInformationData>& getPatchInformationData() { return patchInformationData_; }
+  size_t                             getMatchedPatchCount() {
+    size_t matchedPatchCount = 0;
+    for ( auto& v : patchInformationData_ ) {
+      if ( v.getPatchMode() == PATCH_MODE_P_INTER ) { matchedPatchCount++; }
+    }
+    return matchedPatchCount;
+  }
+
+  size_t getFrameIndex() { return frameIndex_; }
+  void   setFrameIndex( size_t value ) { frameIndex_ = value; }
+  void   setPatchCount( size_t value ) { patchCount_ = value; }
+  void   setPatchInformationData( size_t index, PatchInformationData& value ) { patchInformationData_[index] = value; }
+
+ private:
+  size_t                            frameIndex_;
+  size_t                            patchCount_;
+  std::vector<PatchInformationData> patchInformationData_;
+};
+// 7.3.5.14  Patch tile group layer unit syntax (jkei: remove and replace with AtlasTileGroupLayerRbsp) -> TODO: REMOVE
+class PatchTileGroupLayerUnit {
+ public:
+  PatchTileGroupLayerUnit() : frameIndex_( 0 ) {}
+  ~PatchTileGroupLayerUnit() {}
+
+  PatchTileGroupLayerUnit& operator=( const PatchTileGroupLayerUnit& ) = default;
+
+  uint8_t                 getFrameIndex() { return frameIndex_; }
+  PatchTileGroupHeader&   getPatchTileGroupHeader() { return patchTileGroupHeader_; }
+  PatchTileGroupDataUnit& getPatchTileGroupDataUnit() { return patchTileGroupDataUnit_; }
+
+  void setFrameIndex( uint8_t value ) { frameIndex_ = value; }
+  void setPatchTileGroupHeader( PatchTileGroupHeader value ) { patchTileGroupHeader_ = value; }
+  void setPatchTileGroupDataUnit( PatchTileGroupDataUnit value ) { patchTileGroupDataUnit_ = value; }
+
+ private:
+  uint8_t                frameIndex_;
+  PatchTileGroupHeader   patchTileGroupHeader_;
+  PatchTileGroupDataUnit patchTileGroupDataUnit_;
+};
+// 7.3.5.12  Patch frame parameter set syntax (jkei: remove and replace it with AtlasFrameParameterSetRbsp -> TODO: REMOVE
+class PatchFrameParameterSet {
+ public:
+  PatchFrameParameterSet() :
+      patchFrameParameterSetId_( 0 ),
+      patchVpccParameterSetId_( 0 ),
+      geometryPatchFrameParameterSetId_( 0 ),
+      additionalLtPfocLsbLen_( 0 ),
+      localOverrideGeometryPatchEnableFlag_( false ),
+      projection45DegreeEnableFlag_( false ),
+      lodModeEnableFlag_( false ) {}
+  ~PatchFrameParameterSet() {
+    localOverrideAttributePatchEnableFlag_.clear();
+    attributePatchFrameParameterSetId_.clear();
+  }
+  PatchFrameParameterSet& operator=( const PatchFrameParameterSet& ) = default;
+
+  void allocate( size_t size = 255 ) {
+    localOverrideAttributePatchEnableFlag_.resize( size, false );
+    attributePatchFrameParameterSetId_.resize( size, 0 );
+  }
+  bool getLodModeEnableFlag() { return lodModeEnableFlag_; }
+  void setLodModeEnableFlag( bool value ) { lodModeEnableFlag_ = value; }
+
+  uint8_t getPatchFrameParameterSetId() { return patchFrameParameterSetId_; }
+  uint8_t getPatchVpccParameterSetId() { return patchVpccParameterSetId_; }
+  uint8_t getGeometryPatchFrameParameterSetId() { return geometryPatchFrameParameterSetId_; }
+  uint8_t getAttributePatchFrameParameterSetId( size_t index ) { return attributePatchFrameParameterSetId_[index]; }
+  uint8_t getAdditionalLtPfocLsbLen() { return additionalLtPfocLsbLen_; }
+  bool    getLocalOverrideAttributePatchEnableFlag( size_t index ) {
+    return localOverrideAttributePatchEnableFlag_[index];
+  }
+  bool                       getLocalOverrideGeometryPatchEnableFlag() { return localOverrideGeometryPatchEnableFlag_; }
+  bool                       getProjection45DegreeEnableFlag() { return projection45DegreeEnableFlag_; }
+  AtlasFrameTileInformation& getAtlasFrameTileInformation() { return atlasFrameTileInformation_; }
+  void                       setPatchFrameParameterSetId( uint8_t value ) { patchFrameParameterSetId_ = value; }
+  void                       setPatchVpccParameterSetId( uint8_t value ) { patchVpccParameterSetId_ = value; }
+  void setGeometryPatchFrameParameterSetId( uint8_t value ) { geometryPatchFrameParameterSetId_ = value; }
+  void setAttributePatchFrameParameterSetId( size_t index, uint8_t value ) {
+    attributePatchFrameParameterSetId_[index] = value;
+  }
+  void setAdditionalLtPfocLsbLen( uint8_t value ) { additionalLtPfocLsbLen_ = value; }
+  void setLocalOverrideAttributePatchEnableFlag( size_t index, bool value ) {
+    localOverrideAttributePatchEnableFlag_[index] = value;
+  }
+  void setLocalOverrideGeometryPatchEnableFlag( bool value ) { localOverrideGeometryPatchEnableFlag_ = value; }
+  void setProjection45DegreeEnableFlag( bool value ) { projection45DegreeEnableFlag_ = value; }
+  void setAtlasFrameTileInformation( AtlasFrameTileInformation value ) { atlasFrameTileInformation_ = value; }
+
+ private:
+  uint8_t                   patchFrameParameterSetId_;
+  uint8_t                   patchVpccParameterSetId_;
+  uint8_t                   geometryPatchFrameParameterSetId_;
+  std::vector<uint8_t>      attributePatchFrameParameterSetId_;
+  uint8_t                   additionalLtPfocLsbLen_;
+  bool                      localOverrideGeometryPatchEnableFlag_;
+  std::vector<bool>         localOverrideAttributePatchEnableFlag_;
+  bool                      projection45DegreeEnableFlag_;
+  bool                      lodModeEnableFlag_;
+  AtlasFrameTileInformation atlasFrameTileInformation_;
+};
+// 7.3.5.11 Attribute patch params syntax (apps) -> TODO: REMOVE
+class AttributePatchParams {
+ public:
+  AttributePatchParams() :
+      attributePatchScaleParamsPresentFlag_( false ),
+      attributePatchOffsetParamsPresentFlag_( false ) {
+    attributePatchScale_.clear();
+    attributePatchOffset_.clear();
+  }
+  ~AttributePatchParams() {
+    attributePatchScale_.clear();
+    attributePatchOffset_.clear();
+  }
+  void allocate( size_t size = 255 ) {
+    attributePatchScale_.resize( size, 0 );
+    attributePatchOffset_.resize( size, 0 );
+  }
+  AttributePatchParams& operator=( const AttributePatchParams& ) = default;
+  bool                  getAttributePatchScaleParamsPresentFlag() { return attributePatchScaleParamsPresentFlag_; }
+  bool                  getAttributePatchOffsetParamsPresentFlag() { return attributePatchOffsetParamsPresentFlag_; }
+  uint32_t              getAttributePatchScale( size_t index ) { return attributePatchScale_[index]; }
+  int32_t               getAttributePatchOffset( size_t index ) { return attributePatchOffset_[index]; }
+
+  void setAttributePatchScaleParamsPresentFlag( bool value ) { attributePatchScaleParamsPresentFlag_ = value; }
+  void setAttributePatchOffsetParamsPresentFlag( bool value ) { attributePatchOffsetParamsPresentFlag_ = value; }
+  void setAttributePatchScale( size_t index, uint32_t value ) { attributePatchScale_[index] = value; }
+  void setAttributePatchOffset( size_t index, int32_t value ) { attributePatchOffset_[index] = value; }
+
+ private:
+  bool                  attributePatchScaleParamsPresentFlag_;
+  std::vector<uint32_t> attributePatchScale_;
+  bool                  attributePatchOffsetParamsPresentFlag_;
+  std::vector<int32_t>  attributePatchOffset_;
+};
+// 7.3.5.10 Attribute Patch Parameter Set syntax (appss) -> TODO: REMOVE
+class AttributePatchParameterSet {
+ public:
+  AttributePatchParameterSet() :
+      attributePatchParameterSetId_( 0 ),
+      patchFrameAttributeParameterSetId_( 0 ),
+      attributeDimensionMinus1_( 0 ),
+      attributePatchParamsPresentFlag_( false ) {}
+  ~AttributePatchParameterSet() {}
+  AttributePatchParameterSet& operator=( const AttributePatchParameterSet& ) = default;
+
+  uint8_t               getAttributePatchParameterSetId() { return attributePatchParameterSetId_; }
+  uint8_t               getPatchFrameAttributeParameterSetId() { return patchFrameAttributeParameterSetId_; }
+  bool                  getAttributePatchParamsPresentFlag() { return attributePatchParamsPresentFlag_; }
+  AttributePatchParams& getAttributePatchParams() { return attributePatchParams_; }
+  uint8_t               getAttributeDimensionMinus1() { return attributeDimensionMinus1_; }
+  void                  setAttributePatchParameterSetId( uint8_t value ) { attributePatchParameterSetId_ = value; }
+  void setPatchFrameAttributeParameterSetId( uint8_t value ) { patchFrameAttributeParameterSetId_ = value; }
+  void setAttributePatchParamsPresentFlag( bool value ) { attributePatchParamsPresentFlag_ = value; }
+  void setAttributePatchParams( AttributePatchParams value ) { attributePatchParams_ = value; }
+  void setAttributeDimensionMinus1( uint8_t value ) { attributeDimensionMinus1_ = value; }
+
+ private:
+  uint8_t              attributePatchParameterSetId_;
+  uint8_t              patchFrameAttributeParameterSetId_;
+  uint8_t              attributeDimensionMinus1_;
+  bool                 attributePatchParamsPresentFlag_;
+  AttributePatchParams attributePatchParams_;
+};
+// 7.3.5.9 Geometry patch params syntax -> TODO: REMOVE
+class GeometryPatchParams {
+ public:
+  GeometryPatchParams() :
+      geometryPatchScaleParamsPresentFlag_( false ),
+      geometryPatchOffsetParamsPresentFlag_( false ),
+      geometryPatchRotationParamsPresentFlag_( false ),
+      geometryPatchPointSizeInfoPresentFlag_( false ),
+      geometryPatchPointShapeInfoPresentFlag_( false ),
+      geometryPatchPointSizeInfo_( 0 ),
+      geometryPatchPointShapeInfo_( 0 ) {
+    for ( size_t d = 0; d < 3; d++ ) {
+      geometryPatchScaleOnAxis_[d]  = 0;  // u(32)
+      geometryPatchOffsetOnAxis_[d] = 0;  // i(32)
+    }
+    for ( size_t d = 0; d < 4; d++ ) {
+      geometryPatchRotationXYZW_[d] = 0;  // i(32)
+    }
+  }
+  ~GeometryPatchParams() {}
+
+  GeometryPatchParams& operator=( const GeometryPatchParams& ) = default;
+
+  bool     getGeometryPatchScaleParamsPresentFlag() { return geometryPatchScaleParamsPresentFlag_; }
+  bool     getGeometryPatchOffsetParamsPresentFlag() { return geometryPatchOffsetParamsPresentFlag_; }
+  bool     getGeometryPatchRotationParamsPresentFlag() { return geometryPatchRotationParamsPresentFlag_; }
+  bool     getGeometryPatchPointSizeInfoPresentFlag() { return geometryPatchPointSizeInfoPresentFlag_; }
+  bool     getGeometryPatchPointShapeInfoPresentFlag() { return geometryPatchPointShapeInfoPresentFlag_; }
+  uint32_t getGeometryPatchScaleOnAxis( size_t index ) { return geometryPatchScaleOnAxis_[index]; }
+  int32_t  getGeometryPatchOffsetOnAxis( size_t index ) { return geometryPatchOffsetOnAxis_[index]; }
+  int32_t  getGeometryPatchRotationQuaternion( size_t index ) { return geometryPatchRotationXYZW_[index]; }
+  uint16_t getGeometryPatchPointSizeInfo() { return geometryPatchPointSizeInfo_; }
+  uint32_t getGeometryPatchPointShapeInfo() { return geometryPatchPointShapeInfo_; }
+
+  void setGeometryPatchScaleParamsPresentFlag( bool value ) { geometryPatchScaleParamsPresentFlag_ = value; }
+  void setGeometryPatchOffsetParamsPresentFlag( bool value ) { geometryPatchOffsetParamsPresentFlag_ = value; }
+  void setGeometryPatchRotationParamsPresentFlag( bool value ) { geometryPatchRotationParamsPresentFlag_ = value; }
+  void setGeometryPatchPointSizeInfoPresentFlag( bool value ) { geometryPatchPointSizeInfoPresentFlag_ = value; }
+  void setGeometryPatchPointShapeInfoPresentFlag( bool value ) { geometryPatchPointShapeInfoPresentFlag_ = value; }
+  void setGeometryPatchScaleOnAxis( size_t index, uint32_t value ) { geometryPatchScaleOnAxis_[index] = value; }
+  void setGeometryPatchOffsetOnAxis( size_t index, int32_t value ) { geometryPatchOffsetOnAxis_[index] = value; }
+  void setGeometryPatchRotationQuaternion( size_t index, int32_t value ) { geometryPatchRotationXYZW_[index] = value; }
+  void setGeometryPatchPointSizeInfo( uint16_t value ) { geometryPatchPointSizeInfo_ = value; }
+  void setGeometryPatchPointShapeInfo( uint32_t value ) { geometryPatchPointShapeInfo_ = value; }
+
+ private:
+  bool     geometryPatchScaleParamsPresentFlag_;
+  bool     geometryPatchOffsetParamsPresentFlag_;
+  bool     geometryPatchRotationParamsPresentFlag_;
+  bool     geometryPatchPointSizeInfoPresentFlag_;
+  bool     geometryPatchPointShapeInfoPresentFlag_;
+  uint32_t geometryPatchScaleOnAxis_[3];
+  int32_t  geometryPatchOffsetOnAxis_[3];
+  int32_t  geometryPatchRotationXYZW_[4];
+  uint16_t geometryPatchPointSizeInfo_;
+  uint32_t geometryPatchPointShapeInfo_;
+};
+// 7.3.5.8 Geometry patch parameter set syntax -> TODO: REMOVE
+class GeometryPatchParameterSet {
+ public:
+  GeometryPatchParameterSet() :
+      geometryPatchParameterSetId_( 0 ),
+      patchFrameGeometryParameterSetId_( 0 ),
+      geometryPatchParamsPresentFlag_( false ) {}
+  ~GeometryPatchParameterSet() {}
+  GeometryPatchParameterSet& operator=( const GeometryPatchParameterSet& ) = default;
+
+  uint8_t              getGeometryPatchParameterSetId() { return geometryPatchParameterSetId_; }
+  uint8_t              getPatchFrameGeometryParameterSetId() { return patchFrameGeometryParameterSetId_; }
+  bool                 getGeometryPatchParamsPresentFlag() { return geometryPatchParamsPresentFlag_; }
+  GeometryPatchParams& getGeometryPatchParams() { return geometryPatchParams_; }
+
+  void setGeometryPatchParameterSetId( uint8_t value ) { geometryPatchParameterSetId_ = value; }
+  void setPatchFrameGeometryParameterSetId( uint8_t value ) { patchFrameGeometryParameterSetId_ = value; }
+  void setGeometryPatchParamsPresentFlag( bool value ) { geometryPatchParamsPresentFlag_ = value; }
+  void setGeometryPatchParams( GeometryPatchParams value ) { geometryPatchParams_ = value; }
+
+ private:
+  uint8_t             geometryPatchParameterSetId_;
+  uint8_t             patchFrameGeometryParameterSetId_;
+  bool                geometryPatchParamsPresentFlag_;
+  GeometryPatchParams geometryPatchParams_;
+};
+// 7.3.5.7 Attribute frame paramS syntax (afp) -> TODO: REMOVE
+class AttributeFrameParams {
+ public:
+  AttributeFrameParams() :
+      attributeSmoothingParamsPresentFlag_( false ),
+      attributeScaleParamsPresentFlag_( false ),
+      attributeOffsetParamsPresentFlag_( false ) {
+    attributeScale_.clear();
+    attributeOffset_.clear();
+    attributeSmoothingParamsPresentFlag_.clear();
+    attributeSmoothingGridSizeMinus2_.clear();
+    attributeSmoothingThreshold_.clear();
+    attributeSmoothingThresholdAttributeDifference_.clear();
+    attributeSmoothingThresholdAttributeVariation_.clear();
+    attributeSmoothingLocalEntropyThreshold_.clear();
+  }
+  ~AttributeFrameParams() {
+    attributeScale_.clear();
+    attributeOffset_.clear();
+    attributeSmoothingParamsPresentFlag_.clear();
+    attributeSmoothingGridSizeMinus2_.clear();
+    attributeSmoothingThreshold_.clear();
+    attributeSmoothingThresholdAttributeDifference_.clear();
+    attributeSmoothingThresholdAttributeVariation_.clear();
+    attributeSmoothingLocalEntropyThreshold_.clear();
+  }
+
+  AttributeFrameParams& operator=( const AttributeFrameParams& ) = default;
+
+  void allocate( size_t size ) {
+    attributeScale_.resize( size, 0 );
+    attributeOffset_.resize( size, 0 );
+    attributeSmoothingParamsPresentFlag_.resize( size, 0 );
+    attributeSmoothingGridSizeMinus2_.resize( size, 0 );
+    attributeSmoothingThreshold_.resize( size, 0 );
+    attributeSmoothingThresholdAttributeDifference_.resize( size, 0 );
+    attributeSmoothingThresholdAttributeVariation_.resize( size, 0 );
+    attributeSmoothingLocalEntropyThreshold_.resize( size, 0 );
+  }
+
+  bool    getAttributeSmoothingParamsPresentFlag( size_t index ) { return attributeSmoothingParamsPresentFlag_[index]; }
+  uint8_t getAttributeSmoothingGridSizeMinus2( size_t index ) { return attributeSmoothingGridSizeMinus2_[index]; }
+  uint8_t getAttributeSmoothingThreshold( size_t index ) { return attributeSmoothingThreshold_[index]; }
+  uint32_t getAttributeSmoothingLocalEntropyThreshold( size_t index ) {
+    return attributeSmoothingLocalEntropyThreshold_[index];
+  }
+  uint8_t getAttributeSmoothingThresholdAttributeDifference( size_t index ) {
+    return attributeSmoothingThresholdAttributeDifference_[index];
+  }
+  uint8_t getAttributeSmoothingThresholdAttributeVariation( size_t index ) {
+    return attributeSmoothingThresholdAttributeVariation_[index];
+  }
+  bool     getAttributeScaleParamsPresentFlag() { return attributeScaleParamsPresentFlag_; }
+  bool     getAttributeOffsetParamsPresentFlag() { return attributeOffsetParamsPresentFlag_; }
+  uint32_t getAttributeScale( size_t index ) { return attributeScale_[index]; }
+  int32_t  getAttributeOffset( size_t index ) { return attributeOffset_[index]; }
+
+  void setAttributeSmoothingParamsPresentFlag( std::vector<bool> value ) {
+    attributeSmoothingParamsPresentFlag_ = value;
+  }
+  void setAttributeSmoothingGridSize( std::vector<uint8_t> value ) { attributeSmoothingGridSizeMinus2_ = value; }
+  void setAttributeSmoothingThreshold( std::vector<uint8_t> value ) { attributeSmoothingThreshold_ = value; }
+  void setAttributeSmoothingLocalEntropyThreshold( std::vector<uint32_t> value ) {
+    attributeSmoothingLocalEntropyThreshold_ = value;
+  }
+  void setAttributeSmoothingThresholdAttributeDifference( std::vector<uint8_t> value ) {
+    attributeSmoothingThresholdAttributeDifference_ = value;
+  }
+  void setAttributeSmoothingThresholdAttributeVariation( std::vector<uint8_t> value ) {
+    attributeSmoothingThresholdAttributeVariation_ = value;
+  }
+
+  void setAttributeSmoothingParamsPresentFlag( size_t index, bool value ) {
+    attributeSmoothingParamsPresentFlag_[index] = value;
+  }
+  void setAttributeSmoothingGridSizeMinus2( size_t index, uint8_t value ) {
+    attributeSmoothingGridSizeMinus2_[index] = value;
+  }
+  void setAttributeSmoothingThreshold( size_t index, uint8_t value ) { attributeSmoothingThreshold_[index] = value; }
+  void setAttributeSmoothingLocalEntropyThreshold( size_t index, uint32_t value ) {
+    attributeSmoothingLocalEntropyThreshold_[index] = value;
+  }
+  void setAttributeSmoothingThresholdAttributeDifference( size_t index, uint8_t value ) {
+    attributeSmoothingThresholdAttributeDifference_[index] = value;
+  }
+  void setAttributeSmoothingThresholdAttributeVariation( size_t index, uint8_t value ) {
+    attributeSmoothingThresholdAttributeVariation_[index] = value;
+  }
+  void setAttributeScaleParamsPresentFlag( bool value ) { attributeScaleParamsPresentFlag_ = value; }
+  void setAttributeOffsetParamsPresentFlag( bool value ) { attributeOffsetParamsPresentFlag_ = value; }
+  void setAttributeScale( size_t index, uint32_t value ) { attributeScale_[index] = value; }
+  void setAttributeOffset( size_t index, int32_t value ) { attributeOffset_[index] = value; }
+
+ private:
+  std::vector<bool>     attributeSmoothingParamsPresentFlag_;
+  std::vector<uint8_t>  attributeSmoothingGridSizeMinus2_;
+  std::vector<uint8_t>  attributeSmoothingThreshold_;
+  std::vector<uint32_t> attributeSmoothingLocalEntropyThreshold_;
+  std::vector<uint8_t>  attributeSmoothingThresholdAttributeVariation_;
+  std::vector<uint8_t>  attributeSmoothingThresholdAttributeDifference_;
+  bool                  attributeScaleParamsPresentFlag_;
+  bool                  attributeOffsetParamsPresentFlag_;
+  std::vector<uint32_t> attributeScale_;
+  std::vector<int32_t>  attributeOffset_;
+};
+// 7.3.5.6 Patch frame attribute parameter set syntax -> TODO: REMOVE
+class PatchFrameAttributeParameterSet {
+ public:
+  PatchFrameAttributeParameterSet() :
+      patchFrameAttributeParameterSetId_( 0 ),
+      patchSequencParameterSetId_( 0 ),
+      attributeDimensionMinus1_( 3 ),
+      attributePatchScaleParamsEnabledFlag_( false ),
+      attributePatchOffsetParamsEnabledFlag_( false ) {}
+
+  ~PatchFrameAttributeParameterSet() {}
+
+  PatchFrameAttributeParameterSet& operator=( const PatchFrameAttributeParameterSet& ) = default;
+
+  uint8_t               getPatchFrameAttributeParameterSetId() { return patchFrameAttributeParameterSetId_; }
+  uint8_t               getPatchSequencParameterSetId() { return patchSequencParameterSetId_; }
+  uint8_t               getAttributeDimensionMinus1() { return attributeDimensionMinus1_; }
+  bool                  getAttributePatchScaleParamsEnabledFlag() { return attributePatchScaleParamsEnabledFlag_; }
+  bool                  getAttributePatchOffsetParamsEnabledFlag() { return attributePatchOffsetParamsEnabledFlag_; }
+  AttributeFrameParams& getAttributeFrameParams() { return attributeFrameParams_; }
+
+  void setPatchFrameAttributeParameterSetId( uint8_t value ) { patchFrameAttributeParameterSetId_ = value; }
+  void setPatchSequencParameterSetId( uint8_t value ) { patchSequencParameterSetId_ = value; }
+  void setAttributeDimensionMinus1( uint8_t value ) { attributeDimensionMinus1_ = value; }
+  void setAttributePatchScaleParamsEnabledFlag( bool value ) { attributePatchScaleParamsEnabledFlag_ = value; }
+  void setAttributePatchOffsetParamsEnabledFlag( bool value ) { attributePatchOffsetParamsEnabledFlag_ = value; }
+  void setAttributeFrameParams( AttributeFrameParams value ) { attributeFrameParams_ = value; }
+
+ private:
+  uint8_t              patchFrameAttributeParameterSetId_;
+  uint8_t              patchSequencParameterSetId_;
+  uint8_t              attributeDimensionMinus1_;
+  bool                 attributePatchScaleParamsEnabledFlag_;
+  bool                 attributePatchOffsetParamsEnabledFlag_;
+  AttributeFrameParams attributeFrameParams_;
+};
+// 7.3.5.5 Geometry frame params syntax -> TODO: REMOVE
+class GeometryFrameParams {
+ public:
+  GeometryFrameParams() :
+      geometrySmoothingParamsPresentFlag_( false ),
+      geometryScaleParamsPresentFlag_( false ),
+      geometryOffsetParamsPresentFlag_( false ),
+      geometryRotationParamsPresentFlag_( false ),
+      geometryPointSizeInfoPresentFlag_( false ),
+      geometryPointShapeInfoPresentFlag_( false ),
+      geometrySmoothingEnabledFlag_( false ),
+      geometryPatchBlockFilteringEnableFlag_( false ),
+      geometrySmoothingGridSizeMinus2_( 0 ),
+      geometrySmoothingThreshold_( 0 ),
+      geometryPointSizeInfo_( 0 ),
+      geometryPointShapeInfo_( 0 ),
+      geometryPatchBlockFilteringPassesCountMinus1_( 0 ),
+      geometryPatchBlockFilteringFilterSizeMinus1_( 0 ),
+      geometryPatchBlockFilteringLog2ThresholdMinus1_( 0 ) {
+    for ( uint8_t i = 0; i < 3; i++ ) {
+      geometryScaleOnAxis_[i]  = 0;
+      geometryOffsetOnAxis_[i] = 0;
+    }
+    for ( uint8_t i = 0; i < 4; i++ ) { geometryRotationXYZW_[i] = 0; }
+  }
+  ~GeometryFrameParams() {}
+  GeometryFrameParams& operator=( const GeometryFrameParams& ) = default;
+
+  bool     getGeometrySmoothingParamsPresentFlag() { return geometrySmoothingParamsPresentFlag_; }
+  bool     getGeometryScaleParamsPresentFlag() { return geometryScaleParamsPresentFlag_; }
+  bool     getGeometryOffsetParamsPresentFlag() { return geometryOffsetParamsPresentFlag_; }
+  bool     getGeometryRotationParamsPresentFlag() { return geometryRotationParamsPresentFlag_; }
+  bool     getGeometryPointSizeInfoPresentFlag() { return geometryPointSizeInfoPresentFlag_; }
+  bool     getGeometryPointShapeInfoPresentFlag() { return geometryPointShapeInfoPresentFlag_; }
+  bool     getGeometrySmoothingEnabledFlag() { return geometrySmoothingEnabledFlag_; }
+  bool     getGeometryPatchBlockFilteringEnableFlag() { return geometryPatchBlockFilteringEnableFlag_; }
+  uint8_t  getGeometrySmoothingGridSizeMinus2() { return geometrySmoothingGridSizeMinus2_; }
+  uint8_t  getGeometrySmoothingThreshold() { return geometrySmoothingThreshold_; }
+  uint32_t getGeometryScaleOnAxis( size_t index ) { return geometryScaleOnAxis_[index]; }
+  int32_t  getGeometryOffsetOnAxis( size_t index ) { return geometryOffsetOnAxis_[index]; }
+  int32_t  getGeometryRotationQuaternion( size_t index ) { return geometryRotationXYZW_[index]; }
+  uint16_t getGeometryPointSizeInfo() { return geometryPointSizeInfo_; }
+  uint32_t getGeometryPointShapeInfo() { return geometryPointShapeInfo_; }
+  uint32_t getGeometryPatchBlockFilteringPassesCountMinus1() { return geometryPatchBlockFilteringPassesCountMinus1_; }
+  uint32_t getGeometryPatchBlockFilteringFilterSizeMinus1() { return geometryPatchBlockFilteringFilterSizeMinus1_; }
+  uint32_t getGeometryPatchBlockFilteringLog2ThresholdMinus1() {
+    return geometryPatchBlockFilteringLog2ThresholdMinus1_;
+  }
+
+  void setGeometrySmoothingParamsPresentFlag( bool value ) { geometrySmoothingParamsPresentFlag_ = value; }
+  void setGeometryScaleParamsPresentFlag( bool value ) { geometryScaleParamsPresentFlag_ = value; }
+  void setGeometryOffsetParamsPresentFlag( bool value ) { geometryOffsetParamsPresentFlag_ = value; }
+  void setGeometryRotationParamsPresentFlag( bool value ) { geometryRotationParamsPresentFlag_ = value; }
+  void setGeometryPointSizeInfoPresentFlag( bool value ) { geometryPointSizeInfoPresentFlag_ = value; }
+  void setGeometryPointShapeInfoPresentFlag( bool value ) { geometryPointShapeInfoPresentFlag_ = value; }
+  void setGeometrySmoothingEnabledFlag( bool value ) { geometrySmoothingEnabledFlag_ = value; }
+  void setGeometryPatchBlockFilteringEnableFlag( bool value ) { geometryPatchBlockFilteringEnableFlag_ = value; }
+  void setGeometrySmoothingGridSizeMinus2( uint8_t value ) { geometrySmoothingGridSizeMinus2_ = value; }
+  void setGeometrySmoothingThreshold( uint8_t value ) { geometrySmoothingThreshold_ = value; }
+  void setGeometryScaleOnAxis( size_t index, uint32_t value ) { geometryScaleOnAxis_[index] = value; }
+  void setGeometryOffsetOnAxis( size_t index, int32_t value ) { geometryOffsetOnAxis_[index] = value; }
+  void setGeometryRotationQuaternion( size_t index, int32_t value ) { geometryRotationXYZW_[index] = value; }
+  void setGeometryPointSizeInfo( uint16_t value ) { geometryPointSizeInfo_ = value; }
+  void setGeometryPointShapeInfo( uint32_t value ) { geometryPointShapeInfo_ = value; }
+  void setGeometryPatchBlockFilteringPassesCountMinus1( uint8_t value ) {
+    geometryPatchBlockFilteringPassesCountMinus1_ = value;
+  }
+  void setGeometryPatchBlockFilteringFilterSizeMinus1( uint8_t value ) {
+    geometryPatchBlockFilteringFilterSizeMinus1_ = value;
+  }
+  void setGeometryPatchBlockFilteringLog2ThresholdMinus1( uint8_t value ) {
+    geometryPatchBlockFilteringLog2ThresholdMinus1_ = value;
+  }
+
+ private:
+  bool     geometrySmoothingParamsPresentFlag_;
+  bool     geometryScaleParamsPresentFlag_;
+  bool     geometryOffsetParamsPresentFlag_;
+  bool     geometryRotationParamsPresentFlag_;
+  bool     geometryPointSizeInfoPresentFlag_;
+  bool     geometryPointShapeInfoPresentFlag_;
+  bool     geometrySmoothingEnabledFlag_;
+  bool     geometryPatchBlockFilteringEnableFlag_;
+  uint8_t  geometrySmoothingGridSizeMinus2_;
+  uint8_t  geometrySmoothingThreshold_;
+  uint32_t geometryScaleOnAxis_[3];
+  int32_t  geometryOffsetOnAxis_[3];
+  int32_t  geometryRotationXYZW_[4];
+  uint16_t geometryPointSizeInfo_;
+  uint32_t geometryPointShapeInfo_;
+  uint8_t  geometryPatchBlockFilteringPassesCountMinus1_;
+  uint8_t  geometryPatchBlockFilteringFilterSizeMinus1_;
+  uint8_t  geometryPatchBlockFilteringLog2ThresholdMinus1_;
+};
+// 7.3.5.4 Patch frame geometry parameter set syntax -> TODO: REMOVE
+class PatchFrameGeometryParameterSet {
+ public:
+  PatchFrameGeometryParameterSet() :
+      patchFrameGeometryParameterSetId_( 0 ),
+      patchVpccParameterSetId_( 0 ),
+      geometryPatchParamsEnabledFlag_( false ),
+      geometryPatchScaleParamsEnabledFlag_( false ),
+      geometryPatchOffsetParamsEnabledFlag_( false ),
+      geometryPatchRotationParamsEnabledFlag_( false ),
+      geometryPatchPointSizeInfoEnabledFlag_( false ),
+      geometryPatchPointShapeInfoEnabledFlag_( false ) {}
+
+  ~PatchFrameGeometryParameterSet() {}
+  PatchFrameGeometryParameterSet& operator=( const PatchFrameGeometryParameterSet& ) = default;
+
+  uint8_t              getPatchFrameGeometryParameterSetId() { return patchFrameGeometryParameterSetId_; }
+  uint8_t              getPatchVpccParameterSetId() { return patchVpccParameterSetId_; }
+  bool                 getGeometryPatchParamsEnabledFlag() { return geometryPatchParamsEnabledFlag_; }
+  bool                 getOverrideGeometryPatchParamsFlag() { return overrideGeometryPatchParamsFlag_; }
+  bool                 getGeometryPatchScaleParamsEnabledFlag() { return geometryPatchScaleParamsEnabledFlag_; }
+  bool                 getGeometryPatchOffsetParamsEnabledFlag() { return geometryPatchOffsetParamsEnabledFlag_; }
+  bool                 getGeometryPatchRotationParamsEnabledFlag() { return geometryPatchRotationParamsEnabledFlag_; }
+  bool                 getGeometryPatchPointSizeInfoEnabledFlag() { return geometryPatchPointSizeInfoEnabledFlag_; }
+  bool                 getGeometryPatchPointShapeInfoEnabledFlag() { return geometryPatchPointShapeInfoEnabledFlag_; }
+  GeometryFrameParams& getGeometryFrameParams() { return geometryFrameParams_; }
+
+  void setPatchFrameGeometryParameterSetId( uint8_t value ) { patchFrameGeometryParameterSetId_ = value; }
+  void setPatchVpccParameterSetId( uint8_t value ) { patchVpccParameterSetId_ = value; }
+  void setGeometryPatchParamsEnabledFlag( bool value ) { geometryPatchParamsEnabledFlag_ = value; }
+  void setOverrideGeometryPatchParamsFlag( bool value ) { overrideGeometryPatchParamsFlag_ = value; }
+  void setGeometryPatchScaleParamsEnabledFlag( bool value ) { geometryPatchScaleParamsEnabledFlag_ = value; }
+  void setGeometryPatchOffsetParamsEnabledFlag( bool value ) { geometryPatchOffsetParamsEnabledFlag_ = value; }
+  void setGeometryPatchRotationParamsEnabledFlag( bool value ) { geometryPatchRotationParamsEnabledFlag_ = value; }
+  void setGeometryPatchPointSizeInfoEnabledFlag( bool value ) { geometryPatchPointSizeInfoEnabledFlag_ = value; }
+  void setGeometryPatchPointShapeInfoEnabledFlag( bool value ) { geometryPatchPointShapeInfoEnabledFlag_ = value; }
+  void setGeometryFrameParams( GeometryFrameParams value ) { geometryFrameParams_ = value; }
+
+ private:
+  uint8_t             patchFrameGeometryParameterSetId_;
+  uint8_t             patchVpccParameterSetId_;
+  bool                geometryPatchParamsEnabledFlag_;
+  bool                overrideGeometryPatchParamsFlag_;
+  bool                geometryPatchScaleParamsEnabledFlag_;
+  bool                geometryPatchOffsetParamsEnabledFlag_;
+  bool                geometryPatchRotationParamsEnabledFlag_;
+  bool                geometryPatchPointSizeInfoEnabledFlag_;
+  bool                geometryPatchPointShapeInfoEnabledFlag_;
+  GeometryFrameParams geometryFrameParams_;
+};
+// 7.3.5.3  Patch sequence parameter set syntax (psps) -> TODO: REMOVE
+class PatchVpccParameterSet {
+ public:
+  PatchVpccParameterSet() :
+      patchVpccParameterSetId_( 0 ),
+      log2PatchPackingBlockSize_( 0 ),
+      log2MaxPatchFrameOrderCntLsb_( 0 ),
+      maxDecPatchFrameBufferingMinus1_( 0 ),
+      numRefPatchFrameListsInPsps_( 0 ),
+      longTermRefPatchFramesFlag_( false ),
+      useEightOrientationsFlag_( false ),
+      normalAxisLimitsQuantizationEnableFlag_( false ),
+      normalAxisMaxDeltaValueEnableFlag_( false ) {
+    refListStruct_.clear();
+  }
+  ~PatchVpccParameterSet() { refListStruct_.clear(); }
+
+  PatchVpccParameterSet& operator=( const PatchVpccParameterSet& ) = default;
+
+  void           allocate( size_t size ) { refListStruct_.resize( size ); }
+  uint8_t        getPatchVpccParameterSetId() { return patchVpccParameterSetId_; }
+  uint8_t        getLog2PatchPackingBlockSize() { return log2PatchPackingBlockSize_; }
+  uint8_t        getLog2MaxPatchFrameOrderCntLsbMinus4() { return log2MaxPatchFrameOrderCntLsb_; }
+  uint8_t        getMaxDecPatchFrameBufferingMinus1() { return maxDecPatchFrameBufferingMinus1_; }
+  uint8_t        getNumRefPatchFrameListsInPsps() { return numRefPatchFrameListsInPsps_; }
+  bool           getLongTermRefPatchFramesFlag() { return longTermRefPatchFramesFlag_; }
+  bool           getUseEightOrientationsFlag() { return useEightOrientationsFlag_; }
+  bool           getNormalAxisLimitsQuantizationEnableFlag() { return normalAxisLimitsQuantizationEnableFlag_; }
+  bool           getNormalAxisMaxDeltaValueEnableFlag() { return normalAxisMaxDeltaValueEnableFlag_; }
+  RefListStruct& getRefListStruct( uint8_t index ) { return refListStruct_[index]; }
+  uint8_t        getRefListStructSize() { return refListStruct_.size(); }
+
+  void setPatchVpccParameterSetId( uint8_t value ) { patchVpccParameterSetId_ = value; }
+  void setLog2PatchPackingBlockSize( uint8_t value ) { log2PatchPackingBlockSize_ = value; }
+  void setLog2MaxPatchFrameOrderCntLsbMinus4( uint8_t value ) { log2MaxPatchFrameOrderCntLsb_ = value; }
+  void setMaxDecPatchFrameBufferingMinus1( uint8_t value ) { maxDecPatchFrameBufferingMinus1_ = value; }
+  void setNumRefPatchFrameListsInPsps( uint8_t value ) { numRefPatchFrameListsInPsps_ = value; }
+  void setLongTermRefPatchFramesFlag( bool value ) { longTermRefPatchFramesFlag_ = value; }
+  void setUseEightOrientationsFlag( bool value ) { useEightOrientationsFlag_ = value; }
+  void setNormalAxisLimitsQuantizationEnableFlag( bool value ) { normalAxisLimitsQuantizationEnableFlag_ = value; }
+  void setNormalAxisMaxDeltaValueEnableFlag( bool value ) { normalAxisMaxDeltaValueEnableFlag_ = value; }
+  void setRefListStruct( uint8_t index, RefListStruct value ) { refListStruct_[index] = value; }
+  void addRefListStruct( RefListStruct value ) { refListStruct_.push_back( value ); }
+  RefListStruct& addRefListStruct() {
+    RefListStruct refListStruct;
+    refListStruct_.push_back( refListStruct );
+    return refListStruct_.back();
+  }
+
+ private:
+  uint8_t patchVpccParameterSetId_;
+  uint8_t log2PatchPackingBlockSize_;
+  uint8_t log2MaxPatchFrameOrderCntLsb_;
+  uint8_t maxDecPatchFrameBufferingMinus1_;
+  uint8_t numRefPatchFrameListsInPsps_;
+  bool    longTermRefPatchFramesFlag_;
+  bool    useEightOrientationsFlag_;
+  bool    normalAxisLimitsQuantizationEnableFlag_;
+  bool    normalAxisMaxDeltaValueEnableFlag_;
+
+  std::vector<RefListStruct> refListStruct_;
+};
+// 7.3.5.2  Patch data group unit payload syntax (pdgup) -> this should be removed -> TODO: REMOVE
+class PatchDataGroup {
+ public:
+  PatchDataGroup() {}
+  ~PatchDataGroup() {
+    patchTileGroupLayerUnit_.clear();
+    seiMessageSuffix_.clear();
+    seiMessagePrefix_.clear();
+  }
+  PatchDataGroup&             operator=( const PatchDataGroup& ) = default;
+  PatchVpccParameterSet&      getPatchVpccParameterSet( size_t index ) { return patchVpccParameterSet_[index]; }
+  GeometryPatchParameterSet&  getGeometryPatchParameterSet( size_t index ) { return geometryPatchParameterSet_[index]; }
+  AttributePatchParameterSet& getAttributePatchParameterSet( size_t index ) {
+    return attributePatchParameterSet_[index];
+  }
+  PatchFrameParameterSet&          getPatchFrameParameterSet( size_t index ) { return patchFrameParameterSet_[index]; }
+  PatchFrameAttributeParameterSet& getPatchFrameAttributeParameterSet( size_t index ) {
+    return patchFrameAttributeParameterSet_[index];
+  }
+  PatchFrameGeometryParameterSet& getPatchFrameGeometryParameterSet( size_t index ) {
+    return patchFrameGeometryParameterSet_[index];
+  }
+  PatchTileGroupLayerUnit& getPatchTileGroupLayerUnit( size_t index ) { return patchTileGroupLayerUnit_[index]; }
+  std::vector<SeiMessage>& getSeiMessagePrefix() { return seiMessagePrefix_; }
+  std::vector<SeiMessage>& getSeiMessageSuffix() { return seiMessageSuffix_; }
+  SeiMessage&              getSeiMessagePrefix( size_t index ) { return seiMessagePrefix_[index]; }
+  SeiMessage&              getSeiMessageSuffix( size_t index ) { return seiMessageSuffix_[index]; }
+  size_t                   getPatchTileGroupLayerUnitSize() { return patchTileGroupLayerUnit_.size(); }
+  size_t                   getSeiMessagePrefixSize() { return seiMessagePrefix_.size(); }
+  size_t                   getSeiMessageSuffixSize() { return seiMessageSuffix_.size(); }
+  size_t                   getPatchVpccParameterSetSize() { return patchVpccParameterSetSize_; }
+  size_t                   getGeometryPatchParameterSetSize() { return geometryPatchParameterSetSize_; }
+  size_t                   getAttributePatchParameterSetSize() { return attributePatchParameterSetSize_; }
+  size_t                   getPatchFrameParameterSetSize() { return patchFrameParameterSetSize_; }
+  size_t                   getPatchFrameAttributeParameterSetSize() { return patchFrameAttributeParameterSetSize_; }
+  size_t                   getPatchFrameGeometryParameterSetSize() { return patchFrameGeometryParameterSetSize_; }
+  void                     setPatchVpccParameterSetSize( size_t value ) { patchVpccParameterSetSize_ = value; }
+  void                     setGeometryPatchParameterSetSize( size_t value ) { geometryPatchParameterSetSize_ = value; }
+  void setAttributePatchParameterSetSize( size_t value ) { attributePatchParameterSetSize_ = value; }
+  void setPatchFrameParameterSetSize( size_t value ) { patchFrameParameterSetSize_ = value; }
+  void setPatchFrameAttributeParameterSetSize( size_t value ) { patchFrameAttributeParameterSetSize_ = value; }
+  void setPatchFrameGeometryParameterSetSize( size_t value ) { patchFrameGeometryParameterSetSize_ = value; }
+  void setPatchVpccParameterSet( size_t index, PatchVpccParameterSet value ) { patchVpccParameterSet_[index] = value; }
+  void setGeometryPatchParameterSet( size_t index, GeometryPatchParameterSet value ) {
+    geometryPatchParameterSet_[index] = value;
+  }
+  void setAttributePatchParameterSet( size_t index, AttributePatchParameterSet& value ) {
+    attributePatchParameterSet_[index] = value;
+  }
+  void setPatchFrameParameterSet( size_t index, PatchFrameParameterSet value ) {
+    patchFrameParameterSet_[index] = value;
+  }
+  void setPatchFrameAttributeParameterSet( size_t index, PatchFrameAttributeParameterSet& value ) {
+    patchFrameAttributeParameterSet_[index] = value;
+  }
+  void setPatchFrameGeometryParameterSet( size_t index, PatchFrameGeometryParameterSet value ) {
+    patchFrameGeometryParameterSet_[index] = value;
+  }
+  PatchTileGroupLayerUnit& addPatchTileGroupLayerUnit() {
+    PatchTileGroupLayerUnit patchTileGroupLayerUnit;
+    patchTileGroupLayerUnit_.push_back( patchTileGroupLayerUnit );
+    return patchTileGroupLayerUnit_.back();
+  }
+  SeiMessage& addSeiMessagePrefix() {
+    SeiMessage seiMessage;
+    seiMessagePrefix_.push_back( seiMessage );
+    return seiMessagePrefix_.back();
+  }
+  SeiMessage& addSeiMessageSuffix() {
+    SeiMessage seiMessage;
+    seiMessageSuffix_.push_back( seiMessage );
+    return seiMessageSuffix_.back();
+  }
+
+ private:
+  PatchVpccParameterSet                patchVpccParameterSet_[16];
+  GeometryPatchParameterSet            geometryPatchParameterSet_[64];
+  AttributePatchParameterSet           attributePatchParameterSet_[64];
+  PatchFrameParameterSet               patchFrameParameterSet_[64];
+  PatchFrameAttributeParameterSet      patchFrameAttributeParameterSet_[64];
+  PatchFrameGeometryParameterSet       patchFrameGeometryParameterSet_[64];
+  std::vector<PatchTileGroupLayerUnit> patchTileGroupLayerUnit_;
+  std::vector<SeiMessage>              seiMessagePrefix_;
+  std::vector<SeiMessage>              seiMessageSuffix_;
+  size_t                               patchVpccParameterSetSize_;
+  size_t                               geometryPatchParameterSetSize_;
+  size_t                               attributePatchParameterSetSize_;
+  size_t                               patchFrameParameterSetSize_;
+  size_t                               patchFrameAttributeParameterSetSize_;
+  size_t                               patchFrameGeometryParameterSetSize_;
+};
+//used for context handling
 class PCCContext {
  public:
   PCCContext();
@@ -2763,7 +2723,6 @@ class PCCContext {
   size_t                        getMPGeoHeight() { return MPGeoHeight_; }
   size_t                        getMPAttWidth() { return MPAttWidth_; }
   size_t                        getMPAttHeight() { return MPAttHeight_; }
-  PCCMetadata&                  getGOFLevelMetadata() { return gofLevelMetadata_; }
   std::vector<SubContext>&      getSubContexts() { return subContexts_; }
   std::vector<unionPatch>&      getUnionPatch() { return unionPatch_; }
   bool&                         getPrefilterLossyOM() { return prefilterLossyOM_; }
@@ -2817,6 +2776,28 @@ class PCCContext {
     return vpccParameterSets_.back();
   }
 
+  AtlasSequenceParameterSetRBSP& getAtlasSequenceParameterSet(size_t setId){
+    return atlasSequenceParameterSetList_[setId];
+  }
+  AtlasFrameParameterSetRbsp& getAtlasFrameParameterSet(size_t setId){
+    return atalsFrameParameterSetList_[setId];
+  }
+  AtlasSequenceParameterSetRBSP& addAtlasSequenceParameterSet( uint8_t setId ){
+    AtlasSequenceParameterSetRBSP asps;
+    asps.setAltasSequenceParameterSetId(setId);
+    atlasSequenceParameterSetList_.resize(setId+1); //jkei: setId doesnot need to be sequential
+    atlasSequenceParameterSetList_[setId] = asps; //jkei: makes sens?
+    return atlasSequenceParameterSetList_[setId];
+  }
+  AtlasFrameParameterSetRbsp& addAtlasFrameParameterSet( uint8_t setId ){
+    AtlasFrameParameterSetRbsp afps;
+    afps.setAtlasFrameParameterSetId(setId);
+    atalsFrameParameterSetList_.resize(setId+1); //jkei: setId doesnot need to be sequential
+    atalsFrameParameterSetList_[setId] = afps; //jkei: makes sens?
+    return atalsFrameParameterSetList_[setId];
+  }
+  AtlasTileGroupLayerRbsp& getAtlasTileGroupLayer() {return atlasTileGroupLayer_;}
+  
   PatchDataGroup& getPatchDataGroup() { return patchSequenceDataUnit_; }
 
   void addPointLocalReconstructionMode( const PointLocalReconstructionMode& mode ) {
@@ -2839,9 +2820,13 @@ class PCCContext {
   PCCVideoGeometry                          videoMPsGeometry_;
   PCCVideoTexture                           videoMPsTexture_;
   std::vector<PCCVideoBitstream>            videoBitstream_;
-  PCCMetadata                               gofLevelMetadata_;
   VPCCParameterSet                          vpccParameterSet_;
   PatchDataGroup                            patchSequenceDataUnit_;
+  
+  std::vector<AtlasSequenceParameterSetRBSP> atlasSequenceParameterSetList_; //jkei: should use vector? or only 1 asps is allowed?
+  std::vector<AtlasFrameParameterSetRbsp>   atalsFrameParameterSetList_;
+  AtlasTileGroupLayerRbsp                   atlasTileGroupLayer_; //jkei: do we need vector?
+  
   std::vector<VpccParameterSet>             vpccParameterSets_;
   uint8_t                                   occupancyPrecision_;
   uint8_t                                   occupancyPackingBlockSize_;

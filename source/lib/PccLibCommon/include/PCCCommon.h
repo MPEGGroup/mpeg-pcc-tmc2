@@ -69,6 +69,7 @@
 #define BUGFIX_FIRSTEDDatT1 1
 #define POSTSMOOTHING_RGB2YUV 0
 
+#define SECOND_SUBMIT_USINGATLASXXXPS 1
 // ******************************************************************* //
 // Trace modes to validate new syntax
 // ******************************************************************* //
