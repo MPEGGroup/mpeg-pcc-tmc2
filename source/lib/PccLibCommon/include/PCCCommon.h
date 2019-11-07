@@ -69,7 +69,6 @@
 #define BUGFIX_FIRSTEDDatT1 1
 #define POSTSMOOTHING_RGB2YUV 0
 
-#define SECOND_SUBMIT_USINGATLASXXXPS 1
 // ******************************************************************* //
 // Trace modes to validate new syntax
 // ******************************************************************* //
@@ -167,7 +166,8 @@ enum VPCCUnitType {
   VPCC_RSVD_28,  // 28: Reserved
   VPCC_RSVD_29,  // 29: Reserved
   VPCC_RSVD_30,  // 30: Reserved
-  VPCC_RSVD_31   // 32: Reserved
+  VPCC_RSVD_31,   // 32: Reserved
+  NUM_VPCC_UNIT_TYPE //undefined
 };
 
 enum PDGUnitType {

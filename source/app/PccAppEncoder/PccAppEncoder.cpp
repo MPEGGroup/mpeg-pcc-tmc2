@@ -931,8 +931,7 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
   checksum.setParameters( metricsParams );
 
   PCCBitstreamStat bitstreamStat;
-  //SampleStreamNalUnit ssnu; 
-	SampleStreamVpccUnit ssvpccu;
+  VpccUnitStream vpccUS;
   // Place to get/set default values for gof metadata enabled flags (in sequence level).
   while ( startFrameNumber < endFrameNumber0 ) {
     const size_t endFrameNumber = min( startFrameNumber + groupOfFramesSize0, endFrameNumber0 );
@@ -950,7 +949,7 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
 
     std::cout << "Compressing group of frames " << contextIndex << ": " << startFrameNumber << " -> " << endFrameNumber
               << "..." << std::endl;
-    int ret = encoder.encode( sources, context, /*ssnu*/ ssvpccu, reconstructs );
+    int ret = encoder.encode( sources, context, vpccUS, reconstructs );
     clock.stop();
 
     PCCGroupOfFrames normals;
@@ -982,12 +981,19 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
     startFrameNumber = endFrameNumber;
     contextIndex++;
   }
+  
+  //jkei: wrapping with sampestream and write to the output bin file! ;o;
+  //jkei: i feel like it could be memory issue.. do we want to keep 300 frames in a memory and write off at once or write it off every 32 frames(GOF)?
   PCCBitstream bitstream;
+#ifdef BITSTREAM_TRACE
+  bitstream.setTrace( true );
+  bitstream.openTrace( removeFileExtension( encoderParams.compressedStreamPath_ ) + "_samplestream_write.txt" );
+  bitstream.setTraceFile( bitstream.getTraceFile() );
+#endif
   bitstream.writeHeader();  // JR TODO: must be removed?
   bitstreamStat.setHeader( bitstream.size() );
   PCCBitstreamEncoder bitstreamEncoder;
-  //bitstreamEncoder.write( ssnu, bitstream );
-	bitstreamEncoder.writeSampleStream(ssvpccu, bitstream);
+	bitstreamEncoder.writeSampleStream(vpccUS, bitstream);
   
   bitstreamStat.trace();
   std::cout << "Total bitstream size " << bitstream.size() << " B" << std::endl;

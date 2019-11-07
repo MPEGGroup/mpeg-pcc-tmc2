@@ -69,17 +69,25 @@ class VpccUnit {
   std::vector<uint8_t>& getVpccUnitData() { return vpccUnitData_; }
   
 	void allocate() { vpccUnitData_.resize( vpccUnitSize_, 0 ); }
-  void initialize( size_t size, uint8_t* data ) {
+  void initialize( size_t size, uint8_t* data, VPCCUnitType unitType ) {
     vpccUnitSize_      = size;
     if( size > 0 ) {
       vpccUnitData_.resize( size, 0 );
       memcpy( vpccUnitData_.data(), data, size * sizeof( uint8_t ) );
     }
+    vpccUnitType_ = unitType;
   }
 
+  void getVpccUnitHeader() { } //read 32 bits
+  void getVpccUnitPayload() { }
+  VPCCUnitType getVpccUnitType() {return vpccUnitType_;}
+  
+  void setVpccUnitType(size_t value){vpccUnitType_ = (VPCCUnitType) value;}
+  void setVpccUnitType(VPCCUnitType value){vpccUnitType_ = value;}
  private:
+  VPCCUnitType         vpccUnitType_; //jkei: just for humane reason..
   size_t               vpccUnitSize_;
-  std::vector<uint8_t> vpccUnitData_;
+  std::vector<uint8_t> vpccUnitData_; //jkei: do we really need to do like this? ;o;
 };
 
 // 7.3.5 NAL unit syntax
@@ -124,28 +132,35 @@ class NalUnit {
 class SampleStreamNalUnit {
  public:
   SampleStreamNalUnit() : unitSizePrecisionBytesMinus1_ ( 0 ) { }
-  ~SampleStreamNalUnit() { nalUnit_.clear(); }
-  NalUnit& addNalUnit() {
-    nalUnit_.resize( nalUnit_.size() + 1 );
-    return nalUnit_.back();
+  ~SampleStreamNalUnit() { nalUnitList_.clear(); }
+  NalUnit& addNalUnitToList() {
+    nalUnitList_.resize( nalUnitList_.size() + 1 );
+    return nalUnitList_.back();
   }
 
-  void                  popFront() { nalUnit_.pop_front(); }
-  NalUnit&              front() { return *(nalUnit_.begin()); }
-  std::list<NalUnit>&   getNalUnit() { return nalUnit_; }
-  size_t                getNalUnitCount() { return nalUnit_.size(); }
+  void                  popFront() { nalUnitList_.pop_front(); }
+  NalUnit&              front() { return *(nalUnitList_.begin()); }
+  std::list<NalUnit>&   getNalUnitList() { return nalUnitList_; }
+  size_t                getNalUnitCount() { return nalUnitList_.size(); }
   uint8_t               getUnitSizePrecisionBytesMinus1() { return unitSizePrecisionBytesMinus1_; }
   void                  setUnitSizePrecisionBytesMinus1( uint8_t value ) { unitSizePrecisionBytesMinus1_ = value; }
-  NalUnit&              getLastNalUnit() { return nalUnit_.back(); }
+  NalUnit&              getLastNalUnit() { return nalUnitList_.back(); }
+  
+  NalUnit& getNalUnit() {return nalUnit_;}
+  void getNalUnit(NalUnit nalu) {nalUnit_=nalu;} //jkei: doesn't it work?
+  
  private:
-  uint8_t              unitSizePrecisionBytesMinus1_;
-  std::list<NalUnit> nalUnit_;
+  uint8_t            unitSizePrecisionBytesMinus1_;
+  NalUnit            nalUnit_;
+  std::list<NalUnit> nalUnitList_; //jkei: let's remove this since one nalUnit per one sampleStreamNalUnit??
 };
 
-// 6.1 V-PCC bistreams format
+// B.2 Sample stream V-PCC unit syntax and semantics
+// 6.1 V-PCC bistreams format (previously)
+//jkei: lets do something to match this one to the spec. otherwise I don't know how to read NAL_Atlas group layer repeatly...
 class VpccUnitStream {
  public:
-  VpccUnitStream() { }
+  VpccUnitStream() :ssvhUnitSizePrecisionBytesMinus1_(0) {}
   ~VpccUnitStream() { vpccUnits_.clear(); }
   VpccUnit& addVpccUnit() {
     vpccUnits_.resize( vpccUnits_.size() + 1 );
@@ -156,18 +171,12 @@ class VpccUnitStream {
   std::list<VpccUnit>&  getVpccUnit() { return vpccUnits_; }
   size_t                getVpccUnitCount() { return vpccUnits_.size(); }
   VpccUnit&             getLastVpccUnit() { return vpccUnits_.back(); }
+  uint32_t getSsvhUnitSizePrecisionBytesMinus1() { return ssvhUnitSizePrecisionBytesMinus1_;}
+  void    setSsvhUnitSizePrecisionBytesMinus1(uint32_t value) {  ssvhUnitSizePrecisionBytesMinus1_=value;}
+
  private:
-  std::list<VpccUnit>   vpccUnits_;
-};
-// B.2 Sample stream V-PCC unit syntax and semantics
-class SampleStreamVpccUnit : public VpccUnitStream {
- public:
-  SampleStreamVpccUnit() : unitSizePrecisionBytesMinus1_ ( 0 ) { }
-  ~SampleStreamVpccUnit() { }
-  uint8_t               getUnitSizePrecisionBytesMinus1() { return unitSizePrecisionBytesMinus1_; }
-  void                  setUnitSizePrecisionBytesMinus1( uint8_t value ) { unitSizePrecisionBytesMinus1_ = value; }
- private:
-  uint8_t              unitSizePrecisionBytesMinus1_;
+  std::list<VpccUnit>   vpccUnits_; //jkei: really need to be list?
+  uint32_t               ssvhUnitSizePrecisionBytesMinus1_;
 };
 
 // 7.3.7 Supplemental enhancement information message syntax
@@ -732,13 +741,13 @@ class AtlasTileGroupDataUnit {
 class RefListStruct {
  public:
   RefListStruct() : numRefEntries_( 0 ) {
-    absDeltaPfocSt_.clear();
+    absDeltaAfocSt_.clear();
     afocLsbLt_.clear();
     stRefAtlasFrameFlag_.clear();
     strpfEntrySignFlag_.clear();
   }
   ~RefListStruct() {
-    absDeltaPfocSt_.clear();
+    absDeltaAfocSt_.clear();
     afocLsbLt_.clear();
     stRefAtlasFrameFlag_.clear();
     strpfEntrySignFlag_.clear();
@@ -746,32 +755,32 @@ class RefListStruct {
   RefListStruct& operator=( const RefListStruct& ) = default;
 
   void allocate() {
-    absDeltaPfocSt_.resize( numRefEntries_, 0 );
+    absDeltaAfocSt_.resize( numRefEntries_, 0 );
     afocLsbLt_.resize( numRefEntries_, 0 );
     stRefAtlasFrameFlag_.resize( numRefEntries_, false );
     strpfEntrySignFlag_.resize( numRefEntries_, false );
   }
 
-  void addAbsDeltaPfocSt( uint8_t value ) { absDeltaPfocSt_.push_back( value ); }
+  void addAbsDeltaAfocSt( uint8_t value ) { absDeltaAfocSt_.push_back( value ); }
   void addStrpfEntrySignFlag( bool value ) { strpfEntrySignFlag_.push_back( value ); }
   void addAfocLsbLt( uint8_t value ) { afocLsbLt_.push_back( value ); }
   void addStRefAtalsFrameFlag( bool value ) { stRefAtlasFrameFlag_.push_back( value ); }
 
   uint8_t getNumRefEntries() { return numRefEntries_; }
-  uint8_t getAbsDeltaPfocSt( uint16_t index ) { return absDeltaPfocSt_[index]; }
+  uint8_t getAbsDeltaAfocSt( uint16_t index ) { return absDeltaAfocSt_[index]; }
   bool    getStrpfEntrySignFlag( uint16_t index ) { return strpfEntrySignFlag_[index]; }
   uint8_t getAfocLsbLt( uint16_t index ) { return afocLsbLt_[index]; }
   bool    getStRefAtalsFrameFlag( uint16_t index ) { return stRefAtlasFrameFlag_[index]; }
 
   void setNumRefEntries( uint8_t value ) { numRefEntries_ = value; }
-  void setAbsDeltaPfocSt( uint16_t index, uint8_t value ) { absDeltaPfocSt_[index] = value; }
+  void setAbsDeltaAfocSt( uint16_t index, uint8_t value ) { absDeltaAfocSt_[index] = value; }
   void setStrpfEntrySignFlag( uint16_t index, bool value ) { strpfEntrySignFlag_[index] = value; }
   void setAfocLsbLt( uint16_t index, uint8_t value ) { afocLsbLt_[index] = value; }
   void setStRefAtalsFrameFlag( uint16_t index, bool value ) { stRefAtlasFrameFlag_[index] = value; }
 
  private:
   uint8_t              numRefEntries_;
-  std::vector<uint8_t> absDeltaPfocSt_;
+  std::vector<uint8_t> absDeltaAfocSt_;
   std::vector<uint8_t> afocLsbLt_;
   std::vector<bool>    stRefAtlasFrameFlag_;
   std::vector<bool>    strpfEntrySignFlag_;
@@ -784,7 +793,7 @@ class AtlasTileGroupHeader {
       atghFrameIndex_( 0 ),
       atghAtlasFrameParameterSetId_( 0 ),
       atghAddress_( 0 ),
-      atghType_( 0 ),
+      atghType_( PCCTILEGROUP(0) ),
       atghAtlasFrmOrderCntLsb_( 0 ),
       atghRefAtlasFrameListSpsFlag_( 0 ),
       atghRefAtlasFrameListIdx_( 0 ),
@@ -801,26 +810,26 @@ class AtlasTileGroupHeader {
   ~AtlasTileGroupHeader() {
     atghAdditionalAfocLsbPresentFlag_.clear();
     atghAdditionalAfocLsbVal_.clear();
-    refListStruct_.clear();
   };
   AtlasTileGroupHeader& operator=( const AtlasTileGroupHeader& ) = default;
 
-  void           allocate( size_t size ) { refListStruct_.resize( size ); }
-  RefListStruct& getRefListStruct( uint8_t index ) { return refListStruct_[index]; }
-  uint8_t        getRefListStructSize() { return refListStruct_.size(); }
-  void           setRefListStruct( uint8_t index, RefListStruct value ) { refListStruct_[index] = value; }
-  void           addRefListStruct( RefListStruct value ) { refListStruct_.push_back( value ); }
-  RefListStruct& addRefListStruct() {
-    RefListStruct refListStruct;
-    refListStruct_.push_back( refListStruct );
-    return refListStruct_.back();
-  }
+  //void           allocate( size_t size ) { refListStruct_.resize( size ); }
+  RefListStruct&  getRefListStruct() { return refListStruct_; } //only 1 refList
+  void           setRefListStruct( RefListStruct value ) { refListStruct_ = value; }
+  //uint8_t        getRefListStructSize() { return refListStruct_.size(); }
+  //void           setRefListStruct( uint8_t index, RefListStruct value ) { refListStruct_[index] = value; }
+  //void           addRefListStruct( RefListStruct value ) { refListStruct_.push_back( value ); }
+//  RefListStruct& addRefListStruct() {
+//    RefListStruct refListStruct;
+//    refListStruct_.push_back( refListStruct );
+//    return refListStruct_.back();
+//  }
 
   uint8_t  getFrameIndex() { return atghFrameIndex_; }
   void     setFrameIndex( uint8_t value ) { atghFrameIndex_ = value; }
   uint8_t  getAtghAtlasFrameParameterSetId() { return atghAtlasFrameParameterSetId_; }
   uint32_t getAtghAddress() { return atghAddress_; }
-  uint8_t  getAtghType() { return atghType_; }
+  PCCTILEGROUP  getAtghType() { return atghType_; }
   uint8_t  getAtghAtlasFrmOrderCntLsb() { return atghAtlasFrmOrderCntLsb_; }
   bool     getAtghRefAtlasFrameListSpsFlag() { return atghRefAtlasFrameListSpsFlag_; }
   uint8_t  getAtghRefAtlasFrameListIdx() { return atghRefAtlasFrameListIdx_; }
@@ -839,7 +848,7 @@ class AtlasTileGroupHeader {
 
   void setAtghAtlasFrameParameterSetId( uint8_t value ) { atghAtlasFrameParameterSetId_ = value; }
   void setAtghAddress( uint32_t value ) { atghAddress_ = value; }
-  void setAtghType( uint8_t value ) { atghType_ = value; }
+  void setAtghType( PCCTILEGROUP value ) { atghType_ = value; }
   void setAtghAtlasFrmOrderCntLsb( uint8_t value ) { atghAtlasFrmOrderCntLsb_ = value; }
   void setAtghRefAtlasFrameListSpsFlag( bool value ) { atghRefAtlasFrameListSpsFlag_ = value; }
   void setAtghRefAtlasFrameListIdx( uint8_t value ) { atghRefAtlasFrameListIdx_ = value; }
@@ -860,7 +869,7 @@ class AtlasTileGroupHeader {
   uint8_t                    atghFrameIndex_;
   uint8_t                    atghAtlasFrameParameterSetId_;
   uint32_t                   atghAddress_;
-  uint8_t                    atghType_;
+  PCCTILEGROUP               atghType_;
   uint8_t                    atghAtlasFrmOrderCntLsb_;
   bool                       atghRefAtlasFrameListSpsFlag_;
   uint8_t                    atghRefAtlasFrameListIdx_;
@@ -873,7 +882,7 @@ class AtlasTileGroupHeader {
   uint8_t                    atghNumRefdxActiveMinus1_;
   std::vector<bool>          atghAdditionalAfocLsbPresentFlag_;
   std::vector<uint8_t>       atghAdditionalAfocLsbVal_;
-  std::vector<RefListStruct> refListStruct_;  // jkei: vector?
+  RefListStruct refListStruct_;  // jkei: one ref list
 };
 
 // 7.3.6.10  Atlas tile group layer RBSP syntax (jkei: newly added, replace PatchTileGroupLayerUnit with this)
@@ -1070,16 +1079,34 @@ class AtlasFrameParameterSetRbsp {
       afps2dPosYBitCountMinus1_( 0 ),
       afps3dPosXBitCountMinus1_( 0 ),
       afps3dPosYBitCountMinus1_( 0 ),
+      afpsLodModeEnableFlag_( false ),
       afpsOverrideEomForDepthFlag_( 0 ),
       afpsEomNumberOfPatchBitCountMinus1_( 0 ),
       afpsEomMaxBitCountMinus1_( 0 ),
       afpsRaw3dPosBitCountExplicitModeFlag_( 0 ),
       afpsExtensionPresentFlag_( 0 ),
-      afpsExtensionDataFlag_( 0 ),
-      afpsLodModeEnableFlag_( false ) {}
+      afpsExtensionDataFlag_( 0 ){}
+  
   ~AtlasFrameParameterSetRbsp() {}
   AtlasFrameParameterSetRbsp& operator=( const AtlasFrameParameterSetRbsp& ) = default;
-
+  void copyFrom(AtlasFrameParameterSetRbsp& refAfps){
+    afpsAtlasSequenceParameterSetId_=refAfps.getAtlasSequenceParameterSetId();
+    afpsNumRefIdxDefaultActiveMinus1_=refAfps.getAfpsNumRefIdxDefaultActiveMinus1();
+    afpsAdditionalLtAfocLsbLen_=refAfps.getAfpsAdditionalLtAfocLsbLen();
+    afps2dPosXBitCountMinus1_=refAfps.getAfps2dPosXBitCountMinus1();
+    afps2dPosYBitCountMinus1_=refAfps.getAfps2dPosYBitCountMinus1();
+    afps3dPosXBitCountMinus1_=refAfps.getAfps3dPosXBitCountMinus1();
+    afps3dPosYBitCountMinus1_=refAfps.getAfps3dPosYBitCountMinus1();
+    afpsLodModeEnableFlag_=refAfps.getLodModeEnableFlag();
+    afpsOverrideEomForDepthFlag_=refAfps.getAfpsOverrideEomForDepthFlag();
+    afpsEomNumberOfPatchBitCountMinus1_=refAfps.getAfpsEomNumberOfPatchBitCountMinus1();
+    afpsEomMaxBitCountMinus1_=refAfps.getAfpsEomMaxBitCountMinus1();
+    afpsRaw3dPosBitCountExplicitModeFlag_=refAfps.getAfpsRaw3dPosBitCountExplicitModeFlag();
+    afpsExtensionPresentFlag_=refAfps.getAfpsExtensionPresentFlag();
+    afpsExtensionDataFlag_=refAfps.getAfpsExtensionDataFlag();
+    atlasFrameTileInformation_=refAfps.getAtlasFrameTileInformation(); //jkei: does it work?
+  }
+  
   bool getLodModeEnableFlag() { return afpsLodModeEnableFlag_; }
   void setLodModeEnableFlag( bool value ) { afpsLodModeEnableFlag_ = value; }
 
@@ -1087,10 +1114,10 @@ class AtlasFrameParameterSetRbsp {
   uint8_t getAtlasSequenceParameterSetId() { return afpsAtlasSequenceParameterSetId_; }
   uint8_t getAfpsNumRefIdxDefaultActiveMinus1() { return afpsNumRefIdxDefaultActiveMinus1_; }
   uint8_t getAfpsAdditionalLtAfocLsbLen() { return afpsAdditionalLtAfocLsbLen_; }
-  uint8_t getAfps2dPosXBitCountMinus1() { return afps2dPosXBitCountMinus1_; }
-  uint8_t getAfps2dPosYBitCountMinus1() { return afps2dPosYBitCountMinus1_; }
-  uint8_t getAfps3dPosXBitCountMinus1() { return afps3dPosXBitCountMinus1_; }
-  uint8_t getAfps3dPosYBitCountMinus1() { return afps3dPosYBitCountMinus1_; }
+  size_t getAfps2dPosXBitCountMinus1() { return afps2dPosXBitCountMinus1_; }
+  size_t getAfps2dPosYBitCountMinus1() { return afps2dPosYBitCountMinus1_; }
+  size_t getAfps3dPosXBitCountMinus1() { return afps3dPosXBitCountMinus1_; }
+  size_t getAfps3dPosYBitCountMinus1() { return afps3dPosYBitCountMinus1_; }
   bool    getAfpsOverrideEomForDepthFlag() { return afpsOverrideEomForDepthFlag_; }
   uint8_t getAfpsEomNumberOfPatchBitCountMinus1() { return afpsEomNumberOfPatchBitCountMinus1_; }
   uint8_t getAfpsEomMaxBitCountMinus1() { return afpsEomMaxBitCountMinus1_; }
@@ -1122,12 +1149,12 @@ class AtlasFrameParameterSetRbsp {
   AtlasFrameTileInformation atlasFrameTileInformation_;
   uint8_t                   afpsNumRefIdxDefaultActiveMinus1_;
   uint8_t                   afpsAdditionalLtAfocLsbLen_;
-  uint8_t                   afps2dPosXBitCountMinus1_;
-  uint8_t                   afps2dPosYBitCountMinus1_;
-  uint8_t                   afps3dPosXBitCountMinus1_;
-  uint8_t                   afps3dPosYBitCountMinus1_;
+  size_t                    afps2dPosXBitCountMinus1_;
+  size_t                    afps2dPosYBitCountMinus1_;
+  size_t                    afps3dPosXBitCountMinus1_;
+  size_t                    afps3dPosYBitCountMinus1_;
   bool                      afpsLodModeEnableFlag_; // TODO: remove?
-  uint8_t                   afpsLodBitCount_; //DBG added
+  //uint8_t                   afpsLodBitCount_; //DBG added
   bool                      afpsOverrideEomForDepthFlag_;
   uint8_t                   afpsEomNumberOfPatchBitCountMinus1_;
   uint8_t                   afpsEomMaxBitCountMinus1_;
@@ -1428,6 +1455,10 @@ class GeometryInformation {
       geometryMSBAlignFlag_( false ),
       geometry3dCoordinatesBitdepthMinus1_( 9 ),
       rawGeometryCodecId_( 0 ),
+      geometryPatchBlockFilteringEnableFlag_( 0 ),
+      geometryPatchBlockFilteringPassesCountMinus1_( 0 ),
+      geometryPatchBlockFilteringFilterSizeMinus1_( 0 ),
+      geometryPatchBlockFilteringLog2ThresholdMinus1_( 0 ),
       geometryParamsEnabledFlag_( false ),
       geometryPatchParamsEnabledFlag_( false ) {}
   ~GeometryInformation() {}
@@ -1465,12 +1496,32 @@ class GeometryInformation {
   bool getGeometryParamsEnabledFlag() { return geometryParamsEnabledFlag_; }
   bool getGeometryPatchParamsEnabledFlag() { return geometryPatchParamsEnabledFlag_; }
 
+  bool     getGeometryPatchBlockFilteringEnableFlag() { return geometryPatchBlockFilteringEnableFlag_; }
+  uint32_t getGeometryPatchBlockFilteringPassesCountMinus1() { return geometryPatchBlockFilteringPassesCountMinus1_; }
+  uint32_t getGeometryPatchBlockFilteringFilterSizeMinus1() { return geometryPatchBlockFilteringFilterSizeMinus1_; }
+  uint32_t getGeometryPatchBlockFilteringLog2ThresholdMinus1() {
+    return geometryPatchBlockFilteringLog2ThresholdMinus1_;
+  }
+  void     setGeometryPatchBlockFilteringEnableFlag(bool value) { geometryPatchBlockFilteringEnableFlag_=value; }
+  void     setGeometryPatchBlockFilteringPassesCountMinus1(uint32_t value) { geometryPatchBlockFilteringPassesCountMinus1_=value; }
+  void     setGeometryPatchBlockFilteringFilterSizeMinus1(uint32_t value) { geometryPatchBlockFilteringFilterSizeMinus1_=value; }
+  void     setGeometryPatchBlockFilteringLog2ThresholdMinus1(uint32_t value) {
+    geometryPatchBlockFilteringLog2ThresholdMinus1_=value;
+  }
  private:
   uint8_t geometryCodecId_;
   uint8_t geometryNominal2dBitdepthMinus1_;
   bool    geometryMSBAlignFlag_;
   uint8_t geometry3dCoordinatesBitdepthMinus1_;
   uint8_t rawGeometryCodecId_;
+  
+  //jkei: here or sei?
+  bool     geometryPatchBlockFilteringEnableFlag_;
+  uint8_t  geometryPatchBlockFilteringPassesCountMinus1_;
+  uint8_t  geometryPatchBlockFilteringFilterSizeMinus1_;
+  uint8_t  geometryPatchBlockFilteringLog2ThresholdMinus1_;
+
+  
   // JR TODO: remove
   bool geometryParamsEnabledFlag_;
   bool geometryPatchParamsEnabledFlag_;
@@ -2705,7 +2756,7 @@ class PCCContext {
 
   void resize( size_t size );
 
-  const size_t                  size() { return frames_.size(); }
+  const size_t                  size() { return frames_.size(); } //jkei: lets rename this
   std::vector<PCCFrameContext>& getFrames() { return frames_; }
   PCCFrameContext&              getFrame( int16_t index ) { return frames_[index]; }
   PCCFrameContext&              operator[]( int index ) { return frames_[index]; }
@@ -2779,8 +2830,24 @@ class PCCContext {
   AtlasSequenceParameterSetRBSP& getAtlasSequenceParameterSet(size_t setId){
     return atlasSequenceParameterSetList_[setId];
   }
+  std::vector<AtlasSequenceParameterSetRBSP>& getAtlasSequenceParameterSetList(){
+    return atlasSequenceParameterSetList_;
+  }
+
   AtlasFrameParameterSetRbsp& getAtlasFrameParameterSet(size_t setId){
     return atalsFrameParameterSetList_[setId];
+  }
+  std::vector<AtlasFrameParameterSetRbsp>& getAtlasFrameParameterSetList(){
+    return atalsFrameParameterSetList_;
+  }
+
+  size_t addAtlasSequenceParameterSet(){
+    size_t setId=atlasSequenceParameterSetList_.size();
+    AtlasSequenceParameterSetRBSP asps;
+    asps.setAltasSequenceParameterSetId(setId);
+    atlasSequenceParameterSetList_.resize(setId+1); //jkei: setId doesnot need to be sequential
+    atlasSequenceParameterSetList_[setId] = asps; //jkei: makes sens?
+    return setId;
   }
   AtlasSequenceParameterSetRBSP& addAtlasSequenceParameterSet( uint8_t setId ){
     AtlasSequenceParameterSetRBSP asps;
@@ -2789,6 +2856,24 @@ class PCCContext {
     atlasSequenceParameterSetList_[setId] = asps; //jkei: makes sens?
     return atlasSequenceParameterSetList_[setId];
   }
+  size_t addAtlasFrameParameterSet(){
+    size_t setId=atalsFrameParameterSetList_.size();
+    AtlasFrameParameterSetRbsp afps;
+    afps.setAtlasFrameParameterSetId(setId);
+    atalsFrameParameterSetList_.resize(setId+1);
+    atalsFrameParameterSetList_[setId] = afps;
+    return setId;
+  }
+  size_t addAtlasFrameParameterSet(AtlasFrameParameterSetRbsp& refAfps){
+    size_t setId=atalsFrameParameterSetList_.size();
+    AtlasFrameParameterSetRbsp afps;
+    //AtlasFrameParameterSetRbsp(refAfps) afps; //jkei: can we do this??
+    afps.copyFrom(refAfps);
+    afps.setAtlasFrameParameterSetId(setId);
+    atalsFrameParameterSetList_.resize(setId+1);
+    atalsFrameParameterSetList_[setId] = afps;
+    return setId;
+  }
   AtlasFrameParameterSetRbsp& addAtlasFrameParameterSet( uint8_t setId ){
     AtlasFrameParameterSetRbsp afps;
     afps.setAtlasFrameParameterSetId(setId);
@@ -2796,8 +2881,25 @@ class PCCContext {
     atalsFrameParameterSetList_[setId] = afps; //jkei: makes sens?
     return atalsFrameParameterSetList_[setId];
   }
-  AtlasTileGroupLayerRbsp& getAtlasTileGroupLayer() {return atlasTileGroupLayer_;}
   
+  size_t addAtlasTileGroupLayer(){
+    size_t frameIdx = atlasTileGroupLayerList_.size();
+    AtlasTileGroupLayerRbsp atgl;
+    atlasTileGroupLayerList_.resize(frameIdx+1);
+    atlasTileGroupLayerList_[frameIdx] = atgl;
+    return frameIdx;
+  }
+  
+  AtlasTileGroupLayerRbsp& addAtlasTileGroupLayer( size_t frameIdx ){
+    AtlasTileGroupLayerRbsp atgl;
+    atlasTileGroupLayerList_.resize(frameIdx+1);
+    atlasTileGroupLayerList_[frameIdx] = atgl;
+    return atlasTileGroupLayerList_[frameIdx];
+  }
+  
+  std::vector<AtlasTileGroupLayerRbsp>& getAtlasTileGroupLayerList() {return atlasTileGroupLayerList_;}
+  AtlasTileGroupLayerRbsp& getAtlasTileGroupLayer(size_t index) {return atlasTileGroupLayerList_[index];}
+
   PatchDataGroup& getPatchDataGroup() { return patchSequenceDataUnit_; }
 
   void addPointLocalReconstructionMode( const PointLocalReconstructionMode& mode ) {
@@ -2825,7 +2927,7 @@ class PCCContext {
   
   std::vector<AtlasSequenceParameterSetRBSP> atlasSequenceParameterSetList_; //jkei: should use vector? or only 1 asps is allowed?
   std::vector<AtlasFrameParameterSetRbsp>   atalsFrameParameterSetList_;
-  AtlasTileGroupLayerRbsp                   atlasTileGroupLayer_; //jkei: do we need vector?
+  std::vector<AtlasTileGroupLayerRbsp>      atlasTileGroupLayerList_; //jkei: each tileGroupLayer means a frame...
   
   std::vector<VpccParameterSet>             vpccParameterSets_;
   uint8_t                                   occupancyPrecision_;
@@ -2845,6 +2947,7 @@ class PCCContext {
   size_t                                    EOMFixBitCount_;
   bool                                      singleLayerMode_;
   PCCBitstreamStat*                         bitstreamStat_;
+  //std::vector<int16_t> deltaAfocSt_; //ref, -1,-2,-3,-4
 };
 };  // namespace pcc
 

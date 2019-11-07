@@ -62,14 +62,16 @@ class PCCDecoder : public PCCCodec {
   ~PCCDecoder();
 
   // JR: OLD
-  int decode( PCCBitstream &bitstream, PCCContext &context, PCCGroupOfFrames& reconstruct );
+  int decode_old( PCCBitstream &bitstream, PCCContext &context, PCCGroupOfFrames& reconstruct );
   
   // JR: NEW
-  int decode( /*SampleStreamNalUnit& ssnu*/SampleStreamVpccUnit & ssvpccu, PCCContext& context, PCCGroupOfFrames& reconstructs );
+  int decode( VpccUnitStream & vpccUS, PCCContext& context, PCCGroupOfFrames& reconstructs );
 
   void setParameters( PCCDecoderParameters value );
 
   // adaptor methods
+  void setPointCloudGenerateParameters(GeneratePointCloudParameters& generatePointCloudParameters, PCCContext& context);
+  
   void createPatchFrameDataStructure( PCCContext&   context );
 
   void createPatchFrameDataStructure( PCCContext&      context,

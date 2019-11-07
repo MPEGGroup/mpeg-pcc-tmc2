@@ -123,13 +123,14 @@ class PCCEncoder : public PCCCodec {
               PCCContext&             context,
               /*SampleStreamNalUnit&    ssnu,*/ VpccUnitStream& vpccus,
               PCCGroupOfFrames&       reconstructs );
-  // JR: NEW
-  int encode( const PCCGroupOfFrames& sources,
+  // JR: NEW -> OLD (jkei: i can feel you are tired... :p)
+  int encode_old( const PCCGroupOfFrames& sources,
               PCCContext&             context,
               PCCBitstream&           bitstream,
               PCCGroupOfFrames&       reconstructs );
 
   // adaptor methods (JR: move for test )
+  void setPointCloudGenerateParameters(GeneratePointCloudParameters& generatePointCloudParameters);
   void createPatchFrameDataStructure( PCCContext& context );
 
   void createPatchFrameDataStructure( PCCContext&      context,

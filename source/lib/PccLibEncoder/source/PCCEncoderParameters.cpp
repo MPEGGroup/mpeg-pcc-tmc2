@@ -733,17 +733,20 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
 
   ai.setAttributeCount( noAttributes_ ? 0 : 1 );
   ai.allocate();
-  // ai.setAttributeParamsEnabledFlag( flagColorSmoothing_ );
-  ai.setAttributeDimensionMinus1( 0, noAttributes_ ? 0 : 2 );
-  ai.setAttributeNominal2dBitdepthMinus1( 0, 7 );
-  ai.setAttributeMSBAlignFlag( false );
-
+  if(noAttributes_==0)
+  {
+    // ai.setAttributeParamsEnabledFlag( flagColorSmoothing_ );
+    ai.setAttributeDimensionMinus1( 0, noAttributes_ ? 0 : 2 );
+    ai.setAttributeNominal2dBitdepthMinus1( 0, 7 );
+    ai.setAttributeMSBAlignFlag( false );
+  }
+        
   //asps.setFrameWidth( minimumImageWidth_ );
   //asps.setFrameHeight( minimumImageHeight_);
   asps.setLog2PatchPackingBlockSize( std::log2( occupancyResolution_ )  );
   asps.setLog2MaxAtlasFrameOrderCntLsbMinus4( 4 );
   asps.setMaxDecAtlasFrameBufferingMinus1( 0 ) ;
-  asps.setNumRefAtlasFrameListsInAsps( maxNumRefAtlasFrame_ ); //jkei: let's update when multireference is implemented
+  asps.setNumRefAtlasFrameListsInAsps( 1 ); 
   asps.setMapCountMinus1( mapCountMinus1_ );
   asps.setEnhancedOccupancyMapFixBitCountMinus1( EOMFixBitCount_-1 ) ;
   asps.setSurfaceThicknessMinus1( surfaceThickness_-1 );
@@ -776,6 +779,34 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   afps.setAfpsRaw3dPosBitCountExplicitModeFlag( 0 );
   afps.setAfpsExtensionPresentFlag( 0 );
   afps.setAfpsExtensionDataFlag( 0 );
+  
+  //jkei: any better implementation please?!
+  for(size_t frameIdx=0; frameIdx<frameCount_; frameIdx++){
+    auto& atgl = context.addAtlasTileGroupLayer(frameIdx);
+    auto& atgh  = atgl.getAtlasTileGroupHeader();
+    atgh.setAtghAtlasFrameParameterSetId(0);
+    atgh.setAtghPosMinZQuantizer( uint8_t(std::log2(minLevel_)) );
+    atgh.setAtghPosDeltaMaxZQuantizer(uint8_t(std::log2(minLevel_)));
+    atgh.setAtghPatchSizeXinfoQuantizer(0); //new
+    atgh.setAtghPatchSizeYinfoQuantizer(0); //new
+    atgh.setAtghRaw3dPosAxisBitCountMinus1(0);
+    atgh.setAtghNumRefIdxActiveOverrideFlag(0);
+    
+    atgh.setAtghRefAtlasFrameListSpsFlag( true );
+    atgh.setAtghRefAtlasFrameListIdx(0);
+  }
+
+  //construction of reference frame list of ASPS
+  RefListStruct refList;
+  refList.setNumRefEntries( 4 ); //-1,-2,-3,-4
+  refList.allocate();
+  for(size_t i=0; i<refList.getNumRefEntries(); i++){
+    refList.setAbsDeltaAfocSt(i, i); //jkei: from 1? or from 0?
+    refList.setStrpfEntrySignFlag(i, 0); //negative
+    refList.setStRefAtalsFrameFlag(i, true); //jkei: all short term!
+  }
+  asps.addRefListStruct( refList );
+
   
   pfps.allocate( ai.getAttributeCount() );
   pfps.setLodModeEnableFlag( (levelOfDetailX_>1&&levelOfDetailY_>1) || !(levelOfDetailX_==1&&levelOfDetailY_==1) );

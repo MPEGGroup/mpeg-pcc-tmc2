@@ -173,17 +173,23 @@ class PCCBitstream {
   bool              byteAligned() { return ( position_.bits == 0 ); }
   bool              moreData() { return position_.bytes < data_.size(); }
 
-  inline uint32_t read( uint8_t bits ) {
+  inline uint32_t read( uint8_t bits, bool bFullStream = false ) {
     uint32_t code = read( bits, position_ );
 #ifdef BITSTREAM_TRACE
-    trace( "  CodU[%2u]: %4lu \n", bits, code );
+    if(bFullStream==true)
+      trace( "FullStream: CodU[%2u]: %4lu \n", bits, code );
+    else
+      trace( "  CodU[%2u]: %4lu \n", bits, code );
 #endif
     return code;
   }
-  void write( uint32_t value, uint8_t bits ) {
+  void write( uint32_t value, uint8_t bits, bool bFullStream = false) {
     write( value, bits, position_ );
 #ifdef BITSTREAM_TRACE
-    trace( "  CodU[%2u]: %4lu \n", bits, value );
+    if(bFullStream==true)
+      trace( "FullStream: CodU[%2u]: %4lu \n", bits, value );
+    else
+      trace( "  CodU[%2u]: %4lu \n", bits, value );
 #endif
   }
 
@@ -343,6 +349,7 @@ class PCCBitstream {
 #ifdef BITSTREAM_TRACE
   bool  trace_;
   FILE* traceFile_;
+  //FILE* ssTraceFile_;
 #endif
 };
 

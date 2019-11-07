@@ -89,14 +89,14 @@ class PCCBitstreamDecoder {
   ~PCCBitstreamDecoder();
 
   // JR: OLD
-  int32_t decode( PCCBitstream& bitstream, PCCContext& context );
+  int32_t decode_old( PCCBitstream& bitstream, PCCContext& context );
 
-  // JR: NEW
+  // JR: NEW -> OLD
   void read( PCCBitstream& bitstream, SampleStreamNalUnit& ssnu );
-  int32_t decode( SampleStreamNalUnit& ssnu, PCCContext& context );
+  int32_t decode_old2( SampleStreamNalUnit& ssnu, PCCContext& context );
 	
-	// DBG: NEW
-	void readSampleStream(PCCBitstream & bitstream, SampleStreamVpccUnit& ssvpccu);
+	// DBG: NEWER
+	void readSampleStream(PCCBitstream & bitstream, VpccUnitStream& vpccUS);
 	void readUnitStream(PCCBitstream& bitstream, PCCContext& context, VpccUnitStream& vpccus);
 	int32_t decode( VpccUnitStream& vpccus, PCCContext& context );
 
@@ -357,22 +357,22 @@ class PCCBitstreamDecoder {
   //  void pointLocalReconstructionData( PointLocalReconstructionData& plrd, PCCContext& context, PCCBitstream&
   //  bitstream );
 
-  // 7.3.5.22 Supplemental enhancement information message syntax (jkei: this went up)
+  // 7.3.5.22 Supplemental enhancement information message syntax (jkei: moved up)
   // void seiMessage( PatchDataGroup& pdg, PCCContext& context, PCCBitstream& bitstream );
 
   // JR TODO: continue
   //jkei : added PST:Nov1st
   //B.2  Sample stream V-PCC unit syntax and semantics
   //B.2.1  Sample stream V-PCC header syntax
-  void sampleStreamVpccHeader( PCCBitstream& bitstream, SampleStreamVpccUnit& ssvpccu );
+  void sampleStreamVpccHeader( PCCBitstream& bitstream, VpccUnitStream& vpccUS );
   // B.2.2  Sample stream V-PCC unit syntax
-  void sampleStreamVpccUnit( PCCBitstream& bitstream, SampleStreamVpccUnit& ssvpccu );
+  void sampleStreamVpccUnit( PCCBitstream& bitstream, VpccUnitStream& vpccUS, VpccUnit& vpccUnit);
 
   // C.2 Sample stream NAL unit syntax and semantics
   // C.2.1 Sample stream NAL header syntax
   void sampleStreamNalHeader( PCCBitstream& bitstream, SampleStreamNalUnit& sampleStreamNalUnit );
   // C.2.2 Sample stream NAL unit syntax
-  void sampleStreamNalUnit( PCCBitstream& bitstream, SampleStreamNalUnit& sampleStreamNalUnit );
+  void sampleStreamNalUnit( PCCContext& context, PCCBitstream& bitstream, SampleStreamNalUnit& sampleStreamNalUnit);
   // 7.3.5 NAL unit syntax
   // 7.3.5.1 General NAL unit syntax
   void nalUnit( PCCBitstream& bitstream, NalUnit& nalUnit );

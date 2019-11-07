@@ -90,16 +90,15 @@ class PCCBitstreamEncoder {
   ~PCCBitstreamEncoder();
 
   // JR: OLD
-  int encode( PCCContext& context, PCCBitstream& bitstream );
+  int encode_older( PCCContext& context, PCCBitstream& bitstream );
 
   // JR: NEW
   int write( SampleStreamNalUnit& ssnu, PCCBitstream& bitstream );
-  int encode( PCCContext& context, SampleStreamNalUnit& ssnu );
+  int encode_old( PCCContext& context, SampleStreamNalUnit& ssnu );
 
 	
   // DBG: NEW
-  int writeSampleStream( SampleStreamVpccUnit& ssvpccu, PCCBitstream& bitstream );
-	int writeUnitStream(VpccUnitStream & vpccus, PCCBitstream & bitstream);
+  int writeSampleStream( VpccUnitStream& vpccUS, PCCBitstream& bitstream);
 	int encode(PCCContext & context, VpccUnitStream & vpccus);
 
   void setParameters( PCCEncoderParameters params );
@@ -111,7 +110,7 @@ class PCCBitstreamEncoder {
 #endif
  private:
   // 7.3.2.1 General V-PCC unit syntax
-	void vpccUnit(PCCBitstream & bitstream, VpccUnit & vpccUnit, int32_t numBytesInVPCCUnit);
+	void vpccUnitInSampleStream(PCCBitstream & bitstream, VpccUnit & vpccUnit);
 	void vpccUnit( PCCContext& context, PCCBitstream& bitstream, VPCCUnitType vpccUnitType );
 
   // 7.3.2.2 V-PCC unit header syntax
@@ -385,15 +384,15 @@ class PCCBitstreamEncoder {
 
   // B.2 Sample stream V-PCC unit syntax and semantics
   // B.2.1 Sample stream V-PCC header syntax
-  void sampleStreamVpccHeader( PCCBitstream& bitstream, SampleStreamVpccUnit& sampleStreamVpccUnit );
+  void sampleStreamVpccHeader( PCCBitstream& bitstream, uint32_t precisionBytesMinus1 );
   // B.2.2 Sample stream NAL unit syntax
-  void sampleStreamVpccUnit( PCCBitstream& bitstream, SampleStreamVpccUnit& sampleStreamVpccUnit, VpccUnit& vpccUnit );
+  void sampleStreamVpccUnit( PCCBitstream& bitstream, VpccUnitStream& vpccUS, VpccUnit& vpccUnit);
  
 	// C.2 Sample stream NAL unit syntax and semantics
   // C.2.1 Sample stream NAL header syntax
-  void sampleStreamNalHeader( PCCBitstream& bitstream, SampleStreamNalUnit& sampleStreamNalUnit );
+  void sampleStreamNalHeader( PCCBitstream& bitstream, uint32_t precisionBytesMinus1 );
   // C.2.2 Sample stream NAL unit syntax
-  void sampleStreamNalUnit( PCCBitstream& bitstream, SampleStreamNalUnit& sampleStreamNalUnit, NalUnit& nalUnit );
+  void sampleStreamNalUnit( PCCContext& context, PCCBitstream& bitstream, SampleStreamNalUnit& sampleStreamNalUnit, NalUnit& nalUnit,size_t frameIdx = 0 );
   
   // F.2.1 VUI parameters syntax
   void vuiParameters();

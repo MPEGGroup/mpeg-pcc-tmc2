@@ -736,6 +736,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
                   // lossless coding now
                 }       // if (eddCode == 0)
               } else {  // not params.enhancedDeltaDepthCode_
+                //if ( sps.getPointLocalReconstructionEnabledFlag() )
                 auto& mode = context.getPointLocalReconstructionMode( patch.getPointLocalReconstructionMode( u0, v0 ) );
                 auto  createdPoints =
                     generatePoints( params, frame, video, videoD1, shift, patchIndex, u, v, x, y, mode.interpolate_,
@@ -1804,7 +1805,7 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
         if ( ( f == 0 && ( x + y ) % 2 == 0 ) | ( f == 1 && ( x + y ) % 2 == 1 ) ) {
           const auto& frame = video.getFrame( shift );
           for ( size_t c = 0; c < 3; ++c ) { color[i][c] = frame.getValue( c, x, y ); }
-          int index = source.addPoint( reconstruct[i] );
+          size_t index = source.addPoint( reconstruct[i] );
           source.setColor( index, color[i] );
         } else {
           target.addPoint( reconstruct[i] );
@@ -1814,8 +1815,11 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
         if ( f < frameCount ) {
           const auto& frame = video.getFrame( shift + f );
           for ( size_t c = 0; c < 3; ++c ) { color[i][c] = frame.getValue( c, x, y ); }
-          int index = source.addPoint( reconstruct[i] );
+          size_t index = source.addPoint( reconstruct[i] );
           source.setColor( index, color[i] );
+#if 0
+          std::cout<<(size_t)color[i][0]<<","<<(size_t)color[i][1]<<","<<(size_t)color[i][2]<<std::endl;
+#endif
         } else {
           target.addPoint( reconstruct[i] );
           targetIndex.push_back( i );

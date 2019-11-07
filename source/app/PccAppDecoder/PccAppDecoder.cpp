@@ -272,6 +272,11 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
                      StopwatchUserTime&          clock ) {
   PCCBitstream bitstream;
   PCCBitstreamStat bitstreamStat;
+#ifdef BITSTREAM_TRACE
+  bitstream.setTrace( true );
+  bitstream.openTrace( removeFileExtension( decoderParams.compressedStreamPath_ ) + "_samplestream_read.txt" );
+  bitstream.setTraceFile( bitstream.getTraceFile() );
+#endif
   if ( !bitstream.initialize( decoderParams.compressedStreamPath_ ) ) { return -1; }
   if ( !bitstream.readHeader() ) { return -1; }  // JR TODO: must be remove? 
   bitstreamStat.setHeader( bitstream.size() );
@@ -285,18 +290,18 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
   PCCDecoder decoder;
   decoder.setParameters( decoderParams );
 
-  //SampleStreamNalUnit ssnu;
-  SampleStreamVpccUnit ssvpccu;
+  VpccUnitStream vpccUS;
   PCCBitstreamDecoder bitstreamDecoder;
-  //bitstreamDecoder.read( bitstream, ssnu);
-	bitstreamDecoder.readSampleStream(bitstream, ssvpccu);
+	bitstreamDecoder.readSampleStream(bitstream, vpccUS);
 
-  while ( /*ssnu.getNalUnitCount()*/ ssvpccu.getVpccUnitCount() > 0 ) {
+  //jkei: we need to read every thing from vpccUS. I am not sure it is desirable...
+  bool bMoreData = true;
+  while (  bMoreData ) { //jkie : popFront() is desirable?
     PCCGroupOfFrames reconstructs;
     PCCContext       context;
     context.setBitstreamStat( bitstreamStat );
     clock.start();
-    int ret = decoder.decode( /*ssnu*/ ssvpccu, context, reconstructs );
+    int ret = decoder.decode( vpccUS, context, reconstructs );
     clock.stop();
     if ( ret ) { return ret; }
     if ( metricsParams.computeChecksum_ ) { checksum.computeDecoded( reconstructs ); }
@@ -316,11 +321,14 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
       sources.clear();
       normals.clear();
     }
+    
     if ( !decoderParams.reconstructedDataPath_.empty() ) {
       reconstructs.write( decoderParams.reconstructedDataPath_, frameNumber );
     } else {
       frameNumber += reconstructs.size();
     }
+    
+    bMoreData= (vpccUS.getVpccUnitCount() > 0) ; //jkei: I don't feel like this is clear to understand. getVpccUnitCount() sounds very constant
   }
   bitstreamStat.trace();
   if ( metricsParams.computeMetrics_ ) { metrics.display(); }

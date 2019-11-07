@@ -128,6 +128,15 @@ class PCCFrameContext {
   std::vector<PCCEomPatch>& getEomPatches() { return eomPatches_; }
   PCCEomPatch&              getEomPatches( size_t idx ) { return eomPatches_[idx]; }
 
+  void set2dPosXBitCountMinus1(size_t value){ bitCount2dPosXMinus1_=value; }
+  void set2dPosYBitCountMinus1(size_t value){ bitCount2dPosYMinus1_=value; }
+  void set3dPosXBitCountMinus1(size_t value){ bitCount3dPosXMinus1_=value; }
+  void set3dPosYBitCountMinus1(size_t value){ bitCount3dPosYMinus1_=value; }
+  size_t get2dPosXBitCountMinus1(){ return bitCount2dPosXMinus1_; }
+  size_t get2dPosYBitCountMinus1(){ return bitCount2dPosYMinus1_; }
+  size_t get3dPosXBitCountMinus1(){ return bitCount3dPosXMinus1_; }
+  size_t get3dPosYBitCountMinus1(){ return bitCount3dPosYMinus1_; }
+  
   void allocOneLayerData();
   void printBlockToPatch( const size_t occupancyResolution );
   void printPatch();
@@ -156,6 +165,10 @@ class PCCFrameContext {
   bool                                         rawPatchEnabledFlag_;
   size_t                                       geometry2dNorminalBitdepth_;
   size_t                                       maxDepth_;
+  size_t bitCount2dPosXMinus1_;
+  size_t bitCount2dPosYMinus1_;
+  size_t bitCount3dPosXMinus1_;
+  size_t bitCount3dPosYMinus1_;
   std::vector<PCCVector3<size_t>>              pointToPixel_;
   std::vector<size_t>                          blockToPatch_;
   std::vector<uint32_t>                        occupancyMap_;

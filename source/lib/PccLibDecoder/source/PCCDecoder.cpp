@@ -55,7 +55,7 @@ PCCDecoder::~PCCDecoder() {}
 void PCCDecoder::setParameters( PCCDecoderParameters params ) { params_ = params; }
 
 // JR: NEW
-int PCCDecoder::decode( /*SampleStreamNalUnit& ssnu*/SampleStreamVpccUnit& ssvpccu, PCCContext& context, PCCGroupOfFrames& reconstructs ) {
+int PCCDecoder::decode( VpccUnitStream & vpccUS, PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   int ret = 0;
   if ( params_.nbThread_ > 0 ) { tbb::task_scheduler_init init( (int)params_.nbThread_ ); }
   PCCBitstreamDecoder bitstreamDecoder;
@@ -65,7 +65,7 @@ int PCCDecoder::decode( /*SampleStreamNalUnit& ssnu*/SampleStreamVpccUnit& ssvpc
   bitstream.openTrace( removeFileExtension( params_.compressedStreamPath_ ) + "_hls_decode.txt" );
   bitstreamDecoder.setTraceFile( bitstream.getTraceFile() ); 
 #endif
-  if ( !bitstreamDecoder.decode( /*ssnu*/ ssvpccu, context ) ) { return 0; }
+  if ( !bitstreamDecoder.decode( vpccUS, context ) ) { return 0; }
 #ifdef BITSTREAM_TRACE
   bitstream.closeTrace();
 #endif
@@ -84,7 +84,7 @@ int PCCDecoder::decode( /*SampleStreamNalUnit& ssnu*/SampleStreamVpccUnit& ssvpc
 }
 
 // JR: OLD
-int PCCDecoder::decode( PCCBitstream& bitstream, PCCContext& context, PCCGroupOfFrames& reconstructs ) {
+int PCCDecoder::decode_old( PCCBitstream& bitstream, PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   int ret = 0;
   if ( params_.nbThread_ > 0 ) { tbb::task_scheduler_init init( (int)params_.nbThread_ ); }
   PCCBitstreamDecoder bitstreamDecoder;
@@ -92,7 +92,7 @@ int PCCDecoder::decode( PCCBitstream& bitstream, PCCContext& context, PCCGroupOf
   bitstream.setTrace( true );
   bitstream.openTrace( removeFileExtension( params_.compressedStreamPath_ ) + "_hls_decode.txt" );
 #endif
-  if ( !bitstreamDecoder.decode( bitstream, context ) ) { return 0; }
+  if ( !bitstreamDecoder.decode_old( bitstream, context ) ) { return 0; }
 #ifdef BITSTREAM_TRACE
   bitstream.closeTrace();
 #endif
@@ -117,14 +117,14 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   std::stringstream path;
   auto&             sps        = context.getSps();
   int32_t           atlasIndex = 0;
-  auto&             pdg        = context.getPatchDataGroup();
+  //auto&             pdg        = context.getPatchDataGroup();
   auto&             ai         = sps.getAttributeInformation( atlasIndex );
   auto&             oi         = sps.getOccupancyInformation( atlasIndex );
   auto&             gi         = sps.getGeometryInformation( atlasIndex );
-  auto&             pfgps      = pdg.getPatchFrameGeometryParameterSet( 0 );
-  auto&             pfaps      = pdg.getPatchFrameAttributeParameterSet( 0 );
-  auto&             gfp        = pfgps.getGeometryFrameParams();
-  auto&             afp        = pfaps.getAttributeFrameParams();
+//  auto&             pfgps      = pdg.getPatchFrameGeometryParameterSet( 0 );
+//  auto&             pfaps      = pdg.getPatchFrameAttributeParameterSet( 0 );
+//  auto&             gfp        = pfgps.getGeometryFrameParams();
+//  auto&             afp        = pfaps.getAttributeFrameParams();
 
   path << removeFileExtension( params_.compressedStreamPath_ ) << "_dec_GOF" << sps.getVpccParameterSetId() << "_";
 #ifdef CODEC_TRACE
@@ -132,6 +132,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   openTrace( stringFormat( "%s_GOF%u_codec_decode.txt", removeFileExtension( params_.compressedStreamPath_ ).c_str(),
                            sps.getVpccParameterSetId() ) );
 #endif
+  
   bool lossyMpp = !sps.getLosslessGeo() && sps.getRawPatchEnabledFlag(atlasIndex);
   const size_t frameCountGeometry = sps.getMapCountMinus1(atlasIndex) + 1;
   const size_t frameCountTexture  = sps.getMapCountMinus1(atlasIndex) + 1;
@@ -141,10 +142,12 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   videoDecoder.decompress( context.getVideoOccupancyMap(), path.str(), context.size(), videoBitstreamOM,
                            params_.videoDecoderOccupancyMapPath_, context, decodedBitDepthOM, params_.keepIntermediateFiles_,
                            ( sps.getLosslessGeo() ? sps.getLosslessGeo444() : false ), false, "", "" );
+  
+  auto& videoOcc =context.getVideoOccupancyMap();
 	//converting the decoded bitdepth to the nominal bitdepth
 	context.getVideoOccupancyMap().convertBitdepth(decodedBitDepthOM, oi.getOccupancyNominal2DBitdepthMinus1() + 1, oi.getOccupancyMSBAlignFlag());
-  context.setOccupancyPrecision( sps.getFrameWidth(atlasIndex) / context.getVideoOccupancyMap().getWidth() );
-  if( !gfp.getGeometryPatchBlockFilteringEnableFlag() ) {
+   context.setOccupancyPrecision( sps.getFrameWidth(atlasIndex) / context.getVideoOccupancyMap().getWidth() );
+  if( !gi.getGeometryPatchBlockFilteringEnableFlag() ) {
     generateOccupancyMap( context, context.getOccupancyPrecision(), oi.getLossyOccupancyMapCompressionThreshold(),
                           sps.getEnhancedOccupancyMapForDepthFlag() );
   }
@@ -199,61 +202,14 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
     generateMissedPointsGeometryfromVideo( context, reconstructs );
     std::cout << " missed points geometry -> " << videoBitstreamMP.naluSize() << " B " << endl;
   }
-  if ( sps.getEnhancedOccupancyMapForDepthFlag() && !gfp.getGeometryPatchBlockFilteringEnableFlag() ) {
+  if ( sps.getEnhancedOccupancyMapForDepthFlag() && !gi.getGeometryPatchBlockFilteringEnableFlag() ) {
     generateBlockToPatchFromOccupancyMap( context, context.getOccupancyPackingBlockSize() );
   } else {
     generateBlockToPatchFromBoundaryBox( context, context.getOccupancyPackingBlockSize() );
   }
+  
   GeneratePointCloudParameters generatePointCloudParameters;
-  generatePointCloudParameters.occupancyResolution_      = context.getOccupancyPackingBlockSize();
-  generatePointCloudParameters.occupancyPrecision_       = context.getOccupancyPrecision();
-  generatePointCloudParameters.flagGeometrySmoothing_    = gfp.getGeometrySmoothingParamsPresentFlag();
-  generatePointCloudParameters.gridSmoothing_            = gfp.getGeometrySmoothingEnabledFlag();
-  generatePointCloudParameters.gridSize_                 = gfp.getGeometrySmoothingGridSizeMinus2() + 2;
-  generatePointCloudParameters.neighborCountSmoothing_   = 64;
-  generatePointCloudParameters.radius2Smoothing_         = 64;
-  generatePointCloudParameters.radius2BoundaryDetection_ = 64;
-  generatePointCloudParameters.thresholdSmoothing_       = gfp.getGeometrySmoothingThreshold();
-  generatePointCloudParameters.rawPointColorFormat_      = size_t (sps.getLosslessGeo444() != 0? COLOURFORMAT444 : COLOURFORMAT420);
-  generatePointCloudParameters.nbThread_                 = params_.nbThread_;
-  generatePointCloudParameters.absoluteD1_ =
-      sps.getMapCountMinus1( atlasIndex ) == 0 || sps.getMapAbsoluteCodingEnableFlag( atlasIndex, 1 );
-  generatePointCloudParameters.surfaceThickness_ = context[0].getSurfaceThickness();
-  if ( ai.getAttributeParamsEnabledFlag() ) {
-    generatePointCloudParameters.thresholdColorSmoothing_  = afp.getAttributeSmoothingThreshold( 0 );
-    generatePointCloudParameters.gridColorSmoothing_       = afp.getAttributeSmoothingParamsPresentFlag( 0 );
-    generatePointCloudParameters.cgridSize_                = afp.getAttributeSmoothingGridSizeMinus2( 0 ) + 2;
-    generatePointCloudParameters.thresholdColorDifference_ = afp.getAttributeSmoothingThresholdAttributeDifference( 0 );
-    generatePointCloudParameters.thresholdColorVariation_  = afp.getAttributeSmoothingThresholdAttributeVariation( 0 );
-    generatePointCloudParameters.thresholdLocalEntropy_    = afp.getAttributeSmoothingLocalEntropyThreshold( 0 );
-  } else {
-    generatePointCloudParameters.thresholdColorSmoothing_  = 0.;
-    generatePointCloudParameters.gridColorSmoothing_       = false;
-    generatePointCloudParameters.cgridSize_                = 0;
-    generatePointCloudParameters.thresholdColorDifference_ = 0;
-    generatePointCloudParameters.thresholdColorVariation_  = 0;
-    generatePointCloudParameters.thresholdLocalEntropy_    = 0;
-  }
-  generatePointCloudParameters.radius2ColorSmoothing_         = 64;
-  generatePointCloudParameters.neighborCountColorSmoothing_   = 64;
-  generatePointCloudParameters.flagColorSmoothing_            = afp.getAttributeSmoothingParamsPresentFlag( 0 );
-  generatePointCloudParameters.thresholdLossyOM_              = (size_t)oi.getLossyOccupancyMapCompressionThreshold();
-  generatePointCloudParameters.removeDuplicatePoints_         = sps.getRemoveDuplicatePointEnabledFlag();
-  generatePointCloudParameters.pointLocalReconstruction_      = sps.getPointLocalReconstructionEnabledFlag();
-  generatePointCloudParameters.mapCountMinus1_                = sps.getMapCountMinus1( atlasIndex );
-  generatePointCloudParameters.singleMapPixelInterleaving_  = sps.getPixelDeinterleavingFlag();
-  generatePointCloudParameters.path_                          = path.str();
-  generatePointCloudParameters.useAdditionalPointsPatch_      = sps.getRawPatchEnabledFlag( atlasIndex );
-  generatePointCloudParameters.enhancedDeltaDepthCode_        = sps.getEnhancedOccupancyMapForDepthFlag();
-  generatePointCloudParameters.EOMFixBitCount_                = sps.getEOMFixBitCount();
-  generatePointCloudParameters.EOMTexturePatch_ =
-      generatePointCloudParameters.enhancedDeltaDepthCode_ && sps.getEOMTexturePatch();
-  generatePointCloudParameters.geometry3dCoordinatesBitdepth_ = gi.getGeometry3dCoordinatesBitdepthMinus1() + 1;
-  generatePointCloudParameters.geometryBitDepth3D_            = gi.getGeometry3dCoordinatesBitdepthMinus1() + 1;
-  generatePointCloudParameters.pbfEnableFlag_                 = gfp.getGeometryPatchBlockFilteringEnableFlag();
-  generatePointCloudParameters.pbfPassesCount_     = gfp.getGeometryPatchBlockFilteringPassesCountMinus1() + 1;
-  generatePointCloudParameters.pbfFilterSize_      = gfp.getGeometryPatchBlockFilteringFilterSizeMinus1() + 1;
-  generatePointCloudParameters.pbfLog2Threshold_   = gfp.getGeometryPatchBlockFilteringLog2ThresholdMinus1() + 1;
+  setPointCloudGenerateParameters(generatePointCloudParameters, context);
 
   std::vector<std::vector<uint32_t>> partitions;
   generatePointCloud( reconstructs, context, generatePointCloudParameters, partitions );
@@ -261,12 +217,18 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   if ( ai.getAttributeCount() > 0 ) {
 		int decodedBitdepthAttribute = ai.getAttributeNominal2dBitdepthMinus1(0) + 1;
     auto& videoBitstream = context.getVideoBitstream( VIDEO_TEXTURE );
-    videoDecoder.decompress( context.getVideoTexture(), path.str(), context.size() * frameCountTexture, videoBitstream,
-                             params_.videoDecoderPath_, context, decodedBitdepthAttribute,
-                             params_.keepIntermediateFiles_,
-                             sps.getLosslessGeo()!=0,
-                             params_.patchColorSubsampling_, params_.inverseColorSpaceConversionConfig_,
-                             params_.colorSpaceConversionPath_ );
+    videoDecoder.decompress( context.getVideoTexture(), //video,
+                            path.str(), //path,
+                            context.size() * frameCountTexture, //frameCount,
+                            videoBitstream, //bitstream,
+                            params_.videoDecoderPath_, //decoderPath,
+                            context, //contexts,
+                            decodedBitdepthAttribute, //bitDepth,
+                            params_.keepIntermediateFiles_, //keepIntermediateFiles
+                            sps.getLosslessGeo()!=0, //use444CodecIo
+                            params_.patchColorSubsampling_, //patchColorSubsampling
+                            params_.inverseColorSpaceConversionConfig_,
+                            params_.colorSpaceConversionPath_ );
 		context.getVideoTexture().convertBitdepth(decodedBitdepthAttribute, ai.getAttributeNominal2dBitdepthMinus1( 0 ) + 1, ai.getAttributeMSBAlignFlag());
     std::cout << "texture video  ->" << videoBitstream.naluSize() << " B" << std::endl;
 
@@ -288,6 +250,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   colorPointCloud( reconstructs, context, ai.getAttributeCount(), params_.colorTransform_,
                    generatePointCloudParameters );
 
+  if(0){ //jkei: just for debugging purpose - we need essential sei for smoothing
   //  Generate a buffer to keep unsmoothed geometry, then do geometry smoothing and transfer followed by color smoothing
   if ( generatePointCloudParameters.flagGeometrySmoothing_ ) {
     if ( generatePointCloudParameters.gridSmoothing_ ) {
@@ -313,7 +276,8 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   //    This function does the color smoothing that is usually done in colorPointCloud
   if ( generatePointCloudParameters.flagColorSmoothing_ ) {
     colorSmoothing( reconstructs, context, params_.colorTransform_, generatePointCloudParameters );
-  }  
+  }
+}
 #ifdef CODEC_TRACE
   setTrace( false );
   closeTrace();
@@ -483,25 +447,84 @@ void PCCDecoder::setPointLocalReconstructionData( PCCFrameContext&              
 #endif
 }
 
+void PCCDecoder::setPointCloudGenerateParameters(GeneratePointCloudParameters& generatePointCloudParameters, PCCContext& context){
+  
+  auto&             sps        = context.getSps();
+  int32_t           atlasIndex = 0;
+  auto&             pdg        = context.getPatchDataGroup();
+  auto&             ai         = sps.getAttributeInformation( atlasIndex );
+  auto&             oi         = sps.getOccupancyInformation( atlasIndex );
+  auto&             gi         = sps.getGeometryInformation( atlasIndex );
+  auto&             pfgps      = pdg.getPatchFrameGeometryParameterSet( 0 );
+  auto&             pfaps      = pdg.getPatchFrameAttributeParameterSet( 0 );
+  auto&             gfp        = pfgps.getGeometryFrameParams();
+  auto&             afp        = pfaps.getAttributeFrameParams();
+  generatePointCloudParameters.occupancyResolution_      = context.getOccupancyPackingBlockSize();
+  generatePointCloudParameters.occupancyPrecision_       = context.getOccupancyPrecision();
+  generatePointCloudParameters.flagGeometrySmoothing_    = gfp.getGeometrySmoothingParamsPresentFlag();
+  generatePointCloudParameters.gridSmoothing_            = gfp.getGeometrySmoothingEnabledFlag();
+  generatePointCloudParameters.gridSize_                 = gfp.getGeometrySmoothingGridSizeMinus2() + 2;
+  generatePointCloudParameters.neighborCountSmoothing_   = 64;
+  generatePointCloudParameters.radius2Smoothing_         = 64;
+  generatePointCloudParameters.radius2BoundaryDetection_ = 64;
+  generatePointCloudParameters.thresholdSmoothing_       = gfp.getGeometrySmoothingThreshold();
+  generatePointCloudParameters.rawPointColorFormat_      = size_t (sps.getLosslessGeo444() != 0? COLOURFORMAT444 : COLOURFORMAT420);
+  generatePointCloudParameters.nbThread_                 = params_.nbThread_;
+  generatePointCloudParameters.absoluteD1_ =
+      sps.getMapCountMinus1( atlasIndex ) == 0 || sps.getMapAbsoluteCodingEnableFlag( atlasIndex, 1 );
+  generatePointCloudParameters.surfaceThickness_ = context[0].getSurfaceThickness();
+  if ( ai.getAttributeParamsEnabledFlag() ) {
+    assert(0);
+  } else {
+    generatePointCloudParameters.thresholdColorSmoothing_  = 0.;
+    generatePointCloudParameters.gridColorSmoothing_       = false;
+    generatePointCloudParameters.cgridSize_                = 0;
+    generatePointCloudParameters.thresholdColorDifference_ = 0;
+    generatePointCloudParameters.thresholdColorVariation_  = 0;
+    generatePointCloudParameters.thresholdLocalEntropy_    = 0;
+  }
+  generatePointCloudParameters.radius2ColorSmoothing_         = 64;
+  generatePointCloudParameters.neighborCountColorSmoothing_   = 64;
+  generatePointCloudParameters.flagColorSmoothing_            = 0; //afp.getAttributeSmoothingParamsPresentFlag( 0 );
+  generatePointCloudParameters.thresholdLossyOM_              = (size_t)oi.getLossyOccupancyMapCompressionThreshold();
+  generatePointCloudParameters.removeDuplicatePoints_         = sps.getRemoveDuplicatePointEnabledFlag();
+  generatePointCloudParameters.pointLocalReconstruction_      = sps.getPointLocalReconstructionEnabledFlag();
+  generatePointCloudParameters.mapCountMinus1_                = sps.getMapCountMinus1( atlasIndex );
+  generatePointCloudParameters.singleMapPixelInterleaving_  = sps.getPixelDeinterleavingFlag();
+  //generatePointCloudParameters.path_                          = path.str();
+  generatePointCloudParameters.useAdditionalPointsPatch_      = sps.getRawPatchEnabledFlag( atlasIndex );
+  generatePointCloudParameters.enhancedDeltaDepthCode_        = sps.getEnhancedOccupancyMapForDepthFlag();
+  generatePointCloudParameters.EOMFixBitCount_                = sps.getEOMFixBitCount();
+  generatePointCloudParameters.EOMTexturePatch_ =
+      generatePointCloudParameters.enhancedDeltaDepthCode_ && sps.getEOMTexturePatch();
+  generatePointCloudParameters.geometry3dCoordinatesBitdepth_ = gi.getGeometry3dCoordinatesBitdepthMinus1() + 1;
+  generatePointCloudParameters.geometryBitDepth3D_            = gi.getGeometry3dCoordinatesBitdepthMinus1() + 1;
+  generatePointCloudParameters.pbfEnableFlag_                 = gfp.getGeometryPatchBlockFilteringEnableFlag();
+  generatePointCloudParameters.pbfPassesCount_     = gfp.getGeometryPatchBlockFilteringPassesCountMinus1() + 1;
+  generatePointCloudParameters.pbfFilterSize_      = gfp.getGeometryPatchBlockFilteringFilterSizeMinus1() + 1;
+  generatePointCloudParameters.pbfLog2Threshold_   = gfp.getGeometryPatchBlockFilteringLog2ThresholdMinus1() + 1;
+}
+
 void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
   TRACE_CODEC( "createPatchFrameDataStructure GOP start \n" );
   auto& sps  = context.getSps();
   size_t atlasIndex = 0;
-  auto& pdg  = context.getPatchDataGroup();
-  auto& psps = pdg.getPatchVpccParameterSet( 0 );
-  context.setOccupancyPackingBlockSize( pow( 2, psps.getLog2PatchPackingBlockSize() ) );
-  context.resize( pdg.getPatchTileGroupLayerUnitSize() );
-  TRACE_CODEC( "frameCount = %u \n", pdg.getPatchTileGroupLayerUnitSize() );
+  auto& asps = context.getAtlasSequenceParameterSet(0);
+  auto& atglulist  = context.getAtlasTileGroupLayerList();
 
-  setPointLocalReconstruction( context, sps );
+  context.setOccupancyPackingBlockSize( pow( 2, asps.getLog2PatchPackingBlockSize() ) );
+  context.resize( atglulist.size() );
+  TRACE_CODEC( "frameCount = %u \n", context.size() );
+  
+  //if ( sps.getPointLocalReconstructionEnabledFlag() )
+    setPointLocalReconstruction( context, sps );
   size_t indexPrevFrame = 0;
   context.setMPGeoWidth( 64 );
   context.setMPAttWidth( 0 );
   context.setMPGeoHeight( 0 );
   context.setMPAttHeight( 0 );
-  for ( int i = 0; i < pdg.getPatchTileGroupLayerUnitSize(); i++ ) {
-    auto& frame                          = context.getFrame( i );
-
+  for ( int i = 0; i < context.size(); i++ ) {
+    auto& frame = context.getFrame( i );
     frame.setIndex( i );
     frame.setWidth( sps.getFrameWidth(atlasIndex) );
     frame.setHeight( sps.getFrameHeight(atlasIndex) );
@@ -514,7 +537,6 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
     indexPrevFrame = i;
   }
 }
-
 void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
                                                 PCCFrameContext& frame,
                                                 PCCFrameContext& preFrame,
@@ -523,11 +545,18 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
   auto&             sps            = context.getSps();
   size_t            atlasIndex     = 0;
   auto&             gi             = context.getSps().getGeometryInformation( atlasIndex );
-  auto&             pdg            = context.getPatchDataGroup();
-  auto&             ptglu          = pdg.getPatchTileGroupLayerUnit( frameIndex );
-  auto&             ptgh           = ptglu.getPatchTileGroupHeader();
-  auto&             ptgdu          = ptglu.getPatchTileGroupDataUnit();
-  auto&             pfps           = pdg.getPatchFrameParameterSet( 0 );
+//  auto&             pdg            = context.getPatchDataGroup();
+//  auto&             ptglu          = pdg.getPatchTileGroupLayerUnit( frameIndex );
+//  auto&             ptgh           = ptglu.getPatchTileGroupHeader();
+//  auto&             ptgdu          = ptglu.getPatchTileGroupDataUnit();
+//  auto&             pfps           = pdg.getPatchFrameParameterSet( 0 );
+  
+  auto&        asps   = context.getAtlasSequenceParameterSet(0);
+  auto&        afps   = context.getAtlasFrameParameterSet(0);
+  auto&        atglu  = context.getAtlasTileGroupLayer(frameIndex);
+  auto&        atgh   = atglu.getAtlasTileGroupHeader();
+  auto&        atgdu  = atglu.getAtlasTileGroupDataUnit();
+
   auto&             patches        = frame.getPatches();
   auto&             prePatches     = preFrame.getPatches();
   auto&             pcmPatches     = frame.getMissedPointsPatches();
@@ -539,14 +568,14 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
   size_t            numRawPatches  = 0;
   size_t            numNonRawPatch = 0;
   size_t numEomPatch=0;
-  PCCPatchFrameType patchFrameType = PCCPatchFrameType( ptgh.getType() );
-  size_t            patchCount     = ptgdu.getPatchCount();
+  PCCTILEGROUP tileGroupType = atgh.getAtghType();
+  size_t        patchCount   = atgdu.getPatchCount();
   for ( size_t i = 0; i < patchCount; i++ ) {
-    if ( ( patchFrameType == PATCH_FRAME_I && PCCPatchModeI( ptgdu.getPatchMode( i ) ) == PATCH_MODE_I_Raw ) ||
-         ( patchFrameType == PATCH_FRAME_P && PCCPatchModeP( ptgdu.getPatchMode( i ) ) == PATCH_MODE_P_Raw ) )
+    if ( ( tileGroupType == I_TILE_GRP && PCCPatchModeI( atgdu.getPatchMode( i ) ) == PATCH_MODE_I_Raw ) ||
+         ( tileGroupType == P_TILE_GRP && PCCPatchModeP( atgdu.getPatchMode( i ) ) == PATCH_MODE_P_Raw ) )
       numRawPatches++;
-    else if(( patchFrameType == PATCH_FRAME_I && PCCPatchModeI( ptgdu.getPatchMode( i ) ) == PATCH_MODE_I_EOM ) ||
-            ( patchFrameType == PATCH_FRAME_P && PCCPatchModeP( ptgdu.getPatchMode( i ) ) == PATCH_MODE_P_EOM ) ){
+    else if(( tileGroupType == I_TILE_GRP && PCCPatchModeI( atgdu.getPatchMode( i ) ) == PATCH_MODE_I_EOM ) ||
+            ( tileGroupType == P_TILE_GRP && PCCPatchModeP( atgdu.getPatchMode( i ) ) == PATCH_MODE_P_EOM ) ){
       numEomPatch++;
     }
   }
@@ -561,16 +590,17 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
   TRACE_CODEC( "non-regular Patches(pcm, eom)     = %lu, %lu \n",
               frame.getMissedPointsPatches().size(),
               frame.getEomPatches().size() );
+  TRACE_CODEC( "TileGroup Type                     = %zu (0.P_TILE_GRP 1.SKIP_TILE_GRP 2.I_TILE_GRP)\n", (size_t) atgh.getAtghType() );
   TRACE_CODEC( "OccupancyPackingBlockSize           = %d \n", context.getOccupancyPackingBlockSize() );
   TRACE_CODEC( "PatchInterPredictionEnabledFlag     = %d \n", sps.getPatchInterPredictionEnabledFlag() );
   size_t totalNumberOfMps = 0;
   size_t patchIndex       = 0;
   for ( patchIndex = 0; patchIndex < patchCount; patchIndex++ ) {
-    auto& pid = ptgdu.getPatchInformationData( patchIndex );
-    if ( ( ( patchFrameType == PATCH_FRAME_I ) &&
-           ( ptgdu.getPatchMode( patchIndex ) == (uint8_t)PATCH_MODE_I_INTRA ) ) ||
-         ( ( patchFrameType == PATCH_FRAME_P ) &&
-           ( ptgdu.getPatchMode( patchIndex ) == (uint8_t)PATCH_MODE_P_INTRA ) ) ) {
+    auto& pid = atgdu.getPatchInformationData( patchIndex );
+    if ( ( ( tileGroupType == I_TILE_GRP ) &&
+           ( atgdu.getPatchMode( patchIndex ) == (uint8_t)PATCH_MODE_I_INTRA ) ) ||
+         ( ( tileGroupType == P_TILE_GRP) &&
+           ( atgdu.getPatchMode( patchIndex ) == (uint8_t)PATCH_MODE_P_INTRA ) ) ) {
       auto& patch                    = patches[patchIndex];
       patch.getOccupancyResolution() = context.getOccupancyPackingBlockSize();
       auto& pdu                      = pid.getPatchDataUnit();
@@ -604,7 +634,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
            ( sps.getMapCountMinus1( atlasIndex ) > 0 && !sps.getMapAbsoluteCodingEnableFlag( atlasIndex, 1 ) ) ) {
         patch.getD1() = (int32_t)pdu.getPdu3dPosMinZ() * minLevel;
       } else {
-        if ( pfps.getProjection45DegreeEnableFlag() == 0 ) {
+        if ( asps.get45DegreeProjectionPatchPresentFlag() == 0 ) {
           patch.getD1() = max3DCoordinate - (int32_t)pdu.getPdu3dPosMinZ() * minLevel;
         } else {
           patch.getD1() = ( max3DCoordinate << 1 ) - (int32_t)pdu.getPdu3dPosMinZ() * minLevel;
@@ -634,8 +664,8 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
         setPointLocalReconstructionData( frame, patch, pdu.getPointLocalReconstructionData(),
                                          context.getOccupancyPackingBlockSize() );
       }
-    } else if ( ( patchFrameType == PATCH_FRAME_P &&
-                  PCCPatchModeP( ptgdu.getPatchMode( patchIndex ) ) == PATCH_MODE_P_INTER ) ) {
+    } else if ( ( tileGroupType == P_TILE_GRP &&
+                  PCCPatchModeP( atgdu.getPatchMode( patchIndex ) ) == PATCH_MODE_P_INTER ) ) {
       auto& patch                    = patches[patchIndex];
       patch.getOccupancyResolution() = context.getOccupancyPackingBlockSize();
       auto& ipdu                     = pid.getInterPatchDataUnit();
@@ -674,7 +704,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
            ( sps.getMapCountMinus1(atlasIndex ) > 0 && !sps.getMapAbsoluteCodingEnableFlag( atlasIndex, 1 ) ) ) {
         patch.getD1() = ( ipdu.getIpdu3dPosMinZ() + ( refPatch.getD1() / minLevel ) ) * minLevel;
       } else {
-        if ( pfps.getProjection45DegreeEnableFlag() == 0 ) {
+        if ( asps.get45DegreeProjectionPatchPresentFlag() == 0 ) {
           patch.getD1() = max3DCoordinate - ( ipdu.getIpdu3dPosMinZ() +
                                               ( ( max3DCoordinate - refPatch.getD1() ) / minLevel ) ) *
                                                 minLevel;
@@ -707,10 +737,10 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
         setPointLocalReconstructionData( frame, patch, ipdu.getPointLocalReconstructionData(),
                                          context.getOccupancyPackingBlockSize() );
       }
-    } else if ( ( PCCPatchFrameType( ptgh.getType() ) == PATCH_FRAME_I &&
-                  PCCPatchModeI( ptgdu.getPatchMode( patchIndex ) ) == (uint8_t)PATCH_MODE_I_Raw ) ||
-                ( PCCPatchFrameType( ptgh.getType() ) == PATCH_FRAME_P &&
-                  PCCPatchModeP( ptgdu.getPatchMode( patchIndex ) ) == (uint8_t)PATCH_MODE_P_Raw ) ) {
+    } else if ( ( tileGroupType == I_TILE_GRP &&
+                  PCCPatchModeI( atgdu.getPatchMode( patchIndex ) ) == (uint8_t)PATCH_MODE_I_Raw ) ||
+                ( tileGroupType == P_TILE_GRP &&
+                  PCCPatchModeP( atgdu.getPatchMode( patchIndex ) ) == (uint8_t)PATCH_MODE_P_Raw ) ) {
       TRACE_CODEC( "patch %lu / %lu: raw \n", patchIndex, patches.size() );
 
       auto& ppdu                = pid.getRawPatchDataUnit();
@@ -719,7 +749,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
       missedPointsPatch.v0_     = ppdu.getRpdu2dPosY();
       missedPointsPatch.sizeU0_ = ppdu.getRpdu2dDeltaSizeX();
       missedPointsPatch.sizeV0_ = ppdu.getRpdu2dDeltaSizeY();
-      if ( ptgh.getRaw3dShiftBitCountPresentFlag() ) {
+      if ( afps.getAfpsRaw3dPosBitCountExplicitModeFlag()  ) {
         missedPointsPatch.u1_ = ppdu.getRpdu3dPosX();
         missedPointsPatch.v1_ = ppdu.getRpdu3dPosY();
         missedPointsPatch.d1_ = ppdu.getRpdu3dPosZ();
@@ -736,10 +766,10 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
                    missedPointsPatch.u0_, missedPointsPatch.v0_, missedPointsPatch.sizeU0_, missedPointsPatch.sizeV0_,
                    missedPointsPatch.u1_, missedPointsPatch.v1_, missedPointsPatch.d1_, missedPointsPatch.numberOfMps_,
                    missedPointsPatch.occupancyResolution_ );
-    } else if ( ( PCCPatchFrameType( ptgh.getType() ) == PATCH_FRAME_I &&
-                  PCCPatchModeI( ptgdu.getPatchMode( patchIndex ) ) == (uint8_t)PATCH_MODE_I_EOM ) ||
-                ( PCCPatchFrameType( ptgh.getType() ) == PATCH_FRAME_P &&
-                  PCCPatchModeP( ptgdu.getPatchMode( patchIndex ) ) == (uint8_t)PATCH_MODE_P_EOM ) ) {
+    } else if ( ( tileGroupType == I_TILE_GRP &&
+                  PCCPatchModeI( atgdu.getPatchMode( patchIndex ) ) == (uint8_t)PATCH_MODE_I_EOM ) ||
+                ( tileGroupType == P_TILE_GRP &&
+                  PCCPatchModeP( atgdu.getPatchMode( patchIndex ) ) == (uint8_t)PATCH_MODE_P_EOM ) ) {
       TRACE_CODEC( "patch %lu / %lu: EOM \n", patchIndex, patchCount );
       auto& epdu            = pid.getEomPatchDataUnit();
       auto& eomPatches        = frame.getEomPatches();
@@ -763,10 +793,10 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
         TRACE_CODEC( "%lu, %lu\n", eomPatch.memberPatches[i], eomPatch.eddCountPerPatch[i] );}
       TRACE_CODEC( "\n");
 
-    } else if ( ( PCCPatchFrameType( ptgh.getType() ) == PATCH_FRAME_I &&
-                  PCCPatchModeP( ptgdu.getPatchMode( patchIndex ) ) == (uint8_t)PATCH_MODE_I_END ) ||
-                ( PCCPatchFrameType( ptgh.getType() ) == PATCH_FRAME_P &&
-                  PCCPatchModeP( ptgdu.getPatchMode( patchIndex ) ) == (uint8_t)PATCH_MODE_P_END ) ) {
+    } else if ( ( tileGroupType == I_TILE_GRP &&
+                  PCCPatchModeP( atgdu.getPatchMode( patchIndex ) ) == (uint8_t)PATCH_MODE_I_END ) ||
+                ( tileGroupType == P_TILE_GRP &&
+                  PCCPatchModeP( atgdu.getPatchMode( patchIndex ) ) == (uint8_t)PATCH_MODE_P_END ) ) {
       break;
     } else {
       printf( "Error: unknow frame/patch type \n" );
@@ -776,3 +806,272 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
   TRACE_CODEC( "patch %lu / %lu: end \n", patches.size(), patches.size() );
   frame.setTotalNumberOfMissedPoints( totalNumberOfMps );
 }
+
+//void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
+//                                                PCCFrameContext& frame,
+//                                                PCCFrameContext& preFrame,
+//                                                size_t           frameIndex ) {
+//  TRACE_CODEC( "createPatchFrameDataStructure Frame %lu \n", frame.getIndex() );
+//  auto&             sps            = context.getSps();
+//  size_t            atlasIndex     = 0;
+//  auto&             gi             = context.getSps().getGeometryInformation( atlasIndex );
+////  auto&             pdg            = context.getPatchDataGroup();
+////  auto&             ptglu          = pdg.getPatchTileGroupLayerUnit( frameIndex );
+////  auto&             ptgh           = ptglu.getPatchTileGroupHeader();
+////  auto&             ptgdu          = ptglu.getPatchTileGroupDataUnit();
+////  auto&             pfps           = pdg.getPatchFrameParameterSet( 0 );
+//
+//  auto&        asps   = context.getAtlasSequenceParameterSet(0);
+//  auto&        afps   = context.getAtlasFrameParameterSet(0);
+//  auto&        atglu  = context.getAtlasTileGroupLayer(frameIndex);
+//  auto&        atgh   = atglu.getAtlasTileGroupHeader();
+//  auto&        atgdu  = atglu.getAtlasTileGroupDataUnit();
+//
+//  auto&             patches        = frame.getPatches();
+//  auto&             prePatches     = preFrame.getPatches();
+//  auto&             pcmPatches     = frame.getMissedPointsPatches();
+//  auto&             eomPatches     = frame.getEomPatches();
+//  int64_t           prevSizeU0     = 0;
+//  int64_t           prevSizeV0     = 0;
+//  int64_t           predIndex      = 0;
+//  const size_t      minLevel       = sps.getMinLevel();
+//  size_t            numRawPatches  = 0;
+//  size_t            numNonRawPatch = 0;
+//  size_t numEomPatch=0;
+//  PCCTILEGROUP patchFrameType = PCCPatchFrameType( atgh.getAtghType() );
+//  size_t            patchCount     = atgdu.getPatchCount();
+//  for ( size_t i = 0; i < patchCount; i++ ) {
+//    if ( ( patchFrameType == PATCH_FRAME_I && PCCPatchModeI( atgdu.getPatchMode( i ) ) == PATCH_MODE_I_Raw ) ||
+//         ( patchFrameType == PATCH_FRAME_P && PCCPatchModeP( atgdu.getPatchMode( i ) ) == PATCH_MODE_P_Raw ) )
+//      numRawPatches++;
+//    else if(( patchFrameType == PATCH_FRAME_I && PCCPatchModeI( atgdu.getPatchMode( i ) ) == PATCH_MODE_I_EOM ) ||
+//            ( patchFrameType == PATCH_FRAME_P && PCCPatchModeP( atgdu.getPatchMode( i ) ) == PATCH_MODE_P_EOM ) ){
+//      numEomPatch++;
+//    }
+//  }
+//  numNonRawPatch = patchCount - numRawPatches - numEomPatch;
+//  printf("numNonRawPatch = %zu \n",numNonRawPatch);
+//  printf("sps.getEOMTexturePatch() = %d \n",sps.getEOMTexturePatch());
+//  eomPatches.reserve(numEomPatch);
+//  patches.resize( numNonRawPatch );
+//  pcmPatches.resize( numRawPatches );
+//
+//  TRACE_CODEC( "Patches size                        = %lu \n", patches.size() );
+//  TRACE_CODEC( "non-regular Patches(pcm, eom)     = %lu, %lu \n",
+//              frame.getMissedPointsPatches().size(),
+//              frame.getEomPatches().size() );
+//  TRACE_CODEC( "OccupancyPackingBlockSize           = %d \n", context.getOccupancyPackingBlockSize() );
+//  TRACE_CODEC( "PatchInterPredictionEnabledFlag     = %d \n", sps.getPatchInterPredictionEnabledFlag() );
+//  size_t totalNumberOfMps = 0;
+//  size_t patchIndex       = 0;
+//  for ( patchIndex = 0; patchIndex < patchCount; patchIndex++ ) {
+//    auto& pid = atgdu.getPatchInformationData( patchIndex );
+//    if ( ( ( patchFrameType == PATCH_FRAME_I ) &&
+//           ( atgdu.getPatchMode( patchIndex ) == (uint8_t)PATCH_MODE_I_INTRA ) ) ||
+//         ( ( patchFrameType == PATCH_FRAME_P ) &&
+//           ( atgdu.getPatchMode( patchIndex ) == (uint8_t)PATCH_MODE_P_INTRA ) ) ) {
+//      auto& patch                    = patches[patchIndex];
+//      patch.getOccupancyResolution() = context.getOccupancyPackingBlockSize();
+//      auto& pdu                      = pid.getPatchDataUnit();
+//      patch.getU0()                  = pdu.getPdu2dPosX();
+//      patch.getV0()                  = pdu.getPdu2dPosY();
+//      patch.getU1()                  = pdu.getPdu3dPosX();
+//      patch.getV1()                  = pdu.getPdu3dPosY();
+//
+//      bool lodEnableFlag = pdu.getLodEnableFlag();
+//      if(lodEnableFlag) {
+//        //PatchLoDScaleX[ p ] = pdu_lod_enable_flag[ p ] ? pdu_lod_scale_x_minus1[ p ] + 1: 1
+//        //PatchLoDScaleY[ p ] = pdu_lod_enable_flag[ p ] ? (pdu_lod_scale_y[ p ] + (pdu_lod_scale_x_minus1[ p ] > 0) ? 1 : 2) : 1
+//        patch.setLodScaleX( pdu.getLodScaleXminus1() + 1);
+//        patch.setLodScaleY( pdu.getLodScaleY() + (patch.getLodScaleX()>1?1:2) );
+//      }
+//      else{
+//        patch.setLodScaleX(1);
+//        patch.setLodScaleY(1);
+//      }
+//      patch.getSizeD()               = ( std::min )( pdu.getPdu3dPosDeltaMaxZ() * minLevel, (size_t)255 );
+//      patch.getSizeU0()              = prevSizeU0 + pdu.getPdu2dDeltaSizeX();
+//      patch.getSizeV0()              = prevSizeV0 + pdu.getPdu2dDeltaSizeY();
+//      patch.getNormalAxis()          = size_t( pdu.getProjectPlane() ) % 3;
+//      patch.getProjectionMode()      = size_t( pdu.getProjectPlane() ) < 3 ? 0 : 1;
+//      patch.getPatchOrientation()    = pdu.getPduOrientationIndex();
+//      patch.getAxisOfAdditionalPlane() =
+//          pdu.get45DegreeProjectionPresentFlag() ? pdu.get45DegreeProjectionRotationAxis() : 0;
+//      TRACE_CODEC( "patch %lu / %lu: Intra \n", patchIndex, patches.size() );
+//      const size_t max3DCoordinate = 1 << ( gi.getGeometry3dCoordinatesBitdepthMinus1() + 1 );
+//      if ( patch.getProjectionMode() == 0 ||
+//           ( sps.getMapCountMinus1( atlasIndex ) > 0 && !sps.getMapAbsoluteCodingEnableFlag( atlasIndex, 1 ) ) ) {
+//        patch.getD1() = (int32_t)pdu.getPdu3dPosMinZ() * minLevel;
+//      } else {
+//        if ( asps.get45DegreeProjectionPatchPresentFlag() == 0 ) {
+//          patch.getD1() = max3DCoordinate - (int32_t)pdu.getPdu3dPosMinZ() * minLevel;
+//        } else {
+//          patch.getD1() = ( max3DCoordinate << 1 ) - (int32_t)pdu.getPdu3dPosMinZ() * minLevel;
+//        }
+//      }
+//      prevSizeU0     = patch.getSizeU0();
+//      prevSizeV0     = patch.getSizeV0();
+//
+//      if ( patch.getNormalAxis() == 0 ) {
+//        patch.getTangentAxis()   = 2;
+//        patch.getBitangentAxis() = 1;
+//      } else if ( patch.getNormalAxis() == 1 ) {
+//        patch.getTangentAxis()   = 2;
+//        patch.getBitangentAxis() = 0;
+//      } else {
+//        patch.getTangentAxis()   = 0;
+//        patch.getBitangentAxis() = 1;
+//      }
+//      TRACE_CODEC( "patch UV0 %4lu %4lu UV1 %4lu %4lu D1=%4lu S=%4lu %4lu %4lu(%4lu) P=%lu O=%lu A=%u%u%u Lod =(%zu) %lu,%lu \n",
+//                   patch.getU0(), patch.getV0(), patch.getU1(), patch.getV1(), patch.getD1(), patch.getSizeU0(),
+//                   patch.getSizeV0(), patch.getSizeD(), pdu.getPdu3dPosDeltaMaxZ(), patch.getProjectionMode(),
+//                   patch.getPatchOrientation(), patch.getNormalAxis(), patch.getTangentAxis(), patch.getBitangentAxis(),
+//                   (size_t)lodEnableFlag, patch.getLodScaleX(), patch.getLodScaleY() );
+//
+//      patch.allocOneLayerData();
+//      if ( sps.getPointLocalReconstructionEnabledFlag() ) {
+//        setPointLocalReconstructionData( frame, patch, pdu.getPointLocalReconstructionData(),
+//                                         context.getOccupancyPackingBlockSize() );
+//      }
+//    } else if ( ( patchFrameType == PATCH_FRAME_P &&
+//                  PCCPatchModeP( atgdu.getPatchMode( patchIndex ) ) == PATCH_MODE_P_INTER ) ) {
+//      auto& patch                    = patches[patchIndex];
+//      patch.getOccupancyResolution() = context.getOccupancyPackingBlockSize();
+//      auto& ipdu                     = pid.getInterPatchDataUnit();
+//
+//      TRACE_CODEC( "patch %lu / %lu: Inter \n", patchIndex, patches.size() );
+//      TRACE_CODEC("IPDU: refAtlasFrame= %d refPatchIdx = %d pos2DXY = %ld %ld pos3DXYZW = %ld %ld %ld %ld size2D = %ld %ld \n",
+//                  ipdu.getIpduRefIndex(), ipdu.getIpduRefPatchIndex(),
+//                  ipdu.getIpdu2dPosX(), ipdu.getIpdu2dPosY(),
+//                  ipdu.getIpdu3dPosX(), ipdu.getIpdu3dPosY(),ipdu.getIpdu3dPosMinZ(), ipdu.getIpdu3dPosDeltaMaxZ(),
+//                  ipdu.getIpdu2dDeltaSizeX(), ipdu.getIpdu2dDeltaSizeY());
+//
+//
+//
+//
+//      patch.setBestMatchIdx( ( int32_t )( ipdu.getIpduRefPatchIndex() + predIndex ) );
+//      predIndex += ipdu.getIpduRefPatchIndex() + 1;
+//      const auto& refPatch = prePatches[patch.getBestMatchIdx()];
+//      TRACE_CODEC( "\trefPatch: Idx = %lu UV0 = %lu %lu  UV1 = %lu %lu Size = %lu %lu %lu  Lod = %u,%u\n", patch.getBestMatchIdx(),
+//                          refPatch.getU0(), refPatch.getV0(), refPatch.getU1(), refPatch.getV1(), refPatch.getSizeU0(),
+//                          refPatch.getSizeV0(), refPatch.getSizeD(), refPatch.getLodScaleX(), refPatch.getLodScaleY() );
+//
+//      patch.getProjectionMode()        = refPatch.getProjectionMode();
+//      patch.getU0()                    = ipdu.getIpdu2dPosX() + refPatch.getU0();
+//      patch.getV0()                    = ipdu.getIpdu2dPosY() + refPatch.getV0();
+//      patch.getPatchOrientation()      = refPatch.getPatchOrientation();
+//      patch.getU1()                    = ipdu.getIpdu3dPosX() + refPatch.getU1();
+//      patch.getV1()                    = ipdu.getIpdu3dPosY() + refPatch.getV1();
+//      patch.getSizeU0()                = ipdu.getIpdu2dDeltaSizeX() + refPatch.getSizeU0();
+//      patch.getSizeV0()                = ipdu.getIpdu2dDeltaSizeY() + refPatch.getSizeV0();
+//      patch.getNormalAxis()            = refPatch.getNormalAxis();
+//      patch.getTangentAxis()           = refPatch.getTangentAxis();
+//      patch.getBitangentAxis()         = refPatch.getBitangentAxis();
+//      patch.getAxisOfAdditionalPlane() = refPatch.getAxisOfAdditionalPlane();
+//      const size_t max3DCoordinate     = 1 << ( gi.getGeometry3dCoordinatesBitdepthMinus1() + 1 );
+//      if ( patch.getProjectionMode() == 0 ||
+//           ( sps.getMapCountMinus1(atlasIndex ) > 0 && !sps.getMapAbsoluteCodingEnableFlag( atlasIndex, 1 ) ) ) {
+//        patch.getD1() = ( ipdu.getIpdu3dPosMinZ() + ( refPatch.getD1() / minLevel ) ) * minLevel;
+//      } else {
+//        if ( asps.get45DegreeProjectionPatchPresentFlag() == 0 ) {
+//          patch.getD1() = max3DCoordinate - ( ipdu.getIpdu3dPosMinZ() +
+//                                              ( ( max3DCoordinate - refPatch.getD1() ) / minLevel ) ) *
+//                                                minLevel;
+//        } else {
+//          patch.getD1() =
+//              ( max3DCoordinate << 1 ) -
+//              ( ipdu.getIpdu3dPosMinZ() + ( ( ( max3DCoordinate << 1 ) - refPatch.getD1() ) / minLevel ) ) *
+//                  minLevel;
+//        }
+//      }
+//      const int64_t delta_DD = ipdu.getIpdu3dPosDeltaMaxZ();
+//      size_t        prevDD   = refPatch.getSizeD() / minLevel;
+//      if ( prevDD * minLevel != refPatch.getSizeD() ) { prevDD += 1; }
+//      patch.getSizeD() = ( std::min )( size_t( ( delta_DD + prevDD ) * minLevel ), (size_t)255 );
+//      patch.setLodScaleX(refPatch.getLodScaleX());
+//      patch.setLodScaleY(refPatch.getLodScaleY());
+//      prevSizeU0       = patch.getSizeU0();
+//      prevSizeV0       = patch.getSizeV0();
+//
+//      TRACE_CODEC(
+//          "patch Inter UV0 %4lu %4lu UV1 %4lu %4lu D1=%4lu S=%4lu %4lu %4lu from DeltaSize = "
+//          "%4ld %4ld P=%lu O=%lu A=%u%u%u Lod = %lu,%lu \n",
+//          patch.getU0(), patch.getV0(), patch.getU1(), patch.getV1(), patch.getD1(), patch.getSizeU0(),
+//          patch.getSizeV0(), patch.getSizeD(), ipdu.getIpdu2dDeltaSizeX(), ipdu.getIpdu2dDeltaSizeY(),
+//          patch.getProjectionMode(), patch.getPatchOrientation(), patch.getNormalAxis(), patch.getTangentAxis(),
+//          patch.getBitangentAxis(), patch.getLodScaleX(),patch.getLodScaleY() );
+//
+//      patch.allocOneLayerData();
+//      if ( sps.getPointLocalReconstructionEnabledFlag() ) {
+//        setPointLocalReconstructionData( frame, patch, ipdu.getPointLocalReconstructionData(),
+//                                         context.getOccupancyPackingBlockSize() );
+//      }
+//    } else if ( ( PCCPatchFrameType( atgh.getAtghType() ) == PATCH_FRAME_I &&
+//                  PCCPatchModeI( atgdu.getPatchMode( patchIndex ) ) == (uint8_t)PATCH_MODE_I_Raw ) ||
+//                ( PCCPatchFrameType( atgh.getAtghType() ) == PATCH_FRAME_P &&
+//                  PCCPatchModeP( atgdu.getPatchMode( patchIndex ) ) == (uint8_t)PATCH_MODE_P_Raw ) ) {
+//      TRACE_CODEC( "patch %lu / %lu: raw \n", patchIndex, patches.size() );
+//
+//      auto& ppdu                = pid.getRawPatchDataUnit();
+//      auto& missedPointsPatch   = pcmPatches[patchIndex - numNonRawPatch];
+//      missedPointsPatch.u0_     = ppdu.getRpdu2dPosX();
+//      missedPointsPatch.v0_     = ppdu.getRpdu2dPosY();
+//      missedPointsPatch.sizeU0_ = ppdu.getRpdu2dDeltaSizeX();
+//      missedPointsPatch.sizeV0_ = ppdu.getRpdu2dDeltaSizeY();
+//      if ( afps.getAfpsRaw3dPosBitCountExplicitModeFlag()  ) {
+//        missedPointsPatch.u1_ = ppdu.getRpdu3dPosX();
+//        missedPointsPatch.v1_ = ppdu.getRpdu3dPosY();
+//        missedPointsPatch.d1_ = ppdu.getRpdu3dPosZ();
+//      } else {
+//        const size_t pcmU1V1D1Level = 1 << ( gi.getGeometryNominal2dBitdepthMinus1() );
+//        missedPointsPatch.u1_       = ppdu.getRpdu3dPosX() * pcmU1V1D1Level;
+//        missedPointsPatch.v1_       = ppdu.getRpdu3dPosY() * pcmU1V1D1Level;
+//        missedPointsPatch.d1_       = ppdu.getRpdu3dPosZ() * pcmU1V1D1Level;
+//      }
+//      missedPointsPatch.setNumberOfMps( ppdu.getRpduRawPoints() );
+//      missedPointsPatch.occupancyResolution_ = context.getOccupancyPackingBlockSize();
+//      totalNumberOfMps += missedPointsPatch.getNumberOfMps();
+//      TRACE_CODEC( "Raw :UV = %lu %lu  size = %lu %lu  uvd1 = %lu %lu %lu numPoints = %lu ocmRes = %lu \n",
+//                   missedPointsPatch.u0_, missedPointsPatch.v0_, missedPointsPatch.sizeU0_, missedPointsPatch.sizeV0_,
+//                   missedPointsPatch.u1_, missedPointsPatch.v1_, missedPointsPatch.d1_, missedPointsPatch.numberOfMps_,
+//                   missedPointsPatch.occupancyResolution_ );
+//    } else if ( ( PCCPatchFrameType( atgh.getAtghType() ) == PATCH_FRAME_I &&
+//                  PCCPatchModeI( atgdu.getPatchMode( patchIndex ) ) == (uint8_t)PATCH_MODE_I_EOM ) ||
+//                ( PCCPatchFrameType( atgh.getAtghType() ) == PATCH_FRAME_P &&
+//                  PCCPatchModeP( atgdu.getPatchMode( patchIndex ) ) == (uint8_t)PATCH_MODE_P_EOM ) ) {
+//      TRACE_CODEC( "patch %lu / %lu: EOM \n", patchIndex, patchCount );
+//      auto& epdu            = pid.getEomPatchDataUnit();
+//      auto& eomPatches        = frame.getEomPatches();
+//      PCCEomPatch eomPatch;
+//      eomPatch.u0_ = epdu.getEpdu2dPosX();
+//      eomPatch.v0_ = epdu.getEpdu2dPosY();
+//      eomPatch.sizeU_       = epdu.getEpdu2dDeltaSizeX();
+//      eomPatch.sizeV_       = epdu.getEpdu2dDeltaSizeY();
+//      eomPatch.memberPatches.resize(epdu.getEpduAssociatedPatchesCountMinus1()+1);
+//      eomPatch.eddCountPerPatch.resize(epdu.getEpduAssociatedPatchesCountMinus1()+1);
+//      eomPatch.eddCount_=0;
+//      for(size_t i=0; i<eomPatch.memberPatches.size();i++){
+//        eomPatch.memberPatches[i] = epdu.getEpduAssociatedPatches(i);
+//        eomPatch.eddCountPerPatch[i] = epdu.getEpduEomPointsPerPatch(i);
+//        eomPatch.eddCount_ += eomPatch.eddCountPerPatch[i];
+//      }
+//      eomPatches.push_back(eomPatch);
+//      TRACE_CODEC( "EOM: U0V0 %lu,%lu\tSizeU0V0 %lu,%lu\tN= %lu,%lu\n", eomPatch.u0_ , eomPatch.v0_,
+//                  eomPatch.sizeU_,eomPatch.sizeV_, eomPatch.memberPatches.size(), eomPatch.eddCount_);
+//      for(size_t i=0; i<eomPatch.memberPatches.size();i++){
+//        TRACE_CODEC( "%lu, %lu\n", eomPatch.memberPatches[i], eomPatch.eddCountPerPatch[i] );}
+//      TRACE_CODEC( "\n");
+//
+//    } else if ( ( PCCPatchFrameType( atgh.getAtghType() ) == PATCH_FRAME_I &&
+//                  PCCPatchModeP( atgdu.getPatchMode( patchIndex ) ) == (uint8_t)PATCH_MODE_I_END ) ||
+//                ( PCCPatchFrameType( atgh.getAtghType() ) == PATCH_FRAME_P &&
+//                  PCCPatchModeP( atgdu.getPatchMode( patchIndex ) ) == (uint8_t)PATCH_MODE_P_END ) ) {
+//      break;
+//    } else {
+//      printf( "Error: unknow frame/patch type \n" );
+//      TRACE_CODEC( "Error: unknow frame/patch type \n" );
+//    }
+//  }
+//  TRACE_CODEC( "patch %lu / %lu: end \n", patches.size(), patches.size() );
+//  frame.setTotalNumberOfMissedPoints( totalNumberOfMps );
+//}
