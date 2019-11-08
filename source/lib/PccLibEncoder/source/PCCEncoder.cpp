@@ -85,7 +85,6 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources,
   size_t singleLayerPixelInterleavingOriginal = params_.singleMapPixelInterleaving_;
   if ( params_.nbThread_ > 0 ) { tbb::task_scheduler_init init( (int)params_.nbThread_ ); }
 
-  size_t atlasIndex = 0;
   params_.initializeContext( context );
   printf("Encoder start \n"); fflush(stdout);
   ret |= encode( sources, context, reconstructs );
@@ -131,7 +130,6 @@ int PCCEncoder::encode_old( const PCCGroupOfFrames& sources,
   size_t singleLayerPixelInterleavingOriginal = params_.singleMapPixelInterleaving_;
   if ( params_.nbThread_ > 0 ) { tbb::task_scheduler_init init( (int)params_.nbThread_ ); }
 
-  size_t atlasIndex = 0;
   params_.initializeContext( context );
   printf("Encoder start \n"); fflush(stdout);
   ret |= encode( sources, context, reconstructs );
@@ -340,7 +338,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
 
   // RECONSTRUCT POINT CLOUD GEOMETRY
   GeneratePointCloudParameters generatePointCloudParameters;
-  setPointCloudGenerateParameters(generatePointCloudParameters);
+  setPointCloudGenerateParameters(generatePointCloudParameters, context);
 
   context.allocOneLayerData();
   if ( params_.pointLocalReconstruction_ ) { pointLocalReconstructionSearch( context, generatePointCloudParameters ); }
@@ -985,7 +983,7 @@ void PCCEncoder::spatialConsistencyPack( PCCFrameContext& frame,
   } else {
     if ( printDetailedInfo ) { printMap( occupancyMap, occupancySizeU, occupancySizeV ); }
   }
-  if ( params_.enhancedDeltaDepthCode_ && params_.EOMTexturePatch_ && !frame.getUseMissedPointsSeparateVideo() ) {
+  if ( params_.enhancedDeltaDepthCode_ && !frame.getUseMissedPointsSeparateVideo() ) {
     packEOMTexturePointsPatch( frame, occupancyMap, width, height, occupancySizeU, occupancySizeV, maxOccupancyRow );
   }
   if ( printDetailedInfo ) { printMap( occupancyMap, occupancySizeU, occupancySizeV ); }
@@ -1374,7 +1372,7 @@ void PCCEncoder::spatialConsistencyPackFlexible( PCCFrameContext& frame,
   } else {
     if ( printDetailedInfo ) { printMap( occupancyMap, occupancySizeU, occupancySizeV ); }
   }
-  if ( params_.enhancedDeltaDepthCode_ && params_.EOMTexturePatch_ && !frame.getUseMissedPointsSeparateVideo() ) {
+  if ( params_.enhancedDeltaDepthCode_ && !frame.getUseMissedPointsSeparateVideo() ) {
     packEOMTexturePointsPatch( frame, occupancyMap, width, height, occupancySizeU, occupancySizeV, maxOccupancyRow );
   }
   if ( printDetailedInfo ) { printMap( occupancyMap, occupancySizeU, occupancySizeV ); }
@@ -1599,7 +1597,7 @@ void PCCEncoder::spatialConsistencyPackTetris( PCCFrameContext& frame, PCCFrameC
   } else {
     if ( printDetailedInfo ) { printMap( occupancyMap, occupancySizeU, occupancySizeV ); }
   }
-  if ( params_.enhancedDeltaDepthCode_ && params_.EOMTexturePatch_ && !frame.getUseMissedPointsSeparateVideo() ) {
+  if ( params_.enhancedDeltaDepthCode_ && !frame.getUseMissedPointsSeparateVideo() ) {
     packEOMTexturePointsPatch( frame, occupancyMap, width, height, occupancySizeU, occupancySizeV, maxOccupancyRow );
   }
   if ( printDetailedInfo ) { printMap( occupancyMap, occupancySizeU, occupancySizeV ); }
@@ -2320,7 +2318,7 @@ void PCCEncoder::doGlobalTetrisPacking( PCCContext& context ) {
         packMissedPointsPatch( frames[frameIdx], occupancyMap, width, height, occupancySizeU, occupancySizeV,
                                maxOccupancyRow );
       }
-      if ( params_.enhancedDeltaDepthCode_ && params_.EOMTexturePatch_ &&
+      if ( params_.enhancedDeltaDepthCode_ &&
            !frames[frameIdx].getUseMissedPointsSeparateVideo() ) {
         packEOMTexturePointsPatch( frames[frameIdx], occupancyMap, width, height, occupancySizeU, occupancySizeV,
                                    maxOccupancyRow );
@@ -2487,7 +2485,7 @@ void PCCEncoder::pack( PCCFrameContext& frame, int safeguard, bool enablePointCl
   } else {
     if ( printDetailedInfo ) { printMap( occupancyMap, occupancySizeU, occupancySizeV ); }
   }
-  if ( params_.enhancedDeltaDepthCode_ && params_.EOMTexturePatch_ && !frame.getUseMissedPointsSeparateVideo() ) {
+  if ( params_.enhancedDeltaDepthCode_ && !frame.getUseMissedPointsSeparateVideo() ) {
     packEOMTexturePointsPatch( frame, occupancyMap, width, height, occupancySizeU, occupancySizeV, maxOccupancyRow );
   }
   if ( printDetailedInfo ) { printMap( occupancyMap, occupancySizeU, occupancySizeV ); }
@@ -2705,7 +2703,7 @@ void PCCEncoder::packFlexible( PCCFrameContext& frame, int safeguard, bool enabl
   } else {
     if ( printDetailedInfo ) { printMap( occupancyMap, occupancySizeU, occupancySizeV ); }
   }
-  if ( params_.enhancedDeltaDepthCode_ && params_.EOMTexturePatch_ && !frame.getUseMissedPointsSeparateVideo() ) {
+  if ( params_.enhancedDeltaDepthCode_ && !frame.getUseMissedPointsSeparateVideo() ) {
     packEOMTexturePointsPatch( frame, occupancyMap, width, height, occupancySizeU, occupancySizeV, maxOccupancyRow );
   }
   if ( printDetailedInfo ) { printMap( occupancyMap, occupancySizeU, occupancySizeV ); }
@@ -2860,7 +2858,7 @@ void PCCEncoder::packTetris( PCCFrameContext& frame, int safeguard ) {
   } else {
     if ( printDetailedInfo ) printMap( occupancyMap, occupancySizeU, occupancySizeV );
   }
-  if ( params_.enhancedDeltaDepthCode_ && params_.EOMTexturePatch_ && !frame.getUseMissedPointsSeparateVideo() ) {
+  if ( params_.enhancedDeltaDepthCode_ && !frame.getUseMissedPointsSeparateVideo() ) {
     packEOMTexturePointsPatch( frame, occupancyMap, width, height, occupancySizeU, occupancySizeV, maxOccupancyRow );
   }
   if ( printDetailedInfo ) { printMap( occupancyMap, occupancySizeU, occupancySizeV ); }
@@ -4134,7 +4132,7 @@ void PCCEncoder::generateMPsGeometryImage( PCCContext& context, PCCFrameContext&
   pcmOccupancyMap.resize( pcmOccupancySizeU * pcmOccupancySizeV, false );
 
   packMissedPointsPatch( frame, pcmOccupancyMap, pcmWidth, pcmHeight, pcmOccupancySizeU, pcmOccupancySizeV, 0 );
-//  if ( params_.enhancedDeltaDepthCode_ && params_.EOMTexturePatch_ ) {
+//  if ( params_.enhancedDeltaDepthCode_) {
   //    packEOMTexturePointsPatch( frame, pcmOccupancyMap, pcmWidth, pcmHeight, pcmOccupancySizeU, pcmOccupancySizeV, 0
   //    );
 //  }
@@ -4377,7 +4375,7 @@ bool PCCEncoder::generateGeometryVideo( const PCCGroupOfFrames& sources, PCCCont
       sps.setMapCountMinus1( atlasIndex, params_.mapCountMinus1_ );
       sps.allocateMap( atlasIndex );
       sps.setMapAbsoluteCodingEnableFlag( atlasIndex, 1, params_.absoluteD1_ );
-      sps.setPixelDeinterleavingFlag( params_.singleMapPixelInterleaving_ );
+      
     }
   }
   if( params_.pointLocalReconstruction_ ){
@@ -4857,6 +4855,8 @@ void PCCEncoder::dilate_3DPadding( const PCCPointSet3&     source,
             }
           }
         }
+        assert(count!=0);
+        if(count==0){exit(254);}
         mean_val /= count;
         // now fill in the missing positions with depth values searched in 3D space
         for ( size_t j = 0; j < params_.occupancyPrecision_; j++ ) {
@@ -6172,7 +6172,7 @@ void PCCEncoder::packingFirstFrame( PCCContext& context,
     } else {
       if ( printDetailedInfo ) { printMap( occupancyMap, occupancySizeU, occupancySizeV ); }
     }
-    if ( params_.enhancedDeltaDepthCode_ && params_.EOMTexturePatch_ && !frame.getUseMissedPointsSeparateVideo() ) {
+    if ( params_.enhancedDeltaDepthCode_ && !frame.getUseMissedPointsSeparateVideo() ) {
       packEOMTexturePointsPatch( frame, occupancyMap, widthGPA, heithGPA, occupancySizeU, occupancySizeV,
                                  maxOccupancyRow );
     }
@@ -6297,7 +6297,7 @@ void PCCEncoder::packingFirstFrame( PCCContext& context,
     } else {
       if ( printDetailedInfo ) { printMap( occupancyMap, occupancySizeU, occupancySizeV ); }
     }  
-    if ( params_.enhancedDeltaDepthCode_ && params_.EOMTexturePatch_ && !frame.getUseMissedPointsSeparateVideo() ) {
+    if ( params_.enhancedDeltaDepthCode_ && !frame.getUseMissedPointsSeparateVideo() ) {
       packEOMTexturePointsPatch( frame, occupancyMap, widthGPA, heithGPA, occupancySizeU, occupancySizeV,
                                  maxOccupancyRow );
     }
@@ -6577,8 +6577,7 @@ void PCCEncoder::performGPAPacking( const SubContext& subContext,
     } else {
       if ( printDetailedInfo ) { printMap( occupancyMap, occupancySizeU, occupancySizeV ); }
     }
-    if ( params_.enhancedDeltaDepthCode_ && params_.EOMTexturePatch_ &&
-         !curFrameContext.getUseMissedPointsSeparateVideo() ) {
+    if ( params_.enhancedDeltaDepthCode_ && !curFrameContext.getUseMissedPointsSeparateVideo() ) {
       packEOMTexturePointsPatch( curFrameContext, occupancyMap, widthGPA, heightGPA, occupancySizeU, occupancySizeV,
                                  maxOccupancyRow );
     }
@@ -6919,9 +6918,10 @@ void PCCEncoder::setGeometryPatchParameterSet( PCCMetadata& metadata, GeometryPa
   }
 }
 
-void PCCEncoder::setPointLocalReconstruction( PCCContext& context, VpccParameterSet& sps ) {
-  sps.setPointLocalReconstructionEnabledFlag( 1 );
-  auto& plr = sps.getPointLocalReconstructionInformation();
+void PCCEncoder::setPointLocalReconstruction( PCCContext& context) {
+  auto& asps = context.getAtlasSequenceParameterSet(0);
+  asps.setPointLocalReconstructionEnabledFlag( 1 );
+  auto& plr = asps.addPointLocalReconstructionInformation(); //jkei:is it correct??
   plr.setNumberOfModesMinus1( params_.plrlNumberOfModes_ - 1 );
   plr.setBlockThresholdPerPatchMinus1( params_.patchSize_ - 1 );
   plr.allocate();
@@ -6984,7 +6984,7 @@ void PCCEncoder::setPointLocalReconstructionData( PCCFrameContext&              
 #endif
 }
 
-void PCCEncoder::setPointCloudGenerateParameters(GeneratePointCloudParameters& generatePointCloudParameters){
+void PCCEncoder::setPointCloudGenerateParameters(GeneratePointCloudParameters& generatePointCloudParameters, PCCContext& context){
 //  auto&             sps = context.getSps();
 //  auto&             ai  = sps.getAttributeInformation( atlasIndex );
 
@@ -7024,17 +7024,14 @@ void PCCEncoder::setPointCloudGenerateParameters(GeneratePointCloudParameters& g
   generatePointCloudParameters.geometryBitDepth3D_            =
   params_.geometry3dCoordinatesBitdepth_;
   generatePointCloudParameters.EOMFixBitCount_                = params_.EOMFixBitCount_;
-  generatePointCloudParameters.EOMTexturePatch_ =
-  generatePointCloudParameters.enhancedDeltaDepthCode_ && params_.EOMTexturePatch_;
   generatePointCloudParameters.pbfEnableFlag_      = false;
 }
 void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
   TRACE_CODEC( "createPatchFrameDataStructure GOP start \n" );
-  auto&  sps        = context.getSps();
   size_t frameCount = context.getFrames().size();
   TRACE_CODEC( "frameCount = %u \n", frameCount );
 
-  if ( params_.pointLocalReconstruction_ ) { setPointLocalReconstruction( context, sps ); }
+  if ( params_.pointLocalReconstruction_ ) { setPointLocalReconstruction( context ); }
   PCCFrameContext& refFrame = context.getFrame( 0 );
   for ( size_t i = 0; i < frameCount; i++ ) {
     PCCFrameContext& frame = context.getFrame( i );
@@ -7114,7 +7111,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
   atglu.setFrameIndex( frameIndex );
   atgh.setAtghAtlasFrmOrderCntLsb(frameIndex );
   atgh.setAtghType( I_TILE_GRP ); //P_TILE_GRP = 0, SKIP_TILE_GRP, I_TILE_GRP
-  if ( frameIndex != 0 && sps.getPatchInterPredictionEnabledFlag() ){
+  if ( frameIndex != 0 && params_.deltaCoding_ ){
     bool interPredPresent=false;
     for(auto& patch : patches){
       interPredPresent |= (patch.getBestMatchIdx() != InvalidPatchIndex);
@@ -7131,8 +7128,9 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
 
   TRACE_CODEC( "TileGroup Type                     = %zu (0.P_TILE_GRP 1.SKIP_TILE_GRP 2.I_TILE_GRP)\n", (size_t) atgh.getAtghType() );
   TRACE_CODEC( "OccupancyPackingBlockSize           = %d \n", context.getOccupancyPackingBlockSize() );
-  TRACE_CODEC( "PatchInterPredictionEnabledFlag     = %d \n", sps.getPatchInterPredictionEnabledFlag() );
+  //TRACE_CODEC( "PatchInterPredictionEnabledFlag     = %d \n", sps.getPatchInterPredictionEnabledFlag() );
 
+  size_t patchCount = patches.size() + frame.getNumberOfMissedPointsPatches() + frame.getEomPatches().size();
   // all patches
   for ( size_t patchIndex = 0; patchIndex < patches.size(); patchIndex++ ) {
     const auto& patch = patches[patchIndex];
@@ -7141,7 +7139,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
       const auto& refPatch = refPatches[patch.getBestMatchIdx()];
       auto&       pid      = atgdu.addPatchInformationData((uint8_t)PATCH_MODE_P_INTER);
       //auto&       pid      = ptgdu.addPatchInformationData( (uint8_t)PATCH_MODE_P_INTER);
-      TRACE_CODEC( "patch %lu / %lu: Inter \n", patchIndex, patches.size() );
+      TRACE_CODEC( "patch %lu / %lu: Inter \n", patchIndex, patchCount );
       auto&       ipdu     = pid.getInterPatchDataUnit();
       //ipdu.setIpduRefIndex( patch.getRefAtalsFrameIndex() );
       ipdu.setIpduRefPatchIndex( (int64_t)patch.getBestMatchIdx() - predIndex );
@@ -7178,7 +7176,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
                          refPatch.getU0(), refPatch.getV0(), refPatch.getU1(), refPatch.getV1(), refPatch.getSizeU0(),
                          refPatch.getSizeV0(), refPatch.getSizeD(), refPatch.getLodScaleX(), refPatch.getLodScaleY() );
 
-      if ( sps.getPointLocalReconstructionEnabledFlag() ) {
+      if ( asps.getPointLocalReconstructionEnabledFlag() ) {
         setPointLocalReconstructionData( frame, patch, ipdu.getPointLocalReconstructionData(),
                                          context.getOccupancyPackingBlockSize(), patchIndex );
       }
@@ -7199,7 +7197,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
       uint8_t patchType =
           ( atgh.getAtghType() == I_TILE_GRP ) ? (uint8_t)PATCH_MODE_I_INTRA : (uint8_t)PATCH_MODE_P_INTRA;
       auto&       pid      = atgdu.addPatchInformationData( patchType );
-      TRACE_CODEC( "patch %lu / %lu: Intra \n", patchIndex, patches.size() );
+      TRACE_CODEC( "patch %lu / %lu: Intra \n", patchIndex, patchCount );
       auto& pdu = pid.getPatchDataUnit();
       pdu.setPdu2dPosX( patch.getU0() );
       pdu.setPdu2dPosY( patch.getV0() );
@@ -7247,7 +7245,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
                    patch.getPatchOrientation(), patch.getNormalAxis(), patch.getTangentAxis(), patch.getBitangentAxis(),
                    (size_t)lodEnableFlag, patch.getLodScaleX(), patch.getLodScaleY() );
 
-      if ( sps.getPointLocalReconstructionEnabledFlag() ) {
+      if ( asps.getPointLocalReconstructionEnabledFlag() ) {
         setPointLocalReconstructionData( frame, patch, pdu.getPointLocalReconstructionData(),
                                          context.getOccupancyPackingBlockSize(), patchIndex );
       }
@@ -7263,8 +7261,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
       //auto& pid      = ptgdu.addPatchInformationData( patchType );
       auto& pid = atgdu.addPatchInformationData( patchType );
       auto& ppdu = pid.getRawPatchDataUnit();
-      size_t totalPatchCount = patches.size()+numberOfPcmPatches+frame.getEomPatches().size();
-      TRACE_CODEC( "patch %lu / %lu: raw \n", patches.size()+mpsPatchIndex, totalPatchCount );
+      TRACE_CODEC( "patch %lu / %lu: raw \n", patches.size()+mpsPatchIndex, patchCount );
       ppdu.setRpdu2dPosX( missedPointsPatch.u0_ );
       ppdu.setRpdu2dPosY( missedPointsPatch.v0_ );
       ppdu.setRpdu2dDeltaSizeX( missedPointsPatch.sizeU0_ );
@@ -7287,7 +7284,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
                    missedPointsPatch.getNumberOfMps(), missedPointsPatch.occupancyResolution_ );
     }
   }
-  if ( params_.enhancedDeltaDepthCode_ && params_.EOMTexturePatch_ ) {
+  if ( params_.enhancedDeltaDepthCode_ ) {
     size_t numberOfEomPatches = frame.getEomPatches().size();
     for ( size_t eomPatchIndex = 0; eomPatchIndex < numberOfEomPatches; ++eomPatchIndex ) {
       auto& eomPatch = frame.getEomPatches()[eomPatchIndex];
@@ -7296,8 +7293,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
       //auto& pid      = ptgdu.addPatchInformationData( patchType );
       auto& epdu     = pid.getEomPatchDataUnit();
 #if defined(BITSTREAM_TRACE) || defined(CODEC_TRACE)
-      size_t totalPatchCount = patches.size()+pcmPatches.size()+numberOfEomPatches;
-      TRACE_CODEC( "patch %lu / %lu: EOM \n", patches.size()+pcmPatches.size()+eomPatchIndex, totalPatchCount );
+      TRACE_CODEC( "patch %lu / %lu: EOM \n", patches.size()+pcmPatches.size()+eomPatchIndex, patchCount );
 #endif
       epdu.setEpdu2dPosX( eomPatch.u0_ );
       epdu.setEpdu2dPosY( eomPatch.v0_ );
@@ -7321,9 +7317,9 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
   uint8_t patchType =
       ( atgh.getAtghType() == I_TILE_GRP ) ? (uint8_t)PATCH_MODE_I_END : (uint8_t)PATCH_MODE_P_END;
   //auto& pid = ptgdu.addPatchInformationData( patchType );
-  auto& pid = atgdu.addPatchInformationData( patchType );
+  atgdu.addPatchInformationData( patchType );
   // ptgh bitcount
-  size_t maxU0 = 0, maxV0 = 0, maxU1 = 0, maxV1 = 0, maxLod = 0;
+  size_t maxU0 = 0, maxV0 = 0, maxU1 = 0, maxV1 = 0;
   for ( size_t patchIndex = 0; patchIndex < patches.size(); ++patchIndex ) {
     const auto& patch = patches[patchIndex];
     if ( patch.getBestMatchIdx() == InvalidPatchIndex ) {
@@ -7344,7 +7340,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
       maxV1                = ( std::max )( maxV1, pcmPatch.v1_ );
     }
   }
-  if ( params_.enhancedDeltaDepthCode_ && params_.EOMTexturePatch_ ) {
+  if ( params_.enhancedDeltaDepthCode_ ) {
     for(auto& eomPatch : frame.getEomPatches()){
       maxU0          = ( std::max )( maxU0, eomPatch.u0_ );
       maxV0          = ( std::max )( maxV0, eomPatch.v0_ );

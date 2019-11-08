@@ -76,9 +76,7 @@ class PCCVideoDecoder {
     size_t            width = 0, height = 0;
     PCCHevcParser     hevcParser;
     hevcParser.getVideoSize( bitstream.vector(), width, height );
-#if 1
-    printf("%zu, %zu\n", width, height);
-#endif
+
     const std::string yuvRecFileName = addVideoFormat( fileName + "_rec" + ( use444CodecIo ? ".rgb" : ".yuv" ), width,
                                                        height, !use444CodecIo, bitDepth == 10 ? "10" : "8" );
     const std::string rgbRecFileName =

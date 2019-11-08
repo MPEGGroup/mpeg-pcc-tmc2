@@ -137,7 +137,6 @@ PCCEncoderParameters::PCCEncoderParameters() {
   textureDilationOffLossless_              = true;
   enhancedDeltaDepthCode_                  = false;
   EOMFixBitCount_                          = 2;
-  EOMTexturePatch_                         = true;
   offsetLossyOM_                           = 0;
   thresholdLossyOM_                        = 0;
   prefilterLossyOM_                        = false;
@@ -330,7 +329,6 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   occupancyMapVideoEncoderConfig         " << occupancyMapVideoEncoderConfig_ << std::endl;
   std::cout << "\t   occupancyMapQP                         " << occupancyMapQP_ << std::endl;
   std::cout << "\t   EOMFixBitCount                         " << EOMFixBitCount_ << std::endl;
-  std::cout << "\t   EOMTexturePatch                        " << EOMTexturePatch_ << std::endl;
   std::cout << "\t   occupancyMapRefinement                 " << occupancyMapRefinement_ << std::endl;
   std::cout << "\t Lossy occupancy Map coding" << std::endl;
   std::cout << "\t   Lossy occupancy map offset             " << offsetLossyOM_ << std::endl;
@@ -568,11 +566,6 @@ bool PCCEncoderParameters::check() {
     }
   }
 
-  if ( !enhancedDeltaDepthCode_ && EOMTexturePatch_ ) {   
-    EOMTexturePatch_ = false; 
-    std::cerr << "WARNING: EOMTexturePatch_ is only for enhancedDeltaDepthCode coding mode for now. Force "
-                 "EOMTexturePatch=FALSE.\n";
-  }
   if ( enhancedDeltaDepthCode_ && surfaceThickness_ == 1 ) {
     std::cerr << "WARNING: EDD code doesn't bring any gain when surfaceThickness==1. Please "
                  "consider to increase the value of surfaceThickness.\n";
@@ -719,17 +712,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     }
   }
 
-  sps.setEnhancedOccupancyMapForDepthFlag( enhancedDeltaDepthCode_ );
-  if( sps.getEnhancedOccupancyMapForDepthFlag() ){
-    sps.setEOMFixBitCount( EOMFixBitCount_ );
-    sps.setEOMTexturePatch( EOMTexturePatch_ );
-  }
-  sps.setPixelDeinterleavingFlag( singleMapPixelInterleaving_ );
-  sps.setRemoveDuplicatePointEnabledFlag( removeDuplicatePoints_ );
-  sps.setPatchInterPredictionEnabledFlag( deltaCoding_ );
   sps.setSurfaceThickness( surfaceThickness_ );
-  sps.setProjection45DegreeEnableFlag( additionalProjectionPlaneMode_ > 0 ? 1 : 0 );
-  sps.setPatchPrecedenceOrderFlag( patchPrecedenceOrderFlag_ ); //low delay coding
 
   ai.setAttributeCount( noAttributes_ ? 0 : 1 );
   ai.allocate();
@@ -780,6 +763,10 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   afps.setAfpsExtensionPresentFlag( 0 );
   afps.setAfpsExtensionDataFlag( 0 );
   
+  if(afps.getAfpsOverrideEomForDepthFlag()==0){
+  afps.setAfpsEomMaxBitCountMinus1(7);
+  afps.setAfpsEomNumberOfPatchBitCountMinus1(7);
+  }
   //jkei: any better implementation please?!
   for(size_t frameIdx=0; frameIdx<frameCount_; frameIdx++){
     auto& atgl = context.addAtlasTileGroupLayer(frameIdx);
@@ -789,7 +776,11 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     atgh.setAtghPosDeltaMaxZQuantizer(uint8_t(std::log2(minLevel_)));
     atgh.setAtghPatchSizeXinfoQuantizer(0); //new
     atgh.setAtghPatchSizeYinfoQuantizer(0); //new
-    atgh.setAtghRaw3dPosAxisBitCountMinus1(0);
+    if(afps.getAfpsRaw3dPosBitCountExplicitModeFlag())
+      atgh.setAtghRaw3dPosAxisBitCountMinus1(0); //
+    else
+      atgh.setAtghRaw3dPosAxisBitCountMinus1(geometry3dCoordinatesBitdepth_ - geometryNominal2dBitdepth_ - 1);
+    
     atgh.setAtghNumRefIdxActiveOverrideFlag(0);
     
     atgh.setAtghRefAtlasFrameListSpsFlag( true );

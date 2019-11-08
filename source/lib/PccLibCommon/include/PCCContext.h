@@ -1216,30 +1216,30 @@ class PointLocalReconstructionInformation {
 class AtlasSequenceParameterSetRBSP {
  public:
   AtlasSequenceParameterSetRBSP() :
-      altasSequenceParameterSetId_( 0 ),
-      frameWidth_( 0 ),
-      frameHeight_( 0 ),
-      log2PatchPackingBlockSize_( 0 ),
-      log2MaxAtlasFrameOrderCntLsbMinus4_( 0 ),
-      maxDecAtlasFrameBufferingMinus1_( 0 ),
-      numRefAtlasFrameListsInAsps_( 0 ),
-      mapCountMinus1_( 0 ),
-      enhancedOccupancyMapFixBitCountMinus1_( 0 ),
-      surfaceThicknessMinus1_( 0 ),
-      longTermRefAtlasFramesFlag_( false ),
-      useEightOrientationsFlag_( false ),
-      degree45ProjectionPatchPresentFlag_( false ),
-      normalAxisLimitsQuantizationEnabledFlag_( false ),
-      normalAxisMaxDeltaValueEnabledFlag_( false ),
-      removeDuplicatePointEnabledFlag_( false ),
-      pixelDeinterleavingFlag_( false ),
-      patchPrecedenceOrderFlag_( false ),
-      patchSizeQuantizerPresentFlag_( false ),
-      enhancedOccupancyMapForDepthFlag_( false ),
-      pointLocalReconstructionEnabledFlag_( false ),
-      vuiParametersPresentFlag_( false ),
-      extensionPresentFlag_( false ),
-      extensionDataFlag_( false ) {}
+  altasSequenceParameterSetId_( 0 ),
+  frameWidth_( 0 ),
+  frameHeight_( 0 ),
+  log2PatchPackingBlockSize_( 0 ),
+  log2MaxAtlasFrameOrderCntLsbMinus4_( 0 ),
+  maxDecAtlasFrameBufferingMinus1_( 0 ),
+  longTermRefAtlasFramesFlag_( 0 ),
+  numRefAtlasFrameListsInAsps_( 0 ),
+  useEightOrientationsFlag_( 0 ),
+  degree45ProjectionPatchPresentFlag_( 0 ),
+  normalAxisLimitsQuantizationEnabledFlag_( 0 ),
+  normalAxisMaxDeltaValueEnabledFlag_( 0 ),
+  removeDuplicatePointEnabledFlag_( 0 ),
+  pixelDeinterleavingFlag_( 0 ),
+  patchPrecedenceOrderFlag_( 0 ),
+  patchSizeQuantizerPresentFlag_( 0 ),
+  enhancedOccupancyMapForDepthFlag_( 0 ),
+  pointLocalReconstructionEnabledFlag_( 0 ),
+  mapCountMinus1_( 0 ),
+  enhancedOccupancyMapFixBitCountMinus1_( 0 ),
+  surfaceThicknessMinus1_( 0 ),
+  vuiParametersPresentFlag_( 0 ),
+  extensionPresentFlag_( 0 ),
+  extensionDataFlag_( 0 ) {}
   ~AtlasSequenceParameterSetRBSP() {
     refListStruct_.clear();
     pointLocalReconstructionInformation_.clear();
@@ -1601,16 +1601,7 @@ class VpccParameterSet {
       // JR: remove
       ,
       avgFrameRate_( 0 ),
-      avgFrameRatePresentFlag_( false ),
-      enhancedOccupancyMapForDepthFlag_( false ),
-      EOMFixBitCount_( 2 ),
-      EOMTexturePatch_( false ),
-      patchInterPredictionEnabledFlag_( false ),
-      pixelDeinterleavingFlag_( false ),
-      pointLocalReconstructionEnabledFlag_( false ),
-      removeDuplicatePointEnabledFlag_( false ),
-      projection45degreeEnabledFlag_( false ),
-      patchPrecedenceOrderFlag_( false ) {}
+      avgFrameRatePresentFlag_( false ){}
   ~VpccParameterSet() {
     for ( auto& data : mapAbsoluteCodingEnableFlag_ ) { data.clear(); }
     mapAbsoluteCodingEnableFlag_.clear();
@@ -1656,14 +1647,7 @@ class VpccParameterSet {
 
     // remove
     avgFrameRatePresentFlag_             = avgFrameRatePresentFlag;
-    enhancedOccupancyMapForDepthFlag_    = enhancedOccupancyMapForDepthFlag;
     avgFrameRate_                        = avgFrameRate;
-    patchInterPredictionEnabledFlag_     = patchInterPredictionEnabledFlag;
-    pixelDeinterleavingFlag_             = pixelDeinterleavingFlag;
-    pointLocalReconstructionEnabledFlag_ = pointLocalReconstructionEnabledFlag;
-    removeDuplicatePointEnabledFlag_     = removeDuplicatePointEnabledFlag;
-    projection45degreeEnabledFlag_       = projection45degreeEnabledFlag;
-    patchPrecedenceOrderFlag_            = patchPrecedenceOrderFlag;
   }
 
   void allocateAltas() {
@@ -1709,15 +1693,6 @@ class VpccParameterSet {
 
   // JR: remove
   bool     getAvgFrameRatePresentFlag() { return avgFrameRatePresentFlag_; }
-  bool     getEnhancedOccupancyMapForDepthFlag() { return enhancedOccupancyMapForDepthFlag_; }
-  size_t   getEOMFixBitCount() { return EOMFixBitCount_; }
-  bool     getEOMTexturePatch() { return EOMTexturePatch_; }
-  bool     getPatchInterPredictionEnabledFlag() { return patchInterPredictionEnabledFlag_; }
-  bool     getPixelDeinterleavingFlag() { return pixelDeinterleavingFlag_; }
-  bool     getPointLocalReconstructionEnabledFlag() { return pointLocalReconstructionEnabledFlag_; }
-  bool     getRemoveDuplicatePointEnabledFlag() { return removeDuplicatePointEnabledFlag_; }
-  bool     getProjection45DegreeEnableFlag() { return projection45degreeEnabledFlag_; }
-  bool     getPatchPrecedenceOrderFlag() { return patchPrecedenceOrderFlag_; }
   uint16_t getAvgFrameRate() { return avgFrameRate_; }
   PointLocalReconstructionInformation& getPointLocalReconstructionInformation() {
     return pointLocalReconstructionInformation_;
@@ -1766,15 +1741,6 @@ class VpccParameterSet {
   // JR: Remove
   void setAvgFrameRate( size_t atlasIndex, uint16_t value ) { avgFrameRate_ = value; }
   void setAvgFrameRatePresentFlag( bool value ) { avgFrameRatePresentFlag_ = value; }
-  void setEnhancedOccupancyMapForDepthFlag( bool value ) { enhancedOccupancyMapForDepthFlag_ = value; }
-  void setEOMFixBitCount( size_t value ) { EOMFixBitCount_ = value; }
-  void setEOMTexturePatch( bool value ) { EOMTexturePatch_ = value; }
-  void setPatchInterPredictionEnabledFlag( bool value ) { patchInterPredictionEnabledFlag_ = value; }
-  void setPixelDeinterleavingFlag( bool value ) { pixelDeinterleavingFlag_ = value; }
-  void setPointLocalReconstructionEnabledFlag( bool value ) { pointLocalReconstructionEnabledFlag_ = value; }
-  void setRemoveDuplicatePointEnabledFlag( bool value ) { removeDuplicatePointEnabledFlag_ = value; }
-  void setProjection45DegreeEnableFlag( bool value ) { projection45degreeEnabledFlag_ = value; }
-  void setPatchPrecedenceOrderFlag( bool value ) { patchPrecedenceOrderFlag_ = value; }
   void setProfileTierLevel( ProfileTierLevel value ) { profileTierLevel_ = value; }
 
  private:
@@ -1799,15 +1765,14 @@ class VpccParameterSet {
   // TODO: syntax elements not present in DIS text (JR: must me remove)
   uint16_t                            avgFrameRate_;                         // TODO: remove?
   bool                                avgFrameRatePresentFlag_;              // TODO: remove?
-  bool                                enhancedOccupancyMapForDepthFlag_;     // TODO: remove?
-  size_t                              EOMFixBitCount_;                       // TODO: remove?
-  bool                                EOMTexturePatch_;                      // TODO: remove?
-  bool                                patchInterPredictionEnabledFlag_;      // TODO: remove?
-  bool                                pixelDeinterleavingFlag_;              // TODO: remove?
-  bool                                pointLocalReconstructionEnabledFlag_;  // TODO: remove?
-  bool                                removeDuplicatePointEnabledFlag_;      // TODO: remove?
-  bool                                projection45degreeEnabledFlag_;        // TODO: remove?
-  bool                                patchPrecedenceOrderFlag_;             // TODO: remove?
+//  bool                                enhancedOccupancyMapForDepthFlag_;     // TODO: remove?
+//  size_t                              EOMFixBitCount_;                       // TODO: remove?
+  //bool                                patchInterPredictionEnabledFlag_;      // TODO: remove?
+  //bool                                pixelDeinterleavingFlag_;              // TODO: remove?
+  //bool                                pointLocalReconstructionEnabledFlag_;  // TODO: remove?
+//  bool                                removeDuplicatePointEnabledFlag_;      // TODO: remove?
+//  bool                                projection45degreeEnabledFlag_;        // TODO: remove?
+//  bool                                patchPrecedenceOrderFlag_;             // TODO: remove?
   PointLocalReconstructionInformation pointLocalReconstructionInformation_;  // TODO: remove?
 
   // THE NEXT PARAMETERS ARE NOT IN THE VPCC CD SYNTAX DOCUMENTS AND WILL BE REMOVE

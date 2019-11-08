@@ -120,7 +120,6 @@ void PCCCodec::generatePointCloud( PCCGroupOfFrames&                  reconstruc
   }
   TRACE_CODEC( "  enhancedDeltaDepthCode_         = %d  \n", params.enhancedDeltaDepthCode_ );
   TRACE_CODEC( "  EOMFixBitCount_                 = %d  \n", params.EOMFixBitCount_ );
-  TRACE_CODEC( "  EOMTexturePatch_                = %d  \n", params.EOMTexturePatch_ );
   TRACE_CODEC( "  removeDuplicatePoints_          = %d  \n", params.removeDuplicatePoints_ );
   TRACE_CODEC( "  pointLocalReconstruction_       = %d  \n", params.pointLocalReconstruction_ );
   TRACE_CODEC( "  mapCountMinus1_               = %d  \n", params.mapCountMinus1_ );
@@ -2071,7 +2070,7 @@ void PCCCodec::generateBlockToPatchFromOccupancyMap( PCCContext&  context,
           }  // u1
         }    // v1
         if ( nonZeroPixel > 0 ) {
-          if ( ( context.getSps().getPatchPrecedenceOrderFlag() == 0 ) || blockToPatch[blockIndex] == 0 ) {
+          if ( ( context.getAtlasSequenceParameterSet(0).getPatchPrecedenceOrderFlag() == 0 ) || blockToPatch[blockIndex] == 0 ) {
             blockToPatch[blockIndex] = patchIndex + 1;
           }
 				}
@@ -2105,7 +2104,7 @@ void PCCCodec::generateBlockToPatchFromBoundaryBox( PCCContext&  context,
     for ( size_t v0 = 0; v0 < patch.getSizeV0(); ++v0 ) {
       for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {
         const size_t blockIndex  = patch.patchBlock2CanvasBlock( u0, v0, blockToPatchWidth, blockToPatchHeight );
-        if ( ( context.getSps().getPatchPrecedenceOrderFlag() == 0 ) || blockToPatch[blockIndex] == 0 ) {
+        if ( ( context.getAtlasSequenceParameterSet(0).getPatchPrecedenceOrderFlag() == 0  ) || blockToPatch[blockIndex] == 0 ) {
           blockToPatch[blockIndex] = patchIndex + 1;
         }
       }  // u0
@@ -2159,7 +2158,7 @@ void PCCCodec::generateBlockToPatchFromOccupancyMapVideo( PCCContext&  context,
 					}  // u1
 				}    // v1
 				if (nonZeroPixel > 0) { 
-          if ( ( context.getSps().getPatchPrecedenceOrderFlag() == 0 ) || blockToPatch[blockIndex] == 0 ) {
+          if ( ( context.getAtlasSequenceParameterSet(0).getPatchPrecedenceOrderFlag() == 0 ) || blockToPatch[blockIndex] == 0 ) {
             blockToPatch[blockIndex] = patchIndex + 1;
           }
                                 }

@@ -102,7 +102,6 @@ class PCCEncoderParameters {
   std::string occupancyMapVideoEncoderConfig_;
   size_t      occupancyMapQP_;
   size_t      EOMFixBitCount_;
-  bool        EOMTexturePatch_;
   bool        occupancyMapRefinement_;
 
   // smoothing

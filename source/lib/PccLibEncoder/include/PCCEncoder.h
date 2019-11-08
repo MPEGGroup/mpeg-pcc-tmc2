@@ -130,7 +130,7 @@ class PCCEncoder : public PCCCodec {
               PCCGroupOfFrames&       reconstructs );
 
   // adaptor methods (JR: move for test )
-  void setPointCloudGenerateParameters(GeneratePointCloudParameters& generatePointCloudParameters);
+  void setPointCloudGenerateParameters(GeneratePointCloudParameters& generatePointCloudParameters, PCCContext& context);
   void createPatchFrameDataStructure( PCCContext& context );
 
   void createPatchFrameDataStructure( PCCContext&      context,
@@ -359,7 +359,7 @@ class PCCEncoder : public PCCCodec {
   void setPatchFrameGeometryParameterSet( PCCMetadata& metadata, PatchFrameGeometryParameterSet& gfps );
   void setGeometryPatchParameterSet( PCCMetadata& metadata, GeometryPatchParameterSet& gpps );
 
-  void setPointLocalReconstruction( PCCContext& context, VpccParameterSet& sps );
+  void setPointLocalReconstruction( PCCContext& context );
 
   void setPointLocalReconstructionData( PCCFrameContext&              frame,
                                         const PCCPatch&               patch,

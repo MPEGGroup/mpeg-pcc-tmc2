@@ -848,8 +848,8 @@ class PCCPatch {
                                   int32_t                      height,
                                   int32_t                      occupancyPrecision,
                                   int16_t*                     depth ) {
-    const int32_t x0 = u0_ * occupancyResolution_;
-    const int32_t y0 = v0_ * occupancyResolution_;
+    const int32_t x0 = (int32_t) (u0_ * occupancyResolution_);
+    const int32_t y0 = (int32_t) (v0_ * occupancyResolution_);
     depth += v2 * depthMapWidth_;
     switch ( patchOrientation_ ) {
       case PATCH_ORIENTATION_DEFAULT:
@@ -877,9 +877,9 @@ class PCCPatch {
         break;
       case PATCH_ORIENTATION_ROT180:
         for ( int32_t j = 0, v = v2; j < occupancyPrecision; j++, v++, depth += depthMapWidth_ ) {
-          int32_t y = ( sizeV0_ * occupancyResolution_ - 1 - v ) + y0;
+          int32_t y = (int32_t) (( sizeV0_ * occupancyResolution_ - 1 - v ) + y0);
           for ( int32_t i = 0, u = u2; i < occupancyPrecision; i++, u++ ) {
-            int32_t x = ( sizeU0_ * occupancyResolution_ - 1 - u ) + x0;
+            int32_t x = (int32_t) (( sizeU0_ * occupancyResolution_ - 1 - u ) + x0);
             depth[u]  = geometryVideo[x + width * y];
           }
         }

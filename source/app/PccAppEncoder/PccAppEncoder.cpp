@@ -281,11 +281,6 @@ bool parseParameters( int                   argc,
      encoderParams.EOMFixBitCount_,
      "enhanced occupancy map fixed bit count")
 
-    ("EOMTexturePatch",
-      encoderParams.EOMTexturePatch_,
-      encoderParams.EOMTexturePatch_,
-      "enhanced occupancy map texture in 1 patch")
-
     ("occupancyMapRefinement",
       encoderParams.occupancyMapRefinement_,
       encoderParams.occupancyMapRefinement_,

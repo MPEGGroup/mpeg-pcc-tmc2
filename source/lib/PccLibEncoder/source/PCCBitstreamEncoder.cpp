@@ -413,7 +413,6 @@ void PCCBitstreamEncoder::vpccUnit( PCCContext& context, PCCBitstream& bitstream
 void PCCBitstreamEncoder::vpccUnitHeader( PCCContext& context, PCCBitstream& bitstream, VPCCUnitType vpccUnitType ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   auto& vpcc = context.getVPCC();
-  auto& sps  = context.getSps();
   bitstream.write( vpccUnitType, 5 );  // u(5)
   if ( vpccUnitType == VPCC_AVD || vpccUnitType == VPCC_GVD || vpccUnitType == VPCC_OVD || vpccUnitType == VPCC_AD ) {
     bitstream.write( (uint32_t)vpcc.getVpccParameterSetId(), 4 );  // u(4)
@@ -520,16 +519,6 @@ void PCCBitstreamEncoder::vpccParameterSet( VpccParameterSet& vps, PCCContext& c
   bitstream.write( (uint32_t)vps.getMinLevel(), 8 );          // u(8) TODO: remove?
   bitstream.write( (uint32_t)vps.getSurfaceThickness(), 8 );  // u(8) TODO: remove?
 
-  bitstream.write( (uint32_t)vps.getPatchInterPredictionEnabledFlag(), 1 );      // u(1) TODO: remove?
-  bitstream.write( (uint32_t)vps.getPixelDeinterleavingFlag(), 1 );              // u(1) TODO: remove?
-  bitstream.write( (uint32_t)vps.getPointLocalReconstructionEnabledFlag(), 1 );  // u(1) TODO: remove?
-  if ( vps.getPointLocalReconstructionEnabledFlag() ) {                          // TODO: remove?
-    pointLocalReconstructionInformation( vps.getPointLocalReconstructionInformation(), context,
-                                         bitstream );                        // TODO: remove?
-  }                                                                          // TODO: remove?
-  bitstream.write( (uint32_t)vps.getRemoveDuplicatePointEnabledFlag(), 1 );  // u(1) TODO: remove?
-  bitstream.write( (uint32_t)vps.getProjection45DegreeEnableFlag(), 1 );     // u(1) TODO: remove?
-  bitstream.write( (uint32_t)vps.getPatchPrecedenceOrderFlag(), 1 );         // u(1) TODO: remove?
   // THE NEXT PARAMETERS ARE NOT IN THE VPCC CD SYNTAX DOCUMENTS AND WILL BE REMOVE
   byteAlignment( bitstream );
 }
@@ -1063,13 +1052,12 @@ void PCCBitstreamEncoder::patchDataUnit( PatchDataUnit&        pdu,
     pointLocalReconstructionData( pdu.getPointLocalReconstructionData(), context, bitstream );
   }
   TRACE_BITSTREAM(
-      "Frame %zu, Patch(%zu) => UV %4lu %4lu S=%4ld %4ld P=%zu O=%d A=%lu %lu %lu P45= %d %d lod=(%lu) %lu %lu\n ",
-      pdu.getFrameIndex(),
-      pdu.getPatchIndex(),
-      pdu.getPdu2dPosX(), pdu.getPdu2dPosY(), pdu.getPdu2dDeltaSizeX(), pdu.getPdu2dDeltaSizeY(), pdu.getPdu3dPosX(),
-      pdu.getPdu3dPosY(), pdu.getPdu3dPosMinZ(), pdu.getPdu3dPosDeltaMaxZ(), pdu.getPduProjectionId(),
-      pdu.getPduOrientationIndex(), pdu.getLodEnableFlag(), pdu.getLodScaleXminus1(), pdu.getLodScaleY() );
-}
+        "Frame %zu, Patch(%zu) => 2dPos=%4zu %4zu deltaSize=%4ld %4ld 3dPos=%4zu %4zu %4zu %4zu P=%zu O=%d lod=(%u/%u) %u %u\n ",
+        pdu.getFrameIndex(), pdu.getPatchIndex(),
+        pdu.getPdu2dPosX(), pdu.getPdu2dPosY(), pdu.getPdu2dDeltaSizeX(), pdu.getPdu2dDeltaSizeY(), pdu.getPdu3dPosX(),
+        pdu.getPdu3dPosY(), pdu.getPdu3dPosMinZ(), pdu.getPdu3dPosDeltaMaxZ(), pdu.getPduProjectionId(),
+        pdu.getPduOrientationIndex(), afps.getLodModeEnableFlag(), pdu.getLodEnableFlag(), pdu.getLodScaleXminus1(), pdu.getLodScaleY() );
+ }
 
 // 7.3.7.4  Skip patch data unit syntax
 void PCCBitstreamEncoder::skipPatchDataUnit( SkipPatchDataUnit&    spdu,
@@ -1162,8 +1150,6 @@ void PCCBitstreamEncoder::rawPatchDataUnit( RawPatchDataUnit&     ppdu,
   TRACE_BITSTREAM( "%s \n", __func__ );
   size_t afpsId = atgh.getAtghAtlasFrameParameterSetId();
   AtlasFrameParameterSetRbsp&    afps = context.getAtlasFrameParameterSet(afpsId);
-  size_t aspsId = afps.getAtlasSequenceParameterSetId();
-  AtlasSequenceParameterSetRBSP& asps = context.getAtlasSequenceParameterSet(aspsId);
 
   auto&  sps        = context.getSps();
   size_t atlasIndex = 0;
@@ -1179,7 +1165,7 @@ void PCCBitstreamEncoder::rawPatchDataUnit( RawPatchDataUnit&     ppdu,
   bitstream.write( uint32_t( ppdu.getRpdu3dPosZ() ), atgh.getAtghRaw3dPosAxisBitCountMinus1() + 1 );  // u(v)
   bitstream.writeUvlc( int32_t( ppdu.getRpduRawPoints() ) );
   TRACE_BITSTREAM(
-      "Raw Patch => UV %4lu %4lu  S=%4ld %4ld  UVD1=%4ld %4ld %4ld NumPcmPoints=%lu PatchInRawVideoFlag=%d \n",
+      "Raw Patch => 2dPos=%4zu %4zu  deltaSize=%4ld %4ld 3dPos=%4zu %4zu %4zu NumPcmPoints=%lu PatchInRawVideoFlag=%d \n",
       ppdu.getRpdu2dPosX(), ppdu.getRpdu2dPosY(), ppdu.getRpdu2dDeltaSizeX(), ppdu.getRpdu2dDeltaSizeY(),
       ppdu.getRpdu3dPosX(), ppdu.getRpdu3dPosY(), ppdu.getRpdu3dPosZ(), ppdu.getRpduRawPoints(),
       ppdu.getRpduPatchInRawVideoFlag() );
@@ -1193,8 +1179,6 @@ void PCCBitstreamEncoder::eomPatchDataUnit( EOMPatchDataUnit&     epdu,
   TRACE_BITSTREAM( "%s \n", __func__ );
   size_t afpsId = atgh.getAtghAtlasFrameParameterSetId();
   AtlasFrameParameterSetRbsp&    afps = context.getAtlasFrameParameterSet(afpsId);
-  size_t aspsId = afps.getAtlasSequenceParameterSetId();
-  AtlasSequenceParameterSetRBSP& asps = context.getAtlasSequenceParameterSet(aspsId);
 
   bitstream.write( uint32_t( epdu.getEpdu2dPosX() ), afps.getAfps2dPosXBitCountMinus1() + 1 );  // u(v)
   bitstream.write( uint32_t( epdu.getEpdu2dPosY() ), afps.getAfps2dPosYBitCountMinus1() + 1 );  // u(v)
@@ -1599,9 +1583,9 @@ void PCCBitstreamEncoder::patchFrameParameterSet( PatchDataGroup&   pdg,
     bitstream.write( pfps.getLocalOverrideAttributePatchEnableFlag( i ), 1 );  // u(1)
   }
   bitstream.writeUvlc( pfps.getAdditionalLtPfocLsbLen() );  // ue(v)
-  if ( sps.getProjection45DegreeEnableFlag() ) {
-    bitstream.write( pfps.getProjection45DegreeEnableFlag(), 1 );  // u(1)
-  }
+//  if ( sps.getProjection45DegreeEnableFlag() ) {
+//    bitstream.write( pfps.getProjection45DegreeEnableFlag(), 1 );  // u(1)
+//  }
   bitstream.write( pfps.getLodModeEnableFlag(), 1 );  // u(1)
   byteAlignment( bitstream );
 }
@@ -1828,10 +1812,10 @@ void PCCBitstreamEncoder::patchTileGroupHeader( PatchTileGroupHeader& ptgh,
       }
     }
   }
-  if ( sps.getEnhancedOccupancyMapForDepthFlag() && sps.getEOMTexturePatch() ) {
-    bitstream.write( (uint32_t)ptgh.getEOMPatchNbPatchBitCountMinus1(), 8 );  // u( 8 )
-    bitstream.write( (uint32_t)ptgh.getEOMPatchMaxEPBitCountMinus1(), 8 );    // u( 8 )
-  }
+//  if ( sps.getEnhancedOccupancyMapForDepthFlag() && sps.getEOMTexturePatch() ) {
+//    bitstream.write( (uint32_t)ptgh.getEOMPatchNbPatchBitCountMinus1(), 8 );  // u( 8 )
+//    bitstream.write( (uint32_t)ptgh.getEOMPatchMaxEPBitCountMinus1(), 8 );    // u( 8 )
+//  }
   TRACE_BITSTREAM( "RawPatchEnabledFlag = %d \n", sps.getRawPatchEnabledFlag( atlasIndex ) );
   if ( sps.getRawPatchEnabledFlag( atlasIndex ) ) {
     bitstream.write( (uint32_t)ptgh.getRaw3dShiftBitCountPresentFlag(), 1 );  // u( 1 )
@@ -1932,11 +1916,6 @@ void PCCBitstreamEncoder::patchInformationData( PatchInformationData& pid,
                                                 PCCContext&           context,
                                                 PCCBitstream&         bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
-  auto&  sps        = context.getSps();
-  size_t atlasIndex = 0;
-  auto&  ai         = sps.getAttributeInformation( atlasIndex );
-  auto&  pdg        = context.getPatchDataGroup();
-  auto&  pfps       = pdg.getPatchFrameParameterSet( ptgh.getPatchFrameParameterSetId() );
   if ( ( PCCPatchFrameType( ptgh.getType() ) ) == PATCH_FRAME_P && patchMode == PATCH_MODE_P_SKIP ) {
     // skip mode.
     // currently not supported but added it for convenience. Could easily be removed
@@ -2010,9 +1989,9 @@ void PCCBitstreamEncoder::patchDataUnit( PatchDataUnit&        pdu,
   if ( pdu.get45DegreeProjectionPresentFlag() ) {
     bitstream.write( uint32_t( pdu.get45DegreeProjectionRotationAxis() ), 2 );  // u(2)
   }
-  if ( sps.getPointLocalReconstructionEnabledFlag() ) {
-    pointLocalReconstructionData( pdu.getPointLocalReconstructionData(), context, bitstream );
-  }
+//  if ( sps.getPointLocalReconstructionEnabledFlag() ) {
+//    pointLocalReconstructionData( pdu.getPointLocalReconstructionData(), context, bitstream );
+//  }
   TRACE_BITSTREAM(
       "Patch(%zu/%zu) => UV %4lu %4lu S=%4ld %4ld P=%zu O=%d A=%lu %lu %lu P45= %d %d lod=(%lu) %lu %lu\n ",
       pdu.getPatchIndex(), pdu.getFrameIndex(), pdu.getPdu2dPosX(), pdu.getPdu2dPosY(), pdu.getPdu2dDeltaSizeX(),
@@ -2046,9 +2025,9 @@ void PCCBitstreamEncoder::deltaPatchDataUnit( InterPatchDataUnit&   ipdu,
   if ( psps.getNormalAxisMaxDeltaValueEnableFlag() )
     bitstream.writeSvlc( int32_t( ipdu.getIpdu3dPosDeltaMaxZ() ) );
   
-  if ( sps.getPointLocalReconstructionEnabledFlag() ) {
-    pointLocalReconstructionData( ipdu.getPointLocalReconstructionData(), context, bitstream );
-  }
+//  if ( sps.getPointLocalReconstructionEnabledFlag() ) {
+//    pointLocalReconstructionData( ipdu.getPointLocalReconstructionData(), context, bitstream );
+//  }
 
   TRACE_BITSTREAM(
       "%zu frame %zu DeltaPatch => DeltaIdx = %d ShiftUV = %ld %ld DeltaSize = %ld %ld Axis = %ld %ld %ld\n",

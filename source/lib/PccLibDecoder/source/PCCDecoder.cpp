@@ -125,7 +125,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
 //  auto&             pfaps      = pdg.getPatchFrameAttributeParameterSet( 0 );
 //  auto&             gfp        = pfgps.getGeometryFrameParams();
 //  auto&             afp        = pfaps.getAttributeFrameParams();
-
+  auto& asps = context.getAtlasSequenceParameterSet(0);
   path << removeFileExtension( params_.compressedStreamPath_ ) << "_dec_GOF" << sps.getVpccParameterSetId() << "_";
 #ifdef CODEC_TRACE
   setTrace( true );
@@ -149,7 +149,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
    context.setOccupancyPrecision( sps.getFrameWidth(atlasIndex) / context.getVideoOccupancyMap().getWidth() );
   if( !gi.getGeometryPatchBlockFilteringEnableFlag() ) {
     generateOccupancyMap( context, context.getOccupancyPrecision(), oi.getLossyOccupancyMapCompressionThreshold(),
-                          sps.getEnhancedOccupancyMapForDepthFlag() );
+                          asps.getEnhancedOccupancyMapForDepthFlag() );
   }
 
   if ( sps.getMapCountMinus1(atlasIndex) > 0 && !sps.getMapAbsoluteCodingEnableFlag( atlasIndex, 1 ) ) {
@@ -202,7 +202,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
     generateMissedPointsGeometryfromVideo( context, reconstructs );
     std::cout << " missed points geometry -> " << videoBitstreamMP.naluSize() << " B " << endl;
   }
-  if ( sps.getEnhancedOccupancyMapForDepthFlag() && !gi.getGeometryPatchBlockFilteringEnableFlag() ) {
+  if ( asps.getEnhancedOccupancyMapForDepthFlag() && !gi.getGeometryPatchBlockFilteringEnableFlag() ) {
     generateBlockToPatchFromOccupancyMap( context, context.getOccupancyPackingBlockSize() );
   } else {
     generateBlockToPatchFromBoundaryBox( context, context.getOccupancyPackingBlockSize() );
@@ -458,7 +458,9 @@ void PCCDecoder::setPointCloudGenerateParameters(GeneratePointCloudParameters& g
   auto&             pfgps      = pdg.getPatchFrameGeometryParameterSet( 0 );
   auto&             pfaps      = pdg.getPatchFrameAttributeParameterSet( 0 );
   auto&             gfp        = pfgps.getGeometryFrameParams();
-  auto&             afp        = pfaps.getAttributeFrameParams();
+  
+  auto& asps = context.getAtlasSequenceParameterSet(0); //jkei: 0 is okay, or more generic?
+
   generatePointCloudParameters.occupancyResolution_      = context.getOccupancyPackingBlockSize();
   generatePointCloudParameters.occupancyPrecision_       = context.getOccupancyPrecision();
   generatePointCloudParameters.flagGeometrySmoothing_    = gfp.getGeometrySmoothingParamsPresentFlag();
@@ -487,16 +489,17 @@ void PCCDecoder::setPointCloudGenerateParameters(GeneratePointCloudParameters& g
   generatePointCloudParameters.neighborCountColorSmoothing_   = 64;
   generatePointCloudParameters.flagColorSmoothing_            = 0; //afp.getAttributeSmoothingParamsPresentFlag( 0 );
   generatePointCloudParameters.thresholdLossyOM_              = (size_t)oi.getLossyOccupancyMapCompressionThreshold();
-  generatePointCloudParameters.removeDuplicatePoints_         = sps.getRemoveDuplicatePointEnabledFlag();
-  generatePointCloudParameters.pointLocalReconstruction_      = sps.getPointLocalReconstructionEnabledFlag();
+  
+  generatePointCloudParameters.removeDuplicatePoints_         = asps.getRemoveDuplicatePointEnabledFlag();
+  generatePointCloudParameters.pointLocalReconstruction_      = asps.getPointLocalReconstructionEnabledFlag();
   generatePointCloudParameters.mapCountMinus1_                = sps.getMapCountMinus1( atlasIndex );
-  generatePointCloudParameters.singleMapPixelInterleaving_  = sps.getPixelDeinterleavingFlag();
+  generatePointCloudParameters.singleMapPixelInterleaving_  = asps.getPixelDeinterleavingFlag();
+  
   //generatePointCloudParameters.path_                          = path.str();
   generatePointCloudParameters.useAdditionalPointsPatch_      = sps.getRawPatchEnabledFlag( atlasIndex );
-  generatePointCloudParameters.enhancedDeltaDepthCode_        = sps.getEnhancedOccupancyMapForDepthFlag();
-  generatePointCloudParameters.EOMFixBitCount_                = sps.getEOMFixBitCount();
-  generatePointCloudParameters.EOMTexturePatch_ =
-      generatePointCloudParameters.enhancedDeltaDepthCode_ && sps.getEOMTexturePatch();
+  generatePointCloudParameters.enhancedDeltaDepthCode_        = asps.getEnhancedOccupancyMapForDepthFlag();
+  generatePointCloudParameters.EOMFixBitCount_                =
+  asps.getEnhancedOccupancyMapFixBitCountMinus1();
   generatePointCloudParameters.geometry3dCoordinatesBitdepth_ = gi.getGeometry3dCoordinatesBitdepthMinus1() + 1;
   generatePointCloudParameters.geometryBitDepth3D_            = gi.getGeometry3dCoordinatesBitdepthMinus1() + 1;
   generatePointCloudParameters.pbfEnableFlag_                 = gfp.getGeometryPatchBlockFilteringEnableFlag();
@@ -581,7 +584,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
   }
   numNonRawPatch = patchCount - numRawPatches - numEomPatch;
   printf("numNonRawPatch = %zu \n",numNonRawPatch);
-  printf("sps.getEOMTexturePatch() = %d \n",sps.getEOMTexturePatch());
+  //printf("sps.getEOMTexturePatch() = %d \n",sps.getEOMTexturePatch());
   eomPatches.reserve(numEomPatch);
   patches.resize( numNonRawPatch );
   pcmPatches.resize( numRawPatches );
@@ -592,7 +595,6 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
               frame.getEomPatches().size() );
   TRACE_CODEC( "TileGroup Type                     = %zu (0.P_TILE_GRP 1.SKIP_TILE_GRP 2.I_TILE_GRP)\n", (size_t) atgh.getAtghType() );
   TRACE_CODEC( "OccupancyPackingBlockSize           = %d \n", context.getOccupancyPackingBlockSize() );
-  TRACE_CODEC( "PatchInterPredictionEnabledFlag     = %d \n", sps.getPatchInterPredictionEnabledFlag() );
   size_t totalNumberOfMps = 0;
   size_t patchIndex       = 0;
   for ( patchIndex = 0; patchIndex < patchCount; patchIndex++ ) {
@@ -660,7 +662,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
                    (size_t)lodEnableFlag, patch.getLodScaleX(), patch.getLodScaleY() );
 
       patch.allocOneLayerData();
-      if ( sps.getPointLocalReconstructionEnabledFlag() ) {
+      if ( asps.getPointLocalReconstructionEnabledFlag() ) {
         setPointLocalReconstructionData( frame, patch, pdu.getPointLocalReconstructionData(),
                                          context.getOccupancyPackingBlockSize() );
       }
@@ -733,7 +735,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
           patch.getBitangentAxis(), patch.getLodScaleX(),patch.getLodScaleY() );
 
       patch.allocOneLayerData();
-      if ( sps.getPointLocalReconstructionEnabledFlag() ) {
+      if ( asps.getPointLocalReconstructionEnabledFlag() ) {
         setPointLocalReconstructionData( frame, patch, ipdu.getPointLocalReconstructionData(),
                                          context.getOccupancyPackingBlockSize() );
       }
