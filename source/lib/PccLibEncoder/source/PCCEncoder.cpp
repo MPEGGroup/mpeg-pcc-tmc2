@@ -7271,16 +7271,16 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
         ppdu.setRpdu3dPosY( missedPointsPatch.v1_ );
         ppdu.setRpdu3dPosZ( missedPointsPatch.d1_ );
       } else {
-        const size_t pcmU1V1D1Level = 1 << ( gi.getGeometryNominal2dBitdepthMinus1() );
+        const size_t pcmU1V1D1Level = 1 << ( gi.getGeometryNominal2dBitdepthMinus1()+1 );
         ppdu.setRpdu3dPosX( missedPointsPatch.u1_ / pcmU1V1D1Level );
         ppdu.setRpdu3dPosY( missedPointsPatch.v1_ / pcmU1V1D1Level );
         ppdu.setRpdu3dPosZ( missedPointsPatch.d1_ / pcmU1V1D1Level );
       }
       ppdu.setRpduPatchInRawVideoFlag( sps.getRawSeparateVideoPresentFlag( 0 ) );
       ppdu.setRpduRawPoints( uint32_t(missedPointsPatch.getNumberOfMps()) );
-      TRACE_CODEC( "Raw :UV = %lu %lu  size = %lu %lu  uvd1 = %lu %lu %lu numPoints = %lu ocmRes = %lu \n",
+      TRACE_CODEC( "Raw :UV = %lu %lu  size = %lu %lu  uvd1 = %lu %lu %lu (/%lu)  numPoints = %lu ocmRes = %lu \n",
                    missedPointsPatch.u0_, missedPointsPatch.v0_, missedPointsPatch.sizeU0_, missedPointsPatch.sizeV0_,
-                   missedPointsPatch.u1_, missedPointsPatch.v1_, missedPointsPatch.d1_,
+                   missedPointsPatch.u1_, missedPointsPatch.v1_, missedPointsPatch.d1_,(1 << ( gi.getGeometryNominal2dBitdepthMinus1()+1 )),
                    missedPointsPatch.getNumberOfMps(), missedPointsPatch.occupancyResolution_ );
     }
   }

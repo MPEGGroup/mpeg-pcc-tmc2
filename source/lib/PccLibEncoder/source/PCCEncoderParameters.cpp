@@ -777,7 +777,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     atgh.setAtghPatchSizeXinfoQuantizer(0); //new
     atgh.setAtghPatchSizeYinfoQuantizer(0); //new
     if(afps.getAfpsRaw3dPosBitCountExplicitModeFlag())
-      atgh.setAtghRaw3dPosAxisBitCountMinus1(0); //
+      atgh.setAtghRaw3dPosAxisBitCountMinus1(ceil(log2(geometry3dCoordinatesBitdepth_))-1); //
     else
       atgh.setAtghRaw3dPosAxisBitCountMinus1(geometry3dCoordinatesBitdepth_ - geometryNominal2dBitdepth_ - 1);
     

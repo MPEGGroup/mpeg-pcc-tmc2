@@ -756,7 +756,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
         missedPointsPatch.v1_ = ppdu.getRpdu3dPosY();
         missedPointsPatch.d1_ = ppdu.getRpdu3dPosZ();
       } else {
-        const size_t pcmU1V1D1Level = 1 << ( gi.getGeometryNominal2dBitdepthMinus1() );
+        const size_t pcmU1V1D1Level = 1 << ( gi.getGeometryNominal2dBitdepthMinus1()+1 );
         missedPointsPatch.u1_       = ppdu.getRpdu3dPosX() * pcmU1V1D1Level;
         missedPointsPatch.v1_       = ppdu.getRpdu3dPosY() * pcmU1V1D1Level;
         missedPointsPatch.d1_       = ppdu.getRpdu3dPosZ() * pcmU1V1D1Level;

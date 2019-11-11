@@ -502,7 +502,7 @@ void PCCBitstreamDecoder::atlasSequenceParameterSetRBSP( AtlasSequenceParameterS
   for ( size_t i = 0; i < asps.getNumRefAtlasFrameListsInAsps(); i++ ) {
     refListStruct( asps.getRefListStruct( i ), asps, bitstream );
   }
-  asps.setLongTermRefAtlasFramesFlag( bitstream.read( 1 ) );               // u(1)
+  asps.setUseEightOrientationsFlag( bitstream.read( 1 ) );                 // u(1)
   asps.set45DegreeProjectionPatchPresentFlag( bitstream.read( 1 ) );       // u(1)
   asps.setNormalAxisLimitsQuantizationEnabledFlag( bitstream.read( 1 ) );  // u(1)
   asps.setNormalAxisMaxDeltaValueEnabledFlag( bitstream.read( 1 ) );       // u(1)
@@ -1059,7 +1059,7 @@ void PCCBitstreamDecoder::eomPatchDataUnit( EOMPatchDataUnit&     epdu,
   size_t afpsId = atgh.getAtghAtlasFrameParameterSetId();
   AtlasFrameParameterSetRbsp&    afps = context.getAtlasFrameParameterSet(afpsId);
   epdu.setEpdu2dPosX( bitstream.read( afps.getAfps2dPosXBitCountMinus1() + 1 ) );  // u(v)
-  epdu.setEpdu2dPosY( bitstream.read( afps.getAfps2dPosXBitCountMinus1() + 1 ) );  // u(v)
+  epdu.setEpdu2dPosY( bitstream.read( afps.getAfps2dPosYBitCountMinus1() + 1 ) );  // u(v)
   epdu.setEpdu2dDeltaSizeX( bitstream.readSvlc() );                                // se(v)
   epdu.setEpdu2dDeltaSizeY( bitstream.readSvlc() );                                // se(v)
   epdu.setEpduAssociatedPatchesCountMinus1( bitstream.read( 8 ) );
@@ -1979,9 +1979,9 @@ void PCCBitstreamDecoder::sampleStreamVpccUnit( PCCBitstream& bitstream, VpccUni
   vpccu.setVpccUnitType(vpccUnitType);
   TRACE_BITSTREAM( "vpccUnitType: %hhu VpccUnitSize: %zu\n",vpccUnitType8, vpccu.getVpccUnitSize() );
 #ifdef BITSTREAM_TRACE
-  for ( size_t i = 0; i < vpccu.getVpccUnitSize(); i++ ) {
-     bitstream.trace( "FullStream: CodU[ 8]:    %zu\n", size_t( vpccu.getVpccUnitData( i ) ) );  // b(8)
-  }
+//  for ( size_t i = 0; i < vpccu.getVpccUnitSize(); i++ ) {
+//     bitstream.trace( "FullStream: CodU[ 8]:    %zu\n", size_t( vpccu.getVpccUnitData( i ) ) );  // b(8)
+//  }
 #endif
 
 	pos.bytes += vpccu.getVpccUnitSize();
