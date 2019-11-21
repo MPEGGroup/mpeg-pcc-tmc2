@@ -176,8 +176,14 @@ class PCCEncoderParameters {
   std::string geometryD0Config_;
   std::string geometryD1Config_;
   std::string textureConfig_;
+  std::string textureT0Config_;
+  std::string textureT1Config_;
   bool        keepIntermediateFiles_;
   bool        absoluteD1_;
+  int         qpAdjD1_;
+  bool        absoluteT1_;
+  int         qpAdjT1_;
+  bool        multipleStreams_;
   bool        constrainedPack_;
 
   // dilation

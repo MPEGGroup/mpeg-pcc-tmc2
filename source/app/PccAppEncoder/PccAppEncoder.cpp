@@ -201,7 +201,7 @@ bool parseParameters( int                   argc,
     ("occupancyResolution",
      encoderParams.occupancyResolution_,
      encoderParams.occupancyResolution_,
-     "Resolution T of the occupancy map")
+     "Resolution of packing block(a block contain only one patch)")
 
     ("minPointCountPerCCPatchSegmentation",
      encoderParams.minPointCountPerCCPatchSegmentation_,
@@ -529,6 +529,14 @@ bool parseParameters( int                   argc,
      encoderParams.textureConfig_,
      "HM configuration file for texture compression")
 
+  ("textureT0Config",
+   encoderParams.textureT0Config_,
+   encoderParams.textureT0Config_,
+   "HM configuration file for texture D0 compression")
+  ("textureT1Config",
+   encoderParams.textureT1Config_,
+   encoderParams.textureT1Config_,
+   "HM configuration file for texture D1 compression")
     // lossless parameters
     ("losslessGeo",
      encoderParams.losslessGeo_,
@@ -580,6 +588,25 @@ bool parseParameters( int                   argc,
      encoderParams.absoluteD1_,
      "Absolute D1")
 
+  ("absoluteT1",
+   encoderParams.absoluteT1_,
+   encoderParams.absoluteT1_,
+   "Absolute T1")
+  
+  ("multipleStreams",
+   encoderParams.multipleStreams_, //0. absolute 1 delta
+   encoderParams.multipleStreams_,
+   "number of video(geometry and attribute) streams")
+  
+  ("qpT1",
+   encoderParams.qpAdjT1_, //0. absolute 1 delta
+   encoderParams.qpAdjT1_,
+   "qp adjustment for T1 0, +3, -3...")
+  
+  ("qpD1",
+   encoderParams.qpAdjD1_,
+   encoderParams.qpAdjD1_,
+   "qp adjustment for D1 : 0, +3, -3...")
     ("constrainedPack",
      encoderParams.constrainedPack_,
      encoderParams.constrainedPack_,
@@ -866,18 +893,16 @@ bool parseParameters( int                   argc,
     return false;
   }
 
-  if ( (encoderParams.levelOfDetailX_==0 || encoderParams.levelOfDetailY_==0) )
-  {
-    if(encoderParams.levelOfDetailX_==0)  encoderParams.levelOfDetailX_=1;
-    if(encoderParams.levelOfDetailY_==0)  encoderParams.levelOfDetailY_=1;
-    err.error() << "levelOfDetailX and levelOfDetailY should be greater than 1. levelOfDetailX="<<encoderParams.levelOfDetailX_<<"., levelOfDetailY="<<encoderParams.levelOfDetailY_<<
-    std::endl;
+  if ( ( encoderParams.levelOfDetailX_ == 0 || encoderParams.levelOfDetailY_ == 0 ) ) {
+    if ( encoderParams.levelOfDetailX_ == 0 ) encoderParams.levelOfDetailX_ = 1;
+    if ( encoderParams.levelOfDetailY_ == 0 ) encoderParams.levelOfDetailY_ = 1;
+    err.error() << "levelOfDetailX and levelOfDetailY should be greater than 1. levelOfDetailX="
+                << encoderParams.levelOfDetailX_ << "., levelOfDetailY=" << encoderParams.levelOfDetailY_ << std::endl;
   }
 
-  if ( encoderParams.losslessGeo_ &&
-      (encoderParams.levelOfDetailX_>1 || encoderParams.levelOfDetailY_>1) ) {
-    encoderParams.levelOfDetailX_= 1;
-    encoderParams.levelOfDetailY_=1;
+  if ( encoderParams.losslessGeo_ && ( encoderParams.levelOfDetailX_ > 1 || encoderParams.levelOfDetailY_ > 1 ) ) {
+    encoderParams.levelOfDetailX_ = 1;
+    encoderParams.levelOfDetailY_ = 1;
     err.error() << "scaling is not allowed in lossless case\n";
   }
   if ( encoderParams.enablePointCloudPartitioning_ && encoderParams.patchExpansion_ ) {
@@ -887,9 +912,10 @@ bool parseParameters( int                   argc,
     err.error() << "Point cloud partitioning does not currently support global patch allocation. \n";
   }
 
-  if(encoderParams.patchPrecedenceOrderFlag_==0 && encoderParams.lowDelayEncoding_){
-    encoderParams.lowDelayEncoding_=0;
-    err.error() << "Low Delay Encoding can be used only when patchPrecendenceOrder is enabled. lowDelayEncoding_ is set 0\n";
+  if ( encoderParams.patchPrecedenceOrderFlag_ == 0 && encoderParams.lowDelayEncoding_ ) {
+    encoderParams.lowDelayEncoding_ = 0;
+    err.error()
+        << "Low Delay Encoding can be used only when patchPrecendenceOrder is enabled. lowDelayEncoding_ is set 0\n";
   }
   encoderParams.completePath();
   encoderParams.print();
@@ -909,12 +935,12 @@ bool parseParameters( int                   argc,
 int compressVideo( const PCCEncoderParameters& encoderParams,
                    const PCCMetricsParameters& metricsParams,
                    StopwatchUserTime&          clock ) {
-  const size_t             startFrameNumber0        = encoderParams.startFrameNumber_;
-  const size_t             endFrameNumber0          = encoderParams.startFrameNumber_ + encoderParams.frameCount_;
-  const size_t             groupOfFramesSize0       = ( std::max )( size_t( 1 ), encoderParams.groupOfFramesSize_ );
-  size_t                   startFrameNumber         = startFrameNumber0;
-  size_t                   reconstructedFrameNumber = encoderParams.startFrameNumber_;
-  
+  const size_t startFrameNumber0        = encoderParams.startFrameNumber_;
+  const size_t endFrameNumber0          = encoderParams.startFrameNumber_ + encoderParams.frameCount_;
+  const size_t groupOfFramesSize0       = ( std::max )( size_t( 1 ), encoderParams.groupOfFramesSize_ );
+  size_t       startFrameNumber         = startFrameNumber0;
+  size_t       reconstructedFrameNumber = encoderParams.startFrameNumber_;
+
   std::unique_ptr<uint8_t> buffer;
   size_t                   contextIndex = 0;
   PCCEncoder               encoder;
@@ -925,15 +951,15 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
   metrics.setParameters( metricsParams );
   checksum.setParameters( metricsParams );
 
-  PCCBitstreamStat bitstreamStat;
-  VpccUnitStream vpccUS;
+  PCCBitstreamStat     bitstreamStat;
+  SampleStreamVpccUnit ssvu;
   // Place to get/set default values for gof metadata enabled flags (in sequence level).
   while ( startFrameNumber < endFrameNumber0 ) {
     const size_t endFrameNumber = min( startFrameNumber + groupOfFramesSize0, endFrameNumber0 );
     PCCContext   context;
     context.setBitstreamStat( bitstreamStat );
     context.addVpccParameterSet( contextIndex );
-    context.getVPCC().setVpccParameterSetId( contextIndex );
+    context.getSps( contextIndex ).setVpccParameterSetId( contextIndex );
 
     PCCGroupOfFrames sources, reconstructs;
     if ( !sources.load( encoderParams.uncompressedDataPath_, startFrameNumber, endFrameNumber,
@@ -944,7 +970,7 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
 
     std::cout << "Compressing group of frames " << contextIndex << ": " << startFrameNumber << " -> " << endFrameNumber
               << "..." << std::endl;
-    int ret = encoder.encode( sources, context, vpccUS, reconstructs );
+    int ret = encoder.encode( sources, context, ssvu, reconstructs );
     clock.stop();
 
     PCCGroupOfFrames normals;
@@ -959,8 +985,7 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
       if ( bRunMetric ) metrics.compute( sources, reconstructs, normals );
     }
     if ( metricsParams.computeChecksum_ ) {
-      if ( encoderParams.losslessGeo_ )
-      {
+      if ( encoderParams.losslessGeo_ ) {
         checksum.computeSource( sources );
         checksum.computeReordered( reconstructs );
       }
@@ -976,9 +1001,10 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
     startFrameNumber = endFrameNumber;
     contextIndex++;
   }
-  
-  //jkei: wrapping with sampestream and write to the output bin file! ;o;
-  //jkei: i feel like it could be memory issue.. do we want to keep 300 frames in a memory and write off at once or write it off every 32 frames(GOF)?
+
+  // jkei: wrapping with sampestream and write to the output bin file! ;o;
+  // jkei: i feel like it could be memory issue.. do we want to keep 300 frames in a memory and write off at once or
+  // write it off every 32 frames(GOF)?
   PCCBitstream bitstream;
 #ifdef BITSTREAM_TRACE
   bitstream.setTrace( true );
@@ -988,8 +1014,8 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
   bitstream.writeHeader();  // JR TODO: must be removed?
   bitstreamStat.setHeader( bitstream.size() );
   PCCBitstreamEncoder bitstreamEncoder;
-	bitstreamEncoder.writeSampleStream(vpccUS, bitstream);
-  
+  bitstreamEncoder.write( ssvu, bitstream );
+
   bitstreamStat.trace();
   std::cout << "Total bitstream size " << bitstream.size() << " B" << std::endl;
   bitstream.write( encoderParams.compressedStreamPath_ );
@@ -997,8 +1023,7 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
   if ( metricsParams.computeMetrics_ ) { metrics.display(); }
   bool checksumEqual = true;
   if ( metricsParams.computeChecksum_ ) {
-    if ( encoderParams.losslessGeo_ )
-    { checksumEqual = checksum.compareSrcRec(); }
+    if ( encoderParams.losslessGeo_ ) { checksumEqual = checksum.compareSrcRec(); }
     checksum.write( encoderParams.compressedStreamPath_ );
   }
   return checksumEqual ? 0 : -1;

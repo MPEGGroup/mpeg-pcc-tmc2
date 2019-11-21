@@ -290,18 +290,18 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
   PCCDecoder decoder;
   decoder.setParameters( decoderParams );
 
-  VpccUnitStream vpccUS;
-  PCCBitstreamDecoder bitstreamDecoder;
-	bitstreamDecoder.readSampleStream(bitstream, vpccUS);
+  SampleStreamVpccUnit ssvu;
+  PCCBitstreamDecoder  bitstreamDecoder;
+  bitstreamDecoder.read( bitstream, ssvu );
 
-  //jkei: we need to read every thing from vpccUS. I am not sure it is desirable...
+  // jkei: we need to read every thing from ssvu. I am not sure it is desirable...
   bool bMoreData = true;
-  while (  bMoreData ) { //jkie : popFront() is desirable?
+  while ( bMoreData ) {  // jkie : popFront() is desirable?
     PCCGroupOfFrames reconstructs;
     PCCContext       context;
     context.setBitstreamStat( bitstreamStat );
     clock.start();
-    int ret = decoder.decode( vpccUS, context, reconstructs );
+    int ret = decoder.decode( ssvu, context, reconstructs );
     clock.stop();
     if ( ret ) { return ret; }
     if ( metricsParams.computeChecksum_ ) { checksum.computeDecoded( reconstructs ); }
@@ -328,7 +328,7 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
       frameNumber += reconstructs.size();
     }
     
-    bMoreData= (vpccUS.getVpccUnitCount() > 0) ; //jkei: I don't feel like this is clear to understand. getVpccUnitCount() sounds very constant
+    bMoreData= (ssvu.getVpccUnitCount() > 0) ; //jkei: I don't feel like this is clear to understand. getVpccUnitCount() sounds very constant
   }
   bitstreamStat.trace();
   if ( metricsParams.computeMetrics_ ) { metrics.display(); }

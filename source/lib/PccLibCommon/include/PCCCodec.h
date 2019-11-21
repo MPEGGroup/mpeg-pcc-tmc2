@@ -47,11 +47,11 @@ class PCCPatch;
 namespace pcc {
 
 class PCCContext;
-class PCCFrameContext;
+class PCCFrameContext; 
 class PCCGroupOfFrames;
 class PCCPointSet3;
 template <typename T, size_t N>
-class PCCVideo;
+class PCCVideo; 
 typedef pcc::PCCVideo<uint8_t, 3>  PCCVideoTexture;
 typedef pcc::PCCVideo<uint16_t, 3> PCCVideoGeometry;
 
@@ -71,6 +71,7 @@ struct GeneratePointCloudParameters {
   double      thresholdSmoothing_;
   size_t      rawPointColorFormat_;
   size_t      nbThread_;
+  bool        multipleStreams_;
   bool        absoluteD1_;
   size_t      surfaceThickness_;
   double      thresholdColorSmoothing_;
@@ -121,6 +122,8 @@ class PCCCodec {
                         PCCContext&                        context,
                         const uint8_t                      attributeCount,
                         const PCCColorTransform            colorTransform,
+                       const std::vector<std::vector<bool>>& absoluteT1List,
+                       const size_t multipleStreams,
                         const GeneratePointCloudParameters params );
 
   void smoothPointCloudPostprocess( PCCGroupOfFrames&                   reconstructs,
@@ -328,8 +331,10 @@ class PCCCodec {
                           const std::vector<size_t>& subReconstructIndex );
 
   bool colorPointCloud( PCCPointSet3&                       reconstruct,
-                        PCCFrameContext&                    frame,
-                        const PCCVideoTexture&              video,
+                       PCCContext& context,
+                       size_t frameIndex,
+                       const std::vector<bool>& absoluteT1List,
+                       const size_t multipleStreams,
                         const uint8_t                       attributeCount,
                         const GeneratePointCloudParameters& params );
 

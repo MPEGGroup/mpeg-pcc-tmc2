@@ -150,3 +150,23 @@ void PCCBitstream::writeBuffer( const uint8_t* data, const size_t size ) {
   memcpy( data_.data() + position_.bytes, data, size );
   position_.bytes += size;
 }
+void PCCBitstream::copyFrom(PCCBitstream& dataBitstream, const  uint64_t startByte,  const uint64_t bitstreamSize){
+  if(data_.size()<bitstreamSize) data_.resize(position_.bytes+bitstreamSize);
+  memcpy( data_.data() + position_.bytes, dataBitstream.buffer() +startByte, bitstreamSize ); //dest, source
+  printf("copy from %llu to %llu, size=%llu\n", startByte, position_.bytes, bitstreamSize);
+
+  position_.bytes += bitstreamSize;
+  PCCBistreamPosition pos=dataBitstream.getPosition();
+  pos.bytes+=bitstreamSize;
+  dataBitstream.setPosition(pos);
+}
+void PCCBitstream::copyTo(PCCBitstream& dataBitstream, uint64_t startByte, uint64_t outputSize){
+  #ifdef BITSTREAM_TRACE
+    trace( "Code copied to: size = %lu \n", outputSize );
+  #endif
+  dataBitstream.initialize( outputSize);
+  PCCBistreamPosition pos=dataBitstream.getPosition();
+  memcpy( data_.data() + startByte, dataBitstream.buffer(), outputSize );
+  pos.bytes+=outputSize;
+  dataBitstream.setPosition(pos);
+}

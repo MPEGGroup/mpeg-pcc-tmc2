@@ -60,6 +60,9 @@ class PCCVideoBitstream {
       case VIDEO_GEOMETRY_MP: return std::string( "mps_geo" ); break;
       case VIDEO_TEXTURE: return std::string( "texture" ); break;
       case VIDEO_TEXTURE_MP: return std::string( "mps_tex" ); break;
+      case VIDEO_TEXTURE_T0: return std::string( "textureT0" ); break;
+      case VIDEO_TEXTURE_T1: return std::string( "textureT1" ); break;
+      case NUM_VIDEO_TYPE  : return std::string( "ERROR" ); break;
     }
     return std::string( "unknown" );
   }
