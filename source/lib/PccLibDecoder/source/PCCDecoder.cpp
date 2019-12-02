@@ -177,7 +177,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
                              ( sps.getLosslessGeo() ? sps.getLosslessGeo444() : false ) );
     context.getVideoGeometry().convertBitdepth( decodedBitDepthD0, gi.getGeometryNominal2dBitdepthMinus1() + 1,
                                                 gi.getGeometryMSBAlignFlag() );
-    std::cout << "geometry D0 video ->" << videoBitstreamD0.naluSize() << " B" << std::endl;
+    std::cout << "geometry D0 video ->" << videoBitstreamD0.size() << " B" << std::endl;
 
     // Compress D1
     int   decodedBitDepthD1 = gi.getGeometryNominal2dBitdepthMinus1() + 1;
@@ -187,9 +187,9 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
                              ( sps.getLosslessGeo() ? sps.getLosslessGeo444() : false ) );
     context.getVideoGeometryD1().convertBitdepth( decodedBitDepthD1, gi.getGeometryNominal2dBitdepthMinus1() + 1,
                                                   gi.getGeometryMSBAlignFlag() );
-    std::cout << "geometry D1 video ->" << videoBitstreamD1.naluSize() << " B" << std::endl;
+    std::cout << "geometry D1 video ->" << videoBitstreamD1.size() << " B" << std::endl;
 
-    std::cout << "total geometry video ->" << videoBitstreamD0.naluSize() + videoBitstreamD1.naluSize() << " B"
+    std::cout << "total geometry video ->" << videoBitstreamD0.size() + videoBitstreamD1.size() << " B"
               << std::endl;
   } else {
     int   decodedBitDepthGeo = gi.getGeometryNominal2dBitdepthMinus1() + 1;
@@ -199,18 +199,18 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
                              params_.keepIntermediateFiles_, sps.getLosslessGeo() & sps.getLosslessGeo444() );
     context.getVideoGeometry().convertBitdepth( decodedBitDepthGeo, gi.getGeometryNominal2dBitdepthMinus1() + 1,
                                                 gi.getGeometryMSBAlignFlag() );
-    std::cout << "geometry video ->" << videoBitstream.naluSize() << " B" << std::endl;
+    std::cout << "geometry video ->" << videoBitstream.size() << " B" << std::endl;
   }
 
   if ( sps.getRawPatchEnabledFlag( atlasIndex ) && sps.getRawSeparateVideoPresentFlag( atlasIndex ) ) {
     int   decodedBitDepthMP = gi.getGeometryNominal2dBitdepthMinus1() + 1;
-    auto& videoBitstreamMP  = context.getVideoBitstream( VIDEO_GEOMETRY_MP );
+    auto& videoBitstreamMP  = context.getVideoBitstream( VIDEO_GEOMETRY_RAW );
     videoDecoder.decompress( context.getVideoMPsGeometry(), path.str(), context.size(), videoBitstreamMP,
                              params_.videoDecoderPath_, context, decodedBitDepthMP, params_.keepIntermediateFiles_ );
     context.getVideoMPsGeometry().convertBitdepth( decodedBitDepthMP, gi.getGeometryNominal2dBitdepthMinus1() + 1,
                                                    gi.getGeometryMSBAlignFlag() );
     generateMissedPointsGeometryfromVideo( context, reconstructs );
-    std::cout << " missed points geometry -> " << videoBitstreamMP.naluSize() << " B " << endl;
+    std::cout << " missed points geometry -> " << videoBitstreamMP.size() << " B " << endl;
   }
   // jkei: can we have only one?
   if ( asps.getEnhancedOccupancyMapForDepthFlag() && !pbfEnableFlag ) {
@@ -235,7 +235,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
                                params_.keepIntermediateFiles_, sps.getLosslessGeo() != 0,
                                params_.patchColorSubsampling_, params_.inverseColorSpaceConversionConfig_,
                                params_.colorSpaceConversionPath_ );
-      std::cout << "texture T0 video ->" << videoBitstreamT0.naluSize() << " B" << std::endl;
+      std::cout << "texture T0 video ->" << videoBitstreamT0.size() << " B" << std::endl;
 
       // decompress T1
       auto& videoBitstreamT1 = context.getVideoBitstream( VIDEO_TEXTURE_T1 );
@@ -244,8 +244,8 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
                                params_.keepIntermediateFiles_, sps.getLosslessGeo() != 0,
                                params_.patchColorSubsampling_, params_.inverseColorSpaceConversionConfig_,
                                params_.colorSpaceConversionPath_ );
-      std::cout << "texture T1 video ->" << videoBitstreamT1.naluSize() << " B" << std::endl;
-      std::cout << "texture    video ->" << videoBitstreamT0.naluSize() + videoBitstreamT1.naluSize() << " B"
+      std::cout << "texture T1 video ->" << videoBitstreamT1.size() << " B" << std::endl;
+      std::cout << "texture    video ->" << videoBitstreamT0.size() + videoBitstreamT1.size() << " B"
                 << std::endl;
     } else {
       printf( "Texture\n" );
@@ -263,11 +263,11 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
                                params_.inverseColorSpaceConversionConfig_, params_.colorSpaceConversionPath_ );
       context.getVideoTexture().convertBitdepth(
           decodedBitdepthAttribute, ai.getAttributeNominal2dBitdepthMinus1( 0 ) + 1, ai.getAttributeMSBAlignFlag() );
-      std::cout << "texture video  ->" << videoBitstream.naluSize() << " B" << std::endl;
+      std::cout << "texture video  ->" << videoBitstream.size() << " B" << std::endl;
     }
     if ( sps.getRawPatchEnabledFlag( atlasIndex ) && sps.getRawSeparateVideoPresentFlag( atlasIndex ) ) {
       int   decodedBitdepthAttributeMP = ai.getAttributeNominal2dBitdepthMinus1( 0 ) + 1;
-      auto& videoBitstreamMP           = context.getVideoBitstream( VIDEO_TEXTURE_MP );
+      auto& videoBitstreamMP           = context.getVideoBitstream( VIDEO_TEXTURE_RAW );
       videoDecoder.decompress( context.getVideoMPsTexture(), path.str(), context.size(), videoBitstreamMP,
                                params_.videoDecoderPath_, context, decodedBitdepthAttributeMP,
                                params_.keepIntermediateFiles_, sps.getLosslessGeo(), false,
@@ -276,7 +276,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
           decodedBitdepthAttributeMP, ai.getAttributeNominal2dBitdepthMinus1( 0 ) + 1, ai.getAttributeMSBAlignFlag() );
       printf( "call generateMissedPointsTexturefromVideo \n" );
       generateMissedPointsTexturefromVideo( context, reconstructs );
-      std::cout << " missed points texture -> " << videoBitstreamMP.naluSize() << " B" << endl;
+      std::cout << " missed points texture -> " << videoBitstreamMP.size() << " B" << endl;
     }
   }
   colorPointCloud( reconstructs, context, ai.getAttributeCount(), params_.colorTransform_,

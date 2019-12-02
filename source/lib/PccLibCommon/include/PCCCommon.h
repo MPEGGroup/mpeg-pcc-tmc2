@@ -71,7 +71,7 @@
 #define ATLASIDXPCC 0
 
 #define MULTISTREAM_UPDATE 1       // prevent overflow for the lossless absolute case
-#define VPCCUNIT_DATA_BITSTREAM 0  // jkei: bitstream instead of data
+#define VPCCUNIT_DATA_BITSTREAM 1  // jkei: bitstream instead of data
 
 // ******************************************************************* //
 // Trace modes to validate new syntax
@@ -121,11 +121,11 @@ enum PCCVideoType {
   VIDEO_GEOMETRY,
   VIDEO_GEOMETRY_D0,
   VIDEO_GEOMETRY_D1,
-  VIDEO_GEOMETRY_MP,
+  VIDEO_GEOMETRY_RAW,
   VIDEO_TEXTURE,
   VIDEO_TEXTURE_T0,
   VIDEO_TEXTURE_T1,
-  VIDEO_TEXTURE_MP,
+  VIDEO_TEXTURE_RAW,
   NUM_VIDEO_TYPE
 };
 enum PCCMetadataType { METADATA_GOF = 0, METADATA_FRAME, METADATA_PATCH };
@@ -381,11 +381,11 @@ static inline std::string toString( PCCVideoType type ) {
     case VIDEO_GEOMETRY: return std::string( "geometry video" ); break;
     case VIDEO_GEOMETRY_D0: return std::string( "geometry D0 video" ); break;
     case VIDEO_GEOMETRY_D1: return std::string( "geometry D1 video" ); break;
-    case VIDEO_GEOMETRY_MP: return std::string( "missed points geometry video" ); break;
+    case VIDEO_GEOMETRY_RAW: return std::string( "missed points geometry video" ); break;
     case VIDEO_TEXTURE: return std::string( "texture video " ); break;
     case VIDEO_TEXTURE_T0: return std::string( "texture T0 video " ); break;
     case VIDEO_TEXTURE_T1: return std::string( "texture T1 video " ); break;
-    case VIDEO_TEXTURE_MP: return std::string( "missed points texture video" ); break;
+    case VIDEO_TEXTURE_RAW: return std::string( "missed points texture video" ); break;
     case NUM_VIDEO_TYPE: return std::string( "not supported" ); break;
   }
   return std::string( "not supported" );

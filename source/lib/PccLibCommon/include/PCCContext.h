@@ -1200,8 +1200,8 @@ class VpccUnit {
   size_t getVpccUnitSize() { return vpccUnitSize_; }
 
 #if VPCCUNIT_DATA_BITSTREAM
-  void setVpccUnitDataBitstream( PCCBitstream& bitstream, VPCCUnitType unitType ) {
-    vpccUnitDataBitstream_ = bitstream;
+  void setVpccUnitDataBitstream( PCCBitstream&& bitstream, VPCCUnitType unitType ) {
+    vpccUnitDataBitstream_ = std::move(bitstream);
     vpccUnitSize_          = bitstream.size();
     vpccUnitType_          = unitType;
   }
@@ -1275,7 +1275,7 @@ class NalUnit {
     nalUnitType_      = nalUnitType;
     layerId_          = layerId;
     temporalyIdPlus1_ = temporalyIdPlus1;
-    nalUnitSize_      = size + 2;
+    nalUnitSize_      = size;
     if ( size > 0 ) {
       nalUnitData_.resize( size, 0 );
       memcpy( nalUnitData_.data(), data, size * sizeof( uint8_t ) );

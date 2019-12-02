@@ -84,8 +84,9 @@ int32_t PCCBitstreamDecoder::decode( SampleStreamVpccUnit& ssvu, PCCContext& con
   while ( !endOfGop && ssvu.getVpccUnitCount() > 0 ) {
     auto& VPCCUnit = ssvu.front();
     printf( "vpccUnit size = %lu \n", VPCCUnit.getVpccUnitSize() );
-    VPCCUnitType vpccUnitType;
+    
 #if !VPCCUNIT_DATA_BITSTREAM
+    VPCCUnitType vpccUnitType;
     PCCBitstream bitstream;
     bitstream.initialize( VPCCUnit.getVpccUnitData() );
 #ifdef BITSTREAM_TRACE
@@ -103,9 +104,12 @@ int32_t PCCBitstreamDecoder::decode( SampleStreamVpccUnit& ssvu, PCCContext& con
       TRACE_BITSTREAM( "PCCBitstreamXXcoder::XXcode(AVD)\n" );
     }
 #endif
-    vpccUnit( context, bitstream, vpccUnitType );
-#else
+#endif
+#if VPCCUNIT_DATA_BITSTREAM
+    VPCCUnitType vpccUnitType = VPCC_VPS;
     vpccUnit( context, VPCCUnit, vpccUnitType );
+#else
+    vpccUnit( context, bitstream, vpccUnitType );
 #endif
     if ( vpccUnitType == VPCC_VPS ) {
       numVPS++;
@@ -237,9 +241,10 @@ void PCCBitstreamDecoder::videoSubStream( PCCContext& context, PCCBitstream& bit
     auto& vuh = context.getVpccUnitHeader( (size_t)VPCC_GVD - 1 );
     if ( vuh.getRawVideoFlag() ) {
       TRACE_BITSTREAM( "Geometry raw\n" );
-      bitstream.read( context.createVideoBitstream( VIDEO_GEOMETRY_MP ) );
-      context.getBitstreamStat().setVideoBinSize( VIDEO_GEOMETRY_MP,
-                                                  context.getVideoBitstream( VIDEO_GEOMETRY_MP ).size() );
+      bitstream.read( context.createVideoBitstream( VIDEO_GEOMETRY_RAW ) );
+
+      context.getBitstreamStat().setVideoBinSize( VIDEO_GEOMETRY_RAW,
+                                                  context.getVideoBitstream( VIDEO_GEOMETRY_RAW ).size() );
     } else {
       auto& vps = context.getSps( vuh.getVpccParameterSetId() );
       if ( vps.getMapCountMinus1( atlasIndex ) > 0 && vps.getMultipleMapStreamsPresentFlag( atlasIndex ) ) {
@@ -267,9 +272,9 @@ void PCCBitstreamDecoder::videoSubStream( PCCContext& context, PCCBitstream& bit
     if ( vps.getAttributeInformation( atlasIndex ).getAttributeCount() > 0 ) {
       if ( vuh.getRawVideoFlag() ) {
         TRACE_BITSTREAM( "Texture raw\n" );
-        bitstream.read( context.createVideoBitstream( VIDEO_TEXTURE_MP ) );
-        context.getBitstreamStat().setVideoBinSize( VIDEO_TEXTURE_MP,
-                                                    context.getVideoBitstream( VIDEO_TEXTURE_MP ).size() );
+        bitstream.read( context.createVideoBitstream( VIDEO_TEXTURE_RAW ) );
+        context.getBitstreamStat().setVideoBinSize( VIDEO_TEXTURE_RAW,
+                                                    context.getVideoBitstream( VIDEO_TEXTURE_RAW ).size() );
       } else {
         if ( vps.getMapCountMinus1( atlasIndex ) > 0 && vps.getMultipleMapStreamsPresentFlag( atlasIndex ) ) {
           if ( vuh.getMapIndex() == 0 ) {
@@ -307,7 +312,9 @@ void PCCBitstreamDecoder::vpccUnit( PCCContext& context, PCCBitstream& bitstream
   TRACE_BITSTREAM( "%s \n", __func__ );
   int32_t position = (int32_t)bitstream.size();
   vpccUnitHeader( context, bitstream, vpccUnitType );
-  // assert( vpccUnitType == currVpccUnit.getVpccUnitType() );
+#if VPCCUNIT_DATA_BITSTREAM
+  assert(vpccUnitType == currVpccUnit.getVpccUnitType());
+#endif
   vpccUnitPayload( context, bitstream, vpccUnitType );
   // while( more_data_in_vpcc_unit() ) { bitstream.write( 0, 8 ); }
   context.getBitstreamStat().setVpccUnitSize( vpccUnitType, (int32_t)bitstream.size() - position );
@@ -2106,7 +2113,6 @@ void PCCBitstreamDecoder::sampleStreamVpccUnit( PCCBitstream& bitstream, SampleS
 #if VPCCUNIT_DATA_BITSTREAM
   auto pos = bitstream.getPosition();
   vpccu.getVpccUnitDataBitstream().copyFrom( bitstream, pos.bytes, vpccu.getVpccUnitSize() );
-  // bitstream.copyTo(vpccu.getVpccUnitDataBitstream(),bitstream.getPosition().bytes, vpccu.getVpccUnitSize());
   // jkei: find vpccUnitType for the sanity check!
   uint8_t      vpccUnitType8 = vpccu.getVpccUnitDataBitstream().buffer()[0];
   VPCCUnitType vpccUnitType  = ( VPCCUnitType )( vpccUnitType8 >>= 3 );

@@ -170,15 +170,14 @@ int PCCBitstreamEncoder::encode( PCCContext& context, SampleStreamVpccUnit& ssvu
   fflush( stdout );
   vpccUnit( context, bitstreamVPS, VPCC_VPS );
 #if VPCCUNIT_DATA_BITSTREAM
-  ssvu.addVpccUnit().setVpccUnitDataBitstream( bitstreamVPS, VPCC_VPS );
+  ssvu.addVpccUnit().setVpccUnitDataBitstream( std::move(bitstreamVPS), VPCC_VPS );
   printf( "vpccunit_type:%zu\t%zu\n", (size_t)ssvu.getLastVpccUnit().getVpccUnitType(),
           ssvu.getLastVpccUnit().getVpccUnitSize() );
 #else
   ssvu.addVpccUnit().initialize( bitstreamVPS.size(), bitstreamVPS.buffer(), VPCC_VPS );
 #endif
   // jkei: I don't think is correct...
-
-  for ( int atlasIdx = 0; atlasIdx < sps.getAtlasCountMinus1() + 1; atlasIdx++ ) {
+  for ( uint8_t atlasIdx = 0; atlasIdx < sps.getAtlasCountMinus1() + 1; atlasIdx++ ) {
     vuhAD.setAtlasId( atlasIdx );
     vuhOVD.setAtlasId( atlasIdx );
     vuhGVD.setAtlasId( atlasIdx );
@@ -194,7 +193,7 @@ int PCCBitstreamEncoder::encode( PCCContext& context, SampleStreamVpccUnit& ssvu
     fflush( stdout );
     vpccUnit( context, bitstreamAD, VPCC_AD );
 #if VPCCUNIT_DATA_BITSTREAM
-    ssvu.addVpccUnit().setVpccUnitDataBitstream( bitstreamAD, VPCC_AD );
+    ssvu.addVpccUnit().setVpccUnitDataBitstream( std::move(bitstreamAD), VPCC_AD );
     printf( "vpccunit_type:%zu\t%zu\n", (size_t)ssvu.getLastVpccUnit().getVpccUnitType(),
             ssvu.getLastVpccUnit().getVpccUnitSize() );
 
@@ -212,10 +211,7 @@ int PCCBitstreamEncoder::encode( PCCContext& context, SampleStreamVpccUnit& ssvu
     fflush( stdout );
     vpccUnit( context, bitstreamOVD, VPCC_OVD );
 #if VPCCUNIT_DATA_BITSTREAM
-    ssvu.addVpccUnit().setVpccUnitDataBitstream( bitstreamOVD, VPCC_OVD );
-    printf( "vpccunit_type:%zu\t%zu\n", (size_t)ssvu.getLastVpccUnit().getVpccUnitType(),
-            ssvu.getLastVpccUnit().getVpccUnitSize() );
-
+    ssvu.addVpccUnit().setVpccUnitDataBitstream( std::move(bitstreamOVD), VPCC_OVD );
 #else
     ssvu.addVpccUnit().initialize( bitstreamOVD.size(), bitstreamOVD.buffer(), VPCC_OVD );
 #endif
@@ -235,7 +231,7 @@ int PCCBitstreamEncoder::encode( PCCContext& context, SampleStreamVpccUnit& ssvu
         vuhGVD.setRawVideoFlag( false );
         vpccUnit( context, bitstreamGVD, VPCC_GVD );
 #if VPCCUNIT_DATA_BITSTREAM
-        ssvu.addVpccUnit().setVpccUnitDataBitstream( bitstreamGVD, VPCC_GVD );
+        ssvu.addVpccUnit().setVpccUnitDataBitstream( std::move(bitstreamGVD), VPCC_GVD );
         printf( "vpccunit_type:%zu\t%zu\n", (size_t)ssvu.getLastVpccUnit().getVpccUnitType(),
                 ssvu.getLastVpccUnit().getVpccUnitSize() );
 
@@ -257,10 +253,7 @@ int PCCBitstreamEncoder::encode( PCCContext& context, SampleStreamVpccUnit& ssvu
       vuhGVD.setRawVideoFlag( false );
       vpccUnit( context, bitstreamGVD, VPCC_GVD );
 #if VPCCUNIT_DATA_BITSTREAM
-      ssvu.addVpccUnit().setVpccUnitDataBitstream( bitstreamGVD, VPCC_GVD );
-      printf( "vpccunit_type:%zu\t%zu\n", (size_t)ssvu.getLastVpccUnit().getVpccUnitType(),
-              ssvu.getLastVpccUnit().getVpccUnitSize() );
-
+      ssvu.addVpccUnit().setVpccUnitDataBitstream( std::move(bitstreamGVD), VPCC_GVD );
 #else
       ssvu.addVpccUnit().initialize( bitstreamGVD.size(), bitstreamGVD.buffer(), VPCC_GVD );
 #endif
@@ -279,7 +272,7 @@ int PCCBitstreamEncoder::encode( PCCContext& context, SampleStreamVpccUnit& ssvu
       vuhGVD.setRawVideoFlag( true );
       vpccUnit( context, bitstreamGVD, VPCC_GVD );
 #if VPCCUNIT_DATA_BITSTREAM
-      ssvu.addVpccUnit().setVpccUnitDataBitstream( bitstreamGVD, VPCC_GVD );
+      ssvu.addVpccUnit().setVpccUnitDataBitstream( std::move(bitstreamGVD), VPCC_GVD );
       printf( "vpccunit_type:%zu\t%zu\n", (size_t)ssvu.getLastVpccUnit().getVpccUnitType(),
               ssvu.getLastVpccUnit().getVpccUnitSize() );
 
@@ -311,9 +304,7 @@ int PCCBitstreamEncoder::encode( PCCContext& context, SampleStreamVpccUnit& ssvu
             vuhAVD.setRawVideoFlag( false );
             vpccUnit( context, bitstreamAVD, VPCC_AVD );
 #if VPCCUNIT_DATA_BITSTREAM
-            ssvu.addVpccUnit().setVpccUnitDataBitstream( bitstreamAVD, VPCC_AVD );
-            printf( "vpccunit_type:%zu\t%zu\n", (size_t)ssvu.getLastVpccUnit().getVpccUnitType(),
-                    ssvu.getLastVpccUnit().getVpccUnitSize() );
+            ssvu.addVpccUnit().setVpccUnitDataBitstream( std::move(bitstreamAVD), VPCC_AVD );
 
 #else
             ssvu.addVpccUnit().initialize( bitstreamAVD.size(), bitstreamAVD.buffer(), VPCC_AVD );
@@ -335,7 +326,7 @@ int PCCBitstreamEncoder::encode( PCCContext& context, SampleStreamVpccUnit& ssvu
           vuhAVD.setRawVideoFlag( false );
           vpccUnit( context, bitstreamAVD, VPCC_AVD );
 #if VPCCUNIT_DATA_BITSTREAM
-          ssvu.addVpccUnit().setVpccUnitDataBitstream( bitstreamAVD, VPCC_AVD );
+          ssvu.addVpccUnit().setVpccUnitDataBitstream( std::move(bitstreamAVD), VPCC_AVD );
           printf( "vpccunit_type:%zu\t%zu\n", (size_t)ssvu.getLastVpccUnit().getVpccUnitType(),
                   ssvu.getLastVpccUnit().getVpccUnitSize() );
 
@@ -359,10 +350,7 @@ int PCCBitstreamEncoder::encode( PCCContext& context, SampleStreamVpccUnit& ssvu
           vuhAVD.setRawVideoFlag( true );
           vpccUnit( context, bitstreamAVD, VPCC_AVD );
 #if VPCCUNIT_DATA_BITSTREAM
-          ssvu.addVpccUnit().setVpccUnitDataBitstream( bitstreamAVD, VPCC_AVD );
-          printf( "vpccunit_type:%zu\t%zu\n", (size_t)ssvu.getLastVpccUnit().getVpccUnitType(),
-                  ssvu.getLastVpccUnit().getVpccUnitSize() );
-
+          ssvu.addVpccUnit().setVpccUnitDataBitstream( std::move(bitstreamAVD), VPCC_AVD );
 #else
           ssvu.addVpccUnit().initialize( bitstreamAVD.size(), bitstreamAVD.buffer(), VPCC_AVD );
 #endif
@@ -431,9 +419,9 @@ void PCCBitstreamEncoder::videoSubStream( PCCContext& context, PCCBitstream& bit
     // need to change this to allow for more maps, but for now only 2 are used in the software anyways
     if ( vuh.getRawVideoFlag() ) {
       TRACE_BITSTREAM( "Geometry raw\n" );
-      bitstream.write( context.getVideoBitstream( VIDEO_GEOMETRY_MP ) );
-      context.getBitstreamStat().setVideoBinSize( VIDEO_GEOMETRY_MP,
-                                                  context.getVideoBitstream( VIDEO_GEOMETRY_MP ).size() );
+      bitstream.write( context.getVideoBitstream( VIDEO_GEOMETRY_RAW ) );
+      context.getBitstreamStat().setVideoBinSize( VIDEO_GEOMETRY_RAW,
+                                                  context.getVideoBitstream( VIDEO_GEOMETRY_RAW ).size() );
     } else {
       if ( sps.getMapCountMinus1( atlasIndex ) > 0 && sps.getMultipleMapStreamsPresentFlag( atlasIndex ) ) {
         if ( vuh.getMapIndex() == 0 ) {
@@ -461,9 +449,9 @@ void PCCBitstreamEncoder::videoSubStream( PCCContext& context, PCCBitstream& bit
       // need to change this to allow for more maps, but for now only 2 are used in the software anyways
       if ( vuh.getRawVideoFlag() ) {
         TRACE_BITSTREAM( "Texture raw\n" );
-        bitstream.write( context.getVideoBitstream( VIDEO_TEXTURE_MP ) );
-        context.getBitstreamStat().setVideoBinSize( VIDEO_TEXTURE_MP,
-                                                    context.getVideoBitstream( VIDEO_TEXTURE_MP ).size() );
+        bitstream.write( context.getVideoBitstream( VIDEO_TEXTURE_RAW ) );
+        context.getBitstreamStat().setVideoBinSize( VIDEO_TEXTURE_RAW,
+                                                    context.getVideoBitstream( VIDEO_TEXTURE_RAW ).size() );
       } else {
         if ( sps.getMapCountMinus1( atlasIndex ) > 0 && sps.getMultipleMapStreamsPresentFlag( atlasIndex ) ) {
           if ( vuh.getMapIndex() == 0 ) {
@@ -531,7 +519,8 @@ void PCCBitstreamEncoder::vpccUnit( PCCContext& context, PCCBitstream& bitstream
 // 7.3.2.2 V-PCC unit header syntax
 void PCCBitstreamEncoder::vpccUnitHeader( PCCContext& context, PCCBitstream& bitstream, VPCCUnitType vpccUnitType ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
-  bitstream.write( vpccUnitType, 5 );  // u(5)
+  bitstream.write( (uint32_t) vpccUnitType, 5 );  // u(5)
+
   if ( vpccUnitType == VPCC_AVD || vpccUnitType == VPCC_GVD || vpccUnitType == VPCC_OVD || vpccUnitType == VPCC_AD ) {
     auto& vpcc = context.getVpccUnitHeader( (int)vpccUnitType - 1 );
     bitstream.write( (uint32_t)vpcc.getVpccParameterSetId(), 4 );  // u(4)
@@ -1347,7 +1336,9 @@ void PCCBitstreamEncoder::atlasSubStream( PCCContext& context, PCCBitstream& bit
   SampleStreamNalUnit ssnu;
   uint32_t            maxUnitSize = 0;
   PCCBitstream        tempBitStream;
-
+#if 1
+  printf("atlasSubstream Nal Stream starts:\n"); fflush( stdout );
+#endif
   // jkei: only to calculae the size. isn't there any smarter way?
   std::vector<uint32_t> aspsSizeList;
   std::vector<uint32_t> afpsSizeList;
@@ -1365,7 +1356,7 @@ void PCCBitstreamEncoder::atlasSubStream( PCCContext& context, PCCBitstream& bit
   }
   initSize = tempBitStream.size();
   for ( size_t afpsIdx = 0; afpsIdx < context.getAtlasFrameParameterSetList().size(); afpsIdx++ ) {
-    atlasSequenceParameterSetRBSP( context.getAtlasSequenceParameterSet( afpsIdx ), context, tempBitStream );
+    atlasFrameParameterSetRbsp( context.getAtlasFrameParameterSet(afpsIdx), context, tempBitStream );
     afpsSizeList[afpsIdx] = tempBitStream.size() - ( afpsIdx == 0 ? initSize : afpsSizeList[afpsIdx - 1] );
     if ( maxUnitSize < afpsSizeList[afpsIdx] ) maxUnitSize = afpsSizeList[afpsIdx];
   }
@@ -1381,61 +1372,61 @@ void PCCBitstreamEncoder::atlasSubStream( PCCContext& context, PCCBitstream& bit
   ssnu.setUnitSizePrecisionBytesMinus1( precision );
   sampleStreamNalHeader( bitstream, ssnu );
 #if 1
-  printf( "sampleStreamNalHeader: maxNalUnitSize %u size: %lld\n", maxUnitSize, bitstream.size() );
+  printf( "sampleStreamNalHeader: maxNalUnitSize %u size: %lld\n", maxUnitSize, bitstream.size() ); fflush( stdout );
 #endif
 
   for ( size_t aspsCount = 0; aspsCount < context.getAtlasSequenceParameterSetList().size(); aspsCount++ ) {
     NalUnit nu( NAL_ASPS, 0, 1 );
-    nu.setNalUnitSize( aspsSizeList[aspsCount] + 2 );  //+headersize :
+    nu.setNalUnitSize( aspsSizeList[aspsCount] );
     sampleStreamNalUnit( context, bitstream, ssnu, nu, aspsCount );
 #if 1
-    printf( "nalu%hhu, naluSize:%zu, sizeBitstream written: %ld\n", nu.getNalUnitType(), nu.getNalUnitSize(),
-            bitstream.size() );
+    printf( "nalu%d, naluSize:%zu, sizeBitstream written: %llu\n", (int) nu.getNalUnitType(), nu.getNalUnitSize(),
+            bitstream.size() ); fflush( stdout );
 #endif
   }
 
   for ( size_t afpsCount = 0; afpsCount < context.getAtlasFrameParameterSetList().size(); afpsCount++ ) {
     NalUnit nu( NAL_AFPS, 0, 1 );
-    nu.setNalUnitSize( afpsSizeList[afpsCount] + 2 );  //+headersize
+    nu.setNalUnitSize( afpsSizeList[afpsCount] );
     sampleStreamNalUnit( context, bitstream, ssnu, nu, afpsCount );
 #if 1
-    printf( "nalu%hhu, naluSize:%zu, sizeBitstream written: %ld\n", nu.getNalUnitType(), nu.getNalUnitSize(),
-            bitstream.size() );
+    printf( "nalu%d, naluSize:%zu, sizeBitstream written: %llu\n", (int)nu.getNalUnitType(), nu.getNalUnitSize(),
+            bitstream.size() ); fflush( stdout );
 #endif
   }
   // NAL_TRAIL, NAL_TSA, NAL_STSA, NAL_RADL, NAL_RASL,NAL_SKIP
   for ( size_t frameIdx = 0; frameIdx < context.size(); frameIdx++ ) {
     NalUnit nu( NAL_TSA, 0, 1 );
-    nu.setNalUnitSize( atglSizeList[frameIdx] + 2 );  //+headsize
+    nu.setNalUnitSize( atglSizeList[frameIdx] );  //+headsize
     auto& atgl = context.getAtlasTileGroupLayer( frameIdx );
     atgl.getAtlasTileGroupDataUnit().setFrameIndex( frameIdx );
     // jkei: actually it is not frameidx since increased per tile!
     TRACE_BITSTREAM( " ATGL: frame %zu\n", frameIdx );
     sampleStreamNalUnit( context, bitstream, ssnu, nu, frameIdx );
 #if 1
-    printf( "nalu%hhu, naluSize:%zu, sizeBitstream written: %ld\n", nu.getNalUnitType(), nu.getNalUnitSize(),
-            bitstream.size() );
+    printf( "nalu%d, naluSize:%zu, sizeBitstream written: %llu\n", (int)nu.getNalUnitType(), nu.getNalUnitSize(),
+            bitstream.size() ); fflush( stdout );
 #endif
   }
 
   // NAL_PREFIX_SEI
   for ( size_t i = 0; i < context.getSeiPrefix().size(); i++ ) {
     NalUnit nu( NAL_PREFIX_SEI, 0, 1 );
-    nu.setNalUnitSize( sizeof( context.getAtlasFrameParameterSet( 0 ) ) + 2 );  //+headersize
+    nu.setNalUnitSize( sizeof( context.getAtlasFrameParameterSet( 0 ) ) );
     sampleStreamNalUnit( context, bitstream, ssnu, nu, i );
 #if 1
-    printf( "nalu%hhu, naluSize:%zu, sizeBitstream written: %ld\n", nu.getNalUnitType(), nu.getNalUnitSize(),
-            bitstream.size() );
+    printf( "nalu%d, naluSize:%zu, sizeBitstream written: %llu\n", (int)nu.getNalUnitType(), nu.getNalUnitSize(),
+            bitstream.size() ); fflush( stdout );
 #endif
   }
   // NAL_SUFFIX_SEI
   for ( size_t i = 0; i < context.getSeiSuffix().size(); i++ ) {
     NalUnit nu( NAL_SUFFIX_SEI, 0, 1 );
-    nu.setNalUnitSize( sizeof( context.getAtlasFrameParameterSet( 0 ) ) + 2 );  //+headersize
+    nu.setNalUnitSize( sizeof( context.getAtlasFrameParameterSet( 0 ) ) );
     sampleStreamNalUnit( context, bitstream, ssnu, nu, i );
 #if 1
-    printf( "nalu%hhu, naluSize:%zu, sizeBitstream written: %ld\n", nu.getNalUnitType(), nu.getNalUnitSize(),
-            bitstream.size() );
+    printf( "nalu%d, naluSize:%zu, sizeBitstream written: %llu\n", (int)nu.getNalUnitType(), nu.getNalUnitSize(),
+            bitstream.size() ); fflush( stdout );
 #endif
   }
 }

@@ -77,9 +77,9 @@ class PCCBitstreamGofStat {
 
   size_t getTotalGeometry() {
     return videoBinSize_[VIDEO_GEOMETRY] + videoBinSize_[VIDEO_GEOMETRY_D0] + videoBinSize_[VIDEO_GEOMETRY_D1] +
-           videoBinSize_[VIDEO_GEOMETRY_MP];
+           videoBinSize_[VIDEO_GEOMETRY_RAW];
   }
-  size_t getTotalTexture() { return videoBinSize_[VIDEO_TEXTURE] + videoBinSize_[VIDEO_TEXTURE_T0] + videoBinSize_[VIDEO_TEXTURE_T1] + videoBinSize_[VIDEO_TEXTURE_MP]; }
+  size_t getTotalTexture() { return videoBinSize_[VIDEO_TEXTURE] + videoBinSize_[VIDEO_TEXTURE_T0] + videoBinSize_[VIDEO_TEXTURE_T1] + videoBinSize_[VIDEO_TEXTURE_RAW]; }
   size_t getTotalMetadata() { return getTotal() - getTotalGeometry() - getTotalTexture(); }
 
   void trace() {
@@ -89,10 +89,10 @@ class PCCBitstreamGofStat {
             vpccUnitSize_[VPCC_OVD] * 8, videoBinSize_[VIDEO_OCCUPANCY] );
     printf( "    vpccUnitSize[ VPCC_GVD ]: %9lu B %9lu b ( Geo video = %9lu B + %9lu B + %9lu B + %9lu B )\n",
             vpccUnitSize_[VPCC_GVD], vpccUnitSize_[VPCC_GVD] * 8, videoBinSize_[VIDEO_GEOMETRY],
-            videoBinSize_[VIDEO_GEOMETRY_D0], videoBinSize_[VIDEO_GEOMETRY_D1], videoBinSize_[VIDEO_GEOMETRY_MP] );
+            videoBinSize_[VIDEO_GEOMETRY_D0], videoBinSize_[VIDEO_GEOMETRY_D1], videoBinSize_[VIDEO_GEOMETRY_RAW] );
     printf( "    vpccUnitSize[ VPCC_AVD ]: %9lu B %9lu b ( Tex video = %9lu B + (%9lu B + %9lu B) + %9lu B )\n", vpccUnitSize_[VPCC_AVD],
            vpccUnitSize_[VPCC_AVD] * 8, videoBinSize_[VIDEO_TEXTURE],
-           videoBinSize_[VIDEO_TEXTURE_T0], videoBinSize_[VIDEO_TEXTURE_T1], videoBinSize_[VIDEO_TEXTURE_MP] );
+           videoBinSize_[VIDEO_TEXTURE_T0], videoBinSize_[VIDEO_TEXTURE_T1], videoBinSize_[VIDEO_TEXTURE_RAW] );
   }
 
  private:

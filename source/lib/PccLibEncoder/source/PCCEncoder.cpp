@@ -277,12 +277,14 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
         internalBitDepth,                                 // internalBitDepth
         false,                                            // useConversion
         params_.keepIntermediateFiles_ );                 // keepIntermediateFiles
-
+    size_t sizeGeometryVideoD0=videoBitstreamD0.size();
+    std::cout<<"sizeGeometryVideoD0: " <<sizeGeometryVideoD0<<std::endl; fflush(stdout);
     if ( !params_.absoluteD1_ ) {
       // Form differential video geometryD1
       for ( size_t f = 0; f < frames.size(); ++f ) {
         auto& frame1 = context.getVideoGeometryD1().getFrame( f );
         predictGeometryFrame( frames[f], videoGeometry.getFrame( f ), frame1 );
+        dilate_3DPadding( sources[f], frames[f], frame1, videoOccupancyMap.getFrame( f ) );
       }
     }
 
@@ -299,9 +301,11 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
         false,                                            // useConversion
         params_.keepIntermediateFiles_ );
 
-    auto sizeGeometryVideo = videoBitstreamD0.naluSize() + videoBitstreamD1.naluSize();
-    std::cout << "geometry video ->" << sizeGeometryVideo << " B ("
-              << ( sizeGeometryVideo * 8.0 ) / ( 2 * frames.size() * pointCount ) << " bpp)" << std::endl;
+    size_t sizeGeometryVideoD1=videoBitstreamD1.size();
+    std::cout<<"sizeGeometryVideoD1: " <<sizeGeometryVideoD1<<std::endl; fflush(stdout);
+    std::cout << "geometryVideo ->" << (sizeGeometryVideoD0+sizeGeometryVideoD1)<<"="<<sizeGeometryVideoD0<<"+"<<sizeGeometryVideoD1 << " B ("
+              << ( (sizeGeometryVideoD0+sizeGeometryVideoD1) * 8.0 ) / ( 2 * frames.size() * pointCount ) << " bpp)" << std::endl; fflush(stdout);
+
   } else {
     auto& videoBitstream = context.createVideoBitstream( VIDEO_GEOMETRY );
     auto& videoGeometry  = context.getVideoGeometry();
@@ -319,7 +323,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   }
 
   if ( sps.getRawPatchEnabledFlag( atlasIndex ) && sps.getRawSeparateVideoPresentFlag( atlasIndex ) ) {
-    auto& videoBitstreamMP = context.createVideoBitstream( VIDEO_GEOMETRY_MP );
+    auto& videoBitstreamMP = context.createVideoBitstream( VIDEO_GEOMETRY_RAW );
     generateMissedPointsGeometryVideo( context, reconstructs );
     auto& videoMPsGeometry = context.getVideoMPsGeometry();
     videoEncoder.compress( videoMPsGeometry, path.str(),
@@ -346,7 +350,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   if ( ai.getAttributeCount() > 0 ) {
     std::cout << "Texture Coding starts" << std::endl;
     printf( "  mapCountMinus1_           = %lu \n", params_.mapCountMinus1_ );
-    printf( "  absoluteT1_               = %lu \n", params_.absoluteT1_ );
+    printf( "  absoluteT1_               = %d  \n", params_.absoluteT1_ );
     printf( "  textureBGFill_            = %lu \n", params_.textureBGFill_ );
     printf( "  multipleStreams_          = %d  \n", params_.multipleStreams_ );
     printf( "  groupDilation_          = %d  \n", params_.groupDilation_ );
@@ -355,6 +359,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     const size_t nbVideoFramePerFrame = params_.multipleStreams_ ? 1 : mapCount;
     // GENERATE ATTRIBUTE
     generateTextureVideo( sources, reconstructs, context, params_ );
+    std::cout<<"generate Texture Video done"<<std::endl; fflush(stdout);
+
     auto& videoTexture   = context.getVideoTexture();
     auto& videoTextureT1 = context.getVideoTextureT1();
     if ( !( params_.losslessGeo_ && params_.textureDilationOffLossless_ ) && params_.textureBGFill_ < 3 ) {
@@ -496,6 +502,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
           params_.inverseColorSpaceConversionConfig_,  // inverseColorSpaceConversionConfig
           params_.colorSpaceConversionPath_ );
 
+      size_t sizeTextureVideoT0=videoBitstreamT0.size();
+      std::cout<<"sizeTextureVideoT0: " <<sizeTextureVideoT0<<std::endl; fflush(stdout);
       // Form differential video textureT1
       auto& videoTextureT1 = context.getVideoTextureT1();
       if ( !params_.absoluteT1_ ) {
@@ -516,6 +524,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
             }
           }
         }
+        std::cout<<"texture prediction done " <<std::endl; fflush(stdout);
       }  //! absoluteT1
 
       // compress textureT1
@@ -534,9 +543,10 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
           params_.inverseColorSpaceConversionConfig_,  // inverseColorSpaceConversionConfig
           params_.colorSpaceConversionPath_ );
 
-      auto sizeTextureVideo = videoBitstreamT0.naluSize() + videoBitstreamT1.naluSize();
-      std::cout << "texture video ->" << sizeTextureVideo << " B ("
-                << ( sizeTextureVideo * 8.0 ) / ( 2 * frames.size() * pointCount ) << " bpp)" << std::endl;
+      size_t sizeTextureVideoT1=videoBitstreamT1.size();
+      std::cout << "texture video ->" << (sizeTextureVideoT0+sizeTextureVideoT1) <<"="<<sizeTextureVideoT0<<"+"<<sizeTextureVideoT1<< " B ("
+                << ( (sizeTextureVideoT0+sizeTextureVideoT1) * 8.0 ) / ( 2 * frames.size() * pointCount ) << " bpp)" << std::endl;
+      fflush(stdout);
     } else {
       std::cout << "texture video " << std::endl;
       auto&        videoBitstream = context.createVideoBitstream( VIDEO_TEXTURE );
@@ -555,14 +565,13 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
           params_.inverseColorSpaceConversionConfig_,  // inverseColorSpaceConversionConfig
           params_.colorSpaceConversionPath_ );         // colorSpaceConversionPath
       // params_.lossyMissedPointsPatch_ || params_.useMissedPointsSeparateVideo_, //forceInternalBitDepth
-
-      auto sizeTextureVideo = videoBitstream.naluSize();
+      auto sizeTextureVideo = videoBitstream.size();
       std::cout << "texture video ->" << sizeTextureVideo << " B ("
-                << ( sizeTextureVideo * 8.0 ) / ( 2 * frames.size() * pointCount ) << " bpp)" << std::endl;
+                << ( sizeTextureVideo * 8.0 ) / ( 2 * frames.size() * pointCount ) << " bpp)" << std::endl; fflush(stdout);
     }
 
     if ( sps.getRawPatchEnabledFlag( atlasIndex ) && sps.getRawSeparateVideoPresentFlag( atlasIndex ) ) {
-      auto& videoBitstreamMP = context.createVideoBitstream( VIDEO_TEXTURE_MP );
+      auto& videoBitstreamMP = context.createVideoBitstream( VIDEO_TEXTURE_RAW );
       generateMissedPointsTextureVideo( context, reconstructs );  // 1. texture
       auto&        videoMPsTexture = context.getVideoMPsTexture();
       const size_t nByteAttMP      = 1;
@@ -593,11 +602,12 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
       generatePointCloud( reconstructs, context, gpcParams, partitions );
     }
   }
-  std::cout << "color the point clouds" << std::endl;
+  std::cout << "Color Point Clouds" << std::endl;
   // RECOLOR RECONSTRUCTED POINT CLOUD
   colorPointCloud( reconstructs, context, ai.getAttributeCount(), params_.colorTransform_,
                    ai.getAttributeMapAbsoluteCodingEnabledFlagList(), params_.multipleStreams_, gpcParams );
 
+  std::cout << "Post Processing Point Clouds" << std::endl;
   //  Generate a buffer to keep unsmoothed geometry, then do geometry smoothing and transfer followed by color smoothing
   if ( gpcParams.flagGeometrySmoothing_ ) {
     if ( gpcParams.gridSmoothing_ ) {
@@ -884,8 +894,7 @@ void PCCEncoder::modifyOccupancyMapEDD( PCCFrameContext& frame ) {
   auto& width            = frame.getWidth();
   auto& height           = frame.getHeight();
   occupancyMap.resize( width * height, 0 );
-  // jkei: why? if ( !params_.absoluteD1_ ) fullOccupancyMap.resize( width * height, 0 );
-  if ( !params_.absoluteD1_ ) fullOccupancyMap.resize( width * height, 0 );
+  if ( !params_.absoluteD1_ || !params_.absoluteT1_ ) fullOccupancyMap.resize( width * height, 0 );
   for ( auto& patch : frame.getPatches() ) {
     for ( size_t v = 0; v < patch.getSizeV(); ++v ) {
       for ( size_t u = 0; u < patch.getSizeU(); ++u ) {
@@ -922,7 +931,6 @@ void PCCEncoder::modifyOccupancyMapEDD( PCCFrameContext& frame ) {
     }  // u
   }    // v
 
-  // jkei : lets fix it later
   if ( !params_.absoluteD1_ || !params_.absoluteT1_ ) { fullOccupancyMap = occupancyMap; }
 }
 
@@ -3414,7 +3422,7 @@ void PCCEncoder::generateOccupancyMap( PCCFrameContext& frame ) {
   auto& width            = frame.getWidth();
   auto& height           = frame.getHeight();
   occupancyMap.resize( width * height, 0 );
-  if ( !params_.absoluteD1_ ) { fullOccupancyMap.resize( width * height, 0 ); }
+  if ( !params_.absoluteD1_ || !params_.absoluteT1_ ) { fullOccupancyMap.resize( width * height, 0 ); }
   //  const int16_t infiniteDepth = ( std::numeric_limits<int16_t>::max )();
   for ( auto& patch : frame.getPatches() ) {
     for ( size_t v = 0; v < patch.getSizeV(); ++v ) {
@@ -3459,7 +3467,7 @@ void PCCEncoder::generateOccupancyMap( PCCFrameContext& frame ) {
     }
   }
 #endif
-  if ( !params_.absoluteD1_ ) { fullOccupancyMap = occupancyMap; }
+  if ( !params_.absoluteD1_ || !params_.absoluteT1_ ) { fullOccupancyMap = occupancyMap; }
 }
 
 #if NO_Raw_INOCM
@@ -3498,7 +3506,7 @@ bool PCCEncoder::modifyOccupancyMap( PCCContext& context ) {
         }
       }
     }
-    if ( !params_.absoluteD1_ ) { fullOccupancyMap = occupancyMap; }
+    if ( !params_.absoluteD1_ || !params_.absoluteT1_ ) { fullOccupancyMap = occupancyMap; }
   }
   return true;
 }
@@ -3541,39 +3549,40 @@ bool PCCEncoder::modifyOccupancyMap( PCCContext& context ) {
 //}
 
 // jkei: not used
-void PCCEncoder::modifyOccupancyMap1L( PCCFrameContext& frame ) {
-  auto& occupancyMap     = frame.getOccupancyMap();
-  auto& fullOccupancyMap = frame.getFullOccupancyMap();
-  auto& width            = frame.getWidth();
-  auto& height           = frame.getHeight();
-  occupancyMap.resize( width * height, 0 );
-  if ( !params_.absoluteD1_ ) fullOccupancyMap.resize( width * height, 0 );
-  //  const int16_t infiniteDepth  = ( std::numeric_limits<int16_t>::max )();
-  size_t numOfEddpoints = 0;
-  for ( auto& patch : frame.getPatches() ) {
-    for ( size_t v = 0; v < patch.getSizeV(); ++v ) {
-      for ( size_t u = 0; u < patch.getSizeU(); ++u ) {
-        const size_t  p       = v * patch.getSizeU() + u;
-        const int16_t d       = patch.getDepth( 0 )[p];
-        const int16_t eddCode = patch.getDepthEnhancedDeltaD()[p];
-        size_t        x, y;
-        auto          indx = patch.patch2Canvas( u, v, width, height, x, y );
-        assert( x < width && y < height );
-        if ( ( d < infiniteDepth ) && ( occupancyMap[indx] == 1 ) ) {
-          const size_t N      = params_.EOMFixBitCount_;
-          int16_t      symbol = ( 1 << N ) - 1;
-          symbol -= eddCode;
-          // uint16_t nbBits = 0;
-          for ( uint16_t i = 0; i < N; i++ )
-            if ( eddCode & ( 1 << i ) ) numOfEddpoints++;  // nbBits++;
-          if ( symbol < 0 ) symbol = 0;
-          occupancyMap[indx] += symbol;
-        }
-      }
-    }
-  }
-  if ( !params_.absoluteD1_ ) { fullOccupancyMap = occupancyMap; }
-  printf( "modifyOccupancyMap1L numOfEddpoints %zu\n", numOfEddpoints );
+void PCCEncoder::modifyOccupancyMap1L( PCCFrameContext& frame )
+{
+//  auto& occupancyMap     = frame.getOccupancyMap();
+//  auto& fullOccupancyMap = frame.getFullOccupancyMap();
+//  auto& width            = frame.getWidth();
+//  auto& height           = frame.getHeight();
+//  occupancyMap.resize( width * height, 0 );
+//  if ( !params_.absoluteD1_ ) fullOccupancyMap.resize( width * height, 0 );
+//  //  const int16_t infiniteDepth  = ( std::numeric_limits<int16_t>::max )();
+//  size_t numOfEddpoints = 0;
+//  for ( auto& patch : frame.getPatches() ) {
+//    for ( size_t v = 0; v < patch.getSizeV(); ++v ) {
+//      for ( size_t u = 0; u < patch.getSizeU(); ++u ) {
+//        const size_t  p       = v * patch.getSizeU() + u;
+//        const int16_t d       = patch.getDepth( 0 )[p];
+//        const int16_t eddCode = patch.getDepthEnhancedDeltaD()[p];
+//        size_t        x, y;
+//        auto          indx = patch.patch2Canvas( u, v, width, height, x, y );
+//        assert( x < width && y < height );
+//        if ( ( d < infiniteDepth ) && ( occupancyMap[indx] == 1 ) ) {
+//          const size_t N      = params_.EOMFixBitCount_;
+//          int16_t      symbol = ( 1 << N ) - 1;
+//          symbol -= eddCode;
+//          // uint16_t nbBits = 0;
+//          for ( uint16_t i = 0; i < N; i++ )
+//            if ( eddCode & ( 1 << i ) ) numOfEddpoints++;  // nbBits++;
+//          if ( symbol < 0 ) symbol = 0;
+//          occupancyMap[indx] += symbol;
+//        }
+//      }
+//    }
+//  }
+//  if ( !params_.absoluteD1_ ) { fullOccupancyMap = occupancyMap; }
+//  printf( "modifyOccupancyMap1L numOfEddpoints %zu\n", numOfEddpoints );
 }
 
 void PCCEncoder::refineOccupancyMap( PCCFrameContext& frame ) {
@@ -3861,8 +3870,7 @@ bool PCCEncoder::predictGeometryFrame( PCCFrameContext&        frame,
               const uint16_t value1 = static_cast<uint16_t>( image.getValue( 0, x, y ) );
               const uint16_t value0 = static_cast<uint16_t>( reference.getValue( 0, x, y ) );
               int_least32_t  delta  = 0;
-
-              delta = (int_least32_t)value1 - (int_least32_t)value0;
+              delta = std::abs((int_least32_t)value1 - (int_least32_t)value0);
               if ( delta < 0 ) { delta = 0; }
               if ( !params_.losslessGeo_ && delta > 9 ) { delta = 9; }
               image.setValue( 0, x, y, (uint8_t)delta );
@@ -4756,12 +4764,14 @@ bool PCCEncoder::dilateGeometryVideo( const PCCGroupOfFrames& sources, PCCContex
     if ( params_.multipleStreams_ ) {
       videoGeometry.resize( geometryVideoSize + 1 );
       videoGeometryD1.resize( geometryVideoSize + 1 );
-      auto& frame1 = videoGeometry.getFrame( geometryVideoSize );
-      generateIntraImage( frames[i], 0, frame1 );
-      auto& frame2 = videoGeometryD1.getFrame( geometryVideoSize );
-      generateIntraImage( frames[i], 1, frame2 );
-      dilate_3DPadding( sources[i], frames[i], frame1, videoOccupancyMap.getFrame( i ) );
-      dilate_3DPadding( sources[i], frames[i], frame2, videoOccupancyMap.getFrame( i ) );
+      auto& frame0 = videoGeometry.getFrame( geometryVideoSize );
+      generateIntraImage( frames[i], 0, frame0 );
+      auto& frame1 = videoGeometryD1.getFrame( geometryVideoSize );
+      generateIntraImage( frames[i], 1, frame1 );
+      dilate_3DPadding( sources[i], frames[i], frame0, videoOccupancyMap.getFrame( i ) );
+      if(!params_.absoluteD1_)
+        dilate_3DPadding( sources[i], frames[i], frame1, videoOccupancyMap.getFrame( i ) );
+
     } else {
       const size_t mapCount = params_.mapCountMinus1_ + 1;
       videoGeometry.resize( geometryVideoSize + mapCount );

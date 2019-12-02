@@ -78,7 +78,9 @@ bool PCCBitstream::initialize( std::string compressedStreamPath ) {
 }
 
 bool PCCBitstream::write( std::string compressedStreamPath ) {
+#if !VPCCUNIT_DATA_BITSTREAM
   write( (int32_t) size(), 64, totalSizeIterator_ );
+#endif
   std::ofstream fout( compressedStreamPath, std::ios::binary );
   if ( !fout.is_open() ) { return false; }
   fout.write( reinterpret_cast<const char*>( data_.data() ), size() );
@@ -151,7 +153,7 @@ void PCCBitstream::writeBuffer( const uint8_t* data, const size_t size ) {
   position_.bytes += size;
 }
 void PCCBitstream::copyFrom(PCCBitstream& dataBitstream, const  uint64_t startByte,  const uint64_t bitstreamSize){
-  if(data_.size()<bitstreamSize) data_.resize(position_.bytes+bitstreamSize);
+  if(data_.size()<position_.bytes+bitstreamSize) data_.resize(position_.bytes+bitstreamSize);
   memcpy( data_.data() + position_.bytes, dataBitstream.buffer() +startByte, bitstreamSize ); //dest, source
   printf("copy from %llu to %llu, size=%llu\n", startByte, position_.bytes, bitstreamSize);
 
