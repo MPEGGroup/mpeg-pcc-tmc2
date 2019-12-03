@@ -1021,11 +1021,16 @@ void PCCBitstreamEncoder::atlasTileGroupHeader( AtlasTileGroupHeader& atgh,
       bitstream.write( uint32_t( atgh.getAtghPatchSizeXinfoQuantizer() ), 3 );
       bitstream.write( uint32_t( atgh.getAtghPatchSizeYinfoQuantizer() ), 3 );
     }
+    auto&  gi                       = context.getSps().getGeometryInformation( 0 ); // 0??
+    TRACE_BITSTREAM(" geometry3dBitdepthMinus1 = %lu <= \n",gi.getGeometry3dCoordinatesBitdepthMinus1());
+    TRACE_BITSTREAM(" geometry2dBitdepthMinus1 = %lu \n",gi.getGeometryNominal2dBitdepthMinus1());
+    TRACE_BITSTREAM(" AfpsRaw3dPosBitCountExplicitModeFlag = %lu \n",afps.getAfpsRaw3dPosBitCountExplicitModeFlag());
     if ( afps.getAfpsRaw3dPosBitCountExplicitModeFlag() ) {
-      size_t bitCount = getFixedLengthCodeBitsCount(
-          context.getSps().getGeometryInformation( 0 ).getGeometry3dCoordinatesBitdepthMinus1() + 1 );  // 0??
+      size_t bitCount = getFixedLengthCodeBitsCount( gi.getGeometry3dCoordinatesBitdepthMinus1() + 1 );
+      TRACE_BITSTREAM("bitCount = %lu \n",bitCount);
       bitstream.write( uint32_t( atgh.getAtghRaw3dPosAxisBitCountMinus1() ), bitCount );
     }
+    TRACE_BITSTREAM("==> AtghRaw3dPosAxisBitCountMinus1 = %lu \n",atgh.getAtghRaw3dPosAxisBitCountMinus1());
 
     if ( atgh.getAtghType() == P_TILE_GRP && refList.getNumRefEntries() > 1 ) {
       bitstream.write( uint32_t( atgh.getAtghNumRefIdxActiveOverrideFlag() ), 1 );
@@ -1111,8 +1116,8 @@ void PCCBitstreamEncoder::patchInformationData( PatchInformationData& pid,
     pdu.setFrameIndex( pid.getFrameIndex() );
     pdu.setPatchIndex( pid.getPatchIndex() );
     patchDataUnit( pdu, atgh, context, bitstream );
-  } else if ( ( ( PCCTILEGROUP( atgh.getAtghType() ) ) == I_TILE_GRP && patchMode == PATCH_MODE_I_Raw ) ||
-              ( ( PCCTILEGROUP( atgh.getAtghType() ) ) == P_TILE_GRP && patchMode == PATCH_MODE_P_Raw ) ) {
+  } else if ( ( ( PCCTILEGROUP( atgh.getAtghType() ) ) == I_TILE_GRP && patchMode == PATCH_MODE_I_RAW ) ||
+              ( ( PCCTILEGROUP( atgh.getAtghType() ) ) == P_TILE_GRP && patchMode == PATCH_MODE_P_RAW ) ) {
     auto& rpdu = pid.getRawPatchDataUnit();
     rpdu.setFrameIndex( pid.getFrameIndex() );
     rpdu.setPatchIndex( pid.getPatchIndex() );
@@ -1296,7 +1301,7 @@ void PCCBitstreamEncoder::rawPatchDataUnit( RawPatchDataUnit&     ppdu,
   bitstream.write( uint32_t( ppdu.getRpdu2dPosY() ), afps.getAfps2dPosYBitCountMinus1() + 1 );  // u(v)
   bitstream.writeSvlc( int32_t( ppdu.getRpdu2dDeltaSizeX() ) );                                 // se(v)
   bitstream.writeSvlc( int32_t( ppdu.getRpdu2dDeltaSizeY() ) );                                 // se(v)
-  bitstream.write( uint32_t( ppdu.getRpdu3dPosX() ), atgh.getAtghRaw3dPosAxisBitCountMinus1() + 1 );
+  bitstream.write( uint32_t( ppdu.getRpdu3dPosX() ), atgh.getAtghRaw3dPosAxisBitCountMinus1() + 1 );  // u(v)
   bitstream.write( uint32_t( ppdu.getRpdu3dPosY() ), atgh.getAtghRaw3dPosAxisBitCountMinus1() + 1 );  // u(v)
   bitstream.write( uint32_t( ppdu.getRpdu3dPosZ() ), atgh.getAtghRaw3dPosAxisBitCountMinus1() + 1 );  // u(v)
   bitstream.writeUvlc( uint32_t( ppdu.getRpduRawPoints() ) );
@@ -2111,8 +2116,8 @@ void PCCBitstreamEncoder::atlasSubStream( PCCContext& context, PCCBitstream& bit
 //     ipdu.setFrameIndex( pid.getFrameIndex() );
 //     ipdu.setPatchIndex( pid.getPatchIndex() );
 //     deltaPatchDataUnit( ipdu, ptgh, context, bitstream );
-//   } else if ( ( ( PCCPatchFrameType( ptgh.getType() ) ) == PATCH_FRAME_I && patchMode == PATCH_MODE_I_Raw ) ||
-//               ( ( PCCPatchFrameType( ptgh.getType() ) ) == PATCH_FRAME_P && patchMode == PATCH_MODE_P_Raw ) ) {
+//   } else if ( ( ( PCCPatchFrameType( ptgh.getType() ) ) == PATCH_FRAME_I && patchMode == PATCH_MODE_I_RAW ) ||
+//               ( ( PCCPatchFrameType( ptgh.getType() ) ) == PATCH_FRAME_P && patchMode == PATCH_MODE_P_RAW ) ) {
 //     auto& ppdu = pid.getRawPatchDataUnit();
 //     ppdu.setFrameIndex( pid.getFrameIndex() );
 //     ppdu.setPatchIndex( pid.getPatchIndex() );

@@ -65,19 +65,23 @@
 #include "PCCChrono.h"
 #endif
 
-#define NO_Raw_INOCM 0
+#define NO_PCM_INOCM 0
 #define BUGFIX_FIRSTEDDatT1 1
 #define POSTSMOOTHING_RGB2YUV 0
 #define ATLASIDXPCC 0
 
-#define MULTISTREAM_UPDATE 1       // prevent overflow for the lossless absolute case
+#define MULTISTREAM_UPDATE      1  // prevent overflow for the lossless absolute case
 #define VPCCUNIT_DATA_BITSTREAM 1  // jkei: bitstream instead of data
+
+// #define DEBUG_SURFACE_SEPARATION 
+#define DEBUG_MULTI_STREAMS   
 
 // ******************************************************************* //
 // Trace modes to validate new syntax
 // ******************************************************************* //
 #define BITSTREAM_TRACE
 #define CODEC_TRACE
+// #define DEBUG_TRACE_UVF 
 // ENABLE_LAST_PATCH
 namespace pcc {
 
@@ -216,14 +220,14 @@ enum PCCCodecID { CODEC_HEVC = 0 };
 
 enum PCCPatchFrameType { PATCH_FRAME_I = 0, PATCH_FRAME_P };
 
-enum PCCPatchModeI { PATCH_MODE_I_INTRA = 0, PATCH_MODE_I_Raw, PATCH_MODE_I_EOM, PATCH_MODE_I_END = 14 };
+enum PCCPatchModeI { PATCH_MODE_I_INTRA = 0, PATCH_MODE_I_RAW, PATCH_MODE_I_EOM, PATCH_MODE_I_END = 14 };
 
 enum PCCPatchModeP {
   PATCH_MODE_P_SKIP = 0,
   PATCH_MODE_P_INTRA,
   PATCH_MODE_P_INTER,
   PATCH_MODE_P_MERGE,
-  PATCH_MODE_P_Raw,
+  PATCH_MODE_P_RAW,
   PATCH_MODE_P_EOM,
   PATCH_MODE_P_END = 14
 };

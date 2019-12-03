@@ -60,7 +60,7 @@ class PCCFrameContext {
   std::vector<size_t>&             getBlockToPatch() { return blockToPatch_; }
   std::vector<uint32_t>&           getOccupancyMap() { return occupancyMap_; }
 
-#if NO_Raw_INOCM
+#if NO_RAW_INOCM
   std::vector<uint32_t> copyOccupancyMap() { return occupancyMap_; }
 #endif
   std::vector<uint32_t>&             getFullOccupancyMap() { return fullOccupancyMap_; }

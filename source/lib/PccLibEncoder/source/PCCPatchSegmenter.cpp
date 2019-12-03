@@ -1032,6 +1032,7 @@ void PCCPatchSegmenter3::quantizedPointsPatchModification( const PCCPointSet3& p
   //    }
   //  }
 }
+
 void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
                                          const size_t                frameIndex,
                                          const PCCKdTree&            kdtree,
@@ -1087,10 +1088,15 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
   PCCColor3B              RGB_val;
 
   // jkei: do we really need this? how about points.getColor()??
-  frame_pcc_color.reserve( pointCount );
-  for ( size_t i = 0; i < pointCount; i++ ) {
-    RGB_val = points.getColor( i );
-    frame_pcc_color.push_back( RGB_val );
+#ifdef DEBUG_SURFACE_SEPARATION
+  if ( useSurfaceSeparation ) 
+#endif
+  {
+    frame_pcc_color.reserve( pointCount );
+    for ( size_t i = 0; i < pointCount; i++ ) {
+      RGB_val = points.getColor( i );
+      frame_pcc_color.push_back( RGB_val );
+    }
   }
   if ( enablePointCloudPartitioning ) assert( patchExpansionEnabled == false );
 
@@ -1603,7 +1609,12 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
       }
 
       patch.getDepth( 0 ).resize( patch.getSizeU() * patch.getSizeV(), infiniteDepth );
+#ifdef DEBUG_SURFACE_SEPARATION
+      if ( useSurfaceSeparation ) 
+#endif
+      {
       patch.getdepth0pccidx().resize( patch.getSizeU() * patch.getSizeV(), infinitenumber );
+      }
 
       if ( useEnhancedDeltaDepthCode ) {
         patch.getDepthEnhancedDeltaD().resize( patch.getSizeU() * patch.getSizeV(), 0 );
@@ -1629,7 +1640,11 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
         if ( patch.getProjectionMode() == 0 ) {  // min
           if ( patch.getDepth( 0 )[p] > d ) {
             patch.getDepth( 0 )[p]     = d;
+#ifdef DEBUG_SURFACE_SEPARATION
+            if ( useSurfaceSeparation ) { patch.getdepth0pccidx()[p] = i; }
+#else
             patch.getdepth0pccidx()[p] = i;
+#endif
             patch.getSizeU0()          = ( std::max )( patch.getSizeU0(), u / patch.getOccupancyResolution() );
             patch.getSizeV0()          = ( std::max )( patch.getSizeV0(), v / patch.getOccupancyResolution() );
             patch.getD1()              = ( std::min )( patch.getD1(), size_t( d ) );
@@ -1640,7 +1655,11 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
         } else {  // max
           if ( patch.getDepth( 0 )[p] == infiniteDepth ) {
             patch.getDepth( 0 )[p]     = d;
+#ifdef DEBUG_SURFACE_SEPARATION
+            if ( useSurfaceSeparation ) { patch.getdepth0pccidx()[p] = i;}
+#else
             patch.getdepth0pccidx()[p] = i;
+#endif
             patch.getSizeU0()          = ( std::max )( patch.getSizeU0(), u / patch.getOccupancyResolution() );
             patch.getSizeV0()          = ( std::max )( patch.getSizeV0(), v / patch.getOccupancyResolution() );
             patch.getD1()              = ( std::max )( patch.getD1(), size_t( d ) );
@@ -1653,7 +1672,11 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
           } else {
             if ( patch.getDepth( 0 )[p] < d ) {
               patch.getDepth( 0 )[p]     = d;
+#ifdef DEBUG_SURFACE_SEPARATION
+              if ( useSurfaceSeparation ) { patch.getdepth0pccidx()[p] = i; }
+#else
               patch.getdepth0pccidx()[p] = i;
+#endif
               patch.getSizeU0()          = ( std::max )( patch.getSizeU0(), u / patch.getOccupancyResolution() );
               patch.getSizeV0()          = ( std::max )( patch.getSizeV0(), v / patch.getOccupancyResolution() );
               patch.getD1()              = ( std::max )( patch.getD1(), size_t( d ) );
@@ -1696,7 +1719,11 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
             const int16_t minDepth = minPerBlock[p0];
             if ( ( depth0 - minDepth > 32 ) || ( surfaceThickness + depth0 > patch.getD1() + maxAllowedDepth ) ) {
               patch.getDepth( 0 )[p]     = infiniteDepth;
+#ifdef DEBUG_SURFACE_SEPARATION
+              if ( useSurfaceSeparation ) { patch.getdepth0pccidx()[p] = infinitenumber; }
+#else
               patch.getdepth0pccidx()[p] = infinitenumber;
+#endif
             }
           }
         }
@@ -1729,7 +1756,11 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
 
             if ( maxDepth < 0 ) {
               patch.getDepth( 0 )[p]     = infiniteDepth;
+#ifdef DEBUG_SURFACE_SEPARATION
+              if ( useSurfaceSeparation ) { patch.getdepth0pccidx()[p] = infinitenumber; }
+#else
               patch.getdepth0pccidx()[p] = infinitenumber;
+#endif
             } else {
               if ( depth0 != infiniteDepth ) {
                 int16_t tmp_a = maxDepth - depth0;
@@ -1737,7 +1768,11 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
                 int16_t tmp_c = int16_t( patch.getD1() ) - int16_t( maxAllowedDepth );
                 if ( ( tmp_a > 32 ) || ( tmp_b < tmp_c ) ) {
                   patch.getDepth( 0 )[p]     = infiniteDepth;
+#ifdef DEBUG_SURFACE_SEPARATION
+                  if ( useSurfaceSeparation ) patch.getdepth0pccidx()[p] = infinitenumber;
+#else
                   patch.getdepth0pccidx()[p] = infinitenumber;
+#endif
                 }
               }
             }
@@ -1936,7 +1971,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
               assert( v >= 0 && v < patch.getSizeV() );
               const size_t  p      = v * patch.getSizeU() + u;
               const int16_t depth0 = patch.getDepth( 0 )[p];
-
+#ifndef DEBUG_MULTI_STREAMS
               bool       validD1          = false;
               bool       bColorDifference = true;
               PCCColor3B colorD1candidate;
@@ -1952,17 +1987,22 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
                 validD1 = depth0 < infiniteDepth && ( d - depth0 ) <= int16_t( surfaceThickness ) &&
                           d > patch.getDepth( 1 )[p] && bColorDifference;
               }
+#endif
               if ( depth0 < infiniteDepth && ( d - depth0 ) <= int16_t( surfaceThickness ) &&
                    d > patch.getDepth( 1 )[p] ) {
+#ifndef DEBUG_MULTI_STREAMS
 #if MULTISTREAM_UPDATE
                 if ( bColorDifference )
+#endif
 #endif
                   patch.getDepth( 1 )[p] = d;
               }
               if ( useEnhancedDeltaDepthCode && depth0 < infiniteDepth && ( d - depth0 ) > 0 &&
                    ( d - depth0 ) <= int16_t( surfaceThickness )
+#ifndef DEBUG_MULTI_STREAMS
 #if MULTISTREAM_UPDATE
                    && d < patch.getDepth( 1 )[p]  // jkei:correct?
+#endif
 #endif
               ) {
                 const uint16_t oldEDDCode = patch.getDepthEnhancedDeltaD()[p];
@@ -2010,6 +2050,8 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
                 const size_t  p      = v * patch.getSizeU() + u;
                 const int16_t depth0 = patch.getDepth( 0 )[p];
                 tot_num++;
+
+#ifndef DEBUG_MULTI_STREAMS
                 bool       validD1          = false;
                 bool       bColorDifference = true;
                 PCCColor3B colorD1candidate;
@@ -2028,9 +2070,14 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
                   validD1 &= bColorDifference;
 #endif
                 }
-
+#endif
                 if ( err_flag == false ) {
+#ifdef DEBUG_MULTI_STREAMS
+                  if ( depth0 < infiniteDepth && ( d - depth0 ) <= int16_t( patch_surfaceThickness ) &&
+                       d > patch.getDepth( 1 )[p] ) {
+#else
                   if ( validD1 ) {
+#endif
                     d1_num++;
                     const size_t     d0_idx   = patch.getdepth0pccidx()[p];
                     const size_t     d1_idx   = i;
@@ -2054,11 +2101,21 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
                     err_sum += delta_e;
                   }
                 } else {
-                  if ( validD1 ) { patch.getDepth( 1 )[p] = d; }
+#ifdef DEBUG_MULTI_STREAMS
+                  if ( depth0 < infiniteDepth && ( d - depth0 ) <= int16_t( patch_surfaceThickness ) &&
+                       d > patch.getDepth( 1 )[p] ) 
+#else
+                  if ( validD1 ) 
+#endif
+                  {
+                    patch.getDepth( 1 )[p] = d;
+                  }
                   if ( useEnhancedDeltaDepthCode && depth0 < infiniteDepth && ( d - depth0 ) > 0 &&
                        ( d - depth0 ) <= int16_t( surfaceThickness )
+#ifndef DEBUG_MULTI_STREAMS
 #if MULTISTREAM_UPDATE
                        && d < patch.getDepth( 1 )[p]
+#endif
 #endif
                   ) {
                     const uint16_t oldEDDCode = patch.getDepthEnhancedDeltaD()[p];
@@ -2128,15 +2185,19 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
               }
               if ( depth0 < infiniteDepth && ( depth0 - d ) <= int16_t( surfaceThickness ) &&
                    d < patch.getDepth( 1 )[p] ) {
+#ifndef DEBUG_MULTI_STREAMS
 #if MULTISTREAM_UPDATE
                 if ( bColorDifference )
+#endif
 #endif
                   patch.getDepth( 1 )[p] = d;
               }
               if ( useEnhancedDeltaDepthCode && depth0 < infiniteDepth && ( depth0 - d ) > 0 &&
                    ( depth0 - d ) <= int16_t( surfaceThickness )
+#ifndef DEBUG_MULTI_STREAMS
 #if MULTISTREAM_UPDATE
                    && d > patch.getDepth( 1 )[p]
+#endif
 #endif
               ) {
                 const uint16_t oldEDDCode = patch.getDepthEnhancedDeltaD()[p];
@@ -2183,6 +2244,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
                 const int16_t depth0 = patch.getDepth( 0 )[p];
                 tot_num++;
 
+#ifndef DEBUG_MULTI_STREAMS
                 bool       validD1          = false;
                 bool       bColorDifference = true;
                 PCCColor3B colorD1candidate;
@@ -2201,8 +2263,14 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
                   validD1 &= bColorDifference;
 #endif
                 }
+#endif
                 if ( err_flag == false ) {
+#ifdef DEBUG_MULTI_STREAMS
+                  if ( depth0 < infiniteDepth && ( depth0 - d ) <= int16_t( patch_surfaceThickness ) &&
+                       d < patch.getDepth( 1 )[p] ) {
+#else
                   if ( validD1 ) {
+#endif
                     d1_num++;
                     const size_t     d0_idx   = patch.getdepth0pccidx()[p];
                     const size_t     d1_idx   = i;
@@ -2217,16 +2285,22 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
                 } else {
                   if ( depth0 < infiniteDepth &&
                        ( depth0 - d ) <= int16_t( patch_surfaceThickness )  // fixed to patch_surfaceThickness
+
+#ifndef DEBUG_MULTI_STREAMS
 #if MULTISTREAM_UPDATE
                        && d < patch.getDepth( 1 )[p]
+#endif
 #endif
                   ) {
                     patch.getDepth( 1 )[p] = d;
                   }
                   if ( useEnhancedDeltaDepthCode && depth0 < infiniteDepth && ( depth0 - d ) > 0 &&
                        ( depth0 - d ) <= int16_t( surfaceThickness )
+
+#ifndef DEBUG_MULTI_STREAMS
 #if MULTISTREAM_UPDATE
                        && d > patch.getDepth( 1 )[p]
+#endif
 #endif
                   ) {
                     const uint16_t oldEDDCode = patch.getDepthEnhancedDeltaD()[p];
@@ -2467,7 +2541,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
         }
       }
 
-      if ( testLevelOfDetail > 0 )
+      if ( testLevelOfDetail > 0 ){
         quantizedPointsPatchModification(
             points,
             patch,  // current patch
@@ -2480,6 +2554,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
             patchExpansionEnabled, enablePointCloudPartitioning, roiBoundingBoxMinX, roiBoundingBoxMaxX,
             roiBoundingBoxMinY, roiBoundingBoxMaxY, roiBoundingBoxMinZ, roiBoundingBoxMaxZ, numCutsAlong1stLongestAxis,
             numCutsAlong2ndLongestAxis, numCutsAlong3rdLongestAxis );
+      }
 
       size_t quantDD   = patch.getSizeD() == 0 ? 0 : ( ( patch.getSizeD() - 1 ) / minLevel + 1 );
       patch.getSizeD() = ( std::min )( quantDD * minLevel, static_cast<size_t>( maxAllowedDepth ) );
@@ -2537,13 +2612,13 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
         }
       }
       patch.setEddandD1Count( eddCountPerPatch );
-      if ( useEnhancedDeltaDepthCode ) patch.setEddCount( eddCountPerPatch - d1CountPerPatch );
+      if ( useEnhancedDeltaDepthCode ) { patch.setEddCount( eddCountPerPatch - d1CountPerPatch ); }
       patch.setD0Count( d0CountPerPatch );
       numberOfEDD += ( eddCountPerPatch - d1CountPerPatch );
 
       numD0Points += d0CountPerPatch;
       numD1Points += d1CountPerPatch;
-      if ( useEnhancedDeltaDepthCode ) numEDDonlyPoints += ( eddCountPerPatch - d1CountPerPatch );
+      if ( useEnhancedDeltaDepthCode ) { numEDDonlyPoints += ( eddCountPerPatch - d1CountPerPatch ); }
       // assert(eddPointSet.getPointCount() !=patch.getEddCount());
       std::cout << "\t\t Patch " << patchIndex << " ->(d1,u1,v1)=( " << patch.getD1() << " , " << patch.getU1() << " , "
                 << patch.getV1() << " )(dd,du,dv)=( " << patch.getSizeD() << " , " << patch.getSizeU() << " , "
@@ -3130,7 +3205,7 @@ void PCCPatchSegmenter3::calculateGradient( const PCCPointSet3&               po
   for ( size_t v = 0; v < patch.getSizeV(); ++v ) {
     for ( size_t u = 0; u < patch.getSizeU(); ++u ) {
       const size_t p = v * patch.getSizeU() + u;
-      if ( Gmag[p] > minGradient ) highGradientMap[p] = true;
+      if ( Gmag[p] > minGradient ) { highGradientMap[p] = true; }
     }
   }
 
@@ -3146,7 +3221,7 @@ void PCCPatchSegmenter3::calculateGradient( const PCCPointSet3&               po
           if ( u < patch.getSizeU() - 1 && highGradientMap[p + 1] ) cnt++;
           if ( v > 0 && highGradientMap[p - patch.getSizeU()] ) cnt++;
           if ( v < patch.getSizeV() - 1 && highGradientMap[p + patch.getSizeU()] ) cnt++;
-          if ( cnt >= 2 && Gmag[p] > minGradient / 2.0 ) tmpHighGradientMap[p] = true;
+          if ( cnt >= 2 && Gmag[p] > minGradient / 2.0 ) { tmpHighGradientMap[p] = true; }
         }
       }
     }
@@ -3212,7 +3287,7 @@ void PCCPatchSegmenter3::calculateGradient( const PCCPointSet3&               po
       if ( highGradientGroup.size() > minNumHighGradientPoints ) {
         highGradientConnectedComponents.push_back( highGradientGroup );
       } else {
-        for ( const auto j : highGradientGroup ) flags[j] = true;
+        for ( const auto j : highGradientGroup ) { flags[j] = true; }
       }
     }
   }

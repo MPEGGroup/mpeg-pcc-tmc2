@@ -833,10 +833,11 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     atgh.setAtghPosDeltaMaxZQuantizer( uint8_t( std::log2( minLevel_ ) ) );
     atgh.setAtghPatchSizeXinfoQuantizer( 0 );  // new : to be quantizerSizeU_
     atgh.setAtghPatchSizeYinfoQuantizer( 0 );  // new : to be quantizerSizeV_
-    if ( afps.getAfpsRaw3dPosBitCountExplicitModeFlag() )
+    if ( afps.getAfpsRaw3dPosBitCountExplicitModeFlag() ){
       atgh.setAtghRaw3dPosAxisBitCountMinus1( 0 );  //
-    else
+    } else{ 
       atgh.setAtghRaw3dPosAxisBitCountMinus1( geometry3dCoordinatesBitdepth_ - geometryNominal2dBitdepth_ - 1 );
+    }
     atgh.setAtghNumRefIdxActiveOverrideFlag( 0 );
 
     atgh.setAtghRefAtlasFrameListSpsFlag( true );

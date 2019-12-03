@@ -803,22 +803,22 @@ Void TDecCavlc::parseSPS(TComSPS* pcSPS)
   READ_FLAG( uiCode, "amp_enabled_flag" );                          pcSPS->setUseAMP( uiCode );
   READ_FLAG( uiCode, "sample_adaptive_offset_enabled_flag" );       pcSPS->setUseSAO ( uiCode ? true : false );
 
-  READ_FLAG( uiCode, "pcm_enabled_flag" ); pcSPS->setUseRaw( uiCode ? true : false );
-  if( pcSPS->getUseRaw() )
+  READ_FLAG( uiCode, "pcm_enabled_flag" ); pcSPS->setUsePCM( uiCode ? true : false );
+  if( pcSPS->getUsePCM() )
   {
 #if O0043_BEST_EFFORT_DECODING
-    READ_CODE_CHK( 4, uiCode, "pcm_sample_bit_depth_luma_minus1",   0, pcSPS->getStreamBitDepth(CHANNEL_TYPE_LUMA) );    pcSPS->setRawBitDepth    ( CHANNEL_TYPE_LUMA, 1 + uiCode );
-    READ_CODE_CHK( 4, uiCode, "pcm_sample_bit_depth_chroma_minus1", 0, pcSPS->getStreamBitDepth(CHANNEL_TYPE_LUMA) );    pcSPS->setRawBitDepth    ( CHANNEL_TYPE_CHROMA, 1 + uiCode );
+    READ_CODE_CHK( 4, uiCode, "pcm_sample_bit_depth_luma_minus1",   0, pcSPS->getStreamBitDepth(CHANNEL_TYPE_LUMA) );    pcSPS->setPCMBitDepth    ( CHANNEL_TYPE_LUMA, 1 + uiCode );
+    READ_CODE_CHK( 4, uiCode, "pcm_sample_bit_depth_chroma_minus1", 0, pcSPS->getStreamBitDepth(CHANNEL_TYPE_LUMA) );    pcSPS->setPCMBitDepth    ( CHANNEL_TYPE_CHROMA, 1 + uiCode );
 #else
-    READ_CODE_CHK( 4, uiCode, "pcm_sample_bit_depth_luma_minus1",   0, pcSPS->getBitDepth(CHANNEL_TYPE_LUMA) );          pcSPS->setRawBitDepth    ( CHANNEL_TYPE_LUMA, 1 + uiCode );
-    READ_CODE_CHK( 4, uiCode, "pcm_sample_bit_depth_chroma_minus1", 0, pcSPS->getBitDepth(CHANNEL_TYPE_CHROMA) );        pcSPS->setRawBitDepth    ( CHANNEL_TYPE_CHROMA, 1 + uiCode );
+    READ_CODE_CHK( 4, uiCode, "pcm_sample_bit_depth_luma_minus1",   0, pcSPS->getBitDepth(CHANNEL_TYPE_LUMA) );          pcSPS->setPCMBitDepth    ( CHANNEL_TYPE_LUMA, 1 + uiCode );
+    READ_CODE_CHK( 4, uiCode, "pcm_sample_bit_depth_chroma_minus1", 0, pcSPS->getBitDepth(CHANNEL_TYPE_CHROMA) );        pcSPS->setPCMBitDepth    ( CHANNEL_TYPE_CHROMA, 1 + uiCode );
 #endif
     READ_UVLC_CHK( uiCode, "log2_min_pcm_luma_coding_block_size_minus3", std::min<UInt>(minCbLog2SizeY, 5 )-3, std::min<UInt>(ctbLog2SizeY, 5)-3);
     const UInt log2MinIpcmCbSizeY = uiCode+3;
-    pcSPS->setRawLog2MinSize (log2MinIpcmCbSizeY);
+    pcSPS->setPCMLog2MinSize (log2MinIpcmCbSizeY);
     READ_UVLC_CHK( uiCode, "log2_diff_max_min_pcm_luma_coding_block_size", 0, (std::min<UInt>(ctbLog2SizeY,5) - log2MinIpcmCbSizeY) );
-    pcSPS->setRawLog2MaxSize ( uiCode+pcSPS->getRawLog2MinSize() );
-    READ_FLAG( uiCode, "pcm_loop_filter_disable_flag" );                 pcSPS->setRawFilterDisableFlag ( uiCode ? true : false );
+    pcSPS->setPCMLog2MaxSize ( uiCode+pcSPS->getPCMLog2MinSize() );
+    READ_FLAG( uiCode, "pcm_loop_filter_disable_flag" );                 pcSPS->setPCMFilterDisableFlag ( uiCode ? true : false );
   }
 
   READ_UVLC_CHK( uiCode, "num_short_term_ref_pic_sets", 0, 64 );
@@ -891,8 +891,8 @@ Void TDecCavlc::parseSPS(TComSPS* pcSPS)
               TComSPSRExt &spsRangeExtension = pcSPS->getSpsRangeExtension();
               READ_FLAG( uiCode, "transform_skip_rotation_enabled_flag");     spsRangeExtension.setTransformSkipRotationEnabledFlag(uiCode != 0);
               READ_FLAG( uiCode, "transform_skip_context_enabled_flag");      spsRangeExtension.setTransformSkipContextEnabledFlag (uiCode != 0);
-              READ_FLAG( uiCode, "implicit_rdpcm_enabled_flag");              spsRangeExtension.setRdpcmEnabledFlag(RDRaw_SIGNAL_IMPLICIT, (uiCode != 0));
-              READ_FLAG( uiCode, "explicit_rdpcm_enabled_flag");              spsRangeExtension.setRdpcmEnabledFlag(RDRaw_SIGNAL_EXPLICIT, (uiCode != 0));
+              READ_FLAG( uiCode, "implicit_rdpcm_enabled_flag");              spsRangeExtension.setRdpcmEnabledFlag(RDPCM_SIGNAL_IMPLICIT, (uiCode != 0));
+              READ_FLAG( uiCode, "explicit_rdpcm_enabled_flag");              spsRangeExtension.setRdpcmEnabledFlag(RDPCM_SIGNAL_EXPLICIT, (uiCode != 0));
               READ_FLAG( uiCode, "extended_precision_processing_flag");       spsRangeExtension.setExtendedPrecisionProcessingFlag (uiCode != 0);
               READ_FLAG( uiCode, "intra_smoothing_disabled_flag");            spsRangeExtension.setIntraSmoothingDisabledFlag      (uiCode != 0);
               READ_FLAG( uiCode, "high_precision_offsets_enabled_flag");      spsRangeExtension.setHighPrecisionOffsetsEnabledFlag (uiCode != 0);
@@ -1975,15 +1975,15 @@ Void TDecCavlc::parseProfileTier(ProfileTierLevel *ptl, const Bool /*bIsSubLayer
 //   assert(0);
 // }
 
-// /** Parse I_Raw information.
+// /** Parse I_PCM information.
 // * \param pcCU pointer to CU
 // * \param uiAbsPartIdx CU index
 // * \param uiDepth CU depth
 // * \returns Void
 // *
-// * If I_Raw flag indicates that the CU is I_Raw, parse its raw alignment bits and codes.
+// * If I_PCM flag indicates that the CU is I_PCM, parse its PCM alignment bits and codes.
 // */
-// Void TDecCavlc::parseIRawInfo( TComDataCU* /*pcCU*/, UInt /*uiAbsPartIdx*/, UInt /*uiDepth*/ )
+// Void TDecCavlc::parseIPCMInfo( TComDataCU* /*pcCU*/, UInt /*uiAbsPartIdx*/, UInt /*uiDepth*/ )
 // {
 //   assert(0);
 // }
@@ -2263,7 +2263,7 @@ Void TDecCavlc::parseScalingList(TComScalingList* scalingList)
           scalingList->processRefMatrix( sizeId, listId, scalingList->getRefMatrixId (sizeId,listId));
 
         }
-        else //DRaw Mode
+        else //DPCM Mode
         {
           xDecodeScalingList(scalingList, sizeId, listId);
         }
@@ -2273,7 +2273,7 @@ Void TDecCavlc::parseScalingList(TComScalingList* scalingList)
 
   return;
 }
-/** decode DRaw
+/** decode DPCM
 * \param scalingList  quantization matrix information
 * \param sizeId size index
 * \param listId list index

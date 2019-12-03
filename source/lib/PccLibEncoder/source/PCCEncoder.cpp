@@ -3910,6 +3910,9 @@ void PCCEncoder::generateEomPatch( const PCCPointSet3& source, PCCFrameContext& 
     eomPatches[0].memberPatches.push_back( patchIdx );
     eomPatches[0].eddCountPerPatch.push_back( patch.getEddCount() );
     assert( patch.getEddCount() == eddCountPerPatch );
+    // JR BUG FIX 
+    patch.setEddCount( eddCountPerPatch );  
+    printf("Patch %lu / %lu: eddCount = %6lu vs %6lu \n", patchIdx, patchCount, totalEddCount,patch.getEddCount() ); 
   }
   eomPatches[0].eddCount_ = totalEddCount;
 }
@@ -4769,9 +4772,9 @@ bool PCCEncoder::dilateGeometryVideo( const PCCGroupOfFrames& sources, PCCContex
       auto& frame1 = videoGeometryD1.getFrame( geometryVideoSize );
       generateIntraImage( frames[i], 1, frame1 );
       dilate_3DPadding( sources[i], frames[i], frame0, videoOccupancyMap.getFrame( i ) );
-      if(!params_.absoluteD1_)
+      if(!params_.absoluteD1_){ 
         dilate_3DPadding( sources[i], frames[i], frame1, videoOccupancyMap.getFrame( i ) );
-
+      }
     } else {
       const size_t mapCount = params_.mapCountMinus1_ + 1;
       videoGeometry.resize( geometryVideoSize + mapCount );
@@ -5797,6 +5800,12 @@ bool PCCEncoder::generateTextureVideo( const PCCPointSet3& reconstruct,
     const size_t             u        = location[0];
     const size_t             v        = location[1];
     const size_t             f        = location[2];
+#ifdef DEBUG_TRACE_UVF
+    if( u >= frame.getWidth() || v >= frame.getHeight() || f >= mapCount ){
+      printf("%9lu/ %9lu: uv = %4lu %4lu f = %2lu to high \n",i, pointCount, u,v,f);
+      fflush( stdout );
+    }
+#endif
     if ( params_.singleMapPixelInterleaving_ ) {
       if ( ( f == 0 && ( ( u + v ) % 2 == 0 ) ) || ( f == 1 && ( ( u + v ) % 2 == 1 ) ) ) {
         auto& image = video.getFrame( curNumOfVideoFrames );
@@ -7497,7 +7506,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
     size_t numberOfPcmPatches = frame.getNumberOfMissedPointsPatches();
     for ( size_t mpsPatchIndex = 0; mpsPatchIndex < numberOfPcmPatches; ++mpsPatchIndex ) {
       auto&   missedPointsPatch = pcmPatches[mpsPatchIndex];
-      uint8_t patchType = ( atgh.getAtghType() == I_TILE_GRP ) ? (uint8_t)PATCH_MODE_I_Raw : (uint8_t)PATCH_MODE_P_Raw;
+      uint8_t patchType = ( atgh.getAtghType() == I_TILE_GRP ) ? (uint8_t)PATCH_MODE_I_RAW : (uint8_t)PATCH_MODE_P_RAW;
       // auto& pid      = ptgdu.addPatchInformationData( patchType );
       auto& pid  = atgdu.addPatchInformationData( patchType );
       auto& ppdu = pid.getRawPatchDataUnit();
@@ -7511,7 +7520,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&      context,
         ppdu.setRpdu3dPosY( missedPointsPatch.v1_ );
         ppdu.setRpdu3dPosZ( missedPointsPatch.d1_ );
       } else {
-        const size_t pcmU1V1D1Level = 1 << ( gi.getGeometryNominal2dBitdepthMinus1() );
+        const size_t pcmU1V1D1Level = 1 << ( gi.getGeometryNominal2dBitdepthMinus1() + 1 );
         ppdu.setRpdu3dPosX( missedPointsPatch.u1_ / pcmU1V1D1Level );
         ppdu.setRpdu3dPosY( missedPointsPatch.v1_ / pcmU1V1D1Level );
         ppdu.setRpdu3dPosZ( missedPointsPatch.d1_ / pcmU1V1D1Level );

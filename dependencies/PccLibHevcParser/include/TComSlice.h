@@ -166,8 +166,8 @@ public:
   Void       setScalingListDC(UInt sizeId, UInt listId, UInt u)                 { m_scalingListDC[sizeId][listId] = u;                       } //!< set DC value
   Int        getScalingListDC(UInt sizeId, UInt listId) const                   { return m_scalingListDC[sizeId][listId];                    } //!< get DC value
 
-  Void       setScalingListPredModeFlag(UInt sizeId, UInt listId, Bool bIsDRaw) { m_scalingListPredModeFlagIsDRaw[sizeId][listId] = bIsDRaw; }
-  Bool       getScalingListPredModeFlag(UInt sizeId, UInt listId) const         { return m_scalingListPredModeFlagIsDRaw[sizeId][listId];    }
+  Void       setScalingListPredModeFlag(UInt sizeId, UInt listId, Bool bIsDPCM) { m_scalingListPredModeFlagIsDPCM[sizeId][listId] = bIsDPCM; }
+  Bool       getScalingListPredModeFlag(UInt sizeId, UInt listId) const         { return m_scalingListPredModeFlagIsDPCM[sizeId][listId];    }
 
   Void       checkDcOfMatrix();
   Void       processRefMatrix(UInt sizeId, UInt listId , UInt refListId );
@@ -177,7 +177,7 @@ public:
 
 private:
   Void       outputScalingLists(std::ostream &os) const;
-  Bool             m_scalingListPredModeFlagIsDRaw [SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM]; //!< reference list index
+  Bool             m_scalingListPredModeFlagIsDPCM [SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM]; //!< reference list index
   Int              m_scalingListDC                 [SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM]; //!< the DC value of the matrix coefficient for 16x16
   UInt             m_refMatrixId                   [SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM]; //!< RefMatrixID
   std::vector<Int> m_scalingListCoef               [SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM]; //!< quantization matrix
@@ -726,7 +726,7 @@ class TComSPSRExt // Names aligned to text specification
 private:
   Bool             m_transformSkipRotationEnabledFlag;
   Bool             m_transformSkipContextEnabledFlag;
-  Bool             m_rdpcmEnabledFlag[NUMBER_OF_RDRaw_SIGNALLING_MODES];
+  Bool             m_rdpcmEnabledFlag[NUMBER_OF_RDPCM_SIGNALLING_MODES];
   Bool             m_extendedPrecisionProcessingFlag;
   Bool             m_intraSmoothingDisabledFlag;
   Bool             m_highPrecisionOffsetsEnabledFlag;
@@ -740,8 +740,8 @@ public:
   {
     return getTransformSkipRotationEnabledFlag()
         || getTransformSkipContextEnabledFlag()
-        || getRdpcmEnabledFlag(RDRaw_SIGNAL_IMPLICIT)
-        || getRdpcmEnabledFlag(RDRaw_SIGNAL_EXPLICIT)
+        || getRdpcmEnabledFlag(RDPCM_SIGNAL_IMPLICIT)
+        || getRdpcmEnabledFlag(RDPCM_SIGNAL_EXPLICIT)
         || getExtendedPrecisionProcessingFlag()
         || getIntraSmoothingDisabledFlag()
         || getHighPrecisionOffsetsEnabledFlag()
@@ -756,8 +756,8 @@ public:
   Bool getTransformSkipContextEnabledFlag() const                                      { return m_transformSkipContextEnabledFlag;      }
   Void setTransformSkipContextEnabledFlag(const Bool value)                            { m_transformSkipContextEnabledFlag = value;     }
 
-  Bool getRdpcmEnabledFlag(const RDRawSignallingMode signallingMode) const             { return m_rdpcmEnabledFlag[signallingMode];     }
-  Void setRdpcmEnabledFlag(const RDRawSignallingMode signallingMode, const Bool value) { m_rdpcmEnabledFlag[signallingMode] = value;    }
+  Bool getRdpcmEnabledFlag(const RDPCMSignallingMode signallingMode) const             { return m_rdpcmEnabledFlag[signallingMode];     }
+  Void setRdpcmEnabledFlag(const RDPCMSignallingMode signallingMode, const Bool value) { m_rdpcmEnabledFlag[signallingMode] = value;    }
 
   Bool getExtendedPrecisionProcessingFlag() const                                      { return m_extendedPrecisionProcessingFlag;      }
   Void setExtendedPrecisionProcessingFlag(Bool value)                                  { m_extendedPrecisionProcessingFlag = value;     }
@@ -883,16 +883,16 @@ private:
   UInt             m_uiQuadtreeTULog2MinSize;
   UInt             m_uiQuadtreeTUMaxDepthInter;
   UInt             m_uiQuadtreeTUMaxDepthIntra;
-  Bool             m_useRaw;
+  Bool             m_usePCM;
   UInt             m_pcmLog2MaxSize;
-  UInt             m_uiRawLog2MinSize;
+  UInt             m_uiPCMLog2MinSize;
   Bool             m_useAMP;
 
   // Parameter
   BitDepths        m_bitDepths;
   Int              m_qpBDOffset[MAX_NUM_CHANNEL_TYPE];
   Int              m_pcmBitDepths[MAX_NUM_CHANNEL_TYPE];
-  Bool             m_bRawFilterDisableFlag;
+  Bool             m_bPCMFilterDisableFlag;
 
   UInt             m_uiBitsForPOC;
   UInt             m_numLongTermRefPicSPS;
@@ -975,12 +975,12 @@ public:
   UInt                   getMaxCUHeight() const                                                          { return  m_uiMaxCUHeight;                                             }
   Void                   setMaxTotalCUDepth( UInt u )                                                    { m_uiMaxTotalCUDepth = u;                                             }
   UInt                   getMaxTotalCUDepth() const                                                      { return  m_uiMaxTotalCUDepth;                                         }
-  Void                   setUseRaw( Bool b )                                                             { m_useRaw = b;                                                        }
-  Bool                   getUseRaw() const                                                               { return m_useRaw;                                                     }
-  Void                   setRawLog2MaxSize( UInt u )                                                     { m_pcmLog2MaxSize = u;                                                }
-  UInt                   getRawLog2MaxSize() const                                                       { return  m_pcmLog2MaxSize;                                            }
-  Void                   setRawLog2MinSize( UInt u )                                                     { m_uiRawLog2MinSize = u;                                              }
-  UInt                   getRawLog2MinSize() const                                                       { return  m_uiRawLog2MinSize;                                          }
+  Void                   setUsePCM( Bool b )                                                             { m_usePCM = b;                                                        }
+  Bool                   getUsePCM() const                                                               { return m_usePCM;                                                     }
+  Void                   setPCMLog2MaxSize( UInt u )                                                     { m_pcmLog2MaxSize = u;                                                }
+  UInt                   getPCMLog2MaxSize() const                                                       { return  m_pcmLog2MaxSize;                                            }
+  Void                   setPCMLog2MinSize( UInt u )                                                     { m_uiPCMLog2MinSize = u;                                              }
+  UInt                   getPCMLog2MinSize() const                                                       { return  m_uiPCMLog2MinSize;                                          }
   Void                   setBitsForPOC( UInt u )                                                         { m_uiBitsForPOC = u;                                                  }
   UInt                   getBitsForPOC() const                                                           { return m_uiBitsForPOC;                                               }
   Bool                   getUseAMP() const                                                               { return m_useAMP;                                                     }
@@ -1028,10 +1028,10 @@ public:
 
   Bool                   getTemporalIdNestingFlag() const                                                { return m_bTemporalIdNestingFlag;                                     }
   Void                   setTemporalIdNestingFlag( Bool bValue )                                         { m_bTemporalIdNestingFlag = bValue;                                   }
-  UInt                   getRawBitDepth(ChannelType type) const                                          { return m_pcmBitDepths[type];                                         }
-  Void                   setRawBitDepth(ChannelType type, UInt u)                                        { m_pcmBitDepths[type] = u;                                            }
-  Void                   setRawFilterDisableFlag( Bool bValue )                                          { m_bRawFilterDisableFlag = bValue;                                    }
-  Bool                   getRawFilterDisableFlag() const                                                 { return m_bRawFilterDisableFlag;                                      }
+  UInt                   getPCMBitDepth(ChannelType type) const                                          { return m_pcmBitDepths[type];                                         }
+  Void                   setPCMBitDepth(ChannelType type, UInt u)                                        { m_pcmBitDepths[type] = u;                                            }
+  Void                   setPCMFilterDisableFlag( Bool bValue )                                          { m_bPCMFilterDisableFlag = bValue;                                    }
+  Bool                   getPCMFilterDisableFlag() const                                                 { return m_bPCMFilterDisableFlag;                                      }
 
   Bool                   getScalingListFlag() const                                                      { return m_scalingListEnabledFlag;                                     }
   Void                   setScalingListFlag( Bool b )                                                    { m_scalingListEnabledFlag  = b;                                       }

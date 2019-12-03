@@ -706,6 +706,12 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
                 partition.push_back( uint32_t( patchIndex ) );
                 pointToPixel.push_back( PCCVector3<size_t>( x, y, 0 ) );
 
+#ifdef DEBUG_TRACE_UVF
+                if ( x >= 1280 || y >= 1280 ) {
+                  printf( "P2P 0:  uv = %4lu %4lu f = %lu\n", x, y, 0 );
+                  fflush( stdout );
+                }
+#endif
                 uint16_t    eddCode = 0;
                 size_t      d1pos   = 0;
                 const auto& frame0  = video.getFrame( videoFrameIndex );
@@ -746,6 +752,12 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
                     if ( PCC_SAVE_POINT_TYPE == 1 ) { reconstruct.setType( pointIndex1, POINT_D1 ); }
                     partition.push_back( uint32_t( patchIndex ) );
                     pointToPixel.push_back( PCCVector3<size_t>( x, y, 1 ) );
+#ifdef DEBUG_TRACE_UVF
+                    if ( x >= 1280 || y >= 1280 || 1 == 1 ) {
+                      printf( "P2P 1:  uv = %4lu %4lu f = %lu\n", x, y, 1 );
+                      fflush( stdout );
+                    }
+#endif
                   }
                 } else {  // eddCode != 0
                   uint16_t addedPointCount = 0;
@@ -759,7 +771,11 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
                         point1[patch.getNormalAxis()] = (double)( point0[patch.getNormalAxis()] - deltaDCur );
                       }
 #if BUGFIX_FIRSTEDDatT1
+#if 1 
                       if ( eddCode == 1 || i == d1pos )
+#else
+                      if ( ( eddCode == 1 || i == d1pos ) && ( params.mapCountMinus1_ > 0 ) )
+#endif
 #else
                       if ( addedPointCount == 0 && params.mapCountMinus1_ > 0 )
 #endif
@@ -770,8 +786,23 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
                         if ( PCC_SAVE_POINT_TYPE == 1 ) { reconstruct.setType( pointIndex1, POINT_D1 ); }
                         partition.push_back( uint32_t( patchIndex ) );
                         pointToPixel.push_back( PCCVector3<size_t>( x, y, 1 ) );
+#ifdef DEBUG_TRACE_UVF
+                        if ( x >= 1280 || y >= 1280 || 1 == 1 ) {
+                          printf( "P2P 2:  uv = %4lu %4lu f = %lu\n", x, y, 1 );
+                          fflush( stdout );
+                        }
+#endif
                       } else {
+#if 1
                         eddPointsPerPatch[patchIndex].push_back( point1 );
+#else
+                        if ( point1 != point0 ) {
+                          eddPointsPerPatch[patchIndex].push_back( point1 );
+                          printf( "P[%3lu][%6lu] Add point EDD: %2lu OCM=%2lu XY=%4lu %4lu => %4d %4d %4d / %4d %4d %4d => %6lu \n",
+                                  patchIndex, eddPointsPerPatch[patchIndex].size(), eddCode, occupancyMap[indx], x, y,
+                                  point1.x(), point1.y(), point1.z(), point0.x(), point0.y(), point0.z(), addedPointCount );
+                        }
+#endif
                       }
                       addedPointCount++;
                     }
@@ -821,8 +852,22 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
                       } else if ( params.pointLocalReconstruction_ ) {
                         pointToPixel.push_back( PCCVector3<size_t>(
                             x, y, i == 0 ? 0 : i == 1 ? IntermediateLayerIndex : IntermediateLayerIndex + 1 ) );
+#ifdef DEBUG_TRACE_UVF
+                        if ( x >= 1280 || y >= 1280 ||
+                             ( ( i == 0 ? 0 : i == 1 ? IntermediateLayerIndex : IntermediateLayerIndex + 1 ) ) >= 1 ) {
+                          printf( "P2P 4:  uv = %4lu %4lu f = %lu \n", x, y,
+                                  i == 0 ? 0 : i == 1 ? IntermediateLayerIndex : IntermediateLayerIndex + 1 );
+                          fflush( stdout );
+                        }
+#endif
                       } else {
                         pointToPixel.push_back( PCCVector3<size_t>( x, y, i < 2 ? i : IntermediateLayerIndex + 1 ) );
+#ifdef DEBUG_TRACE_UVF
+                        if ( x >= 1280 || y >= 1280 || ( ( i < 2 ? i : IntermediateLayerIndex + 1 ) >= 1 ) ) {
+                          printf( "P2P 5:  uv = %4lu %4lu f = %lu \n", x, y, i < 2 ? i : IntermediateLayerIndex + 1 );
+                          fflush( stdout );
+                        }
+#endif
                       }
                     }
                   }
@@ -840,22 +885,25 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
   size_t       totalEddPointsInFrame = 0;
   PCCPointSet3 eddSavedPoints;
   if ( params.enhancedDeltaDepthCode_ ) {
+    const size_t blockSize = params.occupancyResolution_ * params.occupancyResolution_;
     size_t numEddPatches = frame.getEomPatches().size();
+    printf( "numEddPatches = %lu  \n", numEddPatches );
     for ( int j = 0; j < numEddPatches; j++ ) {
-      auto&  eomPatch               = frame.getEomPatches()[j];
+      auto&  eomPatch               = frame.getEomPatches( j );
       size_t numPatchesInEddPatches = eomPatch.memberPatches.size();
-      size_t u0Eom =
-          useMissedPointsSeparateVideo ? 0 : eomPatch.u0_ * params.occupancyResolution_;  // seperateVideoCase : 0
+      size_t u0Eom                  = useMissedPointsSeparateVideo ? 0 : eomPatch.u0_ * params.occupancyResolution_;
       size_t v0Eom = useMissedPointsSeparateVideo ? 0 : eomPatch.v0_ * params.occupancyResolution_;
+      printf( "numPatchesInEddPatches[ %d ] = %lu  block = %lu x %lu point = %lu x %lu \n", j, numPatchesInEddPatches,
+              eomPatch.u0_, eomPatch.u0_, u0Eom, v0Eom );
       totalEddPointsInFrame += eomPatch.eddCount_;
       size_t totalPointCount = 0;
       for ( size_t patchCount = 0; patchCount < numPatchesInEddPatches; patchCount++ ) {
         size_t memberPatchIdx            = eomPatch.memberPatches[patchCount];
         size_t numberOfEddPointsPerPatch = eddPointsPerPatch[memberPatchIdx].size();
+        printf( "numberOfEddPointsPerPatch[ %lu ][ %lu ] = %lu  \n", j, patchCount, numberOfEddPointsPerPatch );
         for ( size_t pointCount = 0; pointCount < numberOfEddPointsPerPatch; pointCount++ ) {
-          size_t currBlock = totalPointCount / ( params.occupancyResolution_ * params.occupancyResolution_ );
-          size_t nPixelInCurrentBlockCount =
-              totalPointCount - currBlock * ( params.occupancyResolution_ * params.occupancyResolution_ );
+          size_t currBlock                 = totalPointCount / blockSize;
+          size_t nPixelInCurrentBlockCount = totalPointCount - currBlock * blockSize;
           size_t uBlock = currBlock % blockToPatchWidth;
           size_t vBlock = currBlock / blockToPatchWidth;
           size_t uu =
@@ -871,6 +919,12 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
           partition.push_back( uint32_t( patchIndex ) );
           totalPointCount++;
           pointToPixel.push_back( PCCVector3<size_t>( uu, vv, 0 ) );
+#ifdef DEBUG_TRACE_UVF
+          if ( uu >= 1280 || vv >= 1280 ) {
+            printf( "P2P 6:  uv = %4lu %4lu f = %lu\n", uu, vv, 0 );
+            fflush( stdout );
+          }
+#endif
           occupancyMap[vv * imageWidth + uu] = 1;  // occupied
         }
       }
@@ -961,6 +1015,12 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
                   for ( size_t f = 0; f < mapCount; ++f ) {
                     partition.push_back( uint32_t( patchIndex ) );
                     pointToPixel.push_back( PCCVector3<size_t>( x, y, f ) );
+#ifdef DEBUG_TRACE_UVF
+                    if ( x >= 1280 || y >= 1280 || f >= 1 ) {
+                      printf( "P2P 7:  uv = %4lu %4lu f = %lu\n", x, y, f );
+                      fflush( stdout );
+                    }
+#endif
                   }
                 }
               }
@@ -999,6 +1059,12 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
                 reconstruct.setColor( pointIndex, missedPointsColor );
                 partition.push_back( uint32_t( patchIndex ) );
                 pointToPixel.push_back( PCCVector3<size_t>( x, y, 0 ) );
+#ifdef DEBUG_TRACE_UVF
+                if ( x >= 1280 || y >= 1280 ) {
+                  printf( "P2P 8:  uv = %4lu %4lu f = %lu\n", x, y, 0 );
+                  fflush( stdout );
+                }
+#endif
                 counter++;
               }
             }
@@ -1866,9 +1932,7 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
           target.addPoint( reconstruct[i] );
           targetIndex.push_back( i );
         }
-      }
-
-      else if ( multipleStreams ) {
+      } else if ( multipleStreams ) {
         if ( f == 0 ) {
           const auto& frame = video.getFrame( frameIndex );
           for ( size_t c = 0; c < 3; ++c ) { color[i][c] = frame.getValue( c, x, y ); }
@@ -1897,9 +1961,7 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
           size_t index = (size_t)source.addPoint( reconstruct[i] );
           source.setColor( index, color[i] );
         }
-      }
-
-      else {
+      } else {
         if ( f < frameCount ) {
           const auto& frame = video.getFrame( shift + f );
           for ( size_t c = 0; c < 3; ++c ) { color[i][c] = frame.getValue( c, x, y ); }

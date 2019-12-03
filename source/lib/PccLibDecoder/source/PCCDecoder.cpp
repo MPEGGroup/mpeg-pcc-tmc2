@@ -632,8 +632,8 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
   PCCTILEGROUP tileGroupType  = atgh.getAtghType();
   size_t       patchCount     = atgdu.getPatchCount();
   for ( size_t i = 0; i < patchCount; i++ ) {
-    if ( ( tileGroupType == I_TILE_GRP && PCCPatchModeI( atgdu.getPatchMode( i ) ) == PATCH_MODE_I_Raw ) ||
-         ( tileGroupType == P_TILE_GRP && PCCPatchModeP( atgdu.getPatchMode( i ) ) == PATCH_MODE_P_Raw ) )
+    if ( ( tileGroupType == I_TILE_GRP && PCCPatchModeI( atgdu.getPatchMode( i ) ) == PATCH_MODE_I_RAW ) ||
+         ( tileGroupType == P_TILE_GRP && PCCPatchModeP( atgdu.getPatchMode( i ) ) == PATCH_MODE_P_RAW ) )
       numRawPatches++;
     else if ( ( tileGroupType == I_TILE_GRP && PCCPatchModeI( atgdu.getPatchMode( i ) ) == PATCH_MODE_I_EOM ) ||
               ( tileGroupType == P_TILE_GRP && PCCPatchModeP( atgdu.getPatchMode( i ) ) == PATCH_MODE_P_EOM ) ) {
@@ -797,9 +797,9 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
                                          context.getOccupancyPackingBlockSize() );
       }
     } else if ( ( tileGroupType == I_TILE_GRP &&
-                  PCCPatchModeI( atgdu.getPatchMode( patchIndex ) ) == (uint8_t)PATCH_MODE_I_Raw ) ||
+                  PCCPatchModeI( atgdu.getPatchMode( patchIndex ) ) == (uint8_t)PATCH_MODE_I_RAW ) ||
                 ( tileGroupType == P_TILE_GRP &&
-                  PCCPatchModeP( atgdu.getPatchMode( patchIndex ) ) == (uint8_t)PATCH_MODE_P_Raw ) ) {
+                  PCCPatchModeP( atgdu.getPatchMode( patchIndex ) ) == (uint8_t)PATCH_MODE_P_RAW ) ) {
       TRACE_CODEC( "patch %lu / %lu: raw \n", patchIndex, patchCount );
 
       auto& ppdu                = pid.getRawPatchDataUnit();
@@ -901,8 +901,8 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
 //  PCCTILEGROUP patchFrameType = PCCPatchFrameType( atgh.getAtghType() );
 //  size_t            patchCount     = atgdu.getPatchCount();
 //  for ( size_t i = 0; i < patchCount; i++ ) {
-//    if ( ( patchFrameType == PATCH_FRAME_I && PCCPatchModeI( atgdu.getPatchMode( i ) ) == PATCH_MODE_I_Raw ) ||
-//         ( patchFrameType == PATCH_FRAME_P && PCCPatchModeP( atgdu.getPatchMode( i ) ) == PATCH_MODE_P_Raw ) )
+//    if ( ( patchFrameType == PATCH_FRAME_I && PCCPatchModeI( atgdu.getPatchMode( i ) ) == PATCH_MODE_I_RAW ) ||
+//         ( patchFrameType == PATCH_FRAME_P && PCCPatchModeP( atgdu.getPatchMode( i ) ) == PATCH_MODE_P_RAW ) )
 //      numRawPatches++;
 //    else if(( patchFrameType == PATCH_FRAME_I && PCCPatchModeI( atgdu.getPatchMode( i ) ) == PATCH_MODE_I_EOM ) ||
 //            ( patchFrameType == PATCH_FRAME_P && PCCPatchModeP( atgdu.getPatchMode( i ) ) == PATCH_MODE_P_EOM ) ){
@@ -1071,9 +1071,9 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
 //                                         context.getOccupancyPackingBlockSize() );
 //      }
 //    } else if ( ( PCCPatchFrameType( atgh.getAtghType() ) == PATCH_FRAME_I &&
-//                  PCCPatchModeI( atgdu.getPatchMode( patchIndex ) ) == (uint8_t)PATCH_MODE_I_Raw ) ||
+//                  PCCPatchModeI( atgdu.getPatchMode( patchIndex ) ) == (uint8_t)PATCH_MODE_I_RAW ) ||
 //                ( PCCPatchFrameType( atgh.getAtghType() ) == PATCH_FRAME_P &&
-//                  PCCPatchModeP( atgdu.getPatchMode( patchIndex ) ) == (uint8_t)PATCH_MODE_P_Raw ) ) {
+//                  PCCPatchModeP( atgdu.getPatchMode( patchIndex ) ) == (uint8_t)PATCH_MODE_P_RAW ) ) {
 //      TRACE_CODEC( "patch %lu / %lu: raw \n", patchIndex, patches.size() );
 //
 //      auto& ppdu                = pid.getRawPatchDataUnit();

@@ -72,8 +72,8 @@
 #define NUM_DELTA_QP_CTX              3       ///< number of context models for dQP
 
 #define NUM_SIG_CG_FLAG_CTX           2       ///< number of context models for MULTI_LEVEL_SIGNIFICANCE
-#define NUM_EXPLICIT_RDRaw_FLAG_CTX   1       ///< number of context models for the flag which specifies whether to use RDRaw on inter coded residues
-#define NUM_EXPLICIT_RDRaw_DIR_CTX    1       ///< number of context models for the flag which specifies which RDRaw direction is used on inter coded residues
+#define NUM_EXPLICIT_RDPCM_FLAG_CTX   1       ///< number of context models for the flag which specifies whether to use RDPCM on inter coded residues
+#define NUM_EXPLICIT_RDPCM_DIR_CTX    1       ///< number of context models for the flag which specifies which RDPCM direction is used on inter coded residues
 
 //--------------------------------------------------------------------------------------------------
 
@@ -490,7 +490,7 @@ INIT_TRANSFORMSKIP_FLAG[NUMBER_OF_SLICE_TYPES][2*NUM_TRANSFORMSKIP_FLAG_CTX] =
 };
 
 static const UChar
-INIT_EXPLICIT_RDRaw_FLAG[NUMBER_OF_SLICE_TYPES][2*NUM_EXPLICIT_RDRaw_FLAG_CTX] =
+INIT_EXPLICIT_RDPCM_FLAG[NUMBER_OF_SLICE_TYPES][2*NUM_EXPLICIT_RDPCM_FLAG_CTX] =
 {
   {139, 139},
   {139, 139},
@@ -498,7 +498,7 @@ INIT_EXPLICIT_RDRaw_FLAG[NUMBER_OF_SLICE_TYPES][2*NUM_EXPLICIT_RDRaw_FLAG_CTX] =
 };
 
 static const UChar
-INIT_EXPLICIT_RDRaw_DIR[NUMBER_OF_SLICE_TYPES][2*NUM_EXPLICIT_RDRaw_DIR_CTX] =
+INIT_EXPLICIT_RDPCM_DIR[NUMBER_OF_SLICE_TYPES][2*NUM_EXPLICIT_RDPCM_DIR_CTX] =
 {
   {139, 139},
   {139, 139},

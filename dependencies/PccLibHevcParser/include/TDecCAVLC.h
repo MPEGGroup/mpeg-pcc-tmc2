@@ -304,7 +304,7 @@ public:
 
   Void parseTransformSkipFlags ( class TComTU &rTu, ComponentID component );
 
-  Void parseIRawInfo        ( TComDataCU* pcCU, UInt uiAbsPartIdx, UInt uiDepth);
+  Void parseIPCMInfo        ( TComDataCU* pcCU, UInt uiAbsPartIdx, UInt uiDepth);
 
 */
   Void xParsePredWeightTable ( TComSlice* pcSlice, const TComSPS *sps );
