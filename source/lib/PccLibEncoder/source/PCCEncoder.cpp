@@ -346,7 +346,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   context.allocOneLayerData();
   if ( params_.pointLocalReconstruction_ ) { pointLocalReconstructionSearch( context, gpcParams ); }
   std::vector<std::vector<uint32_t>> partitions;
-  generatePointCloud( reconstructs, context, gpcParams, partitions );
+  generatePointCloud( reconstructs, context, gpcParams, partitions, false );
   if ( ai.getAttributeCount() > 0 ) {
     std::cout << "Texture Coding starts" << std::endl;
     printf( "  mapCountMinus1_           = %lu \n", params_.mapCountMinus1_ );
@@ -599,7 +599,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
       for ( auto& reconstruct : reconstructs ) { reconstruct.clear(); }
       for ( auto& partition : partitions ) { partition.clear(); }
       partitions.clear();
-      generatePointCloud( reconstructs, context, gpcParams, partitions );
+      generatePointCloud( reconstructs, context, gpcParams, partitions, false );
     }
   }
   std::cout << "Color Point Clouds" << std::endl;
@@ -7236,16 +7236,42 @@ void PCCEncoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& 
 void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
   printf( "createPatchFrameDataStructure \n" );
   TRACE_CODEC( "createPatchFrameDataStructure GOP start \n" );
-  auto&  sps        = context.getSps();
   size_t frameCount = context.getFrames().size();
   TRACE_CODEC( "frameCount = %u \n", frameCount );
   TRACE_CODEC( "PLR = %d \n", params_.pointLocalReconstruction_ );
 
   if ( params_.pointLocalReconstruction_ ) { setPointLocalReconstruction( context ); }
+
+  //patch reordering
+  if(params_.patchPrecedenceOrderFlag_)
+  {
+    std::cout<<"encoder reverse ordering"<<std::endl;
+    for(size_t frameIdx=0; frameIdx<frameCount; frameIdx++){
+      auto& patches = context[frameIdx].getPatches();
+      vector<PCCPatch> reverseOrderPatchList;
+      
+      for( int i= (int)patches.size()-1; i>=0; i--)
+      {
+        if(patches[i].getBestMatchIdx()!=-1)
+        {
+          //only 1 previous frame
+          assert(frameIdx>0);
+          patches[i].setBestMatchIdx(context[frameIdx-1].getPatches().size() - patches[i].getBestMatchIdx() - 1 );
+        }
+        
+        reverseOrderPatchList.push_back(patches[i]);
+        
+      }
+      patches = reverseOrderPatchList;
+    }
+  }
+
   PCCFrameContext& refFrame = context.getFrame( 0 );
   for ( size_t i = 0; i < frameCount; i++ ) {
+    //*****//
     PCCFrameContext& frame = context.getFrame( i );
     createPatchFrameDataStructure( context, frame, refFrame, i );
+    //*****//
     AtlasTileGroupHeader& atgh         = context.getAtlasTileGroupLayer( i ).getAtlasTileGroupHeader();
     size_t                afpsIdInList = 0;
     for ( afpsIdInList = 0; afpsIdInList < context.getAtlasFrameParameterSetList().size(); afpsIdInList++ ) {

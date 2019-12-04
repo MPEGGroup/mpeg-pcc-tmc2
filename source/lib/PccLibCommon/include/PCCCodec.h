@@ -116,7 +116,8 @@ class PCCCodec {
   void generatePointCloud( PCCGroupOfFrames&                   reconstructs,
                            PCCContext&                         context,
                            const GeneratePointCloudParameters  params,
-                           std::vector<std::vector<uint32_t>>& partitions );
+                           std::vector<std::vector<uint32_t>>& partitions,
+                           bool bDecoder);
 
   bool colorPointCloud( PCCGroupOfFrames&                  reconstructs,
                         PCCContext&                        context,
@@ -212,12 +213,13 @@ class PCCCodec {
                              const size_t                thresholdLossyOM,
                              const bool                  enhancedOccupancyMapForDepthFlag );
 
-  void generateBlockToPatchFromOccupancyMap( PCCContext& context, const size_t occupancyResolution );
+  void generateBlockToPatchFromOccupancyMap( PCCContext& context, const size_t occupancyResolution, bool bDecoder );
 
   void generateBlockToPatchFromOccupancyMap( PCCContext&      context,
                                              PCCFrameContext& frame,
                                              size_t           frameIndex,
-                                             const size_t     occupancyResolution );
+                                             const size_t     occupancyResolution,
+                                             bool             bDecoder);
 
   void generateBlockToPatchFromBoundaryBox( PCCContext& context, const size_t occupancyResolution );
 
@@ -302,7 +304,8 @@ class PCCCodec {
                            const PCCVideoGeometry&            videoD1,
                            const PCCVideoOccupancyMap&        videoOM,
                            const GeneratePointCloudParameters params,
-                           std::vector<uint32_t>&             partition );
+                           std::vector<uint32_t>&             partition,
+                           bool                               bDecoder);
 
   void smoothPointCloud( PCCPointSet3&                      reconstruct,
                          const std::vector<uint32_t>&       partition,

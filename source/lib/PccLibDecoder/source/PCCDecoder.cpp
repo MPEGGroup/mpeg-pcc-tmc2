@@ -214,7 +214,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   }
   // jkei: can we have only one?
   if ( asps.getEnhancedOccupancyMapForDepthFlag() && !pbfEnableFlag ) {
-    generateBlockToPatchFromOccupancyMap( context, context.getOccupancyPackingBlockSize() );
+    generateBlockToPatchFromOccupancyMap( context, context.getOccupancyPackingBlockSize(), true );
   } else {
     generateBlockToPatchFromBoundaryBox( context, context.getOccupancyPackingBlockSize() );
   }
@@ -223,7 +223,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   setGeneratePointCloudParameters( gpcParams, context );
 
   std::vector<std::vector<uint32_t>> partitions;
-  generatePointCloud( reconstructs, context, gpcParams, partitions );
+  generatePointCloud( reconstructs, context, gpcParams, partitions, true );
 
   if ( ai.getAttributeCount() > 0 ) {
     int decodedBitdepthAttribute = ai.getAttributeNominal2dBitdepthMinus1( 0 ) + 1;

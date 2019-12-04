@@ -78,10 +78,11 @@ void PCCCodec::addGridCentroid( PCCPoint3D&               point,
   cnt[idx]++;
 }
 
-void PCCCodec::generatePointCloud( PCCGroupOfFrames&                  reconstructs,
-                                   PCCContext&                        context,
-                                   const GeneratePointCloudParameters params,
-                                   std::vector<std::vector<uint32_t>>& partitions )  // jkei: do we need this?
+void PCCCodec::generatePointCloud( PCCGroupOfFrames&                   reconstructs,
+                                   PCCContext&                         context,
+                                   const GeneratePointCloudParameters  params,
+                                   std::vector<std::vector<uint32_t>>& partitions,
+                                   bool                                bDecoder )
 {
   TRACE_CODEC( "Generate point Cloud start \n" );
   TRACE_CODEC( "  occupancyResolution_            = %lu \n", params.occupancyResolution_ );
@@ -156,8 +157,7 @@ void PCCCodec::generatePointCloud( PCCGroupOfFrames&                  reconstruc
           params.pbfLog2Threshold_ );
     }
     std::vector<uint32_t> partition;
-    generatePointCloud( reconstructs[i], context, frames[i], videoGeometry, videoGeometryD1, videoOccupancyMap, params,
-                        partition );
+    generatePointCloud( reconstructs[i], context, frames[i], videoGeometry, videoGeometryD1, videoOccupancyMap, params, partition, bDecoder );
     TRACE_CODEC( " generatePointCloud create %lu points \n", reconstructs[i].getPointCount() );
 
 #ifdef CODEC_TRACE
@@ -604,7 +604,8 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
                                    const PCCVideoGeometry&            videoD1,
                                    const PCCVideoOccupancyMap&        videoOM,
                                    const GeneratePointCloudParameters params,
-                                   std::vector<uint32_t>&             partition ) {
+                                   std::vector<uint32_t>&             partition,
+                                   bool                               bDecoder ) {
   TRACE_CODEC( "generatePointCloud F = %lu start \n", frame.getIndex() );
   auto& patches      = frame.getPatches();
   auto& pointToPixel = frame.getPointToPixel();
@@ -627,9 +628,9 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
   pointToPixel.resize( 0 );
   reconstruct.clear();
 
-  TRACE_CODEC( "Frame %lu in generatePointCloud \n", frame.getIndex() );
-  TRACE_CODEC( " params.useAdditionalPointsPatch_ = %d \n", params.useAdditionalPointsPatch_ );
-  TRACE_CODEC( " params.enhancedDeltaDepthCode_   = %d \n", params.enhancedDeltaDepthCode_ );
+  TRACE_CODEC( " Frame %lu in generatePointCloud \n", frame.getIndex() );
+  TRACE_CODEC( " params.useAdditionalPointsPatch = %d \n", params.useAdditionalPointsPatch_ );
+  TRACE_CODEC( " params.enhancedDeltaDepthCode   = %d \n", params.enhancedDeltaDepthCode_ );
 
   bool         useMissedPointsSeparateVideo = frame.getUseMissedPointsSeparateVideo();
   size_t       videoFrameIndex;  // shift;
@@ -658,8 +659,9 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
 
   std::vector<std::vector<PCCPoint3D>> eddPointsPerPatch;
   eddPointsPerPatch.resize( patchCount );
-
-  for ( patchIndex = 0; patchIndex < patchCount; ++patchIndex ) {
+  uint32_t index;
+  for ( index = 0; index<patches.size(); index++ ) {
+      patchIndex = (bDecoder&&context.getAtlasSequenceParameterSet(0).getPatchPrecedenceOrderFlag())? (patchCount-index-1):index;
     const size_t patchIndexPlusOne = patchIndex + 1;
     auto&        patch             = patches[patchIndex];
     PCCColor3B   color( uint8_t( 0 ) );
@@ -881,11 +883,12 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
   }
 
   frame.setTotalNumberOfRegularPoints( reconstruct.getPointCount() );
-
+  patchIndex = index;
   size_t       totalEddPointsInFrame = 0;
   PCCPointSet3 eddSavedPoints;
   if ( params.enhancedDeltaDepthCode_ ) {
     const size_t blockSize = params.occupancyResolution_ * params.occupancyResolution_;
+    size_t totalPatchCount = patchCount;
     size_t numEddPatches = frame.getEomPatches().size();
     printf( "numEddPatches = %lu  \n", numEddPatches );
     for ( int j = 0; j < numEddPatches; j++ ) {
@@ -898,9 +901,11 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
       totalEddPointsInFrame += eomPatch.eddCount_;
       size_t totalPointCount = 0;
       for ( size_t patchCount = 0; patchCount < numPatchesInEddPatches; patchCount++ ) {
-        size_t memberPatchIdx            = eomPatch.memberPatches[patchCount];
+        size_t memberPatchIdx =
+        (bDecoder&&context.getAtlasSequenceParameterSet(0).getPatchPrecedenceOrderFlag())?
+        (totalPatchCount-eomPatch.memberPatches[patchCount]-1) :eomPatch.memberPatches[patchCount];
         size_t numberOfEddPointsPerPatch = eddPointsPerPatch[memberPatchIdx].size();
-        printf( "numberOfEddPointsPerPatch[ %lu ][ %lu ] = %lu  \n", j, patchCount, numberOfEddPointsPerPatch );
+        printf( "numberOfEddPointsPerPatch[ %d ][ %lu ] = %lu  \n", j, patchCount, numberOfEddPointsPerPatch );
         for ( size_t pointCount = 0; pointCount < numberOfEddPointsPerPatch; pointCount++ ) {
           size_t currBlock                 = totalPointCount / blockSize;
           size_t nPixelInCurrentBlockCount = totalPointCount - currBlock * blockSize;
@@ -2176,19 +2181,19 @@ void PCCCodec::generateOccupancyMap( PCCFrameContext&            frame,
   }
 }
 
-void PCCCodec::generateBlockToPatchFromOccupancyMap( PCCContext& context, const size_t occupancyResolution ) {
+void PCCCodec::generateBlockToPatchFromOccupancyMap( PCCContext& context, const size_t occupancyResolution, bool bDecoder  ) {
   size_t sizeFrames = context.getFrames().size();
   for ( int i = 0; i < sizeFrames; i++ ) {
     PCCFrameContext& frame = context.getFrames()[i];
-    generateBlockToPatchFromOccupancyMap( context, frame, i, occupancyResolution );
+    generateBlockToPatchFromOccupancyMap( context, frame, i, occupancyResolution, bDecoder );
   }
 }
 
 void PCCCodec::generateBlockToPatchFromOccupancyMap( PCCContext&      context,
                                                      PCCFrameContext& frame,
                                                      size_t           frameIndex,
-                                                     const size_t     occupancyResolution ) {
-  auto&        asps               = context.getAtlasSequenceParameterSet( 0 );  // TODO: get correct ID
+                                                     const size_t     occupancyResolution,
+                                                     bool             bDecoder ) {
   auto&        patches            = frame.getPatches();
   const size_t patchCount         = patches.size();
   const size_t blockToPatchWidth  = frame.getWidth() / occupancyResolution;
@@ -2214,10 +2219,25 @@ void PCCCodec::generateBlockToPatchFromOccupancyMap( PCCContext&      context,
                 ( occupancyMap[patch.patch2Canvas( u, v, frame.getWidth(), frame.getHeight(), x, y )] != 0 );
           }  // u1
         }    // v1
-        if ( nonZeroPixel > 0 ) {
-          if ( ( asps.getPatchPrecedenceOrderFlag() == 0 ) || blockToPatch[blockIndex] == 0 ) {
-            blockToPatch[blockIndex] = patchIndex + 1;
+        if(bDecoder)
+        {
+          if ( context.getAtlasSequenceParameterSet(0).getPatchPrecedenceOrderFlag()){
+            if( nonZeroPixel > 0 && blockToPatch[blockIndex] ==0 ){
+              blockToPatch[blockIndex] = patchIndex+1;
+            }
           }
+          else{
+            if ( nonZeroPixel > 0 ) { blockToPatch[blockIndex] = patchIndex + 1; }
+          }
+        }
+        else
+        {
+          if ( nonZeroPixel > 0 ) {
+            if ( blockToPatch[blockIndex] == 0 ) {
+              blockToPatch[blockIndex] = patchIndex + 1;
+            }
+          }
+          exit(0); //jkei:remove?
         }
       }  // u0
     }    // v0
@@ -2250,9 +2270,12 @@ void PCCCodec::generateBlockToPatchFromBoundaryBox( PCCContext&      context,
     for ( size_t v0 = 0; v0 < patch.getSizeV0(); ++v0 ) {
       for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {
         const size_t blockIndex = patch.patchBlock2CanvasBlock( u0, v0, blockToPatchWidth, blockToPatchHeight );
-        if ( ( asps.getPatchPrecedenceOrderFlag() == 0 ) || blockToPatch[blockIndex] == 0 ) {
-          blockToPatch[blockIndex] = patchIndex + 1;
+        if ( context.getAtlasSequenceParameterSet(0).getPatchPrecedenceOrderFlag()){
+          if( blockToPatch[blockIndex] ==0 )
+            blockToPatch[blockIndex] = patchIndex+1;
         }
+        else
+          blockToPatch[blockIndex] = patchIndex + 1;
       }  // u0
     }    // v0
   }      // patch
@@ -2304,11 +2327,7 @@ void PCCCodec::generateBlockToPatchFromOccupancyMapVideo( PCCContext&           
             nonZeroPixel += ( occupancyMapImage.getValue( 0, x / occupancyPrecision, y / occupancyPrecision ) != 0 );
           }  // u1
         }    // v1
-        if ( nonZeroPixel > 0 ) {
-          if ( ( asps.getPatchPrecedenceOrderFlag() == 0 ) || blockToPatch[blockIndex] == 0 ) {
-            blockToPatch[blockIndex] = patchIndex + 1;
-          }
-        }
+        if ( nonZeroPixel > 0 ) { blockToPatch[blockIndex] = patchIndex + 1; } //jkei: how about lowdelay???
       }  // u0
     }    // v0
   }      // patch
