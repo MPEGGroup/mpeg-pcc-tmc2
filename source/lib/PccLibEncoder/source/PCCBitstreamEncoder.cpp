@@ -1183,7 +1183,12 @@ void PCCBitstreamEncoder::patchDataUnit( PatchDataUnit&        pdu,
   }
   TRACE_BITSTREAM( "PointLocalReconstructionEnabledFlag = %d \n", asps.getPointLocalReconstructionEnabledFlag() );
   if ( asps.getPointLocalReconstructionEnabledFlag() ) {
-    pointLocalReconstructionData( pdu.getPointLocalReconstructionData(), context, asps, bitstream );
+    auto & plrd = pdu.getPointLocalReconstructionData();
+    TRACE_BITSTREAM( "Prev Size = %d %d Delta Size = %ld %ld => %ld %ld \n",
+                     plrd.getBlockToPatchMapWidth() - pdu.getPdu2dDeltaSizeX(),
+                     plrd.getBlockToPatchMapHeight() - pdu.getPdu2dDeltaSizeY(), pdu.getPdu2dDeltaSizeX(),
+                     pdu.getPdu2dDeltaSizeY(), plrd.getBlockToPatchMapWidth(), plrd.getBlockToPatchMapHeight() );
+    pointLocalReconstructionData( plrd, context, asps, bitstream );
   }
   TRACE_BITSTREAM(
       "Frame %zu, Patch(%zu) => 2dPos %4lu %4lu 2dSize=%4ld %4ld 3dPos %4lu %4lu %4lu %4lu Projection %zu "
@@ -1238,7 +1243,12 @@ void PCCBitstreamEncoder::mergePatchDataUnit( MergePatchDataUnit&   mpdu,
   }  // else
 
   if ( overridePlrFlag && asps.getPointLocalReconstructionEnabledFlag() ) {
-    pointLocalReconstructionData( mpdu.getPointLocalReconstructionData(), context, asps, bitstream );
+    auto & plrd = mpdu.getPointLocalReconstructionData();
+    TRACE_BITSTREAM( "Prev Size = %d %d Delta Size = %ld %ld => %ld %ld \n",
+                     plrd.getBlockToPatchMapWidth() - mpdu.getMpdu2dDeltaSizeX(),
+                     plrd.getBlockToPatchMapHeight() - mpdu.getMpdu2dDeltaSizeY(), mpdu.getMpdu2dDeltaSizeX(),
+                     mpdu.getMpdu2dDeltaSizeY(), plrd.getBlockToPatchMapWidth(), plrd.getBlockToPatchMapHeight() );
+    pointLocalReconstructionData( plrd, context, asps, bitstream );
   }
 
   TRACE_BITSTREAM(
@@ -1259,7 +1269,7 @@ void PCCBitstreamEncoder::interPatchDataUnit( InterPatchDataUnit&   ipdu,
   size_t                         aspsId = afps.getAtlasSequenceParameterSetId();
   AtlasSequenceParameterSetRBSP& asps   = context.getAtlasSequenceParameterSet( aspsId );
 
-  if ( atgh.getAtghNumRefdxActiveMinus1() > 0 ) bitstream.writeUvlc( int32_t( ipdu.getIpduRefIndex() ) );
+  if ( atgh.getAtghNumRefdxActiveMinus1() > 0 ) { bitstream.writeUvlc( int32_t( ipdu.getIpduRefIndex() ) ); }
 
   bitstream.writeSvlc( int32_t( ipdu.getIpduRefPatchIndex() ) );
   bitstream.writeSvlc( int32_t( ipdu.getIpdu2dPosX() ) );
@@ -1273,7 +1283,12 @@ void PCCBitstreamEncoder::interPatchDataUnit( InterPatchDataUnit&   ipdu,
     bitstream.writeSvlc( int32_t( ipdu.getIpdu3dPosDeltaMaxZ() ) );
   }
   if ( asps.getPointLocalReconstructionEnabledFlag() ) {
-    pointLocalReconstructionData( ipdu.getPointLocalReconstructionData(), context, asps, bitstream );
+    auto & plrd = ipdu.getPointLocalReconstructionData();
+    TRACE_BITSTREAM( "Prev Size = %d %d Delta Size = %ld %ld => %ld %ld \n",
+                     plrd.getBlockToPatchMapWidth() - ipdu.getIpdu2dDeltaSizeX(),
+                     plrd.getBlockToPatchMapHeight() - ipdu.getIpdu2dDeltaSizeY(), ipdu.getIpdu2dDeltaSizeX(),
+                     ipdu.getIpdu2dDeltaSizeY(), plrd.getBlockToPatchMapWidth(), plrd.getBlockToPatchMapHeight() );
+    pointLocalReconstructionData( plrd, context, asps, bitstream );
   }
 
   TRACE_BITSTREAM(

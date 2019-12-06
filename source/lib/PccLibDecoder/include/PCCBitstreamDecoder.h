@@ -450,7 +450,7 @@ class PCCBitstreamDecoder {
   int32_t prevPatchSizeU_;
   int32_t prevPatchSizeV_;
   int32_t predPatchIndex_;
-  int32_t predFramePatchTileGroupLayerUnitIndex_;
+  int32_t prevFrameIndex_;
 
 #ifdef BITSTREAM_TRACE
   FILE* traceFile_;

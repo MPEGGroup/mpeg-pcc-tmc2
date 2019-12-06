@@ -773,7 +773,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
                         point1[patch.getNormalAxis()] = (double)( point0[patch.getNormalAxis()] - deltaDCur );
                       }
 #if BUGFIX_FIRSTEDDatT1
-#if 1 
+#if 1
                       if ( eddCode == 1 || i == d1pos )
 #else
                       if ( ( eddCode == 1 || i == d1pos ) && ( params.mapCountMinus1_ > 0 ) )
@@ -1948,17 +1948,16 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
           const auto& image1 = videoT1.getFrame( frameIndex );
           for ( size_t c = 0; c < 3; ++c ) {
             // reconstruction
-
             int16_t value0 = static_cast<int16_t>( image0.getValue( c, x, y ) );
             int16_t value1 = static_cast<int16_t>( image1.getValue( c, x, y ) );
-
             if ( !absoluteT1List[f] ) {
               int16_t delta = value1;
               delta         = delta - 128;
-              if ( delta < -128 )
+              if ( delta < -128 ){
                 delta = -128;
-              else if ( delta > 127 )
+              } else if ( delta > 127 ){ 
                 delta = 127;
+              }
               value1 = value0 + delta;  // elta = value1 - value0; //jkei : change 127 later
             }
             color[i][c] = value1 < 0 ? 0 : ( value1 > 255 ? 255 : value1 );

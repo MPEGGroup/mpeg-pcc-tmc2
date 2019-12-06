@@ -41,7 +41,11 @@
 
 using namespace pcc;
 
-PCCBitstreamDecoder::PCCBitstreamDecoder() : prevPatchSizeU_( 0 ), prevPatchSizeV_( 0 ), predPatchIndex_( 0 ) {}
+PCCBitstreamDecoder::PCCBitstreamDecoder() :
+    prevPatchSizeU_( 0 ),
+    prevPatchSizeV_( 0 ),
+    predPatchIndex_( 0 ),
+    prevFrameIndex_( 0 ) {}
 PCCBitstreamDecoder::~PCCBitstreamDecoder() {}
 
 // B.2  Sample stream V-PCC unit syntax
@@ -923,7 +927,7 @@ void PCCBitstreamDecoder::atlasTileGroupDataUnit( AtlasTileGroupDataUnit& atgdu,
   TRACE_BITSTREAM( "patchMode = %lu \n", patchMode );
   prevPatchSizeU_   = 0;
   prevPatchSizeV_   = 0;
-  predPatchIndex_   = 0;
+  predPatchIndex_   = 0; 
   while ( !( ( ( PCCTILEGROUP( tileGroupType ) == I_TILE_GRP ) && ( patchMode == PATCH_MODE_I_END ) ) ||
              ( ( PCCTILEGROUP( tileGroupType ) == P_TILE_GRP ) && ( patchMode == PATCH_MODE_P_END ) ) ) ) {
     auto& pid = atgdu.addPatchInformationData( patchMode );
@@ -935,6 +939,7 @@ void PCCBitstreamDecoder::atlasTileGroupDataUnit( AtlasTileGroupDataUnit& atgdu,
     patchMode = bitstream.readUvlc();  // ue(v)
     TRACE_BITSTREAM( "patchMode = %lu \n", patchMode );
   }
+  prevFrameIndex_ = atgdu.getFrameIndex(); 
   TRACE_BITSTREAM( "atgdu.getPatchCount() including END = %lu \n", atgdu.getPatchCount() + 1 );
   byteAlignment( bitstream );
 }
@@ -962,7 +967,6 @@ void PCCBitstreamDecoder::patchInformationData( PatchInformationData& pid,
     auto& pdu = pid.getPatchDataUnit();
     pdu.setFrameIndex( pid.getFrameIndex() );
     pdu.setPatchIndex( pid.getPatchIndex() );
-
     patchDataUnit( pdu, atgh, context, bitstream );
   } else if ( ( ( PCCTILEGROUP( atgh.getAtghType() ) ) == I_TILE_GRP && patchMode == PATCH_MODE_I_RAW ) ||
               ( ( PCCTILEGROUP( atgh.getAtghType() ) ) == P_TILE_GRP && patchMode == PATCH_MODE_P_RAW ) ) {
@@ -1030,6 +1034,9 @@ void PCCBitstreamDecoder::patchDataUnit( PatchDataUnit&        pdu,
   TRACE_BITSTREAM( "PointLocalReconstructionEnabledFlag = %d \n", asps.getPointLocalReconstructionEnabledFlag() );
   if ( asps.getPointLocalReconstructionEnabledFlag() ) {
     auto& plrd = pdu.getPointLocalReconstructionData();
+    TRACE_BITSTREAM( "Prev Size = %d %d Delta Size = %ld %ld => %ld %ld \n", prevPatchSizeU_, prevPatchSizeV_,
+                     pdu.getPdu2dDeltaSizeX(), pdu.getPdu2dDeltaSizeY(), prevPatchSizeU_ + pdu.getPdu2dDeltaSizeX(),
+                     prevPatchSizeV_ + pdu.getPdu2dDeltaSizeY() );
     plrd.allocate( prevPatchSizeU_ + pdu.getPdu2dDeltaSizeX(), prevPatchSizeV_ + pdu.getPdu2dDeltaSizeY() );
     pointLocalReconstructionData( plrd, context, asps, bitstream );
     prevPatchSizeU_ += pdu.getPdu2dDeltaSizeX();
@@ -1099,6 +1106,9 @@ void PCCBitstreamDecoder::mergePatchDataUnit( MergePatchDataUnit&   mpdu,
 
   if ( overridePlrFlag && asps.getPointLocalReconstructionEnabledFlag() ) {
     auto& plrd = mpdu.getPointLocalReconstructionData();
+    TRACE_BITSTREAM( "Prev Size = %d %d Delta Size = %ld %ld => %ld %ld \n", prevPatchSizeU_, prevPatchSizeV_,
+                     mpdu.getMpdu2dDeltaSizeX(), mpdu.getMpdu2dDeltaSizeY(), prevPatchSizeU_ + mpdu.getMpdu2dDeltaSizeX(),
+                     prevPatchSizeV_ + mpdu.getMpdu2dDeltaSizeY() );
     plrd.allocate( prevPatchSizeU_ + mpdu.getMpdu2dDeltaSizeX(), prevPatchSizeV_ + mpdu.getMpdu2dDeltaSizeY() );
     pointLocalReconstructionData( plrd, context, asps, bitstream );
     prevPatchSizeU_ += mpdu.getMpdu2dDeltaSizeX();
@@ -1123,7 +1133,7 @@ void PCCBitstreamDecoder::interPatchDataUnit( InterPatchDataUnit&   ipdu,
   size_t                         aspsId = afps.getAtlasSequenceParameterSetId();
   AtlasSequenceParameterSetRBSP& asps   = context.getAtlasSequenceParameterSet( aspsId );
   // AtlasFrameTileInformation&    afti = afps.getAtlasFrameTileInformation();
-  if ( atgh.getAtghNumRefdxActiveMinus1() > 0 ) ipdu.setIpduRefIndex( bitstream.readUvlc() );
+  if ( atgh.getAtghNumRefdxActiveMinus1() > 0 ) { ipdu.setIpduRefIndex( bitstream.readUvlc() ); }
   ipdu.setIpduRefPatchIndex( bitstream.readSvlc() );
   ipdu.setIpdu2dPosX( bitstream.readSvlc() );        // se(v)
   ipdu.setIpdu2dPosY( bitstream.readSvlc() );        // se(v)
@@ -1136,11 +1146,37 @@ void PCCBitstreamDecoder::interPatchDataUnit( InterPatchDataUnit&   ipdu,
     ipdu.setIpdu3dPosDeltaMaxZ( bitstream.readSvlc() );  // se(v)
   }
   if ( asps.getPointLocalReconstructionEnabledFlag() ) {
+    auto& atglPrev = context.getAtlasTileGroupLayer( prevFrameIndex_ );
+    auto& atghPrev = atglPrev.getAtlasTileGroupHeader(); 
+    auto& atgdPrev = atglPrev.getAtlasTileGroupDataUnit(); 
+    auto& pidPrev = atgdPrev.getPatchInformationData(  ipdu.getIpduRefPatchIndex() + predPatchIndex_  );
+    auto patchModePrev = pidPrev.getPatchMode();
+    int32_t sizeU = ipdu.getIpdu2dDeltaSizeX();
+    int32_t sizeV = ipdu.getIpdu2dDeltaSizeY();
+    if ( ( PCCTILEGROUP( atghPrev.getAtghType() ) ) == P_TILE_GRP && patchModePrev == PATCH_MODE_P_SKIP ) {
+    } else if ( ( PCCTILEGROUP( atghPrev.getAtghType() ) ) == P_TILE_GRP && patchModePrev == PATCH_MODE_P_MERGE ) {
+      auto& plrdPrev = pidPrev.getMergePatchDataUnit().getPointLocalReconstructionData();
+      sizeU += plrdPrev.getBlockToPatchMapWidth();
+      sizeV += plrdPrev.getBlockToPatchMapHeight();
+    } else if ( ( PCCTILEGROUP( atghPrev.getAtghType() ) ) == P_TILE_GRP && patchModePrev == PATCH_MODE_P_INTER ) {
+      auto& plrdPrev = pidPrev.getInterPatchDataUnit().getPointLocalReconstructionData();
+      sizeU += plrdPrev.getBlockToPatchMapWidth();
+      sizeV += plrdPrev.getBlockToPatchMapHeight();
+    } else if ( ( ( PCCTILEGROUP( atghPrev.getAtghType() ) ) == I_TILE_GRP && patchModePrev == PATCH_MODE_I_INTRA ) ||
+                ( ( PCCTILEGROUP( atghPrev.getAtghType() ) ) == P_TILE_GRP && patchModePrev == PATCH_MODE_P_INTRA ) ) {
+      auto& plrdPrev = pidPrev.getPatchDataUnit().getPointLocalReconstructionData();
+      sizeU += plrdPrev.getBlockToPatchMapWidth();
+      sizeV += plrdPrev.getBlockToPatchMapHeight();
+    }
+    TRACE_BITSTREAM( "Prev Size = %d %d Delta Size = %ld %ld => %ld %ld \n", sizeU - ipdu.getIpdu2dDeltaSizeX(),
+                     sizeV - ipdu.getIpdu2dDeltaSizeY(), ipdu.getIpdu2dDeltaSizeX(), ipdu.getIpdu2dDeltaSizeY(), sizeU,
+                     sizeV );
     auto& plrd = ipdu.getPointLocalReconstructionData();
-    plrd.allocate( prevPatchSizeU_ + ipdu.getIpdu2dDeltaSizeX(), prevPatchSizeV_ + ipdu.getIpdu2dDeltaSizeY() );
+    plrd.allocate( sizeU, sizeV );
     pointLocalReconstructionData( plrd, context, asps, bitstream );
-    prevPatchSizeU_ += ipdu.getIpdu2dDeltaSizeX();
-    prevPatchSizeV_ += ipdu.getIpdu2dDeltaSizeY();
+    prevPatchSizeU_ = sizeU;
+    prevPatchSizeV_ = sizeV;
+    predPatchIndex_ += ipdu.getIpduRefPatchIndex() + 1;
   }
 
   TRACE_BITSTREAM(

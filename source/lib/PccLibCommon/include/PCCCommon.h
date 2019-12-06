@@ -73,7 +73,7 @@
 #define MULTISTREAM_UPDATE      1  // prevent overflow for the lossless absolute case
 #define VPCCUNIT_DATA_BITSTREAM 1  // jkei: bitstream instead of data
 
-// #define DEBUG_SURFACE_SEPARATION 
+#define DEBUG_SURFACE_SEPARATION 
 #define DEBUG_MULTI_STREAMS   
 
 // ******************************************************************* //

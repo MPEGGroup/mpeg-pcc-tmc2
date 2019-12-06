@@ -2612,13 +2612,27 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
         }
       }
       patch.setEddandD1Count( eddCountPerPatch );
-      if ( useEnhancedDeltaDepthCode ) { patch.setEddCount( eddCountPerPatch - d1CountPerPatch ); }
+      if ( useEnhancedDeltaDepthCode ) { 
+        patch.setEddCount( eddCountPerPatch - d1CountPerPatch );
+        printf( "Patch %lu : EDD = %lu - %lu  = %lu \n", patchIndex, eddCountPerPatch, d1CountPerPatch,
+                eddCountPerPatch - d1CountPerPatch ); 
+      }
       patch.setD0Count( d0CountPerPatch );
+#if 1
+      numberOfEDD += eddCountPerPatch; // JR 
+#else
       numberOfEDD += ( eddCountPerPatch - d1CountPerPatch );
+#endif
 
       numD0Points += d0CountPerPatch;
       numD1Points += d1CountPerPatch;
-      if ( useEnhancedDeltaDepthCode ) { numEDDonlyPoints += ( eddCountPerPatch - d1CountPerPatch ); }
+      if ( useEnhancedDeltaDepthCode ) { 
+#if 1
+        numEDDonlyPoints += eddCountPerPatch;   // JR 
+#else
+        numEDDonlyPoints += ( eddCountPerPatch - d1CountPerPatch );  
+#endif
+      }
       // assert(eddPointSet.getPointCount() !=patch.getEddCount());
       std::cout << "\t\t Patch " << patchIndex << " ->(d1,u1,v1)=( " << patch.getD1() << " , " << patch.getU1() << " , "
                 << patch.getV1() << " )(dd,du,dv)=( " << patch.getSizeD() << " , " << patch.getSizeU() << " , "
@@ -2656,7 +2670,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
     std::cout << " # patches " << patches.size() << std::endl;
     std::cout << " # resampled " << resampled.getPointCount() << std::endl;
     std::cout << " # missed points " << missedPoints.size() << std::endl;
-    if ( useEnhancedDeltaDepthCode ) std::cout << " # EDD points " << numberOfEDD << std::endl;
+    if ( useEnhancedDeltaDepthCode ) { std::cout << " # EDD points " << numberOfEDD << std::endl; }
   }
   distanceSrcRec = meanYAB + meanUAB + meanVAB + meanYBA + meanUBA + meanVBA;
 #if 0
