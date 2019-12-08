@@ -77,7 +77,6 @@ class PCCDecoder : public PCCCodec {
   void createPatchFrameDataStructure(
       PCCContext&      context,
       PCCFrameContext& frame,
-      PCCFrameContext& refFrame,  // change this to be derived from reference data structure
       size_t           frameIndex );
 
  private:
@@ -91,7 +90,12 @@ class PCCDecoder : public PCCCodec {
                                         PCCPatch&                     patch,
                                         PointLocalReconstructionData& plrd,
                                         size_t                        occupancyPackingBlockSize );
-
+  //jkei: let's do something...
+  void copyPointLocalReconstructionData( PCCFrameContext&              frame,
+                                        PCCPatch&                     patch,
+                                        const PCCPatch&                     refPatch,
+                                        size_t                        occupancyPackingBlockSize );
+    
   PCCDecoderParameters params_;
 };
 };  // namespace pcc

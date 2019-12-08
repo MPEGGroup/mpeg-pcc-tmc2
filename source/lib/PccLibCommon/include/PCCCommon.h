@@ -83,7 +83,7 @@
 #define BITSTREAM_TRACE
 #define CODEC_TRACE
 // #define DEBUG_TRACE_UVF 
-// ENABLE_LAST_PATCH
+// ENABLE_LAST_PATCH : jkei: removed
 namespace pcc {
 
 // ******************************************************************* //
@@ -232,7 +232,7 @@ enum PCCPatchModeP {
   PATCH_MODE_P_EOM,
   PATCH_MODE_P_END = 14
 };
-enum PCCPatchType { P_TYPE_INTRA = 0, P_TYPE_INTER, P_TYPE_SKIP, P_TYPE_END, INTRA_PATCH = 0, INTER_PATCH, MERGE_PATCH, SKIP_PATCH, RAW_PATCH, EOM_PATCH, END_PATCH, ERROR};
+enum PCCPatchType { INTRA_PATCH = 0, INTER_PATCH, MERGE_PATCH, SKIP_PATCH, RAW_PATCH, EOM_PATCH, END_PATCH, ERROR };
 enum PCCTILEGROUP { P_TILE_GRP = 0, SKIP_TILE_GRP, I_TILE_GRP };
 enum { COLOURFORMAT420 = 0, COLOURFORMAT444 = 1 };
 

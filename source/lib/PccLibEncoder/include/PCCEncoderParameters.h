@@ -46,6 +46,7 @@ class PCCEncoderParameters {
   void print();
   bool check();
   void completePath();
+  void constructAspsRefList(PCCContext& context, size_t aspsIdx, size_t afpsIdx);
   void initializeContext( PCCContext& context );
   size_t startFrameNumber_;
 
@@ -276,7 +277,7 @@ class PCCEncoderParameters {
   
   //
   bool patchPrecedenceOrderFlag_;
-  size_t maxNumRefPatchList_;
+  size_t maxNumRefAtlasList_;
   size_t maxNumRefAtlasFrame_;
 
 };

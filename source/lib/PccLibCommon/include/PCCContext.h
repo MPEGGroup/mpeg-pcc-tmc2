@@ -1940,7 +1940,7 @@ class AtlasTileGroupHeader {
       atghPatchSizeYinfoQuantizer_( 0 ),
       atghRaw3dPosAxisBitCountMinus1_( 0 ),
       atghNumRefIdxActiveOverrideFlag_( 0 ),
-      atghNumRefdxActiveMinus1_( 0 ) {
+      atghNumRefIdxActiveMinus1_( 0 ) {
     atghAdditionalAfocLsbPresentFlag_.resize( 1, 0 );
     atghAdditionalAfocLsbVal_.resize( 1, 0 );
   };
@@ -1977,7 +1977,7 @@ class AtlasTileGroupHeader {
 
   uint8_t               getAtghRaw3dPosAxisBitCountMinus1() { return atghRaw3dPosAxisBitCountMinus1_; }
   bool                  getAtghNumRefIdxActiveOverrideFlag() { return atghNumRefIdxActiveOverrideFlag_; }
-  uint8_t               getAtghNumRefdxActiveMinus1() { return atghNumRefdxActiveMinus1_; }
+  uint8_t               getAtghNumRefIdxActiveMinus1() { return atghNumRefIdxActiveMinus1_; }
   std::vector<bool>&    getAtghAdditionalAfocLsbPresentFlag() { return atghAdditionalAfocLsbPresentFlag_; }
   std::vector<uint8_t>& getAtghAdditionalAfocLsbVal() { return atghAdditionalAfocLsbVal_; }
   bool    getAtghAdditionalAfocLsbPresentFlag( size_t idx ) { return atghAdditionalAfocLsbPresentFlag_[idx]; }
@@ -1996,7 +1996,7 @@ class AtlasTileGroupHeader {
 
   void setAtghRaw3dPosAxisBitCountMinus1( uint8_t value ) { atghRaw3dPosAxisBitCountMinus1_ = value; }
   void setAtghNumRefIdxActiveOverrideFlag( bool value ) { atghNumRefIdxActiveOverrideFlag_ = value; }
-  void setAtghNumRefdxActiveMinus1( uint8_t value ) { atghNumRefdxActiveMinus1_ = value; }
+  void setAtghNumRefIdxActiveMinus1( uint8_t value ) { atghNumRefIdxActiveMinus1_ = value; }
   void setAtghAdditionalAfocLsbPresentFlag( std::vector<bool>& value ) { atghAdditionalAfocLsbPresentFlag_ = value; }
   void setAtghAdditionalAfocLsbVal( std::vector<uint8_t>& value ) { atghAdditionalAfocLsbVal_ = value; }
   void setAtghAdditionalAfocLsbPresentFlag( size_t idx, bool value ) { atghAdditionalAfocLsbPresentFlag_[idx] = value; }
@@ -2016,7 +2016,7 @@ class AtlasTileGroupHeader {
   uint8_t              atghPatchSizeYinfoQuantizer_;
   uint8_t              atghRaw3dPosAxisBitCountMinus1_;
   bool                 atghNumRefIdxActiveOverrideFlag_;
-  uint8_t              atghNumRefdxActiveMinus1_;
+  uint8_t              atghNumRefIdxActiveMinus1_;
   std::vector<bool>    atghAdditionalAfocLsbPresentFlag_;
   std::vector<uint8_t> atghAdditionalAfocLsbVal_;
   RefListStruct        refListStruct_;  // jkei: one ref list
@@ -3963,6 +3963,27 @@ class PCCContext {
   void                          setOffsetLossyOM( size_t value ) { offsetLossyOM_ = value; }
   void setGeometry3dCoordinatesBitdepth( size_t value ) { geometry3dCoordinatesBitdepth_ = value; }
 
+  void setMaxNumRefAtlasFrame(size_t value) { maxNumRefAtlasFrame_=value; }
+  void setNumOfRefAtlasFrameList(size_t value) { refAtlasFrameList_.resize(value); }
+  void setSizeOfRefAtlasFrameList(size_t listIndex, size_t listSize) { refAtlasFrameList_[listIndex].resize(listSize); }
+  void setRefAtlasFrame(size_t listIndex, size_t refIndex, int32_t value) { refAtlasFrameList_[listIndex][refIndex]=value; }
+  void setRefAtlasFrameList(std::vector<std::vector<int32_t>>& list){
+    size_t listSize= std::min(refAtlasFrameList_.size(), list.size());
+    for(size_t i=0; i<listSize; i++)
+    {
+      size_t refSize= std::min(refAtlasFrameList_[i].size(), list[i].size());
+      for(size_t j=0; j<refSize; j++)
+        refAtlasFrameList_[i][j]=list[i][j];
+    }
+  }
+  size_t                getMaxNumRefAtlasFrame()    { return maxNumRefAtlasFrame_; }
+  size_t                getNumOfRefAtlasFrameList() { return refAtlasFrameList_.size(); }
+  size_t                getSizeOfRefAtlasFrameList( size_t listIndex )        { return refAtlasFrameList_[listIndex].size(); }
+  int32_t               getRefAtlasFrame( size_t listIndex, size_t refIndex ) { return refAtlasFrameList_[listIndex][refIndex]; }
+  std::vector<int32_t>& getRefAtlasFrameList( size_t listIndex ) { return refAtlasFrameList_[listIndex]; }
+  void                  constructRefList(size_t aspsIdx, size_t afpsIdx);
+  size_t                getNumRefIdxActive( AtlasTileGroupHeader& atgh );
+
   PCCVideoBitstream& createVideoBitstream( PCCVideoType type ) {
     videoBitstream_.push_back( PCCVideoBitstream( type ) );
     return videoBitstream_.back();
@@ -4199,6 +4220,10 @@ class PCCContext {
   size_t                                    offsetLossyOM_;
   size_t                                    geometry3dCoordinatesBitdepth_;
   bool                                      singleLayerMode_;
+
+  size_t                                    maxNumRefAtlasFrame_;
+  std::vector<std::vector<int32_t>>         refAtlasFrameList_; //list[0][maxNumRefAtlasFrame_] list[1][index] ...
+
   PCCBitstreamStat*                         bitstreamStat_;
   // size_t                                    EOMFixBitCount_;
   // std::vector<int16_t> deltaAfocSt_; //ref, -1,-2,-3,-4

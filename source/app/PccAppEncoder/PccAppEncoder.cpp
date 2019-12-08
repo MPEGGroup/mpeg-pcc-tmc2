@@ -207,6 +207,7 @@ bool parseParameters( int                   argc,
    encoderParams.log2QuantizerSizeX_,
    encoderParams.log2QuantizerSizeX_,
    "log2 of Quantization step for patch size X: 0. pixel precision 4.16 as before")
+
   ("log2QuantizerSizeY",
    encoderParams.log2QuantizerSizeY_,
    encoderParams.log2QuantizerSizeY_,
@@ -671,9 +672,9 @@ bool parseParameters( int                   argc,
      encoderParams.deltaCoding_,
      "Delta meta-data coding")
 
-  ("maxNumRefPatchList", //
-   encoderParams.maxNumRefPatchList_,
-   encoderParams.maxNumRefPatchList_,
+  ("maxNumRefAtalsList", //
+   encoderParams.maxNumRefAtlasList_,
+   encoderParams.maxNumRefAtlasList_,
    "maximum Number of Reference Patch list, default: 1")
   
   ("maxNumRefAtlasFrame",

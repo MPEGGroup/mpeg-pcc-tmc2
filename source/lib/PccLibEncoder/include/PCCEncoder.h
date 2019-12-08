@@ -136,7 +136,6 @@ class PCCEncoder : public PCCCodec {
 
   void createPatchFrameDataStructure( PCCContext&      context,
                                       PCCFrameContext& frame,
-                                      PCCFrameContext& preFrame,
                                       size_t           frameIndex );
 
  private:
@@ -235,6 +234,8 @@ class PCCEncoder : public PCCCodec {
                                   size_t             occupancySizeU,
                                   size_t             occupancySizeV,
                                   size_t             maxOccupancyRow );
+  void   adjustReferenceAtlasFrames( PCCContext& context);
+  double adjustReferenceAtlasFrame ( PCCContext& context, PCCFrameContext& frame, size_t listIndex, std::vector<PCCPatch>& tempPatchList);
   void spatialConsistencyPack( PCCFrameContext& frame,
                                PCCFrameContext& prevFrame,
                                int              safeguard                    = 0,

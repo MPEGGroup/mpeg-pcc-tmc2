@@ -70,6 +70,7 @@ void PCCPatchSegmenter3::compute( const PCCPointSet3&                 geometry,
     orientations     = orientations18;
     orientationCount = 18;
   }
+  std::cout<<std::endl<<"============= FRAME "<<frameIndex<<" ============= "<<std::endl;
   std::cout << "  Computing normals for original point cloud... ";
   PCCKdTree                            kdtree( geometry );
   PCCNNResult                          result;
@@ -1036,7 +1037,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
                                          std::vector<size_t>&        partition,
                                          std::vector<PCCPatch>&      patches,
                                          std::vector<size_t>&        patchPartition,
-                                         std::vector<size_t>&        resampledPatchPartition,
+                                         std::vector<size_t>& resampledPatchPartition,
                                          std::vector<size_t>         missedPoints,
                                          PCCPointSet3&               resampled,
                                          std::vector<PCCPointSet3>&  subPointCloud,
@@ -1424,7 +1425,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
       size_t d1CountPerPatch  = 0;
       size_t eddCountPerPatch = 0;
       patch.setEddCount( 0 );
-      patch.setPatchType( (uint8_t)P_TYPE_INTRA );
+      patch.setPatchType( (uint8_t)PATCH_MODE_P_INTRA );
       const size_t clusterIndex        = partition[connectedComponent[0]];
       bIsAdditionalProjectionPlane     = false;
       patch.getAxisOfAdditionalPlane() = 0;
@@ -2424,10 +2425,15 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
                         uint16_t nDeltaDCur = ( i + 1 );
 
                         point[patch.getNormalAxis()] = double( depth0 + patch.getD1() + nDeltaDCur );
-
+#if ONELAYERFIX
+                        if ( pointEDD[patch.getNormalAxis()] != point[patch.getNormalAxis()] ) {
+#endif
                         resampled.addPoint( point );
                         resampledPatchPartition.push_back( patchIndex );
                         eddCountPerPatch++;
+#if ONELAYERFIX
+                        }
+#endif
                       }
                     }  // for each i
                   }
@@ -2525,9 +2531,15 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
                       if ( patch.getDepthEnhancedDeltaD()[p] & ( 1 << i ) ) {
                         uint16_t nDeltaDCur          = ( i + 1 );
                         point[patch.getNormalAxis()] = double( patch.getD1() - depth0 - nDeltaDCur );
+#if ONELAYERFIX
+                        if ( pointEDD[patch.getNormalAxis()] != point[patch.getNormalAxis()] ) {
+#endif
                         resampled.addPoint( point );
                         resampledPatchPartition.push_back( patchIndex );
                         eddCountPerPatch++;
+#if ONELAYERFIX
+                        }
+#endif
                       }
                     }   // for each i
                   }     // if( patch.getDepthEnhancedDeltaD()[p] != 0) )
@@ -2634,11 +2646,10 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
       patch.setEddandD1Count( eddCountPerPatch );
       if ( useEnhancedDeltaDepthCode ) { 
         patch.setEddCount( eddCountPerPatch - d1CountPerPatch );
-        printf( "Patch %lu : EDD = %lu - %lu  = %lu \n", patchIndex, eddCountPerPatch, d1CountPerPatch,
-                eddCountPerPatch - d1CountPerPatch ); 
+        //printf( "Patch %lu : EDD = %lu - %lu  = %lu \n", patchIndex, eddCountPerPatch, d1CountPerPatch, eddCountPerPatch - d1CountPerPatch );
       }
       patch.setD0Count( d0CountPerPatch );
-#if 1
+#if 0 //ONELAYERFIX: jkei: eddCountPerPatch is edd+d1, eddonly is #edd
       numberOfEDD += eddCountPerPatch; // JR 
 #else
       numberOfEDD += ( eddCountPerPatch - d1CountPerPatch );
@@ -2647,7 +2658,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
       numD0Points += d0CountPerPatch;
       numD1Points += d1CountPerPatch;
       if ( useEnhancedDeltaDepthCode ) { 
-#if 1
+#if 0 //ONELAYERFIX
         numEDDonlyPoints += eddCountPerPatch;   // JR 
 #else
         numEDDonlyPoints += ( eddCountPerPatch - d1CountPerPatch );  

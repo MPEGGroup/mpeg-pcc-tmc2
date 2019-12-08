@@ -215,7 +215,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   pbfLog2Threshold_ = 2;
 
   patchPrecedenceOrderFlag_ = false;
-  maxNumRefPatchList_       = 1;
+  maxNumRefAtlasList_       = 1;
   maxNumRefAtlasFrame_      = 1;
 
   // qunatizer;
@@ -275,6 +275,8 @@ void PCCEncoderParameters::print() {
   std::cout << "\t qpT1                                     " << qpAdjT1_ << std::endl;
   std::cout << "\t constrainedPack                          " << constrainedPack_ << std::endl;
   std::cout << "\t deltaCoding                              " << deltaCoding_ << std::endl;
+  std::cout<< "\t  maxNumRefPatchList                       " << maxNumRefAtlasList_ << std::endl;
+  std::cout << "\t maxNumRefIndex                           " << maxNumRefAtlasFrame_ << std::endl;
   std::cout << "\t Segmentation" << std::endl;
   std::cout << "\t   nnNormalEstimation                     " << nnNormalEstimation_ << std::endl;
   std::cout << "\t   gridBasedRefineSegmentation            " << gridBasedRefineSegmentation_ << std::endl;
@@ -717,6 +719,23 @@ bool PCCEncoderParameters::check() {
   return ret;
 }
 
+void PCCEncoderParameters::constructAspsRefList(PCCContext& context, size_t aspsIdx, size_t afpsIdx){
+  auto& asps  = context.getAtlasSequenceParameterSet(aspsIdx);
+  //construction of reference frame list of ASPS
+  for(size_t list=0; list<context.getNumOfRefAtlasFrameList(); list++){
+    RefListStruct refList;
+    refList.setNumRefEntries( context.getMaxNumRefAtlasFrame() ); //-1,-2,-3,-4
+    refList.allocate();
+    for(size_t i=0; i<refList.getNumRefEntries(); i++){
+      int afocDiff = context.getRefAtlasFrame(list, i);
+      refList.setAbsDeltaAfocSt(i, std::abs(afocDiff)); //jkei: from 1? or from 0?
+      refList.setStrpfEntrySignFlag(i, afocDiff<0?0:1); //negative
+      refList.setStRefAtalsFrameFlag(i, true); //jkei: all short term!
+    }
+    asps.addRefListStruct( refList );
+  }
+}
+
 void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   auto& sps = context.getSps();
   sps.allocateAltas();
@@ -735,6 +754,17 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   context.setLog2PatchQuantizerSizeY(log2QuantizerSizeY_);
   context.setEnablePatchSizeQuantization( (1<<log2QuantizerSizeX_)<occupancyPrecision_ || (1<<log2QuantizerSizeY_)<occupancyPrecision_ );
   
+  context.setMaxNumRefAtlasFrame(maxNumRefAtlasFrame_);
+  context.setNumOfRefAtlasFrameList(maxNumRefAtlasList_);
+  for(size_t list=0; list<maxNumRefAtlasList_; list++)
+  {
+    context.setSizeOfRefAtlasFrameList(list, maxNumRefAtlasFrame_);
+    for(size_t i=0; i<maxNumRefAtlasFrame_; i++)
+    {
+      context.setRefAtlasFrame(list, i, -i-1); //-1, -2, -3, -4
+    }
+  }
+
   sps.setMapCountMinus1( atlasIndex, (uint32_t)mapCountMinus1_ );
   sps.setMultipleMapStreamsPresentFlag( atlasIndex, mapCountMinus1_ != 0 && multipleStreams_ );  // jkei: new parameter
   sps.setRawSeparateVideoPresentFlag( atlasIndex, useMissedPointsSeparateVideo_ );
@@ -770,8 +800,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
       }
     }
   }
-  // asps.setFrameWidth( minimumImageWidth_ );
-  // asps.setFrameHeight( minimumImageHeight_);
+
   asps.setLog2PatchPackingBlockSize( std::log2( occupancyResolution_ ) );
   asps.setLog2MaxAtlasFrameOrderCntLsbMinus4( 4 );
   asps.setMaxDecAtlasFrameBufferingMinus1( 0 );
@@ -800,7 +829,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   }
   // auto& afps  = context.addAtalsFrameParameterSet(0);
   afps.setAtlasSequenceParameterSetId( 0 );
-  afps.setAfpsNumRefIdxDefaultActiveMinus1( 0 );  // jkei: let's update when multireference is implemented
+  afps.setAfpsNumRefIdxDefaultActiveMinus1( (uint8_t) std::max(0, (int)maxNumRefAtlasFrame_- 1) );
   afps.setAfpsAdditionalLtAfocLsbLen( 4 );
   afps.setAfps2dPosXBitCountMinus1( 0 );
   afps.setAfps2dPosYBitCountMinus1( 0 );
@@ -838,15 +867,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   }
 
   // construction of reference frame list of ASPS
-  RefListStruct refList;
-  refList.setNumRefEntries( 4 );  //-1,-2,-3,-4
-  refList.allocate();
-  for ( size_t i = 0; i < refList.getNumRefEntries(); i++ ) {
-    refList.setAbsDeltaAfocSt( i, i );          // jkei: from 1? or from 0?
-    refList.setStrpfEntrySignFlag( i, 0 );      // negative
-    refList.setStRefAtalsFrameFlag( i, true );  // jkei: all short term!
-  }
-  asps.addRefListStruct( refList );
+  constructAspsRefList(context, 0, 0);
 
   oi.setLossyOccupancyMapCompressionThreshold( (size_t)thresholdLossyOM_ );
   oi.setOccupancyNominal2DBitdepthMinus1( 7 );

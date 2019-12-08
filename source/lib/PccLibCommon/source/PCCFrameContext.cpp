@@ -58,9 +58,11 @@ PCCFrameContext::PCCFrameContext() :
     useMissedPointsSeparateVideo_( false ),
     rawPatchEnabledFlag_( false ),
     geometry2dNorminalBitdepth_( 8 ) {
-      log2PatchQuantizerSizeX_=4;
-      log2PatchQuantizerSizeY_=4;
-      
+      log2PatchQuantizerSizeX_= 4;
+      log2PatchQuantizerSizeY_= 4;
+      numOfAvailableRefAtlasFrameList_ = 1;
+      activeRefAtlasFrameIndex_ = 0;
+      refAFOCList_.resize(0);
     }
 
 PCCFrameContext::~PCCFrameContext() {
@@ -75,6 +77,53 @@ PCCFrameContext::~PCCFrameContext() {
   for ( auto& block : pointToPixelByBlock_ ) { block.clear(); }
   pointToPixelByBlock_.clear();
 }
+
+void PCCFrameContext::setRefAFOCList(std::vector<std::vector<size_t>>& list){
+  size_t listSize= std::min(refAFOCList_.size(), list.size());
+  for(size_t i=0; i<listSize; i++)
+  {
+    size_t refSize= std::min(refAFOCList_[i].size(), list[i].size());
+    for(size_t j=0; j<refSize; j++)
+      refAFOCList_[i][j]=list[i][j];
+  }
+}
+void PCCFrameContext::setRefAFOCList(PCCContext& context){
+  //if(index_==0) return;
+  numOfAvailableRefAtlasFrameList_=context.getNumOfRefAtlasFrameList();
+  refAFOCList_.resize(numOfAvailableRefAtlasFrameList_);
+  int refPOC=0;
+  for(size_t i=0; i<numOfAvailableRefAtlasFrameList_; i++)
+  {
+    size_t maxRefNum = context.getSizeOfRefAtlasFrameList(i);
+    //refAFOCList_[i].resize(maxRefNum);
+    //*jkei*important************************************************//
+    for(size_t j=0; j<maxRefNum; j++)
+    {
+      refPOC = int(index_) + int(context.getRefAtlasFrame(i, j)); //cur+(-1),cur+(-2),cur+(-3),cur+(-4)
+      if(refPOC>=0) refAFOCList_[i].push_back(refPOC);
+    }
+    if(refAFOCList_[i].size()==0) refAFOCList_[i].push_back(255); //jkei: don't need to??
+    //*jkei*important************************************************//
+  }
+}
+
+void PCCFrameContext::constructAtghRefListStruct(PCCContext& context, AtlasTileGroupHeader& atgh){
+  size_t afpsId = atgh.getAtghAtlasFrameParameterSetId();
+  auto&  afps   = context.getAtlasFrameParameterSet(afpsId);
+  size_t aspsId = afps.getAtlasSequenceParameterSetId();
+  auto&  asps   = context.getAtlasSequenceParameterSet(aspsId);
+  atgh.setAtghRefAtlasFrameListSpsFlag( true ); //using ASPS refList
+  atgh.setAtghRefAtlasFrameListIdx( getActiveRefAtlasFrameIndex() );//atgh.atgh_ref_atlas_frame_list_idx
+  atgh.setRefListStruct( asps.getRefListStruct(atgh.getAtghRefAtlasFrameListIdx()) ); //copied to atgh's refList, not signalled
+  
+  if(index_ <= afps.getAfpsNumRefIdxDefaultActiveMinus1() ) { //3
+    atgh.setAtghNumRefIdxActiveOverrideFlag( true );
+    atgh.setAtghNumRefIdxActiveMinus1( index_==0? 0:(index_-1) );
+  }
+  else
+    atgh.setAtghNumRefIdxActiveOverrideFlag( false );
+}
+
 
 void PCCFrameContext::allocOneLayerData() {
   for ( auto& patch : patches_ ) { patch.allocOneLayerData(); }

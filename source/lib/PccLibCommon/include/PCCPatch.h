@@ -104,6 +104,8 @@ class PCCPatch {
       bitangentAxis_( 0 ),
       viewId_( 0 ),
       bestMatchIdx_( InvalidPatchIndex ),
+      refAtlasFrameIdx_(0),
+      predType_(0),
       patchOrientation_( 0 ),
       isGlobalPatch_( false ),
       d0Count_( 0 ),
@@ -153,6 +155,11 @@ class PCCPatch {
   size_t&                     getSizeV0() { return sizeV0_; }
   size_t&                     setViewId() { return viewId_; }
   void                        setBestMatchIdx( int32_t value ) { bestMatchIdx_ = value; }
+  size_t                      getRefAtlasFrameIndex() const {return refAtlasFrameIdx_;}
+  void                        setRefAtlasFrameIndex(size_t value){refAtlasFrameIdx_=value;}
+  size_t                      getPredType()  {return predType_;}
+  size_t                      getPredType() const {return predType_;}
+  void                        setPredType(size_t value) {predType_=value;}
   uint8_t                     getPatchType() const { return patchType_; }
   void                        setPatchType( uint8_t value ) { patchType_ = value; }
   size_t&                     getOccupancyResolution() { return occupancyResolution_; }
@@ -412,6 +419,23 @@ class PCCPatch {
       }
     }
     return true;
+  }
+
+  bool smallerRefFirst( const PCCPatch& rhs ) {
+    if(  bestMatchIdx_==-1 && rhs.getBestMatchIdx()==-1)
+    {
+      return gt(rhs);
+    }
+    else if(  bestMatchIdx_==-1 || rhs.getBestMatchIdx()==-1)
+    {
+      return (bestMatchIdx_!=-1)? true:false;
+    }
+    else if(bestMatchIdx_ == rhs.getBestMatchIdx() )
+    {
+      return refAtlasFrameIdx_ < rhs.getRefAtlasFrameIndex();
+    }
+    else
+      return bestMatchIdx_ < rhs.getBestMatchIdx();
   }
 
   bool gt( const PCCPatch& rhs ) {
@@ -1132,6 +1156,8 @@ class PCCPatch {
   std::vector<bool>       occupancy_;            // occupancy map
   size_t                  viewId_;               // viewId in [0,1,2,3,4,5]
   int32_t                 bestMatchIdx_;         // index of matched patch from pre-frame patch.
+  size_t                  refAtlasFrameIdx_;
+  size_t                  predType_;
   std::vector<int16_t>    depthEnhancedDeltaD_;  // Enhanced delta depht
   std::vector<int64_t>    depth0PCidx_;          // for Surface separation
   size_t                  patchOrientation_;     // patch orientation in canvas atlas
