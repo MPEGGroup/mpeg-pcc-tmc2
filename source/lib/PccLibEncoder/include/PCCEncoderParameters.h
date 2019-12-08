@@ -87,6 +87,8 @@ class PCCEncoderParameters {
   size_t voxelDimensionRefineSegmentation_;
   size_t searchRadiusRefineSegmentation_;
   size_t occupancyResolution_;
+  size_t log2QuantizerSizeX_;
+  size_t log2QuantizerSizeY_;
   size_t minPointCountPerCCPatchSegmentation_;
   size_t maxNNCountPatchSegmentation_;
   size_t surfaceThickness_;

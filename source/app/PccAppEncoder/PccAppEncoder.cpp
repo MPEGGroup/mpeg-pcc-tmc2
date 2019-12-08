@@ -203,6 +203,15 @@ bool parseParameters( int                   argc,
      encoderParams.occupancyResolution_,
      "Resolution of packing block(a block contain only one patch)")
 
+  ("log2QuantizerSizeX",
+   encoderParams.log2QuantizerSizeX_,
+   encoderParams.log2QuantizerSizeX_,
+   "log2 of Quantization step for patch size X: 0. pixel precision 4.16 as before")
+  ("log2QuantizerSizeY",
+   encoderParams.log2QuantizerSizeY_,
+   encoderParams.log2QuantizerSizeY_,
+   "log2 of Quantization step for patch size Y: 0. pixel precision 4.16 as before")
+  
     ("minPointCountPerCCPatchSegmentation",
      encoderParams.minPointCountPerCCPatchSegmentation_,
      encoderParams.minPointCountPerCCPatchSegmentation_,

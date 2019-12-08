@@ -73,8 +73,9 @@
 #define MULTISTREAM_UPDATE      1  // prevent overflow for the lossless absolute case
 #define VPCCUNIT_DATA_BITSTREAM 1  // jkei: bitstream instead of data
 
-#define DEBUG_SURFACE_SEPARATION 
-#define DEBUG_MULTI_STREAMS   
+//#define DEBUG_SURFACE_SEPARATION 
+#define ONELAYERFIX 1
+#define DEBUG_MULTI_STREAMS
 
 // ******************************************************************* //
 // Trace modes to validate new syntax
@@ -231,8 +232,7 @@ enum PCCPatchModeP {
   PATCH_MODE_P_EOM,
   PATCH_MODE_P_END = 14
 };
-
-enum PCCPatchType { P_TYPE_INTRA = 0, P_TYPE_INTER, P_TYPE_SKIP, P_TYPE_END };
+enum PCCPatchType { P_TYPE_INTRA = 0, P_TYPE_INTER, P_TYPE_SKIP, P_TYPE_END, INTRA_PATCH = 0, INTER_PATCH, MERGE_PATCH, SKIP_PATCH, RAW_PATCH, EOM_PATCH, END_PATCH, ERROR};
 enum PCCTILEGROUP { P_TILE_GRP = 0, SKIP_TILE_GRP, I_TILE_GRP };
 enum { COLOURFORMAT420 = 0, COLOURFORMAT444 = 1 };
 
@@ -354,16 +354,17 @@ static inline unsigned int getMaxBit( int16_t h ) {
 
 static inline std::string toString( NalUnitType type ) {
   switch ( type ) {
-    case NAL_ASPS: return std::string( "NAL_ASPS" ); break;
-    case NAL_AFPS: return std::string( "NAL_AFPS" ); break;
-    case NAL_AUD: return std::string( "NAL_AUD" ); break;
-
-    case NAL_TRAIL: return std::string( "NAL_TILEGROUP" ); break;
-    case NAL_TSA: return std::string( "NAL_TILEGROUP" ); break;
-    case NAL_STSA: return std::string( "NAL_TILEGROUP" ); break;
-    case NAL_RADL: return std::string( "NAL_TILEGROUP" ); break;
-    case NAL_RASL: return std::string( "NAL_TILEGROUP" ); break;
-    case NAL_SKIP: return std::string( "NAL_TILEGROUP" ); break;
+    case NAL_ASPS:       return std::string( "NAL_ASPS"  ); break;
+    case NAL_AFPS:       return std::string( "NAL_AFPS"  ); break;
+    case NAL_AUD:        return std::string( "NAL_AUD"   ); break;
+    case NAL_TRAIL:      return std::string( "NAL_TRAIL" ); break;
+    case NAL_TSA:        return std::string( "NAL_TSA"   ); break;
+    case NAL_STSA:       return std::string( "NAL_STSA"  ); break;
+    case NAL_RADL:       return std::string( "NAL_RADL"  ); break;
+    case NAL_RASL:       return std::string( "NAL_RASL"  ); break;
+    case NAL_SKIP:       return std::string( "NAL_SKIP"  ); break;
+    case NAL_PREFIX_SEI: return std::string( "NAL_PREFIX_SEI" ); break;
+    case NAL_SUFFIX_SEI: return std::string( "NAL_SUFFIX_SEI" ); break;
 
     default: return std::string( "others" ); break;
   }

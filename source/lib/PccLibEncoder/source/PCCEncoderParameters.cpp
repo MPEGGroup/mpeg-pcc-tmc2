@@ -61,6 +61,8 @@ PCCEncoderParameters::PCCEncoderParameters() {
   voxelDimensionRefineSegmentation_        = 4;
   searchRadiusRefineSegmentation_          = 192;
   occupancyResolution_                     = 16;
+  log2QuantizerSizeX_                      = 4;
+  log2QuantizerSizeY_                      = 4;
   minPointCountPerCCPatchSegmentation_     = 16;
   maxNNCountPatchSegmentation_             = 16;
   surfaceThickness_                        = 4;
@@ -281,6 +283,7 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   voxelDimensionRefineSegmentation       " << voxelDimensionRefineSegmentation_ << std::endl;
   std::cout << "\t   searchRadiusRefineSegmentation         " << searchRadiusRefineSegmentation_ << std::endl;
   std::cout << "\t   occupancyResolution                    " << occupancyResolution_ << std::endl;
+  std::cout << "\t   quantization step for patch size       " << "1<<"<<log2QuantizerSizeX_ <<", 1<<"<<log2QuantizerSizeY_ << std::endl;
   std::cout << "\t   minPointCountPerCCPatchSegmentation    " << minPointCountPerCCPatchSegmentation_ << std::endl;
   std::cout << "\t   maxNNCountPatchSegmentation            " << maxNNCountPatchSegmentation_ << std::endl;
   std::cout << "\t   surfaceThickness                       " << surfaceThickness_ << std::endl;
@@ -564,7 +567,7 @@ bool PCCEncoderParameters::check() {
       ret = false;
     }
   }
-  if ( !multipleStreams_ ) {
+  if ( !multipleStreams_ && !absoluteD1_) {
     std::cerr << "absoluteD1_ should be true when multipleStreams_ is false\n";
     absoluteD1_ = true;
   }
@@ -717,27 +720,21 @@ bool PCCEncoderParameters::check() {
 void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   auto& sps = context.getSps();
   sps.allocateAltas();
-  // auto&  pdg        = context.getPatchDataGroup();
   size_t atlasIndex = 0;
 
-  printf( "Encoder Param \n" );
-  fflush( stdout );
+  printf( "Encoder Param \n" );  fflush( stdout );
   auto& ai = sps.getAttributeInformation( atlasIndex );
   auto& oi = sps.getOccupancyInformation( atlasIndex );
   auto& gi = sps.getGeometryInformation( atlasIndex );
-  // auto& psps  = pdg.getPatchVpccParameterSet( 0 );
-  // auto& pfgps = pdg.getPatchFrameGeometryParameterSet( 0 );
-  // auto& pfaps = pdg.getPatchFrameAttributeParameterSet( 0 );
-  // auto& gfp   = pfgps.getGeometryFrameParams();
-  // auto& afp   = pfaps.getAttributeFrameParams();
-  // auto& pfps  = pdg.getPatchFrameParameterSet( 0 );
-  // auto& pfti  = pfps.getAtlasFrameTileInformation();
 
   auto& asps = context.addAtlasSequenceParameterSet( 0 );
   auto& afps = context.addAtlasFrameParameterSet( 0 );
 
   context.setOccupancyPackingBlockSize( occupancyResolution_ );
-
+  context.setLog2PatchQuantizerSizeX(log2QuantizerSizeX_);
+  context.setLog2PatchQuantizerSizeY(log2QuantizerSizeY_);
+  context.setEnablePatchSizeQuantization( (1<<log2QuantizerSizeX_)<occupancyPrecision_ || (1<<log2QuantizerSizeY_)<occupancyPrecision_ );
+  
   sps.setMapCountMinus1( atlasIndex, (uint32_t)mapCountMinus1_ );
   sps.setMultipleMapStreamsPresentFlag( atlasIndex, mapCountMinus1_ != 0 && multipleStreams_ );  // jkei: new parameter
   sps.setRawSeparateVideoPresentFlag( atlasIndex, useMissedPointsSeparateVideo_ );
@@ -752,11 +749,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     }
   }
 
-  // sps.setPixelDeinterleavingFlag( singleMapPixelInterleaving_ );
-  // sps.setRemoveDuplicatePointEnabledFlag( removeDuplicatePoints_ );
-  // sps.setPatchInterPredictionEnabledFlag( deltaCoding_ );
   sps.setSurfaceThickness( surfaceThickness_ );
-  // sps.setProjection45DegreeEnableFlag( additionalProjectionPlaneMode_ > 0 ? 1 : 0 );
 
   ai.setAttributeCount( noAttributes_ ? 0 : 1 );
   ai.allocate();
@@ -793,7 +786,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   asps.setRemoveDuplicatePointEnabledFlag( removeDuplicatePoints_ );
   asps.setPixelDeinterleavingFlag( singleMapPixelInterleaving_ );
   asps.setPatchPrecedenceOrderFlag( patchPrecedenceOrderFlag_ );
-  asps.setPatchSizeQuantizerPresentFlag( 0 );
+  asps.setPatchSizeQuantizerPresentFlag( context.getEnablePatchSizeQuantization() );
   asps.setEnhancedOccupancyMapForDepthFlag( enhancedDeltaDepthCode_ );
   asps.setPointLocalReconstructionEnabledFlag( pointLocalReconstruction_ );
   asps.setVuiParametersPresentFlag( 0 );
@@ -831,8 +824,8 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     atgh.setAtghAtlasFrameParameterSetId( 0 );
     atgh.setAtghPosMinZQuantizer( uint8_t( std::log2( minLevel_ ) ) );
     atgh.setAtghPosDeltaMaxZQuantizer( uint8_t( std::log2( minLevel_ ) ) );
-    atgh.setAtghPatchSizeXinfoQuantizer( 0 );  // new : to be quantizerSizeU_
-    atgh.setAtghPatchSizeYinfoQuantizer( 0 );  // new : to be quantizerSizeV_
+    atgh.setAtghPatchSizeXinfoQuantizer( log2QuantizerSizeX_ );
+    atgh.setAtghPatchSizeYinfoQuantizer( log2QuantizerSizeY_ );
     if ( afps.getAfpsRaw3dPosBitCountExplicitModeFlag() ){
       atgh.setAtghRaw3dPosAxisBitCountMinus1( 0 );  //
     } else{ 
@@ -855,12 +848,6 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   }
   asps.addRefListStruct( refList );
 
-  // pfps.allocate( ai.getAttributeCount() );
-  // pfps.setLodModeEnableFlag( ( levelOfDetailX_ > 1 && levelOfDetailY_ > 1 ) ||
-  //                            !( levelOfDetailX_ == 1 && levelOfDetailY_ == 1 ) );
-  // pfti.setSingleTileInAtlasFrameFlag( true );
-  // pfti.setSingleTilePerTileGroupFlag( true );
-
   oi.setLossyOccupancyMapCompressionThreshold( (size_t)thresholdLossyOM_ );
   oi.setOccupancyNominal2DBitdepthMinus1( 7 );
   oi.setOccupancyMSBAlignFlag( false );
@@ -869,31 +856,6 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   gi.setGeometry3dCoordinatesBitdepthMinus1( uint8_t( geometry3dCoordinatesBitdepth_ - 1 ) );
   gi.setGeometryNominal2dBitdepthMinus1( uint8_t( geometryNominal2dBitdepth_ - 1 ) );
   gi.setGeometryMSBAlignFlag( false );
-
-  // psps.setLog2PatchPackingBlockSize( std::log2( occupancyResolution_ ) );
-  // psps.setNormalAxisLimitsQuantizationEnableFlag( true );
-  // psps.setNormalAxisMaxDeltaValueEnableFlag( true );
-
-  // gfp.setGeometrySmoothingParamsPresentFlag( flagGeometrySmoothing_ );
-  // gfp.setGeometrySmoothingEnabledFlag( flagGeometrySmoothing_ );
-  // gfp.setGeometrySmoothingGridSizeMinus2( gridSize_ - 2 );
-  // gfp.setGeometrySmoothingThreshold( (uint8_t)thresholdSmoothing_ );
-  // gfp.setGeometrySmoothingEnabledFlag( gridSmoothing_ );
-  // gfp.setGeometryPatchBlockFilteringEnableFlag( pbfEnableFlag_ );
-  // gfp.setGeometryPatchBlockFilteringPassesCountMinus1( pbfPassesCount_ - 1 );
-  // gfp.setGeometryPatchBlockFilteringFilterSizeMinus1( pbfFilterSize_ - 1 );
-  // gfp.setGeometryPatchBlockFilteringLog2ThresholdMinus1( pbfLog2Threshold_ - 1 );
-
-  // pfaps.setAttributeDimensionMinus1( 2 );
-  // afp.allocate( pfaps.getAttributeDimensionMinus1() + 1 );
-  // for ( size_t i = 0; i < pfaps.getAttributeDimensionMinus1() + 1; i++ ) {
-  //   afp.setAttributeSmoothingParamsPresentFlag( i, flagColorSmoothing_ );
-  //   afp.setAttributeSmoothingGridSizeMinus2( i, cgridSize_ - 2 );
-  //   afp.setAttributeSmoothingThreshold( i, thresholdColorSmoothing_ );
-  //   afp.setAttributeSmoothingThresholdAttributeDifference( i, thresholdColorDifference_ );
-  //   afp.setAttributeSmoothingThresholdAttributeVariation( i, thresholdColorVariation_ );
-  //   afp.setAttributeSmoothingLocalEntropyThreshold( i, thresholdLocalEntropy_ );
-  // }
 
   // deprecated
   sps.setLosslessGeo444( losslessGeo444_ );

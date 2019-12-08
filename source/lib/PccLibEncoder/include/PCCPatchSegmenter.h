@@ -51,6 +51,8 @@ struct PCCPatchSegmenter3Parameters {
   size_t           voxelDimensionRefineSegmentation;
   size_t           searchRadiusRefineSegmentation;
   size_t           occupancyResolution;
+  size_t           quantizerSizeX;
+  size_t           quantizerSizeY;
   size_t           minPointCountPerCCPatchSegmentation;
   size_t           maxNNCountPatchSegmentation;
   size_t           surfaceThickness;
@@ -175,48 +177,18 @@ class PCCPatchSegmenter3 {
   void segmentPatches( const PCCPointSet3&         points,
                        const size_t                frameIndex,
                        const PCCKdTree&            kdtree,
-                       const size_t                maxNNCount,
-                       const size_t                minPointCountPerCC,
-                       const size_t                occupancyResolution,
-                       const double                maxAllowedDist2MissedPointsDetection,
-                       const double                maxAllowedDist2MissedPointsSelection,
-                       const bool                  EOMSingleLayerMode,
-                       const size_t                EOMFixBitCount,
-                       const size_t                surfaceThickness,
-                       const size_t                maxAllowedDepth,
-                       const size_t                minLevel,
+                       const PCCPatchSegmenter3Parameters& params,
                        std::vector<size_t>&        partition,
                        std::vector<PCCPatch>&      patches,
                        std::vector<size_t>&        patchPartition,
                        std::vector<size_t>&        resampledPatchPartition,
                        std::vector<size_t>         missedPoints,
                        PCCPointSet3&               resampled,
-                       bool                        useEnhancedDeltaDepthCode,
-                       const bool                  createSubPointCloud,
                        std::vector<PCCPointSet3>&  subPointCloud,
                        float&                      distanceSrcRec,
-                       const bool                  absoluteD1,
-                       bool                        useSurfaceSeparation,
-                       const size_t                additionalProjectionPlaneMode,
-                       const size_t                geometryBitDepth3D,
-                       const size_t                testLevelOfDetail,
-                       bool                        patchExpansionEnabled,
-                       const bool                  highGradientSeparation,
-                       const double                minGradient,
-                       const size_t                minNumHighGradientPoints,
                        const PCCNormalsGenerator3& normalsGen,
                        const PCCVector3D*          orientations,
-                       const size_t                orientationCount,
-                       bool                        enablePointCloudPartitioning,
-                       std::vector<int>&           roiBoundingBoxMinX,
-                       std::vector<int>&           roiBoundingBoxMaxX,
-                       std::vector<int>&           roiBoundingBoxMinY,
-                       std::vector<int>&           roiBoundingBoxMaxY,
-                       std::vector<int>&           roiBoundingBoxMinZ,
-                       std::vector<int>&           roiBoundingBoxMaxZ,
-                       int                         numCutsAlong1stLongestAxis,
-                       int                         numCutsAlong2ndLongestAxis,
-                       int                         numCutsAlong3rdLongestAxis );
+                       const size_t                orientationCount );
 
   void refineSegmentation( const PCCPointSet3&         pointCloud,
                            const PCCKdTree&            kdtree,

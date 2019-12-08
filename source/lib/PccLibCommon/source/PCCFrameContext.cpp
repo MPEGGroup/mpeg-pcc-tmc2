@@ -57,7 +57,11 @@ PCCFrameContext::PCCFrameContext() :
     losslessGeo444_( false ),
     useMissedPointsSeparateVideo_( false ),
     rawPatchEnabledFlag_( false ),
-    geometry2dNorminalBitdepth_( 8 ) {}
+    geometry2dNorminalBitdepth_( 8 ) {
+      log2PatchQuantizerSizeX_=4;
+      log2PatchQuantizerSizeY_=4;
+      
+    }
 
 PCCFrameContext::~PCCFrameContext() {
   pointToPixel_.clear();

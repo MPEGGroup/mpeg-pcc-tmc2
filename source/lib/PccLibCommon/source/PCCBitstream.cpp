@@ -78,9 +78,9 @@ bool PCCBitstream::initialize( std::string compressedStreamPath ) {
 }
 
 bool PCCBitstream::write( std::string compressedStreamPath ) {
-#if !VPCCUNIT_DATA_BITSTREAM
-  write( (int32_t) size(), 64, totalSizeIterator_ );
-#endif
+//#if !VPCCUNIT_DATA_BITSTREAM
+//  write( (int32_t) size(), 64, totalSizeIterator_ );
+//#endif
   std::ofstream fout( compressedStreamPath, std::ios::binary );
   if ( !fout.is_open() ) { return false; }
   fout.write( reinterpret_cast<const char*>( data_.data() ), size() );

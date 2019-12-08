@@ -63,6 +63,7 @@ typedef pcc::PCCImage<uint8_t, 3>  PCCImageOccupancyMap;
 struct GeneratePointCloudParameters {
   size_t      occupancyResolution_;
   size_t      occupancyPrecision_;
+  bool        enableSizeQuantization_;
   bool        gridSmoothing_;
   size_t      gridSize_;
   size_t      neighborCountSmoothing_;
@@ -263,6 +264,7 @@ class PCCCodec {
                                           const bool                          filling,
                                           const size_t                        minD1,
                                           const size_t                        neighbor );
+  PCCPatchType            getCurrPatchType( PCCTILEGROUP tileGroupType,uint8_t patchMode );
   inline double           entropy( std::vector<uint8_t>& Data, int N ) {
     std::vector<size_t> count;
     count.resize( 256, 0 );

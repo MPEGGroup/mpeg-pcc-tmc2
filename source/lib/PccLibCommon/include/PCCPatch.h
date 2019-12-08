@@ -202,7 +202,12 @@ class PCCPatch {
   size_t  getPatchOrientation() const { return patchOrientation_; }
   bool&   getIsGlobalPatch() { return isGlobalPatch_; }
   bool    getIsGlobalPatch() const { return isGlobalPatch_; }
-
+  size_t  getPatchSize2DXInPixel() const { return size2DXInPixel_; }
+  size_t  getPatchSize2DYInPixel() const { return size2DYInPixel_; }
+  size_t  getPatchSize2DXInPixel() { return size2DXInPixel_; }
+  size_t  getPatchSize2DYInPixel() { return size2DYInPixel_; }
+  void    setPatchSize2DXInPixel(size_t value ) { size2DXInPixel_=value; }
+  void    setPatchSize2DYInPixel(size_t value ) { size2DYInPixel_=value; }
   inline double generateNormalCoordinate( const uint16_t depth ) const {
     double coord = 0;
     if ( projectionMode_ == 0 ) {
@@ -1110,10 +1115,12 @@ class PCCPatch {
   size_t                  sizeD_;                // size for depth
   size_t                  sizeU_;                // size for depth
   size_t                  sizeV_;                // size for depth
-  size_t                  u0_;                   // location in packed image
-  size_t                  v0_;                   // location in packed image
-  size_t                  sizeU0_;               // size of occupancy map
-  size_t                  sizeV0_;               // size of occupancy map
+  size_t                  u0_;                   // location in packed image (n*occupancyResolution_)
+  size_t                  v0_;                   // location in packed image (n*occupancyResolution_)
+  size_t                  sizeU0_;               // size of occupancy map (n*occupancyResolution_)
+  size_t                  sizeV0_;               // size of occupancy map (n*occupancyResolution_)
+  size_t                  size2DXInPixel_;
+  size_t                  size2DYInPixel_;
   size_t                  occupancyResolution_;  // occupancy map resolution
   size_t                  projectionMode_;       // 0: related to the min depth value; 1: related to the max value
   size_t                  levelOfDetailX_;

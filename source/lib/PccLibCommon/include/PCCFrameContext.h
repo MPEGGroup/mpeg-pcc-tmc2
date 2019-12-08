@@ -115,28 +115,32 @@ class PCCFrameContext {
   void                       setUseMissedPointsSeparateVideo( bool value ) { useMissedPointsSeparateVideo_ = value; }
   void                       setSurfaceThickness( size_t surfaceThickness ) { surfaceThickness_ = surfaceThickness; }
   void                       setTotalNumberOfEddPoints( size_t numPoints ) { totalNumberOfEddPoints_ = numPoints; }
-  void setTotalNumberOfRegularPoints( size_t numPoints ) { totalNumberOfRegularPoints_ = numPoints; }
-  void setNumberOfMissedPoints( int index, size_t value ) { numberOfMissedPoints_[index] = value; }
-  void setNumberOfMissedPointsPatches( size_t numPoints ) { numberOfMissedPointsPatches_ = numPoints; }
-  void setTotalNumberOfMissedPoints( size_t numPoints ) { totalNumberOfMissedPoints_ = numPoints; }
-  void setGeometry3dCoordinatesBitdepth( size_t value ) { geometry3dCoordinatesBitdepth_ = value; }
-  void setRawPatchEnabledFlag( bool value ) { rawPatchEnabledFlag_ = value; }
-  void setGeometry2dNorminalBitdepth( size_t value ) { geometry2dNorminalBitdepth_ = value; }
-  void setNumMatchedPatches( size_t value ) { numMatchedPatches_ = value; }
+  void                       setTotalNumberOfRegularPoints( size_t numPoints ) { totalNumberOfRegularPoints_ = numPoints; }
+  void                       setNumberOfMissedPoints( int index, size_t value ) { numberOfMissedPoints_[index] = value; }
+  void                       setNumberOfMissedPointsPatches( size_t numPoints ) { numberOfMissedPointsPatches_ = numPoints; }
+  void                       setTotalNumberOfMissedPoints( size_t numPoints ) { totalNumberOfMissedPoints_ = numPoints; }
+  void                       setGeometry3dCoordinatesBitdepth( size_t value ) { geometry3dCoordinatesBitdepth_ = value; }
+  void                       setRawPatchEnabledFlag( bool value ) { rawPatchEnabledFlag_ = value; }
+  void                       setGeometry2dNorminalBitdepth( size_t value ) { geometry2dNorminalBitdepth_ = value; }
+  void                       setNumMatchedPatches( size_t value ) { numMatchedPatches_ = value; }
 
-  void                      setEomPatches( PCCEomPatch value, size_t idx ) { eomPatches_[idx] = value; }
-  std::vector<PCCEomPatch>& getEomPatches() { return eomPatches_; }
-  PCCEomPatch&              getEomPatches( size_t idx ) { return eomPatches_[idx]; }
+  void                       setEomPatches( PCCEomPatch value, size_t idx ) { eomPatches_[idx] = value; }
+  std::vector<PCCEomPatch>&  getEomPatches() { return eomPatches_; }
+  PCCEomPatch&               getEomPatches( size_t idx ) { return eomPatches_[idx]; }
 
-  void set2dPosXBitCountMinus1(size_t value){ bitCount2dPosXMinus1_=value; }
-  void set2dPosYBitCountMinus1(size_t value){ bitCount2dPosYMinus1_=value; }
-  void set3dPosXBitCountMinus1(size_t value){ bitCount3dPosXMinus1_=value; }
-  void set3dPosYBitCountMinus1(size_t value){ bitCount3dPosYMinus1_=value; }
-  size_t get2dPosXBitCountMinus1(){ return bitCount2dPosXMinus1_; }
-  size_t get2dPosYBitCountMinus1(){ return bitCount2dPosYMinus1_; }
-  size_t get3dPosXBitCountMinus1(){ return bitCount3dPosXMinus1_; }
-  size_t get3dPosYBitCountMinus1(){ return bitCount3dPosYMinus1_; }
-  
+  void                       set2dPosXBitCountMinus1(size_t value){ bitCount2dPosXMinus1_=value; }
+  void                       set2dPosYBitCountMinus1(size_t value){ bitCount2dPosYMinus1_=value; }
+  void                       set3dPosXBitCountMinus1(size_t value){ bitCount3dPosXMinus1_=value; }
+  void                       set3dPosYBitCountMinus1(size_t value){ bitCount3dPosYMinus1_=value; }
+  size_t                     get2dPosXBitCountMinus1(){ return bitCount2dPosXMinus1_; }
+  size_t                     get2dPosYBitCountMinus1(){ return bitCount2dPosYMinus1_; }
+  size_t                     get3dPosXBitCountMinus1(){ return bitCount3dPosXMinus1_; }
+  size_t                     get3dPosYBitCountMinus1(){ return bitCount3dPosYMinus1_; }
+  uint8_t                    getLog2PatchQuantizerSizeX() { return log2PatchQuantizerSizeX_; }
+  uint8_t                    getLog2PatchQuantizerSizeY() { return log2PatchQuantizerSizeY_; }
+  void                       setLog2PatchQuantizerSizeX(uint8_t value) { log2PatchQuantizerSizeX_=value; }
+  void                       setLog2PatchQuantizerSizeY(uint8_t value) { log2PatchQuantizerSizeY_=value; }
+
   void allocOneLayerData();
   void printBlockToPatch( const size_t occupancyResolution );
   void printPatch();
@@ -165,10 +169,12 @@ class PCCFrameContext {
   bool                                         rawPatchEnabledFlag_;
   size_t                                       geometry2dNorminalBitdepth_;
   size_t                                       maxDepth_;
-  size_t bitCount2dPosXMinus1_;
-  size_t bitCount2dPosYMinus1_;
-  size_t bitCount3dPosXMinus1_;
-  size_t bitCount3dPosYMinus1_;
+  size_t                                       bitCount2dPosXMinus1_;
+  size_t                                       bitCount2dPosYMinus1_;
+  size_t                                       bitCount3dPosXMinus1_;
+  size_t                                       bitCount3dPosYMinus1_;
+  size_t                                       log2PatchQuantizerSizeX_;
+  size_t                                       log2PatchQuantizerSizeY_;
   std::vector<PCCVector3<size_t>>              pointToPixel_;
   std::vector<size_t>                          blockToPatch_;
   std::vector<uint32_t>                        occupancyMap_;

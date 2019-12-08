@@ -120,23 +120,19 @@ void PCCPatchSegmenter3::compute( const PCCPointSet3&                 geometry,
   std::vector<size_t> missedPoints;
 
   segmentPatches(
-      geometry, frameIndex, kdtree, params.maxNNCountPatchSegmentation, params.minPointCountPerCCPatchSegmentation,
-      params.occupancyResolution, params.maxAllowedDist2MissedPointsDetection,
-      params.maxAllowedDist2MissedPointsSelection, params.EOMSingleLayerMode, params.EOMFixBitCount,
-      params.surfaceThickness, params.maxAllowedDepth, params.minLevel, partition, patches, patchPartition,
-      resampledPatchPartition, missedPoints, resampled, params.useEnhancedDeltaDepthCode, params.createSubPointCloud,
-      subPointCloud, distanceSrcRec, params.absoluteD1, params.surfaceSeparation, params.additionalProjectionPlaneMode,
-      params.geometryBitDepth3D, params.testLevelOfDetail, params.patchExpansion, params.highGradientSeparation,
-      params.minGradient, params.minNumHighGradientPoints, normalsGen, orientations, orientationCount,
-      params.enablePointCloudPartitioning, const_cast<PCCPatchSegmenter3Parameters&>( params ).roiBoundingBoxMinX,
-      const_cast<PCCPatchSegmenter3Parameters&>( params ).roiBoundingBoxMaxX,
-      const_cast<PCCPatchSegmenter3Parameters&>( params ).roiBoundingBoxMinY,
-      const_cast<PCCPatchSegmenter3Parameters&>( params ).roiBoundingBoxMaxY,
-      const_cast<PCCPatchSegmenter3Parameters&>( params ).roiBoundingBoxMinZ,
-      const_cast<PCCPatchSegmenter3Parameters&>( params ).roiBoundingBoxMaxZ,
-      const_cast<PCCPatchSegmenter3Parameters&>( params ).numCutsAlong1stLongestAxis,
-      const_cast<PCCPatchSegmenter3Parameters&>( params ).numCutsAlong2ndLongestAxis,
-      const_cast<PCCPatchSegmenter3Parameters&>( params ).numCutsAlong3rdLongestAxis );
+      geometry, frameIndex, kdtree,
+                      params,
+                      partition,
+                      patches,
+                      patchPartition,
+                      resampledPatchPartition,
+                      missedPoints,
+                      resampled,
+                      subPointCloud,
+                      distanceSrcRec,
+                      normalsGen,
+                      orientations,
+                      orientationCount );
   std::cout << "[done]" << std::endl;
 }
 
@@ -1036,48 +1032,54 @@ void PCCPatchSegmenter3::quantizedPointsPatchModification( const PCCPointSet3& p
 void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
                                          const size_t                frameIndex,
                                          const PCCKdTree&            kdtree,
-                                         const size_t                maxNNCount,
-                                         const size_t                minPointCountPerCC,
-                                         const size_t                occupancyResolution,
-                                         const double                maxAllowedDist2MissedPointsDetection,
-                                         const double                maxAllowedDist2MissedPointsSelection,
-                                         const bool                  EOMSingleLayerMode,
-                                         const size_t                EOMFixBitCount,
-                                         const size_t                surfaceThickness,
-                                         const size_t                maxAllowedDepth,
-                                         const size_t                minLevel,
+                                         const PCCPatchSegmenter3Parameters& params,
                                          std::vector<size_t>&        partition,
                                          std::vector<PCCPatch>&      patches,
                                          std::vector<size_t>&        patchPartition,
                                          std::vector<size_t>&        resampledPatchPartition,
                                          std::vector<size_t>         missedPoints,
                                          PCCPointSet3&               resampled,
-                                         bool                        useEnhancedDeltaDepthCode,
-                                         const bool                  createSubPointCloud,
                                          std::vector<PCCPointSet3>&  subPointCloud,
                                          float&                      distanceSrcRec,
-                                         const bool                  absoluteD1,
-                                         bool                        useSurfaceSeparation,
-                                         const size_t                additionalProjectionAxis,
-                                         const size_t                geometryBitDepth3D,
-                                         const size_t                testLevelOfDetail,
-                                         bool                        patchExpansionEnabled,
-                                         const bool                  highGradientSeparation,
-                                         const double                minGradient,
-                                         const size_t                minNumHighGradientPoints,
                                          const PCCNormalsGenerator3& normalsGen,
                                          const PCCVector3D*          orientations,
-                                         const size_t                orientationCount,
-                                         bool                        enablePointCloudPartitioning,
-                                         std::vector<int>&           roiBoundingBoxMinX,
-                                         std::vector<int>&           roiBoundingBoxMaxX,
-                                         std::vector<int>&           roiBoundingBoxMinY,
-                                         std::vector<int>&           roiBoundingBoxMaxY,
-                                         std::vector<int>&           roiBoundingBoxMinZ,
-                                         std::vector<int>&           roiBoundingBoxMaxZ,
-                                         int                         numCutsAlong1stLongestAxis,
-                                         int                         numCutsAlong2ndLongestAxis,
-                                         int                         numCutsAlong3rdLongestAxis ) {
+                                         const size_t                orientationCount )
+{
+  //jkei: do we really need to do this? isn't it okay to use params.xxx?
+  const size_t maxNNCount = params.maxNNCountPatchSegmentation;
+  const size_t minPointCountPerCC = params.minPointCountPerCCPatchSegmentation;
+  const size_t occupancyResolution = params.occupancyResolution;
+  const size_t  quantizerSizeX = params.quantizerSizeX;
+  const size_t  quantizerSizeY = params.quantizerSizeY;
+  const double maxAllowedDist2MissedPointsDetection = params.maxAllowedDist2MissedPointsDetection;
+  const double maxAllowedDist2MissedPointsSelection = params.maxAllowedDist2MissedPointsSelection;
+  const bool EOMSingleLayerMode = params.EOMSingleLayerMode;
+  const size_t EOMFixBitCount   = params.EOMFixBitCount;
+  const size_t surfaceThickness = params.surfaceThickness;
+  const size_t maxAllowedDepth  = params.maxAllowedDepth;
+  const size_t minLevel         = params.minLevel;
+  bool useEnhancedDeltaDepthCode = params.useEnhancedDeltaDepthCode;
+  const bool createSubPointCloud = params.createSubPointCloud;
+  const bool                 absoluteD1 = params.absoluteD1;
+  bool             useSurfaceSeparation = params.surfaceSeparation;
+  const size_t additionalProjectionAxis = params.additionalProjectionPlaneMode;
+  const size_t       geometryBitDepth3D = params.geometryBitDepth3D;
+  const size_t        testLevelOfDetail = params.testLevelOfDetail;
+  bool            patchExpansionEnabled = params.patchExpansion;
+  const bool     highGradientSeparation = params.highGradientSeparation;
+  const double              minGradient = params.minGradient;
+  const size_t minNumHighGradientPoints = params.minNumHighGradientPoints;
+  bool     enablePointCloudPartitioning = params.enablePointCloudPartitioning;
+  std::vector<int>&           roiBoundingBoxMinX = const_cast<PCCPatchSegmenter3Parameters&>( params ).roiBoundingBoxMinX;
+  std::vector<int>&           roiBoundingBoxMaxX = const_cast<PCCPatchSegmenter3Parameters&>( params ).roiBoundingBoxMaxX;
+  std::vector<int>&           roiBoundingBoxMinY = const_cast<PCCPatchSegmenter3Parameters&>( params ).roiBoundingBoxMinY;
+  std::vector<int>&           roiBoundingBoxMaxY = const_cast<PCCPatchSegmenter3Parameters&>( params ).roiBoundingBoxMaxY;
+  std::vector<int>&           roiBoundingBoxMinZ = const_cast<PCCPatchSegmenter3Parameters&>( params ).roiBoundingBoxMinZ;
+  std::vector<int>&           roiBoundingBoxMaxZ = const_cast<PCCPatchSegmenter3Parameters&>( params ).roiBoundingBoxMaxZ;
+  int                         numCutsAlong1stLongestAxis = const_cast<PCCPatchSegmenter3Parameters&>( params ).numCutsAlong1stLongestAxis;
+  int                         numCutsAlong2ndLongestAxis = const_cast<PCCPatchSegmenter3Parameters&>( params ).numCutsAlong2ndLongestAxis;
+  int                         numCutsAlong3rdLongestAxis = const_cast<PCCPatchSegmenter3Parameters&>( params ).numCutsAlong3rdLongestAxis;
+
   const size_t pointCount = points.getPointCount();
   patchPartition.resize( pointCount, 0 );
   resampledPatchPartition.reserve( pointCount );
@@ -1623,7 +1625,8 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
       patch.getOccupancyResolution() = occupancyResolution;
       patch.getSizeU0()              = 0;
       patch.getSizeV0()              = 0;
-
+      patch.setPatchSize2DXInPixel(0);
+      patch.setPatchSize2DYInPixel(0);
       for ( const auto i : connectedComponent ) {
         PCCPoint3D pointTmp = points[i];
         if ( bIsAdditionalProjectionPlane ) {
@@ -1645,6 +1648,8 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
 #else
             patch.getdepth0pccidx()[p] = i;
 #endif
+            patch.setPatchSize2DXInPixel(( std::max )( patch.getPatchSize2DXInPixel(), u ));
+            patch.setPatchSize2DYInPixel(( std::max )( patch.getPatchSize2DYInPixel(), v ));
             patch.getSizeU0()          = ( std::max )( patch.getSizeU0(), u / patch.getOccupancyResolution() );
             patch.getSizeV0()          = ( std::max )( patch.getSizeV0(), v / patch.getOccupancyResolution() );
             patch.getD1()              = ( std::min )( patch.getD1(), size_t( d ) );
@@ -1660,6 +1665,9 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
 #else
             patch.getdepth0pccidx()[p] = i;
 #endif
+
+            patch.setPatchSize2DXInPixel(( std::max )( patch.getPatchSize2DXInPixel(), u ));
+            patch.setPatchSize2DYInPixel(( std::max )( patch.getPatchSize2DYInPixel(), v ));
             patch.getSizeU0()          = ( std::max )( patch.getSizeU0(), u / patch.getOccupancyResolution() );
             patch.getSizeV0()          = ( std::max )( patch.getSizeV0(), v / patch.getOccupancyResolution() );
             patch.getD1()              = ( std::max )( patch.getD1(), size_t( d ) );
@@ -1677,6 +1685,9 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
 #else
               patch.getdepth0pccidx()[p] = i;
 #endif
+
+              patch.setPatchSize2DXInPixel(( std::max )( patch.getPatchSize2DXInPixel(), u ));
+              patch.setPatchSize2DYInPixel(( std::max )( patch.getPatchSize2DYInPixel(), v ));
               patch.getSizeU0()          = ( std::max )( patch.getSizeU0(), u / patch.getOccupancyResolution() );
               patch.getSizeV0()          = ( std::max )( patch.getSizeV0(), v / patch.getOccupancyResolution() );
               patch.getD1()              = ( std::max )( patch.getD1(), size_t( d ) );
@@ -1690,7 +1701,13 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
           }
         }
       }
-
+     patch.setPatchSize2DXInPixel( (patch.getPatchSize2DXInPixel() + 1) );
+     patch.setPatchSize2DYInPixel( (patch.getPatchSize2DYInPixel() + 1) );
+     
+     size_t noquantizedPatchSize2DX =(patch.getPatchSize2DXInPixel());
+     size_t noquantizedPatchSize2DY =(patch.getPatchSize2DYInPixel());
+     if(quantizerSizeX!=0) patch.setPatchSize2DXInPixel( ceil ( (double)noquantizedPatchSize2DX/(double)quantizerSizeX)*quantizerSizeX );
+     if(quantizerSizeY!=0) patch.setPatchSize2DYInPixel( ceil ( (double)noquantizedPatchSize2DY/(double)quantizerSizeY)*quantizerSizeY );
       ++patch.getSizeU0();
       ++patch.getSizeV0();
       patch.getOccupancy().resize( patch.getSizeU0() * patch.getSizeV0(), false );
@@ -2611,6 +2628,9 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
           }
         }
       }
+#if  ONELAYERFIX
+          if( EOMSingleLayerMode ) d1CountPerPatch=0;
+#endif
       patch.setEddandD1Count( eddCountPerPatch );
       if ( useEnhancedDeltaDepthCode ) { 
         patch.setEddCount( eddCountPerPatch - d1CountPerPatch );

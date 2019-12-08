@@ -2228,7 +2228,7 @@ void PCCBitstreamDecoder::sampleStreamNalUnit( PCCContext&          context,
     case NAL_RADL:
     case NAL_RASL:
     case NAL_SKIP: atlasTileGroupLayerRbsp( context.addAtlasTileGroupLayer(), context, bitstream ); break;
-    case NAL_SUFFIX_SEI:
+    case NAL_SUFFIX_SEI: seiRbsp( context, bitstream, nu.getNalUnitType() ); break;
     case NAL_PREFIX_SEI: seiRbsp( context, bitstream, nu.getNalUnitType() ); break;
     default: fprintf( stderr, "sampleStreamNalUnit type = %d not supported\n", (int32_t)nu.getNalUnitType() );
   }

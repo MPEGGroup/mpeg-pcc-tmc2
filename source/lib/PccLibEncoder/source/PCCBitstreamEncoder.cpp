@@ -1359,14 +1359,20 @@ void PCCBitstreamEncoder::atlasSubStream( PCCContext& context, PCCBitstream& bit
 #if 1
   printf("atlasSubstream Nal Stream starts:\n"); fflush( stdout );
 #endif
-  // jkei: only to calculae the size. isn't there any smarter way?
+  
+  //TODO:(jkei) let's redo this part later using move
   std::vector<uint32_t> aspsSizeList;
   std::vector<uint32_t> afpsSizeList;
   std::vector<uint32_t> atglSizeList;
+  std::vector<uint32_t> seiPrefixSizeList;
+  std::vector<uint32_t> seiSuffixSizeList;
 
   aspsSizeList.resize( context.getAtlasSequenceParameterSetList().size() );
   afpsSizeList.resize( context.getAtlasFrameParameterSetList().size() );
   atglSizeList.resize( context.size() );
+  seiPrefixSizeList.resize(context.getSeiPrefix().size());
+  seiSuffixSizeList.resize(context.getSeiSuffix().size());
+  
   uint32_t initSize = 0;
   for ( size_t aspsIdx = 0; aspsIdx < context.getAtlasSequenceParameterSetList().size(); aspsIdx++ ) {
     // tempBitStream.clear();
@@ -1386,13 +1392,27 @@ void PCCBitstreamEncoder::atlasSubStream( PCCContext& context, PCCBitstream& bit
     atglSizeList[atglIdx] = tempBitStream.size() - ( atglIdx == 0 ? initSize : atglSizeList[atglIdx - 1] );
     if ( maxUnitSize < atglSizeList[atglIdx] ) maxUnitSize = atglSizeList[atglIdx];
   }
+  initSize = tempBitStream.size();
+  for ( size_t i = 0; i < context.getSeiPrefix().size(); i++ ) {
+    seiRbsp( context, tempBitStream, context.getSeiPrefix( i ), NAL_PREFIX_SEI );
+    seiPrefixSizeList[i] = tempBitStream.size() - ( i == 0 ? initSize : seiPrefixSizeList[i - 1] );
+    if ( maxUnitSize < seiPrefixSizeList[i] ) maxUnitSize = seiPrefixSizeList[i];
+
+  }
+  initSize = tempBitStream.size();
+  for ( size_t i = 0; i < context.getSeiSuffix().size(); i++ ) {
+    seiRbsp( context, tempBitStream, context.getSeiSuffix( i ), NAL_SUFFIX_SEI );
+    seiSuffixSizeList[i] = tempBitStream.size() - ( i == 0 ? initSize : seiSuffixSizeList[i - 1] );
+    if ( maxUnitSize < seiSuffixSizeList[i] ) maxUnitSize = seiSuffixSizeList[i];
+  }
+    
   // calcuation of the max unit size done //
   uint32_t precision =
       ( uint32_t )( min( max( (int)ceil( (double)getFixedLengthCodeBitsCount( maxUnitSize ) / 8.0 ), 1 ), 8 ) - 1 );
   ssnu.setUnitSizePrecisionBytesMinus1( precision );
   sampleStreamNalHeader( bitstream, ssnu );
 #if 1
-  printf( "sampleStreamNalHeader: maxNalUnitSize %u size: %lld\n", maxUnitSize, bitstream.size() ); fflush( stdout );
+  printf( "sampleStreamNalHeader: maxNalUnitSize %u(8*(%d+1)) sizeBitstream written: %lld\n", maxUnitSize, (int)ssnu.getUnitSizePrecisionBytesMinus1(), bitstream.size() ); fflush( stdout );
 #endif
 
   for ( size_t aspsCount = 0; aspsCount < context.getAtlasSequenceParameterSetList().size(); aspsCount++ ) {
@@ -1400,8 +1420,7 @@ void PCCBitstreamEncoder::atlasSubStream( PCCContext& context, PCCBitstream& bit
     nu.setNalUnitSize( aspsSizeList[aspsCount] );
     sampleStreamNalUnit( context, bitstream, ssnu, nu, aspsCount );
 #if 1
-    printf( "nalu%d, naluSize:%zu, sizeBitstream written: %llu\n", (int) nu.getNalUnitType(), nu.getNalUnitSize(),
-            bitstream.size() ); fflush( stdout );
+    printf( "nalu[%d]:%s, headerSize:2+%d, naluSize:%zu, sizeBitstream written: %llu\n", (int) nu.getNalUnitType(), toString(nu.getNalUnitType()).c_str(), ( ssnu.getUnitSizePrecisionBytesMinus1() + 1 ), nu.getNalUnitSize(), bitstream.size() ); fflush( stdout );
 #endif
   }
 
@@ -1410,8 +1429,7 @@ void PCCBitstreamEncoder::atlasSubStream( PCCContext& context, PCCBitstream& bit
     nu.setNalUnitSize( afpsSizeList[afpsCount] );
     sampleStreamNalUnit( context, bitstream, ssnu, nu, afpsCount );
 #if 1
-    printf( "nalu%d, naluSize:%zu, sizeBitstream written: %llu\n", (int)nu.getNalUnitType(), nu.getNalUnitSize(),
-            bitstream.size() ); fflush( stdout );
+    printf( "nalu[%d]:%s, headerSize:2+%d, naluSize:%zu, sizeBitstream written: %llu\n", (int)nu.getNalUnitType(), toString(nu.getNalUnitType()).c_str(), ( ssnu.getUnitSizePrecisionBytesMinus1() + 1 ), nu.getNalUnitSize(), bitstream.size() ); fflush( stdout );
 #endif
   }
   // NAL_TRAIL, NAL_TSA, NAL_STSA, NAL_RADL, NAL_RASL,NAL_SKIP
@@ -1424,7 +1442,7 @@ void PCCBitstreamEncoder::atlasSubStream( PCCContext& context, PCCBitstream& bit
     TRACE_BITSTREAM( " ATGL: frame %zu\n", frameIdx );
     sampleStreamNalUnit( context, bitstream, ssnu, nu, frameIdx );
 #if 1
-    printf( "nalu%d, naluSize:%zu, sizeBitstream written: %llu\n", (int)nu.getNalUnitType(), nu.getNalUnitSize(),
+    printf( "nalu[%d]:%s, headerSize:2+%d, naluSize:%zu, sizeBitstream written: %llu\n", (int)nu.getNalUnitType(), toString(nu.getNalUnitType()).c_str(), ( ssnu.getUnitSizePrecisionBytesMinus1() + 1 ), nu.getNalUnitSize(),
             bitstream.size() ); fflush( stdout );
 #endif
   }
@@ -1432,21 +1450,19 @@ void PCCBitstreamEncoder::atlasSubStream( PCCContext& context, PCCBitstream& bit
   // NAL_PREFIX_SEI
   for ( size_t i = 0; i < context.getSeiPrefix().size(); i++ ) {
     NalUnit nu( NAL_PREFIX_SEI, 0, 1 );
-    nu.setNalUnitSize( sizeof( context.getAtlasFrameParameterSet( 0 ) ) );
+    nu.setNalUnitSize( seiPrefixSizeList[ i ] ); //jkei: it seems not working...
     sampleStreamNalUnit( context, bitstream, ssnu, nu, i );
 #if 1
-    printf( "nalu%d, naluSize:%zu, sizeBitstream written: %llu\n", (int)nu.getNalUnitType(), nu.getNalUnitSize(),
-            bitstream.size() ); fflush( stdout );
+    printf( "nalu[%d]:%s, headerSize:2+%d, naluSize:%zu, sizeBitstream written: %llu\n", (int)nu.getNalUnitType(), toString(nu.getNalUnitType()).c_str(), ( ssnu.getUnitSizePrecisionBytesMinus1() + 1 ), nu.getNalUnitSize(), bitstream.size() ); fflush( stdout );
 #endif
   }
   // NAL_SUFFIX_SEI
   for ( size_t i = 0; i < context.getSeiSuffix().size(); i++ ) {
     NalUnit nu( NAL_SUFFIX_SEI, 0, 1 );
-    nu.setNalUnitSize( sizeof( context.getAtlasFrameParameterSet( 0 ) ) );
+    nu.setNalUnitSize( seiSuffixSizeList[ i ]  ); 
     sampleStreamNalUnit( context, bitstream, ssnu, nu, i );
 #if 1
-    printf( "nalu%d, naluSize:%zu, sizeBitstream written: %llu\n", (int)nu.getNalUnitType(), nu.getNalUnitSize(),
-            bitstream.size() ); fflush( stdout );
+    printf( "nalu[%d]:%s, headerSize:2+%d, naluSize:%zu, sizeBitstream written: %llu\n", (int)nu.getNalUnitType(), toString(nu.getNalUnitType()).c_str(), ( ssnu.getUnitSizePrecisionBytesMinus1() + 1 ), nu.getNalUnitSize(), bitstream.size() ); fflush( stdout );
 #endif
   }
 }
@@ -2407,7 +2423,7 @@ void PCCBitstreamEncoder::sampleStreamNalUnit( PCCContext&          context,
     case NAL_RADL:
     case NAL_RASL:
     case NAL_SKIP: atlasTileGroupLayerRbsp( context.getAtlasTileGroupLayer( index ), context, bitstream ); break;
-    case NAL_SUFFIX_SEI:
+    case NAL_SUFFIX_SEI: seiRbsp( context, bitstream, context.getSeiSuffix( index ), nalu.getNalUnitType() );
     case NAL_PREFIX_SEI: seiRbsp( context, bitstream, context.getSeiPrefix( index ), nalu.getNalUnitType() ); break;
     default: fprintf( stderr, "sampleStreamNalUnit type = %d not supported\n", (int32_t)nalu.getNalUnitType() );
   }

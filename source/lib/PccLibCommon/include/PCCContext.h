@@ -3933,6 +3933,9 @@ class PCCContext {
   PCCVideoTexture&              getVideoMPsTexture() { return videoMPsTexture_; }
   uint8_t                       getOccupancyPrecision() { return occupancyPrecision_; }
   uint8_t                       getOccupancyPackingBlockSize() { return occupancyPackingBlockSize_; }
+  uint8_t                       getLog2PatchQuantizerSizeX() { return log2PatchQuantizerSizeX_; }
+  uint8_t                       getLog2PatchQuantizerSizeY() { return log2PatchQuantizerSizeY_; }
+  bool                          getEnablePatchSizeQuantization() { return enablePatchSizeQuantization_; }
   float                         getModelScale() { return modelScale_; }
   PCCVector3<float>&            getModelOrigin() { return modelOrigin_; }
   size_t                        getMPGeoWidth() { return MPGeoWidth_; }
@@ -3946,6 +3949,10 @@ class PCCContext {
   size_t                        getGeometry3dCoordinatesBitdepth() { return geometry3dCoordinatesBitdepth_; }
   void                          setOccupancyPrecision( uint8_t value ) { occupancyPrecision_ = value; }
   void                          setOccupancyPackingBlockSize( uint8_t value ) { occupancyPackingBlockSize_ = value; }
+
+  void                          setLog2PatchQuantizerSizeX( uint8_t value ) { log2PatchQuantizerSizeX_=value; }
+  void                          setLog2PatchQuantizerSizeY( uint8_t value ) { log2PatchQuantizerSizeY_=value; }
+  void                          setEnablePatchSizeQuantization( bool value ){ enablePatchSizeQuantization_=value; }
   void                          setModelScale( float value ) { modelScale_ = value; }
   void                          setModelOrigin( PCCVector3<float>& value ) { modelOrigin_ = value; }
   void                          setMPGeoWidth( size_t value ) { MPGeoWidth_ = value; }
@@ -4176,6 +4183,9 @@ class PCCContext {
   std::vector<VpccParameterSet>             vpccParameterSets_;
   uint8_t                                   occupancyPrecision_;
   uint8_t                                   occupancyPackingBlockSize_;
+  uint8_t                                   log2PatchQuantizerSizeX_;
+  uint8_t                                   log2PatchQuantizerSizeY_;
+  bool                                      enablePatchSizeQuantization_;
   size_t                                    MPGeoWidth_;
   size_t                                    MPGeoHeight_;
   size_t                                    MPAttWidth_;
