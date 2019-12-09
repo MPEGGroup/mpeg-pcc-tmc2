@@ -433,27 +433,25 @@ void PCCDecoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& 
     // TO DO
   }
 
-  params.occupancyResolution_ = context.getOccupancyPackingBlockSize();
-  params.occupancyPrecision_  = context.getOccupancyPrecision();
-  params.enableSizeQuantization_ = context.getAtlasSequenceParameterSet(0).getPatchSizeQuantizerPresentFlag();
-  params.rawPointColorFormat_ = size_t( sps.getLosslessGeo444() != 0 ? COLOURFORMAT444 : COLOURFORMAT420 );
-  params.nbThread_            = params_.nbThread_;
+  params.occupancyResolution_    = context.getOccupancyPackingBlockSize();
+  params.occupancyPrecision_     = context.getOccupancyPrecision();
+  params.enableSizeQuantization_ = context.getAtlasSequenceParameterSet( 0 ).getPatchSizeQuantizerPresentFlag();
+  params.rawPointColorFormat_    = size_t( sps.getLosslessGeo444() != 0 ? COLOURFORMAT444 : COLOURFORMAT420 );
+  params.nbThread_               = params_.nbThread_;
   params.absoluteD1_ = sps.getMapCountMinus1( atlasIndex ) == 0 || sps.getMapAbsoluteCodingEnableFlag( atlasIndex, 1 );
   params.multipleStreams_  = sps.getMultipleMapStreamsPresentFlag( atlasIndex );
-  params.surfaceThickness_ = context[0].getSurfaceThickness();
-  if ( ai.getAttributeParamsEnabledFlag() ) {
-    assert( 0 );
-  } else {
-    params.thresholdColorSmoothing_  = 0.;
-    params.gridColorSmoothing_       = false;
-    params.cgridSize_                = 0;
-    params.thresholdColorDifference_ = 0;
-    params.thresholdColorVariation_  = 0;
-    params.thresholdLocalEntropy_    = 0;
-  }
+  params.surfaceThickness_ = asps.getSurfaceThicknessMinus1() + 1;
+
+  params.thresholdColorSmoothing_  = 0.;
+  params.gridColorSmoothing_       = false;
+  params.cgridSize_                = 0;
+  params.thresholdColorDifference_ = 0;
+  params.thresholdColorVariation_  = 0;
+  params.thresholdLocalEntropy_    = 0;
+
   params.radius2ColorSmoothing_       = 64;
   params.neighborCountColorSmoothing_ = 64;
-  params.flagColorSmoothing_          = 0;  // afp.getAttributeSmoothingParamsPresentFlag( 0 );
+  params.flagColorSmoothing_          = 0;  
   params.thresholdLossyOM_            = (size_t)oi.getLossyOccupancyMapCompressionThreshold();
 
   params.removeDuplicatePoints_      = asps.getRemoveDuplicatePointEnabledFlag();
@@ -461,7 +459,6 @@ void PCCDecoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& 
   params.mapCountMinus1_             = sps.getMapCountMinus1( atlasIndex );
   params.singleMapPixelInterleaving_ = asps.getPixelDeinterleavingFlag();
 
-  // params.path_                          = path.str();
   params.useAdditionalPointsPatch_      = sps.getRawPatchEnabledFlag( atlasIndex );
   params.enhancedDeltaDepthCode_        = asps.getEnhancedOccupancyMapForDepthFlag();
   params.EOMFixBitCount_                = asps.getEnhancedOccupancyMapFixBitCountMinus1() + 1;
@@ -496,7 +493,6 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
     frame.setHeight( sps.getFrameHeight( atlasIndex ) );
     frame.setLosslessGeo( sps.getLosslessGeo() );
     frame.setLosslessGeo444( sps.getLosslessGeo444() );
-    frame.setSurfaceThickness( sps.getSurfaceThickness() );
     frame.setUseMissedPointsSeparateVideo( sps.getRawSeparateVideoPresentFlag( atlasIndex ) );
     frame.setRawPatchEnabledFlag( sps.getRawPatchEnabledFlag( atlasIndex ) );
     createPatchFrameDataStructure( context, frame, i );

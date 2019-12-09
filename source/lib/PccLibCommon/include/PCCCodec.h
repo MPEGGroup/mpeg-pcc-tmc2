@@ -47,11 +47,11 @@ class PCCPatch;
 namespace pcc {
 
 class PCCContext;
-class PCCFrameContext; 
+class PCCFrameContext;
 class PCCGroupOfFrames;
 class PCCPointSet3;
 template <typename T, size_t N>
-class PCCVideo; 
+class PCCVideo;
 typedef pcc::PCCVideo<uint8_t, 3>  PCCVideoTexture;
 typedef pcc::PCCVideo<uint16_t, 3> PCCVideoGeometry;
 
@@ -118,15 +118,15 @@ class PCCCodec {
                            PCCContext&                         context,
                            const GeneratePointCloudParameters  params,
                            std::vector<std::vector<uint32_t>>& partitions,
-                           bool bDecoder);
+                           bool                                bDecoder );
 
-  bool colorPointCloud( PCCGroupOfFrames&                  reconstructs,
-                        PCCContext&                        context,
-                        const uint8_t                      attributeCount,
-                        const PCCColorTransform            colorTransform,
-                       const std::vector<std::vector<bool>>& absoluteT1List,
-                       const size_t multipleStreams,
-                        const GeneratePointCloudParameters params );
+  bool colorPointCloud( PCCGroupOfFrames&                     reconstructs,
+                        PCCContext&                           context,
+                        const uint8_t                         attributeCount,
+                        const PCCColorTransform               colorTransform,
+                        const std::vector<std::vector<bool>>& absoluteT1List,
+                        const size_t                          multipleStreams,
+                        const GeneratePointCloudParameters    params );
 
   void smoothPointCloudPostprocess( PCCGroupOfFrames&                   reconstructs,
                                     PCCContext&                         context,
@@ -220,7 +220,7 @@ class PCCCodec {
                                              PCCFrameContext& frame,
                                              size_t           frameIndex,
                                              const size_t     occupancyResolution,
-                                             bool             bDecoder);
+                                             bool             bDecoder );
 
   void generateBlockToPatchFromBoundaryBox( PCCContext& context, const size_t occupancyResolution );
 
@@ -264,7 +264,7 @@ class PCCCodec {
                                           const bool                          filling,
                                           const size_t                        minD1,
                                           const size_t                        neighbor );
-  PCCPatchType            getCurrPatchType( PCCTILEGROUP tileGroupType,uint8_t patchMode );
+  PCCPatchType            getCurrPatchType( PCCTILEGROUP tileGroupType, uint8_t patchMode );
   inline double           entropy( std::vector<uint8_t>& Data, int N ) {
     std::vector<size_t> count;
     count.resize( 256, 0 );
@@ -288,7 +288,6 @@ class PCCCodec {
     b      = ( N / 2 ) - 1;
     med    = int( Data.at( a ) ) + Data.at( b );
     newMed = ( med / 2 );
-
     return double( newMed );
   }
 
@@ -307,7 +306,7 @@ class PCCCodec {
                            const PCCVideoOccupancyMap&        videoOM,
                            const GeneratePointCloudParameters params,
                            std::vector<uint32_t>&             partition,
-                           bool                               bDecoder);
+                           bool                               bDecoder );
 
   void smoothPointCloud( PCCPointSet3&                      reconstruct,
                          const std::vector<uint32_t>&       partition,
@@ -336,10 +335,10 @@ class PCCCodec {
                           const std::vector<size_t>& subReconstructIndex );
 
   bool colorPointCloud( PCCPointSet3&                       reconstruct,
-                       PCCContext& context,
-                       size_t frameIndex,
-                       const std::vector<bool>& absoluteT1List,
-                       const size_t multipleStreams,
+                        PCCContext&                         context,
+                        size_t                              frameIndex,
+                        const std::vector<bool>&            absoluteT1List,
+                        const size_t                        multipleStreams,
                         const uint8_t                       attributeCount,
                         const GeneratePointCloudParameters& params );
 

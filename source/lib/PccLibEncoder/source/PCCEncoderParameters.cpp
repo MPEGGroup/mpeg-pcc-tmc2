@@ -779,7 +779,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     }
   }
 
-  sps.setSurfaceThickness( surfaceThickness_ );
+  // sps.setSurfaceThickness( surfaceThickness_ );
 
   ai.setAttributeCount( noAttributes_ ? 0 : 1 );
   ai.allocate();
@@ -873,7 +873,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   oi.setOccupancyNominal2DBitdepthMinus1( 7 );
   oi.setOccupancyMSBAlignFlag( false );
 
-  gi.setGeometryParamsEnabledFlag( flagGeometrySmoothing_ );
+  // gi.setGeometryParamsEnabledFlag( flagGeometrySmoothing_ );
   gi.setGeometry3dCoordinatesBitdepthMinus1( uint8_t( geometry3dCoordinatesBitdepth_ - 1 ) );
   gi.setGeometryNominal2dBitdepthMinus1( uint8_t( geometryNominal2dBitdepth_ - 1 ) );
   gi.setGeometryMSBAlignFlag( false );

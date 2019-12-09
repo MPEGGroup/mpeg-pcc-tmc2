@@ -36,8 +36,6 @@
 #include "PCCCommon.h"
 #include "PCCEncoderParameters.h"
 #include "PCCCodec.h"
-//#include "PCCMetadata.h"
-
 #include <map>
 
 namespace pcc {
@@ -49,10 +47,8 @@ class VpccParameterSet;
 class OccupancyInformation;
 class GeometryInformation;
 class AttributeInformation;
-
 class AtlasTileGroupHeader;
 class AtlasTileGroupDataUnit;
-
 class PatchDataGroup;
 class PatchDataGroupUnitPayload;
 class PatchVpccParameterSet;
@@ -89,19 +85,9 @@ class PCCBitstreamEncoder {
   PCCBitstreamEncoder();
   ~PCCBitstreamEncoder();
 
-  // JR: OLD
-  // int encode_older( PCCContext& context, PCCBitstream& bitstream );
-
-  // JR: NEW
-  // int write( SampleStreamNalUnit& ssnu, PCCBitstream& bitstream );
-  // int write( SampleStreamVpccUnit& ssvu, PCCBitstream& bitstream );
-  // int encode_old( PCCContext& context, SampleStreamNalUnit& ssnu );
-
-  // DBG: NEW
-  int write( SampleStreamNalUnit& ssnu, PCCBitstream& bitstream );
-  int write( SampleStreamVpccUnit& ssvu, PCCBitstream& bitstream );
-  int encode( PCCContext& context, SampleStreamVpccUnit& ssvu );
-
+  int  write( SampleStreamNalUnit& ssnu, PCCBitstream& bitstream );
+  int  write( SampleStreamVpccUnit& ssvu, PCCBitstream& bitstream );
+  int  encode( PCCContext& context, SampleStreamVpccUnit& ssvu );
   void setParameters( PCCEncoderParameters params );
 
 #ifdef BITSTREAM_TRACE
@@ -109,7 +95,6 @@ class PCCBitstreamEncoder {
 #endif
  private:
   // 7.3.2.1 General V-PCC unit syntax
-  // void vpccUnitInSampleStream(PCCBitstream & bitstream, VpccUnit & vpccUnit);
   void vpccUnit( PCCContext& context, PCCBitstream& bitstream, VPCCUnitType vpccUnitType );
 
   // 7.3.2.2 V-PCC unit header syntax
@@ -247,20 +232,8 @@ class PCCBitstreamEncoder {
   // 7.3.8 Supplemental enhancement information message syntax
   void seiMessage( PCCBitstream& bitstream, PCCContext& context, SEI& sei, NalUnitType nalUnitType );
 
-  // jkei: <------- added up to this pointOLD PST.Oct30th
-  void atlasSubStream( PCCContext& context, PCCBitstream& bitstream );
-  // jkei: <------- added up to this pointOLD PST.Nov1st
-  // jkei: OLD--->
   // 7.3.5.1 General patch data group unit syntax
-  // void atlasSubStream_old( PCCContext& context, PCCBitstream& bitstream );
-
-  // 7.3.5.2 Patch data group uni t payload syntax
-  // void atlasSubStreamUnitPayload( PatchDataGroup& atlasSubStream,
-  //                                 PDGUnitType     unitType,
-  //                                 size_t          index,
-  //                                 size_t          frameIndex,
-  //                                 PCCContext&     context,
-  //                                 PCCBitstream&   bitstream );
+  void atlasSubStream( PCCContext& context, PCCBitstream& bitstream );
 
   // 7.3.5.3 Patch sequence parameter set syntax
   void patchVpccParameterSet( PatchDataGroup& pdg, size_t index, PCCBitstream& bitstream );
@@ -309,15 +282,6 @@ class PCCBitstreamEncoder {
                                VpccParameterSet& vpccParameterSet,
                                PCCBitstream&     bitstream );
 
-  // 7.3.6.1 Atlas sequence parameter set RBSP jkei: moved up
-  //  void atlasSequenceParameterSetRBSP( AtlasSequenceParameterSetRBSP& asps,
-  //                                      PCCContext&                    context,
-  //                                      PCCBitstream&                  bitstream );
-  //
-  //  void atlasFrameTileInformation(AtlasFrameTileInformation& pfti,
-  //                                 VpccParameterSet&     sps,
-  //                                 PCCBitstream&   bitstream );
-
   // 7.3.5.13 Patch frame layer unit syntax
   void patchTileGroupLayerUnit( PatchDataGroup& pdg, size_t index, PCCContext& context, PCCBitstream& bitstream );
 
@@ -332,10 +296,6 @@ class PCCBitstreamEncoder {
                       PatchVpccParameterSet& patchVpccParameterSet,
                       PCCBitstream&          bitstream );
 
-  // 7.3.5.16 Reference list structure syntax (NEW: jkei: moved up)
-  // void refListStruct( RefListStruct&                 rls,
-  //                    AtlasSequenceParameterSetRBSP& asps,
-  //                    PCCBitstream&                  bitstream );
   // 7.3.5.16 Patch frame data unit syntax
   void patchTileGroupDataUnit( PatchTileGroupDataUnit& ptgdu,
                                PatchTileGroupHeader&   patchTileGroupHeader,
@@ -371,23 +331,8 @@ class PCCBitstreamEncoder {
                          PCCContext&           context,
                          PCCBitstream&         bitstream );
 
-  // // 7.3.5.21 Point local reconstruction syntax (OLD)
-  // void pointLocalReconstructionInformation( PointLocalReconstructionInformation& plri,
-  //                                           PCCContext&                          context,
-  //                                           PCCBitstream&                        bitstream );
-
-  // 7.3.4.6 Point local reconstruction information syntax (NEW jkei: moved up)
-  //  void pointLocalReconstructionInformation( AtlasSequenceParameterSetRBSP& asps,
-  //                                            PCCContext&                    context,
-  //                                            PCCBitstream&                  bitstream );
-  //
-  //  void pointLocalReconstructionData( PointLocalReconstructionData& plrd, PCCContext& context, PCCBitstream&
-  //  bitstream );
-
   // 7.3.5.22 Supplemental enhancement information message syntax
   void seiMessage( PatchDataGroup& pdg, size_t index, PCCContext& context, PCCBitstream& bitstream );
-
-  // JR TODO: continue
 
   // B.2 Sample stream V-PCC unit syntax and semantics
   // B.2.1 Sample stream V-PCC header syntax
@@ -460,10 +405,6 @@ class PCCBitstreamEncoder {
   void hrdParameters( PCCBitstream& bitstream, HrdParameters& hp );
   // F.2.3  Sub-layer HRD parameters syntax
   void hrdSubLayerParameters( PCCBitstream& bitstream, HrdSubLayerParameters& hlsp, size_t cabCnt );
-
-  // JR TODO: remove
-  // 7.3.2.3 raw separate video data syntax - TODO: remove this
-  void pcmSeparateVideoData( PCCContext& context, PCCBitstream& bitstream, uint8_t bitCount );
 
   PCCEncoderParameters params_;
 #ifdef BITSTREAM_TRACE

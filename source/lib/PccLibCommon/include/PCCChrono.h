@@ -42,9 +42,9 @@ namespace chrono {
  * Clock reporting elapsed user time of the current process excluding children.
  */
 struct utime_self_clock {
-  typedef std::chrono::nanoseconds duration;
-  typedef duration::rep rep;
-  typedef duration::period period;
+  typedef std::chrono::nanoseconds                            duration;
+  typedef duration::rep                                       rep;
+  typedef duration::period                                    period;
   typedef std::chrono::time_point<utime_self_clock, duration> time_point;
 
   static constexpr bool is_steady = true;
@@ -59,17 +59,17 @@ struct utime_self_clock {
  *     via pcc::system() are reported.
  */
 struct utime_children_clock {
-  typedef std::chrono::nanoseconds duration;
-  typedef duration::rep rep;
-  typedef duration::period period;
+  typedef std::chrono::nanoseconds                                duration;
+  typedef duration::rep                                           rep;
+  typedef duration::period                                        period;
   typedef std::chrono::time_point<utime_children_clock, duration> time_point;
 
   static constexpr bool is_steady = true;
 
   static time_point now() noexcept;
 };
-}
-}
+}  // namespace chrono
+}  // namespace pcc
 
 //===========================================================================
 
@@ -106,7 +106,7 @@ class Stopwatch {
 
  private:
   typename Clock::time_point start_time_;
-  duration cumulative_time_{duration::zero()};
+  duration                   cumulative_time_{duration::zero()};
 };
 
 //---------------------------------------------------------------------------
@@ -116,7 +116,7 @@ class Stopwatch {
  * current process and of child processes.
  */
 struct StopwatchUserTime {
-  Stopwatch<utime_self_clock> self;
+  Stopwatch<utime_self_clock>     self;
   Stopwatch<utime_children_clock> children;
 
   void reset() {
@@ -134,7 +134,8 @@ struct StopwatchUserTime {
     children.stop();
   }
 };
-}}
+}  // namespace chrono
+}  // namespace pcc
 
 //===========================================================================
 
@@ -145,7 +146,7 @@ void pcc::chrono::Stopwatch<Clock>::reset() {
 
 //---------------------------------------------------------------------------
 
-template<typename Clock>
+template <typename Clock>
 void pcc::chrono::Stopwatch<Clock>::start() {
   start_time_ = Clock::now();
 }
@@ -154,7 +155,7 @@ void pcc::chrono::Stopwatch<Clock>::start() {
 
 template <typename Clock>
 typename pcc::chrono::Stopwatch<Clock>::duration pcc::chrono::Stopwatch<Clock>::stop() {
-  const auto &delta = duration(Clock::now() - start_time_);
+  const auto& delta = duration( Clock::now() - start_time_ );
   cumulative_time_ += delta;
   return delta;
 }

@@ -54,68 +54,62 @@ using hundredns = std::chrono::duration<int64_t, std::ratio<1, 10000000>>;
 
 // global state to emulate getrusage(RUSAGE_CHILDREN).
 hundredns g_cumulative_time_children{0};
-}
-}
+}  // namespace detail
+}  // namespace chrono
+}  // namespace pcc
+#endif
+
+//---------------------------------------------------------------------------
+
+#if _WIN32
+pcc::chrono::utime_children_clock::time_point pcc::chrono::utime_children_clock::now() noexcept {
+  return time_point( detail::g_cumulative_time_children );
 }
 #endif
 
 //---------------------------------------------------------------------------
 
 #if _WIN32
-pcc::chrono::utime_children_clock::time_point
-pcc::chrono::utime_children_clock::now() noexcept {
-  return time_point(detail::g_cumulative_time_children);
-}
-#endif
-
-//---------------------------------------------------------------------------
-
-#if _WIN32
-pcc::chrono::utime_self_clock::time_point
-pcc::chrono::utime_self_clock::now() noexcept {
-  HANDLE hProcess = GetCurrentProcess();
+pcc::chrono::utime_self_clock::time_point pcc::chrono::utime_self_clock::now() noexcept {
+  HANDLE   hProcess = GetCurrentProcess();
   FILETIME dummy, userTime;
 
-  GetProcessTimes(hProcess, &dummy, &dummy, &dummy, &userTime);
+  GetProcessTimes( hProcess, &dummy, &dummy, &dummy, &userTime );
 
   ULARGE_INTEGER val;
-  val.LowPart = userTime.dwLowDateTime;
+  val.LowPart  = userTime.dwLowDateTime;
   val.HighPart = userTime.dwHighDateTime;
 
   using hundredns = std::chrono::duration<int64_t, std::ratio<1, 10000000>>;
-  return time_point(hundredns(val.QuadPart));
+  return time_point( hundredns( val.QuadPart ) );
 }
 #endif
 
 //---------------------------------------------------------------------------
 
 #if HAVE_GETRUSAGE
-pcc::chrono::utime_self_clock::time_point
-pcc::chrono::utime_self_clock::now() noexcept {
+pcc::chrono::utime_self_clock::time_point pcc::chrono::utime_self_clock::now() noexcept {
   struct rusage usage;
-  getrusage(RUSAGE_SELF, &usage);
+  getrusage( RUSAGE_SELF, &usage );
 
   std::chrono::nanoseconds total;
-  total = std::chrono::seconds(usage.ru_utime.tv_sec) +
-          std::chrono::microseconds(usage.ru_utime.tv_usec);
+  total = std::chrono::seconds( usage.ru_utime.tv_sec ) + std::chrono::microseconds( usage.ru_utime.tv_usec );
 
-  return time_point(total);
+  return time_point( total );
 }
 #endif
 
 //---------------------------------------------------------------------------
 
 #if HAVE_GETRUSAGE
-pcc::chrono::utime_children_clock::time_point
-pcc::chrono::utime_children_clock::now() noexcept {
+pcc::chrono::utime_children_clock::time_point pcc::chrono::utime_children_clock::now() noexcept {
   struct rusage usage;
-  getrusage(RUSAGE_CHILDREN, &usage);
+  getrusage( RUSAGE_CHILDREN, &usage );
 
   std::chrono::nanoseconds total;
-  total = std::chrono::seconds(usage.ru_utime.tv_sec) +
-          std::chrono::microseconds(usage.ru_utime.tv_usec);
+  total = std::chrono::seconds( usage.ru_utime.tv_sec ) + std::chrono::microseconds( usage.ru_utime.tv_usec );
 
-  return time_point(total);
+  return time_point( total );
 }
 #endif
 

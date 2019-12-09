@@ -35,7 +35,6 @@
 #define PCCPatch_h
 
 #include "PCCCommon.h"
-//#include "PCCMetadata.h"
 #include "PCCPointSet.h"
 
 namespace pcc {
@@ -104,8 +103,8 @@ class PCCPatch {
       bitangentAxis_( 0 ),
       viewId_( 0 ),
       bestMatchIdx_( InvalidPatchIndex ),
-      refAtlasFrameIdx_(0),
-      predType_(0),
+      refAtlasFrameIdx_( 0 ),
+      predType_( 0 ),
       patchOrientation_( 0 ),
       isGlobalPatch_( false ),
       d0Count_( 0 ),
@@ -155,11 +154,11 @@ class PCCPatch {
   size_t&                     getSizeV0() { return sizeV0_; }
   size_t&                     setViewId() { return viewId_; }
   void                        setBestMatchIdx( int32_t value ) { bestMatchIdx_ = value; }
-  size_t                      getRefAtlasFrameIndex() const {return refAtlasFrameIdx_;}
-  void                        setRefAtlasFrameIndex(size_t value){refAtlasFrameIdx_=value;}
-  size_t                      getPredType()  {return predType_;}
-  size_t                      getPredType() const {return predType_;}
-  void                        setPredType(size_t value) {predType_=value;}
+  size_t                      getRefAtlasFrameIndex() const { return refAtlasFrameIdx_; }
+  void                        setRefAtlasFrameIndex( size_t value ) { refAtlasFrameIdx_ = value; }
+  size_t                      getPredType() { return predType_; }
+  size_t                      getPredType() const { return predType_; }
+  void                        setPredType( size_t value ) { predType_ = value; }
   uint8_t                     getPatchType() const { return patchType_; }
   void                        setPatchType( uint8_t value ) { patchType_ = value; }
   size_t&                     getOccupancyResolution() { return occupancyResolution_; }
@@ -205,16 +204,16 @@ class PCCPatch {
   bool&                       getIsRoiPatch() { return isRoiPatch_; }
   size_t&                     getRoiIndex() { return roiIndex_; }
   // Flexible Patch Orientation
-  size_t& getPatchOrientation() { return patchOrientation_; }
-  size_t  getPatchOrientation() const { return patchOrientation_; }
-  bool&   getIsGlobalPatch() { return isGlobalPatch_; }
-  bool    getIsGlobalPatch() const { return isGlobalPatch_; }
-  size_t  getPatchSize2DXInPixel() const { return size2DXInPixel_; }
-  size_t  getPatchSize2DYInPixel() const { return size2DYInPixel_; }
-  size_t  getPatchSize2DXInPixel() { return size2DXInPixel_; }
-  size_t  getPatchSize2DYInPixel() { return size2DYInPixel_; }
-  void    setPatchSize2DXInPixel(size_t value ) { size2DXInPixel_=value; }
-  void    setPatchSize2DYInPixel(size_t value ) { size2DYInPixel_=value; }
+  size_t&       getPatchOrientation() { return patchOrientation_; }
+  size_t        getPatchOrientation() const { return patchOrientation_; }
+  bool&         getIsGlobalPatch() { return isGlobalPatch_; }
+  bool          getIsGlobalPatch() const { return isGlobalPatch_; }
+  size_t        getPatchSize2DXInPixel() const { return size2DXInPixel_; }
+  size_t        getPatchSize2DYInPixel() const { return size2DYInPixel_; }
+  size_t        getPatchSize2DXInPixel() { return size2DXInPixel_; }
+  size_t        getPatchSize2DYInPixel() { return size2DYInPixel_; }
+  void          setPatchSize2DXInPixel( size_t value ) { size2DXInPixel_ = value; }
+  void          setPatchSize2DYInPixel( size_t value ) { size2DYInPixel_ = value; }
   inline double generateNormalCoordinate( const uint16_t depth ) const {
     double coord = 0;
     if ( projectionMode_ == 0 ) {
@@ -422,20 +421,15 @@ class PCCPatch {
   }
 
   bool smallerRefFirst( const PCCPatch& rhs ) {
-    if(  bestMatchIdx_==-1 && rhs.getBestMatchIdx()==-1)
-    {
-      return gt(rhs);
-    }
-    else if(  bestMatchIdx_==-1 || rhs.getBestMatchIdx()==-1)
-    {
-      return (bestMatchIdx_!=-1)? true:false;
-    }
-    else if(bestMatchIdx_ == rhs.getBestMatchIdx() )
-    {
+    if ( bestMatchIdx_ == -1 && rhs.getBestMatchIdx() == -1 ) {
+      return gt( rhs );
+    } else if ( bestMatchIdx_ == -1 || rhs.getBestMatchIdx() == -1 ) {
+      return ( bestMatchIdx_ != -1 ) ? true : false;
+    } else if ( bestMatchIdx_ == rhs.getBestMatchIdx() ) {
       return refAtlasFrameIdx_ < rhs.getRefAtlasFrameIndex();
-    }
-    else
+    } else {
       return bestMatchIdx_ < rhs.getBestMatchIdx();
+    }
   }
 
   bool gt( const PCCPatch& rhs ) {
@@ -837,25 +831,21 @@ class PCCPatch {
     output.x() = input.x();
     output.y() = input.y();
     output.z() = input.z();
-
     if ( Axis == 1 ) {  // projection plane is defined by Y Axis.
       output.x() = input.x() - input.z() + s;
       output.x() /= 2.0;
-
       output.z() = input.x() + input.z() - s;
       output.z() /= 2.0;
     }
     if ( Axis == 2 ) {  // projection plane is defined by X Axis.
       output.z() = input.z() - input.y() + s;
       output.z() /= 2.0;
-
       output.y() = input.z() + input.y() - s;
       output.y() /= 2.0;
     }
     if ( Axis == 3 ) {  // projection plane is defined by Z Axis.
       output.y() = input.y() - input.x() + s;
       output.y() /= 2.0;
-
       output.x() = input.y() + input.x() - s;
       output.x() /= 2.0;
     }
@@ -877,8 +867,8 @@ class PCCPatch {
                                   int32_t                      height,
                                   int32_t                      occupancyPrecision,
                                   int16_t*                     depth ) {
-    const int32_t x0 = (int32_t) (u0_ * occupancyResolution_);
-    const int32_t y0 = (int32_t) (v0_ * occupancyResolution_);
+    const int32_t x0 = ( int32_t )( u0_ * occupancyResolution_ );
+    const int32_t y0 = ( int32_t )( v0_ * occupancyResolution_ );
     depth += v2 * depthMapWidth_;
     switch ( patchOrientation_ ) {
       case PATCH_ORIENTATION_DEFAULT:
@@ -897,7 +887,7 @@ class PCCPatch {
         break;
       case PATCH_ORIENTATION_ROT90:
         for ( int32_t j = 0, v = v2; j < occupancyPrecision; j++, v++, depth += depthMapWidth_ ) {
-          int32_t x = int32_t(( sizeV0_ * occupancyResolution_ - 1 - v ) + x0);
+          int32_t x = int32_t( ( sizeV0_ * occupancyResolution_ - 1 - v ) + x0 );
           for ( int32_t i = 0, u = u2; i < occupancyPrecision; i++, u++ ) {
             int32_t y = u + y0;
             depth[u]  = geometryVideo[x + width * y];
@@ -906,9 +896,9 @@ class PCCPatch {
         break;
       case PATCH_ORIENTATION_ROT180:
         for ( int32_t j = 0, v = v2; j < occupancyPrecision; j++, v++, depth += depthMapWidth_ ) {
-          int32_t y = (int32_t) (( sizeV0_ * occupancyResolution_ - 1 - v ) + y0);
+          int32_t y = ( int32_t )( ( sizeV0_ * occupancyResolution_ - 1 - v ) + y0 );
           for ( int32_t i = 0, u = u2; i < occupancyPrecision; i++, u++ ) {
-            int32_t x = (int32_t) (( sizeU0_ * occupancyResolution_ - 1 - u ) + x0);
+            int32_t x = ( int32_t )( ( sizeU0_ * occupancyResolution_ - 1 - u ) + x0 );
             depth[u]  = geometryVideo[x + width * y];
           }
         }
@@ -917,7 +907,7 @@ class PCCPatch {
         for ( int32_t j = 0, v = v2; j < occupancyPrecision; j++, v++, depth += depthMapWidth_ ) {
           int32_t x = v + x0;
           for ( int32_t i = 0, u = u2; i < occupancyPrecision; i++, u++ ) {
-            int32_t y = int32_t(( sizeU0_ * occupancyResolution_ - 1 - u ) + y0);
+            int32_t y = int32_t( ( sizeU0_ * occupancyResolution_ - 1 - u ) + y0 );
             depth[u]  = geometryVideo[x + width * y];
           }
         }
@@ -942,7 +932,7 @@ class PCCPatch {
         break;
       case PATCH_ORIENTATION_MROT180:
         for ( int32_t j = 0, v = v2; j < occupancyPrecision; j++, v++, depth += depthMapWidth_ ) {
-          int32_t y = int32_t(( sizeV0_ * occupancyResolution_ - 1 - v ) + y0);
+          int32_t y = int32_t( ( sizeV0_ * occupancyResolution_ - 1 - v ) + y0 );
           for ( int32_t i = 0, u = u2; i < occupancyPrecision; i++, u++ ) {
             int32_t x = u + x0;
             depth[u]  = geometryVideo[x + width * y];
@@ -973,9 +963,9 @@ class PCCPatch {
                      const int32_t                height,
                      const int32_t                occupancyPrecision,
                      const int32_t                threhold ) {
-    border_                 = occupancyPrecision >= 8 ? 16 : 8;
-    depthMapWidth_          = sizeU0_ * occupancyResolution_ + 2 * border_;
-    depthMapHeight_         = sizeV0_ * occupancyResolution_ + 2 * border_;
+    border_         = occupancyPrecision >= 8 ? 16 : 8;
+    depthMapWidth_  = sizeU0_ * occupancyResolution_ + 2 * border_;
+    depthMapHeight_ = sizeV0_ * occupancyResolution_ + 2 * border_;
     depthMap_.resize( depthMapWidth_ * depthMapHeight_, 0 );
     occupancyMap_.resize( depthMapWidth_ * depthMapHeight_, 0 );
     const int32_t patchIndexPlusOne  = indexCopy_ + 1;
@@ -1068,7 +1058,7 @@ class PCCPatch {
     neighborDepth.resize( size, undefined );
     boundingBox.min_ -= PCCPoint3D( 8 );
     boundingBox.max_ += PCCPoint3D( 8 );
-    const int32_t shift = int32_t(( -v1_ + border_ ) * depthMapWidth_ - u1_ + border_ );
+    const int32_t shift = int32_t( ( -v1_ + border_ ) * depthMapWidth_ - u1_ + border_ );
     for ( auto& i : neighboringPatches_ ) {
       for ( auto& point : patches[i].borderPoints_ ) {
         if ( boundingBox.contains( point ) ) {
@@ -1131,31 +1121,31 @@ class PCCPatch {
   }
 
  private:
-  size_t                  index_;                // patch index
-  size_t                  originalIndex_;        // patch original index
-  size_t                  u1_;                   // tangential shift
-  size_t                  v1_;                   // bitangential shift
-  size_t                  d1_;                   // depth shift
-  size_t                  sizeD_;                // size for depth
-  size_t                  sizeU_;                // size for depth
-  size_t                  sizeV_;                // size for depth
-  size_t                  u0_;                   // location in packed image (n*occupancyResolution_)
-  size_t                  v0_;                   // location in packed image (n*occupancyResolution_)
-  size_t                  sizeU0_;               // size of occupancy map (n*occupancyResolution_)
-  size_t                  sizeV0_;               // size of occupancy map (n*occupancyResolution_)
+  size_t                  index_;          // patch index
+  size_t                  originalIndex_;  // patch original index
+  size_t                  u1_;             // tangential shift
+  size_t                  v1_;             // bitangential shift
+  size_t                  d1_;             // depth shift
+  size_t                  sizeD_;          // size for depth
+  size_t                  sizeU_;          // size for depth
+  size_t                  sizeV_;          // size for depth
+  size_t                  u0_;             // location in packed image (n*occupancyResolution_)
+  size_t                  v0_;             // location in packed image (n*occupancyResolution_)
+  size_t                  sizeU0_;         // size of occupancy map (n*occupancyResolution_)
+  size_t                  sizeV0_;         // size of occupancy map (n*occupancyResolution_)
   size_t                  size2DXInPixel_;
   size_t                  size2DYInPixel_;
   size_t                  occupancyResolution_;  // occupancy map resolution
   size_t                  projectionMode_;       // 0: related to the min depth value; 1: related to the max value
   size_t                  levelOfDetailX_;
   size_t                  levelOfDetailY_;
-  size_t                  normalAxis_;           // x
-  size_t                  tangentAxis_;          // y
-  size_t                  bitangentAxis_;        // z
-  std::vector<int16_t>    depth_[2];             // depth
-  std::vector<bool>       occupancy_;            // occupancy map
-  size_t                  viewId_;               // viewId in [0,1,2,3,4,5]
-  int32_t                 bestMatchIdx_;         // index of matched patch from pre-frame patch.
+  size_t                  normalAxis_;     // x
+  size_t                  tangentAxis_;    // y
+  size_t                  bitangentAxis_;  // z
+  std::vector<int16_t>    depth_[2];       // depth
+  std::vector<bool>       occupancy_;      // occupancy map
+  size_t                  viewId_;         // viewId in [0,1,2,3,4,5]
+  int32_t                 bestMatchIdx_;   // index of matched patch from pre-frame patch.
   size_t                  refAtlasFrameIdx_;
   size_t                  predType_;
   std::vector<int16_t>    depthEnhancedDeltaD_;  // Enhanced delta depht
@@ -1244,7 +1234,6 @@ struct PCCEomPatch {
   size_t sizeU_;
   size_t sizeV_;
   size_t eddCount_;  // in this EomPatch
-  // size_t patchCount_;
   std::vector<size_t> memberPatches;
   std::vector<size_t> eddCountPerPatch;
 };

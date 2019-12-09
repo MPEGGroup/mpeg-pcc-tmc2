@@ -91,8 +91,7 @@ class PCCFrameContext {
   const bool                         getRawPatchEnabledFlag() { return rawPatchEnabledFlag_; }
   const size_t                       getMaxDepth() { return maxDepth_; }
   void                               setMaxDepth( size_t value ) { maxDepth_ = value; }
-  size_t                             getGeometry2dNorminalBitdepth() { return geometry2dNorminalBitdepth_; }
-  const size_t                       getSurfaceThickness() { return surfaceThickness_; }
+  size_t                             getGeometry2dNorminalBitdepth() { return geometry2dNorminalBitdepth_; }  
   std::vector<PCCPointSet3>&         getSrcPointCloudByPatch() { return srcPointCloudByPatch_; }
   PCCPointSet3&              getSrcPointCloudByPatch( size_t patchIndex ) { return srcPointCloudByPatch_[patchIndex]; }
   std::vector<PCCPointSet3>& getSrcPointCloudByBlock() { return srcPointCloudByBlock_; }
@@ -113,67 +112,65 @@ class PCCFrameContext {
   void                       setLosslessGeo( bool lossless ) { losslessGeo_ = lossless; }
   void                       setLosslessGeo444( bool lossless ) { losslessGeo444_ = lossless; }
   void                       setUseMissedPointsSeparateVideo( bool value ) { useMissedPointsSeparateVideo_ = value; }
-  void                       setSurfaceThickness( size_t surfaceThickness ) { surfaceThickness_ = surfaceThickness; }
   void                       setTotalNumberOfEddPoints( size_t numPoints ) { totalNumberOfEddPoints_ = numPoints; }
-  void                       setTotalNumberOfRegularPoints( size_t numPoints ) { totalNumberOfRegularPoints_ = numPoints; }
-  void                       setNumberOfMissedPoints( int index, size_t value ) { numberOfMissedPoints_[index] = value; }
-  void                       setNumberOfMissedPointsPatches( size_t numPoints ) { numberOfMissedPointsPatches_ = numPoints; }
-  void                       setTotalNumberOfMissedPoints( size_t numPoints ) { totalNumberOfMissedPoints_ = numPoints; }
-  void                       setGeometry3dCoordinatesBitdepth( size_t value ) { geometry3dCoordinatesBitdepth_ = value; }
-  void                       setRawPatchEnabledFlag( bool value ) { rawPatchEnabledFlag_ = value; }
-  void                       setGeometry2dNorminalBitdepth( size_t value ) { geometry2dNorminalBitdepth_ = value; }
-  void                       setNumMatchedPatches( size_t value ) { numMatchedPatches_ = value; }
+  void setTotalNumberOfRegularPoints( size_t numPoints ) { totalNumberOfRegularPoints_ = numPoints; }
+  void setNumberOfMissedPoints( int index, size_t value ) { numberOfMissedPoints_[index] = value; }
+  void setNumberOfMissedPointsPatches( size_t numPoints ) { numberOfMissedPointsPatches_ = numPoints; }
+  void setTotalNumberOfMissedPoints( size_t numPoints ) { totalNumberOfMissedPoints_ = numPoints; }
+  void setGeometry3dCoordinatesBitdepth( size_t value ) { geometry3dCoordinatesBitdepth_ = value; }
+  void setRawPatchEnabledFlag( bool value ) { rawPatchEnabledFlag_ = value; }
+  void setGeometry2dNorminalBitdepth( size_t value ) { geometry2dNorminalBitdepth_ = value; }
+  void setNumMatchedPatches( size_t value ) { numMatchedPatches_ = value; }
 
-  void                       setEomPatches( PCCEomPatch value, size_t idx ) { eomPatches_[idx] = value; }
-  std::vector<PCCEomPatch>&  getEomPatches() { return eomPatches_; }
-  PCCEomPatch&               getEomPatches( size_t idx ) { return eomPatches_[idx]; }
+  void                      setEomPatches( PCCEomPatch value, size_t idx ) { eomPatches_[idx] = value; }
+  std::vector<PCCEomPatch>& getEomPatches() { return eomPatches_; }
+  PCCEomPatch&              getEomPatches( size_t idx ) { return eomPatches_[idx]; }
 
-  void                       set2dPosXBitCountMinus1(size_t value){ bitCount2dPosXMinus1_=value; }
-  void                       set2dPosYBitCountMinus1(size_t value){ bitCount2dPosYMinus1_=value; }
-  void                       set3dPosXBitCountMinus1(size_t value){ bitCount3dPosXMinus1_=value; }
-  void                       set3dPosYBitCountMinus1(size_t value){ bitCount3dPosYMinus1_=value; }
-  size_t                     get2dPosXBitCountMinus1(){ return bitCount2dPosXMinus1_; }
-  size_t                     get2dPosYBitCountMinus1(){ return bitCount2dPosYMinus1_; }
-  size_t                     get3dPosXBitCountMinus1(){ return bitCount3dPosXMinus1_; }
-  size_t                     get3dPosYBitCountMinus1(){ return bitCount3dPosYMinus1_; }
-  uint8_t                    getLog2PatchQuantizerSizeX() { return log2PatchQuantizerSizeX_; }
-  uint8_t                    getLog2PatchQuantizerSizeY() { return log2PatchQuantizerSizeY_; }
-  void                       setLog2PatchQuantizerSizeX(uint8_t value) { log2PatchQuantizerSizeX_=value; }
-  void                       setLog2PatchQuantizerSizeY(uint8_t value) { log2PatchQuantizerSizeY_=value; }
+  void    set2dPosXBitCountMinus1( size_t value ) { bitCount2dPosXMinus1_ = value; }
+  void    set2dPosYBitCountMinus1( size_t value ) { bitCount2dPosYMinus1_ = value; }
+  void    set3dPosXBitCountMinus1( size_t value ) { bitCount3dPosXMinus1_ = value; }
+  void    set3dPosYBitCountMinus1( size_t value ) { bitCount3dPosYMinus1_ = value; }
+  size_t  get2dPosXBitCountMinus1() { return bitCount2dPosXMinus1_; }
+  size_t  get2dPosYBitCountMinus1() { return bitCount2dPosYMinus1_; }
+  size_t  get3dPosXBitCountMinus1() { return bitCount3dPosXMinus1_; }
+  size_t  get3dPosYBitCountMinus1() { return bitCount3dPosYMinus1_; }
+  uint8_t getLog2PatchQuantizerSizeX() { return log2PatchQuantizerSizeX_; }
+  uint8_t getLog2PatchQuantizerSizeY() { return log2PatchQuantizerSizeY_; }
+  void    setLog2PatchQuantizerSizeX( uint8_t value ) { log2PatchQuantizerSizeX_ = value; }
+  void    setLog2PatchQuantizerSizeY( uint8_t value ) { log2PatchQuantizerSizeY_ = value; }
 
-  void                       setNumOfRefAFOC(size_t value) { refAFOCList_[0].resize(value); }
-  void                       setRefAFOC(size_t refIndex, size_t value) { refAFOCList_[0][refIndex]=value; }
-  void                       setNumOfRefAtlasFrame(size_t idx, size_t value) { refAFOCList_[idx].resize(value); }
-  void                       setRefAFOC(size_t idx, size_t refIndex, size_t value) { refAFOCList_[idx][refIndex]=value; }
-  void                       setAtlasFrmOrderCntVal(size_t value){ atlasFrmOrderCntVal_=value; }
-  void                       setAtlasFrmOrderCntMsb(size_t value){ atlasFrmOrderCntMsb_=value; }
-  void                       setAtlasFrmOrderCntLsb(size_t value){ atlasFrmOrderCntLsb_=value; }
-  void                       setNumOfRefAtlasFrameList(size_t value) { numOfAvailableRefAtlasFrameList_=value; }
-  void                       setActiveRefAtlasFrameIndex(size_t value) { activeRefAtlasFrameIndex_=value; }
+  void setNumOfRefAFOC( size_t value ) { refAFOCList_[0].resize( value ); }
+  void setRefAFOC( size_t refIndex, size_t value ) { refAFOCList_[0][refIndex] = value; }
+  void setNumOfRefAtlasFrame( size_t idx, size_t value ) { refAFOCList_[idx].resize( value ); }
+  void setRefAFOC( size_t idx, size_t refIndex, size_t value ) { refAFOCList_[idx][refIndex] = value; }
+  void setAtlasFrmOrderCntVal( size_t value ) { atlasFrmOrderCntVal_ = value; }
+  void setAtlasFrmOrderCntMsb( size_t value ) { atlasFrmOrderCntMsb_ = value; }
+  void setAtlasFrmOrderCntLsb( size_t value ) { atlasFrmOrderCntLsb_ = value; }
+  void setNumOfRefAtlasFrameList( size_t value ) { numOfAvailableRefAtlasFrameList_ = value; }
+  void setActiveRefAtlasFrameIndex( size_t value ) { activeRefAtlasFrameIndex_ = value; }
 
-  void                       setAFOC(size_t value) {afOrderCnt_=value;}
-  void                       setRefAtlasListIndexInSPS(size_t listIdx) {refAtlasListIndexInSPS_ = listIdx;}
-  void                       setRefAFOCList(std::vector<std::vector<size_t>>& list);
-  void                       setRefAFOCList(PCCContext& context);
-  void                       constructAtghRefListStruct(PCCContext& context, AtlasTileGroupHeader& atgh);
-  void                       setNumRefIdxActive(size_t value) { numRefIdxActive_=value;}
-  void                       setNumRefIdxActive(PCCContext& context, AtlasTileGroupHeader& atgh);
-  void                       addRefAFOC(size_t value){ refAFOCList_[0].push_back(value);}
-  void                       addRefAFOC(size_t idx, size_t value){ refAFOCList_[idx].push_back(value);}
+  void setAFOC( size_t value ) { afOrderCnt_ = value; }
+  void setRefAtlasListIndexInSPS( size_t listIdx ) { refAtlasListIndexInSPS_ = listIdx; }
+  void setRefAFOCList( std::vector<std::vector<size_t>>& list );
+  void setRefAFOCList( PCCContext& context );
+  void constructAtghRefListStruct( PCCContext& context, AtlasTileGroupHeader& atgh );
+  void setNumRefIdxActive( size_t value ) { numRefIdxActive_ = value; }
+  void setNumRefIdxActive( PCCContext& context, AtlasTileGroupHeader& atgh );
+  void addRefAFOC( size_t value ) { refAFOCList_[0].push_back( value ); }
+  void addRefAFOC( size_t idx, size_t value ) { refAFOCList_[idx].push_back( value ); }
 
-  
-  size_t                     getRefAFOC(size_t refIndex) { return refAFOCList_[0][refIndex]; }
-  size_t                     getRefAFOC(size_t listIdx, size_t refIndex) { return refAFOCList_[listIdx][refIndex]; }
-  size_t                     getRefAFOCListSize(size_t idx) {return refAFOCList_[idx].size();}
-  size_t                     getAtlasFrmOrderCntVal(){ return atlasFrmOrderCntVal_;}
-  size_t                     getAtlasFrmOrderCntMsb(){ return atlasFrmOrderCntMsb_;}
-  size_t                     getAtlasFrmOrderCntLsb(){ return atlasFrmOrderCntLsb_;}
-  size_t                     getNumOfRefAtlasFrameList() { return numOfAvailableRefAtlasFrameList_; }
-  size_t                     getNumRefIdxActive()        { return numRefIdxActive_; }
-  size_t                     getActiveRefAtlasFrameIndex() { return activeRefAtlasFrameIndex_; }
-  
-  size_t getRefAtlasListIndexInSPS() {return refAtlasListIndexInSPS_;}
-  size_t getPFOC() const {return afOrderCnt_;}
+  size_t getRefAFOC( size_t refIndex ) { return refAFOCList_[0][refIndex]; }
+  size_t getRefAFOC( size_t listIdx, size_t refIndex ) { return refAFOCList_[listIdx][refIndex]; }
+  size_t getRefAFOCListSize( size_t idx ) { return refAFOCList_[idx].size(); }
+  size_t getAtlasFrmOrderCntVal() { return atlasFrmOrderCntVal_; }
+  size_t getAtlasFrmOrderCntMsb() { return atlasFrmOrderCntMsb_; }
+  size_t getAtlasFrmOrderCntLsb() { return atlasFrmOrderCntLsb_; }
+  size_t getNumOfRefAtlasFrameList() { return numOfAvailableRefAtlasFrameList_; }
+  size_t getNumRefIdxActive() { return numRefIdxActive_; }
+  size_t getActiveRefAtlasFrameIndex() { return activeRefAtlasFrameIndex_; }
+
+  size_t getRefAtlasListIndexInSPS() { return refAtlasListIndexInSPS_; }
+  size_t getPFOC() const { return afOrderCnt_; }
 
   void allocOneLayerData();
   void printBlockToPatch( const size_t occupancyResolution );
@@ -183,7 +180,6 @@ class PCCFrameContext {
  private:
   size_t                                       index_;
   size_t                                       numMatchedPatches_;
-  size_t                                       surfaceThickness_;
   size_t                                       width_;
   size_t                                       height_;
   size_t                                       MPGeoWidth_;
@@ -209,14 +205,13 @@ class PCCFrameContext {
   size_t                                       bitCount3dPosYMinus1_;
   size_t                                       afOrderCnt_;
   size_t                                       refAtlasListIndexInSPS_;
-  size_t                                       numRefIdxActive_; 
+  size_t                                       numRefIdxActive_;
   size_t                                       atlasFrmOrderCntVal_;
   size_t                                       atlasFrmOrderCntMsb_;
   size_t                                       atlasFrmOrderCntLsb_;
   size_t                                       numOfAvailableRefAtlasFrameList_;
   size_t                                       activeRefAtlasFrameIndex_;
   std::vector<std::vector<size_t>>             refAFOCList_;
-
   size_t                                       log2PatchQuantizerSizeX_;
   size_t                                       log2PatchQuantizerSizeY_;
   std::vector<PCCVector3<size_t>>              pointToPixel_;

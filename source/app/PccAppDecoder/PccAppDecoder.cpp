@@ -91,7 +91,7 @@ bool parseParameters( int                   argc,
   namespace po = df::program_options_lite;
 
   bool   print_help = false;
-  size_t ignore = 1024;
+  size_t ignore     = 1024;
 
   // The definition of the program/config options, along with default values.
   //
@@ -102,144 +102,144 @@ bool parseParameters( int                   argc,
   // clang-format off
   po::Options opts;
   opts.addOptions()
-    ("help", print_help, false, "This help text")
-    ("c,config", po::parseConfigFile,"Configuration file name")
+    ( "help", print_help, false, "This help text" )
+    ( "c,config", po::parseConfigFile,"Configuration file name" )
 
     // i/o
-    ("compressedStreamPath",
-     decoderParams.compressedStreamPath_,
-     decoderParams.compressedStreamPath_,
-     "Output(encoder)/Input(decoder) compressed bitstream")
+    ( "compressedStreamPath",
+      decoderParams.compressedStreamPath_,
+      decoderParams.compressedStreamPath_,
+      "Output(encoder)/Input(decoder) compressed bitstream" )
 
-    ("reconstructedDataPath",
-     decoderParams.reconstructedDataPath_,
-     decoderParams.reconstructedDataPath_,
-     "Output decoded pointcloud. Multi-frame sequences may be represented by %04i")
+    ( "reconstructedDataPath",
+      decoderParams.reconstructedDataPath_,
+      decoderParams.reconstructedDataPath_,
+      "Output decoded pointcloud. Multi-frame sequences may be represented by %04i" )
 
     // sequence configuration
-    ("startFrameNumber",
-     decoderParams.startFrameNumber_,
-     decoderParams.startFrameNumber_,
-     "Fist frame number in sequence to encode/decode")
+    ( "startFrameNumber",
+      decoderParams.startFrameNumber_,
+      decoderParams.startFrameNumber_,
+      "Fist frame number in sequence to encode/decode" )
 
     // colour space conversion
-    ("colorTransform",
-     decoderParams.colorTransform_,
-     decoderParams.colorTransform_,
-     "The colour transform to be applied:\n"
-     "  0: none\n"
-     "  1: RGB to YCbCr (Rec.709)")
+    ( "colorTransform",
+      decoderParams.colorTransform_,
+      decoderParams.colorTransform_,
+      "The colour transform to be applied:\n"
+      "  0: none\n"
+      "  1: RGB to YCbCr (Rec.709)" )
 
-    ("colorSpaceConversionPath",
-     decoderParams.colorSpaceConversionPath_,
-     decoderParams.colorSpaceConversionPath_,
-     "Path to the HDRConvert. If unset, an internal color space conversion is used")
-    
-    ("inverseColorSpaceConversionConfig",
-     decoderParams.inverseColorSpaceConversionConfig_,
-     decoderParams.inverseColorSpaceConversionConfig_,
-     "HDRConvert configuration file used for YUV420 to RGB444 conversion")
+    ( "colorSpaceConversionPath",
+      decoderParams.colorSpaceConversionPath_,
+      decoderParams.colorSpaceConversionPath_,
+      "Path to the HDRConvert. If unset, an internal color space conversion is used" )
 
-    ("videoDecoderPath",
-     decoderParams.videoDecoderPath_,
-     decoderParams.videoDecoderPath_,
-     "HM video decoder executable")
+    ( "inverseColorSpaceConversionConfig",
+      decoderParams.inverseColorSpaceConversionConfig_,
+      decoderParams.inverseColorSpaceConversionConfig_,
+      "HDRConvert configuration file used for YUV420 to RGB444 conversion" )
 
-    ("videoDecoderOccupancyMapPath",
-     decoderParams.videoDecoderOccupancyMapPath_,
-     decoderParams.videoDecoderOccupancyMapPath_,
-     "HM lossless video decoder executable for occupancy map")
+    ( "videoDecoderPath",
+      decoderParams.videoDecoderPath_,
+      decoderParams.videoDecoderPath_,
+      "HM video decoder executable" )
 
-    ("nbThread",
-     decoderParams.nbThread_,
-     decoderParams.nbThread_,
-     "Number of thread used for parallel processing")
-  
-    ("postprocessSmoothingFilterType",
-     decoderParams.postprocessSmoothingFilter_,
-     decoderParams.postprocessSmoothingFilter_,
-     "Exclude geometry smoothing from attribute transfer")
-  
-    ("keepIntermediateFiles",
-     decoderParams.keepIntermediateFiles_,
-     decoderParams.keepIntermediateFiles_,
-     "Keep intermediate files: RGB, YUV and bin")
+    ( "videoDecoderOccupancyMapPath",
+      decoderParams.videoDecoderOccupancyMapPath_,
+      decoderParams.videoDecoderOccupancyMapPath_,
+      "HM lossless video decoder executable for occupancy map" )
+
+    ( "nbThread",
+      decoderParams.nbThread_,
+      decoderParams.nbThread_,
+      "Number of thread used for parallel processing" )
+
+    ( "postprocessSmoothingFilterType",
+      decoderParams.postprocessSmoothingFilter_,
+      decoderParams.postprocessSmoothingFilter_,
+      "Exclude geometry smoothing from attribute transfer" )
+
+    ( "keepIntermediateFiles",
+      decoderParams.keepIntermediateFiles_,
+      decoderParams.keepIntermediateFiles_,
+      "Keep intermediate files: RGB, YUV and bin" )
 
     //visual quality
-    ("patchColorSubsampling", 
-     decoderParams.patchColorSubsampling_,
-     false, 
-     "Enable per-patch color up-sampling");
+    ( "patchColorSubsampling", 
+      decoderParams.patchColorSubsampling_,
+    false, 
+      "Enable per-patch color up-sampling" );
 
-  opts.addOptions()
-    ("computeChecksum",
-     metricsParams.computeChecksum_,
-     metricsParams.computeChecksum_,
-     "Compute checksum")
+    opts.addOptions()
+    ( "computeChecksum",
+      metricsParams.computeChecksum_,
+      metricsParams.computeChecksum_,
+      "Compute checksum" )
 
-    ("computeMetrics",
+    ( "computeMetrics",
       metricsParams.computeMetrics_,
       metricsParams.computeMetrics_,
-     "Compute metrics")
+      "Compute metrics" )
 
-    ("uncompressedDataFolder",
+    ( "uncompressedDataFolder",
       metricsParams.uncompressedDataFolder_,
       metricsParams.uncompressedDataFolder_,
-      "Folder where the uncompress input data are stored, use for cfg relative paths.")
+      "Folder where the uncompress input data are stored, use for cfg relative paths." )
 
-    ("startFrameNumber",
-     metricsParams.startFrameNumber_,
-     metricsParams.startFrameNumber_,
-     "Fist frame number in sequence to encode/decode")
+    ( "startFrameNumber",
+      metricsParams.startFrameNumber_,
+      metricsParams.startFrameNumber_,
+      "Fist frame number in sequence to encode/decode" )
 
-    ("frameCount",
-     metricsParams.frameCount_,
-     metricsParams.frameCount_,
-     "Number of frames to encode")
+    ( "frameCount",
+      metricsParams.frameCount_,
+      metricsParams.frameCount_,
+      "Number of frames to encode" )
 
-    ("groupOfFramesSize",
-     metricsParams.groupOfFramesSize_,
-     metricsParams.groupOfFramesSize_,
-     "Random access period")
+    ( "groupOfFramesSize",
+      metricsParams.groupOfFramesSize_,
+      metricsParams.groupOfFramesSize_,
+      "Random access period" )
 
-    ("uncompressedDataPath",
-     metricsParams.uncompressedDataPath_,
-     metricsParams.uncompressedDataPath_,
-     "Input pointcloud to encode. Multi-frame sequences may be represented by %04i")
+    ( "uncompressedDataPath",
+      metricsParams.uncompressedDataPath_,
+      metricsParams.uncompressedDataPath_,
+      "Input pointcloud to encode. Multi-frame sequences may be represented by %04i" )
 
-    ("reconstructedDataPath",
-     metricsParams.reconstructedDataPath_,
-     metricsParams.reconstructedDataPath_,
-     "Output decoded pointcloud. Multi-frame sequences may be represented by %04i")
+    ( "reconstructedDataPath",
+      metricsParams.reconstructedDataPath_,
+      metricsParams.reconstructedDataPath_,
+      "Output decoded pointcloud. Multi-frame sequences may be represented by %04i" )
 
-    ("normalDataPath",
-     metricsParams.normalDataPath_,
-     metricsParams.normalDataPath_,
-     "Input pointcloud to encode. Multi-frame sequences may be represented by %04i")
+    ( "normalDataPath",
+      metricsParams.normalDataPath_,
+      metricsParams.normalDataPath_,
+      "Input pointcloud to encode. Multi-frame sequences may be represented by %04i" )
 
-    ("resolution",
-     metricsParams.resolution_,
-     metricsParams.resolution_,
-     "Specify the intrinsic resolution")
+    ( "resolution",
+      metricsParams.resolution_,
+      metricsParams.resolution_,
+      "Specify the intrinsic resolution" )
 
-    ("dropdups",
-     metricsParams.dropDuplicates_,
-     metricsParams.dropDuplicates_,
-     "0(detect), 1(drop), 2(average) subsequent points with same coordinates")
+    ( "dropdups",
+      metricsParams.dropDuplicates_,
+      metricsParams.dropDuplicates_,
+      "0(detect), 1(drop), 2(average) subsequent points with same coordinates" )
 
-    ("neighborsProc",
-     metricsParams.neighborsProc_,
-     metricsParams.neighborsProc_,
-     "0(undefined), 1(average), 2(weighted average), 3(min), 4(max) neighbors with same geometric distance")
+    ( "neighborsProc",
+      metricsParams.neighborsProc_,
+      metricsParams.neighborsProc_,
+      "0(undefined), 1(average), 2(weighted average), 3(min), 4(max) neighbors with same geometric distance" )
 
-    ("nbThread",
-     metricsParams.nbThread_,
-     metricsParams.nbThread_,
-     "Number of thread used for parallel processing")
+    ( "nbThread",
+      metricsParams.nbThread_,
+      metricsParams.nbThread_,
+      "Number of thread used for parallel processing" )
 
-    ("minimumImageHeight",    ignore, ignore, "Ignore parameter")
-    ("flagColorPreSmoothing", ignore, ignore, "Ignore parameter")
-    ("surfaceSeparation",     ignore, ignore, "Ignore parameter");
+    ( "minimumImageHeight",    ignore, ignore, "Ignore parameter" )
+    ( "flagColorPreSmoothing", ignore, ignore, "Ignore parameter" )
+    ( "surfaceSeparation",     ignore, ignore, "Ignore parameter" );
 
   // clang-format on
   po::setDefaults( opts );
@@ -262,15 +262,14 @@ bool parseParameters( int                   argc,
 
   // report the current configuration (only in the absence of errors so
   // that errors/warnings are more obvious and in the same place).
-  if ( err.is_errored ) return false;
-
+  if ( err.is_errored ) { return false; }
   return true;
 }
 
 int decompressVideo( const PCCDecoderParameters& decoderParams,
                      const PCCMetricsParameters& metricsParams,
                      StopwatchUserTime&          clock ) {
-  PCCBitstream bitstream;
+  PCCBitstream     bitstream;
   PCCBitstreamStat bitstreamStat;
 #ifdef BITSTREAM_TRACE
   bitstream.setTrace( true );
@@ -278,7 +277,7 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
   bitstream.setTraceFile( bitstream.getTraceFile() );
 #endif
   if ( !bitstream.initialize( decoderParams.compressedStreamPath_ ) ) { return -1; }
-  if ( !bitstream.readHeader() ) { return -1; }  // JR TODO: must be remove? 
+  if ( !bitstream.readHeader() ) { return -1; }  // JR TODO: must be remove?
   bitstreamStat.setHeader( bitstream.size() );
   size_t      frameNumber = decoderParams.startFrameNumber_;
   PCCMetrics  metrics;
@@ -294,9 +293,8 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
   PCCBitstreamDecoder  bitstreamDecoder;
   bitstreamDecoder.read( bitstream, ssvu );
 
-  // jkei: we need to read every thing from ssvu. I am not sure it is desirable...
   bool bMoreData = true;
-  while ( bMoreData ) {  // jkie : popFront() is desirable?
+  while ( bMoreData ) {
     PCCGroupOfFrames reconstructs;
     PCCContext       context;
     context.setBitstreamStat( bitstreamStat );
@@ -321,14 +319,12 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
       sources.clear();
       normals.clear();
     }
-    
     if ( !decoderParams.reconstructedDataPath_.empty() ) {
       reconstructs.write( decoderParams.reconstructedDataPath_, frameNumber );
     } else {
       frameNumber += reconstructs.size();
     }
-    
-    bMoreData= (ssvu.getVpccUnitCount() > 0) ; //jkei: I don't feel like this is clear to understand. getVpccUnitCount() sounds very constant
+    bMoreData = ( ssvu.getVpccUnitCount() > 0 );
   }
   bitstreamStat.trace();
   if ( metricsParams.computeMetrics_ ) { metrics.display(); }

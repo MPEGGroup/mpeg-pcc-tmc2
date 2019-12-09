@@ -57,13 +57,13 @@ class PCCDecoderParameters {
   size_t            nbThread_;
   bool              keepIntermediateFiles_;
   bool              patchColorSubsampling_;
-  
   size_t            postprocessSmoothingFilter_;
-  
+
   //  attribute transfer
   // coloring
   size_t bestColorSearchRange_;
-  // Improved color transfe
+
+  // Improved color transfer
   int    numNeighborsColorTransferFwd_;
   int    numNeighborsColorTransferBwd_;
   bool   useDistWeightedAverageFwd_;

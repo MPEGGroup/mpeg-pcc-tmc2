@@ -41,30 +41,27 @@ using namespace pcc;
 
 typedef KDTreeVectorOfVectorsAdaptor<PCCPointSet3, PCCType, float, 3, metric_L2_Simple_2, size_t> KdTreeAdaptor;
 
-PCCKdTree::PCCKdTree():
-  kdtree_    ( NULL ){
+PCCKdTree::PCCKdTree() : kdtree_( NULL ) {}
+
+PCCKdTree::PCCKdTree( const PCCPointSet3& pointCloud ) : kdtree_( NULL ) { init( pointCloud ); }
+
+PCCKdTree::~PCCKdTree() { clear(); }
+void PCCKdTree::clear() {
+  if ( kdtree_ ) {
+    delete ( (KdTreeAdaptor*)kdtree_ );
+    kdtree_ = NULL;
+  }
 }
 
-PCCKdTree::PCCKdTree( const PCCPointSet3 &pointCloud ) :
-    kdtree_    ( NULL ) {
-    init( pointCloud );
-}
-
-PCCKdTree::~PCCKdTree() {
-  clear();
-}
-void PCCKdTree::clear(){
-  if( kdtree_    ) { delete ((KdTreeAdaptor*)kdtree_); kdtree_ = NULL; }
-}
-
-void PCCKdTree::init( const PCCPointSet3 &pointCloud ) {
+void PCCKdTree::init( const PCCPointSet3& pointCloud ) {
   clear();
   kdtree_ = new KdTreeAdaptor( 3, pointCloud, 10 );
 }
 
 void PCCKdTree::search( const PCCPoint3D& point, const size_t num_results, PCCNNResult& results ) const {
-  if( num_results != results.size()) { results.resize( num_results ); }
-  results.count() = ((KdTreeAdaptor*)kdtree_)->index->knnSearch( &point[0], num_results, results.indices(), results.dist());
+  if ( num_results != results.size() ) { results.resize( num_results ); }
+  results.count() =
+      ( (KdTreeAdaptor*)kdtree_ )->index->knnSearch( &point[0], num_results, results.indices(), results.dist() );
 }
 
 #if 0
@@ -75,15 +72,19 @@ void PCCKdTree::searchRadius( const PCCPoint3D& point, const size_t num_results,
   }
 }
 #else
-void PCCKdTree::searchRadius( const PCCPoint3D& point, const size_t num_results, const double radius, PCCNNResult& results ) const {
-  std::vector<std::pair<size_t,double>> ret;
-  nanoflann::SearchParams params;
-  results.count() = ((KdTreeAdaptor*)kdtree_)->index->radiusSearch( &point[0], radius, ret, params);
-  results.count() = (std::min)( results.count(), num_results );
+void PCCKdTree::searchRadius( const PCCPoint3D& point,
+                              const size_t      num_results,
+                              const double      radius,
+                              PCCNNResult&      results ) const {
+  std::vector<std::pair<size_t, double> > ret;
+  nanoflann::SearchParams                 params;
+  results.count() = ( (KdTreeAdaptor*)kdtree_ )->index->radiusSearch( &point[0], radius, ret, params );
+  results.count() = ( std::min )( results.count(), num_results );
   results.resize( num_results );
-  for (size_t i = 0; i < results.count(); i++){
-    results.indices(i) = ret[i].first;
-    results.dist(i) = ret[i].second;;
+  for ( size_t i = 0; i < results.count(); i++ ) {
+    results.indices( i ) = ret[i].first;
+    results.dist( i )    = ret[i].second;
+    ;
   }
 }
 #endif

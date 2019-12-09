@@ -36,9 +36,7 @@
 #include "PCCCommon.h"
 #include "PCCEncoderParameters.h"
 #include "PCCCodec.h"
-//#include "PCCMetadata.h"
 #include "PCCKdTree.h"
-
 #include <map>
 
 namespace pcc {
@@ -121,22 +119,13 @@ class PCCEncoder : public PCCCodec {
   // JR: NEW
   int encode( const PCCGroupOfFrames& sources,
               PCCContext&             context,
-              /*SampleStreamNalUnit&    ssnu,*/
-              SampleStreamVpccUnit& ssvu,
-              PCCGroupOfFrames&     reconstructs );
-  // // JR: NEW -> OLD (jkei: i can feel you are tired... :p)
-  // int encode_old( const PCCGroupOfFrames& sources,
-  //             PCCContext&             context,
-  //             PCCBitstream&           bitstream,
-  //             PCCGroupOfFrames&       reconstructs );
+              SampleStreamVpccUnit&   ssvu,
+              PCCGroupOfFrames&       reconstructs );
 
-  // adaptor methods (JR: move for test )
   void setGeneratePointCloudParameters( GeneratePointCloudParameters& gpcParams, PCCContext& context );
   void createPatchFrameDataStructure( PCCContext& context );
 
-  void createPatchFrameDataStructure( PCCContext&      context,
-                                      PCCFrameContext& frame,
-                                      size_t           frameIndex );
+  void createPatchFrameDataStructure( PCCContext& context, PCCFrameContext& frame, size_t frameIndex );
 
  private:
   int encode( const PCCGroupOfFrames& sources, PCCContext& context, PCCGroupOfFrames& reconstructs );
@@ -178,6 +167,7 @@ class PCCEncoder : public PCCCodec {
 
   template <typename T>
   void dilate( PCCFrameContext& frame, PCCImage<T, 3>& image, const PCCImage<T, 3>* reference = nullptr );
+
   // 3D geometry padding
   void   dilate_3DPadding( const PCCPointSet3&     source,
                            PCCFrameContext&        frame,
@@ -216,35 +206,38 @@ class PCCEncoder : public PCCCodec {
                           std::vector<uint32_t>& occupancyMap,
                           std::vector<uint32_t>& mipOccupancyMap );
   template <typename T>
-  void regionFill( PCCImage<T, 3>& image, std::vector<uint32_t>& occupancyMap, PCCImage<T, 3>& imageLowRes );
-  void pack( PCCFrameContext& frame, int safeguard = 0, bool enablePointCloudPartitioning = false );
-  void packFlexible( PCCFrameContext& frame, int safeguard = 0, bool enablePointCloudPartitioning = false );
-  void packTetris( PCCFrameContext& frame, int safeguard = 0 );
-  void packMissedPointsPatch( PCCFrameContext&   frame,
-                              std::vector<bool>& occupancyMap,
-                              size_t&            width,
-                              size_t&            height,
-                              size_t             occupancySizeU,
-                              size_t             occupancySizeV,
-                              size_t             maxOccupancyRow );
-  void packEOMTexturePointsPatch( PCCFrameContext&   frame,
-                                  std::vector<bool>& occupancyMap,
-                                  size_t&            width,
-                                  size_t&            height,
-                                  size_t             occupancySizeU,
-                                  size_t             occupancySizeV,
-                                  size_t             maxOccupancyRow );
-  void   adjustReferenceAtlasFrames( PCCContext& context);
-  double adjustReferenceAtlasFrame ( PCCContext& context, PCCFrameContext& frame, size_t listIndex, std::vector<PCCPatch>& tempPatchList);
-  void spatialConsistencyPack( PCCFrameContext& frame,
-                               PCCFrameContext& prevFrame,
-                               int              safeguard                    = 0,
-                               bool             enablePointCloudPartitioning = false );
-  void spatialConsistencyPackFlexible( PCCFrameContext& frame,
-                                       PCCFrameContext& prevFrame,
-                                       int              safeguard                    = 0,
-                                       bool             enablePointCloudPartitioning = false );
-  void spatialConsistencyPackTetris( PCCFrameContext& frame, PCCFrameContext& prevFrame, int safeguard = 0 );
+  void   regionFill( PCCImage<T, 3>& image, std::vector<uint32_t>& occupancyMap, PCCImage<T, 3>& imageLowRes );
+  void   pack( PCCFrameContext& frame, int safeguard = 0, bool enablePointCloudPartitioning = false );
+  void   packFlexible( PCCFrameContext& frame, int safeguard = 0, bool enablePointCloudPartitioning = false );
+  void   packTetris( PCCFrameContext& frame, int safeguard = 0 );
+  void   packMissedPointsPatch( PCCFrameContext&   frame,
+                                std::vector<bool>& occupancyMap,
+                                size_t&            width,
+                                size_t&            height,
+                                size_t             occupancySizeU,
+                                size_t             occupancySizeV,
+                                size_t             maxOccupancyRow );
+  void   packEOMTexturePointsPatch( PCCFrameContext&   frame,
+                                    std::vector<bool>& occupancyMap,
+                                    size_t&            width,
+                                    size_t&            height,
+                                    size_t             occupancySizeU,
+                                    size_t             occupancySizeV,
+                                    size_t             maxOccupancyRow );
+  void   adjustReferenceAtlasFrames( PCCContext& context );
+  double adjustReferenceAtlasFrame( PCCContext&            context,
+                                    PCCFrameContext&       frame,
+                                    size_t                 listIndex,
+                                    std::vector<PCCPatch>& tempPatchList );
+  void   spatialConsistencyPack( PCCFrameContext& frame,
+                                 PCCFrameContext& prevFrame,
+                                 int              safeguard                    = 0,
+                                 bool             enablePointCloudPartitioning = false );
+  void   spatialConsistencyPackFlexible( PCCFrameContext& frame,
+                                         PCCFrameContext& prevFrame,
+                                         int              safeguard                    = 0,
+                                         bool             enablePointCloudPartitioning = false );
+  void   spatialConsistencyPackTetris( PCCFrameContext& frame, PCCFrameContext& prevFrame, int safeguard = 0 );
   // GTP
   void findMatchesForGlobalTetrisPacking( PCCFrameContext& frame, PCCFrameContext& prevFrame );
   void doGlobalTetrisPacking( PCCContext& context );
@@ -371,9 +364,6 @@ class PCCEncoder : public PCCCodec {
                                                  size_t&                     heightGPA,
                                                  size_t&                     widthGPA,
                                                  size_t&                     maxOccupancyRow );  // GPA_HARMONIZATION
-
-  // void setPatchFrameGeometryParameterSet( PCCMetadata& metadata, PatchFrameGeometryParameterSet& gfps );
-  // void setGeometryPatchParameterSet( PCCMetadata& metadata, GeometryPatchParameterSet& gpps );
 
   void setPointLocalReconstruction( PCCContext& context );
 

@@ -70,10 +70,10 @@
 #define POSTSMOOTHING_RGB2YUV 0
 #define ATLASIDXPCC 0
 
-#define MULTISTREAM_UPDATE      1  // prevent overflow for the lossless absolute case
+#define MULTISTREAM_UPDATE 1       // prevent overflow for the lossless absolute case
 #define VPCCUNIT_DATA_BITSTREAM 1  // jkei: bitstream instead of data
 
-//#define DEBUG_SURFACE_SEPARATION 
+//#define DEBUG_SURFACE_SEPARATION
 #define ONELAYERFIX 1
 #define DEBUG_MULTI_STREAMS
 
@@ -82,7 +82,7 @@
 // ******************************************************************* //
 #define BITSTREAM_TRACE
 #define CODEC_TRACE
-// #define DEBUG_TRACE_UVF 
+// #define DEBUG_TRACE_UVF
 // ENABLE_LAST_PATCH : jkei: removed
 namespace pcc {
 
@@ -354,15 +354,15 @@ static inline unsigned int getMaxBit( int16_t h ) {
 
 static inline std::string toString( NalUnitType type ) {
   switch ( type ) {
-    case NAL_ASPS:       return std::string( "NAL_ASPS"  ); break;
-    case NAL_AFPS:       return std::string( "NAL_AFPS"  ); break;
-    case NAL_AUD:        return std::string( "NAL_AUD"   ); break;
-    case NAL_TRAIL:      return std::string( "NAL_TRAIL" ); break;
-    case NAL_TSA:        return std::string( "NAL_TSA"   ); break;
-    case NAL_STSA:       return std::string( "NAL_STSA"  ); break;
-    case NAL_RADL:       return std::string( "NAL_RADL"  ); break;
-    case NAL_RASL:       return std::string( "NAL_RASL"  ); break;
-    case NAL_SKIP:       return std::string( "NAL_SKIP"  ); break;
+    case NAL_ASPS: return std::string( "NAL_ASPS" ); break;
+    case NAL_AFPS: return std::string( "NAL_AFPS" ); break;
+    case NAL_AUD: return std::string( "NAL_AUD" ); break;
+    case NAL_TRAIL: return std::string( "NAL_TRAIL" ); break;
+    case NAL_TSA: return std::string( "NAL_TSA" ); break;
+    case NAL_STSA: return std::string( "NAL_STSA" ); break;
+    case NAL_RADL: return std::string( "NAL_RADL" ); break;
+    case NAL_RASL: return std::string( "NAL_RASL" ); break;
+    case NAL_SKIP: return std::string( "NAL_SKIP" ); break;
     case NAL_PREFIX_SEI: return std::string( "NAL_PREFIX_SEI" ); break;
     case NAL_SUFFIX_SEI: return std::string( "NAL_SUFFIX_SEI" ); break;
 

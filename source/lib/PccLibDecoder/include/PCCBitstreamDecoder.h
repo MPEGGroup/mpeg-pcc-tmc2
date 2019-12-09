@@ -38,7 +38,7 @@
 #include "PCCDecoderParameters.h"
 #include "PCCCodec.h"
 #include "PCCMath.h"
-#include "PCCMetadata.h"
+//#include "PCCMetadata.h"
 #include "PCCPatch.h"
 
 namespace pcc {
@@ -442,10 +442,6 @@ class PCCBitstreamDecoder {
   void hrdParameters( PCCBitstream& bitstream, HrdParameters& hp );
   // F.2.3  Sub-layer HRD parameters syntax
   void hrdSubLayerParameters( PCCBitstream& bitstream, HrdSubLayerParameters& hlsp, size_t cabCnt );
-
-  // JR TODO: remove
-  // 7.3.2.3 raw separate video data syntax - TODO: remove this
-  void pcmSeparateVideoData( PCCContext& context, PCCBitstream& bitstream, uint8_t bitCount );
 
   int32_t prevPatchSizeU_;
   int32_t prevPatchSizeV_;

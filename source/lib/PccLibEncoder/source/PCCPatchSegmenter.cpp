@@ -70,7 +70,7 @@ void PCCPatchSegmenter3::compute( const PCCPointSet3&                 geometry,
     orientations     = orientations18;
     orientationCount = 18;
   }
-  std::cout<<std::endl<<"============= FRAME "<<frameIndex<<" ============= "<<std::endl;
+  std::cout << std::endl << "============= FRAME " << frameIndex << " ============= " << std::endl;
   std::cout << "  Computing normals for original point cloud... ";
   PCCKdTree                            kdtree( geometry );
   PCCNNResult                          result;
@@ -120,20 +120,8 @@ void PCCPatchSegmenter3::compute( const PCCPointSet3&                 geometry,
   std::vector<size_t> resampledPatchPartition;
   std::vector<size_t> missedPoints;
 
-  segmentPatches(
-      geometry, frameIndex, kdtree,
-                      params,
-                      partition,
-                      patches,
-                      patchPartition,
-                      resampledPatchPartition,
-                      missedPoints,
-                      resampled,
-                      subPointCloud,
-                      distanceSrcRec,
-                      normalsGen,
-                      orientations,
-                      orientationCount );
+  segmentPatches( geometry, frameIndex, kdtree, params, partition, patches, patchPartition, resampledPatchPartition,
+                  missedPoints, resampled, subPointCloud, distanceSrcRec, normalsGen, orientations, orientationCount );
   std::cout << "[done]" << std::endl;
 }
 
@@ -255,831 +243,55 @@ void printChunk( const std::vector<std::pair<int, int>>& chunk ) {
   std::cout << std::endl;
 }
 
-void PCCPatchSegmenter3::quantizedPointsPatchModification( const PCCPointSet3& points,
-                                                           PCCPatch&           patch,  // current patch
-                                                           bool                bIsAdditionalProjectionPlane,
-                                                           const double        Threshold_Color_Error,
-                                                           std::vector<PCCColor3B>& frame_pcc_color,
-                                                           std::vector<size_t>&     connectedComponent,
-                                                           const size_t             minPointCountPerCC,
-                                                           const size_t             occupancyResolution,
-                                                           const double maxAllowedDist2MissedPointsDetection,
-                                                           const double maxAllowedDist2MissedPointsSelection,
-                                                           const bool   EOMSingleLayerMode,
-                                                           const size_t EOMFixBitCount,
-                                                           const size_t surfaceThickness,
-                                                           const size_t maxAllowedDepth,
-                                                           const size_t minLevel,
-                                                           const std::vector<size_t>& partition,
-                                                           std::vector<PCCPatch>&     patches,
-                                                           std::vector<size_t>&       patchPartition,
-                                                           std::vector<size_t>&       resampledPatchPartition,
-                                                           std::vector<size_t>        missedPoints,
-                                                           PCCPointSet3&              resampled,
-                                                           bool                       useEnhancedDeltaDepthCode,
-                                                           const bool                 createSubPointCloud,
-                                                           std::vector<PCCPointSet3>& subPointCloud,
-                                                           float&                     distanceSrcRec,
-                                                           const bool                 absoluteD1,
-                                                           bool                       useSurfaceSeparation,
-                                                           const size_t               additionalProjectionAxis,
-                                                           const size_t               geometryBitDepth3D,
-                                                           const size_t               testLevelOfDetail,
-                                                           bool                       patchExpansionEnabled,
-                                                           bool                       enablePointCloudPartitioning,
-                                                           std::vector<int>&          roiBoundingBoxMinX,
-                                                           std::vector<int>&          roiBoundingBoxMaxX,
-                                                           std::vector<int>&          roiBoundingBoxMinY,
-                                                           std::vector<int>&          roiBoundingBoxMaxY,
-                                                           std::vector<int>&          roiBoundingBoxMinZ,
-                                                           std::vector<int>&          roiBoundingBoxMaxZ,
-                                                           int                        numCutsAlong1stLongestAxis,
-                                                           int                        numCutsAlong2ndLongestAxis,
-                                                           int                        numCutsAlong3rdLongestAxis ) {
-  //  const size_t lodScaleX = patch.getLodScaleX();
-  //  const size_t lodScaleY = patch.getLodScaleY();
-  //
-  //  const size_t originalSizeU = patch.getSizeU();
-  //  const size_t originalSizeV = patch.getSizeV();
-  //
-  //  const size_t afterLodSizeU = ceil( originalSizeU / (double)lodScaleX );
-  //  const size_t afterLodSizeV = ceil( originalSizeV / (double)lodScaleY );
-  //
-  //  const size_t finalSizeU = ( std::min )( originalSizeU, afterLodSizeU );
-  //  const size_t finalSizeV = ( std::min )( originalSizeV, afterLodSizeV );
-  //
-  //  // vector clear
-  //  std::vector<int16_t>().swap( patch.getDepth( 0 ) );
-  //  std::vector<int16_t>().swap( patch.getDepth( 1 ) );
-  //  std::vector<int64_t>().swap( patch.getdepth0pccidx() );
-  //  std::vector<int16_t>().swap( patch.getDepthEnhancedDeltaD() );
-  //  std::vector<bool>().swap( patch.getOccupancy() );
-  //
-  //
-  //  if ( patch.getProjectionMode() == 0 ) {
-  //    patch.getD1() = infiniteDepth;
-  //  } else {
-  //    patch.getD1() = 0;
-  //  }
-  //
-  //  patch.getDepth( 0 ).resize( finalSizeU * finalSizeV, infiniteDepth );
-  //  if ( useSurfaceSeparation ) { patch.getdepth0pccidx().resize( finalSizeU * finalSizeV, infinitenumber ); }
-  //    if ( useEnhancedDeltaDepthCode ) { patch.getDepthEnhancedDeltaD().resize( finalSizeU * finalSizeV, 0 ); }
-  //
-  //  patch.getOccupancyResolution() = occupancyResolution;
-  //  patch.getSizeU0()              = 0;
-  //  patch.getSizeV0()              = 0;
-  //
-  //  std::vector<std::vector<bool>> checkPoint( patch.getSizeV(), std::vector<bool>( patch.getSizeU(), false ) );
-  //  // std::vector<size_t>            indexVector;
-  //  for ( size_t v = 0; v < originalSizeV; v++ ) {
-  //    for ( size_t u = 0; u < originalSizeU; u++ ) {
-  //      if ( u % lodScaleX == 0 && v % lodScaleY == 0 ) {
-  //        checkPoint[v][u] = true;
-  //        // indexVector.push_back( p );
-  //      }
-  //    }
-  //  }
-  //
-  //  for ( const auto i : connectedComponent ) {
-  //    PCCPoint3D pointTmp = points[i];
-  //    if ( bIsAdditionalProjectionPlane ) {
-  //      auto& input = pointTmp;
-  //      convert( patch.getAxisOfAdditionalPlane(), geometryBitDepth3D, input, pointTmp );
-  //    }
-  //    const auto&   point = pointTmp;
-  //    const int16_t d     = int16_t( round( point[patch.getNormalAxis()] ) );
-  //    const size_t  u     = size_t( round( point[patch.getTangentAxis()] - patch.getU1() ) );
-  //    const size_t  v     = size_t( round( point[patch.getBitangentAxis()] - patch.getV1() ) );
-  //    assert( u >= 0 && u < patch.getSizeU() );
-  //    assert( v >= 0 && v < patch.getSizeV() );
-  //
-  //    if ( checkPoint[v][u] == true ) {
-  //      const size_t nu = round( u / (double)lodScaleX );
-  //      const size_t nv = round( v / (double)lodScaleY );
-  //      const size_t np = nv * finalSizeU + nu;
-  //
-  //      if ( patch.getProjectionMode() == 0 ) {  // min
-  //        if ( patch.getDepth( 0 )[np] > d ) {
-  //          patch.getDepth( 0 )[np] = d;
-  //          if ( useSurfaceSeparation ) { patch.getdepth0pccidx()[np] = i; }
-  //          patch.getSizeU0() = ( std::max )( patch.getSizeU0(), nu / patch.getOccupancyResolution() );
-  //          patch.getSizeV0() = ( std::max )( patch.getSizeV0(), nv / patch.getOccupancyResolution() );
-  //          patch.getD1()     = ( std::min )( patch.getD1(), size_t( d ) );
-  //          size_t value      = patch.getD1();  // patch.getD1();
-  //          value             = ( value / minLevel );
-  //          patch.getD1()     = value * minLevel;
-  //        }
-  //      } else {  // max
-  //        if ( patch.getDepth( 0 )[np] == infiniteDepth ) {
-  //          patch.getDepth( 0 )[np] = d;
-  //          if ( useSurfaceSeparation ) patch.getdepth0pccidx()[np] = i;
-  //          patch.getSizeU0() = ( std::max )( patch.getSizeU0(), nu / patch.getOccupancyResolution() );
-  //          patch.getSizeV0() = ( std::max )( patch.getSizeV0(), nv / patch.getOccupancyResolution() );
-  //          patch.getD1()     = ( std::max )( patch.getD1(), size_t( d ) );
-  //          size_t value      = size_t( patch.getD1() / minLevel );
-  //          if ( value * minLevel < patch.getD1() )
-  //            patch.getD1() = ( 1 + value ) * minLevel;
-  //          else
-  //            patch.getD1() = value * minLevel;
-  //          // std::cout<<"~~~~~~"<<value<<" -> "<<patch.getD1()<<std::endl;
-  //        } else {
-  //          if ( patch.getDepth( 0 )[np] < d ) {
-  //            patch.getDepth( 0 )[np] = d;
-  //            if ( useSurfaceSeparation ) patch.getdepth0pccidx()[np] = i;
-  //            patch.getSizeU0() = ( std::max )( patch.getSizeU0(), nu / patch.getOccupancyResolution() );
-  //            patch.getSizeV0() = ( std::max )( patch.getSizeV0(), nv / patch.getOccupancyResolution() );
-  //            patch.getD1()     = ( std::max )( patch.getD1(), size_t( d ) );
-  //            size_t value      = size_t( patch.getD1() / minLevel );
-  //            if ( value * minLevel < patch.getD1() )
-  //              patch.getD1() = ( 1 + value ) * minLevel;
-  //            else
-  //              patch.getD1() = value * minLevel;
-  //            // std::cout<<"*******"<<value<<" -> "<<patch.getD1()<<std::endl;
-  //          }
-  //        }
-  //      }
-  //    }
-  //  }
-  //
-  //  ++patch.getSizeU0();
-  //  ++patch.getSizeV0();
-  //  patch.getOccupancy().resize( patch.getSizeU0() * patch.getSizeV0(), false );
-  //  // filter depth
-  //  if ( patch.getProjectionMode() == 0 ) {  // min
-  //    std::vector<int16_t> minPerBlock;
-  //    minPerBlock.resize( patch.getSizeU0() * patch.getSizeV0(), infiniteDepth );
-  //    for ( int64_t v = 0; v < int64_t( finalSizeV ); ++v ) {
-  //      for ( int64_t u = 0; u < int64_t( finalSizeU ); ++u ) {
-  //        const size_t  p        = v * finalSizeU + u;
-  //        const int16_t depth0   = patch.getDepth( 0 )[p];
-  //        const size_t  u0       = u / patch.getOccupancyResolution();
-  //        const size_t  v0       = v / patch.getOccupancyResolution();
-  //        const size_t  p0       = v0 * patch.getSizeU0() + u0;
-  //        const int16_t minDepth = minPerBlock[p0];
-  //        minPerBlock[p0]        = ( std::min )( minDepth, depth0 );
-  //      }
-  //    }
-  //    for ( int64_t v = 0; v < int64_t( finalSizeV ); ++v ) {
-  //      for ( int64_t u = 0; u < int64_t( finalSizeU ); ++u ) {
-  //        const size_t  p        = v * finalSizeU + u;
-  //        const int16_t depth0   = patch.getDepth( 0 )[p];
-  //        const size_t  u0       = u / patch.getOccupancyResolution();
-  //        const size_t  v0       = v / patch.getOccupancyResolution();
-  //        const size_t  p0       = v0 * patch.getSizeU0() + u0;
-  //        const int16_t minDepth = minPerBlock[p0];
-  //        if ( ( depth0 - minDepth > 32 ) || ( surfaceThickness + depth0 > patch.getD1() + maxAllowedDepth ) ) {
-  //          patch.getDepth( 0 )[p] = infiniteDepth;
-  //          if ( useSurfaceSeparation ) { patch.getdepth0pccidx()[p] = infinitenumber; }
-  //        }
-  //      }
-  //    }
-  //  } else {
-  //    std::vector<int16_t> minPerBlock;
-  //    std::vector<int16_t> maxPerBlock;
-  //    maxPerBlock.resize( patch.getSizeU0() * patch.getSizeV0(), 0 );
-  //    minPerBlock.resize( patch.getSizeU0() * patch.getSizeV0(), infiniteDepth );
-  //    for ( int64_t v = 0; v < int64_t( finalSizeV ); ++v ) {
-  //      for ( int64_t u = 0; u < int64_t( finalSizeU ); ++u ) {
-  //        const size_t  p        = v * finalSizeU + u;
-  //        const int16_t depth0   = patch.getDepth( 0 )[p];
-  //        const size_t  u0       = u / patch.getOccupancyResolution();
-  //        const size_t  v0       = v / patch.getOccupancyResolution();
-  //        const size_t  p0       = v0 * patch.getSizeU0() + u0;
-  //        const int16_t minDepth = minPerBlock[p0];
-  //        const int16_t maxDepth = maxPerBlock[p0];
-  //        minPerBlock[p0]        = ( std::min )( minDepth, depth0 );
-  //        if ( depth0 != infiniteDepth ) { maxPerBlock[p0] = ( std::max )( maxDepth, depth0 ); }
-  //      }
-  //    }
-  //    for ( int64_t v = 0; v < int64_t( finalSizeV ); ++v ) {
-  //      for ( int64_t u = 0; u < int64_t( finalSizeU ); ++u ) {
-  //        const size_t  p        = v * finalSizeU + u;
-  //        const int16_t depth0   = patch.getDepth( 0 )[p];
-  //        const size_t  u0       = u / patch.getOccupancyResolution();
-  //        const size_t  v0       = v / patch.getOccupancyResolution();
-  //        const size_t  p0       = v0 * patch.getSizeU0() + u0;
-  //        const int16_t maxDepth = maxPerBlock[p0];
-  //        if ( maxDepth < 0 ) {
-  //          patch.getDepth( 0 )[p] = infiniteDepth;
-  //          if ( useSurfaceSeparation ) { patch.getdepth0pccidx()[p] = infinitenumber; }
-  //        } else {
-  //          if ( depth0 != infiniteDepth ) {
-  //            int16_t tmp_a = maxDepth - depth0;
-  //            int16_t tmp_b = depth0 - int16_t( surfaceThickness );
-  //            int16_t tmp_c = int16_t( patch.getD1() ) - int16_t( maxAllowedDepth );
-  //            if ( ( tmp_a > 32 ) || ( tmp_b < tmp_c ) ) {
-  //              patch.getDepth( 0 )[p] = infiniteDepth;
-  //              if ( useSurfaceSeparation ) patch.getdepth0pccidx()[p] = infinitenumber;
-  //            }
-  //          }
-  //        }
-  //      }
-  //    }
-  //  }
-  //
-  //  if ( EOMSingleLayerMode ) {
-  //    // compute edd
-  //    if ( patch.getProjectionMode() == 0 ) {  // min
-  //      if ( !useSurfaceSeparation ) {
-  //        for ( const auto i : connectedComponent ) {
-  //          const auto&   point = points[i];
-  //          const int16_t d     = int16_t( round( point[patch.getNormalAxis()] ) );
-  //          const size_t  u     = size_t( round( point[patch.getTangentAxis()] - patch.getU1() ) );
-  //          const size_t  v     = size_t( round( point[patch.getBitangentAxis()] - patch.getV1() ) );
-  //          assert( u >= 0 && u < patch.getSizeU() );
-  //          assert( v >= 0 && v < patch.getSizeV() );
-  //
-  //          if ( checkPoint[v][u] == true ) {
-  //            const size_t  nu     = round( u / (double)lodScaleX );
-  //            const size_t  nv     = round( v / (double)lodScaleY );
-  //            const size_t  np     = nv * finalSizeU + nu;
-  //            const int16_t depth0 = patch.getDepth( 0 )[np];
-  //            if ( useEnhancedDeltaDepthCode && depth0 < infiniteDepth && ( d - depth0 ) > 0 &&
-  //                ( d - depth0 ) <= int16_t( EOMFixBitCount ) ) {
-  //              const uint16_t oldEDDCode = patch.getDepthEnhancedDeltaD()[np];
-  //              uint16_t       deltaD     = d - depth0;
-  //              int            comp_depth0;
-  //
-  //              comp_depth0 = depth0 - patch.getD1();
-  //
-  //              patch.getDepthEnhancedDeltaD()[np] |= 1 << ( deltaD - 1 );
-  //              if ( ( comp_depth0 + patch.getDepthEnhancedDeltaD()[np] ) > 1023 ) {
-  //                patch.getDepthEnhancedDeltaD()[np] = oldEDDCode;
-  //                std::cout
-  //                << "(D0 + EDD-Code) > 1023. Data overflow observed (assume using 10bit coding). "
-  //                "Temporary solution: the corresponding inbetween or Depth1 point will be regarded as "
-  //                "missing point. To be improved if this happens a lot...\n";
-  //              }
-  //            }
-  //          }
-  //        }
-  //      } else {  // Surface Separation
-  //        bool   proc_d1_select_flag    = true;
-  //        bool   err_flag               = false;
-  //        size_t patch_surfaceThickness = surfaceThickness;
-  //
-  //        while ( proc_d1_select_flag ) {
-  //          int64_t err_sum = 0;
-  //          int32_t tot_num = 0;
-  //          int32_t d1_num  = 0;
-  //
-  //          if ( err_flag == true ) { proc_d1_select_flag = false; }
-  //          for ( const auto i : connectedComponent ) {
-  //            const auto&   point = points[i];
-  //            const int16_t d     = int16_t( round( point[patch.getNormalAxis()] ) );
-  //            const size_t  u     = size_t( round( point[patch.getTangentAxis()] - patch.getU1() ) );
-  //            const size_t  v     = size_t( round( point[patch.getBitangentAxis()] - patch.getV1() ) );
-  //            assert( u >= 0 && u < patch.getSizeU() );
-  //            assert( v >= 0 && v < patch.getSizeV() );
-  //
-  //            if ( checkPoint[v][u] == true ) {
-  //              const size_t  nu     = round( u / (double)lodScaleX );
-  //              const size_t  nv     = round( v / (double)lodScaleY );
-  //              const size_t  np     = nv * finalSizeU + nu;
-  //              const int16_t depth0 = patch.getDepth( 0 )[np];
-  //              tot_num++;
-  //
-  //              if ( err_flag ) {
-  //                if ( useEnhancedDeltaDepthCode && depth0 < infiniteDepth && ( d - depth0 ) > 0 &&
-  //                    ( d - depth0 ) <= int16_t( patch_surfaceThickness + EOMFixBitCount - surfaceThickness ) ) {
-  //                  const uint16_t oldEDDCode = patch.getDepthEnhancedDeltaD()[np];
-  //                  uint16_t       deltaD     = d - depth0;
-  //                  int            comp_depth0;
-  //
-  //                  comp_depth0 = depth0 - patch.getD1();
-  //
-  //                  patch.getDepthEnhancedDeltaD()[np] |= 1 << ( deltaD - 1 );
-  //                  if ( ( comp_depth0 + patch.getDepthEnhancedDeltaD()[np] ) > 1023 ) {
-  //                    patch.getDepthEnhancedDeltaD()[np] = oldEDDCode;
-  //                    std::cout
-  //                    << "(D0 + EDD-Code) > 1023. Data overflow observed (assume using 10bit coding). "
-  //                    "Temporary solution: the corresponding inbetween or Depth1 point will be regarded "
-  //                    "as missing point. To be improved if this happens a lot...\n";
-  //                  }
-  //                }
-  //              }
-  //            }
-  //          }
-  //          double avg_error;
-  //          if ( d1_num == 0 ) {
-  //            avg_error = 0.0;
-  //          } else {
-  //            avg_error = (double)err_sum / (double)d1_num;
-  //          }
-  //          if ( avg_error < Threshold_Color_Error ) {
-  //            err_flag = true;
-  //          } else {
-  //            patch_surfaceThickness--;
-  //            if ( patch_surfaceThickness == 0 ) { break; }
-  //          }
-  //        }
-  //      }
-  //    } else {  // else ( patch.getProjectionMode() == 0 )
-  //      if ( !useSurfaceSeparation ) {
-  //        for ( const auto i : connectedComponent ) {
-  //          const auto&   point = points[i];
-  //          const int16_t d     = int16_t( round( point[patch.getNormalAxis()] ) );
-  //          const size_t  u     = size_t( round( point[patch.getTangentAxis()] - patch.getU1() ) );
-  //          const size_t  v     = size_t( round( point[patch.getBitangentAxis()] - patch.getV1() ) );
-  //          assert( u >= 0 && u < patch.getSizeU() );
-  //          assert( v >= 0 && v < patch.getSizeV() );
-  //
-  //          if ( checkPoint[v][u] == true ) {
-  //            const size_t  nu     = round( u / (double)lodScaleX );
-  //            const size_t  nv     = round( v / (double)lodScaleY );
-  //            const size_t  np     = nv * finalSizeU + nu;
-  //            const int16_t depth0 = patch.getDepth( 0 )[np];
-  //            if ( useEnhancedDeltaDepthCode && depth0 < infiniteDepth && ( depth0 - d ) > 0 &&
-  //                ( depth0 - d ) <= int16_t( EOMFixBitCount ) ) {
-  //              const uint16_t oldEDDCode = patch.getDepthEnhancedDeltaD()[np];
-  //              uint16_t       deltaD     = depth0 - d;
-  //              int            comp_depth0;
-  //
-  //              comp_depth0 = patch.getD1() - depth0;
-  //
-  //              patch.getDepthEnhancedDeltaD()[np] |= 1 << ( deltaD - 1 );
-  //              if (( comp_depth0 + patch.getDepthEnhancedDeltaD()[np] ) > 1023 ) {
-  //                patch.getDepthEnhancedDeltaD()[np] = oldEDDCode;
-  //                std::cout
-  //                << "(D0 + EDD-Code) > 1023. Data overflow observed (assume using 10bit coding). "
-  //                "Temporary solution: the corresponding inbetween or Depth1 point will be regarded as "
-  //                "missing point. To be improved if this happens a lot...\n";
-  //              }
-  //            }
-  //          }
-  //        }
-  //      } else {  // Surface Separation
-  //        bool   proc_d1_select_flag    = true;
-  //        bool   err_flag               = false;
-  //        size_t patch_surfaceThickness = surfaceThickness;
-  //
-  //        while ( proc_d1_select_flag ) {
-  //          int64_t err_sum = 0;
-  //          int32_t tot_num = 0;
-  //          int32_t d1_num  = 0;
-  //
-  //          if ( err_flag == true ) { proc_d1_select_flag = false; }
-  //
-  //          for ( const auto i : connectedComponent ) {
-  //            const auto&   point = points[i];
-  //            const int16_t d     = int16_t( round( point[patch.getNormalAxis()] ) );
-  //            const size_t  u     = size_t( round( point[patch.getTangentAxis()] - patch.getU1() ) );
-  //            const size_t  v     = size_t( round( point[patch.getBitangentAxis()] - patch.getV1() ) );
-  //            assert( u >= 0 && u < patch.getSizeU() );
-  //            assert( v >= 0 && v < patch.getSizeV() );
-  //
-  //            if ( checkPoint[v][u] == true ) {
-  //              const size_t  nu     = round( u / (double)lodScaleX );
-  //              const size_t  nv     = round( v / (double)lodScaleY );
-  //              const size_t  np     = nv * finalSizeU + nu;
-  //              const int16_t depth0 = patch.getDepth( 0 )[np];
-  //              tot_num++;
-  //
-  //              if ( err_flag ) {
-  //                if ( useEnhancedDeltaDepthCode && depth0 < infiniteDepth && ( depth0 - d ) > 0 &&
-  //                    ( depth0 - d ) <= int16_t( EOMFixBitCount ) ) {
-  //                  const uint16_t oldEDDCode = patch.getDepthEnhancedDeltaD()[np];
-  //                  uint16_t       deltaD     = depth0 - d;
-  //                  int            comp_depth0;
-  //
-  //                  comp_depth0 = patch.getD1() - depth0;
-  //
-  //                  patch.getDepthEnhancedDeltaD()[np] |= 1 << ( deltaD - 1 );
-  //                  if ( ( comp_depth0 + patch.getDepthEnhancedDeltaD()[np] ) > 1023 ) {
-  //                    patch.getDepthEnhancedDeltaD()[np] = oldEDDCode;
-  //                    std::cout
-  //                    << "(D0 + EDD-Code) > 1023. Data overflow observed (assume using 10bit coding). "
-  //                    "Temporary solution: the corresponding inbetween or Depth1 point will be regarded "
-  //                    "as missing point. To be improved if this happens a lot...\n";
-  //                  }
-  //                }
-  //              }
-  //            }
-  //          }
-  //          double avg_error;
-  //          if ( d1_num == 0 ) {
-  //            avg_error = 0.0;
-  //          } else {
-  //            avg_error = (double)err_sum / (double)d1_num;
-  //          }
-  //          if ( avg_error < Threshold_Color_Error ) {
-  //            err_flag = true;
-  //          } else {
-  //            patch_surfaceThickness--;
-  //            if ( patch_surfaceThickness == 0 ) { break; }
-  //          }
-  //        }
-  //      }
-  //    }       // fi ( patch.getProjectionMode() == 0 )
-  //  } else {  // EOMSingleLayerMode
-  //    // compute d1 map
-  //    patch.getDepth( 1 ) = patch.getDepth( 0 );
-  //    if ( patch.getProjectionMode() == 0 ) {  // min
-  //      if ( !useSurfaceSeparation ) {
-  //        for ( const auto i : connectedComponent ) {
-  //          PCCPoint3D pointTmp = points[i];
-  //          if ( bIsAdditionalProjectionPlane ) {
-  //            auto& input = pointTmp;
-  //            convert( patch.getAxisOfAdditionalPlane(), geometryBitDepth3D, input, pointTmp );
-  //          }
-  //          const auto& point = pointTmp;
-  //
-  //          const int16_t d = int16_t( round( point[patch.getNormalAxis()] ) );
-  //          const size_t  u = size_t( round( point[patch.getTangentAxis()] - patch.getU1() ) );
-  //          const size_t  v = size_t( round( point[patch.getBitangentAxis()] - patch.getV1() ) );
-  //          assert( u >= 0 && u < patch.getSizeU() );
-  //          assert( v >= 0 && v < patch.getSizeV() );
-  //
-  //          if ( checkPoint[v][u] == true ) {
-  //            const size_t  nu     = round( u / (double)lodScaleX );
-  //            const size_t  nv     = round( v / (double)lodScaleY );
-  //            const size_t  np     = nv * finalSizeU + nu;
-  //            const int16_t depth0 = patch.getDepth( 0 )[np];
-  //
-  //            if ( depth0 < infiniteDepth && ( d - depth0 ) <= int16_t( surfaceThickness ) &&
-  //                d > patch.getDepth( 1 )[np] ) {
-  //              patch.getDepth( 1 )[np] = d;
-  //            }
-  //            if ( useEnhancedDeltaDepthCode && depth0 < infiniteDepth && ( d - depth0 ) > 0 &&
-  //                ( d - depth0 ) <= int16_t( surfaceThickness ) ) {
-  //              const uint16_t oldEDDCode = patch.getDepthEnhancedDeltaD()[np];
-  //              const uint16_t deltaD     = d - depth0;
-  //              int            comp_depth0;
-  //
-  //              comp_depth0 = depth0 - patch.getD1();
-  //
-  //              patch.getDepthEnhancedDeltaD()[np] |= 1 << ( deltaD - 1 );
-  //              if ( ( comp_depth0 + patch.getDepthEnhancedDeltaD()[np] ) > 1023 ) {
-  //                patch.getDepthEnhancedDeltaD()[np] = oldEDDCode;
-  //                std::cout
-  //                << "(D0 + EDD-Code) > 1023. Data overflow observed (assume using 10bit coding). Temporary "
-  //                "solution: the corresponding inbetween or Depth1 point will be regarded as missing point. "
-  //                "To be improved if this happens a lot...\n";
-  //              }
-  //            }
-  //            if ( patch.getDepth( 1 )[np] < patch.getDepth( 0 )[np] ) {
-  //              std::cout << "3.compute d1 map : ERROR : proj0 and d1 < d0" << std::endl;
-  //            }
-  //          }
-  //        }
-  //      } else {  // Surface Separation
-  //        bool   proc_d1_select_flag    = true;
-  //        bool   err_flag               = false;
-  //        size_t patch_surfaceThickness = surfaceThickness;
-  //
-  //        while ( proc_d1_select_flag ) {
-  //          int64_t err_sum = 0;
-  //          int32_t tot_num = 0;
-  //          int32_t d1_num  = 0;
-  //
-  //          if ( err_flag == true ) { proc_d1_select_flag = false; }
-  //          for ( const auto i : connectedComponent ) {
-  //            PCCPoint3D pointTmp = points[i];
-  //            if ( bIsAdditionalProjectionPlane ) {
-  //              auto& input = pointTmp;
-  //              convert( patch.getAxisOfAdditionalPlane(), geometryBitDepth3D, input, pointTmp );
-  //            }
-  //            const auto&   point = pointTmp;
-  //            const int16_t d     = int16_t( round( point[patch.getNormalAxis()] ) );
-  //            const size_t  u     = size_t( round( point[patch.getTangentAxis()] - patch.getU1() ) );
-  //            const size_t  v     = size_t( round( point[patch.getBitangentAxis()] - patch.getV1() ) );
-  //            assert( u >= 0 && u < patch.getSizeU() );
-  //            assert( v >= 0 && v < patch.getSizeV() );
-  //
-  //            if ( checkPoint[v][u] == true ) {
-  //              const size_t  nu     = round( u / (double)lodScaleX );
-  //              const size_t  nv     = round( v / (double)lodScaleY );
-  //              const size_t  np     = nv * finalSizeU + nu;
-  //              const int16_t depth0 = patch.getDepth( 0 )[np];
-  //
-  //              tot_num++;
-  //
-  //              if ( err_flag == false ) {
-  //                if ( depth0 < infiniteDepth && ( d - depth0 ) <= int16_t( patch_surfaceThickness ) &&
-  //                    d > patch.getDepth( 1 )[np] ) {
-  //                  d1_num++;
-  //                  const size_t     d0_idx   = patch.getdepth0pccidx()[np];
-  //                  const size_t     d1_idx   = i;
-  //                  const PCCColor3B D0_Color = frame_pcc_color[d0_idx];
-  //                  const PCCColor3B D1_Color = frame_pcc_color[d1_idx];
-  //
-  //                  const uint8_t r0 = D0_Color[0];
-  //                  const uint8_t g0 = D0_Color[1];
-  //                  const uint8_t b0 = D0_Color[2];
-  //
-  //                  const uint8_t r1 = D1_Color[0];
-  //                  const uint8_t g1 = D1_Color[1];
-  //                  const uint8_t b1 = D1_Color[2];
-  //
-  //                  int32_t delta_R = int32_t( r0 ) - int32_t( r1 );
-  //                  int32_t delta_G = int32_t( g0 ) - int32_t( g1 );
-  //                  int32_t delta_B = int32_t( b0 ) - int32_t( b1 );
-  //
-  //                  int64_t delta_e = delta_R * delta_R + delta_G * delta_G + delta_B * delta_B;
-  //
-  //                  err_sum += delta_e;
-  //                }
-  //              } else {
-  //                if ( depth0 < infiniteDepth && ( d - depth0 ) <= int16_t( patch_surfaceThickness ) &&
-  //                    d > patch.getDepth( 1 )[np] ) {
-  //                  patch.getDepth( 1 )[np] = d;
-  //                }
-  //                if ( useEnhancedDeltaDepthCode && depth0 < infiniteDepth && ( d - depth0 ) > 0 &&
-  //                    ( d - depth0 ) <= int16_t( patch_surfaceThickness ) ) {
-  //                  const uint16_t oldEDDCode = patch.getDepthEnhancedDeltaD()[np];
-  //                  const uint16_t deltaD     = d - depth0;
-  //                  int            comp_depth0;
-  //
-  //                  comp_depth0 = depth0 - patch.getD1();
-  //
-  //                  patch.getDepthEnhancedDeltaD()[np] |= 1 << ( deltaD - 1 );
-  //                  if ( ( comp_depth0 + patch.getDepthEnhancedDeltaD()[np] ) > 1023 ) {
-  //                    patch.getDepthEnhancedDeltaD()[np] = oldEDDCode;
-  //                    std::cout
-  //                    << "(D0 + EDD-Code) > maxD. Data overflow observed (assume using 10bit coding). "
-  //                    "Temporary solution: the corresponding inbetween or Depth1 point will be regarded as "
-  //                    "missing point. To be improved if this happens a lot...\n";
-  //                  }
-  //                }
-  //                if ( patch.getDepth( 1 )[np] < patch.getDepth( 0 )[np] ) {
-  //                  std::cout << "4.compute d1 map : ERROR : proj0 and d1 < d0" << std::endl;
-  //                }
-  //              }
-  //            }
-  //          }
-  //          double avg_error;
-  //          if ( d1_num == 0 ) {
-  //            avg_error = 0.0;
-  //          } else {
-  //            avg_error = (double)err_sum / (double)d1_num;
-  //          }
-  //          if ( avg_error < Threshold_Color_Error ) {
-  //            err_flag = true;
-  //          } else {
-  //            patch_surfaceThickness--;
-  //            if ( patch_surfaceThickness == 0 ) { break; }
-  //          }
-  //        }
-  //      }
-  //    } else {  // else ( patch.getProjectionMode() == 0 )
-  //      if ( !useSurfaceSeparation ) {
-  //        for ( const auto i : connectedComponent ) {
-  //          PCCPoint3D pointTmp = points[i];
-  //          if ( bIsAdditionalProjectionPlane ) {
-  //            auto& input = pointTmp;
-  //            convert( patch.getAxisOfAdditionalPlane(), geometryBitDepth3D, input, pointTmp );
-  //          }
-  //          const auto&   point = pointTmp;
-  //          const int16_t d     = int16_t( round( point[patch.getNormalAxis()] ) );
-  //          const size_t  u     = size_t( round( point[patch.getTangentAxis()] - patch.getU1() ) );
-  //          const size_t  v     = size_t( round( point[patch.getBitangentAxis()] - patch.getV1() ) );
-  //          assert( u >= 0 && u < patch.getSizeU() );
-  //          assert( v >= 0 && v < patch.getSizeV() );
-  //
-  //          if ( checkPoint[v][u] == true ) {
-  //            const size_t  nu     = round( u / (double)lodScaleX );
-  //            const size_t  nv     = round( v / (double)lodScaleY );
-  //            const size_t  np     = nv * finalSizeU + nu;
-  //            const int16_t depth0 = patch.getDepth( 0 )[np];
-  //
-  //            if ( depth0 < infiniteDepth && ( depth0 - d ) <= int16_t( surfaceThickness ) &&
-  //                d < patch.getDepth( 1 )[np] ) {
-  //              patch.getDepth( 1 )[np] = d;
-  //            }
-  //            if ( useEnhancedDeltaDepthCode && depth0 < infiniteDepth && ( depth0 - d ) > 0 &&
-  //                ( depth0 - d ) <= int16_t( surfaceThickness ) ) {
-  //              const uint16_t oldEDDCode = patch.getDepthEnhancedDeltaD()[np];
-  //              const uint16_t deltaD     = depth0 - d;
-  //              int            comp_depth0;
-  //
-  //              comp_depth0 = patch.getD1() - depth0;
-  //
-  //              patch.getDepthEnhancedDeltaD()[np] |= 1 << ( deltaD - 1 );
-  //              if ( ( comp_depth0 + patch.getDepthEnhancedDeltaD()[np] ) > 1023 ) {
-  //                patch.getDepthEnhancedDeltaD()[np] = oldEDDCode;
-  //                std::cout
-  //                << "(D0 + EDD-Code) > 1023. Data overflow observed (assume using 10bit coding). Temporary "
-  //                "solution: the corresponding inbetween or Depth1 point will be regarded as missing point. "
-  //                "To be improved if this happens a lot...\n";
-  //              }
-  //            }
-  //          }
-  //        }
-  //      } else {  // Surface Separation
-  //        bool   proc_d1_select_flag    = true;
-  //        bool   err_flag               = false;
-  //        size_t patch_surfaceThickness = surfaceThickness;
-  //
-  //        while ( proc_d1_select_flag ) {
-  //          int64_t err_sum = 0;
-  //          int32_t tot_num = 0;
-  //          int32_t d1_num  = 0;
-  //
-  //          if ( err_flag == true ) { proc_d1_select_flag = false; }
-  //
-  //          for ( const auto i : connectedComponent ) {
-  //            PCCPoint3D pointTmp = points[i];
-  //            if ( bIsAdditionalProjectionPlane ) {
-  //              auto& input = pointTmp;
-  //              convert( patch.getAxisOfAdditionalPlane(), geometryBitDepth3D, input, pointTmp );
-  //            }
-  //            const auto&   point = pointTmp;
-  //            const int16_t d     = int16_t( round( point[patch.getNormalAxis()] ) );
-  //            const size_t  u     = size_t( round( point[patch.getTangentAxis()] - patch.getU1() ) );
-  //            const size_t  v     = size_t( round( point[patch.getBitangentAxis()] - patch.getV1() ) );
-  //            assert( u >= 0 && u < patch.getSizeU() );
-  //            assert( v >= 0 && v < patch.getSizeV() );
-  //
-  //            if ( checkPoint[v][u] == true ) {
-  //              const size_t  nu     = round( u / (double)lodScaleX );
-  //              const size_t  nv     = round( v / (double)lodScaleY );
-  //              const size_t  np     = nv * finalSizeU + nu;
-  //              const int16_t depth0 = patch.getDepth( 0 )[np];
-  //              tot_num++;
-  //
-  //              if ( err_flag == false ) {
-  //                if ( depth0 < infiniteDepth && ( depth0 - d ) <= int16_t( patch_surfaceThickness ) &&
-  //                    d < patch.getDepth( 1 )[np] ) {
-  //                  d1_num++;
-  //                  const size_t     d0_idx   = patch.getdepth0pccidx()[np];
-  //                  const size_t     d1_idx   = i;
-  //                  const PCCColor3B D0_Color = frame_pcc_color[d0_idx];
-  //                  const PCCColor3B D1_Color = frame_pcc_color[d1_idx];
-  //                  int32_t          delta_R  = int32_t( D0_Color[0] ) - int32_t( D1_Color[0] );
-  //                  int32_t          delta_G  = int32_t( D0_Color[1] ) - int32_t( D1_Color[1] );
-  //                  int32_t          delta_B  = int32_t( D0_Color[2] ) - int32_t( D1_Color[2] );
-  //                  int64_t          delta_e  = delta_R * delta_R + delta_G * delta_G + delta_B * delta_B;
-  //                  err_sum += delta_e;
-  //                }
-  //              } else {
-  //                if ( depth0 < infiniteDepth && ( depth0 - d ) <= int16_t( patch_surfaceThickness ) &&
-  //                    d < patch.getDepth( 1 )[np] ) {
-  //                  patch.getDepth( 1 )[np] = d;
-  //                }
-  //                if ( useEnhancedDeltaDepthCode && depth0 < infiniteDepth && ( depth0 - d ) > 0 &&
-  //                    ( depth0 - d ) <= int16_t( surfaceThickness ) ) {
-  //                  const uint16_t oldEDDCode = patch.getDepthEnhancedDeltaD()[np];
-  //                  const uint16_t deltaD     = depth0 - d;
-  //                  int            comp_depth0;
-  //
-  //                  comp_depth0 = patch.getD1() - depth0;
-  //
-  //                  patch.getDepthEnhancedDeltaD()[np] |= 1 << ( deltaD - 1 );
-  //                  if ( ( comp_depth0 + patch.getDepthEnhancedDeltaD()[np] ) > 1023 ) {
-  //                    patch.getDepthEnhancedDeltaD()[np] = oldEDDCode;
-  //                    std::cout
-  //                    << "(D0 + EDD-Code) > 1023. Data overflow observed (assume using 10bit coding). "
-  //                    "Temporary solution: the corresponding inbetween or Depth1 point will be regarded as "
-  //                    "missing point. To be improved if this happens a lot...\n";
-  //                  }
-  //                }
-  //              }
-  //            }
-  //          }
-  //          double avg_error;
-  //          if ( d1_num == 0 ) {
-  //            avg_error = 0.0;
-  //          } else {
-  //            avg_error = (double)err_sum / (double)d1_num;
-  //          }
-  //          if ( avg_error < Threshold_Color_Error ) {
-  //            err_flag = true;
-  //          } else {
-  //            patch_surfaceThickness--;
-  //            if ( patch_surfaceThickness == 0 ) { break; }
-  //          }
-  //        }
-  //      }
-  //    }  // fi ( patch.getProjectionMode() == 0 )
-  //  }
-  //
-  //  patch.getSizeD() = 0;
-  //
-  //  patch.getSizeU() = finalSizeU;
-  //  patch.getSizeV() = finalSizeV;
-  //
-  //  for ( size_t i = 0; i < originalSizeV; i++ ) checkPoint[i].clear();
-  //  checkPoint.clear();
-  //
-  //  if ( patch.getProjectionMode() == 0 ) {
-  //    for ( size_t v = 0; v < patch.getSizeV(); ++v ) {
-  //      for ( size_t u = 0; u < patch.getSizeU(); ++u ) {
-  //        const size_t p      = v * patch.getSizeU() + u;
-  //        int16_t      depth0 = patch.getDepth( 0 )[p];
-  //        if ( depth0 < infiniteDepth ) {
-  //          depth0 -= int16_t( patch.getD1() );
-  //          assert( depth0 >= 0 );
-  //          patch.getDepth( 0 )[p] = depth0;
-  //          patch.getSizeD() =
-  //          ( std::max )( patch.getSizeD(), static_cast<size_t>( depth0 ) );  // compute max depth
-  //
-  //          const size_t u0 = u / patch.getOccupancyResolution();
-  //          const size_t v0 = v / patch.getOccupancyResolution();
-  //          const size_t p0 = v0 * patch.getSizeU0() + u0;
-  //          assert( u0 >= 0 && u0 < patch.getSizeU0() );
-  //          assert( v0 >= 0 && v0 < patch.getSizeV0() );
-  //          patch.getOccupancy()[p0] = true;
-  //          if ( !EOMSingleLayerMode ) { patch.getDepth( 1 )[p] -= int16_t( patch.getD1() ); }
-  //
-  //          if ( useEnhancedDeltaDepthCode ) {
-  //          } else {  // if(useEnhancedDeltaDepthCode)
-  //            int16_t depth1 = patch.getDepth( 1 )[p];
-  //            patch.getSizeD() =
-  //            ( std::max )( patch.getSizeD(), static_cast<size_t>( depth1 ) );  // compute max depth
-  //          }
-  //        }  // if(useEnhancedDeltaDepthCode)
-  //      }
-  //    }
-  //  } else {
-  //
-  //    for ( size_t v = 0; v < patch.getSizeV(); ++v ) {
-  //      for ( size_t u = 0; u < patch.getSizeU(); ++u ) {
-  //        const size_t p        = v * patch.getSizeU() + u;
-  //        int16_t      depth0_1 = patch.getDepth( 0 )[p];
-  //        if ( depth0_1 < infiniteDepth ) {
-  //          int16_t depth0 = int16_t( patch.getD1() ) - depth0_1;
-  //          assert( depth0 >= 0 );
-  //          patch.getDepth( 0 )[p] = depth0;
-  //          patch.getSizeD() =
-  //          ( std::max )( patch.getSizeD(), static_cast<size_t>( depth0 ) );  // compute max depth
-  //
-  //          const size_t u0 = u / patch.getOccupancyResolution();
-  //          const size_t v0 = v / patch.getOccupancyResolution();
-  //          const size_t p0 = v0 * patch.getSizeU0() + u0;
-  //          assert( u0 >= 0 && u0 < patch.getSizeU0() );
-  //          assert( v0 >= 0 && v0 < patch.getSizeV0() );
-  //          patch.getOccupancy()[p0] = true;
-  //          int16_t depth1_1         = 0;
-  //          if ( !EOMSingleLayerMode ) {
-  //            depth1_1               = patch.getDepth( 1 )[p];
-  //            patch.getDepth( 1 )[p] = int16_t( patch.getD1() ) - depth1_1;
-  //          }
-  //
-  //          if ( useEnhancedDeltaDepthCode ) {
-  //          } else {
-  //            assert( abs( patch.getDepth( 0 )[p] - patch.getDepth( 1 )[p] ) <= int( surfaceThickness ) );
-  //
-  //            int16_t depth1_2 = patch.getDepth( 1 )[p];
-  //            patch.getSizeD() =
-  //            ( std::max )( patch.getSizeD(), static_cast<size_t>( depth1_2 ) );  // compute max depth
-  //          }
-  //        }
-  //      }
-  //    }
-  //  }
-}
-
-void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
-                                         const size_t                frameIndex,
-                                         const PCCKdTree&            kdtree,
+void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 points,
+                                         const size_t                        frameIndex,
+                                         const PCCKdTree&                    kdtree,
                                          const PCCPatchSegmenter3Parameters& params,
-                                         std::vector<size_t>&        partition,
-                                         std::vector<PCCPatch>&      patches,
-                                         std::vector<size_t>&        patchPartition,
-                                         std::vector<size_t>& resampledPatchPartition,
-                                         std::vector<size_t>         missedPoints,
-                                         PCCPointSet3&               resampled,
-                                         std::vector<PCCPointSet3>&  subPointCloud,
-                                         float&                      distanceSrcRec,
-                                         const PCCNormalsGenerator3& normalsGen,
-                                         const PCCVector3D*          orientations,
-                                         const size_t                orientationCount )
-{
-  //jkei: do we really need to do this? isn't it okay to use params.xxx?
-  const size_t maxNNCount = params.maxNNCountPatchSegmentation;
-  const size_t minPointCountPerCC = params.minPointCountPerCCPatchSegmentation;
-  const size_t occupancyResolution = params.occupancyResolution;
-  const size_t  quantizerSizeX = params.quantizerSizeX;
-  const size_t  quantizerSizeY = params.quantizerSizeY;
-  const double maxAllowedDist2MissedPointsDetection = params.maxAllowedDist2MissedPointsDetection;
-  const double maxAllowedDist2MissedPointsSelection = params.maxAllowedDist2MissedPointsSelection;
-  const bool EOMSingleLayerMode = params.EOMSingleLayerMode;
-  const size_t EOMFixBitCount   = params.EOMFixBitCount;
-  const size_t surfaceThickness = params.surfaceThickness;
-  const size_t maxAllowedDepth  = params.maxAllowedDepth;
-  const size_t minLevel         = params.minLevel;
-  bool useEnhancedDeltaDepthCode = params.useEnhancedDeltaDepthCode;
-  const bool createSubPointCloud = params.createSubPointCloud;
-  const bool                 absoluteD1 = params.absoluteD1;
-  bool             useSurfaceSeparation = params.surfaceSeparation;
-  const size_t additionalProjectionAxis = params.additionalProjectionPlaneMode;
-  const size_t       geometryBitDepth3D = params.geometryBitDepth3D;
-  const size_t        testLevelOfDetail = params.testLevelOfDetail;
-  bool            patchExpansionEnabled = params.patchExpansion;
-  const bool     highGradientSeparation = params.highGradientSeparation;
-  const double              minGradient = params.minGradient;
-  const size_t minNumHighGradientPoints = params.minNumHighGradientPoints;
-  bool     enablePointCloudPartitioning = params.enablePointCloudPartitioning;
-  std::vector<int>&           roiBoundingBoxMinX = const_cast<PCCPatchSegmenter3Parameters&>( params ).roiBoundingBoxMinX;
-  std::vector<int>&           roiBoundingBoxMaxX = const_cast<PCCPatchSegmenter3Parameters&>( params ).roiBoundingBoxMaxX;
-  std::vector<int>&           roiBoundingBoxMinY = const_cast<PCCPatchSegmenter3Parameters&>( params ).roiBoundingBoxMinY;
-  std::vector<int>&           roiBoundingBoxMaxY = const_cast<PCCPatchSegmenter3Parameters&>( params ).roiBoundingBoxMaxY;
-  std::vector<int>&           roiBoundingBoxMinZ = const_cast<PCCPatchSegmenter3Parameters&>( params ).roiBoundingBoxMinZ;
-  std::vector<int>&           roiBoundingBoxMaxZ = const_cast<PCCPatchSegmenter3Parameters&>( params ).roiBoundingBoxMaxZ;
-  int                         numCutsAlong1stLongestAxis = const_cast<PCCPatchSegmenter3Parameters&>( params ).numCutsAlong1stLongestAxis;
-  int                         numCutsAlong2ndLongestAxis = const_cast<PCCPatchSegmenter3Parameters&>( params ).numCutsAlong2ndLongestAxis;
-  int                         numCutsAlong3rdLongestAxis = const_cast<PCCPatchSegmenter3Parameters&>( params ).numCutsAlong3rdLongestAxis;
+                                         std::vector<size_t>&                partition,
+                                         std::vector<PCCPatch>&              patches,
+                                         std::vector<size_t>&                patchPartition,
+                                         std::vector<size_t>&                resampledPatchPartition,
+                                         std::vector<size_t>                 missedPoints,
+                                         PCCPointSet3&                       resampled,
+                                         std::vector<PCCPointSet3>&          subPointCloud,
+                                         float&                              distanceSrcRec,
+                                         const PCCNormalsGenerator3&         normalsGen,
+                                         const PCCVector3D*                  orientations,
+                                         const size_t                        orientationCount ) {
+  // jkei: do we really need to do this? isn't it okay to use params.xxx?
+  const size_t      maxNNCount                           = params.maxNNCountPatchSegmentation;
+  const size_t      minPointCountPerCC                   = params.minPointCountPerCCPatchSegmentation;
+  const size_t      occupancyResolution                  = params.occupancyResolution;
+  const size_t      quantizerSizeX                       = params.quantizerSizeX;
+  const size_t      quantizerSizeY                       = params.quantizerSizeY;
+  const double      maxAllowedDist2MissedPointsDetection = params.maxAllowedDist2MissedPointsDetection;
+  const double      maxAllowedDist2MissedPointsSelection = params.maxAllowedDist2MissedPointsSelection;
+  const bool        EOMSingleLayerMode                   = params.EOMSingleLayerMode;
+  const size_t      EOMFixBitCount                       = params.EOMFixBitCount;
+  const size_t      surfaceThickness                     = params.surfaceThickness;
+  const size_t      maxAllowedDepth                      = params.maxAllowedDepth;
+  const size_t      minLevel                             = params.minLevel;
+  bool              useEnhancedDeltaDepthCode            = params.useEnhancedDeltaDepthCode;
+  const bool        createSubPointCloud                  = params.createSubPointCloud;
+  const bool        absoluteD1                           = params.absoluteD1;
+  bool              useSurfaceSeparation                 = params.surfaceSeparation;
+  const size_t      additionalProjectionAxis             = params.additionalProjectionPlaneMode;
+  const size_t      geometryBitDepth3D                   = params.geometryBitDepth3D;
+  const size_t      testLevelOfDetail                    = params.testLevelOfDetail;
+  bool              patchExpansionEnabled                = params.patchExpansion;
+  const bool        highGradientSeparation               = params.highGradientSeparation;
+  const double      minGradient                          = params.minGradient;
+  const size_t      minNumHighGradientPoints             = params.minNumHighGradientPoints;
+  bool              enablePointCloudPartitioning         = params.enablePointCloudPartitioning;
+  std::vector<int>& roiBoundingBoxMinX = const_cast<PCCPatchSegmenter3Parameters&>( params ).roiBoundingBoxMinX;
+  std::vector<int>& roiBoundingBoxMaxX = const_cast<PCCPatchSegmenter3Parameters&>( params ).roiBoundingBoxMaxX;
+  std::vector<int>& roiBoundingBoxMinY = const_cast<PCCPatchSegmenter3Parameters&>( params ).roiBoundingBoxMinY;
+  std::vector<int>& roiBoundingBoxMaxY = const_cast<PCCPatchSegmenter3Parameters&>( params ).roiBoundingBoxMaxY;
+  std::vector<int>& roiBoundingBoxMinZ = const_cast<PCCPatchSegmenter3Parameters&>( params ).roiBoundingBoxMinZ;
+  std::vector<int>& roiBoundingBoxMaxZ = const_cast<PCCPatchSegmenter3Parameters&>( params ).roiBoundingBoxMaxZ;
+  int numCutsAlong1stLongestAxis       = const_cast<PCCPatchSegmenter3Parameters&>( params ).numCutsAlong1stLongestAxis;
+  int numCutsAlong2ndLongestAxis       = const_cast<PCCPatchSegmenter3Parameters&>( params ).numCutsAlong2ndLongestAxis;
+  int numCutsAlong3rdLongestAxis       = const_cast<PCCPatchSegmenter3Parameters&>( params ).numCutsAlong3rdLongestAxis;
 
   const size_t pointCount = points.getPointCount();
   patchPartition.resize( pointCount, 0 );
@@ -1092,7 +304,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
 
   // jkei: do we really need this? how about points.getColor()??
 #ifdef DEBUG_SURFACE_SEPARATION
-  if ( useSurfaceSeparation ) 
+  if ( useSurfaceSeparation )
 #endif
   {
     frame_pcc_color.reserve( pointCount );
@@ -1613,10 +825,10 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
 
       patch.getDepth( 0 ).resize( patch.getSizeU() * patch.getSizeV(), infiniteDepth );
 #ifdef DEBUG_SURFACE_SEPARATION
-      if ( useSurfaceSeparation ) 
+      if ( useSurfaceSeparation )
 #endif
       {
-      patch.getdepth0pccidx().resize( patch.getSizeU() * patch.getSizeV(), infinitenumber );
+        patch.getdepth0pccidx().resize( patch.getSizeU() * patch.getSizeV(), infinitenumber );
       }
 
       if ( useEnhancedDeltaDepthCode ) {
@@ -1626,8 +838,8 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
       patch.getOccupancyResolution() = occupancyResolution;
       patch.getSizeU0()              = 0;
       patch.getSizeV0()              = 0;
-      patch.setPatchSize2DXInPixel(0);
-      patch.setPatchSize2DYInPixel(0);
+      patch.setPatchSize2DXInPixel( 0 );
+      patch.setPatchSize2DYInPixel( 0 );
       for ( const auto i : connectedComponent ) {
         PCCPoint3D pointTmp = points[i];
         if ( bIsAdditionalProjectionPlane ) {
@@ -1643,36 +855,36 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
         const size_t p = v * patch.getSizeU() + u;
         if ( patch.getProjectionMode() == 0 ) {  // min
           if ( patch.getDepth( 0 )[p] > d ) {
-            patch.getDepth( 0 )[p]     = d;
+            patch.getDepth( 0 )[p] = d;
 #ifdef DEBUG_SURFACE_SEPARATION
             if ( useSurfaceSeparation ) { patch.getdepth0pccidx()[p] = i; }
 #else
             patch.getdepth0pccidx()[p] = i;
 #endif
-            patch.setPatchSize2DXInPixel(( std::max )( patch.getPatchSize2DXInPixel(), u ));
-            patch.setPatchSize2DYInPixel(( std::max )( patch.getPatchSize2DYInPixel(), v ));
-            patch.getSizeU0()          = ( std::max )( patch.getSizeU0(), u / patch.getOccupancyResolution() );
-            patch.getSizeV0()          = ( std::max )( patch.getSizeV0(), v / patch.getOccupancyResolution() );
-            patch.getD1()              = ( std::min )( patch.getD1(), size_t( d ) );
-            size_t value               = patch.getD1();  // patch.getD1();
-            value                      = ( value / minLevel );
-            patch.getD1()              = value * minLevel;
+            patch.setPatchSize2DXInPixel( ( std::max )( patch.getPatchSize2DXInPixel(), u ) );
+            patch.setPatchSize2DYInPixel( ( std::max )( patch.getPatchSize2DYInPixel(), v ) );
+            patch.getSizeU0() = ( std::max )( patch.getSizeU0(), u / patch.getOccupancyResolution() );
+            patch.getSizeV0() = ( std::max )( patch.getSizeV0(), v / patch.getOccupancyResolution() );
+            patch.getD1()     = ( std::min )( patch.getD1(), size_t( d ) );
+            size_t value      = patch.getD1();  // patch.getD1();
+            value             = ( value / minLevel );
+            patch.getD1()     = value * minLevel;
           }
         } else {  // max
           if ( patch.getDepth( 0 )[p] == infiniteDepth ) {
-            patch.getDepth( 0 )[p]     = d;
+            patch.getDepth( 0 )[p] = d;
 #ifdef DEBUG_SURFACE_SEPARATION
-            if ( useSurfaceSeparation ) { patch.getdepth0pccidx()[p] = i;}
+            if ( useSurfaceSeparation ) { patch.getdepth0pccidx()[p] = i; }
 #else
             patch.getdepth0pccidx()[p] = i;
 #endif
 
-            patch.setPatchSize2DXInPixel(( std::max )( patch.getPatchSize2DXInPixel(), u ));
-            patch.setPatchSize2DYInPixel(( std::max )( patch.getPatchSize2DYInPixel(), v ));
-            patch.getSizeU0()          = ( std::max )( patch.getSizeU0(), u / patch.getOccupancyResolution() );
-            patch.getSizeV0()          = ( std::max )( patch.getSizeV0(), v / patch.getOccupancyResolution() );
-            patch.getD1()              = ( std::max )( patch.getD1(), size_t( d ) );
-            size_t value               = size_t( patch.getD1() / minLevel );
+            patch.setPatchSize2DXInPixel( ( std::max )( patch.getPatchSize2DXInPixel(), u ) );
+            patch.setPatchSize2DYInPixel( ( std::max )( patch.getPatchSize2DYInPixel(), v ) );
+            patch.getSizeU0() = ( std::max )( patch.getSizeU0(), u / patch.getOccupancyResolution() );
+            patch.getSizeV0() = ( std::max )( patch.getSizeV0(), v / patch.getOccupancyResolution() );
+            patch.getD1()     = ( std::max )( patch.getD1(), size_t( d ) );
+            size_t value      = size_t( patch.getD1() / minLevel );
             if ( value * minLevel < patch.getD1() )
               patch.getD1() = ( 1 + value ) * minLevel;
             else
@@ -1680,19 +892,19 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
             // std::cout<<"~~~~~~"<<value<<" -> "<<patch.getD1()<<std::endl;
           } else {
             if ( patch.getDepth( 0 )[p] < d ) {
-              patch.getDepth( 0 )[p]     = d;
+              patch.getDepth( 0 )[p] = d;
 #ifdef DEBUG_SURFACE_SEPARATION
               if ( useSurfaceSeparation ) { patch.getdepth0pccidx()[p] = i; }
 #else
               patch.getdepth0pccidx()[p] = i;
 #endif
 
-              patch.setPatchSize2DXInPixel(( std::max )( patch.getPatchSize2DXInPixel(), u ));
-              patch.setPatchSize2DYInPixel(( std::max )( patch.getPatchSize2DYInPixel(), v ));
-              patch.getSizeU0()          = ( std::max )( patch.getSizeU0(), u / patch.getOccupancyResolution() );
-              patch.getSizeV0()          = ( std::max )( patch.getSizeV0(), v / patch.getOccupancyResolution() );
-              patch.getD1()              = ( std::max )( patch.getD1(), size_t( d ) );
-              size_t value               = size_t( patch.getD1() / minLevel );
+              patch.setPatchSize2DXInPixel( ( std::max )( patch.getPatchSize2DXInPixel(), u ) );
+              patch.setPatchSize2DYInPixel( ( std::max )( patch.getPatchSize2DYInPixel(), v ) );
+              patch.getSizeU0() = ( std::max )( patch.getSizeU0(), u / patch.getOccupancyResolution() );
+              patch.getSizeV0() = ( std::max )( patch.getSizeV0(), v / patch.getOccupancyResolution() );
+              patch.getD1()     = ( std::max )( patch.getD1(), size_t( d ) );
+              size_t value      = size_t( patch.getD1() / minLevel );
               if ( value * minLevel < patch.getD1() )
                 patch.getD1() = ( 1 + value ) * minLevel;
               else
@@ -1702,13 +914,17 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
           }
         }
       }
-     patch.setPatchSize2DXInPixel( (patch.getPatchSize2DXInPixel() + 1) );
-     patch.setPatchSize2DYInPixel( (patch.getPatchSize2DYInPixel() + 1) );
-     
-     size_t noquantizedPatchSize2DX =(patch.getPatchSize2DXInPixel());
-     size_t noquantizedPatchSize2DY =(patch.getPatchSize2DYInPixel());
-     if(quantizerSizeX!=0) patch.setPatchSize2DXInPixel( ceil ( (double)noquantizedPatchSize2DX/(double)quantizerSizeX)*quantizerSizeX );
-     if(quantizerSizeY!=0) patch.setPatchSize2DYInPixel( ceil ( (double)noquantizedPatchSize2DY/(double)quantizerSizeY)*quantizerSizeY );
+      patch.setPatchSize2DXInPixel( ( patch.getPatchSize2DXInPixel() + 1 ) );
+      patch.setPatchSize2DYInPixel( ( patch.getPatchSize2DYInPixel() + 1 ) );
+
+      size_t noquantizedPatchSize2DX = ( patch.getPatchSize2DXInPixel() );
+      size_t noquantizedPatchSize2DY = ( patch.getPatchSize2DYInPixel() );
+      if ( quantizerSizeX != 0 )
+        patch.setPatchSize2DXInPixel( ceil( (double)noquantizedPatchSize2DX / (double)quantizerSizeX ) *
+                                      quantizerSizeX );
+      if ( quantizerSizeY != 0 )
+        patch.setPatchSize2DYInPixel( ceil( (double)noquantizedPatchSize2DY / (double)quantizerSizeY ) *
+                                      quantizerSizeY );
       ++patch.getSizeU0();
       ++patch.getSizeV0();
       patch.getOccupancy().resize( patch.getSizeU0() * patch.getSizeV0(), false );
@@ -1736,7 +952,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
             const size_t  p0       = v0 * patch.getSizeU0() + u0;
             const int16_t minDepth = minPerBlock[p0];
             if ( ( depth0 - minDepth > 32 ) || ( surfaceThickness + depth0 > patch.getD1() + maxAllowedDepth ) ) {
-              patch.getDepth( 0 )[p]     = infiniteDepth;
+              patch.getDepth( 0 )[p] = infiniteDepth;
 #ifdef DEBUG_SURFACE_SEPARATION
               if ( useSurfaceSeparation ) { patch.getdepth0pccidx()[p] = infinitenumber; }
 #else
@@ -1773,7 +989,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
             const int16_t maxDepth = maxPerBlock[p0];
 
             if ( maxDepth < 0 ) {
-              patch.getDepth( 0 )[p]     = infiniteDepth;
+              patch.getDepth( 0 )[p] = infiniteDepth;
 #ifdef DEBUG_SURFACE_SEPARATION
               if ( useSurfaceSeparation ) { patch.getdepth0pccidx()[p] = infinitenumber; }
 #else
@@ -1785,7 +1001,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
                 int16_t tmp_b = depth0 - int16_t( surfaceThickness );
                 int16_t tmp_c = int16_t( patch.getD1() ) - int16_t( maxAllowedDepth );
                 if ( ( tmp_a > 32 ) || ( tmp_b < tmp_c ) ) {
-                  patch.getDepth( 0 )[p]     = infiniteDepth;
+                  patch.getDepth( 0 )[p] = infiniteDepth;
 #ifdef DEBUG_SURFACE_SEPARATION
                   if ( useSurfaceSeparation ) patch.getdepth0pccidx()[p] = infinitenumber;
 #else
@@ -2121,9 +1337,9 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
                 } else {
 #ifdef DEBUG_MULTI_STREAMS
                   if ( depth0 < infiniteDepth && ( d - depth0 ) <= int16_t( patch_surfaceThickness ) &&
-                       d > patch.getDepth( 1 )[p] ) 
+                       d > patch.getDepth( 1 )[p] )
 #else
-                  if ( validD1 ) 
+                  if ( validD1 )
 #endif
                   {
                     patch.getDepth( 1 )[p] = d;
@@ -2303,7 +1519,6 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
                 } else {
                   if ( depth0 < infiniteDepth &&
                        ( depth0 - d ) <= int16_t( patch_surfaceThickness )  // fixed to patch_surfaceThickness
-
 #ifndef DEBUG_MULTI_STREAMS
 #if MULTISTREAM_UPDATE
                        && d < patch.getDepth( 1 )[p]
@@ -2314,7 +1529,6 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
                   }
                   if ( useEnhancedDeltaDepthCode && depth0 < infiniteDepth && ( depth0 - d ) > 0 &&
                        ( depth0 - d ) <= int16_t( surfaceThickness )
-
 #ifndef DEBUG_MULTI_STREAMS
 #if MULTISTREAM_UPDATE
                        && d > patch.getDepth( 1 )[p]
@@ -2428,9 +1642,9 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
 #if ONELAYERFIX
                         if ( pointEDD[patch.getNormalAxis()] != point[patch.getNormalAxis()] ) {
 #endif
-                        resampled.addPoint( point );
-                        resampledPatchPartition.push_back( patchIndex );
-                        eddCountPerPatch++;
+                          resampled.addPoint( point );
+                          resampledPatchPartition.push_back( patchIndex );
+                          eddCountPerPatch++;
 #if ONELAYERFIX
                         }
 #endif
@@ -2534,9 +1748,9 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
 #if ONELAYERFIX
                         if ( pointEDD[patch.getNormalAxis()] != point[patch.getNormalAxis()] ) {
 #endif
-                        resampled.addPoint( point );
-                        resampledPatchPartition.push_back( patchIndex );
-                        eddCountPerPatch++;
+                          resampled.addPoint( point );
+                          resampledPatchPartition.push_back( patchIndex );
+                          eddCountPerPatch++;
 #if ONELAYERFIX
                         }
 #endif
@@ -2568,21 +1782,6 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
             }
           }
         }
-      }
-
-      if ( testLevelOfDetail > 0 ){
-        quantizedPointsPatchModification(
-            points,
-            patch,  // current patch
-            bIsAdditionalProjectionPlane, Threshold_Color_Error, frame_pcc_color, connectedComponent,
-            minPointCountPerCC, occupancyResolution, maxAllowedDist2MissedPointsDetection,
-            maxAllowedDist2MissedPointsSelection, EOMSingleLayerMode, EOMFixBitCount, surfaceThickness, maxAllowedDepth,
-            minLevel, partition, patches, patchPartition, resampledPatchPartition, missedPoints, resampled,
-            useEnhancedDeltaDepthCode, createSubPointCloud, subPointCloud, distanceSrcRec, absoluteD1,
-            useSurfaceSeparation, additionalProjectionAxis, geometryBitDepth3D, testLevelOfDetail,
-            patchExpansionEnabled, enablePointCloudPartitioning, roiBoundingBoxMinX, roiBoundingBoxMaxX,
-            roiBoundingBoxMinY, roiBoundingBoxMaxY, roiBoundingBoxMinZ, roiBoundingBoxMaxZ, numCutsAlong1stLongestAxis,
-            numCutsAlong2ndLongestAxis, numCutsAlong3rdLongestAxis );
       }
 
       size_t quantDD   = patch.getSizeD() == 0 ? 0 : ( ( patch.getSizeD() - 1 ) / minLevel + 1 );
@@ -2640,28 +1839,29 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&         points,
           }
         }
       }
-#if  ONELAYERFIX
-          if( EOMSingleLayerMode ) d1CountPerPatch=0;
+#if ONELAYERFIX
+      if ( EOMSingleLayerMode ) d1CountPerPatch = 0;
 #endif
       patch.setEddandD1Count( eddCountPerPatch );
-      if ( useEnhancedDeltaDepthCode ) { 
+      if ( useEnhancedDeltaDepthCode ) {
         patch.setEddCount( eddCountPerPatch - d1CountPerPatch );
-        //printf( "Patch %lu : EDD = %lu - %lu  = %lu \n", patchIndex, eddCountPerPatch, d1CountPerPatch, eddCountPerPatch - d1CountPerPatch );
+        // printf( "Patch %lu : EDD = %lu - %lu  = %lu \n", patchIndex, eddCountPerPatch, d1CountPerPatch,
+        // eddCountPerPatch - d1CountPerPatch );
       }
       patch.setD0Count( d0CountPerPatch );
-#if 0 //ONELAYERFIX: jkei: eddCountPerPatch is edd+d1, eddonly is #edd
-      numberOfEDD += eddCountPerPatch; // JR 
+#if 0  // ONELAYERFIX: jkei: eddCountPerPatch is edd+d1, eddonly is #edd
+      numberOfEDD += eddCountPerPatch; // JR
 #else
       numberOfEDD += ( eddCountPerPatch - d1CountPerPatch );
 #endif
 
       numD0Points += d0CountPerPatch;
       numD1Points += d1CountPerPatch;
-      if ( useEnhancedDeltaDepthCode ) { 
-#if 0 //ONELAYERFIX
-        numEDDonlyPoints += eddCountPerPatch;   // JR 
+      if ( useEnhancedDeltaDepthCode ) {
+#if 0  // ONELAYERFIX
+        numEDDonlyPoints += eddCountPerPatch;   // JR
 #else
-        numEDDonlyPoints += ( eddCountPerPatch - d1CountPerPatch );  
+        numEDDonlyPoints += ( eddCountPerPatch - d1CountPerPatch );
 #endif
       }
       // assert(eddPointSet.getPointCount() !=patch.getEddCount());

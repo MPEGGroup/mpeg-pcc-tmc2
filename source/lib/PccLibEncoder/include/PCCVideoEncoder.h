@@ -58,19 +58,18 @@ class PCCVideoEncoder {
                  const std::string& encoderConfig,
                  const std::string& encoderPath,
                  PCCContext&        contexts,
-                const size_t       nbyte                             ,
-                const bool         use444CodecIo                     ,
-                const bool         use3dmv                           ,
-                const size_t       internalBitDepth                  ,
-                const bool         useConversion                     ,
-                const bool         keepIntermediateFiles             = false,
-                const std::string& colorSpaceConversionConfig        = "",
-                const std::string& inverseColorSpaceConversionConfig = "",
-                const std::string& colorSpaceConversionPath          = "",
-                const size_t       downsamplingFilter                = 4,
-                const size_t       upsamplingFilter                  = 0,
-                const bool         patchColorSubsampling             = false
-                ) {
+                 const size_t       nbyte,
+                 const bool         use444CodecIo,
+                 const bool         use3dmv,
+                 const size_t       internalBitDepth,
+                 const bool         useConversion,
+                 const bool         keepIntermediateFiles             = false,
+                 const std::string& colorSpaceConversionConfig        = "",
+                 const std::string& inverseColorSpaceConversionConfig = "",
+                 const std::string& colorSpaceConversionPath          = "",
+                 const size_t       downsamplingFilter                = 4,
+                 const size_t       upsamplingFilter                  = 0,
+                 const bool         patchColorSubsampling             = false ) {
     auto& frames = video.getFrames();
     if ( frames.empty() ) { return false; }
     const size_t width      = frames[0].getWidth();
@@ -96,13 +95,14 @@ class PCCVideoEncoder {
         addVideoFormat( fileName + "_rec" + ".rgb", width, height, !use444CodecIo, nbyte == 2 ? "10" : "8" );
 
     const bool yuvVideo = colorSpaceConversionConfig.empty() || use444CodecIo;
-    printf("Encoder convert : yuvVideo = %d colorSpaceConversionConfig = %s \n",yuvVideo,colorSpaceConversionConfig.c_str());
-    printf("Encoder convert : colorSpaceConversionPath = %s \n",colorSpaceConversionPath.c_str());
+    printf( "Encoder convert : yuvVideo = %d colorSpaceConversionConfig = %s \n", yuvVideo,
+            colorSpaceConversionConfig.c_str() );
+    printf( "Encoder convert : colorSpaceConversionPath = %s \n", colorSpaceConversionPath.c_str() );
     if ( yuvVideo ) {
       if ( use444CodecIo ) {
         if ( !video.write( srcYuvFileName, nbyte ) ) { return false; }
       } else {
-        printf("Encoder convert : write420 without conversion \n" );
+        printf( "Encoder convert : write420 without conversion \n" );
         if ( !video.write420( srcYuvFileName, nbyte ) ) { return false; }
       }
     } else {
@@ -112,7 +112,7 @@ class PCCVideoEncoder {
         video420.resize( video.getFrameCount() );
         for ( size_t frNum = 0; frNum < video.getFrameCount(); frNum++ ) {
           // context variable, contains the patch information
-          auto& context = contexts[ (int)(frNum / 2)];
+          auto& context = contexts[(int)( frNum / 2 )];
           // full resolution image (already filled by previous dilation
           auto& refImage = video.getFrame( frNum );
           // image that will contain the per-patch chroma sub-sampled image
@@ -301,9 +301,9 @@ class PCCVideoEncoder {
             const std::string yuvFileNameTmp = addVideoFormat( fileName + "_tmp.yuv", patch_width, patch_height, true );
 
             if ( !tmpImage.write( rgbFileNameTmp, nbyte ) ) { return false; }
-            if( colorSpaceConversionPath.empty() ){               
-              tmpImage.read420( yuvFileNameTmp, width, height, nbyte, true, upsamplingFilter );              
-            }else{
+            if ( colorSpaceConversionPath.empty() ) {
+              tmpImage.read420( yuvFileNameTmp, width, height, nbyte, true, upsamplingFilter );
+            } else {
               std::stringstream cmd;
               cmd << colorSpaceConversionPath << " -f " << colorSpaceConversionConfig << " -p SourceFile=\""
                   << rgbFileNameTmp << "\" -p OutputFile=\"" << yuvFileNameTmp << "\" -p SourceWidth=" << patch_width
@@ -341,11 +341,11 @@ class PCCVideoEncoder {
         video420.write420( srcYuvFileName, nbyte );
       } else {
         if ( colorSpaceConversionPath.empty() ) {
-          printf("Encoder convert : write420 with conversion \n" );
+          printf( "Encoder convert : write420 with conversion \n" );
           // if ( keepIntermediateFiles ) { video.write( srcRgbFileName, nbyte ); }
           if ( !video.write420( srcYuvFileName, nbyte, true, downsamplingFilter ) ) { return false; }
         } else {
-          printf("Encoder convert : write + hdrtools conversion \n" );
+          printf( "Encoder convert : write + hdrtools conversion \n" );
           if ( !video.write( srcRgbFileName, nbyte ) ) { return false; }
           std::stringstream cmd;
           cmd << colorSpaceConversionPath << " -f " << colorSpaceConversionConfig << " -p SourceFile=\""
@@ -371,8 +371,8 @@ class PCCVideoEncoder {
           << " --FramesToBeEncoded=" << frameCount << " --BitstreamFile=" << binFileName
           << " --ReconFile=" << recYuvFileName << " --QP=" << qp << " --InputColourSpaceConvert=RGBtoGBR";
       if ( use3dmv ) {
-        cmd << " --UsePccMotionEstimation=1 --BlockToPatchFile=" << blockToPatchFileName << " --OccupancyMapFile=" << occupancyMapFileName
-            << " --PatchInfoFile=" << patchInfoFileName;
+        cmd << " --UsePccMotionEstimation=1 --BlockToPatchFile=" << blockToPatchFileName
+            << " --OccupancyMapFile=" << occupancyMapFileName << " --PatchInfoFile=" << patchInfoFileName;
       }
     } else {
       cmd << encoderPath << " -c " << encoderConfig << " -i " << srcYuvFileName << " --InputBitDepth=" << depth
@@ -382,15 +382,15 @@ class PCCVideoEncoder {
           << " --FramesToBeEncoded=" << frameCount << " --BitstreamFile=" << binFileName
           << " --ReconFile=" << recYuvFileName << " --QP=" << qp;
 
-      if(internalBitDepth!=0){
+      if ( internalBitDepth != 0 ) {
         cmd << " --InternalBitDepth=" << internalBitDepth << " --InternalBitDepthC=" << internalBitDepth;
       }
 
       cmd << " --OutputBitDepth=" << depth;
       cmd << " --OutputBitDepthC=" << depth;
       if ( use3dmv ) {
-        cmd << " --UsePccMotionEstimation=1 --BlockToPatchFile=" << blockToPatchFileName << " --OccupancyMapFile=" << occupancyMapFileName
-            << " --PatchInfoFile=" << patchInfoFileName;
+        cmd << " --UsePccMotionEstimation=1 --BlockToPatchFile=" << blockToPatchFileName
+            << " --OccupancyMapFile=" << occupancyMapFileName << " --PatchInfoFile=" << patchInfoFileName;
       }
     }
     std::cout << cmd.str() << std::endl;

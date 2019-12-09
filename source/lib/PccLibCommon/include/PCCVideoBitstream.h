@@ -45,7 +45,7 @@ class PCCVideoBitstream {
   void                  resize( size_t size ) { data_.resize( size ); }
   std::vector<uint8_t>& vector() { return data_; }
   uint8_t*              buffer() { return data_.data(); }
-  size_t                size() { return (size_t) data_.size(); }
+  size_t                size() { return (size_t)data_.size(); }
   PCCVideoType          type() { return type_; }
 
   void trace() { std::cout << toString( type_ ) << " ->" << size() << " B " << std::endl; }
@@ -61,7 +61,7 @@ class PCCVideoBitstream {
       case VIDEO_TEXTURE_RAW: return std::string( "textureRaw" ); break;
       case VIDEO_TEXTURE_T0: return std::string( "textureT0" ); break;
       case VIDEO_TEXTURE_T1: return std::string( "textureT1" ); break;
-      case NUM_VIDEO_TYPE  : return std::string( "ERROR" ); break;
+      case NUM_VIDEO_TYPE: return std::string( "ERROR" ); break;
     }
     return std::string( "unknown" );
   }

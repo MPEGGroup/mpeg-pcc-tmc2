@@ -236,7 +236,7 @@ struct PCCBox3 {
     if ( min_[2] > point[2] ) { min_[2] = point[2]; }
     if ( max_[0] < point[0] ) { max_[0] = point[0]; }
     if ( max_[1] < point[1] ) { max_[1] = point[1]; }
-    if ( max_[2] < point[2] ) { max_[2] = point[2]; }    
+    if ( max_[2] < point[2] ) { max_[2] = point[2]; }
   }
   bool intersects( const PCCBox3& box ) {
     return max_.x() >= box.min_.x() && min_.x() <= box.max_.x() && max_.y() >= box.min_.y() &&

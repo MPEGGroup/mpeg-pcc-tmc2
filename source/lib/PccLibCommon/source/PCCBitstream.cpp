@@ -78,9 +78,6 @@ bool PCCBitstream::initialize( std::string compressedStreamPath ) {
 }
 
 bool PCCBitstream::write( std::string compressedStreamPath ) {
-//#if !VPCCUNIT_DATA_BITSTREAM
-//  write( (int32_t) size(), 64, totalSizeIterator_ );
-//#endif
   std::ofstream fout( compressedStreamPath, std::ios::binary );
   if ( !fout.is_open() ) { return false; }
   fout.write( reinterpret_cast<const char*>( data_.data() ), size() );
@@ -98,7 +95,6 @@ bool PCCBitstream::readHeader() {
   uint32_t containerVersion = read( 32 );
   if ( containerVersion != PCCTMC2ContainerVersion ) { return false; }
   totalSize = read( 64 );
-  // bitstreamStat_.setHeader( size() );
   return true;
 }
 
@@ -110,7 +106,6 @@ void PCCBitstream::writeHeader() {
   write( PCCTMC2ContainerVersion, 32 );
   totalSizeIterator_ = getPosition();
   write( 0, 64 );  // reserved
-  // bitstreamStat_.setHeader( size() );
 }
 
 void PCCBitstream::read( PCCVideoBitstream& videoBitstream ) {
@@ -128,7 +123,6 @@ void PCCBitstream::read( PCCVideoBitstream& videoBitstream ) {
 #ifdef BITSTREAM_TRACE
   trace( "Code: video : %4lu \n", size );
 #endif
-  // bitstreamStat_.setVideoBinSize( videoBitstream.type(), videoBitstream.size() );
 }
 
 void PCCBitstream::write( PCCVideoBitstream& videoBitstream ) {
@@ -137,7 +131,6 @@ void PCCBitstream::write( PCCVideoBitstream& videoBitstream ) {
 #endif
   writeBuffer( videoBitstream.buffer(), videoBitstream.size() );
   videoBitstream.trace();
-  // bitstreamStat_.setVideoBinSize( videoBitstream.type(), videoBitstream.size() );
 #ifdef BITSTREAM_TRACE
   trace( "Code: video : %4lu \n", videoBitstream.size() );
 #endif

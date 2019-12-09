@@ -37,7 +37,6 @@
 #include "PCCDecoderParameters.h"
 #include "PCCCodec.h"
 #include "PCCMath.h"
-#include "PCCMetadata.h"
 #include "PCCPatch.h"
 
 namespace pcc {
@@ -81,9 +80,6 @@ class PCCDecoder : public PCCCodec {
 
  private:
   int decode( PCCContext& context, PCCGroupOfFrames& reconstruct );
-
-  // void setFrameMetadata( PCCMetadata& metadata, PatchFrameGeometryParameterSet& gfps );
-  // void setPatchMetadata( PCCMetadata& metadata, GeometryPatchParameterSet& gpps );
 
   void setPointLocalReconstruction( PCCContext& context );
   void setPointLocalReconstructionData( PCCFrameContext&              frame,

@@ -82,8 +82,7 @@ void PCCCodec::generatePointCloud( PCCGroupOfFrames&                   reconstru
                                    PCCContext&                         context,
                                    const GeneratePointCloudParameters  params,
                                    std::vector<std::vector<uint32_t>>& partitions,
-                                   bool                                bDecoder )
-{
+                                   bool                                bDecoder ) {
   TRACE_CODEC( "Generate point Cloud start \n" );
   TRACE_CODEC( "  occupancyResolution_            = %lu \n", params.occupancyResolution_ );
   TRACE_CODEC( "  occupancyPrecision_             = %lu \n", params.occupancyPrecision_ );
@@ -157,7 +156,8 @@ void PCCCodec::generatePointCloud( PCCGroupOfFrames&                   reconstru
           params.pbfLog2Threshold_ );
     }
     std::vector<uint32_t> partition;
-    generatePointCloud( reconstructs[i], context, frames[i], videoGeometry, videoGeometryD1, videoOccupancyMap, params, partition, bDecoder );
+    generatePointCloud( reconstructs[i], context, frames[i], videoGeometry, videoGeometryD1, videoOccupancyMap, params,
+                        partition, bDecoder );
     TRACE_CODEC( " generatePointCloud create %lu points \n", reconstructs[i].getPointCount() );
 
 #ifdef CODEC_TRACE
@@ -607,9 +607,9 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
                                    std::vector<uint32_t>&             partition,
                                    bool                               bDecoder ) {
   TRACE_CODEC( "generatePointCloud F = %lu start \n", frame.getIndex() );
-  auto& patches      = frame.getPatches();
-  auto& pointToPixel = frame.getPointToPixel();
-  auto& blockToPatch = frame.getBlockToPatch();
+  auto&        patches            = frame.getPatches();
+  auto&        pointToPixel       = frame.getPointToPixel();
+  auto&        blockToPatch       = frame.getBlockToPatch();
   const size_t blockToPatchWidth  = frame.getWidth() / params.occupancyResolution_;
   const size_t blockToPatchHeight = frame.getHeight() / params.occupancyResolution_;
   reconstruct.addColors();
@@ -632,38 +632,36 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
     }
   }
 
-  if(params.enableSizeQuantization_){
-    size_t quantizerSizeX =1<<frame.getLog2PatchQuantizerSizeX();
-    size_t quantizerSizeY =1<<frame.getLog2PatchQuantizerSizeY();
-    
-    for (size_t patchIndex = 0; patchIndex < patchCount; ++patchIndex) {
-      auto &patch = patches[patchIndex];
-      size_t nonZeroPixel=0;
-      
-      size_t patchSizeXInPixel = (patch.getPatchSize2DXInPixel()/quantizerSizeX)*quantizerSizeX;
-      size_t patchSizeYInPixel = (patch.getPatchSize2DYInPixel()/quantizerSizeY)*quantizerSizeY;
-      if(frame.getLog2PatchQuantizerSizeX()==0) assert(patchSizeXInPixel==patch.getPatchSize2DXInPixel());
-      if(frame.getLog2PatchQuantizerSizeY()==0) assert(patchSizeYInPixel==patch.getPatchSize2DYInPixel());
-      for (size_t v0 = 0; v0 < patch.getSizeV0(); ++v0) {
-        for (size_t u0 = 0; u0 < patch.getSizeU0(); ++u0) {
-          const size_t blockIndex  = patch.patchBlock2CanvasBlock( u0, v0 ,blockToPatchWidth, blockToPatchHeight );
-          if(blockToPatch[blockIndex] ==( patchIndex + 1))
-          {
-            nonZeroPixel=0;
-            for (size_t v1 = 0; v1 < patch.getOccupancyResolution(); ++v1) {
+  if ( params.enableSizeQuantization_ ) {
+    size_t quantizerSizeX = 1 << frame.getLog2PatchQuantizerSizeX();
+    size_t quantizerSizeY = 1 << frame.getLog2PatchQuantizerSizeY();
+
+    for ( size_t patchIndex = 0; patchIndex < patchCount; ++patchIndex ) {
+      auto&  patch        = patches[patchIndex];
+      size_t nonZeroPixel = 0;
+
+      size_t patchSizeXInPixel = ( patch.getPatchSize2DXInPixel() / quantizerSizeX ) * quantizerSizeX;
+      size_t patchSizeYInPixel = ( patch.getPatchSize2DYInPixel() / quantizerSizeY ) * quantizerSizeY;
+      if ( frame.getLog2PatchQuantizerSizeX() == 0 ) assert( patchSizeXInPixel == patch.getPatchSize2DXInPixel() );
+      if ( frame.getLog2PatchQuantizerSizeY() == 0 ) assert( patchSizeYInPixel == patch.getPatchSize2DYInPixel() );
+      for ( size_t v0 = 0; v0 < patch.getSizeV0(); ++v0 ) {
+        for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {
+          const size_t blockIndex = patch.patchBlock2CanvasBlock( u0, v0, blockToPatchWidth, blockToPatchHeight );
+          if ( blockToPatch[blockIndex] == ( patchIndex + 1 ) ) {
+            nonZeroPixel = 0;
+            for ( size_t v1 = 0; v1 < patch.getOccupancyResolution(); ++v1 ) {
               const size_t v = v0 * patch.getOccupancyResolution() + v1;
-              for (size_t u1 = 0; u1 < patch.getOccupancyResolution(); ++u1) {
+              for ( size_t u1 = 0; u1 < patch.getOccupancyResolution(); ++u1 ) {
                 const size_t u = u0 * patch.getOccupancyResolution() + u1;
-                if(u>=patchSizeXInPixel || v>=patchSizeYInPixel)
-                {
-                  size_t x,y;
-                  occupancyMap[patch.patch2Canvas(u,v,frame.getWidth(),frame.getHeight(),x,y)] = 0;
+                if ( u >= patchSizeXInPixel || v >= patchSizeYInPixel ) {
+                  size_t x, y;
+                  occupancyMap[patch.patch2Canvas( u, v, frame.getWidth(), frame.getHeight(), x, y )] = 0;
                 }
-              }//u1
-            }//v1
-          }//patchidx+1==block2patch
-        }//u0
-      }//v0
+              }  // u1
+            }    // v1
+          }      // patchidx+1==block2patch
+        }        // u0
+      }          // v0
     }
   }
   partition.resize( 0 );
@@ -695,8 +693,10 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
   std::vector<std::vector<PCCPoint3D>> eddPointsPerPatch;
   eddPointsPerPatch.resize( patchCount );
   uint32_t index;
-  for ( index = 0; index<patches.size(); index++ ) {
-      patchIndex = (bDecoder&&context.getAtlasSequenceParameterSet(0).getPatchPrecedenceOrderFlag())? (patchCount-index-1):index;
+  for ( index = 0; index < patches.size(); index++ ) {
+    patchIndex = ( bDecoder && context.getAtlasSequenceParameterSet( 0 ).getPatchPrecedenceOrderFlag() )
+                     ? ( patchCount - index - 1 )
+                     : index;
     const size_t patchIndexPlusOne = patchIndex + 1;
     auto&        patch             = patches[patchIndex];
     PCCColor3B   color( uint8_t( 0 ) );
@@ -800,7 +800,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
                   uint16_t addedPointCount = 0;
                   size_t   pointIndex1     = 0;
 #if ONELAYERFIX
-                  for(uint16_t i=0; i<10; i++) {
+                  for ( uint16_t i = 0; i < 10; i++ ) {
                     if ( eddCode & ( 1 << i ) ) d1pos = i;
                   }
 #endif
@@ -813,7 +813,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
                         point1[patch.getNormalAxis()] = (double)( point0[patch.getNormalAxis()] - deltaDCur );
                       }
 #if BUGFIX_FIRSTEDDatT1
-#if 0 //ONELAYERFIX
+#if 0  // ONELAYERFIX
                       if ( eddCode == 1 || i == d1pos )
 #else
                       if ( ( eddCode == 1 || i == d1pos ) && ( params.mapCountMinus1_ > 0 ) )
@@ -834,15 +834,18 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
                           fflush( stdout );
                         }
 #endif
-                      } else {
+                      }
+                      else {
 #if 1
                         eddPointsPerPatch[patchIndex].push_back( point1 );
 #else
                         if ( point1 != point0 ) {
                           eddPointsPerPatch[patchIndex].push_back( point1 );
-                          printf( "P[%3lu][%6lu] Add point EDD: %2lu OCM=%2lu XY=%4lu %4lu => %4d %4d %4d / %4d %4d %4d => %6lu \n",
-                                  patchIndex, eddPointsPerPatch[patchIndex].size(), eddCode, occupancyMap[indx], x, y,
-                                  point1.x(), point1.y(), point1.z(), point0.x(), point0.y(), point0.z(), addedPointCount );
+                          printf(
+                              "P[%3lu][%6lu] Add point EDD: %2lu OCM=%2lu XY=%4lu %4lu => %4d %4d %4d / %4d %4d %4d => "
+                              "%6lu \n",
+                              patchIndex, eddPointsPerPatch[patchIndex].size(), eddCode, occupancyMap[indx], x, y,
+                              point1.x(), point1.y(), point1.z(), point0.x(), point0.y(), point0.z(), addedPointCount );
                         }
 #endif
                       }
@@ -923,34 +926,34 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
   }
 
   frame.setTotalNumberOfRegularPoints( reconstruct.getPointCount() );
-  patchIndex = index;
+  patchIndex                         = index;
   size_t       totalEddPointsInFrame = 0;
   PCCPointSet3 eddSavedPoints;
   if ( params.enhancedDeltaDepthCode_ ) {
-    const size_t blockSize = params.occupancyResolution_ * params.occupancyResolution_;
-    size_t totalPatchCount = patchCount;
-    size_t numEddPatches = frame.getEomPatches().size();
+    const size_t blockSize       = params.occupancyResolution_ * params.occupancyResolution_;
+    size_t       totalPatchCount = patchCount;
+    size_t       numEddPatches   = frame.getEomPatches().size();
     printf( "numEddPatches = %lu  \n", numEddPatches );
     for ( int j = 0; j < numEddPatches; j++ ) {
       auto&  eomPatch               = frame.getEomPatches( j );
       size_t numPatchesInEddPatches = eomPatch.memberPatches.size();
       size_t u0Eom                  = useMissedPointsSeparateVideo ? 0 : eomPatch.u0_ * params.occupancyResolution_;
-      size_t v0Eom = useMissedPointsSeparateVideo ? 0 : eomPatch.v0_ * params.occupancyResolution_;
+      size_t v0Eom                  = useMissedPointsSeparateVideo ? 0 : eomPatch.v0_ * params.occupancyResolution_;
       printf( "numPatchesInEddPatches[ %d ] = %lu  block = %lu x %lu point = %lu x %lu \n", j, numPatchesInEddPatches,
               eomPatch.u0_, eomPatch.u0_, u0Eom, v0Eom );
       totalEddPointsInFrame += eomPatch.eddCount_;
       size_t totalPointCount = 0;
       for ( size_t patchCount = 0; patchCount < numPatchesInEddPatches; patchCount++ ) {
-        size_t memberPatchIdx =
-        (bDecoder&&context.getAtlasSequenceParameterSet(0).getPatchPrecedenceOrderFlag())?
-        (totalPatchCount-eomPatch.memberPatches[patchCount]-1) :eomPatch.memberPatches[patchCount];
+        size_t memberPatchIdx = ( bDecoder && context.getAtlasSequenceParameterSet( 0 ).getPatchPrecedenceOrderFlag() )
+                                    ? ( totalPatchCount - eomPatch.memberPatches[patchCount] - 1 )
+                                    : eomPatch.memberPatches[patchCount];
         size_t numberOfEddPointsPerPatch = eddPointsPerPatch[memberPatchIdx].size();
         printf( "numberOfEddPointsPerPatch[ %d ][ %lu ] = %lu  \n", j, patchCount, numberOfEddPointsPerPatch );
         for ( size_t pointCount = 0; pointCount < numberOfEddPointsPerPatch; pointCount++ ) {
           size_t currBlock                 = totalPointCount / blockSize;
           size_t nPixelInCurrentBlockCount = totalPointCount - currBlock * blockSize;
-          size_t uBlock = currBlock % blockToPatchWidth;
-          size_t vBlock = currBlock / blockToPatchWidth;
+          size_t uBlock                    = currBlock % blockToPatchWidth;
+          size_t vBlock                    = currBlock / blockToPatchWidth;
           size_t uu =
               uBlock * params.occupancyResolution_ + nPixelInCurrentBlockCount % params.occupancyResolution_ + u0Eom;
           size_t vv =
@@ -1993,9 +1996,9 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
             if ( !absoluteT1List[f] ) {
               int16_t delta = value1;
               delta         = delta - 128;
-              if ( delta < -128 ){
+              if ( delta < -128 ) {
                 delta = -128;
-              } else if ( delta > 127 ){ 
+              } else if ( delta > 127 ) {
                 delta = 127;
               }
               value1 = value0 + delta;  // elta = value1 - value0; //jkei : change 127 later
@@ -2220,7 +2223,9 @@ void PCCCodec::generateOccupancyMap( PCCFrameContext&            frame,
   }
 }
 
-void PCCCodec::generateBlockToPatchFromOccupancyMap( PCCContext& context, const size_t occupancyResolution, bool bDecoder  ) {
+void PCCCodec::generateBlockToPatchFromOccupancyMap( PCCContext&  context,
+                                                     const size_t occupancyResolution,
+                                                     bool         bDecoder ) {
   size_t sizeFrames = context.getFrames().size();
   for ( int i = 0; i < sizeFrames; i++ ) {
     PCCFrameContext& frame = context.getFrames()[i];
@@ -2233,7 +2238,7 @@ void PCCCodec::generateBlockToPatchFromOccupancyMap( PCCContext&      context,
                                                      size_t           frameIndex,
                                                      const size_t     occupancyResolution,
                                                      bool             bDecoder ) {
-    auto&        patches            = frame.getPatches();
+  auto&        patches            = frame.getPatches();
   const size_t patchCount         = patches.size();
   const size_t blockToPatchWidth  = frame.getWidth() / occupancyResolution;
   const size_t blockToPatchHeight = frame.getHeight() / occupancyResolution;
@@ -2258,25 +2263,17 @@ void PCCCodec::generateBlockToPatchFromOccupancyMap( PCCContext&      context,
                 ( occupancyMap[patch.patch2Canvas( u, v, frame.getWidth(), frame.getHeight(), x, y )] != 0 );
           }  // u1
         }    // v1
-        if(bDecoder)
-        {
-          if ( context.getAtlasSequenceParameterSet(0).getPatchPrecedenceOrderFlag()){
-            if( nonZeroPixel > 0 && blockToPatch[blockIndex] ==0 ){
-              blockToPatch[blockIndex] = patchIndex+1;
-            }
-          }
-          else{
+        if ( bDecoder ) {
+          if ( context.getAtlasSequenceParameterSet( 0 ).getPatchPrecedenceOrderFlag() ) {
+            if ( nonZeroPixel > 0 && blockToPatch[blockIndex] == 0 ) { blockToPatch[blockIndex] = patchIndex + 1; }
+          } else {
             if ( nonZeroPixel > 0 ) { blockToPatch[blockIndex] = patchIndex + 1; }
           }
-        }
-        else
-        {
+        } else {
           if ( nonZeroPixel > 0 ) {
-            if ( blockToPatch[blockIndex] == 0 ) {
-              blockToPatch[blockIndex] = patchIndex + 1;
-            }
+            if ( blockToPatch[blockIndex] == 0 ) { blockToPatch[blockIndex] = patchIndex + 1; }
           }
-          exit(0); //jkei:remove?
+          exit( 0 );  // jkei:remove?
         }
       }  // u0
     }    // v0
@@ -2309,11 +2306,9 @@ void PCCCodec::generateBlockToPatchFromBoundaryBox( PCCContext&      context,
     for ( size_t v0 = 0; v0 < patch.getSizeV0(); ++v0 ) {
       for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {
         const size_t blockIndex = patch.patchBlock2CanvasBlock( u0, v0, blockToPatchWidth, blockToPatchHeight );
-        if ( context.getAtlasSequenceParameterSet(0).getPatchPrecedenceOrderFlag()){
-          if( blockToPatch[blockIndex] ==0 )
-            blockToPatch[blockIndex] = patchIndex+1;
-        }
-        else
+        if ( context.getAtlasSequenceParameterSet( 0 ).getPatchPrecedenceOrderFlag() ) {
+          if ( blockToPatch[blockIndex] == 0 ) blockToPatch[blockIndex] = patchIndex + 1;
+        } else
           blockToPatch[blockIndex] = patchIndex + 1;
       }  // u0
     }    // v0
@@ -2363,25 +2358,34 @@ void PCCCodec::generateBlockToPatchFromOccupancyMapVideo( PCCContext&           
             size_t       x, y;
             patch.patch2Canvas( u, v, frame.getWidth(), frame.getHeight(), x, y );
             nonZeroPixel += ( occupancyMapImage.getValue( 0, x / occupancyPrecision, y / occupancyPrecision ) != 0 );
-          }  // u1
-        }    // v1
-        if ( nonZeroPixel > 0 ) { blockToPatch[blockIndex] = patchIndex + 1; } //jkei: how about lowdelay???
-      }  // u0
-    }    // v0
-  }      // patch
+          }                                                                     // u1
+        }                                                                       // v1
+        if ( nonZeroPixel > 0 ) { blockToPatch[blockIndex] = patchIndex + 1; }  // jkei: how about lowdelay???
+      }                                                                         // u0
+    }                                                                           // v0
+  }                                                                             // patch
 }
 
-PCCPatchType PCCCodec::getCurrPatchType(PCCTILEGROUP tileGroupType,uint8_t patchMode){
-  if      ( ( ( tileGroupType == I_TILE_GRP ) && patchMode == (uint8_t) PATCH_MODE_I_INTRA )  ||
-            ( ( tileGroupType == P_TILE_GRP)  && patchMode == (uint8_t) PATCH_MODE_P_INTRA ) ) { return INTRA_PATCH; }
-  else if   ( ( tileGroupType == P_TILE_GRP   && patchMode == (uint8_t) PATCH_MODE_P_INTER ) ) { return INTER_PATCH; }
-  else if ( ( tileGroupType == I_TILE_GRP     && patchMode == (uint8_t) PATCH_MODE_I_RAW ) ||
-            ( tileGroupType == P_TILE_GRP     && patchMode == (uint8_t) PATCH_MODE_P_RAW ) )   { return RAW_PATCH; }
-  else if ( ( tileGroupType == I_TILE_GRP     && patchMode == (uint8_t) PATCH_MODE_I_EOM ) ||
-            ( tileGroupType == P_TILE_GRP     && patchMode == (uint8_t) PATCH_MODE_P_EOM ) )   { return EOM_PATCH; }
-  else if   ( ( tileGroupType == P_TILE_GRP   && patchMode == (uint8_t) PATCH_MODE_P_MERGE ) ) { return MERGE_PATCH; }
-  else if   ( ( tileGroupType == P_TILE_GRP   && patchMode == (uint8_t) PATCH_MODE_P_SKIP ) )  { return SKIP_PATCH; }
-  else if ( ( tileGroupType == I_TILE_GRP     && patchMode == (uint8_t) PATCH_MODE_I_END ) ||
-            ( tileGroupType == P_TILE_GRP     && patchMode == (uint8_t) PATCH_MODE_P_END ))    { return END_PATCH; }
-  else { return ERROR; }
+PCCPatchType PCCCodec::getCurrPatchType( PCCTILEGROUP tileGroupType, uint8_t patchMode ) {
+  if ( ( ( tileGroupType == I_TILE_GRP ) && patchMode == (uint8_t)PATCH_MODE_I_INTRA ) ||
+       ( ( tileGroupType == P_TILE_GRP ) && patchMode == (uint8_t)PATCH_MODE_P_INTRA ) ) {
+    return INTRA_PATCH;
+  } else if ( ( tileGroupType == P_TILE_GRP && patchMode == (uint8_t)PATCH_MODE_P_INTER ) ) {
+    return INTER_PATCH;
+  } else if ( ( tileGroupType == I_TILE_GRP && patchMode == (uint8_t)PATCH_MODE_I_RAW ) ||
+              ( tileGroupType == P_TILE_GRP && patchMode == (uint8_t)PATCH_MODE_P_RAW ) ) {
+    return RAW_PATCH;
+  } else if ( ( tileGroupType == I_TILE_GRP && patchMode == (uint8_t)PATCH_MODE_I_EOM ) ||
+              ( tileGroupType == P_TILE_GRP && patchMode == (uint8_t)PATCH_MODE_P_EOM ) ) {
+    return EOM_PATCH;
+  } else if ( ( tileGroupType == P_TILE_GRP && patchMode == (uint8_t)PATCH_MODE_P_MERGE ) ) {
+    return MERGE_PATCH;
+  } else if ( ( tileGroupType == P_TILE_GRP && patchMode == (uint8_t)PATCH_MODE_P_SKIP ) ) {
+    return SKIP_PATCH;
+  } else if ( ( tileGroupType == I_TILE_GRP && patchMode == (uint8_t)PATCH_MODE_I_END ) ||
+              ( tileGroupType == P_TILE_GRP && patchMode == (uint8_t)PATCH_MODE_P_END ) ) {
+    return END_PATCH;
+  } else {
+    return ERROR;
+  }
 }

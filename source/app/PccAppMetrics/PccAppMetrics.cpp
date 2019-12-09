@@ -36,38 +36,31 @@ using namespace std;
 using namespace pcc;
 using pcc::chrono::StopwatchUserTime;
 
-int main(int argc, char *argv[]) {
-  std::cout << "PccAppMetrics v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MINOR << std::endl
-            << std::endl;
+int main( int argc, char* argv[] ) {
+  std::cout << "PccAppMetrics v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MINOR << std::endl << std::endl;
 
   PCCMetricsParameters metricsParams;
-  if (!parseParameters(argc, argv, metricsParams )) {
-    return -1;
-  }
-  if( metricsParams.nbThread_ > 0 ) {
-    tbb::task_scheduler_init init( (int)metricsParams.nbThread_ );
-  }
+  if ( !parseParameters( argc, argv, metricsParams ) ) { return -1; }
+  if ( metricsParams.nbThread_ > 0 ) { tbb::task_scheduler_init init( (int)metricsParams.nbThread_ ); }
 
   // Timers to count elapsed wall/user time
   pcc::chrono::Stopwatch<std::chrono::steady_clock> clockWall;
-  pcc::chrono::StopwatchUserTime clockUser;
+  pcc::chrono::StopwatchUserTime                    clockUser;
 
   clockWall.start();
   int ret = computeMetrics( metricsParams, clockUser );
   clockWall.stop();
 
   using namespace std::chrono;
-  using ms = milliseconds;
-  auto totalWall = duration_cast<ms>(clockWall.count()).count();
+  using ms       = milliseconds;
+  auto totalWall = duration_cast<ms>( clockWall.count() ).count();
   std::cout << "metric:Processing time (wall): " << totalWall / 1000.0 << " s\n";
 
-  auto totalUserSelf = duration_cast<ms>(clockUser.self.count()).count();
-  std::cout << "metric:Processing time (user.self): "
-            << totalUserSelf / 1000.0 << " s\n";
+  auto totalUserSelf = duration_cast<ms>( clockUser.self.count() ).count();
+  std::cout << "metric:Processing time (user.self): " << totalUserSelf / 1000.0 << " s\n";
 
-  auto totalUserChild = duration_cast<ms>(clockUser.children.count()).count();
-  std::cout << "metric:Processing time (user.children): "
-            << totalUserChild / 1000.0 << " s\n";
+  auto totalUserChild = duration_cast<ms>( clockUser.children.count() ).count();
+  std::cout << "metric:Processing time (user.children): " << totalUserChild / 1000.0 << " s\n";
   return ret;
 }
 
@@ -75,23 +68,22 @@ int main(int argc, char *argv[]) {
 // :: Command line / config parsing helpers
 
 template <typename T>
-static std::istream &readUInt(std::istream &in, T &val) {
+static std::istream& readUInt( std::istream& in, T& val ) {
   unsigned int tmp;
   in >> tmp;
-  val = T(tmp);
+  val = T( tmp );
   return in;
 }
 
-namespace pcc{
-  static std::istream &operator>>(std::istream &in, PCCColorTransform &val) { return readUInt(in, val); }
-}
+namespace pcc {
+static std::istream& operator>>( std::istream& in, PCCColorTransform& val ) { return readUInt( in, val ); }
+}  // namespace pcc
 //---------------------------------------------------------------------------
 // :: Command line / config parsing
 
-bool parseParameters(int argc, char *argv[], PCCMetricsParameters& metricsParams ) {
-
-  namespace po = df::program_options_lite;
-  bool print_help = false;
+bool parseParameters( int argc, char* argv[], PCCMetricsParameters& metricsParams ) {
+  namespace po      = df::program_options_lite;
+  bool   print_help = false;
   size_t ignore;
 
   // The definition of the program/config options, along with default values.
@@ -103,90 +95,69 @@ bool parseParameters(int argc, char *argv[], PCCMetricsParameters& metricsParams
   // clang-format off
   po::Options opts;
   opts.addOptions()
-    ("help", print_help, false, "This help text")
-
-    ("computeChecksum",
-     metricsParams.computeChecksum_,
-     metricsParams.computeChecksum_,
-     "Compute checksum")
-
-    ("computeMetrics",
-      metricsParams.computeMetrics_,
-      metricsParams.computeMetrics_,
-     "Compute metrics")
+    ( "help", print_help, false, "This help text" )
+    ( "computeChecksum", metricsParams.computeChecksum_, metricsParams.computeChecksum_, "Compute checksum" )
+    ( "computeMetrics", metricsParams.computeMetrics_, metricsParams.computeMetrics_, "Compute metrics" )
 
     // sequence configuration
-    ("startFrameNumber",
-     metricsParams.startFrameNumber_,
-     metricsParams.startFrameNumber_,
-     "Fist frame number in sequence to encode/decode")
+    ( "startFrameNumber",
+      metricsParams.startFrameNumber_,
+      metricsParams.startFrameNumber_,
+      "Fist frame number in sequence to encode/decode" )
 
-    ("frameCount",
-     metricsParams.frameCount_,
-     metricsParams.frameCount_,
-     "Number of frames to encode")
+    ( "frameCount",  metricsParams.frameCount_, metricsParams.frameCount_, "Number of frames to encode" )
 
-    ("uncompressedDataPath",
-     metricsParams.uncompressedDataPath_,
-     metricsParams.uncompressedDataPath_,
-     "Input pointcloud to encode. Multi-frame sequences may be represented by %04i")
+    ( "uncompressedDataPath",
+      metricsParams.uncompressedDataPath_,
+      metricsParams.uncompressedDataPath_,
+      "Input pointcloud to encode. Multi-frame sequences may be represented by %04i" )
 
-    ("reconstructedDataPath",
-     metricsParams.reconstructedDataPath_,
-     metricsParams.reconstructedDataPath_,
-     "Output decoded pointcloud. Multi-frame sequences may be represented by %04i")
+    ( "reconstructedDataPath",
+      metricsParams.reconstructedDataPath_,
+      metricsParams.reconstructedDataPath_,
+      "Output decoded pointcloud. Multi-frame sequences may be represented by %04i" )
 
-    ("normalDataPath",
-     metricsParams.normalDataPath_,
-     metricsParams.normalDataPath_,
-     "Input pointcloud to encode. Multi-frame sequences may be represented by %04i")
+    ( "normalDataPath",
+      metricsParams.normalDataPath_,
+      metricsParams.normalDataPath_,
+      "Input pointcloud to encode. Multi-frame sequences may be represented by %04i" )
 
-    ("resolution",
-     metricsParams.resolution_,
-     metricsParams.resolution_,
-     "Specify the intrinsic resolution")
+    ( "resolution", metricsParams.resolution_, metricsParams.resolution_, "Specify the intrinsic resolution" )
 
-    ("dropdups",
-     metricsParams.dropDuplicates_,
-     metricsParams.dropDuplicates_,
-     "0(detect), 1(drop), 2(average) subsequent points with same coordinates")
+    ( "dropdups",
+      metricsParams.dropDuplicates_,
+      metricsParams.dropDuplicates_,
+      "0(detect), 1(drop), 2(average) subsequent points with same coordinates" )
 
-    ("neighborsProc",
-     metricsParams.neighborsProc_,
-     metricsParams.neighborsProc_,
-     "0(undefined), 1(average), 2(weighted average), 3(min), 4(max) neighbors with same geometric distance")
+    ( "neighborsProc",
+      metricsParams.neighborsProc_,
+      metricsParams.neighborsProc_,
+      "0(undefined), 1(average), 2(weighted average), 3(min), 4(max) neighbors with same geometric distance" )
 
-    ("nbThread",
-     metricsParams.nbThread_,
-     metricsParams.nbThread_,
-     "Number of thread used for parallel processing")
+    ( "nbThread", metricsParams.nbThread_,metricsParams.nbThread_,"Number of thread used for parallel processing" )
 
-     ("minimumImageHeight",    ignore, ignore, "Ignore parameter")
-     ("flagColorPreSmoothing", ignore, ignore, "Ignore parameter")
-     ("surfaceSeparation",     ignore, ignore, "Ignore parameter");
+    ( "minimumImageHeight",    ignore, ignore, "Ignore parameter" )
+    ( "flagColorPreSmoothing", ignore, ignore, "Ignore parameter" )
+    ( "surfaceSeparation",     ignore, ignore, "Ignore parameter" );
 
   // clang-format on
-  po::setDefaults(opts);
-  po::ErrorReporter err;
-  const list<const char *> &argv_unhandled = po::scanArgv(opts, argc, (const char **)argv, err);
+  po::setDefaults( opts );
+  po::ErrorReporter        err;
+  const list<const char*>& argv_unhandled = po::scanArgv( opts, argc, (const char**)argv, err );
 
-  for (const auto arg : argv_unhandled) {
-    err.warn() << "Unhandled argument ignored: " << arg << "\n";
-  }
-  if (argc == 1 || print_help) {
+  for ( const auto arg : argv_unhandled ) { err.warn() << "Unhandled argument ignored: " << arg << "\n"; }
+  if ( argc == 1 || print_help ) {
     po::doHelp( std::cout, opts, 78 );
     return false;
   }
 
   metricsParams.completePath();
   metricsParams.print();
-  if( !metricsParams.check( true  ) ) {
-    err.error() << "Input parameters are not correct \n";
-  }
+  if ( !metricsParams.check( true ) ) { err.error() << "Input parameters are not correct \n"; }
 
   // report the current configuration (only in the absence of errors so
   // that errors/warnings are more obvious and in the same place).
-  if (err.is_errored) return false;
+  if ( err.is_errored ) return false;
 
   return true;
 }
