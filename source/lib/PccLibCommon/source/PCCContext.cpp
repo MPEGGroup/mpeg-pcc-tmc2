@@ -86,7 +86,7 @@ size_t PCCContext::getNumRefIdxActive( AtlasTileGroupHeader& atgh ) {
     } else {
       auto& refList = atgh.getRefListStruct();
       numRefIdxActive =
-          (size_t)std::min( (int)refList.getNumRefEntries(), (int)afps.getAfpsNumRefIdxDefaultActiveMinus1() + 1 );
+          (size_t)(std::min)( (int)refList.getNumRefEntries(), (int)afps.getAfpsNumRefIdxDefaultActiveMinus1() + 1 );
     }
   }
   return numRefIdxActive;

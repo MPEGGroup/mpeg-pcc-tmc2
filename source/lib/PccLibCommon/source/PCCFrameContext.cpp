@@ -79,9 +79,9 @@ PCCFrameContext::~PCCFrameContext() {
 }
 
 void PCCFrameContext::setRefAFOCList( std::vector<std::vector<size_t>>& list ) {
-  size_t listSize = std::min( refAFOCList_.size(), list.size() );
+  size_t listSize = (std::min)( refAFOCList_.size(), list.size() );
   for ( size_t i = 0; i < listSize; i++ ) {
-    size_t refSize = std::min( refAFOCList_[i].size(), list[i].size() );
+    size_t refSize = (std::min)( refAFOCList_[i].size(), list[i].size() );
     for ( size_t j = 0; j < refSize; j++ ) refAFOCList_[i][j] = list[i][j];
   }
 }

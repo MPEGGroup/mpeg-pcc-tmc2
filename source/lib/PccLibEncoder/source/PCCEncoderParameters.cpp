@@ -829,7 +829,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   }
   // auto& afps  = context.addAtalsFrameParameterSet(0);
   afps.setAtlasSequenceParameterSetId( 0 );
-  afps.setAfpsNumRefIdxDefaultActiveMinus1( (uint8_t) std::max(0, (int)maxNumRefAtlasFrame_- 1) );
+  afps.setAfpsNumRefIdxDefaultActiveMinus1( (uint8_t) (std::max)(0, (int)maxNumRefAtlasFrame_- 1) );
   afps.setAfpsAdditionalLtAfocLsbLen( 4 );
   afps.setAfps2dPosXBitCountMinus1( 0 );
   afps.setAfps2dPosYBitCountMinus1( 0 );

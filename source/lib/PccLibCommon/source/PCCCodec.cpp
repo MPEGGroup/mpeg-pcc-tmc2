@@ -2386,6 +2386,6 @@ PCCPatchType PCCCodec::getCurrPatchType( PCCTILEGROUP tileGroupType, uint8_t pat
               ( tileGroupType == P_TILE_GRP && patchMode == (uint8_t)PATCH_MODE_P_END ) ) {
     return END_PATCH;
   } else {
-    return ERROR;
+    return ERROR_PATCH;
   }
 }

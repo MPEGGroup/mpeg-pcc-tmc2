@@ -947,12 +947,12 @@ double   PCCEncoder::adjustReferenceAtlasFrame(PCCContext& context, PCCFrameCont
   //initialization
   size_t maxU0=0, maxV0=0, maxU1=0, maxV1=0, maxD1=0, maxDD;
   for(size_t patchIdx=0; patchIdx<curPatchCount; patchIdx++){
-    maxU0 = std::max (maxU0,curPatches[patchIdx].getU0());
-    maxV0 = std::max (maxV0,curPatches[patchIdx].getV0());
-    maxU1 = std::max (maxU0,curPatches[patchIdx].getU1());
-    maxV1 = std::max (maxU0,curPatches[patchIdx].getV1());
-    maxD1 = std::max (maxU0,curPatches[patchIdx].getD1());
-    maxDD =std::max (maxU0,curPatches[patchIdx].getSizeD());
+    maxU0 = (std::max) (maxU0,curPatches[patchIdx].getU0());
+    maxV0 = (std::max) (maxV0,curPatches[patchIdx].getV0());
+    maxU1 = (std::max) (maxU0,curPatches[patchIdx].getU1());
+    maxV1 = (std::max) (maxU0,curPatches[patchIdx].getV1());
+    maxD1 = (std::max) (maxU0,curPatches[patchIdx].getD1());
+    maxDD = (std::max) (maxU0,curPatches[patchIdx].getSizeD());
   }
   uint8_t bitMaxU0  = uint8_t( getFixedLengthCodeBitsCount( uint32_t( maxU0 + 1 ) ) );
   uint8_t bitMaxV0  = uint8_t( getFixedLengthCodeBitsCount( uint32_t( maxV0 + 1 ) ) );

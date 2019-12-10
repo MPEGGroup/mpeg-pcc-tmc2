@@ -2877,9 +2877,9 @@ class PCCContext {
     refAtlasFrameList_[listIndex][refIndex] = value;
   }
   void setRefAtlasFrameList( std::vector<std::vector<int32_t>>& list ) {
-    size_t listSize = std::min( refAtlasFrameList_.size(), list.size() );
+    size_t listSize = (std::min)( refAtlasFrameList_.size(), list.size() );
     for ( size_t i = 0; i < listSize; i++ ) {
-      size_t refSize = std::min( refAtlasFrameList_[i].size(), list[i].size() );
+      size_t refSize = (std::min)( refAtlasFrameList_[i].size(), list[i].size() );
       for ( size_t j = 0; j < refSize; j++ ) refAtlasFrameList_[i][j] = list[i][j];
     }
   }
