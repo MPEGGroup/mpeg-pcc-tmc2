@@ -163,7 +163,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   // level of detail
   levelOfDetailX_    = 1;
   levelOfDetailY_    = 1;
-  testLevelOfDetail_ = 0;
+  // testLevelOfDetail_ = 0;
 
   // Flexible Patch Packing
   packingStrategy_      = 1;

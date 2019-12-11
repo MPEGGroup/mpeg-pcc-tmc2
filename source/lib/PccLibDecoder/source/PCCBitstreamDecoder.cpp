@@ -50,9 +50,11 @@ PCCBitstreamDecoder::~PCCBitstreamDecoder() {}
 
 // B.2  Sample stream V-PCC unit syntax
 // sample_stream_vpcc_header + sample_stream_vpcc_unit() sample_stream_vpcc_unit() sample_stream_vpcc_unit() ...
-void PCCBitstreamDecoder::read( PCCBitstream& bitstream, SampleStreamVpccUnit& ssvu ) {
+size_t PCCBitstreamDecoder::read( PCCBitstream& bitstream, SampleStreamVpccUnit& ssvu ) {
+  size_t headerSize = 0; 
   TRACE_BITSTREAM( "PCCBitstreamXXcoder: SampleStream Vpcc Unit start \n" );
   sampleStreamVpccHeader( bitstream, ssvu );
+  headerSize++;
   TRACE_BITSTREAM( "UnitSizePrecisionBytesMinus1 %d <=> %d / 8 - 1\n", ssvu.getSsvhUnitSizePrecisionBytesMinus1() + 1,
                    getFixedLengthCodeBitsCount( ssvu.getSsvhUnitSizePrecisionBytesMinus1() + 1 ) );
 
@@ -60,12 +62,55 @@ void PCCBitstreamDecoder::read( PCCBitstream& bitstream, SampleStreamVpccUnit& s
   while ( bitstream.moreData() ) {
     auto& vpccUnit = ssvu.addVpccUnit();
     sampleStreamVpccUnit( bitstream, ssvu, vpccUnit );
-
     TRACE_BITSTREAM( "V-PCC Unit Size(%zuth/%zu)  = %lu \n", unitCount, ssvu.getVpccUnitCount(),
                      vpccUnit.getVpccUnitSize() );
     unitCount++;
+    headerSize += ssvu.getSsvhUnitSizePrecisionBytesMinus1() + 1;
   }
   TRACE_BITSTREAM( "PCCBitstreamXXcoder: SampleStream Vpcc Unit start done \n" );
+  return headerSize;
+}
+
+// B.2 Sample stream V-PCC unit syntax and semantics
+// B.2.1 Sample stream V-PCC header syntax
+void PCCBitstreamDecoder::sampleStreamVpccHeader( PCCBitstream& bitstream, SampleStreamVpccUnit& ssvu ) {
+  TRACE_BITSTREAM( "%s \n", __func__ );
+  ssvu.setSsvhUnitSizePrecisionBytesMinus1( bitstream.read( 3 ) );  // u(3)
+  bitstream.read( 5 );                                              // u(5)
+  printf("BITSTREAM: sampleStreamVpccHeader read : 3 + 8 b = 1 B\n "); fflush(stdout);
+}
+
+// B.2.2 Sample stream NAL unit syntax
+void PCCBitstreamDecoder::sampleStreamVpccUnit( PCCBitstream& bitstream, SampleStreamVpccUnit& ssvu, VpccUnit& vpccu ) {
+  TRACE_BITSTREAM( "%s \n", __func__ );
+  vpccu.setVpccUnitSize( bitstream.read( 8 * ( ssvu.getSsvhUnitSizePrecisionBytesMinus1() + 1 ) ) );  // u(v)
+  printf("BITSTREAM: sampleStreamVpccHeader read : 8 * ( %u + 1 ) b = %u B\n ", ssvu.getSsvhUnitSizePrecisionBytesMinus1(), ssvu.getSsvhUnitSizePrecisionBytesMinus1() + 1); fflush(stdout);
+#if VPCCUNIT_DATA_BITSTREAM
+  auto pos = bitstream.getPosition();
+  vpccu.getVpccUnitDataBitstream().copyFrom( bitstream, pos.bytes, vpccu.getVpccUnitSize() );
+  // jkei: find vpccUnitType for the sanity check!
+  uint8_t      vpccUnitType8 = vpccu.getVpccUnitDataBitstream().buffer()[0];
+  VPCCUnitType vpccUnitType  = ( VPCCUnitType )( vpccUnitType8 >>= 3 );
+#else
+  vpccu.allocate();
+  auto pos = bitstream.getPosition();
+  vpccu.initialize( vpccu.getVpccUnitSize(), bitstream.buffer() + pos.bytes, NUM_VPCC_UNIT_TYPE );
+
+  // jkei: find vpccUnitType for the sanity check!
+  uint8_t vpccUnitType8 = vpccu.getVpccUnitData( 0 );
+  VPCCUnitType vpccUnitType = ( VPCCUnitType )( vpccUnitType8 >>= 3 );
+#endif
+  vpccu.setVpccUnitType( vpccUnitType );
+  TRACE_BITSTREAM( "vpccUnitType: %hhu VpccUnitSize: %zu\n", vpccUnitType8, vpccu.getVpccUnitSize() );
+//#ifdef BITSTREAM_TRACE
+//  for ( size_t i = 0; i < vpccu.getVpccUnitSize(); i++ ) {
+//     bitstream.trace( "FullStream: CodU[ 8]:    %zu\n", size_t( vpccu.getVpccUnitData( i ) ) );  // b(8)
+//  }
+//#endif
+#if !VPCCUNIT_DATA_BITSTREAM
+  pos.bytes += vpccu.getVpccUnitSize();
+  bitstream.setPosition( pos );
+#endif
 }
 
 int32_t PCCBitstreamDecoder::decode( SampleStreamVpccUnit& ssvu, PCCContext& context ) {
@@ -1232,47 +1277,6 @@ void PCCBitstreamDecoder::nalUnitHeader( PCCBitstream& bitstream, NalUnit& nalUn
   TRACE_BITSTREAM( " NalUnitType      = %hhu \n", nalUnit.getNalUnitType() );
   TRACE_BITSTREAM( " LayerId          = %hhu \n", nalUnit.getLayerId() );
   TRACE_BITSTREAM( " TemporalyIdPlus1 = %hhu \n", nalUnit.getTemporalyIdPlus1() );
-}
-
-// B.2 Sample stream V-PCC unit syntax and semantics
-// B.2.1 Sample stream V-PCC header syntax
-void PCCBitstreamDecoder::sampleStreamVpccHeader( PCCBitstream& bitstream, SampleStreamVpccUnit& ssvu ) {
-  TRACE_BITSTREAM( "%s \n", __func__ );
-  ssvu.setSsvhUnitSizePrecisionBytesMinus1( bitstream.read( 3 ) );  // u(3)
-  bitstream.read( 5 );                                              // u(5)
-}
-
-// B.2.2 Sample stream NAL unit syntax
-void PCCBitstreamDecoder::sampleStreamVpccUnit( PCCBitstream& bitstream, SampleStreamVpccUnit& ssvu, VpccUnit& vpccu ) {
-  TRACE_BITSTREAM( "%s \n", __func__ );
-  vpccu.setVpccUnitSize( bitstream.read( 8 * ( ssvu.getSsvhUnitSizePrecisionBytesMinus1() + 1 ) ) );  // u(v)
-#if VPCCUNIT_DATA_BITSTREAM
-  auto pos = bitstream.getPosition();
-  vpccu.getVpccUnitDataBitstream().copyFrom( bitstream, pos.bytes, vpccu.getVpccUnitSize() );
-  // jkei: find vpccUnitType for the sanity check!
-  uint8_t      vpccUnitType8 = vpccu.getVpccUnitDataBitstream().buffer()[0];
-  VPCCUnitType vpccUnitType  = ( VPCCUnitType )( vpccUnitType8 >>= 3 );
-#else
-  vpccu.allocate();
-  auto pos = bitstream.getPosition();
-  vpccu.initialize( vpccu.getVpccUnitSize(), bitstream.buffer() + pos.bytes, NUM_VPCC_UNIT_TYPE );
-
-  // jkei: find vpccUnitType for the sanity check!
-  uint8_t vpccUnitType8 = vpccu.getVpccUnitData( 0 );
-  VPCCUnitType vpccUnitType = ( VPCCUnitType )( vpccUnitType8 >>= 3 );
-#endif
-  vpccu.setVpccUnitType( vpccUnitType );
-  TRACE_BITSTREAM( "vpccUnitType: %hhu VpccUnitSize: %zu\n", vpccUnitType8, vpccu.getVpccUnitSize() );
-//#ifdef BITSTREAM_TRACE
-//  for ( size_t i = 0; i < vpccu.getVpccUnitSize(); i++ ) {
-//     bitstream.trace( "FullStream: CodU[ 8]:    %zu\n", size_t( vpccu.getVpccUnitData( i ) ) );  // b(8)
-//  }
-//#endif
-#if !VPCCUNIT_DATA_BITSTREAM
-
-  pos.bytes += vpccu.getVpccUnitSize();
-  bitstream.setPosition( pos );
-#endif
 }
 
 // C.2 Sample stream NAL unit syntax and semantics

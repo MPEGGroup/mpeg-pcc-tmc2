@@ -630,10 +630,10 @@ bool parseParameters( int                   argc,
       encoderParams.levelOfDetailY_,
       "levelOfDetail : Y axis in 2D space (should be greater than 1)" )
 
-    ( "testLevelOfDetail",
-      encoderParams.testLevelOfDetail_,
-      encoderParams.testLevelOfDetail_,
-      "testLevelOfDetail : 1.scaling in 3D space" )
+    // ( "testLevelOfDetail",
+    //   encoderParams.testLevelOfDetail_,
+    //   encoderParams.testLevelOfDetail_,
+    //   "testLevelOfDetail : 1.scaling in 3D space" )
 
     ( "groupDilation",
       encoderParams.groupDilation_,
@@ -971,7 +971,7 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
     PCCContext   context;
     context.setBitstreamStat( bitstreamStat );
     context.addVpccParameterSet( contextIndex );
-    context.getSps( contextIndex ).setVpccParameterSetId( contextIndex );
+    // context.getSps( contextIndex ).setVpccParameterSetId( contextIndex );
 
     PCCGroupOfFrames sources, reconstructs;
     if ( !sources.load( encoderParams.uncompressedDataPath_, startFrameNumber, endFrameNumber,
@@ -1026,11 +1026,12 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
   bitstream.writeHeader();  // JR TODO: must be removed?
   bitstreamStat.setHeader( bitstream.size() );
   PCCBitstreamEncoder bitstreamEncoder;
-  bitstreamEncoder.write( ssvu, bitstream );
+  size_t headerSize = bitstreamEncoder.write( ssvu, bitstream );
+  bitstreamStat.incrHeader( headerSize );
+  bitstream.write( encoderParams.compressedStreamPath_ );
 
   bitstreamStat.trace();
   std::cout << "Total bitstream size " << bitstream.size() << " B" << std::endl;
-  bitstream.write( encoderParams.compressedStreamPath_ );
 
   if ( metricsParams.computeMetrics_ ) { metrics.display(); }
   bool checksumEqual = true;

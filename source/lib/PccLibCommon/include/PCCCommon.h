@@ -65,25 +65,23 @@
 #include "PCCChrono.h"
 #endif
 
-#define NO_PCM_INOCM 0
-#define BUGFIX_FIRSTEDDatT1 1
 #define POSTSMOOTHING_RGB2YUV 0
 #define ATLASIDXPCC 0
-
-#define MULTISTREAM_UPDATE 1       // prevent overflow for the lossless absolute case
 #define VPCCUNIT_DATA_BITSTREAM 1  // jkei: bitstream instead of data
 
-//#define DEBUG_SURFACE_SEPARATION
-#define ONELAYERFIX 1
-#define DEBUG_MULTI_STREAMS
+// Segmentation
+#define BUGFIX_FIRSTEDDatT1 1    
+#define ONELAYERFIX         1    
+#define MULTISTREAM_UPDATE  1    
+#define DEBUG_MULTI_STREAMS  
+// #define DEBUG_SURFACE_SEPARATION   
 
 // ******************************************************************* //
 // Trace modes to validate new syntax
 // ******************************************************************* //
-#define BITSTREAM_TRACE
-#define CODEC_TRACE
-// #define DEBUG_TRACE_UVF
-// ENABLE_LAST_PATCH : jkei: removed
+// #define BITSTREAM_TRACE
+// #define CODEC_TRACE 
+
 namespace pcc {
 
 // ******************************************************************* //

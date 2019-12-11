@@ -801,7 +801,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
                   size_t   pointIndex1     = 0;
 #if ONELAYERFIX
                   for ( uint16_t i = 0; i < 10; i++ ) {
-                    if ( eddCode & ( 1 << i ) ) d1pos = i;
+                    if ( eddCode & ( 1 << i ) ){ d1pos = i; }
                   }
 #endif
                   for ( uint16_t i = 0; i < 10; i++ ) {
@@ -813,11 +813,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
                         point1[patch.getNormalAxis()] = (double)( point0[patch.getNormalAxis()] - deltaDCur );
                       }
 #if BUGFIX_FIRSTEDDatT1
-#if 0  // ONELAYERFIX
-                      if ( eddCode == 1 || i == d1pos )
-#else
                       if ( ( eddCode == 1 || i == d1pos ) && ( params.mapCountMinus1_ > 0 ) )
-#endif
 #else
                       if ( addedPointCount == 0 && params.mapCountMinus1_ > 0 )
 #endif

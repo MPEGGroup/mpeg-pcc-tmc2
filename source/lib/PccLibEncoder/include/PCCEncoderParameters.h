@@ -174,7 +174,7 @@ class PCCEncoderParameters {
   // patch sampling resolution
   size_t      levelOfDetailX_;
   size_t      levelOfDetailY_;
-  size_t      testLevelOfDetail_;
+  // size_t      testLevelOfDetail_;
   std::string geometryConfig_;
   std::string geometryD0Config_;
   std::string geometryD1Config_;

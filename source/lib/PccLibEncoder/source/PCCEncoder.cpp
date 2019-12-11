@@ -4638,7 +4638,7 @@ bool PCCEncoder::generateGeometryVideo( const PCCGroupOfFrames& sources, PCCCont
   params.geometryBitDepth3D                   = params_.geometry3dCoordinatesBitdepth_;
   params.EOMFixBitCount                       = params_.EOMFixBitCount_;
   params.EOMSingleLayerMode                   = params_.enhancedDeltaDepthCode_ && ( params_.mapCountMinus1_ == 0 );
-  params.testLevelOfDetail                    = params_.testLevelOfDetail_;
+  // params.testLevelOfDetail                    = params_.testLevelOfDetail_;
   params.patchExpansion                       = params_.patchExpansion_;
   params.highGradientSeparation               = params_.highGradientSeparation_;
   params.minGradient                          = params_.minGradient_;

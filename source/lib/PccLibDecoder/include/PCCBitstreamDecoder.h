@@ -88,16 +88,7 @@ class PCCBitstreamDecoder {
   PCCBitstreamDecoder();
   ~PCCBitstreamDecoder();
 
-  // // JR: OLD
-  // int32_t decode_old( PCCBitstream& bitstream, PCCContext& context );
-
-  // // JR: NEW -> OLD
-  // int32_t decode_old2( SampleStreamNalUnit& ssnu, PCCContext& context );
-
-  // DBG: NEWER
-  void read( PCCBitstream& bitstream, SampleStreamVpccUnit& ssvu );
-  void read( PCCBitstream& bitstream, PCCContext& context, SampleStreamVpccUnit& ssvu );
-
+  size_t read( PCCBitstream& bitstream, SampleStreamVpccUnit& ssvu );
   int32_t decode( SampleStreamVpccUnit& ssvu, PCCContext& context );
 
 #ifdef BITSTREAM_TRACE

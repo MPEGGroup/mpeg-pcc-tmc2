@@ -277,7 +277,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
   bool              useSurfaceSeparation                 = params.surfaceSeparation;
   const size_t      additionalProjectionAxis             = params.additionalProjectionPlaneMode;
   const size_t      geometryBitDepth3D                   = params.geometryBitDepth3D;
-  const size_t      testLevelOfDetail                    = params.testLevelOfDetail;
+  // const size_t      testLevelOfDetail                    = params.testLevelOfDetail;
   bool              patchExpansionEnabled                = params.patchExpansion;
   const bool        highGradientSeparation               = params.highGradientSeparation;
   const double      minGradient                          = params.minGradient;

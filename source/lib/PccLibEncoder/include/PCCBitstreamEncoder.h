@@ -85,10 +85,10 @@ class PCCBitstreamEncoder {
   PCCBitstreamEncoder();
   ~PCCBitstreamEncoder();
 
-  int  write( SampleStreamNalUnit& ssnu, PCCBitstream& bitstream );
-  int  write( SampleStreamVpccUnit& ssvu, PCCBitstream& bitstream );
-  int  encode( PCCContext& context, SampleStreamVpccUnit& ssvu );
-  void setParameters( PCCEncoderParameters params );
+  int32_t write( SampleStreamNalUnit& ssnu, PCCBitstream& bitstream );
+  size_t  write( SampleStreamVpccUnit& ssvu, PCCBitstream& bitstream );
+  int     encode( PCCContext& context, SampleStreamVpccUnit& ssvu );
+  void    setParameters( PCCEncoderParameters params );
 
 #ifdef BITSTREAM_TRACE
   void setTraceFile( FILE* traceFile ) { traceFile_ = traceFile; }
