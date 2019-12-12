@@ -199,8 +199,8 @@ class PCCPatch {
   std::vector<int16_t>&       getDepthEnhancedDeltaD() { return depthEnhancedDeltaD_; }
   const std::vector<int16_t>& getDepthEnhancedDeltaD() const { return depthEnhancedDeltaD_; }
   const size_t&               getAxisOfAdditionalPlane() const { return axisOfAdditionalPlane_; }
-  const std::vector<int64_t>& getdepth0pccidx() const { return depth0PCidx_; }
-  std::vector<int64_t>&       getdepth0pccidx() { return depth0PCidx_; }
+  const std::vector<int64_t>& getDepth0PccIdx() const { return depth0PCidx_; }
+  std::vector<int64_t>&       getDepth0PccIdx() { return depth0PCidx_; }
   bool&                       getIsRoiPatch() { return isRoiPatch_; }
   size_t&                     getRoiIndex() { return roiIndex_; }
   // Flexible Patch Orientation
@@ -1229,11 +1229,11 @@ struct PCCEDDInfosPerPatch {
 };
 
 struct PCCEomPatch {
-  size_t u0_;
-  size_t v0_;
-  size_t sizeU_;
-  size_t sizeV_;
-  size_t eddCount_;  // in this EomPatch
+  size_t              u0_;
+  size_t              v0_;
+  size_t              sizeU_;
+  size_t              sizeV_;
+  size_t              eddCount_;  // in this EomPatch
   std::vector<size_t> memberPatches;
   std::vector<size_t> eddCountPerPatch;
 };

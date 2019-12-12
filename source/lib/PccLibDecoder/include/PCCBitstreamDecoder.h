@@ -88,7 +88,7 @@ class PCCBitstreamDecoder {
   PCCBitstreamDecoder();
   ~PCCBitstreamDecoder();
 
-  size_t read( PCCBitstream& bitstream, SampleStreamVpccUnit& ssvu );
+  size_t  read( PCCBitstream& bitstream, SampleStreamVpccUnit& ssvu );
   int32_t decode( SampleStreamVpccUnit& ssvu, PCCContext& context );
 
 #ifdef BITSTREAM_TRACE
@@ -96,11 +96,7 @@ class PCCBitstreamDecoder {
 #endif
  private:
   // 7.3.2.1 General V-PCC unit syntax
-#if VPCCUNIT_DATA_BITSTREAM
   void vpccUnit( PCCContext& context, VpccUnit& currVpccUnit, VPCCUnitType& vpccUnitType );
-#else
-  void vpccUnit( PCCContext& context, PCCBitstream& bitstream, VPCCUnitType& vpccUnitType );
-#endif
 
   // 7.3.2.2 V-PCC unit header syntax
   void vpccUnitHeader( PCCContext& context, PCCBitstream& bitstream, VPCCUnitType& vpccUnitType );
@@ -147,7 +143,7 @@ class PCCBitstreamDecoder {
   void atlasSequenceParameterSetRBSP( AtlasSequenceParameterSetRBSP& asps,
                                       PCCContext&                    context,
                                       PCCBitstream&                  bitstream );
-  // 7.3.6.2  Point local reconstruction information syntax (NEW, comes from below)
+  // 7.3.6.2  Point local reconstruction information syntax
   void pointLocalReconstructionInformation( AtlasSequenceParameterSetRBSP& asps,
                                             PCCContext&                    context,
                                             PCCBitstream&                  bitstream );
@@ -235,20 +231,8 @@ class PCCBitstreamDecoder {
   // 7.3.8 Supplemental enhancement information message syntax
   void seiMessage( PCCBitstream& bitstream, PCCContext& context, NalUnitType nalUnitType );
 
-  // jkei: <------- added up to this pointOLD PST.Oct30th
-  void atlasSubStream( PCCContext& context, PCCBitstream& bitstream );
-  // jkei: <------- added up to this pointOLD PST.Nov1st
-
-  // jkei: OLD--->
   // 7.3.5.1 General patch data group unit syntax
-  // void atlasSubStream_old( PCCContext& context, PCCBitstream& bitstream );
-
-  // 7.3.5.2 Patch data group unit payload syntax
-  // void atlasSubStreamUnitPayload( PatchDataGroup& atlasSubStream,
-  //                                 PDGUnitType     unitType,
-  //                                 size_t          frameIndex,
-  //                                 PCCContext&     context,
-  //                                 PCCBitstream&   bitstream );
+  void atlasSubStream( PCCContext& context, PCCBitstream& bitstream );
 
   // 7.3.5.3 Patch sequence parameter set syntax
   void patchVpccParameterSet( PatchDataGroup& pdg, PCCBitstream& bitstream );
@@ -305,15 +289,10 @@ class PCCBitstreamDecoder {
                              PCCContext&           context,
                              PCCBitstream&         bitstream );
 
-  // 7.3.5.15 Reference list structure syntax (OLD)
+  // 7.3.5.15 Reference list structure syntax
   void refListStruct( RefListStruct&         refListStruct,
                       PatchVpccParameterSet& patchVpccParameterSet,
                       PCCBitstream&          bitstream );
-
-  // 7.3.5.15 Reference list structure syntax (NEW: jkei: this went up)
-  // void  refListStruct( RefListStruct&             rls,
-  //                    AtlasSequenceParameterSetRBSP& asps,
-  //                    PCCBitstream&              bitstream );
 
   // 7.3.5.16 Patch frame data unit syntax
   void patchTileGroupDataUnit( PatchTileGroupDataUnit& ptgdu,
@@ -349,13 +328,11 @@ class PCCBitstreamDecoder {
                          PCCContext&           context,
                          PCCBitstream&         bitstream );
 
-  // 7.3.5.21 Point local reconstruction syntax (OLD)
+  // 7.3.5.21 Point local reconstruction syntax
   void pointLocalReconstructionInformation( PointLocalReconstructionInformation& plri,
                                             PCCContext&                          context,
                                             PCCBitstream&                        bitstream );
 
-  // JR TODO: continue
-  // jkei : added PST:Nov1st
   // B.2  Sample stream V-PCC unit syntax and semantics
   // B.2.1  Sample stream V-PCC header syntax
   void sampleStreamVpccHeader( PCCBitstream& bitstream, SampleStreamVpccUnit& ssvu );

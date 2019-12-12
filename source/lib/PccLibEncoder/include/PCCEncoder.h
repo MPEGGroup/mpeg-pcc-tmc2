@@ -116,7 +116,6 @@ class PCCEncoder : public PCCCodec {
   ~PCCEncoder();
   void setParameters( PCCEncoderParameters params );
 
-  // JR: NEW
   int encode( const PCCGroupOfFrames& sources,
               PCCContext&             context,
               SampleStreamVpccUnit&   ssvu,
@@ -169,12 +168,12 @@ class PCCEncoder : public PCCCodec {
   void dilate( PCCFrameContext& frame, PCCImage<T, 3>& image, const PCCImage<T, 3>* reference = nullptr );
 
   // 3D geometry padding
-  void   dilate_3DPadding( const PCCPointSet3&     source,
+  void   dilate3DPadding( const PCCPointSet3&     source,
                            PCCFrameContext&        frame,
                            PCCImageGeometry&       image,
                            PCCImageOccupancyMap&   occupancyMap,
                            const PCCImageGeometry* reference = nullptr );
-  size_t adjust_depth_3DPadding( size_t            x,
+  size_t adjustDepth3DPadding( size_t            x,
                                  size_t            y,
                                  uint16_t          mean_val,
                                  PCCImageGeometry& image,
@@ -241,15 +240,7 @@ class PCCEncoder : public PCCCodec {
   // GTP
   void findMatchesForGlobalTetrisPacking( PCCFrameContext& frame, PCCFrameContext& prevFrame );
   void doGlobalTetrisPacking( PCCContext& context );
-
   void generateOccupancyMap( PCCFrameContext& frameContext );
-#if NO_Raw_INOCM
-  bool modifyOccupancyMap( PCCContext& context );
-#endif
-  // jkei: not used
-  // void modifyOccupancyMap( PCCFrameContext& frame, const PCCImageGeometry& imageRef, const PCCImageGeometry& image );
-  void modifyOccupancyMap1L( PCCFrameContext& frame );
-  //
   void refineOccupancyMap( PCCFrameContext& frame );
   void printMap( std::vector<bool> img, const size_t sizeU, const size_t sizeV );
   void printMapTetris( std::vector<bool> img, const size_t sizeU, const size_t sizeV, std::vector<int> horizon );
@@ -304,6 +295,7 @@ class PCCEncoder : public PCCCodec {
 
   // perform data-adaptive GPA method;
   void performDataAdaptiveGPAMethod( PCCContext& context );
+
   // start a subContext;
   void initializeSubContext( PCCFrameContext& frameContext,
                              SubContext&      subContext,
@@ -315,6 +307,7 @@ class PCCEncoder : public PCCCodec {
                               size_t         frameIndex,
                               GlobalPatches& globalPatchTracks,
                               size_t         preIndex );
+
   // patch unions generation and packing; return the height of the unionsPackingImage;
   size_t unionPatchGenerationAndPacking( const GlobalPatches& globalPatchTracks,
                                          PCCContext&          context,
@@ -324,6 +317,7 @@ class PCCEncoder : public PCCCodec {
                                          bool                 useRefFrame = false );
   // update patch information;
   void updateGPAPatchInformation( PCCContext& context, SubContext& subContext, unionPatch& unionPatch );
+
   // perform data-adaptive gpa packing;
   void performGPAPacking( const SubContext& subContext,
                           unionPatch&       unionPatch,
@@ -350,7 +344,7 @@ class PCCEncoder : public PCCCodec {
                                                     std::vector<bool>& occupancyMap,
                                                     size_t&            heightGPA,
                                                     size_t&            widthGPA,
-                                                    size_t&            maxOccupancyRow );  // GPA_HARMONIZATION
+                                                    size_t&            maxOccupancyRow );
 
   void packingWithRefForFirstFrameNoglobalPatch( PCCPatch&                   patch,
                                                  const std::vector<PCCPatch> prePatches,
@@ -363,7 +357,7 @@ class PCCEncoder : public PCCCodec {
                                                  std::vector<bool>&          occupancyMap,
                                                  size_t&                     heightGPA,
                                                  size_t&                     widthGPA,
-                                                 size_t&                     maxOccupancyRow );  // GPA_HARMONIZATION
+                                                 size_t&                     maxOccupancyRow );
 
   void setPointLocalReconstruction( PCCContext& context );
 

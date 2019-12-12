@@ -161,9 +161,8 @@ PCCEncoderParameters::PCCEncoderParameters() {
   surfaceSeparation_          = false;
 
   // level of detail
-  levelOfDetailX_    = 1;
-  levelOfDetailY_    = 1;
-  // testLevelOfDetail_ = 0;
+  levelOfDetailX_ = 1;
+  levelOfDetailY_ = 1;
 
   // Flexible Patch Packing
   packingStrategy_      = 1;
@@ -275,7 +274,7 @@ void PCCEncoderParameters::print() {
   std::cout << "\t qpT1                                     " << qpAdjT1_ << std::endl;
   std::cout << "\t constrainedPack                          " << constrainedPack_ << std::endl;
   std::cout << "\t deltaCoding                              " << deltaCoding_ << std::endl;
-  std::cout<< "\t  maxNumRefPatchList                       " << maxNumRefAtlasList_ << std::endl;
+  std::cout << "\t  maxNumRefPatchList                       " << maxNumRefAtlasList_ << std::endl;
   std::cout << "\t maxNumRefIndex                           " << maxNumRefAtlasFrame_ << std::endl;
   std::cout << "\t Segmentation" << std::endl;
   std::cout << "\t   nnNormalEstimation                     " << nnNormalEstimation_ << std::endl;
@@ -285,7 +284,8 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   voxelDimensionRefineSegmentation       " << voxelDimensionRefineSegmentation_ << std::endl;
   std::cout << "\t   searchRadiusRefineSegmentation         " << searchRadiusRefineSegmentation_ << std::endl;
   std::cout << "\t   occupancyResolution                    " << occupancyResolution_ << std::endl;
-  std::cout << "\t   quantization step for patch size       " << "1<<"<<log2QuantizerSizeX_ <<", 1<<"<<log2QuantizerSizeY_ << std::endl;
+  std::cout << "\t   quantization step for patch size       "
+            << "1<<" << log2QuantizerSizeX_ << ", 1<<" << log2QuantizerSizeY_ << std::endl;
   std::cout << "\t   minPointCountPerCCPatchSegmentation    " << minPointCountPerCCPatchSegmentation_ << std::endl;
   std::cout << "\t   maxNNCountPatchSegmentation            " << maxNNCountPatchSegmentation_ << std::endl;
   std::cout << "\t   surfaceThickness                       " << surfaceThickness_ << std::endl;
@@ -569,7 +569,7 @@ bool PCCEncoderParameters::check() {
       ret = false;
     }
   }
-  if ( !multipleStreams_ && !absoluteD1_) {
+  if ( !multipleStreams_ && !absoluteD1_ ) {
     std::cerr << "absoluteD1_ should be true when multipleStreams_ is false\n";
     absoluteD1_ = true;
   }
@@ -719,18 +719,18 @@ bool PCCEncoderParameters::check() {
   return ret;
 }
 
-void PCCEncoderParameters::constructAspsRefList(PCCContext& context, size_t aspsIdx, size_t afpsIdx){
-  auto& asps  = context.getAtlasSequenceParameterSet(aspsIdx);
-  //construction of reference frame list of ASPS
-  for(size_t list=0; list<context.getNumOfRefAtlasFrameList(); list++){
+void PCCEncoderParameters::constructAspsRefList( PCCContext& context, size_t aspsIdx, size_t afpsIdx ) {
+  auto& asps = context.getAtlasSequenceParameterSet( aspsIdx );
+  // construction of reference frame list of ASPS
+  for ( size_t list = 0; list < context.getNumOfRefAtlasFrameList(); list++ ) {
     RefListStruct refList;
-    refList.setNumRefEntries( context.getMaxNumRefAtlasFrame() ); //-1,-2,-3,-4
+    refList.setNumRefEntries( context.getMaxNumRefAtlasFrame() );  //-1,-2,-3,-4
     refList.allocate();
-    for(size_t i=0; i<refList.getNumRefEntries(); i++){
-      int afocDiff = context.getRefAtlasFrame(list, i);
-      refList.setAbsDeltaAfocSt(i, std::abs(afocDiff)); //jkei: from 1? or from 0?
-      refList.setStrpfEntrySignFlag(i, afocDiff<0?0:1); //negative
-      refList.setStRefAtalsFrameFlag(i, true); //jkei: all short term!
+    for ( size_t i = 0; i < refList.getNumRefEntries(); i++ ) {
+      int afocDiff = context.getRefAtlasFrame( list, i );
+      refList.setAbsDeltaAfocSt( i, std::abs( afocDiff ) );
+      refList.setStrpfEntrySignFlag( i, afocDiff < 0 ? 0 : 1 );
+      refList.setStRefAtalsFrameFlag( i, true );
     }
     asps.addRefListStruct( refList );
   }
@@ -740,33 +740,29 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   auto& sps = context.getSps();
   sps.allocateAltas();
   size_t atlasIndex = 0;
-
-  printf( "Encoder Param \n" );  fflush( stdout );
-  auto& ai = sps.getAttributeInformation( atlasIndex );
-  auto& oi = sps.getOccupancyInformation( atlasIndex );
-  auto& gi = sps.getGeometryInformation( atlasIndex );
-
-  auto& asps = context.addAtlasSequenceParameterSet( 0 );
-  auto& afps = context.addAtlasFrameParameterSet( 0 );
+  auto&  ai         = sps.getAttributeInformation( atlasIndex );
+  auto&  oi         = sps.getOccupancyInformation( atlasIndex );
+  auto&  gi         = sps.getGeometryInformation( atlasIndex );
+  auto&  asps       = context.addAtlasSequenceParameterSet( 0 );
+  auto&  afps       = context.addAtlasFrameParameterSet( 0 );
 
   context.setOccupancyPackingBlockSize( occupancyResolution_ );
-  context.setLog2PatchQuantizerSizeX(log2QuantizerSizeX_);
-  context.setLog2PatchQuantizerSizeY(log2QuantizerSizeY_);
-  context.setEnablePatchSizeQuantization( (1<<log2QuantizerSizeX_)<occupancyPrecision_ || (1<<log2QuantizerSizeY_)<occupancyPrecision_ );
-  
-  context.setMaxNumRefAtlasFrame(maxNumRefAtlasFrame_);
-  context.setNumOfRefAtlasFrameList(maxNumRefAtlasList_);
-  for(size_t list=0; list<maxNumRefAtlasList_; list++)
-  {
-    context.setSizeOfRefAtlasFrameList(list, maxNumRefAtlasFrame_);
-    for(size_t i=0; i<maxNumRefAtlasFrame_; i++)
-    {
-      context.setRefAtlasFrame(list, i, -i-1); //-1, -2, -3, -4
+  context.setLog2PatchQuantizerSizeX( log2QuantizerSizeX_ );
+  context.setLog2PatchQuantizerSizeY( log2QuantizerSizeY_ );
+  context.setEnablePatchSizeQuantization( ( 1 << log2QuantizerSizeX_ ) < occupancyPrecision_ ||
+                                          ( 1 << log2QuantizerSizeY_ ) < occupancyPrecision_ );
+
+  context.setMaxNumRefAtlasFrame( maxNumRefAtlasFrame_ );
+  context.setNumOfRefAtlasFrameList( maxNumRefAtlasList_ );
+  for ( size_t list = 0; list < maxNumRefAtlasList_; list++ ) {
+    context.setSizeOfRefAtlasFrameList( list, maxNumRefAtlasFrame_ );
+    for ( size_t i = 0; i < maxNumRefAtlasFrame_; i++ ) {
+      context.setRefAtlasFrame( list, i, -i - 1 );  //-1, -2, -3, -4
     }
   }
 
   sps.setMapCountMinus1( atlasIndex, (uint32_t)mapCountMinus1_ );
-  sps.setMultipleMapStreamsPresentFlag( atlasIndex, mapCountMinus1_ != 0 && multipleStreams_ );  // jkei: new parameter
+  sps.setMultipleMapStreamsPresentFlag( atlasIndex, mapCountMinus1_ != 0 && multipleStreams_ );
   sps.setRawSeparateVideoPresentFlag( atlasIndex, useMissedPointsSeparateVideo_ );
   sps.setRawPatchEnabledFlag( atlasIndex, losslessGeo_ || lossyMissedPointsPatch_ );
   for ( size_t i = 0; i < mapCountMinus1_ + 1; i++ ) {
@@ -779,12 +775,9 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     }
   }
 
-  // sps.setSurfaceThickness( surfaceThickness_ );
-
   ai.setAttributeCount( noAttributes_ ? 0 : 1 );
   ai.allocate();
   if ( noAttributes_ == 0 ) {
-    // ai.setAttributeParamsEnabledFlag( flagColorSmoothing_ );
     ai.setAttributeDimensionMinus1( 0, noAttributes_ ? 0 : 2 );
     ai.setAttributeNominal2dBitdepthMinus1( 0, 7 );
     ai.setAttributeMSBAlignFlag( false );
@@ -827,9 +820,8 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   } else {
     asps.setEnhancedOccupancyMapFixBitCountMinus1( EOMFixBitCount_ - 1 );  // default values
   }
-  // auto& afps  = context.addAtalsFrameParameterSet(0);
   afps.setAtlasSequenceParameterSetId( 0 );
-  afps.setAfpsNumRefIdxDefaultActiveMinus1( (uint8_t) (std::max)(0, (int)maxNumRefAtlasFrame_- 1) );
+  afps.setAfpsNumRefIdxDefaultActiveMinus1( ( uint8_t )( std::max )( 0, (int)maxNumRefAtlasFrame_ - 1 ) );
   afps.setAfpsAdditionalLtAfocLsbLen( 4 );
   afps.setAfps2dPosXBitCountMinus1( 0 );
   afps.setAfps2dPosYBitCountMinus1( 0 );
@@ -846,7 +838,6 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     afps.setAfpsEomMaxBitCountMinus1( 7 );
     afps.setAfpsEomNumberOfPatchBitCountMinus1( 7 );
   }
-  // jkei: any better implementation please?!
   for ( size_t frameIdx = 0; frameIdx < frameCount_; frameIdx++ ) {
     auto& atgl = context.addAtlasTileGroupLayer( frameIdx );
     auto& atgh = atgl.getAtlasTileGroupHeader();
@@ -855,9 +846,9 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     atgh.setAtghPosDeltaMaxZQuantizer( uint8_t( std::log2( minLevel_ ) ) );
     atgh.setAtghPatchSizeXinfoQuantizer( log2QuantizerSizeX_ );
     atgh.setAtghPatchSizeYinfoQuantizer( log2QuantizerSizeY_ );
-    if ( afps.getAfpsRaw3dPosBitCountExplicitModeFlag() ){
+    if ( afps.getAfpsRaw3dPosBitCountExplicitModeFlag() ) {
       atgh.setAtghRaw3dPosAxisBitCountMinus1( 0 );  //
-    } else{ 
+    } else {
       atgh.setAtghRaw3dPosAxisBitCountMinus1( geometry3dCoordinatesBitdepth_ - geometryNominal2dBitdepth_ - 1 );
     }
     atgh.setAtghNumRefIdxActiveOverrideFlag( 0 );
@@ -867,13 +858,12 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   }
 
   // construction of reference frame list of ASPS
-  constructAspsRefList(context, 0, 0);
+  constructAspsRefList( context, 0, 0 );
 
   oi.setLossyOccupancyMapCompressionThreshold( (size_t)thresholdLossyOM_ );
   oi.setOccupancyNominal2DBitdepthMinus1( 7 );
   oi.setOccupancyMSBAlignFlag( false );
 
-  // gi.setGeometryParamsEnabledFlag( flagGeometrySmoothing_ );
   gi.setGeometry3dCoordinatesBitdepthMinus1( uint8_t( geometry3dCoordinatesBitdepth_ - 1 ) );
   gi.setGeometryNominal2dBitdepthMinus1( uint8_t( geometryNominal2dBitdepth_ - 1 ) );
   gi.setGeometryMSBAlignFlag( false );

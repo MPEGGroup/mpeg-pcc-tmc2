@@ -63,8 +63,7 @@ void PCCContext::allocOneLayerData() {
 void PCCContext::constructRefList( size_t aspsIdx, size_t afpsIdx ) {
   auto& asps = atlasSequenceParameterSet_[aspsIdx];
   // construction of reference frame list from ASPS refList (decoder)
-  setNumOfRefAtlasFrameList( asps.getNumRefAtlasFrameListsInAsps() );  // jkei : if new reflist is added??
-
+  setNumOfRefAtlasFrameList( asps.getNumRefAtlasFrameListsInAsps() );
   for ( size_t list = 0; list < getNumOfRefAtlasFrameList(); list++ ) {
     auto& refList = asps.getRefListStruct( list );
     setMaxNumRefAtlasFrame( refList.getNumRefEntries() );
@@ -84,9 +83,9 @@ size_t PCCContext::getNumRefIdxActive( AtlasTileGroupHeader& atgh ) {
     if ( atgh.getAtghNumRefIdxActiveOverrideFlag() ) {
       numRefIdxActive = atgh.getAtghNumRefIdxActiveMinus1() + 1;
     } else {
-      auto& refList = atgh.getRefListStruct();
-      numRefIdxActive =
-          (size_t)(std::min)( (int)refList.getNumRefEntries(), (int)afps.getAfpsNumRefIdxDefaultActiveMinus1() + 1 );
+      auto& refList   = atgh.getRefListStruct();
+      numRefIdxActive = ( size_t )( std::min )( (int)refList.getNumRefEntries(),
+                                                (int)afps.getAfpsNumRefIdxDefaultActiveMinus1() + 1 );
     }
   }
   return numRefIdxActive;

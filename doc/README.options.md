@@ -121,8 +121,6 @@ The next tables shows the parameters of the encoder, decoder and metrics program
 --absoluteD1=1                                & Absolute D1                                \\ \hline
 --constrainedPack=1                           & Temporally consistent patch packing        \\ \hline
 --binArithCoding=1                            & Binary arithmetic coding                   \\ \hline
---testLevelOfDetail=0                         & Force non-zero level of detail for         \\ 
-                                              & testing                                    \\ \hline
 --testLevelOfDetailSignaling=0                & Test the patch resolution signaling        \\ 
                                               & with pseudo-random values                  \\ \hline
 --groupDilation=1                             & Group Dilation                             \\ \hline

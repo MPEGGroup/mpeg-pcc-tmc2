@@ -49,15 +49,13 @@ PCCBitstreamDecoder::PCCBitstreamDecoder() :
 PCCBitstreamDecoder::~PCCBitstreamDecoder() {}
 
 // B.2  Sample stream V-PCC unit syntax
-// sample_stream_vpcc_header + sample_stream_vpcc_unit() sample_stream_vpcc_unit() sample_stream_vpcc_unit() ...
 size_t PCCBitstreamDecoder::read( PCCBitstream& bitstream, SampleStreamVpccUnit& ssvu ) {
-  size_t headerSize = 0; 
+  size_t headerSize = 0;
   TRACE_BITSTREAM( "PCCBitstreamXXcoder: SampleStream Vpcc Unit start \n" );
   sampleStreamVpccHeader( bitstream, ssvu );
   headerSize++;
   TRACE_BITSTREAM( "UnitSizePrecisionBytesMinus1 %d <=> %d / 8 - 1\n", ssvu.getSsvhUnitSizePrecisionBytesMinus1() + 1,
                    getFixedLengthCodeBitsCount( ssvu.getSsvhUnitSizePrecisionBytesMinus1() + 1 ) );
-
   size_t unitCount = 0;
   while ( bitstream.moreData() ) {
     auto& vpccUnit = ssvu.addVpccUnit();
@@ -77,80 +75,28 @@ void PCCBitstreamDecoder::sampleStreamVpccHeader( PCCBitstream& bitstream, Sampl
   TRACE_BITSTREAM( "%s \n", __func__ );
   ssvu.setSsvhUnitSizePrecisionBytesMinus1( bitstream.read( 3 ) );  // u(3)
   bitstream.read( 5 );                                              // u(5)
-  printf("BITSTREAM: sampleStreamVpccHeader read : 3 + 8 b = 1 B\n "); fflush(stdout);
 }
 
 // B.2.2 Sample stream NAL unit syntax
 void PCCBitstreamDecoder::sampleStreamVpccUnit( PCCBitstream& bitstream, SampleStreamVpccUnit& ssvu, VpccUnit& vpccu ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   vpccu.setVpccUnitSize( bitstream.read( 8 * ( ssvu.getSsvhUnitSizePrecisionBytesMinus1() + 1 ) ) );  // u(v)
-  printf("BITSTREAM: sampleStreamVpccHeader read : 8 * ( %u + 1 ) b = %u B\n ", ssvu.getSsvhUnitSizePrecisionBytesMinus1(), ssvu.getSsvhUnitSizePrecisionBytesMinus1() + 1); fflush(stdout);
-#if VPCCUNIT_DATA_BITSTREAM
-  auto pos = bitstream.getPosition();
+   auto pos = bitstream.getPosition();
   vpccu.getVpccUnitDataBitstream().copyFrom( bitstream, pos.bytes, vpccu.getVpccUnitSize() );
-  // jkei: find vpccUnitType for the sanity check!
   uint8_t      vpccUnitType8 = vpccu.getVpccUnitDataBitstream().buffer()[0];
   VPCCUnitType vpccUnitType  = ( VPCCUnitType )( vpccUnitType8 >>= 3 );
-#else
-  vpccu.allocate();
-  auto pos = bitstream.getPosition();
-  vpccu.initialize( vpccu.getVpccUnitSize(), bitstream.buffer() + pos.bytes, NUM_VPCC_UNIT_TYPE );
-
-  // jkei: find vpccUnitType for the sanity check!
-  uint8_t vpccUnitType8 = vpccu.getVpccUnitData( 0 );
-  VPCCUnitType vpccUnitType = ( VPCCUnitType )( vpccUnitType8 >>= 3 );
-#endif
   vpccu.setVpccUnitType( vpccUnitType );
   TRACE_BITSTREAM( "vpccUnitType: %hhu VpccUnitSize: %zu\n", vpccUnitType8, vpccu.getVpccUnitSize() );
-//#ifdef BITSTREAM_TRACE
-//  for ( size_t i = 0; i < vpccu.getVpccUnitSize(); i++ ) {
-//     bitstream.trace( "FullStream: CodU[ 8]:    %zu\n", size_t( vpccu.getVpccUnitData( i ) ) );  // b(8)
-//  }
-//#endif
-#if !VPCCUNIT_DATA_BITSTREAM
-  pos.bytes += vpccu.getVpccUnitSize();
-  bitstream.setPosition( pos );
-#endif
 }
 
 int32_t PCCBitstreamDecoder::decode( SampleStreamVpccUnit& ssvu, PCCContext& context ) {
-  printf( "\n**PCCBitstreamDecoder::decode start \n" );
-  fflush( stdout );
   bool endOfGop = false;
   int  numVPS   = 0;  // counter for the atlas information
   context.getBitstreamStat().newGOF();
   while ( !endOfGop && ssvu.getVpccUnitCount() > 0 ) {
-    auto& VPCCUnit = ssvu.front();
-    printf( "vpccUnit size = %lu \n", VPCCUnit.getVpccUnitSize() ); fflush(stdout);
-    
-#if !VPCCUNIT_DATA_BITSTREAM
-    VPCCUnitType vpccUnitType;
-    PCCBitstream bitstream;
-    bitstream.initialize( VPCCUnit.getVpccUnitData() );
-#ifdef BITSTREAM_TRACE
-    bitstream.setTrace( true );
-    bitstream.setTraceFile( traceFile_ );
-    if ( VPCCUnit.getVpccUnitType() == VPCC_VPS ) {
-      TRACE_BITSTREAM( "PCCBitstream::(VPS)\n" );
-    } else if ( VPCCUnit.getVpccUnitType() == VPCC_AD ) {
-      TRACE_BITSTREAM( "PCCBitstream::(AD)\n" );
-    } else if ( VPCCUnit.getVpccUnitType() == VPCC_OVD ) {
-      TRACE_BITSTREAM( "PCCBitstream::(OVD)\n" );
-    } else if ( VPCCUnit.getVpccUnitType() == VPCC_GVD ) {
-      TRACE_BITSTREAM( "PCCBitstream::(GVD)\n" );
-    } else if ( VPCCUnit.getVpccUnitType() == VPCC_AVD ) {
-      TRACE_BITSTREAM( "PCCBitstream::(AVD)\n" );
-    }
-#endif
-#endif
-#if VPCCUNIT_DATA_BITSTREAM
-    VPCCUnitType vpccUnitType = VPCC_VPS;
-    printf( "start vpccUnit \n"); fflush(stdout);
+    auto& VPCCUnit = ssvu.front();    
+    VPCCUnitType vpccUnitType = VPCC_VPS;    
     vpccUnit( context, VPCCUnit, vpccUnitType );
-#else
-    vpccUnit( context, bitstream, vpccUnitType );
-#endif
-
     if ( vpccUnitType == VPCC_VPS ) {
       numVPS++;
       if ( numVPS > 1 ) {
@@ -162,8 +108,6 @@ int32_t PCCBitstreamDecoder::decode( SampleStreamVpccUnit& ssvu, PCCContext& con
       ssvu.popFront();  // remove element
     }
   }
-  printf( "PCCBitstreamDecoder::decode done \n" );
-  fflush( stdout );
   return 1;
 }
 
@@ -179,7 +123,6 @@ void PCCBitstreamDecoder::videoSubStream( PCCContext& context, PCCBitstream& bit
     if ( vuh.getRawVideoFlag() ) {
       TRACE_BITSTREAM( "Geometry raw\n" );
       bitstream.read( context.createVideoBitstream( VIDEO_GEOMETRY_RAW ) );
-
       context.getBitstreamStat().setVideoBinSize( VIDEO_GEOMETRY_RAW,
                                                   context.getVideoBitstream( VIDEO_GEOMETRY_RAW ).size() );
     } else {
@@ -237,34 +180,23 @@ void PCCBitstreamDecoder::videoSubStream( PCCContext& context, PCCBitstream& bit
 }
 
 // 7.3.2.1 General V-PCC unit syntax
-#if VPCCUNIT_DATA_BITSTREAM
-void PCCBitstreamDecoder::vpccUnit( PCCContext& context, VpccUnit& currVpccUnit, VPCCUnitType& vpccUnitType )
-#else
-void PCCBitstreamDecoder::vpccUnit( PCCContext& context, PCCBitstream& bitstream, VPCCUnitType& vpccUnitType )
-#endif
-{
-#if VPCCUNIT_DATA_BITSTREAM
+void PCCBitstreamDecoder::vpccUnit( PCCContext& context, VpccUnit& currVpccUnit, VPCCUnitType& vpccUnitType ) {
   PCCBitstream& bitstream = currVpccUnit.getVpccUnitDataBitstream();
 #ifdef BITSTREAM_TRACE
-    bitstream.setTrace( true );
-    bitstream.setTraceFile( traceFile_ );
-  TRACE_BITSTREAM( "PCCBitstream::(%s)\n", toString(currVpccUnit.getVpccUnitType()).c_str());
-#endif
+  bitstream.setTrace( true );
+  bitstream.setTraceFile( traceFile_ );
+  TRACE_BITSTREAM( "PCCBitstream::(%s)\n", toString( currVpccUnit.getVpccUnitType() ).c_str() );
 #endif
   TRACE_BITSTREAM( "%s \n", __func__ );
   int32_t position = (int32_t)bitstream.size();
   vpccUnitHeader( context, bitstream, vpccUnitType );
-#if VPCCUNIT_DATA_BITSTREAM
-  assert(vpccUnitType == currVpccUnit.getVpccUnitType());
-#endif
+  assert( vpccUnitType == currVpccUnit.getVpccUnitType() );
   vpccUnitPayload( context, bitstream, vpccUnitType );
-  // while( more_data_in_vpcc_unit() ) { bitstream.write( 0, 8 ); }
   context.getBitstreamStat().setVpccUnitSize( vpccUnitType, (int32_t)bitstream.size() - position );
-  TRACE_BITSTREAM( "vpccUnit: vpccUnitType = %d(%s) \n", vpccUnitType, toString(vpccUnitType).c_str() );
+  TRACE_BITSTREAM( "vpccUnit: vpccUnitType = %d(%s) \n", vpccUnitType, toString( vpccUnitType ).c_str() );
   TRACE_BITSTREAM( "vpccUnit: size [%d ~ %d] \n", position, bitstream.size() );
   TRACE_BITSTREAM( "%s done\n", __func__ );
-  std::cout << "<----vpccUnit: vpccUnitType = " << toString( VPCCUnitType( vpccUnitType ) ) << std::endl;
-  // printf( "vpccUnit: position = %d / %d \n", position, bitstream.capacity() );  fflush( stdout );
+  std::cout << "<----vpccUnit: vpccUnitType = " << toString( VPCCUnitType( vpccUnitType ) ) << std::endl;  
 }
 
 // 7.3.2.2 V-PCC unit header syntax
@@ -342,18 +274,14 @@ void PCCBitstreamDecoder::vpccParameterSet( VpccParameterSet& sps, PCCContext& c
       } else {
         sps.setMapAbsoluteCodingEnableFlag( j, i, 1 );
       }
-#ifdef BITSTREAM_TRACE
       TRACE_BITSTREAM( " AbsoluteCoding Map%lu = %lu \n", i, sps.getMapAbsoluteCodingEnableFlag( j, i ) );
-#endif
       if ( sps.getMapAbsoluteCodingEnableFlag( j, i ) == 0 ) {
         if ( i > 0 ) {
           sps.setMapPredictorIndexDiff( j, i, bitstream.readUvlc() );  // ue(v)
         } else {
           sps.setMapPredictorIndexDiff( j, i, 0 );
         }
-#ifdef BITSTREAM_TRACE
         TRACE_BITSTREAM( " PredictorIndex L%lu = %lu \n", i, sps.getMapPredictorIndexDiff( j, i ) );
-#endif
       }
     }
     sps.setRawPatchEnabledFlag( j, bitstream.read( 1 ) );  // u(1)
@@ -385,12 +313,9 @@ void PCCBitstreamDecoder::vpccParameterSet( VpccParameterSet& sps, PCCContext& c
 #ifdef BITSTREAM_TRACE
   bitstream.trace( "  Deprecated1\n" );
 #endif
-  sps.setLosslessGeo444( bitstream.read( 1 ) );  // u(1) TODO: remove?
-  sps.setLosslessGeo( bitstream.read( 1 ) );     // u(1) TODO: remove?
-
-  sps.setMinLevel( bitstream.read( 8 ) );          // u(8) TODO: remove?
-  // sps.setSurfaceThickness( bitstream.read( 8 ) );  // u(8) TODO: remove?
-
+  sps.setLosslessGeo444( bitstream.read( 1 ) );  // u(1) 
+  sps.setLosslessGeo( bitstream.read( 1 ) );     // u(1) 
+  sps.setMinLevel( bitstream.read( 8 ) );        // u(8) 
   // THE NEXT PARAMETERS ARE NOT IN THE VPCC CD SYNTAX DOCUMENTS AND WILL BE REMOVE
   byteAlignment( bitstream );
 }
@@ -504,29 +429,19 @@ void PCCBitstreamDecoder::atlasSequenceParameterSetRBSP( AtlasSequenceParameterS
   asps.setPatchSizeQuantizerPresentFlag( bitstream.read( 1 ) );            // u(1)
   asps.setEnhancedOccupancyMapForDepthFlag( bitstream.read( 1 ) );         // u(1)
   asps.setPointLocalReconstructionEnabledFlag( bitstream.read( 1 ) );      // u(1)
-
-  asps.setMapCountMinus1( bitstream.read( 4 ) );  // u(4)
+  asps.setMapCountMinus1( bitstream.read( 4 ) );                           // u(4)
   if ( asps.getEnhancedOccupancyMapForDepthFlag() && asps.getMapCountMinus1() == 0 ) {
     asps.setEnhancedOccupancyMapFixBitCountMinus1( bitstream.read( 4 ) );  // u(4)
   }
-  TRACE_BITSTREAM( "ASPS: EnhancedOccupancyMapFixBitCountMinus1 = %u \n",
-                   asps.getEnhancedOccupancyMapFixBitCountMinus1() );
-  TRACE_BITSTREAM( "ASPS: EnhancedOccupancyMapForDepthFlag      = %u \n", asps.getEnhancedOccupancyMapForDepthFlag() );
-  TRACE_BITSTREAM( "ASPS: MapCountMinus1                        = %u \n", asps.getMapCountMinus1() );
-  TRACE_BITSTREAM( "ASPS: PointLocalReconstructionEnabledFlag   = %d \n",
-                   asps.getPointLocalReconstructionEnabledFlag() );
   if ( asps.getPointLocalReconstructionEnabledFlag() ) {
     pointLocalReconstructionInformation( asps, context, bitstream );
   }
-  TRACE_BITSTREAM( "ASPS: PixelDeinterleavingFlag = %d \n", asps.getPixelDeinterleavingFlag() );
   if ( asps.getPixelDeinterleavingFlag() || asps.getPointLocalReconstructionEnabledFlag() ) {
     asps.setSurfaceThicknessMinus1( bitstream.read( 8 ) );  // u(8)
   }
   asps.setVuiParametersPresentFlag( bitstream.read( 1 ) );  // u(1)
-  TRACE_BITSTREAM( "ASPS: VuiParametersPresentFlag = %d \n", asps.getVuiParametersPresentFlag() );
   if ( asps.getVuiParametersPresentFlag() ) { vuiParameters( bitstream, asps.getVuiParameters() ); }
   asps.setExtensionPresentFlag( bitstream.read( 1 ) );  // u(1)
-  TRACE_BITSTREAM( "ASPS: ExtensionPresentFlag = %d \n", (size_t)asps.getExtensionPresentFlag() );
   if ( asps.getExtensionPresentFlag() ) {
     while ( moreRbspData( bitstream ) ) {
       asps.setExtensionPresentFlag( bitstream.read( 1 ) );  // u(1)
@@ -535,7 +450,7 @@ void PCCBitstreamDecoder::atlasSequenceParameterSetRBSP( AtlasSequenceParameterS
   rbspTrailingBits( bitstream );
 }
 
-// 7.3.6.2 Point local reconstruction information syntax (NEW)
+// 7.3.6.2 Point local reconstruction information syntax
 void PCCBitstreamDecoder::pointLocalReconstructionInformation( AtlasSequenceParameterSetRBSP& asps,
                                                                PCCContext&                    context,
                                                                PCCBitstream&                  bitstream ) {
@@ -587,7 +502,6 @@ bool PCCBitstreamDecoder::moreDataInVpccUnit( PCCBitstream& bitstream ) {
 }
 void PCCBitstreamDecoder::rbspTrailingBits( PCCBitstream& bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
-  // jkei: TODO: need to fill this part
   bitstream.read( 1 );  // f(1): equal to 1
   while ( !bitstream.byteAligned() ) {
     bitstream.read( 1 );  // f(1): equal to 0
@@ -605,8 +519,7 @@ void PCCBitstreamDecoder::atlasFrameParameterSetRbsp( AtlasFrameParameterSetRbsp
   TRACE_BITSTREAM( "%s \n", __func__ );
   afps.setAtlasFrameParameterSetId( bitstream.readUvlc() );     // ue(v)
   afps.setAtlasSequenceParameterSetId( bitstream.readUvlc() );  // ue(v)
-  atlasFrameTileInformation( afps.getAtlasFrameTileInformation(), context.getSps(), bitstream );
-  TRACE_BITSTREAM( "-> back to %s \n", __func__ );
+  atlasFrameTileInformation( afps.getAtlasFrameTileInformation(), context.getSps(), bitstream );  
   afps.setAfpsNumRefIdxDefaultActiveMinus1( bitstream.readUvlc() );  // ue(v)
   afps.setAfpsAdditionalLtAfocLsbLen( bitstream.readUvlc() );        // ue(v)
   afps.setAfps2dPosXBitCountMinus1( bitstream.read( 4 ) );
@@ -614,12 +527,6 @@ void PCCBitstreamDecoder::atlasFrameParameterSetRbsp( AtlasFrameParameterSetRbsp
   afps.setAfps3dPosXBitCountMinus1( bitstream.read( 5 ) );
   afps.setAfps3dPosYBitCountMinus1( bitstream.read( 5 ) );
   afps.setAfpsOverrideEomForDepthFlag( bitstream.read( 1 ) );
-  TRACE_BITSTREAM( " NumRefIdxDefaultActiveMinus1: %zu\n", (size_t)afps.getAfpsNumRefIdxDefaultActiveMinus1() );
-  TRACE_BITSTREAM( " AdditionalLtAfocLsbLen:       %zu\n", (size_t)afps.getAfpsAdditionalLtAfocLsbLen() );
-  TRACE_BITSTREAM( " 2dPosXBitCountMinus1: %zu\n", (size_t)afps.getAfps2dPosXBitCountMinus1() );
-  TRACE_BITSTREAM( " 2dPosYBitCountMinus1: %zu\n", (size_t)afps.getAfps2dPosYBitCountMinus1() );
-  TRACE_BITSTREAM( " 3dPosXBitCountMinus1: %zu\n", (size_t)afps.getAfps3dPosXBitCountMinus1() );
-  TRACE_BITSTREAM( " 3dPosYBitCountMinus1: %zu\n", (size_t)afps.getAfps3dPosYBitCountMinus1() );
   if ( afps.getAfpsOverrideEomForDepthFlag() ) {
     afps.setAfpsEomNumberOfPatchBitCountMinus1( bitstream.read( 4 ) );
     afps.setAfpsEomMaxBitCountMinus1( bitstream.read( 4 ) );
@@ -663,12 +570,10 @@ void PCCBitstreamDecoder::atlasFrameTileInformation( AtlasFrameTileInformation& 
     for ( size_t i = 0; i <= afti.getNumTileGroupsInAtlasFrameMinus1(); i++ ) {
       uint8_t bitCount = getFixedLengthCodeBitsCount( NumTilesInPatchFrame + 1 );
       if ( i > 0 ) {
-        afti.setTopLeftTileIdx( i, bitstream.read( bitCount ) );
-      }  // u(v) : Ceil( Log2( NumTilesInPatchFrame )
+        afti.setTopLeftTileIdx( i, bitstream.read( bitCount ) ); // u(v) 
+      }  
       bitCount = getFixedLengthCodeBitsCount( NumTilesInPatchFrame - afti.getTopLeftTileIdx( i ) + 1 );
-      afti.setBottomRightTileIdxDelta(
-          i,
-          bitstream.read( bitCount ) );  // u(v) : Ceil( Log2( NumTilesInPatchFrame − pfti_top_left_tile_idx[ i ] ) )
+      afti.setBottomRightTileIdxDelta( i, bitstream.read( bitCount ) );  // u(v) 
     }
   }
   afti.setSignalledTileGroupIdFlag( bitstream.read( 1 ) );  // u(1)
@@ -676,10 +581,7 @@ void PCCBitstreamDecoder::atlasFrameTileInformation( AtlasFrameTileInformation& 
     afti.setSignalledTileGroupIdLengthMinus1( bitstream.readUvlc() );  // ue(v)
     for ( size_t i = 0; i <= afti.getSignalledTileGroupIdLengthMinus1(); i++ ) {
       uint8_t bitCount = afti.getSignalledTileGroupIdLengthMinus1() + 1;
-      afti.setTileGroupId( i,
-                           bitstream.read( bitCount ) );  // u(v) : pfti_signalled_tile_group_id_length_minus1 + 1  bits
-      // When not present, the value of pfti_tile_group_id[ i ] is inferred to be equal to i, for each i in the range
-      // of 0 to pfti_num_tile_groups_in_patch_frame_minus1, inclusive.
+      afti.setTileGroupId( i, bitstream.read( bitCount ) );  // u(v)
     }
   }
 }
@@ -698,7 +600,7 @@ void PCCBitstreamDecoder::atlasTileGroupLayerRbsp( AtlasTileGroupLayerRbsp& atgl
   // setFrameIndex
   TRACE_BITSTREAM( "%s \n", __func__ );
   atlasTileGroupHeader( atgl.getAtlasTileGroupHeader(), context, bitstream );
-  if ( atgl.getAtlasTileGroupHeader().getAtghType() != SKIP_TILE_GRP ){
+  if ( atgl.getAtlasTileGroupHeader().getAtghType() != SKIP_TILE_GRP ) {
     atlasTileGroupDataUnit( atgl.getAtlasTileGroupDataUnit(), atgl.getAtlasTileGroupHeader(), context, bitstream );
   }
   rbspTrailingBits( bitstream );
@@ -719,44 +621,34 @@ void PCCBitstreamDecoder::atlasTileGroupHeader( AtlasTileGroupHeader& atgh,
   atgh.setAtghAddress( bitstream.read( afti.getSignalledTileGroupIdLengthMinus1() + 1 ) );
   atgh.setAtghType( PCCTILEGROUP( bitstream.readUvlc() ) );
   atgh.setAtghAtlasFrmOrderCntLsb( bitstream.read( asps.getLog2MaxAtlasFrameOrderCntLsbMinus4() + 4 ) );
-  TRACE_BITSTREAM( " AtlasFrameParameterSetId: %zu\n", atgh.getAtghAtlasFrameParameterSetId() );
-  TRACE_BITSTREAM( " AtlasSequenceParameterSetId: %zu\n", afps.getAtlasSequenceParameterSetId() );
-  TRACE_BITSTREAM( " Address       %zu\n", (size_t)atgh.getAtghAddress() );
-  TRACE_BITSTREAM( " Type          %zu\n", (size_t)atgh.getAtghType() );
-  TRACE_BITSTREAM( " FrameOrderCnt %zu\n", (size_t)atgh.getAtghAtlasFrmOrderCntLsb() );
-
-  if ( asps.getNumRefAtlasFrameListsInAsps() > 0 ) atgh.setAtghRefAtlasFrameListSpsFlag( bitstream.read( 1 ) );
-  else                                             atgh.setAtghRefAtlasFrameListSpsFlag(0); //jkei : init
-  atgh.setAtghRefAtlasFrameListIdx( 0 ); //jkei: init
-
+  if ( asps.getNumRefAtlasFrameListsInAsps() > 0 ) {
+    atgh.setAtghRefAtlasFrameListSpsFlag( bitstream.read( 1 ) );
+  } else {
+    atgh.setAtghRefAtlasFrameListSpsFlag( 0 );
+  }
+  atgh.setAtghRefAtlasFrameListIdx( 0 );
   if ( atgh.getAtghRefAtlasFrameListSpsFlag() == 0 ) {
     refListStruct( atgh.getRefListStruct(), asps, bitstream );
   } else if ( asps.getNumRefAtlasFrameListsInAsps() > 1 ) {
-    size_t bitCount = getFixedLengthCodeBitsCount( asps.getNumRefAtlasFrameListsInAsps() +
-                                                   1 );  // by Ceil( Log2( asps_num_ref_atlas_frame_lists_in_asps ) )
+    size_t bitCount = getFixedLengthCodeBitsCount( asps.getNumRefAtlasFrameListsInAsps() + 1 );
     atgh.setAtghRefAtlasFrameListIdx( bitstream.read( bitCount ) );
   }
-  
-  //copy to Atgh's ref
-  if ( atgh.getAtghRefAtlasFrameListSpsFlag())
-    atgh.setRefListStruct( asps.getRefListStruct(atgh.getAtghRefAtlasFrameListIdx()) );
-
+  if ( atgh.getAtghRefAtlasFrameListSpsFlag() ) {
+    atgh.setRefListStruct( asps.getRefListStruct( atgh.getAtghRefAtlasFrameListIdx() ) );
+  }
   uint8_t rlsIdx  = atgh.getAtghRefAtlasFrameListIdx();
   auto&   refList = atgh.getAtghRefAtlasFrameListSpsFlag() ? asps.getRefListStruct( rlsIdx ) : atgh.getRefListStruct();
   size_t  numLtrAtlasFrmEntries = 0;
   for ( size_t i = 0; i < refList.getNumRefEntries(); i++ ) {
     if ( !refList.getStRefAtalsFrameFlag( i ) ) { numLtrAtlasFrmEntries++; }
   }
-  TRACE_BITSTREAM( " rlsIdx %u numLtrAtlasFrmEntries %zu \n", rlsIdx, (size_t)numLtrAtlasFrmEntries );
   for ( size_t j = 0; j < numLtrAtlasFrmEntries; j++ ) {
     atgh.setAtghAdditionalAfocLsbPresentFlag( j, bitstream.read( 1 ) );
-    // afps_additional_lt_afoc_lsb_len
     if ( atgh.getAtghAdditionalAfocLsbPresentFlag( j ) ) {
       uint8_t bitCount = afps.getAfpsAdditionalLtAfocLsbLen();
       atgh.setAtghAdditionalAfocLsbVal( j, bitstream.read( bitCount ) );
     }
   }
-
   if ( atgh.getAtghType() != SKIP_TILE_GRP ) {
     if ( asps.getNormalAxisLimitsQuantizationEnabledFlag() ) {
       atgh.setAtghPosMinZQuantizer( bitstream.read( 5 ) );
@@ -766,67 +658,54 @@ void PCCBitstreamDecoder::atlasTileGroupHeader( AtlasTileGroupHeader& atgh,
       atgh.setAtghPatchSizeXinfoQuantizer( bitstream.read( 3 ) );
       atgh.setAtghPatchSizeYinfoQuantizer( bitstream.read( 3 ) );
     }
-    // 0??
-    auto&  gi                       = context.getSps().getGeometryInformation( 0 );
-    // size_t geometry3dBitdepthMinus1 = gi.getGeometry3dCoordinatesBitdepthMinus1();
-    // size_t geometry2dBitdepthMinus1 = gi.getGeometryNominal2dBitdepthMinus1();
-
-    TRACE_BITSTREAM(" geometry3dBitdepthMinus1 = %lu <= \n",gi.getGeometry3dCoordinatesBitdepthMinus1());
-    TRACE_BITSTREAM(" geometry2dBitdepthMinus1 = %lu \n",gi.getGeometryNominal2dBitdepthMinus1());
-    TRACE_BITSTREAM(" AfpsRaw3dPosBitCountExplicitModeFlag = %lu \n",afps.getAfpsRaw3dPosBitCountExplicitModeFlag());
-
+    auto& gi = context.getSps().getGeometryInformation( 0 );
     if ( afps.getAfpsRaw3dPosBitCountExplicitModeFlag() ) {
       size_t bitCount = getFixedLengthCodeBitsCount( gi.getGeometry3dCoordinatesBitdepthMinus1() + 1 );
-      TRACE_BITSTREAM("bitCount = %lu \n",bitCount);
       atgh.setAtghRaw3dPosAxisBitCountMinus1( bitstream.read( bitCount ) );
     } else {
-      atgh.setAtghRaw3dPosAxisBitCountMinus1( gi.getGeometry3dCoordinatesBitdepthMinus1() - gi.getGeometryNominal2dBitdepthMinus1() - 1 );
+      atgh.setAtghRaw3dPosAxisBitCountMinus1( gi.getGeometry3dCoordinatesBitdepthMinus1() -
+                                              gi.getGeometryNominal2dBitdepthMinus1() - 1 );
     }
-    TRACE_BITSTREAM("==> AtghRaw3dPosAxisBitCountMinus1 = %lu \n",atgh.getAtghRaw3dPosAxisBitCountMinus1());
     if ( atgh.getAtghType() == P_TILE_GRP && refList.getNumRefEntries() > 1 ) {
       atgh.setAtghNumRefIdxActiveOverrideFlag( bitstream.read( 1 ) );
-      if ( atgh.getAtghNumRefIdxActiveOverrideFlag() ) atgh.setAtghNumRefIdxActiveMinus1( bitstream.readUvlc() );
-
+      if ( atgh.getAtghNumRefIdxActiveOverrideFlag() ) { atgh.setAtghNumRefIdxActiveMinus1( bitstream.readUvlc() ); }
     }
-    TRACE_BITSTREAM("==> AtghNumRefIdxActiveOverrideFlag = %lu \n", atgh.getAtghNumRefIdxActiveOverrideFlag());
-    TRACE_BITSTREAM("==> AtghNumRefIdxActiveMinus1       = %lu \n", atgh.getAtghNumRefIdxActiveMinus1());
-
+    TRACE_BITSTREAM( "==> AtghRaw3dPosAxisBitCountMinus1 = %lu \n", atgh.getAtghRaw3dPosAxisBitCountMinus1() );
+    TRACE_BITSTREAM( "==> AtghNumRefIdxActiveOverrideFlag = %lu \n", atgh.getAtghNumRefIdxActiveOverrideFlag() );
+    TRACE_BITSTREAM( "==> AtghNumRefIdxActiveMinus1       = %lu \n", atgh.getAtghNumRefIdxActiveMinus1() );
   }
   byteAlignment( bitstream );
 }
 
-// 7.3.6.12  Reference list structure syntax (NEW)
+// 7.3.6.12  Reference list structure syntax
 void PCCBitstreamDecoder::refListStruct( RefListStruct&                 rls,
                                          AtlasSequenceParameterSetRBSP& asps,
                                          PCCBitstream&                  bitstream ) {
-  // jkei: bug fixed
   TRACE_BITSTREAM( "%s \n", __func__ );
   rls.setNumRefEntries( bitstream.readUvlc() );  // ue(v)
   TRACE_BITSTREAM( "NumRefEntries = %lu  \n", rls.getNumRefEntries() );
   rls.allocate();
   for ( size_t i = 0; i < rls.getNumRefEntries(); i++ ) {
-    if ( asps.getLongTermRefAtlasFramesFlag() )
+    if ( asps.getLongTermRefAtlasFramesFlag() ) {
       rls.setStRefAtalsFrameFlag( i, bitstream.read( 1 ) );  // u(1)
-    else
+    } else {
       rls.setStRefAtalsFrameFlag( i, 1 );
-
+    }
     if ( rls.getStRefAtalsFrameFlag( i ) ) {
       rls.setAbsDeltaAfocSt( i, bitstream.readUvlc() );  // ue(v)
       if ( rls.getAbsDeltaAfocSt( i ) > 0 ) {
         rls.setStrpfEntrySignFlag( i, bitstream.read( 1 ) );  // u(1)
+      } else {
+        rls.setStrpfEntrySignFlag( i, 1 );
       }
-      else rls.setStrpfEntrySignFlag( i, 1 );   //jkei: is it initialization?
-
     } else {
       uint8_t bitCount = asps.getLog2MaxAtlasFrameOrderCntLsbMinus4() + 4;
-      rls.setAfocLsbLt(
-          i, bitstream.read( bitCount ) );  // u(v) : psps_log2_max_patch_frame_order_cnt_lsb_minus4  + 4 bits
+      rls.setAfocLsbLt( i, bitstream.read( bitCount ) );  // u(v)
     }
     TRACE_BITSTREAM( "stRefAtalsFrameFlag = %lu  \n", rls.getStRefAtalsFrameFlag( i ) );
     TRACE_BITSTREAM( "absDeltaAfocSt      = %lu  \n", rls.getAbsDeltaAfocSt( i ) );
     TRACE_BITSTREAM( "strpfEntrySignFlag  = %lu  \n", rls.getStrpfEntrySignFlag( i ) );
   }
-  TRACE_BITSTREAM( "%s done \n", __func__ );
 }
 
 // 7.3.7.1  General atlas tile group data unit syntax =patchTileGroupDataUnit
@@ -835,16 +714,15 @@ void PCCBitstreamDecoder::atlasTileGroupDataUnit( AtlasTileGroupDataUnit& atgdu,
                                                   PCCContext&             context,
                                                   PCCBitstream&           bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
-  TRACE_BITSTREAM( "atgh.getAtghType()        = %lu \n", atgh.getAtghType() );
   atgdu.init();
   size_t patchIndex    = 0;
   auto   tileGroupType = atgh.getAtghType();
   TRACE_BITSTREAM( "patch %lu : \n", patchIndex );
   uint8_t patchMode = bitstream.readUvlc();  // ue(v)
   TRACE_BITSTREAM( "patchMode = %lu \n", patchMode );
-  prevPatchSizeU_   = 0;
-  prevPatchSizeV_   = 0;
-  predPatchIndex_   = 0; 
+  prevPatchSizeU_ = 0;
+  prevPatchSizeV_ = 0;
+  predPatchIndex_ = 0;
   while ( !( ( ( PCCTILEGROUP( tileGroupType ) == I_TILE_GRP ) && ( patchMode == PATCH_MODE_I_END ) ) ||
              ( ( PCCTILEGROUP( tileGroupType ) == P_TILE_GRP ) && ( patchMode == PATCH_MODE_P_END ) ) ) ) {
     auto& pid = atgdu.addPatchInformationData( patchMode );
@@ -857,10 +735,10 @@ void PCCBitstreamDecoder::atlasTileGroupDataUnit( AtlasTileGroupDataUnit& atgdu,
     TRACE_BITSTREAM( "patchMode = %lu \n", patchMode );
   }
   prevFrameIndex_ = atgdu.getFrameIndex();
-  if(( patchMode == PATCH_MODE_I_END ) || ( patchMode == PATCH_MODE_P_END ) ){
+  if ( ( patchMode == PATCH_MODE_I_END ) || ( patchMode == PATCH_MODE_P_END ) ) {
     TRACE_BITSTREAM( "patchInformationData: AtghType = %lu patchMode = %lu \n", atgh.getAtghType(), patchMode );
   }
-  TRACE_BITSTREAM( "atgdu.getPatchCount() including END = %lu \n", atgdu.getPatchCount() + 1 ); //jkei: +1 since _END doesnot create patchInfoData
+  TRACE_BITSTREAM( "atgdu.getPatchCount() including END = %lu \n", atgdu.getPatchCount() + 1 );
   byteAlignment( bitstream );
 }
 
@@ -913,7 +791,6 @@ void PCCBitstreamDecoder::patchDataUnit( PatchDataUnit&        pdu,
   AtlasFrameParameterSetRbsp&    afps   = context.getAtlasFrameParameterSet( afpsId );
   size_t                         aspsId = afps.getAtlasSequenceParameterSetId();
   AtlasSequenceParameterSetRBSP& asps   = context.getAtlasSequenceParameterSet( aspsId );
-  //  AtlasFrameTileInformation&    afti = afps.getAtlasFrameTileInformation();
 
   pdu.setPdu2dPosX( bitstream.read( afps.getAfps2dPosXBitCountMinus1() + 1 ) );  // u(v)
   pdu.setPdu2dPosY( bitstream.read( afps.getAfps2dPosYBitCountMinus1() + 1 ) );  // u(v)
@@ -970,13 +847,6 @@ void PCCBitstreamDecoder::patchDataUnit( PatchDataUnit&        pdu,
       pdu.getPdu3dPosDeltaMaxZ(), pdu.getPduProjectionId(), pdu.getPduOrientationIndex(), pdu.getLodEnableFlag(),
       pdu.getLodEnableFlag() ? pdu.getLodScaleXminus1() : (uint8_t)0,
       pdu.getLodEnableFlag() ? pdu.getLodScaleY() : (uint8_t)0 );
-
-  //  TRACE_BITSTREAM(
-  //      "Frame %zu, Patch(%zu) => 2dPos %4lu %4lu 2dSize=%4ld %4ld 3dPos %4lu %4lu %4lu %4lu Projection %zu
-  //      Orientation %zu lod=(%lu) %lu %lu\n ", pdu.getFrameIndex(), pdu.getPatchIndex(), pdu.getPdu2dPosX(),
-  //      pdu.getPdu2dPosY(), pdu.getPdu2dDeltaSizeX(), pdu.getPdu2dDeltaSizeY(), pdu.getPdu3dPosX(),
-  //      pdu.getPdu3dPosY(), pdu.getPdu3dPosMinZ(), pdu.getPdu3dPosDeltaMaxZ(), pdu.getPduProjectionId(),
-  //      pdu.getPduOrientationIndex(), pdu.getLodEnableFlag(), pdu.getLodScaleXminus1(), pdu.getLodScaleY() );
 }
 
 // 7.3.7.4  Skip patch data unit syntax
@@ -993,15 +863,17 @@ void PCCBitstreamDecoder::mergePatchDataUnit( MergePatchDataUnit&   mpdu,
                                               PCCContext&           context,
                                               PCCBitstream&         bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
-  size_t                         afpsId = atgh.getAtghAtlasFrameParameterSetId();
-  AtlasFrameParameterSetRbsp&    afps   = context.getAtlasFrameParameterSet( afpsId );
-  size_t                         aspsId = afps.getAtlasSequenceParameterSetId();
-  AtlasSequenceParameterSetRBSP& asps   = context.getAtlasSequenceParameterSet( aspsId );
-  bool overridePlrFlag = false;
-
-  size_t numRefIdxActive= context.getNumRefIdxActive(atgh);
-  if ( numRefIdxActive > 1 ) mpdu.setMpduRefIndex( bitstream.readUvlc() );
-  else                       mpdu.setMpduRefIndex( 0 );
+  size_t                         afpsId          = atgh.getAtghAtlasFrameParameterSetId();
+  AtlasFrameParameterSetRbsp&    afps            = context.getAtlasFrameParameterSet( afpsId );
+  size_t                         aspsId          = afps.getAtlasSequenceParameterSetId();
+  AtlasSequenceParameterSetRBSP& asps            = context.getAtlasSequenceParameterSet( aspsId );
+  bool                           overridePlrFlag = false;
+  size_t                         numRefIdxActive = context.getNumRefIdxActive( atgh );
+  if ( numRefIdxActive > 1 ) {
+    mpdu.setMpduRefIndex( bitstream.readUvlc() );
+  } else {
+    mpdu.setMpduRefIndex( 0 );
+  }
   mpdu.setMpduOverride2dParamsFlag( bitstream.read( 1 ) );
   if ( mpdu.getMpduOverride2dParamsFlag() ) {
     mpdu.setMpdu2dPosX( bitstream.readSvlc() );        // se(v)
@@ -1023,19 +895,17 @@ void PCCBitstreamDecoder::mergePatchDataUnit( MergePatchDataUnit&   mpdu,
         mpdu.setMpduOverridePlrFlag( overridePlrFlag );
       }
     }
-  }  // else
-
+  } 
   if ( overridePlrFlag && asps.getPointLocalReconstructionEnabledFlag() ) {
     auto& plrd = mpdu.getPointLocalReconstructionData();
     TRACE_BITSTREAM( "Prev Size = %d %d Delta Size = %ld %ld => %ld %ld \n", prevPatchSizeU_, prevPatchSizeV_,
-                     mpdu.getMpdu2dDeltaSizeX(), mpdu.getMpdu2dDeltaSizeY(), prevPatchSizeU_ + mpdu.getMpdu2dDeltaSizeX(),
-                     prevPatchSizeV_ + mpdu.getMpdu2dDeltaSizeY() );
+                     mpdu.getMpdu2dDeltaSizeX(), mpdu.getMpdu2dDeltaSizeY(),
+                     prevPatchSizeU_ + mpdu.getMpdu2dDeltaSizeX(), prevPatchSizeV_ + mpdu.getMpdu2dDeltaSizeY() );
     plrd.allocate( prevPatchSizeU_ + mpdu.getMpdu2dDeltaSizeX(), prevPatchSizeV_ + mpdu.getMpdu2dDeltaSizeY() );
     pointLocalReconstructionData( plrd, context, asps, bitstream );
     prevPatchSizeU_ += mpdu.getMpdu2dDeltaSizeX();
     prevPatchSizeV_ += mpdu.getMpdu2dDeltaSizeY();
   }
-
   TRACE_BITSTREAM(
       "%zu frame %zu MergePatch => Ref Frame Idx = %d ShiftUV = %ld %ld DeltaSize = %ld %ld Axis = %ld %ld %ld\n",
       mpdu.getMpduRefIndex(), mpdu.getMpdu2dPosX(), mpdu.getMpdu2dPosY(), mpdu.getMpdu2dDeltaSizeX(),
@@ -1049,13 +919,16 @@ void PCCBitstreamDecoder::interPatchDataUnit( InterPatchDataUnit&   ipdu,
                                               PCCContext&           context,
                                               PCCBitstream&         bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
-  size_t                         afpsId = atgh.getAtghAtlasFrameParameterSetId();
-  AtlasFrameParameterSetRbsp&    afps   = context.getAtlasFrameParameterSet( afpsId );
-  size_t                         aspsId = afps.getAtlasSequenceParameterSetId();
-  AtlasSequenceParameterSetRBSP& asps   = context.getAtlasSequenceParameterSet( aspsId );
-  size_t numRefIdxActive= context.getNumRefIdxActive(atgh);
-  if ( numRefIdxActive > 1 ) ipdu.setIpduRefIndex( bitstream.readUvlc() ); //jkei: spec bug fix
-  else                       ipdu.setIpduRefIndex( 0 );
+  size_t                         afpsId          = atgh.getAtghAtlasFrameParameterSetId();
+  AtlasFrameParameterSetRbsp&    afps            = context.getAtlasFrameParameterSet( afpsId );
+  size_t                         aspsId          = afps.getAtlasSequenceParameterSetId();
+  AtlasSequenceParameterSetRBSP& asps            = context.getAtlasSequenceParameterSet( aspsId );
+  size_t                         numRefIdxActive = context.getNumRefIdxActive( atgh );
+  if ( numRefIdxActive > 1 ) {
+    ipdu.setIpduRefIndex( bitstream.readUvlc() );
+  } else {
+    ipdu.setIpduRefIndex( 0 );
+  }
   ipdu.setIpduRefPatchIndex( bitstream.readSvlc() );
   ipdu.setIpdu2dPosX( bitstream.readSvlc() );        // se(v)
   ipdu.setIpdu2dPosY( bitstream.readSvlc() );        // se(v)
@@ -1068,13 +941,13 @@ void PCCBitstreamDecoder::interPatchDataUnit( InterPatchDataUnit&   ipdu,
     ipdu.setIpdu3dPosDeltaMaxZ( bitstream.readSvlc() );  // se(v)
   }
   if ( asps.getPointLocalReconstructionEnabledFlag() ) {
-    auto& atglPrev = context.getAtlasTileGroupLayer( prevFrameIndex_ );
-    auto& atghPrev = atglPrev.getAtlasTileGroupHeader(); 
-    auto& atgdPrev = atglPrev.getAtlasTileGroupDataUnit(); 
-    auto& pidPrev = atgdPrev.getPatchInformationData(  ipdu.getIpduRefPatchIndex() + predPatchIndex_  );
-    auto patchModePrev = pidPrev.getPatchMode();
-    int32_t sizeU = ipdu.getIpdu2dDeltaSizeX();
-    int32_t sizeV = ipdu.getIpdu2dDeltaSizeY();
+    auto&   atglPrev      = context.getAtlasTileGroupLayer( prevFrameIndex_ );
+    auto&   atghPrev      = atglPrev.getAtlasTileGroupHeader();
+    auto&   atgdPrev      = atglPrev.getAtlasTileGroupDataUnit();
+    auto&   pidPrev       = atgdPrev.getPatchInformationData( ipdu.getIpduRefPatchIndex() + predPatchIndex_ );
+    auto    patchModePrev = pidPrev.getPatchMode();
+    int32_t sizeU         = ipdu.getIpdu2dDeltaSizeX();
+    int32_t sizeV         = ipdu.getIpdu2dDeltaSizeY();
     if ( ( PCCTILEGROUP( atghPrev.getAtghType() ) ) == P_TILE_GRP && patchModePrev == PATCH_MODE_P_SKIP ) {
     } else if ( ( PCCTILEGROUP( atghPrev.getAtghType() ) ) == P_TILE_GRP && patchModePrev == PATCH_MODE_P_MERGE ) {
       auto& plrdPrev = pidPrev.getMergePatchDataUnit().getPointLocalReconstructionData();
@@ -1100,13 +973,12 @@ void PCCBitstreamDecoder::interPatchDataUnit( InterPatchDataUnit&   ipdu,
     prevPatchSizeV_ = sizeV;
     predPatchIndex_ += ipdu.getIpduRefPatchIndex() + 1;
   }
-
   TRACE_BITSTREAM(
-      "%zu frame: numRefIdxActive = %zu reference = frame%zu patch%d 2Dpos = %ld %ld 2DdeltaSize = %ld %ld 3Dpos = %ld %ld %ld %ld\n",
-      ipdu.getFrameIndex(), numRefIdxActive,
-      ipdu.getIpduRefIndex(), ipdu.getIpduRefPatchIndex(), ipdu.getIpdu2dPosX(), ipdu.getIpdu2dPosY(),
-      ipdu.getIpdu2dDeltaSizeX(), ipdu.getIpdu2dDeltaSizeY(), ipdu.getIpdu3dPosX(), ipdu.getIpdu3dPosY(),
-      ipdu.getIpdu3dPosMinZ(), ipdu.getIpdu3dPosDeltaMaxZ() );
+      "%zu frame: numRefIdxActive = %zu reference = frame%zu patch%d 2Dpos = %ld %ld 2DdeltaSize = %ld %ld 3Dpos = %ld "
+      "%ld %ld %ld\n",
+      ipdu.getFrameIndex(), numRefIdxActive, ipdu.getIpduRefIndex(), ipdu.getIpduRefPatchIndex(), ipdu.getIpdu2dPosX(),
+      ipdu.getIpdu2dPosY(), ipdu.getIpdu2dDeltaSizeX(), ipdu.getIpdu2dDeltaSizeY(), ipdu.getIpdu3dPosX(),
+      ipdu.getIpdu3dPosY(), ipdu.getIpdu3dPosMinZ(), ipdu.getIpdu3dPosDeltaMaxZ() );
 }
 
 // 7.3.7.7  Raw patch data unit syntax
@@ -1122,12 +994,11 @@ void PCCBitstreamDecoder::rawPatchDataUnit( RawPatchDataUnit&     ppdu,
   if ( sps.getRawSeparateVideoPresentFlag( atlasIndex ) ) {
     ppdu.setRpduPatchInRawVideoFlag( bitstream.read( 1 ) );
   }  // u(1)
-
-  ppdu.setRpdu2dPosX( bitstream.read( afps.getAfps2dPosXBitCountMinus1() + 1 ) );        // u(v)
-  ppdu.setRpdu2dPosY( bitstream.read( afps.getAfps2dPosYBitCountMinus1() + 1 ) );        // u(v)
-  ppdu.setRpdu2dDeltaSizeX( bitstream.readSvlc() );                                      // se(v)
-  ppdu.setRpdu2dDeltaSizeY( bitstream.readSvlc() );                                      // se(v)
-  TRACE_BITSTREAM(" AtghRaw3dPosAxisBitCountMinus1 = %lu \n",atgh.getAtghRaw3dPosAxisBitCountMinus1() );
+  ppdu.setRpdu2dPosX( bitstream.read( afps.getAfps2dPosXBitCountMinus1() + 1 ) );  // u(v)
+  ppdu.setRpdu2dPosY( bitstream.read( afps.getAfps2dPosYBitCountMinus1() + 1 ) );  // u(v)
+  ppdu.setRpdu2dDeltaSizeX( bitstream.readSvlc() );                                // se(v)
+  ppdu.setRpdu2dDeltaSizeY( bitstream.readSvlc() );                                // se(v)
+  TRACE_BITSTREAM( " AtghRaw3dPosAxisBitCountMinus1 = %lu \n", atgh.getAtghRaw3dPosAxisBitCountMinus1() );
   ppdu.setRpdu3dPosX( bitstream.read( atgh.getAtghRaw3dPosAxisBitCountMinus1() + 1 ) );  // u(v)
   ppdu.setRpdu3dPosY( bitstream.read( atgh.getAtghRaw3dPosAxisBitCountMinus1() + 1 ) );  // u(v)
   ppdu.setRpdu3dPosZ( bitstream.read( atgh.getAtghRaw3dPosAxisBitCountMinus1() + 1 ) );  // u(v)
@@ -1156,39 +1027,31 @@ void PCCBitstreamDecoder::eomPatchDataUnit( EOMPatchDataUnit&     epdu,
     epdu.setEpduAssociatedPatches( bitstream.read( 8 ), cnt );
     epdu.setEpduEomPointsPerPatch( bitstream.readUvlc(), cnt );  //???
   }
+#ifdef BITSTREAM_TRACE
   TRACE_BITSTREAM( "EOM Patch => UV %4lu %4lu  N=%4ld\n", epdu.getEpdu2dPosX(), epdu.getEpdu2dPosY(),
                    epdu.getEpduAssociatedPatchesCountMinus1() + 1 );
-  for ( size_t cnt = 0; cnt < epdu.getEpduAssociatedPatchesCountMinus1() + 1; cnt++ )
+  for ( size_t cnt = 0; cnt < epdu.getEpduAssociatedPatchesCountMinus1() + 1; cnt++ ) {
     TRACE_BITSTREAM( "%4ld, %4ld\n", epdu.getEpduAssociatedPatches()[cnt], epdu.getEpduEomPointsPerPatch()[cnt] );
+  }
+#endif
 }
-// jkei: atlasSubStream updated PST.Nov6 - bitstream is only for atlasSubStream
+
 void PCCBitstreamDecoder::atlasSubStream( PCCContext& context, PCCBitstream& bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
-  int64_t             sizeBitstream = bitstream.capacity(); //jkei: I don't think "capacity" is right...
+  int64_t             sizeBitstream = bitstream.capacity();
   SampleStreamNalUnit ssnu;
   sampleStreamNalHeader( bitstream, ssnu );
   while ( bitstream.size() < sizeBitstream ) {
-    printf( "sizeBitstream = %lld \n",sizeBitstream ); fflush(stdout);
-    printf( "bitstream.size() = %llu \n",bitstream.size() ); fflush(stdout);
     ssnu.addNalUnit();
-//  TRACE_BITSTREAM( " ATGL: frame %zu\n", index -2);
     sampleStreamNalUnit( context, bitstream, ssnu, ssnu.getNalUnit().size() - 1 );
-    // sizeBitstream-=(ssnu.getNalUnit().getNalUnitSize()); //jkei: ideally like this... getNalUnitSize includes nalu
-    // header,
-#if 1
-    auto& nu=ssnu.getNalUnit( ssnu.getNalUnit().size() - 1 );
-    printf( "nalu[%d]:%s, headerSize:2+%d, naluSize:%zu, sizeBitstream written: %llu\n", (int)nu.getNalUnitType(), toString(nu.getNalUnitType()).c_str(), ( ssnu.getUnitSizePrecisionBytesMinus1() + 1 ), nu.getNalUnitSize(), bitstream.size() ); fflush( stdout );
-    TRACE_BITSTREAM( "nalu[%d]:%s, headerSize:2+%d, naluSize:%zu, sizeBitstream written: %llu\n", (int)nu.getNalUnitType(), toString(nu.getNalUnitType()).c_str(), ( ssnu.getUnitSizePrecisionBytesMinus1() + 1 ), nu.getNalUnitSize(), bitstream.size() ); fflush( stdout );
-#else
-    printf( "nalu%u, naluSize:%zu, sizeBitstream read: %lld/%lld\n", ssnu.getNalUnit( 0 ).getNalUnitType(),
-                     ssnu.getNalUnit( 0 ).getNalUnitSize(), bitstream.size(), sizeBitstream );
-    fflush(stdout);
-    TRACE_BITSTREAM( "nalu%hhu, naluSize:%zu, sizeBitstream read: %lld/%lld\n", ssnu.getNalUnit( 0 ).getNalUnitType(),
-                     ssnu.getNalUnit( 0 ).getNalUnitSize(), bitstream.size(), sizeBitstream );
+#ifdef BITSTREAM_TRACE
+    auto& nu = ssnu.getNalUnit( ssnu.getNalUnit().size() - 1 );
+    TRACE_BITSTREAM( "nalu[%d]:%s, headerSize:2+%d, naluSize:%zu, sizeBitstream written: %llu\n",
+                     (int)nu.getNalUnitType(), toString( nu.getNalUnitType() ).c_str(),
+                     ( ssnu.getUnitSizePrecisionBytesMinus1() + 1 ), nu.getNalUnitSize(), bitstream.size() );
 #endif
   }
 }
-// jkei: <------- added up to this point PST.Nov1st
 
 // 7.3.6.6 Point local reconstruction data syntax
 void PCCBitstreamDecoder::pointLocalReconstructionData( PointLocalReconstructionData&  plrd,
@@ -1196,21 +1059,19 @@ void PCCBitstreamDecoder::pointLocalReconstructionData( PointLocalReconstruction
                                                         AtlasSequenceParameterSetRBSP& asps,
                                                         PCCBitstream&                  bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
-  auto&         plri         = asps.getPointLocalReconstructionInformation( 0 );  // TODO fix id
+  auto&         plri         = asps.getPointLocalReconstructionInformation( 0 );
   const size_t  blockCount   = plrd.getBlockToPatchMapWidth() * plrd.getBlockToPatchMapHeight();
   const uint8_t bitCountMode = uint8_t( getFixedLengthCodeBitsCount( uint32_t( plri.getNumberOfModesMinus1() ) ) );
   TRACE_BITSTREAM( "WxH= %lu x %lu => blockCount = %lu \n", plrd.getBlockToPatchMapWidth(),
                    plrd.getBlockToPatchMapHeight(), blockCount );
   TRACE_BITSTREAM( "  NumberOfModesMinus1 = %u  => bitCountMode = %u  \n", plri.getNumberOfModesMinus1(),
                    bitCountMode );
-
   if ( blockCount > plri.getBlockThresholdPerPatchMinus1() + 1 ) {
     plrd.setLevelFlag( bitstream.read( 1 ) );
   } else {
     plrd.setLevelFlag( true );
   }
   TRACE_BITSTREAM( "  LevelFlag = %u \n", plrd.getLevelFlag() );
-
   if ( plrd.getLevelFlag() ) {
     plrd.setPresentFlag( bitstream.read( 1 ) );
     if ( plrd.getPresentFlag() ) { plrd.setModeMinus1( bitstream.read( bitCountMode ) ); }
@@ -1254,8 +1115,6 @@ void PCCBitstreamDecoder::seiMessage( PCCBitstream& bitstream, PCCContext& conte
   seiPayload( bitstream, context, nalUnitType, (SeiPayloadType)payloadType, payloadSize );
 }
 
-// JR TODO: continue
-
 // 7.3.5 NAL unit syntax
 // 7.3.5.1 General NAL unit syntax
 void PCCBitstreamDecoder::nalUnit( PCCBitstream& bitstream, NalUnit& nalUnit ) {
@@ -1297,7 +1156,6 @@ void PCCBitstreamDecoder::sampleStreamNalUnit( PCCContext&          context,
   nu.setNalUnitSize( bitstream.read( 8 * ( ssnu.getUnitSizePrecisionBytesMinus1() + 1 ) ) );  // u(v)
   nu.allocate();
   nalUnitHeader( bitstream, nu );
-  printf( "sampleStreamNalUnit %d \n",(int) nu.getNalUnitType()); fflush(stdout);
   switch ( nu.getNalUnitType() ) {
     case NAL_ASPS: atlasSequenceParameterSetRBSP( context.addAtlasSequenceParameterSet(), context, bitstream ); break;
     case NAL_AFPS: atlasFrameParameterSetRbsp( context.addAtlasFrameParameterSet(), context, bitstream ); break;
@@ -1631,7 +1489,7 @@ void PCCBitstreamDecoder::volumetricTilingInfoLabels( PCCBitstream& bitstream, S
 // E.2.14.3  Volumetric Tiling Info Objects
 void PCCBitstreamDecoder::volumetricTilingInfoObjects( PCCBitstream& bitstream, SEIVolumetricTilingInfo& sei ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
-  const int32_t fixedBitcount = 16;  // JR TODO: get right v value
+  const int32_t fixedBitcount = 16;
   auto&         vtio          = sei.getVolumetricTilingInfoObjects();
   vtio.setVtiNumObjectUpdates( bitstream.readUvlc() );  // ue(v)
   vtio.allocate();
@@ -1639,7 +1497,6 @@ void PCCBitstreamDecoder::volumetricTilingInfoObjects( PCCBitstream& bitstream, 
     vtio.setVtiObjectIdx( i, bitstream.readUvlc() );  // ue(v)
     size_t index = vtio.getVtiObjectIdx( i );
     vtio.allocate( index + 1 );
-
     vtio.setVtiObjectCancelFlag( index, bitstream.read( 1 ) );  // u(1)
     // ObjectTracked[vtiObjectIdx[ i ] ] = ! vtiObjectCancelFlag( index, bitstream.read( x ) )
     if ( !vtio.getVtiObjectCancelFlag( index ) ) {
@@ -1704,7 +1561,7 @@ void PCCBitstreamDecoder::bufferingPeriod( PCCBitstream&        bitstream,
                                            std::vector<uint8_t> hrdCabCntMinus1 ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   SEIBufferingPeriod& sei           = static_cast<SEIBufferingPeriod&>( seiAbstract );
-  const int32_t       fixedBitcount = 16;                        // JR TODO: get right v value
+  const int32_t       fixedBitcount = 16;
   sei.setBpAtlasSequenceParameterSetId( bitstream.readUvlc() );  // ue(v)
   sei.setBpIrapCabParamsPresentFlag( bitstream.read( 1 ) );      // u(1)
   if ( sei.getBpIrapCabParamsPresentFlag() ) {
@@ -1746,7 +1603,7 @@ void PCCBitstreamDecoder::atlasFrameTiming( PCCBitstream& bitstream,
                                             bool          CabDabDelaysPresentFlag ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   SEIAtlasFrameTiming& sei           = static_cast<SEIAtlasFrameTiming&>( seiAbstract );
-  const int32_t        fixedBitcount = 16;  // JR TODO: get right v value
+  const int32_t        fixedBitcount = 16;
   if ( CabDabDelaysPresentFlag ) {
     sei.setAftCabRemovalDelayMinus1( bitstream.read( fixedBitcount ) );  // u(v)
     sei.setAftDabOutputDelay( bitstream.read( fixedBitcount ) );         // u(v)
@@ -1771,7 +1628,7 @@ void PCCBitstreamDecoder::presentationInformation( PCCBitstream& bitstream, SEI&
     for ( size_t d = 0; d < 3; d++ ) {
       int64_t a = bitstream.readS( 32 );
       int64_t b = bitstream.read( 32 );
-      sei.setPiPivot( d, ( a << 32 ) & b );  // i(64) // JR TODO: check signed/unsigned?
+      sei.setPiPivot( d, ( a << 32 ) & b );  // i(64)
     }
   }
   if ( sei.getPiDimensionPresentFlag() ) {
@@ -1792,11 +1649,6 @@ void PCCBitstreamDecoder::smoothingParameters( PCCBitstream& bitstream, SEI& sei
   if ( !sei.getSpGeometryCancelFlag() ) {
     sei.setSpGeometrySmoothingEnabledFlag( bitstream.read( 1 ) );  // u(1)
     if ( sei.getSpGeometrySmoothingEnabledFlag() == 1 ) {
-#if 0      
-      sei.setSpGeometrySmoothingGridSizeMinus2( bitstream.read( 7 ) );  // u(7)
-      sei.setSpGeometrySmoothingThreshold( bitstream.read( 8 ) );       // u(8)
-      TRACE_BITSTREAM( "SpGeometrySmoothingThreshold = %u \n", sei.getSpGeometrySmoothingThreshold() );
-#else
       sei.setSpGeometrySmoothingId( bitstream.read( 8 ) );  // u(8)
       TRACE_BITSTREAM( "SpGeometrySmoothingId = %u \n", sei.getSpGeometrySmoothingId() );
       if ( sei.getSpGeometrySmoothingId() == 0 ) {
@@ -1812,7 +1664,6 @@ void PCCBitstreamDecoder::smoothingParameters( PCCBitstream& bitstream, SEI& sei
         TRACE_BITSTREAM( "  PassesCountMinus1 = %u \n", sei.getSpGeometryPatchBlockFilteringPassesCountMinus1() );
         TRACE_BITSTREAM( "  FilterSizeMinus1 = %u \n", sei.getSpGeometryPatchBlockFilteringFilterSizeMinus1() );
       }
-#endif
     }
   }
   if ( !sei.getSpAttributeCancelFlag() ) {

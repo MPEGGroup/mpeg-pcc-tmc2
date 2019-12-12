@@ -65,22 +65,6 @@
 #include "PCCChrono.h"
 #endif
 
-#define POSTSMOOTHING_RGB2YUV 0
-#define ATLASIDXPCC 0
-#define VPCCUNIT_DATA_BITSTREAM 1  // jkei: bitstream instead of data
-
-// Segmentation
-#define BUGFIX_FIRSTEDDatT1 1    
-#define ONELAYERFIX         1    
-#define MULTISTREAM_UPDATE  1    
-#define DEBUG_MULTI_STREAMS  
-// #define DEBUG_SURFACE_SEPARATION   
-
-// ******************************************************************* //
-// Trace modes to validate new syntax
-// ******************************************************************* //
-// #define BITSTREAM_TRACE
-// #define CODEC_TRACE 
 
 namespace pcc {
 
@@ -92,12 +76,21 @@ namespace pcc {
 // ******************************************************************* //
 // Coding tool configuration
 // ******************************************************************* //
-
 static const uint8_t PCC_SAVE_POINT_TYPE = 0;  // Save point information in reconstructed ply.
+
+
+// ******************************************************************* //
+// Trace modes to validate new syntax
+// ******************************************************************* //
+// #define BITSTREAM_TRACE
+// #define CODEC_TRACE 
 
 // ******************************************************************* //
 // Common constants
 // ******************************************************************* //
+#define ATLASIDXPCC 0
+#define POSTSMOOTHING_RGB2YUV 0
+
 const int16_t infiniteDepth  = ( std::numeric_limits<int16_t>::max )();
 const int64_t infinitenumber = ( std::numeric_limits<int64_t>::max )();
 
@@ -584,7 +577,6 @@ static void createPapiEvent( int& EventSet ) {
   printf( "PAPI: number of L1 cache misses        : %lld \n", values[4] );                        \
   printf( "PAPI: number of L2 cache misses        : %lld \n", values[5] );                        \
   printf( "PAPI: Processing time (wall)           : %lld \n", duration );
-
 #endif
 }  // namespace pcc
 

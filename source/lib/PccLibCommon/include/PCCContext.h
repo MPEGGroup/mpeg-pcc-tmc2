@@ -37,9 +37,7 @@
 #include "PCCMath.h"
 #include "PCCVideo.h"
 #include "PCCVideoBitstream.h"
-#if VPCCUNIT_DATA_BITSTREAM
 #include "PCCBitstream.h"
-#endif
 #include <map>
 
 namespace pcc {
@@ -1187,19 +1185,12 @@ class VUIParameters {
 class VpccUnit {
  public:
   VpccUnit() {}
-  ~VpccUnit() {
-#if !VPCCUNIT_DATA_BITSTREAM
-    vpccUnitData_.clear();
-#endif
-  }
+  ~VpccUnit() {}
 
   void setVpccUnitSize( size_t value ) { vpccUnitSize_ = value; }
-#if VPCCUNIT_DATA_BITSTREAM
   void setVpccUnitSize() { vpccUnitSize_ = vpccUnitDataBitstream_.size(); }
-#endif
   size_t getVpccUnitSize() { return vpccUnitSize_; }
 
-#if VPCCUNIT_DATA_BITSTREAM
   void setVpccUnitDataBitstream( PCCBitstream&& bitstream, VPCCUnitType unitType ) {
     vpccUnitDataBitstream_ = std::move( bitstream );
     vpccUnitSize_          = bitstream.size();
@@ -1210,23 +1201,7 @@ class VpccUnit {
     return vpccUnitDataBitstream_;
   }
   void allocate() { vpccUnitDataBitstream_.initialize( vpccUnitSize_ ); }
-#else
-  void                  setVpccUnitData( size_t index, uint8_t data ) { vpccUnitData_[index] = data; }
-  uint8_t               getVpccUnitData( size_t index ) { return vpccUnitData_[index]; }
-  std::vector<uint8_t>& getVpccUnitData() { return vpccUnitData_; }
-
-  void allocate() { vpccUnitData_.resize( vpccUnitSize_, 0 ); }
-  void initialize( size_t size, uint8_t* data, VPCCUnitType unitType ) {
-    vpccUnitSize_ = size;
-    if ( size > 0 ) {
-      vpccUnitData_.resize( size, 0 );
-      memcpy( vpccUnitData_.data(), data, size * sizeof( uint8_t ) );
-    }
-    vpccUnitType_ = unitType;
-  }
-
-#endif
-  void         getVpccUnitHeader() {}  // read 32 bits
+  void         getVpccUnitHeader() {}
   void         getVpccUnitPayload() {}
   VPCCUnitType getVpccUnitType() { return vpccUnitType_; }
 
@@ -1234,13 +1209,9 @@ class VpccUnit {
   void setVpccUnitType( VPCCUnitType value ) { vpccUnitType_ = value; }
 
  private:
-  VPCCUnitType vpccUnitType_;  // jkei: just for humane reason..
+  VPCCUnitType vpccUnitType_;
   size_t       vpccUnitSize_;
-#if VPCCUNIT_DATA_BITSTREAM
   PCCBitstream vpccUnitDataBitstream_;
-#else
-  std::vector<uint8_t> vpccUnitData_;  // jkei: do we really need to do like this? ;o;
-#endif
 };
 
 // 7.3.5 NAL unit syntax
@@ -1311,13 +1282,11 @@ class SampleStreamNalUnit {
 
  private:
   uint8_t              unitSizePrecisionBytesMinus1_;
-  std::vector<NalUnit> nalUnit_;  // jkei: let's remove this since one nalUnit per one sampleStreamNalUnit??
+  std::vector<NalUnit> nalUnit_;
 };
 
 // B.2 Sample stream V-PCC unit syntax and semantics
-// 6.1 V-PCC bistreams format (previously)
-// jkei: lets do something to match this one to the spec. otherwise I don't know how to read NAL_Atlas group layer
-// repeatly...
+// 6.1 V-PCC bistreams format
 class SampleStreamVpccUnit {
  public:
   SampleStreamVpccUnit() : ssvhUnitSizePrecisionBytesMinus1_( 0 ) {}
@@ -1335,11 +1304,11 @@ class SampleStreamVpccUnit {
   void setSsvhUnitSizePrecisionBytesMinus1( uint32_t value ) { ssvhUnitSizePrecisionBytesMinus1_ = value; }
 
  private:
-  std::vector<VpccUnit> vpccUnits_;  // jkei: really need to be list?
+  std::vector<VpccUnit> vpccUnits_;
   uint32_t              ssvhUnitSizePrecisionBytesMinus1_;
 };
 
-// 7.3.7.9 Point local reconstruction data syntax : jkei: need to be updated!
+// 7.3.7.9 Point local reconstruction data syntax
 class PointLocalReconstructionData {
  public:
   PointLocalReconstructionData() :
@@ -1388,9 +1357,8 @@ class PointLocalReconstructionData {
   std::vector<uint8_t> blockModeMinus1_;
 };
 
-// jkei : Here to ln1420(AtlasFrameParameterSetRbsp) updated (please check PST.oct29th)
 // 7.3.7.8  EOM patch data unit syntax
-class EOMPatchDataUnit {  // jkei: EOM or Eom?
+class EOMPatchDataUnit {
  public:
   EOMPatchDataUnit() :
       epdu2dPosX_( 0 ),
@@ -1445,7 +1413,7 @@ class EOMPatchDataUnit {  // jkei: EOM or Eom?
   std::vector<size_t> epduEomPointsPerPatch_;
 };
 
-// 7.3.7.7  raw patch data unit syntax (jkei:updated)
+// 7.3.7.7  raw patch data unit syntax
 class RawPatchDataUnit {
  public:
   RawPatchDataUnit() :
@@ -1500,7 +1468,7 @@ class RawPatchDataUnit {
   size_t   rpduFrameIndex_;
 };
 
-// 7.3.7.6  Inter patch data unit syntax(jkei: newly added)
+// 7.3.7.6  Inter patch data unit syntax
 class InterPatchDataUnit {
  public:
   InterPatchDataUnit() :
@@ -1565,7 +1533,7 @@ class InterPatchDataUnit {
   PointLocalReconstructionData pointLocalReconstructionData_;
 };
 
-// 7.3.7.5  Merge patch data unit syntax(jkei: newly added)
+// 7.3.7.5  Merge patch data unit syntax
 class MergePatchDataUnit {
  public:
   MergePatchDataUnit() :
@@ -1637,7 +1605,7 @@ class MergePatchDataUnit {
   PointLocalReconstructionData pointLocalReconstructionData_;
 };
 
-// 7.3.7.4  Skip patch data unit syntax(jkei: newly added)
+// 7.3.7.4  Skip patch data unit syntax
 class SkipPatchDataUnit {
  public:
   SkipPatchDataUnit() : spduPatchIndex_( 0 ), spduFrameIndex_( 0 ){};
@@ -1653,7 +1621,7 @@ class SkipPatchDataUnit {
   size_t spduFrameIndex_;
 };
 
-// 7.3.7.3  Patch data unit syntax (jkei: updated)
+// 7.3.7.3  Patch data unit syntax
 class PatchDataUnit {
  public:
   PatchDataUnit() :
@@ -1729,7 +1697,7 @@ class PatchDataUnit {
   size_t                       pduFrameIndex_;
 };
 
-// 7.3.7.2  Patch information data syntax (pid) : jkei : updated
+// 7.3.7.2  Patch information data syntax (pid)
 class PatchInformationData {
  public:
   PatchInformationData(){};
@@ -1764,12 +1732,12 @@ class PatchInformationData {
   PatchDataUnit      patchDataUnit_;
   InterPatchDataUnit interPatchDataUnit_;
   MergePatchDataUnit mergePatchDataUnit_;
-  SkipPatchDataUnit  skipPatchDataUnit_;  // jkei : do we need this??
+  SkipPatchDataUnit  skipPatchDataUnit_;
   RawPatchDataUnit   rawPatchyDataUnit_;
   EOMPatchDataUnit   eomPatchDataUnit_;
 };
 
-// 7.3.7.1  General atlas tile group data unit syntax (jkei: newly added, same as ptgdu but atgduPatchMode_. do we need
+// 7.3.7.1  General atlas tile group data unit syntax
 // atgduPatchMode_?)
 class AtlasTileGroupDataUnit {
  public:
@@ -1815,7 +1783,7 @@ class AtlasTileGroupDataUnit {
   std::vector<PatchInformationData> patchInformationData_;
 };
 
-// 7.3.6.12  Reference list structure syntax (jkei : table number, name updated, encoder/decoder updated accordingly)
+// 7.3.6.12  Reference list structure syntax
 class RefListStruct {
  public:
   RefListStruct() : numRefEntries_( 0 ) {
@@ -1864,7 +1832,7 @@ class RefListStruct {
   std::vector<bool>    strpfEntrySignFlag_;
 };
 
-// 7.3.6.11  Atlas tile group header syntax (jkei : newly added. )
+// 7.3.6.11  Atlas tile group header syntax
 class AtlasTileGroupHeader {
  public:
   AtlasTileGroupHeader() :
@@ -1947,10 +1915,10 @@ class AtlasTileGroupHeader {
   uint8_t              atghNumRefIdxActiveMinus1_;
   std::vector<bool>    atghAdditionalAfocLsbPresentFlag_;
   std::vector<uint8_t> atghAdditionalAfocLsbVal_;
-  RefListStruct        refListStruct_;  // jkei: one ref list
+  RefListStruct        refListStruct_;
 };
 
-// 7.3.6.10  Atlas tile group layer RBSP syntax (jkei: newly added, replace PatchTileGroupLayerUnit with this)
+// 7.3.6.10  Atlas tile group layer RBSP syntax
 class AtlasTileGroupLayerRbsp {
  public:
   AtlasTileGroupLayerRbsp() : frameIndex_( 0 ) {}
@@ -1972,7 +1940,6 @@ class AtlasTileGroupLayerRbsp {
   AtlasTileGroupDataUnit atlasTileGroupDataUnit_;
 };
 
-// jkei: do we need 7.3.6.5~7.3.6.9?
 // 7.3.6.9  Filler data RBSP syntax
 class FillerDataRbsp {
  public:
@@ -2027,7 +1994,7 @@ class SupplementalEnhancementInformationRbsp {
   std::vector<SEI> sei_;
 };
 
-// 7.3.6.4  Atlas frame tile information syntax (jkei: PatchFrameTileInformation is renamed )
+// 7.3.6.4  Atlas frame tile information syntax
 class AtlasFrameTileInformation {
  public:
   AtlasFrameTileInformation() :
@@ -2214,7 +2181,7 @@ class AtlasFrameParameterSetRbsp {
   size_t                    afps2dPosYBitCountMinus1_;
   size_t                    afps3dPosXBitCountMinus1_;
   size_t                    afps3dPosYBitCountMinus1_;
-  bool                      afpsLodModeEnableFlag_;  // TODO: remove?
+  bool                      afpsLodModeEnableFlag_;
   bool                      afpsOverrideEomForDepthFlag_;
   uint8_t                   afpsEomNumberOfPatchBitCountMinus1_;
   uint8_t                   afpsEomMaxBitCountMinus1_;
@@ -2761,7 +2728,7 @@ class VpccParameterSet {
   void    setLosslessGeo444( bool losslessGeo444 ) { losslessGeo444_ = losslessGeo444; }
   void    setLosslessGeo( bool losslessGeo ) { losslessGeo_ = losslessGeo; }
   void    setMinLevel( uint8_t minLevel ) { minLevel_ = minLevel; }
-  
+
  private:
   bool    losslessGeo444_;
   bool    losslessGeo_;
@@ -2826,7 +2793,7 @@ class PCCContext {
 
   void resize( size_t size );
 
-  const size_t                  size() { return frames_.size(); }  // jkei: lets rename this
+  const size_t                  size() { return frames_.size(); }
   std::vector<PCCFrameContext>& getFrames() { return frames_; }
   PCCFrameContext&              getFrame( int16_t index ) { return frames_[index]; }
   PCCFrameContext&              operator[]( int index ) { return frames_[index]; }
@@ -2877,9 +2844,9 @@ class PCCContext {
     refAtlasFrameList_[listIndex][refIndex] = value;
   }
   void setRefAtlasFrameList( std::vector<std::vector<int32_t>>& list ) {
-    size_t listSize = (std::min)( refAtlasFrameList_.size(), list.size() );
+    size_t listSize = ( std::min )( refAtlasFrameList_.size(), list.size() );
     for ( size_t i = 0; i < listSize; i++ ) {
-      size_t refSize = (std::min)( refAtlasFrameList_[i].size(), list[i].size() );
+      size_t refSize = ( std::min )( refAtlasFrameList_[i].size(), list[i].size() );
       for ( size_t j = 0; j < refSize; j++ ) refAtlasFrameList_[i][j] = list[i][j];
     }
   }
@@ -2953,10 +2920,8 @@ class PCCContext {
   AtlasSequenceParameterSetRBSP& addAtlasSequenceParameterSet( uint8_t setId ) {
     AtlasSequenceParameterSetRBSP asps;
     asps.setAltasSequenceParameterSetId( setId );
-    if ( atlasSequenceParameterSet_.size() < setId + 1 ) {
-      atlasSequenceParameterSet_.resize( setId + 1 );  // jkei: setId doesnot need to be sequential
-    }
-    atlasSequenceParameterSet_[setId] = asps;  // jkei: makes sens?
+    if ( atlasSequenceParameterSet_.size() < setId + 1 ) { atlasSequenceParameterSet_.resize( setId + 1 ); }
+    atlasSequenceParameterSet_[setId] = asps;
     return atlasSequenceParameterSet_[setId];
   }
   AtlasFrameParameterSetRbsp& addAtlasFrameParameterSet() {
@@ -2968,7 +2933,6 @@ class PCCContext {
   size_t addAtlasFrameParameterSet( AtlasFrameParameterSetRbsp& refAfps ) {
     size_t                     setId = atlasFrameParameterSet_.size();
     AtlasFrameParameterSetRbsp afps;
-    // AtlasFrameParameterSetRbsp(refAfps) afps; //jkei: can we do this??
     afps.copyFrom( refAfps );
     afps.setAtlasFrameParameterSetId( setId );
     atlasFrameParameterSet_.resize( setId + 1 );
@@ -2978,10 +2942,8 @@ class PCCContext {
   AtlasFrameParameterSetRbsp& addAtlasFrameParameterSet( uint8_t setId ) {
     AtlasFrameParameterSetRbsp afps;
     afps.setAtlasFrameParameterSetId( setId );
-    if ( atlasFrameParameterSet_.size() < setId + 1 ) {
-      atlasFrameParameterSet_.resize( setId + 1 );  // jkei: setId doesnot need to be sequential
-    }
-    atlasFrameParameterSet_[setId] = afps;  // jkei: makes sens?
+    if ( atlasFrameParameterSet_.size() < setId + 1 ) { atlasFrameParameterSet_.resize( setId + 1 ); }
+    atlasFrameParameterSet_[setId] = afps;
     return atlasFrameParameterSet_[setId];
   }
 
@@ -3003,8 +2965,6 @@ class PCCContext {
 
   std::vector<AtlasTileGroupLayerRbsp>& getAtlasTileGroupLayerList() { return atlasTileGroupLayer_; }
   AtlasTileGroupLayerRbsp&              getAtlasTileGroupLayer( size_t index ) { return atlasTileGroupLayer_[index]; }
-
-  // PatchDataGroup& getPatchDataGroup() { return patchSequenceDataUnit_; }
 
   void addPointLocalReconstructionMode( const PointLocalReconstructionMode& mode ) {
     pointLocalReconstructionMode_.push_back( mode );

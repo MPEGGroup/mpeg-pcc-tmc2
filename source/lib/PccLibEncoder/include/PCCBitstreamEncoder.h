@@ -147,7 +147,7 @@ class PCCBitstreamEncoder {
   void atlasSequenceParameterSetRBSP( AtlasSequenceParameterSetRBSP& asps,
                                       PCCContext&                    context,
                                       PCCBitstream&                  bitstream );
-  // 7.3.6.2  Point local reconstruction information syntax (NEW, comes from below)
+  // 7.3.6.2  Point local reconstruction information syntax
   void pointLocalReconstructionInformation( AtlasSequenceParameterSetRBSP& asps,
                                             PCCContext&                    context,
                                             PCCBitstream&                  bitstream );
@@ -291,7 +291,7 @@ class PCCBitstreamEncoder {
                              PCCContext&           context,
                              PCCBitstream&         bitstream );
 
-  // 7.3.5.15 Reference list structure syntax (OLD)
+  // 7.3.5.15 Reference list structure syntax
   void refListStruct( RefListStruct&         refListStruct,
                       PatchVpccParameterSet& patchVpccParameterSet,
                       PCCBitstream&          bitstream );

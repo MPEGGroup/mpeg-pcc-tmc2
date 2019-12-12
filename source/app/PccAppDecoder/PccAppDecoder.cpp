@@ -277,7 +277,7 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
   bitstream.setTraceFile( bitstream.getTraceFile() );
 #endif
   if ( !bitstream.initialize( decoderParams.compressedStreamPath_ ) ) { return -1; }
-  if ( !bitstream.readHeader() ) { return -1; }  // JR TODO: must be remove?
+  if ( !bitstream.readHeader() ) { return -1; }
   bitstreamStat.setHeader( bitstream.size() );
   size_t      frameNumber = decoderParams.startFrameNumber_;
   PCCMetrics  metrics;
@@ -291,11 +291,11 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
 
   SampleStreamVpccUnit ssvu;
   PCCBitstreamDecoder  bitstreamDecoder;
-  size_t headerSize = bitstreamDecoder.read( bitstream, ssvu );
+  size_t               headerSize = bitstreamDecoder.read( bitstream, ssvu );
   bitstreamStat.incrHeader( headerSize );
 
-  bool bMoreData = true;
-  int32_t index= 0;
+  bool    bMoreData = true;
+  int32_t index     = 0;
   while ( bMoreData ) {
     PCCGroupOfFrames reconstructs;
     PCCContext       context;

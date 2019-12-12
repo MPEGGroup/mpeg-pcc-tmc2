@@ -50,15 +50,15 @@ using hundredns = std::chrono::duration<int64_t, std::ratio<1, 10000000>>;
 
 // global state to emulate getrusage(RUSAGE_CHILDREN).
 extern hundredns g_cumulative_time_children;
-}
-}
-}
+}  // namespace detail
+}  // namespace chrono
+}  // namespace pcc
 #endif
 
 //===========================================================================
 
 #if _WIN32
-int pcc::system(const char *command) noexcept {
+int pcc::system( const char* command ) noexcept {
   // Windows doesn't directly support an equivalent of RUSAGE_CHILDREN in
   // GetProcessTimes().  To fully emulate the support is complicated.
   // However, a first order approximation may be made if a process
@@ -70,38 +70,36 @@ int pcc::system(const char *command) noexcept {
   //  - gather the process times for the child
   //  - add to any existing process timers
   //
-  STARTUPINFOW si{};
+  STARTUPINFOW        si{};
   PROCESS_INFORMATION pi{};
-  si.cb = sizeof(si);
+  si.cb = sizeof( si );
 
-  size_t cmd_size = strlen(command) + 1;
+  size_t                     cmd_size = strlen( command ) + 1;
   std::unique_ptr<wchar_t[]> cmd{new wchar_t[cmd_size]};
-  size_t num_converted = 0;
-  mbstowcs_s(&num_converted, cmd.get(), cmd_size, command, _TRUNCATE);
+  size_t                     num_converted = 0;
+  mbstowcs_s( &num_converted, cmd.get(), cmd_size, command, _TRUNCATE );
 
-  if (!CreateProcessW(nullptr, cmd.get(), nullptr, nullptr, 0, 0, nullptr, nullptr, &si, &pi)) {
-    return -1;
-  }
+  if ( !CreateProcessW( nullptr, cmd.get(), nullptr, nullptr, 0, 0, nullptr, nullptr, &si, &pi ) ) { return -1; }
 
-  WaitForSingleObject(pi.hProcess, INFINITE);
+  WaitForSingleObject( pi.hProcess, INFINITE );
 
   DWORD ret = -1;
-  GetExitCodeProcess(pi.hProcess, &ret);
+  GetExitCodeProcess( pi.hProcess, &ret );
 
   FILETIME dummy, userTime;
-  GetProcessTimes(pi.hProcess, &dummy, &dummy, &dummy, &userTime);
+  GetProcessTimes( pi.hProcess, &dummy, &dummy, &dummy, &userTime );
 
   ULARGE_INTEGER val;
-  val.LowPart = userTime.dwLowDateTime;
+  val.LowPart  = userTime.dwLowDateTime;
   val.HighPart = userTime.dwHighDateTime;
 
   using hundredns = std::chrono::duration<int64_t, std::ratio<1, 10000000>>;
-  pcc::chrono::detail::g_cumulative_time_children += hundredns(val.QuadPart);
+  pcc::chrono::detail::g_cumulative_time_children += hundredns( val.QuadPart );
 
-  CloseHandle(pi.hProcess);
-  CloseHandle(pi.hThread);
+  CloseHandle( pi.hProcess );
+  CloseHandle( pi.hThread );
 
-  return int(ret);
+  return int( ret );
 }
 #endif
 

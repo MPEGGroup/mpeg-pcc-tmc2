@@ -60,23 +60,15 @@ class PCCDecoder : public PCCCodec {
   PCCDecoder();
   ~PCCDecoder();
 
-  // // JR: OLD
-  // int decode_old( PCCBitstream &bitstream, PCCContext &context, PCCGroupOfFrames& reconstruct );
-
-  // JR: NEW
   int decode( SampleStreamVpccUnit& ssvu, PCCContext& context, PCCGroupOfFrames& reconstructs );
 
   void setParameters( PCCDecoderParameters value );
 
-  // adaptor methods
   void setGeneratePointCloudParameters( GeneratePointCloudParameters& gpcParams, PCCContext& context );
 
   void createPatchFrameDataStructure( PCCContext& context );
 
-  void createPatchFrameDataStructure(
-      PCCContext&      context,
-      PCCFrameContext& frame,
-      size_t           frameIndex );
+  void createPatchFrameDataStructure( PCCContext& context, PCCFrameContext& frame, size_t frameIndex );
 
  private:
   int decode( PCCContext& context, PCCGroupOfFrames& reconstruct );
@@ -86,12 +78,7 @@ class PCCDecoder : public PCCCodec {
                                         PCCPatch&                     patch,
                                         PointLocalReconstructionData& plrd,
                                         size_t                        occupancyPackingBlockSize );
-  //jkei: let's do something...
-  void copyPointLocalReconstructionData( PCCFrameContext&              frame,
-                                        PCCPatch&                     patch,
-                                        const PCCPatch&                     refPatch,
-                                        size_t                        occupancyPackingBlockSize );
-    
+
   PCCDecoderParameters params_;
 };
 };  // namespace pcc

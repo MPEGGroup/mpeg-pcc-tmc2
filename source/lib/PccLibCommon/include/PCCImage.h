@@ -542,7 +542,7 @@ class PCCImage {
     for ( auto& channel : channels_ ) { channel.resize( size ); }
   }
   bool write420( std::ofstream& outfile, const size_t nbyte, bool convert = false, const size_t filter = 4 ) const {
-    if ( !outfile.good() ) { return false; }  // jkei : do we need to make it more general??
+    if ( !outfile.good() ) { return false; }
     if ( convert ) {
       std::vector<float> RGB444[3], YUV444[3], YUV420[3];
       std::vector<T>     YUV420T[3];

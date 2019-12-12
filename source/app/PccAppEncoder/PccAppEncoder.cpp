@@ -630,11 +630,6 @@ bool parseParameters( int                   argc,
       encoderParams.levelOfDetailY_,
       "levelOfDetail : Y axis in 2D space (should be greater than 1)" )
 
-    // ( "testLevelOfDetail",
-    //   encoderParams.testLevelOfDetail_,
-    //   encoderParams.testLevelOfDetail_,
-    //   "testLevelOfDetail : 1.scaling in 3D space" )
-
     ( "groupDilation",
       encoderParams.groupDilation_,
       encoderParams.groupDilation_,
@@ -1014,19 +1009,16 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
     contextIndex++;
   }
 
-  // jkei: wrapping with sampestream and write to the output bin file! ;o;
-  // jkei: i feel like it could be memory issue.. do we want to keep 300 frames in a memory and write off at once or
-  // write it off every 32 frames(GOF)?
   PCCBitstream bitstream;
 #ifdef BITSTREAM_TRACE
   bitstream.setTrace( true );
   bitstream.openTrace( removeFileExtension( encoderParams.compressedStreamPath_ ) + "_samplestream_write.txt" );
   bitstream.setTraceFile( bitstream.getTraceFile() );
 #endif
-  bitstream.writeHeader();  // JR TODO: must be removed?
+  bitstream.writeHeader();
   bitstreamStat.setHeader( bitstream.size() );
   PCCBitstreamEncoder bitstreamEncoder;
-  size_t headerSize = bitstreamEncoder.write( ssvu, bitstream );
+  size_t              headerSize = bitstreamEncoder.write( ssvu, bitstream );
   bitstreamStat.incrHeader( headerSize );
   bitstream.write( encoderParams.compressedStreamPath_ );
 

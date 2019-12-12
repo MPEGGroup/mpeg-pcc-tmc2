@@ -56,13 +56,9 @@ class PCCFrameContext {
  public:
   PCCFrameContext();
   ~PCCFrameContext();
-  std::vector<PCCVector3<size_t>>& getPointToPixel() { return pointToPixel_; }
-  std::vector<size_t>&             getBlockToPatch() { return blockToPatch_; }
-  std::vector<uint32_t>&           getOccupancyMap() { return occupancyMap_; }
-
-#if NO_RAW_INOCM
-  std::vector<uint32_t> copyOccupancyMap() { return occupancyMap_; }
-#endif
+  std::vector<PCCVector3<size_t>>&   getPointToPixel() { return pointToPixel_; }
+  std::vector<size_t>&               getBlockToPatch() { return blockToPatch_; }
+  std::vector<uint32_t>&             getOccupancyMap() { return occupancyMap_; }
   std::vector<uint32_t>&             getFullOccupancyMap() { return fullOccupancyMap_; }
   std::vector<PCCPatch>&             getPatches() { return patches_; }
   PCCPatch&                          getPatch( size_t index ) { return patches_[index]; }
@@ -91,7 +87,7 @@ class PCCFrameContext {
   const bool                         getRawPatchEnabledFlag() { return rawPatchEnabledFlag_; }
   const size_t                       getMaxDepth() { return maxDepth_; }
   void                               setMaxDepth( size_t value ) { maxDepth_ = value; }
-  size_t                             getGeometry2dNorminalBitdepth() { return geometry2dNorminalBitdepth_; }  
+  size_t                             getGeometry2dNorminalBitdepth() { return geometry2dNorminalBitdepth_; }
   std::vector<PCCPointSet3>&         getSrcPointCloudByPatch() { return srcPointCloudByPatch_; }
   PCCPointSet3&              getSrcPointCloudByPatch( size_t patchIndex ) { return srcPointCloudByPatch_[patchIndex]; }
   std::vector<PCCPointSet3>& getSrcPointCloudByBlock() { return srcPointCloudByBlock_; }
@@ -168,14 +164,12 @@ class PCCFrameContext {
   size_t getNumOfRefAtlasFrameList() { return numOfAvailableRefAtlasFrameList_; }
   size_t getNumRefIdxActive() { return numRefIdxActive_; }
   size_t getActiveRefAtlasFrameIndex() { return activeRefAtlasFrameIndex_; }
-
   size_t getRefAtlasListIndexInSPS() { return refAtlasListIndexInSPS_; }
   size_t getPFOC() const { return afOrderCnt_; }
-
-  void allocOneLayerData();
-  void printBlockToPatch( const size_t occupancyResolution );
-  void printPatch();
-  void printPatchDecoder();
+  void   allocOneLayerData();
+  void   printBlockToPatch( const size_t occupancyResolution );
+  void   printPatch();
+  void   printPatchDecoder();
 
  private:
   size_t                                       index_;

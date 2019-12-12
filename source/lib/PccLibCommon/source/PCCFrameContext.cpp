@@ -39,7 +39,6 @@ using namespace pcc;
 PCCFrameContext::PCCFrameContext() :
     index_( 0 ),
     numMatchedPatches_( 0 ),
-    // surfaceThickness_( 0 ),
     width_( 0 ),
     height_( 0 ),
     MPGeoWidth_( 0 ),
@@ -79,27 +78,23 @@ PCCFrameContext::~PCCFrameContext() {
 }
 
 void PCCFrameContext::setRefAFOCList( std::vector<std::vector<size_t>>& list ) {
-  size_t listSize = (std::min)( refAFOCList_.size(), list.size() );
+  size_t listSize = ( std::min )( refAFOCList_.size(), list.size() );
   for ( size_t i = 0; i < listSize; i++ ) {
-    size_t refSize = (std::min)( refAFOCList_[i].size(), list[i].size() );
+    size_t refSize = ( std::min )( refAFOCList_[i].size(), list[i].size() );
     for ( size_t j = 0; j < refSize; j++ ) refAFOCList_[i][j] = list[i][j];
   }
 }
 void PCCFrameContext::setRefAFOCList( PCCContext& context ) {
-  // if(index_==0) return;
   numOfAvailableRefAtlasFrameList_ = context.getNumOfRefAtlasFrameList();
   refAFOCList_.resize( numOfAvailableRefAtlasFrameList_ );
   int refPOC = 0;
   for ( size_t i = 0; i < numOfAvailableRefAtlasFrameList_; i++ ) {
     size_t maxRefNum = context.getSizeOfRefAtlasFrameList( i );
-    // refAFOCList_[i].resize(maxRefNum);
-    //*jkei*important************************************************//
     for ( size_t j = 0; j < maxRefNum; j++ ) {
-      refPOC = int( index_ ) + int( context.getRefAtlasFrame( i, j ) );  // cur+(-1),cur+(-2),cur+(-3),cur+(-4)
+      refPOC = int( index_ ) + int( context.getRefAtlasFrame( i, j ) );
       if ( refPOC >= 0 ) refAFOCList_[i].push_back( refPOC );
     }
-    if ( refAFOCList_[i].size() == 0 ) refAFOCList_[i].push_back( 255 );  // jkei: don't need to??
-    //*jkei*important************************************************//
+    if ( refAFOCList_[i].size() == 0 ) refAFOCList_[i].push_back( 255 );
   }
 }
 

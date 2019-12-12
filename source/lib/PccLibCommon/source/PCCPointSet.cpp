@@ -609,13 +609,9 @@ bool PCCPointSet3::read( const std::string& fileName, const bool readNormals ) {
     char* str       = strstr( tmp, "end_header" );
     str             = strstr( str, "\n" );
     int headerCount = str - tmp + 1;
-#if 0
-    ifs.seekg(headerCount, std::ios::beg);  // JR: NOK on windows
-#else
     ifs.close();
     ifs.open( fileName, std::ifstream::binary | std::ifstream::in );
     ifs.read( tmp, headerCount );
-#endif
     for ( size_t pointCounter = 0; pointCounter < pointCount && !ifs.eof(); ++pointCounter ) {
       auto& position = positions_[pointCounter];
       for ( size_t a = 0; a < attributeCount && !ifs.eof(); ++a ) {

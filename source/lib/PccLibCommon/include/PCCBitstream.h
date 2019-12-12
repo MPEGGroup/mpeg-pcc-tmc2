@@ -52,7 +52,7 @@ class PCCVideoBitstream;
 
 class PCCBitstreamGofStat {
  public:
-  PCCBitstreamGofStat() { 
+  PCCBitstreamGofStat() {
     vpccUnitSize_.resize( 5, 0 );
     videoBinSize_.resize( NUM_VIDEO_TYPE, 0 );
   }
@@ -96,6 +96,7 @@ class PCCBitstreamGofStat {
             vpccUnitSize_[VPCC_AVD], vpccUnitSize_[VPCC_AVD] * 8, videoBinSize_[VIDEO_TEXTURE],
             videoBinSize_[VIDEO_TEXTURE_T0], videoBinSize_[VIDEO_TEXTURE_T1], videoBinSize_[VIDEO_TEXTURE_RAW] );
   }
+
  private:
   std::vector<size_t> vpccUnitSize_;
   std::vector<size_t> videoBinSize_;
