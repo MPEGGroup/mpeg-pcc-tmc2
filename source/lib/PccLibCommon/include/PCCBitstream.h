@@ -35,7 +35,6 @@
 #define PCCBitstream_h
 
 #include "PCCCommon.h"
-#include "PCCMetadata.h"
 
 namespace pcc {
 
@@ -55,7 +54,7 @@ class PCCBitstreamGofStat {
  public:
   PCCBitstreamGofStat() {
     vpccUnitSize_.resize( 5, 0 );
-    videoBinSize_.resize( 7, 0 );
+    videoBinSize_.resize( NUM_VIDEO_TYPE, 0 );
   }
   ~PCCBitstreamGofStat() {
     vpccUnitSize_.clear();
@@ -71,27 +70,31 @@ class PCCBitstreamGofStat {
     return *this;
   }
   size_t getTotal() {
-    return vpccUnitSize_[VPCC_SPS] + vpccUnitSize_[VPCC_PDG] + vpccUnitSize_[VPCC_OVD] + vpccUnitSize_[VPCC_GVD] +
+    return vpccUnitSize_[VPCC_VPS] + vpccUnitSize_[VPCC_AD] + vpccUnitSize_[VPCC_OVD] + vpccUnitSize_[VPCC_GVD] +
            vpccUnitSize_[VPCC_AVD];
   }
 
   size_t getTotalGeometry() {
     return videoBinSize_[VIDEO_GEOMETRY] + videoBinSize_[VIDEO_GEOMETRY_D0] + videoBinSize_[VIDEO_GEOMETRY_D1] +
-           videoBinSize_[VIDEO_GEOMETRY_MP];
+           videoBinSize_[VIDEO_GEOMETRY_RAW];
   }
-  size_t getTotalTexture() { return videoBinSize_[VIDEO_TEXTURE] + videoBinSize_[VIDEO_TEXTURE_MP]; }
+  size_t getTotalTexture() {
+    return videoBinSize_[VIDEO_TEXTURE] + videoBinSize_[VIDEO_TEXTURE_T0] + videoBinSize_[VIDEO_TEXTURE_T1] +
+           videoBinSize_[VIDEO_TEXTURE_RAW];
+  }
   size_t getTotalMetadata() { return getTotal() - getTotalGeometry() - getTotalTexture(); }
 
   void trace() {
-    printf( "    vpccUnitSize[ VPCC_SPS ]: %9lu B %9lu b\n", vpccUnitSize_[VPCC_SPS], vpccUnitSize_[VPCC_SPS] * 8 );
-    printf( "    vpccUnitSize[ VPCC_PDG ]: %9lu B %9lu b\n", vpccUnitSize_[VPCC_PDG], vpccUnitSize_[VPCC_PDG] * 8 );
+    printf( "    vpccUnitSize[ VPCC_VPS ]: %9lu B %9lu b\n", vpccUnitSize_[VPCC_VPS], vpccUnitSize_[VPCC_VPS] * 8 );
+    printf( "    vpccUnitSize[ VPCC_AD  ]: %9lu B %9lu b\n", vpccUnitSize_[VPCC_AD], vpccUnitSize_[VPCC_AD] * 8 );
     printf( "    vpccUnitSize[ VPCC_OVD ]: %9lu B %9lu b ( Ocm video = %9lu B )\n", vpccUnitSize_[VPCC_OVD],
             vpccUnitSize_[VPCC_OVD] * 8, videoBinSize_[VIDEO_OCCUPANCY] );
     printf( "    vpccUnitSize[ VPCC_GVD ]: %9lu B %9lu b ( Geo video = %9lu B + %9lu B + %9lu B + %9lu B )\n",
             vpccUnitSize_[VPCC_GVD], vpccUnitSize_[VPCC_GVD] * 8, videoBinSize_[VIDEO_GEOMETRY],
-            videoBinSize_[VIDEO_GEOMETRY_D0], videoBinSize_[VIDEO_GEOMETRY_D1], videoBinSize_[VIDEO_GEOMETRY_MP] );
-    printf( "    vpccUnitSize[ VPCC_AVD ]: %9lu B %9lu b ( Tex video = %9lu B + %9lu B )\n", vpccUnitSize_[VPCC_AVD],
-            vpccUnitSize_[VPCC_AVD] * 8, videoBinSize_[VIDEO_TEXTURE], videoBinSize_[VIDEO_TEXTURE_MP] );
+            videoBinSize_[VIDEO_GEOMETRY_D0], videoBinSize_[VIDEO_GEOMETRY_D1], videoBinSize_[VIDEO_GEOMETRY_RAW] );
+    printf( "    vpccUnitSize[ VPCC_AVD ]: %9lu B %9lu b ( Tex video = %9lu B + (%9lu B + %9lu B) + %9lu B )\n",
+            vpccUnitSize_[VPCC_AVD], vpccUnitSize_[VPCC_AVD] * 8, videoBinSize_[VIDEO_TEXTURE],
+            videoBinSize_[VIDEO_TEXTURE_T0], videoBinSize_[VIDEO_TEXTURE_T1], videoBinSize_[VIDEO_TEXTURE_RAW] );
   }
 
  private:
@@ -108,6 +111,7 @@ class PCCBitstreamStat {
     bitstreamGofStat_.push_back( element );
   }
   void   setHeader( size_t size ) { header_ = size; }
+  void   incrHeader( size_t size ) { header_ += size; }
   void   setVpccUnitSize( VPCCUnitType type, size_t size ) { bitstreamGofStat_.back().setVpccUnitSize( type, size ); }
   void   setVideoBinSize( PCCVideoType type, size_t size ) { bitstreamGofStat_.back().setVideoBinSize( type, size ); }
   size_t getVpccUnitSize( VPCCUnitType type ) { return bitstreamGofStat_.back().getVpccUnitSize( type ); }
@@ -149,37 +153,73 @@ class PCCBitstream {
  public:
   PCCBitstream();
   ~PCCBitstream();
-  bool                initialize( const PCCBitstream& bitstream );
-  bool                initialize( std::string compressedStreamPath );
-  void                initialize( uint64_t capacity ) { data_.resize( capacity, 0 ); }
+
+  bool initialize( std::vector<uint8_t>& data );
+  bool initialize( const PCCBitstream& bitstream );
+  bool initialize( std::string compressedStreamPath );
+  void initialize( uint64_t capacity ) { data_.resize( capacity, 0 ); }
+  void clear() {
+    data_.clear();
+    position_.bits  = 0;
+    position_.bytes = 0;
+  }
+  void beginning() {
+    position_.bits  = 0;
+    position_.bytes = 0;
+  }
   bool                write( std::string compressedStreamPath );
   uint8_t*            buffer() { return data_.data(); }
   uint64_t&           size() { return position_.bytes; }
   uint64_t            capacity() { return data_.size(); }
   PCCBistreamPosition getPosition() { return position_; }
+  void                setPosition( PCCBistreamPosition& val ) { position_ = val; }
   PCCBitstream&       operator+=( const uint64_t size ) {
     position_.bytes += size;
     return *this;
   }
-  PCCBitstreamStat& getBitStreamStat() { return bitstreamStat_; }
-  void              writeHeader();
-  void              writeBuffer( const uint8_t* data, const size_t size );
-  void              write( PCCVideoBitstream& videoBitstream );
-  bool              readHeader();
-  void              read( PCCVideoBitstream& videoBitstream );
-  bool              byteAligned() { return ( position_.bits == 0 ); }
+  void writeHeader();
+  void writeBuffer( const uint8_t* data, const size_t size );
+  void copyFrom( PCCBitstream& dataBitstream, const uint64_t startByte, const uint64_t bitstreamSize );
+  void copyTo( PCCBitstream& dataBitstream, uint64_t startByte, uint64_t outputSize );
+  void write( PCCVideoBitstream& videoBitstream );
+  bool readHeader();
+  void read( PCCVideoBitstream& videoBitstream );
+  bool byteAligned() { return ( position_.bits == 0 ); }
+  bool moreData() { return position_.bytes < data_.size(); }
 
-  inline uint32_t read( uint8_t bits ) {
+  inline std::string readString() {
+    while ( !byteAligned() ) { read( 1 ); }
+    std::string str;
+    char        element = read( 8 );
+    while ( element != 0x00 ) {
+      str.push_back( element );
+      element = read( 8 );
+    }
+    return str;
+  }
+
+  inline void writeString( std::string str ) {
+    while ( !byteAligned() ) { write( 0 ); }
+    for ( auto& element : str ) { write( element, 8 ); }
+  }
+
+  inline uint32_t read( uint8_t bits, bool bFullStream = false ) {
     uint32_t code = read( bits, position_ );
 #ifdef BITSTREAM_TRACE
-    trace( "  CodU[%2u]: %4lu \n", bits, code );
+    if ( bFullStream == true )
+      trace( "FullStream: CodU[%2u]: %4lu \n", bits, code );
+    else
+      trace( "  CodU[%2u]: %4lu \n", bits, code );
 #endif
     return code;
   }
-  void write( uint32_t value, uint8_t bits ) {
+  void write( uint32_t value, uint8_t bits, bool bFullStream = false ) {
     write( value, bits, position_ );
 #ifdef BITSTREAM_TRACE
-    trace( "  CodU[%2u]: %4lu \n", bits, value );
+    if ( bFullStream == true )
+      trace( "FullStream: CodU[%2u]: %4lu \n", bits, value );
+    else
+      trace( "  CodU[%2u]: %4lu \n", bits, value );
 #endif
   }
 
@@ -276,13 +316,16 @@ class PCCBitstream {
   void trace( const char* pFormat, Args... eArgs ) {
     if ( trace_ ) {
       FILE* output = traceFile_ ? traceFile_ : stdout;
-      fprintf( output, "[%6llu - %2u]: ", position_.bytes, position_.bits );
+      fprintf( output, "[%6lu - %2u]: ", position_.bytes, position_.bits );
       fflush( output );
       fprintf( output, pFormat, eArgs... );
       fflush( output );
     }
   }
-  void setTrace( bool trace ) { trace_ = trace; }
+  void  setTrace( bool trace ) { trace_ = trace; }
+  void  setTraceFile( FILE* traceFile ) { traceFile_ = traceFile; }
+  FILE* getTraceFile() { return traceFile_; }
+
   bool getTrace() { return trace_; }
   bool openTrace( std::string file ) {
     if ( traceFile_ ) {
@@ -331,7 +374,6 @@ class PCCBitstream {
   std::vector<uint8_t> data_;
   PCCBistreamPosition  position_;
   PCCBistreamPosition  totalSizeIterator_;
-  PCCBitstreamStat     bitstreamStat_;
 
 #ifdef BITSTREAM_TRACE
   bool  trace_;

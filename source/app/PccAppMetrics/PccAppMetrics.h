@@ -44,10 +44,8 @@
 #include <program_options_lite.h>
 #include <tbb/tbb.h>
 
-bool parseParameters(int argc, char *argv[], pcc::PCCMetricsParameters& params );
+bool parseParameters( int argc, char* argv[], pcc::PCCMetricsParameters& params );
 void usage();
-int computeMetrics(const pcc::PCCMetricsParameters& params,
-                  pcc::chrono::StopwatchUserTime&);
-
+int  computeMetrics( const pcc::PCCMetricsParameters& params, pcc::chrono::StopwatchUserTime& );
 
 #endif /* PCC_APP_ENCODER_H */

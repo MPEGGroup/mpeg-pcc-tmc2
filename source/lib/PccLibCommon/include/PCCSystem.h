@@ -43,10 +43,10 @@ namespace pcc {
  * a wrapper around ::system() for winapi compatibility.
  */
 #ifdef _WIN32
-int system(const char *command) noexcept;
+int system( const char* command ) noexcept;
 #else
-static inline int system(const char *command) { return ::system(command); }
+static inline int system( const char* command ) { return ::system( command ); }
 #endif
-}
+}  // namespace pcc
 
 //===========================================================================

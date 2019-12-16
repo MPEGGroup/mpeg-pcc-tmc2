@@ -37,7 +37,6 @@
 #include "PCCDecoderParameters.h"
 #include "PCCCodec.h"
 #include "PCCMath.h"
-#include "PCCMetadata.h"
 #include "PCCPatch.h"
 
 namespace pcc {
@@ -45,40 +44,36 @@ namespace pcc {
 class PCCBitstream;
 class PCCContext;
 class PCCFrameContext;
-class PCCGroupOfFrames; 
+class PCCGroupOfFrames;
 class PCCPatch;
 class PatchFrameGeometryParameterSet;
 class GeometryPatchParameterSet;
-class SequenceParameterSet;
+class VpccParameterSet;
 class PointLocalReconstructionData;
 
 template <typename T, size_t N>
 class PCCImage;
-typedef pcc::PCCImage<uint8_t,  3> PCCImageOccupancyMap;
+typedef pcc::PCCImage<uint8_t, 3> PCCImageOccupancyMap;
 
 class PCCDecoder : public PCCCodec {
  public:
   PCCDecoder();
   ~PCCDecoder();
 
-  int decode( PCCBitstream &bitstream, PCCContext &context, PCCGroupOfFrames& reconstruct );
+  int decode( SampleStreamVpccUnit& ssvu, PCCContext& context, PCCGroupOfFrames& reconstructs );
+
   void setParameters( PCCDecoderParameters value );
 
-  // adaptor methods
-  void createPatchFrameDataStructure( PCCContext&   context );
+  void setGeneratePointCloudParameters( GeneratePointCloudParameters& gpcParams, PCCContext& context );
 
-  void createPatchFrameDataStructure( PCCContext&      context,
-                                      PCCFrameContext& frame,
-                                      PCCFrameContext& refFrame, // change this to be derived from reference data structure
-                                      size_t           frameIndex );
+  void createPatchFrameDataStructure( PCCContext& context );
+
+  void createPatchFrameDataStructure( PCCContext& context, PCCFrameContext& frame, size_t frameIndex );
 
  private:
-  int  decode( PCCContext &context, PCCGroupOfFrames& reconstruct );
+  int decode( PCCContext& context, PCCGroupOfFrames& reconstruct );
 
-  void setFrameMetadata( PCCMetadata& metadata, PatchFrameGeometryParameterSet& gfps );
-  void setPatchMetadata( PCCMetadata& metadata, GeometryPatchParameterSet& gpps );
-
-  void setPointLocalReconstruction( PCCContext& context, SequenceParameterSet& sps );
+  void setPointLocalReconstruction( PCCContext& context );
   void setPointLocalReconstructionData( PCCFrameContext&              frame,
                                         PCCPatch&                     patch,
                                         PointLocalReconstructionData& plrd,
@@ -86,6 +81,6 @@ class PCCDecoder : public PCCCodec {
 
   PCCDecoderParameters params_;
 };
-}; //~namespace
+};  // namespace pcc
 
 #endif /* PCCDecoder_h */

@@ -30,17 +30,14 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
- #include "PCCCommon.h"
- #include "PCCBitstream.h"
- #include "PCCSystem.h"
- #include "PCCVideo.h"
+#include "PCCCommon.h"
+#include "PCCBitstream.h"
+#include "PCCSystem.h"
+#include "PCCVideo.h"
 
- #include "PCCVideoDecoder.h"
+#include "PCCVideoDecoder.h"
 
- using namespace pcc;
+using namespace pcc;
 
- PCCVideoDecoder::PCCVideoDecoder() {
-
- }
- PCCVideoDecoder::~PCCVideoDecoder() {
- }
+PCCVideoDecoder::PCCVideoDecoder() {}
+PCCVideoDecoder::~PCCVideoDecoder() {}

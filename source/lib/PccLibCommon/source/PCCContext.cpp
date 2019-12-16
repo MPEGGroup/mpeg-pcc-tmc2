@@ -48,16 +48,47 @@ PCCContext::~PCCContext() {
   videoBitstream_.clear();
   subContexts_.clear();
   unionPatch_.clear();
-  sequenceParameterSets_.clear();
+  vpccParameterSets_.clear();
 }
 
 void PCCContext::resize( size_t size ) {
   frames_.resize( size );
-  for ( size_t i = 0; i < size; i++ ) { frames_[i].setIndex(i); }
+  for ( size_t i = 0; i < size; i++ ) { frames_[i].setIndex( i ); }
 }
 
 void PCCContext::allocOneLayerData() {
   for ( auto& frame : frames_ ) { frame.allocOneLayerData(); }
+}
+
+void PCCContext::constructRefList( size_t aspsIdx, size_t afpsIdx ) {
+  auto& asps = atlasSequenceParameterSet_[aspsIdx];
+  // construction of reference frame list from ASPS refList (decoder)
+  setNumOfRefAtlasFrameList( asps.getNumRefAtlasFrameListsInAsps() );
+  for ( size_t list = 0; list < getNumOfRefAtlasFrameList(); list++ ) {
+    auto& refList = asps.getRefListStruct( list );
+    setMaxNumRefAtlasFrame( refList.getNumRefEntries() );
+    setSizeOfRefAtlasFrameList( list, maxNumRefAtlasFrame_ );
+    for ( size_t i = 0; i < refList.getNumRefEntries(); i++ ) {
+      int  absDiff = refList.getAbsDeltaAfocSt( i );
+      bool sign    = refList.getStrpfEntrySignFlag( i );
+      setRefAtlasFrame( list, i, sign == 0 ? ( -absDiff ) : absDiff );
+    }
+  }
+}
+size_t PCCContext::getNumRefIdxActive( AtlasTileGroupHeader& atgh ) {
+  size_t afpsId          = atgh.getAtghAtlasFrameParameterSetId();
+  auto&  afps            = getAtlasFrameParameterSet( afpsId );
+  size_t numRefIdxActive = 0;
+  if ( atgh.getAtghType() == P_TILE_GRP || atgh.getAtghType() == SKIP_TILE_GRP ) {
+    if ( atgh.getAtghNumRefIdxActiveOverrideFlag() ) {
+      numRefIdxActive = atgh.getAtghNumRefIdxActiveMinus1() + 1;
+    } else {
+      auto& refList   = atgh.getRefListStruct();
+      numRefIdxActive = ( size_t )( std::min )( (int)refList.getNumRefEntries(),
+                                                (int)afps.getAfpsNumRefIdxDefaultActiveMinus1() + 1 );
+    }
+  }
+  return numRefIdxActive;
 }
 
 void PCCContext::printVideoBitstream() {

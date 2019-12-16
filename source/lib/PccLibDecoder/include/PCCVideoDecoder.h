@@ -76,6 +76,7 @@ class PCCVideoDecoder {
     size_t            width = 0, height = 0;
     PCCHevcParser     hevcParser;
     hevcParser.getVideoSize( bitstream.vector(), width, height );
+
     const std::string yuvRecFileName = addVideoFormat( fileName + "_rec" + ( use444CodecIo ? ".rgb" : ".yuv" ), width,
                                                        height, !use444CodecIo, bitDepth == 10 ? "10" : "8" );
     const std::string rgbRecFileName =
@@ -305,15 +306,16 @@ class PCCVideoDecoder {
             const std::string rgbRecFileNamePatch = addVideoFormat( fileName + "_tmp.rgb", patch_width, patch_height );
             const std::string yuvRecFileNamePatch =
                 addVideoFormat( fileName + "_tmp.yuv", patch_width, patch_height, true );
-            if ( !tmpImage.write420( yuvRecFileNamePatch, bitDepth == 8 ? 1 : 2 ) ) { return false; }            
-            if ( colorSpaceConversionPath.empty() ) {              
+            if ( !tmpImage.write420( yuvRecFileNamePatch, bitDepth == 8 ? 1 : 2 ) ) { return false; }
+            if ( colorSpaceConversionPath.empty() ) {
               tmpImage.read420( yuvRecFileNamePatch, width, height, bitDepth == 8 ? 1 : 2, true, upsamplingFilter );
               if ( !keepIntermediateFiles ) { tmpImage.write( rgbRecFileNamePatch, bitDepth == 8 ? 1 : 2 ); }
             } else {
               std::stringstream cmd;
               cmd << colorSpaceConversionPath << " -f " << inverseColorSpaceConversionConfig << " -p SourceFile=\""
                   << yuvRecFileNamePatch << "\" -p OutputFile=\"" << rgbRecFileNamePatch
-                  << "\" -p SourceWidth=" << patch_width << " -p SourceHeight=" << patch_height << " -p NumberOfFrames=1";
+                  << "\" -p SourceWidth=" << patch_width << " -p SourceHeight=" << patch_height
+                  << " -p NumberOfFrames=1";
               std::cout << cmd.str() << '\n';
               if ( pcc::system( cmd.str().c_str() ) ) {
                 std::cout << "Error: can't run system command!" << std::endl;

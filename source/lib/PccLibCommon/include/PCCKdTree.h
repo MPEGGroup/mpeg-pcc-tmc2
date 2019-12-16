@@ -41,46 +41,53 @@ namespace pcc {
 
 struct PCCNNQuery3 {
   PCCPoint3D point;
-  double radius;
-  size_t nearestNeighborCount;
+  double     radius;
+  size_t     nearestNeighborCount;
 };
 
-class PCCNNResult{
-public:
-  PCCNNResult() : count_ ( 0 ) {}
-  ~PCCNNResult() { indices_.clear(); dist_.clear(); }
-  inline void resize( const size_t size ){
+class PCCNNResult {
+ public:
+  PCCNNResult() : count_( 0 ) {}
+  ~PCCNNResult() {
+    indices_.clear();
+    dist_.clear();
+  }
+  inline void resize( const size_t size ) {
     indices_.resize( size );
     dist_.resize( size );
   }
-  inline size_t size() const { return indices_.size(); }
+  inline size_t  size() const { return indices_.size(); }
   inline size_t& count() { return count_; }
   inline size_t& indices( size_t index ) { return indices_[index]; }
-  inline double&  dist( size_t index ) { return dist_[index]; }
+  inline double& dist( size_t index ) { return dist_[index]; }
   inline size_t* indices() { return indices_.data(); }
-  inline double*  dist() { return dist_.data(); }
-  inline void pop_dist() { dist_.pop_back(); };
-  inline void pop_indices() { indices_.pop_back(); };
-  inline void dec_count() { --count_; }
+  inline double* dist() { return dist_.data(); }
+  inline void    pop_dist() { dist_.pop_back(); };
+  inline void    pop_indices() { indices_.pop_back(); };
+  inline void    dec_count() { --count_; }
+
  private:
-  size_t count_;
-  std::vector<size_t>  indices_;
-  std::vector<double>   dist_;
+  size_t              count_;
+  std::vector<size_t> indices_;
+  std::vector<double> dist_;
 };
 
 class PCCKdTree {
  public:
   PCCKdTree();
-  PCCKdTree( const PCCPointSet3 &pointCloud  );
+  PCCKdTree( const PCCPointSet3& pointCloud );
   ~PCCKdTree();
-  void init( const PCCPointSet3 &pointCloud);
-  void search      ( const PCCPoint3D& point, const size_t num_results,                      PCCNNResult& results ) const ;
-  void searchRadius( const PCCPoint3D& point, const size_t num_results, const double radius, PCCNNResult& results ) const ;
+  void init( const PCCPointSet3& pointCloud );
+  void search( const PCCPoint3D& point, const size_t num_results, PCCNNResult& results ) const;
+  void searchRadius( const PCCPoint3D& point,
+                     const size_t      num_results,
+                     const double      radius,
+                     PCCNNResult&      results ) const;
 
  private:
-  void clear();
+  void  clear();
   void* kdtree_;
 };
 
-}
+}  // namespace pcc
 #endif /* PCCKdTree_h */

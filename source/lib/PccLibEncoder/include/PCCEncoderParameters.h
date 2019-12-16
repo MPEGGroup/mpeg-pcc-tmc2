@@ -43,10 +43,11 @@ class PCCEncoderParameters {
  public:
   PCCEncoderParameters();
   ~PCCEncoderParameters();
-  void print();
-  bool check();
-  void completePath();
-  void initializeContext( PCCContext& context );
+  void   print();
+  bool   check();
+  void   completePath();
+  void   constructAspsRefList( PCCContext& context, size_t aspsIdx, size_t afpsIdx );
+  void   initializeContext( PCCContext& context );
   size_t startFrameNumber_;
 
   std::string configurationFolder_;
@@ -87,6 +88,8 @@ class PCCEncoderParameters {
   size_t voxelDimensionRefineSegmentation_;
   size_t searchRadiusRefineSegmentation_;
   size_t occupancyResolution_;
+  size_t log2QuantizerSizeX_;
+  size_t log2QuantizerSizeY_;
   size_t minPointCountPerCCPatchSegmentation_;
   size_t maxNNCountPatchSegmentation_;
   size_t surfaceThickness_;
@@ -94,7 +97,7 @@ class PCCEncoderParameters {
   double maxAllowedDist2MissedPointsDetection_;
   double maxAllowedDist2MissedPointsSelection_;
   double lambdaRefineSegmentation_;
-  size_t layerCountMinus1_;
+  size_t mapCountMinus1_;
 
   // occupancy map encoding
   size_t      maxCandidateCount_;
@@ -102,7 +105,6 @@ class PCCEncoderParameters {
   std::string occupancyMapVideoEncoderConfig_;
   size_t      occupancyMapQP_;
   size_t      EOMFixBitCount_;
-  bool        EOMTexturePatch_;
   bool        occupancyMapRefinement_;
 
   // smoothing
@@ -170,15 +172,20 @@ class PCCEncoderParameters {
   PCCVector3<float> modelOrigin_;
 
   // patch sampling resolution
-  size_t levelOfDetailX_;
-  size_t levelOfDetailY_;
-  size_t testLevelOfDetail_; 
+  size_t      levelOfDetailX_;
+  size_t      levelOfDetailY_;
   std::string geometryConfig_;
   std::string geometryD0Config_;
   std::string geometryD1Config_;
   std::string textureConfig_;
+  std::string textureT0Config_;
+  std::string textureT1Config_;
   bool        keepIntermediateFiles_;
   bool        absoluteD1_;
+  int         qpAdjD1_;
+  bool        absoluteT1_;
+  int         qpAdjT1_;
+  bool        multipleStreams_;
   bool        constrainedPack_;
 
   // dilation
@@ -198,12 +205,12 @@ class PCCEncoderParameters {
   bool   pointLocalReconstruction_;
   size_t patchSize_;
   size_t plrlNumberOfModes_;
-  bool   singleLayerPixelInterleaving_;
+  bool   singleMapPixelInterleaving_;
 
   // visual quality
-  bool patchColorSubsampling_;
-  bool deltaCoding_;
-  bool surfaceSeparation_;
+  bool   patchColorSubsampling_;
+  bool   deltaCoding_;
+  bool   surfaceSeparation_;
   bool   highGradientSeparation_;
   double minGradient_;
   size_t minNumHighGradientPoints_;
@@ -222,13 +229,13 @@ class PCCEncoderParameters {
   // GPA
   int globalPatchAllocation_;
   // GTP
-  int globalPackingStrategyGOF_;
-  bool globalPackingStrategyReset_;
+  int    globalPackingStrategyGOF_;
+  bool   globalPackingStrategyReset_;
   double globalPackingStrategyThreshold_;
-	//low delay encoding
-	bool   lowDelayEncoding_;
-	//3D geometry padding
-	size_t geometryPadding_;
+  // low delay encoding
+  bool lowDelayEncoding_;
+  // 3D geometry padding
+  size_t geometryPadding_;
 
   // EDD
   bool   enhancedPP_;
@@ -258,14 +265,19 @@ class PCCEncoderParameters {
   int              numROIs_;
 
   // Sort missed points by Morton code
-  bool             mortonOrderSortMissedPoints_;
-  size_t           textureMPSeparateVideoWidth_;
+  bool   mortonOrderSortMissedPoints_;
+  size_t textureMPSeparateVideoWidth_;
 
   // Patch block filtering
   bool    pbfEnableFlag_;
   int16_t pbfPassesCount_;
   int16_t pbfFilterSize_;
   int16_t pbfLog2Threshold_;
+
+  //
+  bool   patchPrecedenceOrderFlag_;
+  size_t maxNumRefAtlasList_;
+  size_t maxNumRefAtlasFrame_;
 };
 
 };  // namespace pcc

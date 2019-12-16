@@ -42,39 +42,35 @@ namespace pcc {
 template <typename T, size_t N>
 class PCCVideo {
  public:
-  PCCVideo() = default;
-  PCCVideo(const PCCVideo &) = default;
-  PCCVideo &operator=(const PCCVideo &rhs) = default;
-  ~PCCVideo() = default;
+  PCCVideo()                  = default;
+  PCCVideo( const PCCVideo& ) = default;
+  PCCVideo& operator=( const PCCVideo& rhs ) = default;
+  ~PCCVideo()                                = default;
 
   void clear() {
-    for (auto &frame : frames_) {
-      frame.clear();
-    }
+    for ( auto& frame : frames_ ) { frame.clear(); }
     frames_.clear();
   }
   std::vector<PCCImage<T, N> >& getFrames() { return frames_; }
 
-  PCCImage<T, N> &getFrame(const size_t index) {
-    assert(index < frames_.size());
+  PCCImage<T, N>& getFrame( const size_t index ) {
+    assert( index < frames_.size() );
     return frames_[index];
   }
-  const PCCImage<T, N> &getFrame(const size_t index) const {
-    assert(index < frames_.size());
+  const PCCImage<T, N>& getFrame( const size_t index ) const {
+    assert( index < frames_.size() );
     return frames_[index];
   }
-  void resize(const size_t frameCount) { frames_.resize(frameCount); }
-  bool write(std::ofstream &outfile, const size_t nbyte) const {
-    for (const auto &frame : frames_) {
-      if (!frame.write(outfile, nbyte)) {
-        return false;
-      }
+  void resize( const size_t frameCount ) { frames_.resize( frameCount ); }
+  bool write( std::ofstream& outfile, const size_t nbyte ) const {
+    for ( const auto& frame : frames_ ) {
+      if ( !frame.write( outfile, nbyte ) ) { return false; }
     }
     return true;
   }
-  bool write(const std::string fileName, const size_t nbyte) {
-    std::ofstream outfile(fileName, std::ios::binary);
-    if (write(outfile, nbyte)) {
+  bool write( const std::string fileName, const size_t nbyte ) {
+    std::ofstream outfile( fileName, std::ios::binary );
+    if ( write( outfile, nbyte ) ) {
       outfile.close();
       return true;
     }
@@ -103,28 +99,32 @@ class PCCVideo {
     }
     return true;
   }
-  bool write420(const std::string fileName, const size_t nbyte) {
-    std::ofstream outfile(fileName, std::ios::binary);
-    if (write420(outfile, nbyte)) {
+  bool write420( const std::string fileName, const size_t nbyte ) {
+    std::ofstream outfile( fileName, std::ios::binary );
+    if ( write420( outfile, nbyte ) ) {
       outfile.close();
       return true;
     }
     return false;
   }
-  bool read(std::ifstream &infile, const size_t sizeU0, const size_t sizeV0,
-            const size_t frameCount, const size_t nbyte) {
-    frames_.resize(frameCount);
-    for (auto &frame : frames_) {
-      if (!frame.read(infile, sizeU0, sizeV0, nbyte)) {
-        return false;
-      }
+  bool read( std::ifstream& infile,
+             const size_t   sizeU0,
+             const size_t   sizeV0,
+             const size_t   frameCount,
+             const size_t   nbyte ) {
+    frames_.resize( frameCount );
+    for ( auto& frame : frames_ ) {
+      if ( !frame.read( infile, sizeU0, sizeV0, nbyte ) ) { return false; }
     }
     return true;
   }
-  bool read(const std::string fileName, const size_t sizeU0, const size_t sizeV0,
-            const size_t frameCount, const size_t nbyte) {
-    std::ifstream infile(fileName, std::ios::binary);
-    if (read(infile, sizeU0, sizeV0, frameCount, nbyte)) {
+  bool read( const std::string fileName,
+             const size_t      sizeU0,
+             const size_t      sizeV0,
+             const size_t      frameCount,
+             const size_t      nbyte ) {
+    std::ifstream infile( fileName, std::ios::binary );
+    if ( read( infile, sizeU0, sizeV0, frameCount, nbyte ) ) {
       infile.close();
       return true;
     }
@@ -174,8 +174,8 @@ class PCCVideo {
                 const size_t      sizeV0,
                 const size_t      frameCount,
                 const size_t      nbyte ) {
-    std::ifstream infile(fileName, std::ios::binary);
-    if (read420(infile, sizeU0, sizeV0, frameCount, nbyte)) {
+    std::ifstream infile( fileName, std::ios::binary );
+    if ( read420( infile, sizeU0, sizeV0, frameCount, nbyte ) ) {
       infile.close();
       return true;
     }
@@ -185,16 +185,14 @@ class PCCVideo {
   size_t getHeight() const { return frames_.empty() ? 0 : frames_[0].getHeight(); }
   size_t getFrameCount() const { return frames_.size(); }
 
-	void convertBitdepth(uint8_t bitdepthInput, uint8_t bitdepthOutput, bool msbAlignFlag) {
-    for ( auto& frame : frames_ ) {
-			frame.convertBitdepth(bitdepthInput, bitdepthOutput, msbAlignFlag);
-    }
-	}
+  void convertBitdepth( uint8_t bitdepthInput, uint8_t bitdepthOutput, bool msbAlignFlag ) {
+    for ( auto& frame : frames_ ) { frame.convertBitdepth( bitdepthInput, bitdepthOutput, msbAlignFlag ); }
+  }
 
  private:
   std::vector<PCCImage<T, N> > frames_;
 };
 
-}
+}  // namespace pcc
 
 #endif /* PCCVideo_h */

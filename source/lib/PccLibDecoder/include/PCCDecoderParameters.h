@@ -43,7 +43,6 @@ class PCCDecoderParameters {
   ~PCCDecoderParameters();
   void print();
   bool check();
-
   void completePath();
 
   size_t            startFrameNumber_;
@@ -57,25 +56,20 @@ class PCCDecoderParameters {
   size_t            nbThread_;
   bool              keepIntermediateFiles_;
   bool              patchColorSubsampling_;
-  
   size_t            postprocessSmoothingFilter_;
-  
-  //  attribute transfer
-  // coloring
-  size_t bestColorSearchRange_;
-  // Improved color transfe
-  int    numNeighborsColorTransferFwd_;
-  int    numNeighborsColorTransferBwd_;
-  bool   useDistWeightedAverageFwd_;
-  bool   useDistWeightedAverageBwd_;
-  bool   skipAvgIfIdenticalSourcePointPresentFwd_;
-  bool   skipAvgIfIdenticalSourcePointPresentBwd_;
-  double distOffsetFwd_;
-  double distOffsetBwd_;
-  double maxGeometryDist2Fwd_;
-  double maxGeometryDist2Bwd_;
-  double maxColorDist2Fwd_;
-  double maxColorDist2Bwd_;
+  size_t            bestColorSearchRange_;
+  int               numNeighborsColorTransferFwd_;
+  int               numNeighborsColorTransferBwd_;
+  bool              useDistWeightedAverageFwd_;
+  bool              useDistWeightedAverageBwd_;
+  bool              skipAvgIfIdenticalSourcePointPresentFwd_;
+  bool              skipAvgIfIdenticalSourcePointPresentBwd_;
+  double            distOffsetFwd_;
+  double            distOffsetBwd_;
+  double            maxGeometryDist2Fwd_;
+  double            maxGeometryDist2Bwd_;
+  double            maxColorDist2Fwd_;
+  double            maxColorDist2Bwd_;
 };
 
 };  // namespace pcc

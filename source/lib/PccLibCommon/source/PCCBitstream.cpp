@@ -56,6 +56,14 @@ bool PCCBitstream::initialize( const PCCBitstream& bitstream ) {
   return true;
 }
 
+bool PCCBitstream::initialize( std::vector<uint8_t>& data ) {
+  position_.bytes = 0;
+  position_.bits  = 0;
+  data_.resize( data.size(), 0 );
+  memcpy( data_.data(), data.data(), data.size() );
+  return true;
+}
+
 bool PCCBitstream::initialize( std::string compressedStreamPath ) {
   std::ifstream fin( compressedStreamPath, std::ios::binary );
   if ( !fin.is_open() ) { return false; }
@@ -70,7 +78,6 @@ bool PCCBitstream::initialize( std::string compressedStreamPath ) {
 }
 
 bool PCCBitstream::write( std::string compressedStreamPath ) {
-  write( (int32_t) size(), 64, totalSizeIterator_ );
   std::ofstream fout( compressedStreamPath, std::ios::binary );
   if ( !fout.is_open() ) { return false; }
   fout.write( reinterpret_cast<const char*>( data_.data() ), size() );
@@ -88,7 +95,6 @@ bool PCCBitstream::readHeader() {
   uint32_t containerVersion = read( 32 );
   if ( containerVersion != PCCTMC2ContainerVersion ) { return false; }
   totalSize = read( 64 );
-  bitstreamStat_.setHeader( size() );
   return true;
 }
 
@@ -100,7 +106,6 @@ void PCCBitstream::writeHeader() {
   write( PCCTMC2ContainerVersion, 32 );
   totalSizeIterator_ = getPosition();
   write( 0, 64 );  // reserved
-  bitstreamStat_.setHeader( size() );
 }
 
 void PCCBitstream::read( PCCVideoBitstream& videoBitstream ) {
@@ -118,7 +123,6 @@ void PCCBitstream::read( PCCVideoBitstream& videoBitstream ) {
 #ifdef BITSTREAM_TRACE
   trace( "Code: video : %4lu \n", size );
 #endif
-  bitstreamStat_.setVideoBinSize( videoBitstream.type(), videoBitstream.size() );
 }
 
 void PCCBitstream::write( PCCVideoBitstream& videoBitstream ) {
@@ -127,7 +131,6 @@ void PCCBitstream::write( PCCVideoBitstream& videoBitstream ) {
 #endif
   writeBuffer( videoBitstream.buffer(), videoBitstream.size() );
   videoBitstream.trace();
-  bitstreamStat_.setVideoBinSize( videoBitstream.type(), videoBitstream.size() );
 #ifdef BITSTREAM_TRACE
   trace( "Code: video : %4lu \n", videoBitstream.size() );
 #endif
@@ -135,10 +138,28 @@ void PCCBitstream::write( PCCVideoBitstream& videoBitstream ) {
 
 void PCCBitstream::writeBuffer( const uint8_t* data, const size_t size ) {
   realloc( size );
-  write( (int32_t) size, 32 );
+  write( (int32_t)size, 32 );
 #ifdef BITSTREAM_TRACE
   trace( "Code: size = %lu \n", size );
 #endif
   memcpy( data_.data() + position_.bytes, data, size );
   position_.bytes += size;
+}
+void PCCBitstream::copyFrom( PCCBitstream& dataBitstream, const uint64_t startByte, const uint64_t bitstreamSize ) {
+  if ( data_.size() < position_.bytes + bitstreamSize ) data_.resize( position_.bytes + bitstreamSize );
+  memcpy( data_.data() + position_.bytes, dataBitstream.buffer() + startByte, bitstreamSize );  // dest, source  
+  position_.bytes += bitstreamSize;
+  PCCBistreamPosition pos = dataBitstream.getPosition();
+  pos.bytes += bitstreamSize;
+  dataBitstream.setPosition( pos );
+}
+void PCCBitstream::copyTo( PCCBitstream& dataBitstream, uint64_t startByte, uint64_t outputSize ) {
+#ifdef BITSTREAM_TRACE
+  trace( "Code copied to: size = %lu \n", outputSize );
+#endif
+  dataBitstream.initialize( outputSize );
+  PCCBistreamPosition pos = dataBitstream.getPosition();
+  memcpy( data_.data() + startByte, dataBitstream.buffer(), outputSize );
+  pos.bytes += outputSize;
+  dataBitstream.setPosition( pos );
 }

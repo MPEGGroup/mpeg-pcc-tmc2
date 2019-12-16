@@ -46,16 +46,18 @@
 #include "PCCBitstream.h"
 #include "PCCGroupOfFrames.h"
 #include "PCCEncoderParameters.h"
+#include "PCCBitstreamEncoder.h"
 #include "PCCMetricsParameters.h"
 #include <program_options_lite.h>
 #include <tbb/tbb.h>
 
-bool parseParameters( int argc, char *argv[],
+bool parseParameters( int                        argc,
+                      char*                      argv[],
                       pcc::PCCEncoderParameters& encoderParams,
                       pcc::PCCMetricsParameters& metricsParams );
 void usage();
-int compressVideo( const pcc::PCCEncoderParameters& encoderParams,
-                   const pcc::PCCMetricsParameters& metricsParams,
-                   pcc::chrono::StopwatchUserTime&);
+int  compressVideo( const pcc::PCCEncoderParameters& encoderParams,
+                    const pcc::PCCMetricsParameters& metricsParams,
+                    pcc::chrono::StopwatchUserTime& );
 
 #endif /* PCC_APP_DECODER_H */

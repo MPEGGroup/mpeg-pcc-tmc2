@@ -45,8 +45,7 @@ class PCCVideoBitstream {
   void                  resize( size_t size ) { data_.resize( size ); }
   std::vector<uint8_t>& vector() { return data_; }
   uint8_t*              buffer() { return data_.data(); }
-  size_t                size() { return data_.size(); }
-  size_t                naluSize() { return data_.size() + 4; }
+  size_t                size() { return (size_t)data_.size(); }
   PCCVideoType          type() { return type_; }
 
   void trace() { std::cout << toString( type_ ) << " ->" << size() << " B " << std::endl; }
@@ -57,9 +56,12 @@ class PCCVideoBitstream {
       case VIDEO_GEOMETRY: return std::string( "geometry" ); break;
       case VIDEO_GEOMETRY_D0: return std::string( "geometryD0" ); break;
       case VIDEO_GEOMETRY_D1: return std::string( "geometryD1" ); break;
-      case VIDEO_GEOMETRY_MP: return std::string( "mps_geo" ); break;
+      case VIDEO_GEOMETRY_RAW: return std::string( "geomteryRaw" ); break;
       case VIDEO_TEXTURE: return std::string( "texture" ); break;
-      case VIDEO_TEXTURE_MP: return std::string( "mps_tex" ); break;
+      case VIDEO_TEXTURE_RAW: return std::string( "textureRaw" ); break;
+      case VIDEO_TEXTURE_T0: return std::string( "textureT0" ); break;
+      case VIDEO_TEXTURE_T1: return std::string( "textureT1" ); break;
+      case NUM_VIDEO_TYPE: return std::string( "ERROR" ); break;
     }
     return std::string( "unknown" );
   }

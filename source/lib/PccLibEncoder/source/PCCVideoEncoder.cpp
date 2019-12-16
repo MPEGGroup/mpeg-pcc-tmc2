@@ -36,8 +36,6 @@
 
 using namespace pcc;
 
-PCCVideoEncoder::PCCVideoEncoder() {
-}
+PCCVideoEncoder::PCCVideoEncoder() {}
 
-PCCVideoEncoder::~PCCVideoEncoder() {
-}
+PCCVideoEncoder::~PCCVideoEncoder() {}
