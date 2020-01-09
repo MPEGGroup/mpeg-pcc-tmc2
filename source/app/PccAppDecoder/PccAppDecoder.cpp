@@ -290,8 +290,8 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
   decoder.setParameters( decoderParams );
 
   SampleStreamVpccUnit ssvu;
-  PCCBitstreamDecoder  bitstreamDecoder;
-  size_t               headerSize = bitstreamDecoder.read( bitstream, ssvu );
+  PCCBitstreamReader   bitstreamReader;
+  size_t               headerSize = bitstreamReader.read( bitstream, ssvu );
   bitstreamStat.incrHeader( headerSize );
 
   bool    bMoreData = true;
@@ -301,7 +301,20 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
     PCCContext       context;
     context.setBitstreamStat( bitstreamStat );
     clock.start();
-    int ret = decoder.decode( ssvu, context, reconstructs );
+
+    PCCBitstreamReader bitstreamReader;
+#ifdef BITSTREAM_TRACE
+    PCCBitstream bitstream;
+    bitstream.setTrace( true );
+    bitstream.openTrace( removeFileExtension( decoderParams.compressedStreamPath_ ) + "_hls_decode.txt" );
+    bitstreamReader.setTraceFile( bitstream.getTraceFile() );
+#endif
+    if ( !bitstreamReader.decode( ssvu, context ) ) { return 0; }
+#ifdef BITSTREAM_TRACE
+    bitstream.closeTrace();
+#endif
+
+    int ret = decoder.decode( context, reconstructs );
     clock.stop();
     if ( ret ) { return ret; }
     if ( metricsParams.computeChecksum_ ) { checksum.computeDecoded( reconstructs ); }

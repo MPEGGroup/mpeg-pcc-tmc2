@@ -81,7 +81,6 @@ TDecCavlc::TDecCavlc()
 
 TDecCavlc::~TDecCavlc()
 {
-
 }
 
 // ====================================================================================================================
@@ -2307,7 +2306,7 @@ Bool TDecCavlc::xMoreRbspData()
   return true;
   // Int bitsLeft = m_pcBitstream->getNumBitsLeft();
 
-  // // if there are more than 8 bits, it cannot be rbsp_trailing_bits
+  // // if there are more than 8 bits, it cannot be Rbsp_trailing_bits
   // if (bitsLeft > 8)
   // {
   //   return true;

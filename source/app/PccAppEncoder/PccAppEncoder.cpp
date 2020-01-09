@@ -966,7 +966,6 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
     PCCContext   context;
     context.setBitstreamStat( bitstreamStat );
     context.addVpccParameterSet( contextIndex );
-    // context.getSps( contextIndex ).setVpccParameterSetId( contextIndex );
 
     PCCGroupOfFrames sources, reconstructs;
     if ( !sources.load( encoderParams.uncompressedDataPath_, startFrameNumber, endFrameNumber,
@@ -977,7 +976,20 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
 
     std::cout << "Compressing group of frames " << contextIndex << ": " << startFrameNumber << " -> " << endFrameNumber
               << "..." << std::endl;
-    int ret = encoder.encode( sources, context, ssvu, reconstructs );
+    int ret = encoder.encode( sources, context, reconstructs );
+
+    PCCBitstreamWriter bitstreamWriter;
+#ifdef BITSTREAM_TRACE
+    PCCBitstream bitstream;
+    bitstream.setTrace( true );
+    bitstream.openTrace( removeFileExtension( encoderParams.compressedStreamPath_ ) + "_hls_encode.txt" );
+    bitstreamWriter.setTraceFile( bitstream.getTraceFile() );
+#endif
+    ret |= bitstreamWriter.encode( context, ssvu );
+#ifdef BITSTREAM_TRACE
+    bitstreamWriter.setTraceFile( NULL );
+    bitstream.closeTrace();
+#endif
     clock.stop();
 
     PCCGroupOfFrames normals;
@@ -1017,8 +1029,8 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
 #endif
   bitstream.writeHeader();
   bitstreamStat.setHeader( bitstream.size() );
-  PCCBitstreamEncoder bitstreamEncoder;
-  size_t              headerSize = bitstreamEncoder.write( ssvu, bitstream );
+  PCCBitstreamWriter bitstreamWriter;
+  size_t              headerSize = bitstreamWriter.write( ssvu, bitstream );
   bitstreamStat.incrHeader( headerSize );
   bitstream.write( encoderParams.compressedStreamPath_ );
 

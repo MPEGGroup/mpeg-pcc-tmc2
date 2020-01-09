@@ -31,9 +31,9 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 #include "PCCCommon.h"
+#include "PCCHighLevelSyntax.h"
 #include "PCCBitstream.h"
-#include "PCCBitstreamEncoder.h"
-#include "PCCBitstreamEncoder.h"
+// #include "PCCBitstreamWriter.h"
 #include "PCCContext.h"
 #include "PCCFrameContext.h"
 #include "PCCPatch.h"
@@ -72,49 +72,13 @@ PCCEncoder::~PCCEncoder() {}
 
 void PCCEncoder::setParameters( PCCEncoderParameters params ) { params_ = params; }
 
-int PCCEncoder::encode( const PCCGroupOfFrames& sources,
-                        PCCContext&             context,
-                        SampleStreamVpccUnit&   ssvu,
-                        PCCGroupOfFrames&       reconstructs ) {
+int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PCCGroupOfFrames& reconstructs ) {  
   int    ret                                  = 0;
   size_t pointLocalReconstructionOriginal     = params_.pointLocalReconstruction_;
   size_t layerCountMinus1Original             = params_.mapCountMinus1_;
   size_t singleLayerPixelInterleavingOriginal = params_.singleMapPixelInterleaving_;
   if ( params_.nbThread_ > 0 ) { tbb::task_scheduler_init init( (int)params_.nbThread_ ); }
-
   params_.initializeContext( context );
-  ret |= encode( sources, context, reconstructs );
-  PCCBitstreamEncoder bitstreamEncoder;
-#ifdef CODEC_TRACE
-  setTrace( true );
-  openTrace( stringFormat( "%s_GOF%u_patch_encode.txt", removeFileExtension( params_.compressedStreamPath_ ).c_str(),
-                           context.getSps().getVpccParameterSetId() ) );
-#endif
-  createPatchFrameDataStructure( context );
-#ifdef CODEC_TRACE
-  closeTrace();
-#endif
-
-#ifdef BITSTREAM_TRACE
-  PCCBitstream bitstream;
-  bitstream.setTrace( true );
-  bitstream.openTrace( removeFileExtension( params_.compressedStreamPath_ ) + "_hls_encode.txt" );
-  bitstreamEncoder.setTraceFile( bitstream.getTraceFile() );
-#endif
-  bitstreamEncoder.setParameters( params_ );
-  ret |= bitstreamEncoder.encode( context, ssvu );
-#ifdef BITSTREAM_TRACE
-  bitstreamEncoder.setTraceFile( NULL );
-  bitstream.closeTrace();
-#endif
-
-  params_.pointLocalReconstruction_   = pointLocalReconstructionOriginal;
-  params_.mapCountMinus1_             = layerCountMinus1Original;
-  params_.singleMapPixelInterleaving_ = singleLayerPixelInterleavingOriginal;
-  return ret;
-}
-
-int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   assert( sources.size() < 256 );
   size_t atlasIndex = 0;
   if ( sources.size() == 0 ) { return 0; }
@@ -124,6 +88,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                            context.getSps().getVpccParameterSetId() ) );
 #endif
   reconstructs.resize( sources.size() );
+  context.setGofSize( sources.size() );
   context.resize( sources.size() );
   auto& frames = context.getFrames();
   for ( size_t i = 0; i < frames.size(); i++ ) {
@@ -573,10 +538,20 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   //    This function does the color smoothing that is usually done in colorPointCloud
   if ( gpcParams.flagColorSmoothing_ ) { colorSmoothing( reconstructs, context, params_.colorTransform_, gpcParams ); }
   if ( !params_.keepIntermediateFiles_ && params_.use3dmc_ ) { remove3DMotionEstimationFiles( path.str() ); }
+
+#ifdef CODEC_TRACE
+  setTrace( true );
+  openTrace( stringFormat( "%s_GOF%u_patch_encode.txt", removeFileExtension( params_.compressedStreamPath_ ).c_str(),
+                           context.getSps().getVpccParameterSetId() ) );
+#endif
+  createPatchFrameDataStructure( context );  
 #ifdef CODEC_TRACE
   setTrace( false );
   closeTrace();
 #endif
+  params_.pointLocalReconstruction_   = pointLocalReconstructionOriginal;
+  params_.mapCountMinus1_             = layerCountMinus1Original;
+  params_.singleMapPixelInterleaving_ = singleLayerPixelInterleavingOriginal;
   return 0;
 }
 
@@ -730,9 +705,7 @@ bool PCCEncoder::generateOccupancyMapVideo( const size_t           imageWidth,
 
 bool PCCEncoder::modifyOccupancyMap( const PCCGroupOfFrames& sources, PCCContext& context ) {
   std::ofstream oFile;
-
   if ( params_.keepIntermediateFiles_ ) { oFile.open( "occupancyMap.rgb", std::ios::binary ); }
-
   auto& videoOccupancyMap = context.getVideoOccupancyMap();
   bool  ret               = true;
   for ( size_t f = 0; f < sources.size(); ++f ) {
@@ -741,9 +714,7 @@ bool PCCEncoder::modifyOccupancyMap( const PCCGroupOfFrames& sources, PCCContext
     ret &= modifyOccupancyMap( contextFrame.getWidth(), contextFrame.getHeight(), contextFrame.getOccupancyMap(),
                                videoFrame, oFile );
   }
-
   if ( params_.keepIntermediateFiles_ ) { oFile.close(); }
-
   return ret;
 }
 
@@ -825,7 +796,6 @@ bool PCCEncoder::modifyOccupancyMap( const size_t           imageWidth,
       }
     }
   }
-
   return true;
 }
 
@@ -7284,8 +7254,13 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
       pdu.setPdu3dPosX( patch.getU1() );
       pdu.setPdu3dPosY( patch.getV1() );
       size_t pduProjectPlane = patch.getProjectionMode() * 3 + size_t( patch.getNormalAxis() );
+#ifdef BUGFIX_45_DEGREE_PROJECTION
+      pdu.setPduProjectionId( asps.get45DegreeProjectionPatchPresentFlag() ? ( pduProjectPlane << 2 ) + patch.getAxisOfAdditionalPlane()
+                                                                           : pduProjectPlane );
+#else
       pdu.setPduProjectionId( asps.get45DegreeProjectionPatchPresentFlag() ? ( pduProjectPlane << 2 )
                                                                            : pduProjectPlane );
+#endif
       if ( asps.getPatchSizeQuantizerPresentFlag() ) {
         int32_t deltaSizeX = patch.getPatchSize2DXInPixel() / quantizerSizeX - prevSizeU0 / quantizerSizeX;
         int32_t deltaSizeY = patch.getPatchSize2DYInPixel() / quantizerSizeY - prevSizeV0 / quantizerSizeY;
@@ -7312,12 +7287,12 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
       pdu.setPdu3dPosDeltaMaxZ( quantDD );
       TRACE_CODEC(
           "patch(Intra) %zu: UV0 %4lu %4lu UV1 %4lu %4lu D1=%4lu S=%4lu %4lu %4lu(%4lu) P=%lu O=%lu A=%u%u%u Lod "
-          "=(%zu) "
-          "%lu,%lu \n",
+          "=(%zu) %lu,%lu 45=%d ProjId=%4lu Axis=%lu  \n",
           patchIndex, patch.getU0(), patch.getV0(), patch.getU1(), patch.getV1(), patch.getD1(), patch.getSizeU0(),
           patch.getSizeV0(), patch.getSizeD(), pdu.getPdu3dPosDeltaMaxZ(), patch.getProjectionMode(),
           patch.getPatchOrientation(), patch.getNormalAxis(), patch.getTangentAxis(), patch.getBitangentAxis(),
-          (size_t)lodEnableFlag, patch.getLodScaleX(), patch.getLodScaleY() );
+          (size_t)lodEnableFlag, patch.getLodScaleX(), patch.getLodScaleY() , asps.get45DegreeProjectionPatchPresentFlag(),
+          pdu.getPduProjectionId(), patch.getAxisOfAdditionalPlane() );
 
       if ( asps.getPointLocalReconstructionEnabledFlag() ) {
         setPointLocalReconstructionData( frame, patch, pdu.getPointLocalReconstructionData(),

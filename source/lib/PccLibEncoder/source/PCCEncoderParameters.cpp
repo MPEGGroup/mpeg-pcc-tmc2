@@ -541,11 +541,13 @@ bool PCCEncoderParameters::check() {
   }
 
   if ( multipleStreams_ ) {
-    geometryConfig_ = {};
     if ( geometryD0Config_.empty() || geometryD1Config_.empty() ) {
-      ret = false;
-      std::cerr << "When multipleStreams is true, geometryD0Config_ and geometryD1Config_ should be non-empty\n";
+      // ret = false; 
+      // std::cerr << "When multipleStreams is true, geometryD0Config_ and geometryD1Config_ should be non-empty\n";
+      geometryD0Config_ = geometryConfig_.substr( 0, geometryConfig_.find_last_of( "." ) ) + "-D0.cfg";
+      geometryD1Config_ = geometryConfig_.substr( 0, geometryConfig_.find_last_of( "." ) ) + "-D1.cfg";
     }
+    geometryConfig_ = {};
   } else {
     geometryD0Config_ = {};
     geometryD1Config_ = {};
@@ -556,11 +558,13 @@ bool PCCEncoderParameters::check() {
   }
 
   if ( multipleStreams_ ) {
-    textureConfig_ = {};
     if ( textureT0Config_.empty() || textureT1Config_.empty() ) {
-      std::cerr << "When multipleStreams_ is true, textureT0Config_ and textureT1Config_ should be non-empty\n";
-      ret = false;
+      // std::cerr << "When multipleStreams_ is true, textureT0Config_ and textureT1Config_ should be non-empty\n";
+      // ret = false;      
+      textureT0Config_ = textureConfig_.substr( 0, textureConfig_.find_last_of( "." ) ) + "-T0.cfg";
+      textureT1Config_ = textureConfig_.substr( 0, textureConfig_.find_last_of( "." ) ) + "-T1.cfg";
     }
+    textureConfig_ = {};
   } else {
     textureT0Config_ = {};
     textureT1Config_ = {};
@@ -842,7 +846,15 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     auto& atgl = context.addAtlasTileGroupLayer( frameIdx );
     auto& atgh = atgl.getAtlasTileGroupHeader();
     atgh.setAtghAtlasFrameParameterSetId( 0 );
+#ifdef BUGFIX_45_DEGREE_PROJECTION
+    if( additionalProjectionPlaneMode_ > 0 ) {
+      atgh.setAtghPosMinZQuantizer( uint8_t( std::log2( minLevel_ ) ) - 1 );
+    } else {
+      atgh.setAtghPosMinZQuantizer( uint8_t( std::log2( minLevel_ ) ) );
+    }
+#else
     atgh.setAtghPosMinZQuantizer( uint8_t( std::log2( minLevel_ ) ) );
+#endif
     atgh.setAtghPosDeltaMaxZQuantizer( uint8_t( std::log2( minLevel_ ) ) );
     atgh.setAtghPatchSizeXinfoQuantizer( log2QuantizerSizeX_ );
     atgh.setAtghPatchSizeYinfoQuantizer( log2QuantizerSizeY_ );

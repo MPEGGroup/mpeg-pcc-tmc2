@@ -178,8 +178,8 @@ Void   TComOutputBitstream::addSubstream( TComOutputBitstream* pcSubstream )
 {
   UInt uiNumBits = pcSubstream->getNumberOfWrittenBits();
 
-  const vector<uint8_t>& rbsp = pcSubstream->getFIFO();
-  for (vector<uint8_t>::const_iterator it = rbsp.begin(); it != rbsp.end();)
+  const vector<uint8_t>& Rbsp = pcSubstream->getFIFO();
+  for (vector<uint8_t>::const_iterator it = Rbsp.begin(); it != Rbsp.end();)
   {
     write(*it++, 8);
   }
@@ -198,18 +198,18 @@ Void TComOutputBitstream::writeByteAlignment()
 Int TComOutputBitstream::countStartCodeEmulations()
 {
   UInt cnt = 0;
-  vector<uint8_t>& rbsp   = getFIFO();
-  for (vector<uint8_t>::iterator it = rbsp.begin(); it != rbsp.end();)
+  vector<uint8_t>& Rbsp   = getFIFO();
+  for (vector<uint8_t>::iterator it = Rbsp.begin(); it != Rbsp.end();)
   {
     vector<uint8_t>::iterator found = it;
     do
     {
       // find the next emulated 00 00 {00,01,02,03}
       // NB, end()-1, prevents finding a trailing two byte sequence
-      found = search_n(found, rbsp.end()-1, 2, 0);
+      found = search_n(found, Rbsp.end()-1, 2, 0);
       found++;
       // if not found, found == end, otherwise found = second zero byte
-      if (found == rbsp.end())
+      if (found == Rbsp.end())
       {
         break;
       }
@@ -219,7 +219,7 @@ Int TComOutputBitstream::countStartCodeEmulations()
       }
     } while (true);
     it = found;
-    if (found != rbsp.end())
+    if (found != Rbsp.end())
     {
       cnt++;
     }

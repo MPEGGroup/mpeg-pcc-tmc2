@@ -47,6 +47,7 @@ IF (MSVC)
 ENDIF()
 
 ADD_SUBDIRECTORY(dependencies)
+add_subdirectory( PccVpccBitstream )
 ADD_SUBDIRECTORY(source/lib/PccLibCommon)
 ADD_SUBDIRECTORY(source/lib/PccLibDecoder)
 ADD_SUBDIRECTORY(source/lib/PccLibEncoder)

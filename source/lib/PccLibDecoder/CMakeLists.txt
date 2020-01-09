@@ -15,11 +15,12 @@ INCLUDE_DIRECTORIES( include
                      ${CMAKE_SOURCE_DIR}/dependencies/tbb/include
                      ${CMAKE_SOURCE_DIR}/dependencies/arithmetic-coding/inc
                      ${CMAKE_SOURCE_DIR}/dependencies/nanoflann
-                     ${CMAKE_SOURCE_DIR}/dependencies/PccLibHevcParser/include )
+                     ${CMAKE_SOURCE_DIR}/dependencies/PccLibHevcParser/include
+                     ${CMAKE_SOURCE_DIR}/PccVpccBitstream/source/lib/PccLibBitstreamCommon/include )
 
 ADD_LIBRARY( ${MYNAME} ${LINKER} ${SRC} )
 
-TARGET_LINK_LIBRARIES(${MYNAME} PccLibCommon PccLibHevcParser )
+TARGET_LINK_LIBRARIES(${MYNAME} PccLibCommon PccLibHevcParser PccLibBitstreamCommon )
 
 SET_TARGET_PROPERTIES( ${MYNAME} PROPERTIES LINKER_LANGUAGE CXX)
 

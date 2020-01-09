@@ -43,7 +43,6 @@ namespace pcc {
 
 class PCCPointSet3;
 class PCCGroupOfFrames;
-class PCCBitstream;
 class PCCContext;
 class PCCFrameContext;
 class PatchFrameGeometryParameterSet;
@@ -103,8 +102,8 @@ struct PaddingContext {
 };
 
 typedef std::map<size_t, PCCPatch>                  unionPatch;     // unionPatch ------ [TrackIndex, UnionPatch];
-typedef std::pair<size_t, size_t>                   GlobalPatch;    // GlobalPatch ----- [FrameIndex, PatchIndex];
-typedef std::map<size_t, std::vector<GlobalPatch> > GlobalPatches;  // GlobalPatches --- [TrackIndex, <GlobalPatch>];
+// typedef std::pair<size_t, size_t>                   GlobalPatch;    // GlobalPatch ----- [FrameIndex, PatchIndex];
+// typedef std::map<size_t, std::vector<GlobalPatch> > GlobalPatches;  // GlobalPatches --- [TrackIndex, <GlobalPatch>];
 typedef std::pair<size_t, size_t>                   SubContext;     // SubContext ------ [start, end);
 
 #define BAD_HEIGHT_THRESHOLD 1.10
@@ -116,19 +115,13 @@ class PCCEncoder : public PCCCodec {
   ~PCCEncoder();
   void setParameters( PCCEncoderParameters params );
 
-  int encode( const PCCGroupOfFrames& sources,
-              PCCContext&             context,
-              SampleStreamVpccUnit&   ssvu,
-              PCCGroupOfFrames&       reconstructs );
+  int encode( const PCCGroupOfFrames& sources, PCCContext& context, PCCGroupOfFrames& reconstructs );
 
   void setGeneratePointCloudParameters( GeneratePointCloudParameters& gpcParams, PCCContext& context );
   void createPatchFrameDataStructure( PCCContext& context );
-
   void createPatchFrameDataStructure( PCCContext& context, PCCFrameContext& frame, size_t frameIndex );
 
  private:
-  int encode( const PCCGroupOfFrames& sources, PCCContext& context, PCCGroupOfFrames& reconstructs );
-
   bool generateOccupancyMapVideo( const PCCGroupOfFrames& sources, PCCContext& context );
   bool generateOccupancyMapVideo( const size_t           imageWidth,
                                   const size_t           imageHeight,

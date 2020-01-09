@@ -15,11 +15,13 @@ INCLUDE_DIRECTORIES( ${CMAKE_SOURCE_DIR}/source/lib/PccLibCommon/include
                      ${CMAKE_SOURCE_DIR}/dependencies/program-options-lite
                      ${CMAKE_SOURCE_DIR}/dependencies/arithmetic-coding/inc
                      ${CMAKE_SOURCE_DIR}/dependencies/tbb/include
-                     ${CMAKE_SOURCE_DIR}/dependencies/nanoflann )
+                     ${CMAKE_SOURCE_DIR}/dependencies/nanoflann 
+                     ${CMAKE_SOURCE_DIR}/PccVpccBitstream/source/lib/PccLibBitstreamCommon/include 
+                     ${CMAKE_SOURCE_DIR}/PccVpccBitstream/source/lib/PccLibBitstreamWriter/include )
                      
 ADD_EXECUTABLE( ${MYNAME} ${SRC} )
 
-SET( LIBS PccLibCommon PccLibEncoder PccLibMetrics tbb_static ) 
+SET( LIBS PccLibCommon PccLibEncoder PccLibMetrics tbb_static PccLibBitstreamCommon PccLibBitstreamWriter ) 
 
 TARGET_LINK_LIBRARIES( ${MYNAME} ${LIBS} )
 

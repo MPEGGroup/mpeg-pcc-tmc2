@@ -31,6 +31,7 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 #include "PCCCommon.h"
+#include "PCCHighLevelSyntax.h"
 #include "PCCBitstream.h"
 #include "PCCVideoBitstream.h"
 #include "PCCContext.h"
@@ -38,7 +39,6 @@
 #include "PCCPatch.h"
 #include "PCCVideoDecoder.h"
 #include "PCCGroupOfFrames.h"
-#include "PCCBitstreamDecoder.h"
 #include <tbb/tbb.h>
 #include "PCCDecoder.h"
 
@@ -54,36 +54,18 @@ PCCDecoder::~PCCDecoder() {}
 
 void PCCDecoder::setParameters( PCCDecoderParameters params ) { params_ = params; }
 
-int PCCDecoder::decode( SampleStreamVpccUnit& ssvu, PCCContext& context, PCCGroupOfFrames& reconstructs ) {
-  int ret = 0;
+int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   if ( params_.nbThread_ > 0 ) { tbb::task_scheduler_init init( (int)params_.nbThread_ ); }
-  PCCBitstreamDecoder bitstreamDecoder;
-#ifdef BITSTREAM_TRACE
-  PCCBitstream bitstream;
-  bitstream.setTrace( true );
-  bitstream.openTrace( removeFileExtension( params_.compressedStreamPath_ ) + "_hls_decode.txt" );
-  bitstreamDecoder.setTraceFile( bitstream.getTraceFile() );
-#endif
-  if ( !bitstreamDecoder.decode( ssvu, context ) ) { return 0; }
-#ifdef BITSTREAM_TRACE
-  bitstream.closeTrace();
-#endif
-
 #ifdef CODEC_TRACE
-  setTrace( true );
-  openTrace( stringFormat( "%s_GOF%u_patch_decode.txt", removeFileExtension( params_.compressedStreamPath_ ).c_str(),
-                           context.getSps().getVpccParameterSetId() ) );
+    setTrace( true );
+    openTrace( stringFormat( "%s_GOF%u_patch_decode.txt", removeFileExtension( params_.compressedStreamPath_ ).c_str(),
+                             context.getSps().getVpccParameterSetId() ) );
 #endif
   createPatchFrameDataStructure( context );
 #ifdef CODEC_TRACE
   closeTrace();
 #endif
-  ret |= decode( context, reconstructs );
-  return ret;
-}
 
-int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
-  reconstructs.resize( context.size() );
   PCCVideoDecoder   videoDecoder;
   std::stringstream path;
   auto&             sps        = context.getSps();
@@ -103,6 +85,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   const size_t mapCount           = sps.getMapCountMinus1( atlasIndex ) + 1;
   auto&        videoBitstreamOM   = context.getVideoBitstream( VIDEO_OCCUPANCY );
   int          decodedBitDepthOM  = 8;
+  reconstructs.resize( context.size() );
   videoDecoder.decompress( context.getVideoOccupancyMap(), path.str(), context.size(), videoBitstreamOM,
                            params_.videoDecoderOccupancyMapPath_, context, decodedBitDepthOM,
                            params_.keepIntermediateFiles_, ( sps.getLosslessGeo() ? sps.getLosslessGeo444() : false ),
@@ -183,9 +166,10 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
 
   GeneratePointCloudParameters gpcParams;
   setGeneratePointCloudParameters( gpcParams, context );
-
   std::vector<std::vector<uint32_t>> partitions;
+  printf("generatePointCloud \n"); fflush(stdout);
   generatePointCloud( reconstructs, context, gpcParams, partitions, true );
+  printf("generatePointCloud done\n"); fflush(stdout);
 
   if ( ai.getAttributeCount() > 0 ) {
     int decodedBitdepthAttribute = ai.getAttributeNominal2dBitdepthMinus1( 0 ) + 1;
@@ -400,6 +384,7 @@ void PCCDecoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& 
   params.EOMFixBitCount_                = asps.getEnhancedOccupancyMapFixBitCountMinus1() + 1;
   params.geometry3dCoordinatesBitdepth_ = gi.getGeometry3dCoordinatesBitdepthMinus1() + 1;
   params.geometryBitDepth3D_            = gi.getGeometry3dCoordinatesBitdepthMinus1() + 1;
+  printf("Params: SPI = %d PBF = %d \n",params.singleMapPixelInterleaving_,params.pbfEnableFlag_); fflush(stdout);
 }
 
 void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
@@ -521,6 +506,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
       patch.getProjectionMode()        = pduProjectionPlane < 3 ? 0 : 1;
       patch.getPatchOrientation()      = pdu.getPduOrientationIndex();
       patch.getAxisOfAdditionalPlane() = pdu45degreeProjectionRotationAxis; 
+
       TRACE_CODEC( "patch %lu / %lu: Intra \n", patchIndex, patchCount );
       const size_t max3DCoordinate = 1 << ( gi.getGeometry3dCoordinatesBitdepthMinus1() + 1 );
       if ( patch.getProjectionMode() == 0 ) {
@@ -548,12 +534,13 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
       }
       TRACE_CODEC(
           "patch(Intra) %zu: UV0 %4lu %4lu UV1 %4lu %4lu D1=%4lu S=%4lu %4lu %4lu(%4lu) P=%lu O=%lu A=%u%u%u Lod "
-          "=(%zu) %lu,%lu \n",
+          "=(%zu) %lu,%lu 45=%d ProjId=%4lu Axis=%lu \n",
           patchIndex, patch.getU0(), patch.getV0(), patch.getU1(), patch.getV1(), patch.getD1(), patch.getSizeU0(),
           patch.getSizeV0(), patch.getSizeD(), pdu.getPdu3dPosDeltaMaxZ(), patch.getProjectionMode(),
           patch.getPatchOrientation(), patch.getNormalAxis(), patch.getTangentAxis(), patch.getBitangentAxis(),
-          (size_t)lodEnableFlag, patch.getLodScaleX(), patch.getLodScaleY() );
-
+          (size_t)lodEnableFlag, patch.getLodScaleX(), patch.getLodScaleY(), asps.get45DegreeProjectionPatchPresentFlag(),
+          pdu.getPduProjectionId(), patch.getAxisOfAdditionalPlane() );
+      
       patch.allocOneLayerData();
       if ( asps.getPointLocalReconstructionEnabledFlag() ) {
         setPointLocalReconstructionData( frame, patch, pdu.getPointLocalReconstructionData(),

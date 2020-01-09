@@ -129,11 +129,13 @@ void PCCCodec::generatePointCloud( PCCGroupOfFrames&                   reconstru
           frames[i].getWidth(), frames[i].getHeight(), params.occupancyResolution_, params.occupancyPrecision_,
           !params.enhancedDeltaDepthCode_ ? params.thresholdLossyOM_ : 0, params.pbfPassesCount_, params.pbfFilterSize_,
           params.pbfLog2Threshold_ );
+      printf( "  PBF done \n" ); fflush(stdout);
     }
     std::vector<uint32_t> partition;
+      printf( "  generatePointCloud  \n" ); fflush(stdout);
     generatePointCloud( reconstructs[i], context, frames[i], videoGeometry, videoGeometryD1, videoOccupancyMap, params,
                         partition, bDecoder );
-
+    printf( "  generatePointCloud done ( %lu points ) \n", reconstructs[i].getPointCount() ); fflush(stdout);
 #ifdef CODEC_TRACE
     TRACE_CODEC( " generatePointCloud create %lu points \n", reconstructs[i].getPointCount() );
     auto checksum = reconstructs[i].computeChecksum();
@@ -426,16 +428,34 @@ std::vector<PCCPoint3D> PCCCodec::generatePoints( const GeneratePointCloudParame
   if ( params.singleMapPixelInterleaving_ ) {
     size_t       patchIndexPlusOne = patchIndex + 1;
     double       depth0, depth1;
-    auto&        occupancyMap      = frame.getOccupancyMap();
-    auto&        blockToPatch      = frame.getBlockToPatch();
     const auto   imageWidth        = frame0.getWidth();
     const auto   imageHeight       = frame0.getHeight();
+    bool occupancyTop, occupancyBotton, occupancyLeft, occupancyRight;
+    if ( !params.pbfEnableFlag_ ) {
+      auto&  occupancyMap  = frame.getOccupancyMap();
+      occupancyTop    = y > 0 && occupancyMap[( y - 1 ) * imageWidth + x];
+      occupancyBotton = y < ( imageHeight - 1 ) && occupancyMap[( y + 1 ) * imageWidth + x];
+      occupancyLeft   =  x > 0 && occupancyMap[y * imageWidth + x - 1];
+      occupancyRight  = x < ( imageWidth - 1 ) && occupancyMap[y * imageWidth + x + 1];
+    } else {
+      occupancyTop    = y > 0 && ( 
+          patch.getOccupancyMap( ( x     ) / patch.getOccupancyResolution(), 
+                                 ( y - 1 ) / patch.getOccupancyResolution()  ) != 0 );
+      occupancyBotton = y < ( imageHeight - 1 ) && (
+          patch.getOccupancyMap( ( x     ) / patch.getOccupancyResolution(), 
+                                 ( y + 1 ) / patch.getOccupancyResolution()  ) != 0 );
+      occupancyLeft   = x > 0 && ( patch.getOccupancyMap( ( x - 1 ) / patch.getOccupancyResolution(), 
+                                                          ( y     ) / patch.getOccupancyResolution() ) != 0 );
+      occupancyRight  = x < ( imageWidth - 1 ) && ( patch.getOccupancyMap( ( x + 1 ) / patch.getOccupancyResolution(), 
+                                                                           ( y     ) / patch.getOccupancyResolution() ) != 0 );
+    }
+    auto&        blockToPatch      = frame.getBlockToPatch();
     const size_t blockToPatchWidth = frame.getWidth() / params.occupancyResolution_;
     double       DepthNeighbors[4] = {0};
     int          count             = 0;
     double       minimumDepth      = point0[patch.getNormalAxis()];
     double       maximumDepth      = point0[patch.getNormalAxis()];
-    if ( x > 0 && occupancyMap[y * imageWidth + x - 1] ) {
+    if ( occupancyLeft ) {
       size_t Temp_u0 = ( x - 1 ) / patch.getOccupancyResolution();
       size_t Temp_v0 = ( y ) / patch.getOccupancyResolution();
       if ( blockToPatch[(Temp_v0)*blockToPatchWidth + Temp_u0] == patchIndexPlusOne ) {
@@ -449,7 +469,7 @@ std::vector<PCCPoint3D> PCCCodec::generatePoints( const GeneratePointCloudParame
         if ( DepthNeighbors[0] > maximumDepth ) { maximumDepth = DepthNeighbors[0]; }
       }
     }
-    if ( x < ( imageWidth - 1 ) && occupancyMap[y * imageWidth + x + 1] ) {
+    if ( occupancyRight ) {
       size_t Temp_u0 = ( x + 1 ) / patch.getOccupancyResolution();
       size_t Temp_v0 = ( y ) / patch.getOccupancyResolution();
       if ( blockToPatch[(Temp_v0)*blockToPatchWidth + Temp_u0] == patchIndexPlusOne ) {
@@ -463,7 +483,7 @@ std::vector<PCCPoint3D> PCCCodec::generatePoints( const GeneratePointCloudParame
         if ( DepthNeighbors[1] > maximumDepth ) { maximumDepth = DepthNeighbors[1]; }
       }
     }
-    if ( y > 0 && occupancyMap[( y - 1 ) * imageWidth + x] ) {
+    if ( occupancyTop ) {
       size_t Temp_u0 = ( x ) / patch.getOccupancyResolution();
       size_t Temp_v0 = ( y - 1 ) / patch.getOccupancyResolution();
       if ( blockToPatch[(Temp_v0)*blockToPatchWidth + Temp_u0] == patchIndexPlusOne ) {
@@ -477,7 +497,7 @@ std::vector<PCCPoint3D> PCCCodec::generatePoints( const GeneratePointCloudParame
         if ( DepthNeighbors[2] > maximumDepth ) { maximumDepth = DepthNeighbors[2]; }
       }
     }
-    if ( y < ( imageHeight - 1 ) && occupancyMap[( y + 1 ) * imageWidth + x] ) {
+    if ( occupancyBotton ) {
       size_t Temp_u0 = ( x ) / patch.getOccupancyResolution();
       size_t Temp_v0 = ( y + 1 ) / patch.getOccupancyResolution();
       if ( blockToPatch[(Temp_v0)*blockToPatchWidth + Temp_u0] == patchIndexPlusOne ) {
@@ -490,6 +510,9 @@ std::vector<PCCPoint3D> PCCCodec::generatePoints( const GeneratePointCloudParame
         if ( DepthNeighbors[3] < minimumDepth ) { minimumDepth = DepthNeighbors[3]; }
         if ( DepthNeighbors[3] > maximumDepth ) { maximumDepth = DepthNeighbors[3]; }
       }
+    }
+    if( !count ) {      
+      return createdPoints;
     }
     if ( ( x + y ) % 2 == 1 ) {
       depth1 = point0[patch.getNormalAxis()];
@@ -579,7 +602,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
                                    const PCCVideoOccupancyMap&        videoOM,
                                    const GeneratePointCloudParameters params,
                                    std::vector<uint32_t>&             partition,
-                                   bool                               bDecoder ) {
+                                   bool                               bDecoder ) {  
   TRACE_CODEC( "generatePointCloud F = %lu start \n", frame.getIndex() );
   auto&        patches            = frame.getPatches();
   auto&        pointToPixel       = frame.getPointToPixel();
@@ -587,7 +610,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
   const size_t blockToPatchWidth  = frame.getWidth() / params.occupancyResolution_;
   const size_t blockToPatchHeight = frame.getHeight() / params.occupancyResolution_;
   reconstruct.addColors();
-  const size_t patchCount = patches.size();
+  const size_t patchCount = patches.size();  
   size_t       N          = 0;
   uint32_t     patchIndex{0};
 

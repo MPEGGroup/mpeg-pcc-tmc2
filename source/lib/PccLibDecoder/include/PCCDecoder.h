@@ -41,7 +41,6 @@
 
 namespace pcc {
 
-class PCCBitstream;
 class PCCContext;
 class PCCFrameContext;
 class PCCGroupOfFrames;
@@ -59,20 +58,13 @@ class PCCDecoder : public PCCCodec {
  public:
   PCCDecoder();
   ~PCCDecoder();
-
-  int decode( SampleStreamVpccUnit& ssvu, PCCContext& context, PCCGroupOfFrames& reconstructs );
-
+  int  decode( PCCContext& context, PCCGroupOfFrames& reconstruct );
   void setParameters( PCCDecoderParameters value );
-
   void setGeneratePointCloudParameters( GeneratePointCloudParameters& gpcParams, PCCContext& context );
-
   void createPatchFrameDataStructure( PCCContext& context );
-
   void createPatchFrameDataStructure( PCCContext& context, PCCFrameContext& frame, size_t frameIndex );
 
  private:
-  int decode( PCCContext& context, PCCGroupOfFrames& reconstruct );
-
   void setPointLocalReconstruction( PCCContext& context );
   void setPointLocalReconstructionData( PCCFrameContext&              frame,
                                         PCCPatch&                     patch,

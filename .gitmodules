@@ -1,0 +1,3 @@
+[submodule "PccVpccBitstream"]
+	path = PccVpccBitstream
+	url = http://mpegx.int-evry.fr/software/ricardj/mpeg-pcc-vpccbitstream.git

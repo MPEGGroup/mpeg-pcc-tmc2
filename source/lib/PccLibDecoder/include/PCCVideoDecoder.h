@@ -49,8 +49,6 @@
 
 namespace pcc {
 
-class PCCBitstream;
-
 class PCCVideoDecoder {
  public:
   PCCVideoDecoder();
