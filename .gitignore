@@ -54,7 +54,6 @@ data/
 *.cmake
 .idea
 DerivedData
-PccVpccBitstream/
 
 source/lib/PccLibCommon/include/PCCConfig.h
 
