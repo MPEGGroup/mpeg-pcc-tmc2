@@ -944,7 +944,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
         std::vector<size_t> fifoa;
         fifoa.reserve( pointCount );
         for ( const auto i : connectedComponent ) {
-          for ( size_t ac = 0; ac < adj[i].size(); ac++ ) {
+          for ( size_t ac = 0; ac < adj[i].size(); ++ac ) {
             const size_t n = adj[i][ac];
             if ( flagExp[n] ) continue;               // point been added in expansion
             if ( ( clusterIndex == partition[n] ) ||  // same plane
@@ -1181,7 +1181,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
                            geometryBitDepth3D,
                            createSubPointCloud,
                            rec);
-      
+
       d0CountPerPatch  = pointCount[0];
       d1CountPerPatch  = pointCount[1];
       eddCountPerPatch = pointCount[2];
@@ -1314,7 +1314,7 @@ void PCCPatchSegmenter3::refineSegmentation( const PCCPointSet3&         pointCl
       tbb::parallel_for( size_t( 0 ), pointCount, [&]( const size_t i ) {
         auto& scoreSmooth = scoresSmooth[i];
         std::fill( scoreSmooth.begin(), scoreSmooth.end(), 0 );
-        for ( auto& neighbor : adj[i] ) { scoreSmooth[partition[neighbor]]++; }
+        for ( auto& neighbor : adj[i] ) { ++scoreSmooth[partition[neighbor]]; }
       } );
     } );
     limited.execute( [&] {
@@ -1352,7 +1352,7 @@ void PCCPatchSegmenter3::refineSegmentationGridBased( const PCCPointSet3&       
                                                       std::vector<size_t>&        partition ) {
   const size_t pointCount = pointCloud.getPointCount();
   auto         geoMax     = pointCloud[0][0];
-  for ( size_t i = 0; i < pointCount; i++ ) {
+  for ( size_t i = 0; i < pointCount; ++i ) {
     const auto& pos = pointCloud[i];
     geoMax          = ( std::max )( geoMax, pos[0] );
     geoMax          = ( std::max )( geoMax, pos[1] );
@@ -1362,10 +1362,10 @@ void PCCPatchSegmenter3::refineSegmentationGridBased( const PCCPointSet3&       
   for ( size_t i = geoMax - 1; i; i >>= 1, geoRange <<= 1 )
     ;
   size_t voxDimShift, gridDimShift, i;
-  for ( voxDimShift = 0, i = voxDim; i > 1; voxDimShift++, i >>= 1 )
+  for ( voxDimShift = 0, i = voxDim; i > 1; ++voxDimShift, i >>= 1 )
     ;
   const size_t gridDim = geoRange >> voxDimShift;
-  for ( gridDimShift = 0, i = gridDim; i > 1; gridDimShift++, i >>= 1 )
+  for ( gridDimShift = 0, i = gridDim; i > 1; ++gridDimShift, i >>= 1 )
     ;
   const size_t gridDimShiftSqr = gridDimShift << 1;
   const size_t voxDimHalf      = voxDim >> 1;
@@ -1385,7 +1385,7 @@ void PCCPatchSegmenter3::refineSegmentationGridBased( const PCCPointSet3&       
 
   PCCPointSet3                          gridCenters;
   std::unordered_map<size_t, voxelType> grid;
-  for ( size_t i = 0; i < pointCount; i++ ) {
+  for ( size_t i = 0; i < pointCount; ++i ) {
     const auto&  pos = pointCloud[i];
     const size_t x0  = ( ( (size_t)pos[0] + voxDimHalf ) >> voxDimShift );
     const size_t y0  = ( ( (size_t)pos[1] + voxDimHalf ) >> voxDimShift );
@@ -1407,16 +1407,16 @@ void PCCPatchSegmenter3::refineSegmentationGridBased( const PCCPointSet3&       
   computeAdjacencyInfoInRadius( gridCenters, kdtree, adj, maxNeighborCount, voxSearchRadius );
 
   std::vector<size_t> tmpPartition( pointCount );
-  for ( size_t n = 0; n < iterationCount; n++ ) {
+  for ( size_t n = 0; n < iterationCount; ++n ) {
     for ( auto& gridElm : grid ) {
       auto& voxel = gridElm.second;
       std::fill( voxel.scoreSmooth.begin(), voxel.scoreSmooth.end(), 0 );
-      for ( auto& j : voxel.pointIndices ) { voxel.scoreSmooth[partition[j]]++; }
+      for ( auto& j : voxel.pointIndices ) { ++voxel.scoreSmooth[partition[j]]; }
     }
     /*tbb::task_arena limited((int)nbThread_);
     limited.execute([&] {
       tbb::parallel_for(size_t(0), gridCenters.getPointCount(), [&](const size_t i) {*/
-    for ( size_t i = 0; i < gridCenters.getPointCount(); i++ ) {
+    for ( size_t i = 0; i < gridCenters.getPointCount(); ++i ) {
       auto&               pos = gridCenters[i];
       size_t              p   = subToInd( pos[0], pos[1], pos[2] );
       std::vector<size_t> scoreSmooth( orientationCount, 0 );
@@ -1426,16 +1426,18 @@ void PCCPatchSegmenter3::refineSegmentationGridBased( const PCCPointSet3&       
         size_t q   = subToInd( pos[0], pos[1], pos[2] );
         /*std::transform(scoreSmooth.begin(), scoreSmooth.end(), grid[q].scoreSmooth.begin(),
           scoreSmooth.begin(), std::plus<size_t>());*/
-        for ( size_t k = 0; k < orientationCount; k++ ) { scoreSmooth[k] += grid[q].scoreSmooth[k]; }
-        nnPointCount += grid[q].pointCount;
+	auto& vox = grid[q];
+        for ( size_t k = 0; k < orientationCount; ++k ) { scoreSmooth[k] += vox.scoreSmooth[k]; }
+        nnPointCount += vox.pointCount;
         if ( nnPointCount >= maxNNCount ) break;
       }
       const double weight = lambda / nnPointCount;
-      for ( auto& j : grid[p].pointIndices ) {
+      auto& pI = grid[p].pointIndices;
+      for ( auto& j : pI ) {
         const PCCVector3D normal       = normalsGen.getNormal( j );
         size_t            clusterIndex = partition[j];
         double            bestScore    = 0.0;
-        for ( size_t k = 0; k < orientationCount; k++ ) {
+        for ( size_t k = 0; k < orientationCount; ++k ) {
           const double scoreNormal = normal * orientations[k];
           const double score       = scoreNormal + weight * scoreSmooth[k];
           if ( score > bestScore ) {
