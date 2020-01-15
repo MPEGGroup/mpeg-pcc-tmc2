@@ -132,6 +132,13 @@ class PCCPatchSegmenter3 {
                                      const size_t                      maxNNCount,
                                      const size_t                      radius );
 
+  bool colorSimilarity(PCCColor3B& colorD1candidate,PCCColor3B& colorD0, uint8_t threshold){
+    bool bSimilarity    = ( std::abs( colorD0[0] - colorD1candidate[0] ) < threshold ) &&
+    ( std::abs( colorD0[1] - colorD1candidate[1] ) < threshold ) &&
+    ( std::abs( colorD0[2] - colorD1candidate[2] ) < threshold );
+    return bSimilarity;
+  }
+
   void segmentPatches( const PCCPointSet3&                 points,
                        const size_t                        frameIndex,
                        const PCCKdTree&                    kdtree,

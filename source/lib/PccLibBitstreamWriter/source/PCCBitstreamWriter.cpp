@@ -478,7 +478,7 @@ void PCCBitstreamWriter::attributeInformation( AttributeInformation& ai,
       bitstream.write( (uint32_t)ai.getRawAttributeCodecId( i ), 8 );  // u(8)
     }
     for ( int32_t j = 0; j < sps.getMapCountMinus1( atlasIndex ); j++ ) {
-      if ( sps.getMapAbsoluteCodingEnableFlag( atlasIndex, j ) == 0 ) {
+      if ( sps.getMapAbsoluteCodingEnableFlag( atlasIndex, j + 1) == 0 ) {
         bitstream.write( (uint32_t)ai.getAttributeMapAbsoluteCodingEnabledFlag( i, j + 1 ), 1 );  // u(1)
       }
     }

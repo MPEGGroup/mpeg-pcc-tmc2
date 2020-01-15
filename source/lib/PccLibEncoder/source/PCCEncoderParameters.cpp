@@ -788,8 +788,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   }
 
   for ( size_t i = 0; i < ai.getAttributeCount(); i++ ) {
-    ai.addAttributeMapAbsoluteCodingEnabledFlag( i, true );  // first map
-    for ( size_t j = 0; j < sps.getMapCountMinus1( ATLASIDXPCC ); j++ ) {
+    for ( size_t j = 0; j <= sps.getMapCountMinus1( ATLASIDXPCC ); j++ ) {
       if ( sps.getMapAbsoluteCodingEnableFlag( ATLASIDXPCC, j ) == 0 ) {
         ai.addAttributeMapAbsoluteCodingEnabledFlag( i, (bool)absoluteT1_ );
       } else {

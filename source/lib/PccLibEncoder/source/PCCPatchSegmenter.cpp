@@ -1135,12 +1135,15 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
               assert( v >= 0 && v < patch.getSizeV() );
               const size_t  p      = v * patch.getSizeU() + u;
               const int16_t depth0 = patch.getDepth( 0 )[p];
+              if( !( depth0 < infiniteDepth )) continue;
+              bool bsimilar = colorSimilarity( frame_pcc_color[i], frame_pcc_color[patch.getDepth0PccIdx()[p]], 128);
+
               if ( depth0 < infiniteDepth && ( d - depth0 ) <= int16_t( surfaceThickness ) &&
-                   d > patch.getDepth( 1 )[p] ) {
+                   d > patch.getDepth( 1 )[p] && bsimilar) {
                 patch.getDepth( 1 )[p] = d;
               }
               if ( useEnhancedDeltaDepthCode && depth0 < infiniteDepth && ( d - depth0 ) > 0 &&
-                   ( d - depth0 ) <= int16_t( surfaceThickness ) ) {
+                   ( d - depth0 ) <= int16_t( surfaceThickness ) && bsimilar ) {
                 const uint16_t oldEDDCode = patch.getDepthEnhancedDeltaD()[p];
                 const uint16_t deltaD     = d - depth0;
                 int            comp_depth0;
@@ -1186,9 +1189,12 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
                 const size_t  p      = v * patch.getSizeU() + u;
                 const int16_t depth0 = patch.getDepth( 0 )[p];
                 tot_num++;
+
+                if( !( depth0 < infiniteDepth )) continue;
+                bool bsimilar = colorSimilarity( frame_pcc_color[i], frame_pcc_color[patch.getDepth0PccIdx()[p]], 128);
                 if ( err_flag == false ) {
                   if ( depth0 < infiniteDepth && ( d - depth0 ) <= int16_t( patch_surfaceThickness ) &&
-                       d > patch.getDepth( 1 )[p] ) {
+                       d > patch.getDepth( 1 )[p] && bsimilar ) {
                     d1_num++;
                     const size_t     d0_idx   = patch.getDepth0PccIdx()[p];
                     const size_t     d1_idx   = i;
@@ -1213,11 +1219,11 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
                   }
                 } else {
                   if ( depth0 < infiniteDepth && ( d - depth0 ) <= int16_t( patch_surfaceThickness ) &&
-                       d > patch.getDepth( 1 )[p] ) {
+                       d > patch.getDepth( 1 )[p] &&bsimilar) {
                     patch.getDepth( 1 )[p] = d;
                   }
                   if ( useEnhancedDeltaDepthCode && depth0 < infiniteDepth && ( d - depth0 ) > 0 &&
-                       ( d - depth0 ) <= int16_t( surfaceThickness ) ) {
+                       ( d - depth0 ) <= int16_t( surfaceThickness )&&bsimilar ) {
                     const uint16_t oldEDDCode = patch.getDepthEnhancedDeltaD()[p];
                     const uint16_t deltaD     = d - depth0;
                     int            comp_depth0;
@@ -1269,26 +1275,15 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
               const size_t  p                = v * patch.getSizeU() + u;
               const int16_t depth0           = patch.getDepth( 0 )[p];
               bool          validD1          = false;
-              bool          bColorDifference = true;
-              PCCColor3B    colorD1candidate;
-              PCCColor3B    colorD0;
-              if ( depth0 < infiniteDepth ) {
-                const size_t d0_idx = patch.getDepth0PccIdx()[p];
-                const size_t d1_idx = i;
-                colorD1candidate    = frame_pcc_color[d1_idx];
-                colorD0             = frame_pcc_color[d0_idx];
-                bColorDifference    = ( std::abs( colorD0[0] - colorD1candidate[0] ) < 128 ) &&
-                                   ( std::abs( colorD0[1] - colorD1candidate[1] ) < 128 ) &&
-                                   ( std::abs( colorD0[2] - colorD1candidate[2] ) < 128 );
-                validD1 = depth0 < infiniteDepth && ( depth0 - d ) <= int16_t( surfaceThickness ) &&
-                          d < patch.getDepth( 1 )[p] && bColorDifference;
-              }
+              if( !( depth0 < infiniteDepth )) continue;
+              bool bsimilar = colorSimilarity( frame_pcc_color[i], frame_pcc_color[patch.getDepth0PccIdx()[p]], 128);
+            
               if ( depth0 < infiniteDepth && ( depth0 - d ) <= int16_t( surfaceThickness ) &&
-                   d < patch.getDepth( 1 )[p] ) {
+                   d < patch.getDepth( 1 )[p] && bsimilar) {
                 patch.getDepth( 1 )[p] = d;
               }
               if ( useEnhancedDeltaDepthCode && depth0 < infiniteDepth && ( depth0 - d ) > 0 &&
-                   ( depth0 - d ) <= int16_t( surfaceThickness ) ) {
+                   ( depth0 - d ) <= int16_t( surfaceThickness ) && bsimilar ) { //bsimilar
                 const uint16_t oldEDDCode = patch.getDepthEnhancedDeltaD()[p];
                 const uint16_t deltaD     = depth0 - d;
                 int            comp_depth0;
@@ -1332,9 +1327,13 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
                 const size_t  p      = v * patch.getSizeU() + u;
                 const int16_t depth0 = patch.getDepth( 0 )[p];
                 tot_num++;
+                
+                if( !( depth0 < infiniteDepth )) continue;
+                bool bsimilar = colorSimilarity( frame_pcc_color[i], frame_pcc_color[patch.getDepth0PccIdx()[p]], 128);
+                
                 if ( err_flag == false ) {
                   if ( depth0 < infiniteDepth && ( depth0 - d ) <= int16_t( patch_surfaceThickness ) &&
-                       d < patch.getDepth( 1 )[p] ) {
+                       d < patch.getDepth( 1 )[p] && bsimilar ) {
                     d1_num++;
                     const size_t     d0_idx   = patch.getDepth0PccIdx()[p];
                     const size_t     d1_idx   = i;
@@ -1349,12 +1348,12 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
                 } else {
                   if ( depth0 < infiniteDepth &&
                        ( depth0 - d ) <= int16_t( patch_surfaceThickness )  // fixed to patch_surfaceThickness
-                       && d < patch.getDepth( 1 )[p]                        // case 2
+                       && d < patch.getDepth( 1 )[p] && bsimilar              // case 2
                   ) {
                     patch.getDepth( 1 )[p] = d;
                   }
                   if ( useEnhancedDeltaDepthCode && depth0 < infiniteDepth && ( depth0 - d ) > 0 &&
-                       ( depth0 - d ) <= int16_t( surfaceThickness ) ) {
+                       ( depth0 - d ) <= int16_t( surfaceThickness ) && bsimilar ) {
                     const uint16_t oldEDDCode = patch.getDepthEnhancedDeltaD()[p];
                     const uint16_t deltaD     = depth0 - d;
                     int            comp_depth0;

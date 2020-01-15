@@ -370,7 +370,7 @@ void PCCBitstreamReader::attributeInformation( AttributeInformation& ai,
       ai.setRawAttributeCodecId( i, bitstream.read( 8 ) );  // u(8)
     }
     ai.addAttributeMapAbsoluteCodingEnabledFlag( i, true );
-    for ( int32_t j = 0; j < sps.getMapCountMinus1( atlasIndex ); j++ ) {
+    for ( int32_t j = 1; j < sps.getMapCountMinus1( atlasIndex ) + 1; j++ ) {
       if ( sps.getMapAbsoluteCodingEnableFlag( atlasIndex, j ) == 0 ) {
         ai.addAttributeMapAbsoluteCodingEnabledFlag( i, bitstream.read( 1 ) );  // u(1)
       } else {

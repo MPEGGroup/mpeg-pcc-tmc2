@@ -162,6 +162,11 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
               << ( (float)changedPixCnt1To0 * 100.0F / pixCnt ) << std::endl;
   }
 
+
+  if(!params_.useMissedPointsSeparateVideo_ && (params_.losslessGeo_ || params_.lossyMissedPointsPatch_)){
+    markRawPatchLocationOccupancyMapVideo(context);
+  }
+
   generateBlockToPatchFromOccupancyMapVideo( context, params_.losslessGeo_, params_.lossyMissedPointsPatch_,
                                              params_.occupancyResolution_, params_.occupancyPrecision_ );
 
@@ -3492,34 +3497,6 @@ void PCCEncoder::generateOccupancyMap( PCCFrameContext& frame ) {
       }
     }
   }
-
-  if ( !frame.getUseMissedPointsSeparateVideo() ) {
-    size_t numberOfMpsPatches = frame.getNumberOfMissedPointsPatches();
-    for ( int i = 0; i < numberOfMpsPatches; i++ ) {
-      auto&        missedPointsPatch = frame.getMissedPointsPatch( i );
-      const size_t v0                = missedPointsPatch.v0_ * missedPointsPatch.occupancyResolution_;
-      const size_t u0                = missedPointsPatch.u0_ * missedPointsPatch.occupancyResolution_;
-      if ( missedPointsPatch.size() ) {
-        for ( size_t v = 0; v < missedPointsPatch.sizeV_; ++v ) {
-          for ( size_t u = 0; u < missedPointsPatch.sizeU_; ++u ) {
-            const size_t p = v * missedPointsPatch.sizeU_ + u;
-            if ( missedPointsPatch.x_[p] < infiniteDepth ) {
-              // if (p < missedPointsPatch.getNumberOfMps()) {
-              const size_t x = ( u0 + u );
-              const size_t y = ( v0 + v );
-              if ( x >= width || y >= height ) {
-                std::cout << "\t\tout of image :" << x << "," << y << "(" << x + y * width << ") vs occupancyMap size"
-                          << occupancyMap.size() << std::endl;
-                exit( 0 );
-              }
-              assert( x < width && y < height );
-              occupancyMap[x + y * width] = 1;
-            }
-          }
-        }
-      }
-    }
-  }
   if ( !params_.absoluteD1_ || !params_.absoluteT1_ ) { fullOccupancyMap = occupancyMap; }
 }
 
@@ -4657,7 +4634,52 @@ bool PCCEncoder::resizeGeometryVideo( PCCContext& context ) {
   }
   return true;
 }
-
+void PCCEncoder::markRawPatchLocationOccupancyMapVideo(PCCContext& context)
+{
+  auto& videoOccupancyMap = context.getVideoOccupancyMap();
+  for(size_t f=0; f<context.size(); f++){
+    markRawPatchLocation(context[f], videoOccupancyMap.getFrame( f ));
+  }
+}
+void PCCEncoder::markRawPatchLocation(//const PCCContext& context, size_t frameIndex,
+                                      PCCFrameContext& contextFrame,
+                                      PCCImageOccupancyMap&   occupancyMap)
+{
+  //auto& contetFrame = context[frameIndex];
+  if ( !contextFrame.getUseMissedPointsSeparateVideo() ) {
+    //for padding purpose
+    size_t width = occupancyMap.getWidth();
+    size_t height = occupancyMap.getHeight();
+    
+    size_t numberOfMpsPatches = contextFrame.getNumberOfMissedPointsPatches();
+    for ( int i = 0; i < numberOfMpsPatches; i++ ) {
+      auto&        missedPointsPatch = contextFrame.getMissedPointsPatch( i );
+      const size_t v0                = missedPointsPatch.v0_ * missedPointsPatch.occupancyResolution_;
+      const size_t u0                = missedPointsPatch.u0_ * missedPointsPatch.occupancyResolution_;
+      if ( missedPointsPatch.size() ) {
+        for ( size_t v = 0; v < missedPointsPatch.sizeV_; ++v ) {
+          for ( size_t u = 0; u < missedPointsPatch.sizeU_; ++u ) {
+            const size_t p = v * missedPointsPatch.sizeU_ + u;
+            if ( missedPointsPatch.x_[p] < infiniteDepth ) {
+              // if (p < missedPointsPatch.getNumberOfMps()) {
+              const size_t x = ( u0 + u );
+              const size_t y = ( v0 + v );
+              if ( x >= width || y >= height ) {
+                std::cout << "\t\tout of image :" << x << "," << y << "(" << x + y * width << ") vs occupancyMap size :"
+                << width <<"x"<<height << std::endl;
+                exit( 0 );
+              }
+              assert( x < width && y < height );
+              occupancyMap.setValue(0, x, y, 1);
+              contextFrame.getOccupancyMap()[x + y * width] = 1;
+              //auto&                 occupancyMapOriginal =
+            }
+          }
+        }
+      }
+    }
+  }
+}
 bool PCCEncoder::dilateGeometryVideo( const PCCGroupOfFrames& sources, PCCContext& context ) {
   auto& videoGeometry     = context.getVideoGeometry();
   auto& videoGeometryD1   = context.getVideoGeometryD1();
