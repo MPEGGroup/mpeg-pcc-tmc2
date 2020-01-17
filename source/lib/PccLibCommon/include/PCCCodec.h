@@ -52,7 +52,7 @@ class PCCGroupOfFrames;
 class PCCPointSet3;
 template <typename T, size_t N>
 class PCCVideo;
-typedef pcc::PCCVideo<uint8_t, 3>  PCCVideoTexture;
+typedef pcc::PCCVideo<uint16_t, 3>  PCCVideoTexture;  
 typedef pcc::PCCVideo<uint16_t, 3> PCCVideoGeometry;
 
 template <typename T, size_t N>
@@ -279,7 +279,7 @@ class PCCCodec {
     return s;
   }
 
-  inline double median( std::vector<uint8_t>& Data, int N ) {
+  inline double median( std::vector<uint16_t>& Data, int N ) {
     float med    = 0;
     int   a      = 0;
     int   b      = 0;
@@ -291,11 +291,13 @@ class PCCCodec {
     return double( newMed );
   }
 
-  inline double mean( std::vector<uint8_t>& Data, int N ) {
+  inline double mean( std::vector<uint16_t>& Data, int N ) {
     double s = 0.0;
     for ( size_t i = 0; i < N; ++i ) { s += double( Data[i] ); }
     return s / double( N );
   }
+
+  void convertYUV444_16bits_toRGB_8bits( PCCPointSet3& reconstruct, size_t k );
 
  private:
   void generatePointCloud( PCCPointSet3&                      reconstruct,
@@ -366,7 +368,7 @@ class PCCCodec {
                              std::vector<int>&                  colorPartition,
                              std::vector<bool>&                 colorDoSmooth,
                              int                                colorgrid,
-                             std::vector<std::vector<uint8_t>>& colorLum,
+                             std::vector<std::vector<uint16_t>>& colorLum,
                              const GeneratePointCloudParameters params );
 
   bool gridFilteringColor( PCCPoint3D&                        curPos,
@@ -414,15 +416,15 @@ class PCCCodec {
                                std::vector<uint32_t>&       PBflag,
                                PCCPointSet3&                reconstruct );
 
-  std::vector<int>                  geoSmoothingCount_;
-  std::vector<PCCVector3D>          geoSmoothingCenter_;
-  std::vector<bool>                 geoSmoothingDoSmooth_;
-  std::vector<int>                  geoSmoothingPartition_;
-  std::vector<int>                  colorSmoothingCount_;
-  std::vector<PCCVector3D>          colorSmoothingCenter_;
-  std::vector<bool>                 colorSmoothingDoSmooth_;
-  std::vector<int>                  colorSmoothingPartition_;
-  std::vector<std::vector<uint8_t>> colorSmoothingLum_;
+  std::vector<int>                   geoSmoothingCount_;
+  std::vector<PCCVector3D>           geoSmoothingCenter_;
+  std::vector<bool>                  geoSmoothingDoSmooth_;
+  std::vector<int>                   geoSmoothingPartition_;
+  std::vector<int>                   colorSmoothingCount_;
+  std::vector<PCCVector3D>           colorSmoothingCenter_;
+  std::vector<bool>                  colorSmoothingDoSmooth_;
+  std::vector<int>                   colorSmoothingPartition_;
+  std::vector<std::vector<uint16_t>> colorSmoothingLum_;
 #ifdef CODEC_TRACE
   bool  trace_;
   FILE* traceFile_;

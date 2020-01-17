@@ -77,8 +77,8 @@ class PCCVideoDecoder {
 
     const std::string yuvRecFileName = addVideoFormat( fileName + "_rec" + ( use444CodecIo ? ".rgb" : ".yuv" ), width,
                                                        height, !use444CodecIo, bitDepth == 10 ? "10" : "8" );
-    const std::string rgbRecFileName =
-        addVideoFormat( fileName + "_rec.rgb", width, height, true, bitDepth == 10 ? "10" : "8" );
+    const std::string yuv444RecFileName =
+        addVideoFormat( fileName + "_rec.yuv", width, height, false, "16" );
     std::ofstream     file( binFileName, std::ios::binary );
     const std::string format = use444CodecIo ? "444" : "420";
     if ( !file.good() ) { return false; }
@@ -344,25 +344,25 @@ class PCCVideoDecoder {
       } else {
         if ( colorSpaceConversionPath.empty() ) {
           video.read420( yuvRecFileName, width, height, frameCount, bitDepth == 8 ? 1 : 2, true, upsamplingFilter );
-          if ( !keepIntermediateFiles ) { video.write( rgbRecFileName, bitDepth == 8 ? 1 : 2 ); }
+          if ( !keepIntermediateFiles ) { video.write( yuv444RecFileName, 2 ); }
         } else {
           std::stringstream cmd;
           cmd << colorSpaceConversionPath << " -f " << inverseColorSpaceConversionConfig << " -p SourceFile=\""
-              << yuvRecFileName << "\" -p OutputFile=\"" << rgbRecFileName << "\" -p SourceWidth=" << width
+              << yuvRecFileName << "\" -p OutputFile=\"" << yuv444RecFileName << "\" -p SourceWidth=" << width
               << " -p SourceHeight=" << height << " -p NumberOfFrames=" << frameCount;
           std::cout << cmd.str() << '\n';
           if ( pcc::system( cmd.str().c_str() ) ) {
             std::cout << "Error: can't run system command!" << std::endl;
             return false;
-          }
-          if ( !video.read( rgbRecFileName, width, height, frameCount, bitDepth == 8 ? 1 : 2 ) ) { return false; }
+          }     
+          if ( !video.read( yuv444RecFileName, width, height, frameCount, 2 ) ) { return false; }
         }
       }
     }
     if ( !keepIntermediateFiles ) {
       removeFile( binFileName );
       removeFile( yuvRecFileName );
-      removeFile( rgbRecFileName );
+      removeFile( yuv444RecFileName );
     }
     return true;
   }

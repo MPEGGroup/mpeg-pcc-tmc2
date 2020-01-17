@@ -71,6 +71,19 @@ class PCCPointSet3 {
     assert( index < colors_.size() && withColors_ );
     colors_[index] = color;
   }
+  std::vector<PCCColor16bit>& getColor16bit() { return colors16bit_; }
+  PCCColor16bit getColor16bit( const size_t index ) const {
+    assert( index < colors16bit_.size() && withColors_);
+    return colors16bit_[index];
+  }
+  PCCColor16bit& getColor16bit( const size_t index ) {
+    assert( index < colors16bit_.size() && withColors_ );
+    return colors16bit_[index];
+  }
+  void setColor16bit( const size_t index, const PCCColor16bit color16bit ) {
+    assert( index < colors16bit_.size() && withColors_ );
+    colors16bit_[index] = color16bit;
+  }
   uint16_t getBoundaryPointType( const size_t index ) const {
     assert( index < boundaryPointTypes_.size() );
     return boundaryPointTypes_[index];
@@ -109,6 +122,7 @@ class PCCPointSet3 {
   }
   std::vector<PCCPoint3D>& getPositions() { return positions_; }
   std::vector<PCCColor3B>& getColors() { return colors_; }
+  std::vector<PCCColor16bit>& getColors16bit() { return colors16bit_; } 
   std::vector<uint16_t>&   getReflectances() { return reflectances_; }
   std::vector<uint8_t>&    getTypes() { return types_; }
 
@@ -140,6 +154,14 @@ class PCCPointSet3 {
     withColors_ = false;
     colors_.resize( 0 );
   }
+  void addColors16bit() {
+    withColors_ = true;
+    resize( getPointCount() );
+  }
+  void removeColors16bit() {
+    withColors_ = false;
+    colors16bit_.resize( 0 );
+  }
   const std::vector<PCCNormal3D>& getNormals() const { return normals_; }
   bool                            hasNormals() const { return withNormals_; }
   void                            addNormals() {
@@ -169,6 +191,24 @@ class PCCPointSet3 {
                        const bool    excludeColorOutlier                     = false,
                        const double  thresholdColorOutlierDist               = 10.0 ) const;
 
+bool transferColors16bit( PCCPointSet3& target,
+                       const int32_t searchRange,
+                       const bool    losslessTexture                         = false,
+                       const int     numNeighborsColorTransferFwd            = 1,
+                       const int     numNeighborsColorTransferBwd            = 1,
+                       const bool    useDistWeightedAverageFwd               = true,
+                       const bool    useDistWeightedAverageBwd               = true,
+                       const bool    skipAvgIfIdenticalSourcePointPresentFwd = true,
+                       const bool    skipAvgIfIdenticalSourcePointPresentBwd = true,
+                       const double  distOffsetFwd                           = 0.0001,
+                       const double  distOffsetBwd                           = 0.0001,
+                       double        maxGeometryDist2Fwd                     = 10000.0,
+                       double        maxGeometryDist2Bwd                     = 10000.0,
+                       double        maxColorDist2Fwd                        = 10000.0,
+                       double        maxColorDist2Bwd                        = 10000.0,
+                       const bool    excludeColorOutlier                     = false,
+                       const double  thresholdColorOutlierDist               = 10.0 ) const;
+
   bool transferColorsFilter3( PCCPointSet3& target, const int32_t searchRange, const bool losslessTexture ) const;
 
   bool transferColorSimple( PCCPointSet3& target, const double bestColorSearchStep = 0.1 );
@@ -178,7 +218,10 @@ class PCCPointSet3 {
   size_t getPointCount() const { return positions_.size(); }
   void   resize( const size_t size ) {
     positions_.resize( size );
-    if ( hasColors() ) { colors_.resize( size ); }
+    if (hasColors()) {
+      colors_.resize(size);   
+	  colors16bit_.resize( size );
+    }
     if ( hasReflectances() ) { reflectances_.resize( size ); }
     if ( PCC_SAVE_POINT_TYPE ) { types_.resize( size ); }
     if ( hasNormals() ) { normals_.resize( size ); }
@@ -187,7 +230,10 @@ class PCCPointSet3 {
   }
   void reserve( const size_t size ) {
     positions_.reserve( size );
-    if ( hasColors() ) { colors_.reserve( size ); }
+    if (hasColors()) {
+      colors_.reserve(size);
+      colors16bit_.reserve( size );
+    }
     if ( hasReflectances() ) { reflectances_.reserve( size ); }
     if ( PCC_SAVE_POINT_TYPE ) { types_.reserve( size ); }
     boundaryPointTypes_.reserve( size );
@@ -196,6 +242,7 @@ class PCCPointSet3 {
   void clear() {
     positions_.clear();
     colors_.clear();
+    colors16bit_.clear();
     reflectances_.clear();
     if ( PCC_SAVE_POINT_TYPE ) { types_.clear(); }
     boundaryPointTypes_.clear();
@@ -322,6 +369,7 @@ class PCCPointSet3 {
 
   std::vector<PCCPoint3D>  positions_;
   std::vector<PCCColor3B>  colors_;
+  std::vector<PCCColor16bit>  colors16bit_;
   std::vector<uint16_t>    reflectances_;
   std::vector<uint16_t>    boundaryPointTypes_;
   std::vector<uint16_t>    pointPatchIndexes_;

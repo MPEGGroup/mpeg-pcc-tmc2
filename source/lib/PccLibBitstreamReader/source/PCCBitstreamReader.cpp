@@ -1683,9 +1683,9 @@ void PCCBitstreamReader::smoothingParameters( PCCBitstream& bitstream, SEI& seiA
     for ( size_t j = 0; j < sei.getSpNumAttributeUpdates(); j++ ) {
       sei.setSpAttributeIdx( j, bitstream.read( 8 ) );  // u(8)
       size_t index     = sei.getSpAttributeIdx( j );
-      size_t dimention = bitstream.read( 8 );  // u(8)
-      sei.allocate( index + 1, dimention + 1 );
-      sei.setSpDimensionMinus1( index, dimention + 1 );
+      size_t dimensionMinus1 = bitstream.read( 8 );  // u(8)
+      sei.allocate( index + 1, dimensionMinus1 + 1 );
+      sei.setSpDimensionMinus1( index, dimensionMinus1 );  
       for ( size_t i = 0; i < sei.getSpDimensionMinus1( index ) + 1; i++ ) {
         sei.setSpAttrSmoothingParamsEnabledFlag( index, i, bitstream.read( 1 ) );  // u(1)
         if ( sei.getSpAttrSmoothingParamsEnabledFlag( index, i ) ) {

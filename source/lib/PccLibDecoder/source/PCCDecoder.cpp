@@ -206,8 +206,6 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
                                sps.getLosslessGeo() != 0,       // use444CodecIo
                                params_.patchColorSubsampling_,  // patchColorSubsampling
                                params_.inverseColorSpaceConversionConfig_, params_.colorSpaceConversionPath_ );
-      context.getVideoTexture().convertBitdepth(
-          decodedBitdepthAttribute, ai.getAttributeNominal2dBitdepthMinus1( 0 ) + 1, ai.getAttributeMSBAlignFlag() );
       std::cout << "texture video  ->" << videoBitstream.size() << " B" << std::endl;
     }
     if ( sps.getRawPatchEnabledFlag( atlasIndex ) && sps.getRawSeparateVideoPresentFlag( atlasIndex ) ) {
@@ -239,8 +237,8 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
       for ( size_t i = 0; i < frames.size(); i++ ) {
         // These are different attribute transfer functions
         if ( params_.postprocessSmoothingFilter_ == 1 ) {
-          tempFrameBuffer[i].transferColors( reconstructs[i], int32_t( 0 ), sps.getLosslessGeo() == 1, 8, 1, 1, 1, 1, 0,
-                                             4, 4, 1000, 1000, 1000, 1000 );  // jkie: make it general
+          tempFrameBuffer[i].transferColors16bit( reconstructs[i], int32_t( 0 ), sps.getLosslessGeo() == 1, 8, 1, 1, 1, 1, 0,
+                                             4, 4, 1000, 1000, 1000*256, 1000*256 );  // jkie: make it general
         } else if ( params_.postprocessSmoothingFilter_ == 2 ) {
           tempFrameBuffer[i].transferColorWeight( reconstructs[i], 0.1 );
         } else if ( params_.postprocessSmoothingFilter_ == 3 ) {
@@ -251,6 +249,14 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   }
   //    This function does the color smoothing that is usually done in colorPointCloud
   if ( gpcParams.flagColorSmoothing_ ) { colorSmoothing( reconstructs, context, params_.colorTransform_, gpcParams ); }
+ 
+  auto& frames = context.getFrames();
+  for ( size_t i = 0; i < frames.size(); i++ ) {
+    for ( int k = 0; k < reconstructs[i].getPointCount(); k++ ) {
+      convertYUV444_16bits_toRGB_8bits( reconstructs[i], k );
+    }
+  }
+
 #ifdef CODEC_TRACE
   setTrace( false );
   closeTrace();
@@ -373,7 +379,25 @@ void PCCDecoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& 
   params.thresholdLocalEntropy_         = 0;
   params.radius2ColorSmoothing_         = 64;
   params.neighborCountColorSmoothing_   = 64;
-  params.flagColorSmoothing_            = 0;
+  params.flagColorSmoothing_            = 0; 
+  if ( seiSmootingIsPresent ) {
+    SEISmoothingParameters& sei =
+        static_cast<SEISmoothingParameters&>( context.getSei( NAL_PREFIX_SEI, SMOOTHING_PARAMETERS ) );
+    for ( size_t j = 0; j < sei.getSpNumAttributeUpdates(); j++ ) {
+      size_t index = sei.getSpAttributeIdx( j );
+      for ( size_t i = 0; i < sei.getSpDimensionMinus1( index ) + 1; i++ ) {
+        if ( sei.getSpAttrSmoothingParamsEnabledFlag( index, i ) ) {
+          params.flagColorSmoothing_       = true;
+          params.thresholdColorSmoothing_  = (double)sei.getSpAttrSmoothingThreshold( index, i );  
+          params.gridColorSmoothing_       = true;
+          params.cgridSize_                = sei.getSpAttrSmoothingGridSizeMinus2( index, i ) + 2;    
+          params.thresholdColorDifference_ = sei.getSpAttrSmoothingThresholdDifference( index, i );   
+          params.thresholdColorVariation_  = sei.getSpAttrSmoothingThresholdVariation( index, i );     
+          params.thresholdLocalEntropy_    = sei.getSpAttrSmoothingLocalEntropyThreshold( index, i );  
+        }
+      }
+    }
+  }
   params.thresholdLossyOM_              = (size_t)oi.getLossyOccupancyMapCompressionThreshold();
   params.removeDuplicatePoints_         = asps.getRemoveDuplicatePointEnabledFlag();
   params.pointLocalReconstruction_      = asps.getPointLocalReconstructionEnabledFlag();

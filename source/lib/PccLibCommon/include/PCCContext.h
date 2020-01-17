@@ -46,7 +46,7 @@ namespace pcc {
 
 class PCCGroupOfFrames;
 class PCCFrameContext;
-typedef pcc::PCCVideo<uint8_t, 3>  PCCVideoTexture;
+typedef pcc::PCCVideo<uint16_t, 3> PCCVideoTexture; 
 typedef pcc::PCCVideo<uint16_t, 3> PCCVideoGeometry;
 typedef pcc::PCCVideo<uint8_t, 3>  PCCVideoOccupancyMap;
 

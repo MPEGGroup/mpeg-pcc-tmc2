@@ -52,12 +52,12 @@ class PointLocalReconstructionData;
 
 template <typename T, size_t N>
 class PCCVideo;
-typedef pcc::PCCVideo<uint8_t, 3>  PCCVideoTexture;
+typedef pcc::PCCVideo<uint16_t, 3>  PCCVideoTexture;
 typedef pcc::PCCVideo<uint16_t, 3> PCCVideoGeometry;
 typedef pcc::PCCVideo<uint8_t, 3>  PCCVideoOccupancyMap;
 template <typename T, size_t N>
 class PCCImage;
-typedef pcc::PCCImage<uint8_t, 3>  PCCImageTexture;
+typedef pcc::PCCImage<uint16_t, 3>  PCCImageTexture;
 typedef pcc::PCCImage<uint16_t, 3> PCCImageGeometry;
 typedef pcc::PCCImage<uint8_t, 3>  PCCImageOccupancyMap;
 struct PCCPatchSegmenter3Parameters;

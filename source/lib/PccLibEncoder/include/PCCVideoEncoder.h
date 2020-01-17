@@ -94,6 +94,8 @@ class PCCVideoEncoder {
     const std::string recRgbFileName =
         addVideoFormat( fileName + "_rec" + ".rgb", width, height, !use444CodecIo, nbyte == 2 ? "10" : "8" );
 
+	const std::string yuv444RecFileName = addVideoFormat( fileName + "_rec.yuv", width, height, false, "16" );
+
     const bool yuvVideo = colorSpaceConversionConfig.empty() || use444CodecIo;
     printf( "Encoder convert : yuvVideo = %d colorSpaceConversionConfig = %s \n", yuvVideo,
             colorSpaceConversionConfig.c_str() );
@@ -422,14 +424,14 @@ class PCCVideoEncoder {
         std::stringstream cmd;
         cmd << colorSpaceConversionPath << " -f " << inverseColorSpaceConversionConfig << " -p SourceFile=\""
             << recYuvFileName << "\""
-            << " -p OutputFile=\"" << recRgbFileName << "\""
+            << " -p OutputFile=\"" << yuv444RecFileName << "\""
             << " -p SourceWidth=" << width << " -p SourceHeight=" << height << " -p NumberOfFrames=" << frameCount;
         std::cout << cmd.str() << '\n';
         if ( int ret = pcc::system( cmd.str().c_str() ) ) {
           std::cout << "Error: can't run system command!" << std::endl;
           return ret;
         }
-        video.read( recRgbFileName, width, height, frameCount, nbyte );
+        video.read( yuv444RecFileName, width, height, frameCount, 2 );
       }
     }
     if ( !keepIntermediateFiles ) {
@@ -438,6 +440,7 @@ class PCCVideoEncoder {
       removeFile( srcRgbFileName );
       removeFile( recYuvFileName );
       removeFile( recRgbFileName );
+      removeFile( yuv444RecFileName );
     }
     return true;
   }

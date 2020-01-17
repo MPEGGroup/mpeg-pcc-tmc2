@@ -530,8 +530,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
         // The parameters for the attribute transfer are still fixed (may wish to make them user input/more flexible)
         // These are different attribute transfer functions
         if ( params_.postprocessSmoothingFilter_ == 1 ) {
-          tempFrameBuffer[i].transferColors( reconstructs[i], int32_t( 0 ), sps.getLosslessGeo() == 1, 8, 1, 1, 1, 1, 0,
-                                             4, 4, 1000, 1000, 1000, 1000 );
+          tempFrameBuffer[i].transferColors16bit( reconstructs[i], int32_t( 0 ), sps.getLosslessGeo() == 1, 8, 1, 1, 1, 1, 0, 4, 4, 1000, 1000, 1000 * 256, 1000 * 256 );
         } else if ( params_.postprocessSmoothingFilter_ == 2 ) {
           tempFrameBuffer[i].transferColorWeight( reconstructs[i], 0.1 );
         } else if ( params_.postprocessSmoothingFilter_ == 3 ) {
@@ -542,6 +541,11 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   }
   //    This function does the color smoothing that is usually done in colorPointCloud
   if ( gpcParams.flagColorSmoothing_ ) { colorSmoothing( reconstructs, context, params_.colorTransform_, gpcParams ); }
+  for ( size_t i = 0; i < frames.size(); i++ ) {
+    for ( int k = 0; k < reconstructs[i].getPointCount(); k++ ) {
+      convertYUV444_16bits_toRGB_8bits( reconstructs[i], k );
+    }
+  }
   if ( !params_.keepIntermediateFiles_ && params_.use3dmc_ ) { remove3DMotionEstimationFiles( path.str() ); }
 
 #ifdef CODEC_TRACE
@@ -7110,13 +7114,13 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
       for ( size_t j = 0; j < sei.getSpNumAttributeUpdates(); j++ ) {
         sei.setSpAttributeIdx( j, 0 );
         size_t index     = sei.getSpAttributeIdx( j );
-        size_t dimention = 3;
-        sei.allocate( index + 1, dimention + 1 );
-        sei.setSpDimensionMinus1( index, dimention + 1 );
+        size_t dimension = 3;
+        sei.allocate( index + 1, dimension + 1 );
+        sei.setSpDimensionMinus1( index, dimension - 1 );  
         for ( size_t i = 0; i < sei.getSpDimensionMinus1( index ) + 1; i++ ) {
           sei.setSpAttrSmoothingParamsEnabledFlag( index, i, true );
           if ( sei.getSpAttrSmoothingParamsEnabledFlag( index, i ) ) {
-            sei.setSpAttrSmoothingGridSizeMinus2( index, i, params_.gridColorSmoothing_ - 2 );
+            sei.setSpAttrSmoothingGridSizeMinus2( index, i, params_.cgridSize_ - 2 );          
             sei.setSpAttrSmoothingThreshold( index, i, params_.thresholdColorSmoothing_ );
             sei.setSpAttrSmoothingLocalEntropyThreshold( index, i, params_.thresholdLocalEntropy_ );
             sei.setSpAttrSmoothingThresholdVariation( index, i, params_.thresholdColorVariation_ );

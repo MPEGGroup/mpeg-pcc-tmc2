@@ -155,6 +155,50 @@ void PCCCodec::generatePointCloud( PCCGroupOfFrames&                   reconstru
   TRACE_CODEC( "Generate point Cloud done \n" );
 }
 
+void PCCCodec::convertYUV444_16bits_toRGB_8bits( PCCPointSet3& reconstruct, size_t k ) { //BT709
+  PCCColor16bit inYUV = reconstruct.getColor16bit( k );
+  PCCColor3B    outRGB;
+
+  /// convert yuv444 (16bit) to normalized yuv444 (format double)
+
+  double y1 = inYUV[0];
+  double u1 = inYUV[1];
+  double v1 = inYUV[2];
+
+  double offset = 32768.0;
+  double scale  = 65535.0;
+  double weight = 1.0 / scale;
+
+  y1 = weight * y1;
+  u1 = weight * ( u1 - offset );
+  v1 = weight * ( v1 - offset );
+  y1 = ( std::max )( y1, 0.0 );
+  y1 = ( std::min )( y1, 1.0 );
+  u1 = ( std::max )( u1, -0.5 );
+  u1 = ( std::min )( u1, 0.5 );
+  v1 = ( std::max )( v1, -0.5 );
+  v1 = ( std::min )( v1, 0.5 );
+
+  //// convert normalized yuv444 to normalized rgb (fromat double)
+
+  double r = y1 /*- 0.00000 * u1*/ + 1.57480 * v1;
+  double g = y1 - 0.18733 * u1 - 0.46813 * v1;
+  double b = y1 + 1.85563 * u1 /*+ 0.00000 * v1*/;
+
+  //// convert normalized rgb to 8-bit rgb
+
+  r = PCCClip( round( r * 255 ), 0.0, 255.0 );
+  g = PCCClip( round( g * 255 ), 0.0, 255.0 );
+  b = PCCClip( round( b * 255 ), 0.0, 255.0 );
+
+  outRGB[0] = static_cast<uint8_t>( r );
+  outRGB[1] = static_cast<uint8_t>( g );
+  outRGB[2] = static_cast<uint8_t>( b );
+  reconstruct.setColor( k, outRGB );
+}
+
+
+
 bool PCCCodec::colorPointCloud( PCCGroupOfFrames&                     reconstructs,
                                 PCCContext&                           context,
                                 const uint8_t                         attributeCount,
@@ -262,15 +306,13 @@ void PCCCodec::colorSmoothing( PCCGroupOfFrames&                  reconstructs,
   auto&     frames   = context.getFrames();
   const int gridSize = params.occupancyPrecision_;
   const int w        = pow( 2, params.geometryBitDepth3D_ ) / gridSize;
-  if ( params.flagColorSmoothing_ && params.gridColorSmoothing_ ) {
-    colorSmoothingCenter_.resize( w * w * w );
-    colorSmoothingCount_.resize( w * w * w );
-    colorSmoothingPartition_.resize( w * w * w );
-    colorSmoothingDoSmooth_.resize( w * w * w );
-  }
   for ( size_t i = 0; i < frames.size(); i++ ) {
     if ( params.flagColorSmoothing_ ) {
       if ( params.gridColorSmoothing_ ) {
+        colorSmoothingCenter_.resize( w * w * w );
+        colorSmoothingCount_.resize( w * w * w );
+        colorSmoothingPartition_.resize( w * w * w );
+        colorSmoothingDoSmooth_.resize( w * w * w );
         std::fill( colorSmoothingCenter_.begin(), colorSmoothingCenter_.end(), 0 );
         std::fill( colorSmoothingCount_.begin(), colorSmoothingCount_.end(), 0 );
         std::fill( colorSmoothingPartition_.begin(), colorSmoothingPartition_.end(), 0 );
@@ -278,9 +320,10 @@ void PCCCodec::colorSmoothing( PCCGroupOfFrames&                  reconstructs,
         colorSmoothingLum_.clear();
         colorSmoothingLum_.resize( w * w * w );
         for ( int k = 0; k < reconstructs[i].getPointCount(); k++ ) {
-          PCCColor3B  color = reconstructs[i].getColor( k );
+          PCCColor16bit color16bit = reconstructs[i].getColor16bit( k );
           PCCVector3D clr;
-          for ( size_t c = 0; c < 3; ++c ) { clr[c] = double( color[c] ); }
+          for ( size_t c = 0; c < 3; ++c ) { clr[c] = double( color16bit[c] ); }
+
           const size_t patchIndexPlusOne = reconstructs[i].getPointPatchIndex( k ) + 1;
           addGridColorCentroid( reconstructs[i][k], clr, patchIndexPlusOne, colorSmoothingCount_, colorSmoothingCenter_,
                                 colorSmoothingPartition_, colorSmoothingDoSmooth_, gridSize, colorSmoothingLum_,
@@ -291,7 +334,6 @@ void PCCCodec::colorSmoothing( PCCGroupOfFrames&                  reconstructs,
         smoothPointCloudColor( reconstructs[i], params );
       }
     }
-    if ( colorTransform == COLOR_TRANSFORM_RGB_TO_YCBCR ) { reconstructs[i].convertYUVToRGB(); }
     colorSmoothingCenter_.resize( 0 );
     colorSmoothingCenter_.shrink_to_fit();
     colorSmoothingCount_.resize( 0 );
@@ -302,14 +344,6 @@ void PCCCodec::colorSmoothing( PCCGroupOfFrames&                  reconstructs,
     colorSmoothingDoSmooth_.shrink_to_fit();
     colorSmoothingLum_.resize( 0 );
     colorSmoothingLum_.shrink_to_fit();
-    geoSmoothingCenter_.resize( 0 );
-    geoSmoothingCenter_.shrink_to_fit();
-    geoSmoothingCount_.resize( 0 );
-    geoSmoothingCount_.shrink_to_fit();
-    geoSmoothingPartition_.resize( 0 );
-    geoSmoothingPartition_.shrink_to_fit();
-    geoSmoothingDoSmooth_.resize( 0 );
-    geoSmoothingDoSmooth_.shrink_to_fit();
   }  // per frame
   TRACE_CODEC( "Color point Cloud done \n" );
 }
@@ -1379,8 +1413,9 @@ void PCCCodec::smoothPointCloudColor( PCCPointSet3& reconstruct, const GenerateP
           centroid[1] += double( color[1] );
           centroid[2] += double( color[2] );
           otherClusterPointCount |= ( queryPointPatchIndex != reconstruct.getPointPatchIndex( index ) );
-          double Y = 0.2126 * double( color[0] ) + 0.7152 * double( color[1] ) + 0.0722 * double( color[2] );
-          Lum.push_back( uint8_t( Y ) );
+
+
+          Lum.push_back( color[0] );
         }
         PCCColor3B color;
         if ( otherClusterPointCount ) {
@@ -1415,7 +1450,7 @@ void PCCCodec::addGridColorCentroid( PCCPoint3D&                        point,
                                      std::vector<int>&                  colorPartition,
                                      std::vector<bool>&                 colorDoSmooth,
                                      int                                gridSize,
-                                     std::vector<std::vector<uint8_t>>& colorLum,
+                                     std::vector<std::vector<uint16_t>>& colorLum,
                                      const GeneratePointCloudParameters params ) {
   const int w   = pow( 2, params.geometryBitDepth3D_ ) / gridSize;
   int       x   = point.x() / gridSize;
@@ -1431,8 +1466,8 @@ void PCCCodec::addGridColorCentroid( PCCPoint3D&                        point,
   }
   colorCenter[idx] += color;
   colorGridCount[idx]++;
-  double Y = 0.2126 * color[0] + 0.7152 * color[1] + 0.0722 * color[2];
-  colorLum[idx].push_back( uint8_t( Y ) );
+
+  colorLum[idx].push_back( uint16_t( color[0] ) );
 }
 
 bool PCCCodec::gridFilteringColor( PCCPoint3D&                        curPos,
@@ -1481,8 +1516,8 @@ bool PCCCodec::gridFilteringColor( PCCPoint3D&                        curPos,
   int         cnt0;
   PCCVector3D colorCentroid3[2][2][2] = {};
   int         gridSize2               = gridSize * 2;
-  double      mmThresh                = params.thresholdColorVariation_;
-  double      yThresh                 = params.thresholdColorDifference_;
+  double      mmThresh                = params.thresholdColorVariation_ * 256.0;
+  double      yThresh                 = params.thresholdColorDifference_* 256.0;
   if ( colorGridCount[idx[0][0][0]] > 0 ) {
     colorCentroid3[0][0][0] = colorCenter[idx[0][0][0]] / double( colorGridCount[idx[0][0][0]] );
     cnt0                    = colorGridCount[idx[0][0][0]];
@@ -1499,15 +1534,11 @@ bool PCCCodec::gridFilteringColor( PCCPoint3D&                        curPos,
     cnt0                    = 1;
   }
 
-  double Y0 = ( 0.2126 * colorCentroid3[0][0][0][0] + 0.7152 * colorCentroid3[0][0][0][1] +
-                0.0722 * colorCentroid3[0][0][0][2] ) /
-              double( cnt0 );
+  double Y0 = colorCentroid3[0][0][0][0] / double( cnt0 );
 
   if ( colorGridCount[idx[0][0][1]] > 0 ) {
     colorCentroid3[0][0][1] = colorCenter[idx[0][0][1]] / double( colorGridCount[idx[0][0][1]] );
-    double Y1               = ( 0.2126 * colorCentroid3[0][0][1][0] + 0.7152 * colorCentroid3[0][0][1][1] +
-                  0.0722 * colorCentroid3[0][0][1][2] ) /
-                double( colorGridCount[idx[0][0][1]] );
+    double Y1 = colorCentroid3[0][0][1][0] / double( colorGridCount[idx[0][0][1]] );
     if ( abs( Y0 - Y1 ) > yThresh ) { colorCentroid3[0][0][1] = curPosColor; }
     if ( colorGridCount[idx[0][0][1]] > 1 ) {
       double meanY   = mean( colorSmoothingLum_[idx[0][0][1]], int( colorGridCount[idx[0][0][1]] ) );
@@ -1520,9 +1551,7 @@ bool PCCCodec::gridFilteringColor( PCCPoint3D&                        curPos,
 
   if ( colorGridCount[idx[0][1][0]] > 0 ) {
     colorCentroid3[0][1][0] = colorCenter[idx[0][1][0]] / double( colorGridCount[idx[0][1][0]] );
-    double Y2               = ( 0.2126 * colorCentroid3[0][1][0][0] + 0.7152 * colorCentroid3[0][1][0][1] +
-                  0.0722 * colorCentroid3[0][1][0][2] ) /
-                double( colorGridCount[idx[0][1][0]] );
+   double Y2 = colorCentroid3[0][1][0][0] / double( colorGridCount[idx[0][1][0]] );
 
     if ( abs( Y0 - Y2 ) > yThresh ) { colorCentroid3[0][1][0] = curPosColor; }
     if ( colorGridCount[idx[0][1][0]] > 1 ) {
@@ -1536,9 +1565,7 @@ bool PCCCodec::gridFilteringColor( PCCPoint3D&                        curPos,
 
   if ( colorGridCount[idx[0][1][1]] > 0 ) {
     colorCentroid3[0][1][1] = colorCenter[idx[0][1][1]] / double( colorGridCount[idx[0][1][1]] );
-    double Y3               = ( 0.2126 * colorCentroid3[0][1][1][0] + 0.7152 * colorCentroid3[0][1][1][1] +
-                  0.0722 * colorCentroid3[0][1][1][2] ) /
-                double( colorGridCount[idx[0][1][1]] );
+    double Y3 = colorCentroid3[0][1][1][0] / double( colorGridCount[idx[0][1][1]] );
 
     if ( abs( Y0 - Y3 ) > yThresh ) { colorCentroid3[0][1][1] = curPosColor; }
     if ( colorGridCount[idx[0][1][1]] > 1 ) {
@@ -1552,9 +1579,7 @@ bool PCCCodec::gridFilteringColor( PCCPoint3D&                        curPos,
 
   if ( colorGridCount[idx[1][0][0]] > 0 ) {
     colorCentroid3[1][0][0] = colorCenter[idx[1][0][0]] / double( colorGridCount[idx[1][0][0]] );
-    double Y4               = ( 0.2126 * colorCentroid3[1][0][0][0] + 0.7152 * colorCentroid3[1][0][0][1] +
-                  0.0722 * colorCentroid3[1][0][0][2] ) /
-                double( colorGridCount[idx[1][0][0]] );
+    double Y4 = colorCentroid3[1][0][0][0] / double( colorGridCount[idx[1][0][0]] );
 
     if ( abs( Y0 - Y4 ) > yThresh ) { colorCentroid3[1][0][0] = curPosColor; }
     if ( colorGridCount[idx[1][0][0]] > 1 ) {
@@ -1568,9 +1593,7 @@ bool PCCCodec::gridFilteringColor( PCCPoint3D&                        curPos,
 
   if ( colorGridCount[idx[1][0][1]] > 0 ) {
     colorCentroid3[1][0][1] = colorCenter[idx[1][0][1]] / double( colorGridCount[idx[1][0][1]] );
-    double Y5               = ( 0.2126 * colorCentroid3[1][0][1][0] + 0.7152 * colorCentroid3[1][0][1][1] +
-                  0.0722 * colorCentroid3[1][0][1][2] ) /
-                double( colorGridCount[idx[1][0][1]] );
+    double Y5 = colorCentroid3[1][0][1][0] / double( colorGridCount[idx[1][0][1]] );
 
     if ( abs( Y0 - Y5 ) > yThresh ) { colorCentroid3[1][0][1] = curPosColor; }
     if ( colorGridCount[idx[1][0][1]] > 1 ) {
@@ -1584,9 +1607,7 @@ bool PCCCodec::gridFilteringColor( PCCPoint3D&                        curPos,
 
   if ( colorGridCount[idx[1][1][0]] > 0 ) {
     colorCentroid3[1][1][0] = colorCenter[idx[1][1][0]] / double( colorGridCount[idx[1][1][0]] );
-    double Y6               = ( 0.2126 * colorCentroid3[1][1][0][0] + 0.7152 * colorCentroid3[1][1][0][1] +
-                  0.0722 * colorCentroid3[1][1][0][2] ) /
-                double( colorGridCount[idx[1][1][0]] );
+    double Y6 = colorCentroid3[1][1][0][0] / double( colorGridCount[idx[1][1][0]] );
 
     if ( abs( Y0 - Y6 ) > yThresh ) { colorCentroid3[1][1][0] = curPosColor; }
     if ( colorGridCount[idx[1][1][0]] > 1 ) {
@@ -1600,9 +1621,7 @@ bool PCCCodec::gridFilteringColor( PCCPoint3D&                        curPos,
 
   if ( colorGridCount[idx[1][1][1]] > 0 ) {
     colorCentroid3[1][1][1] = colorCenter[idx[1][1][1]] / double( colorGridCount[idx[1][1][1]] );
-    double Y7               = ( 0.2126 * colorCentroid3[1][1][1][0] + 0.7152 * colorCentroid3[1][1][1][1] +
-                  0.0722 * colorCentroid3[1][1][1][2] ) /
-                double( colorGridCount[idx[1][1][1]] );
+    double Y7 = colorCentroid3[1][1][1][0] / double( colorGridCount[idx[1][1][1]] );
 
     if ( abs( Y0 - Y7 ) > yThresh ) { colorCentroid3[1][1][1] = curPosColor; }
     if ( colorGridCount[idx[1][1][1]] > 1 ) {
@@ -1650,11 +1669,11 @@ void PCCCodec::smoothPointCloudColorLC( PCCPointSet3& reconstruct, const Generat
     PCCVector3D colorCentroid( 0.0 );
     int         colorCount             = 0;
     bool        otherClusterPointCount = false;
-    PCCColor3B  color                  = reconstruct.getColor( i );
+    PCCColor16bit  color16bit                  = reconstruct.getColor16bit( i );
     PCCVector3D curPosColor( 0.0 );
-    curPosColor[0] = double( color[0] );
-    curPosColor[1] = double( color[1] );
-    curPosColor[2] = double( color[2] );
+    curPosColor[0] = double( color16bit[0] );
+    curPosColor[1] = double( color16bit[1] );
+    curPosColor[2] = double( color16bit[2] );
     if ( reconstruct.getBoundaryPointType( i ) == 1 ) {
       otherClusterPointCount =
           gridFilteringColor( curPos, colorCentroid, colorCount, colorSmoothingCount_, colorSmoothingCenter_,
@@ -1664,17 +1683,20 @@ void PCCCodec::smoothPointCloudColorLC( PCCPointSet3& reconstruct, const Generat
       colorCentroid = ( colorCentroid + (double)colorCount / 2.0 ) / (double)colorCount;
       for ( size_t k = 0; k < 3; ++k ) { colorCentroid[k] = double( int64_t( colorCentroid[k] ) ); }
       double distToCentroid2 = 0;
-      double Ycent           = 0.2126 * double( colorCentroid[0] ) + 0.7152 * double( colorCentroid[1] ) +
-                     0.0722 * double( colorCentroid[2] );
-      double Ycur =
-          0.2126 * double( curPosColor[0] ) + 0.7152 * double( curPosColor[1] ) + 0.0722 * double( curPosColor[2] );
-      distToCentroid2 = abs( Ycent - Ycur ) * 10.;
+
+      double Ycent = colorCentroid[0];
+      double Ycur  = curPosColor[0];
+
+      distToCentroid2 = abs( Ycent - Ycur ) * 10./256.;
+
       if ( distToCentroid2 >= params.thresholdColorSmoothing_ ) {
-        PCCColor3B color;
-        color[0] = uint8_t( colorCentroid[0] );
-        color[1] = uint8_t( colorCentroid[1] );
-        color[2] = uint8_t( colorCentroid[2] );
-        reconstruct.setColor( i, color );
+
+		PCCColor16bit color16bit;
+        color16bit[0] = uint16_t( colorCentroid[0] );
+        color16bit[1] = uint16_t( colorCentroid[1] );
+        color16bit[2] = uint16_t( colorCentroid[2] );
+
+        reconstruct.setColor16bit( i, color16bit );
       }
     }
   }
@@ -1765,6 +1787,7 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
   } else {
     auto& pointToPixel                 = frame.getPointToPixel();
     auto& color                        = reconstruct.getColors();
+	auto& color16bit                   = reconstruct.getColors16bit(); 
     bool  useMissedPointsSeparateVideo = frame.getUseMissedPointsSeparateVideo();
     bool  losslessAtt                  = frame.getLosslessGeo();
     bool  losslessGeo                  = frame.getLosslessGeo();
@@ -1805,8 +1828,9 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
     targetIndex.resize( 0 );
     target.clear();
     source.clear();
-    target.addColors();
-    source.addColors();
+
+    target.addColors16bit();
+    source.addColors16bit();
     const size_t shift = frame.getIndex() * frameCount;
     for ( size_t i = 0; i < pointCount; ++i ) {
       const PCCVector3<size_t> location = pointToPixel[i];
@@ -1816,9 +1840,13 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
       if ( params.singleMapPixelInterleaving_ ) {
         if ( ( f == 0 && ( x + y ) % 2 == 0 ) | ( f == 1 && ( x + y ) % 2 == 1 ) ) {
           const auto& frame = video.getFrame( shift );
-          for ( size_t c = 0; c < 3; ++c ) { color[i][c] = frame.getValue( c, x, y ); }
-          size_t index = source.addPoint( reconstruct[i] );
-          source.setColor( index, color[i] );
+
+          for ( size_t c = 0; c < 3; ++c ) {
+            color16bit[i][c] = frame.getValue( c, x, y );
+          }
+          int index = source.addPoint( reconstruct[i] );
+
+          source.setColor16bit( index, color16bit[i] );
         } else {
           target.addPoint( reconstruct[i] );
           targetIndex.push_back( i );
@@ -1826,9 +1854,9 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
       } else if ( multipleStreams ) {
         if ( f == 0 ) {
           const auto& frame = video.getFrame( frameIndex );
-          for ( size_t c = 0; c < 3; ++c ) { color[i][c] = frame.getValue( c, x, y ); }
+          for ( size_t c = 0; c < 3; ++c ) { color16bit[i][c] = frame.getValue( c, x, y ); }
           size_t index = (size_t)source.addPoint( reconstruct[i] );
-          source.setColor( index, color[i] );
+          source.setColor16bit( index, color16bit[i] );
         } else {
           const auto& image0 = video.getFrame( frameIndex );
           const auto& image1 = videoT1.getFrame( frameIndex );
@@ -1838,25 +1866,27 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
             int16_t value1 = static_cast<int16_t>( image1.getValue( c, x, y ) );
             if ( !absoluteT1List[f] ) {
               int16_t delta = value1;
-              delta         = delta - 128;
-              if ( delta < -128 ) {
-                delta = -128;
-              } else if ( delta > 127 ) {
-                delta = 127;
+              delta = delta - 32768;
+              if ( delta < -32768 ) {
+                delta = -32768;
+              } else if ( delta > 32767 ) {
+                delta = 32767;
               }
               value1 = value0 + delta;
             }
-            color[i][c] = value1 < 0 ? 0 : ( value1 > 255 ? 255 : value1 );
+            color[i][c] = value1 < 0 ? 0 : ( value1 > 65535 ? 65535 : value1 );
           }
           size_t index = (size_t)source.addPoint( reconstruct[i] );
-          source.setColor( index, color[i] );
+          source.setColor16bit( index, color16bit[i] );
         }
       } else {
         if ( f < frameCount ) {
           const auto& frame = video.getFrame( shift + f );
-          for ( size_t c = 0; c < 3; ++c ) { color[i][c] = frame.getValue( c, x, y ); }
-          size_t index = source.addPoint( reconstruct[i] );
-          source.setColor( index, color[i] );
+          for ( size_t c = 0; c < 3; ++c ) { color16bit[i][c] = frame.getValue( c, x, y );
+          }
+          int index = source.addPoint( reconstruct[i] );
+
+          source.setColor16bit( index, color16bit[i] );
         } else {
           target.addPoint( reconstruct[i] );
           targetIndex.push_back( i );
@@ -1867,7 +1897,7 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
     if ( target.getPointCount() > 0 ) {
       source.transferColorWeight( target );
       for ( size_t i = 0; i < target.getPointCount(); ++i ) {
-        reconstruct.setColor( targetIndex[i], target.getColor( i ) );
+        reconstruct.setColor16bit( targetIndex[i], target.getColor16bit( i ) );
       }
     }
     if ( ( losslessAtt || lossyMissedPointsPatch ) && useMissedPointsSeparateVideo ) {
