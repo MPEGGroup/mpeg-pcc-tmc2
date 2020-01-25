@@ -80,8 +80,8 @@ class AtlasSequenceParameterSetRbsp {
     pointLocalReconstructionInformation_.resize( mapCountMinus1_ + 1 );
   }
   uint8_t        getAltasSequenceParameterSetId() { return altasSequenceParameterSetId_; }
-  uint8_t        getFrameWidth() { return frameWidth_; }
-  uint8_t        getFrameHeight() { return frameHeight_; }
+  uint16_t       getFrameWidth() { return frameWidth_; }
+  uint16_t       getFrameHeight() { return frameHeight_; }
   uint8_t        getLog2PatchPackingBlockSize() { return log2PatchPackingBlockSize_; }
   uint8_t        getLog2MaxAtlasFrameOrderCntLsbMinus4() { return log2MaxAtlasFrameOrderCntLsbMinus4_; }
   uint8_t        getMaxDecAtlasFrameBufferingMinus1() { return maxDecAtlasFrameBufferingMinus1_; }
@@ -106,8 +106,8 @@ class AtlasSequenceParameterSetRbsp {
   VUIParameters& getVuiParameters() { return vuiParameters_; }
 
   void setAltasSequenceParameterSetId( uint8_t value ) { altasSequenceParameterSetId_ = value; }
-  void setFrameWidth( uint8_t value ) { frameWidth_ = value; }
-  void setFrameHeight( uint8_t value ) { frameHeight_ = value; }
+  void setFrameWidth( uint16_t value ) { frameWidth_ = value; }
+  void setFrameHeight( uint16_t value ) { frameHeight_ = value; }
   void setLog2PatchPackingBlockSize( uint8_t value ) { log2PatchPackingBlockSize_ = value; }
   void setLog2MaxAtlasFrameOrderCntLsbMinus4( uint8_t value ) { log2MaxAtlasFrameOrderCntLsbMinus4_ = value; }
   void setMaxDecAtlasFrameBufferingMinus1( uint8_t value ) { maxDecAtlasFrameBufferingMinus1_ = value; }

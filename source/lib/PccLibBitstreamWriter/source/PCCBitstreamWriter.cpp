@@ -1102,31 +1102,31 @@ void PCCBitstreamWriter::atlasSubStream( PCCHighLevelSyntax& syntax, PCCBitstrea
   for ( size_t aspsIdx = 0; aspsIdx < syntax.getAtlasSequenceParameterSetList().size(); aspsIdx++ ) {
     atlasSequenceParameterSetRbsp( syntax.getAtlasSequenceParameterSet( aspsIdx ), syntax, tempBitStream );
     aspsSizeList[aspsIdx] = tempBitStream.size() - lastSize;
-		lastSize = tempBitStream.size();
+    lastSize = tempBitStream.size();
     if ( maxUnitSize < aspsSizeList[aspsIdx] ) maxUnitSize = aspsSizeList[aspsIdx];
   }
   for ( size_t afpsIdx = 0; afpsIdx < syntax.getAtlasFrameParameterSetList().size(); afpsIdx++ ) {
     atlasFrameParameterSetRbsp( syntax.getAtlasFrameParameterSet( afpsIdx ), syntax, tempBitStream );
     afpsSizeList[afpsIdx] = tempBitStream.size() - lastSize;
-		lastSize = tempBitStream.size();
+    lastSize = tempBitStream.size();
     if ( maxUnitSize < afpsSizeList[afpsIdx] ) maxUnitSize = afpsSizeList[afpsIdx];
   }
   for ( size_t atglIdx = 0; atglIdx < atglSizeList.size(); atglIdx++ ) {
     atlasTileGroupLayerRbsp( syntax.getAtlasTileGroupLayer( atglIdx ), syntax, tempBitStream );
     atglSizeList[atglIdx] = tempBitStream.size() - lastSize;
-		lastSize = tempBitStream.size();
+    lastSize = tempBitStream.size();
     if ( maxUnitSize < atglSizeList[atglIdx] ) maxUnitSize = atglSizeList[atglIdx];
   }
   for ( size_t i = 0; i < syntax.getSeiPrefix().size(); i++ ) {
     seiRbsp( syntax, tempBitStream, syntax.getSeiPrefix( i ), NAL_PREFIX_SEI );
     seiPrefixSizeList[i] = tempBitStream.size() - lastSize;
-		lastSize = tempBitStream.size();
+    lastSize = tempBitStream.size();
     if ( maxUnitSize < seiPrefixSizeList[i] ) maxUnitSize = seiPrefixSizeList[i];
   }
   for ( size_t i = 0; i < syntax.getSeiSuffix().size(); i++ ) {
     seiRbsp( syntax, tempBitStream, syntax.getSeiSuffix( i ), NAL_SUFFIX_SEI );
     seiSuffixSizeList[i] = tempBitStream.size() - lastSize;
-		lastSize = tempBitStream.size();
+    lastSize = tempBitStream.size();
     if ( maxUnitSize < seiSuffixSizeList[i] ) maxUnitSize = seiSuffixSizeList[i];
   }
 

@@ -131,7 +131,11 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
 
   sps.setFrameWidth( atlasIndex, (uint16_t)frames[0].getWidth() );
   sps.setFrameHeight( atlasIndex, (uint16_t)frames[0].getHeight() );
-
+  // DIS requirement, see 7.4.6.1
+  for (int i = 0; i < context.getAtlasSequenceParameterSetList().size(); i++) {
+    context.getAtlasSequenceParameterSet(i).setFrameHeight(sps.getFrameWidth(atlasIndex));
+    context.getAtlasSequenceParameterSet(i).setFrameWidth(sps.getFrameHeight(atlasIndex));
+  }
   // GENERATE OCCUPANCY MAP
   generateOccupancyMap( context );
 
