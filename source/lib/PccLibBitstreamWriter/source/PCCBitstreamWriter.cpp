@@ -1098,34 +1098,35 @@ void PCCBitstreamWriter::atlasSubStream( PCCHighLevelSyntax& syntax, PCCBitstrea
   atglSizeList.resize( syntax.getGofSize() );
   seiPrefixSizeList.resize( syntax.getSeiPrefix().size() );
   seiSuffixSizeList.resize( syntax.getSeiSuffix().size() );
-  uint32_t initSize = 0;
+  uint32_t lastSize = 0;
   for ( size_t aspsIdx = 0; aspsIdx < syntax.getAtlasSequenceParameterSetList().size(); aspsIdx++ ) {
     atlasSequenceParameterSetRbsp( syntax.getAtlasSequenceParameterSet( aspsIdx ), syntax, tempBitStream );
-    aspsSizeList[aspsIdx] = tempBitStream.size() - ( aspsIdx == 0 ? initSize : aspsSizeList[aspsIdx - 1] );
+    aspsSizeList[aspsIdx] = tempBitStream.size() - lastSize;
+		lastSize = tempBitStream.size();
     if ( maxUnitSize < aspsSizeList[aspsIdx] ) maxUnitSize = aspsSizeList[aspsIdx];
   }
-  initSize = tempBitStream.size();
   for ( size_t afpsIdx = 0; afpsIdx < syntax.getAtlasFrameParameterSetList().size(); afpsIdx++ ) {
     atlasFrameParameterSetRbsp( syntax.getAtlasFrameParameterSet( afpsIdx ), syntax, tempBitStream );
-    afpsSizeList[afpsIdx] = tempBitStream.size() - ( afpsIdx == 0 ? initSize : afpsSizeList[afpsIdx - 1] );
+    afpsSizeList[afpsIdx] = tempBitStream.size() - lastSize;
+		lastSize = tempBitStream.size();
     if ( maxUnitSize < afpsSizeList[afpsIdx] ) maxUnitSize = afpsSizeList[afpsIdx];
   }
-  initSize = tempBitStream.size();
   for ( size_t atglIdx = 0; atglIdx < atglSizeList.size(); atglIdx++ ) {
     atlasTileGroupLayerRbsp( syntax.getAtlasTileGroupLayer( atglIdx ), syntax, tempBitStream );
-    atglSizeList[atglIdx] = tempBitStream.size() - ( atglIdx == 0 ? initSize : atglSizeList[atglIdx - 1] );
+    atglSizeList[atglIdx] = tempBitStream.size() - lastSize;
+		lastSize = tempBitStream.size();
     if ( maxUnitSize < atglSizeList[atglIdx] ) maxUnitSize = atglSizeList[atglIdx];
   }
-  initSize = tempBitStream.size();
   for ( size_t i = 0; i < syntax.getSeiPrefix().size(); i++ ) {
     seiRbsp( syntax, tempBitStream, syntax.getSeiPrefix( i ), NAL_PREFIX_SEI );
-    seiPrefixSizeList[i] = tempBitStream.size() - ( i == 0 ? initSize : seiPrefixSizeList[i - 1] );
+    seiPrefixSizeList[i] = tempBitStream.size() - lastSize;
+		lastSize = tempBitStream.size();
     if ( maxUnitSize < seiPrefixSizeList[i] ) maxUnitSize = seiPrefixSizeList[i];
   }
-  initSize = tempBitStream.size();
   for ( size_t i = 0; i < syntax.getSeiSuffix().size(); i++ ) {
     seiRbsp( syntax, tempBitStream, syntax.getSeiSuffix( i ), NAL_SUFFIX_SEI );
-    seiSuffixSizeList[i] = tempBitStream.size() - ( i == 0 ? initSize : seiSuffixSizeList[i - 1] );
+    seiSuffixSizeList[i] = tempBitStream.size() - lastSize;
+		lastSize = tempBitStream.size();
     if ( maxUnitSize < seiSuffixSizeList[i] ) maxUnitSize = seiSuffixSizeList[i];
   }
 
