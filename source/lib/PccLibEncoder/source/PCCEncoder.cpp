@@ -541,9 +541,23 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   }
   //    This function does the color smoothing that is usually done in colorPointCloud
   if ( gpcParams.flagColorSmoothing_ ) { colorSmoothing( reconstructs, context, params_.colorTransform_, gpcParams ); }
+  if ( sps.getLosslessGeo() != 1 ) {  // lossy: convert 16-bit yuv444 to 8-bit RGB444
   for ( size_t i = 0; i < frames.size(); i++ ) {
     for ( int k = 0; k < reconstructs[i].getPointCount(); k++ ) {
       convertYUV444_16bits_toRGB_8bits( reconstructs[i], k );
+    }
+  }
+  } else {  // lossless: copy 16-bit RGB to 8-bit RGB
+    PCCColor16bit color16;
+    PCCColor3B    color8;
+    for ( size_t i = 0; i < frames.size(); i++ ) {
+      for ( int k = 0; k < reconstructs[i].getPointCount(); k++ ) {
+        color16   = reconstructs[i].getColor16bit( k );
+        color8[0] = uint8_t( color16[0] );
+        color8[1] = uint8_t( color16[1] );
+        color8[2] = uint8_t( color16[2] );
+        reconstructs[i].setColor( k, color8 );
+      }
     }
   }
   if ( !params_.keepIntermediateFiles_ && params_.use3dmc_ ) { remove3DMotionEstimationFiles( path.str() ); }
