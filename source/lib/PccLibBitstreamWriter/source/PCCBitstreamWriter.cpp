@@ -1111,17 +1111,17 @@ void PCCBitstreamWriter::atlasSubStream( PCCHighLevelSyntax& syntax, PCCBitstrea
     lastSize = tempBitStream.size();
     if ( maxUnitSize < afpsSizeList[afpsIdx] ) maxUnitSize = afpsSizeList[afpsIdx];
   }
-  for ( size_t atglIdx = 0; atglIdx < atglSizeList.size(); atglIdx++ ) {
-    atlasTileGroupLayerRbsp( syntax.getAtlasTileGroupLayer( atglIdx ), syntax, tempBitStream );
-    atglSizeList[atglIdx] = tempBitStream.size() - lastSize;
-    lastSize = tempBitStream.size();
-    if ( maxUnitSize < atglSizeList[atglIdx] ) maxUnitSize = atglSizeList[atglIdx];
-  }
   for ( size_t i = 0; i < syntax.getSeiPrefix().size(); i++ ) {
     seiRbsp( syntax, tempBitStream, syntax.getSeiPrefix( i ), NAL_PREFIX_SEI );
     seiPrefixSizeList[i] = tempBitStream.size() - lastSize;
     lastSize = tempBitStream.size();
     if ( maxUnitSize < seiPrefixSizeList[i] ) maxUnitSize = seiPrefixSizeList[i];
+  }
+  for ( size_t atglIdx = 0; atglIdx < atglSizeList.size(); atglIdx++ ) {
+    atlasTileGroupLayerRbsp( syntax.getAtlasTileGroupLayer( atglIdx ), syntax, tempBitStream );
+    atglSizeList[atglIdx] = tempBitStream.size() - lastSize;
+    lastSize = tempBitStream.size();
+    if ( maxUnitSize < atglSizeList[atglIdx] ) maxUnitSize = atglSizeList[atglIdx];
   }
   for ( size_t i = 0; i < syntax.getSeiSuffix().size(); i++ ) {
     seiRbsp( syntax, tempBitStream, syntax.getSeiSuffix( i ), NAL_SUFFIX_SEI );
@@ -1129,8 +1129,7 @@ void PCCBitstreamWriter::atlasSubStream( PCCHighLevelSyntax& syntax, PCCBitstrea
     lastSize = tempBitStream.size();
     if ( maxUnitSize < seiSuffixSizeList[i] ) maxUnitSize = seiSuffixSizeList[i];
   }
-
-  // calcuation of the max unit size done 
+  // calculation of the max unit size done 
   uint32_t precision =
       ( uint32_t )( min( max( (int)ceil( (double)getFixedLengthCodeBitsCount( maxUnitSize ) / 8.0 ), 1 ), 8 ) - 1 );
   ssnu.setUnitSizePrecisionBytesMinus1( precision );
@@ -1151,6 +1150,15 @@ void PCCBitstreamWriter::atlasSubStream( PCCHighLevelSyntax& syntax, PCCBitstrea
                      (int)nu.getNalUnitType(), toString( nu.getNalUnitType() ).c_str(),
                      ( ssnu.getUnitSizePrecisionBytesMinus1() + 1 ), nu.getNalUnitSize(), bitstream.size() );
   }
+  // NAL_PREFIX_SEI
+  for ( size_t i = 0; i < syntax.getSeiPrefix().size(); i++ ) {
+    NalUnit nu( NAL_PREFIX_SEI, 0, 1 );
+    nu.setNalUnitSize( seiPrefixSizeList[i] );
+    sampleStreamNalUnit( syntax, bitstream, ssnu, nu, i );
+    TRACE_BITSTREAM( "nalu[%d]:%s, headerSize:2+%d, naluSize:%zu, sizeBitstream written: %llu\n",
+                     (int)nu.getNalUnitType(), toString( nu.getNalUnitType() ).c_str(),
+                     ( ssnu.getUnitSizePrecisionBytesMinus1() + 1 ), nu.getNalUnitSize(), bitstream.size() );
+  }
   // NAL_TRAIL, NAL_TSA, NAL_STSA, NAL_RADL, NAL_RASL,NAL_SKIP
   for ( size_t frameIdx = 0; frameIdx < atglSizeList.size(); frameIdx++ ) {
     NalUnit nu( NAL_TSA, 0, 1 );
@@ -1159,15 +1167,6 @@ void PCCBitstreamWriter::atlasSubStream( PCCHighLevelSyntax& syntax, PCCBitstrea
     atgl.getAtlasTileGroupDataUnit().setFrameIndex( frameIdx );
     TRACE_BITSTREAM( " ATGL: frame %zu\n", frameIdx );
     sampleStreamNalUnit( syntax, bitstream, ssnu, nu, frameIdx );
-    TRACE_BITSTREAM( "nalu[%d]:%s, headerSize:2+%d, naluSize:%zu, sizeBitstream written: %llu\n",
-                     (int)nu.getNalUnitType(), toString( nu.getNalUnitType() ).c_str(),
-                     ( ssnu.getUnitSizePrecisionBytesMinus1() + 1 ), nu.getNalUnitSize(), bitstream.size() );
-  }
-  // NAL_PREFIX_SEI
-  for ( size_t i = 0; i < syntax.getSeiPrefix().size(); i++ ) {
-    NalUnit nu( NAL_PREFIX_SEI, 0, 1 );
-    nu.setNalUnitSize( seiPrefixSizeList[i] );
-    sampleStreamNalUnit( syntax, bitstream, ssnu, nu, i );
     TRACE_BITSTREAM( "nalu[%d]:%s, headerSize:2+%d, naluSize:%zu, sizeBitstream written: %llu\n",
                      (int)nu.getNalUnitType(), toString( nu.getNalUnitType() ).c_str(),
                      ( ssnu.getUnitSizePrecisionBytesMinus1() + 1 ), nu.getNalUnitSize(), bitstream.size() );
