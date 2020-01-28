@@ -324,7 +324,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
 #else
           switch ( params_.textureBGFill_ ) {
             case 0:
-              for ( int mapIdx = 0; mapIdx < nbVideoFramePerFrame; mapIdx++ ) {
+              for ( int mapIdx = 0; mapIdx < mapCount/*nbVideoFramePerFrame*/; mapIdx++ ) {
                 if ( mapIdx == 0 ) {
                   dilate( frames[f], videoTexture.getFrame( f * nbVideoFramePerFrame ) );
                 } else {  // for multiple streams, only 2 streams are being used, should re-think this
@@ -335,7 +335,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
               }
               break;
             case 1:
-              for ( int mapIdx = 0; mapIdx < nbVideoFramePerFrame; mapIdx++ ) {
+              for ( int mapIdx = 0; mapIdx < mapCount/*nbVideoFramePerFrame*/; mapIdx++ ) {
                 if ( mapIdx == 0 ) {
                   dilateSmoothedPushPull( frames[f], videoTexture.getFrame( f * nbVideoFramePerFrame ) );
                 } else {  // for multiple streams, only 2 streams are being used, should re-think this
@@ -346,7 +346,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
               }
               break;
             case 2:
-              for ( int mapIdx = 0; mapIdx < nbVideoFramePerFrame; mapIdx++ ) {
+              for ( int mapIdx = 0; mapIdx < mapCount/*nbVideoFramePerFrame*/; mapIdx++ ) {
                 if ( mapIdx == 0 ) {
                   dilateHarmonicBackgroundFill( frames[f], videoTexture.getFrame( f * nbVideoFramePerFrame ) );
                 } else {  // for multiple streams, only 2 streams are being used, should re-think this
@@ -4717,7 +4717,7 @@ bool PCCEncoder::dilateGeometryVideo( const PCCGroupOfFrames& sources, PCCContex
       auto& frame1 = videoGeometryD1.getFrame( geometryVideoSize );
       generateIntraImage( frames[i], 1, frame1 );
       dilate3DPadding( sources[i], frames[i], frame0, videoOccupancyMap.getFrame( i ) );
-      if ( !params_.absoluteD1_ ) {
+      if ( params_.absoluteD1_ ) {
         dilate3DPadding( sources[i], frames[i], frame1, videoOccupancyMap.getFrame( i ) );
       }
     } else {

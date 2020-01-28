@@ -1862,19 +1862,23 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
           const auto& image1 = videoT1.getFrame( frameIndex );
           for ( size_t c = 0; c < 3; ++c ) {
             // reconstruction
-            int16_t value0 = static_cast<int16_t>( image0.getValue( c, x, y ) );
-            int16_t value1 = static_cast<int16_t>( image1.getValue( c, x, y ) );
+            uint16_t value0 = static_cast<uint16_t>( image0.getValue( c, x, y ) );
+            uint16_t value1 = static_cast<uint16_t>( image1.getValue( c, x, y ) );
             if ( !absoluteT1List[f] ) {
-              int16_t delta = value1;
-              delta = delta - 32768;
-              if ( delta < -32768 ) {
-                delta = -32768;
-              } else if ( delta > 32767 ) {
-                delta = 32767;
+							int32_t newValue = value1;
+              newValue -= 32768; //transforming the value from uint16 to int16
+							//clipping the delta value
+              if ( newValue < -32768 ) {
+                newValue = -32768;
+              } else if ( newValue > 32767 ) {
+                newValue = 32767;
               }
-              value1 = value0 + delta;
-            }
-            color[i][c] = value1 < 0 ? 0 : ( value1 > 65535 ? 65535 : value1 );
+              newValue += value0; //add value0
+              color16bit[i][c] = newValue < 0 ? 0 : ( newValue > 65535 ? 65535 : (uint16_t)newValue ); //clipping to the unsigned 16 bit range
+						}
+						else {
+							color16bit[i][c] = value1;
+						}
           }
           size_t index = (size_t)source.addPoint( reconstruct[i] );
           source.setColor16bit( index, color16bit[i] );
