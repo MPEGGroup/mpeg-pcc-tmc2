@@ -1226,6 +1226,12 @@ void PCCBitstreamWriter::seiMessage( PCCBitstream& bitstream,
   int32_t payloadType = (int32_t)sei.getPayloadType();
   for ( ; payloadType >= 0xff; payloadType -= 0xff ) { bitstream.write( 0xff, 8 ); }
   bitstream.write( payloadType, 8 );
+
+  // calculating the size of the sei message before writing it into the bitstream, is there a better way to do this???
+  PCCBitstream tempbitstream;
+  seiPayload( tempbitstream, syntax, sei, nalUnitType );
+  sei.setPayloadSize(tempbitstream.size());
+
   int32_t payloadSize = (int32_t)sei.getPayloadSize();
   for ( ; payloadSize >= 0xff; payloadSize -= 0xff ) { bitstream.write( 0xff, 8 ); }
   bitstream.write( payloadSize, 8 );
@@ -1335,7 +1341,8 @@ void PCCBitstreamWriter::seiPayload( PCCBitstream& bitstream,
   //   }
   //   byteAlignment( bitstream );
   // }
-  byteAlignment( bitstream );
+  if(!bitstream.byteAligned()) // this prevents from writing one more byte, in case the payload is already byte aligned (see xWriteByteAlign in HM)
+    byteAlignment( bitstream );
 }
 
 // E.2.2  Filler payload SEI message syntax

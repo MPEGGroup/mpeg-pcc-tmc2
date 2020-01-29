@@ -44,10 +44,10 @@ class SEI {
   SEI() {}
   virtual ~SEI() {}
   virtual SeiPayloadType getPayloadType() = 0;
-  uint8_t                getPayloadSize() { return payloadSize_; }
-  void                   setPayloadSize( uint8_t value ) { payloadSize_ = value; }
+  size_t                 getPayloadSize() { return payloadSize_; }
+  void                   setPayloadSize( size_t value ) { payloadSize_ = value; }
  private:
-  uint8_t payloadSize_;
+  size_t payloadSize_;
 };
 
 // E.2.3  User data registered by Recommendation ITU-T T.35 SEI message syntax
