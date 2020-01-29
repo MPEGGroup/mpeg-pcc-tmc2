@@ -79,18 +79,46 @@ const uint32_t PCCTMC2ContainerMagicNumber = 23021981;
 const uint32_t PCCTMC2ContainerVersion     = 1;
 const uint32_t PCC_UNDEFINED_INDEX         = -1;
 const bool     printDetailedInfo           = false;
-
+const uint8_t MAX_NUM_ATTR_PARTITIONS = 64;
 enum PCCVideoType {
   VIDEO_OCCUPANCY = 0,
   VIDEO_GEOMETRY,
   VIDEO_GEOMETRY_D0,
   VIDEO_GEOMETRY_D1,
+  VIDEO_GEOMETRY_D2,
+  VIDEO_GEOMETRY_D3,
+  VIDEO_GEOMETRY_D4,
+  VIDEO_GEOMETRY_D5,
+  VIDEO_GEOMETRY_D6,
+  VIDEO_GEOMETRY_D7,
+  VIDEO_GEOMETRY_D8,
+  VIDEO_GEOMETRY_D9,
+  VIDEO_GEOMETRY_D10,
+  VIDEO_GEOMETRY_D11,
+  VIDEO_GEOMETRY_D12,
+  VIDEO_GEOMETRY_D13,
+  VIDEO_GEOMETRY_D14,
+  VIDEO_GEOMETRY_D15,
   VIDEO_GEOMETRY_RAW,
   VIDEO_TEXTURE,
   VIDEO_TEXTURE_T0,
-  VIDEO_TEXTURE_T1,
-  VIDEO_TEXTURE_RAW,
-  NUM_VIDEO_TYPE
+  VIDEO_TEXTURE_T1 = VIDEO_TEXTURE_T0 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_TEXTURE_T2 = VIDEO_TEXTURE_T1 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_TEXTURE_T3 = VIDEO_TEXTURE_T2 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_TEXTURE_T4 = VIDEO_TEXTURE_T3 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_TEXTURE_T5 = VIDEO_TEXTURE_T4 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_TEXTURE_T6 = VIDEO_TEXTURE_T5 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_TEXTURE_T7 = VIDEO_TEXTURE_T6 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_TEXTURE_T8 = VIDEO_TEXTURE_T7 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_TEXTURE_T9 = VIDEO_TEXTURE_T8 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_TEXTURE_T10 = VIDEO_TEXTURE_T9 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_TEXTURE_T11 = VIDEO_TEXTURE_T10 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_TEXTURE_T12 = VIDEO_TEXTURE_T11 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_TEXTURE_T13 = VIDEO_TEXTURE_T12 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_TEXTURE_T14 = VIDEO_TEXTURE_T13 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_TEXTURE_T15 = VIDEO_TEXTURE_T14 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_TEXTURE_RAW = VIDEO_TEXTURE_T15 + MAX_NUM_ATTR_PARTITIONS,
+  NUM_VIDEO_TYPE = VIDEO_TEXTURE_RAW + MAX_NUM_ATTR_PARTITIONS
 };
 enum PCCMetadataType { METADATA_GOF = 0, METADATA_FRAME, METADATA_PATCH };
 enum PCCPatchOrientation {
@@ -141,7 +169,7 @@ enum VPCCUnitType {
   NUM_VPCC_UNIT_TYPE  // undefined
 };
 
-enum PDGUnitType {
+/*enum PDGUnitType { //deprecated -> to be removed
   PDG_PSPS = 0,    // 00: Patch sequence parameter set
   PDG_PFPS,        // 01: Patch frame parameter set
   PDG_PFGPS,       // 02: Patch frame geometry parameter set
@@ -174,7 +202,7 @@ enum PDGUnitType {
   PDG_RSVD_29,     // 29: Reserved
   PDG_RSVD_30,     // 30: Reserved
   PDG_RSVD_31      // 32: Reserved
-};
+};*/
 
 enum PCCCodecID { CODEC_HEVC = 0 };
 
@@ -182,7 +210,7 @@ enum PCCPatchFrameType { PATCH_FRAME_I = 0, PATCH_FRAME_P };
 
 enum PCCPatchModeI { PATCH_MODE_I_INTRA = 0, PATCH_MODE_I_RAW, PATCH_MODE_I_EOM, PATCH_MODE_I_END = 14 };
 
-enum PCCPatchModeP {
+enum PCCPatchModeP { // to be removed
   PATCH_MODE_P_SKIP = 0,
   PATCH_MODE_P_INTRA,
   PATCH_MODE_P_INTER,
@@ -384,7 +412,7 @@ static inline uint32_t getFixedLengthCodeBitsCount( uint32_t range ) {
   return count;
 }
 
-static inline const std::string strUnitType( PDGUnitType unitType ) {
+/*static inline const std::string strUnitType( PDGUnitType unitType ) { //deprecated -> to be removed
   switch ( unitType ) {
     case PDG_PSPS: return std::string( "PDG_PSPS " ); break;
     case PDG_PFPS: return std::string( "PDG_PFPS " ); break;
@@ -396,7 +424,7 @@ static inline const std::string strUnitType( PDGUnitType unitType ) {
     default: break;
   }
   return std::string( "ERROR" );
-}
+}*/
 
 }  // namespace pcc
 

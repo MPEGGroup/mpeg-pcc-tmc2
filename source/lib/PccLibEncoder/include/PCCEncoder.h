@@ -281,7 +281,7 @@ class PCCEncoder : public PCCCodec {
   void pointLocalReconstructionSearch( PCCContext&                        context,
                                        PCCFrameContext&                   frame,
                                        const PCCVideoGeometry&            video,
-                                       const PCCVideoGeometry&            videoD1,
+                                       const std::vector<PCCVideoGeometry>&            videoMultiple,
                                        const GeneratePointCloudParameters params );
 
   void presmoothPointCloudColor( PCCPointSet3& reconstruct, const PCCEncoderParameters params );

@@ -203,7 +203,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
 
     // Compress geometryD0
     auto& videoBitstreamD0 = context.createVideoBitstream( VIDEO_GEOMETRY_D0 );
-    auto& videoGeometry    = context.getVideoGeometry();
+    auto& videoGeometry    = context.getVideoGeometryMultiple()[0];
     videoEncoder.compress(
         videoGeometry, path.str(), ( params_.geometryQP_ - 1 ), videoBitstreamD0, params_.geometryD0Config_,
         ( params_.use3dmc_ != 0 ) ? params_.videoEncoderAuxPath_ : params_.videoEncoderPath_, context,
@@ -218,14 +218,14 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     if ( !params_.absoluteD1_ ) {
       // Form differential video geometryD1
       for ( size_t f = 0; f < frames.size(); ++f ) {
-        auto& frame1 = context.getVideoGeometryD1().getFrame( f );
+        auto& frame1 = context.getVideoGeometryMultiple()[1].getFrame( f );
         predictGeometryFrame( frames[f], videoGeometry.getFrame( f ), frame1 );
         dilate3DPadding( sources[f], frames[f], frame1, videoOccupancyMap.getFrame( f ) );
       }
     }
 
     // Compress geometryD1
-    auto& videoGeometryD1  = context.getVideoGeometryD1();
+    auto& videoGeometryD1 = context.getVideoGeometryMultiple()[1];
     auto& videoBitstreamD1 = context.createVideoBitstream( VIDEO_GEOMETRY_D1 );
     videoEncoder.compress(
         videoGeometryD1, path.str(), params_.geometryQP_, videoBitstreamD1, params_.geometryD1Config_,
@@ -290,8 +290,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     generateTextureVideo( sources, reconstructs, context, params_ );
     std::cout << "generate Texture Video done" << std::endl;    
 
-    auto& videoTexture   = context.getVideoTexture();
-    auto& videoTextureT1 = context.getVideoTextureT1();
+    auto& videoTexture   = params_.multipleStreams_ ? context.getVideoTextureMultiple()[0] : context.getVideoTexture();
+    auto& videoTextureT1 = context.getVideoTextureMultiple()[1];
     if ( !( params_.losslessGeo_ && params_.textureDilationOffLossless_ ) && params_.textureBGFill_ < 3 ) {
       // ATTRIBUTE IMAGE PADDING
       for ( size_t f = 0; f < frames.size(); ++f ) {
@@ -300,28 +300,6 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
         clockPadding.start();
 
         if ( params_.absoluteT1_ ) {
-#if 0
-          switch ( params_.textureBGFill_ ) {
-            case 0:
-              dilate( frames[f], videoTexture.getFrame( f * nbVideoFramePerFrame ) );
-              dilate( frames[f], ( params_.multipleStreams_ ? videoTextureT1.getFrame( f )
-                                                            : videoTexture.getFrame( f * nbVideoFramePerFrame + 1 ) ) );
-              break;
-            case 1:
-              dilateSmoothedPushPull( frames[f], videoTexture.getFrame( f * nbVideoFramePerFrame ) );
-              dilateSmoothedPushPull(
-                  frames[f], ( params_.multipleStreams_ ? videoTextureT1.getFrame( f )
-                                                        : videoTexture.getFrame( f * nbVideoFramePerFrame + 1 ) ) );
-              break;
-            case 2:
-              dilateHarmonicBackgroundFill( frames[f], videoTexture.getFrame( f * nbVideoFramePerFrame ) );
-              dilateHarmonicBackgroundFill(
-                  frames[f], ( params_.multipleStreams_ ? videoTextureT1.getFrame( f )
-                                                        : videoTexture.getFrame( f * nbVideoFramePerFrame + 1 ) ) );
-              break;
-            default: std::cout << "Warning: no texture padding applied!" << std::endl;
-          }  // switch
-#else
           switch ( params_.textureBGFill_ ) {
             case 0:
               for ( int mapIdx = 0; mapIdx < mapCount/*nbVideoFramePerFrame*/; mapIdx++ ) {
@@ -358,7 +336,6 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
               break;
             default: std::cout << "Warning: no texture padding applied!" << std::endl;
           }  // switch
-#endif
           if ( mapCount > 1 && !params_.multipleStreams_ && params_.groupDilation_ ) {
             // Group dilation in texture
             auto&    frame        = frames[f];
@@ -405,7 +382,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     // ENCODE ATTRIBUTE IMAGE
     if ( params_.multipleStreams_ ) {
       size_t nbyteAtt     = 1;
-      auto&  videoTexture = context.getVideoTexture();
+      auto&  videoTexture = context.getVideoTextureMultiple()[0];
       // Compress textureT0
       auto& videoBitstreamT0 = context.createVideoBitstream( VIDEO_TEXTURE_T0 );
       videoEncoder.compress(
@@ -425,7 +402,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
       size_t sizeTextureVideoT0 = videoBitstreamT0.size();
       std::cout << "sizeTextureVideoT0: " << sizeTextureVideoT0 << std::endl;      
       // Form differential video textureT1
-      auto& videoTextureT1 = context.getVideoTextureT1();
+      auto& videoTextureT1 = context.getVideoTextureMultiple()[1];
       if ( !params_.absoluteT1_ ) {
         for ( size_t f = 0; f < frames.size(); ++f ) {
           auto& frame1 = videoTextureT1.getFrame( f );
@@ -3466,7 +3443,8 @@ bool PCCEncoder::generateGeometryVideo( const PCCPointSet3&                sourc
 
 void PCCEncoder::geometryGroupDilation( PCCContext& context ) {
   auto& videoGeometry     = context.getVideoGeometry();
-  auto& videoGeometryD1   = context.getVideoGeometryD1();
+  auto& videoGeometryD0   = context.getVideoGeometryMultiple()[0];
+  auto& videoGeometryD1   = context.getVideoGeometryMultiple()[1];
   auto  videoOccupancyMap = context.getVideoOccupancyMap();
   auto& frames            = context.getFrames();
   for ( size_t f = 0; f < frames.size(); ++f ) {
@@ -3474,7 +3452,7 @@ void PCCEncoder::geometryGroupDilation( PCCContext& context ) {
     auto& width        = frame.getWidth();
     auto& height       = frame.getHeight();
     auto& occupancyMap = videoOccupancyMap.getFrame( f );
-    auto& frame1       = params_.multipleStreams_ ? videoGeometry.getFrame( f ) : videoGeometry.getFrame( 2 * f );
+    auto& frame1       = params_.multipleStreams_ ? videoGeometryD0.getFrame( f ) : videoGeometry.getFrame( 2 * f );
     auto& frame2       = params_.multipleStreams_ ? videoGeometryD1.getFrame( f ) : videoGeometry.getFrame( 2 * f + 1 );
     for ( size_t y = 0; y < height; y++ ) {
       for ( size_t x = 0; x < width; x++ ) {
@@ -4474,16 +4452,16 @@ bool PCCEncoder::generateGeometryVideo( const PCCGroupOfFrames& sources, PCCCont
 void PCCEncoder::pointLocalReconstructionSearch( PCCContext& context, const GeneratePointCloudParameters params ) {
   auto& frames          = context.getFrames();
   auto& videoGeometry   = context.getVideoGeometry();
-  auto& videoGeometryD1 = context.getVideoGeometryD1();
+  auto& videoGeometryMultiple = context.getVideoGeometryMultiple();
   for ( size_t i = 0; i < frames.size(); i++ ) {
-    pointLocalReconstructionSearch( context, frames[i], videoGeometry, videoGeometryD1, params );
+    pointLocalReconstructionSearch( context, frames[i], videoGeometry, videoGeometryMultiple, params );
   }
 }
 
 void PCCEncoder::pointLocalReconstructionSearch( PCCContext&                        context,
                                                  PCCFrameContext&                   frame,
                                                  const PCCVideoGeometry&            video,
-                                                 const PCCVideoGeometry&            videoD1,
+                                                 const std::vector<PCCVideoGeometry>&            videoMultiple,
                                                  const GeneratePointCloudParameters params ) {
   auto&                 patches         = frame.getPatches();
   auto&                 blockToPatch    = frame.getBlockToPatch();
@@ -4523,12 +4501,12 @@ void PCCEncoder::pointLocalReconstructionSearch( PCCContext&                    
     if ( video.getFrameCount() < ( shift + 1 ) ) { return; }
   } else {
     shift = frame.getIndex() * ( params.mapCountMinus1_ + 1 );
-    if ( video.getFrameCount() < ( shift + ( params.mapCountMinus1_ + 1 ) ) ) { return; }
+    if ( videoMultiple[0].getFrameCount() < ( shift + ( params.mapCountMinus1_ + 1 ) ) ) { return; }
   }
   const size_t patchCount           = patches.size();
   size_t       nbOfOptimizationMode = context.getPointLocalReconstructionModeNumber();
-  const size_t imageWidth           = video.getWidth();
-  const size_t imageHeight          = video.getHeight();
+  const size_t imageWidth           = params.multipleStreams_ ? videoMultiple[0].getWidth() : video.getWidth() ;
+  const size_t imageHeight          = params.multipleStreams_ ? videoMultiple[0].getHeight() :video.getHeight();
   for ( size_t patchIndex = 0; patchIndex < patchCount; ++patchIndex ) {
     const size_t  patchIndexPlusOne = patchIndex + 1;
     auto&         patch             = patches[patchIndex];
@@ -4554,7 +4532,7 @@ void PCCEncoder::pointLocalReconstructionSearch( PCCContext&                    
                   size_t       x, y;
                   const bool   occupancy = occupancyMap[patch.patch2Canvas( u, v, imageWidth, imageHeight, x, y )] != 0;
                   if ( !occupancy ) { continue; }
-                  auto createdPoints = generatePoints( params, frame, video, videoD1, shift, patchIndex, u, v, x, y,
+                  auto createdPoints = generatePoints( params, frame, video, videoMultiple, shift, patchIndex, u, v, x, y,
                                                        mode.interpolate_, mode.filling_, mode.minD1_, mode.neighbor_ );
                   if ( createdPoints.size() > 0 ) {
                     for ( size_t i = 0; i < createdPoints.size(); i++ ) {
@@ -4608,7 +4586,7 @@ void PCCEncoder::pointLocalReconstructionSearch( PCCContext&                    
                   size_t       x, y;
                   const bool   occupancy = occupancyMap[patch.patch2Canvas( u, v, imageWidth, imageHeight, x, y )] != 0;
                   if ( !occupancy ) { continue; }
-                  auto createdPoints = generatePoints( params, frame, video, videoD1, shift, patchIndex, u, v, x, y,
+                  auto createdPoints = generatePoints( params, frame, video, videoMultiple, shift, patchIndex, u, v, x, y,
                                                        mode.interpolate_, mode.filling_, mode.minD1_, mode.neighbor_ );
                   if ( createdPoints.size() > 0 ) {
                     for ( size_t i = 0; i < createdPoints.size(); i++ ) {
@@ -4704,25 +4682,26 @@ void PCCEncoder::markRawPatchLocation(//const PCCContext& context, size_t frameI
 }
 bool PCCEncoder::dilateGeometryVideo( const PCCGroupOfFrames& sources, PCCContext& context ) {
   auto& videoGeometry     = context.getVideoGeometry();
-  auto& videoGeometryD1   = context.getVideoGeometryD1();
+  auto& videoGeometryMultiple   = context.getVideoGeometryMultiple();
   auto& videoOccupancyMap = context.getVideoOccupancyMap();
   auto& frames            = context.getFrames();
   for ( size_t i = 0; i < frames.size(); i++ ) {
-    const size_t geometryVideoSize = videoGeometry.getFrameCount();
     if ( params_.multipleStreams_ ) {
-      videoGeometry.resize( geometryVideoSize + 1 );
-      videoGeometryD1.resize( geometryVideoSize + 1 );
-      auto& frame0 = videoGeometry.getFrame( geometryVideoSize );
+      const size_t geometryVideoSize = videoGeometryMultiple[0].getFrameCount();
+      videoGeometryMultiple[0].resize( geometryVideoSize + 1 ); //increasing the video with only one frame
+      videoGeometryMultiple[1].resize( geometryVideoSize + 1 );
+      auto& frame0 = videoGeometryMultiple[0].getFrame( geometryVideoSize );
       generateIntraImage( frames[i], 0, frame0 );
-      auto& frame1 = videoGeometryD1.getFrame( geometryVideoSize );
+      auto& frame1 = videoGeometryMultiple[1].getFrame( geometryVideoSize );
       generateIntraImage( frames[i], 1, frame1 );
       dilate3DPadding( sources[i], frames[i], frame0, videoOccupancyMap.getFrame( i ) );
       if ( params_.absoluteD1_ ) {
         dilate3DPadding( sources[i], frames[i], frame1, videoOccupancyMap.getFrame( i ) );
       }
     } else {
+      const size_t geometryVideoSize = videoGeometry.getFrameCount();
       const size_t mapCount = params_.mapCountMinus1_ + 1;
-      videoGeometry.resize( geometryVideoSize + mapCount );
+      videoGeometry.resize( geometryVideoSize + mapCount ); //increasing the video with mapCount frames
 
       if ( params_.singleMapPixelInterleaving_ ) {
         auto& frame1 = videoGeometry.getFrame( geometryVideoSize );
@@ -5686,8 +5665,8 @@ bool PCCEncoder::generateTextureVideo( const PCCPointSet3& reconstruct,
                                        size_t              frameIndex,
                                        const size_t        mapCount ) {
   auto& frame   = context[frameIndex];
-  auto& video   = context.getVideoTexture();
-  auto& videoT1 = context.getVideoTextureT1();
+  auto& video   = params_.multipleStreams_ ? context.getVideoTextureMultiple()[0] : context.getVideoTexture();
+  auto& videoT1 = context.getVideoTextureMultiple()[1];
   assert( mapCount == 2 );
   auto&  pointToPixel                 = frame.getPointToPixel();
   bool   useMissedPointsSeparateVideo = frame.getUseMissedPointsSeparateVideo();

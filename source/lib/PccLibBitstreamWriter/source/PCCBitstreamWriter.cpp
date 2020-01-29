@@ -259,17 +259,10 @@ void PCCBitstreamWriter::videoSubStream( PCCHighLevelSyntax& syntax, PCCBitstrea
                                                   syntax.getVideoBitstream( VIDEO_GEOMETRY_RAW ).size() );
     } else {
       if ( sps.getMapCountMinus1( atlasIndex ) > 0 && sps.getMultipleMapStreamsPresentFlag( atlasIndex ) ) {
-        if ( vuh.getMapIndex() == 0 ) {
-          TRACE_BITSTREAM( "Geometry D0\n" );
-          bitstream.write( syntax.getVideoBitstream( VIDEO_GEOMETRY_D0 ) );
-          syntax.getBitstreamStat().setVideoBinSize( VIDEO_GEOMETRY_D0,
-                                                      syntax.getVideoBitstream( VIDEO_GEOMETRY_D0 ).size() );
-        } else if ( vuh.getMapIndex() == 1 ) {
-          TRACE_BITSTREAM( "Geometry D1\n" );
-          bitstream.write( syntax.getVideoBitstream( VIDEO_GEOMETRY_D1 ) );
-          syntax.getBitstreamStat().setVideoBinSize( VIDEO_GEOMETRY_D1,
-                                                      syntax.getVideoBitstream( VIDEO_GEOMETRY_D1 ).size() );
-        }
+        PCCVideoType geometryIndex = (PCCVideoType)(VIDEO_GEOMETRY_D0 + vuh.getMapIndex());
+        TRACE_BITSTREAM( "Geometry D%d\n", vuh.getMapIndex() );
+        bitstream.write( syntax.getVideoBitstream( geometryIndex ) );
+        syntax.getBitstreamStat().setVideoBinSize( geometryIndex, syntax.getVideoBitstream( geometryIndex ).size() );
       } else {
         TRACE_BITSTREAM( "Geometry \n" );
         bitstream.write( syntax.getVideoBitstream( VIDEO_GEOMETRY ) );
@@ -280,28 +273,23 @@ void PCCBitstreamWriter::videoSubStream( PCCHighLevelSyntax& syntax, PCCBitstrea
   } else if ( vpccUnitType == VPCC_AVD ) {
     if ( sps.getAttributeInformation( atlasIndex ).getAttributeCount() > 0 ) {
       if ( vuh.getRawVideoFlag() ) {
-        TRACE_BITSTREAM( "Texture raw\n" );
-        bitstream.write( syntax.getVideoBitstream( VIDEO_TEXTURE_RAW ) );
-        syntax.getBitstreamStat().setVideoBinSize( VIDEO_TEXTURE_RAW,
-                                                    syntax.getVideoBitstream( VIDEO_TEXTURE_RAW ).size() );
+        PCCVideoType textureIndex = (PCCVideoType)(VIDEO_TEXTURE_RAW + vuh.getAttributeDimensionIndex());
+        TRACE_BITSTREAM( "Texture raw, PARTITION: %d\n", vuh.getAttributeDimensionIndex() );
+        bitstream.write( syntax.getVideoBitstream( textureIndex ) );
+        syntax.getBitstreamStat().setVideoBinSize( textureIndex,
+                                                    syntax.getVideoBitstream( textureIndex ).size() );
       } else {
         if ( sps.getMapCountMinus1( atlasIndex ) > 0 && sps.getMultipleMapStreamsPresentFlag( atlasIndex ) ) {
-          if ( vuh.getMapIndex() == 0 ) {
-            TRACE_BITSTREAM( "Texture T0\n" );
-            bitstream.write( syntax.getVideoBitstream( VIDEO_TEXTURE_T0 ) );
-            syntax.getBitstreamStat().setVideoBinSize( VIDEO_TEXTURE_T0,
-                                                        syntax.getVideoBitstream( VIDEO_TEXTURE_T0 ).size() );
-          } else if ( vuh.getMapIndex() == 1 ) {
-            TRACE_BITSTREAM( "Texture T1\n" );
-            bitstream.write( syntax.getVideoBitstream( VIDEO_TEXTURE_T1 ) );
-            syntax.getBitstreamStat().setVideoBinSize( VIDEO_TEXTURE_T1,
-                                                        syntax.getVideoBitstream( VIDEO_TEXTURE_T1 ).size() );
-          }
+          PCCVideoType textureIndex = (PCCVideoType)(VIDEO_TEXTURE_T0 + vuh.getMapIndex()*MAX_NUM_ATTR_PARTITIONS + vuh.getAttributeDimensionIndex());
+          TRACE_BITSTREAM( "Texture MAP: %d, PARTITION: %d\n",vuh.getMapIndex(),vuh.getAttributeDimensionIndex()); 
+          bitstream.write( syntax.getVideoBitstream(  textureIndex ) );
+          syntax.getBitstreamStat().setVideoBinSize( textureIndex , syntax.getVideoBitstream( textureIndex ).size() );
         } else {
-          TRACE_BITSTREAM( "Texture\n" );
-          bitstream.write( syntax.getVideoBitstream( VIDEO_TEXTURE ) );
-          syntax.getBitstreamStat().setVideoBinSize( VIDEO_TEXTURE,
-                                                      syntax.getVideoBitstream( VIDEO_TEXTURE ).size() );
+          PCCVideoType textureIndex = (PCCVideoType)(VIDEO_TEXTURE + vuh.getAttributeDimensionIndex());
+          TRACE_BITSTREAM( "Texture PARTITION: %d\n",vuh.getAttributeDimensionIndex() );
+          bitstream.write( syntax.getVideoBitstream( textureIndex ) );
+          syntax.getBitstreamStat().setVideoBinSize( textureIndex,
+                                                      syntax.getVideoBitstream( textureIndex ).size() );
         }
       }
     }

@@ -115,27 +115,22 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
                 << std::endl;
       std::exit( -1 );
     }
-    // Compress D0
-    int   decodedBitDepthD0 = gi.getGeometryNominal2dBitdepthMinus1() + 1;
-    auto& videoBitstreamD0  = context.getVideoBitstream( VIDEO_GEOMETRY_D0 );
-    videoDecoder.decompress( context.getVideoGeometry(), path.str(), context.size(), videoBitstreamD0,
-                             params_.videoDecoderPath_, context, decodedBitDepthD0, params_.keepIntermediateFiles_,
+    context.getVideoGeometryMultiple().resize(sps.getMapCountMinus1(atlasIndex) + 1);
+    size_t totalGeoSize = 0;
+    for (int mapIndex = 0; mapIndex < sps.getMapCountMinus1(atlasIndex) + 1; mapIndex++) {
+      // Decompress D[mapIndex]
+      int   decodedBitDepth = gi.getGeometryNominal2dBitdepthMinus1() + 1; // this should be extracted from the bitstream
+      PCCVideoType geometryIndex = (PCCVideoType)(VIDEO_GEOMETRY_D0 + mapIndex);
+      auto& videoBitstream = context.getVideoBitstream( geometryIndex );
+      videoDecoder.decompress( context.getVideoGeometryMultiple()[mapIndex], path.str(), context.size(), videoBitstream,
+                               params_.videoDecoderPath_, context, decodedBitDepth, params_.keepIntermediateFiles_,
                              ( sps.getLosslessGeo() ? sps.getLosslessGeo444() : false ) );
-    context.getVideoGeometry().convertBitdepth( decodedBitDepthD0, gi.getGeometryNominal2dBitdepthMinus1() + 1,
+      context.getVideoGeometryMultiple()[mapIndex].convertBitdepth( decodedBitDepth, gi.getGeometryNominal2dBitdepthMinus1() + 1,
                                                 gi.getGeometryMSBAlignFlag() );
-    std::cout << "geometry D0 video ->" << videoBitstreamD0.size() << " B" << std::endl;
-
-    // Compress D1
-    int   decodedBitDepthD1 = gi.getGeometryNominal2dBitdepthMinus1() + 1;
-    auto& videoBitstreamD1  = context.getVideoBitstream( VIDEO_GEOMETRY_D1 );
-    videoDecoder.decompress( context.getVideoGeometryD1(), path.str(), context.size(), videoBitstreamD1,
-                             params_.videoDecoderPath_, context, decodedBitDepthD1, params_.keepIntermediateFiles_,
-                             ( sps.getLosslessGeo() ? sps.getLosslessGeo444() : false ) );
-    context.getVideoGeometryD1().convertBitdepth( decodedBitDepthD1, gi.getGeometryNominal2dBitdepthMinus1() + 1,
-                                                  gi.getGeometryMSBAlignFlag() );
-    std::cout << "geometry D1 video ->" << videoBitstreamD1.size() << " B" << std::endl;
-
-    std::cout << "total geometry video ->" << videoBitstreamD0.size() + videoBitstreamD1.size() << " B"
+      std::cout << "geometry D"<<mapIndex<<" video ->" << videoBitstream.size() << " B" << std::endl;
+      totalGeoSize += videoBitstream.size();
+    }    
+    std::cout << "total geometry video ->" << totalGeoSize << " B"
               << std::endl;
   } else {
     int   decodedBitDepthGeo = gi.getGeometryNominal2dBitdepthMinus1() + 1;
@@ -172,30 +167,33 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   printf("generatePointCloud done\n"); fflush(stdout);
 
   if ( ai.getAttributeCount() > 0 ) {
-    int decodedBitdepthAttribute = ai.getAttributeNominal2dBitdepthMinus1( 0 ) + 1;
-    if ( sps.getMultipleMapStreamsPresentFlag( 0 ) ) {
-      // decompress T0
-      auto& videoBitstreamT0 = context.getVideoBitstream( VIDEO_TEXTURE_T0 );
-      videoDecoder.decompress( context.getVideoTexture(), path.str(), context.size(), videoBitstreamT0,
+    for (int attrIndex = 0; attrIndex < sps.getAttributeInformation(atlasIndex).getAttributeCount(); attrIndex++) {//right now we only have one attribute, this should be generalized
+      int decodedBitdepthAttribute = ai.getAttributeNominal2dBitdepthMinus1(attrIndex) + 1;
+      int   decodedBitdepthAttributeMP = ai.getAttributeNominal2dBitdepthMinus1(attrIndex) + 1;
+      for (int attrPartitionIndex = 0; attrPartitionIndex < sps.getAttributeInformation(atlasIndex).getAttributeDimensionPartitionsMinus1(attrIndex) + 1; attrPartitionIndex++) {//right now we have only one partition, this should be generalized
+        if (sps.getMultipleMapStreamsPresentFlag(atlasIndex)) {
+          int sizeTextureVideo = 0;
+          context.getVideoTextureMultiple().resize(sps.getMapCountMinus1(atlasIndex) + 1); //this allocation is considering only one attribute, with a single partition, but multiple streams
+          for (int mapIndex = 0; mapIndex < sps.getMapCountMinus1(atlasIndex) + 1; mapIndex++) {
+            // decompress T[mapIndex]
+            PCCVideoType textureIndex = (PCCVideoType)(VIDEO_TEXTURE_T0 + attrPartitionIndex + MAX_NUM_ATTR_PARTITIONS * mapIndex);
+            auto& videoBitstream = context.getVideoBitstream(textureIndex);
+            videoDecoder.decompress(context.getVideoTextureMultiple()[mapIndex], path.str(), context.size(), videoBitstream,
                                params_.videoDecoderPath_, context, ai.getAttributeNominal2dBitdepthMinus1( 0 ) + 1,
                                params_.keepIntermediateFiles_, sps.getLosslessGeo() != 0,
                                params_.patchColorSubsampling_, params_.inverseColorSpaceConversionConfig_,
                                params_.colorSpaceConversionPath_ );
-      std::cout << "texture T0 video ->" << videoBitstreamT0.size() << " B" << std::endl;
-
-      // decompress T1
-      auto& videoBitstreamT1 = context.getVideoBitstream( VIDEO_TEXTURE_T1 );
-      videoDecoder.decompress( context.getVideoTextureT1(), path.str(), context.size(), videoBitstreamT1,
-                               params_.videoDecoderPath_, context, ai.getAttributeNominal2dBitdepthMinus1( 0 ) + 1,
-                               params_.keepIntermediateFiles_, sps.getLosslessGeo() != 0,
-                               params_.patchColorSubsampling_, params_.inverseColorSpaceConversionConfig_,
-                               params_.colorSpaceConversionPath_ );
-      std::cout << "texture T1 video ->" << videoBitstreamT1.size() << " B" << std::endl;
-      std::cout << "texture    video ->" << videoBitstreamT0.size() + videoBitstreamT1.size() << " B"
-                << std::endl;
-    } else {
-      auto& videoBitstream = context.getVideoBitstream( VIDEO_TEXTURE );
-      videoDecoder.decompress( context.getVideoTexture(),       // video,
+            /*context.getVideoTextureMultiple()[mapIndex].convertBitdepth(
+              decodedBitdepthAttribute, ai.getAttributeNominal2dBitdepthMinus1(0) + 1, ai.getAttributeMSBAlignFlag());*/
+            std::cout << "texture T" << mapIndex << " video ->" << videoBitstream.size() << " B" << std::endl;
+            sizeTextureVideo += videoBitstream.size();
+          }
+          std::cout << "texture    video ->" << sizeTextureVideo << " B" << std::endl;
+        }
+        else {
+          PCCVideoType textureIndex = (PCCVideoType)(VIDEO_TEXTURE + attrPartitionIndex );
+          auto& videoBitstream = context.getVideoBitstream(textureIndex);
+          videoDecoder.decompress( context.getVideoTexture(),       // video,
                                path.str(),                      // path,
                                context.size() * mapCount,       // frameCount,
                                videoBitstream,                  // bitstream,
@@ -206,19 +204,23 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
                                sps.getLosslessGeo() != 0,       // use444CodecIo
                                params_.patchColorSubsampling_,  // patchColorSubsampling
                                params_.inverseColorSpaceConversionConfig_, params_.colorSpaceConversionPath_ );
-      std::cout << "texture video  ->" << videoBitstream.size() << " B" << std::endl;
-    }
-    if ( sps.getRawPatchEnabledFlag( atlasIndex ) && sps.getRawSeparateVideoPresentFlag( atlasIndex ) ) {
-      int   decodedBitdepthAttributeMP = ai.getAttributeNominal2dBitdepthMinus1( 0 ) + 1;
-      auto& videoBitstreamMP           = context.getVideoBitstream( VIDEO_TEXTURE_RAW );
-      videoDecoder.decompress( context.getVideoMPsTexture(), path.str(), context.size(), videoBitstreamMP,
+          /*context.getVideoTexture().convertBitdepth(
+              decodedBitdepthAttribute, ai.getAttributeNominal2dBitdepthMinus1(0) + 1, ai.getAttributeMSBAlignFlag());*/
+          std::cout << "texture video  ->" << videoBitstream.size() << " B" << std::endl;
+        }
+        if ( sps.getRawPatchEnabledFlag( atlasIndex ) && sps.getRawSeparateVideoPresentFlag( atlasIndex ) ) {
+          PCCVideoType textureIndex = (PCCVideoType)(VIDEO_TEXTURE_RAW + attrPartitionIndex );
+          auto& videoBitstreamMP = context.getVideoBitstream(textureIndex);
+          videoDecoder.decompress( context.getVideoMPsTexture(), path.str(), context.size(), videoBitstreamMP,
                                params_.videoDecoderPath_, context, decodedBitdepthAttributeMP,
                                params_.keepIntermediateFiles_, sps.getLosslessGeo(), false,
                                params_.inverseColorSpaceConversionConfig_, params_.colorSpaceConversionPath_ );
-      context.getVideoTexture().convertBitdepth(
+          context.getVideoTexture().convertBitdepth(
           decodedBitdepthAttributeMP, ai.getAttributeNominal2dBitdepthMinus1( 0 ) + 1, ai.getAttributeMSBAlignFlag() );      
-      generateMissedPointsTexturefromVideo( context, reconstructs );
-      std::cout << " missed points texture -> " << videoBitstreamMP.size() << " B" << endl;
+          generateMissedPointsTexturefromVideo( context, reconstructs );
+          std::cout << " missed points texture -> " << videoBitstreamMP.size() << " B" << endl;
+        }
+      }
     }
   }
   colorPointCloud( reconstructs, context, ai.getAttributeCount(), params_.colorTransform_,

@@ -109,7 +109,7 @@ void PCCCodec::generatePointCloud( PCCGroupOfFrames&                   reconstru
   TRACE_CODEC( "    pbfLog2Threshold_             = %d \n", params.pbfLog2Threshold_ );
   auto& frames            = context.getFrames();
   auto& videoGeometry     = context.getVideoGeometry();
-  auto& videoGeometryD1   = context.getVideoGeometryD1();
+  auto& videoGeometryMultiple   = context.getVideoGeometryMultiple();
   auto& videoOccupancyMap = context.getVideoOccupancyMap();
 #ifdef ENABLE_PAPI_PROFILING
   PAPI_PROFILING_INITIALIZE;
@@ -133,7 +133,7 @@ void PCCCodec::generatePointCloud( PCCGroupOfFrames&                   reconstru
     }
     std::vector<uint32_t> partition;
       printf( "  generatePointCloud  \n" ); fflush(stdout);
-    generatePointCloud( reconstructs[i], context, frames[i], videoGeometry, videoGeometryD1, videoOccupancyMap, params,
+    generatePointCloud( reconstructs[i], context, frames[i], videoGeometry, videoGeometryMultiple, videoOccupancyMap, params,
                         partition, bDecoder );
     printf( "  generatePointCloud done ( %lu points ) \n", reconstructs[i].getPointCount() ); fflush(stdout);
 #ifdef CODEC_TRACE
@@ -438,7 +438,7 @@ void PCCCodec::identifyBoundaryPoints( const std::vector<uint32_t>& occupancyMap
 std::vector<PCCPoint3D> PCCCodec::generatePoints( const GeneratePointCloudParameters& params,
                                                   PCCFrameContext&                    frame,
                                                   const PCCVideoGeometry&             video,
-                                                  const PCCVideoGeometry&             videoD1,
+                                                  const std::vector<PCCVideoGeometry>&             videoMultiple,
                                                   const size_t                        videoFrameIndex,
                                                   const size_t                        patchIndex,
                                                   const size_t                        u,
@@ -450,7 +450,7 @@ std::vector<PCCPoint3D> PCCCodec::generatePoints( const GeneratePointCloudParame
                                                   const size_t                        minD1,
                                                   const size_t                        neighbor ) {
   const auto&             patch  = frame.getPatch( patchIndex );
-  auto&                   frame0 = video.getFrame( videoFrameIndex );
+  auto&                   frame0 = 	params.multipleStreams_ ? videoMultiple[0].getFrame( videoFrameIndex ) : video.getFrame( videoFrameIndex );
   std::vector<PCCPoint3D> createdPoints;
   PCCPoint3D              point0;
   if ( params.pbfEnableFlag_ ) {
@@ -612,7 +612,7 @@ std::vector<PCCPoint3D> PCCCodec::generatePoints( const GeneratePointCloudParame
     if ( params.mapCountMinus1_ > 0 ) {
       PCCPoint3D  point1( point0 );
       const auto& frame1 =
-          params.multipleStreams_ ? videoD1.getFrame( videoFrameIndex ) : video.getFrame( 1 + videoFrameIndex );
+          params.multipleStreams_ ? videoMultiple[1].getFrame( videoFrameIndex ) : video.getFrame( 1 + videoFrameIndex );
       if ( params.absoluteD1_ )
         point1 = patch.generatePoint( u, v, frame1.getValue( 0, x, y ) );
       else {
@@ -632,7 +632,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
                                    PCCContext&                        context,
                                    PCCFrameContext&                   frame,
                                    const PCCVideoGeometry&            video,
-                                   const PCCVideoGeometry&            videoD1,
+                                   const std::vector<PCCVideoGeometry>&            videoMultiple,
                                    const PCCVideoOccupancyMap&        videoOM,
                                    const GeneratePointCloudParameters params,
                                    std::vector<uint32_t>&             partition,
@@ -709,15 +709,15 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
   TRACE_CODEC( " mapCount                       = %d \n", mapCount );
   if ( params.multipleStreams_ ) {
     videoFrameIndex = frame.getIndex();
-    if ( video.getFrameCount() < ( videoFrameIndex + 1 ) ) { return; }
+    if ( videoMultiple[0].getFrameCount() < ( videoFrameIndex + 1 ) ) { return; }
   } else {
     videoFrameIndex = frame.getIndex() * mapCount;
     if ( video.getFrameCount() < ( videoFrameIndex + mapCount ) ) { return; }
   }
   TRACE_CODEC( " videoFrameIndex(shift):frameIndex*mapCount  = %d \n", videoFrameIndex );
-  const auto&           frame0      = video.getFrame( videoFrameIndex );
-  const size_t          imageWidth  = video.getWidth();
-  const size_t          imageHeight = video.getHeight();
+  const auto&           frame0      = params.multipleStreams_ ? videoMultiple[0].getFrame( videoFrameIndex ) : video.getFrame( videoFrameIndex );
+  const size_t          imageWidth  = frame0.getWidth();
+  const size_t          imageHeight = frame0.getHeight();
   std::vector<uint32_t> BPflag;
   if ( !params.pbfEnableFlag_ ) { BPflag.resize( imageWidth * imageHeight, 0 ); }
 
@@ -775,10 +775,11 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
                 pointToPixel.push_back( PCCVector3<size_t>( x, y, 0 ) );
                 uint16_t    eddCode = 0;
                 size_t      d1pos   = 0;
-                const auto& frame0  = video.getFrame( videoFrameIndex );
+                const auto& frame0  =  params.multipleStreams_ ? videoMultiple[0].getFrame( videoFrameIndex )
+                                                               : video.getFrame( videoFrameIndex );
                 const auto& indx    = patch.patch2Canvas( u, v, imageWidth, imageHeight, x, y );
                 if ( params.mapCountMinus1_ > 0 ) {
-                  const auto& frame1 = params.multipleStreams_ ? videoD1.getFrame( videoFrameIndex )
+                  const auto& frame1 = params.multipleStreams_ ? videoMultiple[1].getFrame( videoFrameIndex )
                                                                : video.getFrame( videoFrameIndex + 1 );
                   int16_t diff = params.absoluteD1_
                                      ? ( (int16_t)frame1.getValue( 0, x, y ) - (int16_t)frame0.getValue( 0, x, y ) )
@@ -845,7 +846,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                      reconstruc
               } else {  // not params.enhancedDeltaDepthCode_
                 auto& mode = context.getPointLocalReconstructionMode( patch.getPointLocalReconstructionMode( u0, v0 ) );
                 auto  createdPoints =
-                    generatePoints( params, frame, video, videoD1, videoFrameIndex, patchIndex, u, v, x, y,
+                    generatePoints( params, frame, video, videoMultiple, videoFrameIndex, patchIndex, u, v, x, y,
                                     mode.interpolate_, mode.filling_, mode.minD1_, mode.neighbor_ );
                 if ( createdPoints.size() > 0 ) {
                   for ( size_t i = 0; i < createdPoints.size(); i++ ) {
@@ -1774,8 +1775,8 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
                                 const GeneratePointCloudParameters& params ) {
   TRACE_CODEC( "colorPointCloud start \n" );
   auto&        frame                   = context[frameIndex];
-  auto&        video                   = context.getVideoTexture();
-  auto&        videoT1                 = context.getVideoTextureT1();
+  auto&        video                   = multipleStreams ? context.getVideoTextureMultiple()[0] : context.getVideoTexture();
+  auto&        videoT1                 = context.getVideoTextureMultiple()[1];
   const size_t frameCount              = params.mapCountMinus1_ + 1;
   size_t       numberOfMpsAndEddColors = 0;
   size_t       numOfMPGeos             = 0;

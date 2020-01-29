@@ -310,7 +310,7 @@ void PCCEncoderParameters::print() {
     std::cout << "\t   globalPackingStrategyReset         " << geometryD1Config_ << std::endl;
     std::cout << "\t   globalPackingStrategyThreshold     " << geometryD1Config_ << std::endl;
   }
-  std::cout << "\t   patchPrecedencOrder                   " << patchPrecedenceOrderFlag_ << std::endl;
+  std::cout << "\t   patchPrecedenceOrder                   " << patchPrecedenceOrderFlag_ << std::endl;
   std::cout << "\t   lowDelayEncoding                       " << lowDelayEncoding_ << std::endl;
   std::cout << "\t   textureBGFill                          " << textureBGFill_ << std::endl;
   std::cout << "\t   geometryPadding                        " << geometryPadding_ << std::endl;
@@ -893,6 +893,11 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   context.setMPAttWidth( textureMPSeparateVideoWidth_ );
   context.setMPGeoHeight( 0 );
   context.setMPAttHeight( 0 );
+  //multiple streams allocation
+  if (multipleStreams_) {
+    context.getVideoGeometryMultiple().resize(mapCountMinus1_ + 1);
+    context.getVideoTextureMultiple().resize(mapCountMinus1_ + 1);
+  } 
   context.setGeometry3dCoordinatesBitdepth( geometry3dCoordinatesBitdepth_ );
   size_t numPlrm =
       pointLocalReconstruction_

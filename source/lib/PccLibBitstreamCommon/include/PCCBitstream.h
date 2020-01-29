@@ -75,12 +75,16 @@ class PCCBitstreamGofStat {
   }
 
   size_t getTotalGeometry() {
-    return videoBinSize_[VIDEO_GEOMETRY] + videoBinSize_[VIDEO_GEOMETRY_D0] + videoBinSize_[VIDEO_GEOMETRY_D1] +
-           videoBinSize_[VIDEO_GEOMETRY_RAW];
+		size_t retVal = 0;
+		for (int i = VIDEO_GEOMETRY; i <= VIDEO_GEOMETRY_RAW; i++)
+			retVal += videoBinSize_[i];
+		return retVal;
   }
   size_t getTotalTexture() {
-    return videoBinSize_[VIDEO_TEXTURE] + videoBinSize_[VIDEO_TEXTURE_T0] + videoBinSize_[VIDEO_TEXTURE_T1] +
-           videoBinSize_[VIDEO_TEXTURE_RAW];
+    size_t retVal = 0;
+		for (int i = VIDEO_TEXTURE; i < VIDEO_TEXTURE_RAW + MAX_NUM_ATTR_PARTITIONS; i++)
+			retVal += videoBinSize_[i];
+		return retVal;
   }
   size_t getTotalMetadata() { return getTotal() - getTotalGeometry() - getTotalTexture(); }
 

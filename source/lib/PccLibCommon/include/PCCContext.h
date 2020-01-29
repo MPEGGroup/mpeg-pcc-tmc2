@@ -72,9 +72,9 @@ class PCCContext : public PCCHighLevelSyntax {
   PCCFrameContext&              getFrame( int16_t index ) { return frames_[index]; }
   PCCFrameContext&              operator[]( int index ) { return frames_[index]; }
   PCCVideoGeometry&             getVideoGeometry() { return videoGeometry_; }
-  PCCVideoGeometry&             getVideoGeometryD1() { return videoGeometryD1_; }
+  std::vector<PCCVideoGeometry>& getVideoGeometryMultiple() { return videoGeometryMultiple_; }
   PCCVideoTexture&              getVideoTexture() { return videoTexture_; }
-  PCCVideoTexture&              getVideoTextureT1() { return videoTextureT1_; }
+  std::vector<PCCVideoTexture>&              getVideoTextureMultiple() { return videoTextureMultiple_; }
   PCCVideoOccupancyMap&         getVideoOccupancyMap() { return videoOccupancyMap_; }
   PCCVideoGeometry&             getVideoMPsGeometry() { return videoMPsGeometry_; }
   PCCVideoTexture&              getVideoMPsTexture() { return videoMPsTexture_; }
@@ -89,9 +89,9 @@ class PCCContext : public PCCHighLevelSyntax {
  private:
   std::vector<PCCFrameContext> frames_;
   PCCVideoGeometry             videoGeometry_;
-  PCCVideoGeometry             videoGeometryD1_;
+  std::vector<PCCVideoGeometry>              videoGeometryMultiple_;
   PCCVideoTexture              videoTexture_;
-  PCCVideoTexture              videoTextureT1_;
+  std::vector<PCCVideoTexture>               videoTextureMultiple_;
   PCCVideoOccupancyMap         videoOccupancyMap_;
   PCCVideoGeometry             videoMPsGeometry_;
   PCCVideoTexture              videoMPsTexture_;
