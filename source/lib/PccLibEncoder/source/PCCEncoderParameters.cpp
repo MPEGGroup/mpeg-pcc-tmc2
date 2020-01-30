@@ -741,7 +741,7 @@ void PCCEncoderParameters::constructAspsRefList( PCCContext& context, size_t asp
 }
 
 void PCCEncoderParameters::initializeContext( PCCContext& context ) {
-  auto& sps = context.getSps();
+  auto& sps = context.getVps();
   sps.allocateAltas();
   size_t atlasIndex = 0;
   auto&  ai         = sps.getAttributeInformation( atlasIndex );

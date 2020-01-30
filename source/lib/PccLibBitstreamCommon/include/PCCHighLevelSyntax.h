@@ -135,24 +135,34 @@ class PCCHighLevelSyntax {
   VpccUnitPayloadHeader& getVpccUnitHeaderAD() { return vpccUnitHeader_[size_t( VPCC_AD ) - 1]; }    // 0
   VpccUnitPayloadHeader& getVpccUnitHeader( int index ) { return vpccUnitHeader_[index]; }
 
-  VpccParameterSet&              getSps() { return vpccParameterSets_[0]; }
-  VpccParameterSet&              getSps( size_t index ) { return vpccParameterSets_[index]; }
-  std::vector<VpccParameterSet>& getSpsList() { return vpccParameterSets_; }
-
-  VpccParameterSet& addVpccParameterSet( uint8_t index ) {
+  VpccParameterSet&              getVps() { return getVps( activeVPS_ ); }
+  VpccParameterSet&              getVps( uint8_t vps_id ) {
+      for ( auto& value : vpccParameterSets_ ) {
+      if ( value.getVpccParameterSetId() == vps_id) { 
+        return value; 
+      }
+    }
+    printf( "ERROR: can't get vps with id %d \n", vps_id );
+    fflush( stdout );
+    assert( 0 );
+    exit( -1 );
+  }
+  std::vector<VpccParameterSet>& getVpsList() { return vpccParameterSets_; }
+  void                           setActiveVpsId(uint8_t val) { activeVPS_ = val; }
+  VpccParameterSet&              addVpccParameterSet( uint8_t index ) {
     VpccParameterSet sps;
     sps.setVpccParameterSetId( index );
     vpccParameterSets_.push_back( sps );
     return vpccParameterSets_.back();
   }
-
-  VpccParameterSet& addVpccParameterSet() {
+  VpccParameterSet&              addVpccParameterSet() {
     uint8_t          index = vpccParameterSets_.size();
     VpccParameterSet sps;
     sps.setVpccParameterSetId( index );
     vpccParameterSets_.push_back( sps );
     return vpccParameterSets_.back();
   }
+  
   AtlasSequenceParameterSetRbsp& getAtlasSequenceParameterSet( size_t setId ) {
     return atlasSequenceParameterSet_[setId];
   }
@@ -291,11 +301,14 @@ class PCCHighLevelSyntax {
   std::vector<PCCVideoBitstream>             videoBitstream_;
   VpccUnitPayloadHeader                      vpccUnitHeader_[5];
   std::vector<AtlasSequenceParameterSetRbsp> atlasSequenceParameterSet_;
+  uint8_t                                    activeASPS_;
   std::vector<AtlasFrameParameterSetRbsp>    atlasFrameParameterSet_;
+  uint8_t                                    activeAFPS_;
   std::vector<AtlasTileGroupLayerRbsp>       atlasTileGroupLayer_;
   std::vector<std::shared_ptr<SEI>>          seiPrefix_;
   std::vector<std::shared_ptr<SEI>>          seiSuffix_;
   std::vector<VpccParameterSet>              vpccParameterSets_;
+  uint8_t                                    activeVPS_;
   uint8_t                                    occupancyPrecision_;
   uint8_t                                    occupancyPackingBlockSize_;
   uint8_t                                    log2PatchQuantizerSizeX_;

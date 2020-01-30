@@ -85,7 +85,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
 #ifdef CODEC_TRACE
   setTrace( true );
   openTrace( stringFormat( "%s_GOF%u_codec_encode.txt", removeFileExtension( params_.compressedStreamPath_ ).c_str(),
-                           context.getSps().getVpccParameterSetId() ) );
+                           context.getVps().getVpccParameterSetId() ) );
 #endif
   reconstructs.resize( sources.size() );
   context.setGofSize( sources.size() );
@@ -112,7 +112,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   generateGeometryVideo( sources, context );
 
   params_.initializeContext( context );
-  auto&             sps = context.getSps();
+  auto&             sps = context.getVps();
   auto&             ai  = sps.getAttributeInformation( atlasIndex );
   std::stringstream path;
   path << removeFileExtension( params_.compressedStreamPath_ ) << "_GOF" << sps.getVpccParameterSetId() << "_";
@@ -184,7 +184,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
 
   // ENCODE GEOMETRY IMAGE
   if ( params_.use3dmc_ ) { create3DMotionEstimationFiles( sources, context, path.str() ); }
-  auto&  gi                      = context.getSps().getGeometryInformation( atlasIndex );
+  auto&  gi                      = context.getVps().getGeometryInformation( atlasIndex );
   size_t geometryVideoBitDepth   = gi.getGeometryNominal2dBitdepthMinus1() + 1;
   size_t geometryMPVideoBitDepth = gi.getGeometryNominal2dBitdepthMinus1() + 1;
   size_t nbyteGeo                = ( geometryVideoBitDepth <= 8 ) ? 1 : 2;
@@ -546,7 +546,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
 #ifdef CODEC_TRACE
   setTrace( true );
   openTrace( stringFormat( "%s_GOF%u_patch_encode.txt", removeFileExtension( params_.compressedStreamPath_ ).c_str(),
-                           context.getSps().getVpccParameterSetId() ) );
+                           context.getVps().getVpccParameterSetId() ) );
 #endif
   createPatchFrameDataStructure( context );  
 #ifdef CODEC_TRACE
@@ -3222,7 +3222,7 @@ bool comp1( const mypair& a, const mypair& b ) { return a.value < b.value; }
 
 void PCCEncoder::calculateWeightNormal( PCCContext& context, const PCCPointSet3& source, PCCFrameContext& frame ) {
   size_t atlasIndex         = 0;
-  auto&  gi                 = context.getSps().getGeometryInformation( atlasIndex );
+  auto&  gi                 = context.getVps().getGeometryInformation( atlasIndex );
   size_t geometryBitDepth3D = gi.getGeometry3dCoordinatesBitdepthMinus1() + 1;
   size_t maxValue           = 1 << geometryBitDepth3D;
 
@@ -3443,8 +3443,7 @@ bool PCCEncoder::generateGeometryVideo( const PCCPointSet3&                sourc
 
 void PCCEncoder::geometryGroupDilation( PCCContext& context ) {
   auto& videoGeometry     = context.getVideoGeometry();
-  auto& videoGeometryD0   = context.getVideoGeometryMultiple()[0];
-  auto& videoGeometryD1   = context.getVideoGeometryMultiple()[1];
+  auto& videoGeometryMultiple   = context.getVideoGeometryMultiple();
   auto  videoOccupancyMap = context.getVideoOccupancyMap();
   auto& frames            = context.getFrames();
   for ( size_t f = 0; f < frames.size(); ++f ) {
@@ -3452,8 +3451,8 @@ void PCCEncoder::geometryGroupDilation( PCCContext& context ) {
     auto& width        = frame.getWidth();
     auto& height       = frame.getHeight();
     auto& occupancyMap = videoOccupancyMap.getFrame( f );
-    auto& frame1       = params_.multipleStreams_ ? videoGeometryD0.getFrame( f ) : videoGeometry.getFrame( 2 * f );
-    auto& frame2       = params_.multipleStreams_ ? videoGeometryD1.getFrame( f ) : videoGeometry.getFrame( 2 * f + 1 );
+    auto& frame1       = params_.multipleStreams_ ? videoGeometryMultiple[0].getFrame( f ) : videoGeometry.getFrame( 2 * f );
+    auto& frame2       = params_.multipleStreams_ ? videoGeometryMultiple[1].getFrame( f ) : videoGeometry.getFrame( 2 * f + 1 );
     for ( size_t y = 0; y < height; y++ ) {
       for ( size_t x = 0; x < width; x++ ) {
         // const size_t pos = y * width + x;
@@ -4138,7 +4137,7 @@ void PCCEncoder::sortMissedPointsPatch( PCCFrameContext& frame, size_t index ) {
 }
 
 void PCCEncoder::generateMissedPointsGeometryVideo( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
-  auto&  sps              = context.getSps();
+  auto&  sps              = context.getVps();
   auto&  videoMPsGeometry = context.getVideoMPsGeometry();
   auto   gofSize          = context.size();
   size_t maxWidth         = 0;
@@ -7133,7 +7132,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
   TRACE_CODEC( "createPatchFrameDataStructure Frame %lu \n", frame.getIndex() );
   auto&        patches                   = frame.getPatches();
   auto&        pcmPatches                = frame.getMissedPointsPatches();
-  auto&        sps                       = context.getSps();
+  auto&        sps                       = context.getVps();
   auto&        atglu                     = context.getAtlasTileGroupLayer( frameIndex );
   auto&        atgh                      = atglu.getAtlasTileGroupHeader();
   auto&        atgdu                     = atglu.getAtlasTileGroupDataUnit();

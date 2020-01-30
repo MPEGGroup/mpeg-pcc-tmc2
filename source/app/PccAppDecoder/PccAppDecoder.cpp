@@ -306,7 +306,8 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
 #ifdef BITSTREAM_TRACE
     PCCBitstream bitstream;
     bitstream.setTrace( true );
-    bitstream.openTrace( removeFileExtension( decoderParams.compressedStreamPath_ ) + "_hls_decode.txt" );
+		bitstream.openTrace(stringFormat( "%s_GOF%u_hls_decode.txt", removeFileExtension( decoderParams.compressedStreamPath_ ).c_str(),
+                           index++ ));
     bitstreamReader.setTraceFile( bitstream.getTraceFile() );
 #endif
     if ( !bitstreamReader.decode( ssvu, context ) ) { return 0; }

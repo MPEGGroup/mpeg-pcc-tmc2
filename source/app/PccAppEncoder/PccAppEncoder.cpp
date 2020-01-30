@@ -966,6 +966,7 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
     PCCContext   context;
     context.setBitstreamStat( bitstreamStat );
     context.addVpccParameterSet( contextIndex );
+    context.setActiveVpsId(contextIndex);
 
     PCCGroupOfFrames sources, reconstructs;
     if ( !sources.load( encoderParams.uncompressedDataPath_, startFrameNumber, endFrameNumber,
@@ -982,7 +983,8 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
 #ifdef BITSTREAM_TRACE
     PCCBitstream bitstream;
     bitstream.setTrace( true );
-    bitstream.openTrace( removeFileExtension( encoderParams.compressedStreamPath_ ) + "_hls_encode.txt" );
+    bitstream.openTrace(stringFormat( "%s_GOF%u_hls_encode.txt", removeFileExtension( encoderParams.compressedStreamPath_ ).c_str(),
+                           context.getVps().getVpccParameterSetId() ));
     bitstreamWriter.setTraceFile( bitstream.getTraceFile() );
 #endif
     ret |= bitstreamWriter.encode( context, ssvu );

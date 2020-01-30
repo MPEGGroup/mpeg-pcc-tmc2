@@ -101,6 +101,7 @@ int32_t PCCBitstreamReader::decode( SampleStreamVpccUnit& ssvu, PCCHighLevelSynt
         endOfGop = true;
       } else {
         ssvu.popFront();  // remove element
+
       }
     } else {
       ssvu.popFront();  // remove element
@@ -124,7 +125,7 @@ void PCCBitstreamReader::videoSubStream( PCCHighLevelSyntax& syntax, PCCBitstrea
       syntax.getBitstreamStat().setVideoBinSize( VIDEO_GEOMETRY_RAW,
                                                   syntax.getVideoBitstream( VIDEO_GEOMETRY_RAW ).size() );
     } else {
-      auto& vps = syntax.getSps( vuh.getVpccParameterSetId() );
+      auto& vps = syntax.getVps();
       if ( vps.getMapCountMinus1( atlasIndex ) > 0 && vps.getMultipleMapStreamsPresentFlag( atlasIndex ) ) {
         PCCVideoType geometryIndex = (PCCVideoType)(VIDEO_GEOMETRY_D0 + vuh.getMapIndex());
         TRACE_BITSTREAM("Geometry MAP: %d\n", vuh.getMapIndex());
@@ -139,7 +140,7 @@ void PCCBitstreamReader::videoSubStream( PCCHighLevelSyntax& syntax, PCCBitstrea
     }
   } else if ( vpccUnitType == VPCC_AVD ) {
     auto& vuh = syntax.getVpccUnitHeader( (size_t)VPCC_AVD - 1 );
-    auto& vps = syntax.getSps( vuh.getVpccParameterSetId() );
+    auto& vps = syntax.getVps();
     if ( vps.getAttributeInformation( atlasIndex ).getAttributeCount() > 0 ) {
       if ( vuh.getRawVideoFlag() ) {
         PCCVideoType textureIndex = (PCCVideoType)(VIDEO_TEXTURE_RAW + vuh.getAttributeDimensionIndex());
@@ -193,6 +194,7 @@ void PCCBitstreamReader::vpccUnitHeader( PCCHighLevelSyntax& syntax, PCCBitstrea
   if ( vpccUnitType == VPCC_AVD || vpccUnitType == VPCC_GVD || vpccUnitType == VPCC_OVD || vpccUnitType == VPCC_AD ) {
     auto& vpcc = syntax.getVpccUnitHeader( (int)vpccUnitType - 1 );
     vpcc.setVpccParameterSetId( bitstream.read( 4 ) );  // u(4)
+    syntax.setActiveVpsId(vpcc.getVpccParameterSetId());
     vpcc.setAtlasId( bitstream.read( 6 ) );             // u(6)
   }
   if ( vpccUnitType == VPCC_AVD ) {
@@ -506,7 +508,7 @@ void PCCBitstreamReader::atlasFrameParameterSetRbsp( AtlasFrameParameterSetRbsp&
   TRACE_BITSTREAM( "%s \n", __func__ );
   afps.setAtlasFrameParameterSetId( bitstream.readUvlc() );     // ue(v)
   afps.setAtlasSequenceParameterSetId( bitstream.readUvlc() );  // ue(v)
-  atlasFrameTileInformation( afps.getAtlasFrameTileInformation(), syntax.getSps(), bitstream );  
+  atlasFrameTileInformation( afps.getAtlasFrameTileInformation(), syntax.getVps(), bitstream );  
   afps.setAfpsNumRefIdxDefaultActiveMinus1( bitstream.readUvlc() );  // ue(v)
   afps.setAfpsAdditionalLtAfocLsbLen( bitstream.readUvlc() );        // ue(v)
   afps.setAfps2dPosXBitCountMinus1( bitstream.read( 4 ) );
@@ -646,7 +648,7 @@ void PCCBitstreamReader::atlasTileGroupHeader( AtlasTileGroupHeader& atgh,
       atgh.setAtghPatchSizeXinfoQuantizer( bitstream.read( 3 ) );
       atgh.setAtghPatchSizeYinfoQuantizer( bitstream.read( 3 ) );
     }
-    auto& gi = syntax.getSps().getGeometryInformation( 0 );
+    auto& gi = syntax.getVps().getGeometryInformation( 0 );
     if ( afps.getAfpsRaw3dPosBitCountExplicitModeFlag() ) {
       size_t bitCount = getFixedLengthCodeBitsCount( gi.getGeometry3dCoordinatesBitdepthMinus1() + 1 );
       atgh.setAtghRaw3dPosAxisBitCountMinus1( bitstream.read( bitCount ) );
@@ -797,17 +799,17 @@ void PCCBitstreamReader::patchDataUnit( PatchDataUnit&        pdu,
   TRACE_BITSTREAM( " 3dPosXY: %zu,%zu\n", pdu.getPdu3dPosX(), pdu.getPdu3dPosY() );
 
   const uint8_t bitCountForMinDepth =
-      syntax.getSps().getGeometryInformation( 0 ).getGeometry3dCoordinatesBitdepthMinus1() -
+      syntax.getVps().getGeometryInformation( 0 ).getGeometry3dCoordinatesBitdepthMinus1() -
       atgh.getAtghPosMinZQuantizer() + ( pdu.getPduProjectionId() > 5 ? 2 : 1 );
   pdu.setPdu3dPosMinZ( bitstream.read( bitCountForMinDepth ) );  // u(v)  
   TRACE_BITSTREAM( " Pdu3dPosMinZ: %zu ( bitCountForMinDepth = %u = %u - %u + %u ) \n", 
       pdu.getPdu3dPosMinZ(), bitCountForMinDepth,
-      syntax.getSps().getGeometryInformation( 0 ).getGeometry3dCoordinatesBitdepthMinus1(), 
+      syntax.getVps().getGeometryInformation( 0 ).getGeometry3dCoordinatesBitdepthMinus1(), 
       atgh.getAtghPosMinZQuantizer(), pdu.getPduProjectionId() > 5 ? 2 : 1  );
 
   if ( asps.getNormalAxisMaxDeltaValueEnabledFlag() ) {
     uint8_t bitCountForMaxDepth =
-        syntax.getSps().getGeometryInformation( 0 ).getGeometry3dCoordinatesBitdepthMinus1() -
+        syntax.getVps().getGeometryInformation( 0 ).getGeometry3dCoordinatesBitdepthMinus1() -
         atgh.getAtghPosDeltaMaxZQuantizer() + ( pdu.getPduProjectionId() > 5 ? 2 : 1 );
     if ( asps.get45DegreeProjectionPatchPresentFlag() ) bitCountForMaxDepth++;
     pdu.setPdu3dPosDeltaMaxZ( bitstream.read( bitCountForMaxDepth ) );  // u(v)
@@ -986,7 +988,7 @@ void PCCBitstreamReader::rawPatchDataUnit( RawPatchDataUnit&     ppdu,
                                             AtlasTileGroupHeader& atgh,
                                             PCCHighLevelSyntax&           syntax,
                                             PCCBitstream&         bitstream ) {
-  auto& sps = syntax.getSps();
+  auto& sps = syntax.getVps();
   TRACE_BITSTREAM( "%s \n", __func__ );
   size_t                      afpsId     = atgh.getAtghAtlasFrameParameterSetId();
   AtlasFrameParameterSetRbsp& afps       = syntax.getAtlasFrameParameterSet( afpsId );

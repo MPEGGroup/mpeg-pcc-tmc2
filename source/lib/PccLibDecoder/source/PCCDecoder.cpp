@@ -59,7 +59,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
 #ifdef CODEC_TRACE
     setTrace( true );
     openTrace( stringFormat( "%s_GOF%u_patch_decode.txt", removeFileExtension( params_.compressedStreamPath_ ).c_str(),
-                             context.getSps().getVpccParameterSetId() ) );
+                             context.getVps().getVpccParameterSetId() ) );
 #endif
   createPatchFrameDataStructure( context );
 #ifdef CODEC_TRACE
@@ -68,7 +68,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
 
   PCCVideoDecoder   videoDecoder;
   std::stringstream path;
-  auto&             sps        = context.getSps();
+  auto&             sps        = context.getVps();
   int32_t           atlasIndex = 0;
   auto&             ai         = sps.getAttributeInformation( atlasIndex );
   auto&             oi         = sps.getOccupancyInformation( atlasIndex );
@@ -346,7 +346,7 @@ void PCCDecoder::setPointLocalReconstructionData( PCCFrameContext&              
 }
 
 void PCCDecoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& params, PCCContext& context ) {
-  auto&   sps                   = context.getSps();
+  auto&   sps                   = context.getVps();
   int32_t atlasIndex            = 0;
   auto&   ai                    = sps.getAttributeInformation( atlasIndex );
   auto&   oi                    = sps.getOccupancyInformation( atlasIndex );
@@ -429,7 +429,7 @@ void PCCDecoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& 
 
 void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
   TRACE_CODEC( "createPatchFrameDataStructure GOP start \n" );
-  auto&  sps        = context.getSps();
+  auto&  sps        = context.getVps();
   size_t atlasIndex = 0;
   auto&  asps       = context.getAtlasSequenceParameterSet( 0 );
   auto&  atglulist  = context.getAtlasTileGroupLayerList();
@@ -460,9 +460,9 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
                                                 PCCFrameContext& frame,
                                                 size_t           frameIndex ) {
   TRACE_CODEC( "createPatchFrameDataStructure Frame %lu \n", frame.getIndex() );
-  auto&  sps        = context.getSps();
+  auto&  sps        = context.getVps();
   size_t atlasIndex = 0;
-  auto&  gi         = context.getSps().getGeometryInformation( atlasIndex );
+  auto&  gi         = context.getVps().getGeometryInformation( atlasIndex );
 
   auto& asps  = context.getAtlasSequenceParameterSet( 0 );
   auto& afps  = context.getAtlasFrameParameterSet( 0 );

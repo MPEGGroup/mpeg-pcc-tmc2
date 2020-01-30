@@ -1918,7 +1918,7 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
 
 void PCCCodec::generateMissedPointsGeometryfromVideo( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   TRACE_CODEC( " generateMissedPointsGeometryfromVideo start \n" );
-  auto&        sps              = context.getSps();
+  auto&        sps              = context.getVps();
   const size_t gofSize          = context.size();
   auto&        videoMPsGeometry = context.getVideoMPsGeometry();
   videoMPsGeometry.resize( gofSize );
