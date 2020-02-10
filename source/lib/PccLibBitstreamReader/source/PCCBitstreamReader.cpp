@@ -1242,6 +1242,7 @@ void PCCBitstreamReader::seiPayload( PCCBitstream&  bitstream,
   //   }
   //   byteAlignment( bitstream );
   // }
+  if(!bitstream.byteAligned()) // this prevents from writing one more byte, in case the payload is already byte aligned (see xWriteByteAlign in HM)
   byteAlignment( bitstream );
 }
 
