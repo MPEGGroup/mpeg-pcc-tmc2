@@ -718,6 +718,29 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
         patch.getProjectionMode() = 1;
       }
 
+      if (params.enablePatchSplitting_) {
+        int16_t minU = (std::numeric_limits<int16_t>::max)();
+        int16_t minV = (std::numeric_limits<int16_t>::max)();
+        for (const auto i : connectedComponent) {
+          const PCCPoint3D &point = points[i];
+          minU = (std::min)(minU, int16_t(round(point[patch.getTangentAxis()])));
+          minV = (std::min)(minV, int16_t(round(point[patch.getBitangentAxis()])));
+        }
+        std::vector<size_t> tempCC;
+        tempCC.resize(0);
+        for (const auto i : connectedComponent) {
+          const PCCPoint3D &point = points[i];
+          const int16_t u = int16_t(round(point[patch.getTangentAxis()]));
+          const int16_t v = int16_t(round(point[patch.getBitangentAxis()]));
+          if (u - minU < params.maxPatchSize_ && v - minV < params.maxPatchSize_) {
+            tempCC.push_back(i);
+          }
+        }
+        connectedComponent = tempCC;
+        if (!connectedComponent.size())
+          continue;
+      }
+
       if ( absoluteD1 ) {
         // for additional projection plane
         if ( clusterIndex == 6 || clusterIndex == 7 ) { patch.getProjectionMode() = 0; }

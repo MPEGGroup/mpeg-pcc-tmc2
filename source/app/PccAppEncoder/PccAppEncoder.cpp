@@ -203,6 +203,16 @@ bool parseParameters( int                   argc,
        encoderParams.occupancyResolution_,
        "Resolution of packing block(a block contain only one patch)" )
 
+    ( "enablePatchSplitting",
+       encoderParams.enablePatchSplitting_,
+       encoderParams.enablePatchSplitting_,
+       "Enable patch splitting" )
+
+    ( "maxPatchSize",
+       encoderParams.maxPatchSize_,
+       encoderParams.maxPatchSize_,
+       "Maximum patch size for segmentation" )
+	   
     ( "log2QuantizerSizeX",
        encoderParams.log2QuantizerSizeX_,
        encoderParams.log2QuantizerSizeX_,

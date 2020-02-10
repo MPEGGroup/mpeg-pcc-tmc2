@@ -61,6 +61,8 @@ PCCEncoderParameters::PCCEncoderParameters() {
   voxelDimensionRefineSegmentation_        = 4;
   searchRadiusRefineSegmentation_          = 192;
   occupancyResolution_                     = 16;
+  enablePatchSplitting_                    = true;
+  maxPatchSize_                            = 1024;
   log2QuantizerSizeX_                      = 4;
   log2QuantizerSizeY_                      = 4;
   minPointCountPerCCPatchSegmentation_     = 16;
@@ -284,6 +286,8 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   voxelDimensionRefineSegmentation       " << voxelDimensionRefineSegmentation_ << std::endl;
   std::cout << "\t   searchRadiusRefineSegmentation         " << searchRadiusRefineSegmentation_ << std::endl;
   std::cout << "\t   occupancyResolution                    " << occupancyResolution_ << std::endl;
+  std::cout << "\t   enablePatchSplitting                   " << enablePatchSplitting_ << std::endl;
+  std::cout << "\t   maxPatchSize                           " << maxPatchSize_ << std::endl;
   std::cout << "\t   quantization step for patch size       "
             << "1<<" << log2QuantizerSizeX_ << ", 1<<" << log2QuantizerSizeY_ << std::endl;
   std::cout << "\t   minPointCountPerCCPatchSegmentation    " << minPointCountPerCCPatchSegmentation_ << std::endl;

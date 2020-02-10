@@ -51,6 +51,8 @@ struct PCCPatchSegmenter3Parameters {
   size_t           voxelDimensionRefineSegmentation_;
   size_t           searchRadiusRefineSegmentation_;
   size_t           occupancyResolution_;
+  bool             enablePatchSplitting_;
+  size_t           maxPatchSize_;
   size_t           quantizerSizeX_;
   size_t           quantizerSizeY_;
   size_t           minPointCountPerCCPatchSegmentation_;

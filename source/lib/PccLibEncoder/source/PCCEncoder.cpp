@@ -4384,6 +4384,8 @@ bool PCCEncoder::generateGeometryVideo( const PCCGroupOfFrames& sources, PCCCont
   params.voxelDimensionRefineSegmentation_     = params_.voxelDimensionRefineSegmentation_;
   params.searchRadiusRefineSegmentation_       = params_.searchRadiusRefineSegmentation_;
   params.occupancyResolution_                  = params_.occupancyResolution_;
+  params.enablePatchSplitting_                 = params_.enablePatchSplitting_;
+  params.maxPatchSize_                         = params_.maxPatchSize_;
   params.quantizerSizeX_                       = 1 << context.getLog2PatchQuantizerSizeX();
   params.quantizerSizeY_                       = 1 << context.getLog2PatchQuantizerSizeY();
   params.minPointCountPerCCPatchSegmentation_  = params_.minPointCountPerCCPatchSegmentation_;
