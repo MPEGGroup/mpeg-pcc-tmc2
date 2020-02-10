@@ -806,6 +806,7 @@ class PCCPatch {
   void allocOneLayerData() {
     pointLocalReconstructionLevel_       = 0;
     pointLocalReconstructionModeByPatch_ = 0;
+    //printf( "sizeU0_ =%d,  sizeV0_ = %d\n", sizeU0_ , sizeV0_ );
     pointLocalReconstructionModeByBlock_.resize( sizeU0_ * sizeV0_, 0 );
     std::fill( pointLocalReconstructionModeByBlock_.begin(), pointLocalReconstructionModeByBlock_.end(), 0 );
   }
@@ -1072,8 +1073,8 @@ class PCCPatch {
     }
     std::vector<uint8_t> newOccupancyMap;
     newOccupancyMap.resize( size, 0 );
-    for ( size_t iter = 0; iter < passesCount; iter++ ) {
-      uint8_t* src = iter % 2 == 0 ? occupancyMap_.data() : newOccupancyMap.data();
+    for ( size_t iter = 0; iter < passesCount; iter++ ) {  // HN : OMap precision =4, passescount = 2
+      uint8_t* src = iter % 2 == 0 ? occupancyMap_.data() : newOccupancyMap.data(); // iter=0, occupancyMap_.data(), iter=1, newOccupancyMap.data()
       uint8_t* dst = iter % 2 == 1 ? occupancyMap_.data() : newOccupancyMap.data();
       for ( int32_t v = 0, c = border_ * depthMapWidth_ + border_; v < sizeY; v++, c += 2 * border_ ) {
         for ( int32_t u = 0; u < sizeX; u++, c++ ) {
@@ -1118,6 +1119,20 @@ class PCCPatch {
       }
     }
     if ( passesCount % 2 == 1 ) { memcpy( occupancyMap_.data(), newOccupancyMap.data(), size * sizeof( uint8_t ) ); }
+ //   int8_t diffMap;
+ //   uint32_t countM1 = 0;
+ //   uint32_t count0 = 0;
+ //   uint32_t countP1 = 0;
+ //   uint32_t sumOMap = 0;
+ //   uint32_t sumNewOMap = 0;
+	//for ( size_t k = 0; k < size; k++ ) { 
+	//	diffMap = occupancyMap_[k] - newOccupancyMap[k];
+ //         if ( diffMap == -1 ) countM1++;
+ //         if ( diffMap == 0 ) count0++;
+ //         if ( diffMap == 1 ) countP1++;
+ //         sumOMap += occupancyMap_[k];
+ //         sumNewOMap += newOccupancyMap[k];
+	//}
   }
 
  private:

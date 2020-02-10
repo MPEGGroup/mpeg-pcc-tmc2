@@ -86,6 +86,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   auto&        videoBitstreamOM   = context.getVideoBitstream( VIDEO_OCCUPANCY );
   int          decodedBitDepthOM  = 8;
   reconstructs.resize( context.size() );
+
   videoDecoder.decompress( context.getVideoOccupancyMap(), path.str(), context.size(), videoBitstreamOM,
                            params_.videoDecoderOccupancyMapPath_, context, decodedBitDepthOM,
                            params_.keepIntermediateFiles_, ( sps.getLosslessGeo() ? sps.getLosslessGeo444() : false ),
@@ -95,7 +96,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   context.getVideoOccupancyMap().convertBitdepth( decodedBitDepthOM, oi.getOccupancyNominal2DBitdepthMinus1() + 1,
                                                   oi.getOccupancyMSBAlignFlag() );
   context.setOccupancyPrecision( sps.getFrameWidth( atlasIndex ) / context.getVideoOccupancyMap().getWidth() );
-  
+
   bool seiSmootingIsPresent = context.seiIsPresent( NAL_PREFIX_SEI, SMOOTHING_PARAMETERS );  
   bool pbfEnableFlag = false; 
   if( seiSmootingIsPresent ) {
@@ -250,7 +251,8 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
     }
   }
   //    This function does the color smoothing that is usually done in colorPointCloud
-  if ( gpcParams.flagColorSmoothing_ ) { colorSmoothing( reconstructs, context, params_.colorTransform_, gpcParams ); }
+  if ( gpcParams.flagColorSmoothing_ ) { colorSmoothing( reconstructs, context, params_.colorTransform_, gpcParams );
+  }
  
   auto& frames = context.getFrames();
   if ( sps.getLosslessGeo() != 1 ) {  // lossy: convert 16-bit yuv444 to 8-bit RGB444
@@ -361,6 +363,7 @@ void PCCDecoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& 
   params.pbfPassesCount_        = 0;
   params.pbfFilterSize_         = 0;
   params.pbfLog2Threshold_      = 0;
+  printf( "params.pbfLog2Threshold_      = 0; \n " );
   if ( seiSmootingIsPresent ) {
     SEISmoothingParameters& sei =
         static_cast<SEISmoothingParameters&>( context.getSei( NAL_PREFIX_SEI, SMOOTHING_PARAMETERS ) );
@@ -442,6 +445,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
   context.setMPAttWidth( 0 );
   context.setMPGeoHeight( 0 );
   context.setMPAttHeight( 0 );
+
   for ( int i = 0; i < context.size(); i++ ) {
     auto& frame = context.getFrame( i );
     if(i>0) { frame.setRefAFOCList( context ); }
@@ -546,7 +550,6 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
       patch.getProjectionMode()        = pduProjectionPlane < 3 ? 0 : 1;
       patch.getPatchOrientation()      = pdu.getPduOrientationIndex();
       patch.getAxisOfAdditionalPlane() = pdu45degreeProjectionRotationAxis; 
-
       TRACE_CODEC( "patch %lu / %lu: Intra \n", patchIndex, patchCount );
       const size_t max3DCoordinate = 1 << ( gi.getGeometry3dCoordinatesBitdepthMinus1() + 1 );
       if ( patch.getProjectionMode() == 0 ) {
@@ -580,7 +583,6 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
           patch.getPatchOrientation(), patch.getNormalAxis(), patch.getTangentAxis(), patch.getBitangentAxis(),
           (size_t)lodEnableFlag, patch.getLodScaleX(), patch.getLodScaleY(), asps.get45DegreeProjectionPatchPresentFlag(),
           pdu.getPduProjectionId(), patch.getAxisOfAdditionalPlane() );
-      
       patch.allocOneLayerData();
       if ( asps.getPointLocalReconstructionEnabledFlag() ) {
         setPointLocalReconstructionData( frame, patch, pdu.getPointLocalReconstructionData(),

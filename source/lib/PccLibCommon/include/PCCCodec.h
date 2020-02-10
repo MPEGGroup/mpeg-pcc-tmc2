@@ -279,16 +279,15 @@ class PCCCodec {
     return s;
   }
 
+
   inline double median( std::vector<uint16_t>& Data, int N ) {
-    float med    = 0;
-    int   a      = 0;
-    int   b      = 0;
-    float newMed = 0;
-    if ( N % 2 == 0 ) a = N / 2;
-    b      = ( N / 2 ) - 1;
-    med    = int( Data.at( a ) ) + Data.at( b );
-    newMed = ( med / 2 );
-    return double( newMed );
+
+	std::sort( Data.begin(), Data.end() ); 
+   
+    if ( N % 2 == 0 )
+      return ( double( Data[N / 2] ) + double( Data[N / 2 - 1] ) ) / 2.0;
+    else
+      return double( Data[N / 2] );
   }
 
   inline double mean( std::vector<uint16_t>& Data, int N ) {

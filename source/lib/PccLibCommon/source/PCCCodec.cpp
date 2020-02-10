@@ -1526,8 +1526,9 @@ bool PCCCodec::gridFilteringColor( PCCPoint3D&                        curPos,
       double meanY   = mean( colorSmoothingLum_[idx[0][0][0]], int( colorGridCount[idx[0][0][0]] ) );
       double medianY = median( colorSmoothingLum_[idx[0][0][0]], int( colorGridCount[idx[0][0][0]] ) );
       if ( abs( meanY - medianY ) > mmThresh ) {
-        colorCentroid3[0][0][0] = curPosColor;
-        cnt0                    = 1;
+        colorCentroid           = curPosColor;
+        colorCount                = 1;
+        return otherClusterPointCount; 
       }
     }
   } else {
@@ -1535,11 +1536,11 @@ bool PCCCodec::gridFilteringColor( PCCPoint3D&                        curPos,
     cnt0                    = 1;
   }
 
-  double Y0 = colorCentroid3[0][0][0][0] / double( cnt0 );
+  double Y0 = colorCentroid3[0][0][0][0];
 
   if ( colorGridCount[idx[0][0][1]] > 0 ) {
     colorCentroid3[0][0][1] = colorCenter[idx[0][0][1]] / double( colorGridCount[idx[0][0][1]] );
-    double Y1 = colorCentroid3[0][0][1][0] / double( colorGridCount[idx[0][0][1]] );
+    double Y1 = colorCentroid3[0][0][1][0];
     if ( abs( Y0 - Y1 ) > yThresh ) { colorCentroid3[0][0][1] = curPosColor; }
     if ( colorGridCount[idx[0][0][1]] > 1 ) {
       double meanY   = mean( colorSmoothingLum_[idx[0][0][1]], int( colorGridCount[idx[0][0][1]] ) );
@@ -1552,7 +1553,7 @@ bool PCCCodec::gridFilteringColor( PCCPoint3D&                        curPos,
 
   if ( colorGridCount[idx[0][1][0]] > 0 ) {
     colorCentroid3[0][1][0] = colorCenter[idx[0][1][0]] / double( colorGridCount[idx[0][1][0]] );
-   double Y2 = colorCentroid3[0][1][0][0] / double( colorGridCount[idx[0][1][0]] );
+   double Y2 = colorCentroid3[0][1][0][0];
 
     if ( abs( Y0 - Y2 ) > yThresh ) { colorCentroid3[0][1][0] = curPosColor; }
     if ( colorGridCount[idx[0][1][0]] > 1 ) {
@@ -1566,7 +1567,7 @@ bool PCCCodec::gridFilteringColor( PCCPoint3D&                        curPos,
 
   if ( colorGridCount[idx[0][1][1]] > 0 ) {
     colorCentroid3[0][1][1] = colorCenter[idx[0][1][1]] / double( colorGridCount[idx[0][1][1]] );
-    double Y3 = colorCentroid3[0][1][1][0] / double( colorGridCount[idx[0][1][1]] );
+    double Y3 = colorCentroid3[0][1][1][0];
 
     if ( abs( Y0 - Y3 ) > yThresh ) { colorCentroid3[0][1][1] = curPosColor; }
     if ( colorGridCount[idx[0][1][1]] > 1 ) {
@@ -1580,7 +1581,7 @@ bool PCCCodec::gridFilteringColor( PCCPoint3D&                        curPos,
 
   if ( colorGridCount[idx[1][0][0]] > 0 ) {
     colorCentroid3[1][0][0] = colorCenter[idx[1][0][0]] / double( colorGridCount[idx[1][0][0]] );
-    double Y4 = colorCentroid3[1][0][0][0] / double( colorGridCount[idx[1][0][0]] );
+    double Y4 = colorCentroid3[1][0][0][0];
 
     if ( abs( Y0 - Y4 ) > yThresh ) { colorCentroid3[1][0][0] = curPosColor; }
     if ( colorGridCount[idx[1][0][0]] > 1 ) {
@@ -1594,7 +1595,7 @@ bool PCCCodec::gridFilteringColor( PCCPoint3D&                        curPos,
 
   if ( colorGridCount[idx[1][0][1]] > 0 ) {
     colorCentroid3[1][0][1] = colorCenter[idx[1][0][1]] / double( colorGridCount[idx[1][0][1]] );
-    double Y5 = colorCentroid3[1][0][1][0] / double( colorGridCount[idx[1][0][1]] );
+    double Y5 = colorCentroid3[1][0][1][0];
 
     if ( abs( Y0 - Y5 ) > yThresh ) { colorCentroid3[1][0][1] = curPosColor; }
     if ( colorGridCount[idx[1][0][1]] > 1 ) {
@@ -1608,7 +1609,7 @@ bool PCCCodec::gridFilteringColor( PCCPoint3D&                        curPos,
 
   if ( colorGridCount[idx[1][1][0]] > 0 ) {
     colorCentroid3[1][1][0] = colorCenter[idx[1][1][0]] / double( colorGridCount[idx[1][1][0]] );
-    double Y6 = colorCentroid3[1][1][0][0] / double( colorGridCount[idx[1][1][0]] );
+    double Y6 = colorCentroid3[1][1][0][0];
 
     if ( abs( Y0 - Y6 ) > yThresh ) { colorCentroid3[1][1][0] = curPosColor; }
     if ( colorGridCount[idx[1][1][0]] > 1 ) {
@@ -1622,7 +1623,7 @@ bool PCCCodec::gridFilteringColor( PCCPoint3D&                        curPos,
 
   if ( colorGridCount[idx[1][1][1]] > 0 ) {
     colorCentroid3[1][1][1] = colorCenter[idx[1][1][1]] / double( colorGridCount[idx[1][1][1]] );
-    double Y7 = colorCentroid3[1][1][1][0] / double( colorGridCount[idx[1][1][1]] );
+    double Y7 = colorCentroid3[1][1][1][0];
 
     if ( abs( Y0 - Y7 ) > yThresh ) { colorCentroid3[1][1][1] = curPosColor; }
     if ( colorGridCount[idx[1][1][1]] > 1 ) {
@@ -1655,7 +1656,7 @@ bool PCCCodec::gridFilteringColor( PCCPoint3D&                        curPos,
 
 void PCCCodec::smoothPointCloudColorLC( PCCPointSet3& reconstruct, const GeneratePointCloudParameters params ) {
   const size_t pointCount = reconstruct.getPointCount();
-  const int    gridSize   = params.cgridSize_;
+  const int    gridSize = params.occupancyPrecision_;
   const int    disth      = ( std::max )( gridSize / 2, 1 );
   for ( int i = 0; i < pointCount; i++ ) {
     PCCPoint3D curPos    = reconstruct[i];
