@@ -1077,6 +1077,337 @@ bool PCCPointSet3::transferColors( PCCPointSet3& target,
   return true;
 }
 
+bool PCCPointSet3::transferColors16bitBP( PCCPointSet3& target,
+                                        const int32_t searchRange,
+                                        const bool    losslessTexture,
+                                        const int     numNeighborsColorTransferFwd,
+                                        const int     numNeighborsColorTransferBwd,
+                                        const bool    useDistWeightedAverageFwd,
+                                        const bool    useDistWeightedAverageBwd,
+                                        const bool    skipAvgIfIdenticalSourcePointPresentFwd,
+                                        const bool    skipAvgIfIdenticalSourcePointPresentBwd,
+                                        const double  distOffsetFwd,
+                                        const double  distOffsetBwd,
+                                        double        maxGeometryDist2Fwd,
+                                        double        maxGeometryDist2Bwd,
+                                        double        maxColorDist2Fwd,
+                                        double        maxColorDist2Bwd,
+                                        const bool    excludeColorOutlier,
+                                        const double  thresholdColorOutlierDist ) const {
+  const auto&  source           = *this;
+  const size_t pointCountSource = source.getPointCount();
+  const size_t pointCountTarget = target.getPointCount();
+  if ( !pointCountSource || !pointCountTarget || !source.hasColors() ) { return false; }
+  PCCKdTree kdtreeTarget( target ), kdtreeSource( source );
+  target.addColors16bit();
+  std::vector<PCCColor16bit> refinedColors1;
+  refinedColors1.resize( pointCountTarget );
+  maxGeometryDist2Fwd = ( maxGeometryDist2Fwd < 512 ) ? maxGeometryDist2Fwd : std::numeric_limits<double>::max();
+  maxGeometryDist2Bwd = ( maxGeometryDist2Bwd < 512 ) ? maxGeometryDist2Bwd : std::numeric_limits<double>::max();
+  maxColorDist2Fwd    = ( maxColorDist2Fwd < 131072 ) ? maxColorDist2Fwd : std::numeric_limits<double>::max();
+  maxColorDist2Bwd    = ( maxColorDist2Bwd < 131072 ) ? maxColorDist2Bwd : std::numeric_limits<double>::max();
+
+  // ==========================================================================================
+  //                                     Forward direction
+  // ==========================================================================================
+  // for each target point indexed by index, derive the refined color as refinedColors1[index]
+  PCCNNResult result;
+  for ( size_t index = 0; index < pointCountTarget; ++index ) {
+    PCCColor16bit colorT16bit = target.getColor16bit( index );
+    for ( int k = 0; k < 3; ++k ) { refinedColors1[index][k] = colorT16bit[k]; }
+    if ( target.getBoundaryPointType( index ) == 3 ) {
+      kdtreeSource.search( target[index], numNeighborsColorTransferFwd, result );
+      // keep the points that satisfy geometry dist threshold
+      while ( 1 ) {
+        if ( result.count() == 1 ) { break; }
+        if ( result.dist( int( result.count() ) - 1 ) <= maxGeometryDist2Fwd ) {
+          break;
+        } else {
+          result.pop_dist();
+          result.pop_indices();
+          result.dec_count();
+        }
+      }
+      bool isDone = false;
+      if ( skipAvgIfIdenticalSourcePointPresentFwd ) {
+        if ( result.dist( 0 ) < 0.0001 ) {
+          refinedColors1[index] = source.getColor16bit( result.indices( 0 ) );
+          isDone                = true;
+        }
+      }
+      if ( !isDone ) {
+        int nNN = (int)result.count();
+        while ( nNN > 0 && !isDone ) {
+          if ( nNN == 1 ) {
+            refinedColors1[index] = source.getColor16bit( result.indices( 0 ) );
+            isDone                = true;
+          }
+          if ( !isDone ) {
+            std::vector<PCCVector3D> colors;
+            colors.resize( 0 );
+            colors.resize( nNN );
+            for ( int i = 0; i < nNN; ++i ) {
+              for ( int k = 0; k < 3; ++k ) { colors[i][k] = double( source.getColor16bit( result.indices( i ) )[k] ); }
+            }
+            double maxColorDist2 = std::numeric_limits<double>::min();
+            for ( int i = 0; i < nNN; ++i ) {
+              for ( int j = i + 1; j < nNN; ++j ) {
+                const double dist2 = ( colors[i] - colors[j] ).getNorm2();
+                if ( dist2 > maxColorDist2 ) { maxColorDist2 = dist2; }
+              }
+            }
+            if ( maxColorDist2 <= maxColorDist2Fwd ) {
+              PCCVector3D refinedColor( 0.0 );
+              if ( useDistWeightedAverageFwd ) {
+                double sumWeights{0.0};
+                for ( int i = 0; i < nNN; ++i ) {
+                  const double weight = 1 / ( result.dist( i ) + distOffsetFwd );
+                  for ( int k = 0; k < 3; ++k ) {
+                    refinedColor[k] += source.getColor16bit( result.indices( i ) )[k] * weight;
+                  }
+                  sumWeights += weight;
+                }
+                refinedColor /= sumWeights;
+                if ( excludeColorOutlier ) {
+                  PCCVector3D excludeOutlierRefinedColor( 0.0 );
+                  size_t      excludeCount = 0;
+                  sumWeights               = 0.0;
+                  for ( int i = 0; i < nNN; ++i ) {
+                    double        dist     = 0.0;
+                    PCCColor16bit tmpColor = source.getColor16bit( result.indices( i ) );
+                    PCCVector3D   sourceColor( tmpColor[0], tmpColor[1], tmpColor[2] );
+                    dist = ( sourceColor - refinedColor ).getNorm2();
+                    if ( dist > thresholdColorOutlierDist * thresholdColorOutlierDist * 256.0 * 256.0 ) {
+                      excludeCount += 1;
+                      continue;
+                    }
+                    const double weight = 1 / ( result.dist( i ) + distOffsetFwd );
+                    for ( int k = 0; k < 3; ++k ) {
+                      excludeOutlierRefinedColor[k] += source.getColor16bit( result.indices( i ) )[k] * weight;
+                    }
+                    sumWeights += weight;
+                  }
+
+                  if ( excludeCount != nNN && excludeCount != 0 ) {
+                    refinedColor = excludeOutlierRefinedColor / sumWeights;
+                  }
+                }
+              } else {
+                for ( int i = 0; i < nNN; ++i ) {
+                  for ( int k = 0; k < 3; ++k ) { refinedColor[k] += source.getColor16bit( result.indices( i ) )[k]; }
+                }
+                refinedColor /= nNN;
+              }
+              for ( int k = 0; k < 3; ++k ) {
+                refinedColors1[index][k] = uint16_t( PCCClip( round( refinedColor[k] ), 0.0, 65535.0 ) );
+              }
+              isDone = true;
+            } else {
+              --nNN;
+            }
+          }
+        }
+      }
+    }
+  }
+  // ==========================================================================================
+  //                                  Backward direction
+  // ==========================================================================================
+  // for each target point, derive a vector of source candidate points as colorsDists2.
+  // colorsDists2 is iteratively refined (by removing the farthest points) until the
+  // std of remaining colors in it is smaller than a threshold.
+  struct DistColor {
+    double        dist;
+    PCCColor16bit color;
+  };
+  std::vector<std::vector<DistColor>> refinedColorsDists2;
+  refinedColorsDists2.resize( pointCountTarget );
+  // populate refinedColorsDists2
+  for ( size_t index = 0; index < pointCountSource; ++index ) {
+    const PCCColor16bit color = source.getColor16bit( index );
+    kdtreeTarget.search( source[index], numNeighborsColorTransferBwd, result );
+    // keep the points that satisfy geometry dist threshold
+    for ( int i = 0; i < result.count(); ++i ) {
+      if ( result.dist( i ) <= maxGeometryDist2Bwd ) {
+        refinedColorsDists2[result.indices( i )].push_back( DistColor{result.dist( i ), color} );
+      }
+    }
+  }
+  // sort refinedColorsDists2 according to distance
+  for ( size_t index = 0; index < pointCountTarget; ++index ) {
+    std::sort( refinedColorsDists2[index].begin(), refinedColorsDists2[index].end(),
+               []( DistColor& dc1, DistColor& dc2 ) { return dc1.dist < dc2.dist; } );
+  }
+  // compute centroid2
+  for ( size_t index = 0; index < pointCountTarget; ++index ) {
+    const PCCColor16bit color1 = refinedColors1[index];       // refined color derived in forward direction
+    auto& colorsDists2         = refinedColorsDists2[index];  // set of candidate points derived in backward direction
+    if ( colorsDists2.empty() || losslessTexture ) {
+      target.setColor16bit( index, color1 );
+    } else {
+      bool              isDone = false;
+      const PCCVector3D centroid1( color1[0], color1[1], color1[2] );
+      PCCVector3D       centroid2( 0.0 );
+      if ( skipAvgIfIdenticalSourcePointPresentBwd ) {
+        if ( colorsDists2[0].dist < 0.0001 ) {
+          auto temp = colorsDists2[0];
+          colorsDists2.clear();
+          colorsDists2.push_back( temp );
+          for ( int k = 0; k < 3; ++k ) { centroid2[k] = colorsDists2[0].color[k]; }
+          isDone = true;
+        }
+      }
+      if ( !isDone ) {
+        int nNN = (int)colorsDists2.size();
+        while ( nNN > 0 && !isDone ) {
+          nNN = (int)colorsDists2.size();
+          if ( nNN == 1 ) {
+            auto temp = colorsDists2[0];
+            colorsDists2.clear();
+            colorsDists2.push_back( temp );
+            for ( int k = 0; k < 3; ++k ) { centroid2[k] = colorsDists2[0].color[k]; }
+            isDone = true;
+          }
+          if ( !isDone ) {
+            std::vector<PCCVector3D> colors;
+            colors.resize( 0 );
+            colors.resize( nNN );
+            for ( int i = 0; i < nNN; ++i ) {
+              for ( int k = 0; k < 3; ++k ) { colors[i][k] = double( colorsDists2[i].color[k] ); }
+            }
+            double maxColorDist2 = std::numeric_limits<double>::min();
+            for ( int i = 0; i < nNN; ++i ) {
+              for ( int j = i + 1; j < nNN; ++j ) {
+                const double dist2 = ( colors[i] - colors[j] ).getNorm2();
+                if ( dist2 > maxColorDist2 ) { maxColorDist2 = dist2; }
+              }
+            }
+            if ( maxColorDist2 <= maxColorDist2Bwd ) {
+              for ( size_t k = 0; k < 3; ++k ) { centroid2[k] = 0; }
+              if ( useDistWeightedAverageBwd ) {
+                double sumWeights{0.0};
+                for ( int i = 0; i < colorsDists2.size(); ++i ) {
+                  const double weight = 1 / ( sqrt( colorsDists2[i].dist ) + distOffsetBwd );
+                  for ( size_t k = 0; k < 3; ++k ) { centroid2[k] += ( colorsDists2[i].color[k] * weight ); }
+                  sumWeights += weight;
+                }
+                centroid2 /= sumWeights;
+                if ( excludeColorOutlier ) {
+                  PCCVector3D excludeOutlierCentroid2( 0.0 );
+                  size_t      excludeCount = 0;
+                  sumWeights               = 0.0;
+                  for ( int i = 0; i < colorsDists2.size(); ++i ) {
+                    double      dist = 0.0;
+                    PCCVector3D sourceColor( colorsDists2[i].color[0], colorsDists2[i].color[1],
+                                             colorsDists2[i].color[2] );
+                    dist = ( sourceColor - centroid2 ).getNorm2();
+                    if ( dist > thresholdColorOutlierDist * thresholdColorOutlierDist * 256.0 * 256.0 ) {
+                      excludeCount += 1;
+                      continue;
+                    }
+                    const double weight = 1 / ( sqrt( colorsDists2[i].dist ) + distOffsetBwd );
+                    for ( size_t k = 0; k < 3; ++k ) {
+                      excludeOutlierCentroid2[k] += ( colorsDists2[i].color[k] * weight );
+                    }
+                    sumWeights += weight;
+                  }
+
+                  if ( excludeCount != nNN && excludeCount != 0 ) { centroid2 = excludeOutlierCentroid2 / sumWeights; }
+                }
+              } else {
+                for ( auto& coldist : colorsDists2 ) {
+                  for ( int k = 0; k < 3; ++k ) { centroid2[k] += coldist.color[k]; }
+                }
+                centroid2 /= colorsDists2.size();
+              }
+              isDone = true;
+            } else {
+              colorsDists2.pop_back();
+            }
+          }
+        }
+      }
+      double H  = double( colorsDists2.size() );
+      double D2 = 0.0;
+      for ( const auto color2dist : colorsDists2 ) {
+        auto color2 = color2dist.color;
+        for ( size_t k = 0; k < 3; ++k ) {
+          const double d2 = centroid2[k] - color2[k];
+          D2 += d2 * d2;
+        }
+      }
+      const double r      = double( pointCountTarget ) / double( pointCountSource );
+      const double delta2 = ( centroid2 - centroid1 ).getNorm2();
+      const double eps    = 0.000001;
+
+      const bool fixWeight = 1;           // m42538
+      if ( fixWeight || delta2 > eps ) {  // centroid2 != centroid1
+        double w = 0.0;
+
+        if ( !fixWeight ) {
+          const double alpha = D2 / delta2;
+          const double a     = H * r - 1.0;
+          const double c     = alpha * r - 1.0;
+          if ( fabs( a ) < eps ) {
+            w = -0.5 * c;
+          } else {
+            const double delta = 1.0 - a * c;
+            if ( delta >= 0.0 ) { w = ( -1.0 + sqrt( delta ) ) / a; }
+          }
+        }
+        const double oneMinusW = 1.0 - w;
+        PCCVector3D  color0;
+        for ( size_t k = 0; k < 3; ++k ) {
+          color0[k] = PCCClip( round( w * centroid1[k] + oneMinusW * centroid2[k] ), 0.0, 65535.0 );
+        }
+        const double rSource  = 1.0 / double( pointCountSource );
+        const double rTarget  = 1.0 / double( pointCountTarget );
+        const double maxValue = std::numeric_limits<uint16_t>::max();
+        double       minError = std::numeric_limits<double>::max();
+        PCCVector3D  bestColor( color0 );
+        PCCVector3D  color;
+        for ( int32_t s1 = -searchRange; s1 <= searchRange; ++s1 ) {
+          color[0] = PCCClip( color0[0] + s1, 0.0, maxValue );
+          for ( int32_t s2 = -searchRange; s2 <= searchRange; ++s2 ) {
+            color[1] = PCCClip( color0[1] + s2, 0.0, maxValue );
+            for ( int32_t s3 = -searchRange; s3 <= searchRange; ++s3 ) {
+              color[2] = PCCClip( color0[2] + s3, 0.0, maxValue );
+
+              double e1 = 0.0;
+              for ( size_t k = 0; k < 3; ++k ) {
+                const double d = color[k] - color1[k];
+                e1 += d * d;
+              }
+              e1 *= rTarget;
+
+              double e2 = 0.0;
+              for ( const auto color2dist : colorsDists2 ) {
+                auto color2 = color2dist.color;
+                for ( size_t k = 0; k < 3; ++k ) {
+                  const double d = color[k] - color2[k];
+                  e2 += d * d;
+                }
+              }
+              e2 *= rSource;
+
+              const double error = std::max( e1, e2 );
+              if ( error < minError ) {
+                minError  = error;
+                bestColor = color;
+              }
+            }
+          }
+        }
+        target.setColor16bit(
+            index, PCCColor16bit( uint16_t( bestColor[0] ), uint16_t( bestColor[1] ), uint16_t( bestColor[2] ) ) );
+      } else {  // centroid2 == centroid1
+        target.setColor16bit( index, color1 );
+      }
+    }
+  }
+  return true;
+}
+
 bool PCCPointSet3::transferColors16bit( PCCPointSet3& target,
                                    const int32_t searchRange,
                                    const bool    losslessTexture,

@@ -191,7 +191,25 @@ class PCCPointSet3 {
                        const bool    excludeColorOutlier                     = false,
                        const double  thresholdColorOutlierDist               = 10.0 ) const;
 
-bool transferColors16bit( PCCPointSet3& target,
+  bool transferColors16bitBP( PCCPointSet3& target,
+                         const int32_t searchRange,
+                         const bool    losslessTexture                         = false,
+                         const int     numNeighborsColorTransferFwd            = 1,
+                         const int     numNeighborsColorTransferBwd            = 1,
+                         const bool    useDistWeightedAverageFwd               = true,
+                         const bool    useDistWeightedAverageBwd               = true,
+                         const bool    skipAvgIfIdenticalSourcePointPresentFwd = true,
+                         const bool    skipAvgIfIdenticalSourcePointPresentBwd = true,
+                         const double  distOffsetFwd                           = 0.0001,
+                         const double  distOffsetBwd                           = 0.0001,
+                         double        maxGeometryDist2Fwd                     = 10000.0,
+                         double        maxGeometryDist2Bwd                     = 10000.0,
+                         double        maxColorDist2Fwd                        = 10000.0,
+                         double        maxColorDist2Bwd                        = 10000.0,
+                         const bool    excludeColorOutlier                     = false,
+                         const double  thresholdColorOutlierDist               = 10.0 ) const;
+  
+  bool transferColors16bit( PCCPointSet3& target,
                        const int32_t searchRange,
                        const bool    losslessTexture                         = false,
                        const int     numNeighborsColorTransferFwd            = 1,

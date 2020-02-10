@@ -1323,6 +1323,7 @@ void PCCCodec::smoothPointCloudGrid( PCCPointSet3&                      reconstr
         reconstruct[c][1] = centroid[1];
         reconstruct[c][2] = centroid[2];
         if ( PCC_SAVE_POINT_TYPE == 1 ) { reconstruct.setType( c, POINT_SMOOTH ); }
+        reconstruct.setBoundaryPointType( c, static_cast<uint16_t>( 3 ) );
       }
     }
   }
