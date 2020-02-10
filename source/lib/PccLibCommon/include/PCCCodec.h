@@ -348,50 +348,58 @@ class PCCCodec {
   void smoothPointCloudGrid( PCCPointSet3&                      reconstruct,
                              const std::vector<uint32_t>&       partition,
                              const GeneratePointCloudParameters params,
-                             int                                gridWidth );
+                             uint16_t                           gridWidth,
+                             std::vector<int>&                  cellIndex );
 
   void addGridCentroid( PCCPoint3D&               point,
-                        int                       patchIdx,
-                        std::vector<int>&         count,
-                        std::vector<PCCVector3D>& center,
-                        std::vector<int>&         partition,
+                        uint32_t                  patchIdx,
+                        std::vector<uint16_t>&    count,
+                        std::vector<PCCVector3<float>>& center,
+                        std::vector<uint32_t>&    partition,
                         std::vector<bool>&        doSmooth,
-                        int                       gridSize,
-                        int                       gridWidth );
+                        uint8_t                   gridSize,
+                        uint16_t                  gridWidth,
+						int                       cellId );
 
-  void addGridColorCentroid( PCCPoint3D&                        point,
-                             PCCVector3D&                       color,
-                             int                                patchIdx,
-                             std::vector<int>&                  colorCount,
-                             std::vector<PCCVector3D>&          colorCenter,
-                             std::vector<int>&                  colorPartition,
-                             std::vector<bool>&                 colorDoSmooth,
-                             int                                colorgrid,
+  void addGridColorCentroid( PCCPoint3D&                         point,
+                             PCCVector3D&                        color,
+                             uint32_t                            patchIdx,
+                             std::vector<uint16_t>&              colorCount,
+                             std::vector<PCCVector3<float>>&     colorCenter,
+                             std::vector<uint32_t >&             colorPartition,
+                             std::vector<bool>&                  colorDoSmooth,
+                             uint8_t                             colorGrid,
                              std::vector<std::vector<uint16_t>>& colorLum,
-                             const GeneratePointCloudParameters params );
+                             const GeneratePointCloudParameters  params,
+                             int                                 cellId );
 
   bool gridFilteringColor( PCCPoint3D&                        curPos,
                            PCCVector3D&                       colorCentroid,
                            int&                               colorCount,
-                           std::vector<int>&                  colorGridCount,
-                           std::vector<PCCVector3D>&          colorCenterGrid,
+                           std::vector<uint16_t>&             colorGridCount,
+                           std::vector<PCCVector3<float>>&   colorCenterGrid,
                            std::vector<bool>&                 colorDoSmooth,
-                           int                                colorGrid,
+                           uint8_t                            colorGrid,
                            PCCVector3D&                       curPosColor,
-                           const GeneratePointCloudParameters params );
+                           const GeneratePointCloudParameters params,
+						   std::vector<int>&                  cellIndex );
 
-  void smoothPointCloudColorLC( PCCPointSet3& reconstruct, const GeneratePointCloudParameters params );
+  void smoothPointCloudColorLC( PCCPointSet3&                      reconstruct,
+                                const GeneratePointCloudParameters params,
+                                std::vector<int>&                  cellIndex );
 
   bool gridFiltering( const std::vector<uint32_t>& partition,
                       PCCPointSet3&                pointCloud,
                       PCCPoint3D&                  curPos,
                       PCCVector3D&                 centroid,
                       int&                         count,
-                      std::vector<int>&            gridCount,
-                      std::vector<PCCVector3D>&    center,
+                      std::vector<uint16_t>&       gridCount,
+                      std::vector<PCCVector3<float>>&   center,
                       std::vector<bool>&           doSmooth,
-                      int                          gridSize,
-                      int                          gridWidth );
+                      uint8_t                      gridSize,
+                      uint16_t                     gridWidth,
+					  std::vector<int>&            cellIndex );
+
 
   bool gridFilteringTransfer( const std::vector<uint32_t>& partition,
                               PCCPointSet3&                pointCloud,
@@ -415,14 +423,14 @@ class PCCCodec {
                                std::vector<uint32_t>&       PBflag,
                                PCCPointSet3&                reconstruct );
 
-  std::vector<int>                   geoSmoothingCount_;
-  std::vector<PCCVector3D>           geoSmoothingCenter_;
-  std::vector<bool>                  geoSmoothingDoSmooth_;
-  std::vector<int>                   geoSmoothingPartition_;
-  std::vector<int>                   colorSmoothingCount_;
-  std::vector<PCCVector3D>           colorSmoothingCenter_;
-  std::vector<bool>                  colorSmoothingDoSmooth_;
-  std::vector<int>                   colorSmoothingPartition_;
+  std::vector<uint16_t>             geoSmoothingCount_;
+  std::vector<PCCVector3<float>>    geoSmoothingCenter_;
+  std::vector<bool>                 geoSmoothingDoSmooth_;
+  std::vector<uint32_t>             geoSmoothingPartition_;
+  std::vector<uint16_t>             colorSmoothingCount_;
+  std::vector<PCCVector3<float>>    colorSmoothingCenter_;  
+  std::vector<bool>                 colorSmoothingDoSmooth_;
+  std::vector<uint32_t>             colorSmoothingPartition_;
   std::vector<std::vector<uint16_t>> colorSmoothingLum_;
 #ifdef CODEC_TRACE
   bool  trace_;
