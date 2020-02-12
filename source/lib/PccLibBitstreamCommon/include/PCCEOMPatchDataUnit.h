@@ -43,8 +43,8 @@ class EOMPatchDataUnit {
   EOMPatchDataUnit() :
       epdu2dPosX_( 0 ),
       epdu2dPosY_( 0 ),
-      epdu2dDeltaSizeX_( 0 ),
-      epdu2dDeltaSizeY_( 0 ),
+      epdu2dSizeXMinus1_( 0 ),
+      epdu2dSizeYMinus1_( 0 ),
       epduAssociatedPatcheCountMinus1_( 0 ),
       epduPatchIndex_( 0 ),
       epduFrameIndex_( 0 ) {
@@ -56,8 +56,8 @@ class EOMPatchDataUnit {
 
   size_t               getEpdu2dPosX() { return epdu2dPosX_; }
   size_t               getEpdu2dPosY() { return epdu2dPosY_; }
-  int64_t              getEpdu2dDeltaSizeX() { return epdu2dDeltaSizeX_; }
-  int64_t              getEpdu2dDeltaSizeY() { return epdu2dDeltaSizeY_; }
+  int64_t              getEpdu2dSizeXMinus1() { return epdu2dSizeXMinus1_; }
+  int64_t              getEpdu2dSizeYMinus1() { return epdu2dSizeYMinus1_; }
   int64_t              getEpduAssociatedPatchesCountMinus1() { return epduAssociatedPatcheCountMinus1_; }
   std::vector<size_t>& getEpduAssociatedPatches() { return epduAssociatedPatches_; }
   size_t               getEpduAssociatedPatches( size_t index ) { return epduAssociatedPatches_[index]; }
@@ -78,14 +78,14 @@ class EOMPatchDataUnit {
 
   void setEpdu2dPosX( size_t value ) { epdu2dPosX_ = value; }
   void setEpdu2dPosY( size_t value ) { epdu2dPosY_ = value; }
-  void setEpdu2dDeltaSizeX( int64_t value ) { epdu2dDeltaSizeX_ = value; }
-  void setEpdu2dDeltaSizeY( int64_t value ) { epdu2dDeltaSizeY_ = value; }
+  void setEpdu2dSizeXMinus1( uint64_t value ) { epdu2dSizeXMinus1_ = value; }
+  void setEpdu2dSizeYMinus1( uint64_t value ) { epdu2dSizeYMinus1_ = value; }
 
  private:
   size_t              epdu2dPosX_;
   size_t              epdu2dPosY_;
-  int64_t             epdu2dDeltaSizeX_;
-  int64_t             epdu2dDeltaSizeY_;
+  uint64_t            epdu2dSizeXMinus1_;
+  uint64_t            epdu2dSizeYMinus1_;
   size_t              epduAssociatedPatcheCountMinus1_;
   size_t              epduPatchIndex_;
   size_t              epduFrameIndex_;

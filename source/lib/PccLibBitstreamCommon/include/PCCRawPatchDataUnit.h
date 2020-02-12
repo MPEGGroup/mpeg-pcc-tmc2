@@ -44,8 +44,8 @@ class RawPatchDataUnit {
       rpduPatchInRawVideoFlag_( false ),
       rpdu2dPosX_( 0 ),
       rpdu2dPosY_( 0 ),
-      rpdu2dDeltaSizeX_( 0 ),
-      rpdu2dDeltaSizeY_( 0 ),
+      rpdu2dSizeXMinus1_( 0 ),
+      rpdu2dSizeYMinus1_( 0 ),
       rpdu3dPosX_( 0 ),
       rpdu3dPosY_( 0 ),
       rpdu3dPosZ_( 0 ),
@@ -58,8 +58,8 @@ class RawPatchDataUnit {
   bool     getRpduPatchInRawVideoFlag() { return rpduPatchInRawVideoFlag_; }
   size_t   getRpdu2dPosX() { return rpdu2dPosX_; }
   size_t   getRpdu2dPosY() { return rpdu2dPosY_; }
-  int64_t  getRpdu2dDeltaSizeX() { return rpdu2dDeltaSizeX_; }
-  int64_t  getRpdu2dDeltaSizeY() { return rpdu2dDeltaSizeY_; }
+  int64_t  getRpdu2dSizeXMinus1() { return rpdu2dSizeXMinus1_; }
+  int64_t  getRpdu2dSizeYMinus1() { return rpdu2dSizeYMinus1_; }
   size_t   getRpdu3dPosX() { return rpdu3dPosX_; }
   size_t   getRpdu3dPosY() { return rpdu3dPosY_; }
   size_t   getRpdu3dPosZ() { return rpdu3dPosZ_; }
@@ -71,8 +71,8 @@ class RawPatchDataUnit {
   void     setRpduPatchInRawVideoFlag( bool value ) { rpduPatchInRawVideoFlag_ = value; }
   void     setRpdu2dPosX( size_t value ) { rpdu2dPosX_ = value; }
   void     setRpdu2dPosY( size_t value ) { rpdu2dPosY_ = value; }
-  void     setRpdu2dDeltaSizeX( int64_t value ) { rpdu2dDeltaSizeX_ = value; }
-  void     setRpdu2dDeltaSizeY( int64_t value ) { rpdu2dDeltaSizeY_ = value; }
+  void     setRpdu2dSizeXMinus1( uint64_t value ) { rpdu2dSizeXMinus1_ = value; }
+  void     setRpdu2dSizeYMinus1( uint64_t value ) { rpdu2dSizeYMinus1_ = value; }
   void     setRpdu3dPosX( size_t value ) { rpdu3dPosX_ = value; }
   void     setRpdu3dPosY( size_t value ) { rpdu3dPosY_ = value; }
   void     setRpdu3dPosZ( size_t value ) { rpdu3dPosZ_ = value; }
@@ -82,8 +82,8 @@ class RawPatchDataUnit {
   bool     rpduPatchInRawVideoFlag_;
   size_t   rpdu2dPosX_;
   size_t   rpdu2dPosY_;
-  int64_t  rpdu2dDeltaSizeX_;
-  int64_t  rpdu2dDeltaSizeY_;
+  uint64_t rpdu2dSizeXMinus1_;
+  uint64_t rpdu2dSizeYMinus1_;
   size_t   rpdu3dPosX_;
   size_t   rpdu3dPosY_;
   size_t   rpdu3dPosZ_;

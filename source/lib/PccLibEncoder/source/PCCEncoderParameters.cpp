@@ -836,10 +836,6 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   afps.setAtlasSequenceParameterSetId( 0 );
   afps.setAfpsNumRefIdxDefaultActiveMinus1( ( uint8_t )( std::max )( 0, (int)maxNumRefAtlasFrame_ - 1 ) );
   afps.setAfpsAdditionalLtAfocLsbLen( 4 );
-  afps.setAfps2dPosXBitCountMinus1( 0 );
-  afps.setAfps2dPosYBitCountMinus1( 0 );
-  afps.setAfps3dPosXBitCountMinus1( 0 );
-  afps.setAfps3dPosYBitCountMinus1( 0 );
   afps.setAfpsOverrideEomForDepthFlag( 0 );
   afps.setAfpsEomNumberOfPatchBitCountMinus1( 0 );
   afps.setAfpsEomMaxBitCountMinus1( 0 );

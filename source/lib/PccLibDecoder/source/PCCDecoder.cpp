@@ -600,16 +600,14 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
       }
       patch.getSizeD()  = ( std::min )( pdu.getPdu3dPosDeltaMaxZ() * minLevel, (size_t)255 );
       if(asps.getPatchSizeQuantizerPresentFlag()){
-        int32_t quantizedDeltaSizeU = pdu.getPdu2dDeltaSizeX();
-        int32_t quantizedDeltaSizeV = pdu.getPdu2dDeltaSizeY();
-        patch.setPatchSize2DXInPixel( prevPatchSize2DXInPixel + quantizedDeltaSizeU*quantizerSizeX );
-        patch.setPatchSize2DYInPixel( prevPatchSize2DYInPixel + quantizedDeltaSizeV*quantizerSizeY );
+        patch.setPatchSize2DXInPixel( pdu.getPdu2dSizeXMinus1()*quantizerSizeX + 1);
+        patch.setPatchSize2DYInPixel( pdu.getPdu2dSizeYMinus1()*quantizerSizeY + 1);
         patch.getSizeU0()              = ceil( (double)patch.getPatchSize2DXInPixel()/ (double)packingBlockSize);
         patch.getSizeV0()              = ceil( (double)patch.getPatchSize2DYInPixel()/ (double)packingBlockSize);
       }
       else{
-        patch.getSizeU0() = prevSizeU0 + pdu.getPdu2dDeltaSizeX();
-        patch.getSizeV0() = prevSizeV0 + pdu.getPdu2dDeltaSizeY();
+        patch.getSizeU0() = pdu.getPdu2dSizeXMinus1() + 1;
+        patch.getSizeV0() = pdu.getPdu2dSizeYMinus1() + 1;
       }
       size_t pduProjectionPlane =
           asps.get45DegreeProjectionPatchPresentFlag() ? ( pdu.getPduProjectionId() >> 2 ) : pdu.getPduProjectionId();
@@ -800,20 +798,13 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
           if( asps.getPointLocalReconstructionEnabledFlag())  overridePlrFlag=mpdu.getMpduOverridePlrFlag();
         }
 
-        
       }
-      
-
       patch.getProjectionMode()        = refPatch.getProjectionMode();
       patch.getPatchOrientation()      = refPatch.getPatchOrientation();
-
       patch.getNormalAxis()            = refPatch.getNormalAxis();
       patch.getTangentAxis()           = refPatch.getTangentAxis();
       patch.getBitangentAxis()         = refPatch.getBitangentAxis();
       patch.getAxisOfAdditionalPlane() = refPatch.getAxisOfAdditionalPlane();
-      
-
-
       patch.setLodScaleX( refPatch.getLodScaleX() );
       patch.setLodScaleY( refPatch.getLodScaleY() );
       prevSizeU0 = patch.getSizeU0();
@@ -909,8 +900,8 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
       auto& missedPointsPatch   = pcmPatches[patchIndex - numNonRawPatch];
       missedPointsPatch.u0_     = ppdu.getRpdu2dPosX();
       missedPointsPatch.v0_     = ppdu.getRpdu2dPosY();
-      missedPointsPatch.sizeU0_ = ppdu.getRpdu2dDeltaSizeX();
-      missedPointsPatch.sizeV0_ = ppdu.getRpdu2dDeltaSizeY();
+      missedPointsPatch.sizeU0_ = ppdu.getRpdu2dSizeXMinus1() + 1;
+      missedPointsPatch.sizeV0_ = ppdu.getRpdu2dSizeYMinus1() + 1;
       if ( afps.getAfpsRaw3dPosBitCountExplicitModeFlag() ) {
         missedPointsPatch.u1_ = ppdu.getRpdu3dPosX();
         missedPointsPatch.v1_ = ppdu.getRpdu3dPosY();
@@ -936,8 +927,8 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
       PCCEomPatch eomPatch;
       eomPatch.u0_    = epdu.getEpdu2dPosX();
       eomPatch.v0_    = epdu.getEpdu2dPosY();
-      eomPatch.sizeU_ = epdu.getEpdu2dDeltaSizeX();
-      eomPatch.sizeV_ = epdu.getEpdu2dDeltaSizeY();
+      eomPatch.sizeU_ = epdu.getEpdu2dSizeXMinus1() + 1;
+      eomPatch.sizeV_ = epdu.getEpdu2dSizeYMinus1() + 1;
       eomPatch.memberPatches.resize( epdu.getEpduAssociatedPatchesCountMinus1() + 1 );
       eomPatch.eddCountPerPatch.resize( epdu.getEpduAssociatedPatchesCountMinus1() + 1 );
       eomPatch.eddCount_ = 0;

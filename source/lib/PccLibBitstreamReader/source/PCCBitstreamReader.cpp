@@ -511,10 +511,6 @@ void PCCBitstreamReader::atlasFrameParameterSetRbsp( AtlasFrameParameterSetRbsp&
   atlasFrameTileInformation( afps.getAtlasFrameTileInformation(), syntax.getVps(), bitstream );  
   afps.setAfpsNumRefIdxDefaultActiveMinus1( bitstream.readUvlc() );  // ue(v)
   afps.setAfpsAdditionalLtAfocLsbLen( bitstream.readUvlc() );        // ue(v)
-  afps.setAfps2dPosXBitCountMinus1( bitstream.read( 4 ) );
-  afps.setAfps2dPosYBitCountMinus1( bitstream.read( 4 ) );
-  afps.setAfps3dPosXBitCountMinus1( bitstream.read( 5 ) );
-  afps.setAfps3dPosYBitCountMinus1( bitstream.read( 5 ) );
   afps.setAfpsOverrideEomForDepthFlag( bitstream.read( 1 ) );
   if ( afps.getAfpsOverrideEomForDepthFlag() ) {
     afps.setAfpsEomNumberOfPatchBitCountMinus1( bitstream.read( 4 ) );
@@ -787,15 +783,17 @@ void PCCBitstreamReader::patchDataUnit( PatchDataUnit&        pdu,
   TRACE_BITSTREAM( "PduProjectionId = %lu (45DegreeProjectionPatchPresentFlag = %d ) \n", 
     pdu.getPduProjectionId(),asps.get45DegreeProjectionPatchPresentFlag()  );
 #endif
-  pdu.setPdu2dPosX( bitstream.read( afps.getAfps2dPosXBitCountMinus1() + 1 ) );  // u(v)
-  pdu.setPdu2dPosY( bitstream.read( afps.getAfps2dPosYBitCountMinus1() + 1 ) );  // u(v)
+  pdu.setPdu2dPosX( bitstream.readUvlc() );  // ue(v)
+  pdu.setPdu2dPosY( bitstream.readUvlc() );  // ue(v)
   TRACE_BITSTREAM( " 2dPosXY: %zu,%zu\n", pdu.getPdu2dPosX(), pdu.getPdu2dPosX() );
-  pdu.setPdu2dDeltaSizeX( bitstream.readSvlc() );  // se(v)
-  pdu.setPdu2dDeltaSizeY( bitstream.readSvlc() );  // se(v)
+  pdu.setPdu2dSizeXMinus1( bitstream.readUvlc() );  // ue(v)
+  pdu.setPdu2dSizeYMinus1( bitstream.readUvlc() );  // ue(v)
   TRACE_BITSTREAM( " 2dDeltaSizeXY: %d,%d\n", int32_t( pdu.getPdu2dDeltaSizeX() ),
                    int32_t( pdu.getPdu2dDeltaSizeY() ) );
-  pdu.setPdu3dPosX( bitstream.read( afps.getAfps3dPosXBitCountMinus1() + 1 ) );  // u(v)
-  pdu.setPdu3dPosY( bitstream.read( afps.getAfps3dPosYBitCountMinus1() + 1 ) );  // u(v)
+  uint8_t bitCount3DPos=
+   syntax.getVps(0).getGeometryInformation(0).getGeometry3dCoordinatesBitdepthMinus1() +1;
+  pdu.setPdu3dPosX( bitstream.read( bitCount3DPos ) );  // u(v)
+  pdu.setPdu3dPosY( bitstream.read( bitCount3DPos ) );  // u(v)
   TRACE_BITSTREAM( " 3dPosXY: %zu,%zu\n", pdu.getPdu3dPosX(), pdu.getPdu3dPosY() );
 
   const uint8_t bitCountForMinDepth =
@@ -836,10 +834,8 @@ void PCCBitstreamReader::patchDataUnit( PatchDataUnit&        pdu,
     TRACE_BITSTREAM( "Prev Size = %d %d Delta Size = %ld %ld => %ld %ld \n", prevPatchSizeU_, prevPatchSizeV_,
                      pdu.getPdu2dDeltaSizeX(), pdu.getPdu2dDeltaSizeY(), prevPatchSizeU_ + pdu.getPdu2dDeltaSizeX(),
                      prevPatchSizeV_ + pdu.getPdu2dDeltaSizeY() );
-    plrd.allocate( prevPatchSizeU_ + pdu.getPdu2dDeltaSizeX(), prevPatchSizeV_ + pdu.getPdu2dDeltaSizeY() );
+    plrd.allocate( pdu.getPdu2dSizeXMinus1()+1, pdu.getPdu2dSizeYMinus1()+1 );
     pointLocalReconstructionData( plrd, syntax, asps, bitstream );
-    prevPatchSizeU_ += pdu.getPdu2dDeltaSizeX();
-    prevPatchSizeV_ += pdu.getPdu2dDeltaSizeY();
   }
   TRACE_BITSTREAM(
       "Frame %zu, Patch(%zu) => 2Dpos = %4lu %4lu 2Dsize = %4ld %4ld 3Dpos = %ld %ld %ld DeltaMaxZ = %ld Projection = %zu "
@@ -992,16 +988,14 @@ void PCCBitstreamReader::rawPatchDataUnit( RawPatchDataUnit&     ppdu,
                                             PCCBitstream&         bitstream ) {
   auto& sps = syntax.getVps();
   TRACE_BITSTREAM( "%s \n", __func__ );
-  size_t                      afpsId     = atgh.getAtghAtlasFrameParameterSetId();
-  AtlasFrameParameterSetRbsp& afps       = syntax.getAtlasFrameParameterSet( afpsId );
   size_t                      atlasIndex = 0;
   if ( sps.getRawSeparateVideoPresentFlag( atlasIndex ) ) {
     ppdu.setRpduPatchInRawVideoFlag( bitstream.read( 1 ) );
   }  // u(1)
-  ppdu.setRpdu2dPosX( bitstream.read( afps.getAfps2dPosXBitCountMinus1() + 1 ) );  // u(v)
-  ppdu.setRpdu2dPosY( bitstream.read( afps.getAfps2dPosYBitCountMinus1() + 1 ) );  // u(v)
-  ppdu.setRpdu2dDeltaSizeX( bitstream.readSvlc() );                                // se(v)
-  ppdu.setRpdu2dDeltaSizeY( bitstream.readSvlc() );                                // se(v)
+  ppdu.setRpdu2dPosX( bitstream.readUvlc() );  // ue(v)
+  ppdu.setRpdu2dPosY( bitstream.readUvlc() );  // ue(v)
+  ppdu.setRpdu2dSizeXMinus1( bitstream.readUvlc() );                               // ue(v)
+  ppdu.setRpdu2dSizeYMinus1( bitstream.readUvlc() );                               // ue(v)
   TRACE_BITSTREAM( " AtghRaw3dPosAxisBitCountMinus1 = %lu \n", atgh.getAtghRaw3dPosAxisBitCountMinus1() );
   ppdu.setRpdu3dPosX( bitstream.read( atgh.getAtghRaw3dPosAxisBitCountMinus1() + 1 ) );  // u(v)
   ppdu.setRpdu3dPosY( bitstream.read( atgh.getAtghRaw3dPosAxisBitCountMinus1() + 1 ) );  // u(v)
@@ -1020,12 +1014,10 @@ void PCCBitstreamReader::eomPatchDataUnit( EOMPatchDataUnit&     epdu,
                                             PCCHighLevelSyntax&           syntax,
                                             PCCBitstream&         bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
-  size_t                      afpsId = atgh.getAtghAtlasFrameParameterSetId();
-  AtlasFrameParameterSetRbsp& afps   = syntax.getAtlasFrameParameterSet( afpsId );
-  epdu.setEpdu2dPosX( bitstream.read( afps.getAfps2dPosXBitCountMinus1() + 1 ) );  // u(v)
-  epdu.setEpdu2dPosY( bitstream.read( afps.getAfps2dPosYBitCountMinus1() + 1 ) );  // u(v)
-  epdu.setEpdu2dDeltaSizeX( bitstream.readSvlc() );                                // se(v)
-  epdu.setEpdu2dDeltaSizeY( bitstream.readSvlc() );                                // se(v)
+  epdu.setEpdu2dPosX( bitstream.readUvlc() );        // ue(v)
+  epdu.setEpdu2dPosY( bitstream.readUvlc() );        // ue(v)
+  epdu.setEpdu2dSizeXMinus1( bitstream.readUvlc() ); // ue(v)
+  epdu.setEpdu2dSizeYMinus1( bitstream.readUvlc() ); // ue(v)
   epdu.setEpduAssociatedPatchesCountMinus1( bitstream.read( 8 ) );
   for ( size_t cnt = 0; cnt < epdu.getEpduAssociatedPatchesCountMinus1() + 1; cnt++ ) {
     epdu.setEpduAssociatedPatches( bitstream.read( 8 ), cnt );

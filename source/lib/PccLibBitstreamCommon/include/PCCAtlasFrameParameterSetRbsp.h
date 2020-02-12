@@ -46,10 +46,6 @@ class AtlasFrameParameterSetRbsp {
       afpsAtlasSequenceParameterSetId_( 0 ),
       afpsNumRefIdxDefaultActiveMinus1_( 0 ),
       afpsAdditionalLtAfocLsbLen_( 0 ),
-      afps2dPosXBitCountMinus1_( 0 ),
-      afps2dPosYBitCountMinus1_( 0 ),
-      afps3dPosXBitCountMinus1_( 0 ),
-      afps3dPosYBitCountMinus1_( 0 ),
       afpsLodModeEnableFlag_( false ),
       afpsOverrideEomForDepthFlag_( 0 ),
       afpsEomNumberOfPatchBitCountMinus1_( 0 ),
@@ -64,10 +60,6 @@ class AtlasFrameParameterSetRbsp {
     afpsAtlasSequenceParameterSetId_      = refAfps.getAtlasSequenceParameterSetId();
     afpsNumRefIdxDefaultActiveMinus1_     = refAfps.getAfpsNumRefIdxDefaultActiveMinus1();
     afpsAdditionalLtAfocLsbLen_           = refAfps.getAfpsAdditionalLtAfocLsbLen();
-    afps2dPosXBitCountMinus1_             = refAfps.getAfps2dPosXBitCountMinus1();
-    afps2dPosYBitCountMinus1_             = refAfps.getAfps2dPosYBitCountMinus1();
-    afps3dPosXBitCountMinus1_             = refAfps.getAfps3dPosXBitCountMinus1();
-    afps3dPosYBitCountMinus1_             = refAfps.getAfps3dPosYBitCountMinus1();
     afpsLodModeEnableFlag_                = refAfps.getLodModeEnableFlag();
     afpsOverrideEomForDepthFlag_          = refAfps.getAfpsOverrideEomForDepthFlag();
     afpsEomNumberOfPatchBitCountMinus1_   = refAfps.getAfpsEomNumberOfPatchBitCountMinus1();
@@ -82,10 +74,6 @@ class AtlasFrameParameterSetRbsp {
   uint8_t                    getAtlasSequenceParameterSetId() { return afpsAtlasSequenceParameterSetId_; }
   uint8_t                    getAfpsNumRefIdxDefaultActiveMinus1() { return afpsNumRefIdxDefaultActiveMinus1_; }
   uint8_t                    getAfpsAdditionalLtAfocLsbLen() { return afpsAdditionalLtAfocLsbLen_; }
-  size_t                     getAfps2dPosXBitCountMinus1() { return afps2dPosXBitCountMinus1_; }
-  size_t                     getAfps2dPosYBitCountMinus1() { return afps2dPosYBitCountMinus1_; }
-  size_t                     getAfps3dPosXBitCountMinus1() { return afps3dPosXBitCountMinus1_; }
-  size_t                     getAfps3dPosYBitCountMinus1() { return afps3dPosYBitCountMinus1_; }
   bool                       getAfpsOverrideEomForDepthFlag() { return afpsOverrideEomForDepthFlag_; }
   uint8_t                    getAfpsEomNumberOfPatchBitCountMinus1() { return afpsEomNumberOfPatchBitCountMinus1_; }
   uint8_t                    getAfpsEomMaxBitCountMinus1() { return afpsEomMaxBitCountMinus1_; }
@@ -99,10 +87,6 @@ class AtlasFrameParameterSetRbsp {
   void setAtlasSequenceParameterSetId( uint8_t value ) { afpsAtlasSequenceParameterSetId_ = value; }
   void setAfpsNumRefIdxDefaultActiveMinus1( uint8_t value ) { afpsNumRefIdxDefaultActiveMinus1_ = value; }
   void setAfpsAdditionalLtAfocLsbLen( uint8_t value ) { afpsAdditionalLtAfocLsbLen_ = value; }
-  void setAfps2dPosXBitCountMinus1( uint8_t value ) { afps2dPosXBitCountMinus1_ = value; }
-  void setAfps2dPosYBitCountMinus1( uint8_t value ) { afps2dPosYBitCountMinus1_ = value; }
-  void setAfps3dPosXBitCountMinus1( uint8_t value ) { afps3dPosXBitCountMinus1_ = value; }
-  void setAfps3dPosYBitCountMinus1( uint8_t value ) { afps3dPosYBitCountMinus1_ = value; }
   void setAfpsOverrideEomForDepthFlag( bool value ) { afpsOverrideEomForDepthFlag_ = value; }
   void setAfpsEomNumberOfPatchBitCountMinus1( uint8_t value ) { afpsEomNumberOfPatchBitCountMinus1_ = value; }
   void setAfpsEomMaxBitCountMinus1( uint8_t value ) { afpsEomMaxBitCountMinus1_ = value; }
@@ -118,10 +102,6 @@ class AtlasFrameParameterSetRbsp {
   AtlasFrameTileInformation atlasFrameTileInformation_;
   uint8_t                   afpsNumRefIdxDefaultActiveMinus1_;
   uint8_t                   afpsAdditionalLtAfocLsbLen_;
-  size_t                    afps2dPosXBitCountMinus1_;
-  size_t                    afps2dPosYBitCountMinus1_;
-  size_t                    afps3dPosXBitCountMinus1_;
-  size_t                    afps3dPosYBitCountMinus1_;
   bool                      afpsLodModeEnableFlag_;
   bool                      afpsOverrideEomForDepthFlag_;
   uint8_t                   afpsEomNumberOfPatchBitCountMinus1_;

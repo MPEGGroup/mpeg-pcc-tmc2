@@ -44,8 +44,8 @@ class PatchDataUnit {
   PatchDataUnit() :
       pdu2dPosX_( 0 ),
       pdu2dPosY_( 0 ),
-      pdu2dDeltaSizeX_( 0 ),
-      pdu2dDeltaSizeY_( 0 ),
+      pdu2dSizeXMinus1_( 0 ),
+      pdu2dSizeYMinus1_( 0 ),
       pdu3dPosX_( 0 ),
       pdu3dPosY_( 0 ),
       pdu3dPosMinZ_( 0 ),
@@ -62,8 +62,8 @@ class PatchDataUnit {
   PatchDataUnit&                operator=( const PatchDataUnit& ) = default;
   size_t                        getPdu2dPosX() { return pdu2dPosX_; }
   size_t                        getPdu2dPosY() { return pdu2dPosY_; }
-  int64_t                       getPdu2dDeltaSizeX() { return pdu2dDeltaSizeX_; }
-  int64_t                       getPdu2dDeltaSizeY() { return pdu2dDeltaSizeY_; }
+  int64_t                       getPdu2dSizeXMinus1() { return pdu2dSizeXMinus1_; }
+  int64_t                       getPdu2dSizeYMinus1() { return pdu2dSizeYMinus1_; }
   size_t                        getPdu3dPosX() { return pdu3dPosX_; }
   size_t                        getPdu3dPosY() { return pdu3dPosY_; }
   size_t                        getPdu3dPosMinZ() { return pdu3dPosMinZ_; }
@@ -81,8 +81,8 @@ class PatchDataUnit {
   void   setFrameIndex( size_t value ) { pduFrameIndex_ = value; }
   void   setPdu2dPosX( size_t value ) { pdu2dPosX_ = value; }
   void   setPdu2dPosY( size_t value ) { pdu2dPosY_ = value; }
-  void   setPdu2dDeltaSizeX( int64_t value ) { pdu2dDeltaSizeX_ = value; }
-  void   setPdu2dDeltaSizeY( int64_t value ) { pdu2dDeltaSizeY_ = value; }
+  void   setPdu2dSizeXMinus1( uint64_t value ) { pdu2dSizeXMinus1_ = value; }
+  void   setPdu2dSizeYMinus1( uint64_t value ) { pdu2dSizeYMinus1_ = value; }
   void   setPdu3dPosX( size_t value ) { pdu3dPosX_ = value; }
   void   setPdu3dPosY( size_t value ) { pdu3dPosY_ = value; }
   void   setPdu3dPosMinZ( size_t value ) { pdu3dPosMinZ_ = value; }
@@ -98,8 +98,8 @@ class PatchDataUnit {
  private:
   size_t                       pdu2dPosX_;
   size_t                       pdu2dPosY_;
-  int64_t                      pdu2dDeltaSizeX_;
-  int64_t                      pdu2dDeltaSizeY_;
+  uint64_t                     pdu2dSizeXMinus1_;
+  uint64_t                     pdu2dSizeYMinus1_;
   size_t                       pdu3dPosX_;
   size_t                       pdu3dPosY_;
   size_t                       pdu3dPosMinZ_;
