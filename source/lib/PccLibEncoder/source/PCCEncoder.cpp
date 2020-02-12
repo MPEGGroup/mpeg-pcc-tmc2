@@ -2222,40 +2222,24 @@ void PCCEncoder::doGlobalTetrisPacking( PCCContext& context ) {
       vector<int>      orientation_horizontal;
       int              numOrientations;
       std::vector<int> horizon;
-      if ( params_.packingStrategy_ == 0 ) {
-        orientation_vertical.resize( 1 );
-        orientation_vertical = {PATCH_ORIENTATION_DEFAULT};
-        orientation_horizontal.resize( 1 );
-        orientation_horizontal = {PATCH_ORIENTATION_DEFAULT};
-        numOrientations        = 1;
-      } else {
-        if ( params_.packingStrategy_ == 1 ) {
-          orientation_vertical.resize( 8 );
-          orientation_vertical = {PATCH_ORIENTATION_DEFAULT, PATCH_ORIENTATION_SWAP,    PATCH_ORIENTATION_ROT180,
+      orientation_vertical.resize( 8 );
+      orientation_vertical = {PATCH_ORIENTATION_DEFAULT, PATCH_ORIENTATION_SWAP,    PATCH_ORIENTATION_ROT180,
+        PATCH_ORIENTATION_MIRROR,  PATCH_ORIENTATION_MROT180, PATCH_ORIENTATION_ROT270,
+        PATCH_ORIENTATION_MROT90,  PATCH_ORIENTATION_ROT90};  // favoring vertical orientation
+      orientation_horizontal.resize( 8 );
+      if( params_.packingStrategy_ == 2 ){
+        orientation_horizontal = {PATCH_ORIENTATION_DEFAULT, PATCH_ORIENTATION_SWAP,    PATCH_ORIENTATION_ROT180,
                                   PATCH_ORIENTATION_MIRROR,  PATCH_ORIENTATION_MROT180, PATCH_ORIENTATION_ROT270,
-                                  PATCH_ORIENTATION_MROT90,  PATCH_ORIENTATION_ROT90};  // favoring vertical orientation
-          orientation_horizontal.resize( 8 );
-          orientation_horizontal = {
-              PATCH_ORIENTATION_SWAP,   PATCH_ORIENTATION_DEFAULT, PATCH_ORIENTATION_ROT270,
-              PATCH_ORIENTATION_MROT90, PATCH_ORIENTATION_ROT90,   PATCH_ORIENTATION_ROT180,
-              PATCH_ORIENTATION_MIRROR, PATCH_ORIENTATION_MROT180};  // favoring horizontal orientations (that should be
-                                                                     // rotated)
-          numOrientations = params_.useEightOrientations_ ? 8 : 2;
-        } else {
-          if ( params_.packingStrategy_ == 2 ) {
-            orientation_vertical.resize( 8 );
-            orientation_vertical = {PATCH_ORIENTATION_DEFAULT, PATCH_ORIENTATION_SWAP,    PATCH_ORIENTATION_ROT180,
-                                    PATCH_ORIENTATION_MIRROR,  PATCH_ORIENTATION_MROT180, PATCH_ORIENTATION_ROT270,
-                                    PATCH_ORIENTATION_MROT90,  PATCH_ORIENTATION_ROT90};
-            orientation_horizontal.resize( 8 );
-            orientation_horizontal = {PATCH_ORIENTATION_DEFAULT, PATCH_ORIENTATION_SWAP,    PATCH_ORIENTATION_ROT180,
-                                      PATCH_ORIENTATION_MIRROR,  PATCH_ORIENTATION_MROT180, PATCH_ORIENTATION_ROT270,
-                                      PATCH_ORIENTATION_MROT90,  PATCH_ORIENTATION_ROT90};
-            numOrientations        = params_.useEightOrientations_ ? 8 : 2;
-            horizon.resize( occupancySizeU, 0 );
-          }
-        }
+                                  PATCH_ORIENTATION_MROT90,  PATCH_ORIENTATION_ROT90};
       }
+      else
+      orientation_horizontal = {
+        PATCH_ORIENTATION_SWAP,   PATCH_ORIENTATION_DEFAULT, PATCH_ORIENTATION_ROT270,
+        PATCH_ORIENTATION_MROT90, PATCH_ORIENTATION_ROT90,   PATCH_ORIENTATION_ROT180,
+        PATCH_ORIENTATION_MIRROR, PATCH_ORIENTATION_MROT180};  // favoring horizontal orientations (that should be
+      // rotated)
+      numOrientations = params_.useEightOrientations_ ? 8 : 2;
+
       std::vector<bool> occupancyMap;
       occupancyMap.resize( occupancySizeU * occupancySizeV, false );
       int indNextMatchedPatch = 0;
@@ -3408,7 +3392,6 @@ bool PCCEncoder::generateGeometryVideo( const PCCPointSet3&                sourc
   }
 
   if ( params_.enhancedDeltaDepthCode_ ) { generateEomPatch( source, frame ); }
-
   if ( params_.packingStrategy_ == 0 ) {
     if ( ( frameIndex == 0 ) || ( !params_.constrainedPack_ ) ) {
       pack( frame, params_.safeGuardDistance_, params_.enablePointCloudPartitioning_ );
@@ -4394,6 +4377,7 @@ bool PCCEncoder::generateGeometryVideo( const PCCGroupOfFrames& sources, PCCCont
   params.maxNNCountPatchSegmentation_          = params_.maxNNCountPatchSegmentation_;
   params.surfaceThickness_                     = params_.surfaceThickness_;
   params.minLevel_                             = params_.minLevel_;
+  params.mapCountMinus1_                       = params_.mapCountMinus1_;
   params.maxAllowedDist2MissedPointsDetection_ = params_.maxAllowedDist2MissedPointsDetection_;
   params.maxAllowedDist2MissedPointsSelection_ = params_.maxAllowedDist2MissedPointsSelection_;
   params.lambdaRefineSegmentation_             = params_.lambdaRefineSegmentation_;
@@ -4949,6 +4933,7 @@ void PCCEncoder::dilate3DPadding( const PCCPointSet3&     source,
             }
           }
         }
+        assert(count>0);
         mean_val /= count;
         // now fill in the missing positions with depth values searched in 3D space
         for ( size_t j = 0; j < params_.occupancyPrecision_; j++ ) {
@@ -7179,7 +7164,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
   TRACE_CODEC( "OccupancyPackingBlockSize           = %d \n", context.getOccupancyPackingBlockSize() );
 
   // all patches
-#if TRACE_CODEC
+#ifdef CODEC_TRACE
   size_t  totalPatchCount = patches.size() + frame.getMissedPointsPatches().size() + frame.getEomPatches().size();
 #endif
   int32_t quantizerSizeX  = 1 << params_.log2QuantizerSizeX_;

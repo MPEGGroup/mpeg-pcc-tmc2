@@ -293,7 +293,9 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
   PCCBitstreamReader   bitstreamReader;
   size_t               headerSize = bitstreamReader.read( bitstream, ssvu );
   bitstreamStat.incrHeader( headerSize );
-
+#ifdef BITSTREAM_TRACE
+  size_t index = 0;
+#endif
   bool    bMoreData = true;
   while ( bMoreData ) {
     PCCGroupOfFrames reconstructs;

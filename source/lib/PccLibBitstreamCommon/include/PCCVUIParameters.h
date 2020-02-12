@@ -85,7 +85,7 @@ class HrdParameters {
       hrdFixedAtlasRateWithinCasFlag_[i] = 0;
       hrdLowDelayFlag[i]                 = 0;
     }
-    hrdElementalDurationInTcMinus1_ = 0;
+     hrdElementalDurationInTcMinus1_ = 0;
      hrdCabCntMinus1_ = 0;
   }
   ~HrdParameters() {}

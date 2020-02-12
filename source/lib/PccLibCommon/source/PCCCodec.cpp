@@ -342,7 +342,7 @@ void PCCCodec::smoothPointCloudPostprocess( PCCPointSet3&                      r
     }
   }
 #ifdef CODEC_TRACE
-  checksum = reconstructs[i].computeChecksum();
+  checksum = reconstruct.computeChecksum();
   TRACE_CODEC( "ChecksumOut %lu: ", frameIndex );
   for ( auto& c : checksum ) { TRACE_CODEC( "%02x", c ); }
   TRACE_CODEC( "\n" );

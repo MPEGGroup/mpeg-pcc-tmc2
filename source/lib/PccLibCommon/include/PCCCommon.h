@@ -66,6 +66,8 @@
 #include "PCCChrono.h"
 #endif
 
+#define MATCHTOANCHOR 1 //jkei: set 1 to match with the results of anchor for mapcount=1 case.
+
 namespace pcc {
 
 // ******************************************************************* //
@@ -81,7 +83,7 @@ static const uint8_t PCC_SAVE_POINT_TYPE = 0;  // Save point information in reco
 // ******************************************************************* //
 // Trace modes to validate new syntax
 // ******************************************************************* //
-// #define CODEC_TRACE 
+// #define CODEC_TRACE
 
 // ******************************************************************* //
 // Common constants

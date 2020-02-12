@@ -889,6 +889,8 @@ void PCCBitstreamWriter::patchDataUnit( PatchDataUnit&        pdu,
         atgh.getAtghPosDeltaMaxZQuantizer() + ( pdu.getPduProjectionId() > 5 ? 2 : 1 );
     if ( asps.get45DegreeProjectionPatchPresentFlag() ) { bitCountForMaxDepth++; }
     bitstream.write( uint32_t( pdu.getPdu3dPosDeltaMaxZ() ), bitCountForMaxDepth );
+    TRACE_BITSTREAM( " Pdu3dPosDeltaMaxZ: %zu ( bitCountForMaxDepth = %u) \n",
+        pdu.getPdu3dPosDeltaMaxZ(), bitCountForMaxDepth  );
   }
 #ifndef BUGFIX_45_DEGREE_PROJECTION
   bitstream.write( uint32_t( pdu.getPduProjectionId() ),
@@ -913,8 +915,8 @@ void PCCBitstreamWriter::patchDataUnit( PatchDataUnit&        pdu,
     pointLocalReconstructionData( plrd, syntax, asps, bitstream );
   }
   TRACE_BITSTREAM(
-      "Frame %zu, Patch(%zu) => 2dPos %4lu %4lu 2dSize=%4ld %4ld 3dPos %4lu %4lu %4lu %4lu Projection %zu "
-      "Orientation %zu lod=(%lu) %lu %lu\n ",
+      "Frame %zu, Patch(%zu) => 2Dpos = %4lu %4lu 2Dsize = %4ld %4ld 3Dpos = %ld %ld %ld DeltaMaxZ = %ld Projection = %zu "
+      "Orientation = %zu lod=(%lu) %lu %lu\n ",
       pdu.getFrameIndex(), pdu.getPatchIndex(), pdu.getPdu2dPosX(), pdu.getPdu2dPosY(), pdu.getPdu2dDeltaSizeX(),
       pdu.getPdu2dDeltaSizeY(), pdu.getPdu3dPosX(), pdu.getPdu3dPosY(), pdu.getPdu3dPosMinZ(),
       pdu.getPdu3dPosDeltaMaxZ(), pdu.getPduProjectionId(), pdu.getPduOrientationIndex(), pdu.getLodEnableFlag(),
@@ -1001,6 +1003,13 @@ void PCCBitstreamWriter::interPatchDataUnit( InterPatchDataUnit&   ipdu,
   if ( asps.getNormalAxisMaxDeltaValueEnabledFlag() ) {
     bitstream.writeSvlc( int32_t( ipdu.getIpdu3dPosDeltaMaxZ() ) );
   }
+  TRACE_BITSTREAM(
+      "%zu frame: numRefIdxActive = %zu reference = frame%zu patch%d 2Dpos = %ld %ld 2DdeltaSize = %ld %ld 3Dpos = %ld "
+      "%ld %ld DeltaMaxZ = %ld\n",
+      ipdu.getFrameIndex(), numRefIdxActive, ipdu.getIpduRefIndex(), ipdu.getIpduRefPatchIndex(), ipdu.getIpdu2dPosX(),
+      ipdu.getIpdu2dPosY(), ipdu.getIpdu2dDeltaSizeX(), ipdu.getIpdu2dDeltaSizeY(), ipdu.getIpdu3dPosX(),
+      ipdu.getIpdu3dPosY(), ipdu.getIpdu3dPosMinZ(), ipdu.getIpdu3dPosDeltaMaxZ() );
+  
   if ( asps.getPointLocalReconstructionEnabledFlag() ) {
     auto& plrd = ipdu.getPointLocalReconstructionData();
     TRACE_BITSTREAM( "Prev Size = %d %d Delta Size = %ld %ld => %ld %ld \n",
@@ -1009,12 +1018,6 @@ void PCCBitstreamWriter::interPatchDataUnit( InterPatchDataUnit&   ipdu,
                      ipdu.getIpdu2dDeltaSizeY(), plrd.getBlockToPatchMapWidth(), plrd.getBlockToPatchMapHeight() );
     pointLocalReconstructionData( plrd, syntax, asps, bitstream );
   }
-  TRACE_BITSTREAM(
-      "%zu frame: numRefIdxActive = %zu reference = frame%zu patch%d 2Dpos = %ld %ld 2DdeltaSize = %ld %ld 3Dpos = %ld "
-      "%ld %ld %ld\n",
-      ipdu.getFrameIndex(), numRefIdxActive, ipdu.getIpduRefIndex(), ipdu.getIpduRefPatchIndex(), ipdu.getIpdu2dPosX(),
-      ipdu.getIpdu2dPosY(), ipdu.getIpdu2dDeltaSizeX(), ipdu.getIpdu2dDeltaSizeY(), ipdu.getIpdu3dPosX(),
-      ipdu.getIpdu3dPosY(), ipdu.getIpdu3dPosMinZ(), ipdu.getIpdu3dPosDeltaMaxZ() );
 }
 
 // 7.3.7.7 raw patch data unit syntax
