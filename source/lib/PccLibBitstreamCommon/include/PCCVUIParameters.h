@@ -77,12 +77,16 @@ class HrdParameters {
       hrdCabSizeScale_( 0 ),
       hrdInitialCabRemovalDelayLengthMinus1_( 0 ),
       hrdAuCabRemovalDelayLengthMinus1_( 0 ),
-      hrdDabOutputDelayLengthMinus1_( 0 ) {
+      hrdDabOutputDelayLengthMinus1_( 0 ),
+      hrdElementalDurationInTcMinus1_( 0 ),
+      hrdCabCntMinus1_( 0 ){
     for ( size_t i = 0; i <= maxNumSubLayersMinus1_; i++ ) {
       hrdFixedAtlasRateGeneralFlag_[i]   = 0;
       hrdFixedAtlasRateWithinCasFlag_[i] = 0;
       hrdLowDelayFlag[i]                 = 0;
     }
+    hrdElementalDurationInTcMinus1_ = 0;
+     hrdCabCntMinus1_ = 0;
   }
   ~HrdParameters() {}
   HrdParameters& operator=( const HrdParameters& ) = default;

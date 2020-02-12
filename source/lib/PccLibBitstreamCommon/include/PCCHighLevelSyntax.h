@@ -284,10 +284,12 @@ class PCCHighLevelSyntax {
     return false;
   }
 
-  SEI& getSei( NalUnitType nalUnitType, SeiPayloadType payloadType ) {
+  SEI* getSei( NalUnitType nalUnitType, SeiPayloadType payloadType ) {
     for ( auto& sei : nalUnitType == NAL_PREFIX_SEI ? seiPrefix_ : seiSuffix_ ) {
-      if ( sei->getPayloadType() == payloadType ) { return *sei; }
+      if ( sei->getPayloadType() == payloadType ) { return sei.get(); }
     }
+    assert(0);
+    return (SEI*) nullptr;
   }
   SEI& addSeiPrefix( SeiPayloadType payloadType ) { return addSei( NAL_PREFIX_SEI, payloadType ); }
   SEI& addSeiSuffix( SeiPayloadType payloadType ) { return addSei( NAL_SUFFIX_SEI, payloadType ); }

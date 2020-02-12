@@ -54,7 +54,7 @@ PCCDecoder::~PCCDecoder() {}
 
 void PCCDecoder::setParameters( PCCDecoderParameters params ) { params_ = params; }
 
-int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
+int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, std::vector<std::vector<uint32_t>>& partitions) {
   if ( params_.nbThread_ > 0 ) { tbb::task_scheduler_init init( (int)params_.nbThread_ ); }
 #ifdef CODEC_TRACE
     setTrace( true );
@@ -81,33 +81,16 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
                            sps.getVpccParameterSetId() ) );
 #endif
   bool         lossyMpp           = !sps.getLosslessGeo() && sps.getRawPatchEnabledFlag( atlasIndex );
-  const size_t frameCountGeometry = sps.getMapCountMinus1( atlasIndex ) + 1;
   const size_t mapCount           = sps.getMapCountMinus1( atlasIndex ) + 1;
   auto&        videoBitstreamOM   = context.getVideoBitstream( VIDEO_OCCUPANCY );
   int          decodedBitDepthOM  = 8;
-  reconstructs.resize( context.size() );
-
   videoDecoder.decompress( context.getVideoOccupancyMap(), path.str(), context.size(), videoBitstreamOM,
                            params_.videoDecoderOccupancyMapPath_, context, decodedBitDepthOM,
                            params_.keepIntermediateFiles_, ( sps.getLosslessGeo() ? sps.getLosslessGeo444() : false ),
                            false, "", "" );
-  auto& videoOcc = context.getVideoOccupancyMap();
   // converting the decoded bitdepth to the nominal bitdepth
   context.getVideoOccupancyMap().convertBitdepth( decodedBitDepthOM, oi.getOccupancyNominal2DBitdepthMinus1() + 1,
                                                   oi.getOccupancyMSBAlignFlag() );
-  context.setOccupancyPrecision( sps.getFrameWidth( atlasIndex ) / context.getVideoOccupancyMap().getWidth() );
-
-  bool seiSmootingIsPresent = context.seiIsPresent( NAL_PREFIX_SEI, SMOOTHING_PARAMETERS );  
-  bool pbfEnableFlag = false; 
-  if( seiSmootingIsPresent ) {
-    SEISmoothingParameters& sei =
-        static_cast<SEISmoothingParameters&>( context.getSei( NAL_PREFIX_SEI, SMOOTHING_PARAMETERS ) );
-    pbfEnableFlag = sei.getSpGeometrySmoothingEnabledFlag() && sei.getSpGeometrySmoothingId() == 1;   
-  }
-  if ( !pbfEnableFlag ) {
-    generateOccupancyMap( context, context.getOccupancyPrecision(), oi.getLossyOccupancyMapCompressionThreshold(),
-                          asps.getEnhancedOccupancyMapForDepthFlag() );
-  }
 
   if ( sps.getMultipleMapStreamsPresentFlag( atlasIndex ) ) {
     if ( lossyMpp ) {
@@ -136,7 +119,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   } else {
     int   decodedBitDepthGeo = gi.getGeometryNominal2dBitdepthMinus1() + 1;
     auto& videoBitstream     = context.getVideoBitstream( VIDEO_GEOMETRY );
-    videoDecoder.decompress( context.getVideoGeometry(), path.str(), context.size() * frameCountGeometry,
+    videoDecoder.decompress( context.getVideoGeometry(), path.str(), context.size() * mapCount,
                              videoBitstream, params_.videoDecoderPath_, context, decodedBitDepthGeo,
                              params_.keepIntermediateFiles_, sps.getLosslessGeo() & sps.getLosslessGeo444() );
     context.getVideoGeometry().convertBitdepth( decodedBitDepthGeo, gi.getGeometryNominal2dBitdepthMinus1() + 1,
@@ -154,18 +137,6 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
     generateMissedPointsGeometryfromVideo( context, reconstructs );
     std::cout << " missed points geometry -> " << videoBitstreamMP.size() << " B " << endl;
   }
-  if ( asps.getEnhancedOccupancyMapForDepthFlag() && !pbfEnableFlag ) {
-    generateBlockToPatchFromOccupancyMap( context, context.getOccupancyPackingBlockSize(), true );
-  } else {
-    generateBlockToPatchFromBoundaryBox( context, context.getOccupancyPackingBlockSize() );
-  }
-
-  GeneratePointCloudParameters gpcParams;
-  setGeneratePointCloudParameters( gpcParams, context );
-  std::vector<std::vector<uint32_t>> partitions;
-  printf("generatePointCloud \n"); fflush(stdout);
-  generatePointCloud( reconstructs, context, gpcParams, partitions, true );
-  printf("generatePointCloud done\n"); fflush(stdout);
 
   if ( ai.getAttributeCount() > 0 ) {
     for (int attrIndex = 0; attrIndex < sps.getAttributeInformation(atlasIndex).getAttributeCount(); attrIndex++) {//right now we only have one attribute, this should be generalized
@@ -224,59 +195,26 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
       }
     }
   }
+  
+  reconstructs.setFrameCount( context.size() );
+  context.setOccupancyPrecision( sps.getFrameWidth( atlasIndex ) / context.getVideoOccupancyMap().getWidth() );
+
+  context.setOccupancyPrecision( sps.getFrameWidth( atlasIndex ) / context.getVideoOccupancyMap().getWidth() );
+  generateOccupancyMap( context, context.getOccupancyPrecision(), oi.getLossyOccupancyMapCompressionThreshold(),
+                          asps.getEnhancedOccupancyMapForDepthFlag() );
+
+  generateBlockToPatchFromBoundaryBox( context, context.getOccupancyPackingBlockSize() );
+  
+  GeneratePointCloudParameters gpcParams;
+  setGeneratePointCloudParameters( gpcParams, context );
+  printf("generatePointCloud \n"); fflush(stdout);
+  generatePointCloud( reconstructs, context, gpcParams, partitions, true );
+  printf("generatePointCloud done\n"); fflush(stdout);
+
   colorPointCloud( reconstructs, context, ai.getAttributeCount(), params_.colorTransform_,
                    ai.getAttributeMapAbsoluteCodingEnabledFlagList(),  // atlasIdx
                    sps.getMultipleMapStreamsPresentFlag( ATLASIDXPCC ), gpcParams );
-
-  //  Generate a buffer to keep unsmoothed geometry, then do geometry smoothing and transfer followed by color
-  //  smoothing
-  if ( gpcParams.flagGeometrySmoothing_ ) {
-    if ( gpcParams.gridSmoothing_ ) {
-      PCCGroupOfFrames tempFrameBuffer;
-      auto&            frames = context.getFrames();
-      tempFrameBuffer.resize( reconstructs.size() );
-      for ( size_t i = 0; i < frames.size(); i++ ) { tempFrameBuffer[i] = reconstructs[i]; }
-      smoothPointCloudPostprocess( reconstructs, context, params_.colorTransform_, gpcParams, partitions );
-      for ( size_t i = 0; i < frames.size(); i++ ) {
-        // These are different attribute transfer functions
-        if ( params_.postprocessSmoothingFilter_ == 1 ) {
-          //tempFrameBuffer[i].transferColors16bit( reconstructs[i], int32_t( 0 ), sps.getLosslessGeo() == 1, 8, 1, 1, 1, 1, 0,
-          //                                   4, 4, 1000, 1000, 1000*256, 1000*256 );  // jkie: make it general
-			tempFrameBuffer[i].transferColors16bitBP( reconstructs[i], int32_t( 0 ), sps.getLosslessGeo() == 1, 8, 1, 1, 1, 1, 0,
-                                             4, 4, 1000, 1000, 1000*256, 1000*256 );  // jkie: make it general
-        } else if ( params_.postprocessSmoothingFilter_ == 2 ) {
-          tempFrameBuffer[i].transferColorWeight( reconstructs[i], 0.1 );
-        } else if ( params_.postprocessSmoothingFilter_ == 3 ) {
-          tempFrameBuffer[i].transferColorsFilter3( reconstructs[i], int32_t( 0 ), sps.getLosslessGeo() == 1 );
-        }
-      }
-    }
-  }
-  //    This function does the color smoothing that is usually done in colorPointCloud
-  if ( gpcParams.flagColorSmoothing_ ) { colorSmoothing( reconstructs, context, params_.colorTransform_, gpcParams );
-  }
- 
-  auto& frames = context.getFrames();
-  if ( sps.getLosslessGeo() != 1 ) {  // lossy: convert 16-bit yuv444 to 8-bit RGB444
-  for ( size_t i = 0; i < frames.size(); i++ ) {
-    for ( int k = 0; k < reconstructs[i].getPointCount(); k++ ) {
-      convertYUV444_16bits_toRGB_8bits( reconstructs[i], k );
-    }
-  }
-  } else {  // lossless: copy 16-bit RGB to 8-bit RGB
-    PCCColor16bit color16;
-    PCCColor3B    color8;
-    for ( size_t i = 0; i < frames.size(); i++ ) {
-      for ( int k = 0; k < reconstructs[i].getPointCount(); k++ ) {
-        color16   = reconstructs[i].getColor16bit( k );
-        color8[0] = uint8_t( color16[0] );
-        color8[1] = uint8_t( color16[1] );
-        color8[2] = uint8_t( color16[2] );
-        reconstructs[i].setColor( k, color8 );
-      }
-    }
-  }
-
+  
 #ifdef CODEC_TRACE
   setTrace( false );
   closeTrace();
@@ -284,6 +222,49 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   return 0;
 }
 
+int PCCDecoder::reconstruct( PCCContext& context, PCCGroupOfFrames& reconstructs, std::vector<std::vector<uint32_t>>& partitions ){
+  auto& sps = context.getVps();
+  PCCPointSet3 tempFrameBuffer;
+  auto&            frames = context.getFrames();
+  GeneratePointCloudParameters ppSEIParams; //=gpcParams;
+  for(size_t f=0; f<frames.size(); f++){
+    setPostProcessingSeiParameters( ppSEIParams, context, f );
+    tempFrameBuffer = reconstructs[f];
+    if ( ppSEIParams.flagGeometrySmoothing_){
+      if(ppSEIParams.gridSmoothing_ ) {
+        smoothPointCloudPostprocess( reconstructs[f], context, f, params_.colorTransform_, ppSEIParams, partitions[f] );
+      }
+      // These are different attribute transfer functions
+      if ( params_.postprocessSmoothingFilter_ == 1 ) {
+        tempFrameBuffer.transferColors16bitBP( reconstructs[f], int32_t( 0 ), sps.getLosslessGeo() == 1, 8, 1, 1, 1, 1, 0,
+                                                 4, 4, 1000, 1000, 1000*256, 1000*256 );  // jkie: let's make it general
+      } else if ( params_.postprocessSmoothingFilter_ == 2 ) {
+        tempFrameBuffer.transferColorWeight( reconstructs[f], 0.1 );
+      } else if ( params_.postprocessSmoothingFilter_ == 3 ) {
+        tempFrameBuffer.transferColorsFilter3( reconstructs[f], int32_t( 0 ), sps.getLosslessGeo() == 1 );
+      }
+    }
+    if ( ppSEIParams.flagColorSmoothing_ ){
+      colorSmoothing( reconstructs[f], context, f, params_.colorTransform_, ppSEIParams );
+    }
+    if ( sps.getLosslessGeo() != 1 ) {  // lossy: convert 16-bit yuv444 to 8-bit RGB444
+      for ( int k = 0; k < reconstructs[f].getPointCount(); k++ ) {
+        convertYUV444_16bits_toRGB_8bits( reconstructs[f], k );
+      }
+    } else {  // lossless: copy 16-bit RGB to 8-bit RGB
+      PCCColor16bit color16;
+      PCCColor3B    color8;
+      for ( int k = 0; k < reconstructs[f].getPointCount(); k++ ) {
+        color16   = reconstructs[f].getColor16bit( k );
+        color8[0] = uint8_t( color16[0] );
+        color8[1] = uint8_t( color16[1] );
+        color8[2] = uint8_t( color16[2] );
+        reconstructs[f].setColor( k, color8 );
+      }
+    }//else
+  }
+  return 0;
+}
 void PCCDecoder::setPointLocalReconstruction( PCCContext& context ) {
   auto&                        asps = context.getAtlasSequenceParameterSet( 0 );  
   PointLocalReconstructionMode mode = {0, 0, 0, 1};
@@ -349,14 +330,14 @@ void PCCDecoder::setPointLocalReconstructionData( PCCFrameContext&              
 #endif
 }
 
-void PCCDecoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& params, PCCContext& context ) {
+void PCCDecoder::setPostProcessingSeiParameters( GeneratePointCloudParameters& params, PCCContext& context, size_t frameIndex ) {
   auto&   sps                   = context.getVps();
   int32_t atlasIndex            = 0;
-  auto&   ai                    = sps.getAttributeInformation( atlasIndex );
   auto&   oi                    = sps.getOccupancyInformation( atlasIndex );
   auto&   gi                    = sps.getGeometryInformation( atlasIndex );
   auto&   asps                  = context.getAtlasSequenceParameterSet( 0 );
-  bool    seiSmootingIsPresent  = context.seiIsPresent( NAL_PREFIX_SEI, SMOOTHING_PARAMETERS );
+  bool    seiSmoothingIsPresent  = context.seiIsPresent( NAL_PREFIX_SEI, SMOOTHING_PARAMETERS );
+  
   params.flagGeometrySmoothing_ = false;
   params.gridSmoothing_         = false;
   params.gridSize_              = 0;
@@ -365,22 +346,108 @@ void PCCDecoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& 
   params.pbfPassesCount_        = 0;
   params.pbfFilterSize_         = 0;
   params.pbfLog2Threshold_      = 0;
+#if 0
   printf( "params.pbfLog2Threshold_      = 0; \n " );
-  if ( seiSmootingIsPresent ) {
-    SEISmoothingParameters& sei =
-        static_cast<SEISmoothingParameters&>( context.getSei( NAL_PREFIX_SEI, SMOOTHING_PARAMETERS ) );
-    if ( sei.getSpGeometrySmoothingEnabledFlag() ) {
+#endif
+  if ( seiSmoothingIsPresent ) {
+    SEISmoothingParameters* sei =
+        static_cast<SEISmoothingParameters*>( context.getSei( NAL_PREFIX_SEI, SMOOTHING_PARAMETERS ) );
+    
+    if ( sei->getSpGeometrySmoothingEnabledFlag() ) {
       params.flagGeometrySmoothing_ = true;
-      if ( sei.getSpGeometrySmoothingId() == 0 ) {
+      if ( sei->getSpGeometrySmoothingId() == 0 ) {
         params.gridSmoothing_      = true;
-        params.gridSize_           = sei.getSpGeometrySmoothingGridSizeMinus2() + 2;
-        params.thresholdSmoothing_ = (double)sei.getSpGeometrySmoothingThreshold();
+        params.gridSize_           = sei->getSpGeometrySmoothingGridSizeMinus2() + 2;
+        params.thresholdSmoothing_ = (double)sei->getSpGeometrySmoothingThreshold();
       }
-      if ( sei.getSpGeometrySmoothingId() == 1 ) {
+      if ( sei->getSpGeometrySmoothingId() == 1 ) {
         params.pbfEnableFlag_    = true;
-        params.pbfPassesCount_   = sei.getSpGeometryPatchBlockFilteringPassesCountMinus1()   + 1;
-        params.pbfFilterSize_    = sei.getSpGeometryPatchBlockFilteringFilterSizeMinus1()    + 1;
-        params.pbfLog2Threshold_ = sei.getSpGeometryPatchBlockFilteringLog2ThresholdMinus1() + 1;
+        params.pbfPassesCount_   = sei->getSpGeometryPatchBlockFilteringPassesCountMinus1()   + 1;
+        params.pbfFilterSize_    = sei->getSpGeometryPatchBlockFilteringFilterSizeMinus1()    + 1;
+        params.pbfLog2Threshold_ = sei->getSpGeometryPatchBlockFilteringLog2ThresholdMinus1() + 1;
+      }
+    }
+  }
+  params.occupancyResolution_    = context.getOccupancyPackingBlockSize();
+  params.occupancyPrecision_     = context.getOccupancyPrecision();
+  params.enableSizeQuantization_ = context.getAtlasSequenceParameterSet( 0 ).getPatchSizeQuantizerPresentFlag();
+  params.rawPointColorFormat_    = size_t( sps.getLosslessGeo444() != 0 ? COLOURFORMAT444 : COLOURFORMAT420 );
+  params.nbThread_               = params_.nbThread_;
+  params.absoluteD1_ = sps.getMapCountMinus1( atlasIndex ) == 0 || sps.getMapAbsoluteCodingEnableFlag( atlasIndex, 1 );
+  params.multipleStreams_               = sps.getMultipleMapStreamsPresentFlag( atlasIndex );
+  params.surfaceThickness_              = asps.getSurfaceThicknessMinus1() + 1;
+  params.thresholdColorSmoothing_       = 0.;
+  params.gridColorSmoothing_            = false;
+  params.cgridSize_                     = 0;
+  params.thresholdColorDifference_      = 0;
+  params.thresholdColorVariation_       = 0;
+  params.thresholdLocalEntropy_         = 0;
+  params.radius2ColorSmoothing_         = 64;
+  params.neighborCountColorSmoothing_   = 64;
+  params.flagColorSmoothing_            = 0;
+  if ( seiSmoothingIsPresent ) {
+    SEISmoothingParameters* sei =
+        static_cast<SEISmoothingParameters*>( context.getSei( NAL_PREFIX_SEI, SMOOTHING_PARAMETERS ) );
+    for ( size_t j = 0; j < sei->getSpNumAttributeUpdates(); j++ ) {
+      size_t index = sei->getSpAttributeIdx( j );
+      for ( size_t i = 0; i < sei->getSpDimensionMinus1( index ) + 1; i++ ) {
+        if ( sei->getSpAttrSmoothingParamsEnabledFlag( index, i ) ) {
+          params.flagColorSmoothing_       = true;
+          params.thresholdColorSmoothing_  = (double)sei->getSpAttrSmoothingThreshold( index, i );
+          params.gridColorSmoothing_       = true;
+          params.cgridSize_                = sei->getSpAttrSmoothingGridSizeMinus2( index, i ) + 2;
+          params.thresholdColorDifference_ = sei->getSpAttrSmoothingThresholdDifference( index, i );
+          params.thresholdColorVariation_  = sei->getSpAttrSmoothingThresholdVariation( index, i );
+          params.thresholdLocalEntropy_    = sei->getSpAttrSmoothingLocalEntropyThreshold( index, i );
+        }
+      }
+    }
+  }
+  params.thresholdLossyOM_              = (size_t)oi.getLossyOccupancyMapCompressionThreshold();
+  params.removeDuplicatePoints_         = asps.getRemoveDuplicatePointEnabledFlag();
+  params.pointLocalReconstruction_      = asps.getPointLocalReconstructionEnabledFlag();
+  params.mapCountMinus1_                = sps.getMapCountMinus1( atlasIndex );
+  params.singleMapPixelInterleaving_    = asps.getPixelDeinterleavingFlag();
+  params.useAdditionalPointsPatch_      = sps.getRawPatchEnabledFlag( atlasIndex );
+  params.enhancedDeltaDepthCode_        = asps.getEnhancedOccupancyMapForDepthFlag();
+  params.EOMFixBitCount_                = asps.getEnhancedOccupancyMapFixBitCountMinus1() + 1;
+  params.geometry3dCoordinatesBitdepth_ = gi.getGeometry3dCoordinatesBitdepthMinus1() + 1;
+  params.geometryBitDepth3D_            = gi.getGeometry3dCoordinatesBitdepthMinus1() + 1;
+  printf("Params: SPI = %d PBF = %d \n",params.singleMapPixelInterleaving_,params.pbfEnableFlag_); fflush(stdout);
+}
+
+void PCCDecoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& params, PCCContext& context ) {
+  auto&   sps                   = context.getVps();
+  int32_t atlasIndex            = 0;
+  auto&   oi                    = sps.getOccupancyInformation( atlasIndex );
+  auto&   gi                    = sps.getGeometryInformation( atlasIndex );
+  auto&   asps                  = context.getAtlasSequenceParameterSet( 0 );
+  bool    seiSmoothingIsPresent  = context.seiIsPresent( NAL_PREFIX_SEI, SMOOTHING_PARAMETERS );
+  
+  params.flagGeometrySmoothing_ = false;
+  params.gridSmoothing_         = false;
+  params.gridSize_              = 0;
+  params.thresholdSmoothing_    = 0;
+  params.pbfEnableFlag_         = false;
+  params.pbfPassesCount_        = 0;
+  params.pbfFilterSize_         = 0;
+  params.pbfLog2Threshold_      = 0;
+  if ( seiSmoothingIsPresent ) {
+    SEISmoothingParameters* sei =
+        static_cast<SEISmoothingParameters*>( context.getSei( NAL_PREFIX_SEI, SMOOTHING_PARAMETERS ) );
+    
+    if ( sei->getSpGeometrySmoothingEnabledFlag() ) {
+      params.flagGeometrySmoothing_ = true;
+      if ( sei->getSpGeometrySmoothingId() == 0 ) {
+        params.gridSmoothing_      = true;
+        params.gridSize_           = sei->getSpGeometrySmoothingGridSizeMinus2() + 2;
+        params.thresholdSmoothing_ = (double)sei->getSpGeometrySmoothingThreshold();
+      }
+      if ( sei->getSpGeometrySmoothingId() == 1 ) {
+        params.pbfEnableFlag_    = true;
+        params.pbfPassesCount_   = sei->getSpGeometryPatchBlockFilteringPassesCountMinus1()   + 1;
+        params.pbfFilterSize_    = sei->getSpGeometryPatchBlockFilteringFilterSizeMinus1()    + 1;
+        params.pbfLog2Threshold_ = sei->getSpGeometryPatchBlockFilteringLog2ThresholdMinus1() + 1;
       }
     }
   }
@@ -401,20 +468,20 @@ void PCCDecoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& 
   params.radius2ColorSmoothing_         = 64;
   params.neighborCountColorSmoothing_   = 64;
   params.flagColorSmoothing_            = 0; 
-  if ( seiSmootingIsPresent ) {
-    SEISmoothingParameters& sei =
-        static_cast<SEISmoothingParameters&>( context.getSei( NAL_PREFIX_SEI, SMOOTHING_PARAMETERS ) );
-    for ( size_t j = 0; j < sei.getSpNumAttributeUpdates(); j++ ) {
-      size_t index = sei.getSpAttributeIdx( j );
-      for ( size_t i = 0; i < sei.getSpDimensionMinus1( index ) + 1; i++ ) {
-        if ( sei.getSpAttrSmoothingParamsEnabledFlag( index, i ) ) {
+  if ( seiSmoothingIsPresent ) {
+    SEISmoothingParameters* sei =
+        static_cast<SEISmoothingParameters*>( context.getSei( NAL_PREFIX_SEI, SMOOTHING_PARAMETERS ) );
+    for ( size_t j = 0; j < sei->getSpNumAttributeUpdates(); j++ ) {
+      size_t index = sei->getSpAttributeIdx( j );
+      for ( size_t i = 0; i < sei->getSpDimensionMinus1( index ) + 1; i++ ) {
+        if ( sei->getSpAttrSmoothingParamsEnabledFlag( index, i ) ) {
           params.flagColorSmoothing_       = true;
-          params.thresholdColorSmoothing_  = (double)sei.getSpAttrSmoothingThreshold( index, i );  
+          params.thresholdColorSmoothing_  = (double)sei->getSpAttrSmoothingThreshold( index, i );
           params.gridColorSmoothing_       = true;
-          params.cgridSize_                = sei.getSpAttrSmoothingGridSizeMinus2( index, i ) + 2;    
-          params.thresholdColorDifference_ = sei.getSpAttrSmoothingThresholdDifference( index, i );   
-          params.thresholdColorVariation_  = sei.getSpAttrSmoothingThresholdVariation( index, i );     
-          params.thresholdLocalEntropy_    = sei.getSpAttrSmoothingLocalEntropyThreshold( index, i );  
+          params.cgridSize_                = sei->getSpAttrSmoothingGridSizeMinus2( index, i ) + 2;
+          params.thresholdColorDifference_ = sei->getSpAttrSmoothingThresholdDifference( index, i );
+          params.thresholdColorVariation_  = sei->getSpAttrSmoothingThresholdVariation( index, i );
+          params.thresholdLocalEntropy_    = sei->getSpAttrSmoothingLocalEntropyThreshold( index, i );
         }
       }
     }

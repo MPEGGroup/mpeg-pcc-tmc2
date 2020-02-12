@@ -37,7 +37,7 @@
 using namespace pcc;
 
 PCCGroupOfFrames::PCCGroupOfFrames() {}
-
+PCCGroupOfFrames::PCCGroupOfFrames(size_t value){ frames_.resize( value ); }
 PCCGroupOfFrames::~PCCGroupOfFrames() { frames_.clear(); }
 
 bool PCCGroupOfFrames::load( const std::string       uncompressedDataPath,

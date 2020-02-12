@@ -73,7 +73,6 @@ PCCEncoder::~PCCEncoder() {}
 void PCCEncoder::setParameters( PCCEncoderParameters params ) { params_ = params; }
 
 int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PCCGroupOfFrames& reconstructs ) {  
-  int    ret                                  = 0;
   size_t pointLocalReconstructionOriginal     = params_.pointLocalReconstruction_;
   size_t layerCountMinus1Original             = params_.mapCountMinus1_;
   size_t singleLayerPixelInterleavingOriginal = params_.singleMapPixelInterleaving_;
@@ -87,7 +86,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   openTrace( stringFormat( "%s_GOF%u_codec_encode.txt", removeFileExtension( params_.compressedStreamPath_ ).c_str(),
                            context.getVps().getVpccParameterSetId() ) );
 #endif
-  reconstructs.resize( sources.size() );
+  reconstructs.setFrameCount( sources.size() );
   context.setGofSize( sources.size() );
   context.resize( sources.size() );
   auto& frames = context.getFrames();
@@ -504,7 +503,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   if ( gpcParams.flagGeometrySmoothing_ ) {
     if ( gpcParams.gridSmoothing_ ) {
       PCCGroupOfFrames tempFrameBuffer;
-      tempFrameBuffer.resize( reconstructs.size() );
+      tempFrameBuffer.setFrameCount( reconstructs.size() );
       for ( size_t i = 0; i < frames.size(); i++ ) { tempFrameBuffer[i] = reconstructs[i]; }
       smoothPointCloudPostprocess( reconstructs, context, params_.colorTransform_, gpcParams, partitions );
       for ( size_t i = 0; i < frames.size(); i++ ) {
@@ -961,8 +960,10 @@ double PCCEncoder::adjustReferenceAtlasFrame( PCCContext&            context,
       }
       tempBitStream.writeSvlc( delta_d1 );
     }
+#if TRACE_CODEC
     float bitCostInterA = ( curPatch.getBestMatchIdx() != -1 ) ? tempBitStream.size() : 0;
     float bitCostInter  = bitCostInterA - initSize;
+#endif
     float bitCostIntra  = bitCostIntraA - initSize;
 
     maxIOUList[curId] = 1 / bitCostIntra;
@@ -2962,6 +2963,7 @@ void PCCEncoder::packTetris( PCCFrameContext& frame, int safeguard ) {
                 << std::endl;
     }
   }
+
   size_t occupancySizeU = params_.minimumImageWidth_ / params_.occupancyResolution_;
   size_t occupancySizeV = ( std::max )( patches[0].getSizeV0(), patches[0].getSizeU0() );
   for ( auto& patch : patches ) { occupancySizeU = ( std::max )( occupancySizeU, patch.getSizeU0() + 1 ); }
@@ -5669,7 +5671,7 @@ bool PCCEncoder::generateTextureVideo( const PCCPointSet3& reconstruct,
   auto& frame   = context[frameIndex];
   auto& video   = params_.multipleStreams_ ? context.getVideoTextureMultiple()[0] : context.getVideoTexture();
   auto& videoT1 = context.getVideoTextureMultiple()[1];
-  assert( mapCount == 2 );
+  assert( mapCount > 0 );
   auto&  pointToPixel                 = frame.getPointToPixel();
   bool   useMissedPointsSeparateVideo = frame.getUseMissedPointsSeparateVideo();
   bool   losslessAtt                  = frame.getLosslessGeo();
@@ -7002,7 +7004,7 @@ void PCCEncoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& 
   params.rawPointColorFormat_           = size_t( params_.losslessGeo444_ ? COLOURFORMAT444 : COLOURFORMAT420 );
   params.nbThread_                      = params_.nbThread_;
   params.absoluteD1_                    = params_.absoluteD1_;
-  params.multipleStreams_               = params_.mapCountMinus1_ == 0 || params_.multipleStreams_;
+  params.multipleStreams_               = params_.multipleStreams_;
   params.surfaceThickness_              = params_.surfaceThickness_;
   params.thresholdColorSmoothing_       = params_.thresholdColorSmoothing_;
   params.thresholdColorDifference_      = params_.thresholdColorDifference_;
@@ -7061,7 +7063,6 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
     }
   }
 
-  PCCFrameContext& refFrame = context.getFrame( 0 );
   for ( size_t i = 0; i < frameCount; i++ ) {
     //*****//
     PCCFrameContext& frame = context.getFrame( i );
@@ -7178,7 +7179,9 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
   TRACE_CODEC( "OccupancyPackingBlockSize           = %d \n", context.getOccupancyPackingBlockSize() );
 
   // all patches
+#if TRACE_CODEC
   size_t  totalPatchCount = patches.size() + frame.getMissedPointsPatches().size() + frame.getEomPatches().size();
+#endif
   int32_t quantizerSizeX  = 1 << params_.log2QuantizerSizeX_;
   int32_t quantizerSizeY  = 1 << params_.log2QuantizerSizeY_;
   for ( size_t patchIndex = 0; patchIndex < patches.size(); patchIndex++ ) {

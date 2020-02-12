@@ -683,7 +683,13 @@ bool PCCEncoderParameters::check() {
       std::cerr << "Point local reconstruction is built on one layer coding. Force mapCountMinus1_ = 0.\n";
     }
   }
-
+  else{
+    if( multipleStreams_ ) {
+      std::cout << " multipleStreams is set 0 when mapCountMinus1 is 0. Force multipleStreams_= 0."<<std::endl;
+      multipleStreams_= 0;
+    }
+  }
+  
   if ( occupancyMapVideoEncoderConfig_.empty() ) {
     ret = false;
     std::cerr << "to use segmentation, you must define a segmentationDataPath \n";

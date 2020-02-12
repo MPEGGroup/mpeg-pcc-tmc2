@@ -295,7 +295,6 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
   bitstreamStat.incrHeader( headerSize );
 
   bool    bMoreData = true;
-  int32_t index     = 0;
   while ( bMoreData ) {
     PCCGroupOfFrames reconstructs;
     PCCContext       context;
@@ -315,9 +314,17 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
     bitstream.closeTrace();
 #endif
 
-    int ret = decoder.decode( context, reconstructs );
+    std::vector<std::vector<uint32_t>> partitions;
+    int retDecoding = decoder.decode( context, reconstructs, partitions );
+    
+    //jkei : this will be the process.
+    //we need to change this part(and "GeneratePointCloudParameters ppSEIParams" and "setPostProcessingSeiParameters")
+    //based on desirable reconstruction profile of DECODER and presence of SEIs
+    //if(retDecoding==0) // do we need this?
+    int retReconstruction = decoder.reconstruct(context, reconstructs, partitions);
+    
     clock.stop();
-    if ( ret ) { return ret; }
+    if ( retDecoding || retReconstruction ) { return retDecoding!=0 ? retDecoding : retReconstruction; }
     if ( metricsParams.computeChecksum_ ) { checksum.computeDecoded( reconstructs ); }
     if ( metricsParams.computeMetrics_ ) {
       PCCGroupOfFrames sources, normals;
@@ -341,6 +348,10 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
       frameNumber += reconstructs.size();
     }
     bMoreData = ( ssvu.getVpccUnitCount() > 0 );
+    
+    //jkei: do we need this?
+    for(size_t f=0; f<partitions.size(); f++)
+      partitions[f].clear();
   }
   bitstreamStat.trace();
   if ( metricsParams.computeMetrics_ ) { metrics.display(); }

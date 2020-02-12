@@ -58,8 +58,11 @@ class PCCDecoder : public PCCCodec {
  public:
   PCCDecoder();
   ~PCCDecoder();
-  int  decode( PCCContext& context, PCCGroupOfFrames& reconstruct );
+  int  decode     ( PCCContext& context, PCCGroupOfFrames& reconstruct, std::vector<std::vector<uint32_t>>& partitions );
+  int  reconstruct( PCCContext& context, PCCGroupOfFrames& reconstructs, std::vector<std::vector<uint32_t>>& partitions);
+    
   void setParameters( PCCDecoderParameters value );
+  void setPostProcessingSeiParameters( GeneratePointCloudParameters& gpcParams, PCCContext& context, size_t frameIndex );
   void setGeneratePointCloudParameters( GeneratePointCloudParameters& gpcParams, PCCContext& context );
   void createPatchFrameDataStructure( PCCContext& context );
   void createPatchFrameDataStructure( PCCContext& context, PCCFrameContext& frame, size_t frameIndex );

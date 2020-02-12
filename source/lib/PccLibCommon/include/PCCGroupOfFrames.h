@@ -41,11 +41,12 @@ class PCCPointSet3;
 class PCCGroupOfFrames {
  public:
   PCCGroupOfFrames();
+  PCCGroupOfFrames(size_t value);
   ~PCCGroupOfFrames();
 
   void                clear() { frames_.clear(); }
   size_t              size() const { return frames_.size(); }
-  void                resize( size_t n ) { frames_.resize( n ); }
+  void                setFrameCount( size_t n ) { frames_.resize( n ); }
   const PCCPointSet3& operator[]( const size_t index ) const {
     assert( index < frames_.size() );
     return frames_[index];

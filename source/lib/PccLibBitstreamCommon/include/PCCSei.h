@@ -41,7 +41,7 @@ namespace pcc {
 // E.2.1	General SEI message syntax  <=> 7.3.8	Supplemental enhancement information message syntax
 class SEI {
  public:
-  SEI() {}
+  SEI() {payloadSize_=0;}
   virtual ~SEI() {}
   virtual SeiPayloadType getPayloadType() = 0;
   size_t                 getPayloadSize() { return payloadSize_; }
@@ -761,7 +761,7 @@ class SEIBufferingPeriod : public SEI {
   uint32_t getBpAclInitialCabRemovalDelay( size_t i, size_t j ) { return bpAclInitialCabRemovalDelay_[i][j]; }
   uint32_t getBpAclInitialCabRemovalOffset( size_t i, size_t j ) { return bpAclInitialCabRemovalOffset_[i][j]; }
 
-  void setBpIrapCabParamsPresentFlag( bool value ) { bpIrapCabParamsPresentFlag_; }
+  void setBpIrapCabParamsPresentFlag( bool value ) { bpIrapCabParamsPresentFlag_ = value; }
   void setBpConcatenationFlag( bool value ) { bpConcatenationFlag_ = value; }
   void setBpAtlasSequenceParameterSetId( uint8_t value ) { bpAtlasSequenceParameterSetId_ = value; }
   void setBpCabDelayOffset( uint32_t value ) { bpCabDelayOffset_ = value; }
@@ -878,9 +878,9 @@ class SEISmoothingParameters : public SEI {
       spGeometryCancelFlag_( true ),
       spAttributeCancelFlag_( true ),
       spGeometrySmoothingEnabledFlag_( false ),
-      spGeometrySmoothingId_( 0 ),
       spGeometrySmoothingGridSizeMinus2_( 0 ),
       spGeometrySmoothingThreshold_( 0 ),
+      spGeometrySmoothingId_( 0 ),
       spGeometryPatchBlockFilteringLog2ThresholdMinus1_( 0 ),
       spGeometryPatchBlockFilteringPassesCountMinus1_( 0 ),
       spGeometryPatchBlockFilteringFilterSizeMinus1_( 0 ),

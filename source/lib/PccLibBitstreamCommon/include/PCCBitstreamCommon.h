@@ -342,19 +342,17 @@ static inline std::string toString( VPCCUnitType type ) {
   }
 }
 static inline std::string toString( PCCVideoType type ) {
-  switch ( type ) {
-    case VIDEO_OCCUPANCY: return std::string( "occupancy map video" ); break;
-    case VIDEO_GEOMETRY: return std::string( "geometry video" ); break;
-    case VIDEO_GEOMETRY_D0: return std::string( "geometry D0 video" ); break;
-    case VIDEO_GEOMETRY_D1: return std::string( "geometry D1 video" ); break;
-    case VIDEO_GEOMETRY_RAW: return std::string( "missed points geometry video" ); break;
-    case VIDEO_TEXTURE: return std::string( "texture video " ); break;
-    case VIDEO_TEXTURE_T0: return std::string( "texture T0 video " ); break;
-    case VIDEO_TEXTURE_T1: return std::string( "texture T1 video " ); break;
-    case VIDEO_TEXTURE_RAW: return std::string( "missed points texture video" ); break;
-    case NUM_VIDEO_TYPE: return std::string( "not supported" ); break;
-  }
-  return std::string( "not supported" );
+  size_t typeIndex = (size_t) type;
+  if( typeIndex == (size_t)VIDEO_OCCUPANCY)         return std::string( "occupancy map video " );
+  else if( typeIndex == (size_t)VIDEO_GEOMETRY)     return std::string( "geometry video " );
+  else if( typeIndex >= (size_t)VIDEO_GEOMETRY_D0 && typeIndex <= (size_t)VIDEO_GEOMETRY_D15 )
+       return std::string( "geometry D" )+ std::to_string (typeIndex-(size_t)VIDEO_GEOMETRY_D0 ) + std::string(" video ");
+  else if( typeIndex == (size_t)VIDEO_GEOMETRY_RAW) return std::string( "raw points geometry video " );
+  else if( typeIndex == (size_t)VIDEO_TEXTURE)      return std::string( "texture video " );
+  else if( typeIndex >= (size_t)VIDEO_TEXTURE_T0 && typeIndex <= (size_t)VIDEO_TEXTURE_T15 )
+       return std::string( "texture T" )+ std::to_string (typeIndex-(size_t)VIDEO_TEXTURE_T0 ) + std::string(" video ");
+  else if( typeIndex == (size_t)VIDEO_TEXTURE_RAW)  return std::string( "raw points texture video " );
+  else                                              return std::string( "not supported" );
 }
 static bool exist( const std::string& sString ) {
   struct stat buffer;

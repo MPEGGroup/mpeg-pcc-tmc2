@@ -227,6 +227,235 @@ bool PCCCodec::colorPointCloud( PCCGroupOfFrames&                     reconstruc
   return true;
 }
 
+void PCCCodec::smoothPointCloudPostprocess( PCCPointSet3&                      reconstruct,
+                                           PCCContext&                         context,
+                                           size_t                              frameIndex,
+                                           const PCCColorTransform             colorTransform,
+                                           const GeneratePointCloudParameters  params,
+                                           std::vector<uint32_t>&              partition ) {
+#ifdef CODEC_TRACE
+  auto checksum = reconstruct.computeChecksum();
+  TRACE_CODEC( "ChecksumIn %lu: ", frameIndex );
+  for ( auto& c : checksum ) { TRACE_CODEC( "%02x", c ); }
+  TRACE_CODEC( "\n" );
+  printf( "ChecksumIn %lu: ", frameIndex );
+  for ( auto& c : checksum ) { printf( "%02x", c ); }
+  printf( "\n" );
+  fflush( stdout );
+  TRACE_CODEC( "  flagGeometrySmoothing_ = %d \n", params.flagGeometrySmoothing_ );
+  TRACE_CODEC( "  gridSmoothing_         = %d \n", params.gridSmoothing_ );
+  TRACE_CODEC( "  gridSize_              = %lu \n", params.gridSize_ );
+  TRACE_CODEC( "  thresholdSmoothing_    = %f \n", params.thresholdSmoothing_ );
+  TRACE_CODEC( "  pbfEnableFlag_         = %d \n", params.pbfEnableFlag_ );
+#endif
+  if ( params.flagGeometrySmoothing_ ) {
+    if ( params.gridSmoothing_ ) {
+      // reset for each GOF
+      PCCInt16Box3D boundingBox;
+      boundingBox.min_ = boundingBox.max_ = reconstruct[0];
+      for ( int j = 0; j < reconstruct.getPointCount(); j++ ) {
+        const PCCPoint3D point = reconstruct[j];
+        for ( size_t k = 0; k < 3; ++k ) {
+          if ( point[k] < boundingBox.min_[k] ) { boundingBox.min_[k] = floor( point[k] ); }
+          if ( point[k] > boundingBox.max_[k] ) { boundingBox.max_[k] = ceil( point[k] ); }
+        }
+      }
+      int maxSize = ( std::max )( ( std::max )( boundingBox.max_.x(), boundingBox.max_.y() ), boundingBox.max_.z() );
+      const int w = ( maxSize + (int)params.gridSize_ - 1 ) / ( (int)params.gridSize_ );
+      
+      // identify boundary cells
+      size_t           pointCount = reconstruct.getPointCount();
+      std::vector<int> cellIndex;
+      
+      cellIndex.resize( w * w * w );
+      std::fill( cellIndex.begin(), cellIndex.end(), -1 );
+      size_t    numBoundaryCells = 0;
+      const int disth            = ( std::max )( (int)params.gridSize_ / 2, 1 );
+      const int th               = params.gridSize_ * w;
+      
+      for ( size_t n = 0; n < pointCount; ++n ) {
+        if ( reconstruct.getBoundaryPointType( n ) == 1 ) {
+          PCCPoint3D point = reconstruct[n];
+          int        x     = point.x();
+          int        y     = point.y();
+          int        z     = point.z();
+          
+          if ( x < disth || y < disth || z < disth || th <= x + disth || th <= y + disth || th <= z + disth ) {
+            continue;
+          }
+          
+          int x2 = x / params.gridSize_;
+          int y2 = y / params.gridSize_;
+          int z2 = z / params.gridSize_;
+          
+          int x3 = x % params.gridSize_;
+          int y3 = y % params.gridSize_;
+          int z3 = z % params.gridSize_;
+          
+          int qx = x2 + ( ( x3 < params.gridSize_ / 2 ) ? -1 : 0 );
+          int qy = y2 + ( ( y3 < params.gridSize_ / 2 ) ? -1 : 0 );
+          int qz = z2 + ( ( z3 < params.gridSize_ / 2 ) ? -1 : 0 );
+          
+          for ( int ix = 0; ix < 2; ix++ ) {
+            for ( int iy = 0; iy < 2; iy++ ) {
+              for ( int iz = 0; iz < 2; iz++ ) {
+                int x4     = qx + ix;
+                int y4     = qy + iy;
+                int z4     = qz + iz;
+                int cellId = x4 + y4 * w + z4 * w * w;
+                if ( cellIndex[cellId] == -1 ) {
+                  cellIndex[cellId] = numBoundaryCells;
+                  numBoundaryCells++;
+                }
+              }
+            }
+          }
+        }
+      }
+      
+      geoSmoothingCenter_.resize( numBoundaryCells );
+      geoSmoothingCount_.resize( numBoundaryCells );
+      geoSmoothingPartition_.resize( numBoundaryCells );
+      geoSmoothingDoSmooth_.resize( numBoundaryCells );
+      int size = (int)geoSmoothingCount_.size();
+      geoSmoothingCount_.resize( 0 );
+      geoSmoothingCount_.resize( size, 0 );
+      for ( int j = 0; j < reconstruct.getPointCount(); j++ ) {
+        PCCPoint3D point  = reconstruct[j];
+        int        x2     = point.x() / params.gridSize_;
+        int        y2     = point.y() / params.gridSize_;
+        int        z2     = point.z() / params.gridSize_;
+        int        cellId = x2 + y2 * w + z2 * w * w;
+        if ( cellIndex[cellId] != -1 ) {
+          addGridCentroid( reconstruct[j], partition[j] + 1, geoSmoothingCount_, geoSmoothingCenter_,
+                          geoSmoothingPartition_, geoSmoothingDoSmooth_, (int)params.gridSize_, w,
+                          cellIndex[cellId] );
+        }
+      }
+      for ( int i = 0; i < geoSmoothingCount_.size(); i++ ) {
+        if ( geoSmoothingCount_[i] ) { geoSmoothingCenter_[i] /= geoSmoothingCount_[i]; }
+      }
+      smoothPointCloudGrid( reconstruct, partition, params, w, cellIndex );
+      cellIndex.clear();
+    } else {
+      if ( !params.pbfEnableFlag_ ) { smoothPointCloud( reconstruct, partition, params ); }
+    }
+  }
+#ifdef CODEC_TRACE
+  checksum = reconstructs[i].computeChecksum();
+  TRACE_CODEC( "ChecksumOut %lu: ", frameIndex );
+  for ( auto& c : checksum ) { TRACE_CODEC( "%02x", c ); }
+  TRACE_CODEC( "\n" );
+  printf( "ChecksumOut %lu: ", frameIndex );
+  for ( auto& c : checksum ) { printf( "%02x", c ); }
+  printf( "\n" );
+  fflush( stdout );
+#endif
+}
+void PCCCodec::colorSmoothing( PCCPointSet3&                     reconstruct,
+                              PCCContext&                        context,
+                              size_t                             frameIndex,
+                              const PCCColorTransform            colorTransform,
+                              const GeneratePointCloudParameters params ){
+  const int gridSize = params.occupancyPrecision_;
+  const int w        = pow( 2, params.geometryBitDepth3D_ ) / gridSize;
+  const int w3       = w*w*w;
+  assert( params.flagColorSmoothing_ );
+  if ( params.gridColorSmoothing_ ) {
+    size_t           pointCount = reconstruct.getPointCount();
+    std::vector<int> cellIndex;
+    cellIndex.resize( w3 );
+    std::fill( cellIndex.begin(), cellIndex.end(), -1 );
+
+    size_t    numBoundaryCells = 0;
+    const int disth            = ( std::max )( gridSize / 2, 1 );
+    int       pcMaxSize        = pow( 2, params.geometryBitDepth3D_ );
+
+    for ( size_t n = 0; n < pointCount; ++n ) {
+      if ( reconstruct.getBoundaryPointType( n ) == 1 ) {
+        PCCPoint3D point = reconstruct[n];
+        int        x     = point.x();
+        int        y     = point.y();
+        int        z     = point.z();
+
+        if ( x < disth || y < disth || z < disth || pcMaxSize <= x + disth || pcMaxSize <= y + disth ||
+             pcMaxSize <= z + disth ) {
+          continue;
+        }
+
+        int x2 = x / gridSize;
+        int y2 = y / gridSize;
+        int z2 = z / gridSize;
+
+        int x3 = x % gridSize;
+        int y3 = y % gridSize;
+        int z3 = z % gridSize;
+
+        int qx = x2 + ( ( x3 < gridSize / 2 ) ? -1 : 0 );
+        int qy = y2 + ( ( y3 < gridSize / 2 ) ? -1 : 0 );
+        int qz = z2 + ( ( z3 < gridSize / 2 ) ? -1 : 0 );
+
+        for ( int ix = 0; ix < 2; ix++ ) {
+          for ( int iy = 0; iy < 2; iy++ ) {
+            for ( int iz = 0; iz < 2; iz++ ) {
+              int x4     = qx + ix;
+              int y4     = qy + iy;
+              int z4     = qz + iz;
+              int cellId = x4 + y4 * w + z4 * w * w;
+              if ( cellIndex[cellId] == -1 ) {
+                cellIndex[cellId] = numBoundaryCells;
+                numBoundaryCells++;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    colorSmoothingCenter_.resize( numBoundaryCells );
+    colorSmoothingCount_.resize( numBoundaryCells );
+    colorSmoothingPartition_.resize( numBoundaryCells );
+    colorSmoothingDoSmooth_.resize( numBoundaryCells );
+    std::fill( colorSmoothingCenter_.begin(), colorSmoothingCenter_.end(), 0 );
+    std::fill( colorSmoothingCount_.begin(), colorSmoothingCount_.end(), 0 );
+    std::fill( colorSmoothingPartition_.begin(), colorSmoothingPartition_.end(), 0 );
+    std::fill( colorSmoothingDoSmooth_.begin(), colorSmoothingDoSmooth_.end(), 0 );
+    colorSmoothingLum_.clear();
+    colorSmoothingLum_.resize( numBoundaryCells );
+    for ( int k = 0; k < reconstruct.getPointCount(); k++ ) {
+      PCCPoint3D point  = reconstruct[k];
+      int        x2     = point.x() / gridSize;
+      int        y2     = point.y() / gridSize;
+      int        z2     = point.z() / gridSize;
+      int        cellId = x2 + y2 * w + z2 * w * w;
+      if ( cellIndex[cellId] != -1 ) {
+      PCCColor16bit color16bit = reconstruct.getColor16bit( k );
+      PCCVector3D clr;
+      for ( size_t c = 0; c < 3; ++c ) { clr[c] = double( color16bit[c] ); }
+
+      const size_t patchIndexPlusOne = reconstruct.getPointPatchIndex( k ) + 1;
+      addGridColorCentroid( reconstruct[k], clr, patchIndexPlusOne, colorSmoothingCount_,
+                              colorSmoothingCenter_, colorSmoothingPartition_, colorSmoothingDoSmooth_, gridSize,
+                              colorSmoothingLum_, params, cellIndex[cellId] );
+      }
+    }
+    smoothPointCloudColorLC( reconstruct, params, cellIndex );
+  } else {
+    smoothPointCloudColor( reconstruct, params );
+  }
+    colorSmoothingCenter_.resize( 0 );
+    colorSmoothingCenter_.shrink_to_fit();
+    colorSmoothingCount_.resize( 0 );
+    colorSmoothingCount_.shrink_to_fit();
+    colorSmoothingPartition_.resize( 0 );
+    colorSmoothingPartition_.shrink_to_fit();
+    colorSmoothingDoSmooth_.resize( 0 );
+    colorSmoothingDoSmooth_.shrink_to_fit();
+    colorSmoothingLum_.resize( 0 );
+    colorSmoothingLum_.shrink_to_fit();
+
+}
+
 void PCCCodec::smoothPointCloudPostprocess( PCCGroupOfFrames&                   reconstructs,
                                             PCCContext&                         context,
                                             const PCCColorTransform             colorTransform,
@@ -1245,8 +1474,7 @@ bool PCCCodec::gridFiltering( const std::vector<uint32_t>&    partition,
                               uint8_t                         gridSize,
                               uint16_t                        gridWidth,
                               std::vector<int>&               cellIndex ) {
-  const uint16_t w                      = gridWidth;
-  int            w3                     = w * w * w;
+  uint16_t       gridSizeHalf = gridSize/2;
   bool           otherClusterPointCount = false;
   int            x                      = curPoint.x();
   int            y                      = curPoint.y();
@@ -1254,26 +1482,20 @@ bool PCCCodec::gridFiltering( const std::vector<uint32_t>&    partition,
   int            x2                     = x / gridSize;
   int            y2                     = y / gridSize;
   int            z2                     = z / gridSize;
-  int            x3                     = x % gridSize;
-  int            y3                     = y % gridSize;
-  int            z3                     = z % gridSize;
-  int            sx                     = x2 + ( ( x3 < gridSize / 2 ) ? -1 : 0 );
-  int            sy                     = y2 + ( ( y3 < gridSize / 2 ) ? -1 : 0 );
-  int            sz                     = z2 + ( ( z3 < gridSize / 2 ) ? -1 : 0 );
-  int            sx2                    = sx * gridSize;
-  int            sy2                    = sy * gridSize;
-  int            sz2                    = sz * gridSize;
-  int            wx                     = ( x - sx2 - gridSize / 2 ) * 2 + 1;
-  int            wy                     = ( y - sy2 - gridSize / 2 ) * 2 + 1;
-  int            wz                     = ( z - sz2 - gridSize / 2 ) * 2 + 1;
+  int            x3                     = x - x2 * gridSize;
+  int            y3                     = y - y2 * gridSize;
+  int            z3                     = z - z2 * gridSize;
+  int            sx                     = x2 + ( ( x3 < gridSizeHalf ) ? -1 : 0 );
+  int            sy                     = y2 + ( ( y3 < gridSizeHalf ) ? -1 : 0 );
+  int            sz                     = z2 + ( ( z3 < gridSizeHalf ) ? -1 : 0 );
   int            idx[2][2][2];
   for ( int dz = 0; dz < 2; dz++ ) {
+    int z4          = sz + dz;
     for ( int dy = 0; dy < 2; dy++ ) {
+      int y4          = sy + dy;
       for ( int dx = 0; dx < 2; dx++ ) {
-        int x3          = sx + dx;
-        int y3          = sy + dy;
-        int z3          = sz + dz;
-        int tmp         = x3 + y3 * w + z3 * w * w;
+        int x4          = sx + dx;
+        int tmp         = x4 + y4 * gridWidth + z4 * gridWidth * gridWidth;
         idx[dz][dy][dx] = tmp;
         if ( doSmooth[cellIndex[tmp]] && gridCount[cellIndex[tmp]] ) { otherClusterPointCount = true; }
       }
@@ -1285,6 +1507,14 @@ bool PCCCodec::gridFiltering( const std::vector<uint32_t>&    partition,
   PCCVector3D curVector( x, y, z );
   int         gridSize2 = gridSize * 2;
 
+  int            gridWidth3             = gridWidth*gridWidth*gridWidth;
+  int            sx2                    = sx * gridSize;
+  int            sy2                    = sy * gridSize;
+  int            sz2                    = sz * gridSize;
+  int            wx                     = ( x - sx2 - gridSizeHalf ) * 2 + 1;
+  int            wy                     = ( y - sy2 - gridSizeHalf ) * 2 + 1;
+  int            wz                     = ( z - sz2 - gridSizeHalf ) * 2 + 1;
+
   centroid3[0][0][0][0] =
       gridCount[cellIndex[idx[0][0][0]]] > 0 ? (double)( center[cellIndex[idx[0][0][0]]][0] ) : curVector[0];
   centroid3[0][0][0][1] =
@@ -1293,7 +1523,7 @@ bool PCCCodec::gridFiltering( const std::vector<uint32_t>&    partition,
       gridCount[cellIndex[idx[0][0][0]]] > 0 ? (double)( center[cellIndex[idx[0][0][0]]][2] ) : curVector[2];
 
   centroid3[0][0][1] = curVector;
-  if ( idx[0][0][1] < w3 ) {
+  if ( idx[0][0][1] < gridWidth3 ) {
     centroid3[0][0][1][0] =
         gridCount[cellIndex[idx[0][0][1]]] > 0 ? (double)( center[cellIndex[idx[0][0][1]]][0] ) : curVector[0];
     centroid3[0][0][1][1] =
@@ -1303,7 +1533,7 @@ bool PCCCodec::gridFiltering( const std::vector<uint32_t>&    partition,
   }
 
   centroid3[0][1][0] = curVector;
-  if ( idx[0][1][0] < w3 ) {
+  if ( idx[0][1][0] < gridWidth3 ) {
     centroid3[0][1][0][0] =
         gridCount[cellIndex[idx[0][1][0]]] > 0 ? (double)( center[cellIndex[idx[0][1][0]]][0] ) : curVector[0];
     centroid3[0][1][0][1] =
@@ -1313,7 +1543,7 @@ bool PCCCodec::gridFiltering( const std::vector<uint32_t>&    partition,
   }
 
   centroid3[0][1][1] = curVector;
-  if ( idx[0][1][1] < w3 ) {
+  if ( idx[0][1][1] < gridWidth3 ) {
     centroid3[0][1][1][0] =
         gridCount[cellIndex[idx[0][1][1]]] > 0 ? (double)( center[cellIndex[idx[0][1][1]]][0] ) : curVector[0];
     centroid3[0][1][1][1] =
@@ -1323,7 +1553,7 @@ bool PCCCodec::gridFiltering( const std::vector<uint32_t>&    partition,
   }
 
   centroid3[1][0][0] = curVector;
-  if ( idx[1][0][0] < w3 ) {
+  if ( idx[1][0][0] < gridWidth3 ) {
     centroid3[1][0][0][0] =
         gridCount[cellIndex[idx[1][0][0]]] > 0 ? (double)( center[cellIndex[idx[1][0][0]]][0] ) : curVector[0];
     centroid3[1][0][0][1] =
@@ -1333,7 +1563,7 @@ bool PCCCodec::gridFiltering( const std::vector<uint32_t>&    partition,
   }
 
   centroid3[1][0][1] = curVector;
-  if ( idx[1][0][1] < w3 ) {
+  if ( idx[1][0][1] < gridWidth3 ) {
     centroid3[1][0][1][0] =
         gridCount[cellIndex[idx[1][0][1]]] > 0 ? (double)( center[cellIndex[idx[1][0][1]]][0] ) : curVector[0];
     centroid3[1][0][1][1] =
@@ -1343,7 +1573,7 @@ bool PCCCodec::gridFiltering( const std::vector<uint32_t>&    partition,
   }
 
   centroid3[1][1][0] = curVector;
-  if ( idx[1][1][0] < w3 ) {
+  if ( idx[1][1][0] < gridWidth3 ) {
     centroid3[1][1][0][0] =
         gridCount[cellIndex[idx[1][1][0]]] > 0 ? (double)( center[cellIndex[idx[1][1][0]]][0] ) : curVector[0];
     centroid3[1][1][0][1] =
@@ -1353,7 +1583,7 @@ bool PCCCodec::gridFiltering( const std::vector<uint32_t>&    partition,
   }
 
   centroid3[1][1][1] = curVector;
-  if ( idx[1][1][1] < w3 ) {
+  if ( idx[1][1][1] < gridWidth3 ) {
     centroid3[1][1][1][0] =
         gridCount[cellIndex[idx[1][1][1]]] > 0 ? (double)( center[cellIndex[idx[1][1][1]]][0] ) : curVector[0];
     centroid3[1][1][1][1] =
@@ -1362,32 +1592,35 @@ bool PCCCodec::gridFiltering( const std::vector<uint32_t>&    partition,
         gridCount[cellIndex[idx[1][1][1]]] > 0 ? (double)( center[cellIndex[idx[1][1][1]]][2] ) : curVector[2];
   }
 
-  centroid3[0][0][0] = ( gridSize2 - wx ) * ( gridSize2 - wy ) * ( gridSize2 - wz ) * centroid3[0][0][0];
-  centroid3[0][0][1] = ( wx ) * ( gridSize2 - wy ) * ( gridSize2 - wz ) * centroid3[0][0][1];
-  centroid3[0][1][0] = ( gridSize2 - wx ) * ( wy ) * ( gridSize2 - wz ) * centroid3[0][1][0];
-  centroid3[0][1][1] = ( wx ) * ( wy ) * ( gridSize2 - wz ) * centroid3[0][1][1];
-  centroid3[1][0][0] = ( gridSize2 - wx ) * ( gridSize2 - wy ) * (wz)*centroid3[1][0][0];
-  centroid3[1][0][1] = ( wx ) * ( gridSize2 - wy ) * (wz)*centroid3[1][0][1];
-  centroid3[1][1][0] = ( gridSize2 - wx ) * ( wy ) * (wz)*centroid3[1][1][0];
-  centroid3[1][1][1] = ( wx ) * ( wy ) * (wz)*centroid3[1][1][1];
+  int gridSizeWx = ( gridSize2 - wx );
+  int gridSizeWy = ( gridSize2 - wy );
+  int gridSizeWz = ( gridSize2 - wz );
+  centroid3[0][0][0] = gridSizeWx * gridSizeWy * gridSizeWz * centroid3[0][0][0];
+  centroid3[0][0][1] = ( wx )     * gridSizeWy * gridSizeWz * centroid3[0][0][1];
+  centroid3[0][1][0] = gridSizeWx * ( wy )     * gridSizeWz * centroid3[0][1][0];
+  centroid3[0][1][1] = ( wx )     * ( wy )     * gridSizeWz * centroid3[0][1][1];
+  centroid3[1][0][0] = gridSizeWx * gridSizeWy * (wz)       * centroid3[1][0][0];
+  centroid3[1][0][1] = ( wx )     * gridSizeWy * (wz)       * centroid3[1][0][1];
+  centroid3[1][1][0] = gridSizeWx * ( wy )     * (wz)       * centroid3[1][1][0];
+  centroid3[1][1][1] = ( wx )     * ( wy )     * (wz)       * centroid3[1][1][1];
 
   PCCVector3D centroid4;
   centroid4 = centroid3[0][0][0] + centroid3[0][0][1] + centroid3[0][1][0] + centroid3[0][1][1] + centroid3[1][0][0] +
               centroid3[1][0][1] + centroid3[1][1][0] + centroid3[1][1][1];
+
+  count  = gridSizeWx * gridSizeWy * gridSizeWz * gridCount[cellIndex[idx[0][0][0]]];
+  count += ( wx )     * gridSizeWy * gridSizeWz * gridCount[cellIndex[idx[0][0][1]]];
+  count += gridSizeWx * ( wy )     * gridSizeWz * gridCount[cellIndex[idx[0][1][0]]];
+  count += ( wx )     * ( wy )     * gridSizeWz * gridCount[cellIndex[idx[0][1][1]]];
+  count += gridSizeWx * gridSizeWy * (wz)       * gridCount[cellIndex[idx[1][0][0]]];
+  count += ( wx )     * gridSizeWy * (wz)       * gridCount[cellIndex[idx[1][0][1]]];
+  count += gridSizeWx * ( wy )     * (wz)       * gridCount[cellIndex[idx[1][1][0]]];
+  count += ( wx )     * ( wy )     * (wz)       * gridCount[cellIndex[idx[1][1][1]]];
   centroid4 /= gridSize2 * gridSize2 * gridSize2;
+  count     /= gridSize2 * gridSize2 * gridSize2;
+  centroid   = centroid4 * count;
+//  centroid = (centroid4 * count) / (gridSize2 * gridSize2 * gridSize2 * gridSize2 * gridSize2 * gridSize2);
 
-  count = 0;
-  count += ( gridSize2 - wx ) * ( gridSize2 - wy ) * ( gridSize2 - wz ) * gridCount[cellIndex[idx[0][0][0]]];
-  count += ( wx ) * ( gridSize2 - wy ) * ( gridSize2 - wz ) * gridCount[cellIndex[idx[0][0][1]]];
-  count += ( gridSize2 - wx ) * ( wy ) * ( gridSize2 - wz ) * gridCount[cellIndex[idx[0][1][0]]];
-  count += ( wx ) * ( wy ) * ( gridSize2 - wz ) * gridCount[cellIndex[idx[0][1][1]]];
-  count += ( gridSize2 - wx ) * ( gridSize2 - wy ) * (wz)*gridCount[cellIndex[idx[1][0][0]]];
-  count += ( wx ) * ( gridSize2 - wy ) * (wz)*gridCount[cellIndex[idx[1][0][1]]];
-  count += ( gridSize2 - wx ) * ( wy ) * (wz)*gridCount[cellIndex[idx[1][1][0]]];
-  count += ( wx ) * ( wy ) * (wz)*gridCount[cellIndex[idx[1][1][1]]];
-  count /= gridSize2 * gridSize2 * gridSize2;
-
-  centroid = centroid4 * count;
   return otherClusterPointCount;
 }
 
@@ -1403,7 +1636,7 @@ bool PCCCodec::gridFilteringTransfer( const std::vector<uint32_t>& partition,
                                       int                          gridWidth,
                                       std::vector<PCCVector3D>&    colorGrid,
                                       PCCVector3D&                 color ) {
-  const int w                      = gridWidth;
+
   bool      otherClusterPointCount = false;
   int       x                      = curPoint.x();
   int       y                      = curPoint.y();
@@ -1411,26 +1644,17 @@ bool PCCCodec::gridFilteringTransfer( const std::vector<uint32_t>& partition,
   int       x2                     = x / gridSize;
   int       y2                     = y / gridSize;
   int       z2                     = z / gridSize;
-  int       x3                     = x % gridSize;
-  int       y3                     = y % gridSize;
-  int       z3                     = z % gridSize;
-  int       sx                     = x2 + ( ( x3 < gridSize / 2 ) ? -1 : 0 );
-  int       sy                     = y2 + ( ( y3 < gridSize / 2 ) ? -1 : 0 );
-  int       sz                     = z2 + ( ( z3 < gridSize / 2 ) ? -1 : 0 );
-  int       sx2                    = sx * gridSize;
-  int       sy2                    = sy * gridSize;
-  int       sz2                    = sz * gridSize;
-  int       wx                     = ( x - sx2 - gridSize / 2 ) * 2 + 1;
-  int       wy                     = ( y - sy2 - gridSize / 2 ) * 2 + 1;
-  int       wz                     = ( z - sz2 - gridSize / 2 ) * 2 + 1;
+  int       sx                     = x2 + ( ( (x - x2 * gridSize) < gridSize / 2 ) ? -1 : 0 );
+  int       sy                     = y2 + ( ( (y - y2 * gridSize) < gridSize / 2 ) ? -1 : 0 );
+  int       sz                     = z2 + ( ( (z - z2 * gridSize) < gridSize / 2 ) ? -1 : 0 );
   int       idx[2][2][2];
   for ( int dz = 0; dz < 2; dz++ ) {
+    int z4          = sz + dz;
     for ( int dy = 0; dy < 2; dy++ ) {
+      int y4          = sy + dy;
       for ( int dx = 0; dx < 2; dx++ ) {
-        int x3          = sx + dx;
-        int y3          = sy + dy;
-        int z3          = sz + dz;
-        int tmp         = x3 + y3 * w + z3 * w * w;
+        int x4          = sx + dx;
+        int tmp         = x4 + y4 * gridWidth + z4 * gridWidth * gridWidth;
         idx[dz][dy][dx] = tmp;
         if ( doSmooth[tmp] && gridCount[tmp] ) { otherClusterPointCount = true; }
       }
@@ -1440,6 +1664,13 @@ bool PCCCodec::gridFilteringTransfer( const std::vector<uint32_t>& partition,
   PCCVector3D centroid3[2][2][2] = {};
   PCCVector3D curVector( x, y, z );
   int         gridSize2 = gridSize * 2;
+  int       sx2                    = sx * gridSize;
+  int       sy2                    = sy * gridSize;
+  int       sz2                    = sz * gridSize;
+  int       wx                     = ( x - sx2 - gridSize / 2 ) * 2 + 1;
+  int       wy                     = ( y - sy2 - gridSize / 2 ) * 2 + 1;
+  int       wz                     = ( z - sz2 - gridSize / 2 ) * 2 + 1;
+
   centroid3[0][0][0]    = gridCount[idx[0][0][0]] > 0 ? center[idx[0][0][0]] : curVector;
   centroid3[0][0][1]    = gridCount[idx[0][0][1]] > 0 ? center[idx[0][0][1]] : curVector;
   centroid3[0][1][0]    = gridCount[idx[0][1][0]] > 0 ? center[idx[0][1][0]] : curVector;
@@ -1449,32 +1680,36 @@ bool PCCCodec::gridFilteringTransfer( const std::vector<uint32_t>& partition,
   centroid3[1][1][0]    = gridCount[idx[1][1][0]] > 0 ? center[idx[1][1][0]] : curVector;
   centroid3[1][1][1]    = gridCount[idx[1][1][1]] > 0 ? center[idx[1][1][1]] : curVector;
 
-  centroid3[0][0][0] = ( gridSize2 - wx ) * ( gridSize2 - wy ) * ( gridSize2 - wz ) * centroid3[0][0][0];
-  centroid3[0][0][1] = ( wx ) * ( gridSize2 - wy ) * ( gridSize2 - wz ) * centroid3[0][0][1];
-  centroid3[0][1][0] = ( gridSize2 - wx ) * ( wy ) * ( gridSize2 - wz ) * centroid3[0][1][0];
-  centroid3[0][1][1] = ( wx ) * ( wy ) * ( gridSize2 - wz ) * centroid3[0][1][1];
-  centroid3[1][0][0] = ( gridSize2 - wx ) * ( gridSize2 - wy ) * (wz)*centroid3[1][0][0];
-  centroid3[1][0][1] = ( wx ) * ( gridSize2 - wy ) * (wz)*centroid3[1][0][1];
-  centroid3[1][1][0] = ( gridSize2 - wx ) * ( wy ) * (wz)*centroid3[1][1][0];
-  centroid3[1][1][1] = ( wx ) * ( wy ) * (wz)*centroid3[1][1][1];
+  int gridSizeWx = ( gridSize2 - wx );
+  int gridSizeWy = ( gridSize2 - wy );
+  int gridSizeWz = ( gridSize2 - wz );
+
+  centroid3[0][0][0] = gridSizeWx * gridSizeWy * gridSizeWz * centroid3[0][0][0];
+  centroid3[0][0][1] = ( wx )     * gridSizeWy * gridSizeWz * centroid3[0][0][1];
+  centroid3[0][1][0] = gridSizeWx * ( wy )     * gridSizeWz * centroid3[0][1][0];
+  centroid3[0][1][1] = ( wx )     * ( wy )     * gridSizeWz * centroid3[0][1][1];
+  centroid3[1][0][0] = gridSizeWx * gridSizeWy * ( wz )     * centroid3[1][0][0];
+  centroid3[1][0][1] = ( wx )     * gridSizeWy * ( wz )     * centroid3[1][0][1];
+  centroid3[1][1][0] = gridSizeWx * ( wy )     * ( wz )     * centroid3[1][1][0];
+  centroid3[1][1][1] = ( wx )     * ( wy )     * ( wz )     * centroid3[1][1][1];
 
   PCCVector3D centroid4;
   centroid4 = centroid3[0][0][0] + centroid3[0][0][1] + centroid3[0][1][0] + centroid3[0][1][1] + centroid3[1][0][0] +
               centroid3[1][0][1] + centroid3[1][1][0] + centroid3[1][1][1];
+
+  count  = gridSizeWx * gridSizeWy * gridSizeWz * gridCount[idx[0][0][0]];
+  count += ( wx )     * gridSizeWy * gridSizeWz * gridCount[idx[0][0][1]];
+  count += gridSizeWx * ( wy )     * gridSizeWz * gridCount[idx[0][1][0]];
+  count += ( wx )     * ( wy )     * gridSizeWz * gridCount[idx[0][1][1]];
+  count += gridSizeWx * gridSizeWy * ( wz )     * gridCount[idx[1][0][0]];
+  count += ( wx )     * gridSizeWy * ( wz )     * gridCount[idx[1][0][1]];
+  count += gridSizeWx * ( wy )     * ( wz )     * gridCount[idx[1][1][0]];
+  count += ( wx )     * ( wy )     * ( wz )     * gridCount[idx[1][1][1]];
+  count     /= gridSize2 * gridSize2 * gridSize2;
   centroid4 /= gridSize2 * gridSize2 * gridSize2;
+  centroid   = centroid4 * count;
+  //centroid = (centroid4 * count) / (gridSize2 * gridSize2 * gridSize2 * gridSize2 * gridSize2 * gridSize2);
 
-  count = 0;
-  count += ( gridSize2 - wx ) * ( gridSize2 - wy ) * ( gridSize2 - wz ) * gridCount[idx[0][0][0]];
-  count += ( wx ) * ( gridSize2 - wy ) * ( gridSize2 - wz ) * gridCount[idx[0][0][1]];
-  count += ( gridSize2 - wx ) * ( wy ) * ( gridSize2 - wz ) * gridCount[idx[0][1][0]];
-  count += ( wx ) * ( wy ) * ( gridSize2 - wz ) * gridCount[idx[0][1][1]];
-  count += ( gridSize2 - wx ) * ( gridSize2 - wy ) * (wz)*gridCount[idx[1][0][0]];
-  count += ( wx ) * ( gridSize2 - wy ) * (wz)*gridCount[idx[1][0][1]];
-  count += ( gridSize2 - wx ) * ( wy ) * (wz)*gridCount[idx[1][1][0]];
-  count += ( wx ) * ( wy ) * (wz)*gridCount[idx[1][1][1]];
-  count /= gridSize2 * gridSize2 * gridSize2;
-
-  centroid = centroid4 * count;
   return otherClusterPointCount;
 }
 
@@ -1504,13 +1739,15 @@ void PCCCodec::smoothPointCloudGrid( PCCPointSet3&                      reconstr
                          geoSmoothingDoSmooth_, gridSize, gridWidth, cellIndex );
     }
     if ( otherClusterPointCount ) {
-      double dist2 = ( ( curVector * count - centroid ).getNorm2() + (double)count / 2.0 ) / (double)count;
+      //double dist2 = ( ( curVector * count - centroid ).getNorm2() + (double)count / 2.0 ) / (double)count;
+      double dist2 = ( ( curVector * count - centroid ).getNorm2() ) / (double)count + 0.5;
       if ( dist2 >= ( std::max )( (int)params.thresholdSmoothing_, (int)count ) * 2 ) {
-        centroid = ( centroid + (double)count / 2.0 ) / (double)count;
-        for ( size_t k = 0; k < 3; ++k ) { centroid[k] = double( int64_t( centroid[k] ) ); }
-        reconstruct[c][0] = centroid[0];
-        reconstruct[c][1] = centroid[1];
-        reconstruct[c][2] = centroid[2];
+        centroid =  centroid / (double)count + 0.5;
+        for ( size_t k = 0; k < 3; ++k ) {
+          centroid[k] = double( int64_t( centroid[k] ) );
+          reconstruct[c][k] = centroid[k];
+        }
+
         if ( PCC_SAVE_POINT_TYPE == 1 ) { reconstruct.setType( c, POINT_SMOOTH ); }
         reconstruct.setBoundaryPointType( c, static_cast<uint16_t>( 3 ) );
       }
@@ -1882,7 +2119,19 @@ bool PCCCodec::gridFilteringColor( PCCPoint3D&                        curPos,
   } else {
     colorCentroid3[1][1][1] = curPosColor;
   }
+#if 1
+  int gridSizeWx = ( gridSize2 - wx );
+  int gridSizeWy = ( gridSize2 - wy );
+  int gridSizeWz = ( gridSize2 - wz );
 
+  colorCentroid3[0][0][0] = gridSizeWx * gridSizeWy * gridSizeWz * colorCentroid3[0][0][0];
+  colorCentroid3[0][0][1] = ( wx )     * gridSizeWy * gridSizeWz * colorCentroid3[0][0][1];
+  colorCentroid3[0][1][0] = gridSizeWx * ( wy )     * gridSizeWz * colorCentroid3[0][1][0];
+  colorCentroid3[0][1][1] = ( wx )     * ( wy )     * gridSizeWz * colorCentroid3[0][1][1];
+  colorCentroid3[1][0][0] = gridSizeWx * gridSizeWy * (wz)       * colorCentroid3[1][0][0];
+  colorCentroid3[1][0][1] = ( wx )     * gridSizeWy * (wz)       * colorCentroid3[1][0][1];
+  colorCentroid3[1][1][0] = gridSizeWx * ( wy )     * (wz)       * colorCentroid3[1][1][0];
+#else
   colorCentroid3[0][0][0] = ( gridSize2 - wx ) * ( gridSize2 - wy ) * ( gridSize2 - wz ) * colorCentroid3[0][0][0];
   colorCentroid3[0][0][1] = ( wx ) * ( gridSize2 - wy ) * ( gridSize2 - wz ) * colorCentroid3[0][0][1];
   colorCentroid3[0][1][0] = ( gridSize2 - wx ) * ( wy ) * ( gridSize2 - wz ) * colorCentroid3[0][1][0];
@@ -1891,7 +2140,7 @@ bool PCCCodec::gridFilteringColor( PCCPoint3D&                        curPos,
   colorCentroid3[1][0][1] = ( wx ) * ( gridSize2 - wy ) * (wz)*colorCentroid3[1][0][1];
   colorCentroid3[1][1][0] = ( gridSize2 - wx ) * ( wy ) * (wz)*colorCentroid3[1][1][0];
   colorCentroid3[1][1][1] = ( wx ) * ( wy ) * (wz)*colorCentroid3[1][1][1];
-
+#endif
   PCCVector3D colorCentroid4;
   colorCentroid4 = colorCentroid3[0][0][0] + colorCentroid3[0][0][1] + colorCentroid3[0][1][0] +
                    colorCentroid3[0][1][1] + colorCentroid3[1][0][0] + colorCentroid3[1][0][1] +
@@ -2415,7 +2664,6 @@ void PCCCodec::generateBlockToPatchFromBoundaryBox( PCCContext&      context,
   const size_t blockToPatchHeight = frame.getHeight() / occupancyResolution;
   const size_t blockCount         = blockToPatchWidth * blockToPatchHeight;
   auto&        blockToPatch       = frame.getBlockToPatch();
-  auto&        asps               = context.getAtlasSequenceParameterSet( 0 );
   blockToPatch.resize( blockCount );
   std::fill( blockToPatch.begin(), blockToPatch.end(), 0 );
   for ( size_t patchIndex = 0; patchIndex < patchCount; ++patchIndex ) {

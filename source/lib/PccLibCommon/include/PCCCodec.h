@@ -127,6 +127,17 @@ class PCCCodec {
                         const std::vector<std::vector<bool>>& absoluteT1List,
                         const size_t                          multipleStreams,
                         const GeneratePointCloudParameters    params );
+  void smoothPointCloudPostprocess( PCCPointSet3&                      reconstruct,
+                                   PCCContext&                         context,
+                                   size_t                              frameIndex,
+                                   const PCCColorTransform             colorTransform,
+                                   const GeneratePointCloudParameters  params,
+                                   std::vector<uint32_t>&              partition );
+  void colorSmoothing( PCCPointSet3&                     reconstruct,
+                      PCCContext&                        context,
+                      size_t                             frameIndex,
+                      const PCCColorTransform            colorTransform,
+                      const GeneratePointCloudParameters params );
 
   void smoothPointCloudPostprocess( PCCGroupOfFrames&                   reconstructs,
                                     PCCContext&                         context,

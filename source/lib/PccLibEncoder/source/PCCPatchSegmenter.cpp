@@ -1297,7 +1297,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
               assert( v >= 0 && v < patch.getSizeV() );
               const size_t  p                = v * patch.getSizeU() + u;
               const int16_t depth0           = patch.getDepth( 0 )[p];
-              bool          validD1          = false;
+              //bool          validD1          = false;
               if( !( depth0 < infiniteDepth )) continue;
               bool bsimilar = colorSimilarity( frame_pcc_color[i], frame_pcc_color[patch.getDepth0PccIdx()[p]], 128);
             
