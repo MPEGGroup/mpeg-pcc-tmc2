@@ -788,8 +788,8 @@ void PCCBitstreamReader::patchDataUnit( PatchDataUnit&        pdu,
   TRACE_BITSTREAM( " 2dPosXY: %zu,%zu\n", pdu.getPdu2dPosX(), pdu.getPdu2dPosX() );
   pdu.setPdu2dSizeXMinus1( bitstream.readUvlc() );  // ue(v)
   pdu.setPdu2dSizeYMinus1( bitstream.readUvlc() );  // ue(v)
-  TRACE_BITSTREAM( " 2dDeltaSizeXY: %d,%d\n", int32_t( pdu.getPdu2dDeltaSizeX() ),
-                   int32_t( pdu.getPdu2dDeltaSizeY() ) );
+  TRACE_BITSTREAM( " 2dSizeXY: %d,%d\n", int32_t( pdu.getPdu2dSizeXMinus1() + 1 ),
+                   int32_t( pdu.getPdu2dSizeYMinus1() +1 ) );
   uint8_t bitCount3DPos=
    syntax.getVps(0).getGeometryInformation(0).getGeometry3dCoordinatesBitdepthMinus1() +1;
   pdu.setPdu3dPosX( bitstream.read( bitCount3DPos ) );  // u(v)
@@ -831,17 +831,16 @@ void PCCBitstreamReader::patchDataUnit( PatchDataUnit&        pdu,
   TRACE_BITSTREAM( "PointLocalReconstructionEnabledFlag = %d \n", asps.getPointLocalReconstructionEnabledFlag() );
   if ( asps.getPointLocalReconstructionEnabledFlag() ) {
     auto& plrd = pdu.getPointLocalReconstructionData();
-    TRACE_BITSTREAM( "Prev Size = %d %d Delta Size = %ld %ld => %ld %ld \n", prevPatchSizeU_, prevPatchSizeV_,
-                     pdu.getPdu2dDeltaSizeX(), pdu.getPdu2dDeltaSizeY(), prevPatchSizeU_ + pdu.getPdu2dDeltaSizeX(),
-                     prevPatchSizeV_ + pdu.getPdu2dDeltaSizeY() );
+    TRACE_BITSTREAM( "Size = %ld %ld\n",
+                     pdu.getPdu2dSizeYMinus1()+1, pdu.getPdu2dSizeYMinus1()+1 );
     plrd.allocate( pdu.getPdu2dSizeXMinus1()+1, pdu.getPdu2dSizeYMinus1()+1 );
     pointLocalReconstructionData( plrd, syntax, asps, bitstream );
   }
   TRACE_BITSTREAM(
       "Frame %zu, Patch(%zu) => 2Dpos = %4lu %4lu 2Dsize = %4ld %4ld 3Dpos = %ld %ld %ld DeltaMaxZ = %ld Projection = %zu "
       "Orientation = %zu lod= (%lu) %lu %lu\n ",
-      pdu.getFrameIndex(), pdu.getPatchIndex(), pdu.getPdu2dPosX(), pdu.getPdu2dPosY(), pdu.getPdu2dDeltaSizeX(),
-      pdu.getPdu2dDeltaSizeY(), pdu.getPdu3dPosX(), pdu.getPdu3dPosY(), pdu.getPdu3dPosMinZ(),
+      pdu.getFrameIndex(), pdu.getPatchIndex(), pdu.getPdu2dPosX(), pdu.getPdu2dPosY(), pdu.getPdu2dSizeXMinus1()+1,
+      pdu.getPdu2dSizeYMinus1()+1, pdu.getPdu3dPosX(), pdu.getPdu3dPosY(), pdu.getPdu3dPosMinZ(),
       pdu.getPdu3dPosDeltaMaxZ(), pdu.getPduProjectionId(), pdu.getPduOrientationIndex(), pdu.getLodEnableFlag(),
       pdu.getLodEnableFlag() ? pdu.getLodScaleXminus1() : (uint8_t)0,
       pdu.getLodEnableFlag() ? pdu.getLodScaleY() : (uint8_t)0 );
@@ -982,7 +981,7 @@ void PCCBitstreamReader::interPatchDataUnit( InterPatchDataUnit&   ipdu,
 }
 
 // 7.3.7.7  Raw patch data unit syntax
-void PCCBitstreamReader::rawPatchDataUnit( RawPatchDataUnit&     ppdu,
+void PCCBitstreamReader::rawPatchDataUnit( RawPatchDataUnit&     rpdu,
                                             AtlasTileGroupHeader& atgh,
                                             PCCHighLevelSyntax&           syntax,
                                             PCCBitstream&         bitstream ) {
@@ -990,22 +989,22 @@ void PCCBitstreamReader::rawPatchDataUnit( RawPatchDataUnit&     ppdu,
   TRACE_BITSTREAM( "%s \n", __func__ );
   size_t                      atlasIndex = 0;
   if ( sps.getRawSeparateVideoPresentFlag( atlasIndex ) ) {
-    ppdu.setRpduPatchInRawVideoFlag( bitstream.read( 1 ) );
+    rpdu.setRpduPatchInRawVideoFlag( bitstream.read( 1 ) );
   }  // u(1)
-  ppdu.setRpdu2dPosX( bitstream.readUvlc() );  // ue(v)
-  ppdu.setRpdu2dPosY( bitstream.readUvlc() );  // ue(v)
-  ppdu.setRpdu2dSizeXMinus1( bitstream.readUvlc() );                               // ue(v)
-  ppdu.setRpdu2dSizeYMinus1( bitstream.readUvlc() );                               // ue(v)
+  rpdu.setRpdu2dPosX( bitstream.readUvlc() );  // ue(v)
+  rpdu.setRpdu2dPosY( bitstream.readUvlc() );  // ue(v)
+  rpdu.setRpdu2dSizeXMinus1( bitstream.readUvlc() );                               // ue(v)
+  rpdu.setRpdu2dSizeYMinus1( bitstream.readUvlc() );                               // ue(v)
   TRACE_BITSTREAM( " AtghRaw3dPosAxisBitCountMinus1 = %lu \n", atgh.getAtghRaw3dPosAxisBitCountMinus1() );
-  ppdu.setRpdu3dPosX( bitstream.read( atgh.getAtghRaw3dPosAxisBitCountMinus1() + 1 ) );  // u(v)
-  ppdu.setRpdu3dPosY( bitstream.read( atgh.getAtghRaw3dPosAxisBitCountMinus1() + 1 ) );  // u(v)
-  ppdu.setRpdu3dPosZ( bitstream.read( atgh.getAtghRaw3dPosAxisBitCountMinus1() + 1 ) );  // u(v)
-  ppdu.setRpduRawPoints( bitstream.readUvlc() );
+  rpdu.setRpdu3dPosX( bitstream.read( atgh.getAtghRaw3dPosAxisBitCountMinus1() + 1 ) );  // u(v)
+  rpdu.setRpdu3dPosY( bitstream.read( atgh.getAtghRaw3dPosAxisBitCountMinus1() + 1 ) );  // u(v)
+  rpdu.setRpdu3dPosZ( bitstream.read( atgh.getAtghRaw3dPosAxisBitCountMinus1() + 1 ) );  // u(v)
+  rpdu.setRpduRawPoints( bitstream.readUvlc() );
   TRACE_BITSTREAM(
       "Raw Patch => UV %4lu %4lu  S=%4ld %4ld  UVD1=%4ld %4ld %4ld NumPcmPoints=%zu PatchInRawVideoFlag=%d \n",
-      ppdu.getRpdu2dPosX(), ppdu.getRpdu2dPosY(), ppdu.getRpdu2dDeltaSizeX(), ppdu.getRpdu2dDeltaSizeY(),
-      ppdu.getRpdu3dPosX(), ppdu.getRpdu3dPosY(), ppdu.getRpdu3dPosZ(), (size_t)ppdu.getRpduRawPoints(),
-      ppdu.getRpduPatchInRawVideoFlag() );
+      rpdu.getRpdu2dPosX(), rpdu.getRpdu2dPosY(), rpdu.getRpdu2dSizeXMinus1()+1, rpdu.getRpdu2dSizeYMinus1()+1,
+      rpdu.getRpdu3dPosX(), rpdu.getRpdu3dPosY(), rpdu.getRpdu3dPosZ(), (size_t)rpdu.getRpduRawPoints(),
+      rpdu.getRpduPatchInRawVideoFlag() );
 }
 
 // 7.3.6.x EOM patch data unit syntax

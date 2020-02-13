@@ -1036,11 +1036,11 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
             patch.getSizeV0() = ( std::max )( patch.getSizeV0(), v / patch.getOccupancyResolution() );
             minD0             = ( std::min )( minD0, d );
             maxD0             = ( std::max )( maxD0, d );
-        }
-        if( patch.getProjectionMode() == 0 ){
-          patch.getD1()     = (minD0/minLevel)*minLevel;
-        }else{
-          patch.getD1()     = size_t(ceil( (double)maxD0/(double)minLevel))*minLevel;
+          if( patch.getProjectionMode() == 0 ){
+            patch.getD1()     = (minD0/minLevel)*minLevel;
+          }else{
+            patch.getD1()     = size_t(ceil( (double)maxD0/(double)minLevel))*minLevel;
+          }
         }
       } //i
 

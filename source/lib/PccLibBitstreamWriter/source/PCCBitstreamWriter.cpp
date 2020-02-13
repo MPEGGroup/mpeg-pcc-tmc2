@@ -906,17 +906,15 @@ void PCCBitstreamWriter::patchDataUnit( PatchDataUnit&        pdu,
   TRACE_BITSTREAM( "PointLocalReconstructionEnabledFlag = %d \n", asps.getPointLocalReconstructionEnabledFlag() );
   if ( asps.getPointLocalReconstructionEnabledFlag() ) {
     auto& plrd = pdu.getPointLocalReconstructionData();
-    TRACE_BITSTREAM( "Prev Size = %d %d Delta Size = %ld %ld => %ld %ld \n",
-                     plrd.getBlockToPatchMapWidth() - pdu.getPdu2dDeltaSizeX(),
-                     plrd.getBlockToPatchMapHeight() - pdu.getPdu2dDeltaSizeY(), pdu.getPdu2dDeltaSizeX(),
-                     pdu.getPdu2dDeltaSizeY(), plrd.getBlockToPatchMapWidth(), plrd.getBlockToPatchMapHeight() );
+    TRACE_BITSTREAM( "Size = %ld %ld\n",
+                     pdu.getPdu2dSizeXMinus1(), pdu.getPdu2dSizeYMinus1());
     pointLocalReconstructionData( plrd, syntax, asps, bitstream );
   }
   TRACE_BITSTREAM(
       "Frame %zu, Patch(%zu) => 2Dpos = %4lu %4lu 2Dsize = %4ld %4ld 3Dpos = %ld %ld %ld DeltaMaxZ = %ld Projection = %zu "
       "Orientation = %zu lod=(%lu) %lu %lu\n ",
-      pdu.getFrameIndex(), pdu.getPatchIndex(), pdu.getPdu2dPosX(), pdu.getPdu2dPosY(), pdu.getPdu2dDeltaSizeX(),
-      pdu.getPdu2dDeltaSizeY(), pdu.getPdu3dPosX(), pdu.getPdu3dPosY(), pdu.getPdu3dPosMinZ(),
+      pdu.getFrameIndex(), pdu.getPatchIndex(), pdu.getPdu2dPosX(), pdu.getPdu2dPosY(), pdu.getPdu2dSizeXMinus1(),
+      pdu.getPdu2dSizeYMinus1(), pdu.getPdu3dPosX(), pdu.getPdu3dPosY(), pdu.getPdu3dPosMinZ(),
       pdu.getPdu3dPosDeltaMaxZ(), pdu.getPduProjectionId(), pdu.getPduOrientationIndex(), pdu.getLodEnableFlag(),
       pdu.getLodScaleXminus1(), pdu.getLodScaleY() );
 }
