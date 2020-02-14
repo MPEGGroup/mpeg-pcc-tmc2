@@ -912,7 +912,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
         missedPointsPatch.v1_       = ppdu.getRpdu3dPosY() * pcmU1V1D1Level;
         missedPointsPatch.d1_       = ppdu.getRpdu3dPosZ() * pcmU1V1D1Level;
       }
-      missedPointsPatch.setNumberOfMps( ppdu.getRpduRawPoints() );
+      missedPointsPatch.setNumberOfMps( ppdu.getRpduRawPoints() + 1);
       missedPointsPatch.occupancyResolution_ = context.getOccupancyPackingBlockSize();
       totalNumberOfMps += missedPointsPatch.getNumberOfMps();
       TRACE_CODEC( "Raw :UV = %lu %lu  size = %lu %lu  uvd1 = %lu %lu %lu numPoints = %lu ocmRes = %lu \n",

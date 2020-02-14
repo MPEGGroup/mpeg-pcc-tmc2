@@ -7313,7 +7313,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
         ppdu.setRpdu3dPosZ( missedPointsPatch.d1_ / pcmU1V1D1Level );
       }
       ppdu.setRpduPatchInRawVideoFlag( sps.getRawSeparateVideoPresentFlag( 0 ) );
-      ppdu.setRpduRawPoints( uint32_t( missedPointsPatch.getNumberOfMps() ) );
+      ppdu.setRpduRawPoints( uint32_t( missedPointsPatch.getNumberOfMps() - 1) );
       TRACE_CODEC( "Raw :UV = %lu %lu  size = %lu %lu  uvd1 = %lu %lu %lu numPoints = %lu ocmRes = %lu \n",
                    missedPointsPatch.u0_, missedPointsPatch.v0_, missedPointsPatch.sizeU0_, missedPointsPatch.sizeV0_,
                    missedPointsPatch.u1_, missedPointsPatch.v1_, missedPointsPatch.d1_,
