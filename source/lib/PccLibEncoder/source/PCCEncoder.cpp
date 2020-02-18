@@ -91,8 +91,6 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   context.resize( sources.size() );
   auto& frames = context.getFrames();
   for ( size_t i = 0; i < frames.size(); i++ ) {
-    frames[i].setLosslessGeo( params_.losslessGeo_ );
-    frames[i].setLosslessGeo444( params_.losslessGeo444_ );
     frames[i].setRawPatchEnabledFlag( params_.losslessGeo_ || params_.lossyMissedPointsPatch_ );
     frames[i].setUseMissedPointsSeparateVideo( params_.useMissedPointsSeparateVideo_ );
     frames[i].setGeometry3dCoordinatesBitdepth( params_.geometry3dCoordinatesBitdepth_ );
@@ -281,6 +279,14 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   if ( params_.pointLocalReconstruction_ ) { pointLocalReconstructionSearch( context, gpcParams ); }
   std::vector<std::vector<uint32_t>> partitions;
   generatePointCloud( reconstructs, context, gpcParams, partitions, false );
+
+#ifdef CODEC_TRACE
+  TRACE_CODEC( " generatePointCloud create %lu points \n", reconstructs[0].getPointCount() );  
+  printf( "Checksum %lu: post generate point cloud : ", 0 );
+  for ( auto& c : reconstructs[0].computeChecksum() ) { printf( "%02x", c ); }
+  printf( "\n" );
+  fflush( stdout );
+#endif
   if ( ai.getAttributeCount() > 0 ) {
     std::cout << "Texture Coding starts" << std::endl;
     const size_t mapCount             = params_.mapCountMinus1_ + 1;
@@ -288,7 +294,12 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     // GENERATE ATTRIBUTE
     generateTextureVideo( sources, reconstructs, context, params_ );
     std::cout << "generate Texture Video done" << std::endl;    
-
+#ifdef CODEC_TRACE 
+    printf( "Checksum %lu: post generateTextureVideo: ", 0 );
+    for ( auto& c : reconstructs[0].computeChecksum() ) { printf( "%02x", c ); }
+    printf( "\n" );
+    fflush( stdout );
+#endif
     auto& videoTexture   = params_.multipleStreams_ ? context.getVideoTextureMultiple()[0] : context.getVideoTexture();
     auto& videoTextureT1 = context.getVideoTextureMultiple()[1];
     if ( !( params_.losslessGeo_ && params_.textureDilationOffLossless_ ) && params_.textureBGFill_ < 3 ) {
@@ -377,7 +388,12 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                   << "): " << totalPaddingTime / 1000.0 << " s\n";
       }
     }
-
+#ifdef CODEC_TRACE 
+    printf( "Checksum %lu: post dilate: ", 0 );
+    for ( auto& c : reconstructs[0].computeChecksum() ) { printf( "%02x", c ); }
+    printf( "\n" );
+    fflush( stdout );
+#endif
     // ENCODE ATTRIBUTE IMAGE
     if ( params_.multipleStreams_ ) {
       size_t nbyteAtt     = 1;
@@ -461,8 +477,15 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                 << ( sizeTextureVideo * 8.0 ) / ( 2 * frames.size() * pointCount ) << " bpp)" << std::endl;
     }
 
+#ifdef CODEC_TRACE 
+    printf( "Checksum %lu: post compress texture : ", 0 );
+    for ( auto& c : reconstructs[0].computeChecksum() ) { printf( "%02x", c ); }
+    printf( "\n" );
+    fflush( stdout );
+#endif
     if ( sps.getRawPatchEnabledFlag( atlasIndex ) && sps.getRawSeparateVideoPresentFlag( atlasIndex ) ) {
       auto& videoBitstreamMP = context.createVideoBitstream( VIDEO_TEXTURE_RAW );
+      printf( "generateMissedPointsTextureVideo \n" );
       generateMissedPointsTextureVideo( context, reconstructs );  // 1. texture
       auto&        videoMPsTexture = context.getVideoMPsTexture();
       const size_t nByteAttMP      = 1;
@@ -477,8 +500,30 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                              params_.colorSpaceConversionConfig_,         // colorSpaceConversionConfig
                              params_.inverseColorSpaceConversionConfig_,  // inverseColorSpaceConversionConfig
                              params_.colorSpaceConversionPath_ );         // colorSpaceConversionPath
-      if ( params_.lossyMissedPointsPatch_ ) { generateMissedPointsTexturefromVideo( context, reconstructs ); }
+      if ( params_.lossyMissedPointsPatch_ ) {
+#ifdef CODEC_TRACE
+        printf( "Checksum %lu: pre generateMissedPointsTexturefromVideo : ", 0 );
+        for ( auto& c : reconstructs[0].computeChecksum() ) { printf( "%02x", c ); }
+        printf( "\n" );
+        fflush( stdout );
+#endif
+        printf( "generateMissedPointsTexturefromVideo \n" );
+        generateMissedPointsTexturefromVideo( context, reconstructs );
+
+#ifdef CODEC_TRACE
+        printf( "Checksum %lu: post generateMissedPointsTexturefromVideo : ", 0 );
+        for ( auto& c : reconstructs[0].computeChecksum() ) { printf( "%02x", c ); }
+        printf( "\n" );
+        fflush( stdout );
+#endif
+      }
     }
+#ifdef CODEC_TRACE 
+    printf( "Checksum %lu: post compress texture : ", 0 );
+    for ( auto& c : reconstructs[0].computeChecksum() ) { printf( "%02x", c ); }
+    printf( "\n" );
+    fflush( stdout );
+#endif
   }
 
   if ( params_.flagGeometrySmoothing_ ) {
@@ -510,24 +555,26 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
         // The parameters for the attribute transfer are still fixed (may wish to make them user input/more flexible)
         // These are different attribute transfer functions
         if ( params_.postprocessSmoothingFilter_ == 1 ) {
-         // tempFrameBuffer[i].transferColors16bit( reconstructs[i], int32_t( 0 ), sps.getLosslessGeo() == 1, 8, 1, 1, 1, 1, 0, 4, 4, 1000, 1000, 1000 * 256, 1000 * 256 );
-          tempFrameBuffer[i].transferColors16bitBP( reconstructs[i], int32_t( 0 ), sps.getLosslessGeo() == 1, 8, 1, 1, 1, 1, 0, 4, 4, 1000, 1000, 1000 * 256, 1000 * 256 );
+          // tempFrameBuffer[i].transferColors16bit( reconstructs[i], int32_t( 0 ), params_.losslessGeo_ == 1, 8, 1, 1,
+          // 1, 1, 0, 4, 4, 1000, 1000, 1000 * 256, 1000 * 256 );
+          tempFrameBuffer[i].transferColors16bitBP( reconstructs[i], int32_t( 0 ), params_.losslessGeo_ == 1, 8, 1, 1,
+                                                    1, 1, 0, 4, 4, 1000, 1000, 1000 * 256, 1000 * 256 );
         } else if ( params_.postprocessSmoothingFilter_ == 2 ) {
           tempFrameBuffer[i].transferColorWeight( reconstructs[i], 0.1 );
         } else if ( params_.postprocessSmoothingFilter_ == 3 ) {
-          tempFrameBuffer[i].transferColorsFilter3( reconstructs[i], int32_t( 0 ), sps.getLosslessGeo() == 1 );
+          tempFrameBuffer[i].transferColorsFilter3( reconstructs[i], int32_t( 0 ), params_.losslessGeo_ == 1 );
         }
       }
     }
   }
   //    This function does the color smoothing that is usually done in colorPointCloud
   if ( gpcParams.flagColorSmoothing_ ) { colorSmoothing( reconstructs, context, params_.colorTransform_, gpcParams ); }
-  if ( sps.getLosslessGeo() != 1 ) {  // lossy: convert 16-bit yuv444 to 8-bit RGB444
-  for ( size_t i = 0; i < frames.size(); i++ ) {
-    for ( int k = 0; k < reconstructs[i].getPointCount(); k++ ) {
-      convertYUV444_16bits_toRGB_8bits( reconstructs[i], k );
+  if ( params_.losslessGeo_ != 1 ) {  // lossy: convert 16-bit yuv444 to 8-bit RGB444
+    for ( size_t i = 0; i < frames.size(); i++ ) {
+      for ( int k = 0; k < reconstructs[i].getPointCount(); k++ ) {
+        convertYUV444_16bits_toRGB_8bits( reconstructs[i], k );
+      }
     }
-  }
   } else {  // lossless: copy 16-bit RGB to 8-bit RGB
     PCCColor16bit color16;
     PCCColor3B    color8;
@@ -4131,8 +4178,6 @@ void PCCEncoder::generateMissedPointsGeometryVideo( PCCContext& context, PCCGrou
   videoMPsGeometry.resize( gofSize );
   for ( auto& frame : context.getFrames() ) {
     const size_t shift = frame.getIndex();
-    frame.setLosslessGeo( sps.getLosslessGeo() );
-    frame.setLosslessGeo444( sps.getLosslessGeo444() );
     frame.setMPGeoWidth( context.getMPGeoWidth() );
     printf( "generateMissedPointsGeometryVideo::context.getMPGeoWidth() = %zu \n", context.getMPGeoWidth() );
     frame.setMPGeoHeight( 0 );
@@ -4263,7 +4308,7 @@ void PCCEncoder::generateMPsTextureImage( PCCContext&         context,
                                           PCCImageTexture&    image,
                                           size_t              shift,
                                           const PCCPointSet3& reconstruct ) {
-  bool   losslessAtt               = frame.getLosslessGeo();
+  bool   losslessAtt               = params_.losslessGeo_; 
   size_t numberOfMpsPatches        = frame.getNumberOfMissedPointsPatches();
   size_t numberOfEddPoints         = frame.getTotalNumberOfEddPoints();
   size_t numOfMPGeos               = frame.getTotalNumberOfMissedPoints();
@@ -5631,18 +5676,37 @@ bool PCCEncoder::generateTextureVideo( const PCCGroupOfFrames&    sources,
         }
       }
     } else {
-      sources[i].transferColors( reconstructs[i], int32_t( params_.bestColorSearchRange_ ), params_.losslessGeo_ == 1,
-                                 params_.numNeighborsColorTransferFwd_, params_.numNeighborsColorTransferBwd_,
-                                 params_.useDistWeightedAverageFwd_, params_.useDistWeightedAverageBwd_,
-                                 params_.skipAvgIfIdenticalSourcePointPresentFwd_,
-                                 params_.skipAvgIfIdenticalSourcePointPresentBwd_, params_.distOffsetFwd_,
-                                 params_.distOffsetBwd_, params_.maxGeometryDist2Fwd_, params_.maxGeometryDist2Bwd_,
-                                 params_.maxColorDist2Fwd_, params_.maxColorDist2Bwd_, params_.excludeColorOutlier_,
-                                 params_.thresholdColorOutlierDist_ );
-      // color pre-smoothing
-      if ( !params_.losslessGeo_ && params_.flagColorPreSmoothing_ ) {
-        presmoothPointCloudColor( reconstructs[i], params );
-      }
+        printf("!PLR transfer color \n");
+        
+          printf( "Checksun : before transferColors :" );
+          for ( auto& c : reconstructs[0].computeChecksum() ) { printf( "%02x", c ); }
+          printf( "\n" );
+        sources[i].transferColors( reconstructs[i], int32_t( params_.bestColorSearchRange_ ), params_.losslessGeo_ == 1,
+                                   params_.numNeighborsColorTransferFwd_, params_.numNeighborsColorTransferBwd_,
+                                   params_.useDistWeightedAverageFwd_, params_.useDistWeightedAverageBwd_,
+                                   params_.skipAvgIfIdenticalSourcePointPresentFwd_,
+                                   params_.skipAvgIfIdenticalSourcePointPresentBwd_, params_.distOffsetFwd_,
+                                   params_.distOffsetBwd_, params_.maxGeometryDist2Fwd_, params_.maxGeometryDist2Bwd_,
+                                   params_.maxColorDist2Fwd_, params_.maxColorDist2Bwd_, params_.excludeColorOutlier_,
+                                   params_.thresholdColorOutlierDist_ );
+                                   
+          printf( "Checksun : post transferColors :" );
+          for ( auto& c : reconstructs[0].computeChecksum() ) { printf( "%02x", c ); }
+          printf( "\n" );
+        // color pre-smoothing
+        if ( !params_.losslessGeo_ && params_.flagColorPreSmoothing_ ) {
+          printf( "Checksun : presmoothPointCloudColor start :" );
+          for ( auto& c : reconstructs[0].computeChecksum() ) { printf( "%02x", c ); }
+          printf( "\n" );
+          presmoothPointCloudColor( reconstructs[i], params );
+          printf( "Checksun : presmoothPointCloudColor done :" );
+          for ( auto& c : reconstructs[0].computeChecksum() ) { printf( "%02x", c ); }
+          printf( "\n" );
+        } else {
+          printf( "Checksun : !presmoothPointCloudColor:" );
+          for ( auto& c : reconstructs[0].computeChecksum() ) { printf( "%02x", c ); }
+          printf( "\n" );
+        }
     }
     ret &= generateTextureVideo( reconstructs[i], context, i, mapCount );
   }
@@ -5659,8 +5723,8 @@ bool PCCEncoder::generateTextureVideo( const PCCPointSet3& reconstruct,
   assert( mapCount > 0 );
   auto&  pointToPixel                 = frame.getPointToPixel();
   bool   useMissedPointsSeparateVideo = frame.getUseMissedPointsSeparateVideo();
-  bool   losslessAtt                  = frame.getLosslessGeo();
-  bool   losslessGeo                  = frame.getLosslessGeo();
+  bool   losslessAtt                  = params_.losslessGeo_; // frame.getLosslessGeo();
+  bool   losslessGeo                  = params_.losslessGeo_; // frame.getLosslessGeo();
   bool   lossyMissedPointsPatch       = frame.getRawPatchEnabledFlag() && ( !losslessGeo );
   size_t numberOfEddPoints            = frame.getTotalNumberOfEddPoints();
   size_t numOfMPGeos                  = frame.getTotalNumberOfMissedPoints();
@@ -7108,7 +7172,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
   auto&        afps                      = context.getAtlasFrameParameterSet( afpsId );
   size_t       aspsId                    = afps.getAtlasSequenceParameterSetId();
   auto&        asps                      = context.getAtlasSequenceParameterSet( aspsId );
-  const size_t minLevel                  = sps.getMinLevel();
+  const size_t minLevel                  = pow( 2., atgh.getAtghPosMinZQuantizer() );
   size_t       atlasIndex                = 0;
   auto&        gi                        = sps.getGeometryInformation( atlasIndex );
   auto         geometryBitDepth2D        = gi.getGeometryNominal2dBitdepthMinus1() + 1;
@@ -7246,13 +7310,8 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
       pdu.setPdu3dPosX( patch.getU1() );
       pdu.setPdu3dPosY( patch.getV1() );
       size_t pduProjectPlane = patch.getProjectionMode() * 3 + size_t( patch.getNormalAxis() );
-#ifdef BUGFIX_45_DEGREE_PROJECTION
       pdu.setPduProjectionId( asps.get45DegreeProjectionPatchPresentFlag() ? ( pduProjectPlane << 2 ) + patch.getAxisOfAdditionalPlane()
                                                                            : pduProjectPlane );
-#else
-      pdu.setPduProjectionId( asps.get45DegreeProjectionPatchPresentFlag() ? ( pduProjectPlane << 2 )
-                                                                           : pduProjectPlane );
-#endif
       if ( asps.getPatchSizeQuantizerPresentFlag() ) {
         pdu.setPdu2dSizeXMinus1( (patch.getPatchSize2DXInPixel()-1) / quantizerSizeX );
         pdu.setPdu2dSizeYMinus1( (patch.getPatchSize2DYInPixel()-1) / quantizerSizeY );
@@ -7290,7 +7349,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
     }
   }
 
-  if ( ( sps.getLosslessGeo() || params_.lossyMissedPointsPatch_ ) ) {
+  if ( ( params_.losslessGeo_ || params_.lossyMissedPointsPatch_ ) ) {
     size_t numberOfPcmPatches = frame.getNumberOfMissedPointsPatches();
     for ( size_t mpsPatchIndex = 0; mpsPatchIndex < numberOfPcmPatches; ++mpsPatchIndex ) {
       auto&   missedPointsPatch = pcmPatches[mpsPatchIndex];

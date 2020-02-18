@@ -851,15 +851,11 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     auto& atgl = context.addAtlasTileGroupLayer( frameIdx );
     auto& atgh = atgl.getAtlasTileGroupHeader();
     atgh.setAtghAtlasFrameParameterSetId( 0 );
-#ifdef BUGFIX_45_DEGREE_PROJECTION
     if( additionalProjectionPlaneMode_ > 0 ) {
       atgh.setAtghPosMinZQuantizer( uint8_t( std::log2( minLevel_ ) ) - 1 );
     } else {
       atgh.setAtghPosMinZQuantizer( uint8_t( std::log2( minLevel_ ) ) );
     }
-#else
-    atgh.setAtghPosMinZQuantizer( uint8_t( std::log2( minLevel_ ) ) );
-#endif
     atgh.setAtghPosDeltaMaxZQuantizer( uint8_t( std::log2( minLevel_ ) ) );
     atgh.setAtghPatchSizeXinfoQuantizer( log2QuantizerSizeX_ );
     atgh.setAtghPatchSizeYinfoQuantizer( log2QuantizerSizeY_ );
@@ -884,11 +880,6 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   gi.setGeometry3dCoordinatesBitdepthMinus1( uint8_t( geometry3dCoordinatesBitdepth_ - 1 ) );
   gi.setGeometryNominal2dBitdepthMinus1( uint8_t( geometryNominal2dBitdepth_ - 1 ) );
   gi.setGeometryMSBAlignFlag( false );
-
-  // deprecated
-  sps.setLosslessGeo444( losslessGeo444_ );
-  sps.setLosslessGeo( losslessGeo_ );
-  sps.setMinLevel( minLevel_ );
 
   // Encoder only data
   context.setOccupancyPrecision( occupancyPrecision_ );

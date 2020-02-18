@@ -52,8 +52,6 @@ PCCFrameContext::PCCFrameContext() :
     globalPatchCount_( 0 ),
     geometry3dCoordinatesBitdepth_( 10 ),
     pointLocalReconstructionNumber_( 0 ),
-    losslessGeo_( false ),
-    losslessGeo444_( false ),
     useMissedPointsSeparateVideo_( false ),
     rawPatchEnabledFlag_( false ),
     geometry2dNorminalBitdepth_( 8 ) {
