@@ -143,38 +143,98 @@ class HrdParameters {
 class VUIParameters {
  public:
   VUIParameters() :
-      vuiTimingInfoPresentFlag_( false ),
-      vuiPocProportionalToTimingFlag_( false ),
-      vuiHrdParametersPresentFlag_( false ),
-      vuiNumUnitsInTick_( 1001 ),
-      vuiTimeScale_( 60000 ),
-      vuiNumTicksPocDiffOneMinus1_( 0 ) {}
+    vuiWorldCoordinatesInfoPresentFlag_(false),
+    vuiUnitInMetresFlag_( false ),
+    vuiDefaultDispalyBoxSize_( false ),
+    vuiNumUnitsInBlock_( 1 ),
+    vuiBlockScale_( 1 ),
+    vuiDefDispBoxLeftOffset_( 0 ),
+    vuiDefDispBoxRightOffset_( 0 ),
+    vuiDefDispBoxTopOffset_( 0 ),
+    vuiDefDispBoxBottomOffset_( 0 ),
+    vuiDefDispBoxFrontOffset_( 0 ),
+    vuiDefDispBoxBackOffset_( 0 ),
+    vuiTimingInfoPresentFlag_(false),
+    vuiPocProportionalToTimingFlag_(false),
+    vuiHrdParametersPresentFlag_(false),
+    vuiNumUnitsInTick_(1001),
+    vuiTimeScale_(60000),
+    vuiNumTicksPocDiffOneMinus1_( 0 ),
+    vuiBitstreamRestrictionFlag_( false ),
+    vuiTileGroupsRestrictedFlag_( false ),
+    vuiConsistentTilesForVideoComponentsFlag_( false ),
+    vuiMaxNumTileGroupPerAtlas_( 1) {}
   ~VUIParameters() {}
   VUIParameters& operator=( const VUIParameters& ) = default;
 
+  bool           getVuiWorldCoordinatesInfoPresentFlag() { return vuiWorldCoordinatesInfoPresentFlag_; }
+  bool           getVuiUnitInMetresFlag() { return vuiUnitInMetresFlag_; }
+  bool           getVuiDefaultDispalyBoxSize() { return vuiDefaultDispalyBoxSize_; }
   bool           getVuiTimingInfoPresentFlag() { return vuiTimingInfoPresentFlag_; }
   bool           getVuiPocProportionalToTimingFlag() { return vuiPocProportionalToTimingFlag_; }
   bool           getVuiHrdParametersPresentFlag() { return vuiHrdParametersPresentFlag_; }
+  uint32_t       getVuiNumUnitsInBlock() { return vuiNumUnitsInBlock_; }
+  uint32_t       getVuiBlockScale() { return vuiBlockScale_; }
+  uint32_t       getVuiDefDispBoxLeftOffset() { return vuiDefDispBoxLeftOffset_; }
+  uint32_t       getVuiDefDispBoxRightOffset() { return vuiDefDispBoxRightOffset_; }
+  uint32_t       getVuiDefDispBoxTopOffset() { return vuiDefDispBoxTopOffset_; }
+  uint32_t       getVuiDefDispBoxBottomOffset() { return vuiDefDispBoxBottomOffset_; }
+  uint32_t       getVuiDefDispBoxFrontOffset() { return vuiDefDispBoxFrontOffset_; }
+  uint32_t       getVuiDefDispBoxBackOffset() { return vuiDefDispBoxBackOffset_; }
   uint32_t       getVuiNumUnitsInTick() { return vuiNumUnitsInTick_; }
   uint32_t       getVuiTimeScale() { return vuiTimeScale_; }
   uint32_t       getVuiNumTicksPocDiffOneMinus1() { return vuiNumTicksPocDiffOneMinus1_; }
   HrdParameters& getHrdParameters() { return hrdParameters_; }
+  bool           getVuiBitstreamRestrictionFlag() { return vuiBitstreamRestrictionFlag_; }
+  bool           getVuiTileGroupsRestrictedFlag() { return vuiTileGroupsRestrictedFlag_; }
+  bool           getVuiConsistentTilesForVideoComponentsFlag() { return vuiConsistentTilesForVideoComponentsFlag_; }
+  uint32_t       getVuiMaxNumTileGroupPerAtlas() { return vuiMaxNumTileGroupPerAtlas_; }
 
+  void setVuiWorldCoordinatesInfoPresentFlag( bool value ) { vuiWorldCoordinatesInfoPresentFlag_ = value; }
+  void setVuiUnitInMetresFlag( bool value ) { vuiUnitInMetresFlag_ = value; }
+  void setVuiDefaultDispalyBoxSize(bool value) { vuiDefaultDispalyBoxSize_ = value; }
   void setVuiTimingInfoPresentFlag( bool value ) { vuiTimingInfoPresentFlag_ = value; }
   void setVuiPocProportionalToTimingFlag( bool value ) { vuiPocProportionalToTimingFlag_ = value; }
   void setVuiHrdParametersPresentFlag( bool value ) { vuiHrdParametersPresentFlag_ = value; }
+  void setVuiNumUnitsInBlock( uint32_t value ) { vuiNumUnitsInBlock_ = value; }
+  void setVuiBlockScale( uint32_t value ) { vuiBlockScale_ = value; }
+  void setVuiDefDispBoxLeftOffset( uint32_t value ) { vuiDefDispBoxLeftOffset_ = value; }
+  void setVuiDefDispBoxRightOffset( uint32_t value ) { vuiDefDispBoxRightOffset_ = value; }
+  void setVuiDefDispBoxTopOffset( uint32_t value ) { vuiDefDispBoxTopOffset_ = value; }
+  void setVuiDefDispBoxBottomOffset( uint32_t value ) { vuiDefDispBoxBottomOffset_ = value; }
+  void setVuiDefDispBoxFrontOffset( uint32_t value ) { vuiDefDispBoxFrontOffset_ = value; }
+  void setVuiDefDispBoxBackOffset( uint32_t value ) { vuiDefDispBoxBackOffset_ = value; }
   void setVuiNumUnitsInTick( uint32_t value ) { vuiNumUnitsInTick_ = value; }
   void setVuiTimeScale( uint32_t value ) { vuiTimeScale_ = value; }
-  void setVuiNumTicksPocDiffOneMinus1( bool value ) { vuiNumTicksPocDiffOneMinus1_ = value; }
+  void setVuiNumTicksPocDiffOneMinus1( uint32_t value ) { vuiNumTicksPocDiffOneMinus1_ = value; }
+  void setVuiBitstreamRestrictionFlag( bool value ) { vuiBitstreamRestrictionFlag_ = value; }
+  void setVuiTileGroupsRestrictedFlag( bool value ) { vuiTileGroupsRestrictedFlag_ = value; }
+  void setVuiConsistentTilesForVideoComponentsFlag( bool value ) { vuiConsistentTilesForVideoComponentsFlag_ = value; }
+  void setVuiMaxNumTileGroupPerAtlas(uint32_t value) { vuiMaxNumTileGroupPerAtlas_ = value; }
 
  private:
+  bool          vuiWorldCoordinatesInfoPresentFlag_;
+  bool          vuiUnitInMetresFlag_;
+  bool          vuiDefaultDispalyBoxSize_;
   bool          vuiTimingInfoPresentFlag_;
   bool          vuiPocProportionalToTimingFlag_;
   bool          vuiHrdParametersPresentFlag_;
+  uint32_t      vuiNumUnitsInBlock_;
+  uint32_t      vuiBlockScale_;
+  uint32_t      vuiDefDispBoxLeftOffset_;
+  uint32_t      vuiDefDispBoxRightOffset_;
+  uint32_t      vuiDefDispBoxTopOffset_;
+  uint32_t      vuiDefDispBoxBottomOffset_;
+  uint32_t      vuiDefDispBoxFrontOffset_;
+  uint32_t      vuiDefDispBoxBackOffset_;
   uint32_t      vuiNumUnitsInTick_;
   uint32_t      vuiTimeScale_;
   uint32_t      vuiNumTicksPocDiffOneMinus1_;
   HrdParameters hrdParameters_;
+  bool          vuiBitstreamRestrictionFlag_;
+  bool          vuiTileGroupsRestrictedFlag_;
+  bool          vuiConsistentTilesForVideoComponentsFlag_;
+  uint32_t      vuiMaxNumTileGroupPerAtlas_;
 };
 
 };  // namespace pcc

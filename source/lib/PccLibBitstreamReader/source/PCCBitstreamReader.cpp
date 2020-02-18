@@ -1689,6 +1689,21 @@ void PCCBitstreamReader::smoothingParameters( PCCBitstream& bitstream, SEI& seiA
 // F.2.1  VUI parameters syntax
 void PCCBitstreamReader::vuiParameters( PCCBitstream& bitstream, VUIParameters& vp ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
+  vp.setVuiWorldCoordinatesInfoPresentFlag( bitstream.read(1) );  // u(1)
+  if( vp.getVuiWorldCoordinatesInfoPresentFlag() ) {
+    vp.setVuiUnitInMetresFlag( bitstream.read(1) ); // u(1)
+    vp.setVuiNumUnitsInBlock( bitstream.read(32) ); // u(32)
+    vp.setVuiBlockScale( bitstream.read(32) ); // u(32)
+  }
+  vp.setVuiDefaultDispalyBoxSize( bitstream.read(1) ); // u(1)
+  if( vp.getVuiDefaultDispalyBoxSize() ) {
+    vp.setVuiDefDispBoxLeftOffset(bitstream.readUvlc()); // ue(v)
+    vp.setVuiDefDispBoxRightOffset(bitstream.readUvlc()); // ue(v)
+    vp.setVuiDefDispBoxTopOffset(bitstream.readUvlc()); // ue(v)
+    vp.setVuiDefDispBoxBottomOffset(bitstream.readUvlc()); // ue(v)
+    vp.setVuiDefDispBoxFrontOffset(bitstream.readUvlc()); // ue(v)
+    vp.setVuiDefDispBoxBackOffset(bitstream.readUvlc()); // ue(v)
+  }
   vp.setVuiTimingInfoPresentFlag( bitstream.read( 1 ) );  // u(1)
   if ( vp.getVuiTimingInfoPresentFlag() ) {
     vp.setVuiNumUnitsInTick( bitstream.read( 32 ) );              // u(32)
@@ -1699,6 +1714,12 @@ void PCCBitstreamReader::vuiParameters( PCCBitstream& bitstream, VUIParameters& 
     }
     vp.setVuiHrdParametersPresentFlag( bitstream.read( 1 ) );  // u(1)
     if ( vp.getVuiHrdParametersPresentFlag() ) { hrdParameters( bitstream, vp.getHrdParameters() ); }
+  }
+  vp.setVuiBitstreamRestrictionFlag( bitstream.read(1) );
+  if ( vp.getVuiBitstreamRestrictionFlag() ) {
+    vp.setVuiTileGroupsRestrictedFlag( bitstream.read(1) );
+    vp.setVuiConsistentTilesForVideoComponentsFlag( bitstream.read(1) );
+    vp.setVuiMaxNumTileGroupPerAtlas( bitstream.readUvlc() );
   }
 }
 
