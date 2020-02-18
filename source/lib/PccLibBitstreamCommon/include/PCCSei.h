@@ -229,6 +229,7 @@ class SEIGeometryTransformationParams : public SEI {
       gtpScaleEnabledFlag_( false ),
       gtpOffsetEnabledFlag_( false ),
       gtpRotationEnabledFlag_( false ),
+      gtpNumCameraInfoMinus1_( 0 ),
       gtpRotationQx_( 0 ),
       gtpRotationQy_( 0 ),
       gtpRotationQz_( 0 ) {
@@ -238,10 +239,20 @@ class SEIGeometryTransformationParams : public SEI {
     }
   }
 
-  ~SEIGeometryTransformationParams() {}
+  ~SEIGeometryTransformationParams() {
+    gtpCameraOffsetOnAxis_[3].clear();
+    gtpCameraOrientationOnAxis_[3].clear();
+  }
   SEIGeometryTransformationParams& operator=( const SEIGeometryTransformationParams& ) = default;
 
-  SeiPayloadType getPayloadType() { return SEI_PREFIX_INDICATION; }
+  SeiPayloadType getPayloadType() { return GEOMETRY_TRANSFORMATION_PARAMS; }
+
+  void allocate() {
+    for (uint8_t d = 0; d < 3; d++) {
+      gtpCameraOffsetOnAxis_[d].resize(8);
+      gtpCameraOrientationOnAxis_[d].resize(8);
+    }
+  }
 
   bool     getGtpCancelFlag() { return gtpCancelFlag_; }
   bool     getGtpScaleEnabledFlag() { return gtpScaleEnabledFlag_; }
@@ -252,6 +263,11 @@ class SEIGeometryTransformationParams : public SEI {
   int16_t  getGtpRotationQx() { return gtpRotationQx_; }
   int16_t  getGtpRotationQy() { return gtpRotationQy_; }
   int16_t  getGtpRotationQz() { return gtpRotationQz_; }
+  uint8_t                   getGtpNumCameraInfoMinus1() { return gtpNumCameraInfoMinus1_; }
+  std::vector<int16_t>&     getGtpCameraOffsetOnAxis() { return gtpCameraOffsetOnAxis_[3]; }
+  std::vector<int16_t>&     getGtpCameraOrientationOnAxis() { return gtpCameraOrientationOnAxis_[3]; }
+  int16_t                   getGtpCameraOffsetOnAxis(uint8_t cameraId, size_t axisId) { return gtpCameraOffsetOnAxis_[cameraId][axisId]; }
+  int16_t                   getGtpCameraOrientationOnAxis(uint8_t cameraId, size_t axisId) { return gtpCameraOrientationOnAxis_[cameraId][axisId]; }
 
   void setGtpCancelFlag( bool value ) { gtpCancelFlag_ = value; }
   void setGtpScaleEnabledFlag( bool value ) { gtpScaleEnabledFlag_ = value; }
@@ -262,17 +278,23 @@ class SEIGeometryTransformationParams : public SEI {
   void setGtpRotationQx( uint16_t value ) { gtpRotationQx_ = value; }
   void setGtpRotationQy( uint16_t value ) { gtpRotationQy_ = value; }
   void setGtpRotationQz( uint16_t value ) { gtpRotationQz_ = value; }
+  void setGtpNumCameraInfoMinus1(uint8_t value) { gtpNumCameraInfoMinus1_ = value; }
+  void setGtpCameraOffsetOnAxis(uint8_t cameraId, uint8_t axisId, int16_t value) { gtpCameraOffsetOnAxis_[cameraId][axisId] = value; }
+  void setGtpCameraOrientationOnAxis(uint8_t cameraId, uint8_t axisId, int16_t value) { gtpCameraOrientationOnAxis_[cameraId][axisId] = value; }
 
  private:
-  bool     gtpCancelFlag_;
-  bool     gtpScaleEnabledFlag_;
-  bool     gtpOffsetEnabledFlag_;
-  bool     gtpRotationEnabledFlag_;
-  uint32_t gtpGeometryScaleOnAxis_[3];
-  int32_t  gtpGeometryOffsetOnAxis_[3];
-  int16_t  gtpRotationQx_;
-  int16_t  gtpRotationQy_;
-  int16_t  gtpRotationQz_;
+  bool                      gtpCancelFlag_;
+  bool                      gtpScaleEnabledFlag_;
+  bool                      gtpOffsetEnabledFlag_;
+  bool                      gtpRotationEnabledFlag_;
+  uint32_t                  gtpGeometryScaleOnAxis_[3];
+  int32_t                   gtpGeometryOffsetOnAxis_[3];
+  int16_t                   gtpRotationQx_;
+  int16_t                   gtpRotationQy_;
+  int16_t                   gtpRotationQz_;
+  uint8_t                   gtpNumCameraInfoMinus1_;
+  std::vector<int16_t>      gtpCameraOffsetOnAxis_[3];
+  std::vector<int16_t>      gtpCameraOrientationOnAxis_[3];
 };
 
 // E.2.11  Attribute transformation parameters SEI message syntax
