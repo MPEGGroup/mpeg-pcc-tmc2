@@ -1441,6 +1441,7 @@ void PCCBitstreamWriter::geometryTransformationParams( PCCBitstream& bitstream, 
     bitstream.write( sei.getGtpScaleEnabledFlag(), 1 );     // u(1)
     bitstream.write( sei.getGtpOffsetEnabledFlag(), 1 );    // u(1)
     bitstream.write( sei.getGtpRotationEnabledFlag(), 1 );  // u(1)
+    bitstream.write( sei.getGtpNumCameraInfoMinus1(), 3 );  // u(3)
     if ( sei.getGtpScaleEnabledFlag() ) {
       for ( size_t d = 0; d < 3; d++ ) {
         bitstream.write( sei.getGtpGeometryScaleOnAxis( d ), 32 );  // u(32)
@@ -1455,6 +1456,16 @@ void PCCBitstreamWriter::geometryTransformationParams( PCCBitstream& bitstream, 
       bitstream.writeS( sei.getGtpRotationQx(), 16 );  // i(16)
       bitstream.writeS( sei.getGtpRotationQy(), 16 );  // i(16)
       bitstream.writeS( sei.getGtpRotationQz(), 16 );  // i(16)
+    }
+    if (sei.getGtpNumCameraInfoMinus1() != 0) {
+      for (uint8_t camId = 0; camId < sei.getGtpNumCameraInfoMinus1(); camId++) {
+        for (size_t d = 0; d < 3; d++) {
+          bitstream.writeS(sei.getGtpCameraOffsetOnAxis(camId, d), 16);  // i(16)
+        }
+        for (size_t d = 0; d < 3; d++) {
+          bitstream.writeS(sei.getGtpCameraOrientationOnAxis(camId, d), 16);  // i(16)
+        }
+      }
     }
   }
 }
