@@ -196,6 +196,7 @@ void PCCBitstreamReader::vpccUnitHeader( PCCHighLevelSyntax& syntax, PCCBitstrea
     vpcc.setVpccParameterSetId( bitstream.read( 4 ) );  // u(4)
     syntax.setActiveVpsId(vpcc.getVpccParameterSetId());
     vpcc.setAtlasId( bitstream.read( 6 ) );             // u(6)
+    syntax.setAtlasIndex(vpcc.getAtlasId());
   }
   if ( vpccUnitType == VPCC_AVD ) {
     auto& vpcc = syntax.getVpccUnitHeader( (int)vpccUnitType - 1 );
@@ -245,6 +246,7 @@ void PCCBitstreamReader::vpccParameterSet( VpccParameterSet& sps, PCCHighLevelSy
   sps.setVpccParameterSetId( bitstream.read( 4 ) );  // u(4)
   sps.setAtlasCountMinus1( bitstream.read( 6 ) );    // u(6)
   sps.allocateAtlas();
+  syntax.allocateAtlasHLS(sps.getAtlasCountMinus1() + 1);
   for ( int j = 0; j < sps.getAtlasCountMinus1() + 1; j++ ) {
     TRACE_BITSTREAM( "Atlas = %lu \n", j );
     sps.setFrameWidth( j, bitstream.read( 16 ) );     // u(16)

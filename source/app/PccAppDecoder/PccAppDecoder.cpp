@@ -315,9 +315,13 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
 #ifdef BITSTREAM_TRACE
     bitstream.closeTrace();
 #endif
-
+		// allocate atlas structure
+		context.resizeAtlas(context.getVps().getAtlasCountMinus1() + 1);
+		for (int atlId = 0; atlId < context.getVps().getAtlasCountMinus1() + 1; atlId++) {
+			context.getAtlas(atlId).allocateVideoFrames(context, 0); // first allocating the structures, frames will be added as the V-PCC units are being decoded ???
+			context.setAtlasIndex(atlId);
     std::vector<std::vector<uint32_t>> partitions;
-    int retDecoding = decoder.decode( context, reconstructs, partitions );
+			int retDecoding = decoder.decode(context, reconstructs, partitions, atlId);
     
     //jkei : this will be the process.
     //we need to change this part(and "GeneratePointCloudParameters ppSEIParams" and "setPostProcessingSeiParameters")
@@ -355,6 +359,7 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
     for(size_t f=0; f<partitions.size(); f++)
       partitions[f].clear();
   }
+	}
   bitstreamStat.trace();
   if ( metricsParams.computeMetrics_ ) { metrics.display(); }
   if ( metricsParams.computeChecksum_ ) {

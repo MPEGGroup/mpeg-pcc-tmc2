@@ -752,15 +752,19 @@ void PCCEncoderParameters::constructAspsRefList( PCCContext& context, size_t asp
 
 void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   auto& sps = context.getVps();
+  int numAtlas = 1;
+	context.resizeAtlas(numAtlas); // single atlas for V-PCC
+  sps.setAtlasCountMinus1(numAtlas - 1);
   sps.allocateAtlas();
+  context.allocateAtlasHLS(sps.getAtlasCountMinus1()+1);
   size_t atlasIndex = 0;
+	context.setAtlasIndex(atlasIndex);
   auto&  ai         = sps.getAttributeInformation( atlasIndex );
   auto&  oi         = sps.getOccupancyInformation( atlasIndex );
   auto&  gi         = sps.getGeometryInformation( atlasIndex );
   auto&  asps       = context.addAtlasSequenceParameterSet( 0 );
   auto&  afps       = context.addAtlasFrameParameterSet( 0 );
 
-  context.setOccupancyPackingBlockSize( occupancyResolution_ );
   context.setLog2PatchQuantizerSizeX( log2QuantizerSizeX_ );
   context.setLog2PatchQuantizerSizeY( log2QuantizerSizeY_ );
   context.setEnablePatchSizeQuantization( ( 1 << log2QuantizerSizeX_ ) < occupancyPrecision_ ||
@@ -840,8 +844,11 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     afps.setAfpsEomMaxBitCountMinus1( 7 );
     afps.setAfpsEomNumberOfPatchBitCountMinus1( 7 );
   }
+  //now create a list of tile groups per frame (NOTE: our frame has only one tile group)
+  int numTilesPerFrame = (afps.getAtlasFrameTileInformation().getNumTileRowsMinus1() + 1) * (afps.getAtlasFrameTileInformation().getNumTileColumnsMinus1() + 1);
   for ( size_t frameIdx = 0; frameIdx < frameCount_; frameIdx++ ) {
-    auto& atgl = context.addAtlasTileGroupLayer( frameIdx );
+    for (size_t tileGroupId = 0; tileGroupId < numTilesPerFrame; tileGroupId++) {
+      auto& atgl = context.addAtlasTileGroupLayer(frameIdx, tileGroupId);
     auto& atgh = atgl.getAtlasTileGroupHeader();
     atgh.setAtghAtlasFrameParameterSetId( 0 );
     if( additionalProjectionPlaneMode_ > 0 ) {
@@ -862,6 +869,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     atgh.setAtghRefAtlasFrameListSpsFlag( true );
     atgh.setAtghRefAtlasFrameListIdx( 0 );
   }
+  }
 
   // construction of reference frame list of ASPS
   constructAspsRefList( context, 0, 0 );
@@ -876,18 +884,12 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
 
   // Encoder only data
   context.setOccupancyPrecision( occupancyPrecision_ );
-  context.setOccupancyPackingBlockSize( occupancyResolution_ );
   context.setModelScale( modelScale_ );
   context.setModelOrigin( modelOrigin_ );
   context.setMPGeoWidth( textureMPSeparateVideoWidth_ );
   context.setMPAttWidth( textureMPSeparateVideoWidth_ );
   context.setMPGeoHeight( 0 );
   context.setMPAttHeight( 0 );
-  //multiple streams allocation
-  if (multipleStreams_) {
-    context.getVideoGeometryMultiple().resize(mapCountMinus1_ + 1);
-    context.getVideoTextureMultiple().resize(mapCountMinus1_ + 1);
-  } 
   context.setGeometry3dCoordinatesBitdepth( geometry3dCoordinatesBitdepth_ );
   size_t numPlrm =
       pointLocalReconstruction_
@@ -899,4 +901,6 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   // Lossy occupancy map
   context.getOffsetLossyOM()    = offsetLossyOM_;
   context.getPrefilterLossyOM() = prefilterLossyOM_;
+	//atlas video allocation
+	context.getAtlas(atlasIndex).allocateVideoFrames(context, 0);
 }

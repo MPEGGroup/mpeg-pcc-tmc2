@@ -54,7 +54,7 @@ PCCDecoder::~PCCDecoder() {}
 
 void PCCDecoder::setParameters( PCCDecoderParameters params ) { params_ = params; }
 
-int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, std::vector<std::vector<uint32_t>>& partitions) {
+int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, std::vector<std::vector<uint32_t>>& partitions, int32_t  atlasIndex = 0) {
   if ( params_.nbThread_ > 0 ) { tbb::task_scheduler_init init( (int)params_.nbThread_ ); }
 #ifdef CODEC_TRACE
     setTrace( true );
@@ -69,7 +69,6 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, std
   PCCVideoDecoder   videoDecoder;
   std::stringstream path;
   auto&             sps        = context.getVps();
-  int32_t           atlasIndex = 0;
   auto&             ai         = sps.getAttributeInformation( atlasIndex );
   auto&             oi         = sps.getOccupancyInformation( atlasIndex );
   auto&             gi         = sps.getGeometryInformation( atlasIndex );
@@ -532,11 +531,11 @@ void PCCDecoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& 
 void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
   TRACE_CODEC( "createPatchFrameDataStructure GOP start \n" );
   auto&  sps        = context.getVps();
-  size_t atlasIndex = 0;
-  auto&  asps       = context.getAtlasSequenceParameterSet( 0 );
+  size_t atlasIndex = context.getAtlasIndex();
+  //auto&  asps       = context.getAtlasSequenceParameterSet( /*0*/ );
   auto&  atglulist  = context.getAtlasTileGroupLayerList();
-  context.setOccupancyPackingBlockSize( pow( 2, asps.getLog2PatchPackingBlockSize() ) );
-  context.resize( atglulist.size() );
+  //context.setOccupancyPackingBlockSize( pow( 2, asps.getLog2PatchPackingBlockSize() ) );
+  context.resize( atglulist.size() ); // assuming that we have just one tile group per frame, how should we get the total number of frames?
   TRACE_CODEC( "frameCount = %u \n", context.size() );
   setPointLocalReconstruction( context );
   context.constructRefList(0, 0);
@@ -544,7 +543,8 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
   context.setMPAttWidth( 0 );
   context.setMPGeoHeight( 0 );
   context.setMPAttHeight( 0 );
-  for ( int i = 0; i < context.size(); i++ ) {
+
+  for ( size_t i = 0; i < context.size(); i++ ) {
     auto& frame = context.getFrame( i );
     if(i>0) { frame.setRefAFOCList( context ); }
     frame.setAFOC(i); 
@@ -553,6 +553,8 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
     frame.setHeight( sps.getFrameHeight( atlasIndex ) );
     frame.setUseMissedPointsSeparateVideo( sps.getRawSeparateVideoPresentFlag( atlasIndex ) );
     frame.setRawPatchEnabledFlag( sps.getRawPatchEnabledFlag( atlasIndex ) );
+		auto& afps = context.getAtlasFrameParameterSet(); //how to determine which AFPS is valid for a particular POC? Right now we only have one anyway
+    size_t numTileGroups = atglulist[i].size();
     createPatchFrameDataStructure( context, frame, i );
   }
 }
@@ -561,15 +563,19 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
                                                 size_t           frameIndex ) {
   TRACE_CODEC( "createPatchFrameDataStructure Frame %lu \n", frame.getIndex() );
   auto&  sps        = context.getVps();
-  size_t atlasIndex = 0;
-  auto&  gi         = context.getVps().getGeometryInformation( atlasIndex );
-
-  auto& asps  = context.getAtlasSequenceParameterSet( 0 );
-  auto& afps  = context.getAtlasFrameParameterSet( 0 );
-  auto& atglu = context.getAtlasTileGroupLayer( frameIndex );
+  size_t atlasIndex = context.getAtlasIndex();
+  auto&  gi         = sps.getGeometryInformation( atlasIndex );
+  uint32_t NumTilesInPatchFrame = 1;// (afti.getNumTileColumnsMinus1() + 1) * (afti.getNumTileRowsMinus1() + 1); 
+  // TODO: How to determine the number of tiles in a frame??? Currently one tile is used, but if multiple tiles are used, the code below is wrong (patches are not accumulated, but overwriten)
+  for (size_t tileGroupIndex = 0; tileGroupIndex < NumTilesInPatchFrame; tileGroupIndex++) {
+    auto& atglu = context.getAtlasTileGroupLayer(frameIndex, tileGroupIndex);
   auto& atgh  = atglu.getAtlasTileGroupHeader();
+    //the header indicates the structures used
+    auto& afps = context.getAtlasFrameParameterSet(atgh.getAtghAtlasFrameParameterSetId());
+    auto& asps = context.getAtlasSequenceParameterSet(afps.getAtlasSequenceParameterSetId());
   auto& atgdu = atglu.getAtlasTileGroupDataUnit();
 
+    //local variable initialization
   auto&        patches        = frame.getPatches();
   auto&        pcmPatches     = frame.getMissedPointsPatches();
   auto&        eomPatches     = frame.getEomPatches();
@@ -981,4 +987,5 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext&      context,
   }
   TRACE_CODEC( "patch %lu / %lu: end \n", patches.size(), patches.size() );
   frame.setTotalNumberOfMissedPoints( totalNumberOfMps );
+  }
 }

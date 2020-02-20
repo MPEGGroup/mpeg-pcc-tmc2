@@ -7183,15 +7183,18 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
   auto&        patches                   = frame.getPatches();
   auto&        pcmPatches                = frame.getMissedPointsPatches();
   auto&        sps                       = context.getVps();
-  auto&        atglu                     = context.getAtlasTileGroupLayer( frameIndex );
+  uint32_t NumTilesInPatchFrame = 1;// (afti.getNumTileColumnsMinus1() + 1) * (afti.getNumTileRowsMinus1() + 1); 
+  // TODO: How to determine the number of tiles in a frame??? Currently one tile is used, but if multiple tiles are used, the code below is wrong (patches are not accumulated, but overwriten)
+  for (size_t tileGroupIndex = 0; tileGroupIndex < NumTilesInPatchFrame; tileGroupIndex++) {
+    auto&        atglu = context.getAtlasTileGroupLayer(frameIndex, tileGroupIndex);
   auto&        atgh                      = atglu.getAtlasTileGroupHeader();
   auto&        atgdu                     = atglu.getAtlasTileGroupDataUnit();
-  size_t       afpsId                    = 0;
+    size_t       afpsId = atgh.getAtghAtlasFrameParameterSetId();
   auto&        afps                      = context.getAtlasFrameParameterSet( afpsId );
   size_t       aspsId                    = afps.getAtlasSequenceParameterSetId();
   auto&        asps                      = context.getAtlasSequenceParameterSet( aspsId );
   const size_t minLevel                  = pow( 2., atgh.getAtghPosMinZQuantizer() );
-  size_t       atlasIndex                = 0;
+    size_t       atlasIndex = context.getAtlasIndex();
   auto&        gi                        = sps.getGeometryInformation( atlasIndex );
   auto         geometryBitDepth2D        = gi.getGeometryNominal2dBitdepthMinus1() + 1;
   uint8_t      maxBitCountForMaxDepthTmp = uint8_t( geometryBitDepth2D - gbitCountSize[minLevel] + 1 );
@@ -7425,8 +7428,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
   TRACE_CODEC( "patch %lu / %lu: end \n", patches.size(), patches.size() );
   uint8_t patchType = ( atgh.getAtghType() == I_TILE_GRP ) ? (uint8_t)PATCH_MODE_I_END : (uint8_t)PATCH_MODE_P_END;
   atgdu.addPatchInformationData( patchType );
-
-
+  }
 }
 
 void PCCEncoder::SegmentationPartiallyAddtinalProjectionPlane( const PCCPointSet3&                source,
