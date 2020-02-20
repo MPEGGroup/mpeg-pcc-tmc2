@@ -406,12 +406,6 @@ void PCCBitstreamWriter::vpccParameterSet( VpccParameterSet& vps, PCCHighLevelSy
       bitstream.write( (uint32_t)vps.getExtensionDataByte( i ), 8 );  // u(8)
     }
   }
-  // THE NEXT PARAMETERS ARE NOT IN THE VPCC CD SYNTAX DOCUMENTS AND WILL BE REMOVE
-  TRACE_BITSTREAM( "  Deprecated1\n" );
-  bitstream.write( (uint32_t)vps.getLosslessGeo444(), 1 );  // u(1) 
-  bitstream.write( (uint32_t)vps.getLosslessGeo(), 1 );     // u(1) 
-  bitstream.write( (uint32_t)vps.getMinLevel(), 8 );        // u(8) 
-  // THE NEXT PARAMETERS ARE NOT IN THE VPCC CD SYNTAX DOCUMENTS AND WILL BE REMOVE
   byteAlignment( bitstream );
 }
 
@@ -852,13 +846,10 @@ void PCCBitstreamWriter::patchDataUnit( PatchDataUnit&        pdu,
   AtlasFrameParameterSetRbsp&    afps   = syntax.getAtlasFrameParameterSet( afpsId );
   size_t                         aspsId = afps.getAtlasSequenceParameterSetId();
   AtlasSequenceParameterSetRbsp& asps   = syntax.getAtlasSequenceParameterSet( aspsId );
-
-#ifdef BUGFIX_45_DEGREE_PROJECTION
   bitstream.write( uint32_t( pdu.getPduProjectionId() ),
                    ( asps.get45DegreeProjectionPatchPresentFlag() ? 5 : 3 ) );  // u(5 or 3)
   TRACE_BITSTREAM( "PduProjectionId = %lu (45DegreeProjectionPatchPresentFlag = %d ) \n", 
     pdu.getPduProjectionId(),asps.get45DegreeProjectionPatchPresentFlag()  );
-#endif
   bitstream.writeUvlc( uint32_t( pdu.getPdu2dPosX() ) );  // ue(v)
   bitstream.writeUvlc( uint32_t( pdu.getPdu2dPosY() ) );  // ue(v)
   TRACE_BITSTREAM( " 2dPosXY: %zu,%zu\n", pdu.getPdu2dPosX(), pdu.getPdu2dPosX() );
@@ -889,10 +880,6 @@ void PCCBitstreamWriter::patchDataUnit( PatchDataUnit&        pdu,
     TRACE_BITSTREAM( " Pdu3dPosDeltaMaxZ: %zu ( bitCountForMaxDepth = %u) \n",
         pdu.getPdu3dPosDeltaMaxZ(), bitCountForMaxDepth  );
   }
-#ifndef BUGFIX_45_DEGREE_PROJECTION
-  bitstream.write( uint32_t( pdu.getPduProjectionId() ),
-                   ( asps.get45DegreeProjectionPatchPresentFlag() ? 5 : 3 ) );  // u(5 or 3)
-#endif
   bitstream.write( uint32_t( pdu.getPduOrientationIndex() ),
                    ( asps.getUseEightOrientationsFlag() ? 3 : 1 ) );  // u(3 or 1)
   if ( afps.getLodModeEnableFlag() ) {

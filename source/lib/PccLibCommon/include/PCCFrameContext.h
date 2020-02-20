@@ -81,8 +81,6 @@ class PCCFrameContext {
   const size_t                       getMPGeoHeight() { return MPGeoHeight_; }
   const size_t                       getMPAttWidth() { return MPAttWidth_; }
   const size_t                       getMPAttHeight() { return MPAttHeight_; }
-  const bool                         getLosslessGeo() { return losslessGeo_; }
-  const bool                         getLosslessGeo444() { return losslessGeo444_; }
   bool                               getUseMissedPointsSeparateVideo() { return useMissedPointsSeparateVideo_; }
   const bool                         getRawPatchEnabledFlag() { return rawPatchEnabledFlag_; }
   const size_t                       getMaxDepth() { return maxDepth_; }
@@ -105,8 +103,6 @@ class PCCFrameContext {
   void                       setMPGeoHeight( size_t height ) { MPGeoHeight_ = height; }
   void                       setMPAttWidth( size_t width ) { MPAttWidth_ = width; }
   void                       setMPAttHeight( size_t height ) { MPAttHeight_ = height; }
-  void                       setLosslessGeo( bool lossless ) { losslessGeo_ = lossless; }
-  void                       setLosslessGeo444( bool lossless ) { losslessGeo444_ = lossless; }
   void                       setUseMissedPointsSeparateVideo( bool value ) { useMissedPointsSeparateVideo_ = value; }
   void                       setTotalNumberOfEddPoints( size_t numPoints ) { totalNumberOfEddPoints_ = numPoints; }
   void setTotalNumberOfRegularPoints( size_t numPoints ) { totalNumberOfRegularPoints_ = numPoints; }
@@ -179,8 +175,6 @@ class PCCFrameContext {
   size_t                                       globalPatchCount_;
   size_t                                       geometry3dCoordinatesBitdepth_;
   uint8_t                                      pointLocalReconstructionNumber_;
-  bool                                         losslessGeo_;
-  bool                                         losslessGeo444_;
   bool                                         useMissedPointsSeparateVideo_;
   bool                                         rawPatchEnabledFlag_;
   size_t                                       geometry2dNorminalBitdepth_;

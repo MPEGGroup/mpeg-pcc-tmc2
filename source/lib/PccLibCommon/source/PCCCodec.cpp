@@ -129,20 +129,23 @@ void PCCCodec::generatePointCloud( PCCGroupOfFrames&                   reconstru
           frames[i].getWidth(), frames[i].getHeight(), params.occupancyResolution_, params.occupancyPrecision_,
           !params.enhancedDeltaDepthCode_ ? params.thresholdLossyOM_ : 0, params.pbfPassesCount_, params.pbfFilterSize_,
           params.pbfLog2Threshold_ );
-      printf( "  PBF done \n" ); fflush(stdout);
+      printf( "  PBF done \n" );
+      fflush( stdout );
     }
     std::vector<uint32_t> partition;
-      printf( "  generatePointCloud  \n" ); fflush(stdout);
-    generatePointCloud( reconstructs[i], context, frames[i], videoGeometry, videoGeometryMultiple, videoOccupancyMap, params,
-                        partition, bDecoder );
-    printf( "  generatePointCloud done ( %lu points ) \n", reconstructs[i].getPointCount() ); fflush(stdout);
+    printf( "  generatePointCloud  \n" );
+    fflush( stdout );
+    generatePointCloud( reconstructs[i], context, frames[i], videoGeometry, videoGeometryMultiple, videoOccupancyMap,
+                        params, partition, bDecoder );
+    printf( "  generatePointCloud done ( %lu points ) \n", reconstructs[i].getPointCount() );
+    fflush( stdout );
 #ifdef CODEC_TRACE
     TRACE_CODEC( " generatePointCloud create %lu points \n", reconstructs[i].getPointCount() );
     auto checksum = reconstructs[i].computeChecksum();
-    TRACE_CODEC( "Checksum %lu: ", i );
+    TRACE_CODEC( "Checksum %lu: post generate point cloud : ", i );
     for ( auto& c : checksum ) { TRACE_CODEC( "%02x", c ); }
     TRACE_CODEC( "\n" );
-    printf( "Checksum %lu: ", i );
+    printf( "Checksum %lu: post generate point cloud : ", i );
     for ( auto& c : checksum ) { printf( "%02x", c ); }
     printf( "\n" );
     fflush( stdout );
@@ -2274,6 +2277,7 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
                                 const uint8_t                       attributeCount,
                                 const GeneratePointCloudParameters& params ) {
   TRACE_CODEC( "colorPointCloud start \n" );
+  auto&        sps                     = context.getVps();
   auto&        frame                   = context[frameIndex];
   auto&        video                   = multipleStreams ? context.getVideoTextureMultiple()[0] : context.getVideoTexture();
   auto&        videoT1                 = context.getVideoTextureMultiple()[1];
@@ -2288,28 +2292,29 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
   } else {
     auto& pointToPixel                 = frame.getPointToPixel();
     auto& color                        = reconstruct.getColors();
-	auto& color16bit                   = reconstruct.getColors16bit(); 
+    auto& color16bit                   = reconstruct.getColors16bit();
     bool  useMissedPointsSeparateVideo = frame.getUseMissedPointsSeparateVideo();
-    bool  losslessAtt                  = frame.getLosslessGeo();
-    bool  losslessGeo                  = frame.getLosslessGeo();
-    bool  lossyMissedPointsPatch       = !losslessGeo && frame.getRawPatchEnabledFlag();
+    bool  lossyMissedPointsPatch       = !sps.getRawPatchEnabledFlag( 0 ) && frame.getRawPatchEnabledFlag();
     numOfMPGeos                        = frame.getTotalNumberOfMissedPoints();
     numberOfEddPoints                  = frame.getTotalNumberOfEddPoints();
     numberOfMpsAndEddColors            = numOfMPGeos + numberOfEddPoints;
     size_t pointCount                  = reconstruct.getPointCount();
-    if ( ( losslessAtt || lossyMissedPointsPatch ) && useMissedPointsSeparateVideo ) {
+    if ( ( sps.getRawPatchEnabledFlag( 0 ) || lossyMissedPointsPatch ) && useMissedPointsSeparateVideo ) {
       numOfMPGeos             = frame.getTotalNumberOfMissedPoints();
       numberOfEddPoints       = frame.getTotalNumberOfEddPoints();
       numberOfMpsAndEddColors = numOfMPGeos + numberOfEddPoints;
-      if ( useMissedPointsSeparateVideo && ( losslessAtt || lossyMissedPointsPatch ) ) {
+      TRACE_CODEC( "numOfMPGeos             = %d \n", numOfMPGeos );
+      TRACE_CODEC( "numberOfEddPoints       = %d \n", numberOfEddPoints );
+      TRACE_CODEC( "numberOfMpsAndEddColors = %d \n", numberOfMpsAndEddColors );
+      if ( useMissedPointsSeparateVideo && ( sps.getRawPatchEnabledFlag( 0 ) || lossyMissedPointsPatch ) ) {
         pointCount = reconstruct.getPointCount() - numOfMPGeos - numberOfEddPoints;
         assert( numberOfMpsAndEddColors == ( numberOfEddPoints + numOfMPGeos ) );
+        TRACE_CODEC( "  => pointCount         = %d \n", pointCount );
       }
     }
-
     TRACE_CODEC( "useMissedPointsSeparateVideo = %d \n", useMissedPointsSeparateVideo );
-    TRACE_CODEC( "losslessAtt                  = %d \n", losslessAtt );
-    TRACE_CODEC( "losslessGeo                  = %d \n", losslessGeo );
+    TRACE_CODEC( "sps.getRawPatchEnabledFlag()  = %d \n", context.getVps().getRawPatchEnabledFlag( 0 ) );
+    TRACE_CODEC( "plt.getProfileCodecGroupIdc() = %d \n", context.getVps().getProfileTierLevel().getProfileCodecGroupIdc() );
     TRACE_CODEC( "lossyMissedPointsPatch       = %d \n", lossyMissedPointsPatch );
     if ( params.enhancedDeltaDepthCode_ ) {
       TRACE_CODEC( "numberOfMpsAndEddColors      = %lu \n", numberOfMpsAndEddColors );
@@ -2321,6 +2326,7 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
     TRACE_CODEC( "pointLocalReconstruction     = %d \n", params.pointLocalReconstruction_ );
     TRACE_CODEC( "singleLayerPixelInterleaving = %d \n", params.singleMapPixelInterleaving_ );
     TRACE_CODEC( "enhancedDeltaDepthCode       = %d \n", params.enhancedDeltaDepthCode_ );
+    TRACE_CODEC( "multipleStreams              = %d \n", multipleStreams );
 
     if ( !pointCount || !reconstruct.hasColors() ) { return false; }
     PCCPointSet3        target;
@@ -2329,7 +2335,6 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
     targetIndex.resize( 0 );
     target.clear();
     source.clear();
-
     target.addColors16bit();
     source.addColors16bit();
     const size_t shift = frame.getIndex() * frameCount;
@@ -2341,12 +2346,10 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
       if ( params.singleMapPixelInterleaving_ ) {
         if ( ( f == 0 && ( x + y ) % 2 == 0 ) | ( f == 1 && ( x + y ) % 2 == 1 ) ) {
           const auto& frame = video.getFrame( shift );
-
           for ( size_t c = 0; c < 3; ++c ) {
             color16bit[i][c] = frame.getValue( c, x, y );
           }
           int index = source.addPoint( reconstruct[i] );
-
           source.setColor16bit( index, color16bit[i] );
         } else {
           target.addPoint( reconstruct[i] );
@@ -2387,10 +2390,8 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
       } else {
         if ( f < frameCount ) {
           const auto& frame = video.getFrame( shift + f );
-          for ( size_t c = 0; c < 3; ++c ) { color16bit[i][c] = frame.getValue( c, x, y );
-          }
+          for ( size_t c = 0; c < 3; ++c ) { color16bit[i][c] = frame.getValue( c, x, y ); }
           int index = source.addPoint( reconstruct[i] );
-
           source.setColor16bit( index, color16bit[i] );
         } else {
           target.addPoint( reconstruct[i] );
@@ -2398,14 +2399,13 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
         }
       }
     }
-
     if ( target.getPointCount() > 0 ) {
       source.transferColorWeight( target );
       for ( size_t i = 0; i < target.getPointCount(); ++i ) {
         reconstruct.setColor16bit( targetIndex[i], target.getColor16bit( i ) );
       }
     }
-    if ( ( losslessAtt || lossyMissedPointsPatch ) && useMissedPointsSeparateVideo ) {
+    if ( ( sps.getRawPatchEnabledFlag( 0 ) || lossyMissedPointsPatch ) && useMissedPointsSeparateVideo ) {
       std::vector<PCCColor3B>& mpsTextures = frame.getMpsTextures();
       std::vector<PCCColor3B>& eddTextures = frame.getEddTextures();
       for ( size_t i = 0; i < numOfMPGeos; ++i ) { color[pointCount + numberOfEddPoints + i] = mpsTextures[i]; }
@@ -2424,8 +2424,6 @@ void PCCCodec::generateMissedPointsGeometryfromVideo( PCCContext& context, PCCGr
   videoMPsGeometry.resize( gofSize );
   for ( auto& framecontext : context.getFrames() ) {
     const size_t shift = framecontext.getIndex();
-    framecontext.setLosslessGeo( sps.getLosslessGeo() );
-    framecontext.setLosslessGeo444( sps.getLosslessGeo444() );
     generateMPsGeometryfromImage( context, framecontext, reconstructs, shift );
     size_t totalNumRawPoints = 0;
     for ( size_t i = 0; i < framecontext.getNumberOfMissedPointsPatches(); i++ ) {
@@ -2446,6 +2444,10 @@ void PCCCodec::generateMPsGeometryfromImage( PCCContext&       context,
   auto&  videoMPsGeometry   = context.getVideoMPsGeometry();
   auto&  image              = videoMPsGeometry.getFrame( frameIndex );
   size_t numberOfMpsPatches = frame.getNumberOfMissedPointsPatches();
+  auto&  sps                = context.getVps();
+  bool is444 = sps.getProfileTierLevel().getProfileCodecGroupIdc() == CODEC_GROUP_HEVC444;
+
+  TRACE_CODEC("generateMPsGeometryfromImage is444 = %d \n",is444);
   for ( int i = 0; i < numberOfMpsPatches; i++ ) {
     auto&        missedPointsPatch = frame.getMissedPointsPatch( i );
     const size_t v0                = missedPointsPatch.v0_ * missedPointsPatch.occupancyResolution_;
@@ -2453,7 +2455,7 @@ void PCCCodec::generateMPsGeometryfromImage( PCCContext&       context,
     missedPointsPatch.sizeV_       = missedPointsPatch.sizeV0_ * missedPointsPatch.occupancyResolution_;
     missedPointsPatch.sizeU_       = missedPointsPatch.sizeU0_ * missedPointsPatch.occupancyResolution_;
     size_t numberOfMps             = missedPointsPatch.getNumberOfMps();
-    if ( !frame.getLosslessGeo444() ) { numberOfMps *= 3; }
+    if ( !is444 ) { numberOfMps *= 3; }
     missedPointsPatch.resize( numberOfMps );
     for ( size_t v = 0; v < missedPointsPatch.sizeV_; ++v ) {
       for ( size_t u = 0; u < missedPointsPatch.sizeU_; ++u ) {
@@ -2461,7 +2463,7 @@ void PCCCodec::generateMPsGeometryfromImage( PCCContext&       context,
         if ( p < numberOfMps ) {
           const size_t x = ( u0 + u );
           const size_t y = ( v0 + v );
-          if ( frame.getLosslessGeo444() ) {
+          if ( is444 ) {
             missedPointsPatch.x_[p] = image.getValue( 0, x, y );
             missedPointsPatch.y_[p] = image.getValue( 1, x, y );
             missedPointsPatch.z_[p] = image.getValue( 2, x, y );
@@ -2478,13 +2480,21 @@ void PCCCodec::generateMissedPointsTexturefromVideo( PCCContext& context, PCCGro
   const size_t gofSize         = context.size();
   auto&        videoMPsTexture = context.getVideoMPsTexture();
   videoMPsTexture.resize( gofSize );
+  TRACE_CODEC("generateMissedPointsTexturefromVideo \n");
   for ( auto& framecontext : context.getFrames() ) {
     const size_t shift = framecontext.getIndex();  //
     generateMPsTexturefromImage( context, framecontext, reconstructs, shift );
     std::cout << "generate Missed Points (Texture) : frame " << shift
-              << ", # of Missed Points Texture : " << framecontext.getMissedPointsPatch( 0 ).size() << std::endl;
+              << ", # of Missed Points Texture : " << framecontext.getMissedPointsPatch( 0 ).size() << std::endl;        
+#ifdef CODEC_TRACE
+    auto checksum = reconstructs[shift].computeChecksum();
+    TRACE_CODEC( "Checksum: rec post missed point: " );
+    for ( auto& c : checksum ) { TRACE_CODEC( "%02x", c ); }
+    TRACE_CODEC( "\n" );
+#endif
   }
   std::cout << "MissedPoints Texture [done]" << std::endl;
+  TRACE_CODEC("generateMissedPointsTexturefromVideo done \n");
 }
 
 void PCCCodec::generateMPsTexturefromImage( PCCContext&       context,

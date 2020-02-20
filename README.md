@@ -1,4 +1,4 @@
-# VPCC - mpeg-pcc-tmc2 - realese 4.0  
+# - Video Point Cloud Compression - VPCC - mpeg-pcc-tmc2 test model candisoftware 2
 
 ## Building
 
@@ -24,18 +24,26 @@ Bash scripts can be use to build mpeg-pcc-tmc2 project:
 - cmake .. -G "Visual Studio 15 2017 Win64"
 - open the generated visual studio solution and build it
 
+
 ### External dependencies
 
 The external dependencies must be download and build: 
-- HM-16.20+SCM-8.8 (apply  pcc_me-ext_for_HM-16.20+SCM-8.8.patch on it stored in \dependencies\hm-modification ).
+
+- HM-16.20+SCM-8.8 (apply pcc_me-ext_for_HM-16.20+SCM-8.8.patch on it stored in \dependencies\hm-modification ).
    
    svn checkout https://hevc.hhi.fraunhofer.de/svn/svn_HEVCSoftware/tags/HM-16.20+SCM-8.8/ external/HM-16.20+SCM-8.8-3DMC;    
    cd external/HM-16.20+SCM-8.8-3DMC
    svn patch ../../tmc2_r7.0/dependencies/hm-modification/pcc_me-ext_for_HM-16.20+SCM-8.8.patch 
    
 - HDRTools
+
+    git clone -b 0.17-dev https://gitlab.com/standards/HDRTools.git        
+
 - pcc_distortion
 
+	git clone http://mpegx.int-evry.fr/software/MPEG/PCC/mpeg-pcc-dmetric.git 
+
+	
 ## Running
 
 Configuration files are provided in the cfg directory to aid configuring
@@ -86,4 +94,7 @@ These examples can be start based on your system with the following scripts:
 - ./test/runme_osx.sh
 
 
+### Contact
 
+Don't hesitate to contact me for any information: 
+- Julien Ricard - MPEG-3DG-VPCC software coordinator (julien.ricard@interdigital.com). 

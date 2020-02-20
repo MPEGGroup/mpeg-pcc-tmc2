@@ -63,8 +63,6 @@
 
 namespace pcc {
 
-#define BUGFIX_45_DEGREE_PROJECTION
-
 // ******************************************************************* //
 // Trace modes to validate new syntax
 // ******************************************************************* //
@@ -169,43 +167,15 @@ enum VPCCUnitType {
   NUM_VPCC_UNIT_TYPE  // undefined
 };
 
-/*enum PDGUnitType { //deprecated -> to be removed
-  PDG_PSPS = 0,    // 00: Patch sequence parameter set
-  PDG_PFPS,        // 01: Patch frame parameter set
-  PDG_PFGPS,       // 02: Patch frame geometry parameter set
-  PDG_PFAPS,       // 03: Patch frame attribute parameter set
-  PDG_GPPS,        // 04: Geometry patch parameter set
-  PDG_APPS,        // 05: Attribute patch parameter set
-  PDG_PTGLU,       // 06: Patch tile group layer unit
-  PDG_PREFIX_SEI,  // 07: Prefix SEI message
-  PDG_SUFFIX_SEI,  // 08: Suffix SEI message
-  PDG_RSVD_09,     // 09: Reserved
-  PDG_RSVD_10,     // 10: Reserved
-  PDG_RSVD_11,     // 11: Reserved
-  PDG_RSVD_12,     // 12: Reserved
-  PDG_RSVD_13,     // 13: Reserved
-  PDG_RSVD_14,     // 14: Reserved
-  PDG_RSVD_15,     // 15: Reserved
-  PDG_RSVD_16,     // 16: Reserved
-  PDG_RSVD_17,     // 17: Reserved
-  PDG_RSVD_18,     // 18: Reserved
-  PDG_RSVD_19,     // 19: Reserved
-  PDG_RSVD_20,     // 20: Reserved
-  PDG_RSVD_21,     // 21: Reserved
-  PDG_RSVD_22,     // 22: Reserved
-  PDG_RSVD_23,     // 23: Reserved
-  PDG_RSVD_24,     // 24: Reserved
-  PDG_RSVD_25,     // 25: Reserved
-  PDG_RSVD_26,     // 26: Reserved
-  PDG_RSVD_27,     // 27: Reserved
-  PDG_RSVD_28,     // 28: Reserved
-  PDG_RSVD_29,     // 29: Reserved
-  PDG_RSVD_30,     // 30: Reserved
-  PDG_RSVD_31      // 32: Reserved
-};*/
 
 enum PCCCodecID { CODEC_HEVC = 0 };
 
+enum PCCCodecGroup {
+  CODEC_GROUP_AVC_PROGRESSIVE_HIGH = 0,
+  CODEC_GROUP_HEVC_MAIN10,
+  CODEC_GROUP_HEVC444,
+  CODEC_GROUP_MP4RA
+};
 enum PCCPatchFrameType { PATCH_FRAME_I = 0, PATCH_FRAME_P };
 
 enum PCCPatchModeI { PATCH_MODE_I_INTRA = 0, PATCH_MODE_I_RAW, PATCH_MODE_I_EOM, PATCH_MODE_I_END = 14 };
@@ -410,19 +380,6 @@ static inline uint32_t getFixedLengthCodeBitsCount( uint32_t range ) {
   return count;
 }
 
-/*static inline const std::string strUnitType( PDGUnitType unitType ) { //deprecated -> to be removed
-  switch ( unitType ) {
-    case PDG_PSPS: return std::string( "PDG_PSPS " ); break;
-    case PDG_PFPS: return std::string( "PDG_PFPS " ); break;
-    case PDG_PFGPS: return std::string( "PDG_PFGPS" ); break;
-    case PDG_PFAPS: return std::string( "PDG_PFAPS" ); break;
-    case PDG_GPPS: return std::string( "PDG_GPPS " ); break;
-    case PDG_APPS: return std::string( "PDG_APPS " ); break;
-    case PDG_PTGLU: return std::string( "PDG_PTGLU" ); break;
-    default: break;
-  }
-  return std::string( "ERROR" );
-}*/
 
 static inline int floorLog2(uint32_t x)
 {

@@ -297,15 +297,6 @@ void PCCBitstreamReader::vpccParameterSet( VpccParameterSet& sps, PCCHighLevelSy
       sps.setExtensionDataByte( i, bitstream.read( 8 ) );  // u(8)
     }
   }
-
-  // THE NEXT PARAMETERS ARE NOT IN THE VPCC CD SYNTAX DOCUMENTS AND WILL BE REMOVE
-#ifdef BITSTREAM_TRACE
-  bitstream.trace( "  Deprecated1\n" );
-#endif
-  sps.setLosslessGeo444( bitstream.read( 1 ) );  // u(1) 
-  sps.setLosslessGeo( bitstream.read( 1 ) );     // u(1) 
-  sps.setMinLevel( bitstream.read( 8 ) );        // u(8) 
-  // THE NEXT PARAMETERS ARE NOT IN THE VPCC CD SYNTAX DOCUMENTS AND WILL BE REMOVE
   byteAlignment( bitstream );
 }
 
@@ -778,12 +769,9 @@ void PCCBitstreamReader::patchDataUnit( PatchDataUnit&        pdu,
   AtlasFrameParameterSetRbsp&    afps   = syntax.getAtlasFrameParameterSet( afpsId );
   size_t                         aspsId = afps.getAtlasSequenceParameterSetId();
   AtlasSequenceParameterSetRbsp& asps   = syntax.getAtlasSequenceParameterSet( aspsId );
-
-#ifdef BUGFIX_45_DEGREE_PROJECTION
   pdu.setPduProjectionId( bitstream.read( asps.get45DegreeProjectionPatchPresentFlag() ? 5 : 3 ) ); // u(5 or 3)
   TRACE_BITSTREAM( "PduProjectionId = %lu (45DegreeProjectionPatchPresentFlag = %d ) \n", 
     pdu.getPduProjectionId(),asps.get45DegreeProjectionPatchPresentFlag()  );
-#endif
   pdu.setPdu2dPosX( bitstream.readUvlc() );  // ue(v)
   pdu.setPdu2dPosY( bitstream.readUvlc() );  // ue(v)
   TRACE_BITSTREAM( " 2dPosXY: %zu,%zu\n", pdu.getPdu2dPosX(), pdu.getPdu2dPosX() );
@@ -815,9 +803,6 @@ void PCCBitstreamReader::patchDataUnit( PatchDataUnit&        pdu,
     TRACE_BITSTREAM( " Pdu3dPosDeltaMaxZ: %zu ( bitCountForMaxDepth = %u) \n",
         pdu.getPdu3dPosDeltaMaxZ(), bitCountForMaxDepth  );
   }
-#ifndef BUGFIX_45_DEGREE_PROJECTION
-  pdu.setPduProjectionId( bitstream.read( asps.get45DegreeProjectionPatchPresentFlag() ? 5 : 3 ) ); // u(5 or 3)
-#endif
   pdu.setPduOrientationIndex( bitstream.read( ( asps.getUseEightOrientationsFlag() ? 3 : 1 ) ) );  // u(3 or 1)
   if ( afps.getLodModeEnableFlag() ) {
     pdu.setLodEnableFlag( bitstream.read( 1 ) );  // u1
