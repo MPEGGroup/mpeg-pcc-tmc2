@@ -895,12 +895,12 @@ double PCCEncoder::adjustReferenceAtlasFrame( PCCContext&            context,
     maxD1 = ( std::max )( maxU0, curPatches[patchIdx].getD1() );
     maxDD = ( std::max )( maxU0, curPatches[patchIdx].getSizeD() );
   }
-  uint8_t bitMaxU0 = uint8_t( getFixedLengthCodeBitsCount( uint32_t( maxU0 + 1 ) ) );
-  uint8_t bitMaxV0 = uint8_t( getFixedLengthCodeBitsCount( uint32_t( maxV0 + 1 ) ) );
-  uint8_t bitMaxU1 = uint8_t( getFixedLengthCodeBitsCount( uint32_t( maxU1 + 1 ) ) );
-  uint8_t bitMaxV1 = uint8_t( getFixedLengthCodeBitsCount( uint32_t( maxV1 + 1 ) ) );
-  uint8_t bitMaxD1 = uint8_t( getFixedLengthCodeBitsCount( uint32_t( maxD1 + 1 ) ) );
-  uint8_t bitMaxDD = uint8_t( getFixedLengthCodeBitsCount( uint32_t( maxDD + 1 ) ) );
+  uint8_t bitMaxU0 = uint8_t( ceilLog2( uint32_t( maxU0 ) ) );
+  uint8_t bitMaxV0 = uint8_t( ceilLog2( uint32_t( maxV0 ) ) );
+  uint8_t bitMaxU1 = uint8_t( ceilLog2( uint32_t( maxU1 ) ) );
+  uint8_t bitMaxV1 = uint8_t( ceilLog2( uint32_t( maxV1 ) ) );
+  uint8_t bitMaxD1 = uint8_t( ceilLog2( uint32_t( maxD1 ) ) );
+  uint8_t bitMaxDD = uint8_t( ceilLog2( uint32_t( maxDD ) ) );
 
   const size_t max3DCoordinate = 1 << ( params_.geometry3dCoordinatesBitdepth_ );
   for ( size_t curId = 0; curId < curPatchCount; curId++ ) {
@@ -7313,7 +7313,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
         ppdu.setRpdu3dPosZ( missedPointsPatch.d1_ / pcmU1V1D1Level );
       }
       ppdu.setRpduPatchInRawVideoFlag( sps.getRawSeparateVideoPresentFlag( 0 ) );
-      ppdu.setRpduRawPoints( uint32_t( missedPointsPatch.getNumberOfMps() - 1) );
+      ppdu.setRpduRawPointsMinus1( uint32_t( missedPointsPatch.getNumberOfMps() - 1) );
       TRACE_CODEC( "Raw :UV = %lu %lu  size = %lu %lu  uvd1 = %lu %lu %lu numPoints = %lu ocmRes = %lu \n",
                    missedPointsPatch.u0_, missedPointsPatch.v0_, missedPointsPatch.sizeU0_, missedPointsPatch.sizeV0_,
                    missedPointsPatch.u1_, missedPointsPatch.v1_, missedPointsPatch.d1_,

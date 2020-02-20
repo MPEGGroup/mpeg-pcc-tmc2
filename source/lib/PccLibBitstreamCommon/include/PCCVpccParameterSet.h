@@ -84,7 +84,7 @@ class VpccParameterSet {
                           bool     patchPrecedenceOrderFlag ) {
     vpccParameterSetId_ = vpccParameterSetId;
     atlasCountMinus1_   = 0;
-    allocateAltas();
+    allocateAtlas();
     frameWidth_[0]                    = frameWidth;
     frameHeight_[0]                   = frameHeight;
     mapCountMinus1_[0]                = mapCountMinus1;
@@ -93,7 +93,7 @@ class VpccParameterSet {
     rawSeparateVideoPresentFlag_[0]   = pcmSeparateVideoPresentFlag;
   }
 
-  void allocateAltas() {
+  void allocateAtlas() {
     frameWidth_.resize( atlasCountMinus1_ + 1, 1 );
     frameHeight_.resize( atlasCountMinus1_ + 1 );
     mapCountMinus1_.resize( atlasCountMinus1_ + 1 );

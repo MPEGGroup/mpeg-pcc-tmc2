@@ -424,6 +424,56 @@ static inline uint32_t getFixedLengthCodeBitsCount( uint32_t range ) {
   return std::string( "ERROR" );
 }*/
 
+static inline int floorLog2(uint32_t x)
+{
+  if (x == 0)
+  {
+    // note: ceilLog2() expects -1 as return value
+    return -1;
+  }
+#ifdef __GNUC__
+  return 31 - __builtin_clz(x);
+#else
+#ifdef _MSC_VER
+  unsigned long r = 0;
+  _BitScanReverse(&r, x);
+  return r;
+#else
+  int result = 0;
+  if (x & 0xffff0000)
+  {
+    x >>= 16;
+    result += 16;
+  }
+  if (x & 0xff00)
+  {
+    x >>= 8;
+    result += 8;
+  }
+  if (x & 0xf0)
+  {
+    x >>= 4;
+    result += 4;
+  }
+  if (x & 0xc)
+  {
+    x >>= 2;
+    result += 2;
+  }
+  if (x & 0x2)
+  {
+    x >>= 1;
+    result += 1;
+  }
+  return result;
+#endif
+#endif
+}
+
+static inline int ceilLog2(uint32_t x)
+{
+  return (x==0) ? -1 : floorLog2(x - 1) + 1;
+}
 }  // namespace pcc
 
 #endif /* PCC_BITSTREAM_COMMON_H */
