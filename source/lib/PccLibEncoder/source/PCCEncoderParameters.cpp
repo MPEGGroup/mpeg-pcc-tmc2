@@ -794,17 +794,10 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   if ( noAttributes_ == 0 ) {
     ai.setAttributeDimensionMinus1( 0, noAttributes_ ? 0 : 2 );
     ai.setAttributeNominal2dBitdepthMinus1( 0, 7 );
-    ai.setAttributeMSBAlignFlag( false );
   }
 
   for ( size_t i = 0; i < ai.getAttributeCount(); i++ ) {
-    for ( size_t j = 0; j <= sps.getMapCountMinus1( ATLASIDXPCC ); j++ ) {
-      if ( sps.getMapAbsoluteCodingEnableFlag( ATLASIDXPCC, j ) == 0 ) {
-        ai.addAttributeMapAbsoluteCodingEnabledFlag( i, (bool)absoluteT1_ );
-      } else {
-        ai.addAttributeMapAbsoluteCodingEnabledFlag( i, true );
-      }
-    }
+    ai.setAttributeMapAbsoluteCodingPersistanceFlag( i, (bool)absoluteT1_ );
   }
 
   asps.setLog2PatchPackingBlockSize( std::log2( occupancyResolution_ ) );

@@ -156,7 +156,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, std
                                params_.patchColorSubsampling_, params_.inverseColorSpaceConversionConfig_,
                                params_.colorSpaceConversionPath_ );
             /*context.getVideoTextureMultiple()[mapIndex].convertBitdepth(
-              decodedBitdepthAttribute, ai.getAttributeNominal2dBitdepthMinus1(0) + 1, ai.getAttributeMSBAlignFlag());*/
+              decodedBitdepthAttribute, ai.getAttributeNominal2dBitdepthMinus1(attrIndex) + 1, ai.getAttributeMSBAlignFlag(attrIndex));*/
             std::cout << "texture T" << mapIndex << " video ->" << videoBitstream.size() << " B" << std::endl;
             sizeTextureVideo += videoBitstream.size();
           }
@@ -177,7 +177,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, std
                                params_.patchColorSubsampling_,  // patchColorSubsampling
                                params_.inverseColorSpaceConversionConfig_, params_.colorSpaceConversionPath_ );
           /*context.getVideoTexture().convertBitdepth(
-              decodedBitdepthAttribute, ai.getAttributeNominal2dBitdepthMinus1(0) + 1, ai.getAttributeMSBAlignFlag());*/
+              decodedBitdepthAttribute, ai.getAttributeNominal2dBitdepthMinus1(attrIndex) + 1, ai.getAttributeMSBAlignFlag(attrIndex));*/
           std::cout << "texture video  ->" << videoBitstream.size() << " B" << std::endl;
         }
         if ( sps.getRawPatchEnabledFlag( atlasIndex ) && sps.getRawSeparateVideoPresentFlag( atlasIndex ) ) {
@@ -188,7 +188,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, std
                                params_.keepIntermediateFiles_, sps.getLosslessGeo(), false,
                                params_.inverseColorSpaceConversionConfig_, params_.colorSpaceConversionPath_ );
           context.getVideoTexture().convertBitdepth(
-          decodedBitdepthAttributeMP, ai.getAttributeNominal2dBitdepthMinus1( 0 ) + 1, ai.getAttributeMSBAlignFlag() );      
+          decodedBitdepthAttributeMP, ai.getAttributeNominal2dBitdepthMinus1( 0 ) + 1, ai.getAttributeMSBAlignFlag( 0 ) );      
           generateMissedPointsTexturefromVideo( context, reconstructs );
           std::cout << " missed points texture -> " << videoBitstreamMP.size() << " B" << endl;
         }
@@ -211,8 +211,27 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, std
   generatePointCloud( reconstructs, context, gpcParams, partitions, true );
   printf("generatePointCloud done\n"); fflush(stdout);
 
+  // RECOLOR RECONSTRUCTED POINT CLOUD
+	//recreating the prediction list per attribute (either the attribute is coded absolute, or follows the geometry)
+	//see contribution m52529
+	std::vector<std::vector<bool>> absoluteT1List;
+	absoluteT1List.resize(ai.getAttributeCount());
+	for (int attrIdx = 0; attrIdx < ai.getAttributeCount(); ++attrIdx) {
+		absoluteT1List[attrIdx].resize(sps.getMapCountMinus1(atlasIndex) + 1);
+		if (ai.getAttributeMapAbsoluteCodingPersistanceFlag(attrIdx)) {
+			for (int mapIdx = 0; mapIdx < sps.getMapCountMinus1(atlasIndex) + 1; ++mapIdx) {
+				absoluteT1List[attrIdx][mapIdx] = true;
+			}
+		}
+		else {
+			//follow geometry
+			for (int mapIdx = 0; mapIdx < sps.getMapCountMinus1(atlasIndex) + 1; ++mapIdx) {
+				absoluteT1List[attrIdx][mapIdx] = sps.getMapAbsoluteCodingEnableFlag(atlasIndex, mapIdx);
+			}
+		}
+	}
   colorPointCloud( reconstructs, context, ai.getAttributeCount(), params_.colorTransform_,
-                   ai.getAttributeMapAbsoluteCodingEnabledFlagList(),  // atlasIdx
+                   absoluteT1List,  // atlasIdx
                    sps.getMultipleMapStreamsPresentFlag( ATLASIDXPCC ), gpcParams );
   
 #ifdef CODEC_TRACE

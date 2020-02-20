@@ -360,13 +360,9 @@ void PCCBitstreamReader::attributeInformation( AttributeInformation& ai,
     if ( sps.getRawSeparateVideoPresentFlag( atlasIndex ) ) {
       ai.setRawAttributeCodecId( i, bitstream.read( 8 ) );  // u(8)
     }
-    ai.addAttributeMapAbsoluteCodingEnabledFlag( i, true );
-    for ( int32_t j = 1; j < sps.getMapCountMinus1( atlasIndex ) + 1; j++ ) {
-      if ( sps.getMapAbsoluteCodingEnableFlag( atlasIndex, j ) == 0 ) {
-        ai.addAttributeMapAbsoluteCodingEnabledFlag( i, bitstream.read( 1 ) );  // u(1)
-      } else {
-        ai.addAttributeMapAbsoluteCodingEnabledFlag( i, true );
-      }
+    ai.setAttributeMapAbsoluteCodingPersistanceFlag( i, true );
+    if ( sps.getMapCountMinus1( atlasIndex ) > 0 ) {
+      ai.setAttributeMapAbsoluteCodingPersistanceFlag( i, bitstream.read( 1 ) );  // u(1)
     }
     ai.setAttributeDimensionMinus1( i, bitstream.read( 6 ) );  // u(6)
     if ( ai.getAttributeDimensionMinus1( i ) > 0 ) {
@@ -384,9 +380,7 @@ void PCCBitstreamReader::attributeInformation( AttributeInformation& ai,
       ai.setAttributePartitionChannelsMinus1( i, k, remainingDimensions );
     }
     ai.setAttributeNominal2dBitdepthMinus1( i, bitstream.read( 5 ) );  // u(5)
-  }
-  if ( ai.getAttributeCount() > 0 ) {
-    ai.setAttributeMSBAlignFlag( bitstream.read( 1 ) );  // u(1)
+    ai.setAttributeMSBAlignFlag( i, bitstream.read( 1 ) );  // u(1)
   }
 }
 
@@ -632,6 +626,7 @@ void PCCBitstreamReader::atlasTileGroupHeader( AtlasTileGroupHeader& atgh,
   for ( size_t i = 0; i < refList.getNumRefEntries(); i++ ) {
     if ( !refList.getStRefAtalsFrameFlag( i ) ) { numLtrAtlasFrmEntries++; }
   }
+  TRACE_BITSTREAM( " rlsIdx %u numLtrAtlasFrmEntries %zu \n", rlsIdx, (size_t)numLtrAtlasFrmEntries );
   for ( size_t j = 0; j < numLtrAtlasFrmEntries; j++ ) {
     atgh.setAtghAdditionalAfocLsbPresentFlag( j, bitstream.read( 1 ) );
     if ( atgh.getAtghAdditionalAfocLsbPresentFlag( j ) ) {

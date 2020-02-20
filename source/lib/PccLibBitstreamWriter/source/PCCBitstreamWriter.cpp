@@ -465,10 +465,8 @@ void PCCBitstreamWriter::attributeInformation( AttributeInformation& ai,
     if ( sps.getRawSeparateVideoPresentFlag( atlasIndex ) ) {
       bitstream.write( (uint32_t)ai.getRawAttributeCodecId( i ), 8 );  // u(8)
     }
-    for ( int32_t j = 0; j < sps.getMapCountMinus1( atlasIndex ); j++ ) {
-      if ( sps.getMapAbsoluteCodingEnableFlag( atlasIndex, j + 1) == 0 ) {
-        bitstream.write( (uint32_t)ai.getAttributeMapAbsoluteCodingEnabledFlag( i, j + 1 ), 1 );  // u(1)
-      }
+    if ( sps.getMapCountMinus1( atlasIndex ) > 0 ) {
+      bitstream.write( (uint32_t)ai.getAttributeMapAbsoluteCodingPersistanceFlag( i ), 1 );  // u(1)
     }
     bitstream.write( (uint32_t)ai.getAttributeDimensionMinus1( i ), 6 );  // u(6)
     if ( ai.getAttributeDimensionMinus1( i ) > 0 ) {
@@ -483,9 +481,7 @@ void PCCBitstreamWriter::attributeInformation( AttributeInformation& ai,
       }
     }
     bitstream.write( (uint32_t)ai.getAttributeNominal2dBitdepthMinus1( i ), 5 );  // u(5)
-  }
-  if ( ai.getAttributeCount() > 0 ) {
-    bitstream.write( (uint32_t)ai.getAttributeMSBAlignFlag(), 1 );  // u(1)
+    bitstream.write( (uint32_t)ai.getAttributeMSBAlignFlag( i ), 1 );  // u(1)
   }
 }
 

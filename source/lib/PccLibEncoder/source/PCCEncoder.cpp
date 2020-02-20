@@ -495,8 +495,26 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   }
   std::cout << "Color Point Clouds" << std::endl;
   // RECOLOR RECONSTRUCTED POINT CLOUD
+	//recreating the prediction list per attribute (either the attribute is coded absoulte, or follows the geometry)
+	//see contribution m52529
+	std::vector<std::vector<bool>> absoluteT1List;
+	absoluteT1List.resize(ai.getAttributeCount());
+	for (int attrIdx = 0; attrIdx < ai.getAttributeCount(); ++attrIdx) {
+		absoluteT1List[attrIdx].resize(sps.getMapCountMinus1(atlasIndex) + 1);
+		if (ai.getAttributeMapAbsoluteCodingPersistanceFlag(attrIdx)) {
+			for (int mapIdx = 0; mapIdx < sps.getMapCountMinus1(atlasIndex) + 1; ++mapIdx) {
+				absoluteT1List[attrIdx][mapIdx] = true;
+			}
+		}
+		else {
+			//follow geometry
+			for (int mapIdx = 0; mapIdx < sps.getMapCountMinus1(atlasIndex) + 1; ++mapIdx) {
+				absoluteT1List[attrIdx][mapIdx] = sps.getMapAbsoluteCodingEnableFlag(atlasIndex, mapIdx);
+			}
+		}
+	}
   colorPointCloud( reconstructs, context, ai.getAttributeCount(), params_.colorTransform_,
-                   ai.getAttributeMapAbsoluteCodingEnabledFlagList(), params_.multipleStreams_, gpcParams );
+                   absoluteT1List, params_.multipleStreams_, gpcParams );
 
   std::cout << "Post Processing Point Clouds" << std::endl;
   //  Generate a buffer to keep unsmoothed geometry, then do geometry smoothing and transfer followed by color smoothing
