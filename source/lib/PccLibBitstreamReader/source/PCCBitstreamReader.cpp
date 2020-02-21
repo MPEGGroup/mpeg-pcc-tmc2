@@ -1726,11 +1726,11 @@ void PCCBitstreamReader::vuiParameters( PCCBitstream& bitstream, VUIParameters& 
     vp.setVuiHrdParametersPresentFlag( bitstream.read( 1 ) );  // u(1)
     if ( vp.getVuiHrdParametersPresentFlag() ) { hrdParameters( bitstream, vp.getHrdParameters() ); }
   }
-  vp.setVuiBitstreamRestrictionFlag( bitstream.read(1) );
+  vp.setVuiBitstreamRestrictionFlag( bitstream.read( 1 ) );  // u(1)
   if ( vp.getVuiBitstreamRestrictionFlag() ) {
-    vp.setVuiTileGroupsRestrictedFlag( bitstream.read(1) );
-    vp.setVuiConsistentTilesForVideoComponentsFlag( bitstream.read(1) );
-    vp.setVuiMaxNumTileGroupPerAtlas( bitstream.readUvlc() );
+    vp.setVuiTileGroupsRestrictedFlag( bitstream.read( 1 ) );               // u(1)
+    vp.setVuiConsistentTilesForVideoComponentsFlag( bitstream.read( 1 ) );  // u(1)
+    vp.setVuiMaxNumTileGroupPerAtlas( bitstream.readUvlc() );               // ue(v)
   }
 }
 
