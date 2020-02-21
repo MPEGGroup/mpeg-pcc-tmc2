@@ -40,7 +40,7 @@ namespace pcc {
 // 7.3.4.5 Attribute information Syntax
 class AttributeInformation {
  public:
-  AttributeInformation() : attributeCount_( 0 ), attributeMSBAlignFlag_( false ) {}
+  AttributeInformation() : attributeCount_( 0 ) {}
   ~AttributeInformation() {
     attributeTypeId_.clear();
     attributeCodecId_.clear();
@@ -50,7 +50,8 @@ class AttributeInformation {
     attributeNominal2dBitdepthMinus1_.clear();
     for ( auto& value : attributePartitionChannelsMinus1_ ) { value.clear(); }
     attributePartitionChannelsMinus1_.clear();
-    for ( auto& value : attributeMapAbsoluteCodingEnabledFlagList_ ) { value.clear(); }
+    attributeMapAbsoluteCodingPersistanceFlagList_.clear();
+    attributeMSBAlignFlag_.clear();
   }
   AttributeInformation& operator=( const AttributeInformation& ) = default;
 
@@ -62,10 +63,11 @@ class AttributeInformation {
     attributeDimensionPartitionsMinus1_.resize( attributeCount_, 0 );
     attributeNominal2dBitdepthMinus1_.resize( attributeCount_, 0 );
     attributePartitionChannelsMinus1_.resize( attributeCount_ );
-    attributeMapAbsoluteCodingEnabledFlagList_.resize( attributeCount_ );
+    attributeMapAbsoluteCodingPersistanceFlagList_.resize( attributeCount_ );
+    attributeMSBAlignFlag_.resize( attributeCount_ , 0 );
   }
   uint8_t getAttributeCount() { return attributeCount_; }
-  bool    getAttributeMSBAlignFlag() { return attributeMSBAlignFlag_; }
+  bool    getAttributeMSBAlignFlag( uint32_t index ) { return attributeMSBAlignFlag_[index]; }
   uint8_t getAttributeTypeId( uint32_t index ) { return attributeTypeId_[index]; }
   uint8_t getAttributeCodecId( uint32_t index ) { return attributeCodecId_[index]; };
   uint8_t getRawAttributeCodecId( uint32_t index ) { return rawAttributeCodecId_[index]; }
@@ -78,17 +80,14 @@ class AttributeInformation {
     }
     return attributePartitionChannelsMinus1_[index][j];
   }
-  std::vector<std::vector<bool>>& getAttributeMapAbsoluteCodingEnabledFlagList() {
-    return attributeMapAbsoluteCodingEnabledFlagList_;
+  std::vector<bool>& getAttributeMapAbsoluteCodingPersistanceFlagList() {
+    return attributeMapAbsoluteCodingPersistanceFlagList_;
   }
-  std::vector<bool>& getAttributeMapAbsoluteCodingEnabledFlagList( size_t attIdx ) {
-    return attributeMapAbsoluteCodingEnabledFlagList_[attIdx];
-  }
-  uint8_t getAttributeMapAbsoluteCodingEnabledFlag( size_t attIdx, size_t mapIdx ) {
-    return (uint8_t)attributeMapAbsoluteCodingEnabledFlagList_[attIdx][mapIdx];
+  uint8_t getAttributeMapAbsoluteCodingPersistanceFlag( size_t attIdx ) {
+    return (uint8_t)attributeMapAbsoluteCodingPersistanceFlagList_[attIdx];
   }
   void setAttributeCount( uint8_t value ) { attributeCount_ = value; }
-  void setAttributeMSBAlignFlag( bool value ) { attributeMSBAlignFlag_ = value; }
+  void setAttributeMSBAlignFlag( uint32_t index, bool value ) { attributeMSBAlignFlag_[index] = value; }
   void setAttributeTypeId( uint32_t index, uint8_t value ) { attributeTypeId_[index] = value; }
   void setAttributeCodecId( uint32_t index, uint8_t value ) { attributeCodecId_[index] = value; };
   void setRawAttributeCodecId( uint32_t index, uint8_t value ) { rawAttributeCodecId_[index] = value; }
@@ -105,17 +104,8 @@ class AttributeInformation {
     }
     attributePartitionChannelsMinus1_[index][j] = value;
   }
-  bool setAttributeMapAbsoluteCodingEnabledFlag( size_t attIdx, size_t mapIdx, bool value ) {
-    bool bSizeAdjusted = false;
-    if ( attributeMapAbsoluteCodingEnabledFlagList_[attIdx].size() <= mapIdx ) {
-      attributeMapAbsoluteCodingEnabledFlagList_[attIdx].resize( mapIdx + 1 );
-      bSizeAdjusted = true;
-    }
-    attributeMapAbsoluteCodingEnabledFlagList_[attIdx][mapIdx] = value;
-    return bSizeAdjusted;
-  }
-  void addAttributeMapAbsoluteCodingEnabledFlag( size_t attIdx, bool value ) {
-    attributeMapAbsoluteCodingEnabledFlagList_[attIdx].push_back( value );
+  void setAttributeMapAbsoluteCodingPersistanceFlag( size_t attIdx, bool value ) {
+    attributeMapAbsoluteCodingPersistanceFlagList_[attIdx] = value;
   }
 
  private:
@@ -123,12 +113,12 @@ class AttributeInformation {
   std::vector<uint8_t>              attributeTypeId_;
   std::vector<uint8_t>              attributeCodecId_;
   std::vector<uint8_t>              rawAttributeCodecId_;
-  std::vector<std::vector<bool>>    attributeMapAbsoluteCodingEnabledFlagList_;
+  std::vector<bool>                 attributeMapAbsoluteCodingPersistanceFlagList_;
   std::vector<uint8_t>              attributeDimensionMinus1_;
   std::vector<uint8_t>              attributeDimensionPartitionsMinus1_;
   std::vector<std::vector<uint8_t>> attributePartitionChannelsMinus1_;
   std::vector<uint8_t>              attributeNominal2dBitdepthMinus1_;
-  bool                              attributeMSBAlignFlag_;
+  std::vector<bool>                 attributeMSBAlignFlag_;
 };
 
 };  // namespace pcc

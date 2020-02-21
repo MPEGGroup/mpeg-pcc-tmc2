@@ -38,13 +38,11 @@ using namespace pcc;
 PCCHighLevelSyntax::PCCHighLevelSyntax() : gofSize_( 0 ) {}
 
 PCCHighLevelSyntax::~PCCHighLevelSyntax() {
-  videoBitstream_.clear();
-  // subContexts_.clear();
-  // unionPatch_.clear();
   vpccParameterSets_.clear();
+  atlasHLS_.clear();
 }
 
-void PCCHighLevelSyntax::constructRefList( size_t aspsIdx, size_t afpsIdx ) {
+void PCCAtlasHighLevelSyntax::constructRefList( size_t aspsIdx, size_t afpsIdx ) {
   auto& asps = atlasSequenceParameterSet_[aspsIdx];
   // construction of reference frame list from ASPS refList (decoder)
   setNumOfRefAtlasFrameList( asps.getNumRefAtlasFrameListsInAsps() );
@@ -59,7 +57,7 @@ void PCCHighLevelSyntax::constructRefList( size_t aspsIdx, size_t afpsIdx ) {
     }
   }
 }
-size_t PCCHighLevelSyntax::getNumRefIdxActive( AtlasTileGroupHeader& atgh ) {
+size_t PCCAtlasHighLevelSyntax::getNumRefIdxActive( AtlasTileGroupHeader& atgh ) {
   size_t afpsId          = atgh.getAtghAtlasFrameParameterSetId();
   auto&  afps            = getAtlasFrameParameterSet( afpsId );
   size_t numRefIdxActive = 0;
@@ -75,7 +73,7 @@ size_t PCCHighLevelSyntax::getNumRefIdxActive( AtlasTileGroupHeader& atgh ) {
   return numRefIdxActive;
 }
 
-void PCCHighLevelSyntax::printVideoBitstream() {
+void PCCAtlasHighLevelSyntax::printVideoBitstream() {
   size_t index = 0;
   printf( "VideoBitstream list: \n" );
   for ( auto& value : videoBitstream_ ) {
@@ -84,4 +82,10 @@ void PCCHighLevelSyntax::printVideoBitstream() {
     index++;
   }
   fflush( stdout );
+}
+
+PCCAtlasHighLevelSyntax::PCCAtlasHighLevelSyntax() { activeAFPS_ = 0; activeASPS_ = 0; }
+
+PCCAtlasHighLevelSyntax::~PCCAtlasHighLevelSyntax() {
+  videoBitstream_.clear();
 }

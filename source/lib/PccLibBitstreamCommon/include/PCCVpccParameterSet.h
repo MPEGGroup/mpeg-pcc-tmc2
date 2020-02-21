@@ -84,7 +84,7 @@ class VpccParameterSet {
                           bool     patchPrecedenceOrderFlag ) {
     vpccParameterSetId_ = vpccParameterSetId;
     atlasCountMinus1_   = 0;
-    allocateAltas();
+    allocateAtlas();
     frameWidth_[0]                    = frameWidth;
     frameHeight_[0]                   = frameHeight;
     mapCountMinus1_[0]                = mapCountMinus1;
@@ -93,7 +93,7 @@ class VpccParameterSet {
     rawSeparateVideoPresentFlag_[0]   = pcmSeparateVideoPresentFlag;
   }
 
-  void allocateAltas() {
+  void allocateAtlas() {
     frameWidth_.resize( atlasCountMinus1_ + 1, 1 );
     frameHeight_.resize( atlasCountMinus1_ + 1 );
     mapCountMinus1_.resize( atlasCountMinus1_ + 1 );
@@ -192,21 +192,6 @@ class VpccParameterSet {
   bool                              extensionPresentFlag_;
   size_t                            extensionLength_;
   std::vector<uint8_t>              extensionDataByte_;
-
-  // THE NEXT PARAMETERS ARE NOT IN THE VPCC CD SYNTAX DOCUMENTS AND WILL BE REMOVE
- public:
-  bool    getLosslessGeo444() { return losslessGeo444_; }
-  bool    getLosslessGeo() { return losslessGeo_; }
-  uint8_t getMinLevel() { return minLevel_; }
-  void    setLosslessGeo444( bool losslessGeo444 ) { losslessGeo444_ = losslessGeo444; }
-  void    setLosslessGeo( bool losslessGeo ) { losslessGeo_ = losslessGeo; }
-  void    setMinLevel( uint8_t minLevel ) { minLevel_ = minLevel; }
-
- private:
-  bool    losslessGeo444_;
-  bool    losslessGeo_;
-  uint8_t minLevel_;
-  // THE NEXT PARAMETERS ARE NOT IN THE VPCC CD SYNTAX DOCUMENTS AND WILL BE REMOVE
 };
 
 };  // namespace pcc

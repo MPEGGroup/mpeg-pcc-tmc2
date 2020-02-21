@@ -58,7 +58,7 @@ class PCCDecoder : public PCCCodec {
  public:
   PCCDecoder();
   ~PCCDecoder();
-  int  decode     ( PCCContext& context, PCCGroupOfFrames& reconstruct, std::vector<std::vector<uint32_t>>& partitions );
+  int  decode     ( PCCContext& context, PCCGroupOfFrames& reconstruct, std::vector<std::vector<uint32_t>>& partitions, int32_t atlasIndex );
   int  reconstruct( PCCContext& context, PCCGroupOfFrames& reconstructs, std::vector<std::vector<uint32_t>>& partitions);
     
   void setParameters( PCCDecoderParameters value );

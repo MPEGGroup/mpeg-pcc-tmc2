@@ -49,7 +49,7 @@ class RawPatchDataUnit {
       rpdu3dPosX_( 0 ),
       rpdu3dPosY_( 0 ),
       rpdu3dPosZ_( 0 ),
-      rpduRawPoints_( 0 ),
+      rpduRawPointsMinus1_( 0 ),
       rpduPatchIndex_( 0 ),
       rpduFrameIndex_( 0 ) {}
   ~RawPatchDataUnit() {}
@@ -63,7 +63,7 @@ class RawPatchDataUnit {
   size_t   getRpdu3dPosX() { return rpdu3dPosX_; }
   size_t   getRpdu3dPosY() { return rpdu3dPosY_; }
   size_t   getRpdu3dPosZ() { return rpdu3dPosZ_; }
-  uint32_t getRpduRawPoints() { return rpduRawPoints_; }
+  uint32_t getRpduRawPointsMinus1() { return rpduRawPointsMinus1_; }
   size_t   getPatchIndex() { return rpduPatchIndex_; }
   size_t   getFrameIndex() { return rpduFrameIndex_; }
   void     setPatchIndex( size_t value ) { rpduPatchIndex_ = value; }
@@ -76,7 +76,7 @@ class RawPatchDataUnit {
   void     setRpdu3dPosX( size_t value ) { rpdu3dPosX_ = value; }
   void     setRpdu3dPosY( size_t value ) { rpdu3dPosY_ = value; }
   void     setRpdu3dPosZ( size_t value ) { rpdu3dPosZ_ = value; }
-  void     setRpduRawPoints( uint32_t value ) { rpduRawPoints_ = value; }
+  void     setRpduRawPointsMinus1( uint32_t value ) { rpduRawPointsMinus1_ = value; }
 
  private:
   bool     rpduPatchInRawVideoFlag_;
@@ -87,7 +87,7 @@ class RawPatchDataUnit {
   size_t   rpdu3dPosX_;
   size_t   rpdu3dPosY_;
   size_t   rpdu3dPosZ_;
-  uint32_t rpduRawPoints_;
+  uint32_t rpduRawPointsMinus1_;
   size_t   rpduPatchIndex_;
   size_t   rpduFrameIndex_;
 };
