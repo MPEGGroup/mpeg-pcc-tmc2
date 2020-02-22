@@ -2337,6 +2337,9 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
     source.clear();
     target.addColors16bit();
     source.addColors16bit();
+    uint8_t numBits = 16;
+    double offset = (1 << (numBits -1));
+    double maxValue = (1 << numBits) - 1;
     const size_t shift = frame.getIndex() * frameCount;
     for ( size_t i = 0; i < pointCount; ++i ) {
       const PCCVector3<size_t> location = pointToPixel[i];
@@ -2370,15 +2373,15 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
             uint16_t value1 = static_cast<uint16_t>( image1.getValue( c, x, y ) );
             if ( !absoluteT1List[f] ) {
 							int32_t newValue = value1;
-              newValue -= 32768; //transforming the value from uint16 to int16
+              newValue -= offset; 
 							//clipping the delta value
-              if ( newValue < -32768 ) {
-                newValue = -32768;
-              } else if ( newValue > 32767 ) {
-                newValue = 32767;
+              if ( newValue < -offset ) {
+                newValue = -offset;
+              } else if ( newValue > offset-1 ) {
+                newValue = offset-1;
               }
               newValue += value0; //add value0
-              color16bit[i][c] = newValue < 0 ? 0 : ( newValue > 65535 ? 65535 : (uint16_t)newValue ); //clipping to the unsigned 16 bit range
+              color16bit[i][c] = newValue < 0 ? 0 : ( newValue > maxValue ? maxValue : (uint16_t)newValue ); //clipping to the unsigned 16 bit range
 						}
 						else {
 							color16bit[i][c] = value1;
