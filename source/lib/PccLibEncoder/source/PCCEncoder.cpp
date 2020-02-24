@@ -4188,7 +4188,6 @@ void PCCEncoder::sortMissedPointsPatch( PCCFrameContext& frame, size_t index ) {
 }
 
 void PCCEncoder::generateMissedPointsGeometryVideo( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
-  auto&  sps              = context.getVps();
   auto&  videoMPsGeometry = context.getVideoMPsGeometry();
   auto   gofSize          = context.size();
   size_t maxWidth         = 0;
@@ -5694,11 +5693,11 @@ bool PCCEncoder::generateTextureVideo( const PCCGroupOfFrames&    sources,
         }
       }
     } else {
-        printf("!PLR transfer color \n");
-        
-          printf( "Checksun : before transferColors :" );
+#if CODEC_TRACE
+          printf( "Checksum : before transferColors :" );
           for ( auto& c : reconstructs[0].computeChecksum() ) { printf( "%02x", c ); }
           printf( "\n" );
+#endif
         sources[i].transferColors( reconstructs[i], int32_t( params_.bestColorSearchRange_ ), params_.losslessGeo_ == 1,
                                    params_.numNeighborsColorTransferFwd_, params_.numNeighborsColorTransferBwd_,
                                    params_.useDistWeightedAverageFwd_, params_.useDistWeightedAverageBwd_,
@@ -5707,24 +5706,32 @@ bool PCCEncoder::generateTextureVideo( const PCCGroupOfFrames&    sources,
                                    params_.distOffsetBwd_, params_.maxGeometryDist2Fwd_, params_.maxGeometryDist2Bwd_,
                                    params_.maxColorDist2Fwd_, params_.maxColorDist2Bwd_, params_.excludeColorOutlier_,
                                    params_.thresholdColorOutlierDist_ );
-                                   
-          printf( "Checksun : post transferColors :" );
+#if CODEC_TRACE
+          printf( "Checksum : post transferColors :" );
           for ( auto& c : reconstructs[0].computeChecksum() ) { printf( "%02x", c ); }
           printf( "\n" );
+#endif
         // color pre-smoothing
         if ( !params_.losslessGeo_ && params_.flagColorPreSmoothing_ ) {
-          printf( "Checksun : presmoothPointCloudColor start :" );
+#if CODEC_TRACE
+          printf( "Checksum : presmoothPointCloudColor start :" );
           for ( auto& c : reconstructs[0].computeChecksum() ) { printf( "%02x", c ); }
           printf( "\n" );
+#endif
           presmoothPointCloudColor( reconstructs[i], params );
-          printf( "Checksun : presmoothPointCloudColor done :" );
+#if CODEC_TRACE
+          printf( "Checksum : presmoothPointCloudColor done :" );
           for ( auto& c : reconstructs[0].computeChecksum() ) { printf( "%02x", c ); }
           printf( "\n" );
-        } else {
-          printf( "Checksun : !presmoothPointCloudColor:" );
+#endif
+        }
+#if CODEC_TRACE
+        else {
+          printf( "Checksum : !presmoothPointCloudColor:" );
           for ( auto& c : reconstructs[0].computeChecksum() ) { printf( "%02x", c ); }
           printf( "\n" );
         }
+#endif
     }
     ret &= generateTextureVideo( reconstructs[i], context, i, mapCount );
   }

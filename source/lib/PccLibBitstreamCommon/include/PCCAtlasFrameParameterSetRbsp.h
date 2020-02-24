@@ -44,6 +44,7 @@ class AtlasFrameParameterSetRbsp {
   AtlasFrameParameterSetRbsp() :
       afpsAtlasFrameParameterSetId_( 0 ),
       afpsAtlasSequenceParameterSetId_( 0 ),
+      afpsOutputFlagPresentFlag_( 0 ),
       afpsNumRefIdxDefaultActiveMinus1_( 0 ),
       afpsAdditionalLtAfocLsbLen_( 0 ),
       afpsLodModeEnableFlag_( false ),
@@ -72,6 +73,7 @@ class AtlasFrameParameterSetRbsp {
 
   uint8_t                    getAtlasFrameParameterSetId() { return afpsAtlasFrameParameterSetId_; }
   uint8_t                    getAtlasSequenceParameterSetId() { return afpsAtlasSequenceParameterSetId_; }
+  bool                       getAfpsOutputFlagPresentFlag() { return afpsOutputFlagPresentFlag_; }
   uint8_t                    getAfpsNumRefIdxDefaultActiveMinus1() { return afpsNumRefIdxDefaultActiveMinus1_; }
   uint8_t                    getAfpsAdditionalLtAfocLsbLen() { return afpsAdditionalLtAfocLsbLen_; }
   bool                       getAfpsOverrideEomForDepthFlag() { return afpsOverrideEomForDepthFlag_; }
@@ -85,6 +87,7 @@ class AtlasFrameParameterSetRbsp {
 
   void setAtlasFrameParameterSetId( uint8_t value ) { afpsAtlasFrameParameterSetId_ = value; }
   void setAtlasSequenceParameterSetId( uint8_t value ) { afpsAtlasSequenceParameterSetId_ = value; }
+  void setAfpsOutputFlagPresentFlag( bool value ) { afpsOutputFlagPresentFlag_ = value; }
   void setAfpsNumRefIdxDefaultActiveMinus1( uint8_t value ) { afpsNumRefIdxDefaultActiveMinus1_ = value; }
   void setAfpsAdditionalLtAfocLsbLen( uint8_t value ) { afpsAdditionalLtAfocLsbLen_ = value; }
   void setAfpsOverrideEomForDepthFlag( bool value ) { afpsOverrideEomForDepthFlag_ = value; }
@@ -100,6 +103,7 @@ class AtlasFrameParameterSetRbsp {
   uint8_t                   afpsAtlasFrameParameterSetId_;
   uint8_t                   afpsAtlasSequenceParameterSetId_;
   AtlasFrameTileInformation atlasFrameTileInformation_;
+  bool                      afpsOutputFlagPresentFlag_;
   uint8_t                   afpsNumRefIdxDefaultActiveMinus1_;
   uint8_t                   afpsAdditionalLtAfocLsbLen_;
   bool                      afpsLodModeEnableFlag_;

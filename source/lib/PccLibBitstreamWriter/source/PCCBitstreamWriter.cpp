@@ -599,9 +599,10 @@ void PCCBitstreamWriter::atlasFrameParameterSetRbsp( AtlasFrameParameterSetRbsp&
   bitstream.writeUvlc( afps.getAtlasFrameParameterSetId() );     // ue(v)
   bitstream.writeUvlc( afps.getAtlasSequenceParameterSetId() );  // ue(v)
   atlasFrameTileInformation( afps.getAtlasFrameTileInformation(), syntax.getVps(), bitstream );
+  bitstream.write    ( uint32_t( afps.getAfpsOutputFlagPresentFlag() ), 1 );
   bitstream.writeUvlc( uint32_t( afps.getAfpsNumRefIdxDefaultActiveMinus1() ) );  // ue(v)
   bitstream.writeUvlc( uint32_t( afps.getAfpsAdditionalLtAfocLsbLen() ) );        // ue(v)
-  bitstream.write( uint32_t( afps.getAfpsOverrideEomForDepthFlag() ), 1 );        // u(1)
+  bitstream.write    ( uint32_t( afps.getAfpsOverrideEomForDepthFlag() ), 1 );        // u(1)
   if ( afps.getAfpsOverrideEomForDepthFlag() ) {
     bitstream.write( uint32_t( afps.getAfpsEomNumberOfPatchBitCountMinus1() ), 4 );
     bitstream.write( uint32_t( afps.getAfpsEomMaxBitCountMinus1() ), 4 );
@@ -691,6 +692,9 @@ void PCCBitstreamWriter::atlasTileGroupHeader( AtlasTileGroupHeader& atgh,
   bitstream.writeUvlc( atgh.getAtghAtlasFrameParameterSetId() );
   bitstream.write( uint32_t( atgh.getAtghAddress() ), afti.getSignalledTileGroupIdLengthMinus1() + 1 );
   bitstream.writeUvlc( uint32_t( atgh.getAtghType() ) );
+  if( afps.getAfpsOutputFlagPresentFlag()) {
+    bitstream.write( uint32_t( atgh.getAtghAtlasOutputFlag() ), 1 );
+  }
   bitstream.write( uint32_t( atgh.getAtghAtlasFrmOrderCntLsb() ), asps.getLog2MaxAtlasFrameOrderCntLsbMinus4() + 4 );
   TRACE_BITSTREAM( " AtlasFrameParameterSetId: %zu\n", atgh.getAtghAtlasFrameParameterSetId() );
   TRACE_BITSTREAM( " AtlasSequenceParameterSetId: %zu\n", afps.getAtlasSequenceParameterSetId() );
