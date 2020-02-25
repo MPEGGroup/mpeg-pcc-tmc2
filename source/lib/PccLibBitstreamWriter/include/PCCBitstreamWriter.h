@@ -380,12 +380,7 @@ class PCCBitstreamWriter {
   // E.2.13  Component codec mapping SEI message syntax
   void componentCodecMapping( PCCBitstream& bitstream, SEI& sei );
   // E.2.14  Volumetric Tiling SEI message syntax
-  // E.2.14.1  General
-  void volumetricTilingInfo( PCCBitstream& bitstream, SEI& sei );
-  // E.2.14.2  Volumetric Tiling Info Labels
-  void volumetricTilingInfoLabels( PCCBitstream& bitstream, SEIVolumetricTilingInfo& sei );
-  // E.2.14.3  Volumetric Tiling Info Objects
-  void volumetricTilingInfoObjects( PCCBitstream& bitstream, SEIVolumetricTilingInfo& sei );
+
   // E.2.15  Buffering period SEI message syntax
   void bufferingPeriod( PCCBitstream&        bitstream,
                         SEI&                 sei,
@@ -399,6 +394,12 @@ class PCCBitstreamWriter {
   // E.2.18  Smoothing parameters SEI message syntax
   void smoothingParameters( PCCBitstream& bitstream, SEI& sei );
 
+  //m52705
+  void sceneObjectInformation( PCCBitstream& bitstream, SEI& sei );
+  void objectLabelInformation( PCCBitstream& bitstream, SEI& sei );
+  void patchInformation      ( PCCBitstream& bitstream, SEI& sei );
+  void volumetricRectangleInformation( PCCBitstream& bitstream, SEI& sei );
+  
   // F.2  VUI syntax
   // F.2.1  VUI parameters syntax
   void vuiParameters( PCCBitstream& bitstream, VUIParameters& vp );
