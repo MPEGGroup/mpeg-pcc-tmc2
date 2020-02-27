@@ -198,8 +198,12 @@ class PCCAtlasHighLevelSyntax {
       case ATTRIBUTE_TRANSFORMATION_PARAMS: sharedPtr = std::make_shared<SEIAttributeTransformationParams>(); break;
       case ACTIVE_SUBSTREAMS: sharedPtr = std::make_shared<SEIActiveSubstreams>(); break;
       case COMPONENT_CODEC_MAPPING: sharedPtr = std::make_shared<SEIComponentCodecMapping>(); break;
-      case VOLUMETRIC_TILING_INFO: sharedPtr = std::make_shared<SEIVolumetricTilingInfo>(); break;
-      case PRESENTATION_INFORMATION: sharedPtr = std::make_shared<SEIPresentationInformation>(); break;
+      //case VOLUMETRIC_TILING_INFO: sharedPtr = std::make_shared<SEIVolumetricTilingInfo>(); break;
+      case SCENE_OBJECT_INFORMATION:         sharedPtr = std::make_shared<SEISceneObjectInformation>(); break;
+      case OBJECT_LABEL_INFORMATION:         sharedPtr = std::make_shared<SEIObjectLabelInformation>(); break;
+      case PATCH_INFORMATION:                sharedPtr = std::make_shared<SEIPatchInformation>(); break;
+      case VOLUMETRIC_RECTANGLE_INFORMATION: sharedPtr = std::make_shared<SEIVolumetricRectangleInformation>(); break;
+      case PRESENTATION_INFORMATION:         sharedPtr = std::make_shared<SEIPresentationInformation>(); break;
       case SMOOTHING_PARAMETERS: sharedPtr = std::make_shared<SEISmoothingParameters>(); break;
       case RESERVED_SEI_MESSAGE: sharedPtr = std::make_shared<SEIReservedSeiMessage>(); break;
       default:

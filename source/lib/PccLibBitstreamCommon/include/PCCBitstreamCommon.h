@@ -210,7 +210,11 @@ enum SeiPayloadType {
   VOLUMETRIC_TILING_INFO,           // 15: volumetricTilingInfo
   PRESENTATION_INFORMATION,         // 16: presentationInformation
   SMOOTHING_PARAMETERS,             // 17: smoothingParameters
-  RESERVED_SEI_MESSAGE,             // 18: reservedSeiMessage
+  SCENE_OBJECT_INFORMATION,         // 18: scene object information m52705
+  OBJECT_LABEL_INFORMATION,         // 19: Object label information
+  PATCH_INFORMATION,                // 20: Patch information SEI message syntax
+  VOLUMETRIC_RECTANGLE_INFORMATION, // 21: Volumetric rectangle information
+  RESERVED_SEI_MESSAGE,             // 22: reservedSeiMessage
 };
 
 enum NalUnitType {  // Name, Content of NAL unit and RBSP syntax structure NAL unit type class

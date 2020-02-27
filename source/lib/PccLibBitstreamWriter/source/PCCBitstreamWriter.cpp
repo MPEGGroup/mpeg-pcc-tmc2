@@ -599,9 +599,10 @@ void PCCBitstreamWriter::atlasFrameParameterSetRbsp( AtlasFrameParameterSetRbsp&
   bitstream.writeUvlc( afps.getAtlasFrameParameterSetId() );     // ue(v)
   bitstream.writeUvlc( afps.getAtlasSequenceParameterSetId() );  // ue(v)
   atlasFrameTileInformation( afps.getAtlasFrameTileInformation(), syntax.getVps(), bitstream );
+  bitstream.write    ( uint32_t( afps.getAfpsOutputFlagPresentFlag() ), 1 );
   bitstream.writeUvlc( uint32_t( afps.getAfpsNumRefIdxDefaultActiveMinus1() ) );  // ue(v)
   bitstream.writeUvlc( uint32_t( afps.getAfpsAdditionalLtAfocLsbLen() ) );        // ue(v)
-  bitstream.write( uint32_t( afps.getAfpsOverrideEomForDepthFlag() ), 1 );        // u(1)
+  bitstream.write    ( uint32_t( afps.getAfpsOverrideEomForDepthFlag() ), 1 );        // u(1)
   if ( afps.getAfpsOverrideEomForDepthFlag() ) {
     bitstream.write( uint32_t( afps.getAfpsEomNumberOfPatchBitCountMinus1() ), 4 );
     bitstream.write( uint32_t( afps.getAfpsEomMaxBitCountMinus1() ), 4 );
@@ -691,6 +692,9 @@ void PCCBitstreamWriter::atlasTileGroupHeader( AtlasTileGroupHeader& atgh,
   bitstream.writeUvlc( atgh.getAtghAtlasFrameParameterSetId() );
   bitstream.write( uint32_t( atgh.getAtghAddress() ), afti.getSignalledTileGroupIdLengthMinus1() + 1 );
   bitstream.writeUvlc( uint32_t( atgh.getAtghType() ) );
+  if( afps.getAfpsOutputFlagPresentFlag()) {
+    bitstream.write( uint32_t( atgh.getAtghAtlasOutputFlag() ), 1 );
+  }
   bitstream.write( uint32_t( atgh.getAtghAtlasFrmOrderCntLsb() ), asps.getLog2MaxAtlasFrameOrderCntLsbMinus4() + 4 );
   TRACE_BITSTREAM( " AtlasFrameParameterSetId: %zu\n", atgh.getAtghAtlasFrameParameterSetId() );
   TRACE_BITSTREAM( " AtlasSequenceParameterSetId: %zu\n", afps.getAtlasSequenceParameterSetId() );
@@ -1268,45 +1272,51 @@ void PCCBitstreamWriter::seiPayload( PCCBitstream& bitstream,
   TRACE_BITSTREAM( "%s \n", __func__ );
   auto payloadType = sei.getPayloadType();
   if ( nalUnitType == NAL_PREFIX_SEI ) {
-    if ( payloadType == 0 ) {
+    if ( payloadType == BUFFERING_PERIOD ) {
       bool                 NalHrdBpPresentFlag = false;
       bool                 AclHrdBpPresentFlag = false;
       std::vector<uint8_t> hrdCabCntMinus1;
       bufferingPeriod( bitstream, sei, NalHrdBpPresentFlag, AclHrdBpPresentFlag, hrdCabCntMinus1 );
-    } else if ( payloadType == 1 ) {
+    } else if ( payloadType == ATLAS_FRAME_TIMING ) {
       atlasFrameTiming( bitstream, sei, false );
-    } else if ( payloadType == 2 ) {
+    } else if ( payloadType == FILLER_PAYLOAD ) {
       fillerPayload( bitstream, sei );
-    } else if ( payloadType == 3 ) {
+    } else if ( payloadType == USER_DATAREGISTERED_ITUTT35 ) {
       userDataRegisteredItuTT35( bitstream, sei );
-    } else if ( payloadType == 4 ) {
+    } else if ( payloadType == USER_DATA_UNREGISTERED ) {
       userDataUnregistered( bitstream, sei );
-    } else if ( payloadType == 5 ) {
+    } else if ( payloadType == RECOVERY_POINT ) {
       recoveryPoint( bitstream, sei );
-    } else if ( payloadType == 6 ) {
+    } else if ( payloadType == NO_DISPLAY ) {
       noDisplay( bitstream, sei );
-    } else if ( payloadType == 7 ) {
+    } else if ( payloadType == TIME_CODE ) {
       // timeCode( bitstream, sei );
-    } else if ( payloadType == 8 ) {
+    } else if ( payloadType == REGIONAL_NESTING ) {
       // regionalNesting( bitstream, sei );
-    } else if ( payloadType == 9 ) {
+    } else if ( payloadType == SEI_MANIFEST ) {
       seiManifest( bitstream, sei );
-    } else if ( payloadType == 10 ) {
+    } else if ( payloadType == SEI_PREFIX_INDICATION ) {
       seiPrefixIndication( bitstream, sei );
-    } else if ( payloadType == 11 ) {
+    } else if ( payloadType == GEOMETRY_TRANSFORMATION_PARAMS ) {
       geometryTransformationParams( bitstream, sei );
-    } else if ( payloadType == 12 ) {
+    } else if ( payloadType == ATTRIBUTE_TRANSFORMATION_PARAMS ) {
       attributeTransformationParams( bitstream, sei );
-    } else if ( payloadType == 13 ) {
+    } else if ( payloadType == ACTIVE_SUBSTREAMS ) {
       activeSubstreams( bitstream, sei );
-    } else if ( payloadType == 14 ) {
+    } else if ( payloadType == COMPONENT_CODEC_MAPPING ) {
       componentCodecMapping( bitstream, sei );
-    } else if ( payloadType == 15 ) {
-      volumetricTilingInfo( bitstream, sei );
-    } else if ( payloadType == 16 ) {
+    } else if ( payloadType == PRESENTATION_INFORMATION ) {
       presentationInformation( bitstream, sei );
-    } else if ( payloadType == 17 ) {
+    } else if ( payloadType == SMOOTHING_PARAMETERS ) {
       smoothingParameters( bitstream, sei );
+    } else if ( payloadType == SCENE_OBJECT_INFORMATION ) {
+      sceneObjectInformation( bitstream, sei );
+    } else if ( payloadType == OBJECT_LABEL_INFORMATION ) {
+      objectLabelInformation( bitstream, sei );
+    } else if ( payloadType == PATCH_INFORMATION ) {
+      patchInformation( bitstream, sei );
+    } else if ( payloadType == VOLUMETRIC_RECTANGLE_INFORMATION ) {
+      volumetricRectangleInformation( bitstream, sei );
     } else {
       reservedSeiMessage( bitstream, sei );
     }
@@ -1527,116 +1537,11 @@ void PCCBitstreamWriter::componentCodecMapping( PCCBitstream& bitstream, SEI& se
   }
 }
 
+//m52705
 // E.2.14  Volumetric Tiling SEI message syntax
 // E.2.14.1  General
-void PCCBitstreamWriter::volumetricTilingInfo( PCCBitstream& bitstream, SEI& seiAbstract ) {
-  TRACE_BITSTREAM( "%s \n", __func__ );
-  SEIVolumetricTilingInfo& sei = static_cast<SEIVolumetricTilingInfo&>( seiAbstract );
-  bitstream.write( sei.getVtiCancelFlag(), 1 );  // u(1)
-  if ( !sei.getVtiCancelFlag() ) {
-    bitstream.write( sei.getVtiObjectLabelPresentFlag(), 1 );           // u(1)
-    bitstream.write( sei.getVti3dBoundingBoxPresentFlag(), 1 );         // u(1)
-    bitstream.write( sei.getVtiObjectPriorityPresentFlag(), 1 );        // u(1)
-    bitstream.write( sei.getVtiObjectHiddenPresentFlag(), 1 );          // u(1)
-    bitstream.write( sei.getVtiObjectCollisionShapePresentFlag(), 1 );  // u(1)
-    bitstream.write( sei.getVtiObjectDependencyPresentFlag(), 1 );      // u(1)
-    if ( sei.getVtiObjectLabelPresentFlag() ) { volumetricTilingInfoLabels( bitstream, sei ); }
-    if ( sei.getVti3dBoundingBoxPresentFlag() ) {
-      bitstream.write( sei.getVtiBoundingBoxScaleLog2(), 5 );          // u(5)
-      bitstream.write( sei.getVti3dBoundingBoxScaleLog2(), 5 );        // u(5)
-      bitstream.write( sei.getVti3dBoundingBoxPrecisionMinus8(), 5 );  // u(5)
-    }
-    volumetricTilingInfoObjects( bitstream, sei );
-  }
-}
-
 // E.2.14.2  Volumetric Tiling Info Labels
-void PCCBitstreamWriter::volumetricTilingInfoLabels( PCCBitstream& bitstream, SEIVolumetricTilingInfo& sei ) {
-  TRACE_BITSTREAM( "%s \n", __func__ );
-  auto& vtil = sei.getVolumetricTilingInfoLabels();
-  bitstream.write( vtil.getVtiObjectLabelLanguagePresentFlag(), 1 );  // u(1)
-  if ( vtil.getVtiObjectLabelLanguagePresentFlag() ) {
-    while ( !bitstream.byteAligned() ) {
-      bitstream.write( 0, 1 );  // f(1): equal to 0
-    }
-    bitstream.writeString( vtil.getVtiObjectLabelLanguage() );  // st(v)
-  }
-  bitstream.writeUvlc( vtil.getVtiNumObjectLabelUpdates() );  // ue(v)
-  for ( size_t i = 0; i < vtil.getVtiNumObjectLabelUpdates(); i++ ) {
-    bitstream.writeUvlc( vtil.getVtiLabelIdx( i ) );  // ue(v);
-    bool cancelFlag = false;
-    bitstream.write( cancelFlag, 1 );  // u(1)
-    if ( !cancelFlag ) {
-      while ( !bitstream.byteAligned() ) {
-        bitstream.write( 0, 1 );  // f(1): equal to 0
-      }
-      bitstream.writeString( vtil.getVtiLabel( vtil.getVtiLabelIdx( i ) ) );  // st(v)
-    }
-  }
-}
-
 // E.2.14.3  Volumetric Tiling Info Objects
-void PCCBitstreamWriter::volumetricTilingInfoObjects( PCCBitstream& bitstream, SEIVolumetricTilingInfo& sei ) {
-  TRACE_BITSTREAM( "%s \n", __func__ );
-  const int32_t fixedBitcount = 16;
-  auto&         vtio          = sei.getVolumetricTilingInfoObjects();
-  bitstream.writeUvlc( vtio.getVtiNumObjectUpdates() );  // ue(v)
-  for ( size_t i = 0; i <= vtio.getVtiNumObjectUpdates(); i++ ) {
-    bitstream.writeUvlc( vtio.getVtiObjectIdx( i ) );  // ue(v)
-    size_t index = vtio.getVtiObjectIdx( i );
-    bitstream.write( vtio.getVtiObjectCancelFlag( index ), 1 );  // u(1)
-    if ( !vtio.getVtiObjectCancelFlag( index ) ) {
-      bitstream.write( vtio.getVtiBoundingBoxUpdateFlag( index ), 1 );  // u(1)
-      if ( vtio.getVtiBoundingBoxUpdateFlag( index ) ) {
-        bitstream.write( vtio.getVtiBoundingBoxTop( index ), fixedBitcount );     // u(v)
-        bitstream.write( vtio.getVtiBoundingBoxLeft( index ), fixedBitcount );    // u(v)
-        bitstream.write( vtio.getVtiBoundingBoxWidth( index ), fixedBitcount );   // u(v)
-        bitstream.write( vtio.getVtiBoundingBoxHeight( index ), fixedBitcount );  // u(v)
-      }
-      if ( sei.getVti3dBoundingBoxPresentFlag() ) {
-        bitstream.write( vtio.getVti3dBoundingBoxUpdateFlag( index ), 1 );  // u(1)
-        if ( vtio.getVti3dBoundingBoxUpdateFlag( index ) ) {
-          bitstream.write( vtio.getVti3dBoundingBoxX( index ), fixedBitcount );       // u(v)
-          bitstream.write( vtio.getVti3dBoundingBoxY( index ), fixedBitcount );       // u(v)
-          bitstream.write( vtio.getVti3dBoundingBoxZ( index ), fixedBitcount );       // u(v)
-          bitstream.write( vtio.getVti3dBoundingBoxDeltaX( index ), fixedBitcount );  // u(v)
-          bitstream.write( vtio.getVti3dBoundingBoxDeltaY( index ), fixedBitcount );  // u(v)
-          bitstream.write( vtio.getVti3dBoundingBoxDeltaZ( index ), fixedBitcount );  // u(v)
-        }
-      }
-      if ( sei.getVtiObjectPriorityPresentFlag() ) {
-        bitstream.write( vtio.getVtiObjectPriorityUpdateFlag( index ), 1 );  // u(1)
-        if ( vtio.getVtiObjectPriorityUpdateFlag( index ) ) {
-          bitstream.write( vtio.getVtiObjectPriorityValue( index ), 4 );  // u(4)
-        }
-      }
-      if ( sei.getVtiObjectHiddenPresentFlag() ) {
-        bitstream.write( vtio.getVtiObjectHiddenFlag( index ), 1 );  // u(1)
-      }
-      if ( sei.getVtiObjectLabelPresentFlag() ) {
-        bitstream.write( vtio.getVtiObjectLabelUpdateFlag( index ), 1 );  // u(1)
-        if ( vtio.getVtiObjectLabelUpdateFlag( index ) ) {
-          bitstream.write( vtio.getVtiObjectLabelIdx( index ), fixedBitcount );  // ue(v)
-        }
-      }
-      if ( sei.getVtiObjectCollisionShapePresentFlag() ) {
-        bitstream.write( vtio.getVtiObjectCollisionShapeUpdateFlag( index ), 1 );  // u(1)
-        if ( vtio.getVtiObjectCollisionShapeUpdateFlag( index ) ) {
-          bitstream.write( vtio.getVtiObjectCollisionShapeId( index ), 16 );  // u(16)
-        }
-      }
-      if ( sei.getVtiObjectDependencyPresentFlag() ) {
-        bitstream.write( vtio.getVtiObjectDependencyUpdateFlag( index ), 1 );  // u(1)
-        if ( vtio.getVtiObjectDependencyUpdateFlag( index ) ) {
-          bitstream.write( vtio.getVtiObjectNumDependencies( index ), 4 );  // u(4)
-          for ( size_t j = 0; j < vtio.getVtiObjectNumDependencies( index ); j++ ) {
-            bitstream.write( vtio.getVtiObjectDependencyIdx( index, j ), 8 );  // u(8)
-          }
-        }
-      }
-    }
-  }
-}
 
 // E.2.15  Buffering period SEI message syntax
 void PCCBitstreamWriter::bufferingPeriod( PCCBitstream&        bitstream,
@@ -1764,6 +1669,186 @@ void PCCBitstreamWriter::smoothingParameters( PCCBitstream& bitstream, SEI& seiA
     }
   }
 }
+//m52705
+void PCCBitstreamWriter::sceneObjectInformation( PCCBitstream& bitstream, SEI& seiAbstract ) {
+  
+  TRACE_BITSTREAM( "%s \n", __func__ );
+  SEISceneObjectInformation& sei = static_cast<SEISceneObjectInformation&>( seiAbstract );
+  const int32_t fixedBitcount = 16;
+  bitstream.write( sei.getSoiCancelFlag(), 1);
+  bitstream.writeUvlc( sei.getSoiNumObjectUpdates() );
+  if( sei.getSoiNumObjectUpdates() > 0 ){
+    bitstream.write( sei.getSoiSimpleObjectsFlag(), 1 );
+    if( sei.getSoiSimpleObjectsFlag() == 0 ){
+      bitstream.write( sei.getSoiObjectLabelPresentFlag(), 1);
+      bitstream.write( sei.getSoiPriorityPresentFlag(), 1);
+      bitstream.write( sei.getSoiObjectHiddenPresentFlag(), 1);
+      bitstream.write( sei.getSoiObjectDependencyPresentFlag(), 1);
+      bitstream.write( sei.getSoiVisibilityConesPresentFlag(), 1);
+      bitstream.write( sei.getSoi3dBoundingBoxPresentFlag(), 1);
+      bitstream.write( sei.getSoiCollisionShapePresentFlag(), 1);
+      bitstream.write( sei.getSoiPointStylePresentFlag(), 1);
+      bitstream.write( sei.getSoiMaterialIdPresentFlag(), 1);
+      bitstream.write( sei.getSoiExtensionPresentFlag(), 1);
+    }
+    if( sei.getSoi3dBoundingBoxPresentFlag() ){
+      bitstream.write( sei.getSoi3dBoundingBoxScaleLog2(), 5 );
+      bitstream.write( sei.getSoi3dBoundingBoxPrecisionMinus8(), 5 );
+    }
+    bitstream.write( sei.getSoiLog2MaxObjectIdxUpdated(), 5 );
+    if(sei.getSoiObjectDependencyPresentFlag())
+      bitstream.write( sei.getSoiLog2MaxObjectDependencyIdx(), 5 );
+    for(size_t i=0; i<=sei.getSoiNumObjectUpdates(); i++){
+      assert(sei.getSoiObjectIdx(i).size()>=sei.getSoiNumObjectUpdates());
+      bitstream.write( sei.getSoiObjectIdx(i), sei.getSoiLog2MaxObjectIdxUpdated() );
+      size_t k = sei.getSoiObjectIdx(i);
+      bitstream.write( sei.getSoiObjectCancelFlag(k), 1 );
+      //ObjectTracked[k]=!piObjectCancelFlag[k];
+      if( sei.getSoiObjectCancelFlag(k) ){
+        if( sei.getSoiObjectLabelPresentFlag() ){
+          bitstream.write( sei.getSoiObjectLabelUpdateFlag(k), 1 );
+          if( sei.getSoiObjectLabelUpdateFlag(k) )
+            bitstream.writeUvlc( sei.getSoiObjectLabelIdx(k) );
+        }
+        if( sei.getSoiPriorityPresentFlag() ){
+          bitstream.write( sei.getSoiPriorityUpdateFlag(k), 1 );
+          if( sei.getSoiPriorityUpdateFlag(k) )
+            bitstream.write( sei.getSoiPriorityValue(k), 4 );
+        }
+        if( sei.getSoiObjectHiddenPresentFlag() )
+          bitstream.write( sei.getSoiObjectHiddenFlag(k), 1 );
+        
+        if( sei.getSoiObjectDependencyPresentFlag() ){
+          bitstream.write( sei.getSoiObjectDependencyUpdateFlag(k), 1 );
+          if( sei.getSoiObjectDependencyUpdateFlag(k) ){
+            bitstream.write( sei.getSoiObjectNumDependencies(k), 4 );
+            size_t bitCount = ceil(log2( sei.getSoiObjectNumDependencies(k) )+0.5);
+            for(size_t j=0; j<sei.getSoiObjectNumDependencies(k); j++)
+              bitstream.write( sei.getSoiObjectDependencyIdx(k, j), bitCount );
+          }
+        }
+        if( sei.getSoiVisibilityConesPresentFlag()){
+        bitstream.write( sei.getSoiVisibilityConesUpdateFlag(k), 1 );
+          if( sei.getSoiVisibilityConesUpdateFlag(k) ){
+            bitstream.write( sei.getSoiDirectionX(k), 32 );
+            bitstream.write( sei.getSoiDirectionY(k), 32 );
+            bitstream.write( sei.getSoiDirectionZ(k), 32 );
+            bitstream.write( sei.getSoiAngle(k), 16 );
+          }
+        }//cones
+        
+        if(sei.getSoi3dBoundingBoxPresentFlag()){
+        bitstream.write( sei.getSoi3dBoundingBoxUpdateFlag(k), 1 );
+          if( sei.getSoi3dBoundingBoxUpdateFlag(k) ){
+            bitstream.write( sei.getSoi3dBoundingBoxX(k), fixedBitcount );
+            bitstream.write( sei.getSoi3dBoundingBoxY(k), fixedBitcount );
+            bitstream.write( sei.getSoi3dBoundingBoxZ(k), fixedBitcount );
+            bitstream.write( sei.getSoi3dBoundingBoxDeltaX(k), fixedBitcount );
+            bitstream.write( sei.getSoi3dBoundingBoxDeltaY(k), fixedBitcount );
+            bitstream.write( sei.getSoi3dBoundingBoxDeltaZ(k), fixedBitcount );
+          }
+        }//3dBB
+        
+        if( sei.getSoiCollisionShapePresentFlag()){
+        bitstream.write( sei.getSoiCollisionShapeUpdateFlag(k), 1 );
+          if(sei.getSoiCollisionShapeUpdateFlag(k))
+            bitstream.write( sei.getSoiCollisionShapeId(k), 16 );
+        }//collision
+        if(sei.getSoiPointStylePresentFlag()){
+          bitstream.write( sei.getSoiPointStyleUpdateFlag(k), 1 );
+          if(sei.getSoiPointStyleUpdateFlag(k))
+            bitstream.write( sei.getSoiPointShapeId(k), 8 );//only shape??
+          bitstream.write( sei.getSoiPointSize(k), 16 );
+        }//pointstyle
+        if(sei.getSoiMaterialIdPresentFlag()){
+          bitstream.write( sei.getSoiMaterialIdUpdateFlag(k), 1 );
+          if( sei.getSoiMaterialIdUpdateFlag(k) )
+            bitstream.write( sei.getSoiMaterialId(k), 16 );
+        }//materialid
+      }//sei.getSoiObjectCancelFlag(k)
+    }//for(size_t i=0; i<=sei.getSoiNumObjectUpdates(); i++)
+  } //if( sei.getSoiNumObjectUpdates() > 0 )
+}
+
+void PCCBitstreamWriter::objectLabelInformation( PCCBitstream& bitstream, SEI& seiAbstract ) {
+  TRACE_BITSTREAM( "%s \n", __func__ );
+  SEIObjectLabelInformation& sei = static_cast<SEIObjectLabelInformation&>( seiAbstract );
+  bitstream.write( sei.getOliCancelFlag(), 1);
+  if( !sei.getOliCancelFlag() ){
+    bitstream.write( sei.getOliLabelLanguagePresentFlag(), 1 );
+    if( sei.getOliLabelLanguagePresentFlag() ){
+      while ( !bitstream.byteAligned() ) bitstream.write( uint32_t(0), 1);
+      bitstream.writeString( sei.getOliLabelLanguage() );
+    }
+    bitstream.writeUvlc( sei.getOliNumLabelUpdates() );
+    for(size_t i=0; i<sei.getOliNumLabelUpdates(); i++){
+      bitstream.writeUvlc( sei.getOliLabelIdx(i) );
+      bitstream.write( sei.getOliLabelCancelFlag(), 1 );
+      if(!sei.getOliLabelCancelFlag() ){
+        while ( !bitstream.byteAligned() ) bitstream.write( uint32_t(0), 1);
+        bitstream.writeString( sei.getOliLabel( sei.getOliLabelIdx(i)) );
+      }
+    }
+  }
+};//Object label information
+void PCCBitstreamWriter::patchInformation( PCCBitstream& bitstream, SEI& seiAbstract ) {
+  TRACE_BITSTREAM( "%s \n", __func__ );
+  SEIPatchInformation& sei = static_cast<SEIPatchInformation&>( seiAbstract );
+  bitstream.write( sei.getPiCancelFlag(), 1 );
+  bitstream.writeUvlc( sei.getPiNumTileGroupUpdates() );
+  if( sei.getPiNumTileGroupUpdates() >0 ){
+    bitstream.write( sei.getPiLog2MaxObjectIdxTracked(), 5 );
+    bitstream.write( sei.getPiLog2MaxPatchIdxUpdated(), 4 );
+  }
+  for(size_t i=0; i<sei.getPiNumTileGroupUpdates(); i++){
+    bitstream.writeUvlc( sei.getPiTileGroupAddress(i) );
+    size_t j = sei.getPiTileGroupAddress(i);
+    bitstream.write( sei.getPiTileGroupCancelFlag(j), 1);
+    bitstream.writeUvlc( sei.getPiNumPatchUpdates(j));
+    for(size_t k=0; k<sei.getPiNumPatchUpdates(j); k++){
+      bitstream.write( sei.getPiPatchIdx(j, k), sei.getPiLog2MaxPatchIdxUpdated() );
+      auto p= sei.getPiPatchIdx(j, k);
+      bitstream.write( sei.getPiPatchCancelFlag(j, p), 1);
+      if( !sei.getPiPatchCancelFlag(j, p) ){
+        bitstream.writeUvlc( sei.getPiPatchNumberOfObjectsMinus1(j, p));
+        for(size_t n=0; n< sei.getPiPatchNumberOfObjectsMinus1(j, p)+1; n++)
+          bitstream.write( sei.getPiPatchObjectIdx(j, p, n), sei.getPiLog2MaxObjectIdxTracked() ); //?pi_log2_max_object_idx_updated?
+      }
+    }
+  }
+}; //patch information
+void PCCBitstreamWriter::volumetricRectangleInformation( PCCBitstream& bitstream, SEI& seiAbstract ) {
+  TRACE_BITSTREAM( "%s \n", __func__ );
+  SEIVolumetricRectangleInformation& sei = static_cast<SEIVolumetricRectangleInformation&>( seiAbstract );
+  const int32_t fixedBitcount = 16;
+  bitstream.write( sei.getVriCancelFlag(), 1 );
+  bitstream.writeUvlc( sei.getVriNumRectanglesUpdates() );
+  if( sei.getVriNumRectanglesUpdates() > 0 ){
+    bitstream.write( sei.getVriLog2MaxObjectIdxTracked(), 5 );
+    bitstream.write( sei.getVriLog2MaxRectangleIdxUpdated(), 4);
+  }
+  
+  for(size_t k=0; k<sei.getVriNumRectanglesUpdates(); k++){
+    bitstream.write( sei.getVriRectangleIdx(k), sei.getVriLog2MaxRectangleIdxUpdated());
+    auto p=sei.getVriRectangleIdx(k);
+    bitstream.write( sei.getVriRectangleCancelFlag(p), 1);
+    
+    
+    if( !sei.getVriRectangleCancelFlag(p) ){
+      bitstream.write( sei.getVriBoundingBoxUpdateFlag(p), 1);
+      if(sei.getVriBoundingBoxUpdateFlag(p)){
+        bitstream.write( sei.getVriBoundingBoxTop(p), fixedBitcount);
+        bitstream.write( sei.getVriBoundingBoxLeft(p), fixedBitcount);
+        bitstream.write( sei.getVriBoundingBoxWidth(p), fixedBitcount);
+        bitstream.write( sei.getVriBoundingBoxHeight(p), fixedBitcount);
+      }
+      bitstream.writeUvlc( sei.getVriRectangleNumberOfObjectsMinus1(p) );
+      for(size_t n=0; n<sei.getVriRectangleNumberOfObjectsMinus1(p)+1; n++)
+        bitstream.write( sei.getVriRectangleObjectIdx(p, n), sei.getVriLog2MaxObjectIdxTracked());
+    }
+  }
+}; //volumetric rectangle information
+////////
 
 // F.2  VUI syntax
 // F.2.1  VUI parameters syntax

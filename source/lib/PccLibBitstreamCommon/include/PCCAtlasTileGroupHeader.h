@@ -46,6 +46,7 @@ class AtlasTileGroupHeader {
       atghAtlasFrameParameterSetId_( 0 ),
       atghAddress_( 0 ),
       atghType_( PCCTILEGROUP( 0 ) ),
+      atghAtlasOutputFlag_( false ),
       atghAtlasFrmOrderCntLsb_( 0 ),
       atghRefAtlasFrameListSpsFlag_( 0 ),
       atghRefAtlasFrameListIdx_( 0 ),
@@ -71,6 +72,7 @@ class AtlasTileGroupHeader {
   uint8_t               getAtghAtlasFrameParameterSetId() { return atghAtlasFrameParameterSetId_; }
   uint32_t              getAtghAddress() { return atghAddress_; }
   PCCTILEGROUP          getAtghType() { return atghType_; }
+  bool                  getAtghAtlasOutputFlag() { return atghAtlasOutputFlag_; }
   uint8_t               getAtghAtlasFrmOrderCntLsb() { return atghAtlasFrmOrderCntLsb_; }
   bool                  getAtghRefAtlasFrameListSpsFlag() { return atghRefAtlasFrameListSpsFlag_; }
   uint8_t               getAtghRefAtlasFrameListIdx() { return atghRefAtlasFrameListIdx_; }
@@ -89,6 +91,7 @@ class AtlasTileGroupHeader {
   void setAtghAtlasFrameParameterSetId( uint8_t value ) { atghAtlasFrameParameterSetId_ = value; }
   void setAtghAddress( uint32_t value ) { atghAddress_ = value; }
   void setAtghType( PCCTILEGROUP value ) { atghType_ = value; }
+  void setAtghAtlasOutputFlag( bool value ) { atghAtlasOutputFlag_ = value; }
   void setAtghAtlasFrmOrderCntLsb( uint8_t value ) { atghAtlasFrmOrderCntLsb_ = value; }
   void setAtghRefAtlasFrameListSpsFlag( bool value ) { atghRefAtlasFrameListSpsFlag_ = value; }
   void setAtghRefAtlasFrameListIdx( uint8_t value ) { atghRefAtlasFrameListIdx_ = value; }
@@ -109,6 +112,7 @@ class AtlasTileGroupHeader {
   uint8_t              atghAtlasFrameParameterSetId_;
   uint32_t             atghAddress_;
   PCCTILEGROUP         atghType_;
+  bool                 atghAtlasOutputFlag_;
   uint8_t              atghAtlasFrmOrderCntLsb_;
   bool                 atghRefAtlasFrameListSpsFlag_;
   uint8_t              atghRefAtlasFrameListIdx_;
