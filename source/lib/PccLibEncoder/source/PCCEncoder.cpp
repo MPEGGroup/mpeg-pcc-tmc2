@@ -3766,22 +3766,51 @@ bool PCCEncoder::predictTextureFrame( PCCFrameContext&       frame,
   const size_t refWidth     = reference.getWidth();
   const size_t refHeight    = reference.getHeight();
   auto&        occupancyMap = frame.getOccupancyMap();
+  uint8_t numBitdepth = 8;
+  const int16_t offsetValue = (1 << (numBitdepth - 1));
+  const int16_t maxValue = (1 << numBitdepth) - 1;
   for ( size_t y = 0; y < refHeight; ++y ) {
     for ( size_t x = 0; x < refWidth; ++x ) {
       const size_t pos1 = y * refWidth + x;
       if ( occupancyMap[pos1] != 0 ) {
+        // convert the reference from YUV444 16 bit to RGB 888 8 bits
+        int16_t reference_color[3];
+        /// convert yuv444 (16bit) to normalized yuv444 (format double)
+        double y1 = reference.getValue(0, x, y);
+        double u1 = reference.getValue(1, x, y);
+        double v1 = reference.getValue(2, x, y);
+        double offset = 32768.0;
+        double scale  = 65535.0;
+        double weight = 1.0 / scale;
+        y1 = weight * y1;
+        u1 = weight * ( u1 - offset );
+        v1 = weight * ( v1 - offset );
+        y1 = ( std::max )( y1, 0.0 );
+        y1 = ( std::min )( y1, 1.0 );
+        u1 = ( std::max )( u1, -0.5 );
+        u1 = ( std::min )( u1, 0.5 );
+        v1 = ( std::max )( v1, -0.5 );
+        v1 = ( std::min )( v1, 0.5 );
+        //// convert normalized yuv444 to normalized rgb (fromat double)
+        double r = y1 /*- 0.00000 * u1*/ + 1.57480 * v1;
+        double g = y1 - 0.18733 * u1 - 0.46813 * v1;
+        double b = y1 + 1.85563 * u1 /*+ 0.00000 * v1*/;
+        //// convert normalized rgb to 8-bit rgb
+        reference_color[0] = PCCClip( round( r * 255 ), 0.0, 255.0 );
+        reference_color[1] = PCCClip( round( g * 255 ), 0.0, 255.0 );
+        reference_color[2] = PCCClip( round( b * 255 ), 0.0, 255.0 );
         for ( size_t c = 0; c < 3; ++c ) {
           const int16_t value1 = static_cast<int16_t>( image.getValue( c, x, y ) );
-          const int16_t value0 = static_cast<int16_t>( reference.getValue( c, x, y ) );
+          const int16_t value0 = reference_color[c];
           int16_t       delta  = 0;
           delta                = value1 - value0;
-          if ( delta < -128 ) {
-            delta = -128;
-          } else if ( delta > 127 ) {
-            delta = 127;
+          if ( delta < -offsetValue ) {
+            delta = -offsetValue;
+          } else if ( delta > offsetValue-1 ) {
+            delta = offsetValue-1;
           }
-          delta += 128;
-          delta = delta < 0 ? 0 : ( delta > 255 ? 255 : delta );
+          delta += offsetValue;
+          delta = delta < 0 ? 0 : ( delta > maxValue ? maxValue : delta );
           image.setValue( c, x, y, ( uint8_t )( delta ) );
         }  // c
       } else {
