@@ -37,7 +37,7 @@
 
 using namespace pcc;
 
-PCCContext::PCCContext() {}
+PCCContext::PCCContext() = default;
 
 PCCContext::~PCCContext() { atlasContexts_.clear(); }
 
@@ -46,7 +46,7 @@ void PCCContext::resizeAtlas( size_t size ) {
   for ( int atlIdx = 0; atlIdx < size; atlIdx++ ) { atlasContexts_[atlIdx].setAtlasIndex( atlIdx ); }
 }
 
-PCCAtlasContext::PCCAtlasContext() {}
+PCCAtlasContext::PCCAtlasContext() = default;
 
 PCCAtlasContext::~PCCAtlasContext() {
   frameContexts_.clear();
@@ -178,11 +178,11 @@ void PCCAtlasContext::clearVideoFrames() {
   attrBitdepth_.clear();
   attrWidth_.clear();
   attrHeight_.clear();
-  for ( size_t attrIdx = 0; attrIdx < attrAuxFrames_.size(); attrIdx++ ) {
-    for ( size_t partIdx = 0; partIdx < attrAuxFrames_[attrIdx].size(); partIdx++ ) {
-      attrAuxFrames_[attrIdx][partIdx].clear();
+  for (auto & attrAuxFrame : attrAuxFrames_) {
+    for (auto & partIdx : attrAuxFrame) {
+      partIdx.clear();
     }
-    attrAuxFrames_[attrIdx].clear();
+    attrAuxFrame.clear();
   }
   attrAuxFrames_.clear();
 }

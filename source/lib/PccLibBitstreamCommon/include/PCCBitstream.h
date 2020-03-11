@@ -158,7 +158,7 @@ class PCCBitstream {
 
   bool initialize( std::vector<uint8_t>& data );
   bool initialize( const PCCBitstream& bitstream );
-  bool initialize( std::string compressedStreamPath );
+  bool initialize( const std::string& compressedStreamPath );
   void initialize( uint64_t capacity ) { data_.resize( capacity, 0 ); }
   void clear() {
     data_.clear();
@@ -169,7 +169,7 @@ class PCCBitstream {
     position_.bits  = 0;
     position_.bytes = 0;
   }
-  bool                write( std::string compressedStreamPath );
+  bool                write( const std::string& compressedStreamPath );
   uint8_t*            buffer() { return data_.data(); }
   uint64_t&           size() { return position_.bytes; }
   uint64_t            capacity() { return data_.size(); }

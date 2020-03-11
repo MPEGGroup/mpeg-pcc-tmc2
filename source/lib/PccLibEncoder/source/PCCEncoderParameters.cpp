@@ -172,7 +172,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   safeGuardDistance_    = 0;
   useEightOrientations_ = false;
   lowDelayEncoding_     = false;
-  geometryPadding_      = false;
+  geometryPadding_      = 0U;
 
   // lossy raw points patch
   lossyRawPointsPatch_             = false;
@@ -222,7 +222,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   // qunatizer;
 }
 
-PCCEncoderParameters::~PCCEncoderParameters() {}
+PCCEncoderParameters::~PCCEncoderParameters() = default;
 
 void PCCEncoderParameters::completePath() {
   if ( !uncompressedDataFolder_.empty() ) {
@@ -334,8 +334,9 @@ void PCCEncoderParameters::print() {
   if ( multipleStreams_ ) {
     std::cout << "\t   textureT0Config                         " << textureT0Config_ << std::endl;
     std::cout << "\t   textureT1Config                         " << textureT1Config_ << std::endl;
-  } else
+  } else {
     std::cout << "\t   textureConfig                          " << textureConfig_ << std::endl;
+}
   if ( useRawPointsSeparateVideo_ ) {
     if ( losslessGeo_ ) {
       std::cout << "\t geometryMPConfig                          " << geometryMPConfig_ << std::endl;
@@ -548,8 +549,8 @@ bool PCCEncoderParameters::check() {
     if ( geometryD0Config_.empty() || geometryD1Config_.empty() ) {
       // ret = false;
       // std::cerr << "When multipleStreams is true, geometryD0Config_ and geometryD1Config_ should be non-empty\n";
-      geometryD0Config_ = geometryConfig_.substr( 0, geometryConfig_.find_last_of( "." ) ) + "-D0.cfg";
-      geometryD1Config_ = geometryConfig_.substr( 0, geometryConfig_.find_last_of( "." ) ) + "-D1.cfg";
+      geometryD0Config_ = geometryConfig_.substr( 0, geometryConfig_.find_last_of( '.' ) ) + "-D0.cfg";
+      geometryD1Config_ = geometryConfig_.substr( 0, geometryConfig_.find_last_of( '.' ) ) + "-D1.cfg";
     }
     geometryConfig_ = {};
   } else {
@@ -565,8 +566,8 @@ bool PCCEncoderParameters::check() {
     if ( textureT0Config_.empty() || textureT1Config_.empty() ) {
       // std::cerr << "When multipleStreams_ is true, textureT0Config_ and textureT1Config_ should be non-empty\n";
       // ret = false;
-      textureT0Config_ = textureConfig_.substr( 0, textureConfig_.find_last_of( "." ) ) + "-T0.cfg";
-      textureT1Config_ = textureConfig_.substr( 0, textureConfig_.find_last_of( "." ) ) + "-T1.cfg";
+      textureT0Config_ = textureConfig_.substr( 0, textureConfig_.find_last_of( '.' ) ) + "-T0.cfg";
+      textureT1Config_ = textureConfig_.substr( 0, textureConfig_.find_last_of( '.' ) ) + "-T1.cfg";
     }
     textureConfig_ = {};
   } else {
@@ -635,7 +636,7 @@ bool PCCEncoderParameters::check() {
     offsetLossyOM_ = 0;
   }
 
-  if ( enhancedOccupancyMapCode_ && ( prefilterLossyOM_ == true ) ) {
+  if ( enhancedOccupancyMapCode_ && ( prefilterLossyOM_ ) ) {
     std::cerr
         << "WARNING: When using enhanced occupancy map for delta depth, prefilterLossyOM_ should be equal to false\n";
     std::cerr << "         Forcing prefilterLossyOM_ to false\n";
@@ -648,7 +649,7 @@ bool PCCEncoderParameters::check() {
                  "useRawPointsSeparateVideo_=false.\n";
   }
   if ( useRawPointsSeparateVideo_ ) {
-    if ( textureMPSeparateVideoWidth_ % 64 ) {
+    if ( (textureMPSeparateVideoWidth_ % 64) != 0U ) {
       ret = false;
       std::cerr << "textureMPSeparateVideoWidth_ must be multiple of 64.\n";
     }
@@ -707,8 +708,8 @@ bool PCCEncoderParameters::check() {
   if ( flagGeometrySmoothing_ ) {
     if ( pbfEnableFlag_ ) {
       gridSmoothing_ = false;
-      if ( !pbfPassesCount_ ) { pbfPassesCount_ = occupancyPrecision_ <= 2 ? 1 : occupancyPrecision_ == 4 ? 2 : 4; }
-      if ( !pbfFilterSize_ ) { pbfFilterSize_ = occupancyPrecision_; }
+      if ( pbfPassesCount_ == 0 ) { pbfPassesCount_ = occupancyPrecision_ <= 2 ? 1 : occupancyPrecision_ == 4 ? 2 : 4; }
+      if ( pbfFilterSize_ == 0 ) { pbfFilterSize_ = occupancyPrecision_; }
     }
     if ( gridSmoothing_ ) {
       if ( gridSize_ == 0 ) {
@@ -742,7 +743,7 @@ void PCCEncoderParameters::constructAspsRefList( PCCContext& context, size_t asp
     for ( size_t i = 0; i < refList.getNumRefEntries(); i++ ) {
       int afocDiff = context.getRefAtlasFrame( list, i );
       refList.setAbsDeltaAfocSt( i, std::abs( afocDiff ) );
-      refList.setStrpfEntrySignFlag( i, afocDiff < 0 ? 0 : 1 );
+      refList.setStrpfEntrySignFlag( i, afocDiff < 0 ? false : !static_cast<bool>(0) );
       refList.setStRefAtalsFrameFlag( i, true );
     }
     asps.addRefListStruct( refList );
@@ -766,19 +767,19 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
 
   context.setLog2PatchQuantizerSizeX( log2QuantizerSizeX_ );
   context.setLog2PatchQuantizerSizeY( log2QuantizerSizeY_ );
-  context.setEnablePatchSizeQuantization( ( ( 1 << (int32_t)log2QuantizerSizeX_ ) < (int32_t)occupancyPrecision_ ) ||
-                                          ( ( 1 << (int32_t)log2QuantizerSizeY_ ) < (int32_t)occupancyPrecision_ ) );
+  context.setEnablePatchSizeQuantization( ( ( 1 << static_cast<int32_t>(log2QuantizerSizeX_) ) < static_cast<int32_t>(occupancyPrecision_) ) ||
+                                          ( ( 1 << static_cast<int32_t>(log2QuantizerSizeY_) ) < static_cast<int32_t>(occupancyPrecision_) ) );
 
   context.setMaxNumRefAtlasFrame( maxNumRefAtlasFrame_ );
   context.setNumOfRefAtlasFrameList( maxNumRefAtlasList_ );
   for ( size_t list = 0; list < maxNumRefAtlasList_; list++ ) {
     context.setSizeOfRefAtlasFrameList( list, maxNumRefAtlasFrame_ );
     for ( size_t i = 0; i < maxNumRefAtlasFrame_; i++ ) {
-      context.setRefAtlasFrame( list, i, -( int32_t )( i + 1 ) );  //-1, -2, -3, -4
+      context.setRefAtlasFrame( list, i, -static_cast< int32_t>( i + 1 ) );  //-1, -2, -3, -4
     }
   }
 
-  sps.setMapCountMinus1( atlasIndex, (uint32_t)mapCountMinus1_ );
+  sps.setMapCountMinus1( atlasIndex, static_cast<uint32_t>(mapCountMinus1_) );
   sps.setMultipleMapStreamsPresentFlag( atlasIndex, mapCountMinus1_ != 0 && multipleStreams_ );
   sps.setRawSeparateVideoPresentFlag( atlasIndex, useRawPointsSeparateVideo_ );
   sps.setRawPatchEnabledFlag( atlasIndex, losslessGeo_ || lossyRawPointsPatch_ );
@@ -794,13 +795,13 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
 
   ai.setAttributeCount( noAttributes_ ? 0 : 1 );
   ai.allocate();
-  if ( noAttributes_ == 0 ) {
+  if ( static_cast<int>(noAttributes_) == 0 ) {
     ai.setAttributeDimensionMinus1( 0, noAttributes_ ? 0 : 2 );
     ai.setAttributeNominal2dBitdepthMinus1( 0, 7 );
   }
 
   for ( size_t i = 0; i < ai.getAttributeCount(); i++ ) {
-    ai.setAttributeMapAbsoluteCodingPersistanceFlag( i, (bool)absoluteT1_ );
+    ai.setAttributeMapAbsoluteCodingPersistanceFlag( i, absoluteT1_ );
   }
 
   asps.setLog2PatchPackingBlockSize( std::log2( occupancyResolution_ ) );
@@ -824,13 +825,13 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   asps.setExtensionPresentFlag( 0 );
   asps.setExtensionDataFlag( 0 );
 
-  if ( asps.getEnhancedOccupancyMapFixBitCountMinus1() && mapCountMinus1_ == 0 ) {
+  if ( (asps.getEnhancedOccupancyMapFixBitCountMinus1() != 0U) && mapCountMinus1_ == 0 ) {
     asps.setEnhancedOccupancyMapFixBitCountMinus1( EOMFixBitCount_ - 1 );
   } else {
     asps.setEnhancedOccupancyMapFixBitCountMinus1( EOMFixBitCount_ - 1 );  // default values
   }
   afps.setAtlasSequenceParameterSetId( 0 );
-  afps.setAfpsNumRefIdxDefaultActiveMinus1( ( uint8_t )( std::max )( 0, (int)maxNumRefAtlasFrame_ - 1 ) );
+  afps.setAfpsNumRefIdxDefaultActiveMinus1( static_cast< uint8_t>(( std::max )( 0, static_cast<int>(maxNumRefAtlasFrame_) - 1 )) );
   afps.setAfpsAdditionalLtAfocLsbLen( 4 );
   afps.setAfpsOverrideEomForDepthFlag( 0 );
   afps.setAfpsEomNumberOfPatchBitCountMinus1( 0 );
@@ -839,7 +840,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   afps.setAfpsExtensionPresentFlag( 0 );
   afps.setAfpsExtensionDataFlag( 0 );
 
-  if ( afps.getAfpsOverrideEomForDepthFlag() == 0 ) {
+  if ( static_cast<int>(afps.getAfpsOverrideEomForDepthFlag()) == 0 ) {
     afps.setAfpsEomMaxBitCountMinus1( 7 );
     afps.setAfpsEomNumberOfPatchBitCountMinus1( 7 );
   }
@@ -874,7 +875,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   // construction of reference frame list of ASPS
   constructAspsRefList( context, 0, 0 );
 
-  oi.setLossyOccupancyMapCompressionThreshold( (size_t)thresholdLossyOM_ );
+  oi.setLossyOccupancyMapCompressionThreshold( thresholdLossyOM_ );
   oi.setOccupancyNominal2DBitdepthMinus1( 7 );
   oi.setOccupancyMSBAlignFlag( false );
 
@@ -893,7 +894,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   context.setGeometry3dCoordinatesBitdepth( geometry3dCoordinatesBitdepth_ );
   size_t numPlrm =
       pointLocalReconstruction_
-          ? ( std::max )( (size_t)1, ( std::min )( plrlNumberOfModes_, g_pointLocalReconstructionMode.size() ) )
+          ? ( std::max )( static_cast<size_t>(1), ( std::min )( plrlNumberOfModes_, g_pointLocalReconstructionMode.size() ) )
           : 1;
   for ( size_t i = 0; i < numPlrm; i++ ) {
     context.addPointLocalReconstructionMode( g_pointLocalReconstructionMode[i] );

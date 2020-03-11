@@ -117,11 +117,11 @@ void PCCPointSet3::distance( const PCCPointSet3& pointcloud,
     distU += pow( yuvA[1] - yuvB[1], 2.f );
     distV += pow( yuvA[2] - yuvB[2], 2.f );
   }
-  distP /= (float)( positions_.size() );
+  distP /= static_cast<float>( positions_.size() );
 
-  distY /= (float)( positions_.size() );
-  distU /= (float)( positions_.size() );
-  distV /= (float)( positions_.size() );
+  distY /= static_cast<float>( positions_.size() );
+  distU /= static_cast<float>( positions_.size() );
+  distV /= static_cast<float>( positions_.size() );
 }
 
 void PCCPointSet3::distance( const PCCPointSet3& pointcloud, float& distP ) const {
@@ -132,7 +132,7 @@ void PCCPointSet3::distance( const PCCPointSet3& pointcloud, float& distP ) cons
     kdtree.search( positions_[i], 1, result );
     distP += result.dist( 0 );
   }
-  distP /= (float)( positions_.size() );
+  distP /= static_cast<float>( positions_.size() );
 }
 
 PCCPoint3D PCCPointSet3::computeCentroid() const {
@@ -224,9 +224,9 @@ std::vector<uint8_t> PCCPointSet3::computeChecksum( bool reorderPoints ) {
 std::vector<uint8_t> PCCPointSet3::computeMd5() {
   std::vector<uint8_t> digest;
   MD5                  md5;
-  md5.update( (uint8_t*)positions_.data(), positions_.size() * sizeof( PCCPoint3D ) );
-  if ( withColors_ ) { md5.update( (uint8_t*)colors_.data(), colors_.size() * sizeof( PCCColor3B ) ); }
-  if ( withReflectances_ ) { md5.update( (uint8_t*)reflectances_.data(), reflectances_.size() * sizeof( uint16_t ) ); }
+  md5.update( reinterpret_cast<uint8_t*>(positions_.data()), positions_.size() * sizeof( PCCPoint3D ) );
+  if ( withColors_ ) { md5.update( reinterpret_cast<uint8_t*>(colors_.data()), colors_.size() * sizeof( PCCColor3B ) ); }
+  if ( withReflectances_ ) { md5.update( reinterpret_cast<uint8_t*>(reflectances_.data()), reflectances_.size() * sizeof( uint16_t ) ); }
   digest.resize( MD5_DIGEST_STRING_LENGTH );
   md5.finalize( digest.data() );
   return digest;
@@ -806,7 +806,7 @@ bool PCCPointSet3::transferColors( PCCPointSet3& target,
       }
     }
     if ( !isDone ) {
-      int nNN = (int)result.count();
+      int nNN = static_cast<int>(result.count());
       while ( nNN > 0 && !isDone ) {
         if ( nNN == 1 ) {
           refinedColors1[index] = source.getColor( result.indices( 0 ) );
@@ -925,9 +925,9 @@ bool PCCPointSet3::transferColors( PCCPointSet3& target,
         }
       }
       if ( !isDone ) {
-        int nNN = (int)colorsDists2.size();
+        int nNN = static_cast<int>(colorsDists2.size());
         while ( nNN > 0 && !isDone ) {
-          nNN = (int)colorsDists2.size();
+          nNN = static_cast<int>(colorsDists2.size());
           if ( nNN == 1 ) {
             auto temp = colorsDists2[0];
             colorsDists2.clear();
@@ -1134,7 +1134,7 @@ bool PCCPointSet3::transferColors16bitBP( PCCPointSet3& target,
         }
       }
       if ( !isDone ) {
-        int nNN = (int)result.count();
+        int nNN = static_cast<int>(result.count());
         while ( nNN > 0 && !isDone ) {
           if ( nNN == 1 ) {
             refinedColors1[index] = source.getColor16bit( result.indices( 0 ) );
@@ -1256,9 +1256,9 @@ bool PCCPointSet3::transferColors16bitBP( PCCPointSet3& target,
         }
       }
       if ( !isDone ) {
-        int nNN = (int)colorsDists2.size();
+        int nNN = static_cast<int>(colorsDists2.size());
         while ( nNN > 0 && !isDone ) {
-          nNN = (int)colorsDists2.size();
+          nNN = static_cast<int>(colorsDists2.size());
           if ( nNN == 1 ) {
             auto temp = colorsDists2[0];
             colorsDists2.clear();
@@ -1462,7 +1462,7 @@ bool PCCPointSet3::transferColors16bit( PCCPointSet3& target,
       }
     }
     if ( !isDone ) {
-      int nNN = (int)result.count();
+      int nNN = static_cast<int>(result.count());
       while ( nNN > 0 && !isDone ) {
         if ( nNN == 1 ) {
           refinedColors1[index] = source.getColor16bit( result.indices( 0 ) );
@@ -1583,9 +1583,9 @@ bool PCCPointSet3::transferColors16bit( PCCPointSet3& target,
         }
       }
       if ( !isDone ) {
-        int nNN = (int)colorsDists2.size();
+        int nNN = static_cast<int>(colorsDists2.size());
         while ( nNN > 0 && !isDone ) {
-          nNN = (int)colorsDists2.size();
+          nNN = static_cast<int>(colorsDists2.size());
           if ( nNN == 1 ) {
             auto temp = colorsDists2[0];
             colorsDists2.clear();

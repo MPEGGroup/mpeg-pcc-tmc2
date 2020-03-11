@@ -76,7 +76,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   size_t pointLocalReconstructionOriginal     = params_.pointLocalReconstruction_;
   size_t layerCountMinus1Original             = params_.mapCountMinus1_;
   size_t singleLayerPixelInterleavingOriginal = params_.singleMapPixelInterleaving_;
-  if ( params_.nbThread_ > 0 ) { tbb::task_scheduler_init init( (int)params_.nbThread_ ); }
+  if ( params_.nbThread_ > 0 ) { tbb::task_scheduler_init init( static_cast<int>(params_.nbThread_) ); }
   params_.initializeContext( context );
   assert( sources.size() < 256 );
   size_t atlasIndex = 0;
@@ -126,8 +126,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
 
   resizeGeometryVideo( context );
 
-  sps.setFrameWidth( atlasIndex, (uint16_t)frames[0].getWidth() );
-  sps.setFrameHeight( atlasIndex, (uint16_t)frames[0].getHeight() );
+  sps.setFrameWidth( atlasIndex, static_cast<uint16_t>(frames[0].getWidth()) );
+  sps.setFrameHeight( atlasIndex, static_cast<uint16_t>(frames[0].getHeight()) );
   // DIS requirement, see 7.4.6.1
   for ( int i = 0; i < context.getAtlasSequenceParameterSetList().size(); i++ ) {
     context.getAtlasSequenceParameterSet( i ).setFrameHeight( sps.getFrameWidth( atlasIndex ) );
@@ -155,12 +155,12 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     changedPixCnt1To0 = 0;
     pixCnt            = 0;
     modifyOccupancyMap( sources, context );
-    std::cout << "Percentage of changed occupancy map values = " << ( (float)changedPixCnt * 100.0F / pixCnt )
+    std::cout << "Percentage of changed occupancy map values = " << ( static_cast<float>(changedPixCnt) * 100.0F / pixCnt )
               << std::endl;
     std::cout << "Percentage of changed occupancy map values from 0 to 1 = "
-              << ( (float)changedPixCnt0To1 * 100.0F / pixCnt ) << std::endl;
+              << ( static_cast<float>(changedPixCnt0To1) * 100.0F / pixCnt ) << std::endl;
     std::cout << "Percentage of changed occupancy map values from 1 to 0 = "
-              << ( (float)changedPixCnt1To0 * 100.0F / pixCnt ) << std::endl;
+              << ( static_cast<float>(changedPixCnt1To0) * 100.0F / pixCnt ) << std::endl;
   }
 
   if ( !params_.useRawPointsSeparateVideo_ && ( params_.losslessGeo_ || params_.lossyRawPointsPatch_ ) ) {
@@ -362,9 +362,9 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                   for ( size_t c = 0; c < 3; c++ ) {
                     tmp_d0  = frame1.getValue( c, x, y );
                     tmp_d1  = frame2.getValue( c, x, y );
-                    tmp_avg = ( (uint32_t)tmp_d0 + (uint32_t)tmp_d1 + 1 ) >> 1;
-                    frame1.setValue( c, x, y, (uint8_t)tmp_avg );
-                    frame2.setValue( c, x, y, (uint8_t)tmp_avg );
+                    tmp_avg = ( static_cast<uint32_t>(tmp_d0) + static_cast<uint32_t>(tmp_d1) + 1 ) >> 1;
+                    frame1.setValue( c, x, y, static_cast<uint8_t>(tmp_avg) );
+                    frame2.setValue( c, x, y, static_cast<uint8_t>(tmp_avg) );
                   }
                 }
               }
@@ -680,10 +680,10 @@ void PCCEncoder::preFilterOccupancyMap( PCCImageOccupancyMap& image, size_t kwid
 
           size_t i = limit<int32_t>( int32_t( u + kCenterW - mm ), 0, width - 1 );
           size_t j = limit<int32_t>( int32_t( v + kCenterH - nn ), 0, height - 1 );
-          val += (double)imageTemp.getValue( 0, i, j ) * kernel[q];
+          val += static_cast<double>(imageTemp.getValue( 0, i, j )) * kernel[q];
         }
       }
-      image.setValue( 0, u, v, ( uint8_t )( val >> 8 ) );
+      image.setValue( 0, u, v, static_cast< uint8_t>( val >> 8 ) );
     }
   }
 }
@@ -819,41 +819,41 @@ bool PCCEncoder::modifyOccupancyMap( const size_t           imageWidth,
             if ( occupancyMap[index] == 0 ) {
               changedPixCnt0To1++;
               if ( params_.keepIntermediateFiles_ ) {
-                tmpC = (char)255;
+                tmpC = static_cast<char>(255);
                 ofile.write( &tmpC, 1 );
-                tmpC = (char)0;
+                tmpC = static_cast<char>(0);
                 ofile.write( &tmpC, 1 );
-                tmpC = (char)0;
+                tmpC = static_cast<char>(0);
                 ofile.write( &tmpC, 1 );
               }
             } else {
               changedPixCnt1To0++;
               if ( params_.keepIntermediateFiles_ ) {
-                tmpC = (char)0;
+                tmpC = static_cast<char>(0);
                 ofile.write( &tmpC, 1 );
-                tmpC = (char)255;
+                tmpC = static_cast<char>(255);
                 ofile.write( &tmpC, 1 );
-                tmpC = (char)0;
+                tmpC = static_cast<char>(0);
                 ofile.write( &tmpC, 1 );
               }
             }
           } else {
             if ( occupancyMap[index] == 0 ) {
               if ( params_.keepIntermediateFiles_ ) {
-                tmpC = (char)0;
+                tmpC = static_cast<char>(0);
                 ofile.write( &tmpC, 1 );
-                tmpC = (char)0;
+                tmpC = static_cast<char>(0);
                 ofile.write( &tmpC, 1 );
-                tmpC = (char)0;
+                tmpC = static_cast<char>(0);
                 ofile.write( &tmpC, 1 );
               }
             } else {
               if ( params_.keepIntermediateFiles_ ) {
-                tmpC = (char)255;
+                tmpC = static_cast<char>(255);
                 ofile.write( &tmpC, 1 );
-                tmpC = (char)255;
+                tmpC = static_cast<char>(255);
                 ofile.write( &tmpC, 1 );
-                tmpC = (char)255;
+                tmpC = static_cast<char>(255);
                 ofile.write( &tmpC, 1 );
               }
             }
@@ -995,7 +995,7 @@ double PCCEncoder::adjustReferenceAtlasFrame( PCCContext&            context,
     if ( curPatch.getBestMatchIdx() != -1 ) {
       size_t refPOC   = frame.getRefAFOC( listIndex, 0 );
       auto&  refPatch = context[refPOC].getPatch( curPatch.getBestMatchIdx() );
-      tempBitStream.writeSvlc( int32_t( (int64_t)curPatch.getBestMatchIdx() - curId ) );  // approx
+      tempBitStream.writeSvlc( int32_t( static_cast<int64_t>(curPatch.getBestMatchIdx()) - curId ) );  // approx
       tempBitStream.writeUvlc( int32_t( 0 ) );
       tempBitStream.writeSvlc( int32_t( curPatch.getU0() - refPatch.getU0() ) );
       tempBitStream.writeSvlc( int32_t( curPatch.getV0() - refPatch.getV0() ) );
@@ -1006,7 +1006,7 @@ double PCCEncoder::adjustReferenceAtlasFrame( PCCContext&            context,
 
       size_t        quantDD  = curPatch.getSizeD() == 0 ? 0 : ( ( curPatch.getSizeD() - 1 ) / params_.minLevel_ + 1 );
       size_t        prevQDD  = refPatch.getSizeD() == 0 ? 0 : ( ( refPatch.getSizeD() - 1 ) / params_.minLevel_ + 1 );
-      const int64_t delta_dd = ( (int64_t)quantDD ) - ( (int64_t)prevQDD );
+      const int64_t delta_dd = ( static_cast<int64_t>(quantDD) ) - ( static_cast<int64_t>(prevQDD) );
       tempBitStream.writeSvlc( int32_t( delta_dd ) );  // se(v)
 
       int32_t delta_d1 = 0;
@@ -1049,7 +1049,7 @@ double PCCEncoder::adjustReferenceAtlasFrame( PCCContext&            context,
                             refPatch.getPatchOrientation() == curPatch.getPatchOrientation();
         if ( bMatchingRef ) {
           float initSize = tempBitStream.size();
-          tempBitStream.writeSvlc( int32_t( (int64_t)refPatchId - curId ) );  // approx
+          tempBitStream.writeSvlc( int32_t( static_cast<int64_t>(refPatchId) - curId ) );  // approx
           tempBitStream.writeUvlc( int32_t( refIdx ) );
           tempBitStream.writeSvlc( int32_t( curPatch.getU0() - refPatch.getU0() ) );
           tempBitStream.writeSvlc( int32_t( curPatch.getV0() - refPatch.getV0() ) );
@@ -1059,7 +1059,7 @@ double PCCEncoder::adjustReferenceAtlasFrame( PCCContext&            context,
           tempBitStream.writeSvlc( int32_t( curPatch.getV1() - refPatch.getV1() ) );
           size_t quantDD = curPatch.getSizeD() == 0 ? 0 : ( ( curPatch.getSizeD() - 1 ) / params_.minLevel_ + 1 );
           size_t prevQDD = refPatch.getSizeD() == 0 ? 0 : ( ( refPatch.getSizeD() - 1 ) / params_.minLevel_ + 1 );
-          const int64_t delta_dd = ( (int64_t)quantDD ) - ( (int64_t)prevQDD );
+          const int64_t delta_dd = ( static_cast<int64_t>(quantDD) ) - ( static_cast<int64_t>(prevQDD) );
           tempBitStream.writeSvlc( int32_t( delta_dd ) );  // se(v)
 
           int32_t delta_d1 = 0;
@@ -1092,7 +1092,7 @@ double PCCEncoder::adjustReferenceAtlasFrame( PCCContext&            context,
       if ( bestCurIdx >= 0 && maxIou > maxIOUList[bestCurIdx] ) {
         curPatches[bestCurIdx].setBestMatchIdx( refPatchId );    // the matched patch id in preivious frame.
         curPatches[bestCurIdx].setRefAtlasFrameIndex( refIdx );  // the matched patch id in preivious frame.
-        curPatches[bestCurIdx].setPatchType( (uint8_t)PATCH_MODE_P_INTER );
+        curPatches[bestCurIdx].setPatchType( static_cast<uint8_t>(PATCH_MODE_P_INTER) );
         maxIOUList[bestCurIdx] = maxIou;
       }
     }  // refPatch
@@ -1103,11 +1103,11 @@ double PCCEncoder::adjustReferenceAtlasFrame( PCCContext&            context,
   size_t numInterPredictedPatches = 0;
   for ( size_t patchIdx = 0; patchIdx < curPatchCount; patchIdx++ ) {
     if ( curPatches[patchIdx].getBestMatchIdx() != PCC_UNDEFINED_INDEX ) {
-      curPatches[patchIdx].setPatchType( (uint8_t)PATCH_MODE_P_INTER );
+      curPatches[patchIdx].setPatchType( static_cast<uint8_t>(PATCH_MODE_P_INTER) );
       numInterPredictedPatches++;
       sumMaxIOU += maxIOUList[patchIdx];
     } else {
-      curPatches[patchIdx].setPatchType( (uint8_t)PATCH_MODE_P_INTRA );
+      curPatches[patchIdx].setPatchType( static_cast<uint8_t>(PATCH_MODE_P_INTRA) );
     }
 
     tempPatchList.push_back( curPatches[patchIdx] );
@@ -1159,7 +1159,7 @@ void PCCEncoder::spatialConsistencyPack( PCCFrameContext& frame,
     if ( maxIou > thresholdIOU ) {
       // store the best match index
       patches[bestIdx].setBestMatchIdx( id - 1 );  // the matched patch id in previous frame.
-      patches[bestIdx].setPatchType( (uint8_t)PATCH_MODE_P_INTER );
+      patches[bestIdx].setPatchType( static_cast<uint8_t>(PATCH_MODE_P_INTER) );
       matchedPatches.push_back( patches[bestIdx] );
     }
   }
@@ -1170,7 +1170,7 @@ void PCCEncoder::spatialConsistencyPack( PCCFrameContext& frame,
     assert( patch.getSizeU0() <= occupancySizeU );
     assert( patch.getSizeV0() <= occupancySizeV );
     if ( patch.getBestMatchIdx() == InvalidPatchIndex ) {
-      patch.setPatchType( (uint8_t)PATCH_MODE_P_INTRA );  // P_TYPE_INTRA
+      patch.setPatchType( static_cast<uint8_t>(PATCH_MODE_P_INTRA) );  // P_TYPE_INTRA
       newOrderPatches.push_back( patch );
     }
   }
@@ -1359,7 +1359,7 @@ void PCCEncoder::spatialConsistencyPackFlexible( PCCFrameContext& frame,
     for ( auto& cpatch : patches ) {
       if ( ( patch.getViewId() == cpatch.getViewId() ) && ( cpatch.getBestMatchIdx() == InvalidPatchIndex ) &&
            ( patch.getLodScaleX() == cpatch.getLodScaleX() && patch.getLodScaleY() == cpatch.getLodScaleY() ) ) {
-        patch.setPatchType( (uint8_t)PATCH_MODE_P_INTRA );
+        patch.setPatchType( static_cast<uint8_t>(PATCH_MODE_P_INTRA) );
         Rect  rect  = Rect( patch.getU1(), patch.getV1(), patch.getSizeU(), patch.getSizeV() );
         Rect  crect = Rect( cpatch.getU1(), cpatch.getV1(), cpatch.getSizeU(), cpatch.getSizeV() );
         float iou   = computeIOU( rect, crect );
@@ -1374,7 +1374,7 @@ void PCCEncoder::spatialConsistencyPackFlexible( PCCFrameContext& frame,
     if ( maxIou > thresholdIOU ) {
       // store the best match index
       patches[bestIdx].setBestMatchIdx( id - 1 );  // the matched patch id in preivious frame.
-      patches[bestIdx].setPatchType( (uint8_t)PATCH_MODE_P_INTER );
+      patches[bestIdx].setPatchType( static_cast<uint8_t>(PATCH_MODE_P_INTER) );
       patches[bestIdx].setRefAtlasFrameIndex( bestRefFrameIdx );
       matchedPatches.push_back( patches[bestIdx] );
     }
@@ -1387,7 +1387,7 @@ void PCCEncoder::spatialConsistencyPackFlexible( PCCFrameContext& frame,
     assert( patch.getSizeU0() <= occupancySizeU );
     assert( patch.getSizeV0() <= occupancySizeV );
     if ( patch.getBestMatchIdx() == InvalidPatchIndex ) {
-      patch.setPatchType( (uint8_t)PATCH_MODE_P_INTRA );
+      patch.setPatchType( static_cast<uint8_t>(PATCH_MODE_P_INTRA) );
       newOrderPatches.push_back( patch );
     }
   }
@@ -1748,7 +1748,7 @@ void PCCEncoder::spatialConsistencyPackTetris( PCCFrameContext& frame, PCCFrameC
     if ( maxIou > thresholdIOU ) {
       // store the best match index
       patches[bestIdx].setBestMatchIdx( id - 1 );  // the matched patch id in preivious frame.
-      patches[bestIdx].setPatchType( (uint8_t)PATCH_MODE_P_INTER );
+      patches[bestIdx].setPatchType( static_cast<uint8_t>(PATCH_MODE_P_INTER) );
       matchedPatches.push_back( patches[bestIdx] );
     }
   }
@@ -3378,8 +3378,8 @@ bool PCCEncoder::generateScaledGeometry( const PCCPointSet3& source, PCCFrameCon
     patches[i].setLodScaleY( params_.levelOfDetailY_ );
     patches[i].getSizeU()  = scaleSizeU;
     patches[i].getSizeV()  = scaleSizeV;
-    patches[i].getSizeU0() = std::ceil( (double)scaleSizeU / params_.occupancyResolution_ );
-    patches[i].getSizeV0() = std::ceil( (double)scaleSizeV / params_.occupancyResolution_ );
+    patches[i].getSizeU0() = std::ceil( static_cast<double>(scaleSizeU) / params_.occupancyResolution_ );
+    patches[i].getSizeV0() = std::ceil( static_cast<double>(scaleSizeV) / params_.occupancyResolution_ );
 
     patches[i].getOccupancy().clear();
     patches[i].getDepth( 0 ).clear();
@@ -3501,9 +3501,9 @@ void PCCEncoder::geometryGroupDilation( PCCContext& context ) {
         // const size_t pos = y * width + x;
         if ( occupancyMap.getValue( 0, x / params_.occupancyPrecision_, y / params_.occupancyPrecision_ ) == 0 ) {
           uint32_t avg =
-              ( ( (uint32_t)frame1.getValue( 0, x, y ) ) + ( (uint32_t)frame2.getValue( 0, x, y ) ) + 1 ) >> 1;
-          frame1.setValue( 0, x, y, (uint16_t)avg );
-          frame2.setValue( 0, x, y, (uint16_t)avg );
+              ( ( static_cast<uint32_t>(frame1.getValue( 0, x, y )) ) + ( static_cast<uint32_t>(frame2.getValue( 0, x, y )) ) + 1 ) >> 1;
+          frame1.setValue( 0, x, y, static_cast<uint16_t>(avg) );
+          frame2.setValue( 0, x, y, static_cast<uint16_t>(avg) );
         }
       }
     }
@@ -3803,12 +3803,12 @@ bool PCCEncoder::predictTextureFrame( PCCFrameContext&       frame,
           }
           delta += offsetValue;
           delta = delta < 0 ? 0 : ( delta > maxValue ? maxValue : delta );
-          image.setValue( c, x, y, ( uint8_t )( delta ) );
+          image.setValue( c, x, y, static_cast< uint8_t>( delta ) );
         }  // c
       } else {
-        image.setValue( 0, x, y, ( uint8_t )( 128 ) );
-        image.setValue( 1, x, y, ( uint8_t )( 128 ) );
-        image.setValue( 2, x, y, ( uint8_t )( 128 ) );
+        image.setValue( 0, x, y, static_cast< uint8_t>( 128 ) );
+        image.setValue( 1, x, y, static_cast< uint8_t>( 128 ) );
+        image.setValue( 2, x, y, static_cast< uint8_t>( 128 ) );
       }
     }
   }
@@ -3853,10 +3853,10 @@ bool PCCEncoder::predictGeometryFrame( PCCFrameContext&        frame,
               const uint16_t value1 = static_cast<uint16_t>( image.getValue( 0, x, y ) );
               const uint16_t value0 = static_cast<uint16_t>( reference.getValue( 0, x, y ) );
               int_least32_t  delta  = 0;
-              delta                 = std::abs( (int_least32_t)value1 - (int_least32_t)value0 );
+              delta                 = std::abs( static_cast<int_least32_t>(value1) - static_cast<int_least32_t>(value0) );
               if ( delta < 0 ) { delta = 0; }
               if ( !params_.losslessGeo_ && delta > 9 ) { delta = 9; }
-              image.setValue( 0, x, y, (uint8_t)delta );
+              image.setValue( 0, x, y, static_cast<uint8_t>(delta) );
             }
           }
         }
@@ -4504,7 +4504,7 @@ bool PCCEncoder::generateGeometryVideo( const PCCGroupOfFrames& sources, PCCCont
     sumDistanceSrcRec += distanceSrcRec;
   }
   if ( params_.pointLocalReconstruction_ || params_.singleMapPixelInterleaving_ ) {
-    const float distanceSrcRec = sumDistanceSrcRec / (float)frames.size();
+    const float distanceSrcRec = sumDistanceSrcRec / static_cast<float>(frames.size());
     if ( distanceSrcRec >= 250.f ) {
       params_.pointLocalReconstruction_   = false;
       params_.mapCountMinus1_             = 1;
@@ -5472,9 +5472,9 @@ void PCCEncoder::pushPullFill( PCCImage<T, 3>&              image,
       if ( occupancyMap[xUp + widthUp * yUp] == 0 ) {
         if ( ( xUp % 2 == 0 ) && ( yUp % 2 == 0 ) ) {
           w1 = 144;
-          w2 = ( x > 0 ? (unsigned char)48 : 0 );
-          w3 = ( y > 0 ? (unsigned char)48 : 0 );
-          w4 = ( ( ( x > 0 ) && ( y > 0 ) ) ? (unsigned char)16 : 0 );
+          w2 = ( x > 0 ? static_cast<unsigned char>(48) : 0 );
+          w3 = ( y > 0 ? static_cast<unsigned char>(48) : 0 );
+          w4 = ( ( ( x > 0 ) && ( y > 0 ) ) ? static_cast<unsigned char>(16) : 0 );
           for ( int cc = 0; cc < 3; cc++ ) {
             T val       = mip.getValue( cc, x, y );
             T valLeft   = ( x > 0 ? mip.getValue( cc, x - 1, y ) : 0 );
@@ -5485,9 +5485,9 @@ void PCCEncoder::pushPullFill( PCCImage<T, 3>&              image,
           }
         } else if ( ( xUp % 2 == 1 ) && ( yUp % 2 == 0 ) ) {
           w1 = 144;
-          w2 = ( x < width - 1 ? (unsigned char)48 : 0 );
-          w3 = ( y > 0 ? (unsigned char)48 : 0 );
-          w4 = ( ( ( x < width - 1 ) && ( y > 0 ) ) ? (unsigned char)16 : 0 );
+          w2 = ( x < width - 1 ? static_cast<unsigned char>(48) : 0 );
+          w3 = ( y > 0 ? static_cast<unsigned char>(48) : 0 );
+          w4 = ( ( ( x < width - 1 ) && ( y > 0 ) ) ? static_cast<unsigned char>(16) : 0 );
           for ( int cc = 0; cc < 3; cc++ ) {
             T val        = mip.getValue( cc, x, y );
             T valRight   = ( x < width - 1 ? mip.getValue( cc, x + 1, y ) : 0 );
@@ -5498,9 +5498,9 @@ void PCCEncoder::pushPullFill( PCCImage<T, 3>&              image,
           }
         } else if ( ( xUp % 2 == 0 ) && ( yUp % 2 == 1 ) ) {
           w1 = 144;
-          w2 = ( x > 0 ? (unsigned char)48 : 0 );
-          w3 = ( y < height - 1 ? (unsigned char)48 : 0 );
-          w4 = ( ( ( x > 0 ) && ( y < height - 1 ) ) ? (unsigned char)16 : 0 );
+          w2 = ( x > 0 ? static_cast<unsigned char>(48) : 0 );
+          w3 = ( y < height - 1 ? static_cast<unsigned char>(48) : 0 );
+          w4 = ( ( ( x > 0 ) && ( y < height - 1 ) ) ? static_cast<unsigned char>(16) : 0 );
           for ( int cc = 0; cc < 3; cc++ ) {
             T val         = mip.getValue( cc, x, y );
             T valLeft     = ( x > 0 ? mip.getValue( cc, x - 1, y ) : 0 );
@@ -5511,9 +5511,9 @@ void PCCEncoder::pushPullFill( PCCImage<T, 3>&              image,
           }
         } else {
           w1 = 144;
-          w2 = ( x < width - 1 ? (unsigned char)48 : 0 );
-          w3 = ( y < height - 1 ? (unsigned char)48 : 0 );
-          w4 = ( ( ( x < width - 1 ) && ( y < height - 1 ) ) ? (unsigned char)16 : 0 );
+          w2 = ( x < width - 1 ? static_cast<unsigned char>(48) : 0 );
+          w3 = ( y < height - 1 ? static_cast<unsigned char>(48) : 0 );
+          w4 = ( ( ( x < width - 1 ) && ( y < height - 1 ) ) ? static_cast<unsigned char>(16) : 0 );
           for ( int cc = 0; cc < 3; cc++ ) {
             T val          = mip.getValue( cc, x, y );
             T valRight     = ( x < width - 1 ? mip.getValue( cc, x + 1, y ) : 0 );
@@ -5606,7 +5606,7 @@ void PCCEncoder::presmoothPointCloudColor( PCCPointSet3& reconstruct, const PCCE
   std::vector<PCCColor3B> temp;
   temp.resize( pointCount );
   for ( size_t m = 0; m < pointCount; ++m ) { temp[m] = reconstruct.getColor( m ); }
-  tbb::task_arena limited( (int)params.nbThread_ );
+  tbb::task_arena limited( static_cast<int>(params.nbThread_) );
   limited.execute( [&] {
     tbb::parallel_for( size_t( 0 ), pointCount, [&]( const size_t i ) {
       //  for (size_t i = 0; i < pointCount; ++i) {
@@ -6603,14 +6603,14 @@ void PCCEncoder::updatePatchInformation( PCCContext& context, SubContext& subCon
     updated.resize( nextPatches.size(), false );
     for ( int32_t index = globalPatchCount; index < curPatches.size(); index++ ) {
       for ( int32_t i = globalPatchCount; i < nextPatches.size(); i++ ) {
-        if ( ( (int32_t)curPatches[index].getIndex() == nextPatches[i].getBestMatchIdx() ) &&
+        if ( ( static_cast<int32_t>(curPatches[index].getIndex()) == nextPatches[i].getBestMatchIdx() ) &&
              ( updated[i] == false ) ) {
           nextPatches[i].setBestMatchIdx( index );
           updated[i] = true;
           break;
         }
       }
-      curPatches[index].getIndex() = (size_t)index;
+      curPatches[index].getIndex() = static_cast<size_t>(index);
       std::cout << "[" << frameIndex << ":" << index << " ," << curPatches[index].getBestMatchIdx() << "] ";
     }
   }
@@ -7138,7 +7138,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
       auto&            patches = context[frameIdx].getPatches();
       vector<PCCPatch> reverseOrderPatchList;
 
-      for ( int i = (int)patches.size() - 1; i >= 0; i-- ) {
+      for ( int i = static_cast<int>(patches.size()) - 1; i >= 0; i-- ) {
         if ( patches[i].getBestMatchIdx() != -1 ) {
           // only 1 previous frame
           assert( frameIdx > 0 );
@@ -7261,11 +7261,11 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
         // INTER patches
         size_t      refPOC   = frame.getRefAFOC( patch.getRefAtlasFrameIndex() );
         const auto& refPatch = context.getFrame( refPOC ).getPatches()[patch.getBestMatchIdx()];
-        auto&       pid      = atgdu.addPatchInformationData( (uint8_t)PATCH_MODE_P_INTER );
+        auto&       pid      = atgdu.addPatchInformationData( static_cast<uint8_t>(PATCH_MODE_P_INTER) );
         TRACE_CODEC( "patch %zu / %zu: Inter \n", patchIndex, totalPatchCount );
         auto& ipdu = pid.getInterPatchDataUnit();
         ipdu.setIpduRefIndex( patch.getRefAtlasFrameIndex() );
-        ipdu.setIpduRefPatchIndex( (int64_t)patch.getBestMatchIdx() - predIndex );
+        ipdu.setIpduRefPatchIndex( static_cast<int64_t>(patch.getBestMatchIdx()) - predIndex );
         ipdu.setIpdu2dPosX( patch.getU0() - refPatch.getU0() );
         ipdu.setIpdu2dPosY( patch.getV0() - refPatch.getV0() );
         if ( asps.getPatchSizeQuantizerPresentFlag() ) {
@@ -7297,7 +7297,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
 
         size_t        quantDD  = patch.getSizeD() == 0 ? 0 : ( ( patch.getSizeD() - 1 ) / minLevel + 1 );
         size_t        prevQDD  = refPatch.getSizeD() == 0 ? 0 : ( ( refPatch.getSizeD() - 1 ) / minLevel + 1 );
-        const int64_t delta_dd = ( (int64_t)quantDD ) - ( (int64_t)prevQDD );
+        const int64_t delta_dd = ( static_cast<int64_t>(quantDD) ) - ( static_cast<int64_t>(prevQDD) );
         ipdu.setIpdu3dPosDeltaMaxZ( delta_dd );
         TRACE_CODEC(
             "IPDU: refAtlasFrame= %d refPatchIdx = %d pos2DXY = %ld %ld pos3DXYZW = %ld %ld %ld %ld size2D = %ld %ld "
@@ -7329,7 +7329,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
       } else {
         // INTRA patches
         uint8_t patchType =
-            ( atgh.getAtghType() == I_TILE_GRP ) ? (uint8_t)PATCH_MODE_I_INTRA : (uint8_t)PATCH_MODE_P_INTRA;
+            ( atgh.getAtghType() == I_TILE_GRP ) ? static_cast<uint8_t>(PATCH_MODE_I_INTRA) : static_cast<uint8_t>(PATCH_MODE_P_INTRA);
         auto& pid = atgdu.addPatchInformationData( patchType );
         TRACE_CODEC( "patch %zu / %zu: Intra \n", patchIndex, totalPatchCount );
         auto& pdu = pid.getPatchDataUnit();
@@ -7399,7 +7399,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
       for ( size_t mpsPatchIndex = 0; mpsPatchIndex < numberOfPcmPatches; ++mpsPatchIndex ) {
         auto&   rawPointsPatch = pcmPatches[mpsPatchIndex];
         uint8_t patchType =
-            ( atgh.getAtghType() == I_TILE_GRP ) ? (uint8_t)PATCH_MODE_I_RAW : (uint8_t)PATCH_MODE_P_RAW;
+            ( atgh.getAtghType() == I_TILE_GRP ) ? static_cast<uint8_t>(PATCH_MODE_I_RAW) : static_cast<uint8_t>(PATCH_MODE_P_RAW);
         auto& pid  = atgdu.addPatchInformationData( patchType );
         auto& ppdu = pid.getRawPatchDataUnit();
         TRACE_CODEC( "patch %zu / %zu: raw \n", patches.size() + mpsPatchIndex, totalPatchCount );
@@ -7430,7 +7430,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
       for ( size_t eomPatchIndex = 0; eomPatchIndex < numberOfEomPatches; ++eomPatchIndex ) {
         auto&   eomPatch = frame.getEomPatches()[eomPatchIndex];
         uint8_t patchType =
-            ( atgh.getAtghType() == I_TILE_GRP ) ? (uint8_t)PATCH_MODE_I_EOM : (uint8_t)PATCH_MODE_P_EOM;
+            ( atgh.getAtghType() == I_TILE_GRP ) ? static_cast<uint8_t>(PATCH_MODE_I_EOM) : static_cast<uint8_t>(PATCH_MODE_P_EOM);
         auto& pid  = atgdu.addPatchInformationData( patchType );
         auto& epdu = pid.getEomPatchDataUnit();
         TRACE_CODEC( "patch %zu / %zu: EOM \n", patches.size() + pcmPatches.size() + eomPatchIndex, totalPatchCount );
@@ -7452,7 +7452,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
       }
     }
     TRACE_CODEC( "patch %zu / %zu: end \n", patches.size(), patches.size() );
-    uint8_t patchType = ( atgh.getAtghType() == I_TILE_GRP ) ? (uint8_t)PATCH_MODE_I_END : (uint8_t)PATCH_MODE_P_END;
+    uint8_t patchType = ( atgh.getAtghType() == I_TILE_GRP ) ? static_cast<uint8_t>(PATCH_MODE_I_END) : static_cast<uint8_t>(PATCH_MODE_P_END);
     atgdu.addPatchInformationData( patchType );
   }
 }

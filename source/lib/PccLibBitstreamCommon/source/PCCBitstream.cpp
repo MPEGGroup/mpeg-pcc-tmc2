@@ -64,7 +64,7 @@ bool PCCBitstream::initialize( std::vector<uint8_t>& data ) {
   return true;
 }
 
-bool PCCBitstream::initialize( std::string compressedStreamPath ) {
+bool PCCBitstream::initialize( const std::string& compressedStreamPath ) {
   std::ifstream fin( compressedStreamPath, std::ios::binary );
   if ( !fin.is_open() ) { return false; }
   fin.seekg( 0, std::ios::end );
@@ -77,7 +77,7 @@ bool PCCBitstream::initialize( std::string compressedStreamPath ) {
   return true;
 }
 
-bool PCCBitstream::write( std::string compressedStreamPath ) {
+bool PCCBitstream::write( const std::string& compressedStreamPath ) {
   std::ofstream fout( compressedStreamPath, std::ios::binary );
   if ( !fout.is_open() ) { return false; }
   fout.write( reinterpret_cast<const char*>( data_.data() ), size() );
@@ -138,7 +138,7 @@ void PCCBitstream::write( PCCVideoBitstream& videoBitstream ) {
 
 void PCCBitstream::writeBuffer( const uint8_t* data, const size_t size ) {
   realloc( size );
-  write( (int32_t)size, 32 );
+  write( static_cast<int32_t>(size), 32 );
 #ifdef BITSTREAM_TRACE
   trace( "Code: size = %zu \n", size );
 #endif
@@ -146,7 +146,8 @@ void PCCBitstream::writeBuffer( const uint8_t* data, const size_t size ) {
   position_.bytes += size;
 }
 void PCCBitstream::copyFrom( PCCBitstream& dataBitstream, const uint64_t startByte, const uint64_t bitstreamSize ) {
-  if ( data_.size() < position_.bytes + bitstreamSize ) data_.resize( position_.bytes + bitstreamSize );
+  if ( data_.size() < position_.bytes + bitstreamSize ) { data_.resize( position_.bytes + bitstreamSize );
+}
   memcpy( data_.data() + position_.bytes, dataBitstream.buffer() + startByte, bitstreamSize );  // dest, source
   position_.bytes += bitstreamSize;
   PCCBistreamPosition pos = dataBitstream.getPosition();

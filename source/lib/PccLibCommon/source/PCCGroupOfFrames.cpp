@@ -36,11 +36,11 @@
 
 using namespace pcc;
 
-PCCGroupOfFrames::PCCGroupOfFrames() {}
+PCCGroupOfFrames::PCCGroupOfFrames() = default;
 PCCGroupOfFrames::PCCGroupOfFrames( size_t value ) { frames_.resize( value ); }
 PCCGroupOfFrames::~PCCGroupOfFrames() { frames_.clear(); }
 
-bool PCCGroupOfFrames::load( const std::string       uncompressedDataPath,
+bool PCCGroupOfFrames::load( const std::string&       uncompressedDataPath,
                              const size_t            startFrameNumber,
                              const size_t            endFrameNumber,
                              const PCCColorTransform colorTransform,
@@ -62,7 +62,7 @@ bool PCCGroupOfFrames::load( const std::string       uncompressedDataPath,
   return true;
 }
 
-bool PCCGroupOfFrames::write( const std::string reconstructedDataPath, size_t& frameNumber ) {
+bool PCCGroupOfFrames::write( const std::string& reconstructedDataPath, size_t& frameNumber ) {
   char fileName[4096];
   for ( auto& pointSet : frames_ ) {
     sprintf( fileName, reconstructedDataPath.c_str(), frameNumber++ );

@@ -43,7 +43,7 @@ using namespace pcc;
 
 void PCCPatchSegmenter3::setNbThread( size_t nbThread ) {
   nbThread_ = nbThread;
-  if ( nbThread_ > 0 ) { tbb::task_scheduler_init init( (int)nbThread ); }
+  if ( nbThread_ > 0 ) { tbb::task_scheduler_init init( static_cast<int>(nbThread) ); }
 }
 
 void PCCPatchSegmenter3::compute( const PCCPointSet3&                 geometry,
@@ -149,7 +149,7 @@ void PCCPatchSegmenter3::initialSegmentation( const PCCPointSet3&         geomet
   weightValue[0] = weightValue[3] = axisWeight[0];
   weightValue[1] = weightValue[4] = axisWeight[1];
   weightValue[2] = weightValue[5] = axisWeight[2];
-  tbb::task_arena limited( (int)nbThread_ );
+  tbb::task_arena limited( static_cast<int>(nbThread_) );
   limited.execute( [&] {
     tbb::parallel_for( size_t( 0 ), pointCount, [&]( const size_t i ) {
       const PCCVector3D normal       = normalsGen.getNormal( i );
@@ -173,7 +173,7 @@ void PCCPatchSegmenter3::computeAdjacencyInfo( const PCCPointSet3&              
                                                const size_t                      maxNNCount ) {
   const size_t pointCount = pointCloud.getPointCount();
   adj.resize( pointCount );
-  tbb::task_arena limited( (int)nbThread_ );
+  tbb::task_arena limited( static_cast<int>(nbThread_) );
   limited.execute( [&] {
     tbb::parallel_for( size_t( 0 ), pointCount, [&]( const size_t i ) {
       PCCNNResult result;
@@ -192,7 +192,7 @@ void PCCPatchSegmenter3::computeAdjacencyInfoInRadius( const PCCPointSet3&      
                                                        const size_t                      radius ) {
   const size_t pointCount = pointCloud.getPointCount();
   adj.resize( pointCount );
-  tbb::task_arena limited( (int)nbThread_ );
+  tbb::task_arena limited( static_cast<int>(nbThread_) );
   limited.execute( [&] {
     tbb::parallel_for( size_t( 0 ), pointCount, [&]( const size_t i ) {
       PCCNNResult result;
@@ -212,7 +212,7 @@ void PCCPatchSegmenter3::computeAdjacencyInfoDist( const PCCPointSet3&          
   const size_t pointCount = pointCloud.getPointCount();
   adj.resize( pointCount );
   adjDist.resize( pointCount );
-  tbb::task_arena limited( (int)nbThread_ );
+  tbb::task_arena limited( static_cast<int>(nbThread_) );
   limited.execute( [&] {
     tbb::parallel_for( size_t( 0 ), pointCount, [&]( const size_t i ) {
       PCCNNResult result;
@@ -256,7 +256,7 @@ void PCCPatchSegmenter3::resampledPointcloud( std::vector<size_t>& pointCount,
   size_t  d1CountPerPatch  = 0;
   size_t  eomCountPerPatch = 0;
   int16_t projectionTypeIndication =
-      ( -2 * (int16_t)patch.getProjectionMode() + 1 );  // projection=0 -> 1, projection=1 -> -1
+      ( -2 * static_cast<int16_t>(patch.getProjectionMode()) + 1 );  // projection=0 -> 1, projection=1 -> -1
   for ( size_t v = 0; v < patch.getSizeV(); ++v ) {
     for ( size_t u = 0; u < patch.getSizeU(); ++u ) {
       const size_t p = v * patch.getSizeU() + u;
@@ -417,7 +417,7 @@ int16_t PCCPatchSegmenter3::getPatchSurfaceThickness( const PCCPointSet3&      p
   }  // connectcomponent
 
   for ( size_t i = 0; i < patchSurfaceThicknessList.size(); i++ ) {
-    double avg_error = d1NumList[i] == 0 ? 0 : (double)errSumList[i] / (double)d1NumList[i];
+    double avg_error = d1NumList[i] == 0 ? 0 : static_cast<double>(errSumList[i]) / static_cast<double>(d1NumList[i]);
     if ( avg_error < Threshold_Color_Error ) {
       patch_surfaceThickness = patchSurfaceThicknessList[i];
       break;
@@ -600,7 +600,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
         }
       }
 
-      numChunks = (int)chunks.size();
+      numChunks = static_cast<int>(chunks.size());
 
       for ( int i = 0; i < numChunks; ++i ) {
         std::cout << "Chunk " << i << " : " << std::endl;
@@ -804,7 +804,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
       size_t d1CountPerPatch  = 0;
       size_t eomCountPerPatch = 0;
       patch.setEOMCount( 0 );
-      patch.setPatchType( (uint8_t)PATCH_MODE_P_INTRA );
+      patch.setPatchType( static_cast<uint8_t>(PATCH_MODE_P_INTRA) );
       const size_t clusterIndex        = partition[connectedComponent[0]];
       bIsAdditionalProjectionPlane     = false;
       patch.getAxisOfAdditionalPlane() = 0;
@@ -1034,7 +1034,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
           if ( patch.getProjectionMode() == 0 ) {
             patch.getD1() = ( minD0 / minLevel ) * minLevel;
           } else {
-            patch.getD1() = size_t( ceil( (double)maxD0 / (double)minLevel ) ) * minLevel;
+            patch.getD1() = size_t( ceil( static_cast<double>(maxD0) / static_cast<double>(minLevel) ) ) * minLevel;
           }
         }
       }  // i
@@ -1044,11 +1044,11 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
       size_t noquantizedPatchSize2DX = ( patch.getPatchSize2DXInPixel() );
       size_t noquantizedPatchSize2DY = ( patch.getPatchSize2DYInPixel() );
       if ( quantizerSizeX != 0 ) {
-        patch.setPatchSize2DXInPixel( ceil( (double)noquantizedPatchSize2DX / (double)quantizerSizeX ) *
+        patch.setPatchSize2DXInPixel( ceil( static_cast<double>(noquantizedPatchSize2DX) / static_cast<double>(quantizerSizeX) ) *
                                       quantizerSizeX );
       }
       if ( quantizerSizeY != 0 ) {
-        patch.setPatchSize2DYInPixel( ceil( (double)noquantizedPatchSize2DY / (double)quantizerSizeY ) *
+        patch.setPatchSize2DYInPixel( ceil( static_cast<double>(noquantizedPatchSize2DY) / static_cast<double>(quantizerSizeY) ) *
                                       quantizerSizeY );
       }
       ++patch.getSizeU0();
@@ -1300,7 +1300,7 @@ void PCCPatchSegmenter3::refineSegmentation( const PCCPointSet3&         pointCl
   std::vector<size_t>              tempPartition( pointCount );
   std::vector<std::vector<size_t>> scoresSmooth( pointCount, std::vector<size_t>( orientationCount ) );
   for ( size_t k = 0; k < iterationCount; ++k ) {
-    tbb::task_arena limited( (int)nbThread_ );
+    tbb::task_arena limited( static_cast<int>(nbThread_) );
     limited.execute( [&] {
       tbb::parallel_for( size_t( 0 ), pointCount, [&]( const size_t i ) {
         auto& scoreSmooth = scoresSmooth[i];
@@ -1378,9 +1378,9 @@ void PCCPatchSegmenter3::refineSegmentationGridBased( const PCCPointSet3&       
   std::unordered_map<size_t, voxelType> grid;
   for ( size_t i = 0; i < pointCount; ++i ) {
     const auto&  pos = pointCloud[i];
-    const size_t x0  = ( ( (size_t)pos[0] + voxDimHalf ) >> voxDimShift );
-    const size_t y0  = ( ( (size_t)pos[1] + voxDimHalf ) >> voxDimShift );
-    const size_t z0  = ( ( (size_t)pos[2] + voxDimHalf ) >> voxDimShift );
+    const size_t x0  = ( ( static_cast<size_t>(pos[0]) + voxDimHalf ) >> voxDimShift );
+    const size_t y0  = ( ( static_cast<size_t>(pos[1]) + voxDimHalf ) >> voxDimShift );
+    const size_t z0  = ( ( static_cast<size_t>(pos[2]) + voxDimHalf ) >> voxDimShift );
     size_t       p   = subToInd( x0, y0, z0 );
     if ( !grid.count( p ) ) {
       grid[p].init( 64, orientationCount );
@@ -1449,7 +1449,7 @@ float pcc::computeIOU( Rect a, Rect b ) {
   Rect  intersec         = a & b;
   int   intersectionArea = intersec.area();
   int   unionArea        = a.area() + b.area() - intersectionArea;
-  iou                    = (float)intersectionArea / unionArea;
+  iou                    = static_cast<float>(intersectionArea) / unionArea;
   return iou;
 }
 

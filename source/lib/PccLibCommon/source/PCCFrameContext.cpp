@@ -79,7 +79,8 @@ void PCCFrameContext::setRefAFOCList( std::vector<std::vector<size_t>>& list ) {
   size_t listSize = ( std::min )( refAFOCList_.size(), list.size() );
   for ( size_t i = 0; i < listSize; i++ ) {
     size_t refSize = ( std::min )( refAFOCList_[i].size(), list[i].size() );
-    for ( size_t j = 0; j < refSize; j++ ) refAFOCList_[i][j] = list[i][j];
+    for ( size_t j = 0; j < refSize; j++ ) { refAFOCList_[i][j] = list[i][j];
+}
   }
 }
 void PCCFrameContext::setRefAFOCList( PCCContext& context ) {
@@ -90,9 +91,11 @@ void PCCFrameContext::setRefAFOCList( PCCContext& context ) {
     size_t maxRefNum = context.getSizeOfRefAtlasFrameList( i );
     for ( size_t j = 0; j < maxRefNum; j++ ) {
       refPOC = int( index_ ) + int( context.getRefAtlasFrame( i, j ) );
-      if ( refPOC >= 0 ) refAFOCList_[i].push_back( refPOC );
+      if ( refPOC >= 0 ) { refAFOCList_[i].push_back( refPOC );
+}
     }
-    if ( refAFOCList_[i].size() == 0 ) refAFOCList_[i].push_back( 255 );
+    if ( refAFOCList_[i].empty() ) { refAFOCList_[i].push_back( 255 );
+}
   }
 }
 
@@ -109,8 +112,9 @@ void PCCFrameContext::constructAtghRefListStruct( PCCContext& context, AtlasTile
   if ( index_ <= afps.getAfpsNumRefIdxDefaultActiveMinus1() ) {  // 3
     atgh.setAtghNumRefIdxActiveOverrideFlag( true );
     atgh.setAtghNumRefIdxActiveMinus1( index_ == 0 ? 0 : ( index_ - 1 ) );
-  } else
+  } else {
     atgh.setAtghNumRefIdxActiveOverrideFlag( false );
+}
 }
 
 void PCCFrameContext::allocOneLayerData() {

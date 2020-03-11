@@ -150,9 +150,9 @@ void QualityMetrics::compute( const PCCPointSet3& pointcloudA, const PCCPointSet
               b += nbdup * pointcloudB.getColor( sameDistList[i] )[2];
               nbdupcumul += nbdup;
             }
-            rgb[0] = (unsigned char)round( (double)r / nbdupcumul );
-            rgb[1] = (unsigned char)round( (double)g / nbdupcumul );
-            rgb[2] = (unsigned char)round( (double)b / nbdupcumul );
+            rgb[0] = static_cast<unsigned char>(round( static_cast<double>(r) / nbdupcumul ));
+            rgb[1] = static_cast<unsigned char>(round( static_cast<double>(g) / nbdupcumul ));
+            rgb[2] = static_cast<unsigned char>(round( static_cast<double>(b) / nbdupcumul ));
             convertRGBtoYUV_BT709( rgb, yuvB );
             for ( size_t i = 0; i < 3; i++ ) { distColor[i] = pow( yuvA[i] - yuvB[i], 2.f ); }
           } break;
@@ -370,7 +370,7 @@ void PCCMetrics::display() {
     std::cout << "Imported intrinsic resoluiton: " << params_.resolution_ << std::endl;
     std::cout << "Peak distance for PSNR: " << params_.resolution_ << std::endl;
     std::cout << "Point cloud sizes for org version, dec version, and the scaling ratio: " << sourcePoints_[i] << ", "
-              << reconstructDuplicates_[i] << ", " << (float)reconstructDuplicates_[i] / (float)sourcePoints_[i]
+              << reconstructDuplicates_[i] << ", " << static_cast<float>(reconstructDuplicates_[i]) / static_cast<float>(sourcePoints_[i])
               << std::endl;
     quality1[i].print( '1' );
     quality2[i].print( '2' );

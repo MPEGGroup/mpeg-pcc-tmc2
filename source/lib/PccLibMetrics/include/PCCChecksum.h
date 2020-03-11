@@ -46,10 +46,10 @@ class PCCChecksum {
  public:
   PCCChecksum();
   ~PCCChecksum();
-  void setParameters( PCCMetricsParameters params );
+  void setParameters( const PCCMetricsParameters& params );
 
-  void read( const std::string compressedStreamPath );
-  void write( const std::string compressedStreamPath );
+  void read( const std::string& compressedStreamPath );
+  void write( const std::string& compressedStreamPath );
 
   void computeSource( PCCGroupOfFrames& groupOfFrames );
   void computeReordered( PCCGroupOfFrames& groupOfFrames );

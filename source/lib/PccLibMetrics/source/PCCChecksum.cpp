@@ -39,14 +39,14 @@
 using namespace std;
 using namespace pcc;
 
-PCCChecksum::PCCChecksum() {}
+PCCChecksum::PCCChecksum() = default;
 PCCChecksum::~PCCChecksum() {
   checksumsSrc_.clear();
   checksumsOrd_.clear();
   checksumsRec_.clear();
   checksumsDec_.clear();
 }
-void PCCChecksum::setParameters( PCCMetricsParameters params ) { params_ = params; }
+void PCCChecksum::setParameters( const PCCMetricsParameters& params ) { params_ = params; }
 
 void PCCChecksum::computeSource( PCCGroupOfFrames& groupOfFrames ) {
   for ( auto& frame : groupOfFrames ) {
@@ -87,16 +87,18 @@ void PCCChecksum::computeDecoded( PCCGroupOfFrames& groupOfFrames ) {
   }
 }
 
-void PCCChecksum::read( const std::string compressedStreamPath ) {
+void PCCChecksum::read( const std::string& compressedStreamPath ) {
   std::ifstream fin( removeFileExtension( compressedStreamPath ) + ".checksum", std::ios::in );
   if ( fin.is_open() ) {
-    size_t numberOfFrames = 0, sizeChecksum = 0;
+    size_t numberOfFrames = 0;
+    size_t sizeChecksum = 0;
     fin >> numberOfFrames >> sizeChecksum;
     checksumsRec_.resize( numberOfFrames );
     for ( auto& checksum : checksumsRec_ ) {
       checksum.resize( sizeChecksum, 0 );
       for ( auto& c : checksum ) {
-        uint8_t c0, c1;
+        uint8_t c0;
+        uint8_t c1;
         fin >> c0 >> c1;
         c = ( ( c0 + ( c0 > '9' ? 9 : 0 ) ) & 0x0F ) * 16 + ( ( c1 + ( c1 > '9' ? 9 : 0 ) ) & 0x0F );
       }
@@ -108,11 +110,11 @@ void PCCChecksum::read( const std::string compressedStreamPath ) {
   }
 }
 
-void PCCChecksum::write( const std::string compressedStreamPath ) {
+void PCCChecksum::write( const std::string& compressedStreamPath ) {
   std::ofstream fout( removeFileExtension( compressedStreamPath ) + ".checksum", std::ios::out );
   if ( !fout.is_open() ) { return; }
   fout << checksumsRec_.size() << std::endl;
-  fout << ( checksumsRec_.size() == 0 ? 0 : checksumsRec_[0].size() ) << std::endl;
+  fout << ( checksumsRec_.empty() ? 0 : checksumsRec_[0].size() ) << std::endl;
   for ( auto& checksum : checksumsRec_ ) {
     for ( auto& c : checksum ) { fout << std::hex << ( c / 16 ) << std::hex << ( c % 16 ); }
     fout << std::endl;

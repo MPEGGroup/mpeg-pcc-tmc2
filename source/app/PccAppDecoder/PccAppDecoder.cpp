@@ -42,7 +42,7 @@ int main( int argc, char* argv[] ) {
   PCCDecoderParameters decoderParams;
   PCCMetricsParameters metricsParams;
   if ( !parseParameters( argc, argv, decoderParams, metricsParams ) ) { return -1; }
-  if ( decoderParams.nbThread_ > 0 ) { tbb::task_scheduler_init init( (int)decoderParams.nbThread_ ); }
+  if ( decoderParams.nbThread_ > 0 ) { tbb::task_scheduler_init init( static_cast<int>(decoderParams.nbThread_) ); }
 
   // Timers to count elapsed wall/user time
   pcc::chrono::Stopwatch<std::chrono::steady_clock> clockWall;

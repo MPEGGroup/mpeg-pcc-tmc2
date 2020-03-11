@@ -58,7 +58,7 @@ int PCCDecoder::decode( PCCContext&                         context,
                         PCCGroupOfFrames&                   reconstructs,
                         std::vector<std::vector<uint32_t>>& partitions,
                         int32_t                             atlasIndex = 0 ) {
-  if ( params_.nbThread_ > 0 ) { tbb::task_scheduler_init init( (int)params_.nbThread_ ); }
+  if ( params_.nbThread_ > 0 ) { tbb::task_scheduler_init init( static_cast<int>(params_.nbThread_) ); }
 #ifdef CODEC_TRACE
   setTrace( true );
   openTrace( stringFormat( "%s_GOF%u_patch_decode.txt", removeFileExtension( params_.compressedStreamPath_ ).c_str(),
@@ -106,7 +106,7 @@ int PCCDecoder::decode( PCCContext&                         context,
     for ( int mapIndex = 0; mapIndex < sps.getMapCountMinus1( atlasIndex ) + 1; mapIndex++ ) {
       // Decompress D[mapIndex]
       int decodedBitDepth = gi.getGeometryNominal2dBitdepthMinus1() + 1;  // this should be extracted from the bitstream
-      PCCVideoType geometryIndex  = ( PCCVideoType )( VIDEO_GEOMETRY_D0 + mapIndex );
+      PCCVideoType geometryIndex  = static_cast< PCCVideoType>( VIDEO_GEOMETRY_D0 + mapIndex );
       auto&        videoBitstream = context.getVideoBitstream( geometryIndex );
       videoDecoder.decompress( context.getVideoGeometryMultiple()[mapIndex], path.str(), context.size(), videoBitstream,
                                params_.videoDecoderPath_, context, decodedBitDepth, params_.keepIntermediateFiles_,
@@ -156,7 +156,7 @@ int PCCDecoder::decode( PCCContext&                         context,
           for ( int mapIndex = 0; mapIndex < sps.getMapCountMinus1( atlasIndex ) + 1; mapIndex++ ) {
             // decompress T[mapIndex]
             PCCVideoType textureIndex =
-                ( PCCVideoType )( VIDEO_TEXTURE_T0 + attrPartitionIndex + MAX_NUM_ATTR_PARTITIONS * mapIndex );
+                static_cast< PCCVideoType>( VIDEO_TEXTURE_T0 + attrPartitionIndex + MAX_NUM_ATTR_PARTITIONS * mapIndex );
             auto& videoBitstream = context.getVideoBitstream( textureIndex );
             videoDecoder.decompress( context.getVideoTextureMultiple()[mapIndex], path.str(), context.size(),
                                      videoBitstream, params_.videoDecoderPath_, context,
@@ -171,7 +171,7 @@ int PCCDecoder::decode( PCCContext&                         context,
           }
           std::cout << "texture    video ->" << sizeTextureVideo << " B" << std::endl;
         } else {
-          PCCVideoType textureIndex   = ( PCCVideoType )( VIDEO_TEXTURE + attrPartitionIndex );
+          PCCVideoType textureIndex   = static_cast< PCCVideoType>( VIDEO_TEXTURE + attrPartitionIndex );
           auto&        videoBitstream = context.getVideoBitstream( textureIndex );
           videoDecoder.decompress( context.getVideoTexture(),                 // video,
                                    path.str(),                                // path,
@@ -190,7 +190,7 @@ int PCCDecoder::decode( PCCContext&                         context,
           std::cout << "texture video  ->" << videoBitstream.size() << " B" << std::endl;
         }
         if ( sps.getRawPatchEnabledFlag( atlasIndex ) && sps.getRawSeparateVideoPresentFlag( atlasIndex ) ) {
-          PCCVideoType textureIndex     = ( PCCVideoType )( VIDEO_TEXTURE_RAW + attrPartitionIndex );
+          PCCVideoType textureIndex     = static_cast< PCCVideoType>( VIDEO_TEXTURE_RAW + attrPartitionIndex );
           auto&        videoBitstreamMP = context.getVideoBitstream( textureIndex );
           videoDecoder.decompress( context.getVideoMPsTexture(), path.str(), context.size(), videoBitstreamMP,
                                    params_.videoDecoderPath_, context, decodedBitdepthAttributeMP,
@@ -400,7 +400,7 @@ void PCCDecoder::setPostProcessingSeiParameters( GeneratePointCloudParameters& p
       if ( sei->getSpGeometrySmoothingId() == 0 ) {
         params.gridSmoothing_      = true;
         params.gridSize_           = sei->getSpGeometrySmoothingGridSizeMinus2() + 2;
-        params.thresholdSmoothing_ = (double)sei->getSpGeometrySmoothingThreshold();
+        params.thresholdSmoothing_ = static_cast<double>(sei->getSpGeometrySmoothingThreshold());
       }
       if ( sei->getSpGeometrySmoothingId() == 1 ) {
         params.pbfEnableFlag_    = true;
@@ -436,7 +436,7 @@ void PCCDecoder::setPostProcessingSeiParameters( GeneratePointCloudParameters& p
       for ( size_t i = 0; i < sei->getSpDimensionMinus1( index ) + 1; i++ ) {
         if ( sei->getSpAttrSmoothingParamsEnabledFlag( index, i ) ) {
           params.flagColorSmoothing_       = true;
-          params.thresholdColorSmoothing_  = (double)sei->getSpAttrSmoothingThreshold( index, i );
+          params.thresholdColorSmoothing_  = static_cast<double>(sei->getSpAttrSmoothingThreshold( index, i ));
           params.gridColorSmoothing_       = true;
           params.cgridSize_                = sei->getSpAttrSmoothingGridSizeMinus2( index, i ) + 2;
           params.thresholdColorDifference_ = sei->getSpAttrSmoothingThresholdDifference( index, i );
@@ -446,7 +446,7 @@ void PCCDecoder::setPostProcessingSeiParameters( GeneratePointCloudParameters& p
       }
     }
   }
-  params.thresholdLossyOM_              = (size_t)oi.getLossyOccupancyMapCompressionThreshold();
+  params.thresholdLossyOM_              = static_cast<size_t>(oi.getLossyOccupancyMapCompressionThreshold());
   params.removeDuplicatePoints_         = asps.getRemoveDuplicatePointEnabledFlag();
   params.pointLocalReconstruction_      = asps.getPointLocalReconstructionEnabledFlag();
   params.mapCountMinus1_                = sps.getMapCountMinus1( atlasIndex );
@@ -486,7 +486,7 @@ void PCCDecoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& 
       if ( sei->getSpGeometrySmoothingId() == 0 ) {
         params.gridSmoothing_      = true;
         params.gridSize_           = sei->getSpGeometrySmoothingGridSizeMinus2() + 2;
-        params.thresholdSmoothing_ = (double)sei->getSpGeometrySmoothingThreshold();
+        params.thresholdSmoothing_ = static_cast<double>(sei->getSpGeometrySmoothingThreshold());
       }
       if ( sei->getSpGeometrySmoothingId() == 1 ) {
         params.pbfEnableFlag_    = true;
@@ -522,7 +522,7 @@ void PCCDecoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& 
       for ( size_t i = 0; i < sei->getSpDimensionMinus1( index ) + 1; i++ ) {
         if ( sei->getSpAttrSmoothingParamsEnabledFlag( index, i ) ) {
           params.flagColorSmoothing_       = true;
-          params.thresholdColorSmoothing_  = (double)sei->getSpAttrSmoothingThreshold( index, i );
+          params.thresholdColorSmoothing_  = static_cast<double>(sei->getSpAttrSmoothingThreshold( index, i ));
           params.gridColorSmoothing_       = true;
           params.cgridSize_                = sei->getSpAttrSmoothingGridSizeMinus2( index, i ) + 2;
           params.thresholdColorDifference_ = sei->getSpAttrSmoothingThresholdDifference( index, i );
@@ -532,7 +532,7 @@ void PCCDecoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& 
       }
     }
   }
-  params.thresholdLossyOM_              = (size_t)oi.getLossyOccupancyMapCompressionThreshold();
+  params.thresholdLossyOM_              = static_cast<size_t>(oi.getLossyOccupancyMapCompressionThreshold());
   params.removeDuplicatePoints_         = asps.getRemoveDuplicatePointEnabledFlag();
   params.pointLocalReconstruction_      = asps.getPointLocalReconstructionEnabledFlag();
   params.mapCountMinus1_                = sps.getMapCountMinus1( atlasIndex );
@@ -656,8 +656,8 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
         if ( asps.getPatchSizeQuantizerPresentFlag() ) {
           patch.setPatchSize2DXInPixel( pdu.getPdu2dSizeXMinus1() * quantizerSizeX + 1 );
           patch.setPatchSize2DYInPixel( pdu.getPdu2dSizeYMinus1() * quantizerSizeY + 1 );
-          patch.getSizeU0() = ceil( (double)patch.getPatchSize2DXInPixel() / (double)packingBlockSize );
-          patch.getSizeV0() = ceil( (double)patch.getPatchSize2DYInPixel() / (double)packingBlockSize );
+          patch.getSizeU0() = ceil( static_cast<double>(patch.getPatchSize2DXInPixel()) / static_cast<double>(packingBlockSize) );
+          patch.getSizeV0() = ceil( static_cast<double>(patch.getPatchSize2DYInPixel()) / static_cast<double>(packingBlockSize) );
         } else {
           patch.getSizeU0() = pdu.getPdu2dSizeXMinus1() + 1;
           patch.getSizeV0() = pdu.getPdu2dSizeYMinus1() + 1;
@@ -673,12 +673,12 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
         TRACE_CODEC( "patch %zu / %zu: Intra \n", patchIndex, patchCount );
         const size_t max3DCoordinate = size_t( 1 ) << ( gi.getGeometry3dCoordinatesBitdepthMinus1() + 1 );
         if ( patch.getProjectionMode() == 0 ) {
-          patch.getD1() = (int32_t)pdu.getPdu3dPosMinZ() * minLevel;
+          patch.getD1() = static_cast<int32_t>(pdu.getPdu3dPosMinZ()) * minLevel;
         } else {
           if ( asps.get45DegreeProjectionPatchPresentFlag() == 0 ) {
-            patch.getD1() = max3DCoordinate - (int32_t)pdu.getPdu3dPosMinZ() * minLevel;
+            patch.getD1() = max3DCoordinate - static_cast<int32_t>(pdu.getPdu3dPosMinZ()) * minLevel;
           } else {
-            patch.getD1() = ( max3DCoordinate << 1 ) - (int32_t)pdu.getPdu3dPosMinZ() * minLevel;
+            patch.getD1() = ( max3DCoordinate << 1 ) - static_cast<int32_t>(pdu.getPdu3dPosMinZ()) * minLevel;
           }
         }
         prevSizeU0              = patch.getSizeU0();
@@ -720,7 +720,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
             ipdu.getIpduRefIndex(), ipdu.getIpduRefPatchIndex(), ipdu.getIpdu2dPosX(), ipdu.getIpdu2dPosY(),
             ipdu.getIpdu3dPosX(), ipdu.getIpdu3dPosY(), ipdu.getIpdu3dPosMinZ(), ipdu.getIpdu3dPosDeltaMaxZ(),
             ipdu.getIpdu2dDeltaSizeX(), ipdu.getIpdu2dDeltaSizeY() );
-        patch.setBestMatchIdx( ( int32_t )( ipdu.getIpduRefPatchIndex() + predIndex ) );
+        patch.setBestMatchIdx( static_cast< int32_t>( ipdu.getIpduRefPatchIndex() + predIndex ) );
         predIndex += ipdu.getIpduRefPatchIndex() + 1;
         patch.setRefAtlasFrameIndex( ipdu.getIpduRefIndex() );
         size_t      refPOC   = frame.getRefAFOC( patch.getRefAtlasFrameIndex() );
@@ -740,8 +740,8 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
                                         ( ipdu.getIpdu2dDeltaSizeX() ) * quantizerSizeX );
           patch.setPatchSize2DYInPixel( refPatch.getPatchSize2DYInPixel() +
                                         ( ipdu.getIpdu2dDeltaSizeY() ) * quantizerSizeY );
-          patch.getSizeU0() = ceil( (double)patch.getPatchSize2DXInPixel() / (double)packingBlockSize );
-          patch.getSizeV0() = ceil( (double)patch.getPatchSize2DYInPixel() / (double)packingBlockSize );
+          patch.getSizeU0() = ceil( static_cast<double>(patch.getPatchSize2DXInPixel()) / static_cast<double>(packingBlockSize) );
+          patch.getSizeV0() = ceil( static_cast<double>(patch.getPatchSize2DYInPixel()) / static_cast<double>(packingBlockSize) );
         } else {
           patch.getSizeU0() = ipdu.getIpdu2dDeltaSizeX() + refPatch.getSizeU0();
           patch.getSizeV0() = ipdu.getIpdu2dDeltaSizeY() + refPatch.getSizeV0();
@@ -821,8 +821,8 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
             patch.setPatchSize2DYInPixel( refPatch.getPatchSize2DYInPixel() +
                                           ( mpdu.getMpdu2dDeltaSizeY() ) * quantizerSizeY );
 
-            patch.getSizeU0() = ceil( (double)patch.getPatchSize2DXInPixel() / (double)packingBlockSize );
-            patch.getSizeV0() = ceil( (double)patch.getPatchSize2DYInPixel() / (double)packingBlockSize );
+            patch.getSizeU0() = ceil( static_cast<double>(patch.getPatchSize2DXInPixel()) / static_cast<double>(packingBlockSize) );
+            patch.getSizeV0() = ceil( static_cast<double>(patch.getPatchSize2DYInPixel()) / static_cast<double>(packingBlockSize) );
           } else {
             patch.getSizeU0() = mpdu.getMpdu2dDeltaSizeX() + refPatch.getSizeU0();
             patch.getSizeV0() = mpdu.getMpdu2dDeltaSizeY() + refPatch.getSizeV0();
@@ -888,7 +888,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
         TRACE_CODEC( "patch %zu / %zu: Inter \n", patchIndex, patchCount );
         TRACE_CODEC( "SDU: refAtlasFrame= 0 refPatchIdx = %d \n", patchIndex );
 
-        patch.setBestMatchIdx( ( int32_t )( patchIndex ) );
+        patch.setBestMatchIdx( static_cast< int32_t>( patchIndex ) );
         predIndex += patchIndex;
         patch.setRefAtlasFrameIndex( 0 );
         size_t      refPOC   = frame.getRefAFOC( patch.getRefAtlasFrameIndex() );
@@ -908,8 +908,8 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
           patch.setPatchSize2DXInPixel( refPatch.getPatchSize2DXInPixel() );
           patch.setPatchSize2DYInPixel( refPatch.getPatchSize2DYInPixel() );
 
-          patch.getSizeU0() = ceil( (double)patch.getPatchSize2DXInPixel() / (double)packingBlockSize );
-          patch.getSizeV0() = ceil( (double)patch.getPatchSize2DYInPixel() / (double)packingBlockSize );
+          patch.getSizeU0() = ceil( static_cast<double>(patch.getPatchSize2DXInPixel()) / static_cast<double>(packingBlockSize) );
+          patch.getSizeV0() = ceil( static_cast<double>(patch.getPatchSize2DYInPixel()) / static_cast<double>(packingBlockSize) );
         } else {
           patch.getSizeU0() = refPatch.getSizeU0();
           patch.getSizeV0() = refPatch.getSizeV0();

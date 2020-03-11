@@ -46,7 +46,7 @@ class PCCEncoderParameters {
   void   print();
   bool   check();
   void   completePath();
-  void   constructAspsRefList( PCCContext& context, size_t aspsIdx, size_t afpsIdx );
+  static void   constructAspsRefList( PCCContext& context, size_t aspsIdx, size_t afpsIdx );
   void   initializeContext( PCCContext& context );
   size_t startFrameNumber_;
 

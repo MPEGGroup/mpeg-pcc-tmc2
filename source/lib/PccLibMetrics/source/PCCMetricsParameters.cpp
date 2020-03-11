@@ -61,7 +61,7 @@ PCCMetricsParameters::PCCMetricsParameters() {
   computeHausdorff_   = false;
 }
 
-PCCMetricsParameters::~PCCMetricsParameters() {}
+PCCMetricsParameters::~PCCMetricsParameters() = default;
 
 void PCCMetricsParameters::completePath() {
   if ( !uncompressedDataFolder_.empty() ) {

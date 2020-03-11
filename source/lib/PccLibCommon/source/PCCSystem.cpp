@@ -79,14 +79,15 @@ int pcc::system( const char* command ) noexcept {
   size_t                     num_converted = 0;
   mbstowcs_s( &num_converted, cmd.get(), cmd_size, command, _TRUNCATE );
 
-  if ( !CreateProcessW( nullptr, cmd.get(), nullptr, nullptr, 0, 0, nullptr, nullptr, &si, &pi ) ) { return -1; }
+  if ( CreateProcessW( nullptr, cmd.get(), nullptr, nullptr, 0, 0, nullptr, nullptr, &si, &pi ) == 0 ) { return -1; }
 
   WaitForSingleObject( pi.hProcess, INFINITE );
 
   DWORD ret = -1;
   GetExitCodeProcess( pi.hProcess, &ret );
 
-  FILETIME dummy, userTime;
+  FILETIME dummy;
+  FILETIME userTime;
   GetProcessTimes( pi.hProcess, &dummy, &dummy, &dummy, &userTime );
 
   ULARGE_INTEGER val;
