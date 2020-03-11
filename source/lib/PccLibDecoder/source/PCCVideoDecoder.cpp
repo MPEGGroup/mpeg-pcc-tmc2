@@ -38,5 +38,5 @@
 
 using namespace pcc;
 
-PCCVideoDecoder::PCCVideoDecoder() {}
-PCCVideoDecoder::~PCCVideoDecoder() {}
+PCCVideoDecoder::PCCVideoDecoder()  = default;
+PCCVideoDecoder::~PCCVideoDecoder() = default;

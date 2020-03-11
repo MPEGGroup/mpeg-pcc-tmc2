@@ -42,7 +42,7 @@ int main( int argc, char* argv[] ) {
   PCCEncoderParameters encoderParams;
   PCCMetricsParameters metricsParams;
   if ( !parseParameters( argc, argv, encoderParams, metricsParams ) ) { return -1; }
-  if ( encoderParams.nbThread_ > 0 ) { tbb::task_scheduler_init init( static_cast<int>(encoderParams.nbThread_) ); }
+  if ( encoderParams.nbThread_ > 0 ) { tbb::task_scheduler_init init( static_cast<int>( encoderParams.nbThread_ ) ); }
 
   // Timers to count elapsed wall/user time
   pcc::chrono::Stopwatch<std::chrono::steady_clock> clockWall;
@@ -911,8 +911,8 @@ bool parseParameters( int                   argc,
   }
 
   if ( ( encoderParams.levelOfDetailX_ == 0 || encoderParams.levelOfDetailY_ == 0 ) ) {
-    if ( encoderParams.levelOfDetailX_ == 0 ) encoderParams.levelOfDetailX_ = 1;
-    if ( encoderParams.levelOfDetailY_ == 0 ) encoderParams.levelOfDetailY_ = 1;
+    if ( encoderParams.levelOfDetailX_ == 0 ) { encoderParams.levelOfDetailX_ = 1; }
+    if ( encoderParams.levelOfDetailY_ == 0 ) { encoderParams.levelOfDetailY_ = 1; }
     err.error() << "levelOfDetailX and levelOfDetailY should be greater than 1. levelOfDetailX="
                 << encoderParams.levelOfDetailX_ << "., levelOfDetailY=" << encoderParams.levelOfDetailY_ << std::endl;
   }
@@ -925,12 +925,12 @@ bool parseParameters( int                   argc,
   if ( encoderParams.enablePointCloudPartitioning_ && encoderParams.patchExpansion_ ) {
     err.error() << "Point cloud partitioning does not currently support patch expansion. \n";
   }
-  if ( encoderParams.enablePointCloudPartitioning_ && encoderParams.globalPatchAllocation_ ) {
+  if ( encoderParams.enablePointCloudPartitioning_ && ( encoderParams.globalPatchAllocation_ != 0 ) ) {
     err.error() << "Point cloud partitioning does not currently support global patch allocation. \n";
   }
 
-  if ( encoderParams.patchPrecedenceOrderFlag_ == 0 && encoderParams.lowDelayEncoding_ ) {
-    encoderParams.lowDelayEncoding_ = 0;
+  if ( static_cast<int>( encoderParams.patchPrecedenceOrderFlag_ ) == 0 && encoderParams.lowDelayEncoding_ ) {
+    encoderParams.lowDelayEncoding_ = false;
     err.error()
         << "Low Delay Encoding can be used only when patchPrecendenceOrder is enabled. lowDelayEncoding_ is set 0\n";
   }
@@ -944,7 +944,7 @@ bool parseParameters( int                   argc,
 
   // report the current configuration (only in the absence of errors so
   // that errors/warnings are more obvious and in the same place).
-  if ( err.is_errored ) return false;
+  if ( err.is_errored ) { return false; }
 
   return true;
 }
@@ -962,7 +962,9 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
   size_t                   contextIndex = 0;
   PCCEncoder               encoder;
   encoder.setParameters( encoderParams );
-  std::vector<std::vector<uint8_t>> reconstructedChecksums, sourceReorderChecksums, reconstructedReorderChecksums;
+  std::vector<std::vector<uint8_t>> reconstructedChecksums;
+  std::vector<std::vector<uint8_t>> sourceReorderChecksums;
+  std::vector<std::vector<uint8_t>> reconstructedReorderChecksums;
   PCCMetrics                        metrics;
   PCCChecksum                       checksum;
   metrics.setParameters( metricsParams );
@@ -978,7 +980,8 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
     context.addVpccParameterSet( contextIndex );
     context.setActiveVpsId( contextIndex );
 
-    PCCGroupOfFrames sources, reconstructs;
+    PCCGroupOfFrames sources;
+    PCCGroupOfFrames reconstructs;
     if ( !sources.load( encoderParams.uncompressedDataPath_, startFrameNumber, endFrameNumber,
                         encoderParams.colorTransform_ ) ) {
       return -1;
@@ -1008,13 +1011,13 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
     PCCGroupOfFrames normals;
     bool             bRunMetric = true;
     if ( metricsParams.computeMetrics_ ) {
-      if ( metricsParams.normalDataPath_ != "" ) {
+      if ( !metricsParams.normalDataPath_.empty() ) {
         if ( !normals.load( metricsParams.normalDataPath_, startFrameNumber, endFrameNumber, COLOR_TRANSFORM_NONE,
                             true ) ) {
           bRunMetric = false;
         }
       }
-      if ( bRunMetric ) metrics.compute( sources, reconstructs, normals );
+      if ( bRunMetric ) { metrics.compute( sources, reconstructs, normals ); }
     }
     if ( metricsParams.computeChecksum_ ) {
       if ( encoderParams.losslessGeo_ ) {
@@ -1023,7 +1026,7 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
       }
       checksum.computeReconstructed( reconstructs );
     }
-    if ( ret ) { return ret; }
+    if ( ret != 0 ) { return ret; }
     if ( !encoderParams.reconstructedDataPath_.empty() ) {
       reconstructs.write( encoderParams.reconstructedDataPath_, reconstructedFrameNumber );
     }

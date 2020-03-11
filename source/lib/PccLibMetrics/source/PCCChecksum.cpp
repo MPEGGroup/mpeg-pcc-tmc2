@@ -91,7 +91,7 @@ void PCCChecksum::read( const std::string& compressedStreamPath ) {
   std::ifstream fin( removeFileExtension( compressedStreamPath ) + ".checksum", std::ios::in );
   if ( fin.is_open() ) {
     size_t numberOfFrames = 0;
-    size_t sizeChecksum = 0;
+    size_t sizeChecksum   = 0;
     fin >> numberOfFrames >> sizeChecksum;
     checksumsRec_.resize( numberOfFrames );
     for ( auto& checksum : checksumsRec_ ) {

@@ -41,7 +41,7 @@ int main( int argc, char* argv[] ) {
 
   PCCMetricsParameters metricsParams;
   if ( !parseParameters( argc, argv, metricsParams ) ) { return -1; }
-  if ( metricsParams.nbThread_ > 0 ) { tbb::task_scheduler_init init( static_cast<int>(metricsParams.nbThread_) ); }
+  if ( metricsParams.nbThread_ > 0 ) { tbb::task_scheduler_init init( static_cast<int>( metricsParams.nbThread_ ) ); }
 
   // Timers to count elapsed wall/user time
   pcc::chrono::Stopwatch<std::chrono::steady_clock> clockWall;
@@ -157,7 +157,7 @@ bool parseParameters( int argc, char* argv[], PCCMetricsParameters& metricsParam
 
   // report the current configuration (only in the absence of errors so
   // that errors/warnings are more obvious and in the same place).
-  if ( err.is_errored ) return false;
+  if ( err.is_errored ) { return false; }
 
   return true;
 }
@@ -169,7 +169,9 @@ int computeMetrics( const PCCMetricsParameters& metricsParams, StopwatchUserTime
   metrics.setParameters( metricsParams );
   for ( size_t frameIndex = metricsParams.startFrameNumber_;
         frameIndex < metricsParams.startFrameNumber_ + metricsParams.frameCount_; frameIndex++ ) {
-    PCCGroupOfFrames sources, reconstructs, normals;
+    PCCGroupOfFrames sources;
+    PCCGroupOfFrames reconstructs;
+    PCCGroupOfFrames normals;
     if ( !sources.load( metricsParams.uncompressedDataPath_, frameIndex, frameIndex + 1, COLOR_TRANSFORM_NONE ) ) {
       return -1;
     }
@@ -177,7 +179,7 @@ int computeMetrics( const PCCMetricsParameters& metricsParams, StopwatchUserTime
                              COLOR_TRANSFORM_NONE ) ) {
       return -1;
     }
-    if ( metricsParams.normalDataPath_ != "" ) {
+    if ( !metricsParams.normalDataPath_.empty() ) {
       if ( !normals.load( metricsParams.normalDataPath_, frameIndex, frameIndex + 1, COLOR_TRANSFORM_NONE, true ) ) {
         return -1;
       }

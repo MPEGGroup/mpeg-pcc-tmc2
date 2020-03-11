@@ -178,10 +178,8 @@ void PCCAtlasContext::clearVideoFrames() {
   attrBitdepth_.clear();
   attrWidth_.clear();
   attrHeight_.clear();
-  for (auto & attrAuxFrame : attrAuxFrames_) {
-    for (auto & partIdx : attrAuxFrame) {
-      partIdx.clear();
-    }
+  for ( auto& attrAuxFrame : attrAuxFrames_ ) {
+    for ( auto& partIdx : attrAuxFrame ) { partIdx.clear(); }
     attrAuxFrame.clear();
   }
   attrAuxFrames_.clear();

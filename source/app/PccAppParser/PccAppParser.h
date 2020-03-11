@@ -41,6 +41,6 @@
 #include "PCCBitstreamReader.h"
 
 void usage();
-int  parserPccBin( const std::string filename );
+int  parserPccBin( const std::string& filename );
 
 #endif /* PCC_BITSTREAM_APP_PARSER_H */

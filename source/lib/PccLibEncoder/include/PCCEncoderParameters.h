@@ -43,12 +43,12 @@ class PCCEncoderParameters {
  public:
   PCCEncoderParameters();
   ~PCCEncoderParameters();
-  void   print();
-  bool   check();
-  void   completePath();
-  static void   constructAspsRefList( PCCContext& context, size_t aspsIdx, size_t afpsIdx );
-  void   initializeContext( PCCContext& context );
-  size_t startFrameNumber_;
+  void        print();
+  bool        check();
+  void        completePath();
+  static void constructAspsRefList( PCCContext& context, size_t aspsIdx, size_t afpsIdx );
+  void        initializeContext( PCCContext& context );
+  size_t      startFrameNumber_;
 
   std::string configurationFolder_;
   std::string uncompressedDataFolder_;

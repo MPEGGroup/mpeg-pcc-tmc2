@@ -37,8 +37,8 @@
 using namespace pcc;
 
 const std::vector<PointLocalReconstructionMode> g_pointLocalReconstructionMode = {
-    {0, 0, 0, 1}, {1, 0, 0, 1}, {1, 1, 0, 1}, {1, 0, 0, 2}, {1, 1, 0, 2},
-    {0, 0, 1, 1}, {1, 0, 1, 1}, {1, 1, 1, 1}, {1, 0, 1, 2}, {1, 1, 1, 2},
+    {false, false, 0, 1}, {true, false, 0, 1}, {true, true, 0, 1}, {true, false, 0, 2}, {true, true, 0, 2},
+    {false, false, 1, 1}, {true, false, 1, 1}, {true, true, 1, 1}, {true, false, 1, 2}, {true, true, 1, 2},
 };
 
 PCCEncoderParameters::PCCEncoderParameters() {
@@ -210,7 +210,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   minNumHighGradientPoints_ = 256;
 
   // Patch border filtering
-  pbfEnableFlag_    = 0;
+  pbfEnableFlag_    = false;
   pbfPassesCount_   = 0;
   pbfFilterSize_    = 0;
   pbfLog2Threshold_ = 2;
@@ -336,7 +336,7 @@ void PCCEncoderParameters::print() {
     std::cout << "\t   textureT1Config                         " << textureT1Config_ << std::endl;
   } else {
     std::cout << "\t   textureConfig                          " << textureConfig_ << std::endl;
-}
+  }
   if ( useRawPointsSeparateVideo_ ) {
     if ( losslessGeo_ ) {
       std::cout << "\t geometryMPConfig                          " << geometryMPConfig_ << std::endl;
@@ -649,7 +649,7 @@ bool PCCEncoderParameters::check() {
                  "useRawPointsSeparateVideo_=false.\n";
   }
   if ( useRawPointsSeparateVideo_ ) {
-    if ( (textureMPSeparateVideoWidth_ % 64) != 0U ) {
+    if ( ( textureMPSeparateVideoWidth_ % 64 ) != 0U ) {
       ret = false;
       std::cerr << "textureMPSeparateVideoWidth_ must be multiple of 64.\n";
     }
@@ -686,7 +686,7 @@ bool PCCEncoderParameters::check() {
   } else {
     if ( multipleStreams_ ) {
       std::cout << " multipleStreams is set 0 when mapCountMinus1 is 0. Force multipleStreams_= 0." << std::endl;
-      multipleStreams_ = 0;
+      multipleStreams_ = false;
     }
   }
 
@@ -743,7 +743,7 @@ void PCCEncoderParameters::constructAspsRefList( PCCContext& context, size_t asp
     for ( size_t i = 0; i < refList.getNumRefEntries(); i++ ) {
       int afocDiff = context.getRefAtlasFrame( list, i );
       refList.setAbsDeltaAfocSt( i, std::abs( afocDiff ) );
-      refList.setStrpfEntrySignFlag( i, afocDiff < 0 ? false : !static_cast<bool>(0) );
+      refList.setStrpfEntrySignFlag( i, afocDiff < 0 ? false : !false );
       refList.setStRefAtalsFrameFlag( i, true );
     }
     asps.addRefListStruct( refList );
@@ -767,35 +767,36 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
 
   context.setLog2PatchQuantizerSizeX( log2QuantizerSizeX_ );
   context.setLog2PatchQuantizerSizeY( log2QuantizerSizeY_ );
-  context.setEnablePatchSizeQuantization( ( ( 1 << static_cast<int32_t>(log2QuantizerSizeX_) ) < static_cast<int32_t>(occupancyPrecision_) ) ||
-                                          ( ( 1 << static_cast<int32_t>(log2QuantizerSizeY_) ) < static_cast<int32_t>(occupancyPrecision_) ) );
+  context.setEnablePatchSizeQuantization(
+      ( ( 1 << static_cast<int32_t>( log2QuantizerSizeX_ ) ) < static_cast<int32_t>( occupancyPrecision_ ) ) ||
+      ( ( 1 << static_cast<int32_t>( log2QuantizerSizeY_ ) ) < static_cast<int32_t>( occupancyPrecision_ ) ) );
 
   context.setMaxNumRefAtlasFrame( maxNumRefAtlasFrame_ );
   context.setNumOfRefAtlasFrameList( maxNumRefAtlasList_ );
   for ( size_t list = 0; list < maxNumRefAtlasList_; list++ ) {
     context.setSizeOfRefAtlasFrameList( list, maxNumRefAtlasFrame_ );
     for ( size_t i = 0; i < maxNumRefAtlasFrame_; i++ ) {
-      context.setRefAtlasFrame( list, i, -static_cast< int32_t>( i + 1 ) );  //-1, -2, -3, -4
+      context.setRefAtlasFrame( list, i, -static_cast<int32_t>( i + 1 ) );  //-1, -2, -3, -4
     }
   }
 
-  sps.setMapCountMinus1( atlasIndex, static_cast<uint32_t>(mapCountMinus1_) );
+  sps.setMapCountMinus1( atlasIndex, static_cast<uint32_t>( mapCountMinus1_ ) );
   sps.setMultipleMapStreamsPresentFlag( atlasIndex, mapCountMinus1_ != 0 && multipleStreams_ );
   sps.setRawSeparateVideoPresentFlag( atlasIndex, useRawPointsSeparateVideo_ );
   sps.setRawPatchEnabledFlag( atlasIndex, losslessGeo_ || lossyRawPointsPatch_ );
   for ( size_t i = 0; i < mapCountMinus1_ + 1; i++ ) {
     if ( i == 0 ) {
-      sps.setMapAbsoluteCodingEnableFlag( atlasIndex, i, 1 );
-      sps.setMapPredictorIndexDiff( atlasIndex, i, 0 );
+      sps.setMapAbsoluteCodingEnableFlag( atlasIndex, i, true );
+      sps.setMapPredictorIndexDiff( atlasIndex, i, false );
     } else {
       sps.setMapAbsoluteCodingEnableFlag( atlasIndex, i, absoluteD1_ );
-      sps.setMapPredictorIndexDiff( atlasIndex, i, 0 );
+      sps.setMapPredictorIndexDiff( atlasIndex, i, false );
     }
   }
 
   ai.setAttributeCount( noAttributes_ ? 0 : 1 );
   ai.allocate();
-  if ( static_cast<int>(noAttributes_) == 0 ) {
+  if ( static_cast<int>( noAttributes_ ) == 0 ) {
     ai.setAttributeDimensionMinus1( 0, noAttributes_ ? 0 : 2 );
     ai.setAttributeNominal2dBitdepthMinus1( 0, 7 );
   }
@@ -810,37 +811,38 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   asps.setNumRefAtlasFrameListsInAsps( 1 );
   asps.setMapCountMinus1( mapCountMinus1_ );
   asps.setSurfaceThicknessMinus1( surfaceThickness_ - 1 );
-  asps.setLongTermRefAtlasFramesFlag( 0 );
+  asps.setLongTermRefAtlasFramesFlag( false );
   asps.setUseEightOrientationsFlag( useEightOrientations_ );
   asps.set45DegreeProjectionPatchPresentFlag( additionalProjectionPlaneMode_ > 0 );
-  asps.setNormalAxisLimitsQuantizationEnabledFlag( 1 );
-  asps.setNormalAxisMaxDeltaValueEnabledFlag( 1 );
+  asps.setNormalAxisLimitsQuantizationEnabledFlag( true );
+  asps.setNormalAxisMaxDeltaValueEnabledFlag( true );
   asps.setRemoveDuplicatePointEnabledFlag( removeDuplicatePoints_ );
   asps.setPixelDeinterleavingFlag( singleMapPixelInterleaving_ );
   asps.setPatchPrecedenceOrderFlag( patchPrecedenceOrderFlag_ );
   asps.setPatchSizeQuantizerPresentFlag( context.getEnablePatchSizeQuantization() );
   asps.setEnhancedOccupancyMapForDepthFlag( enhancedOccupancyMapCode_ );
   asps.setPointLocalReconstructionEnabledFlag( pointLocalReconstruction_ );
-  asps.setVuiParametersPresentFlag( 0 );
-  asps.setExtensionPresentFlag( 0 );
-  asps.setExtensionDataFlag( 0 );
+  asps.setVuiParametersPresentFlag( false );
+  asps.setExtensionPresentFlag( false );
+  asps.setExtensionDataFlag( false );
 
-  if ( (asps.getEnhancedOccupancyMapFixBitCountMinus1() != 0U) && mapCountMinus1_ == 0 ) {
+  if ( ( asps.getEnhancedOccupancyMapFixBitCountMinus1() != 0U ) && mapCountMinus1_ == 0 ) {
     asps.setEnhancedOccupancyMapFixBitCountMinus1( EOMFixBitCount_ - 1 );
   } else {
     asps.setEnhancedOccupancyMapFixBitCountMinus1( EOMFixBitCount_ - 1 );  // default values
   }
   afps.setAtlasSequenceParameterSetId( 0 );
-  afps.setAfpsNumRefIdxDefaultActiveMinus1( static_cast< uint8_t>(( std::max )( 0, static_cast<int>(maxNumRefAtlasFrame_) - 1 )) );
+  afps.setAfpsNumRefIdxDefaultActiveMinus1(
+      static_cast<uint8_t>( ( std::max )( 0, static_cast<int>( maxNumRefAtlasFrame_ ) - 1 ) ) );
   afps.setAfpsAdditionalLtAfocLsbLen( 4 );
-  afps.setAfpsOverrideEomForDepthFlag( 0 );
+  afps.setAfpsOverrideEomForDepthFlag( false );
   afps.setAfpsEomNumberOfPatchBitCountMinus1( 0 );
   afps.setAfpsEomMaxBitCountMinus1( 0 );
-  afps.setAfpsRaw3dPosBitCountExplicitModeFlag( 0 );
+  afps.setAfpsRaw3dPosBitCountExplicitModeFlag( false );
   afps.setAfpsExtensionPresentFlag( 0 );
-  afps.setAfpsExtensionDataFlag( 0 );
+  afps.setAfpsExtensionDataFlag( false );
 
-  if ( static_cast<int>(afps.getAfpsOverrideEomForDepthFlag()) == 0 ) {
+  if ( static_cast<int>( afps.getAfpsOverrideEomForDepthFlag() ) == 0 ) {
     afps.setAfpsEomMaxBitCountMinus1( 7 );
     afps.setAfpsEomNumberOfPatchBitCountMinus1( 7 );
   }
@@ -865,7 +867,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
       } else {
         atgh.setAtghRaw3dPosAxisBitCountMinus1( geometry3dCoordinatesBitdepth_ - geometryNominal2dBitdepth_ - 1 );
       }
-      atgh.setAtghNumRefIdxActiveOverrideFlag( 0 );
+      atgh.setAtghNumRefIdxActiveOverrideFlag( false );
 
       atgh.setAtghRefAtlasFrameListSpsFlag( true );
       atgh.setAtghRefAtlasFrameListIdx( 0 );
@@ -892,10 +894,10 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   context.setMPGeoHeight( 0 );
   context.setMPAttHeight( 0 );
   context.setGeometry3dCoordinatesBitdepth( geometry3dCoordinatesBitdepth_ );
-  size_t numPlrm =
-      pointLocalReconstruction_
-          ? ( std::max )( static_cast<size_t>(1), ( std::min )( plrlNumberOfModes_, g_pointLocalReconstructionMode.size() ) )
-          : 1;
+  size_t numPlrm = pointLocalReconstruction_
+                       ? ( std::max )( static_cast<size_t>( 1 ),
+                                       ( std::min )( plrlNumberOfModes_, g_pointLocalReconstructionMode.size() ) )
+                       : 1;
   for ( size_t i = 0; i < numPlrm; i++ ) {
     context.addPointLocalReconstructionMode( g_pointLocalReconstructionMode[i] );
   }

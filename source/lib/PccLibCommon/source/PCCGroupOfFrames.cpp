@@ -40,7 +40,7 @@ PCCGroupOfFrames::PCCGroupOfFrames() = default;
 PCCGroupOfFrames::PCCGroupOfFrames( size_t value ) { frames_.resize( value ); }
 PCCGroupOfFrames::~PCCGroupOfFrames() { frames_.clear(); }
 
-bool PCCGroupOfFrames::load( const std::string&       uncompressedDataPath,
+bool PCCGroupOfFrames::load( const std::string&      uncompressedDataPath,
                              const size_t            startFrameNumber,
                              const size_t            endFrameNumber,
                              const PCCColorTransform colorTransform,

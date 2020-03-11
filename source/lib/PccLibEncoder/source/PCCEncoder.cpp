@@ -56,8 +56,8 @@ uint64_t pixCnt;
 using namespace std;
 using namespace pcc;
 
-std::string getEncoderConfig1L( std::string string ) {
-  std::string sub    = string.substr( 0, string.find_last_of( "." ) );
+std::string getEncoderConfig1L( const std::string& string ) {
+  std::string sub    = string.substr( 0, string.find_last_of( '.' ) );
   std::string result = sub + "-1L.cfg";
   return result;
 }
@@ -68,15 +68,15 @@ PCCEncoder::PCCEncoder() {
 #endif
 }
 
-PCCEncoder::~PCCEncoder() {}
+PCCEncoder::~PCCEncoder() = default;
 
-void PCCEncoder::setParameters( PCCEncoderParameters params ) { params_ = params; }
+void PCCEncoder::setParameters( const PCCEncoderParameters& params ) { params_ = params; }
 
 int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PCCGroupOfFrames& reconstructs ) {
-  size_t pointLocalReconstructionOriginal     = params_.pointLocalReconstruction_;
+  size_t pointLocalReconstructionOriginal     = static_cast<size_t>( params_.pointLocalReconstruction_ );
   size_t layerCountMinus1Original             = params_.mapCountMinus1_;
-  size_t singleLayerPixelInterleavingOriginal = params_.singleMapPixelInterleaving_;
-  if ( params_.nbThread_ > 0 ) { tbb::task_scheduler_init init( static_cast<int>(params_.nbThread_) ); }
+  size_t singleLayerPixelInterleavingOriginal = static_cast<size_t>( params_.singleMapPixelInterleaving_ );
+  if ( params_.nbThread_ > 0 ) { tbb::task_scheduler_init init( static_cast<int>( params_.nbThread_ ) ); }
   params_.initializeContext( context );
   assert( sources.size() < 256 );
   size_t atlasIndex = 0;
@@ -126,8 +126,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
 
   resizeGeometryVideo( context );
 
-  sps.setFrameWidth( atlasIndex, static_cast<uint16_t>(frames[0].getWidth()) );
-  sps.setFrameHeight( atlasIndex, static_cast<uint16_t>(frames[0].getHeight()) );
+  sps.setFrameWidth( atlasIndex, static_cast<uint16_t>( frames[0].getWidth() ) );
+  sps.setFrameHeight( atlasIndex, static_cast<uint16_t>( frames[0].getHeight() ) );
   // DIS requirement, see 7.4.6.1
   for ( int i = 0; i < context.getAtlasSequenceParameterSetList().size(); i++ ) {
     context.getAtlasSequenceParameterSet( i ).setFrameHeight( sps.getFrameWidth( atlasIndex ) );
@@ -155,12 +155,12 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     changedPixCnt1To0 = 0;
     pixCnt            = 0;
     modifyOccupancyMap( sources, context );
-    std::cout << "Percentage of changed occupancy map values = " << ( static_cast<float>(changedPixCnt) * 100.0F / pixCnt )
-              << std::endl;
+    std::cout << "Percentage of changed occupancy map values = "
+              << ( static_cast<float>( changedPixCnt ) * 100.0F / pixCnt ) << std::endl;
     std::cout << "Percentage of changed occupancy map values from 0 to 1 = "
-              << ( static_cast<float>(changedPixCnt0To1) * 100.0F / pixCnt ) << std::endl;
+              << ( static_cast<float>( changedPixCnt0To1 ) * 100.0F / pixCnt ) << std::endl;
     std::cout << "Percentage of changed occupancy map values from 1 to 0 = "
-              << ( static_cast<float>(changedPixCnt1To0) * 100.0F / pixCnt ) << std::endl;
+              << ( static_cast<float>( changedPixCnt1To0 ) * 100.0F / pixCnt ) << std::endl;
   }
 
   if ( !params_.useRawPointsSeparateVideo_ && ( params_.losslessGeo_ || params_.lossyRawPointsPatch_ ) ) {
@@ -202,7 +202,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     auto& videoGeometry    = context.getVideoGeometryMultiple()[0];
     videoEncoder.compress(
         videoGeometry, path.str(), ( params_.geometryQP_ - 1 ), videoBitstreamD0, params_.geometryD0Config_,
-        ( params_.use3dmc_ != 0 ) ? params_.videoEncoderAuxPath_ : params_.videoEncoderPath_, context,
+        ( static_cast<int>( params_.use3dmc_ ) != 0 ) ? params_.videoEncoderAuxPath_ : params_.videoEncoderPath_,
+        context,
         nbyteGeo,                                         // nbyte
         params_.losslessGeo_ && params_.losslessGeo444_,  // use444CodecIo
         params_.use3dmc_,                                 // use3dmv
@@ -225,7 +226,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     auto& videoBitstreamD1 = context.createVideoBitstream( VIDEO_GEOMETRY_D1 );
     videoEncoder.compress(
         videoGeometryD1, path.str(), params_.geometryQP_, videoBitstreamD1, params_.geometryD1Config_,
-        ( params_.use3dmc_ != 0 ) ? params_.videoEncoderAuxPath_ : params_.videoEncoderPath_, context,
+        ( static_cast<int>( params_.use3dmc_ ) != 0 ) ? params_.videoEncoderAuxPath_ : params_.videoEncoderPath_,
+        context,
         nbyteGeo,                                         // nbyte
         params_.losslessGeo_ && params_.losslessGeo444_,  // use444CodecIo
         params_.use3dmc_,                                 // use3dmv
@@ -245,7 +247,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     videoEncoder.compress(
         videoGeometry, path.str(), params_.geometryQP_, videoBitstream,
         params_.mapCountMinus1_ == 0 ? getEncoderConfig1L( params_.geometryConfig_ ) : params_.geometryConfig_,
-        ( params_.use3dmc_ != 0 ) ? params_.videoEncoderAuxPath_ : params_.videoEncoderPath_, context,
+        ( static_cast<int>( params_.use3dmc_ ) != 0 ) ? params_.videoEncoderAuxPath_ : params_.videoEncoderPath_,
+        context,
         nbyteGeo,                                         // nbyte
         params_.losslessGeo_ && params_.losslessGeo444_,  // use444CodecIo
         params_.use3dmc_,                                 // use3dmv
@@ -353,7 +356,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
             auto&    height       = frame.getHeight();
             auto&    frame1       = videoTexture.getFrame( f * nbVideoFramePerFrame );
             auto&    frame2       = videoTexture.getFrame( f * nbVideoFramePerFrame + 1 );
-            uint8_t  tmp_d0, tmp_d1;
+            uint8_t  tmp_d0;
+            uint8_t  tmp_d1;
             uint32_t tmp_avg;
             for ( size_t y = 0; y < height; y++ ) {
               for ( size_t x = 0; x < width; x++ ) {
@@ -362,9 +366,9 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                   for ( size_t c = 0; c < 3; c++ ) {
                     tmp_d0  = frame1.getValue( c, x, y );
                     tmp_d1  = frame2.getValue( c, x, y );
-                    tmp_avg = ( static_cast<uint32_t>(tmp_d0) + static_cast<uint32_t>(tmp_d1) + 1 ) >> 1;
-                    frame1.setValue( c, x, y, static_cast<uint8_t>(tmp_avg) );
-                    frame2.setValue( c, x, y, static_cast<uint8_t>(tmp_avg) );
+                    tmp_avg = ( static_cast<uint32_t>( tmp_d0 ) + static_cast<uint32_t>( tmp_d1 ) + 1 ) >> 1;
+                    frame1.setValue( c, x, y, static_cast<uint8_t>( tmp_avg ) );
+                    frame2.setValue( c, x, y, static_cast<uint8_t>( tmp_avg ) );
                   }
                 }
               }
@@ -402,7 +406,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
       videoEncoder.compress(
           videoTexture, path.str(), params_.textureQP_, videoBitstreamT0,
           params_.mapCountMinus1_ == 0 ? getEncoderConfig1L( params_.textureConfig_ ) : params_.textureT0Config_,
-          ( params_.use3dmc_ != 0 ) ? params_.videoEncoderAuxPath_ : params_.videoEncoderPath_, context,
+          ( static_cast<int>( params_.use3dmc_ ) != 0 ) ? params_.videoEncoderAuxPath_ : params_.videoEncoderPath_,
+          context,
           nbyteAtt,                                    // nbyte
           params_.losslessGeo_,                        // use444CodecIo
           params_.use3dmc_,                            // use3dmv
@@ -438,7 +443,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
       videoEncoder.compress(
           videoTextureT1, path.str(), params_.textureQP_ + params_.qpAdjT1_, videoBitstreamT1,
           params_.mapCountMinus1_ == 0 ? getEncoderConfig1L( params_.textureConfig_ ) : params_.textureT1Config_,
-          ( params_.use3dmc_ != 0 ) ? params_.videoEncoderAuxPath_ : params_.videoEncoderPath_, context,
+          ( static_cast<int>( params_.use3dmc_ ) != 0 ) ? params_.videoEncoderAuxPath_ : params_.videoEncoderPath_,
+          context,
           nbyteAtt,                                    // nbyte
           params_.losslessGeo_,                        // use444CodecIo
           params_.use3dmc_,                            // use3dmv
@@ -461,7 +467,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
       videoEncoder.compress(
           videoTexture, path.str(), params_.textureQP_, videoBitstream,
           params_.mapCountMinus1_ == 0 ? getEncoderConfig1L( params_.textureConfig_ ) : params_.textureConfig_,
-          ( params_.use3dmc_ != 0 ) ? params_.videoEncoderAuxPath_ : params_.videoEncoderPath_, context,
+          ( static_cast<int>( params_.use3dmc_ ) != 0 ) ? params_.videoEncoderAuxPath_ : params_.videoEncoderPath_,
+          context,
           nbyteAtt,                                    // nbyte
           params_.losslessGeo_,                        // use444CodecIo
           params_.use3dmc_,                            // use3dmv
@@ -545,7 +552,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   absoluteT1List.resize( ai.getAttributeCount() );
   for ( int attrIdx = 0; attrIdx < ai.getAttributeCount(); ++attrIdx ) {
     absoluteT1List[attrIdx].resize( sps.getMapCountMinus1( atlasIndex ) + 1 );
-    if ( ai.getAttributeMapAbsoluteCodingPersistanceFlag( attrIdx ) ) {
+    if ( ai.getAttributeMapAbsoluteCodingPersistanceFlag( attrIdx ) != 0u ) {
       for ( uint32_t mapIdx = 0; mapIdx < sps.getMapCountMinus1( atlasIndex ) + 1; ++mapIdx ) {
         absoluteT1List[attrIdx][mapIdx] = true;
       }
@@ -557,7 +564,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     }
   }
   colorPointCloud( reconstructs, context, ai.getAttributeCount(), params_.colorTransform_, absoluteT1List,
-                   params_.multipleStreams_, gpcParams );
+                   static_cast<size_t>( params_.multipleStreams_ ), gpcParams );
 
   std::cout << "Post Processing Point Clouds" << std::endl;
   //  Generate a buffer to keep unsmoothed geometry, then do geometry smoothing and transfer followed by color smoothing
@@ -573,19 +580,21 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
         if ( params_.postprocessSmoothingFilter_ == 1 ) {
           // tempFrameBuffer[i].transferColors16bit( reconstructs[i], int32_t( 0 ), params_.losslessGeo_ == 1, 8, 1, 1,
           // 1, 1, 0, 4, 4, 1000, 1000, 1000 * 256, 1000 * 256 );
-          tempFrameBuffer[i].transferColors16bitBP( reconstructs[i], int32_t( 0 ), params_.losslessGeo_ == 1, 8, 1, 1,
-                                                    1, 1, 0, 4, 4, 1000, 1000, 1000 * 256, 1000 * 256 );
+          tempFrameBuffer[i].transferColors16bitBP( reconstructs[i], int32_t( 0 ),
+                                                    static_cast<int>( params_.losslessGeo_ ) == 1, 8, 1, true, true,
+                                                    true, false, 4, 4, 1000, 1000, 1000 * 256, 1000 * 256 );
         } else if ( params_.postprocessSmoothingFilter_ == 2 ) {
           tempFrameBuffer[i].transferColorWeight( reconstructs[i], 0.1 );
         } else if ( params_.postprocessSmoothingFilter_ == 3 ) {
-          tempFrameBuffer[i].transferColorsFilter3( reconstructs[i], int32_t( 0 ), params_.losslessGeo_ == 1 );
+          tempFrameBuffer[i].transferColorsFilter3( reconstructs[i], int32_t( 0 ),
+                                                    static_cast<int>( params_.losslessGeo_ ) == 1 );
         }
       }
     }
   }
   //    This function does the color smoothing that is usually done in colorPointCloud
   if ( gpcParams.flagColorSmoothing_ ) { colorSmoothing( reconstructs, context, params_.colorTransform_, gpcParams ); }
-  if ( params_.losslessGeo_ != 1 ) {  // lossy: convert 16-bit yuv444 to 8-bit RGB444
+  if ( static_cast<int>( params_.losslessGeo_ ) != 1 ) {  // lossy: convert 16-bit yuv444 to 8-bit RGB444
     for ( size_t i = 0; i < frames.size(); i++ ) {
       for ( int k = 0; k < reconstructs[i].getPointCount(); k++ ) {
         convertYUV444_16bits_toRGB_8bits( reconstructs[i], k );
@@ -616,9 +625,9 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   setTrace( false );
   closeTrace();
 #endif
-  params_.pointLocalReconstruction_   = pointLocalReconstructionOriginal;
+  params_.pointLocalReconstruction_   = ( pointLocalReconstructionOriginal != 0u );
   params_.mapCountMinus1_             = layerCountMinus1Original;
-  params_.singleMapPixelInterleaving_ = singleLayerPixelInterleavingOriginal;
+  params_.singleMapPixelInterleaving_ = ( singleLayerPixelInterleavingOriginal != 0u );
   return 0;
 }
 
@@ -640,10 +649,11 @@ void PCCEncoder::printMapTetris( std::vector<bool> img,
   std::cout << "PrintMap size = " << sizeU << " x " << sizeV << std::endl;
   for ( int v = 0; v < sizeV; ++v ) {
     for ( int u = 0; u < sizeU; ++u ) {
-      if ( v == horizon[u] )
+      if ( v == horizon[u] ) {
         std::cout << ( img[v * sizeU + u] ? 'U' : 'O' );
-      else
+      } else {
         std::cout << ( img[v * sizeU + u] ? 'X' : '.' );
+      }
     }
     std::cout << std::endl;
   }
@@ -658,8 +668,8 @@ T PCCEncoder::limit( T x, T minVal, T maxVal ) {
 }
 
 void PCCEncoder::preFilterOccupancyMap( PCCImageOccupancyMap& image, size_t kwidth, size_t kheight ) {
-  if ( kwidth == 0 ) kwidth = sqrt( kernel.size() );
-  if ( kheight == 0 ) kheight = sqrt( kernel.size() );
+  if ( kwidth == 0 ) { kwidth = sqrt( kernel.size() ); }
+  if ( kheight == 0 ) { kheight = sqrt( kernel.size() ); }
 
   const size_t width  = image.getWidth();
   const size_t height = image.getHeight();
@@ -680,10 +690,10 @@ void PCCEncoder::preFilterOccupancyMap( PCCImageOccupancyMap& image, size_t kwid
 
           size_t i = limit<int32_t>( int32_t( u + kCenterW - mm ), 0, width - 1 );
           size_t j = limit<int32_t>( int32_t( v + kCenterH - nn ), 0, height - 1 );
-          val += static_cast<double>(imageTemp.getValue( 0, i, j )) * kernel[q];
+          val += static_cast<double>( imageTemp.getValue( 0, i, j ) ) * kernel[q];
         }
       }
-      image.setValue( 0, u, v, static_cast< uint8_t>( val >> 8 ) );
+      image.setValue( 0, u, v, static_cast<uint8_t>( val >> 8 ) );
     }
   }
 }
@@ -732,7 +742,7 @@ bool PCCEncoder::generateOccupancyMapVideo( const size_t           imageWidth,
               }
             }
             block0[v1 * blockSize0 + u1] = isFull;
-            fullCount += isFull;
+            fullCount += static_cast<unsigned long long>( isFull );
             /*for ( size_t v3 = 0; v3 < params_.occupancyPrecision_; ++v3 ) {
               for ( size_t u3 = 0; u3 < params_.occupancyPrecision_; ++u3 ) {
                 occupancyMap[( v2 + v3 ) * imageWidth + u2 + u3] = isFull; -> does not update the occupancy map, this
@@ -743,7 +753,7 @@ bool PCCEncoder::generateOccupancyMapVideo( const size_t           imageWidth,
         }
         for ( size_t iterBlockV = 0; iterBlockV < blockSize0; iterBlockV++ ) {
           for ( size_t iterBlockU = 0; iterBlockU < blockSize0; iterBlockU++ ) {
-            uint8_t pixel = block0[iterBlockV * blockSize0 + iterBlockU];
+            uint8_t pixel = static_cast<uint8_t>( block0[iterBlockV * blockSize0 + iterBlockU] );
             if ( pixel > 0 ) { pixel = ( params_.offsetLossyOM_ > 0 ) ? params_.offsetLossyOM_ : 1; }
             size_t videoFrameU = u0 * blockSize0 + iterBlockU;
             size_t videoFrameV = v0 * blockSize0 + iterBlockV;
@@ -819,41 +829,41 @@ bool PCCEncoder::modifyOccupancyMap( const size_t           imageWidth,
             if ( occupancyMap[index] == 0 ) {
               changedPixCnt0To1++;
               if ( params_.keepIntermediateFiles_ ) {
-                tmpC = static_cast<char>(255);
+                tmpC = static_cast<char>( 255 );
                 ofile.write( &tmpC, 1 );
-                tmpC = static_cast<char>(0);
+                tmpC = static_cast<char>( 0 );
                 ofile.write( &tmpC, 1 );
-                tmpC = static_cast<char>(0);
+                tmpC = static_cast<char>( 0 );
                 ofile.write( &tmpC, 1 );
               }
             } else {
               changedPixCnt1To0++;
               if ( params_.keepIntermediateFiles_ ) {
-                tmpC = static_cast<char>(0);
+                tmpC = static_cast<char>( 0 );
                 ofile.write( &tmpC, 1 );
-                tmpC = static_cast<char>(255);
+                tmpC = static_cast<char>( 255 );
                 ofile.write( &tmpC, 1 );
-                tmpC = static_cast<char>(0);
+                tmpC = static_cast<char>( 0 );
                 ofile.write( &tmpC, 1 );
               }
             }
           } else {
             if ( occupancyMap[index] == 0 ) {
               if ( params_.keepIntermediateFiles_ ) {
-                tmpC = static_cast<char>(0);
+                tmpC = static_cast<char>( 0 );
                 ofile.write( &tmpC, 1 );
-                tmpC = static_cast<char>(0);
+                tmpC = static_cast<char>( 0 );
                 ofile.write( &tmpC, 1 );
-                tmpC = static_cast<char>(0);
+                tmpC = static_cast<char>( 0 );
                 ofile.write( &tmpC, 1 );
               }
             } else {
               if ( params_.keepIntermediateFiles_ ) {
-                tmpC = static_cast<char>(255);
+                tmpC = static_cast<char>( 255 );
                 ofile.write( &tmpC, 1 );
-                tmpC = static_cast<char>(255);
+                tmpC = static_cast<char>( 255 );
                 ofile.write( &tmpC, 1 );
-                tmpC = static_cast<char>(255);
+                tmpC = static_cast<char>( 255 );
                 ofile.write( &tmpC, 1 );
               }
             }
@@ -872,14 +882,15 @@ void PCCEncoder::modifyOccupancyMapEOM( PCCFrameContext& frame ) {
   auto& width            = frame.getWidth();
   auto& height           = frame.getHeight();
   occupancyMap.resize( width * height, 0 );
-  if ( !params_.absoluteD1_ || !params_.absoluteT1_ ) fullOccupancyMap.resize( width * height, 0 );
+  if ( !params_.absoluteD1_ || !params_.absoluteT1_ ) { fullOccupancyMap.resize( width * height, 0 ); }
   for ( auto& patch : frame.getPatches() ) {
     for ( size_t v = 0; v < patch.getSizeV(); ++v ) {
       for ( size_t u = 0; u < patch.getSizeU(); ++u ) {
         const size_t  p       = v * patch.getSizeU() + u;
         const int16_t d       = patch.getDepth( 0 )[p];
         const int16_t eomCode = patch.getDepthEnhancedDeltaD()[p];
-        size_t        x, y;
+        size_t        x;
+        size_t        y;
         auto          indx = patch.patch2Canvas( u, v, width, height, x, y );
         assert( x < width && y < height );
         const size_t d0 = d;
@@ -892,7 +903,7 @@ void PCCEncoder::modifyOccupancyMapEOM( PCCFrameContext& frame ) {
             // uint16_t nbBits = 0;
             //          for ( uint16_t i = 0; i < N; i++ )
             //            if ( eomCode & ( 1 << i ) ) numOfEOMpoints++;  // nbBits++;
-            if ( symbol < 0 ) symbol = 0;
+            if ( symbol < 0 ) { symbol = 0; }
             occupancyMap[indx] += symbol;
           }
         } else {
@@ -946,10 +957,15 @@ double PCCEncoder::adjustReferenceAtlasFrame( PCCContext&            context,
   size_t       curPatchCount = curPatches.size();
   if ( curPatches.empty() ) { return -1; }
   vector<double> maxIOUList;
-  maxIOUList.resize( curPatchCount, -1.0f );
+  maxIOUList.resize( curPatchCount, -1.0F );
   double sumMaxIOU = 0;
   // initialization
-  size_t maxU0 = 0, maxV0 = 0, maxU1 = 0, maxV1 = 0, maxD1 = 0, maxDD;
+  size_t maxU0 = 0;
+  size_t maxV0 = 0;
+  size_t maxU1 = 0;
+  size_t maxV1 = 0;
+  size_t maxD1 = 0;
+  size_t maxDD;
   for ( size_t patchIdx = 0; patchIdx < curPatchCount; patchIdx++ ) {
     maxU0 = ( std::max )( maxU0, curPatches[patchIdx].getU0() );
     maxV0 = ( std::max )( maxV0, curPatches[patchIdx].getV0() );
@@ -958,12 +974,12 @@ double PCCEncoder::adjustReferenceAtlasFrame( PCCContext&            context,
     maxD1 = ( std::max )( maxU0, curPatches[patchIdx].getD1() );
     maxDD = ( std::max )( maxU0, curPatches[patchIdx].getSizeD() );
   }
-  uint8_t bitMaxU0 = uint8_t( ceilLog2( uint32_t( maxU0 ) ) );
-  uint8_t bitMaxV0 = uint8_t( ceilLog2( uint32_t( maxV0 ) ) );
-  uint8_t bitMaxU1 = uint8_t( ceilLog2( uint32_t( maxU1 ) ) );
-  uint8_t bitMaxV1 = uint8_t( ceilLog2( uint32_t( maxV1 ) ) );
-  uint8_t bitMaxD1 = uint8_t( ceilLog2( uint32_t( maxD1 ) ) );
-  uint8_t bitMaxDD = uint8_t( ceilLog2( uint32_t( maxDD ) ) );
+  auto bitMaxU0 = uint8_t( ceilLog2( uint32_t( maxU0 ) ) );
+  auto bitMaxV0 = uint8_t( ceilLog2( uint32_t( maxV0 ) ) );
+  auto bitMaxU1 = uint8_t( ceilLog2( uint32_t( maxU1 ) ) );
+  auto bitMaxV1 = uint8_t( ceilLog2( uint32_t( maxV1 ) ) );
+  auto bitMaxD1 = uint8_t( ceilLog2( uint32_t( maxD1 ) ) );
+  auto bitMaxDD = uint8_t( ceilLog2( uint32_t( maxDD ) ) );
 
   const size_t max3DCoordinate = size_t( 1 ) << params_.geometry3dCoordinatesBitdepth_;
   for ( size_t curId = 0; curId < curPatchCount; curId++ ) {
@@ -986,7 +1002,7 @@ double PCCEncoder::adjustReferenceAtlasFrame( PCCContext&            context,
     } else {
       tempBitStream.write( curPatch.getPatchOrientation(), 1 );
     }
-    if ( curPatch.getAxisOfAdditionalPlane() ) {
+    if ( curPatch.getAxisOfAdditionalPlane() != 0u ) {
       tempBitStream.write( uint32_t( curPatch.getAxisOfAdditionalPlane() ), 1 );
     }
     float bitCostIntraA = tempBitStream.size();
@@ -995,7 +1011,7 @@ double PCCEncoder::adjustReferenceAtlasFrame( PCCContext&            context,
     if ( curPatch.getBestMatchIdx() != -1 ) {
       size_t refPOC   = frame.getRefAFOC( listIndex, 0 );
       auto&  refPatch = context[refPOC].getPatch( curPatch.getBestMatchIdx() );
-      tempBitStream.writeSvlc( int32_t( static_cast<int64_t>(curPatch.getBestMatchIdx()) - curId ) );  // approx
+      tempBitStream.writeSvlc( int32_t( static_cast<int64_t>( curPatch.getBestMatchIdx() ) - curId ) );  // approx
       tempBitStream.writeUvlc( int32_t( 0 ) );
       tempBitStream.writeSvlc( int32_t( curPatch.getU0() - refPatch.getU0() ) );
       tempBitStream.writeSvlc( int32_t( curPatch.getV0() - refPatch.getV0() ) );
@@ -1006,7 +1022,7 @@ double PCCEncoder::adjustReferenceAtlasFrame( PCCContext&            context,
 
       size_t        quantDD  = curPatch.getSizeD() == 0 ? 0 : ( ( curPatch.getSizeD() - 1 ) / params_.minLevel_ + 1 );
       size_t        prevQDD  = refPatch.getSizeD() == 0 ? 0 : ( ( refPatch.getSizeD() - 1 ) / params_.minLevel_ + 1 );
-      const int64_t delta_dd = ( static_cast<int64_t>(quantDD) ) - ( static_cast<int64_t>(prevQDD) );
+      const int64_t delta_dd = ( static_cast<int64_t>( quantDD ) ) - ( static_cast<int64_t>( prevQDD ) );
       tempBitStream.writeSvlc( int32_t( delta_dd ) );  // se(v)
 
       int32_t delta_d1 = 0;
@@ -1041,7 +1057,7 @@ double PCCEncoder::adjustReferenceAtlasFrame( PCCContext&            context,
     for ( size_t refPatchId = 0; refPatchId < refPatches.size(); refPatchId++ ) {
       // bestOrderPatches.clear();
       auto& refPatch   = refPatches[refPatchId];
-      float maxIou     = 0.0f;
+      float maxIou     = 0.0F;
       int   bestCurIdx = -1;
       for ( size_t curId = 0; curId < curPatchCount; curId++ ) {
         auto& curPatch     = curPatches[curId];
@@ -1049,7 +1065,7 @@ double PCCEncoder::adjustReferenceAtlasFrame( PCCContext&            context,
                             refPatch.getPatchOrientation() == curPatch.getPatchOrientation();
         if ( bMatchingRef ) {
           float initSize = tempBitStream.size();
-          tempBitStream.writeSvlc( int32_t( static_cast<int64_t>(refPatchId) - curId ) );  // approx
+          tempBitStream.writeSvlc( int32_t( static_cast<int64_t>( refPatchId ) - curId ) );  // approx
           tempBitStream.writeUvlc( int32_t( refIdx ) );
           tempBitStream.writeSvlc( int32_t( curPatch.getU0() - refPatch.getU0() ) );
           tempBitStream.writeSvlc( int32_t( curPatch.getV0() - refPatch.getV0() ) );
@@ -1059,7 +1075,7 @@ double PCCEncoder::adjustReferenceAtlasFrame( PCCContext&            context,
           tempBitStream.writeSvlc( int32_t( curPatch.getV1() - refPatch.getV1() ) );
           size_t quantDD = curPatch.getSizeD() == 0 ? 0 : ( ( curPatch.getSizeD() - 1 ) / params_.minLevel_ + 1 );
           size_t prevQDD = refPatch.getSizeD() == 0 ? 0 : ( ( refPatch.getSizeD() - 1 ) / params_.minLevel_ + 1 );
-          const int64_t delta_dd = ( static_cast<int64_t>(quantDD) ) - ( static_cast<int64_t>(prevQDD) );
+          const int64_t delta_dd = ( static_cast<int64_t>( quantDD ) ) - ( static_cast<int64_t>( prevQDD ) );
           tempBitStream.writeSvlc( int32_t( delta_dd ) );  // se(v)
 
           int32_t delta_d1 = 0;
@@ -1092,7 +1108,7 @@ double PCCEncoder::adjustReferenceAtlasFrame( PCCContext&            context,
       if ( bestCurIdx >= 0 && maxIou > maxIOUList[bestCurIdx] ) {
         curPatches[bestCurIdx].setBestMatchIdx( refPatchId );    // the matched patch id in preivious frame.
         curPatches[bestCurIdx].setRefAtlasFrameIndex( refIdx );  // the matched patch id in preivious frame.
-        curPatches[bestCurIdx].setPatchType( static_cast<uint8_t>(PATCH_MODE_P_INTER) );
+        curPatches[bestCurIdx].setPatchType( static_cast<uint8_t>( PATCH_MODE_P_INTER ) );
         maxIOUList[bestCurIdx] = maxIou;
       }
     }  // refPatch
@@ -1103,11 +1119,11 @@ double PCCEncoder::adjustReferenceAtlasFrame( PCCContext&            context,
   size_t numInterPredictedPatches = 0;
   for ( size_t patchIdx = 0; patchIdx < curPatchCount; patchIdx++ ) {
     if ( curPatches[patchIdx].getBestMatchIdx() != PCC_UNDEFINED_INDEX ) {
-      curPatches[patchIdx].setPatchType( static_cast<uint8_t>(PATCH_MODE_P_INTER) );
+      curPatches[patchIdx].setPatchType( static_cast<uint8_t>( PATCH_MODE_P_INTER ) );
       numInterPredictedPatches++;
       sumMaxIOU += maxIOUList[patchIdx];
     } else {
-      curPatches[patchIdx].setPatchType( static_cast<uint8_t>(PATCH_MODE_P_INTRA) );
+      curPatches[patchIdx].setPatchType( static_cast<uint8_t>( PATCH_MODE_P_INTRA ) );
     }
 
     tempPatchList.push_back( curPatches[patchIdx] );
@@ -1131,18 +1147,21 @@ void PCCEncoder::spatialConsistencyPack( PCCFrameContext& frame,
   size_t occupancySizeU = params_.minimumImageWidth_ / params_.occupancyResolution_;
   size_t occupancySizeV =
       ( std::max )( params_.minimumImageHeight_ / params_.occupancyResolution_, patches[0].getSizeV0() );
-  vector<PCCPatch> matchedPatches, tmpPatches, newOrderPatches;
+  vector<PCCPatch> matchedPatches;
+  vector<PCCPatch> tmpPatches;
+  vector<PCCPatch> newOrderPatches;
   matchedPatches.clear();
   newOrderPatches.clear();
-  float thresholdIOU = 0.2f;
+  float thresholdIOU = 0.2F;
 
   // main loop.
   for ( auto& patch : prevPatches ) {
     assert( patch.getSizeU0() <= occupancySizeU );
     assert( patch.getSizeV0() <= occupancySizeV );
     id++;
-    float maxIou  = 0.0f;
-    int   bestIdx = -1, cId = 0;
+    float maxIou  = 0.0F;
+    int   bestIdx = -1;
+    int   cId     = 0;
     for ( auto& cpatch : patches ) {
       if ( ( patch.getViewId() == cpatch.getViewId() ) && ( cpatch.getBestMatchIdx() == InvalidPatchIndex ) &&
            ( patch.getLodScaleX() == cpatch.getLodScaleX() && patch.getLodScaleY() == cpatch.getLodScaleY() ) ) {
@@ -1159,7 +1178,7 @@ void PCCEncoder::spatialConsistencyPack( PCCFrameContext& frame,
     if ( maxIou > thresholdIOU ) {
       // store the best match index
       patches[bestIdx].setBestMatchIdx( id - 1 );  // the matched patch id in previous frame.
-      patches[bestIdx].setPatchType( static_cast<uint8_t>(PATCH_MODE_P_INTER) );
+      patches[bestIdx].setPatchType( static_cast<uint8_t>( PATCH_MODE_P_INTER ) );
       matchedPatches.push_back( patches[bestIdx] );
     }
   }
@@ -1170,7 +1189,7 @@ void PCCEncoder::spatialConsistencyPack( PCCFrameContext& frame,
     assert( patch.getSizeU0() <= occupancySizeU );
     assert( patch.getSizeV0() <= occupancySizeV );
     if ( patch.getBestMatchIdx() == InvalidPatchIndex ) {
-      patch.setPatchType( static_cast<uint8_t>(PATCH_MODE_P_INTRA) );  // P_TYPE_INTRA
+      patch.setPatchType( static_cast<uint8_t>( PATCH_MODE_P_INTRA ) );  // P_TYPE_INTRA
       newOrderPatches.push_back( patch );
     }
   }
@@ -1219,11 +1238,12 @@ void PCCEncoder::spatialConsistencyPack( PCCFrameContext& frame,
         const size_t v = patch.getV0() + v0;
         for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {
           const size_t u = patch.getU0() + u0;
-          if ( params_.lowDelayEncoding_ )
+          if ( params_.lowDelayEncoding_ ) {
             occupancyMap[v * occupancySizeU + u] = true;
-          else
+          } else {
             occupancyMap[v * occupancySizeU + u] =
                 occupancyMap[v * occupancySizeU + u] || occupancy[v0 * patch.getSizeU0() + u0];
+          }
         }
       }
 
@@ -1347,19 +1367,21 @@ void PCCEncoder::spatialConsistencyPackFlexible( PCCFrameContext& frame,
   int              id             = 0;
   size_t           occupancySizeU = params_.minimumImageWidth_ / params_.occupancyResolution_;
   size_t           occupancySizeV = ( std::max )( patches[0].getSizeU0(), patches[0].getSizeV0() );
-  vector<PCCPatch> matchedPatches, tmpPatches;
+  vector<PCCPatch> matchedPatches;
+  vector<PCCPatch> tmpPatches;
   matchedPatches.clear();
-  float  thresholdIOU    = 0.2f;
+  float  thresholdIOU    = 0.2F;
   size_t bestRefFrameIdx = 0;
   // main loop.
   for ( auto& patch : prevPatches ) {
     id++;
-    float maxIou  = 0.0f;
-    int   bestIdx = -1, cId = 0;
+    float maxIou  = 0.0F;
+    int   bestIdx = -1;
+    int   cId     = 0;
     for ( auto& cpatch : patches ) {
       if ( ( patch.getViewId() == cpatch.getViewId() ) && ( cpatch.getBestMatchIdx() == InvalidPatchIndex ) &&
            ( patch.getLodScaleX() == cpatch.getLodScaleX() && patch.getLodScaleY() == cpatch.getLodScaleY() ) ) {
-        patch.setPatchType( static_cast<uint8_t>(PATCH_MODE_P_INTRA) );
+        patch.setPatchType( static_cast<uint8_t>( PATCH_MODE_P_INTRA ) );
         Rect  rect  = Rect( patch.getU1(), patch.getV1(), patch.getSizeU(), patch.getSizeV() );
         Rect  crect = Rect( cpatch.getU1(), cpatch.getV1(), cpatch.getSizeU(), cpatch.getSizeV() );
         float iou   = computeIOU( rect, crect );
@@ -1374,7 +1396,7 @@ void PCCEncoder::spatialConsistencyPackFlexible( PCCFrameContext& frame,
     if ( maxIou > thresholdIOU ) {
       // store the best match index
       patches[bestIdx].setBestMatchIdx( id - 1 );  // the matched patch id in preivious frame.
-      patches[bestIdx].setPatchType( static_cast<uint8_t>(PATCH_MODE_P_INTER) );
+      patches[bestIdx].setPatchType( static_cast<uint8_t>( PATCH_MODE_P_INTER ) );
       patches[bestIdx].setRefAtlasFrameIndex( bestRefFrameIdx );
       matchedPatches.push_back( patches[bestIdx] );
     }
@@ -1387,7 +1409,7 @@ void PCCEncoder::spatialConsistencyPackFlexible( PCCFrameContext& frame,
     assert( patch.getSizeU0() <= occupancySizeU );
     assert( patch.getSizeV0() <= occupancySizeV );
     if ( patch.getBestMatchIdx() == InvalidPatchIndex ) {
-      patch.setPatchType( static_cast<uint8_t>(PATCH_MODE_P_INTRA) );
+      patch.setPatchType( static_cast<uint8_t>( PATCH_MODE_P_INTRA ) );
       newOrderPatches.push_back( patch );
     }
   }
@@ -1498,10 +1520,11 @@ void PCCEncoder::spatialConsistencyPackFlexible( PCCFrameContext& frame,
       for ( size_t v0 = 0; v0 < patch.getSizeV0(); ++v0 ) {
         for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {
           int coord = patch.patchBlock2CanvasBlock( u0, v0, occupancySizeU, occupancySizeV );
-          if ( params_.lowDelayEncoding_ )
+          if ( params_.lowDelayEncoding_ ) {
             occupancyMap[coord] = true;
-          else
+          } else {
             occupancyMap[coord] = occupancyMap[coord] || occupancy[v0 * patch.getSizeU0() + u0];
+          }
         }
       }
       if ( !( patch.isPatchDimensionSwitched() ) ) {
@@ -1720,9 +1743,10 @@ void PCCEncoder::spatialConsistencyPackTetris( PCCFrameContext& frame, PCCFrameC
   int              id             = 0;
   size_t           occupancySizeU = params_.minimumImageWidth_ / params_.occupancyResolution_;
   size_t           occupancySizeV = ( std::max )( patches[0].getSizeU0(), patches[0].getSizeV0() );
-  vector<PCCPatch> matchedPatches, tmpPatches;
+  vector<PCCPatch> matchedPatches;
+  vector<PCCPatch> tmpPatches;
   matchedPatches.clear();
-  float thresholdIOU = 0.2f;
+  float thresholdIOU = 0.2F;
 
   // main loop.
   for ( auto& patch : prevPatches ) {
@@ -1730,7 +1754,8 @@ void PCCEncoder::spatialConsistencyPackTetris( PCCFrameContext& frame, PCCFrameC
     assert( patch.getSizeV0() <= occupancySizeV );
     id++;
     float maxIou  = 0.0;
-    int   bestIdx = -1, cId = 0;
+    int   bestIdx = -1;
+    int   cId     = 0;
     for ( auto& cpatch : patches ) {
       if ( ( patch.getViewId() == cpatch.getViewId() ) && ( cpatch.getBestMatchIdx() == -1 ) &&
            ( patch.getLodScaleX() == cpatch.getLodScaleX() && patch.getLodScaleY() == cpatch.getLodScaleY() ) ) {
@@ -1748,7 +1773,7 @@ void PCCEncoder::spatialConsistencyPackTetris( PCCFrameContext& frame, PCCFrameC
     if ( maxIou > thresholdIOU ) {
       // store the best match index
       patches[bestIdx].setBestMatchIdx( id - 1 );  // the matched patch id in preivious frame.
-      patches[bestIdx].setPatchType( static_cast<uint8_t>(PATCH_MODE_P_INTER) );
+      patches[bestIdx].setPatchType( static_cast<uint8_t>( PATCH_MODE_P_INTER ) );
       matchedPatches.push_back( patches[bestIdx] );
     }
   }
@@ -1802,7 +1827,8 @@ void PCCEncoder::spatialConsistencyPackTetris( PCCFrameContext& frame, PCCFrameC
     bool locationFound = false;
     while ( !locationFound ) {
       int    best_wasted_space = ( std::numeric_limits<int>::max )();
-      size_t best_u, best_v;
+      size_t best_u;
+      size_t best_v;
       int    best_orientation;
       if ( patch.getBestMatchIdx() != -1 ) {
         patch.getPatchOrientation() = prevPatches[patch.getBestMatchIdx()].getPatchOrientation();
@@ -1815,7 +1841,7 @@ void PCCEncoder::spatialConsistencyPackTetris( PCCFrameContext& frame, PCCFrameC
           // Translate coordinates and mask them out.
           int xp = x + prevPatches[patch.getBestMatchIdx()].getU0();
           int yp = y + prevPatches[patch.getBestMatchIdx()].getV0();
-          if ( printDetailedInfo ) std::cout << "Testing position (" << xp << ',' << yp << ')' << std::endl;
+          if ( printDetailedInfo ) { std::cout << "Testing position (" << xp << ',' << yp << ')' << std::endl; }
           if ( xp >= 0 && xp < occupancySizeU && yp >= 0 && yp < occupancySizeV ) {
             patch.getU0() = xp;
             patch.getV0() = yp;
@@ -1824,15 +1850,17 @@ void PCCEncoder::spatialConsistencyPackTetris( PCCFrameContext& frame, PCCFrameC
               locationFound = true;
               best_u        = xp;
               best_v        = yp;
-              if ( printDetailedInfo )
+              if ( printDetailedInfo ) {
                 std::cout << "Maintained orientation " << patch.getPatchOrientation() << " for matched patch "
                           << patch.getIndex() << " in new position (" << xp << "," << yp << ")" << std::endl;
+              }
             }
           }
-          if ( abs( x ) <= abs( y ) && ( x != y || x >= 0 ) )
+          if ( abs( x ) <= abs( y ) && ( x != y || x >= 0 ) ) {
             x += ( ( y >= 0 ) ? 1 : -1 );
-          else
+          } else {
             y += ( ( x >= 0 ) ? -1 : 1 );
+          }
         }
       } else {
         vector<int> orientation_values = {
@@ -1849,9 +1877,10 @@ void PCCEncoder::spatialConsistencyPackTetris( PCCFrameContext& frame, PCCFrameC
               patch.getPatchOrientation() = orientation_values[orientationIdx];
               if ( !patch.isPatchLocationAboveHorizon( horizon, top_horizon, bottom_horizon, right_horizon,
                                                        left_horizon ) ) {
-                if ( printDetailedInfo )
+                if ( printDetailedInfo ) {
                   std::cout << "(" << u << "," << v << "|" << patch.getPatchOrientation() << ") above horizon"
                             << std::endl;
+                }
                 continue;
               }
               if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_,
@@ -1879,9 +1908,10 @@ void PCCEncoder::spatialConsistencyPackTetris( PCCFrameContext& frame, PCCFrameC
         patch.getU0()               = best_u;
         patch.getV0()               = best_v;
         patch.getPatchOrientation() = best_orientation;
-        if ( printDetailedInfo )
+        if ( printDetailedInfo ) {
           std::cout << "Selected position (" << best_u << "," << best_v << ") and orientation " << best_orientation
                     << std::endl;
+        }
         // update the horizon
         patch.update_horizon( horizon, top_horizon, bottom_horizon, right_horizon, left_horizon );
         // debugging
@@ -1895,10 +1925,11 @@ void PCCEncoder::spatialConsistencyPackTetris( PCCFrameContext& frame, PCCFrameC
     for ( size_t v0 = 0; v0 < patch.getSizeV0(); ++v0 ) {
       for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {
         int coord = patch.patchBlock2CanvasBlock( u0, v0, occupancySizeU, occupancySizeV );
-        if ( params_.lowDelayEncoding_ )
+        if ( params_.lowDelayEncoding_ ) {
           occupancyMap[coord] = true;
-        else
+        } else {
           occupancyMap[coord] = occupancyMap[coord] || occupancy[v0 * patch.getSizeU0() + u0];
+        }
       }
     }
     if ( !( patch.isPatchDimensionSwitched() ) ) {
@@ -1950,12 +1981,13 @@ void PCCEncoder::findMatchesForGlobalTetrisPacking( PCCFrameContext& frame, PCCF
   vector<PCCPatch> matchedPatches;
   int              id = 0;
   matchedPatches.clear();
-  float thresholdIOU = 0.2f;
+  float thresholdIOU = 0.2F;
   // main loop.
   for ( auto& patch : prevPatches ) {
     id++;
-    float maxIou  = 0.0f;
-    int   bestIdx = -1, cId = 0;
+    float maxIou  = 0.0F;
+    int   bestIdx = -1;
+    int   cId     = 0;
     for ( auto& cpatch : patches ) {
       if ( ( patch.getViewId() == cpatch.getViewId() ) && ( cpatch.getBestMatchIdx() == InvalidPatchIndex ) &&
            ( patch.getLodScaleX() == cpatch.getLodScaleX() && patch.getLodScaleY() == cpatch.getLodScaleY() ) ) {
@@ -1998,7 +2030,7 @@ void PCCEncoder::findMatchesForGlobalTetrisPacking( PCCFrameContext& frame, PCCF
   frame.setNumMatchedPatches( matchedPatches.size() );
 
   vector<PCCPatch> newOrderPatches = matchedPatches;
-  for ( auto patch : patches ) {
+  for ( const auto& patch : patches ) {
     if ( patch.getBestMatchIdx() == InvalidPatchIndex ) { newOrderPatches.push_back( patch ); }
   }
   frame.setNumMatchedPatches( matchedPatches.size() );
@@ -2007,12 +2039,13 @@ void PCCEncoder::findMatchesForGlobalTetrisPacking( PCCFrameContext& frame, PCCF
   if ( printDetailedInfo ) {
     for ( int patchIdx = 0; patchIdx < patches.size(); patchIdx++ ) {
       auto& patch = patches[patchIdx];
-      if ( patchIdx < frame.getNumMatchedPatches() )
+      if ( patchIdx < frame.getNumMatchedPatches() ) {
         std::cout << "Matched (refPatch[" << patches[patchIdx].getBestMatchIdx()
                   << "]=" << prevPatches[patches[patchIdx].getBestMatchIdx()].getIndex() << ") Patch[" << patchIdx
                   << "]->";
-      else
+      } else {
         std::cout << "Unmatched Patch[" << patchIdx << "]->";
+      }
       patch.getU0() = 0;
       patch.getV0() = 0;
       patch.print();
@@ -2022,42 +2055,32 @@ void PCCEncoder::findMatchesForGlobalTetrisPacking( PCCFrameContext& frame, PCCF
 
 void PCCEncoder::doGlobalTetrisPacking( PCCContext& context ) {
   struct doubleLinkedPatchElement {
-    pcc::PCCPatch*    elem;
-    int32_t           nextElemPos;
-    int32_t           prevElemPos;
-    int32_t           weight;
+    pcc::PCCPatch*    elem{nullptr};
+    int32_t           nextElemPos{-1};
+    int32_t           prevElemPos{-1};
+    int32_t           weight{0};
     pcc::PCCPatch     globalElem;
     std::vector<bool> globalOccupancyMap;
 
-    doubleLinkedPatchElement() : elem( nullptr ), nextElemPos( -1 ), prevElemPos( -1 ), weight( 0 ) {}
+    doubleLinkedPatchElement() = default;
     doubleLinkedPatchElement( pcc::PCCPatch* patch ) :
         elem( patch ),
-        nextElemPos( -1 ),
+
         prevElemPos( patch->getBestMatchIdx() ),
         weight( patch->getBestMatchIdx() >= 0 ? 1 : 0 ) {}
     bool gt( const doubleLinkedPatchElement& rhs ) {
       // setting the largest dimension
-      if ( weight > rhs.weight ) {
-        return true;
-      } else {
-        if ( weight < rhs.weight ) {
-          return false;
-        } else
-          return elem->gt( rhs.elem[0] );
-      }
+      if ( weight > rhs.weight ) { return true; }
+      if ( weight < rhs.weight ) { return false; }
+      { return elem->gt( rhs.elem[0] ); }
     }
     bool gt2( const doubleLinkedPatchElement& rhs ) {
       // setting the largest dimension
       float volume       = weight * ( globalOccupancyMap.size() );
       float volume_right = rhs.weight * ( rhs.globalOccupancyMap.size() );
-      if ( volume > volume_right ) {
-        return true;
-      } else {
-        if ( volume < volume_right ) {
-          return false;
-        } else
-          return elem->gt( rhs.elem[0] );
-      }
+      if ( volume > volume_right ) { return true; }
+      if ( volume < volume_right ) { return false; }
+      { return elem->gt( rhs.elem[0] ); }
     }
   };
 
@@ -2073,7 +2096,7 @@ void PCCEncoder::doGlobalTetrisPacking( PCCContext& context ) {
   for ( int gofIdx = 0; gofIdx < numGof; gofIdx++ ) {
     int frStart = ( gofIdx ) * ( gofSize );
     int frEnd   = ( gofIdx + 1 ) * ( gofSize );
-    if ( gofIdx + 1 == numGof ) frEnd = frames.size();
+    if ( gofIdx + 1 == numGof ) { frEnd = frames.size(); }
     for ( size_t frameIdx = frStart; frameIdx < frEnd; frameIdx++ ) {
       auto& patches = frames[frameIdx].getPatches();
       patchMatrix[frameIdx].resize( patches.size() );
@@ -2092,8 +2115,9 @@ void PCCEncoder::doGlobalTetrisPacking( PCCContext& context ) {
     for ( int frameIdx = frEnd - 1; frameIdx >= frStart; frameIdx-- ) {
       for ( size_t patchIdx = 0; patchIdx < patchMatrix[frameIdx].size(); patchIdx++ ) {
         // update the list
-        if ( patchMatrix[frameIdx][patchIdx].prevElemPos >= 0 )
+        if ( patchMatrix[frameIdx][patchIdx].prevElemPos >= 0 ) {
           patchMatrix[frameIdx - 1][patchMatrix[frameIdx][patchIdx].prevElemPos].nextElemPos = patchIdx;
+        }
         // update the weight, the global occupancy map, and the patch size
         if ( patchMatrix[frameIdx][patchIdx].nextElemPos >= 0 ) {
           // new weight
@@ -2259,10 +2283,11 @@ void PCCEncoder::doGlobalTetrisPacking( PCCContext& context ) {
       } else {
         // have to maintain the same order of the matched patches from previous frame
         // now sort the rest of the list according to the sort function of the class
-        if ( frames[frameIdx].getNumMatchedPatches() != patchMatrixSortedIndexes[frameIdx].size() )
+        if ( frames[frameIdx].getNumMatchedPatches() != patchMatrixSortedIndexes[frameIdx].size() ) {
           sort( patchMatrixSortedIndexes[frameIdx].begin() + frames[frameIdx].getNumMatchedPatches(),
                 patchMatrixSortedIndexes[frameIdx].end(),
                 [&patchUnsorted]( size_t i1, size_t i2 ) { return patchUnsorted[i1].gt( patchUnsorted[i2] ); } );
+        }
         if ( printDetailedInfo ) {
           for ( int patchIdx = 0; patchIdx < frames[frameIdx].getNumMatchedPatches(); patchIdx++ ) {
             auto& patch = patchMatrix[frameIdx][patchMatrixSortedIndexes[frameIdx][patchIdx]];
@@ -2286,20 +2311,21 @@ void PCCEncoder::doGlobalTetrisPacking( PCCContext& context ) {
       int              numOrientations;
       std::vector<int> horizon;
       orientation_vertical.resize( 8 );
+      // favoring vertical orientation
       orientation_vertical = {PATCH_ORIENTATION_DEFAULT, PATCH_ORIENTATION_SWAP,    PATCH_ORIENTATION_ROT180,
                               PATCH_ORIENTATION_MIRROR,  PATCH_ORIENTATION_MROT180, PATCH_ORIENTATION_ROT270,
-                              PATCH_ORIENTATION_MROT90,  PATCH_ORIENTATION_ROT90};  // favoring vertical orientation
+                              PATCH_ORIENTATION_MROT90,  PATCH_ORIENTATION_ROT90};
       orientation_horizontal.resize( 8 );
       if ( params_.packingStrategy_ == 2 ) {
         orientation_horizontal = {PATCH_ORIENTATION_DEFAULT, PATCH_ORIENTATION_SWAP,    PATCH_ORIENTATION_ROT180,
                                   PATCH_ORIENTATION_MIRROR,  PATCH_ORIENTATION_MROT180, PATCH_ORIENTATION_ROT270,
                                   PATCH_ORIENTATION_MROT90,  PATCH_ORIENTATION_ROT90};
-      } else
-        orientation_horizontal = {
-            PATCH_ORIENTATION_SWAP,   PATCH_ORIENTATION_DEFAULT, PATCH_ORIENTATION_ROT270,
-            PATCH_ORIENTATION_MROT90, PATCH_ORIENTATION_ROT90,   PATCH_ORIENTATION_ROT180,
-            PATCH_ORIENTATION_MIRROR, PATCH_ORIENTATION_MROT180};  // favoring horizontal orientations (that should be
-      // rotated)
+      } else {
+        // favoring horizontal orientations (that should be rotated)
+        orientation_horizontal = {PATCH_ORIENTATION_SWAP,   PATCH_ORIENTATION_DEFAULT, PATCH_ORIENTATION_ROT270,
+                                  PATCH_ORIENTATION_MROT90, PATCH_ORIENTATION_ROT90,   PATCH_ORIENTATION_ROT180,
+                                  PATCH_ORIENTATION_MIRROR, PATCH_ORIENTATION_MROT180};
+      }
       numOrientations = params_.useEightOrientations_ ? 8 : 2;
 
       std::vector<bool> occupancyMap;
@@ -2329,7 +2355,8 @@ void PCCEncoder::doGlobalTetrisPacking( PCCContext& context ) {
 
         while ( !locationFound ) {
           int    best_wasted_space = ( std::numeric_limits<int>::max )();
-          size_t best_u, best_v;
+          size_t best_u;
+          size_t best_v;
           int    best_orientation;
           if ( curPatchElem.prevElemPos != InvalidPatchIndex ) {
             // try to place on the same position as the matched global patch, with the same orientation
@@ -2391,8 +2418,9 @@ void PCCEncoder::doGlobalTetrisPacking( PCCContext& context ) {
                 }
                 // if the element is the prediction of a patch in the next frame, store the current order for the next
                 // frame, to maintain the sequence
-                if ( curPatchElem.nextElemPos >= 0 )
+                if ( curPatchElem.nextElemPos >= 0 ) {
                   patchMatrixSortedIndexes[frameIdx + 1][indNextMatchedPatch++] = curPatchElem.nextElemPos;
+                }
               }
             } else {
               std::cout << "Could not fit the global patch in the canvas, at position (" << curGlobalElem.getU0() << ","
@@ -2472,26 +2500,28 @@ void PCCEncoder::doGlobalTetrisPacking( PCCContext& context ) {
                                                         curPatchElem.elem->getOccupancyResolution();
                       }
                       curPatchElem.elem->getPatchOrientation() = curGlobalElem.getPatchOrientation();
-                      if ( curPatchElem.elem->getBestMatchIdx() >= 0 )
+                      if ( curPatchElem.elem->getBestMatchIdx() >= 0 ) {
                         curPatchElem.elem->setBestMatchIdx(
                             std::distance( patchMatrixSortedIndexes[frameIdx - 1].begin(),
                                            std::find( patchMatrixSortedIndexes[frameIdx - 1].begin(),
                                                       patchMatrixSortedIndexes[frameIdx - 1].end(),
                                                       curPatchElem.elem->getBestMatchIdx() ) ) );
+                      }
                       sortedPatches.push_back( *curPatchElem.elem );
                       if ( printDetailedInfo ) {
-                        if ( curPatchElem.elem->getBestMatchIdx() >= 0 )
+                        if ( curPatchElem.elem->getBestMatchIdx() >= 0 ) {
                           std::cout << "Orientation " << curPatchElem.elem->getPatchOrientation()
                                     << " maintained for matched patch " << curPatchElem.elem->getIndex() << " ("
                                     << curPatchElem.elem->getU0() << "," << curPatchElem.elem->getV0()
                                     << ") -> matchedPatch[" << curPatchElem.elem->getBestMatchIdx() << "]="
                                     << patchMatrix[frameIdx - 1][curPatchElem.elem->getBestMatchIdx()].elem->getIndex()
                                     << std::endl;
-                        else
+                        } else {
                           std::cout << "Orientation " << curPatchElem.elem->getPatchOrientation()
                                     << " selected for unmatched patch " << curPatchElem.elem->getIndex() << " ("
                                     << curPatchElem.elem->getU0() << "," << curPatchElem.elem->getV0() << ")"
                                     << std::endl;
+                        }
                       }
                       // if the element is the prediction of a patch in the next frame, store the current order for the
                       // next frame, to maintain the sequence
@@ -2525,9 +2555,10 @@ void PCCEncoder::doGlobalTetrisPacking( PCCContext& context ) {
               curGlobalElem.getU0()               = best_u;
               curGlobalElem.getV0()               = best_v;
               curGlobalElem.getPatchOrientation() = best_orientation;
-              if ( printDetailedInfo )
+              if ( printDetailedInfo ) {
                 std::cout << "Selected position (" << best_u << "," << best_v << ") and orientation "
                           << best_orientation << std::endl;
+              }
               if ( !( curGlobalElem.isPatchDimensionSwitched() ) ) {
                 curPatchElem.elem->getU0() =
                     curGlobalElem.getU0() + ( curPatchElem.elem->getU1() - curGlobalElem.getU1() ) /
@@ -2577,10 +2608,11 @@ void PCCEncoder::doGlobalTetrisPacking( PCCContext& context ) {
         for ( size_t v0 = 0; v0 < curGlobalElem.getSizeV0(); ++v0 ) {
           for ( size_t u0 = 0; u0 < curGlobalElem.getSizeU0(); ++u0 ) {
             int coord = curGlobalElem.patchBlock2CanvasBlock( u0, v0, occupancySizeU, occupancySizeV );
-            if ( params_.lowDelayEncoding_ )
+            if ( params_.lowDelayEncoding_ ) {
               occupancyMap[coord] = true;
-            else
+            } else {
               occupancyMap[coord] = occupancyMap[coord] || occupancy[v0 * curGlobalElem.getSizeU0() + u0];
+            }
           }
         }
         if ( !( curGlobalElem.isPatchDimensionSwitched() ) ) {
@@ -2673,11 +2705,12 @@ void PCCEncoder::pack( PCCFrameContext& frame, int safeguard, bool enablePointCl
         const size_t v = patch.getV0() + v0;
         for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {
           const size_t u = patch.getU0() + u0;
-          if ( params_.lowDelayEncoding_ )
+          if ( params_.lowDelayEncoding_ ) {
             occupancyMap[v * occupancySizeU + u] = true;
-          else
+          } else {
             occupancyMap[v * occupancySizeU + u] =
                 occupancyMap[v * occupancySizeU + u] || occupancy[v0 * patch.getSizeU0() + u0];
+          }
         }
       }
 
@@ -2863,10 +2896,11 @@ void PCCEncoder::packFlexible( PCCFrameContext& frame, int safeguard, bool enabl
       for ( size_t v0 = 0; v0 < patch.getSizeV0(); ++v0 ) {
         for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {
           int coord = patch.patchBlock2CanvasBlock( u0, v0, occupancySizeU, occupancySizeV );
-          if ( params_.lowDelayEncoding_ )
+          if ( params_.lowDelayEncoding_ ) {
             occupancyMap[coord] = true;
-          else
+          } else {
             occupancyMap[coord] = occupancyMap[coord] || occupancy[v0 * patch.getSizeU0() + u0];
+          }
         }
       }
 
@@ -3033,7 +3067,7 @@ void PCCEncoder::packTetris( PCCFrameContext& frame, int safeguard ) {
     auto& occupancy = patch.getOccupancy();
 
     // getting the horizons using the rotation 0 position
-    if ( printDetailedInfo ) patch.print();
+    if ( printDetailedInfo ) { patch.print(); }
     std::vector<int> top_horizon;
     std::vector<int> bottom_horizon;
     std::vector<int> right_horizon;
@@ -3049,7 +3083,8 @@ void PCCEncoder::packTetris( PCCFrameContext& frame, int safeguard ) {
     int numOrientations = params_.useEightOrientations_ ? 8 : 2;
     while ( !locationFound ) {
       int    best_wasted_space = ( std::numeric_limits<int>::max )();
-      size_t best_u, best_v;
+      size_t best_u;
+      size_t best_v;
       int    best_orientation;
       for ( size_t u = 0; u < occupancySizeU; ++u ) {
         for ( size_t v = 0; v < occupancySizeV; ++v ) {
@@ -3059,19 +3094,21 @@ void PCCEncoder::packTetris( PCCFrameContext& frame, int safeguard ) {
             patch.getPatchOrientation() = orientation_values[orientationIdx];
             if ( !patch.isPatchLocationAboveHorizon( horizon, top_horizon, bottom_horizon, right_horizon,
                                                      left_horizon ) ) {
-              if ( printDetailedInfo )
+              if ( printDetailedInfo ) {
                 std::cout << "(" << u << "," << v << "|" << patch.getPatchOrientation() << ") above horizon"
                           << std::endl;
+              }
               continue;
             }
-            if ( printDetailedInfo )
+            if ( printDetailedInfo ) {
               std::cout << "(" << u << "," << v << "|" << patch.getPatchOrientation() << ")" << std::endl;
+            }
             if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_,
                                             safeguard ) ) {
               // now calculate the wasted space
               int wasted_space =
                   patch.calculate_wasted_space( horizon, top_horizon, bottom_horizon, right_horizon, left_horizon );
-              if ( printDetailedInfo ) std::cout << "(wasted space) = " << wasted_space << std::endl;
+              if ( printDetailedInfo ) { std::cout << "(wasted space) = " << wasted_space << std::endl; }
               if ( wasted_space < best_wasted_space ) {
                 best_wasted_space = wasted_space;
                 best_u            = u;
@@ -3086,16 +3123,18 @@ void PCCEncoder::packTetris( PCCFrameContext& frame, int safeguard ) {
       if ( !locationFound ) {
         occupancySizeV *= 2;
         occupancyMap.resize( occupancySizeU * occupancySizeV );
-        if ( printDetailedInfo )
+        if ( printDetailedInfo ) {
           std::cout << "Increasing frame size (" << occupancySizeU << "," << occupancySizeV << ")" << std::endl;
+        }
       } else {
         // select the best position and orientation
         patch.getU0()               = best_u;
         patch.getV0()               = best_v;
         patch.getPatchOrientation() = best_orientation;
-        if ( printDetailedInfo )
+        if ( printDetailedInfo ) {
           std::cout << "Selected position (" << best_u << "," << best_v << ") and orientation " << best_orientation
                     << "(wasted space=" << best_wasted_space << ")" << std::endl;
+        }
         // update the horizon
         patch.update_horizon( horizon, top_horizon, bottom_horizon, right_horizon, left_horizon );
         // debugging
@@ -3109,10 +3148,11 @@ void PCCEncoder::packTetris( PCCFrameContext& frame, int safeguard ) {
     for ( size_t v0 = 0; v0 < patch.getSizeV0(); ++v0 ) {
       for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {
         int coord = patch.patchBlock2CanvasBlock( u0, v0, occupancySizeU, occupancySizeV );
-        if ( params_.lowDelayEncoding_ )
+        if ( params_.lowDelayEncoding_ ) {
           occupancyMap[coord] = true;
-        else
+        } else {
           occupancyMap[coord] = occupancyMap[coord] || occupancy[v0 * patch.getSizeU0() + u0];
+        }
       }
     }
     if ( !( patch.isPatchDimensionSwitched() ) ) {
@@ -3131,7 +3171,7 @@ void PCCEncoder::packTetris( PCCFrameContext& frame, int safeguard ) {
   if ( frame.getNumberOfRawPointsPatches() > 0 ) {
     packRawPointsPatch( frame, occupancyMap, width, height, occupancySizeU, occupancySizeV, maxOccupancyRow );
   } else {
-    if ( printDetailedInfo ) printMap( occupancyMap, occupancySizeU, occupancySizeV );
+    if ( printDetailedInfo ) { printMap( occupancyMap, occupancySizeU, occupancySizeV ); }
   }
   if ( params_.enhancedOccupancyMapCode_ && !frame.getUseRawPointsSeparateVideo() ) {
     packEOMTexturePointsPatch( frame, occupancyMap, width, height, occupancySizeU, occupancySizeV, maxOccupancyRow );
@@ -3152,9 +3192,9 @@ void PCCEncoder::packEOMTexturePointsPatch( PCCFrameContext&   frame,
   auto&  eomPatches = frame.getEomPatches();
   size_t lastHeight = height;
   for ( size_t i = 0; i < eomPatches.size(); i++ ) {
-    size_t eomPointsPatchBlocks = static_cast<size_t>(
+    auto eomPointsPatchBlocks = static_cast<size_t>(
         ceil( double( eomPatches[i].eomCount_ ) / ( params_.occupancyResolution_ * params_.occupancyResolution_ ) ) );
-    size_t eomPointsPatchBlocksV = static_cast<size_t>( ceil( double( eomPointsPatchBlocks ) / occupancySizeU ) );
+    auto eomPointsPatchBlocksV = static_cast<size_t>( ceil( double( eomPointsPatchBlocks ) / occupancySizeU ) );
     occupancySizeV += eomPointsPatchBlocksV;
     eomPatches[i].u0_    = 0;
     eomPatches[i].v0_    = lastHeight / params_.occupancyResolution_;
@@ -3181,11 +3221,11 @@ void PCCEncoder::packRawPointsPatch( PCCFrameContext&   frame,
   size_t numberOfRawPointsPatches = frame.getNumberOfRawPointsPatches();
   size_t safeguard                = 0;
   for ( int i = 0; i < numberOfRawPointsPatches; i++ ) {
-    auto&  rawPointsPatch       = frame.getRawPointsPatch( i );
-    size_t rawPointsPatchBlocks = static_cast<size_t>(
+    auto& rawPointsPatch       = frame.getRawPointsPatch( i );
+    auto  rawPointsPatchBlocks = static_cast<size_t>(
         ceil( double( rawPointsPatch.size() ) / ( params_.occupancyResolution_ * params_.occupancyResolution_ ) ) );
-    size_t rawPointsPatchBlocksV0 = static_cast<size_t>( ceil( double( rawPointsPatchBlocks ) / occupancySizeU ) );
-    size_t rawPointsPatchBlocksU0 =
+    auto rawPointsPatchBlocksV0 = static_cast<size_t>( ceil( double( rawPointsPatchBlocks ) / occupancySizeU ) );
+    auto rawPointsPatchBlocksU0 =
         static_cast<size_t>( ceil( double( rawPointsPatchBlocks ) / rawPointsPatchBlocksV0 ) );
     rawPointsPatch.sizeU0_ = rawPointsPatchBlocksU0;
     rawPointsPatch.sizeV0_ = rawPointsPatchBlocksV0;
@@ -3247,11 +3287,12 @@ void PCCEncoder::packRawPointsPatch( PCCFrameContext&   frame,
       const size_t v = rawPointsPatch.v0_ + v0;
       for ( size_t u0 = 0; u0 < rawPointsPatch.sizeU0_; ++u0 ) {
         const size_t u = rawPointsPatch.u0_ + u0;
-        if ( params_.lowDelayEncoding_ )
+        if ( params_.lowDelayEncoding_ ) {
           occupancyMap[v * occupancySizeU + u] = true;
-        else
+        } else {
           occupancyMap[v * occupancySizeU + u] =
               occupancyMap[v * occupancySizeU + u] || rawPointsPatchOccupancy[v0 * rawPointsPatch.sizeU0_ + u0];
+        }
       }
       height = ( std::max )( height, ( patch.getV0() + patch.getSizeV0() ) * params_.occupancyResolution_ );
     }
@@ -3281,7 +3322,8 @@ void PCCEncoder::calculateWeightNormal( PCCContext& context, const PCCPointSet3&
     const int size_1f = maxValue * maxValue;
     for ( size_t idx = 0; idx < pointCount; idx++ ) {
       const PCCPoint3D point = source[idx];
-      int              x, y;
+      int              x;
+      int              y;
       // YZ: 0,3
       x                        = int( point[1] );
       y                        = int( point[2] );
@@ -3304,9 +3346,9 @@ void PCCEncoder::calculateWeightNormal( PCCContext& context, const PCCPointSet3&
       pjCnt[x].value = 0;
     }
     for ( size_t idx = 0; idx < maxValue * maxValue; idx++ ) {
-      if ( pjFace[idx] == true ) { pjCnt[0].value = pjCnt[0].value + 1; }
-      if ( pjFace[idx + size_1f] == true ) { pjCnt[1].value = pjCnt[1].value + 1; }
-      if ( pjFace[idx + size_1f * 2] == true ) { pjCnt[2].value = pjCnt[2].value + 1; }
+      if ( pjFace[idx] ) { pjCnt[0].value = pjCnt[0].value + 1; }
+      if ( pjFace[idx + size_1f] ) { pjCnt[1].value = pjCnt[1].value + 1; }
+      if ( pjFace[idx + size_1f * 2] ) { pjCnt[2].value = pjCnt[2].value + 1; }
     }
 
     std::sort( pjCnt, pjCnt + 3, comp1 );
@@ -3323,7 +3365,8 @@ void PCCEncoder::calculateWeightNormal( PCCContext& context, const PCCPointSet3&
       axis_weight[idx_t] = axis_weight[idx_t + 3] = 1.0;
     } else {
       int    idx_t = pjCnt[0].idx;
-      double tmpb, tmpa;
+      double tmpb;
+      double tmpa;
       axis_weight[idx_t] = axis_weight[idx_t + 3] = params_.minWeightEPP_;
 
       idx_t              = pjCnt[2].idx;
@@ -3378,8 +3421,8 @@ bool PCCEncoder::generateScaledGeometry( const PCCPointSet3& source, PCCFrameCon
     patches[i].setLodScaleY( params_.levelOfDetailY_ );
     patches[i].getSizeU()  = scaleSizeU;
     patches[i].getSizeV()  = scaleSizeV;
-    patches[i].getSizeU0() = std::ceil( static_cast<double>(scaleSizeU) / params_.occupancyResolution_ );
-    patches[i].getSizeV0() = std::ceil( static_cast<double>(scaleSizeV) / params_.occupancyResolution_ );
+    patches[i].getSizeU0() = std::ceil( static_cast<double>( scaleSizeU ) / params_.occupancyResolution_ );
+    patches[i].getSizeV0() = std::ceil( static_cast<double>( scaleSizeV ) / params_.occupancyResolution_ );
 
     patches[i].getOccupancy().clear();
     patches[i].getDepth( 0 ).clear();
@@ -3411,14 +3454,14 @@ bool PCCEncoder::generateScaledGeometry( const PCCPointSet3& source, PCCFrameCon
   return true;
 }
 
-bool PCCEncoder::generateGeometryVideo( const PCCPointSet3&                source,
-                                        PCCFrameContext&                   frame,
-                                        const PCCPatchSegmenter3Parameters segmenterParams,
-                                        PCCVideoGeometry&                  videoGeometry,
-                                        PCCFrameContext&                   prevFrame,
-                                        size_t                             frameIndex,
-                                        float&                             distanceSrcRec ) {
-  if ( !source.getPointCount() ) { return false; }
+bool PCCEncoder::generateGeometryVideo( const PCCPointSet3&                 source,
+                                        PCCFrameContext&                    frame,
+                                        const PCCPatchSegmenter3Parameters& segmenterParams,
+                                        PCCVideoGeometry&                   videoGeometry,
+                                        PCCFrameContext&                    prevFrame,
+                                        size_t                              frameIndex,
+                                        float&                              distanceSrcRec ) {
+  if ( source.getPointCount() == 0u ) { return false; }
 
   if ( segmenterParams.additionalProjectionPlaneMode_ != 5 ) {
     auto& patches = frame.getPatches();
@@ -3459,23 +3502,25 @@ bool PCCEncoder::generateGeometryVideo( const PCCPointSet3&                sourc
       if ( ( frameIndex == 0 ) || ( !params_.constrainedPack_ ) ) {
         packFlexible( frame, params_.safeGuardDistance_, params_.enablePointCloudPartitioning_ );
       } else {
-        if ( params_.globalPatchAllocation_ == 2 )
+        if ( params_.globalPatchAllocation_ == 2 ) {
           findMatchesForGlobalTetrisPacking(
               frame, prevFrame );  // this could also be a different prevFrame, it depends on the prediction structure
-        else
+        } else {
           spatialConsistencyPackFlexible( frame, prevFrame, params_.safeGuardDistance_,
                                           params_.enablePointCloudPartitioning_ );
+        }
       }
     } else {
       if ( params_.packingStrategy_ == 2 ) {
         if ( ( frameIndex == 0 ) || ( !params_.constrainedPack_ ) ) {
           packTetris( frame, params_.safeGuardDistance_ );
         } else {
-          if ( params_.globalPatchAllocation_ == 2 )
+          if ( params_.globalPatchAllocation_ == 2 ) {
             findMatchesForGlobalTetrisPacking(
                 frame, prevFrame );  // this could also be a different prevFrame, it depends on the prediction structure
-          else
+          } else {
             spatialConsistencyPackTetris( frame, prevFrame, params_.safeGuardDistance_ );
+          }
         }
       }
     }
@@ -3500,10 +3545,11 @@ void PCCEncoder::geometryGroupDilation( PCCContext& context ) {
       for ( size_t x = 0; x < width; x++ ) {
         // const size_t pos = y * width + x;
         if ( occupancyMap.getValue( 0, x / params_.occupancyPrecision_, y / params_.occupancyPrecision_ ) == 0 ) {
-          uint32_t avg =
-              ( ( static_cast<uint32_t>(frame1.getValue( 0, x, y )) ) + ( static_cast<uint32_t>(frame2.getValue( 0, x, y )) ) + 1 ) >> 1;
-          frame1.setValue( 0, x, y, static_cast<uint16_t>(avg) );
-          frame2.setValue( 0, x, y, static_cast<uint16_t>(avg) );
+          uint32_t avg = ( ( static_cast<uint32_t>( frame1.getValue( 0, x, y ) ) ) +
+                           ( static_cast<uint32_t>( frame2.getValue( 0, x, y ) ) ) + 1 ) >>
+                         1;
+          frame1.setValue( 0, x, y, static_cast<uint16_t>( avg ) );
+          frame2.setValue( 0, x, y, static_cast<uint16_t>( avg ) );
         }
       }
     }
@@ -3543,9 +3589,10 @@ void PCCEncoder::generateOccupancyMap( PCCFrameContext& frame ) {
 }
 
 void PCCEncoder::refineOccupancyMap( PCCFrameContext& frame ) {
-  auto&        patches        = frame.getPatches();
-  const size_t patchCount     = patches.size();
-  size_t       countRemove4x4 = 0, countRemove16x16 = 0;
+  auto&        patches          = frame.getPatches();
+  const size_t patchCount       = patches.size();
+  size_t       countRemove4x4   = 0;
+  size_t       countRemove16x16 = 0;
 
   for ( size_t patchIndex = 0; patchIndex < patchCount; ++patchIndex ) {
     auto& patch = patches[patchIndex];
@@ -3635,7 +3682,7 @@ void PCCEncoder::refineOccupancyMap( PCCFrameContext& frame ) {
   }
 }
 
-void PCCEncoder::remove3DMotionEstimationFiles( std::string path ) {
+void PCCEncoder::remove3DMotionEstimationFiles( const std::string& path ) {
   removeFile( path + "occupancy.txt" );
   removeFile( path + "patchInfo.txt" );
   removeFile( path + "blockToPatch.txt" );
@@ -3643,7 +3690,7 @@ void PCCEncoder::remove3DMotionEstimationFiles( std::string path ) {
 
 void PCCEncoder::create3DMotionEstimationFiles( const PCCGroupOfFrames& sources,
                                                 PCCContext&             context,
-                                                std::string             path ) {
+                                                const std::string&      path ) {
   FILE* occupancyFile    = fopen( ( path + "occupancy.txt" ).c_str(), "wb" );
   FILE* patchInfoFile    = fopen( ( path + "patchInfo.txt" ).c_str(), "wb" );
   FILE* blockToPatchFile = fopen( ( path + "blockToPatch.txt" ).c_str(), "wb" );
@@ -3661,10 +3708,11 @@ void PCCEncoder::create3DMotionEstimationFiles( const PCCGroupOfFrames& sources,
     uint32_t oneVal  = 1;
     for ( int y = 0; y < frame.getHeight(); y++ ) {
       for ( int x = 0; x < frame.getWidth(); x++ ) {
-        if ( occupancyMapImage.getValue( 0, x / params_.occupancyPrecision_, y / params_.occupancyPrecision_ ) > 0 )
+        if ( occupancyMapImage.getValue( 0, x / params_.occupancyPrecision_, y / params_.occupancyPrecision_ ) > 0 ) {
           fwrite( &oneVal, sizeof( uint32_t ), 1, occupancyFile );
-        else
+        } else {
           fwrite( &zeroVal, sizeof( uint32_t ), 1, occupancyFile );
+        }
       }
     }
     const size_t numPatches = patches.size();
@@ -3706,7 +3754,8 @@ void PCCEncoder::generateIntraImage( PCCFrameContext& frame, const size_t mapInd
         const size_t  p = v * patch.getSizeU() + u;
         const int16_t d = patch.getDepth( mapIndex )[p];
         if ( d < infiniteDepth ) {
-          size_t x, y;
+          size_t x;
+          size_t y;
           patch.patch2Canvas( u, v, width, height, x, y );
           // FIX1
           //          if ( msb_align_flag )
@@ -3730,7 +3779,7 @@ void PCCEncoder::generateIntraImage( PCCFrameContext& frame, const size_t mapInd
       auto&        rawPointsPatch = frame.getRawPointsPatch( i );
       const size_t v0             = rawPointsPatch.v0_ * rawPointsPatch.occupancyResolution_;
       const size_t u0             = rawPointsPatch.u0_ * rawPointsPatch.occupancyResolution_;
-      if ( rawPointsPatch.size() ) {
+      if ( rawPointsPatch.size() != 0u ) {
         for ( size_t v = 0; v < rawPointsPatch.sizeV_; ++v ) {
           for ( size_t u = 0; u < rawPointsPatch.sizeU_; ++u ) {
             const size_t p = v * rawPointsPatch.sizeU_ + u;
@@ -3792,7 +3841,7 @@ bool PCCEncoder::predictTextureFrame( PCCFrameContext&       frame,
         reference_color[1] = PCCClip( round( g * 255 ), 0.0, 255.0 );
         reference_color[2] = PCCClip( round( b * 255 ), 0.0, 255.0 );
         for ( size_t c = 0; c < 3; ++c ) {
-          const int16_t value1 = static_cast<int16_t>( image.getValue( c, x, y ) );
+          const auto    value1 = static_cast<int16_t>( image.getValue( c, x, y ) );
           const int16_t value0 = reference_color[c];
           int16_t       delta  = 0;
           delta                = value1 - value0;
@@ -3803,12 +3852,12 @@ bool PCCEncoder::predictTextureFrame( PCCFrameContext&       frame,
           }
           delta += offsetValue;
           delta = delta < 0 ? 0 : ( delta > maxValue ? maxValue : delta );
-          image.setValue( c, x, y, static_cast< uint8_t>( delta ) );
+          image.setValue( c, x, y, static_cast<uint8_t>( delta ) );
         }  // c
       } else {
-        image.setValue( 0, x, y, static_cast< uint8_t>( 128 ) );
-        image.setValue( 1, x, y, static_cast< uint8_t>( 128 ) );
-        image.setValue( 2, x, y, static_cast< uint8_t>( 128 ) );
+        image.setValue( 0, x, y, static_cast<uint8_t>( 128 ) );
+        image.setValue( 1, x, y, static_cast<uint8_t>( 128 ) );
+        image.setValue( 2, x, y, static_cast<uint8_t>( 128 ) );
       }
     }
   }
@@ -3846,17 +3895,18 @@ bool PCCEncoder::predictGeometryFrame( PCCFrameContext&        frame,
             const size_t v = v0 * patch.getOccupancyResolution() + v1;
             for ( size_t u1 = 0; u1 < patch.getOccupancyResolution(); ++u1 ) {
               const size_t u = u0 * patch.getOccupancyResolution() + u1;
-              size_t       x, y;
+              size_t       x;
+              size_t       y;
               patch.patch2Canvas( u, v, imageWidth, imageHeight, x, y );
               const bool occupancy = occupancyMap[y * imageWidth + x] != 0;
               if ( !occupancy ) { continue; }
-              const uint16_t value1 = static_cast<uint16_t>( image.getValue( 0, x, y ) );
-              const uint16_t value0 = static_cast<uint16_t>( reference.getValue( 0, x, y ) );
-              int_least32_t  delta  = 0;
-              delta                 = std::abs( static_cast<int_least32_t>(value1) - static_cast<int_least32_t>(value0) );
+              const auto    value1 = static_cast<uint16_t>( image.getValue( 0, x, y ) );
+              const auto    value0 = static_cast<uint16_t>( reference.getValue( 0, x, y ) );
+              int_least32_t delta  = 0;
+              delta = std::abs( static_cast<int_least32_t>( value1 ) - static_cast<int_least32_t>( value0 ) );
               if ( delta < 0 ) { delta = 0; }
               if ( !params_.losslessGeo_ && delta > 9 ) { delta = 9; }
-              image.setValue( 0, x, y, static_cast<uint8_t>(delta) );
+              image.setValue( 0, x, y, static_cast<uint8_t>( delta ) );
             }
           }
         }
@@ -3880,12 +3930,14 @@ void PCCEncoder::generateEomPatch( const PCCPointSet3& source, PCCFrameContext& 
       for ( size_t u = 0; u < patch.getSizeU(); ++u ) {
         const size_t p       = v * patch.getSizeU() + u;
         int16_t      eomCode = patch.getDepthEnhancedDeltaD()[p];
-        if ( eomCode ) {
+        if ( eomCode != 0 ) {
           uint16_t nbBits = 0;
           for ( uint16_t i = 0; i < 10; i++ ) {
-            if ( eomCode & ( 1 << i ) ) nbBits++;
+            if ( ( eomCode & ( 1 << i ) ) != 0 ) { nbBits++; }
           }
-          if ( params_.mapCountMinus1_ > 0 ) nbBits--;  // don't count d1
+          if ( params_.mapCountMinus1_ > 0 ) {
+            nbBits--;  // don't count d1
+          }
           eomCountPerPatch += nbBits;
         }
       }
@@ -3939,7 +3991,7 @@ void PCCEncoder::generateRawPointsPatch( const PCCPointSet3& source,
               point1[patch.getTangentAxis()]   = double( u ) + patch.getU1();
               point1[patch.getBitangentAxis()] = double( v ) + patch.getV1();
               for ( uint16_t i = 0; i < 16; i++ ) {  // surfaceThickness is not necessary here?
-                if ( patch.getDepthEnhancedDeltaD()[p] & ( 1 << i ) ) {
+                if ( ( patch.getDepthEnhancedDeltaD()[p] & ( 1 << i ) ) != 0 ) {
                   uint16_t nDeltaDCur = ( i + 1 );
                   size_t   depth1     = 0;
                   if ( params_.mapCountMinus1_ == 0 ) {
@@ -4037,7 +4089,7 @@ void PCCEncoder::generateRawPointsPatch( const PCCPointSet3& source,
             << inputBbox.max_.z() << ");" << std::endl;
 
   PCCBox3D bboxRawPoints;
-  double   mpsBoxSize = double( 1 << params_.geometryNominal2dBitdepth_ );
+  auto     mpsBoxSize = double( 1 << params_.geometryNominal2dBitdepth_ );
 
   bboxRawPoints.min_ = inputBbox.min_;
   bboxRawPoints.max_ = inputBbox.min_;
@@ -4116,7 +4168,7 @@ void PCCEncoder::generateRawPointsPatch( const PCCPointSet3& source,
 void PCCEncoder::sortRawPointsPatchMorton( PCCFrameContext& frame, size_t index ) {
   auto&  rawPointsPatch = frame.getRawPointsPatch( index );
   size_t numRawPoints   = rawPointsPatch.getNumberOfRawPoints();
-  if ( numRawPoints ) {
+  if ( numRawPoints != 0u ) {
     PCCPointSet3 rawPointsSet;
     rawPointsSet.resize( numRawPoints );
     for ( size_t i = 0; i < numRawPoints; i++ ) {
@@ -4154,7 +4206,7 @@ void PCCEncoder::sortRawPointsPatch( PCCFrameContext& frame, size_t index ) {
   const size_t maxNeighborCount     = 5;
   const size_t neighborSearchRadius = 5 * 5;
   size_t       numRawPoints         = rawPointsPatch.getNumberOfRawPoints();
-  if ( numRawPoints ) {
+  if ( numRawPoints != 0u ) {
     vector<size_t> sortIdx;
     sortIdx.reserve( numRawPoints );
     PCCPointSet3 rawPointsSet;
@@ -4222,8 +4274,9 @@ void PCCEncoder::generateRawPointsGeometryVideo( PCCContext& context, PCCGroupOf
     generateMPsGeometryImage( context, frame, videoMPsGeometry.getFrame( shift ) );
 
     size_t totalNumRawPoints = 0;
-    for ( size_t ii = 0; ii < frame.getNumberOfRawPointsPatches(); ii++ )
+    for ( size_t ii = 0; ii < frame.getNumberOfRawPointsPatches(); ii++ ) {
       totalNumRawPoints += frame.getRawPointsPatch( ii ).size();
+    }
     cout << "generate raw Points Video (Geometry) frame " << shift
          << ": # of raw Patches : " << frame.getNumberOfRawPointsPatches()
          << " total # of raw Geometry : " << totalNumRawPoints << endl;
@@ -4312,7 +4365,7 @@ void PCCEncoder::generateMPsGeometryImage( PCCContext& context, PCCFrameContext&
       numberOfRawPoints *= 3;
       lastValue = rawPointsPatch.x_[numberOfRawPoints - 1];
     }
-    if ( rawPointsPatch.size() ) {
+    if ( rawPointsPatch.size() != 0u ) {
       for ( size_t v = 0; v < rawPointsPatch.sizeV_; ++v ) {
         for ( size_t u = 0; u < rawPointsPatch.sizeU_; ++u ) {
           const size_t p = v * rawPointsPatch.sizeU_ + u;
@@ -4356,7 +4409,8 @@ void PCCEncoder::generateMPsTextureImage( PCCContext&         context,
   double avgR{0.0};
   double avgG{0.0};
   double avgB{0.0};
-  size_t xx, yy;
+  size_t xx;
+  size_t yy;
   size_t width = frame.getMPAttWidth();
   if ( numOfMPGeos != 0 ) {
     heightMP         = numOfMPGeos / width + 1;
@@ -4367,7 +4421,7 @@ void PCCEncoder::generateMPsTextureImage( PCCContext&         context,
     for ( int i = 0; i < numberOfRawPointsPatches; i++ ) {
       auto& rawPointsPatch = frame.getRawPointsPatch( i );
       mpsV0                = rawPointsPatch.v0_ * rawPointsPatch.occupancyResolution_ + rawPointsPatch.sizeV_;
-      if ( mpsV0 > maxRawPointsV0 ) maxRawPointsV0 = mpsV0;
+      if ( mpsV0 > maxRawPointsV0 ) { maxRawPointsV0 = mpsV0; }
     }
     heightMP = maxRawPointsV0;
     image.resize( width, heightMP );
@@ -4416,7 +4470,7 @@ void PCCEncoder::generateMPsTextureImage( PCCContext&         context,
         xx            = uBlock * 16 + ( nPixelInCurrentBlockCount % 16 );
         yy            = vBlock * 16 + ( nPixelInCurrentBlockCount / 16 ) + heightMP;
         ++nPixelInCurrentBlockCount;
-        if ( nPixelInCurrentBlockCount >= 256 ) nPixelInCurrentBlockCount = 0;
+        if ( nPixelInCurrentBlockCount >= 256 ) { nPixelInCurrentBlockCount = 0; }
         assert( yy < heightMP + heightEOM );
         image.setValue( 0, xx, yy, eomTextures[k + eomPatchOffset].r() );
         image.setValue( 1, xx, yy, eomTextures[k + eomPatchOffset].g() );
@@ -4504,8 +4558,8 @@ bool PCCEncoder::generateGeometryVideo( const PCCGroupOfFrames& sources, PCCCont
     sumDistanceSrcRec += distanceSrcRec;
   }
   if ( params_.pointLocalReconstruction_ || params_.singleMapPixelInterleaving_ ) {
-    const float distanceSrcRec = sumDistanceSrcRec / static_cast<float>(frames.size());
-    if ( distanceSrcRec >= 250.f ) {
+    const float distanceSrcRec = sumDistanceSrcRec / static_cast<float>( frames.size() );
+    if ( distanceSrcRec >= 250.F ) {
       params_.pointLocalReconstruction_   = false;
       params_.mapCountMinus1_             = 1;
       params_.singleMapPixelInterleaving_ = false;
@@ -4519,12 +4573,12 @@ bool PCCEncoder::generateGeometryVideo( const PCCGroupOfFrames& sources, PCCCont
   return res;
 }
 
-void PCCEncoder::pointLocalReconstructionSearch( PCCContext& context, const GeneratePointCloudParameters params ) {
+void PCCEncoder::pointLocalReconstructionSearch( PCCContext& context, const GeneratePointCloudParameters& params ) {
   auto& frames                = context.getFrames();
   auto& videoGeometry         = context.getVideoGeometry();
   auto& videoGeometryMultiple = context.getVideoGeometryMultiple();
-  for ( size_t i = 0; i < frames.size(); i++ ) {
-    pointLocalReconstructionSearch( context, frames[i], videoGeometry, videoGeometryMultiple, params );
+  for ( auto& frame : frames ) {
+    pointLocalReconstructionSearch( context, frame, videoGeometry, videoGeometryMultiple, params );
   }
 }
 
@@ -4532,13 +4586,15 @@ void PCCEncoder::pointLocalReconstructionSearch( PCCContext&                    
                                                  PCCFrameContext&                     frame,
                                                  const PCCVideoGeometry&              video,
                                                  const std::vector<PCCVideoGeometry>& videoMultiple,
-                                                 const GeneratePointCloudParameters   params ) {
+                                                 const GeneratePointCloudParameters&  params ) {
   auto&                 patches         = frame.getPatches();
   auto&                 blockToPatch    = frame.getBlockToPatch();
   auto&                 occupancyMapOrg = frame.getOccupancyMap();
   std::vector<uint32_t> occupancyMap;
   occupancyMap.resize( occupancyMapOrg.size(), 0 );
-  for ( size_t i = 0; i < occupancyMapOrg.size(); i++ ) { occupancyMap[i] = ( occupancyMapOrg[i] >= 1 ); }
+  for ( size_t i = 0; i < occupancyMapOrg.size(); i++ ) {
+    occupancyMap[i] = static_cast<unsigned int>( occupancyMapOrg[i] >= 1 );
+  }
   const size_t width              = frame.getWidth();
   const size_t height             = frame.getHeight();
   const size_t blockToPatchWidth  = width / params_.occupancyResolution_;
@@ -4558,7 +4614,7 @@ void PCCEncoder::pointLocalReconstructionSearch( PCCContext&                    
           }
           for ( size_t v3 = 0; v3 < params_.occupancyPrecision_; ++v3 ) {
             for ( size_t u3 = 0; u3 < params_.occupancyPrecision_; ++u3 ) {
-              occupancyMap[( v2 + v3 ) * width + u2 + u3] = isFull;
+              occupancyMap[( v2 + v3 ) * width + u2 + u3] = static_cast<unsigned int>( isFull );
             }
           }
         }
@@ -4588,7 +4644,8 @@ void PCCEncoder::pointLocalReconstructionSearch( PCCContext&                    
       std::vector<float>        distance;
       reconstruct.resize( nbOfOptimizationMode );
       distance.resize( nbOfOptimizationMode );
-      size_t optimizationIndex = 0, optimizationIndexMin = 0;
+      size_t optimizationIndex    = 0;
+      size_t optimizationIndexMin = 0;
       for ( size_t i = 0; i < nbOfOptimizationMode; i++ ) {
         auto& mode = context.getPointLocalReconstructionMode( i );
         for ( size_t v0 = 0; v0 < patch.getSizeV0(); ++v0 ) {
@@ -4599,15 +4656,16 @@ void PCCEncoder::pointLocalReconstructionSearch( PCCContext&                    
                 const size_t v = v0 * patch.getOccupancyResolution() + v1;
                 for ( size_t u1 = 0; u1 < patch.getOccupancyResolution(); ++u1 ) {
                   const size_t u = u0 * patch.getOccupancyResolution() + u1;
-                  size_t       x, y;
+                  size_t       x;
+                  size_t       y;
                   const bool   occupancy = occupancyMap[patch.patch2Canvas( u, v, imageWidth, imageHeight, x, y )] != 0;
                   if ( !occupancy ) { continue; }
                   auto createdPoints =
                       generatePoints( params, frame, video, videoMultiple, shift, patchIndex, u, v, x, y,
                                       mode.interpolate_, mode.filling_, mode.minD1_, mode.neighbor_ );
-                  if ( createdPoints.size() > 0 ) {
-                    for ( size_t i = 0; i < createdPoints.size(); i++ ) {
-                      reconstruct[optimizationIndex].addPoint( createdPoints[i] );
+                  if ( !createdPoints.empty() ) {
+                    for ( const auto& createdPoint : createdPoints ) {
+                      reconstruct[optimizationIndex].addPoint( createdPoint );
                     }
                   }
                 }
@@ -4615,7 +4673,8 @@ void PCCEncoder::pointLocalReconstructionSearch( PCCContext&                    
             }
           }
         }
-        float distancePSrcRec, distancePRecSrc;
+        float distancePSrcRec;
+        float distancePRecSrc;
         srcPointCloudPatch.distanceGeo( reconstruct[optimizationIndex], distancePSrcRec, distancePRecSrc );
         distance[optimizationIndex] = ( std::max )( distancePSrcRec, distancePRecSrc );
         if ( optimizationIndex == 0 || distance[optimizationIndexMin] > distance[optimizationIndex] ) {
@@ -4647,34 +4706,37 @@ void PCCEncoder::pointLocalReconstructionSearch( PCCContext&                    
             std::vector<float>        distance;
             reconstruct.resize( nbOfOptimizationMode );
             distance.resize( nbOfOptimizationMode );
-            size_t optimizationIndex = 0, optimizationIndexMin = 0;
+            size_t optimizationIndex    = 0;
+            size_t optimizationIndexMin = 0;
             for ( size_t i = 0; i < nbOfOptimizationMode; i++ ) {
               auto& mode = context.getPointLocalReconstructionMode( i );
               for ( size_t v1 = 0; v1 < patch.getOccupancyResolution(); ++v1 ) {
                 const size_t v = v0 * patch.getOccupancyResolution() + v1;
                 for ( size_t u1 = 0; u1 < patch.getOccupancyResolution(); ++u1 ) {
                   const size_t u = u0 * patch.getOccupancyResolution() + u1;
-                  size_t       x, y;
+                  size_t       x;
+                  size_t       y;
                   const bool   occupancy = occupancyMap[patch.patch2Canvas( u, v, imageWidth, imageHeight, x, y )] != 0;
                   if ( !occupancy ) { continue; }
                   auto createdPoints =
                       generatePoints( params, frame, video, videoMultiple, shift, patchIndex, u, v, x, y,
                                       mode.interpolate_, mode.filling_, mode.minD1_, mode.neighbor_ );
-                  if ( createdPoints.size() > 0 ) {
-                    for ( size_t i = 0; i < createdPoints.size(); i++ ) {
+                  if ( !createdPoints.empty() ) {
+                    for ( const auto& createdPoint : createdPoints ) {
                       if ( patch.getAxisOfAdditionalPlane() == 0 ) {
-                        reconstruct[optimizationIndex].addPoint( createdPoints[i] );
+                        reconstruct[optimizationIndex].addPoint( createdPoint );
                       } else {
                         PCCVector3D tmp;
-                        PCCPatch::InverseRotatePosition45DegreeOnAxis(
-                            patch.getAxisOfAdditionalPlane(), params.geometryBitDepth3D_, createdPoints[i], tmp );
+                        PCCPatch::InverseRotatePosition45DegreeOnAxis( patch.getAxisOfAdditionalPlane(),
+                                                                       params.geometryBitDepth3D_, createdPoint, tmp );
                         reconstruct[optimizationIndex].addPoint( tmp );
                       }
                     }
                   }
                 }
               }
-              float distancePSrcRec, distancePRecSrc;
+              float distancePSrcRec;
+              float distancePRecSrc;
               blockSrcPointCloud.distanceGeo( reconstruct[optimizationIndex], distancePSrcRec, distancePRecSrc );
               distance[optimizationIndex] = ( std::max )( distancePSrcRec, distancePRecSrc );
               if ( optimizationIndex == 0 || distance[optimizationIndexMin] > distance[optimizationIndex] ) {
@@ -4691,7 +4753,8 @@ void PCCEncoder::pointLocalReconstructionSearch( PCCContext&                    
 }
 
 bool PCCEncoder::resizeGeometryVideo( PCCContext& context ) {
-  size_t maxWidth = 0, maxHeight = 0;
+  size_t maxWidth  = 0;
+  size_t maxHeight = 0;
   for ( auto& frame : context.getFrames() ) {
     maxWidth  = ( std::max )( maxWidth, frame.getWidth() );
     maxHeight = ( std::max )( maxHeight, frame.getHeight() );
@@ -4724,7 +4787,7 @@ void PCCEncoder::markRawPatchLocation(  // const PCCContext& context, size_t fra
       auto&        rawPointsPatch = contextFrame.getRawPointsPatch( i );
       const size_t v0             = rawPointsPatch.v0_ * rawPointsPatch.occupancyResolution_;
       const size_t u0             = rawPointsPatch.u0_ * rawPointsPatch.occupancyResolution_;
-      if ( rawPointsPatch.size() ) {
+      if ( rawPointsPatch.size() != 0u ) {
         for ( size_t v = 0; v < rawPointsPatch.sizeV_; ++v ) {
           for ( size_t u = 0; u < rawPointsPatch.sizeU_; ++u ) {
             const size_t p = v * rawPointsPatch.sizeU_ + u;
@@ -4877,14 +4940,14 @@ void PCCEncoder::dilate( PCCFrameContext& frame, PCCImage<T, 3>& image, const PC
             assert( x0 < int64_t( image.getWidth() ) && y0 < int64_t( image.getHeight() ) );
             const size_t location0 = y0 * image.getWidth() + x0;
             if ( occupancyMapTemp[location0] == iteration ) {
-              for ( size_t n = 0; n < 4; ++n ) {
-                const int64_t x1        = x0 + neighbors[n][0];
-                const int64_t y1        = y0 + neighbors[n][1];
+              for ( auto neighbor : neighbors ) {
+                const int64_t x1        = x0 + neighbor[0];
+                const int64_t y1        = y0 + neighbor[1];
                 const size_t  location1 = y1 * image.getWidth() + x1;
                 if ( x1 >= u0 && x1 < int64_t( u0 + params_.occupancyResolution_ ) && y1 >= v0 &&
                      y1 < int64_t( v0 + params_.occupancyResolution_ ) && occupancyMapTemp[location1] == 0 ) {
-                  const int64_t u3 = u2 + neighbors[n][0];
-                  const int64_t v3 = v2 + neighbors[n][1];
+                  const int64_t u3 = u2 + neighbor[0];
+                  const int64_t v3 = v2 + neighbor[1];
                   assert( u3 >= 0 && u3 < int64_t( params_.occupancyResolution_ ) );
                   assert( v3 >= 0 && v3 < int64_t( params_.occupancyResolution_ ) );
                   for ( size_t k = 0; k < 3; ++k ) { values[v3][u3][k] += image.getValue( k, x0, y0 ); }
@@ -5022,13 +5085,15 @@ void PCCEncoder::dilate3DPadding( const PCCPointSet3&     source,
             if ( occupancyMapOriginal[y * image.getWidth() + x] == 0 ) {
               // try to find the best value to approximate this new point to the original point cloud
               // get the patch information
-              if ( params_.geometryPadding_ == 1 )
+              if ( params_.geometryPadding_ == 1 ) {
                 occupancyMapTemp[y * image.getWidth() + x] =
                     adjustDepth3DPadding( x, y, mean_val, image, kdtree, frame );
-              else
+              } else {
                 occupancyMapTemp[y * image.getWidth() + x] = 0;
-            } else
+              }
+            } else {
               occupancyMapTemp[y * image.getWidth() + x] = 1;
+            }
           }
         }
       }
@@ -5048,14 +5113,14 @@ void PCCEncoder::dilate3DPadding( const PCCPointSet3&     source,
           assert( x0 < int64_t( image.getWidth() ) && y0 < int64_t( image.getHeight() ) );
           const size_t location0 = y0 * image.getWidth() + x0;
           if ( params_.enhancedOccupancyMapCode_ ) {
-            nonZeroPixelCount += ( occupancyMapTemp[location0] > 0 );
+            nonZeroPixelCount += static_cast<unsigned long long>( occupancyMapTemp[location0] > 0 );
           } else {
-            nonZeroPixelCount += ( occupancyMapTemp[location0] == 1 );
+            nonZeroPixelCount += static_cast<unsigned long long>( occupancyMapTemp[location0] == 1 );
           }
         }
       }
-      if ( !nonZeroPixelCount ) {
-        if ( reference ) {
+      if ( nonZeroPixelCount == 0u ) {
+        if ( reference != nullptr ) {
           for ( size_t v2 = 0; v2 < params_.occupancyResolution_; ++v2 ) {
             for ( size_t u2 = 0; u2 < params_.occupancyResolution_; ++u2 ) {
               const size_t x0 = u0 + u2;
@@ -5107,14 +5172,14 @@ void PCCEncoder::dilate3DPadding( const PCCPointSet3&     source,
             assert( x0 < int64_t( image.getWidth() ) && y0 < int64_t( image.getHeight() ) );
             const size_t location0 = y0 * image.getWidth() + x0;
             if ( occupancyMapTemp[location0] == iteration ) {
-              for ( size_t n = 0; n < 4; ++n ) {
-                const int64_t x1        = x0 + neighbors[n][0];
-                const int64_t y1        = y0 + neighbors[n][1];
+              for ( auto neighbor : neighbors ) {
+                const int64_t x1        = x0 + neighbor[0];
+                const int64_t y1        = y0 + neighbor[1];
                 const size_t  location1 = y1 * image.getWidth() + x1;
                 if ( x1 >= u0 && x1 < int64_t( u0 + params_.occupancyResolution_ ) && y1 >= v0 &&
                      y1 < int64_t( v0 + params_.occupancyResolution_ ) && occupancyMapTemp[location1] == 0 ) {
-                  const int64_t u3 = u2 + neighbors[n][0];
-                  const int64_t v3 = v2 + neighbors[n][1];
+                  const int64_t u3 = u2 + neighbor[0];
+                  const int64_t v3 = v2 + neighbor[1];
                   assert( u3 >= 0 && u3 < int64_t( params_.occupancyResolution_ ) );
                   assert( v3 >= 0 && v3 < int64_t( params_.occupancyResolution_ ) );
                   for ( size_t k = 0; k < 3; ++k ) { values[v3][u3][k] += image.getValue( k, x0, y0 ); }
@@ -5126,7 +5191,7 @@ void PCCEncoder::dilate3DPadding( const PCCPointSet3&     source,
         }
         for ( size_t v2 = 0; v2 < params_.occupancyResolution_; ++v2 ) {
           for ( size_t u2 = 0; u2 < params_.occupancyResolution_; ++u2 ) {
-            if ( count[v2][u2] ) {
+            if ( count[v2][u2] != 0u ) {
               ++nonZeroPixelCount;
               const size_t x0             = u0 + u2;
               const size_t y0             = v0 + v2;
@@ -5159,16 +5224,17 @@ void PCCEncoder::dilateHarmonicBackgroundFill( PCCFrameContext& frame, PCCImage<
   int                                miplev = 0;
 
   // create coarse image by dyadic sampling
-  while ( 1 ) {
+  while ( true ) {
     mipVec.resize( mipVec.size() + 1 );
     mipOccupancyMapVec.resize( mipOccupancyMapVec.size() + 1 );
-    if ( miplev > 0 )
+    if ( miplev > 0 ) {
       CreateCoarseLayer( mipVec[miplev - 1], mipVec[miplev], mipOccupancyMapVec[miplev - 1],
                          mipOccupancyMapVec[miplev] );
-    else
+    } else {
       CreateCoarseLayer( image, mipVec[miplev], occupancyMapTemp, mipOccupancyMapVec[miplev] );
+    }
 
-    if ( mipVec[miplev].getWidth() <= 4 || mipVec[miplev].getHeight() <= 4 ) break;
+    if ( mipVec[miplev].getWidth() <= 4 || mipVec[miplev].getHeight() <= 4 ) { break; }
     ++miplev;
   }
   miplev++;
@@ -5189,16 +5255,20 @@ void PCCEncoder::CreateCoarseLayer( PCCImage<T, 3>&        image,
                                     std::vector<uint32_t>& occupancyMap,
                                     std::vector<uint32_t>& mipOccupancyMap ) {
   int dyadicWidth = 1;
-  while ( dyadicWidth < image.getWidth() ) dyadicWidth *= 2;
+  while ( dyadicWidth < image.getWidth() ) { dyadicWidth *= 2; }
   int dyadicHeight = 1;
-  while ( dyadicHeight < image.getHeight() ) dyadicHeight *= 2;
+  while ( dyadicHeight < image.getHeight() ) { dyadicHeight *= 2; }
   // allocate the mipmap with half the resolution
   mip.resize( ( dyadicWidth / 2 ), ( dyadicHeight / 2 ) );
   mipOccupancyMap.resize( ( dyadicWidth / 2 ) * ( dyadicHeight / 2 ), 0 );
   int    stride    = image.getWidth();
   int    newStride = ( dyadicWidth / 2 );
-  int    x, y, i, j;
-  double num[3], den;
+  int    x;
+  int    y;
+  int    i;
+  int    j;
+  double num[3];
+  double den;
   for ( y = 0; y < mip.getHeight(); y++ ) {
     for ( x = 0; x < mip.getWidth(); x++ ) {
       num[0] = 0;
@@ -5260,9 +5330,9 @@ void PCCEncoder::regionFill( PCCImage<T, 3>& image, std::vector<uint32_t>& occup
         b[2][idx] = 0;
         for ( int i = -1; i < 2; i++ ) {
           for ( int j = -1; j < 2; j++ ) {
-            if ( ( i == j ) || ( i == -j ) ) continue;
-            if ( ( column + j < 0 ) || ( column + j > image.getWidth() - 1 ) ) continue;
-            if ( ( row + i < 0 ) || ( row + i > image.getHeight() - 1 ) ) continue;
+            if ( ( i == j ) || ( i == -j ) ) { continue; }
+            if ( ( column + j < 0 ) || ( column + j > image.getWidth() - 1 ) ) { continue; }
+            if ( ( row + i < 0 ) || ( row + i > image.getHeight() - 1 ) ) { continue; }
             count++;
             if ( occupancyMap[column + j + stride * ( row + i )] == 1 ) {
               b[0][idx] += image.getValue( 0, column + j, row + i );
@@ -5398,8 +5468,14 @@ void PCCEncoder::pushPullMip( const PCCImage<T, 3>&        image,
                               PCCImage<T, 3>&              mip,
                               const std::vector<uint32_t>& occupancyMap,
                               std::vector<uint32_t>&       mipOccupancyMap ) {
-  unsigned char w1, w2, w3, w4;
-  unsigned char val1, val2, val3, val4;
+  unsigned char w1;
+  unsigned char w2;
+  unsigned char w3;
+  unsigned char w4;
+  unsigned char val1;
+  unsigned char val2;
+  unsigned char val3;
+  unsigned char val4;
   const size_t  width     = image.getWidth();
   const size_t  height    = image.getHeight();
   const size_t  newWidth  = ( ( width + 1 ) >> 1 );
@@ -5411,37 +5487,44 @@ void PCCEncoder::pushPullMip( const PCCImage<T, 3>&        image,
     const size_t yUp = y << 1;
     for ( size_t x = 0; x < newWidth; ++x ) {
       const size_t xUp = x << 1;
-      if ( occupancyMap[xUp + width * yUp] == 0 )
+      if ( occupancyMap[xUp + width * yUp] == 0 ) {
         w1 = 0;
-      else
+      } else {
         w1 = 255;
-      if ( ( xUp + 1 >= width ) || ( occupancyMap[xUp + 1 + width * yUp] == 0 ) )
+      }
+      if ( ( xUp + 1 >= width ) || ( occupancyMap[xUp + 1 + width * yUp] == 0 ) ) {
         w2 = 0;
-      else
+      } else {
         w2 = 255;
-      if ( ( yUp + 1 >= height ) || ( occupancyMap[xUp + width * ( yUp + 1 )] == 0 ) )
+      }
+      if ( ( yUp + 1 >= height ) || ( occupancyMap[xUp + width * ( yUp + 1 )] == 0 ) ) {
         w3 = 0;
-      else
+      } else {
         w3 = 255;
-      if ( ( xUp + 1 >= width ) || ( yUp + 1 >= height ) || ( occupancyMap[xUp + 1 + width * ( yUp + 1 )] == 0 ) )
+      }
+      if ( ( xUp + 1 >= width ) || ( yUp + 1 >= height ) || ( occupancyMap[xUp + 1 + width * ( yUp + 1 )] == 0 ) ) {
         w4 = 0;
-      else
+      } else {
         w4 = 255;
+      }
       if ( w1 + w2 + w3 + w4 > 0 ) {
         for ( int cc = 0; cc < 3; cc++ ) {
           val1 = image.getValue( cc, xUp, yUp );
-          if ( xUp + 1 >= width )
+          if ( xUp + 1 >= width ) {
             val2 = 0;
-          else
+          } else {
             val2 = image.getValue( cc, xUp + 1, yUp );
-          if ( yUp + 1 >= height )
+          }
+          if ( yUp + 1 >= height ) {
             val3 = 0;
-          else
+          } else {
             val3 = image.getValue( cc, xUp, yUp + 1 );
-          if ( ( xUp + 1 >= width ) || ( yUp + 1 >= height ) )
+          }
+          if ( ( xUp + 1 >= width ) || ( yUp + 1 >= height ) ) {
             val4 = 0;
-          else
+          } else {
             val4 = image.getValue( cc, xUp + 1, yUp + 1 );
+          }
           T newVal = mean4w( val1, w1, val2, w2, val3, w3, val4, w4 );
           mip.setValue( cc, x, y, newVal );
         }
@@ -5463,8 +5546,14 @@ void PCCEncoder::pushPullFill( PCCImage<T, 3>&              image,
   const size_t heightUp = image.getHeight();
   assert( ( ( widthUp + 1 ) >> 1 ) == width );
   assert( ( ( heightUp + 1 ) >> 1 ) == height );
-  int           x, y, xUp, yUp;
-  unsigned char w1, w2, w3, w4;
+  int           x;
+  int           y;
+  int           xUp;
+  int           yUp;
+  unsigned char w1;
+  unsigned char w2;
+  unsigned char w3;
+  unsigned char w4;
   for ( yUp = 0; yUp < heightUp; ++yUp ) {
     y = yUp >> 1;
     for ( xUp = 0; xUp < widthUp; ++xUp ) {
@@ -5472,9 +5561,9 @@ void PCCEncoder::pushPullFill( PCCImage<T, 3>&              image,
       if ( occupancyMap[xUp + widthUp * yUp] == 0 ) {
         if ( ( xUp % 2 == 0 ) && ( yUp % 2 == 0 ) ) {
           w1 = 144;
-          w2 = ( x > 0 ? static_cast<unsigned char>(48) : 0 );
-          w3 = ( y > 0 ? static_cast<unsigned char>(48) : 0 );
-          w4 = ( ( ( x > 0 ) && ( y > 0 ) ) ? static_cast<unsigned char>(16) : 0 );
+          w2 = ( x > 0 ? static_cast<unsigned char>( 48 ) : 0 );
+          w3 = ( y > 0 ? static_cast<unsigned char>( 48 ) : 0 );
+          w4 = ( ( ( x > 0 ) && ( y > 0 ) ) ? static_cast<unsigned char>( 16 ) : 0 );
           for ( int cc = 0; cc < 3; cc++ ) {
             T val       = mip.getValue( cc, x, y );
             T valLeft   = ( x > 0 ? mip.getValue( cc, x - 1, y ) : 0 );
@@ -5485,9 +5574,9 @@ void PCCEncoder::pushPullFill( PCCImage<T, 3>&              image,
           }
         } else if ( ( xUp % 2 == 1 ) && ( yUp % 2 == 0 ) ) {
           w1 = 144;
-          w2 = ( x < width - 1 ? static_cast<unsigned char>(48) : 0 );
-          w3 = ( y > 0 ? static_cast<unsigned char>(48) : 0 );
-          w4 = ( ( ( x < width - 1 ) && ( y > 0 ) ) ? static_cast<unsigned char>(16) : 0 );
+          w2 = ( x < width - 1 ? static_cast<unsigned char>( 48 ) : 0 );
+          w3 = ( y > 0 ? static_cast<unsigned char>( 48 ) : 0 );
+          w4 = ( ( ( x < width - 1 ) && ( y > 0 ) ) ? static_cast<unsigned char>( 16 ) : 0 );
           for ( int cc = 0; cc < 3; cc++ ) {
             T val        = mip.getValue( cc, x, y );
             T valRight   = ( x < width - 1 ? mip.getValue( cc, x + 1, y ) : 0 );
@@ -5498,9 +5587,9 @@ void PCCEncoder::pushPullFill( PCCImage<T, 3>&              image,
           }
         } else if ( ( xUp % 2 == 0 ) && ( yUp % 2 == 1 ) ) {
           w1 = 144;
-          w2 = ( x > 0 ? static_cast<unsigned char>(48) : 0 );
-          w3 = ( y < height - 1 ? static_cast<unsigned char>(48) : 0 );
-          w4 = ( ( ( x > 0 ) && ( y < height - 1 ) ) ? static_cast<unsigned char>(16) : 0 );
+          w2 = ( x > 0 ? static_cast<unsigned char>( 48 ) : 0 );
+          w3 = ( y < height - 1 ? static_cast<unsigned char>( 48 ) : 0 );
+          w4 = ( ( ( x > 0 ) && ( y < height - 1 ) ) ? static_cast<unsigned char>( 16 ) : 0 );
           for ( int cc = 0; cc < 3; cc++ ) {
             T val         = mip.getValue( cc, x, y );
             T valLeft     = ( x > 0 ? mip.getValue( cc, x - 1, y ) : 0 );
@@ -5511,9 +5600,9 @@ void PCCEncoder::pushPullFill( PCCImage<T, 3>&              image,
           }
         } else {
           w1 = 144;
-          w2 = ( x < width - 1 ? static_cast<unsigned char>(48) : 0 );
-          w3 = ( y < height - 1 ? static_cast<unsigned char>(48) : 0 );
-          w4 = ( ( ( x < width - 1 ) && ( y < height - 1 ) ) ? static_cast<unsigned char>(16) : 0 );
+          w2 = ( x < width - 1 ? static_cast<unsigned char>( 48 ) : 0 );
+          w3 = ( y < height - 1 ? static_cast<unsigned char>( 48 ) : 0 );
+          w4 = ( ( ( x < width - 1 ) && ( y < height - 1 ) ) ? static_cast<unsigned char>( 16 ) : 0 );
           for ( int cc = 0; cc < 3; cc++ ) {
             T val          = mip.getValue( cc, x, y );
             T valRight     = ( x < width - 1 ? mip.getValue( cc, x + 1, y ) : 0 );
@@ -5558,7 +5647,7 @@ void PCCEncoder::dilateSmoothedPushPull( PCCFrameContext& frame, PCCImage<T, 3>&
   int                                miplev = 0;
 
   // pull phase create the mipmap
-  while ( 1 ) {
+  while ( true ) {
     mipVec.resize( mipVec.size() + 1 );
     mipOccupancyMapVec.resize( mipOccupancyMapVec.size() + 1 );
     div *= 2;
@@ -5606,7 +5695,7 @@ void PCCEncoder::presmoothPointCloudColor( PCCPointSet3& reconstruct, const PCCE
   std::vector<PCCColor3B> temp;
   temp.resize( pointCount );
   for ( size_t m = 0; m < pointCount; ++m ) { temp[m] = reconstruct.getColor( m ); }
-  tbb::task_arena limited( static_cast<int>(params.nbThread_) );
+  tbb::task_arena limited( static_cast<int>( params.nbThread_ ) );
   limited.execute( [&] {
     tbb::parallel_for( size_t( 0 ), pointCount, [&]( const size_t i ) {
       //  for (size_t i = 0; i < pointCount; ++i) {
@@ -5633,7 +5722,7 @@ void PCCEncoder::presmoothPointCloudColor( PCCPointSet3& reconstruct, const PCCE
         }
 
         PCCColor3B color;
-        if ( neighborCount ) {
+        if ( neighborCount != 0u ) {
           for ( size_t k = 0; k < 3; ++k ) {
             centroid[k] = double( int64_t( centroid[k] + ( neighborCount / 2 ) ) / neighborCount );
           }
@@ -5663,10 +5752,10 @@ void PCCEncoder::presmoothPointCloudColor( PCCPointSet3& reconstruct, const PCCE
   } );
 }
 
-bool PCCEncoder::generateTextureVideo( const PCCGroupOfFrames&    sources,
-                                       PCCGroupOfFrames&          reconstructs,
-                                       PCCContext&                context,
-                                       const PCCEncoderParameters params ) {
+bool PCCEncoder::generateTextureVideo( const PCCGroupOfFrames&     sources,
+                                       PCCGroupOfFrames&           reconstructs,
+                                       PCCContext&                 context,
+                                       const PCCEncoderParameters& params ) {
   auto& frames = context.getFrames();
   bool  ret    = true;
   for ( size_t i = 0; i < frames.size(); i++ ) {
@@ -5678,7 +5767,8 @@ bool PCCEncoder::generateTextureVideo( const PCCGroupOfFrames&    sources,
       vector<size_t> subReconstructIndex;
       subReconstructIndex.clear();
       if ( reconstructs[i].hasColors() ) { subReconstruct.addColors(); }
-      size_t numPointSub = 0, numPoint = reconstructs[i].getPointCount();
+      size_t numPointSub  = 0;
+      size_t numPoint     = reconstructs[i].getPointCount();
       auto&  pointToPixel = frame.getPointToPixel();
       for ( size_t j = 0; j < numPoint; j++ ) {
         if ( pointToPixel[j][2] < mapCount ) {
@@ -5688,10 +5778,10 @@ bool PCCEncoder::generateTextureVideo( const PCCGroupOfFrames&    sources,
         }
       }
       subReconstruct.resize( numPointSub );
-      sources[i].transferColors( subReconstruct, int32_t( params_.bestColorSearchRange_ ), params_.losslessGeo_ == 1,
-                                 params_.numNeighborsColorTransferFwd_, params_.numNeighborsColorTransferBwd_,
-                                 params_.useDistWeightedAverageFwd_, params_.useDistWeightedAverageBwd_,
-                                 params_.skipAvgIfIdenticalSourcePointPresentFwd_,
+      sources[i].transferColors( subReconstruct, int32_t( params_.bestColorSearchRange_ ),
+                                 static_cast<int>( params_.losslessGeo_ ) == 1, params_.numNeighborsColorTransferFwd_,
+                                 params_.numNeighborsColorTransferBwd_, params_.useDistWeightedAverageFwd_,
+                                 params_.useDistWeightedAverageBwd_, params_.skipAvgIfIdenticalSourcePointPresentFwd_,
                                  params_.skipAvgIfIdenticalSourcePointPresentBwd_, params_.distOffsetFwd_,
                                  params_.distOffsetBwd_, params_.maxGeometryDist2Fwd_, params_.maxGeometryDist2Bwd_,
                                  params_.maxColorDist2Fwd_, params_.maxColorDist2Bwd_, params_.excludeColorOutlier_,
@@ -5714,10 +5804,10 @@ bool PCCEncoder::generateTextureVideo( const PCCGroupOfFrames&    sources,
       for ( auto& c : reconstructs[0].computeChecksum() ) { printf( "%02x", c ); }
       printf( "\n" );
 #endif
-      sources[i].transferColors( reconstructs[i], int32_t( params_.bestColorSearchRange_ ), params_.losslessGeo_ == 1,
-                                 params_.numNeighborsColorTransferFwd_, params_.numNeighborsColorTransferBwd_,
-                                 params_.useDistWeightedAverageFwd_, params_.useDistWeightedAverageBwd_,
-                                 params_.skipAvgIfIdenticalSourcePointPresentFwd_,
+      sources[i].transferColors( reconstructs[i], int32_t( params_.bestColorSearchRange_ ),
+                                 static_cast<int>( params_.losslessGeo_ ) == 1, params_.numNeighborsColorTransferFwd_,
+                                 params_.numNeighborsColorTransferBwd_, params_.useDistWeightedAverageFwd_,
+                                 params_.useDistWeightedAverageBwd_, params_.skipAvgIfIdenticalSourcePointPresentFwd_,
                                  params_.skipAvgIfIdenticalSourcePointPresentBwd_, params_.distOffsetFwd_,
                                  params_.distOffsetBwd_, params_.maxGeometryDist2Fwd_, params_.maxGeometryDist2Bwd_,
                                  params_.maxColorDist2Fwd_, params_.maxColorDist2Bwd_, params_.excludeColorOutlier_,
@@ -5773,7 +5863,7 @@ bool PCCEncoder::generateTextureVideo( const PCCPointSet3& reconstruct,
   if ( ( losslessAtt || lossyRawPointsPatch ) && useRawPointsSeparateVideo ) {
     pointCount = frame.getTotalNumberOfRegularPoints();
   }
-  if ( !pointCount || !reconstruct.hasColors() ) { return false; }
+  if ( ( pointCount == 0u ) || !reconstruct.hasColors() ) { return false; }
 
   const size_t curNumOfVideoFrames = video.getFrameCount();
   if ( params_.multipleStreams_ ) {
@@ -5877,7 +5967,8 @@ void PCCEncoder::generateIntraEnhancedOccupancyMapImage( PCCFrameContext&       
         const int16_t d = patch.getDepth( 0 )[p];
         if ( d < infiniteDepth ) {
           const int16_t enhancedDeltaD = patch.getDepthEnhancedDeltaD()[p];
-          size_t        x, y;
+          size_t        x;
+          size_t        y;
           patch.patch2Canvas( u, v, width, height, x, y );
           image.setValue( 0, x, y, uint16_t( enhancedDeltaD + imageRef.getValue( 0, x, y ) ) );
         }
@@ -5891,7 +5982,7 @@ void PCCEncoder::generateIntraEnhancedOccupancyMapImage( PCCFrameContext&       
       auto&        rawPointsPatch = frame.getRawPointsPatch( i );
       const size_t v0             = rawPointsPatch.v0_ * rawPointsPatch.occupancyResolution_;
       const size_t u0             = rawPointsPatch.u0_ * rawPointsPatch.occupancyResolution_;
-      if ( rawPointsPatch.size() ) {
+      if ( rawPointsPatch.size() != 0u ) {
         for ( size_t v = 0; v < rawPointsPatch.sizeV_; ++v ) {
           for ( size_t u = 0; u < rawPointsPatch.sizeU_; ++u ) {
             const size_t p = v * rawPointsPatch.sizeU_ + u;
@@ -5910,13 +6001,14 @@ void PCCEncoder::generateIntraEnhancedOccupancyMapImage( PCCFrameContext&       
       }
     }
   }
-  return;
 }
 
 void PCCEncoder::performDataAdaptiveGPAMethod( PCCContext& context ) {
   // some valid parameters;
-  SubContext    subContextPre, subContextCur;  // [start, end);
-  unionPatch    unionPatchPre, unionPatchCur;  // [trackIndex, patchUnion];
+  SubContext    subContextPre;
+  SubContext    subContextCur;  // [start, end);
+  unionPatch    unionPatchPre;
+  unionPatch    unionPatchCur;                 // [trackIndex, patchUnion];
   GlobalPatches globalPatchTracks;             // [trackIndex, <[frameIndex, patchIndex]>];
   bool          startSubContext      = true;   // startSubContext is initialized as true;  start a subContext;
   bool          endSubContext        = false;  // endSubContext   is initialized as false; end   a subContext;
@@ -5930,7 +6022,7 @@ void PCCEncoder::performDataAdaptiveGPAMethod( PCCContext& context ) {
       initializeSubContext( context[frameIndex], subContextPre, globalPatchTracks, unionPatchPre, frameIndex );
 
       if ( subContextPre.first == 0 ) { useRefFrame = false; }
-      packingFirstFrame( context, frameIndex, params_.packingStrategy_, params_.safeGuardDistance_, useRefFrame );
+      packingFirstFrame( context, frameIndex, params_.packingStrategy_ != 0u, params_.safeGuardDistance_, useRefFrame );
 
       context[subContextPre.first].getPrePCCGPAFrameSize() = context[subContextPre.first].getCurPCCGPAFrameSize();
       context[subContextPre.first].getCurPCCGPAFrameSize().widthGPA_  = 0;
@@ -6016,7 +6108,7 @@ void PCCEncoder::performDataAdaptiveGPAMethod( PCCContext& context ) {
         context[j].getPrePCCGPAFrameSize() = context[j].getCurPCCGPAFrameSize();
         assert( !curPatches.empty() );
         for ( auto& curPatch : curPatches ) { curPatch.getPreGPAPatchData() = curPatch.getCurGPAPatchData(); }
-        if ( context[j].getRawPointsPatches().size() > 0 && !context[j].getUseRawPointsSeparateVideo() ) {
+        if ( !context[j].getRawPointsPatches().empty() && !context[j].getUseRawPointsSeparateVideo() ) {
           for ( size_t idxRawPatches = 0; idxRawPatches < context[j].getRawPointsPatches().size(); idxRawPatches++ ) {
             context[j].getRawPointsPatch( idxRawPatches ).preV0_ =
                 context[j].getRawPointsPatch( idxRawPatches ).tempV0_;
@@ -6074,8 +6166,9 @@ void PCCEncoder::clearCurrentGPAPatchDataInfor( PCCContext& context, SubContext&
     auto& curPatches = context[j].getPatches();
     assert( !curPatches.empty() );
     for ( auto& curPatch : curPatches ) { curPatch.getCurGPAPatchData().initialize(); }
-    if ( !context[j].getRawPointsPatches().empty() )
-      for ( auto rawPointsPatch : context[j].getRawPointsPatches() ) rawPointsPatch.tempV0_ = 0;
+    if ( !context[j].getRawPointsPatches().empty() ) {
+      for ( auto rawPointsPatch : context[j].getRawPointsPatches() ) { rawPointsPatch.tempV0_ = 0; }
+    }
   }
 }
 void PCCEncoder::generateGlobalPatches( PCCContext&    context,
@@ -6083,14 +6176,14 @@ void PCCEncoder::generateGlobalPatches( PCCContext&    context,
                                         GlobalPatches& globalPatchTracks,
                                         size_t         preIndex ) {
   auto& curPatches = context[frameIndex].getPatches();
-  assert( curPatches.size() > 0 );
-  for ( GlobalPatches::iterator iter = globalPatchTracks.begin(); iter != globalPatchTracks.end(); iter++ ) {
-    auto& trackPatches = iter->second;  // !!!< <frameIndex, patchIndex> >;
+  assert( !curPatches.empty() );
+  for ( auto& globalPatchTrack : globalPatchTracks ) {
+    auto& trackPatches = globalPatchTrack.second;  // !!!< <frameIndex, patchIndex> >;
     if ( trackPatches.empty() ) { continue; }
     const auto& preGlobalPatch = trackPatches[preIndex];
     const auto& prePatch       = context[preGlobalPatch.first].getPatches()[preGlobalPatch.second];
-    float       thresholdIOU   = 0.2f;
-    float       maxIou         = 0.0f;
+    float       thresholdIOU   = 0.2F;
+    float       maxIou         = 0.0F;
     int32_t     bestIdx        = -1;       // best matched patch index in curPatches;
     int32_t     cId            = 0;        // patch index in curPatches;
     for ( auto& curPatch : curPatches ) {  // curPatches; may be modified;
@@ -6116,9 +6209,9 @@ void PCCEncoder::generateGlobalPatches( PCCContext&    context,
   }
 
   // update global patch information according to curGlobalPatches;
-  for ( GlobalPatches::iterator iter = globalPatchTracks.begin(); iter != globalPatchTracks.end(); iter++ ) {
-    const size_t trackIndex   = iter->first;
-    const auto&  trackPatches = iter->second;  // !!!< <frameIndex, patchIndex> >;
+  for ( auto& globalPatchTrack : globalPatchTracks ) {
+    const size_t trackIndex   = globalPatchTrack.first;
+    const auto&  trackPatches = globalPatchTrack.second;  // !!!< <frameIndex, patchIndex> >;
     if ( trackPatches.empty() ) { continue; }
     for ( const auto& trackPatch : trackPatches ) {
       GPAPatchData& curGPAPatchData    = context[trackPatch.first].getPatches()[trackPatch.second].getCurGPAPatchData();
@@ -6138,20 +6231,19 @@ size_t PCCEncoder::unionPatchGenerationAndPacking( const GlobalPatches& globalPa
   unionPatchTemp.clear();
   // 1.1 patchTracks generation;
   std::map<size_t, std::vector<PCCPatch>> patchTracks;
-  for ( GlobalPatches::const_iterator iter = globalPatchTracks.begin(); iter != globalPatchTracks.end(); iter++ ) {
-    const auto& trackIndex   = iter->first;
-    const auto& trackPatches = iter->second;
+  for ( const auto& globalPatchTrack : globalPatchTracks ) {
+    const auto& trackIndex   = globalPatchTrack.first;
+    const auto& trackPatches = globalPatchTrack.second;
     if ( trackPatches.empty() ) { continue; }
     for ( const auto& trackPatch : trackPatches ) {
       patchTracks[trackIndex].emplace_back( context[trackPatch.first].getPatches()[trackPatch.second] );
     }
   }
   // 1.2 union processing --- patchTracks -> unionPatch;
-  for ( std::map<size_t, std::vector<PCCPatch>>::const_iterator iter = patchTracks.begin(); iter != patchTracks.end();
-        iter++ ) {
-    const auto& trackIndex   = iter->first;
-    const auto& trackPatches = iter->second;
-    assert( trackPatches.size() != 0 );
+  for ( const auto& patchTrack : patchTracks ) {
+    const auto& trackIndex   = patchTrack.first;
+    const auto& trackPatches = patchTrack.second;
+    assert( !trackPatches.empty() );
     // get the sizeU0 && sizeV0;
     size_t maxSizeU0 = 0;
     size_t maxSizeV0 = 0;
@@ -6166,7 +6258,7 @@ size_t PCCEncoder::unionPatchGenerationAndPacking( const GlobalPatches& globalPa
     curPatchUnion.getSizeU0() = maxSizeU0;
     curPatchUnion.getSizeV0() = maxSizeV0;
     curPatchUnion.getOccupancy().resize( maxSizeU0 * maxSizeV0, false );
-    if ( useRefFrame && ( trackPatches.size() > 0 ) ) {
+    if ( useRefFrame && ( !trackPatches.empty() ) ) {
       assert( refFrameIdx != -1 );
       size_t matchedPatchIdx = trackPatches[0].getBestMatchIdx();  // the first frame in the subcontext.
       if ( matchedPatchIdx == -1 ) {
@@ -6187,7 +6279,7 @@ size_t PCCEncoder::unionPatchGenerationAndPacking( const GlobalPatches& globalPa
           assert( u < maxSizeU0 );
           size_t p  = v * trackPatch.getSizeU0() + u;
           size_t up = v * curPatchUnion.getSizeU0() + u;
-          if ( occupancy[p] && !( curPatchUnion.getOccupancy()[up] ) ) curPatchUnion.getOccupancy()[up] = true;
+          if ( occupancy[p] && !( curPatchUnion.getOccupancy()[up] ) ) { curPatchUnion.getOccupancy()[up] = true; }
         }
       }
     }
@@ -6197,8 +6289,8 @@ size_t PCCEncoder::unionPatchGenerationAndPacking( const GlobalPatches& globalPa
   // 2. unionPatch packing;
   size_t occupancySizeU = params_.minimumImageWidth_ / params_.occupancyResolution_;
   size_t occupancySizeV = 0;  // GPA_HARMONIZATION
-  for ( unionPatch::const_iterator iter = unionPatchTemp.begin(); iter != unionPatchTemp.end(); iter++ ) {
-    const auto& curPatchUnion = iter->second;
+  for ( const auto& iter : unionPatchTemp ) {
+    const auto& curPatchUnion = iter.second;
     occupancySizeU            = std::max<size_t>( occupancySizeU, curPatchUnion.getSizeU0() + 1 );
     occupancySizeV            = std::max<size_t>( occupancySizeV, curPatchUnion.getSizeV0() + 1 );
   }
@@ -6218,8 +6310,8 @@ size_t PCCEncoder::unionPatchGenerationAndPacking( const GlobalPatches& globalPa
                                                              // rotated)
   int numOrientations = params_.useEightOrientations_ ? 8 : 2;
   occupancyMap.resize( occupancySizeU * occupancySizeV, false );
-  for ( unionPatch::iterator iter = unionPatchTemp.begin(); iter != unionPatchTemp.end(); iter++ ) {
-    auto& curPatchUnion = iter->second;  // [u0, v0] may be modified;
+  for ( auto& iter : unionPatchTemp ) {
+    auto& curPatchUnion = iter.second;  // [u0, v0] may be modified;
     assert( curPatchUnion.getSizeU0() < occupancySizeU );
     assert( curPatchUnion.getSizeV0() < occupancySizeV );
     bool  locationFound = false;
@@ -6278,10 +6370,11 @@ size_t PCCEncoder::unionPatchGenerationAndPacking( const GlobalPatches& globalPa
     for ( size_t v0 = 0; v0 < curPatchUnion.getSizeV0(); ++v0 ) {
       for ( size_t u0 = 0; u0 < curPatchUnion.getSizeU0(); ++u0 ) {
         int coord = curPatchUnion.patchBlock2CanvasBlock( u0, v0, occupancySizeU, occupancySizeV );
-        if ( params_.lowDelayEncoding_ )
+        if ( params_.lowDelayEncoding_ ) {
           occupancyMap[coord] = true;
-        else
+        } else {
           occupancyMap[coord] = occupancyMap[coord] || occupancy[v0 * curPatchUnion.getSizeU0() + u0];
+        }
       }
     }
 
@@ -6320,7 +6413,7 @@ void PCCEncoder::packingFirstFrame( PCCContext& context,
   heithGPA       = occupancySizeV * params_.occupancyResolution_;
   size_t maxOccupancyRow{0};
 
-  if ( packingStrategy == 0 ) {
+  if ( static_cast<int>( packingStrategy ) == 0 ) {
     std::vector<bool> occupancyMap;
     occupancyMap.resize( occupancySizeU * occupancySizeV, false );
     for ( auto& patch : patches ) {
@@ -6349,11 +6442,12 @@ void PCCEncoder::packingFirstFrame( PCCContext& context,
         const size_t v = patch.getV0() + v0;
         for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {
           const size_t u = patch.getU0() + u0;
-          if ( params_.lowDelayEncoding_ )
+          if ( params_.lowDelayEncoding_ ) {
             occupancyMap[v * occupancySizeU + u] = true;
-          else
+          } else {
             occupancyMap[v * occupancySizeU + u] =
                 occupancyMap[v * occupancySizeU + u] || occupancy[v0 * patch.getSizeU0() + u0];
+          }
         }
       }
 
@@ -6362,7 +6456,7 @@ void PCCEncoder::packingFirstFrame( PCCContext& context,
       maxOccupancyRow = ( std::max )( maxOccupancyRow, ( patch.getV0() + patch.getSizeV0() ) );
     }
 
-    if ( frame.getRawPointsPatches().size() > 0 && !frame.getUseRawPointsSeparateVideo() ) {
+    if ( !frame.getRawPointsPatches().empty() && !frame.getUseRawPointsSeparateVideo() ) {
       packRawPointsPatch( frame, occupancyMap, widthGPA, heithGPA, occupancySizeU, occupancySizeV, maxOccupancyRow );
       for ( size_t idxRawPatches = 0; idxRawPatches < frame.getRawPointsPatches().size(); idxRawPatches++ ) {
         frame.getRawPointsPatch( idxRawPatches ).preV0_ = frame.getRawPointsPatch( idxRawPatches ).v0_;
@@ -6465,10 +6559,11 @@ void PCCEncoder::packingFirstFrame( PCCContext& context,
       for ( size_t v0 = 0; v0 < curGPAPatchData.sizeV0; ++v0 ) {
         for ( size_t u0 = 0; u0 < curGPAPatchData.sizeU0; ++u0 ) {
           int coord = patch.patchBlock2CanvasBlockForGPA( u0, v0, occupancySizeU, occupancySizeV );
-          if ( params_.lowDelayEncoding_ )
+          if ( params_.lowDelayEncoding_ ) {
             occupancyMap[coord] = true;
-          else
+          } else {
             occupancyMap[coord] = occupancyMap[coord] || occupancy[v0 * patch.getSizeU0() + u0];
+          }
         }
       }
       if ( !( curGPAPatchData.isPatchDimensionSwitched() ) ) {
@@ -6486,7 +6581,7 @@ void PCCEncoder::packingFirstFrame( PCCContext& context,
       }
     }
 
-    if ( frame.getRawPointsPatches().size() > 0 && !frame.getUseRawPointsSeparateVideo() ) {
+    if ( !frame.getRawPointsPatches().empty() && !frame.getUseRawPointsSeparateVideo() ) {
       packRawPointsPatch( frame, occupancyMap, widthGPA, heithGPA, occupancySizeU, occupancySizeV, maxOccupancyRow );
       for ( size_t idxRawPatches = 0; idxRawPatches < frame.getRawPointsPatches().size(); idxRawPatches++ ) {
         frame.getRawPointsPatch( idxRawPatches ).preV0_ = frame.getRawPointsPatch( idxRawPatches ).v0_;
@@ -6527,7 +6622,7 @@ void PCCEncoder::updatePatchInformation( PCCContext& context, SubContext& subCon
     }
 
     // update rawPoints patch infor.
-    if ( frame.getRawPointsPatches().size() > 0 && !frame.getUseRawPointsSeparateVideo() ) {
+    if ( !frame.getRawPointsPatches().empty() && !frame.getUseRawPointsSeparateVideo() ) {
       for ( size_t idxRawPatches = 0; idxRawPatches < frame.getRawPointsPatches().size(); idxRawPatches++ ) {
         // frame.getRawPointsPatch( idxRawPatches ).u0_ = frame.getRawPointsPatch( idxRawPatches ).preU0_;
         frame.getRawPointsPatch( idxRawPatches ).v0_ = frame.getRawPointsPatch( idxRawPatches ).preV0_;
@@ -6603,14 +6698,14 @@ void PCCEncoder::updatePatchInformation( PCCContext& context, SubContext& subCon
     updated.resize( nextPatches.size(), false );
     for ( int32_t index = globalPatchCount; index < curPatches.size(); index++ ) {
       for ( int32_t i = globalPatchCount; i < nextPatches.size(); i++ ) {
-        if ( ( static_cast<int32_t>(curPatches[index].getIndex()) == nextPatches[i].getBestMatchIdx() ) &&
-             ( updated[i] == false ) ) {
+        if ( ( static_cast<int32_t>( curPatches[index].getIndex() ) == nextPatches[i].getBestMatchIdx() ) &&
+             ( !updated[i] ) ) {
           nextPatches[i].setBestMatchIdx( index );
           updated[i] = true;
           break;
         }
       }
-      curPatches[index].getIndex() = static_cast<size_t>(index);
+      curPatches[index].getIndex() = static_cast<size_t>( index );
       std::cout << "[" << frameIndex << ":" << index << " ," << curPatches[index].getBestMatchIdx() << "] ";
     }
   }
@@ -6626,14 +6721,12 @@ void PCCEncoder::updatePatchInformation( PCCContext& context, SubContext& subCon
     auto&  curPatches        = context[frameIndex].getPatches();
     size_t numMatchedPatches = globalPatchCount;
     for ( int32_t index = globalPatchCount; index < curPatches.size(); index++ ) {
-      if ( curPatches[index].getBestMatchIdx() != InvalidPatchIndex ) numMatchedPatches++;
+      if ( curPatches[index].getBestMatchIdx() != InvalidPatchIndex ) { numMatchedPatches++; }
     }
     context[frameIndex].setNumMatchedPatches( numMatchedPatches );
   }
 
   // GPA_HARMONIZATION End ----------------------------------------
-
-  return;
 }
 
 void PCCEncoder::updateGPAPatchInformation( PCCContext& context, SubContext& subContext, unionPatch& unionPatch ) {
@@ -6654,8 +6747,9 @@ void PCCEncoder::updateGPAPatchInformation( PCCContext& context, SubContext& sub
           for ( size_t u0 = 0; u0 < initialSizeU0; ++u0 ) {
             size_t initialIndex = v0 * initialSizeU0 + u0;
             size_t updatedIndex = v0 * updatedSizeU0 + u0;
-            if ( initialOccupancy[initialIndex] && !updatedOccupancy[updatedIndex] )
+            if ( initialOccupancy[initialIndex] && !updatedOccupancy[updatedIndex] ) {
               updatedOccupancy[updatedIndex] = true;
+            }
           }
         }
         curGPAPatchData.sizeU0    = updatedSizeU0;
@@ -6722,10 +6816,11 @@ void PCCEncoder::performGPAPacking( const SubContext& subContext,
         for ( size_t v0 = 0; v0 < curGPAPatchData.sizeV0; ++v0 ) {
           for ( size_t u0 = 0; u0 < curGPAPatchData.sizeU0; ++u0 ) {
             int coord = patch.patchBlock2CanvasBlockForGPA( u0, v0, occupancySizeU, occupancySizeV );
-            if ( params_.lowDelayEncoding_ )
+            if ( params_.lowDelayEncoding_ ) {
               occupancyMap[coord] = true;
-            else
+            } else {
               occupancyMap[coord] = occupancyMap[coord] || curGPAPatchData.occupancy[v0 * curGPAPatchData.sizeU0 + u0];
+            }
           }
         }
         if ( !( curGPAPatchData.isPatchDimensionSwitched() ) ) {
@@ -6762,7 +6857,7 @@ void PCCEncoder::performGPAPacking( const SubContext& subContext,
       }
     }
 
-    if ( curFrameContext.getRawPointsPatches().size() > 0 && !curFrameContext.getUseRawPointsSeparateVideo() ) {
+    if ( !curFrameContext.getRawPointsPatches().empty() && !curFrameContext.getUseRawPointsSeparateVideo() ) {
       packRawPointsPatch( curFrameContext, occupancyMap, widthGPA, heightGPA, occupancySizeU, occupancySizeV,
                           maxOccupancyRow );
       for ( size_t idxRawPatches = 0; idxRawPatches < curFrameContext.getRawPointsPatches().size(); idxRawPatches++ ) {
@@ -6863,10 +6958,11 @@ void PCCEncoder::packingWithoutRefForFirstFrameNoglobalPatch(
   for ( size_t v0 = 0; v0 < curGPAPatchData.sizeV0; ++v0 ) {
     for ( size_t u0 = 0; u0 < curGPAPatchData.sizeU0; ++u0 ) {
       int coord = patch.patchBlock2CanvasBlockForGPA( u0, v0, occupancySizeU, occupancySizeV );
-      if ( params_.lowDelayEncoding_ )
+      if ( params_.lowDelayEncoding_ ) {
         occupancyMap[coord] = true;
-      else
+      } else {
         occupancyMap[coord] = occupancyMap[coord] || occupancy[v0 * patch.getSizeU0() + u0];
+      }
     }
   }
   if ( !( curGPAPatchData.isPatchDimensionSwitched() ) ) {
@@ -6883,18 +6979,18 @@ void PCCEncoder::packingWithoutRefForFirstFrameNoglobalPatch(
     maxOccupancyRow = ( std::max )( maxOccupancyRow, ( curGPAPatchData.v0 + curGPAPatchData.sizeU0 ) );
   }
 }
-void PCCEncoder::packingWithRefForFirstFrameNoglobalPatch( PCCPatch&                   patch,
-                                                           const std::vector<PCCPatch> prePatches,
-                                                           size_t                      startFrameIndex,
-                                                           size_t                      i,
-                                                           size_t                      icount,
-                                                           size_t&                     occupancySizeU,
-                                                           size_t&                     occupancySizeV,
-                                                           const size_t                safeguard,
-                                                           std::vector<bool>&          occupancyMap,
-                                                           size_t&                     heightGPA,
-                                                           size_t&                     widthGPA,
-                                                           size_t&                     maxOccupancyRow ) {
+void PCCEncoder::packingWithRefForFirstFrameNoglobalPatch( PCCPatch&                    patch,
+                                                           const std::vector<PCCPatch>& prePatches,
+                                                           size_t                       startFrameIndex,
+                                                           size_t                       i,
+                                                           size_t                       icount,
+                                                           size_t&                      occupancySizeU,
+                                                           size_t&                      occupancySizeV,
+                                                           const size_t                 safeguard,
+                                                           std::vector<bool>&           occupancyMap,
+                                                           size_t&                      heightGPA,
+                                                           size_t&                      widthGPA,
+                                                           size_t&                      maxOccupancyRow ) {
   vector<int> orientation_vertical = {PATCH_ORIENTATION_DEFAULT, PATCH_ORIENTATION_SWAP,    PATCH_ORIENTATION_ROT180,
                                       PATCH_ORIENTATION_MIRROR,  PATCH_ORIENTATION_MROT180, PATCH_ORIENTATION_ROT270,
                                       PATCH_ORIENTATION_MROT90,  PATCH_ORIENTATION_ROT90};
@@ -6986,10 +7082,11 @@ void PCCEncoder::packingWithRefForFirstFrameNoglobalPatch( PCCPatch&            
   for ( size_t v0 = 0; v0 < curGPAPatchData.sizeV0; ++v0 ) {
     for ( size_t u0 = 0; u0 < curGPAPatchData.sizeU0; ++u0 ) {
       int coord = patch.patchBlock2CanvasBlockForGPA( u0, v0, occupancySizeU, occupancySizeV );
-      if ( params_.lowDelayEncoding_ )
+      if ( params_.lowDelayEncoding_ ) {
         occupancyMap[coord] = true;
-      else
+      } else {
         occupancyMap[coord] = occupancyMap[coord] || occupancy[v0 * curGPAPatchData.sizeU0 + u0];
+      }
     }
   }
   if ( !( curGPAPatchData.isPatchDimensionSwitched() ) ) {
@@ -7044,7 +7141,7 @@ void PCCEncoder::setPointLocalReconstructionData( PCCFrameContext&              
   const size_t blockToPatchWidth  = frame.getWidth() / params_.occupancyResolution_;
   const size_t blockToPatchHeight = frame.getHeight() / params_.occupancyResolution_;
   TRACE_CODEC( "WxH = %zu x %zu \n", plrd.getBlockToPatchMapWidth(), plrd.getBlockToPatchMapHeight() );
-  plrd.setLevelFlag( patch.getPointLocalReconstructionLevel() );
+  plrd.setLevelFlag( patch.getPointLocalReconstructionLevel() != 0u );
   TRACE_CODEC( "  LevelFlag = %d \n", plrd.getLevelFlag() );
   if ( plrd.getLevelFlag() ) {
     plrd.setPresentFlag( patch.getPointLocalReconstructionMode() > 0 );
@@ -7138,7 +7235,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
       auto&            patches = context[frameIdx].getPatches();
       vector<PCCPatch> reverseOrderPatchList;
 
-      for ( int i = static_cast<int>(patches.size()) - 1; i >= 0; i-- ) {
+      for ( int i = static_cast<int>( patches.size() ) - 1; i >= 0; i-- ) {
         if ( patches[i].getBestMatchIdx() != -1 ) {
           // only 1 previous frame
           assert( frameIdx > 0 );
@@ -7158,7 +7255,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
     //*****//
   }
   if ( params_.flagGeometrySmoothing_ || params_.flagColorSmoothing_ ) {
-    SEISmoothingParameters& sei = static_cast<SEISmoothingParameters&>( context.addSeiPrefix( SMOOTHING_PARAMETERS ) );
+    auto& sei = static_cast<SEISmoothingParameters&>( context.addSeiPrefix( SMOOTHING_PARAMETERS ) );
     if ( params_.flagGeometrySmoothing_ ) {
       sei.setSpGeometryCancelFlag( false );
       sei.setSpGeometrySmoothingEnabledFlag( params_.gridSmoothing_ || params_.pbfEnableFlag_ );
@@ -7219,13 +7316,15 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
     size_t       atlasIndex                = context.getAtlasIndex();
     auto&        gi                        = sps.getGeometryInformation( atlasIndex );
     auto         geometryBitDepth2D        = gi.getGeometryNominal2dBitdepthMinus1() + 1;
-    uint8_t      maxBitCountForMaxDepthTmp = uint8_t( geometryBitDepth2D - gbitCountSize[minLevel] + 1 );
-    uint8_t      maxBitCountForMinDepthTmp = uint8_t( 10 - gbitCountSize[minLevel] );
+    auto         maxBitCountForMaxDepthTmp = uint8_t( geometryBitDepth2D - gbitCountSize[minLevel] + 1 );
+    auto         maxBitCountForMinDepthTmp = uint8_t( 10 - gbitCountSize[minLevel] );
     if ( asps.get45DegreeProjectionPatchPresentFlag() ) {
       maxBitCountForMaxDepthTmp += 1;
       maxBitCountForMinDepthTmp += 1;
     }
-    int64_t prevSizeU0 = 0, prevSizeV0 = 0, predIndex = 0;
+    int64_t prevSizeU0 = 0;
+    int64_t prevSizeV0 = 0;
+    int64_t predIndex  = 0;
     TRACE_CODEC( "Patches size                        = %zu \n", patches.size() );
     TRACE_CODEC( "non-regular Patches(pcm, eom)     = %zu, %zu \n", frame.getRawPointsPatches().size(),
                  frame.getEomPatches().size() );
@@ -7236,12 +7335,12 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
       bool interPredPresent = false;
       for ( auto& patch : patches ) {
         interPredPresent |= ( patch.getBestMatchIdx() != InvalidPatchIndex );
-        if ( interPredPresent ) break;
+        if ( interPredPresent ) { break; }
       }
       if ( interPredPresent ) { atgh.setAtghType( P_TILE_GRP ); }
     }
     if ( atgh.getAtghType() == I_TILE_GRP ) {
-      for ( auto& patch : patches ) patch.setBestMatchIdx( InvalidPatchIndex );
+      for ( auto& patch : patches ) { patch.setBestMatchIdx( InvalidPatchIndex ); }
       frame.setNumMatchedPatches( 0 );
     }
     frame.constructAtghRefListStruct( context, atgh );
@@ -7261,11 +7360,11 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
         // INTER patches
         size_t      refPOC   = frame.getRefAFOC( patch.getRefAtlasFrameIndex() );
         const auto& refPatch = context.getFrame( refPOC ).getPatches()[patch.getBestMatchIdx()];
-        auto&       pid      = atgdu.addPatchInformationData( static_cast<uint8_t>(PATCH_MODE_P_INTER) );
+        auto&       pid      = atgdu.addPatchInformationData( static_cast<uint8_t>( PATCH_MODE_P_INTER ) );
         TRACE_CODEC( "patch %zu / %zu: Inter \n", patchIndex, totalPatchCount );
         auto& ipdu = pid.getInterPatchDataUnit();
         ipdu.setIpduRefIndex( patch.getRefAtlasFrameIndex() );
-        ipdu.setIpduRefPatchIndex( static_cast<int64_t>(patch.getBestMatchIdx()) - predIndex );
+        ipdu.setIpduRefPatchIndex( static_cast<int64_t>( patch.getBestMatchIdx() ) - predIndex );
         ipdu.setIpdu2dPosX( patch.getU0() - refPatch.getU0() );
         ipdu.setIpdu2dPosY( patch.getV0() - refPatch.getV0() );
         if ( asps.getPatchSizeQuantizerPresentFlag() ) {
@@ -7286,7 +7385,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
         if ( patch.getProjectionMode() == 0 ) {
           ipdu.setIpdu3dPosMinZ( ( patch.getD1() / minLevel ) - ( refPatch.getD1() / minLevel ) );
         } else {
-          if ( asps.get45DegreeProjectionPatchPresentFlag() == 0 ) {
+          if ( static_cast<int>( asps.get45DegreeProjectionPatchPresentFlag() ) == 0 ) {
             ipdu.setIpdu3dPosMinZ( ( max3DCoordinate - patch.getD1() ) / minLevel -
                                    ( max3DCoordinate - refPatch.getD1() ) / minLevel );
           } else {
@@ -7297,7 +7396,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
 
         size_t        quantDD  = patch.getSizeD() == 0 ? 0 : ( ( patch.getSizeD() - 1 ) / minLevel + 1 );
         size_t        prevQDD  = refPatch.getSizeD() == 0 ? 0 : ( ( refPatch.getSizeD() - 1 ) / minLevel + 1 );
-        const int64_t delta_dd = ( static_cast<int64_t>(quantDD) ) - ( static_cast<int64_t>(prevQDD) );
+        const int64_t delta_dd = ( static_cast<int64_t>( quantDD ) ) - ( static_cast<int64_t>( prevQDD ) );
         ipdu.setIpdu3dPosDeltaMaxZ( delta_dd );
         TRACE_CODEC(
             "IPDU: refAtlasFrame= %d refPatchIdx = %d pos2DXY = %ld %ld pos3DXYZW = %ld %ld %ld %ld size2D = %ld %ld "
@@ -7328,8 +7427,8 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
 
       } else {
         // INTRA patches
-        uint8_t patchType =
-            ( atgh.getAtghType() == I_TILE_GRP ) ? static_cast<uint8_t>(PATCH_MODE_I_INTRA) : static_cast<uint8_t>(PATCH_MODE_P_INTRA);
+        uint8_t patchType = ( atgh.getAtghType() == I_TILE_GRP ) ? static_cast<uint8_t>( PATCH_MODE_I_INTRA )
+                                                                 : static_cast<uint8_t>( PATCH_MODE_P_INTRA );
         auto& pid = atgdu.addPatchInformationData( patchType );
         TRACE_CODEC( "patch %zu / %zu: Intra \n", patchIndex, totalPatchCount );
         auto& pdu = pid.getPatchDataUnit();
@@ -7346,7 +7445,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
             pdu.setLodScaleY( patch.getLodScaleY() - ( patch.getLodScaleX() > 1 ? 1 : 2 ) );
           }
         } else {
-          pdu.setLodEnableFlag( 0 );
+          pdu.setLodEnableFlag( false );
           pdu.setLodScaleXminus1( 0 );
           pdu.setLodScaleY( 0 );
         }
@@ -7369,7 +7468,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
         if ( patch.getProjectionMode() == 0 ) {
           pdu.setPdu3dPosMinZ( patch.getD1() / minLevel );
         } else {
-          if ( asps.get45DegreeProjectionPatchPresentFlag() == 0 ) {
+          if ( static_cast<int>( asps.get45DegreeProjectionPatchPresentFlag() ) == 0 ) {
             pdu.setPdu3dPosMinZ( ( max3DCoordinate - patch.getD1() ) / minLevel );
           } else {
             pdu.setPdu3dPosMinZ( ( ( max3DCoordinate << 1 ) - patch.getD1() ) / minLevel );
@@ -7398,8 +7497,8 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
       size_t numberOfPcmPatches = frame.getNumberOfRawPointsPatches();
       for ( size_t mpsPatchIndex = 0; mpsPatchIndex < numberOfPcmPatches; ++mpsPatchIndex ) {
         auto&   rawPointsPatch = pcmPatches[mpsPatchIndex];
-        uint8_t patchType =
-            ( atgh.getAtghType() == I_TILE_GRP ) ? static_cast<uint8_t>(PATCH_MODE_I_RAW) : static_cast<uint8_t>(PATCH_MODE_P_RAW);
+        uint8_t patchType      = ( atgh.getAtghType() == I_TILE_GRP ) ? static_cast<uint8_t>( PATCH_MODE_I_RAW )
+                                                                 : static_cast<uint8_t>( PATCH_MODE_P_RAW );
         auto& pid  = atgdu.addPatchInformationData( patchType );
         auto& ppdu = pid.getRawPatchDataUnit();
         TRACE_CODEC( "patch %zu / %zu: raw \n", patches.size() + mpsPatchIndex, totalPatchCount );
@@ -7428,9 +7527,9 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
     if ( params_.enhancedOccupancyMapCode_ ) {
       size_t numberOfEomPatches = frame.getEomPatches().size();
       for ( size_t eomPatchIndex = 0; eomPatchIndex < numberOfEomPatches; ++eomPatchIndex ) {
-        auto&   eomPatch = frame.getEomPatches()[eomPatchIndex];
-        uint8_t patchType =
-            ( atgh.getAtghType() == I_TILE_GRP ) ? static_cast<uint8_t>(PATCH_MODE_I_EOM) : static_cast<uint8_t>(PATCH_MODE_P_EOM);
+        auto&   eomPatch  = frame.getEomPatches()[eomPatchIndex];
+        uint8_t patchType = ( atgh.getAtghType() == I_TILE_GRP ) ? static_cast<uint8_t>( PATCH_MODE_I_EOM )
+                                                                 : static_cast<uint8_t>( PATCH_MODE_P_EOM );
         auto& pid  = atgdu.addPatchInformationData( patchType );
         auto& epdu = pid.getEomPatchDataUnit();
         TRACE_CODEC( "patch %zu / %zu: EOM \n", patches.size() + pcmPatches.size() + eomPatchIndex, totalPatchCount );
@@ -7438,7 +7537,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
         epdu.setEpdu2dPosY( eomPatch.v0_ );
         epdu.setEpdu2dSizeXMinus1( eomPatch.sizeU_ - 1 );
         epdu.setEpdu2dSizeYMinus1( eomPatch.sizeV_ - 1 );
-        assert( eomPatch.memberPatches.size() >= 1 );
+        assert( !eomPatch.memberPatches.empty() );
         epdu.setEpduAssociatedPatchesCountMinus1( uint32_t( eomPatch.memberPatches.size() - 1 ) );
         for ( size_t i = 0; i < eomPatch.memberPatches.size(); i++ ) {
           epdu.setEpduAssociatedPatches( eomPatch.memberPatches[i], i );
@@ -7452,23 +7551,24 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
       }
     }
     TRACE_CODEC( "patch %zu / %zu: end \n", patches.size(), patches.size() );
-    uint8_t patchType = ( atgh.getAtghType() == I_TILE_GRP ) ? static_cast<uint8_t>(PATCH_MODE_I_END) : static_cast<uint8_t>(PATCH_MODE_P_END);
+    uint8_t patchType = ( atgh.getAtghType() == I_TILE_GRP ) ? static_cast<uint8_t>( PATCH_MODE_I_END )
+                                                             : static_cast<uint8_t>( PATCH_MODE_P_END );
     atgdu.addPatchInformationData( patchType );
   }
 }
 
-void PCCEncoder::SegmentationPartiallyAddtinalProjectionPlane( const PCCPointSet3&                source,
-                                                               PCCFrameContext&                   frame,
-                                                               const PCCPatchSegmenter3Parameters segmenterParams,
-                                                               PCCVideoGeometry&                  videoGeometry,
-                                                               PCCFrameContext&                   prevFrame,
-                                                               size_t                             frameIndex,
-                                                               float&                             distanceSrcRec ) {
+void PCCEncoder::SegmentationPartiallyAddtinalProjectionPlane( const PCCPointSet3&                 source,
+                                                               PCCFrameContext&                    frame,
+                                                               const PCCPatchSegmenter3Parameters& segmenterParams,
+                                                               PCCVideoGeometry&                   videoGeometry,
+                                                               PCCFrameContext&                    prevFrame,
+                                                               size_t                              frameIndex,
+                                                               float&                              distanceSrcRec ) {
   std::vector<PCCPatch> Orthogonal;
   std::vector<PCCPatch> Additional;
 
   size_t axis  = 0;
-  int    min_x = ( 1u << segmenterParams.geometryBitDepth3D_ ) + 1;
+  int    min_x = ( 1U << segmenterParams.geometryBitDepth3D_ ) + 1;
   int    max_x = -1;
   int    min_y = min_x;
   int    max_y = -1;
@@ -7548,7 +7648,7 @@ void PCCEncoder::SegmentationPartiallyAddtinalProjectionPlane( const PCCPointSet
     frame.getSrcPointCloudByPatch() = Tmp;
   }
 
-  if ( partial.getPointCount() ) {
+  if ( partial.getPointCount() != 0u ) {
     // additional projection
     std::vector<PCCPointSet3>    Tmp;
     std::vector<PCCPointSet3>    PointCloudByPatchA;
@@ -7577,7 +7677,9 @@ void PCCEncoder::SegmentationPartiallyAddtinalProjectionPlane( const PCCPointSet
       if ( patch.getAxisOfAdditionalPlane() == 0 ) { remove.push_back( patchIndex ); }
     }
     // erace
-    for ( auto itr = remove.begin(); itr != remove.end(); ++itr ) { Additional.erase( Additional.begin() + *itr ); }
+    for ( std::_Vector_iterator<std::_Vector_val<std::_Simple_types<unsigned long long>>>::value_type& itr : remove ) {
+      Additional.erase( Additional.begin() + itr );
+    }
   }
   auto& patches = frame.getPatches();
   patches.reserve( Orthogonal.size() + Additional.size() );

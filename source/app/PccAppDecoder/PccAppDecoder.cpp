@@ -42,7 +42,7 @@ int main( int argc, char* argv[] ) {
   PCCDecoderParameters decoderParams;
   PCCMetricsParameters metricsParams;
   if ( !parseParameters( argc, argv, decoderParams, metricsParams ) ) { return -1; }
-  if ( decoderParams.nbThread_ > 0 ) { tbb::task_scheduler_init init( static_cast<int>(decoderParams.nbThread_) ); }
+  if ( decoderParams.nbThread_ > 0 ) { tbb::task_scheduler_init init( static_cast<int>( decoderParams.nbThread_ ) ); }
 
   // Timers to count elapsed wall/user time
   pcc::chrono::Stopwatch<std::chrono::steady_clock> clockWall;
@@ -262,8 +262,7 @@ bool parseParameters( int                   argc,
 
   // report the current configuration (only in the absence of errors so
   // that errors/warnings are more obvious and in the same place).
-  if ( err.is_errored ) { return false; }
-  return true;
+  return !err.is_errored;
 }
 
 int decompressVideo( const PCCDecoderParameters& decoderParams,
@@ -284,14 +283,15 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
   PCCChecksum checksum;
   metrics.setParameters( metricsParams );
   checksum.setParameters( metricsParams );
-  std::vector<std::vector<uint8_t>> checksumsRec, checksumsDec;
+  std::vector<std::vector<uint8_t>> checksumsRec;
+  std::vector<std::vector<uint8_t>> checksumsDec;
   if ( metricsParams.computeChecksum_ ) { checksum.read( decoderParams.compressedStreamPath_ ); }
   PCCDecoder decoder;
   decoder.setParameters( decoderParams );
 
   SampleStreamVpccUnit ssvu;
   PCCBitstreamReader   bitstreamReader;
-  size_t               headerSize = bitstreamReader.read( bitstream, ssvu );
+  size_t               headerSize = pcc::PCCBitstreamReader::read( bitstream, ssvu );
   bitstreamStat.incrHeader( headerSize );
 #ifdef BITSTREAM_TRACE
   size_t index = 0;
@@ -311,7 +311,7 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
                                        removeFileExtension( decoderParams.compressedStreamPath_ ).c_str(), index++ ) );
     bitstreamReader.setTraceFile( bitstream.getTraceFile() );
 #endif
-    if ( !bitstreamReader.decode( ssvu, context ) ) { return 0; }
+    if ( bitstreamReader.decode( ssvu, context ) == 0 ) { return 0; }
 #ifdef BITSTREAM_TRACE
     bitstream.closeTrace();
 #endif
@@ -332,15 +332,18 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
       int retReconstruction = decoder.reconstruct( context, reconstructs, partitions );
 
       clock.stop();
-      if ( retDecoding || retReconstruction ) { return retDecoding != 0 ? retDecoding : retReconstruction; }
+      if ( ( retDecoding != 0 ) || ( retReconstruction != 0 ) ) {
+        return retDecoding != 0 ? retDecoding : retReconstruction;
+      }
       if ( metricsParams.computeChecksum_ ) { checksum.computeDecoded( reconstructs ); }
       if ( metricsParams.computeMetrics_ ) {
-        PCCGroupOfFrames sources, normals;
+        PCCGroupOfFrames sources;
+        PCCGroupOfFrames normals;
         if ( !sources.load( metricsParams.uncompressedDataPath_, frameNumber, frameNumber + reconstructs.size(),
                             decoderParams.colorTransform_ ) ) {
           return -1;
         }
-        if ( metricsParams.normalDataPath_ != "" ) {
+        if ( !metricsParams.normalDataPath_.empty() ) {
           if ( !normals.load( metricsParams.normalDataPath_, frameNumber, frameNumber + reconstructs.size(),
                               COLOR_TRANSFORM_NONE, true ) ) {
             return -1;
@@ -358,7 +361,7 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
       bMoreData = ( ssvu.getVpccUnitCount() > 0 );
 
       // jkei: do we need this?
-      for ( size_t f = 0; f < partitions.size(); f++ ) partitions[f].clear();
+      for ( auto& partition : partitions ) { partition.clear(); }
     }
   }
   bitstreamStat.trace();

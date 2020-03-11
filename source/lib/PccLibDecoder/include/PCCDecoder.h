@@ -66,7 +66,7 @@ class PCCDecoder : public PCCCodec {
                    PCCGroupOfFrames&                   reconstructs,
                    std::vector<std::vector<uint32_t>>& partitions );
 
-  void setParameters( PCCDecoderParameters value );
+  void setParameters( const PCCDecoderParameters& params );
   void setPostProcessingSeiParameters( GeneratePointCloudParameters& gpcParams,
                                        PCCContext&                   context,
                                        size_t                        frameIndex );
@@ -75,11 +75,11 @@ class PCCDecoder : public PCCCodec {
   void createPatchFrameDataStructure( PCCContext& context, PCCFrameContext& frame, size_t frameIndex );
 
  private:
-  void setPointLocalReconstruction( PCCContext& context );
-  void setPointLocalReconstructionData( PCCFrameContext&              frame,
-                                        PCCPatch&                     patch,
-                                        PointLocalReconstructionData& plrd,
-                                        size_t                        occupancyPackingBlockSize );
+  static void setPointLocalReconstruction( PCCContext& context );
+  static void setPointLocalReconstructionData( PCCFrameContext&              frame,
+                                               PCCPatch&                     patch,
+                                               PointLocalReconstructionData& plrd,
+                                               size_t                        occupancyPackingBlockSize );
 
   PCCDecoderParameters params_;
 };

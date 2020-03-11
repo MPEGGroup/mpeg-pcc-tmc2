@@ -62,27 +62,30 @@ void convertRGBtoYUV_BT709( const PCCColor3B& rgb, std::vector<float>& yuv ) {
 }
 
 QualityMetrics::QualityMetrics() :
-    c2cMse_( 0.0f ),
-    c2cHausdorff_( 0.0f ),
-    c2cPsnr_( 0.0f ),
-    c2cHausdorffPsnr_( 0.0f ),
-    c2pMse_( 0.0f ),
-    c2pHausdorff_( 0.0f ),
-    c2pPsnr_( 0.0f ),
-    c2pHausdorffPsnr_( 0.0f ),
-    psnr_( 0.0f ),
-    reflectanceMse_( 0.0f ),
-    reflectancePsnr_( 0.0f ) {
-  colorMse_[0] = colorMse_[0] = colorMse_[0] = 0.0f;
-  colorPsnr_[0] = colorPsnr_[0] = colorPsnr_[0] = 0.0f;
+    c2cMse_( 0.0F ),
+    c2cHausdorff_( 0.0F ),
+    c2cPsnr_( 0.0F ),
+    c2cHausdorffPsnr_( 0.0F ),
+    c2pMse_( 0.0F ),
+    c2pHausdorff_( 0.0F ),
+    c2pPsnr_( 0.0F ),
+    c2pHausdorffPsnr_( 0.0F ),
+    psnr_( 0.0F ),
+    reflectanceMse_( 0.0F ),
+    reflectancePsnr_( 0.0F ) {
+  colorMse_[0] = colorMse_[0] = colorMse_[0] = 0.0F;
+  colorPsnr_[0] = colorPsnr_[0] = colorPsnr_[0] = 0.0F;
 }
 
-void QualityMetrics::setParameters( PCCMetricsParameters params ) { params_ = params; }
+void QualityMetrics::setParameters( const PCCMetricsParameters& params ) { params_ = params; }
 
 void QualityMetrics::compute( const PCCPointSet3& pointcloudA, const PCCPointSet3& pointcloudB ) {
-  double maxC2c = ( std::numeric_limits<double>::min )(), maxC2p = ( std::numeric_limits<double>::min )();
-  double sseC2p = 0, sseC2c = 0, sseReflectance = 0;
-  size_t num = 0;
+  double maxC2c         = ( std::numeric_limits<double>::min )();
+  double maxC2p         = ( std::numeric_limits<double>::min )();
+  double sseC2p         = 0;
+  double sseC2c         = 0;
+  double sseReflectance = 0;
+  size_t num            = 0;
   double sseColor[3];
   sseColor[0] = sseColor[1] = sseColor[2] = 0.0;
 
@@ -122,7 +125,7 @@ void QualityMetrics::compute( const PCCPointSet3& pointcloudA, const PCCPointSet
         for ( size_t j = 0; j < 3; j++ ) { errVector[j] = pointcloudA[indexA][j] - pointcloudB[indexB][j]; }
         double dist = pow( errVector[0] * normalsB[indexB][0] + errVector[1] * normalsB[indexB][1] +
                                errVector[2] * normalsB[indexB][2],
-                           2.f );
+                           2.F );
         distProjC2p += dist;
       }
       distProjC2p /= sameDistList.size();
@@ -132,29 +135,32 @@ void QualityMetrics::compute( const PCCPointSet3& pointcloudA, const PCCPointSet
     double distColor[3];
     distColor[0] = distColor[1] = distColor[2] = 0.0;
     if ( params_.computeColor_ && pointcloudA.hasColors() && pointcloudB.hasColors() ) {
-      std::vector<float> yuvA, yuvB;
+      std::vector<float> yuvA;
+      std::vector<float> yuvB;
       PCCColor3B         rgb;
       convertRGBtoYUV_BT709( pointcloudA.getColor( indexA ), yuvA );
-      if ( params_.neighborsProc_ ) {
+      if ( params_.neighborsProc_ != 0 ) {
         switch ( params_.neighborsProc_ ) {
           case 0: break;
           case 1:  // Average
           case 2:  // Weighted average
           {
             int          nbdupcumul = 0;
-            unsigned int r = 0, g = 0, b = 0;
-            for ( size_t i = 0; i < sameDistList.size(); i++ ) {
+            unsigned int r          = 0;
+            unsigned int g          = 0;
+            unsigned int b          = 0;
+            for ( unsigned long long i : sameDistList ) {
               int nbdup = 1;  // pointcloudB.xyz.nbdup[ indices_sameDst[n] ];
-              r += nbdup * pointcloudB.getColor( sameDistList[i] )[0];
-              g += nbdup * pointcloudB.getColor( sameDistList[i] )[1];
-              b += nbdup * pointcloudB.getColor( sameDistList[i] )[2];
+              r += nbdup * pointcloudB.getColor( i )[0];
+              g += nbdup * pointcloudB.getColor( i )[1];
+              b += nbdup * pointcloudB.getColor( i )[2];
               nbdupcumul += nbdup;
             }
-            rgb[0] = static_cast<unsigned char>(round( static_cast<double>(r) / nbdupcumul ));
-            rgb[1] = static_cast<unsigned char>(round( static_cast<double>(g) / nbdupcumul ));
-            rgb[2] = static_cast<unsigned char>(round( static_cast<double>(b) / nbdupcumul ));
+            rgb[0] = static_cast<unsigned char>( round( static_cast<double>( r ) / nbdupcumul ) );
+            rgb[1] = static_cast<unsigned char>( round( static_cast<double>( g ) / nbdupcumul ) );
+            rgb[2] = static_cast<unsigned char>( round( static_cast<double>( b ) / nbdupcumul ) );
             convertRGBtoYUV_BT709( rgb, yuvB );
-            for ( size_t i = 0; i < 3; i++ ) { distColor[i] = pow( yuvA[i] - yuvB[i], 2.f ); }
+            for ( size_t i = 0; i < 3; i++ ) { distColor[i] = pow( yuvA[i] - yuvB[i], 2.F ); }
           } break;
           case 3:  // Min
           case 4:  // Max
@@ -164,7 +170,7 @@ void QualityMetrics::compute( const PCCPointSet3& pointcloudA, const PCCPointSet
             for ( auto index : sameDistList ) {
               convertRGBtoYUV_BT709( pointcloudB.getColor( index ), yuvB );
               float dist =
-                  pow( yuvA[0] - yuvB[0], 2.f ) + pow( yuvA[1] - yuvB[1], 2.f ) + pow( yuvA[2] - yuvB[2], 2.f );
+                  pow( yuvA[0] - yuvB[0], 2.F ) + pow( yuvA[1] - yuvB[1], 2.F ) + pow( yuvA[2] - yuvB[2], 2.F );
               if ( ( ( params_.neighborsProc_ == 3 ) && ( dist < distBest ) ) ||
                    ( ( params_.neighborsProc_ == 4 ) && ( dist > distBest ) ) ) {
                 distBest  = dist;
@@ -177,12 +183,12 @@ void QualityMetrics::compute( const PCCPointSet3& pointcloudA, const PCCPointSet
       } else {
         convertRGBtoYUV_BT709( pointcloudB.getColor( indexB ), yuvB );
       }
-      for ( size_t i = 0; i < 3; i++ ) { distColor[i] = pow( yuvA[i] - yuvB[i], 2.f ); }
+      for ( size_t i = 0; i < 3; i++ ) { distColor[i] = pow( yuvA[i] - yuvB[i], 2.F ); }
     }
 
     double distReflectance = 0.0;
     if ( params_.computeReflectance_ && pointcloudA.hasReflectances() && pointcloudB.hasReflectances() ) {
-      distReflectance = pow( pointcloudA.getReflectance( indexA ) - pointcloudB.getReflectance( indexB ), 2.f );
+      distReflectance = pow( pointcloudA.getReflectance( indexA ) - pointcloudB.getReflectance( indexB ), 2.F );
     }
     num++;
 
@@ -280,10 +286,10 @@ void QualityMetrics::print( char code ) {
 }
 PCCMetrics::PCCMetrics() :
     sourcePoints_( 0 ), sourceDuplicates_( 0 ), reconstructPoints_( 0 ), reconstructDuplicates_( 0 ) {}
-PCCMetrics::~PCCMetrics() {}
-void PCCMetrics::setParameters( PCCMetricsParameters params ) { params_ = params; }
+PCCMetrics::~PCCMetrics() = default;
+void PCCMetrics::setParameters( const PCCMetricsParameters& params ) { params_ = params; }
 
-const QualityMetrics QualityMetrics::operator+( const QualityMetrics& metric ) const {
+QualityMetrics QualityMetrics::operator+( const QualityMetrics& metric ) const {
   QualityMetrics result;
   // Derive the final symmetric metric
   if ( params_.computeC2c_ ) {
@@ -328,11 +334,13 @@ void PCCMetrics::compute( const PCCGroupOfFrames& sources,
     exit( -1 );
   }
   for ( size_t i = 0; i < sources.size(); i++ ) {
-    const PCCPointSet3 &sourceOrg = sources[i], &reconstructOrg = reconstructs[i];
+    const PCCPointSet3& sourceOrg      = sources[i];
+    const PCCPointSet3& reconstructOrg = reconstructs[i];
     sourcePoints_.push_back( sourceOrg.getPointCount() );
     reconstructPoints_.push_back( reconstructOrg.getPointCount() );
-    PCCPointSet3 source, reconstruct;
-    if ( params_.dropDuplicates_ ) {
+    PCCPointSet3 source;
+    PCCPointSet3 reconstruct;
+    if ( params_.dropDuplicates_ != 0 ) {
       sourceOrg.removeDuplicate( source, params_.dropDuplicates_ );
       reconstructOrg.removeDuplicate( reconstruct, params_.dropDuplicates_ );
       sourceDuplicates_.push_back( source.getPointCount() );
@@ -353,7 +361,8 @@ void PCCMetrics::compute( PCCPointSet3& source, PCCPointSet3& reconstruct, const
     source.copyNormals( normalSource );
     reconstruct.scaleNormals( normalSource );
   }
-  QualityMetrics q1, q2;
+  QualityMetrics q1;
+  QualityMetrics q2;
   q1.setParameters( params_ );
   q1.compute( source, reconstruct );
   q2.setParameters( params_ );
@@ -370,8 +379,8 @@ void PCCMetrics::display() {
     std::cout << "Imported intrinsic resoluiton: " << params_.resolution_ << std::endl;
     std::cout << "Peak distance for PSNR: " << params_.resolution_ << std::endl;
     std::cout << "Point cloud sizes for org version, dec version, and the scaling ratio: " << sourcePoints_[i] << ", "
-              << reconstructDuplicates_[i] << ", " << static_cast<float>(reconstructDuplicates_[i]) / static_cast<float>(sourcePoints_[i])
-              << std::endl;
+              << reconstructDuplicates_[i] << ", "
+              << static_cast<float>( reconstructDuplicates_[i] ) / static_cast<float>( sourcePoints_[i] ) << std::endl;
     quality1[i].print( '1' );
     quality2[i].print( '2' );
     qualityF[i].print( 'F' );

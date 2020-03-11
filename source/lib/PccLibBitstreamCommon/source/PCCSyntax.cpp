@@ -53,7 +53,7 @@ void PCCAtlasHighLevelSyntax::constructRefList( size_t aspsIdx, size_t afpsIdx )
     for ( size_t i = 0; i < refList.getNumRefEntries(); i++ ) {
       int  absDiff = refList.getAbsDeltaAfocSt( i );
       bool sign    = refList.getStrpfEntrySignFlag( i );
-      setRefAtlasFrame( list, i, static_cast<int>(sign) == 0 ? ( -absDiff ) : absDiff );
+      setRefAtlasFrame( list, i, static_cast<int>( sign ) == 0 ? ( -absDiff ) : absDiff );
     }
   }
 }
@@ -65,9 +65,10 @@ size_t PCCAtlasHighLevelSyntax::getNumRefIdxActive( AtlasTileGroupHeader& atgh )
     if ( atgh.getAtghNumRefIdxActiveOverrideFlag() ) {
       numRefIdxActive = atgh.getAtghNumRefIdxActiveMinus1() + 1;
     } else {
-      auto& refList   = atgh.getRefListStruct();
-      numRefIdxActive = static_cast< size_t>(( std::min )( static_cast<int>(refList.getNumRefEntries()),
-                                                static_cast<int>(afps.getAfpsNumRefIdxDefaultActiveMinus1()) + 1 ));
+      auto& refList = atgh.getRefListStruct();
+      numRefIdxActive =
+          static_cast<size_t>( ( std::min )( static_cast<int>( refList.getNumRefEntries() ),
+                                             static_cast<int>( afps.getAfpsNumRefIdxDefaultActiveMinus1() ) + 1 ) );
     }
   }
   return numRefIdxActive;

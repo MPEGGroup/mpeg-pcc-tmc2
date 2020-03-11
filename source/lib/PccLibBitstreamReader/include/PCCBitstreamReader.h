@@ -87,8 +87,8 @@ class PCCBitstreamReader {
   PCCBitstreamReader();
   ~PCCBitstreamReader();
 
-  static size_t  read( PCCBitstream& bitstream, SampleStreamVpccUnit& ssvu );
-  int32_t decode( SampleStreamVpccUnit& ssvu, PCCHighLevelSyntax& syntax );
+  static size_t read( PCCBitstream& bitstream, SampleStreamVpccUnit& ssvu );
+  int32_t       decode( SampleStreamVpccUnit& ssvu, PCCHighLevelSyntax& syntax );
 
 #ifdef BITSTREAM_TRACE
   void setTraceFile( FILE* traceFile ) { traceFile_ = traceFile; }
@@ -118,14 +118,10 @@ class PCCBitstreamReader {
   static void occupancyInformation( OccupancyInformation& oi, PCCBitstream& bitstream );
 
   // 7.3.4.4 Geometry parameter set syntax
-  static void geometryInformation( GeometryInformation& gi,
-                            VpccParameterSet&    sps,
-                            PCCBitstream&        bitstream );
+  static void geometryInformation( GeometryInformation& gi, VpccParameterSet& sps, PCCBitstream& bitstream );
 
   // 7.3.4.5 Attribute parameter set syntax
-  static void attributeInformation( AttributeInformation& ai,
-                             VpccParameterSet&     sps,
-                             PCCBitstream&         bitstream );
+  static void attributeInformation( AttributeInformation& ai, VpccParameterSet& sps, PCCBitstream& bitstream );
 
   // 7.2 Specification of syntax functions and descriptors
   static bool byteAligned( PCCBitstream& bitstream );
@@ -144,16 +140,18 @@ class PCCBitstreamReader {
                                       PCCBitstream&                  bitstream );
   // 7.3.6.2  Point local reconstruction information syntax
   static void pointLocalReconstructionInformation( AtlasSequenceParameterSetRbsp& asps,
-                                            PCCHighLevelSyntax&            syntax,
-                                            PCCBitstream&                  bitstream );
+                                                   PCCHighLevelSyntax&            syntax,
+                                                   PCCBitstream&                  bitstream );
 
   // 7.3.6.3  Atlas frame parameter set Rbsp syntax
   static void atlasFrameParameterSetRbsp( AtlasFrameParameterSetRbsp& afps,
-                                   PCCHighLevelSyntax&         syntax,
-                                   PCCBitstream&               bitstream );
+                                          PCCHighLevelSyntax&         syntax,
+                                          PCCBitstream&               bitstream );
 
   // 7.3.6.4  Atlas frame tile information syntax
-  static void atlasFrameTileInformation( AtlasFrameTileInformation& afti, VpccParameterSet& sps, PCCBitstream& bitstream );
+  static void atlasFrameTileInformation( AtlasFrameTileInformation& afti,
+                                         VpccParameterSet&          sps,
+                                         PCCBitstream&              bitstream );
 
   // 7.3.6.5  Supplemental enhancement information Rbsp syntax
   void seiRbsp( PCCHighLevelSyntax& syntax, PCCBitstream& bitstream, NalUnitType nalUnitType );
@@ -190,15 +188,15 @@ class PCCBitstreamReader {
 
   // 7.3.7.3  Patch data unit syntax : AtlasTileGroupHeader instead of PatchTileGroupHeader
   static void patchDataUnit( PatchDataUnit&        pdu,
-                      AtlasTileGroupHeader& atgh,
-                      PCCHighLevelSyntax&   syntax,
-                      PCCBitstream&         bitstream );
+                             AtlasTileGroupHeader& atgh,
+                             PCCHighLevelSyntax&   syntax,
+                             PCCBitstream&         bitstream );
 
   // 7.3.7.4  Skip patch data unit syntax
   static void skipPatchDataUnit( SkipPatchDataUnit&    spdu,
-                          AtlasTileGroupHeader& atgh,
-                          PCCHighLevelSyntax&   syntax,
-                          PCCBitstream&         bitstream );
+                                 AtlasTileGroupHeader& atgh,
+                                 PCCHighLevelSyntax&   syntax,
+                                 PCCBitstream&         bitstream );
 
   // 7.3.7.5  Merge patch data unit syntax
   void mergePatchDataUnit( MergePatchDataUnit&   mpdu,
@@ -214,26 +212,26 @@ class PCCBitstreamReader {
 
   // 7.3.7.7  Raw patch data unit syntax
   static void rawPatchDataUnit( RawPatchDataUnit&     rpdu,
-                         AtlasTileGroupHeader& atgh,
-                         PCCHighLevelSyntax&   syntax,
-                         PCCBitstream&         bitstream );
+                                AtlasTileGroupHeader& atgh,
+                                PCCHighLevelSyntax&   syntax,
+                                PCCBitstream&         bitstream );
   // 7.3.7.8  EOM patch data unit syntax
   static void eomPatchDataUnit( EOMPatchDataUnit&     epdu,
-                         AtlasTileGroupHeader& ptgh,
-                         PCCHighLevelSyntax&   syntax,
-                         PCCBitstream&         bitstream );
+                                AtlasTileGroupHeader& ptgh,
+                                PCCHighLevelSyntax&   syntax,
+                                PCCBitstream&         bitstream );
 
   // 7.3.7.9  Point local reconstruction data syntax
   static void pointLocalReconstructionData( PointLocalReconstructionData&  plrd,
-                                     PCCHighLevelSyntax&            syntax,
-                                     AtlasSequenceParameterSetRbsp& asps,
-                                     PCCBitstream&                  bitstream );
+                                            PCCHighLevelSyntax&            syntax,
+                                            AtlasSequenceParameterSetRbsp& asps,
+                                            PCCBitstream&                  bitstream );
 
   // // 7.3.8  Supplemental enhancement information message syntax
   // void seiMessage( PatchDataGroup& pdg, PCCHighLevelSyntax& syntax, PCCBitstream& bitstream );
 
   // 7.3.8 Supplemental enhancement information message syntax
-  void seiMessage( PCCBitstream& bitstream, PCCHighLevelSyntax& syntax, NalUnitType nalUnitType );
+  static void seiMessage( PCCBitstream& bitstream, PCCHighLevelSyntax& syntax, NalUnitType nalUnitType );
 
   // 7.3.5.1 General patch data group unit syntax
   void atlasSubStream( PCCHighLevelSyntax& syntax, PCCBitstream& bitstream );
@@ -363,10 +361,10 @@ class PCCBitstreamReader {
   // E.2  SEI payload syntax
   // E.2.1  General SEI message syntax
   static void seiPayload( PCCBitstream&       bitstream,
-                   PCCHighLevelSyntax& syntax,
-                   NalUnitType         nalUnitType,
-                   SeiPayloadType      payloadType,
-                   size_t              payloadSize );
+                          PCCHighLevelSyntax& syntax,
+                          NalUnitType         nalUnitType,
+                          SeiPayloadType      payloadType,
+                          size_t              payloadSize );
 
   // E.2.2  Filler payload SEI message syntax
   static void fillerPayload( PCCBitstream& bitstream, SEI& sei, size_t payloadSize );
@@ -396,11 +394,11 @@ class PCCBitstreamReader {
 
   // E.2.15  Buffering period SEI message syntax
   static void bufferingPeriod( PCCBitstream&        bitstream,
-                        SEI&                 sei,
-                        size_t               payloadSize,
-                        bool                 NalHrdBpPresentFlag,
-                        bool                 AclHrdBpPresentFlag,
-                        std::vector<uint8_t> hrdCabCntMinus1 );
+                               SEI&                 sei,
+                               size_t               payloadSize,
+                               bool                 NalHrdBpPresentFlag,
+                               bool                 AclHrdBpPresentFlag,
+                               std::vector<uint8_t> hrdCabCntMinus1 );
   // E.2.16  Atlas frame timing SEI message syntax
   static void atlasFrameTiming( PCCBitstream& bitstream, SEI& sei, size_t payloadSize, bool CabDabDelaysPresentFlag );
   // E.2.17  Presentation inforomation SEI message syntax
@@ -415,7 +413,7 @@ class PCCBitstreamReader {
 
   // F.2  VUI syntax
   // F.2.1  VUI parameters syntax
-  void vuiParameters( PCCBitstream& bitstream, VUIParameters& vp );
+  static void vuiParameters( PCCBitstream& bitstream, VUIParameters& vp );
   // F.2.2  HRD parameters syntax
   static void hrdParameters( PCCBitstream& bitstream, HrdParameters& hp );
   // F.2.3  Sub-layer HRD parameters syntax

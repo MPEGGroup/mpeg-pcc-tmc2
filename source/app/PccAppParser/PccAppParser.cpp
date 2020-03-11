@@ -43,8 +43,8 @@ int main( int argc, char* argv[] ) {
     printf( "File %s not exist \n", argv[1] );
     usage();
   }
-
-  int ret = parserPccBin( argv[1] );
+  std::string filename = argv[1];
+  int         ret      = parserPccBin( filename );
 
   return ret;
 }
@@ -55,7 +55,7 @@ void usage() {
   exit( -1 );
 }
 
-int parserPccBin( std::string filename ) {
+int parserPccBin( const std::string& filename ) {
   PCCBitstream     bitstream;
   PCCBitstreamStat bitstreamStat;
 #ifdef BITSTREAM_TRACE
@@ -69,7 +69,7 @@ int parserPccBin( std::string filename ) {
 
   SampleStreamVpccUnit ssvu;
   PCCBitstreamReader   bitstreamReader;
-  size_t               headerSize = bitstreamReader.read( bitstream, ssvu );
+  size_t               headerSize = pcc::PCCBitstreamReader::read( bitstream, ssvu );
   bitstreamStat.incrHeader( headerSize );
 
   bool    bMoreData = true;
@@ -79,7 +79,7 @@ int parserPccBin( std::string filename ) {
     syntax.setBitstreamStat( bitstreamStat );
     PCCBitstreamReader gofBitstreamReader;
     int                ret = gofBitstreamReader.decode( ssvu, syntax );
-    if ( ret ) { return ret; }
+    if ( ret != 0 ) { return ret; }
     bMoreData = ( ssvu.getVpccUnitCount() > 0 );
   }
   bitstreamStat.trace();

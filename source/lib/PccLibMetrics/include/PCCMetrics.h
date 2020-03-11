@@ -52,11 +52,11 @@ class QualityMetrics {
  public:
   QualityMetrics();
 
-  void setParameters( PCCMetricsParameters params );
+  void setParameters( const PCCMetricsParameters& params );
 
   void compute( const PCCPointSet3& cloudA, const PCCPointSet3& cloudB );
 
-  const QualityMetrics operator+( const QualityMetrics& rcMv ) const;
+  QualityMetrics operator+( const QualityMetrics& metric ) const;
 
   void print( char code );
 
@@ -90,7 +90,7 @@ class PCCMetrics {
  public:
   PCCMetrics();
   ~PCCMetrics();
-  void setParameters( PCCMetricsParameters params );
+  void setParameters( const PCCMetricsParameters& params );
   void compute( const PCCGroupOfFrames& sources,
                 const PCCGroupOfFrames& reconstructs,
                 const PCCGroupOfFrames& normals );
