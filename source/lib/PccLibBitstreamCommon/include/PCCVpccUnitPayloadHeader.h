@@ -36,9 +36,9 @@
 #include "PCCBitstreamCommon.h"
 
 namespace pcc {
-    
+
 // 7.3.2.2  V-PCC unit header syntax
-class VpccUnitPayloadHeader { 
+class VpccUnitPayloadHeader {
  public:
   VpccUnitPayloadHeader() :
       unitType_( 0 ),
@@ -78,4 +78,4 @@ class VpccUnitPayloadHeader {
 
 };  // namespace pcc
 
-#endif //~PCC_BITSTREAM_VPCCUNITPAYLOADHEADER_H
+#endif  //~PCC_BITSTREAM_VPCCUNITPAYLOADHEADER_H

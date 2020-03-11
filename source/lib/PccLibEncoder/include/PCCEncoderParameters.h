@@ -96,8 +96,8 @@ class PCCEncoderParameters {
   size_t maxNNCountPatchSegmentation_;
   size_t surfaceThickness_;
   size_t minLevel_;  // 8,16,32,64
-  double maxAllowedDist2MissedPointsDetection_;
-  double maxAllowedDist2MissedPointsSelection_;
+  double maxAllowedDist2RawPointsDetection_;
+  double maxAllowedDist2RawPointsSelection_;
   double lambdaRefineSegmentation_;
   size_t mapCountMinus1_;
 
@@ -164,8 +164,8 @@ class PCCEncoderParameters {
   bool losslessGeo_;
   bool losslessGeo444_;
 
-  // missed points video
-  bool        useMissedPointsSeparateVideo_;
+  // raw points video
+  bool        useRawPointsSeparateVideo_;
   std::string geometryMPConfig_;
   std::string textureMPConfig_;
 
@@ -194,8 +194,8 @@ class PCCEncoderParameters {
   bool groupDilation_;
   bool textureDilationOffLossless_;
 
-  // EDD
-  bool enhancedDeltaDepthCode_;
+  // EOM
+  bool enhancedOccupancyMapCode_;
 
   // Lossy occupancy Map coding
   size_t offsetLossyOM_;
@@ -223,8 +223,8 @@ class PCCEncoderParameters {
   size_t safeGuardDistance_;
   bool   useEightOrientations_;
 
-  // Lossy Missed Points Patch
-  bool   lossyMissedPointsPatch_;
+  // Lossy raw points Patch
+  bool   lossyRawPointsPatch_;
   double minNormSumOfInvDist4MPSelection_;
   int    lossyMppGeoQP_;
 
@@ -239,7 +239,7 @@ class PCCEncoderParameters {
   // 3D geometry padding
   size_t geometryPadding_;
 
-  // EDD
+  // EOM
   bool   enhancedPP_;
   double minWeightEPP_;
 
@@ -266,8 +266,8 @@ class PCCEncoderParameters {
   int              numCutsAlong3rdLongestAxis_;
   int              numROIs_;
 
-  // Sort missed points by Morton code
-  bool   mortonOrderSortMissedPoints_;
+  // Sort raw points by Morton code
+  bool   mortonOrderSortRawPoints_;
   size_t textureMPSeparateVideoWidth_;
 
   // Patch block filtering

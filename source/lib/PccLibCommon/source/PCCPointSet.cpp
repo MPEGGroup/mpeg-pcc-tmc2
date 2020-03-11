@@ -318,26 +318,24 @@ bool PCCPointSet3::isBboxEmpty( PCCBox3D bbox ) const {
   return true;
 }
 
-int PCCPointSet3::fillMissedPointsBbox( std::vector<size_t>  missedPoints,
-                                        PCCBox3D             bbox,
-                                        std::vector<size_t>& bboxMissedPoints ) const {
-  const size_t MissedPointCount = missedPoints.size();
-
-  for ( size_t i = 0; i < MissedPointCount; ++i ) {
-    const PCCPoint3D& pt = ( *this )[missedPoints[i]];
+int PCCPointSet3::fillRawPointsBbox( std::vector<size_t>  rawPoints,
+                                     PCCBox3D             bbox,
+                                     std::vector<size_t>& bboxRawPoints ) const {
+  const size_t rawPointsCount = rawPoints.size();
+  for ( size_t i = 0; i < rawPointsCount; ++i ) {
+    const PCCPoint3D& pt = ( *this )[rawPoints[i]];
     if ( ( pt[0] >= bbox.min_[0] && pt[0] <= bbox.max_[0] ) && ( pt[1] >= bbox.min_[1] && pt[1] <= bbox.max_[1] ) &&
          ( pt[2] >= bbox.min_[2] && pt[2] <= bbox.max_[2] ) ) {
-      bboxMissedPoints.push_back( missedPoints[i] );
+      bboxRawPoints.push_back( rawPoints[i] );
     }
   }
-  return bboxMissedPoints.size();
+  return bboxRawPoints.size();
 }
 
-bool PCCPointSet3::isMissedBboxEmpty( std::vector<size_t> missedPoints, PCCBox3D bbox ) const {
-  const size_t MissedPointCount = missedPoints.size();
-
-  for ( size_t i = 0; i < MissedPointCount; ++i ) {
-    const PCCPoint3D& pt = ( *this )[missedPoints[i]];
+bool PCCPointSet3::isRawPointsBboxEmpty( std::vector<size_t> rawPoints, PCCBox3D bbox ) const {
+  const size_t rawPointsCount = rawPoints.size();
+  for ( size_t i = 0; i < rawPointsCount; ++i ) {
+    const PCCPoint3D& pt = ( *this )[rawPoints[i]];
     if ( ( pt[0] >= bbox.min_[0] && pt[0] <= bbox.max_[0] ) && ( pt[1] >= bbox.min_[1] && pt[1] <= bbox.max_[1] ) &&
          ( pt[2] >= bbox.min_[2] && pt[2] <= bbox.max_[2] ) ) {
       return false;
@@ -1078,22 +1076,22 @@ bool PCCPointSet3::transferColors( PCCPointSet3& target,
 }
 
 bool PCCPointSet3::transferColors16bitBP( PCCPointSet3& target,
-                                        const int32_t searchRange,
-                                        const bool    losslessTexture,
-                                        const int     numNeighborsColorTransferFwd,
-                                        const int     numNeighborsColorTransferBwd,
-                                        const bool    useDistWeightedAverageFwd,
-                                        const bool    useDistWeightedAverageBwd,
-                                        const bool    skipAvgIfIdenticalSourcePointPresentFwd,
-                                        const bool    skipAvgIfIdenticalSourcePointPresentBwd,
-                                        const double  distOffsetFwd,
-                                        const double  distOffsetBwd,
-                                        double        maxGeometryDist2Fwd,
-                                        double        maxGeometryDist2Bwd,
-                                        double        maxColorDist2Fwd,
-                                        double        maxColorDist2Bwd,
-                                        const bool    excludeColorOutlier,
-                                        const double  thresholdColorOutlierDist ) const {
+                                          const int32_t searchRange,
+                                          const bool    losslessTexture,
+                                          const int     numNeighborsColorTransferFwd,
+                                          const int     numNeighborsColorTransferBwd,
+                                          const bool    useDistWeightedAverageFwd,
+                                          const bool    useDistWeightedAverageBwd,
+                                          const bool    skipAvgIfIdenticalSourcePointPresentFwd,
+                                          const bool    skipAvgIfIdenticalSourcePointPresentBwd,
+                                          const double  distOffsetFwd,
+                                          const double  distOffsetBwd,
+                                          double        maxGeometryDist2Fwd,
+                                          double        maxGeometryDist2Bwd,
+                                          double        maxColorDist2Fwd,
+                                          double        maxColorDist2Bwd,
+                                          const bool    excludeColorOutlier,
+                                          const double  thresholdColorOutlierDist ) const {
   const auto&  source           = *this;
   const size_t pointCountSource = source.getPointCount();
   const size_t pointCountTarget = target.getPointCount();
@@ -1409,33 +1407,33 @@ bool PCCPointSet3::transferColors16bitBP( PCCPointSet3& target,
 }
 
 bool PCCPointSet3::transferColors16bit( PCCPointSet3& target,
-                                   const int32_t searchRange,
-                                   const bool    losslessTexture,
-                                   const int     numNeighborsColorTransferFwd,
-                                   const int     numNeighborsColorTransferBwd,
-                                   const bool    useDistWeightedAverageFwd,
-                                   const bool    useDistWeightedAverageBwd,
-                                   const bool    skipAvgIfIdenticalSourcePointPresentFwd,
-                                   const bool    skipAvgIfIdenticalSourcePointPresentBwd,
-                                   const double  distOffsetFwd,
-                                   const double  distOffsetBwd,
-                                   double        maxGeometryDist2Fwd,
-                                   double        maxGeometryDist2Bwd,
-                                   double        maxColorDist2Fwd,
-                                   double        maxColorDist2Bwd,
-                                   const bool    excludeColorOutlier,
-                                   const double  thresholdColorOutlierDist ) const {
+                                        const int32_t searchRange,
+                                        const bool    losslessTexture,
+                                        const int     numNeighborsColorTransferFwd,
+                                        const int     numNeighborsColorTransferBwd,
+                                        const bool    useDistWeightedAverageFwd,
+                                        const bool    useDistWeightedAverageBwd,
+                                        const bool    skipAvgIfIdenticalSourcePointPresentFwd,
+                                        const bool    skipAvgIfIdenticalSourcePointPresentBwd,
+                                        const double  distOffsetFwd,
+                                        const double  distOffsetBwd,
+                                        double        maxGeometryDist2Fwd,
+                                        double        maxGeometryDist2Bwd,
+                                        double        maxColorDist2Fwd,
+                                        double        maxColorDist2Bwd,
+                                        const bool    excludeColorOutlier,
+                                        const double  thresholdColorOutlierDist ) const {
   const auto&  source           = *this;
   const size_t pointCountSource = source.getPointCount();
   const size_t pointCountTarget = target.getPointCount();
   if ( !pointCountSource || !pointCountTarget || !source.hasColors() ) { return false; }
   PCCKdTree kdtreeTarget( target ), kdtreeSource( source );
   target.addColors16bit();
-  std::vector<PCCColor16bit> refinedColors1;                                                  
+  std::vector<PCCColor16bit> refinedColors1;
   refinedColors1.resize( pointCountTarget );
   maxGeometryDist2Fwd = ( maxGeometryDist2Fwd < 512 ) ? maxGeometryDist2Fwd : std::numeric_limits<double>::max();
   maxGeometryDist2Bwd = ( maxGeometryDist2Bwd < 512 ) ? maxGeometryDist2Bwd : std::numeric_limits<double>::max();
-  maxColorDist2Fwd    = ( maxColorDist2Fwd < 131072 ) ? maxColorDist2Fwd : std::numeric_limits<double>::max();  
+  maxColorDist2Fwd    = ( maxColorDist2Fwd < 131072 ) ? maxColorDist2Fwd : std::numeric_limits<double>::max();
   maxColorDist2Bwd    = ( maxColorDist2Bwd < 131072 ) ? maxColorDist2Bwd : std::numeric_limits<double>::max();
 
   // ==========================================================================================
@@ -1490,7 +1488,9 @@ bool PCCPointSet3::transferColors16bit( PCCPointSet3& target,
               double sumWeights{0.0};
               for ( int i = 0; i < nNN; ++i ) {
                 const double weight = 1 / ( result.dist( i ) + distOffsetFwd );
-                for ( int k = 0; k < 3; ++k ) { refinedColor[k] += source.getColor16bit( result.indices( i ) )[k] * weight; }
+                for ( int k = 0; k < 3; ++k ) {
+                  refinedColor[k] += source.getColor16bit( result.indices( i ) )[k] * weight;
+                }
                 sumWeights += weight;
               }
               refinedColor /= sumWeights;
@@ -1499,11 +1499,11 @@ bool PCCPointSet3::transferColors16bit( PCCPointSet3& target,
                 size_t      excludeCount = 0;
                 sumWeights               = 0.0;
                 for ( int i = 0; i < nNN; ++i ) {
-                  double      dist     = 0.0;
-                  PCCColor16bit  tmpColor = source.getColor16bit( result.indices( i ) );
-                  PCCVector3D sourceColor( tmpColor[0], tmpColor[1], tmpColor[2] );
+                  double        dist     = 0.0;
+                  PCCColor16bit tmpColor = source.getColor16bit( result.indices( i ) );
+                  PCCVector3D   sourceColor( tmpColor[0], tmpColor[1], tmpColor[2] );
                   dist = ( sourceColor - refinedColor ).getNorm2();
-                  if ( dist > thresholdColorOutlierDist * thresholdColorOutlierDist * 256.0 * 256.0) {
+                  if ( dist > thresholdColorOutlierDist * thresholdColorOutlierDist * 256.0 * 256.0 ) {
                     excludeCount += 1;
                     continue;
                   }
@@ -1542,7 +1542,7 @@ bool PCCPointSet3::transferColors16bit( PCCPointSet3& target,
   // colorsDists2 is iteratively refined (by removing the farthest points) until the
   // std of remaining colors in it is smaller than a threshold.
   struct DistColor {
-    double     dist;
+    double        dist;
     PCCColor16bit color;
   };
   std::vector<std::vector<DistColor>> refinedColorsDists2;
@@ -1566,7 +1566,7 @@ bool PCCPointSet3::transferColors16bit( PCCPointSet3& target,
   // compute centroid2
   for ( size_t index = 0; index < pointCountTarget; ++index ) {
     const PCCColor16bit color1 = refinedColors1[index];       // refined color derived in forward direction
-    auto& colorsDists2      = refinedColorsDists2[index];  // set of candidate points derived in backward direction
+    auto& colorsDists2         = refinedColorsDists2[index];  // set of candidate points derived in backward direction
     if ( colorsDists2.empty() || losslessTexture ) {
       target.setColor16bit( index, color1 );
     } else {
@@ -1723,8 +1723,8 @@ bool PCCPointSet3::transferColors16bit( PCCPointSet3& target,
             }
           }
         }
-        target.setColor16bit( index,
-                         PCCColor16bit( uint16_t( bestColor[0] ), uint16_t( bestColor[1] ), uint16_t( bestColor[2] ) ) );
+        target.setColor16bit(
+            index, PCCColor16bit( uint16_t( bestColor[0] ), uint16_t( bestColor[1] ), uint16_t( bestColor[2] ) ) );
       } else {  // centroid2 == centroid1
         target.setColor16bit( index, color1 );
       }
@@ -1892,7 +1892,7 @@ bool PCCPointSet3::transferColorWeight( PCCPointSet3& target, const double bestC
   for ( size_t index = 0; index < pointCountTarget; ++index ) {
     kdtreeSource.search( target[index], num_results, result );
     double color16bit[3] = {0., 0., 0.};
-    double sum      = 0;
+    double sum           = 0;
     if ( result.count() > 1 && result.dist( 0 ) > 0.0001 ) {
       for ( size_t i = 0; i < result.count(); i++ ) {
         const auto&  found = source.getColor16bit( result.indices( i ) );
@@ -1908,13 +1908,13 @@ bool PCCPointSet3::transferColorWeight( PCCPointSet3& target, const double bestC
       color16bit[1] /= sum;
       color16bit[2] /= sum;
     } else {
-
       const auto& found = source.getColor16bit( result.indices( 0 ) );
-      color16bit[0]          = found[0];
-      color16bit[1]          = found[1];
-      color16bit[2]          = found[2];
+      color16bit[0]     = found[0];
+      color16bit[1]     = found[1];
+      color16bit[2]     = found[2];
     }
-    target.setColor16bit( index, PCCColor16bit( uint16_t( color16bit[0] ), uint16_t( color16bit[1] ), uint16_t( color16bit[2] ) ) );
+    target.setColor16bit(
+        index, PCCColor16bit( uint16_t( color16bit[0] ), uint16_t( color16bit[1] ), uint16_t( color16bit[2] ) ) );
   }
   return true;
 }

@@ -296,7 +296,7 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
 #ifdef BITSTREAM_TRACE
   size_t index = 0;
 #endif
-  bool    bMoreData = true;
+  bool bMoreData = true;
   while ( bMoreData ) {
     PCCGroupOfFrames reconstructs;
     PCCContext       context;
@@ -307,59 +307,60 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
 #ifdef BITSTREAM_TRACE
     PCCBitstream bitstream;
     bitstream.setTrace( true );
-		bitstream.openTrace(stringFormat( "%s_GOF%u_hls_decode.txt", removeFileExtension( decoderParams.compressedStreamPath_ ).c_str(),
-                           index++ ));
+    bitstream.openTrace( stringFormat( "%s_GOF%u_hls_decode.txt",
+                                       removeFileExtension( decoderParams.compressedStreamPath_ ).c_str(), index++ ) );
     bitstreamReader.setTraceFile( bitstream.getTraceFile() );
 #endif
     if ( !bitstreamReader.decode( ssvu, context ) ) { return 0; }
 #ifdef BITSTREAM_TRACE
     bitstream.closeTrace();
 #endif
-		// allocate atlas structure
-		context.resizeAtlas(context.getVps().getAtlasCountMinus1() + 1);
-		for (int atlId = 0; atlId < context.getVps().getAtlasCountMinus1() + 1; atlId++) {
-			context.getAtlas(atlId).allocateVideoFrames(context, 0); // first allocating the structures, frames will be added as the V-PCC units are being decoded ???
-			context.setAtlasIndex(atlId);
-    std::vector<std::vector<uint32_t>> partitions;
-			int retDecoding = decoder.decode(context, reconstructs, partitions, atlId);
-    
-    //jkei : this will be the process.
-    //we need to change this part(and "GeneratePointCloudParameters ppSEIParams" and "setPostProcessingSeiParameters")
-    //based on desirable reconstruction profile of DECODER and presence of SEIs
-    //if(retDecoding==0) // do we need this?
-    int retReconstruction = decoder.reconstruct(context, reconstructs, partitions);
-    
-    clock.stop();
-    if ( retDecoding || retReconstruction ) { return retDecoding!=0 ? retDecoding : retReconstruction; }
-    if ( metricsParams.computeChecksum_ ) { checksum.computeDecoded( reconstructs ); }
-    if ( metricsParams.computeMetrics_ ) {
-      PCCGroupOfFrames sources, normals;
-      if ( !sources.load( metricsParams.uncompressedDataPath_, frameNumber, frameNumber + reconstructs.size(),
-                          decoderParams.colorTransform_ ) ) {
-        return -1;
-      }
-      if ( metricsParams.normalDataPath_ != "" ) {
-        if ( !normals.load( metricsParams.normalDataPath_, frameNumber, frameNumber + reconstructs.size(),
-                            COLOR_TRANSFORM_NONE, true ) ) {
+    // allocate atlas structure
+    context.resizeAtlas( context.getVps().getAtlasCountMinus1() + 1 );
+    for ( uint32_t atlId = 0; atlId < context.getVps().getAtlasCountMinus1() + 1; atlId++ ) {
+      context.getAtlas( atlId ).allocateVideoFrames(
+          context,
+          0 );  // first allocating the structures, frames will be added as the V-PCC units are being decoded ???
+      context.setAtlasIndex( atlId );
+      std::vector<std::vector<uint32_t>> partitions;
+      int                                retDecoding = decoder.decode( context, reconstructs, partitions, atlId );
+
+      // jkei : this will be the process.
+      // we need to change this part(and "GeneratePointCloudParameters ppSEIParams" and
+      // "setPostProcessingSeiParameters") based on desirable reconstruction profile of DECODER and presence of SEIs
+      // if(retDecoding==0) // do we need this?
+      int retReconstruction = decoder.reconstruct( context, reconstructs, partitions );
+
+      clock.stop();
+      if ( retDecoding || retReconstruction ) { return retDecoding != 0 ? retDecoding : retReconstruction; }
+      if ( metricsParams.computeChecksum_ ) { checksum.computeDecoded( reconstructs ); }
+      if ( metricsParams.computeMetrics_ ) {
+        PCCGroupOfFrames sources, normals;
+        if ( !sources.load( metricsParams.uncompressedDataPath_, frameNumber, frameNumber + reconstructs.size(),
+                            decoderParams.colorTransform_ ) ) {
           return -1;
         }
+        if ( metricsParams.normalDataPath_ != "" ) {
+          if ( !normals.load( metricsParams.normalDataPath_, frameNumber, frameNumber + reconstructs.size(),
+                              COLOR_TRANSFORM_NONE, true ) ) {
+            return -1;
+          }
+        }
+        metrics.compute( sources, reconstructs, normals );
+        sources.clear();
+        normals.clear();
       }
-      metrics.compute( sources, reconstructs, normals );
-      sources.clear();
-      normals.clear();
+      if ( !decoderParams.reconstructedDataPath_.empty() ) {
+        reconstructs.write( decoderParams.reconstructedDataPath_, frameNumber );
+      } else {
+        frameNumber += reconstructs.size();
+      }
+      bMoreData = ( ssvu.getVpccUnitCount() > 0 );
+
+      // jkei: do we need this?
+      for ( size_t f = 0; f < partitions.size(); f++ ) partitions[f].clear();
     }
-    if ( !decoderParams.reconstructedDataPath_.empty() ) {
-      reconstructs.write( decoderParams.reconstructedDataPath_, frameNumber );
-    } else {
-      frameNumber += reconstructs.size();
-    }
-    bMoreData = ( ssvu.getVpccUnitCount() > 0 );
-    
-    //jkei: do we need this?
-    for(size_t f=0; f<partitions.size(); f++)
-      partitions[f].clear();
   }
-	}
   bitstreamStat.trace();
   if ( metricsParams.computeMetrics_ ) { metrics.display(); }
   if ( metricsParams.computeChecksum_ ) {

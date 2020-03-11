@@ -243,15 +243,15 @@ bool parseParameters( int                   argc,
        encoderParams.minLevel_,
        "minimum level for patches" )
 
-    ( "maxAllowedDist2MissedPointsDetection",
-       encoderParams.maxAllowedDist2MissedPointsDetection_,
-       encoderParams.maxAllowedDist2MissedPointsDetection_,
-       "Maximum distance for a point to be ignored during missed point detection" )
+    ( "maxAllowedDist2RawPointsDetection",
+       encoderParams.maxAllowedDist2RawPointsDetection_,
+       encoderParams.maxAllowedDist2RawPointsDetection_,
+       "Maximum distance for a point to be ignored during raw points detection" )
 
-    ( "maxAllowedDist2MissedPointsSelection",
-       encoderParams.maxAllowedDist2MissedPointsSelection_,
-       encoderParams.maxAllowedDist2MissedPointsSelection_,
-       "Maximum distance for a point to be ignored during  missed points  selection" )
+    ( "maxAllowedDist2RawPointsSelection",
+       encoderParams.maxAllowedDist2RawPointsSelection_,
+       encoderParams.maxAllowedDist2RawPointsSelection_,
+       "Maximum distance for a point to be ignored during  raw points  selection" )
 
     ( "lambdaRefineSegmentation",
        encoderParams.lambdaRefineSegmentation_,
@@ -290,10 +290,10 @@ bool parseParameters( int                   argc,
        encoderParams.occupancyMapQP_,
        "QP for compression of occupancy map video" )
 
-    //EDD code
-    ( "enhancedDeltaDepthCode",
-       encoderParams.enhancedDeltaDepthCode_,
-       encoderParams.enhancedDeltaDepthCode_,
+    //EOM code
+    ( "enhancedOccupancyMapCode",
+       encoderParams.enhancedOccupancyMapCode_,
+       encoderParams.enhancedOccupancyMapCode_,
        "Use enhanced-delta-depth code" )
 
     ( "EOMFixBitCount",
@@ -571,10 +571,10 @@ bool parseParameters( int                   argc,
       encoderParams.losslessGeo444_,
       "Use 4444 format for lossless geometry" )
 
-    ( "useMissedPointsSeparateVideo",
-      encoderParams.useMissedPointsSeparateVideo_,
-      encoderParams.useMissedPointsSeparateVideo_,
-      "compress missed point with video codec" )
+    ( "useRawPointsSeparateVideo",
+      encoderParams.useRawPointsSeparateVideo_,
+      encoderParams.useRawPointsSeparateVideo_,
+      "compress raw points with video codec" )
 
     ( "textureMPSeparateVideoWidth",
       encoderParams.textureMPSeparateVideoWidth_,
@@ -584,12 +584,12 @@ bool parseParameters( int                   argc,
     ( "geometryMPConfig",
       encoderParams.geometryMPConfig_,
       encoderParams.geometryMPConfig_,
-      "HM configuration file for missed points geometry compression" )
+      "HM configuration file for raw points geometry compression" )
 
     ( "textureMPConfig",
       encoderParams.textureMPConfig_,
       encoderParams.textureMPConfig_,
-      "HM configuration file for missed points texture compression" )
+      "HM configuration file for raw points texture compression" )
 
     //etc
     ( "nbThread",
@@ -748,21 +748,21 @@ bool parseParameters( int                   argc,
       encoderParams.textureBGFill_,
       "Selects the background filling operation for texture only (0: patch-edge extension, 1(default): smoothed push-pull algorithm), 2: harmonic background filling\n" )
 
-    //lossy-missed-points patch
-    ( "lossyMissedPointsPatch",
-      encoderParams.lossyMissedPointsPatch_,
-      encoderParams.lossyMissedPointsPatch_,
-      "Lossy missed points patch(0: no lossy missed points patch, 1: enable lossy missed points patch (default=0)\n" )
+    //lossy-raw-points patch
+    ( "lossyRawPointsPatch",
+      encoderParams.lossyRawPointsPatch_,
+      encoderParams.lossyRawPointsPatch_,
+      "Lossy raw points patch(0: no lossy raw points patch, 1: enable lossy raw points patch (default=0)\n" )
 
     ( "minNormSumOfInvDist4MPSelection",
       encoderParams.minNormSumOfInvDist4MPSelection_,
       encoderParams.minNormSumOfInvDist4MPSelection_,
-      "Minimum normalized sum of inverse distance for missed points selection: double value between 0.0 and 1.0 (default=0.35)\n" )
+      "Minimum normalized sum of inverse distance for raw points selection: double value between 0.0 and 1.0 (default=0.35)\n" )
 
     ( "lossyMppGeoQP",
       encoderParams.lossyMppGeoQP_,
       encoderParams.lossyMppGeoQP_,
-      "QP value for geometry in lossy missed points patch (default=4)\n" )
+      "QP value for geometry in lossy raw points patch (default=4)\n" )
 
     ( "globalPatchAllocation",
       encoderParams.globalPatchAllocation_,
@@ -858,8 +858,8 @@ bool parseParameters( int                   argc,
     ( "numCutsAlong2ndLongestAxis"  , encoderParams.numCutsAlong2ndLongestAxis_, encoderParams.numCutsAlong2ndLongestAxis_, " " )
     ( "numCutsAlong3rdLongestAxis"  , encoderParams.numCutsAlong3rdLongestAxis_, encoderParams.numCutsAlong3rdLongestAxis_, " " )
 
-    // Sort missed points by Morton code (m49363 CE2.25)
-    ( "mortonOrderSortMissedPoints" , encoderParams.mortonOrderSortMissedPoints_, encoderParams.mortonOrderSortMissedPoints_, " " ) 
+    // Sort raw points by Morton code (m49363 CE2.25)
+    ( "mortonOrderSortRawPoints" , encoderParams.mortonOrderSortRawPoints_, encoderParams.mortonOrderSortRawPoints_, " " ) 
     
     // Patch block filtering
     ( "pbfEnableFlag", encoderParams.pbfEnableFlag_, encoderParams.pbfEnableFlag_, " enable patch block filtering \n" )
@@ -976,7 +976,7 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
     PCCContext   context;
     context.setBitstreamStat( bitstreamStat );
     context.addVpccParameterSet( contextIndex );
-    context.setActiveVpsId(contextIndex);
+    context.setActiveVpsId( contextIndex );
 
     PCCGroupOfFrames sources, reconstructs;
     if ( !sources.load( encoderParams.uncompressedDataPath_, startFrameNumber, endFrameNumber,
@@ -993,8 +993,9 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
 #ifdef BITSTREAM_TRACE
     PCCBitstream bitstream;
     bitstream.setTrace( true );
-    bitstream.openTrace(stringFormat( "%s_GOF%u_hls_encode.txt", removeFileExtension( encoderParams.compressedStreamPath_ ).c_str(),
-                           context.getVps().getVpccParameterSetId() ));
+    bitstream.openTrace( stringFormat( "%s_GOF%u_hls_encode.txt",
+                                       removeFileExtension( encoderParams.compressedStreamPath_ ).c_str(),
+                                       context.getVps().getVpccParameterSetId() ) );
     bitstreamWriter.setTraceFile( bitstream.getTraceFile() );
 #endif
     ret |= bitstreamWriter.encode( context, ssvu );
@@ -1042,7 +1043,7 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
   bitstream.writeHeader();
   bitstreamStat.setHeader( bitstream.size() );
   PCCBitstreamWriter bitstreamWriter;
-  size_t              headerSize = bitstreamWriter.write( ssvu, bitstream );
+  size_t             headerSize = bitstreamWriter.write( ssvu, bitstream );
   bitstreamStat.incrHeader( headerSize );
   bitstream.write( encoderParams.compressedStreamPath_ );
 

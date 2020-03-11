@@ -37,7 +37,7 @@
 #include "PCCPointLocalReconstructionData.h"
 
 namespace pcc {
-    
+
 // 7.3.7.6  Inter patch data unit syntax
 class InterPatchDataUnit {
  public:
@@ -105,4 +105,4 @@ class InterPatchDataUnit {
 
 };  // namespace pcc
 
-#endif //~PCC_BITSTREAM_INTERPATCHDATAUNIT_H
+#endif  //~PCC_BITSTREAM_INTERPATCHDATAUNIT_H

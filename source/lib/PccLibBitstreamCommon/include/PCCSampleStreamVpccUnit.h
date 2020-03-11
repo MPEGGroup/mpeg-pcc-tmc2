@@ -37,7 +37,7 @@
 #include "PCCVpccUnit.h"
 
 namespace pcc {
-    
+
 // B.2 Sample stream V-PCC unit syntax and semantics
 // 6.1 V-PCC bistreams format
 class SampleStreamVpccUnit {
@@ -63,4 +63,4 @@ class SampleStreamVpccUnit {
 
 };  // namespace pcc
 
-#endif //~PCC_BITSTREAM_SAMPLESTREAMVPCCUNIT_H
+#endif  //~PCC_BITSTREAM_SAMPLESTREAMVPCCUNIT_H

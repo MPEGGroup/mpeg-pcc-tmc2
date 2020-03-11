@@ -64,4 +64,4 @@ class SampleStreamNalUnit {
 
 };  // namespace pcc
 
-#endif //~PCC_BITSTREAM_SAMPLESTREAMNALUNIT_H
+#endif  //~PCC_BITSTREAM_SAMPLESTREAMNALUNIT_H

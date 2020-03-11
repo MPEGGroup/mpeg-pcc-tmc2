@@ -146,15 +146,17 @@ class PCCBitstreamWriter {
   // 7.3.5.2  NAL unit header syntax
   // 7.3.6.1  Atlas sequence parameter set Rbsp syntax
   void atlasSequenceParameterSetRbsp( AtlasSequenceParameterSetRbsp& asps,
-                                      PCCHighLevelSyntax&                    syntax,
+                                      PCCHighLevelSyntax&            syntax,
                                       PCCBitstream&                  bitstream );
   // 7.3.6.2  Point local reconstruction information syntax
   void pointLocalReconstructionInformation( AtlasSequenceParameterSetRbsp& asps,
-                                            PCCHighLevelSyntax&                    syntax,
+                                            PCCHighLevelSyntax&            syntax,
                                             PCCBitstream&                  bitstream );
 
   // 7.3.6.3  Atlas frame parameter set Rbsp syntax
-  void atlasFrameParameterSetRbsp( AtlasFrameParameterSetRbsp& afps, PCCHighLevelSyntax& syntax, PCCBitstream& bitstream );
+  void atlasFrameParameterSetRbsp( AtlasFrameParameterSetRbsp& afps,
+                                   PCCHighLevelSyntax&         syntax,
+                                   PCCBitstream&               bitstream );
 
   // 7.3.6.4  Atlas frame tile information syntax
   void atlasFrameTileInformation( AtlasFrameTileInformation& pfti, VpccParameterSet& sps, PCCBitstream& bitstream );
@@ -182,51 +184,54 @@ class PCCBitstreamWriter {
   // 7.3.7.1  General atlas tile group data unit syntax =patchTileGroupDataUnit
   void atlasTileGroupDataUnit( AtlasTileGroupDataUnit& atgdu,
                                AtlasTileGroupHeader&   atgh,
-                               PCCHighLevelSyntax&             syntax,
+                               PCCHighLevelSyntax&     syntax,
                                PCCBitstream&           bitstream );
 
   // 7.3.7.2  Patch information data syntax
   void patchInformationData( PatchInformationData& pid,
                              size_t                patchMode,
                              AtlasTileGroupHeader& atgh,
-                             PCCHighLevelSyntax&           syntax,
+                             PCCHighLevelSyntax&   syntax,
                              PCCBitstream&         bitstream );
 
   // 7.3.7.3  Patch data unit syntax : AtlasTileGroupHeader instead of PatchTileGroupHeader
-  void patchDataUnit( PatchDataUnit& pdu, AtlasTileGroupHeader& atgh, PCCHighLevelSyntax& syntax, PCCBitstream& bitstream );
+  void patchDataUnit( PatchDataUnit&        pdu,
+                      AtlasTileGroupHeader& atgh,
+                      PCCHighLevelSyntax&   syntax,
+                      PCCBitstream&         bitstream );
 
   // 7.3.7.4  Skip patch data unit syntax
   void skipPatchDataUnit( SkipPatchDataUnit&    spdu,
                           AtlasTileGroupHeader& atgh,
-                          PCCHighLevelSyntax&           syntax,
+                          PCCHighLevelSyntax&   syntax,
                           PCCBitstream&         bitstream );
 
   // 7.3.7.5  Merge patch data unit syntax
   void mergePatchDataUnit( MergePatchDataUnit&   mpdu,
                            AtlasTileGroupHeader& atgh,
-                           PCCHighLevelSyntax&           syntax,
+                           PCCHighLevelSyntax&   syntax,
                            PCCBitstream&         bitstream );
 
   // 7.3.7.6  Inter patch data unit syntax
   void interPatchDataUnit( InterPatchDataUnit&   ipdu,
                            AtlasTileGroupHeader& atgh,
-                           PCCHighLevelSyntax&           syntax,
+                           PCCHighLevelSyntax&   syntax,
                            PCCBitstream&         bitstream );
 
   // 7.3.7.7  Raw patch data unit syntax
   void rawPatchDataUnit( RawPatchDataUnit&     rpdu,
                          AtlasTileGroupHeader& ptgh,
-                         PCCHighLevelSyntax&           syntax,
+                         PCCHighLevelSyntax&   syntax,
                          PCCBitstream&         bitstream );
   // 7.3.7.8  EOM patch data unit syntax
   void eomPatchDataUnit( EOMPatchDataUnit&     epdu,
                          AtlasTileGroupHeader& ptgh,
-                         PCCHighLevelSyntax&           syntax,
+                         PCCHighLevelSyntax&   syntax,
                          PCCBitstream&         bitstream );
 
   // 7.3.7.9  Point local reconstruction data syntax
   void pointLocalReconstructionData( PointLocalReconstructionData&  plrd,
-                                     PCCHighLevelSyntax&                    syntax,
+                                     PCCHighLevelSyntax&            syntax,
                                      AtlasSequenceParameterSetRbsp& asps,
                                      PCCBitstream&                  bitstream );
 
@@ -284,12 +289,15 @@ class PCCBitstreamWriter {
                                PCCBitstream&     bitstream );
 
   // 7.3.5.13 Patch frame layer unit syntax
-  void patchTileGroupLayerUnit( PatchDataGroup& pdg, size_t index, PCCHighLevelSyntax& syntax, PCCBitstream& bitstream );
+  void patchTileGroupLayerUnit( PatchDataGroup&     pdg,
+                                size_t              index,
+                                PCCHighLevelSyntax& syntax,
+                                PCCBitstream&       bitstream );
 
   // 7.3.5.14 Patch frame header syntax
   void patchTileGroupHeader( PatchTileGroupHeader& patchTileGroupHeader,
                              PatchTileGroupHeader& pfhPrev,
-                             PCCHighLevelSyntax&           syntax,
+                             PCCHighLevelSyntax&   syntax,
                              PCCBitstream&         bitstream );
 
   // 7.3.5.15 Reference list structure syntax
@@ -300,7 +308,7 @@ class PCCBitstreamWriter {
   // 7.3.5.16 Patch frame data unit syntax
   void patchTileGroupDataUnit( PatchTileGroupDataUnit& ptgdu,
                                PatchTileGroupHeader&   patchTileGroupHeader,
-                               PCCHighLevelSyntax&             syntax,
+                               PCCHighLevelSyntax&     syntax,
                                PCCBitstream&           bitstream );
 
   // 7.3.5.17 Patch information data syntax
@@ -308,28 +316,31 @@ class PCCBitstreamWriter {
                              size_t                patchIndex,
                              size_t                patchMode,
                              PatchTileGroupHeader& ptgh,
-                             PCCHighLevelSyntax&           syntax,
+                             PCCHighLevelSyntax&   syntax,
                              PCCBitstream&         bitstream );
 
   // 7.3.5.18 Patch data unit syntax
-  void patchDataUnit( PatchDataUnit& pdu, PatchTileGroupHeader& ptgh, PCCHighLevelSyntax& syntax, PCCBitstream& bitstream );
+  void patchDataUnit( PatchDataUnit&        pdu,
+                      PatchTileGroupHeader& ptgh,
+                      PCCHighLevelSyntax&   syntax,
+                      PCCBitstream&         bitstream );
 
   // 7.3.5.19  Delta Patch data unit
   void deltaPatchDataUnit( InterPatchDataUnit&   dpdu,
                            PatchTileGroupHeader& ptgh,
-                           PCCHighLevelSyntax&           syntax,
+                           PCCHighLevelSyntax&   syntax,
                            PCCBitstream&         bitstream );
 
   // 7.3.5.20 raw patch data unit syntax
   void pcmPatchDataUnit( RawPatchDataUnit&     ppdu,
                          PatchTileGroupHeader& ptgh,
-                         PCCHighLevelSyntax&           syntax,
+                         PCCHighLevelSyntax&   syntax,
                          PCCBitstream&         bitstream );
 
   // 7.3.5.x EOM patch data unit syntax
   void eomPatchDataUnit( EOMPatchDataUnit&     epdu,
                          PatchTileGroupHeader& ptgh,
-                         PCCHighLevelSyntax&           syntax,
+                         PCCHighLevelSyntax&   syntax,
                          PCCBitstream&         bitstream );
 
   // 7.3.5.22 Supplemental enhancement information message syntax
@@ -345,7 +356,7 @@ class PCCBitstreamWriter {
   // C.2.1 Sample stream NAL header syntax
   void sampleStreamNalHeader( PCCBitstream& bitstream, SampleStreamNalUnit& ssnu );
   // C.2.2 Sample stream NAL unit syntax
-  void sampleStreamNalUnit( PCCHighLevelSyntax&          syntax,
+  void sampleStreamNalUnit( PCCHighLevelSyntax&  syntax,
                             PCCBitstream&        bitstream,
                             SampleStreamNalUnit& ssnu,
                             NalUnit&             nalUnit,
@@ -394,12 +405,12 @@ class PCCBitstreamWriter {
   // E.2.18  Smoothing parameters SEI message syntax
   void smoothingParameters( PCCBitstream& bitstream, SEI& sei );
 
-  //m52705
+  // m52705
   void sceneObjectInformation( PCCBitstream& bitstream, SEI& sei );
   void objectLabelInformation( PCCBitstream& bitstream, SEI& sei );
-  void patchInformation      ( PCCBitstream& bitstream, SEI& sei );
+  void patchInformation( PCCBitstream& bitstream, SEI& sei );
   void volumetricRectangleInformation( PCCBitstream& bitstream, SEI& sei );
-  
+
   // F.2  VUI syntax
   // F.2.1  VUI parameters syntax
   void vuiParameters( PCCBitstream& bitstream, VUIParameters& vp );

@@ -36,7 +36,7 @@
 #include "PCCBitstreamCommon.h"
 
 namespace pcc {
-    
+
 // 7.3.7.4  Skip patch data unit syntax
 class SkipPatchDataUnit {
  public:
@@ -55,4 +55,4 @@ class SkipPatchDataUnit {
 
 };  // namespace pcc
 
-#endif //~PCC_BITSTREAM_SKIPPATCHDATAUNIT_H
+#endif  //~PCC_BITSTREAM_SKIPPATCHDATAUNIT_H

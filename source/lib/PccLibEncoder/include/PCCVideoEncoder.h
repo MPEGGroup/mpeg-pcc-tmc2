@@ -94,7 +94,7 @@ class PCCVideoEncoder {
     const std::string recRgbFileName =
         addVideoFormat( fileName + "_rec" + ".rgb", width, height, !use444CodecIo, nbyte == 2 ? "10" : "8" );
 
-	const std::string yuv444RecFileName = addVideoFormat( fileName + "_rec.yuv", width, height, false, "16" );
+    const std::string yuv444RecFileName = addVideoFormat( fileName + "_rec.yuv", width, height, false, "16" );
 
     const bool yuvVideo = colorSpaceConversionConfig.empty() || use444CodecIo;
     printf( "Encoder convert : yuvVideo = %d colorSpaceConversionConfig = %s \n", yuvVideo,

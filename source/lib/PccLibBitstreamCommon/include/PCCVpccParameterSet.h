@@ -40,15 +40,12 @@
 #include "PCCAttributeInformation.h"
 
 namespace pcc {
-    
+
 // 7.3.4.1  General V-PCC Sequence parameter set syntax
 class VpccParameterSet {
  public:
   VpccParameterSet() :
-      vpccParameterSetId_( 0 ),
-      atlasCountMinus1_( 0 ),
-      extensionPresentFlag_( false ),
-      extensionLength_( 0 ) {}
+      vpccParameterSetId_( 0 ), atlasCountMinus1_( 0 ), extensionPresentFlag_( false ), extensionLength_( 0 ) {}
   ~VpccParameterSet() {
     for ( auto& data : mapAbsoluteCodingEnableFlag_ ) { data.clear(); }
     mapAbsoluteCodingEnableFlag_.clear();
@@ -196,4 +193,4 @@ class VpccParameterSet {
 
 };  // namespace pcc
 
-#endif //~PCC_BITSTREAM_VPCCPARAMETERSET_H
+#endif  //~PCC_BITSTREAM_VPCCPARAMETERSET_H

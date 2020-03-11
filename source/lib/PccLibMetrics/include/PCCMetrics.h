@@ -43,24 +43,20 @@ namespace pcc {
 class PCCGroupOfFrames;
 
 /**
- * Note: This object is a integration of the mpeg-pcc-dmetric tool ( http://mpegx.int-evry.fr/software/MPEG/PCC/mpeg-pcc-dmetric )
- * in the mpeg-pcc-tmc2 based on the works of :
- *    Dong Tian <tian@merl.com>
- *    Maja Krivokuca <majakri01@gmail.com>
- *    Phil Chou <philchou@msn.com>
+ * Note: This object is a integration of the mpeg-pcc-dmetric tool (
+ *http://mpegx.int-evry.fr/software/MPEG/PCC/mpeg-pcc-dmetric ) in the mpeg-pcc-tmc2 based on the works of : Dong Tian
+ *<tian@merl.com> Maja Krivokuca <majakri01@gmail.com> Phil Chou <philchou@msn.com>
  **/
 
 class QualityMetrics {
-public:
-
+ public:
   QualityMetrics();
 
   void setParameters( PCCMetricsParameters params );
 
   void compute( const PCCPointSet3& cloudA, const PCCPointSet3& cloudB );
 
-  const QualityMetrics operator+ ( const QualityMetrics& rcMv ) const;
-
+  const QualityMetrics operator+( const QualityMetrics& rcMv ) const;
 
   void print( char code );
 
@@ -77,7 +73,7 @@ public:
   float c2pHausdorffPsnr_;
 
   // Color
-  float colorMse_ [3];
+  float colorMse_[3];
   float colorPsnr_[3];
 
   // point 2 plane ( cloud 2 plane ), proposed metric
@@ -91,31 +87,28 @@ public:
 };
 
 class PCCMetrics {
-public:
+ public:
   PCCMetrics();
   ~PCCMetrics();
   void setParameters( PCCMetricsParameters params );
- void compute( const PCCGroupOfFrames& sources,
-               const PCCGroupOfFrames& reconstructs,
-               const PCCGroupOfFrames& normals );
- void compute( PCCPointSet3& source,
-               PCCPointSet3& reconstruct,
-               const PCCPointSet3& normalSource );
- void display();
-private:
+  void compute( const PCCGroupOfFrames& sources,
+                const PCCGroupOfFrames& reconstructs,
+                const PCCGroupOfFrames& normals );
+  void compute( PCCPointSet3& source, PCCPointSet3& reconstruct, const PCCPointSet3& normalSource );
+  void display();
 
- std::vector<size_t> sourcePoints_;
- std::vector<size_t> sourceDuplicates_;
- std::vector<size_t> reconstructPoints_;
- std::vector<size_t> reconstructDuplicates_;
+ private:
+  std::vector<size_t> sourcePoints_;
+  std::vector<size_t> sourceDuplicates_;
+  std::vector<size_t> reconstructPoints_;
+  std::vector<size_t> reconstructDuplicates_;
 
- std::vector<QualityMetrics> quality1;
- std::vector<QualityMetrics> quality2;
- std::vector<QualityMetrics> qualityF;
- PCCMetricsParameters params_;
-
+  std::vector<QualityMetrics> quality1;
+  std::vector<QualityMetrics> quality2;
+  std::vector<QualityMetrics> qualityF;
+  PCCMetricsParameters        params_;
 };
 
-}; //~namespace
+};  // namespace pcc
 
 #endif /* PCCMetrics.h */

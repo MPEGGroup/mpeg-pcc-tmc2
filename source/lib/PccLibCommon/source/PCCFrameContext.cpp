@@ -45,14 +45,14 @@ PCCFrameContext::PCCFrameContext() :
     MPGeoHeight_( 0 ),
     MPAttWidth_( 0 ),
     MPAttHeight_( 0 ),
-    numberOfMissedPointsPatches_( 0 ),
-    totalNumberOfMissedPoints_( 0 ),
-    totalNumberOfEddPoints_( 0 ),
+    numberOfRawPointsPatches_( 0 ),
+    totalNumberOfRawPoints_( 0 ),
+    totalNumberOfEOMPoints_( 0 ),
     totalNumberOfRegularPoints_( 0 ),
     globalPatchCount_( 0 ),
     geometry3dCoordinatesBitdepth_( 10 ),
     pointLocalReconstructionNumber_( 0 ),
-    useMissedPointsSeparateVideo_( false ),
+    useRawPointsSeparateVideo_( false ),
     rawPatchEnabledFlag_( false ),
     geometry2dNorminalBitdepth_( 8 ) {
   log2PatchQuantizerSizeX_         = 4;
@@ -122,18 +122,18 @@ void PCCFrameContext::printBlockToPatch( const size_t resolution ) {
 }
 void PCCFrameContext::printPatch() {
   size_t index = 0;
-  printf( "Patch %4lu:", patches_.size() );
+  printf( "Patch %4zu:", patches_.size() );
   for ( auto& patch : patches_ ) {
-    printf( "  Patch[%4lu]: ", index++ );
+    printf( "  Patch[%4zu]: ", index++ );
     patch.print();
   }
   fflush( stdout );
 }
 void PCCFrameContext::printPatchDecoder() {
   size_t index = 0;
-  printf( "Patch %4lu:", patches_.size() );
+  printf( "Patch %4zu:", patches_.size() );
   for ( auto& patch : patches_ ) {
-    printf( "  Patch[%4lu]: ", index++ );
+    printf( "  Patch[%4zu]: ", index++ );
     patch.printDecoder();
   }
   fflush( stdout );

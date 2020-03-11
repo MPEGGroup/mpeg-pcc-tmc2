@@ -77,15 +77,16 @@ void PCCAtlasHighLevelSyntax::printVideoBitstream() {
   size_t index = 0;
   printf( "VideoBitstream list: \n" );
   for ( auto& value : videoBitstream_ ) {
-    printf( "  * %lu / %lu: ", index, videoBitstream_.size() );
+    printf( "  * %zu / %zu: ", index, videoBitstream_.size() );
     value.trace();
     index++;
   }
   fflush( stdout );
 }
 
-PCCAtlasHighLevelSyntax::PCCAtlasHighLevelSyntax() { activeAFPS_ = 0; activeASPS_ = 0; }
-
-PCCAtlasHighLevelSyntax::~PCCAtlasHighLevelSyntax() {
-  videoBitstream_.clear();
+PCCAtlasHighLevelSyntax::PCCAtlasHighLevelSyntax() {
+  activeAFPS_ = 0;
+  activeASPS_ = 0;
 }
+
+PCCAtlasHighLevelSyntax::~PCCAtlasHighLevelSyntax() { videoBitstream_.clear(); }

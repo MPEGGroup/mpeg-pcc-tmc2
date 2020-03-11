@@ -36,7 +36,7 @@
 #include "PCCBitstreamCommon.h"
 
 namespace pcc {
-    
+
 // 7.3.4.5 Attribute information Syntax
 class AttributeInformation {
  public:
@@ -64,7 +64,7 @@ class AttributeInformation {
     attributeNominal2dBitdepthMinus1_.resize( attributeCount_, 0 );
     attributePartitionChannelsMinus1_.resize( attributeCount_ );
     attributeMapAbsoluteCodingPersistanceFlagList_.resize( attributeCount_ );
-    attributeMSBAlignFlag_.resize( attributeCount_ , 0 );
+    attributeMSBAlignFlag_.resize( attributeCount_, 0 );
   }
   uint8_t getAttributeCount() { return attributeCount_; }
   bool    getAttributeMSBAlignFlag( uint32_t index ) { return attributeMSBAlignFlag_[index]; }
@@ -123,4 +123,4 @@ class AttributeInformation {
 
 };  // namespace pcc
 
-#endif //~PCC_BITSTREAM_ATTRIBUTEINFORMATION_H
+#endif  //~PCC_BITSTREAM_ATTRIBUTEINFORMATION_H

@@ -424,12 +424,12 @@ class PCCMatrix3 {
 typedef PCCVector3<double>  PCCVector3D;
 typedef PCCVector3<int16_t> PCCPoint3D;
 
-typedef PCCBox3<double>     PCCBox3D;
-typedef PCCBox3<int16_t>    PCCInt16Box3D;
-typedef PCCVector3<uint8_t> PCCColor3B;
-typedef PCCVector3<uint16_t> PCCColor16bit; 
-typedef PCCVector3<double>  PCCNormal3D;
-typedef PCCMatrix3<double>  PCCMatrix3D;
+typedef PCCBox3<double>      PCCBox3D;
+typedef PCCBox3<int16_t>     PCCInt16Box3D;
+typedef PCCVector3<uint8_t>  PCCColor3B;
+typedef PCCVector3<uint16_t> PCCColor16bit;
+typedef PCCVector3<double>   PCCNormal3D;
+typedef PCCMatrix3<double>   PCCMatrix3D;
 
 static inline PCCVector3D operator+( const PCCVector3D& a, const PCCPoint3D& b ) {
   return PCCVector3D( a[0] + b[0], a[1] + b[1], a[2] + b[2] );

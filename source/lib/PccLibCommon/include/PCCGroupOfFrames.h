@@ -41,7 +41,7 @@ class PCCPointSet3;
 class PCCGroupOfFrames {
  public:
   PCCGroupOfFrames();
-  PCCGroupOfFrames(size_t value);
+  PCCGroupOfFrames( size_t value );
   ~PCCGroupOfFrames();
 
   void                clear() { frames_.clear(); }

@@ -114,14 +114,14 @@ void PCCBitstream::read( PCCVideoBitstream& videoBitstream ) {
 #endif
   uint32_t size = read( 32 );
 #ifdef BITSTREAM_TRACE
-  trace( "Code: size = %lu \n", size );
+  trace( "Code: size = %zu \n", size );
 #endif
   videoBitstream.resize( size );
   memcpy( videoBitstream.buffer(), data_.data() + position_.bytes, size );
   videoBitstream.trace();
   position_.bytes += size;
 #ifdef BITSTREAM_TRACE
-  trace( "Code: video : %4lu \n", size );
+  trace( "Code: video : %4zu \n", size );
 #endif
 }
 
@@ -132,7 +132,7 @@ void PCCBitstream::write( PCCVideoBitstream& videoBitstream ) {
   writeBuffer( videoBitstream.buffer(), videoBitstream.size() );
   videoBitstream.trace();
 #ifdef BITSTREAM_TRACE
-  trace( "Code: video : %4lu \n", videoBitstream.size() );
+  trace( "Code: video : %4zu \n", videoBitstream.size() );
 #endif
 }
 
@@ -140,14 +140,14 @@ void PCCBitstream::writeBuffer( const uint8_t* data, const size_t size ) {
   realloc( size );
   write( (int32_t)size, 32 );
 #ifdef BITSTREAM_TRACE
-  trace( "Code: size = %lu \n", size );
+  trace( "Code: size = %zu \n", size );
 #endif
   memcpy( data_.data() + position_.bytes, data, size );
   position_.bytes += size;
 }
 void PCCBitstream::copyFrom( PCCBitstream& dataBitstream, const uint64_t startByte, const uint64_t bitstreamSize ) {
   if ( data_.size() < position_.bytes + bitstreamSize ) data_.resize( position_.bytes + bitstreamSize );
-  memcpy( data_.data() + position_.bytes, dataBitstream.buffer() + startByte, bitstreamSize );  // dest, source  
+  memcpy( data_.data() + position_.bytes, dataBitstream.buffer() + startByte, bitstreamSize );  // dest, source
   position_.bytes += bitstreamSize;
   PCCBistreamPosition pos = dataBitstream.getPosition();
   pos.bytes += bitstreamSize;
@@ -155,7 +155,7 @@ void PCCBitstream::copyFrom( PCCBitstream& dataBitstream, const uint64_t startBy
 }
 void PCCBitstream::copyTo( PCCBitstream& dataBitstream, uint64_t startByte, uint64_t outputSize ) {
 #ifdef BITSTREAM_TRACE
-  trace( "Code copied to: size = %lu \n", outputSize );
+  trace( "Code copied to: size = %zu \n", outputSize );
 #endif
   dataBitstream.initialize( outputSize );
   PCCBistreamPosition pos = dataBitstream.getPosition();

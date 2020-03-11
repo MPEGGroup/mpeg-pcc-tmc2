@@ -36,7 +36,7 @@
 #include "PCCBitstreamCommon.h"
 
 namespace pcc {
-    
+
 // 7.3.4.3 Occupancy information Set Syntax
 class OccupancyInformation {
  public:
@@ -71,4 +71,4 @@ class OccupancyInformation {
 
 };  // namespace pcc
 
-#endif //~PCC_BITSTREAM_OCCUPANCYINFORMATION_H
+#endif  //~PCC_BITSTREAM_OCCUPANCYINFORMATION_H

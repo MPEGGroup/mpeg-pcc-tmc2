@@ -37,7 +37,7 @@
 #include "PCCRefListStruct.h"
 
 namespace pcc {
-    
+
 // 7.3.6.11  Atlas tile group header syntax
 class AtlasTileGroupHeader {
  public:
@@ -130,4 +130,4 @@ class AtlasTileGroupHeader {
 
 };  // namespace pcc
 
-#endif //~PCC_BITSTREAM_ATLASTILEGROUPHEADER_H
+#endif  //~PCC_BITSTREAM_ATLASTILEGROUPHEADER_H

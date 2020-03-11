@@ -84,7 +84,7 @@ static std::istream& operator>>( std::istream& in, PCCColorTransform& val ) { re
 bool parseParameters( int argc, char* argv[], PCCMetricsParameters& metricsParams ) {
   namespace po      = df::program_options_lite;
   bool   print_help = false;
-  size_t ignore;
+  size_t ignore     = 0;
 
   // The definition of the program/config options, along with default values.
   //

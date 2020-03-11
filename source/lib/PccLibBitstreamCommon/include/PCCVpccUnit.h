@@ -44,8 +44,8 @@ class VpccUnit {
   VpccUnit() {}
   ~VpccUnit() {}
 
-  void setVpccUnitSize( size_t value ) { vpccUnitSize_ = value; }
-  void setVpccUnitSize() { vpccUnitSize_ = vpccUnitDataBitstream_.size(); }
+  void   setVpccUnitSize( size_t value ) { vpccUnitSize_ = value; }
+  void   setVpccUnitSize() { vpccUnitSize_ = vpccUnitDataBitstream_.size(); }
   size_t getVpccUnitSize() { return vpccUnitSize_; }
 
   void setVpccUnitDataBitstream( PCCBitstream&& bitstream, VPCCUnitType unitType ) {
@@ -57,7 +57,7 @@ class VpccUnit {
     vpccUnitDataBitstream_.beginning();
     return vpccUnitDataBitstream_;
   }
-  void allocate() { vpccUnitDataBitstream_.initialize( vpccUnitSize_ ); }
+  void         allocate() { vpccUnitDataBitstream_.initialize( vpccUnitSize_ ); }
   void         getVpccUnitHeader() {}
   void         getVpccUnitPayload() {}
   VPCCUnitType getVpccUnitType() { return vpccUnitType_; }
@@ -73,4 +73,4 @@ class VpccUnit {
 
 };  // namespace pcc
 
-#endif //~PCC_BITSTREAM_VPCCUNIT_H
+#endif  //~PCC_BITSTREAM_VPCCUNIT_H

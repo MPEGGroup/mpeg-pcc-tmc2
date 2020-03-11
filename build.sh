@@ -11,7 +11,25 @@ case "$(uname -s)" in
   *)          MACHINE="UNKNOWN:${unameOut}"
 esac
 
+buildWindows() {
+  MSBUILD="/c/Program Files (x86)/Microsoft Visual Studio/2019/Professional/MSBuild/Current/Bin/MSBuild.exe"
+  printf -v MSBUILDPATH '%q' "$MSBUILD"
+  MSBUILDFOUND=`ls "${MSBUILD[@]}" 2>&1 | grep "No such file or directory"`
+  if [ "$MSBUILDFOUND" == "" ] 
+  then 
+    eval ${MSBUILDPATH[@]} $1 -p:Configuration=$2 -maxcpucount:8
+  else
+    echo " Could not directly build project in command line because MsBuild not found ($MSBUILD)";
+    echo " "
+    echo " Please build solution in Microsoft Visual Studio:" 
+    echo "   - Open the generated Visual Studio solution: ${CURDIR}/$1";      
+    echo "   - Build $1"        
+  fi
+}
+
 MODE=Release;
+FORMAT=0;
+TIDY=0;
 CMAKE_FLAGS=;
 if [ "$MACHINE" == "Linux" ] ; then NUMBER_OF_PROCESSORS=`grep -c ^processor /proc/cpuinfo`; fi
 
@@ -22,30 +40,59 @@ do
     debug|Debug|DEBUG      ) MODE=Debug; CMAKE_FLAGS="$CMAKE_FLAGS-DCMAKE_C_FLAGS=\"-g3\" -DCMAKE_CXX_FLAGS=\"-g3\" ";;
     release|Release|RELEASE) MODE=Release;;
     profiling|Profiling|PROFILING) CMAKE_FLAGS="$CMAKE_FLAGS -DENABLE_PAPI_PROFILING=ON ";;
-    verbose|VERBOSE        )       CMD=VERBOSE=1;;
-    *                      ) echo "ERROR: arguments \"$i\" not supported: option = [debug|release]"; exit -1;;
+    format                )  FORMAT=1;;
+    tidy                     )    TIDY=1;;
+    verbose|VERBOSE)       CMD=VERBOSE=1;;
+    *                        ) echo "ERROR: arguments \"$i\" not supported: option = [debug|release]"; exit -1;;
   esac
 done
+CMAKE_FLAGS="$CMAKE_FLAGS -DCMAKE_BUILD_TYPE=$MODE -DCMAKE_EXPORT_COMPILE_COMMANDS=ON";
 
-CMAKE_FLAGS="$CMAKE_FLAGS -DCMAKE_BUILD_TYPE=$MODE";
-case "${MACHINE}" in
-  Linux) cmake -H${CURDIR} -B${CURDIR}/build/${MODE} -G "Unix Makefiles"              ${CMAKE_FLAGS};; 
-  Mac)   cmake -H${CURDIR} -B${CURDIR}/build/${MODE} -G "Xcode"                       ${CMAKE_FLAGS};;
-  *)     cmake -H${CURDIR} -B${CURDIR}/build/${MODE} -G "Visual Studio 14 2015 Win64" ${CMAKE_FLAGS};;
-esac
+# Get default cmake configuration: 
+CMAKE_GENERATORS=`cmake -G 2>&1 | grep "*" | cut -c2- | awk -F "=" '{print $1}' | sed -e 's/^[ \t]*//;s/[ \t]*$//'`;
+if [ "$CMAKE_GENERATORS" == "" ] ; then CMAKE_GENERATORS="Unix Makefiles"; fi
 
+echo $MACHINE;
+echo $CMAKE_GENERATORS;
+if [ $MACHINE != "Linux" ] 
+then 
+  echo "Windows cmake"
+  cmake -H${CURDIR} -B${CURDIR}/build/${MODE}   -G "${CMAKE_GENERATORS}" -A x64 ${CMAKE_FLAGS}
+
+  #  -T v142,host=x64
+else
+  cmake -H${CURDIR} -B${CURDIR}/build/${MODE} -G "${CMAKE_GENERATORS}"  ${CMAKE_FLAGS} 
+fi 
+
+
+if [ $FORMAT == 1 ] 
+then 
+  echo -e "\033[0;32mFormat: $(readlink -f $CURDIR) \033[0m";
+  case "${MACHINE}" in
+    Linux) cmake --build ${CURDIR}/build/${MODE} --target clang-format;; 
+    Mac)   echo "Please, open the generated xcode project and build it ";;
+    *)     buildWindows ./build/${MODE}/clang-format.vcxproj  ${MODE};;
+  esac 
+  echo -e "\033[0;32mdone \033[0m";
+  exit;
+fi 
+
+if [ $TIDY == 1 ] 
+then 
+  echo -e "\033[0;32mFormat: $(readlink -f $CURDIR) \033[0m";
+  case "${MACHINE}" in
+    Linux) cmake --build ${CURDIR}/build/${MODE} --target clang-tidy;; 
+    Mac)   echo "Please, open the generated xcode project and build it ";;
+    *)     buildWindows ./build/${MODE}/clang-tidy.vcxproj ${MODE};;
+  esac 
+  echo -e "\033[0;32mdone \033[0m";
+  exit;
+fi 
+
+echo -e "\033[0;32mBuild: $(readlink -f $CURDIR) \033[0m";
 case "${MACHINE}" in
   Linux) make -C ${CURDIR}/build/${MODE} -j ${NUMBER_OF_PROCESSORS} ${CMD} -s;; 
   Mac)   echo "Please, open the generated xcode project and build it ";;
-  *)     MSBUILD="/c/Program Files (x86)/MSBuild/14.0/Bin/MSBuild.exe"
-         printf -v MSBUILDPATH '%q' "$MSBUILD"
-         MSBUILDFOUND=`ls "${MSBUILD[@]}" | grep "No such file or directory"`
-         if [ "$MSBUILDFOUND" == "" ] 
-         then 
-           eval ${MSBUILDPATH[@]} ./build/${MODE}/TMC2.sln /property:Configuration=${MODE};
-         else
-           echo "MsBuild not found ($MSBUILD)";
-           echo "Please, open the generated visual studio solution and build it ";        
-         fi
-  ;;
+  *)     buildWindows ./build/${MODE}/TMC2.sln ${MODE};;
 esac 
+echo -e "\033[0;32mdone \033[0m";

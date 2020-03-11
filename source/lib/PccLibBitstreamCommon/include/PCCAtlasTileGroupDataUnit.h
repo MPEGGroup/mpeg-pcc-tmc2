@@ -37,7 +37,7 @@
 #include "PCCPatchInformationData.h"
 
 namespace pcc {
-    
+
 // 7.3.7.1  General atlas tile group data unit syntax
 // atgduPatchMode_?)
 class AtlasTileGroupDataUnit {
@@ -86,4 +86,4 @@ class AtlasTileGroupDataUnit {
 
 };  // namespace pcc
 
-#endif //~PCC_BITSTREAM_ATLASTILEGROUPDATAUNIT_H
+#endif  //~PCC_BITSTREAM_ATLASTILEGROUPDATAUNIT_H

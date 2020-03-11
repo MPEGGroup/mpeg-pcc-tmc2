@@ -37,7 +37,7 @@
 #include "PCCPointLocalReconstructionData.h"
 
 namespace pcc {
-    
+
 // 7.3.7.3  Patch data unit syntax
 class PatchDataUnit {
  public:
@@ -116,4 +116,4 @@ class PatchDataUnit {
 
 };  // namespace pcc
 
-#endif //~PCC_BITSTREAM_PATCHDATAUNIT_H
+#endif  //~PCC_BITSTREAM_PATCHDATAUNIT_H

@@ -63,10 +63,10 @@ The next tables shows the parameters of the encoder, decoder and metrics program
                                               & extraction                                 \\ \hline
 --surfaceThickness=4                          & Surface thickness                          \\ \hline
 --maxAllowedDepth=255                         & Maximum depth per patch                    \\ \hline
---maxAllowedDist2MissedPointsDetection=9      & Maximum distance for a point to be         \\ 
-                                              & ignored during missed point detection      \\ \hline
---maxAllowedDist2MissedPointsSelection=1      & Maximum distance for a point to be         \\ 
-                                              & ignored during  missed points              \\ 
+--maxAllowedDist2RawPointsDetection=9      & Maximum distance for a point to be         \\ 
+                                              & ignored during raw points detection      \\ \hline
+--maxAllowedDist2RawPointsSelection=1      & Maximum distance for a point to be         \\ 
+                                              & ignored during  raw points              \\ 
                                               & selection                                  \\ \hline
 --lambdaRefineSegmentation=3                  & Controls the smoothness of the patch       \\ 
                                               & boundaries  during segmentation            \\ 
@@ -112,7 +112,7 @@ The next tables shows the parameters of the encoder, decoder and metrics program
 --losslessTexture=0                           & Enable lossless encoding of texture        \\ \hline
 --noAttributes=0                              & Disable encoding of attributes             \\ \hline
 --losslessGeo444=0                            & Use 4444 format for lossless geometry      \\ \hline
---useMissedPointsSeparateVideo=0              & compress missed point with video           \\ 
+--useRawPointsSeparateVideo=0              & compress raw points with video           \\ 
                                               & codec                                      \\ \hline
 --geometryMPConfig=""                         & HM configuration file for missed           \\ 
                                               & points geometry compression                \\ \hline
@@ -125,7 +125,7 @@ The next tables shows the parameters of the encoder, decoder and metrics program
                                               & with pseudo-random values                  \\ \hline
 --groupDilation=1                             & Group Dilation                             \\ \hline
 --textureDilationOffLossless=1                & Group Dilation                             \\ \hline
---enhancedDeltaDepthCode=0                    & Use enhanced-delta-depth code              \\ \hline
+--enhancedOccupancyMapCode=0                    & Use enhanced-delta-depth code              \\ \hline
 --patchColorSubsampling=0                     & Enable per patch color sub-sampling        \\ \hline
 --deltaCoding=1                               & Delta meta-data coding                     \\ \hline
 --projectionMode=0                            & projectionMode 0:min, 1:max, 2:adaptive    \\ 
@@ -147,11 +147,11 @@ The next tables shows the parameters of the encoder, decoder and metrics program
                                               & for texture only (0: patch-edge extension, \\ 
                                               & 1(default): smoothed push-pull algorithm), \\ 
                                               & 2: harmonic background filling             \\ \hline
---lossyMissedPointsPatch=0                    & Lossy missed points patch(0: no lossy      \\ 
-                                              & missed points patch, 1: enable lossy       \\ 
-                                              & missed points  patch (default=0)           \\ \hline
+--lossyRawPointsPatch=0                    & Lossy raw points patch(0: no lossy      \\ 
+                                              & raw points patch, 1: enable lossy       \\ 
+                                              & raw points  patch (default=0)           \\ \hline
 --minNormSumOfInvDist4MP                      & Minimum normalized sum of inverse distance \\ 
-     \ \ \ \ \ \ Selection=0.35               & for missed points selection: double value  \\ 
+     \ \ \ \ \ \ Selection=0.35               & for raw points selection: double value  \\ 
                                               & between 0.0 and 1.0 (default=0.35)         \\ \hline
 --lossyMppGeoQP=4                             & QP value for geometry in lossy missed      \\ 
                                               & points patch (default=4)                   \\ \hline

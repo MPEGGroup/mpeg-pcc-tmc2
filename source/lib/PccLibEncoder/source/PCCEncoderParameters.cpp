@@ -69,8 +69,8 @@ PCCEncoderParameters::PCCEncoderParameters() {
   maxNNCountPatchSegmentation_             = 16;
   surfaceThickness_                        = 4;
   minLevel_                                = 64;  // fix value
-  maxAllowedDist2MissedPointsDetection_    = 9.0;
-  maxAllowedDist2MissedPointsSelection_    = 1.0;
+  maxAllowedDist2RawPointsDetection_       = 9.0;
+  maxAllowedDist2RawPointsSelection_       = 1.0;
   lambdaRefineSegmentation_                = 3.0;
   minimumImageWidth_                       = 1280;
   minimumImageHeight_                      = 1280;
@@ -117,7 +117,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   losslessGeo_                             = false;
   noAttributes_                            = false;
   losslessGeo444_                          = false;
-  useMissedPointsSeparateVideo_            = false;
+  useRawPointsSeparateVideo_               = false;
   geometryMPConfig_                        = {};
   textureMPConfig_                         = {};
   nbThread_                                = 1;
@@ -145,7 +145,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   flagColorPreSmoothing_                  = true;
   groupDilation_                          = true;
   textureDilationOffLossless_             = true;
-  enhancedDeltaDepthCode_                 = false;
+  enhancedOccupancyMapCode_               = false;
   EOMFixBitCount_                         = 2;
   offsetLossyOM_                          = 0;
   thresholdLossyOM_                       = 0;
@@ -174,8 +174,8 @@ PCCEncoderParameters::PCCEncoderParameters() {
   lowDelayEncoding_     = false;
   geometryPadding_      = false;
 
-  // lossy missed points patch
-  lossyMissedPointsPatch_          = false;
+  // lossy raw points patch
+  lossyRawPointsPatch_             = false;
   minNormSumOfInvDist4MPSelection_ = 0.35;
   lossyMppGeoQP_                   = 4;
   // GPA
@@ -200,8 +200,8 @@ PCCEncoderParameters::PCCEncoderParameters() {
   numTilesHor_                  = 2;
   tileHeightToWidthRatio_       = 1;
 
-  // Sort missed points by Morton code
-  mortonOrderSortMissedPoints_ = false;
+  // Sort raw points by Morton code
+  mortonOrderSortRawPoints_    = false;
   textureMPSeparateVideoWidth_ = 64;
 
   // Separate high gradient points
@@ -244,7 +244,7 @@ void PCCEncoderParameters::completePath() {
     if ( !occupancyMapVideoEncoderConfig_.empty() ) {
       occupancyMapVideoEncoderConfig_ = configurationFolder_ + occupancyMapVideoEncoderConfig_;
     }
-    if ( useMissedPointsSeparateVideo_ ) {
+    if ( useRawPointsSeparateVideo_ ) {
       if ( !geometryMPConfig_.empty() ) { geometryMPConfig_ = configurationFolder_ + geometryMPConfig_; }
       if ( !textureMPConfig_.empty() ) { textureMPConfig_ = configurationFolder_ + textureMPConfig_; }
     }
@@ -256,8 +256,8 @@ void PCCEncoderParameters::print() {
   std::cout << "\t losslessGeo                              " << losslessGeo_ << std::endl;
   std::cout << "\t noAttributes                             " << noAttributes_ << std::endl;
   std::cout << "\t raw Geometry Colour Plane                " << ( losslessGeo444_ ? "444" : "420" ) << std::endl;
-  std::cout << "\t enhancedDeltaDepthCode                   " << enhancedDeltaDepthCode_ << std::endl;
-  std::cout << "\t useMissedPointsSeparateVideo             " << useMissedPointsSeparateVideo_ << std::endl;
+  std::cout << "\t enhancedOccupancyMapCode                   " << enhancedOccupancyMapCode_ << std::endl;
+  std::cout << "\t useRawPointsSeparateVideo             " << useRawPointsSeparateVideo_ << std::endl;
   std::cout << "\t textureMPSeparateVideoWidth              " << textureMPSeparateVideoWidth_ << std::endl;
   std::cout << "\t uncompressedDataPath                     " << uncompressedDataPath_ << std::endl;
   std::cout << "\t compressedStreamPath                     " << compressedStreamPath_ << std::endl;
@@ -293,8 +293,8 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   minPointCountPerCCPatchSegmentation    " << minPointCountPerCCPatchSegmentation_ << std::endl;
   std::cout << "\t   maxNNCountPatchSegmentation            " << maxNNCountPatchSegmentation_ << std::endl;
   std::cout << "\t   surfaceThickness                       " << surfaceThickness_ << std::endl;
-  std::cout << "\t   maxAllowedDist2MissedPointsDetection " << maxAllowedDist2MissedPointsDetection_ << std::endl;
-  std::cout << "\t   maxAllowedDist2MissedPointsSelection " << maxAllowedDist2MissedPointsSelection_ << std::endl;
+  std::cout << "\t   maxAllowedDist2RawPointsDetection " << maxAllowedDist2RawPointsDetection_ << std::endl;
+  std::cout << "\t   maxAllowedDist2RawPointsSelection " << maxAllowedDist2RawPointsSelection_ << std::endl;
   std::cout << "\t   lambdaRefineSegmentation               " << lambdaRefineSegmentation_ << std::endl;
   std::cout << "\t   depthQuantizationStep                  " << minLevel_ << std::endl;
   std::cout << "\t   highGradientSeparation                 " << highGradientSeparation_ << std::endl;
@@ -336,7 +336,7 @@ void PCCEncoderParameters::print() {
     std::cout << "\t   textureT1Config                         " << textureT1Config_ << std::endl;
   } else
     std::cout << "\t   textureConfig                          " << textureConfig_ << std::endl;
-  if ( useMissedPointsSeparateVideo_ ) {
+  if ( useRawPointsSeparateVideo_ ) {
     if ( losslessGeo_ ) {
       std::cout << "\t geometryMPConfig                          " << geometryMPConfig_ << std::endl;
       std::cout << "\t textureMPConfig                            " << textureMPConfig_ << std::endl;
@@ -424,12 +424,12 @@ void PCCEncoderParameters::print() {
   std::cout << "\t     patchSize                            " << patchSize_ << std::endl;
   std::cout << "\t   singleLayerPixelInterleaving           " << singleMapPixelInterleaving_ << std::endl;
   std::cout << "\t surface Separation                       " << surfaceSeparation_ << std::endl;
-  std::cout << "\t Lossy missed points patch                " << std::endl;
-  std::cout << "\t   lossyMissedPointsPatch                 " << lossyMissedPointsPatch_ << std::endl;
+  std::cout << "\t Lossy raw points patch                " << std::endl;
+  std::cout << "\t   lossyRawPointsPatch                 " << lossyRawPointsPatch_ << std::endl;
   std::cout << "\t   minNormSumOfInvDist4MPSelection        " << minNormSumOfInvDist4MPSelection_ << std::endl;
   std::cout << "\t   lossyMppGeoQP                          " << lossyMppGeoQP_ << std::endl;
-  std::cout << "\t Missed points sorting                    " << std::endl;
-  std::cout << "\t   mortonOrderSortMissedPoints            " << mortonOrderSortMissedPoints_ << std::endl;
+  std::cout << "\t raw points sorting                    " << std::endl;
+  std::cout << "\t   mortonOrderSortRawPoints            " << mortonOrderSortRawPoints_ << std::endl;
   std::cout << "\t Enhanced projection plane                " << enhancedPP_ << std::endl;
   std::cout << "\t AdditionalProjectionPlane                " << std::endl;
   std::cout << "\t   additionalProjectionPlaneMode          " << additionalProjectionPlaneMode_ << std::endl;
@@ -546,7 +546,7 @@ bool PCCEncoderParameters::check() {
 
   if ( multipleStreams_ ) {
     if ( geometryD0Config_.empty() || geometryD1Config_.empty() ) {
-      // ret = false; 
+      // ret = false;
       // std::cerr << "When multipleStreams is true, geometryD0Config_ and geometryD1Config_ should be non-empty\n";
       geometryD0Config_ = geometryConfig_.substr( 0, geometryConfig_.find_last_of( "." ) ) + "-D0.cfg";
       geometryD1Config_ = geometryConfig_.substr( 0, geometryConfig_.find_last_of( "." ) ) + "-D1.cfg";
@@ -564,7 +564,7 @@ bool PCCEncoderParameters::check() {
   if ( multipleStreams_ ) {
     if ( textureT0Config_.empty() || textureT1Config_.empty() ) {
       // std::cerr << "When multipleStreams_ is true, textureT0Config_ and textureT1Config_ should be non-empty\n";
-      // ret = false;      
+      // ret = false;
       textureT0Config_ = textureConfig_.substr( 0, textureConfig_.find_last_of( "." ) ) + "-T0.cfg";
       textureT1Config_ = textureConfig_.substr( 0, textureConfig_.find_last_of( "." ) ) + "-T1.cfg";
     }
@@ -603,51 +603,51 @@ bool PCCEncoderParameters::check() {
       std::cerr << "WARNING: singleLayerPixelInterleaving is only for lossy coding mode for now. "
                    "Force singleMapPixelInterleaving_=FALSE.\n";
     }
-    if ( lossyMissedPointsPatch_ ) {
-      lossyMissedPointsPatch_ = false;
-      std::cerr << "WARNING: lossyMissedPointsPatch_ is only for lossy coding mode for now. "
-                   "Force lossyMissedPointsPatch_=FALSE.\n";
+    if ( lossyRawPointsPatch_ ) {
+      lossyRawPointsPatch_ = false;
+      std::cerr << "WARNING: lossyRawPointsPatch_ is only for lossy coding mode for now. "
+                   "Force lossyRawPointsPatch_=FALSE.\n";
     }
   } else {
-    if ( enhancedDeltaDepthCode_ ) {
-      enhancedDeltaDepthCode_ = false;
-      std::cerr << "WARNING: enhancedDeltaDepthCode_ is only for lossless coding mode for now. Force "
-                   "enhancedDeltaDepthCode_=FALSE.\n";
+    if ( enhancedOccupancyMapCode_ ) {
+      enhancedOccupancyMapCode_ = false;
+      std::cerr << "WARNING: enhancedOccupancyMapCode_ is only for lossless coding mode for now. Force "
+                   "enhancedOccupancyMapCode_=FALSE.\n";
     }
   }
 
-  if ( enhancedDeltaDepthCode_ && surfaceThickness_ == 1 ) {
-    std::cerr << "WARNING: EDD code doesn't bring any gain when surfaceThickness==1. Please "
+  if ( enhancedOccupancyMapCode_ && surfaceThickness_ == 1 ) {
+    std::cerr << "WARNING: EOM code doesn't bring any gain when surfaceThickness==1. Please "
                  "consider to increase the value of surfaceThickness.\n";
   }
 
-  if ( enhancedDeltaDepthCode_ && ( thresholdLossyOM_ > 0 ) ) {
+  if ( enhancedOccupancyMapCode_ && ( thresholdLossyOM_ > 0 ) ) {
     std::cerr
         << "WARNING: When using enhanced occupancy map for delta depth, thresholdOccupancyMap should be equal to 0\n";
     std::cerr << "         Forcing thresholdLossyOM_ to 0\n";
     thresholdLossyOM_ = 0;
   }
 
-  if ( enhancedDeltaDepthCode_ && ( offsetLossyOM_ > 0 ) ) {
+  if ( enhancedOccupancyMapCode_ && ( offsetLossyOM_ > 0 ) ) {
     std::cerr
         << "WARNING: When using enhanced occupancy map for delta depth, offsetOccupancyMap should be equal to 0\n";
     std::cerr << "         Forcing offsetLossyOM_ to 0\n";
     offsetLossyOM_ = 0;
   }
 
-  if ( enhancedDeltaDepthCode_ && ( prefilterLossyOM_ == true ) ) {
+  if ( enhancedOccupancyMapCode_ && ( prefilterLossyOM_ == true ) ) {
     std::cerr
         << "WARNING: When using enhanced occupancy map for delta depth, prefilterLossyOM_ should be equal to false\n";
     std::cerr << "         Forcing prefilterLossyOM_ to false\n";
     prefilterLossyOM_ = false;
   }
 
-  if ( useMissedPointsSeparateVideo_ && !lossyMissedPointsPatch_ && !losslessGeo_ ) {
-    useMissedPointsSeparateVideo_ = false;
-    std::cerr << "WARNING: useMissedPointsSeparateVideo_ is for lossy coding mode if lossyMissedPointsPatch_. Force "
-                 "useMissedPointsSeparateVideo_=false.\n";
+  if ( useRawPointsSeparateVideo_ && !lossyRawPointsPatch_ && !losslessGeo_ ) {
+    useRawPointsSeparateVideo_ = false;
+    std::cerr << "WARNING: useRawPointsSeparateVideo_ is for lossy coding mode if lossyRawPointsPatch_. Force "
+                 "useRawPointsSeparateVideo_=false.\n";
   }
-  if ( useMissedPointsSeparateVideo_ ) {
+  if ( useRawPointsSeparateVideo_ ) {
     if ( textureMPSeparateVideoWidth_ % 64 ) {
       ret = false;
       std::cerr << "textureMPSeparateVideoWidth_ must be multiple of 64.\n";
@@ -682,21 +682,20 @@ bool PCCEncoderParameters::check() {
       ret = false;
       std::cerr << "Point local reconstruction is built on one layer coding. Force mapCountMinus1_ = 0.\n";
     }
-  }
-  else{
-    if( multipleStreams_ ) {
-      std::cout << " multipleStreams is set 0 when mapCountMinus1 is 0. Force multipleStreams_= 0."<<std::endl;
-      multipleStreams_= 0;
+  } else {
+    if ( multipleStreams_ ) {
+      std::cout << " multipleStreams is set 0 when mapCountMinus1 is 0. Force multipleStreams_= 0." << std::endl;
+      multipleStreams_ = 0;
     }
   }
-  
+
   if ( occupancyMapVideoEncoderConfig_.empty() ) {
     ret = false;
     std::cerr << "to use segmentation, you must define a segmentationDataPath \n";
   }
-  if ( lossyMissedPointsPatch_ ) {
-    if ( !useMissedPointsSeparateVideo_ ) {
-      std::cerr << "Lossy missed points patch in the same video frame as the regular patches is "
+  if ( lossyRawPointsPatch_ ) {
+    if ( !useRawPointsSeparateVideo_ ) {
+      std::cerr << "Lossy raw points patch in the same video frame as the regular patches is "
                    "not optimized as of now.\n";
     }
     if ( ( minNormSumOfInvDist4MPSelection_ < 0.0 ) || ( minNormSumOfInvDist4MPSelection_ > 1.0 ) ) {
@@ -751,38 +750,38 @@ void PCCEncoderParameters::constructAspsRefList( PCCContext& context, size_t asp
 }
 
 void PCCEncoderParameters::initializeContext( PCCContext& context ) {
-  auto& sps = context.getVps();
-  int numAtlas = 1;
-	context.resizeAtlas(numAtlas); // single atlas for V-PCC
-  sps.setAtlasCountMinus1(numAtlas - 1);
+  auto& sps      = context.getVps();
+  int   numAtlas = 1;
+  context.resizeAtlas( numAtlas );  // single atlas for V-PCC
+  sps.setAtlasCountMinus1( numAtlas - 1 );
   sps.allocateAtlas();
-  context.allocateAtlasHLS(sps.getAtlasCountMinus1()+1);
+  context.allocateAtlasHLS( sps.getAtlasCountMinus1() + 1 );
   size_t atlasIndex = 0;
-	context.setAtlasIndex(atlasIndex);
-  auto&  ai         = sps.getAttributeInformation( atlasIndex );
-  auto&  oi         = sps.getOccupancyInformation( atlasIndex );
-  auto&  gi         = sps.getGeometryInformation( atlasIndex );
-  auto&  asps       = context.addAtlasSequenceParameterSet( 0 );
-  auto&  afps       = context.addAtlasFrameParameterSet( 0 );
+  context.setAtlasIndex( atlasIndex );
+  auto& ai   = sps.getAttributeInformation( atlasIndex );
+  auto& oi   = sps.getOccupancyInformation( atlasIndex );
+  auto& gi   = sps.getGeometryInformation( atlasIndex );
+  auto& asps = context.addAtlasSequenceParameterSet( 0 );
+  auto& afps = context.addAtlasFrameParameterSet( 0 );
 
   context.setLog2PatchQuantizerSizeX( log2QuantizerSizeX_ );
   context.setLog2PatchQuantizerSizeY( log2QuantizerSizeY_ );
-  context.setEnablePatchSizeQuantization( ( 1 << log2QuantizerSizeX_ ) < occupancyPrecision_ ||
-                                          ( 1 << log2QuantizerSizeY_ ) < occupancyPrecision_ );
+  context.setEnablePatchSizeQuantization( ( ( 1 << (int32_t)log2QuantizerSizeX_ ) < (int32_t)occupancyPrecision_ ) ||
+                                          ( ( 1 << (int32_t)log2QuantizerSizeY_ ) < (int32_t)occupancyPrecision_ ) );
 
   context.setMaxNumRefAtlasFrame( maxNumRefAtlasFrame_ );
   context.setNumOfRefAtlasFrameList( maxNumRefAtlasList_ );
   for ( size_t list = 0; list < maxNumRefAtlasList_; list++ ) {
     context.setSizeOfRefAtlasFrameList( list, maxNumRefAtlasFrame_ );
     for ( size_t i = 0; i < maxNumRefAtlasFrame_; i++ ) {
-      context.setRefAtlasFrame( list, i, -i - 1 );  //-1, -2, -3, -4
+      context.setRefAtlasFrame( list, i, -( int32_t )( i + 1 ) );  //-1, -2, -3, -4
     }
   }
 
   sps.setMapCountMinus1( atlasIndex, (uint32_t)mapCountMinus1_ );
   sps.setMultipleMapStreamsPresentFlag( atlasIndex, mapCountMinus1_ != 0 && multipleStreams_ );
-  sps.setRawSeparateVideoPresentFlag( atlasIndex, useMissedPointsSeparateVideo_ );
-  sps.setRawPatchEnabledFlag( atlasIndex, losslessGeo_ || lossyMissedPointsPatch_ );
+  sps.setRawSeparateVideoPresentFlag( atlasIndex, useRawPointsSeparateVideo_ );
+  sps.setRawPatchEnabledFlag( atlasIndex, losslessGeo_ || lossyRawPointsPatch_ );
   for ( size_t i = 0; i < mapCountMinus1_ + 1; i++ ) {
     if ( i == 0 ) {
       sps.setMapAbsoluteCodingEnableFlag( atlasIndex, i, 1 );
@@ -819,7 +818,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   asps.setPixelDeinterleavingFlag( singleMapPixelInterleaving_ );
   asps.setPatchPrecedenceOrderFlag( patchPrecedenceOrderFlag_ );
   asps.setPatchSizeQuantizerPresentFlag( context.getEnablePatchSizeQuantization() );
-  asps.setEnhancedOccupancyMapForDepthFlag( enhancedDeltaDepthCode_ );
+  asps.setEnhancedOccupancyMapForDepthFlag( enhancedOccupancyMapCode_ );
   asps.setPointLocalReconstructionEnabledFlag( pointLocalReconstruction_ );
   asps.setVuiParametersPresentFlag( 0 );
   asps.setExtensionPresentFlag( 0 );
@@ -844,31 +843,32 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     afps.setAfpsEomMaxBitCountMinus1( 7 );
     afps.setAfpsEomNumberOfPatchBitCountMinus1( 7 );
   }
-  //now create a list of tile groups per frame (NOTE: our frame has only one tile group)
-  int numTilesPerFrame = (afps.getAtlasFrameTileInformation().getNumTileRowsMinus1() + 1) * (afps.getAtlasFrameTileInformation().getNumTileColumnsMinus1() + 1);
+  // now create a list of tile groups per frame (NOTE: our frame has only one tile group)
+  int numTilesPerFrame = ( afps.getAtlasFrameTileInformation().getNumTileRowsMinus1() + 1 ) *
+                         ( afps.getAtlasFrameTileInformation().getNumTileColumnsMinus1() + 1 );
   for ( size_t frameIdx = 0; frameIdx < frameCount_; frameIdx++ ) {
-    for (size_t tileGroupId = 0; tileGroupId < numTilesPerFrame; tileGroupId++) {
-      auto& atgl = context.addAtlasTileGroupLayer(frameIdx, tileGroupId);
-    auto& atgh = atgl.getAtlasTileGroupHeader();
-    atgh.setAtghAtlasFrameParameterSetId( 0 );
-    if( additionalProjectionPlaneMode_ > 0 ) {
-      atgh.setAtghPosMinZQuantizer( uint8_t( std::log2( minLevel_ ) ) - 1 );
-    } else {
-      atgh.setAtghPosMinZQuantizer( uint8_t( std::log2( minLevel_ ) ) );
-    }
-    atgh.setAtghPosDeltaMaxZQuantizer( uint8_t( std::log2( minLevel_ ) ) );
-    atgh.setAtghPatchSizeXinfoQuantizer( log2QuantizerSizeX_ );
-    atgh.setAtghPatchSizeYinfoQuantizer( log2QuantizerSizeY_ );
-    if ( afps.getAfpsRaw3dPosBitCountExplicitModeFlag() ) {
-      atgh.setAtghRaw3dPosAxisBitCountMinus1( 0 );  //
-    } else {
-      atgh.setAtghRaw3dPosAxisBitCountMinus1( geometry3dCoordinatesBitdepth_ - geometryNominal2dBitdepth_ - 1 );
-    }
-    atgh.setAtghNumRefIdxActiveOverrideFlag( 0 );
+    for ( size_t tileGroupId = 0; tileGroupId < numTilesPerFrame; tileGroupId++ ) {
+      auto& atgl = context.addAtlasTileGroupLayer( frameIdx, tileGroupId );
+      auto& atgh = atgl.getAtlasTileGroupHeader();
+      atgh.setAtghAtlasFrameParameterSetId( 0 );
+      if ( additionalProjectionPlaneMode_ > 0 ) {
+        atgh.setAtghPosMinZQuantizer( uint8_t( std::log2( minLevel_ ) ) - 1 );
+      } else {
+        atgh.setAtghPosMinZQuantizer( uint8_t( std::log2( minLevel_ ) ) );
+      }
+      atgh.setAtghPosDeltaMaxZQuantizer( uint8_t( std::log2( minLevel_ ) ) );
+      atgh.setAtghPatchSizeXinfoQuantizer( log2QuantizerSizeX_ );
+      atgh.setAtghPatchSizeYinfoQuantizer( log2QuantizerSizeY_ );
+      if ( afps.getAfpsRaw3dPosBitCountExplicitModeFlag() ) {
+        atgh.setAtghRaw3dPosAxisBitCountMinus1( 0 );  //
+      } else {
+        atgh.setAtghRaw3dPosAxisBitCountMinus1( geometry3dCoordinatesBitdepth_ - geometryNominal2dBitdepth_ - 1 );
+      }
+      atgh.setAtghNumRefIdxActiveOverrideFlag( 0 );
 
-    atgh.setAtghRefAtlasFrameListSpsFlag( true );
-    atgh.setAtghRefAtlasFrameListIdx( 0 );
-  }
+      atgh.setAtghRefAtlasFrameListSpsFlag( true );
+      atgh.setAtghRefAtlasFrameListIdx( 0 );
+    }
   }
 
   // construction of reference frame list of ASPS
@@ -901,6 +901,6 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   // Lossy occupancy map
   context.getOffsetLossyOM()    = offsetLossyOM_;
   context.getPrefilterLossyOM() = prefilterLossyOM_;
-	//atlas video allocation
-	context.getAtlas(atlasIndex).allocateVideoFrames(context, 0);
+  // atlas video allocation
+  context.getAtlas( atlasIndex ).allocateVideoFrames( context, 0 );
 }

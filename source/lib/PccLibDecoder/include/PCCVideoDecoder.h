@@ -77,8 +77,7 @@ class PCCVideoDecoder {
 
     const std::string yuvRecFileName = addVideoFormat( fileName + "_rec" + ( use444CodecIo ? ".rgb" : ".yuv" ), width,
                                                        height, !use444CodecIo, bitDepth == 10 ? "10" : "8" );
-    const std::string yuv444RecFileName =
-        addVideoFormat( fileName + "_rec.yuv", width, height, false, "16" );
+    const std::string yuv444RecFileName = addVideoFormat( fileName + "_rec.yuv", width, height, false, "16" );
     std::ofstream     file( binFileName, std::ios::binary );
     const std::string format = use444CodecIo ? "444" : "420";
     if ( !file.good() ) { return false; }
@@ -354,7 +353,7 @@ class PCCVideoDecoder {
           if ( pcc::system( cmd.str().c_str() ) ) {
             std::cout << "Error: can't run system command!" << std::endl;
             return false;
-          }     
+          }
           if ( !video.read( yuv444RecFileName, width, height, frameCount, 2 ) ) { return false; }
         }
       }

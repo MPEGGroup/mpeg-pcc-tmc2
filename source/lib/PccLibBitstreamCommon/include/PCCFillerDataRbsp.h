@@ -36,7 +36,7 @@
 #include "PCCBitstreamCommon.h"
 
 namespace pcc {
-    
+
 // 7.3.6.9  Filler data RBSP syntax
 class FillerDataRbsp {
  public:
@@ -49,4 +49,4 @@ class FillerDataRbsp {
 
 };  // namespace pcc
 
-#endif //~PCC_BITSTREAM_FILLERDATARBSP_H
+#endif  //~PCC_BITSTREAM_FILLERDATARBSP_H

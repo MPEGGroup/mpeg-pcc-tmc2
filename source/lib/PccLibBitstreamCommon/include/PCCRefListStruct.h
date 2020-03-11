@@ -36,7 +36,7 @@
 #include "PCCBitstreamCommon.h"
 
 namespace pcc {
-    
+
 // 7.3.6.12  Reference list structure syntax
 class RefListStruct {
  public:
@@ -88,4 +88,4 @@ class RefListStruct {
 
 };  // namespace pcc
 
-#endif //~PCC_BITSTREAM_REFLISTSTRUCT_H
+#endif  //~PCC_BITSTREAM_REFLISTSTRUCT_H

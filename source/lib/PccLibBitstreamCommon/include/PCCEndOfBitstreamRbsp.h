@@ -49,4 +49,4 @@ class EndOfBitstreamRbsp {
 
 };  // namespace pcc
 
-#endif //~PCC_BITSTREAM_ENDOFBITSTREAMRBSP_H
+#endif  //~PCC_BITSTREAM_ENDOFBITSTREAMRBSP_H

@@ -36,7 +36,7 @@
 #include "PCCBitstreamCommon.h"
 
 namespace pcc {
-    
+
 // 7.3.7.8  EOM patch data unit syntax
 class EOMPatchDataUnit {
  public:
@@ -56,9 +56,9 @@ class EOMPatchDataUnit {
 
   size_t               getEpdu2dPosX() { return epdu2dPosX_; }
   size_t               getEpdu2dPosY() { return epdu2dPosY_; }
-  int64_t              getEpdu2dSizeXMinus1() { return epdu2dSizeXMinus1_; }
-  int64_t              getEpdu2dSizeYMinus1() { return epdu2dSizeYMinus1_; }
-  int64_t              getEpduAssociatedPatchesCountMinus1() { return epduAssociatedPatcheCountMinus1_; }
+  size_t               getEpdu2dSizeXMinus1() { return epdu2dSizeXMinus1_; }
+  size_t               getEpdu2dSizeYMinus1() { return epdu2dSizeYMinus1_; }
+  size_t               getEpduAssociatedPatchesCountMinus1() { return epduAssociatedPatcheCountMinus1_; }
   std::vector<size_t>& getEpduAssociatedPatches() { return epduAssociatedPatches_; }
   size_t               getEpduAssociatedPatches( size_t index ) { return epduAssociatedPatches_[index]; }
   std::vector<size_t>  getEpduEomPointsPerPatch() { return epduEomPointsPerPatch_; }
@@ -78,14 +78,14 @@ class EOMPatchDataUnit {
 
   void setEpdu2dPosX( size_t value ) { epdu2dPosX_ = value; }
   void setEpdu2dPosY( size_t value ) { epdu2dPosY_ = value; }
-  void setEpdu2dSizeXMinus1( uint64_t value ) { epdu2dSizeXMinus1_ = value; }
-  void setEpdu2dSizeYMinus1( uint64_t value ) { epdu2dSizeYMinus1_ = value; }
+  void setEpdu2dSizeXMinus1( size_t value ) { epdu2dSizeXMinus1_ = value; }
+  void setEpdu2dSizeYMinus1( size_t value ) { epdu2dSizeYMinus1_ = value; }
 
  private:
   size_t              epdu2dPosX_;
   size_t              epdu2dPosY_;
-  uint64_t            epdu2dSizeXMinus1_;
-  uint64_t            epdu2dSizeYMinus1_;
+  size_t              epdu2dSizeXMinus1_;
+  size_t              epdu2dSizeYMinus1_;
   size_t              epduAssociatedPatcheCountMinus1_;
   size_t              epduPatchIndex_;
   size_t              epduFrameIndex_;
@@ -95,4 +95,4 @@ class EOMPatchDataUnit {
 
 };  // namespace pcc
 
-#endif //~PCC_BITSTREAM_EOMPATCHDATAUNIT_H
+#endif  //~PCC_BITSTREAM_EOMPATCHDATAUNIT_H

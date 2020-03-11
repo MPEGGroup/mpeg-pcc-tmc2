@@ -37,7 +37,7 @@
 #include "PCCPointLocalReconstructionData.h"
 
 namespace pcc {
-    
+
 // 7.3.7.5  Merge patch data unit syntax
 class MergePatchDataUnit {
  public:
@@ -112,4 +112,4 @@ class MergePatchDataUnit {
 
 };  // namespace pcc
 
-#endif //~PCC_BITSTREAM_MERGEPATCHDATAUNIT_H
+#endif  //~PCC_BITSTREAM_MERGEPATCHDATAUNIT_H

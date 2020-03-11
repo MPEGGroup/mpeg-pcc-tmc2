@@ -63,10 +63,10 @@ struct PCCPatchSegmenter3Parameters {
   size_t           mapCountMinus1_;
   size_t           minLevel_;
   size_t           maxAllowedDepth_;
-  double           maxAllowedDist2MissedPointsDetection_;
-  double           maxAllowedDist2MissedPointsSelection_;
+  double           maxAllowedDist2RawPointsDetection_;
+  double           maxAllowedDist2RawPointsSelection_;
   double           lambdaRefineSegmentation_;
-  bool             useEnhancedDeltaDepthCode_;
+  bool             useEnhancedOccupancyMapCode_;
   bool             absoluteD1_;
   bool             createSubPointCloud_;
   bool             surfaceSeparation_;
@@ -135,44 +135,44 @@ class PCCPatchSegmenter3 {
                                      const size_t                      maxNNCount,
                                      const size_t                      radius );
 
-  bool colorSimilarity(PCCColor3B& colorD1candidate,PCCColor3B& colorD0, uint8_t threshold){
-    bool bSimilarity    = ( std::abs( colorD0[0] - colorD1candidate[0] ) < threshold ) &&
-    ( std::abs( colorD0[1] - colorD1candidate[1] ) < threshold ) &&
-    ( std::abs( colorD0[2] - colorD1candidate[2] ) < threshold );
+  bool colorSimilarity( PCCColor3B& colorD1candidate, PCCColor3B& colorD0, uint8_t threshold ) {
+    bool bSimilarity = ( std::abs( colorD0[0] - colorD1candidate[0] ) < threshold ) &&
+                       ( std::abs( colorD0[1] - colorD1candidate[1] ) < threshold ) &&
+                       ( std::abs( colorD0[2] - colorD1candidate[2] ) < threshold );
     return bSimilarity;
   }
-  
-  int64_t colorDifference(PCCColor3B& D0_Color,PCCColor3B& D1_Color){
+
+  int64_t colorDifference( PCCColor3B& D0_Color, PCCColor3B& D1_Color ) {
     int32_t delta_R = int32_t( D0_Color[0] ) - int32_t( D1_Color[0] );
     int32_t delta_G = int32_t( D0_Color[1] ) - int32_t( D1_Color[1] );
     int32_t delta_B = int32_t( D0_Color[2] ) - int32_t( D1_Color[2] );
     int64_t delta_e = delta_R * delta_R + delta_G * delta_G + delta_B * delta_B;
     return delta_e;
   }
-  void resampledPointcloud( std::vector<size_t>&    pointCount,
-                           PCCPointSet3&            resampled,
-                           std::vector<size_t>&     resampledPatchPartition,
-                           PCCPatch&                patch,
-                           size_t                   patchIndex,
-                           bool                     multipleLayer,
-                           size_t                   surfaceThickness,
-                           size_t                   EOMFixBitCount,
-                           bool                     bIsAdditionalProjectionPlane,
-                           bool                     useEnhancedDeltaDepthCode,
-                           size_t                   geometryBitDepth3D,
-                           bool                     createSubPointCloud,
-                           PCCPointSet3&            rec);
-  
+  void resampledPointcloud( std::vector<size_t>& pointCount,
+                            PCCPointSet3&        resampled,
+                            std::vector<size_t>& resampledPatchPartition,
+                            PCCPatch&            patch,
+                            size_t               patchIndex,
+                            bool                 multipleLayer,
+                            size_t               surfaceThickness,
+                            size_t               EOMFixBitCount,
+                            bool                 bIsAdditionalProjectionPlane,
+                            bool                 useEnhancedOccupancyMapCode,
+                            size_t               geometryBitDepth3D,
+                            bool                 createSubPointCloud,
+                            PCCPointSet3&        rec );
+
   int16_t getPatchSurfaceThickness( const PCCPointSet3&      points,
-                                   PCCPatch&                patch,
-                                   size_t patchIndex,
-                                   std::vector<PCCColor3B>& frame_pcc_color,
-                                   std::vector<size_t>&     connectedComponent,
-                                   size_t                   surfaceThickness,
-                                   size_t projectionMode,
-                                   bool                     bIsAdditionalProjectionPlane,
-                                   size_t                   geometryBitDepth3D);
-  
+                                    PCCPatch&                patch,
+                                    size_t                   patchIndex,
+                                    std::vector<PCCColor3B>& frame_pcc_color,
+                                    std::vector<size_t>&     connectedComponent,
+                                    size_t                   surfaceThickness,
+                                    size_t                   projectionMode,
+                                    bool                     bIsAdditionalProjectionPlane,
+                                    size_t                   geometryBitDepth3D );
+
   void segmentPatches( const PCCPointSet3&                 points,
                        const size_t                        frameIndex,
                        const PCCKdTree&                    kdtree,
@@ -181,7 +181,7 @@ class PCCPatchSegmenter3 {
                        std::vector<PCCPatch>&              patches,
                        std::vector<size_t>&                patchPartition,
                        std::vector<size_t>&                resampledPatchPartition,
-                       std::vector<size_t>                 missedPoints,
+                       std::vector<size_t>                 rawPoints,
                        PCCPointSet3&                       resampled,
                        std::vector<PCCPointSet3>&          subPointCloud,
                        float&                              distanceSrcRec,

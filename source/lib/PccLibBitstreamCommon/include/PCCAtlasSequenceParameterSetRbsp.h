@@ -39,7 +39,7 @@
 #include "PCCPointLocalReconstructionInformation.h"
 
 namespace pcc {
-    
+
 // 7.3.6.1 Atlas sequence parameter set RBSP
 class AtlasSequenceParameterSetRbsp {
  public:
@@ -182,4 +182,4 @@ class AtlasSequenceParameterSetRbsp {
 
 };  // namespace pcc
 
-#endif //~PCC_BITSTREAM_ATLASSEQUENCEPARAMETERSETRBSP_H
+#endif  //~PCC_BITSTREAM_ATLASSEQUENCEPARAMETERSETRBSP_H
