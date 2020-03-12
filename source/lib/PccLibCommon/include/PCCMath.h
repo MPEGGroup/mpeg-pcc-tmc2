@@ -421,8 +421,8 @@ class PCCMatrix3 {
   T data_[3][3];
 };
 
-typedef PCCVector3<double>  PCCVector3D;
-typedef PCCVector3<int16_t> PCCPoint3D;
+typedef PCCVector3<double>   PCCVector3D;
+typedef PCCVector3<int16_t>  PCCPoint3D;
 typedef PCCBox3<double>      PCCBox3D;
 typedef PCCBox3<int16_t>     PCCInt16Box3D;
 typedef PCCVector3<uint8_t>  PCCColor3B;

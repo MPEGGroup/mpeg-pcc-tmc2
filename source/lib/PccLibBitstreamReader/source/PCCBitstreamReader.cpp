@@ -40,7 +40,10 @@
 using namespace pcc;
 
 PCCBitstreamReader::PCCBitstreamReader() :
-    prevPatchSizeU_( 0 ), prevPatchSizeV_( 0 ), predPatchIndex_( 0 ), prevFrameIndex_( 0 ) {}
+    prevPatchSizeU_( 0 ),
+    prevPatchSizeV_( 0 ),
+    predPatchIndex_( 0 ),
+    prevFrameIndex_( 0 ) {}
 PCCBitstreamReader::~PCCBitstreamReader() = default;
 
 // B.2  Sample stream V-PCC unit syntax

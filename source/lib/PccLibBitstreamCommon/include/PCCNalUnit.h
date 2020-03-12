@@ -41,7 +41,10 @@ namespace pcc {
 class NalUnit {
  public:
   NalUnit( NalUnitType nalUnitType = NAL_TRAIL, uint8_t layerId = 0, uint8_t temporalyIdPlus1 = 0 ) :
-      nalUnitType_( nalUnitType ), layerId_( layerId ), temporalyIdPlus1_( temporalyIdPlus1 ), nalUnitSize_( 0 ) {}
+      nalUnitType_( nalUnitType ),
+      layerId_( layerId ),
+      temporalyIdPlus1_( temporalyIdPlus1 ),
+      nalUnitSize_( 0 ) {}
   ~NalUnit() { nalUnitData_.clear(); }
   void                  allocate() { nalUnitData_.resize( nalUnitSize_ - 2, 0 ); }
   NalUnitType           getNalUnitType() { return nalUnitType_; }

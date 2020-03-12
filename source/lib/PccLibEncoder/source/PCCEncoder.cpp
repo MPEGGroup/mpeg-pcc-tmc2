@@ -7676,9 +7676,7 @@ void PCCEncoder::SegmentationPartiallyAddtinalProjectionPlane( const PCCPointSet
       if ( patch.getAxisOfAdditionalPlane() == 0 ) { remove.push_back( patchIndex ); }
     }
     // erace
-    for ( auto& itr : remove ) {
-      Additional.erase( Additional.begin() + itr );
-    }
+    for ( auto& itr : remove ) { Additional.erase( Additional.begin() + itr ); }
   }
   auto& patches = frame.getPatches();
   patches.reserve( Orthogonal.size() + Additional.size() );

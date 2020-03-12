@@ -285,7 +285,10 @@ void QualityMetrics::print( char code ) {
   }
 }
 PCCMetrics::PCCMetrics() :
-    sourcePoints_( 0 ), sourceDuplicates_( 0 ), reconstructPoints_( 0 ), reconstructDuplicates_( 0 ) {}
+    sourcePoints_( 0 ),
+    sourceDuplicates_( 0 ),
+    reconstructPoints_( 0 ),
+    reconstructDuplicates_( 0 ) {}
 PCCMetrics::~PCCMetrics() = default;
 void PCCMetrics::setParameters( const PCCMetricsParameters& params ) { params_ = params; }
 

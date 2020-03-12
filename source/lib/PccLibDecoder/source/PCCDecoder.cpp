@@ -52,7 +52,7 @@ PCCDecoder::PCCDecoder() {
 }
 PCCDecoder::~PCCDecoder() = default;
 void PCCDecoder::setParameters( const PCCDecoderParameters& params ) { params_ = params; }
-int PCCDecoder::decode( PCCContext&                         context,
+int  PCCDecoder::decode( PCCContext&                         context,
                         PCCGroupOfFrames&                   reconstructs,
                         std::vector<std::vector<uint32_t>>& partitions,
                         int32_t                             atlasIndex = 0 ) {
@@ -206,7 +206,7 @@ int PCCDecoder::decode( PCCContext&                         context,
 
   reconstructs.setFrameCount( context.size() );
   context.setOccupancyPrecision( sps.getFrameWidth( atlasIndex ) / context.getVideoOccupancyMap().getWidth() );
-  
+
   generateOccupancyMap( context, context.getOccupancyPrecision(), oi.getLossyOccupancyMapCompressionThreshold(),
                         asps.getEnhancedOccupancyMapForDepthFlag() );
 
@@ -782,7 +782,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
             patch.getProjectionMode(), patch.getPatchOrientation(), patch.getNormalAxis(), patch.getTangentAxis(),
             patch.getBitangentAxis(), patch.getLodScaleX(), patch.getLodScaleY() );
 
-        patch.allocOneLayerData(); 
+        patch.allocOneLayerData();
         if ( asps.getPointLocalReconstructionEnabledFlag() ) {
           setPointLocalReconstructionData( frame, patch, ipdu.getPointLocalReconstructionData(),
                                            context.getOccupancyPackingBlockSize() );
@@ -878,7 +878,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
             patch.getProjectionMode(), patch.getPatchOrientation(), patch.getNormalAxis(), patch.getTangentAxis(),
             patch.getBitangentAxis(), patch.getLodScaleX(), patch.getLodScaleY() );
 
-        patch.allocOneLayerData(); 
+        patch.allocOneLayerData();
         if ( asps.getPointLocalReconstructionEnabledFlag() ) {
           setPointLocalReconstructionData( frame, patch, mpdu.getPointLocalReconstructionData(),
                                            context.getOccupancyPackingBlockSize() );

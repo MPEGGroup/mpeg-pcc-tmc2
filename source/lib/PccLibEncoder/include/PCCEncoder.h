@@ -102,7 +102,7 @@ struct PaddingContext {
 };
 
 typedef std::map<size_t, PCCPatch> unionPatch;  // unionPatch ------ [TrackIndex, UnionPatch];
-typedef std::pair<size_t, size_t> SubContext;  // SubContext ------ [start, end);
+typedef std::pair<size_t, size_t>  SubContext;  // SubContext ------ [start, end);
 
 #define BAD_HEIGHT_THRESHOLD 1.10
 #define BAD_CONDITION_THRESHOLD 2

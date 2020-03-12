@@ -159,16 +159,16 @@ void PCCCodec::generatePointCloud( PCCGroupOfFrames&                   reconstru
 }
 
 void PCCCodec::convertYUV444_16bits_toRGB_8bits( PCCPointSet3& reconstruct, size_t k ) {  // BT709
-  PCCColor16bit inYUV = reconstruct.getColor16bit( k );
-  PCCColor3B    outRGB;
+  PCCColor16bitinYUV = reconstruct.getColor16bit( k );
+  PCCColor3BoutRGB;
 
   /// convert yuv444 (16bit) to normalized yuv444 (format double)
-  double y1 = inYUV[0];
-  double u1 = inYUV[1];
-  double v1 = inYUV[2];
-  double offset = 32768.0;
-  double scale  = 65535.0;
-  double weight = 1.0 / scale;
+  doubley1     = inYUV[0];
+  doubleu1     = inYUV[1];
+  doublev1     = inYUV[2];
+  doubleoffset = 32768.0;
+  doublescale  = 65535.0;
+  doubleweight = 1.0 / scale;
 
   y1 = weight * y1;
   u1 = weight * ( u1 - offset );
@@ -181,9 +181,9 @@ void PCCCodec::convertYUV444_16bits_toRGB_8bits( PCCPointSet3& reconstruct, size
   v1 = ( std::min )( v1, 0.5 );
 
   //// convert normalized yuv444 to normalized rgb (fromat double)
-  double r = y1 /*- 0.00000 * u1*/ + 1.57480 * v1;
-  double g = y1 - 0.18733 * u1 - 0.46813 * v1;
-  double b = y1 + 1.85563 * u1 /*+ 0.00000 * v1*/;
+  doubler = y1 /*- 0.00000 * u1*/ + 1.57480 * v1;
+  doubleg = y1 - 0.18733 * u1 - 0.46813 * v1;
+  doubleb = y1 + 1.85563 * u1 /*+ 0.00000 * v1*/;
 
   //// convert normalized rgb to 8-bit rgb
   r = PCCClip( round( r * 255 ), 0.0, 255.0 );

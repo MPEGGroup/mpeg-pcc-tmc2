@@ -45,7 +45,10 @@ namespace pcc {
 class VpccParameterSet {
  public:
   VpccParameterSet() :
-      vpccParameterSetId_( 0 ), atlasCountMinus1_( 0 ), extensionPresentFlag_( false ), extensionLength_( 0 ) {}
+      vpccParameterSetId_( 0 ),
+      atlasCountMinus1_( 0 ),
+      extensionPresentFlag_( false ),
+      extensionLength_( 0 ) {}
   ~VpccParameterSet() {
     for ( auto& data : mapAbsoluteCodingEnableFlag_ ) { data.clear(); }
     mapAbsoluteCodingEnableFlag_.clear();
