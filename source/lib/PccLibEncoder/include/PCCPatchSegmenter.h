@@ -377,25 +377,21 @@ class Rect {
 
   Rect() { x_ = y_ = width_ = height_ = 0; }
   Rect( int x, int y, int w, int h ) {
-    this->x_ = x;
-    this->y_ = y;
-    width_   = w;
-    height_  = h;
+    x_      = x;
+    y_      = y;
+    width_  = w;
+    height_ = h;
   }
   int area() { return ( width_ * height_ ); }
 
   Rect operator&( const Rect& rhs ) {
     Rect c;
-    int  x1 = ( this->x_ > rhs.x_ ) ? this->x_ : rhs.x_;
-    int  y1 = ( this->y_ > rhs.y_ ) ? this->y_ : rhs.y_;
-    c.width_ =
-        ( ( ( this->x_ + this->width_ ) < ( rhs.x_ + rhs.width_ ) ) ? this->x_ + this->width_ : rhs.x_ + rhs.width_ ) -
-        x1;
-    c.height_ = ( ( ( this->y_ + this->height_ ) < ( rhs.y_ + rhs.height_ ) ) ? this->y_ + this->height_
-                                                                              : rhs.y_ + rhs.height_ ) -
-                y1;
-    c.x_ = x1;
-    c.y_ = y1;
+    int  x1   = ( x_ > rhs.x_ ) ? x_ : rhs.x_;
+    int  y1   = ( y_ > rhs.y_ ) ? y_ : rhs.y_;
+    c.width_  = ( ( ( x_ + width_ ) < ( rhs.x_ + rhs.width_ ) ) ? x_ + width_ : rhs.x_ + rhs.width_ ) - x1;
+    c.height_ = ( ( ( y_ + height_ ) < ( rhs.y_ + rhs.height_ ) ) ? y_ + height_ : rhs.y_ + rhs.height_ ) - y1;
+    c.x_      = x1;
+    c.y_      = y1;
     if ( c.width_ <= 0 || c.height_ <= 0 ) { c.x_ = c.y_ = c.width_ = c.height_ = 0; }
     return Rect( c );
   }

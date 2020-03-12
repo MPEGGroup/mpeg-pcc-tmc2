@@ -43,34 +43,28 @@ class PCCEncoderParameters {
  public:
   PCCEncoderParameters();
   ~PCCEncoderParameters();
-  void        print();
-  bool        check();
-  void        completePath();
-  static void constructAspsRefList( PCCContext& context, size_t aspsIdx, size_t afpsIdx );
-  void        initializeContext( PCCContext& context );
-  size_t      startFrameNumber_;
-
-  std::string configurationFolder_;
-  std::string uncompressedDataFolder_;
-
-  std::string compressedStreamPath_;
-  std::string reconstructedDataPath_;
-
+  void              print();
+  bool              check();
+  void              completePath();
+  static void       constructAspsRefList( PCCContext& context, size_t aspsIdx, size_t afpsIdx );
+  void              initializeContext( PCCContext& context );
+  size_t            startFrameNumber_;
+  std::string       configurationFolder_;
+  std::string       uncompressedDataFolder_;
+  std::string       compressedStreamPath_;
+  std::string       reconstructedDataPath_;
   PCCColorTransform colorTransform_;
   std::string       colorSpaceConversionPath_;
   std::string       videoEncoderPath_;
   bool              use3dmc_;
   std::string       videoEncoderAuxPath_;
   std::string       videoEncoderOccupancyMapPath_;
-
-  std::string colorSpaceConversionConfig_;
-  std::string inverseColorSpaceConversionConfig_;
-
-  size_t nbThread_;
-
-  size_t      frameCount_;
-  size_t      groupOfFramesSize_;
-  std::string uncompressedDataPath_;
+  std::string       colorSpaceConversionConfig_;
+  std::string       inverseColorSpaceConversionConfig_;
+  size_t            nbThread_;
+  size_t            frameCount_;
+  size_t            groupOfFramesSize_;
+  std::string       uncompressedDataPath_;
 
   // packing
   size_t minimumImageWidth_;

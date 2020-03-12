@@ -777,7 +777,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
       // convert connected component indexes of chunks to original indexes
       for ( int chunkIndex = 0; chunkIndex < numChunks; ++chunkIndex ) {
         for ( auto& connectedComponent : connectedComponentsChunks[chunkIndex] ) {
-          for ( unsigned long long& i : connectedComponent ) { i = pointsIndexChunks[chunkIndex][i]; }
+          for ( size_t i : connectedComponent ) { i = pointsIndexChunks[chunkIndex][i]; }
         }
       }
       // merge connected components of chunks into connectedComponents

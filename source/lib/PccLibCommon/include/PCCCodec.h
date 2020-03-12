@@ -41,11 +41,8 @@
 #include "PCCContext.h"
 
 namespace pcc {
+
 class PCCPatch;
-} /* namespace pcc */
-
-namespace pcc {
-
 class PCCContext;
 class PCCFrameContext;
 class PCCGroupOfFrames;

@@ -102,8 +102,6 @@ struct PaddingContext {
 };
 
 typedef std::map<size_t, PCCPatch> unionPatch;  // unionPatch ------ [TrackIndex, UnionPatch];
-// typedef std::pair<size_t, size_t>                   GlobalPatch;    // GlobalPatch ----- [FrameIndex, PatchIndex];
-// typedef std::map<size_t, std::vector<GlobalPatch> > GlobalPatches;  // GlobalPatches --- [TrackIndex, <GlobalPatch>];
 typedef std::pair<size_t, size_t> SubContext;  // SubContext ------ [start, end);
 
 #define BAD_HEIGHT_THRESHOLD 1.10

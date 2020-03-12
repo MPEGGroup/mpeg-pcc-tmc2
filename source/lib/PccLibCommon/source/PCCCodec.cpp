@@ -163,11 +163,9 @@ void PCCCodec::convertYUV444_16bits_toRGB_8bits( PCCPointSet3& reconstruct, size
   PCCColor3B    outRGB;
 
   /// convert yuv444 (16bit) to normalized yuv444 (format double)
-
   double y1 = inYUV[0];
   double u1 = inYUV[1];
   double v1 = inYUV[2];
-
   double offset = 32768.0;
   double scale  = 65535.0;
   double weight = 1.0 / scale;
@@ -183,13 +181,11 @@ void PCCCodec::convertYUV444_16bits_toRGB_8bits( PCCPointSet3& reconstruct, size
   v1 = ( std::min )( v1, 0.5 );
 
   //// convert normalized yuv444 to normalized rgb (fromat double)
-
   double r = y1 /*- 0.00000 * u1*/ + 1.57480 * v1;
   double g = y1 - 0.18733 * u1 - 0.46813 * v1;
   double b = y1 + 1.85563 * u1 /*+ 0.00000 * v1*/;
 
   //// convert normalized rgb to 8-bit rgb
-
   r = PCCClip( round( r * 255 ), 0.0, 255.0 );
   g = PCCClip( round( g * 255 ), 0.0, 255.0 );
   b = PCCClip( round( b * 255 ), 0.0, 255.0 );
@@ -353,6 +349,7 @@ void PCCCodec::smoothPointCloudPostprocess( PCCPointSet3&                       
   fflush( stdout );
 #endif
 }
+
 void PCCCodec::colorSmoothing( PCCPointSet3&                       reconstruct,
                                PCCContext&                         context,
                                size_t                              frameIndex,

@@ -45,7 +45,6 @@ namespace pcc {
 
 class PCCContext;
 class PCCFrameContext;
-
 class PCCVideoEncoder {
  public:
   PCCVideoEncoder();

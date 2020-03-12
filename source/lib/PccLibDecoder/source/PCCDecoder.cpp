@@ -51,9 +51,7 @@ PCCDecoder::PCCDecoder() {
 #endif
 }
 PCCDecoder::~PCCDecoder() = default;
-
 void PCCDecoder::setParameters( const PCCDecoderParameters& params ) { params_ = params; }
-
 int PCCDecoder::decode( PCCContext&                         context,
                         PCCGroupOfFrames&                   reconstructs,
                         std::vector<std::vector<uint32_t>>& partitions,
@@ -208,8 +206,7 @@ int PCCDecoder::decode( PCCContext&                         context,
 
   reconstructs.setFrameCount( context.size() );
   context.setOccupancyPrecision( sps.getFrameWidth( atlasIndex ) / context.getVideoOccupancyMap().getWidth() );
-
-  context.setOccupancyPrecision( sps.getFrameWidth( atlasIndex ) / context.getVideoOccupancyMap().getWidth() );
+  
   generateOccupancyMap( context, context.getOccupancyPrecision(), oi.getLossyOccupancyMapCompressionThreshold(),
                         asps.getEnhancedOccupancyMapForDepthFlag() );
 
@@ -244,7 +241,6 @@ int PCCDecoder::decode( PCCContext&                         context,
   colorPointCloud( reconstructs, context, ai.getAttributeCount(), params_.colorTransform_,
                    absoluteT1List,  // atlasIdx
                    sps.getMultipleMapStreamsPresentFlag( ATLASIDXPCC ), gpcParams );
-
 #ifdef CODEC_TRACE
   setTrace( false );
   closeTrace();
@@ -258,8 +254,8 @@ int PCCDecoder::reconstruct( PCCContext&                         context,
   auto& sps           = context.getVps();
   auto& plt           = sps.getProfileTierLevel();
   bool  use444CodecIo = sps.getRawPatchEnabledFlag( 0 );  // plt.getProfileCodecGroupIdc() == CODEC_GROUP_HEVC444;
+  auto& frames        = context.getFrames();
   PCCPointSet3 tempFrameBuffer;
-  auto&        frames = context.getFrames();
 
   // sps.getRawPatchEnabledFlag( atlasIndex )
   GeneratePointCloudParameters ppSEIParams;  //=gpcParams;
@@ -284,7 +280,6 @@ int PCCDecoder::reconstruct( PCCContext&                         context,
     if ( ppSEIParams.flagColorSmoothing_ ) {
       colorSmoothing( reconstructs[f], context, f, params_.colorTransform_, ppSEIParams );
     }
-
     if ( !use444CodecIo ) {  // lossy: convert 16-bit yuv444 to 8-bit RGB444
       printf( " convert 16-bit yuv444 to 8-bit RGB444 \n" );
       for ( int k = 0; k < reconstructs[f].getPointCount(); k++ ) {
@@ -305,6 +300,7 @@ int PCCDecoder::reconstruct( PCCContext&                         context,
   }
   return 0;
 }
+
 void PCCDecoder::setPointLocalReconstruction( PCCContext& context ) {
   auto&                        asps = context.getAtlasSequenceParameterSet( 0 );
   PointLocalReconstructionMode mode = {false, false, 0, 1};
@@ -380,7 +376,6 @@ void PCCDecoder::setPostProcessingSeiParameters( GeneratePointCloudParameters& p
   auto&   asps                  = context.getAtlasSequenceParameterSet( 0 );
   bool    seiSmoothingIsPresent = context.seiIsPresent( NAL_PREFIX_SEI, SMOOTHING_PARAMETERS );
   auto&   plt                   = sps.getProfileTierLevel();
-
   params.flagGeometrySmoothing_ = false;
   params.gridSmoothing_         = false;
   params.gridSize_              = 0;
@@ -787,7 +782,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
             patch.getProjectionMode(), patch.getPatchOrientation(), patch.getNormalAxis(), patch.getTangentAxis(),
             patch.getBitangentAxis(), patch.getLodScaleX(), patch.getLodScaleY() );
 
-        patch.allocOneLayerData();  // do we need this?
+        patch.allocOneLayerData(); 
         if ( asps.getPointLocalReconstructionEnabledFlag() ) {
           setPointLocalReconstructionData( frame, patch, ipdu.getPointLocalReconstructionData(),
                                            context.getOccupancyPackingBlockSize() );
@@ -808,8 +803,6 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
             mpdu.getMpdu3dPosY(), mpdu.getMpdu3dPosMinZ(), mpdu.getMpdu3dPosDeltaMaxZ(), mpdu.getMpdu2dDeltaSizeX(),
             mpdu.getMpdu2dDeltaSizeY() );
 
-        //      patch.setBestMatchIdx( ( int32_t )( mpdu.getMpduRefPatchIndex() + predIndex ) );
-        //      predIndex += mpdu.getMpduRefPatchIndex() + 1;
         patch.setBestMatchIdx( patchIndex );
         predIndex = patchIndex;
         patch.setRefAtlasFrameIndex( mpdu.getMpduRefIndex() );
@@ -885,7 +878,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
             patch.getProjectionMode(), patch.getPatchOrientation(), patch.getNormalAxis(), patch.getTangentAxis(),
             patch.getBitangentAxis(), patch.getLodScaleX(), patch.getLodScaleY() );
 
-        patch.allocOneLayerData();  // do we need this?
+        patch.allocOneLayerData(); 
         if ( asps.getPointLocalReconstructionEnabledFlag() ) {
           setPointLocalReconstructionData( frame, patch, mpdu.getPointLocalReconstructionData(),
                                            context.getOccupancyPackingBlockSize() );
@@ -958,7 +951,6 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
         patch.allocOneLayerData();
       } else if ( currPatchType == RAW_PATCH ) {
         TRACE_CODEC( "patch %zu / %zu: raw \n", patchIndex, patchCount );
-
         auto& ppdu             = pid.getRawPatchDataUnit();
         auto& rawPointsPatch   = pcmPatches[patchIndex - numNonRawPatch];
         rawPointsPatch.u0_     = ppdu.getRpdu2dPosX();
@@ -1006,7 +998,6 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
           TRACE_CODEC( "%zu, %zu\n", eomPatch.memberPatches[i], eomPatch.eomCountPerPatch[i] );
         }
         TRACE_CODEC( "\n" );
-
       } else if ( currPatchType == END_PATCH ) {
         break;
       } else {

@@ -37,8 +37,6 @@
 #include "PCCMath.h"
 #include "PCCVideo.h"
 #include "PCCBitstreamCommon.h"
-// #include "PCCBitstream.h"
-// #include "PCCVideoBitstream.h"
 #include "PCCHighLevelSyntax.h"
 #include <map>
 
@@ -99,77 +97,24 @@ class PCCAtlasContext {
   std::vector<unionPatch>& getUnionPatch() { return unionPatch_; }
 
  private:
-  // atlas index
-  size_t atlasIndex_;
-  // frame context
-  std::vector<PCCFrameContext> frameContexts_;
-  // video variables
-  // OccFrame[ orderIdx ][ compIdx ][ y ][ x ]
-  // where:
-  // orderIdx  is the display order index of the decoded occupancy frames
-  // compIdx = 0,
-  // y = [0, OccHeight [ orderIdx ] - 1 ]
-  // x = [0, OccWidth [ orderIdx ] - 1 ]
-  // PCCVideoOccupancyMap -> pcc::PCCVideo<uint8_t, 3>
-  // PCCVideo -> std::vector<PCCImage<T, N> > frames_;
-  // PCCImage -> std::vector<T> channels_[N]
-  PCCVideoOccupancyMap occFrames_;
-  // OccBitdepth [ orderIdx ]
-  std::vector<size_t> occBitdepth_;
-  // OccWidth  [ orderIdx ]
-  std::vector<size_t> occWidth_;
-  // OccHeight [ orderIdx ]
-  std::vector<size_t> occHeight_;
-  // GeoFrame [ mapIdx ] [ orderIdx ][ compIdx ][ y ][ x ]
-  // where:
-  // mapIdx = [0, vps_map_count_minus1[ atlasIdx ]]
-  // orderIdx  is the display order index of the decoded geometry frames
-  // compIdx = 0,
-  // y = [0, GeoHeight [ mapIdx ] [ orderIdx ] - 1 ]
-  // x = [0, GeoWidth [ mapIdx ] [ orderIdx ] - 1 ]
-  // std::vector<PCCVideoGeometry>
-  // PCCVideoGeometry -> pcc::PCCVideo<uint16_t, 3>
-  // PCCVideo -> std::vector<PCCImage<T, N> > frames_;
-  // PCCImage -> std::vector<T> channels_[N]
-  std::vector<PCCVideoGeometry> geoFrames_;
-  // GeoBitdepth [ mapIdx ] [ orderIdx ]
-  std::vector<std::vector<size_t>> geoBitdepth_;
-  // GeoWidth [ mapIdx ] [ orderIdx ]
-  std::vector<std::vector<size_t>> geoWidth_;
-  // GeoHeight [ mapIdx ] [ orderIdx ]
-  std::vector<std::vector<size_t>> geoHeight_;
-  // GeoAuxFrame [ orderIdx ][ compIdx ][ y ][ x ]
-  // PCCVideoGeometry -> pcc::PCCVideo<uint16_t, 3>
-  // PCCVideo -> std::vector<PCCImage<T, N> > frames_;
-  // PCCImage -> std::vector<T> channels_[N]
-  PCCVideoGeometry geoAuxFrames_;
-  // AttrFrame [ attrIdx ] [ partIdx ] [ mapIdx ] [ orderIdx ][ compIdx ][ y ][ x ]
-  // attrIdx = [0, ai_attribute_count[ atlasIdx ] - 1]
-  // partIdx = [0, ai_attribute_dimension_partitions_minus1[ atlasIdx ][ attrIdx ]]
-  // mapIdx = [0, vps_map_count_minus1[ atlasIdx ]]
-  // orderIdx  is the display order index of the decoded attribute frames
-  // compIdx = = [0, ai_attribute_partition_channels_minus1[ atlasIdx ][ attrIdx ][ partIdx ]]
-  // y = [0, AttrHeight [ mapIdx ] [ orderIdx ] - 1 ]
-  // x = [0, AttrWidth [ mapIdx ] [ orderIdx ] - 1 ]
-  // std::vector<std::vector<std::vector<PCCVideoAttributes>>>
-  // PCCVideoAttributes -> pcc::PCCVideo<uint16_t, 3>
-  // PCCVideo -> std::vector<PCCImage<T, N> > frames_;
-  // PCCImage -> std::vector<T> channels_[N]
-  std::vector<std::vector<std::vector<PCCVideoAttributes>>> attrFrames_;
-  // AttrBitdepth [ attrIdx ] [ partIdx ] [ mapIdx ] [ orderIdx ]
+  size_t                                                     atlasIndex_;
+  std::vector<PCCFrameContext>                               frameContexts_;
+  PCCVideoOccupancyMap                                       occFrames_;
+  std::vector<size_t>                                        occBitdepth_;
+  std::vector<size_t>                                        occWidth_;
+  std::vector<size_t>                                        occHeight_;
+  std::vector<PCCVideoGeometry>                              geoFrames_;
+  std::vector<std::vector<size_t>>                           geoBitdepth_;
+  std::vector<std::vector<size_t>>                           geoWidth_;
+  std::vector<std::vector<size_t>>                           geoHeight_;
+  PCCVideoGeometry                                           geoAuxFrames_;
+  std::vector<std::vector<std::vector<PCCVideoAttributes>>>  attrFrames_;
   std::vector<std::vector<std::vector<std::vector<size_t>>>> attrBitdepth_;
-  // AttrWidth [ attrIdx ] [ partIdx ] [ mapIdx ] [ orderIdx ]
   std::vector<std::vector<std::vector<std::vector<size_t>>>> attrWidth_;
-  // AttrHeight [ attrIdx ] [ partIdx ] [ mapIdx ] [ orderIdx ]
   std::vector<std::vector<std::vector<std::vector<size_t>>>> attrHeight_;
-  // AttrAuxFrame [ attrIdx ] [ partIdx ] [ orderIdx ][ compIdx ][ y ][ x ]
-  // PCCVideoAttributes -> std::vector<std::vector<pcc::PCCVideo<uint16_t, 3>>>
-  // PCCVideo -> std::vector<PCCImage<T, N> > frames_;
-  // PCCImage -> std::vector<T> channels_[N]
-  std::vector<std::vector<PCCVideoAttributes>> attrAuxFrames_;
-  // GPA variables
-  std::vector<SubContext> subContexts_;
-  std::vector<unionPatch> unionPatch_;
+  std::vector<std::vector<PCCVideoAttributes>>               attrAuxFrames_;
+  std::vector<SubContext>                                    subContexts_;
+  std::vector<unionPatch>                                    unionPatch_;
 };
 
 // used for context handling

@@ -33,7 +33,6 @@
 #include "PCCCommon.h"
 #include "PCCHighLevelSyntax.h"
 #include "PCCBitstream.h"
-// #include "PCCBitstreamWriter.h"
 #include "PCCContext.h"
 #include "PCCFrameContext.h"
 #include "PCCPatch.h"
@@ -7677,7 +7676,7 @@ void PCCEncoder::SegmentationPartiallyAddtinalProjectionPlane( const PCCPointSet
       if ( patch.getAxisOfAdditionalPlane() == 0 ) { remove.push_back( patchIndex ); }
     }
     // erace
-    for ( std::_Vector_iterator<std::_Vector_val<std::_Simple_types<unsigned long long>>>::value_type& itr : remove ) {
+    for ( auto& itr : remove ) {
       Additional.erase( Additional.begin() + itr );
     }
   }
