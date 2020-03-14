@@ -75,11 +75,11 @@ class PCCDecoder : public PCCCodec {
   void createPatchFrameDataStructure( PCCContext& context, PCCFrameContext& frame, size_t frameIndex );
 
  private:
-  static void setPointLocalReconstruction( PCCContext& context );
-  static void setPointLocalReconstructionData( PCCFrameContext&              frame,
-                                               PCCPatch&                     patch,
-                                               PointLocalReconstructionData& plrd,
-                                               size_t                        occupancyPackingBlockSize );
+  void setPointLocalReconstruction( PCCContext& context );
+  void setPointLocalReconstructionData( PCCFrameContext&              frame,
+                                        PCCPatch&                     patch,
+                                        PointLocalReconstructionData& plrd,
+                                        size_t                        occupancyPackingBlockSize );
 
   PCCDecoderParameters params_;
 };

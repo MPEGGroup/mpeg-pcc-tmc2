@@ -120,7 +120,8 @@ class PCCVideoEncoder {
           auto& destImage = video420.getFrame( frNum );
           destImage.resize( width, height );
 
-          // iterate the patch information and perform chroma down-sampling on each patch individually
+          // iterate the patch information and perform chroma down-sampling on
+          // each patch individually
           std::vector<PCCPatch> patches      = context.getPatches();
           std::vector<size_t>   blockToPatch = context.getBlockToPatch();
           for ( int patchIdx = 0; patchIdx <= patches.size(); patchIdx++ ) {
@@ -165,12 +166,14 @@ class PCCVideoEncoder {
                   // do nothing
                   continue;
                 } else {
-                  // search for the block that contains texture information and extend the block edge
+                  // search for the block that contains texture information and
+                  // extend the block edge
                   int              direction;
                   int              searchIndex;
                   std::vector<int> neighborIdx( 4, -1 );
                   std::vector<int> neighborDistance( 4, ( std::numeric_limits<int>::max )() );
-                  // looking for the neighboring block to the left of the current block
+                  // looking for the neighboring block to the left of the
+                  // current block
                   searchIndex = (int)j;
                   while ( searchIndex >= 0 ) {
                     if ( context.getBlockToPatch()[( i + patch_top / occupancyResolution ) *
@@ -182,7 +185,8 @@ class PCCVideoEncoder {
                     }
                     searchIndex--;
                   }
-                  // looking for the neighboring block to the right of the current block
+                  // looking for the neighboring block to the right of the
+                  // current block
                   searchIndex = (int)j;
                   while ( searchIndex < patch_width / occupancyResolution ) {
                     if ( context.getBlockToPatch()[( i + patch_top / occupancyResolution ) *
@@ -220,7 +224,8 @@ class PCCVideoEncoder {
                   }
                   // check if the candidate was found
                   assert( *( std::max )( neighborIdx.begin(), neighborIdx.end() ) > 0 );
-                  // now fill in the block with the edge value coming from the nearest neighbor
+                  // now fill in the block with the edge value coming from the
+                  // nearest neighbor
                   direction =
                       std::min_element( neighborDistance.begin(), neighborDistance.end() ) - neighborDistance.begin();
                   if ( direction == 0 ) {
@@ -343,7 +348,8 @@ class PCCVideoEncoder {
       } else {
         if ( colorSpaceConversionPath.empty() ) {
           printf( "Encoder convert : write420 with conversion \n" );
-          // if ( keepIntermediateFiles ) { video.write( srcRgbFileName, nbyte ); }
+          // if ( keepIntermediateFiles ) { video.write( srcRgbFileName, nbyte
+          // ); }
           if ( !video.write420( srcYuvFileName, nbyte, true, downsamplingFilter ) ) { return false; }
         } else {
           printf( "Encoder convert : write + hdrtools conversion \n" );

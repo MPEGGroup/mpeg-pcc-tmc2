@@ -803,7 +803,8 @@ bool PCCPointSet3::transferColors( PCCPointSet3& target,
   // ==========================================================================================
   //                                     Forward direction
   // ==========================================================================================
-  // for each target point indexed by index, derive the refined color as refinedColors1[index]
+  // for each target point indexed by index, derive the refined color as
+  // refinedColors1[index]
   PCCNNResult result;
   for ( size_t index = 0; index < pointCountTarget; ++index ) {
     kdtreeSource.search( target[index], numNeighborsColorTransferFwd, result );
@@ -897,8 +898,10 @@ bool PCCPointSet3::transferColors( PCCPointSet3& target,
   // ==========================================================================================
   //                                  Backward direction
   // ==========================================================================================
-  // for each target point, derive a vector of source candidate points as colorsDists2.
-  // colorsDists2 is iteratively refined (by removing the farthest points) until the
+  // for each target point, derive a vector of source candidate points as
+  // colorsDists2.
+  // colorsDists2 is iteratively refined (by removing the farthest points) until
+  // the
   // std of remaining colors in it is smaller than a threshold.
   struct DistColor {
     double     dist;
@@ -924,8 +927,10 @@ bool PCCPointSet3::transferColors( PCCPointSet3& target,
   }
   // compute centroid2
   for ( size_t index = 0; index < pointCountTarget; ++index ) {
-    const PCCColor3B color1 = refinedColors1[index];       // refined color derived in forward direction
-    auto& colorsDists2      = refinedColorsDists2[index];  // set of candidate points derived in backward direction
+    const PCCColor3B color1       = refinedColors1[index];       // refined color derived in forward direction
+    auto&            colorsDists2 = refinedColorsDists2[index];  // set of candidate points
+                                                                 // derived in backward
+                                                                 // direction
     if ( colorsDists2.empty() || losslessTexture ) {
       target.setColor( index, color1 );
     } else {
@@ -1123,7 +1128,8 @@ bool PCCPointSet3::transferColors16bitBP( PCCPointSet3& target,
   // ==========================================================================================
   //                                     Forward direction
   // ==========================================================================================
-  // for each target point indexed by index, derive the refined color as refinedColors1[index]
+  // for each target point indexed by index, derive the refined color as
+  // refinedColors1[index]
   PCCNNResult result;
   for ( size_t index = 0; index < pointCountTarget; ++index ) {
     PCCColor16bit colorT16bit = target.getColor16bit( index );
@@ -1223,8 +1229,10 @@ bool PCCPointSet3::transferColors16bitBP( PCCPointSet3& target,
   // ==========================================================================================
   //                                  Backward direction
   // ==========================================================================================
-  // for each target point, derive a vector of source candidate points as colorsDists2.
-  // colorsDists2 is iteratively refined (by removing the farthest points) until the
+  // for each target point, derive a vector of source candidate points as
+  // colorsDists2.
+  // colorsDists2 is iteratively refined (by removing the farthest points) until
+  // the
   // std of remaining colors in it is smaller than a threshold.
   struct DistColor {
     double        dist;
@@ -1250,8 +1258,10 @@ bool PCCPointSet3::transferColors16bitBP( PCCPointSet3& target,
   }
   // compute centroid2
   for ( size_t index = 0; index < pointCountTarget; ++index ) {
-    const PCCColor16bit color1 = refinedColors1[index];       // refined color derived in forward direction
-    auto& colorsDists2         = refinedColorsDists2[index];  // set of candidate points derived in backward direction
+    const PCCColor16bit color1       = refinedColors1[index];       // refined color derived in forward direction
+    auto&               colorsDists2 = refinedColorsDists2[index];  // set of candidate points
+                                                                    // derived in backward
+                                                                    // direction
     if ( colorsDists2.empty() || losslessTexture ) {
       target.setColor16bit( index, color1 );
     } else {
@@ -1449,7 +1459,8 @@ bool PCCPointSet3::transferColors16bit( PCCPointSet3& target,
   // ==========================================================================================
   //                                     Forward direction
   // ==========================================================================================
-  // for each target point indexed by index, derive the refined color as refinedColors1[index]
+  // for each target point indexed by index, derive the refined color as
+  // refinedColors1[index]
   PCCNNResult result;
   for ( size_t index = 0; index < pointCountTarget; ++index ) {
     kdtreeSource.search( target[index], numNeighborsColorTransferFwd, result );
@@ -1545,8 +1556,10 @@ bool PCCPointSet3::transferColors16bit( PCCPointSet3& target,
   // ==========================================================================================
   //                                  Backward direction
   // ==========================================================================================
-  // for each target point, derive a vector of source candidate points as colorsDists2.
-  // colorsDists2 is iteratively refined (by removing the farthest points) until the
+  // for each target point, derive a vector of source candidate points as
+  // colorsDists2.
+  // colorsDists2 is iteratively refined (by removing the farthest points) until
+  // the
   // std of remaining colors in it is smaller than a threshold.
   struct DistColor {
     double        dist;
@@ -1572,8 +1585,10 @@ bool PCCPointSet3::transferColors16bit( PCCPointSet3& target,
   }
   // compute centroid2
   for ( size_t index = 0; index < pointCountTarget; ++index ) {
-    const PCCColor16bit color1 = refinedColors1[index];       // refined color derived in forward direction
-    auto& colorsDists2         = refinedColorsDists2[index];  // set of candidate points derived in backward direction
+    const PCCColor16bit color1       = refinedColors1[index];       // refined color derived in forward direction
+    auto&               colorsDists2 = refinedColorsDists2[index];  // set of candidate points
+                                                                    // derived in backward
+                                                                    // direction
     if ( colorsDists2.empty() || losslessTexture ) {
       target.setColor16bit( index, color1 );
     } else {
@@ -1786,7 +1801,8 @@ bool PCCPointSet3::transferColorsFilter3( PCCPointSet3& target,
           D2 += d2 * d2;
         }
       }
-      //      const double r = double(pointCountTarget) / double(pointCountSource);
+      //      const double r = double(pointCountTarget) /
+      // double(pointCountSource);
       const double delta2 = ( centroid2 - centroid1 ).getNorm2();
       const double eps    = 0.000001;
 
@@ -1931,7 +1947,9 @@ void PCCPointSet3::copyNormals( const PCCPointSet3& sourceWithNormal ) {
     exit( -1 );
   }
   if ( sourceWithNormal.getPointCount() != getPointCount() ) {
-    std::cerr << "Normal object and current object must have the same number of points \n" << std::endl;
+    std::cerr << "Normal object and current object must have the same number "
+                 "of points \n"
+              << std::endl;
     exit( -1 );
   }
   addNormals();
@@ -1953,7 +1971,10 @@ void PCCPointSet3::copyNormals( const PCCPointSet3& sourceWithNormal ) {
       normals_[i][1] = sourceWithNormal.normals_[index][1];
       normals_[i][2] = sourceWithNormal.normals_[index][2];
     } else {
-      std::cerr << "Error point " << i << " of the current points cloud is not present in the normal point cloud. \n"
+      std::cerr << "Error point " << i
+                << " of the current points cloud is not "
+                   "present in the normal point cloud. "
+                   "\n"
                 << std::endl;
       exit( -1 );
     }

@@ -226,29 +226,48 @@ enum SeiPayloadType {
   RESERVED_SEI_MESSAGE,              // 22: reservedSeiMessage
 };
 
-enum NalUnitType {  // Name, Content of NAL unit and RBSP syntax structure NAL unit type class
-  NAL_TRAIL = 0,    // 0: Coded tile group of a non-TSA, non STSA trailing atlas frame atlas_tile_group_layer_rbsp() ACL
-  NAL_TSA,          // 1: Coded tile group of a TSA atlas frame, atlas_tile_group_layer_rbsp() ACL
-  NAL_STSA,         // 2: Coded tile group of a STSA atlas frame, atlas_tile_group_layer_rbsp() ACL
-  NAL_RADL,         // 3: Coded tile group of a RADL atlas frame, atlas_tile_group_layer_rbsp() ACL
-  NAL_RASL,         // 4: Coded tile group of a RASL atlas frame, atlas_tile_group_layer_rbsp() ACL
-  NAL_SKIP,         // 5: Coded tile group of a skipped atlas frame, atlas_tile_group_layer_rbsp() ACL
+enum NalUnitType {  // Name, Content of NAL unit and RBSP syntax structure NAL
+                    // unit type class
+  NAL_TRAIL = 0,    // 0: Coded tile group of a non-TSA, non STSA trailing atlas
+                    // frame atlas_tile_group_layer_rbsp() ACL
+  NAL_TSA,          // 1: Coded tile group of a TSA atlas frame,
+                    // atlas_tile_group_layer_rbsp() ACL
+  NAL_STSA,         // 2: Coded tile group of a STSA atlas frame,
+                    // atlas_tile_group_layer_rbsp() ACL
+  NAL_RADL,         // 3: Coded tile group of a RADL atlas frame,
+                    // atlas_tile_group_layer_rbsp() ACL
+  NAL_RASL,         // 4: Coded tile group of a RASL atlas frame,
+                    // atlas_tile_group_layer_rbsp() ACL
+  NAL_SKIP,         // 5: Coded tile group of a skipped atlas frame,
+                    // atlas_tile_group_layer_rbsp() ACL
   NAL_RSV_ACL_6,    // 6: Reserved non-IRAP ACL NAL unit types ACL
   NAL_RSV_ACL_7,    // 7: Reserved non-IRAP ACL NAL unit types ACL
   NAL_RSV_ACL_8,    // 8: Reserved non-IRAP ACL NAL unit types ACL
   NAL_RSV_ACL_9,    // 9: Reserved non-IRAP ACL NAL unit types ACL
-  NAL_BLA_W_LP,     // 10: Coded tile group of a BLA atlas frame, atlas_tile_group_layer_rbsp() ACL
-  NAL_BLA_W_RADL,   // 11: Coded tile group of a BLA atlas frame, atlas_tile_group_layer_rbsp() ACL
-  NAL_BLA_N_LP,     // 12: Coded tile group of a BLA atlas frame, atlas_tile_group_layer_rbsp() ACL
-  NAL_GBLA_W_LP,    // 13: Coded tile group of a GBLA atlas frame, atlas_tile_group_layer_rbsp() ACL
-  NAL_GBLA_W_RADL,  // 14: Coded tile group of a GBLA atlas frame, atlas_tile_group_layer_rbsp() ACL
-  NAL_GBLA_N_LP,    // 15: Coded tile group of a GBLA atlas frame, atlas_tile_group_layer_rbsp() ACL
-  NAL_IDR_W_RADL,   // 16: Coded tile group of an IDR atlas frame, atlas_tile_group_layer_rbsp() ACL
-  NAL_IDR_N_LP,     // 17: Coded tile group of an IDR atlas frame, atlas_tile_group_layer_rbsp() ACL
-  NAL_GIDR_W_RADL,  // 18: Coded tile group of a GIDR atlas frame, atlas_tile_group_layer_rbsp() ACL
-  NAL_GIDR_N_LP,    // 19: Coded tile group of a GIDR atlas frame, atlas_tile_group_layer_rbsp() ACL
-  NAL_CRA,          // 20: Coded tile group of a CRA atlas frame, atlas_tile_group_layer_rbsp() ACL
-  NAL_GCRA,         // 21: Coded tile group of a GCRA atlas frame, atlas_tile_group_layer_rbsp() ACL
+  NAL_BLA_W_LP,     // 10: Coded tile group of a BLA atlas frame,
+                    // atlas_tile_group_layer_rbsp() ACL
+  NAL_BLA_W_RADL,   // 11: Coded tile group of a BLA atlas frame,
+                    // atlas_tile_group_layer_rbsp() ACL
+  NAL_BLA_N_LP,     // 12: Coded tile group of a BLA atlas frame,
+                    // atlas_tile_group_layer_rbsp() ACL
+  NAL_GBLA_W_LP,    // 13: Coded tile group of a GBLA atlas frame,
+                    // atlas_tile_group_layer_rbsp() ACL
+  NAL_GBLA_W_RADL,  // 14: Coded tile group of a GBLA atlas frame,
+                    // atlas_tile_group_layer_rbsp() ACL
+  NAL_GBLA_N_LP,    // 15: Coded tile group of a GBLA atlas frame,
+                    // atlas_tile_group_layer_rbsp() ACL
+  NAL_IDR_W_RADL,   // 16: Coded tile group of an IDR atlas frame,
+                    // atlas_tile_group_layer_rbsp() ACL
+  NAL_IDR_N_LP,     // 17: Coded tile group of an IDR atlas frame,
+                    // atlas_tile_group_layer_rbsp() ACL
+  NAL_GIDR_W_RADL,  // 18: Coded tile group of a GIDR atlas frame,
+                    // atlas_tile_group_layer_rbsp() ACL
+  NAL_GIDR_N_LP,    // 19: Coded tile group of a GIDR atlas frame,
+                    // atlas_tile_group_layer_rbsp() ACL
+  NAL_CRA,          // 20: Coded tile group of a CRA atlas frame,
+                    // atlas_tile_group_layer_rbsp() ACL
+  NAL_GCRA,         // 21: Coded tile group of a GCRA atlas frame,
+                    // atlas_tile_group_layer_rbsp() ACL
   NAL_IRAP_ACL_22,  // 22: Reserved IRAP ACL NAL unit types ACL
   NAL_IRAP_ACL_23,  // 23: Reserved IRAP ACL NAL unit types ACL
   NAL_RSV_ACL_24,   // 24: Reserved non-IRAP ACL NAL unit types ACL
@@ -259,15 +278,20 @@ enum NalUnitType {  // Name, Content of NAL unit and RBSP syntax structure NAL u
   NAL_RSV_ACL_29,   // 29: Reserved non-IRAP ACL NAL unit types ACL
   NAL_RSV_ACL_30,   // 30: Reserved non-IRAP ACL NAL unit types ACL
   NAL_RSV_ACL_31,   // 31: Reserved non-IRAP ACL NAL unit types ACL
-  NAL_ASPS,         // 32: Atlas sequence parameter set atlas_sequence_parameter_set_rbsp() non-ACL
-  NAL_AFPS,         // 33: Atlas frame parameter set atlas_frame_parameter_set_rbsp() non-ACL
+  NAL_ASPS,         // 32: Atlas sequence parameter set
+                    // atlas_sequence_parameter_set_rbsp() non-ACL
+  NAL_AFPS,         // 33: Atlas frame parameter set atlas_frame_parameter_set_rbsp()
+                    // non-ACL
   NAL_AUD,          // 34: Access unit delimiter access_unit_delimiter_rbsp() non-ACL
-  NAL_VPCC_AUD,     // 35: V-PCC access unit delimiter access_unit_delimiter_rbsp() non-ACL
+  NAL_VPCC_AUD,     // 35: V-PCC access unit delimiter access_unit_delimiter_rbsp()
+                    // non-ACL
   NAL_EOS,          // 36: End of sequence end_of_seq_rbsp() non-ACL
   NAL_EOB,          // 37! End of bitstream end_of_atlas_substream_rbsp() non-ACL
   NAL_FD,           // 38: Filler filler_data_rbsp() non-ACL
-  NAL_PREFIX_SEI,   // 39: Supplemental enhancement information sei_rbsp() non-ACL
-  NAL_SUFFIX_SEI,   // 40: Supplemental enhancement information sei_rbsp() non-ACL
+  NAL_PREFIX_SEI,   // 39: Supplemental enhancement information sei_rbsp()
+                    // non-ACL
+  NAL_SUFFIX_SEI,   // 40: Supplemental enhancement information sei_rbsp()
+                    // non-ACL
   NAL_RSV_NACL_41,  // 42: Reserved non-ACL NAL unit types non-ACL
   NAL_RSV_NACL_42,  // 42: Reserved non-ACL NAL unit types non-ACL
   NAL_RSV_NACL_43,  // 43: Reserved non-ACL NAL unit types non-ACL

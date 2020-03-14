@@ -35,7 +35,7 @@
 #include "PCCVideo.h"
 #include "PCCImage.h"
 #include "PCCPointSet.h"
-#include "tbb/tbb.h"  
+#include "tbb/tbb.h"
 #include "PCCKdTree.h"
 #include "PCCContext.h"
 #include "PCCFrameContext.h"
@@ -158,7 +158,8 @@ void PCCCodec::generatePointCloud( PCCGroupOfFrames&                   reconstru
   TRACE_CODEC( "Generate point Cloud done \n" );
 }
 
-void PCCCodec::convertYUV444_16bits_toRGB_8bits( PCCPointSet3& reconstruct, size_t k ) {  // BT709
+void PCCCodec::convertYUV444_16bits_toRGB_8bits( PCCPointSet3& reconstruct,
+                                                 size_t        k ) {  // BT709
   PCCColor16bit inYUV = reconstruct.getColor16bit( k );
   PCCColor3B    outRGB;
 
@@ -1079,7 +1080,8 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                        reconstr
     auto&        patch             = patches[patchIndex];
     PCCColor3B   color( uint8_t( 0 ) );
     TRACE_CODEC(
-        "P%2lu/%2lu: 2D=(%2lu,%2lu)*(%2lu,%2lu) 3D(%4zu,%4zu,%4zu)*(%4zu,%4zu) A=(%zu,%zu,%zu) Or=%zu P=%zu => %zu "
+        "P%2lu/%2lu: 2D=(%2lu,%2lu)*(%2lu,%2lu) 3D(%4zu,%4zu,%4zu)*(%4zu,%4zu) "
+        "A=(%zu,%zu,%zu) Or=%zu P=%zu => %zu "
         "AxisOfAdditionalPlane = %zu \n",
         patchIndex, patchCount, patch.getU0(), patch.getV0(), patch.getSizeU0(), patch.getSizeV0(), patch.getU1(),
         patch.getV1(), patch.getD1(), patch.getSizeU0() * patch.getOccupancyResolution(),
@@ -1111,7 +1113,8 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                        reconstr
                 occupancy = occupancyMap[canvasIndex] != 0;
               }
               if ( !occupancy ) { continue; }
-              // TRACE_CODEC( "B %4zu ci %9zu  ocm %1lu xy = %4zu %4zu \n",blockIndex, canvasIndex, occupancy, x,y );
+              // TRACE_CODEC( "B %4zu ci %9zu  ocm %1lu xy = %4zu %4zu
+              // \n",blockIndex, canvasIndex, occupancy, x,y );
               if ( params.enhancedOccupancyMapCode_ ) {
                 // D0
                 PCCPoint3D   point0      = patch.generatePoint( u, v, frame0.getValue( 0, x, y ) );
@@ -1190,7 +1193,8 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                        reconstr
                     }
                   }  // for each bit of EOM code
                   if ( PCC_SAVE_POINT_TYPE == 1 ) { reconstruct.setType( pointIndex1, POINT_D1 ); }
-                  // Without "Identify boundary points" & "1st Extension boundary region" as EOM code is only for
+                  // Without "Identify boundary points" & "1st Extension
+                  // boundary region" as EOM code is only for
                   // lossless coding now
                 }       // if (eomCode == 0)
               } else {  // not params.enhancedOccupancyMapCode_
@@ -1344,10 +1348,10 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                        reconstr
         auto& rawPointsPatch = frame.getRawPointsPatch( i );
 
         PCCColor3B rawPointsColor( uint8_t( 0 ) );
-        rawPointsColor[0]   = 0;
-        rawPointsColor[1]   = 255;
-        rawPointsColor[2]   = 255;
-        size_t numRawPoints = rawPointsPatch.getNumberOfRawPoints();
+        rawPointsColor[0]     = 0;
+        rawPointsColor[1]     = 255;
+        rawPointsColor[2]     = 255;
+        size_t numRawPoints   = rawPointsPatch.getNumberOfRawPoints();
         size_t ores           = rawPointsPatch.occupancyResolution_;
         rawPointsPatch.sizeV_ = rawPointsPatch.sizeV0_ * ores;
         rawPointsPatch.sizeU_ = rawPointsPatch.sizeU0_ * ores;
@@ -1363,9 +1367,9 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                        reconstr
                   const bool   occupancy = occupancyMap[y * imageWidth + x] != 0;
                   if ( !occupancy ) { continue; }
                   PCCPoint3D point0;
-                  point0[0] = double( frame0.getValue( 0, x, y ) ) + rawPointsPatch.u1_;
-                  point0[1] = double( frame0.getValue( 1, x, y ) ) + rawPointsPatch.v1_;
-                  point0[2] = double( frame0.getValue( 2, x, y ) ) + rawPointsPatch.d1_;
+                  point0[0]               = double( frame0.getValue( 0, x, y ) ) + rawPointsPatch.u1_;
+                  point0[1]               = double( frame0.getValue( 1, x, y ) ) + rawPointsPatch.v1_;
+                  point0[2]               = double( frame0.getValue( 2, x, y ) ) + rawPointsPatch.d1_;
                   const size_t pointIndex = reconstruct.addPoint( point0 );
                   reconstruct.setPointPatchIndex( pointIndex, patchIndex );
                   reconstruct.setColor( pointIndex, rawPointsColor );
@@ -1642,7 +1646,8 @@ bool PCCCodec::gridFiltering( const std::vector<uint32_t>&    partition,
   centroid4 /= gridSize2 * gridSize2 * gridSize2;
   count /= gridSize2 * gridSize2 * gridSize2;
   centroid = centroid4 * count;
-  //  centroid = (centroid4 * count) / (gridSize2 * gridSize2 * gridSize2 * gridSize2 * gridSize2 * gridSize2);
+  //  centroid = (centroid4 * count) / (gridSize2 * gridSize2 * gridSize2 *
+  // gridSize2 * gridSize2 * gridSize2);
 
   return otherClusterPointCount;
 }
@@ -1730,7 +1735,8 @@ bool PCCCodec::gridFilteringTransfer( const std::vector<uint32_t>& partition,
   count /= gridSize2 * gridSize2 * gridSize2;
   centroid4 /= gridSize2 * gridSize2 * gridSize2;
   centroid = centroid4 * count;
-  // centroid = (centroid4 * count) / (gridSize2 * gridSize2 * gridSize2 * gridSize2 * gridSize2 * gridSize2);
+  // centroid = (centroid4 * count) / (gridSize2 * gridSize2 * gridSize2 *
+  // gridSize2 * gridSize2 * gridSize2);
 
   return otherClusterPointCount;
 }
@@ -1762,7 +1768,8 @@ void PCCCodec::smoothPointCloudGrid( PCCPointSet3&                       reconst
                          geoSmoothingDoSmooth_, gridSize, gridWidth, cellIndex );
     }
     if ( otherClusterPointCount ) {
-      // double dist2 = ( ( curVector * count - centroid ).getNorm2() + (double)count / 2.0 ) / (double)count;
+      // double dist2 = ( ( curVector * count - centroid ).getNorm2() +
+      // (double)count / 2.0 ) / (double)count;
       double dist2 = ( ( curVector * count - centroid ).getNorm2() ) / static_cast<double>( count ) + 0.5;
       if ( dist2 >= ( std::max )( static_cast<int>( params.thresholdSmoothing_ ), count ) * 2 ) {
         centroid = centroid / static_cast<double>( count ) + 0.5;
@@ -2400,9 +2407,10 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
               newValue += value0;  // add value0
               color16bit[i][c] =
                   newValue < 0 ? 0
-                               : ( newValue > maxValue
-                                       ? maxValue
-                                       : static_cast<uint16_t>( newValue ) );  // clipping to the unsigned 16 bit range
+                               : ( newValue > maxValue ? maxValue : static_cast<uint16_t>( newValue ) );  // clipping to
+                                                                                                          // the
+                                                                                                          // unsigned 16
+                                                                                                          // bit range
             } else {
               color16bit[i][c] = value1;
             }

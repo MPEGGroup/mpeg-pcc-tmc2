@@ -97,20 +97,26 @@ bool PCCMetricsParameters::check( bool checkFiles ) {
     if ( checkFiles ) {
       if ( uncompressedDataPath_.empty() ) {
         std::cout << "uncompressedDataPath not set\n";
-        std::cout << "WARNING: Source ply not correctly set: disable compute metric. \n";
-        std::cout << "WARNING: Source ply not correctly set: disable compute metric. \n";
+        std::cout << "WARNING: Source ply not correctly set: disable compute "
+                     "metric. \n";
+        std::cout << "WARNING: Source ply not correctly set: disable compute "
+                     "metric. \n";
         computeMetrics_ = false;
       }
       if ( reconstructedDataPath_.empty() ) {
         std::cout << "reconstructedDataPath_ not set\n";
-        std::cout << "WARNING: Reconstructed ply not correctly set: disable compute metric. \n";
-        std::cout << "WARNING: Reconstructed ply not correctly set: disable compute metric. \n";
+        std::cout << "WARNING: Reconstructed ply not correctly set: disable "
+                     "compute metric. \n";
+        std::cout << "WARNING: Reconstructed ply not correctly set: disable "
+                     "compute metric. \n";
       }
     }
     if ( computeC2p_ && normalDataPath_.empty() ) {
       std::cout << "normalDataPath_ not set if computeC2p_ == true \n";
-      std::cout << "WARNING: Normal ply not correctly set: disable compute metric. \n";
-      std::cout << "WARNING: Normal ply not correctly set: disable compute metric. \n";
+      std::cout << "WARNING: Normal ply not correctly set: disable compute "
+                   "metric. \n";
+      std::cout << "WARNING: Normal ply not correctly set: disable compute "
+                   "metric. \n";
       computeMetrics_ = false;
     }
   }

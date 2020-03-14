@@ -192,7 +192,8 @@ class PCCBitstreamWriter {
                              PCCHighLevelSyntax&   syntax,
                              PCCBitstream&         bitstream );
 
-  // 7.3.7.3  Patch data unit syntax : AtlasTileGroupHeader instead of PatchTileGroupHeader
+  // 7.3.7.3  Patch data unit syntax : AtlasTileGroupHeader instead of
+  // PatchTileGroupHeader
   void patchDataUnit( PatchDataUnit&        pdu,
                       AtlasTileGroupHeader& atgh,
                       PCCHighLevelSyntax&   syntax,
@@ -417,7 +418,7 @@ class PCCBitstreamWriter {
   // F.2.3  Sub-layer HRD parameters syntax
   static void hrdSubLayerParameters( PCCBitstream& bitstream, HrdSubLayerParameters& hlsp, size_t cabCnt );
 
-  // PCCEncoderParameters params_;
+// PCCEncoderParameters params_;
 #ifdef BITSTREAM_TRACE
   FILE* traceFile_;
 #endif

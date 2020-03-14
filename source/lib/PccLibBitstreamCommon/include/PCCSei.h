@@ -38,7 +38,8 @@
 namespace pcc {
 
 // Annex E: Supplemental enhancement information
-// E.2.1	General SEI message syntax  <=> 7.3.8	Supplemental enhancement information message syntax
+// E.2.1	General SEI message syntax  <=> 7.3.8	Supplemental enhancement
+// information message syntax
 class SEI {
  public:
   SEI() { payloadSize_ = 0; }

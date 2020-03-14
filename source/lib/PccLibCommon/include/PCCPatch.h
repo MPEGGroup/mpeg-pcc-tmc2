@@ -456,13 +456,17 @@ class PCCPatch {
   }
 
   void print() const {
-    printf( "Patch[%3zu] uv0 = %4zu %4zu / %4zu %4zu uvd1 = %4zu %4zu %4zu / %4zu %4zu %4zu \n", index_, u0_, v0_,
-            sizeU0_, sizeV0_, u1_, v1_, d1_, sizeU_, sizeV_, sizeD_ );
+    printf(
+        "Patch[%3zu] uv0 = %4zu %4zu / %4zu %4zu uvd1 = %4zu %4zu %4zu / %4zu "
+        "%4zu %4zu \n",
+        index_, u0_, v0_, sizeU0_, sizeV0_, u1_, v1_, d1_, sizeU_, sizeV_, sizeD_ );
   }
 
   void printDecoder() const {
-    printf( "Patch uv0 = %4zu %4zu / %4zu %4zu uvd1 = %4zu %4zu %4zu orientation = %4zu  \n", u0_, v0_, sizeU0_,
-            sizeV0_, u1_, v1_, d1_, patchOrientation_ );
+    printf(
+        "Patch uv0 = %4zu %4zu / %4zu %4zu uvd1 = %4zu %4zu %4zu orientation = "
+        "%4zu  \n",
+        u0_, v0_, sizeU0_, sizeV0_, u1_, v1_, d1_, patchOrientation_ );
   }
 
   friend bool operator<( const PCCPatch& lhs, const PCCPatch& rhs ) {
@@ -525,7 +529,8 @@ class PCCPatch {
     if ( getPatchOrientation() == PATCH_ORIENTATION_DEFAULT ) {
       for ( int idx = 0; idx < getSizeU0(); idx++ ) {
         wasted_space_external += getV0() + bottom_horizon[idx] - horizon[getU0() + idx];
-        // calculating internal wasted space --> because of new block2patch restriction, this area only contains
+        // calculating internal wasted space --> because of new block2patch
+        // restriction, this area only contains
         // locations for the local patch
         for ( int idx2 = bottom_horizon[idx] + 1; idx2 < getSizeV0() - top_horizon[idx]; idx2++ ) {
           if ( !occupancy_[idx2 * getSizeU0() + idx] ) wasted_space_internal++;
@@ -1073,9 +1078,8 @@ class PCCPatch {
     std::vector<uint8_t> newOccupancyMap;
     newOccupancyMap.resize( size, 0 );
     for ( size_t iter = 0; iter < passesCount; iter++ ) {  // HN : OMap precision =4, passescount = 2
-      uint8_t* src = iter % 2 == 0
-                         ? occupancyMap_.data()
-                         : newOccupancyMap.data();  // iter=0, occupancyMap_.data(), iter=1, newOccupancyMap.data()
+      uint8_t* src = iter % 2 == 0 ? occupancyMap_.data() : newOccupancyMap.data();  // iter=0, occupancyMap_.data(),
+                                                                                     // iter=1, newOccupancyMap.data()
       uint8_t* dst = iter % 2 == 1 ? occupancyMap_.data() : newOccupancyMap.data();
       for ( int32_t v = 0, c = border_ * depthMapWidth_ + border_; v < sizeY; v++, c += 2 * border_ ) {
         for ( int32_t u = 0; u < sizeX; u++, c++ ) {
@@ -1137,22 +1141,23 @@ class PCCPatch {
   }
 
  private:
-  size_t                  index_;          // patch index
-  size_t                  originalIndex_;  // patch original index
-  size_t                  u1_;             // tangential shift
-  size_t                  v1_;             // bitangential shift
-  size_t                  d1_;             // depth shift
-  size_t                  sizeD_;          // size for depth
-  size_t                  sizeU_;          // size for depth
-  size_t                  sizeV_;          // size for depth
-  size_t                  u0_;             // location in packed image (n*occupancyResolution_)
-  size_t                  v0_;             // location in packed image (n*occupancyResolution_)
-  size_t                  sizeU0_;         // size of occupancy map (n*occupancyResolution_)
-  size_t                  sizeV0_;         // size of occupancy map (n*occupancyResolution_)
-  size_t                  size2DXInPixel_;
-  size_t                  size2DYInPixel_;
-  size_t                  occupancyResolution_;  // occupancy map resolution
-  size_t                  projectionMode_;       // 0: related to the min depth value; 1: related to the max value
+  size_t index_;          // patch index
+  size_t originalIndex_;  // patch original index
+  size_t u1_;             // tangential shift
+  size_t v1_;             // bitangential shift
+  size_t d1_;             // depth shift
+  size_t sizeD_;          // size for depth
+  size_t sizeU_;          // size for depth
+  size_t sizeV_;          // size for depth
+  size_t u0_;             // location in packed image (n*occupancyResolution_)
+  size_t v0_;             // location in packed image (n*occupancyResolution_)
+  size_t sizeU0_;         // size of occupancy map (n*occupancyResolution_)
+  size_t sizeV0_;         // size of occupancy map (n*occupancyResolution_)
+  size_t size2DXInPixel_;
+  size_t size2DYInPixel_;
+  size_t occupancyResolution_;  // occupancy map resolution
+  size_t projectionMode_;       // 0: related to the min depth value; 1: related to
+                                // the max value
   size_t                  levelOfDetailX_;
   size_t                  levelOfDetailY_;
   size_t                  normalAxis_;     // x
@@ -1188,7 +1193,8 @@ class PCCPatch {
   std::vector<size_t>     neighboringPatches_;  // List of neighboring patch index
   std::vector<int16_t>    depthMap_;            // Depth map
   std::vector<uint8_t>    occupancyMap_;        // Occupancy map
-  std::vector<PCCPoint3D> borderPoints_;        // 3D points created from borders of the patch
+  std::vector<PCCPoint3D> borderPoints_;        // 3D points created from borders of
+                                                // the patch
 };
 
 class PatchBlockFiltering {

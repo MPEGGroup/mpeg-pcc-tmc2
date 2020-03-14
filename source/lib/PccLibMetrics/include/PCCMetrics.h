@@ -44,8 +44,10 @@ class PCCGroupOfFrames;
 
 /**
  * Note: This object is a integration of the mpeg-pcc-dmetric tool (
- *http://mpegx.int-evry.fr/software/MPEG/PCC/mpeg-pcc-dmetric ) in the mpeg-pcc-tmc2 based on the works of : Dong Tian
- *<tian@merl.com> Maja Krivokuca <majakri01@gmail.com> Phil Chou <philchou@msn.com>
+ *http://mpegx.int-evry.fr/software/MPEG/PCC/mpeg-pcc-dmetric ) in the
+ *mpeg-pcc-tmc2 based on the works of : Dong Tian
+ *<tian@merl.com> Maja Krivokuca <majakri01@gmail.com> Phil Chou
+ *<philchou@msn.com>
  **/
 
 class QualityMetrics {

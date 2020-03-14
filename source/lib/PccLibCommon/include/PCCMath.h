@@ -129,7 +129,8 @@ class PCCVector3 {
   }
 
   // T operator*(const PCCVector3 &rhs) const {
-  //   return (data_[0] * rhs.data_[0] + data_[1] * rhs.data_[1] + data_[2] * rhs.data_[2]);
+  //   return (data_[0] * rhs.data_[0] + data_[1] * rhs.data_[1] + data_[2] *
+  // rhs.data_[2]);
   // }
   PCCVector3 operator^( const PCCVector3& rhs ) const {
     return PCCVector3<T>( data_[1] * rhs.data_[2] - data_[2] * rhs.data_[1],
@@ -540,8 +541,9 @@ static inline void PCCDiagonalize( const PCCMatrix3<double>& A, PCCMatrix3<doubl
       break;  // no room for improvement - reached machine precision.
     }
     jr[0] = jr[1] = jr[2] = jr[3] = 0.0;
-    jr[k0] = sgn * sqrt( ( 1.0 - c ) / 2.0 );  // using 1/2 angle identity sin(a/2) = sqrt((1-cos(a))/2)
-    jr[k0] *= -1.0;                            // since our quat-to-matrix convention was for v*M instead of M*v
+    jr[k0]                        = sgn * sqrt( ( 1.0 - c ) / 2.0 );  // using 1/2 angle identity sin(a/2)
+                                                                      // = sqrt((1-cos(a))/2)
+    jr[k0] *= -1.0;  // since our quat-to-matrix convention was for v*M instead of M*v
     jr[3] = sqrt( 1.0 - jr[k0] * jr[k0] );
     if ( jr[3] == 1.0 ) {
       break;  // reached limits of floating point precision

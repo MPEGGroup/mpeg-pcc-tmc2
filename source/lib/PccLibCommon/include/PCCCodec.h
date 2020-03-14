@@ -41,8 +41,11 @@
 #include "PCCContext.h"
 
 namespace pcc {
-
 class PCCPatch;
+} /* namespace pcc */
+
+namespace pcc {
+
 class PCCContext;
 class PCCFrameContext;
 class PCCGroupOfFrames;
@@ -111,30 +114,30 @@ class PCCCodec {
   PCCCodec();
   ~PCCCodec();
 
-  static void generatePointCloud( PCCGroupOfFrames&                   reconstructs,
-                                  PCCContext&                         context,
-                                  const GeneratePointCloudParameters& params,
-                                  std::vector<std::vector<uint32_t>>& partitions,
-                                  bool                                bDecoder );
+  void generatePointCloud( PCCGroupOfFrames&                   reconstructs,
+                           PCCContext&                         context,
+                           const GeneratePointCloudParameters& params,
+                           std::vector<std::vector<uint32_t>>& partitions,
+                           bool                                bDecoder );
 
-  static bool colorPointCloud( PCCGroupOfFrames&                     reconstructs,
-                               PCCContext&                           context,
-                               const uint8_t                         attributeCount,
-                               const PCCColorTransform               colorTransform,
-                               const std::vector<std::vector<bool>>& absoluteT1List,
-                               const size_t                          multipleStreams,
-                               const GeneratePointCloudParameters&   params );
-  void        smoothPointCloudPostprocess( PCCPointSet3&                       reconstruct,
-                                           PCCContext&                         context,
-                                           size_t                              frameIndex,
-                                           const PCCColorTransform             colorTransform,
-                                           const GeneratePointCloudParameters& params,
-                                           std::vector<uint32_t>&              partition );
-  void        colorSmoothing( PCCPointSet3&                       reconstruct,
-                              PCCContext&                         context,
-                              size_t                              frameIndex,
-                              const PCCColorTransform             colorTransform,
-                              const GeneratePointCloudParameters& params );
+  bool colorPointCloud( PCCGroupOfFrames&                     reconstructs,
+                        PCCContext&                           context,
+                        const uint8_t                         attributeCount,
+                        const PCCColorTransform               colorTransform,
+                        const std::vector<std::vector<bool>>& absoluteT1List,
+                        const size_t                          multipleStreams,
+                        const GeneratePointCloudParameters&   params );
+  void smoothPointCloudPostprocess( PCCPointSet3&                       reconstruct,
+                                    PCCContext&                         context,
+                                    size_t                              frameIndex,
+                                    const PCCColorTransform             colorTransform,
+                                    const GeneratePointCloudParameters& params,
+                                    std::vector<uint32_t>&              partition );
+  void colorSmoothing( PCCPointSet3&                       reconstruct,
+                       PCCContext&                         context,
+                       size_t                              frameIndex,
+                       const PCCColorTransform             colorTransform,
+                       const GeneratePointCloudParameters& params );
 
   void smoothPointCloudPostprocess( PCCGroupOfFrames&                   reconstructs,
                                     PCCContext&                         context,
@@ -147,24 +150,23 @@ class PCCCodec {
                        const PCCColorTransform             colorTransform,
                        const GeneratePointCloudParameters& params );
 
-  static void generateMPsGeometryfromImage( PCCContext&       context,
-                                            PCCFrameContext&  frame,
-                                            PCCGroupOfFrames& reconstructs,
-                                            size_t            frameIndex );
+  void generateMPsGeometryfromImage( PCCContext&       context,
+                                     PCCFrameContext&  frame,
+                                     PCCGroupOfFrames& reconstructs,
+                                     size_t            frameIndex );
 
-  static void generateMPsTexturefromImage( PCCContext&       context,
-                                           PCCFrameContext&  frame,
-                                           PCCGroupOfFrames& reconstructs,
-                                           size_t            frameIndex );
+  void generateMPsTexturefromImage( PCCContext&       context,
+                                    PCCFrameContext&  frame,
+                                    PCCGroupOfFrames& reconstructs,
+                                    size_t            frameIndex );
 
-  static void generateRawPointsGeometryfromVideo( PCCContext& context, PCCGroupOfFrames& reconstructs );
+  void generateRawPointsGeometryfromVideo( PCCContext& context, PCCGroupOfFrames& reconstructs );
+  void generateRawPointsTexturefromVideo( PCCContext& context, PCCGroupOfFrames& reconstructs );
 
-  static void generateRawPointsTexturefromVideo( PCCContext& context, PCCGroupOfFrames& reconstructs );
-
-  static void generateOccupancyMap( PCCContext&  context,
-                                    const size_t occupancyPrecision,
-                                    const size_t thresholdLossyOM,
-                                    bool         enhancedOccupancyMapForDepthFlag );
+  void generateOccupancyMap( PCCContext&  context,
+                             const size_t occupancyPrecision,
+                             const size_t thresholdLossyOM,
+                             bool         enhancedOccupancyMapForDepthFlag );
 
 #ifdef CODEC_TRACE
   template <typename... Args>
@@ -216,66 +218,64 @@ class PCCCodec {
   }
 #endif
  protected:
-  static void generateOccupancyMap( PCCFrameContext&            frame,
-                                    const PCCImageOccupancyMap& videoFrame,
-                                    const size_t                occupancyPrecision,
-                                    const size_t                thresholdLossyOM,
-                                    const bool                  enhancedOccupancyMapForDepthFlag );
+  void generateOccupancyMap( PCCFrameContext&            frame,
+                             const PCCImageOccupancyMap& videoFrame,
+                             const size_t                occupancyPrecision,
+                             const size_t                thresholdLossyOM,
+                             const bool                  enhancedOccupancyMapForDepthFlag );
 
-  static void generateBlockToPatchFromOccupancyMap( PCCContext&  context,
-                                                    const size_t occupancyResolution,
-                                                    bool         bDecoder );
+  void generateBlockToPatchFromOccupancyMap( PCCContext& context, const size_t occupancyResolution, bool bDecoder );
 
-  static void generateBlockToPatchFromOccupancyMap( PCCContext&      context,
-                                                    PCCFrameContext& frame,
-                                                    size_t           frameIndex,
-                                                    const size_t     occupancyResolution,
-                                                    bool             bDecoder );
+  void generateBlockToPatchFromOccupancyMap( PCCContext&      context,
+                                             PCCFrameContext& frame,
+                                             size_t           frameIndex,
+                                             const size_t     occupancyResolution,
+                                             bool             bDecoder );
 
-  static void generateBlockToPatchFromBoundaryBox( PCCContext& context, const size_t occupancyResolution );
+  void generateBlockToPatchFromBoundaryBox( PCCContext& context, const size_t occupancyResolution );
 
-  static void generateBlockToPatchFromBoundaryBox( PCCContext&      context,
-                                                   PCCFrameContext& frame,
-                                                   size_t           frameIndex,
-                                                   const size_t     occupancyResolution );
+  void generateBlockToPatchFromBoundaryBox( PCCContext&      context,
+                                            PCCFrameContext& frame,
+                                            size_t           frameIndex,
+                                            const size_t     occupancyResolution );
 
-  static void generateBlockToPatchFromOccupancyMapVideo( PCCContext&  context,
-                                                         const bool   losslessGeo,
-                                                         const bool   lossyRawPointsPatch,
-                                                         const size_t occupancyResolution,
-                                                         const size_t occupancyPrecision );
+  void generateBlockToPatchFromOccupancyMapVideo( PCCContext&  context,
+                                                  const bool   losslessGeo,
+                                                  const bool   lossyRawPointsPatch,
+                                                  const size_t occupancyResolution,
+                                                  const size_t occupancyPrecision );
 
-  static void generateBlockToPatchFromOccupancyMapVideo( PCCContext&           context,
-                                                         PCCFrameContext&      frame,
-                                                         PCCImageOccupancyMap& occupancyMapImage,
-                                                         size_t                frameIndex,
-                                                         const size_t          occupancyResolution,
-                                                         const size_t          occupancyPrecision );
+  void generateBlockToPatchFromOccupancyMapVideo( PCCContext&           context,
+                                                  PCCFrameContext&      frame,
+                                                  PCCImageOccupancyMap& occupancyMapImage,
+                                                  size_t                frameIndex,
+                                                  const size_t          occupancyResolution,
+                                                  const size_t          occupancyPrecision );
 
-  static int getDeltaNeighbors( const PCCImageGeometry& frame,
-                                const PCCPatch&         patch,
-                                const int               xOrg,
-                                const int               yOrg,
-                                const int               neighboring,
-                                const int               threshold,
-                                const bool              projectionMode );
+  int getDeltaNeighbors( const PCCImageGeometry& frame,
+                         const PCCPatch&         patch,
+                         const int               xOrg,
+                         const int               yOrg,
+                         const int               neighboring,
+                         const int               threshold,
+                         const bool              projectionMode );
 
-  static std::vector<PCCPoint3D> generatePoints( const GeneratePointCloudParameters&  params,
-                                                 PCCFrameContext&                     frame,
-                                                 const PCCVideoGeometry&              video,
-                                                 const std::vector<PCCVideoGeometry>& videoMultiple,
-                                                 const size_t                         videoFrameIndex,
-                                                 const size_t                         patchIndex,
-                                                 const size_t                         u,
-                                                 const size_t                         v,
-                                                 const size_t                         x,
-                                                 const size_t                         y,
-                                                 const bool                           interpolate,
-                                                 const bool                           filling,
-                                                 const size_t                         minD1,
-                                                 const size_t                         neighbor );
-  static PCCPatchType            getCurrPatchType( PCCTILEGROUP tileGroupType, uint8_t patchMode );
-  inline double                  entropy( std::vector<uint8_t>& Data, int N ) {
+  std::vector<PCCPoint3D> generatePoints( const GeneratePointCloudParameters&  params,
+                                          PCCFrameContext&                     frame,
+                                          const PCCVideoGeometry&              video,
+                                          const std::vector<PCCVideoGeometry>& videoMultiple,
+                                          const size_t                         videoFrameIndex,
+                                          const size_t                         patchIndex,
+                                          const size_t                         u,
+                                          const size_t                         v,
+                                          const size_t                         x,
+                                          const size_t                         y,
+                                          const bool                           interpolate,
+                                          const bool                           filling,
+                                          const size_t                         minD1,
+                                          const size_t                         neighbor );
+  PCCPatchType            getCurrPatchType( PCCTILEGROUP tileGroupType, uint8_t patchMode );
+  inline double           entropy( std::vector<uint8_t>& Data, int N ) {
     std::vector<size_t> count;
     count.resize( 256, 0 );
     for ( size_t i = 0; i < N; ++i ) { ++count[size_t( Data[i] )]; }
@@ -304,52 +304,52 @@ class PCCCodec {
     return s / double( N );
   }
 
-  static void convertYUV444_16bits_toRGB_8bits( PCCPointSet3& reconstruct, size_t k );
+  void convertYUV444_16bits_toRGB_8bits( PCCPointSet3& reconstruct, size_t k );
 
  private:
-  static void generatePointCloud( PCCPointSet3&                        reconstruct,
-                                  PCCContext&                          context,
-                                  PCCFrameContext&                     frame,
-                                  const PCCVideoGeometry&              video,
-                                  const std::vector<PCCVideoGeometry>& videoMultiple,
-                                  const PCCVideoOccupancyMap&          videoOM,
-                                  const GeneratePointCloudParameters&  params,
-                                  std::vector<uint32_t>&               partition,
-                                  bool                                 bDecoder );
+  void generatePointCloud( PCCPointSet3&                        reconstruct,
+                           PCCContext&                          context,
+                           PCCFrameContext&                     frame,
+                           const PCCVideoGeometry&              video,
+                           const std::vector<PCCVideoGeometry>& videoMultiple,
+                           const PCCVideoOccupancyMap&          videoOM,
+                           const GeneratePointCloudParameters&  params,
+                           std::vector<uint32_t>&               partition,
+                           bool                                 bDecoder );
 
-  static void smoothPointCloud( PCCPointSet3&                      reconstruct,
-                                const std::vector<uint32_t>&       partition,
-                                const GeneratePointCloudParameters params );
+  void smoothPointCloud( PCCPointSet3&                      reconstruct,
+                         const std::vector<uint32_t>&       partition,
+                         const GeneratePointCloudParameters params );
 
-  static void createSubReconstruct( const PCCPointSet3&                 reconstruct,
-                                    const std::vector<uint32_t>&        partition,
-                                    PCCFrameContext&                    frame,
-                                    const GeneratePointCloudParameters& params,
-                                    const size_t                        frameCount,
-                                    PCCPointSet3&                       subReconstruct,
-                                    std::vector<uint32_t>&              subPartition,
-                                    std::vector<size_t>&                subReconstructIndex );
+  void createSubReconstruct( const PCCPointSet3&                 reconstruct,
+                             const std::vector<uint32_t>&        partition,
+                             PCCFrameContext&                    frame,
+                             const GeneratePointCloudParameters& params,
+                             const size_t                        frameCount,
+                             PCCPointSet3&                       subReconstruct,
+                             std::vector<uint32_t>&              subPartition,
+                             std::vector<size_t>&                subReconstructIndex );
 
-  static void createSpecificLayerReconstruct( const PCCPointSet3&                 reconstruct,
-                                              const std::vector<uint32_t>&        partition,
-                                              PCCFrameContext&                    frame,
-                                              const GeneratePointCloudParameters& params,
-                                              const size_t                        frameCount,
-                                              PCCPointSet3&                       subReconstruct,
-                                              std::vector<uint32_t>&              subPartition,
-                                              std::vector<size_t>&                subReconstructIndex );
+  void createSpecificLayerReconstruct( const PCCPointSet3&                 reconstruct,
+                                       const std::vector<uint32_t>&        partition,
+                                       PCCFrameContext&                    frame,
+                                       const GeneratePointCloudParameters& params,
+                                       const size_t                        frameCount,
+                                       PCCPointSet3&                       subReconstruct,
+                                       std::vector<uint32_t>&              subPartition,
+                                       std::vector<size_t>&                subReconstructIndex );
 
-  static void updateReconstruct( PCCPointSet3&              reconstruct,
-                                 const PCCPointSet3&        subReconstruct,
-                                 const std::vector<size_t>& subReconstructIndex );
+  void updateReconstruct( PCCPointSet3&              reconstruct,
+                          const PCCPointSet3&        subReconstruct,
+                          const std::vector<size_t>& subReconstructIndex );
 
-  static bool colorPointCloud( PCCPointSet3&                       reconstruct,
-                               PCCContext&                         context,
-                               size_t                              frameIndex,
-                               const std::vector<bool>&            absoluteT1List,
-                               const size_t                        multipleStreams,
-                               const uint8_t                       attributeCount,
-                               const GeneratePointCloudParameters& params );
+  bool colorPointCloud( PCCPointSet3&                       reconstruct,
+                        PCCContext&                         context,
+                        size_t                              frameIndex,
+                        const std::vector<bool>&            absoluteT1List,
+                        const size_t                        multipleStreams,
+                        const uint8_t                       attributeCount,
+                        const GeneratePointCloudParameters& params );
 
   void smoothPointCloudColor( PCCPointSet3& reconstruct, const GeneratePointCloudParameters params );
 
@@ -359,27 +359,27 @@ class PCCCodec {
                              uint16_t                            gridWidth,
                              std::vector<int>&                   cellIndex );
 
-  static void addGridCentroid( PCCPoint3D&                     point,
-                               uint32_t                        patchIdx,
-                               std::vector<uint16_t>&          count,
-                               std::vector<PCCVector3<float>>& center,
-                               std::vector<uint32_t>&          partition,
-                               std::vector<bool>&              doSmooth,
-                               uint8_t                         gridSize,
-                               uint16_t                        gridWidth,
-                               int                             cellId );
+  void addGridCentroid( PCCPoint3D&                     point,
+                        uint32_t                        patchIdx,
+                        std::vector<uint16_t>&          count,
+                        std::vector<PCCVector3<float>>& center,
+                        std::vector<uint32_t>&          partition,
+                        std::vector<bool>&              doSmooth,
+                        uint8_t                         gridSize,
+                        uint16_t                        gridWidth,
+                        int                             cellId );
 
-  static void addGridColorCentroid( PCCPoint3D&                         point,
-                                    PCCVector3D&                        color,
-                                    uint32_t                            patchIdx,
-                                    std::vector<uint16_t>&              colorGridCount,
-                                    std::vector<PCCVector3<float>>&     colorCenter,
-                                    std::vector<uint32_t>&              colorPartition,
-                                    std::vector<bool>&                  colorDoSmooth,
-                                    uint8_t                             colorGrid,
-                                    std::vector<std::vector<uint16_t>>& colorLum,
-                                    const GeneratePointCloudParameters& params,
-                                    int                                 cellId );
+  void addGridColorCentroid( PCCPoint3D&                         point,
+                             PCCVector3D&                        color,
+                             uint32_t                            patchIdx,
+                             std::vector<uint16_t>&              colorGridCount,
+                             std::vector<PCCVector3<float>>&     colorCenter,
+                             std::vector<uint32_t>&              colorPartition,
+                             std::vector<bool>&                  colorDoSmooth,
+                             uint8_t                             colorGrid,
+                             std::vector<std::vector<uint16_t>>& colorLum,
+                             const GeneratePointCloudParameters& params,
+                             int                                 cellId );
 
   bool gridFilteringColor( PCCPoint3D&                         curPos,
                            PCCVector3D&                        colorCentroid,
@@ -396,39 +396,39 @@ class PCCCodec {
                                 const GeneratePointCloudParameters& params,
                                 std::vector<int>&                   cellIndex );
 
-  static bool gridFiltering( const std::vector<uint32_t>&    partition,
-                             PCCPointSet3&                   pointCloud,
-                             PCCPoint3D&                     curPoint,
-                             PCCVector3D&                    centroid,
-                             int&                            count,
-                             std::vector<uint16_t>&          gridCount,
-                             std::vector<PCCVector3<float>>& center,
-                             std::vector<bool>&              doSmooth,
-                             uint8_t                         gridSize,
-                             uint16_t                        gridWidth,
-                             std::vector<int>&               cellIndex );
+  bool gridFiltering( const std::vector<uint32_t>&    partition,
+                      PCCPointSet3&                   pointCloud,
+                      PCCPoint3D&                     curPoint,
+                      PCCVector3D&                    centroid,
+                      int&                            count,
+                      std::vector<uint16_t>&          gridCount,
+                      std::vector<PCCVector3<float>>& center,
+                      std::vector<bool>&              doSmooth,
+                      uint8_t                         gridSize,
+                      uint16_t                        gridWidth,
+                      std::vector<int>&               cellIndex );
 
-  static bool gridFilteringTransfer( const std::vector<uint32_t>& partition,
-                                     PCCPointSet3&                pointCloud,
-                                     PCCPoint3D&                  curPoint,
-                                     PCCVector3D&                 centroid,
-                                     int&                         count,
-                                     std::vector<int>&            gridCount,
-                                     std::vector<PCCVector3D>&    center,
-                                     std::vector<bool>&           doSmooth,
-                                     int                          gridSize,
-                                     int                          gridWidth,
-                                     std::vector<PCCVector3D>&    colorGrid,
-                                     PCCVector3D&                 color );
+  bool gridFilteringTransfer( const std::vector<uint32_t>& partition,
+                              PCCPointSet3&                pointCloud,
+                              PCCPoint3D&                  curPoint,
+                              PCCVector3D&                 centroid,
+                              int&                         count,
+                              std::vector<int>&            gridCount,
+                              std::vector<PCCVector3D>&    center,
+                              std::vector<bool>&           doSmooth,
+                              int                          gridSize,
+                              int                          gridWidth,
+                              std::vector<PCCVector3D>&    colorGrid,
+                              PCCVector3D&                 color );
 
-  static void identifyBoundaryPoints( const std::vector<uint32_t>& occupancyMap,
-                                      const size_t                 x,
-                                      const size_t                 y,
-                                      const size_t                 imageWidth,
-                                      const size_t                 imageHeight,
-                                      const size_t                 pointIndex,
-                                      std::vector<uint32_t>&       BPflag,
-                                      PCCPointSet3&                reconstruct );
+  void identifyBoundaryPoints( const std::vector<uint32_t>& occupancyMap,
+                               const size_t                 x,
+                               const size_t                 y,
+                               const size_t                 imageWidth,
+                               const size_t                 imageHeight,
+                               const size_t                 pointIndex,
+                               std::vector<uint32_t>&       BPflag,
+                               PCCPointSet3&                reconstruct );
 
   std::vector<uint16_t>              geoSmoothingCount_;
   std::vector<PCCVector3<float>>     geoSmoothingCenter_;
