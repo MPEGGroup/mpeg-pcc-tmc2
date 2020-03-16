@@ -146,8 +146,8 @@ class PCCContext : public PCCHighLevelSyntax {
   std::vector<PCCVideoGeometry>& getVideoGeometryMultiple() {
     return atlasContexts_[atlasIndex_].getVideoGeometryMultiple();
   }
-  PCCVideoGeometry& getVideoMPsGeometry( size_t atlId ) { return atlasContexts_[atlId].getVideoAuxGeometry(); }
-  PCCVideoGeometry& getVideoMPsGeometry() { return atlasContexts_[atlasIndex_].getVideoAuxGeometry(); }
+  PCCVideoGeometry& getVideoRawPointsGeometry( size_t atlId ) { return atlasContexts_[atlId].getVideoAuxGeometry(); }
+  PCCVideoGeometry& getVideoRawPointsGeometry() { return atlasContexts_[atlasIndex_].getVideoAuxGeometry(); }
   // attributes
   PCCVideoTexture& getVideoTexture( size_t atlId, size_t attrIdx, size_t mapIdx, size_t partIdx ) {
     return atlasContexts_[atlId].getVideoAttribute( attrIdx, mapIdx, partIdx );
@@ -159,10 +159,10 @@ class PCCContext : public PCCHighLevelSyntax {
   std::vector<PCCVideoTexture>& getVideoTextureMultiple() {
     return atlasContexts_[atlasIndex_].getVideoAttributeMultiple( 0, 0 );
   }
-  PCCVideoTexture& getVideoMPsTexture( size_t atlId, size_t attrIdx, size_t partIdx ) {
+  PCCVideoTexture& getVideoRawPointsTexture( size_t atlId, size_t attrIdx, size_t partIdx ) {
     return atlasContexts_[atlId].getVideoAuxAttribute( attrIdx, partIdx );
   }
-  PCCVideoTexture& getVideoMPsTexture() { return atlasContexts_[atlasIndex_].getVideoAuxAttribute( 0, 0 ); }
+  PCCVideoTexture& getVideoRawPointsTexture() { return atlasContexts_[atlasIndex_].getVideoAuxAttribute( 0, 0 ); }
 
   // fame context related functions
   std::vector<PCCFrameContext>::iterator begin() { return atlasContexts_[atlasIndex_].getFrameContexts().begin(); }

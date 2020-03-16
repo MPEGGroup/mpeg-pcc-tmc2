@@ -90,7 +90,8 @@ class PCCVideoDecoder {
           << " --BitstreamFile=" << binFileName << " --ReconFile=" << yuvRecFileName;
     } else {
       cmd << decoderPath << " --BitstreamFile=" << binFileName << " --ReconFile=" << yuvRecFileName;
-      // if bitDepth == 8 ensure output bitdepth as 8bit. This is to cater for case if 10bit encoding was used for lossy
+      // if bitDepth == 8 ensure output bitdepth as 8bit. This is to cater for
+      // case if 10bit encoding was used for lossy
       // cases.
       if ( bitDepth == 8 ) { cmd << " --OutputBitDepth=8 --OutputBitDepthC=8"; }
     }
@@ -122,7 +123,8 @@ class PCCVideoDecoder {
           auto& destImage = video.getFrame( frNum );
           destImage.resize( width, height );
 
-          // iterate the patch information and perform chroma down-sampling on each patch individually
+          // iterate the patch information and perform chroma down-sampling on
+          // each patch individually
           std::vector<PCCPatch> patches      = context.getPatches();
           std::vector<size_t>   blockToPatch = context.getBlockToPatch();
           for ( int patchIdx = 0; patchIdx <= patches.size(); patchIdx++ ) {
@@ -167,12 +169,14 @@ class PCCVideoDecoder {
                   // do nothing
                   continue;
                 } else {
-                  // search for the block that contains texture information and extend the block edge
+                  // search for the block that contains texture information and
+                  // extend the block edge
                   int              direction;
                   int              searchIndex;
                   std::vector<int> neighborIdx( 4, -1 );
                   std::vector<int> neighborDistance( 4, ( std::numeric_limits<int>::max )() );
-                  // looking for the neighboring block to the left of the current block
+                  // looking for the neighboring block to the left of the
+                  // current block
                   searchIndex = j;
                   while ( searchIndex >= 0 ) {
                     if ( context.getBlockToPatch()[( i + patch_top / occupancyResolution ) *
@@ -184,7 +188,8 @@ class PCCVideoDecoder {
                     }
                     searchIndex--;
                   }
-                  // looking for the neighboring block to the right of the current block
+                  // looking for the neighboring block to the right of the
+                  // current block
                   searchIndex = j;
                   while ( searchIndex < patch_width / occupancyResolution ) {
                     if ( context.getBlockToPatch()[( i + patch_top / occupancyResolution ) *
@@ -222,7 +227,8 @@ class PCCVideoDecoder {
                   }
                   // check if the candidate was found
                   assert( *( std::max )( neighborIdx.begin(), neighborIdx.end() ) > 0 );
-                  // now fill in the block with the edge value coming from the nearest neighbor
+                  // now fill in the block with the edge value coming from the
+                  // nearest neighbor
                   direction = ( std::min_element )( neighborDistance.begin(), neighborDistance.end() ) -
                               neighborDistance.begin();
                   if ( direction == 0 ) {

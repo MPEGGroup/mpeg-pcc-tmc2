@@ -91,12 +91,16 @@ class PCCBitstreamGofStat {
     printf( "    vpccUnitSize[ VPCC_AD  ]: %9zu B %9zu b\n", vpccUnitSize_[VPCC_AD], vpccUnitSize_[VPCC_AD] * 8 );
     printf( "    vpccUnitSize[ VPCC_OVD ]: %9zu B %9zu b ( Ocm video = %9zu B )\n", vpccUnitSize_[VPCC_OVD],
             vpccUnitSize_[VPCC_OVD] * 8, videoBinSize_[VIDEO_OCCUPANCY] );
-    printf( "    vpccUnitSize[ VPCC_GVD ]: %9zu B %9zu b ( Geo video = %9zu B + %9zu B + %9zu B + %9zu B )\n",
-            vpccUnitSize_[VPCC_GVD], vpccUnitSize_[VPCC_GVD] * 8, videoBinSize_[VIDEO_GEOMETRY],
-            videoBinSize_[VIDEO_GEOMETRY_D0], videoBinSize_[VIDEO_GEOMETRY_D1], videoBinSize_[VIDEO_GEOMETRY_RAW] );
-    printf( "    vpccUnitSize[ VPCC_AVD ]: %9zu B %9zu b ( Tex video = %9zu B + (%9zu B + %9zu B) + %9zu B )\n",
-            vpccUnitSize_[VPCC_AVD], vpccUnitSize_[VPCC_AVD] * 8, videoBinSize_[VIDEO_TEXTURE],
-            videoBinSize_[VIDEO_TEXTURE_T0], videoBinSize_[VIDEO_TEXTURE_T1], videoBinSize_[VIDEO_TEXTURE_RAW] );
+    printf(
+        "    vpccUnitSize[ VPCC_GVD ]: %9zu B %9zu b ( Geo video = %9zu B + "
+        "%9zu B + %9zu B + %9zu B )\n",
+        vpccUnitSize_[VPCC_GVD], vpccUnitSize_[VPCC_GVD] * 8, videoBinSize_[VIDEO_GEOMETRY],
+        videoBinSize_[VIDEO_GEOMETRY_D0], videoBinSize_[VIDEO_GEOMETRY_D1], videoBinSize_[VIDEO_GEOMETRY_RAW] );
+    printf(
+        "    vpccUnitSize[ VPCC_AVD ]: %9zu B %9zu b ( Tex video = %9zu B + "
+        "(%9zu B + %9zu B) + %9zu B )\n",
+        vpccUnitSize_[VPCC_AVD], vpccUnitSize_[VPCC_AVD] * 8, videoBinSize_[VIDEO_TEXTURE],
+        videoBinSize_[VIDEO_TEXTURE_T0], videoBinSize_[VIDEO_TEXTURE_T1], videoBinSize_[VIDEO_TEXTURE_RAW] );
   }
 
  private:

@@ -241,10 +241,14 @@ void QualityMetrics::compute( const PCCPointSet3& pointcloudA, const PCCPointSet
 void QualityMetrics::print( char code ) {
   switch ( code ) {
     case '1':
-      std::cout << "1. Use infile1 (A) as reference, loop over A, use normals on B. (A->B)." << std::endl;
+      std::cout << "1. Use infile1 (A) as reference, loop over A, use normals "
+                   "on B. (A->B)."
+                << std::endl;
       break;
     case '2':
-      std::cout << "2. Use infile2 (B) as reference, loop over B, use normals on A. (B->A)." << std::endl;
+      std::cout << "2. Use infile2 (B) as reference, loop over B, use normals "
+                   "on A. (B->A)."
+                << std::endl;
       break;
     case 'F': std::cout << "3. Final (symmetric)." << std::endl; break;
     default:
@@ -332,8 +336,10 @@ void PCCMetrics::compute( const PCCGroupOfFrames& sources,
                           const PCCGroupOfFrames& normals ) {
   PCCPointSet3 normalEmpty;
   if ( ( sources.size() != reconstructs.size() ) || ( normals.size() != 0 && sources.size() != normals.size() ) ) {
-    printf( "Error: group of frames must have same numbers of frames. ( src = %zu rec = %zu norm = %zu ) \n",
-            sources.size(), reconstructs.size(), normals.size() );
+    printf(
+        "Error: group of frames must have same numbers of frames. ( src = %zu "
+        "rec = %zu norm = %zu ) \n",
+        sources.size(), reconstructs.size(), normals.size() );
     exit( -1 );
   }
   for ( size_t i = 0; i < sources.size(); i++ ) {
@@ -381,8 +387,9 @@ void PCCMetrics::display() {
     printf( "WARNING: %zu points with same coordinates found\n", reconstructPoints_[i] - reconstructDuplicates_[i] );
     std::cout << "Imported intrinsic resoluiton: " << params_.resolution_ << std::endl;
     std::cout << "Peak distance for PSNR: " << params_.resolution_ << std::endl;
-    std::cout << "Point cloud sizes for org version, dec version, and the scaling ratio: " << sourcePoints_[i] << ", "
-              << reconstructDuplicates_[i] << ", "
+    std::cout << "Point cloud sizes for org version, dec version, and the "
+                 "scaling ratio: "
+              << sourcePoints_[i] << ", " << reconstructDuplicates_[i] << ", "
               << static_cast<float>( reconstructDuplicates_[i] ) / static_cast<float>( sourcePoints_[i] ) << std::endl;
     quality1[i].print( '1' );
     quality2[i].print( '2' );

@@ -101,8 +101,10 @@ struct PaddingContext {
   std::vector<double>  _x, _p, _r, _q;
 };
 
-typedef std::map<size_t, PCCPatch> unionPatch;  // unionPatch ------ [TrackIndex, UnionPatch];
-typedef std::pair<size_t, size_t>  SubContext;  // SubContext ------ [start, end);
+typedef std::map<size_t, PCCPatch> unionPatch;  // unionPatch ------
+                                                // [TrackIndex, UnionPatch];
+typedef std::pair<size_t, size_t> SubContext;   // SubContext ------ [start,
+                                                // end);
 
 #define BAD_HEIGHT_THRESHOLD 1.10
 #define BAD_CONDITION_THRESHOLD 2
@@ -150,8 +152,8 @@ class PCCEncoder : public PCCCodec {
   void generateRawPointsGeometryVideo( PCCContext& context, PCCGroupOfFrames& reconstructs );
   void generateRawPointsTextureVideo( PCCContext& context, PCCGroupOfFrames& reconstructs );
 
-  void generateMPsGeometryImage( PCCContext& context, PCCFrameContext& frame, PCCImageGeometry& image );
-  void generateMPsTextureImage( PCCContext&         context,
+  void generateRawPointsGeometryImage( PCCContext& context, PCCFrameContext& frame, PCCImageGeometry& image );
+  void generateRawPointsTextureImage( PCCContext&         context,
                                 PCCFrameContext&    frame,
                                 PCCImageTexture&    image,
                                 size_t              shift,
@@ -303,7 +305,8 @@ class PCCEncoder : public PCCCodec {
                                      GlobalPatches& globalPatchTracks,
                                      size_t         preIndex );
 
-  // patch unions generation and packing; return the height of the unionsPackingImage;
+  // patch unions generation and packing; return the height of the
+  // unionsPackingImage;
   size_t unionPatchGenerationAndPacking( const GlobalPatches& globalPatchTracks,
                                          PCCContext&          context,
                                          unionPatch&          unionPatch,

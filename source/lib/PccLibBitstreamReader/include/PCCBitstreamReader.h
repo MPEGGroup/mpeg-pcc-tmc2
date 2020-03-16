@@ -186,7 +186,8 @@ class PCCBitstreamReader {
                              PCCHighLevelSyntax&   syntax,
                              PCCBitstream&         bitstream );
 
-  // 7.3.7.3  Patch data unit syntax : AtlasTileGroupHeader instead of PatchTileGroupHeader
+  // 7.3.7.3  Patch data unit syntax : AtlasTileGroupHeader instead of
+  // PatchTileGroupHeader
   static void patchDataUnit( PatchDataUnit&        pdu,
                              AtlasTileGroupHeader& atgh,
                              PCCHighLevelSyntax&   syntax,
@@ -228,7 +229,8 @@ class PCCBitstreamReader {
                                             PCCBitstream&                  bitstream );
 
   // // 7.3.8  Supplemental enhancement information message syntax
-  // void seiMessage( PatchDataGroup& pdg, PCCHighLevelSyntax& syntax, PCCBitstream& bitstream );
+  // void seiMessage( PatchDataGroup& pdg, PCCHighLevelSyntax& syntax,
+  // PCCBitstream& bitstream );
 
   // 7.3.8 Supplemental enhancement information message syntax
   static void seiMessage( PCCBitstream& bitstream, PCCHighLevelSyntax& syntax, NalUnitType nalUnitType );

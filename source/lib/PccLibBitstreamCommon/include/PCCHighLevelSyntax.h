@@ -159,8 +159,10 @@ class PCCAtlasHighLevelSyntax {
 
   // ATGL related functions
   AtlasTileGroupLayerRbsp& addAtlasTileGroupLayer() {
-    size_t frameIdx = atlasTileGroupLayer_.size();  // not correct, should indicate which frame we are sending, maybe
-                                                    // derive this somewhere else, but for now is OK
+    size_t frameIdx = atlasTileGroupLayer_.size();  // not correct, should
+                                                    // indicate which frame we
+                                                    // are sending, maybe
+    // derive this somewhere else, but for now is OK
     AtlasTileGroupLayerRbsp atgl;
     atgl.setFrameIndex( frameIdx );
     atgl.getAtlasTileGroupDataUnit().setFrameIndex( frameIdx );
@@ -199,7 +201,8 @@ class PCCAtlasHighLevelSyntax {
       case ATTRIBUTE_TRANSFORMATION_PARAMS: sharedPtr = std::make_shared<SEIAttributeTransformationParams>(); break;
       case ACTIVE_SUBSTREAMS: sharedPtr = std::make_shared<SEIActiveSubstreams>(); break;
       case COMPONENT_CODEC_MAPPING: sharedPtr = std::make_shared<SEIComponentCodecMapping>(); break;
-      // case VOLUMETRIC_TILING_INFO: sharedPtr = std::make_shared<SEIVolumetricTilingInfo>(); break;
+      // case VOLUMETRIC_TILING_INFO: sharedPtr =
+      // std::make_shared<SEIVolumetricTilingInfo>(); break;
       case SCENE_OBJECT_INFORMATION: sharedPtr = std::make_shared<SEISceneObjectInformation>(); break;
       case OBJECT_LABEL_INFORMATION: sharedPtr = std::make_shared<SEIObjectLabelInformation>(); break;
       case PATCH_INFORMATION: sharedPtr = std::make_shared<SEIPatchInformation>(); break;
@@ -315,7 +318,8 @@ class PCCHighLevelSyntax {
   }
   void setAtlasIndex( size_t atlId ) { atlasIndex_ = atlId; }
 
-  // All the functions below are just redirect to the corresponding atlas function
+  // All the functions below are just redirect to the corresponding atlas
+  // function
   // video related functions
   PCCVideoBitstream& createVideoBitstream( PCCVideoType type ) {
     return atlasHLS_[atlasIndex_].createVideoBitstream( type );
@@ -425,7 +429,8 @@ class PCCHighLevelSyntax {
   SEI& getSeiPrefix( size_t index ) { return atlasHLS_[atlasIndex_].getSeiPrefix( index ); }
   SEI& getSeiSuffix( size_t index ) { return atlasHLS_[atlasIndex_].getSeiSuffix( index ); }
 
-  // context variables, not sure if we should keep them at this level, but leaving here for now
+  // context variables, not sure if we should keep them at this level, but
+  // leaving here for now
   size_t  getGofSize() { return gofSize_; }
   uint8_t getOccupancyPrecision() { return occupancyPrecision_; }
   uint8_t getOccupancyPackingBlockSize() {

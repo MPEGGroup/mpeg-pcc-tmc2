@@ -469,7 +469,8 @@ void PCCEncoderParameters::print() {
                                     roiBoundingBoxMaxY_.size(), roiBoundingBoxMinZ_.size(), roiBoundingBoxMaxZ_.size()};
     for ( int i = 0; i < vecSizes.size(); ++i ) {
       if ( vecSizes[i] != vecSizes[0] ) {
-        std::cerr << "All the 6 arrays roiBoundingBox[Min-Max][X-Y-Z] must have the same number of elements."
+        std::cerr << "All the 6 arrays roiBoundingBox[Min-Max][X-Y-Z] must "
+                     "have the same number of elements."
                   << std::endl;
         std::exit( EXIT_FAILURE );
       }
@@ -535,8 +536,9 @@ bool PCCEncoderParameters::check() {
   }
 
   if ( ( videoEncoderOccupancyMapPath_.empty() || !exist( videoEncoderOccupancyMapPath_ ) ) ) {
-    std::cerr << "WARNING: videoEncoderOccupancyMapPath is set as videoEncoderPath_ : " << videoEncoderPath_
-              << std::endl;
+    std::cerr << "WARNING: videoEncoderOccupancyMapPath is set as "
+                 "videoEncoderPath_ : "
+              << videoEncoderPath_ << std::endl;
     videoEncoderOccupancyMapPath_ = videoEncoderPath_;
   }
 
@@ -548,7 +550,8 @@ bool PCCEncoderParameters::check() {
   if ( multipleStreams_ ) {
     if ( geometryD0Config_.empty() || geometryD1Config_.empty() ) {
       // ret = false;
-      // std::cerr << "When multipleStreams is true, geometryD0Config_ and geometryD1Config_ should be non-empty\n";
+      // std::cerr << "When multipleStreams is true, geometryD0Config_ and
+      // geometryD1Config_ should be non-empty\n";
       geometryD0Config_ = geometryConfig_.substr( 0, geometryConfig_.find_last_of( '.' ) ) + "-D0.cfg";
       geometryD1Config_ = geometryConfig_.substr( 0, geometryConfig_.find_last_of( '.' ) ) + "-D1.cfg";
     }
@@ -558,13 +561,15 @@ bool PCCEncoderParameters::check() {
     geometryD1Config_ = {};
     if ( geometryConfig_.empty() ) {
       ret = false;
-      std::cerr << "When multipleStreams is not true, geometryConfig_ should be non-empty\n";
+      std::cerr << "When multipleStreams is not true, geometryConfig_ should "
+                   "be non-empty\n";
     }
   }
 
   if ( multipleStreams_ ) {
     if ( textureT0Config_.empty() || textureT1Config_.empty() ) {
-      // std::cerr << "When multipleStreams_ is true, textureT0Config_ and textureT1Config_ should be non-empty\n";
+      // std::cerr << "When multipleStreams_ is true, textureT0Config_ and
+      // textureT1Config_ should be non-empty\n";
       // ret = false;
       textureT0Config_ = textureConfig_.substr( 0, textureConfig_.find_last_of( '.' ) ) + "-T0.cfg";
       textureT1Config_ = textureConfig_.substr( 0, textureConfig_.find_last_of( '.' ) ) + "-T1.cfg";
@@ -574,7 +579,8 @@ bool PCCEncoderParameters::check() {
     textureT0Config_ = {};
     textureT1Config_ = {};
     if ( textureConfig_.empty() ) {
-      std::cerr << "When multipleStreams is false, textureConfig_ should be non-empty\n";
+      std::cerr << "When multipleStreams is false, textureConfig_ should be "
+                   "non-empty\n";
       ret = false;
     }
   }
@@ -591,61 +597,68 @@ bool PCCEncoderParameters::check() {
     pbfEnableFlag_ = false;
     if ( mapCountMinus1_ == 0 ) {
       // mapCountMinus1_ = 1;
-      // std::cerr << "WARNING: mapCountMinus1_ is only for lossy coding mode for now. Force "
+      // std::cerr << "WARNING: mapCountMinus1_ is only for lossy coding mode
+      // for now. Force "
       //             "mapCountMinus1_=1.\n";
     }
     if ( pointLocalReconstruction_ ) {
       pointLocalReconstruction_ = false;
-      std::cerr << "WARNING: pointLocalReconstruction_ is only for lossy coding mode for now. Force "
+      std::cerr << "WARNING: pointLocalReconstruction_ is only for lossy "
+                   "coding mode for now. Force "
                    "pointLocalReconstruction_=FALSE.\n";
     }
     if ( singleMapPixelInterleaving_ ) {
       singleMapPixelInterleaving_ = false;
-      std::cerr << "WARNING: singleLayerPixelInterleaving is only for lossy coding mode for now. "
+      std::cerr << "WARNING: singleLayerPixelInterleaving is only for lossy "
+                   "coding mode for now. "
                    "Force singleMapPixelInterleaving_=FALSE.\n";
     }
     if ( lossyRawPointsPatch_ ) {
       lossyRawPointsPatch_ = false;
-      std::cerr << "WARNING: lossyRawPointsPatch_ is only for lossy coding mode for now. "
+      std::cerr << "WARNING: lossyRawPointsPatch_ is only for lossy coding "
+                   "mode for now. "
                    "Force lossyRawPointsPatch_=FALSE.\n";
     }
   } else {
     if ( enhancedOccupancyMapCode_ ) {
       enhancedOccupancyMapCode_ = false;
-      std::cerr << "WARNING: enhancedOccupancyMapCode_ is only for lossless coding mode for now. Force "
+      std::cerr << "WARNING: enhancedOccupancyMapCode_ is only for lossless "
+                   "coding mode for now. Force "
                    "enhancedOccupancyMapCode_=FALSE.\n";
     }
   }
 
   if ( enhancedOccupancyMapCode_ && surfaceThickness_ == 1 ) {
-    std::cerr << "WARNING: EOM code doesn't bring any gain when surfaceThickness==1. Please "
+    std::cerr << "WARNING: EOM code doesn't bring any gain when "
+                 "surfaceThickness==1. Please "
                  "consider to increase the value of surfaceThickness.\n";
   }
 
   if ( enhancedOccupancyMapCode_ && ( thresholdLossyOM_ > 0 ) ) {
-    std::cerr
-        << "WARNING: When using enhanced occupancy map for delta depth, thresholdOccupancyMap should be equal to 0\n";
+    std::cerr << "WARNING: When using enhanced occupancy map for delta depth, "
+                 "thresholdOccupancyMap should be equal to 0\n";
     std::cerr << "         Forcing thresholdLossyOM_ to 0\n";
     thresholdLossyOM_ = 0;
   }
 
   if ( enhancedOccupancyMapCode_ && ( offsetLossyOM_ > 0 ) ) {
-    std::cerr
-        << "WARNING: When using enhanced occupancy map for delta depth, offsetOccupancyMap should be equal to 0\n";
+    std::cerr << "WARNING: When using enhanced occupancy map for delta depth, "
+                 "offsetOccupancyMap should be equal to 0\n";
     std::cerr << "         Forcing offsetLossyOM_ to 0\n";
     offsetLossyOM_ = 0;
   }
 
   if ( enhancedOccupancyMapCode_ && ( prefilterLossyOM_ ) ) {
-    std::cerr
-        << "WARNING: When using enhanced occupancy map for delta depth, prefilterLossyOM_ should be equal to false\n";
+    std::cerr << "WARNING: When using enhanced occupancy map for delta depth, "
+                 "prefilterLossyOM_ should be equal to false\n";
     std::cerr << "         Forcing prefilterLossyOM_ to false\n";
     prefilterLossyOM_ = false;
   }
 
   if ( useRawPointsSeparateVideo_ && !lossyRawPointsPatch_ && !losslessGeo_ ) {
     useRawPointsSeparateVideo_ = false;
-    std::cerr << "WARNING: useRawPointsSeparateVideo_ is for lossy coding mode if lossyRawPointsPatch_. Force "
+    std::cerr << "WARNING: useRawPointsSeparateVideo_ is for lossy coding mode "
+                 "if lossyRawPointsPatch_. Force "
                  "useRawPointsSeparateVideo_=false.\n";
   }
   if ( useRawPointsSeparateVideo_ ) {
@@ -655,7 +668,8 @@ bool PCCEncoderParameters::check() {
     }
     if ( singleMapPixelInterleaving_ ) {
       ret = false;
-      std::cerr << "Pixel Interleaving is built on one layer coding. Force mapCountMinus1_ = 0.\n";
+      std::cerr << "Pixel Interleaving is built on one layer coding. Force "
+                   "mapCountMinus1_ = 0.\n";
     }
     if ( geometryMPConfig_.empty() || !exist( geometryMPConfig_ ) ) {
       std::cerr << "WARNING: geometryMPConfig_ is set as geometryConfig_ : " << geometryConfig_ << std::endl;
@@ -671,21 +685,26 @@ bool PCCEncoderParameters::check() {
 
   if ( singleMapPixelInterleaving_ && pointLocalReconstruction_ ) {
     ret = false;
-    std::cerr << "Pixel Interleaving and Point local reconstruction cna't be use in the same time.\n";
+    std::cerr << "Pixel Interleaving and Point local reconstruction cna't be "
+                 "use in the same time.\n";
   }
 
   if ( mapCountMinus1_ != 0 ) {
     if ( singleMapPixelInterleaving_ ) {
       ret = false;
-      std::cerr << "Pixel Interleaving is built on one layer coding. Force mapCountMinus1_ = 0.\n";
+      std::cerr << "Pixel Interleaving is built on one layer coding. Force "
+                   "mapCountMinus1_ = 0.\n";
     }
     if ( pointLocalReconstruction_ ) {
       ret = false;
-      std::cerr << "Point local reconstruction is built on one layer coding. Force mapCountMinus1_ = 0.\n";
+      std::cerr << "Point local reconstruction is built on one layer coding. "
+                   "Force mapCountMinus1_ = 0.\n";
     }
   } else {
     if ( multipleStreams_ ) {
-      std::cout << " multipleStreams is set 0 when mapCountMinus1 is 0. Force multipleStreams_= 0." << std::endl;
+      std::cout << " multipleStreams is set 0 when mapCountMinus1 is 0. Force "
+                   "multipleStreams_= 0."
+                << std::endl;
       multipleStreams_ = false;
     }
   }
@@ -696,12 +715,14 @@ bool PCCEncoderParameters::check() {
   }
   if ( lossyRawPointsPatch_ ) {
     if ( !useRawPointsSeparateVideo_ ) {
-      std::cerr << "Lossy raw points patch in the same video frame as the regular patches is "
+      std::cerr << "Lossy raw points patch in the same video frame as the "
+                   "regular patches is "
                    "not optimized as of now.\n";
     }
     if ( ( minNormSumOfInvDist4MPSelection_ < 0.0 ) || ( minNormSumOfInvDist4MPSelection_ > 1.0 ) ) {
       ret = false;
-      std::cerr << "minNormSumOfInvDist4MPSelection must be between 0.0 and 1.0 (inclusive)\n";
+      std::cerr << "minNormSumOfInvDist4MPSelection must be between 0.0 and "
+                   "1.0 (inclusive)\n";
     }
   }
 
@@ -776,7 +797,8 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   for ( size_t list = 0; list < maxNumRefAtlasList_; list++ ) {
     context.setSizeOfRefAtlasFrameList( list, maxNumRefAtlasFrame_ );
     for ( size_t i = 0; i < maxNumRefAtlasFrame_; i++ ) {
-      context.setRefAtlasFrame( list, i, -static_cast<int32_t>( i + 1 ) );  //-1, -2, -3, -4
+      context.setRefAtlasFrame( list, i,
+                                -static_cast<int32_t>( i + 1 ) );  //-1, -2, -3, -4
     }
   }
 
@@ -846,7 +868,8 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     afps.setAfpsEomMaxBitCountMinus1( 7 );
     afps.setAfpsEomNumberOfPatchBitCountMinus1( 7 );
   }
-  // now create a list of tile groups per frame (NOTE: our frame has only one tile group)
+  // now create a list of tile groups per frame (NOTE: our frame has only one
+  // tile group)
   int numTilesPerFrame = ( afps.getAtlasFrameTileInformation().getNumTileRowsMinus1() + 1 ) *
                          ( afps.getAtlasFrameTileInformation().getNumTileColumnsMinus1() + 1 );
   for ( size_t frameIdx = 0; frameIdx < frameCount_; frameIdx++ ) {

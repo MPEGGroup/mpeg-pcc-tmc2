@@ -147,7 +147,8 @@ void PCCBitstream::writeBuffer( const uint8_t* data, const size_t size ) {
 }
 void PCCBitstream::copyFrom( PCCBitstream& dataBitstream, const uint64_t startByte, const uint64_t bitstreamSize ) {
   if ( data_.size() < position_.bytes + bitstreamSize ) { data_.resize( position_.bytes + bitstreamSize ); }
-  memcpy( data_.data() + position_.bytes, dataBitstream.buffer() + startByte, bitstreamSize );  // dest, source
+  memcpy( data_.data() + position_.bytes, dataBitstream.buffer() + startByte,
+          bitstreamSize );  // dest, source
   position_.bytes += bitstreamSize;
   PCCBistreamPosition pos = dataBitstream.getPosition();
   pos.bytes += bitstreamSize;

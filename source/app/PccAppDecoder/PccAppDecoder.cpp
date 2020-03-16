@@ -101,145 +101,94 @@ bool parseParameters( int                   argc,
   //
   // clang-format off
   po::Options opts;
-  opts.addOptions()
-    ( "help", print_help, false, "This help text" )
-    ( "c,config", po::parseConfigFile,"Configuration file name" )
+  opts.addOptions()("help", print_help, false, "This help text")(
+      "c,config", po::parseConfigFile, "Configuration file name")
 
-    // i/o
-    ( "compressedStreamPath",
-      decoderParams.compressedStreamPath_,
-      decoderParams.compressedStreamPath_,
-      "Output(encoder)/Input(decoder) compressed bitstream" )
+      // i/o
+      ("compressedStreamPath", decoderParams.compressedStreamPath_,
+       decoderParams.compressedStreamPath_,
+       "Output(encoder)/Input(decoder) compressed bitstream")(
+          "reconstructedDataPath", decoderParams.reconstructedDataPath_,
+          decoderParams.reconstructedDataPath_,
+          "Output decoded pointcloud. Multi-frame sequences may be represented "
+          "by %04i")
 
-    ( "reconstructedDataPath",
-      decoderParams.reconstructedDataPath_,
-      decoderParams.reconstructedDataPath_,
-      "Output decoded pointcloud. Multi-frame sequences may be represented by %04i" )
+      // sequence configuration
+      ("startFrameNumber", decoderParams.startFrameNumber_,
+       decoderParams.startFrameNumber_,
+       "Fist frame number in sequence to encode/decode")
 
-    // sequence configuration
-    ( "startFrameNumber",
-      decoderParams.startFrameNumber_,
-      decoderParams.startFrameNumber_,
-      "Fist frame number in sequence to encode/decode" )
+      // colour space conversion
+      ("colorTransform", decoderParams.colorTransform_,
+       decoderParams.colorTransform_,
+       "The colour transform to be applied:\n"
+       "  0: none\n"
+       "  1: RGB to YCbCr (Rec.709)")(
+          "colorSpaceConversionPath", decoderParams.colorSpaceConversionPath_,
+          decoderParams.colorSpaceConversionPath_,
+          "Path to the HDRConvert. If unset, an internal color space "
+          "conversion is used")(
+          "inverseColorSpaceConversionConfig",
+          decoderParams.inverseColorSpaceConversionConfig_,
+          decoderParams.inverseColorSpaceConversionConfig_,
+          "HDRConvert configuration file used for YUV420 to RGB444 conversion")(
+          "videoDecoderPath", decoderParams.videoDecoderPath_,
+          decoderParams.videoDecoderPath_, "HM video decoder executable")(
+          "videoDecoderOccupancyMapPath",
+          decoderParams.videoDecoderOccupancyMapPath_,
+          decoderParams.videoDecoderOccupancyMapPath_,
+          "HM lossless video decoder executable for occupancy map")(
+          "nbThread", decoderParams.nbThread_, decoderParams.nbThread_,
+          "Number of thread used for parallel processing")(
+          "postprocessSmoothingFilterType",
+          decoderParams.postprocessSmoothingFilter_,
+          decoderParams.postprocessSmoothingFilter_,
+          "Exclude geometry smoothing from attribute transfer")(
+          "keepIntermediateFiles", decoderParams.keepIntermediateFiles_,
+          decoderParams.keepIntermediateFiles_,
+          "Keep intermediate files: RGB, YUV and bin")
 
-    // colour space conversion
-    ( "colorTransform",
-      decoderParams.colorTransform_,
-      decoderParams.colorTransform_,
-      "The colour transform to be applied:\n"
-      "  0: none\n"
-      "  1: RGB to YCbCr (Rec.709)" )
+      // visual quality
+      ("patchColorSubsampling", decoderParams.patchColorSubsampling_, false,
+       "Enable per-patch color up-sampling");
 
-    ( "colorSpaceConversionPath",
-      decoderParams.colorSpaceConversionPath_,
-      decoderParams.colorSpaceConversionPath_,
-      "Path to the HDRConvert. If unset, an internal color space conversion is used" )
-
-    ( "inverseColorSpaceConversionConfig",
-      decoderParams.inverseColorSpaceConversionConfig_,
-      decoderParams.inverseColorSpaceConversionConfig_,
-      "HDRConvert configuration file used for YUV420 to RGB444 conversion" )
-
-    ( "videoDecoderPath",
-      decoderParams.videoDecoderPath_,
-      decoderParams.videoDecoderPath_,
-      "HM video decoder executable" )
-
-    ( "videoDecoderOccupancyMapPath",
-      decoderParams.videoDecoderOccupancyMapPath_,
-      decoderParams.videoDecoderOccupancyMapPath_,
-      "HM lossless video decoder executable for occupancy map" )
-
-    ( "nbThread",
-      decoderParams.nbThread_,
-      decoderParams.nbThread_,
-      "Number of thread used for parallel processing" )
-
-    ( "postprocessSmoothingFilterType",
-      decoderParams.postprocessSmoothingFilter_,
-      decoderParams.postprocessSmoothingFilter_,
-      "Exclude geometry smoothing from attribute transfer" )
-
-    ( "keepIntermediateFiles",
-      decoderParams.keepIntermediateFiles_,
-      decoderParams.keepIntermediateFiles_,
-      "Keep intermediate files: RGB, YUV and bin" )
-
-    //visual quality
-    ( "patchColorSubsampling", 
-      decoderParams.patchColorSubsampling_,
-    false, 
-      "Enable per-patch color up-sampling" );
-
-    opts.addOptions()
-    ( "computeChecksum",
-      metricsParams.computeChecksum_,
-      metricsParams.computeChecksum_,
-      "Compute checksum" )
-
-    ( "computeMetrics",
-      metricsParams.computeMetrics_,
-      metricsParams.computeMetrics_,
-      "Compute metrics" )
-
-    ( "uncompressedDataFolder",
+  opts.addOptions()("computeChecksum", metricsParams.computeChecksum_,
+                    metricsParams.computeChecksum_, "Compute checksum")(
+      "computeMetrics", metricsParams.computeMetrics_,
+      metricsParams.computeMetrics_, "Compute metrics")(
+      "uncompressedDataFolder", metricsParams.uncompressedDataFolder_,
       metricsParams.uncompressedDataFolder_,
-      metricsParams.uncompressedDataFolder_,
-      "Folder where the uncompress input data are stored, use for cfg relative paths." )
-
-    ( "startFrameNumber",
-      metricsParams.startFrameNumber_,
-      metricsParams.startFrameNumber_,
-      "Fist frame number in sequence to encode/decode" )
-
-    ( "frameCount",
-      metricsParams.frameCount_,
-      metricsParams.frameCount_,
-      "Number of frames to encode" )
-
-    ( "groupOfFramesSize",
-      metricsParams.groupOfFramesSize_,
-      metricsParams.groupOfFramesSize_,
-      "Random access period" )
-
-    ( "uncompressedDataPath",
+      "Folder where the uncompress input data are stored, use for cfg relative "
+      "paths.")("startFrameNumber", metricsParams.startFrameNumber_,
+                metricsParams.startFrameNumber_,
+                "Fist frame number in sequence to encode/decode")(
+      "frameCount", metricsParams.frameCount_, metricsParams.frameCount_,
+      "Number of frames to encode")(
+      "groupOfFramesSize", metricsParams.groupOfFramesSize_,
+      metricsParams.groupOfFramesSize_, "Random access period")(
+      "uncompressedDataPath", metricsParams.uncompressedDataPath_,
       metricsParams.uncompressedDataPath_,
-      metricsParams.uncompressedDataPath_,
-      "Input pointcloud to encode. Multi-frame sequences may be represented by %04i" )
-
-    ( "reconstructedDataPath",
-      metricsParams.reconstructedDataPath_,
-      metricsParams.reconstructedDataPath_,
-      "Output decoded pointcloud. Multi-frame sequences may be represented by %04i" )
-
-    ( "normalDataPath",
+      "Input pointcloud to encode. Multi-frame sequences may be represented by "
+      "%04i")("reconstructedDataPath", metricsParams.reconstructedDataPath_,
+              metricsParams.reconstructedDataPath_,
+              "Output decoded pointcloud. Multi-frame sequences may be "
+              "represented by %04i")(
+      "normalDataPath", metricsParams.normalDataPath_,
       metricsParams.normalDataPath_,
-      metricsParams.normalDataPath_,
-      "Input pointcloud to encode. Multi-frame sequences may be represented by %04i" )
-
-    ( "resolution",
-      metricsParams.resolution_,
-      metricsParams.resolution_,
-      "Specify the intrinsic resolution" )
-
-    ( "dropdups",
-      metricsParams.dropDuplicates_,
-      metricsParams.dropDuplicates_,
-      "0(detect), 1(drop), 2(average) subsequent points with same coordinates" )
-
-    ( "neighborsProc",
+      "Input pointcloud to encode. Multi-frame sequences may be represented by "
+      "%04i")("resolution", metricsParams.resolution_,
+              metricsParams.resolution_, "Specify the intrinsic resolution")(
+      "dropdups", metricsParams.dropDuplicates_, metricsParams.dropDuplicates_,
+      "0(detect), 1(drop), 2(average) subsequent points with same coordinates")(
+      "neighborsProc", metricsParams.neighborsProc_,
       metricsParams.neighborsProc_,
-      metricsParams.neighborsProc_,
-      "0(undefined), 1(average), 2(weighted average), 3(min), 4(max) neighbors with same geometric distance" )
-
-    ( "nbThread",
-      metricsParams.nbThread_,
-      metricsParams.nbThread_,
-      "Number of thread used for parallel processing" )
-
-    ( "minimumImageHeight",    ignore, ignore, "Ignore parameter" )
-    ( "flagColorPreSmoothing", ignore, ignore, "Ignore parameter" )
-    ( "surfaceSeparation",     ignore, ignore, "Ignore parameter" );
+      "0(undefined), 1(average), 2(weighted average), 3(min), 4(max) neighbors "
+      "with same geometric distance")(
+      "nbThread", metricsParams.nbThread_, metricsParams.nbThread_,
+      "Number of thread used for parallel processing")(
+      "minimumImageHeight", ignore, ignore, "Ignore parameter")(
+      "flagColorPreSmoothing", ignore, ignore, "Ignore parameter")(
+      "surfaceSeparation", ignore, ignore, "Ignore parameter");
 
   // clang-format on
   po::setDefaults( opts );
@@ -327,8 +276,10 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
       int                                retDecoding = decoder.decode( context, reconstructs, partitions, atlId );
 
       // jkei : this will be the process.
-      // we need to change this part(and "GeneratePointCloudParameters ppSEIParams" and
-      // "setPostProcessingSeiParameters") based on desirable reconstruction profile of DECODER and presence of SEIs
+      // we need to change this part(and "GeneratePointCloudParameters
+      // ppSEIParams" and
+      // "setPostProcessingSeiParameters") based on desirable reconstruction
+      // profile of DECODER and presence of SEIs
       // if(retDecoding==0) // do we need this?
       int retReconstruction = decoder.reconstruct( context, reconstructs, partitions );
 #else

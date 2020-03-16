@@ -84,6 +84,50 @@ class PCCPointSet3 {
     assert( index < colors16bit_.size() && withColors_ );
     colors16bit_[index] = color16bit;
   }
+  void copyRGB16ToRGB8(){    
+    for ( size_t k = 0; k < getPointCount(); k++ ) {     
+      colors_[k][0] = uint8_t( colors16bit_[k][0] );
+      colors_[k][1] = uint8_t( colors16bit_[k][1] );
+      colors_[k][2] = uint8_t( colors16bit_[k][2] );
+    }
+  } 
+  
+  /// convert yuv444 (16bit) to normalized yuv444 (format double)
+  void convertYUV16ToRGB8(){
+    for ( size_t k = 0; k < getPointCount(); k++ ) {      
+      double y1     = colors16bit_[ k ][0];
+      double u1     = colors16bit_[ k ][1];
+      double v1     = colors16bit_[ k ][2];
+      double offset = 32768.0;
+      double scale  = 65535.0;
+      double weight = 1.0 / scale;
+
+      y1 = weight * y1;
+      u1 = weight * ( u1 - offset );
+      v1 = weight * ( v1 - offset );
+      y1 = ( std::max )( y1, 0.0 );
+      y1 = ( std::min )( y1, 1.0 );
+      u1 = ( std::max )( u1, -0.5 );
+      u1 = ( std::min )( u1, 0.5 );
+      v1 = ( std::max )( v1, -0.5 );
+      v1 = ( std::min )( v1, 0.5 );
+
+      //// convert normalized yuv444 to normalized rgb (fromat double)
+      double r = y1 /*- 0.00000 * u1*/ + 1.57480 * v1;
+      double g = y1 - 0.18733 * u1 - 0.46813 * v1;
+      double b = y1 + 1.85563 * u1 /*+ 0.00000 * v1*/;
+
+      //// convert normalized rgb to 8-bit rgb
+      r = PCCClip( round( r * 255 ), 0.0, 255.0 );
+      g = PCCClip( round( g * 255 ), 0.0, 255.0 );
+      b = PCCClip( round( b * 255 ), 0.0, 255.0 );
+
+      colors_[k][0] = static_cast<uint8_t>( r );
+      colors_[k][1] = static_cast<uint8_t>( g );
+      colors_[k][2] = static_cast<uint8_t>( b );      
+    }
+  }
+
   uint16_t getBoundaryPointType( const size_t index ) const {
     assert( index < boundaryPointTypes_.size() );
     return boundaryPointTypes_[index];

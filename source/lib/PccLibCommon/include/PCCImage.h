@@ -91,9 +91,7 @@ class ChromaSampler {
            (float)( 0.14630826357715 * 512 ), (float)( 0.45417830962846 * 512 ), (float)( 0.45417830962846 * 512 ),
            (float)( 0.14630826357715 * 512 ), (float)( -0.08189331229717 * 512 ), (float)( -0.05254456550808 * 512 ),
            (float)( 0.03519540819902 * 512 ), (float)( 0.02360533018213 * 512 ), (float)( -0.01539537217249 * 512 ),
-           (float)( -0.00945406160902 * 512 )
-
-          },
+           (float)( -0.00945406160902 * 512 )},
           +256.0,
           9.0}},
         {// 5 DF_WCS
@@ -691,7 +689,8 @@ class PCCImage {
       floatYUVToYUV( YUV444[1], channels_[1], 1, 2 );
       floatYUVToYUV( YUV444[2], channels_[2], 1, 2 );
     } else {
-      // TODO: This clause may need to be fixed when nbyte is equal to 1 and T is equal to 2.
+      // TODO: This clause may need to be fixed when nbyte is equal to 1 and T
+      // is equal to 2.
       if ( nbyte == 1 ) {
         std::vector<uint8_t> channels[N];
         for ( size_t i = 0; i < N; i++ ) { channels[i].resize( channels_[i].size() ); }
