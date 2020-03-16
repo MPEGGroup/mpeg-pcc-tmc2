@@ -18,13 +18,6 @@ endif()
 # clang-tidy
 find_program(CLANG_TIDY "clang-tidy")
 if(CLANG_TIDY)
-#   get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
-#   SET( INCLUDE_ARGS "" )
-#   foreach(dir ${dirs})
-#     SET( INCLUDE_ARGS "${INCLUDE_ARGS} -I${dir}" )
-#     message( ${INCLUDE_ARGS})
-#   endforeach()
-   
     set( INCLUDE_ARGS " -I${CMAKE_CURRENT_SOURCE_DIR}/source/dependencies/nanoflann \
     -I${CMAKE_CURRENT_SOURCE_DIR}/source/dependencies/libmd5  \
     -I${CMAKE_CURRENT_SOURCE_DIR}/source/dependencies/tbb/include  \
@@ -41,9 +34,6 @@ if(CLANG_TIDY)
     -I${CMAKE_CURRENT_SOURCE_DIR}/source/app/PccAppMetrics/include   \
     -I${CMAKE_CURRENT_SOURCE_DIR}/source/app/PccAppParser/include  " )
      
-    message( " clang-tidy ${ALL_CXX_SOURCE_FILES} --  -system-headers=0 ${INCLUDE_ARGS} " )
-
-    # -std=c++14 -std=c++11
     add_custom_target(
       clang-tidy
       COMMAND clang-tidy

@@ -318,10 +318,11 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
     // allocate atlas structure
     context.resizeAtlas( context.getVps().getAtlasCountMinus1() + 1 );
     for ( uint32_t atlId = 0; atlId < context.getVps().getAtlasCountMinus1() + 1; atlId++ ) {
-      context.getAtlas( atlId ).allocateVideoFrames(
-          context,
-          0 );  // first allocating the structures, frames will be added as the V-PCC units are being decoded ???
+      context.getAtlas( atlId ).allocateVideoFrames( context, 0 ); 
+      // first allocating the structures, frames will be added as the V-PCC units are being decoded ???
       context.setAtlasIndex( atlId );
+
+#ifndef TEST_SEQUENTIAL_DECODING 
       std::vector<std::vector<uint32_t>> partitions;
       int                                retDecoding = decoder.decode( context, reconstructs, partitions, atlId );
 
@@ -330,7 +331,10 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
       // "setPostProcessingSeiParameters") based on desirable reconstruction profile of DECODER and presence of SEIs
       // if(retDecoding==0) // do we need this?
       int retReconstruction = decoder.reconstruct( context, reconstructs, partitions );
-
+#else
+      int retDecoding = decoder.decodeSequential( context, reconstructs, atlId );
+      int retReconstruction = retDecoding;
+#endif
       clock.stop();
       if ( ( retDecoding != 0 ) || ( retReconstruction != 0 ) ) {
         return retDecoding != 0 ? retDecoding : retReconstruction;
@@ -360,8 +364,11 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
       }
       bMoreData = ( ssvu.getVpccUnitCount() > 0 );
 
+
+#ifndef TEST_SEQUENTIAL_DECODING 
       // jkei: do we need this?
       for ( auto& partition : partitions ) { partition.clear(); }
+#endif
     }
   }
   bitstreamStat.trace();
