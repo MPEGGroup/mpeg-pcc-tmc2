@@ -220,7 +220,7 @@ class PCCEncoderParameters {
   // Lossy raw points Patch
   bool   lossyRawPointsPatch_;
   double minNormSumOfInvDist4MPSelection_;
-  int    lossyMppGeoQP_;
+  int    lossyRawPointPatchGeoQP_;
 
   // GPA
   int globalPatchAllocation_;

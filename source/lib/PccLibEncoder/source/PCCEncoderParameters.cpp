@@ -177,7 +177,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   // lossy raw points patch
   lossyRawPointsPatch_             = false;
   minNormSumOfInvDist4MPSelection_ = 0.35;
-  lossyMppGeoQP_                   = 4;
+  lossyRawPointPatchGeoQP_         = 4;
   // GPA
   globalPatchAllocation_ = 0;
   // GTP
@@ -256,14 +256,14 @@ void PCCEncoderParameters::print() {
   std::cout << "\t losslessGeo                              " << losslessGeo_ << std::endl;
   std::cout << "\t noAttributes                             " << noAttributes_ << std::endl;
   std::cout << "\t raw Geometry Colour Plane                " << ( losslessGeo444_ ? "444" : "420" ) << std::endl;
-  std::cout << "\t enhancedOccupancyMapCode                   " << enhancedOccupancyMapCode_ << std::endl;
-  std::cout << "\t useRawPointsSeparateVideo             " << useRawPointsSeparateVideo_ << std::endl;
+  std::cout << "\t enhancedOccupancyMapCode                 " << enhancedOccupancyMapCode_ << std::endl;
+  std::cout << "\t useRawPointsSeparateVideo                " << useRawPointsSeparateVideo_ << std::endl;
   std::cout << "\t textureMPSeparateVideoWidth              " << textureMPSeparateVideoWidth_ << std::endl;
   std::cout << "\t uncompressedDataPath                     " << uncompressedDataPath_ << std::endl;
   std::cout << "\t compressedStreamPath                     " << compressedStreamPath_ << std::endl;
   std::cout << "\t reconstructedDataPath                    " << reconstructedDataPath_ << std::endl;
   std::cout << "\t frameCount                               " << frameCount_ << std::endl;
-  std::cout << "\t mapCountMinus1                          " << mapCountMinus1_ << std::endl;
+  std::cout << "\t mapCountMinus1                           " << mapCountMinus1_ << std::endl;
   std::cout << "\t startFrameNumber                         " << startFrameNumber_ << std::endl;
   std::cout << "\t groupOfFramesSize                        " << groupOfFramesSize_ << std::endl;
   std::cout << "\t colorTransform                           " << colorTransform_ << std::endl;
@@ -276,7 +276,7 @@ void PCCEncoderParameters::print() {
   std::cout << "\t qpT1                                     " << qpAdjT1_ << std::endl;
   std::cout << "\t constrainedPack                          " << constrainedPack_ << std::endl;
   std::cout << "\t deltaCoding                              " << deltaCoding_ << std::endl;
-  std::cout << "\t  maxNumRefPatchList                       " << maxNumRefAtlasList_ << std::endl;
+  std::cout << "\t  maxNumRefPatchList                      " << maxNumRefAtlasList_ << std::endl;
   std::cout << "\t maxNumRefIndex                           " << maxNumRefAtlasFrame_ << std::endl;
   std::cout << "\t Segmentation" << std::endl;
   std::cout << "\t   nnNormalEstimation                     " << nnNormalEstimation_ << std::endl;
@@ -293,14 +293,14 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   minPointCountPerCCPatchSegmentation    " << minPointCountPerCCPatchSegmentation_ << std::endl;
   std::cout << "\t   maxNNCountPatchSegmentation            " << maxNNCountPatchSegmentation_ << std::endl;
   std::cout << "\t   surfaceThickness                       " << surfaceThickness_ << std::endl;
-  std::cout << "\t   maxAllowedDist2RawPointsDetection " << maxAllowedDist2RawPointsDetection_ << std::endl;
-  std::cout << "\t   maxAllowedDist2RawPointsSelection " << maxAllowedDist2RawPointsSelection_ << std::endl;
+  std::cout << "\t   maxAllowedDist2RawPointsDetection      " << maxAllowedDist2RawPointsDetection_ << std::endl;
+  std::cout << "\t   maxAllowedDist2RawPointsSelection      " << maxAllowedDist2RawPointsSelection_ << std::endl;
   std::cout << "\t   lambdaRefineSegmentation               " << lambdaRefineSegmentation_ << std::endl;
   std::cout << "\t   depthQuantizationStep                  " << minLevel_ << std::endl;
   std::cout << "\t   highGradientSeparation                 " << highGradientSeparation_ << std::endl;
   if ( highGradientSeparation_ ) {
-    std::cout << "\t     minGradient                          " << minGradient_ << std::endl;
-    std::cout << "\t     minNumHighGradientPoints             " << minNumHighGradientPoints_ << std::endl;
+    std::cout << "\t     minGradient                        " << minGradient_ << std::endl;
+    std::cout << "\t     minNumHighGradientPoints           " << minNumHighGradientPoints_ << std::endl;
   }
   std::cout << "\t Packing" << std::endl;
   std::cout << "\t   minimumImageWidth                      " << minimumImageWidth_ << std::endl;
@@ -310,9 +310,9 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   safeGuardDistance                      " << safeGuardDistance_ << std::endl;
   std::cout << "\t   globalPatchAllocation                  " << globalPatchAllocation_ << std::endl;
   if ( globalPatchAllocation_ == 2 ) {
-    std::cout << "\t   globalPackingStrategyGOF           " << geometryD0Config_ << std::endl;
-    std::cout << "\t   globalPackingStrategyReset         " << geometryD1Config_ << std::endl;
-    std::cout << "\t   globalPackingStrategyThreshold     " << geometryD1Config_ << std::endl;
+    std::cout << "\t   globalPackingStrategyGOF             " << geometryD0Config_ << std::endl;
+    std::cout << "\t   globalPackingStrategyReset           " << geometryD1Config_ << std::endl;
+    std::cout << "\t   globalPackingStrategyThreshold       " << geometryD1Config_ << std::endl;
   }
   std::cout << "\t   patchPrecedenceOrder                   " << patchPrecedenceOrderFlag_ << std::endl;
   std::cout << "\t   lowDelayEncoding                       " << lowDelayEncoding_ << std::endl;
@@ -326,21 +326,21 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   videoEncoderAuxPath                    " << videoEncoderAuxPath_ << std::endl;
   std::cout << "\t   videoEncoderOccupancyMapPath           " << videoEncoderOccupancyMapPath_ << std::endl;
   if ( multipleStreams_ ) {
-    std::cout << "\t   geometryD0Config                       " << geometryD0Config_ << std::endl;
-    std::cout << "\t   geometryD1Config                       " << geometryD1Config_ << std::endl;
+    std::cout << "\t   geometryD0Config                     " << geometryD0Config_ << std::endl;
+    std::cout << "\t   geometryD1Config                     " << geometryD1Config_ << std::endl;
   } else {
-    std::cout << "\t   geometryConfig                         " << geometryConfig_ << std::endl;
+    std::cout << "\t   geometryConfig                       " << geometryConfig_ << std::endl;
   }
   if ( multipleStreams_ ) {
-    std::cout << "\t   textureT0Config                         " << textureT0Config_ << std::endl;
-    std::cout << "\t   textureT1Config                         " << textureT1Config_ << std::endl;
+    std::cout << "\t   textureT0Config                      " << textureT0Config_ << std::endl;
+    std::cout << "\t   textureT1Config                      " << textureT1Config_ << std::endl;
   } else {
-    std::cout << "\t   textureConfig                          " << textureConfig_ << std::endl;
+    std::cout << "\t   textureConfig                        " << textureConfig_ << std::endl;
   }
   if ( useRawPointsSeparateVideo_ ) {
     if ( losslessGeo_ ) {
-      std::cout << "\t geometryMPConfig                          " << geometryMPConfig_ << std::endl;
-      std::cout << "\t textureMPConfig                            " << textureMPConfig_ << std::endl;
+      std::cout << "\t geometryMPConfig                     " << geometryMPConfig_ << std::endl;
+      std::cout << "\t textureMPConfig                      " << textureMPConfig_ << std::endl;
     }
   }
   std::cout << "\t   colorSpaceConversionConfig             " << colorSpaceConversionConfig_ << std::endl;
@@ -364,33 +364,33 @@ void PCCEncoderParameters::print() {
   std::cout << "\t Geometry smoothing                       " << std::endl;
   std::cout << "\t   flagGeometrySmoothing                  " << flagGeometrySmoothing_ << std::endl;
   if ( flagGeometrySmoothing_ ) {
-    std::cout << "\t   gridSmoothing                          " << gridSmoothing_ << std::endl;
+    std::cout << "\t   gridSmoothing                        " << gridSmoothing_ << std::endl;
     if ( gridSmoothing_ ) {
-      std::cout << "\t   gridSize                               " << gridSize_ << std::endl;
-      std::cout << "\t   thresholdSmoothing                     " << thresholdSmoothing_ << std::endl;
+      std::cout << "\t   gridSize                           " << gridSize_ << std::endl;
+      std::cout << "\t   thresholdSmoothing                 " << thresholdSmoothing_ << std::endl;
     } else {
-      std::cout << "\t   neighborCountSmoothing                 " << neighborCountSmoothing_ << std::endl;
-      std::cout << "\t   radius2Smoothing                       " << radius2Smoothing_ << std::endl;
-      std::cout << "\t   radius2BoundaryDetection               " << radius2BoundaryDetection_ << std::endl;
-      std::cout << "\t   thresholdSmoothing                     " << thresholdSmoothing_ << std::endl;
+      std::cout << "\t   neighborCountSmoothing             " << neighborCountSmoothing_ << std::endl;
+      std::cout << "\t   radius2Smoothing                   " << radius2Smoothing_ << std::endl;
+      std::cout << "\t   radius2BoundaryDetection           " << radius2BoundaryDetection_ << std::endl;
+      std::cout << "\t   thresholdSmoothing                 " << thresholdSmoothing_ << std::endl;
     }
   }
   std::cout << "\t   patchExpansion                         " << patchExpansion_ << std::endl;
   std::cout << "\t Color smoothing" << std::endl;
-  std::cout << "\t   flagColorSmoothing                       " << flagColorSmoothing_ << std::endl;
+  std::cout << "\t   flagColorSmoothing                     " << flagColorSmoothing_ << std::endl;
   if ( flagColorSmoothing_ ) {
-    std::cout << "\t   gridColorSmoothing                       " << gridColorSmoothing_ << std::endl;
+    std::cout << "\t   gridColorSmoothing                   " << gridColorSmoothing_ << std::endl;
     if ( gridColorSmoothing_ ) {
-      std::cout << "\t   thresholdColorSmoothing                " << thresholdColorSmoothing_ << std::endl;
-      std::cout << "\t   thresholdColorDifference               " << thresholdColorDifference_ << std::endl;
-      std::cout << "\t   thresholdColorVariation                " << thresholdColorVariation_ << std::endl;
-      std::cout << "\t   thresholdLocalEntropy                  " << thresholdLocalEntropy_ << std::endl;
-      std::cout << "\t   cgridSize                              " << cgridSize_ << std::endl;
+      std::cout << "\t   thresholdColorSmoothing            " << thresholdColorSmoothing_ << std::endl;
+      std::cout << "\t   thresholdColorDifference           " << thresholdColorDifference_ << std::endl;
+      std::cout << "\t   thresholdColorVariation            " << thresholdColorVariation_ << std::endl;
+      std::cout << "\t   thresholdLocalEntropy              " << thresholdLocalEntropy_ << std::endl;
+      std::cout << "\t   cgridSize                          " << cgridSize_ << std::endl;
     } else {
-      std::cout << "\t   thresholdColorSmoothing                " << thresholdColorSmoothing_ << std::endl;
-      std::cout << "\t   thresholdLocalEntropy                  " << thresholdLocalEntropy_ << std::endl;
-      std::cout << "\t   radius2ColorSmoothing                  " << radius2ColorSmoothing_ << std::endl;
-      std::cout << "\t   neighborCountColorSmoothing            " << neighborCountColorSmoothing_ << std::endl;
+      std::cout << "\t   thresholdColorSmoothing            " << thresholdColorSmoothing_ << std::endl;
+      std::cout << "\t   thresholdLocalEntropy              " << thresholdLocalEntropy_ << std::endl;
+      std::cout << "\t   radius2ColorSmoothing              " << radius2ColorSmoothing_ << std::endl;
+      std::cout << "\t   neighborCountColorSmoothing        " << neighborCountColorSmoothing_ << std::endl;
     }
   }
   std::cout << "\t Color pre-smoothing                      " << std::endl;
@@ -416,7 +416,7 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   patchColorSubsampling                  " << patchColorSubsampling_ << std::endl;
   std::cout << "\t   excludeColorOutlier                    " << excludeColorOutlier_ << std::endl;
   if ( excludeColorOutlier_ ) {
-    std::cout << "\t     thresholdColorOutlierDist            " << thresholdColorOutlierDist_ << std::endl;
+    std::cout << "\t     thresholdColorOutlierDist          " << thresholdColorOutlierDist_ << std::endl;
   }
   std::cout << "\t Reconstruction " << std::endl;
   std::cout << "\t   removeDuplicatePoints                  " << removeDuplicatePoints_ << std::endl;
@@ -425,12 +425,12 @@ void PCCEncoderParameters::print() {
   std::cout << "\t     patchSize                            " << patchSize_ << std::endl;
   std::cout << "\t   singleLayerPixelInterleaving           " << singleMapPixelInterleaving_ << std::endl;
   std::cout << "\t surface Separation                       " << surfaceSeparation_ << std::endl;
-  std::cout << "\t Lossy raw points patch                " << std::endl;
-  std::cout << "\t   lossyRawPointsPatch                 " << lossyRawPointsPatch_ << std::endl;
+  std::cout << "\t Lossy raw points patch                   " << std::endl;
+  std::cout << "\t   lossyRawPointsPatch                    " << lossyRawPointsPatch_ << std::endl;
   std::cout << "\t   minNormSumOfInvDist4MPSelection        " << minNormSumOfInvDist4MPSelection_ << std::endl;
-  std::cout << "\t   lossyMppGeoQP                          " << lossyMppGeoQP_ << std::endl;
-  std::cout << "\t raw points sorting                    " << std::endl;
-  std::cout << "\t   mortonOrderSortRawPoints            " << mortonOrderSortRawPoints_ << std::endl;
+  std::cout << "\t   lossyRawPointPatchGeoQP                " << lossyRawPointPatchGeoQP_ << std::endl;
+  std::cout << "\t raw points sorting                       " << std::endl;
+  std::cout << "\t   mortonOrderSortRawPoints               " << mortonOrderSortRawPoints_ << std::endl;
   std::cout << "\t Enhanced projection plane                " << enhancedPP_ << std::endl;
   std::cout << "\t AdditionalProjectionPlane                " << std::endl;
   std::cout << "\t   additionalProjectionPlaneMode          " << additionalProjectionPlaneMode_ << std::endl;
@@ -490,7 +490,6 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   pbfPassesCount                         " << pbfPassesCount_ << std::endl;
   std::cout << "\t   pbfFilterSize                          " << pbfFilterSize_ << std::endl;
   std::cout << "\t   pbfLog2Threshold                       " << pbfLog2Threshold_ << std::endl;
-
   std::cout << std::endl;
 }
 
@@ -751,6 +750,7 @@ bool PCCEncoderParameters::check() {
     ret = false;
     std::cerr << "EOMFixBitCount shall be greater than 0. \n";
   }
+
   return ret;
 }
 
@@ -929,4 +929,10 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   context.getPrefilterLossyOM() = prefilterLossyOM_;
   // atlas video allocation
   context.getAtlas( atlasIndex ).allocateVideoFrames( context, 0 );
+
+  auto& plt = sps.getProfileTierLevel();
+  plt.setProfileCodecGroupIdc( CODEC_GROUP_HEVC_MAIN10 );
+  if( losslessGeo444_ ){
+    plt.setProfileCodecGroupIdc( CODEC_GROUP_HEVC444 );
+  } 
 }

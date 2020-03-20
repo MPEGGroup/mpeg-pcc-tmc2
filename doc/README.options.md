@@ -147,13 +147,13 @@ The next tables shows the parameters of the encoder, decoder and metrics program
                                               & for texture only (0: patch-edge extension, \\ 
                                               & 1(default): smoothed push-pull algorithm), \\ 
                                               & 2: harmonic background filling             \\ \hline
---lossyRawPointsPatch=0                    & Lossy raw points patch(0: no lossy      \\ 
+--lossyRawPointsPatch=0                       & Lossy raw points patch(0: no lossy      \\ 
                                               & raw points patch, 1: enable lossy       \\ 
                                               & raw points  patch (default=0)           \\ \hline
 --minNormSumOfInvDist4MP                      & Minimum normalized sum of inverse distance \\ 
      \ \ \ \ \ \ Selection=0.35               & for raw points selection: double value  \\ 
                                               & between 0.0 and 1.0 (default=0.35)         \\ \hline
---lossyMppGeoQP=4                             & QP value for geometry in lossy missed      \\ 
+--lossyRawPointPatchGeoQP=4                   & QP value for geometry in lossy missed      \\ 
                                               & points patch (default=4)                   \\ \hline
 --globalPatchAllocation=0                     & Global temporally consistent patch         \\ 
                                               & allocation.                                \\ 

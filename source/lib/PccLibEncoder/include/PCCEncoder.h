@@ -137,8 +137,8 @@ class PCCEncoder : public PCCCodec {
                                   std::vector<uint32_t>& occupancyMap,
                                   PCCImageOccupancyMap&  videoFrameOccupancyMap,
                                   std::ofstream&         ofile );
-  void        markRawPatchLocationOccupancyMapVideo( PCCContext& context );
-  static void markRawPatchLocation( PCCFrameContext& contextFrame, PCCImageOccupancyMap& occupancyMap );
+  void markRawPatchLocationOccupancyMapVideo( PCCContext& context );
+  void markRawPatchLocation( PCCFrameContext& contextFrame, PCCImageOccupancyMap& occupancyMap );
 
   bool generateGeometryVideo( const PCCGroupOfFrames& sources, PCCContext& context );
   bool resizeGeometryVideo( PCCContext& context );

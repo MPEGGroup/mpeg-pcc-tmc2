@@ -54,26 +54,15 @@ template <typename T, size_t N>
 class PCCImage;
 typedef pcc::PCCImage<uint8_t, 3> PCCImageOccupancyMap;
 
-#define TEST_SEQUENTIAL_DECODING 
 
 class PCCDecoder : public PCCCodec {
  public:
   PCCDecoder();
   ~PCCDecoder();
   
-#ifndef TEST_SEQUENTIAL_DECODING
-  int decode( PCCContext&                         context,
-              PCCGroupOfFrames&                   reconstruct,
-              std::vector<std::vector<uint32_t>>& partitions,
-              int32_t                             atlasIndex );
-  int reconstruct( PCCContext&                         context,
-                   PCCGroupOfFrames&                   reconstructs,
-                   std::vector<std::vector<uint32_t>>& partitions );
-#else
-  int decodeSequential( PCCContext&                         context,
-              PCCGroupOfFrames&                   reconstruct,
-              int32_t                             atlasIndex );
-#endif
+  int decode( PCCContext&       context,
+              PCCGroupOfFrames& reconstruct,
+              int32_t           atlasIndex );
 
   void setParameters( const PCCDecoderParameters& params );
   void setPostProcessingSeiParameters( GeneratePointCloudParameters& gpcParams,

@@ -90,9 +90,11 @@ then
 fi 
 
 echo -e "\033[0;32mBuild: $(readlink -f $CURDIR) \033[0m";
+
 case "${MACHINE}" in
-  Linux) make -C ${CURDIR}/build/${MODE} -j ${NUMBER_OF_PROCESSORS} ${CMD} -s || (echo "mycommand failed $$?"; exit 1);; 
+  Linux) make -C ${CURDIR}/build/${MODE} -j ${NUMBER_OF_PROCESSORS} ${CMD} -s ;  if [[ $? -ne 0 ]] ; then exit 1; fi ;;
   Mac)   echo "Please, open the generated xcode project and build it ";;
   *)     buildWindows ./build/${MODE}/TMC2.sln ${MODE};;
 esac 
 echo -e "\033[0;32mdone \033[0m";
+

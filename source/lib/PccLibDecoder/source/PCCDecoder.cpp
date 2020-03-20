@@ -53,268 +53,9 @@ PCCDecoder::PCCDecoder() {
 PCCDecoder::~PCCDecoder() = default;
 void PCCDecoder::setParameters( const PCCDecoderParameters& params ) { params_ = params; }
 
-
-#ifndef TEST_SEQUENTIAL_DECODING
-int  PCCDecoder::decode( PCCContext&                         context,
-                        PCCGroupOfFrames&                   reconstructs,
-                        std::vector<std::vector<uint32_t>>& partitions,
-                        int32_t                             atlasIndex = 0 ) {
-  if ( params_.nbThread_ > 0 ) { tbb::task_scheduler_init init( static_cast<int>( params_.nbThread_ ) ); }
-#ifdef CODEC_TRACE
-  setTrace( true );
-  openTrace( stringFormat( "%s_GOF%u_patch_decode.txt", removeFileExtension( params_.compressedStreamPath_ ).c_str(),
-                           context.getVps().getVpccParameterSetId() ) );
-#endif
-  createPatchFrameDataStructure( context );
-#ifdef CODEC_TRACE
-  closeTrace();
-#endif
-
-  PCCVideoDecoder   videoDecoder;
-  std::stringstream path;
-  auto&             sps  = context.getVps();
-  auto&             ai   = sps.getAttributeInformation( atlasIndex );
-  auto&             oi   = sps.getOccupancyInformation( atlasIndex );
-  auto&             gi   = sps.getGeometryInformation( atlasIndex );
-  auto&             asps = context.getAtlasSequenceParameterSet( 0 );
-  path << removeFileExtension( params_.compressedStreamPath_ ) << "_dec_GOF" << sps.getVpccParameterSetId() << "_";
-#ifdef CODEC_TRACE
-  setTrace( true );
-  openTrace( stringFormat( "%s_GOF%u_codec_decode.txt", removeFileExtension( params_.compressedStreamPath_ ).c_str(),
-                           sps.getVpccParameterSetId() ) );
-#endif
-  auto&        plt               = sps.getProfileTierLevel();
-  bool         use444CodecIo     = plt.getProfileCodecGroupIdc() == CODEC_GROUP_HEVC444;
-  const size_t mapCount          = sps.getMapCountMinus1( atlasIndex ) + 1;
-  auto&        videoBitstreamOM  = context.getVideoBitstream( VIDEO_OCCUPANCY );
-  int          decodedBitDepthOM = 8;
-  videoDecoder.decompress( context.getVideoOccupancyMap(), path.str(), context.size(), videoBitstreamOM,
-                           params_.videoDecoderOccupancyMapPath_, context, decodedBitDepthOM,
-                           params_.keepIntermediateFiles_, use444CodecIo, false, "", "" );
-  // converting the decoded bitdepth to the nominal bitdepth
-  context.getVideoOccupancyMap().convertBitdepth( decodedBitDepthOM, oi.getOccupancyNominal2DBitdepthMinus1() + 1,
-                                                  oi.getOccupancyMSBAlignFlag() );
-
-  if ( sps.getMultipleMapStreamsPresentFlag( atlasIndex ) ) {
-    if ( sps.getRawPatchEnabledFlag( atlasIndex ) ) {
-      std::cout << "ERROR! Lossy-raw-points-patch code not implemented when "
-                   "absoluteD_ = 0 as "
-                   "of now. Exiting ..."
-                << std::endl;
-      std::exit( -1 );
-    }
-    context.getVideoGeometryMultiple().resize( sps.getMapCountMinus1( atlasIndex ) + 1 );
-    size_t totalGeoSize = 0;
-    for ( int mapIndex = 0; mapIndex < sps.getMapCountMinus1( atlasIndex ) + 1; mapIndex++ ) {
-      // Decompress D[mapIndex]
-      int decodedBitDepth = gi.getGeometryNominal2dBitdepthMinus1() + 1;  // this should be extracted from the bitstream
-      auto  geometryIndex = static_cast<PCCVideoType>( VIDEO_GEOMETRY_D0 + mapIndex );
-      auto& videoBitstream = context.getVideoBitstream( geometryIndex );
-      videoDecoder.decompress( context.getVideoGeometryMultiple()[mapIndex], path.str(), context.size(), videoBitstream,
-                               params_.videoDecoderPath_, context, decodedBitDepth, params_.keepIntermediateFiles_,
-                               use444CodecIo );
-      context.getVideoGeometryMultiple()[mapIndex].convertBitdepth(
-          decodedBitDepth, gi.getGeometryNominal2dBitdepthMinus1() + 1, gi.getGeometryMSBAlignFlag() );
-      std::cout << "geometry D" << mapIndex << " video ->" << videoBitstream.size() << " B" << std::endl;
-      totalGeoSize += videoBitstream.size();
-    }
-    std::cout << "total geometry video ->" << totalGeoSize << " B" << std::endl;
-  } else {
-    int   decodedBitDepthGeo = gi.getGeometryNominal2dBitdepthMinus1() + 1;
-    auto& videoBitstream     = context.getVideoBitstream( VIDEO_GEOMETRY );
-    videoDecoder.decompress( context.getVideoGeometry(), path.str(), context.size() * mapCount, videoBitstream,
-                             params_.videoDecoderPath_, context, decodedBitDepthGeo, params_.keepIntermediateFiles_,
-                             use444CodecIo );
-    context.getVideoGeometry().convertBitdepth( decodedBitDepthGeo, gi.getGeometryNominal2dBitdepthMinus1() + 1,
-                                                gi.getGeometryMSBAlignFlag() );
-    std::cout << "geometry video ->" << videoBitstream.size() << " B" << std::endl;
-  }
-
-  if ( sps.getRawPatchEnabledFlag( atlasIndex ) && sps.getRawSeparateVideoPresentFlag( atlasIndex ) ) {
-    int   decodedBitDepthMP = gi.getGeometryNominal2dBitdepthMinus1() + 1;
-    auto& videoBitstreamMP  = context.getVideoBitstream( VIDEO_GEOMETRY_RAW );
-    videoDecoder.decompress( context.getVideoRawPointsGeometry(), path.str(), context.size(), videoBitstreamMP,
-                             params_.videoDecoderPath_, context, decodedBitDepthMP, params_.keepIntermediateFiles_ );
-    context.getVideoRawPointsGeometry().convertBitdepth( decodedBitDepthMP, gi.getGeometryNominal2dBitdepthMinus1() + 1,
-                                                   gi.getGeometryMSBAlignFlag() );
-    generateRawPointsGeometryfromVideo( context, reconstructs );
-    std::cout << " raw points geometry -> " << videoBitstreamMP.size() << " B " << endl;
-  }
-
-  if ( ai.getAttributeCount() > 0 ) {
-    for ( int attrIndex = 0; attrIndex < sps.getAttributeInformation( atlasIndex ).getAttributeCount();
-          attrIndex++ ) {  // right now we only have one attribute, this should be
-                           // generalized
-      int decodedBitdepthAttribute   = ai.getAttributeNominal2dBitdepthMinus1( attrIndex ) + 1;
-      int decodedBitdepthAttributeMP = ai.getAttributeNominal2dBitdepthMinus1( attrIndex ) + 1;
-      for ( int attrPartitionIndex = 0;
-            attrPartitionIndex <
-            sps.getAttributeInformation( atlasIndex ).getAttributeDimensionPartitionsMinus1( attrIndex ) + 1;
-            attrPartitionIndex++ ) {  // right now we have only one partition,
-                                      // this should be generalized
-        if ( sps.getMultipleMapStreamsPresentFlag( atlasIndex ) ) {
-          int sizeTextureVideo = 0;
-          context.getVideoTextureMultiple().resize( sps.getMapCountMinus1( atlasIndex ) + 1 );  // this allocation is
-                                                                                                // considering only one
-                                                                                                // attribute, with a
-                                                                                                // single partition, but
-                                                                                                // multiple streams
-          for ( int mapIndex = 0; mapIndex < sps.getMapCountMinus1( atlasIndex ) + 1; mapIndex++ ) {
-            // decompress T[mapIndex]
-            auto textureIndex =
-                static_cast<PCCVideoType>( VIDEO_TEXTURE_T0 + attrPartitionIndex + MAX_NUM_ATTR_PARTITIONS * mapIndex );
-            auto& videoBitstream = context.getVideoBitstream( textureIndex );
-            videoDecoder.decompress( context.getVideoTextureMultiple()[mapIndex], path.str(), context.size(),
-                                     videoBitstream, params_.videoDecoderPath_, context,
-                                     ai.getAttributeNominal2dBitdepthMinus1( 0 ) + 1, params_.keepIntermediateFiles_,
-                                     sps.getRawPatchEnabledFlag( atlasIndex ), params_.patchColorSubsampling_,
-                                     params_.inverseColorSpaceConversionConfig_, params_.colorSpaceConversionPath_ );
-            /*context.getVideoTextureMultiple()[mapIndex].convertBitdepth(
-              decodedBitdepthAttribute,
-              ai.getAttributeNominal2dBitdepthMinus1(attrIndex) + 1,
-              ai.getAttributeMSBAlignFlag(attrIndex));*/
-            std::cout << "texture T" << mapIndex << " video ->" << videoBitstream.size() << " B" << std::endl;
-            sizeTextureVideo += videoBitstream.size();
-          }
-          std::cout << "texture    video ->" << sizeTextureVideo << " B" << std::endl;
-        } else {
-          auto  textureIndex   = static_cast<PCCVideoType>( VIDEO_TEXTURE + attrPartitionIndex );
-          auto& videoBitstream = context.getVideoBitstream( textureIndex );
-          videoDecoder.decompress( context.getVideoTexture(),                 // video,
-                                   path.str(),                                // path,
-                                   context.size() * mapCount,                 // frameCount,
-                                   videoBitstream,                            // bitstream,
-                                   params_.videoDecoderPath_,                 // decoderPath,
-                                   context,                                   // contexts,
-                                   decodedBitdepthAttribute,                  // bitDepth,
-                                   params_.keepIntermediateFiles_,            // keepIntermediateFiles
-                                   sps.getRawPatchEnabledFlag( atlasIndex ),  // use444CodecIo
-                                   params_.patchColorSubsampling_,            // patchColorSubsampling
-                                   params_.inverseColorSpaceConversionConfig_, params_.colorSpaceConversionPath_ );
-          /*context.getVideoTexture().convertBitdepth(
-              decodedBitdepthAttribute,
-             ai.getAttributeNominal2dBitdepthMinus1(attrIndex) + 1,
-             ai.getAttributeMSBAlignFlag(attrIndex));*/
-          std::cout << "texture video  ->" << videoBitstream.size() << " B" << std::endl;
-        }
-        if ( sps.getRawPatchEnabledFlag( atlasIndex ) && sps.getRawSeparateVideoPresentFlag( atlasIndex ) ) {
-          auto  textureIndex     = static_cast<PCCVideoType>( VIDEO_TEXTURE_RAW + attrPartitionIndex );
-          auto& videoBitstreamMP = context.getVideoBitstream( textureIndex );
-          videoDecoder.decompress( context.getVideoRawPointsTexture(), path.str(), context.size(), videoBitstreamMP,
-                                   params_.videoDecoderPath_, context, decodedBitdepthAttributeMP,
-                                   params_.keepIntermediateFiles_, true, false,
-                                   params_.inverseColorSpaceConversionConfig_, params_.colorSpaceConversionPath_ );
-          context.getVideoTexture().convertBitdepth( decodedBitdepthAttributeMP,
-                                                     ai.getAttributeNominal2dBitdepthMinus1( 0 ) + 1,
-                                                     ai.getAttributeMSBAlignFlag( 0 ) );
-          generateRawPointsTexturefromVideo( context, reconstructs );
-          std::cout << " raw points texture -> " << videoBitstreamMP.size() << " B" << endl;
-        }
-      }
-    }
-  }
-
-  reconstructs.setFrameCount( context.size() );
-  context.setOccupancyPrecision( sps.getFrameWidth( atlasIndex ) / context.getVideoOccupancyMap().getWidth() );
-
-
-//   generateOccupancyMap( context, context.getOccupancyPrecision(), oi.getLossyOccupancyMapCompressionThreshold(),
-//                        asps.getEnhancedOccupancyMapForDepthFlag() );
-// generateBlockToPatchFromBoundaryBox( context, context.getOccupancyPackingBlockSize() );
-
-  size_t occupancyResolution = context.getOccupancyPackingBlockSize();
-  for( auto& frame : context.getFrames() ){ 
-    generateOccupancyMap( frame, context.getVideoOccupancyMap().getFrame( frame.getIndex() ), context.getOccupancyPrecision(),
-                          oi.getLossyOccupancyMapCompressionThreshold(), asps.getEnhancedOccupancyMapForDepthFlag()  );
-    generateBlockToPatchFromBoundaryBox( context, frame,  occupancyResolution );
-  }
-
-
-
-  GeneratePointCloudParameters gpcParams;
-  setGeneratePointCloudParameters( gpcParams, context );
-  printf( "generatePointCloud \n" );
-  fflush( stdout );
-  generatePointCloud( reconstructs, context, gpcParams, partitions, true );
-  printf( "generatePointCloud done\n" );
-  fflush( stdout );
-
-  // RECOLOR RECONSTRUCTED POINT CLOUD
-  // recreating the prediction list per attribute (either the attribute is coded
-  // absolute, or follows the geometry)
-  // see contribution m52529
-  std::vector<std::vector<bool>> absoluteT1List;
-  absoluteT1List.resize( ai.getAttributeCount() );
-  for ( int attrIdx = 0; attrIdx < ai.getAttributeCount(); ++attrIdx ) {
-    absoluteT1List[attrIdx].resize( sps.getMapCountMinus1( atlasIndex ) + 1 );
-    if ( ai.getAttributeMapAbsoluteCodingPersistanceFlag( attrIdx ) != 0u ) {
-      for ( int mapIdx = 0; mapIdx < sps.getMapCountMinus1( atlasIndex ) + 1; ++mapIdx ) {
-        absoluteT1List[attrIdx][mapIdx] = true;
-      }
-    } else {
-      // follow geometry
-      for ( int mapIdx = 0; mapIdx < sps.getMapCountMinus1( atlasIndex ) + 1; ++mapIdx ) {
-        absoluteT1List[attrIdx][mapIdx] = sps.getMapAbsoluteCodingEnableFlag( atlasIndex, mapIdx );
-      }
-    }
-  }
-  colorPointCloud( reconstructs, context, ai.getAttributeCount(), params_.colorTransform_, absoluteT1List,  // atlasIdx
-                   sps.getMultipleMapStreamsPresentFlag( ATLASIDXPCC ), gpcParams );
-#ifdef CODEC_TRACE
-  setTrace( false );
-  closeTrace();
-#endif
-  return 0;
-}
-
-int PCCDecoder::reconstruct( PCCContext&                         context,
-                             PCCGroupOfFrames&                   reconstructs,
-                             std::vector<std::vector<uint32_t>>& partitions ) {
-  auto& sps           = context.getVps();
-  auto& plt           = sps.getProfileTierLevel();
-  bool  use444CodecIo = sps.getRawPatchEnabledFlag( 0 );  // plt.getProfileCodecGroupIdc() == CODEC_GROUP_HEVC444;
-  auto& frames        = context.getFrames();
-  PCCPointSet3 tempFrameBuffer;
-
-  // sps.getRawPatchEnabledFlag( atlasIndex )
-  GeneratePointCloudParameters ppSEIParams;  //=gpcParams;
-  for ( size_t f = 0; f < frames.size(); f++ ) {
-    setPostProcessingSeiParameters( ppSEIParams, context );
-    tempFrameBuffer = reconstructs[f];
-    if ( ppSEIParams.flagGeometrySmoothing_ ) {
-      if ( ppSEIParams.gridSmoothing_ ) {
-        smoothPointCloudPostprocess( reconstructs[f], context, params_.colorTransform_, ppSEIParams, partitions[f] );
-      }
-      // These are different attribute transfer functions
-      if ( params_.postprocessSmoothingFilter_ == 1 ) {
-        tempFrameBuffer.transferColors16bitBP( reconstructs[f], int32_t( 0 ), use444CodecIo, 8, 1, true, true, true,
-                                               false, 4, 4, 1000, 1000, 1000 * 256,
-                                               1000 * 256 );  // jkie: let's make it general
-      } else if ( params_.postprocessSmoothingFilter_ == 2 ) {
-        tempFrameBuffer.transferColorWeight( reconstructs[f], 0.1 );
-      } else if ( params_.postprocessSmoothingFilter_ == 3 ) {
-        tempFrameBuffer.transferColorsFilter3( reconstructs[f], int32_t( 0 ), use444CodecIo );
-      }
-    }
-    if ( ppSEIParams.flagColorSmoothing_ ) {
-      colorSmoothing( reconstructs[f], context, params_.colorTransform_, ppSEIParams );
-    }
-    if ( !use444CodecIo ) {  // lossy: convert 16-bit yuv444 to 8-bit RGB444
-      printf( " convert 16-bit yuv444 to 8-bit RGB444 \n" );
-      reconstructs[f].convertYUV16ToRGB8();
-    } else {  // lossless: copy 16-bit RGB to 8-bit RGB
-      printf( "lossless: copy 16-bit RGB to 8-bit RGB\n" );
-      reconstructs[f].copyRGB16ToRGB8();     
-    } 
-  }
-  return 0;
-}
-
-#else
-
-int  PCCDecoder::decodeSequential( PCCContext&                         context,
-                        PCCGroupOfFrames&                   reconstructs,
-                        int32_t                             atlasIndex = 0 ) {
+int  PCCDecoder::decode( PCCContext&       context,
+                         PCCGroupOfFrames& reconstructs,
+                         int32_t           atlasIndex = 0 ) {
   if ( params_.nbThread_ > 0 ) { tbb::task_scheduler_init init( static_cast<int>( params_.nbThread_ ) ); }
 #ifdef CODEC_TRACE
   setTrace( true );
@@ -401,6 +142,8 @@ int  PCCDecoder::decodeSequential( PCCContext&                         context,
           attrIndex++ ) {  // right now we only have one attribute, this should be generalized
       int decodedBitdepthAttribute   = ai.getAttributeNominal2dBitdepthMinus1( attrIndex ) + 1;
       int decodedBitdepthAttributeMP = ai.getAttributeNominal2dBitdepthMinus1( attrIndex ) + 1;
+      printf("RawPatchEnabledFlag[ atlasIndex = %d ] = %d \n",atlasIndex,sps.getRawPatchEnabledFlag( atlasIndex ) );
+      printf("ProfileCodecGroupIdc() = %d \n",(int)plt.getProfileCodecGroupIdc() );
       for ( int attrPartitionIndex = 0;
             attrPartitionIndex <
             sps.getAttributeInformation( atlasIndex ).getAttributeDimensionPartitionsMinus1( attrIndex ) + 1;
@@ -438,7 +181,7 @@ int  PCCDecoder::decodeSequential( PCCContext&                         context,
                                    context,                                   // contexts,
                                    decodedBitdepthAttribute,                  // bitDepth,
                                    params_.keepIntermediateFiles_,            // keepIntermediateFiles
-                                   sps.getRawPatchEnabledFlag( atlasIndex ),  // use444CodecIo
+                                   sps.getRawPatchEnabledFlag( atlasIndex ), // && plt.getProfileCodecGroupIdc() == CODEC_GROUP_HEVC444,  // use444CodecIo
                                    params_.patchColorSubsampling_,            // patchColorSubsampling
                                    params_.inverseColorSpaceConversionConfig_, params_.colorSpaceConversionPath_ );
           /*context.getVideoTexture().convertBitdepth(
@@ -463,7 +206,7 @@ int  PCCDecoder::decodeSequential( PCCContext&                         context,
     }
   }
 
-  // JR: All video have been decoded, start reconsctruction processes
+  // All video have been decoded, start reconsctruction processes
   if ( sps.getRawPatchEnabledFlag( atlasIndex ) && sps.getRawSeparateVideoPresentFlag( atlasIndex ) ) {
     printf("generateRawPointsGeometryfromVideo \n"); fflush(stdout);
     generateRawPointsGeometryfromVideo( context, reconstructs );
@@ -531,7 +274,9 @@ int  PCCDecoder::decodeSequential( PCCContext&                         context,
     }
 
     // Post-Processing
-    use444CodecIo = sps.getRawPatchEnabledFlag( 0 );  // plt.getProfileCodecGroupIdc() == CODEC_GROUP_HEVC444;
+    use444CodecIo = sps.getRawPatchEnabledFlag( 0 ); 
+    // use444CodecIo = sps.getRawPatchEnabledFlag( 0 ) && plt.getProfileCodecGroupIdc() == CODEC_GROUP_HEVC444;
+    // use444CodecIo = plt.getProfileCodecGroupIdc() == CODEC_GROUP_HEVC444;
     if ( ppSEIParams.flagGeometrySmoothing_ ) {
       PCCPointSet3 tempFrameBuffer = reconstruct;
       if ( ppSEIParams.gridSmoothing_ ) {
@@ -565,7 +310,6 @@ int  PCCDecoder::decodeSequential( PCCContext&                         context,
 #endif
   return 0;
 }
-#endif
 
 void PCCDecoder::setPointLocalReconstruction( PCCContext& context ) {
   auto&                        asps = context.getAtlasSequenceParameterSet( 0 );

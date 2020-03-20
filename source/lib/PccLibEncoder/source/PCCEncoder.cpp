@@ -147,13 +147,16 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                          8,                                         // internalBitDepth
                          false,                                     // useConversion
                          params_.keepIntermediateFiles_ );
-
+ printf("compress ocm done \n"); fflush(stdout);
+ printf("offsetLossyOM_ = %lu \n",params_.offsetLossyOM_); fflush(stdout);
   if ( params_.offsetLossyOM_ > 0 ) {
     changedPixCnt     = 0;
     changedPixCnt0To1 = 0;
     changedPixCnt1To0 = 0;
     pixCnt            = 0;
+ printf("modifyOccupancyMap start \n"); fflush(stdout);
     modifyOccupancyMap( sources, context );
+ printf("modifyOccupancyMap done \n"); fflush(stdout);
     std::cout << "Percentage of changed occupancy map values = "
               << ( static_cast<float>( changedPixCnt ) * 100.0F / pixCnt ) << std::endl;
     std::cout << "Percentage of changed occupancy map values from 0 to 1 = "
@@ -162,13 +165,20 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
               << ( static_cast<float>( changedPixCnt1To0 ) * 100.0F / pixCnt ) << std::endl;
   }
 
+  printf("useRawPointsSeparateVideo_ = %d \n",params_.useRawPointsSeparateVideo_ ); fflush(stdout);
+  printf("losslessGeo_               = %d \n",params_.losslessGeo_ ); fflush(stdout);
+  printf("lossyRawPointsPatch_       = %d \n",params_.lossyRawPointsPatch_ ); fflush(stdout);
+
   if ( !params_.useRawPointsSeparateVideo_ && ( params_.losslessGeo_ || params_.lossyRawPointsPatch_ ) ) {
+  printf("markRawPatchLocationOccupancyMapVideo start \n"); fflush(stdout);
     markRawPatchLocationOccupancyMapVideo( context );
   }
+ printf("generateBlockToPatchFromOccupancyMapVideo start \n"); fflush(stdout);
 
   generateBlockToPatchFromOccupancyMapVideo( context, params_.losslessGeo_, params_.lossyRawPointsPatch_,
                                              params_.occupancyResolution_, params_.occupancyPrecision_ );
 
+ printf("generateBlockToPatchFromOccupancyMapVideo done \n"); fflush(stdout);
   // GEOMETRY IMAGE PADDING
   dilateGeometryVideo( sources, context );
 
@@ -259,7 +269,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     generateRawPointsGeometryVideo( context, reconstructs );
     auto& videoRawPointsGeometry = context.getVideoRawPointsGeometry();
     videoEncoder.compress( videoRawPointsGeometry, path.str(),
-                           params_.lossyRawPointsPatch_ ? params_.lossyMppGeoQP_ : params_.geometryQP_,
+                           params_.lossyRawPointsPatch_ ? params_.lossyRawPointPatchGeoQP_ : params_.geometryQP_,
                            videoBitstreamMP, params_.geometryMPConfig_, params_.videoEncoderPath_, context,
                            nbyteGeoMP,        // nbyte
                            false,             // use444CodecIo
@@ -4803,23 +4813,29 @@ bool PCCEncoder::resizeGeometryVideo( PCCContext& context ) {
 }
 void PCCEncoder::markRawPatchLocationOccupancyMapVideo( PCCContext& context ) {
   auto& videoOccupancyMap = context.getVideoOccupancyMap();
+  printf("markRawPatchLocation seq: Start \n"); fflush(stdout);
   for ( size_t f = 0; f < context.size(); f++ ) { markRawPatchLocation( context[f], videoOccupancyMap.getFrame( f ) ); }
+  printf("markRawPatchLocation seq: done \n"); fflush(stdout);
 }
-void PCCEncoder::markRawPatchLocation(  // const PCCContext& context, size_t
-                                        // frameIndex,
-    PCCFrameContext&      contextFrame,
-    PCCImageOccupancyMap& occupancyMap ) {
-  // auto& contetFrame = context[frameIndex];
+void PCCEncoder::markRawPatchLocation(  PCCFrameContext&      contextFrame,
+                                        PCCImageOccupancyMap& imageOccupancyMap ) {
+  printf("markRawPatchLocation: frame %lu UseRawPointsSeparateVideo = %d  \n", 
+  contextFrame.getIndex(),contextFrame.getUseRawPointsSeparateVideo() ); fflush(stdout);
+
   if ( !contextFrame.getUseRawPointsSeparateVideo() ) {
     // for padding purpose
-    size_t width  = occupancyMap.getWidth();
-    size_t height = occupancyMap.getHeight();
-
+    size_t width  = contextFrame.getWidth();
+    size_t height = contextFrame.getHeight();
+    printf("markRawPatchLocation: size = %lu x %lu \n", width, height);  fflush(stdout);
+    printf("Image Size = %lu \n",contextFrame.getWidth()*contextFrame.getWidth() ); 
     size_t numberOfRawPointsPatches = contextFrame.getNumberOfRawPointsPatches();
     for ( int i = 0; i < numberOfRawPointsPatches; i++ ) {
+      
       auto&        rawPointsPatch = contextFrame.getRawPointsPatch( i );
       const size_t v0             = rawPointsPatch.v0_ * rawPointsPatch.occupancyResolution_;
       const size_t u0             = rawPointsPatch.u0_ * rawPointsPatch.occupancyResolution_;
+      printf("RawPointsPatches = %d /  %lu: u0 v0 =  %4lu %4lu size = %4lu %4lu rawPointsPatch.size() = %lu \n",
+        i,numberOfRawPointsPatches,u0,v0,rawPointsPatch.sizeU_, rawPointsPatch.sizeV_, rawPointsPatch.size());  fflush(stdout);
       if ( rawPointsPatch.size() != 0u ) {
         for ( size_t v = 0; v < rawPointsPatch.sizeV_; ++v ) {
           for ( size_t u = 0; u < rawPointsPatch.sizeU_; ++u ) {
@@ -4827,23 +4843,28 @@ void PCCEncoder::markRawPatchLocation(  // const PCCContext& context, size_t
             if ( rawPointsPatch.x_[p] < infiniteDepth ) {
               // if (p < rawPointsPatch.getNumberOfRawPoints()) {
               const size_t x = ( u0 + u );
-              const size_t y = ( v0 + v );
-              if ( x >= width || y >= height ) {
-                std::cout << "\t\tout of image :" << x << "," << y << "(" << x + y * width
-                          << ") vs occupancyMap size :" << width << "x" << height << std::endl;
-                exit( 0 );
+              const size_t y = ( v0 + v );  
+              
+              printf("%4lu %4lu => p = %lu => xy = %lu %lu  => %lu \n", u,v,p,x,y,rawPointsPatch.x_[p]); fflush(stdout);
+              if( !params_.lossyRawPointsPatch_){
+                if ( x >= width || y >= height ) {
+                  std::cout << "\t\tout of image :" << x << "," << y << "(" << x + y * width
+                            << ") vs occupancyMap size :" << width << "x" << height << std::endl;
+                  exit( 0 );
+                }
+                assert( x < width && y < height );            
+                imageOccupancyMap.setValue( 0, x, y, 1 );
               }
-              assert( x < width && y < height );
-              occupancyMap.setValue( 0, x, y, 1 );
               contextFrame.getOccupancyMap()[x + y * width] = 1;
-              // auto&                 occupancyMapOriginal =
             }
           }
         }
       }
     }
   }
+  printf("markRawPatchLocation: done \n"); fflush(stdout);
 }
+
 bool PCCEncoder::dilateGeometryVideo( const PCCGroupOfFrames& sources, PCCContext& context ) {
   auto& videoGeometry         = context.getVideoGeometry();
   auto& videoGeometryMultiple = context.getVideoGeometryMultiple();
