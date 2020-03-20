@@ -38,14 +38,16 @@
 namespace pcc {
 
 // Annex E: Supplemental enhancement information
-// E.2.1	General SEI message syntax  <=> 7.3.8	Supplemental enhancement information message syntax
+// E.2.1	General SEI message syntax  <=> 7.3.8	Supplemental enhancement
+// information message syntax
 class SEI {
  public:
-  SEI() {payloadSize_=0;}
+  SEI() { payloadSize_ = 0; }
   virtual ~SEI() {}
   virtual SeiPayloadType getPayloadType() = 0;
   size_t                 getPayloadSize() { return payloadSize_; }
   void                   setPayloadSize( size_t value ) { payloadSize_ = value; }
+
  private:
   size_t payloadSize_;
 };
@@ -248,26 +250,30 @@ class SEIGeometryTransformationParams : public SEI {
   SeiPayloadType getPayloadType() { return GEOMETRY_TRANSFORMATION_PARAMS; }
 
   void allocate() {
-    for (uint8_t d = 0; d < 3; d++) {
-      gtpCameraOffsetOnAxis_[d].resize(8);
-      gtpCameraOrientationOnAxis_[d].resize(8);
+    for ( uint8_t d = 0; d < 3; d++ ) {
+      gtpCameraOffsetOnAxis_[d].resize( 8 );
+      gtpCameraOrientationOnAxis_[d].resize( 8 );
     }
   }
 
-  bool     getGtpCancelFlag() { return gtpCancelFlag_; }
-  bool     getGtpScaleEnabledFlag() { return gtpScaleEnabledFlag_; }
-  bool     getGtpOffsetEnabledFlag() { return gtpOffsetEnabledFlag_; }
-  bool     getGtpRotationEnabledFlag() { return gtpRotationEnabledFlag_; }
-  uint32_t getGtpGeometryScaleOnAxis( size_t index ) { return gtpGeometryScaleOnAxis_[index]; }
-  int32_t  getGtpGeometryOffsetOnAxis( size_t index ) { return gtpGeometryOffsetOnAxis_[index]; }
-  int16_t  getGtpRotationQx() { return gtpRotationQx_; }
-  int16_t  getGtpRotationQy() { return gtpRotationQy_; }
-  int16_t  getGtpRotationQz() { return gtpRotationQz_; }
-  uint8_t                   getGtpNumCameraInfoMinus1() { return gtpNumCameraInfoMinus1_; }
-  std::vector<int16_t>&     getGtpCameraOffsetOnAxis() { return gtpCameraOffsetOnAxis_[3]; }
-  std::vector<int16_t>&     getGtpCameraOrientationOnAxis() { return gtpCameraOrientationOnAxis_[3]; }
-  int16_t                   getGtpCameraOffsetOnAxis(uint8_t cameraId, size_t axisId) { return gtpCameraOffsetOnAxis_[cameraId][axisId]; }
-  int16_t                   getGtpCameraOrientationOnAxis(uint8_t cameraId, size_t axisId) { return gtpCameraOrientationOnAxis_[cameraId][axisId]; }
+  bool                  getGtpCancelFlag() { return gtpCancelFlag_; }
+  bool                  getGtpScaleEnabledFlag() { return gtpScaleEnabledFlag_; }
+  bool                  getGtpOffsetEnabledFlag() { return gtpOffsetEnabledFlag_; }
+  bool                  getGtpRotationEnabledFlag() { return gtpRotationEnabledFlag_; }
+  uint32_t              getGtpGeometryScaleOnAxis( size_t index ) { return gtpGeometryScaleOnAxis_[index]; }
+  int32_t               getGtpGeometryOffsetOnAxis( size_t index ) { return gtpGeometryOffsetOnAxis_[index]; }
+  int16_t               getGtpRotationQx() { return gtpRotationQx_; }
+  int16_t               getGtpRotationQy() { return gtpRotationQy_; }
+  int16_t               getGtpRotationQz() { return gtpRotationQz_; }
+  uint8_t               getGtpNumCameraInfoMinus1() { return gtpNumCameraInfoMinus1_; }
+  std::vector<int16_t>& getGtpCameraOffsetOnAxis() { return gtpCameraOffsetOnAxis_[3]; }
+  std::vector<int16_t>& getGtpCameraOrientationOnAxis() { return gtpCameraOrientationOnAxis_[3]; }
+  int16_t               getGtpCameraOffsetOnAxis( uint8_t cameraId, size_t axisId ) {
+    return gtpCameraOffsetOnAxis_[cameraId][axisId];
+  }
+  int16_t getGtpCameraOrientationOnAxis( uint8_t cameraId, size_t axisId ) {
+    return gtpCameraOrientationOnAxis_[cameraId][axisId];
+  }
 
   void setGtpCancelFlag( bool value ) { gtpCancelFlag_ = value; }
   void setGtpScaleEnabledFlag( bool value ) { gtpScaleEnabledFlag_ = value; }
@@ -278,23 +284,27 @@ class SEIGeometryTransformationParams : public SEI {
   void setGtpRotationQx( uint16_t value ) { gtpRotationQx_ = value; }
   void setGtpRotationQy( uint16_t value ) { gtpRotationQy_ = value; }
   void setGtpRotationQz( uint16_t value ) { gtpRotationQz_ = value; }
-  void setGtpNumCameraInfoMinus1(uint8_t value) { gtpNumCameraInfoMinus1_ = value; }
-  void setGtpCameraOffsetOnAxis(uint8_t cameraId, uint8_t axisId, int16_t value) { gtpCameraOffsetOnAxis_[cameraId][axisId] = value; }
-  void setGtpCameraOrientationOnAxis(uint8_t cameraId, uint8_t axisId, int16_t value) { gtpCameraOrientationOnAxis_[cameraId][axisId] = value; }
+  void setGtpNumCameraInfoMinus1( uint8_t value ) { gtpNumCameraInfoMinus1_ = value; }
+  void setGtpCameraOffsetOnAxis( uint8_t cameraId, uint8_t axisId, int16_t value ) {
+    gtpCameraOffsetOnAxis_[cameraId][axisId] = value;
+  }
+  void setGtpCameraOrientationOnAxis( uint8_t cameraId, uint8_t axisId, int16_t value ) {
+    gtpCameraOrientationOnAxis_[cameraId][axisId] = value;
+  }
 
  private:
-  bool                      gtpCancelFlag_;
-  bool                      gtpScaleEnabledFlag_;
-  bool                      gtpOffsetEnabledFlag_;
-  bool                      gtpRotationEnabledFlag_;
-  uint32_t                  gtpGeometryScaleOnAxis_[3];
-  int32_t                   gtpGeometryOffsetOnAxis_[3];
-  uint8_t                   gtpNumCameraInfoMinus1_;
-  int16_t                   gtpRotationQx_;
-  int16_t                   gtpRotationQy_;
-  int16_t                   gtpRotationQz_;
-  std::vector<int16_t>      gtpCameraOffsetOnAxis_[3];
-  std::vector<int16_t>      gtpCameraOrientationOnAxis_[3];
+  bool                 gtpCancelFlag_;
+  bool                 gtpScaleEnabledFlag_;
+  bool                 gtpOffsetEnabledFlag_;
+  bool                 gtpRotationEnabledFlag_;
+  uint32_t             gtpGeometryScaleOnAxis_[3];
+  int32_t              gtpGeometryOffsetOnAxis_[3];
+  uint8_t              gtpNumCameraInfoMinus1_;
+  int16_t              gtpRotationQx_;
+  int16_t              gtpRotationQy_;
+  int16_t              gtpRotationQz_;
+  std::vector<int16_t> gtpCameraOffsetOnAxis_[3];
+  std::vector<int16_t> gtpCameraOrientationOnAxis_[3];
 };
 
 // E.2.11  Attribute transformation parameters SEI message syntax
@@ -435,7 +445,7 @@ class SEIComponentCodecMapping : public SEI {
     ccmCodecId_.resize( ccmCodecMappingsCountMinus1_ + 1, 0 );
     ccmCodec4cc_.resize( 256 );
   }
-  bool                      getCcmCodecMappingsCountMinus1() { return ccmCodecMappingsCountMinus1_; }
+  uint8_t                   getCcmCodecMappingsCountMinus1() { return ccmCodecMappingsCountMinus1_; }
   std::vector<uint8_t>&     getCcmCodecId() { return ccmCodecId_; }
   std::vector<std::string>& getCcmCodec4cc() { return ccmCodec4cc_; }
   uint8_t                   getCcmCodecId( size_t index ) { return ccmCodecId_[index]; }
@@ -452,14 +462,14 @@ class SEIComponentCodecMapping : public SEI {
 };
 
 // E.2.14  Volumetric Tiling SEI message syntax
-//m52705
+// m52705
 class SEISceneObjectInformation : public SEI {
-public:
-  SEISceneObjectInformation(){}
-  ~SEISceneObjectInformation(){}
+ public:
+  SEISceneObjectInformation() {}
+  ~SEISceneObjectInformation() {}
   SEISceneObjectInformation& operator=( const SEISceneObjectInformation& ) = default;
-  void allocateObjectIdx() { soiObjectIdx_.resize( soiNumObjectUpdates_ ); }
-  void allocateObjectNumDependencies(size_t index, size_t objectNumDependencies){
+  void                       allocateObjectIdx() { soiObjectIdx_.resize( soiNumObjectUpdates_ ); }
+  void                       allocateObjectNumDependencies( size_t index, size_t objectNumDependencies ) {
     soiObjectDependencyIdx_[index].resize( objectNumDependencies );
   }
   void allocate( size_t size ) {
@@ -491,110 +501,110 @@ public:
       soiPointSize_.resize( size );
       soiMaterialIdUpdateFlag_.resize( size );
       soiMaterialId_.resize( size );
-      
-      soiObjectDependencyIdx_.resize( size ); //16
-      
+
+      soiObjectDependencyIdx_.resize( size );  // 16
     }
   }
-  
-  SeiPayloadType getPayloadType() { return SCENE_OBJECT_INFORMATION; }
-  bool     getSoiCancelFlag() { return soiCancelFlag_; }
-  uint32_t getSoiNumObjectUpdates() { return soiNumObjectUpdates_; }
-  bool     getSoiSimpleObjectsFlag() { return soiSimpleObjectsFlag_; }
-  bool     getSoiObjectLabelPresentFlag() { return soiObjectLabelPresentFlag_; }
-  bool     getSoiPriorityPresentFlag() { return soiPriorityPresentFlag_; }
-  bool     getSoiObjectHiddenPresentFlag() { return soiObjectHiddenPresentFlag_; }
-  bool     getSoiObjectDependencyPresentFlag() { return soiObjectDependencyPresentFlag_; }
-  bool     getSoiVisibilityConesPresentFlag() { return soiVisibilityConesPresentFlag_; }
-  bool     getSoi3dBoundingBoxPresentFlag() { return soi3dBoundingBoxPresentFlag_; }
-  bool     getSoiCollisionShapePresentFlag() { return soiCollisionShapePresentFlag_; }
-  bool     getSoiPointStylePresentFlag() { return soiPointStylePresentFlag_; }
-  bool     getSoiMaterialIdPresentFlag() { return soiMaterialIdPresentFlag_; }
-  bool     getSoiExtensionPresentFlag() { return soiExtensionPresentFlag_; }
-  uint8_t  getSoi3dBoundingBoxScaleLog2() { return soi3dBoundingBoxScaleLog2_; }
-  uint8_t  getSoi3dBoundingBoxPrecisionMinus8() { return soi3dBoundingBoxPrecisionMinus8_; }
-  uint8_t  getSoiLog2MaxObjectIdxUpdated() { return soiLog2MaxObjectIdxUpdated_; }
-  uint8_t  getSoiLog2MaxObjectDependencyIdx() { return soiLog2MaxObjectDependencyIdx_; }
-  std::vector<uint32_t>& getSoiObjectIdx()        { return soiObjectIdx_; }
-  uint32_t getSoiObjectIdx(size_t index)        { return soiObjectIdx_[index]; }
-  bool     getSoiObjectCancelFlag(size_t index) { return soiObjectCancelFlag_[index]; }
-  bool     getSoiObjectLabelUpdateFlag(size_t index) { return soiObjectLabelUpdateFlag_[index]; }
-  uint32_t getSoiObjectLabelIdx(size_t index) { return soiObjectLabelIdx_[index]; }
-  bool     getSoiPriorityUpdateFlag(size_t index) { return soiPriorityUpdateFlag_[index]; }
-  uint8_t  getSoiPriorityValue(size_t index) { return soiPriorityValue_[index]; }
-  bool     getSoiObjectHiddenFlag(size_t index) { return soiObjectHiddenFlag_[index]; }
-  bool     getSoiObjectDependencyUpdateFlag(size_t index) { return soiObjectDependencyUpdateFlag_[index]; }
-  uint8_t  getSoiObjectNumDependencies(size_t index) { return soiObjectNumDependencies_[index]; }
-  uint32_t getSoiObjectDependencyIdx(size_t index, size_t objnum) { return soiObjectDependencyIdx_[index][objnum]; }
-  bool     getSoiVisibilityConesUpdateFlag(size_t index) { return soiVisibilityConesUpdateFlag_[index]; }
-  uint32_t getSoiDirectionX(size_t index) { return soiDirectionX_[index]; }
-  uint32_t getSoiDirectionY(size_t index) { return soiDirectionY_[index]; }
-  uint32_t getSoiDirectionZ(size_t index) { return soiDirectionZ_[index]; }
-  uint16_t getSoiAngle(size_t index) { return soiAngle_[index]; }
-  bool     getSoi3dBoundingBoxUpdateFlag(size_t index) { return soi3dBoundingBoxUpdateFlag_[index]; }
-  uint32_t getSoi3dBoundingBoxX(size_t index) { return soi3dBoundingBoxX_[index]; }
-  uint32_t getSoi3dBoundingBoxY(size_t index) { return soi3dBoundingBoxY_[index]; }
-  uint32_t getSoi3dBoundingBoxZ(size_t index) { return soi3dBoundingBoxZ_[index]; }
-  uint32_t getSoi3dBoundingBoxDeltaX(size_t index) { return soi3dBoundingBoxDeltaX_[index]; }
-  uint32_t getSoi3dBoundingBoxDeltaY(size_t index) { return soi3dBoundingBoxDeltaY_[index]; }
-  uint32_t getSoi3dBoundingBoxDeltaZ(size_t index) { return soi3dBoundingBoxDeltaZ_[index]; }
-  bool     getSoiCollisionShapeUpdateFlag(size_t index) { return soiCollisionShapeUpdateFlag_[index]; }
-  uint16_t getSoiCollisionShapeId(size_t index) { return soiCollisionShapeId_[index]; }
-  bool     getSoiPointStyleUpdateFlag(size_t index) { return soiPointStyleUpdateFlag_[index]; }
-  uint8_t  getSoiPointShapeId(size_t index) { return soiPointShapeId_[index]; }
-  uint16_t getSoiPointSize(size_t index) { return soiPointSize_[index]; }
-  bool     getSoiMaterialIdUpdateFlag(size_t index) { return soiMaterialIdUpdateFlag_[index]; }
-  uint16_t getSoiMaterialId(size_t index) { return soiMaterialId_[index]; }
 
-  void setSoiCancelFlag            ( bool     value ) { soiCancelFlag_ = value; }
-  void setSoiNumObjectUpdates      ( uint32_t value ) { soiNumObjectUpdates_ = value; }
-  void setSoiSimpleObjectsFlag     ( bool     value ) { soiSimpleObjectsFlag_ = value; }
-  void setSoiObjectLabelPresentFlag( bool     value ) { soiObjectLabelPresentFlag_ = value; }
-  void setSoiPriorityPresentFlag   ( bool     value ) { soiPriorityPresentFlag_ = value; }
-  void setSoiObjectHiddenPresentFlag( bool     value ) { soiObjectHiddenPresentFlag_ = value; }
-  void setSoiObjectDependencyPresentFlag( bool     value ) { soiObjectDependencyPresentFlag_ = value; }
-  void setSoiVisibilityConesPresentFlag ( bool     value ) { soiVisibilityConesPresentFlag_ = value; }
-  void setSoi3dBoundingBoxPresentFlag  ( bool     value ) { soi3dBoundingBoxPresentFlag_ = value; }
-  void setSoiCollisionShapePresentFlag  ( bool     value ) { soiCollisionShapePresentFlag_ = value; }
-  void setSoiPointStylePresentFlag   ( bool     value ) { soiPointStylePresentFlag_ = value; }
-  void setSoiMaterialIdPresentFlag   ( bool     value ) { soiMaterialIdPresentFlag_ = value; }
-  void setSoiExtensionPresentFlag    ( bool     value ) { soiExtensionPresentFlag_ = value; }
-  void setSoi3dBoundingBoxScaleLog2  ( uint8_t  value ) { soi3dBoundingBoxScaleLog2_ = value; }
-  void setSoi3dBoundingBoxPrecisionMinus8( uint8_t  value ) { soi3dBoundingBoxPrecisionMinus8_ = value; }
-  void setSoiLog2MaxObjectIdxUpdated     ( uint8_t  value ) { soiLog2MaxObjectIdxUpdated_ = value; }
-  void setSoiLog2MaxObjectDependencyIdx  ( uint8_t  value ) { soiLog2MaxObjectDependencyIdx_ = value; }
-  void setSoiObjectIdx            ( size_t index, uint32_t value ) { soiObjectIdx_[index] = value; }
-  void setSoiObjectCancelFlag     ( size_t index, bool     value ) { soiObjectCancelFlag_[index] = value; }
-  void setSoiObjectLabelUpdateFlag( size_t index, bool     value ) { soiObjectLabelUpdateFlag_[index] = value; }
-  void setSoiObjectLabelIdx       ( size_t index, uint32_t value ) { soiObjectLabelIdx_[index] = value; }
-  void setSoiPriorityUpdateFlag   ( size_t index, bool     value ) { soiPriorityUpdateFlag_[index] = value; }
-  void setSoiPriorityValue        ( size_t index, uint8_t  value ) { soiPriorityValue_[index] = value; }
-  void setSoiObjectHiddenFlag     ( size_t index, bool     value ) { soiObjectHiddenFlag_[index] = value; }
-  void setSoiObjectDependencyUpdateFlag ( size_t index, bool     value ) { soiObjectDependencyUpdateFlag_[index] = value; }
-  void setSoiObjectNumDependencies      ( size_t index, uint8_t  value ) { soiObjectNumDependencies_[index] = value; }
-  void setSoiObjectDependencyIdx        ( size_t index, size_t objnum, uint32_t value ) { soiObjectDependencyIdx_[index][objnum] = value; }
-  void setSoiVisibilityConesUpdateFlag  ( size_t index, bool     value ) { soiVisibilityConesUpdateFlag_[index] = value; }
-  void setSoiDirectionX ( size_t index, uint32_t value ) { soiDirectionX_[index] = value; }
-  void setSoiDirectionY ( size_t index, uint32_t value ) { soiDirectionY_[index] = value; }
-  void setSoiDirectionZ ( size_t index, uint32_t value ) { soiDirectionZ_[index] = value; }
-  void setSoiAngle      ( size_t index, uint16_t value ) { soiAngle_[index] = value; }
-  void setSoi3dBoundingBoxUpdateFlag( size_t index, bool     value ) { soi3dBoundingBoxUpdateFlag_[index] = value; }
+  SeiPayloadType         getPayloadType() { return SCENE_OBJECT_INFORMATION; }
+  bool                   getSoiCancelFlag() { return soiCancelFlag_; }
+  uint32_t               getSoiNumObjectUpdates() { return soiNumObjectUpdates_; }
+  bool                   getSoiSimpleObjectsFlag() { return soiSimpleObjectsFlag_; }
+  bool                   getSoiObjectLabelPresentFlag() { return soiObjectLabelPresentFlag_; }
+  bool                   getSoiPriorityPresentFlag() { return soiPriorityPresentFlag_; }
+  bool                   getSoiObjectHiddenPresentFlag() { return soiObjectHiddenPresentFlag_; }
+  bool                   getSoiObjectDependencyPresentFlag() { return soiObjectDependencyPresentFlag_; }
+  bool                   getSoiVisibilityConesPresentFlag() { return soiVisibilityConesPresentFlag_; }
+  bool                   getSoi3dBoundingBoxPresentFlag() { return soi3dBoundingBoxPresentFlag_; }
+  bool                   getSoiCollisionShapePresentFlag() { return soiCollisionShapePresentFlag_; }
+  bool                   getSoiPointStylePresentFlag() { return soiPointStylePresentFlag_; }
+  bool                   getSoiMaterialIdPresentFlag() { return soiMaterialIdPresentFlag_; }
+  bool                   getSoiExtensionPresentFlag() { return soiExtensionPresentFlag_; }
+  uint8_t                getSoi3dBoundingBoxScaleLog2() { return soi3dBoundingBoxScaleLog2_; }
+  uint8_t                getSoi3dBoundingBoxPrecisionMinus8() { return soi3dBoundingBoxPrecisionMinus8_; }
+  uint8_t                getSoiLog2MaxObjectIdxUpdated() { return soiLog2MaxObjectIdxUpdated_; }
+  uint8_t                getSoiLog2MaxObjectDependencyIdx() { return soiLog2MaxObjectDependencyIdx_; }
+  std::vector<uint32_t>& getSoiObjectIdx() { return soiObjectIdx_; }
+  uint32_t               getSoiObjectIdx( size_t index ) { return soiObjectIdx_[index]; }
+  bool                   getSoiObjectCancelFlag( size_t index ) { return soiObjectCancelFlag_[index]; }
+  bool                   getSoiObjectLabelUpdateFlag( size_t index ) { return soiObjectLabelUpdateFlag_[index]; }
+  uint32_t               getSoiObjectLabelIdx( size_t index ) { return soiObjectLabelIdx_[index]; }
+  bool                   getSoiPriorityUpdateFlag( size_t index ) { return soiPriorityUpdateFlag_[index]; }
+  uint8_t                getSoiPriorityValue( size_t index ) { return soiPriorityValue_[index]; }
+  bool                   getSoiObjectHiddenFlag( size_t index ) { return soiObjectHiddenFlag_[index]; }
+  bool     getSoiObjectDependencyUpdateFlag( size_t index ) { return soiObjectDependencyUpdateFlag_[index]; }
+  uint8_t  getSoiObjectNumDependencies( size_t index ) { return soiObjectNumDependencies_[index]; }
+  uint32_t getSoiObjectDependencyIdx( size_t index, size_t objnum ) { return soiObjectDependencyIdx_[index][objnum]; }
+  bool     getSoiVisibilityConesUpdateFlag( size_t index ) { return soiVisibilityConesUpdateFlag_[index]; }
+  uint32_t getSoiDirectionX( size_t index ) { return soiDirectionX_[index]; }
+  uint32_t getSoiDirectionY( size_t index ) { return soiDirectionY_[index]; }
+  uint32_t getSoiDirectionZ( size_t index ) { return soiDirectionZ_[index]; }
+  uint16_t getSoiAngle( size_t index ) { return soiAngle_[index]; }
+  bool     getSoi3dBoundingBoxUpdateFlag( size_t index ) { return soi3dBoundingBoxUpdateFlag_[index]; }
+  uint32_t getSoi3dBoundingBoxX( size_t index ) { return soi3dBoundingBoxX_[index]; }
+  uint32_t getSoi3dBoundingBoxY( size_t index ) { return soi3dBoundingBoxY_[index]; }
+  uint32_t getSoi3dBoundingBoxZ( size_t index ) { return soi3dBoundingBoxZ_[index]; }
+  uint32_t getSoi3dBoundingBoxDeltaX( size_t index ) { return soi3dBoundingBoxDeltaX_[index]; }
+  uint32_t getSoi3dBoundingBoxDeltaY( size_t index ) { return soi3dBoundingBoxDeltaY_[index]; }
+  uint32_t getSoi3dBoundingBoxDeltaZ( size_t index ) { return soi3dBoundingBoxDeltaZ_[index]; }
+  bool     getSoiCollisionShapeUpdateFlag( size_t index ) { return soiCollisionShapeUpdateFlag_[index]; }
+  uint16_t getSoiCollisionShapeId( size_t index ) { return soiCollisionShapeId_[index]; }
+  bool     getSoiPointStyleUpdateFlag( size_t index ) { return soiPointStyleUpdateFlag_[index]; }
+  uint8_t  getSoiPointShapeId( size_t index ) { return soiPointShapeId_[index]; }
+  uint16_t getSoiPointSize( size_t index ) { return soiPointSize_[index]; }
+  bool     getSoiMaterialIdUpdateFlag( size_t index ) { return soiMaterialIdUpdateFlag_[index]; }
+  uint16_t getSoiMaterialId( size_t index ) { return soiMaterialId_[index]; }
+
+  void setSoiCancelFlag( bool value ) { soiCancelFlag_ = value; }
+  void setSoiNumObjectUpdates( uint32_t value ) { soiNumObjectUpdates_ = value; }
+  void setSoiSimpleObjectsFlag( bool value ) { soiSimpleObjectsFlag_ = value; }
+  void setSoiObjectLabelPresentFlag( bool value ) { soiObjectLabelPresentFlag_ = value; }
+  void setSoiPriorityPresentFlag( bool value ) { soiPriorityPresentFlag_ = value; }
+  void setSoiObjectHiddenPresentFlag( bool value ) { soiObjectHiddenPresentFlag_ = value; }
+  void setSoiObjectDependencyPresentFlag( bool value ) { soiObjectDependencyPresentFlag_ = value; }
+  void setSoiVisibilityConesPresentFlag( bool value ) { soiVisibilityConesPresentFlag_ = value; }
+  void setSoi3dBoundingBoxPresentFlag( bool value ) { soi3dBoundingBoxPresentFlag_ = value; }
+  void setSoiCollisionShapePresentFlag( bool value ) { soiCollisionShapePresentFlag_ = value; }
+  void setSoiPointStylePresentFlag( bool value ) { soiPointStylePresentFlag_ = value; }
+  void setSoiMaterialIdPresentFlag( bool value ) { soiMaterialIdPresentFlag_ = value; }
+  void setSoiExtensionPresentFlag( bool value ) { soiExtensionPresentFlag_ = value; }
+  void setSoi3dBoundingBoxScaleLog2( uint8_t value ) { soi3dBoundingBoxScaleLog2_ = value; }
+  void setSoi3dBoundingBoxPrecisionMinus8( uint8_t value ) { soi3dBoundingBoxPrecisionMinus8_ = value; }
+  void setSoiLog2MaxObjectIdxUpdated( uint8_t value ) { soiLog2MaxObjectIdxUpdated_ = value; }
+  void setSoiLog2MaxObjectDependencyIdx( uint8_t value ) { soiLog2MaxObjectDependencyIdx_ = value; }
+  void setSoiObjectIdx( size_t index, uint32_t value ) { soiObjectIdx_[index] = value; }
+  void setSoiObjectCancelFlag( size_t index, bool value ) { soiObjectCancelFlag_[index] = value; }
+  void setSoiObjectLabelUpdateFlag( size_t index, bool value ) { soiObjectLabelUpdateFlag_[index] = value; }
+  void setSoiObjectLabelIdx( size_t index, uint32_t value ) { soiObjectLabelIdx_[index] = value; }
+  void setSoiPriorityUpdateFlag( size_t index, bool value ) { soiPriorityUpdateFlag_[index] = value; }
+  void setSoiPriorityValue( size_t index, uint8_t value ) { soiPriorityValue_[index] = value; }
+  void setSoiObjectHiddenFlag( size_t index, bool value ) { soiObjectHiddenFlag_[index] = value; }
+  void setSoiObjectDependencyUpdateFlag( size_t index, bool value ) { soiObjectDependencyUpdateFlag_[index] = value; }
+  void setSoiObjectNumDependencies( size_t index, uint8_t value ) { soiObjectNumDependencies_[index] = value; }
+  void setSoiObjectDependencyIdx( size_t index, size_t objnum, uint32_t value ) {
+    soiObjectDependencyIdx_[index][objnum] = value;
+  }
+  void setSoiVisibilityConesUpdateFlag( size_t index, bool value ) { soiVisibilityConesUpdateFlag_[index] = value; }
+  void setSoiDirectionX( size_t index, uint32_t value ) { soiDirectionX_[index] = value; }
+  void setSoiDirectionY( size_t index, uint32_t value ) { soiDirectionY_[index] = value; }
+  void setSoiDirectionZ( size_t index, uint32_t value ) { soiDirectionZ_[index] = value; }
+  void setSoiAngle( size_t index, uint16_t value ) { soiAngle_[index] = value; }
+  void setSoi3dBoundingBoxUpdateFlag( size_t index, bool value ) { soi3dBoundingBoxUpdateFlag_[index] = value; }
   void setSoi3dBoundingBoxX( size_t index, uint32_t value ) { soi3dBoundingBoxX_[index] = value; }
   void setSoi3dBoundingBoxY( size_t index, uint32_t value ) { soi3dBoundingBoxY_[index] = value; }
   void setSoi3dBoundingBoxZ( size_t index, uint32_t value ) { soi3dBoundingBoxZ_[index] = value; }
   void setSoi3dBoundingBoxDeltaX( size_t index, uint32_t value ) { soi3dBoundingBoxDeltaX_[index] = value; }
   void setSoi3dBoundingBoxDeltaY( size_t index, uint32_t value ) { soi3dBoundingBoxDeltaY_[index] = value; }
   void setSoi3dBoundingBoxDeltaZ( size_t index, uint32_t value ) { soi3dBoundingBoxDeltaZ_[index] = value; }
-  void setSoiCollisionShapeUpdateFlag( size_t index, bool     value ) { soiCollisionShapeUpdateFlag_[index] = value; }
-  void setSoiCollisionShapeId        ( size_t index, uint16_t value ) { soiCollisionShapeId_[index] = value; }
-  void setSoiPointStyleUpdateFlag    ( size_t index, bool     value ) { soiPointStyleUpdateFlag_[index] = value; }
-  void setSoiPointShapeId            ( size_t index, uint8_t  value ) { soiPointShapeId_[index] = value; }
-  void setSoiPointSize               ( size_t index, uint16_t value ) { soiPointSize_[index] = value; }
-  void setSoiMaterialIdUpdateFlag    ( size_t index, bool     value ) { soiMaterialIdUpdateFlag_[index] = value; }
-  void setSoiMaterialId              ( size_t index, uint16_t value ) { soiMaterialId_[index] = value; }
+  void setSoiCollisionShapeUpdateFlag( size_t index, bool value ) { soiCollisionShapeUpdateFlag_[index] = value; }
+  void setSoiCollisionShapeId( size_t index, uint16_t value ) { soiCollisionShapeId_[index] = value; }
+  void setSoiPointStyleUpdateFlag( size_t index, bool value ) { soiPointStyleUpdateFlag_[index] = value; }
+  void setSoiPointShapeId( size_t index, uint8_t value ) { soiPointShapeId_[index] = value; }
+  void setSoiPointSize( size_t index, uint16_t value ) { soiPointSize_[index] = value; }
+  void setSoiMaterialIdUpdateFlag( size_t index, bool value ) { soiMaterialIdUpdateFlag_[index] = value; }
+  void setSoiMaterialId( size_t index, uint16_t value ) { soiMaterialId_[index] = value; }
 
-private:
-
+ private:
   bool     soiCancelFlag_;
   uint32_t soiNumObjectUpdates_;
   bool     soiSimpleObjectsFlag_;
@@ -612,96 +622,100 @@ private:
   uint8_t  soi3dBoundingBoxPrecisionMinus8_;
   uint8_t  soiLog2MaxObjectIdxUpdated_;
   uint8_t  soiLog2MaxObjectDependencyIdx_;
-  //max pow(2,32)
-  std::vector<uint32_t> soiObjectIdx_;
-  std::vector<bool    > soiObjectCancelFlag_;
-  std::vector<bool    > soiObjectLabelUpdateFlag_;
-  std::vector<uint32_t> soiObjectLabelIdx_;
-  std::vector<bool    > soiPriorityUpdateFlag_;
-  std::vector<uint8_t > soiPriorityValue_;
-  std::vector<bool    > soiObjectHiddenFlag_;
-  std::vector<bool    > soiObjectDependencyUpdateFlag_;
-  std::vector<uint8_t > soiObjectNumDependencies_;
-  std::vector<std::vector<uint32_t>> soiObjectDependencyIdx_; //16
-  std::vector<bool    > soiVisibilityConesUpdateFlag_;
-  std::vector<uint32_t> soiDirectionX_;
-  std::vector<uint32_t> soiDirectionY_;
-  std::vector<uint32_t> soiDirectionZ_;
-  std::vector<uint16_t> soiAngle_;
-  std::vector<bool    > soi3dBoundingBoxUpdateFlag_;
-  std::vector<uint32_t> soi3dBoundingBoxX_;
-  std::vector<uint32_t> soi3dBoundingBoxY_;
-  std::vector<uint32_t> soi3dBoundingBoxZ_;
-  std::vector<uint32_t> soi3dBoundingBoxDeltaX_;
-  std::vector<uint32_t> soi3dBoundingBoxDeltaY_;
-  std::vector<uint32_t> soi3dBoundingBoxDeltaZ_;
-  std::vector<bool    > soiCollisionShapeUpdateFlag_;
-  std::vector<uint16_t> soiCollisionShapeId_;
-  std::vector<bool    > soiPointStyleUpdateFlag_;
-  std::vector<uint8_t > soiPointShapeId_;
-  std::vector<uint16_t> soiPointSize_;
-  std::vector<bool    > soiMaterialIdUpdateFlag_;
-  std::vector<uint16_t> soiMaterialId_;
+  // max pow(2,32)
+  std::vector<uint32_t>              soiObjectIdx_;
+  std::vector<bool>                  soiObjectCancelFlag_;
+  std::vector<bool>                  soiObjectLabelUpdateFlag_;
+  std::vector<uint32_t>              soiObjectLabelIdx_;
+  std::vector<bool>                  soiPriorityUpdateFlag_;
+  std::vector<uint8_t>               soiPriorityValue_;
+  std::vector<bool>                  soiObjectHiddenFlag_;
+  std::vector<bool>                  soiObjectDependencyUpdateFlag_;
+  std::vector<uint8_t>               soiObjectNumDependencies_;
+  std::vector<std::vector<uint32_t>> soiObjectDependencyIdx_;  // 16
+  std::vector<bool>                  soiVisibilityConesUpdateFlag_;
+  std::vector<uint32_t>              soiDirectionX_;
+  std::vector<uint32_t>              soiDirectionY_;
+  std::vector<uint32_t>              soiDirectionZ_;
+  std::vector<uint16_t>              soiAngle_;
+  std::vector<bool>                  soi3dBoundingBoxUpdateFlag_;
+  std::vector<uint32_t>              soi3dBoundingBoxX_;
+  std::vector<uint32_t>              soi3dBoundingBoxY_;
+  std::vector<uint32_t>              soi3dBoundingBoxZ_;
+  std::vector<uint32_t>              soi3dBoundingBoxDeltaX_;
+  std::vector<uint32_t>              soi3dBoundingBoxDeltaY_;
+  std::vector<uint32_t>              soi3dBoundingBoxDeltaZ_;
+  std::vector<bool>                  soiCollisionShapeUpdateFlag_;
+  std::vector<uint16_t>              soiCollisionShapeId_;
+  std::vector<bool>                  soiPointStyleUpdateFlag_;
+  std::vector<uint8_t>               soiPointShapeId_;
+  std::vector<uint16_t>              soiPointSize_;
+  std::vector<bool>                  soiMaterialIdUpdateFlag_;
+  std::vector<uint16_t>              soiMaterialId_;
 
-};//sceneobjectinformation
+};  // sceneobjectinformation
 
-class SEIObjectLabelInformation  : public SEI {
-public:
-  SEIObjectLabelInformation(){}
-  ~SEIObjectLabelInformation(){}
+class SEIObjectLabelInformation : public SEI {
+ public:
+  SEIObjectLabelInformation() {}
+  ~SEIObjectLabelInformation() {}
   SEIObjectLabelInformation& operator=( const SEIObjectLabelInformation& ) = default;
 
   SeiPayloadType getPayloadType() { return OBJECT_LABEL_INFORMATION; }
-  void     allocate() { oliLabelIdx_.resize( oliNumLabelUpdates_, 0 ); }
-  bool     getOliCancelFlag(){ return oliCancelFlag_; }
-  bool     getOliLabelLanguagePresentFlag(){ return oliLabelLanguagePresentFlag_; }
-  std::string& getOliLabelLanguage(){ return oliLabelLanguage_; }
-  uint32_t getOliNumLabelUpdates(){ return oliNumLabelUpdates_; }
-  uint32_t getOliLabelIdx(size_t index){ return oliLabelIdx_[index]; }
-  bool     getOliLabelCancelFlag(){ return oliLabelCancelFlag_; }
-  bool     getOliBitEqualToZero(){ return oliBitEqualToZero_; }
-  std::string& getOliLabel(size_t index){ return oliLabel_[index]; }
-  
-  void setOliCancelFlag(bool     value ){ oliCancelFlag_ = value; }
-  void setOliLabelLanguagePresentFlag(bool     value ){ oliLabelLanguagePresentFlag_ = value; }
-  void setOliLabelLanguage(std::string value ){ oliLabelLanguage_ = value; }
-  void setOliNumLabelUpdates(uint32_t value ){ oliNumLabelUpdates_ = value; }
-  void setOliLabelIdx(size_t index, uint32_t value ){ oliLabelIdx_[index] = value; }
-  void setOliLabelCancelFlag(bool     value ){ oliLabelCancelFlag_ = value; }
-  void setOliBitEqualToZero(bool     value ){ oliBitEqualToZero_ = value; }
-  void setOliLabel(size_t index, std::string value ){
+  void           allocate() { oliLabelIdx_.resize( oliNumLabelUpdates_, 0 ); }
+  bool           getOliCancelFlag() { return oliCancelFlag_; }
+  bool           getOliLabelLanguagePresentFlag() { return oliLabelLanguagePresentFlag_; }
+  std::string&   getOliLabelLanguage() { return oliLabelLanguage_; }
+  uint32_t       getOliNumLabelUpdates() { return oliNumLabelUpdates_; }
+  uint32_t       getOliLabelIdx( size_t index ) { return oliLabelIdx_[index]; }
+  bool           getOliLabelCancelFlag() { return oliLabelCancelFlag_; }
+  bool           getOliBitEqualToZero() { return oliBitEqualToZero_; }
+  std::string&   getOliLabel( size_t index ) { return oliLabel_[index]; }
+
+  void setOliCancelFlag( bool value ) { oliCancelFlag_ = value; }
+  void setOliLabelLanguagePresentFlag( bool value ) { oliLabelLanguagePresentFlag_ = value; }
+  void setOliLabelLanguage( std::string value ) { oliLabelLanguage_ = value; }
+  void setOliNumLabelUpdates( uint32_t value ) { oliNumLabelUpdates_ = value; }
+  void setOliLabelIdx( size_t index, uint32_t value ) { oliLabelIdx_[index] = value; }
+  void setOliLabelCancelFlag( bool value ) { oliLabelCancelFlag_ = value; }
+  void setOliBitEqualToZero( bool value ) { oliBitEqualToZero_ = value; }
+  void setOliLabel( size_t index, std::string value ) {
     if ( oliLabel_.size() < index ) { oliLabel_.resize( index + 1 ); }
     oliLabel_[index] = value;
   }
 
-private:
-  bool oliCancelFlag_;
-  bool oliLabelLanguagePresentFlag_;
-  std::string oliLabelLanguage_; //st(v)
-  uint32_t oliNumLabelUpdates_;
-  std::vector<uint32_t>  oliLabelIdx_;
-  bool oliLabelCancelFlag_;
-  bool oliBitEqualToZero_;
-  std::vector<std::string> oliLabel_; //st(v)
-};//Object label information
+ private:
+  bool                     oliCancelFlag_;
+  bool                     oliLabelLanguagePresentFlag_;
+  std::string              oliLabelLanguage_;  // st(v)
+  uint32_t                 oliNumLabelUpdates_;
+  std::vector<uint32_t>    oliLabelIdx_;
+  bool                     oliLabelCancelFlag_;
+  bool                     oliBitEqualToZero_;
+  std::vector<std::string> oliLabel_;  // st(v)
+};                                     // Object label information
 
 class SEIPatchInformation : public SEI {
-public:
-  SEIPatchInformation(){}
-  ~SEIPatchInformation(){}
+ public:
+  SEIPatchInformation() {}
+  ~SEIPatchInformation() {}
   SEIPatchInformation& operator=( const SEIPatchInformation& ) = default;
-  SeiPayloadType getPayloadType() { return PATCH_INFORMATION; }
-  bool     getPiCancelFlag() { return piCancelFlag_; }
-  uint32_t getPiNumTileGroupUpdates() { return piNumTileGroupUpdates_; }
-  uint8_t  getPiLog2MaxObjectIdxTracked() { return piLog2MaxObjectIdxTracked_; }
-  uint8_t  getPiLog2MaxPatchIdxUpdated() { return piLog2MaxPatchIdxUpdated_; }
-  uint32_t getPiTileGroupAddress(size_t index) { return piTileGroupAddress_[index]; }
-  bool     getPiTileGroupCancelFlag(size_t index) { return piTileGroupCancelFlag_[index]; }
-  uint32_t getPiNumPatchUpdates(size_t index) { return piNumPatchUpdates_[index]; }
-  uint32_t getPiPatchIdx(size_t index, size_t index2) { return piPatchIdx_[index][index2]; }
-  bool     getPiPatchCancelFlag(size_t index, size_t index2) { return piPatchCancelFlag_[index][index2]; }
-  uint32_t getPiPatchNumberOfObjectsMinus1(size_t index, size_t index2) { return piPatchNumberOfObjectsMinus1_[index][index2]; }
-  uint32_t getPiPatchObjectIdx(size_t index, size_t index2, size_t index3) { return piPatchObjectIdx_[index][index2][index3]; }
+  SeiPayloadType       getPayloadType() { return PATCH_INFORMATION; }
+  bool                 getPiCancelFlag() { return piCancelFlag_; }
+  uint32_t             getPiNumTileGroupUpdates() { return piNumTileGroupUpdates_; }
+  uint8_t              getPiLog2MaxObjectIdxTracked() { return piLog2MaxObjectIdxTracked_; }
+  uint8_t              getPiLog2MaxPatchIdxUpdated() { return piLog2MaxPatchIdxUpdated_; }
+  uint32_t             getPiTileGroupAddress( size_t index ) { return piTileGroupAddress_[index]; }
+  bool                 getPiTileGroupCancelFlag( size_t index ) { return piTileGroupCancelFlag_[index]; }
+  uint32_t             getPiNumPatchUpdates( size_t index ) { return piNumPatchUpdates_[index]; }
+  uint32_t             getPiPatchIdx( size_t index, size_t index2 ) { return piPatchIdx_[index][index2]; }
+  bool                 getPiPatchCancelFlag( size_t index, size_t index2 ) { return piPatchCancelFlag_[index][index2]; }
+  uint32_t             getPiPatchNumberOfObjectsMinus1( size_t index, size_t index2 ) {
+    return piPatchNumberOfObjectsMinus1_[index][index2];
+  }
+  uint32_t getPiPatchObjectIdx( size_t index, size_t index2, size_t index3 ) {
+    return piPatchObjectIdx_[index][index2][index3];
+  }
 
   void setPiCancelFlag( bool value ) { piCancelFlag_ = value; }
   void setPiNumTileGroupUpdates( uint32_t value ) { piNumTileGroupUpdates_ = value; }
@@ -712,85 +726,91 @@ public:
   void setPiNumPatchUpdates( size_t index, uint32_t value ) { piNumPatchUpdates_[index] = value; }
   void setPiPatchIdx( size_t index, size_t index2, uint32_t value ) { piPatchIdx_[index][index2] = value; }
   void setPiPatchCancelFlag( size_t index, size_t index2, bool value ) { piPatchCancelFlag_[index][index2] = value; }
-  void setPiPatchNumberOfObjectsMinus1( size_t index, size_t index2, uint32_t value ) { piPatchNumberOfObjectsMinus1_[index][index2] = value; }
-  void setPiPatchObjectIdx( size_t index, size_t index2, size_t index3, uint32_t value ) { piPatchObjectIdx_[index][index2][index3] = value; }
-  
-private:
-  bool     piCancelFlag_;
-  uint32_t piNumTileGroupUpdates_;
-  uint8_t  piLog2MaxObjectIdxTracked_;
-  uint8_t  piLog2MaxPatchIdxUpdated_;
-  std::vector<uint32_t> piTileGroupAddress_;
-  std::vector<bool>     piTileGroupCancelFlag_;
-  std::vector<uint32_t> piNumPatchUpdates_;
-  std::vector<std::vector<uint32_t>> piPatchIdx_;
-  std::vector<std::vector<bool>>     piPatchCancelFlag_;
-  std::vector<std::vector<uint32_t>> piPatchNumberOfObjectsMinus1_;
+  void setPiPatchNumberOfObjectsMinus1( size_t index, size_t index2, uint32_t value ) {
+    piPatchNumberOfObjectsMinus1_[index][index2] = value;
+  }
+  void setPiPatchObjectIdx( size_t index, size_t index2, size_t index3, uint32_t value ) {
+    piPatchObjectIdx_[index][index2][index3] = value;
+  }
+
+ private:
+  bool                                            piCancelFlag_;
+  uint32_t                                        piNumTileGroupUpdates_;
+  uint8_t                                         piLog2MaxObjectIdxTracked_;
+  uint8_t                                         piLog2MaxPatchIdxUpdated_;
+  std::vector<uint32_t>                           piTileGroupAddress_;
+  std::vector<bool>                               piTileGroupCancelFlag_;
+  std::vector<uint32_t>                           piNumPatchUpdates_;
+  std::vector<std::vector<uint32_t>>              piPatchIdx_;
+  std::vector<std::vector<bool>>                  piPatchCancelFlag_;
+  std::vector<std::vector<uint32_t>>              piPatchNumberOfObjectsMinus1_;
   std::vector<std::vector<std::vector<uint32_t>>> piPatchObjectIdx_;
 
-
-}; //patch information
+};  // patch information
 class SEIVolumetricRectangleInformation : public SEI {
-public:
-  SEIVolumetricRectangleInformation(){}
-  ~SEIVolumetricRectangleInformation(){}
+ public:
+  SEIVolumetricRectangleInformation() {}
+  ~SEIVolumetricRectangleInformation() {}
   SEIVolumetricRectangleInformation& operator=( const SEIVolumetricRectangleInformation& ) = default;
-  void allocate( size_t size ) {
+  void                               allocate( size_t size ) {
     vriBoundingBoxUpdateFlag_.resize( size );
     vriBoundingBoxTop_.resize( size );
     vriBoundingBoxLeft_.resize( size );
     vriBoundingBoxWidth_.resize( size );
     vriBoundingBoxHeight_.resize( size );
     vriRectangleObjectIdx_.resize( size );
-   }
-  void allocateRectangleObjectIdx( size_t index, size_t size ) { vriRectangleObjectIdx_[index].resize(size); }
-  
-  SeiPayloadType getPayloadType() { return VOLUMETRIC_RECTANGLE_INFORMATION; }
-  bool     getVriCancelFlag(){ return vriCancelFlag_; }
-  uint32_t getVriNumRectanglesUpdates(){ return vriNumRectanglesUpdates_; }
-  uint8_t  getVriLog2MaxObjectIdxTracked(){ return vriLog2MaxObjectIdxTracked_; }
-  uint8_t  getVriLog2MaxRectangleIdxUpdated(){ return vriLog2MaxRectangleIdxUpdated_; }
-  uint32_t getVriRectangleIdx( size_t index ){ return vriRectangleIdx_[index]; }
-  bool     getVriRectangleCancelFlag( size_t index ){ return vriRectangleCancelFlag_[index]; }
-  bool     getVriBoundingBoxUpdateFlag( size_t index ){ return vriBoundingBoxUpdateFlag_[index]; }
-  uint32_t getVriBoundingBoxTop( size_t index ){ return vriBoundingBoxTop_[index]; }
-  uint32_t getVriBoundingBoxLeft( size_t index ){ return vriBoundingBoxLeft_[index]; }
-  uint32_t getVriBoundingBoxWidth( size_t index ){ return vriBoundingBoxWidth_[index]; }
-  uint32_t getVriBoundingBoxHeight( size_t index ){ return vriBoundingBoxHeight_[index]; }
-  uint32_t getVriRectangleNumberOfObjectsMinus1( size_t index ){ return vriRectangleNumberOfObjectsMinus1_[index]; }
-  uint32_t getVriRectangleObjectIdx( size_t index, size_t index2 ){ return vriRectangleObjectIdx_[index][index2]; }
+  }
+  void allocateRectangleObjectIdx( size_t index, size_t size ) { vriRectangleObjectIdx_[index].resize( size ); }
 
-  void setVriCancelFlag             ( bool value )    { vriCancelFlag_ = value; }
-  void setVriNumRectanglesUpdates   ( uint32_t value ){ vriNumRectanglesUpdates_ = value; }
+  SeiPayloadType getPayloadType() { return VOLUMETRIC_RECTANGLE_INFORMATION; }
+  bool           getVriCancelFlag() { return vriCancelFlag_; }
+  uint32_t       getVriNumRectanglesUpdates() { return vriNumRectanglesUpdates_; }
+  uint8_t        getVriLog2MaxObjectIdxTracked() { return vriLog2MaxObjectIdxTracked_; }
+  uint8_t        getVriLog2MaxRectangleIdxUpdated() { return vriLog2MaxRectangleIdxUpdated_; }
+  uint32_t       getVriRectangleIdx( size_t index ) { return vriRectangleIdx_[index]; }
+  bool           getVriRectangleCancelFlag( size_t index ) { return vriRectangleCancelFlag_[index]; }
+  bool           getVriBoundingBoxUpdateFlag( size_t index ) { return vriBoundingBoxUpdateFlag_[index]; }
+  uint32_t       getVriBoundingBoxTop( size_t index ) { return vriBoundingBoxTop_[index]; }
+  uint32_t       getVriBoundingBoxLeft( size_t index ) { return vriBoundingBoxLeft_[index]; }
+  uint32_t       getVriBoundingBoxWidth( size_t index ) { return vriBoundingBoxWidth_[index]; }
+  uint32_t       getVriBoundingBoxHeight( size_t index ) { return vriBoundingBoxHeight_[index]; }
+  uint32_t getVriRectangleNumberOfObjectsMinus1( size_t index ) { return vriRectangleNumberOfObjectsMinus1_[index]; }
+  uint32_t getVriRectangleObjectIdx( size_t index, size_t index2 ) { return vriRectangleObjectIdx_[index][index2]; }
+
+  void setVriCancelFlag( bool value ) { vriCancelFlag_ = value; }
+  void setVriNumRectanglesUpdates( uint32_t value ) { vriNumRectanglesUpdates_ = value; }
   void setVriLog2MaxObjectIdxTracked( uint8_t value ) { vriLog2MaxObjectIdxTracked_ = value; }
-  void setVriLog2MaxRectangleIdxUpdated( uint8_t value ){ vriLog2MaxRectangleIdxUpdated_ = value; }
-  void setVriRectangleIdx( size_t index, uint32_t value )             { vriRectangleIdx_[index] = value; }
-  void setVriRectangleCancelFlag( size_t index, bool value )          { vriRectangleCancelFlag_[index] = value; }
-  void setVriBoundingBoxUpdateFlag( size_t index, bool value )        { vriBoundingBoxUpdateFlag_[index] = value; }
-  void setVriBoundingBoxTop   ( size_t index, uint32_t value )           { vriBoundingBoxTop_[index] = value; }
-  void setVriBoundingBoxLeft  ( size_t index, uint32_t value )          { vriBoundingBoxLeft_[index] = value; }
-  void setVriBoundingBoxWidth ( size_t index, uint32_t value )         { vriBoundingBoxWidth_[index] = value; }
-  void setVriBoundingBoxHeight( size_t index, uint32_t value )        { vriBoundingBoxHeight_[index] = value; }
-  void setVriRectangleNumberOfObjectsMinus1( size_t index, uint32_t value ){ vriRectangleNumberOfObjectsMinus1_[index] = value; }
-  void setVriRectangleObjectIdx( size_t index, size_t index2, uint32_t value )       { vriRectangleObjectIdx_[index][index2] = value; }
-  
-private:
-  bool     vriCancelFlag_;
-  uint32_t vriNumRectanglesUpdates_;
-  uint8_t  vriLog2MaxObjectIdxTracked_;
-  uint8_t  vriLog2MaxRectangleIdxUpdated_;
-  std::vector<uint32_t> vriRectangleIdx_;
-  std::vector<bool>     vriRectangleCancelFlag_;
-  std::vector<bool>     vriBoundingBoxUpdateFlag_;
-  std::vector<uint32_t> vriBoundingBoxTop_;
-  std::vector<uint32_t> vriBoundingBoxLeft_;
-  std::vector<uint32_t> vriBoundingBoxWidth_;
-  std::vector<uint32_t> vriBoundingBoxHeight_;
-  std::vector<uint32_t> vriRectangleNumberOfObjectsMinus1_;
+  void setVriLog2MaxRectangleIdxUpdated( uint8_t value ) { vriLog2MaxRectangleIdxUpdated_ = value; }
+  void setVriRectangleIdx( size_t index, uint32_t value ) { vriRectangleIdx_[index] = value; }
+  void setVriRectangleCancelFlag( size_t index, bool value ) { vriRectangleCancelFlag_[index] = value; }
+  void setVriBoundingBoxUpdateFlag( size_t index, bool value ) { vriBoundingBoxUpdateFlag_[index] = value; }
+  void setVriBoundingBoxTop( size_t index, uint32_t value ) { vriBoundingBoxTop_[index] = value; }
+  void setVriBoundingBoxLeft( size_t index, uint32_t value ) { vriBoundingBoxLeft_[index] = value; }
+  void setVriBoundingBoxWidth( size_t index, uint32_t value ) { vriBoundingBoxWidth_[index] = value; }
+  void setVriBoundingBoxHeight( size_t index, uint32_t value ) { vriBoundingBoxHeight_[index] = value; }
+  void setVriRectangleNumberOfObjectsMinus1( size_t index, uint32_t value ) {
+    vriRectangleNumberOfObjectsMinus1_[index] = value;
+  }
+  void setVriRectangleObjectIdx( size_t index, size_t index2, uint32_t value ) {
+    vriRectangleObjectIdx_[index][index2] = value;
+  }
+
+ private:
+  bool                               vriCancelFlag_;
+  uint32_t                           vriNumRectanglesUpdates_;
+  uint8_t                            vriLog2MaxObjectIdxTracked_;
+  uint8_t                            vriLog2MaxRectangleIdxUpdated_;
+  std::vector<uint32_t>              vriRectangleIdx_;
+  std::vector<bool>                  vriRectangleCancelFlag_;
+  std::vector<bool>                  vriBoundingBoxUpdateFlag_;
+  std::vector<uint32_t>              vriBoundingBoxTop_;
+  std::vector<uint32_t>              vriBoundingBoxLeft_;
+  std::vector<uint32_t>              vriBoundingBoxWidth_;
+  std::vector<uint32_t>              vriBoundingBoxHeight_;
+  std::vector<uint32_t>              vriRectangleNumberOfObjectsMinus1_;
   std::vector<std::vector<uint32_t>> vriRectangleObjectIdx_;
 
-
-}; //volumetric rectangle information
+};  // volumetric rectangle information
 
 // E.2.15  Buffering period SEI message syntax
 class SEIBufferingPeriod : public SEI {
@@ -1128,4 +1148,4 @@ class SEISmoothingParameters : public SEI {
 
 };  // namespace pcc
 
-#endif //~PCC_BITSTREAM_SEI_H
+#endif  //~PCC_BITSTREAM_SEI_H

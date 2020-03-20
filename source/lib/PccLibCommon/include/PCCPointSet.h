@@ -72,8 +72,8 @@ class PCCPointSet3 {
     colors_[index] = color;
   }
   std::vector<PCCColor16bit>& getColor16bit() { return colors16bit_; }
-  PCCColor16bit getColor16bit( const size_t index ) const {
-    assert( index < colors16bit_.size() && withColors_);
+  PCCColor16bit               getColor16bit( const size_t index ) const {
+    assert( index < colors16bit_.size() && withColors_ );
     return colors16bit_[index];
   }
   PCCColor16bit& getColor16bit( const size_t index ) {
@@ -84,6 +84,50 @@ class PCCPointSet3 {
     assert( index < colors16bit_.size() && withColors_ );
     colors16bit_[index] = color16bit;
   }
+  void copyRGB16ToRGB8(){    
+    for ( size_t k = 0; k < getPointCount(); k++ ) {     
+      colors_[k][0] = uint8_t( colors16bit_[k][0] );
+      colors_[k][1] = uint8_t( colors16bit_[k][1] );
+      colors_[k][2] = uint8_t( colors16bit_[k][2] );
+    }
+  } 
+  
+  /// convert yuv444 (16bit) to normalized yuv444 (format double)
+  void convertYUV16ToRGB8(){
+    for ( size_t k = 0; k < getPointCount(); k++ ) {      
+      double y1     = colors16bit_[ k ][0];
+      double u1     = colors16bit_[ k ][1];
+      double v1     = colors16bit_[ k ][2];
+      double offset = 32768.0;
+      double scale  = 65535.0;
+      double weight = 1.0 / scale;
+
+      y1 = weight * y1;
+      u1 = weight * ( u1 - offset );
+      v1 = weight * ( v1 - offset );
+      y1 = ( std::max )( y1, 0.0 );
+      y1 = ( std::min )( y1, 1.0 );
+      u1 = ( std::max )( u1, -0.5 );
+      u1 = ( std::min )( u1, 0.5 );
+      v1 = ( std::max )( v1, -0.5 );
+      v1 = ( std::min )( v1, 0.5 );
+
+      //// convert normalized yuv444 to normalized rgb (fromat double)
+      double r = y1 /*- 0.00000 * u1*/ + 1.57480 * v1;
+      double g = y1 - 0.18733 * u1 - 0.46813 * v1;
+      double b = y1 + 1.85563 * u1 /*+ 0.00000 * v1*/;
+
+      //// convert normalized rgb to 8-bit rgb
+      r = PCCClip( round( r * 255 ), 0.0, 255.0 );
+      g = PCCClip( round( g * 255 ), 0.0, 255.0 );
+      b = PCCClip( round( b * 255 ), 0.0, 255.0 );
+
+      colors_[k][0] = static_cast<uint8_t>( r );
+      colors_[k][1] = static_cast<uint8_t>( g );
+      colors_[k][2] = static_cast<uint8_t>( b );      
+    }
+  }
+
   uint16_t getBoundaryPointType( const size_t index ) const {
     assert( index < boundaryPointTypes_.size() );
     return boundaryPointTypes_[index];
@@ -120,11 +164,11 @@ class PCCPointSet3 {
     assert( index < reflectances_.size() && withReflectances_ );
     reflectances_[index] = reflectance;
   }
-  std::vector<PCCPoint3D>& getPositions() { return positions_; }
-  std::vector<PCCColor3B>& getColors() { return colors_; }
-  std::vector<PCCColor16bit>& getColors16bit() { return colors16bit_; } 
-  std::vector<uint16_t>&   getReflectances() { return reflectances_; }
-  std::vector<uint8_t>&    getTypes() { return types_; }
+  std::vector<PCCPoint3D>&    getPositions() { return positions_; }
+  std::vector<PCCColor3B>&    getColors() { return colors_; }
+  std::vector<PCCColor16bit>& getColors16bit() { return colors16bit_; }
+  std::vector<uint16_t>&      getReflectances() { return reflectances_; }
+  std::vector<uint8_t>&       getTypes() { return types_; }
 
   bool hasReflectances() const { return withReflectances_; }
   void addReflectances() {
@@ -192,40 +236,40 @@ class PCCPointSet3 {
                        const double  thresholdColorOutlierDist               = 10.0 ) const;
 
   bool transferColors16bitBP( PCCPointSet3& target,
-                         const int32_t searchRange,
-                         const bool    losslessTexture                         = false,
-                         const int     numNeighborsColorTransferFwd            = 1,
-                         const int     numNeighborsColorTransferBwd            = 1,
-                         const bool    useDistWeightedAverageFwd               = true,
-                         const bool    useDistWeightedAverageBwd               = true,
-                         const bool    skipAvgIfIdenticalSourcePointPresentFwd = true,
-                         const bool    skipAvgIfIdenticalSourcePointPresentBwd = true,
-                         const double  distOffsetFwd                           = 0.0001,
-                         const double  distOffsetBwd                           = 0.0001,
-                         double        maxGeometryDist2Fwd                     = 10000.0,
-                         double        maxGeometryDist2Bwd                     = 10000.0,
-                         double        maxColorDist2Fwd                        = 10000.0,
-                         double        maxColorDist2Bwd                        = 10000.0,
-                         const bool    excludeColorOutlier                     = false,
-                         const double  thresholdColorOutlierDist               = 10.0 ) const;
-  
+                              const int32_t searchRange,
+                              const bool    losslessTexture                         = false,
+                              const int     numNeighborsColorTransferFwd            = 1,
+                              const int     numNeighborsColorTransferBwd            = 1,
+                              const bool    useDistWeightedAverageFwd               = true,
+                              const bool    useDistWeightedAverageBwd               = true,
+                              const bool    skipAvgIfIdenticalSourcePointPresentFwd = true,
+                              const bool    skipAvgIfIdenticalSourcePointPresentBwd = true,
+                              const double  distOffsetFwd                           = 0.0001,
+                              const double  distOffsetBwd                           = 0.0001,
+                              double        maxGeometryDist2Fwd                     = 10000.0,
+                              double        maxGeometryDist2Bwd                     = 10000.0,
+                              double        maxColorDist2Fwd                        = 10000.0,
+                              double        maxColorDist2Bwd                        = 10000.0,
+                              const bool    excludeColorOutlier                     = false,
+                              const double  thresholdColorOutlierDist               = 10.0 ) const;
+
   bool transferColors16bit( PCCPointSet3& target,
-                       const int32_t searchRange,
-                       const bool    losslessTexture                         = false,
-                       const int     numNeighborsColorTransferFwd            = 1,
-                       const int     numNeighborsColorTransferBwd            = 1,
-                       const bool    useDistWeightedAverageFwd               = true,
-                       const bool    useDistWeightedAverageBwd               = true,
-                       const bool    skipAvgIfIdenticalSourcePointPresentFwd = true,
-                       const bool    skipAvgIfIdenticalSourcePointPresentBwd = true,
-                       const double  distOffsetFwd                           = 0.0001,
-                       const double  distOffsetBwd                           = 0.0001,
-                       double        maxGeometryDist2Fwd                     = 10000.0,
-                       double        maxGeometryDist2Bwd                     = 10000.0,
-                       double        maxColorDist2Fwd                        = 10000.0,
-                       double        maxColorDist2Bwd                        = 10000.0,
-                       const bool    excludeColorOutlier                     = false,
-                       const double  thresholdColorOutlierDist               = 10.0 ) const;
+                            const int32_t searchRange,
+                            const bool    losslessTexture                         = false,
+                            const int     numNeighborsColorTransferFwd            = 1,
+                            const int     numNeighborsColorTransferBwd            = 1,
+                            const bool    useDistWeightedAverageFwd               = true,
+                            const bool    useDistWeightedAverageBwd               = true,
+                            const bool    skipAvgIfIdenticalSourcePointPresentFwd = true,
+                            const bool    skipAvgIfIdenticalSourcePointPresentBwd = true,
+                            const double  distOffsetFwd                           = 0.0001,
+                            const double  distOffsetBwd                           = 0.0001,
+                            double        maxGeometryDist2Fwd                     = 10000.0,
+                            double        maxGeometryDist2Bwd                     = 10000.0,
+                            double        maxColorDist2Fwd                        = 10000.0,
+                            double        maxColorDist2Bwd                        = 10000.0,
+                            const bool    excludeColorOutlier                     = false,
+                            const double  thresholdColorOutlierDist               = 10.0 ) const;
 
   bool transferColorsFilter3( PCCPointSet3& target, const int32_t searchRange, const bool losslessTexture ) const;
 
@@ -236,9 +280,9 @@ class PCCPointSet3 {
   size_t getPointCount() const { return positions_.size(); }
   void   resize( const size_t size ) {
     positions_.resize( size );
-    if (hasColors()) {
-      colors_.resize(size);   
-	  colors16bit_.resize( size );
+    if ( hasColors() ) {
+      colors_.resize( size );
+      colors16bit_.resize( size );
     }
     if ( hasReflectances() ) { reflectances_.resize( size ); }
     if ( PCC_SAVE_POINT_TYPE ) { types_.resize( size ); }
@@ -248,8 +292,8 @@ class PCCPointSet3 {
   }
   void reserve( const size_t size ) {
     positions_.reserve( size );
-    if (hasColors()) {
-      colors_.reserve(size);
+    if ( hasColors() ) {
+      colors_.reserve( size );
       colors16bit_.reserve( size );
     }
     if ( hasReflectances() ) { reflectances_.reserve( size ); }
@@ -313,10 +357,8 @@ class PCCPointSet3 {
   PCCPoint3D computeCentroid() const;
   PCCBox3D   computeBoundingBox() const;
   bool       isBboxEmpty( PCCBox3D bbox ) const;
-  bool       isMissedBboxEmpty( std::vector<size_t> missedPoints, PCCBox3D bbox ) const;
-  int        fillMissedPointsBbox( std::vector<size_t>  missedPoints,
-                                   PCCBox3D             bbox,
-                                   std::vector<size_t>& bboxMissedPoints ) const;
+  bool       isRawPointsBboxEmpty( std::vector<size_t> rawPoints, PCCBox3D bbox ) const;
+  int fillRawPointsBbox( std::vector<size_t> rawPoints, PCCBox3D bbox, std::vector<size_t>& bboxRawPoints ) const;
 
   static bool compareSeparators( char aChar, const char* const sep ) {
     int i = 0;
@@ -385,17 +427,17 @@ class PCCPointSet3 {
   void distance( const PCCPointSet3& pointcloud, float& distP ) const;
   std::vector<uint8_t> computeMd5();
 
-  std::vector<PCCPoint3D>  positions_;
-  std::vector<PCCColor3B>  colors_;
-  std::vector<PCCColor16bit>  colors16bit_;
-  std::vector<uint16_t>    reflectances_;
-  std::vector<uint16_t>    boundaryPointTypes_;
-  std::vector<uint16_t>    pointPatchIndexes_;
-  std::vector<uint8_t>     types_;
-  std::vector<PCCNormal3D> normals_;
-  bool                     withNormals_;
-  bool                     withColors_;
-  bool                     withReflectances_;
+  std::vector<PCCPoint3D>    positions_;
+  std::vector<PCCColor3B>    colors_;
+  std::vector<PCCColor16bit> colors16bit_;
+  std::vector<uint16_t>      reflectances_;
+  std::vector<uint16_t>      boundaryPointTypes_;
+  std::vector<uint16_t>      pointPatchIndexes_;
+  std::vector<uint8_t>       types_;
+  std::vector<PCCNormal3D>   normals_;
+  bool                       withNormals_;
+  bool                       withColors_;
+  bool                       withReflectances_;
 };
 }  // namespace pcc
 

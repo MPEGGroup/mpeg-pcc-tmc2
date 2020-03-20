@@ -38,7 +38,7 @@
 #include "PCCAtlasTileGroupDataUnit.h"
 
 namespace pcc {
-    
+
 // 7.3.6.10  Atlas tile group layer RBSP syntax
 class AtlasTileGroupLayerRbsp {
  public:
@@ -63,4 +63,4 @@ class AtlasTileGroupLayerRbsp {
 
 };  // namespace pcc
 
-#endif //~PCC_BITSTREAM_ATLASTILEGROUPLAYERRBSP_H
+#endif  //~PCC_BITSTREAM_ATLASTILEGROUPLAYERRBSP_H

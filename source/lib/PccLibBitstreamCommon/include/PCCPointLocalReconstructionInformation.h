@@ -95,4 +95,4 @@ class PointLocalReconstructionInformation {
 
 };  // namespace pcc
 
-#endif //~PCC_BITSTREAM_POINTLOCALRECONSTRUCTIONINFORMATION_H
+#endif  //~PCC_BITSTREAM_POINTLOCALRECONSTRUCTIONINFORMATION_H

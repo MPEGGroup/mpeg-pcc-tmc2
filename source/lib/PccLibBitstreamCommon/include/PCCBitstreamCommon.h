@@ -45,7 +45,6 @@
 #include <sstream>
 #include <string>
 #include <cstring>
-#include <unordered_map>
 #include <sys/stat.h>
 #include <memory>
 #include <queue>
@@ -77,7 +76,7 @@ const uint32_t PCCTMC2ContainerMagicNumber = 23021981;
 const uint32_t PCCTMC2ContainerVersion     = 1;
 const uint32_t PCC_UNDEFINED_INDEX         = -1;
 const bool     printDetailedInfo           = false;
-const uint8_t MAX_NUM_ATTR_PARTITIONS = 64;
+const uint8_t  MAX_NUM_ATTR_PARTITIONS     = 64;
 enum PCCVideoType {
   VIDEO_OCCUPANCY = 0,
   VIDEO_GEOMETRY,
@@ -100,15 +99,15 @@ enum PCCVideoType {
   VIDEO_GEOMETRY_RAW,
   VIDEO_TEXTURE,
   VIDEO_TEXTURE_T0,
-  VIDEO_TEXTURE_T1 = VIDEO_TEXTURE_T0 + MAX_NUM_ATTR_PARTITIONS,
-  VIDEO_TEXTURE_T2 = VIDEO_TEXTURE_T1 + MAX_NUM_ATTR_PARTITIONS,
-  VIDEO_TEXTURE_T3 = VIDEO_TEXTURE_T2 + MAX_NUM_ATTR_PARTITIONS,
-  VIDEO_TEXTURE_T4 = VIDEO_TEXTURE_T3 + MAX_NUM_ATTR_PARTITIONS,
-  VIDEO_TEXTURE_T5 = VIDEO_TEXTURE_T4 + MAX_NUM_ATTR_PARTITIONS,
-  VIDEO_TEXTURE_T6 = VIDEO_TEXTURE_T5 + MAX_NUM_ATTR_PARTITIONS,
-  VIDEO_TEXTURE_T7 = VIDEO_TEXTURE_T6 + MAX_NUM_ATTR_PARTITIONS,
-  VIDEO_TEXTURE_T8 = VIDEO_TEXTURE_T7 + MAX_NUM_ATTR_PARTITIONS,
-  VIDEO_TEXTURE_T9 = VIDEO_TEXTURE_T8 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_TEXTURE_T1  = VIDEO_TEXTURE_T0 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_TEXTURE_T2  = VIDEO_TEXTURE_T1 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_TEXTURE_T3  = VIDEO_TEXTURE_T2 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_TEXTURE_T4  = VIDEO_TEXTURE_T3 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_TEXTURE_T5  = VIDEO_TEXTURE_T4 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_TEXTURE_T6  = VIDEO_TEXTURE_T5 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_TEXTURE_T7  = VIDEO_TEXTURE_T6 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_TEXTURE_T8  = VIDEO_TEXTURE_T7 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_TEXTURE_T9  = VIDEO_TEXTURE_T8 + MAX_NUM_ATTR_PARTITIONS,
   VIDEO_TEXTURE_T10 = VIDEO_TEXTURE_T9 + MAX_NUM_ATTR_PARTITIONS,
   VIDEO_TEXTURE_T11 = VIDEO_TEXTURE_T10 + MAX_NUM_ATTR_PARTITIONS,
   VIDEO_TEXTURE_T12 = VIDEO_TEXTURE_T11 + MAX_NUM_ATTR_PARTITIONS,
@@ -116,7 +115,7 @@ enum PCCVideoType {
   VIDEO_TEXTURE_T14 = VIDEO_TEXTURE_T13 + MAX_NUM_ATTR_PARTITIONS,
   VIDEO_TEXTURE_T15 = VIDEO_TEXTURE_T14 + MAX_NUM_ATTR_PARTITIONS,
   VIDEO_TEXTURE_RAW = VIDEO_TEXTURE_T15 + MAX_NUM_ATTR_PARTITIONS,
-  NUM_VIDEO_TYPE = VIDEO_TEXTURE_RAW + MAX_NUM_ATTR_PARTITIONS
+  NUM_VIDEO_TYPE    = VIDEO_TEXTURE_RAW + MAX_NUM_ATTR_PARTITIONS
 };
 enum PCCMetadataType { METADATA_GOF = 0, METADATA_FRAME, METADATA_PATCH };
 enum PCCPatchOrientation {
@@ -128,8 +127,8 @@ enum PCCPatchOrientation {
   PATCH_ORIENTATION_MIRROR  = 5,
   PATCH_ORIENTATION_MROT90  = 6,
   PATCH_ORIENTATION_MROT180 = 7,
-  PATCH_ORIENTATION_MROT270 = 8 //similar to SWAP, not used
-};  // switched SWAP with ROT90 positions
+  PATCH_ORIENTATION_MROT270 = 8  // similar to SWAP, not used
+};                               // switched SWAP with ROT90 positions
 
 enum VPCCUnitType {
   VPCC_VPS = 0,       // 0: Sequence parameter set
@@ -167,7 +166,6 @@ enum VPCCUnitType {
   NUM_VPCC_UNIT_TYPE  // undefined
 };
 
-
 enum PCCCodecID { CODEC_HEVC = 0 };
 
 enum PCCCodecGroup {
@@ -176,11 +174,12 @@ enum PCCCodecGroup {
   CODEC_GROUP_HEVC444,
   CODEC_GROUP_MP4RA
 };
+
 enum PCCPatchFrameType { PATCH_FRAME_I = 0, PATCH_FRAME_P };
 
 enum PCCPatchModeI { PATCH_MODE_I_INTRA = 0, PATCH_MODE_I_RAW, PATCH_MODE_I_EOM, PATCH_MODE_I_END = 14 };
 
-enum PCCPatchModeP { // to be removed
+enum PCCPatchModeP {  // to be removed
   PATCH_MODE_P_SKIP = 0,
   PATCH_MODE_P_INTRA,
   PATCH_MODE_P_INTER,
@@ -189,57 +188,86 @@ enum PCCPatchModeP { // to be removed
   PATCH_MODE_P_EOM,
   PATCH_MODE_P_END = 14
 };
-enum PCCPatchType { INTRA_PATCH = 0, INTER_PATCH, MERGE_PATCH, SKIP_PATCH, RAW_PATCH, EOM_PATCH, END_PATCH, ERROR_PATCH };
+enum PCCPatchType {
+  INTRA_PATCH = 0,
+  INTER_PATCH,
+  MERGE_PATCH,
+  SKIP_PATCH,
+  RAW_PATCH,
+  EOM_PATCH,
+  END_PATCH,
+  ERROR_PATCH
+};
 enum PCCTILEGROUP { P_TILE_GRP = 0, SKIP_TILE_GRP, I_TILE_GRP };
+
 enum SeiPayloadType {
-  BUFFERING_PERIOD = 0,             //  0: bufferingPeriod
-  ATLAS_FRAME_TIMING,               //  1: atlasFrameTiming
-  FILLER_PAYLOAD,                   //  2: fillerPayload
-  USER_DATAREGISTERED_ITUTT35,      //  3: userDataRegisteredItuTT35
-  USER_DATA_UNREGISTERED,           //  4: userDataUnregistered
-  RECOVERY_POINT,                   //  5: recoveryPoint
-  NO_DISPLAY,                       //  6: noDisplay
-  TIME_CODE,                        //  7: timeCode
-  REGIONAL_NESTING,                 //  8: regionalNesting
-  SEI_MANIFEST,                     //  9: seiManifest
-  SEI_PREFIX_INDICATION,            // 10: seiPrefixIndication
-  GEOMETRY_TRANSFORMATION_PARAMS,   // 11: geometryTransformationParams
-  ATTRIBUTE_TRANSFORMATION_PARAMS,  // 12: attributeTransformationParams
-  ACTIVE_SUBSTREAMS,                // 13: activeSubstreams
-  COMPONENT_CODEC_MAPPING,          // 14: componentCodecMapping
-  VOLUMETRIC_TILING_INFO,           // 15: volumetricTilingInfo
-  PRESENTATION_INFORMATION,         // 16: presentationInformation
-  SMOOTHING_PARAMETERS,             // 17: smoothingParameters
-  SCENE_OBJECT_INFORMATION,         // 18: scene object information m52705
-  OBJECT_LABEL_INFORMATION,         // 19: Object label information
-  PATCH_INFORMATION,                // 20: Patch information SEI message syntax
-  VOLUMETRIC_RECTANGLE_INFORMATION, // 21: Volumetric rectangle information
-  RESERVED_SEI_MESSAGE,             // 22: reservedSeiMessage
+  BUFFERING_PERIOD = 0,              //  0: bufferingPeriod
+  ATLAS_FRAME_TIMING,                //  1: atlasFrameTiming
+  FILLER_PAYLOAD,                    //  2: fillerPayload
+  USER_DATAREGISTERED_ITUTT35,       //  3: userDataRegisteredItuTT35
+  USER_DATA_UNREGISTERED,            //  4: userDataUnregistered
+  RECOVERY_POINT,                    //  5: recoveryPoint
+  NO_DISPLAY,                        //  6: noDisplay
+  TIME_CODE,                         //  7: timeCode
+  REGIONAL_NESTING,                  //  8: regionalNesting
+  SEI_MANIFEST,                      //  9: seiManifest
+  SEI_PREFIX_INDICATION,             // 10: seiPrefixIndication
+  GEOMETRY_TRANSFORMATION_PARAMS,    // 11: geometryTransformationParams
+  ATTRIBUTE_TRANSFORMATION_PARAMS,   // 12: attributeTransformationParams
+  ACTIVE_SUBSTREAMS,                 // 13: activeSubstreams
+  COMPONENT_CODEC_MAPPING,           // 14: componentCodecMapping
+  VOLUMETRIC_TILING_INFO,            // 15: volumetricTilingInfo
+  PRESENTATION_INFORMATION,          // 16: presentationInformation
+  SMOOTHING_PARAMETERS,              // 17: smoothingParameters
+  SCENE_OBJECT_INFORMATION,          // 18: scene object information m52705
+  OBJECT_LABEL_INFORMATION,          // 19: Object label information
+  PATCH_INFORMATION,                 // 20: Patch information SEI message syntax
+  VOLUMETRIC_RECTANGLE_INFORMATION,  // 21: Volumetric rectangle information
+  RESERVED_SEI_MESSAGE,              // 22: reservedSeiMessage
 };
 
-enum NalUnitType {  // Name, Content of NAL unit and RBSP syntax structure NAL unit type class
-  NAL_TRAIL = 0,    // 0: Coded tile group of a non-TSA, non STSA trailing atlas frame atlas_tile_group_layer_rbsp() ACL
-  NAL_TSA,          // 1: Coded tile group of a TSA atlas frame, atlas_tile_group_layer_rbsp() ACL
-  NAL_STSA,         // 2: Coded tile group of a STSA atlas frame, atlas_tile_group_layer_rbsp() ACL
-  NAL_RADL,         // 3: Coded tile group of a RADL atlas frame, atlas_tile_group_layer_rbsp() ACL
-  NAL_RASL,         // 4: Coded tile group of a RASL atlas frame, atlas_tile_group_layer_rbsp() ACL
-  NAL_SKIP,         // 5: Coded tile group of a skipped atlas frame, atlas_tile_group_layer_rbsp() ACL
+enum NalUnitType {  // Name, Content of NAL unit and RBSP syntax structure NAL
+                    // unit type class
+  NAL_TRAIL = 0,    // 0: Coded tile group of a non-TSA, non STSA trailing atlas
+                    // frame atlas_tile_group_layer_rbsp() ACL
+  NAL_TSA,          // 1: Coded tile group of a TSA atlas frame,
+                    // atlas_tile_group_layer_rbsp() ACL
+  NAL_STSA,         // 2: Coded tile group of a STSA atlas frame,
+                    // atlas_tile_group_layer_rbsp() ACL
+  NAL_RADL,         // 3: Coded tile group of a RADL atlas frame,
+                    // atlas_tile_group_layer_rbsp() ACL
+  NAL_RASL,         // 4: Coded tile group of a RASL atlas frame,
+                    // atlas_tile_group_layer_rbsp() ACL
+  NAL_SKIP,         // 5: Coded tile group of a skipped atlas frame,
+                    // atlas_tile_group_layer_rbsp() ACL
   NAL_RSV_ACL_6,    // 6: Reserved non-IRAP ACL NAL unit types ACL
   NAL_RSV_ACL_7,    // 7: Reserved non-IRAP ACL NAL unit types ACL
   NAL_RSV_ACL_8,    // 8: Reserved non-IRAP ACL NAL unit types ACL
   NAL_RSV_ACL_9,    // 9: Reserved non-IRAP ACL NAL unit types ACL
-  NAL_BLA_W_LP,     // 10: Coded tile group of a BLA atlas frame, atlas_tile_group_layer_rbsp() ACL
-  NAL_BLA_W_RADL,   // 11: Coded tile group of a BLA atlas frame, atlas_tile_group_layer_rbsp() ACL
-  NAL_BLA_N_LP,     // 12: Coded tile group of a BLA atlas frame, atlas_tile_group_layer_rbsp() ACL
-  NAL_GBLA_W_LP,    // 13: Coded tile group of a GBLA atlas frame, atlas_tile_group_layer_rbsp() ACL
-  NAL_GBLA_W_RADL,  // 14: Coded tile group of a GBLA atlas frame, atlas_tile_group_layer_rbsp() ACL
-  NAL_GBLA_N_LP,    // 15: Coded tile group of a GBLA atlas frame, atlas_tile_group_layer_rbsp() ACL
-  NAL_IDR_W_RADL,   // 16: Coded tile group of an IDR atlas frame, atlas_tile_group_layer_rbsp() ACL
-  NAL_IDR_N_LP,     // 17: Coded tile group of an IDR atlas frame, atlas_tile_group_layer_rbsp() ACL
-  NAL_GIDR_W_RADL,  // 18: Coded tile group of a GIDR atlas frame, atlas_tile_group_layer_rbsp() ACL
-  NAL_GIDR_N_LP,    // 19: Coded tile group of a GIDR atlas frame, atlas_tile_group_layer_rbsp() ACL
-  NAL_CRA,          // 20: Coded tile group of a CRA atlas frame, atlas_tile_group_layer_rbsp() ACL
-  NAL_GCRA,         // 21: Coded tile group of a GCRA atlas frame, atlas_tile_group_layer_rbsp() ACL
+  NAL_BLA_W_LP,     // 10: Coded tile group of a BLA atlas frame,
+                    // atlas_tile_group_layer_rbsp() ACL
+  NAL_BLA_W_RADL,   // 11: Coded tile group of a BLA atlas frame,
+                    // atlas_tile_group_layer_rbsp() ACL
+  NAL_BLA_N_LP,     // 12: Coded tile group of a BLA atlas frame,
+                    // atlas_tile_group_layer_rbsp() ACL
+  NAL_GBLA_W_LP,    // 13: Coded tile group of a GBLA atlas frame,
+                    // atlas_tile_group_layer_rbsp() ACL
+  NAL_GBLA_W_RADL,  // 14: Coded tile group of a GBLA atlas frame,
+                    // atlas_tile_group_layer_rbsp() ACL
+  NAL_GBLA_N_LP,    // 15: Coded tile group of a GBLA atlas frame,
+                    // atlas_tile_group_layer_rbsp() ACL
+  NAL_IDR_W_RADL,   // 16: Coded tile group of an IDR atlas frame,
+                    // atlas_tile_group_layer_rbsp() ACL
+  NAL_IDR_N_LP,     // 17: Coded tile group of an IDR atlas frame,
+                    // atlas_tile_group_layer_rbsp() ACL
+  NAL_GIDR_W_RADL,  // 18: Coded tile group of a GIDR atlas frame,
+                    // atlas_tile_group_layer_rbsp() ACL
+  NAL_GIDR_N_LP,    // 19: Coded tile group of a GIDR atlas frame,
+                    // atlas_tile_group_layer_rbsp() ACL
+  NAL_CRA,          // 20: Coded tile group of a CRA atlas frame,
+                    // atlas_tile_group_layer_rbsp() ACL
+  NAL_GCRA,         // 21: Coded tile group of a GCRA atlas frame,
+                    // atlas_tile_group_layer_rbsp() ACL
   NAL_IRAP_ACL_22,  // 22: Reserved IRAP ACL NAL unit types ACL
   NAL_IRAP_ACL_23,  // 23: Reserved IRAP ACL NAL unit types ACL
   NAL_RSV_ACL_24,   // 24: Reserved non-IRAP ACL NAL unit types ACL
@@ -250,15 +278,20 @@ enum NalUnitType {  // Name, Content of NAL unit and RBSP syntax structure NAL u
   NAL_RSV_ACL_29,   // 29: Reserved non-IRAP ACL NAL unit types ACL
   NAL_RSV_ACL_30,   // 30: Reserved non-IRAP ACL NAL unit types ACL
   NAL_RSV_ACL_31,   // 31: Reserved non-IRAP ACL NAL unit types ACL
-  NAL_ASPS,         // 32: Atlas sequence parameter set atlas_sequence_parameter_set_rbsp() non-ACL
-  NAL_AFPS,         // 33: Atlas frame parameter set atlas_frame_parameter_set_rbsp() non-ACL
+  NAL_ASPS,         // 32: Atlas sequence parameter set
+                    // atlas_sequence_parameter_set_rbsp() non-ACL
+  NAL_AFPS,         // 33: Atlas frame parameter set atlas_frame_parameter_set_rbsp()
+                    // non-ACL
   NAL_AUD,          // 34: Access unit delimiter access_unit_delimiter_rbsp() non-ACL
-  NAL_VPCC_AUD,     // 35: V-PCC access unit delimiter access_unit_delimiter_rbsp() non-ACL
+  NAL_VPCC_AUD,     // 35: V-PCC access unit delimiter access_unit_delimiter_rbsp()
+                    // non-ACL
   NAL_EOS,          // 36: End of sequence end_of_seq_rbsp() non-ACL
   NAL_EOB,          // 37! End of bitstream end_of_atlas_substream_rbsp() non-ACL
   NAL_FD,           // 38: Filler filler_data_rbsp() non-ACL
-  NAL_PREFIX_SEI,   // 39: Supplemental enhancement information sei_rbsp() non-ACL
-  NAL_SUFFIX_SEI,   // 40: Supplemental enhancement information sei_rbsp() non-ACL
+  NAL_PREFIX_SEI,   // 39: Supplemental enhancement information sei_rbsp()
+                    // non-ACL
+  NAL_SUFFIX_SEI,   // 40: Supplemental enhancement information sei_rbsp()
+                    // non-ACL
   NAL_RSV_NACL_41,  // 42: Reserved non-ACL NAL unit types non-ACL
   NAL_RSV_NACL_42,  // 42: Reserved non-ACL NAL unit types non-ACL
   NAL_RSV_NACL_43,  // 43: Reserved non-ACL NAL unit types non-ACL
@@ -300,7 +333,6 @@ static inline std::string toString( NalUnitType type ) {
     case NAL_SKIP: return std::string( "NAL_SKIP" ); break;
     case NAL_PREFIX_SEI: return std::string( "NAL_PREFIX_SEI" ); break;
     case NAL_SUFFIX_SEI: return std::string( "NAL_SUFFIX_SEI" ); break;
-
     default: return std::string( "others" ); break;
   }
 }
@@ -316,17 +348,25 @@ static inline std::string toString( VPCCUnitType type ) {
   }
 }
 static inline std::string toString( PCCVideoType type ) {
-  size_t typeIndex = (size_t) type;
-  if( typeIndex == (size_t)VIDEO_OCCUPANCY)         return std::string( "occupancy map video " );
-  else if( typeIndex == (size_t)VIDEO_GEOMETRY)     return std::string( "geometry video " );
-  else if( typeIndex >= (size_t)VIDEO_GEOMETRY_D0 && typeIndex <= (size_t)VIDEO_GEOMETRY_D15 )
-       return std::string( "geometry D" )+ std::to_string (typeIndex-(size_t)VIDEO_GEOMETRY_D0 ) + std::string(" video ");
-  else if( typeIndex == (size_t)VIDEO_GEOMETRY_RAW) return std::string( "raw points geometry video " );
-  else if( typeIndex == (size_t)VIDEO_TEXTURE)      return std::string( "texture video " );
-  else if( typeIndex >= (size_t)VIDEO_TEXTURE_T0 && typeIndex <= (size_t)VIDEO_TEXTURE_T15 )
-       return std::string( "texture T" )+ std::to_string (typeIndex-(size_t)VIDEO_TEXTURE_T0 ) + std::string(" video ");
-  else if( typeIndex == (size_t)VIDEO_TEXTURE_RAW)  return std::string( "raw points texture video " );
-  else                                              return std::string( "not supported" );
+  size_t typeIndex = (size_t)type;
+  if ( typeIndex == (size_t)VIDEO_OCCUPANCY )
+    return std::string( "occupancy map video " );
+  else if ( typeIndex == (size_t)VIDEO_GEOMETRY )
+    return std::string( "geometry video " );
+  else if ( typeIndex >= (size_t)VIDEO_GEOMETRY_D0 && typeIndex <= (size_t)VIDEO_GEOMETRY_D15 )
+    return std::string( "geometry D" ) + std::to_string( typeIndex - (size_t)VIDEO_GEOMETRY_D0 ) +
+           std::string( " video " );
+  else if ( typeIndex == (size_t)VIDEO_GEOMETRY_RAW )
+    return std::string( "raw points geometry video " );
+  else if ( typeIndex == (size_t)VIDEO_TEXTURE )
+    return std::string( "texture video " );
+  else if ( typeIndex >= (size_t)VIDEO_TEXTURE_T0 && typeIndex <= (size_t)VIDEO_TEXTURE_T15 )
+    return std::string( "texture T" ) + std::to_string( typeIndex - (size_t)VIDEO_TEXTURE_T0 ) +
+           std::string( " video " );
+  else if ( typeIndex == (size_t)VIDEO_TEXTURE_RAW )
+    return std::string( "raw points texture video " );
+  else
+    return std::string( "not supported" );
 }
 static bool exist( const std::string& sString ) {
   struct stat buffer;
@@ -371,7 +411,6 @@ static inline const T PCCEndianSwap( const T u ) {
   return dest.u;
 }
 
-
 static inline uint32_t getFixedLengthCodeBitsCount( uint32_t range ) {
   int count = 0;
   if ( range > 0 ) {
@@ -384,45 +423,37 @@ static inline uint32_t getFixedLengthCodeBitsCount( uint32_t range ) {
   return count;
 }
 
-
-static inline int floorLog2(uint32_t x)
-{
-  if (x == 0)
-  {
+static inline int floorLog2( uint32_t x ) {
+  if ( x == 0 ) {
     // note: ceilLog2() expects -1 as return value
     return -1;
   }
 #ifdef __GNUC__
-  return 31 - __builtin_clz(x);
+  return 31 - __builtin_clz( x );
 #else
 #ifdef _MSC_VER
   unsigned long r = 0;
-  _BitScanReverse(&r, x);
+  _BitScanReverse( &r, x );
   return r;
 #else
   int result = 0;
-  if (x & 0xffff0000)
-  {
+  if ( x & 0xffff0000 ) {
     x >>= 16;
     result += 16;
   }
-  if (x & 0xff00)
-  {
+  if ( x & 0xff00 ) {
     x >>= 8;
     result += 8;
   }
-  if (x & 0xf0)
-  {
+  if ( x & 0xf0 ) {
     x >>= 4;
     result += 4;
   }
-  if (x & 0xc)
-  {
+  if ( x & 0xc ) {
     x >>= 2;
     result += 2;
   }
-  if (x & 0x2)
-  {
+  if ( x & 0x2 ) {
     x >>= 1;
     result += 1;
   }
@@ -431,10 +462,7 @@ static inline int floorLog2(uint32_t x)
 #endif
 }
 
-static inline int ceilLog2(uint32_t x)
-{
-  return (x==0) ? -1 : floorLog2(x - 1) + 1;
-}
+static inline int ceilLog2( uint32_t x ) { return ( x == 0 ) ? -1 : floorLog2( x - 1 ) + 1; }
 }  // namespace pcc
 
 #endif /* PCC_BITSTREAM_COMMON_H */

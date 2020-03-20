@@ -91,9 +91,7 @@ class ChromaSampler {
            (float)( 0.14630826357715 * 512 ), (float)( 0.45417830962846 * 512 ), (float)( 0.45417830962846 * 512 ),
            (float)( 0.14630826357715 * 512 ), (float)( -0.08189331229717 * 512 ), (float)( -0.05254456550808 * 512 ),
            (float)( 0.03519540819902 * 512 ), (float)( 0.02360533018213 * 512 ), (float)( -0.01539537217249 * 512 ),
-           (float)( -0.00945406160902 * 512 )
-
-          },
+           (float)( -0.00945406160902 * 512 )},
           +256.0,
           9.0}},
         {// 5 DF_WCS
@@ -674,7 +672,7 @@ class PCCImage {
       std::vector<float> RGB444[3], YUV444[3], YUV420[3];
       // TODO: currently only handles nbyte equal to 1
       std::vector<uint8_t> YUV420T[3];
-      ChromaSampler chromaSampler;
+      ChromaSampler        chromaSampler;
       YUV420T[0].resize( width_ * height_ );
       YUV420T[1].resize( widthChroma * heightChroma );
       YUV420T[2].resize( widthChroma * heightChroma );
@@ -691,7 +689,8 @@ class PCCImage {
       floatYUVToYUV( YUV444[1], channels_[1], 1, 2 );
       floatYUVToYUV( YUV444[2], channels_[2], 1, 2 );
     } else {
-      // TODO: This clause may need to be fixed when nbyte is equal to 1 and T is equal to 2.
+      // TODO: This clause may need to be fixed when nbyte is equal to 1 and T
+      // is equal to 2.
       if ( nbyte == 1 ) {
         std::vector<uint8_t> channels[N];
         for ( size_t i = 0; i < N; i++ ) { channels[i].resize( channels_[i].size() ); }
@@ -764,7 +763,7 @@ class PCCImage {
     } else {
       assert( nbyte < sizeof( T ) );
       // Only relevant case is nbyte equal to 1 and T equal to 2.
-      size_t pixCnt = width_ * height_;
+      size_t               pixCnt = width_ * height_;
       std::vector<uint8_t> YUV8[3];
       for ( size_t i = 0; i < N; i++ ) { YUV8[i].resize( pixCnt ); }
       for ( size_t i = 0; i < N; i++ ) {
@@ -926,14 +925,14 @@ class PCCImage {
   static inline float fClip( float x, float low, float high ) { return fMin( fMax( x, low ), high ); }
 
   // TODO: This currently can't handle 10-bit. A new parameter is needed.
-  void                floatYUVToYUV( const std::vector<float>& src,
-                                     std::vector<T>&           dst,
-                                     const bool                chroma,
-                                     const size_t              nbyte ) const {
+  void floatYUVToYUV( const std::vector<float>& src,
+                      std::vector<T>&           dst,
+                      const bool                chroma,
+                      const size_t              nbyte ) const {
     size_t count = src.size();
     dst.resize( count );
-    //double offset = chroma ? nbyte == 1 ? 128. : 512. : 0;
-    //double scale  = nbyte == 1 ? 255. : 1023.;
+    // double offset = chroma ? nbyte == 1 ? 128. : 512. : 0;
+    // double scale  = nbyte == 1 ? 255. : 1023.;
     double offset = chroma ? nbyte == 1 ? 128. : 32768. : 0;
     double scale  = nbyte == 1 ? 255. : 65535.;
     for ( size_t i = 0; i < count; i++ ) {
@@ -943,9 +942,9 @@ class PCCImage {
 
   // TODO: Generalize to vector<T>
   void YUVtoFloatYUV( const std::vector<uint8_t>& src,
-                      std::vector<float>&   dst,
-                      const bool            chroma,
-                      const size_t          nbBytes ) const {
+                      std::vector<float>&         dst,
+                      const bool                  chroma,
+                      const size_t                nbBytes ) const {
     size_t count = src.size();
     dst.resize( count );
     float    minV   = chroma ? -0.5f : 0.f;

@@ -41,7 +41,7 @@ class PCCPointSet3;
 class PCCGroupOfFrames {
  public:
   PCCGroupOfFrames();
-  PCCGroupOfFrames(size_t value);
+  PCCGroupOfFrames( size_t value );
   ~PCCGroupOfFrames();
 
   void                clear() { frames_.clear(); }
@@ -59,13 +59,13 @@ class PCCGroupOfFrames {
   std::vector<PCCPointSet3>::iterator begin() { return frames_.begin(); }
   std::vector<PCCPointSet3>::iterator end() { return frames_.end(); }
 
-  bool load( const std::string       uncompressedDataPath,
+  bool load( const std::string&      uncompressedDataPath,
              const size_t            startFrameNumber,
              const size_t            endFrameNumber,
              const PCCColorTransform colorTransform,
              const bool              readNormals = false );
 
-  bool write( const std::string reconstructedDataPath, size_t& frameNumber );
+  bool write( const std::string& reconstructedDataPath, size_t& frameNumber );
 
  private:
   std::vector<PCCPointSet3> frames_;

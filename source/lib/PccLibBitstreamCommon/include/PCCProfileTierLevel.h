@@ -36,7 +36,7 @@
 #include "PCCBitstreamCommon.h"
 
 namespace pcc {
-    
+
 // 7.3.4.2 Profile, Tier and Level Syntax
 class ProfileTierLevel {
  public:
@@ -69,4 +69,4 @@ class ProfileTierLevel {
 
 };  // namespace pcc
 
-#endif //~PCC_BITSTREAM_PROFILETIERLEVEL_H
+#endif  //~PCC_BITSTREAM_PROFILETIERLEVEL_H

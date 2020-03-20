@@ -37,7 +37,7 @@
 #include "PCCAtlasFrameTileInformation.h"
 
 namespace pcc {
-    
+
 // 7.3.6.3  Atlas frame parameter set RBSP syntax
 class AtlasFrameParameterSetRbsp {
  public:
@@ -117,4 +117,4 @@ class AtlasFrameParameterSetRbsp {
 
 };  // namespace pcc
 
-#endif //~PCC_BITSTREAM_ATLASFRAMEPARAMETERSETRBSP_H
+#endif  //~PCC_BITSTREAM_ATLASFRAMEPARAMETERSETRBSP_H

@@ -40,7 +40,7 @@
 #include "PCCAttributeInformation.h"
 
 namespace pcc {
-    
+
 // 7.3.4.1  General V-PCC Sequence parameter set syntax
 class VpccParameterSet {
  public:
@@ -196,4 +196,4 @@ class VpccParameterSet {
 
 };  // namespace pcc
 
-#endif //~PCC_BITSTREAM_VPCCPARAMETERSET_H
+#endif  //~PCC_BITSTREAM_VPCCPARAMETERSET_H

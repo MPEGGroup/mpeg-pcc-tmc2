@@ -66,7 +66,7 @@
 #include "PCCChrono.h"
 #endif
 
-#define MATCHTOANCHOR 1 //jkei: set 1 to match with the results of anchor for mapcount=1 case.
+#define MATCHTOANCHOR 1  // jkei: set 1 to match with the results of anchor for mapcount=1 case.
 
 namespace pcc {
 
@@ -92,14 +92,14 @@ static const uint8_t PCC_SAVE_POINT_TYPE = 0;  // Save point information in reco
 
 enum PCCEndianness { PCC_BIG_ENDIAN = 0, PCC_LITTLE_ENDIAN = 1 };
 enum PCCColorTransform { COLOR_TRANSFORM_NONE = 0, COLOR_TRANSFORM_RGB_TO_YCBCR = 1 };
-enum PCCPointType { POINT_UNSET = 0, POINT_D0, POINT_D1, POINT_DF, POINT_SMOOTH, POINT_EDD };
+enum PCCPointType { POINT_UNSET = 0, POINT_D0, POINT_D1, POINT_DF, POINT_SMOOTH, POINT_EOM };
 enum { COLOURFORMAT420 = 0, COLOURFORMAT444 = 1 };
 
 const int16_t infiniteDepth          = ( std::numeric_limits<int16_t>::max )();
 const int64_t infinitenumber         = ( std::numeric_limits<int64_t>::max )();
 const int32_t InvalidPatchIndex      = -1;
 const size_t  IntermediateLayerIndex = 100;
-const size_t  eddLayerIndex          = 10;
+const size_t  eomLayerIndex          = 10;
 const size_t  NeighborThreshold      = 4;
 const size_t  NumPatchOrientations   = 8;
 const size_t  gbitCountSize[]        = {
@@ -156,7 +156,7 @@ void printVector( std::vector<T>    data,
                   const std::string string,
                   const bool        hexa = false ) {
   if ( data.size() == 0 ) { data.resize( width * height, 0 ); }
-  printf( "%s: %lu %lu \n", string.c_str(), width, height );
+  printf( "%s: %zu %zu \n", string.c_str(), width, height );
   for ( size_t v0 = 0; v0 < height; ++v0 ) {
     for ( size_t u0 = 0; u0 < width; ++u0 ) {
       if ( hexa ) {

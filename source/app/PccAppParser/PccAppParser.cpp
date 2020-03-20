@@ -43,19 +43,19 @@ int main( int argc, char* argv[] ) {
     printf( "File %s not exist \n", argv[1] );
     usage();
   }
+  std::string filename = argv[1];
+  int         ret      = parserPccBin( filename );
 
-  int ret = parserPccBin(  argv[1] );
-  
   return ret;
 }
 
 void usage() {
-  printf("Usage: ./PccAppParser <filename> \n"); 
-  printf("      <filename>: path to the compress PCC bitstream \n");
-  exit(-1);
+  printf( "Usage: ./PccAppParser <filename> \n" );
+  printf( "      <filename>: path to the compress PCC bitstream \n" );
+  exit( -1 );
 }
 
-int parserPccBin( std::string filename) {
+int parserPccBin( const std::string& filename ) {
   PCCBitstream     bitstream;
   PCCBitstreamStat bitstreamStat;
 #ifdef BITSTREAM_TRACE
@@ -68,18 +68,18 @@ int parserPccBin( std::string filename) {
   bitstreamStat.setHeader( bitstream.size() );
 
   SampleStreamVpccUnit ssvu;
-  PCCBitstreamReader  bitstreamReader;
-  size_t               headerSize = bitstreamReader.read( bitstream, ssvu );
+  PCCBitstreamReader   bitstreamReader;
+  size_t               headerSize = pcc::PCCBitstreamReader::read( bitstream, ssvu );
   bitstreamStat.incrHeader( headerSize );
 
   bool    bMoreData = true;
   int32_t index     = 0;
   while ( bMoreData ) {
-    PCCHighLevelSyntax       syntax;
+    PCCHighLevelSyntax syntax;
     syntax.setBitstreamStat( bitstreamStat );
-    PCCBitstreamReader  gofBitstreamReader;
-    int ret =  gofBitstreamReader.decode( ssvu, syntax );
-    if ( ret ) { return ret; }    
+    PCCBitstreamReader gofBitstreamReader;
+    int                ret = gofBitstreamReader.decode( ssvu, syntax );
+    if ( ret != 0 ) { return ret; }
     bMoreData = ( ssvu.getVpccUnitCount() > 0 );
   }
   bitstreamStat.trace();

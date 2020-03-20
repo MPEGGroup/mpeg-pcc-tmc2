@@ -142,4 +142,4 @@ class AtlasFrameTileInformation {
 
 };  // namespace pcc
 
-#endif //~PCC_BITSTREAM_ATLASFRAMETILEINFORMATION_H
+#endif  //~PCC_BITSTREAM_ATLASFRAMETILEINFORMATION_H

@@ -43,34 +43,28 @@ class PCCEncoderParameters {
  public:
   PCCEncoderParameters();
   ~PCCEncoderParameters();
-  void   print();
-  bool   check();
-  void   completePath();
-  void   constructAspsRefList( PCCContext& context, size_t aspsIdx, size_t afpsIdx );
-  void   initializeContext( PCCContext& context );
-  size_t startFrameNumber_;
-
-  std::string configurationFolder_;
-  std::string uncompressedDataFolder_;
-
-  std::string compressedStreamPath_;
-  std::string reconstructedDataPath_;
-
+  void              print();
+  bool              check();
+  void              completePath();
+  static void       constructAspsRefList( PCCContext& context, size_t aspsIdx, size_t afpsIdx );
+  void              initializeContext( PCCContext& context );
+  size_t            startFrameNumber_;
+  std::string       configurationFolder_;
+  std::string       uncompressedDataFolder_;
+  std::string       compressedStreamPath_;
+  std::string       reconstructedDataPath_;
   PCCColorTransform colorTransform_;
   std::string       colorSpaceConversionPath_;
   std::string       videoEncoderPath_;
   bool              use3dmc_;
   std::string       videoEncoderAuxPath_;
   std::string       videoEncoderOccupancyMapPath_;
-
-  std::string colorSpaceConversionConfig_;
-  std::string inverseColorSpaceConversionConfig_;
-
-  size_t nbThread_;
-
-  size_t      frameCount_;
-  size_t      groupOfFramesSize_;
-  std::string uncompressedDataPath_;
+  std::string       colorSpaceConversionConfig_;
+  std::string       inverseColorSpaceConversionConfig_;
+  size_t            nbThread_;
+  size_t            frameCount_;
+  size_t            groupOfFramesSize_;
+  std::string       uncompressedDataPath_;
 
   // packing
   size_t minimumImageWidth_;
@@ -96,8 +90,8 @@ class PCCEncoderParameters {
   size_t maxNNCountPatchSegmentation_;
   size_t surfaceThickness_;
   size_t minLevel_;  // 8,16,32,64
-  double maxAllowedDist2MissedPointsDetection_;
-  double maxAllowedDist2MissedPointsSelection_;
+  double maxAllowedDist2RawPointsDetection_;
+  double maxAllowedDist2RawPointsSelection_;
   double lambdaRefineSegmentation_;
   size_t mapCountMinus1_;
 
@@ -164,8 +158,8 @@ class PCCEncoderParameters {
   bool losslessGeo_;
   bool losslessGeo444_;
 
-  // missed points video
-  bool        useMissedPointsSeparateVideo_;
+  // raw points video
+  bool        useRawPointsSeparateVideo_;
   std::string geometryMPConfig_;
   std::string textureMPConfig_;
 
@@ -194,8 +188,8 @@ class PCCEncoderParameters {
   bool groupDilation_;
   bool textureDilationOffLossless_;
 
-  // EDD
-  bool enhancedDeltaDepthCode_;
+  // EOM
+  bool enhancedOccupancyMapCode_;
 
   // Lossy occupancy Map coding
   size_t offsetLossyOM_;
@@ -223,10 +217,10 @@ class PCCEncoderParameters {
   size_t safeGuardDistance_;
   bool   useEightOrientations_;
 
-  // Lossy Missed Points Patch
-  bool   lossyMissedPointsPatch_;
+  // Lossy raw points Patch
+  bool   lossyRawPointsPatch_;
   double minNormSumOfInvDist4MPSelection_;
-  int    lossyMppGeoQP_;
+  int    lossyRawPointPatchGeoQP_;
 
   // GPA
   int globalPatchAllocation_;
@@ -239,7 +233,7 @@ class PCCEncoderParameters {
   // 3D geometry padding
   size_t geometryPadding_;
 
-  // EDD
+  // EOM
   bool   enhancedPP_;
   double minWeightEPP_;
 
@@ -266,8 +260,8 @@ class PCCEncoderParameters {
   int              numCutsAlong3rdLongestAxis_;
   int              numROIs_;
 
-  // Sort missed points by Morton code
-  bool   mortonOrderSortMissedPoints_;
+  // Sort raw points by Morton code
+  bool   mortonOrderSortRawPoints_;
   size_t textureMPSeparateVideoWidth_;
 
   // Patch block filtering

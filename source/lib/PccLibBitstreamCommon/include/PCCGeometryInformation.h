@@ -36,7 +36,7 @@
 #include "PCCBitstreamCommon.h"
 
 namespace pcc {
-    
+
 // 7.3.4.4 Geometry information Syntax
 class GeometryInformation {
  public:
@@ -70,4 +70,4 @@ class GeometryInformation {
 
 };  // namespace pcc
 
-#endif //~PCC_BITSTREAM_GEOMETRYINFORMATION_H
+#endif  //~PCC_BITSTREAM_GEOMETRYINFORMATION_H

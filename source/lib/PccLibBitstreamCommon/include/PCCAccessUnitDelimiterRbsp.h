@@ -36,7 +36,7 @@
 #include "PCCBitstreamCommon.h"
 
 namespace pcc {
-    
+
 // 7.3.6.6  Access unit delimiter RBSP syntax
 class AccessUnitDelimiterRbsp {
  public:
@@ -52,4 +52,4 @@ class AccessUnitDelimiterRbsp {
 
 };  // namespace pcc
 
-#endif //~PCC_BITSTREAM_ACCESSUNITDELIMITERRBSP_H
+#endif  //~PCC_BITSTREAM_ACCESSUNITDELIMITERRBSP_H

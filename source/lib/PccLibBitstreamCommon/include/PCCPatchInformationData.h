@@ -43,7 +43,7 @@
 #include "PCCEOMPatchDataUnit.h"
 
 namespace pcc {
-    
+
 // 7.3.7.2  Patch information data syntax (pid)
 class PatchInformationData {
  public:
@@ -86,4 +86,4 @@ class PatchInformationData {
 
 };  // namespace pcc
 
-#endif //~PCC_BITSTREAM_PATCHINFORMATIONDATA_H
+#endif  //~PCC_BITSTREAM_PATCHINFORMATIONDATA_H

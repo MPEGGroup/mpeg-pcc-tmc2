@@ -34,7 +34,6 @@
 #define PCCKdTree_h
 
 #include "PCCCommon.h"
-
 #include "PCCPointSet.h"
 
 namespace pcc {

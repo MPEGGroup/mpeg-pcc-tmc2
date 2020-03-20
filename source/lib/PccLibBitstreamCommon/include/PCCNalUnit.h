@@ -86,4 +86,4 @@ class NalUnit {
 
 };  // namespace pcc
 
-#endif //~PCC_BITSTREAM_NALUNIT_H
+#endif  //~PCC_BITSTREAM_NALUNIT_H

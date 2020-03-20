@@ -49,7 +49,7 @@ PCCDecoderParameters::PCCDecoderParameters() {
   postprocessSmoothingFilter_        = 1;
 }
 
-PCCDecoderParameters::~PCCDecoderParameters() {}
+PCCDecoderParameters::~PCCDecoderParameters() = default;
 void PCCDecoderParameters::print() {
   std::cout << "+ Parameters" << std::endl;
   std::cout << "\t compressedStreamPath                " << compressedStreamPath_ << std::endl;

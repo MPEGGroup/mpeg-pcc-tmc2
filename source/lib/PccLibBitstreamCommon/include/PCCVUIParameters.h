@@ -79,14 +79,14 @@ class HrdParameters {
       hrdAuCabRemovalDelayLengthMinus1_( 0 ),
       hrdDabOutputDelayLengthMinus1_( 0 ),
       hrdElementalDurationInTcMinus1_( 0 ),
-      hrdCabCntMinus1_( 0 ){
+      hrdCabCntMinus1_( 0 ) {
     for ( size_t i = 0; i <= maxNumSubLayersMinus1_; i++ ) {
       hrdFixedAtlasRateGeneralFlag_[i]   = 0;
       hrdFixedAtlasRateWithinCasFlag_[i] = 0;
       hrdLowDelayFlag[i]                 = 0;
     }
-     hrdElementalDurationInTcMinus1_ = 0;
-     hrdCabCntMinus1_ = 0;
+    hrdElementalDurationInTcMinus1_ = 0;
+    hrdCabCntMinus1_                = 0;
   }
   ~HrdParameters() {}
   HrdParameters& operator=( const HrdParameters& ) = default;
@@ -143,27 +143,27 @@ class HrdParameters {
 class VUIParameters {
  public:
   VUIParameters() :
-    vuiWorldCoordinatesInfoPresentFlag_(false),
-    vuiUnitInMetresFlag_( false ),
-    vuiDefaultDispalyBoxSize_( false ),
-    vuiNumUnitsInBlock_( 1 ),
-    vuiBlockScale_( 1 ),
-    vuiDefDispBoxLeftOffset_( 0 ),
-    vuiDefDispBoxRightOffset_( 0 ),
-    vuiDefDispBoxTopOffset_( 0 ),
-    vuiDefDispBoxBottomOffset_( 0 ),
-    vuiDefDispBoxFrontOffset_( 0 ),
-    vuiDefDispBoxBackOffset_( 0 ),
-    vuiTimingInfoPresentFlag_(false),
-    vuiPocProportionalToTimingFlag_(false),
-    vuiHrdParametersPresentFlag_(false),
-    vuiNumUnitsInTick_(1001),
-    vuiTimeScale_(60000),
-    vuiNumTicksPocDiffOneMinus1_( 0 ),
-    vuiBitstreamRestrictionFlag_( false ),
-    vuiTileGroupsRestrictedFlag_( false ),
-    vuiConsistentTilesForVideoComponentsFlag_( false ),
-    vuiMaxNumTileGroupPerAtlas_( 1) {}
+      vuiWorldCoordinatesInfoPresentFlag_( false ),
+      vuiUnitInMetresFlag_( false ),
+      vuiDefaultDispalyBoxSize_( false ),
+      vuiNumUnitsInBlock_( 1 ),
+      vuiBlockScale_( 1 ),
+      vuiDefDispBoxLeftOffset_( 0 ),
+      vuiDefDispBoxRightOffset_( 0 ),
+      vuiDefDispBoxTopOffset_( 0 ),
+      vuiDefDispBoxBottomOffset_( 0 ),
+      vuiDefDispBoxFrontOffset_( 0 ),
+      vuiDefDispBoxBackOffset_( 0 ),
+      vuiTimingInfoPresentFlag_( false ),
+      vuiPocProportionalToTimingFlag_( false ),
+      vuiHrdParametersPresentFlag_( false ),
+      vuiNumUnitsInTick_( 1001 ),
+      vuiTimeScale_( 60000 ),
+      vuiNumTicksPocDiffOneMinus1_( 0 ),
+      vuiBitstreamRestrictionFlag_( false ),
+      vuiTileGroupsRestrictedFlag_( false ),
+      vuiConsistentTilesForVideoComponentsFlag_( false ),
+      vuiMaxNumTileGroupPerAtlas_( 1 ) {}
   ~VUIParameters() {}
   VUIParameters& operator=( const VUIParameters& ) = default;
 
@@ -192,7 +192,7 @@ class VUIParameters {
 
   void setVuiWorldCoordinatesInfoPresentFlag( bool value ) { vuiWorldCoordinatesInfoPresentFlag_ = value; }
   void setVuiUnitInMetresFlag( bool value ) { vuiUnitInMetresFlag_ = value; }
-  void setVuiDefaultDispalyBoxSize(bool value) { vuiDefaultDispalyBoxSize_ = value; }
+  void setVuiDefaultDispalyBoxSize( bool value ) { vuiDefaultDispalyBoxSize_ = value; }
   void setVuiTimingInfoPresentFlag( bool value ) { vuiTimingInfoPresentFlag_ = value; }
   void setVuiPocProportionalToTimingFlag( bool value ) { vuiPocProportionalToTimingFlag_ = value; }
   void setVuiHrdParametersPresentFlag( bool value ) { vuiHrdParametersPresentFlag_ = value; }
@@ -210,7 +210,7 @@ class VUIParameters {
   void setVuiBitstreamRestrictionFlag( bool value ) { vuiBitstreamRestrictionFlag_ = value; }
   void setVuiTileGroupsRestrictedFlag( bool value ) { vuiTileGroupsRestrictedFlag_ = value; }
   void setVuiConsistentTilesForVideoComponentsFlag( bool value ) { vuiConsistentTilesForVideoComponentsFlag_ = value; }
-  void setVuiMaxNumTileGroupPerAtlas(uint32_t value) { vuiMaxNumTileGroupPerAtlas_ = value; }
+  void setVuiMaxNumTileGroupPerAtlas( uint32_t value ) { vuiMaxNumTileGroupPerAtlas_ = value; }
 
  private:
   bool          vuiWorldCoordinatesInfoPresentFlag_;
@@ -239,4 +239,4 @@ class VUIParameters {
 
 };  // namespace pcc
 
-#endif //~PCC_BITSTREAM_VUIPARAMETERS_H
+#endif  //~PCC_BITSTREAM_VUIPARAMETERS_H

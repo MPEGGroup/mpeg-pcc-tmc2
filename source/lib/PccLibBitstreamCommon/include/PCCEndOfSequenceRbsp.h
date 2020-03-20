@@ -36,7 +36,7 @@
 #include "PCCBitstreamCommon.h"
 
 namespace pcc {
-    
+
 // 7.3.6.7  End of sequence RBSP syntax
 class EndOfSequenceRbsp {
  public:
@@ -49,4 +49,4 @@ class EndOfSequenceRbsp {
 
 };  // namespace pcc
 
-#endif //~PCC_BITSTREAM_ENDOFSEQUENCERBSP_H
+#endif  //~PCC_BITSTREAM_ENDOFSEQUENCERBSP_H

@@ -75,30 +75,32 @@ class PCCBitstreamGofStat {
   }
 
   size_t getTotalGeometry() {
-		size_t retVal = 0;
-		for (int i = VIDEO_GEOMETRY; i <= VIDEO_GEOMETRY_RAW; i++)
-			retVal += videoBinSize_[i];
-		return retVal;
+    size_t retVal = 0;
+    for ( int i = VIDEO_GEOMETRY; i <= VIDEO_GEOMETRY_RAW; i++ ) retVal += videoBinSize_[i];
+    return retVal;
   }
   size_t getTotalTexture() {
     size_t retVal = 0;
-		for (int i = VIDEO_TEXTURE; i < VIDEO_TEXTURE_RAW + MAX_NUM_ATTR_PARTITIONS; i++)
-			retVal += videoBinSize_[i];
-		return retVal;
+    for ( int i = VIDEO_TEXTURE; i < VIDEO_TEXTURE_RAW + MAX_NUM_ATTR_PARTITIONS; i++ ) retVal += videoBinSize_[i];
+    return retVal;
   }
   size_t getTotalMetadata() { return getTotal() - getTotalGeometry() - getTotalTexture(); }
 
   void trace() {
-    printf( "    vpccUnitSize[ VPCC_VPS ]: %9lu B %9lu b\n", vpccUnitSize_[VPCC_VPS], vpccUnitSize_[VPCC_VPS] * 8 );
-    printf( "    vpccUnitSize[ VPCC_AD  ]: %9lu B %9lu b\n", vpccUnitSize_[VPCC_AD], vpccUnitSize_[VPCC_AD] * 8 );
-    printf( "    vpccUnitSize[ VPCC_OVD ]: %9lu B %9lu b ( Ocm video = %9lu B )\n", vpccUnitSize_[VPCC_OVD],
+    printf( "    vpccUnitSize[ VPCC_VPS ]: %9zu B %9zu b\n", vpccUnitSize_[VPCC_VPS], vpccUnitSize_[VPCC_VPS] * 8 );
+    printf( "    vpccUnitSize[ VPCC_AD  ]: %9zu B %9zu b\n", vpccUnitSize_[VPCC_AD], vpccUnitSize_[VPCC_AD] * 8 );
+    printf( "    vpccUnitSize[ VPCC_OVD ]: %9zu B %9zu b ( Ocm video = %9zu B )\n", vpccUnitSize_[VPCC_OVD],
             vpccUnitSize_[VPCC_OVD] * 8, videoBinSize_[VIDEO_OCCUPANCY] );
-    printf( "    vpccUnitSize[ VPCC_GVD ]: %9lu B %9lu b ( Geo video = %9lu B + %9lu B + %9lu B + %9lu B )\n",
-            vpccUnitSize_[VPCC_GVD], vpccUnitSize_[VPCC_GVD] * 8, videoBinSize_[VIDEO_GEOMETRY],
-            videoBinSize_[VIDEO_GEOMETRY_D0], videoBinSize_[VIDEO_GEOMETRY_D1], videoBinSize_[VIDEO_GEOMETRY_RAW] );
-    printf( "    vpccUnitSize[ VPCC_AVD ]: %9lu B %9lu b ( Tex video = %9lu B + (%9lu B + %9lu B) + %9lu B )\n",
-            vpccUnitSize_[VPCC_AVD], vpccUnitSize_[VPCC_AVD] * 8, videoBinSize_[VIDEO_TEXTURE],
-            videoBinSize_[VIDEO_TEXTURE_T0], videoBinSize_[VIDEO_TEXTURE_T1], videoBinSize_[VIDEO_TEXTURE_RAW] );
+    printf(
+        "    vpccUnitSize[ VPCC_GVD ]: %9zu B %9zu b ( Geo video = %9zu B + "
+        "%9zu B + %9zu B + %9zu B )\n",
+        vpccUnitSize_[VPCC_GVD], vpccUnitSize_[VPCC_GVD] * 8, videoBinSize_[VIDEO_GEOMETRY],
+        videoBinSize_[VIDEO_GEOMETRY_D0], videoBinSize_[VIDEO_GEOMETRY_D1], videoBinSize_[VIDEO_GEOMETRY_RAW] );
+    printf(
+        "    vpccUnitSize[ VPCC_AVD ]: %9zu B %9zu b ( Tex video = %9zu B + "
+        "(%9zu B + %9zu B) + %9zu B )\n",
+        vpccUnitSize_[VPCC_AVD], vpccUnitSize_[VPCC_AVD] * 8, videoBinSize_[VIDEO_TEXTURE],
+        videoBinSize_[VIDEO_TEXTURE_T0], videoBinSize_[VIDEO_TEXTURE_T1], videoBinSize_[VIDEO_TEXTURE_RAW] );
   }
 
  private:
@@ -127,7 +129,7 @@ class PCCBitstreamStat {
 
   void trace( bool byGOF = false ) {
     printf( "Bitstream stat: \n" );
-    printf( "  Header:                     %9lu B %9lu b\n", header_, header_ * 8 );
+    printf( "  Header:                     %9zu B %9zu b\n", header_, header_ * 8 );
     if ( byGOF ) {
       for ( size_t i = 0; i < bitstreamGofStat_.size(); i++ ) {
         printf( "  GOF %2zu: \n", i );
@@ -142,10 +144,10 @@ class PCCBitstreamStat {
     size_t totalGeometry = totalBitstreamStat.getTotalGeometry();
     size_t totalTexture  = totalBitstreamStat.getTotalTexture();
     size_t total         = totalMetadata + totalGeometry + totalTexture;
-    printf( "  TotalMetadata:              %9lu B %9lu b \n", totalMetadata, totalMetadata * 8 );
-    printf( "  TotalGeometry:              %9lu B %9lu b \n", totalGeometry, totalGeometry * 8 );
-    printf( "  TotalTexture:               %9lu B %9lu b \n", totalTexture, totalTexture * 8 );
-    printf( "  Total:                      %9lu B %9lu b \n", total, total * 8 );
+    printf( "  TotalMetadata:              %9zu B %9zu b \n", totalMetadata, totalMetadata * 8 );
+    printf( "  TotalGeometry:              %9zu B %9zu b \n", totalGeometry, totalGeometry * 8 );
+    printf( "  TotalTexture:               %9zu B %9zu b \n", totalTexture, totalTexture * 8 );
+    printf( "  Total:                      %9zu B %9zu b \n", total, total * 8 );
   }
 
  private:
@@ -160,7 +162,7 @@ class PCCBitstream {
 
   bool initialize( std::vector<uint8_t>& data );
   bool initialize( const PCCBitstream& bitstream );
-  bool initialize( std::string compressedStreamPath );
+  bool initialize( const std::string& compressedStreamPath );
   void initialize( uint64_t capacity ) { data_.resize( capacity, 0 ); }
   void clear() {
     data_.clear();
@@ -171,7 +173,7 @@ class PCCBitstream {
     position_.bits  = 0;
     position_.bytes = 0;
   }
-  bool                write( std::string compressedStreamPath );
+  bool                write( const std::string& compressedStreamPath );
   uint8_t*            buffer() { return data_.data(); }
   uint64_t&           size() { return position_.bytes; }
   uint64_t            capacity() { return data_.size(); }
@@ -211,9 +213,9 @@ class PCCBitstream {
     uint32_t code = read( bits, position_ );
 #ifdef BITSTREAM_TRACE
     if ( bFullStream == true )
-      trace( "FullStream: CodU[%2u]: %4lu \n", bits, code );
+      trace( "FullStream: CodU[%2u]: %4zu \n", bits, code );
     else
-      trace( "  CodU[%2u]: %4lu \n", bits, code );
+      trace( "  CodU[%2u]: %4zu \n", bits, code );
 #endif
     return code;
   }
@@ -221,9 +223,9 @@ class PCCBitstream {
     write( value, bits, position_ );
 #ifdef BITSTREAM_TRACE
     if ( bFullStream == true )
-      trace( "FullStream: CodU[%2u]: %4lu \n", bits, value );
+      trace( "FullStream: CodU[%2u]: %4zu \n", bits, value );
     else
-      trace( "  CodU[%2u]: %4lu \n", bits, value );
+      trace( "  CodU[%2u]: %4zu \n", bits, value );
 #endif
   }
 
@@ -238,7 +240,7 @@ class PCCBitstream {
     }
     write( code, bits );
 #ifdef BITSTREAM_TRACE
-    trace( "  CodS[%2u]: %4lu \n", bits, value );
+    trace( "  CodS[%2u]: %4zu \n", bits, value );
 #endif
   }
 
@@ -253,7 +255,7 @@ class PCCBitstream {
       value = (int32_t)code | ~( midPoint - 1 );
     }
 #ifdef BITSTREAM_TRACE
-    trace( "  CodS[%2u]: %4lu \n", bits, value );
+    trace( "  CodS[%2u]: %4zu \n", bits, value );
 #endif
     return value;
   }
@@ -273,7 +275,7 @@ class PCCBitstream {
     write( code, ( length + 1 ) >> 1 );
 #ifdef BITSTREAM_TRACE
     trace_ = traceStartingValue;
-    trace( "  CodeUvlc: %4lu \n", orgCode );
+    trace( "  CodeUvlc: %4zu \n", orgCode );
 #endif
   }
 
@@ -295,7 +297,7 @@ class PCCBitstream {
     }
 #ifdef BITSTREAM_TRACE
     trace_ = traceStartingValue;
-    trace( "  CodeUvlc: %4lu \n", value );
+    trace( "  CodeUvlc: %4zu \n", value );
 #endif
     return value;
   }

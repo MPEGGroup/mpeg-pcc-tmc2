@@ -37,7 +37,7 @@
 #include "PCCSEI.h"
 
 namespace pcc {
-    
+
 // 7.3.6.5  Supplemental enhancement information RBSP syntax
 class SupplementalEnhancementInformationRbsp {
  public:
@@ -51,4 +51,4 @@ class SupplementalEnhancementInformationRbsp {
 
 };  // namespace pcc
 
-#endif //~PCC_BITSTREAM_SUPPLEMENTALENHANCEMENTINFORMATIONRBSP_H
+#endif  //~PCC_BITSTREAM_SUPPLEMENTALENHANCEMENTINFORMATIONRBSP_H

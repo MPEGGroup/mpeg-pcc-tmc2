@@ -36,7 +36,7 @@
 #include "PCCBitstreamCommon.h"
 
 namespace pcc {
-    
+
 // 7.3.7.9 Point local reconstruction data syntax
 class PointLocalReconstructionData {
  public:
@@ -88,4 +88,4 @@ class PointLocalReconstructionData {
 
 };  // namespace pcc
 
-#endif //~PCC_BITSTREAM_PLRD_H
+#endif  //~PCC_BITSTREAM_PLRD_H

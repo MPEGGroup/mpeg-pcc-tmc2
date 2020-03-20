@@ -46,33 +46,36 @@ class PCCMetricsParameters {
   bool check( bool checkFiles = false );
   void completePath();
 
-  bool                computeMetrics_;
-  bool                computeChecksum_;
+  bool computeMetrics_;
+  bool computeChecksum_;
 
-  size_t              startFrameNumber_;
-  size_t              frameCount_;
-  size_t              groupOfFramesSize_;
+  size_t startFrameNumber_;
+  size_t frameCount_;
+  size_t groupOfFramesSize_;
 
-  std::string         uncompressedDataFolder_;
-  std::string         uncompressedDataPath_;
-  std::string         reconstructedDataPath_;
-  std::string         normalDataPath_;
+  std::string uncompressedDataFolder_;
+  std::string uncompressedDataPath_;
+  std::string reconstructedDataPath_;
+  std::string normalDataPath_;
 
-  size_t              nbThread_;
+  size_t nbThread_;
 
-  float               resolution_;        //! intrinsic resolution, imported. for geometric distortion
-  int                 dropDuplicates_;    //! 0(detect) 1(drop) 2(average) subsequent points with same geo coordinates
-  int                 neighborsProc_;     //! 0(undefined), 1(average), 2(weighted average), 3(min), 4(max) neighbors with same geometric distance
+  float resolution_;    //! intrinsic resolution, imported. for geometric
+                        // distortion
+  int dropDuplicates_;  //! 0(detect) 1(drop) 2(average) subsequent points with
+                        // same geo coordinates
+  int neighborsProc_;   //! 0(undefined), 1(average), 2(weighted average),
+                        // 3(min), 4(max) neighbors with same geometric
+                       //! distance
 
-  bool                computeC2c_;
-  bool                computeC2p_;
-  bool                computeColor_;
-  bool                computeLidar_;
-  bool                computeReflectance_;
-  bool                computeHausdorff_;
-
+  bool computeC2c_;
+  bool computeC2p_;
+  bool computeColor_;
+  bool computeLidar_;
+  bool computeReflectance_;
+  bool computeHausdorff_;
 };
 
-}; //~namespace
+};  // namespace pcc
 
 #endif /* PCCMetricsParameters_h */

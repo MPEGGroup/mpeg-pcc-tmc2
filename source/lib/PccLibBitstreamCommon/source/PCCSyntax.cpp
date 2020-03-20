@@ -53,7 +53,7 @@ void PCCAtlasHighLevelSyntax::constructRefList( size_t aspsIdx, size_t afpsIdx )
     for ( size_t i = 0; i < refList.getNumRefEntries(); i++ ) {
       int  absDiff = refList.getAbsDeltaAfocSt( i );
       bool sign    = refList.getStrpfEntrySignFlag( i );
-      setRefAtlasFrame( list, i, sign == 0 ? ( -absDiff ) : absDiff );
+      setRefAtlasFrame( list, i, static_cast<int>( sign ) == 0 ? ( -absDiff ) : absDiff );
     }
   }
 }
@@ -65,9 +65,10 @@ size_t PCCAtlasHighLevelSyntax::getNumRefIdxActive( AtlasTileGroupHeader& atgh )
     if ( atgh.getAtghNumRefIdxActiveOverrideFlag() ) {
       numRefIdxActive = atgh.getAtghNumRefIdxActiveMinus1() + 1;
     } else {
-      auto& refList   = atgh.getRefListStruct();
-      numRefIdxActive = ( size_t )( std::min )( (int)refList.getNumRefEntries(),
-                                                (int)afps.getAfpsNumRefIdxDefaultActiveMinus1() + 1 );
+      auto& refList = atgh.getRefListStruct();
+      numRefIdxActive =
+          static_cast<size_t>( ( std::min )( static_cast<int>( refList.getNumRefEntries() ),
+                                             static_cast<int>( afps.getAfpsNumRefIdxDefaultActiveMinus1() ) + 1 ) );
     }
   }
   return numRefIdxActive;
@@ -77,15 +78,16 @@ void PCCAtlasHighLevelSyntax::printVideoBitstream() {
   size_t index = 0;
   printf( "VideoBitstream list: \n" );
   for ( auto& value : videoBitstream_ ) {
-    printf( "  * %lu / %lu: ", index, videoBitstream_.size() );
+    printf( "  * %zu / %zu: ", index, videoBitstream_.size() );
     value.trace();
     index++;
   }
   fflush( stdout );
 }
 
-PCCAtlasHighLevelSyntax::PCCAtlasHighLevelSyntax() { activeAFPS_ = 0; activeASPS_ = 0; }
-
-PCCAtlasHighLevelSyntax::~PCCAtlasHighLevelSyntax() {
-  videoBitstream_.clear();
+PCCAtlasHighLevelSyntax::PCCAtlasHighLevelSyntax() {
+  activeAFPS_ = 0;
+  activeASPS_ = 0;
 }
+
+PCCAtlasHighLevelSyntax::~PCCAtlasHighLevelSyntax() { videoBitstream_.clear(); }

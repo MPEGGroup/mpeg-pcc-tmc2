@@ -36,7 +36,7 @@
 #include "PCCBitstreamCommon.h"
 
 namespace pcc {
-    
+
 // 7.3.7.7  raw patch data unit syntax
 class RawPatchDataUnit {
  public:
@@ -94,4 +94,4 @@ class RawPatchDataUnit {
 
 };  // namespace pcc
 
-#endif //~PCC_BITSTREAM_RAWPATCHDATAUNIT_H
+#endif  //~PCC_BITSTREAM_RAWPATCHDATAUNIT_H
