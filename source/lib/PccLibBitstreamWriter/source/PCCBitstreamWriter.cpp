@@ -64,8 +64,10 @@ size_t PCCBitstreamWriter::write( SampleStreamVpccUnit& ssvu, PCCBitstream& bits
       maxUnitSize = static_cast<uint32_t>( vpccUnit.getVpccUnitSize() );
     }
   }
+  TRACE_BITSTREAM("maxUnitSize = %u \n",maxUnitSize);
   uint32_t precision = static_cast<uint32_t>(
       min( max( static_cast<int>( ceil( static_cast<double>( ceilLog2( maxUnitSize ) ) / 8.0 ) ), 1 ), 8 ) - 1 );
+  TRACE_BITSTREAM(" => SsvhUnitSizePrecisionBytesMinus1 = %u \n",precision);
   ssvu.setSsvhUnitSizePrecisionBytesMinus1( precision );
   sampleStreamVpccHeader( bitstream, ssvu );
   headerSize += 1;
@@ -86,8 +88,7 @@ size_t PCCBitstreamWriter::write( SampleStreamVpccUnit& ssvu, PCCBitstream& bits
 // B.2.1 Sample stream V-PCC header syntax
 void PCCBitstreamWriter::sampleStreamVpccHeader( PCCBitstream& bitstream, SampleStreamVpccUnit& ssvu ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
-  bitstream.write( uint32_t( ssvu.getSsvhUnitSizePrecisionBytesMinus1() ),
-                   3 );     // u(3)
+  bitstream.write( uint32_t( ssvu.getSsvhUnitSizePrecisionBytesMinus1() ), 3 ); // u(3)
   bitstream.write( 0, 5 );  // u(5)
 }
 
@@ -1192,8 +1193,14 @@ void PCCBitstreamWriter::atlasSubStream( PCCHighLevelSyntax& syntax, PCCBitstrea
     if ( maxUnitSize < seiSuffixSizeList[i] ) { maxUnitSize = seiSuffixSizeList[i]; }
   }
   // calculation of the max unit size done
+    TRACE_BITSTREAM( "maxUnitSize                                                        = %u \n",maxUnitSize);
+    TRACE_BITSTREAM( "ceilLog2( maxUnitSize + 1 )                                        = %d \n",ceilLog2( maxUnitSize + 1 ));
+    TRACE_BITSTREAM( "ceil( static_cast<double>( ceilLog2( maxUnitSize + 1 ) ) / 8.0 ) ) = %f \n",
+      ceil( static_cast<double>( ceilLog2( maxUnitSize + 1 ) ) / 8.0 ) );
+
   uint32_t precision = static_cast<uint32_t>(
-      min( max( static_cast<int>( ceil( static_cast<double>( ceilLog2( maxUnitSize ) ) / 8.0 ) ), 1 ), 8 ) - 1 );
+      min( max( static_cast<int>( ceil( static_cast<double>( ceilLog2( maxUnitSize + 1 ) ) / 8.0 ) ), 1 ), 8 ) - 1 );
+    TRACE_BITSTREAM( "precision                                                      = %u \n",precision);
   ssnu.setUnitSizePrecisionBytesMinus1( precision );
   sampleStreamNalHeader( bitstream, ssnu );
   for ( size_t aspsCount = 0; aspsCount < syntax.getAtlasSequenceParameterSetList().size(); aspsCount++ ) {
@@ -1331,6 +1338,7 @@ void PCCBitstreamWriter::seiMessage( PCCBitstream&       bitstream,
 void PCCBitstreamWriter::sampleStreamNalHeader( PCCBitstream& bitstream, SampleStreamNalUnit& ssnu ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   bitstream.write( ssnu.getUnitSizePrecisionBytesMinus1(), 3 );  // u(3)
+  TRACE_BITSTREAM( "UnitSizePrecisionBytesMinus1 = %lu \n",ssnu.getUnitSizePrecisionBytesMinus1() );
   bitstream.write( 0, 5 );                                       // u(5)
 }
 
@@ -1341,6 +1349,7 @@ void PCCBitstreamWriter::sampleStreamNalUnit( PCCHighLevelSyntax&  syntax,
                                               NalUnit&             nalu,
                                               size_t               index ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
+  TRACE_BITSTREAM( "UnitSizePrecisionBytesMinus1 = %lu \n",ssnu.getUnitSizePrecisionBytesMinus1() );
   bitstream.write( uint32_t( nalu.getNalUnitSize() ),
                    8 * ( ssnu.getUnitSizePrecisionBytesMinus1() + 1 ) );  // u(v)
   nalUnitHeader( bitstream, nalu );
