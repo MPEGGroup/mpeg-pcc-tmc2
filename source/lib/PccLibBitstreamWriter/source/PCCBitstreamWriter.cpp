@@ -923,10 +923,6 @@ void PCCBitstreamWriter::patchDataUnit( PatchDataUnit&        pdu,
   AtlasFrameParameterSetRbsp&    afps   = syntax.getAtlasFrameParameterSet( afpsId );
   size_t                         aspsId = afps.getAtlasSequenceParameterSetId();
   AtlasSequenceParameterSetRbsp& asps   = syntax.getAtlasSequenceParameterSet( aspsId );
-  bitstream.write( uint32_t( pdu.getPduProjectionId() ),
-                   ( asps.get45DegreeProjectionPatchPresentFlag() ? 5 : 3 ) );  // u(5 or 3)
-  TRACE_BITSTREAM( "PduProjectionId = %zu (45DegreeProjectionPatchPresentFlag = %d ) \n", pdu.getPduProjectionId(),
-                   asps.get45DegreeProjectionPatchPresentFlag() );
   bitstream.writeUvlc( uint32_t( pdu.getPdu2dPosX() ) );  // ue(v)
   bitstream.writeUvlc( uint32_t( pdu.getPdu2dPosY() ) );  // ue(v)
   TRACE_BITSTREAM( " 2dPosXY: %zu,%zu\n", pdu.getPdu2dPosX(), pdu.getPdu2dPosX() );
@@ -934,28 +930,32 @@ void PCCBitstreamWriter::patchDataUnit( PatchDataUnit&        pdu,
   bitstream.writeUvlc( uint32_t( pdu.getPdu2dSizeYMinus1() ) );
   TRACE_BITSTREAM( " 2dSizeXY: %d,%d\n", int32_t( pdu.getPdu2dSizeXMinus1() + 1 ),
                    int32_t( pdu.getPdu2dSizeYMinus1() + 1 ) );
-  uint8_t bitCount3DPos = syntax.getVps( 0 ).getGeometryInformation( 0 ).getGeometry3dCoordinatesBitdepthMinus1() + 1;
+  uint8_t bitCount3DPos = syntax.getVps().getGeometryInformation( 0 ).getGeometry3dCoordinatesBitdepthMinus1() + 1;
   bitstream.write( uint32_t( pdu.getPdu3dPosX() ), bitCount3DPos );  // u(v)
   bitstream.write( uint32_t( pdu.getPdu3dPosY() ), bitCount3DPos );  // u(v)
   TRACE_BITSTREAM( " 3dPosXY: %zu,%zu\n", pdu.getPdu3dPosX(), pdu.getPdu3dPosY() );
   const uint8_t bitCountForMinDepth =
       syntax.getVps().getGeometryInformation( 0 ).getGeometry3dCoordinatesBitdepthMinus1() -
-      atgh.getAtghPosMinZQuantizer() + ( pdu.getPduProjectionId() > 5 ? 2 : 1 );
+      atgh.getAtghPosMinZQuantizer() +  2 ;
   bitstream.write( uint32_t( pdu.getPdu3dPosMinZ() ),
                    bitCountForMinDepth );  // u(v)
   TRACE_BITSTREAM( " Pdu3dPosMinZ: %zu ( bitCountForMinDepth = %u = %u - %u + %u ) \n", pdu.getPdu3dPosMinZ(),
                    bitCountForMinDepth,
                    syntax.getVps().getGeometryInformation( 0 ).getGeometry3dCoordinatesBitdepthMinus1(),
-                   atgh.getAtghPosMinZQuantizer(), pdu.getPduProjectionId() > 5 ? 2 : 1 );
+                   atgh.getAtghPosMinZQuantizer(), 2 );
 
   if ( asps.getNormalAxisMaxDeltaValueEnabledFlag() ) {
     uint8_t bitCountForMaxDepth = syntax.getVps().getGeometryInformation( 0 ).getGeometry3dCoordinatesBitdepthMinus1() -
-                                  atgh.getAtghPosDeltaMaxZQuantizer() + ( pdu.getPduProjectionId() > 5 ? 2 : 1 );
+                                  atgh.getAtghPosDeltaMaxZQuantizer() + 2;
     if ( asps.get45DegreeProjectionPatchPresentFlag() ) { bitCountForMaxDepth++; }
     bitstream.write( uint32_t( pdu.getPdu3dPosDeltaMaxZ() ), bitCountForMaxDepth );
     TRACE_BITSTREAM( " Pdu3dPosDeltaMaxZ: %zu ( bitCountForMaxDepth = %u) \n", pdu.getPdu3dPosDeltaMaxZ(),
                      bitCountForMaxDepth );
   }
+  bitstream.write( uint32_t( pdu.getPduProjectionId() ),
+                   ( asps.get45DegreeProjectionPatchPresentFlag() ? 5 : 3 ) );  // u(5 or 3)
+  TRACE_BITSTREAM( "PduProjectionId = %zu (45DegreeProjectionPatchPresentFlag = %d ) \n", pdu.getPduProjectionId(),
+                   asps.get45DegreeProjectionPatchPresentFlag() );
   bitstream.write( uint32_t( pdu.getPduOrientationIndex() ),
                    ( asps.getUseEightOrientationsFlag() ? 3 : 1 ) );  // u(3 or 1)
   if ( afps.getLodModeEnableFlag() ) {
@@ -1848,7 +1848,7 @@ void PCCBitstreamWriter::sceneObjectInformation( PCCBitstream& bitstream, SEI& s
     bitstream.write( sei.getSoiLog2MaxObjectIdxUpdated(), 5 );
     if ( sei.getSoiObjectDependencyPresentFlag() ) { bitstream.write( sei.getSoiLog2MaxObjectDependencyIdx(), 5 ); }
     for ( size_t i = 0; i <= sei.getSoiNumObjectUpdates(); i++ ) {
-      assert( sei.getSoiObjectIdx( i ).size() >= sei.getSoiNumObjectUpdates() );
+      assert( sei.getSoiObjectIdx( i ) >= sei.getSoiNumObjectUpdates() );
       bitstream.write( sei.getSoiObjectIdx( i ), sei.getSoiLog2MaxObjectIdxUpdated() );
       size_t k = sei.getSoiObjectIdx( i );
       bitstream.write( static_cast<uint32_t>( sei.getSoiObjectCancelFlag( k ) ), 1 );
