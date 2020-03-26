@@ -116,12 +116,8 @@ void PCCCodec::generatePointCloud( PCCGroupOfFrames&                   reconstru
   for ( size_t i = 0; i < frames.size(); i++ ) {
     TRACE_CODEC( " Frame %zu / %zu \n", i, frames.size() );
     std::vector<uint32_t> partition;
-    printf( "  generatePointCloud  \n" );
-    fflush( stdout );
     generatePointCloud( reconstructs[i], context, frames[i],// videoGeometry, videoGeometryMultiple, videoOccupancyMap,
                         params, partition, bDecoder );
-    printf( "  generatePointCloud done ( %zu points ) \n", reconstructs[i].getPointCount() );
-    fflush( stdout );
 #ifdef CODEC_TRACE
     TRACE_CODEC( " generatePointCloud create %zu points \n", reconstructs[i].getPointCount() );
     auto checksum = reconstructs[i].computeChecksum();
@@ -953,8 +949,6 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                        reconstr
         frame.getWidth(), frame.getHeight(), params.occupancyResolution_, params.occupancyPrecision_,
         !params.enhancedOccupancyMapCode_ ? params.thresholdLossyOM_ : 0, params.pbfPassesCount_,
         params.pbfFilterSize_, params.pbfLog2Threshold_ );
-    printf( "  PBF done \n" );
-    fflush( stdout );
   }
 
   // point cloud occupancy map upscaling from video using nearest neighbor

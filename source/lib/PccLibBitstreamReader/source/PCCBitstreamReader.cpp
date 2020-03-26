@@ -79,6 +79,7 @@ void PCCBitstreamReader::sampleStreamVpccHeader( PCCBitstream& bitstream, Sample
 void PCCBitstreamReader::sampleStreamVpccUnit( PCCBitstream& bitstream, SampleStreamVpccUnit& ssvu, VpccUnit& vpccu ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   vpccu.setVpccUnitSize( bitstream.read( 8 * ( ssvu.getSsvhUnitSizePrecisionBytesMinus1() + 1 ) ) );  // u(v)
+
   auto pos = bitstream.getPosition();
   vpccu.getVpccUnitDataBitstream().copyFrom( bitstream, pos.bytes, vpccu.getVpccUnitSize() );
   uint8_t vpccUnitType8 = vpccu.getVpccUnitDataBitstream().buffer()[0];
@@ -98,6 +99,10 @@ int32_t PCCBitstreamReader::decode( SampleStreamVpccUnit& ssvu, PCCHighLevelSynt
     if ( vpccUnitType == VPCC_VPS ) {
       numVPS++;
       if ( numVPS > 1 ) {
+        //remove the bits counted for the last VPS
+        int32_t vpccUnitSize = (int32_t)VPCCUnit.getVpccUnitDataBitstream().capacity();
+        int32_t statSize = syntax.getBitstreamStat().getVpccUnitSize(VPCC_VPS) - vpccUnitSize;
+        syntax.getBitstreamStat().overwriteVpccUnitSize( VPCC_VPS, statSize );
         endOfGop = true;
       } else {
         ssvu.popFront();  // remove element
@@ -178,7 +183,7 @@ void PCCBitstreamReader::vpccUnit( PCCHighLevelSyntax& syntax, VpccUnit& currVpc
   vpccUnitHeader( syntax, bitstream, vpccUnitType );
   assert( vpccUnitType == currVpccUnit.getVpccUnitType() );
   vpccUnitPayload( syntax, bitstream, vpccUnitType );
-  syntax.getBitstreamStat().setVpccUnitSize( vpccUnitType, static_cast<int32_t>( bitstream.size() ) - position );
+  syntax.getBitstreamStat().setVpccUnitSize( vpccUnitType, static_cast<int32_t>( bitstream.size() ) - position );  
   TRACE_BITSTREAM( "vpccUnit: vpccUnitType = %d(%s) \n", vpccUnitType, toString( vpccUnitType ).c_str() );
   TRACE_BITSTREAM( "vpccUnit: size [%d ~ %d] \n", position, bitstream.size() );
   TRACE_BITSTREAM( "%s done\n", __func__ );

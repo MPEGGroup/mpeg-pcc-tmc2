@@ -60,6 +60,7 @@ class PCCBitstreamGofStat {
     vpccUnitSize_.clear();
     videoBinSize_.clear();
   }
+  void                 overwriteVpccUnitSize( VPCCUnitType type, size_t size ) { vpccUnitSize_[type] = size; }
   void                 setVpccUnitSize( VPCCUnitType type, size_t size ) { vpccUnitSize_[type] += size; }
   void                 setVideoBinSize( PCCVideoType type, size_t size ) { videoBinSize_[type] += size; }
   size_t               getVpccUnitSize( VPCCUnitType type ) { return vpccUnitSize_[type]; }
@@ -118,6 +119,7 @@ class PCCBitstreamStat {
   }
   void   setHeader( size_t size ) { header_ = size; }
   void   incrHeader( size_t size ) { header_ += size; }
+  void   overwriteVpccUnitSize( VPCCUnitType type, size_t size ) { bitstreamGofStat_.back().overwriteVpccUnitSize( type, size ); }
   void   setVpccUnitSize( VPCCUnitType type, size_t size ) { bitstreamGofStat_.back().setVpccUnitSize( type, size ); }
   void   setVideoBinSize( PCCVideoType type, size_t size ) { bitstreamGofStat_.back().setVideoBinSize( type, size ); }
   size_t getVpccUnitSize( VPCCUnitType type ) { return bitstreamGofStat_.back().getVpccUnitSize( type ); }

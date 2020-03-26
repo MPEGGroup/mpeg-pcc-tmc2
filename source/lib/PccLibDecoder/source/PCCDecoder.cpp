@@ -395,12 +395,8 @@ void PCCDecoder::setPostProcessingSeiParameters( GeneratePointCloudParameters& p
   params.pbfPassesCount_        = 0;
   params.pbfFilterSize_         = 0;
   params.pbfLog2Threshold_      = 0;
-#if 0
-  printf( "params.pbfLog2Threshold_      = 0; \n " );
-#endif
   if ( seiSmoothingIsPresent ) {
     auto* sei = static_cast<SEISmoothingParameters*>( context.getSei( NAL_PREFIX_SEI, SMOOTHING_PARAMETERS ) );
-
     if ( sei->getSpGeometrySmoothingEnabledFlag() ) {
       params.flagGeometrySmoothing_ = true;
       if ( sei->getSpGeometrySmoothingId() == 0 ) {
@@ -461,9 +457,6 @@ void PCCDecoder::setPostProcessingSeiParameters( GeneratePointCloudParameters& p
   params.EOMFixBitCount_                = asps.getEnhancedOccupancyMapFixBitCountMinus1() + 1;
   params.geometry3dCoordinatesBitdepth_ = gi.getGeometry3dCoordinatesBitdepthMinus1() + 1;
   params.geometryBitDepth3D_            = gi.getGeometry3dCoordinatesBitdepthMinus1() + 1;
-  printf( "Params: SPI = %d PBF = %d \n", static_cast<int>( params.singleMapPixelInterleaving_ ),
-          static_cast<int>( params.pbfEnableFlag_ ) );
-  fflush( stdout );
 }
 
 void PCCDecoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& params, PCCContext& context ) {
@@ -474,7 +467,6 @@ void PCCDecoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& 
   auto&   asps                  = context.getAtlasSequenceParameterSet( 0 );
   bool    seiSmoothingIsPresent = context.seiIsPresent( NAL_PREFIX_SEI, SMOOTHING_PARAMETERS );
   auto&   plt                   = sps.getProfileTierLevel();
-
   params.flagGeometrySmoothing_ = false;
   params.gridSmoothing_         = false;
   params.gridSize_              = 0;
@@ -546,9 +538,6 @@ void PCCDecoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& 
   params.EOMFixBitCount_                = asps.getEnhancedOccupancyMapFixBitCountMinus1() + 1;
   params.geometry3dCoordinatesBitdepth_ = gi.getGeometry3dCoordinatesBitdepthMinus1() + 1;
   params.geometryBitDepth3D_            = gi.getGeometry3dCoordinatesBitdepthMinus1() + 1;
-  printf( "Params: SPI = %d PBF = %d \n", static_cast<int>( params.singleMapPixelInterleaving_ ),
-          static_cast<int>( params.pbfEnableFlag_ ) );
-  fflush( stdout );
 }
 
 void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
