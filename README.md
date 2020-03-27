@@ -1,4 +1,4 @@
-# - Video Point Cloud Compression - VPCC - mpeg-pcc-tmc2 test model candisoftware 2
+# - Video Point Cloud Compression - VPCC - mpeg-pcc-tmc2 test model candidate software
 
 ## Building
 
@@ -92,6 +92,8 @@ These examples can be start based on your system with the following scripts:
 - ./test/runme_linux.sh
 - ./test/runme_windows.bat
 - ./test/runme_osx.sh
+
+The V-PCC common test condition (CTC) command lines could be found in ./test/ctc_command_line.sh. 
 
 
 ### Contact
