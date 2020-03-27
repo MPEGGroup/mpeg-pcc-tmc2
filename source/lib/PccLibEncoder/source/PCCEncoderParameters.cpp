@@ -37,8 +37,8 @@
 using namespace pcc;
 
 const std::vector<PointLocalReconstructionMode> g_pointLocalReconstructionMode = {
-    {0, 0, 0, 1}, {1, 0, 0, 1}, {1, 1, 0, 1}, {1, 0, 0, 2}, {1, 1, 0, 2},
-    {0, 0, 1, 1}, {1, 0, 1, 1}, {1, 1, 1, 1}, {1, 0, 1, 2}, {1, 1, 1, 2},
+    {false, false, 0, 1}, {true, false, 0, 1}, {true, true, 0, 1}, {true, false, 0, 2}, {true, true, 0, 2},
+    {false, false, 1, 1}, {true, false, 1, 1}, {true, true, 1, 1}, {true, false, 1, 2}, {true, true, 1, 2},
 };
 
 PCCEncoderParameters::PCCEncoderParameters() {
@@ -61,14 +61,16 @@ PCCEncoderParameters::PCCEncoderParameters() {
   voxelDimensionRefineSegmentation_        = 4;
   searchRadiusRefineSegmentation_          = 192;
   occupancyResolution_                     = 16;
+  enablePatchSplitting_                    = true;
+  maxPatchSize_                            = 1024;
   log2QuantizerSizeX_                      = 4;
   log2QuantizerSizeY_                      = 4;
   minPointCountPerCCPatchSegmentation_     = 16;
   maxNNCountPatchSegmentation_             = 16;
   surfaceThickness_                        = 4;
   minLevel_                                = 64;  // fix value
-  maxAllowedDist2MissedPointsDetection_    = 9.0;
-  maxAllowedDist2MissedPointsSelection_    = 1.0;
+  maxAllowedDist2RawPointsDetection_       = 9.0;
+  maxAllowedDist2RawPointsSelection_       = 1.0;
   lambdaRefineSegmentation_                = 3.0;
   minimumImageWidth_                       = 1280;
   minimumImageHeight_                      = 1280;
@@ -115,7 +117,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   losslessGeo_                             = false;
   noAttributes_                            = false;
   losslessGeo444_                          = false;
-  useMissedPointsSeparateVideo_            = false;
+  useRawPointsSeparateVideo_               = false;
   geometryMPConfig_                        = {};
   textureMPConfig_                         = {};
   nbThread_                                = 1;
@@ -128,7 +130,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   qpAdjD1_                                = 0;
   constrainedPack_                        = true;
   thresholdColorSmoothing_                = 10.0;
-  thresholdColorDifference_               = 100.0;
+  thresholdColorDifference_               = 10.0;
   thresholdColorVariation_                = 6.0;
   thresholdLocalEntropy_                  = 4.0;
   radius2ColorSmoothing_                  = 4.0 * 16;
@@ -143,7 +145,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   flagColorPreSmoothing_                  = true;
   groupDilation_                          = true;
   textureDilationOffLossless_             = true;
-  enhancedDeltaDepthCode_                 = false;
+  enhancedOccupancyMapCode_               = false;
   EOMFixBitCount_                         = 2;
   offsetLossyOM_                          = 0;
   thresholdLossyOM_                       = 0;
@@ -170,12 +172,12 @@ PCCEncoderParameters::PCCEncoderParameters() {
   safeGuardDistance_    = 0;
   useEightOrientations_ = false;
   lowDelayEncoding_     = false;
-  geometryPadding_      = false;
+  geometryPadding_      = 0U;
 
-  // lossy missed points patch
-  lossyMissedPointsPatch_          = false;
+  // lossy raw points patch
+  lossyRawPointsPatch_             = false;
   minNormSumOfInvDist4MPSelection_ = 0.35;
-  lossyMppGeoQP_                   = 4;
+  lossyRawPointPatchGeoQP_         = 4;
   // GPA
   globalPatchAllocation_ = 0;
   // GTP
@@ -198,8 +200,8 @@ PCCEncoderParameters::PCCEncoderParameters() {
   numTilesHor_                  = 2;
   tileHeightToWidthRatio_       = 1;
 
-  // Sort missed points by Morton code
-  mortonOrderSortMissedPoints_ = false;
+  // Sort raw points by Morton code
+  mortonOrderSortRawPoints_    = false;
   textureMPSeparateVideoWidth_ = 64;
 
   // Separate high gradient points
@@ -208,7 +210,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   minNumHighGradientPoints_ = 256;
 
   // Patch border filtering
-  pbfEnableFlag_    = 0;
+  pbfEnableFlag_    = false;
   pbfPassesCount_   = 0;
   pbfFilterSize_    = 0;
   pbfLog2Threshold_ = 2;
@@ -220,7 +222,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   // qunatizer;
 }
 
-PCCEncoderParameters::~PCCEncoderParameters() {}
+PCCEncoderParameters::~PCCEncoderParameters() = default;
 
 void PCCEncoderParameters::completePath() {
   if ( !uncompressedDataFolder_.empty() ) {
@@ -242,7 +244,7 @@ void PCCEncoderParameters::completePath() {
     if ( !occupancyMapVideoEncoderConfig_.empty() ) {
       occupancyMapVideoEncoderConfig_ = configurationFolder_ + occupancyMapVideoEncoderConfig_;
     }
-    if ( useMissedPointsSeparateVideo_ ) {
+    if ( useRawPointsSeparateVideo_ ) {
       if ( !geometryMPConfig_.empty() ) { geometryMPConfig_ = configurationFolder_ + geometryMPConfig_; }
       if ( !textureMPConfig_.empty() ) { textureMPConfig_ = configurationFolder_ + textureMPConfig_; }
     }
@@ -254,14 +256,14 @@ void PCCEncoderParameters::print() {
   std::cout << "\t losslessGeo                              " << losslessGeo_ << std::endl;
   std::cout << "\t noAttributes                             " << noAttributes_ << std::endl;
   std::cout << "\t raw Geometry Colour Plane                " << ( losslessGeo444_ ? "444" : "420" ) << std::endl;
-  std::cout << "\t enhancedDeltaDepthCode                   " << enhancedDeltaDepthCode_ << std::endl;
-  std::cout << "\t useMissedPointsSeparateVideo             " << useMissedPointsSeparateVideo_ << std::endl;
+  std::cout << "\t enhancedOccupancyMapCode                 " << enhancedOccupancyMapCode_ << std::endl;
+  std::cout << "\t useRawPointsSeparateVideo                " << useRawPointsSeparateVideo_ << std::endl;
   std::cout << "\t textureMPSeparateVideoWidth              " << textureMPSeparateVideoWidth_ << std::endl;
   std::cout << "\t uncompressedDataPath                     " << uncompressedDataPath_ << std::endl;
   std::cout << "\t compressedStreamPath                     " << compressedStreamPath_ << std::endl;
   std::cout << "\t reconstructedDataPath                    " << reconstructedDataPath_ << std::endl;
   std::cout << "\t frameCount                               " << frameCount_ << std::endl;
-  std::cout << "\t mapCountMinus1                          " << mapCountMinus1_ << std::endl;
+  std::cout << "\t mapCountMinus1                           " << mapCountMinus1_ << std::endl;
   std::cout << "\t startFrameNumber                         " << startFrameNumber_ << std::endl;
   std::cout << "\t groupOfFramesSize                        " << groupOfFramesSize_ << std::endl;
   std::cout << "\t colorTransform                           " << colorTransform_ << std::endl;
@@ -274,7 +276,7 @@ void PCCEncoderParameters::print() {
   std::cout << "\t qpT1                                     " << qpAdjT1_ << std::endl;
   std::cout << "\t constrainedPack                          " << constrainedPack_ << std::endl;
   std::cout << "\t deltaCoding                              " << deltaCoding_ << std::endl;
-  std::cout << "\t  maxNumRefPatchList                       " << maxNumRefAtlasList_ << std::endl;
+  std::cout << "\t  maxNumRefPatchList                      " << maxNumRefAtlasList_ << std::endl;
   std::cout << "\t maxNumRefIndex                           " << maxNumRefAtlasFrame_ << std::endl;
   std::cout << "\t Segmentation" << std::endl;
   std::cout << "\t   nnNormalEstimation                     " << nnNormalEstimation_ << std::endl;
@@ -284,19 +286,21 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   voxelDimensionRefineSegmentation       " << voxelDimensionRefineSegmentation_ << std::endl;
   std::cout << "\t   searchRadiusRefineSegmentation         " << searchRadiusRefineSegmentation_ << std::endl;
   std::cout << "\t   occupancyResolution                    " << occupancyResolution_ << std::endl;
+  std::cout << "\t   enablePatchSplitting                   " << enablePatchSplitting_ << std::endl;
+  std::cout << "\t   maxPatchSize                           " << maxPatchSize_ << std::endl;
   std::cout << "\t   quantization step for patch size       "
             << "1<<" << log2QuantizerSizeX_ << ", 1<<" << log2QuantizerSizeY_ << std::endl;
   std::cout << "\t   minPointCountPerCCPatchSegmentation    " << minPointCountPerCCPatchSegmentation_ << std::endl;
   std::cout << "\t   maxNNCountPatchSegmentation            " << maxNNCountPatchSegmentation_ << std::endl;
   std::cout << "\t   surfaceThickness                       " << surfaceThickness_ << std::endl;
-  std::cout << "\t   maxAllowedDist2MissedPointsDetection " << maxAllowedDist2MissedPointsDetection_ << std::endl;
-  std::cout << "\t   maxAllowedDist2MissedPointsSelection " << maxAllowedDist2MissedPointsSelection_ << std::endl;
+  std::cout << "\t   maxAllowedDist2RawPointsDetection      " << maxAllowedDist2RawPointsDetection_ << std::endl;
+  std::cout << "\t   maxAllowedDist2RawPointsSelection      " << maxAllowedDist2RawPointsSelection_ << std::endl;
   std::cout << "\t   lambdaRefineSegmentation               " << lambdaRefineSegmentation_ << std::endl;
   std::cout << "\t   depthQuantizationStep                  " << minLevel_ << std::endl;
   std::cout << "\t   highGradientSeparation                 " << highGradientSeparation_ << std::endl;
   if ( highGradientSeparation_ ) {
-    std::cout << "\t     minGradient                          " << minGradient_ << std::endl;
-    std::cout << "\t     minNumHighGradientPoints             " << minNumHighGradientPoints_ << std::endl;
+    std::cout << "\t     minGradient                        " << minGradient_ << std::endl;
+    std::cout << "\t     minNumHighGradientPoints           " << minNumHighGradientPoints_ << std::endl;
   }
   std::cout << "\t Packing" << std::endl;
   std::cout << "\t   minimumImageWidth                      " << minimumImageWidth_ << std::endl;
@@ -306,11 +310,11 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   safeGuardDistance                      " << safeGuardDistance_ << std::endl;
   std::cout << "\t   globalPatchAllocation                  " << globalPatchAllocation_ << std::endl;
   if ( globalPatchAllocation_ == 2 ) {
-    std::cout << "\t   globalPackingStrategyGOF           " << geometryD0Config_ << std::endl;
-    std::cout << "\t   globalPackingStrategyReset         " << geometryD1Config_ << std::endl;
-    std::cout << "\t   globalPackingStrategyThreshold     " << geometryD1Config_ << std::endl;
+    std::cout << "\t   globalPackingStrategyGOF             " << geometryD0Config_ << std::endl;
+    std::cout << "\t   globalPackingStrategyReset           " << geometryD1Config_ << std::endl;
+    std::cout << "\t   globalPackingStrategyThreshold       " << geometryD1Config_ << std::endl;
   }
-  std::cout << "\t   patchPrecedencOrder                   " << patchPrecedenceOrderFlag_ << std::endl;
+  std::cout << "\t   patchPrecedenceOrder                   " << patchPrecedenceOrderFlag_ << std::endl;
   std::cout << "\t   lowDelayEncoding                       " << lowDelayEncoding_ << std::endl;
   std::cout << "\t   textureBGFill                          " << textureBGFill_ << std::endl;
   std::cout << "\t   geometryPadding                        " << geometryPadding_ << std::endl;
@@ -322,20 +326,21 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   videoEncoderAuxPath                    " << videoEncoderAuxPath_ << std::endl;
   std::cout << "\t   videoEncoderOccupancyMapPath           " << videoEncoderOccupancyMapPath_ << std::endl;
   if ( multipleStreams_ ) {
-    std::cout << "\t   geometryD0Config                       " << geometryD0Config_ << std::endl;
-    std::cout << "\t   geometryD1Config                       " << geometryD1Config_ << std::endl;
+    std::cout << "\t   geometryD0Config                     " << geometryD0Config_ << std::endl;
+    std::cout << "\t   geometryD1Config                     " << geometryD1Config_ << std::endl;
   } else {
-    std::cout << "\t   geometryConfig                         " << geometryConfig_ << std::endl;
+    std::cout << "\t   geometryConfig                       " << geometryConfig_ << std::endl;
   }
   if ( multipleStreams_ ) {
-    std::cout << "\t   textureT0Config                         " << textureT0Config_ << std::endl;
-    std::cout << "\t   textureT1Config                         " << textureT1Config_ << std::endl;
-  } else
-    std::cout << "\t   textureConfig                          " << textureConfig_ << std::endl;
-  if ( useMissedPointsSeparateVideo_ ) {
+    std::cout << "\t   textureT0Config                      " << textureT0Config_ << std::endl;
+    std::cout << "\t   textureT1Config                      " << textureT1Config_ << std::endl;
+  } else {
+    std::cout << "\t   textureConfig                        " << textureConfig_ << std::endl;
+  }
+  if ( useRawPointsSeparateVideo_ ) {
     if ( losslessGeo_ ) {
-      std::cout << "\t geometryMPConfig                          " << geometryMPConfig_ << std::endl;
-      std::cout << "\t textureMPConfig                            " << textureMPConfig_ << std::endl;
+      std::cout << "\t geometryMPConfig                     " << geometryMPConfig_ << std::endl;
+      std::cout << "\t textureMPConfig                      " << textureMPConfig_ << std::endl;
     }
   }
   std::cout << "\t   colorSpaceConversionConfig             " << colorSpaceConversionConfig_ << std::endl;
@@ -359,33 +364,33 @@ void PCCEncoderParameters::print() {
   std::cout << "\t Geometry smoothing                       " << std::endl;
   std::cout << "\t   flagGeometrySmoothing                  " << flagGeometrySmoothing_ << std::endl;
   if ( flagGeometrySmoothing_ ) {
-    std::cout << "\t   gridSmoothing                          " << gridSmoothing_ << std::endl;
+    std::cout << "\t   gridSmoothing                        " << gridSmoothing_ << std::endl;
     if ( gridSmoothing_ ) {
-      std::cout << "\t   gridSize                               " << gridSize_ << std::endl;
-      std::cout << "\t   thresholdSmoothing                     " << thresholdSmoothing_ << std::endl;
+      std::cout << "\t   gridSize                           " << gridSize_ << std::endl;
+      std::cout << "\t   thresholdSmoothing                 " << thresholdSmoothing_ << std::endl;
     } else {
-      std::cout << "\t   neighborCountSmoothing                 " << neighborCountSmoothing_ << std::endl;
-      std::cout << "\t   radius2Smoothing                       " << radius2Smoothing_ << std::endl;
-      std::cout << "\t   radius2BoundaryDetection               " << radius2BoundaryDetection_ << std::endl;
-      std::cout << "\t   thresholdSmoothing                     " << thresholdSmoothing_ << std::endl;
+      std::cout << "\t   neighborCountSmoothing             " << neighborCountSmoothing_ << std::endl;
+      std::cout << "\t   radius2Smoothing                   " << radius2Smoothing_ << std::endl;
+      std::cout << "\t   radius2BoundaryDetection           " << radius2BoundaryDetection_ << std::endl;
+      std::cout << "\t   thresholdSmoothing                 " << thresholdSmoothing_ << std::endl;
     }
   }
   std::cout << "\t   patchExpansion                         " << patchExpansion_ << std::endl;
   std::cout << "\t Color smoothing" << std::endl;
-  std::cout << "\t   flagColorSmoothing                       " << flagColorSmoothing_ << std::endl;
+  std::cout << "\t   flagColorSmoothing                     " << flagColorSmoothing_ << std::endl;
   if ( flagColorSmoothing_ ) {
-    std::cout << "\t   gridColorSmoothing                       " << gridColorSmoothing_ << std::endl;
+    std::cout << "\t   gridColorSmoothing                   " << gridColorSmoothing_ << std::endl;
     if ( gridColorSmoothing_ ) {
-      std::cout << "\t   thresholdColorSmoothing                " << thresholdColorSmoothing_ << std::endl;
-      std::cout << "\t   thresholdColorDifference               " << thresholdColorDifference_ << std::endl;
-      std::cout << "\t   thresholdColorVariation                " << thresholdColorVariation_ << std::endl;
-      std::cout << "\t   thresholdLocalEntropy                  " << thresholdLocalEntropy_ << std::endl;
-      std::cout << "\t   cgridSize                              " << cgridSize_ << std::endl;
+      std::cout << "\t   thresholdColorSmoothing            " << thresholdColorSmoothing_ << std::endl;
+      std::cout << "\t   thresholdColorDifference           " << thresholdColorDifference_ << std::endl;
+      std::cout << "\t   thresholdColorVariation            " << thresholdColorVariation_ << std::endl;
+      std::cout << "\t   thresholdLocalEntropy              " << thresholdLocalEntropy_ << std::endl;
+      std::cout << "\t   cgridSize                          " << cgridSize_ << std::endl;
     } else {
-      std::cout << "\t   thresholdColorSmoothing                " << thresholdColorSmoothing_ << std::endl;
-      std::cout << "\t   thresholdLocalEntropy                  " << thresholdLocalEntropy_ << std::endl;
-      std::cout << "\t   radius2ColorSmoothing                  " << radius2ColorSmoothing_ << std::endl;
-      std::cout << "\t   neighborCountColorSmoothing            " << neighborCountColorSmoothing_ << std::endl;
+      std::cout << "\t   thresholdColorSmoothing            " << thresholdColorSmoothing_ << std::endl;
+      std::cout << "\t   thresholdLocalEntropy              " << thresholdLocalEntropy_ << std::endl;
+      std::cout << "\t   radius2ColorSmoothing              " << radius2ColorSmoothing_ << std::endl;
+      std::cout << "\t   neighborCountColorSmoothing        " << neighborCountColorSmoothing_ << std::endl;
     }
   }
   std::cout << "\t Color pre-smoothing                      " << std::endl;
@@ -411,7 +416,7 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   patchColorSubsampling                  " << patchColorSubsampling_ << std::endl;
   std::cout << "\t   excludeColorOutlier                    " << excludeColorOutlier_ << std::endl;
   if ( excludeColorOutlier_ ) {
-    std::cout << "\t     thresholdColorOutlierDist            " << thresholdColorOutlierDist_ << std::endl;
+    std::cout << "\t     thresholdColorOutlierDist          " << thresholdColorOutlierDist_ << std::endl;
   }
   std::cout << "\t Reconstruction " << std::endl;
   std::cout << "\t   removeDuplicatePoints                  " << removeDuplicatePoints_ << std::endl;
@@ -420,12 +425,12 @@ void PCCEncoderParameters::print() {
   std::cout << "\t     patchSize                            " << patchSize_ << std::endl;
   std::cout << "\t   singleLayerPixelInterleaving           " << singleMapPixelInterleaving_ << std::endl;
   std::cout << "\t surface Separation                       " << surfaceSeparation_ << std::endl;
-  std::cout << "\t Lossy missed points patch                " << std::endl;
-  std::cout << "\t   lossyMissedPointsPatch                 " << lossyMissedPointsPatch_ << std::endl;
+  std::cout << "\t Lossy raw points patch                   " << std::endl;
+  std::cout << "\t   lossyRawPointsPatch                    " << lossyRawPointsPatch_ << std::endl;
   std::cout << "\t   minNormSumOfInvDist4MPSelection        " << minNormSumOfInvDist4MPSelection_ << std::endl;
-  std::cout << "\t   lossyMppGeoQP                          " << lossyMppGeoQP_ << std::endl;
-  std::cout << "\t Missed points sorting                    " << std::endl;
-  std::cout << "\t   mortonOrderSortMissedPoints            " << mortonOrderSortMissedPoints_ << std::endl;
+  std::cout << "\t   lossyRawPointPatchGeoQP                " << lossyRawPointPatchGeoQP_ << std::endl;
+  std::cout << "\t raw points sorting                       " << std::endl;
+  std::cout << "\t   mortonOrderSortRawPoints               " << mortonOrderSortRawPoints_ << std::endl;
   std::cout << "\t Enhanced projection plane                " << enhancedPP_ << std::endl;
   std::cout << "\t AdditionalProjectionPlane                " << std::endl;
   std::cout << "\t   additionalProjectionPlaneMode          " << additionalProjectionPlaneMode_ << std::endl;
@@ -464,7 +469,8 @@ void PCCEncoderParameters::print() {
                                     roiBoundingBoxMaxY_.size(), roiBoundingBoxMinZ_.size(), roiBoundingBoxMaxZ_.size()};
     for ( int i = 0; i < vecSizes.size(); ++i ) {
       if ( vecSizes[i] != vecSizes[0] ) {
-        std::cerr << "All the 6 arrays roiBoundingBox[Min-Max][X-Y-Z] must have the same number of elements."
+        std::cerr << "All the 6 arrays roiBoundingBox[Min-Max][X-Y-Z] must "
+                     "have the same number of elements."
                   << std::endl;
         std::exit( EXIT_FAILURE );
       }
@@ -484,7 +490,6 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   pbfPassesCount                         " << pbfPassesCount_ << std::endl;
   std::cout << "\t   pbfFilterSize                          " << pbfFilterSize_ << std::endl;
   std::cout << "\t   pbfLog2Threshold                       " << pbfLog2Threshold_ << std::endl;
-
   std::cout << std::endl;
 }
 
@@ -530,8 +535,9 @@ bool PCCEncoderParameters::check() {
   }
 
   if ( ( videoEncoderOccupancyMapPath_.empty() || !exist( videoEncoderOccupancyMapPath_ ) ) ) {
-    std::cerr << "WARNING: videoEncoderOccupancyMapPath is set as videoEncoderPath_ : " << videoEncoderPath_
-              << std::endl;
+    std::cerr << "WARNING: videoEncoderOccupancyMapPath is set as "
+                 "videoEncoderPath_ : "
+              << videoEncoderPath_ << std::endl;
     videoEncoderOccupancyMapPath_ = videoEncoderPath_;
   }
 
@@ -541,31 +547,39 @@ bool PCCEncoderParameters::check() {
   }
 
   if ( multipleStreams_ ) {
-    geometryConfig_ = {};
     if ( geometryD0Config_.empty() || geometryD1Config_.empty() ) {
-      ret = false;
-      std::cerr << "When multipleStreams is true, geometryD0Config_ and geometryD1Config_ should be non-empty\n";
+      // ret = false;
+      // std::cerr << "When multipleStreams is true, geometryD0Config_ and
+      // geometryD1Config_ should be non-empty\n";
+      geometryD0Config_ = geometryConfig_.substr( 0, geometryConfig_.find_last_of( '.' ) ) + "-D0.cfg";
+      geometryD1Config_ = geometryConfig_.substr( 0, geometryConfig_.find_last_of( '.' ) ) + "-D1.cfg";
     }
+    geometryConfig_ = {};
   } else {
     geometryD0Config_ = {};
     geometryD1Config_ = {};
     if ( geometryConfig_.empty() ) {
       ret = false;
-      std::cerr << "When multipleStreams is not true, geometryConfig_ should be non-empty\n";
+      std::cerr << "When multipleStreams is not true, geometryConfig_ should "
+                   "be non-empty\n";
     }
   }
 
   if ( multipleStreams_ ) {
-    textureConfig_ = {};
     if ( textureT0Config_.empty() || textureT1Config_.empty() ) {
-      std::cerr << "When multipleStreams_ is true, textureT0Config_ and textureT1Config_ should be non-empty\n";
-      ret = false;
+      // std::cerr << "When multipleStreams_ is true, textureT0Config_ and
+      // textureT1Config_ should be non-empty\n";
+      // ret = false;
+      textureT0Config_ = textureConfig_.substr( 0, textureConfig_.find_last_of( '.' ) ) + "-T0.cfg";
+      textureT1Config_ = textureConfig_.substr( 0, textureConfig_.find_last_of( '.' ) ) + "-T1.cfg";
     }
+    textureConfig_ = {};
   } else {
     textureT0Config_ = {};
     textureT1Config_ = {};
     if ( textureConfig_.empty() ) {
-      std::cerr << "When multipleStreams is false, textureConfig_ should be non-empty\n";
+      std::cerr << "When multipleStreams is false, textureConfig_ should be "
+                   "non-empty\n";
       ret = false;
     }
   }
@@ -582,71 +596,79 @@ bool PCCEncoderParameters::check() {
     pbfEnableFlag_ = false;
     if ( mapCountMinus1_ == 0 ) {
       // mapCountMinus1_ = 1;
-      // std::cerr << "WARNING: mapCountMinus1_ is only for lossy coding mode for now. Force "
+      // std::cerr << "WARNING: mapCountMinus1_ is only for lossy coding mode
+      // for now. Force "
       //             "mapCountMinus1_=1.\n";
     }
     if ( pointLocalReconstruction_ ) {
       pointLocalReconstruction_ = false;
-      std::cerr << "WARNING: pointLocalReconstruction_ is only for lossy coding mode for now. Force "
+      std::cerr << "WARNING: pointLocalReconstruction_ is only for lossy "
+                   "coding mode for now. Force "
                    "pointLocalReconstruction_=FALSE.\n";
     }
     if ( singleMapPixelInterleaving_ ) {
       singleMapPixelInterleaving_ = false;
-      std::cerr << "WARNING: singleLayerPixelInterleaving is only for lossy coding mode for now. "
+      std::cerr << "WARNING: singleLayerPixelInterleaving is only for lossy "
+                   "coding mode for now. "
                    "Force singleMapPixelInterleaving_=FALSE.\n";
     }
-    if ( lossyMissedPointsPatch_ ) {
-      lossyMissedPointsPatch_ = false;
-      std::cerr << "WARNING: lossyMissedPointsPatch_ is only for lossy coding mode for now. "
-                   "Force lossyMissedPointsPatch_=FALSE.\n";
+    if ( lossyRawPointsPatch_ ) {
+      lossyRawPointsPatch_ = false;
+      std::cerr << "WARNING: lossyRawPointsPatch_ is only for lossy coding "
+                   "mode for now. "
+                   "Force lossyRawPointsPatch_=FALSE.\n";
     }
   } else {
-    if ( enhancedDeltaDepthCode_ ) {
-      enhancedDeltaDepthCode_ = false;
-      std::cerr << "WARNING: enhancedDeltaDepthCode_ is only for lossless coding mode for now. Force "
-                   "enhancedDeltaDepthCode_=FALSE.\n";
+    if ( enhancedOccupancyMapCode_ ) {
+      enhancedOccupancyMapCode_ = false;
+      std::cerr << "WARNING: enhancedOccupancyMapCode_ is only for lossless "
+                   "coding mode for now. Force "
+                   "enhancedOccupancyMapCode_=FALSE.\n";
     }
   }
 
-  if ( enhancedDeltaDepthCode_ && surfaceThickness_ == 1 ) {
-    std::cerr << "WARNING: EDD code doesn't bring any gain when surfaceThickness==1. Please "
+  if ( enhancedOccupancyMapCode_ && surfaceThickness_ == 1 ) {
+    std::cerr << "WARNING: EOM code doesn't bring any gain when "
+                 "surfaceThickness==1. Please "
                  "consider to increase the value of surfaceThickness.\n";
   }
 
-  if ( enhancedDeltaDepthCode_ && ( thresholdLossyOM_ > 0 ) ) {
-    std::cerr
-        << "WARNING: When using enhanced occupancy map for delta depth, thresholdOccupancyMap should be equal to 0\n";
+  if ( enhancedOccupancyMapCode_ && ( thresholdLossyOM_ > 0 ) ) {
+    std::cerr << "WARNING: When using enhanced occupancy map for delta depth, "
+                 "thresholdOccupancyMap should be equal to 0\n";
     std::cerr << "         Forcing thresholdLossyOM_ to 0\n";
     thresholdLossyOM_ = 0;
   }
 
-  if ( enhancedDeltaDepthCode_ && ( offsetLossyOM_ > 0 ) ) {
-    std::cerr
-        << "WARNING: When using enhanced occupancy map for delta depth, offsetOccupancyMap should be equal to 0\n";
+  if ( enhancedOccupancyMapCode_ && ( offsetLossyOM_ > 0 ) ) {
+    std::cerr << "WARNING: When using enhanced occupancy map for delta depth, "
+                 "offsetOccupancyMap should be equal to 0\n";
     std::cerr << "         Forcing offsetLossyOM_ to 0\n";
     offsetLossyOM_ = 0;
   }
 
-  if ( enhancedDeltaDepthCode_ && ( prefilterLossyOM_ == true ) ) {
-    std::cerr
-        << "WARNING: When using enhanced occupancy map for delta depth, prefilterLossyOM_ should be equal to false\n";
+  if ( enhancedOccupancyMapCode_ && ( prefilterLossyOM_ ) ) {
+    std::cerr << "WARNING: When using enhanced occupancy map for delta depth, "
+                 "prefilterLossyOM_ should be equal to false\n";
     std::cerr << "         Forcing prefilterLossyOM_ to false\n";
     prefilterLossyOM_ = false;
   }
 
-  if ( useMissedPointsSeparateVideo_ && !lossyMissedPointsPatch_ && !losslessGeo_ ) {
-    useMissedPointsSeparateVideo_ = false;
-    std::cerr << "WARNING: useMissedPointsSeparateVideo_ is for lossy coding mode if lossyMissedPointsPatch_. Force "
-                 "useMissedPointsSeparateVideo_=false.\n";
+  if ( useRawPointsSeparateVideo_ && !lossyRawPointsPatch_ && !losslessGeo_ ) {
+    useRawPointsSeparateVideo_ = false;
+    std::cerr << "WARNING: useRawPointsSeparateVideo_ is for lossy coding mode "
+                 "if lossyRawPointsPatch_. Force "
+                 "useRawPointsSeparateVideo_=false.\n";
   }
-  if ( useMissedPointsSeparateVideo_ ) {
-    if ( textureMPSeparateVideoWidth_ % 64 ) {
+  if ( useRawPointsSeparateVideo_ ) {
+    if ( ( textureMPSeparateVideoWidth_ % 64 ) != 0U ) {
       ret = false;
       std::cerr << "textureMPSeparateVideoWidth_ must be multiple of 64.\n";
     }
     if ( singleMapPixelInterleaving_ ) {
       ret = false;
-      std::cerr << "Pixel Interleaving is built on one layer coding. Force mapCountMinus1_ = 0.\n";
+      std::cerr << "Pixel Interleaving is built on one layer coding. Force "
+                   "mapCountMinus1_ = 0.\n";
     }
     if ( geometryMPConfig_.empty() || !exist( geometryMPConfig_ ) ) {
       std::cerr << "WARNING: geometryMPConfig_ is set as geometryConfig_ : " << geometryConfig_ << std::endl;
@@ -662,17 +684,27 @@ bool PCCEncoderParameters::check() {
 
   if ( singleMapPixelInterleaving_ && pointLocalReconstruction_ ) {
     ret = false;
-    std::cerr << "Pixel Interleaving and Point local reconstruction cna't be use in the same time.\n";
+    std::cerr << "Pixel Interleaving and Point local reconstruction cna't be "
+                 "use in the same time.\n";
   }
 
   if ( mapCountMinus1_ != 0 ) {
     if ( singleMapPixelInterleaving_ ) {
       ret = false;
-      std::cerr << "Pixel Interleaving is built on one layer coding. Force mapCountMinus1_ = 0.\n";
+      std::cerr << "Pixel Interleaving is built on one layer coding. Force "
+                   "mapCountMinus1_ = 0.\n";
     }
     if ( pointLocalReconstruction_ ) {
       ret = false;
-      std::cerr << "Point local reconstruction is built on one layer coding. Force mapCountMinus1_ = 0.\n";
+      std::cerr << "Point local reconstruction is built on one layer coding. "
+                   "Force mapCountMinus1_ = 0.\n";
+    }
+  } else {
+    if ( multipleStreams_ ) {
+      std::cout << " multipleStreams is set 0 when mapCountMinus1 is 0. Force "
+                   "multipleStreams_= 0."
+                << std::endl;
+      multipleStreams_ = false;
     }
   }
 
@@ -680,22 +712,24 @@ bool PCCEncoderParameters::check() {
     ret = false;
     std::cerr << "to use segmentation, you must define a segmentationDataPath \n";
   }
-  if ( lossyMissedPointsPatch_ ) {
-    if ( !useMissedPointsSeparateVideo_ ) {
-      std::cerr << "Lossy missed points patch in the same video frame as the regular patches is "
+  if ( lossyRawPointsPatch_ ) {
+    if ( !useRawPointsSeparateVideo_ ) {
+      std::cerr << "Lossy raw points patch in the same video frame as the "
+                   "regular patches is "
                    "not optimized as of now.\n";
     }
     if ( ( minNormSumOfInvDist4MPSelection_ < 0.0 ) || ( minNormSumOfInvDist4MPSelection_ > 1.0 ) ) {
       ret = false;
-      std::cerr << "minNormSumOfInvDist4MPSelection must be between 0.0 and 1.0 (inclusive)\n";
+      std::cerr << "minNormSumOfInvDist4MPSelection must be between 0.0 and "
+                   "1.0 (inclusive)\n";
     }
   }
 
   if ( flagGeometrySmoothing_ ) {
     if ( pbfEnableFlag_ ) {
       gridSmoothing_ = false;
-      if ( !pbfPassesCount_ ) { pbfPassesCount_ = occupancyPrecision_ <= 2 ? 1 : occupancyPrecision_ == 4 ? 2 : 4; }
-      if ( !pbfFilterSize_ ) { pbfFilterSize_ = occupancyPrecision_; }
+      if ( pbfPassesCount_ == 0 ) { pbfPassesCount_ = occupancyPrecision_ <= 2 ? 1 : occupancyPrecision_ == 4 ? 2 : 4; }
+      if ( pbfFilterSize_ == 0 ) { pbfFilterSize_ = occupancyPrecision_; }
     }
     if ( gridSmoothing_ ) {
       if ( gridSize_ == 0 ) {
@@ -716,6 +750,7 @@ bool PCCEncoderParameters::check() {
     ret = false;
     std::cerr << "EOMFixBitCount shall be greater than 0. \n";
   }
+
   return ret;
 }
 
@@ -729,7 +764,7 @@ void PCCEncoderParameters::constructAspsRefList( PCCContext& context, size_t asp
     for ( size_t i = 0; i < refList.getNumRefEntries(); i++ ) {
       int afocDiff = context.getRefAtlasFrame( list, i );
       refList.setAbsDeltaAfocSt( i, std::abs( afocDiff ) );
-      refList.setStrpfEntrySignFlag( i, afocDiff < 0 ? 0 : 1 );
+      refList.setStrpfEntrySignFlag( i, afocDiff < 0 ? false : !false );
       refList.setStRefAtalsFrameFlag( i, true );
     }
     asps.addRefListStruct( refList );
@@ -737,61 +772,59 @@ void PCCEncoderParameters::constructAspsRefList( PCCContext& context, size_t asp
 }
 
 void PCCEncoderParameters::initializeContext( PCCContext& context ) {
-  auto& sps = context.getSps();
-  sps.allocateAltas();
+  auto& sps      = context.getVps();
+  int   numAtlas = 1;
+  context.resizeAtlas( numAtlas );  // single atlas for V-PCC
+  sps.setAtlasCountMinus1( numAtlas - 1 );
+  sps.allocateAtlas();
+  context.allocateAtlasHLS( sps.getAtlasCountMinus1() + 1 );
   size_t atlasIndex = 0;
-  auto&  ai         = sps.getAttributeInformation( atlasIndex );
-  auto&  oi         = sps.getOccupancyInformation( atlasIndex );
-  auto&  gi         = sps.getGeometryInformation( atlasIndex );
-  auto&  asps       = context.addAtlasSequenceParameterSet( 0 );
-  auto&  afps       = context.addAtlasFrameParameterSet( 0 );
+  context.setAtlasIndex( atlasIndex );
+  auto& ai   = sps.getAttributeInformation( atlasIndex );
+  auto& oi   = sps.getOccupancyInformation( atlasIndex );
+  auto& gi   = sps.getGeometryInformation( atlasIndex );
+  auto& asps = context.addAtlasSequenceParameterSet( 0 );
+  auto& afps = context.addAtlasFrameParameterSet( 0 );
 
-  context.setOccupancyPackingBlockSize( occupancyResolution_ );
   context.setLog2PatchQuantizerSizeX( log2QuantizerSizeX_ );
   context.setLog2PatchQuantizerSizeY( log2QuantizerSizeY_ );
-  context.setEnablePatchSizeQuantization( ( 1 << log2QuantizerSizeX_ ) < occupancyPrecision_ ||
-                                          ( 1 << log2QuantizerSizeY_ ) < occupancyPrecision_ );
+  context.setEnablePatchSizeQuantization(
+      ( ( 1 << static_cast<int32_t>( log2QuantizerSizeX_ ) ) < static_cast<int32_t>( occupancyPrecision_ ) ) ||
+      ( ( 1 << static_cast<int32_t>( log2QuantizerSizeY_ ) ) < static_cast<int32_t>( occupancyPrecision_ ) ) );
 
   context.setMaxNumRefAtlasFrame( maxNumRefAtlasFrame_ );
   context.setNumOfRefAtlasFrameList( maxNumRefAtlasList_ );
   for ( size_t list = 0; list < maxNumRefAtlasList_; list++ ) {
     context.setSizeOfRefAtlasFrameList( list, maxNumRefAtlasFrame_ );
     for ( size_t i = 0; i < maxNumRefAtlasFrame_; i++ ) {
-      context.setRefAtlasFrame( list, i, -i - 1 );  //-1, -2, -3, -4
+      context.setRefAtlasFrame( list, i,
+                                -static_cast<int32_t>( i + 1 ) );  //-1, -2, -3, -4
     }
   }
 
-  sps.setMapCountMinus1( atlasIndex, (uint32_t)mapCountMinus1_ );
+  sps.setMapCountMinus1( atlasIndex, static_cast<uint32_t>( mapCountMinus1_ ) );
   sps.setMultipleMapStreamsPresentFlag( atlasIndex, mapCountMinus1_ != 0 && multipleStreams_ );
-  sps.setRawSeparateVideoPresentFlag( atlasIndex, useMissedPointsSeparateVideo_ );
-  sps.setRawPatchEnabledFlag( atlasIndex, losslessGeo_ || lossyMissedPointsPatch_ );
+  sps.setRawSeparateVideoPresentFlag( atlasIndex, useRawPointsSeparateVideo_ );
+  sps.setRawPatchEnabledFlag( atlasIndex, losslessGeo_ || lossyRawPointsPatch_ );
   for ( size_t i = 0; i < mapCountMinus1_ + 1; i++ ) {
     if ( i == 0 ) {
-      sps.setMapAbsoluteCodingEnableFlag( atlasIndex, i, 1 );
-      sps.setMapPredictorIndexDiff( atlasIndex, i, 0 );
+      sps.setMapAbsoluteCodingEnableFlag( atlasIndex, i, true );
+      sps.setMapPredictorIndexDiff( atlasIndex, i, false );
     } else {
       sps.setMapAbsoluteCodingEnableFlag( atlasIndex, i, absoluteD1_ );
-      sps.setMapPredictorIndexDiff( atlasIndex, i, 0 );
+      sps.setMapPredictorIndexDiff( atlasIndex, i, false );
     }
   }
 
   ai.setAttributeCount( noAttributes_ ? 0 : 1 );
   ai.allocate();
-  if ( noAttributes_ == 0 ) {
+  if ( static_cast<int>( noAttributes_ ) == 0 ) {
     ai.setAttributeDimensionMinus1( 0, noAttributes_ ? 0 : 2 );
     ai.setAttributeNominal2dBitdepthMinus1( 0, 7 );
-    ai.setAttributeMSBAlignFlag( false );
   }
 
   for ( size_t i = 0; i < ai.getAttributeCount(); i++ ) {
-    ai.addAttributeMapAbsoluteCodingEnabledFlag( i, true );  // first map
-    for ( size_t j = 0; j < sps.getMapCountMinus1( ATLASIDXPCC ); j++ ) {
-      if ( sps.getMapAbsoluteCodingEnableFlag( ATLASIDXPCC, j ) == 0 ) {
-        ai.addAttributeMapAbsoluteCodingEnabledFlag( i, (bool)absoluteT1_ );
-      } else {
-        ai.addAttributeMapAbsoluteCodingEnabledFlag( i, true );
-      }
-    }
+    ai.setAttributeMapAbsoluteCodingPersistanceFlag( i, absoluteT1_ );
   }
 
   asps.setLog2PatchPackingBlockSize( std::log2( occupancyResolution_ ) );
@@ -800,67 +833,74 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   asps.setNumRefAtlasFrameListsInAsps( 1 );
   asps.setMapCountMinus1( mapCountMinus1_ );
   asps.setSurfaceThicknessMinus1( surfaceThickness_ - 1 );
-  asps.setLongTermRefAtlasFramesFlag( 0 );
+  asps.setLongTermRefAtlasFramesFlag( false );
   asps.setUseEightOrientationsFlag( useEightOrientations_ );
   asps.set45DegreeProjectionPatchPresentFlag( additionalProjectionPlaneMode_ > 0 );
-  asps.setNormalAxisLimitsQuantizationEnabledFlag( 1 );
-  asps.setNormalAxisMaxDeltaValueEnabledFlag( 1 );
+  asps.setNormalAxisLimitsQuantizationEnabledFlag( true );
+  asps.setNormalAxisMaxDeltaValueEnabledFlag( true );
   asps.setRemoveDuplicatePointEnabledFlag( removeDuplicatePoints_ );
   asps.setPixelDeinterleavingFlag( singleMapPixelInterleaving_ );
   asps.setPatchPrecedenceOrderFlag( patchPrecedenceOrderFlag_ );
   asps.setPatchSizeQuantizerPresentFlag( context.getEnablePatchSizeQuantization() );
-  asps.setEnhancedOccupancyMapForDepthFlag( enhancedDeltaDepthCode_ );
+  asps.setEnhancedOccupancyMapForDepthFlag( enhancedOccupancyMapCode_ );
   asps.setPointLocalReconstructionEnabledFlag( pointLocalReconstruction_ );
-  asps.setVuiParametersPresentFlag( 0 );
-  asps.setExtensionPresentFlag( 0 );
-  asps.setExtensionDataFlag( 0 );
+  asps.setVuiParametersPresentFlag( false );
+  asps.setExtensionPresentFlag( false );
+  asps.setExtensionDataFlag( false );
 
-  if ( asps.getEnhancedOccupancyMapFixBitCountMinus1() && mapCountMinus1_ == 0 ) {
+  if ( ( asps.getEnhancedOccupancyMapFixBitCountMinus1() != 0U ) && mapCountMinus1_ == 0 ) {
     asps.setEnhancedOccupancyMapFixBitCountMinus1( EOMFixBitCount_ - 1 );
   } else {
     asps.setEnhancedOccupancyMapFixBitCountMinus1( EOMFixBitCount_ - 1 );  // default values
   }
   afps.setAtlasSequenceParameterSetId( 0 );
-  afps.setAfpsNumRefIdxDefaultActiveMinus1( ( uint8_t )( std::max )( 0, (int)maxNumRefAtlasFrame_ - 1 ) );
+  afps.setAfpsNumRefIdxDefaultActiveMinus1(
+      static_cast<uint8_t>( ( std::max )( 0, static_cast<int>( maxNumRefAtlasFrame_ ) - 1 ) ) );
   afps.setAfpsAdditionalLtAfocLsbLen( 4 );
-  afps.setAfps2dPosXBitCountMinus1( 0 );
-  afps.setAfps2dPosYBitCountMinus1( 0 );
-  afps.setAfps3dPosXBitCountMinus1( 0 );
-  afps.setAfps3dPosYBitCountMinus1( 0 );
-  afps.setAfpsOverrideEomForDepthFlag( 0 );
+  afps.setAfpsOverrideEomForDepthFlag( false );
   afps.setAfpsEomNumberOfPatchBitCountMinus1( 0 );
   afps.setAfpsEomMaxBitCountMinus1( 0 );
-  afps.setAfpsRaw3dPosBitCountExplicitModeFlag( 0 );
+  afps.setAfpsRaw3dPosBitCountExplicitModeFlag( false );
   afps.setAfpsExtensionPresentFlag( 0 );
-  afps.setAfpsExtensionDataFlag( 0 );
+  afps.setAfpsExtensionDataFlag( false );
 
-  if ( afps.getAfpsOverrideEomForDepthFlag() == 0 ) {
+  if ( static_cast<int>( afps.getAfpsOverrideEomForDepthFlag() ) == 0 ) {
     afps.setAfpsEomMaxBitCountMinus1( 7 );
     afps.setAfpsEomNumberOfPatchBitCountMinus1( 7 );
   }
+  // now create a list of tile groups per frame (NOTE: our frame has only one
+  // tile group)
+  int numTilesPerFrame = ( afps.getAtlasFrameTileInformation().getNumTileRowsMinus1() + 1 ) *
+                         ( afps.getAtlasFrameTileInformation().getNumTileColumnsMinus1() + 1 );
   for ( size_t frameIdx = 0; frameIdx < frameCount_; frameIdx++ ) {
-    auto& atgl = context.addAtlasTileGroupLayer( frameIdx );
-    auto& atgh = atgl.getAtlasTileGroupHeader();
-    atgh.setAtghAtlasFrameParameterSetId( 0 );
-    atgh.setAtghPosMinZQuantizer( uint8_t( std::log2( minLevel_ ) ) );
-    atgh.setAtghPosDeltaMaxZQuantizer( uint8_t( std::log2( minLevel_ ) ) );
-    atgh.setAtghPatchSizeXinfoQuantizer( log2QuantizerSizeX_ );
-    atgh.setAtghPatchSizeYinfoQuantizer( log2QuantizerSizeY_ );
-    if ( afps.getAfpsRaw3dPosBitCountExplicitModeFlag() ) {
-      atgh.setAtghRaw3dPosAxisBitCountMinus1( 0 );  //
-    } else {
-      atgh.setAtghRaw3dPosAxisBitCountMinus1( geometry3dCoordinatesBitdepth_ - geometryNominal2dBitdepth_ - 1 );
-    }
-    atgh.setAtghNumRefIdxActiveOverrideFlag( 0 );
+    for ( size_t tileGroupId = 0; tileGroupId < numTilesPerFrame; tileGroupId++ ) {
+      auto& atgl = context.addAtlasTileGroupLayer( frameIdx, tileGroupId );
+      auto& atgh = atgl.getAtlasTileGroupHeader();
+      atgh.setAtghAtlasFrameParameterSetId( 0 );
+      if ( additionalProjectionPlaneMode_ > 0 ) {
+        atgh.setAtghPosMinZQuantizer( uint8_t( std::log2( minLevel_ ) ) - 1 );
+      } else {
+        atgh.setAtghPosMinZQuantizer( uint8_t( std::log2( minLevel_ ) ) );
+      }
+      atgh.setAtghPosDeltaMaxZQuantizer( uint8_t( std::log2( minLevel_ ) ) );
+      atgh.setAtghPatchSizeXinfoQuantizer( log2QuantizerSizeX_ );
+      atgh.setAtghPatchSizeYinfoQuantizer( log2QuantizerSizeY_ );
+      if ( afps.getAfpsRaw3dPosBitCountExplicitModeFlag() ) {
+        atgh.setAtghRaw3dPosAxisBitCountMinus1( 0 );  //
+      } else {
+        atgh.setAtghRaw3dPosAxisBitCountMinus1( geometry3dCoordinatesBitdepth_ - geometryNominal2dBitdepth_ - 1 );
+      }
+      atgh.setAtghNumRefIdxActiveOverrideFlag( false );
 
-    atgh.setAtghRefAtlasFrameListSpsFlag( true );
-    atgh.setAtghRefAtlasFrameListIdx( 0 );
+      atgh.setAtghRefAtlasFrameListSpsFlag( true );
+      atgh.setAtghRefAtlasFrameListIdx( 0 );
+    }
   }
 
   // construction of reference frame list of ASPS
   constructAspsRefList( context, 0, 0 );
 
-  oi.setLossyOccupancyMapCompressionThreshold( (size_t)thresholdLossyOM_ );
+  oi.setLossyOccupancyMapCompressionThreshold( thresholdLossyOM_ );
   oi.setOccupancyNominal2DBitdepthMinus1( 7 );
   oi.setOccupancyMSBAlignFlag( false );
 
@@ -868,14 +908,8 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   gi.setGeometryNominal2dBitdepthMinus1( uint8_t( geometryNominal2dBitdepth_ - 1 ) );
   gi.setGeometryMSBAlignFlag( false );
 
-  // deprecated
-  sps.setLosslessGeo444( losslessGeo444_ );
-  sps.setLosslessGeo( losslessGeo_ );
-  sps.setMinLevel( minLevel_ );
-
   // Encoder only data
   context.setOccupancyPrecision( occupancyPrecision_ );
-  context.setOccupancyPackingBlockSize( occupancyResolution_ );
   context.setModelScale( modelScale_ );
   context.setModelOrigin( modelOrigin_ );
   context.setMPGeoWidth( textureMPSeparateVideoWidth_ );
@@ -883,14 +917,22 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   context.setMPGeoHeight( 0 );
   context.setMPAttHeight( 0 );
   context.setGeometry3dCoordinatesBitdepth( geometry3dCoordinatesBitdepth_ );
-  size_t numPlrm =
-      pointLocalReconstruction_
-          ? ( std::max )( (size_t)1, ( std::min )( plrlNumberOfModes_, g_pointLocalReconstructionMode.size() ) )
-          : 1;
+  size_t numPlrm = pointLocalReconstruction_
+                       ? ( std::max )( static_cast<size_t>( 1 ),
+                                       ( std::min )( plrlNumberOfModes_, g_pointLocalReconstructionMode.size() ) )
+                       : 1;
   for ( size_t i = 0; i < numPlrm; i++ ) {
     context.addPointLocalReconstructionMode( g_pointLocalReconstructionMode[i] );
   }
   // Lossy occupancy map
   context.getOffsetLossyOM()    = offsetLossyOM_;
   context.getPrefilterLossyOM() = prefilterLossyOM_;
+  // atlas video allocation
+  context.getAtlas( atlasIndex ).allocateVideoFrames( context, 0 );
+
+  auto& plt = sps.getProfileTierLevel();
+  plt.setProfileCodecGroupIdc( CODEC_GROUP_HEVC_MAIN10 );
+  if( losslessGeo444_ ){
+    plt.setProfileCodecGroupIdc( CODEC_GROUP_HEVC444 );
+  } 
 }

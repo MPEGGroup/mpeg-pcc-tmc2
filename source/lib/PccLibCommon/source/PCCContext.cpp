@@ -37,71 +37,150 @@
 
 using namespace pcc;
 
-PCCContext::PCCContext() {}
+PCCContext::PCCContext() = default;
 
-PCCContext::~PCCContext() {
-  frames_.clear();
-  videoGeometry_.clear();
-  videoTexture_.clear();
-  videoMPsGeometry_.clear();
-  videoMPsTexture_.clear();
-  videoBitstream_.clear();
+PCCContext::~PCCContext() { atlasContexts_.clear(); }
+
+void PCCContext::resizeAtlas( size_t size ) {
+  atlasContexts_.resize( size );
+  for ( int atlIdx = 0; atlIdx < size; atlIdx++ ) { atlasContexts_[atlIdx].setAtlasIndex( atlIdx ); }
+}
+
+PCCAtlasContext::PCCAtlasContext() = default;
+
+PCCAtlasContext::~PCCAtlasContext() {
+  frameContexts_.clear();
+  clearVideoFrames();
   subContexts_.clear();
   unionPatch_.clear();
-  vpccParameterSets_.clear();
 }
 
-void PCCContext::resize( size_t size ) {
-  frames_.resize( size );
-  for ( size_t i = 0; i < size; i++ ) { frames_[i].setIndex( i ); }
+void PCCAtlasContext::resize( size_t size, size_t frameStart ) {
+  frameContexts_.resize( size );
+  for ( size_t i = frameStart; i < size + frameStart; i++ ) { frameContexts_[i].setIndex( i ); }
 }
 
-void PCCContext::allocOneLayerData() {
-  for ( auto& frame : frames_ ) { frame.allocOneLayerData(); }
+void PCCAtlasContext::allocOneLayerData() {
+  for ( auto& frameContext : frameContexts_ ) { frameContext.allocOneLayerData(); }
 }
 
-void PCCContext::constructRefList( size_t aspsIdx, size_t afpsIdx ) {
-  auto& asps = atlasSequenceParameterSet_[aspsIdx];
-  // construction of reference frame list from ASPS refList (decoder)
-  setNumOfRefAtlasFrameList( asps.getNumRefAtlasFrameListsInAsps() );
-  for ( size_t list = 0; list < getNumOfRefAtlasFrameList(); list++ ) {
-    auto& refList = asps.getRefListStruct( list );
-    setMaxNumRefAtlasFrame( refList.getNumRefEntries() );
-    setSizeOfRefAtlasFrameList( list, maxNumRefAtlasFrame_ );
-    for ( size_t i = 0; i < refList.getNumRefEntries(); i++ ) {
-      int  absDiff = refList.getAbsDeltaAfocSt( i );
-      bool sign    = refList.getStrpfEntrySignFlag( i );
-      setRefAtlasFrame( list, i, sign == 0 ? ( -absDiff ) : absDiff );
+void PCCAtlasContext::printBlockToPatch( const size_t occupancyResolution ) {
+  for ( auto& frameContext : frameContexts_ ) { frameContext.printBlockToPatch( occupancyResolution ); }
+}
+
+void PCCAtlasContext::allocateVideoFrames( PCCHighLevelSyntax& syntax, size_t numFrames ) {
+  // syntax elements values
+  size_t attrCount     = syntax.getVps().getAttributeInformation( atlasIndex_ ).getAttributeCount();
+  size_t mapCount      = syntax.getVps().getMapCountMinus1( atlasIndex_ ) + 1;
+  size_t nominalWidth  = syntax.getVps().getFrameWidth( atlasIndex_ );
+  size_t nominalHeight = syntax.getVps().getFrameHeight( atlasIndex_ );
+  // allocating structures for occupancy map
+  size_t nominalBitDepthOccupancy =
+      syntax.getVps().getOccupancyInformation( atlasIndex_ ).getOccupancyNominal2DBitdepthMinus1() + 1;
+  occFrames_.resize( numFrames );
+  occBitdepth_.resize( numFrames, nominalBitDepthOccupancy );
+  occWidth_.resize( numFrames, nominalWidth );
+  occHeight_.resize( numFrames, nominalHeight );
+
+  // allocating structures for geometry
+  size_t nominalBitDepthGeometry =
+      syntax.getVps().getGeometryInformation( atlasIndex_ ).getGeometryNominal2dBitdepthMinus1() + 1;
+  geoFrames_.resize( mapCount );
+  geoBitdepth_.resize( mapCount );
+  geoWidth_.resize( mapCount );
+  geoHeight_.resize( mapCount );
+  for ( size_t mapIdx = 0; mapIdx < mapCount; mapIdx++ ) {
+    geoFrames_[mapIdx].resize( numFrames );
+    geoBitdepth_[mapIdx].resize( numFrames, nominalBitDepthGeometry );
+    geoWidth_[mapIdx].resize( numFrames, nominalWidth );
+    geoHeight_[mapIdx].resize( numFrames, nominalHeight );
+  }
+  geoAuxFrames_.resize( numFrames );
+
+  // allocating structures for attributes
+  attrFrames_.resize( attrCount );
+  attrBitdepth_.resize( attrCount );
+  attrWidth_.resize( attrCount );
+  attrHeight_.resize( attrCount );
+  for ( size_t attrIdx = 0; attrIdx < attrCount; attrIdx++ ) {
+    size_t nominalBitDepthAttribute =
+        syntax.getVps().getAttributeInformation( atlasIndex_ ).getAttributeNominal2dBitdepthMinus1( attrIdx ) + 1;
+    size_t partitionCount =
+        syntax.getVps().getAttributeInformation( atlasIndex_ ).getAttributeDimensionPartitionsMinus1( attrIdx ) + 1;
+    attrFrames_[attrIdx].resize( partitionCount );
+    attrBitdepth_[attrIdx].resize( partitionCount );
+    attrWidth_[attrIdx].resize( partitionCount );
+    attrHeight_[attrIdx].resize( partitionCount );
+    for ( size_t partIdx = 0; partIdx < partitionCount; partIdx++ ) {
+      attrFrames_[attrIdx][partIdx].resize( mapCount );
+      attrBitdepth_[attrIdx][partIdx].resize( mapCount );
+      attrWidth_[attrIdx][partIdx].resize( mapCount );
+      attrHeight_[attrIdx][partIdx].resize( mapCount );
+      for ( size_t mapIdx = 0; mapIdx < syntax.getVps().getMapCountMinus1( atlasIndex_ ) + 1; mapIdx++ ) {
+        attrFrames_[attrIdx][partIdx][mapIdx].resize( numFrames );
+        attrBitdepth_[attrIdx][partIdx][mapIdx].resize( numFrames, nominalBitDepthAttribute );
+        attrWidth_[attrIdx][partIdx][mapIdx].resize( numFrames, nominalWidth );
+        attrHeight_[attrIdx][partIdx][mapIdx].resize( numFrames, nominalHeight );
+      }
+    }
+  }
+  attrAuxFrames_.resize( attrCount );
+  for ( size_t attrIdx = 0; attrIdx < attrCount; attrIdx++ ) {
+    size_t partitionCount =
+        syntax.getVps().getAttributeInformation( atlasIndex_ ).getAttributeDimensionPartitionsMinus1( attrIdx ) + 1;
+    attrAuxFrames_[attrIdx].resize( partitionCount );
+    for ( size_t partIdx = 0; partIdx < partitionCount; partIdx++ ) {
+      attrAuxFrames_[attrIdx][partIdx].resize( numFrames );
     }
   }
 }
-size_t PCCContext::getNumRefIdxActive( AtlasTileGroupHeader& atgh ) {
-  size_t afpsId          = atgh.getAtghAtlasFrameParameterSetId();
-  auto&  afps            = getAtlasFrameParameterSet( afpsId );
-  size_t numRefIdxActive = 0;
-  if ( atgh.getAtghType() == P_TILE_GRP || atgh.getAtghType() == SKIP_TILE_GRP ) {
-    if ( atgh.getAtghNumRefIdxActiveOverrideFlag() ) {
-      numRefIdxActive = atgh.getAtghNumRefIdxActiveMinus1() + 1;
-    } else {
-      auto& refList   = atgh.getRefListStruct();
-      numRefIdxActive = ( size_t )( std::min )( (int)refList.getNumRefEntries(),
-                                                (int)afps.getAfpsNumRefIdxDefaultActiveMinus1() + 1 );
+
+void PCCAtlasContext::clearVideoFrames() {
+  // clearing structures for occupancy map
+  occFrames_.clear();
+  occBitdepth_.clear();
+  occWidth_.clear();
+  occHeight_.clear();
+
+  // clearing structures for geometry
+  for ( size_t mapIdx = 0; mapIdx < geoFrames_.size(); mapIdx++ ) {
+    geoFrames_[mapIdx].clear();
+    geoBitdepth_[mapIdx].clear();
+    geoWidth_[mapIdx].clear();
+    geoHeight_[mapIdx].clear();
+  }
+  geoFrames_.clear();
+  geoBitdepth_.clear();
+  geoWidth_.clear();
+  geoHeight_.clear();
+  geoAuxFrames_.clear();
+
+  // clearing structures for attributes
+  for ( size_t attrIdx = 0; attrIdx < attrFrames_.size(); attrIdx++ ) {
+    for ( size_t partIdx = 0; partIdx < attrHeight_[attrIdx].size(); partIdx++ ) {
+      for ( size_t mapIdx = 0; mapIdx < attrHeight_[attrIdx][partIdx].size(); mapIdx++ ) {
+        attrFrames_[attrIdx][partIdx][mapIdx].clear();
+        attrBitdepth_[attrIdx][partIdx][mapIdx].clear();
+        attrWidth_[attrIdx][partIdx][mapIdx].clear();
+        attrHeight_[attrIdx][partIdx][mapIdx].clear();
+      }
+      attrFrames_[attrIdx][partIdx].clear();
+      attrBitdepth_[attrIdx][partIdx].clear();
+      attrWidth_[attrIdx][partIdx].clear();
+      attrHeight_[attrIdx][partIdx].clear();
     }
+    attrFrames_[attrIdx].clear();
+    attrBitdepth_[attrIdx].clear();
+    attrWidth_[attrIdx].clear();
+    attrHeight_[attrIdx].clear();
   }
-  return numRefIdxActive;
-}
-
-void PCCContext::printVideoBitstream() {
-  size_t index = 0;
-  printf( "VideoBitstream list: \n" );
-  for ( auto& value : videoBitstream_ ) {
-    printf( "  * %lu / %lu: ", index, videoBitstream_.size() );
-    value.trace();
-    index++;
+  attrFrames_.clear();
+  attrBitdepth_.clear();
+  attrWidth_.clear();
+  attrHeight_.clear();
+  for ( auto& attrAuxFrame : attrAuxFrames_ ) {
+    for ( auto& partIdx : attrAuxFrame ) { partIdx.clear(); }
+    attrAuxFrame.clear();
   }
-  fflush( stdout );
-}
-
-void PCCContext::printBlockToPatch( const size_t occupancyResolution ) {
-  for ( auto& frame : frames_ ) { frame.printBlockToPatch( occupancyResolution ); }
+  attrAuxFrames_.clear();
 }

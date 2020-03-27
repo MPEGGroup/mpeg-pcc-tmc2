@@ -41,7 +41,6 @@
 
 namespace pcc {
 
-class PCCBitstream;
 class PCCContext;
 class PCCFrameContext;
 class PCCGroupOfFrames;
@@ -55,24 +54,24 @@ template <typename T, size_t N>
 class PCCImage;
 typedef pcc::PCCImage<uint8_t, 3> PCCImageOccupancyMap;
 
+
 class PCCDecoder : public PCCCodec {
  public:
   PCCDecoder();
   ~PCCDecoder();
+  
+  int decode( PCCContext&       context,
+              PCCGroupOfFrames& reconstruct,
+              int32_t           atlasIndex );
 
-  int decode( SampleStreamVpccUnit& ssvu, PCCContext& context, PCCGroupOfFrames& reconstructs );
-
-  void setParameters( PCCDecoderParameters value );
-
+  void setParameters( const PCCDecoderParameters& params );
+  void setPostProcessingSeiParameters( GeneratePointCloudParameters& gpcParams,
+                                       PCCContext&                   context );
   void setGeneratePointCloudParameters( GeneratePointCloudParameters& gpcParams, PCCContext& context );
-
   void createPatchFrameDataStructure( PCCContext& context );
-
   void createPatchFrameDataStructure( PCCContext& context, PCCFrameContext& frame, size_t frameIndex );
 
  private:
-  int decode( PCCContext& context, PCCGroupOfFrames& reconstruct );
-
   void setPointLocalReconstruction( PCCContext& context );
   void setPointLocalReconstructionData( PCCFrameContext&              frame,
                                         PCCPatch&                     patch,

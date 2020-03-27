@@ -36,6 +36,6 @@
 
 using namespace pcc;
 
-PCCVideoEncoder::PCCVideoEncoder() {}
+PCCVideoEncoder::PCCVideoEncoder() = default;
 
-PCCVideoEncoder::~PCCVideoEncoder() {}
+PCCVideoEncoder::~PCCVideoEncoder() = default;

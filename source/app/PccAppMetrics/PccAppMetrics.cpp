@@ -41,7 +41,7 @@ int main( int argc, char* argv[] ) {
 
   PCCMetricsParameters metricsParams;
   if ( !parseParameters( argc, argv, metricsParams ) ) { return -1; }
-  if ( metricsParams.nbThread_ > 0 ) { tbb::task_scheduler_init init( (int)metricsParams.nbThread_ ); }
+  if ( metricsParams.nbThread_ > 0 ) { tbb::task_scheduler_init init( static_cast<int>( metricsParams.nbThread_ ) ); }
 
   // Timers to count elapsed wall/user time
   pcc::chrono::Stopwatch<std::chrono::steady_clock> clockWall;
@@ -84,7 +84,7 @@ static std::istream& operator>>( std::istream& in, PCCColorTransform& val ) { re
 bool parseParameters( int argc, char* argv[], PCCMetricsParameters& metricsParams ) {
   namespace po      = df::program_options_lite;
   bool   print_help = false;
-  size_t ignore;
+  size_t ignore     = 0;
 
   // The definition of the program/config options, along with default values.
   //
@@ -94,51 +94,44 @@ bool parseParameters( int argc, char* argv[], PCCMetricsParameters& metricsParam
   //
   // clang-format off
   po::Options opts;
-  opts.addOptions()
-    ( "help", print_help, false, "This help text" )
-    ( "computeChecksum", metricsParams.computeChecksum_, metricsParams.computeChecksum_, "Compute checksum" )
-    ( "computeMetrics", metricsParams.computeMetrics_, metricsParams.computeMetrics_, "Compute metrics" )
+  opts.addOptions()("help", print_help, false, "This help text")(
+      "computeChecksum", metricsParams.computeChecksum_,
+      metricsParams.computeChecksum_,
+      "Compute checksum")("computeMetrics", metricsParams.computeMetrics_,
+                          metricsParams.computeMetrics_, "Compute metrics")
 
-    // sequence configuration
-    ( "startFrameNumber",
-      metricsParams.startFrameNumber_,
-      metricsParams.startFrameNumber_,
-      "Fist frame number in sequence to encode/decode" )
-
-    ( "frameCount",  metricsParams.frameCount_, metricsParams.frameCount_, "Number of frames to encode" )
-
-    ( "uncompressedDataPath",
-      metricsParams.uncompressedDataPath_,
-      metricsParams.uncompressedDataPath_,
-      "Input pointcloud to encode. Multi-frame sequences may be represented by %04i" )
-
-    ( "reconstructedDataPath",
-      metricsParams.reconstructedDataPath_,
-      metricsParams.reconstructedDataPath_,
-      "Output decoded pointcloud. Multi-frame sequences may be represented by %04i" )
-
-    ( "normalDataPath",
-      metricsParams.normalDataPath_,
-      metricsParams.normalDataPath_,
-      "Input pointcloud to encode. Multi-frame sequences may be represented by %04i" )
-
-    ( "resolution", metricsParams.resolution_, metricsParams.resolution_, "Specify the intrinsic resolution" )
-
-    ( "dropdups",
-      metricsParams.dropDuplicates_,
-      metricsParams.dropDuplicates_,
-      "0(detect), 1(drop), 2(average) subsequent points with same coordinates" )
-
-    ( "neighborsProc",
-      metricsParams.neighborsProc_,
-      metricsParams.neighborsProc_,
-      "0(undefined), 1(average), 2(weighted average), 3(min), 4(max) neighbors with same geometric distance" )
-
-    ( "nbThread", metricsParams.nbThread_,metricsParams.nbThread_,"Number of thread used for parallel processing" )
-
-    ( "minimumImageHeight",    ignore, ignore, "Ignore parameter" )
-    ( "flagColorPreSmoothing", ignore, ignore, "Ignore parameter" )
-    ( "surfaceSeparation",     ignore, ignore, "Ignore parameter" );
+      // sequence configuration
+      ("startFrameNumber", metricsParams.startFrameNumber_,
+       metricsParams.startFrameNumber_,
+       "Fist frame number in sequence to encode/decode")(
+          "frameCount", metricsParams.frameCount_, metricsParams.frameCount_,
+          "Number of frames to encode")(
+          "uncompressedDataPath", metricsParams.uncompressedDataPath_,
+          metricsParams.uncompressedDataPath_,
+          "Input pointcloud to encode. Multi-frame sequences may be "
+          "represented by %04i")(
+          "reconstructedDataPath", metricsParams.reconstructedDataPath_,
+          metricsParams.reconstructedDataPath_,
+          "Output decoded pointcloud. Multi-frame sequences may be represented "
+          "by %04i")("normalDataPath", metricsParams.normalDataPath_,
+                     metricsParams.normalDataPath_,
+                     "Input pointcloud to encode. Multi-frame sequences may be "
+                     "represented by %04i")(
+          "resolution", metricsParams.resolution_, metricsParams.resolution_,
+          "Specify the intrinsic resolution")(
+          "dropdups", metricsParams.dropDuplicates_,
+          metricsParams.dropDuplicates_,
+          "0(detect), 1(drop), 2(average) subsequent points with same "
+          "coordinates")("neighborsProc", metricsParams.neighborsProc_,
+                         metricsParams.neighborsProc_,
+                         "0(undefined), 1(average), 2(weighted average), "
+                         "3(min), 4(max) neighbors with same geometric "
+                         "distance")(
+          "nbThread", metricsParams.nbThread_, metricsParams.nbThread_,
+          "Number of thread used for parallel processing")(
+          "minimumImageHeight", ignore, ignore, "Ignore parameter")(
+          "flagColorPreSmoothing", ignore, ignore, "Ignore parameter")(
+          "surfaceSeparation", ignore, ignore, "Ignore parameter");
 
   // clang-format on
   po::setDefaults( opts );
@@ -157,7 +150,7 @@ bool parseParameters( int argc, char* argv[], PCCMetricsParameters& metricsParam
 
   // report the current configuration (only in the absence of errors so
   // that errors/warnings are more obvious and in the same place).
-  if ( err.is_errored ) return false;
+  if ( err.is_errored ) { return false; }
 
   return true;
 }
@@ -169,7 +162,9 @@ int computeMetrics( const PCCMetricsParameters& metricsParams, StopwatchUserTime
   metrics.setParameters( metricsParams );
   for ( size_t frameIndex = metricsParams.startFrameNumber_;
         frameIndex < metricsParams.startFrameNumber_ + metricsParams.frameCount_; frameIndex++ ) {
-    PCCGroupOfFrames sources, reconstructs, normals;
+    PCCGroupOfFrames sources;
+    PCCGroupOfFrames reconstructs;
+    PCCGroupOfFrames normals;
     if ( !sources.load( metricsParams.uncompressedDataPath_, frameIndex, frameIndex + 1, COLOR_TRANSFORM_NONE ) ) {
       return -1;
     }
@@ -177,7 +172,7 @@ int computeMetrics( const PCCMetricsParameters& metricsParams, StopwatchUserTime
                              COLOR_TRANSFORM_NONE ) ) {
       return -1;
     }
-    if ( metricsParams.normalDataPath_ != "" ) {
+    if ( !metricsParams.normalDataPath_.empty() ) {
       if ( !normals.load( metricsParams.normalDataPath_, frameIndex, frameIndex + 1, COLOR_TRANSFORM_NONE, true ) ) {
         return -1;
       }

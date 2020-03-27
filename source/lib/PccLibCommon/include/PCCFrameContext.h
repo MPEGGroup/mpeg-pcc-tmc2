@@ -56,39 +56,37 @@ class PCCFrameContext {
  public:
   PCCFrameContext();
   ~PCCFrameContext();
-  std::vector<PCCVector3<size_t>>&   getPointToPixel() { return pointToPixel_; }
-  std::vector<size_t>&               getBlockToPatch() { return blockToPatch_; }
-  std::vector<uint32_t>&             getOccupancyMap() { return occupancyMap_; }
-  std::vector<uint32_t>&             getFullOccupancyMap() { return fullOccupancyMap_; }
-  std::vector<PCCPatch>&             getPatches() { return patches_; }
-  PCCPatch&                          getPatch( size_t index ) { return patches_[index]; }
-  const PCCPatch&                    getPatch( size_t index ) const { return patches_[index]; }
-  std::vector<PCCMissedPointsPatch>& getMissedPointsPatches() { return missedPointsPatches_; }
-  PCCMissedPointsPatch&              getMissedPointsPatch( size_t index ) { return missedPointsPatches_[index]; }
-  std::vector<size_t>&               getNumberOfMissedPoints() { return numberOfMissedPoints_; };
-  std::vector<PCCColor3B>&           getMpsTextures() { return mpsTextures_; };
-  std::vector<PCCColor3B>&           getEddTextures() { return eddTextures_; };
-  size_t&                            getWidth() { return width_; }
-  size_t&                            getHeight() { return height_; }
-  const size_t                       getIndex() { return index_; }
-  const size_t                       getTotalNumberOfEddPoints() { return totalNumberOfEddPoints_; }
-  const size_t                       getTotalNumberOfRegularPoints() { return totalNumberOfRegularPoints_; }
-  const size_t                       getNumberOfMissedPoints( int index ) { return numberOfMissedPoints_[index]; }
-  const size_t                       getNumMatchedPatches() { return numMatchedPatches_; }
-  const size_t                       getNumberOfMissedPointsPatches() { return missedPointsPatches_.size(); }
-  const size_t                       getTotalNumberOfMissedPoints() { return totalNumberOfMissedPoints_; }
-  const size_t                       getMPGeoWidth() { return MPGeoWidth_; }
-  const size_t                       getMPGeoHeight() { return MPGeoHeight_; }
-  const size_t                       getMPAttWidth() { return MPAttWidth_; }
-  const size_t                       getMPAttHeight() { return MPAttHeight_; }
-  const bool                         getLosslessGeo() { return losslessGeo_; }
-  const bool                         getLosslessGeo444() { return losslessGeo444_; }
-  bool                               getUseMissedPointsSeparateVideo() { return useMissedPointsSeparateVideo_; }
-  const bool                         getRawPatchEnabledFlag() { return rawPatchEnabledFlag_; }
-  const size_t                       getMaxDepth() { return maxDepth_; }
-  void                               setMaxDepth( size_t value ) { maxDepth_ = value; }
-  size_t                             getGeometry2dNorminalBitdepth() { return geometry2dNorminalBitdepth_; }
-  std::vector<PCCPointSet3>&         getSrcPointCloudByPatch() { return srcPointCloudByPatch_; }
+  std::vector<PCCVector3<size_t>>& getPointToPixel() { return pointToPixel_; }
+  std::vector<size_t>&             getBlockToPatch() { return blockToPatch_; }
+  std::vector<uint32_t>&           getOccupancyMap() { return occupancyMap_; }
+  std::vector<uint32_t>&           getFullOccupancyMap() { return fullOccupancyMap_; }
+  std::vector<PCCPatch>&           getPatches() { return patches_; }
+  PCCPatch&                        getPatch( size_t index ) { return patches_[index]; }
+  const PCCPatch&                  getPatch( size_t index ) const { return patches_[index]; }
+  std::vector<PCCRawPointsPatch>&  getRawPointsPatches() { return rawPointsPatches_; }
+  PCCRawPointsPatch&               getRawPointsPatch( size_t index ) { return rawPointsPatches_[index]; }
+  std::vector<size_t>&             getNumberOfRawPoints() { return numberOfRawPoints_; };
+  std::vector<PCCColor3B>&         getRawPointsTextures() { return mpsTextures_; };
+  std::vector<PCCColor3B>&         getEOMTextures() { return eomTextures_; };
+  size_t&                          getWidth() { return width_; }
+  size_t&                          getHeight() { return height_; }
+  const size_t                     getIndex() { return index_; }
+  const size_t                     getTotalNumberOfEOMPoints() { return totalNumberOfEOMPoints_; }
+  const size_t                     getTotalNumberOfRegularPoints() { return totalNumberOfRegularPoints_; }
+  const size_t                     getNumberOfRawPoints( int index ) { return numberOfRawPoints_[index]; }
+  const size_t                     getNumMatchedPatches() { return numMatchedPatches_; }
+  const size_t                     getNumberOfRawPointsPatches() { return rawPointsPatches_.size(); }
+  const size_t                     getTotalNumberOfRawPoints() { return totalNumberOfRawPoints_; }
+  const size_t                     getMPGeoWidth() { return MPGeoWidth_; }
+  const size_t                     getMPGeoHeight() { return MPGeoHeight_; }
+  const size_t                     getMPAttWidth() { return MPAttWidth_; }
+  const size_t                     getMPAttHeight() { return MPAttHeight_; }
+  bool                             getUseRawPointsSeparateVideo() { return useRawPointsSeparateVideo_; }
+  const bool                       getRawPatchEnabledFlag() { return rawPatchEnabledFlag_; }
+  const size_t                     getMaxDepth() { return maxDepth_; }
+  void                             setMaxDepth( size_t value ) { maxDepth_ = value; }
+  size_t                           getGeometry2dNorminalBitdepth() { return geometry2dNorminalBitdepth_; }
+  std::vector<PCCPointSet3>&       getSrcPointCloudByPatch() { return srcPointCloudByPatch_; }
   PCCPointSet3&              getSrcPointCloudByPatch( size_t patchIndex ) { return srcPointCloudByPatch_[patchIndex]; }
   std::vector<PCCPointSet3>& getSrcPointCloudByBlock() { return srcPointCloudByBlock_; }
   PCCVector3D&               getWeightNormal() { return weightNormal_; }
@@ -105,14 +103,12 @@ class PCCFrameContext {
   void                       setMPGeoHeight( size_t height ) { MPGeoHeight_ = height; }
   void                       setMPAttWidth( size_t width ) { MPAttWidth_ = width; }
   void                       setMPAttHeight( size_t height ) { MPAttHeight_ = height; }
-  void                       setLosslessGeo( bool lossless ) { losslessGeo_ = lossless; }
-  void                       setLosslessGeo444( bool lossless ) { losslessGeo444_ = lossless; }
-  void                       setUseMissedPointsSeparateVideo( bool value ) { useMissedPointsSeparateVideo_ = value; }
-  void                       setTotalNumberOfEddPoints( size_t numPoints ) { totalNumberOfEddPoints_ = numPoints; }
+  void                       setUseRawPointsSeparateVideo( bool value ) { useRawPointsSeparateVideo_ = value; }
+  void                       setTotalNumberOfEOMPoints( size_t numPoints ) { totalNumberOfEOMPoints_ = numPoints; }
   void setTotalNumberOfRegularPoints( size_t numPoints ) { totalNumberOfRegularPoints_ = numPoints; }
-  void setNumberOfMissedPoints( int index, size_t value ) { numberOfMissedPoints_[index] = value; }
-  void setNumberOfMissedPointsPatches( size_t numPoints ) { numberOfMissedPointsPatches_ = numPoints; }
-  void setTotalNumberOfMissedPoints( size_t numPoints ) { totalNumberOfMissedPoints_ = numPoints; }
+  void setNumberOfRawPoints( int index, size_t value ) { numberOfRawPoints_[index] = value; }
+  void setNumberOfRawPointsPatches( size_t numPoints ) { numberOfRawPointsPatches_ = numPoints; }
+  void setTotalNumberOfRawPoints( size_t numPoints ) { totalNumberOfRawPoints_ = numPoints; }
   void setGeometry3dCoordinatesBitdepth( size_t value ) { geometry3dCoordinatesBitdepth_ = value; }
   void setRawPatchEnabledFlag( bool value ) { rawPatchEnabledFlag_ = value; }
   void setGeometry2dNorminalBitdepth( size_t value ) { geometry2dNorminalBitdepth_ = value; }
@@ -122,14 +118,6 @@ class PCCFrameContext {
   std::vector<PCCEomPatch>& getEomPatches() { return eomPatches_; }
   PCCEomPatch&              getEomPatches( size_t idx ) { return eomPatches_[idx]; }
 
-  void    set2dPosXBitCountMinus1( size_t value ) { bitCount2dPosXMinus1_ = value; }
-  void    set2dPosYBitCountMinus1( size_t value ) { bitCount2dPosYMinus1_ = value; }
-  void    set3dPosXBitCountMinus1( size_t value ) { bitCount3dPosXMinus1_ = value; }
-  void    set3dPosYBitCountMinus1( size_t value ) { bitCount3dPosYMinus1_ = value; }
-  size_t  get2dPosXBitCountMinus1() { return bitCount2dPosXMinus1_; }
-  size_t  get2dPosYBitCountMinus1() { return bitCount2dPosYMinus1_; }
-  size_t  get3dPosXBitCountMinus1() { return bitCount3dPosXMinus1_; }
-  size_t  get3dPosYBitCountMinus1() { return bitCount3dPosYMinus1_; }
   uint8_t getLog2PatchQuantizerSizeX() { return log2PatchQuantizerSizeX_; }
   uint8_t getLog2PatchQuantizerSizeY() { return log2PatchQuantizerSizeY_; }
   void    setLog2PatchQuantizerSizeX( uint8_t value ) { log2PatchQuantizerSizeX_ = value; }
@@ -180,23 +168,17 @@ class PCCFrameContext {
   size_t                                       MPGeoHeight_;
   size_t                                       MPAttWidth_;
   size_t                                       MPAttHeight_;
-  size_t                                       numberOfMissedPointsPatches_;
-  size_t                                       totalNumberOfMissedPoints_;
-  size_t                                       totalNumberOfEddPoints_;
+  size_t                                       numberOfRawPointsPatches_;
+  size_t                                       totalNumberOfRawPoints_;
+  size_t                                       totalNumberOfEOMPoints_;
   size_t                                       totalNumberOfRegularPoints_;
   size_t                                       globalPatchCount_;
   size_t                                       geometry3dCoordinatesBitdepth_;
   uint8_t                                      pointLocalReconstructionNumber_;
-  bool                                         losslessGeo_;
-  bool                                         losslessGeo444_;
-  bool                                         useMissedPointsSeparateVideo_;
+  bool                                         useRawPointsSeparateVideo_;
   bool                                         rawPatchEnabledFlag_;
   size_t                                       geometry2dNorminalBitdepth_;
   size_t                                       maxDepth_;
-  size_t                                       bitCount2dPosXMinus1_;
-  size_t                                       bitCount2dPosYMinus1_;
-  size_t                                       bitCount3dPosXMinus1_;
-  size_t                                       bitCount3dPosYMinus1_;
   size_t                                       afOrderCnt_;
   size_t                                       refAtlasListIndexInSPS_;
   size_t                                       numRefIdxActive_;
@@ -213,10 +195,10 @@ class PCCFrameContext {
   std::vector<uint32_t>                        occupancyMap_;
   std::vector<uint32_t>                        fullOccupancyMap_;
   std::vector<PCCPatch>                        patches_;
-  std::vector<PCCMissedPointsPatch>            missedPointsPatches_;
-  std::vector<size_t>                          numberOfMissedPoints_;
+  std::vector<PCCRawPointsPatch>               rawPointsPatches_;
+  std::vector<size_t>                          numberOfRawPoints_;
   std::vector<PCCColor3B>                      mpsTextures_;
-  std::vector<PCCColor3B>                      eddTextures_;
+  std::vector<PCCColor3B>                      eomTextures_;
   std::vector<PCCPointSet3>                    srcPointCloudByPatch_;
   std::vector<PCCPointSet3>                    srcPointCloudByBlock_;
   std::vector<PCCPointSet3>                    recPointCloudByBlock_;

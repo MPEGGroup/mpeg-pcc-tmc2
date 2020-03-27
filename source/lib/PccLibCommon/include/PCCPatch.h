@@ -108,8 +108,8 @@ class PCCPatch {
       patchOrientation_( 0 ),
       isGlobalPatch_( false ),
       d0Count_( 0 ),
-      eddCount_( 0 ),
-      eddandD1Count_( 0 ),
+      eomCount_( 0 ),
+      eomandD1Count_( 0 ),
       patchType_( PATCH_MODE_I_INTRA ) {
     depth_[0].clear();
     depth_[1].clear();
@@ -134,10 +134,10 @@ class PCCPatch {
     neighboringPatches_.clear();
     depthMap_.clear();
   };
-  size_t                      getEddCount() { return eddCount_; }
-  void                        setEddCount( size_t value ) { eddCount_ = value; }
-  size_t                      getEddandD1Count() { return eddandD1Count_; }
-  void                        setEddandD1Count( size_t value ) { eddandD1Count_ = value; }
+  size_t                      getEOMCount() { return eomCount_; }
+  void                        setEOMCount( size_t value ) { eomCount_ = value; }
+  size_t                      getEOMandD1Count() { return eomandD1Count_; }
+  void                        setEOMandD1Count( size_t value ) { eomandD1Count_ = value; }
   size_t                      getD0Count() { return d0Count_; }
   void                        setD0Count( size_t value ) { d0Count_ = value; }
   size_t&                     getIndex() { return index_; }
@@ -203,18 +203,17 @@ class PCCPatch {
   std::vector<int64_t>&       getDepth0PccIdx() { return depth0PCidx_; }
   bool&                       getIsRoiPatch() { return isRoiPatch_; }
   size_t&                     getRoiIndex() { return roiIndex_; }
-  // Flexible Patch Orientation
-  size_t&       getPatchOrientation() { return patchOrientation_; }
-  size_t        getPatchOrientation() const { return patchOrientation_; }
-  bool&         getIsGlobalPatch() { return isGlobalPatch_; }
-  bool          getIsGlobalPatch() const { return isGlobalPatch_; }
-  size_t        getPatchSize2DXInPixel() const { return size2DXInPixel_; }
-  size_t        getPatchSize2DYInPixel() const { return size2DYInPixel_; }
-  size_t        getPatchSize2DXInPixel() { return size2DXInPixel_; }
-  size_t        getPatchSize2DYInPixel() { return size2DYInPixel_; }
-  void          setPatchSize2DXInPixel( size_t value ) { size2DXInPixel_ = value; }
-  void          setPatchSize2DYInPixel( size_t value ) { size2DYInPixel_ = value; }
-  inline double generateNormalCoordinate( const uint16_t depth ) const {
+  size_t&                     getPatchOrientation() { return patchOrientation_; }
+  size_t                      getPatchOrientation() const { return patchOrientation_; }
+  bool&                       getIsGlobalPatch() { return isGlobalPatch_; }
+  bool                        getIsGlobalPatch() const { return isGlobalPatch_; }
+  size_t                      getPatchSize2DXInPixel() const { return size2DXInPixel_; }
+  size_t                      getPatchSize2DYInPixel() const { return size2DYInPixel_; }
+  size_t                      getPatchSize2DXInPixel() { return size2DXInPixel_; }
+  size_t                      getPatchSize2DYInPixel() { return size2DYInPixel_; }
+  void                        setPatchSize2DXInPixel( size_t value ) { size2DXInPixel_ = value; }
+  void                        setPatchSize2DYInPixel( size_t value ) { size2DYInPixel_ = value; }
+  inline double               generateNormalCoordinate( const uint16_t depth ) const {
     double coord = 0;
     if ( projectionMode_ == 0 ) {
       coord = ( (double)depth + (double)d1_ );
@@ -457,13 +456,17 @@ class PCCPatch {
   }
 
   void print() const {
-    printf( "Patch[%3zu] uv0 = %4zu %4zu / %4zu %4zu uvd1 = %4zu %4zu %4zu / %4zu %4zu %4zu \n", index_, u0_, v0_,
-            sizeU0_, sizeV0_, u1_, v1_, d1_, sizeU_, sizeV_, sizeD_ );
+    printf(
+        "Patch[%3zu] uv0 = %4zu %4zu / %4zu %4zu uvd1 = %4zu %4zu %4zu / %4zu "
+        "%4zu %4zu \n",
+        index_, u0_, v0_, sizeU0_, sizeV0_, u1_, v1_, d1_, sizeU_, sizeV_, sizeD_ );
   }
 
   void printDecoder() const {
-    printf( "Patch uv0 = %4zu %4zu / %4zu %4zu uvd1 = %4zu %4zu %4zu orientation = %4zu  \n", u0_, v0_, sizeU0_,
-            sizeV0_, u1_, v1_, d1_, patchOrientation_ );
+    printf(
+        "Patch uv0 = %4zu %4zu / %4zu %4zu uvd1 = %4zu %4zu %4zu orientation = "
+        "%4zu  \n",
+        u0_, v0_, sizeU0_, sizeV0_, u1_, v1_, d1_, patchOrientation_ );
   }
 
   friend bool operator<( const PCCPatch& lhs, const PCCPatch& rhs ) {
@@ -526,7 +529,8 @@ class PCCPatch {
     if ( getPatchOrientation() == PATCH_ORIENTATION_DEFAULT ) {
       for ( int idx = 0; idx < getSizeU0(); idx++ ) {
         wasted_space_external += getV0() + bottom_horizon[idx] - horizon[getU0() + idx];
-        // calculating internal wasted space --> because of new block2patch restriction, this area only contains
+        // calculating internal wasted space --> because of new block2patch
+        // restriction, this area only contains
         // locations for the local patch
         for ( int idx2 = bottom_horizon[idx] + 1; idx2 < getSizeV0() - top_horizon[idx]; idx2++ ) {
           if ( !occupancy_[idx2 * getSizeU0() + idx] ) wasted_space_internal++;
@@ -806,6 +810,7 @@ class PCCPatch {
   void allocOneLayerData() {
     pointLocalReconstructionLevel_       = 0;
     pointLocalReconstructionModeByPatch_ = 0;
+    // printf( "sizeU0_ =%d,  sizeV0_ = %d\n", sizeU0_ , sizeV0_ );
     pointLocalReconstructionModeByBlock_.resize( sizeU0_ * sizeV0_, 0 );
     std::fill( pointLocalReconstructionModeByBlock_.begin(), pointLocalReconstructionModeByBlock_.end(), 0 );
   }
@@ -950,7 +955,7 @@ class PCCPatch {
         break;
       default:
         assert( 0 );
-        printf( "patchOrientation_ = %lu not supported \n", patchOrientation_ );
+        printf( "patchOrientation_ = %zu not supported \n", patchOrientation_ );
         exit( -1 );
         break;
     }
@@ -1058,7 +1063,7 @@ class PCCPatch {
     neighborDepth.resize( size, undefined );
     boundingBox.min_ -= PCCPoint3D( 8 );
     boundingBox.max_ += PCCPoint3D( 8 );
-    const int32_t shift = int32_t( ( -v1_ + border_ ) * depthMapWidth_ - u1_ + border_ );
+    const int32_t shift = ( int32_t )( ( -(int32_t)v1_ + border_ ) * depthMapWidth_ - (int32_t)u1_ + border_ );
     for ( auto& i : neighboringPatches_ ) {
       for ( auto& point : patches[i].borderPoints_ ) {
         if ( boundingBox.contains( point ) ) {
@@ -1072,8 +1077,9 @@ class PCCPatch {
     }
     std::vector<uint8_t> newOccupancyMap;
     newOccupancyMap.resize( size, 0 );
-    for ( size_t iter = 0; iter < passesCount; iter++ ) {
-      uint8_t* src = iter % 2 == 0 ? occupancyMap_.data() : newOccupancyMap.data();
+    for ( size_t iter = 0; iter < passesCount; iter++ ) {  // HN : OMap precision =4, passescount = 2
+      uint8_t* src = iter % 2 == 0 ? occupancyMap_.data() : newOccupancyMap.data();  // iter=0, occupancyMap_.data(),
+                                                                                     // iter=1, newOccupancyMap.data()
       uint8_t* dst = iter % 2 == 1 ? occupancyMap_.data() : newOccupancyMap.data();
       for ( int32_t v = 0, c = border_ * depthMapWidth_ + border_; v < sizeY; v++, c += 2 * border_ ) {
         for ( int32_t u = 0; u < sizeX; u++, c++ ) {
@@ -1118,25 +1124,40 @@ class PCCPatch {
       }
     }
     if ( passesCount % 2 == 1 ) { memcpy( occupancyMap_.data(), newOccupancyMap.data(), size * sizeof( uint8_t ) ); }
+    //   int8_t diffMap;
+    //   uint32_t countM1 = 0;
+    //   uint32_t count0 = 0;
+    //   uint32_t countP1 = 0;
+    //   uint32_t sumOMap = 0;
+    //   uint32_t sumNewOMap = 0;
+    // for ( size_t k = 0; k < size; k++ ) {
+    //	diffMap = occupancyMap_[k] - newOccupancyMap[k];
+    //         if ( diffMap == -1 ) countM1++;
+    //         if ( diffMap == 0 ) count0++;
+    //         if ( diffMap == 1 ) countP1++;
+    //         sumOMap += occupancyMap_[k];
+    //         sumNewOMap += newOccupancyMap[k];
+    //}
   }
 
  private:
-  size_t                  index_;          // patch index
-  size_t                  originalIndex_;  // patch original index
-  size_t                  u1_;             // tangential shift
-  size_t                  v1_;             // bitangential shift
-  size_t                  d1_;             // depth shift
-  size_t                  sizeD_;          // size for depth
-  size_t                  sizeU_;          // size for depth
-  size_t                  sizeV_;          // size for depth
-  size_t                  u0_;             // location in packed image (n*occupancyResolution_)
-  size_t                  v0_;             // location in packed image (n*occupancyResolution_)
-  size_t                  sizeU0_;         // size of occupancy map (n*occupancyResolution_)
-  size_t                  sizeV0_;         // size of occupancy map (n*occupancyResolution_)
-  size_t                  size2DXInPixel_;
-  size_t                  size2DYInPixel_;
-  size_t                  occupancyResolution_;  // occupancy map resolution
-  size_t                  projectionMode_;       // 0: related to the min depth value; 1: related to the max value
+  size_t index_;          // patch index
+  size_t originalIndex_;  // patch original index
+  size_t u1_;             // tangential shift
+  size_t v1_;             // bitangential shift
+  size_t d1_;             // depth shift
+  size_t sizeD_;          // size for depth
+  size_t sizeU_;          // size for depth
+  size_t sizeV_;          // size for depth
+  size_t u0_;             // location in packed image (n*occupancyResolution_)
+  size_t v0_;             // location in packed image (n*occupancyResolution_)
+  size_t sizeU0_;         // size of occupancy map (n*occupancyResolution_)
+  size_t sizeV0_;         // size of occupancy map (n*occupancyResolution_)
+  size_t size2DXInPixel_;
+  size_t size2DYInPixel_;
+  size_t occupancyResolution_;  // occupancy map resolution
+  size_t projectionMode_;       // 0: related to the min depth value; 1: related to
+                                // the max value
   size_t                  levelOfDetailX_;
   size_t                  levelOfDetailY_;
   size_t                  normalAxis_;     // x
@@ -1159,8 +1180,8 @@ class PCCPatch {
   bool                    isGlobalPatch_;
   size_t                  axisOfAdditionalPlane_;
   size_t                  d0Count_;
-  size_t                  eddCount_;
-  size_t                  eddandD1Count_;
+  size_t                  eomCount_;
+  size_t                  eomandD1Count_;
   uint8_t                 patchType_;
   bool                    isRoiPatch_;
   size_t                  roiIndex_;
@@ -1172,7 +1193,8 @@ class PCCPatch {
   std::vector<size_t>     neighboringPatches_;  // List of neighboring patch index
   std::vector<int16_t>    depthMap_;            // Depth map
   std::vector<uint8_t>    occupancyMap_;        // Occupancy map
-  std::vector<PCCPoint3D> borderPoints_;        // 3D points created from borders of the patch
+  std::vector<PCCPoint3D> borderPoints_;        // 3D points created from borders of
+                                                // the patch
 };
 
 class PatchBlockFiltering {
@@ -1222,9 +1244,9 @@ class PatchBlockFiltering {
   const std::vector<uint16_t>* geometryVideo_;
 };
 
-struct PCCEDDInfosPerPatch {
+struct PCCEOMInfosPerPatch {
   size_t patchIdx_;
-  size_t numOfEddPoints_;
+  size_t numOfEOMPoints_;
   size_t offset_;
 };
 
@@ -1233,12 +1255,12 @@ struct PCCEomPatch {
   size_t              v0_;
   size_t              sizeU_;
   size_t              sizeV_;
-  size_t              eddCount_;  // in this EomPatch
+  size_t              eomCount_;  // in this EomPatch
   std::vector<size_t> memberPatches;
-  std::vector<size_t> eddCountPerPatch;
+  std::vector<size_t> eomCountPerPatch;
 };
 
-struct PCCMissedPointsPatch {
+struct PCCRawPointsPatch {
   size_t                u1_;  // tangential shift
   size_t                v1_;  // bitangential shift
   size_t                d1_;  // depth shift
@@ -1257,9 +1279,9 @@ struct PCCMissedPointsPatch {
   std::vector<uint16_t> g_;
   std::vector<uint16_t> b_;
 
-  size_t numberOfEddPoints_;
-  size_t numberOfMps_;
-  size_t numberOfMpsColors_;
+  size_t numberOfEOMPoints_;
+  size_t numberOfRawPoints_;
+  size_t numberOfRawPointsColors_;
 
   // GPA.
   size_t preV0_;
@@ -1279,10 +1301,12 @@ struct PCCMissedPointsPatch {
   const size_t size() { return x_.size(); }
 
   const size_t sizeOfColor() { return r_.size(); }
-  void         setNumberOfMps( size_t numberOfMPs ) { numberOfMps_ = numberOfMPs; }
-  void         setNumberOfMpsColors( size_t numberOfMpsColors ) { numberOfMpsColors_ = numberOfMpsColors; }
-  const size_t getNumberOfMps() { return numberOfMps_; }
-  const size_t getNumberOfMpsColors() { return numberOfMpsColors_; }
+  void         setNumberOfRawPoints( size_t numberOfRawPoints ) { numberOfRawPoints_ = numberOfRawPoints; }
+  void         setNumberOfRawPointsColors( size_t numberOfRawPointsColors ) {
+    numberOfRawPointsColors_ = numberOfRawPointsColors;
+  }
+  const size_t getNumberOfRawPoints() { return numberOfRawPoints_; }
+  const size_t getNumberOfRawPointsColors() { return numberOfRawPointsColors_; }
 
   void resizeColor( const size_t size ) {
     r_.resize( size );
@@ -1295,18 +1319,18 @@ struct PCCMissedPointsPatch {
     b_.resize( size, val );
   }
   void reset() {
-    sizeU_               = 0;
-    sizeV_               = 0;
-    u0_                  = 0;
-    v0_                  = 0;
-    sizeV0_              = 0;
-    sizeU0_              = 0;
-    occupancyResolution_ = 0;
-    numberOfEddPoints_   = 0;
-    numberOfMps_         = 0;
-    numberOfMpsColors_   = 0;
-    preV0_               = 0;
-    tempV0_              = 0;
+    sizeU_                   = 0;
+    sizeV_                   = 0;
+    u0_                      = 0;
+    v0_                      = 0;
+    sizeV0_                  = 0;
+    sizeU0_                  = 0;
+    occupancyResolution_     = 0;
+    numberOfEOMPoints_       = 0;
+    numberOfRawPoints_       = 0;
+    numberOfRawPointsColors_ = 0;
+    preV0_                   = 0;
+    tempV0_                  = 0;
     occupancy_.resize( 0 );
     x_.resize( 0 );
     y_.resize( 0 );

@@ -51,6 +51,8 @@ struct PCCPatchSegmenter3Parameters {
   size_t           voxelDimensionRefineSegmentation_;
   size_t           searchRadiusRefineSegmentation_;
   size_t           occupancyResolution_;
+  bool             enablePatchSplitting_;
+  size_t           maxPatchSize_;
   size_t           quantizerSizeX_;
   size_t           quantizerSizeY_;
   size_t           minPointCountPerCCPatchSegmentation_;
@@ -58,12 +60,13 @@ struct PCCPatchSegmenter3Parameters {
   size_t           surfaceThickness_;
   size_t           EOMFixBitCount_;
   bool             EOMSingleLayerMode_;
+  size_t           mapCountMinus1_;
   size_t           minLevel_;
   size_t           maxAllowedDepth_;
-  double           maxAllowedDist2MissedPointsDetection_;
-  double           maxAllowedDist2MissedPointsSelection_;
+  double           maxAllowedDist2RawPointsDetection_;
+  double           maxAllowedDist2RawPointsSelection_;
   double           lambdaRefineSegmentation_;
-  bool             useEnhancedDeltaDepthCode_;
+  bool             useEnhancedOccupancyMapCode_;
   bool             absoluteD1_;
   bool             createSubPointCloud_;
   bool             surfaceSeparation_;
@@ -109,7 +112,7 @@ class PCCPatchSegmenter3 {
                             const PCCVector3D*          orientations,
                             const size_t                orientationCount,
                             std::vector<size_t>&        partition,
-                            const PCCVector3D           axis_weight );
+                            const PCCVector3D&          axisWeight );
   void initialSegmentation( const PCCPointSet3&         geometry,
                             const PCCNormalsGenerator3& normalsGen,
                             const PCCVector3D*          orientations,
@@ -132,6 +135,44 @@ class PCCPatchSegmenter3 {
                                      const size_t                      maxNNCount,
                                      const size_t                      radius );
 
+  bool colorSimilarity( PCCColor3B& colorD1candidate, PCCColor3B& colorD0, uint8_t threshold ) {
+    bool bSimilarity = ( std::abs( colorD0[0] - colorD1candidate[0] ) < threshold ) &&
+                       ( std::abs( colorD0[1] - colorD1candidate[1] ) < threshold ) &&
+                       ( std::abs( colorD0[2] - colorD1candidate[2] ) < threshold );
+    return bSimilarity;
+  }
+
+  int64_t colorDifference( PCCColor3B& D0_Color, PCCColor3B& D1_Color ) {
+    int32_t delta_R = int32_t( D0_Color[0] ) - int32_t( D1_Color[0] );
+    int32_t delta_G = int32_t( D0_Color[1] ) - int32_t( D1_Color[1] );
+    int32_t delta_B = int32_t( D0_Color[2] ) - int32_t( D1_Color[2] );
+    int64_t delta_e = delta_R * delta_R + delta_G * delta_G + delta_B * delta_B;
+    return delta_e;
+  }
+  void resampledPointcloud( std::vector<size_t>& pointCount,
+                            PCCPointSet3&        resampled,
+                            std::vector<size_t>& resampledPatchPartition,
+                            PCCPatch&            patch,
+                            size_t               patchIndex,
+                            bool                 multipleMaps,
+                            size_t               surfaceThickness,
+                            size_t               EOMFixBitCount,
+                            bool                 bIsAdditionalProjectionPlane,
+                            bool                 useEnhancedOccupancyMapCode,
+                            size_t               geometryBitDepth3D,
+                            bool                 createSubPointCloud,
+                            PCCPointSet3&        rec );
+
+  int16_t getPatchSurfaceThickness( const PCCPointSet3&      points,
+                                    PCCPatch&                patch,
+                                    size_t                   patchIndex,
+                                    std::vector<PCCColor3B>& frame_pcc_color,
+                                    std::vector<size_t>&     connectedComponent,
+                                    size_t                   surfaceThickness,
+                                    size_t                   projectionMode,
+                                    bool                     bIsAdditionalProjectionPlane,
+                                    size_t                   geometryBitDepth3D );
+
   void segmentPatches( const PCCPointSet3&                 points,
                        const size_t                        frameIndex,
                        const PCCKdTree&                    kdtree,
@@ -140,7 +181,7 @@ class PCCPatchSegmenter3 {
                        std::vector<PCCPatch>&              patches,
                        std::vector<size_t>&                patchPartition,
                        std::vector<size_t>&                resampledPatchPartition,
-                       std::vector<size_t>                 missedPoints,
+                       std::vector<size_t>                 rawPoints,
                        PCCPointSet3&                       resampled,
                        std::vector<PCCPointSet3>&          subPointCloud,
                        float&                              distanceSrcRec,
@@ -165,7 +206,7 @@ class PCCPatchSegmenter3 {
                                     const size_t                maxNNCount,
                                     const double                lambda,
                                     const size_t                iterationCount,
-                                    const size_t                voxelDimensionRefineSegmentation,
+                                    const size_t                voxDim,
                                     const size_t                searchRadiusRefineSegmentation,
                                     std::vector<size_t>&        partition );
 
@@ -221,45 +262,45 @@ class PCCPatchSegmenter3 {
     }
   }
 
-  void separateHighGradientPoints( const PCCPointSet3&               points,
-                                   const size_t                      additionalProjectionAxis,
-                                   const bool                        absoluteD1,
-                                   const PCCNormalsGenerator3&       normalsGen,
-                                   const PCCVector3D*                orientations,
-                                   const size_t                      orientationCount,
-                                   const size_t                      surfaceThickness,
-                                   const size_t                      geometryBitDepth3D,
-                                   const double                      minGradient,
-                                   const size_t                      minNumHighGradientPoints,
-                                   std::vector<size_t>&              partition,
-                                   std::vector<std::vector<size_t>>& adj,
-                                   std::vector<std::vector<size_t>>& connectedComponents );
-  void determinePatchOrientation( const size_t         additionalProjectionAxis,
-                                  const bool           absoluteD1,
-                                  bool&                bIsAdditionalProjectionPlane,
-                                  PCCPatch&            patch,
-                                  std::vector<size_t>& partition,
-                                  std::vector<size_t>& connectedComponent );
-  void generatePatchD0( const PCCPointSet3&  points,
-                        const size_t         geometryBitDepth3D,
-                        const bool           bIsAdditionalProjectionPlane,
-                        PCCPatch&            patch,
-                        std::vector<size_t>& connectedComponent );
-  void calculateGradient( const PCCPointSet3&               points,
-                          const std::vector<size_t>&        connectedComponent,
-                          const PCCNormalsGenerator3&       normalsGen,
-                          const PCCVector3D*                orientations,
-                          const size_t                      orientationCount,
-                          const size_t                      orgPartitionIdx,
-                          const size_t                      surfaceThickness,
-                          const size_t                      geometryBitDepth3D,
-                          const bool                        bIsAdditionalProjectionPlane,
-                          const double                      minGradient,
-                          const size_t                      minNumHighGradientPoints,
-                          PCCPatch&                         patch,
-                          std::vector<std::vector<size_t>>& adj,
-                          std::vector<std::vector<size_t>>& highGradientConnectedComponents,
-                          std::vector<bool>&                isRemoved );
+  void        separateHighGradientPoints( const PCCPointSet3&               points,
+                                          const size_t                      additionalProjectionAxis,
+                                          const bool                        absoluteD1,
+                                          const PCCNormalsGenerator3&       normalsGen,
+                                          const PCCVector3D*                orientations,
+                                          const size_t                      orientationCount,
+                                          const size_t                      surfaceThickness,
+                                          const size_t                      geometryBitDepth3D,
+                                          const double                      minGradient,
+                                          const size_t                      minNumHighGradientPoints,
+                                          std::vector<size_t>&              partition,
+                                          std::vector<std::vector<size_t>>& adj,
+                                          std::vector<std::vector<size_t>>& connectedComponents );
+  static void determinePatchOrientation( const size_t         additionalProjectionAxis,
+                                         const bool           absoluteD1,
+                                         bool&                bIsAdditionalProjectionPlane,
+                                         PCCPatch&            patch,
+                                         std::vector<size_t>& partition,
+                                         std::vector<size_t>& connectedComponent );
+  void        generatePatchD0( const PCCPointSet3&  points,
+                               const size_t         geometryBitDepth3D,
+                               const bool           bIsAdditionalProjectionPlane,
+                               PCCPatch&            patch,
+                               std::vector<size_t>& connectedComponent );
+  void        calculateGradient( const PCCPointSet3&               points,
+                                 const std::vector<size_t>&        connectedComponent,
+                                 const PCCNormalsGenerator3&       normalsGen,
+                                 const PCCVector3D*                orientations,
+                                 const size_t                      orientationCount,
+                                 const size_t                      orgPartitionIdx,
+                                 const size_t                      surfaceThickness,
+                                 const size_t                      geometryBitDepth3D,
+                                 const bool                        bIsAdditionalProjectionPlane,
+                                 const double                      minGradient,
+                                 const size_t                      minNumHighGradientPoints,
+                                 PCCPatch&                         patch,
+                                 std::vector<std::vector<size_t>>& adj,
+                                 std::vector<std::vector<size_t>>& highGradientConnectedComponents,
+                                 std::vector<bool>&                isRemoved );
 
   PCCVector3D orientations6[6] = {
       PCCVector3D( 1.0, 0.0, 0.0 ),  PCCVector3D( 0.0, 1.0, 0.0 ),  PCCVector3D( 0.0, 0.0, 1.0 ),
@@ -336,25 +377,21 @@ class Rect {
 
   Rect() { x_ = y_ = width_ = height_ = 0; }
   Rect( int x, int y, int w, int h ) {
-    this->x_ = x;
-    this->y_ = y;
-    width_   = w;
-    height_  = h;
+    x_      = x;
+    y_      = y;
+    width_  = w;
+    height_ = h;
   }
   int area() { return ( width_ * height_ ); }
 
   Rect operator&( const Rect& rhs ) {
     Rect c;
-    int  x1 = ( this->x_ > rhs.x_ ) ? this->x_ : rhs.x_;
-    int  y1 = ( this->y_ > rhs.y_ ) ? this->y_ : rhs.y_;
-    c.width_ =
-        ( ( ( this->x_ + this->width_ ) < ( rhs.x_ + rhs.width_ ) ) ? this->x_ + this->width_ : rhs.x_ + rhs.width_ ) -
-        x1;
-    c.height_ = ( ( ( this->y_ + this->height_ ) < ( rhs.y_ + rhs.height_ ) ) ? this->y_ + this->height_
-                                                                              : rhs.y_ + rhs.height_ ) -
-                y1;
-    c.x_ = x1;
-    c.y_ = y1;
+    int  x1   = ( x_ > rhs.x_ ) ? x_ : rhs.x_;
+    int  y1   = ( y_ > rhs.y_ ) ? y_ : rhs.y_;
+    c.width_  = ( ( ( x_ + width_ ) < ( rhs.x_ + rhs.width_ ) ) ? x_ + width_ : rhs.x_ + rhs.width_ ) - x1;
+    c.height_ = ( ( ( y_ + height_ ) < ( rhs.y_ + rhs.height_ ) ) ? y_ + height_ : rhs.y_ + rhs.height_ ) - y1;
+    c.x_      = x1;
+    c.y_      = y1;
     if ( c.width_ <= 0 || c.height_ <= 0 ) { c.x_ = c.y_ = c.width_ = c.height_ = 0; }
     return Rect( c );
   }

@@ -12,13 +12,14 @@ FILE(GLOB SRC include/*.h source/*.cpp
 
 INCLUDE_DIRECTORIES( include
                      ${CMAKE_SOURCE_DIR}/source/lib/PccLibCommon/include  
+                     ${CMAKE_SOURCE_DIR}/source/lib/PccLibBitstreamCommon/include 
                      ${CMAKE_SOURCE_DIR}/dependencies/tbb/include
                      ${CMAKE_SOURCE_DIR}/dependencies/arithmetic-coding/inc
                      ${CMAKE_SOURCE_DIR}/dependencies/nanoflann )
 
 ADD_LIBRARY( ${MYNAME} ${LINKER} ${SRC} )
 
-TARGET_LINK_LIBRARIES(${MYNAME} PccLibCommon )
+TARGET_LINK_LIBRARIES(${MYNAME} PccLibCommon PccLibBitstreamCommon )
 
 SET_TARGET_PROPERTIES( ${MYNAME} PROPERTIES LINKER_LANGUAGE CXX)
 

@@ -45,7 +45,6 @@ namespace pcc {
 
 class PCCContext;
 class PCCFrameContext;
-
 class PCCVideoEncoder {
  public:
   PCCVideoEncoder();
@@ -94,6 +93,8 @@ class PCCVideoEncoder {
     const std::string recRgbFileName =
         addVideoFormat( fileName + "_rec" + ".rgb", width, height, !use444CodecIo, nbyte == 2 ? "10" : "8" );
 
+    const std::string yuv444RecFileName = addVideoFormat( fileName + "_rec.yuv", width, height, false, "16" );
+
     const bool yuvVideo = colorSpaceConversionConfig.empty() || use444CodecIo;
     printf( "Encoder convert : yuvVideo = %d colorSpaceConversionConfig = %s \n", yuvVideo,
             colorSpaceConversionConfig.c_str() );
@@ -119,7 +120,8 @@ class PCCVideoEncoder {
           auto& destImage = video420.getFrame( frNum );
           destImage.resize( width, height );
 
-          // iterate the patch information and perform chroma down-sampling on each patch individually
+          // iterate the patch information and perform chroma down-sampling on
+          // each patch individually
           std::vector<PCCPatch> patches      = context.getPatches();
           std::vector<size_t>   blockToPatch = context.getBlockToPatch();
           for ( int patchIdx = 0; patchIdx <= patches.size(); patchIdx++ ) {
@@ -164,12 +166,14 @@ class PCCVideoEncoder {
                   // do nothing
                   continue;
                 } else {
-                  // search for the block that contains texture information and extend the block edge
+                  // search for the block that contains texture information and
+                  // extend the block edge
                   int              direction;
                   int              searchIndex;
                   std::vector<int> neighborIdx( 4, -1 );
                   std::vector<int> neighborDistance( 4, ( std::numeric_limits<int>::max )() );
-                  // looking for the neighboring block to the left of the current block
+                  // looking for the neighboring block to the left of the
+                  // current block
                   searchIndex = (int)j;
                   while ( searchIndex >= 0 ) {
                     if ( context.getBlockToPatch()[( i + patch_top / occupancyResolution ) *
@@ -181,7 +185,8 @@ class PCCVideoEncoder {
                     }
                     searchIndex--;
                   }
-                  // looking for the neighboring block to the right of the current block
+                  // looking for the neighboring block to the right of the
+                  // current block
                   searchIndex = (int)j;
                   while ( searchIndex < patch_width / occupancyResolution ) {
                     if ( context.getBlockToPatch()[( i + patch_top / occupancyResolution ) *
@@ -219,7 +224,8 @@ class PCCVideoEncoder {
                   }
                   // check if the candidate was found
                   assert( *( std::max )( neighborIdx.begin(), neighborIdx.end() ) > 0 );
-                  // now fill in the block with the edge value coming from the nearest neighbor
+                  // now fill in the block with the edge value coming from the
+                  // nearest neighbor
                   direction =
                       std::min_element( neighborDistance.begin(), neighborDistance.end() ) - neighborDistance.begin();
                   if ( direction == 0 ) {
@@ -342,7 +348,8 @@ class PCCVideoEncoder {
       } else {
         if ( colorSpaceConversionPath.empty() ) {
           printf( "Encoder convert : write420 with conversion \n" );
-          // if ( keepIntermediateFiles ) { video.write( srcRgbFileName, nbyte ); }
+          // if ( keepIntermediateFiles ) { video.write( srcRgbFileName, nbyte
+          // ); }
           if ( !video.write420( srcYuvFileName, nbyte, true, downsamplingFilter ) ) { return false; }
         } else {
           printf( "Encoder convert : write + hdrtools conversion \n" );
@@ -422,14 +429,14 @@ class PCCVideoEncoder {
         std::stringstream cmd;
         cmd << colorSpaceConversionPath << " -f " << inverseColorSpaceConversionConfig << " -p SourceFile=\""
             << recYuvFileName << "\""
-            << " -p OutputFile=\"" << recRgbFileName << "\""
+            << " -p OutputFile=\"" << yuv444RecFileName << "\""
             << " -p SourceWidth=" << width << " -p SourceHeight=" << height << " -p NumberOfFrames=" << frameCount;
         std::cout << cmd.str() << '\n';
         if ( int ret = pcc::system( cmd.str().c_str() ) ) {
           std::cout << "Error: can't run system command!" << std::endl;
           return ret;
         }
-        video.read( recRgbFileName, width, height, frameCount, nbyte );
+        video.read( yuv444RecFileName, width, height, frameCount, 2 );
       }
     }
     if ( !keepIntermediateFiles ) {
@@ -438,6 +445,7 @@ class PCCVideoEncoder {
       removeFile( srcRgbFileName );
       removeFile( recYuvFileName );
       removeFile( recRgbFileName );
+      removeFile( yuv444RecFileName );
     }
     return true;
   }

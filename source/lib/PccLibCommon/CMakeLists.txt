@@ -25,6 +25,7 @@ SOURCE_GROUP( cpp   FILES ${PROJECT_CPP_FILES} )
 SOURCE_GROUP( input FILES ${PROJECT_IN_FILES}  )
 
 INCLUDE_DIRECTORIES( include
+                     ${CMAKE_SOURCE_DIR}/source/lib/PccLibBitstreamCommon/include 
                      ${CMAKE_SOURCE_DIR}/dependencies/nanoflann
                      ${CMAKE_SOURCE_DIR}/dependencies/tbb/include
                      ${CMAKE_SOURCE_DIR}/dependencies/libmd5 )
@@ -33,6 +34,8 @@ ADD_LIBRARY( ${MYNAME} ${LINKER} ${SRC} ${PROJECT_INC_FILES} ${PROJECT_CPP_FILES
 IF( ENABLE_PAPI_PROFILING )
   TARGET_LINK_LIBRARIES(${MYNAME} ${CMAKE_SOURCE_DIR}/dependencies/papi/src/libpapi.a  )
 ENDIF()
+
+TARGET_LINK_LIBRARIES(${MYNAME} PccLibBitstreamCommon )
 
 SET_TARGET_PROPERTIES( ${MYNAME} PROPERTIES LINKER_LANGUAGE CXX)
 

@@ -31,7 +31,6 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 #include "PCCCommon.h"
-#include "PCCBitstream.h"
 #include "PCCSystem.h"
 #include "PCCVideo.h"
 
@@ -39,5 +38,5 @@
 
 using namespace pcc;
 
-PCCVideoDecoder::PCCVideoDecoder() {}
-PCCVideoDecoder::~PCCVideoDecoder() {}
+PCCVideoDecoder::PCCVideoDecoder()  = default;
+PCCVideoDecoder::~PCCVideoDecoder() = default;

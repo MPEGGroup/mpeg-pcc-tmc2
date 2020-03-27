@@ -10,6 +10,7 @@ FILE(GLOB SRC include/*.h source/*.cpp
 
 INCLUDE_DIRECTORIES( include
                      ${CMAKE_SOURCE_DIR}/source/lib/PccLibCommon/include  
+                     ${CMAKE_SOURCE_DIR}/source/lib/PccLibBitstreamCommon/include 
                      ${CMAKE_SOURCE_DIR}/dependencies/tbb/include
                      ${CMAKE_SOURCE_DIR}/dependencies/nanoflann )
 

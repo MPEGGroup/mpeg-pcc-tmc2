@@ -30,47 +30,17 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+#ifndef PCC_BITSTREAM_APP_PARSER_H
+#define PCC_BITSTREAM_APP_PARSER_H
 
-#ifndef PCCVideoBitstream_h
-#define PCCVideoBitstream_h
+#define _CRT_SECURE_NO_WARNINGS
 
-#include "PCCCommon.h"
-namespace pcc {
+#include "PCCBitstreamCommon.h"
+#include "PCCHighLevelSyntax.h"
+#include "PCCBitstream.h"
+#include "PCCBitstreamReader.h"
 
-class PCCVideoBitstream {
- public:
-  PCCVideoBitstream( PCCVideoType type ) : type_( type ) { data_.clear(); }
-  ~PCCVideoBitstream() { data_.clear(); }
+void usage();
+int  parserPccBin( const std::string& filename );
 
-  void                  resize( size_t size ) { data_.resize( size ); }
-  std::vector<uint8_t>& vector() { return data_; }
-  uint8_t*              buffer() { return data_.data(); }
-  size_t                size() { return (size_t)data_.size(); }
-  PCCVideoType          type() { return type_; }
-
-  void trace() { std::cout << toString( type_ ) << " ->" << size() << " B " << std::endl; }
-
-  std::string getExtension() {
-    switch ( type_ ) {
-      case VIDEO_OCCUPANCY: return std::string( "occupancy" ); break;
-      case VIDEO_GEOMETRY: return std::string( "geometry" ); break;
-      case VIDEO_GEOMETRY_D0: return std::string( "geometryD0" ); break;
-      case VIDEO_GEOMETRY_D1: return std::string( "geometryD1" ); break;
-      case VIDEO_GEOMETRY_RAW: return std::string( "geomteryRaw" ); break;
-      case VIDEO_TEXTURE: return std::string( "texture" ); break;
-      case VIDEO_TEXTURE_RAW: return std::string( "textureRaw" ); break;
-      case VIDEO_TEXTURE_T0: return std::string( "textureT0" ); break;
-      case VIDEO_TEXTURE_T1: return std::string( "textureT1" ); break;
-      case NUM_VIDEO_TYPE: return std::string( "ERROR" ); break;
-    }
-    return std::string( "unknown" );
-  }
-
- private:
-  std::vector<uint8_t> data_;
-  PCCVideoType         type_;
-};
-
-}  // namespace pcc
-
-#endif /* PCCBitstream_h */
+#endif /* PCC_BITSTREAM_APP_PARSER_H */

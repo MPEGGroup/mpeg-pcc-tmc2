@@ -242,12 +242,12 @@ Void xReadCode (UInt uiLength, UInt& rValue)
 Void xReadRbspTrailingBits()
 {
   UInt bit;
-  READ_FLAG( bit, "rbsp_stop_one_bit");
+  READ_FLAG( bit, "Rbsp_stop_one_bit");
   assert (bit==1);
   Int cnt = 0;
   while (m_pcBitstream.isAlign())
   {
-    READ_FLAG( bit, "rbsp_alignment_zero_bit");
+    READ_FLAG( bit, "Rbsp_alignment_zero_bit");
     assert (bit==0);
     cnt++;
   }

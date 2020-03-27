@@ -1,0 +1,7 @@
+#define TMC2_VERSION_MAJOR @TMC2_VERSION_MAJOR@
+#define TMC2_VERSION_MINOR @TMC2_VERSION_MINOR@
+
+/* Define to 1 if getrusage(2) is present */
+#cmakedefine01 HAVE_GETRUSAGE
+
+#cmakedefine ENABLE_PAPI_PROFILING

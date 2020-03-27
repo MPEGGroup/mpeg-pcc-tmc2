@@ -45,16 +45,14 @@ PCCFrameContext::PCCFrameContext() :
     MPGeoHeight_( 0 ),
     MPAttWidth_( 0 ),
     MPAttHeight_( 0 ),
-    numberOfMissedPointsPatches_( 0 ),
-    totalNumberOfMissedPoints_( 0 ),
-    totalNumberOfEddPoints_( 0 ),
+    numberOfRawPointsPatches_( 0 ),
+    totalNumberOfRawPoints_( 0 ),
+    totalNumberOfEOMPoints_( 0 ),
     totalNumberOfRegularPoints_( 0 ),
     globalPatchCount_( 0 ),
     geometry3dCoordinatesBitdepth_( 10 ),
     pointLocalReconstructionNumber_( 0 ),
-    losslessGeo_( false ),
-    losslessGeo444_( false ),
-    useMissedPointsSeparateVideo_( false ),
+    useRawPointsSeparateVideo_( false ),
     rawPatchEnabledFlag_( false ),
     geometry2dNorminalBitdepth_( 8 ) {
   log2PatchQuantizerSizeX_         = 4;
@@ -81,7 +79,7 @@ void PCCFrameContext::setRefAFOCList( std::vector<std::vector<size_t>>& list ) {
   size_t listSize = ( std::min )( refAFOCList_.size(), list.size() );
   for ( size_t i = 0; i < listSize; i++ ) {
     size_t refSize = ( std::min )( refAFOCList_[i].size(), list[i].size() );
-    for ( size_t j = 0; j < refSize; j++ ) refAFOCList_[i][j] = list[i][j];
+    for ( size_t j = 0; j < refSize; j++ ) { refAFOCList_[i][j] = list[i][j]; }
   }
 }
 void PCCFrameContext::setRefAFOCList( PCCContext& context ) {
@@ -92,9 +90,9 @@ void PCCFrameContext::setRefAFOCList( PCCContext& context ) {
     size_t maxRefNum = context.getSizeOfRefAtlasFrameList( i );
     for ( size_t j = 0; j < maxRefNum; j++ ) {
       refPOC = int( index_ ) + int( context.getRefAtlasFrame( i, j ) );
-      if ( refPOC >= 0 ) refAFOCList_[i].push_back( refPOC );
+      if ( refPOC >= 0 ) { refAFOCList_[i].push_back( refPOC ); }
     }
-    if ( refAFOCList_[i].size() == 0 ) refAFOCList_[i].push_back( 255 );
+    if ( refAFOCList_[i].empty() ) { refAFOCList_[i].push_back( 255 ); }
   }
 }
 
@@ -105,14 +103,15 @@ void PCCFrameContext::constructAtghRefListStruct( PCCContext& context, AtlasTile
   auto&  asps   = context.getAtlasSequenceParameterSet( aspsId );
   atgh.setAtghRefAtlasFrameListSpsFlag( true );                       // using ASPS refList
   atgh.setAtghRefAtlasFrameListIdx( getActiveRefAtlasFrameIndex() );  // atgh.atgh_ref_atlas_frame_list_idx
-  atgh.setRefListStruct(
-      asps.getRefListStruct( atgh.getAtghRefAtlasFrameListIdx() ) );  // copied to atgh's refList, not signalled
+  atgh.setRefListStruct( asps.getRefListStruct( atgh.getAtghRefAtlasFrameListIdx() ) );  // copied to atgh's refList,
+                                                                                         // not signalled
 
   if ( index_ <= afps.getAfpsNumRefIdxDefaultActiveMinus1() ) {  // 3
     atgh.setAtghNumRefIdxActiveOverrideFlag( true );
     atgh.setAtghNumRefIdxActiveMinus1( index_ == 0 ? 0 : ( index_ - 1 ) );
-  } else
+  } else {
     atgh.setAtghNumRefIdxActiveOverrideFlag( false );
+  }
 }
 
 void PCCFrameContext::allocOneLayerData() {
@@ -124,18 +123,18 @@ void PCCFrameContext::printBlockToPatch( const size_t resolution ) {
 }
 void PCCFrameContext::printPatch() {
   size_t index = 0;
-  printf( "Patch %4lu:", patches_.size() );
+  printf( "Patch %4zu:", patches_.size() );
   for ( auto& patch : patches_ ) {
-    printf( "  Patch[%4lu]: ", index++ );
+    printf( "  Patch[%4zu]: ", index++ );
     patch.print();
   }
   fflush( stdout );
 }
 void PCCFrameContext::printPatchDecoder() {
   size_t index = 0;
-  printf( "Patch %4lu:", patches_.size() );
+  printf( "Patch %4zu:", patches_.size() );
   for ( auto& patch : patches_ ) {
-    printf( "  Patch[%4lu]: ", index++ );
+    printf( "  Patch[%4zu]: ", index++ );
     patch.printDecoder();
   }
   fflush( stdout );

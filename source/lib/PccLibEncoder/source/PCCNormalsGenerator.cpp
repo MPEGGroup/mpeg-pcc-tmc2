@@ -63,7 +63,7 @@ void PCCNormalsGenerator3::compute( const PCCPointSet3&                   pointC
   nbThread_ = nbThread;
   init( pointCloud.getPointCount(), params );
   computeNormals( pointCloud, kdtree, params );
-  if ( params.numberOfIterationsInNormalSmoothing_ ) { smoothNormals( pointCloud, kdtree, params ); }
+  if ( params.numberOfIterationsInNormalSmoothing_ != 0u ) { smoothNormals( pointCloud, kdtree, params ); }
   orientNormals( pointCloud, kdtree, params );
 }
 void PCCNormalsGenerator3::computeNormal( const size_t                          index,
@@ -71,8 +71,12 @@ void PCCNormalsGenerator3::computeNormal( const size_t                          
                                           const PCCKdTree&                      kdtree,
                                           const PCCNormalsGenerator3Parameters& params,
                                           PCCNNResult&                          nNResult ) {
-  PCCVector3D bary( pointCloud[index][0], pointCloud[index][1], pointCloud[index][2] ), normal( 0.0 ), eigenval( 0.0 );
-  PCCMatrix3D covMat, Q, D;
+  PCCVector3D bary( pointCloud[index][0], pointCloud[index][1], pointCloud[index][2] );
+  PCCVector3D normal( 0.0 );
+  PCCVector3D eigenval( 0.0 );
+  PCCMatrix3D covMat;
+  PCCMatrix3D Q;
+  PCCMatrix3D D;
   kdtree.search( pointCloud[index], params.numberOfNearestNeighborsInNormalEstimation_, nNResult );
   if ( nNResult.count() > 1 ) {
     bary = 0.0;
@@ -157,7 +161,7 @@ void PCCNormalsGenerator3::computeNormals( const PCCPointSet3&                  
   std::vector<size_t> subRanges;
   const size_t        chunckCount = 64;
   PCCDivideRange( 0, pointCount, chunckCount, subRanges );
-  tbb::task_arena limited( (int)nbThread_ );
+  tbb::task_arena limited( static_cast<int>( nbThread_ ) );
   limited.execute( [&] {
     tbb::parallel_for( size_t( 0 ), subRanges.size() - 1, [&]( const size_t i ) {
       const size_t start = subRanges[i];
@@ -177,21 +181,22 @@ void PCCNormalsGenerator3::orientNormals( const PCCPointSet3&                   
     PCCNNResult  nNResult;
     visited_.resize( pointCount );
     std::fill( visited_.begin(), visited_.end(), 0 );
-    PCCNNQuery3 nNQuery  = {PCCPoint3D( 0.0 ), (float)params.radiusNormalOrientation_ * params.radiusNormalOrientation_,
+    PCCNNQuery3 nNQuery             = {PCCPoint3D( 0.0 ),
+                           static_cast<float>( params.radiusNormalOrientation_ ) * params.radiusNormalOrientation_,
                            params.numberOfNearestNeighborsInNormalOrientation_};
-    PCCNNQuery3 nNQuery2 = {PCCPoint3D( 0.0 ), ( std::numeric_limits<float>::max )(),
+    PCCNNQuery3 nNQuery2            = {PCCPoint3D( 0.0 ), ( std::numeric_limits<float>::max )(),
                             params.numberOfNearestNeighborsInNormalOrientation_};
     size_t      processedPointCount = 0;
     for ( size_t ptIndex = 0; ptIndex < pointCount; ++ptIndex ) {
-      if ( !visited_[ptIndex] ) {
+      if ( visited_[ptIndex] == 0u ) {
         visited_[ptIndex] = 1;
         ++processedPointCount;
         size_t      numberOfNormals;
         PCCVector3D accumulatedNormals;
         addNeighbors( uint32_t( ptIndex ), pointCloud, kdtree, nNQuery2, nNResult, accumulatedNormals,
                       numberOfNormals );
-        if ( !numberOfNormals ) {
-          if ( ptIndex ) {
+        if ( numberOfNormals == 0u ) {
+          if ( ptIndex != 0u ) {
             accumulatedNormals = normals_[ptIndex - 1];
           } else {
             accumulatedNormals = ( params.viewPoint_ - pointCloud[ptIndex] );
@@ -202,7 +207,7 @@ void PCCNormalsGenerator3::orientNormals( const PCCPointSet3&                   
           PCCWeightedEdge edge = edges_.top();
           edges_.pop();
           uint32_t current = edge.end_;
-          if ( !visited_[current] ) {
+          if ( visited_[current] == 0u ) {
             visited_[current] = 1;
             ++processedPointCount;
             if ( normals_[edge.start_] * normals_[current] < 0.0 ) { normals_[current] = -normals_[current]; }
@@ -213,14 +218,15 @@ void PCCNormalsGenerator3::orientNormals( const PCCPointSet3&                   
     }
     size_t negNormalCount = 0;
     for ( size_t ptIndex = 0; ptIndex < pointCount; ++ptIndex ) {
-      negNormalCount += ( normals_[ptIndex] * ( params.viewPoint_ - pointCloud[ptIndex] ) < 0.0 );
+      negNormalCount +=
+          static_cast<unsigned long long>( normals_[ptIndex] * ( params.viewPoint_ - pointCloud[ptIndex] ) < 0.0 );
     }
     if ( negNormalCount > ( pointCount + 1 ) / 2 ) {
       for ( size_t ptIndex = 0; ptIndex < pointCount; ++ptIndex ) { normals_[ptIndex] = -normals_[ptIndex]; }
     }
   } else if ( params.orientationStrategy_ == PCC_NORMALS_GENERATOR_ORIENTATION_VIEW_POINT ) {
     const size_t    pointCount = pointCloud.getPointCount();
-    tbb::task_arena limited( (int)nbThread_ );
+    tbb::task_arena limited( static_cast<int>( nbThread_ ) );
     limited.execute( [&] {
       tbb::parallel_for( size_t( 0 ), pointCount, [&]( const size_t ptIndex ) {
         if ( normals_[ptIndex] * ( params.viewPoint_ - pointCloud[ptIndex] ) < 0.0 ) {
@@ -247,8 +253,8 @@ void PCCNormalsGenerator3::addNeighbors( const uint32_t      current,
   PCCWeightedEdge newEdge;
   uint32_t        index;
   for ( size_t i = 0; i < nNResult.count(); ++i ) {
-    index = (uint32_t)nNResult.indices( i );
-    if ( !visited_[index] ) {
+    index = static_cast<uint32_t>( nNResult.indices( i ) );
+    if ( visited_[index] == 0u ) {
       newEdge.weight_ = fabs( normals_[current] * normals_[index] );
       newEdge.end_    = index;
       newEdge.start_  = current;
@@ -265,13 +271,15 @@ void PCCNormalsGenerator3::smoothNormals( const PCCPointSet3&                   
   const double        w2         = params.weightNormalSmoothing_;
   const double        w0         = ( 1 - w2 );
   const size_t        pointCount = pointCloud.getPointCount();
-  PCCVector3D         n0, n1, n2;
+  PCCVector3D         n0;
+  PCCVector3D         n1;
+  PCCVector3D         n2;
   std::vector<size_t> subRanges;
   const size_t        chunckCount = 64;
   PCCDivideRange( 0, pointCount, chunckCount, subRanges );
   const double radius = params.radiusNormalSmoothing_ * params.radiusNormalSmoothing_;
   for ( size_t it = 0; it < params.numberOfIterationsInNormalSmoothing_; ++it ) {
-    tbb::task_arena limited( (int)nbThread_ );
+    tbb::task_arena limited( static_cast<int>( nbThread_ ) );
     limited.execute( [&] {
       tbb::parallel_for( size_t( 0 ), subRanges.size() - 1, [&]( const size_t i ) {
         const size_t start = subRanges[i];

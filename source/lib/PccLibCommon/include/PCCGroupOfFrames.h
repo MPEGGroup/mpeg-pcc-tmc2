@@ -41,11 +41,12 @@ class PCCPointSet3;
 class PCCGroupOfFrames {
  public:
   PCCGroupOfFrames();
+  PCCGroupOfFrames( size_t value );
   ~PCCGroupOfFrames();
 
   void                clear() { frames_.clear(); }
   size_t              size() const { return frames_.size(); }
-  void                resize( size_t n ) { frames_.resize( n ); }
+  void                setFrameCount( size_t n ) { frames_.resize( n ); }
   const PCCPointSet3& operator[]( const size_t index ) const {
     assert( index < frames_.size() );
     return frames_[index];
@@ -58,13 +59,13 @@ class PCCGroupOfFrames {
   std::vector<PCCPointSet3>::iterator begin() { return frames_.begin(); }
   std::vector<PCCPointSet3>::iterator end() { return frames_.end(); }
 
-  bool load( const std::string       uncompressedDataPath,
+  bool load( const std::string&      uncompressedDataPath,
              const size_t            startFrameNumber,
              const size_t            endFrameNumber,
              const PCCColorTransform colorTransform,
              const bool              readNormals = false );
 
-  bool write( const std::string reconstructedDataPath, size_t& frameNumber );
+  bool write( const std::string& reconstructedDataPath, size_t& frameNumber );
 
  private:
   std::vector<PCCPointSet3> frames_;

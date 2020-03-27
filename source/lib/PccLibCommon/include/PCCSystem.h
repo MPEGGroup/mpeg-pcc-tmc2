@@ -32,6 +32,7 @@
  */
 #pragma once
 
+#include "PCCCommon.h"
 #ifndef _WIN32
 #include <cstdlib>
 #endif

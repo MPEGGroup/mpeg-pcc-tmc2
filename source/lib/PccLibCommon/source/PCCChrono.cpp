@@ -72,7 +72,8 @@ pcc::chrono::utime_children_clock::time_point pcc::chrono::utime_children_clock:
 #if _WIN32
 pcc::chrono::utime_self_clock::time_point pcc::chrono::utime_self_clock::now() noexcept {
   HANDLE   hProcess = GetCurrentProcess();
-  FILETIME dummy, userTime;
+  FILETIME dummy;
+  FILETIME userTime;
 
   GetProcessTimes( hProcess, &dummy, &dummy, &dummy, &userTime );
 

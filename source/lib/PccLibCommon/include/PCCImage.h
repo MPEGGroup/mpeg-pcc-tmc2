@@ -91,9 +91,7 @@ class ChromaSampler {
            (float)( 0.14630826357715 * 512 ), (float)( 0.45417830962846 * 512 ), (float)( 0.45417830962846 * 512 ),
            (float)( 0.14630826357715 * 512 ), (float)( -0.08189331229717 * 512 ), (float)( -0.05254456550808 * 512 ),
            (float)( 0.03519540819902 * 512 ), (float)( 0.02360533018213 * 512 ), (float)( -0.01539537217249 * 512 ),
-           (float)( -0.00945406160902 * 512 )
-
-          },
+           (float)( -0.00945406160902 * 512 )},
           +256.0,
           9.0}},
         {// 5 DF_WCS
@@ -557,9 +555,25 @@ class PCCImage {
       floatYUVToYUV( YUV420[0], YUV420T[0], 0, nbyte );
       floatYUVToYUV( YUV420[1], YUV420T[1], 1, nbyte );
       floatYUVToYUV( YUV420[2], YUV420T[2], 1, nbyte );
-      outfile.write( (const char*)( YUV420T[0].data() ), width_ * height_ * ( nbyte == 1 ? 1 : sizeof( T ) ) );
-      outfile.write( (const char*)( YUV420T[1].data() ), width_ * height_ * ( nbyte == 1 ? 1 : sizeof( T ) ) / 4 );
-      outfile.write( (const char*)( YUV420T[2].data() ), width_ * height_ * ( nbyte == 1 ? 1 : sizeof( T ) ) / 4 );
+      size_t pixCnt = width_ * height_;
+      if ( nbyte == sizeof( T ) ) {
+        outfile.write( (const char*)( YUV420T[0].data() ), pixCnt * sizeof( T ) );
+        outfile.write( (const char*)( YUV420T[1].data() ), ( pixCnt * sizeof( T ) ) / 4 );
+        outfile.write( (const char*)( YUV420T[2].data() ), ( pixCnt * sizeof( T ) ) / 4 );
+      } else {
+        assert( nbyte < sizeof( T ) );
+        // Only relevant case is nbyte equal to 1 and T equal to 2.
+        std::vector<uint8_t> YUV8[3];
+        YUV8[0].resize( pixCnt );
+        YUV8[1].resize( pixCnt / 4 );
+        YUV8[2].resize( pixCnt / 4 );
+        for ( size_t k = 0; k < pixCnt; ++k ) { YUV8[0][k] = static_cast<uint8_t>( YUV420T[0][k] ); }
+        for ( size_t k = 0; k < pixCnt / 4; ++k ) { YUV8[1][k] = static_cast<uint8_t>( YUV420T[1][k] ); }
+        for ( size_t k = 0; k < pixCnt / 4; ++k ) { YUV8[2][k] = static_cast<uint8_t>( YUV420T[2][k] ); }
+        outfile.write( (const char*)( YUV8[0].data() ), pixCnt );
+        outfile.write( (const char*)( YUV8[1].data() ), pixCnt / 4 );
+        outfile.write( (const char*)( YUV8[2].data() ), pixCnt / 4 );
+      }
     } else {
       if ( nbyte == 1 ) {
         std::vector<uint8_t> channels[N];
@@ -610,17 +624,29 @@ class PCCImage {
   }
   bool write( std::ofstream& outfile, const size_t nbyte ) const {
     if ( !outfile.good() ) { return false; }
-    if ( nbyte == 1 ) {
-      std::vector<uint8_t> channels[N];
-      for ( size_t i = 0; i < N; i++ ) {
-        channels[i].resize( channels_[i].size() );
-        ( std::copy )( channels_[i].begin(), channels_[i].end(), channels[i].begin() );
+    if ( nbyte == sizeof( T ) ) {
+      if ( nbyte == 1 ) {
+        std::vector<uint8_t> channels[N];
+        for ( size_t i = 0; i < N; i++ ) {
+          channels[i].resize( channels_[i].size() );
+          ( std::copy )( channels_[i].begin(), channels_[i].end(), channels[i].begin() );
+        }
+        const size_t byteCount = width_ * height_;
+        for ( const auto& channel : channels ) { outfile.write( (const char*)( channel.data() ), byteCount ); }
+      } else {
+        const size_t byteCount = width_ * height_ * sizeof( T );
+        for ( const auto& channel : channels_ ) { outfile.write( (const char*)( channel.data() ), byteCount ); }
       }
-      const size_t byteCount = width_ * height_;
-      for ( const auto& channel : channels ) { outfile.write( (const char*)( channel.data() ), byteCount ); }
     } else {
-      const size_t byteCount = width_ * height_ * sizeof( T );
-      for ( const auto& channel : channels_ ) { outfile.write( (const char*)( channel.data() ), byteCount ); }
+      assert( nbyte < sizeof( T ) );
+      // Only relevant case is nbyte equal to 1 and T equal to 2.
+      size_t               pixCnt = width_ * height_;
+      std::vector<uint8_t> YUV8[3];
+      for ( size_t i = 0; i < N; i++ ) { YUV8[i].resize( pixCnt ); }
+      for ( size_t i = 0; i < N; i++ ) {
+        for ( size_t k = 0; k < pixCnt; ++k ) { YUV8[i][k] = static_cast<uint8_t>( channels_[i][k] ); }
+        outfile.write( (const char*)( YUV8[i].data() ), pixCnt );
+      }
     }
     return true;
   }
@@ -644,25 +670,27 @@ class PCCImage {
       size_t             widthChroma  = width_ / 2;
       size_t             heightChroma = height_ / 2;
       std::vector<float> RGB444[3], YUV444[3], YUV420[3];
-      std::vector<T>     YUV420T[3];
-      ChromaSampler      chromaSampler;
+      // TODO: currently only handles nbyte equal to 1
+      std::vector<uint8_t> YUV420T[3];
+      ChromaSampler        chromaSampler;
       YUV420T[0].resize( width_ * height_ );
       YUV420T[1].resize( widthChroma * heightChroma );
       YUV420T[2].resize( widthChroma * heightChroma );
-      infile.read( (char*)( YUV420T[0].data() ), width_ * height_ * ( nbyte == 1 ? 1 : sizeof( T ) ) );
-      infile.read( (char*)( YUV420T[1].data() ), widthChroma * heightChroma * ( nbyte == 1 ? 1 : sizeof( T ) ) );
-      infile.read( (char*)( YUV420T[2].data() ), widthChroma * heightChroma * ( nbyte == 1 ? 1 : sizeof( T ) ) );
+      infile.read( (char*)( YUV420T[0].data() ), width_ * height_ * nbyte );
+      infile.read( (char*)( YUV420T[1].data() ), widthChroma * heightChroma * nbyte );
+      infile.read( (char*)( YUV420T[2].data() ), widthChroma * heightChroma * nbyte );
       YUVtoFloatYUV( YUV420T[0], YUV420[0], 0, nbyte );
       YUVtoFloatYUV( YUV420T[1], YUV420[1], 1, nbyte );
       YUVtoFloatYUV( YUV420T[2], YUV420[2], 1, nbyte );
       copy( YUV420[0], YUV444[0] );
       chromaSampler.upsampling( YUV420[1], YUV444[1], widthChroma, heightChroma, nbyte == 1 ? 255 : 1023, filter );
       chromaSampler.upsampling( YUV420[2], YUV444[2], widthChroma, heightChroma, nbyte == 1 ? 255 : 1023, filter );
-      convertYUVToRGB( YUV444[0], YUV444[1], YUV444[2], RGB444[0], RGB444[1], RGB444[2] );
-      floatRGBToRGB( RGB444[0], channels_[0], nbyte );
-      floatRGBToRGB( RGB444[1], channels_[1], nbyte );
-      floatRGBToRGB( RGB444[2], channels_[2], nbyte );
+      floatYUVToYUV( YUV444[0], channels_[0], 0, 2 );
+      floatYUVToYUV( YUV444[1], channels_[1], 1, 2 );
+      floatYUVToYUV( YUV444[2], channels_[2], 1, 2 );
     } else {
+      // TODO: This clause may need to be fixed when nbyte is equal to 1 and T
+      // is equal to 2.
       if ( nbyte == 1 ) {
         std::vector<uint8_t> channels[N];
         for ( size_t i = 0; i < N; i++ ) { channels[i].resize( channels_[i].size() ); }
@@ -719,17 +747,29 @@ class PCCImage {
   bool read( std::ifstream& infile, const size_t sizeU0, const size_t sizeV0, const size_t nbyte ) {
     if ( !infile.good() ) { return false; }
     resize( sizeU0, sizeV0 );
-    if ( nbyte == 1 ) {
-      std::vector<uint8_t> channels[N];
-      for ( size_t i = 0; i < N; i++ ) { channels[i].resize( channels_[i].size() ); }
-      const size_t byteCount = width_ * height_;
-      for ( auto& channel : channels ) { infile.read( (char*)( channel.data() ), byteCount ); }
-      for ( size_t i = 0; i < N; i++ ) {
-        ( std::copy )( channels[i].begin(), channels[i].end(), channels_[i].begin() );
+    if ( nbyte == sizeof( T ) ) {
+      if ( nbyte == 1 ) {
+        std::vector<uint8_t> channels[N];
+        for ( size_t i = 0; i < N; i++ ) { channels[i].resize( channels_[i].size() ); }
+        const size_t byteCount = width_ * height_;
+        for ( auto& channel : channels ) { infile.read( (char*)( channel.data() ), byteCount ); }
+        for ( size_t i = 0; i < N; i++ ) {
+          ( std::copy )( channels[i].begin(), channels[i].end(), channels_[i].begin() );
+        }
+      } else {
+        const size_t byteCount = width_ * height_ * sizeof( T );
+        for ( auto& channel : channels_ ) { infile.read( (char*)( channel.data() ), byteCount ); }
       }
     } else {
-      const size_t byteCount = width_ * height_ * sizeof( T );
-      for ( auto& channel : channels_ ) { infile.read( (char*)( channel.data() ), byteCount ); }
+      assert( nbyte < sizeof( T ) );
+      // Only relevant case is nbyte equal to 1 and T equal to 2.
+      size_t               pixCnt = width_ * height_;
+      std::vector<uint8_t> YUV8[3];
+      for ( size_t i = 0; i < N; i++ ) { YUV8[i].resize( pixCnt ); }
+      for ( size_t i = 0; i < N; i++ ) {
+        infile.read( (char*)( YUV8[i].data() ), pixCnt );
+        for ( size_t k = 0; k < pixCnt; ++k ) { channels_[i][k] = static_cast<T>( YUV8[i][k] ); }
+      }
     }
     return true;
   }
@@ -883,22 +923,28 @@ class PCCImage {
   static inline float fMin( float a, float b ) { return ( ( a ) < ( b ) ) ? ( a ) : ( b ); }
   static inline float fMax( float a, float b ) { return ( ( a ) > ( b ) ) ? ( a ) : ( b ); }
   static inline float fClip( float x, float low, float high ) { return fMin( fMax( x, low ), high ); }
-  void                floatYUVToYUV( const std::vector<float>& src,
-                                     std::vector<T>&           dst,
-                                     const bool                chroma,
-                                     const size_t              nbyte ) const {
+
+  // TODO: This currently can't handle 10-bit. A new parameter is needed.
+  void floatYUVToYUV( const std::vector<float>& src,
+                      std::vector<T>&           dst,
+                      const bool                chroma,
+                      const size_t              nbyte ) const {
     size_t count = src.size();
     dst.resize( count );
-    double offset = chroma ? nbyte == 1 ? 128. : 512. : 0;
-    double scale  = nbyte == 1 ? 255. : 1023.;
+    // double offset = chroma ? nbyte == 1 ? 128. : 512. : 0;
+    // double scale  = nbyte == 1 ? 255. : 1023.;
+    double offset = chroma ? nbyte == 1 ? 128. : 32768. : 0;
+    double scale  = nbyte == 1 ? 255. : 65535.;
     for ( size_t i = 0; i < count; i++ ) {
       dst[i] = static_cast<T>( fClip( std::round( (float)( scale * (double)src[i] + offset ) ), 0.f, (float)scale ) );
     }
   }
-  void YUVtoFloatYUV( const std::vector<T>& src,
-                      std::vector<float>&   dst,
-                      const bool            chroma,
-                      const size_t          nbBytes ) const {
+
+  // TODO: Generalize to vector<T>
+  void YUVtoFloatYUV( const std::vector<uint8_t>& src,
+                      std::vector<float>&         dst,
+                      const bool                  chroma,
+                      const size_t                nbBytes ) const {
     size_t count = src.size();
     dst.resize( count );
     float    minV   = chroma ? -0.5f : 0.f;
