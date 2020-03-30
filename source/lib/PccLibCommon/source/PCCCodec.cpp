@@ -1110,7 +1110,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                        reconstr
                     eomCode = symbol | ( 1 << bits );
                     d1pos   = ( bits );
                   }
-                } else {  // params.mapCountMinus1_ == 0                    
+                } else {  // params.mapCountMinus1_ == 0
                   eomCode = ( 1 << params.EOMFixBitCount_ ) - occupancyMap[indx];
                 }
                 PCCPoint3D point1( point0 );
@@ -1268,9 +1268,10 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                        reconstr
       // Add point GPS from rawPointsPatch without inserting to pointToPixel
       size_t numberOfRawPointsPatches = frame.getNumberOfRawPointsPatches();
       for ( int j = 0; j < numberOfRawPointsPatches; j++ ) {
-        auto&  rawPointsPatch = frame.getRawPointsPatch( j );
-        size_t sizeofRawPoints      = rawPointsPatch.getNumberOfRawPoints();
-        if ( params.rawPointColorFormat_ == COLOURFORMAT444 ) {
+        auto&  rawPointsPatch  = frame.getRawPointsPatch( j );
+        size_t sizeofRawPoints = rawPointsPatch.getNumberOfRawPoints();
+        if ( 0 ) {  // yo- the geometry is always coded with YUV 420 format. So the COLOURFORMAT444 is impossible
+                    // without separate auxiliary video
           for ( int i = 0; i < sizeofRawPoints; i++ ) {
             PCCVector3D point0;
             point0[0]               = rawPointsPatch.x_[i] + rawPointsPatch.u1_;
@@ -1315,7 +1316,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                        reconstr
         size_t ores           = rawPointsPatch.occupancyResolution_;
         rawPointsPatch.sizeV_ = rawPointsPatch.sizeV0_ * ores;
         rawPointsPatch.sizeU_ = rawPointsPatch.sizeU0_ * ores;
-        if ( params.rawPointColorFormat_ == COLOURFORMAT444 ) {
+        if ( 0 ) {  // yo- => only 420 format for geometry code => use geometry CodecId()
           for ( size_t v0 = 0; v0 < rawPointsPatch.sizeV0_; ++v0 ) {
             for ( size_t u0 = 0; u0 < rawPointsPatch.sizeU0_; ++u0 ) {
               for ( size_t v1 = 0; v1 < rawPointsPatch.occupancyResolution_; ++v1 ) {
@@ -2394,8 +2395,17 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
     if ( ( sps.getRawPatchEnabledFlag( 0 ) || lossyRawPointsPatch ) && useRawPointsSeparateVideo ) {
       std::vector<PCCColor3B>& mpsTextures = frame.getRawPointsTextures();
       std::vector<PCCColor3B>& eomTextures = frame.getEOMTextures();
-      for ( size_t i = 0; i < numOfMPGeos; ++i ) { color[pointCount + numberOfEOMPoints + i] = mpsTextures[i]; }
-      for ( size_t i = 0; i < numberOfEOMPoints; ++i ) { color[pointCount + i] = eomTextures[i]; }
+      for ( size_t i = 0; i < numberOfEOMPoints; ++i ) {
+        color16bit[pointCount + i].r() = (uint16_t)eomTextures[i].r();
+        color16bit[pointCount + i].g() = (uint16_t)eomTextures[i].g();
+        color16bit[pointCount + i].b() = (uint16_t)eomTextures[i].b();
+      }
+
+      for ( size_t i = 0; i < numOfMPGeos; ++i ) {
+        color16bit[pointCount + numberOfEOMPoints + i].r() = (uint16_t)mpsTextures[i].r();
+        color16bit[pointCount + numberOfEOMPoints + i].g() = (uint16_t)mpsTextures[i].g();
+        color16bit[pointCount + numberOfEOMPoints + i].b() = (uint16_t)mpsTextures[i].b();
+      }
     }
   }  // noAtt
   TRACE_CODEC( "colorPointCloud done \n" );
@@ -2431,9 +2441,9 @@ void PCCCodec::generateRawPointsGeometryfromVideo( PCCContext&       context,
   auto&  image                    = videoRawPointsGeometry.getFrame( frameIndex );
   size_t numberOfRawPointsPatches = frame.getNumberOfRawPointsPatches();
   auto&  sps                      = context.getVps();
-  bool   is444                    = sps.getProfileTierLevel().getProfileCodecGroupIdc() == CODEC_GROUP_HEVC444;
+  bool   isAuxiliarygeometrys444  = false;  // yo- use geo auxiliary codecID
 
-  TRACE_CODEC( "generateRawPointsGeometryfromVideo is444 = %d \n", is444 );
+  TRACE_CODEC( "generateRawPointsGeometryfromVideo isGeometry444 = %d \n", isGeometry444 );
   for ( int i = 0; i < numberOfRawPointsPatches; i++ ) {
     auto&        rawPointsPatch = frame.getRawPointsPatch( i );
     const size_t v0             = rawPointsPatch.v0_ * rawPointsPatch.occupancyResolution_;
@@ -2441,7 +2451,7 @@ void PCCCodec::generateRawPointsGeometryfromVideo( PCCContext&       context,
     rawPointsPatch.sizeV_       = rawPointsPatch.sizeV0_ * rawPointsPatch.occupancyResolution_;
     rawPointsPatch.sizeU_       = rawPointsPatch.sizeU0_ * rawPointsPatch.occupancyResolution_;
     size_t numberOfRawPoints    = rawPointsPatch.getNumberOfRawPoints();
-    if ( !is444 ) { numberOfRawPoints *= 3; }
+    if ( !isAuxiliarygeometrys444 ) { numberOfRawPoints *= 3; }
     rawPointsPatch.resize( numberOfRawPoints );
     for ( size_t v = 0; v < rawPointsPatch.sizeV_; ++v ) {
       for ( size_t u = 0; u < rawPointsPatch.sizeU_; ++u ) {
@@ -2449,7 +2459,7 @@ void PCCCodec::generateRawPointsGeometryfromVideo( PCCContext&       context,
         if ( p < numberOfRawPoints ) {
           const size_t x = ( u0 + u );
           const size_t y = ( v0 + v );
-          if ( is444 ) {
+          if ( isAuxiliarygeometrys444 ) {
             rawPointsPatch.x_[p] = image.getValue( 0, x, y );
             rawPointsPatch.y_[p] = image.getValue( 1, x, y );
             rawPointsPatch.z_[p] = image.getValue( 2, x, y );
@@ -2463,7 +2473,7 @@ void PCCCodec::generateRawPointsGeometryfromVideo( PCCContext&       context,
 }
 
 void PCCCodec::generateRawPointsTexturefromVideo( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
-  const size_t gofSize         = context.size();
+  const size_t gofSize               = context.size();
   auto&        videoRawPointsTexture = context.getVideoRawPointsTexture();
   videoRawPointsTexture.resize( gofSize );
   TRACE_CODEC( "generateRawPointsTexturefromVideo \n" );
