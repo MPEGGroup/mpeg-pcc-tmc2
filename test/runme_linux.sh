@@ -56,6 +56,8 @@ then
       24) CFGSEQUENCE="sequence/redandblack_vox10.cfg";;
       25) CFGSEQUENCE="sequence/soldier_vox10.cfg";;
       26) CFGSEQUENCE="sequence/longdress_vox10.cfg";;
+      27) CFGSEQUENCE="sequence/basketball_player_vox11";;
+      28) CFGSEQUENCE="sequence/dancer_vox11.cfg";;
       *) echo "sequence not correct ($SEQ)";   exit -1;;
   esac
   case $RATE in
@@ -74,6 +76,8 @@ else
       24) CFGSEQUENCE="sequence/redandblack_vox10-lossless.cfg";;
       25) CFGSEQUENCE="sequence/soldier_vox10-lossless.cfg";;
       26) CFGSEQUENCE="sequence/longdress_vox10-lossless.cfg";;
+      27) CFGSEQUENCE="sequence/basketball_player_vox11-lossless";;
+      28) CFGSEQUENCE="sequence/dancer_vox11-lossless.cfg";;
       *) echo "sequence not correct ($SEQ)";   exit -1;;
   esac 
   CFGRATE="rate/ctc-r5.cfg"
@@ -120,6 +124,6 @@ $DECODER \
   --compressedStreamPath=$BIN \
   --videoDecoderPath=${HMDECODER} \
   --colorSpaceConversionPath=${HDRCONVERT} \
-  --inverseColorSpaceConversionConfig=${CFGDIR}/hdrconvert/yuv420torgb444.cfg \
+  --inverseColorSpaceConversionConfig=${CFGDIR}/hdrconvert/yuv420toyuv444_16bit.cfg \
   --nbThread=$THREAD \
   --reconstructedDataPath=${BIN%.???}_dec_%04d.ply
