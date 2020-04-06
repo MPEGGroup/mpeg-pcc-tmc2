@@ -280,32 +280,47 @@ int  PCCDecoder::decode( PCCContext&       context,
 
     // Decode point cloud
     printf( "call generatePointCloud() \n" );
-    generateOccupancyMap( frame, context.getVideoOccupancyMap().getFrame( frame.getIndex() ),
-                          context.getOccupancyPrecision(), oi.getLossyOccupancyMapCompressionThreshold(),
-                          asps.getEnhancedOccupancyMapForDepthFlag() );
-    generateBlockToPatchFromBoundaryBox( context, frame, context.getOccupancyPackingBlockSize() );
+
+    if ( !ppSEIParams.pbfEnableFlag_ ) {
+      generateOccupancyMap( frame, context.getVideoOccupancyMap().getFrame( frame.getIndex() ), 
+                            context.getOccupancyPrecision(), oi.getLossyOccupancyMapCompressionThreshold(),
+                            asps.getEnhancedOccupancyMapForDepthFlag() );
+    }
+
+    printf(" asps.getEnhancedOccupancyMapForDepthFlag() = %d \n", asps.getEnhancedOccupancyMapForDepthFlag());
+    printf("ppSEIParams.pbfEnableFlag_ = %d \n", ppSEIParams.pbfEnableFlag_);
+    generateBlockToPatchFromBoundaryBox(context, frame, context.getOccupancyPackingBlockSize());    
+
+    // generateBlockToPatchFromBoundaryBox( context, frame, context.getOccupancyPackingBlockSize() );
     printf( "call generatePointCloud() \n" );
     generatePointCloud( reconstruct, context, frame, gpcParams, partition, true );
+    printf("generatePointCloud done \n");
+    printf("start colorPointCloud loop attIdx = [0;%lu ] \n",ai.getAttributeCount()); fflush(stdout);
     for ( size_t attIdx = 0; attIdx < ai.getAttributeCount(); attIdx++ ) {
+      printf("start colorPointCloud attIdx = %lu / %lu ] \n",attIdx, ai.getAttributeCount()); fflush(stdout);
       colorPointCloud( reconstruct, context, frame, absoluteT1List[attIdx],
                        sps.getMultipleMapStreamsPresentFlag( ATLASIDXPCC ), ai.getAttributeCount(), gpcParams );
     }
 
     // Post-Processing
+    printf("Post-Processing  params_.postprocessSmoothingFilter_ = %d \n", params_.postprocessSmoothingFilter_ );
     if ( ppSEIParams.flagGeometrySmoothing_ ) {
       PCCPointSet3 tempFrameBuffer = reconstruct;
       if ( ppSEIParams.gridSmoothing_ ) {
+        printf("smoothPointCloudPostprocess \n");
         smoothPointCloudPostprocess( reconstruct, context, params_.colorTransform_, ppSEIParams, partition );
       }
-      // These are different attribute transfer functions
-      if ( params_.postprocessSmoothingFilter_ == 1 ) {
-        tempFrameBuffer.transferColors16bitBP( reconstruct, int32_t( 0 ), isAttributes444, 8, 1, true, true, true,
-                                               false, 4, 4, 1000, 1000, 1000 * 256,
-                                               1000 * 256 );  // jkie: let's make it general
-      } else if ( params_.postprocessSmoothingFilter_ == 2 ) {
-        tempFrameBuffer.transferColorWeight( reconstruct, 0.1 );
-      } else if ( params_.postprocessSmoothingFilter_ == 3 ) {
-        tempFrameBuffer.transferColorsFilter3( reconstruct, int32_t( 0 ), isAttributes444 );
+      if( !ppSEIParams.pbfEnableFlag_){
+        // These are different attribute transfer functions
+        if ( params_.postprocessSmoothingFilter_ == 1 ) {
+          tempFrameBuffer.transferColors16bitBP( reconstruct, int32_t( 0 ), isAttributes444, 8, 1, true, true, true,
+                                                false, 4, 4, 1000, 1000, 1000 * 256,
+                                                1000 * 256 );  // jkie: let's make it general
+        } else if ( params_.postprocessSmoothingFilter_ == 2 ) {
+          tempFrameBuffer.transferColorWeight( reconstruct, 0.1 );
+        } else if ( params_.postprocessSmoothingFilter_ == 3 ) {
+          tempFrameBuffer.transferColorsFilter3( reconstruct, int32_t( 0 ), isAttributes444 );
+        }
       }
     }
     if ( ppSEIParams.flagColorSmoothing_ ) {

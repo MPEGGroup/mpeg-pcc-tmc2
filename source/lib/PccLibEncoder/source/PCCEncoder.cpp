@@ -277,13 +277,6 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   std::vector<std::vector<uint32_t>> partitions;
   generatePointCloud( reconstructs, context, gpcParams, partitions, false );
 
-#ifdef CODEC_TRACE
-  TRACE_CODEC( " generatePointCloud create %zu points \n", reconstructs[0].getPointCount() );
-  printf( "Checksum %zu: post generate point cloud : ", 0 );
-  for ( auto& c : reconstructs[0].computeChecksum() ) { printf( "%02x", c ); }
-  printf( "\n" );
-  fflush( stdout );
-#endif
   if ( ai.getAttributeCount() > 0 ) {
     std::cout << "Texture Coding starts" << std::endl;
     const size_t mapCount             = params_.mapCountMinus1_ + 1;
@@ -291,12 +284,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     // GENERATE ATTRIBUTE
     generateTextureVideo( sources, reconstructs, context, params_ );
     std::cout << "generate Texture Video done" << std::endl;
-#ifdef CODEC_TRACE
-    printf( "Checksum %zu: post generateTextureVideo: ", 0 );
-    for ( auto& c : reconstructs[0].computeChecksum() ) { printf( "%02x", c ); }
-    printf( "\n" );
-    fflush( stdout );
-#endif
+
     auto& videoTexture   = params_.multipleStreams_ ? context.getVideoTextureMultiple()[0] : context.getVideoTexture();
     auto& videoTextureT1 = context.getVideoTextureMultiple()[1];
     if ( !( params_.losslessGeo_ && params_.textureDilationOffLossless_ ) && params_.textureBGFill_ < 3 ) {
@@ -389,12 +377,6 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                   << "): " << totalPaddingTime / 1000.0 << " s\n";
       }
     }
-#ifdef CODEC_TRACE
-    printf( "Checksum %zu: post dilate: ", 0 );
-    for ( auto& c : reconstructs[0].computeChecksum() ) { printf( "%02x", c ); }
-    printf( "\n" );
-    fflush( stdout );
-#endif
     // ENCODE ATTRIBUTE IMAGE
     if ( params_.multipleStreams_ ) {
       size_t nbyteAtt     = 1;
@@ -478,12 +460,6 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                 << ( sizeTextureVideo * 8.0 ) / ( 2 * frames.size() * pointCount ) << " bpp)" << std::endl;
     }
 
-#ifdef CODEC_TRACE
-    printf( "Checksum %zu: post compress texture : ", 0 );
-    for ( auto& c : reconstructs[0].computeChecksum() ) { printf( "%02x", c ); }
-    printf( "\n" );
-    fflush( stdout );
-#endif
     if ( sps.getRawPatchEnabledFlag( atlasIndex ) && sps.getRawSeparateVideoPresentFlag( atlasIndex ) ) {
       auto& videoBitstreamMP = context.createVideoBitstream( VIDEO_TEXTURE_RAW );
       printf( "generateRawPointsTextureVideo \n" );
@@ -502,29 +478,10 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                              params_.inverseColorSpaceConversionConfig_,  // inverseColorSpaceConversionConfig
                              params_.colorSpaceConversionPath_ );         // colorSpaceConversionPath
       if ( params_.lossyRawPointsPatch_ ) {
-#ifdef CODEC_TRACE
-        printf( "Checksum %zu: pre generateRawPointsTexturefromVideo : ", 0 );
-        for ( auto& c : reconstructs[0].computeChecksum() ) { printf( "%02x", c ); }
-        printf( "\n" );
-        fflush( stdout );
-#endif
         printf( "generateRawPointsTexturefromVideo \n" );
         generateRawPointsTexturefromVideo( context, reconstructs );
-
-#ifdef CODEC_TRACE
-        printf( "Checksum %zu: post generateRawPointsTexturefromVideo : ", 0 );
-        for ( auto& c : reconstructs[0].computeChecksum() ) { printf( "%02x", c ); }
-        printf( "\n" );
-        fflush( stdout );
-#endif
       }
     }
-#ifdef CODEC_TRACE
-    printf( "Checksum %zu: post compress texture : ", 0 );
-    for ( auto& c : reconstructs[0].computeChecksum() ) { printf( "%02x", c ); }
-    printf( "\n" );
-    fflush( stdout );
-#endif
   }
 
   if ( params_.flagGeometrySmoothing_ ) {
@@ -5838,11 +5795,6 @@ bool PCCEncoder::generateTextureVideo( const PCCGroupOfFrames&     sources,
         }
       }
     } else {
-#ifdef CODEC_TRACE
-      printf( "Checksum : before transferColors :" );
-      for ( auto& c : reconstructs[0].computeChecksum() ) { printf( "%02x", c ); }
-      printf( "\n" );
-#endif
       sources[i].transferColors( reconstructs[i], int32_t( params_.bestColorSearchRange_ ),
                                  static_cast<int>( params_.losslessGeo_ ) == 1, params_.numNeighborsColorTransferFwd_,
                                  params_.numNeighborsColorTransferBwd_, params_.useDistWeightedAverageFwd_,
@@ -5851,32 +5803,10 @@ bool PCCEncoder::generateTextureVideo( const PCCGroupOfFrames&     sources,
                                  params_.distOffsetBwd_, params_.maxGeometryDist2Fwd_, params_.maxGeometryDist2Bwd_,
                                  params_.maxColorDist2Fwd_, params_.maxColorDist2Bwd_, params_.excludeColorOutlier_,
                                  params_.thresholdColorOutlierDist_ );
-#ifdef CODEC_TRACE
-      printf( "Checksum : post transferColors :" );
-      for ( auto& c : reconstructs[0].computeChecksum() ) { printf( "%02x", c ); }
-      printf( "\n" );
-#endif
       // color pre-smoothing
       if ( !params_.losslessGeo_ && params_.flagColorPreSmoothing_ ) {
-#ifdef CODEC_TRACE
-        printf( "Checksum : presmoothPointCloudColor start :" );
-        for ( auto& c : reconstructs[0].computeChecksum() ) { printf( "%02x", c ); }
-        printf( "\n" );
-#endif
         presmoothPointCloudColor( reconstructs[i], params );
-#ifdef CODEC_TRACE
-        printf( "Checksum : presmoothPointCloudColor done :" );
-        for ( auto& c : reconstructs[0].computeChecksum() ) { printf( "%02x", c ); }
-        printf( "\n" );
-#endif
       }
-#ifdef CODEC_TRACE
-      else {
-        printf( "Checksum : !presmoothPointCloudColor:" );
-        for ( auto& c : reconstructs[0].computeChecksum() ) { printf( "%02x", c ); }
-        printf( "\n" );
-      }
-#endif
     }
     ret &= generateTextureVideo( reconstructs[i], context, i, mapCount );
   }

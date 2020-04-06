@@ -422,6 +422,9 @@ class PCCCodec {
                                std::vector<uint32_t>&       BPflag,
                                PCCPointSet3&                reconstruct );
 
+#ifdef CODEC_TRACE
+  void printChecksum( PCCPointSet3& ePointcloud, std::string eString );
+#endif
   std::vector<uint16_t>              geoSmoothingCount_;
   std::vector<PCCVector3<float>>     geoSmoothingCenter_;
   std::vector<bool>                  geoSmoothingDoSmooth_;

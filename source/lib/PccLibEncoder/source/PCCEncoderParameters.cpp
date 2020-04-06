@@ -595,6 +595,7 @@ bool PCCEncoderParameters::check() {
 
   if ( losslessGeo_ ) {
     pbfEnableFlag_ = false;
+    occupancyMapRefinement_ = false;
     if ( mapCountMinus1_ == 0 ) {
       // mapCountMinus1_ = 1;
       // std::cerr << "WARNING: mapCountMinus1_ is only for lossy coding mode
@@ -604,34 +605,29 @@ bool PCCEncoderParameters::check() {
     if ( pointLocalReconstruction_ ) {
       pointLocalReconstruction_ = false;
       std::cerr << "WARNING: pointLocalReconstruction_ is only for lossy "
-                   "coding mode for now. Force "
-                   "pointLocalReconstruction_=FALSE.\n";
+                   "coding mode for now. Force pointLocalReconstruction_=FALSE.\n";
     }
     if ( singleMapPixelInterleaving_ ) {
       singleMapPixelInterleaving_ = false;
       std::cerr << "WARNING: singleLayerPixelInterleaving is only for lossy "
-                   "coding mode for now. "
-                   "Force singleMapPixelInterleaving_=FALSE.\n";
+                   "coding mode for now. Force singleMapPixelInterleaving_=FALSE.\n";
     }
     if ( lossyRawPointsPatch_ ) {
       lossyRawPointsPatch_ = false;
       std::cerr << "WARNING: lossyRawPointsPatch_ is only for lossy coding "
-                   "mode for now. "
-                   "Force lossyRawPointsPatch_=FALSE.\n";
+                   "mode for now. Force lossyRawPointsPatch_=FALSE.\n";
     }
   } else {
     if ( enhancedOccupancyMapCode_ ) {
       enhancedOccupancyMapCode_ = false;
       std::cerr << "WARNING: enhancedOccupancyMapCode_ is only for lossless "
-                   "coding mode for now. Force "
-                   "enhancedOccupancyMapCode_=FALSE.\n";
+                   "coding mode for now. Force enhancedOccupancyMapCode_=FALSE.\n";
     }
   }
 
   if ( enhancedOccupancyMapCode_ && surfaceThickness_ == 1 ) {
-    std::cerr << "WARNING: EOM code doesn't bring any gain when "
-                 "surfaceThickness==1. Please "
-                 "consider to increase the value of surfaceThickness.\n";
+    std::cerr << "WARNING: EOM code doesn't bring any gain when surfaceThickness==1."
+                 "Please consider to increase the value of surfaceThickness.\n";
   }
 
   if ( enhancedOccupancyMapCode_ && ( thresholdLossyOM_ > 0 ) ) {

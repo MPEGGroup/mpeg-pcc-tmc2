@@ -221,13 +221,14 @@ class PCCBitstream {
 #endif
     return code;
   }
-  void write( uint32_t value, uint8_t bits, bool bFullStream = false ) {
-    write( value, bits, position_ );
+  template<typename T>
+  void write( T value, uint8_t bits, bool bFullStream = false ) {
+    write( static_cast<uint32_t>(value), bits, position_ );
 #ifdef BITSTREAM_TRACE
     if ( bFullStream == true )
-      trace( "FullStream: CodU[%2u]: %4zu \n", bits, value );
+      trace( "FullStream: CodU[%2u]: %4zu \n", bits, static_cast<uint32_t>(value) );
     else
-      trace( "  CodU[%2u]: %4zu \n", bits, value );
+      trace( "  CodU[%2u]: %4zu \n", bits, static_cast<uint32_t>(value) );
 #endif
   }
 
@@ -262,7 +263,9 @@ class PCCBitstream {
     return value;
   }
 
-  inline void writeUvlc( uint32_t code ) {
+  template<typename T>
+  inline void writeUvlc( T value ) {
+    uint32_t code = static_cast<uint32_t>(value);
 #ifdef BITSTREAM_TRACE
     uint32_t orgCode            = code;
     bool     traceStartingValue = trace_;
@@ -304,7 +307,9 @@ class PCCBitstream {
     return value;
   }
 
-  inline void writeSvlc( int32_t code ) {
+  template<typename T>
+  inline void writeSvlc( T value ) {
+    int32_t code = static_cast<int32_t>(value);
     writeUvlc( ( uint32_t )( code <= 0 ? -code << 1 : ( code << 1 ) - 1 ) );
 #ifdef BITSTREAM_TRACE
     trace( "  CodeSvlc: %4d \n", code );

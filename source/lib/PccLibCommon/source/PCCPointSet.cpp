@@ -786,6 +786,7 @@ bool PCCPointSet3::transferColors( PCCPointSet3& target,
                                    double        maxColorDist2Bwd,
                                    const bool    excludeColorOutlier,
                                    const double  thresholdColorOutlierDist ) const {
+  printf("transferColors \n");
   const auto&  source           = *this;
   const size_t pointCountSource = source.getPointCount();
   const size_t pointCountTarget = target.getPointCount();
@@ -1111,6 +1112,7 @@ bool PCCPointSet3::transferColors16bitBP( PCCPointSet3& target,
                                           double        maxColorDist2Bwd,
                                           const bool    excludeColorOutlier,
                                           const double  thresholdColorOutlierDist ) const {
+  printf("transferColors16bitBP \n");
   const auto&  source           = *this;
   const size_t pointCountSource = source.getPointCount();
   const size_t pointCountTarget = target.getPointCount();
@@ -1442,6 +1444,7 @@ bool PCCPointSet3::transferColors16bit( PCCPointSet3& target,
                                         double        maxColorDist2Bwd,
                                         const bool    excludeColorOutlier,
                                         const double  thresholdColorOutlierDist ) const {
+  printf("transferColors16bit \n");
   const auto&  source           = *this;
   const size_t pointCountSource = source.getPointCount();
   const size_t pointCountTarget = target.getPointCount();
@@ -1754,6 +1757,7 @@ bool PCCPointSet3::transferColors16bit( PCCPointSet3& target,
 bool PCCPointSet3::transferColorsFilter3( PCCPointSet3& target,
                                           const int32_t searchRange,
                                           const bool    losslessTexture ) const {
+  printf("transferColorsFilter3 \n");
   const auto&  source           = *this;
   const size_t pointCountSource = source.getPointCount();
   const size_t pointCountTarget = target.getPointCount();
@@ -1827,6 +1831,7 @@ bool PCCPointSet3::transferColorsFilter3( PCCPointSet3& target,
 }
 
 bool PCCPointSet3::transferColorSimple( PCCPointSet3& target, const double bestColorSearchStep ) {
+  printf("transferColorSimple \n");
   const auto&  source           = *this;
   const size_t pointCountSource = source.getPointCount();
   const size_t pointCountTarget = target.getPointCount();

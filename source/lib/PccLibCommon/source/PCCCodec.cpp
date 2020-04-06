@@ -118,23 +118,12 @@ void PCCCodec::generatePointCloud( PCCGroupOfFrames&                   reconstru
     std::vector<uint32_t> partition;
     generatePointCloud( reconstructs[i], context, frames[i],// videoGeometry, videoGeometryMultiple, videoOccupancyMap,
                         params, partition, bDecoder );
-#ifdef CODEC_TRACE
-    TRACE_CODEC( " generatePointCloud create %zu points \n", reconstructs[i].getPointCount() );
-    auto checksum = reconstructs[i].computeChecksum();
-    TRACE_CODEC( "Checksum %zu: post generate point cloud : ", i );
-    for ( auto& c : checksum ) { TRACE_CODEC( "%02x", c ); }
-    TRACE_CODEC( "\n" );
-    printf( "Checksum %zu: post generate point cloud : ", i );
-    for ( auto& c : checksum ) { printf( "%02x", c ); }
-    printf( "\n" );
-    fflush( stdout );
-#endif
     partitions.push_back( partition );
   }
 #ifdef ENABLE_PAPI_PROFILING
   PAPI_PROFILING_RESULTS;
 #endif
-  TRACE_CODEC( "Generate point Cloud done \n" );
+  TRACE_CODEC( "Generate point Cloud done \n" );  
 }
 
 bool PCCCodec::colorPointCloud( PCCGroupOfFrames&                     reconstructs,
@@ -149,16 +138,6 @@ bool PCCCodec::colorPointCloud( PCCGroupOfFrames&                     reconstruc
   for ( size_t i = 0; i < frames.size(); i++ ) {
     for ( size_t attIdx = 0; attIdx < attributeCount; attIdx++ ) {
       colorPointCloud( reconstructs[i], context, frames[i], absoluteT1List[attIdx], multipleStreams, attributeCount, params );
-#ifdef CODEC_TRACE
-      auto checksum = reconstructs[i].computeChecksum();
-      TRACE_CODEC( "Checksum %zu: ", i );
-      for ( auto& c : checksum ) { TRACE_CODEC( "%02x", c ); }
-      TRACE_CODEC( "\n" );
-      printf( "Checksum %zu: ", i );
-      for ( auto& c : checksum ) { printf( "%02x", c ); }
-      printf( "\n" );
-      fflush( stdout );
-#endif
     }
   }
   TRACE_CODEC( "Color point Cloud done \n" );
@@ -171,14 +150,7 @@ void PCCCodec::smoothPointCloudPostprocess( PCCPointSet3&                       
                                             const GeneratePointCloudParameters& params,
                                             std::vector<uint32_t>&              partition ) {
 #ifdef CODEC_TRACE
-  auto checksum = reconstruct.computeChecksum();
-  TRACE_CODEC( "ChecksumIn:" );
-  for ( auto& c : checksum ) { TRACE_CODEC( "%02x", c ); }
-  TRACE_CODEC( "\n" );
-  printf( "ChecksumIn:" );
-  for ( auto& c : checksum ) { printf( "%02x", c ); }
-  printf( "\n" );
-  fflush( stdout );
+  printChecksum( reconstruct, "smoothPointCloudPostprocess in" );
   TRACE_CODEC( "  flagGeometrySmoothing_ = %d \n", params.flagGeometrySmoothing_ );
   TRACE_CODEC( "  gridSmoothing_         = %d \n", params.gridSmoothing_ );
   TRACE_CODEC( "  gridSize_              = %zu \n", params.gridSize_ );
@@ -279,15 +251,8 @@ void PCCCodec::smoothPointCloudPostprocess( PCCPointSet3&                       
     }
   }
 #ifdef CODEC_TRACE
-  checksum = reconstruct.computeChecksum();
-  TRACE_CODEC( "ChecksumOut:" );
-  for ( auto& c : checksum ) { TRACE_CODEC( "%02x", c ); }
-  TRACE_CODEC( "\n" );
-  printf( "ChecksumOut:" );
-  for ( auto& c : checksum ) { printf( "%02x", c ); }
-  printf( "\n" );
-  fflush( stdout );
-#endif
+  printChecksum( reconstruct, "smoothPointCloudPostprocess out" );
+#endif 
 }
 
 void PCCCodec::colorSmoothing( PCCPointSet3&                       reconstruct,
@@ -402,14 +367,7 @@ void PCCCodec::smoothPointCloudPostprocess( PCCGroupOfFrames&                   
   for ( size_t i = 0; i < frames.size(); i++ ) {
 #ifdef CODEC_TRACE
     TRACE_CODEC( "smoothPointCloudPostprocess Frame size = %zu \n", frames.size() );
-    auto checksum = reconstructs[i].computeChecksum();
-    TRACE_CODEC( "ChecksumIn %zu: ", i );
-    for ( auto& c : checksum ) { TRACE_CODEC( "%02x", c ); }
-    TRACE_CODEC( "\n" );
-    printf( "ChecksumIn %zu: ", i );
-    for ( auto& c : checksum ) { printf( "%02x", c ); }
-    printf( "\n" );
-    fflush( stdout );
+    printChecksum( reconstructs[i], "smoothPointCloudPostprocess In" );
     TRACE_CODEC( "  flagGeometrySmoothing_ = %d \n", params.flagGeometrySmoothing_ );
     TRACE_CODEC( "  gridSmoothing_         = %d \n", params.gridSmoothing_ );
     TRACE_CODEC( "  gridSize_              = %zu \n", params.gridSize_ );
@@ -511,14 +469,7 @@ void PCCCodec::smoothPointCloudPostprocess( PCCGroupOfFrames&                   
       }
     }
 #ifdef CODEC_TRACE
-    checksum = reconstructs[i].computeChecksum();
-    TRACE_CODEC( "ChecksumOut %zu: ", i );
-    for ( auto& c : checksum ) { TRACE_CODEC( "%02x", c ); }
-    TRACE_CODEC( "\n" );
-    printf( "ChecksumOut %zu: ", i );
-    for ( auto& c : checksum ) { printf( "%02x", c ); }
-    printf( "\n" );
-    fflush( stdout );
+    printChecksum( reconstructs[i], "smoothPointCloudPostprocess Out" );
 #endif
   }
   TRACE_CODEC( "Smooth point Cloud post process done \n" );
@@ -917,9 +868,6 @@ std::vector<PCCPoint3D> PCCCodec::generatePoints( const GeneratePointCloudParame
 void PCCCodec::generatePointCloud( PCCPointSet3&                        reconstruct,
                                    PCCContext&                          context,
                                    PCCFrameContext&                     frame,
-                                  //  const PCCVideoGeometry&              videoGeometry,
-                                  //  const std::vector<PCCVideoGeometry>& videoGeometryMultiple,
-                                  //  const PCCVideoOccupancyMap&          videoOccupancyMap,
                                    const GeneratePointCloudParameters&  params,
                                    std::vector<uint32_t>&               partition,
                                    bool                                 bDecoder ) {
@@ -936,6 +884,8 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                        reconstr
   uint32_t     patchIndex         = 0;
   reconstruct.addColors();
 
+  printf("generatePointCloud pbfEnableFlag_ = %d \n",params.pbfEnableFlag_ );
+  TRACE_CODEC("generatePointCloud pbfEnableFlag_ = %d \n",params.pbfEnableFlag_ );
   if ( params.pbfEnableFlag_ ) {
     PatchBlockFiltering patchBlockFiltering;
     patchBlockFiltering.setPatches( &( frame.getPatches() ) );
@@ -949,6 +899,8 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                        reconstr
         frame.getWidth(), frame.getHeight(), params.occupancyResolution_, params.occupancyPrecision_,
         !params.enhancedOccupancyMapCode_ ? params.thresholdLossyOM_ : 0, params.pbfPassesCount_,
         params.pbfFilterSize_, params.pbfLog2Threshold_ );
+    printf("PBF done \n");
+    TRACE_CODEC("PBF done \n");
   }
 
   // point cloud occupancy map upscaling from video using nearest neighbor
@@ -965,7 +917,6 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                        reconstr
       }
     }
   }
-
   if ( params.enableSizeQuantization_ ) {
     size_t quantizerSizeX = ( size_t( 1 ) << frame.getLog2PatchQuantizerSizeX() );
     size_t quantizerSizeY = ( size_t( 1 ) << frame.getLog2PatchQuantizerSizeY() );
@@ -1395,8 +1346,11 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                        reconstr
         identifyBoundaryPoints( occupancyMap, x, y, imageWidth, imageHeight, i, BPflag, reconstruct );
       }
     }
-  }
-  TRACE_CODEC( " end point = %zu  \n", reconstruct.getPointCount() );
+  }  
+#ifdef CODEC_TRACE 
+  TRACE_CODEC( " generatePointCloud create %zu points \n", reconstruct.getPointCount() );
+  printChecksum( reconstruct, "generatePointCloud Out" );
+#endif
 }
 
 void PCCCodec::addGridCentroid( PCCPoint3D&                     point,
@@ -2256,6 +2210,9 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
                                 const uint8_t                       attributeCount,
                                 const GeneratePointCloudParameters& params ) {
   TRACE_CODEC( "colorPointCloud start \n" );
+#ifdef CODEC_TRACE
+    printChecksum( reconstruct, "colorPointCloud in" );
+#endif
   auto&        sps        = context.getVps();
   auto&        videoTexture       = multipleStreams != 0U ? context.getVideoTextureMultiple()[0] : context.getVideoTexture();
   auto&        videoTextureFrame1 = context.getVideoTextureMultiple()[1];
@@ -2394,7 +2351,6 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
         color16bit[pointCount + i].g() = (uint16_t)eomTextures[i].g();
         color16bit[pointCount + i].b() = (uint16_t)eomTextures[i].b();
       }
-
       for ( size_t i = 0; i < numOfMPGeos; ++i ) {
         color16bit[pointCount + numberOfEOMPoints + i].r() = (uint16_t)mpsTextures[i].r();
         color16bit[pointCount + numberOfEOMPoints + i].g() = (uint16_t)mpsTextures[i].g();
@@ -2402,7 +2358,10 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
       }
     }
   }  // noAtt
-  TRACE_CODEC( "colorPointCloud done \n" );
+#ifdef CODEC_TRACE
+    printChecksum( reconstruct, "colorPointCloud out" );
+    TRACE_CODEC( "colorPointCloud done \n" );
+#endif
   return true;
 }
 
@@ -2437,7 +2396,7 @@ void PCCCodec::generateRawPointsGeometryfromVideo( PCCContext&       context,
   auto&  sps                      = context.getVps();
   bool   isAuxiliarygeometrys444  = false;  // yo- use geo auxiliary codecID
 
-  TRACE_CODEC( "generateRawPointsGeometryfromVideo isGeometry444 = %d \n", isGeometry444 );
+  TRACE_CODEC( "generateRawPointsGeometryfromVideo \n" );
   for ( int i = 0; i < numberOfRawPointsPatches; i++ ) {
     auto&        rawPointsPatch = frame.getRawPointsPatch( i );
     const size_t v0             = rawPointsPatch.v0_ * rawPointsPatch.occupancyResolution_;
@@ -2477,10 +2436,7 @@ void PCCCodec::generateRawPointsTexturefromVideo( PCCContext& context, PCCGroupO
     std::cout << "generate raw points (Texture) : frame " << shift
               << ", # of raw points Texture : " << framecontext.getRawPointsPatch( 0 ).size() << std::endl;
 #ifdef CODEC_TRACE
-    auto checksum = reconstructs[shift].computeChecksum();
-    TRACE_CODEC( "Checksum: rec post raw points: " );
-    for ( auto& c : checksum ) { TRACE_CODEC( "%02x", c ); }
-    TRACE_CODEC( "\n" );
+    printChecksum( reconstructs[shift], "generateRawPointsTexturefromVideo out" );
 #endif
   }
   std::cout << "RawPoints Texture [done]" << std::endl;
@@ -2757,3 +2713,16 @@ PCCPatchType PCCCodec::getCurrPatchType( PCCTILEGROUP tileGroupType, uint8_t pat
     return ERROR_PATCH;
   }
 }
+
+#ifdef CODEC_TRACE
+void PCCCodec::printChecksum( PCCPointSet3& ePointcloud, std::string eString ) {
+  auto checksum = ePointcloud.computeChecksum();
+  TRACE_CODEC( "Checksum %s: " , eString.c_str());
+  for ( auto& c : checksum ) { TRACE_CODEC( "%02x", c ); }
+  TRACE_CODEC( "\n" );
+  printf( "Checksum %s: " , eString.c_str() );
+  for ( auto& c : checksum ) { printf( "%02x", c ); }
+  printf( "\n" );
+  fflush( stdout );
+}
+#endif

@@ -915,7 +915,7 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
   // Place to get/set default values for gof metadata enabled flags (in sequence
   // level).
   while ( startFrameNumber < endFrameNumber0 ) {
-    const size_t endFrameNumber = min( startFrameNumber + groupOfFramesSize0, endFrameNumber0 );
+    size_t endFrameNumber = min( startFrameNumber + groupOfFramesSize0, endFrameNumber0 );
     PCCContext   context;
     context.setBitstreamStat( bitstreamStat );
     context.addVpccParameterSet( contextIndex );
@@ -927,8 +927,10 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
                         encoderParams.colorTransform_ ) ) {
       return -1;
     }
+    if( sources.size() < endFrameNumber - startFrameNumber ){
+      endFrameNumber = startFrameNumber + sources.size(); 
+    }
     clock.start();
-
     std::cout << "Compressing group of frames " << contextIndex << ": " << startFrameNumber << " -> " << endFrameNumber
               << "..." << std::endl;
     int ret = encoder.encode( sources, context, reconstructs );

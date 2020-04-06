@@ -406,7 +406,7 @@ void PCCBitstreamReader::atlasSequenceParameterSetRbsp( AtlasSequenceParameterSe
   for ( size_t i = 0; i < asps.getNumRefAtlasFrameListsInAsps(); i++ ) {
     refListStruct( asps.getRefListStruct( i ), asps, bitstream );
   }
-  asps.setLongTermRefAtlasFramesFlag( bitstream.read( 1 ) != 0U );               // u(1)
+  asps.setUseEightOrientationsFlag( bitstream.read( 1 ) != 0U );               // u(1)
   asps.set45DegreeProjectionPatchPresentFlag( bitstream.read( 1 ) != 0U );       // u(1)
   asps.setNormalAxisLimitsQuantizationEnabledFlag( bitstream.read( 1 ) != 0U );  // u(1)
   asps.setNormalAxisMaxDeltaValueEnabledFlag( bitstream.read( 1 ) != 0U );       // u(1)
