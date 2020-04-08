@@ -506,7 +506,8 @@ void PCCBitstreamReader::atlasFrameParameterSetRbsp( AtlasFrameParameterSetRbsp&
   TRACE_BITSTREAM( "%s \n", __func__ );
   afps.setAtlasFrameParameterSetId( bitstream.readUvlc() );     // ue(v)
   afps.setAtlasSequenceParameterSetId( bitstream.readUvlc() );  // ue(v)
-  atlasFrameTileInformation( afps.getAtlasFrameTileInformation(), syntax.getVps(), bitstream );
+  auto& asps = syntax.getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
+  atlasFrameTileInformation( afps.getAtlasFrameTileInformation(), asps, bitstream );
   afps.setAfpsOutputFlagPresentFlag( bitstream.read( 1 ) != 0U );
   afps.setAfpsNumRefIdxDefaultActiveMinus1( bitstream.readUvlc() );  // ue(v)
   afps.setAfpsAdditionalLtAfocLsbLen( bitstream.readUvlc() );        // ue(v)
@@ -525,7 +526,7 @@ void PCCBitstreamReader::atlasFrameParameterSetRbsp( AtlasFrameParameterSetRbsp&
 
 // 7.3.6.4  Atlas frame tile information syntax
 void PCCBitstreamReader::atlasFrameTileInformation( AtlasFrameTileInformation& afti,
-                                                    VpccParameterSet&          sps,
+                                                    AtlasSequenceParameterSetRbsp& asps,
                                                     PCCBitstream&              bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   afti.setSingleTileInAtlasFrameFlag( bitstream.read( 1 ) != 0U );  // u(1)
@@ -534,6 +535,8 @@ void PCCBitstreamReader::atlasFrameTileInformation( AtlasFrameTileInformation& a
     if ( afti.getUniformTileSpacingFlag() ) {
       afti.setTileColumnWidthMinus1( 0, bitstream.readUvlc() );  //  ue(v)
       afti.setTileRowHeightMinus1( 0, bitstream.readUvlc() );    //  ue(v)
+      afti.setNumTileColumnsMinus1( ceil(asps.getFrameWidth() / ((afti.getTileColumnWidthMinus1( 0 )+1)*64.0))-1 );
+      afti.setNumTileRowsMinus1   ( ceil(asps.getFrameHeight()/ ((afti.getTileRowHeightMinus1  ( 0 )+1)*64.0))-1 );
     } else {
       afti.setNumTileColumnsMinus1( bitstream.readUvlc() );  //  ue(v)
       afti.setNumTileRowsMinus1( bitstream.readUvlc() );     //  ue(v)
@@ -544,7 +547,6 @@ void PCCBitstreamReader::atlasFrameTileInformation( AtlasFrameTileInformation& a
         afti.setTileRowHeightMinus1( i, bitstream.readUvlc() );  //  ue(v)
       }
     }
-  }
 
   afti.setSingleTilePerTileGroupFlag( bitstream.read( 1 ) );  //  u(1)
   if ( afti.getSingleTilePerTileGroupFlag() == 0U ) {
@@ -555,10 +557,14 @@ void PCCBitstreamReader::atlasFrameTileInformation( AtlasFrameTileInformation& a
       uint8_t bitCount = ceilLog2( NumTilesInPatchFrame );
       if ( i > 0 ) {
         afti.setTopLeftTileIdx( i, bitstream.read( bitCount ) );  // u(v)
+      } else{
+        afti.setTopLeftTileIdx( i, 0 );
       }
       bitCount = ceilLog2( NumTilesInPatchFrame - afti.getTopLeftTileIdx( i ) );
       afti.setBottomRightTileIdxDelta( i, bitstream.read( bitCount ) );  // u(v)
     }
+  } else {
+    afti.setNumTileGroupsInAtlasFrameMinus1(  ( afti.getNumTileColumnsMinus1() + 1 ) * ( afti.getNumTileRowsMinus1() + 1 )  );  // ue(v)
   }
   afti.setSignalledTileGroupIdFlag( bitstream.read( 1 ) != 0U );  // u(1)
   if ( afti.getSignalledTileGroupIdFlag() ) {
@@ -567,6 +573,10 @@ void PCCBitstreamReader::atlasFrameTileInformation( AtlasFrameTileInformation& a
       uint8_t bitCount = afti.getSignalledTileGroupIdLengthMinus1() + 1;
       afti.setTileGroupId( i, bitstream.read( bitCount ) );  // u(v)
     }
+  }
+ }//if ( !afti.getSingleTileInAtlasFrameFlag() )
+  else{
+    afti.setNumTileGroupsInAtlasFrameMinus1( 1 );
   }
 }
 
@@ -603,7 +613,16 @@ void PCCBitstreamReader::atlasTileGroupHeader( AtlasTileGroupHeader& atgh,
   AtlasSequenceParameterSetRbsp& asps   = syntax.getAtlasSequenceParameterSet( aspsId );
   AtlasFrameTileInformation&     afti   = afps.getAtlasFrameTileInformation();
 
-  atgh.setAtghAddress( bitstream.read( afti.getSignalledTileGroupIdLengthMinus1() + 1 ) );
+  //v9.1
+  if(afti.getSignalledTileGroupIdFlag())
+    atgh.setAtghAddress( bitstream.read( afti.getSignalledTileGroupIdLengthMinus1() + 1 ) );
+  else{
+    if(afti.getNumTileGroupsInAtlasFrameMinus1()!=0)
+      atgh.setAtghAddress( bitstream.read( ceilLog2( afti.getNumTileGroupsInAtlasFrameMinus1()+1 ) ));
+    else
+      atgh.setAtghAddress( 0 );
+  }
+  
   atgh.setAtghType( PCCTILEGROUP( bitstream.readUvlc() ) );
   if ( afps.getAfpsOutputFlagPresentFlag() ) {
     atgh.setAtghAtlasOutputFlag( bitstream.read( 1 ) != 0U );

@@ -606,7 +606,8 @@ void PCCBitstreamWriter::atlasFrameParameterSetRbsp( AtlasFrameParameterSetRbsp&
   TRACE_BITSTREAM( "%s \n", __func__ );
   bitstream.writeUvlc( afps.getAtlasFrameParameterSetId() );     // ue(v)
   bitstream.writeUvlc( afps.getAtlasSequenceParameterSetId() );  // ue(v)
-  atlasFrameTileInformation( afps.getAtlasFrameTileInformation(), syntax.getVps(), bitstream );
+  auto& asps = syntax.getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
+  atlasFrameTileInformation( afps.getAtlasFrameTileInformation(), asps, bitstream );
   bitstream.write( afps.getAfpsOutputFlagPresentFlag(), 1 );
   bitstream.writeUvlc( afps.getAfpsNumRefIdxDefaultActiveMinus1() );  // ue(v)
   bitstream.writeUvlc( afps.getAfpsAdditionalLtAfocLsbLen() );        // ue(v)
@@ -625,7 +626,7 @@ void PCCBitstreamWriter::atlasFrameParameterSetRbsp( AtlasFrameParameterSetRbsp&
 
 // 7.3.6.4  Atlas frame tile information syntax
 void PCCBitstreamWriter::atlasFrameTileInformation( AtlasFrameTileInformation& afti,
-                                                    VpccParameterSet&          sps,
+                                                    AtlasSequenceParameterSetRbsp& asps,
                                                     PCCBitstream&              bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   bitstream.write( afti.getSingleTileInAtlasFrameFlag(), 1 );  // u(1)
@@ -644,7 +645,7 @@ void PCCBitstreamWriter::atlasFrameTileInformation( AtlasFrameTileInformation& a
         bitstream.writeUvlc( afti.getTileRowHeightMinus1( i ) );  //  ue(v)
       }
     }
-  }
+  
   bitstream.write( afti.getSingleTilePerTileGroupFlag(), 1 );  //  u(1)
   if ( afti.getSingleTilePerTileGroupFlag() == 0u ) {
     uint32_t NumTilesInPatchFrame = ( afti.getNumTileColumnsMinus1() + 1 ) * ( afti.getNumTileRowsMinus1() + 1 );
@@ -666,6 +667,7 @@ void PCCBitstreamWriter::atlasFrameTileInformation( AtlasFrameTileInformation& a
       bitstream.write( afti.getTileGroupId( i ), bitCount );  // u(v)
     }
   }
+ } //if ( !afti.getSingleTileInAtlasFrameFlag() )
 }
 
 // 7.3.6.5  Supplemental enhancement information Rbsp syntax
@@ -702,7 +704,13 @@ void PCCBitstreamWriter::atlasTileGroupHeader( AtlasTileGroupHeader& atgh,
   AtlasSequenceParameterSetRbsp& asps   = syntax.getAtlasSequenceParameterSet( aspsId );
   AtlasFrameTileInformation&     afti   = afps.getAtlasFrameTileInformation();
   bitstream.writeUvlc( atgh.getAtghAtlasFrameParameterSetId() );
-  bitstream.write( atgh.getAtghAddress(), afti.getSignalledTileGroupIdLengthMinus1() + 1 );
+  //v9.1
+  if(afti.getSignalledTileGroupIdFlag())
+    bitstream.write( uint32_t( atgh.getAtghAddress() ), afti.getSignalledTileGroupIdLengthMinus1() + 1 );
+  else{
+    if(afti.getNumTileGroupsInAtlasFrameMinus1()!=0)
+      bitstream.write( uint32_t( atgh.getAtghAddress() ), ceilLog2( afti.getNumTileGroupsInAtlasFrameMinus1()+1) );
+  }
   bitstream.writeUvlc( atgh.getAtghType() );
   if ( afps.getAfpsOutputFlagPresentFlag() ) { bitstream.write( atgh.getAtghAtlasOutputFlag(), 1 ); }
   bitstream.write( atgh.getAtghAtlasFrmOrderCntLsb(), asps.getLog2MaxAtlasFrameOrderCntLsbMinus4() + 4 );
