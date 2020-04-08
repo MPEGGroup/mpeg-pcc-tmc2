@@ -156,7 +156,7 @@ class PCCBitstreamWriter {
 
   // 7.3.6.4  Atlas frame tile information syntax
   static void atlasFrameTileInformation( AtlasFrameTileInformation& afti,
-                                         VpccParameterSet&          sps,
+                                         AtlasSequenceParameterSetRbsp& asps,
                                          PCCBitstream&              bitstream );
 
   // 7.3.6.5  Supplemental enhancement information Rbsp syntax
