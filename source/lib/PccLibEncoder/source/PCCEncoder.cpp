@@ -548,8 +548,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
       }
     }
   }
-  //    This function does the color smoothing that is usually done in
-  // colorPointCloud
+  // This function does the color smoothing that is usually done in colorPointCloud
   if ( gpcParams.flagColorSmoothing_ ) { colorSmoothing( reconstructs, context, params_.colorTransform_, gpcParams ); }
   if ( static_cast<int>( params_.losslessGeo_ ) != 1 ) {  // lossy: convert 16-bit yuv444 to 8-bit RGB444
     for ( size_t i = 0; i < frames.size(); i++ ) {

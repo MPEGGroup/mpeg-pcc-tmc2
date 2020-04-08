@@ -136,7 +136,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   radius2ColorSmoothing_                  = 4.0 * 16;
   neighborCountColorSmoothing_            = 4 * 16;
   flagColorSmoothing_                     = false;
-  gridColorSmoothing_                     = false;
+  gridColorSmoothing_                     = true;
   cgridSize_                              = 4;
   thresholdColorPreSmoothing_             = 10.0;
   thresholdColorPreSmoothingLocalEntropy_ = 4.5;
