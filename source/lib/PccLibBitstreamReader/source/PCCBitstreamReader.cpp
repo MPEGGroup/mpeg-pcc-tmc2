@@ -564,7 +564,7 @@ void PCCBitstreamReader::atlasFrameTileInformation( AtlasFrameTileInformation& a
       afti.setBottomRightTileIdxDelta( i, bitstream.read( bitCount ) );  // u(v)
     }
   } else {
-    afti.setNumTileGroupsInAtlasFrameMinus1(  ( afti.getNumTileColumnsMinus1() + 1 ) * ( afti.getNumTileRowsMinus1() + 1 )  );  // ue(v)
+    afti.setNumTileGroupsInAtlasFrameMinus1(  ( afti.getNumTileColumnsMinus1() + 1 ) * ( afti.getNumTileRowsMinus1() + 1 ) - 1 );  // ue(v)
   }
   afti.setSignalledTileGroupIdFlag( bitstream.read( 1 ) != 0U );  // u(1)
   if ( afti.getSignalledTileGroupIdFlag() ) {
@@ -576,7 +576,7 @@ void PCCBitstreamReader::atlasFrameTileInformation( AtlasFrameTileInformation& a
   }
  }//if ( !afti.getSingleTileInAtlasFrameFlag() )
   else{
-    afti.setNumTileGroupsInAtlasFrameMinus1( 1 );
+    afti.setNumTileGroupsInAtlasFrameMinus1( 0 );
   }
 }
 
