@@ -2273,9 +2273,6 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
     source.clear();
     target.addColors16bit();
     source.addColors16bit();
-    uint8_t      numBits  = 16;
-    double       offset   = ( 1 << ( numBits - 1 ) );
-    double       maxValue = ( 1 << numBits ) - 1;
     const size_t shift    = frame.getIndex() * frameCount;
     for ( size_t i = 0; i < pointCount; ++i ) {
       const PCCVector3<size_t> location = pointToPixel[i];
@@ -2302,6 +2299,9 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
         } else {
           const auto& image0 = videoTexture.getFrame( frame.getIndex() );
           const auto& image1 = videoTextureFrame1.getFrame( frame.getIndex() );
+          uint8_t      numBits  = image0.getColorFormat()==0?8:16; //or 8
+          double       offset   = ( 1 << ( numBits - 1 ) );
+          double       maxValue = ( 1 << numBits ) - 1;
           for ( size_t c = 0; c < 3; ++c ) {
             // reconstruction
             auto value0 = static_cast<uint16_t>( image0.getValue( c, x, y ) );

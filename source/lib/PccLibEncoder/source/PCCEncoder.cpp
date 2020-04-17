@@ -3800,8 +3800,13 @@ bool PCCEncoder::predictTextureFrame( PCCFrameContext&       frame,
     for ( size_t x = 0; x < refWidth; ++x ) {
       const size_t pos1 = y * refWidth + x;
       if ( occupancyMap[pos1] != 0 ) {
-        // convert the reference from YUV444 16 bit to RGB 888 8 bits
         int16_t reference_color[3];
+        if(reference.getColorFormat()==0){
+          reference_color[0]=reference.getValue( 0, x, y );
+          reference_color[1]=reference.getValue( 1, x, y );
+          reference_color[2]=reference.getValue( 2, x, y );
+        }
+        else{
         /// convert yuv444 (16bit) to normalized yuv444 (format double)
         double y1     = reference.getValue( 0, x, y );
         double u1     = reference.getValue( 1, x, y );
@@ -3826,6 +3831,7 @@ bool PCCEncoder::predictTextureFrame( PCCFrameContext&       frame,
         reference_color[0] = PCCClip( round( r * 255 ), 0.0, 255.0 );
         reference_color[1] = PCCClip( round( g * 255 ), 0.0, 255.0 );
         reference_color[2] = PCCClip( round( b * 255 ), 0.0, 255.0 );
+        }
         for ( size_t c = 0; c < 3; ++c ) {
           const auto    value1 = static_cast<int16_t>( image.getValue( c, x, y ) );
           const int16_t value0 = reference_color[c];

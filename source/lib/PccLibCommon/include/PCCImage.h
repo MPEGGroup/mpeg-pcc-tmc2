@@ -514,7 +514,7 @@ class ChromaSampler {
 template <typename T, size_t N>
 class PCCImage {
  public:
-  PCCImage() : width_( 0 ), height_( 0 ) {}
+  PCCImage() : width_( 0 ), height_( 0 ), colorFormat_( 0 ) {}
   PCCImage( const PCCImage& ) = default;
   PCCImage& operator=( const PCCImage& rhs ) = default;
   ~PCCImage()                                = default;
@@ -526,7 +526,8 @@ class PCCImage {
   size_t getHeight() const { return height_; }
   size_t getDepth() const { return sizeof( T ) * 8; }
   size_t getChannelCount() const { return N; }
-
+  size_t getColorFormat() const         { return colorFormat_; }
+  void   setColorFormat( size_t value ) { colorFormat_=value; }
   const std::vector<T>& getChannel( size_t index ) const { return channels_[index]; }
   void                  set( const T value = 0 ) {
     for ( auto& channel : channels_ ) {
@@ -985,6 +986,7 @@ class PCCImage {
   size_t         width_;
   size_t         height_;
   std::vector<T> channels_[N];
+  size_t         colorFormat_; //0.RGB 1.YUV420 2.YUV444 16bits
 };
 }  // namespace pcc
 
