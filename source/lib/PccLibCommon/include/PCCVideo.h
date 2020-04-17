@@ -61,6 +61,7 @@ class PCCVideo {
     assert( index < frames_.size() );
     return frames_[index];
   }
+  void setColorFormat( size_t value ) { for(auto& f : frames_ ) f.setColorFormat(value); }
   void resize( const size_t frameCount ) { frames_.resize( frameCount ); }
   bool write( std::ofstream& outfile, const size_t nbyte ) const {
     for ( const auto& frame : frames_ ) {

@@ -104,8 +104,10 @@ class PCCVideoDecoder {
     if ( inverseColorSpaceConversionConfig.empty() || use444CodecIo ) {
       if ( use444CodecIo ) {
         if ( !video.read( yuvRecFileName, width, height, frameCount, bitDepth == 8 ? 1 : 2 ) ) { return false; }
+        video.setColorFormat(0);
       } else {
         if ( !video.read420( yuvRecFileName, width, height, frameCount, bitDepth == 8 ? 1 : 2 ) ) { return false; }
+        video.setColorFormat(1);
       }
     } else {
       if ( patchColorSubsampling ) {
@@ -350,6 +352,7 @@ class PCCVideoDecoder {
         if ( colorSpaceConversionPath.empty() ) {
           video.read420( yuvRecFileName, width, height, frameCount, bitDepth == 8 ? 1 : 2, true, upsamplingFilter );
           if ( !keepIntermediateFiles ) { video.write( yuv444RecFileName, 2 ); }
+          video.setColorFormat(1);
         } else {
           std::stringstream cmd;
           cmd << colorSpaceConversionPath << " -f " << inverseColorSpaceConversionConfig << " -p SourceFile=\""
@@ -361,6 +364,7 @@ class PCCVideoDecoder {
             return false;
           }
           if ( !video.read( yuv444RecFileName, width, height, frameCount, 2 ) ) { return false; }
+          video.setColorFormat(2);
         }
       }
     }

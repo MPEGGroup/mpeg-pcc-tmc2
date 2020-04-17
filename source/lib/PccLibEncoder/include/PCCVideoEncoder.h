@@ -418,12 +418,15 @@ class PCCVideoEncoder {
     if ( yuvVideo ) {
       if ( use444CodecIo ) {
         video.read( recYuvFileName, width, height, frameCount, nbyte );
+        video.setColorFormat(0);
       } else {
         video.read420( recYuvFileName, width, height, frameCount, nbyte );
+        video.setColorFormat(1);
       }
     } else {
       if ( colorSpaceConversionPath.empty() ) {
         video.read420( recYuvFileName, width, height, frameCount, nbyte, true, upsamplingFilter );
+        video.setColorFormat(1);
         if ( !keepIntermediateFiles ) { video.write( recRgbFileName, nbyte ); }
       } else {
         std::stringstream cmd;
@@ -437,6 +440,7 @@ class PCCVideoEncoder {
           return ret;
         }
         video.read( yuv444RecFileName, width, height, frameCount, 2 );
+        video.setColorFormat(2);
       }
     }
     if ( !keepIntermediateFiles ) {

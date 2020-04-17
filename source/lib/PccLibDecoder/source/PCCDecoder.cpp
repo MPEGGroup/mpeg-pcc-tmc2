@@ -93,12 +93,6 @@ int  PCCDecoder::decode( PCCContext&       context,
                                                   oi.getOccupancyMSBAlignFlag() );
 
   if ( sps.getMultipleMapStreamsPresentFlag( atlasIndex ) ) {
-    if ( sps.getRawPatchEnabledFlag( atlasIndex ) ) {
-      std::cout << "ERROR! Lossy-raw-points-patch code not implemented when absoluteD_ = 0 as "
-                   "of now. Exiting ..."
-                << std::endl;
-      std::exit( -1 );
-    }
     context.getVideoGeometryMultiple().resize( sps.getMapCountMinus1( atlasIndex ) + 1 );
     size_t totalGeoSize = 0;
     for ( int mapIndex = 0; mapIndex < sps.getMapCountMinus1( atlasIndex ) + 1; mapIndex++ ) {
