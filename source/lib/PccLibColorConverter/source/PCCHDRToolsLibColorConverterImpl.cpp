@@ -805,7 +805,7 @@ void PCCHDRToolsLibColorConverterImpl<T>::destroy() {
   }
 }
 
-template class PCCHDRToolsLibColorConverterImpl<uint8_t>;
-template class PCCHDRToolsLibColorConverterImpl<uint16_t>;
+template class pcc::PCCHDRToolsLibColorConverterImpl<uint8_t>;
+template class pcc::PCCHDRToolsLibColorConverterImpl<uint16_t>;
 
 #endif  //~USE_HDRTOOLS

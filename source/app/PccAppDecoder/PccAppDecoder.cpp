@@ -70,17 +70,15 @@ int main( int argc, char* argv[] ) {
 //---------------------------------------------------------------------------
 // :: Command line / config parsing helpers
 
-template <typename T>
-static std::istream& readUInt( std::istream& in, T& val ) {
+namespace pcc {
+static std::istream& operator>>( std::istream& in, PCCColorTransform& val ) {   
   unsigned int tmp;
   in >> tmp;
-  val = T( tmp );
+  val = PCCColorTransform( tmp );
   return in;
 }
-
-namespace pcc {
-static std::istream& operator>>( std::istream& in, PCCColorTransform& val ) { return readUInt( in, val ); }
 }  // namespace pcc
+
 //---------------------------------------------------------------------------
 // :: Command line / config parsing
 

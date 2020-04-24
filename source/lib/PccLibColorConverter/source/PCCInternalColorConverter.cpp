@@ -595,5 +595,5 @@ void PCCInternalColorConverter<T>::upsampling( const std::vector<float>& chromaI
   }
 }
 
-template class PCCInternalColorConverter<uint8_t>;
-template class PCCInternalColorConverter<uint16_t>;
+template class pcc::PCCInternalColorConverter<uint8_t>;
+template class pcc::PCCInternalColorConverter<uint16_t>;

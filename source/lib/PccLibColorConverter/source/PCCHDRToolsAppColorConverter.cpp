@@ -92,7 +92,7 @@ void PCCHDRToolsAppColorConverter<T>::convert( std::string        configFile,
   removeFile( outputFile );
 }
 
-template class PCCHDRToolsAppColorConverter<uint8_t>;
-template class PCCHDRToolsAppColorConverter<uint16_t>;
+template class pcc::PCCHDRToolsAppColorConverter<uint8_t>;
+template class pcc::PCCHDRToolsAppColorConverter<uint16_t>;
 
 #endif  //~USE_HDRTOOLS

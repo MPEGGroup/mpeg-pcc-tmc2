@@ -56,7 +56,7 @@ void PCCHMLibVideoDecoder<T>::decode( PCCVideoBitstream& bitstream,
   decoder.decode( bitstream, outputBitDepth, RGB2GBR, video );
 }
 
-template class PCCHMLibVideoDecoder<uint8_t>;
-template class PCCHMLibVideoDecoder<uint16_t>;
+template class pcc::PCCHMLibVideoDecoder<uint8_t>;
+template class pcc::PCCHMLibVideoDecoder<uint16_t>;
 
 #endif

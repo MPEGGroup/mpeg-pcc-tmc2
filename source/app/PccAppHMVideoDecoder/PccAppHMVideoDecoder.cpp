@@ -45,21 +45,6 @@
 using namespace std;
 using namespace pcc;
 
-//---------------------------------------------------------------------------
-// :: Command line / config parsing helpers
-
-template <typename T>
-static std::istream& readUInt( std::istream& in, T& val ) {
-  unsigned int tmp;
-  in >> tmp;
-  val = T( tmp );
-  return in;
-}
-
-namespace pcc {
-static std::istream& operator>>( std::istream& in, PCCColorTransform& val ) { return readUInt( in, val ); }
-}  // namespace pcc
-
 size_t getFileSize( const std::string& file ) {
   size_t        size = 0;
   std::ifstream in( file.c_str(), ios_base::binary );

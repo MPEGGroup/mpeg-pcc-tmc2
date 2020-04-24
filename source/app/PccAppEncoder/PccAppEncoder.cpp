@@ -70,33 +70,13 @@ int main( int argc, char* argv[] ) {
 //---------------------------------------------------------------------------
 // :: Command line / config parsing helpers
 
-template <typename T>
-static std::istream& readUInt( std::istream& in, T& val ) {
+namespace pcc {
+static std::istream& operator>>( std::istream& in, PCCColorTransform& val ) {   
   unsigned int tmp;
   in >> tmp;
-  val = T( tmp );
+  val = PCCColorTransform( tmp );
   return in;
 }
-
-namespace pcc {
-static std::istream& operator>>( std::istream& in, PCCColorTransform& val ) { return readUInt( in, val ); }
-
-static std::istream& operator>>( std::istream& in, std::vector<int>& vector ) {
-  std::string str;
-  in >> str;
-  str.erase( std::remove( str.begin(), str.end(), ' ' ), str.end() );
-  size_t pos = 0;
-  while ( ( pos = str.find( "," ) ) != std::string::npos ) {
-    vector.push_back( std::stoi( str.substr( 0, pos ) ) );
-    str.erase( 0, pos + 1 );
-  }
-  vector.push_back( std::stoi( str.substr( 0, pos ) ) );
-  return in;
-}
-
-// template <class T>
-// static inline istream& operator>> (std::istream &in, T &val ) {  in >> val;
-// return in; }
 }  // namespace pcc
 
 //---------------------------------------------------------------------------

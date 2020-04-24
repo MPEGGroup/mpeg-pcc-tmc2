@@ -53,7 +53,7 @@ void PCCHMLibVideoEncoder<T>::encode( PCCVideo<T, 3>&    videoSrc,
   encoder.encode( videoSrc, arguments, bitstream, videoRec );
 }
 
-template class PCCHMLibVideoEncoder<uint8_t>;
-template class PCCHMLibVideoEncoder<uint16_t>;
+template class pcc::PCCHMLibVideoEncoder<uint8_t>;
+template class pcc::PCCHMLibVideoEncoder<uint16_t>;
 
 #endif

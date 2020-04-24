@@ -80,5 +80,5 @@ PCCCOLORFORMAT PCCHMAppVideoEncoder<T>::getColorFormat( std::string& name ) {
   return PCCCOLORFORMAT::UNKNOWN;
 }
 
-template class PCCHMAppVideoEncoder<uint8_t>;
-template class PCCHMAppVideoEncoder<uint16_t>;
+template class pcc::PCCHMAppVideoEncoder<uint8_t>;
+template class pcc::PCCHMAppVideoEncoder<uint16_t>;

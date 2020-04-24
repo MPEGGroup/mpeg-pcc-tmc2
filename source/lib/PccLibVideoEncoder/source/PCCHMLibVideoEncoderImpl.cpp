@@ -829,7 +829,7 @@ Void PCCHMLibVideoEncoderImpl<T>::xReadPicture( TComPicYuv* pic, PCCVideo<T, 3>&
              m_internalBitDepth[0] - m_outputBitDepth[0], m_inputColourSpaceConvert == IPCOLOURSPACE_RGBtoGBR );
 }
 
-template class PCCHMLibVideoEncoderImpl<uint8_t>;
-template class PCCHMLibVideoEncoderImpl<uint16_t>;
+template class pcc::PCCHMLibVideoEncoderImpl<uint8_t>;
+template class pcc::PCCHMLibVideoEncoderImpl<uint16_t>;
 
 #endif

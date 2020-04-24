@@ -54,7 +54,7 @@ void PCCHDRToolsLibColorConverter<T>::convert( std::string        configFile,
   converter.convert( configFile, videoSrc, videoDst );
 }
 
-template class PCCHDRToolsLibColorConverter<uint8_t>;
-template class PCCHDRToolsLibColorConverter<uint16_t>;
+template class pcc::PCCHDRToolsLibColorConverter<uint8_t>;
+template class pcc::PCCHDRToolsLibColorConverter<uint16_t>;
 
 #endif  //~USE_HDRTOOLS

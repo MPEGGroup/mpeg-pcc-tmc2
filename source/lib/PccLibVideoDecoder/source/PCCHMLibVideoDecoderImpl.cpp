@@ -345,7 +345,7 @@ void PCCHMLibVideoDecoderImpl<T>::xWritePicture( const TComPicYuv* pic, PCCVideo
              m_internalBitDepths - m_outputBitDepth[0], format, m_bRGB2GBR );
 }
 
-template class PCCHMLibVideoDecoderImpl<uint8_t>;
-template class PCCHMLibVideoDecoderImpl<uint16_t>;
+template class pcc::PCCHMLibVideoDecoderImpl<uint8_t>;
+template class pcc::PCCHMLibVideoDecoderImpl<uint16_t>;
 
 #endif

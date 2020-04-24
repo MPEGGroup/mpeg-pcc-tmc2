@@ -82,7 +82,7 @@ void PCCHMAppVideoDecoder<T>::decode( PCCVideoBitstream& bitstream,
   removeFile( reconFile );
 }
 
-template class PCCHMAppVideoDecoder<uint8_t>;
-template class PCCHMAppVideoDecoder<uint16_t>;
+template class pcc::PCCHMAppVideoDecoder<uint8_t>;
+template class pcc::PCCHMAppVideoDecoder<uint16_t>;
 
 #endif

@@ -64,23 +64,6 @@ int main( int argc, char* argv[] ) {
   return ret;
 }
 
-//---------------------------------------------------------------------------
-// :: Command line / config parsing helpers
-
-template <typename T>
-static std::istream& readUInt( std::istream& in, T& val ) {
-  unsigned int tmp;
-  in >> tmp;
-  val = T( tmp );
-  return in;
-}
-
-namespace pcc {
-static std::istream& operator>>( std::istream& in, PCCColorTransform& val ) { return readUInt( in, val ); }
-}  // namespace pcc
-//---------------------------------------------------------------------------
-// :: Command line / config parsing
-
 bool parseParameters( int argc, char* argv[], PCCMetricsParameters& metricsParams ) {
   namespace po      = df::program_options_lite;
   bool   print_help = false;
