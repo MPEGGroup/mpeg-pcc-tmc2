@@ -55,9 +55,7 @@ bool PCCGroupOfFrames::load( const std::string&      uncompressedDataPath,
     pointSet.resize( 0 );
     if ( !pointSet.read( fileName, readNormals ) ) {
       std::cout << "Error: can't open " << fileName << std::endl;
-      if( frameNumber == startFrameNumber ){         
-        return false;
-      }
+      if ( frameNumber == startFrameNumber ) { return false; }
     }
     if ( colorTransform == COLOR_TRANSFORM_RGB_TO_YCBCR ) { pointSet.convertRGBToYUV(); }
   }

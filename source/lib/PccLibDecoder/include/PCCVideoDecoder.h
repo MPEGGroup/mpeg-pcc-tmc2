@@ -45,7 +45,11 @@
 #include "PCCFrameContext.h"
 #include "PCCPatch.h"
 
+#ifdef USE_HM_VIDEO_CODEC
+#include "PCCHMVideoDecoder.h"
+#else
 #include "PCCHevcParser.h"
+#endif
 
 namespace pcc {
 
@@ -72,19 +76,62 @@ class PCCVideoDecoder {
     const std::string fileName    = path + type;
     const std::string binFileName = fileName + ".bin";
     size_t            width = 0, height = 0;
-    PCCHevcParser     hevcParser;
+#ifndef USE_HM_VIDEO_CODEC
+    PccLibHevcParser::PCCHevcParser hevcParser;
     hevcParser.getVideoSize( bitstream.vector(), width, height );
+#endif
 
+#ifdef USE_HM_VIDEO_CODEC
+    if ( keepIntermediateFiles ) {
+      std::ofstream file( binFileName, std::ios::binary );
+      if ( !file.good() ) { return false; }
+      file.write( reinterpret_cast<char*>( bitstream.buffer() ), bitstream.size() );
+      file.close();
+    }
+    std::string        s( reinterpret_cast<char*>( bitstream.buffer() ), bitstream.size() );
+    std::istringstream iss( s );
+    std::istream&      stream = iss;
+    PCCHMVideoDecoder  hmDecoder;
+    hmDecoder.decode( stream, bitDepth == 8 ? 8 : 10, use444CodecIo, video );
+    width  = video.getWidth();
+    height = video.getHeight();
+#endif
     const std::string yuvRecFileName = addVideoFormat( fileName + "_rec" + ( use444CodecIo ? ".rgb" : ".yuv" ), width,
                                                        height, !use444CodecIo, bitDepth == 10 ? "10" : "8" );
     const std::string yuv444RecFileName = addVideoFormat( fileName + "_rec.yuv", width, height, false, "16" );
+
+#ifdef USE_HM_VIDEO_CODEC
+    std::ofstream file( yuvRecFileName, std::ios::binary );
+    if ( !file.good() ) { return false; }
+    size_t byteDepth    = ( bitDepth == 10 ? 2 : 1 );
+    size_t size         = byteDepth * width * height;
+    size_t chromaFactor = use444CodecIo ? 1 : 4;
+    printf( "Write video.size() = %lu video = %lu \n", video.size(), byteDepth );
+    if ( sizeof( T ) == byteDepth ) {
+      for ( auto& image : video ) {
+        file.write( (char*)( image.getChannel( 0 ).data() ), size );
+        file.write( (char*)( image.getChannel( 1 ).data() ), size / chromaFactor );
+        file.write( (char*)( image.getChannel( 2 ).data() ), size / chromaFactor );
+      }
+    } else {
+      std::vector<uint8_t> data;
+      data.resize( size + 2 * size / chromaFactor );
+      for ( auto& image : video ) {
+        auto* tmp = data.data();
+        for ( size_t i = 0; i < size; ++i ) { *( tmp++ ) = image.getChannel( 0 ).data()[i]; }
+        for ( size_t i = 0; i < size / chromaFactor; ++i ) { *( tmp++ ) = image.getChannel( 1 ).data()[i]; }
+        for ( size_t i = 0; i < size / chromaFactor; ++i ) { *( tmp++ ) = image.getChannel( 2 ).data()[i]; }
+        file.write( (char*)( data.data() ), data.size() );
+      }
+    }
+    file.close();
+#else
     std::ofstream     file( binFileName, std::ios::binary );
     const std::string format = use444CodecIo ? "444" : "420";
     if ( !file.good() ) { return false; }
     file.write( reinterpret_cast<char*>( bitstream.buffer() ), bitstream.size() );
     file.close();
     std::stringstream cmd;
-
     if ( use444CodecIo ) {
       cmd << decoderPath << " --OutputColourSpaceConvert=GBRtoRGB"
           << " --BitstreamFile=" << binFileName << " --ReconFile=" << yuvRecFileName;
@@ -95,19 +142,19 @@ class PCCVideoDecoder {
       // cases.
       if ( bitDepth == 8 ) { cmd << " --OutputBitDepth=8 --OutputBitDepthC=8"; }
     }
-
     std::cout << cmd.str() << '\n';
     if ( pcc::system( cmd.str().c_str() ) ) {
       std::cout << "Error: can't run system command!" << std::endl;
       return false;
     }
+#endif
     if ( inverseColorSpaceConversionConfig.empty() || use444CodecIo ) {
       if ( use444CodecIo ) {
         if ( !video.read( yuvRecFileName, width, height, frameCount, bitDepth == 8 ? 1 : 2 ) ) { return false; }
-        video.setColorFormat(0);
+        video.setColorFormat( 0 );
       } else {
         if ( !video.read420( yuvRecFileName, width, height, frameCount, bitDepth == 8 ? 1 : 2 ) ) { return false; }
-        video.setColorFormat(1);
+        video.setColorFormat( 1 );
       }
     } else {
       if ( patchColorSubsampling ) {
@@ -352,7 +399,7 @@ class PCCVideoDecoder {
         if ( colorSpaceConversionPath.empty() ) {
           video.read420( yuvRecFileName, width, height, frameCount, bitDepth == 8 ? 1 : 2, true, upsamplingFilter );
           if ( !keepIntermediateFiles ) { video.write( yuv444RecFileName, 2 ); }
-          video.setColorFormat(1);
+          video.setColorFormat( 1 );
         } else {
           std::stringstream cmd;
           cmd << colorSpaceConversionPath << " -f " << inverseColorSpaceConversionConfig << " -p SourceFile=\""
@@ -364,7 +411,7 @@ class PCCVideoDecoder {
             return false;
           }
           if ( !video.read( yuv444RecFileName, width, height, frameCount, 2 ) ) { return false; }
-          video.setColorFormat(2);
+          video.setColorFormat( 2 );
         }
       }
     }

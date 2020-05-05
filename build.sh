@@ -3,6 +3,11 @@
 CURDIR=`dirname $0`;
 echo -e "\033[0;32mBuild: $(readlink -f $CURDIR) \033[0m";
 
+CMAKE="";
+if [ `cmake  --version | grep version | awk '{print $3 }' | awk -F '.' '{print $1}'` == 3 ] ; then CMAKE=cmake; fi
+if [ `cmake3 --version | grep version | awk '{print $3 }' | awk -F '.' '{print $1}'` == 3 ] ; then CMAKE=cmake3; fi
+if [ "$CMAKE" == "" ] ; then echo "Can't find cmake > 3.0"; exit; fi
+
 case "$(uname -s)" in
   Linux*)     MACHINE=Linux;;
   Darwin*)    MACHINE=Mac;;
@@ -48,20 +53,25 @@ do
 done
 CMAKE_FLAGS="$CMAKE_FLAGS -DCMAKE_BUILD_TYPE=$MODE -DCMAKE_EXPORT_COMPILE_COMMANDS=ON";
 
+
 # Get default cmake configuration: 
-CMAKE_GENERATORS=`cmake -G 2>&1 | grep "*" | cut -c2- | awk -F "=" '{print $1}' | sed -e 's/^[ \t]*//;s/[ \t]*$//'`;
+CMAKE_GENERATORS=`$CMAKE -G 2>&1 | grep "*" | cut -c2- | awk -F "=" '{print $1}' | sed -e 's/^[ \t]*//;s/[ \t]*$//'`;
 if [ "$CMAKE_GENERATORS" == "" ] ; then CMAKE_GENERATORS="Unix Makefiles"; fi
 
-echo $MACHINE;
-echo $CMAKE_GENERATORS;
+echo "CMAKE      = $CMAKE"
+echo "MACHINE    = $MACHINE";
+echo "GENERATORS = $CMAKE_GENERATORS";
 if [ $MACHINE != "Linux" ] 
 then 
   echo "Windows cmake"
-  cmake -H${CURDIR} -B${CURDIR}/build/${MODE}   -G "${CMAKE_GENERATORS}" -A x64 ${CMAKE_FLAGS}
-
+  ${CMAKE} -H${CURDIR} -B${CURDIR}/build/${MODE}   -G "${CMAKE_GENERATORS}" -A x64 ${CMAKE_FLAGS}
   #  -T v142,host=x64
 else
-  cmake -H${CURDIR} -B${CURDIR}/build/${MODE} -G "${CMAKE_GENERATORS}"  ${CMAKE_FLAGS} 
+
+echo "CMAKE = $CMAKE";
+  ${CMAKE} -H${CURDIR} -B${CURDIR}/build/${MODE} -G "${CMAKE_GENERATORS}"  ${CMAKE_FLAGS} 
+  
+echo "CMAKE = $CMAKE";
 fi 
 
 
@@ -69,7 +79,7 @@ if [ $FORMAT == 1 ]
 then 
   echo -e "\033[0;32mFormat: $(readlink -f $CURDIR) \033[0m";
   case "${MACHINE}" in
-    Linux) cmake --build ${CURDIR}/build/${MODE} --target clang-format;; 
+    Linux) ${CMAKE} --build ${CURDIR}/build/${MODE} --target clang-format;; 
     Mac)   echo "Please, open the generated xcode project and build it ";;
     *)     buildWindows ./build/${MODE}/clang-format.vcxproj  ${MODE};;
   esac 
@@ -81,7 +91,7 @@ if [ $TIDY == 1 ]
 then 
   echo -e "\033[0;32mFormat: $(readlink -f $CURDIR) \033[0m";
   case "${MACHINE}" in
-    Linux) cmake --build ${CURDIR}/build/${MODE} --target clang-tidy;; 
+    Linux) ${CMAKE} --build ${CURDIR}/build/${MODE} --target clang-tidy;; 
     Mac)   echo "Please, open the generated xcode project and build it ";;
     *)     buildWindows ./build/${MODE}/clang-tidy.vcxproj ${MODE};;
   esac 

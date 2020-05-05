@@ -52,6 +52,7 @@ class PCCVideo {
     frames_.clear();
   }
   std::vector<PCCImage<T, N> >& getFrames() { return frames_; }
+  void                          swap( PCCVideo<T, N>& video ) { frames_.swap( video.frames_ ); }
 
   PCCImage<T, N>& getFrame( const size_t index ) {
     assert( index < frames_.size() );
@@ -61,10 +62,17 @@ class PCCVideo {
     assert( index < frames_.size() );
     return frames_[index];
   }
-  void setColorFormat( size_t value ) { for(auto& f : frames_ ) f.setColorFormat(value); }
+  void setColorFormat( size_t value ) {
+    for ( auto& f : frames_ ) f.setColorFormat( value );
+  }
   void resize( const size_t frameCount ) { frames_.resize( frameCount ); }
-  bool write( std::ofstream& outfile, const size_t nbyte ) const {
-    for ( const auto& frame : frames_ ) {
+
+  typename std::vector<PCCImage<T, N> >::iterator begin() { return frames_.begin(); }
+  typename std::vector<PCCImage<T, N> >::iterator end() { return frames_.end(); }
+  const size_t                                    size() { return frames_.size(); }
+
+  bool write( std::ofstream& outfile, const size_t nbyte ) {
+    for ( auto& frame : frames_ ) {
       if ( !frame.write( outfile, nbyte ) ) { return false; }
     }
     return true;
@@ -78,8 +86,8 @@ class PCCVideo {
     return false;
   }
 
-  bool write420( std::ofstream& outfile, const size_t nbyte, bool convert, const size_t filter ) const {
-    for ( const auto& frame : frames_ ) {
+  bool write420( std::ofstream& outfile, const size_t nbyte, bool convert, const size_t filter ) {
+    for ( auto& frame : frames_ ) {
       if ( !frame.write420( outfile, nbyte, convert, filter ) ) { return false; }
     }
     return true;
@@ -94,8 +102,8 @@ class PCCVideo {
     return false;
   }
 
-  bool write420( std::ofstream& outfile, const size_t nbyte ) const {
-    for ( const auto& frame : frames_ ) {
+  bool write420( std::ofstream& outfile, const size_t nbyte ) {
+    for ( auto& frame : frames_ ) {
       if ( !frame.write420( outfile, nbyte ) ) { return false; }
     }
     return true;

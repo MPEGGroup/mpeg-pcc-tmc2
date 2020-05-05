@@ -149,9 +149,9 @@ class PCCBitstreamReader {
                                           PCCBitstream&               bitstream );
 
   // 7.3.6.4  Atlas frame tile information syntax
-  static void atlasFrameTileInformation( AtlasFrameTileInformation& afti,
+  static void atlasFrameTileInformation( AtlasFrameTileInformation&     afti,
                                          AtlasSequenceParameterSetRbsp& asps,
-                                         PCCBitstream&              bitstream );
+                                         PCCBitstream&                  bitstream );
 
   // 7.3.6.5  Supplemental enhancement information Rbsp syntax
   void seiRbsp( PCCHighLevelSyntax& syntax, PCCBitstream& bitstream, NalUnitType nalUnitType );

@@ -99,9 +99,9 @@ int32_t PCCBitstreamReader::decode( SampleStreamVpccUnit& ssvu, PCCHighLevelSynt
     if ( vpccUnitType == VPCC_VPS ) {
       numVPS++;
       if ( numVPS > 1 ) {
-        //remove the bits counted for the last VPS
+        // remove the bits counted for the last VPS
         int32_t vpccUnitSize = (int32_t)VPCCUnit.getVpccUnitDataBitstream().capacity();
-        int32_t statSize = syntax.getBitstreamStat().getVpccUnitSize(VPCC_VPS) - vpccUnitSize;
+        int32_t statSize     = syntax.getBitstreamStat().getVpccUnitSize( VPCC_VPS ) - vpccUnitSize;
         syntax.getBitstreamStat().overwriteVpccUnitSize( VPCC_VPS, statSize );
         endOfGop = true;
       } else {
@@ -183,7 +183,7 @@ void PCCBitstreamReader::vpccUnit( PCCHighLevelSyntax& syntax, VpccUnit& currVpc
   vpccUnitHeader( syntax, bitstream, vpccUnitType );
   assert( vpccUnitType == currVpccUnit.getVpccUnitType() );
   vpccUnitPayload( syntax, bitstream, vpccUnitType );
-  syntax.getBitstreamStat().setVpccUnitSize( vpccUnitType, static_cast<int32_t>( bitstream.size() ) - position );  
+  syntax.getBitstreamStat().setVpccUnitSize( vpccUnitType, static_cast<int32_t>( bitstream.size() ) - position );
   TRACE_BITSTREAM( "vpccUnit: vpccUnitType = %d(%s) \n", vpccUnitType, toString( vpccUnitType ).c_str() );
   TRACE_BITSTREAM( "vpccUnit: size [%d ~ %d] \n", position, bitstream.size() );
   TRACE_BITSTREAM( "%s done\n", __func__ );
@@ -406,7 +406,7 @@ void PCCBitstreamReader::atlasSequenceParameterSetRbsp( AtlasSequenceParameterSe
   for ( size_t i = 0; i < asps.getNumRefAtlasFrameListsInAsps(); i++ ) {
     refListStruct( asps.getRefListStruct( i ), asps, bitstream );
   }
-  asps.setUseEightOrientationsFlag( bitstream.read( 1 ) != 0U );               // u(1)
+  asps.setUseEightOrientationsFlag( bitstream.read( 1 ) != 0U );                 // u(1)
   asps.set45DegreeProjectionPatchPresentFlag( bitstream.read( 1 ) != 0U );       // u(1)
   asps.setNormalAxisLimitsQuantizationEnabledFlag( bitstream.read( 1 ) != 0U );  // u(1)
   asps.setNormalAxisMaxDeltaValueEnabledFlag( bitstream.read( 1 ) != 0U );       // u(1)
@@ -525,9 +525,9 @@ void PCCBitstreamReader::atlasFrameParameterSetRbsp( AtlasFrameParameterSetRbsp&
 }
 
 // 7.3.6.4  Atlas frame tile information syntax
-void PCCBitstreamReader::atlasFrameTileInformation( AtlasFrameTileInformation& afti,
+void PCCBitstreamReader::atlasFrameTileInformation( AtlasFrameTileInformation&     afti,
                                                     AtlasSequenceParameterSetRbsp& asps,
-                                                    PCCBitstream&              bitstream ) {
+                                                    PCCBitstream&                  bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   afti.setSingleTileInAtlasFrameFlag( bitstream.read( 1 ) != 0U );  // u(1)
   if ( !afti.getSingleTileInAtlasFrameFlag() ) {
@@ -535,8 +535,10 @@ void PCCBitstreamReader::atlasFrameTileInformation( AtlasFrameTileInformation& a
     if ( afti.getUniformTileSpacingFlag() ) {
       afti.setTileColumnWidthMinus1( 0, bitstream.readUvlc() );  //  ue(v)
       afti.setTileRowHeightMinus1( 0, bitstream.readUvlc() );    //  ue(v)
-      afti.setNumTileColumnsMinus1( ceil(asps.getFrameWidth() / ((afti.getTileColumnWidthMinus1( 0 )+1)*64.0))-1 );
-      afti.setNumTileRowsMinus1   ( ceil(asps.getFrameHeight()/ ((afti.getTileRowHeightMinus1  ( 0 )+1)*64.0))-1 );
+      afti.setNumTileColumnsMinus1(
+          ceil( asps.getFrameWidth() / ( ( afti.getTileColumnWidthMinus1( 0 ) + 1 ) * 64.0 ) ) - 1 );
+      afti.setNumTileRowsMinus1( ceil( asps.getFrameHeight() / ( ( afti.getTileRowHeightMinus1( 0 ) + 1 ) * 64.0 ) ) -
+                                 1 );
     } else {
       afti.setNumTileColumnsMinus1( bitstream.readUvlc() );  //  ue(v)
       afti.setNumTileRowsMinus1( bitstream.readUvlc() );     //  ue(v)
@@ -548,34 +550,35 @@ void PCCBitstreamReader::atlasFrameTileInformation( AtlasFrameTileInformation& a
       }
     }
 
-  afti.setSingleTilePerTileGroupFlag( bitstream.read( 1 ) );  //  u(1)
-  if ( afti.getSingleTilePerTileGroupFlag() == 0U ) {
-    uint32_t NumTilesInPatchFrame = ( afti.getNumTileColumnsMinus1() + 1 ) * ( afti.getNumTileRowsMinus1() + 1 );
+    afti.setSingleTilePerTileGroupFlag( bitstream.read( 1 ) );  //  u(1)
+    if ( afti.getSingleTilePerTileGroupFlag() == 0U ) {
+      uint32_t NumTilesInPatchFrame = ( afti.getNumTileColumnsMinus1() + 1 ) * ( afti.getNumTileRowsMinus1() + 1 );
 
-    afti.setNumTileGroupsInAtlasFrameMinus1( bitstream.readUvlc() );  // ue(v)
-    for ( size_t i = 0; i <= afti.getNumTileGroupsInAtlasFrameMinus1(); i++ ) {
-      uint8_t bitCount = ceilLog2( NumTilesInPatchFrame );
-      if ( i > 0 ) {
-        afti.setTopLeftTileIdx( i, bitstream.read( bitCount ) );  // u(v)
-      } else{
-        afti.setTopLeftTileIdx( i, 0 );
+      afti.setNumTileGroupsInAtlasFrameMinus1( bitstream.readUvlc() );  // ue(v)
+      for ( size_t i = 0; i <= afti.getNumTileGroupsInAtlasFrameMinus1(); i++ ) {
+        uint8_t bitCount = ceilLog2( NumTilesInPatchFrame );
+        if ( i > 0 ) {
+          afti.setTopLeftTileIdx( i, bitstream.read( bitCount ) );  // u(v)
+        } else {
+          afti.setTopLeftTileIdx( i, 0 );
+        }
+        bitCount = ceilLog2( NumTilesInPatchFrame - afti.getTopLeftTileIdx( i ) );
+        afti.setBottomRightTileIdxDelta( i, bitstream.read( bitCount ) );  // u(v)
       }
-      bitCount = ceilLog2( NumTilesInPatchFrame - afti.getTopLeftTileIdx( i ) );
-      afti.setBottomRightTileIdxDelta( i, bitstream.read( bitCount ) );  // u(v)
+    } else {
+      afti.setNumTileGroupsInAtlasFrameMinus1(
+          ( afti.getNumTileColumnsMinus1() + 1 ) * ( afti.getNumTileRowsMinus1() + 1 ) - 1 );  // ue(v)
     }
-  } else {
-    afti.setNumTileGroupsInAtlasFrameMinus1(  ( afti.getNumTileColumnsMinus1() + 1 ) * ( afti.getNumTileRowsMinus1() + 1 ) - 1 );  // ue(v)
-  }
-  afti.setSignalledTileGroupIdFlag( bitstream.read( 1 ) != 0U );  // u(1)
-  if ( afti.getSignalledTileGroupIdFlag() ) {
-    afti.setSignalledTileGroupIdLengthMinus1( bitstream.readUvlc() );  // ue(v)
-    for ( size_t i = 0; i <= afti.getSignalledTileGroupIdLengthMinus1(); i++ ) {
-      uint8_t bitCount = afti.getSignalledTileGroupIdLengthMinus1() + 1;
-      afti.setTileGroupId( i, bitstream.read( bitCount ) );  // u(v)
+    afti.setSignalledTileGroupIdFlag( bitstream.read( 1 ) != 0U );  // u(1)
+    if ( afti.getSignalledTileGroupIdFlag() ) {
+      afti.setSignalledTileGroupIdLengthMinus1( bitstream.readUvlc() );  // ue(v)
+      for ( size_t i = 0; i <= afti.getSignalledTileGroupIdLengthMinus1(); i++ ) {
+        uint8_t bitCount = afti.getSignalledTileGroupIdLengthMinus1() + 1;
+        afti.setTileGroupId( i, bitstream.read( bitCount ) );  // u(v)
+      }
     }
-  }
- }//if ( !afti.getSingleTileInAtlasFrameFlag() )
-  else{
+  }  // if ( !afti.getSingleTileInAtlasFrameFlag() )
+  else {
     afti.setNumTileGroupsInAtlasFrameMinus1( 0 );
   }
 }
@@ -613,16 +616,16 @@ void PCCBitstreamReader::atlasTileGroupHeader( AtlasTileGroupHeader& atgh,
   AtlasSequenceParameterSetRbsp& asps   = syntax.getAtlasSequenceParameterSet( aspsId );
   AtlasFrameTileInformation&     afti   = afps.getAtlasFrameTileInformation();
 
-  //v9.1
-  if(afti.getSignalledTileGroupIdFlag())
+  // v9.1
+  if ( afti.getSignalledTileGroupIdFlag() )
     atgh.setAtghAddress( bitstream.read( afti.getSignalledTileGroupIdLengthMinus1() + 1 ) );
-  else{
-    if(afti.getNumTileGroupsInAtlasFrameMinus1()!=0)
-      atgh.setAtghAddress( bitstream.read( ceilLog2( afti.getNumTileGroupsInAtlasFrameMinus1()+1 ) ));
+  else {
+    if ( afti.getNumTileGroupsInAtlasFrameMinus1() != 0 )
+      atgh.setAtghAddress( bitstream.read( ceilLog2( afti.getNumTileGroupsInAtlasFrameMinus1() + 1 ) ) );
     else
       atgh.setAtghAddress( 0 );
   }
-  
+
   atgh.setAtghType( PCCTILEGROUP( bitstream.readUvlc() ) );
   if ( afps.getAfpsOutputFlagPresentFlag() ) {
     atgh.setAtghAtlasOutputFlag( bitstream.read( 1 ) != 0U );
@@ -1689,10 +1692,9 @@ void PCCBitstreamReader::sceneObjectInformation( PCCBitstream& bitstream, SEI& s
             sei.setSoiObjectNumDependencies( k, bitstream.read( 4 ) );
             sei.allocateObjectNumDependencies( k, sei.getSoiObjectNumDependencies( k ) );
             for ( size_t j = 0; j < sei.getSoiObjectNumDependencies( k ); j++ ) {
-              sei.setSoiObjectDependencyIdx( k, j,
-                                             bitstream.read( 8 ) );  // size_t bitCount = ceil(log2(
-                                                                     // sei.getSoiObjectNumDependencies(k)
-                                                                     // )+0.5);
+              sei.setSoiObjectDependencyIdx( k, j, bitstream.read( 8 ) );  // size_t bitCount = ceil(log2(
+              // sei.getSoiObjectNumDependencies(k)
+              // )+0.5);
             }
           }
         }

@@ -117,9 +117,11 @@ class PCCBitstreamStat {
     PCCBitstreamGofStat element;
     bitstreamGofStat_.push_back( element );
   }
-  void   setHeader( size_t size ) { header_ = size; }
-  void   incrHeader( size_t size ) { header_ += size; }
-  void   overwriteVpccUnitSize( VPCCUnitType type, size_t size ) { bitstreamGofStat_.back().overwriteVpccUnitSize( type, size ); }
+  void setHeader( size_t size ) { header_ = size; }
+  void incrHeader( size_t size ) { header_ += size; }
+  void overwriteVpccUnitSize( VPCCUnitType type, size_t size ) {
+    bitstreamGofStat_.back().overwriteVpccUnitSize( type, size );
+  }
   void   setVpccUnitSize( VPCCUnitType type, size_t size ) { bitstreamGofStat_.back().setVpccUnitSize( type, size ); }
   void   setVideoBinSize( PCCVideoType type, size_t size ) { bitstreamGofStat_.back().setVideoBinSize( type, size ); }
   size_t getVpccUnitSize( VPCCUnitType type ) { return bitstreamGofStat_.back().getVpccUnitSize( type ); }
@@ -175,13 +177,14 @@ class PCCBitstream {
     position_.bits  = 0;
     position_.bytes = 0;
   }
-  bool                write( const std::string& compressedStreamPath );
-  uint8_t*            buffer() { return data_.data(); }
-  uint64_t&           size() { return position_.bytes; }
-  uint64_t            capacity() { return data_.size(); }
-  PCCBistreamPosition getPosition() { return position_; }
-  void                setPosition( PCCBistreamPosition& val ) { position_ = val; }
-  PCCBitstream&       operator+=( const uint64_t size ) {
+  bool                  write( const std::string& compressedStreamPath );
+  uint8_t*              buffer() { return data_.data(); }
+  std::vector<uint8_t>& vector() { return data_; }
+  uint64_t&             size() { return position_.bytes; }
+  uint64_t              capacity() { return data_.size(); }
+  PCCBistreamPosition   getPosition() { return position_; }
+  void                  setPosition( PCCBistreamPosition& val ) { position_ = val; }
+  PCCBitstream&         operator+=( const uint64_t size ) {
     position_.bytes += size;
     return *this;
   }
@@ -221,14 +224,14 @@ class PCCBitstream {
 #endif
     return code;
   }
-  template<typename T>
+  template <typename T>
   void write( T value, uint8_t bits, bool bFullStream = false ) {
-    write( static_cast<uint32_t>(value), bits, position_ );
+    write( static_cast<uint32_t>( value ), bits, position_ );
 #ifdef BITSTREAM_TRACE
     if ( bFullStream == true )
-      trace( "FullStream: CodU[%2u]: %4zu \n", bits, static_cast<uint32_t>(value) );
+      trace( "FullStream: CodU[%2u]: %4zu \n", bits, static_cast<uint32_t>( value ) );
     else
-      trace( "  CodU[%2u]: %4zu \n", bits, static_cast<uint32_t>(value) );
+      trace( "  CodU[%2u]: %4zu \n", bits, static_cast<uint32_t>( value ) );
 #endif
   }
 
@@ -263,9 +266,9 @@ class PCCBitstream {
     return value;
   }
 
-  template<typename T>
+  template <typename T>
   inline void writeUvlc( T value ) {
-    uint32_t code = static_cast<uint32_t>(value);
+    uint32_t code = static_cast<uint32_t>( value );
 #ifdef BITSTREAM_TRACE
     uint32_t orgCode            = code;
     bool     traceStartingValue = trace_;
@@ -307,9 +310,9 @@ class PCCBitstream {
     return value;
   }
 
-  template<typename T>
+  template <typename T>
   inline void writeSvlc( T value ) {
-    int32_t code = static_cast<int32_t>(value);
+    int32_t code = static_cast<int32_t>( value );
     writeUvlc( ( uint32_t )( code <= 0 ? -code << 1 : ( code << 1 ) - 1 ) );
 #ifdef BITSTREAM_TRACE
     trace( "  CodeSvlc: %4d \n", code );

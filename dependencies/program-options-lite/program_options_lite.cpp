@@ -54,21 +54,13 @@ namespace df
     ostream& ErrorReporter::error(const string& where)
     {
       is_errored = 1;
-      if (!where.empty())
-        cerr << where << " error: ";
-      else
-        cerr << "Error: ";
-
+      cerr << where << " error: ";
       return cerr;
     }
 
     ostream& ErrorReporter::warn(const string& where)
     {
-      if (!where.empty())
-        cerr << where << " warning: ";
-      else
-        cerr << "Warning: ";
-
+      cerr << where << " warning: ";
       return cerr;
     }
 
@@ -157,8 +149,6 @@ namespace df
       if (!entry.opt_long.empty())
       {
         out << "--" << entry.opt_long.front();
-        out << '=';
-        entry.opt->writeDefault(out);
       }
     }
 
@@ -175,7 +165,7 @@ namespace df
         max_width = max(max_width, (unsigned) line.tellp());
       }
 
-      unsigned opt_width = min(max_width+2, 7+28u + pad_short) + 2;
+      unsigned opt_width = min(max_width+2, 28u + pad_short) + 2;
       unsigned desc_width = columns - opt_width;
 
       /* second pass: write out formatted option and help text.
@@ -197,12 +187,10 @@ namespace df
           continue;
         }
         size_t currlength = size_t(line.tellp());
-        if (currlength >= opt_width)
+        if (currlength > opt_width)
         {
           /* if option text is too long (and would collide with the
-           * help text, split onto next line and ensure a gap after
-           * the previous option to increase readability */
-          cout << endl;
+           * help text, split onto next line */
           line << endl;
           currlength = 0;
         }

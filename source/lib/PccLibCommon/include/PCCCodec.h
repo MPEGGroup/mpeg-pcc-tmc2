@@ -120,12 +120,12 @@ class PCCCodec {
                            std::vector<std::vector<uint32_t>>& partitions,
                            bool                                bDecoder );
 
-  void generatePointCloud( PCCPointSet3&                        reconstruct,
-                           PCCContext&                          context,
-                           PCCFrameContext&                     frame,
-                           const GeneratePointCloudParameters&  params,
-                           std::vector<uint32_t>&               partition,
-                           bool                                 bDecoder );
+  void generatePointCloud( PCCPointSet3&                       reconstruct,
+                           PCCContext&                         context,
+                           PCCFrameContext&                    frame,
+                           const GeneratePointCloudParameters& params,
+                           std::vector<uint32_t>&              partition,
+                           bool                                bDecoder );
 
   bool colorPointCloud( PCCGroupOfFrames&                     reconstructs,
                         PCCContext&                           context,
@@ -134,7 +134,7 @@ class PCCCodec {
                         const std::vector<std::vector<bool>>& absoluteT1List,
                         const size_t                          multipleStreams,
                         const GeneratePointCloudParameters&   params );
-                        
+
   bool colorPointCloud( PCCPointSet3&                       reconstruct,
                         PCCContext&                         context,
                         PCCFrameContext&                    frame,
@@ -165,14 +165,14 @@ class PCCCodec {
                        const GeneratePointCloudParameters& params );
 
   void generateRawPointsGeometryfromVideo( PCCContext&       context,
-                                     PCCFrameContext&  frame,
-                                     PCCGroupOfFrames& reconstructs,
-                                     size_t            frameIndex );
+                                           PCCFrameContext&  frame,
+                                           PCCGroupOfFrames& reconstructs,
+                                           size_t            frameIndex );
 
   void generateRawPointsTexturefromVideo( PCCContext&       context,
-                                    PCCFrameContext&  frame,
-                                    PCCGroupOfFrames& reconstructs,
-                                    size_t            frameIndex );
+                                          PCCFrameContext&  frame,
+                                          PCCGroupOfFrames& reconstructs,
+                                          size_t            frameIndex );
 
   void generateRawPointsGeometryfromVideo( PCCContext& context, PCCGroupOfFrames& reconstructs );
   void generateRawPointsTexturefromVideo( PCCContext& context, PCCGroupOfFrames& reconstructs );
@@ -316,7 +316,6 @@ class PCCCodec {
   }
 
  private:
-
   void smoothPointCloud( PCCPointSet3&                      reconstruct,
                          const std::vector<uint32_t>&       partition,
                          const GeneratePointCloudParameters params );

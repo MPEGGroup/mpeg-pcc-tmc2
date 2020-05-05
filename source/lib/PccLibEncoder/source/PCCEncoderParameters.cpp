@@ -203,7 +203,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   // Sort raw points by Morton code
   mortonOrderSortRawPoints_    = false;
   textureMPSeparateVideoWidth_ = 64;
-  //yo-  textureMPSeparateVideoWidth_ = 256;
+  // yo-  textureMPSeparateVideoWidth_ = 256;
 
   // Separate high gradient points
   highGradientSeparation_   = false;
@@ -594,7 +594,7 @@ bool PCCEncoderParameters::check() {
   }
 
   if ( losslessGeo_ ) {
-    pbfEnableFlag_ = false;
+    pbfEnableFlag_          = false;
     occupancyMapRefinement_ = false;
     if ( mapCountMinus1_ == 0 ) {
       // mapCountMinus1_ = 1;
@@ -929,7 +929,5 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
 
   auto& plt = sps.getProfileTierLevel();
   plt.setProfileCodecGroupIdc( CODEC_GROUP_HEVC_MAIN10 );
-  if ( losslessGeo_ ) {
-    plt.setProfileCodecGroupIdc( CODEC_GROUP_HEVC444 );
-  } 
+  if ( losslessGeo_ ) { plt.setProfileCodecGroupIdc( CODEC_GROUP_HEVC444 ); }
 }

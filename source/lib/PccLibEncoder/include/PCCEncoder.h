@@ -129,14 +129,14 @@ class PCCEncoder : public PCCCodec {
                                   PCCImageOccupancyMap&  videoFrameOccupancyMap );
 
   template <typename T>
-  T           limit( T x, T minVal, T maxVal );
-  void        preFilterOccupancyMap( PCCImageOccupancyMap& image, size_t kwidth, size_t kheight );
-  bool        modifyOccupancyMap( const PCCGroupOfFrames& sources, PCCContext& context );
-  bool        modifyOccupancyMap( const size_t           imageWidth,
-                                  const size_t           imageHeight,
-                                  std::vector<uint32_t>& occupancyMap,
-                                  PCCImageOccupancyMap&  videoFrameOccupancyMap,
-                                  std::ofstream&         ofile );
+  T    limit( T x, T minVal, T maxVal );
+  void preFilterOccupancyMap( PCCImageOccupancyMap& image, size_t kwidth, size_t kheight );
+  bool modifyOccupancyMap( const PCCGroupOfFrames& sources, PCCContext& context );
+  bool modifyOccupancyMap( const size_t           imageWidth,
+                           const size_t           imageHeight,
+                           std::vector<uint32_t>& occupancyMap,
+                           PCCImageOccupancyMap&  videoFrameOccupancyMap,
+                           std::ofstream&         ofile );
   void markRawPatchLocationOccupancyMapVideo( PCCContext& context );
   void markRawPatchLocation( PCCFrameContext& contextFrame, PCCImageOccupancyMap& occupancyMap );
 
@@ -154,10 +154,10 @@ class PCCEncoder : public PCCCodec {
 
   void generateRawPointsGeometryImage( PCCContext& context, PCCFrameContext& frame, PCCImageGeometry& image );
   void generateRawPointsTextureImage( PCCContext&         context,
-                                PCCFrameContext&    frame,
-                                PCCImageTexture&    image,
-                                size_t              shift,
-                                const PCCPointSet3& reconstruct );
+                                      PCCFrameContext&    frame,
+                                      PCCImageTexture&    image,
+                                      size_t              shift,
+                                      const PCCPointSet3& reconstruct );
 
   template <typename T>
   void dilate( PCCFrameContext& frame, PCCImage<T, 3>& image, const PCCImage<T, 3>* reference = nullptr );

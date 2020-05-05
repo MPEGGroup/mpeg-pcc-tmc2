@@ -80,6 +80,23 @@ static std::istream& readUInt( std::istream& in, T& val ) {
 
 namespace pcc {
 static std::istream& operator>>( std::istream& in, PCCColorTransform& val ) { return readUInt( in, val ); }
+
+static std::istream& operator>>( std::istream& in, std::vector<int>& vector ) {
+  std::string str;
+  in >> str;
+  str.erase( std::remove( str.begin(), str.end(), ' ' ), str.end() );
+  size_t pos = 0;
+  while ( ( pos = str.find( "," ) ) != std::string::npos ) {
+    vector.push_back( std::stoi( str.substr( 0, pos ) ) );
+    str.erase( 0, pos + 1 );
+  }
+  vector.push_back( std::stoi( str.substr( 0, pos ) ) );
+  return in;
+}
+
+// template <class T>
+// static inline istream& operator>> (std::istream &in, T &val ) {  in >> val;
+// return in; }
 }  // namespace pcc
 
 //---------------------------------------------------------------------------
@@ -101,12 +118,10 @@ bool parseParameters( int                   argc,
   // clang-format off
   po::Options opts;
   opts.addOptions()
-    ( "help",
-      print_help,
-      false,
+    ( "help", print_help, false, 
       "This help text" )
-    ( "c,config",
-      po::parseConfigFile,
+    ( "c,config", 
+    po::parseConfigFile, 
       "Configuration file name" )
     ( "configurationFolder",
       encoderParams.configurationFolder_,
@@ -142,7 +157,7 @@ bool parseParameters( int                   argc,
       "Number of frames to encode" )
     ( "groupOfFramesSize",
       encoderParams.groupOfFramesSize_,
-      encoderParams.groupOfFramesSize_,
+      encoderParams.groupOfFramesSize_, 
       "Random access period" )
 
     // colour space conversion
@@ -194,11 +209,11 @@ bool parseParameters( int                   argc,
       "Resolution of packing block(a block contain only one patch)" )
     ( "enablePatchSplitting",
       encoderParams.enablePatchSplitting_,
-      encoderParams.enablePatchSplitting_,
+      encoderParams.enablePatchSplitting_, 
       "Enable patch splitting" )
     ( "maxPatchSize",
       encoderParams.maxPatchSize_,
-      encoderParams.maxPatchSize_,
+      encoderParams.maxPatchSize_, 
       "Maximum patch size for segmentation" )
     ( "log2QuantizerSizeX",
       encoderParams.log2QuantizerSizeX_,
@@ -218,11 +233,11 @@ bool parseParameters( int                   argc,
       "Number of nearest neighbors used during connected components extraction" )
     ( "surfaceThickness",
       encoderParams.surfaceThickness_,
-      encoderParams.surfaceThickness_,
+      encoderParams.surfaceThickness_, 
       "Surface thickness" )
     ( "depthQuantizationStep",
       encoderParams.minLevel_,
-      encoderParams.minLevel_,
+      encoderParams.minLevel_, 
       "minimum level for patches" )
     ( "maxAllowedDist2RawPointsDetection",
       encoderParams.maxAllowedDist2RawPointsDetection_,
@@ -240,7 +255,7 @@ bool parseParameters( int                   argc,
     // packing
     ( "minimumImageWidth",
       encoderParams.minimumImageWidth_,
-      encoderParams.minimumImageWidth_,
+      encoderParams.minimumImageWidth_, 
       "Minimum width of packed patch frame" )
     ( "minimumImageHeight",
       encoderParams.minimumImageHeight_,
@@ -254,7 +269,7 @@ bool parseParameters( int                   argc,
       "Maximum nuber of candidates in list L" )
     ( "occupancyPrecision",
       encoderParams.occupancyPrecision_,
-      encoderParams.occupancyPrecision_,
+      encoderParams.occupancyPrecision_, 
       "Occupancy map B0 precision" )
     ( "occupancyMapVideoEncoderConfig",
       encoderParams.occupancyMapVideoEncoderConfig_,
@@ -276,7 +291,7 @@ bool parseParameters( int                   argc,
       "enhanced occupancy map fixed bit count" )
     ( "occupancyMapRefinement",
       encoderParams.occupancyMapRefinement_,
-      encoderParams.occupancyMapRefinement_,
+      encoderParams.occupancyMapRefinement_, 
       "Use occupancy map refinement" )
 
     // smoothing
@@ -286,15 +301,15 @@ bool parseParameters( int                   argc,
       "Exclude geometry smoothing from attribute transfer\n" )
     ( "flagGeometrySmoothing",
       encoderParams.flagGeometrySmoothing_,
-      encoderParams.flagGeometrySmoothing_,
+      encoderParams.flagGeometrySmoothing_, 
       "Enable geometry smoothing\n" )
     ( "neighborCountSmoothing",
       encoderParams.neighborCountSmoothing_,
-      encoderParams.neighborCountSmoothing_,
+      encoderParams.neighborCountSmoothing_, 
       "Neighbor count smoothing" )
     ( "radius2Smoothing",
       encoderParams.radius2Smoothing_,
-      encoderParams.radius2Smoothing_,
+      encoderParams.radius2Smoothing_, 
       "Radius to smoothing" )
     ( "radius2BoundaryDetection",
       encoderParams.radius2BoundaryDetection_,
@@ -302,19 +317,19 @@ bool parseParameters( int                   argc,
       "Radius to boundary detection" )
     ( "thresholdSmoothing",
       encoderParams.thresholdSmoothing_,
-      encoderParams.thresholdSmoothing_,
+      encoderParams.thresholdSmoothing_, 
       "Threshold smoothing" )
 
     // Patch Expansion (m47772 CE2.12)
     ( "patchExpansion",
       encoderParams.patchExpansion_,
-      encoderParams.patchExpansion_,
+      encoderParams.patchExpansion_, 
       "Use occupancy map refinement" )
 
     // grid smoothing (m44705 CE2.17)
     ( "gridSmoothing",
       encoderParams.gridSmoothing_,
-      encoderParams.gridSmoothing_,
+      encoderParams.gridSmoothing_, 
       "Enable grid smoothing" )
     ( "gridSize",
       encoderParams.gridSize_,
@@ -324,7 +339,7 @@ bool parseParameters( int                   argc,
     // color smoothing
     ( "thresholdColorSmoothing",
       encoderParams.thresholdColorSmoothing_,
-      encoderParams.thresholdColorSmoothing_,
+      encoderParams.thresholdColorSmoothing_, 
       "Threshold of color smoothing" )
     ( "gridColorSmoothing",
       encoderParams.gridColorSmoothing_,
@@ -344,11 +359,11 @@ bool parseParameters( int                   argc,
       "Threshold of color variation in cells" )
     ( "thresholdLocalEntropy",
       encoderParams.thresholdLocalEntropy_,
-      encoderParams.thresholdLocalEntropy_,
+      encoderParams.thresholdLocalEntropy_, 
       "Threshold of local entropy" )
     ( "radius2ColorSmoothing",
       encoderParams.radius2ColorSmoothing_,
-      encoderParams.radius2ColorSmoothing_,
+      encoderParams.radius2ColorSmoothing_, 
       "Redius of color smoothing" )
     ( "neighborCountColorSmoothing",
       encoderParams.neighborCountColorSmoothing_,
@@ -356,7 +371,7 @@ bool parseParameters( int                   argc,
       "Neighbor count for color smoothing" )
     ( "flagColorSmoothing",
       encoderParams.flagColorSmoothing_,
-      encoderParams.flagColorSmoothing_,
+      encoderParams.flagColorSmoothing_, 
       "Enable color smoothing\n" )
 
     // color pre-smoothing
@@ -378,13 +393,13 @@ bool parseParameters( int                   argc,
       "Neighbor count for color pre-smoothing" )
     ( "flagColorPreSmoothing",
       encoderParams.flagColorPreSmoothing_,
-      encoderParams.flagColorPreSmoothing_,
+      encoderParams.flagColorPreSmoothing_, 
       "Enable color pre-smoothing\n" )
 
     // colouring
     ( "bestColorSearchRange",
       encoderParams.bestColorSearchRange_,
-      encoderParams.bestColorSearchRange_,
+      encoderParams.bestColorSearchRange_, 
       "Best color search range" )
     // Improved color transfer (m49367 CE2.17)
     ( "numNeighborsColorTransferFwd",
@@ -447,11 +462,11 @@ bool parseParameters( int                   argc,
     // video encoding
     ( "videoEncoderPath",
       encoderParams.videoEncoderPath_,
-      encoderParams.videoEncoderPath_,
+      encoderParams.videoEncoderPath_, 
       "HM video encoder executable" )
     ( "videoEncoderAuxPath",
       encoderParams.videoEncoderAuxPath_,
-      encoderParams.videoEncoderAuxPath_,
+      encoderParams.videoEncoderAuxPath_, 
       "HM video encoder executable" )
     ( "videoEncoderOccupancyMapPath",
       encoderParams.videoEncoderOccupancyMapPath_,
@@ -496,7 +511,7 @@ bool parseParameters( int                   argc,
       "Enable lossless encoding of geometry\n" )
     ( "noAttributes",
       encoderParams.noAttributes_,
-      encoderParams.noAttributes_,
+      encoderParams.noAttributes_, 
       "Disable encoding of attributes" )
     ( "losslessGeo444",
       encoderParams.losslessGeo444_,
@@ -534,17 +549,17 @@ bool parseParameters( int                   argc,
       "Absolute D1" )
     ( "absoluteT1",
       encoderParams.absoluteT1_,
-      encoderParams.absoluteT1_,
+      encoderParams.absoluteT1_, 
       "Absolute T1" )
     ( "multipleStreams",
       encoderParams.multipleStreams_,
-      // 0. absolute 1 delta
-    encoderParams.multipleStreams_,
+    // 0. absolute 1 delta
+      encoderParams.multipleStreams_,
       "number of video(geometry and attribute) streams" )
     ( "qpT1",
       encoderParams.qpAdjT1_,
-      // 0. absolute 1 delta
-    encoderParams.qpAdjT1_,
+    // 0. absolute 1 delta
+      encoderParams.qpAdjT1_, 
       "qp adjustment for T1 0, +3, -3..." )
     ( "qpD1",
       encoderParams.qpAdjD1_,
@@ -564,11 +579,11 @@ bool parseParameters( int                   argc,
       "levelOfDetail : Y axis in 2D space (should be greater than 1)" )
     ( "groupDilation",
       encoderParams.groupDilation_,
-      encoderParams.groupDilation_,
+      encoderParams.groupDilation_, 
       "Group Dilation" )
     ( "textureDilationOffLossless",
       encoderParams.textureDilationOffLossless_,
-      encoderParams.textureDilationOffLossless_,
+      encoderParams.textureDilationOffLossless_, 
       "Group Dilation" )
 
     // Lossy occupancy map coding
@@ -587,16 +602,15 @@ bool parseParameters( int                   argc,
 
     // visual quality
     ( "patchColorSubsampling",
-      encoderParams.patchColorSubsampling_,
-      false,
+      encoderParams.patchColorSubsampling_, false,
       "Enable per patch color sub-sampling\n" )
     ( "deltaCoding",
       encoderParams.deltaCoding_,
       encoderParams.deltaCoding_,
       "Delta meta-data coding" )
     ( "maxNumRefAtalsList",
-      //
-    encoderParams.maxNumRefAtlasList_,
+    //
+      encoderParams.maxNumRefAtlasList_,
       encoderParams.maxNumRefAtlasList_,
       "maximum Number of Reference Patch list, default: 1" )
     ( "maxNumRefAtlasFrame",
@@ -609,7 +623,7 @@ bool parseParameters( int                   argc,
       "Use point local reconstruction" )
     ( "mapCountMinus1",
       encoderParams.mapCountMinus1_,
-      encoderParams.mapCountMinus1_,
+      encoderParams.mapCountMinus1_, 
       "Numbers of layers (rename to maps?)" )
     ( "singleLayerPixelInterleaving",
       encoderParams.singleMapPixelInterleaving_,
@@ -617,11 +631,11 @@ bool parseParameters( int                   argc,
       "Use single layer pixel interleaving" )
     ( "removeDuplicatePoints",
       encoderParams.removeDuplicatePoints_,
-      encoderParams.removeDuplicatePoints_,
+      encoderParams.removeDuplicatePoints_, 
       "Remove duplicate points( " )
     ( "surfaceSeparation",
       encoderParams.surfaceSeparation_,
-      encoderParams.surfaceSeparation_,
+      encoderParams.surfaceSeparation_, 
       "surface separation" )
 
     // high gradient separation
@@ -655,7 +669,7 @@ bool parseParameters( int                   argc,
       encoderParams.textureBGFill_,
       encoderParams.textureBGFill_,
       "Selects the background filling operation for texture only (0: patch-edge extension, "
-      "1(default): smoothed push-pull algorithm), 2: harmonic background filling\n" )
+      "1(default): smoothed push-pull algorithm), 2: harmonic background filling " )
 
     // lossy-raw-points patch
     ( "lossyRawPointsPatch",
@@ -688,7 +702,7 @@ bool parseParameters( int                   argc,
       "matched patches area ratio threshold (decides if connections are valid or not, 0(default))\n" )
     ( "patchPrecedenceOrder",
       encoderParams.patchPrecedenceOrderFlag_,
-      encoderParams.patchPrecedenceOrderFlag_,
+      encoderParams.patchPrecedenceOrderFlag_, 
       "Order of patches\n" )
     ( "lowDelayEncoding",
       encoderParams.lowDelayEncoding_,
@@ -708,11 +722,11 @@ bool parseParameters( int                   argc,
       "Bit depth of geomtery 3D coordinates" )
     ( "geometryNominal2dBitdepth",
       encoderParams.geometryNominal2dBitdepth_,
-      encoderParams.geometryNominal2dBitdepth_,
+      encoderParams.geometryNominal2dBitdepth_, 
       "Bit depth of geometry 2D" )
     ( "nbPlrmMode",
       encoderParams.plrlNumberOfModes_,
-      encoderParams.plrlNumberOfModes_,
+      encoderParams.plrlNumberOfModes_, 
       "Number of PLR mode" )
     ( "patchSize",
       encoderParams.patchSize_,
@@ -724,7 +738,7 @@ bool parseParameters( int                   argc,
       "Use enhanced Projection Plane(0: OFF, 1: ON)\n" )
     ( "minWeightEPP",
       encoderParams.minWeightEPP_,
-      encoderParams.minWeightEPP_,
+      encoderParams.minWeightEPP_, 
       "Minimum value\n" )
     ( "additionalProjectionPlaneMode",
       encoderParams.additionalProjectionPlaneMode_,
@@ -750,7 +764,7 @@ bool parseParameters( int                   argc,
       " " )
     ( "roiBoundingBoxMinY",
       encoderParams.roiBoundingBoxMinY_,
-      encoderParams.roiBoundingBoxMinY_,
+      encoderParams.roiBoundingBoxMinY_, 
       " " )
     ( "roiBoundingBoxMaxY",
       encoderParams.roiBoundingBoxMaxY_,
@@ -762,7 +776,7 @@ bool parseParameters( int                   argc,
       " " )
     ( "roiBoundingBoxMaxZ",
       encoderParams.roiBoundingBoxMaxZ_,
-      encoderParams.roiBoundingBoxMaxZ_,
+      encoderParams.roiBoundingBoxMaxZ_, 
       " " )
     ( "numTilesHor",
       encoderParams.numTilesHor_,
@@ -782,64 +796,64 @@ bool parseParameters( int                   argc,
       " " )
     ( "numCutsAlong3rdLongestAxis",
       encoderParams.numCutsAlong3rdLongestAxis_,
-      encoderParams.numCutsAlong3rdLongestAxis_,
+      encoderParams.numCutsAlong3rdLongestAxis_, 
       " " )
 
     // Sort raw points by Morton code (m49363 CE2.25)
     ( "mortonOrderSortRawPoints",
       encoderParams.mortonOrderSortRawPoints_,
-      encoderParams.mortonOrderSortRawPoints_,
+      encoderParams.mortonOrderSortRawPoints_, 
       " " )
 
     // Patch block filtering
     ( "pbfEnableFlag",
       encoderParams.pbfEnableFlag_,
-      encoderParams.pbfEnableFlag_,
+      encoderParams.pbfEnableFlag_, 
       " enable patch block filtering \n" )
     ( "pbfFilterSize",
       encoderParams.pbfFilterSize_,
-      encoderParams.pbfFilterSize_,
+      encoderParams.pbfFilterSize_, 
       "pbfFilterSize \n" )
     ( "pbfPassesCount",
       encoderParams.pbfPassesCount_,
-      encoderParams.pbfPassesCount_,
+      encoderParams.pbfPassesCount_, 
       "pbfPassesCount \n" )
     ( "pbfLog2Threshold",
       encoderParams.pbfLog2Threshold_,
-      encoderParams.pbfLog2Threshold_,
+      encoderParams.pbfLog2Threshold_, 
       "pbfLog2Threshold \n" );
 
-  opts.addOptions()
-  ( "computeChecksum",
-    metricsParams.computeChecksum_,
-    metricsParams.computeChecksum_, 
-    "Compute checksum" )
-  ( "computeMetrics",
-    metricsParams.computeMetrics_,
-    metricsParams.computeMetrics_, 
-    "Compute metrics" )
-  ( "normalDataPath", 
-    metricsParams.normalDataPath_, 
-    metricsParams.normalDataPath_,
-    "Input pointcloud to encode. Multi-frame sequences may be represented by %04i" )
-  ( "resolution", 
-    metricsParams.resolution_, 
-    metricsParams.resolution_, 
-    "Specify the intrinsic resolution" )
-  ( "dropdups",
-     metricsParams.dropDuplicates_,
-     metricsParams.dropDuplicates_, 
-    "0(detect), 1(drop), 2(average) subsequent points with same coordinates" )
-  ( "neighborsProc", 
-    metricsParams.neighborsProc_, 
-    metricsParams.neighborsProc_, 
-    "0(undefined), 1(average), 2(weighted average), 3(min), 4(max) neighbors with same geometric distance");
+    opts.addOptions()
+    ( "computeChecksum", 
+      metricsParams.computeChecksum_,
+      metricsParams.computeChecksum_, 
+      "Compute checksum" )
+    ( "computeMetrics", 
+      metricsParams.computeMetrics_,
+      metricsParams.computeMetrics_, 
+      "Compute metrics" )
+    ( "normalDataPath", 
+      metricsParams.normalDataPath_,
+      metricsParams.normalDataPath_,
+      "Input pointcloud to encode. Multi-frame sequences may be represented by %04i" )
+    ( "resolution", 
+      metricsParams.resolution_,
+      metricsParams.resolution_, 
+      "Specify the intrinsic resolution" )
+    ( "dropdups", 
+      metricsParams.dropDuplicates_, 
+      metricsParams.dropDuplicates_,
+      "0(detect), 1(drop), 2(average) subsequent points with same coordinates" )
+    ( "neighborsProc", 
+      metricsParams.neighborsProc_,
+      metricsParams.neighborsProc_,
+      "0(undefined), 1(average), 2(weighted average), 3(min), 4(max) neighbors with same geometric distance" );
   // clang-format on
   po::setDefaults( opts );
   po::ErrorReporter        err;
   const list<const char*>& argv_unhandled = po::scanArgv( opts, argc, (const char**)argv, err );
 
-  for ( const auto arg : argv_unhandled ) { err.warn() << "Unhandled argument ignored: " << arg << "\n"; }
+  for ( const auto arg : argv_unhandled ) { printf( "Unhandled argument ignored: %s \n", arg ); }
 
   if ( argc == 1 || print_help ) {
     po::doHelp( std::cout, opts, 78 );
@@ -849,37 +863,37 @@ bool parseParameters( int                   argc,
   if ( ( encoderParams.levelOfDetailX_ == 0 || encoderParams.levelOfDetailY_ == 0 ) ) {
     if ( encoderParams.levelOfDetailX_ == 0 ) { encoderParams.levelOfDetailX_ = 1; }
     if ( encoderParams.levelOfDetailY_ == 0 ) { encoderParams.levelOfDetailY_ = 1; }
-    err.error() << "levelOfDetailX and levelOfDetailY should be greater than "
-                   "1. levelOfDetailX="
-                << encoderParams.levelOfDetailX_ << "., levelOfDetailY=" << encoderParams.levelOfDetailY_ << std::endl;
+    std::cerr << "levelOfDetailX and levelOfDetailY should be greater than "
+                 "1. levelOfDetailX="
+              << encoderParams.levelOfDetailX_ << "., levelOfDetailY=" << encoderParams.levelOfDetailY_ << std::endl;
   }
 
   if ( encoderParams.losslessGeo_ && ( encoderParams.levelOfDetailX_ > 1 || encoderParams.levelOfDetailY_ > 1 ) ) {
     encoderParams.levelOfDetailX_ = 1;
     encoderParams.levelOfDetailY_ = 1;
-    err.error() << "scaling is not allowed in lossless case\n";
+    std::cerr << "scaling is not allowed in lossless case\n";
   }
   if ( encoderParams.enablePointCloudPartitioning_ && encoderParams.patchExpansion_ ) {
-    err.error() << "Point cloud partitioning does not currently support patch "
-                   "expansion. \n";
+    std::cerr << "Point cloud partitioning does not currently support patch "
+                 "expansion. \n";
   }
   if ( encoderParams.enablePointCloudPartitioning_ && ( encoderParams.globalPatchAllocation_ != 0 ) ) {
-    err.error() << "Point cloud partitioning does not currently support global "
-                   "patch allocation. \n";
+    std::cerr << "Point cloud partitioning does not currently support global "
+                 "patch allocation. \n";
   }
 
   if ( static_cast<int>( encoderParams.patchPrecedenceOrderFlag_ ) == 0 && encoderParams.lowDelayEncoding_ ) {
     encoderParams.lowDelayEncoding_ = false;
-    err.error() << "Low Delay Encoding can be used only when "
-                   "patchPrecendenceOrder is enabled. lowDelayEncoding_ is set "
-                   "0\n";
+    std::cerr << "Low Delay Encoding can be used only when "
+                 "patchPrecendenceOrder is enabled. lowDelayEncoding_ is set "
+                 "0\n";
   }
   encoderParams.completePath();
   encoderParams.print();
-  if ( !encoderParams.check() ) { err.error() << "Input encoder parameters not correct \n"; }
+  if ( !encoderParams.check() ) { std::cerr << "Input encoder parameters not correct \n"; }
   metricsParams.completePath();
   metricsParams.print();
-  if ( !metricsParams.check() ) { err.error() << "Input metrics parameters not correct \n"; }
+  if ( !metricsParams.check() ) { std::cerr << "Input metrics parameters not correct \n"; }
   metricsParams.startFrameNumber_ = encoderParams.startFrameNumber_;
 
   // report the current configuration (only in the absence of errors so
@@ -915,8 +929,8 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
   // Place to get/set default values for gof metadata enabled flags (in sequence
   // level).
   while ( startFrameNumber < endFrameNumber0 ) {
-    size_t endFrameNumber = min( startFrameNumber + groupOfFramesSize0, endFrameNumber0 );
-    PCCContext   context;
+    size_t     endFrameNumber = min( startFrameNumber + groupOfFramesSize0, endFrameNumber0 );
+    PCCContext context;
     context.setBitstreamStat( bitstreamStat );
     context.addVpccParameterSet( contextIndex );
     context.setActiveVpsId( contextIndex );
@@ -927,9 +941,7 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
                         encoderParams.colorTransform_ ) ) {
       return -1;
     }
-    if( sources.size() < endFrameNumber - startFrameNumber ){
-      endFrameNumber = startFrameNumber + sources.size(); 
-    }
+    if ( sources.size() < endFrameNumber - startFrameNumber ) { endFrameNumber = startFrameNumber + sources.size(); }
     clock.start();
     std::cout << "Compressing group of frames " << contextIndex << ": " << startFrameNumber << " -> " << endFrameNumber
               << "..." << std::endl;

@@ -54,19 +54,15 @@ template <typename T, size_t N>
 class PCCImage;
 typedef pcc::PCCImage<uint8_t, 3> PCCImageOccupancyMap;
 
-
 class PCCDecoder : public PCCCodec {
  public:
   PCCDecoder();
   ~PCCDecoder();
-  
-  int decode( PCCContext&       context,
-              PCCGroupOfFrames& reconstruct,
-              int32_t           atlasIndex );
+
+  int decode( PCCContext& context, PCCGroupOfFrames& reconstruct, int32_t atlasIndex );
 
   void setParameters( const PCCDecoderParameters& params );
-  void setPostProcessingSeiParameters( GeneratePointCloudParameters& gpcParams,
-                                       PCCContext&                   context );
+  void setPostProcessingSeiParameters( GeneratePointCloudParameters& gpcParams, PCCContext& context );
   void setGeneratePointCloudParameters( GeneratePointCloudParameters& gpcParams, PCCContext& context );
   void createPatchFrameDataStructure( PCCContext& context );
   void createPatchFrameDataStructure( PCCContext& context, PCCFrameContext& frame, size_t frameIndex );

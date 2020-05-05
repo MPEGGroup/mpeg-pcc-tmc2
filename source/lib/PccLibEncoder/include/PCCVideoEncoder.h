@@ -40,6 +40,9 @@
 #include "PCCContext.h"
 #include "PCCFrameContext.h"
 #include "PCCPatch.h"
+#ifdef USE_HM_VIDEO_CODEC
+#include "PCCHMVideoEncoder.h"
+#endif
 
 namespace pcc {
 
@@ -103,7 +106,7 @@ class PCCVideoEncoder {
       if ( use444CodecIo ) {
         if ( !video.write( srcYuvFileName, nbyte ) ) { return false; }
       } else {
-        printf( "Encoder convert : write420 without conversion \n" );
+        printf( "Encoder convert : write420 without conversion: %s \n", srcYuvFileName.c_str() );
         if ( !video.write420( srcYuvFileName, nbyte ) ) { return false; }
       }
     } else {
@@ -348,8 +351,7 @@ class PCCVideoEncoder {
       } else {
         if ( colorSpaceConversionPath.empty() ) {
           printf( "Encoder convert : write420 with conversion \n" );
-          // if ( keepIntermediateFiles ) { video.write( srcRgbFileName, nbyte
-          // ); }
+          // if ( keepIntermediateFiles ) { video.write( srcRgbFileName, nbyte ); }
           if ( !video.write420( srcYuvFileName, nbyte, true, downsamplingFilter ) ) { return false; }
         } else {
           printf( "Encoder convert : write + hdrtools conversion \n" );
@@ -364,6 +366,29 @@ class PCCVideoEncoder {
             std::cout << "Error: can't run system command!" << std::endl;
             return false;
           }
+#ifdef USE_HM_VIDEO_CODEC
+          std::ifstream fileRec( srcYuvFileName, std::ios::binary );
+          if ( !fileRec.good() ) { return false; }
+          size_t size = nbyte * width * height;
+          if ( sizeof( T ) == nbyte ) {
+            for ( auto& image : video ) {
+              fileRec.read( (char*)( image.getChannel( 0 ).data() ), size );
+              fileRec.read( (char*)( image.getChannel( 1 ).data() ), size / 4 );
+              fileRec.read( (char*)( image.getChannel( 2 ).data() ), size / 4 );
+            }
+          } else {
+            std::vector<uint8_t> data;
+            data.resize( 6 * size / 4 );
+            for ( auto& image : video ) {
+              auto* tmp = data.data();
+              fileRec.read( (char*)( tmp ), 6 * size / 4 );
+              for ( size_t i = 0; i < size; ++i ) { image.getChannel( 0 ).data()[i] = *( tmp++ ); }
+              for ( size_t i = 0; i < size / 4; ++i ) { image.getChannel( 1 ).data()[i] = *( tmp++ ); }
+              for ( size_t i = 0; i < size / 4; ++i ) { image.getChannel( 2 ).data()[i] = *( tmp++ ); }
+            }
+          }
+          fileRec.close();
+#endif
         }
       }
     }
@@ -401,11 +426,37 @@ class PCCVideoEncoder {
       }
     }
     std::cout << cmd.str() << std::endl;
+#ifdef USE_HM_VIDEO_CODEC
+    PCCHMVideoEncoder encoder;
+    PCCVideo<T, 3>    videoRec;
+    encoder.encode( video, cmd.str(), bitstream, videoRec );
+    std::ofstream file( recYuvFileName, std::ios::binary );
+    if ( !file.good() ) { return false; }
+    size_t size         = nbyte * width * height;
+    size_t chromaFactor = use444CodecIo ? 1 : 4;
+    if ( sizeof( T ) == nbyte ) {
+      for ( auto& image : videoRec ) {
+        file.write( (char*)( image.getChannel( 0 ).data() ), size );
+        file.write( (char*)( image.getChannel( 1 ).data() ), size / chromaFactor );
+        file.write( (char*)( image.getChannel( 2 ).data() ), size / chromaFactor );
+      }
+    } else {
+      std::vector<uint8_t> data;
+      data.resize( size + 2 * size / chromaFactor );
+      for ( auto& image : videoRec ) {
+        auto* tmp = data.data();
+        for ( size_t i = 0; i < size; ++i ) { *( tmp++ ) = image.getChannel( 0 ).data()[i]; }
+        for ( size_t i = 0; i < size / chromaFactor; ++i ) { *( tmp++ ) = image.getChannel( 1 ).data()[i]; }
+        for ( size_t i = 0; i < size / chromaFactor; ++i ) { *( tmp++ ) = image.getChannel( 2 ).data()[i]; }
+        file.write( (char*)( data.data() ), data.size() );
+      }
+    }
+    file.close();
+#else
     if ( pcc::system( cmd.str().c_str() ) ) {
       std::cout << "Error: can't run system command!" << std::endl;
       return false;
     }
-
     std::ifstream file( binFileName, std::ios::binary | std::ios::ate );
     if ( !file.good() ) { return false; }
     const uint64_t fileSize = file.tellg();
@@ -414,19 +465,19 @@ class PCCVideoEncoder {
     file.seekg( 0 );
     file.read( reinterpret_cast<char*>( bitstream.buffer() ), fileSize );
     file.close();
-
+#endif
     if ( yuvVideo ) {
       if ( use444CodecIo ) {
         video.read( recYuvFileName, width, height, frameCount, nbyte );
-        video.setColorFormat(0);
+        video.setColorFormat( 0 );
       } else {
         video.read420( recYuvFileName, width, height, frameCount, nbyte );
-        video.setColorFormat(1);
+        video.setColorFormat( 1 );
       }
     } else {
       if ( colorSpaceConversionPath.empty() ) {
         video.read420( recYuvFileName, width, height, frameCount, nbyte, true, upsamplingFilter );
-        video.setColorFormat(1);
+        video.setColorFormat( 1 );
         if ( !keepIntermediateFiles ) { video.write( recRgbFileName, nbyte ); }
       } else {
         std::stringstream cmd;
@@ -440,7 +491,7 @@ class PCCVideoEncoder {
           return ret;
         }
         video.read( yuv444RecFileName, width, height, frameCount, 2 );
-        video.setColorFormat(2);
+        video.setColorFormat( 2 );
       }
     }
     if ( !keepIntermediateFiles ) {

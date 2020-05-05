@@ -518,17 +518,17 @@ class PCCImage {
   PCCImage( const PCCImage& ) = default;
   PCCImage& operator=( const PCCImage& rhs ) = default;
   ~PCCImage()                                = default;
-
   void clear() {
     for ( auto& channel : channels_ ) { channel.clear(); }
   }
-  size_t getWidth() const { return width_; }
-  size_t getHeight() const { return height_; }
-  size_t getDepth() const { return sizeof( T ) * 8; }
-  size_t getChannelCount() const { return N; }
-  size_t getColorFormat() const         { return colorFormat_; }
-  void   setColorFormat( size_t value ) { colorFormat_=value; }
+  size_t                getWidth() const { return width_; }
+  size_t                getHeight() const { return height_; }
+  size_t                getDepth() const { return sizeof( T ) * 8; }
+  size_t                getChannelCount() const { return N; }
+  size_t                getColorFormat() const { return colorFormat_; }
+  void                  setColorFormat( size_t value ) { colorFormat_ = value; }
   const std::vector<T>& getChannel( size_t index ) const { return channels_[index]; }
+  std::vector<T>&       getChannel( size_t index ) { return channels_[index]; }
   void                  set( const T value = 0 ) {
     for ( auto& channel : channels_ ) {
       for ( auto& p : channel ) { p = value; }
@@ -540,22 +540,91 @@ class PCCImage {
     const size_t size = sizeU0 * sizeV0;
     for ( auto& channel : channels_ ) { channel.resize( size ); }
   }
-  bool write420( std::ofstream& outfile, const size_t nbyte, bool convert = false, const size_t filter = 4 ) const {
+
+  template <typename Pel>
+  void set( const Pel* Y,
+            const Pel* U,
+            const Pel* V,
+            size_t     widthY,
+            size_t     heightY,
+            size_t     strideY,
+            size_t     widthC,
+            size_t     heightC,
+            size_t     strideC,
+            int16_t    shiftbits,
+            bool       rgb2bgr ) {
+    resize( widthY, heightY );
+    const Pel*   ptr[2][3] = {{Y, U, V}, {V, Y, U}};
+    const size_t width[3]  = {widthY, widthC, widthC};
+    const size_t height[3] = {heightY, heightC, heightC};
+    const size_t stride[3] = {strideY, strideC, strideC};
+    int16_t      rounding  = 1 << ( shiftbits - 1 );
+    printf( "copy image from HM to PCC: S=%d R=%d (%4dx%4d S=%4d C:%4dx%4d => %4dx%4d) bgr=%d \n", shiftbits, rounding,
+            widthY, heightY, strideY, widthC, heightC, width_, height_, rgb2bgr );
+    for ( size_t c = 0; c < 3; c++ ) {
+      auto* src = ptr[rgb2bgr][c];
+      auto* dst = channels_[c].data();
+      if ( shiftbits > 0 ) {
+        T minval = 0;
+        T maxval = ( T )( ( 1 << ( 10 - (int)shiftbits ) ) - 1 );
+        for ( size_t v = 0; v < height[c]; ++v, src += stride[c], dst += width[c] ) {
+          for ( size_t u = 0; u < width[c]; ++u ) {
+            dst[u] = clamp( ( T )( ( src[u] + rounding ) >> shiftbits ), minval, maxval );
+          }
+        }
+      } else {
+        for ( size_t v = 0; v < height[c]; ++v, src += stride[c], dst += width[c] ) {
+          for ( size_t u = 0; u < width[c]; ++u ) { dst[u] = (T)src[u]; }
+        }
+      }
+    }
+  }
+
+  template <typename Pel>
+  void get( Pel*    Y,
+            Pel*    U,
+            Pel*    V,
+            size_t  widthY,
+            size_t  heightY,
+            size_t  strideY,
+            size_t  widthC,
+            size_t  heightC,
+            size_t  strideC,
+            int16_t shiftbits,
+            bool    rgb2bgr ) {
+    int          chromaSubsample = widthY / widthC;
+    int          widthChroma     = width_ / chromaSubsample;
+    int          heightChroma    = height_ / chromaSubsample;
+    Pel*         ptr[2][3]       = {{Y, U, V}, {V, Y, U}};
+    const size_t width[3]        = {width_, widthChroma, widthChroma};
+    const size_t heightSrc[3]    = {height_, heightChroma, heightChroma};
+    const size_t heightDst[3]    = {heightY, heightC, heightC};
+    const size_t stride[3]       = {strideY, strideC, strideC};
+    printf( "copy image from PCC to HM: S = %d (%4dx%4d => %4dx%4d S=%4d C: %4dx%4d ) \n", shiftbits, width_, height_,
+            widthY, heightY, strideY, widthC, heightC );
+    for ( size_t c = 0; c < 3; c++ ) {
+      auto* src = channels_[c].data();
+      auto* dst = ptr[rgb2bgr][c];
+      if ( shiftbits > 0 ) {
+        for ( size_t v = 0; v < heightSrc[c]; ++v, src += width[c], dst += stride[c] ) {
+          for ( size_t u = 0; u < width[c]; ++u ) { dst[u] = ( Pel )( src[u] ) << shiftbits; }
+        }
+      } else {
+        for ( size_t v = 0; v < heightSrc[c]; ++v, src += width[c], dst += stride[c] ) {
+          for ( size_t u = 0; u < width[c]; ++u ) { dst[u] = (Pel)src[u]; }
+        }
+      }
+      for ( size_t v = heightSrc[c]; v < heightDst[c]; ++v, dst += stride[c] ) {
+        for ( size_t u = 0; u < width[c]; ++u ) { dst[u] = 0; }
+      }
+    }
+  }
+
+  bool write420( std::ofstream& outfile, const size_t nbyte, bool convert = false, const size_t filter = 4 ) {
     if ( !outfile.good() ) { return false; }
     if ( convert ) {
-      std::vector<float> RGB444[3], YUV444[3], YUV420[3];
-      std::vector<T>     YUV420T[3];
-      ChromaSampler      chromaSampler;
-      RGBtoFloatRGB( channels_[0], RGB444[0], nbyte );
-      RGBtoFloatRGB( channels_[1], RGB444[1], nbyte );
-      RGBtoFloatRGB( channels_[2], RGB444[2], nbyte );
-      convertRGBToYUV( RGB444[0], RGB444[1], RGB444[2], YUV444[0], YUV444[1], YUV444[2] );
-      copy( YUV444[0], YUV420[0] );
-      chromaSampler.downsampling( YUV444[1], YUV420[1], (int)width_, (int)height_, nbyte == 1 ? 255 : 1023, filter );
-      chromaSampler.downsampling( YUV444[2], YUV420[2], (int)width_, (int)height_, nbyte == 1 ? 255 : 1023, filter );
-      floatYUVToYUV( YUV420[0], YUV420T[0], 0, nbyte );
-      floatYUVToYUV( YUV420[1], YUV420T[1], 1, nbyte );
-      floatYUVToYUV( YUV420[2], YUV420T[2], 1, nbyte );
+      std::vector<T> YUV420T[3];
+      convertRGB44ToYUV420( channels_[0], channels_[1], channels_[2], YUV420T[0], YUV420T[1], YUV420T[2], filter );
       size_t pixCnt = width_ * height_;
       if ( nbyte == sizeof( T ) ) {
         outfile.write( (const char*)( YUV420T[0].data() ), pixCnt * sizeof( T ) );
@@ -623,7 +692,7 @@ class PCCImage {
     }
     return true;
   }
-  bool write( std::ofstream& outfile, const size_t nbyte ) const {
+  bool write( std::ofstream& outfile, const size_t nbyte ) {
     if ( !outfile.good() ) { return false; }
     if ( nbyte == sizeof( T ) ) {
       if ( nbyte == 1 ) {
@@ -651,7 +720,8 @@ class PCCImage {
     }
     return true;
   }
-  bool write( const std::string fileName, const size_t nbyte ) const {
+
+  bool write( const std::string fileName, const size_t nbyte ) {
     std::ofstream outfile( fileName, std::ios::binary );
     if ( write( outfile, nbyte ) ) {
       outfile.close();
@@ -659,6 +729,7 @@ class PCCImage {
     }
     return false;
   }
+
   bool read420( std::ifstream& infile,
                 const size_t   sizeU0,
                 const size_t   sizeV0,
@@ -668,27 +739,30 @@ class PCCImage {
     if ( !infile.good() ) { return false; }
     resize( sizeU0, sizeV0 );
     if ( convert ) {
-      size_t             widthChroma  = width_ / 2;
-      size_t             heightChroma = height_ / 2;
-      std::vector<float> RGB444[3], YUV444[3], YUV420[3];
-      // TODO: currently only handles nbyte equal to 1
-      std::vector<uint8_t> YUV420T[3];
-      ChromaSampler        chromaSampler;
-      YUV420T[0].resize( width_ * height_ );
-      YUV420T[1].resize( widthChroma * heightChroma );
-      YUV420T[2].resize( widthChroma * heightChroma );
-      infile.read( (char*)( YUV420T[0].data() ), width_ * height_ * nbyte );
-      infile.read( (char*)( YUV420T[1].data() ), widthChroma * heightChroma * nbyte );
-      infile.read( (char*)( YUV420T[2].data() ), widthChroma * heightChroma * nbyte );
-      YUVtoFloatYUV( YUV420T[0], YUV420[0], 0, nbyte );
-      YUVtoFloatYUV( YUV420T[1], YUV420[1], 1, nbyte );
-      YUVtoFloatYUV( YUV420T[2], YUV420[2], 1, nbyte );
-      copy( YUV420[0], YUV444[0] );
-      chromaSampler.upsampling( YUV420[1], YUV444[1], widthChroma, heightChroma, nbyte == 1 ? 255 : 1023, filter );
-      chromaSampler.upsampling( YUV420[2], YUV444[2], widthChroma, heightChroma, nbyte == 1 ? 255 : 1023, filter );
-      floatYUVToYUV( YUV444[0], channels_[0], 0, 2 );
-      floatYUVToYUV( YUV444[1], channels_[1], 1, 2 );
-      floatYUVToYUV( YUV444[2], channels_[2], 1, 2 );
+      size_t         pixCnt = sizeU0 * sizeV0;
+      std::vector<T> YUV420T[3];
+      YUV420T[0].resize( pixCnt );
+      YUV420T[1].resize( pixCnt / 4 );
+      YUV420T[2].resize( pixCnt / 4 );
+      if ( nbyte == sizeof( T ) ) {
+        infile.read( (char*)( YUV420T[0].data() ), pixCnt * nbyte );
+        infile.read( (char*)( YUV420T[1].data() ), pixCnt * nbyte / 4 );
+        infile.read( (char*)( YUV420T[2].data() ), pixCnt * nbyte / 4 );
+      } else {
+        assert( nbyte < sizeof( T ) );
+        // Only relevant case is nbyte equal to 1 and T equal to 2.
+        std::vector<uint8_t> YUV8[3];
+        YUV8[0].resize( pixCnt );
+        YUV8[1].resize( pixCnt / 4 );
+        YUV8[2].resize( pixCnt / 4 );
+        infile.read( (char*)( YUV8[0].data() ), pixCnt );
+        infile.read( (char*)( YUV8[1].data() ), pixCnt / 4 );
+        infile.read( (char*)( YUV8[2].data() ), pixCnt / 4 );
+        for ( size_t k = 0; k < pixCnt; ++k ) { YUV420T[0][k] = static_cast<T>( YUV8[0][k] ); }
+        for ( size_t k = 0; k < pixCnt / 4; ++k ) { YUV420T[1][k] = static_cast<T>( YUV8[1][k] ); }
+        for ( size_t k = 0; k < pixCnt / 4; ++k ) { YUV420T[2][k] = static_cast<T>( YUV8[2][k] ); }
+      }
+      convertYUV420ToRGB44( YUV420T[0], YUV420T[1], YUV420T[2], channels_[0], channels_[1], channels_[2], filter );
     } else {
       // TODO: This clause may need to be fixed when nbyte is equal to 1 and T
       // is equal to 2.
@@ -745,6 +819,7 @@ class PCCImage {
     }
     return true;
   }
+
   bool read( std::ifstream& infile, const size_t sizeU0, const size_t sizeV0, const size_t nbyte ) {
     if ( !infile.good() ) { return false; }
     resize( sizeU0, sizeV0 );
@@ -797,10 +872,7 @@ class PCCImage {
   static const size_t MaxValue     = ( std::numeric_limits<T>::max )();
   static const size_t HalfMaxValue = ( MaxValue + 1 ) / 2;
 
-  bool write420( const std::string fileName,
-                 const size_t      nbyte,
-                 const bool        convert = false,
-                 const size_t      filter  = 0 ) const {
+  bool write420( const std::string fileName, const size_t nbyte, const bool convert = false, const size_t filter = 0 ) {
     std::ofstream outfile( fileName, std::ios::binary );
     if ( write420( outfile, nbyte, convert, filter ) ) {
       outfile.close();
@@ -898,6 +970,52 @@ class PCCImage {
     for ( size_t i = 0; i < count; i++ ) { dst[i] = src[i]; }
   }
 
+  void convertRGB44ToYUV420( std::vector<T>& R,
+                             std::vector<T>& G,
+                             std::vector<T>& B,
+                             std::vector<T>& Y,
+                             std::vector<T>& U,
+                             std::vector<T>& V,
+                             size_t          filter ) {
+    size_t             nbyte = sizeof( T );
+    std::vector<float> RGB444[3], YUV444[3], YUV420[3];
+    std::vector<T>     YUV420T[3];
+    ChromaSampler      chromaSampler;
+    RGBtoFloatRGB( R, RGB444[0], nbyte );
+    RGBtoFloatRGB( G, RGB444[1], nbyte );
+    RGBtoFloatRGB( B, RGB444[2], nbyte );
+    convertRGBToYUV( RGB444[0], RGB444[1], RGB444[2], YUV444[0], YUV444[1], YUV444[2] );
+    copy( YUV444[0], YUV420[0] );
+    chromaSampler.downsampling( YUV444[1], YUV420[1], (int)width_, (int)height_, nbyte == 1 ? 255 : 1023, filter );
+    chromaSampler.downsampling( YUV444[2], YUV420[2], (int)width_, (int)height_, nbyte == 1 ? 255 : 1023, filter );
+    floatYUVToYUV( YUV420[0], Y, 0, nbyte );
+    floatYUVToYUV( YUV420[1], U, 1, nbyte );
+    floatYUVToYUV( YUV420[2], B, 1, nbyte );
+  }
+
+  void convertYUV420ToRGB44( std::vector<T>& Y,
+                             std::vector<T>& U,
+                             std::vector<T>& V,
+                             std::vector<T>& R,
+                             std::vector<T>& G,
+                             std::vector<T>& B,
+                             size_t          filter ) {
+    size_t             nbyte = sizeof( T );
+    ChromaSampler      chromaSampler;
+    size_t             widthChroma  = width_ / 2;
+    size_t             heightChroma = height_ / 2;
+    std::vector<float> RGB444[3], YUV444[3], YUV420[3];
+    YUVtoFloatYUV( Y, YUV420[0], 0, nbyte );
+    YUVtoFloatYUV( U, YUV420[1], 1, nbyte );
+    YUVtoFloatYUV( V, YUV420[2], 1, nbyte );
+    copy( YUV420[0], YUV444[0] );
+    chromaSampler.upsampling( YUV420[1], YUV444[1], widthChroma, heightChroma, nbyte == 1 ? 255 : 1023, filter );
+    chromaSampler.upsampling( YUV420[2], YUV444[2], widthChroma, heightChroma, nbyte == 1 ? 255 : 1023, filter );
+    floatYUVToYUV( YUV444[0], R, 0, 2 );
+    floatYUVToYUV( YUV444[1], G, 1, 2 );
+    floatYUVToYUV( YUV444[2], B, 1, 2 );
+  }
+
   void RGBtoFloatRGB( const std::vector<T>& src, std::vector<float>& dst, const size_t nbyte ) const {
     size_t count = src.size();
     dst.resize( count );
@@ -942,10 +1060,10 @@ class PCCImage {
   }
 
   // TODO: Generalize to vector<T>
-  void YUVtoFloatYUV( const std::vector<uint8_t>& src,
-                      std::vector<float>&         dst,
-                      const bool                  chroma,
-                      const size_t                nbBytes ) const {
+  void YUVtoFloatYUV( const std::vector<T>& src,
+                      std::vector<float>&   dst,
+                      const bool            chroma,
+                      const size_t          nbBytes ) const {
     size_t count = src.size();
     dst.resize( count );
     float    minV   = chroma ? -0.5f : 0.f;
@@ -986,7 +1104,7 @@ class PCCImage {
   size_t         width_;
   size_t         height_;
   std::vector<T> channels_[N];
-  size_t         colorFormat_; //0.RGB 1.YUV420 2.YUV444 16bits
+  size_t         colorFormat_;  // 0.RGB 1.YUV420 2.YUV444 16bits
 };
 }  // namespace pcc
 

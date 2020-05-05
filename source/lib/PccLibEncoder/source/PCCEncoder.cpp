@@ -465,12 +465,11 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
       printf( "generateRawPointsTextureVideo \n" );
       generateRawPointsTextureVideo( context, reconstructs );  // 1. texture
       auto&        videoRawPointsTexture = context.getVideoRawPointsTexture();
-      const size_t nByteAttMP      = 1;
+      const size_t nByteAttMP            = 1;
       videoEncoder.compress( videoRawPointsTexture, path.str(), params_.textureQP_, videoBitstreamMP,
-                             params_.textureMPConfig_, params_.videoEncoderPath_, context,
-                             nByteAttMP,                                  // nbyte
-                             params_.losslessGeo_,                        // use444CodecIo
-                             false,                                       // use3dmv
+                             params_.textureMPConfig_, params_.videoEncoderPath_, context, nByteAttMP,  // nbyte
+                             params_.losslessGeo_,                                                      // use444CodecIo
+                             false,                                                                     // use3dmv
                              10,                                          // internalBitDepth
                              !params_.losslessGeo_,                       // useConversion
                              params_.keepIntermediateFiles_,              // keepIntermediateFiles
@@ -548,12 +547,11 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
       }
     }
   }
-  // This function does the color smoothing that is usually done in colorPointCloud
+  // This function does the color smoothing that is usually done in
+  // colorPointCloud
   if ( gpcParams.flagColorSmoothing_ ) { colorSmoothing( reconstructs, context, params_.colorTransform_, gpcParams ); }
   if ( static_cast<int>( params_.losslessGeo_ ) != 1 ) {  // lossy: convert 16-bit yuv444 to 8-bit RGB444
-    for ( size_t i = 0; i < frames.size(); i++ ) {
-      reconstructs[i].convertYUV16ToRGB8();
-    }
+    for ( size_t i = 0; i < frames.size(); i++ ) { reconstructs[i].convertYUV16ToRGB8(); }
   } else {  // lossless: copy 16-bit RGB to 8-bit RGB
     PCCColor16bit color16;
     PCCColor3B    color8;
@@ -3801,36 +3799,35 @@ bool PCCEncoder::predictTextureFrame( PCCFrameContext&       frame,
       const size_t pos1 = y * refWidth + x;
       if ( occupancyMap[pos1] != 0 ) {
         int16_t reference_color[3];
-        if(reference.getColorFormat()==0){
-          reference_color[0]=reference.getValue( 0, x, y );
-          reference_color[1]=reference.getValue( 1, x, y );
-          reference_color[2]=reference.getValue( 2, x, y );
-        }
-        else{
-        /// convert yuv444 (16bit) to normalized yuv444 (format double)
-        double y1     = reference.getValue( 0, x, y );
-        double u1     = reference.getValue( 1, x, y );
-        double v1     = reference.getValue( 2, x, y );
-        double offset = 32768.0;
-        double scale  = 65535.0;
-        double weight = 1.0 / scale;
-        y1            = weight * y1;
-        u1            = weight * ( u1 - offset );
-        v1            = weight * ( v1 - offset );
-        y1            = ( std::max )( y1, 0.0 );
-        y1            = ( std::min )( y1, 1.0 );
-        u1            = ( std::max )( u1, -0.5 );
-        u1            = ( std::min )( u1, 0.5 );
-        v1            = ( std::max )( v1, -0.5 );
-        v1            = ( std::min )( v1, 0.5 );
-        //// convert normalized yuv444 to normalized rgb (fromat double)
-        double r = y1 /*- 0.00000 * u1*/ + 1.57480 * v1;
-        double g = y1 - 0.18733 * u1 - 0.46813 * v1;
-        double b = y1 + 1.85563 * u1 /*+ 0.00000 * v1*/;
-        //// convert normalized rgb to 8-bit rgb
-        reference_color[0] = PCCClip( round( r * 255 ), 0.0, 255.0 );
-        reference_color[1] = PCCClip( round( g * 255 ), 0.0, 255.0 );
-        reference_color[2] = PCCClip( round( b * 255 ), 0.0, 255.0 );
+        if ( reference.getColorFormat() == 0 ) {
+          reference_color[0] = reference.getValue( 0, x, y );
+          reference_color[1] = reference.getValue( 1, x, y );
+          reference_color[2] = reference.getValue( 2, x, y );
+        } else {
+          /// convert yuv444 (16bit) to normalized yuv444 (format double)
+          double y1     = reference.getValue( 0, x, y );
+          double u1     = reference.getValue( 1, x, y );
+          double v1     = reference.getValue( 2, x, y );
+          double offset = 32768.0;
+          double scale  = 65535.0;
+          double weight = 1.0 / scale;
+          y1            = weight * y1;
+          u1            = weight * ( u1 - offset );
+          v1            = weight * ( v1 - offset );
+          y1            = ( std::max )( y1, 0.0 );
+          y1            = ( std::min )( y1, 1.0 );
+          u1            = ( std::max )( u1, -0.5 );
+          u1            = ( std::min )( u1, 0.5 );
+          v1            = ( std::max )( v1, -0.5 );
+          v1            = ( std::min )( v1, 0.5 );
+          //// convert normalized yuv444 to normalized rgb (fromat double)
+          double r = y1 /*- 0.00000 * u1*/ + 1.57480 * v1;
+          double g = y1 - 0.18733 * u1 - 0.46813 * v1;
+          double b = y1 + 1.85563 * u1 /*+ 0.00000 * v1*/;
+          //// convert normalized rgb to 8-bit rgb
+          reference_color[0] = PCCClip( round( r * 255 ), 0.0, 255.0 );
+          reference_color[1] = PCCClip( round( g * 255 ), 0.0, 255.0 );
+          reference_color[2] = PCCClip( round( b * 255 ), 0.0, 255.0 );
         }
         for ( size_t c = 0; c < 3; ++c ) {
           const auto    value1 = static_cast<int16_t>( image.getValue( c, x, y ) );
@@ -4253,9 +4250,9 @@ void PCCEncoder::sortRawPointsPatch( PCCFrameContext& frame, size_t index ) {
 
 void PCCEncoder::generateRawPointsGeometryVideo( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   auto&  videoRawPointsGeometry = context.getVideoRawPointsGeometry();
-  auto   gofSize          = context.size();
-  size_t maxWidth         = 0;
-  size_t maxHeight        = 0;
+  auto   gofSize                = context.size();
+  size_t maxWidth               = 0;
+  size_t maxHeight              = 0;
   videoRawPointsGeometry.resize( gofSize );
   for ( auto& frame : context.getFrames() ) {
     const size_t shift = frame.getIndex();
@@ -4294,7 +4291,7 @@ void PCCEncoder::generateRawPointsGeometryVideo( PCCContext& context, PCCGroupOf
 
 void PCCEncoder::generateRawPointsTextureVideo( PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   auto& videoRawPointsTexture = context.getVideoRawPointsTexture();
-  auto  gofSize         = context.size();
+  auto  gofSize               = context.size();
   videoRawPointsTexture.resize( gofSize );
   size_t maxWidth  = 0;
   size_t maxHeight = 0;
@@ -4302,13 +4299,14 @@ void PCCEncoder::generateRawPointsTextureVideo( PCCContext& context, PCCGroupOfF
     const size_t shift = frame.getIndex();
     frame.setMPAttWidth( context.getMPAttWidth() );
     frame.setMPAttHeight( 0 );
-    generateRawPointsTextureImage( context, frame, videoRawPointsTexture.getFrame( shift ), shift, reconstructs[shift] );
+    generateRawPointsTextureImage( context, frame, videoRawPointsTexture.getFrame( shift ), shift,
+                                   reconstructs[shift] );
     cout << "generate raw points (Texture) : frame " << shift
          << ", # of raw points Texture : " << frame.getRawPointsPatch( 0 ).size() << endl;
     // for resizing for mpgeometry
     auto& rawPointsTextureFrame = videoRawPointsTexture.getFrame( shift );
-    maxWidth         = ( std::max )( maxWidth, rawPointsTextureFrame.getWidth() );
-    maxHeight        = ( std::max )( maxHeight, rawPointsTextureFrame.getHeight() );
+    maxWidth                    = ( std::max )( maxWidth, rawPointsTextureFrame.getWidth() );
+    maxHeight                   = ( std::max )( maxHeight, rawPointsTextureFrame.getHeight() );
   }
   // resizing for mpgeometry
   assert( maxWidth % 8 == 0 );
@@ -4316,14 +4314,16 @@ void PCCEncoder::generateRawPointsTextureVideo( PCCContext& context, PCCGroupOfF
   context.setMPAttWidth( maxWidth );
   context.setMPAttHeight( maxHeight );
   for ( auto& frame : context.getFrames() ) {
-    const size_t shift      = frame.getIndex();
+    const size_t shift                 = frame.getIndex();
     auto&        rawPointsTextureFrame = videoRawPointsTexture.getFrame( shift );
     rawPointsTextureFrame.resize( maxWidth, maxHeight );
   }
   cout << "RawPoints Texture [done]" << endl;
 }
 
-void PCCEncoder::generateRawPointsGeometryImage( PCCContext& context, PCCFrameContext& frame, PCCImageGeometry& image ) {
+void PCCEncoder::generateRawPointsGeometryImage( PCCContext&       context,
+                                                 PCCFrameContext&  frame,
+                                                 PCCImageGeometry& image ) {
   size_t width = frame.getMPGeoWidth();
 
   const int16_t     infiniteDepth = ( std::numeric_limits<int16_t>::max )();
@@ -4346,8 +4346,10 @@ void PCCEncoder::generateRawPointsGeometryImage( PCCContext& context, PCCFrameCo
     const size_t v0                = rawPointsPatch.v0_ * rawPointsPatch.occupancyResolution_;
     const size_t u0                = rawPointsPatch.u0_ * rawPointsPatch.occupancyResolution_;
     size_t       numberOfRawPoints = rawPointsPatch.getNumberOfRawPoints();
-    printf( "generateRawPointsGeometryImage:: (u0,v0,sizeU,sizeU) = (%zu,%zu,%zu,%zu) \n", u0, v0, rawPointsPatch.sizeU_,
-            rawPointsPatch.sizeV_ );
+    printf(
+        "generateRawPointsGeometryImage:: (u0,v0,sizeU,sizeU) = "
+        "(%zu,%zu,%zu,%zu) \n",
+        u0, v0, rawPointsPatch.sizeU_, rawPointsPatch.sizeV_ );
     if ( params_.losslessGeo444_ ) {
       lastValue = rawPointsPatch.x_[numberOfRawPoints - 1];
       lastY     = rawPointsPatch.y_[numberOfRawPoints - 1];
@@ -4385,10 +4387,10 @@ void PCCEncoder::generateRawPointsGeometryImage( PCCContext& context, PCCFrameCo
 }
 
 void PCCEncoder::generateRawPointsTextureImage( PCCContext&         context,
-                                          PCCFrameContext&    frame,
-                                          PCCImageTexture&    image,
-                                          size_t              shift,
-                                          const PCCPointSet3& reconstruct ) {
+                                                PCCFrameContext&    frame,
+                                                PCCImageTexture&    image,
+                                                size_t              shift,
+                                                const PCCPointSet3& reconstruct ) {
   bool   losslessAtt               = params_.losslessGeo_;
   size_t numberOfRawPointsPatches  = frame.getNumberOfRawPointsPatches();
   size_t numberOfEOMPoints         = frame.getTotalNumberOfEOMPoints();
@@ -4763,14 +4765,13 @@ bool PCCEncoder::resizeGeometryVideo( PCCContext& context ) {
 
 void PCCEncoder::markRawPatchLocationOccupancyMapVideo( PCCContext& context ) {
   auto& videoOccupancyMap = context.getVideoOccupancyMap();
-  for ( size_t f = 0; f < context.size(); f++ ) { markRawPatchLocation( context[f], videoOccupancyMap.getFrame( f ) ); }  
+  for ( size_t f = 0; f < context.size(); f++ ) { markRawPatchLocation( context[f], videoOccupancyMap.getFrame( f ) ); }
 }
-void PCCEncoder::markRawPatchLocation(  PCCFrameContext&      contextFrame,
-                                        PCCImageOccupancyMap& imageOccupancyMap ) {
+void PCCEncoder::markRawPatchLocation( PCCFrameContext& contextFrame, PCCImageOccupancyMap& imageOccupancyMap ) {
   if ( !contextFrame.getUseRawPointsSeparateVideo() ) {
     // for padding purpose
-    size_t width  = contextFrame.getWidth();
-    size_t height = contextFrame.getHeight();
+    size_t width                    = contextFrame.getWidth();
+    size_t height                   = contextFrame.getHeight();
     size_t numberOfRawPointsPatches = contextFrame.getNumberOfRawPointsPatches();
     for ( int i = 0; i < numberOfRawPointsPatches; i++ ) {
       auto&        rawPointsPatch = contextFrame.getRawPointsPatch( i );
@@ -4783,14 +4784,14 @@ void PCCEncoder::markRawPatchLocation(  PCCFrameContext&      contextFrame,
             if ( rawPointsPatch.x_[p] < infiniteDepth ) {
               // if (p < rawPointsPatch.getNumberOfRawPoints()) {
               const size_t x = ( u0 + u );
-              const size_t y = ( v0 + v );  
-              if( !params_.lossyRawPointsPatch_){
+              const size_t y = ( v0 + v );
+              if ( !params_.lossyRawPointsPatch_ ) {
                 if ( x >= width || y >= height ) {
                   std::cout << "\t\tout of image :" << x << "," << y << "(" << x + y * width
                             << ") vs occupancyMap size :" << width << "x" << height << std::endl;
                   exit( 0 );
                 }
-                assert( x < width && y < height );            
+                assert( x < width && y < height );
                 imageOccupancyMap.setValue( 0, x, y, 1 );
               }
               contextFrame.getOccupancyMap()[x + y * width] = 1;

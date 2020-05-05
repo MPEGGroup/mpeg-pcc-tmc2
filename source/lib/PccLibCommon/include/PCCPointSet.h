@@ -84,20 +84,20 @@ class PCCPointSet3 {
     assert( index < colors16bit_.size() && withColors_ );
     colors16bit_[index] = color16bit;
   }
-  void copyRGB16ToRGB8(){    
-    for ( size_t k = 0; k < getPointCount(); k++ ) {     
+  void copyRGB16ToRGB8() {
+    for ( size_t k = 0; k < getPointCount(); k++ ) {
       colors_[k][0] = uint8_t( colors16bit_[k][0] );
       colors_[k][1] = uint8_t( colors16bit_[k][1] );
       colors_[k][2] = uint8_t( colors16bit_[k][2] );
     }
-  } 
-  
+  }
+
   /// convert yuv444 (16bit) to normalized yuv444 (format double)
-  void convertYUV16ToRGB8(){
-    for ( size_t k = 0; k < getPointCount(); k++ ) {      
-      double y1     = colors16bit_[ k ][0];
-      double u1     = colors16bit_[ k ][1];
-      double v1     = colors16bit_[ k ][2];
+  void convertYUV16ToRGB8() {
+    for ( size_t k = 0; k < getPointCount(); k++ ) {
+      double y1     = colors16bit_[k][0];
+      double u1     = colors16bit_[k][1];
+      double v1     = colors16bit_[k][2];
       double offset = 32768.0;
       double scale  = 65535.0;
       double weight = 1.0 / scale;
@@ -124,7 +124,7 @@ class PCCPointSet3 {
 
       colors_[k][0] = static_cast<uint8_t>( r );
       colors_[k][1] = static_cast<uint8_t>( g );
-      colors_[k][2] = static_cast<uint8_t>( b );      
+      colors_[k][2] = static_cast<uint8_t>( b );
     }
   }
 

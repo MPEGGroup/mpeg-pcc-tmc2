@@ -95,66 +95,39 @@ bool parseParameters( int argc, char* argv[], PCCMetricsParameters& metricsParam
   // clang-format off
   po::Options opts;
   opts.addOptions()
-  ("help", print_help, false, "This help text")
-  ( "computeChecksum", metricsParams.computeChecksum_, metricsParams.computeChecksum_, "Compute checksum")
-  ("computeMetrics", metricsParams.computeMetrics_,metricsParams.computeMetrics_, "Compute metrics")
-
-// sequence configuration
-("startFrameNumber",
- metricsParams.startFrameNumber_,
- metricsParams.startFrameNumber_,
- "Fist frame number in sequence to encode/decode")
-("frameCount",
-  metricsParams.frameCount_,
-  metricsParams.frameCount_,
- "Number of frames to encode")
-("uncompressedDataPath",
-  metricsParams.uncompressedDataPath_,
- metricsParams.uncompressedDataPath_,
-  "Input pointcloud to encode. Multi-frame sequences may be represented by %04i")
-("reconstructedDataPath",
-  metricsParams.reconstructedDataPath_,
- metricsParams.reconstructedDataPath_,
- "Output decoded pointcloud. Multi-frame sequences may be represented y %04i")
-("normalDataPath",
-  metricsParams.normalDataPath_,
- metricsParams.normalDataPath_,
- "Input pointcloud to encode. Multi-frame sequences may be epresented by %04i")
-("resolution",
-  metricsParams.resolution_,
-  metricsParams.resolution_,
- "Specify the intrinsic resolution")
-("dropdups",
-  metricsParams.dropDuplicates_,
- metricsParams.dropDuplicates_,
- "0(detect), 1(drop), 2(average) subsequent points with same coordinates")
-("neighborsProc",
-  metricsParams.neighborsProc_,
- metricsParams.neighborsProc_,
- "0(undefined), 1(average), 2(weighted average), 3(min), 4(max) neighbors with same geometric distance")
-("nbThread",
-  metricsParams.nbThread_,
-  metricsParams.nbThread_,
- "Number of thread used for parallel processing")
-("minimumImageHeight",
-  ignore,
-  ignore,
-  "Ignore parameter")
-("flagColorPreSmoothing",
-  ignore,
-  ignore,
-  "Ignore parameter")
-("surfaceSeparation",
-  ignore,
-  ignore,
-  "Ignore parameter");
-
+    ("help", print_help, false, "This help text")
+    ("computeChecksum", metricsParams.computeChecksum_, metricsParams.computeChecksum_,"Compute checksum")
+    ("computeMetrics", metricsParams.computeMetrics_, metricsParams.computeMetrics_, "Compute metrics")
+    // sequence configuration
+    ("startFrameNumber", metricsParams.startFrameNumber_,
+    metricsParams.startFrameNumber_,
+    "Fist frame number in sequence to encode/decode") 
+    ("frameCount", metricsParams.frameCount_, metricsParams.frameCount_, "Number of frames to encode") 
+    ("uncompressedDataPath", metricsParams.uncompressedDataPath_, metricsParams.uncompressedDataPath_,
+    "Input pointcloud to encode. Multi-frame sequences may be represented by %04i") 
+    ("reconstructedDataPath", metricsParams.reconstructedDataPath_,
+    metricsParams.reconstructedDataPath_, 
+    "Output decoded pointcloud. Multi-frame sequences may be represented by %04i") 
+    ("normalDataPath", metricsParams.normalDataPath_,
+    metricsParams.normalDataPath_,
+    "Input pointcloud to encode. Multi-frame sequences may be represented by %04i") 
+    ("resolution", metricsParams.resolution_, metricsParams.resolution_,
+    "Specify the intrinsic resolution") 
+    ("dropdups", metricsParams.dropDuplicates_,
+    metricsParams.dropDuplicates_,
+    "0(detect), 1(drop), 2(average) subsequent points with same coordinates") 
+    ("neighborsProc", metricsParams.neighborsProc_,
+    metricsParams.neighborsProc_,
+    "0(undefined), 1(average), 2(weighted average), 3(min), 4(max) neighbors with same geometric distance") 
+    ("nbThread", metricsParams.nbThread_, metricsParams.nbThread_,
+    "Number of thread used for parallel processing") 
+    ("minimumImageHeight", ignore, ignore, "Ignore parameter") 
+    ("flagColorPreSmoothing", ignore, ignore, "Ignore parameter") 
+    ("surfaceSeparation", ignore, ignore, "Ignore parameter");
   // clang-format on
   po::setDefaults( opts );
   po::ErrorReporter        err;
   const list<const char*>& argv_unhandled = po::scanArgv( opts, argc, (const char**)argv, err );
-
-  for ( const auto arg : argv_unhandled ) { err.warn() << "Unhandled argument ignored: " << arg << "\n"; }
   if ( argc == 1 || print_help ) {
     po::doHelp( std::cout, opts, 78 );
     return false;
@@ -162,7 +135,10 @@ bool parseParameters( int argc, char* argv[], PCCMetricsParameters& metricsParam
 
   metricsParams.completePath();
   metricsParams.print();
-  if ( !metricsParams.check( true ) ) { err.error() << "Input parameters are not correct \n"; }
+  if ( !metricsParams.check( true ) ) {
+    printf( "Error Input parameters are not correct \n" );
+    return false;
+  }
 
   // report the current configuration (only in the absence of errors so
   // that errors/warnings are more obvious and in the same place).

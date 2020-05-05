@@ -1,2 +1,4 @@
 add_subdirectory( tbb )
-add_subdirectory( PccLibHevcParser )
+IF( NOT USE_HM_VIDEO_CODEC )
+  add_subdirectory( PccLibHevcParser )
+ENDIF()

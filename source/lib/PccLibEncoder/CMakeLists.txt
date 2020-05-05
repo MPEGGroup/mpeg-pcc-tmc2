@@ -13,11 +13,16 @@ FILE(GLOB SRC include/*.h source/*.cpp
 INCLUDE_DIRECTORIES( include
                      ${CMAKE_SOURCE_DIR}/source/lib/PccLibCommon/include  
                      ${CMAKE_SOURCE_DIR}/source/lib/PccLibBitstreamCommon/include 
+                     ${CMAKE_SOURCE_DIR}/source/lib/PccLibVideoEncoder/include 
                      ${CMAKE_SOURCE_DIR}/dependencies/tbb/include
                      ${CMAKE_SOURCE_DIR}/dependencies/arithmetic-coding/inc
                      ${CMAKE_SOURCE_DIR}/dependencies/nanoflann )
 
 ADD_LIBRARY( ${MYNAME} ${LINKER} ${SRC} )
+
+IF( USE_HM_VIDEO_CODEC )
+    TARGET_LINK_LIBRARIES(${MYNAME} PRIVATE PccLibVideoEncoder )
+ENDIF()
 
 TARGET_LINK_LIBRARIES(${MYNAME} PccLibCommon PccLibBitstreamCommon )
 

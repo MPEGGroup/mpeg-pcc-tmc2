@@ -5,3 +5,5 @@
 #cmakedefine01 HAVE_GETRUSAGE
 
 #cmakedefine ENABLE_PAPI_PROFILING
+
+#cmakedefine USE_HM_VIDEO_CODEC

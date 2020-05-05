@@ -1,13 +1,17 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.12.2)
-PROJECT (TMC2 CXX)
+cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
+
+PROJECT (TMC2 CXX C )
 SET( TMC2_VERSION_MAJOR 9 )
 SET( TMC2_VERSION_MINOR 1 )
+
+
+OPTION( USE_HM_VIDEO_CODEC "Clone, build and use HM video encoder and decoder" TRUE )
 
 ## CLANG-TIDY CHECK
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-#set(CMAKE_C_COMPILER "/usr/bin/clang")
-#set(CMAKE_CXX_COMPILER "/usr/bin/clang++")
+# set(CMAKE_C_COMPILER "/usr/bin/clang")
+# set(CMAKE_CXX_COMPILER "/usr/bin/clang++")
 set( CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/dependencies/cmake")
@@ -55,6 +59,15 @@ IF (MSVC)
   SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /NODEFAULTLIB:tbb.lib")
 ENDIF()
 
+# INCLUDE USE_HM_VIDEO_CODEC
+IF( USE_HM_VIDEO_CODEC )
+  INCLUDE( ${CMAKE_SOURCE_DIR}/dependencies/cmake/hm.cmake )
+  ADD_SUBDIRECTORY(source/lib/PccLibVideoDecoder)
+  ADD_SUBDIRECTORY(source/lib/PccLibVideoEncoder)
+  ADD_SUBDIRECTORY(source/app/PccAppHMVideoEncoder)
+  ADD_SUBDIRECTORY(source/app/PccAppHMVideoDecoder)
+ENDIF()
+
 ## CLANG FORMAT
 INCLUDE( dependencies/cmake/clang.cmake )
 
@@ -62,11 +75,14 @@ ADD_SUBDIRECTORY(dependencies)
 ADD_SUBDIRECTORY(source/lib/PccLibBitstreamCommon)
 ADD_SUBDIRECTORY(source/lib/PccLibBitstreamWriter)
 ADD_SUBDIRECTORY(source/lib/PccLibBitstreamReader)
+
 ADD_SUBDIRECTORY(source/lib/PccLibCommon)
 ADD_SUBDIRECTORY(source/lib/PccLibDecoder)
 ADD_SUBDIRECTORY(source/lib/PccLibEncoder)
 ADD_SUBDIRECTORY(source/lib/PccLibMetrics)
+
 ADD_SUBDIRECTORY(source/app/PccAppParser)
 ADD_SUBDIRECTORY(source/app/PccAppEncoder)
 ADD_SUBDIRECTORY(source/app/PccAppDecoder)
 ADD_SUBDIRECTORY(source/app/PccAppMetrics)
+

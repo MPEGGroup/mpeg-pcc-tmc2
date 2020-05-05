@@ -53,9 +53,7 @@ PCCDecoder::PCCDecoder() {
 PCCDecoder::~PCCDecoder() = default;
 void PCCDecoder::setParameters( const PCCDecoderParameters& params ) { params_ = params; }
 
-int  PCCDecoder::decode( PCCContext&       context,
-                         PCCGroupOfFrames& reconstructs,
-                         int32_t           atlasIndex = 0 ) {
+int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int32_t atlasIndex = 0 ) {
   if ( params_.nbThread_ > 0 ) { tbb::task_scheduler_init init( static_cast<int>( params_.nbThread_ ) ); }
 #ifdef CODEC_TRACE
   setTrace( true );
@@ -140,33 +138,35 @@ int  PCCDecoder::decode( PCCContext&       context,
 
   if ( ai.getAttributeCount() > 0 ) {
     for ( int attrIndex = 0; attrIndex < sps.getAttributeInformation( atlasIndex ).getAttributeCount();
-          attrIndex++ ) {  // right now we only have one attribute, this should be generalized
+          attrIndex++ ) {  // right now we only have one attribute, this should be
+                           // generalized
       int decodedBitdepthAttribute   = ai.getAttributeNominal2dBitdepthMinus1( attrIndex ) + 1;
       int decodedBitdepthAttributeMP = ai.getAttributeNominal2dBitdepthMinus1( attrIndex ) + 1;
-      printf( "RawPatchEnabledFlag[ atlasIndex = %d ] = %d \n", atlasIndex, sps.getRawPatchEnabledFlag( atlasIndex ) );
-      printf( "ProfileCodecGroupIdc() = %d \n", (int)plt.getProfileCodecGroupIdc() );
       for ( int attrPartitionIndex = 0;
             attrPartitionIndex <
             sps.getAttributeInformation( atlasIndex ).getAttributeDimensionPartitionsMinus1( attrIndex ) + 1;
-            attrPartitionIndex++ ) {  // right now we have only one partition, this should be generalized
+            attrPartitionIndex++ ) {  // right now we have only one partition,
+                                      // this should be generalized
         if ( sps.getMultipleMapStreamsPresentFlag( atlasIndex ) ) {
           int sizeTextureVideo = 0;
-          context.getVideoTextureMultiple().resize(
-              sps.getMapCountMinus1( atlasIndex ) +
-              1 );  // this allocation is considering only one attribute, with a single partition, but multiple streams
+          context.getVideoTextureMultiple().resize( sps.getMapCountMinus1( atlasIndex ) + 1 );  // this allocation is
+                                                                                                // considering only one
+                                                                                                // attribute, with a
+                                                                                                // single partition, but
+                                                                                                // multiple streams
           for ( int mapIndex = 0; mapIndex < sps.getMapCountMinus1( atlasIndex ) + 1; mapIndex++ ) {
             // decompress T[mapIndex]
             auto textureIndex =
                 static_cast<PCCVideoType>( VIDEO_TEXTURE_T0 + attrPartitionIndex + MAX_NUM_ATTR_PARTITIONS * mapIndex );
             auto& videoBitstream = context.getVideoBitstream( textureIndex );
-            printf( "call videoDecoder.decompress():: context.getVideoTextureMultiple()[mapIndex] \n" );
-            videoDecoder.decompress(
-                context.getVideoTextureMultiple()[mapIndex], path.str(), context.size(), videoBitstream,
-                params_.videoDecoderPath_, context, ai.getAttributeNominal2dBitdepthMinus1( 0 ) + 1,
-                params_.keepIntermediateFiles_, isAttributes444, params_.patchColorSubsampling_,
-                params_.inverseColorSpaceConversionConfig_, params_.colorSpaceConversionPath_ );
+            videoDecoder.decompress( context.getVideoTextureMultiple()[mapIndex], path.str(), context.size(),
+                                     videoBitstream, params_.videoDecoderPath_, context,
+                                     ai.getAttributeNominal2dBitdepthMinus1( 0 ) + 1, params_.keepIntermediateFiles_,
+                                     isAttributes444, params_.patchColorSubsampling_,
+                                     params_.inverseColorSpaceConversionConfig_, params_.colorSpaceConversionPath_ );
             /*context.getVideoTextureMultiple()[mapIndex].convertBitdepth(
-              decodedBitdepthAttribute, ai.getAttributeNominal2dBitdepthMinus1(attrIndex) + 1,
+              decodedBitdepthAttribute,
+              ai.getAttributeNominal2dBitdepthMinus1(attrIndex) + 1,
               ai.getAttributeMSBAlignFlag(attrIndex));*/
             std::cout << "texture T" << mapIndex << " video ->" << videoBitstream.size() << " B" << std::endl;
             sizeTextureVideo += videoBitstream.size();
@@ -175,7 +175,6 @@ int  PCCDecoder::decode( PCCContext&       context,
         } else {
           auto  textureIndex   = static_cast<PCCVideoType>( VIDEO_TEXTURE + attrPartitionIndex );
           auto& videoBitstream = context.getVideoBitstream( textureIndex );
-          printf( "call videoDecoder.decompress()::context.getVideoTexture() \n" );
           videoDecoder.decompress( context.getVideoTexture(),       // video,
                                    path.str(),                      // path,
                                    context.size() * mapCount,       // frameCount,
@@ -189,7 +188,8 @@ int  PCCDecoder::decode( PCCContext&       context,
                                    params_.inverseColorSpaceConversionConfig_, params_.colorSpaceConversionPath_ );
 
           /*context.getVideoTexture().convertBitdepth(
-              decodedBitdepthAttribute, ai.getAttributeNominal2dBitdepthMinus1(attrIndex) + 1,
+              decodedBitdepthAttribute,
+             ai.getAttributeNominal2dBitdepthMinus1(attrIndex) + 1,
              ai.getAttributeMSBAlignFlag(attrIndex));*/
           std::cout << "texture video  ->" << videoBitstream.size() << " B" << std::endl;
         }
@@ -201,9 +201,12 @@ int  PCCDecoder::decode( PCCContext&       context,
                                    params_.keepIntermediateFiles_, isAuxiliaryAttributes444, false,
                                    params_.inverseColorSpaceConversionConfig_, params_.colorSpaceConversionPath_ );
 
-          /* context.getVideoRawPointsTexture().convertBitdepth( decodedBitdepthAttributeMP,
-                                                      ai.getAttributeNominal2dBitdepthMinus1( 0 ) + 1,
-                                                      ai.getAttributeMSBAlignFlag( 0 ) );*/
+          /* context.getVideoRawPointsTexture().convertBitdepth(
+             decodedBitdepthAttributeMP,
+                                                      ai.getAttributeNominal2dBitdepthMinus1(
+             0 ) + 1,
+                                                      ai.getAttributeMSBAlignFlag(
+             0 ) );*/
 
           // generateRawPointsTexturefromVideo( context, reconstructs );
           std::cout << " raw points texture -> " << videoBitstreamMP.size() << " B" << endl;
@@ -214,27 +217,22 @@ int  PCCDecoder::decode( PCCContext&       context,
 
   // All video have been decoded, start reconsctruction processes
   if ( sps.getRawPatchEnabledFlag( atlasIndex ) && sps.getRawSeparateVideoPresentFlag( atlasIndex ) ) {
-    printf( "generateRawPointsGeometryfromVideo \n" );
-    fflush( stdout );
     generateRawPointsGeometryfromVideo( context, reconstructs );
   }
 
   if ( ai.getAttributeCount() > 0 ) {
     for ( int attrIndex = 0; attrIndex < sps.getAttributeInformation( atlasIndex ).getAttributeCount();
-          attrIndex++ ) {  // right now we only have one attribute, this should be generalized
+          attrIndex++ ) {  // right now we only have one attribute, this should be
+                           // generalized
       int decodedBitdepthAttribute   = ai.getAttributeNominal2dBitdepthMinus1( attrIndex ) + 1;
       int decodedBitdepthAttributeMP = ai.getAttributeNominal2dBitdepthMinus1( attrIndex ) + 1;
       for ( int attrPartitionIndex = 0;
             attrPartitionIndex <
             sps.getAttributeInformation( atlasIndex ).getAttributeDimensionPartitionsMinus1( attrIndex ) + 1;
-            attrPartitionIndex++ ) {  // right now we have only one partition, this should be generalized
+            attrPartitionIndex++ ) {  // right now we have only one partition,
+                                      // this should be generalized
         if ( sps.getRawPatchEnabledFlag( atlasIndex ) && sps.getRawSeparateVideoPresentFlag( atlasIndex ) ) {
-          printf( "generateRawPointsTexturefromVideo attrIndex = %d attrPartitionIndex = %d \n", attrIndex,
-                  attrPartitionIndex );
-          fflush( stdout );
           generateRawPointsTexturefromVideo( context, reconstructs );
-          printf( "Done \n" );
-          fflush( stdout );
         }
       }
     }
@@ -242,15 +240,13 @@ int  PCCDecoder::decode( PCCContext&       context,
 
   reconstructs.setFrameCount( context.size() );
   context.setOccupancyPrecision( sps.getFrameWidth( atlasIndex ) / context.getVideoOccupancyMap().getWidth() );
-
-  printf( "setGeneratePointCloudParameters \n" );
-  fflush( stdout );
   GeneratePointCloudParameters gpcParams;
   GeneratePointCloudParameters ppSEIParams;
   setGeneratePointCloudParameters( gpcParams, context );
   setPostProcessingSeiParameters( ppSEIParams, context );
 
-  // recreating the prediction list per attribute (either the attribute is coded absolute, or follows the geometry)
+  // recreating the prediction list per attribute (either the attribute is coded
+  // absolute, or follows the geometry)
   // see contribution m52529
   std::vector<std::vector<bool>> absoluteT1List;
   absoluteT1List.resize( ai.getAttributeCount() );
@@ -273,43 +269,34 @@ int  PCCDecoder::decode( PCCContext&       context,
     std::vector<uint32_t> partition;
 
     // Decode point cloud
-    printf( "call generatePointCloud() \n" );
-
     if ( !ppSEIParams.pbfEnableFlag_ ) {
-      generateOccupancyMap( frame, context.getVideoOccupancyMap().getFrame( frame.getIndex() ), 
+      generateOccupancyMap( frame, context.getVideoOccupancyMap().getFrame( frame.getIndex() ),
                             context.getOccupancyPrecision(), oi.getLossyOccupancyMapCompressionThreshold(),
                             asps.getEnhancedOccupancyMapForDepthFlag() );
     }
 
-    printf(" asps.getEnhancedOccupancyMapForDepthFlag() = %d \n", asps.getEnhancedOccupancyMapForDepthFlag());
-    printf("ppSEIParams.pbfEnableFlag_ = %d \n", ppSEIParams.pbfEnableFlag_);
-    generateBlockToPatchFromBoundaryBox(context, frame, context.getOccupancyPackingBlockSize());    
+    generateBlockToPatchFromBoundaryBox( context, frame, context.getOccupancyPackingBlockSize() );
 
-    // generateBlockToPatchFromBoundaryBox( context, frame, context.getOccupancyPackingBlockSize() );
-    printf( "call generatePointCloud() \n" );
+    // generateBlockToPatchFromBoundaryBox( context, frame,
+    // context.getOccupancyPackingBlockSize() );
     generatePointCloud( reconstruct, context, frame, gpcParams, partition, true );
-    printf("generatePointCloud done \n");
-    printf("start colorPointCloud loop attIdx = [0;%lu ] \n",ai.getAttributeCount()); fflush(stdout);
     for ( size_t attIdx = 0; attIdx < ai.getAttributeCount(); attIdx++ ) {
-      printf("start colorPointCloud attIdx = %lu / %lu ] \n",attIdx, ai.getAttributeCount()); fflush(stdout);
       colorPointCloud( reconstruct, context, frame, absoluteT1List[attIdx],
                        sps.getMultipleMapStreamsPresentFlag( ATLASIDXPCC ), ai.getAttributeCount(), gpcParams );
     }
 
     // Post-Processing
-    printf("Post-Processing  params_.postprocessSmoothingFilter_ = %d \n", params_.postprocessSmoothingFilter_ );
     if ( ppSEIParams.flagGeometrySmoothing_ ) {
       PCCPointSet3 tempFrameBuffer = reconstruct;
       if ( ppSEIParams.gridSmoothing_ ) {
-        printf("smoothPointCloudPostprocess \n");
         smoothPointCloudPostprocess( reconstruct, context, params_.colorTransform_, ppSEIParams, partition );
       }
-      if( !ppSEIParams.pbfEnableFlag_){
+      if ( !ppSEIParams.pbfEnableFlag_ ) {
         // These are different attribute transfer functions
         if ( params_.postprocessSmoothingFilter_ == 1 ) {
           tempFrameBuffer.transferColors16bitBP( reconstruct, int32_t( 0 ), isAttributes444, 8, 1, true, true, true,
-                                                false, 4, 4, 1000, 1000, 1000 * 256,
-                                                1000 * 256 );  // jkie: let's make it general
+                                                 false, 4, 4, 1000, 1000, 1000 * 256,
+                                                 1000 * 256 );  // jkie: let's make it general
         } else if ( params_.postprocessSmoothingFilter_ == 2 ) {
           tempFrameBuffer.transferColorWeight( reconstruct, 0.1 );
         } else if ( params_.postprocessSmoothingFilter_ == 3 ) {
@@ -402,8 +389,7 @@ void PCCDecoder::setPointLocalReconstructionData( PCCFrameContext&              
 #endif
 }
 
-void PCCDecoder::setPostProcessingSeiParameters( GeneratePointCloudParameters& params,
-                                                 PCCContext&                   context ) {
+void PCCDecoder::setPostProcessingSeiParameters( GeneratePointCloudParameters& params, PCCContext& context ) {
   auto&   sps                   = context.getVps();
   int32_t atlasIndex            = 0;
   auto&   oi                    = sps.getOccupancyInformation( atlasIndex );

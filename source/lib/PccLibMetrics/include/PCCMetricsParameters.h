@@ -66,7 +66,7 @@ class PCCMetricsParameters {
                         // same geo coordinates
   int neighborsProc_;   //! 0(undefined), 1(average), 2(weighted average),
                         // 3(min), 4(max) neighbors with same geometric
-                       //! distance
+                        //! distance
 
   bool computeC2c_;
   bool computeC2p_;
