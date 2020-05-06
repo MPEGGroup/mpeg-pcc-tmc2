@@ -990,7 +990,7 @@ class PCCImage {
     chromaSampler.downsampling( YUV444[2], YUV420[2], (int)width_, (int)height_, nbyte == 1 ? 255 : 1023, filter );
     floatYUVToYUV( YUV420[0], Y, 0, nbyte );
     floatYUVToYUV( YUV420[1], U, 1, nbyte );
-    floatYUVToYUV( YUV420[2], B, 1, nbyte );
+    floatYUVToYUV( YUV420[2], V, 1, nbyte );
   }
 
   void convertYUV420ToRGB44( std::vector<T>& Y,
