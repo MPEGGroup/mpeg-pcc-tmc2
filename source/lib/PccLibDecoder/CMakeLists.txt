@@ -18,18 +18,16 @@ INCLUDE_DIRECTORIES( include
                      ${CMAKE_SOURCE_DIR}/dependencies/arithmetic-coding/inc
                      ${CMAKE_SOURCE_DIR}/dependencies/nanoflann )
                      
-
 SET( LIBS PccLibCommon PccLibBitstreamCommon )
-IF( NOT USE_HM_VIDEO_CODEC )
+
+IF( USE_HM_VIDEO_CODEC )
+    SET( LIBS ${LIBS} PccLibVideoDecoder )
+ELSE()
     INCLUDE_DIRECTORIES( ${CMAKE_SOURCE_DIR}/dependencies/PccLibHevcParser/include )
     SET( LIBS ${LIBS} PccLibHevcParser )
 ENDIF()
 
 ADD_LIBRARY( ${MYNAME} ${LINKER} ${SRC} )
-
-IF( USE_HM_VIDEO_CODEC )
-     SET( LIBS ${LIBS} PccLibVideoDecoder )
-ENDIF()
 
 TARGET_LINK_LIBRARIES(${MYNAME} ${LIBS} )
 

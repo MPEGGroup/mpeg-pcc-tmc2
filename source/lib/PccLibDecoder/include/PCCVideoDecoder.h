@@ -77,7 +77,7 @@ class PCCVideoDecoder {
     const std::string binFileName = fileName + ".bin";
     size_t            width = 0, height = 0;
 #ifndef USE_HM_VIDEO_CODEC
-    PccLibHevcParser::PCCHevcParser hevcParser;
+    PCCHevcParser hevcParser;
     hevcParser.getVideoSize( bitstream.vector(), width, height );
 #endif
 
