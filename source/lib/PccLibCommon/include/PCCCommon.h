@@ -67,6 +67,7 @@
 #include <papi.h>
 #include "PCCChrono.h"
 #endif
+#undef OPTIONAL 
 
 #define MATCHTOANCHOR 1  // jkei: set 1 to match with the results of anchor for mapcount=1 case.
 
