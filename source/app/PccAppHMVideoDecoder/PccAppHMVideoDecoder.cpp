@@ -92,9 +92,9 @@ bool parseParameters( int argc, char* argv[], std::string& binFile, size_t& widt
 
   printf( "Parameters : \n" );
   printf( "  binFile = %s \n", binFile.c_str() );
-  printf( "  width = %lu \n", width );
-  printf( "  height = %lu \n", height );
-  printf( "  nbyte = %lu \n", nbyte );
+  printf( "  width   = %zu \n", width );
+  printf( "  height  = %zu \n", height );
+  printf( "  nbyte   = %zu \n", nbyte );
   if ( argc == 1 || print_help || binFile.empty() || width == 0 || height == 0 || nbyte == 0 ) {
     printf( "Error parameters not correct \n" );
     fflush( stdout );

@@ -33,6 +33,7 @@
 #ifndef PCCTMC2Common_h
 #define PCCTMC2Common_h
 
+#define NOMINMAX
 #include <limits>
 #include <assert.h>
 #include <chrono>
@@ -51,6 +52,7 @@
 #include <queue>
 #include <algorithm>
 #include <map>
+#include <array>
 #include "PCCConfig.h"
 #include "PCCBitstreamCommon.h"
 #if defined( WIN32 )

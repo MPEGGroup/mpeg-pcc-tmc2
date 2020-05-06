@@ -19,7 +19,7 @@ INCLUDE_DIRECTORIES( include
                      ${CMAKE_SOURCE_DIR}/dependencies/nanoflann )
                      
 
-SET( LIBS PccLibCommon  PccLibBitstreamCommon )
+SET( LIBS PccLibCommon PccLibBitstreamCommon )
 IF( NOT USE_HM_VIDEO_CODEC )
     INCLUDE_DIRECTORIES( ${CMAKE_SOURCE_DIR}/dependencies/PccLibHevcParser/include )
     SET( LIBS ${LIBS} PccLibHevcParser )
@@ -28,7 +28,7 @@ ENDIF()
 ADD_LIBRARY( ${MYNAME} ${LINKER} ${SRC} )
 
 IF( USE_HM_VIDEO_CODEC )
-    TARGET_LINK_LIBRARIES(${MYNAME} PRIVATE PccLibVideoDecoder )
+     SET( LIBS ${LIBS} PccLibVideoDecoder )
 ENDIF()
 
 TARGET_LINK_LIBRARIES(${MYNAME} ${LIBS} )

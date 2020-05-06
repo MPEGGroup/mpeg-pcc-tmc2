@@ -1,10 +1,9 @@
 cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 
-MESSAGE("Clone and build HM libraries") 
 SET( HM_VERSION         HM-16.20+SCM-8.8 )
 SET( HM_DIR             ${CMAKE_SOURCE_DIR}/dependencies/${HM_VERSION}/ )
 set( HM_LIB_SOURCE_DIR  ${HM_DIR}/source/Lib )
-message( " HM_LIB_SOURCE_DIR = ${HM_LIB_SOURCE_DIR}" )
+MESSAGE("Clone and build HM libraries: ${HM_LIB_SOURCE_DIR}") 
 
 IF( NOT EXISTS "${HM_DIR}/README" )   
   EXECUTE_PROCESS( COMMAND svn checkout https://hevc.hhi.fraunhofer.de/svn/svn_HEVCSoftware/tags/${HM_VERSION}/ ${HM_DIR} )

@@ -84,12 +84,12 @@ bool parseParameters( int          argc,
   const list<const char*>& argv_unhandled = po::scanArgv( opts, argc, (const char**)argv, err );
 
   printf( "parseParameters : \n" );
-  printf( "  srcVideo = %s \n", srcVideo.c_str() );
+  printf( "  srcVideo          = %s \n", srcVideo.c_str() );
   printf( "  encoderParameters = %s \n", encoderParameters.c_str() );
-  printf( "  width = %lu \n", width );
-  printf( "  height = %lu \n", height );
-  printf( "  frameCount = %lu \n", frameCount );
-  printf( "  nbyte = %lu \n", nbyte );
+  printf( "  width             = %zu \n", width );
+  printf( "  height            = %zu \n", height );
+  printf( "  frameCount        = %zu \n", frameCount );
+  printf( "  nbyte             = %zu \n", nbyte );
   if ( argc == 1 || print_help || srcVideo.empty() || encoderParameters.empty() || width == 0 || height == 0 ||
        frameCount == 0 || nbyte == 0 ) {
     printf( "Error parameters not correct \n" );

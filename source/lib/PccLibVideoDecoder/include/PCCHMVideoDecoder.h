@@ -386,7 +386,7 @@ class PCCHMVideoDecoder : public PCCVirtualVideoDecoder {
   template <typename T>
   void xWritePicture( const TComPicYuv* pic, PCCVideo<T, 3>& video ) {
     int chromaSubsample = pic->getWidth( COMPONENT_Y ) / pic->getWidth( COMPONENT_Cb );
-    printf( "write output frame %lu size = %d %d bit depth = %d - %d = %d in %d bytes buffers ( ChromaSub. = %d )\n",
+    printf( "write output frame %zu size = %d %d bit depth = %d - %d = %d in %zd bytes buffers ( ChromaSub. = %d )\n",
             video.size(), pic->getWidth( COMPONENT_Y ), pic->getHeight( COMPONENT_Y ), m_internalBitDepths,
             m_outputBitDepth[0], m_internalBitDepths - m_outputBitDepth[0], sizeof( T ), chromaSubsample );
     fflush( stdout );

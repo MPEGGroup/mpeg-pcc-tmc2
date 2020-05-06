@@ -9,13 +9,12 @@ FILE(GLOB SRC  include/*.h
                ${HM_LIB_SOURCE_DIR}/TAppCommon/* )
 
 INCLUDE_DIRECTORIES( include 
-                     ${CMAKE_SOURCE_DIR}/source/lib/PccLibCommon/include
+                     ${CMAKE_SOURCE_DIR}/source/lib/PccLibCommon/include/
                      ${HM_LIB_SOURCE_DIR}/TAppCommon/
-                     ${HM_LIB_SOURCE_DIR} )
+                     ${HM_LIB_SOURCE_DIR}/ )
 
 ADD_LIBRARY( ${MYNAME} ${LINKER} ${SRC} )
 
-TARGET_LINK_LIBRARIES(${MYNAME} PccLibCommon TLibCommon TLibVideoIO TLibEncoder  )
+TARGET_LINK_LIBRARIES( ${MYNAME} PccLibCommon TLibCommon TLibVideoIO TLibEncoder  )
 
 SET_TARGET_PROPERTIES( ${MYNAME} PROPERTIES LINKER_LANGUAGE CXX)
-

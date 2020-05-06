@@ -33,6 +33,7 @@
 #ifndef PCC_BITSTREAM_COMMON_H
 #define PCC_BITSTREAM_COMMON_H
 
+#define NOMINMAX
 #include <limits>
 #include <assert.h>
 #include <chrono>

@@ -559,7 +559,7 @@ class PCCImage {
     const size_t height[3] = {heightY, heightC, heightC};
     const size_t stride[3] = {strideY, strideC, strideC};
     int16_t      rounding  = 1 << ( shiftbits - 1 );
-    printf( "copy image from HM to PCC: S=%d R=%d (%4dx%4d S=%4d C:%4dx%4d => %4dx%4d) bgr=%d \n", shiftbits, rounding,
+    printf( "copy image from HM to PCC: S=%d R=%d (%4zux%4zu S=%4zu C:%4zux%4zu => %4zux%4zu) bgr=%d \n", shiftbits, rounding,
             widthY, heightY, strideY, widthC, heightC, width_, height_, rgb2bgr );
     for ( size_t c = 0; c < 3; c++ ) {
       auto* src = ptr[rgb2bgr][c];
@@ -592,15 +592,15 @@ class PCCImage {
             size_t  strideC,
             int16_t shiftbits,
             bool    rgb2bgr ) {
-    int          chromaSubsample = widthY / widthC;
-    int          widthChroma     = width_ / chromaSubsample;
-    int          heightChroma    = height_ / chromaSubsample;
+    size_t       chromaSubsample = widthY / widthC;
+    size_t       widthChroma     = width_ / chromaSubsample;
+    size_t       heightChroma    = height_ / chromaSubsample;
     Pel*         ptr[2][3]       = {{Y, U, V}, {V, Y, U}};
     const size_t width[3]        = {width_, widthChroma, widthChroma};
     const size_t heightSrc[3]    = {height_, heightChroma, heightChroma};
     const size_t heightDst[3]    = {heightY, heightC, heightC};
     const size_t stride[3]       = {strideY, strideC, strideC};
-    printf( "copy image from PCC to HM: S = %d (%4dx%4d => %4dx%4d S=%4d C: %4dx%4d ) \n", shiftbits, width_, height_,
+    printf( "copy image from PCC to HM: S = %d (%4zux%4zu => %4zux%4zu S=%4zu C: %4zux%4zu ) \n", shiftbits, width_, height_,
             widthY, heightY, strideY, widthC, heightC );
     for ( size_t c = 0; c < 3; c++ ) {
       auto* src = channels_[c].data();

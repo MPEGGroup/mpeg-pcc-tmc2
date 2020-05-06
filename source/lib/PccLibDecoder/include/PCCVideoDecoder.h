@@ -106,7 +106,7 @@ class PCCVideoDecoder {
     size_t byteDepth    = ( bitDepth == 10 ? 2 : 1 );
     size_t size         = byteDepth * width * height;
     size_t chromaFactor = use444CodecIo ? 1 : 4;
-    printf( "Write video.size() = %lu video = %lu \n", video.size(), byteDepth );
+    printf( "Write video.size() = %zu video = %zu \n", video.size(), byteDepth );
     if ( sizeof( T ) == byteDepth ) {
       for ( auto& image : video ) {
         file.write( (char*)( image.getChannel( 0 ).data() ), size );
