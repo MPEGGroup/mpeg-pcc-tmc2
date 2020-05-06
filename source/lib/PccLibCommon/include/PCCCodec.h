@@ -153,34 +153,16 @@ class PCCCodec {
                        const PCCColorTransform             colorTransform,
                        const GeneratePointCloudParameters& params );
 
-  void smoothPointCloudPostprocess( PCCGroupOfFrames&                   reconstructs,
-                                    PCCContext&                         context,
-                                    const PCCColorTransform             colorTransform,
-                                    const GeneratePointCloudParameters& params,
-                                    std::vector<std::vector<uint32_t>>& partitions );
-
-  void colorSmoothing( PCCGroupOfFrames&                   reconstructs,
-                       PCCContext&                         context,
-                       const PCCColorTransform             colorTransform,
-                       const GeneratePointCloudParameters& params );
-
   void generateRawPointsGeometryfromVideo( PCCContext&       context,
                                      PCCFrameContext&  frame,
-                                     PCCGroupOfFrames& reconstructs,
                                      size_t            frameIndex );
 
   void generateRawPointsTexturefromVideo( PCCContext&       context,
                                     PCCFrameContext&  frame,
-                                    PCCGroupOfFrames& reconstructs,
                                     size_t            frameIndex );
 
-  void generateRawPointsGeometryfromVideo( PCCContext& context, PCCGroupOfFrames& reconstructs );
-  void generateRawPointsTexturefromVideo( PCCContext& context, PCCGroupOfFrames& reconstructs );
-
-  void generateOccupancyMap( PCCContext&  context,
-                             const size_t occupancyPrecision,
-                             const size_t thresholdLossyOM,
-                             bool         enhancedOccupancyMapForDepthFlag );
+  void generateRawPointsGeometryfromVideo( PCCContext& context );
+  void generateRawPointsTexturefromVideo( PCCContext& context );
 
 #ifdef CODEC_TRACE
   template <typename... Args>

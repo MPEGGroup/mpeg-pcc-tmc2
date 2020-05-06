@@ -77,17 +77,17 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   size_t singleLayerPixelInterleavingOriginal = static_cast<size_t>( params_.singleMapPixelInterleaving_ );
   if ( params_.nbThread_ > 0 ) { tbb::task_scheduler_init init( static_cast<int>( params_.nbThread_ ) ); }
   params_.initializeContext( context );
-  assert( sources.size() < 256 );
+  assert( sources.getFrameCount() < 256 );
   size_t atlasIndex = 0;
-  if ( sources.size() == 0 ) { return 0; }
+  if ( sources.getFrameCount() == 0 ) { return 0; }
 #ifdef CODEC_TRACE
   setTrace( true );
   openTrace( stringFormat( "%s_GOF%u_codec_encode.txt", removeFileExtension( params_.compressedStreamPath_ ).c_str(),
                            context.getVps().getVpccParameterSetId() ) );
 #endif
-  reconstructs.setFrameCount( sources.size() );
-  context.setGofSize( sources.size() );
-  context.resize( sources.size() );
+  reconstructs.setFrameCount( sources.getFrameCount() );
+  context.setGofSize( sources.getFrameCount() );
+  context.resize( sources.getFrameCount() );
   auto& frames = context.getFrames();
   for ( size_t i = 0; i < frames.size(); i++ ) {
     frames[i].setRawPatchEnabledFlag( params_.losslessGeo_ || params_.lossyRawPointsPatch_ );
@@ -119,7 +119,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     doGlobalTetrisPacking( context );
   }
 
-  if ( params_.maxNumRefAtlasFrame_ != 1 && sources.size() > 2 && params_.constrainedPack_ ) {
+  if ( params_.maxNumRefAtlasFrame_ != 1 && sources.getFrameCount() > 2 && params_.constrainedPack_ ) {
     adjustReferenceAtlasFrames( context );
   }
 
@@ -129,8 +129,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   sps.setFrameHeight( atlasIndex, static_cast<uint16_t>( frames[0].getHeight() ) );
   // DIS requirement, see 7.4.6.1
   for ( int i = 0; i < context.getAtlasSequenceParameterSetList().size(); i++ ) {
-    context.getAtlasSequenceParameterSet( i ).setFrameHeight( sps.getFrameWidth( atlasIndex ) );
-    context.getAtlasSequenceParameterSet( i ).setFrameWidth( sps.getFrameHeight( atlasIndex ) );
+    context.getAtlasSequenceParameterSet( i ).setFrameHeight( sps.getFrameHeight( atlasIndex ) );
+    context.getAtlasSequenceParameterSet( i ).setFrameWidth( sps.getFrameWidth( atlasIndex ) );
   }
   // GENERATE OCCUPANCY MAP
   generateOccupancyMap( context );
@@ -265,7 +265,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                            internalBitDepth,  // internalBitDepth
                            false,             // useConversion
                            params_.keepIntermediateFiles_ );
-    if ( params_.lossyRawPointsPatch_ ) { generateRawPointsGeometryfromVideo( context, reconstructs ); }
+    if ( params_.lossyRawPointsPatch_ ) { generateRawPointsGeometryfromVideo( context ); }
   }
 
   // RECONSTRUCT POINT CLOUD GEOMETRY
@@ -479,7 +479,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                              params_.colorSpaceConversionPath_ );         // colorSpaceConversionPath
       if ( params_.lossyRawPointsPatch_ ) {
         printf( "generateRawPointsTexturefromVideo \n" );
-        generateRawPointsTexturefromVideo( context, reconstructs );
+        generateRawPointsTexturefromVideo( context );
       }
     }
   }
@@ -520,53 +520,45 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                    static_cast<size_t>( params_.multipleStreams_ ), gpcParams );
 
   std::cout << "Post Processing Point Clouds" << std::endl;
-  //  Generate a buffer to keep unsmoothed geometry, then do geometry smoothing
-  // and transfer followed by color smoothing
-  if ( gpcParams.flagGeometrySmoothing_ ) {
-    if ( gpcParams.gridSmoothing_ ) {
-      PCCGroupOfFrames tempFrameBuffer;
-      tempFrameBuffer.setFrameCount( reconstructs.size() );
-      for ( size_t i = 0; i < frames.size(); i++ ) { tempFrameBuffer[i] = reconstructs[i]; }
-      smoothPointCloudPostprocess( reconstructs, context, params_.colorTransform_, gpcParams, partitions );
-      for ( size_t i = 0; i < frames.size(); i++ ) {
-        // The parameters for the attribute transfer are still fixed (may wish
-        // to make them user input/more flexible)
+  bool isAttributes444 = static_cast<int>( params_.losslessGeo_ ) == 1;
+  for ( size_t frameIdx=0; frameIdx< sources.getFrameCount(); frameIdx++ ) {
+    auto& frame = context.getFrame(frameIdx);
+    GeneratePointCloudParameters ppSEIParams;
+    setPostProcessingSeiParameters( ppSEIParams, context );
+    auto&                 reconstruct = reconstructs[frame.getIndex()];
+    auto&                 partition = partitions[frameIdx];
+
+    if ( ppSEIParams.flagGeometrySmoothing_ ) {
+      PCCPointSet3 tempFrameBuffer = reconstruct;
+      if ( ppSEIParams.gridSmoothing_ ) {
+        printf("smoothPointCloudPostprocess \n");
+        smoothPointCloudPostprocess( reconstruct, context, params_.colorTransform_, ppSEIParams, partition );
+      }
+      if( !ppSEIParams.pbfEnableFlag_){
         // These are different attribute transfer functions
         if ( params_.postprocessSmoothingFilter_ == 1 ) {
-          // tempFrameBuffer[i].transferColors16bit( reconstructs[i], int32_t( 0
-          // ), params_.losslessGeo_ == 1, 8, 1, 1,
-          // 1, 1, 0, 4, 4, 1000, 1000, 1000 * 256, 1000 * 256 );
-          tempFrameBuffer[i].transferColors16bitBP( reconstructs[i], int32_t( 0 ),
-                                                    static_cast<int>( params_.losslessGeo_ ) == 1, 8, 1, true, true,
-                                                    true, false, 4, 4, 1000, 1000, 1000 * 256, 1000 * 256 );
+          tempFrameBuffer.transferColors16bitBP( reconstruct, int32_t( 0 ), isAttributes444, 8, 1, true, true, true,
+                                                false, 4, 4, 1000, 1000, 1000 * 256,
+                                                1000 * 256 );  // jkie: let's make it general
         } else if ( params_.postprocessSmoothingFilter_ == 2 ) {
-          tempFrameBuffer[i].transferColorWeight( reconstructs[i], 0.1 );
+          tempFrameBuffer.transferColorWeight( reconstruct, 0.1 );
         } else if ( params_.postprocessSmoothingFilter_ == 3 ) {
-          tempFrameBuffer[i].transferColorsFilter3( reconstructs[i], int32_t( 0 ),
-                                                    static_cast<int>( params_.losslessGeo_ ) == 1 );
+          tempFrameBuffer.transferColorsFilter3( reconstruct, int32_t( 0 ), isAttributes444 );
         }
       }
     }
-  }
-  // This function does the color smoothing that is usually done in colorPointCloud
-  if ( gpcParams.flagColorSmoothing_ ) { colorSmoothing( reconstructs, context, params_.colorTransform_, gpcParams ); }
-  if ( static_cast<int>( params_.losslessGeo_ ) != 1 ) {  // lossy: convert 16-bit yuv444 to 8-bit RGB444
-    for ( size_t i = 0; i < frames.size(); i++ ) {
-      reconstructs[i].convertYUV16ToRGB8();
+    
+    if ( ppSEIParams.flagColorSmoothing_ ) {
+      colorSmoothing( reconstruct, context, params_.colorTransform_, ppSEIParams );
     }
-  } else {  // lossless: copy 16-bit RGB to 8-bit RGB
-    PCCColor16bit color16;
-    PCCColor3B    color8;
-    for ( size_t i = 0; i < frames.size(); i++ ) {
-      for ( int k = 0; k < reconstructs[i].getPointCount(); k++ ) {
-        color16   = reconstructs[i].getColor16bit( k );
-        color8[0] = uint8_t( color16[0] );
-        color8[1] = uint8_t( color16[1] );
-        color8[2] = uint8_t( color16[2] );
-        reconstructs[i].setColor( k, color8 );
-      }
+    if ( !isAttributes444 ) {  // lossy: convert 16-bit yuv444 to 8-bit RGB444
+      reconstruct.convertYUV16ToRGB8();
+    } else{  // lossless: copy 16-bit RGB to 8-bit RGB
+      reconstruct.copyRGB16ToRGB8();
     }
-  }
+    
+  }//frame
+  
   if ( !params_.keepIntermediateFiles_ && params_.use3dmc_ ) { remove3DMotionEstimationFiles( path.str() ); }
 
 #ifdef CODEC_TRACE
@@ -655,8 +647,8 @@ void PCCEncoder::preFilterOccupancyMap( PCCImageOccupancyMap& image, size_t kwid
 bool PCCEncoder::generateOccupancyMapVideo( const PCCGroupOfFrames& sources, PCCContext& context ) {
   auto& videoOccupancyMap = context.getVideoOccupancyMap();
   bool  ret               = true;
-  videoOccupancyMap.resize( sources.size() );
-  for ( size_t f = 0; f < sources.size(); ++f ) {
+  videoOccupancyMap.resize( sources.getFrameCount() );
+  for ( size_t f = 0; f < sources.getFrameCount(); ++f ) {
     auto&                 contextFrame = context.getFrames()[f];
     PCCImageOccupancyMap& videoFrame   = videoOccupancyMap.getFrame( f );
     ret &= generateOccupancyMapVideo( contextFrame.getWidth(), contextFrame.getHeight(), contextFrame.getOccupancyMap(),
@@ -740,7 +732,7 @@ bool PCCEncoder::modifyOccupancyMap( const PCCGroupOfFrames& sources, PCCContext
   if ( params_.keepIntermediateFiles_ ) { oFile.open( "occupancyMap.rgb", std::ios::binary ); }
   auto& videoOccupancyMap = context.getVideoOccupancyMap();
   bool  ret               = true;
-  for ( size_t f = 0; f < sources.size(); ++f ) {
+  for ( size_t f = 0; f < sources.getFrameCount(); ++f ) {
     auto&                 contextFrame = context.getFrames()[f];
     PCCImageOccupancyMap& videoFrame   = videoOccupancyMap.getFrame( f );
     ret &= modifyOccupancyMap( contextFrame.getWidth(), contextFrame.getHeight(), contextFrame.getOccupancyMap(),
@@ -3680,7 +3672,7 @@ void PCCEncoder::create3DMotionEstimationFiles( const PCCGroupOfFrames& sources,
   FILE* patchInfoFile    = fopen( ( path + "patchInfo.txt" ).c_str(), "wb" );
   FILE* blockToPatchFile = fopen( ( path + "blockToPatch.txt" ).c_str(), "wb" );
 
-  for ( size_t frIdx = 0; frIdx < sources.size(); ++frIdx ) {
+  for ( size_t frIdx = 0; frIdx < sources.getFrameCount(); ++frIdx ) {
     auto&        frame              = context.getFrame( frIdx );
     auto&        occupancyMapImage  = context.getVideoOccupancyMap().getFrame( frIdx );
     auto&        patches            = frame.getPatches();
@@ -4258,36 +4250,32 @@ void PCCEncoder::generateRawPointsGeometryVideo( PCCContext& context, PCCGroupOf
   size_t maxHeight        = 0;
   videoRawPointsGeometry.resize( gofSize );
   for ( auto& frame : context.getFrames() ) {
-    const size_t shift = frame.getIndex();
-    frame.setMPGeoWidth( context.getMPGeoWidth() );
-    frame.setMPGeoHeight( 0 );
-    // frame.setEnhancedOccupancyMap(
-    // sps.getEnhancedOccupancyMapForDepthFlag());
-    generateRawPointsGeometryImage( context, frame, videoRawPointsGeometry.getFrame( shift ) );
+    const size_t frameIndex = frame.getIndex();
+    generateRawPointsGeometryImage( context, frame, videoRawPointsGeometry.getFrame( frameIndex ) );
 
     size_t totalNumRawPoints = 0;
     for ( size_t ii = 0; ii < frame.getNumberOfRawPointsPatches(); ii++ ) {
       totalNumRawPoints += frame.getRawPointsPatch( ii ).size();
     }
-    cout << "generate raw Points Video (Geometry) frame " << shift
+    cout << "generate raw Points Video (Geometry) frame " << frameIndex
          << ": # of raw Patches : " << frame.getNumberOfRawPointsPatches()
          << " total # of raw Geometry : " << totalNumRawPoints << endl;
 
-    // for resizing for mpgeometry
-    auto& MPGeoFrame = videoRawPointsGeometry.getFrame( shift );
-    maxWidth         = ( std::max )( maxWidth, MPGeoFrame.getWidth() );
-    maxHeight        = ( std::max )( maxHeight, MPGeoFrame.getHeight() );
+    // for resizing for raw geometry
+    auto& rawPGeoFrame = videoRawPointsGeometry.getFrame( frameIndex );
+    maxWidth         = ( std::max )( maxWidth,  rawPGeoFrame.getWidth() );
+    maxHeight        = ( std::max )( maxHeight, rawPGeoFrame.getHeight() );
   }
 
-  // resizing for mpgeometry
+  // resizing for raw geometry
   assert( maxWidth == 64 );
   assert( maxHeight % 8 == 0 );
-  context.setMPGeoWidth( maxWidth );
-  context.setMPGeoHeight( maxHeight );
+  context.setRawGeoWidth( maxWidth );
+  context.setRawGeoHeight( maxHeight );
   for ( auto& frame : context.getFrames() ) {
-    const size_t shift      = frame.getIndex();
-    auto&        MPGeoFrame = videoRawPointsGeometry.getFrame( shift );
-    MPGeoFrame.resize( maxWidth, maxHeight );
+    const size_t frameIndex      = frame.getIndex();
+    auto&        rawGeoFrame = videoRawPointsGeometry.getFrame( frameIndex );
+    rawGeoFrame.resize( maxWidth, maxHeight );
   }
   cout << "generateRawPointsGeometryVideo [done]" << endl;
 }
@@ -4299,32 +4287,30 @@ void PCCEncoder::generateRawPointsTextureVideo( PCCContext& context, PCCGroupOfF
   size_t maxWidth  = 0;
   size_t maxHeight = 0;
   for ( auto& frame : context.getFrames() ) {
-    const size_t shift = frame.getIndex();
-    frame.setMPAttWidth( context.getMPAttWidth() );
-    frame.setMPAttHeight( 0 );
-    generateRawPointsTextureImage( context, frame, videoRawPointsTexture.getFrame( shift ), shift, reconstructs[shift] );
-    cout << "generate raw points (Texture) : frame " << shift
+    const size_t frameIndex = frame.getIndex();
+    generateRawPointsTextureImage( context, frame, videoRawPointsTexture.getFrame( frameIndex ), reconstructs[frameIndex] );
+    cout << "generate raw points (Texture) : frame " << frameIndex
          << ", # of raw points Texture : " << frame.getRawPointsPatch( 0 ).size() << endl;
-    // for resizing for mpgeometry
-    auto& rawPointsTextureFrame = videoRawPointsTexture.getFrame( shift );
+    // for resizing for raw texture
+    auto& rawPointsTextureFrame = videoRawPointsTexture.getFrame( frameIndex );
     maxWidth         = ( std::max )( maxWidth, rawPointsTextureFrame.getWidth() );
     maxHeight        = ( std::max )( maxHeight, rawPointsTextureFrame.getHeight() );
   }
-  // resizing for mpgeometry
+  // resizing for raw texture
   assert( maxWidth % 8 == 0 );
   assert( maxHeight % 8 == 0 );
-  context.setMPAttWidth( maxWidth );
-  context.setMPAttHeight( maxHeight );
+  context.setRawAttWidth( maxWidth );
+  context.setRawAttHeight( maxHeight );
   for ( auto& frame : context.getFrames() ) {
-    const size_t shift      = frame.getIndex();
-    auto&        rawPointsTextureFrame = videoRawPointsTexture.getFrame( shift );
+    const size_t frameIndex      = frame.getIndex();
+    auto&        rawPointsTextureFrame = videoRawPointsTexture.getFrame( frameIndex );
     rawPointsTextureFrame.resize( maxWidth, maxHeight );
   }
   cout << "RawPoints Texture [done]" << endl;
 }
 
 void PCCEncoder::generateRawPointsGeometryImage( PCCContext& context, PCCFrameContext& frame, PCCImageGeometry& image ) {
-  size_t width = frame.getMPGeoWidth();
+  size_t width = context.getRawGeoWidth();
 
   const int16_t     infiniteDepth = ( std::numeric_limits<int16_t>::max )();
   std::vector<bool> pcmOccupancyMap;
@@ -4334,7 +4320,6 @@ void PCCEncoder::generateRawPointsGeometryImage( PCCContext& context, PCCFrameCo
   size_t            pcmWidth          = width;
   pcmOccupancyMap.resize( pcmOccupancySizeU * pcmOccupancySizeV, false );
   packRawPointsPatch( frame, pcmOccupancyMap, pcmWidth, pcmHeight, pcmOccupancySizeU, pcmOccupancySizeV, 0 );
-  frame.setMPGeoHeight( pcmHeight );
   image.resize( pcmWidth, pcmHeight );
   image.set( 0 );
   uint16_t lastValue{0};
@@ -4387,12 +4372,11 @@ void PCCEncoder::generateRawPointsGeometryImage( PCCContext& context, PCCFrameCo
 void PCCEncoder::generateRawPointsTextureImage( PCCContext&         context,
                                           PCCFrameContext&    frame,
                                           PCCImageTexture&    image,
-                                          size_t              shift,
                                           const PCCPointSet3& reconstruct ) {
   bool   losslessAtt               = params_.losslessGeo_;
   size_t numberOfRawPointsPatches  = frame.getNumberOfRawPointsPatches();
   size_t numberOfEOMPoints         = frame.getTotalNumberOfEOMPoints();
-  size_t numOfMPGeos               = frame.getTotalNumberOfRawPoints();
+  size_t numOfRawGeos               = frame.getTotalNumberOfRawPoints();
   size_t nPixelInCurrentBlockCount = 0;
   size_t heightEOM                 = 0;
   size_t heightMP                  = 0;
@@ -4402,9 +4386,9 @@ void PCCEncoder::generateRawPointsTextureImage( PCCContext&         context,
   double avgB{0.0};
   size_t xx;
   size_t yy;
-  size_t width = frame.getMPAttWidth();
-  if ( numOfMPGeos != 0 ) {
-    heightMP         = numOfMPGeos / width + 1;
+  size_t width = context.getRawAttWidth();
+  if ( numOfRawGeos != 0 ) {
+    heightMP         = numOfRawGeos / width + 1;
     size_t heightby8 = heightMP / 8;
     if ( heightby8 * 8 != heightMP ) { heightMP = ( heightby8 + 1 ) * 8; }
     size_t mpsV0;
@@ -4471,7 +4455,7 @@ void PCCEncoder::generateRawPointsTextureImage( PCCContext&         context,
         avgB = avgB + double( eomTextures[k + eomPatchOffset].b() ) / eomPointsPatch.eomCount_;
       }
       if ( !losslessAtt ) {
-        for ( size_t k = numOfMPGeos; k < width * heightMP; ++k ) {
+        for ( size_t k = numOfRawGeos; k < width * heightMP; ++k ) {
           xx = k % width;
           yy = k / width;
           image.setValue( 0, xx, yy, static_cast<uint8_t>( avgR ) );
@@ -4612,13 +4596,13 @@ void PCCEncoder::pointLocalReconstructionSearch( PCCContext&                    
       }
     }
   }
-  size_t shift;
+  size_t frameIndex;
   if ( params.multipleStreams_ ) {
-    shift = frame.getIndex();
-    if ( video.getFrameCount() < ( shift + 1 ) ) { return; }
+    frameIndex = frame.getIndex();
+    if ( video.getFrameCount() < ( frameIndex + 1 ) ) { return; }
   } else {
-    shift = frame.getIndex() * ( params.mapCountMinus1_ + 1 );
-    if ( videoMultiple[0].getFrameCount() < ( shift + ( params.mapCountMinus1_ + 1 ) ) ) { return; }
+    frameIndex = frame.getIndex() * ( params.mapCountMinus1_ + 1 );
+    if ( videoMultiple[0].getFrameCount() < ( frameIndex + ( params.mapCountMinus1_ + 1 ) ) ) { return; }
   }
   const size_t patchCount           = patches.size();
   size_t       nbOfOptimizationMode = context.getPointLocalReconstructionModeNumber();
@@ -4652,7 +4636,7 @@ void PCCEncoder::pointLocalReconstructionSearch( PCCContext&                    
                   const bool   occupancy = occupancyMap[patch.patch2Canvas( u, v, imageWidth, imageHeight, x, y )] != 0;
                   if ( !occupancy ) { continue; }
                   auto createdPoints =
-                      generatePoints( params, frame, video, videoMultiple, shift, patchIndex, u, v, x, y,
+                      generatePoints( params, frame, video, videoMultiple, frameIndex, patchIndex, u, v, x, y,
                                       mode.interpolate_, mode.filling_, mode.minD1_, mode.neighbor_ );
                   if ( !createdPoints.empty() ) {
                     for ( const auto& createdPoint : createdPoints ) {
@@ -4710,7 +4694,7 @@ void PCCEncoder::pointLocalReconstructionSearch( PCCContext&                    
                   const bool   occupancy = occupancyMap[patch.patch2Canvas( u, v, imageWidth, imageHeight, x, y )] != 0;
                   if ( !occupancy ) { continue; }
                   auto createdPoints =
-                      generatePoints( params, frame, video, videoMultiple, shift, patchIndex, u, v, x, y,
+                      generatePoints( params, frame, video, videoMultiple, frameIndex, patchIndex, u, v, x, y,
                                       mode.interpolate_, mode.filling_, mode.minD1_, mode.neighbor_ );
                   if ( !createdPoints.empty() ) {
                     for ( const auto& createdPoint : createdPoints ) {
@@ -5832,7 +5816,7 @@ bool PCCEncoder::generateTextureVideo( const PCCPointSet3& reconstruct,
   bool   losslessGeo               = params_.losslessGeo_;  // frame.getLosslessGeo();
   bool   lossyRawPointsPatch       = frame.getRawPatchEnabledFlag() && ( !losslessGeo );
   size_t numberOfEOMPoints         = frame.getTotalNumberOfEOMPoints();
-  size_t numOfMPGeos               = frame.getTotalNumberOfRawPoints();
+  size_t numOfRawGeos              = frame.getTotalNumberOfRawPoints();
   size_t pointCount                = reconstruct.getPointCount();
   if ( ( losslessAtt || lossyRawPointsPatch ) && useRawPointsSeparateVideo ) {
     pointCount = frame.getTotalNumberOfRegularPoints();
@@ -5909,10 +5893,10 @@ bool PCCEncoder::generateTextureVideo( const PCCPointSet3& reconstruct,
     std::vector<PCCColor3B>& mpsTextures = frame.getRawPointsTextures();
     std::vector<PCCColor3B>& eomTextures = frame.getEOMTextures();
     std::cout.flush();
-    mpsTextures.resize( numOfMPGeos );
+    mpsTextures.resize( numOfRawGeos );
     eomTextures.resize( numberOfEOMPoints );
 
-    for ( size_t i = 0; i < numOfMPGeos; ++i ) {
+    for ( size_t i = 0; i < numOfRawGeos; ++i ) {
       const PCCColor3B color = reconstruct.getColor( pointCount + numberOfEOMPoints + i );
       mpsTextures[i]         = color;
     }
@@ -7161,7 +7145,47 @@ void PCCEncoder::setPointLocalReconstructionData( PCCFrameContext&              
   }
 #endif
 }
-
+void PCCEncoder::setPostProcessingSeiParameters( GeneratePointCloudParameters& params, PCCContext& context ) {
+  params.occupancyResolution_           = params_.occupancyResolution_;
+  params.occupancyPrecision_            = params_.occupancyPrecision_;
+  params.enableSizeQuantization_        = context.getEnablePatchSizeQuantization();
+  params.flagGeometrySmoothing_         = params_.flagGeometrySmoothing_;
+  params.gridSmoothing_                 = params_.gridSmoothing_;
+  params.gridSize_                      = params_.gridSize_;
+  params.neighborCountSmoothing_        = params_.neighborCountSmoothing_;
+  params.radius2Smoothing_              = params_.radius2Smoothing_;
+  params.radius2BoundaryDetection_      = params_.radius2BoundaryDetection_;
+  params.thresholdSmoothing_            = params_.thresholdSmoothing_;
+  params.rawPointColorFormat_           = size_t( params_.losslessGeo444_ ? COLOURFORMAT444 : COLOURFORMAT420 );
+  params.nbThread_                      = params_.nbThread_;
+  params.absoluteD1_                    = params_.absoluteD1_;
+  params.multipleStreams_               = params_.multipleStreams_;
+  params.surfaceThickness_              = params_.surfaceThickness_;
+  params.thresholdColorSmoothing_       = params_.thresholdColorSmoothing_;
+  params.thresholdColorDifference_      = params_.thresholdColorDifference_;
+  params.thresholdColorVariation_       = params_.thresholdColorVariation_;
+  params.thresholdLocalEntropy_         = params_.thresholdLocalEntropy_;
+  params.radius2ColorSmoothing_         = params_.radius2ColorSmoothing_;
+  params.neighborCountColorSmoothing_   = params_.neighborCountColorSmoothing_;
+  params.flagColorSmoothing_            = params_.flagColorSmoothing_;
+  params.gridColorSmoothing_            = params_.gridColorSmoothing_;
+  params.cgridSize_                     = params_.cgridSize_;
+  params.enhancedOccupancyMapCode_      = params_.enhancedOccupancyMapCode_;
+  params.thresholdLossyOM_              = params_.thresholdLossyOM_;
+  params.removeDuplicatePoints_         = params_.removeDuplicatePoints_;
+  params.pointLocalReconstruction_      = params_.pointLocalReconstruction_;
+  params.mapCountMinus1_                = params_.mapCountMinus1_;
+  params.singleMapPixelInterleaving_    = params_.singleMapPixelInterleaving_;
+  params.geometry3dCoordinatesBitdepth_ = params_.geometry3dCoordinatesBitdepth_;
+  params.useAdditionalPointsPatch_      = params_.losslessGeo_ || params_.lossyRawPointsPatch_;
+  params.plrlNumberOfModes_             = params_.plrlNumberOfModes_;
+  params.geometryBitDepth3D_            = params_.geometry3dCoordinatesBitdepth_;
+  params.EOMFixBitCount_                = params_.EOMFixBitCount_;
+  params.pbfEnableFlag_                 = false;
+  params.pbfPassesCount_                = 0;
+  params.pbfFilterSize_                 = 0;
+  params.pbfLog2Threshold_              = 0;
+}
 void PCCEncoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& params, PCCContext& context ) {
   params.occupancyResolution_           = params_.occupancyResolution_;
   params.occupancyPrecision_            = params_.occupancyPrecision_;

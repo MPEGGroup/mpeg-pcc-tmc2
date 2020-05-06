@@ -439,10 +439,10 @@ class PCCHighLevelSyntax {
   uint8_t getLog2PatchQuantizerSizeX() { return log2PatchQuantizerSizeX_; }
   uint8_t getLog2PatchQuantizerSizeY() { return log2PatchQuantizerSizeY_; }
   bool    getEnablePatchSizeQuantization() { return enablePatchSizeQuantization_; }
-  size_t  getMPGeoWidth() { return MPGeoWidth_; }
-  size_t  getMPGeoHeight() { return MPGeoHeight_; }
-  size_t  getMPAttWidth() { return MPAttWidth_; }
-  size_t  getMPAttHeight() { return MPAttHeight_; }
+  size_t  getRawGeoWidth()  { return rawGeoWidth_; }
+  size_t  getRawGeoHeight() { return rawGeoHeight_; }
+  size_t  getRawAttWidth()  { return rawAttWidth_; }
+  size_t  getRawAttHeight() { return rawAttHeight_; }
   bool&   getPrefilterLossyOM() { return prefilterLossyOM_; }
   size_t& getOffsetLossyOM() { return offsetLossyOM_; }
   size_t  getGeometry3dCoordinatesBitdepth() { return geometry3dCoordinatesBitdepth_; }
@@ -451,10 +451,10 @@ class PCCHighLevelSyntax {
   void    setLog2PatchQuantizerSizeX( uint8_t value ) { log2PatchQuantizerSizeX_ = value; }
   void    setLog2PatchQuantizerSizeY( uint8_t value ) { log2PatchQuantizerSizeY_ = value; }
   void    setEnablePatchSizeQuantization( bool value ) { enablePatchSizeQuantization_ = value; }
-  void    setMPGeoWidth( size_t value ) { MPGeoWidth_ = value; }
-  void    setMPGeoHeight( size_t value ) { MPGeoHeight_ = value; }
-  void    setMPAttWidth( size_t value ) { MPAttWidth_ = value; }
-  void    setMPAttHeight( size_t value ) { MPAttHeight_ = value; }
+  void    setRawGeoWidth( size_t value )  { rawGeoWidth_ = value; }
+  void    setRawGeoHeight( size_t value ) { rawGeoHeight_ = value; }
+  void    setRawAttWidth( size_t value )  { rawAttWidth_ = value; }
+  void    setRawAttHeight( size_t value ) { rawAttHeight_ = value; }
   void    setPrefilterLossyOM( bool value ) { prefilterLossyOM_ = value; }
   void    setOffsetLossyOM( size_t value ) { offsetLossyOM_ = value; }
   void    setGeometry3dCoordinatesBitdepth( size_t value ) { geometry3dCoordinatesBitdepth_ = value; }
@@ -470,10 +470,10 @@ class PCCHighLevelSyntax {
   uint8_t                        log2PatchQuantizerSizeX_;
   uint8_t                        log2PatchQuantizerSizeY_;
   bool                           enablePatchSizeQuantization_;
-  size_t                         MPGeoWidth_;
-  size_t                         MPGeoHeight_;
-  size_t                         MPAttWidth_;
-  size_t                         MPAttHeight_;
+  size_t                         rawGeoWidth_;
+  size_t                         rawGeoHeight_;
+  size_t                         rawAttWidth_;
+  size_t                         rawAttHeight_;
   bool                           prefilterLossyOM_;
   size_t                         offsetLossyOM_;
   size_t                         geometry3dCoordinatesBitdepth_;

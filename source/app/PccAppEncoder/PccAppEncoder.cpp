@@ -506,9 +506,9 @@ bool parseParameters( int                   argc,
       encoderParams.useRawPointsSeparateVideo_,
       encoderParams.useRawPointsSeparateVideo_,
       "compress raw points with video codec" )
-    ( "textureMPSeparateVideoWidth",
-      encoderParams.textureMPSeparateVideoWidth_,
-      encoderParams.textureMPSeparateVideoWidth_,
+    ( "textureRawSeparateVideoWidth",
+      encoderParams.textureRawSeparateVideoWidth_,
+      encoderParams.textureRawSeparateVideoWidth_,
       "Width of the MP's texture in separate video" )
     ( "geometryMPConfig",
       encoderParams.geometryMPConfig_,
@@ -927,8 +927,8 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
                         encoderParams.colorTransform_ ) ) {
       return -1;
     }
-    if( sources.size() < endFrameNumber - startFrameNumber ){
-      endFrameNumber = startFrameNumber + sources.size(); 
+    if( sources.getFrameCount() < endFrameNumber - startFrameNumber ){
+      endFrameNumber = startFrameNumber + sources.getFrameCount();
     }
     clock.start();
     std::cout << "Compressing group of frames " << contextIndex << ": " << startFrameNumber << " -> " << endFrameNumber

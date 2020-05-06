@@ -45,7 +45,7 @@ class PCCGroupOfFrames {
   ~PCCGroupOfFrames();
 
   void                clear() { frames_.clear(); }
-  size_t              size() const { return frames_.size(); }
+  size_t              getFrameCount() const { return frames_.size(); }
   void                setFrameCount( size_t n ) { frames_.resize( n ); }
   const PCCPointSet3& operator[]( const size_t index ) const {
     assert( index < frames_.size() );

@@ -279,12 +279,12 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
       if ( metricsParams.computeMetrics_ ) {
         PCCGroupOfFrames sources;
         PCCGroupOfFrames normals;
-        if ( !sources.load( metricsParams.uncompressedDataPath_, frameNumber, frameNumber + reconstructs.size(),
+        if ( !sources.load( metricsParams.uncompressedDataPath_, frameNumber, frameNumber + reconstructs.getFrameCount(),
                             decoderParams.colorTransform_ ) ) {
           return -1;
         }
         if ( !metricsParams.normalDataPath_.empty() ) {
-          if ( !normals.load( metricsParams.normalDataPath_, frameNumber, frameNumber + reconstructs.size(),
+          if ( !normals.load( metricsParams.normalDataPath_, frameNumber, frameNumber + reconstructs.getFrameCount(),
                               COLOR_TRANSFORM_NONE, true ) ) {
             return -1;
           }
@@ -296,7 +296,7 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
       if ( !decoderParams.reconstructedDataPath_.empty() ) {
         reconstructs.write( decoderParams.reconstructedDataPath_, frameNumber );
       } else {
-        frameNumber += reconstructs.size();
+        frameNumber += reconstructs.getFrameCount();
       }
       bMoreData = ( ssvu.getVpccUnitCount() > 0 );
     }
