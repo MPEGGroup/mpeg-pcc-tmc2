@@ -1096,6 +1096,7 @@ bool PCCPointSet3::transferColors( PCCPointSet3& target,
 }
 
 bool PCCPointSet3::transferColors16bitBP( PCCPointSet3& target,
+                                          const int filterType,
                                           const int32_t searchRange,
                                           const bool    losslessTexture,
                                           const int     numNeighborsColorTransferFwd,
@@ -1112,7 +1113,7 @@ bool PCCPointSet3::transferColors16bitBP( PCCPointSet3& target,
                                           double        maxColorDist2Bwd,
                                           const bool    excludeColorOutlier,
                                           const double  thresholdColorOutlierDist ) const {
-  printf("transferColors16bitBP \n");
+  std::cout << "colorTransfer filter: "<< filterType <<std::endl;
   const auto&  source           = *this;
   const size_t pointCountSource = source.getPointCount();
   const size_t pointCountTarget = target.getPointCount();
@@ -1126,7 +1127,8 @@ bool PCCPointSet3::transferColors16bitBP( PCCPointSet3& target,
   maxGeometryDist2Bwd = ( maxGeometryDist2Bwd < 512 ) ? maxGeometryDist2Bwd : std::numeric_limits<double>::max();
   maxColorDist2Fwd    = ( maxColorDist2Fwd < 131072 ) ? maxColorDist2Fwd : std::numeric_limits<double>::max();
   maxColorDist2Bwd    = ( maxColorDist2Bwd < 131072 ) ? maxColorDist2Bwd : std::numeric_limits<double>::max();
-
+  PCCPointSet3 partSource;
+  partSource.addColors();
   // ==========================================================================================
   //                                     Forward direction
   // ==========================================================================================
@@ -1138,6 +1140,15 @@ bool PCCPointSet3::transferColors16bitBP( PCCPointSet3& target,
     for ( int k = 0; k < 3; ++k ) { refinedColors1[index][k] = colorT16bit[k]; }
     if ( target.getBoundaryPointType( index ) == 3 ) {
       kdtreeSource.search( target[index], numNeighborsColorTransferFwd, result );
+      if( filterType==1 ){
+        for(size_t rI=0; rI<result.count(); rI++){
+          auto indexInSource = result.indices(rI);
+          auto partIndex2= partSource.addPoint( source[indexInSource] );
+          partSource.setColor(partIndex2, source.getColor(indexInSource));
+          partSource.setColor16bit(partIndex2, source.getColor16bit(indexInSource));
+          partSource.setParentPointIndex(partIndex2, indexInSource);
+        }
+      }
       // keep the points that satisfy geometry dist threshold
       while ( true ) {
         if ( result.count() == 1 ) { break; }
@@ -1239,27 +1250,56 @@ bool PCCPointSet3::transferColors16bitBP( PCCPointSet3& target,
   struct DistColor {
     double        dist;
     PCCColor16bit color;
+    PCCPoint3D    point;
+    size_t        index;
+    size_t        indexPartial;
   };
   std::vector<std::vector<DistColor>> refinedColorsDists2;
-  refinedColorsDists2.resize( pointCountTarget );
-  // populate refinedColorsDists2
-  for ( size_t index = 0; index < pointCountSource; ++index ) {
-    const PCCColor16bit color = source.getColor16bit( index );
-    kdtreeTarget.search( source[index], numNeighborsColorTransferBwd, result );
-    // keep the points that satisfy geometry dist threshold
-    for ( int i = 0; i < result.count(); ++i ) {
-      if ( result.dist( i ) <= maxGeometryDist2Bwd ) {
-        refinedColorsDists2[result.indices( i )].push_back( DistColor{result.dist( i ), color} );
+  if( filterType==1 ){
+    refinedColorsDists2.resize( pointCountTarget );
+    // populate refinedColorsDists2
+    auto sampleSetPointCount = partSource.getPointCount();
+    for ( size_t index = 0; index < sampleSetPointCount; ++index ) {
+      const PCCColor16bit color = partSource.getColor16bit( index );
+      kdtreeTarget.search( partSource[index], numNeighborsColorTransferBwd, result );
+      // keep the points that satisfy geometry dist threshold
+      for ( int i = 0; i < result.count(); ++i ) {
+        if ( result.dist( i ) <= maxGeometryDist2Bwd ) {
+          if( std::abs(color[0] - target.getColor16bit()[result.indices( i )][0])<40 &&
+             std::abs(color[1] - target.getColor16bit()[result.indices( i )][1])<40 &&
+             std::abs(color[2] - target.getColor16bit()[result.indices( i )][2])<40  )
+            refinedColorsDists2[result.indices( i )].push_back( DistColor{result.dist( i ), color, target[result.indices( i )], partSource.getParentPointIndex(index), index } );
+        }
       }
     }
-  }
-  // sort refinedColorsDists2 according to distance
-  for ( size_t index = 0; index < pointCountTarget; ++index ) {
-    std::sort( refinedColorsDists2[index].begin(), refinedColorsDists2[index].end(),
-               []( DistColor& dc1, DistColor& dc2 ) { return dc1.dist < dc2.dist; } );
+
+    // sort refinedColorsDists2 according to distance
+    for ( size_t index = 0; index < pointCountTarget; ++index ) {
+      std::sort( refinedColorsDists2[index].begin(), refinedColorsDists2[index].end(),
+                []( DistColor& dc1, DistColor& dc2 ) { return dc1.dist < dc2.dist; } );
+    }
+  }else{
+  // populate refinedColorsDists2
+  refinedColorsDists2.resize( pointCountTarget );
+    for ( size_t index = 0; index < pointCountSource; ++index ) {
+      const PCCColor16bit color = source.getColor16bit( index );
+      kdtreeTarget.search( source[index], numNeighborsColorTransferBwd, result );
+      // keep the points that satisfy geometry dist threshold
+      for ( int i = 0; i < result.count(); ++i ) {
+        if ( result.dist( i ) <= maxGeometryDist2Bwd ) {
+          refinedColorsDists2[result.indices( i )].push_back( DistColor{result.dist( i ), color} );
+        }
+      }
+    }
+    // sort refinedColorsDists2 according to distance
+    for ( size_t index = 0; index < pointCountTarget; ++index ) {
+      std::sort( refinedColorsDists2[index].begin(), refinedColorsDists2[index].end(),
+                []( DistColor& dc1, DistColor& dc2 ) { return dc1.dist < dc2.dist; } );
+    }
   }
   // compute centroid2
   for ( size_t index = 0; index < pointCountTarget; ++index ) {
+    if ( filterType==1 && target.getBoundaryPointType( index ) != 3 ) continue;
     const PCCColor16bit color1       = refinedColors1[index];       // refined color derived in forward direction
     auto&               colorsDists2 = refinedColorsDists2[index];  // set of candidate points
                                                                     // derived in backward

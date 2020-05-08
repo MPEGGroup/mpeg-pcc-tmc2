@@ -532,11 +532,11 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
         // The parameters for the attribute transfer are still fixed (may wish
         // to make them user input/more flexible)
         // These are different attribute transfer functions
-        if ( params_.postprocessSmoothingFilter_ == 1 ) {
+        if ( params_.postprocessSmoothingFilter_ == 1 || params_.postprocessSmoothingFilter_ == 5 ) {
           // tempFrameBuffer[i].transferColors16bit( reconstructs[i], int32_t( 0
           // ), params_.losslessGeo_ == 1, 8, 1, 1,
           // 1, 1, 0, 4, 4, 1000, 1000, 1000 * 256, 1000 * 256 );
-          tempFrameBuffer[i].transferColors16bitBP( reconstructs[i], int32_t( 0 ),
+          tempFrameBuffer[i].transferColors16bitBP( reconstructs[i], params_.postprocessSmoothingFilter_, int32_t( 0 ),
                                                     static_cast<int>( params_.losslessGeo_ ) == 1, 8, 1, true, true,
                                                     true, false, 4, 4, 1000, 1000, 1000 * 256, 1000 * 256 );
         } else if ( params_.postprocessSmoothingFilter_ == 2 ) {
