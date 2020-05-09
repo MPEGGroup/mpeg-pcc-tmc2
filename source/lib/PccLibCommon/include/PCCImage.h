@@ -622,14 +622,17 @@ class PCCImage {
 
   bool write420( std::ofstream& outfile, const size_t nbyte, bool convert = false, const size_t filter = 4 ) {
     if ( !outfile.good() ) { return false; }
+    printf("Write RGB 444 nbyte = %lu SizeT = %zu Size = %zu %zu \n",nbyte, sizeof( T ), width_, height_);      
+    printf(" pixel 0 = %2x %2x %2x \n",channels_[0][0],channels_[1][0],channels_[2][0]);
     if ( convert ) {
       std::vector<T> YUV420T[3];
-      convertRGB44ToYUV420( channels_[0], channels_[1], channels_[2], YUV420T[0], YUV420T[1], YUV420T[2], filter );
+      convertRGB44ToYUV420( channels_[0], channels_[1], channels_[2], YUV420T[0], YUV420T[1], YUV420T[2], nbyte, filter );
       size_t pixCnt = width_ * height_;
       if ( nbyte == sizeof( T ) ) {
         outfile.write( (const char*)( YUV420T[0].data() ), pixCnt * sizeof( T ) );
         outfile.write( (const char*)( YUV420T[1].data() ), ( pixCnt * sizeof( T ) ) / 4 );
         outfile.write( (const char*)( YUV420T[2].data() ), ( pixCnt * sizeof( T ) ) / 4 );
+      printf(" ==> YUV420T = %2x %2x %2x \n",YUV420T[0][0],YUV420T[1][0],YUV420T[2][0]);
       } else {
         assert( nbyte < sizeof( T ) );
         // Only relevant case is nbyte equal to 1 and T equal to 2.
@@ -643,6 +646,7 @@ class PCCImage {
         outfile.write( (const char*)( YUV8[0].data() ), pixCnt );
         outfile.write( (const char*)( YUV8[1].data() ), pixCnt / 4 );
         outfile.write( (const char*)( YUV8[2].data() ), pixCnt / 4 );
+        printf(" ==> YUV8 = %2x %2x %2x \n",YUV8[0][0],YUV8[1][0],YUV8[2][0]);
       }
     } else {
       if ( nbyte == 1 ) {
@@ -711,6 +715,8 @@ class PCCImage {
       assert( nbyte < sizeof( T ) );
       // Only relevant case is nbyte equal to 1 and T equal to 2.
       size_t               pixCnt = width_ * height_;
+      printf("Write RGB 444 nbyte = %lu SizeT = %zu Size = %zu %zu \n",nbyte, sizeof( T ), width_ ,  height_);      
+      printf(" pixel 0 = %2x %2x %2x \n",channels_[0][0],channels_[1][0],channels_[2][0]);
       std::vector<uint8_t> YUV8[3];
       for ( size_t i = 0; i < N; i++ ) { YUV8[i].resize( pixCnt ); }
       for ( size_t i = 0; i < N; i++ ) {
@@ -762,7 +768,7 @@ class PCCImage {
         for ( size_t k = 0; k < pixCnt / 4; ++k ) { YUV420T[1][k] = static_cast<T>( YUV8[1][k] ); }
         for ( size_t k = 0; k < pixCnt / 4; ++k ) { YUV420T[2][k] = static_cast<T>( YUV8[2][k] ); }
       }
-      convertYUV420ToRGB44( YUV420T[0], YUV420T[1], YUV420T[2], channels_[0], channels_[1], channels_[2], filter );
+      convertYUV420ToRGB44( YUV420T[0], YUV420T[1], YUV420T[2], channels_[0], channels_[1], channels_[2], nbyte, filter );
     } else {
       // TODO: This clause may need to be fixed when nbyte is equal to 1 and T
       // is equal to 2.
@@ -976,8 +982,8 @@ class PCCImage {
                              std::vector<T>& Y,
                              std::vector<T>& U,
                              std::vector<T>& V,
+                             size_t          nbyte,
                              size_t          filter ) {
-    size_t             nbyte = sizeof( T );
     std::vector<float> RGB444[3], YUV444[3], YUV420[3];
     std::vector<T>     YUV420T[3];
     ChromaSampler      chromaSampler;
@@ -999,8 +1005,8 @@ class PCCImage {
                              std::vector<T>& R,
                              std::vector<T>& G,
                              std::vector<T>& B,
+                             size_t          nbyte,
                              size_t          filter ) {
-    size_t             nbyte = sizeof( T );
     ChromaSampler      chromaSampler;
     size_t             widthChroma  = width_ / 2;
     size_t             heightChroma = height_ / 2;

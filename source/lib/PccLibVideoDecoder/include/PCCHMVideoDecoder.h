@@ -145,11 +145,6 @@ class PCCHMVideoDecoder : public PCCVirtualVideoDecoder {
            !m_cTDecTop.getFirstSliceInSequence() ) {
         if ( !loopFiltered || bitstreamFile ) {
           m_cTDecTop.executeLoopFilters( poc, pcListPic );
-
-          if ( pcListPic ) {
-            auto*& pcPic = pcListPic->back();
-            printf( "%p  OutputMark( %d  ) here pcListPic = %p \n", pcPic, pcPic->getOutputMark(), pcListPic );
-          }
         }
         loopFiltered = ( nalu.m_nalUnitType == NAL_UNIT_EOS );
         if ( nalu.m_nalUnitType == NAL_UNIT_EOS ) { m_cTDecTop.setFirstSliceInSequence( true ); }
@@ -199,14 +194,14 @@ class PCCHMVideoDecoder : public PCCVirtualVideoDecoder {
           xWriteOutput( pcListPic, nalu.m_temporalId, video );
         }
       }
-    }
-
+    }        
+    setVideoSize( pcListPic->front()->getPicSym()->getSPS() );
     xFlushOutput( pcListPic, video );
     // delete buffers
     m_cTDecTop.deletePicBuffer();
 
     // destroy internal classes
-    m_cTDecTop.destroy();
+    m_cTDecTop.destroy();    
   }
 
   // ====================================================================================================================

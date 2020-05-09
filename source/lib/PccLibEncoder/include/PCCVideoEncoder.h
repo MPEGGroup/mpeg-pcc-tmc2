@@ -366,6 +366,7 @@ class PCCVideoEncoder {
             std::cout << "Error: can't run system command!" << std::endl;
             return false;
           }
+        }
 #ifdef USE_HM_VIDEO_CODEC
           std::ifstream fileRec( srcYuvFileName, std::ios::binary );
           if ( !fileRec.good() ) { return false; }
@@ -376,6 +377,8 @@ class PCCVideoEncoder {
               fileRec.read( (char*)( image.getChannel( 1 ).data() ), size / 4 );
               fileRec.read( (char*)( image.getChannel( 2 ).data() ), size / 4 );
             }
+            printf("read 16 bits: %2x %2x %2x \n",  video.getFrame(0).getChannel( 0 ).data()[0],
+              video.getFrame(0).getChannel( 1 ).data()[0], video.getFrame(0).getChannel( 2 ).data()[0]  );
           } else {
             std::vector<uint8_t> data;
             data.resize( 6 * size / 4 );
@@ -386,10 +389,11 @@ class PCCVideoEncoder {
               for ( size_t i = 0; i < size / 4; ++i ) { image.getChannel( 1 ).data()[i] = *( tmp++ ); }
               for ( size_t i = 0; i < size / 4; ++i ) { image.getChannel( 2 ).data()[i] = *( tmp++ ); }
             }
+            printf("read 8 bits: %2x %2x %2x \n",  video.getFrame(0).getChannel( 0 ).data()[0],
+              video.getFrame(0).getChannel( 1 ).data()[0], video.getFrame(0).getChannel( 1 ).data()[0]  );
           }
           fileRec.close();
 #endif
-        }
       }
     }
 
