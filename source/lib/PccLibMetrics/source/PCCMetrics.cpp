@@ -335,14 +335,14 @@ void PCCMetrics::compute( const PCCGroupOfFrames& sources,
                           const PCCGroupOfFrames& reconstructs,
                           const PCCGroupOfFrames& normals ) {
   PCCPointSet3 normalEmpty;
-  if ( ( sources.size() != reconstructs.size() ) || ( normals.size() != 0 && sources.size() != normals.size() ) ) {
+  if ( ( sources.getFrameCount() != reconstructs.getFrameCount() ) || ( normals.getFrameCount() != 0 && sources.getFrameCount() != normals.getFrameCount() ) ) {
     printf(
         "Error: group of frames must have same numbers of frames. ( src = %zu "
         "rec = %zu norm = %zu ) \n",
-        sources.size(), reconstructs.size(), normals.size() );
+        sources.getFrameCount(), reconstructs.getFrameCount(), normals.getFrameCount() );
     exit( -1 );
   }
-  for ( size_t i = 0; i < sources.size(); i++ ) {
+  for ( size_t i = 0; i < sources.getFrameCount(); i++ ) {
     const PCCPointSet3& sourceOrg      = sources[i];
     const PCCPointSet3& reconstructOrg = reconstructs[i];
     sourcePoints_.push_back( sourceOrg.getPointCount() );
@@ -354,13 +354,13 @@ void PCCMetrics::compute( const PCCGroupOfFrames& sources,
       reconstructOrg.removeDuplicate( reconstruct, params_.dropDuplicates_ );
       sourceDuplicates_.push_back( source.getPointCount() );
       reconstructDuplicates_.push_back( reconstruct.getPointCount() );
-      compute( source, reconstruct, normals.size() == 0 ? normalEmpty : normals[i] );
+      compute( source, reconstruct, normals.getFrameCount() == 0 ? normalEmpty : normals[i] );
     } else {
       source      = sourceOrg;
       reconstruct = reconstructOrg;
       sourceDuplicates_.push_back( 0 );
       reconstructDuplicates_.push_back( 0 );
-      compute( source, reconstruct, normals.size() == 0 ? normalEmpty : normals[i] );
+      compute( source, reconstruct, normals.getFrameCount() == 0 ? normalEmpty : normals[i] );
     }
   }
 }

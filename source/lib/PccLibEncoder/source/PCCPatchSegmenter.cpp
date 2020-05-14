@@ -449,8 +449,8 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
   const size_t      occupancyResolution               = params.occupancyResolution_;
   const size_t      quantizerSizeX                    = params.quantizerSizeX_;
   const size_t      quantizerSizeY                    = params.quantizerSizeY_;
-  const double      maxAlloweomist2RawPointsDetection = params.maxAllowedDist2RawPointsDetection_;
-  const double      maxAlloweomist2RawPointsSelection = params.maxAllowedDist2RawPointsSelection_;
+  const double      maxAllowedDist2RawPointsDetection = params.maxAllowedDist2RawPointsDetection_;
+  const double      maxAllowedDist2RawPointsSelection = params.maxAllowedDist2RawPointsSelection_;
   const bool        EOMSingleLayerMode                = params.EOMSingleLayerMode_;
   const size_t      EOMFixBitCount                    = params.EOMFixBitCount_;
   const size_t      surfaceThickness                  = params.surfaceThickness_;
@@ -708,7 +708,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
       for ( const auto i : rawPoints ) { flags[i] = true; }
       connectedComponents.reserve( 256 );
       for ( const auto i : rawPoints ) {
-        if ( flags[i] && rawPointsDistance[i] > maxAlloweomist2RawPointsDetection ) {
+        if ( flags[i] && rawPointsDistance[i] > maxAllowedDist2RawPointsDetection ) {
           flags[i]                  = false;
           const size_t indexCC      = connectedComponents.size();
           const size_t clusterIndex = partition[i];
@@ -748,7 +748,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
         for ( const auto i : rawPointsChunks[chunkIndex] ) { flags[i] = true; }
         connectedComponentsChunks[chunkIndex].reserve( 256 );
         for ( const auto i : rawPointsChunks[chunkIndex] ) {
-          if ( flags[i] && rawPointsDistanceChunks[chunkIndex][i] > maxAlloweomist2RawPointsDetection ) {
+          if ( flags[i] && rawPointsDistanceChunks[chunkIndex][i] > maxAllowedDist2RawPointsDetection ) {
             flags[i]                  = false;
             const size_t indexCC      = connectedComponentsChunks[chunkIndex].size();
             const size_t clusterIndex = partition[pointsIndexChunks[chunkIndex][i]];
@@ -1251,7 +1251,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
         for ( const auto i : connectedComponent ) {
           kdtreeRec.search( points[i], 1, result );
           const double dist2 = result.dist( 0 );
-          if ( dist2 <= maxAlloweomist2RawPointsSelection ) {
+          if ( dist2 <= maxAllowedDist2RawPointsSelection ) {
             if ( bIsAdditionalProjectionPlane ) {
               PCCVector3D input;
               input.x() = points[i].x();
@@ -1285,7 +1285,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
       kdtreeResampled.search( points[i], 1, result );
       const double dist2   = result.dist( 0 );
       rawPointsDistance[i] = dist2;
-      if ( dist2 > maxAlloweomist2RawPointsSelection ) { rawPoints.push_back( i ); }
+      if ( dist2 > maxAllowedDist2RawPointsSelection ) { rawPoints.push_back( i ); }
     }
     if ( enablePointCloudPartitioning ) {
       // update rawPointsChunks using rawPoints

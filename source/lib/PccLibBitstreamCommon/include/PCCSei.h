@@ -266,8 +266,8 @@ class SEIGeometryTransformationParams : public SEI {
   int16_t               getGtpRotationQy() { return gtpRotationQy_; }
   int16_t               getGtpRotationQz() { return gtpRotationQz_; }
   uint8_t               getGtpNumCameraInfoMinus1() { return gtpNumCameraInfoMinus1_; }
-  std::vector<int16_t>& getGtpCameraOffsetOnAxis() { return gtpCameraOffsetOnAxis_[3]; }
-  std::vector<int16_t>& getGtpCameraOrientationOnAxis() { return gtpCameraOrientationOnAxis_[3]; }
+  std::vector<int16_t>& getGtpCameraOffsetOnAxis( size_t index ) { return gtpCameraOffsetOnAxis_[index]; }
+  std::vector<int16_t>& getGtpCameraOrientationOnAxis( size_t index ) { return gtpCameraOrientationOnAxis_[index]; }
   int16_t               getGtpCameraOffsetOnAxis( uint8_t cameraId, size_t axisId ) {
     return gtpCameraOffsetOnAxis_[cameraId][axisId];
   }

@@ -217,22 +217,26 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
 
   // All video have been decoded, start reconsctruction processes
   if ( sps.getRawPatchEnabledFlag( atlasIndex ) && sps.getRawSeparateVideoPresentFlag( atlasIndex ) ) {
-    generateRawPointsGeometryfromVideo( context, reconstructs );
+    printf( "generateRawPointsGeometryfromVideo \n" );
+    fflush( stdout );
+    generateRawPointsGeometryfromVideo( context );
   }
 
   if ( ai.getAttributeCount() > 0 ) {
     for ( int attrIndex = 0; attrIndex < sps.getAttributeInformation( atlasIndex ).getAttributeCount();
-          attrIndex++ ) {  // right now we only have one attribute, this should be
-                           // generalized
-      int decodedBitdepthAttribute   = ai.getAttributeNominal2dBitdepthMinus1( attrIndex ) + 1;
-      int decodedBitdepthAttributeMP = ai.getAttributeNominal2dBitdepthMinus1( attrIndex ) + 1;
+          attrIndex++ ) {  // right now we only have one attribute, this should be generalized
       for ( int attrPartitionIndex = 0;
             attrPartitionIndex <
             sps.getAttributeInformation( atlasIndex ).getAttributeDimensionPartitionsMinus1( attrIndex ) + 1;
             attrPartitionIndex++ ) {  // right now we have only one partition,
                                       // this should be generalized
         if ( sps.getRawPatchEnabledFlag( atlasIndex ) && sps.getRawSeparateVideoPresentFlag( atlasIndex ) ) {
-          generateRawPointsTexturefromVideo( context, reconstructs );
+          printf( "generateRawPointsTexturefromVideo attrIndex = %d attrPartitionIndex = %d \n", attrIndex,
+                  attrPartitionIndex );
+          fflush( stdout );
+          generateRawPointsTexturefromVideo( context );
+          printf( "Done \n" );
+          fflush( stdout );
         }
       }
     }
@@ -280,12 +284,16 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
     // generateBlockToPatchFromBoundaryBox( context, frame,
     // context.getOccupancyPackingBlockSize() );
     generatePointCloud( reconstruct, context, frame, gpcParams, partition, true );
+    printf("generatePointCloud done \n");
+    printf("start colorPointCloud loop attIdx = [0;%hhu ] \n",ai.getAttributeCount()); fflush(stdout);
     for ( size_t attIdx = 0; attIdx < ai.getAttributeCount(); attIdx++ ) {
+      printf("start colorPointCloud attIdx = %lu / %hhu ] \n",attIdx, ai.getAttributeCount()); fflush(stdout);
       colorPointCloud( reconstruct, context, frame, absoluteT1List[attIdx],
                        sps.getMultipleMapStreamsPresentFlag( ATLASIDXPCC ), ai.getAttributeCount(), gpcParams );
     }
 
     // Post-Processing
+    printf("Post-Processing  params_.postprocessSmoothingFilter_ = %zu \n", params_.postprocessSmoothingFilter_ );
     if ( ppSEIParams.flagGeometrySmoothing_ ) {
       PCCPointSet3 tempFrameBuffer = reconstruct;
       if ( ppSEIParams.gridSmoothing_ ) {
@@ -564,10 +572,10 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
   TRACE_CODEC( "frameCount = %u \n", context.size() );
   setPointLocalReconstruction( context );
   context.constructRefList( 0, 0 );
-  context.setMPGeoWidth( 64 );
-  context.setMPAttWidth( 0 );
-  context.setMPGeoHeight( 0 );
-  context.setMPAttHeight( 0 );
+  context.setRawGeoWidth( 64 );
+  context.setRawAttWidth( 0 );
+  context.setRawGeoHeight( 0 );
+  context.setRawAttHeight( 0 );
 
   for ( size_t i = 0; i < context.size(); i++ ) {
     auto& frame = context.getFrame( i );
@@ -578,11 +586,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
     frame.setHeight( sps.getFrameHeight( atlasIndex ) );
     frame.setUseRawPointsSeparateVideo( sps.getRawSeparateVideoPresentFlag( atlasIndex ) );
     frame.setRawPatchEnabledFlag( sps.getRawPatchEnabledFlag( atlasIndex ) );
-    auto& afps = context.getAtlasFrameParameterSet();  // how to determine which
-                                                       // AFPS is valid for a
-                                                       // particular POC?
     // Right now we only have one anyway
-    size_t numTileGroups = atglulist[i].size();
     createPatchFrameDataStructure( context, frame, i );
   }
 }
