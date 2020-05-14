@@ -235,8 +235,6 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
                   attrPartitionIndex );
           fflush( stdout );
           generateRawPointsTexturefromVideo( context );
-          printf( "Done \n" );
-          fflush( stdout );
         }
       }
     }

@@ -89,8 +89,6 @@ class PCCVideoDecoder {
     decoder->decode( bitstream, bitDepth == 8 ? 8 : 10, use444CodecIo, video, decoderPath, fileName, frameCount );
     width  = video.getWidth();
     height = video.getHeight();
-    printf( "decoder done size = %zu %zu \n", width, height );
-    fflush( stdout );
     const std::string yuvRecFileName = addVideoFormat( fileName + "_rec" + ( use444CodecIo ? ".rgb" : ".yuv" ), width,
                                                        height, !use444CodecIo, bitDepth == 10 ? "10" : "8" );
     const std::string yuv444RecFileName = addVideoFormat( fileName + "_rec.yuv", width, height, false, "16" );

@@ -93,7 +93,6 @@ bool parseParameters( int          argc,
   if ( argc == 1 || print_help || srcVideo.empty() || encoderParameters.empty() || width == 0 || height == 0 ||
        frameCount == 0 || nbyte == 0 ) {
     printf( "Error parameters not correct \n" );
-    fflush( stdout );
     return false;
   }
 

@@ -564,7 +564,6 @@ void PCCHDRToolsColorConverterImpl<T>::process( ProjectParameters* inputParams,
         }
       }
     }
-
     // optional forced clipping of the data given their defined range. This is
     // done here without consideration of the upconversion process.
     if ( inputParams->m_forceClipping == 1 ) { m_iFrameStore->clipRange(); }
@@ -657,57 +656,33 @@ void PCCHDRToolsColorConverterImpl<T>::process( ProjectParameters* inputParams,
     }
     // frame output
     m_outputFrame->copyFrame( m_oFrameStore );
-#if 1
-    m_outputFrame->writeOneFrame( m_outputFile, frameNumber, m_outputFile->m_fileHeader, 0 );
+    // m_outputFrame->writeOneFrame( m_outputFile, frameNumber, m_outputFile->m_fileHeader, 0 );
     if ( m_oFrameStore->m_isFloat ) {
       printf( "float input not supported \n" );
       exit( -1 );
     } else {
       videoDst.resize( videoDst.getFrameCount() + 1 );
       auto& image = videoDst.getFrames().back();
-      printf( "Here \n" );
-      fflush( stdout );
-      printf( "m_oFrameStore->m_chromaFormat = %d \n", m_oFrameStore->m_chromaFormat );
-      fflush( stdout );
-      printf( "m_oFrameStore->m_colorSpace = %d \n", m_oFrameStore->m_colorSpace );
-      fflush( stdout );
-
       PCCCOLORFORMAT format =
           m_oFrameStore->m_chromaFormat == hdrtoolslib::CF_420
               ? PCCCOLORFORMAT::YUV420
               : m_oFrameStore->m_colorSpace == hdrtoolslib::CM_RGB ? PCCCOLORFORMAT::RGB444 : PCCCOLORFORMAT::YUV444;
-      printf( "Allocat frame of format = %d size = %d x %d \n", format, m_oFrameStore->m_width[hdrtoolslib::Y_COMP],
-              m_oFrameStore->m_height[hdrtoolslib::Y_COMP] );
-      fflush( stdout );
       image.resize( m_oFrameStore->m_width[hdrtoolslib::Y_COMP], m_oFrameStore->m_height[hdrtoolslib::Y_COMP], format );
-
       if ( m_oFrameStore->m_bitDepth == 8 ) {
         for ( int8_t c = 0; c < 3; c++ ) {
           auto& dst = videoDst.getFrame( frameNumber ).getChannel( c );
           for ( size_t i = 0; i < dst.size(); i++ ) { dst[i] = m_oFrameStore->m_comp[c][i]; }
-        }
-        printf( "output  %u %u %u => %2x %2x %2x \n", m_oFrameStore->m_comp[0][0], m_oFrameStore->m_comp[1][0],
-                m_oFrameStore->m_comp[2][0], m_oFrameStore->m_comp[0][0], m_oFrameStore->m_comp[1][0],
-                m_oFrameStore->m_comp[2][0] );
-        fflush( stdout );
+        }      
       } else if ( m_oFrameStore->m_bitDepth > 8 ) {
         for ( int8_t c = 0; c < 3; c++ ) {
           auto& dst = videoDst.getFrame( frameNumber ).getChannel( c );
           for ( size_t i = 0; i < dst.size(); i++ ) { dst[i] = m_oFrameStore->m_ui16Comp[c][i]; }
         }
-        printf( "output  %u %u %u => %2x %2x %2x \n", m_oFrameStore->m_ui16Comp[0][0], m_oFrameStore->m_ui16Comp[1][0],
-                m_oFrameStore->m_ui16Comp[2][0], m_oFrameStore->m_ui16Comp[0][0], m_oFrameStore->m_ui16Comp[1][0],
-                m_oFrameStore->m_ui16Comp[2][0] );
-        fflush( stdout );
       } else {
         printf( "output format not yet supported ( frame depht = %d \n", m_oFrameStore->m_bitDepth );
         exit( -1 );
       }
     }
-    printf( "videoDst %u %u %u => %2x %2x %2x \n", videoDst[0][0][0], videoDst[0][1][0], videoDst[0][2][0],
-            videoDst[0][0][0], videoDst[0][1][0], videoDst[0][2][0] );
-    fflush( stdout );
-#endif
   }  // end for frameNumber
 }
 

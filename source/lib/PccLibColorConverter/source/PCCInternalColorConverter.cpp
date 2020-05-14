@@ -355,8 +355,7 @@ void PCCInternalColorConverter<T>::convert( std::string     configuration,
     exit( -1 );
   }
   printf( "ColorConverter configuration : %s %d %d videoSrc %zu frames \n", config.c_str(), bitdepth, filter,
-          videoSrc.getFrameCount() );
-  fflush( stdout );
+          videoSrc.getFrameCount() );  
   videoDst.clear();
   if ( config == "YUV420ToYUV444" ) {
     convertYUV420ToYUV444( videoSrc, videoDst, bitdepth == 8 ? 1 : 2, filter );
