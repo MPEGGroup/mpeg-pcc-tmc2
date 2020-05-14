@@ -117,6 +117,7 @@ class PCCEncoder : public PCCCodec {
 
   int encode( const PCCGroupOfFrames& sources, PCCContext& context, PCCGroupOfFrames& reconstructs );
 
+  void setPostProcessingSeiParameters ( GeneratePointCloudParameters& params, PCCContext& context );
   void setGeneratePointCloudParameters( GeneratePointCloudParameters& gpcParams, PCCContext& context );
   void createPatchFrameDataStructure( PCCContext& context );
   void createPatchFrameDataStructure( PCCContext& context, PCCFrameContext& frame, size_t frameIndex );
@@ -156,7 +157,6 @@ class PCCEncoder : public PCCCodec {
   void generateRawPointsTextureImage( PCCContext&         context,
                                 PCCFrameContext&    frame,
                                 PCCImageTexture&    image,
-                                size_t              shift,
                                 const PCCPointSet3& reconstruct );
 
   template <typename T>

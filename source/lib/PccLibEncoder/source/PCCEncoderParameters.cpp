@@ -202,8 +202,8 @@ PCCEncoderParameters::PCCEncoderParameters() {
 
   // Sort raw points by Morton code
   mortonOrderSortRawPoints_    = false;
-  textureMPSeparateVideoWidth_ = 64;
-  //yo-  textureMPSeparateVideoWidth_ = 256;
+  textureRawSeparateVideoWidth_ = 64;
+  //yo-  textureRawSeparateVideoWidth_ = 256;
 
   // Separate high gradient points
   highGradientSeparation_   = false;
@@ -259,7 +259,7 @@ void PCCEncoderParameters::print() {
   std::cout << "\t raw Geometry Colour Plane                " << ( losslessGeo444_ ? "444" : "420" ) << std::endl;
   std::cout << "\t enhancedOccupancyMapCode                 " << enhancedOccupancyMapCode_ << std::endl;
   std::cout << "\t useRawPointsSeparateVideo                " << useRawPointsSeparateVideo_ << std::endl;
-  std::cout << "\t textureMPSeparateVideoWidth              " << textureMPSeparateVideoWidth_ << std::endl;
+  std::cout << "\t textureRawSeparateVideoWidth             " << textureRawSeparateVideoWidth_ << std::endl;
   std::cout << "\t uncompressedDataPath                     " << uncompressedDataPath_ << std::endl;
   std::cout << "\t compressedStreamPath                     " << compressedStreamPath_ << std::endl;
   std::cout << "\t reconstructedDataPath                    " << reconstructedDataPath_ << std::endl;
@@ -658,9 +658,9 @@ bool PCCEncoderParameters::check() {
                  "useRawPointsSeparateVideo_=false.\n";
   }
   if ( useRawPointsSeparateVideo_ ) {
-    if ( ( textureMPSeparateVideoWidth_ % 64 ) != 0U ) {
+    if ( ( textureRawSeparateVideoWidth_ % 64 ) != 0U ) {
       ret = false;
-      std::cerr << "textureMPSeparateVideoWidth_ must be multiple of 64.\n";
+      std::cerr << "textureRawSeparateVideoWidth_ must be multiple of 64.\n";
     }
     if ( singleMapPixelInterleaving_ ) {
       ret = false;
@@ -909,10 +909,10 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   context.setOccupancyPrecision( occupancyPrecision_ );
   context.setModelScale( modelScale_ );
   context.setModelOrigin( modelOrigin_ );
-  context.setMPGeoWidth( textureMPSeparateVideoWidth_ );
-  context.setMPAttWidth( textureMPSeparateVideoWidth_ );
-  context.setMPGeoHeight( 0 );
-  context.setMPAttHeight( 0 );
+  context.setRawGeoWidth( textureRawSeparateVideoWidth_ );
+  context.setRawAttWidth( textureRawSeparateVideoWidth_ );
+  context.setRawGeoHeight( 0 );
+  context.setRawAttHeight( 0 );
   context.setGeometry3dCoordinatesBitdepth( geometry3dCoordinatesBitdepth_ );
   size_t numPlrm = pointLocalReconstruction_
                        ? ( std::max )( static_cast<size_t>( 1 ),

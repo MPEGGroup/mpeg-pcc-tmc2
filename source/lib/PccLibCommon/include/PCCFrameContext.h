@@ -77,10 +77,6 @@ class PCCFrameContext {
   const size_t                     getNumMatchedPatches() { return numMatchedPatches_; }
   const size_t                     getNumberOfRawPointsPatches() { return rawPointsPatches_.size(); }
   const size_t                     getTotalNumberOfRawPoints() { return totalNumberOfRawPoints_; }
-  const size_t                     getMPGeoWidth() { return MPGeoWidth_; }
-  const size_t                     getMPGeoHeight() { return MPGeoHeight_; }
-  const size_t                     getMPAttWidth() { return MPAttWidth_; }
-  const size_t                     getMPAttHeight() { return MPAttHeight_; }
   bool                             getUseRawPointsSeparateVideo() { return useRawPointsSeparateVideo_; }
   const bool                       getRawPatchEnabledFlag() { return rawPatchEnabledFlag_; }
   const size_t                     getMaxDepth() { return maxDepth_; }
@@ -99,10 +95,6 @@ class PCCFrameContext {
   void                       setIndex( size_t value ) { index_ = value; }
   void                       setWidth( size_t value ) { width_ = value; }
   void                       setHeight( size_t value ) { height_ = value; }
-  void                       setMPGeoWidth( size_t width ) { MPGeoWidth_ = width; }
-  void                       setMPGeoHeight( size_t height ) { MPGeoHeight_ = height; }
-  void                       setMPAttWidth( size_t width ) { MPAttWidth_ = width; }
-  void                       setMPAttHeight( size_t height ) { MPAttHeight_ = height; }
   void                       setUseRawPointsSeparateVideo( bool value ) { useRawPointsSeparateVideo_ = value; }
   void                       setTotalNumberOfEOMPoints( size_t numPoints ) { totalNumberOfEOMPoints_ = numPoints; }
   void setTotalNumberOfRegularPoints( size_t numPoints ) { totalNumberOfRegularPoints_ = numPoints; }
@@ -164,10 +156,6 @@ class PCCFrameContext {
   size_t                                       numMatchedPatches_;
   size_t                                       width_;
   size_t                                       height_;
-  size_t                                       MPGeoWidth_;
-  size_t                                       MPGeoHeight_;
-  size_t                                       MPAttWidth_;
-  size_t                                       MPAttHeight_;
   size_t                                       numberOfRawPointsPatches_;
   size_t                                       totalNumberOfRawPoints_;
   size_t                                       totalNumberOfEOMPoints_;

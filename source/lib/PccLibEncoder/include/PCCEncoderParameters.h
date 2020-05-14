@@ -262,7 +262,7 @@ class PCCEncoderParameters {
 
   // Sort raw points by Morton code
   bool   mortonOrderSortRawPoints_;
-  size_t textureMPSeparateVideoWidth_;
+  size_t textureRawSeparateVideoWidth_;
 
   // Patch block filtering
   bool    pbfEnableFlag_;
