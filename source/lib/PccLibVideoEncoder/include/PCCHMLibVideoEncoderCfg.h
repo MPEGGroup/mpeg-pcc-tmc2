@@ -30,8 +30,12 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef PCCHMVideoEncoderCfg_h
-#define PCCHMVideoEncoderCfg_h
+#ifndef PCCHMLibVideoEncoderCfg_h
+#define PCCHMLibVideoEncoderCfg_h
+
+#include "PCCCommon.h"
+
+#ifdef USE_HM_VIDEO_CODEC
 
 #include "TLibCommon/CommonDef.h"
 
@@ -49,7 +53,7 @@
 // ====================================================================================================================
 
 /// encoder configuration class
-class PCCHMVideoEncoderCfg {
+class PCCHMLibVideoEncoderCfg {
 #if JVET_E0059_FLOATING_POINT_QP_FIX
  public:
   template <class T>
@@ -695,8 +699,8 @@ class PCCHMVideoEncoderCfg {
   Void xPrintParameter();  ///< print configuration values
   Void xPrintUsage();      ///< print usage
  public:
-  PCCHMVideoEncoderCfg();
-  virtual ~PCCHMVideoEncoderCfg();
+  PCCHMLibVideoEncoderCfg();
+  virtual ~PCCHMLibVideoEncoderCfg();
 
  public:
   Void create();                             ///< create option handling class
@@ -704,8 +708,9 @@ class PCCHMVideoEncoderCfg {
   Bool parseCfg( Int argc, TChar* argv[] );  ///< parse configuration file to fill
                                              /// member variables
 
-};  // END CLASS DEFINITION PCCHMVideoEncoderCfg
+};  // END CLASS DEFINITION PCCHMLibVideoEncoderCfg
 
 //! \}
+#endif
 
 #endif  // __TAPPENCCFG__

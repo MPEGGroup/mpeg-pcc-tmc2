@@ -32,14 +32,14 @@
  */
 #include "PCCCommon.h"
 #include "PCCVideo.h"
+#include "PCCVideoBitstream.h"
 
 #include <program_options_lite.h>
 
-#define HM_DECODER
-#ifdef HM_DECODER
-#include "PCCHMVideoDecoder.h"
+#ifdef USE_HM_VIDEO_CODEC
+#include "PCCHMLibVideoDecoder.h"
 #else
-#include "PCCVideoDecoder.h"
+#include "PCCHMAppVideoDecoder.h"
 #endif
 
 using namespace std;
@@ -71,12 +71,13 @@ size_t getFileSize( const std::string& file ) {
   return size;
 }
 
-//---------------------------------------------------------------------------
-// :: Command line / config parsing
+int main( int argc, char* argv[] ) {
+  std::cout << "PccAppVideoDecoder v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MINOR << std::endl << std::endl;
+  std::string binFile, path;
+  size_t      width = 0, height = 0, nbyte = 0, frame = 0;
+  bool        print_help = false;
 
-bool parseParameters( int argc, char* argv[], std::string& binFile, size_t& width, size_t& height, size_t& nbyte ) {
-  namespace po    = df::program_options_lite;
-  bool print_help = false;
+  namespace po = df::program_options_lite;
   // clang-format off
   po::Options opts;
   opts.addOptions()
@@ -84,7 +85,10 @@ bool parseParameters( int argc, char* argv[], std::string& binFile, size_t& widt
   ("bin", binFile, binFile, "Video bin file")
   ("width", width, width, "Video width")
   ("height", height, height,"Video height")
-  ("nbyte", nbyte, nbyte, "Video nbyte");
+  ("nbyte", nbyte, nbyte, "Video nbyte")
+  ("frame", frame, frame, "number of frames")
+  ("path", path, path, "HM decoder path");
+
   // clang-format on
   po::setDefaults( opts );
   po::ErrorReporter        err;
@@ -95,82 +99,26 @@ bool parseParameters( int argc, char* argv[], std::string& binFile, size_t& widt
   printf( "  width   = %zu \n", width );
   printf( "  height  = %zu \n", height );
   printf( "  nbyte   = %zu \n", nbyte );
-  if ( argc == 1 || print_help || binFile.empty() || width == 0 || height == 0 || nbyte == 0 ) {
+  printf( "  frame   = %zu \n", frame );
+  printf( "  path    = %s \n", path.c_str() );
+  if ( argc == 1 || print_help || binFile.empty() || path.empty() || width == 0 || height == 0 || nbyte == 0 ||
+       frame == 0 ) {
     printf( "Error parameters not correct \n" );
-    fflush( stdout );
-    return false;
+    return -1;
   }
 
-  // report the current configuration (only in the absence of errors so
-  // that errors/warnings are more obvious and in the same place).
-  if ( err.is_errored ) { return false; }
-  return true;
-}
+  PCCVideoBitstream bitstream( VIDEO_OCCUPANCY );
+  bitstream.read( binFile );
 
-int main( int argc, char* argv[] ) {
-  std::cout << "PccAppVideoDecoder v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MINOR << std::endl << std::endl;
-  std::string binFile;
-  size_t      width = 0, height = 0, nbyte = 0;
-  if ( !parseParameters( argc, argv, binFile, width, height, nbyte ) ) { return -1; }
-  PCCVideo<uint8_t, 3> videoDec;
-
-  std::string yuvDecFileName = removeFileExtension( binFile ) + "_dec.yuv";
-#ifdef HM_DECODER
-  printf( "Read %s \n", binFile.c_str() );
-  size_t        fileSize = getFileSize( binFile );
-  std::ifstream fileIn( binFile, std::ios::binary );
-  if ( !fileIn.good() ) {
-    printf( "Can't read %s \n", binFile.c_str() );
-    return false;
-  }
-  std::vector<uint8_t> bitstream;
-  bitstream.resize( fileSize );
-  fileIn.read( (char*)( bitstream.data() ), bitstream.size() );
-  fileIn.close();
-
-  std::string        s( reinterpret_cast<char*>( bitstream.data() ), bitstream.size() );
-  std::istringstream iss( s );
-  std::istream&      stream = iss;
-  PCCHMVideoDecoder  hmDecoder;
-  hmDecoder.decode( stream, nbyte == 1 ? 8 : 0, false, videoDec );
-
-  std::ofstream fileOut( yuvDecFileName.c_str(), std::ios::binary );
-  if ( !fileOut.good() ) { return false; }
-  size_t size = nbyte * width * height;
-  if ( sizeof( uint8_t ) == nbyte ) {
-    for ( auto& image : videoDec ) {
-      fileOut.write( (char*)( image.getChannel( 0 ).data() ), size );
-      fileOut.write( (char*)( image.getChannel( 1 ).data() ), size / 4 );
-      fileOut.write( (char*)( image.getChannel( 2 ).data() ), size / 4 );
-    }
-  } else {
-    std::vector<uint8_t> data;
-    data.resize( 6 * size / 4 );
-    for ( auto& image : videoDec ) {
-      auto* tmp = data.data();
-      for ( size_t i = 0; i < size; ++i ) { *( tmp++ ) = image.getChannel( 0 ).data()[i]; }
-      for ( size_t i = 0; i < size / 4; ++i ) { *( tmp++ ) = image.getChannel( 1 ).data()[i]; }
-      for ( size_t i = 0; i < size / 4; ++i ) { *( tmp++ ) = image.getChannel( 2 ).data()[i]; }
-      fileOut.write( (char*)( data.data() ), 6 * size / 4 );
-    }
-  }
-  fileOut.close();
-
+  typedef uint16_t T;
+  PCCVideo<T, 3>   videoDec;
+#ifdef USE_HM_VIDEO_CODEC
+  PCCHMLibVideoDecoder<T> hmDecoder;
 #else
-  std::string       enc = "TAppEncoderHighBitDepthStatic";
-  PCCVideoBitstream videoBitstream( VIDEO_OCCUPANCY );
-  PCCContext        context;
-  PCCVideoDeoder    encoder;
-  encoder.compress( videoSrc, std::string( "" ), 8, videoBitstream,
-                    encoderParameters,  // occupancyMapVideoEncoderConfig_,
-                    enc,                // videoEncoderOccupancyMapPath_,
-                    context, 1,         // nByte
-                    false,              // use444CodecIo
-                    false,              // use3dmv
-                    8,                  // internalBitDepth
-                    false,              // useConversion
-                    true );
+  PCCHMAppVideoDecoder<T> hmDecoder;
 #endif
+  hmDecoder.decode( bitstream, nbyte == 1 ? 8 : 0, false, videoDec, path, removeFileExtension( binFile ), frame );
+  videoDec.write( removeFileExtension( binFile ) + "_dec.yuv", nbyte );
 
   return 1;
 }

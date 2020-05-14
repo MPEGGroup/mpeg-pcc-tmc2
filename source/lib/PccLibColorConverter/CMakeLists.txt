@@ -6,19 +6,19 @@ PROJECT(${MYNAME} C CXX)
 
 FILE(GLOB SRC  include/*.h 
                source/*.cpp  
-               ${HM_LIB_SOURCE_DIR}/TAppCommon/* )
+               ${HDRTOOLS_DIR}/projects/HDRConvert/inc/ProjectParameters.h
+               ${HDRTOOLS_DIR}/projects/HDRConvert/src/ProjectParameters.cpp )
 
 INCLUDE_DIRECTORIES( include 
                      ${CMAKE_SOURCE_DIR}/source/lib/PccLibCommon/include/
                      ${CMAKE_SOURCE_DIR}/source/lib/PccLibBitstreamCommon/include/
-                     ${HM_LIB_SOURCE_DIR}/TAppCommon/
-                     ${HM_LIB_SOURCE_DIR}/ )
+                     ${HDRTOOLS_DIR}/common/inc
+                     ${HDRTOOLS_DIR}/projects/HDRConvert/inc )
 
 SET( LIBS PccLibCommon )
-IF( USE_HM_VIDEO_CODEC )
-    SET( LIBS ${LIBS} TLibCommon TLibVideoIO TLibEncoder )
+IF( USE_HDRTOOLS )
+SET( LIBS ${LIBS} HDRLib )
 ENDIF()
-
 ADD_LIBRARY( ${MYNAME} ${LINKER} ${SRC} )
 
 TARGET_LINK_LIBRARIES( ${MYNAME} ${LIBS} )

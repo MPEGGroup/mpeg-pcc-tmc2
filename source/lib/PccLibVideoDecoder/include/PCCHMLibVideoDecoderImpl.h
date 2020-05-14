@@ -30,29 +30,49 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef PCCVirtualVideoEncoder_h
-#define PCCVirtualVideoEncoder_h
+#ifndef PCCVirtualVideoDecoderImpl_h
+#define PCCVirtualVideoDecoderImpl_h
 
 #include "PCCCommon.h"
+
+#ifdef USE_HM_VIDEO_CODEC
+
 #include "PCCVideo.h"
 #include "PCCVideoBitstream.h"
+
+#include <TLibCommon/TComList.h>
+#include <TLibCommon/TComPicYuv.h>
+#include <TLibDecoder/AnnexBread.h>
+#include <TLibDecoder/NALread.h>
+#include <TLibDecoder/TDecTop.h>
 
 namespace pcc {
 
 template <class T>
-class PCCVirtualVideoEncoder {
+class PCCHMLibVideoDecoderImpl {
  public:
-  PCCVirtualVideoEncoder() {}
-  ~PCCVirtualVideoEncoder() {}
+  PCCHMLibVideoDecoderImpl();
 
-  virtual void encode( PCCVideo<T, 3>&    videoSrc,
-                       std::string        arguments,
-                       PCCVideoBitstream& bitstream,
-                       PCCVideo<T, 3>&    videoRec ) = 0;
+  ~PCCHMLibVideoDecoderImpl();
+  void decode( PCCVideoBitstream& bitstream, size_t outputBitDepth, bool RGB2GBR, PCCVideo<T, 3>& video );
 
  private:
+  void                                  setVideoSize( const TComSPS& sps );
+  Void                                  xWriteOutput( TComList<TComPic*>* pcListPic, UInt tId, PCCVideo<T, 3>& video );
+  Void                                  xFlushOutput( TComList<TComPic*>* pcListPic, PCCVideo<T, 3>& video );
+  void                                  xWritePicture( const TComPicYuv* pic, PCCVideo<T, 3>& video );
+  TDecTop                               m_cTDecTop{};
+  int                                   m_iPOCLastDisplay = -MAX_INT;
+  int                                   m_iSkipFrame{};
+  std::array<int, MAX_NUM_CHANNEL_TYPE> m_outputBitDepth{};
+  int                                   m_internalBitDepths;
+  int                                   m_outputWidth;
+  int                                   m_outputHeight;
+  bool                                  m_bRGB2GBR;
 };
 
 };  // namespace pcc
 
-#endif /* PCCVirtualVideoEncoder_h */
+#endif
+
+#endif /* PCCVirtualVideoDecoder_h */

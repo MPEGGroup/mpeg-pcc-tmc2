@@ -2303,7 +2303,7 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
         } else {
           const auto& image0   = videoTexture.getFrame( frame.getIndex() );
           const auto& image1   = videoTextureFrame1.getFrame( frame.getIndex() );
-          uint8_t     numBits  = image0.getColorFormat() == 0 ? 8 : 16;  // or 8
+          uint8_t     numBits  = image0.getDeprecatedColorFormat() == 0 ? 8 : 16;  // or 8
           double      offset   = ( 1 << ( numBits - 1 ) );
           double      maxValue = ( 1 << numBits ) - 1;
           for ( size_t c = 0; c < 3; ++c ) {

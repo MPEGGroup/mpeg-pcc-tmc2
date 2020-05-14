@@ -31,7 +31,6 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 #include "PCCCommon.h"
-#include "PCCSystem.h"
 #include "PCCVideo.h"
 
 #include "PCCVideoDecoder.h"

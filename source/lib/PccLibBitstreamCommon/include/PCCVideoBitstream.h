@@ -77,11 +77,28 @@ class PCCVideoBitstream {
       return std::string( "texture" );
     else if ( typeIndex >= (size_t)VIDEO_TEXTURE_T0 && typeIndex <= (size_t)VIDEO_TEXTURE_T15 )
       return std::string( "textureT" ) + std::to_string( typeIndex - ( size_t )( VIDEO_TEXTURE_T0 ) );
-
     else if ( typeIndex == (size_t)VIDEO_TEXTURE_RAW )
       return std::string( "rtextureRaw" );
     else
       return std::string( "unknown" );
+  }
+  bool write( const std::string& filename ) {
+    std::ofstream file( filename, std::ios::binary );
+    if ( !file.good() ) { return false; }
+    file.write( reinterpret_cast<char*>( data_.data() ), data_.size() );
+    file.close();
+    return true;
+  }
+  bool read( const std::string& filename ) {
+    std::ifstream file( filename, std::ios::binary | std::ios::ate );
+    if ( !file.good() ) { return false; }
+    const uint64_t fileSize = file.tellg();
+    resize( (size_t)fileSize );
+    file.clear();
+    file.seekg( 0 );
+    file.read( reinterpret_cast<char*>( data_.data() ), data_.size() );
+    file.close();
+    return true;
   }
 
  private:

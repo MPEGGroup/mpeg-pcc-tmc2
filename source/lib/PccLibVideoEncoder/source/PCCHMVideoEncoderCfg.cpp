@@ -35,6 +35,9 @@
     \brief    Handle encoder configuration parameters
 */
 
+#include "PCCCommon.h"
+
+#ifdef USE_HM_VIDEO_CODEC
 #include <stdio.h>
 #include <stdlib.h>
 #include <cassert>
@@ -42,7 +45,7 @@
 #include <string>
 #include <limits>
 #include "TLibCommon/TComRom.h"
-#include "PCCHMVideoEncoderCfg.h"
+#include "PCCHMLibVideoEncoderCfg.h"
 //#include "TAppCommon/program_options_lite.h"
 #include "program_options_lite.h"
 
@@ -145,7 +148,7 @@ enum UIProfileName  // this is used for determining profile strings, where
 // Constructor / destructor / initialization / destroy
 // ====================================================================================================================
 
-PCCHMVideoEncoderCfg::PCCHMVideoEncoderCfg() :
+PCCHMLibVideoEncoderCfg::PCCHMLibVideoEncoderCfg() :
     m_inputColourSpaceConvert( IPCOLOURSPACE_UNCHANGED ),
     m_snrInternalColourSpace( false ),
     m_outputInternalColourSpace( false )
@@ -160,7 +163,7 @@ PCCHMVideoEncoderCfg::PCCHMVideoEncoderCfg() :
   m_targetPivotValue     = NULL;
 }
 
-PCCHMVideoEncoderCfg::~PCCHMVideoEncoderCfg() {
+PCCHMLibVideoEncoderCfg::~PCCHMLibVideoEncoderCfg() {
   if ( m_aidQP ) { delete[] m_aidQP; }
   if ( m_startOfCodedInterval ) {
     delete[] m_startOfCodedInterval;
@@ -176,9 +179,9 @@ PCCHMVideoEncoderCfg::~PCCHMVideoEncoderCfg() {
   }
 }
 
-Void PCCHMVideoEncoderCfg::create() {}
+Void PCCHMLibVideoEncoderCfg::create() {}
 
-Void PCCHMVideoEncoderCfg::destroy() {}
+Void PCCHMLibVideoEncoderCfg::destroy() {}
 
 std::istringstream& operator>>( std::istringstream& in,
                                 GOPEntry&           entry )  // input
@@ -565,7 +568,7 @@ istream& SMultiValueInput<T>::readValues( std::istream& in ) {
 
 #if JVET_E0059_FLOATING_POINT_QP_FIX
 template <class T>
-static inline istream& operator>>( std::istream& in, PCCHMVideoEncoderCfg::OptionalValue<T>& value ) {
+static inline istream& operator>>( std::istream& in, PCCHMLibVideoEncoderCfg::OptionalValue<T>& value ) {
   in >> std::ws;
   if ( in.eof() ) {
     value.bPresent = false;
@@ -637,7 +640,7 @@ static Void automaticallySelectRExtProfile( const Bool         bUsingGeneralRExt
     \param  argv        array of arguments
     \retval             true when success
  */
-Bool PCCHMVideoEncoderCfg::parseCfg( Int argc, TChar* argv[] ) {
+Bool PCCHMLibVideoEncoderCfg::parseCfg( Int argc, TChar* argv[] ) {
   Bool do_help = false;
 
   Int           tmpChromaFormat;
@@ -1977,7 +1980,7 @@ Bool PCCHMVideoEncoderCfg::parseCfg( Int argc, TChar* argv[] ) {
 // Private member functions
 // ====================================================================================================================
 
-Void PCCHMVideoEncoderCfg::xCheckParameter() {
+Void PCCHMLibVideoEncoderCfg::xCheckParameter() {
   if ( m_decodedPictureHashSEIType == HASHTYPE_NONE ) {
     fprintf( stderr, "******************************************************************\n" );
     fprintf( stderr, "** WARNING: --SEIDecodedPictureHash is now disabled by default. **\n" );
@@ -3179,7 +3182,7 @@ const TChar* profileToString( const Profile::Name profile ) {
   return "";
 }
 
-Void PCCHMVideoEncoderCfg::xPrintParameter() {
+Void PCCHMLibVideoEncoderCfg::xPrintParameter() {
   printf( "\n" );
   printf( "Input          File                    : %s\n", m_inputFileName.c_str() );
   printf( "Bitstream      File                    : %s\n", m_bitstreamFileName.c_str() );
@@ -3485,3 +3488,5 @@ Bool confirmPara( Bool bflag, const TChar* message ) {
 }
 
 //! \}
+
+#endif

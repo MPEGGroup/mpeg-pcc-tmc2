@@ -14,16 +14,14 @@ INCLUDE_DIRECTORIES( include
                      ${CMAKE_SOURCE_DIR}/source/lib/PccLibCommon/include  
                      ${CMAKE_SOURCE_DIR}/source/lib/PccLibBitstreamCommon/include 
                      ${CMAKE_SOURCE_DIR}/source/lib/PccLibVideoEncoder/include 
+                     ${CMAKE_SOURCE_DIR}/source/lib/PccLibColorConverter/include/
                      ${CMAKE_SOURCE_DIR}/dependencies/tbb/include
                      ${CMAKE_SOURCE_DIR}/dependencies/arithmetic-coding/inc
                      ${CMAKE_SOURCE_DIR}/dependencies/nanoflann )
 
-ADD_LIBRARY( ${MYNAME} ${LINKER} ${SRC} )
+SET( LIBS PccLibCommon PccLibBitstreamCommon PccLibVideoEncoder PccLibColorConverter )
 
-SET( LIBS PccLibCommon PccLibBitstreamCommon )
-IF( USE_HM_VIDEO_CODEC )
-    SET( LIBS ${LIBS} PccLibVideoEncoder )
-ENDIF()
+ADD_LIBRARY( ${MYNAME} ${LINKER} ${SRC} )
 
 TARGET_LINK_LIBRARIES( ${MYNAME} ${LIBS} )
 

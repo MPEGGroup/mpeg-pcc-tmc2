@@ -62,8 +62,9 @@ class PCCVideo {
     assert( index < frames_.size() );
     return frames_[index];
   }
-  void setColorFormat( size_t value ) {
-    for ( auto& f : frames_ ) f.setColorFormat( value );
+  PCCImage<T, N>& operator[]( int index ) { return frames_[index]; }
+  void            setDeprecatedColorFormat( size_t value ) {
+    for ( auto& f : frames_ ) f.setDeprecatedColorFormat( value );
   }
   void resize( const size_t frameCount ) { frames_.resize( frameCount ); }
 
@@ -71,13 +72,16 @@ class PCCVideo {
   typename std::vector<PCCImage<T, N> >::iterator end() { return frames_.end(); }
   const size_t                                    size() { return frames_.size(); }
 
-  bool write( std::ofstream& outfile, const size_t nbyte ) {
-    for ( auto& frame : frames_ ) {
-      if ( !frame.write( outfile, nbyte ) ) { return false; }
-    }
-    return true;
+  size_t         getWidth() const { return frames_.empty() ? 0 : frames_[0].getWidth(); }
+  size_t         getHeight() const { return frames_.empty() ? 0 : frames_[0].getHeight(); }
+  PCCCOLORFORMAT getColorFormat() const {
+    return frames_.empty() ? PCCCOLORFORMAT::UNKNOWN : frames_[0].getColorFormat();
   }
+  size_t getFrameCount() const { return frames_.size(); }
+
   bool write( const std::string fileName, const size_t nbyte ) {
+    printf( "Write video: %s \n", fileName.c_str() );
+    fflush( stdout );
     std::ofstream outfile( fileName, std::ios::binary );
     if ( write( outfile, nbyte ) ) {
       outfile.close();
@@ -85,120 +89,51 @@ class PCCVideo {
     }
     return false;
   }
-
-  bool write420( std::ofstream& outfile, const size_t nbyte, bool convert, const size_t filter ) {
-    for ( auto& frame : frames_ ) {
-      if ( !frame.write420( outfile, nbyte, convert, filter ) ) { return false; }
-    }
-    return true;
-  }
-
-  bool write420( const std::string fileName, const size_t nbyte, const bool convert, const size_t filter ) {
-    std::ofstream outfile( fileName, std::ios::binary );
-    if ( write420( outfile, nbyte, convert, filter ) ) {
-      outfile.close();
-      return true;
-    }
-    return false;
-  }
-
-  bool write420( std::ofstream& outfile, const size_t nbyte ) {
-    for ( auto& frame : frames_ ) {
-      if ( !frame.write420( outfile, nbyte ) ) { return false; }
-    }
-    return true;
-  }
-  bool write420( const std::string fileName, const size_t nbyte ) {
-    std::ofstream outfile( fileName, std::ios::binary );
-    if ( write420( outfile, nbyte ) ) {
-      outfile.close();
-      return true;
-    }
-    return false;
-  }
-  bool read( std::ifstream& infile,
-             const size_t   sizeU0,
-             const size_t   sizeV0,
-             const size_t   frameCount,
-             const size_t   nbyte ) {
-    frames_.resize( frameCount );
-    for ( auto& frame : frames_ ) {
-      if ( !frame.read( infile, sizeU0, sizeV0, nbyte ) ) { return false; }
-    }
-    return true;
-  }
-  bool read( const std::string fileName,
-             const size_t      sizeU0,
-             const size_t      sizeV0,
-             const size_t      frameCount,
-             const size_t      nbyte ) {
+  bool read( const std::string    fileName,
+             const size_t         sizeU0,
+             const size_t         sizeV0,
+             const PCCCOLORFORMAT format,
+             const size_t         frameCount,
+             const size_t         nbyte ) {
+    printf( "Read video: %s \n", fileName.c_str() );
+    fflush( stdout );
     std::ifstream infile( fileName, std::ios::binary );
-    if ( read( infile, sizeU0, sizeV0, frameCount, nbyte ) ) {
+    if ( read( infile, sizeU0, sizeV0, format, frameCount, nbyte ) ) {
       infile.close();
       return true;
     }
+    infile.close();
     return false;
   }
-  bool read420( std::ifstream& infile,
-                const size_t   sizeU0,
-                const size_t   sizeV0,
-                const size_t   frameCount,
-                const size_t   nbyte,
-                const bool     convert,
-                const size_t   filter ) {
-    frames_.resize( frameCount );
-    for ( auto& frame : frames_ ) {
-      if ( !frame.read420( infile, sizeU0, sizeV0, nbyte, convert, filter ) ) { return false; }
-    }
-    return true;
-  }
-  bool read420( const std::string fileName,
-                const size_t      sizeU0,
-                const size_t      sizeV0,
-                const size_t      frameCount,
-                const size_t      nbyte,
-                bool              convert,
-                const int         filter ) {
-    std::ifstream infile( fileName, std::ios::binary );
-    if ( read420( infile, sizeU0, sizeV0, frameCount, nbyte, convert, filter ) ) {
-      infile.close();
-      return true;
-    }
-    return false;
-  }
-
-  bool read420( std::ifstream& infile,
-                const size_t   sizeU0,
-                const size_t   sizeV0,
-                const size_t   frameCount,
-                const size_t   nbyte ) {
-    frames_.resize( frameCount );
-    for ( auto& frame : frames_ ) {
-      if ( !frame.read420( infile, sizeU0, sizeV0, nbyte ) ) { return false; }
-    }
-    return true;
-  }
-  bool read420( const std::string fileName,
-                const size_t      sizeU0,
-                const size_t      sizeV0,
-                const size_t      frameCount,
-                const size_t      nbyte ) {
-    std::ifstream infile( fileName, std::ios::binary );
-    if ( read420( infile, sizeU0, sizeV0, frameCount, nbyte ) ) {
-      infile.close();
-      return true;
-    }
-    return false;
-  }
-  size_t getWidth() const { return frames_.empty() ? 0 : frames_[0].getWidth(); }
-  size_t getHeight() const { return frames_.empty() ? 0 : frames_[0].getHeight(); }
-  size_t getFrameCount() const { return frames_.size(); }
-
   void convertBitdepth( uint8_t bitdepthInput, uint8_t bitdepthOutput, bool msbAlignFlag ) {
     for ( auto& frame : frames_ ) { frame.convertBitdepth( bitdepthInput, bitdepthOutput, msbAlignFlag ); }
   }
+  void convertYUV420ToYUV444() {
+    for ( auto& frame : frames_ ) { frame.convertYUV420ToYUV444(); }
+  }
+  void convertYUV444ToYUV420() {
+    for ( auto& frame : frames_ ) { frame.convertYUV444ToYUV420(); }
+  }
 
  private:
+  bool write( std::ofstream& outfile, const size_t nbyte ) {
+    for ( auto& frame : frames_ ) {
+      if ( !frame.write( outfile, nbyte ) ) { return false; }
+    }
+    return true;
+  }
+  bool read( std::ifstream&       infile,
+             const size_t         sizeU0,
+             const size_t         sizeV0,
+             const PCCCOLORFORMAT format,
+             const size_t         frameCount,
+             const size_t         nbyte ) {
+    frames_.resize( frameCount );
+    for ( auto& frame : frames_ ) {
+      if ( !frame.read( infile, sizeU0, sizeV0, format, nbyte ) ) { return false; }
+    }
+    return true;
+  }
   std::vector<PCCImage<T, N> > frames_;
 };
 

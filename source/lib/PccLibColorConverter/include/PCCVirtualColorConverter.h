@@ -30,29 +30,25 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef PCCVirtualVideoEncoder_h
-#define PCCVirtualVideoEncoder_h
+#ifndef PCCVirtualColorConverter_h
+#define PCCVirtualColorConverter_h
 
-#include "PCCCommon.h"
 #include "PCCVideo.h"
-#include "PCCVideoBitstream.h"
 
 namespace pcc {
 
 template <class T>
-class PCCVirtualVideoEncoder {
+class PCCVirtualColorConverter {
  public:
-  PCCVirtualVideoEncoder() {}
-  ~PCCVirtualVideoEncoder() {}
+  PCCVirtualColorConverter() {}
+  ~PCCVirtualColorConverter() {}
 
-  virtual void encode( PCCVideo<T, 3>&    videoSrc,
-                       std::string        arguments,
-                       PCCVideoBitstream& bitstream,
-                       PCCVideo<T, 3>&    videoRec ) = 0;
+  virtual void convert( std::string configFile, PCCVideo<T, 3>& videoSrc, PCCVideo<T, 3>& videoDst ) = 0;
+  virtual void convert( std::string configFile, PCCVideo<T, 3>& videoSrc )                           = 0;
 
  private:
 };
 
 };  // namespace pcc
 
-#endif /* PCCVirtualVideoEncoder_h */
+#endif /* PCCVirtualColorConverter_h */

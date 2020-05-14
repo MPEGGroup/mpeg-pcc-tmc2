@@ -33,9 +33,14 @@
 #include "PCCCommon.h"
 #include "PCCVideo.h"
 
-#include "program_options_lite.h"
+#include <program_options_lite.h>
 
-#include "PCCVideoEncoder.h"
+#include "PCCVirtualColorConverter.h"
+#ifdef USE_HDRTOOLS
+#include "PCCHDRToolsColorConverter.h"
+#else
+#include "PCCInternalColorConverter.h"
+#endif
 
 using namespace std;
 using namespace pcc;
@@ -60,38 +65,48 @@ static std::istream& operator>>( std::istream& in, PCCColorTransform& val ) { re
 
 bool parseParameters( int          argc,
                       char*        argv[],
-                      std::string& srcVideo,
-                      std::string& encoderParameters,
+                      std::string& srcVideoPath,
+                      std::string& dstVideoPath,
+                      std::string& configFile,
                       size_t&      width,
                       size_t&      height,
+                      std::string& colorFormat,
                       size_t&      frameCount,
-                      size_t&      nbyte ) {
+                      size_t&      inputNumBytes,
+                      size_t&      outputNumBytes ) {
   namespace po    = df::program_options_lite;
   bool print_help = false;
   // clang-format off
   po::Options opts;
-  opts.addOptions()
-  ("help", print_help, false, "This help text")
-  ("srcVideo", srcVideo, srcVideo, "Source yuv file")
-  ("width", width, width, "Source video width")
-  ("height", height, height,"Source video height")
-  ("frameCount", frameCount, frameCount, "Source video frame count")
-  ("nbyte", nbyte, nbyte, "Source video nbyte")
-  ("encoderParameters", encoderParameters, encoderParameters,"Hm encoder parameters");
+  opts.addOptions()("help", print_help, false, "This help text")
+     ( "srcVideoPath", srcVideoPath, srcVideoPath, "Source yuv file path")
+     ( "dstVideoPath", dstVideoPath, dstVideoPath, "Create yuv file path")
+     ("configFile", configFile, configFile, "HDRTools configuration files")
+     ("width", width, width, "Source video width")
+     ("height", height, height,"Source video height")
+     ("colorFormat", colorFormat, colorFormat,"Source color format")
+     ("frameCount", frameCount, frameCount, "Source video frame count")
+     ("inputNumBytes", inputNumBytes, inputNumBytes, "Source video nbyte")
+     ("outputNumBytes", outputNumBytes, outputNumBytes, "Output video nbyte");
   // clang-format on
   po::setDefaults( opts );
   po::ErrorReporter        err;
   const list<const char*>& argv_unhandled = po::scanArgv( opts, argc, (const char**)argv, err );
 
   printf( "parseParameters : \n" );
-  printf( "  srcVideo          = %s \n", srcVideo.c_str() );
-  printf( "  encoderParameters = %s \n", encoderParameters.c_str() );
-  printf( "  width             = %zu \n", width );
-  printf( "  height            = %zu \n", height );
-  printf( "  frameCount        = %zu \n", frameCount );
-  printf( "  nbyte             = %zu \n", nbyte );
-  if ( argc == 1 || print_help || srcVideo.empty() || encoderParameters.empty() || width == 0 || height == 0 ||
-       frameCount == 0 || nbyte == 0 ) {
+  printf( "  srcVideoPath   = %s \n", srcVideoPath.c_str() );
+  printf( "  dstVideoPath   = %s \n", dstVideoPath.c_str() );
+  printf( "  configFile     = %s \n", configFile.c_str() );
+  printf( "  width          = %zu \n", width );
+  printf( "  height         = %zu \n", height );
+  printf( "  colorFormat    = %s  \n", colorFormat.c_str() );
+  printf( "  frameCount     = %zu \n", frameCount );
+  printf( "  inputNumBytes  = %zu \n", inputNumBytes );
+  printf( "  outputNumBytes = %zu \n", outputNumBytes );
+
+  if ( argc == 1 || print_help || srcVideoPath.empty() || dstVideoPath.empty() || configFile.empty() ||
+       colorFormat.empty() || width == 0 || height == 0 || frameCount == 0 || inputNumBytes == 0 ||
+       outputNumBytes == 0 || ( colorFormat != "RGB444" && colorFormat != "YUV444" && colorFormat != "YUV420" ) ) {
     printf( "Error parameters not correct \n" );
     fflush( stdout );
     return false;
@@ -104,20 +119,25 @@ bool parseParameters( int          argc,
 }
 
 int main( int argc, char* argv[] ) {
-  std::cout << "PccAppVideoEncoder v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MINOR << std::endl << std::endl;
-  std::string srcVideo, encoderParameters;
-  size_t      width = 0, height = 0, frameCount = 0, nbyte = 0;
-  if ( !parseParameters( argc, argv, srcVideo, encoderParameters, width, height, frameCount, nbyte ) ) { return -1; }
-  PCCVideo<uint8_t, 3> videoSrc, videoRec;
-  videoSrc.read( srcVideo, width, height, PCCCOLORFORMAT::YUV420, frameCount, nbyte );
-  std::string       enc = "TAppEncoderHighBitDepthStatic";
-  PCCVideoBitstream bitstream( VIDEO_OCCUPANCY );
-  PCCContext        context;
-  PCCVideoEncoder   encoder;
-  encoder.compress( videoSrc, std::string( "" ), 8, bitstream, encoderParameters, enc, context, 1, false, false, 8,
-                    false, true );
-  videoSrc.swap( videoRec );
-  bitstream.write( removeFileExtension( srcVideo ) + ".bin" );
-  videoRec.write( removeFileExtension( srcVideo ) + "_rec.yuv", nbyte );
+  std::cout << "PccAppVideoConverter v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MINOR << std::endl << std::endl;
+  std::string srcVideoPath, dstVideoPath, configFile, colorFormat;
+  size_t      width = 0, height = 0, frameCount = 0, inputNumBytes = 0, outputNumBytes = 0;
+  if ( !parseParameters( argc, argv, srcVideoPath, dstVideoPath, configFile, width, height, colorFormat, frameCount,
+                         inputNumBytes, outputNumBytes ) ) {
+    return -1;
+  }
+  typedef uint16_t T;
+  PCCCOLORFORMAT   format = colorFormat == "RGB444"
+                              ? PCCCOLORFORMAT::RGB444
+                              : colorFormat == "YUV444" ? PCCCOLORFORMAT::YUV444 : PCCCOLORFORMAT::YUV420;
+  PCCVideo<T, 3> videoSrc, videoRec;
+  videoSrc.read( srcVideoPath, width, height, format, frameCount, inputNumBytes );
+#ifdef USE_HDRTOOLS
+  PCCHDRToolsColorConverter<T> convert;
+#else
+  PCCInternalColorConverter<T> convert;
+#endif
+  convert.convert( configFile, videoSrc, videoRec );
+  videoRec.write( dstVideoPath, outputNumBytes );
   return 1;
 }

@@ -4,8 +4,8 @@ PROJECT (TMC2 CXX C )
 SET( TMC2_VERSION_MAJOR 9 )
 SET( TMC2_VERSION_MINOR 1 )
 
-
-OPTION( USE_HM_VIDEO_CODEC "Clone, build and use HM video encoder and decoder" TRUE )
+OPTION( USE_HM_VIDEO_CODEC "Clone, build and use HM video encoder and decoder"   TRUE )
+OPTION( USE_HDRTOOLS       "Clone, build and use HDRTools for color conversions" TRUE )
 
 ## CLANG-TIDY CHECK
 set(CMAKE_CXX_STANDARD 14)
@@ -62,20 +62,21 @@ ENDIF()
 # INCLUDE USE_HM_VIDEO_CODEC
 IF( USE_HM_VIDEO_CODEC )
   INCLUDE( ${CMAKE_SOURCE_DIR}/dependencies/cmake/hm.cmake )
-  ADD_SUBDIRECTORY(source/lib/PccLibVideoDecoder)
-  ADD_SUBDIRECTORY(source/lib/PccLibVideoEncoder)
-  ADD_SUBDIRECTORY(source/app/PccAppHMVideoEncoder)
-  ADD_SUBDIRECTORY(source/app/PccAppHMVideoDecoder)
+ENDIF()
+if ( USE_HDRTOOLS )  
+  INCLUDE( ${CMAKE_SOURCE_DIR}/dependencies/cmake/hdrtools.cmake )
 ENDIF()
 
 ## CLANG FORMAT
 INCLUDE( dependencies/cmake/clang.cmake )
 
 ADD_SUBDIRECTORY(dependencies)
+ADD_SUBDIRECTORY(source/lib/PccLibVideoDecoder)
+ADD_SUBDIRECTORY(source/lib/PccLibVideoEncoder)
+ADD_SUBDIRECTORY(source/lib/PccLibColorConverter)
 ADD_SUBDIRECTORY(source/lib/PccLibBitstreamCommon)
 ADD_SUBDIRECTORY(source/lib/PccLibBitstreamWriter)
 ADD_SUBDIRECTORY(source/lib/PccLibBitstreamReader)
-
 ADD_SUBDIRECTORY(source/lib/PccLibCommon)
 ADD_SUBDIRECTORY(source/lib/PccLibDecoder)
 ADD_SUBDIRECTORY(source/lib/PccLibEncoder)
@@ -85,4 +86,7 @@ ADD_SUBDIRECTORY(source/app/PccAppParser)
 ADD_SUBDIRECTORY(source/app/PccAppEncoder)
 ADD_SUBDIRECTORY(source/app/PccAppDecoder)
 ADD_SUBDIRECTORY(source/app/PccAppMetrics)
+ADD_SUBDIRECTORY(source/app/PccAppHMVideoEncoder)
+ADD_SUBDIRECTORY(source/app/PccAppHMVideoDecoder)
+ADD_SUBDIRECTORY(source/app/PccAppColorConverter)
 

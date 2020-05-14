@@ -31,75 +31,31 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/** \file     encmain.cpp
-    \brief    Encoder application main
-*/
+#ifndef __PCCHMLibVideoEncoder_H__
+#define __PCCHMLibVideoEncoder_H__
 
-#include <time.h>
-#include <iostream>
-#include "TAppEncTop.h"
-#include "TAppCommon/program_options_lite.h"
+#include "PCCCommon.h"
 
-//! \ingroup TAppEncoder
-//! \{
+#ifdef USE_HM_VIDEO_CODEC
+#include "PCCVideo.h"
+#include "PCCVirtualVideoEncoder.h"
 
-#include "../Lib/TLibCommon/Debug.h"
+namespace pcc {
 
-// ====================================================================================================================
-// Main function
-// ====================================================================================================================
+template <class T>
+class PCCHMLibVideoEncoder : public PCCVirtualVideoEncoder<T> {
+ public:
+  PCCHMLibVideoEncoder();
+  ~PCCHMLibVideoEncoder();
 
-int main( int argc, char* argv[] ) {
-  TAppEncTop cTAppEncTop;
+  void encode( PCCVideo<T, 3>&    videoSrc,
+               std::string        arguments,
+               PCCVideoBitstream& bitstream,
+               PCCVideo<T, 3>&    videoRec );
+};
 
-  // print information
-  fprintf( stdout, "\n" );
-  fprintf( stdout, "HM software: Encoder Version [%s] (including RExt)", NV_VERSION );
-  fprintf( stdout, NVM_ONOS );
-  fprintf( stdout, NVM_COMPILEDBY );
-  fprintf( stdout, NVM_BITS );
-  fprintf( stdout, "\n\n" );
+}  // namespace pcc
 
-  // create application encoder class
-  cTAppEncTop.create();
-
-  // parse configuration
-  try {
-    if ( !cTAppEncTop.parseCfg( argc, argv ) ) {
-      cTAppEncTop.destroy();
-#if ENVIRONMENT_VARIABLE_DEBUG_AND_TEST
-      EnvVar::printEnvVar();
-#endif
-      return 1;
-    }
-  } catch ( df::program_options_lite::ParseFailure& e ) {
-    std::cerr << "Error parsing option \"" << e.arg << "\" with argument \"" << e.val << "\"." << std::endl;
-    return 1;
-  }
-
-#if PRINT_MACRO_VALUES
-  printMacroSettings();
 #endif
 
-#if ENVIRONMENT_VARIABLE_DEBUG_AND_TEST
-  EnvVar::printEnvVarInUse();
 #endif
-
-  // starting time
-  Double  dResult;
-  clock_t lBefore = clock();
-
-  // call encoding function
-  cTAppEncTop.encode();
-
-  // ending time
-  dResult = ( Double )( clock() - lBefore ) / CLOCKS_PER_SEC;
-  printf( "\n Total Time: %12.3f sec.\n", dResult );
-
-  // destroy application encoder class
-  cTAppEncTop.destroy();
-
-  return 0;
-}
-
-//! \}

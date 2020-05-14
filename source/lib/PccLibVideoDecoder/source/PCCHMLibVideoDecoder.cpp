@@ -30,29 +30,33 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef PCCVirtualVideoEncoder_h
-#define PCCVirtualVideoEncoder_h
-
 #include "PCCCommon.h"
-#include "PCCVideo.h"
-#include "PCCVideoBitstream.h"
 
-namespace pcc {
+#ifdef USE_HM_VIDEO_CODEC
 
-template <class T>
-class PCCVirtualVideoEncoder {
- public:
-  PCCVirtualVideoEncoder() {}
-  ~PCCVirtualVideoEncoder() {}
+#include "PCCHMLibVideoDecoder.h"
+#include "PCCHMLibVideoDecoderImpl.h"
 
-  virtual void encode( PCCVideo<T, 3>&    videoSrc,
-                       std::string        arguments,
-                       PCCVideoBitstream& bitstream,
-                       PCCVideo<T, 3>&    videoRec ) = 0;
+using namespace pcc;
 
- private:
-};
+template <typename T>
+PCCHMLibVideoDecoder<T>::PCCHMLibVideoDecoder() {}
+template <typename T>
+PCCHMLibVideoDecoder<T>::~PCCHMLibVideoDecoder() {}
 
-};  // namespace pcc
+template <typename T>
+void PCCHMLibVideoDecoder<T>::decode( PCCVideoBitstream& bitstream,
+                                      size_t             outputBitDepth,
+                                      bool               RGB2GBR,
+                                      PCCVideo<T, 3>&    video,
+                                      const std::string& decoderPath,
+                                      const std::string& parameters,
+                                      const size_t       frameCount ) {
+  PCCHMLibVideoDecoderImpl<T> decoder;
+  decoder.decode( bitstream, outputBitDepth, RGB2GBR, video );
+}
 
-#endif /* PCCVirtualVideoEncoder_h */
+template class PCCHMLibVideoDecoder<uint8_t>;
+template class PCCHMLibVideoDecoder<uint16_t>;
+
+#endif

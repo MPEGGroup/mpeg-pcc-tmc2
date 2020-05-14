@@ -30,29 +30,34 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef PCCVirtualVideoEncoder_h
-#define PCCVirtualVideoEncoder_h
+#ifndef PCCHMAppVideoDecoder_h
+#define PCCHMAppVideoDecoder_h
 
 #include "PCCCommon.h"
+
+#ifndef USE_HM_VIDEO_CODEC
 #include "PCCVideo.h"
-#include "PCCVideoBitstream.h"
+#include "PCCVirtualVideoDecoder.h"
 
 namespace pcc {
 
 template <class T>
-class PCCVirtualVideoEncoder {
+class PCCHMAppVideoDecoder : public PCCVirtualVideoDecoder<T> {
  public:
-  PCCVirtualVideoEncoder() {}
-  ~PCCVirtualVideoEncoder() {}
+  PCCHMAppVideoDecoder();
+  ~PCCHMAppVideoDecoder();
 
-  virtual void encode( PCCVideo<T, 3>&    videoSrc,
-                       std::string        arguments,
-                       PCCVideoBitstream& bitstream,
-                       PCCVideo<T, 3>&    videoRec ) = 0;
-
- private:
+  void decode( PCCVideoBitstream& bitstream,
+               size_t             outputBitDepth,
+               bool               RGB2GBR,
+               PCCVideo<T, 3>&    video,
+               const std::string& decoderPath = "",
+               const std::string& parameters  = "",
+               const size_t       frameCount  = 0 );
 };
 
 };  // namespace pcc
 
-#endif /* PCCVirtualVideoEncoder_h */
+#endif
+
+#endif /* PCCHMAppVideoDecoder_h */

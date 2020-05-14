@@ -67,7 +67,7 @@
 #include <papi.h>
 #include "PCCChrono.h"
 #endif
-#undef OPTIONAL 
+#undef OPTIONAL
 
 #define MATCHTOANCHOR 1  // jkei: set 1 to match with the results of anchor for mapcount=1 case.
 
@@ -97,6 +97,7 @@ enum PCCEndianness { PCC_BIG_ENDIAN = 0, PCC_LITTLE_ENDIAN = 1 };
 enum PCCColorTransform { COLOR_TRANSFORM_NONE = 0, COLOR_TRANSFORM_RGB_TO_YCBCR = 1 };
 enum PCCPointType { POINT_UNSET = 0, POINT_D0, POINT_D1, POINT_DF, POINT_SMOOTH, POINT_EOM };
 enum { COLOURFORMAT420 = 0, COLOURFORMAT444 = 1 };
+enum PCCCOLORFORMAT { UNKNOWN = 0, RGB444, YUV444, YUV420 };
 
 const int16_t infiniteDepth          = ( std::numeric_limits<int16_t>::max )();
 const int64_t infinitenumber         = ( std::numeric_limits<int64_t>::max )();
@@ -171,6 +172,16 @@ void printVector( std::vector<T>    data,
     printf( "\n" );
     fflush( stdout );
   }
+}
+
+static std::string getParameter( const std::string& config, const std::string& param ) {
+  std::size_t pos = 0;
+  if ( ( pos = config.find( param ) ) == std::string::npos ) {
+    printf( "Can't find parameter: \"%s\" in: %s \n", param.c_str(), config.c_str() );
+    exit( -1 );
+  }
+  pos += param.length();
+  return config.substr( pos, config.find( " ", pos ) - pos );
 }
 
 using Range = std::pair<int, int>;

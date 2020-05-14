@@ -38,7 +38,6 @@
 #include "PCCPatch.h"
 #include "PCCPatchSegmenter.h"
 #include "PCCVideoEncoder.h"
-#include "PCCSystem.h"
 #include "PCCGroupOfFrames.h"
 #include "PCCPointSet.h"
 #include "PCCEncoderParameters.h"
@@ -160,19 +159,25 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     std::cout << "Percentage of changed occupancy map values from 1 to 0 = "
               << ( static_cast<float>( changedPixCnt1To0 ) * 100.0F / pixCnt ) << std::endl;
   }
-
   if ( !params_.useRawPointsSeparateVideo_ && ( params_.losslessGeo_ || params_.lossyRawPointsPatch_ ) ) {
     markRawPatchLocationOccupancyMapVideo( context );
   }
   generateBlockToPatchFromOccupancyMapVideo( context, params_.losslessGeo_, params_.lossyRawPointsPatch_,
                                              params_.occupancyResolution_, params_.occupancyPrecision_ );
-
+  printf( " dilateGeometryVideo\n" );
+  fflush( stdout );
   // GEOMETRY IMAGE PADDING
   dilateGeometryVideo( sources, context );
+  printf( " dilateGeometryVideo done \n" );
+  fflush( stdout );
 
   // Group dilation in Geometry
   if ( params_.groupDilation_ && params_.absoluteD1_ && params_.mapCountMinus1_ > 0 ) {
+    printf( " geometryGroupDilation\n" );
+    fflush( stdout );
     geometryGroupDilation( context );
+    printf( " geometryGroupDilation done \n" );
+    fflush( stdout );
   }
 
   // ENCODE GEOMETRY IMAGE
@@ -195,6 +200,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
       std::exit( -1 );
     }
 
+    printf( " compress videoGeometry \n" );
+    fflush( stdout );
     // Compress geometryD0
     auto& videoBitstreamD0 = context.createVideoBitstream( VIDEO_GEOMETRY_D0 );
     auto& videoGeometry    = context.getVideoGeometryMultiple()[0];
@@ -679,7 +686,7 @@ bool PCCEncoder::generateOccupancyMapVideo( const size_t           imageWidth,
   const size_t blockToPatchHeight          = imageHeight / params_.occupancyResolution_;
 
   if ( !params_.enhancedOccupancyMapCode_ ) {
-    videoFrameOccupancyMap.resize( videoFrameOccupancyMapSizeU, videoFrameOccupancyMapSizeV );
+    videoFrameOccupancyMap.resize( videoFrameOccupancyMapSizeU, videoFrameOccupancyMapSizeV, PCCCOLORFORMAT::YUV420 );
     for ( size_t v0 = 0; v0 < blockToPatchHeight; ++v0 ) {
       for ( size_t u0 = 0; u0 < blockToPatchWidth; ++u0 ) {
         size_t fullCount = 0;
@@ -716,7 +723,7 @@ bool PCCEncoder::generateOccupancyMapVideo( const size_t           imageWidth,
       }
     }
   } else {
-    videoFrameOccupancyMap.resize( imageWidth, imageHeight );
+    videoFrameOccupancyMap.resize( imageWidth, imageHeight, PCCCOLORFORMAT::YUV420 );
     for ( size_t v = 0; v < imageHeight; v++ ) {
       for ( size_t u = 0; u < imageWidth; u++ ) {
         size_t i      = v * imageWidth + u;
@@ -3728,7 +3735,7 @@ void PCCEncoder::create3DMotionEstimationFiles( const PCCGroupOfFrames& sources,
 void PCCEncoder::generateIntraImage( PCCFrameContext& frame, const size_t mapIndex, PCCImageGeometry& image ) {
   auto& width  = frame.getWidth();
   auto& height = frame.getHeight();
-  image.resize( width, height );
+  image.resize( width, height, PCCCOLORFORMAT::YUV444 );
   image.set( 0 );
   //  const int16_t infiniteDepth = ( std::numeric_limits<int16_t>::max )();
   size_t maxDepth = 0;
@@ -3799,7 +3806,7 @@ bool PCCEncoder::predictTextureFrame( PCCFrameContext&       frame,
       const size_t pos1 = y * refWidth + x;
       if ( occupancyMap[pos1] != 0 ) {
         int16_t reference_color[3];
-        if ( reference.getColorFormat() == 0 ) {
+        if ( reference.getDeprecatedColorFormat() == 0 ) {
           reference_color[0] = reference.getValue( 0, x, y );
           reference_color[1] = reference.getValue( 1, x, y );
           reference_color[2] = reference.getValue( 2, x, y );
@@ -4284,7 +4291,7 @@ void PCCEncoder::generateRawPointsGeometryVideo( PCCContext& context, PCCGroupOf
   for ( auto& frame : context.getFrames() ) {
     const size_t shift      = frame.getIndex();
     auto&        MPGeoFrame = videoRawPointsGeometry.getFrame( shift );
-    MPGeoFrame.resize( maxWidth, maxHeight );
+    MPGeoFrame.resize( maxWidth, maxHeight, PCCCOLORFORMAT::YUV444 );
   }
   cout << "generateRawPointsGeometryVideo [done]" << endl;
 }
@@ -4316,7 +4323,7 @@ void PCCEncoder::generateRawPointsTextureVideo( PCCContext& context, PCCGroupOfF
   for ( auto& frame : context.getFrames() ) {
     const size_t shift                 = frame.getIndex();
     auto&        rawPointsTextureFrame = videoRawPointsTexture.getFrame( shift );
-    rawPointsTextureFrame.resize( maxWidth, maxHeight );
+    rawPointsTextureFrame.resize( maxWidth, maxHeight, PCCCOLORFORMAT::YUV444 );
   }
   cout << "RawPoints Texture [done]" << endl;
 }
@@ -4335,7 +4342,7 @@ void PCCEncoder::generateRawPointsGeometryImage( PCCContext&       context,
   pcmOccupancyMap.resize( pcmOccupancySizeU * pcmOccupancySizeV, false );
   packRawPointsPatch( frame, pcmOccupancyMap, pcmWidth, pcmHeight, pcmOccupancySizeU, pcmOccupancySizeV, 0 );
   frame.setMPGeoHeight( pcmHeight );
-  image.resize( pcmWidth, pcmHeight );
+  image.resize( pcmWidth, pcmHeight, PCCCOLORFORMAT::YUV444 );
   image.set( 0 );
   uint16_t lastValue{0};
   uint16_t lastY{0};
@@ -4417,7 +4424,7 @@ void PCCEncoder::generateRawPointsTextureImage( PCCContext&         context,
       if ( mpsV0 > maxRawPointsV0 ) { maxRawPointsV0 = mpsV0; }
     }
     heightMP = maxRawPointsV0;
-    image.resize( width, heightMP );
+    image.resize( width, heightMP, PCCCOLORFORMAT::YUV444 );
     std::vector<PCCColor3B>& mpsTextures     = frame.getRawPointsTextures();
     int                      framePointIndex = 0;
     for ( int i = 0; i < numberOfRawPointsPatches; i++ ) {
@@ -4454,7 +4461,7 @@ void PCCEncoder::generateRawPointsTextureImage( PCCContext&         context,
       eomPointsPatch.v0_    = heightMP;
       eomPointsPatch.sizeU_ = width;
       eomPointsPatch.sizeV_ = eomPointsPatch.eomCount_ / width;
-      image.resize( width, heightMP + heightEOM );
+      image.resize( width, heightMP + heightEOM, PCCCOLORFORMAT::YUV444 );
       std::vector<PCCColor3B>& eomTextures = frame.getEOMTextures();
       for ( size_t k = 0; k < eomPointsPatch.eomCount_; k++ ) {
         size_t nBlock = k / 256;
@@ -4808,6 +4815,8 @@ bool PCCEncoder::dilateGeometryVideo( const PCCGroupOfFrames& sources, PCCContex
   auto& videoGeometryMultiple = context.getVideoGeometryMultiple();
   auto& videoOccupancyMap     = context.getVideoOccupancyMap();
   auto& frames                = context.getFrames();
+  printf( " geometryGroupDilation frames.size() = %zu \n", frames.size() );
+  fflush( stdout );
   for ( size_t i = 0; i < frames.size(); i++ ) {
     if ( params_.multipleStreams_ ) {
       const size_t geometryVideoSize = videoGeometryMultiple[0].getFrameCount();
@@ -5259,7 +5268,7 @@ void PCCEncoder::CreateCoarseLayer( PCCImage<T, 3>&        image,
   int dyadicHeight = 1;
   while ( dyadicHeight < image.getHeight() ) { dyadicHeight *= 2; }
   // allocate the mipmap with half the resolution
-  mip.resize( ( dyadicWidth / 2 ), ( dyadicHeight / 2 ) );
+  mip.resize( ( dyadicWidth / 2 ), ( dyadicHeight / 2 ), PCCCOLORFORMAT::YUV444 );
   mipOccupancyMap.resize( ( dyadicWidth / 2 ) * ( dyadicHeight / 2 ), 0 );
   int    stride    = image.getWidth();
   int    newStride = ( dyadicWidth / 2 );
@@ -5483,7 +5492,7 @@ void PCCEncoder::pushPullMip( const PCCImage<T, 3>&        image,
   const size_t  newWidth  = ( ( width + 1 ) >> 1 );
   const size_t  newHeight = ( ( height + 1 ) >> 1 );
   // allocate the mipmap with half the resolution
-  mip.resize( newWidth, newHeight );
+  mip.resize( newWidth, newHeight, PCCCOLORFORMAT::YUV444 );
   mipOccupancyMap.resize( newWidth * newHeight, 0 );
   for ( size_t y = 0; y < newHeight; ++y ) {
     const size_t yUp = y << 1;
@@ -5844,18 +5853,18 @@ bool PCCEncoder::generateTextureVideo( const PCCPointSet3& reconstruct,
   if ( params_.multipleStreams_ ) {
     video.resize( curNumOfVideoFrames + 1 );  // adding 1 more
     auto& image = video.getFrame( curNumOfVideoFrames );
-    image.resize( frame.getWidth(), frame.getHeight() );
+    image.resize( frame.getWidth(), frame.getHeight(), PCCCOLORFORMAT::RGB444 );
     image.set( 0 );
     videoT1.resize( curNumOfVideoFrames + 1 );  // adding 1 more
     auto& image1 = videoT1.getFrame( curNumOfVideoFrames );
-    image1.resize( frame.getWidth(), frame.getHeight() );
+    image1.resize( frame.getWidth(), frame.getHeight(), PCCCOLORFORMAT::RGB444 );
     image1.set( 0 );
 
   } else {
     video.resize( curNumOfVideoFrames + mapCount );  // adding mapCount more
     for ( size_t f = 0; f < mapCount; ++f ) {
       auto& image = video.getFrame( f + curNumOfVideoFrames );
-      image.resize( frame.getWidth(), frame.getHeight() );
+      image.resize( frame.getWidth(), frame.getHeight(), PCCCOLORFORMAT::RGB444 );
       image.set( 0 );
     }
   }
@@ -5932,7 +5941,7 @@ void PCCEncoder::generateIntraEnhancedOccupancyMapImage( PCCFrameContext&       
                                                          PCCImageGeometry&       image ) {
   size_t width  = frame.getWidth();
   size_t height = frame.getHeight();
-  image.resize( width, height );
+  image.resize( width, height, PCCCOLORFORMAT::YUV420 );
   image.set( 0 );
   //  const int16_t infiniteDepth = ( std::numeric_limits<int16_t>::max )();
   for ( auto& patch : frame.getPatches() ) {

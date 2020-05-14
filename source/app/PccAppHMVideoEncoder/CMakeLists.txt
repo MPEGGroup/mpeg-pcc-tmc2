@@ -11,6 +11,7 @@ INCLUDE_DIRECTORIES( ${CMAKE_SOURCE_DIR}/source/lib/PccLibCommon/include
                      ${CMAKE_SOURCE_DIR}/source/lib/PccLibBitstreamCommon/include                    
                      ${CMAKE_SOURCE_DIR}/source/lib/PccLibEncoder/include              
                      ${CMAKE_SOURCE_DIR}/source/lib/PccLibVideoEncoder/include 
+                     ${CMAKE_SOURCE_DIR}/source/lib/PccLibColorConverter/include/
                      ${CMAKE_SOURCE_DIR}/dependencies/program-options-lite  )
                      
 ADD_EXECUTABLE( ${MYNAME} ${SRC} )

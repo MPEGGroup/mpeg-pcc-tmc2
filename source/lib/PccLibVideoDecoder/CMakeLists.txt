@@ -10,11 +10,21 @@ FILE(GLOB SRC  include/*.h
 
 INCLUDE_DIRECTORIES( include 
                      ${CMAKE_SOURCE_DIR}/source/lib/PccLibCommon/include/
+                     ${CMAKE_SOURCE_DIR}/source/lib/PccLibBitstreamCommon/include/
                      ${HM_LIB_SOURCE_DIR}/TAppCommon/
                      ${HM_LIB_SOURCE_DIR}/ )
 
+SET( LIBS PccLibCommon )
+
+IF( USE_HM_VIDEO_CODEC )
+    SET( LIBS ${LIBS} TLibCommon TLibVideoIO TLibDecoder )
+ELSE()
+    INCLUDE_DIRECTORIES( ${CMAKE_SOURCE_DIR}/dependencies/PccLibHevcParser/include )
+    SET( LIBS ${LIBS} PccLibHevcParser )
+ENDIF()
+
 ADD_LIBRARY( ${MYNAME} ${LINKER} ${SRC} )
 
-TARGET_LINK_LIBRARIES( ${MYNAME} PccLibCommon TLibCommon TLibVideoIO TLibDecoder  )
+TARGET_LINK_LIBRARIES( ${MYNAME} ${LIBS} )
 
 SET_TARGET_PROPERTIES( ${MYNAME} PROPERTIES LINKER_LANGUAGE CXX)
