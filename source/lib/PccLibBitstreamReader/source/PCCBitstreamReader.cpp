@@ -406,8 +406,12 @@ void PCCBitstreamReader::atlasSequenceParameterSetRbsp( AtlasSequenceParameterSe
   for ( size_t i = 0; i < asps.getNumRefAtlasFrameListsInAsps(); i++ ) {
     refListStruct( asps.getRefListStruct( i ), asps, bitstream );
   }
-  asps.setUseEightOrientationsFlag( bitstream.read( 1 ) != 0U );                 // u(1)
-  asps.set45DegreeProjectionPatchPresentFlag( bitstream.read( 1 ) != 0U );       // u(1)
+  asps.setUseEightOrientationsFlag( bitstream.read( 1 ) != 0U );               // u(1)
+  asps.setExtendedProjectionEnabledFlag( bitstream.read( 1 ) != 0U );       // u(1)
+  if (asps.getExtendedProjectionEnabledFlag())
+    asps.setMaxNumberProjectionsMinus1(bitstream.readUvlc());
+  else
+    asps.setMaxNumberProjectionsMinus1(5);
   asps.setNormalAxisLimitsQuantizationEnabledFlag( bitstream.read( 1 ) != 0U );  // u(1)
   asps.setNormalAxisMaxDeltaValueEnabledFlag( bitstream.read( 1 ) != 0U );       // u(1)
   asps.setRemoveDuplicatePointEnabledFlag( bitstream.read( 1 ) != 0U );          // u(1)
@@ -677,6 +681,13 @@ void PCCBitstreamReader::atlasTileGroupHeader( AtlasTileGroupHeader& atgh,
       atgh.setAtghPatchSizeXinfoQuantizer( bitstream.read( 3 ) );
       atgh.setAtghPatchSizeYinfoQuantizer( bitstream.read( 3 ) );
     }
+
+    if ( asps.getExtendedProjectionEnabledFlag() ) {
+      atgh.setAtghAdditionalBitCount3dPosX( bitstream.readSvlc() );
+      atgh.setAtghAdditionalBitCount3dPosY( bitstream.readSvlc() );
+      atgh.setAtghAdditionalBitCount3dPosZ( bitstream.readSvlc() );
+    }
+
     auto& gi = syntax.getVps().getGeometryInformation( 0 );
     if ( afps.getAfpsRaw3dPosBitCountExplicitModeFlag() ) {
       size_t bitCount = ceilLog2( gi.getGeometry3dCoordinatesBitdepthMinus1() + 1 );
@@ -819,31 +830,32 @@ void PCCBitstreamReader::patchDataUnit( PatchDataUnit&        pdu,
   pdu.setPdu2dSizeYMinus1( bitstream.readUvlc() );  // ue(v)
   TRACE_BITSTREAM( " 2dSizeXY: %d,%d\n", int32_t( pdu.getPdu2dSizeXMinus1() + 1 ),
                    int32_t( pdu.getPdu2dSizeYMinus1() + 1 ) );
-  uint8_t bitCount3DPos = syntax.getVps().getGeometryInformation( 0 ).getGeometry3dCoordinatesBitdepthMinus1() + 1;
-  pdu.setPdu3dPosX( bitstream.read( bitCount3DPos ) );  // u(v)
-  pdu.setPdu3dPosY( bitstream.read( bitCount3DPos ) );  // u(v)
+  uint8_t bitCount3DPosX = syntax.getVps().getGeometryInformation( 0 ).getGeometry3dCoordinatesBitdepthMinus1() + 1 + atgh.getAtghAdditionalBitCount3dPosX();
+  uint8_t bitCount3DPosY = syntax.getVps().getGeometryInformation( 0 ).getGeometry3dCoordinatesBitdepthMinus1() + 1 + atgh.getAtghAdditionalBitCount3dPosY();
+  pdu.setPdu3dPosX( bitstream.read( bitCount3DPosX ) );  // u(v)
+  pdu.setPdu3dPosY( bitstream.read( bitCount3DPosY ) );  // u(v)
   TRACE_BITSTREAM( " 3dPosXY: %zu,%zu\n", pdu.getPdu3dPosX(), pdu.getPdu3dPosY() );
 
   const uint8_t bitCountForMinDepth =
       syntax.getVps().getGeometryInformation( 0 ).getGeometry3dCoordinatesBitdepthMinus1() -
-      atgh.getAtghPosMinZQuantizer() + 2;
+      atgh.getAtghPosMinZQuantizer() + 1 + atgh.getAtghAdditionalBitCount3dPosZ();
   pdu.setPdu3dPosMinZ( bitstream.read( bitCountForMinDepth ) );  // u(v)
   TRACE_BITSTREAM( " Pdu3dPosMinZ: %zu ( bitCountForMinDepth = %u = %u - %u + %u ) \n", pdu.getPdu3dPosMinZ(),
                    bitCountForMinDepth,
                    syntax.getVps().getGeometryInformation( 0 ).getGeometry3dCoordinatesBitdepthMinus1(),
-                   atgh.getAtghPosMinZQuantizer(), 2 );
+                   atgh.getAtghPosMinZQuantizer(), 1 + atgh.getAtghAdditionalBitCount3dPosZ() );
 
   if ( asps.getNormalAxisMaxDeltaValueEnabledFlag() ) {
     uint8_t bitCountForMaxDepth = syntax.getVps().getGeometryInformation( 0 ).getGeometry3dCoordinatesBitdepthMinus1() -
-                                  atgh.getAtghPosDeltaMaxZQuantizer() + 2;
-    if ( asps.get45DegreeProjectionPatchPresentFlag() ) { bitCountForMaxDepth++; }
+                                  atgh.getAtghPosDeltaMaxZQuantizer() + 1 + atgh.getAtghAdditionalBitCount3dPosZ();
     pdu.setPdu3dPosDeltaMaxZ( bitstream.read( bitCountForMaxDepth ) );  // u(v)
     TRACE_BITSTREAM( " Pdu3dPosDeltaMaxZ: %zu ( bitCountForMaxDepth = %u) \n", pdu.getPdu3dPosDeltaMaxZ(),
                      bitCountForMaxDepth );
   }
-  pdu.setPduProjectionId( bitstream.read( asps.get45DegreeProjectionPatchPresentFlag() ? 5 : 3 ) );  // u(5 or 3)
-  TRACE_BITSTREAM( "PduProjectionId = %zu (45DegreeProjectionPatchPresentFlag = %d ) \n", pdu.getPduProjectionId(),
-                   asps.get45DegreeProjectionPatchPresentFlag() );
+  uint8_t bitCountForProjectionId = ceilLog2(asps.getMaxNumberProjectionsMinus1() + 1);
+  pdu.setPduProjectionId( bitstream.read( bitCountForProjectionId) );  // u(v)
+  TRACE_BITSTREAM( "PduProjectionId = %zu (ExtendedProjectionEnabledFlag = %d ) \n", pdu.getPduProjectionId(),
+                   asps.getExtendedProjectionEnabledFlag() );
   pdu.setPduOrientationIndex( bitstream.read( ( asps.getUseEightOrientationsFlag() ? 3 : 1 ) ) );  // u(3 or 1)
   if ( afps.getLodModeEnableFlag() ) {
     pdu.setLodEnableFlag( bitstream.read( 1 ) != 0U );  // u1
@@ -868,7 +880,7 @@ void PCCBitstreamReader::patchDataUnit( PatchDataUnit&        pdu,
       "Frame %zu, Patch(%zu) => 2Dpos = %4zu %4zu 2Dsize = %4ld %4ld 3Dpos = "
       "%ld %ld %ld DeltaMaxZ = %ld Projection = "
       "%zu "
-      "Orientation = %zu lod= (%zu) %zu %zu\n ",
+      "Orientation = %zu lod= (%d) %d %d\n ",
       pdu.getFrameIndex(), pdu.getPatchIndex(), pdu.getPdu2dPosX(), pdu.getPdu2dPosY(), pdu.getPdu2dSizeXMinus1() + 1,
       pdu.getPdu2dSizeYMinus1() + 1, pdu.getPdu3dPosX(), pdu.getPdu3dPosY(), pdu.getPdu3dPosMinZ(),
       pdu.getPdu3dPosDeltaMaxZ(), pdu.getPduProjectionId(), pdu.getPduOrientationIndex(), pdu.getLodEnableFlag(),

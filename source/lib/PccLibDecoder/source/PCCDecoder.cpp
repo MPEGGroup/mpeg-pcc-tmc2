@@ -681,20 +681,14 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
           patch.getSizeU0() = pdu.getPdu2dSizeXMinus1() + 1;
           patch.getSizeV0() = pdu.getPdu2dSizeYMinus1() + 1;
         }
-        size_t pduProjectionPlane =
-            asps.get45DegreeProjectionPatchPresentFlag() ? ( pdu.getPduProjectionId() >> 2 ) : pdu.getPduProjectionId();
-        size_t pdu45degreeProjectionRotationAxis =
-            asps.get45DegreeProjectionPatchPresentFlag() ? ( pdu.getPduProjectionId() & 0x03 ) : 0;
-        patch.getNormalAxis()            = pduProjectionPlane % 3;
-        patch.getProjectionMode()        = pduProjectionPlane < 3 ? 0 : 1;
         patch.getPatchOrientation()      = pdu.getPduOrientationIndex();
-        patch.getAxisOfAdditionalPlane() = pdu45degreeProjectionRotationAxis;
+        patch.setViewId(pdu.getPduProjectionId());
         TRACE_CODEC( "patch %zu / %zu: Intra \n", patchIndex, patchCount );
         const size_t max3DCoordinate = size_t( 1 ) << ( gi.getGeometry3dCoordinatesBitdepthMinus1() + 1 );
         if ( patch.getProjectionMode() == 0 ) {
           patch.getD1() = static_cast<int32_t>( pdu.getPdu3dPosMinZ() ) * minLevel;
         } else {
-          if ( static_cast<int>( asps.get45DegreeProjectionPatchPresentFlag() ) == 0 ) {
+          if ( static_cast<int>( asps.getExtendedProjectionEnabledFlag() ) == 0 ) {
             patch.getD1() = max3DCoordinate - static_cast<int32_t>( pdu.getPdu3dPosMinZ() ) * minLevel;
           } else {
             patch.getD1() = ( max3DCoordinate << 1 ) - static_cast<int32_t>( pdu.getPdu3dPosMinZ() ) * minLevel;
@@ -722,7 +716,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
             patch.getSizeV0(), patch.getSizeD(), pdu.getPdu3dPosDeltaMaxZ(), patch.getProjectionMode(),
             patch.getPatchOrientation(), patch.getNormalAxis(), patch.getTangentAxis(), patch.getBitangentAxis(),
             (size_t)lodEnableFlag, patch.getLodScaleX(), patch.getLodScaleY(),
-            asps.get45DegreeProjectionPatchPresentFlag(), pdu.getPduProjectionId(), patch.getAxisOfAdditionalPlane() );
+            asps.getExtendedProjectionEnabledFlag(), pdu.getPduProjectionId(), patch.getAxisOfAdditionalPlane() );
         patch.allocOneLayerData();
         if ( asps.getPointLocalReconstructionEnabledFlag() ) {
           setPointLocalReconstructionData( frame, patch, pdu.getPointLocalReconstructionData(),
@@ -779,7 +773,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
         if ( patch.getProjectionMode() == 0 ) {
           patch.getD1() = ( ipdu.getIpdu3dPosMinZ() + ( refPatch.getD1() / minLevel ) ) * minLevel;
         } else {
-          if ( static_cast<int>( asps.get45DegreeProjectionPatchPresentFlag() ) == 0 ) {
+          if ( static_cast<int>( asps.getExtendedProjectionEnabledFlag() ) == 0 ) {
             patch.getD1() =
                 max3DCoordinate -
                 ( ipdu.getIpdu3dPosMinZ() + ( ( max3DCoordinate - refPatch.getD1() ) / minLevel ) ) * minLevel;
@@ -863,7 +857,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
             if ( patch.getProjectionMode() == 0 ) {
               patch.getD1() = ( mpdu.getMpdu3dPosMinZ() + ( refPatch.getD1() / minLevel ) ) * minLevel;
             } else {
-              if ( static_cast<int>( asps.get45DegreeProjectionPatchPresentFlag() ) == 0 ) {
+              if ( static_cast<int>( asps.getExtendedProjectionEnabledFlag() ) == 0 ) {
                 patch.getD1() =
                     max3DCoordinate -
                     ( mpdu.getMpdu3dPosMinZ() + ( ( max3DCoordinate - refPatch.getD1() ) / minLevel ) ) * minLevel;
@@ -956,7 +950,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
         if ( patch.getProjectionMode() == 0 ) {
           patch.getD1() = ( ( refPatch.getD1() / minLevel ) ) * minLevel;
         } else {
-          if ( static_cast<int>( asps.get45DegreeProjectionPatchPresentFlag() ) == 0 ) {
+          if ( static_cast<int>( asps.getExtendedProjectionEnabledFlag() ) == 0 ) {
             patch.getD1() = max3DCoordinate - ( ( ( max3DCoordinate - refPatch.getD1() ) / minLevel ) ) * minLevel;
           } else {
             patch.getD1() = ( max3DCoordinate << 1 ) -

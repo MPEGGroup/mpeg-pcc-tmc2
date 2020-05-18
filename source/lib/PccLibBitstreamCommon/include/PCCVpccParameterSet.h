@@ -80,7 +80,7 @@ class VpccParameterSet {
                           bool     pixelDeinterleavingFlag,
                           bool     pointLocalReconstructionEnabledFlag,
                           bool     removeDuplicatePointEnabledFlag,
-                          bool     projection45degreeEnabledFlag,
+                          bool     extendedProjectionEnabledFlag,
                           bool     patchPrecedenceOrderFlag ) {
     vpccParameterSetId_ = vpccParameterSetId;
     atlasCountMinus1_   = 0;

@@ -821,103 +821,17 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
       size_t eomCountPerPatch = 0;
       patch.setEOMCount( 0 );
       patch.setPatchType( static_cast<uint8_t>( PATCH_MODE_P_INTRA ) );
-      const size_t clusterIndex        = partition[connectedComponent[0]];
-      bIsAdditionalProjectionPlane     = false;
-      patch.getAxisOfAdditionalPlane() = 0;
-      if ( clusterIndex == 0 || clusterIndex == 3 ) {
-        patch.getNormalAxis()    = 0;
-        patch.getTangentAxis()   = 2;
-        patch.getBitangentAxis() = 1;
-      } else if ( clusterIndex == 1 || clusterIndex == 4 ) {
-        patch.getNormalAxis()    = 1;
-        patch.getTangentAxis()   = 2;
-        patch.getBitangentAxis() = 0;
-      } else if ( clusterIndex == 2 || clusterIndex == 5 ) {
-        patch.getNormalAxis()    = 2;
-        patch.getTangentAxis()   = 0;
-        patch.getBitangentAxis() = 1;
-      } else if ( additionalProjectionAxis == 1 ) {  // Y Axis
-        bIsAdditionalProjectionPlane     = true;
-        patch.getAxisOfAdditionalPlane() = additionalProjectionAxis;  // Y Axis
-        if ( clusterIndex == 6 || clusterIndex == 8 ) {               // 6->0 : 8->3
-          patch.getNormalAxis()    = 0;
-          patch.getTangentAxis()   = 2;
-          patch.getBitangentAxis() = 1;
-        } else if ( clusterIndex == 7 || clusterIndex == 9 ) {  // 7->2 : 9->5
-          patch.getNormalAxis()    = 2;
-          patch.getTangentAxis()   = 0;
-          patch.getBitangentAxis() = 1;
-        }
-      } else if ( additionalProjectionAxis == 2 ) {  // X Axis
-        bIsAdditionalProjectionPlane     = true;
-        patch.getAxisOfAdditionalPlane() = additionalProjectionAxis;  // X Axis
-        if ( clusterIndex == 6 || clusterIndex == 8 ) {               // 6->2 : 8->5
-          patch.getNormalAxis()    = 2;
-          patch.getTangentAxis()   = 0;
-          patch.getBitangentAxis() = 1;
-        } else if ( clusterIndex == 7 || clusterIndex == 9 ) {  // 7->1 : 9->4
-          patch.getNormalAxis()    = 1;
-          patch.getTangentAxis()   = 2;
-          patch.getBitangentAxis() = 0;
-        }
-      } else if ( additionalProjectionAxis == 3 ) {  // Z Axis
-        bIsAdditionalProjectionPlane     = true;
-        patch.getAxisOfAdditionalPlane() = additionalProjectionAxis;  // Y Zxis
-        if ( clusterIndex == 6 || clusterIndex == 8 ) {               // 6->0 : 8->3
-          patch.getNormalAxis()    = 1;
-          patch.getTangentAxis()   = 2;
-          patch.getBitangentAxis() = 0;
-        } else if ( clusterIndex == 7 || clusterIndex == 9 ) {  // 7->2 : 9->1
-          patch.getNormalAxis()    = 0;
-          patch.getTangentAxis()   = 2;
-          patch.getBitangentAxis() = 1;
-        }
-      } else if ( additionalProjectionAxis == 4 ) {  // All
-        bIsAdditionalProjectionPlane = true;
-        if ( clusterIndex == 6 || clusterIndex == 8 ) {  // 6->0 : 8->3
-          patch.getAxisOfAdditionalPlane() = 1;          // Y Axis
-          patch.getNormalAxis()            = 0;
-          patch.getTangentAxis()           = 2;
-          patch.getBitangentAxis()         = 1;
-        } else if ( clusterIndex == 7 || clusterIndex == 9 ) {  // 7->2 : 9->1
-          patch.getAxisOfAdditionalPlane() = 1;                 // Y Axis
-          patch.getNormalAxis()            = 2;
-          patch.getTangentAxis()           = 0;
-          patch.getBitangentAxis()         = 1;
-        } else if ( clusterIndex == 10 || clusterIndex == 12 ) {  // 6->2 : 8->5
-          patch.getAxisOfAdditionalPlane() = 2;                   // X Axis
-          patch.getNormalAxis()            = 2;
-          patch.getTangentAxis()           = 0;
-          patch.getBitangentAxis()         = 1;
-        } else if ( clusterIndex == 11 || clusterIndex == 13 ) {  // 7->1 : 9->4
-          patch.getAxisOfAdditionalPlane() = 2;                   // X Axis
-          patch.getNormalAxis()            = 1;
-          patch.getTangentAxis()           = 2;
-          patch.getBitangentAxis()         = 0;
-        } else if ( clusterIndex == 14 || clusterIndex == 16 ) {  // 6->0 : 8->3
-          patch.getAxisOfAdditionalPlane() = 3;                   // Z Axis
-          patch.getNormalAxis()            = 1;
-          patch.getTangentAxis()           = 2;
-          patch.getBitangentAxis()         = 0;
-        } else if ( clusterIndex == 15 || clusterIndex == 17 ) {  // 7->2 : 9->1
-          patch.getAxisOfAdditionalPlane() = 3;                   // Z Axis
-          patch.getNormalAxis()            = 0;
-          patch.getTangentAxis()           = 2;
-          patch.getBitangentAxis()         = 1;
-        }
-      }
-
-      patch.setViewId() = clusterIndex;
+      size_t clusterIndex        = partition[connectedComponent[0]];
+      bIsAdditionalProjectionPlane     = (clusterIndex > 5);// false;
+      if (bIsAdditionalProjectionPlane && (additionalProjectionAxis == 2))
+        clusterIndex += 4;
+      if (bIsAdditionalProjectionPlane && (additionalProjectionAxis == 3))
+        clusterIndex += 8;
+      patch.setViewId(clusterIndex);
       patch.setBestMatchIdx( InvalidPatchIndex );
 
       patch.getPreGPAPatchData().initialize();
       patch.getCurGPAPatchData().initialize();
-
-      if ( clusterIndex <= 2 ) {
-        patch.getProjectionMode() = 0;
-      } else {
-        patch.getProjectionMode() = 1;
-      }
 
       if ( params.enablePatchSplitting_ ) {
         int16_t minU = ( std::numeric_limits<int16_t>::max )();
@@ -940,14 +854,6 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
       }
 
       const int16_t projectionDirectionType = -2 * patch.getProjectionMode() + 1;
-
-      if ( absoluteD1 ) {
-        // for additional projection plane
-        if ( clusterIndex == 6 || clusterIndex == 7 ) { patch.getProjectionMode() = 0; }
-        if ( clusterIndex == 10 || clusterIndex == 11 || clusterIndex == 14 || clusterIndex == 15 ) {
-          patch.getProjectionMode() = 0;
-        }
-      }
 
       if ( patchExpansionEnabled ) {
         for ( const auto i : connectedComponent ) {
@@ -1609,108 +1515,13 @@ void PCCPatchSegmenter3::determinePatchOrientation( const size_t         additio
                                                     PCCPatch&            patch,
                                                     std::vector<size_t>& partition,
                                                     std::vector<size_t>& connectedComponent ) {
-  const size_t clusterIndex        = partition[connectedComponent[0]];
-  bIsAdditionalProjectionPlane     = false;
-  patch.getAxisOfAdditionalPlane() = 0;
-  if ( clusterIndex == 0 || clusterIndex == 3 ) {
-    patch.getNormalAxis()    = 0;
-    patch.getTangentAxis()   = 2;
-    patch.getBitangentAxis() = 1;
-  } else if ( clusterIndex == 1 || clusterIndex == 4 ) {
-    patch.getNormalAxis()    = 1;
-    patch.getTangentAxis()   = 2;
-    patch.getBitangentAxis() = 0;
-  } else if ( clusterIndex == 2 || clusterIndex == 5 ) {
-    patch.getNormalAxis()    = 2;
-    patch.getTangentAxis()   = 0;
-    patch.getBitangentAxis() = 1;
-  } else if ( additionalProjectionAxis == 1 ) {  // Y Axis
-    bIsAdditionalProjectionPlane     = true;
-    patch.getAxisOfAdditionalPlane() = additionalProjectionAxis;  // Y Axis
-    if ( clusterIndex == 6 || clusterIndex == 8 ) {               // 6->0 : 8->3
-      patch.getNormalAxis()    = 0;
-      patch.getTangentAxis()   = 2;
-      patch.getBitangentAxis() = 1;
-    } else if ( clusterIndex == 7 || clusterIndex == 9 ) {  // 7->2 : 9->5
-      patch.getNormalAxis()    = 2;
-      patch.getTangentAxis()   = 0;
-      patch.getBitangentAxis() = 1;
-    }
-  } else if ( additionalProjectionAxis == 2 ) {  // X Axis
-    bIsAdditionalProjectionPlane     = true;
-    patch.getAxisOfAdditionalPlane() = additionalProjectionAxis;  // X Axis
-    if ( clusterIndex == 6 || clusterIndex == 8 ) {               // 6->2 : 8->5
-      patch.getNormalAxis()    = 2;
-      patch.getTangentAxis()   = 0;
-      patch.getBitangentAxis() = 1;
-    } else if ( clusterIndex == 7 || clusterIndex == 9 ) {  // 7->1 : 9->4
-      patch.getNormalAxis()    = 1;
-      patch.getTangentAxis()   = 2;
-      patch.getBitangentAxis() = 0;
-    }
-  } else if ( additionalProjectionAxis == 3 ) {  // Z Axis
-    bIsAdditionalProjectionPlane     = true;
-    patch.getAxisOfAdditionalPlane() = additionalProjectionAxis;  // Y Zxis
-    if ( clusterIndex == 6 || clusterIndex == 8 ) {               // 6->0 : 8->3
-      patch.getNormalAxis()    = 1;
-      patch.getTangentAxis()   = 2;
-      patch.getBitangentAxis() = 0;
-    } else if ( clusterIndex == 7 || clusterIndex == 9 ) {  // 7->2 : 9->1
-      patch.getNormalAxis()    = 0;
-      patch.getTangentAxis()   = 2;
-      patch.getBitangentAxis() = 1;
-    }
-  } else if ( additionalProjectionAxis == 4 ) {  // All
-    bIsAdditionalProjectionPlane = true;
-    if ( clusterIndex == 6 || clusterIndex == 8 ) {  // 6->0 : 8->3
-      patch.getAxisOfAdditionalPlane() = 1;          // Y Axis
-      patch.getNormalAxis()            = 0;
-      patch.getTangentAxis()           = 2;
-      patch.getBitangentAxis()         = 1;
-    } else if ( clusterIndex == 7 || clusterIndex == 9 ) {  // 7->2 : 9->1
-      patch.getAxisOfAdditionalPlane() = 1;                 // Y Axis
-      patch.getNormalAxis()            = 2;
-      patch.getTangentAxis()           = 0;
-      patch.getBitangentAxis()         = 1;
-    } else if ( clusterIndex == 10 || clusterIndex == 12 ) {  // 6->2 : 8->5
-      patch.getAxisOfAdditionalPlane() = 2;                   // X Axis
-      patch.getNormalAxis()            = 2;
-      patch.getTangentAxis()           = 0;
-      patch.getBitangentAxis()         = 1;
-    } else if ( clusterIndex == 11 || clusterIndex == 13 ) {  // 7->1 : 9->4
-      patch.getAxisOfAdditionalPlane() = 2;                   // X Axis
-      patch.getNormalAxis()            = 1;
-      patch.getTangentAxis()           = 2;
-      patch.getBitangentAxis()         = 0;
-    } else if ( clusterIndex == 14 || clusterIndex == 16 ) {  // 6->0 : 8->3
-      patch.getAxisOfAdditionalPlane() = 3;                   // Z Axis
-      patch.getNormalAxis()            = 1;
-      patch.getTangentAxis()           = 2;
-      patch.getBitangentAxis()         = 0;
-    } else if ( clusterIndex == 15 || clusterIndex == 17 ) {  // 7->2 : 9->1
-      patch.getAxisOfAdditionalPlane() = 3;                   // Z Axis
-      patch.getNormalAxis()            = 0;
-      patch.getTangentAxis()           = 2;
-      patch.getBitangentAxis()         = 1;
-    }
-  }
-
-  patch.setViewId() = clusterIndex;
-
-  if ( clusterIndex <= 2 ) {
-    patch.getProjectionMode() = 0;
-  } else {
-    patch.getProjectionMode() = 1;
-  }
-
-  if ( absoluteD1 ) {
-    // for additional projection plane
-    if ( clusterIndex == 6 || clusterIndex == 7 ) { patch.getProjectionMode() = 0; }
-    // for additional projection plane
-    if ( clusterIndex == 10 || clusterIndex == 11 || clusterIndex == 14 || clusterIndex == 15 ) {
-      patch.getProjectionMode() = 0;
-    }
-  }
+  size_t clusterIndex        = partition[connectedComponent[0]];
+  bIsAdditionalProjectionPlane     = (clusterIndex > 5);// false;
+  if (bIsAdditionalProjectionPlane && (additionalProjectionAxis == 2))
+    clusterIndex += 4;
+  if (bIsAdditionalProjectionPlane && (additionalProjectionAxis == 3))
+    clusterIndex += 8;
+  patch.setViewId(clusterIndex);
 }
 
 void PCCPatchSegmenter3::generatePatchD0( const PCCPointSet3&  points,

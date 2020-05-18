@@ -54,6 +54,9 @@ class AtlasTileGroupHeader {
       atghPosDeltaMaxZQuantizer_( 0 ),
       atghPatchSizeXinfoQuantizer_( 0 ),
       atghPatchSizeYinfoQuantizer_( 0 ),
+      atghAdditionalBitCount3dPosX_( 0 ),
+      atghAdditionalBitCount3dPosY_( 0 ),
+      atghAdditionalBitCount3dPosZ_( 0 ),
       atghRaw3dPosAxisBitCountMinus1_( 0 ),
       atghNumRefIdxActiveOverrideFlag_( 0 ),
       atghNumRefIdxActiveMinus1_( 0 ) {
@@ -80,6 +83,9 @@ class AtlasTileGroupHeader {
   uint8_t               getAtghPosDeltaMaxZQuantizer() { return atghPosDeltaMaxZQuantizer_; }
   uint8_t               getAtghPatchSizeXinfoQuantizer() { return atghPatchSizeXinfoQuantizer_; }
   uint8_t               getAtghPatchSizeYinfoQuantizer() { return atghPatchSizeYinfoQuantizer_; }
+  int8_t                getAtghAdditionalBitCount3dPosX() { return atghAdditionalBitCount3dPosX_; }
+  int8_t                getAtghAdditionalBitCount3dPosY() { return atghAdditionalBitCount3dPosY_; }
+  int8_t                getAtghAdditionalBitCount3dPosZ() { return atghAdditionalBitCount3dPosZ_; }
   uint8_t               getAtghRaw3dPosAxisBitCountMinus1() { return atghRaw3dPosAxisBitCountMinus1_; }
   bool                  getAtghNumRefIdxActiveOverrideFlag() { return atghNumRefIdxActiveOverrideFlag_; }
   uint8_t               getAtghNumRefIdxActiveMinus1() { return atghNumRefIdxActiveMinus1_; }
@@ -99,6 +105,9 @@ class AtlasTileGroupHeader {
   void setAtghPosDeltaMaxZQuantizer( uint8_t value ) { atghPosDeltaMaxZQuantizer_ = value; }
   void setAtghPatchSizeXinfoQuantizer( uint8_t value ) { atghPatchSizeXinfoQuantizer_ = value; }
   void setAtghPatchSizeYinfoQuantizer( uint8_t value ) { atghPatchSizeYinfoQuantizer_ = value; }
+  void setAtghAdditionalBitCount3dPosX( int8_t value ) { atghAdditionalBitCount3dPosX_ = value; }
+  void setAtghAdditionalBitCount3dPosY( int8_t value ) { atghAdditionalBitCount3dPosY_ = value; }
+  void setAtghAdditionalBitCount3dPosZ( int8_t value ) { atghAdditionalBitCount3dPosZ_ = value; }
   void setAtghRaw3dPosAxisBitCountMinus1( uint8_t value ) { atghRaw3dPosAxisBitCountMinus1_ = value; }
   void setAtghNumRefIdxActiveOverrideFlag( bool value ) { atghNumRefIdxActiveOverrideFlag_ = value; }
   void setAtghNumRefIdxActiveMinus1( uint8_t value ) { atghNumRefIdxActiveMinus1_ = value; }
@@ -120,6 +129,9 @@ class AtlasTileGroupHeader {
   uint8_t              atghPosDeltaMaxZQuantizer_;
   uint8_t              atghPatchSizeXinfoQuantizer_;
   uint8_t              atghPatchSizeYinfoQuantizer_;
+  int8_t               atghAdditionalBitCount3dPosX_;
+  int8_t               atghAdditionalBitCount3dPosY_;
+  int8_t               atghAdditionalBitCount3dPosZ_;
   uint8_t              atghRaw3dPosAxisBitCountMinus1_;
   bool                 atghNumRefIdxActiveOverrideFlag_;
   uint8_t              atghNumRefIdxActiveMinus1_;
