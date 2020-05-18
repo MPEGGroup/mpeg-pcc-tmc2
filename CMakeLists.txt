@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 
 PROJECT (TMC2 CXX C )
 SET( TMC2_VERSION_MAJOR 10 )
-SET( TMC2_VERSION_MINOR 0-rc01 )
+SET( TMC2_VERSION_MINOR 0 )
 
 OPTION( USE_HM_VIDEO_CODEC "Clone, build and use HM video encoder and decoder"   TRUE )
 OPTION( USE_HDRTOOLS       "Clone, build and use HDRTools for color conversions" TRUE )
