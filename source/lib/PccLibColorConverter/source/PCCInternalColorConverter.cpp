@@ -343,9 +343,11 @@ template <typename T>
 PCCInternalColorConverter<T>::~PCCInternalColorConverter() {}
 
 template <typename T>
-void PCCInternalColorConverter<T>::convert( std::string     configuration,
-                                            PCCVideo<T, 3>& videoSrc,
-                                            PCCVideo<T, 3>& videoDst ) {
+void PCCInternalColorConverter<T>::convert( std::string        configuration,
+                                            PCCVideo<T, 3>&    videoSrc,
+                                            PCCVideo<T, 3>&    videoDst,
+                                            const std::string& externalPath,
+                                            const std::string& fileName ) {
   std::string config   = "";
   int32_t     bitdepth = -1;
   int32_t     filter   = -1;
@@ -355,7 +357,7 @@ void PCCInternalColorConverter<T>::convert( std::string     configuration,
     exit( -1 );
   }
   printf( "ColorConverter configuration : %s %d %d videoSrc %zu frames \n", config.c_str(), bitdepth, filter,
-          videoSrc.getFrameCount() );  
+          videoSrc.getFrameCount() );
   videoDst.clear();
   if ( config == "YUV420ToYUV444" ) {
     convertYUV420ToYUV444( videoSrc, videoDst, bitdepth == 8 ? 1 : 2, filter );

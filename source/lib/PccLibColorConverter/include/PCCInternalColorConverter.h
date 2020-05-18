@@ -60,13 +60,20 @@ class PCCInternalColorConverter : public PCCVirtualColorConverter<T> {
   PCCInternalColorConverter();
   ~PCCInternalColorConverter();
 
-  void convert( std::string configuration, PCCVideo<T, 3>& videoSrc ) {
+  void convert( std::string        configuration,
+                PCCVideo<T, 3>&    videoSrc,
+                const std::string& externalPath = "",
+                const std::string& fileName     = "" ) {
     PCCVideo<T, 3> videoDst;
-    convert( configuration, videoSrc, videoDst );
+    convert( configuration, videoSrc, videoDst, externalPath, fileName );
     videoSrc = videoDst;
   }
 
-  void convert( std::string configuration, PCCVideo<T, 3>& videoSrc, PCCVideo<T, 3>& videoDst );
+  void convert( std::string        configuration,
+                PCCVideo<T, 3>&    videoSrc,
+                PCCVideo<T, 3>&    videoDst,
+                const std::string& externalPath = "",
+                const std::string& fileName     = "" );
 
  private:
   void extractParameters( std::string& configuration, std::string& config, int32_t& bitdepth, int32_t& filter );

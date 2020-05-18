@@ -143,9 +143,7 @@ class PCCHMVideoDecoder : public PCCVirtualVideoDecoder {
 
       if ( ( bNewPicture || !bitstreamFile || nalu.m_nalUnitType == NAL_UNIT_EOS ) &&
            !m_cTDecTop.getFirstSliceInSequence() ) {
-        if ( !loopFiltered || bitstreamFile ) {
-          m_cTDecTop.executeLoopFilters( poc, pcListPic );
-        }
+        if ( !loopFiltered || bitstreamFile ) { m_cTDecTop.executeLoopFilters( poc, pcListPic ); }
         loopFiltered = ( nalu.m_nalUnitType == NAL_UNIT_EOS );
         if ( nalu.m_nalUnitType == NAL_UNIT_EOS ) { m_cTDecTop.setFirstSliceInSequence( true ); }
       } else if ( ( bNewPicture || !bitstreamFile || nalu.m_nalUnitType == NAL_UNIT_EOS ) &&
@@ -194,14 +192,14 @@ class PCCHMVideoDecoder : public PCCVirtualVideoDecoder {
           xWriteOutput( pcListPic, nalu.m_temporalId, video );
         }
       }
-    }        
+    }
     setVideoSize( pcListPic->front()->getPicSym()->getSPS() );
     xFlushOutput( pcListPic, video );
     // delete buffers
     m_cTDecTop.deletePicBuffer();
 
     // destroy internal classes
-    m_cTDecTop.destroy();    
+    m_cTDecTop.destroy();
   }
 
   // ====================================================================================================================

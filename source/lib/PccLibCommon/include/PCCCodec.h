@@ -153,13 +153,9 @@ class PCCCodec {
                        const PCCColorTransform             colorTransform,
                        const GeneratePointCloudParameters& params );
 
-  void generateRawPointsGeometryfromVideo( PCCContext&       context,
-                                     PCCFrameContext&  frame,
-                                     size_t            frameIndex );
+  void generateRawPointsGeometryfromVideo( PCCContext& context, PCCFrameContext& frame, size_t frameIndex );
 
-  void generateRawPointsTexturefromVideo( PCCContext&       context,
-                                    PCCFrameContext&  frame,
-                                    size_t            frameIndex );
+  void generateRawPointsTexturefromVideo( PCCContext& context, PCCFrameContext& frame, size_t frameIndex );
 
   void generateRawPointsGeometryfromVideo( PCCContext& context );
   void generateRawPointsTexturefromVideo( PCCContext& context );

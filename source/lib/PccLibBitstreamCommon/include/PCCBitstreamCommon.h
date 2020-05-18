@@ -385,20 +385,16 @@ static inline std::string removeFileExtension( const std::string string ) {
   return ( pos != std::string::npos && pos + 4 == string.length() ) ? string.substr( 0, pos ) : string;
 }
 
-static inline std::string addVideoFormat( const std::string string,
+static inline std::string addVideoFormat( const std::string filename,
                                           const size_t      width,
                                           const size_t      height,
-                                          const bool        yuv420 = true,
-                                          const std::string pixel  = "8" ) {
-  size_t      pos      = string.find_last_of( "." );
-  std::string filename = string.substr( 0, pos ), extension = string.substr( pos );
-  if ( extension == ".yuv" || extension == ".rgb" ) {
-    std::stringstream result;
-    result << filename << "_" << width << "x" << height << "_" << pixel << "bit_"
-           << ( extension == ".yuv" && yuv420 ? "p420" : "p444" ) << extension;
-    return result.str();
-  }
-  return string;
+                                          const bool        isYUV = true,
+                                          const bool        is420 = true,
+                                          const std::string pixel = "8" ) {
+  std::stringstream result;
+  result << filename << "_" << width << "x" << height << "_" << pixel << "bit_" << ( isYUV & is420 ? "p420" : "p444" )
+         << ( isYUV ? ".yuv" : ".rgb" );
+  return result.str();
 }
 
 template <typename T>

@@ -282,16 +282,18 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
     // generateBlockToPatchFromBoundaryBox( context, frame,
     // context.getOccupancyPackingBlockSize() );
     generatePointCloud( reconstruct, context, frame, gpcParams, partition, true );
-    printf("generatePointCloud done \n");
-    printf("start colorPointCloud loop attIdx = [0;%hhu ] \n",ai.getAttributeCount()); fflush(stdout);
+    printf( "generatePointCloud done \n" );
+    printf( "start colorPointCloud loop attIdx = [0;%hhu ] \n", ai.getAttributeCount() );
+    fflush( stdout );
     for ( size_t attIdx = 0; attIdx < ai.getAttributeCount(); attIdx++ ) {
-      printf("start colorPointCloud attIdx = %lu / %hhu ] \n",attIdx, ai.getAttributeCount()); fflush(stdout);
+      printf( "start colorPointCloud attIdx = %lu / %hhu ] \n", attIdx, ai.getAttributeCount() );
+      fflush( stdout );
       colorPointCloud( reconstruct, context, frame, absoluteT1List[attIdx],
                        sps.getMultipleMapStreamsPresentFlag( ATLASIDXPCC ), ai.getAttributeCount(), gpcParams );
     }
 
     // Post-Processing
-    printf("Post-Processing  params_.postprocessSmoothingFilter_ = %zu \n", params_.postprocessSmoothingFilter_ );
+    printf( "Post-Processing  params_.postprocessSmoothingFilter_ = %zu \n", params_.postprocessSmoothingFilter_ );
     if ( ppSEIParams.flagGeometrySmoothing_ ) {
       PCCPointSet3 tempFrameBuffer = reconstruct;
       if ( ppSEIParams.gridSmoothing_ ) {

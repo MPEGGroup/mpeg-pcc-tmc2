@@ -30,8 +30,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef PCCHDRToolsColorConverter_h
-#define PCCHDRToolsColorConverter_h
+#ifndef PCCHDRToolsLibColorConverter_h
+#define PCCHDRToolsLibColorConverter_h
 
 #include "PCCVirtualColorConverter.h"
 #include "PCCVideo.h"
@@ -43,21 +43,28 @@ class ProjectParameters;
 namespace pcc {
 
 template <class T>
-class PCCHDRToolsColorConverter : public PCCVirtualColorConverter<T> {
+class PCCHDRToolsLibColorConverter : public PCCVirtualColorConverter<T> {
  public:
-  PCCHDRToolsColorConverter();
-  ~PCCHDRToolsColorConverter();
-  void convert( std::string configFile, PCCVideo<T, 3>& videoSrc, PCCVideo<T, 3>& videoDst );
-
-  void convert( std::string configuration, PCCVideo<T, 3>& videoSrc ) {
+  PCCHDRToolsLibColorConverter();
+  ~PCCHDRToolsLibColorConverter();
+  void convert( std::string        configuration,
+                PCCVideo<T, 3>&    videoSrc,
+                const std::string& externalPath = "",
+                const std::string& fileName     = "" ) {
     PCCVideo<T, 3> videoDst;
-    convert( configuration, videoSrc, videoDst );
+    convert( configuration, videoSrc, videoDst, externalPath, fileName );
     videoSrc = videoDst;
   }
+
+  void convert( std::string        configuration,
+                PCCVideo<T, 3>&    videoSrc,
+                PCCVideo<T, 3>&    videoDst,
+                const std::string& externalPath = "",
+                const std::string& fileName     = "" );
 };
 
 };  // namespace pcc
 
 #endif  //~USE_HDRTOOLS
 
-#endif /* PCCHDRToolsColorConverter_h */
+#endif /* PCCHDRToolsLibColorConverter_h */

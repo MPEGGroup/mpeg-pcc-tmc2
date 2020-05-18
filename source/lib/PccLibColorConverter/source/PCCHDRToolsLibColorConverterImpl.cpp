@@ -34,12 +34,12 @@
 
 #ifdef USE_HDRTOOLS
 
-#include "PCCHDRToolsColorConverterImpl.h"
+#include "PCCHDRToolsLibColorConverterImpl.h"
 
 using namespace pcc;
 
 template <typename T>
-PCCHDRToolsColorConverterImpl<T>::PCCHDRToolsColorConverterImpl() {
+PCCHDRToolsLibColorConverterImpl<T>::PCCHDRToolsLibColorConverterImpl() {
   m_oFrameStore  = NULL;
   m_iFrameStore  = NULL;
   m_nFrameStores = 7;
@@ -73,14 +73,14 @@ PCCHDRToolsColorConverterImpl<T>::PCCHDRToolsColorConverterImpl() {
   m_outputFile             = NULL;
 }
 template <typename T>
-PCCHDRToolsColorConverterImpl<T>::~PCCHDRToolsColorConverterImpl() {
+PCCHDRToolsLibColorConverterImpl<T>::~PCCHDRToolsLibColorConverterImpl() {
   destroy();
 }
 
 template <typename T>
-void PCCHDRToolsColorConverterImpl<T>::convert( std::string     configFile,
-                                                PCCVideo<T, 3>& videoSrc,
-                                                PCCVideo<T, 3>& videoDst ) {
+void PCCHDRToolsLibColorConverterImpl<T>::convert( std::string     configFile,
+                                                   PCCVideo<T, 3>& videoSrc,
+                                                   PCCVideo<T, 3>& videoDst ) {
   using hdrtoolslib::params;
   using hdrtoolslib::ZERO;
   params                         = &ccParams;
@@ -97,7 +97,7 @@ void PCCHDRToolsColorConverterImpl<T>::convert( std::string     configFile,
 }
 
 template <typename T>
-void PCCHDRToolsColorConverterImpl<T>::init( ProjectParameters* inputParams ) {
+void PCCHDRToolsLibColorConverterImpl<T>::init( ProjectParameters* inputParams ) {
   m_filterInFloat        = inputParams->m_filterInFloat;
   m_inputFile            = &inputParams->m_inputFile;
   m_outputFile           = &inputParams->m_outputFile;
@@ -532,9 +532,9 @@ void PCCHDRToolsColorConverterImpl<T>::init( ProjectParameters* inputParams ) {
 }
 
 template <typename T>
-void PCCHDRToolsColorConverterImpl<T>::process( ProjectParameters* inputParams,
-                                                PCCVideo<T, 3>&    videoSrc,
-                                                PCCVideo<T, 3>&    videoDst ) {
+void PCCHDRToolsLibColorConverterImpl<T>::process( ProjectParameters* inputParams,
+                                                   PCCVideo<T, 3>&    videoSrc,
+                                                   PCCVideo<T, 3>&    videoDst ) {
   int                       frameNumber;
   int                       iCurrentFrameToProcess = 0;
   float                     fDistance0   = inputParams->m_source.m_frameRate / inputParams->m_output.m_frameRate;
@@ -662,7 +662,7 @@ void PCCHDRToolsColorConverterImpl<T>::process( ProjectParameters* inputParams,
       exit( -1 );
     } else {
       videoDst.resize( videoDst.getFrameCount() + 1 );
-      auto& image = videoDst.getFrames().back();
+      auto&          image = videoDst.getFrames().back();
       PCCCOLORFORMAT format =
           m_oFrameStore->m_chromaFormat == hdrtoolslib::CF_420
               ? PCCCOLORFORMAT::YUV420
@@ -672,7 +672,7 @@ void PCCHDRToolsColorConverterImpl<T>::process( ProjectParameters* inputParams,
         for ( int8_t c = 0; c < 3; c++ ) {
           auto& dst = videoDst.getFrame( frameNumber ).getChannel( c );
           for ( size_t i = 0; i < dst.size(); i++ ) { dst[i] = m_oFrameStore->m_comp[c][i]; }
-        }      
+        }
       } else if ( m_oFrameStore->m_bitDepth > 8 ) {
         for ( int8_t c = 0; c < 3; c++ ) {
           auto& dst = videoDst.getFrame( frameNumber ).getChannel( c );
@@ -687,7 +687,7 @@ void PCCHDRToolsColorConverterImpl<T>::process( ProjectParameters* inputParams,
 }
 
 template <typename T>
-void PCCHDRToolsColorConverterImpl<T>::destroy() {
+void PCCHDRToolsLibColorConverterImpl<T>::destroy() {
   // destroy
   if ( m_addNoise != NULL ) {
     delete m_addNoise;
@@ -805,7 +805,7 @@ void PCCHDRToolsColorConverterImpl<T>::destroy() {
   }
 }
 
-template class PCCHDRToolsColorConverterImpl<uint8_t>;
-template class PCCHDRToolsColorConverterImpl<uint16_t>;
+template class PCCHDRToolsLibColorConverterImpl<uint8_t>;
+template class PCCHDRToolsLibColorConverterImpl<uint16_t>;
 
 #endif  //~USE_HDRTOOLS

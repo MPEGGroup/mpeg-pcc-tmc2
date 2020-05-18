@@ -527,25 +527,25 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
 
   std::cout << "Post Processing Point Clouds" << std::endl;
   bool isAttributes444 = static_cast<int>( params_.losslessGeo_ ) == 1;
-  for ( size_t frameIdx=0; frameIdx< sources.getFrameCount(); frameIdx++ ) {
-    auto& frame = context.getFrame(frameIdx);
+  for ( size_t frameIdx = 0; frameIdx < sources.getFrameCount(); frameIdx++ ) {
+    auto&                        frame = context.getFrame( frameIdx );
     GeneratePointCloudParameters ppSEIParams;
     setPostProcessingSeiParameters( ppSEIParams, context );
-    auto&                 reconstruct = reconstructs[frame.getIndex()];
-    auto&                 partition = partitions[frameIdx];
+    auto& reconstruct = reconstructs[frame.getIndex()];
+    auto& partition   = partitions[frameIdx];
 
     if ( ppSEIParams.flagGeometrySmoothing_ ) {
       PCCPointSet3 tempFrameBuffer = reconstruct;
       if ( ppSEIParams.gridSmoothing_ ) {
-        printf("smoothPointCloudPostprocess \n");
+        printf( "smoothPointCloudPostprocess \n" );
         smoothPointCloudPostprocess( reconstruct, context, params_.colorTransform_, ppSEIParams, partition );
       }
-      if( !ppSEIParams.pbfEnableFlag_){
+      if ( !ppSEIParams.pbfEnableFlag_ ) {
         // These are different attribute transfer functions
         if ( params_.postprocessSmoothingFilter_ == 1 ) {
           tempFrameBuffer.transferColors16bitBP( reconstruct, int32_t( 0 ), isAttributes444, 8, 1, true, true, true,
-                                                false, 4, 4, 1000, 1000, 1000 * 256,
-                                                1000 * 256 );  // jkie: let's make it general
+                                                 false, 4, 4, 1000, 1000, 1000 * 256,
+                                                 1000 * 256 );  // jkie: let's make it general
         } else if ( params_.postprocessSmoothingFilter_ == 2 ) {
           tempFrameBuffer.transferColorWeight( reconstruct, 0.1 );
         } else if ( params_.postprocessSmoothingFilter_ == 3 ) {
@@ -553,18 +553,18 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
         }
       }
     }
-    
+
     if ( ppSEIParams.flagColorSmoothing_ ) {
       colorSmoothing( reconstruct, context, params_.colorTransform_, ppSEIParams );
     }
     if ( !isAttributes444 ) {  // lossy: convert 16-bit yuv444 to 8-bit RGB444
       reconstruct.convertYUV16ToRGB8();
-    } else{  // lossless: copy 16-bit RGB to 8-bit RGB
+    } else {  // lossless: copy 16-bit RGB to 8-bit RGB
       reconstruct.copyRGB16ToRGB8();
     }
-    
-  }//frame
-  
+
+  }  // frame
+
   if ( !params_.keepIntermediateFiles_ && params_.use3dmc_ ) { remove3DMotionEstimationFiles( path.str() ); }
 
 #ifdef CODEC_TRACE
@@ -4268,8 +4268,8 @@ void PCCEncoder::generateRawPointsGeometryVideo( PCCContext& context, PCCGroupOf
 
     // for resizing for raw geometry
     auto& rawPGeoFrame = videoRawPointsGeometry.getFrame( frameIndex );
-    maxWidth         = ( std::max )( maxWidth,  rawPGeoFrame.getWidth() );
-    maxHeight        = ( std::max )( maxHeight, rawPGeoFrame.getHeight() );
+    maxWidth           = ( std::max )( maxWidth, rawPGeoFrame.getWidth() );
+    maxHeight          = ( std::max )( maxHeight, rawPGeoFrame.getHeight() );
   }
 
   // resizing for raw geometry
@@ -4278,7 +4278,7 @@ void PCCEncoder::generateRawPointsGeometryVideo( PCCContext& context, PCCGroupOf
   context.setRawGeoWidth( maxWidth );
   context.setRawGeoHeight( maxHeight );
   for ( auto& frame : context.getFrames() ) {
-    const size_t frameIndex      = frame.getIndex();
+    const size_t frameIndex  = frame.getIndex();
     auto&        rawGeoFrame = videoRawPointsGeometry.getFrame( frameIndex );
     rawGeoFrame.resize( maxWidth, maxHeight, PCCCOLORFORMAT::YUV444 );
   }
@@ -4293,13 +4293,14 @@ void PCCEncoder::generateRawPointsTextureVideo( PCCContext& context, PCCGroupOfF
   size_t maxHeight = 0;
   for ( auto& frame : context.getFrames() ) {
     const size_t frameIndex = frame.getIndex();
-    generateRawPointsTextureImage( context, frame, videoRawPointsTexture.getFrame( frameIndex ), reconstructs[frameIndex] );
+    generateRawPointsTextureImage( context, frame, videoRawPointsTexture.getFrame( frameIndex ),
+                                   reconstructs[frameIndex] );
     cout << "generate raw points (Texture) : frame " << frameIndex
          << ", # of raw points Texture : " << frame.getRawPointsPatch( 0 ).size() << endl;
     // for resizing for raw texture
     auto& rawPointsTextureFrame = videoRawPointsTexture.getFrame( frameIndex );
-    maxWidth         = ( std::max )( maxWidth, rawPointsTextureFrame.getWidth() );
-    maxHeight        = ( std::max )( maxHeight, rawPointsTextureFrame.getHeight() );
+    maxWidth                    = ( std::max )( maxWidth, rawPointsTextureFrame.getWidth() );
+    maxHeight                   = ( std::max )( maxHeight, rawPointsTextureFrame.getHeight() );
   }
   // resizing for raw texture
   assert( maxWidth % 8 == 0 );
@@ -4307,14 +4308,16 @@ void PCCEncoder::generateRawPointsTextureVideo( PCCContext& context, PCCGroupOfF
   context.setRawAttWidth( maxWidth );
   context.setRawAttHeight( maxHeight );
   for ( auto& frame : context.getFrames() ) {
-    const size_t frameIndex      = frame.getIndex();
+    const size_t frameIndex            = frame.getIndex();
     auto&        rawPointsTextureFrame = videoRawPointsTexture.getFrame( frameIndex );
     rawPointsTextureFrame.resize( maxWidth, maxHeight, PCCCOLORFORMAT::YUV444 );
   }
   cout << "RawPoints Texture [done]" << endl;
 }
 
-void PCCEncoder::generateRawPointsGeometryImage( PCCContext& context, PCCFrameContext& frame, PCCImageGeometry& image ) {
+void PCCEncoder::generateRawPointsGeometryImage( PCCContext&       context,
+                                                 PCCFrameContext&  frame,
+                                                 PCCImageGeometry& image ) {
   size_t width = context.getRawGeoWidth();
 
   const int16_t     infiniteDepth = ( std::numeric_limits<int16_t>::max )();
@@ -4325,7 +4328,7 @@ void PCCEncoder::generateRawPointsGeometryImage( PCCContext& context, PCCFrameCo
   size_t            pcmWidth          = width;
   pcmOccupancyMap.resize( pcmOccupancySizeU * pcmOccupancySizeV, false );
   packRawPointsPatch( frame, pcmOccupancyMap, pcmWidth, pcmHeight, pcmOccupancySizeU, pcmOccupancySizeV, 0 );
-  image.resize( pcmWidth, pcmHeight, PCCCOLORFORMAT::YUV444  );
+  image.resize( pcmWidth, pcmHeight, PCCCOLORFORMAT::YUV444 );
   image.set( 0 );
   uint16_t lastValue{0};
   uint16_t lastY{0};
@@ -4377,13 +4380,13 @@ void PCCEncoder::generateRawPointsGeometryImage( PCCContext& context, PCCFrameCo
 }
 
 void PCCEncoder::generateRawPointsTextureImage( PCCContext&         context,
-                                          PCCFrameContext&    frame,
-                                          PCCImageTexture&    image,
-                                          const PCCPointSet3& reconstruct ) {
+                                                PCCFrameContext&    frame,
+                                                PCCImageTexture&    image,
+                                                const PCCPointSet3& reconstruct ) {
   bool   losslessAtt               = params_.losslessGeo_;
   size_t numberOfRawPointsPatches  = frame.getNumberOfRawPointsPatches();
   size_t numberOfEOMPoints         = frame.getTotalNumberOfEOMPoints();
-  size_t numOfRawGeos               = frame.getTotalNumberOfRawPoints();
+  size_t numOfRawGeos              = frame.getTotalNumberOfRawPoints();
   size_t nPixelInCurrentBlockCount = 0;
   size_t heightEOM                 = 0;
   size_t heightMP                  = 0;
@@ -5656,8 +5659,8 @@ void PCCEncoder::dilateSmoothedPushPull( PCCFrameContext& frame, PCCImage<T, 3>&
 #if DEBUG_PATCH
   for ( int k = 0; k < miplev; k++ ) {
     char buf[100];
-    sprintf( buf, "mip%02i.rgb", k );
-    std::string filename = addVideoFormat( buf, mipVec[k].getWidth(), mipVec[k].getHeight(), false );
+    sprintf( buf, "mip%02i", k );
+    std::string filename = addVideoFormat( buf, mipVec[k].getWidth(), mipVec[k].getHeight(), false, false );
     mipVec[k].write( filename, 1 );
   }
 #endif
@@ -5674,8 +5677,8 @@ void PCCEncoder::dilateSmoothedPushPull( PCCFrameContext& frame, PCCImage<T, 3>&
 #if DEBUG_PATCH
   for ( int k = 0; k < miplev; k++ ) {
     char buf[100];
-    sprintf( buf, "mipfill%02i.rgb", k );
-    std::string filename = addVideoFormat( buf, mipVec[k].getWidth(), mipVec[k].getHeight(), false );
+    sprintf( buf, "mipfill%02i", k );
+    std::string filename = addVideoFormat( buf, mipVec[k].getWidth(), mipVec[k].getHeight(), false, false );
     mipVec[k].write( filename, 1 );
   }
 #endif

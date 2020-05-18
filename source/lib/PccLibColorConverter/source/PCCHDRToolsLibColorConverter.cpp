@@ -30,32 +30,31 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef PCCVirtualColorConverter_h
-#define PCCVirtualColorConverter_h
+#include "PCCVirtualColorConverter.h"
 
-#include "PCCVideo.h"
+#ifdef USE_HDRTOOLS
 
-namespace pcc {
+#include "PCCHDRToolsLibColorConverter.h"
+#include "PCCHDRToolsLibColorConverterImpl.h"
 
-template <class T>
-class PCCVirtualColorConverter {
- public:
-  PCCVirtualColorConverter() {}
-  ~PCCVirtualColorConverter() {}
+using namespace pcc;
 
-  virtual void convert( std::string        configFile,
-                        PCCVideo<T, 3>&    videoSrc,
-                        PCCVideo<T, 3>&    videoDst,
-                        const std::string& externalPath = "",
-                        const std::string& fileName     = "" ) = 0;
-  virtual void convert( std::string        configFile,
-                        PCCVideo<T, 3>&    videoSrc,
-                        const std::string& externalPath = "",
-                        const std::string& fileName     = "" ) = 0;
+template <typename T>
+PCCHDRToolsLibColorConverter<T>::PCCHDRToolsLibColorConverter() {}
+template <typename T>
+PCCHDRToolsLibColorConverter<T>::~PCCHDRToolsLibColorConverter() {}
 
- private:
-};
+template <typename T>
+void PCCHDRToolsLibColorConverter<T>::convert( std::string        configFile,
+                                               PCCVideo<T, 3>&    videoSrc,
+                                               PCCVideo<T, 3>&    videoDst,
+                                               const std::string& externalPath,
+                                               const std::string& fileName ) {
+  PCCHDRToolsLibColorConverterImpl<T> converter;
+  converter.convert( configFile, videoSrc, videoDst );
+}
 
-};  // namespace pcc
+template class PCCHDRToolsLibColorConverter<uint8_t>;
+template class PCCHDRToolsLibColorConverter<uint16_t>;
 
-#endif /* PCCVirtualColorConverter_h */
+#endif  //~USE_HDRTOOLS

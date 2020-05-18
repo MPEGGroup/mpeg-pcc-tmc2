@@ -30,8 +30,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef PCCHDRToolsColorConverterImpl_h
-#define PCCHDRToolsColorConverterImpl_h
+#ifndef PCCHDRToolsLibColorConverterImpl_h
+#define PCCHDRToolsLibColorConverterImpl_h
 
 #include "PCCCommon.h"
 
@@ -65,10 +65,10 @@
 namespace pcc {
 
 template <class T>
-class PCCHDRToolsColorConverterImpl {
+class PCCHDRToolsLibColorConverterImpl {
  public:
-  PCCHDRToolsColorConverterImpl();
-  ~PCCHDRToolsColorConverterImpl();
+  PCCHDRToolsLibColorConverterImpl();
+  ~PCCHDRToolsLibColorConverterImpl();
   void convert( std::string configFile, PCCVideo<T, 3>& videoSrc, PCCVideo<T, 3>& videoDst );
 
  private:
@@ -129,4 +129,4 @@ class PCCHDRToolsColorConverterImpl {
 
 #endif  //~USE_HDRTOOLS
 
-#endif /* PCCHDRToolsColorConverterImpl_h */
+#endif /* PCCHDRToolsLibColorConverterImpl_h */

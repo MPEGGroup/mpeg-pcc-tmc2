@@ -37,8 +37,9 @@
 
 #include "PCCVirtualColorConverter.h"
 #ifdef USE_HDRTOOLS
-#include "PCCHDRToolsColorConverter.h"
+#include "PCCHDRToolsLibColorConverter.h"
 #else
+#include "PCCHDRToolsAppColorConverter.h"
 #include "PCCInternalColorConverter.h"
 #endif
 
@@ -132,9 +133,9 @@ int main( int argc, char* argv[] ) {
   PCCVideo<T, 3> videoSrc, videoRec;
   videoSrc.read( srcVideoPath, width, height, format, frameCount, inputNumBytes );
 #ifdef USE_HDRTOOLS
-  PCCHDRToolsColorConverter<T> convert;
+  PCCHDRToolsLibColorConverter<T> convert;
 #else
-  PCCInternalColorConverter<T> convert;
+  PCCHDRToolsAppColorConverter<T> convert;
 #endif
   convert.convert( configFile, videoSrc, videoRec );
   videoRec.write( dstVideoPath, outputNumBytes );

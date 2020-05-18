@@ -30,29 +30,39 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+#ifndef PCCHDRToolsAppColorConverter_h
+#define PCCHDRToolsAppColorConverter_h
+
 #include "PCCVirtualColorConverter.h"
+#include "PCCVideo.h"
 
-#ifdef USE_HDRTOOLS
+#ifndef USE_HDRTOOLS
 
-#include "PCCHDRToolsColorConverter.h"
-#include "PCCHDRToolsColorConverterImpl.h"
+namespace pcc {
 
-using namespace pcc;
+template <class T>
+class PCCHDRToolsAppColorConverter : public PCCVirtualColorConverter<T> {
+ public:
+  PCCHDRToolsAppColorConverter();
+  ~PCCHDRToolsAppColorConverter();
+  void convert( std::string        configuration,
+                PCCVideo<T, 3>&    videoSrc,
+                const std::string& externalPath = "",
+                const std::string& fileName     = "" ) {
+    PCCVideo<T, 3> videoDst;
+    convert( configuration, videoSrc, videoDst, externalPath, fileName );
+    videoSrc = videoDst;
+  }
 
-template <typename T>
-PCCHDRToolsColorConverter<T>::PCCHDRToolsColorConverter() {}
-template <typename T>
-PCCHDRToolsColorConverter<T>::~PCCHDRToolsColorConverter() {}
+  void convert( std::string        configuration,
+                PCCVideo<T, 3>&    videoSrc,
+                PCCVideo<T, 3>&    videoDst,
+                const std::string& externalPath = "",
+                const std::string& fileName     = "" );
+};
 
-template <typename T>
-void PCCHDRToolsColorConverter<T>::convert( std::string     configFile,
-                                            PCCVideo<T, 3>& videoSrc,
-                                            PCCVideo<T, 3>& videoDst ) {
-  PCCHDRToolsColorConverterImpl<T> converter;
-  converter.convert( configFile, videoSrc, videoDst );
-}
-
-template class PCCHDRToolsColorConverter<uint8_t>;
-template class PCCHDRToolsColorConverter<uint16_t>;
+};  // namespace pcc
 
 #endif  //~USE_HDRTOOLS
+
+#endif /* PCCHDRToolsLibColorConverter_h */

@@ -201,9 +201,9 @@ PCCEncoderParameters::PCCEncoderParameters() {
   tileHeightToWidthRatio_       = 1;
 
   // Sort raw points by Morton code
-  mortonOrderSortRawPoints_    = false;
+  mortonOrderSortRawPoints_     = false;
   textureRawSeparateVideoWidth_ = 64;
-  //yo-  textureRawSeparateVideoWidth_ = 256;
+  // yo-  textureRawSeparateVideoWidth_ = 256;
 
   // Separate high gradient points
   highGradientSeparation_   = false;

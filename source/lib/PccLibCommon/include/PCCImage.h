@@ -129,7 +129,6 @@ class PCCImage {
   size_t                getWidth() const { return width_; }
   size_t                getHeight() const { return height_; }
   PCCCOLORFORMAT        getColorFormat() const { return format_; }
-  size_t                getDepth() const { return sizeof( T ) * 8; }
   size_t                getChannelCount() const { return N; }
   size_t                getDeprecatedColorFormat() const { return deprecatedColorFormat_; }
   void                  setDeprecatedColorFormat( size_t value ) { deprecatedColorFormat_ = value; }

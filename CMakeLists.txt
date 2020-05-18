@@ -5,7 +5,7 @@ SET( TMC2_VERSION_MAJOR 9 )
 SET( TMC2_VERSION_MINOR 1 )
 
 OPTION( USE_HM_VIDEO_CODEC "Clone, build and use HM video encoder and decoder"   TRUE )
-OPTION( USE_HDRTOOLS       "Clone, build and use HDRTools for color conversions" TRUE )
+OPTION( USE_HDRTOOLS       "Clone, build and use HDRTools for color conversions" FALSE )
 
 ## CLANG-TIDY CHECK
 set(CMAKE_CXX_STANDARD 14)

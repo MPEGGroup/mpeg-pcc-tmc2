@@ -308,8 +308,8 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
       if ( metricsParams.computeMetrics_ ) {
         PCCGroupOfFrames sources;
         PCCGroupOfFrames normals;
-        if ( !sources.load( metricsParams.uncompressedDataPath_, frameNumber, frameNumber + reconstructs.getFrameCount(),
-                            decoderParams.colorTransform_ ) ) {
+        if ( !sources.load( metricsParams.uncompressedDataPath_, frameNumber,
+                            frameNumber + reconstructs.getFrameCount(), decoderParams.colorTransform_ ) ) {
           return -1;
         }
         if ( !metricsParams.normalDataPath_.empty() ) {

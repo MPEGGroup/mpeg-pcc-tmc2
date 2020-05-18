@@ -47,7 +47,9 @@
 
 #include "PCCInternalColorConverter.h"
 #ifdef USE_HDRTOOLS
-#include "PCCHDRToolsColorConverter.h"
+#include "PCCHDRToolsLibColorConverter.h"
+#else
+#include "PCCHDRToolsAppColorConverter.h"
 #endif
 
 namespace pcc {
@@ -91,15 +93,15 @@ class PCCVideoEncoder {
     const std::string blockToPatchFileName = path + "blockToPatch.txt";
     const std::string occupancyMapFileName = path + "occupancy.txt";
     const std::string patchInfoFileName    = path + "patchInfo.txt";
-    const std::string srcYuvFileName = addVideoFormat( fileName + ( use444CodecIo ? ".rgb" : ".yuv" ), width, height,
-                                                       !use444CodecIo, nbyte == 2 ? "10" : "8" );
+    const std::string srcYuvFileName =
+        addVideoFormat( fileName, width, height, !use444CodecIo, !use444CodecIo, nbyte == 2 ? "10" : "8" );
     const std::string srcRgbFileName =
-        addVideoFormat( fileName + ".rgb", width, height, !use444CodecIo, nbyte == 2 ? "10" : "8" );
-    const std::string recYuvFileName = addVideoFormat( fileName + "_rec" + ( use444CodecIo ? ".rgb" : ".yuv" ), width,
-                                                       height, !use444CodecIo, nbyte == 2 ? "10" : "8" );
+        addVideoFormat( fileName, width, height, false, !use444CodecIo, nbyte == 2 ? "10" : "8" );
+    const std::string recYuvFileName =
+        addVideoFormat( fileName + "_rec", width, height, !use444CodecIo, !use444CodecIo, nbyte == 2 ? "10" : "8" );
     const std::string recRgbFileName =
-        addVideoFormat( fileName + "_rec" + ".rgb", width, height, !use444CodecIo, nbyte == 2 ? "10" : "8" );
-    const std::string yuv444RecFileName = addVideoFormat( fileName + "_rec.yuv", width, height, false, "16" );
+        addVideoFormat( fileName + "_rec", width, height, false, !use444CodecIo, nbyte == 2 ? "10" : "8" );
+    const std::string yuv444RecFileName = addVideoFormat( fileName + "_rec", width, height, true, false, "16" );
     const bool        yuvVideo          = colorSpaceConversionConfig.empty() || use444CodecIo;
 
     std::shared_ptr<PCCVirtualVideoEncoder<T>> encoder;
@@ -110,19 +112,19 @@ class PCCVideoEncoder {
 #endif
     std::shared_ptr<PCCVirtualColorConverter<T>> converter;
     std::string                                  configInverseColorSpace, configColorSpace;
-#ifdef USE_HDRTOOLS
     if ( colorSpaceConversionPath.empty() ) {
-#endif
       converter               = std::make_shared<PCCInternalColorConverter<T>>();
       configInverseColorSpace = stringFormat( "YUV420ToYUV444_%zu_%zu", depth, upsamplingFilter );
       configColorSpace        = stringFormat( "RGB444ToYUV420_%zu_%zu", depth, downsamplingFilter );
-#ifdef USE_HDRTOOLS
     } else {
-      converter               = std::make_shared<PCCHDRToolsColorConverter<T>>();
+#ifdef USE_HDRTOOLS
+      converter = std::make_shared<PCCHDRToolsLibColorConverter<T>>();
+#else
+      converter = std::make_shared<PCCHDRToolsAppColorConverter<T>>();
+#endif
       configInverseColorSpace = inverseColorSpaceConversionConfig;
       configColorSpace        = colorSpaceConversionConfig;
     }
-#endif
 
     // Convert src video
     if ( yuvVideo ) {
@@ -327,12 +329,13 @@ class PCCVideoEncoder {
               }
             }
             // perform downsampling
-            const std::string rgbFileNameTmp = addVideoFormat( fileName + "_tmp.rgb", patch_width, patch_height );
-            const std::string yuvFileNameTmp = addVideoFormat( fileName + "_tmp.yuv", patch_width, patch_height, true );
-            PCCVideo<T, 3>    tmpVideo;
+            // const std::string rgbFileNameTmp = addVideoFormat( fileName + "_tmp.rgb", patch_width, patch_height );
+            // const std::string yuvFileNameTmp = addVideoFormat( fileName + "_tmp.yuv", patch_width, patch_height, true
+            // );
+            PCCVideo<T, 3> tmpVideo;
             tmpVideo.resize( 1 );
             tmpVideo[0] = tmpImage;
-            converter->convert( configColorSpace, tmpVideo );
+            converter->convert( configColorSpace, tmpVideo, colorSpaceConversionPath, fileName + "_tmp" );
             // substitute the pixels in the output image for compression
             for ( size_t i = 0; i < patch_height; i++ ) {
               for ( size_t j = 0; j < patch_width; j++ ) {
@@ -352,7 +355,7 @@ class PCCVideoEncoder {
         video444.convertYUV444ToYUV420();
         video = video444;
       } else {
-        converter->convert( configColorSpace, video );
+        converter->convert( configColorSpace, video, colorSpaceConversionPath, fileName + "_rec" );
       }
     }
     if ( keepIntermediateFiles ) { video.write( srcYuvFileName, nbyte ); }
@@ -410,7 +413,7 @@ class PCCVideoEncoder {
       video = videoRec;
     } else {
       if ( keepIntermediateFiles ) { videoRec.write( recYuvFileName, nbyte ); }
-      converter->convert( configInverseColorSpace, videoRec, video );
+      converter->convert( configInverseColorSpace, videoRec, video, colorSpaceConversionPath, fileName + "_rec" );
       if ( keepIntermediateFiles ) { video.write( yuv444RecFileName, 2 ); }
       video.setDeprecatedColorFormat( 2 );
     }

@@ -941,7 +941,7 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
                         encoderParams.colorTransform_ ) ) {
       return -1;
     }
-    if( sources.getFrameCount() < endFrameNumber - startFrameNumber ){
+    if ( sources.getFrameCount() < endFrameNumber - startFrameNumber ) {
       endFrameNumber = startFrameNumber + sources.getFrameCount();
     }
     clock.start();

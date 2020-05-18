@@ -117,7 +117,7 @@ class PCCEncoder : public PCCCodec {
 
   int encode( const PCCGroupOfFrames& sources, PCCContext& context, PCCGroupOfFrames& reconstructs );
 
-  void setPostProcessingSeiParameters ( GeneratePointCloudParameters& params, PCCContext& context );
+  void setPostProcessingSeiParameters( GeneratePointCloudParameters& params, PCCContext& context );
   void setGeneratePointCloudParameters( GeneratePointCloudParameters& gpcParams, PCCContext& context );
   void createPatchFrameDataStructure( PCCContext& context );
   void createPatchFrameDataStructure( PCCContext& context, PCCFrameContext& frame, size_t frameIndex );
@@ -155,9 +155,9 @@ class PCCEncoder : public PCCCodec {
 
   void generateRawPointsGeometryImage( PCCContext& context, PCCFrameContext& frame, PCCImageGeometry& image );
   void generateRawPointsTextureImage( PCCContext&         context,
-                                PCCFrameContext&    frame,
-                                PCCImageTexture&    image,
-                                const PCCPointSet3& reconstruct );
+                                      PCCFrameContext&    frame,
+                                      PCCImageTexture&    image,
+                                      const PCCPointSet3& reconstruct );
 
   template <typename T>
   void dilate( PCCFrameContext& frame, PCCImage<T, 3>& image, const PCCImage<T, 3>* reference = nullptr );

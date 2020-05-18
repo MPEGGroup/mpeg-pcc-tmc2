@@ -746,8 +746,8 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
     if ( videoGeometry.getFrameCount() < ( videoFrameIndex + mapCount ) ) { return; }
   }
   TRACE_CODEC( " videoFrameIndex:frameIndex*mapCount  = %d \n", videoFrameIndex );
-  const auto& frame0 =
-      params.multipleStreams_ ? videoGeometryMultiple[0].getFrame( videoFrameIndex ) : videoGeometry.getFrame( videoFrameIndex );
+  const auto& frame0 = params.multipleStreams_ ? videoGeometryMultiple[0].getFrame( videoFrameIndex )
+                                               : videoGeometry.getFrame( videoFrameIndex );
   const size_t          imageWidth  = frame0.getWidth();
   const size_t          imageHeight = frame0.getHeight();
   std::vector<uint32_t> BPflag;
@@ -1021,7 +1021,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
       }
       // secure the size of rgb in raw points patch
       size_t numofEOMSaved  = params.enhancedOccupancyMapCode_ ? frame.getTotalNumberOfEOMPoints() : 0;
-      size_t numofRawcolors  = frame.getTotalNumberOfRawPoints();
+      size_t numofRawcolors = frame.getTotalNumberOfRawPoints();
       auto&  rawPointsPatch = frame.getRawPointsPatch( 0 );
       rawPointsPatch.setNumberOfRawPointsColors( numofRawcolors + numofEOMSaved );
       rawPointsPatch.resizeColor( numofRawcolors + numofEOMSaved );
@@ -1993,12 +1993,12 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
 #ifdef CODEC_TRACE
   printChecksum( reconstruct, "colorPointCloud in" );
 #endif
-  auto&        sps        = context.getVps();
-  auto&        videoTexture       = multipleStreams != 0U ? context.getVideoTextureMultiple()[0] : context.getVideoTexture();
-  auto&        videoTextureFrame1 = context.getVideoTextureMultiple()[1];
-  const size_t mapCount           = params.mapCountMinus1_ + 1;
+  auto&        sps          = context.getVps();
+  auto&        videoTexture = multipleStreams != 0U ? context.getVideoTextureMultiple()[0] : context.getVideoTexture();
+  auto&        videoTextureFrame1            = context.getVideoTextureMultiple()[1];
+  const size_t mapCount                      = params.mapCountMinus1_ + 1;
   size_t       numberOfRawPointsAndEOMColors = 0;
-  size_t       numOfRawGeos                   = 0;
+  size_t       numOfRawGeos                  = 0;
   size_t       numberOfEOMPoints             = 0;
   if ( attributeCount == 0 ) {
     for ( auto& color : reconstruct.getColors() ) {
@@ -2052,7 +2052,7 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
     source.clear();
     target.addColors16bit();
     source.addColors16bit();
-    const size_t pcFrameIndex    = frame.getIndex() * mapCount;
+    const size_t pcFrameIndex = frame.getIndex() * mapCount;
     for ( size_t i = 0; i < pointCount; ++i ) {
       const PCCVector3<size_t> location = pointToPixel[i];
       const size_t             x        = location[0];
@@ -2147,7 +2147,7 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
 
 void PCCCodec::generateRawPointsGeometryfromVideo( PCCContext& context ) {
   TRACE_CODEC( " generateRawPointsGeometryfromVideo start \n" );
-  const size_t gofSize          = context.size();
+  const size_t gofSize                = context.size();
   auto&        videoRawPointsGeometry = context.getVideoRawPointsGeometry();
   videoRawPointsGeometry.resize( gofSize );
   for ( auto& framecontext : context.getFrames() ) {
@@ -2165,9 +2165,7 @@ void PCCCodec::generateRawPointsGeometryfromVideo( PCCContext& context ) {
   TRACE_CODEC( " generateRawPointsGeometryfromVideo done \n" );
 }
 
-void PCCCodec::generateRawPointsGeometryfromVideo( PCCContext&       context,
-                                                   PCCFrameContext&  frame,
-                                                   size_t            frameIndex ) {
+void PCCCodec::generateRawPointsGeometryfromVideo( PCCContext& context, PCCFrameContext& frame, size_t frameIndex ) {
   auto&  videoRawPointsGeometry   = context.getVideoRawPointsGeometry();
   auto&  image                    = videoRawPointsGeometry.getFrame( frameIndex );
   size_t numberOfRawPointsPatches = frame.getNumberOfRawPointsPatches();
@@ -2220,17 +2218,15 @@ void PCCCodec::generateRawPointsTexturefromVideo( PCCContext& context ) {
   TRACE_CODEC( "generateRawPointsTexturefromVideo done \n" );
 }
 
-void PCCCodec::generateRawPointsTexturefromVideo( PCCContext&       context,
-                                            PCCFrameContext&  frame,
-                                            size_t            frameIndex ) {
+void PCCCodec::generateRawPointsTexturefromVideo( PCCContext& context, PCCFrameContext& frame, size_t frameIndex ) {
   auto&  videoRawPointsTexture = context.getVideoRawPointsTexture();
-  auto&  image           = videoRawPointsTexture.getFrame( frameIndex );
-  size_t width           = image.getWidth();
-  size_t height          = image.getHeight();
+  auto&  image                 = videoRawPointsTexture.getFrame( frameIndex );
+  size_t width                 = image.getWidth();
+  size_t height                = image.getHeight();
   context.setRawAttWidth( width );
   context.setRawAttHeight( height );
   size_t                   numberOfEOMPoints = frame.getTotalNumberOfEOMPoints();
-  size_t                   numOfRawGeos       = frame.getTotalNumberOfRawPoints();
+  size_t                   numOfRawGeos      = frame.getTotalNumberOfRawPoints();
   std::vector<PCCColor3B>& mpsTextures       = frame.getRawPointsTextures();
   std::vector<PCCColor3B>& eomTextures       = frame.getEOMTextures();
   mpsTextures.resize( numOfRawGeos );

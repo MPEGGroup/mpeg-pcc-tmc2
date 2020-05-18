@@ -57,8 +57,8 @@ void PCCHMAppVideoDecoder<T>::decode( PCCVideoBitstream& bitstream,
   PCCHevcParser hevcParser;
   hevcParser.getVideoSize( bitstream.vector(), width, height );
   const std::string binFileName = fileName + ".bin";
-  const std::string reconFile   = addVideoFormat( fileName + "_rec" + ( RGB2GBR ? ".rgb" : ".yuv" ), width, height,
-                                                !RGB2GBR, outputBitDepth == 10 ? "10" : "8" );
+  const std::string reconFile =
+      addVideoFormat( fileName + "_rec", width, height, !RGB2GBR, !RGB2GBR, outputBitDepth == 10 ? "10" : "8" );
   bitstream.write( binFileName );
   std::stringstream cmd;
   cmd << decoderPath << " --BitstreamFile=" << binFileName << " --ReconFile=" << reconFile;

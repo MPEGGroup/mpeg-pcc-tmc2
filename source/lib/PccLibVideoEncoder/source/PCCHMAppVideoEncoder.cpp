@@ -43,19 +43,19 @@ PCCHMAppVideoEncoder<T>::~PCCHMAppVideoEncoder() {}
 
 template <typename T>
 void PCCHMAppVideoEncoder<T>::encode( PCCVideo<T, 3>&    videoSrc,
-                                      std::string        arguments,
+                                      std::string        command,
                                       PCCVideoBitstream& bitstream,
                                       PCCVideo<T, 3>&    videoRec ) {
   const size_t width          = videoSrc.getWidth();
   const size_t height         = videoSrc.getHeight();
   const size_t frameCount     = videoSrc.getFrameCount();
-  std::string  bitstreamFile  = getParameter( arguments, "--BitstreamFile=" );
-  std::string  inputFile      = getParameter( arguments, "--InputFile=" );
-  std::string  reconFile      = getParameter( arguments, "--ReconFile=" );
-  size_t       inputBitDepth  = std::stoi( getParameter( arguments, "--InputBitDepth=" ) );
-  size_t       outputBitDepth = std::stoi( getParameter( arguments, "--OutputBitDepth=" ) );
+  std::string  bitstreamFile  = getParameter( command, "--BitstreamFile=" );
+  std::string  inputFile      = getParameter( command, "--InputFile=" );
+  std::string  reconFile      = getParameter( command, "--ReconFile=" );
+  size_t       inputBitDepth  = std::stoi( getParameter( command, "--InputBitDepth=" ) );
+  size_t       outputBitDepth = std::stoi( getParameter( command, "--OutputBitDepth=" ) );
   videoSrc.write( inputFile, inputBitDepth == 8 ? 1 : 2 );
-  if ( pcc::system( arguments.c_str() ) ) {
+  if ( pcc::system( command.c_str() ) ) {
     std::cout << "Error: can't run system command!" << std::endl;
     exit( -1 );
   }
