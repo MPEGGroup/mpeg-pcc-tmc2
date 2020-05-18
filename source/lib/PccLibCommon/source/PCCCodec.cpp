@@ -2210,6 +2210,9 @@ void PCCCodec::generateRawPointsTexturefromVideo( PCCContext& context ) {
     generateRawPointsTexturefromVideo( context, framecontext, frameIndex );
     std::cout << "generate raw points (Texture) : frame " << frameIndex
               << ", # of raw points Texture : " << framecontext.getRawPointsPatch( 0 ).size() << std::endl;
+#ifdef CODEC_TRACE
+    printChecksum( reconstructs[frameIndex], "generateRawPointsTexturefromVideo out" );
+#endif
   }
   std::cout << "RawPoints Texture [done]" << std::endl;
   TRACE_CODEC( "generateRawPointsTexturefromVideo done \n" );

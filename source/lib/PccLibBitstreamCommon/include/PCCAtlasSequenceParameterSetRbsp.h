@@ -53,8 +53,7 @@ class AtlasSequenceParameterSetRbsp {
       longTermRefAtlasFramesFlag_( false ),
       numRefAtlasFrameListsInAsps_( 0 ),
       useEightOrientationsFlag_( false ),
-      extendedProjectionEnabledFlag_( false ),
-      maxNumberProjectionsMinus1_( 5 ),
+      degree45ProjectionPatchPresentFlag_( false ),
       normalAxisLimitsQuantizationEnabledFlag_( true ),
       normalAxisMaxDeltaValueEnabledFlag_( false ),
       removeDuplicatePointEnabledFlag_( false ),
@@ -92,8 +91,7 @@ class AtlasSequenceParameterSetRbsp {
   uint8_t        getSurfaceThicknessMinus1() { return surfaceThicknessMinus1_; }
   bool           getLongTermRefAtlasFramesFlag() { return longTermRefAtlasFramesFlag_; }
   bool           getUseEightOrientationsFlag() { return useEightOrientationsFlag_; }
-  bool           getExtendedProjectionEnabledFlag() { return extendedProjectionEnabledFlag_; }
-  size_t         getMaxNumberProjectionsMinus1() { return maxNumberProjectionsMinus1_; }
+  bool           get45DegreeProjectionPatchPresentFlag() { return degree45ProjectionPatchPresentFlag_; }
   bool           getNormalAxisLimitsQuantizationEnabledFlag() { return normalAxisLimitsQuantizationEnabledFlag_; }
   bool           getNormalAxisMaxDeltaValueEnabledFlag() { return normalAxisMaxDeltaValueEnabledFlag_; }
   bool           getRemoveDuplicatePointEnabledFlag() { return removeDuplicatePointEnabledFlag_; }
@@ -119,8 +117,7 @@ class AtlasSequenceParameterSetRbsp {
   void setSurfaceThicknessMinus1( uint8_t value ) { surfaceThicknessMinus1_ = value; }
   void setLongTermRefAtlasFramesFlag( bool value ) { longTermRefAtlasFramesFlag_ = value; }
   void setUseEightOrientationsFlag( bool value ) { useEightOrientationsFlag_ = value; }
-  void setExtendedProjectionEnabledFlag( bool value ) { extendedProjectionEnabledFlag_ = value; }
-  void setMaxNumberProjectionsMinus1( size_t value ) { maxNumberProjectionsMinus1_ = value; }
+  void set45DegreeProjectionPatchPresentFlag( bool value ) { degree45ProjectionPatchPresentFlag_ = value; }
   void setNormalAxisLimitsQuantizationEnabledFlag( bool value ) { normalAxisLimitsQuantizationEnabledFlag_ = value; }
   void setNormalAxisMaxDeltaValueEnabledFlag( bool value ) { normalAxisMaxDeltaValueEnabledFlag_ = value; }
   void setRemoveDuplicatePointEnabledFlag( bool value ) { removeDuplicatePointEnabledFlag_ = value; }
@@ -156,41 +153,31 @@ class AtlasSequenceParameterSetRbsp {
   uint8_t                                          altasSequenceParameterSetId_;
   uint16_t                                         frameWidth_;
   uint16_t                                         frameHeight_;
+  uint8_t                                          log2PatchPackingBlockSize_;
   uint8_t                                          log2MaxAtlasFrameOrderCntLsbMinus4_;
   uint8_t                                          maxDecAtlasFrameBufferingMinus1_;
   bool                                             longTermRefAtlasFramesFlag_;
   uint8_t                                          numRefAtlasFrameListsInAsps_;
   std::vector<RefListStruct>                       refListStruct_;
   bool                                             useEightOrientationsFlag_;
-  bool                                             extendedProjectionEnabledFlag_;
-  size_t                                           maxNumberProjectionsMinus1_;
+  bool                                             degree45ProjectionPatchPresentFlag_;
   bool                                             normalAxisLimitsQuantizationEnabledFlag_;
   bool                                             normalAxisMaxDeltaValueEnabledFlag_;
-  bool                                             patchPrecedenceOrderFlag_;
-  uint8_t                                          log2PatchPackingBlockSize_;
-  bool                                             patchSizeQuantizerPresentFlag_;
-  uint8_t                                          mapCountMinus1_;
-  bool                                             pixelDeinterleavingFlag_;
-  std::vector<bool>                                pixelDeinterleavingMapFlag_;
-  bool                                             enhancedOccupancyMapForDepthFlag_;
-  uint8_t                                          enhancedOccupancyMapFixBitCountMinus1_;
-  bool                                             rawPatchEnabledFlag_;
-  bool                                             auxiliaryVideoEnabledFlag_;
-  bool                                             pointLocalReconstructionEnabledFlag_;
-  std::vector<PointLocalReconstructionInformation> pointLocalReconstructionInformation_;
-  bool                                             vuiParametersPresentFlag_;
-  VUIParameters                                    vuiParameters_;
-  bool                                             extensionPresentFlag_;
-  bool                                             vpccExtensionFlag_;
-  bool                                             mivExtensionFlag_;
-  bool                                             extension6bitsFlag_;
-  //VPCCExtension                                  vpccExtension_;
   bool                                             removeDuplicatePointEnabledFlag_;
+  bool                                             pixelDeinterleavingFlag_;
+  bool                                             patchPrecedenceOrderFlag_;
+  bool                                             patchSizeQuantizerPresentFlag_;
+  bool                                             enhancedOccupancyMapForDepthFlag_;
+  bool                                             pointLocalReconstructionEnabledFlag_;
+  uint8_t                                          mapCountMinus1_;
+  uint8_t                                          enhancedOccupancyMapFixBitCountMinus1_;
+  std::vector<PointLocalReconstructionInformation> pointLocalReconstructionInformation_;
   uint8_t                                          surfaceThicknessMinus1_;
-  //MIVExtension                                   mivExtension_;
-
+  bool                                             vuiParametersPresentFlag_;
+  bool                                             extensionPresentFlag_;
   bool                                             extensionDataFlag_;
 
+  VUIParameters vuiParameters_;
 };
 
 };  // namespace pcc

@@ -152,6 +152,7 @@ class PCCPatch {
   size_t&                     getV0() { return v0_; }
   size_t&                     getSizeU0() { return sizeU0_; }
   size_t&                     getSizeV0() { return sizeV0_; }
+  size_t&                     setViewId() { return viewId_; }
   void                        setBestMatchIdx( int32_t value ) { bestMatchIdx_ = value; }
   size_t                      getRefAtlasFrameIndex() const { return refAtlasFrameIdx_; }
   void                        setRefAtlasFrameIndex( size_t value ) { refAtlasFrameIdx_ = value; }
@@ -221,144 +222,6 @@ class PCCPatch {
       if ( tmp_depth > 0 ) { coord = tmp_depth; }
     }
     return coord;
-  }
-
-  void                        setViewId(size_t viewId) {
-    viewId_ = viewId;
-    //now set the other variables according to the viewId
-    switch (viewId)
-    {
-    case 0:
-      getAxisOfAdditionalPlane() = 0;
-      getNormalAxis()            = 0;
-      getTangentAxis()           = 2;
-      getBitangentAxis()         = 1;
-      getProjectionMode()        = 0;
-      break;
-    case 1:
-      getAxisOfAdditionalPlane() = 0;
-      getNormalAxis()            = 1;
-      getTangentAxis()           = 2;
-      getBitangentAxis()         = 0;
-      getProjectionMode()        = 0;
-      break;
-    case 2:
-      getAxisOfAdditionalPlane() = 0;
-      getNormalAxis()            = 2;
-      getTangentAxis()           = 0;
-      getBitangentAxis()         = 1;
-      getProjectionMode()        = 0;
-      break;
-    case 3:
-      getAxisOfAdditionalPlane() = 0;
-      getNormalAxis()            = 0;
-      getTangentAxis()           = 2;
-      getBitangentAxis()         = 1;
-      getProjectionMode()        = 1;
-      break;
-    case 4:
-      getAxisOfAdditionalPlane() = 0;
-      getNormalAxis()            = 1;
-      getTangentAxis()           = 2;
-      getBitangentAxis()         = 0;
-      getProjectionMode()        = 1;
-      break;
-    case 5:
-      getAxisOfAdditionalPlane() = 0;
-      getNormalAxis()            = 2;
-      getTangentAxis()           = 0;
-      getBitangentAxis()         = 1;
-      getProjectionMode()        = 1;
-      break;
-    case 6:
-      getAxisOfAdditionalPlane() = 1;
-      getNormalAxis()            = 0;
-      getTangentAxis()           = 2;
-      getBitangentAxis()         = 1;
-      getProjectionMode()        = 0;
-      break;
-    case 7:
-      getAxisOfAdditionalPlane() = 1;
-      getNormalAxis()            = 2;
-      getTangentAxis()           = 0;
-      getBitangentAxis()         = 1;
-      getProjectionMode()        = 0;
-      break;
-    case 8:
-      getAxisOfAdditionalPlane() = 1;
-      getNormalAxis()            = 0;
-      getTangentAxis()           = 2;
-      getBitangentAxis()         = 1;
-      getProjectionMode()        = 1;
-      break;
-    case 9:
-      getAxisOfAdditionalPlane() = 1;
-      getNormalAxis()            = 2;
-      getTangentAxis()           = 0;
-      getBitangentAxis()         = 1;
-      getProjectionMode()        = 1;
-      break;
-    case 10:
-      getAxisOfAdditionalPlane() = 2;
-      getNormalAxis()            = 2;
-      getTangentAxis()           = 0;
-      getBitangentAxis()         = 1;
-      getProjectionMode()        = 0;
-      break;
-    case 11:
-      getAxisOfAdditionalPlane() = 2;
-      getNormalAxis()            = 1;
-      getTangentAxis()           = 2;
-      getBitangentAxis()         = 0;
-      getProjectionMode()        = 0;
-      break;
-    case 12:
-      getAxisOfAdditionalPlane() = 2;
-      getNormalAxis()            = 2;
-      getTangentAxis()           = 0;
-      getBitangentAxis()         = 1;
-      getProjectionMode()        = 1;
-      break;
-    case 13:
-      getAxisOfAdditionalPlane() = 2;
-      getNormalAxis()            = 1;
-      getTangentAxis()           = 2;
-      getBitangentAxis()         = 0;
-      getProjectionMode()        = 1;
-      break;
-    case 14:
-      getAxisOfAdditionalPlane() = 3;
-      getNormalAxis()            = 1;
-      getTangentAxis()           = 2;
-      getBitangentAxis()         = 0;
-      getProjectionMode()        = 0;
-      break;
-    case 15:
-      getAxisOfAdditionalPlane() = 3;
-      getNormalAxis()            = 0;
-      getTangentAxis()           = 2;
-      getBitangentAxis()         = 1;
-      getProjectionMode()        = 0;
-      break;
-    case 16:
-      getAxisOfAdditionalPlane() = 3;
-      getNormalAxis()            = 1;
-      getTangentAxis()           = 2;
-      getBitangentAxis()         = 0;
-      getProjectionMode()        = 1;
-      break;
-    case 17:
-      getAxisOfAdditionalPlane() = 3;
-      getNormalAxis()            = 0;
-      getTangentAxis()           = 2;
-      getBitangentAxis()         = 1;
-      getProjectionMode()        = 1;
-      break;
-    default:
-      std::cout << "ViewId (" << viewId << ") not allowed... exiting" << std::endl;
-      exit(-1);
-      break;
-    }
   }
 
   PCCPoint3D generatePoint( const size_t u, const size_t v, const uint16_t depth ) const {
@@ -990,23 +853,6 @@ class PCCPatch {
       output.y() /= 2.0;
       output.x() = input.y() + input.x() - s;
       output.x() /= 2.0;
-    }
-  }
-
-  static void RotatePosition45DegreeOnAxis( size_t Axis, size_t lod, PCCPoint3D input, PCCPoint3D& output ) {
-    size_t shif = ( 1u << lod ) - 1;
-    output      = input;
-    if ( Axis == 1 ) {  // Additional plane are defined by Y Axis.
-      output.x() = input.x() + input.z();
-      output.z() = -input.x() + input.z() + shif;
-    }
-    if ( Axis == 2 ) {  // Additional plane are defined by X Axis.
-      output.z() = input.z() + input.y();
-      output.y() = -input.z() + input.y() + shif;
-    }
-    if ( Axis == 3 ) {
-      output.y() = input.y() + input.x();
-      output.x() = -input.y() + input.x() + shif;
     }
   }
 

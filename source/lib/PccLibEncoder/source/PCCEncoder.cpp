@@ -7342,6 +7342,10 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
     auto         geometryBitDepth2D        = gi.getGeometryNominal2dBitdepthMinus1() + 1;
     auto         maxBitCountForMaxDepthTmp = uint8_t( geometryBitDepth2D - gbitCountSize[minLevel] + 1 );
     auto         maxBitCountForMinDepthTmp = uint8_t( 10 - gbitCountSize[minLevel] );
+    if ( asps.get45DegreeProjectionPatchPresentFlag() ) {
+      maxBitCountForMaxDepthTmp += 1;
+      maxBitCountForMinDepthTmp += 1;
+    }
     int64_t prevSizeU0 = 0;
     int64_t prevSizeV0 = 0;
     int64_t predIndex  = 0;
@@ -7407,7 +7411,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
         if ( patch.getProjectionMode() == 0 ) {
           ipdu.setIpdu3dPosMinZ( ( patch.getD1() / minLevel ) - ( refPatch.getD1() / minLevel ) );
         } else {
-          if ( static_cast<int>( asps.getExtendedProjectionEnabledFlag() ) == 0 ) {
+          if ( static_cast<int>( asps.get45DegreeProjectionPatchPresentFlag() ) == 0 ) {
             ipdu.setIpdu3dPosMinZ( ( max3DCoordinate - patch.getD1() ) / minLevel -
                                    ( max3DCoordinate - refPatch.getD1() ) / minLevel );
           } else {
@@ -7480,7 +7484,10 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
 
         pdu.setPdu3dPosX( patch.getU1() );
         pdu.setPdu3dPosY( patch.getV1() );
-        pdu.setPduProjectionId(patch.getViewId());
+        size_t pduProjectPlane = patch.getProjectionMode() * 3 + size_t( patch.getNormalAxis() );
+        pdu.setPduProjectionId( asps.get45DegreeProjectionPatchPresentFlag()
+                                    ? ( pduProjectPlane << 2 ) + patch.getAxisOfAdditionalPlane()
+                                    : pduProjectPlane );
         if ( asps.getPatchSizeQuantizerPresentFlag() ) {
           pdu.setPdu2dSizeXMinus1( ( patch.getPatchSize2DXInPixel() - 1 ) / quantizerSizeX );
           pdu.setPdu2dSizeYMinus1( ( patch.getPatchSize2DYInPixel() - 1 ) / quantizerSizeY );
@@ -7493,7 +7500,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
         if ( patch.getProjectionMode() == 0 ) {
           pdu.setPdu3dPosMinZ( patch.getD1() / minLevel );
         } else {
-          if ( static_cast<int>( asps.getExtendedProjectionEnabledFlag() ) == 0 ) {
+          if ( static_cast<int>( asps.get45DegreeProjectionPatchPresentFlag() ) == 0 ) {
             pdu.setPdu3dPosMinZ( ( max3DCoordinate - patch.getD1() ) / minLevel );
           } else {
             pdu.setPdu3dPosMinZ( ( ( max3DCoordinate << 1 ) - patch.getD1() ) / minLevel );
@@ -7510,7 +7517,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
             patch.getSizeV0(), patch.getSizeD(), pdu.getPdu3dPosDeltaMaxZ(), patch.getProjectionMode(),
             patch.getPatchOrientation(), patch.getNormalAxis(), patch.getTangentAxis(), patch.getBitangentAxis(),
             (size_t)lodEnableFlag, patch.getLodScaleX(), patch.getLodScaleY(),
-            asps.getExtendedProjectionEnabledFlag(), pdu.getPduProjectionId(), patch.getAxisOfAdditionalPlane() );
+            asps.get45DegreeProjectionPatchPresentFlag(), pdu.getPduProjectionId(), patch.getAxisOfAdditionalPlane() );
 
         if ( asps.getPointLocalReconstructionEnabledFlag() ) {
           setPointLocalReconstructionData( frame, patch, pdu.getPointLocalReconstructionData(),
