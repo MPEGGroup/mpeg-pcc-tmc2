@@ -832,7 +832,8 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   asps.setSurfaceThicknessMinus1( surfaceThickness_ - 1 );
   asps.setLongTermRefAtlasFramesFlag( false );
   asps.setUseEightOrientationsFlag( useEightOrientations_ );
-  asps.set45DegreeProjectionPatchPresentFlag( additionalProjectionPlaneMode_ > 0 );
+  asps.setExtendedProjectionEnabledFlag( additionalProjectionPlaneMode_ > 0 );
+  asps.setMaxNumberProjectionsMinus1(5 + 4 * (std::min)(additionalProjectionPlaneMode_,3));
   asps.setNormalAxisLimitsQuantizationEnabledFlag( true );
   asps.setNormalAxisMaxDeltaValueEnabledFlag( true );
   asps.setRemoveDuplicatePointEnabledFlag( removeDuplicatePoints_ );
@@ -875,7 +876,8 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
       auto& atgh = atgl.getAtlasTileGroupHeader();
       atgh.setAtghAtlasFrameParameterSetId( 0 );
       if ( additionalProjectionPlaneMode_ > 0 ) {
-        atgh.setAtghPosMinZQuantizer( uint8_t( std::log2( minLevel_ ) ) - 1 );
+        //atgh.setAtghPosMinZQuantizer( uint8_t( std::log2( minLevel_ ) ) - 1 );
+        atgh.setAtghPosMinZQuantizer( uint8_t( std::log2( minLevel_ ) ));
       } else {
         atgh.setAtghPosMinZQuantizer( uint8_t( std::log2( minLevel_ ) ) );
       }

@@ -407,7 +407,11 @@ void PCCBitstreamReader::atlasSequenceParameterSetRbsp( AtlasSequenceParameterSe
     refListStruct( asps.getRefListStruct( i ), asps, bitstream );
   }
   asps.setUseEightOrientationsFlag( bitstream.read( 1 ) != 0U );               // u(1)
-  asps.set45DegreeProjectionPatchPresentFlag( bitstream.read( 1 ) != 0U );       // u(1)
+  asps.setExtendedProjectionEnabledFlag( bitstream.read( 1 ) != 0U );       // u(1)
+  if (asps.getExtendedProjectionEnabledFlag())
+    asps.setMaxNumberProjectionsMinus1(bitstream.readUvlc());
+  else
+    asps.setMaxNumberProjectionsMinus1(5);
   asps.setNormalAxisLimitsQuantizationEnabledFlag( bitstream.read( 1 ) != 0U );  // u(1)
   asps.setNormalAxisMaxDeltaValueEnabledFlag( bitstream.read( 1 ) != 0U );       // u(1)
   asps.setRemoveDuplicatePointEnabledFlag( bitstream.read( 1 ) != 0U );          // u(1)
@@ -833,14 +837,14 @@ void PCCBitstreamReader::patchDataUnit( PatchDataUnit&        pdu,
   if ( asps.getNormalAxisMaxDeltaValueEnabledFlag() ) {
     uint8_t bitCountForMaxDepth = syntax.getVps().getGeometryInformation( 0 ).getGeometry3dCoordinatesBitdepthMinus1() -
                                   atgh.getAtghPosDeltaMaxZQuantizer() + 2;
-    if ( asps.get45DegreeProjectionPatchPresentFlag() ) { bitCountForMaxDepth++; }
     pdu.setPdu3dPosDeltaMaxZ( bitstream.read( bitCountForMaxDepth ) );  // u(v)
     TRACE_BITSTREAM( " Pdu3dPosDeltaMaxZ: %zu ( bitCountForMaxDepth = %u) \n", pdu.getPdu3dPosDeltaMaxZ(),
                      bitCountForMaxDepth );
   }
-  pdu.setPduProjectionId( bitstream.read( asps.get45DegreeProjectionPatchPresentFlag() ? 5 : 3 ) );  // u(5 or 3)
-  TRACE_BITSTREAM( "PduProjectionId = %zu (45DegreeProjectionPatchPresentFlag = %d ) \n", pdu.getPduProjectionId(),
-                   asps.get45DegreeProjectionPatchPresentFlag() );
+  uint8_t bitCountForProjectionId = ceilLog2(asps.getMaxNumberProjectionsMinus1() + 1);
+  pdu.setPduProjectionId( bitstream.read( bitCountForProjectionId) );  // u(v)
+  TRACE_BITSTREAM( "PduProjectionId = %zu (ExtendedProjectionEnabledFlag = %d ) \n", pdu.getPduProjectionId(),
+                   asps.getExtendedProjectionEnabledFlag() );
   pdu.setPduOrientationIndex( bitstream.read( ( asps.getUseEightOrientationsFlag() ? 3 : 1 ) ) );  // u(3 or 1)
   if ( afps.getLodModeEnableFlag() ) {
     pdu.setLodEnableFlag( bitstream.read( 1 ) != 0U );  // u1
@@ -865,7 +869,7 @@ void PCCBitstreamReader::patchDataUnit( PatchDataUnit&        pdu,
       "Frame %zu, Patch(%zu) => 2Dpos = %4zu %4zu 2Dsize = %4ld %4ld 3Dpos = "
       "%ld %ld %ld DeltaMaxZ = %ld Projection = "
       "%zu "
-      "Orientation = %zu lod= (%zu) %zu %zu\n ",
+      "Orientation = %zu lod= (%d) %d %d\n ",
       pdu.getFrameIndex(), pdu.getPatchIndex(), pdu.getPdu2dPosX(), pdu.getPdu2dPosY(), pdu.getPdu2dSizeXMinus1() + 1,
       pdu.getPdu2dSizeYMinus1() + 1, pdu.getPdu3dPosX(), pdu.getPdu3dPosY(), pdu.getPdu3dPosMinZ(),
       pdu.getPdu3dPosDeltaMaxZ(), pdu.getPduProjectionId(), pdu.getPduOrientationIndex(), pdu.getLodEnableFlag(),
