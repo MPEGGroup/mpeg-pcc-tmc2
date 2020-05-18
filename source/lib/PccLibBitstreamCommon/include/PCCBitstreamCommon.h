@@ -70,6 +70,7 @@ namespace pcc {
 // ******************************************************************* //
 // Common constants
 // ******************************************************************* //
+//#define SEND_BITCOUNT_ATGH
 #define ATLASIDXPCC 0
 
 const uint32_t PCCTMC2ContainerMagicNumber = 23021981;

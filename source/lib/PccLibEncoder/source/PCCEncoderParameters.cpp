@@ -876,11 +876,13 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
       auto& atgh = atgl.getAtlasTileGroupHeader();
       atgh.setAtghAtlasFrameParameterSetId( 0 );
       atgh.setAtghPosMinZQuantizer( uint8_t( std::log2( minLevel_ ) ) );
+#ifdef SEND_BITCOUNT_ATGH
       if ( additionalProjectionPlaneMode_ > 0 ) {
         atgh.setAtghAdditionalBitCount3dPosX( 1 );
         atgh.setAtghAdditionalBitCount3dPosY( 1 );
         atgh.setAtghAdditionalBitCount3dPosZ( 1 );
       }
+#endif
       atgh.setAtghPosDeltaMaxZQuantizer( uint8_t( std::log2( minLevel_ ) ) );
       atgh.setAtghPatchSizeXinfoQuantizer( log2QuantizerSizeX_ );
       atgh.setAtghPatchSizeYinfoQuantizer( log2QuantizerSizeY_ );
