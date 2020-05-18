@@ -756,6 +756,13 @@ void PCCBitstreamWriter::atlasTileGroupHeader( AtlasTileGroupHeader& atgh,
       bitstream.write( atgh.getAtghPatchSizeXinfoQuantizer(), 3 );
       bitstream.write( atgh.getAtghPatchSizeYinfoQuantizer(), 3 );
     }
+
+    if (asps.getExtendedProjectionEnabledFlag()) {
+      bitstream.writeSvlc( atgh.getAtghAdditionalBitCount3dPosX() );
+      bitstream.writeSvlc( atgh.getAtghAdditionalBitCount3dPosY() );
+      bitstream.writeSvlc( atgh.getAtghAdditionalBitCount3dPosZ() );
+    }
+
     auto& gi = syntax.getVps().getGeometryInformation( 0 );
     if ( afps.getAfpsRaw3dPosBitCountExplicitModeFlag() ) {
       size_t bitCount = ceilLog2( gi.getGeometry3dCoordinatesBitdepthMinus1() + 1 );
@@ -884,22 +891,23 @@ void PCCBitstreamWriter::patchDataUnit( PatchDataUnit&        pdu,
   bitstream.writeUvlc( pdu.getPdu2dSizeYMinus1() );
   TRACE_BITSTREAM( " 2dSizeXY: %d,%d\n", int32_t( pdu.getPdu2dSizeXMinus1() + 1 ),
                    int32_t( pdu.getPdu2dSizeYMinus1() + 1 ) );
-  uint8_t bitCount3DPos = syntax.getVps().getGeometryInformation( 0 ).getGeometry3dCoordinatesBitdepthMinus1() + 1;
-  bitstream.write( pdu.getPdu3dPosX(), bitCount3DPos );  // u(v)
-  bitstream.write( pdu.getPdu3dPosY(), bitCount3DPos );  // u(v)
+  uint8_t bitCount3DPosX = syntax.getVps().getGeometryInformation( 0 ).getGeometry3dCoordinatesBitdepthMinus1() + 1 + atgh.getAtghAdditionalBitCount3dPosX();
+  uint8_t bitCount3DPosY = syntax.getVps().getGeometryInformation( 0 ).getGeometry3dCoordinatesBitdepthMinus1() + 1 + atgh.getAtghAdditionalBitCount3dPosY();
+  bitstream.write( pdu.getPdu3dPosX(), bitCount3DPosX );  // u(v)
+  bitstream.write( pdu.getPdu3dPosY(), bitCount3DPosY );  // u(v)
   TRACE_BITSTREAM( " 3dPosXY: %zu,%zu\n", pdu.getPdu3dPosX(), pdu.getPdu3dPosY() );
   const uint8_t bitCountForMinDepth =
       syntax.getVps().getGeometryInformation( 0 ).getGeometry3dCoordinatesBitdepthMinus1() -
-      atgh.getAtghPosMinZQuantizer() + 2;
+      atgh.getAtghPosMinZQuantizer() + 1 + atgh.getAtghAdditionalBitCount3dPosZ();
   bitstream.write( pdu.getPdu3dPosMinZ(), bitCountForMinDepth );  // u(v)
   TRACE_BITSTREAM( " Pdu3dPosMinZ: %zu ( bitCountForMinDepth = %u = %u - %u + %u ) \n", pdu.getPdu3dPosMinZ(),
                    bitCountForMinDepth,
                    syntax.getVps().getGeometryInformation( 0 ).getGeometry3dCoordinatesBitdepthMinus1(),
-                   atgh.getAtghPosMinZQuantizer(), 2);
+                   atgh.getAtghPosMinZQuantizer(), 1 + atgh.getAtghAdditionalBitCount3dPosZ());
 
   if ( asps.getNormalAxisMaxDeltaValueEnabledFlag() ) {
     uint8_t bitCountForMaxDepth = syntax.getVps().getGeometryInformation( 0 ).getGeometry3dCoordinatesBitdepthMinus1() -
-                                  atgh.getAtghPosDeltaMaxZQuantizer() + 2;
+                                  atgh.getAtghPosDeltaMaxZQuantizer() + 1 + atgh.getAtghAdditionalBitCount3dPosZ();
     bitstream.write( pdu.getPdu3dPosDeltaMaxZ(), bitCountForMaxDepth );
     TRACE_BITSTREAM( " Pdu3dPosDeltaMaxZ: %zu ( bitCountForMaxDepth = %u) \n", pdu.getPdu3dPosDeltaMaxZ(),
                      bitCountForMaxDepth );

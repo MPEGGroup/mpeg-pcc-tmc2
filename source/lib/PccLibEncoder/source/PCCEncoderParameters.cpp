@@ -875,11 +875,11 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
       auto& atgl = context.addAtlasTileGroupLayer( frameIdx, tileGroupId );
       auto& atgh = atgl.getAtlasTileGroupHeader();
       atgh.setAtghAtlasFrameParameterSetId( 0 );
+      atgh.setAtghPosMinZQuantizer( uint8_t( std::log2( minLevel_ ) ) );
       if ( additionalProjectionPlaneMode_ > 0 ) {
-        //atgh.setAtghPosMinZQuantizer( uint8_t( std::log2( minLevel_ ) ) - 1 );
-        atgh.setAtghPosMinZQuantizer( uint8_t( std::log2( minLevel_ ) ));
-      } else {
-        atgh.setAtghPosMinZQuantizer( uint8_t( std::log2( minLevel_ ) ) );
+        atgh.setAtghAdditionalBitCount3dPosX( 1 );
+        atgh.setAtghAdditionalBitCount3dPosY( 1 );
+        atgh.setAtghAdditionalBitCount3dPosZ( 1 );
       }
       atgh.setAtghPosDeltaMaxZQuantizer( uint8_t( std::log2( minLevel_ ) ) );
       atgh.setAtghPatchSizeXinfoQuantizer( log2QuantizerSizeX_ );
