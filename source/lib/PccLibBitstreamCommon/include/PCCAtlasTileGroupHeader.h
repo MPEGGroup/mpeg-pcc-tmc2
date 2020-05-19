@@ -54,7 +54,7 @@ class AtlasTileGroupHeader {
       atghPosDeltaMaxZQuantizer_( 0 ),
       atghPatchSizeXinfoQuantizer_( 0 ),
       atghPatchSizeYinfoQuantizer_( 0 ),
-#ifdef SEND_BITCOUNT_ATGH
+#if SEND_BITCOUNT_ATGH
       atghAdditionalBitCount3dPosX_( 0 ),
       atghAdditionalBitCount3dPosY_( 0 ),
       atghAdditionalBitCount3dPosZ_( 0 ),
@@ -85,7 +85,7 @@ class AtlasTileGroupHeader {
   uint8_t               getAtghPosDeltaMaxZQuantizer() { return atghPosDeltaMaxZQuantizer_; }
   uint8_t               getAtghPatchSizeXinfoQuantizer() { return atghPatchSizeXinfoQuantizer_; }
   uint8_t               getAtghPatchSizeYinfoQuantizer() { return atghPatchSizeYinfoQuantizer_; }
-#ifdef SEND_BITCOUNT_ATGH
+#if SEND_BITCOUNT_ATGH
   int8_t                getAtghAdditionalBitCount3dPosX() { return atghAdditionalBitCount3dPosX_; }
   int8_t                getAtghAdditionalBitCount3dPosY() { return atghAdditionalBitCount3dPosY_; }
   int8_t                getAtghAdditionalBitCount3dPosZ() { return atghAdditionalBitCount3dPosZ_; }
@@ -109,7 +109,7 @@ class AtlasTileGroupHeader {
   void setAtghPosDeltaMaxZQuantizer( uint8_t value ) { atghPosDeltaMaxZQuantizer_ = value; }
   void setAtghPatchSizeXinfoQuantizer( uint8_t value ) { atghPatchSizeXinfoQuantizer_ = value; }
   void setAtghPatchSizeYinfoQuantizer( uint8_t value ) { atghPatchSizeYinfoQuantizer_ = value; }
-#ifdef SEND_BITCOUNT_ATGH
+#if SEND_BITCOUNT_ATGH
   void setAtghAdditionalBitCount3dPosX( int8_t value ) { atghAdditionalBitCount3dPosX_ = value; }
   void setAtghAdditionalBitCount3dPosY( int8_t value ) { atghAdditionalBitCount3dPosY_ = value; }
   void setAtghAdditionalBitCount3dPosZ( int8_t value ) { atghAdditionalBitCount3dPosZ_ = value; }
@@ -135,7 +135,7 @@ class AtlasTileGroupHeader {
   uint8_t              atghPosDeltaMaxZQuantizer_;
   uint8_t              atghPatchSizeXinfoQuantizer_;
   uint8_t              atghPatchSizeYinfoQuantizer_;
-#ifdef SEND_BITCOUNT_ATGH
+#if SEND_BITCOUNT_ATGH
   int8_t               atghAdditionalBitCount3dPosX_;
   int8_t               atghAdditionalBitCount3dPosY_;
   int8_t               atghAdditionalBitCount3dPosZ_;
