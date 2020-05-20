@@ -254,7 +254,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
   absoluteT1List.resize( ai.getAttributeCount() );
   for ( int attrIdx = 0; attrIdx < ai.getAttributeCount(); ++attrIdx ) {
     absoluteT1List[attrIdx].resize( sps.getMapCountMinus1( atlasIndex ) + 1 );
-    if ( ai.getAttributeMapAbsoluteCodingPersistanceFlag( attrIdx ) != 0u ) {
+    if ( ai.getAttributeMapAbsoluteCodingPersistenceFlag( attrIdx ) != 0u ) {
       for ( uint32_t mapIdx = 0; mapIdx < sps.getMapCountMinus1( atlasIndex ) + 1; ++mapIdx ) {
         absoluteT1List[attrIdx][mapIdx] = true;
       }

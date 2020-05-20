@@ -197,9 +197,9 @@ class PCCAtlasHighLevelSyntax {
       case REGIONAL_NESTING: break;
       case SEI_MANIFEST: sharedPtr = std::make_shared<SEIManifest>(); break;
       case SEI_PREFIX_INDICATION: sharedPtr = std::make_shared<SEIPrefixIndication>(); break;
-      case GEOMETRY_TRANSFORMATION_PARAMS: sharedPtr = std::make_shared<SEIGeometryTransformationParams>(); break;
+      // case GEOMETRY_TRANSFORMATION_PARAMS: sharedPtr = std::make_shared<SEIGeometryTransformationParams>(); break;
       case ATTRIBUTE_TRANSFORMATION_PARAMS: sharedPtr = std::make_shared<SEIAttributeTransformationParams>(); break;
-      case ACTIVE_SUBSTREAMS: sharedPtr = std::make_shared<SEIActiveSubstreams>(); break;
+      case ACTIVE_SUB_BITSTREAMS: sharedPtr = std::make_shared<SEIActiveSubBitstreams>(); break;
       case COMPONENT_CODEC_MAPPING: sharedPtr = std::make_shared<SEIComponentCodecMapping>(); break;
       // case VOLUMETRIC_TILING_INFO: sharedPtr =
       // std::make_shared<SEIVolumetricTilingInfo>(); break;

@@ -66,7 +66,7 @@ namespace pcc {
 // ******************************************************************* //
 // Trace modes to validate new syntax
 // ******************************************************************* //
-#define BITSTREAM_TRACE
+// #define BITSTREAM_TRACE
 
 // ******************************************************************* //
 // Common constants
@@ -271,18 +271,37 @@ enum SeiPayloadType {
   REGIONAL_NESTING,                  //  8: regionalNesting
   SEI_MANIFEST,                      //  9: seiManifest
   SEI_PREFIX_INDICATION,             // 10: seiPrefixIndication
-  GEOMETRY_TRANSFORMATION_PARAMS,    // 11: geometryTransformationParams
-  ATTRIBUTE_TRANSFORMATION_PARAMS,   // 12: attributeTransformationParams
-  ACTIVE_SUBSTREAMS,                 // 13: activeSubstreams
-  COMPONENT_CODEC_MAPPING,           // 14: componentCodecMapping
-  VOLUMETRIC_TILING_INFO,            // 15: volumetricTilingInfo
-  PRESENTATION_INFORMATION,          // 16: presentationInformation
-  SMOOTHING_PARAMETERS,              // 17: smoothingParameters
-  SCENE_OBJECT_INFORMATION,          // 18: scene object information m52705
-  OBJECT_LABEL_INFORMATION,          // 19: Object label information
-  PATCH_INFORMATION,                 // 20: Patch information SEI message syntax
-  VOLUMETRIC_RECTANGLE_INFORMATION,  // 21: Volumetric rectangle information
-  RESERVED_SEI_MESSAGE,              // 22: reservedSeiMessage
+  ATTRIBUTE_TRANSFORMATION_PARAMS,   // 11: attributeTransformationParams
+  ACTIVE_SUB_BITSTREAMS,             // 12: activeSubBitstreams
+  COMPONENT_CODEC_MAPPING,           // 13: componentCodecMapping
+  SCENE_OBJECT_INFORMATION,          // 14: scene object information m52705
+  OBJECT_LABEL_INFORMATION,          // 15: Object label information
+  PATCH_INFORMATION,                 // 16: Patch information SEI message syntax
+  VOLUMETRIC_RECTANGLE_INFORMATION,  // 17: Volumetric rectangle information 
+  
+
+  // JR TODO: deprecated 
+  VOLUMETRIC_TILING_INFO,            // 14: volumetricTilingInfo
+  PRESENTATION_INFORMATION,          // 15: presentationInformation
+  SMOOTHING_PARAMETERS,              // 16: smoothingParameters
+ 
+  // else if( payloadType  = =  18 )
+  // 	atlas_infromation( payloadSize )
+  // else if( payloadType  = =  19 )
+  // 	viewport_camera_parameters( payloadSize )
+  // else if( payloadType  = =  20 )
+  // 	viewport_position( payloadSize )
+  // else if( payloadType  = =  64 )
+  // 	geometry_smoothing( payloadSize ) /* Specified in Annex H */
+  // else if( payloadType  = =  65 )
+  // 	attribute_smoothing( payloadSize ) /* Specified in Annex H  */
+  
+  // TODO: ~deprecated 
+
+
+  RESERVED_SEI_MESSAGE,              // 21: reservedSeiMessage
+
+  // GEOMETRY_TRANSFORMATION_PARAMS,    // 10: geometryTransformationParams
 };
 
 enum NalUnitType {      

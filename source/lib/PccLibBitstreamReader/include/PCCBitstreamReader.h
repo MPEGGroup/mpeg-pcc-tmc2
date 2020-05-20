@@ -376,54 +376,53 @@ class PCCBitstreamReader {
   // 7.3.5.2 NAL unit header syntax
   static void nalUnitHeader( PCCBitstream& bitstream, NalUnit& nalUnit );
 
-  // E.2  SEI payload syntax
-  // E.2.1  General SEI message syntax
+  // F.2  SEI payload syntax
+  // F.2.1  General SEI message syntax
   static void seiPayload( PCCBitstream&       bitstream,
                           PCCHighLevelSyntax& syntax,
                           NalUnitType         nalUnitType,
                           SeiPayloadType      payloadType,
                           size_t              payloadSize );
 
-  // E.2.2  Filler payload SEI message syntax
+  // F.2.2  Filler payload SEI message syntax
   static void fillerPayload( PCCBitstream& bitstream, SEI& sei, size_t payloadSize );
-  // E.2.3  User data registered by Recommendation ITU-T T.35 SEI message syntax
+  // F.2.3  User data registered by Recommendation ITU-T T.35 SEI message syntax
   static void userDataRegisteredItuTT35( PCCBitstream& bitstream, SEI& sei, size_t payloadSize );
-  // E.2.4  User data unregistered SEI message syntax
+  // F.2.4  User data unregistered SEI message syntax
   static void userDataUnregistered( PCCBitstream& bitstream, SEI& sei, size_t payloadSize );
-  // E.2.5  Recovery point SEI message syntax
+  // F.2.5  Recovery point SEI message syntax
   static void recoveryPoint( PCCBitstream& bitstream, SEI& sei, size_t payloadSize );
-  // E.2.6  No display SEI message syntax
+  // F.2.6  No display SEI message syntax
   static void noDisplay( PCCBitstream& bitstream, SEI& sei, size_t payloadSize );
-  // E.2.7  Reserved SEI message syntax
+  // F.2.7  Reserved SEI message syntax
   static void reservedSeiMessage( PCCBitstream& bitstream, SEI& sei, size_t payloadSize );
-  // E.2.8  SEI manifest SEI message syntax
+  // F.2.8  SEI manifest SEI message syntax
   static void seiManifest( PCCBitstream& bitstream, SEI& sei, size_t payloadSize );
-  // E.2.9  SEI prefix indication SEI message syntax
+  // F.2.9  SEI prefix indication SEI message syntax
   static void seiPrefixIndication( PCCBitstream& bitstream, SEI& sei, size_t payloadSize );
-  // E.2.10  Geometry transformation parameters SEI message syntax
-  static void geometryTransformationParams( PCCBitstream& bitstream, SEI& sei, size_t payloadSize );
-  // E.2.11  Attribute transformation parameters SEI message syntax
+  // F.2.10  Attribute transformation parameters SEI message syntax
   static void attributeTransformationParams( PCCBitstream& bitstream, SEI& sei, size_t payloadSize );
-  // E.2.12  Active substreams SEI message syntax
-  static void activeSubstreams( PCCBitstream& bitstream, SEI& sei, size_t payloadSize );
-  // E.2.13  Component codec mapping SEI message syntax
+  // F.2.11  Active substreams SEI message syntax
+  static void activeSubBitstreams( PCCBitstream& bitstream, SEI& sei, size_t payloadSize );
+  // F.2.12  Component codec mapping SEI message syntax
   static void componentCodecMapping( PCCBitstream& bitstream, SEI& sei, size_t payloadSize );
-  // E.2.14  Volumetric Tiling SEI message syntax
+  // F.2.14  Volumetric Tiling SEI message syntax
 
-  // E.2.15  Buffering period SEI message syntax
+  // F.2.15  Buffering period SEI message syntax
   static void bufferingPeriod( PCCBitstream&        bitstream,
                                SEI&                 sei,
                                size_t               payloadSize,
                                bool                 NalHrdBpPresentFlag,
                                bool                 AclHrdBpPresentFlag,
                                std::vector<uint8_t> hrdCabCntMinus1 );
-  // E.2.16  Atlas frame timing SEI message syntax
+  // F.2.16  Atlas frame timing SEI message syntax
   static void atlasFrameTiming( PCCBitstream& bitstream, SEI& sei, size_t payloadSize, bool CabDabDelaysPresentFlag );
-  // E.2.17  Presentation inforomation SEI message syntax
+  // F.2.17  Presentation inforomation SEI message syntax
   static void presentationInformation( PCCBitstream& bitstream, SEI& sei, size_t payloadSize );
-  // E.2.18  Smoothing parameters SEI message syntax
+  // F.2.18  Smoothing parameters SEI message syntax
   static void smoothingParameters( PCCBitstream& bitstream, SEI& sei, size_t payloadSize );
-  // m52705
+
+  // F.2.13.1	Scene object information SEI message syntax 
   static void sceneObjectInformation( PCCBitstream& bitstream, SEI& sei, size_t payloadSize );
   static void objectLabelInformation( PCCBitstream& bitstream, SEI& sei, size_t payloadSize );
   static void patchInformation( PCCBitstream& bitstream, SEI& sei, size_t payloadSize );

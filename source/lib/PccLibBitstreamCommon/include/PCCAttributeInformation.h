@@ -50,7 +50,7 @@ class AttributeInformation {
     attributeNominal2dBitdepthMinus1_.clear();
     for ( auto& value : attributePartitionChannelsMinus1_ ) { value.clear(); }
     attributePartitionChannelsMinus1_.clear();
-    attributeMapAbsoluteCodingPersistanceFlagList_.clear();
+    attributeMapAbsoluteCodingPersistenceFlagList_.clear();
     attributeMSBAlignFlag_.clear();
   }
   AttributeInformation& operator=( const AttributeInformation& ) = default;
@@ -63,7 +63,7 @@ class AttributeInformation {
     attributeDimensionPartitionsMinus1_.resize( attributeCount_, 0 );
     attributeNominal2dBitdepthMinus1_.resize( attributeCount_, 0 );
     attributePartitionChannelsMinus1_.resize( attributeCount_ );
-    attributeMapAbsoluteCodingPersistanceFlagList_.resize( attributeCount_ );
+    attributeMapAbsoluteCodingPersistenceFlagList_.resize( attributeCount_ );
     attributeMSBAlignFlag_.resize( attributeCount_, 0 );
   }
   uint8_t getAttributeCount() { return attributeCount_; }
@@ -80,11 +80,11 @@ class AttributeInformation {
     }
     return attributePartitionChannelsMinus1_[index][j];
   }
-  std::vector<bool>& getAttributeMapAbsoluteCodingPersistanceFlagList() {
-    return attributeMapAbsoluteCodingPersistanceFlagList_;
+  std::vector<bool>& getAttributeMapAbsoluteCodingPersistenceFlagList() {
+    return attributeMapAbsoluteCodingPersistenceFlagList_;
   }
-  uint8_t getAttributeMapAbsoluteCodingPersistanceFlag( size_t attIdx ) {
-    return (uint8_t)attributeMapAbsoluteCodingPersistanceFlagList_[attIdx];
+  uint8_t getAttributeMapAbsoluteCodingPersistenceFlag( size_t attIdx ) {
+    return (uint8_t)attributeMapAbsoluteCodingPersistenceFlagList_[attIdx];
   }
   void setAttributeCount( uint8_t value ) { attributeCount_ = value; }
   void setAttributeMSBAlignFlag( uint32_t index, bool value ) { attributeMSBAlignFlag_[index] = value; }
@@ -104,8 +104,8 @@ class AttributeInformation {
     }
     attributePartitionChannelsMinus1_[index][j] = value;
   }
-  void setAttributeMapAbsoluteCodingPersistanceFlag( size_t attIdx, bool value ) {
-    attributeMapAbsoluteCodingPersistanceFlagList_[attIdx] = value;
+  void setAttributeMapAbsoluteCodingPersistenceFlag( size_t attIdx, bool value ) {
+    attributeMapAbsoluteCodingPersistenceFlagList_[attIdx] = value;
   }
 
  private:
@@ -113,7 +113,7 @@ class AttributeInformation {
   std::vector<uint8_t>              attributeTypeId_;
   std::vector<uint8_t>              attributeCodecId_;
   std::vector<uint8_t>              auxiliaryAttributeCodecId_;
-  std::vector<bool>                 attributeMapAbsoluteCodingPersistanceFlagList_;
+  std::vector<bool>                 attributeMapAbsoluteCodingPersistenceFlagList_;
   std::vector<uint8_t>              attributeDimensionMinus1_;
   std::vector<uint8_t>              attributeDimensionPartitionsMinus1_;
   std::vector<std::vector<uint8_t>> attributePartitionChannelsMinus1_;

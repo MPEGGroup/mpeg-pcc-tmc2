@@ -823,7 +823,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     ai.setAttributeNominal2dBitdepthMinus1( 0, 7 );
   }
   for ( size_t i = 0; i < ai.getAttributeCount(); i++ ) {
-    ai.setAttributeMapAbsoluteCodingPersistanceFlag( i, absoluteT1_ );
+    ai.setAttributeMapAbsoluteCodingPersistenceFlag( i, absoluteT1_ );
   }
   asps.setLog2PatchPackingBlockSize( std::log2( occupancyResolution_ ) );
   asps.setLog2MaxAtlasFrameOrderCntLsbMinus4( 4 );

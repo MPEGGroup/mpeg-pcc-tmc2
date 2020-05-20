@@ -38,7 +38,7 @@
 namespace pcc {
 
 // Annex E: Supplemental enhancement information
-// E.2.1	General SEI message syntax  <=> 7.3.8	Supplemental enhancement
+// F.2.1	General SEI message syntax  <=> 7.3.8	Supplemental enhancement
 // information message syntax
 class SEI {
  public:
@@ -52,7 +52,7 @@ class SEI {
   size_t payloadSize_;
 };
 
-// E.2.3  User data registered by Recommendation ITU-T T.35 SEI message syntax
+// F.2.3  User data registered by Recommendation ITU-T T.35 SEI message syntax
 class SEIUserDataRegisteredItuTT35 : public SEI {
  public:
   SEIUserDataRegisteredItuTT35() : ituTT35CountryCode_( 0 ), ituTT35CountryCodeExtensionByte_( 0 ) {}
@@ -74,7 +74,7 @@ class SEIUserDataRegisteredItuTT35 : public SEI {
   std::vector<uint8_t> ituTT35PayloadByte_;
 };
 
-// E.2.4  User data unregistered SEI message syntax
+// F.2.4  User data unregistered SEI message syntax
 class SEIUserDataUnregistered : public SEI {
  public:
   SEIUserDataUnregistered() {
@@ -98,7 +98,7 @@ class SEIUserDataUnregistered : public SEI {
   std::vector<uint8_t> userDataPayloadByte_;
 };
 
-// E.2.5  Recovery point SEI message syntax
+// F.2.5  Recovery point SEI message syntax
 class SEIRecoveryPoint : public SEI {
  public:
   SEIRecoveryPoint() : recoveryAfocCnt_( 0 ), exactMatchFlag_( 0 ), brokenLinkFlag_( 0 ) {}
@@ -121,7 +121,7 @@ class SEIRecoveryPoint : public SEI {
   uint8_t brokenLinkFlag_;
 };
 
-// E.2.6  No display SEI message syntax
+// F.2.6  No display SEI message syntax
 class SEINoDisplay : public SEI {
  public:
   SEINoDisplay() {}
@@ -134,7 +134,7 @@ class SEINoDisplay : public SEI {
  private:
 };
 
-// E.2.7  Reserved SEI message syntax
+// F.2.7  Reserved SEI message syntax
 class SEIReservedSeiMessage : public SEI {
  public:
   SEIReservedSeiMessage() {}
@@ -155,7 +155,7 @@ class SEIReservedSeiMessage : public SEI {
   std::vector<uint8_t> reservedSeiMessagePayloadByte_;
 };
 
-// E.2.8  SEI manifest SEI message syntax
+// F.2.8  SEI manifest SEI message syntax
 class SEIManifest : public SEI {
  public:
   SEIManifest() : manifestNumSeiMsgTypes_( 0 ) {}
@@ -187,7 +187,7 @@ class SEIManifest : public SEI {
   std::vector<uint8_t>  manifestSeiDescription_;
 };
 
-// E.2.9  SEI prefix indication SEI message syntax
+// F.2.9  SEI prefix indication SEI message syntax
 class SEIPrefixIndication : public SEI {
  public:
   SEIPrefixIndication() : prefixSeiPayloadType_( 0 ), numSeiPrefixIndicationsMinus1_( 0 ) {}
@@ -222,8 +222,8 @@ class SEIPrefixIndication : public SEI {
   std::vector<uint16_t>          numBitsInPrefixIndicationMinus1_;
   std::vector<std::vector<bool>> seiPrefixDataBit_;
 };
-
-// E.2.10  Geometry transformation parameters SEI message syntax
+/*
+// F.2.10  Geometry transformation parameters SEI message syntax
 class SEIGeometryTransformationParams : public SEI {
  public:
   SEIGeometryTransformationParams() :
@@ -306,11 +306,15 @@ class SEIGeometryTransformationParams : public SEI {
   std::vector<int16_t> gtpCameraOffsetOnAxis_[3];
   std::vector<int16_t> gtpCameraOrientationOnAxis_[3];
 };
+*/
 
-// E.2.11  Attribute transformation parameters SEI message syntax
+// F.2.10  Attribute transformation parameters SEI message syntax
 class SEIAttributeTransformationParams : public SEI {
  public:
-  SEIAttributeTransformationParams() : atpCancelFlag_( false ), atpNumAttributeUpdates_( 0 ) {}
+  SEIAttributeTransformationParams() : 
+    atpCancelFlag_( false ), 
+    atpNumAttributeUpdates_( 0 ),
+    atpPersistenceFlag_( false ) {}
 
   ~SEIAttributeTransformationParams() {
     atpAttributeIdx_.clear();
@@ -349,7 +353,7 @@ class SEIAttributeTransformationParams : public SEI {
   std::vector<std::vector<bool>>&     getAtpOffsetParamsEnabledFlag() { return atpOffsetParamsEnabledFlag_; }
   std::vector<std::vector<uint32_t>>& getAtpAttributeScale() { return atpAttributeScale_; }
   std::vector<std::vector<int32_t>>&  getAtpAttributeOffset() { return atpAttributeOffset_; }
-
+  bool                                getAtpPersistenceFlag() { return atpPersistenceFlag_; }  
   uint8_t  getAtpAttributeIdx( size_t i ) { return atpAttributeIdx_[i]; }
   uint8_t  getAtpDimensionMinus1( size_t i ) { return atpDimensionMinus1_[i]; }
   bool     getAtpScaleParamsEnabledFlag( size_t i, size_t j ) { return atpScaleParamsEnabledFlag_[i][j]; }
@@ -365,7 +369,8 @@ class SEIAttributeTransformationParams : public SEI {
   void setAtpOffsetParamsEnabledFlag( size_t i, size_t j, bool value ) { atpOffsetParamsEnabledFlag_[i][j] = value; }
   void setAtpAttributeScale( size_t i, size_t j, uint32_t value ) { atpAttributeScale_[i][j] = value; }
   void setAtpAttributeOffset( size_t i, size_t j, int32_t value ) { atpAttributeOffset_[i][j] = value; }
-
+  void setAtpPersistenceFlag( bool value ) { atpPersistenceFlag_ = value; }
+  
  private:
   bool                               atpCancelFlag_;
   int32_t                            atpNumAttributeUpdates_;
@@ -375,29 +380,30 @@ class SEIAttributeTransformationParams : public SEI {
   std::vector<std::vector<bool>>     atpOffsetParamsEnabledFlag_;
   std::vector<std::vector<uint32_t>> atpAttributeScale_;
   std::vector<std::vector<int32_t>>  atpAttributeOffset_;
+  bool                               atpPersistenceFlag_;
 };
 
-// E.2.12  Active substreams SEI message syntax
-class SEIActiveSubstreams : public SEI {
+// F.2.11  Active substreams SEI message syntax
+class SEIActiveSubBitstreams : public SEI {
  public:
-  SEIActiveSubstreams() :
+  SEIActiveSubBitstreams() :
       activeAttributesChangesFlag_( 0 ),
       activeMapsChangesFlag_( 0 ),
-      rawPointsSubstreamsActiveFlag_( 0 ),
+      auxiliaryPointsSubstreamsActiveFlag_( 0 ),
       allAttributesActiveFlag_( 0 ),
       allMapsActiveFlag_( 0 ),
       activeAttributeCountMinus1_( 0 ),
       activeMapCountMinus1_( 0 ) {}
-  ~SEIActiveSubstreams() {
+  ~SEIActiveSubBitstreams() {
     activeAttributeIdx_.clear();
     activeMapIdx_.clear();
   }
-  SEIActiveSubstreams& operator=( const SEIActiveSubstreams& ) = default;
+  SEIActiveSubBitstreams& operator=( const SEIActiveSubBitstreams& ) = default;
 
-  SeiPayloadType        getPayloadType() { return ACTIVE_SUBSTREAMS; }
+  SeiPayloadType        getPayloadType() { return ACTIVE_SUB_BITSTREAMS; }
   bool                  getActiveAttributesChangesFlag() { return activeAttributesChangesFlag_; }
   bool                  getActiveMapsChangesFlag() { return activeMapsChangesFlag_; }
-  bool                  getRawPointsSubstreamsActiveFlag() { return rawPointsSubstreamsActiveFlag_; }
+  bool                  getAuxiliaryPointsSubstreamsActiveFlag() { return auxiliaryPointsSubstreamsActiveFlag_; }
   bool                  getAllAttributesActiveFlag() { return allAttributesActiveFlag_; }
   bool                  getAllMapsActiveFlag() { return allMapsActiveFlag_; }
   uint8_t               getActiveAttributeCountMinus1() { return activeAttributeCountMinus1_; }
@@ -409,7 +415,7 @@ class SEIActiveSubstreams : public SEI {
 
   void setActiveAttributesChangesFlag( bool value ) { activeAttributesChangesFlag_ = value; }
   void setActiveMapsChangesFlag( bool value ) { activeMapsChangesFlag_ = value; }
-  void setRawPointsSubstreamsActiveFlag( bool value ) { rawPointsSubstreamsActiveFlag_ = value; }
+  void setAuxiliaryPointsSubstreamsActiveFlag( bool value ) { auxiliaryPointsSubstreamsActiveFlag_ = value; }
   void setAllAttributesActiveFlag( bool value ) { allAttributesActiveFlag_ = value; }
   void setAllMapsActiveFlag( bool value ) { allMapsActiveFlag_ = value; }
   void setActiveAttributeCountMinus1( uint8_t value ) { activeAttributeCountMinus1_ = value; }
@@ -420,7 +426,7 @@ class SEIActiveSubstreams : public SEI {
  private:
   bool                 activeAttributesChangesFlag_;
   bool                 activeMapsChangesFlag_;
-  bool                 rawPointsSubstreamsActiveFlag_;
+  bool                 auxiliaryPointsSubstreamsActiveFlag_;
   bool                 allAttributesActiveFlag_;
   bool                 allMapsActiveFlag_;
   uint8_t              activeAttributeCountMinus1_;
@@ -429,7 +435,7 @@ class SEIActiveSubstreams : public SEI {
   std::vector<uint8_t> activeMapIdx_;
 };
 
-// E.2.13  Component codec mapping SEI message syntax
+// F.2.12  Component codec mapping SEI message syntax
 class SEIComponentCodecMapping : public SEI {
  public:
   SEIComponentCodecMapping() : ccmCodecMappingsCountMinus1_( 0 ) {}
@@ -461,7 +467,7 @@ class SEIComponentCodecMapping : public SEI {
   std::vector<std::string> ccmCodec4cc_;
 };
 
-// E.2.14  Volumetric Tiling SEI message syntax
+// F.2.14  Volumetric Tiling SEI message syntax
 // m52705
 class SEISceneObjectInformation : public SEI {
  public:
@@ -671,6 +677,7 @@ class SEIObjectLabelInformation : public SEI {
   bool           getOliLabelCancelFlag() { return oliLabelCancelFlag_; }
   bool           getOliBitEqualToZero() { return oliBitEqualToZero_; }
   std::string&   getOliLabel( size_t index ) { return oliLabel_[index]; }
+  bool           getOliPersistenceFlag() { return oliPersistenceFlag_; }  
 
   void setOliCancelFlag( bool value ) { oliCancelFlag_ = value; }
   void setOliLabelLanguagePresentFlag( bool value ) { oliLabelLanguagePresentFlag_ = value; }
@@ -683,7 +690,7 @@ class SEIObjectLabelInformation : public SEI {
     if ( oliLabel_.size() < index ) { oliLabel_.resize( index + 1 ); }
     oliLabel_[index] = value;
   }
-
+  void setOliPersistenceFlag( bool value ) { oliPersistenceFlag_ = value; }
  private:
   bool                     oliCancelFlag_;
   bool                     oliLabelLanguagePresentFlag_;
@@ -693,6 +700,7 @@ class SEIObjectLabelInformation : public SEI {
   bool                     oliLabelCancelFlag_;
   bool                     oliBitEqualToZero_;
   std::vector<std::string> oliLabel_;  // st(v)
+  bool                     oliPersistenceFlag_;
 };                                     // Object label information
 
 class SEIPatchInformation : public SEI {
@@ -701,7 +709,8 @@ class SEIPatchInformation : public SEI {
   ~SEIPatchInformation() {}
   SEIPatchInformation& operator=( const SEIPatchInformation& ) = default;
   SeiPayloadType       getPayloadType() { return PATCH_INFORMATION; }
-  bool                 getPiCancelFlag() { return piCancelFlag_; }
+  bool                 getPiPersistenceFlag() { return piPersistenceFlag_; }
+  bool                 getPiResetFlag() { return piResetFlag_; }
   uint32_t             getPiNumTileUpdates() { return piNumTileUpdates_; }
   uint8_t              getPiLog2MaxObjectIdxTracked() { return piLog2MaxObjectIdxTracked_; }
   uint8_t              getPiLog2MaxPatchIdxUpdated() { return piLog2MaxPatchIdxUpdated_; }
@@ -716,8 +725,8 @@ class SEIPatchInformation : public SEI {
   uint32_t getPiPatchObjectIdx( size_t index, size_t index2, size_t index3 ) {
     return piPatchObjectIdx_[index][index2][index3];
   }
-
-  void setPiCancelFlag( bool value ) { piCancelFlag_ = value; }
+  void setPiPersistenceFlag( bool value ) { piPersistenceFlag_ = value; }
+  void setPiResetFlag( bool value ) { piResetFlag_ = value; }
   void setPiNumTileUpdates( uint32_t value ) { piNumTileUpdates_ = value; }
   void setPiLog2MaxObjectIdxTracked( uint8_t value ) { piLog2MaxObjectIdxTracked_ = value; }
   void setPiLog2MaxPatchIdxUpdated( uint8_t value ) { piLog2MaxPatchIdxUpdated_ = value; }
@@ -734,7 +743,8 @@ class SEIPatchInformation : public SEI {
   }
 
  private:
-  bool                                            piCancelFlag_;
+  bool                                            piPersistenceFlag_;
+  bool                                            piResetFlag_;
   uint32_t                                        piNumTileUpdates_;
   uint8_t                                         piLog2MaxObjectIdxTracked_;
   uint8_t                                         piLog2MaxPatchIdxUpdated_;
@@ -763,7 +773,8 @@ class SEIVolumetricRectangleInformation : public SEI {
   void allocateRectangleObjectIdx( size_t index, size_t size ) { vriRectangleObjectIdx_[index].resize( size ); }
 
   SeiPayloadType getPayloadType() { return VOLUMETRIC_RECTANGLE_INFORMATION; }
-  bool           getVriCancelFlag() { return vriCancelFlag_; }
+  bool           getVriPersistenceFlag() { return vriPersistenceFlag_; }
+  bool           getVriResetFlag() { return vriResetFlag_; }
   uint32_t       getVriNumRectanglesUpdates() { return vriNumRectanglesUpdates_; }
   uint8_t        getVriLog2MaxObjectIdxTracked() { return vriLog2MaxObjectIdxTracked_; }
   uint8_t        getVriLog2MaxRectangleIdxUpdated() { return vriLog2MaxRectangleIdxUpdated_; }
@@ -777,7 +788,8 @@ class SEIVolumetricRectangleInformation : public SEI {
   uint32_t getVriRectangleNumberOfObjectsMinus1( size_t index ) { return vriRectangleNumberOfObjectsMinus1_[index]; }
   uint32_t getVriRectangleObjectIdx( size_t index, size_t index2 ) { return vriRectangleObjectIdx_[index][index2]; }
 
-  void setVriCancelFlag( bool value ) { vriCancelFlag_ = value; }
+  void setVriPersistenceFlag( bool value ) { vriPersistenceFlag_ = value; }
+  void setVriResetFlag( bool value ) { vriResetFlag_ = value; }
   void setVriNumRectanglesUpdates( uint32_t value ) { vriNumRectanglesUpdates_ = value; }
   void setVriLog2MaxObjectIdxTracked( uint8_t value ) { vriLog2MaxObjectIdxTracked_ = value; }
   void setVriLog2MaxRectangleIdxUpdated( uint8_t value ) { vriLog2MaxRectangleIdxUpdated_ = value; }
@@ -796,7 +808,8 @@ class SEIVolumetricRectangleInformation : public SEI {
   }
 
  private:
-  bool                               vriCancelFlag_;
+  bool                               vriPersistenceFlag_;
+  bool                               vriResetFlag_;
   uint32_t                           vriNumRectanglesUpdates_;
   uint8_t                            vriLog2MaxObjectIdxTracked_;
   uint8_t                            vriLog2MaxRectangleIdxUpdated_;
@@ -812,7 +825,7 @@ class SEIVolumetricRectangleInformation : public SEI {
 
 };  // volumetric rectangle information
 
-// E.2.15  Buffering period SEI message syntax
+// F.2.15  Buffering period SEI message syntax
 class SEIBufferingPeriod : public SEI {
  public:
   SEIBufferingPeriod() :
@@ -924,7 +937,7 @@ class SEIBufferingPeriod : public SEI {
   std::vector<uint32_t>              bpAclInitialAltCabRemovalOffset_;
 };
 
-// E.2.16  Atlas frame timing SEI message syntax
+// F.2.16  Atlas frame timing SEI message syntax
 class SEIAtlasFrameTiming : public SEI {
  public:
   SEIAtlasFrameTiming() : aftCabRemovalDelayMinus1_( 0 ), aftDabOutputDelay_( 0 ) {}
@@ -944,7 +957,7 @@ class SEIAtlasFrameTiming : public SEI {
   uint32_t aftDabOutputDelay_;
 };
 
-// E.2.17  Presentation inforomation SEI message syntax
+// F.2.17  Presentation inforomation SEI message syntax
 class SEIPresentationInformation : public SEI {
  public:
   SEIPresentationInformation() :
@@ -992,7 +1005,7 @@ class SEIPresentationInformation : public SEI {
   int64_t piDimension_[3];
 };
 
-// E.2.18  Smoothing parameters SEI message syntax
+// F.2.18  Smoothing parameters SEI message syntax
 class SEISmoothingParameters : public SEI {
  public:
   SEISmoothingParameters() :
