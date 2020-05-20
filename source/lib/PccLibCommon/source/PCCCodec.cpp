@@ -446,7 +446,6 @@ void PCCCodec::identifyBoundaryPoints( const std::vector<uint32_t>& occupancyMap
 
 std::vector<PCCPoint3D> PCCCodec::generatePoints( const GeneratePointCloudParameters&  params,
                                                   PCCFrameContext&                     frame,
-                                                  const PCCVideoGeometry&              videoGeometry,
                                                   const std::vector<PCCVideoGeometry>& videoGeometryMultiple,
                                                   const size_t                         videoFrameIndex,
                                                   const size_t                         patchIndex,
@@ -459,8 +458,8 @@ std::vector<PCCPoint3D> PCCCodec::generatePoints( const GeneratePointCloudParame
                                                   const size_t                         minD1,
                                                   const size_t                         neighbor ) {
   const auto& patch = frame.getPatch( patchIndex );
-  auto&       frame0 =
-      params.multipleStreams_ ? videoGeometryMultiple[0].getFrame( videoFrameIndex ) : videoGeometry.getFrame( videoFrameIndex );
+  auto&       frame0 = videoGeometryMultiple[0].getFrame( videoFrameIndex );
+      //params.multipleStreams_ ? videoGeometryMultiple[0].getFrame( videoFrameIndex ) : videoGeometry.getFrame( videoFrameIndex );
   std::vector<PCCPoint3D> createdPoints;
   PCCPoint3D              point0;
   if ( params.pbfEnableFlag_ ) {
@@ -625,7 +624,7 @@ std::vector<PCCPoint3D> PCCCodec::generatePoints( const GeneratePointCloudParame
     if ( params.mapCountMinus1_ > 0 ) {
       PCCPoint3D  point1( point0 );
       const auto& frame1 = params.multipleStreams_ ? videoGeometryMultiple[1].getFrame( videoFrameIndex )
-                                                   : videoGeometry.getFrame( 1 + videoFrameIndex );
+                                                   : videoGeometryMultiple[0].getFrame( 1 + videoFrameIndex );
       if ( params.absoluteD1_ ) {
         point1 = patch.generatePoint( u, v, frame1.getValue( 0, x, y ) );
       } else {
@@ -648,7 +647,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                        reconstr
                                    std::vector<uint32_t>&               partition,
                                    bool                                 bDecoder ) {
   TRACE_CODEC( "generatePointCloud F = %zu start \n", frame.getIndex() );
-  auto&        videoGeometry         = context.getVideoGeometry();
+  auto&        videoGeometry         = context.getVideoGeometryMultiple()[0];
   auto&        videoGeometryMultiple = context.getVideoGeometryMultiple();
   auto&        videoOccupancyMap     = context.getVideoOccupancyMap();
   auto&        patches            = frame.getPatches();
@@ -881,7 +880,8 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                        reconstr
               } else {  // not params.enhancedOccupancyMapCode_
                 auto& mode = context.getPointLocalReconstructionMode( patch.getPointLocalReconstructionMode( u0, v0 ) );
                 auto  createdPoints =
-                    generatePoints( params, frame, videoGeometry, videoGeometryMultiple, videoFrameIndex, patchIndex, u, v, x, y,
+                    generatePoints( params, frame, //videoGeometry,
+                                   videoGeometryMultiple, videoFrameIndex, patchIndex, u, v, x, y,
                                     mode.interpolate_, mode.filling_, mode.minD1_, mode.neighbor_ );
                 if ( !createdPoints.empty() ) {
                   for ( size_t i = 0; i < createdPoints.size(); i++ ) {
@@ -1990,7 +1990,7 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
     printChecksum( reconstruct, "colorPointCloud in" );
 #endif
   auto&        sps        = context.getVps();
-  auto&        videoTexture       = multipleStreams != 0U ? context.getVideoTextureMultiple()[0] : context.getVideoTexture();
+  auto&        videoTexture       = context.getVideoTextureMultiple()[0];
   auto&        videoTextureFrame1 = context.getVideoTextureMultiple()[1];
   const size_t mapCount           = params.mapCountMinus1_ + 1;
   size_t       numberOfRawPointsAndEOMColors = 0;
@@ -2307,61 +2307,6 @@ void PCCCodec::generateOccupancyMap( PCCFrameContext&            frame,
   }
 }
 
-void PCCCodec::generateBlockToPatchFromOccupancyMap( PCCContext&  context,
-                                                     const size_t occupancyResolution,
-                                                     bool         bDecoder ) {
-  for ( auto& frame : context.getFrames() ) {
-    generateBlockToPatchFromOccupancyMap( context, frame, occupancyResolution, bDecoder );
-  }
-}
-
-void PCCCodec::generateBlockToPatchFromOccupancyMap( PCCContext&      context,
-                                                     PCCFrameContext& frame,
-                                                     const size_t     occupancyResolution,
-                                                     bool             bDecoder ) {
-  auto&        patches            = frame.getPatches();
-  const size_t patchCount         = patches.size();
-  const size_t blockToPatchWidth  = frame.getWidth() / occupancyResolution;
-  const size_t blockToPatchHeight = frame.getHeight() / occupancyResolution;
-  const size_t blockCount         = blockToPatchWidth * blockToPatchHeight;
-  auto&        blockToPatch       = frame.getBlockToPatch();
-  const auto&  occupancyMap       = frame.getOccupancyMap();
-  blockToPatch.resize( blockCount );
-  std::fill( blockToPatch.begin(), blockToPatch.end(), 0 );
-  for ( size_t patchIndex = 0; patchIndex < patchCount; ++patchIndex ) {
-    auto&  patch        = patches[patchIndex];
-    size_t nonZeroPixel = 0;
-    for ( size_t v0 = 0; v0 < patch.getSizeV0(); ++v0 ) {
-      for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {
-        const size_t blockIndex = patch.patchBlock2CanvasBlock( u0, v0, blockToPatchWidth, blockToPatchHeight );
-        nonZeroPixel            = 0;
-        for ( size_t v1 = 0; v1 < patch.getOccupancyResolution(); ++v1 ) {
-          const size_t v = v0 * patch.getOccupancyResolution() + v1;
-          for ( size_t u1 = 0; u1 < patch.getOccupancyResolution(); ++u1 ) {
-            const size_t u = u0 * patch.getOccupancyResolution() + u1;
-            size_t       x;
-            size_t       y;
-            nonZeroPixel += static_cast<unsigned long long>(
-                occupancyMap[patch.patch2Canvas( u, v, frame.getWidth(), frame.getHeight(), x, y )] != 0 );
-          }  // u1
-        }    // v1
-        if ( bDecoder ) {
-          if ( context.getAtlasSequenceParameterSet( 0 ).getPatchPrecedenceOrderFlag() ) {
-            if ( nonZeroPixel > 0 && blockToPatch[blockIndex] == 0 ) { blockToPatch[blockIndex] = patchIndex + 1; }
-          } else {
-            if ( nonZeroPixel > 0 ) { blockToPatch[blockIndex] = patchIndex + 1; }
-          }
-        } else {
-          if ( nonZeroPixel > 0 ) {
-            if ( blockToPatch[blockIndex] == 0 ) { blockToPatch[blockIndex] = patchIndex + 1; }
-          }
-          exit( 0 );
-        }
-      }  // u0
-    }    // v0
-  }      // patch
-}
-
 void PCCCodec::generateBlockToPatchFromBoundaryBox( PCCContext& context, const size_t occupancyResolution ) {
   for (auto& frame : context.getFrames()){
     generateBlockToPatchFromBoundaryBox( context, frame, occupancyResolution );
@@ -2395,8 +2340,6 @@ void PCCCodec::generateBlockToPatchFromBoundaryBox( PCCContext&      context,
 }
 
 void PCCCodec::generateBlockToPatchFromOccupancyMapVideo( PCCContext&  context,
-                                                          const bool   losslessGeo,
-                                                          const bool   lossyRawPointsPatch,
                                                           const size_t occupancyResolution,
                                                           const size_t occupancyPrecision ) {
   size_t sizeFrames = context.getFrames().size();

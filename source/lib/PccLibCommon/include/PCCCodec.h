@@ -220,13 +220,6 @@ class PCCCodec {
                              const size_t                thresholdLossyOM,
                              const bool                  enhancedOccupancyMapForDepthFlag );
 
-  void generateBlockToPatchFromOccupancyMap( PCCContext& context, const size_t occupancyResolution, bool bDecoder );
-
-  void generateBlockToPatchFromOccupancyMap( PCCContext&      context,
-                                             PCCFrameContext& frame,
-                                             const size_t     occupancyResolution,
-                                             bool             bDecoder );
-
   void generateBlockToPatchFromBoundaryBox( PCCContext& context, const size_t occupancyResolution );
 
   void generateBlockToPatchFromBoundaryBox( PCCContext&      context,
@@ -234,8 +227,6 @@ class PCCCodec {
                                             const size_t     occupancyResolution );
 
   void generateBlockToPatchFromOccupancyMapVideo( PCCContext&  context,
-                                                  const bool   losslessGeo,
-                                                  const bool   lossyRawPointsPatch,
                                                   const size_t occupancyResolution,
                                                   const size_t occupancyPrecision );
 
@@ -255,7 +246,6 @@ class PCCCodec {
 
   std::vector<PCCPoint3D> generatePoints( const GeneratePointCloudParameters&  params,
                                           PCCFrameContext&                     frame,
-                                          const PCCVideoGeometry&              video,
                                           const std::vector<PCCVideoGeometry>& videoMultiple,
                                           const size_t                         videoFrameIndex,
                                           const size_t                         patchIndex,

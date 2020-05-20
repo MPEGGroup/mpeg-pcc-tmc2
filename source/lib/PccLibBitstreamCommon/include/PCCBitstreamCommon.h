@@ -60,12 +60,14 @@
 #include <mach/mach.h>
 #endif
 
+#define SINGLEPASS_WRITING 1
+
 namespace pcc {
 
 // ******************************************************************* //
 // Trace modes to validate new syntax
 // ******************************************************************* //
-// #define BITSTREAM_TRACE
+ #define BITSTREAM_TRACE
 
 // ******************************************************************* //
 // Common constants

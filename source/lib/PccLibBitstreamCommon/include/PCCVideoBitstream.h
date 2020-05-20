@@ -51,19 +51,6 @@ class PCCVideoBitstream {
   void trace() { std::cout << toString( type_ ) << " ->" << size() << " B " << std::endl; }
 
   std::string getExtension() {
-    //    switch ( type_ ) {
-    //      case VIDEO_OCCUPANCY: return std::string( "occupancy" ); break;
-    //      case VIDEO_GEOMETRY: return std::string( "geometry" ); break;
-    //      case VIDEO_GEOMETRY_D0: return std::string( "geometryD0" ); break;
-    //      case VIDEO_GEOMETRY_D1: return std::string( "geometryD1" ); break;
-    //      case VIDEO_GEOMETRY_RAW: return std::string( "geomteryRaw" ); break;
-    //      case VIDEO_TEXTURE: return std::string( "texture" ); break;
-    //      case VIDEO_TEXTURE_RAW: return std::string( "textureRaw" ); break;
-    //      case VIDEO_TEXTURE_T0: return std::string( "textureT0" ); break;
-    //      case VIDEO_TEXTURE_T1: return std::string( "textureT1" ); break;
-    //      default: return std::string( "ERROR" ); break;
-    //    }
-
     size_t typeIndex = (size_t)type_;
     if ( typeIndex == (size_t)VIDEO_OCCUPANCY )
       return std::string( "occupancy" );
@@ -77,9 +64,8 @@ class PCCVideoBitstream {
       return std::string( "texture" );
     else if ( typeIndex >= (size_t)VIDEO_TEXTURE_T0 && typeIndex <= (size_t)VIDEO_TEXTURE_T15 )
       return std::string( "textureT" ) + std::to_string( typeIndex - ( size_t )( VIDEO_TEXTURE_T0 ) );
-
     else if ( typeIndex == (size_t)VIDEO_TEXTURE_RAW )
-      return std::string( "rtextureRaw" );
+      return std::string( "textureRaw" );
     else
       return std::string( "unknown" );
   }

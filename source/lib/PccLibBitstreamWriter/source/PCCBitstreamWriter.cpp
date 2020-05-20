@@ -1300,9 +1300,7 @@ void PCCBitstreamWriter::sampleStreamNalUnit( PCCHighLevelSyntax&  syntax,
                    8 * ( ssnu.getUnitSizePrecisionBytesMinus1() + 1 ) );  // u(v)
   nalUnitHeader( bitstream, nalu );
   switch ( nalu.getNalUnitType() ) {
-    case NAL_ASPS:
-      atlasSequenceParameterSetRbsp( syntax.getAtlasSequenceParameterSet( index ), syntax, bitstream );
-      break;
+    case NAL_ASPS: atlasSequenceParameterSetRbsp( syntax.getAtlasSequenceParameterSet( index ), syntax, bitstream ); break;
     case NAL_AFPS: atlasFrameParameterSetRbsp( syntax.getAtlasFrameParameterSet( index ), syntax, bitstream ); break;
     case NAL_TRAIL:
     case NAL_TSA:

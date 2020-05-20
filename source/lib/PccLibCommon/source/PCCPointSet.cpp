@@ -1112,7 +1112,7 @@ bool PCCPointSet3::transferColors16bitBP( PCCPointSet3& target,
                                           double        maxColorDist2Bwd,
                                           const bool    excludeColorOutlier,
                                           const double  thresholdColorOutlierDist ) const {
-  printf("transferColors16bitBP \n");
+  //printf("transferColors16bitBP \n");
   const auto&  source           = *this;
   const size_t pointCountSource = source.getPointCount();
   const size_t pointCountTarget = target.getPointCount();
