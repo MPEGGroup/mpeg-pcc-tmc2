@@ -268,9 +268,9 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
   PCCDecoder decoder;
   decoder.setParameters( decoderParams );
 
-  SampleStreamVpccUnit ssvu;
-  PCCBitstreamReader   bitstreamReader;
-  size_t               headerSize = pcc::PCCBitstreamReader::read( bitstream, ssvu );
+  SampleStreamV3CUnit ssvu;
+  PCCBitstreamReader  bitstreamReader;
+  size_t              headerSize = pcc::PCCBitstreamReader::read( bitstream, ssvu );
   bitstreamStat.incrHeader( headerSize );
 #ifdef BITSTREAM_TRACE
   size_t index = 0;
@@ -298,7 +298,7 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
     context.resizeAtlas( context.getVps().getAtlasCountMinus1() + 1 );
     for ( uint32_t atlId = 0; atlId < context.getVps().getAtlasCountMinus1() + 1; atlId++ ) {
       context.getAtlas( atlId ).allocateVideoFrames( context, 0 );
-      // first allocating the structures, frames will be added as the V-PCC
+      // first allocating the structures, frames will be added as the V3C
       // units are being decoded ???
       context.setAtlasIndex( atlId );
       int retDecoding = decoder.decode( context, reconstructs, atlId );
@@ -327,7 +327,7 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
       } else {
         frameNumber += reconstructs.getFrameCount();
       }
-      bMoreData = ( ssvu.getVpccUnitCount() > 0 );
+      bMoreData = ( ssvu.getV3CUnitCount() > 0 );
     }
   }
   bitstreamStat.trace();

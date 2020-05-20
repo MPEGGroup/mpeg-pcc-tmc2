@@ -41,55 +41,55 @@ namespace pcc {
 class RawPatchDataUnit {
  public:
   RawPatchDataUnit() :
-      rpduPatchInRawVideoFlag_( false ),
-      rpdu2dPosX_( 0 ),
-      rpdu2dPosY_( 0 ),
-      rpdu2dSizeXMinus1_( 0 ),
-      rpdu2dSizeYMinus1_( 0 ),
-      rpdu3dPosX_( 0 ),
-      rpdu3dPosY_( 0 ),
-      rpdu3dPosZ_( 0 ),
-      rpduRawPointsMinus1_( 0 ),
-      rpduPatchIndex_( 0 ),
-      rpduFrameIndex_( 0 ) {}
+      patchInAuxiliaryVideoFlag_( false ),
+      pos2dX_( 0 ),
+      pos2dY_( 0 ),
+      size2dXMinus1_( 0 ),
+      size2dYMinus1_( 0 ),
+      pos3dX_( 0 ),
+      pos3dY_( 0 ),
+      pos3dZ_( 0 ),
+      rawPointsMinus1_( 0 ),
+      patchIndex_( 0 ),
+      frameIndex_( 0 ) {}
   ~RawPatchDataUnit() {}
   RawPatchDataUnit& operator=( const RawPatchDataUnit& ) = default;
 
-  bool     getRpduPatchInRawVideoFlag() { return rpduPatchInRawVideoFlag_; }
-  size_t   getRpdu2dPosX() { return rpdu2dPosX_; }
-  size_t   getRpdu2dPosY() { return rpdu2dPosY_; }
-  int64_t  getRpdu2dSizeXMinus1() { return rpdu2dSizeXMinus1_; }
-  int64_t  getRpdu2dSizeYMinus1() { return rpdu2dSizeYMinus1_; }
-  size_t   getRpdu3dPosX() { return rpdu3dPosX_; }
-  size_t   getRpdu3dPosY() { return rpdu3dPosY_; }
-  size_t   getRpdu3dPosZ() { return rpdu3dPosZ_; }
-  uint32_t getRpduRawPointsMinus1() { return rpduRawPointsMinus1_; }
-  size_t   getPatchIndex() { return rpduPatchIndex_; }
-  size_t   getFrameIndex() { return rpduFrameIndex_; }
-  void     setPatchIndex( size_t value ) { rpduPatchIndex_ = value; }
-  void     setFrameIndex( size_t value ) { rpduFrameIndex_ = value; }
-  void     setRpduPatchInRawVideoFlag( bool value ) { rpduPatchInRawVideoFlag_ = value; }
-  void     setRpdu2dPosX( size_t value ) { rpdu2dPosX_ = value; }
-  void     setRpdu2dPosY( size_t value ) { rpdu2dPosY_ = value; }
-  void     setRpdu2dSizeXMinus1( uint64_t value ) { rpdu2dSizeXMinus1_ = value; }
-  void     setRpdu2dSizeYMinus1( uint64_t value ) { rpdu2dSizeYMinus1_ = value; }
-  void     setRpdu3dPosX( size_t value ) { rpdu3dPosX_ = value; }
-  void     setRpdu3dPosY( size_t value ) { rpdu3dPosY_ = value; }
-  void     setRpdu3dPosZ( size_t value ) { rpdu3dPosZ_ = value; }
-  void     setRpduRawPointsMinus1( uint32_t value ) { rpduRawPointsMinus1_ = value; }
+  bool     getPatchInAuxiliaryVideoFlag() { return patchInAuxiliaryVideoFlag_; }
+  size_t   get2dPosX() { return pos2dX_; }
+  size_t   get2dPosY() { return pos2dY_; }
+  int64_t  get2dSizeXMinus1() { return size2dXMinus1_; }
+  int64_t  get2dSizeYMinus1() { return size2dYMinus1_; }
+  size_t   get3dPosX() { return pos3dX_; }
+  size_t   get3dPosY() { return pos3dY_; }
+  size_t   get3dPosZ() { return pos3dZ_; }
+  uint32_t getRawPointsMinus1() { return rawPointsMinus1_; }
+  size_t   getPatchIndex() { return patchIndex_; }
+  size_t   getFrameIndex() { return frameIndex_; }
+  void     setPatchIndex( size_t value ) { patchIndex_ = value; }
+  void     setFrameIndex( size_t value ) { frameIndex_ = value; }
+  void     setPatchInAuxiliaryVideoFlag( bool value ) { patchInAuxiliaryVideoFlag_ = value; }
+  void     set2dPosX( size_t value ) { pos2dX_ = value; }
+  void     set2dPosY( size_t value ) { pos2dY_ = value; }
+  void     set2dSizeXMinus1( uint64_t value ) { size2dXMinus1_ = value; }
+  void     set2dSizeYMinus1( uint64_t value ) { size2dYMinus1_ = value; }
+  void     set3dPosX( size_t value ) { pos3dX_ = value; }
+  void     set3dPosY( size_t value ) { pos3dY_ = value; }
+  void     set3dPosZ( size_t value ) { pos3dZ_ = value; }
+  void     setRawPointsMinus1( uint32_t value ) { rawPointsMinus1_ = value; }
 
  private:
-  bool     rpduPatchInRawVideoFlag_;
-  size_t   rpdu2dPosX_;
-  size_t   rpdu2dPosY_;
-  uint64_t rpdu2dSizeXMinus1_;
-  uint64_t rpdu2dSizeYMinus1_;
-  size_t   rpdu3dPosX_;
-  size_t   rpdu3dPosY_;
-  size_t   rpdu3dPosZ_;
-  uint32_t rpduRawPointsMinus1_;
-  size_t   rpduPatchIndex_;
-  size_t   rpduFrameIndex_;
+  bool     patchInAuxiliaryVideoFlag_;
+  size_t   pos2dX_;
+  size_t   pos2dY_;
+  uint64_t size2dXMinus1_;
+  uint64_t size2dYMinus1_;
+  size_t   pos3dX_;
+  size_t   pos3dY_;
+  size_t   pos3dZ_;
+  uint32_t rawPointsMinus1_;
+  size_t   patchIndex_;
+  size_t   frameIndex_;
 };
 
 };  // namespace pcc

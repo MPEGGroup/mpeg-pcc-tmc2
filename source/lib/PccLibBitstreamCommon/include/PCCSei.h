@@ -702,11 +702,11 @@ class SEIPatchInformation : public SEI {
   SEIPatchInformation& operator=( const SEIPatchInformation& ) = default;
   SeiPayloadType       getPayloadType() { return PATCH_INFORMATION; }
   bool                 getPiCancelFlag() { return piCancelFlag_; }
-  uint32_t             getPiNumTileGroupUpdates() { return piNumTileGroupUpdates_; }
+  uint32_t             getPiNumTileUpdates() { return piNumTileUpdates_; }
   uint8_t              getPiLog2MaxObjectIdxTracked() { return piLog2MaxObjectIdxTracked_; }
   uint8_t              getPiLog2MaxPatchIdxUpdated() { return piLog2MaxPatchIdxUpdated_; }
-  uint32_t             getPiTileGroupAddress( size_t index ) { return piTileGroupAddress_[index]; }
-  bool                 getPiTileGroupCancelFlag( size_t index ) { return piTileGroupCancelFlag_[index]; }
+  uint32_t             getPiTileAddress( size_t index ) { return piTileAddress_[index]; }
+  bool                 getPiTileCancelFlag( size_t index ) { return piTileCancelFlag_[index]; }
   uint32_t             getPiNumPatchUpdates( size_t index ) { return piNumPatchUpdates_[index]; }
   uint32_t             getPiPatchIdx( size_t index, size_t index2 ) { return piPatchIdx_[index][index2]; }
   bool                 getPiPatchCancelFlag( size_t index, size_t index2 ) { return piPatchCancelFlag_[index][index2]; }
@@ -718,11 +718,11 @@ class SEIPatchInformation : public SEI {
   }
 
   void setPiCancelFlag( bool value ) { piCancelFlag_ = value; }
-  void setPiNumTileGroupUpdates( uint32_t value ) { piNumTileGroupUpdates_ = value; }
+  void setPiNumTileUpdates( uint32_t value ) { piNumTileUpdates_ = value; }
   void setPiLog2MaxObjectIdxTracked( uint8_t value ) { piLog2MaxObjectIdxTracked_ = value; }
   void setPiLog2MaxPatchIdxUpdated( uint8_t value ) { piLog2MaxPatchIdxUpdated_ = value; }
-  void setPiTileGroupAddress( size_t index, uint32_t value ) { piTileGroupAddress_[index] = value; }
-  void setPiTileGroupCancelFlag( size_t index, bool value ) { piTileGroupCancelFlag_[index] = value; }
+  void setPiTileAddress( size_t index, uint32_t value ) { piTileAddress_[index] = value; }
+  void setPiTileCancelFlag( size_t index, bool value ) { piTileCancelFlag_[index] = value; }
   void setPiNumPatchUpdates( size_t index, uint32_t value ) { piNumPatchUpdates_[index] = value; }
   void setPiPatchIdx( size_t index, size_t index2, uint32_t value ) { piPatchIdx_[index][index2] = value; }
   void setPiPatchCancelFlag( size_t index, size_t index2, bool value ) { piPatchCancelFlag_[index][index2] = value; }
@@ -735,11 +735,11 @@ class SEIPatchInformation : public SEI {
 
  private:
   bool                                            piCancelFlag_;
-  uint32_t                                        piNumTileGroupUpdates_;
+  uint32_t                                        piNumTileUpdates_;
   uint8_t                                         piLog2MaxObjectIdxTracked_;
   uint8_t                                         piLog2MaxPatchIdxUpdated_;
-  std::vector<uint32_t>                           piTileGroupAddress_;
-  std::vector<bool>                               piTileGroupCancelFlag_;
+  std::vector<uint32_t>                           piTileAddress_;
+  std::vector<bool>                               piTileCancelFlag_;
   std::vector<uint32_t>                           piNumPatchUpdates_;
   std::vector<std::vector<uint32_t>>              piPatchIdx_;
   std::vector<std::vector<bool>>                  piPatchCancelFlag_;

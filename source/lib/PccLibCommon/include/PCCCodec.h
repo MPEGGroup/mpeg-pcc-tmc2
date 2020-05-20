@@ -263,7 +263,7 @@ class PCCCodec {
                                           const bool                           filling,
                                           const size_t                         minD1,
                                           const size_t                         neighbor );
-  PCCPatchType            getCurrPatchType( PCCTILEGROUP tileGroupType, uint8_t patchMode );
+  // PCCPatchType            getCurrPatchType( PCCTileType tileType, uint8_t patchMode );
   inline double           entropy( std::vector<uint8_t>& Data, int N ) {
     std::vector<size_t> count;
     count.resize( 256, 0 );

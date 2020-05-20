@@ -59,56 +59,6 @@ void PCCCodec::generatePointCloud( PCCGroupOfFrames&                   reconstru
                                    const GeneratePointCloudParameters& params,
                                    std::vector<std::vector<uint32_t>>& partitions,
                                    bool                                bDecoder ) {
-#ifdef CODEC_TRACE
-  TRACE_CODEC( "Generate point Cloud start \n" );
-  TRACE_CODEC( "  occupancyResolution_            = %zu \n", params.occupancyResolution_ );
-  TRACE_CODEC( "  occupancyPrecision_             = %zu \n", params.occupancyPrecision_ );
-  TRACE_CODEC( "  flagGeometrySmoothing_          = %d  \n", params.flagGeometrySmoothing_ );
-  if ( params.flagGeometrySmoothing_ ) {
-    TRACE_CODEC( "  gridSmoothing_                  = %d  \n", params.gridSmoothing_ );
-    if ( params.gridSmoothing_ ) {
-      TRACE_CODEC( "  gridSize_                       = %zu \n", params.gridSize_ );
-    } else {
-      TRACE_CODEC( "  neighborCountSmoothing_         = %zu \n", params.neighborCountSmoothing_ );
-      TRACE_CODEC( "  radius2Smoothing_               = %f  \n", params.radius2Smoothing_ );
-      TRACE_CODEC( "  radius2BoundaryDetection_       = %f  \n", params.radius2BoundaryDetection_ );
-    }
-    TRACE_CODEC( "  thresholdSmoothing_              = %f \n", params.thresholdSmoothing_ );
-  }
-  TRACE_CODEC( "  rawPointColorFormat_            = %d  \n", params.rawPointColorFormat_ );
-  TRACE_CODEC( "  nbThread_                       = %zu \n", params.nbThread_ );
-  TRACE_CODEC( "  multipleStreams_                = %d  \n", params.multipleStreams_ );
-  TRACE_CODEC( "  absoluteD1_                     = %d  \n", params.absoluteD1_ );
-  TRACE_CODEC( "  surfaceThickness                = %zu \n", params.surfaceThickness_ );
-  TRACE_CODEC( "  flagColorSmoothing_             = %d  \n", params.flagColorSmoothing_ );
-  if ( params.flagColorSmoothing_ ) {
-    TRACE_CODEC( "  gridColorSmoothing_           = %d  \n", params.gridColorSmoothing_ );
-    if ( params.gridColorSmoothing_ ) {
-      TRACE_CODEC( "  cgridSize_                      = %zu \n", params.cgridSize_ );
-      TRACE_CODEC( "  thresholdColorSmoothing_        = %f  \n", params.thresholdColorSmoothing_ );
-      TRACE_CODEC( "  thresholdColorDifference_       = %f  \n", params.thresholdColorDifference_ );
-      TRACE_CODEC( "  thresholdColorVariation_        = %f  \n", params.thresholdColorVariation_ );
-      TRACE_CODEC( "  thresholdLocalEntropy_          = %f  \n", params.thresholdLocalEntropy_ );
-    } else {
-      TRACE_CODEC( "  thresholdColorSmoothing_        = %f  \n", params.thresholdColorSmoothing_ );
-      TRACE_CODEC( "  thresholdLocalEntropy_          = %f  \n", params.thresholdLocalEntropy_ );
-      TRACE_CODEC( "  radius2ColorSmoothing_          = %f  \n", params.radius2ColorSmoothing_ );
-      TRACE_CODEC( "  neighborCountColorSmoothing_    = %zu \n", params.neighborCountColorSmoothing_ );
-    }
-  }
-  TRACE_CODEC( "  enhancedOccupancyMapCode_         = %d  \n", params.enhancedOccupancyMapCode_ );
-  TRACE_CODEC( "  EOMFixBitCount_                 = %d  \n", params.EOMFixBitCount_ );
-  TRACE_CODEC( "  removeDuplicatePoints_          = %d  \n", params.removeDuplicatePoints_ );
-  TRACE_CODEC( "  pointLocalReconstruction_       = %d  \n", params.pointLocalReconstruction_ );
-  TRACE_CODEC( "  mapCountMinus1_                 = %d  \n", params.mapCountMinus1_ );
-  TRACE_CODEC( "  singleLayerPixelInterleaving    = %d  \n", params.singleMapPixelInterleaving_ );
-  TRACE_CODEC( "  useAdditionalPointsPatch_       = %d  \n", params.useAdditionalPointsPatch_ );
-  TRACE_CODEC( "  PBF   \n" );
-  TRACE_CODEC( "    pbfEnableFlag_                = %d \n", params.pbfEnableFlag_ );
-  TRACE_CODEC( "    pbfPassesCount_               = %d \n", params.pbfPassesCount_ );
-  TRACE_CODEC( "    pbfFilterSize_                = %d \n", params.pbfFilterSize_ );
-  TRACE_CODEC( "    pbfLog2Threshold_             = %d \n", params.pbfLog2Threshold_ );
-#endif
   auto& frames = context.getFrames();
 #ifdef ENABLE_PAPI_PROFILING
   PAPI_PROFILING_INITIALIZE;
@@ -649,7 +599,57 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
                                    const GeneratePointCloudParameters& params,
                                    std::vector<uint32_t>&              partition,
                                    bool                                bDecoder ) {
-  TRACE_CODEC( "generatePointCloud F = %zu start \n", frame.getIndex() );
+  TRACE_CODEC( "generatePointCloud F = %zu start \n", frame.getIndex() );  
+#ifdef CODEC_TRACE
+  TRACE_CODEC( "Generate point Cloud start \n" );
+  TRACE_CODEC( "  occupancyResolution_            = %zu \n", params.occupancyResolution_ );
+  TRACE_CODEC( "  occupancyPrecision_             = %zu \n", params.occupancyPrecision_ );
+  TRACE_CODEC( "  flagGeometrySmoothing_          = %d  \n", params.flagGeometrySmoothing_ );
+  if ( params.flagGeometrySmoothing_ ) {
+    TRACE_CODEC( "  gridSmoothing_                  = %d  \n", params.gridSmoothing_ );
+    if ( params.gridSmoothing_ ) {
+      TRACE_CODEC( "  gridSize_                       = %zu \n", params.gridSize_ );
+    } else {
+      TRACE_CODEC( "  neighborCountSmoothing_         = %zu \n", params.neighborCountSmoothing_ );
+      TRACE_CODEC( "  radius2Smoothing_               = %f  \n", params.radius2Smoothing_ );
+      TRACE_CODEC( "  radius2BoundaryDetection_       = %f  \n", params.radius2BoundaryDetection_ );
+    }
+    TRACE_CODEC( "  thresholdSmoothing_              = %f \n", params.thresholdSmoothing_ );
+  }
+  TRACE_CODEC( "  rawPointColorFormat_            = %d  \n", params.rawPointColorFormat_ );
+  TRACE_CODEC( "  nbThread_                       = %zu \n", params.nbThread_ );
+  TRACE_CODEC( "  multipleStreams_                = %d  \n", params.multipleStreams_ );
+  TRACE_CODEC( "  absoluteD1_                     = %d  \n", params.absoluteD1_ );
+  TRACE_CODEC( "  surfaceThickness                = %zu \n", params.surfaceThickness_ );
+  TRACE_CODEC( "  flagColorSmoothing_             = %d  \n", params.flagColorSmoothing_ );
+  if ( params.flagColorSmoothing_ ) {
+    TRACE_CODEC( "  gridColorSmoothing_           = %d  \n", params.gridColorSmoothing_ );
+    if ( params.gridColorSmoothing_ ) {
+      TRACE_CODEC( "  cgridSize_                      = %zu \n", params.cgridSize_ );
+      TRACE_CODEC( "  thresholdColorSmoothing_        = %f  \n", params.thresholdColorSmoothing_ );
+      TRACE_CODEC( "  thresholdColorDifference_       = %f  \n", params.thresholdColorDifference_ );
+      TRACE_CODEC( "  thresholdColorVariation_        = %f  \n", params.thresholdColorVariation_ );
+      TRACE_CODEC( "  thresholdLocalEntropy_          = %f  \n", params.thresholdLocalEntropy_ );
+    } else {
+      TRACE_CODEC( "  thresholdColorSmoothing_        = %f  \n", params.thresholdColorSmoothing_ );
+      TRACE_CODEC( "  thresholdLocalEntropy_          = %f  \n", params.thresholdLocalEntropy_ );
+      TRACE_CODEC( "  radius2ColorSmoothing_          = %f  \n", params.radius2ColorSmoothing_ );
+      TRACE_CODEC( "  neighborCountColorSmoothing_    = %zu \n", params.neighborCountColorSmoothing_ );
+    }
+  }
+  TRACE_CODEC( "  enhancedOccupancyMapCode_         = %d  \n", params.enhancedOccupancyMapCode_ );
+  TRACE_CODEC( "  EOMFixBitCount_                 = %d  \n", params.EOMFixBitCount_ );
+  TRACE_CODEC( "  removeDuplicatePoints_          = %d  \n", params.removeDuplicatePoints_ );
+  TRACE_CODEC( "  pointLocalReconstruction_       = %d  \n", params.pointLocalReconstruction_ );
+  TRACE_CODEC( "  mapCountMinus1_                 = %d  \n", params.mapCountMinus1_ );
+  TRACE_CODEC( "  singleLayerPixelInterleaving    = %d  \n", params.singleMapPixelInterleaving_ );
+  TRACE_CODEC( "  useAdditionalPointsPatch_       = %d  \n", params.useAdditionalPointsPatch_ );
+  TRACE_CODEC( "  PBF   \n" );
+  TRACE_CODEC( "    pbfEnableFlag_                = %d \n", params.pbfEnableFlag_ );
+  TRACE_CODEC( "    pbfPassesCount_               = %d \n", params.pbfPassesCount_ );
+  TRACE_CODEC( "    pbfFilterSize_                = %d \n", params.pbfFilterSize_ );
+  TRACE_CODEC( "    pbfLog2Threshold_             = %d \n", params.pbfLog2Threshold_ );
+#endif
   auto&        videoGeometry         = context.getVideoGeometry();
   auto&        videoGeometryMultiple = context.getVideoGeometryMultiple();
   auto&        videoOccupancyMap     = context.getVideoOccupancyMap();
@@ -2008,26 +2008,27 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
     auto& pointToPixel              = frame.getPointToPixel();
     auto& color16bit                = reconstruct.getColors16bit();
     bool  useRawPointsSeparateVideo = frame.getUseRawPointsSeparateVideo();
-    bool  lossyRawPointsPatch       = !sps.getRawPatchEnabledFlag( 0 ) && frame.getRawPatchEnabledFlag();
+    auto& asps                      = context.getAtlasSequenceParameterSet( 0 );  // TODO: get correct value
+    bool  lossyRawPointsPatch       = !asps.getRawPatchEnabledFlag() && frame.getRawPatchEnabledFlag();
     numOfRawGeos                    = frame.getTotalNumberOfRawPoints();
     numberOfEOMPoints               = frame.getTotalNumberOfEOMPoints();
     numberOfRawPointsAndEOMColors   = numOfRawGeos + numberOfEOMPoints;
     size_t pointCount               = reconstruct.getPointCount();
-    if ( ( sps.getRawPatchEnabledFlag( 0 ) || lossyRawPointsPatch ) && useRawPointsSeparateVideo ) {
+    if ( ( asps.getRawPatchEnabledFlag() || lossyRawPointsPatch ) && useRawPointsSeparateVideo ) {
       numOfRawGeos                  = frame.getTotalNumberOfRawPoints();
       numberOfEOMPoints             = frame.getTotalNumberOfEOMPoints();
       numberOfRawPointsAndEOMColors = numOfRawGeos + numberOfEOMPoints;
       TRACE_CODEC( "numOfRawGeos            = %d \n", numOfRawGeos );
       TRACE_CODEC( "numberOfEOMPoints       = %d \n", numberOfEOMPoints );
       TRACE_CODEC( "numberOfRawPointsAndEOMColors = %d \n", numberOfRawPointsAndEOMColors );
-      if ( useRawPointsSeparateVideo && ( sps.getRawPatchEnabledFlag( 0 ) || lossyRawPointsPatch ) ) {
+      if ( useRawPointsSeparateVideo && ( asps.getRawPatchEnabledFlag() || lossyRawPointsPatch ) ) {
         pointCount = reconstruct.getPointCount() - numOfRawGeos - numberOfEOMPoints;
         assert( numberOfRawPointsAndEOMColors == ( numberOfEOMPoints + numOfRawGeos ) );
         TRACE_CODEC( "  => pointCount         = %d \n", pointCount );
       }
     }
     TRACE_CODEC( "useRawPointsSeparateVideo = %d \n", useRawPointsSeparateVideo );
-    TRACE_CODEC( "sps.getRawPatchEnabledFlag()  = %d \n", context.getVps().getRawPatchEnabledFlag( 0 ) );
+    TRACE_CODEC( "sps.getRawPatchEnabledFlag()  = %d \n", asps.getRawPatchEnabledFlag() );
     TRACE_CODEC( "plt.getProfileCodecGroupIdc() = %d \n",
                  context.getVps().getProfileTierLevel().getProfileCodecGroupIdc() );
     TRACE_CODEC( "lossyRawPointsPatch       = %d \n", lossyRawPointsPatch );
@@ -2123,7 +2124,7 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
         reconstruct.setColor16bit( targetIndex[i], target.getColor16bit( i ) );
       }
     }
-    if ( ( sps.getRawPatchEnabledFlag( 0 ) || lossyRawPointsPatch ) && useRawPointsSeparateVideo ) {
+    if ( ( asps.getRawPatchEnabledFlag() || lossyRawPointsPatch ) && useRawPointsSeparateVideo ) {
       std::vector<PCCColor3B>& mpsTextures = frame.getRawPointsTextures();
       std::vector<PCCColor3B>& eomTextures = frame.getEOMTextures();
       for ( size_t i = 0; i < numberOfEOMPoints; ++i ) {
@@ -2205,14 +2206,10 @@ void PCCCodec::generateRawPointsTexturefromVideo( PCCContext& context ) {
   auto&        videoRawPointsTexture = context.getVideoRawPointsTexture();
   videoRawPointsTexture.resize( gofSize );
   TRACE_CODEC( "generateRawPointsTexturefromVideo \n" );
-  for ( auto& framecontext : context.getFrames() ) {
-    const size_t frameIndex = framecontext.getIndex();  //
-    generateRawPointsTexturefromVideo( context, framecontext, frameIndex );
-    std::cout << "generate raw points (Texture) : frame " << frameIndex
-              << ", # of raw points Texture : " << framecontext.getRawPointsPatch( 0 ).size() << std::endl;
-#ifdef CODEC_TRACE
-    printChecksum( reconstructs[frameIndex], "generateRawPointsTexturefromVideo out" );
-#endif
+  for ( auto& frame : context.getFrames() ) {    
+    generateRawPointsTexturefromVideo( context, frame, frame.getIndex() );
+    std::cout << "generate raw points (Texture) : frame " << frame.getIndex()
+              << ", # of raw points Texture : " << frame.getRawPointsPatch( 0 ).size() << std::endl;
   }
   std::cout << "RawPoints Texture [done]" << std::endl;
   TRACE_CODEC( "generateRawPointsTexturefromVideo done \n" );
@@ -2444,36 +2441,6 @@ void PCCCodec::generateBlockToPatchFromOccupancyMapVideo( PCCContext&           
       }  // u0
     }    // v0
   }      // patch
-}
-
-PCCPatchType PCCCodec::getCurrPatchType( PCCTILEGROUP tileGroupType, uint8_t patchMode ) {
-  if ( ( ( tileGroupType == I_TILE_GRP ) && patchMode == static_cast<uint8_t>( PATCH_MODE_I_INTRA ) ) ||
-       ( ( tileGroupType == P_TILE_GRP ) && patchMode == static_cast<uint8_t>( PATCH_MODE_P_INTRA ) ) ) {
-    return INTRA_PATCH;
-  }
-  if ( ( tileGroupType == P_TILE_GRP && patchMode == static_cast<uint8_t>( PATCH_MODE_P_INTER ) ) ) {
-    return INTER_PATCH;
-  }
-  if ( ( tileGroupType == I_TILE_GRP && patchMode == static_cast<uint8_t>( PATCH_MODE_I_RAW ) ) ||
-       ( tileGroupType == P_TILE_GRP && patchMode == static_cast<uint8_t>( PATCH_MODE_P_RAW ) ) ) {
-    return RAW_PATCH;
-  }
-  if ( ( tileGroupType == I_TILE_GRP && patchMode == static_cast<uint8_t>( PATCH_MODE_I_EOM ) ) ||
-       ( tileGroupType == P_TILE_GRP && patchMode == static_cast<uint8_t>( PATCH_MODE_P_EOM ) ) ) {
-    return EOM_PATCH;
-  }
-  if ( ( tileGroupType == P_TILE_GRP && patchMode == static_cast<uint8_t>( PATCH_MODE_P_MERGE ) ) ) {
-    return MERGE_PATCH;
-  }
-  if ( ( tileGroupType == P_TILE_GRP && patchMode == static_cast<uint8_t>( PATCH_MODE_P_SKIP ) ) ) {
-    return SKIP_PATCH;
-  }
-  if ( ( tileGroupType == I_TILE_GRP && patchMode == static_cast<uint8_t>( PATCH_MODE_I_END ) ) ||
-       ( tileGroupType == P_TILE_GRP && patchMode == static_cast<uint8_t>( PATCH_MODE_P_END ) ) ) {
-    return END_PATCH;
-  } else {
-    return ERROR_PATCH;
-  }
 }
 
 #ifdef CODEC_TRACE

@@ -47,7 +47,7 @@ class PCCContext;
 class PCCFrameContext;
 class PatchFrameGeometryParameterSet;
 class GeometryPatchParameterSet;
-class VpccParameterSet;
+class V3CParameterSet;
 class PointLocalReconstructionData;
 
 template <typename T, size_t N>

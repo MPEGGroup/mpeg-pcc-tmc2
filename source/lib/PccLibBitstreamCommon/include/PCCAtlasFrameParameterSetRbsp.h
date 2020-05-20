@@ -42,77 +42,73 @@ namespace pcc {
 class AtlasFrameParameterSetRbsp {
  public:
   AtlasFrameParameterSetRbsp() :
-      afpsAtlasFrameParameterSetId_( 0 ),
-      afpsAtlasSequenceParameterSetId_( 0 ),
-      afpsOutputFlagPresentFlag_( 0 ),
-      afpsNumRefIdxDefaultActiveMinus1_( 0 ),
-      afpsAdditionalLtAfocLsbLen_( 0 ),
-      afpsLodModeEnableFlag_( false ),
-      afpsOverrideEomForDepthFlag_( 0 ),
-      afpsEomNumberOfPatchBitCountMinus1_( 0 ),
-      afpsEomMaxBitCountMinus1_( 0 ),
-      afpsRaw3dPosBitCountExplicitModeFlag_( 0 ),
-      afpsExtensionPresentFlag_( 0 ),
-      afpsExtensionDataFlag_( 0 ) {}
+      atlasFrameParameterSetId_( 0 ),
+      atlasSequenceParameterSetId_( 0 ),
+      outputFlagPresentFlag_( 0 ),
+      numRefIdxDefaultActiveMinus1_( 0 ),
+      additionalLtAfocLsbLen_( 0 ),
+      lodModeEnableFlag_( false ),
+      raw3dPosBitCountExplicitModeFlag_( 0 ),
+      extensionFlag_( 0 ),
+      vpccExtensionFlag_( 0 ),
+      mivExtensionFlag_( 0 ),
+      extension6Bits_( 0 ) {}
 
   ~AtlasFrameParameterSetRbsp() {}
   AtlasFrameParameterSetRbsp& operator=( const AtlasFrameParameterSetRbsp& ) = default;
   void                        copyFrom( AtlasFrameParameterSetRbsp& refAfps ) {
-    afpsAtlasSequenceParameterSetId_      = refAfps.getAtlasSequenceParameterSetId();
-    afpsNumRefIdxDefaultActiveMinus1_     = refAfps.getAfpsNumRefIdxDefaultActiveMinus1();
-    afpsAdditionalLtAfocLsbLen_           = refAfps.getAfpsAdditionalLtAfocLsbLen();
-    afpsLodModeEnableFlag_                = refAfps.getLodModeEnableFlag();
-    afpsOverrideEomForDepthFlag_          = refAfps.getAfpsOverrideEomForDepthFlag();
-    afpsEomNumberOfPatchBitCountMinus1_   = refAfps.getAfpsEomNumberOfPatchBitCountMinus1();
-    afpsEomMaxBitCountMinus1_             = refAfps.getAfpsEomMaxBitCountMinus1();
-    afpsRaw3dPosBitCountExplicitModeFlag_ = refAfps.getAfpsRaw3dPosBitCountExplicitModeFlag();
-    afpsExtensionPresentFlag_             = refAfps.getAfpsExtensionPresentFlag();
-    afpsExtensionDataFlag_                = refAfps.getAfpsExtensionDataFlag();
-    atlasFrameTileInformation_            = refAfps.getAtlasFrameTileInformation();
+    atlasSequenceParameterSetId_  = refAfps.getAtlasSequenceParameterSetId();
+    numRefIdxDefaultActiveMinus1_ = refAfps.getNumRefIdxDefaultActiveMinus1();
+    additionalLtAfocLsbLen_       = refAfps.getAdditionalLtAfocLsbLen();
+    lodModeEnableFlag_            = refAfps.getLodModeEnableFlag();
+    raw3dPosBitCountExplicitModeFlag_ = refAfps.getRaw3dPosBitCountExplicitModeFlag();
+    extensionFlag_                    = refAfps.getExtensionFlag();
+    vpccExtensionFlag_                = refAfps.getVpccExtensionFlag();
+    mivExtensionFlag_                 = refAfps.getMivExtensionFlag();
+    extension6Bits_                   = refAfps.getExtension6Bits();
+    atlasFrameTileInformation_        = refAfps.getAtlasFrameTileInformation();
   }
 
-  uint8_t                    getAtlasFrameParameterSetId() { return afpsAtlasFrameParameterSetId_; }
-  uint8_t                    getAtlasSequenceParameterSetId() { return afpsAtlasSequenceParameterSetId_; }
-  bool                       getAfpsOutputFlagPresentFlag() { return afpsOutputFlagPresentFlag_; }
-  uint8_t                    getAfpsNumRefIdxDefaultActiveMinus1() { return afpsNumRefIdxDefaultActiveMinus1_; }
-  uint8_t                    getAfpsAdditionalLtAfocLsbLen() { return afpsAdditionalLtAfocLsbLen_; }
-  bool                       getAfpsOverrideEomForDepthFlag() { return afpsOverrideEomForDepthFlag_; }
-  uint8_t                    getAfpsEomNumberOfPatchBitCountMinus1() { return afpsEomNumberOfPatchBitCountMinus1_; }
-  uint8_t                    getAfpsEomMaxBitCountMinus1() { return afpsEomMaxBitCountMinus1_; }
-  bool                       getAfpsRaw3dPosBitCountExplicitModeFlag() { return afpsRaw3dPosBitCountExplicitModeFlag_; }
-  uint8_t                    getAfpsExtensionPresentFlag() { return afpsExtensionPresentFlag_; }
-  bool                       getAfpsExtensionDataFlag() { return afpsExtensionDataFlag_; }
+  uint8_t getAtlasFrameParameterSetId() { return atlasFrameParameterSetId_; }
+  uint8_t getAtlasSequenceParameterSetId() { return atlasSequenceParameterSetId_; }
+  bool    getOutputFlagPresentFlag() { return outputFlagPresentFlag_; }
+  uint8_t getNumRefIdxDefaultActiveMinus1() { return numRefIdxDefaultActiveMinus1_; }
+  uint8_t getAdditionalLtAfocLsbLen() { return additionalLtAfocLsbLen_; }
+  bool    getRaw3dPosBitCountExplicitModeFlag() { return raw3dPosBitCountExplicitModeFlag_; }
+  bool    getExtensionFlag() { return extensionFlag_; }
+  bool    getVpccExtensionFlag() { return vpccExtensionFlag_; }
+  bool    getMivExtensionFlag() { return mivExtensionFlag_; }
+  uint8_t getExtension6Bits() { return extension6Bits_; }
   AtlasFrameTileInformation& getAtlasFrameTileInformation() { return atlasFrameTileInformation_; }
-  bool                       getLodModeEnableFlag() { return afpsLodModeEnableFlag_; }
+  bool                       getLodModeEnableFlag() { return lodModeEnableFlag_; }
+  AfpsVpccExtension&         getAfpsVpccExtension() {return afpsVpccExtension_; }
 
-  void setAtlasFrameParameterSetId( uint8_t value ) { afpsAtlasFrameParameterSetId_ = value; }
-  void setAtlasSequenceParameterSetId( uint8_t value ) { afpsAtlasSequenceParameterSetId_ = value; }
-  void setAfpsOutputFlagPresentFlag( bool value ) { afpsOutputFlagPresentFlag_ = value; }
-  void setAfpsNumRefIdxDefaultActiveMinus1( uint8_t value ) { afpsNumRefIdxDefaultActiveMinus1_ = value; }
-  void setAfpsAdditionalLtAfocLsbLen( uint8_t value ) { afpsAdditionalLtAfocLsbLen_ = value; }
-  void setAfpsOverrideEomForDepthFlag( bool value ) { afpsOverrideEomForDepthFlag_ = value; }
-  void setAfpsEomNumberOfPatchBitCountMinus1( uint8_t value ) { afpsEomNumberOfPatchBitCountMinus1_ = value; }
-  void setAfpsEomMaxBitCountMinus1( uint8_t value ) { afpsEomMaxBitCountMinus1_ = value; }
-  void setAfpsRaw3dPosBitCountExplicitModeFlag( bool value ) { afpsRaw3dPosBitCountExplicitModeFlag_ = value; }
-  void setAfpsExtensionPresentFlag( uint8_t value ) { afpsExtensionPresentFlag_ = value; }
-  void setAfpsExtensionDataFlag( bool value ) { afpsExtensionDataFlag_ = value; }
-  void setAtlasFrameTileInformation( AtlasFrameTileInformation value ) { atlasFrameTileInformation_ = value; }
-  void setLodModeEnableFlag( bool value ) { afpsLodModeEnableFlag_ = value; }
+  void setAtlasFrameParameterSetId( uint8_t value ) { atlasFrameParameterSetId_ = value; }
+  void setAtlasSequenceParameterSetId( uint8_t value ) { atlasSequenceParameterSetId_ = value; }
+  void setOutputFlagPresentFlag( bool value ) { outputFlagPresentFlag_ = value; }
+  void setNumRefIdxDefaultActiveMinus1( uint8_t value ) { numRefIdxDefaultActiveMinus1_ = value; }
+  void setAdditionalLtAfocLsbLen( uint8_t value ) { additionalLtAfocLsbLen_ = value; }
+  void setRaw3dPosBitCountExplicitModeFlag( bool value ) { raw3dPosBitCountExplicitModeFlag_ = value; }
+  void setExtensionFlag( bool value ) { extensionFlag_ = value; }
+  void setVpccExtensionFlag( bool value ) { vpccExtensionFlag_ = value; }
+  void setMivExtensionFlag( bool value ) { mivExtensionFlag_ = value; }
+  void setExtension6Bits( uint8_t value ) { extension6Bits_ = value; }
+  void setLodModeEnableFlag( bool value ) { lodModeEnableFlag_ = value; }
 
  private:
-  uint8_t                   afpsAtlasFrameParameterSetId_;
-  uint8_t                   afpsAtlasSequenceParameterSetId_;
+  uint8_t                   atlasFrameParameterSetId_;
+  uint8_t                   atlasSequenceParameterSetId_;
   AtlasFrameTileInformation atlasFrameTileInformation_;
-  bool                      afpsOutputFlagPresentFlag_;
-  uint8_t                   afpsNumRefIdxDefaultActiveMinus1_;
-  uint8_t                   afpsAdditionalLtAfocLsbLen_;
-  bool                      afpsLodModeEnableFlag_;
-  bool                      afpsOverrideEomForDepthFlag_;
-  uint8_t                   afpsEomNumberOfPatchBitCountMinus1_;
-  uint8_t                   afpsEomMaxBitCountMinus1_;
-  bool                      afpsRaw3dPosBitCountExplicitModeFlag_;
-  uint8_t                   afpsExtensionPresentFlag_;
-  bool                      afpsExtensionDataFlag_;
+  bool                      outputFlagPresentFlag_;
+  uint8_t                   numRefIdxDefaultActiveMinus1_;
+  uint8_t                   additionalLtAfocLsbLen_;
+  bool                      lodModeEnableFlag_;
+  bool                      raw3dPosBitCountExplicitModeFlag_;
+  bool                      extensionFlag_;
+  bool                      vpccExtensionFlag_;
+  bool                      mivExtensionFlag_;
+  uint8_t                   extension6Bits_;
+  AfpsVpccExtension         afpsVpccExtension_;
 };
 
 };  // namespace pcc

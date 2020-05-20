@@ -110,7 +110,7 @@ class PCCPatch {
       d0Count_( 0 ),
       eomCount_( 0 ),
       eomandD1Count_( 0 ),
-      patchType_( PATCH_MODE_I_INTRA ) {
+      patchType_( I_INTRA ) {
     depth_[0].clear();
     depth_[1].clear();
     occupancy_.clear();

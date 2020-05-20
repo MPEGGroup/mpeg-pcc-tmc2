@@ -129,9 +129,9 @@ class PCCFrameContext {
   void setRefAtlasListIndexInSPS( size_t listIdx ) { refAtlasListIndexInSPS_ = listIdx; }
   void setRefAFOCList( std::vector<std::vector<size_t>>& list );
   void setRefAFOCList( PCCContext& context );
-  void constructAtghRefListStruct( PCCContext& context, AtlasTileGroupHeader& atgh );
+  void constructAtghRefListStruct( PCCContext& context, AtlasTileHeader& ath );
   void setNumRefIdxActive( size_t value ) { numRefIdxActive_ = value; }
-  void setNumRefIdxActive( PCCContext& context, AtlasTileGroupHeader& atgh );
+  void setNumRefIdxActive( PCCContext& context, AtlasTileHeader& ath );
   void addRefAFOC( size_t value ) { refAFOCList_[0].push_back( value ); }
   void addRefAFOC( size_t idx, size_t value ) { refAFOCList_[idx].push_back( value ); }
 

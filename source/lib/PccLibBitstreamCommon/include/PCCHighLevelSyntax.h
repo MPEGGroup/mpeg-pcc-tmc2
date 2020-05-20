@@ -38,16 +38,16 @@
 #include "PCCBitstream.h"
 
 #include "PCCSei.h"
-#include "PCCVpccUnit.h"
+#include "PCCV3CUnit.h"
 #include "PCCSampleStreamNalUnit.h"
-#include "PCCSampleStreamVpccUnit.h"
-#include "PCCAtlasTileGroupHeader.h"
-#include "PCCVpccParameterSet.h"
-#include "PCCVpccUnitPayloadHeader.h"
-#include "PCCAtlasTileGroupLayerRbsp.h"
+#include "PCCSampleStreamV3CUnit.h"
+#include "PCCAtlasTileHeader.h"
+#include "PCCV3CParameterSet.h"
+#include "PCCV3CUnitPayloadHeader.h"
+#include "PCCAtlasTileLayerRbsp.h"
 #include "PCCAtlasSequenceParameterSetRbsp.h"
 #include "PCCAtlasFrameParameterSetRbsp.h"
-#include "PCCAtlasTileGroupLayerRbsp.h"
+#include "PCCAtlasTileLayerRbsp.h"
 
 namespace pcc {
 
@@ -85,13 +85,13 @@ class PCCAtlasHighLevelSyntax {
   AtlasSequenceParameterSetRbsp& getAtlasSequenceParameterSet() { return atlasSequenceParameterSet_[activeASPS_]; }
   AtlasSequenceParameterSetRbsp& addAtlasSequenceParameterSet() {
     AtlasSequenceParameterSetRbsp asps;
-    asps.setAltasSequenceParameterSetId( atlasSequenceParameterSet_.size() );
+    asps.setAtlasSequenceParameterSetId( atlasSequenceParameterSet_.size() );
     atlasSequenceParameterSet_.push_back( asps );
     return atlasSequenceParameterSet_.back();
   }
   AtlasSequenceParameterSetRbsp& addAtlasSequenceParameterSet( uint8_t setId ) {
     AtlasSequenceParameterSetRbsp asps;
-    asps.setAltasSequenceParameterSetId( setId );
+    asps.setAtlasSequenceParameterSetId( setId );
     if ( atlasSequenceParameterSet_.size() < setId + 1 ) { atlasSequenceParameterSet_.resize( setId + 1 ); }
     atlasSequenceParameterSet_[setId] = asps;
     return atlasSequenceParameterSet_[setId];
@@ -117,7 +117,7 @@ class PCCAtlasHighLevelSyntax {
   int32_t getRefAtlasFrame( size_t listIndex, size_t refIndex ) { return refAtlasFrameList_[listIndex][refIndex]; }
   std::vector<int32_t>& getRefAtlasFrameList( size_t listIndex ) { return refAtlasFrameList_[listIndex]; }
   void                  constructRefList( size_t aspsIdx, size_t afpsIdx );
-  size_t                getNumRefIdxActive( AtlasTileGroupHeader& atgh );
+  size_t                getNumRefIdxActive( AtlasTileHeader& ath );
   size_t                getMaxNumRefAtlasFrame() { return maxNumRefAtlasFrame_; }
   void                  setMaxNumRefAtlasFrame( size_t value ) { maxNumRefAtlasFrame_ = value; }
   // point local recosntruction, defined in ASPS
@@ -158,28 +158,28 @@ class PCCAtlasHighLevelSyntax {
   }
 
   // ATGL related functions
-  AtlasTileGroupLayerRbsp& addAtlasTileGroupLayer() {
-    size_t frameIdx = atlasTileGroupLayer_.size();  // not correct, should
+  AtlasTileLayerRbsp& addAtlasTileLayer() {
+    size_t frameIdx = atlasTileLayer_.size();  // not correct, should
                                                     // indicate which frame we
                                                     // are sending, maybe
     // derive this somewhere else, but for now is OK
-    AtlasTileGroupLayerRbsp atgl;
+    AtlasTileLayerRbsp atgl;
     atgl.setFrameIndex( frameIdx );
-    atgl.getAtlasTileGroupDataUnit().setFrameIndex( frameIdx );
-    atlasTileGroupLayer_.resize( atlasTileGroupLayer_.size() + 1 );
-    atlasTileGroupLayer_.back().push_back( atgl );
-    return atlasTileGroupLayer_.back().back();
+    atgl.getAtlasTileDataUnit().setFrameIndex( frameIdx );
+    atlasTileLayer_.resize( atlasTileLayer_.size() + 1 );
+    atlasTileLayer_.back().push_back( atgl );
+    return atlasTileLayer_.back().back();
   }
-  AtlasTileGroupLayerRbsp& addAtlasTileGroupLayer( size_t frameIdx, size_t tileGroupIdx ) {
-    AtlasTileGroupLayerRbsp atgl;
-    atlasTileGroupLayer_.resize( frameIdx + 1 );
-    atlasTileGroupLayer_[frameIdx].resize( tileGroupIdx + 1 );
-    atlasTileGroupLayer_[frameIdx][tileGroupIdx] = atgl;
-    return atlasTileGroupLayer_[frameIdx][tileGroupIdx];
+  AtlasTileLayerRbsp& addAtlasTileLayer( size_t frameIdx, size_t tileIdx ) {
+    AtlasTileLayerRbsp atgl;
+    atlasTileLayer_.resize( frameIdx + 1 );
+    atlasTileLayer_[frameIdx].resize( tileIdx + 1 );
+    atlasTileLayer_[frameIdx][tileIdx] = atgl;
+    return atlasTileLayer_[frameIdx][tileIdx];
   }
-  std::vector<std::vector<AtlasTileGroupLayerRbsp>>& getAtlasTileGroupLayerList() { return atlasTileGroupLayer_; }
-  AtlasTileGroupLayerRbsp& getAtlasTileGroupLayer( size_t frameIdx = 0, size_t tileGroupIdx = 0 ) {
-    return atlasTileGroupLayer_[frameIdx][tileGroupIdx];
+  std::vector<std::vector<AtlasTileLayerRbsp>>& getAtlasTileLayerList() { return atlasTileLayer_; }
+  AtlasTileLayerRbsp& getAtlasTileLayer( size_t frameIdx = 0, size_t tileIdx = 0 ) {
+    return atlasTileLayer_[frameIdx][tileIdx];
   }
 
   // SEI related functions
@@ -215,10 +215,10 @@ class PCCAtlasHighLevelSyntax {
         exit( -1 );
         break;
     }
-    if ( nalUnitType == NAL_PREFIX_SEI ) {
+    if ( nalUnitType == NAL_PREFIX_ESEI || nalUnitType == NAL_PREFIX_NSEI ) {
       seiPrefix_.push_back( sharedPtr );
       return *( seiPrefix_.back().get() );
-    } else if ( nalUnitType == NAL_SUFFIX_SEI ) {
+    } else if ( nalUnitType == NAL_SUFFIX_ESEI || nalUnitType == NAL_SUFFIX_NSEI ) {
       seiSuffix_.push_back( sharedPtr );
       return *( seiSuffix_.back().get() );
     } else {
@@ -228,21 +228,25 @@ class PCCAtlasHighLevelSyntax {
     return *( sharedPtr );
   }
   bool seiIsPresent( NalUnitType nalUnitType, SeiPayloadType payloadType ) {
-    if ( nalUnitType != NAL_PREFIX_SEI && nalUnitType != NAL_SUFFIX_SEI ) { return false; }
-    for ( auto& sei : nalUnitType == NAL_PREFIX_SEI ? seiPrefix_ : seiSuffix_ ) {
+    if ( nalUnitType != NAL_PREFIX_ESEI && nalUnitType != NAL_SUFFIX_ESEI &&
+         nalUnitType != NAL_PREFIX_NSEI && nalUnitType != NAL_SUFFIX_NSEI ) { return false; }
+    for ( auto& sei : nalUnitType == NAL_PREFIX_ESEI || nalUnitType == NAL_PREFIX_NSEI ? seiPrefix_ : seiSuffix_ ) {
       if ( sei->getPayloadType() == payloadType ) { return true; }
     }
     return false;
   }
   SEI* getSei( NalUnitType nalUnitType, SeiPayloadType payloadType ) {
-    for ( auto& sei : nalUnitType == NAL_PREFIX_SEI ? seiPrefix_ : seiSuffix_ ) {
+    for ( auto& sei : nalUnitType == NAL_PREFIX_ESEI || nalUnitType == NAL_PREFIX_NSEI ? seiPrefix_ : seiSuffix_ ) {
       if ( sei->getPayloadType() == payloadType ) { return sei.get(); }
     }
     assert( 0 );
     return (SEI*)nullptr;
   }
-  SEI& addSeiPrefix( SeiPayloadType payloadType ) { return addSei( NAL_PREFIX_SEI, payloadType ); }
-  SEI& addSeiSuffix( SeiPayloadType payloadType ) { return addSei( NAL_SUFFIX_SEI, payloadType ); }
+  SEI& addSeiPrefix( SeiPayloadType payloadType, bool essensial ) { 
+    return addSei( essensial? NAL_PREFIX_ESEI : NAL_PREFIX_NSEI, payloadType ); 
+  }
+  SEI& addSeiSuffix( SeiPayloadType payloadType, bool essensial ) { 
+    return addSei( essensial? NAL_SUFFIX_ESEI : NAL_SUFFIX_NSEI, payloadType ); }
   std::vector<std::shared_ptr<SEI>>& getSeiPrefix() { return seiPrefix_; }
   std::vector<std::shared_ptr<SEI>>& getSeiSuffix() { return seiSuffix_; }
   SEI&                               getSeiPrefix( size_t index ) { return *( seiPrefix_[index] ); }
@@ -261,7 +265,7 @@ class PCCAtlasHighLevelSyntax {
   std::vector<AtlasFrameParameterSetRbsp> atlasFrameParameterSet_;
   uint8_t                                 activeAFPS_;
   // ATGL related variables
-  std::vector<std::vector<AtlasTileGroupLayerRbsp>> atlasTileGroupLayer_;
+  std::vector<std::vector<AtlasTileLayerRbsp>> atlasTileLayer_;
   // SEI related variables
   std::vector<std::shared_ptr<SEI>> seiPrefix_;
   std::vector<std::shared_ptr<SEI>> seiSuffix_;
@@ -276,36 +280,36 @@ class PCCHighLevelSyntax {
   void              setBitstreamStat( PCCBitstreamStat& bitstreamStat ) { bitstreamStat_ = &bitstreamStat; }
   PCCBitstreamStat& getBitstreamStat() { return *bitstreamStat_; }
 
-  // V-PCC unit related functions
-  VpccUnitPayloadHeader& getVpccUnitHeaderAVD() { return vpccUnitHeader_[size_t( VPCC_AVD ) - 1]; }  // 3
-  VpccUnitPayloadHeader& getVpccUnitHeaderGVD() { return vpccUnitHeader_[size_t( VPCC_GVD ) - 1]; }  // 2
-  VpccUnitPayloadHeader& getVpccUnitHeaderOVD() { return vpccUnitHeader_[size_t( VPCC_OVD ) - 1]; }  // 1
-  VpccUnitPayloadHeader& getVpccUnitHeaderAD() { return vpccUnitHeader_[size_t( VPCC_AD ) - 1]; }    // 0
-  VpccUnitPayloadHeader& getVpccUnitHeader( int index ) { return vpccUnitHeader_[index]; }
+  // V3C unit related functions
+  V3CUnitPayloadHeader& getV3CUnitHeaderAVD() { return V3CUnitHeader_[size_t( V3C_AVD ) - 1]; }  // 3
+  V3CUnitPayloadHeader& getV3CUnitHeaderGVD() { return V3CUnitHeader_[size_t( V3C_GVD ) - 1]; }  // 2
+  V3CUnitPayloadHeader& getV3CUnitHeaderOVD() { return V3CUnitHeader_[size_t( V3C_OVD ) - 1]; }  // 1
+  V3CUnitPayloadHeader& getV3CUnitHeaderAD() { return V3CUnitHeader_[size_t( V3C_AD ) - 1]; }    // 0
+  V3CUnitPayloadHeader& getV3CUnitHeader( int index ) { return V3CUnitHeader_[index]; }
 
   // VPS related functions
-  VpccParameterSet& getVps() { return getVps( activeVPS_ ); }
-  VpccParameterSet& getVps( uint8_t vps_id ) {
+  V3CParameterSet& getVps() { return getVps( activeVPS_ ); }
+  V3CParameterSet& getVps( uint8_t vps_id ) {
     for ( auto& value : vpccParameterSets_ ) {
-      if ( value.getVpccParameterSetId() == vps_id ) { return value; }
+      if ( value.getV3CParameterSetId() == vps_id ) { return value; }
     }
     printf( "ERROR: can't get vps with id %d \n", vps_id );
     fflush( stdout );
     assert( 0 );
     exit( -1 );
   }
-  std::vector<VpccParameterSet>& getVpsList() { return vpccParameterSets_; }
-  void                           setActiveVpsId( uint8_t val ) { activeVPS_ = val; }
-  VpccParameterSet&              addVpccParameterSet( uint8_t index ) {
-    VpccParameterSet sps;
-    sps.setVpccParameterSetId( index );
+  std::vector<V3CParameterSet>& getVpsList() { return vpccParameterSets_; }
+  void                          setActiveVpsId( uint8_t val ) { activeVPS_ = val; }
+  V3CParameterSet&              addV3CParameterSet( uint8_t index ) {
+    V3CParameterSet sps;
+    sps.setV3CParameterSetId( index );
     vpccParameterSets_.push_back( sps );
     return vpccParameterSets_.back();
   }
-  VpccParameterSet& addVpccParameterSet() {
-    uint8_t          index = vpccParameterSets_.size();
-    VpccParameterSet sps;
-    sps.setVpccParameterSetId( index );
+  V3CParameterSet& addV3CParameterSet() {
+    uint8_t         index = vpccParameterSets_.size();
+    V3CParameterSet sps;
+    sps.setV3CParameterSetId( index );
     vpccParameterSets_.push_back( sps );
     return vpccParameterSets_.back();
   }
@@ -369,7 +373,7 @@ class PCCHighLevelSyntax {
   void constructRefList( size_t aspsIdx, size_t afpsIdx ) {
     atlasHLS_[atlasIndex_].constructRefList( aspsIdx, afpsIdx );
   };
-  size_t getNumRefIdxActive( AtlasTileGroupHeader& atgh ) { return atlasHLS_[atlasIndex_].getNumRefIdxActive( atgh ); };
+  size_t getNumRefIdxActive( AtlasTileHeader& ath ) { return atlasHLS_[atlasIndex_].getNumRefIdxActive( ath ); };
   size_t getMaxNumRefAtlasFrame() { return atlasHLS_[atlasIndex_].getMaxNumRefAtlasFrame(); }
   void   setMaxNumRefAtlasFrame( size_t value ) { atlasHLS_[atlasIndex_].setMaxNumRefAtlasFrame( value ); }
   // point local recosntruction, defined in ASPS
@@ -401,15 +405,15 @@ class PCCHighLevelSyntax {
   }
 
   // ATGL related functions
-  AtlasTileGroupLayerRbsp& addAtlasTileGroupLayer() { return atlasHLS_[atlasIndex_].addAtlasTileGroupLayer(); }
-  AtlasTileGroupLayerRbsp& addAtlasTileGroupLayer( size_t frameIdx, size_t tileGroupIdx ) {
-    return atlasHLS_[atlasIndex_].addAtlasTileGroupLayer( frameIdx, tileGroupIdx );
+  AtlasTileLayerRbsp& addAtlasTileLayer() { return atlasHLS_[atlasIndex_].addAtlasTileLayer(); }
+  AtlasTileLayerRbsp& addAtlasTileLayer( size_t frameIdx, size_t tileIdx ) {
+    return atlasHLS_[atlasIndex_].addAtlasTileLayer( frameIdx, tileIdx );
   }
-  std::vector<std::vector<AtlasTileGroupLayerRbsp>>& getAtlasTileGroupLayerList() {
-    return atlasHLS_[atlasIndex_].getAtlasTileGroupLayerList();
+  std::vector<std::vector<AtlasTileLayerRbsp>>& getAtlasTileLayerList() {
+    return atlasHLS_[atlasIndex_].getAtlasTileLayerList();
   }
-  AtlasTileGroupLayerRbsp& getAtlasTileGroupLayer( size_t frameIdx = 0, size_t tileGroupIdx = 0 ) {
-    return atlasHLS_[atlasIndex_].getAtlasTileGroupLayer( frameIdx, tileGroupIdx );
+  AtlasTileLayerRbsp& getAtlasTileLayer( size_t frameIdx = 0, size_t tileIdx = 0 ) {
+    return atlasHLS_[atlasIndex_].getAtlasTileLayer( frameIdx, tileIdx );
   }
 
   // SEI related functions
@@ -422,8 +426,8 @@ class PCCHighLevelSyntax {
   SEI* getSei( NalUnitType nalUnitType, SeiPayloadType payloadType ) {
     return atlasHLS_[atlasIndex_].getSei( nalUnitType, payloadType );
   }
-  SEI& addSeiPrefix( SeiPayloadType payloadType ) { return atlasHLS_[atlasIndex_].addSeiPrefix( payloadType ); }
-  SEI& addSeiSuffix( SeiPayloadType payloadType ) { return atlasHLS_[atlasIndex_].addSeiSuffix( payloadType ); }
+  SEI& addSeiPrefix( SeiPayloadType payloadType, bool essensial) { return atlasHLS_[atlasIndex_].addSeiPrefix( payloadType, essensial ); }
+  SEI& addSeiSuffix( SeiPayloadType payloadType, bool essensial ) { return atlasHLS_[atlasIndex_].addSeiSuffix( payloadType, essensial ); }
   std::vector<std::shared_ptr<SEI>>& getSeiPrefix() { return atlasHLS_[atlasIndex_].getSeiPrefix(); }
   std::vector<std::shared_ptr<SEI>>& getSeiSuffix() { return atlasHLS_[atlasIndex_].getSeiSuffix(); }
   SEI& getSeiPrefix( size_t index ) { return atlasHLS_[atlasIndex_].getSeiPrefix( index ); }
@@ -463,8 +467,8 @@ class PCCHighLevelSyntax {
  private:
   size_t                         gofSize_;
   std::vector<PCCVideoBitstream> videoBitstream_;
-  VpccUnitPayloadHeader          vpccUnitHeader_[5];
-  std::vector<VpccParameterSet>  vpccParameterSets_;
+  V3CUnitPayloadHeader           V3CUnitHeader_[5];
+  std::vector<V3CParameterSet>   vpccParameterSets_;
   uint8_t                        activeVPS_;
   uint8_t                        occupancyPrecision_;
   uint8_t                        log2PatchQuantizerSizeX_;

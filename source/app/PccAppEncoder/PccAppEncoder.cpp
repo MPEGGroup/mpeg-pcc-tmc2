@@ -924,15 +924,15 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
   metrics.setParameters( metricsParams );
   checksum.setParameters( metricsParams );
 
-  PCCBitstreamStat     bitstreamStat;
-  SampleStreamVpccUnit ssvu;
+  PCCBitstreamStat    bitstreamStat;
+  SampleStreamV3CUnit ssvu;
   // Place to get/set default values for gof metadata enabled flags (in sequence
   // level).
   while ( startFrameNumber < endFrameNumber0 ) {
     size_t     endFrameNumber = min( startFrameNumber + groupOfFramesSize0, endFrameNumber0 );
     PCCContext context;
     context.setBitstreamStat( bitstreamStat );
-    context.addVpccParameterSet( contextIndex );
+    context.addV3CParameterSet( contextIndex );
     context.setActiveVpsId( contextIndex );
 
     PCCGroupOfFrames sources;
@@ -955,7 +955,7 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
     bitstream.setTrace( true );
     bitstream.openTrace( stringFormat( "%s_GOF%u_hls_encode.txt",
                                        removeFileExtension( encoderParams.compressedStreamPath_ ).c_str(),
-                                       context.getVps().getVpccParameterSetId() ) );
+                                       context.getVps().getV3CParameterSetId() ) );
     bitstreamWriter.setTraceFile( bitstream.getTraceFile() );
 #endif
     ret |= bitstreamWriter.encode( context, ssvu );

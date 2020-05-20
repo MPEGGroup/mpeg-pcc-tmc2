@@ -34,6 +34,7 @@
 #define PCC_BITSTREAM_PROFILETIERLEVEL_H
 
 #include "PCCBitstreamCommon.h"
+#include "PCCProfileToolsetConstraintsInformation.h"
 
 namespace pcc {
 
@@ -43,28 +44,51 @@ class ProfileTierLevel {
   ProfileTierLevel() :
       tierFlag_( false ),
       profileCodecGroupIdc_( 0 ),
-      profilePccToolsetIdc_( 0 ),
+      profileToolsetIdc_( 0 ),
       profileReconctructionIdc_( 0 ),
-      levelIdc_( 0 ) {}
-  ~ProfileTierLevel() {}
+      levelIdc_( 0 ),
+      numSubProfiles_( 0 ),
+      extendedSubProfileFlag_( false ),
+      toolConstraintsPresentFlag_( false ) {}
+  ~ProfileTierLevel() { subProfileIdc_.clear(); }
   ProfileTierLevel& operator=( const ProfileTierLevel& ) = default;
-  bool              getTierFlag() { return tierFlag_; }
-  uint8_t           getProfileCodecGroupIdc() { return profileCodecGroupIdc_; }
-  uint8_t           getProfilePccToolsetIdc() { return profilePccToolsetIdc_; }
-  uint8_t           getProfileReconctructionIdc() { return profileReconctructionIdc_; }
-  uint8_t           getLevelIdc() { return levelIdc_; }
-  void              setTierFlag( bool value ) { tierFlag_ = value; }
-  void              setProfileCodecGroupIdc( uint8_t value ) { profileCodecGroupIdc_ = value; }
-  void              setProfilePccToolsetIdc( uint8_t value ) { profilePccToolsetIdc_ = value; }
-  void              setProfileReconctructionIdc( uint8_t value ) { profileReconctructionIdc_ = value; }
-  void              setLevelIdc( uint8_t value ) { levelIdc_ = value; }
+
+  void allocate() { subProfileIdc_.resize( numSubProfiles_, 0 ); }
+
+  bool                                  getTierFlag() { return tierFlag_; }
+  uint8_t                               getProfileCodecGroupIdc() { return profileCodecGroupIdc_; }
+  uint8_t                               getProfileToolsetIdc() { return profileToolsetIdc_; }
+  uint8_t                               getProfileReconctructionIdc() { return profileReconctructionIdc_; }
+  uint8_t                               getLevelIdc() { return levelIdc_; }
+  uint8_t                               getNumSubProfiles() { return numSubProfiles_; }
+  bool                                  getExtendedSubProfileFlag() { return extendedSubProfileFlag_; }
+  bool                                  getToolConstraintsPresentFlag() { return toolConstraintsPresentFlag_; }
+  uint8_t                               getSubProfileIdc( size_t index ) { return subProfileIdc_[index]; }
+  ProfileToolsetConstraintsInformation& getProfileToolsetConstraintsInformation() {
+    return profileToolsetConstraintsInformation_;
+  }
+
+  void setTierFlag( bool value ) { tierFlag_ = value; }
+  void setProfileCodecGroupIdc( uint8_t value ) { profileCodecGroupIdc_ = value; }
+  void setProfileToolsetIdc( uint8_t value ) { profileToolsetIdc_ = value; }
+  void setProfileReconctructionIdc( uint8_t value ) { profileReconctructionIdc_ = value; }
+  void setLevelIdc( uint8_t value ) { levelIdc_ = value; }
+  void setNumSubProfiles( uint8_t value ) { numSubProfiles_ = value; }
+  void setExtendedSubProfileFlag( bool value ) { extendedSubProfileFlag_ = value; }
+  void setToolConstraintsPresentFlag( bool value ) { toolConstraintsPresentFlag_ = value; }
+  void setSubProfileIdc( size_t index, uint8_t value ) { subProfileIdc_[index] = value; }
 
  private:
-  bool    tierFlag_;
-  uint8_t profileCodecGroupIdc_;
-  uint8_t profilePccToolsetIdc_;
-  uint8_t profileReconctructionIdc_;
-  uint8_t levelIdc_;
+  bool                                 tierFlag_;
+  uint8_t                              profileCodecGroupIdc_;
+  uint8_t                              profileToolsetIdc_;
+  uint8_t                              profileReconctructionIdc_;
+  uint8_t                              levelIdc_;
+  uint8_t                              numSubProfiles_;
+  bool                                 extendedSubProfileFlag_;
+  bool                                 toolConstraintsPresentFlag_;
+  std::vector<uint8_t>                 subProfileIdc_;
+  ProfileToolsetConstraintsInformation profileToolsetConstraintsInformation_;
 };
 
 };  // namespace pcc

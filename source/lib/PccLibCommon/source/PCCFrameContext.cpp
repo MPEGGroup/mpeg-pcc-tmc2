@@ -92,21 +92,20 @@ void PCCFrameContext::setRefAFOCList( PCCContext& context ) {
   }
 }
 
-void PCCFrameContext::constructAtghRefListStruct( PCCContext& context, AtlasTileGroupHeader& atgh ) {
-  size_t afpsId = atgh.getAtghAtlasFrameParameterSetId();
+void PCCFrameContext::constructAtghRefListStruct( PCCContext& context, AtlasTileHeader& ath ) {
+  size_t afpsId = ath.getAtlasFrameParameterSetId();
   auto&  afps   = context.getAtlasFrameParameterSet( afpsId );
   size_t aspsId = afps.getAtlasSequenceParameterSetId();
   auto&  asps   = context.getAtlasSequenceParameterSet( aspsId );
-  atgh.setAtghRefAtlasFrameListSpsFlag( true );                       // using ASPS refList
-  atgh.setAtghRefAtlasFrameListIdx( getActiveRefAtlasFrameIndex() );  // atgh.atgh_ref_atlas_frame_list_idx
-  atgh.setRefListStruct( asps.getRefListStruct( atgh.getAtghRefAtlasFrameListIdx() ) );  // copied to atgh's refList,
+  ath.setRefAtlasFrameListSpsFlag( true );                       // using ASPS refList
+  ath.setRefAtlasFrameListIdx( getActiveRefAtlasFrameIndex() );  // ath.atgh_ref_atlas_frame_list_idx
+  ath.setRefListStruct( asps.getRefListStruct( ath.getRefAtlasFrameListIdx() ) );  // copied to ath's refList,
                                                                                          // not signalled
-
-  if ( index_ <= afps.getAfpsNumRefIdxDefaultActiveMinus1() ) {  // 3
-    atgh.setAtghNumRefIdxActiveOverrideFlag( true );
-    atgh.setAtghNumRefIdxActiveMinus1( index_ == 0 ? 0 : ( index_ - 1 ) );
+  if ( index_ <= afps.getNumRefIdxDefaultActiveMinus1() ) {  // 3
+    ath.setNumRefIdxActiveOverrideFlag( true );
+    ath.setNumRefIdxActiveMinus1( index_ == 0 ? 0 : ( index_ - 1 ) );
   } else {
-    atgh.setAtghNumRefIdxActiveOverrideFlag( false );
+    ath.setNumRefIdxActiveOverrideFlag( false );
   }
 }
 

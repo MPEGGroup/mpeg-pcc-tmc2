@@ -761,7 +761,7 @@ void PCCEncoderParameters::constructAspsRefList( PCCContext& context, size_t asp
     for ( size_t i = 0; i < refList.getNumRefEntries(); i++ ) {
       int afocDiff = context.getRefAtlasFrame( list, i );
       refList.setAbsDeltaAfocSt( i, std::abs( afocDiff ) );
-      refList.setStrpfEntrySignFlag( i, afocDiff < 0 ? false : !false );
+      refList.setStrafEntrySignFlag( i, afocDiff < 0 ? false : !false );
       refList.setStRefAtalsFrameFlag( i, true );
     }
     asps.addRefListStruct( refList );
@@ -771,7 +771,7 @@ void PCCEncoderParameters::constructAspsRefList( PCCContext& context, size_t asp
 void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   auto& sps      = context.getVps();
   int   numAtlas = 1;
-  context.resizeAtlas( numAtlas );  // single atlas for V-PCC
+  context.resizeAtlas( numAtlas );  // single atlas for V3C
   sps.setAtlasCountMinus1( numAtlas - 1 );
   sps.allocateAtlas();
   context.allocateAtlasHLS( sps.getAtlasCountMinus1() + 1 );
@@ -801,8 +801,11 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
 
   sps.setMapCountMinus1( atlasIndex, static_cast<uint32_t>( mapCountMinus1_ ) );
   sps.setMultipleMapStreamsPresentFlag( atlasIndex, mapCountMinus1_ != 0 && multipleStreams_ );
-  sps.setRawSeparateVideoPresentFlag( atlasIndex, useRawPointsSeparateVideo_ );
-  sps.setRawPatchEnabledFlag( atlasIndex, losslessGeo_ || lossyRawPointsPatch_ );
+  sps.setAuxiliaryVideoPresentFlag( atlasIndex, useRawPointsSeparateVideo_ );   
+  sps.setOccupancyVideoPresentFlag( atlasIndex, true );   
+  sps.setGeometryVideoPresentFlag( atlasIndex, true );   
+  sps.setAttributeVideoPresentFlag( atlasIndex, true );   
+  asps.setRawPatchEnabledFlag( losslessGeo_ || lossyRawPointsPatch_ );
   for ( size_t i = 0; i < mapCountMinus1_ + 1; i++ ) {
     if ( i == 0 ) {
       sps.setMapAbsoluteCodingEnableFlag( atlasIndex, i, true );
@@ -819,78 +822,84 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     ai.setAttributeDimensionMinus1( 0, noAttributes_ ? 0 : 2 );
     ai.setAttributeNominal2dBitdepthMinus1( 0, 7 );
   }
-
   for ( size_t i = 0; i < ai.getAttributeCount(); i++ ) {
     ai.setAttributeMapAbsoluteCodingPersistanceFlag( i, absoluteT1_ );
   }
-
   asps.setLog2PatchPackingBlockSize( std::log2( occupancyResolution_ ) );
   asps.setLog2MaxAtlasFrameOrderCntLsbMinus4( 4 );
   asps.setMaxDecAtlasFrameBufferingMinus1( 0 );
   asps.setNumRefAtlasFrameListsInAsps( 1 );
   asps.setMapCountMinus1( mapCountMinus1_ );
-  asps.setSurfaceThicknessMinus1( surfaceThickness_ - 1 );
   asps.setLongTermRefAtlasFramesFlag( false );
   asps.setUseEightOrientationsFlag( useEightOrientations_ );
-  asps.set45DegreeProjectionPatchPresentFlag( additionalProjectionPlaneMode_ > 0 );
   asps.setNormalAxisLimitsQuantizationEnabledFlag( true );
   asps.setNormalAxisMaxDeltaValueEnabledFlag( true );
-  asps.setRemoveDuplicatePointEnabledFlag( removeDuplicatePoints_ );
   asps.setPixelDeinterleavingFlag( singleMapPixelInterleaving_ );
   asps.setPatchPrecedenceOrderFlag( patchPrecedenceOrderFlag_ );
   asps.setPatchSizeQuantizerPresentFlag( context.getEnablePatchSizeQuantization() );
-  asps.setEnhancedOccupancyMapForDepthFlag( enhancedOccupancyMapCode_ );
+  asps.setEomPatchEnabledFlag( enhancedOccupancyMapCode_ );
   asps.setPointLocalReconstructionEnabledFlag( pointLocalReconstruction_ );
   asps.setVuiParametersPresentFlag( false );
-  asps.setExtensionPresentFlag( false );
-  asps.setExtensionDataFlag( false );
+  asps.setExtensionFlag( true );
+  asps.setVpccExtensionFlag( true );
+  asps.setMivExtensionFlag( false );
+  asps.setExtension6Bits( 0 );
+  asps.setExtendedProjectionEnabledFlag( additionalProjectionPlaneMode_ > 0 );
 
-  if ( ( asps.getEnhancedOccupancyMapFixBitCountMinus1() != 0U ) && mapCountMinus1_ == 0 ) {
-    asps.setEnhancedOccupancyMapFixBitCountMinus1( EOMFixBitCount_ - 1 );
+  if( asps.getVpccExtensionFlag() ){ 
+    auto& ext = asps.getAspsVpccExtension();
+    ext.setRemoveDuplicatePointEnableFlag( removeDuplicatePoints_ );
+    ext.setSurfaceThicknessMinus1( surfaceThickness_ - 1 );
+  }
+
+  if ( ( asps.getEomPatchEnabledFlag() ) && mapCountMinus1_ == 0 ) {
+    asps.setEomFixBitCountMinus1( EOMFixBitCount_ - 1 );
   } else {
-    asps.setEnhancedOccupancyMapFixBitCountMinus1( EOMFixBitCount_ - 1 );  // default values
+    asps.setEomFixBitCountMinus1( EOMFixBitCount_ - 1 );  // default values
   }
   afps.setAtlasSequenceParameterSetId( 0 );
-  afps.setAfpsNumRefIdxDefaultActiveMinus1(
+  afps.setNumRefIdxDefaultActiveMinus1(
       static_cast<uint8_t>( ( std::max )( 0, static_cast<int>( maxNumRefAtlasFrame_ ) - 1 ) ) );
-  afps.setAfpsAdditionalLtAfocLsbLen( 4 );
-  afps.setAfpsOverrideEomForDepthFlag( false );
-  afps.setAfpsEomNumberOfPatchBitCountMinus1( 0 );
-  afps.setAfpsEomMaxBitCountMinus1( 0 );
-  afps.setAfpsRaw3dPosBitCountExplicitModeFlag( false );
-  afps.setAfpsExtensionPresentFlag( 0 );
-  afps.setAfpsExtensionDataFlag( false );
+  afps.setAdditionalLtAfocLsbLen( 4 );
+  // afps.setOverrideEomForDepthFlag( false );
+  // afps.setEomNumberOfPatchBitCountMinus1( 0 );
+  // afps.setEomMaxBitCountMinus1( 0 );
+  afps.setRaw3dPosBitCountExplicitModeFlag( false );
+  afps.setExtensionFlag( true );
+  afps.setVpccExtensionFlag( true );
+  afps.setMivExtensionFlag( true );
+  afps.setExtension6Bits( 0 );
 
-  if ( static_cast<int>( afps.getAfpsOverrideEomForDepthFlag() ) == 0 ) {
-    afps.setAfpsEomMaxBitCountMinus1( 7 );
-    afps.setAfpsEomNumberOfPatchBitCountMinus1( 7 );
-  }
+  // if ( static_cast<int>( afps.getOverrideEomForDepthFlag() ) == 0 ) {
+  //   afps.setEomMaxBitCountMinus1( 7 );
+  //   afps.setEomNumberOfPatchBitCountMinus1( 7 );
+  // }
   // now create a list of tile groups per frame (NOTE: our frame has only one
   // tile group)
-  int numTilesPerFrame = ( afps.getAtlasFrameTileInformation().getNumTileRowsMinus1() + 1 ) *
-                         ( afps.getAtlasFrameTileInformation().getNumTileColumnsMinus1() + 1 );
+  int numTilesPerFrame = ( afps.getAtlasFrameTileInformation().getNumPartitionRowsMinus1() + 1 ) *
+                         ( afps.getAtlasFrameTileInformation().getNumPartitionColumnsMinus1() + 1 );
   for ( size_t frameIdx = 0; frameIdx < frameCount_; frameIdx++ ) {
-    for ( size_t tileGroupId = 0; tileGroupId < numTilesPerFrame; tileGroupId++ ) {
-      auto& atgl = context.addAtlasTileGroupLayer( frameIdx, tileGroupId );
-      auto& atgh = atgl.getAtlasTileGroupHeader();
-      atgh.setAtghAtlasFrameParameterSetId( 0 );
+    for ( size_t tileId = 0; tileId < numTilesPerFrame; tileId++ ) {
+      auto& atgl = context.addAtlasTileLayer( frameIdx, tileId );
+      auto& ath = atgl.getAtlasTileHeader();
+      ath.setAtlasFrameParameterSetId( 0 );
       if ( additionalProjectionPlaneMode_ > 0 ) {
-        atgh.setAtghPosMinZQuantizer( uint8_t( std::log2( minLevel_ ) ) - 1 );
+        ath.setPosMinZQuantizer( uint8_t( std::log2( minLevel_ ) ) - 1 );
       } else {
-        atgh.setAtghPosMinZQuantizer( uint8_t( std::log2( minLevel_ ) ) );
+        ath.setPosMinZQuantizer( uint8_t( std::log2( minLevel_ ) ) );
       }
-      atgh.setAtghPosDeltaMaxZQuantizer( uint8_t( std::log2( minLevel_ ) ) );
-      atgh.setAtghPatchSizeXinfoQuantizer( log2QuantizerSizeX_ );
-      atgh.setAtghPatchSizeYinfoQuantizer( log2QuantizerSizeY_ );
-      if ( afps.getAfpsRaw3dPosBitCountExplicitModeFlag() ) {
-        atgh.setAtghRaw3dPosAxisBitCountMinus1( 0 );  //
+      ath.setPosDeltaMaxZQuantizer( uint8_t( std::log2( minLevel_ ) ) );
+      ath.setPatchSizeXinfoQuantizer( log2QuantizerSizeX_ );
+      ath.setPatchSizeYinfoQuantizer( log2QuantizerSizeY_ );
+      if ( afps.getRaw3dPosBitCountExplicitModeFlag() ) {
+        ath.setRaw3dPosAxisBitCountMinus1( 0 );  //
       } else {
-        atgh.setAtghRaw3dPosAxisBitCountMinus1( geometry3dCoordinatesBitdepth_ - geometryNominal2dBitdepth_ - 1 );
+        ath.setRaw3dPosAxisBitCountMinus1( geometry3dCoordinatesBitdepth_ - geometryNominal2dBitdepth_ - 1 );
       }
-      atgh.setAtghNumRefIdxActiveOverrideFlag( false );
+      ath.setNumRefIdxActiveOverrideFlag( false );
 
-      atgh.setAtghRefAtlasFrameListSpsFlag( true );
-      atgh.setAtghRefAtlasFrameListIdx( 0 );
+      ath.setRefAtlasFrameListSpsFlag( true );
+      ath.setRefAtlasFrameListIdx( 0 );
     }
   }
 

@@ -52,23 +52,23 @@ void PCCAtlasHighLevelSyntax::constructRefList( size_t aspsIdx, size_t afpsIdx )
     setSizeOfRefAtlasFrameList( list, maxNumRefAtlasFrame_ );
     for ( size_t i = 0; i < refList.getNumRefEntries(); i++ ) {
       int  absDiff = refList.getAbsDeltaAfocSt( i );
-      bool sign    = refList.getStrpfEntrySignFlag( i );
+      bool sign    = refList.getStrafEntrySignFlag( i );
       setRefAtlasFrame( list, i, static_cast<int>( sign ) == 0 ? ( -absDiff ) : absDiff );
     }
   }
 }
-size_t PCCAtlasHighLevelSyntax::getNumRefIdxActive( AtlasTileGroupHeader& atgh ) {
-  size_t afpsId          = atgh.getAtghAtlasFrameParameterSetId();
+size_t PCCAtlasHighLevelSyntax::getNumRefIdxActive( AtlasTileHeader& ath ) {
+  size_t afpsId          = ath.getAtlasFrameParameterSetId();
   auto&  afps            = getAtlasFrameParameterSet( afpsId );
   size_t numRefIdxActive = 0;
-  if ( atgh.getAtghType() == P_TILE_GRP || atgh.getAtghType() == SKIP_TILE_GRP ) {
-    if ( atgh.getAtghNumRefIdxActiveOverrideFlag() ) {
-      numRefIdxActive = atgh.getAtghNumRefIdxActiveMinus1() + 1;
+  if ( ath.getType() == P_TILE || ath.getType() == SKIP_TILE ) {
+    if ( ath.getNumRefIdxActiveOverrideFlag() ) {
+      numRefIdxActive = ath.getNumRefIdxActiveMinus1() + 1;
     } else {
-      auto& refList = atgh.getRefListStruct();
+      auto& refList = ath.getRefListStruct();
       numRefIdxActive =
           static_cast<size_t>( ( std::min )( static_cast<int>( refList.getNumRefEntries() ),
-                                             static_cast<int>( afps.getAfpsNumRefIdxDefaultActiveMinus1() ) + 1 ) );
+                                             static_cast<int>( afps.getNumRefIdxDefaultActiveMinus1() ) + 1 ) );
     }
   }
   return numRefIdxActive;

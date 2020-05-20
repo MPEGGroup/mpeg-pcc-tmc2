@@ -44,7 +44,7 @@ class AttributeInformation {
   ~AttributeInformation() {
     attributeTypeId_.clear();
     attributeCodecId_.clear();
-    rawAttributeCodecId_.clear();
+    auxiliaryAttributeCodecId_.clear();
     attributeDimensionMinus1_.clear();
     attributeDimensionPartitionsMinus1_.clear();
     attributeNominal2dBitdepthMinus1_.clear();
@@ -58,7 +58,7 @@ class AttributeInformation {
   void allocate() {
     attributeTypeId_.resize( attributeCount_, 0 );
     attributeCodecId_.resize( attributeCount_, 0 );
-    rawAttributeCodecId_.resize( attributeCount_, 0 );
+    auxiliaryAttributeCodecId_.resize( attributeCount_, 0 );
     attributeDimensionMinus1_.resize( attributeCount_, 0 );
     attributeDimensionPartitionsMinus1_.resize( attributeCount_, 0 );
     attributeNominal2dBitdepthMinus1_.resize( attributeCount_, 0 );
@@ -70,7 +70,7 @@ class AttributeInformation {
   bool    getAttributeMSBAlignFlag( uint32_t index ) { return attributeMSBAlignFlag_[index]; }
   uint8_t getAttributeTypeId( uint32_t index ) { return attributeTypeId_[index]; }
   uint8_t getAttributeCodecId( uint32_t index ) { return attributeCodecId_[index]; };
-  uint8_t getRawAttributeCodecId( uint32_t index ) { return rawAttributeCodecId_[index]; }
+  uint8_t getAuxiliaryAttributeCodecId( uint32_t index ) { return auxiliaryAttributeCodecId_[index]; }
   uint8_t getAttributeDimensionMinus1( uint32_t index ) { return attributeDimensionMinus1_[index]; }
   uint8_t getAttributeDimensionPartitionsMinus1( uint32_t index ) { return attributeDimensionPartitionsMinus1_[index]; }
   uint8_t getAttributeNominal2dBitdepthMinus1( uint32_t index ) { return attributeNominal2dBitdepthMinus1_[index]; }
@@ -90,7 +90,7 @@ class AttributeInformation {
   void setAttributeMSBAlignFlag( uint32_t index, bool value ) { attributeMSBAlignFlag_[index] = value; }
   void setAttributeTypeId( uint32_t index, uint8_t value ) { attributeTypeId_[index] = value; }
   void setAttributeCodecId( uint32_t index, uint8_t value ) { attributeCodecId_[index] = value; };
-  void setRawAttributeCodecId( uint32_t index, uint8_t value ) { rawAttributeCodecId_[index] = value; }
+  void setAuxiliaryAttributeCodecId( uint32_t index, uint8_t value ) { auxiliaryAttributeCodecId_[index] = value; }
   void setAttributeDimensionMinus1( uint32_t index, uint8_t value ) { attributeDimensionMinus1_[index] = value; }
   void setAttributeDimensionPartitionsMinus1( uint32_t index, uint8_t value ) {
     attributeDimensionPartitionsMinus1_[index] = value;
@@ -112,7 +112,7 @@ class AttributeInformation {
   uint8_t                           attributeCount_;
   std::vector<uint8_t>              attributeTypeId_;
   std::vector<uint8_t>              attributeCodecId_;
-  std::vector<uint8_t>              rawAttributeCodecId_;
+  std::vector<uint8_t>              auxiliaryAttributeCodecId_;
   std::vector<bool>                 attributeMapAbsoluteCodingPersistanceFlagList_;
   std::vector<uint8_t>              attributeDimensionMinus1_;
   std::vector<uint8_t>              attributeDimensionPartitionsMinus1_;

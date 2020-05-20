@@ -62,19 +62,19 @@ class RefListStruct {
   }
 
   void addAbsDeltaAfocSt( uint8_t value ) { absDeltaAfocSt_.push_back( value ); }
-  void addStrpfEntrySignFlag( bool value ) { strpfEntrySignFlag_.push_back( value ); }
+  void addStrafEntrySignFlag( bool value ) { strpfEntrySignFlag_.push_back( value ); }
   void addAfocLsbLt( uint8_t value ) { afocLsbLt_.push_back( value ); }
   void addStRefAtalsFrameFlag( bool value ) { stRefAtlasFrameFlag_.push_back( value ); }
 
   uint8_t getNumRefEntries() { return numRefEntries_; }
   uint8_t getAbsDeltaAfocSt( uint16_t index ) { return absDeltaAfocSt_[index]; }
-  bool    getStrpfEntrySignFlag( uint16_t index ) { return strpfEntrySignFlag_[index]; }
+  bool    getStrafEntrySignFlag( uint16_t index ) { return strpfEntrySignFlag_[index]; }
   uint8_t getAfocLsbLt( uint16_t index ) { return afocLsbLt_[index]; }
   bool    getStRefAtalsFrameFlag( uint16_t index ) { return stRefAtlasFrameFlag_[index]; }
 
   void setNumRefEntries( uint8_t value ) { numRefEntries_ = value; }
   void setAbsDeltaAfocSt( uint16_t index, uint8_t value ) { absDeltaAfocSt_[index] = value; }
-  void setStrpfEntrySignFlag( uint16_t index, bool value ) { strpfEntrySignFlag_[index] = value; }
+  void setStrafEntrySignFlag( uint16_t index, bool value ) { strpfEntrySignFlag_[index] = value; }
   void setAfocLsbLt( uint16_t index, uint8_t value ) { afocLsbLt_[index] = value; }
   void setStRefAtalsFrameFlag( uint16_t index, bool value ) { stRefAtlasFrameFlag_[index] = value; }
 

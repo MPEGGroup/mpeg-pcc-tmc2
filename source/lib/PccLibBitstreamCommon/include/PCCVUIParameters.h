@@ -161,9 +161,9 @@ class VUIParameters {
       vuiTimeScale_( 60000 ),
       vuiNumTicksPocDiffOneMinus1_( 0 ),
       vuiBitstreamRestrictionFlag_( false ),
-      vuiTileGroupsRestrictedFlag_( false ),
+      vuiTilesRestrictedFlag_( false ),
       vuiConsistentTilesForVideoComponentsFlag_( false ),
-      vuiMaxNumTileGroupPerAtlas_( 1 ) {}
+      vuiMaxNumTilePerAtlas_( 1 ) {}
   ~VUIParameters() {}
   VUIParameters& operator=( const VUIParameters& ) = default;
 
@@ -186,9 +186,9 @@ class VUIParameters {
   uint32_t       getVuiNumTicksPocDiffOneMinus1() { return vuiNumTicksPocDiffOneMinus1_; }
   HrdParameters& getHrdParameters() { return hrdParameters_; }
   bool           getVuiBitstreamRestrictionFlag() { return vuiBitstreamRestrictionFlag_; }
-  bool           getVuiTileGroupsRestrictedFlag() { return vuiTileGroupsRestrictedFlag_; }
+  bool           getVuiTilesRestrictedFlag() { return vuiTilesRestrictedFlag_; }
   bool           getVuiConsistentTilesForVideoComponentsFlag() { return vuiConsistentTilesForVideoComponentsFlag_; }
-  uint32_t       getVuiMaxNumTileGroupPerAtlas() { return vuiMaxNumTileGroupPerAtlas_; }
+  uint32_t       getVuiMaxNumTilePerAtlas() { return vuiMaxNumTilePerAtlas_; }
 
   void setVuiWorldCoordinatesInfoPresentFlag( bool value ) { vuiWorldCoordinatesInfoPresentFlag_ = value; }
   void setVuiUnitInMetresFlag( bool value ) { vuiUnitInMetresFlag_ = value; }
@@ -208,9 +208,9 @@ class VUIParameters {
   void setVuiTimeScale( uint32_t value ) { vuiTimeScale_ = value; }
   void setVuiNumTicksPocDiffOneMinus1( uint32_t value ) { vuiNumTicksPocDiffOneMinus1_ = value; }
   void setVuiBitstreamRestrictionFlag( bool value ) { vuiBitstreamRestrictionFlag_ = value; }
-  void setVuiTileGroupsRestrictedFlag( bool value ) { vuiTileGroupsRestrictedFlag_ = value; }
+  void setVuiTilesRestrictedFlag( bool value ) { vuiTilesRestrictedFlag_ = value; }
   void setVuiConsistentTilesForVideoComponentsFlag( bool value ) { vuiConsistentTilesForVideoComponentsFlag_ = value; }
-  void setVuiMaxNumTileGroupPerAtlas( uint32_t value ) { vuiMaxNumTileGroupPerAtlas_ = value; }
+  void setVuiMaxNumTilePerAtlas( uint32_t value ) { vuiMaxNumTilePerAtlas_ = value; }
 
  private:
   bool          vuiWorldCoordinatesInfoPresentFlag_;
@@ -232,9 +232,9 @@ class VUIParameters {
   uint32_t      vuiNumTicksPocDiffOneMinus1_;
   HrdParameters hrdParameters_;
   bool          vuiBitstreamRestrictionFlag_;
-  bool          vuiTileGroupsRestrictedFlag_;
+  bool          vuiTilesRestrictedFlag_;
   bool          vuiConsistentTilesForVideoComponentsFlag_;
-  uint32_t      vuiMaxNumTileGroupPerAtlas_;
+  uint32_t      vuiMaxNumTilePerAtlas_;
 };
 
 };  // namespace pcc

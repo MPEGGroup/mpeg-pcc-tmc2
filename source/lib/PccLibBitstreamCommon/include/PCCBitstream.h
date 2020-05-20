@@ -53,26 +53,26 @@ class PCCVideoBitstream;
 class PCCBitstreamGofStat {
  public:
   PCCBitstreamGofStat() {
-    vpccUnitSize_.resize( NUM_VPCC_UNIT_TYPE, 0 );
+    v3cUnitSize_.resize( NUM_V3C_UNIT_TYPE, 0 );
     videoBinSize_.resize( NUM_VIDEO_TYPE, 0 );
   }
   ~PCCBitstreamGofStat() {
-    vpccUnitSize_.clear();
+    v3cUnitSize_.clear();
     videoBinSize_.clear();
   }
-  void                 overwriteVpccUnitSize( VPCCUnitType type, size_t size ) { vpccUnitSize_[type] = size; }
-  void                 setVpccUnitSize( VPCCUnitType type, size_t size ) { vpccUnitSize_[type] += size; }
+  void                 overwriteV3CUnitSize( V3CUnitType type, size_t size ) { v3cUnitSize_[type] = size; }
+  void                 setV3CUnitSize( V3CUnitType type, size_t size ) { v3cUnitSize_[type] += size; }
   void                 setVideoBinSize( PCCVideoType type, size_t size ) { videoBinSize_[type] += size; }
-  size_t               getVpccUnitSize( VPCCUnitType type ) { return vpccUnitSize_[type]; }
+  size_t               getV3CUnitSize( V3CUnitType type ) { return v3cUnitSize_[type]; }
   size_t               getVideoBinSize( PCCVideoType type ) { return videoBinSize_[type]; }
   PCCBitstreamGofStat& operator+=( const PCCBitstreamGofStat& other ) {
-    for ( size_t i = 0; i < vpccUnitSize_.size(); i++ ) { vpccUnitSize_[i] += other.vpccUnitSize_[i]; }
+    for ( size_t i = 0; i < v3cUnitSize_.size(); i++ ) { v3cUnitSize_[i] += other.v3cUnitSize_[i]; }
     for ( size_t i = 0; i < videoBinSize_.size(); i++ ) { videoBinSize_[i] += other.videoBinSize_[i]; }
     return *this;
   }
   size_t getTotal() {
-    return vpccUnitSize_[VPCC_VPS] + vpccUnitSize_[VPCC_AD] + vpccUnitSize_[VPCC_OVD] + vpccUnitSize_[VPCC_GVD] +
-           vpccUnitSize_[VPCC_AVD];
+    return v3cUnitSize_[V3C_VPS] + v3cUnitSize_[V3C_AD] + v3cUnitSize_[V3C_OVD] + v3cUnitSize_[V3C_GVD] +
+           v3cUnitSize_[V3C_AVD];
   }
 
   size_t getTotalGeometry() {
@@ -88,24 +88,24 @@ class PCCBitstreamGofStat {
   size_t getTotalMetadata() { return getTotal() - getTotalGeometry() - getTotalTexture(); }
 
   void trace() {
-    printf( "    vpccUnitSize[ VPCC_VPS ]: %9zu B %9zu b\n", vpccUnitSize_[VPCC_VPS], vpccUnitSize_[VPCC_VPS] * 8 );
-    printf( "    vpccUnitSize[ VPCC_AD  ]: %9zu B %9zu b\n", vpccUnitSize_[VPCC_AD], vpccUnitSize_[VPCC_AD] * 8 );
-    printf( "    vpccUnitSize[ VPCC_OVD ]: %9zu B %9zu b ( Ocm video = %9zu B )\n", vpccUnitSize_[VPCC_OVD],
-            vpccUnitSize_[VPCC_OVD] * 8, videoBinSize_[VIDEO_OCCUPANCY] );
+    printf( "    V3CUnitSize[ V3C_VPS ]: %9zu B %9zu b\n", v3cUnitSize_[V3C_VPS], v3cUnitSize_[V3C_VPS] * 8 );
+    printf( "    V3CUnitSize[ V3C_AD  ]: %9zu B %9zu b\n", v3cUnitSize_[V3C_AD], v3cUnitSize_[V3C_AD] * 8 );
+    printf( "    V3CUnitSize[ V3C_OVD ]: %9zu B %9zu b ( Ocm video = %9zu B )\n", v3cUnitSize_[V3C_OVD],
+            v3cUnitSize_[V3C_OVD] * 8, videoBinSize_[VIDEO_OCCUPANCY] );
     printf(
-        "    vpccUnitSize[ VPCC_GVD ]: %9zu B %9zu b ( Geo video = %9zu B + "
+        "    V3CUnitSize[ V3C_GVD ]: %9zu B %9zu b ( Geo video = %9zu B + "
         "%9zu B + %9zu B + %9zu B )\n",
-        vpccUnitSize_[VPCC_GVD], vpccUnitSize_[VPCC_GVD] * 8, videoBinSize_[VIDEO_GEOMETRY],
+        v3cUnitSize_[V3C_GVD], v3cUnitSize_[V3C_GVD] * 8, videoBinSize_[VIDEO_GEOMETRY],
         videoBinSize_[VIDEO_GEOMETRY_D0], videoBinSize_[VIDEO_GEOMETRY_D1], videoBinSize_[VIDEO_GEOMETRY_RAW] );
     printf(
-        "    vpccUnitSize[ VPCC_AVD ]: %9zu B %9zu b ( Tex video = %9zu B + "
+        "    V3CUnitSize[ V3C_AVD ]: %9zu B %9zu b ( Tex video = %9zu B + "
         "(%9zu B + %9zu B) + %9zu B )\n",
-        vpccUnitSize_[VPCC_AVD], vpccUnitSize_[VPCC_AVD] * 8, videoBinSize_[VIDEO_TEXTURE],
-        videoBinSize_[VIDEO_TEXTURE_T0], videoBinSize_[VIDEO_TEXTURE_T1], videoBinSize_[VIDEO_TEXTURE_RAW] );
+        v3cUnitSize_[V3C_AVD], v3cUnitSize_[V3C_AVD] * 8, videoBinSize_[VIDEO_TEXTURE], videoBinSize_[VIDEO_TEXTURE_T0],
+        videoBinSize_[VIDEO_TEXTURE_T1], videoBinSize_[VIDEO_TEXTURE_RAW] );
   }
 
  private:
-  std::vector<size_t> vpccUnitSize_;
+  std::vector<size_t> v3cUnitSize_;
   std::vector<size_t> videoBinSize_;
 };
 
@@ -119,12 +119,12 @@ class PCCBitstreamStat {
   }
   void setHeader( size_t size ) { header_ = size; }
   void incrHeader( size_t size ) { header_ += size; }
-  void overwriteVpccUnitSize( VPCCUnitType type, size_t size ) {
-    bitstreamGofStat_.back().overwriteVpccUnitSize( type, size );
+  void overwriteV3CUnitSize( V3CUnitType type, size_t size ) {
+    bitstreamGofStat_.back().overwriteV3CUnitSize( type, size );
   }
-  void   setVpccUnitSize( VPCCUnitType type, size_t size ) { bitstreamGofStat_.back().setVpccUnitSize( type, size ); }
+  void   setV3CUnitSize( V3CUnitType type, size_t size ) { bitstreamGofStat_.back().setV3CUnitSize( type, size ); }
   void   setVideoBinSize( PCCVideoType type, size_t size ) { bitstreamGofStat_.back().setVideoBinSize( type, size ); }
-  size_t getVpccUnitSize( VPCCUnitType type ) { return bitstreamGofStat_.back().getVpccUnitSize( type ); }
+  size_t getV3CUnitSize( V3CUnitType type ) { return bitstreamGofStat_.back().getV3CUnitSize( type ); }
   size_t getVideoBinSize( PCCVideoType type ) { return bitstreamGofStat_.back().getVideoBinSize( type ); }
 
   size_t getTotalGeometry() { return bitstreamGofStat_.back().getTotalGeometry(); }

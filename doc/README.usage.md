@@ -15,10 +15,10 @@ The encoder takes as input a PLY file describing a point cloud with
 integer positions and, optionally, per-point integer colour attributes.
 
 The output of the encoder is a binary bitstream encapsulated using the
-V-PCC annex-B format.
+V3C annex-B format.
 
 Conversely, the decoder takes as input a compressed bitstream file in
-V-PCC annex-B format and produces a reconstructed PLY file with position
+V3C annex-B format and produces a reconstructed PLY file with position
 and any present attribute values.
 
 The software may be configured using either command line arguments or from
@@ -37,11 +37,11 @@ Common test condition configurations
 ---------------
 
 The configuration files stored in the ./cfg/ sub-folder could be used to 
-to perform the V-PCC common test conditions (CTC) experiments. An example 
+to perform the V3C common test conditions (CTC) experiments. An example 
 of the usage of this file could be found in ./test/runme_linux.sh.
 
 The reference software configuration not defined the CTC, please validated
-your experimentes based on the wxxxxxx- V-PCC common test conditions document.
+your experimentes based on the wxxxxxx- V3C common test conditions document.
 
 Examples
 ---------------

@@ -820,7 +820,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
       size_t d1CountPerPatch  = 0;
       size_t eomCountPerPatch = 0;
       patch.setEOMCount( 0 );
-      patch.setPatchType( static_cast<uint8_t>( PATCH_MODE_P_INTRA ) );
+      patch.setPatchType( static_cast<uint8_t>( P_INTRA ) );
       const size_t clusterIndex        = partition[connectedComponent[0]];
       bIsAdditionalProjectionPlane     = false;
       patch.getAxisOfAdditionalPlane() = 0;
@@ -906,19 +906,15 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
           patch.getBitangentAxis()         = 1;
         }
       }
-
       patch.setViewId() = clusterIndex;
       patch.setBestMatchIdx( InvalidPatchIndex );
-
       patch.getPreGPAPatchData().initialize();
       patch.getCurGPAPatchData().initialize();
-
       if ( clusterIndex <= 2 ) {
         patch.getProjectionMode() = 0;
       } else {
         patch.getProjectionMode() = 1;
       }
-
       if ( params.enablePatchSplitting_ ) {
         int16_t minU = ( std::numeric_limits<int16_t>::max )();
         int16_t minV = ( std::numeric_limits<int16_t>::max )();

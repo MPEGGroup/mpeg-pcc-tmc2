@@ -41,56 +41,56 @@ namespace pcc {
 class EOMPatchDataUnit {
  public:
   EOMPatchDataUnit() :
-      epdu2dPosX_( 0 ),
-      epdu2dPosY_( 0 ),
-      epdu2dSizeXMinus1_( 0 ),
-      epdu2dSizeYMinus1_( 0 ),
-      epduAssociatedPatcheCountMinus1_( 0 ),
-      epduPatchIndex_( 0 ),
-      epduFrameIndex_( 0 ) {
-    epduAssociatedPatches_.clear();
-    epduEomPointsPerPatch_.clear();
+      pos2dX_( 0 ),
+      pos2dY_( 0 ),
+      size2dXMinus1_( 0 ),
+      size2dYMinus1_( 0 ),
+      patchCountMinus1_( 0 ),
+      patchIndex_( 0 ),
+      frameIndex_( 0 ) {
+      associatedPatchesIdx_.clear();
+      points_.clear();
   };
   ~EOMPatchDataUnit(){};
   EOMPatchDataUnit& operator=( const EOMPatchDataUnit& ) = default;
+  
+  bool getPatchInAuxiliaryVideoFlag() { return patchInAuxiliaryVideoFlag_; }
+  size_t               get2dPosX() { return pos2dX_; }
+  size_t               get2dPosY() { return pos2dY_; }
+  size_t               get2dSizeXMinus1() { return size2dXMinus1_; }
+  size_t               get2dSizeYMinus1() { return size2dYMinus1_; }
+  size_t               getPatchCountMinus1() { return patchCountMinus1_; }
+  size_t               getAssociatedPatchesIdx( size_t index ) { return associatedPatchesIdx_[index]; }
+  size_t               getPoints( size_t index ) { return points_[index]; }
+  size_t               getPatchIndex() { return patchIndex_; }
+  size_t               getFrameIndex() { return frameIndex_; }
 
-  size_t               getEpdu2dPosX() { return epdu2dPosX_; }
-  size_t               getEpdu2dPosY() { return epdu2dPosY_; }
-  size_t               getEpdu2dSizeXMinus1() { return epdu2dSizeXMinus1_; }
-  size_t               getEpdu2dSizeYMinus1() { return epdu2dSizeYMinus1_; }
-  size_t               getEpduAssociatedPatchesCountMinus1() { return epduAssociatedPatcheCountMinus1_; }
-  std::vector<size_t>& getEpduAssociatedPatches() { return epduAssociatedPatches_; }
-  size_t               getEpduAssociatedPatches( size_t index ) { return epduAssociatedPatches_[index]; }
-  std::vector<size_t>  getEpduEomPointsPerPatch() { return epduEomPointsPerPatch_; }
-  size_t               getEpduEomPointsPerPatch( size_t index ) { return epduEomPointsPerPatch_[index]; }
-  size_t               getPatchIndex() { return epduPatchIndex_; }
-  size_t               getFrameIndex() { return epduFrameIndex_; }
-  void                 setPatchIndex( size_t value ) { epduPatchIndex_ = value; }
-  void                 setFrameIndex( size_t value ) { epduFrameIndex_ = value; }
-
-  void setEpduAssociatedPatchesCountMinus1( uint32_t value ) {
-    epduAssociatedPatcheCountMinus1_ = value;
-    epduAssociatedPatches_.resize( epduAssociatedPatcheCountMinus1_ + 1 );
-    epduEomPointsPerPatch_.resize( epduAssociatedPatcheCountMinus1_ + 1 );
+  void setPatchInAuxiliaryVideoFlag( bool value ) { patchInAuxiliaryVideoFlag_ = value; }
+  void set2dPosX( size_t value ) { pos2dX_ = value; }
+  void set2dPosY( size_t value ) { pos2dY_ = value; }
+  void set2dSizeXMinus1( size_t value ) { size2dXMinus1_ = value; }
+  void set2dSizeYMinus1( size_t value ) { size2dYMinus1_ = value; }
+  void setPatchIndex( size_t value ) { patchIndex_ = value; }
+  void setFrameIndex( size_t value ) { frameIndex_ = value; }
+  void setAssociatedPatchesIdx(  size_t index, size_t value ) { associatedPatchesIdx_[index] = value; }
+  void setPoints( size_t index, size_t value ) { points_[index] = value; }
+  void setPatchCountMinus1( uint32_t value ) {
+    patchCountMinus1_ = value;
+    associatedPatchesIdx_.resize( patchCountMinus1_ + 1 );
+    points_.resize( patchCountMinus1_ + 1 );
   }
-  void setEpduAssociatedPatches( size_t value, size_t index ) { epduAssociatedPatches_[index] = value; }
-  void setEpduEomPointsPerPatch( size_t value, size_t index ) { epduEomPointsPerPatch_[index] = value; }
-
-  void setEpdu2dPosX( size_t value ) { epdu2dPosX_ = value; }
-  void setEpdu2dPosY( size_t value ) { epdu2dPosY_ = value; }
-  void setEpdu2dSizeXMinus1( size_t value ) { epdu2dSizeXMinus1_ = value; }
-  void setEpdu2dSizeYMinus1( size_t value ) { epdu2dSizeYMinus1_ = value; }
 
  private:
-  size_t              epdu2dPosX_;
-  size_t              epdu2dPosY_;
-  size_t              epdu2dSizeXMinus1_;
-  size_t              epdu2dSizeYMinus1_;
-  size_t              epduAssociatedPatcheCountMinus1_;
-  size_t              epduPatchIndex_;
-  size_t              epduFrameIndex_;
-  std::vector<size_t> epduAssociatedPatches_;
-  std::vector<size_t> epduEomPointsPerPatch_;
+  bool                patchInAuxiliaryVideoFlag_;
+  size_t              pos2dX_;
+  size_t              pos2dY_;
+  size_t              size2dXMinus1_;
+  size_t              size2dYMinus1_;
+  size_t              patchCountMinus1_;
+  std::vector<size_t> associatedPatchesIdx_;
+  std::vector<size_t> points_;
+  size_t              patchIndex_;
+  size_t              frameIndex_;
 };
 
 };  // namespace pcc

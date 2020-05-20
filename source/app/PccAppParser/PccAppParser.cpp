@@ -67,9 +67,9 @@ int parserPccBin( const std::string& filename ) {
   if ( !bitstream.readHeader() ) { return -1; }
   bitstreamStat.setHeader( bitstream.size() );
 
-  SampleStreamVpccUnit ssvu;
-  PCCBitstreamReader   bitstreamReader;
-  size_t               headerSize = pcc::PCCBitstreamReader::read( bitstream, ssvu );
+  SampleStreamV3CUnit ssvu;
+  PCCBitstreamReader  bitstreamReader;
+  size_t              headerSize = pcc::PCCBitstreamReader::read( bitstream, ssvu );
   bitstreamStat.incrHeader( headerSize );
 
   bool    bMoreData = true;
@@ -80,7 +80,7 @@ int parserPccBin( const std::string& filename ) {
     PCCBitstreamReader gofBitstreamReader;
     int                ret = gofBitstreamReader.decode( ssvu, syntax );
     if ( ret != 0 ) { return ret; }
-    bMoreData = ( ssvu.getVpccUnitCount() > 0 );
+    bMoreData = ( ssvu.getV3CUnitCount() > 0 );
   }
   bitstreamStat.trace();
   return 0;

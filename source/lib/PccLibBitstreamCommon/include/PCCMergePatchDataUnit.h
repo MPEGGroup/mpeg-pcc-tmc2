@@ -42,71 +42,70 @@ namespace pcc {
 class MergePatchDataUnit {
  public:
   MergePatchDataUnit() :
-      mpduOverride2dParamsFlag_( 0 ),
-      mpduOverride3dParamsFlag_( 0 ),
-      mpduRefIndex_( 0 ),
-      mpdu2dPosX_( 0 ),
-      mpdu2dPosY_( 0 ),
-      mpdu2dDeltaSizeX_( 0 ),
-      mpdu2dDeltaSizeY_( 0 ),
-      mpdu3dPosX_( 0 ),
-      mpdu3dPosY_( 0 ),
-      mpdu3dPosMinZ_( 0 ),
-      mpdu3dPosDeltaMaxZ_( 0 ),
-      mpduOverridePlrFlag_( 0 ),
-      mpduPatchIndex_( 0 ),
-      mpduFrameIndex_( 0 ){};
+      override2dParamsFlag_( 0 ),
+      override3dParamsFlag_( 0 ),
+      overridePlrFlag_( 0 ),
+      refIndex_( 0 ),
+      pos2dX_( 0 ),
+      pos2dY_( 0 ),
+      delta2dSizeX_( 0 ),
+      delta2dSizeY_( 0 ),
+      pos3dX_( 0 ),
+      pos3dY_( 0 ),
+      pos3dMinZ_( 0 ),
+      pos3dDeltaMaxZ_( 0 ),
+      patchIndex_( 0 ),
+      frameIndex_( 0 ){};
   ~MergePatchDataUnit(){};
   MergePatchDataUnit& operator=( const MergePatchDataUnit& ) = default;
 
+  bool                          getOverride2dParamsFlag() { return override2dParamsFlag_; }
+  bool                          getOverride3dParamsFlag() { return override3dParamsFlag_; }
+  bool                          getOverridePlrFlag() { return overridePlrFlag_; }
+  int64_t                       getRefIndex() { return refIndex_; }
+  int64_t                       get2dPosX() { return pos2dX_; }
+  int64_t                       get2dPosY() { return pos2dY_; }
+  int64_t                       get2dDeltaSizeX() { return delta2dSizeX_; }
+  int64_t                       get2dDeltaSizeY() { return delta2dSizeY_; }
+  int64_t                       get3dPosX() { return pos3dX_; }
+  int64_t                       get3dPosY() { return pos3dY_; }
+  int64_t                       get3dPosMinZ() { return pos3dMinZ_; }
+  int64_t                       get3dPosDeltaMaxZ() { return pos3dDeltaMaxZ_; }
+  size_t                        getPatchIndex() { return patchIndex_; }
+  size_t                        getFrameIndex() { return frameIndex_; }
   PointLocalReconstructionData& getPointLocalReconstructionData() { return pointLocalReconstructionData_; }
+
+  void setOverride2dParamsFlag( bool value ) { override2dParamsFlag_ = value; }
+  void setOverride3dParamsFlag( bool value ) { override3dParamsFlag_ = value; }
+  void setOverridePlrFlag( bool value ) { overridePlrFlag_ = value; }
+  void setRefIndex( int64_t value ) { refIndex_ = value; }
+  void set2dPosX( int64_t value ) { pos2dX_ = value; }
+  void set2dPosY( int64_t value ) { pos2dY_ = value; }
+  void set2dDeltaSizeX( int64_t value ) { delta2dSizeX_ = value; }
+  void set2dDeltaSizeY( int64_t value ) { delta2dSizeY_ = value; }
+  void set3dPosX( int64_t value ) { pos3dX_ = value; }
+  void set3dPosY( int64_t value ) { pos3dY_ = value; }
+  void set3dPosMinZ( int64_t value ) { pos3dMinZ_ = value; }
+  void set3dPosDeltaMaxZ( int64_t value ) { pos3dDeltaMaxZ_ = value; }
+  void setPatchIndex( size_t value ) { patchIndex_ = value; }
+  void setFrameIndex( size_t value ) { frameIndex_ = value; }
   void setPointLocalReconstructionData( PointLocalReconstructionData value ) { pointLocalReconstructionData_ = value; }
-  size_t getPatchIndex() { return mpduPatchIndex_; }
-  size_t getFrameIndex() { return mpduFrameIndex_; }
-  void   setPatchIndex( size_t value ) { mpduPatchIndex_ = value; }
-  void   setFrameIndex( size_t value ) { mpduFrameIndex_ = value; }
-
-  bool    getMpduOverride2dParamsFlag() { return mpduOverride2dParamsFlag_; }
-  bool    getMpduOverride3dParamsFlag() { return mpduOverride3dParamsFlag_; }
-  int64_t getMpduRefIndex() { return mpduRefIndex_; }
-  int64_t getMpdu2dPosX() { return mpdu2dPosX_; }
-  int64_t getMpdu2dPosY() { return mpdu2dPosY_; }
-  int64_t getMpdu2dDeltaSizeX() { return mpdu2dDeltaSizeX_; }
-  int64_t getMpdu2dDeltaSizeY() { return mpdu2dDeltaSizeY_; }
-  int64_t getMpdu3dPosX() { return mpdu3dPosX_; }
-  int64_t getMpdu3dPosY() { return mpdu3dPosY_; }
-  int64_t getMpdu3dPosMinZ() { return mpdu3dPosMinZ_; }
-  int64_t getMpdu3dPosDeltaMaxZ() { return mpdu3dPosDeltaMaxZ_; }
-  int64_t getMpduOverridePlrFlag() { return mpduOverridePlrFlag_; }
-
-  void setMpduOverride2dParamsFlag( bool value ) { mpduOverride2dParamsFlag_ = value; }
-  void setMpduOverride3dParamsFlag( bool value ) { mpduOverride3dParamsFlag_ = value; }
-  void setMpduRefIndex( int64_t value ) { mpduRefIndex_ = value; }
-  void setMpdu2dPosX( int64_t value ) { mpdu2dPosX_ = value; }
-  void setMpdu2dPosY( int64_t value ) { mpdu2dPosY_ = value; }
-  void setMpdu2dDeltaSizeX( int64_t value ) { mpdu2dDeltaSizeX_ = value; }
-  void setMpdu2dDeltaSizeY( int64_t value ) { mpdu2dDeltaSizeY_ = value; }
-  void setMpdu3dPosX( int64_t value ) { mpdu3dPosX_ = value; }
-  void setMpdu3dPosY( int64_t value ) { mpdu3dPosY_ = value; }
-  void setMpdu3dPosMinZ( int64_t value ) { mpdu3dPosMinZ_ = value; }
-  void setMpdu3dPosDeltaMaxZ( int64_t value ) { mpdu3dPosDeltaMaxZ_ = value; }
-  void setMpduOverridePlrFlag( int64_t value ) { mpduOverridePlrFlag_ = value; }
 
  private:
-  bool                         mpduOverride2dParamsFlag_;
-  bool                         mpduOverride3dParamsFlag_;
-  int64_t                      mpduRefIndex_;
-  int64_t                      mpdu2dPosX_;
-  int64_t                      mpdu2dPosY_;
-  int64_t                      mpdu2dDeltaSizeX_;
-  int64_t                      mpdu2dDeltaSizeY_;
-  int64_t                      mpdu3dPosX_;
-  int64_t                      mpdu3dPosY_;
-  int64_t                      mpdu3dPosMinZ_;
-  int64_t                      mpdu3dPosDeltaMaxZ_;
-  int64_t                      mpduOverridePlrFlag_;
-  size_t                       mpduPatchIndex_;
-  size_t                       mpduFrameIndex_;
+  bool                         override2dParamsFlag_;
+  bool                         override3dParamsFlag_;
+  bool                         overridePlrFlag_;
+  int64_t                      refIndex_;
+  int64_t                      pos2dX_;
+  int64_t                      pos2dY_;
+  int64_t                      delta2dSizeX_;
+  int64_t                      delta2dSizeY_;
+  int64_t                      pos3dX_;
+  int64_t                      pos3dY_;
+  int64_t                      pos3dMinZ_;
+  int64_t                      pos3dDeltaMaxZ_;
+  size_t                       patchIndex_;
+  size_t                       frameIndex_;
   PointLocalReconstructionData pointLocalReconstructionData_;
 };
 

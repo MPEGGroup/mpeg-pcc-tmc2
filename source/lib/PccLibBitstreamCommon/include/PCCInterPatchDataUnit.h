@@ -42,64 +42,62 @@ namespace pcc {
 class InterPatchDataUnit {
  public:
   InterPatchDataUnit() :
-      ipduRefIndex_( 0 ),
-      ipduRefpatchIndex_( 0 ),
-      ipdu2dPosX_( 0 ),
-      ipdu2dPosY_( 0 ),
-      ipdu2dDeltaSizeX_( 0 ),
-      ipdu2dDeltaSizeY_( 0 ),
-      ipdu3dPosX_( 0 ),
-      ipdu3dPosY_( 0 ),
-      ipdu3dPosMinZ_( 0 ),
-      ipdu3dPosDeltaMaxZ_( 0 ),
-      ipduPatchIndex_( 0 ),
-      ipduFrameIndex_( 0 ){};
+      refIndex_( 0 ),
+      refPatchIndex_( 0 ),
+      pos2dX_( 0 ),
+      pos2dY_( 0 ),
+      delta2dSizeX_( 0 ),
+      delta2dSizeY_( 0 ),
+      pos3dX_( 0 ),
+      pos3dY_( 0 ),
+      pos3dMinZ_( 0 ),
+      pos3dDeltaMaxZ_( 0 ),
+      patchIndex_( 0 ),
+      frameIndex_( 0 ){};
   ~InterPatchDataUnit(){};
   InterPatchDataUnit& operator=( const InterPatchDataUnit& ) = default;
-
+ 
+  size_t  getPatchIndex() { return patchIndex_; }
+  size_t  getFrameIndex() { return frameIndex_; }
+  int64_t getRefIndex() { return refIndex_; }
+  int64_t getRefPatchIndex() { return refPatchIndex_; }
+  int64_t get2dPosX() { return pos2dX_; }
+  int64_t get2dPosY() { return pos2dY_; }
+  int64_t get2dDeltaSizeX() { return delta2dSizeX_; }
+  int64_t get2dDeltaSizeY() { return delta2dSizeY_; }
+  int64_t get3dPosX() { return pos3dX_; }
+  int64_t get3dPosY() { return pos3dY_; }
+  int64_t get3dPosMinZ() { return pos3dMinZ_; }
+  int64_t get3dPosDeltaMaxZ() { return pos3dDeltaMaxZ_; }
   PointLocalReconstructionData& getPointLocalReconstructionData() { return pointLocalReconstructionData_; }
-  int64_t                       getIpduRefIndex() { return ipduRefIndex_; }
-  int64_t                       getIpduRefPatchIndex() { return ipduRefpatchIndex_; }
-  int64_t                       getIpdu2dPosX() { return ipdu2dPosX_; }
-  int64_t                       getIpdu2dPosY() { return ipdu2dPosY_; }
-  int64_t                       getIpdu2dDeltaSizeX() { return ipdu2dDeltaSizeX_; }
-  int64_t                       getIpdu2dDeltaSizeY() { return ipdu2dDeltaSizeY_; }
-  int64_t                       getIpdu3dPosX() { return ipdu3dPosX_; }
-  int64_t                       getIpdu3dPosY() { return ipdu3dPosY_; }
-  int64_t                       getIpdu3dPosMinZ() { return ipdu3dPosMinZ_; }
-  int64_t                       getIpdu3dPosDeltaMaxZ() { return ipdu3dPosDeltaMaxZ_; }
 
-  void setIpduRefIndex( int64_t value ) { ipduRefIndex_ = value; }
-  void setIpduRefPatchIndex( int64_t value ) { ipduRefpatchIndex_ = value; }
-  void setIpdu2dPosX( int64_t value ) { ipdu2dPosX_ = value; }
-  void setIpdu2dPosY( int64_t value ) { ipdu2dPosY_ = value; }
-  void setIpdu2dDeltaSizeX( int64_t value ) { ipdu2dDeltaSizeX_ = value; }
-  void setIpdu2dDeltaSizeY( int64_t value ) { ipdu2dDeltaSizeY_ = value; }
-  void setIpdu3dPosX( int64_t value ) { ipdu3dPosX_ = value; }
-  void setIpdu3dPosY( int64_t value ) { ipdu3dPosY_ = value; }
-  void setIpdu3dPosMinZ( int64_t value ) { ipdu3dPosMinZ_ = value; }
-  void setIpdu3dPosDeltaMaxZ( int64_t value ) { ipdu3dPosDeltaMaxZ_ = value; }
-
-  size_t getPatchIndex() { return ipduPatchIndex_; }
-  size_t getFrameIndex() { return ipduFrameIndex_; }
-  void   setPatchIndex( size_t value ) { ipduPatchIndex_ = value; }
-  void   setFrameIndex( size_t value ) { ipduFrameIndex_ = value; }
-
+  void setPatchIndex( size_t value ) { patchIndex_ = value; }
+  void setFrameIndex( size_t value ) { frameIndex_ = value; }
+  void setRefIndex( int64_t value ) { refIndex_ = value; }
+  void setRefPatchIndex( int64_t value ) { refPatchIndex_ = value; }
+  void set2dPosX( int64_t value ) { pos2dX_ = value; }
+  void set2dPosY( int64_t value ) { pos2dY_ = value; }
+  void set2dDeltaSizeX( int64_t value ) { delta2dSizeX_ = value; }
+  void set2dDeltaSizeY( int64_t value ) { delta2dSizeY_ = value; }
+  void set3dPosX( int64_t value ) { pos3dX_ = value; }
+  void set3dPosY( int64_t value ) { pos3dY_ = value; }
+  void set3dPosMinZ( int64_t value ) { pos3dMinZ_ = value; }
+  void set3dPosDeltaMaxZ( int64_t value ) { pos3dDeltaMaxZ_ = value; }
   void setPointLocalReconstructionData( PointLocalReconstructionData value ) { pointLocalReconstructionData_ = value; }
 
  private:
-  int64_t                      ipduRefIndex_;
-  int64_t                      ipduRefpatchIndex_;
-  int64_t                      ipdu2dPosX_;
-  int64_t                      ipdu2dPosY_;
-  int64_t                      ipdu2dDeltaSizeX_;
-  int64_t                      ipdu2dDeltaSizeY_;
-  int64_t                      ipdu3dPosX_;
-  int64_t                      ipdu3dPosY_;
-  int64_t                      ipdu3dPosMinZ_;
-  int64_t                      ipdu3dPosDeltaMaxZ_;
-  size_t                       ipduPatchIndex_;
-  size_t                       ipduFrameIndex_;
+  int64_t                      refIndex_;
+  int64_t                      refPatchIndex_;
+  int64_t                      pos2dX_;
+  int64_t                      pos2dY_;
+  int64_t                      delta2dSizeX_;
+  int64_t                      delta2dSizeY_;
+  int64_t                      pos3dX_;
+  int64_t                      pos3dY_;
+  int64_t                      pos3dMinZ_;
+  int64_t                      pos3dDeltaMaxZ_;
+  size_t                       patchIndex_;
+  size_t                       frameIndex_;
   PointLocalReconstructionData pointLocalReconstructionData_;
 };
 

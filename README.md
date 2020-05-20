@@ -93,7 +93,7 @@ These examples can be start based on your system with the following scripts:
 - ./test/runme_windows.bat
 - ./test/runme_osx.sh
 
-The V-PCC common test condition (CTC) command lines could be found in ./test/ctc_command_line.sh. 
+The V3C common test condition (CTC) command lines could be found in ./test/ctc_command_line.sh. 
 
 
 ### Contact
