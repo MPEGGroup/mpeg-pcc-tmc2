@@ -92,7 +92,11 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   for ( size_t i = 0; i < frames.size(); i++ ) {
     frames[i].setRawPatchEnabledFlag( params_.losslessGeo_ || params_.lossyRawPointsPatch_ );
     frames[i].setUseRawPointsSeparateVideo( params_.useRawPointsSeparateVideo_ );
+#if EXPAND_RANGE_ENCODER
+    frames[i].setGeometry3dCoordinatesBitdepth( params_.geometry3dCoordinatesBitdepth_ + (params_.additionalProjectionPlaneMode_>0) );
+#else
     frames[i].setGeometry3dCoordinatesBitdepth( params_.geometry3dCoordinatesBitdepth_ );
+#endif
     frames[i].setGeometry2dNorminalBitdepth( params_.geometryNominal2dBitdepth_ );
     frames[i].setMaxDepth( ( 1 << params_.geometryNominal2dBitdepth_ ) - 1 );
     frames[i].setLog2PatchQuantizerSizeX( context.getLog2PatchQuantizerSizeX() );
@@ -929,7 +933,11 @@ double PCCEncoder::adjustReferenceAtlasFrame( PCCContext&            context,
   auto bitMaxD1 = uint8_t( ceilLog2( uint32_t( maxD1 ) ) );
   auto bitMaxDD = uint8_t( ceilLog2( uint32_t( maxDD ) ) );
 
+#if EXPAND_RANGE_ENCODER
+  const size_t max3DCoordinate = size_t( 1 ) << (params_.geometry3dCoordinatesBitdepth_ + (params_.additionalProjectionPlaneMode_ > 0));
+#else
   const size_t max3DCoordinate = size_t( 1 ) << params_.geometry3dCoordinatesBitdepth_;
+#endif
   for ( size_t curId = 0; curId < curPatchCount; curId++ ) {
     auto& curPatch = curPatches[curId];
     // intra
@@ -3939,8 +3947,12 @@ void PCCEncoder::generateRawPointsPatch( const PCCPointSet3& source,
                                          bool                useEnhancedOccupancyMapCode ) {
   //  const int16_t infiniteDepth    = ( std::numeric_limits<int16_t>::max )();
   auto& patches = frame.getPatches();
-
-  const size_t geometry3dCoordinatesBitdepth = params_.geometry3dCoordinatesBitdepth_;
+  
+#if EXPAND_RANGE_ENCODER
+  const size_t geometry3dCoordinatesBitdepth = params_.geometry3dCoordinatesBitdepth_ + (params_.additionalProjectionPlaneMode_ > 0);
+#else
+    const size_t geometry3dCoordinatesBitdepth = params_.geometry3dCoordinatesBitdepth_;
+#endif
 
   PCCPointSet3 pointsToBeProjected;
   for ( const auto& patch : patches ) {
@@ -4498,7 +4510,11 @@ bool PCCEncoder::generateGeometryVideo( const PCCGroupOfFrames& sources, PCCCont
   params.additionalProjectionPlaneMode_       = params_.additionalProjectionPlaneMode_;
   params.partialAdditionalProjectionPlane_    = params_.partialAdditionalProjectionPlane_;
   params.maxAllowedDepth_                     = ( size_t( 1 ) << params_.geometryNominal2dBitdepth_ ) - 1;
+#if EXPAND_RANGE_ENCODER
+  params.geometryBitDepth3D_                  = params_.geometry3dCoordinatesBitdepth_ + (params_.additionalProjectionPlaneMode_ > 0);
+#else
   params.geometryBitDepth3D_                  = params_.geometry3dCoordinatesBitdepth_;
+#endif
   params.EOMFixBitCount_                      = params_.EOMFixBitCount_;
   params.EOMSingleLayerMode_                  = params_.enhancedOccupancyMapCode_ && ( params_.mapCountMinus1_ == 0 );
   params.patchExpansion_                      = params_.patchExpansion_;
@@ -7176,7 +7192,11 @@ void PCCEncoder::setPostProcessingSeiParameters( GeneratePointCloudParameters& p
   params.pointLocalReconstruction_      = params_.pointLocalReconstruction_;
   params.mapCountMinus1_                = params_.mapCountMinus1_;
   params.singleMapPixelInterleaving_    = params_.singleMapPixelInterleaving_;
+#if EXPAND_RANGE_ENCODER
+  params.geometry3dCoordinatesBitdepth_ = params_.geometry3dCoordinatesBitdepth_ + (params_.additionalProjectionPlaneMode_ > 0);
+#else
   params.geometry3dCoordinatesBitdepth_ = params_.geometry3dCoordinatesBitdepth_;
+#endif
   params.useAdditionalPointsPatch_      = params_.losslessGeo_ || params_.lossyRawPointsPatch_;
   params.plrlNumberOfModes_             = params_.plrlNumberOfModes_;
   params.geometryBitDepth3D_            = params_.geometry3dCoordinatesBitdepth_;
@@ -7217,10 +7237,18 @@ void PCCEncoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& 
   params.pointLocalReconstruction_      = params_.pointLocalReconstruction_;
   params.mapCountMinus1_                = params_.mapCountMinus1_;
   params.singleMapPixelInterleaving_    = params_.singleMapPixelInterleaving_;
+#if EXPAND_RANGE_ENCODER
+  params.geometry3dCoordinatesBitdepth_ = params_.geometry3dCoordinatesBitdepth_ + (params_.additionalProjectionPlaneMode_ > 0);
+#else
   params.geometry3dCoordinatesBitdepth_ = params_.geometry3dCoordinatesBitdepth_;
+#endif
   params.useAdditionalPointsPatch_      = params_.losslessGeo_ || params_.lossyRawPointsPatch_;
   params.plrlNumberOfModes_             = params_.plrlNumberOfModes_;
+#if EXPAND_RANGE_ENCODER
+  params.geometryBitDepth3D_            = params_.geometry3dCoordinatesBitdepth_ + (params_.additionalProjectionPlaneMode_ > 0);
+#else
   params.geometryBitDepth3D_            = params_.geometry3dCoordinatesBitdepth_;
+#endif
   params.EOMFixBitCount_                = params_.EOMFixBitCount_;
   params.pbfEnableFlag_                 = false;
   params.pbfPassesCount_                = 0;
@@ -7485,7 +7513,11 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
           if ( static_cast<int>( asps.getExtendedProjectionEnabledFlag() ) == 0 ) {
             pdu.setPdu3dPosMinZ( ( max3DCoordinate - patch.getD1() ) / minLevel );
           } else {
+#if EXPAND_RANGE_ENCODER
+            pdu.setPdu3dPosMinZ( ( max3DCoordinate - patch.getD1() ) / minLevel );
+#else
             pdu.setPdu3dPosMinZ( ( ( max3DCoordinate << 1 ) - patch.getD1() ) / minLevel );
+#endif
           }
         }
 

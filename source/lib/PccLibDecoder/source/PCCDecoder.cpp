@@ -695,7 +695,11 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
           if ( static_cast<int>( asps.getExtendedProjectionEnabledFlag() ) == 0 ) {
             patch.getD1() = max3DCoordinate - static_cast<int32_t>( pdu.getPdu3dPosMinZ() ) * minLevel;
           } else {
+#if EXPAND_RANGE_ENCODER
+            patch.getD1() = ( max3DCoordinate ) - static_cast<int32_t>( pdu.getPdu3dPosMinZ() ) * minLevel;
+#else
             patch.getD1() = ( max3DCoordinate << 1 ) - static_cast<int32_t>( pdu.getPdu3dPosMinZ() ) * minLevel;
+#endif
           }
         }
         prevSizeU0              = patch.getSizeU0();
@@ -782,9 +786,15 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
                 max3DCoordinate -
                 ( ipdu.getIpdu3dPosMinZ() + ( ( max3DCoordinate - refPatch.getD1() ) / minLevel ) ) * minLevel;
           } else {
+#if EXPAND_RANGE_ENCODER
+            patch.getD1() =
+                ( max3DCoordinate ) -
+                ( ipdu.getIpdu3dPosMinZ() + ( ( ( max3DCoordinate ) - refPatch.getD1() ) / minLevel ) ) * minLevel;
+#else
             patch.getD1() =
                 ( max3DCoordinate << 1 ) -
                 ( ipdu.getIpdu3dPosMinZ() + ( ( ( max3DCoordinate << 1 ) - refPatch.getD1() ) / minLevel ) ) * minLevel;
+#endif
           }
         }
         const int64_t delta_DD = ipdu.getIpdu3dPosDeltaMaxZ();
@@ -866,10 +876,17 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
                     max3DCoordinate -
                     ( mpdu.getMpdu3dPosMinZ() + ( ( max3DCoordinate - refPatch.getD1() ) / minLevel ) ) * minLevel;
               } else {
+#if EXPAND_RANGE_ENCODER
+                patch.getD1() =
+                     max3DCoordinate  -
+                    ( mpdu.getMpdu3dPosMinZ() + ( ( max3DCoordinate - refPatch.getD1() ) / minLevel ) ) *
+                        minLevel;
+#else
                 patch.getD1() =
                     ( max3DCoordinate << 1 ) -
                     ( mpdu.getMpdu3dPosMinZ() + ( ( ( max3DCoordinate << 1 ) - refPatch.getD1() ) / minLevel ) ) *
                         minLevel;
+#endif
               }
             }
 
@@ -957,8 +974,12 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
           if ( static_cast<int>( asps.getExtendedProjectionEnabledFlag() ) == 0 ) {
             patch.getD1() = max3DCoordinate - ( ( ( max3DCoordinate - refPatch.getD1() ) / minLevel ) ) * minLevel;
           } else {
+#if EXPAND_RANGE_ENCODER
+            patch.getD1() = max3DCoordinate - ( ( ( max3DCoordinate - refPatch.getD1() ) / minLevel ) ) * minLevel;
+#else
             patch.getD1() = ( max3DCoordinate << 1 ) -
                             ( ( ( ( max3DCoordinate << 1 ) - refPatch.getD1() ) / minLevel ) ) * minLevel;
+#endif
           }
         }
         size_t prevDD = refPatch.getSizeD() / minLevel;

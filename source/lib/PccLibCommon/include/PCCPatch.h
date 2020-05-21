@@ -969,7 +969,11 @@ class PCCPatch {
   }
 
   static void InverseRotatePosition45DegreeOnAxis( size_t Axis, size_t lod, PCCPoint3D input, PCCVector3D& output ) {
-    size_t s   = ( 1u << lod ) - 1;
+#ifdef EXPAND_RANGE_ENCODER
+    size_t s = ( 1u << (lod-1) ) - 1;
+#else
+    size_t s = ( 1u << lod ) - 1;
+#endif
     output.x() = input.x();
     output.y() = input.y();
     output.z() = input.z();
@@ -994,7 +998,11 @@ class PCCPatch {
   }
 
   static void RotatePosition45DegreeOnAxis( size_t Axis, size_t lod, PCCPoint3D input, PCCPoint3D& output ) {
+#ifdef EXPAND_RANGE_ENCODER
+    size_t shif = ( 1u << (lod-1) ) - 1;
+#else
     size_t shif = ( 1u << lod ) - 1;
+#endif
     output      = input;
     if ( Axis == 1 ) {  // Additional plane are defined by Y Axis.
       output.x() = input.x() + input.z();

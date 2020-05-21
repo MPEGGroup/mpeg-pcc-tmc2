@@ -187,7 +187,6 @@ PCCEncoderParameters::PCCEncoderParameters() {
   use3dmc_                          = true;
   enhancedPP_                       = true;
   minWeightEPP_                     = 0.6;
-  geometry3dCoordinatesBitdepth_    = 10;
   additionalProjectionPlaneMode_    = 0;
   partialAdditionalProjectionPlane_ = 0.00;
 
@@ -882,7 +881,11 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
       if ( afps.getAfpsRaw3dPosBitCountExplicitModeFlag() ) {
         atgh.setAtghRaw3dPosAxisBitCountMinus1( 0 );  //
       } else {
+#if EXPAND_RANGE_ENCODER
+        atgh.setAtghRaw3dPosAxisBitCountMinus1( geometry3dCoordinatesBitdepth_ + asps.getExtendedProjectionEnabledFlag() - geometryNominal2dBitdepth_ - 1 );
+#else
         atgh.setAtghRaw3dPosAxisBitCountMinus1( geometry3dCoordinatesBitdepth_ - geometryNominal2dBitdepth_ - 1 );
+#endif
       }
       atgh.setAtghNumRefIdxActiveOverrideFlag( false );
 
@@ -898,7 +901,11 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   oi.setOccupancyNominal2DBitdepthMinus1( 7 );
   oi.setOccupancyMSBAlignFlag( false );
 
+#if EXPAND_RANGE_ENCODER
+  gi.setGeometry3dCoordinatesBitdepthMinus1( uint8_t( geometry3dCoordinatesBitdepth_ + asps.getExtendedProjectionEnabledFlag() - 1) );
+#else
   gi.setGeometry3dCoordinatesBitdepthMinus1( uint8_t( geometry3dCoordinatesBitdepth_ - 1 ) );
+#endif
   gi.setGeometryNominal2dBitdepthMinus1( uint8_t( geometryNominal2dBitdepth_ - 1 ) );
   gi.setGeometryMSBAlignFlag( false );
 
@@ -910,7 +917,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   context.setRawAttWidth( textureRawSeparateVideoWidth_ );
   context.setRawGeoHeight( 0 );
   context.setRawAttHeight( 0 );
-  context.setGeometry3dCoordinatesBitdepth( geometry3dCoordinatesBitdepth_ );
+  context.setGeometry3dCoordinatesBitdepth( gi.getGeometry3dCoordinatesBitdepthMinus1() + 1 );
   size_t numPlrm = pointLocalReconstruction_
                        ? ( std::max )( static_cast<size_t>( 1 ),
                                        ( std::min )( plrlNumberOfModes_, g_pointLocalReconstructionMode.size() ) )

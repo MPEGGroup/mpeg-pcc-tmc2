@@ -889,7 +889,11 @@ void PCCBitstreamWriter::patchDataUnit( PatchDataUnit&        pdu,
   bitstream.write( pdu.getPdu3dPosX(), bitCount3DPos );  // u(v)
   bitstream.write( pdu.getPdu3dPosY(), bitCount3DPos );  // u(v)
 #else
+#ifdef EXPAND_RANGE_ENCODER
+  uint8_t bitCount3DPos = syntax.getVps().getGeometryInformation(0).getGeometry3dCoordinatesBitdepthMinus1() + 1;
+#else
   uint8_t bitCount3DPos = syntax.getVps().getGeometryInformation(0).getGeometry3dCoordinatesBitdepthMinus1() + 2;
+#endif
   bitstream.write( pdu.getPdu3dPosX(), bitCount3DPos );  // u(v)
   bitstream.write( pdu.getPdu3dPosY(), bitCount3DPos );  // u(v)
 #endif
@@ -899,9 +903,15 @@ void PCCBitstreamWriter::patchDataUnit( PatchDataUnit&        pdu,
       syntax.getVps().getGeometryInformation( 0 ).getGeometry3dCoordinatesBitdepthMinus1() -
       atgh.getAtghPosMinZQuantizer() + 1 + asps.getExtendedProjectionEnabledFlag();
 #else
+#ifdef EXPAND_RANGE_ENCODER
+  const uint8_t bitCountForMinDepth =
+      syntax.getVps().getGeometryInformation( 0 ).getGeometry3dCoordinatesBitdepthMinus1() -
+      atgh.getAtghPosMinZQuantizer() + 1;
+#else
   const uint8_t bitCountForMinDepth =
       syntax.getVps().getGeometryInformation( 0 ).getGeometry3dCoordinatesBitdepthMinus1() -
       atgh.getAtghPosMinZQuantizer() + 2;
+#endif
 #endif
 
   bitstream.write( pdu.getPdu3dPosMinZ(), bitCountForMinDepth );  // u(v)
@@ -911,18 +921,30 @@ void PCCBitstreamWriter::patchDataUnit( PatchDataUnit&        pdu,
                    syntax.getVps().getGeometryInformation( 0 ).getGeometry3dCoordinatesBitdepthMinus1(),
                    atgh.getAtghPosMinZQuantizer(), 1 + asps.getExtendedProjectionEnabledFlag());
 #else
+#ifdef EXPAND_RANGE_ENCODER
+  TRACE_BITSTREAM( " Pdu3dPosMinZ: %zu ( bitCountForMinDepth = %u = %u - %u + %u ) \n", pdu.getPdu3dPosMinZ(),
+                   bitCountForMinDepth,
+                   syntax.getVps().getGeometryInformation( 0 ).getGeometry3dCoordinatesBitdepthMinus1(),
+                   atgh.getAtghPosMinZQuantizer(), 1);
+#else
   TRACE_BITSTREAM( " Pdu3dPosMinZ: %zu ( bitCountForMinDepth = %u = %u - %u + %u ) \n", pdu.getPdu3dPosMinZ(),
                    bitCountForMinDepth,
                    syntax.getVps().getGeometryInformation( 0 ).getGeometry3dCoordinatesBitdepthMinus1(),
                    atgh.getAtghPosMinZQuantizer(), 2);
+#endif
 #endif
   if ( asps.getNormalAxisMaxDeltaValueEnabledFlag() ) {
 #if EXPAND_RANGE_CONDITIONAL
     uint8_t bitCountForMaxDepth = syntax.getVps().getGeometryInformation( 0 ).getGeometry3dCoordinatesBitdepthMinus1() -
                                   atgh.getAtghPosDeltaMaxZQuantizer() + 1 + asps.getExtendedProjectionEnabledFlag();
 #else
+#ifdef EXPAND_RANGE_ENCODER
+    uint8_t bitCountForMaxDepth = syntax.getVps().getGeometryInformation( 0 ).getGeometry3dCoordinatesBitdepthMinus1() -
+                                  atgh.getAtghPosDeltaMaxZQuantizer() + 1;
+#else
     uint8_t bitCountForMaxDepth = syntax.getVps().getGeometryInformation( 0 ).getGeometry3dCoordinatesBitdepthMinus1() -
                                   atgh.getAtghPosDeltaMaxZQuantizer() + 2;
+#endif
 #endif
     bitstream.write( pdu.getPdu3dPosDeltaMaxZ(), bitCountForMaxDepth );
     TRACE_BITSTREAM( " Pdu3dPosDeltaMaxZ: %zu ( bitCountForMaxDepth = %u) \n", pdu.getPdu3dPosDeltaMaxZ(),
