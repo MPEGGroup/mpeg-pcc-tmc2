@@ -150,7 +150,7 @@ void PCCHMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream,
       }
     }
   }
-
+  setVideoSize( pcListPic->front()->getPicSym()->getSPS() );
   xFlushOutput( pcListPic, video );
   // delete buffers
   m_cTDecTop.deletePicBuffer();
