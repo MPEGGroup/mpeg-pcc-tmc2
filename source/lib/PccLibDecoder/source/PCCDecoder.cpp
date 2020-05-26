@@ -116,10 +116,10 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
   } else {
     int   decodedBitDepthGeo = gi.getGeometryNominal2dBitdepthMinus1() + 1;
     auto& videoBitstream     = context.getVideoBitstream( VIDEO_GEOMETRY );
-    videoDecoder.decompress( context.getVideoGeometry(), path.str(), context.size() * mapCount, videoBitstream,
+    videoDecoder.decompress( context.getVideoGeometryMultiple()[0], path.str(), context.size() * mapCount, videoBitstream,
                              params_.videoDecoderPath_, context, decodedBitDepthGeo, params_.keepIntermediateFiles_,
                              isGeometry444 );
-    context.getVideoGeometry().convertBitdepth( decodedBitDepthGeo, gi.getGeometryNominal2dBitdepthMinus1() + 1,
+    context.getVideoGeometryMultiple()[0].convertBitdepth( decodedBitDepthGeo, gi.getGeometryNominal2dBitdepthMinus1() + 1,
                                                 gi.getGeometryMSBAlignFlag() );
     std::cout << "geometry video ->" << videoBitstream.size() << " B" << std::endl;
   }
@@ -175,7 +175,8 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
         } else {
           auto  textureIndex   = static_cast<PCCVideoType>( VIDEO_TEXTURE + attrPartitionIndex );
           auto& videoBitstream = context.getVideoBitstream( textureIndex );
-          videoDecoder.decompress( context.getVideoTexture(),       // video,
+          printf( "call videoDecoder.decompress()::context.getVideoTexture() \n" );
+          videoDecoder.decompress( context.getVideoTextureMultiple()[0],       // video,
                                    path.str(),                      // path,
                                    context.size() * mapCount,       // frameCount,
                                    videoBitstream,                  // bitstream,

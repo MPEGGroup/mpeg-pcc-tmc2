@@ -45,7 +45,7 @@ struct PCCGPAFrameSize {
   size_t heightGPA_;
 };
 
-struct PCCFrameOCPInfo {
+struct PCCFrameOCMInfo {
   size_t            occupancySizeU_;
   size_t            occupancySizeV_;
   size_t            maxOccupancyRow_;
@@ -66,7 +66,7 @@ class PCCFrameContext {
   std::vector<PCCRawPointsPatch>&  getRawPointsPatches() { return rawPointsPatches_; }
   PCCRawPointsPatch&               getRawPointsPatch( size_t index ) { return rawPointsPatches_[index]; }
   std::vector<size_t>&             getNumberOfRawPoints() { return numberOfRawPoints_; };
-  std::vector<PCCColor3B>&         getRawPointsTextures() { return mpsTextures_; };
+  std::vector<PCCColor3B>&         getRawPointsTextures() { return rawTextures_; };
   std::vector<PCCColor3B>&         getEOMTextures() { return eomTextures_; };
   size_t&                          getWidth() { return width_; }
   size_t&                          getHeight() { return height_; }
@@ -89,7 +89,7 @@ class PCCFrameContext {
   uint8_t&                   getPointLocalReconstructionNumber() { return pointLocalReconstructionNumber_; }
   PCCGPAFrameSize&           getPrePCCGPAFrameSize() { return prePCCGPAFrameSize_; }
   PCCGPAFrameSize&           getCurPCCGPAFrameSize() { return curPCCGPAFrameSize_; }
-  PCCFrameOCPInfo&           getPCCOCPGPAInfo() { return ocpGPAInfo_; }
+  PCCFrameOCMInfo&           getPCCOCPGPAInfo() { return ocpGPAInfo_; }
   size_t&                    getGlobalPatchCount() { return globalPatchCount_; }
   size_t                     getGeometry3dCoordinatesBitdepth() { return geometry3dCoordinatesBitdepth_; }
   void                       setIndex( size_t value ) { index_ = value; }
@@ -185,7 +185,7 @@ class PCCFrameContext {
   std::vector<PCCPatch>                        patches_;
   std::vector<PCCRawPointsPatch>               rawPointsPatches_;
   std::vector<size_t>                          numberOfRawPoints_;
-  std::vector<PCCColor3B>                      mpsTextures_;
+  std::vector<PCCColor3B>                      rawTextures_;
   std::vector<PCCColor3B>                      eomTextures_;
   std::vector<PCCPointSet3>                    srcPointCloudByPatch_;
   std::vector<PCCPointSet3>                    srcPointCloudByBlock_;
@@ -193,7 +193,7 @@ class PCCFrameContext {
   std::vector<std::vector<PCCVector3<size_t>>> pointToPixelByBlock_;
   PCCGPAFrameSize                              prePCCGPAFrameSize_;
   PCCGPAFrameSize                              curPCCGPAFrameSize_;
-  PCCFrameOCPInfo                              ocpGPAInfo_;
+  PCCFrameOCMInfo                              ocpGPAInfo_;
   PCCVector3D                                  weightNormal_;
   std::vector<PCCEomPatch>                     eomPatches_;
 };

@@ -980,7 +980,7 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
   bitstream.openTrace( removeFileExtension( encoderParams.compressedStreamPath_ ) + "_samplestream_write.txt" );
   bitstream.setTraceFile( bitstream.getTraceFile() );
 #endif
-  bitstream.writeHeader();
+  //bitstream.writeHeader();
   bitstreamStat.setHeader( bitstream.size() );
   PCCBitstreamWriter bitstreamWriter;
   size_t             headerSize = bitstreamWriter.write( ssvu, bitstream );

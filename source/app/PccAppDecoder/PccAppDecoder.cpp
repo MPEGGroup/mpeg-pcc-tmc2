@@ -253,7 +253,7 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
   bitstream.setTraceFile( bitstream.getTraceFile() );
 #endif
   if ( !bitstream.initialize( decoderParams.compressedStreamPath_ ) ) { return -1; }
-  if ( !bitstream.readHeader() ) { return -1; }
+  //if ( !bitstream.readHeader() ) { return -1; }
   bitstreamStat.setHeader( bitstream.size() );
   size_t      frameNumber = decoderParams.startFrameNumber_;
   PCCMetrics  metrics;

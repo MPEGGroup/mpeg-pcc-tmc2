@@ -123,24 +123,46 @@ class PCCEncoder : public PCCCodec {
   void createPatchFrameDataStructure( PCCContext& context, PCCFrameContext& frame, size_t frameIndex );
 
  private:
+  template <typename T>
+  T           limit( T x, T minVal, T maxVal );
+
+  //**occupancy map**//
   bool generateOccupancyMapVideo( const PCCGroupOfFrames& sources, PCCContext& context );
   bool generateOccupancyMapVideo( const size_t           imageWidth,
                                   const size_t           imageHeight,
                                   std::vector<uint32_t>& occupancyMap,
                                   PCCImageOccupancyMap&  videoFrameOccupancyMap );
+  bool   generateOccupancyMap( PCCContext& context );
+  void   modifyOccupancyMapEOM( PCCFrameContext& frame );
+  void        generateOccupancyMap( PCCFrameContext& frameContext );
+  void        refineOccupancyMap( PCCFrameContext& frame );
 
-  template <typename T>
-  T    limit( T x, T minVal, T maxVal );
-  void preFilterOccupancyMap( PCCImageOccupancyMap& image, size_t kwidth, size_t kheight );
-  bool modifyOccupancyMap( const PCCGroupOfFrames& sources, PCCContext& context );
-  bool modifyOccupancyMap( const size_t           imageWidth,
-                           const size_t           imageHeight,
-                           std::vector<uint32_t>& occupancyMap,
-                           PCCImageOccupancyMap&  videoFrameOccupancyMap,
-                           std::ofstream&         ofile );
+  void        preFilterOccupancyMap( PCCImageOccupancyMap& image, size_t kwidth, size_t kheight );
+  bool        modifyOccupancyMap( const PCCGroupOfFrames& sources, PCCContext& context );
+  bool        modifyOccupancyMap( const size_t           imageWidth,
+                                  const size_t           imageHeight,
+                                  std::vector<uint32_t>& occupancyMap,
+                                  PCCImageOccupancyMap&  videoFrameOccupancyMap,
+                                  std::ofstream&         ofile );
+  //**auxPatches**//
   void markRawPatchLocationOccupancyMapVideo( PCCContext& context );
   void markRawPatchLocation( PCCFrameContext& contextFrame, PCCImageOccupancyMap& occupancyMap );
+  void generateRawPointsGeometryVideo( PCCContext& context, PCCGroupOfFrames& reconstructs );
+  void generateRawPointsTextureVideo( PCCContext& context, PCCGroupOfFrames& reconstructs );
 
+  void generateRawPointsGeometryImage( PCCContext& context, PCCFrameContext& frame, PCCImageGeometry& image );
+  void generateRawPointsTextureImage( PCCContext&         context,
+                                PCCFrameContext&    frame,
+                                PCCImageTexture&    image,
+                                const PCCPointSet3& reconstruct );
+  void        generateEomPatch( const PCCPointSet3& source, PCCFrameContext& frame );
+  void        generateRawPointsPatch( const PCCPointSet3& source,
+                                      PCCFrameContext&    frameContext,
+                                      bool                useEnhancedOccupancyMapCode );
+  void                   sortRawPointsPatch( PCCFrameContext& frameContext, size_t index );
+  void                   sortRawPointsPatchMorton( PCCFrameContext& frameContext, size_t index );
+
+  //**geometry video**//
   bool generateGeometryVideo( const PCCGroupOfFrames& sources, PCCContext& context );
   bool resizeGeometryVideo( PCCContext& context );
   bool dilateGeometryVideo( const PCCGroupOfFrames& sources, PCCContext& context );
@@ -150,15 +172,30 @@ class PCCEncoder : public PCCCodec {
                              PCCContext&                 context,
                              const PCCEncoderParameters& params );
 
-  void generateRawPointsGeometryVideo( PCCContext& context, PCCGroupOfFrames& reconstructs );
-  void generateRawPointsTextureVideo( PCCContext& context, PCCGroupOfFrames& reconstructs );
+  void        generateIntraImage( PCCFrameContext& frameContext, const size_t mapIndex, PCCImageGeometry& image );
+  bool        predictGeometryFrame( PCCFrameContext&        frameContext,
+                                    const PCCImageGeometry& reference,
+                                    PCCImageGeometry&       image );
+  static bool predictTextureFrame( PCCFrameContext&       frameContext,
+                                   const PCCImageTexture& reference,
+                                   PCCImageTexture&       image );
 
-  void generateRawPointsGeometryImage( PCCContext& context, PCCFrameContext& frame, PCCImageGeometry& image );
-  void generateRawPointsTextureImage( PCCContext&         context,
-                                      PCCFrameContext&    frame,
-                                      PCCImageTexture&    image,
-                                      const PCCPointSet3& reconstruct );
+  bool generateScaledGeometry( const PCCPointSet3& source, PCCFrameContext& frame );
+  bool generateGeometryVideo( const PCCPointSet3&                 source,
+                              PCCFrameContext&                    frameContext,
+                              const PCCPatchSegmenter3Parameters& segmenterParams,
+                              PCCVideoGeometry&                   videoGeometry,
+                              PCCFrameContext&                    prevFrame,
+                              size_t                              frameIndex,
+                              float&                              distanceSrcRec );
 
+  bool generateTextureVideo( const PCCPointSet3& reconstruct,
+                             PCCContext&         context,
+                             size_t              frameIndex,
+                             const size_t        mapCount );
+
+  void geometryGroupDilation( PCCContext& context );
+  
   template <typename T>
   void dilate( PCCFrameContext& frame, PCCImage<T, 3>& image, const PCCImage<T, 3>* reference = nullptr );
 
@@ -174,8 +211,6 @@ class PCCEncoder : public PCCCodec {
                                PCCImageGeometry& image,
                                PCCKdTree&        kdtree,
                                PCCFrameContext&  frame );
-  bool   generateOccupancyMap( PCCContext& context );
-  void   modifyOccupancyMapEOM( PCCFrameContext& frame );
 
   // Push-pull background filling
   template <typename T>
@@ -201,8 +236,9 @@ class PCCEncoder : public PCCCodec {
                           std::vector<uint32_t>& mipOccupancyMap );
   template <typename T>
   void   regionFill( PCCImage<T, 3>& image, std::vector<uint32_t>& occupancyMap, PCCImage<T, 3>& imageLowRes );
-  void   pack( PCCFrameContext& frame, int safeguard = 0, bool enablePointCloudPartitioning = false );
-  void   packFlexible( PCCFrameContext& frame, int safeguard = 0, bool enablePointCloudPartitioning = false );
+  
+  //**placing patches**//
+  void   packFlexible( PCCFrameContext& frame, int packingStrategy, int safeguard = 0, bool enablePointCloudPartitioning = false );
   void   packTetris( PCCFrameContext& frame, int safeguard = 0 );
   void   packRawPointsPatch( PCCFrameContext&   frame,
                              std::vector<bool>& occupancyMap,
@@ -223,73 +259,18 @@ class PCCEncoder : public PCCCodec {
                                     PCCFrameContext&       frame,
                                     size_t                 listIndex,
                                     std::vector<PCCPatch>& tempPatchList );
-  void   spatialConsistencyPack( PCCFrameContext& frame,
-                                 PCCFrameContext& prevFrame,
-                                 int              safeguard                    = 0,
-                                 bool             enablePointCloudPartitioning = false );
   void   spatialConsistencyPackFlexible( PCCFrameContext& frame,
                                          PCCFrameContext& prevFrame,
+                                         int packingStrategy, 
                                          int              safeguard                    = 0,
                                          bool             enablePointCloudPartitioning = false );
   void   spatialConsistencyPackTetris( PCCFrameContext& frame, PCCFrameContext& prevFrame, int safeguard = 0 );
-  // GTP
+  
+  //**GTP**//
   void        findMatchesForGlobalTetrisPacking( PCCFrameContext& frame, PCCFrameContext& prevFrame );
   void        doGlobalTetrisPacking( PCCContext& context );
-  void        generateOccupancyMap( PCCFrameContext& frameContext );
-  void        refineOccupancyMap( PCCFrameContext& frame );
-  static void printMap( std::vector<bool> img, const size_t sizeU, const size_t sizeV );
-  static void printMapTetris( std::vector<bool> img, const size_t sizeU, const size_t sizeV, std::vector<int> horizon );
-  void        generateIntraImage( PCCFrameContext& frameContext, const size_t mapIndex, PCCImageGeometry& image );
-  bool        predictGeometryFrame( PCCFrameContext&        frameContext,
-                                    const PCCImageGeometry& reference,
-                                    PCCImageGeometry&       image );
-  static bool predictTextureFrame( PCCFrameContext&       frameContext,
-                                   const PCCImageTexture& reference,
-                                   PCCImageTexture&       image );
-  void        generateEomPatch( const PCCPointSet3& source, PCCFrameContext& frame );
-  void        generateRawPointsPatch( const PCCPointSet3& source,
-                                      PCCFrameContext&    frameContext,
-                                      bool                useEnhancedOccupancyMapCode );
 
-  void                   sortRawPointsPatch( PCCFrameContext& frameContext, size_t index );
-  void                   sortRawPointsPatchMorton( PCCFrameContext& frameContext, size_t index );
-  static inline uint64_t mortonAddr( const int32_t x, const int32_t y, const int32_t z );
-  uint64_t               mortonAddr( const PCCPoint3D& vec, int depth );
-
-  bool generateScaledGeometry( const PCCPointSet3& source, PCCFrameContext& frame );
-  bool generateGeometryVideo( const PCCPointSet3&                 source,
-                              PCCFrameContext&                    frameContext,
-                              const PCCPatchSegmenter3Parameters& segmenterParams,
-                              PCCVideoGeometry&                   videoGeometry,
-                              PCCFrameContext&                    prevFrame,
-                              size_t                              frameIndex,
-                              float&                              distanceSrcRec );
-
-  bool generateTextureVideo( const PCCPointSet3& reconstruct,
-                             PCCContext&         context,
-                             size_t              frameIndex,
-                             const size_t        mapCount );
-
-  void generateIntraEnhancedOccupancyMapImage( PCCFrameContext&        frame,
-                                               const PCCImageGeometry& imageRef,
-                                               PCCImageGeometry&       image );
-
-  void geometryGroupDilation( PCCContext& context );
-
-  void create3DMotionEstimationFiles( const PCCGroupOfFrames& sources, PCCContext& context, const std::string& path );
-  static void remove3DMotionEstimationFiles( const std::string& path );
-
-  void pointLocalReconstructionSearch( PCCContext& context, const GeneratePointCloudParameters& params );
-  void pointLocalReconstructionSearch( PCCContext&                          context,
-                                       PCCFrameContext&                     frame,
-                                       const PCCVideoGeometry&              video,
-                                       const std::vector<PCCVideoGeometry>& videoMultiple,
-                                       const GeneratePointCloudParameters&  params );
-
-  void presmoothPointCloudColor( PCCPointSet3& reconstruct, const PCCEncoderParameters params );
-
-  void calculateWeightNormal( PCCContext& context, const PCCPointSet3& source, PCCFrameContext& frameContext );
-
+  //**GPA**//
   // perform data-adaptive GPA method;
   void performDataAdaptiveGPAMethod( PCCContext& context );
 
@@ -357,6 +338,13 @@ class PCCEncoder : public PCCCodec {
                                                  size_t&                      widthGPA,
                                                  size_t&                      maxOccupancyRow );
 
+  //**Point Local Reconstruction**//
+  void pointLocalReconstructionSearch( PCCContext& context, const GeneratePointCloudParameters& params );
+  void pointLocalReconstructionSearch( PCCContext&                          context,
+                                       PCCFrameContext&                     frame,
+                                       const std::vector<PCCVideoGeometry>& videoMultiple,
+                                       const GeneratePointCloudParameters&  params );
+
   void setPointLocalReconstruction( PCCContext& context );
 
   void setPointLocalReconstructionData( PCCFrameContext&              frame,
@@ -364,7 +352,7 @@ class PCCEncoder : public PCCCodec {
                                         PointLocalReconstructionData& plrd,
                                         size_t                        occupancyPackingBlockSize,
                                         size_t                        patchIndex );
-
+ //**Additional Projection Plane**//
   void SegmentationPartiallyAddtinalProjectionPlane( const PCCPointSet3&                 source,
                                                      PCCFrameContext&                    frameContext,
                                                      const PCCPatchSegmenter3Parameters& segmenterParams,
@@ -372,7 +360,18 @@ class PCCEncoder : public PCCCodec {
                                                      PCCFrameContext&                    prevFrame,
                                                      size_t                              frameIndex,
                                                      float&                              distanceSrcRec );
+  //**tools**//
+  static inline uint64_t mortonAddr( const int32_t x, const int32_t y, const int32_t z );
+  uint64_t               mortonAddr( const PCCPoint3D& vec, int depth );
+  void create3DMotionEstimationFiles( const PCCGroupOfFrames& sources, PCCContext& context, const std::string& path );
+  static void remove3DMotionEstimationFiles( const std::string& path );
+  void presmoothPointCloudColor( PCCPointSet3& reconstruct, const PCCEncoderParameters params );
+  void calculateWeightNormal( PCCContext& context, const PCCPointSet3& source, PCCFrameContext& frameContext );
 
+  //**print out**//
+  static void printMap( std::vector<bool> img, const size_t sizeU, const size_t sizeV );
+  static void printMapTetris( std::vector<bool> img, const size_t sizeU, const size_t sizeV, std::vector<int> horizon );
+  
   PCCEncoderParameters params_;
 };
 
