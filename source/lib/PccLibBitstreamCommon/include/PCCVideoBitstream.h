@@ -45,29 +45,30 @@ class PCCVideoBitstream {
   void                  resize( size_t size ) { data_.resize( size ); }
   std::vector<uint8_t>& vector() { return data_; }
   uint8_t*              buffer() { return data_.data(); }
-  size_t                size() { return (size_t)data_.size(); }
+  size_t                size() { return data_.size(); }
   PCCVideoType          type() { return type_; }
 
   void trace() { std::cout << toString( type_ ) << " ->" << size() << " B " << std::endl; }
 
   std::string getExtension() {
     size_t typeIndex = (size_t)type_;
-    if ( typeIndex == (size_t)VIDEO_OCCUPANCY )
+    if ( typeIndex == (size_t)VIDEO_OCCUPANCY ) {
       return std::string( "occupancy" );
-    else if ( typeIndex == (size_t)VIDEO_GEOMETRY )
+    } else if ( typeIndex == (size_t)VIDEO_GEOMETRY ) {
       return std::string( "geometry" );
-    else if ( typeIndex >= (size_t)VIDEO_GEOMETRY_D0 && typeIndex <= (size_t)VIDEO_GEOMETRY_D15 ) {
+    } else if ( typeIndex >= (size_t)VIDEO_GEOMETRY_D0 && typeIndex <= (size_t)VIDEO_GEOMETRY_D15 ) {
       return std::string( "geometryD" ) + std::to_string( typeIndex - (size_t)VIDEO_GEOMETRY_D0 );
-    } else if ( typeIndex == (size_t)VIDEO_GEOMETRY_RAW )
+    } else if ( typeIndex == (size_t)VIDEO_GEOMETRY_RAW ) {
       return std::string( "geomteryRaw" );
-    else if ( typeIndex == (size_t)VIDEO_TEXTURE )
+    } else if ( typeIndex == (size_t)VIDEO_TEXTURE ) {
       return std::string( "texture" );
-    else if ( typeIndex >= (size_t)VIDEO_TEXTURE_T0 && typeIndex <= (size_t)VIDEO_TEXTURE_T15 )
+    } else if ( typeIndex >= (size_t)VIDEO_TEXTURE_T0 && typeIndex <= (size_t)VIDEO_TEXTURE_T15 ) {
       return std::string( "textureT" ) + std::to_string( typeIndex - ( size_t )( VIDEO_TEXTURE_T0 ) );
-    else if ( typeIndex == (size_t)VIDEO_TEXTURE_RAW )
+    } else if ( typeIndex == (size_t)VIDEO_TEXTURE_RAW ) {
       return std::string( "textureRaw" );
-    else
+    } else {
       return std::string( "unknown" );
+    }
   }
   bool write( const std::string& filename ) {
     std::ofstream file( filename, std::ios::binary );

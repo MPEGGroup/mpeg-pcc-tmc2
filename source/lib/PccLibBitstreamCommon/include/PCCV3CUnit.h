@@ -43,31 +43,27 @@ class V3CUnit {
  public:
   V3CUnit() {}
   ~V3CUnit() {}
-  void   setV3CUnitSize( size_t value ) { v3cUnitSize_ = value; }
-  void   setV3CUnitSize() { v3cUnitSize_ = V3CUnitDataBitstream_.size(); }
-  size_t getV3CUnitSize() { return v3cUnitSize_; }
 
-  void setV3CUnitDataBitstream( PCCBitstream&& bitstream, V3CUnitType unitType ) {
-    V3CUnitDataBitstream_ = std::move( bitstream );
-    v3cUnitSize_          = bitstream.size();
-    v3cUnitType_          = unitType;
+  void          allocate() { bitstream_.initialize( size_ ); }
+  size_t        getSize() { return size_; }
+  V3CUnitType   getType() { return type_; }
+  PCCBitstream& getBitstream() {
+    bitstream_.beginning();
+    return bitstream_;
   }
-  PCCBitstream& getV3CUnitDataBitstream() {
-    V3CUnitDataBitstream_.beginning();
-    return V3CUnitDataBitstream_;
+  void setSize( size_t value ) { size_ = value; }
+  void setSize() { size_ = bitstream_.size(); }
+  void setType( V3CUnitType value ) { type_ = value; }
+  void setBitstream( PCCBitstream&& bitstream, V3CUnitType unitType ) {
+    bitstream_ = std::move( bitstream );
+    size_      = bitstream.size();
+    type_      = unitType;
   }
-  void        allocate() { V3CUnitDataBitstream_.initialize( v3cUnitSize_ ); }
-  void        getV3CUnitHeader() {}
-  void        getV3CUnitPayload() {}
-  V3CUnitType getV3CUnitType() { return v3cUnitType_; }
-
-  void setV3CUnitType( size_t value ) { v3cUnitType_ = (V3CUnitType)value; }
-  void setV3CUnitType( V3CUnitType value ) { v3cUnitType_ = value; }
 
  private:
-  V3CUnitType  v3cUnitType_;
-  size_t       v3cUnitSize_;
-  PCCBitstream V3CUnitDataBitstream_;
+  V3CUnitType  type_;
+  size_t       size_;
+  PCCBitstream bitstream_;
 };
 
 };  // namespace pcc

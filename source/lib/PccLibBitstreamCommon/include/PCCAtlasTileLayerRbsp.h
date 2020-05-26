@@ -48,17 +48,14 @@ class AtlasTileLayerRbsp {
   AtlasTileLayerRbsp& operator=( const AtlasTileLayerRbsp& ) = default;
 
   uint8_t            getFrameIndex() { return frameIndex_; }
-  AtlasTileHeader&   getAtlasTileHeader() { return atlasTileHeader_; }
-  AtlasTileDataUnit& getAtlasTileDataUnit() { return atlasTileDataUnit_; }
-
-  void setFrameIndex( uint8_t value ) { frameIndex_ = value; }
-  void setAtlasTileHeader( AtlasTileHeader value ) { atlasTileHeader_ = value; }
-  void setAtlasTileDataUnit( AtlasTileDataUnit value ) { atlasTileDataUnit_ = value; }
+  AtlasTileHeader&   getHeader() { return header_; }
+  AtlasTileDataUnit& getDataUnit() { return dataUnit_; }
+  void               setFrameIndex( uint8_t value ) { frameIndex_ = value; }
 
  private:
   uint8_t           frameIndex_;
-  AtlasTileHeader   atlasTileHeader_;
-  AtlasTileDataUnit atlasTileDataUnit_;
+  AtlasTileHeader   header_;
+  AtlasTileDataUnit dataUnit_;
 };
 
 };  // namespace pcc

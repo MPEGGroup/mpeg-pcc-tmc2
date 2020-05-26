@@ -30,18 +30,18 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef PCC_BITSTREAM_V3CUnitPAYLOADHEADER_H
-#define PCC_BITSTREAM_V3CUnitPAYLOADHEADER_H
+#ifndef PCC_BITSTREAM_V3CUNITHEADER_H
+#define PCC_BITSTREAM_V3CUNITHEADER_H
 
 #include "PCCBitstreamCommon.h"
 
 namespace pcc {
 
 // 7.3.2.2  V3C unit header syntax
-class V3CUnitPayloadHeader {
+class V3CUnitHeader {
  public:
-  V3CUnitPayloadHeader() :
-      unitType_( 0 ),
+  V3CUnitHeader() :
+      // unitType_( 0 ),
       sequenceParamterSetId_( 0 ),
       atlasId_( 0 ),
       attributeIndex_( 0 ),
@@ -49,25 +49,22 @@ class V3CUnitPayloadHeader {
       mapIndex_( 0 ),
       auxiliaryVideoFlag_( false ) {}
 
-  ~V3CUnitPayloadHeader() {}
-  V3CUnitPayloadHeader& operator=( const V3CUnitPayloadHeader& ) = default;
-  uint8_t               getV3CUnitType() { return unitType_; }
-  uint8_t               getV3CParameterSetId() { return sequenceParamterSetId_; }
-  uint8_t               getAtlasId() { return atlasId_; }
-  uint8_t               getAttributeIndex() { return attributeIndex_; }
-  uint8_t               getAttributeDimensionIndex() { return attributeDimensionIndex_; }
-  uint8_t               getMapIndex() { return mapIndex_; }
-  bool                  getAuxiliaryVideoFlag() { return auxiliaryVideoFlag_; }
-  void                  setV3CUnitType( uint8_t value ) { unitType_ = value; }
-  void                  setV3CParameterSetId( uint8_t value ) { sequenceParamterSetId_ = value; }
-  void                  setAtlasId( uint8_t value ) { atlasId_ = value; }
-  void                  setAttributeIndex( uint8_t value ) { attributeIndex_ = value; }
-  void                  setAttributeDimensionIndex( uint8_t value ) { attributeDimensionIndex_ = value; }
-  void                  setMapIndex( uint8_t value ) { mapIndex_ = value; }
-  void                  setAuxiliaryVideoFlag( bool value ) { auxiliaryVideoFlag_ = value; }
+  ~V3CUnitHeader() {}
+  V3CUnitHeader& operator=( const V3CUnitHeader& ) = default;
+  uint8_t        getV3CParameterSetId() { return sequenceParamterSetId_; }
+  uint8_t        getAtlasId() { return atlasId_; }
+  uint8_t        getAttributeIndex() { return attributeIndex_; }
+  uint8_t        getAttributeDimensionIndex() { return attributeDimensionIndex_; }
+  uint8_t        getMapIndex() { return mapIndex_; }
+  bool           getAuxiliaryVideoFlag() { return auxiliaryVideoFlag_; }
+  void           setV3CParameterSetId( uint8_t value ) { sequenceParamterSetId_ = value; }
+  void           setAtlasId( uint8_t value ) { atlasId_ = value; }
+  void           setAttributeIndex( uint8_t value ) { attributeIndex_ = value; }
+  void           setAttributeDimensionIndex( uint8_t value ) { attributeDimensionIndex_ = value; }
+  void           setMapIndex( uint8_t value ) { mapIndex_ = value; }
+  void           setAuxiliaryVideoFlag( bool value ) { auxiliaryVideoFlag_ = value; }
 
  private:
-  uint8_t unitType_;
   uint8_t sequenceParamterSetId_;
   uint8_t atlasId_;
   uint8_t attributeIndex_;
@@ -78,4 +75,4 @@ class V3CUnitPayloadHeader {
 
 };  // namespace pcc
 
-#endif  //~PCC_BITSTREAM_V3CUnitPAYLOADHEADER_H
+#endif  //~PCC_BITSTREAM_V3CUNITHEADER_H

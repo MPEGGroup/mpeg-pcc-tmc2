@@ -51,6 +51,8 @@ class PatchInformationData {
   ~PatchInformationData(){};
   PatchInformationData& operator=( const PatchInformationData& ) = default;
 
+  size_t              getFrameIndex() { return frameIndex_; }
+  size_t              getPatchIndex() { return patchIndex_; }
   uint8_t             getPatchMode() { return patchMode_; }
   PatchDataUnit&      getPatchDataUnit() { return patchDataUnit_; }
   InterPatchDataUnit& getInterPatchDataUnit() { return interPatchDataUnit_; }
@@ -59,6 +61,8 @@ class PatchInformationData {
   RawPatchDataUnit&   getRawPatchDataUnit() { return rawPatchyDataUnit_; }
   EOMPatchDataUnit&   getEomPatchDataUnit() { return eomPatchDataUnit_; }
 
+  void setFrameIndex( size_t value ) { frameIndex_ = value; }
+  void setPatchIndex( size_t value ) { patchIndex_ = value; }
   void setPatchMode( uint8_t value ) { patchMode_ = value; }
   void setPatchDataUnit( PatchDataUnit& value ) { patchDataUnit_ = value; }
   void setInterPatchDataUnit( InterPatchDataUnit& value ) { interPatchDataUnit_ = value; }
@@ -66,11 +70,6 @@ class PatchInformationData {
   void setSkipPatchDataUnit( SkipPatchDataUnit& value ) { skipPatchDataUnit_ = value; }
   void setRawPatchDataUnit( RawPatchDataUnit& value ) { rawPatchyDataUnit_ = value; }
   void setEomPatchDataUnit( EOMPatchDataUnit& value ) { eomPatchDataUnit_ = value; }
-
-  size_t getFrameIndex() { return frameIndex_; }
-  size_t getPatchIndex() { return patchIndex_; }
-  void   setFrameIndex( size_t value ) { frameIndex_ = value; }
-  void   setPatchIndex( size_t value ) { patchIndex_ = value; }
 
  private:
   size_t             frameIndex_;

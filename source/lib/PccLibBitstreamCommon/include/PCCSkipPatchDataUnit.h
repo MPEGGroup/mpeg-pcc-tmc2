@@ -40,17 +40,17 @@ namespace pcc {
 // 7.3.7.4  Skip patch data unit syntax
 class SkipPatchDataUnit {
  public:
-  SkipPatchDataUnit() : spduPatchIndex_( 0 ), spduFrameIndex_( 0 ){};
+  SkipPatchDataUnit() : patchIndex_( 0 ), frameIndex_( 0 ){};
   ~SkipPatchDataUnit(){};
   SkipPatchDataUnit& operator=( const SkipPatchDataUnit& ) = default;
-  size_t             getPatchIndex() { return spduPatchIndex_; }
-  size_t             getFrameIndex() { return spduFrameIndex_; }
-  void               setPatchIndex( size_t value ) { spduPatchIndex_ = value; }
-  void               setFrameIndex( size_t value ) { spduFrameIndex_ = value; }
+  size_t             getPatchIndex() { return patchIndex_; }
+  size_t             getFrameIndex() { return frameIndex_; }
+  void               setPatchIndex( size_t value ) { patchIndex_ = value; }
+  void               setFrameIndex( size_t value ) { frameIndex_ = value; }
 
  private:
-  size_t spduPatchIndex_;
-  size_t spduFrameIndex_;
+  size_t patchIndex_;
+  size_t frameIndex_;
 };
 
 };  // namespace pcc

@@ -616,11 +616,11 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
   // used, the code below is wrong (patches are not accumulated, but overwriten)
   for ( size_t tileIndex = 0; tileIndex < NumTilesInPatchFrame; tileIndex++ ) {
     auto& atglu = context.getAtlasTileLayer( frameIndex, tileIndex );
-    auto& ath   = atglu.getAtlasTileHeader();
+    auto& ath   = atglu.getHeader();
     // the header indicates the structures used
     auto& afps  = context.getAtlasFrameParameterSet( ath.getAtlasFrameParameterSetId() );
     auto& asps  = context.getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
-    auto& atgdu = atglu.getAtlasTileDataUnit();
+    auto& atgdu = atglu.getDataUnit();
 
     // local variable initialization
     auto&        patches                 = frame.getPatches();

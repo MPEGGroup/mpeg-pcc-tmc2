@@ -43,7 +43,7 @@
 #include "PCCSampleStreamV3CUnit.h"
 #include "PCCAtlasTileHeader.h"
 #include "PCCV3CParameterSet.h"
-#include "PCCV3CUnitPayloadHeader.h"
+#include "PCCV3CUnitHeader.h"
 #include "PCCAtlasTileLayerRbsp.h"
 #include "PCCAtlasSequenceParameterSetRbsp.h"
 #include "PCCAtlasFrameParameterSetRbsp.h"
@@ -165,7 +165,7 @@ class PCCAtlasHighLevelSyntax {
     // derive this somewhere else, but for now is OK
     AtlasTileLayerRbsp atgl;
     atgl.setFrameIndex( frameIdx );
-    atgl.getAtlasTileDataUnit().setFrameIndex( frameIdx );
+    atgl.getDataUnit().setFrameIndex( frameIdx );
     atlasTileLayer_.resize( atlasTileLayer_.size() + 1 );
     atlasTileLayer_.back().push_back( atgl );
     return atlasTileLayer_.back().back();
@@ -279,11 +279,11 @@ class PCCHighLevelSyntax {
   PCCBitstreamStat& getBitstreamStat() { return *bitstreamStat_; }
 
   // V3C unit related functions
-  V3CUnitPayloadHeader& getV3CUnitHeaderAVD() { return v3cUnitHeader_[size_t( V3C_AVD ) - 1]; }  // 3
-  V3CUnitPayloadHeader& getV3CUnitHeaderGVD() { return v3cUnitHeader_[size_t( V3C_GVD ) - 1]; }  // 2
-  V3CUnitPayloadHeader& getV3CUnitHeaderOVD() { return v3cUnitHeader_[size_t( V3C_OVD ) - 1]; }  // 1
-  V3CUnitPayloadHeader& getV3CUnitHeaderAD() { return v3cUnitHeader_[size_t( V3C_AD ) - 1]; }    // 0
-  V3CUnitPayloadHeader& getV3CUnitHeader( int index ) { return v3cUnitHeader_[index]; }
+  V3CUnitHeader& getV3CUnitHeaderAVD() { return v3cUnitHeader_[size_t( V3C_AVD ) - 1]; }  // 3
+  V3CUnitHeader& getV3CUnitHeaderGVD() { return v3cUnitHeader_[size_t( V3C_GVD ) - 1]; }  // 2
+  V3CUnitHeader& getV3CUnitHeaderOVD() { return v3cUnitHeader_[size_t( V3C_OVD ) - 1]; }  // 1
+  V3CUnitHeader& getV3CUnitHeaderAD() { return v3cUnitHeader_[size_t( V3C_AD ) - 1]; }    // 0
+  V3CUnitHeader& getV3CUnitHeader( int index ) { return v3cUnitHeader_[index]; }
 
   // VPS related functions
   V3CParameterSet& getVps() { return getVps( activeVPS_ ); }
@@ -469,7 +469,7 @@ class PCCHighLevelSyntax {
  private:
   size_t                         gofSize_;
   std::vector<PCCVideoBitstream> videoBitstream_;
-  V3CUnitPayloadHeader           v3cUnitHeader_[5];
+  V3CUnitHeader                  v3cUnitHeader_[5];
   std::vector<V3CParameterSet>   vpccParameterSets_;
   uint8_t                        activeVPS_;
   uint8_t                        occupancyPrecision_;

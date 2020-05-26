@@ -835,7 +835,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   asps.setUseEightOrientationsFlag( useEightOrientations_ );
   asps.setNormalAxisLimitsQuantizationEnabledFlag( true );
   asps.setNormalAxisMaxDeltaValueEnabledFlag( true );
-  asps.setPixelDeinterleavingFlag( singleMapPixelInterleaving_ );
+  asps.setxelDeinterleavingFlag( singleMapPixelInterleaving_ );
   asps.setPatchPrecedenceOrderFlag( patchPrecedenceOrderFlag_ );
   asps.setPatchSizeQuantizerPresentFlag( context.getEnablePatchSizeQuantization() );
   asps.setEomPatchEnabledFlag( enhancedOccupancyMapCode_ );
@@ -882,7 +882,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   for ( size_t frameIdx = 0; frameIdx < frameCount_; frameIdx++ ) {
     for ( size_t tileId = 0; tileId < numTilesPerFrame; tileId++ ) {
       auto& atgl = context.addAtlasTileLayer( frameIdx, tileId );
-      auto& ath  = atgl.getAtlasTileHeader();
+      auto& ath  = atgl.getHeader();
       ath.setAtlasFrameParameterSetId( 0 );
       if ( additionalProjectionPlaneMode_ > 0 ) {
         ath.setPosMinZQuantizer( uint8_t( std::log2( minLevel_ ) ) - 1 );

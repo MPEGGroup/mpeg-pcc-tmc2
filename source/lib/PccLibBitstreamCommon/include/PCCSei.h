@@ -55,23 +55,23 @@ class SEI {
 // F.2.3  User data registered by Recommendation ITU-T T.35 SEI message syntax
 class SEIUserDataRegisteredItuTT35 : public SEI {
  public:
-  SEIUserDataRegisteredItuTT35() : ituTT35CountryCode_( 0 ), ituTT35CountryCodeExtensionByte_( 0 ) {}
+  SEIUserDataRegisteredItuTT35() : countryCode_( 0 ), countryCodeExtensionByte_( 0 ) {}
 
-  ~SEIUserDataRegisteredItuTT35() { ituTT35PayloadByte_.clear(); }
+  ~SEIUserDataRegisteredItuTT35() { payloadByte_.clear(); }
   SEIUserDataRegisteredItuTT35& operator=( const SEIUserDataRegisteredItuTT35& ) = default;
 
   SeiPayloadType getPayloadType() { return USER_DATAREGISTERED_ITUTT35; }
 
-  uint8_t               getItuTT35CountryCode() { return ituTT35CountryCode_; }
-  uint8_t               getItuTT35CountryCodeExtensionByte() { return ituTT35CountryCodeExtensionByte_; }
-  std::vector<uint8_t>& getItuTT35PayloadByte() { return ituTT35PayloadByte_; }
-  void                  setItuTT35CountryCode( uint8_t value ) { ituTT35CountryCode_ = value; }
-  void setItuTT35CountryCodeExtensionByte( uint8_t value ) { ituTT35CountryCodeExtensionByte_ = value; }
+  uint8_t               getCountryCode() { return countryCode_; }
+  uint8_t               getCountryCodeExtensionByte() { return countryCodeExtensionByte_; }
+  std::vector<uint8_t>& getPayloadByte() { return payloadByte_; }
+  void                  setCountryCode( uint8_t value ) { countryCode_ = value; }
+  void                  setCountryCodeExtensionByte( uint8_t value ) { countryCodeExtensionByte_ = value; }
 
  private:
-  uint8_t              ituTT35CountryCode_;
-  uint8_t              ituTT35CountryCodeExtensionByte_;
-  std::vector<uint8_t> ituTT35PayloadByte_;
+  uint8_t              countryCode_;
+  uint8_t              countryCodeExtensionByte_;
+  std::vector<uint8_t> payloadByte_;
 };
 
 // F.2.4  User data unregistered SEI message syntax
@@ -87,11 +87,11 @@ class SEIUserDataUnregistered : public SEI {
   SeiPayloadType getPayloadType() { return USER_DATA_UNREGISTERED; }
 
   uint8_t*              getUuidIsoIec11578() { return uuidIsoIec11578_; }
-  uint8_t               getUuidIsoIec11578( size_t index ) { return uuidIsoIec11578_[index]; }
+  uint8_t               getUuidIsoIec11578( size_t i ) { return uuidIsoIec11578_[i]; }
   std::vector<uint8_t>& getUserDataPayloadByte() { return userDataPayloadByte_; }
-  uint8_t&              getUserDataPayloadByte( size_t index ) { return userDataPayloadByte_[index]; }
-  void                  setUuidIsoIec11578( size_t index, uint8_t value ) { uuidIsoIec11578_[index] = value; }
-  void                  setUserDataPayloadByte( size_t index, uint8_t value ) { userDataPayloadByte_[index] = value; }
+  uint8_t&              getUserDataPayloadByte( size_t i ) { return userDataPayloadByte_[i]; }
+  void                  setUuidIsoIec11578( size_t i, uint8_t value ) { uuidIsoIec11578_[i] = value; }
+  void                  setUserDataPayloadByte( size_t i, uint8_t value ) { userDataPayloadByte_[i] = value; }
 
  private:
   uint8_t              uuidIsoIec11578_[16];
@@ -125,7 +125,6 @@ class SEIRecoveryPoint : public SEI {
 class SEINoDisplay : public SEI {
  public:
   SEINoDisplay() {}
-
   ~SEINoDisplay() {}
   SEINoDisplay& operator=( const SEINoDisplay& ) = default;
 
@@ -138,53 +137,49 @@ class SEINoDisplay : public SEI {
 class SEIReservedSeiMessage : public SEI {
  public:
   SEIReservedSeiMessage() {}
-
-  ~SEIReservedSeiMessage() { reservedSeiMessagePayloadByte_.clear(); }
+  ~SEIReservedSeiMessage() { payloadByte_.clear(); }
   SEIReservedSeiMessage& operator=( const SEIReservedSeiMessage& ) = default;
 
   SeiPayloadType getPayloadType() { return RESERVED_SEI_MESSAGE; }
 
-  std::vector<uint8_t>& getReservedSeiMessagePayloadByte() { return reservedSeiMessagePayloadByte_; }
-  uint8_t getReservedSeiMessagePayloadByte( size_t index ) { return reservedSeiMessagePayloadByte_[index]; }
+  std::vector<uint8_t>& getPayloadByte() { return payloadByte_; }
+  uint8_t               getPayloadByte( size_t i ) { return payloadByte_[i]; }
 
-  void setReservedSeiMessagePayloadByte( size_t index, uint8_t value ) {
-    reservedSeiMessagePayloadByte_[index] = value;
-  }
+  void setPayloadByte( size_t i, uint8_t value ) { payloadByte_[i] = value; }
 
  private:
-  std::vector<uint8_t> reservedSeiMessagePayloadByte_;
+  std::vector<uint8_t> payloadByte_;
 };
 
 // F.2.8  SEI manifest SEI message syntax
 class SEIManifest : public SEI {
  public:
-  SEIManifest() : manifestNumSeiMsgTypes_( 0 ) {}
+  SEIManifest() : numSeiMsgTypes_( 0 ) {}
   ~SEIManifest() {
-    manifestSeiPayloadType_.clear();
-
-    manifestSeiDescription_.clear();
+    seiPayloadType_.clear();
+    seiDescription_.clear();
   }
   SEIManifest& operator=( const SEIManifest& ) = default;
 
   SeiPayloadType getPayloadType() { return SEI_MANIFEST; }
 
   void allocate() {
-    manifestSeiPayloadType_.resize( manifestNumSeiMsgTypes_, 0 );
-    manifestSeiDescription_.resize( manifestNumSeiMsgTypes_, 0 );
+    seiPayloadType_.resize( numSeiMsgTypes_, 0 );
+    seiDescription_.resize( numSeiMsgTypes_, 0 );
   }
-  uint16_t               getManifestNumSeiMsgTypes() { return manifestNumSeiMsgTypes_; }
-  std::vector<uint16_t>& getManifestSeiPayloadType() { return manifestSeiPayloadType_; }
-  std::vector<uint8_t>&  getManifestSeiDescription() { return manifestSeiDescription_; }
-  uint16_t               getManifestSeiPayloadType( size_t index ) { return manifestSeiPayloadType_[index]; }
-  uint8_t                getManifestSeiDescription( size_t index ) { return manifestSeiDescription_[index]; }
-  void                   setManifestNumSeiMsgTypes( uint16_t value ) { manifestNumSeiMsgTypes_ = value; }
-  void setManifestSeiPayloadType( size_t index, uint16_t value ) { manifestSeiPayloadType_[index] = value; }
-  void setManifestSeiDescription( size_t index, uint8_t value ) { manifestSeiDescription_[index] = value; }
+  uint16_t               getNumSeiMsgTypes() { return numSeiMsgTypes_; }
+  std::vector<uint16_t>& getSeiPayloadType() { return seiPayloadType_; }
+  std::vector<uint8_t>&  getSeiDescription() { return seiDescription_; }
+  uint16_t               getSeiPayloadType( size_t i ) { return seiPayloadType_[i]; }
+  uint8_t                getSeiDescription( size_t i ) { return seiDescription_[i]; }
+  void                   setNumSeiMsgTypes( uint16_t value ) { numSeiMsgTypes_ = value; }
+  void                   setSeiPayloadType( size_t i, uint16_t value ) { seiPayloadType_[i] = value; }
+  void                   setSeiDescription( size_t i, uint8_t value ) { seiDescription_[i] = value; }
 
  private:
-  uint16_t              manifestNumSeiMsgTypes_;
-  std::vector<uint16_t> manifestSeiPayloadType_;
-  std::vector<uint8_t>  manifestSeiDescription_;
+  uint16_t              numSeiMsgTypes_;
+  std::vector<uint16_t> seiPayloadType_;
+  std::vector<uint8_t>  seiDescription_;
 };
 
 // F.2.9  SEI prefix indication SEI message syntax
@@ -205,15 +200,13 @@ class SEIPrefixIndication : public SEI {
   uint8_t                         getNumSeiPrefixIndicationsMinus1() { return numSeiPrefixIndicationsMinus1_; }
   std::vector<uint16_t>&          getNumBitsInPrefixIndicationMinus1() { return numBitsInPrefixIndicationMinus1_; }
   std::vector<std::vector<bool>>& getSeiPrefixDataBit() { return seiPrefixDataBit_; }
-  uint16_t getNumBitsInPrefixIndicationMinus1( size_t index ) { return numBitsInPrefixIndicationMinus1_[index]; }
+  uint16_t          getNumBitsInPrefixIndicationMinus1( size_t i ) { return numBitsInPrefixIndicationMinus1_[i]; }
   std::vector<bool> getSeiPrefixDataBit( size_t i ) { return seiPrefixDataBit_[i]; }
   bool              getSeiPrefixDataBit( size_t i, size_t j ) { return seiPrefixDataBit_[i][j]; }
 
   void setPrefixSeiPayloadType( uint16_t value ) { prefixSeiPayloadType_ = value; }
   void setNumSeiPrefixIndicationsMinus1( uint8_t value ) { numSeiPrefixIndicationsMinus1_ = value; }
-  void setNumBitsInPrefixIndicationMinus1( size_t index, uint16_t value ) {
-    numBitsInPrefixIndicationMinus1_[index] = value;
-  }
+  void setNumBitsInPrefixIndicationMinus1( size_t i, uint16_t value ) { numBitsInPrefixIndicationMinus1_[i] = value; }
   void setSeiPrefixDataBit( size_t i, size_t j, bool value ) { seiPrefixDataBit_[i][j] = value; }
 
  private:
@@ -222,165 +215,77 @@ class SEIPrefixIndication : public SEI {
   std::vector<uint16_t>          numBitsInPrefixIndicationMinus1_;
   std::vector<std::vector<bool>> seiPrefixDataBit_;
 };
-/*
-// F.2.10  Geometry transformation parameters SEI message syntax
-class SEIGeometryTransformationParams : public SEI {
- public:
-  SEIGeometryTransformationParams() :
-      gtpCancelFlag_( false ),
-      gtpScaleEnabledFlag_( false ),
-      gtpOffsetEnabledFlag_( false ),
-      gtpRotationEnabledFlag_( false ),
-      gtpNumCameraInfoMinus1_( 0 ),
-      gtpRotationQx_( 0 ),
-      gtpRotationQy_( 0 ),
-      gtpRotationQz_( 0 ) {
-    for ( size_t i = 0; i < 3; i++ ) {
-      gtpGeometryScaleOnAxis_[i]  = 0;
-      gtpGeometryOffsetOnAxis_[i] = 0;
-    }
-  }
-
-  ~SEIGeometryTransformationParams() {
-    gtpCameraOffsetOnAxis_[3].clear();
-    gtpCameraOrientationOnAxis_[3].clear();
-  }
-  SEIGeometryTransformationParams& operator=( const SEIGeometryTransformationParams& ) = default;
-
-  SeiPayloadType getPayloadType() { return GEOMETRY_TRANSFORMATION_PARAMS; }
-
-  void allocate() {
-    for ( uint8_t d = 0; d < 3; d++ ) {
-      gtpCameraOffsetOnAxis_[d].resize( 8 );
-      gtpCameraOrientationOnAxis_[d].resize( 8 );
-    }
-  }
-
-  bool                  getGtpCancelFlag() { return gtpCancelFlag_; }
-  bool                  getGtpScaleEnabledFlag() { return gtpScaleEnabledFlag_; }
-  bool                  getGtpOffsetEnabledFlag() { return gtpOffsetEnabledFlag_; }
-  bool                  getGtpRotationEnabledFlag() { return gtpRotationEnabledFlag_; }
-  uint32_t              getGtpGeometryScaleOnAxis( size_t index ) { return gtpGeometryScaleOnAxis_[index]; }
-  int32_t               getGtpGeometryOffsetOnAxis( size_t index ) { return gtpGeometryOffsetOnAxis_[index]; }
-  int16_t               getGtpRotationQx() { return gtpRotationQx_; }
-  int16_t               getGtpRotationQy() { return gtpRotationQy_; }
-  int16_t               getGtpRotationQz() { return gtpRotationQz_; }
-  uint8_t               getGtpNumCameraInfoMinus1() { return gtpNumCameraInfoMinus1_; }
-  std::vector<int16_t>& getGtpCameraOffsetOnAxis( size_t index ) { return gtpCameraOffsetOnAxis_[index]; }
-  std::vector<int16_t>& getGtpCameraOrientationOnAxis( size_t index ) { return gtpCameraOrientationOnAxis_[index]; }
-  int16_t               getGtpCameraOffsetOnAxis( uint8_t cameraId, size_t axisId ) {
-    return gtpCameraOffsetOnAxis_[cameraId][axisId];
-  }
-  int16_t getGtpCameraOrientationOnAxis( uint8_t cameraId, size_t axisId ) {
-    return gtpCameraOrientationOnAxis_[cameraId][axisId];
-  }
-
-  void setGtpCancelFlag( bool value ) { gtpCancelFlag_ = value; }
-  void setGtpScaleEnabledFlag( bool value ) { gtpScaleEnabledFlag_ = value; }
-  void setGtpOffsetEnabledFlag( bool value ) { gtpOffsetEnabledFlag_ = value; }
-  void setGtpRotationEnabledFlag( bool value ) { gtpRotationEnabledFlag_ = value; }
-  void setGtpGeometryScaleOnAxis( size_t index, uint32_t value ) { gtpGeometryScaleOnAxis_[index] = value; }
-  void setGtpGeometryOffsetOnAxis( size_t index, int32_t value ) { gtpGeometryOffsetOnAxis_[index] = value; }
-  void setGtpRotationQx( uint16_t value ) { gtpRotationQx_ = value; }
-  void setGtpRotationQy( uint16_t value ) { gtpRotationQy_ = value; }
-  void setGtpRotationQz( uint16_t value ) { gtpRotationQz_ = value; }
-  void setGtpNumCameraInfoMinus1( uint8_t value ) { gtpNumCameraInfoMinus1_ = value; }
-  void setGtpCameraOffsetOnAxis( uint8_t cameraId, uint8_t axisId, int16_t value ) {
-    gtpCameraOffsetOnAxis_[cameraId][axisId] = value;
-  }
-  void setGtpCameraOrientationOnAxis( uint8_t cameraId, uint8_t axisId, int16_t value ) {
-    gtpCameraOrientationOnAxis_[cameraId][axisId] = value;
-  }
-
- private:
-  bool                 gtpCancelFlag_;
-  bool                 gtpScaleEnabledFlag_;
-  bool                 gtpOffsetEnabledFlag_;
-  bool                 gtpRotationEnabledFlag_;
-  uint32_t             gtpGeometryScaleOnAxis_[3];
-  int32_t              gtpGeometryOffsetOnAxis_[3];
-  uint8_t              gtpNumCameraInfoMinus1_;
-  int16_t              gtpRotationQx_;
-  int16_t              gtpRotationQy_;
-  int16_t              gtpRotationQz_;
-  std::vector<int16_t> gtpCameraOffsetOnAxis_[3];
-  std::vector<int16_t> gtpCameraOrientationOnAxis_[3];
-};
-*/
 
 // F.2.10  Attribute transformation parameters SEI message syntax
 class SEIAttributeTransformationParams : public SEI {
  public:
-  SEIAttributeTransformationParams() :
-      atpCancelFlag_( false ),
-      atpNumAttributeUpdates_( 0 ),
-      atpPersistenceFlag_( false ) {}
+  SEIAttributeTransformationParams() : cancelFlag_( false ), numAttributeUpdates_( 0 ), persistenceFlag_( false ) {}
 
   ~SEIAttributeTransformationParams() {
-    atpAttributeIdx_.clear();
-    atpDimensionMinus1_.clear();
-    for ( auto& element : atpScaleParamsEnabledFlag_ ) { element.clear(); }
-    for ( auto& element : atpOffsetParamsEnabledFlag_ ) { element.clear(); }
-    for ( auto& element : atpAttributeScale_ ) { element.clear(); }
-    for ( auto& element : atpAttributeOffset_ ) { element.clear(); }
-    atpScaleParamsEnabledFlag_.clear();
-    atpOffsetParamsEnabledFlag_.clear();
-    atpAttributeScale_.clear();
-    atpAttributeOffset_.clear();
+    attributeIdx_.clear();
+    dimensionMinus1_.clear();
+    for ( auto& element : scaleParamsEnabledFlag_ ) { element.clear(); }
+    for ( auto& element : offsetParamsEnabledFlag_ ) { element.clear(); }
+    for ( auto& element : attributeScale_ ) { element.clear(); }
+    for ( auto& element : attributeOffset_ ) { element.clear(); }
+    scaleParamsEnabledFlag_.clear();
+    offsetParamsEnabledFlag_.clear();
+    attributeScale_.clear();
+    attributeOffset_.clear();
   }
   SEIAttributeTransformationParams& operator=( const SEIAttributeTransformationParams& ) = default;
 
   SeiPayloadType getPayloadType() { return ATTRIBUTE_TRANSFORMATION_PARAMS; }
   void           allocate() {
-    atpAttributeIdx_.resize( atpNumAttributeUpdates_ + 1, 0 );
-    atpDimensionMinus1_.resize( 256 + 1, 0 );
-    atpScaleParamsEnabledFlag_.resize( 256 );
-    atpOffsetParamsEnabledFlag_.resize( 256 );
-    atpAttributeScale_.resize( 256 );
-    atpAttributeOffset_.resize( 256 );
+    attributeIdx_.resize( numAttributeUpdates_ + 1, 0 );
+    dimensionMinus1_.resize( 256 + 1, 0 );
+    scaleParamsEnabledFlag_.resize( 256 );
+    offsetParamsEnabledFlag_.resize( 256 );
+    attributeScale_.resize( 256 );
+    attributeOffset_.resize( 256 );
   }
-  void allocate( size_t index ) {
-    atpScaleParamsEnabledFlag_[index].resize( atpDimensionMinus1_[index] + 1, false );
-    atpOffsetParamsEnabledFlag_[index].resize( atpDimensionMinus1_[index] + 1, false );
-    atpAttributeScale_[index].resize( atpDimensionMinus1_[index] + 1, 0 );
-    atpAttributeOffset_[index].resize( atpDimensionMinus1_[index] + 1, 0 );
+  void allocate( size_t i ) {
+    scaleParamsEnabledFlag_[i].resize( dimensionMinus1_[i] + 1, false );
+    offsetParamsEnabledFlag_[i].resize( dimensionMinus1_[i] + 1, false );
+    attributeScale_[i].resize( dimensionMinus1_[i] + 1, 0 );
+    attributeOffset_[i].resize( dimensionMinus1_[i] + 1, 0 );
   }
-  bool                                getAtpCancelFlag() { return atpCancelFlag_; }
-  int32_t                             getAtpNumAttributeUpdates() { return atpNumAttributeUpdates_; }
-  std::vector<uint8_t>&               atpAttributeIdx() { return atpAttributeIdx_; }
-  std::vector<uint8_t>&               getAtpDimensionMinus() { return atpDimensionMinus1_; }
-  std::vector<std::vector<bool>>&     getAtpScaleParamsEnabledFlag() { return atpScaleParamsEnabledFlag_; }
-  std::vector<std::vector<bool>>&     getAtpOffsetParamsEnabledFlag() { return atpOffsetParamsEnabledFlag_; }
-  std::vector<std::vector<uint32_t>>& getAtpAttributeScale() { return atpAttributeScale_; }
-  std::vector<std::vector<int32_t>>&  getAtpAttributeOffset() { return atpAttributeOffset_; }
-  bool                                getAtpPersistenceFlag() { return atpPersistenceFlag_; }
-  uint8_t                             getAtpAttributeIdx( size_t i ) { return atpAttributeIdx_[i]; }
-  uint8_t                             getAtpDimensionMinus1( size_t i ) { return atpDimensionMinus1_[i]; }
-  bool     getAtpScaleParamsEnabledFlag( size_t i, size_t j ) { return atpScaleParamsEnabledFlag_[i][j]; }
-  bool     getAtpOffsetParamsEnabledFlag( size_t i, size_t j ) { return atpOffsetParamsEnabledFlag_[i][j]; }
-  uint32_t getAtpAttributeScale( size_t i, size_t j ) { return atpAttributeScale_[i][j]; }
-  int32_t  getAtpAttributeOffset( size_t i, size_t j ) { return atpAttributeOffset_[i][j]; }
+  bool                                getCancelFlag() { return cancelFlag_; }
+  int32_t                             getNumAttributeUpdates() { return numAttributeUpdates_; }
+  std::vector<uint8_t>&               AttributeIdx() { return attributeIdx_; }
+  std::vector<uint8_t>&               getDimensionMinus() { return dimensionMinus1_; }
+  std::vector<std::vector<bool>>&     getScaleParamsEnabledFlag() { return scaleParamsEnabledFlag_; }
+  std::vector<std::vector<bool>>&     getOffsetParamsEnabledFlag() { return offsetParamsEnabledFlag_; }
+  std::vector<std::vector<uint32_t>>& getAttributeScale() { return attributeScale_; }
+  std::vector<std::vector<int32_t>>&  getAttributeOffset() { return attributeOffset_; }
+  bool                                getPersistenceFlag() { return persistenceFlag_; }
+  uint8_t                             getAttributeIdx( size_t i ) { return attributeIdx_[i]; }
+  uint8_t                             getDimensionMinus1( size_t i ) { return dimensionMinus1_[i]; }
+  bool     getScaleParamsEnabledFlag( size_t i, size_t j ) { return scaleParamsEnabledFlag_[i][j]; }
+  bool     getOffsetParamsEnabledFlag( size_t i, size_t j ) { return offsetParamsEnabledFlag_[i][j]; }
+  uint32_t getAttributeScale( size_t i, size_t j ) { return attributeScale_[i][j]; }
+  int32_t  getAttributeOffset( size_t i, size_t j ) { return attributeOffset_[i][j]; }
 
-  void setAtpCancelFlag( bool value ) { atpCancelFlag_ = value; }
-  void setAtpNumAttributeUpdates( int32_t value ) { atpNumAttributeUpdates_ = value; }
-  void setAtpAttributeIdx( size_t i, uint8_t value ) { atpAttributeIdx_[i] = value; }
-  void setAtpDimensionMinus1( size_t i, uint8_t value ) { atpDimensionMinus1_[i] = value; }
-  void setAtpScaleParamsEnabledFlag( size_t i, size_t j, bool value ) { atpScaleParamsEnabledFlag_[i][j] = value; }
-  void setAtpOffsetParamsEnabledFlag( size_t i, size_t j, bool value ) { atpOffsetParamsEnabledFlag_[i][j] = value; }
-  void setAtpAttributeScale( size_t i, size_t j, uint32_t value ) { atpAttributeScale_[i][j] = value; }
-  void setAtpAttributeOffset( size_t i, size_t j, int32_t value ) { atpAttributeOffset_[i][j] = value; }
-  void setAtpPersistenceFlag( bool value ) { atpPersistenceFlag_ = value; }
+  void setCancelFlag( bool value ) { cancelFlag_ = value; }
+  void setNumAttributeUpdates( int32_t value ) { numAttributeUpdates_ = value; }
+  void setAttributeIdx( size_t i, uint8_t value ) { attributeIdx_[i] = value; }
+  void setDimensionMinus1( size_t i, uint8_t value ) { dimensionMinus1_[i] = value; }
+  void setScaleParamsEnabledFlag( size_t i, size_t j, bool value ) { scaleParamsEnabledFlag_[i][j] = value; }
+  void setOffsetParamsEnabledFlag( size_t i, size_t j, bool value ) { offsetParamsEnabledFlag_[i][j] = value; }
+  void setAttributeScale( size_t i, size_t j, uint32_t value ) { attributeScale_[i][j] = value; }
+  void setAttributeOffset( size_t i, size_t j, int32_t value ) { attributeOffset_[i][j] = value; }
+  void setPersistenceFlag( bool value ) { persistenceFlag_ = value; }
 
  private:
-  bool                               atpCancelFlag_;
-  int32_t                            atpNumAttributeUpdates_;
-  std::vector<uint8_t>               atpAttributeIdx_;
-  std::vector<uint8_t>               atpDimensionMinus1_;
-  std::vector<std::vector<bool>>     atpScaleParamsEnabledFlag_;
-  std::vector<std::vector<bool>>     atpOffsetParamsEnabledFlag_;
-  std::vector<std::vector<uint32_t>> atpAttributeScale_;
-  std::vector<std::vector<int32_t>>  atpAttributeOffset_;
-  bool                               atpPersistenceFlag_;
+  bool                               cancelFlag_;
+  int32_t                            numAttributeUpdates_;
+  std::vector<uint8_t>               attributeIdx_;
+  std::vector<uint8_t>               dimensionMinus1_;
+  std::vector<std::vector<bool>>     scaleParamsEnabledFlag_;
+  std::vector<std::vector<bool>>     offsetParamsEnabledFlag_;
+  std::vector<std::vector<uint32_t>> attributeScale_;
+  std::vector<std::vector<int32_t>>  attributeOffset_;
+  bool                               persistenceFlag_;
 };
 
 // F.2.11  Active substreams SEI message syntax
@@ -410,8 +315,8 @@ class SEIActiveSubBitstreams : public SEI {
   uint8_t               getActiveMapCountMinus1() { return activeMapCountMinus1_; }
   std::vector<uint8_t>& getActiveAttributeIdx() { return activeAttributeIdx_; }
   std::vector<uint8_t>& getActiveMapIdx() { return activeMapIdx_; }
-  uint8_t               getActiveAttributeIdx( size_t index ) { return activeAttributeIdx_[index]; }
-  uint8_t               getActiveMapIdx( size_t index ) { return activeMapIdx_[index]; }
+  uint8_t               getActiveAttributeIdx( size_t i ) { return activeAttributeIdx_[i]; }
+  uint8_t               getActiveMapIdx( size_t i ) { return activeMapIdx_[i]; }
 
   void setActiveAttributesChangesFlag( bool value ) { activeAttributesChangesFlag_ = value; }
   void setActiveMapsChangesFlag( bool value ) { activeMapsChangesFlag_ = value; }
@@ -420,8 +325,8 @@ class SEIActiveSubBitstreams : public SEI {
   void setAllMapsActiveFlag( bool value ) { allMapsActiveFlag_ = value; }
   void setActiveAttributeCountMinus1( uint8_t value ) { activeAttributeCountMinus1_ = value; }
   void setActiveMapCountMinus1( uint8_t value ) { activeMapCountMinus1_ = value; }
-  void setActiveAttributeIdx( size_t index, uint8_t value ) { activeAttributeIdx_[index] = value; }
-  void setActiveMapIdx( size_t index, uint8_t value ) { activeMapIdx_[index] = value; }
+  void setActiveAttributeIdx( size_t i, uint8_t value ) { activeAttributeIdx_[i] = value; }
+  void setActiveMapIdx( size_t i, uint8_t value ) { activeMapIdx_[i] = value; }
 
  private:
   bool                 activeAttributesChangesFlag_;
@@ -438,33 +343,31 @@ class SEIActiveSubBitstreams : public SEI {
 // F.2.12  Component codec mapping SEI message syntax
 class SEIComponentCodecMapping : public SEI {
  public:
-  SEIComponentCodecMapping() : ccmCodecMappingsCountMinus1_( 0 ) {}
+  SEIComponentCodecMapping() : codecMappingsCountMinus1_( 0 ) {}
   ~SEIComponentCodecMapping() {
-    ccmCodecId_.clear();
-    ccmCodec4cc_.clear();
+    codecId_.clear();
+    codec4cc_.clear();
   }
   SEIComponentCodecMapping& operator=( const SEIComponentCodecMapping& ) = default;
 
   SeiPayloadType getPayloadType() { return COMPONENT_CODEC_MAPPING; }
 
   void allocate() {
-    ccmCodecId_.resize( ccmCodecMappingsCountMinus1_ + 1, 0 );
-    ccmCodec4cc_.resize( 256 );
+    codecId_.resize( codecMappingsCountMinus1_ + 1, 0 );
+    codec4cc_.resize( 256 );
   }
-  uint8_t                   getCcmCodecMappingsCountMinus1() { return ccmCodecMappingsCountMinus1_; }
-  std::vector<uint8_t>&     getCcmCodecId() { return ccmCodecId_; }
-  std::vector<std::string>& getCcmCodec4cc() { return ccmCodec4cc_; }
-  uint8_t                   getCcmCodecId( size_t index ) { return ccmCodecId_[index]; }
-  std::string               getCcmCodec4cc( size_t index ) { return ccmCodec4cc_[index]; }
+  uint8_t     getCodecMappingsCountMinus1() { return codecMappingsCountMinus1_; }
+  uint8_t     getCodecId( size_t i ) { return codecId_[i]; }
+  std::string getCodec4cc( size_t i ) { return codec4cc_[i]; }
 
-  void setCcmCodecMappingsCountMinus1( uint8_t value ) { ccmCodecMappingsCountMinus1_ = value; }
-  void setCcmCodecId( size_t index, uint8_t value ) { ccmCodecId_[index] = value; }
-  void setCcmCodec4cc( size_t index, std::string value ) { ccmCodec4cc_[index] = value; }
+  void setCodecMappingsCountMinus1( uint8_t value ) { codecMappingsCountMinus1_ = value; }
+  void setCodecId( size_t i, uint8_t value ) { codecId_[i] = value; }
+  void setCodec4cc( size_t i, std::string value ) { codec4cc_[i] = value; }
 
  private:
-  uint8_t                  ccmCodecMappingsCountMinus1_;
-  std::vector<uint8_t>     ccmCodecId_;
-  std::vector<std::string> ccmCodec4cc_;
+  uint8_t                  codecMappingsCountMinus1_;
+  std::vector<uint8_t>     codecId_;
+  std::vector<std::string> codec4cc_;
 };
 
 // F.2.14  Volumetric Tiling SEI message syntax
@@ -474,190 +377,186 @@ class SEISceneObjectInformation : public SEI {
   SEISceneObjectInformation() {}
   ~SEISceneObjectInformation() {}
   SEISceneObjectInformation& operator=( const SEISceneObjectInformation& ) = default;
-  void                       allocateObjectIdx() { soiObjectIdx_.resize( soiNumObjectUpdates_ ); }
-  void                       allocateObjectNumDependencies( size_t index, size_t objectNumDependencies ) {
-    soiObjectDependencyIdx_[index].resize( objectNumDependencies );
+  void                       allocateObjectIdx() { objectIdx_.resize( numObjectUpdates_ ); }
+  void                       allocateObjectNumDependencies( size_t i, size_t objectNumDependencies ) {
+    objectDependencyIdx_[i].resize( objectNumDependencies );
   }
   void allocate( size_t size ) {
-    if ( soiObjectCancelFlag_.size() < size ) {
-      soiObjectCancelFlag_.resize( size );
-      soiObjectLabelUpdateFlag_.resize( size );
-      soiObjectLabelIdx_.resize( size );
-      soiPriorityUpdateFlag_.resize( size );
-      soiPriorityValue_.resize( size );
-      soiObjectHiddenFlag_.resize( size );
-      soiObjectDependencyUpdateFlag_.resize( size );
-      soiObjectNumDependencies_.resize( size );
-      soiVisibilityConesUpdateFlag_.resize( size );
-      soiDirectionX_.resize( size );
-      soiDirectionY_.resize( size );
-      soiDirectionZ_.resize( size );
-      soiAngle_.resize( size );
-      soi3dBoundingBoxUpdateFlag_.resize( size );
-      soi3dBoundingBoxX_.resize( size );
-      soi3dBoundingBoxY_.resize( size );
-      soi3dBoundingBoxZ_.resize( size );
-      soi3dBoundingBoxDeltaX_.resize( size );
-      soi3dBoundingBoxDeltaY_.resize( size );
-      soi3dBoundingBoxDeltaZ_.resize( size );
-      soiCollisionShapeUpdateFlag_.resize( size );
-      soiCollisionShapeId_.resize( size );
-      soiPointStyleUpdateFlag_.resize( size );
-      soiPointShapeId_.resize( size );
-      soiPointSize_.resize( size );
-      soiMaterialIdUpdateFlag_.resize( size );
-      soiMaterialId_.resize( size );
-
-      soiObjectDependencyIdx_.resize( size );  // 16
+    if ( objectCancelFlag_.size() < size ) {
+      objectCancelFlag_.resize( size );
+      objectLabelUpdateFlag_.resize( size );
+      objectLabelIdx_.resize( size );
+      priorityUpdateFlag_.resize( size );
+      priorityValue_.resize( size );
+      objectHiddenFlag_.resize( size );
+      objectDependencyUpdateFlag_.resize( size );
+      objectNumDependencies_.resize( size );
+      visibilityConesUpdateFlag_.resize( size );
+      directionX_.resize( size );
+      directionY_.resize( size );
+      directionZ_.resize( size );
+      angle_.resize( size );
+      boundingBoxUpdateFlag_.resize( size );
+      boundingBoxX_.resize( size );
+      boundingBoxY_.resize( size );
+      boundingBoxZ_.resize( size );
+      boundingBoxDeltaX_.resize( size );
+      boundingBoxDeltaY_.resize( size );
+      boundingBoxDeltaZ_.resize( size );
+      collisionShapeUpdateFlag_.resize( size );
+      collisionShapeId_.resize( size );
+      pointStyleUpdateFlag_.resize( size );
+      pointShapeId_.resize( size );
+      pointSize_.resize( size );
+      materialIdUpdateFlag_.resize( size );
+      materialId_.resize( size );
+      objectDependencyIdx_.resize( size );  // 16
     }
   }
 
   SeiPayloadType         getPayloadType() { return SCENE_OBJECT_INFORMATION; }
-  bool                   getSoiCancelFlag() { return soiCancelFlag_; }
-  uint32_t               getSoiNumObjectUpdates() { return soiNumObjectUpdates_; }
-  bool                   getSoiSimpleObjectsFlag() { return soiSimpleObjectsFlag_; }
-  bool                   getSoiObjectLabelPresentFlag() { return soiObjectLabelPresentFlag_; }
-  bool                   getSoiPriorityPresentFlag() { return soiPriorityPresentFlag_; }
-  bool                   getSoiObjectHiddenPresentFlag() { return soiObjectHiddenPresentFlag_; }
-  bool                   getSoiObjectDependencyPresentFlag() { return soiObjectDependencyPresentFlag_; }
-  bool                   getSoiVisibilityConesPresentFlag() { return soiVisibilityConesPresentFlag_; }
-  bool                   getSoi3dBoundingBoxPresentFlag() { return soi3dBoundingBoxPresentFlag_; }
-  bool                   getSoiCollisionShapePresentFlag() { return soiCollisionShapePresentFlag_; }
-  bool                   getSoiPointStylePresentFlag() { return soiPointStylePresentFlag_; }
-  bool                   getSoiMaterialIdPresentFlag() { return soiMaterialIdPresentFlag_; }
-  bool                   getSoiExtensionPresentFlag() { return soiExtensionPresentFlag_; }
-  uint8_t                getSoi3dBoundingBoxScaleLog2() { return soi3dBoundingBoxScaleLog2_; }
-  uint8_t                getSoi3dBoundingBoxPrecisionMinus8() { return soi3dBoundingBoxPrecisionMinus8_; }
-  uint8_t                getSoiLog2MaxObjectIdxUpdated() { return soiLog2MaxObjectIdxUpdated_; }
-  uint8_t                getSoiLog2MaxObjectDependencyIdx() { return soiLog2MaxObjectDependencyIdx_; }
-  std::vector<uint32_t>& getSoiObjectIdx() { return soiObjectIdx_; }
-  uint32_t               getSoiObjectIdx( size_t index ) { return soiObjectIdx_[index]; }
-  bool                   getSoiObjectCancelFlag( size_t index ) { return soiObjectCancelFlag_[index]; }
-  bool                   getSoiObjectLabelUpdateFlag( size_t index ) { return soiObjectLabelUpdateFlag_[index]; }
-  uint32_t               getSoiObjectLabelIdx( size_t index ) { return soiObjectLabelIdx_[index]; }
-  bool                   getSoiPriorityUpdateFlag( size_t index ) { return soiPriorityUpdateFlag_[index]; }
-  uint8_t                getSoiPriorityValue( size_t index ) { return soiPriorityValue_[index]; }
-  bool                   getSoiObjectHiddenFlag( size_t index ) { return soiObjectHiddenFlag_[index]; }
-  bool     getSoiObjectDependencyUpdateFlag( size_t index ) { return soiObjectDependencyUpdateFlag_[index]; }
-  uint8_t  getSoiObjectNumDependencies( size_t index ) { return soiObjectNumDependencies_[index]; }
-  uint32_t getSoiObjectDependencyIdx( size_t index, size_t objnum ) { return soiObjectDependencyIdx_[index][objnum]; }
-  bool     getSoiVisibilityConesUpdateFlag( size_t index ) { return soiVisibilityConesUpdateFlag_[index]; }
-  uint32_t getSoiDirectionX( size_t index ) { return soiDirectionX_[index]; }
-  uint32_t getSoiDirectionY( size_t index ) { return soiDirectionY_[index]; }
-  uint32_t getSoiDirectionZ( size_t index ) { return soiDirectionZ_[index]; }
-  uint16_t getSoiAngle( size_t index ) { return soiAngle_[index]; }
-  bool     getSoi3dBoundingBoxUpdateFlag( size_t index ) { return soi3dBoundingBoxUpdateFlag_[index]; }
-  uint32_t getSoi3dBoundingBoxX( size_t index ) { return soi3dBoundingBoxX_[index]; }
-  uint32_t getSoi3dBoundingBoxY( size_t index ) { return soi3dBoundingBoxY_[index]; }
-  uint32_t getSoi3dBoundingBoxZ( size_t index ) { return soi3dBoundingBoxZ_[index]; }
-  uint32_t getSoi3dBoundingBoxDeltaX( size_t index ) { return soi3dBoundingBoxDeltaX_[index]; }
-  uint32_t getSoi3dBoundingBoxDeltaY( size_t index ) { return soi3dBoundingBoxDeltaY_[index]; }
-  uint32_t getSoi3dBoundingBoxDeltaZ( size_t index ) { return soi3dBoundingBoxDeltaZ_[index]; }
-  bool     getSoiCollisionShapeUpdateFlag( size_t index ) { return soiCollisionShapeUpdateFlag_[index]; }
-  uint16_t getSoiCollisionShapeId( size_t index ) { return soiCollisionShapeId_[index]; }
-  bool     getSoiPointStyleUpdateFlag( size_t index ) { return soiPointStyleUpdateFlag_[index]; }
-  uint8_t  getSoiPointShapeId( size_t index ) { return soiPointShapeId_[index]; }
-  uint16_t getSoiPointSize( size_t index ) { return soiPointSize_[index]; }
-  bool     getSoiMaterialIdUpdateFlag( size_t index ) { return soiMaterialIdUpdateFlag_[index]; }
-  uint16_t getSoiMaterialId( size_t index ) { return soiMaterialId_[index]; }
+  bool                   getCancelFlag() { return cancelFlag_; }
+  uint32_t               getNumObjectUpdates() { return numObjectUpdates_; }
+  bool                   getSimpleObjectsFlag() { return soiSimpleObjectsFlag_; }
+  bool                   getObjectLabelPresentFlag() { return objectLabelPresentFlag_; }
+  bool                   getPriorityPresentFlag() { return priorityPresentFlag_; }
+  bool                   getObjectHiddenPresentFlag() { return objectHiddenPresentFlag_; }
+  bool                   getObjectDependencyPresentFlag() { return objectDependencyPresentFlag_; }
+  bool                   getVisibilityConesPresentFlag() { return visibilityConesPresentFlag_; }
+  bool                   get3dBoundingBoxPresentFlag() { return boundingBoxPresentFlag_; }
+  bool                   getCollisionShapePresentFlag() { return collisionShapePresentFlag_; }
+  bool                   getPointStylePresentFlag() { return pointStylePresentFlag_; }
+  bool                   getMaterialIdPresentFlag() { return materialIdPresentFlag_; }
+  bool                   getExtensionPresentFlag() { return extensionPresentFlag_; }
+  uint8_t                get3dBoundingBoxScaleLog2() { return boundingBoxScaleLog2_; }
+  uint8_t                get3dBoundingBoxPrecisionMinus8() { return boundingBoxPrecisionMinus8_; }
+  uint8_t                getLog2MaxObjectIdxUpdated() { return log2MaxObjectIdxUpdated_; }
+  uint8_t                getLog2MaxObjectDependencyIdx() { return log2MaxObjectDependencyIdx_; }
+  std::vector<uint32_t>& getObjectIdx() { return objectIdx_; }
+  uint32_t               getObjectIdx( size_t i ) { return objectIdx_[i]; }
+  bool                   getObjectCancelFlag( size_t i ) { return objectCancelFlag_[i]; }
+  bool                   getObjectLabelUpdateFlag( size_t i ) { return objectLabelUpdateFlag_[i]; }
+  uint32_t               getObjectLabelIdx( size_t i ) { return objectLabelIdx_[i]; }
+  bool                   getPriorityUpdateFlag( size_t i ) { return priorityUpdateFlag_[i]; }
+  uint8_t                getPriorityValue( size_t i ) { return priorityValue_[i]; }
+  bool                   getObjectHiddenFlag( size_t i ) { return objectHiddenFlag_[i]; }
+  bool                   getObjectDependencyUpdateFlag( size_t i ) { return objectDependencyUpdateFlag_[i]; }
+  uint8_t                getObjectNumDependencies( size_t i ) { return objectNumDependencies_[i]; }
+  uint32_t               getObjectDependencyIdx( size_t i, size_t objnum ) { return objectDependencyIdx_[i][objnum]; }
+  bool                   getVisibilityConesUpdateFlag( size_t i ) { return visibilityConesUpdateFlag_[i]; }
+  uint32_t               getDirectionX( size_t i ) { return directionX_[i]; }
+  uint32_t               getDirectionY( size_t i ) { return directionY_[i]; }
+  uint32_t               getDirectionZ( size_t i ) { return directionZ_[i]; }
+  uint16_t               getAngle( size_t i ) { return angle_[i]; }
+  bool                   get3dBoundingBoxUpdateFlag( size_t i ) { return boundingBoxUpdateFlag_[i]; }
+  uint32_t               get3dBoundingBoxX( size_t i ) { return boundingBoxX_[i]; }
+  uint32_t               get3dBoundingBoxY( size_t i ) { return boundingBoxY_[i]; }
+  uint32_t               get3dBoundingBoxZ( size_t i ) { return boundingBoxZ_[i]; }
+  uint32_t               get3dBoundingBoxDeltaX( size_t i ) { return boundingBoxDeltaX_[i]; }
+  uint32_t               get3dBoundingBoxDeltaY( size_t i ) { return boundingBoxDeltaY_[i]; }
+  uint32_t               get3dBoundingBoxDeltaZ( size_t i ) { return boundingBoxDeltaZ_[i]; }
+  bool                   getCollisionShapeUpdateFlag( size_t i ) { return collisionShapeUpdateFlag_[i]; }
+  uint16_t               getCollisionShapeId( size_t i ) { return collisionShapeId_[i]; }
+  bool                   getPointStyleUpdateFlag( size_t i ) { return pointStyleUpdateFlag_[i]; }
+  uint8_t                getPointShapeId( size_t i ) { return pointShapeId_[i]; }
+  uint16_t               getPointSize( size_t i ) { return pointSize_[i]; }
+  bool                   getMaterialIdUpdateFlag( size_t i ) { return materialIdUpdateFlag_[i]; }
+  uint16_t               getMaterialId( size_t i ) { return materialId_[i]; }
 
-  void setSoiCancelFlag( bool value ) { soiCancelFlag_ = value; }
-  void setSoiNumObjectUpdates( uint32_t value ) { soiNumObjectUpdates_ = value; }
-  void setSoiSimpleObjectsFlag( bool value ) { soiSimpleObjectsFlag_ = value; }
-  void setSoiObjectLabelPresentFlag( bool value ) { soiObjectLabelPresentFlag_ = value; }
-  void setSoiPriorityPresentFlag( bool value ) { soiPriorityPresentFlag_ = value; }
-  void setSoiObjectHiddenPresentFlag( bool value ) { soiObjectHiddenPresentFlag_ = value; }
-  void setSoiObjectDependencyPresentFlag( bool value ) { soiObjectDependencyPresentFlag_ = value; }
-  void setSoiVisibilityConesPresentFlag( bool value ) { soiVisibilityConesPresentFlag_ = value; }
-  void setSoi3dBoundingBoxPresentFlag( bool value ) { soi3dBoundingBoxPresentFlag_ = value; }
-  void setSoiCollisionShapePresentFlag( bool value ) { soiCollisionShapePresentFlag_ = value; }
-  void setSoiPointStylePresentFlag( bool value ) { soiPointStylePresentFlag_ = value; }
-  void setSoiMaterialIdPresentFlag( bool value ) { soiMaterialIdPresentFlag_ = value; }
-  void setSoiExtensionPresentFlag( bool value ) { soiExtensionPresentFlag_ = value; }
-  void setSoi3dBoundingBoxScaleLog2( uint8_t value ) { soi3dBoundingBoxScaleLog2_ = value; }
-  void setSoi3dBoundingBoxPrecisionMinus8( uint8_t value ) { soi3dBoundingBoxPrecisionMinus8_ = value; }
-  void setSoiLog2MaxObjectIdxUpdated( uint8_t value ) { soiLog2MaxObjectIdxUpdated_ = value; }
-  void setSoiLog2MaxObjectDependencyIdx( uint8_t value ) { soiLog2MaxObjectDependencyIdx_ = value; }
-  void setSoiObjectIdx( size_t index, uint32_t value ) { soiObjectIdx_[index] = value; }
-  void setSoiObjectCancelFlag( size_t index, bool value ) { soiObjectCancelFlag_[index] = value; }
-  void setSoiObjectLabelUpdateFlag( size_t index, bool value ) { soiObjectLabelUpdateFlag_[index] = value; }
-  void setSoiObjectLabelIdx( size_t index, uint32_t value ) { soiObjectLabelIdx_[index] = value; }
-  void setSoiPriorityUpdateFlag( size_t index, bool value ) { soiPriorityUpdateFlag_[index] = value; }
-  void setSoiPriorityValue( size_t index, uint8_t value ) { soiPriorityValue_[index] = value; }
-  void setSoiObjectHiddenFlag( size_t index, bool value ) { soiObjectHiddenFlag_[index] = value; }
-  void setSoiObjectDependencyUpdateFlag( size_t index, bool value ) { soiObjectDependencyUpdateFlag_[index] = value; }
-  void setSoiObjectNumDependencies( size_t index, uint8_t value ) { soiObjectNumDependencies_[index] = value; }
-  void setSoiObjectDependencyIdx( size_t index, size_t objnum, uint32_t value ) {
-    soiObjectDependencyIdx_[index][objnum] = value;
-  }
-  void setSoiVisibilityConesUpdateFlag( size_t index, bool value ) { soiVisibilityConesUpdateFlag_[index] = value; }
-  void setSoiDirectionX( size_t index, uint32_t value ) { soiDirectionX_[index] = value; }
-  void setSoiDirectionY( size_t index, uint32_t value ) { soiDirectionY_[index] = value; }
-  void setSoiDirectionZ( size_t index, uint32_t value ) { soiDirectionZ_[index] = value; }
-  void setSoiAngle( size_t index, uint16_t value ) { soiAngle_[index] = value; }
-  void setSoi3dBoundingBoxUpdateFlag( size_t index, bool value ) { soi3dBoundingBoxUpdateFlag_[index] = value; }
-  void setSoi3dBoundingBoxX( size_t index, uint32_t value ) { soi3dBoundingBoxX_[index] = value; }
-  void setSoi3dBoundingBoxY( size_t index, uint32_t value ) { soi3dBoundingBoxY_[index] = value; }
-  void setSoi3dBoundingBoxZ( size_t index, uint32_t value ) { soi3dBoundingBoxZ_[index] = value; }
-  void setSoi3dBoundingBoxDeltaX( size_t index, uint32_t value ) { soi3dBoundingBoxDeltaX_[index] = value; }
-  void setSoi3dBoundingBoxDeltaY( size_t index, uint32_t value ) { soi3dBoundingBoxDeltaY_[index] = value; }
-  void setSoi3dBoundingBoxDeltaZ( size_t index, uint32_t value ) { soi3dBoundingBoxDeltaZ_[index] = value; }
-  void setSoiCollisionShapeUpdateFlag( size_t index, bool value ) { soiCollisionShapeUpdateFlag_[index] = value; }
-  void setSoiCollisionShapeId( size_t index, uint16_t value ) { soiCollisionShapeId_[index] = value; }
-  void setSoiPointStyleUpdateFlag( size_t index, bool value ) { soiPointStyleUpdateFlag_[index] = value; }
-  void setSoiPointShapeId( size_t index, uint8_t value ) { soiPointShapeId_[index] = value; }
-  void setSoiPointSize( size_t index, uint16_t value ) { soiPointSize_[index] = value; }
-  void setSoiMaterialIdUpdateFlag( size_t index, bool value ) { soiMaterialIdUpdateFlag_[index] = value; }
-  void setSoiMaterialId( size_t index, uint16_t value ) { soiMaterialId_[index] = value; }
+  void setCancelFlag( bool value ) { cancelFlag_ = value; }
+  void setNumObjectUpdates( uint32_t value ) { numObjectUpdates_ = value; }
+  void setSimpleObjectsFlag( bool value ) { soiSimpleObjectsFlag_ = value; }
+  void setObjectLabelPresentFlag( bool value ) { objectLabelPresentFlag_ = value; }
+  void setPriorityPresentFlag( bool value ) { priorityPresentFlag_ = value; }
+  void setObjectHiddenPresentFlag( bool value ) { objectHiddenPresentFlag_ = value; }
+  void setObjectDependencyPresentFlag( bool value ) { objectDependencyPresentFlag_ = value; }
+  void setVisibilityConesPresentFlag( bool value ) { visibilityConesPresentFlag_ = value; }
+  void set3dBoundingBoxPresentFlag( bool value ) { boundingBoxPresentFlag_ = value; }
+  void setCollisionShapePresentFlag( bool value ) { collisionShapePresentFlag_ = value; }
+  void setPointStylePresentFlag( bool value ) { pointStylePresentFlag_ = value; }
+  void setMaterialIdPresentFlag( bool value ) { materialIdPresentFlag_ = value; }
+  void setExtensionPresentFlag( bool value ) { extensionPresentFlag_ = value; }
+  void set3dBoundingBoxScaleLog2( uint8_t value ) { boundingBoxScaleLog2_ = value; }
+  void set3dBoundingBoxPrecisionMinus8( uint8_t value ) { boundingBoxPrecisionMinus8_ = value; }
+  void setLog2MaxObjectIdxUpdated( uint8_t value ) { log2MaxObjectIdxUpdated_ = value; }
+  void setLog2MaxObjectDependencyIdx( uint8_t value ) { log2MaxObjectDependencyIdx_ = value; }
+  void setObjectIdx( size_t i, uint32_t value ) { objectIdx_[i] = value; }
+  void setObjectCancelFlag( size_t i, bool value ) { objectCancelFlag_[i] = value; }
+  void setObjectLabelUpdateFlag( size_t i, bool value ) { objectLabelUpdateFlag_[i] = value; }
+  void setObjectLabelIdx( size_t i, uint32_t value ) { objectLabelIdx_[i] = value; }
+  void setPriorityUpdateFlag( size_t i, bool value ) { priorityUpdateFlag_[i] = value; }
+  void setPriorityValue( size_t i, uint8_t value ) { priorityValue_[i] = value; }
+  void setObjectHiddenFlag( size_t i, bool value ) { objectHiddenFlag_[i] = value; }
+  void setObjectDependencyUpdateFlag( size_t i, bool value ) { objectDependencyUpdateFlag_[i] = value; }
+  void setObjectNumDependencies( size_t i, uint8_t value ) { objectNumDependencies_[i] = value; }
+  void setObjectDependencyIdx( size_t i, size_t objnum, uint32_t value ) { objectDependencyIdx_[i][objnum] = value; }
+  void setVisibilityConesUpdateFlag( size_t i, bool value ) { visibilityConesUpdateFlag_[i] = value; }
+  void setDirectionX( size_t i, uint32_t value ) { directionX_[i] = value; }
+  void setDirectionY( size_t i, uint32_t value ) { directionY_[i] = value; }
+  void setDirectionZ( size_t i, uint32_t value ) { directionZ_[i] = value; }
+  void setAngle( size_t i, uint16_t value ) { angle_[i] = value; }
+  void set3dBoundingBoxUpdateFlag( size_t i, bool value ) { boundingBoxUpdateFlag_[i] = value; }
+  void set3dBoundingBoxX( size_t i, uint32_t value ) { boundingBoxX_[i] = value; }
+  void set3dBoundingBoxY( size_t i, uint32_t value ) { boundingBoxY_[i] = value; }
+  void set3dBoundingBoxZ( size_t i, uint32_t value ) { boundingBoxZ_[i] = value; }
+  void set3dBoundingBoxDeltaX( size_t i, uint32_t value ) { boundingBoxDeltaX_[i] = value; }
+  void set3dBoundingBoxDeltaY( size_t i, uint32_t value ) { boundingBoxDeltaY_[i] = value; }
+  void set3dBoundingBoxDeltaZ( size_t i, uint32_t value ) { boundingBoxDeltaZ_[i] = value; }
+  void setCollisionShapeUpdateFlag( size_t i, bool value ) { collisionShapeUpdateFlag_[i] = value; }
+  void setCollisionShapeId( size_t i, uint16_t value ) { collisionShapeId_[i] = value; }
+  void setPointStyleUpdateFlag( size_t i, bool value ) { pointStyleUpdateFlag_[i] = value; }
+  void setPointShapeId( size_t i, uint8_t value ) { pointShapeId_[i] = value; }
+  void setPointSize( size_t i, uint16_t value ) { pointSize_[i] = value; }
+  void setMaterialIdUpdateFlag( size_t i, bool value ) { materialIdUpdateFlag_[i] = value; }
+  void setMaterialId( size_t i, uint16_t value ) { materialId_[i] = value; }
 
  private:
-  bool     soiCancelFlag_;
-  uint32_t soiNumObjectUpdates_;
-  bool     soiSimpleObjectsFlag_;
-  bool     soiObjectLabelPresentFlag_;
-  bool     soiPriorityPresentFlag_;
-  bool     soiObjectHiddenPresentFlag_;
-  bool     soiObjectDependencyPresentFlag_;
-  bool     soiVisibilityConesPresentFlag_;
-  bool     soi3dBoundingBoxPresentFlag_;
-  bool     soiCollisionShapePresentFlag_;
-  bool     soiPointStylePresentFlag_;
-  bool     soiMaterialIdPresentFlag_;
-  bool     soiExtensionPresentFlag_;
-  uint8_t  soi3dBoundingBoxScaleLog2_;
-  uint8_t  soi3dBoundingBoxPrecisionMinus8_;
-  uint8_t  soiLog2MaxObjectIdxUpdated_;
-  uint8_t  soiLog2MaxObjectDependencyIdx_;
-  // max pow(2,32)
-  std::vector<uint32_t>              soiObjectIdx_;
-  std::vector<bool>                  soiObjectCancelFlag_;
-  std::vector<bool>                  soiObjectLabelUpdateFlag_;
-  std::vector<uint32_t>              soiObjectLabelIdx_;
-  std::vector<bool>                  soiPriorityUpdateFlag_;
-  std::vector<uint8_t>               soiPriorityValue_;
-  std::vector<bool>                  soiObjectHiddenFlag_;
-  std::vector<bool>                  soiObjectDependencyUpdateFlag_;
-  std::vector<uint8_t>               soiObjectNumDependencies_;
-  std::vector<std::vector<uint32_t>> soiObjectDependencyIdx_;  // 16
-  std::vector<bool>                  soiVisibilityConesUpdateFlag_;
-  std::vector<uint32_t>              soiDirectionX_;
-  std::vector<uint32_t>              soiDirectionY_;
-  std::vector<uint32_t>              soiDirectionZ_;
-  std::vector<uint16_t>              soiAngle_;
-  std::vector<bool>                  soi3dBoundingBoxUpdateFlag_;
-  std::vector<uint32_t>              soi3dBoundingBoxX_;
-  std::vector<uint32_t>              soi3dBoundingBoxY_;
-  std::vector<uint32_t>              soi3dBoundingBoxZ_;
-  std::vector<uint32_t>              soi3dBoundingBoxDeltaX_;
-  std::vector<uint32_t>              soi3dBoundingBoxDeltaY_;
-  std::vector<uint32_t>              soi3dBoundingBoxDeltaZ_;
-  std::vector<bool>                  soiCollisionShapeUpdateFlag_;
-  std::vector<uint16_t>              soiCollisionShapeId_;
-  std::vector<bool>                  soiPointStyleUpdateFlag_;
-  std::vector<uint8_t>               soiPointShapeId_;
-  std::vector<uint16_t>              soiPointSize_;
-  std::vector<bool>                  soiMaterialIdUpdateFlag_;
-  std::vector<uint16_t>              soiMaterialId_;
+  bool                               cancelFlag_;
+  uint32_t                           numObjectUpdates_;
+  bool                               soiSimpleObjectsFlag_;
+  bool                               objectLabelPresentFlag_;
+  bool                               priorityPresentFlag_;
+  bool                               objectHiddenPresentFlag_;
+  bool                               objectDependencyPresentFlag_;
+  bool                               visibilityConesPresentFlag_;
+  bool                               boundingBoxPresentFlag_;
+  bool                               collisionShapePresentFlag_;
+  bool                               pointStylePresentFlag_;
+  bool                               materialIdPresentFlag_;
+  bool                               extensionPresentFlag_;
+  uint8_t                            boundingBoxScaleLog2_;
+  uint8_t                            boundingBoxPrecisionMinus8_;
+  uint8_t                            log2MaxObjectIdxUpdated_;
+  uint8_t                            log2MaxObjectDependencyIdx_;
+  std::vector<uint32_t>              objectIdx_;
+  std::vector<bool>                  objectCancelFlag_;
+  std::vector<bool>                  objectLabelUpdateFlag_;
+  std::vector<uint32_t>              objectLabelIdx_;
+  std::vector<bool>                  priorityUpdateFlag_;
+  std::vector<uint8_t>               priorityValue_;
+  std::vector<bool>                  objectHiddenFlag_;
+  std::vector<bool>                  objectDependencyUpdateFlag_;
+  std::vector<uint8_t>               objectNumDependencies_;
+  std::vector<std::vector<uint32_t>> objectDependencyIdx_;  // 16
+  std::vector<bool>                  visibilityConesUpdateFlag_;
+  std::vector<uint32_t>              directionX_;
+  std::vector<uint32_t>              directionY_;
+  std::vector<uint32_t>              directionZ_;
+  std::vector<uint16_t>              angle_;
+  std::vector<bool>                  boundingBoxUpdateFlag_;
+  std::vector<uint32_t>              boundingBoxX_;
+  std::vector<uint32_t>              boundingBoxY_;
+  std::vector<uint32_t>              boundingBoxZ_;
+  std::vector<uint32_t>              boundingBoxDeltaX_;
+  std::vector<uint32_t>              boundingBoxDeltaY_;
+  std::vector<uint32_t>              boundingBoxDeltaZ_;
+  std::vector<bool>                  collisionShapeUpdateFlag_;
+  std::vector<uint16_t>              collisionShapeId_;
+  std::vector<bool>                  pointStyleUpdateFlag_;
+  std::vector<uint8_t>               pointShapeId_;
+  std::vector<uint16_t>              pointSize_;
+  std::vector<bool>                  materialIdUpdateFlag_;
+  std::vector<uint16_t>              materialId_;
 
 };  // sceneobjectinformation
 
@@ -668,40 +567,40 @@ class SEIObjectLabelInformation : public SEI {
   SEIObjectLabelInformation& operator=( const SEIObjectLabelInformation& ) = default;
 
   SeiPayloadType getPayloadType() { return OBJECT_LABEL_INFORMATION; }
-  void           allocate() { oliLabelIdx_.resize( oliNumLabelUpdates_, 0 ); }
-  bool           getOliCancelFlag() { return oliCancelFlag_; }
-  bool           getOliLabelLanguagePresentFlag() { return oliLabelLanguagePresentFlag_; }
-  std::string&   getOliLabelLanguage() { return oliLabelLanguage_; }
-  uint32_t       getOliNumLabelUpdates() { return oliNumLabelUpdates_; }
-  uint32_t       getOliLabelIdx( size_t index ) { return oliLabelIdx_[index]; }
-  bool           getOliLabelCancelFlag() { return oliLabelCancelFlag_; }
-  bool           getOliBitEqualToZero() { return oliBitEqualToZero_; }
-  std::string&   getOliLabel( size_t index ) { return oliLabel_[index]; }
-  bool           getOliPersistenceFlag() { return oliPersistenceFlag_; }
+  void           allocate() { labelIdx_.resize( numLabelUpdates_, 0 ); }
+  bool           getCancelFlag() { return cancelFlag_; }
+  bool           getLabelLanguagePresentFlag() { return labelLanguagePresentFlag_; }
+  std::string&   getLabelLanguage() { return labelLanguage_; }
+  uint32_t       getNumLabelUpdates() { return numLabelUpdates_; }
+  uint32_t       getLabelIdx( size_t i ) { return labelIdx_[i]; }
+  bool           getLabelCancelFlag() { return labelCancelFlag_; }
+  bool           getBitEqualToZero() { return bitEqualToZero_; }
+  std::string&   getLabel( size_t i ) { return label_[i]; }
+  bool           getPersistenceFlag() { return persistenceFlag_; }
 
-  void setOliCancelFlag( bool value ) { oliCancelFlag_ = value; }
-  void setOliLabelLanguagePresentFlag( bool value ) { oliLabelLanguagePresentFlag_ = value; }
-  void setOliLabelLanguage( std::string value ) { oliLabelLanguage_ = value; }
-  void setOliNumLabelUpdates( uint32_t value ) { oliNumLabelUpdates_ = value; }
-  void setOliLabelIdx( size_t index, uint32_t value ) { oliLabelIdx_[index] = value; }
-  void setOliLabelCancelFlag( bool value ) { oliLabelCancelFlag_ = value; }
-  void setOliBitEqualToZero( bool value ) { oliBitEqualToZero_ = value; }
-  void setOliLabel( size_t index, std::string value ) {
-    if ( oliLabel_.size() < index ) { oliLabel_.resize( index + 1 ); }
-    oliLabel_[index] = value;
+  void setCancelFlag( bool value ) { cancelFlag_ = value; }
+  void setLabelLanguagePresentFlag( bool value ) { labelLanguagePresentFlag_ = value; }
+  void setLabelLanguage( std::string value ) { labelLanguage_ = value; }
+  void setNumLabelUpdates( uint32_t value ) { numLabelUpdates_ = value; }
+  void setLabelIdx( size_t i, uint32_t value ) { labelIdx_[i] = value; }
+  void setLabelCancelFlag( bool value ) { labelCancelFlag_ = value; }
+  void setBitEqualToZero( bool value ) { bitEqualToZero_ = value; }
+  void setLabel( size_t i, std::string value ) {
+    if ( label_.size() < i ) { label_.resize( i + 1 ); }
+    label_[i] = value;
   }
-  void setOliPersistenceFlag( bool value ) { oliPersistenceFlag_ = value; }
+  void setPersistenceFlag( bool value ) { persistenceFlag_ = value; }
 
  private:
-  bool                     oliCancelFlag_;
-  bool                     oliLabelLanguagePresentFlag_;
-  std::string              oliLabelLanguage_;  // st(v)
-  uint32_t                 oliNumLabelUpdates_;
-  std::vector<uint32_t>    oliLabelIdx_;
-  bool                     oliLabelCancelFlag_;
-  bool                     oliBitEqualToZero_;
-  std::vector<std::string> oliLabel_;  // st(v)
-  bool                     oliPersistenceFlag_;
+  bool                     cancelFlag_;
+  bool                     labelLanguagePresentFlag_;
+  std::string              labelLanguage_;  // st(v)
+  uint32_t                 numLabelUpdates_;
+  std::vector<uint32_t>    labelIdx_;
+  bool                     labelCancelFlag_;
+  bool                     bitEqualToZero_;
+  std::vector<std::string> label_;  // st(v)
+  bool                     persistenceFlag_;
 };  // Object label information
 
 class SEIPatchInformation : public SEI {
@@ -710,52 +609,46 @@ class SEIPatchInformation : public SEI {
   ~SEIPatchInformation() {}
   SEIPatchInformation& operator=( const SEIPatchInformation& ) = default;
   SeiPayloadType       getPayloadType() { return PATCH_INFORMATION; }
-  bool                 getPiPersistenceFlag() { return piPersistenceFlag_; }
-  bool                 getPiResetFlag() { return piResetFlag_; }
-  uint32_t             getPiNumTileUpdates() { return piNumTileUpdates_; }
-  uint8_t              getPiLog2MaxObjectIdxTracked() { return piLog2MaxObjectIdxTracked_; }
-  uint8_t              getPiLog2MaxPatchIdxUpdated() { return piLog2MaxPatchIdxUpdated_; }
-  uint32_t             getPiTileAddress( size_t index ) { return piTileAddress_[index]; }
-  bool                 getPiTileCancelFlag( size_t index ) { return piTileCancelFlag_[index]; }
-  uint32_t             getPiNumPatchUpdates( size_t index ) { return piNumPatchUpdates_[index]; }
-  uint32_t             getPiPatchIdx( size_t index, size_t index2 ) { return piPatchIdx_[index][index2]; }
-  bool                 getPiPatchCancelFlag( size_t index, size_t index2 ) { return piPatchCancelFlag_[index][index2]; }
-  uint32_t             getPiPatchNumberOfObjectsMinus1( size_t index, size_t index2 ) {
-    return piPatchNumberOfObjectsMinus1_[index][index2];
+  bool                 getPersistenceFlag() { return persistenceFlag_; }
+  bool                 getResetFlag() { return resetFlag_; }
+  uint32_t             getNumTileUpdates() { return numTileUpdates_; }
+  uint8_t              getLog2MaxObjectIdxTracked() { return log2MaxObjectIdxTracked_; }
+  uint8_t              getLog2MaxPatchIdxUpdated() { return log2MaxPatchIdxUpdated_; }
+  uint32_t             getTileAddress( size_t i ) { return tileAddress_[i]; }
+  bool                 getTileCancelFlag( size_t i ) { return tileCancelFlag_[i]; }
+  uint32_t             getNumPatchUpdates( size_t i ) { return numPatchUpdates_[i]; }
+  uint32_t             getPatchIdx( size_t i, size_t j ) { return patchIdx_[i][j]; }
+  bool                 getPatchCancelFlag( size_t i, size_t j ) { return patchCancelFlag_[i][j]; }
+  uint32_t             getPatchNumberOfObjectsMinus1( size_t i, size_t j ) { return patchNumberOfObjectsMinus1_[i][j]; }
+  uint32_t             getPatchObjectIdx( size_t i, size_t j, size_t k ) { return patchObjectIdx_[i][j][k]; }
+  void                 setPersistenceFlag( bool value ) { persistenceFlag_ = value; }
+  void                 setResetFlag( bool value ) { resetFlag_ = value; }
+  void                 setNumTileUpdates( uint32_t value ) { numTileUpdates_ = value; }
+  void                 setLog2MaxObjectIdxTracked( uint8_t value ) { log2MaxObjectIdxTracked_ = value; }
+  void                 setLog2MaxPatchIdxUpdated( uint8_t value ) { log2MaxPatchIdxUpdated_ = value; }
+  void                 setTileAddress( size_t i, uint32_t value ) { tileAddress_[i] = value; }
+  void                 setTileCancelFlag( size_t i, bool value ) { tileCancelFlag_[i] = value; }
+  void                 setNumPatchUpdates( size_t i, uint32_t value ) { numPatchUpdates_[i] = value; }
+  void                 setPatchIdx( size_t i, size_t j, uint32_t value ) { patchIdx_[i][j] = value; }
+  void                 setPatchCancelFlag( size_t i, size_t j, bool value ) { patchCancelFlag_[i][j] = value; }
+  void                 setPatchNumberOfObjectsMinus1( size_t i, size_t j, uint32_t value ) {
+    patchNumberOfObjectsMinus1_[i][j] = value;
   }
-  uint32_t getPiPatchObjectIdx( size_t index, size_t index2, size_t index3 ) {
-    return piPatchObjectIdx_[index][index2][index3];
-  }
-  void setPiPersistenceFlag( bool value ) { piPersistenceFlag_ = value; }
-  void setPiResetFlag( bool value ) { piResetFlag_ = value; }
-  void setPiNumTileUpdates( uint32_t value ) { piNumTileUpdates_ = value; }
-  void setPiLog2MaxObjectIdxTracked( uint8_t value ) { piLog2MaxObjectIdxTracked_ = value; }
-  void setPiLog2MaxPatchIdxUpdated( uint8_t value ) { piLog2MaxPatchIdxUpdated_ = value; }
-  void setPiTileAddress( size_t index, uint32_t value ) { piTileAddress_[index] = value; }
-  void setPiTileCancelFlag( size_t index, bool value ) { piTileCancelFlag_[index] = value; }
-  void setPiNumPatchUpdates( size_t index, uint32_t value ) { piNumPatchUpdates_[index] = value; }
-  void setPiPatchIdx( size_t index, size_t index2, uint32_t value ) { piPatchIdx_[index][index2] = value; }
-  void setPiPatchCancelFlag( size_t index, size_t index2, bool value ) { piPatchCancelFlag_[index][index2] = value; }
-  void setPiPatchNumberOfObjectsMinus1( size_t index, size_t index2, uint32_t value ) {
-    piPatchNumberOfObjectsMinus1_[index][index2] = value;
-  }
-  void setPiPatchObjectIdx( size_t index, size_t index2, size_t index3, uint32_t value ) {
-    piPatchObjectIdx_[index][index2][index3] = value;
-  }
+  void setPatchObjectIdx( size_t i, size_t j, size_t index3, uint32_t value ) { patchObjectIdx_[i][j][index3] = value; }
 
  private:
-  bool                                            piPersistenceFlag_;
-  bool                                            piResetFlag_;
-  uint32_t                                        piNumTileUpdates_;
-  uint8_t                                         piLog2MaxObjectIdxTracked_;
-  uint8_t                                         piLog2MaxPatchIdxUpdated_;
-  std::vector<uint32_t>                           piTileAddress_;
-  std::vector<bool>                               piTileCancelFlag_;
-  std::vector<uint32_t>                           piNumPatchUpdates_;
-  std::vector<std::vector<uint32_t>>              piPatchIdx_;
-  std::vector<std::vector<bool>>                  piPatchCancelFlag_;
-  std::vector<std::vector<uint32_t>>              piPatchNumberOfObjectsMinus1_;
-  std::vector<std::vector<std::vector<uint32_t>>> piPatchObjectIdx_;
+  bool                                            persistenceFlag_;
+  bool                                            resetFlag_;
+  uint32_t                                        numTileUpdates_;
+  uint8_t                                         log2MaxObjectIdxTracked_;
+  uint8_t                                         log2MaxPatchIdxUpdated_;
+  std::vector<uint32_t>                           tileAddress_;
+  std::vector<bool>                               tileCancelFlag_;
+  std::vector<uint32_t>                           numPatchUpdates_;
+  std::vector<std::vector<uint32_t>>              patchIdx_;
+  std::vector<std::vector<bool>>                  patchCancelFlag_;
+  std::vector<std::vector<uint32_t>>              patchNumberOfObjectsMinus1_;
+  std::vector<std::vector<std::vector<uint32_t>>> patchObjectIdx_;
 };
 
 class SEIVolumetricRectangleInformation : public SEI {
@@ -764,535 +657,523 @@ class SEIVolumetricRectangleInformation : public SEI {
   ~SEIVolumetricRectangleInformation() {}
   SEIVolumetricRectangleInformation& operator=( const SEIVolumetricRectangleInformation& ) = default;
   void                               allocate( size_t size ) {
-    vriBoundingBoxUpdateFlag_.resize( size );
-    vriBoundingBoxTop_.resize( size );
-    vriBoundingBoxLeft_.resize( size );
-    vriBoundingBoxWidth_.resize( size );
-    vriBoundingBoxHeight_.resize( size );
-    vriRectangleObjectIdx_.resize( size );
+    boundingBoxUpdateFlag_.resize( size );
+    boundingBoxTop_.resize( size );
+    boundingBoxLeft_.resize( size );
+    boundingBoxWidth_.resize( size );
+    boundingBoxHeight_.resize( size );
+    rectangleObjectIdx_.resize( size );
   }
-  void allocateRectangleObjectIdx( size_t index, size_t size ) { vriRectangleObjectIdx_[index].resize( size ); }
+  void allocateRectangleObjectIdx( size_t i, size_t size ) { rectangleObjectIdx_[i].resize( size ); }
 
   SeiPayloadType getPayloadType() { return VOLUMETRIC_RECTANGLE_INFORMATION; }
-  bool           getVriPersistenceFlag() { return vriPersistenceFlag_; }
-  bool           getVriResetFlag() { return vriResetFlag_; }
-  uint32_t       getVriNumRectanglesUpdates() { return vriNumRectanglesUpdates_; }
-  uint8_t        getVriLog2MaxObjectIdxTracked() { return vriLog2MaxObjectIdxTracked_; }
-  uint8_t        getVriLog2MaxRectangleIdxUpdated() { return vriLog2MaxRectangleIdxUpdated_; }
-  uint32_t       getVriRectangleIdx( size_t index ) { return vriRectangleIdx_[index]; }
-  bool           getVriRectangleCancelFlag( size_t index ) { return vriRectangleCancelFlag_[index]; }
-  bool           getVriBoundingBoxUpdateFlag( size_t index ) { return vriBoundingBoxUpdateFlag_[index]; }
-  uint32_t       getVriBoundingBoxTop( size_t index ) { return vriBoundingBoxTop_[index]; }
-  uint32_t       getVriBoundingBoxLeft( size_t index ) { return vriBoundingBoxLeft_[index]; }
-  uint32_t       getVriBoundingBoxWidth( size_t index ) { return vriBoundingBoxWidth_[index]; }
-  uint32_t       getVriBoundingBoxHeight( size_t index ) { return vriBoundingBoxHeight_[index]; }
-  uint32_t getVriRectangleNumberOfObjectsMinus1( size_t index ) { return vriRectangleNumberOfObjectsMinus1_[index]; }
-  uint32_t getVriRectangleObjectIdx( size_t index, size_t index2 ) { return vriRectangleObjectIdx_[index][index2]; }
+  bool           getPersistenceFlag() { return persistenceFlag_; }
+  bool           getResetFlag() { return resetFlag_; }
+  uint32_t       getNumRectanglesUpdates() { return numRectanglesUpdates_; }
+  uint8_t        getLog2MaxObjectIdxTracked() { return log2MaxObjectIdxTracked_; }
+  uint8_t        getLog2MaxRectangleIdxUpdated() { return log2MaxRectangleIdxUpdated_; }
+  uint32_t       getRectangleIdx( size_t i ) { return rectangleIdx_[i]; }
+  bool           getRectangleCancelFlag( size_t i ) { return rectangleCancelFlag_[i]; }
+  bool           getBoundingBoxUpdateFlag( size_t i ) { return boundingBoxUpdateFlag_[i]; }
+  uint32_t       getBoundingBoxTop( size_t i ) { return boundingBoxTop_[i]; }
+  uint32_t       getBoundingBoxLeft( size_t i ) { return boundingBoxLeft_[i]; }
+  uint32_t       getBoundingBoxWidth( size_t i ) { return boundingBoxWidth_[i]; }
+  uint32_t       getBoundingBoxHeight( size_t i ) { return boundingBoxHeight_[i]; }
+  uint32_t       getRectangleNumberOfObjectsMinus1( size_t i ) { return rectangleNumberOfObjectsMinus1_[i]; }
+  uint32_t       getRectangleObjectIdx( size_t i, size_t j ) { return rectangleObjectIdx_[i][j]; }
 
-  void setVriPersistenceFlag( bool value ) { vriPersistenceFlag_ = value; }
-  void setVriResetFlag( bool value ) { vriResetFlag_ = value; }
-  void setVriNumRectanglesUpdates( uint32_t value ) { vriNumRectanglesUpdates_ = value; }
-  void setVriLog2MaxObjectIdxTracked( uint8_t value ) { vriLog2MaxObjectIdxTracked_ = value; }
-  void setVriLog2MaxRectangleIdxUpdated( uint8_t value ) { vriLog2MaxRectangleIdxUpdated_ = value; }
-  void setVriRectangleIdx( size_t index, uint32_t value ) { vriRectangleIdx_[index] = value; }
-  void setVriRectangleCancelFlag( size_t index, bool value ) { vriRectangleCancelFlag_[index] = value; }
-  void setVriBoundingBoxUpdateFlag( size_t index, bool value ) { vriBoundingBoxUpdateFlag_[index] = value; }
-  void setVriBoundingBoxTop( size_t index, uint32_t value ) { vriBoundingBoxTop_[index] = value; }
-  void setVriBoundingBoxLeft( size_t index, uint32_t value ) { vriBoundingBoxLeft_[index] = value; }
-  void setVriBoundingBoxWidth( size_t index, uint32_t value ) { vriBoundingBoxWidth_[index] = value; }
-  void setVriBoundingBoxHeight( size_t index, uint32_t value ) { vriBoundingBoxHeight_[index] = value; }
-  void setVriRectangleNumberOfObjectsMinus1( size_t index, uint32_t value ) {
-    vriRectangleNumberOfObjectsMinus1_[index] = value;
-  }
-  void setVriRectangleObjectIdx( size_t index, size_t index2, uint32_t value ) {
-    vriRectangleObjectIdx_[index][index2] = value;
-  }
+  void setPersistenceFlag( bool value ) { persistenceFlag_ = value; }
+  void setResetFlag( bool value ) { resetFlag_ = value; }
+  void setNumRectanglesUpdates( uint32_t value ) { numRectanglesUpdates_ = value; }
+  void setLog2MaxObjectIdxTracked( uint8_t value ) { log2MaxObjectIdxTracked_ = value; }
+  void setLog2MaxRectangleIdxUpdated( uint8_t value ) { log2MaxRectangleIdxUpdated_ = value; }
+  void setRectangleIdx( size_t i, uint32_t value ) { rectangleIdx_[i] = value; }
+  void setRectangleCancelFlag( size_t i, bool value ) { rectangleCancelFlag_[i] = value; }
+  void setBoundingBoxUpdateFlag( size_t i, bool value ) { boundingBoxUpdateFlag_[i] = value; }
+  void setBoundingBoxTop( size_t i, uint32_t value ) { boundingBoxTop_[i] = value; }
+  void setBoundingBoxLeft( size_t i, uint32_t value ) { boundingBoxLeft_[i] = value; }
+  void setBoundingBoxWidth( size_t i, uint32_t value ) { boundingBoxWidth_[i] = value; }
+  void setBoundingBoxHeight( size_t i, uint32_t value ) { boundingBoxHeight_[i] = value; }
+  void setRectangleNumberOfObjectsMinus1( size_t i, uint32_t value ) { rectangleNumberOfObjectsMinus1_[i] = value; }
+  void setRectangleObjectIdx( size_t i, size_t j, uint32_t value ) { rectangleObjectIdx_[i][j] = value; }
 
  private:
-  bool                               vriPersistenceFlag_;
-  bool                               vriResetFlag_;
-  uint32_t                           vriNumRectanglesUpdates_;
-  uint8_t                            vriLog2MaxObjectIdxTracked_;
-  uint8_t                            vriLog2MaxRectangleIdxUpdated_;
-  std::vector<uint32_t>              vriRectangleIdx_;
-  std::vector<bool>                  vriRectangleCancelFlag_;
-  std::vector<bool>                  vriBoundingBoxUpdateFlag_;
-  std::vector<uint32_t>              vriBoundingBoxTop_;
-  std::vector<uint32_t>              vriBoundingBoxLeft_;
-  std::vector<uint32_t>              vriBoundingBoxWidth_;
-  std::vector<uint32_t>              vriBoundingBoxHeight_;
-  std::vector<uint32_t>              vriRectangleNumberOfObjectsMinus1_;
-  std::vector<std::vector<uint32_t>> vriRectangleObjectIdx_;
+  bool                               persistenceFlag_;
+  bool                               resetFlag_;
+  uint32_t                           numRectanglesUpdates_;
+  uint8_t                            log2MaxObjectIdxTracked_;
+  uint8_t                            log2MaxRectangleIdxUpdated_;
+  std::vector<uint32_t>              rectangleIdx_;
+  std::vector<bool>                  rectangleCancelFlag_;
+  std::vector<bool>                  boundingBoxUpdateFlag_;
+  std::vector<uint32_t>              boundingBoxTop_;
+  std::vector<uint32_t>              boundingBoxLeft_;
+  std::vector<uint32_t>              boundingBoxWidth_;
+  std::vector<uint32_t>              boundingBoxHeight_;
+  std::vector<uint32_t>              rectangleNumberOfObjectsMinus1_;
+  std::vector<std::vector<uint32_t>> rectangleObjectIdx_;
 };
 
 // F.2.15  Buffering period SEI message syntax
 class SEIBufferingPeriod : public SEI {
  public:
   SEIBufferingPeriod() :
-      bpIrapCabParamsPresentFlag_( false ),
-      bpConcatenationFlag_( false ),
-      bpAtlasSequenceParameterSetId_( 0 ),
-      bpCabDelayOffset_( 0 ),
-      bpDabDelayOffset_( 0 ),
-      bpAtlasCabRemovalDelayDeltaMinus1_( 0 ),
-      bpMaxSubLayersMinus1_( 0 ) {}
+      irapCabParamsPresentFlag_( false ),
+      concatenationFlag_( false ),
+      atlasSequenceParameterSetId_( 0 ),
+      cabDelayOffset_( 0 ),
+      dabDelayOffset_( 0 ),
+      atlasCabRemovalDelayDeltaMinus1_( 0 ),
+      maxSubLayersMinus1_( 0 ) {}
   ~SEIBufferingPeriod() {
-    for ( auto& element : bpNalInitialCabRemovalDelay_ ) { element.clear(); }
-    for ( auto& element : bpNalInitialCabRemovalOffset_ ) { element.clear(); }
-    for ( auto& element : bpAclInitialCabRemovalDelay_ ) { element.clear(); }
-    for ( auto& element : bpAclInitialCabRemovalOffset_ ) { element.clear(); }
-    bpNalInitialCabRemovalDelay_.clear();
-    bpNalInitialCabRemovalOffset_.clear();
-    bpAclInitialCabRemovalDelay_.clear();
-    bpAclInitialCabRemovalOffset_.clear();
-    bpNalInitialAltCabRemovalDelay_.clear();
-    bpNalInitialAltCabRemovalOffset_.clear();
-    bpAclInitialAltCabRemovalDelay_.clear();
-    bpAclInitialAltCabRemovalOffset_.clear();
+    for ( auto& element : nalInitialCabRemovalDelay_ ) { element.clear(); }
+    for ( auto& element : nalInitialCabRemovalOffset_ ) { element.clear(); }
+    for ( auto& element : aclInitialCabRemovalDelay_ ) { element.clear(); }
+    for ( auto& element : aclInitialCabRemovalOffset_ ) { element.clear(); }
+    nalInitialCabRemovalDelay_.clear();
+    nalInitialCabRemovalOffset_.clear();
+    aclInitialCabRemovalDelay_.clear();
+    aclInitialCabRemovalOffset_.clear();
+    nalInitialAltCabRemovalDelay_.clear();
+    nalInitialAltCabRemovalOffset_.clear();
+    aclInitialAltCabRemovalDelay_.clear();
+    aclInitialAltCabRemovalOffset_.clear();
   }
   SEIBufferingPeriod& operator=( const SEIBufferingPeriod& ) = default;
 
   SeiPayloadType getPayloadType() { return BUFFERING_PERIOD; }
   void           allocate() {
-    bpNalInitialCabRemovalDelay_.resize( bpMaxSubLayersMinus1_ + 1 );
-    bpNalInitialCabRemovalOffset_.resize( bpMaxSubLayersMinus1_ + 1 );
-    bpAclInitialCabRemovalDelay_.resize( bpMaxSubLayersMinus1_ + 1 );
-    bpAclInitialCabRemovalOffset_.resize( bpMaxSubLayersMinus1_ + 1 );
-    bpNalInitialAltCabRemovalDelay_.resize( bpMaxSubLayersMinus1_ + 1 );
-    bpNalInitialAltCabRemovalOffset_.resize( bpMaxSubLayersMinus1_ + 1 );
-    bpAclInitialAltCabRemovalDelay_.resize( bpMaxSubLayersMinus1_ + 1 );
-    bpAclInitialAltCabRemovalOffset_.resize( bpMaxSubLayersMinus1_ + 1 );
+    nalInitialCabRemovalDelay_.resize( maxSubLayersMinus1_ + 1 );
+    nalInitialCabRemovalOffset_.resize( maxSubLayersMinus1_ + 1 );
+    aclInitialCabRemovalDelay_.resize( maxSubLayersMinus1_ + 1 );
+    aclInitialCabRemovalOffset_.resize( maxSubLayersMinus1_ + 1 );
+    nalInitialAltCabRemovalDelay_.resize( maxSubLayersMinus1_ + 1 );
+    nalInitialAltCabRemovalOffset_.resize( maxSubLayersMinus1_ + 1 );
+    aclInitialAltCabRemovalDelay_.resize( maxSubLayersMinus1_ + 1 );
+    aclInitialAltCabRemovalOffset_.resize( maxSubLayersMinus1_ + 1 );
   }
-  bool     getBpIrapCabParamsPresentFlag() { return bpIrapCabParamsPresentFlag_; }
-  bool     getBpConcatenationFlag() { return bpConcatenationFlag_; }
-  uint8_t  getBpAtlasSequenceParameterSetId() { return bpAtlasSequenceParameterSetId_; }
-  uint32_t getBpCabDelayOffset() { return bpCabDelayOffset_; }
-  uint32_t getBpDabDelayOffset() { return bpDabDelayOffset_; }
-  uint32_t getBpAtlasCabRemovalDelayDeltaMinus1() { return bpAtlasCabRemovalDelayDeltaMinus1_; }
-  uint32_t getBpMaxSubLayersMinus1() { return bpMaxSubLayersMinus1_; }
-  std::vector<std::vector<uint32_t>>& getBpNalInitialCabRemovalDelay() { return bpNalInitialCabRemovalDelay_; }
-  std::vector<std::vector<uint32_t>>& getBpNalInitialCabRemovalOffse() { return bpNalInitialCabRemovalOffset_; }
-  std::vector<uint32_t>&              getBpNalInitialAltCabRemovalDelay() { return bpNalInitialAltCabRemovalDelay_; }
-  std::vector<uint32_t>&              getBpNalInitialAltCabRemovalOffset() { return bpNalInitialAltCabRemovalOffset_; }
-  std::vector<std::vector<uint32_t>>& getBpAclInitialCabRemovalDelay() { return bpAclInitialCabRemovalDelay_; }
-  std::vector<std::vector<uint32_t>>& getBpAclInitialCabRemovalOffset() { return bpAclInitialCabRemovalOffset_; }
-  std::vector<uint32_t>&              getBpAclInitialAltCabRemovalDelay() { return bpAclInitialAltCabRemovalDelay_; }
-  std::vector<uint32_t>&              getBpAclInitialAltCabRemovalOffset() { return bpAclInitialAltCabRemovalOffset_; }
-  std::vector<uint32_t>& getBpNalInitialCabRemovalDelay( size_t index ) { return bpNalInitialCabRemovalDelay_[index]; }
-  std::vector<uint32_t>& getBpNalInitialCabRemovalOffsey( size_t index ) {
-    return bpNalInitialCabRemovalOffset_[index];
-  }
-  std::vector<uint32_t>& getBpAclInitialCabRemovalDelay( size_t index ) { return bpAclInitialCabRemovalDelay_[index]; }
-  std::vector<uint32_t>& getBpAclInitialCabRemovalOffset( size_t index ) {
-    return bpAclInitialCabRemovalOffset_[index];
-  }
-  uint32_t getBpNalInitialAltCabRemovalDelay( size_t i ) { return bpNalInitialAltCabRemovalDelay_[i]; }
-  uint32_t getBpNalInitialAltCabRemovalOffset( size_t i ) { return bpNalInitialAltCabRemovalOffset_[i]; }
-  uint32_t getBpAclInitialAltCabRemovalDelay( size_t i ) { return bpAclInitialAltCabRemovalDelay_[i]; }
-  uint32_t getBpAclInitialAltCabRemovalOffset( size_t i ) { return bpAclInitialAltCabRemovalOffset_[i]; }
-  uint32_t getBpNalInitialCabRemovalDelay( size_t i, size_t j ) { return bpNalInitialCabRemovalDelay_[i][j]; }
-  uint32_t getBpNalInitialCabRemovalOffset( size_t i, size_t j ) { return bpNalInitialCabRemovalOffset_[i][j]; }
-  uint32_t getBpAclInitialCabRemovalDelay( size_t i, size_t j ) { return bpAclInitialCabRemovalDelay_[i][j]; }
-  uint32_t getBpAclInitialCabRemovalOffset( size_t i, size_t j ) { return bpAclInitialCabRemovalOffset_[i][j]; }
+  bool                                getIrapCabParamsPresentFlag() { return irapCabParamsPresentFlag_; }
+  bool                                getConcatenationFlag() { return concatenationFlag_; }
+  uint8_t                             getAtlasSequenceParameterSetId() { return atlasSequenceParameterSetId_; }
+  uint32_t                            getCabDelayOffset() { return cabDelayOffset_; }
+  uint32_t                            getDabDelayOffset() { return dabDelayOffset_; }
+  uint32_t                            getAtlasCabRemovalDelayDeltaMinus1() { return atlasCabRemovalDelayDeltaMinus1_; }
+  uint32_t                            getMaxSubLayersMinus1() { return maxSubLayersMinus1_; }
+  std::vector<std::vector<uint32_t>>& getNalInitialCabRemovalDelay() { return nalInitialCabRemovalDelay_; }
+  std::vector<std::vector<uint32_t>>& getNalInitialCabRemovalOffse() { return nalInitialCabRemovalOffset_; }
+  std::vector<uint32_t>&              getNalInitialAltCabRemovalDelay() { return nalInitialAltCabRemovalDelay_; }
+  std::vector<uint32_t>&              getNalInitialAltCabRemovalOffset() { return nalInitialAltCabRemovalOffset_; }
+  std::vector<std::vector<uint32_t>>& getAclInitialCabRemovalDelay() { return aclInitialCabRemovalDelay_; }
+  std::vector<std::vector<uint32_t>>& getAclInitialCabRemovalOffset() { return aclInitialCabRemovalOffset_; }
+  std::vector<uint32_t>&              getAclInitialAltCabRemovalDelay() { return aclInitialAltCabRemovalDelay_; }
+  std::vector<uint32_t>&              getAclInitialAltCabRemovalOffset() { return aclInitialAltCabRemovalOffset_; }
+  std::vector<uint32_t>&              getNalInitialCabRemovalDelay( size_t i ) { return nalInitialCabRemovalDelay_[i]; }
+  std::vector<uint32_t>& getNalInitialCabRemovalOffsey( size_t i ) { return nalInitialCabRemovalOffset_[i]; }
+  std::vector<uint32_t>& getAclInitialCabRemovalDelay( size_t i ) { return aclInitialCabRemovalDelay_[i]; }
+  std::vector<uint32_t>& getAclInitialCabRemovalOffset( size_t i ) { return aclInitialCabRemovalOffset_[i]; }
+  uint32_t               getNalInitialAltCabRemovalDelay( size_t i ) { return nalInitialAltCabRemovalDelay_[i]; }
+  uint32_t               getNalInitialAltCabRemovalOffset( size_t i ) { return nalInitialAltCabRemovalOffset_[i]; }
+  uint32_t               getAclInitialAltCabRemovalDelay( size_t i ) { return aclInitialAltCabRemovalDelay_[i]; }
+  uint32_t               getAclInitialAltCabRemovalOffset( size_t i ) { return aclInitialAltCabRemovalOffset_[i]; }
+  uint32_t               getNalInitialCabRemovalDelay( size_t i, size_t j ) { return nalInitialCabRemovalDelay_[i][j]; }
+  uint32_t getNalInitialCabRemovalOffset( size_t i, size_t j ) { return nalInitialCabRemovalOffset_[i][j]; }
+  uint32_t getAclInitialCabRemovalDelay( size_t i, size_t j ) { return aclInitialCabRemovalDelay_[i][j]; }
+  uint32_t getAclInitialCabRemovalOffset( size_t i, size_t j ) { return aclInitialCabRemovalOffset_[i][j]; }
 
-  void setBpIrapCabParamsPresentFlag( bool value ) { bpIrapCabParamsPresentFlag_ = value; }
-  void setBpConcatenationFlag( bool value ) { bpConcatenationFlag_ = value; }
-  void setBpAtlasSequenceParameterSetId( uint8_t value ) { bpAtlasSequenceParameterSetId_ = value; }
-  void setBpCabDelayOffset( uint32_t value ) { bpCabDelayOffset_ = value; }
-  void setBpDabDelayOffset( uint32_t value ) { bpDabDelayOffset_ = value; }
-  void setBpAtlasCabRemovalDelayDeltaMinus1( uint32_t value ) { bpAtlasCabRemovalDelayDeltaMinus1_ = value; }
-  void setBpMaxSubLayersMinus1( uint32_t value ) { bpMaxSubLayersMinus1_ = value; }
-  void setBpNalInitialAltCabRemovalDelay( size_t i, uint32_t value ) { bpNalInitialAltCabRemovalDelay_[i] = value; }
-  void setBpNalInitialAltCabRemovalOffset( size_t i, uint32_t value ) { bpNalInitialAltCabRemovalOffset_[i] = value; }
-  void setBpAclInitialAltCabRemovalDelay( size_t i, uint32_t value ) { bpAclInitialAltCabRemovalDelay_[i] = value; }
-  void setBpAclInitialAltCabRemovalOffset( size_t i, uint32_t value ) { bpAclInitialAltCabRemovalOffset_[i] = value; }
-  void setBpNalInitialCabRemovalDelay( size_t i, size_t j, uint32_t value ) {
-    bpNalInitialCabRemovalDelay_[i][j] = value;
+  void setIrapCabParamsPresentFlag( bool value ) { irapCabParamsPresentFlag_ = value; }
+  void setConcatenationFlag( bool value ) { concatenationFlag_ = value; }
+  void setAtlasSequenceParameterSetId( uint8_t value ) { atlasSequenceParameterSetId_ = value; }
+  void setCabDelayOffset( uint32_t value ) { cabDelayOffset_ = value; }
+  void setDabDelayOffset( uint32_t value ) { dabDelayOffset_ = value; }
+  void setAtlasCabRemovalDelayDeltaMinus1( uint32_t value ) { atlasCabRemovalDelayDeltaMinus1_ = value; }
+  void setMaxSubLayersMinus1( uint32_t value ) { maxSubLayersMinus1_ = value; }
+  void setNalInitialAltCabRemovalDelay( size_t i, uint32_t value ) { nalInitialAltCabRemovalDelay_[i] = value; }
+  void setNalInitialAltCabRemovalOffset( size_t i, uint32_t value ) { nalInitialAltCabRemovalOffset_[i] = value; }
+  void setAclInitialAltCabRemovalDelay( size_t i, uint32_t value ) { aclInitialAltCabRemovalDelay_[i] = value; }
+  void setAclInitialAltCabRemovalOffset( size_t i, uint32_t value ) { aclInitialAltCabRemovalOffset_[i] = value; }
+  void setNalInitialCabRemovalDelay( size_t i, size_t j, uint32_t value ) { nalInitialCabRemovalDelay_[i][j] = value; }
+  void setNalInitialCabRemovalOffset( size_t i, size_t j, uint32_t value ) {
+    nalInitialCabRemovalOffset_[i][j] = value;
   }
-  void setBpNalInitialCabRemovalOffset( size_t i, size_t j, uint32_t value ) {
-    bpNalInitialCabRemovalOffset_[i][j] = value;
-  }
-  void setBpAclInitialCabRemovalDelay( size_t i, size_t j, uint32_t value ) {
-    bpAclInitialCabRemovalDelay_[i][j] = value;
-  }
-  void setBpAclInitialCabRemovalOffset( size_t i, size_t j, uint32_t value ) {
-    bpAclInitialCabRemovalOffset_[i][j] = value;
+  void setAclInitialCabRemovalDelay( size_t i, size_t j, uint32_t value ) { aclInitialCabRemovalDelay_[i][j] = value; }
+  void setAclInitialCabRemovalOffset( size_t i, size_t j, uint32_t value ) {
+    aclInitialCabRemovalOffset_[i][j] = value;
   }
 
  private:
-  bool                               bpIrapCabParamsPresentFlag_;
-  bool                               bpConcatenationFlag_;
-  uint8_t                            bpAtlasSequenceParameterSetId_;
-  uint32_t                           bpCabDelayOffset_;
-  uint32_t                           bpDabDelayOffset_;
-  uint32_t                           bpAtlasCabRemovalDelayDeltaMinus1_;
-  uint32_t                           bpMaxSubLayersMinus1_;
-  std::vector<std::vector<uint32_t>> bpNalInitialCabRemovalDelay_;
-  std::vector<std::vector<uint32_t>> bpNalInitialCabRemovalOffset_;
-  std::vector<uint32_t>              bpNalInitialAltCabRemovalDelay_;
-  std::vector<uint32_t>              bpNalInitialAltCabRemovalOffset_;
-  std::vector<std::vector<uint32_t>> bpAclInitialCabRemovalDelay_;
-  std::vector<std::vector<uint32_t>> bpAclInitialCabRemovalOffset_;
-  std::vector<uint32_t>              bpAclInitialAltCabRemovalDelay_;
-  std::vector<uint32_t>              bpAclInitialAltCabRemovalOffset_;
+  bool                               irapCabParamsPresentFlag_;
+  bool                               concatenationFlag_;
+  uint8_t                            atlasSequenceParameterSetId_;
+  uint32_t                           cabDelayOffset_;
+  uint32_t                           dabDelayOffset_;
+  uint32_t                           atlasCabRemovalDelayDeltaMinus1_;
+  uint32_t                           maxSubLayersMinus1_;
+  std::vector<std::vector<uint32_t>> nalInitialCabRemovalDelay_;
+  std::vector<std::vector<uint32_t>> nalInitialCabRemovalOffset_;
+  std::vector<uint32_t>              nalInitialAltCabRemovalDelay_;
+  std::vector<uint32_t>              nalInitialAltCabRemovalOffset_;
+  std::vector<std::vector<uint32_t>> aclInitialCabRemovalDelay_;
+  std::vector<std::vector<uint32_t>> aclInitialCabRemovalOffset_;
+  std::vector<uint32_t>              aclInitialAltCabRemovalDelay_;
+  std::vector<uint32_t>              aclInitialAltCabRemovalOffset_;
 };
 
 // F.2.16  Atlas frame timing SEI message syntax
 class SEIAtlasFrameTiming : public SEI {
  public:
-  SEIAtlasFrameTiming() : aftCabRemovalDelayMinus1_( 0 ), aftDabOutputDelay_( 0 ) {}
+  SEIAtlasFrameTiming() : cabRemovalDelayMinus1_( 0 ), dabOutputDelay_( 0 ) {}
   ~SEIAtlasFrameTiming() {}
   SEIAtlasFrameTiming& operator=( const SEIAtlasFrameTiming& ) = default;
 
   SeiPayloadType getPayloadType() { return ATLAS_FRAME_TIMING; }
 
-  uint32_t getAftCabRemovalDelayMinus1() { return aftCabRemovalDelayMinus1_; }
-  uint32_t getAftDabOutputDelay() { return aftDabOutputDelay_; }
+  uint32_t getAftCabRemovalDelayMinus1() { return cabRemovalDelayMinus1_; }
+  uint32_t getAftDabOutputDelay() { return dabOutputDelay_; }
 
-  void setAftCabRemovalDelayMinus1( uint32_t value ) { aftCabRemovalDelayMinus1_ = value; }
-  void setAftDabOutputDelay( uint32_t value ) { aftDabOutputDelay_ = value; }
+  void setAftCabRemovalDelayMinus1( uint32_t value ) { cabRemovalDelayMinus1_ = value; }
+  void setAftDabOutputDelay( uint32_t value ) { dabOutputDelay_ = value; }
 
  private:
-  uint32_t aftCabRemovalDelayMinus1_;
-  uint32_t aftDabOutputDelay_;
+  uint32_t cabRemovalDelayMinus1_;
+  uint32_t dabOutputDelay_;
 };
 
 class SEIAtlasInformation : public SEI {
  public:
   SEIAtlasInformation() :
-      aiPersistenceFlag_( false ),
-      aiResetFlag_( false ),
-      aiNumAtlasesMinus1_( 0 ),
-      aiNumUpdates_( 0 ),
-      aiLog2MaxObjectIdxTracked_( 0 ) {}
+      persistenceFlag_( false ),
+      resetFlag_( false ),
+      numAtlasesMinus1_( 0 ),
+      numUpdates_( 0 ),
+      log2MaxObjectIdxTracked_( 0 ) {}
   ~SEIAtlasInformation() {
-    aiObjectIdx_.clear();
-    for ( auto& element : aiObjectInAtlasPresentFlag_ ) { element.clear(); }
-    aiObjectInAtlasPresentFlag_.clear();
+    objectIdx_.clear();
+    for ( auto& element : objectInAtlasPresentFlag_ ) { element.clear(); }
+    objectInAtlasPresentFlag_.clear();
   }
   SEIAtlasInformation& operator=( const SEIAtlasInformation& ) = default;
 
   SeiPayloadType getPayloadType() { return ATLAS_INFORMATION; }
 
   void allocate() {
-    aiObjectIdx_.resize( aiNumUpdates_, 0 );
-    aiObjectInAtlasPresentFlag_.resize( aiNumUpdates_ );
-    for ( auto& element : aiObjectInAtlasPresentFlag_ ) { element.resize( aiNumAtlasesMinus1_ + 1, false ); }
+    objectIdx_.resize( numUpdates_, 0 );
+    objectInAtlasPresentFlag_.resize( numUpdates_ );
+    for ( auto& element : objectInAtlasPresentFlag_ ) { element.resize( numAtlasesMinus1_ + 1, false ); }
   }
 
-  bool     getPersistenceFlag() { return aiPersistenceFlag_; }
-  bool     getResetFlag() { return aiResetFlag_; }
-  uint32_t getNumAtlasesMinus1() { return aiNumAtlasesMinus1_; }
-  uint32_t getNumUpdates() { return aiNumUpdates_; }
-  uint32_t getLog2MaxObjectIdxTracked() { return aiLog2MaxObjectIdxTracked_; }
-  uint32_t getObjectIdx( size_t i ) { return aiObjectIdx_[i]; }
-  bool     getObjectInAtlasPresentFlag( size_t i, size_t j ) { return aiObjectInAtlasPresentFlag_[i][j]; }
+  bool     getPersistenceFlag() { return persistenceFlag_; }
+  bool     getResetFlag() { return resetFlag_; }
+  uint32_t getNumAtlasesMinus1() { return numAtlasesMinus1_; }
+  uint32_t getNumUpdates() { return numUpdates_; }
+  uint32_t getLog2MaxObjectIdxTracked() { return log2MaxObjectIdxTracked_; }
+  uint32_t getObjectIdx( size_t i ) { return objectIdx_[i]; }
+  bool     getObjectInAtlasPresentFlag( size_t i, size_t j ) { return objectInAtlasPresentFlag_[i][j]; }
 
-  void setPersistenceFlag( bool value ) { aiPersistenceFlag_ = value; }
-  void setResetFlag( bool value ) { aiResetFlag_ = value; }
-  void setNumAtlasesMinus1( uint32_t value ) { aiNumAtlasesMinus1_ = value; }
-  void setNumUpdates( uint32_t value ) { aiNumUpdates_ = value; }
-  void setLog2MaxObjectIdxTracked( uint32_t value ) { aiLog2MaxObjectIdxTracked_ = value; }
-  void setObjectIdx( size_t i, uint32_t value ) { aiObjectIdx_[i] = value; }
-  void setObjectInAtlasPresentFlag( size_t i, size_t j, bool value ) { aiObjectInAtlasPresentFlag_[i][j] = value; }
+  void setPersistenceFlag( bool value ) { persistenceFlag_ = value; }
+  void setResetFlag( bool value ) { resetFlag_ = value; }
+  void setNumAtlasesMinus1( uint32_t value ) { numAtlasesMinus1_ = value; }
+  void setNumUpdates( uint32_t value ) { numUpdates_ = value; }
+  void setLog2MaxObjectIdxTracked( uint32_t value ) { log2MaxObjectIdxTracked_ = value; }
+  void setObjectIdx( size_t i, uint32_t value ) { objectIdx_[i] = value; }
+  void setObjectInAtlasPresentFlag( size_t i, size_t j, bool value ) { objectInAtlasPresentFlag_[i][j] = value; }
 
  private:
-  bool                           aiPersistenceFlag_;
-  bool                           aiResetFlag_;
-  uint32_t                       aiNumAtlasesMinus1_;
-  uint32_t                       aiNumUpdates_;
-  uint32_t                       aiLog2MaxObjectIdxTracked_;
-  std::vector<uint32_t>          aiObjectIdx_;
-  std::vector<std::vector<bool>> aiObjectInAtlasPresentFlag_;
+  bool                           persistenceFlag_;
+  bool                           resetFlag_;
+  uint32_t                       numAtlasesMinus1_;
+  uint32_t                       numUpdates_;
+  uint32_t                       log2MaxObjectIdxTracked_;
+  std::vector<uint32_t>          objectIdx_;
+  std::vector<std::vector<bool>> objectInAtlasPresentFlag_;
 };
 
 class SEIViewportCameraParameters : public SEI {
  public:
   SEIViewportCameraParameters() :
-      vcpCameraId_( 0 ),
-      vcpCancelFlag_( false ),
-      vcpPersistenceFlag_( false ),
-      vcpCameraType_( 0.f ),
-      vcpErpHorizontalFov_( 0.f ),
-      vcpErpVerticalFov_( 0.f ),
-      vcpPerspectiveAspectRatio_( 0.f ),
-      vcpPerspectiveHorizontalFov_( 0.f ),
-      vcpOrthoAspectRatio_( 0.f ),
-      vcpOrthoHorizontalSize_( 0.f ),
-      vcpClippingNearPlane_( 0.f ),
-      vcpClippingFarPlane_( 0.f ) {}
+      cameraId_( 0 ),
+      cancelFlag_( false ),
+      persistenceFlag_( false ),
+      cameraType_( 0.f ),
+      erpHorizontalFov_( 0.f ),
+      erpVerticalFov_( 0.f ),
+      perspectiveAspectRatio_( 0.f ),
+      perspectiveHorizontalFov_( 0.f ),
+      orthoAspectRatio_( 0.f ),
+      orthoHorizontalSize_( 0.f ),
+      clippingNearPlane_( 0.f ),
+      clippingFarPlane_( 0.f ) {}
   ~SEIViewportCameraParameters() {}
   SEIViewportCameraParameters& operator=( const SEIViewportCameraParameters& ) = default;
 
   SeiPayloadType getPayloadType() { return VIEWPORT_CAMERA_PARAMETERS; }
 
-  uint32_t getCameraId() { return vcpCameraId_; }
-  bool     getCancelFlag() { return vcpCancelFlag_; }
-  bool     getPersistenceFlag() { return vcpPersistenceFlag_; }
-  uint8_t  getCameraType() { return vcpCameraType_; }
-  float    getErpHorizontalFov() { return vcpErpHorizontalFov_; }
-  float    getErpVerticalFov() { return vcpErpVerticalFov_; }
-  float    getPerspectiveAspectRatio() { return vcpPerspectiveAspectRatio_; }
-  float    getPerspectiveHorizontalFov() { return vcpPerspectiveHorizontalFov_; }
-  float    getOrthoAspectRatio() { return vcpOrthoAspectRatio_; }
-  float    getOrthoHorizontalSize() { return vcpOrthoHorizontalSize_; }
-  float    getClippingNearPlane() { return vcpClippingNearPlane_; }
-  float    getClippingFarPlane() { return vcpClippingFarPlane_; }
+  uint32_t getCameraId() { return cameraId_; }
+  bool     getCancelFlag() { return cancelFlag_; }
+  bool     getPersistenceFlag() { return persistenceFlag_; }
+  uint8_t  getCameraType() { return cameraType_; }
+  float    getErpHorizontalFov() { return erpHorizontalFov_; }
+  float    getErpVerticalFov() { return erpVerticalFov_; }
+  float    getPerspectiveAspectRatio() { return perspectiveAspectRatio_; }
+  float    getPerspectiveHorizontalFov() { return perspectiveHorizontalFov_; }
+  float    getOrthoAspectRatio() { return orthoAspectRatio_; }
+  float    getOrthoHorizontalSize() { return orthoHorizontalSize_; }
+  float    getClippingNearPlane() { return clippingNearPlane_; }
+  float    getClippingFarPlane() { return clippingFarPlane_; }
 
-  void setCameraId( uint32_t value ) { vcpCameraId_ = value; }
-  void setCancelFlag( bool value ) { vcpCancelFlag_ = value; }
-  void setPersistenceFlag( bool value ) { vcpPersistenceFlag_ = value; }
-  void setCameraType( uint8_t value ) { vcpCameraType_ = value; }
-  void setErpHorizontalFov( float value ) { vcpErpHorizontalFov_ = value; }
-  void setErpVerticalFov( float value ) { vcpErpVerticalFov_ = value; }
-  void setPerspectiveAspectRatio( float value ) { vcpPerspectiveAspectRatio_ = value; }
-  void setPerspectiveHorizontalFov( float value ) { vcpPerspectiveHorizontalFov_ = value; }
-  void setOrthoAspectRatio( float value ) { vcpOrthoAspectRatio_ = value; }
-  void setOrthoHorizontalSize( float value ) { vcpOrthoHorizontalSize_ = value; }
-  void setClippingNearPlane( float value ) { vcpClippingNearPlane_ = value; }
-  void setClippingFarPlane( float value ) { vcpClippingFarPlane_ = value; }
+  void setCameraId( uint32_t value ) { cameraId_ = value; }
+  void setCancelFlag( bool value ) { cancelFlag_ = value; }
+  void setPersistenceFlag( bool value ) { persistenceFlag_ = value; }
+  void setCameraType( uint8_t value ) { cameraType_ = value; }
+  void setErpHorizontalFov( float value ) { erpHorizontalFov_ = value; }
+  void setErpVerticalFov( float value ) { erpVerticalFov_ = value; }
+  void setPerspectiveAspectRatio( float value ) { perspectiveAspectRatio_ = value; }
+  void setPerspectiveHorizontalFov( float value ) { perspectiveHorizontalFov_ = value; }
+  void setOrthoAspectRatio( float value ) { orthoAspectRatio_ = value; }
+  void setOrthoHorizontalSize( float value ) { orthoHorizontalSize_ = value; }
+  void setClippingNearPlane( float value ) { clippingNearPlane_ = value; }
+  void setClippingFarPlane( float value ) { clippingFarPlane_ = value; }
 
  private:
-  uint32_t vcpCameraId_;
-  bool     vcpCancelFlag_;
-  bool     vcpPersistenceFlag_;
-  uint8_t  vcpCameraType_;
-  float    vcpErpHorizontalFov_;
-  float    vcpErpVerticalFov_;
-  float    vcpPerspectiveAspectRatio_;
-  float    vcpPerspectiveHorizontalFov_;
-  float    vcpOrthoAspectRatio_;
-  float    vcpOrthoHorizontalSize_;
-  float    vcpClippingNearPlane_;
-  float    vcpClippingFarPlane_;
+  uint32_t cameraId_;
+  bool     cancelFlag_;
+  bool     persistenceFlag_;
+  uint8_t  cameraType_;
+  float    erpHorizontalFov_;
+  float    erpVerticalFov_;
+  float    perspectiveAspectRatio_;
+  float    perspectiveHorizontalFov_;
+  float    orthoAspectRatio_;
+  float    orthoHorizontalSize_;
+  float    clippingNearPlane_;
+  float    clippingFarPlane_;
 };
 
 class SEIViewportPosition : public SEI {
  public:
   SEIViewportPosition() :
-      vpViewportId_( 0 ),
-      vpCameraParametersPresentFlag_( false ),
-      vpVcpCameraId_( 0 ),
-      vpCancelFlag_( false ),
-      vpPersistenceFlag_( false ),
-      vpPosition_{0.0f, 0.0f, 0.0f},
-      vpQuaternionX_( 0.0f ),
-      vpQuaternionY_( 0.0f ),
-      vpQuaternionZ_( 0.0f ),
-      vpCenterViewFlag_( false ),
-      vpLeftViewFlag_( false ) {}
+      viewportId_( 0 ),
+      cameraParametersPresentFlag_( false ),
+      CameraId_( 0 ),
+      cancelFlag_( false ),
+      persistenceFlag_( false ),
+      position_{0.0f, 0.0f, 0.0f},
+      quaternionX_( 0.0f ),
+      quaternionY_( 0.0f ),
+      quaternionZ_( 0.0f ),
+      centerViewFlag_( false ),
+      leftViewFlag_( false ) {}
   ~SEIViewportPosition() {}
   SEIViewportPosition& operator=( const SEIViewportPosition& ) = default;
 
   SeiPayloadType getPayloadType() { return VIEWPORT_POSITION; }
 
-  uint32_t getViewportId() { return vpViewportId_; }
-  bool     getCameraParametersPresentFlag() { return vpCameraParametersPresentFlag_; }
-  uint8_t  getVcpCameraId() { return vpVcpCameraId_; }
-  bool     getCancelFlag() { return vpCancelFlag_; }
-  bool     getPersistenceFlag() { return vpPersistenceFlag_; }
-  float    getPosition( size_t i ) { return vpPosition_[i]; }
-  float    getQuaternionX() { return vpQuaternionX_; }
-  float    getQuaternionY() { return vpQuaternionY_; }
-  float    getQuaternionZ() { return vpQuaternionZ_; }
-  bool     getCenterViewFlag() { return vpCenterViewFlag_; }
-  bool     getLeftViewFlag() { return vpLeftViewFlag_; }
+  uint32_t getViewportId() { return viewportId_; }
+  bool     getCameraParametersPresentFlag() { return cameraParametersPresentFlag_; }
+  uint8_t  getVcpCameraId() { return CameraId_; }
+  bool     getCancelFlag() { return cancelFlag_; }
+  bool     getPersistenceFlag() { return persistenceFlag_; }
+  float    getPosition( size_t i ) { return position_[i]; }
+  float    getQuaternionX() { return quaternionX_; }
+  float    getQuaternionY() { return quaternionY_; }
+  float    getQuaternionZ() { return quaternionZ_; }
+  bool     getCenterViewFlag() { return centerViewFlag_; }
+  bool     getLeftViewFlag() { return leftViewFlag_; }
 
-  void setViewportId( uint32_t value ) { vpViewportId_ = value; }
-  void setCameraParametersPresentFlag( bool value ) { vpCameraParametersPresentFlag_ = value; }
-  void setVcpCameraId( uint8_t value ) { vpVcpCameraId_ = value; }
-  void setCancelFlag( bool value ) { vpCancelFlag_ = value; }
-  void setPersistenceFlag( bool value ) { vpPersistenceFlag_ = value; }
-  void setPosition( size_t i, float value ) { vpPosition_[i] = value; }
-  void setQuaternionX( float value ) { vpQuaternionX_ = value; }
-  void setQuaternionY( float value ) { vpQuaternionY_ = value; }
-  void setQuaternionZ( float value ) { vpQuaternionZ_ = value; }
-  void setCenterViewFlag( bool value ) { vpCenterViewFlag_ = value; }
-  void setLeftViewFlag( bool value ) { vpLeftViewFlag_ = value; }
+  void setViewportId( uint32_t value ) { viewportId_ = value; }
+  void setCameraParametersPresentFlag( bool value ) { cameraParametersPresentFlag_ = value; }
+  void setVcpCameraId( uint8_t value ) { CameraId_ = value; }
+  void setCancelFlag( bool value ) { cancelFlag_ = value; }
+  void setPersistenceFlag( bool value ) { persistenceFlag_ = value; }
+  void setPosition( size_t i, float value ) { position_[i] = value; }
+  void setQuaternionX( float value ) { quaternionX_ = value; }
+  void setQuaternionY( float value ) { quaternionY_ = value; }
+  void setQuaternionZ( float value ) { quaternionZ_ = value; }
+  void setCenterViewFlag( bool value ) { centerViewFlag_ = value; }
+  void setLeftViewFlag( bool value ) { leftViewFlag_ = value; }
 
  private:
-  uint32_t vpViewportId_;
-  bool     vpCameraParametersPresentFlag_;
-  uint8_t  vpVcpCameraId_;
-  bool     vpCancelFlag_;
-  bool     vpPersistenceFlag_;
-  float    vpPosition_[3];
-  float    vpQuaternionX_;
-  float    vpQuaternionY_;
-  float    vpQuaternionZ_;
-  bool     vpCenterViewFlag_;
-  bool     vpLeftViewFlag_;
+  uint32_t viewportId_;
+  bool     cameraParametersPresentFlag_;
+  uint8_t  CameraId_;
+  bool     cancelFlag_;
+  bool     persistenceFlag_;
+  float    position_[3];
+  float    quaternionX_;
+  float    quaternionY_;
+  float    quaternionZ_;
+  bool     centerViewFlag_;
+  bool     leftViewFlag_;
 };
 
 class SEIGeometrySmoothing : public SEI {
  public:
   SEIGeometrySmoothing() :
-      gsSmoothingPersistenceFlag_( false ),
-      gsSmoothingResetFlag_( false ),
-      gsSmoothingInstancesUpdated_( 0 ) {}
+      smoothingPersistenceFlag_( false ),
+      smoothingResetFlag_( false ),
+      smoothingInstancesUpdated_( 0 ) {}
   ~SEIGeometrySmoothing() {
-    gsSmoothingInstanceIndex_.clear();
-    gsSmoothingInstanceCancelFlag_.clear();
-    gsSmoothingMethodType_.clear();
-    gsSmoothingGridSizeMinus2_.clear();
-    gsSmoothingThreshold_.clear();
-    gsPbfLog2ThresholdMinus1_.clear();
-    gsPbfPassesCountMinus1_.clear();
-    gsPbfFilterSizeMinus1_.clear();
+    smoothingInstanceIndex_.clear();
+    smoothingInstanceCancelFlag_.clear();
+    smoothingMethodType_.clear();
+    smoothingGridSizeMinus2_.clear();
+    smoothingThreshold_.clear();
+    pbfLog2ThresholdMinus1_.clear();
+    pbfPassesCountMinus1_.clear();
+    pbfFilterSizeMinus1_.clear();
   }
   SEIGeometrySmoothing& operator=( const SEIGeometrySmoothing& ) = default;
 
   SeiPayloadType getPayloadType() { return GEOMETRY_SMOOTHING; }
   void           allocate() {
-    gsSmoothingInstanceIndex_.resize( gsSmoothingInstancesUpdated_, 0 );
-    gsSmoothingInstanceCancelFlag_.resize( gsSmoothingInstancesUpdated_, 0 );
-    gsSmoothingMethodType_.resize( gsSmoothingInstancesUpdated_, 0 );
-    gsSmoothingGridSizeMinus2_.resize( gsSmoothingInstancesUpdated_, 0 );
-    gsSmoothingThreshold_.resize( gsSmoothingInstancesUpdated_, 0 );
-    gsPbfLog2ThresholdMinus1_.resize( gsSmoothingInstancesUpdated_, 0 );
-    gsPbfPassesCountMinus1_.resize( gsSmoothingInstancesUpdated_, 0 );
-    gsPbfFilterSizeMinus1_.resize( gsSmoothingInstancesUpdated_, 0 );
+    smoothingInstanceIndex_.resize( smoothingInstancesUpdated_, 0 );
+    smoothingInstanceCancelFlag_.resize( smoothingInstancesUpdated_, 0 );
+    smoothingMethodType_.resize( smoothingInstancesUpdated_, 0 );
+    smoothingGridSizeMinus2_.resize( smoothingInstancesUpdated_, 0 );
+    smoothingThreshold_.resize( smoothingInstancesUpdated_, 0 );
+    pbfLog2ThresholdMinus1_.resize( smoothingInstancesUpdated_, 0 );
+    pbfPassesCountMinus1_.resize( smoothingInstancesUpdated_, 0 );
+    pbfFilterSizeMinus1_.resize( smoothingInstancesUpdated_, 0 );
   }
 
-  bool    getSmoothingPersistenceFlag() { return gsSmoothingPersistenceFlag_; }
-  bool    getSmoothingResetFlag() { return gsSmoothingResetFlag_; }
-  uint8_t getSmoothingInstancesUpdated() { return gsSmoothingInstancesUpdated_; }
-  uint8_t getSmoothingInstanceIndex( size_t i ) { return gsSmoothingInstanceIndex_[i]; }
-  bool    getSmoothingInstanceCancelFlag( size_t i ) { return gsSmoothingInstanceCancelFlag_[i]; }
-  uint8_t getSmoothingMethodType( size_t i ) { return gsSmoothingMethodType_[i]; }
-  uint8_t getSmoothingGridSizeMinus2( size_t i ) { return gsSmoothingGridSizeMinus2_[i]; }
-  uint8_t getSmoothingThreshold( size_t i ) { return gsSmoothingThreshold_[i]; }
-  uint8_t getPbfLog2ThresholdMinus1( size_t i ) { return gsPbfLog2ThresholdMinus1_[i]; }
-  uint8_t getPbfPassesCountMinus1( size_t i ) { return gsPbfPassesCountMinus1_[i]; }
-  uint8_t getPbfFilterSizeMinus1( size_t i ) { return gsPbfFilterSizeMinus1_[i]; }
+  bool    getSmoothingPersistenceFlag() { return smoothingPersistenceFlag_; }
+  bool    getSmoothingResetFlag() { return smoothingResetFlag_; }
+  uint8_t getSmoothingInstancesUpdated() { return smoothingInstancesUpdated_; }
+  uint8_t getSmoothingInstanceIndex( size_t i ) { return smoothingInstanceIndex_[i]; }
+  bool    getSmoothingInstanceCancelFlag( size_t i ) { return smoothingInstanceCancelFlag_[i]; }
+  uint8_t getSmoothingMethodType( size_t i ) { return smoothingMethodType_[i]; }
+  uint8_t getSmoothingGridSizeMinus2( size_t i ) { return smoothingGridSizeMinus2_[i]; }
+  uint8_t getSmoothingThreshold( size_t i ) { return smoothingThreshold_[i]; }
+  uint8_t getPbfLog2ThresholdMinus1( size_t i ) { return pbfLog2ThresholdMinus1_[i]; }
+  uint8_t getPbfPassesCountMinus1( size_t i ) { return pbfPassesCountMinus1_[i]; }
+  uint8_t getPbfFilterSizeMinus1( size_t i ) { return pbfFilterSizeMinus1_[i]; }
 
-  void setSmoothingPersistenceFlag( bool value ) { gsSmoothingPersistenceFlag_ = value; }
-  void setSmoothingResetFlag( bool value ) { gsSmoothingResetFlag_ = value; }
-  void setSmoothingInstancesUpdated( uint8_t value ) { gsSmoothingInstancesUpdated_ = value; }
-  void setSmoothingInstanceIndex( size_t i, uint8_t value ) { gsSmoothingInstanceIndex_[i] = value; }
-  void setSmoothingInstanceCancelFlag( size_t i, bool value ) { gsSmoothingInstanceCancelFlag_[i] = value; }
-  void setSmoothingMethodType( size_t i, uint8_t value ) { gsSmoothingMethodType_[i] = value; }
-  void setSmoothingGridSizeMinus2( size_t i, uint8_t value ) { gsSmoothingGridSizeMinus2_[i] = value; }
-  void setSmoothingThreshold( size_t i, uint8_t value ) { gsSmoothingThreshold_[i] = value; }
-  void setPbfLog2ThresholdMinus1( size_t i, uint8_t value ) { gsPbfLog2ThresholdMinus1_[i] = value; }
-  void setPbfPassesCountMinus1( size_t i, uint8_t value ) { gsPbfPassesCountMinus1_[i] = value; }
-  void setPbfFilterSizeMinus1( size_t i, uint8_t value ) { gsPbfFilterSizeMinus1_[i] = value; }
+  void setSmoothingPersistenceFlag( bool value ) { smoothingPersistenceFlag_ = value; }
+  void setSmoothingResetFlag( bool value ) { smoothingResetFlag_ = value; }
+  void setSmoothingInstancesUpdated( uint8_t value ) { smoothingInstancesUpdated_ = value; }
+  void setSmoothingInstanceIndex( size_t i, uint8_t value ) { smoothingInstanceIndex_[i] = value; }
+  void setSmoothingInstanceCancelFlag( size_t i, bool value ) { smoothingInstanceCancelFlag_[i] = value; }
+  void setSmoothingMethodType( size_t i, uint8_t value ) { smoothingMethodType_[i] = value; }
+  void setSmoothingGridSizeMinus2( size_t i, uint8_t value ) { smoothingGridSizeMinus2_[i] = value; }
+  void setSmoothingThreshold( size_t i, uint8_t value ) { smoothingThreshold_[i] = value; }
+  void setPbfLog2ThresholdMinus1( size_t i, uint8_t value ) { pbfLog2ThresholdMinus1_[i] = value; }
+  void setPbfPassesCountMinus1( size_t i, uint8_t value ) { pbfPassesCountMinus1_[i] = value; }
+  void setPbfFilterSizeMinus1( size_t i, uint8_t value ) { pbfFilterSizeMinus1_[i] = value; }
 
  private:
-  bool                 gsSmoothingPersistenceFlag_;
-  bool                 gsSmoothingResetFlag_;
-  uint8_t              gsSmoothingInstancesUpdated_;
-  std::vector<uint8_t> gsSmoothingInstanceIndex_;
-  std::vector<bool>    gsSmoothingInstanceCancelFlag_;
-  std::vector<uint8_t> gsSmoothingMethodType_;
-  std::vector<uint8_t> gsSmoothingGridSizeMinus2_;
-  std::vector<uint8_t> gsSmoothingThreshold_;
-  std::vector<uint8_t> gsPbfLog2ThresholdMinus1_;
-  std::vector<uint8_t> gsPbfPassesCountMinus1_;
-  std::vector<uint8_t> gsPbfFilterSizeMinus1_;
+  bool                 smoothingPersistenceFlag_;
+  bool                 smoothingResetFlag_;
+  uint8_t              smoothingInstancesUpdated_;
+  std::vector<uint8_t> smoothingInstanceIndex_;
+  std::vector<bool>    smoothingInstanceCancelFlag_;
+  std::vector<uint8_t> smoothingMethodType_;
+  std::vector<uint8_t> smoothingGridSizeMinus2_;
+  std::vector<uint8_t> smoothingThreshold_;
+  std::vector<uint8_t> pbfLog2ThresholdMinus1_;
+  std::vector<uint8_t> pbfPassesCountMinus1_;
+  std::vector<uint8_t> pbfFilterSizeMinus1_;
 };
 
 class SEIAttributeSmoothing : public SEI {
  public:
   SEIAttributeSmoothing() :
-      asSmoothingPersistenceFlag_( false ),
-      asSmoothingResetFlag_( false ),
-      asNumAttributesUpdated_( 0 ) {}
+      smoothingPersistenceFlag_( false ),
+      smoothingResetFlag_( false ),
+      numAttributesUpdated_( 0 ) {}
   ~SEIAttributeSmoothing() {
-    asAttributeIdx_.clear();
-    asAttributeSmoothingCancelFlag_.clear();
-    asSmoothingInstancesUpdated_.clear();
-    for ( auto& element : asSmoothingInstanceIndex_ ) { element.clear(); }
-    for ( auto& element : asSmoothingInstanceCancelFlag_ ) { element.clear(); }
-    for ( auto& element : asSmoothingMethodType_ ) { element.clear(); }
-    for ( auto& element : asSmoothingGridSizeMinus2_ ) { element.clear(); }
-    for ( auto& element : asSmoothingThreshold_ ) { element.clear(); }
-    for ( auto& element : asSmoothingThresholdVariation_ ) { element.clear(); }
-    for ( auto& element : asSmoothingThresholdDifference_ ) { element.clear(); }
-    asSmoothingInstanceIndex_.clear();
-    asSmoothingInstanceCancelFlag_.clear();
-    asSmoothingMethodType_.clear();
-    asSmoothingGridSizeMinus2_.clear();
-    asSmoothingThreshold_.clear();
-    asSmoothingThresholdVariation_.clear();
-    asSmoothingThresholdDifference_.clear();
+    attributeIdx_.clear();
+    attributeSmoothingCancelFlag_.clear();
+    smoothingInstancesUpdated_.clear();
+    for ( auto& element : smoothingInstanceIndex_ ) { element.clear(); }
+    for ( auto& element : smoothingInstanceCancelFlag_ ) { element.clear(); }
+    for ( auto& element : smoothingMethodType_ ) { element.clear(); }
+    for ( auto& element : smoothingGridSizeMinus2_ ) { element.clear(); }
+    for ( auto& element : smoothingThreshold_ ) { element.clear(); }
+    for ( auto& element : smoothingThresholdVariation_ ) { element.clear(); }
+    for ( auto& element : smoothingThresholdDifference_ ) { element.clear(); }
+    smoothingInstanceIndex_.clear();
+    smoothingInstanceCancelFlag_.clear();
+    smoothingMethodType_.clear();
+    smoothingGridSizeMinus2_.clear();
+    smoothingThreshold_.clear();
+    smoothingThresholdVariation_.clear();
+    smoothingThresholdDifference_.clear();
   }
   SEIAttributeSmoothing& operator=( const SEIAttributeSmoothing& ) = default;
 
   SeiPayloadType getPayloadType() { return ATTRIBUTE_SMOOTHING; }
 
   void allocate() {
-    asAttributeIdx_.resize( asNumAttributesUpdated_, 0 );
-    asAttributeSmoothingCancelFlag_.resize( asNumAttributesUpdated_, false );
-    asSmoothingInstancesUpdated_.resize( asNumAttributesUpdated_, 0 );
+    attributeIdx_.resize( numAttributesUpdated_, 0 );
+    attributeSmoothingCancelFlag_.resize( numAttributesUpdated_, false );
+    smoothingInstancesUpdated_.resize( numAttributesUpdated_, 0 );
   }
   void allocate( size_t size, size_t dimension ) {
-    if ( asSmoothingInstanceIndex_.size() < size ) {
-      asSmoothingInstanceIndex_.resize( size );
-      asSmoothingInstanceCancelFlag_.resize( size );
-      asSmoothingMethodType_.resize( size );
-      asSmoothingGridSizeMinus2_.resize( size );
-      asSmoothingThreshold_.resize( size );
-      asSmoothingThresholdVariation_.resize( size );
-      asSmoothingThresholdDifference_.resize( size );
+    if ( smoothingInstanceIndex_.size() < size ) {
+      smoothingInstanceIndex_.resize( size );
+      smoothingInstanceCancelFlag_.resize( size );
+      smoothingMethodType_.resize( size );
+      smoothingGridSizeMinus2_.resize( size );
+      smoothingThreshold_.resize( size );
+      smoothingThresholdVariation_.resize( size );
+      smoothingThresholdDifference_.resize( size );
     }
-    asSmoothingInstanceIndex_[size - 1].resize( dimension );
-    asSmoothingInstanceCancelFlag_[size - 1].resize( dimension );
-    asSmoothingMethodType_[size - 1].resize( dimension );
-    asSmoothingGridSizeMinus2_[size - 1].resize( dimension );
-    asSmoothingThreshold_[size - 1].resize( dimension );
-    asSmoothingThresholdVariation_[size - 1].resize( dimension );
-    asSmoothingThresholdDifference_[size - 1].resize( dimension );
+    smoothingInstanceIndex_[size - 1].resize( dimension );
+    smoothingInstanceCancelFlag_[size - 1].resize( dimension );
+    smoothingMethodType_[size - 1].resize( dimension );
+    smoothingGridSizeMinus2_[size - 1].resize( dimension );
+    smoothingThreshold_[size - 1].resize( dimension );
+    smoothingThresholdVariation_[size - 1].resize( dimension );
+    smoothingThresholdDifference_[size - 1].resize( dimension );
   }
 
-  uint8_t getSmoothingPersistenceFlag() { return asSmoothingPersistenceFlag_; }
-  uint8_t getSmoothingResetFlag() { return asSmoothingResetFlag_; }
-  uint8_t getNumAttributesUpdated() { return asNumAttributesUpdated_; }
-  uint8_t getAttributeIdx( size_t i ) { return asAttributeIdx_[i]; }
-  uint8_t getAttributeSmoothingCancelFlag( size_t i ) { return asAttributeSmoothingCancelFlag_[i]; }
-  uint8_t getSmoothingInstancesUpdated( size_t i ) { return asSmoothingInstancesUpdated_[i]; }
-  uint8_t getSmoothingInstanceIndex( size_t i, size_t j ) { return asSmoothingInstanceIndex_[i][j]; }
-  uint8_t getSmoothingInstanceCancelFlag( size_t i, size_t j ) { return asSmoothingInstanceCancelFlag_[i][j]; }
-  uint8_t getSmoothingMethodType( size_t i, size_t j ) { return asSmoothingMethodType_[i][j]; }
-  uint8_t getSmoothingGridSizeMinus2( size_t i, size_t j ) { return asSmoothingGridSizeMinus2_[i][j]; }
-  uint8_t getSmoothingThreshold( size_t i, size_t j ) { return asSmoothingThreshold_[i][j]; }
-  uint8_t getSmoothingThresholdVariation( size_t i, size_t j ) { return asSmoothingThresholdVariation_[i][j]; }
-  uint8_t getSmoothingThresholdDifference( size_t i, size_t j ) { return asSmoothingThresholdDifference_[i][j]; }
+  uint8_t getSmoothingPersistenceFlag() { return smoothingPersistenceFlag_; }
+  uint8_t getSmoothingResetFlag() { return smoothingResetFlag_; }
+  uint8_t getNumAttributesUpdated() { return numAttributesUpdated_; }
+  uint8_t getAttributeIdx( size_t i ) { return attributeIdx_[i]; }
+  uint8_t getAttributeSmoothingCancelFlag( size_t i ) { return attributeSmoothingCancelFlag_[i]; }
+  uint8_t getSmoothingInstancesUpdated( size_t i ) { return smoothingInstancesUpdated_[i]; }
+  uint8_t getSmoothingInstanceIndex( size_t i, size_t j ) { return smoothingInstanceIndex_[i][j]; }
+  uint8_t getSmoothingInstanceCancelFlag( size_t i, size_t j ) { return smoothingInstanceCancelFlag_[i][j]; }
+  uint8_t getSmoothingMethodType( size_t i, size_t j ) { return smoothingMethodType_[i][j]; }
+  uint8_t getSmoothingGridSizeMinus2( size_t i, size_t j ) { return smoothingGridSizeMinus2_[i][j]; }
+  uint8_t getSmoothingThreshold( size_t i, size_t j ) { return smoothingThreshold_[i][j]; }
+  uint8_t getSmoothingThresholdVariation( size_t i, size_t j ) { return smoothingThresholdVariation_[i][j]; }
+  uint8_t getSmoothingThresholdDifference( size_t i, size_t j ) { return smoothingThresholdDifference_[i][j]; }
 
-  void setSmoothingPersistenceFlag( uint8_t value ) { asSmoothingPersistenceFlag_ = value; }
-  void setSmoothingResetFlag( uint8_t value ) { asSmoothingResetFlag_ = value; }
-  void setNumAttributesUpdated( uint8_t value ) { asNumAttributesUpdated_ = value; }
-  void setAttributeIdx( size_t i, uint8_t value ) { asAttributeIdx_[i] = value; }
-  void setAttributeSmoothingCancelFlag( size_t i, uint8_t value ) { asAttributeSmoothingCancelFlag_[i] = value; }
-  void setSmoothingInstancesUpdated( size_t i, uint8_t value ) { asSmoothingInstancesUpdated_[i] = value; }
-  void setSmoothingInstanceIndex( size_t i, size_t j, uint8_t value ) { asSmoothingInstanceIndex_[i][j] = value; }
+  void setSmoothingPersistenceFlag( uint8_t value ) { smoothingPersistenceFlag_ = value; }
+  void setSmoothingResetFlag( uint8_t value ) { smoothingResetFlag_ = value; }
+  void setNumAttributesUpdated( uint8_t value ) { numAttributesUpdated_ = value; }
+  void setAttributeIdx( size_t i, uint8_t value ) { attributeIdx_[i] = value; }
+  void setAttributeSmoothingCancelFlag( size_t i, uint8_t value ) { attributeSmoothingCancelFlag_[i] = value; }
+  void setSmoothingInstancesUpdated( size_t i, uint8_t value ) { smoothingInstancesUpdated_[i] = value; }
+  void setSmoothingInstanceIndex( size_t i, size_t j, uint8_t value ) { smoothingInstanceIndex_[i][j] = value; }
   void setSmoothingInstanceCancelFlag( size_t i, size_t j, uint8_t value ) {
-    asSmoothingInstanceCancelFlag_[i][j] = value;
+    smoothingInstanceCancelFlag_[i][j] = value;
   }
-  void setSmoothingMethodType( size_t i, size_t j, uint8_t value ) { asSmoothingMethodType_[i][j] = value; }
-  void setSmoothingGridSizeMinus2( size_t i, size_t j, uint8_t value ) { asSmoothingGridSizeMinus2_[i][j] = value; }
-  void setSmoothingThreshold( size_t i, size_t j, uint8_t value ) { asSmoothingThreshold_[i][j] = value; }
+  void setSmoothingMethodType( size_t i, size_t j, uint8_t value ) { smoothingMethodType_[i][j] = value; }
+  void setSmoothingGridSizeMinus2( size_t i, size_t j, uint8_t value ) { smoothingGridSizeMinus2_[i][j] = value; }
+  void setSmoothingThreshold( size_t i, size_t j, uint8_t value ) { smoothingThreshold_[i][j] = value; }
   void setSmoothingThresholdVariation( size_t i, size_t j, uint8_t value ) {
-    asSmoothingThresholdVariation_[i][j] = value;
+    smoothingThresholdVariation_[i][j] = value;
   }
   void setSmoothingThresholdDifference( size_t i, size_t j, uint8_t value ) {
-    asSmoothingThresholdDifference_[i][j] = value;
+    smoothingThresholdDifference_[i][j] = value;
   }
 
  private:
-  bool                              asSmoothingPersistenceFlag_;
-  bool                              asSmoothingResetFlag_;
-  uint8_t                           asNumAttributesUpdated_;
-  std::vector<uint8_t>              asAttributeIdx_;
-  std::vector<bool>                 asAttributeSmoothingCancelFlag_;
-  std::vector<uint8_t>              asSmoothingInstancesUpdated_;
-  std::vector<std::vector<uint8_t>> asSmoothingInstanceIndex_;
-  std::vector<std::vector<uint8_t>> asSmoothingInstanceCancelFlag_;
-  std::vector<std::vector<uint8_t>> asSmoothingMethodType_;
-  std::vector<std::vector<uint8_t>> asSmoothingGridSizeMinus2_;
-  std::vector<std::vector<uint8_t>> asSmoothingThreshold_;
-  std::vector<std::vector<uint8_t>> asSmoothingThresholdVariation_;
-  std::vector<std::vector<uint8_t>> asSmoothingThresholdDifference_;
+  bool                              smoothingPersistenceFlag_;
+  bool                              smoothingResetFlag_;
+  uint8_t                           numAttributesUpdated_;
+  std::vector<uint8_t>              attributeIdx_;
+  std::vector<bool>                 attributeSmoothingCancelFlag_;
+  std::vector<uint8_t>              smoothingInstancesUpdated_;
+  std::vector<std::vector<uint8_t>> smoothingInstanceIndex_;
+  std::vector<std::vector<uint8_t>> smoothingInstanceCancelFlag_;
+  std::vector<std::vector<uint8_t>> smoothingMethodType_;
+  std::vector<std::vector<uint8_t>> smoothingGridSizeMinus2_;
+  std::vector<std::vector<uint8_t>> smoothingThreshold_;
+  std::vector<std::vector<uint8_t>> smoothingThresholdVariation_;
+  std::vector<std::vector<uint8_t>> smoothingThresholdDifference_;
 };
 
 };  // namespace pcc

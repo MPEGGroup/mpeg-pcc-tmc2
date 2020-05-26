@@ -41,7 +41,7 @@ namespace pcc {
 // C.2 Sample stream NAL unit syntax and semantics
 class SampleStreamNalUnit {
  public:
-  SampleStreamNalUnit() : unitSizePrecisionBytesMinus1_( 0 ) {}
+  SampleStreamNalUnit() : sizePrecisionBytesMinus1_( 0 ) {}
   ~SampleStreamNalUnit() { nalUnit_.clear(); }
   NalUnit& addNalUnit() {
     nalUnit_.resize( nalUnit_.size() + 1 );
@@ -53,13 +53,12 @@ class SampleStreamNalUnit {
   std::vector<NalUnit>& getNalUnit() { return nalUnit_; }
   NalUnit&              getNalUnit( size_t index ) { return nalUnit_[index]; }
   size_t                getNalUnitCount() { return nalUnit_.size(); }
-  uint8_t               getUnitSizePrecisionBytesMinus1() { return unitSizePrecisionBytesMinus1_; }
+  uint8_t               getSizePrecisionBytesMinus1() { return sizePrecisionBytesMinus1_; }
   NalUnit&              getLastNalUnit() { return nalUnit_.back(); }
-
-  void setUnitSizePrecisionBytesMinus1( uint8_t value ) { unitSizePrecisionBytesMinus1_ = value; }
+  void                  setSizePrecisionBytesMinus1( uint8_t value ) { sizePrecisionBytesMinus1_ = value; }
 
  private:
-  uint8_t              unitSizePrecisionBytesMinus1_;
+  uint8_t              sizePrecisionBytesMinus1_;
   std::vector<NalUnit> nalUnit_;
 };
 

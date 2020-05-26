@@ -6767,8 +6767,8 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
   // used, the code below is wrong (patches are not accumulated, but overwriten)
   for ( size_t tileIndex = 0; tileIndex < NumTilesInPatchFrame; tileIndex++ ) {
     auto&        atglu                     = context.getAtlasTileLayer( frameIndex, tileIndex );
-    auto&        ath                       = atglu.getAtlasTileHeader();
-    auto&        atgdu                     = atglu.getAtlasTileDataUnit();
+    auto&        ath                       = atglu.getHeader();
+    auto&        atgdu                     = atglu.getDataUnit();
     size_t       afpsId                    = ath.getAtlasFrameParameterSetId();
     auto&        afps                      = context.getAtlasFrameParameterSet( afpsId );
     size_t       aspsId                    = afps.getAtlasSequenceParameterSetId();

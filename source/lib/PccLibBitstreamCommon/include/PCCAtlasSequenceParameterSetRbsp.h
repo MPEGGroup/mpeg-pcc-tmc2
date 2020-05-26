@@ -104,7 +104,7 @@ class AtlasSequenceParameterSetRbsp {
   bool               getPatchSizeQuantizerPresentFlag() { return patchSizeQuantizerPresentFlag_; }
   uint8_t            getMapCountMinus1() { return mapCountMinus1_; }
   bool               getPixelDeinterleavingFlag() { return pixelDeinterleavingFlag_; }
-  bool               getPixeDeinterleavingMapFlag( size_t index ) { return pixeDeinterleavingMapFlag_[index]; }
+  bool               getxeDeinterleavingMapFlag( size_t index ) { return pixeDeinterleavingMapFlag_[index]; }
   bool               getEomPatchEnabledFlag() { return eomPatchEnabledFlag_; }
   uint8_t            getEomFixBitCountMinus1() { return eomFixBitCountMinus1_; }
   bool               getRawPatchEnabledFlag() { return rawPatchEnabledFlag_; }
@@ -133,8 +133,8 @@ class AtlasSequenceParameterSetRbsp {
   void setLog2PatchPackingBlockSize( uint8_t value ) { log2PatchPackingBlockSize_ = value; }
   void setPatchSizeQuantizerPresentFlag( bool value ) { patchSizeQuantizerPresentFlag_ = value; }
   void setMapCountMinus1( uint8_t value ) { mapCountMinus1_ = value; }
-  void setPixelDeinterleavingFlag( bool value ) { pixelDeinterleavingFlag_ = value; }
-  void setPixeDeinterleavingMapFlag( size_t index, bool value ) { pixeDeinterleavingMapFlag_[index] = value; }
+  void setxelDeinterleavingFlag( bool value ) { pixelDeinterleavingFlag_ = value; }
+  void setxeDeinterleavingMapFlag( size_t index, bool value ) { pixeDeinterleavingMapFlag_[index] = value; }
   void setEomPatchEnabledFlag( bool value ) { eomPatchEnabledFlag_ = value; }
   void setEomFixBitCountMinus1( uint8_t value ) { eomFixBitCountMinus1_ = value; }
   void setRawPatchEnabledFlag( bool value ) { rawPatchEnabledFlag_ = value; }

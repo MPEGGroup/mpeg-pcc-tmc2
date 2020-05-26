@@ -69,14 +69,13 @@ class AtlasAdaptationParameterSetRbsp {
   AapsVpccExtension& getAapsVpccExtension() { return aapsVpccExtension_; }
 
  private:
-  uint8_t atlasAdaptationParameterSetId_;
-  bool    log2MaxAfocPresentFlag_;
-  uint8_t log2MaxAtlasFrameOrderCntLsbMinus4_;
-  bool    extensionFlag_;
-  bool    vpccExtensionFlag_;
-  bool    mivExtensionFlag_;
-  uint8_t extension6Bits_;
-
+  uint8_t           atlasAdaptationParameterSetId_;
+  bool              log2MaxAfocPresentFlag_;
+  uint8_t           log2MaxAtlasFrameOrderCntLsbMinus4_;
+  bool              extensionFlag_;
+  bool              vpccExtensionFlag_;
+  bool              mivExtensionFlag_;
+  uint8_t           extension6Bits_;
   AapsVpccExtension aapsVpccExtension_;
 };
 

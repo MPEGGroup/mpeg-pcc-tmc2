@@ -143,7 +143,7 @@ class PCCBitstreamReader {
 
   // 7.3.6.10	Frame order count RBSP syntax
   static uint32_t frameOrderCountRbsp( PCCBitstream&                    bitstream,
-                                       V3CUnitPayloadHeader&            vuh,
+                                       V3CUnitHeader&                   vuh,
                                        AtlasSequenceParameterSetRbsp&   asps,
                                        AtlasAdaptationParameterSetRbsp& aaps );
 

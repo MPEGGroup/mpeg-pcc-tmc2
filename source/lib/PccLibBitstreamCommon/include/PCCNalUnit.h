@@ -41,47 +41,45 @@ namespace pcc {
 class NalUnit {
  public:
   NalUnit( NalUnitType nalUnitType = NAL_TRAIL_N, uint8_t layerId = 0, uint8_t temporalyIdPlus1 = 0 ) :
-      nalUnitType_( nalUnitType ),
+      type_( nalUnitType ),
       layerId_( layerId ),
       temporalyIdPlus1_( temporalyIdPlus1 ),
-      nalUnitSize_( 0 ) {}
-  ~NalUnit() { nalUnitData_.clear(); }
-  void                  allocate() { nalUnitData_.resize( nalUnitSize_ - 2, 0 ); }
-  NalUnitType           getNalUnitType() { return nalUnitType_; }
+      size_( 0 ) {}
+  ~NalUnit() { data_.clear(); }
+  void                  allocate() { data_.resize( size_ - 2, 0 ); }
+  NalUnitType           getType() { return type_; }
   uint8_t               getLayerId() { return layerId_; }
   uint8_t               getTemporalyIdPlus1() { return temporalyIdPlus1_; }
-  size_t                getNalUnitSize() { return nalUnitSize_; }
-  uint8_t               getNalUnitData( size_t index ) { return nalUnitData_[index]; }
-  std::vector<uint8_t>& getNalUnitData() { return nalUnitData_; }
+  size_t                getSize() { return size_; }
+  uint8_t               getData( size_t index ) { return data_[index]; }
+  std::vector<uint8_t>& getData() { return data_; }
 
-  void setNalUnitType( NalUnitType value ) { nalUnitType_ = value; }
+  void setType( NalUnitType value ) { type_ = value; }
   void setLayerId( uint8_t value ) { layerId_ = value; }
   void setTemporalyIdPlus1( uint8_t value ) { temporalyIdPlus1_ = value; }
-  void setNalUnitSize( size_t value ) { nalUnitSize_ = value; }
-  void setNalUnitData( size_t index, uint8_t data ) { nalUnitData_[index] = data; }
-
-  void initialize( NalUnitType nalUnitType, uint8_t layerId, uint8_t temporalyIdPlus1 ) {
-    nalUnitType_      = nalUnitType;
+  void setSize( size_t value ) { size_ = value; }
+  void setData( size_t index, uint8_t data ) { data_[index] = data; }
+  void initialize( NalUnitType type,
+                   uint8_t     layerId,
+                   uint8_t     temporalyIdPlus1,
+                   size_t      size = 0,
+                   uint8_t*    data = nullptr ) {
+    type_             = type;
     layerId_          = layerId;
     temporalyIdPlus1_ = temporalyIdPlus1;
-  }
-  void initialize( NalUnitType nalUnitType, uint8_t layerId, uint8_t temporalyIdPlus1, size_t size, uint8_t* data ) {
-    nalUnitType_      = nalUnitType;
-    layerId_          = layerId;
-    temporalyIdPlus1_ = temporalyIdPlus1;
-    nalUnitSize_      = size;
-    if ( size > 0 ) {
-      nalUnitData_.resize( size, 0 );
-      memcpy( nalUnitData_.data(), data, size * sizeof( uint8_t ) );
+    if ( size_ > 0 ) {
+      size_ = size;
+      data_.resize( size_, 0 );
+      memcpy( data_.data(), data, size_ * sizeof( uint8_t ) );
     }
   }
 
  private:
-  NalUnitType          nalUnitType_;
+  NalUnitType          type_;
   uint8_t              layerId_;
   uint8_t              temporalyIdPlus1_;
-  size_t               nalUnitSize_;
-  std::vector<uint8_t> nalUnitData_;
+  size_t               size_;
+  std::vector<uint8_t> data_;
 };
 
 };  // namespace pcc

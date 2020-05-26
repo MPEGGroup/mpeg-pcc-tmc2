@@ -146,7 +146,7 @@ class PCCBitstreamWriter {
 
   // 7.3.6.10 Frame order count RBSP syntax
   void frameOrderCountRbsp( PCCBitstream&                    bitstream,
-                            V3CUnitPayloadHeader&            vuh,
+                            V3CUnitHeader&                   vuh,
                             AtlasSequenceParameterSetRbsp&   asps,
                             AtlasAdaptationParameterSetRbsp& aaps,
                             uint32_t                         frmOrderContLsb );
