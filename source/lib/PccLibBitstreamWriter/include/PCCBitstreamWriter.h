@@ -113,7 +113,7 @@ class PCCBitstreamWriter {
 
   static void videoSubStream( PCCHighLevelSyntax& syntax, PCCBitstream& bitstream, V3CUnitType V3CUnitType );
 
-  // 7.3.3	Byte alignment syntax
+  // 7.3.3 Byte alignment syntax
   static void byteAlignment( PCCBitstream& bitstream );
 
   // 7.3.4.1 General Sequence parameter set syntax
@@ -131,7 +131,7 @@ class PCCBitstreamWriter {
   // 7.3.4.5 Attribute information syntax
   static void attributeInformation( AttributeInformation& ai, V3CParameterSet& sps, PCCBitstream& bitstream );
 
-  // 7.3.4.6	Profile toolset constraints information syntax
+  // 7.3.4.6 Profile toolset constraints information syntax
   static void profileToolsetConstraintsInformation( ProfileToolsetConstraintsInformation& ptci,
                                                     PCCBitstream&                         bitstream );
 
@@ -144,7 +144,7 @@ class PCCBitstreamWriter {
   static void rbspTrailingBits( PCCBitstream& bitstream );
   static bool payloadExtensionPresent( PCCBitstream& bitstream );
 
-  // 7.3.6.10	Frame order count RBSP syntax
+  // 7.3.6.10 Frame order count RBSP syntax
   void frameOrderCountRbsp( PCCBitstream&                    bitstream,
                             V3CUnitPayloadHeader&            vuh,
                             AtlasSequenceParameterSetRbsp&   asps,
@@ -177,8 +177,8 @@ class PCCBitstreamWriter {
                                          AtlasSequenceParameterSetRbsp& asps,
                                          PCCBitstream&                  bitstream );
 
-  // 7.3.6.3	Atlas adaptation parameter set RBSP syntax
-  // 7.3.6.3.1	General atlas adaptation parameter set RBSP syntax
+  // 7.3.6.3 Atlas adaptation parameter set RBSP syntax
+  // 7.3.6.3.1 General atlas adaptation parameter set RBSP syntax
   void atlasAdaptationParameterSetRbsp( AtlasAdaptationParameterSetRbsp& aaps, PCCBitstream& bitstream );
 
   // 7.3.6.5  Supplemental enhancement information Rbsp syntax
@@ -411,16 +411,25 @@ class PCCBitstreamWriter {
                                std::vector<uint8_t> hrdCabCntMinus1 );
   // F.2.16  Atlas frame timing SEI message syntax
   static void atlasFrameTiming( PCCBitstream& bitstream, SEI& sei, bool CabDabDelaysPresentFlag );
-  // F.2.17  Presentation inforomation SEI message syntax
-  static void presentationInformation( PCCBitstream& bitstream, SEI& sei );
-  // F.2.18  Smoothing parameters SEI message syntax
-  static void smoothingParameters( PCCBitstream& bitstream, SEI& sei );
 
-  // F.2.13.1	Scene object information SEI message syntax 
+  // F.2.13.1 Scene object information SEI message syntax
   static void sceneObjectInformation( PCCBitstream& bitstream, SEI& sei );
+  // F.2.13.2 Object label information SEI message syntax
   static void objectLabelInformation( PCCBitstream& bitstream, SEI& sei );
+  // F.2.13.3 Patch information SEI message syntax
   static void patchInformation( PCCBitstream& bitstream, SEI& sei );
+  // F.2.13.4 Volumetric rectangle information SEI message syntax
   static void volumetricRectangleInformation( PCCBitstream& bitstream, SEI& sei );
+  // F.2.13.5  Atlas information  SEI message syntax
+  static void atlasInformation( PCCBitstream& bitstream, SEI& seiAbstract );
+  // F.2.16.1 Viewport camera parameters SEI messages syntax
+  static void viewportCameraParameters( PCCBitstream& bitstream, SEI& seiAbstract );
+  // F.2.16.1 Viewport camera parameters SEI messages syntax
+  static void viewportPosition( PCCBitstream& bitstream, SEI& seiAbstract );
+  // H.16.2.1 Geometry smoothing SEI message syntax
+  static void geometrySmoothing( PCCBitstream& bitstream, SEI& seiAbstract );
+  // H.16.2.2 Attribute smoothing SEI message syntax
+  static void attributeSmoothing( PCCBitstream& bitstream, SEI& seiAbstract );
 
   // F.2  VUI syntax
   // F.2.1  VUI parameters syntax
@@ -430,28 +439,28 @@ class PCCBitstreamWriter {
   // F.2.3  Sub-layer HRD parameters syntax
   static void hrdSubLayerParameters( PCCBitstream& bitstream, HrdSubLayerParameters& hlsp, size_t cabCnt );
 
-  // H.7.3.4.1	VPS V-PCC extension syntax
+  // H.7.3.4.1 VPS V-PCC extension syntax
   static void vpsVpccExtension( PCCBitstream& bitstream, VpsVpccExtension& ext );
 
-  // H.7.3.4.2	VPS MIV extension syntax
+  // H.7.3.4.2 VPS MIV extension syntax
   static void vpsMivExtension( PCCBitstream& bitstream );
 
-  // H.7.3.6.1.1	ASPS V-PCC extension syntax
+  // H.7.3.6.1.1 ASPS V-PCC extension syntax
   static void aspsVpccExtension( PCCBitstream& bitstream, AtlasSequenceParameterSetRbsp& asps, AspsVpccExtension& ext );
-  // H.7.3.6.1.2	ASPS MIV extension syntax
+  // H.7.3.6.1.2 ASPS MIV extension syntax
   static void aspsMivExtension( PCCBitstream& bitstream );
 
-  // H.7.3.6.2.1	AFPS V-PCC extension syntax
+  // H.7.3.6.2.1 AFPS V-PCC extension syntax
   static void afpsVpccExtension( PCCBitstream& bitstream, AfpsVpccExtension& ext );
-  // H.7.3.6.2.2	AFPS MIV extension syntax
+  // H.7.3.6.2.2 AFPS MIV extension syntax
   static void afpsMivExtension( PCCBitstream& bitstream );
 
-  // H.7.3.6.3.1	AAPS V-PCC extension syntax
+  // H.7.3.6.3.1 AAPS V-PCC extension syntax
   static void aapsVpccExtension( PCCBitstream& bitstream, AapsVpccExtension& ext );
-  // H.7.3.6.3.2	AAPS MIV extension syntax
+  // H.7.3.6.3.2 AAPS MIV extension syntax
   static void aapsMivExtension( PCCBitstream& bitstream );
 
-  // H.7.3.6.3.2	Atlas camera parameters syntax
+  // H.7.3.6.3.2 Atlas camera parameters syntax
   static void atlasCameraParameters( PCCBitstream& bitstream, AtlasCameraParameters& acp );
 
 // PCCEncoderParameters params_;

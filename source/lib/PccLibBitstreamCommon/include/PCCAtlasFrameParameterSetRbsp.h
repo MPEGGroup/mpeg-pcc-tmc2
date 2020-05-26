@@ -57,10 +57,10 @@ class AtlasFrameParameterSetRbsp {
   ~AtlasFrameParameterSetRbsp() {}
   AtlasFrameParameterSetRbsp& operator=( const AtlasFrameParameterSetRbsp& ) = default;
   void                        copyFrom( AtlasFrameParameterSetRbsp& refAfps ) {
-    atlasSequenceParameterSetId_  = refAfps.getAtlasSequenceParameterSetId();
-    numRefIdxDefaultActiveMinus1_ = refAfps.getNumRefIdxDefaultActiveMinus1();
-    additionalLtAfocLsbLen_       = refAfps.getAdditionalLtAfocLsbLen();
-    lodModeEnableFlag_            = refAfps.getLodModeEnableFlag();
+    atlasSequenceParameterSetId_      = refAfps.getAtlasSequenceParameterSetId();
+    numRefIdxDefaultActiveMinus1_     = refAfps.getNumRefIdxDefaultActiveMinus1();
+    additionalLtAfocLsbLen_           = refAfps.getAdditionalLtAfocLsbLen();
+    lodModeEnableFlag_                = refAfps.getLodModeEnableFlag();
     raw3dPosBitCountExplicitModeFlag_ = refAfps.getRaw3dPosBitCountExplicitModeFlag();
     extensionFlag_                    = refAfps.getExtensionFlag();
     vpccExtensionFlag_                = refAfps.getVpccExtensionFlag();
@@ -69,19 +69,19 @@ class AtlasFrameParameterSetRbsp {
     atlasFrameTileInformation_        = refAfps.getAtlasFrameTileInformation();
   }
 
-  uint8_t getAtlasFrameParameterSetId() { return atlasFrameParameterSetId_; }
-  uint8_t getAtlasSequenceParameterSetId() { return atlasSequenceParameterSetId_; }
-  bool    getOutputFlagPresentFlag() { return outputFlagPresentFlag_; }
-  uint8_t getNumRefIdxDefaultActiveMinus1() { return numRefIdxDefaultActiveMinus1_; }
-  uint8_t getAdditionalLtAfocLsbLen() { return additionalLtAfocLsbLen_; }
-  bool    getRaw3dPosBitCountExplicitModeFlag() { return raw3dPosBitCountExplicitModeFlag_; }
-  bool    getExtensionFlag() { return extensionFlag_; }
-  bool    getVpccExtensionFlag() { return vpccExtensionFlag_; }
-  bool    getMivExtensionFlag() { return mivExtensionFlag_; }
-  uint8_t getExtension6Bits() { return extension6Bits_; }
+  uint8_t                    getAtlasFrameParameterSetId() { return atlasFrameParameterSetId_; }
+  uint8_t                    getAtlasSequenceParameterSetId() { return atlasSequenceParameterSetId_; }
+  bool                       getOutputFlagPresentFlag() { return outputFlagPresentFlag_; }
+  uint8_t                    getNumRefIdxDefaultActiveMinus1() { return numRefIdxDefaultActiveMinus1_; }
+  uint8_t                    getAdditionalLtAfocLsbLen() { return additionalLtAfocLsbLen_; }
+  bool                       getRaw3dPosBitCountExplicitModeFlag() { return raw3dPosBitCountExplicitModeFlag_; }
+  bool                       getExtensionFlag() { return extensionFlag_; }
+  bool                       getVpccExtensionFlag() { return vpccExtensionFlag_; }
+  bool                       getMivExtensionFlag() { return mivExtensionFlag_; }
+  uint8_t                    getExtension6Bits() { return extension6Bits_; }
   AtlasFrameTileInformation& getAtlasFrameTileInformation() { return atlasFrameTileInformation_; }
   bool                       getLodModeEnableFlag() { return lodModeEnableFlag_; }
-  AfpsVpccExtension&         getAfpsVpccExtension() {return afpsVpccExtension_; }
+  AfpsVpccExtension&         getAfpsVpccExtension() { return afpsVpccExtension_; }
 
   void setAtlasFrameParameterSetId( uint8_t value ) { atlasFrameParameterSetId_ = value; }
   void setAtlasSequenceParameterSetId( uint8_t value ) { atlasSequenceParameterSetId_ = value; }

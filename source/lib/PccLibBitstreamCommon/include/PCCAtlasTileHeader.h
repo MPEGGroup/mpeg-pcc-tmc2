@@ -58,14 +58,14 @@ class AtlasTileHeader {
       raw3dPosAxisBitCountMinus1_( 0 ),
       numRefIdxActiveOverrideFlag_( 0 ),
       numRefIdxActiveMinus1_( 0 ) {
-      additionalAfocLsbPresentFlag_.resize( 1, 0 );
-      additionalAfocLsbVal_.resize( 1, 0 );
+    additionalAfocLsbPresentFlag_.resize( 1, 0 );
+    additionalAfocLsbVal_.resize( 1, 0 );
   };
   ~AtlasTileHeader() {
     additionalAfocLsbPresentFlag_.clear();
     additionalAfocLsbVal_.clear();
   };
-  AtlasTileHeader& operator=( const AtlasTileHeader& ) = default;
+  AtlasTileHeader&      operator=( const AtlasTileHeader& ) = default;
   RefListStruct&        getRefListStruct() { return refListStruct_; }  // only 1 refList
   void                  setRefListStruct( RefListStruct value ) { refListStruct_ = value; }
   uint8_t               getFrameIndex() { return frameIndex_; }
@@ -87,8 +87,8 @@ class AtlasTileHeader {
   uint8_t               getNumRefIdxActiveMinus1() { return numRefIdxActiveMinus1_; }
   std::vector<bool>&    getAdditionalAfocLsbPresentFlag() { return additionalAfocLsbPresentFlag_; }
   std::vector<uint8_t>& getAdditionalAfocLsbVal() { return additionalAfocLsbVal_; }
-  bool    getAdditionalAfocLsbPresentFlag( size_t idx ) { return additionalAfocLsbPresentFlag_[idx]; }
-  uint8_t getAdditionalAfocLsbVal( size_t idx ) { return additionalAfocLsbVal_[idx]; }
+  bool                  getAdditionalAfocLsbPresentFlag( size_t idx ) { return additionalAfocLsbPresentFlag_[idx]; }
+  uint8_t               getAdditionalAfocLsbVal( size_t idx ) { return additionalAfocLsbVal_[idx]; }
 
   void setAtlasFrameParameterSetId( uint8_t value ) { atlasFrameParameterSetId_ = value; }
   void setAtlasAdaptationParameterSetId( uint8_t value ) { atlasAdaptationParameterSetId_ = value; }

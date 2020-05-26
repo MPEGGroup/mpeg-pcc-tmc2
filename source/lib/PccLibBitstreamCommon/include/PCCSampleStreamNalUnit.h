@@ -54,8 +54,9 @@ class SampleStreamNalUnit {
   NalUnit&              getNalUnit( size_t index ) { return nalUnit_[index]; }
   size_t                getNalUnitCount() { return nalUnit_.size(); }
   uint8_t               getUnitSizePrecisionBytesMinus1() { return unitSizePrecisionBytesMinus1_; }
-  void                  setUnitSizePrecisionBytesMinus1( uint8_t value ) { unitSizePrecisionBytesMinus1_ = value; }
   NalUnit&              getLastNalUnit() { return nalUnit_.back(); }
+  
+  void                  setUnitSizePrecisionBytesMinus1( uint8_t value ) { unitSizePrecisionBytesMinus1_ = value; }
 
  private:
   uint8_t              unitSizePrecisionBytesMinus1_;

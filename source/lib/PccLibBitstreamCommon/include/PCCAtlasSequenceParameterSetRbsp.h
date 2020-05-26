@@ -87,39 +87,39 @@ class AtlasSequenceParameterSetRbsp {
     pointLocalReconstructionInformation_.resize( mapCountMinus1_ + 1 );
   }
 
-  uint8_t        getAtlasSequenceParameterSetId() { return atlasSequenceParameterSetId_; }
-  uint16_t       getFrameWidth() { return frameWidth_; }
-  uint16_t       getFrameHeight() { return frameHeight_; }
-  uint8_t        getLog2MaxAtlasFrameOrderCntLsbMinus4() { return log2MaxAtlasFrameOrderCntLsbMinus4_; }
-  uint8_t        getMaxDecAtlasFrameBufferingMinus1() { return maxDecAtlasFrameBufferingMinus1_; }
-  bool           getLongTermRefAtlasFramesFlag() { return longTermRefAtlasFramesFlag_; }
-  uint8_t        getNumRefAtlasFrameListsInAsps() { return numRefAtlasFrameListsInAsps_; }
-  bool           getUseEightOrientationsFlag() { return useEightOrientationsFlag_; }
-  bool           getExtendedProjectionEnabledFlag() { return extendedProjectionEnabledFlag_; }
-  uint8_t        getMaxNumberProjectionsMinus1() { return maxNumberProjectionsMinus1_; }
-  bool           getNormalAxisLimitsQuantizationEnabledFlag() { return normalAxisLimitsQuantizationEnabledFlag_; }
-  bool           getNormalAxisMaxDeltaValueEnabledFlag() { return normalAxisMaxDeltaValueEnabledFlag_; }
-  bool           getPatchPrecedenceOrderFlag() { return patchPrecedenceOrderFlag_; }
-  uint8_t        getLog2PatchPackingBlockSize() { return log2PatchPackingBlockSize_; }
-  bool           getPatchSizeQuantizerPresentFlag() { return patchSizeQuantizerPresentFlag_; }
-  uint8_t        getMapCountMinus1() { return mapCountMinus1_; }
-  bool           getPixelDeinterleavingFlag() { return pixelDeinterleavingFlag_; }
-  bool           getPixeDeinterleavingMapFlag( size_t index ) { return pixeDeinterleavingMapFlag_[index]; }
-  bool           getEomPatchEnabledFlag() { return eomPatchEnabledFlag_; }
-  uint8_t        getEomFixBitCountMinus1() { return eomFixBitCountMinus1_; }
-  bool           getRawPatchEnabledFlag() { return rawPatchEnabledFlag_; }
-  bool           getAuxiliaryVideoEnabledFlag() { return auxiliaryVideoEnabledFlag_; }
-  bool           getPointLocalReconstructionEnabledFlag() { return pointLocalReconstructionEnabledFlag_; }
-  bool           getVuiParametersPresentFlag() { return vuiParametersPresentFlag_; }
-  bool           getExtensionFlag() { return extensionFlag_; }
-  bool           getVpccExtensionFlag() { return vpccExtensionFlag_; }
-  bool           getMivExtensionFlag() { return mivExtensionFlag_; }
-  uint8_t           getExtension6Bits() { return extension6Bits_; }
-  VUIParameters& getVuiParameters() { return vuiParameters_; }
+  uint8_t            getAtlasSequenceParameterSetId() { return atlasSequenceParameterSetId_; }
+  uint16_t           getFrameWidth() { return frameWidth_; }
+  uint16_t           getFrameHeight() { return frameHeight_; }
+  uint8_t            getLog2MaxAtlasFrameOrderCntLsbMinus4() { return log2MaxAtlasFrameOrderCntLsbMinus4_; }
+  uint8_t            getMaxDecAtlasFrameBufferingMinus1() { return maxDecAtlasFrameBufferingMinus1_; }
+  bool               getLongTermRefAtlasFramesFlag() { return longTermRefAtlasFramesFlag_; }
+  uint8_t            getNumRefAtlasFrameListsInAsps() { return numRefAtlasFrameListsInAsps_; }
+  bool               getUseEightOrientationsFlag() { return useEightOrientationsFlag_; }
+  bool               getExtendedProjectionEnabledFlag() { return extendedProjectionEnabledFlag_; }
+  uint8_t            getMaxNumberProjectionsMinus1() { return maxNumberProjectionsMinus1_; }
+  bool               getNormalAxisLimitsQuantizationEnabledFlag() { return normalAxisLimitsQuantizationEnabledFlag_; }
+  bool               getNormalAxisMaxDeltaValueEnabledFlag() { return normalAxisMaxDeltaValueEnabledFlag_; }
+  bool               getPatchPrecedenceOrderFlag() { return patchPrecedenceOrderFlag_; }
+  uint8_t            getLog2PatchPackingBlockSize() { return log2PatchPackingBlockSize_; }
+  bool               getPatchSizeQuantizerPresentFlag() { return patchSizeQuantizerPresentFlag_; }
+  uint8_t            getMapCountMinus1() { return mapCountMinus1_; }
+  bool               getPixelDeinterleavingFlag() { return pixelDeinterleavingFlag_; }
+  bool               getPixeDeinterleavingMapFlag( size_t index ) { return pixeDeinterleavingMapFlag_[index]; }
+  bool               getEomPatchEnabledFlag() { return eomPatchEnabledFlag_; }
+  uint8_t            getEomFixBitCountMinus1() { return eomFixBitCountMinus1_; }
+  bool               getRawPatchEnabledFlag() { return rawPatchEnabledFlag_; }
+  bool               getAuxiliaryVideoEnabledFlag() { return auxiliaryVideoEnabledFlag_; }
+  bool               getPointLocalReconstructionEnabledFlag() { return pointLocalReconstructionEnabledFlag_; }
+  bool               getVuiParametersPresentFlag() { return vuiParametersPresentFlag_; }
+  bool               getExtensionFlag() { return extensionFlag_; }
+  bool               getVpccExtensionFlag() { return vpccExtensionFlag_; }
+  bool               getMivExtensionFlag() { return mivExtensionFlag_; }
+  uint8_t            getExtension6Bits() { return extension6Bits_; }
+  VUIParameters&     getVuiParameters() { return vuiParameters_; }
   AspsVpccExtension& getAspsVpccExtension() { return aspsVpccExtension_; }
-  void setAtlasSequenceParameterSetId( uint8_t value ) { atlasSequenceParameterSetId_ = value; }
-  void setFrameWidth( uint16_t value ) { frameWidth_ = value; }
-  void setFrameHeight( uint16_t value ) { frameHeight_ = value; }
+  void               setAtlasSequenceParameterSetId( uint8_t value ) { atlasSequenceParameterSetId_ = value; }
+  void               setFrameWidth( uint16_t value ) { frameWidth_ = value; }
+  void               setFrameHeight( uint16_t value ) { frameHeight_ = value; }
   void setLog2MaxAtlasFrameOrderCntLsbMinus4( uint8_t value ) { log2MaxAtlasFrameOrderCntLsbMinus4_ = value; }
   void setMaxDecAtlasFrameBufferingMinus1( uint8_t value ) { maxDecAtlasFrameBufferingMinus1_ = value; }
   void setLongTermRefAtlasFramesFlag( bool value ) { longTermRefAtlasFramesFlag_ = value; }
@@ -134,7 +134,7 @@ class AtlasSequenceParameterSetRbsp {
   void setPatchSizeQuantizerPresentFlag( bool value ) { patchSizeQuantizerPresentFlag_ = value; }
   void setMapCountMinus1( uint8_t value ) { mapCountMinus1_ = value; }
   void setPixelDeinterleavingFlag( bool value ) { pixelDeinterleavingFlag_ = value; }
-  void setPixeDeinterleavingMapFlag( size_t index, bool     value ) { pixeDeinterleavingMapFlag_[index]    = value; }
+  void setPixeDeinterleavingMapFlag( size_t index, bool value ) { pixeDeinterleavingMapFlag_[index] = value; }
   void setEomPatchEnabledFlag( bool value ) { eomPatchEnabledFlag_ = value; }
   void setEomFixBitCountMinus1( uint8_t value ) { eomFixBitCountMinus1_ = value; }
   void setRawPatchEnabledFlag( bool value ) { rawPatchEnabledFlag_ = value; }
@@ -195,7 +195,7 @@ class AtlasSequenceParameterSetRbsp {
   bool                                             extensionFlag_;
   bool                                             vpccExtensionFlag_;
   bool                                             mivExtensionFlag_;
-  uint8_t                                             extension6Bits_;
+  uint8_t                                          extension6Bits_;
   VUIParameters                                    vuiParameters_;
   AspsVpccExtension                                aspsVpccExtension_;
 };

@@ -260,51 +260,33 @@ static PCCPatchType getPatchType( PCCTileType tileType, uint8_t patchMode ) {
 }
 
 enum SeiPayloadType {
-  BUFFERING_PERIOD = 0,              //  0: bufferingPeriod
-  ATLAS_FRAME_TIMING,                //  1: atlasFrameTiming
-  FILLER_PAYLOAD,                    //  2: fillerPayload
-  USER_DATAREGISTERED_ITUTT35,       //  3: userDataRegisteredItuTT35
-  USER_DATA_UNREGISTERED,            //  4: userDataUnregistered
-  RECOVERY_POINT,                    //  5: recoveryPoint
-  NO_DISPLAY,                        //  6: noDisplay
-  TIME_CODE,                         //  7: timeCode
-  REGIONAL_NESTING,                  //  8: regionalNesting
-  SEI_MANIFEST,                      //  9: seiManifest
-  SEI_PREFIX_INDICATION,             // 10: seiPrefixIndication
-  ATTRIBUTE_TRANSFORMATION_PARAMS,   // 11: attributeTransformationParams
-  ACTIVE_SUB_BITSTREAMS,             // 12: activeSubBitstreams
-  COMPONENT_CODEC_MAPPING,           // 13: componentCodecMapping
-  SCENE_OBJECT_INFORMATION,          // 14: scene object information m52705
-  OBJECT_LABEL_INFORMATION,          // 15: Object label information
-  PATCH_INFORMATION,                 // 16: Patch information SEI message syntax
-  VOLUMETRIC_RECTANGLE_INFORMATION,  // 17: Volumetric rectangle information 
-  
-
-  // JR TODO: deprecated 
-  VOLUMETRIC_TILING_INFO,            // 14: volumetricTilingInfo
-  PRESENTATION_INFORMATION,          // 15: presentationInformation
-  SMOOTHING_PARAMETERS,              // 16: smoothingParameters
- 
-  // else if( payloadType  = =  18 )
-  // 	atlas_infromation( payloadSize )
-  // else if( payloadType  = =  19 )
-  // 	viewport_camera_parameters( payloadSize )
-  // else if( payloadType  = =  20 )
-  // 	viewport_position( payloadSize )
-  // else if( payloadType  = =  64 )
-  // 	geometry_smoothing( payloadSize ) /* Specified in Annex H */
-  // else if( payloadType  = =  65 )
-  // 	attribute_smoothing( payloadSize ) /* Specified in Annex H  */
-  
-  // TODO: ~deprecated 
-
-
-  RESERVED_SEI_MESSAGE,              // 21: reservedSeiMessage
-
-  // GEOMETRY_TRANSFORMATION_PARAMS,    // 10: geometryTransformationParams
+  BUFFERING_PERIOD                 = 0,   //  0: bufferingPeriod
+  ATLAS_FRAME_TIMING               = 1,   //  1: atlasFrameTiming
+  FILLER_PAYLOAD                   = 2,   //  2: fillerPayload
+  USER_DATAREGISTERED_ITUTT35      = 3,   //  3: userDataRegisteredItuTT35
+  USER_DATA_UNREGISTERED           = 4,   //  4: userDataUnregistered
+  RECOVERY_POINT                   = 5,   //  5: recoveryPoint
+  NO_DISPLAY                       = 6,   //  6: noDisplay
+  TIME_CODE                        = 7,   //  7: timeCode
+  REGIONAL_NESTING                 = 8,   //  8: regionalNesting
+  SEI_MANIFEST                     = 9,   //  9: seiManifest
+  SEI_PREFIX_INDICATION            = 10,  // 10: seiPrefixIndication
+  ATTRIBUTE_TRANSFORMATION_PARAMS  = 11,  // 11: attributeTransformationParams
+  ACTIVE_SUB_BITSTREAMS            = 12,  // 12: activeSubBitstreams
+  COMPONENT_CODEC_MAPPING          = 13,  // 13: componentCodecMapping
+  SCENE_OBJECT_INFORMATION         = 14,  // 14: scene object information m52705
+  OBJECT_LABEL_INFORMATION         = 15,  // 15: Object label information
+  PATCH_INFORMATION                = 16,  // 16: Patch information SEI message syntax
+  VOLUMETRIC_RECTANGLE_INFORMATION = 17,  // 17: Volumetric rectangle information
+  ATLAS_INFORMATION                = 18,  // 18: atlas_information
+  VIEWPORT_CAMERA_PARAMETERS       = 19,  // 17: viewport camera parameters
+  VIEWPORT_POSITION                = 20,  // 20: viewport position
+  GEOMETRY_SMOOTHING               = 64,  // 17: geometry smoothing
+  ATTRIBUTE_SMOOTHING              = 65,  // 20: attribute smoothing
+  RESERVED_SEI_MESSAGE             = 127  // xx: reservedSeiMessage
 };
 
-enum NalUnitType {      
+enum NalUnitType {
   NAL_TRAIL_N = 0,      // 0 Coded tile of a non-TSA, non STSA trailing atlas frame ACL
   NAL_TRAIL_R,          // 1 Coded tile of a non-TSA, non STSA trailing atlas frame ACL
   NAL_TSA_N,            // 2 Coded tile of a TSA atlas frame ACL
@@ -331,7 +313,7 @@ enum NalUnitType {
   NAL_IDR_N_LP,         // 23 Coded tile of an IDR atlas frame ACL
   NAL_GIDR_W_RADL,      // 24 Coded tile of a GIDR atlas frame ACL
   NAL_GIDR_N_LP,        // 25 Coded tile of a GIDR atlas frame ACL
-  NAL_CRA,              // 26 Coded tile of a CRA atlas frame ACL 
+  NAL_CRA,              // 26 Coded tile of a CRA atlas frame ACL
   NAL_GCRA,             // 27 Coded tile of a GCRA atlas frame ACL
   NAL_RSV_IRAP_ACL_28,  // 28 Reserved IRAP ACL NAL unit types ACL
   NAL_RSV_IRAP_ACL_29,  // 29 Reserved IRAP ACL NAL unit types ACL
@@ -341,19 +323,19 @@ enum NalUnitType {
   NAL_RSV_ACL_33,       // 33 Reserved non-IRAP ACL NAL unit types ACL
   NAL_RSV_ACL_34,       // 34 Reserved non-IRAP ACL NAL unit types ACL
   NAL_RSV_ACL_35,       // 35 Reserved non-IRAP ACL NAL unit types ACL
-  NAL_ASPS,             // 36 Atlas sequence parameter set non-ACL 
-  NAL_AFPS,             // 37 Atlas frame parameter set non-ACL  
-  NAL_AUD,              // 38 Access unit delimiter non-ACL   
-  NAL_V3C_AUD,          // 39 V3C access unit delimiter non-ACL  
-  NAL_EOS,              // 40 End of sequence non-ACL  
-  NAL_EOB,              // 41 End of bitstream non-ACL 
-  NAL_FD,               // 42 Filler non-ACL  
+  NAL_ASPS,             // 36 Atlas sequence parameter set non-ACL
+  NAL_AFPS,             // 37 Atlas frame parameter set non-ACL
+  NAL_AUD,              // 38 Access unit delimiter non-ACL
+  NAL_V3C_AUD,          // 39 V3C access unit delimiter non-ACL
+  NAL_EOS,              // 40 End of sequence non-ACL
+  NAL_EOB,              // 41 End of bitstream non-ACL
+  NAL_FD,               // 42 Filler non-ACL
   NAL_PREFIX_NSEI,      // 43 Non-essential supplemental enhancement information non-ACL
   NAL_SUFFIX_NSEI,      // 44 Non-essential supplemental enhancement information non-ACL
   NAL_PREFIX_ESEI,      // 45 Essential supplemental enhancement information non-ACL
   NAL_SUFFIX_ESEI,      // 46 Essential supplemental enhancement information non-ACL
-  NAL_AAPS,             // 47 Atlas adaptation parameter set non-ACL 
-  NAL_FOC,              // 48 Frame order count non-ACL 
+  NAL_AAPS,             // 47 Atlas adaptation parameter set non-ACL
+  NAL_FOC,              // 48 Frame order count non-ACL
   NAL_RSV_NACL_49,      // 49 Reserved non-ACL NAL unit types non-ACL
   NAL_RSV_NACL_50,      // 50 Reserved non-ACL NAL unit types non-ACL
   NAL_RSV_NACL_51,      // 51 Reserved non-ACL NAL unit types non-ACL

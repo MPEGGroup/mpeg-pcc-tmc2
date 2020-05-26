@@ -71,7 +71,7 @@ int main( int argc, char* argv[] ) {
 // :: Command line / config parsing helpers
 
 namespace pcc {
-static std::istream& operator>>( std::istream& in, PCCColorTransform& val ) {   
+static std::istream& operator>>( std::istream& in, PCCColorTransform& val ) {
   unsigned int tmp;
   in >> tmp;
   val = PCCColorTransform( tmp );

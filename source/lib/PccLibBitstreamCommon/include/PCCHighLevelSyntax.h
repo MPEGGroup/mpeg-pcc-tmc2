@@ -160,8 +160,8 @@ class PCCAtlasHighLevelSyntax {
   // ATGL related functions
   AtlasTileLayerRbsp& addAtlasTileLayer() {
     size_t frameIdx = atlasTileLayer_.size();  // not correct, should
-                                                    // indicate which frame we
-                                                    // are sending, maybe
+                                               // indicate which frame we
+                                               // are sending, maybe
     // derive this somewhere else, but for now is OK
     AtlasTileLayerRbsp atgl;
     atgl.setFrameIndex( frameIdx );
@@ -178,7 +178,7 @@ class PCCAtlasHighLevelSyntax {
     return atlasTileLayer_[frameIdx][tileIdx];
   }
   std::vector<std::vector<AtlasTileLayerRbsp>>& getAtlasTileLayerList() { return atlasTileLayer_; }
-  AtlasTileLayerRbsp& getAtlasTileLayer( size_t frameIdx = 0, size_t tileIdx = 0 ) {
+  AtlasTileLayerRbsp&                           getAtlasTileLayer( size_t frameIdx = 0, size_t tileIdx = 0 ) {
     return atlasTileLayer_[frameIdx][tileIdx];
   }
 
@@ -197,18 +197,18 @@ class PCCAtlasHighLevelSyntax {
       case REGIONAL_NESTING: break;
       case SEI_MANIFEST: sharedPtr = std::make_shared<SEIManifest>(); break;
       case SEI_PREFIX_INDICATION: sharedPtr = std::make_shared<SEIPrefixIndication>(); break;
-      // case GEOMETRY_TRANSFORMATION_PARAMS: sharedPtr = std::make_shared<SEIGeometryTransformationParams>(); break;
       case ATTRIBUTE_TRANSFORMATION_PARAMS: sharedPtr = std::make_shared<SEIAttributeTransformationParams>(); break;
       case ACTIVE_SUB_BITSTREAMS: sharedPtr = std::make_shared<SEIActiveSubBitstreams>(); break;
       case COMPONENT_CODEC_MAPPING: sharedPtr = std::make_shared<SEIComponentCodecMapping>(); break;
-      // case VOLUMETRIC_TILING_INFO: sharedPtr =
-      // std::make_shared<SEIVolumetricTilingInfo>(); break;
       case SCENE_OBJECT_INFORMATION: sharedPtr = std::make_shared<SEISceneObjectInformation>(); break;
       case OBJECT_LABEL_INFORMATION: sharedPtr = std::make_shared<SEIObjectLabelInformation>(); break;
       case PATCH_INFORMATION: sharedPtr = std::make_shared<SEIPatchInformation>(); break;
       case VOLUMETRIC_RECTANGLE_INFORMATION: sharedPtr = std::make_shared<SEIVolumetricRectangleInformation>(); break;
-      case PRESENTATION_INFORMATION: sharedPtr = std::make_shared<SEIPresentationInformation>(); break;
-      case SMOOTHING_PARAMETERS: sharedPtr = std::make_shared<SEISmoothingParameters>(); break;
+      case ATLAS_INFORMATION: sharedPtr = std::make_shared<SEIAtlasInformation>(); break;
+      case VIEWPORT_CAMERA_PARAMETERS: sharedPtr = std::make_shared<SEIViewportCameraParameters>(); break;
+      case VIEWPORT_POSITION: sharedPtr = std::make_shared<SEIViewportPosition>(); break;
+      case GEOMETRY_SMOOTHING: sharedPtr = std::make_shared<SEIGeometrySmoothing>(); break;
+      case ATTRIBUTE_SMOOTHING: sharedPtr = std::make_shared<SEIAttributeSmoothing>(); break;
       case RESERVED_SEI_MESSAGE: sharedPtr = std::make_shared<SEIReservedSeiMessage>(); break;
       default:
         fprintf( stderr, "SEI payload type not supported \n" );
@@ -228,8 +228,10 @@ class PCCAtlasHighLevelSyntax {
     return *( sharedPtr );
   }
   bool seiIsPresent( NalUnitType nalUnitType, SeiPayloadType payloadType ) {
-    if ( nalUnitType != NAL_PREFIX_ESEI && nalUnitType != NAL_SUFFIX_ESEI &&
-         nalUnitType != NAL_PREFIX_NSEI && nalUnitType != NAL_SUFFIX_NSEI ) { return false; }
+    if ( nalUnitType != NAL_PREFIX_ESEI && nalUnitType != NAL_SUFFIX_ESEI && nalUnitType != NAL_PREFIX_NSEI &&
+         nalUnitType != NAL_SUFFIX_NSEI ) {
+      return false;
+    }
     for ( auto& sei : nalUnitType == NAL_PREFIX_ESEI || nalUnitType == NAL_PREFIX_NSEI ? seiPrefix_ : seiSuffix_ ) {
       if ( sei->getPayloadType() == payloadType ) { return true; }
     }
@@ -242,11 +244,12 @@ class PCCAtlasHighLevelSyntax {
     assert( 0 );
     return (SEI*)nullptr;
   }
-  SEI& addSeiPrefix( SeiPayloadType payloadType, bool essensial ) { 
-    return addSei( essensial? NAL_PREFIX_ESEI : NAL_PREFIX_NSEI, payloadType ); 
+  SEI& addSeiPrefix( SeiPayloadType payloadType, bool essensial ) {
+    return addSei( essensial ? NAL_PREFIX_ESEI : NAL_PREFIX_NSEI, payloadType );
   }
-  SEI& addSeiSuffix( SeiPayloadType payloadType, bool essensial ) { 
-    return addSei( essensial? NAL_SUFFIX_ESEI : NAL_SUFFIX_NSEI, payloadType ); }
+  SEI& addSeiSuffix( SeiPayloadType payloadType, bool essensial ) {
+    return addSei( essensial ? NAL_SUFFIX_ESEI : NAL_SUFFIX_NSEI, payloadType );
+  }
   std::vector<std::shared_ptr<SEI>>& getSeiPrefix() { return seiPrefix_; }
   std::vector<std::shared_ptr<SEI>>& getSeiSuffix() { return seiSuffix_; }
   SEI&                               getSeiPrefix( size_t index ) { return *( seiPrefix_[index] ); }
@@ -426,8 +429,12 @@ class PCCHighLevelSyntax {
   SEI* getSei( NalUnitType nalUnitType, SeiPayloadType payloadType ) {
     return atlasHLS_[atlasIndex_].getSei( nalUnitType, payloadType );
   }
-  SEI& addSeiPrefix( SeiPayloadType payloadType, bool essensial) { return atlasHLS_[atlasIndex_].addSeiPrefix( payloadType, essensial ); }
-  SEI& addSeiSuffix( SeiPayloadType payloadType, bool essensial ) { return atlasHLS_[atlasIndex_].addSeiSuffix( payloadType, essensial ); }
+  SEI& addSeiPrefix( SeiPayloadType payloadType, bool essensial ) {
+    return atlasHLS_[atlasIndex_].addSeiPrefix( payloadType, essensial );
+  }
+  SEI& addSeiSuffix( SeiPayloadType payloadType, bool essensial ) {
+    return atlasHLS_[atlasIndex_].addSeiSuffix( payloadType, essensial );
+  }
   std::vector<std::shared_ptr<SEI>>& getSeiPrefix() { return atlasHLS_[atlasIndex_].getSeiPrefix(); }
   std::vector<std::shared_ptr<SEI>>& getSeiSuffix() { return atlasHLS_[atlasIndex_].getSeiSuffix(); }
   SEI& getSeiPrefix( size_t index ) { return atlasHLS_[atlasIndex_].getSeiPrefix( index ); }

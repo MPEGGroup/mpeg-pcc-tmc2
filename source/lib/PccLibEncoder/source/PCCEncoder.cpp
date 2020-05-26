@@ -107,8 +107,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   generateGeometryVideo( sources, context );
 
   params_.initializeContext( context );
-  auto&             sps = context.getVps();
-  auto&             ai  = sps.getAttributeInformation( atlasIndex );
+  auto&             sps  = context.getVps();
+  auto&             ai   = sps.getAttributeInformation( atlasIndex );
   auto&             asps = context.getAtlasSequenceParameterSet( atlasIndex );
   std::stringstream path;
   path << removeFileExtension( params_.compressedStreamPath_ ) << "_GOF" << sps.getV3CParameterSetId() << "_";
@@ -1144,7 +1144,7 @@ void PCCEncoder::spatialConsistencyPack( PCCFrameContext& frame,
     assert( patch.getSizeU0() <= occupancySizeU );
     assert( patch.getSizeV0() <= occupancySizeV );
     if ( patch.getBestMatchIdx() == InvalidPatchIndex ) {
-      patch.setPatchType( static_cast<uint8_t>(  P_INTRA ) );  // P_TYPE_INTRA
+      patch.setPatchType( static_cast<uint8_t>( P_INTRA ) );  // P_TYPE_INTRA
       newOrderPatches.push_back( patch );
     }
   }
@@ -2038,14 +2038,14 @@ void PCCEncoder::doGlobalTetrisPacking( PCCContext& context ) {
       if ( weight < rhs.weight ) { return false; }
       { return elem->gt( rhs.elem[0] ); }
     }
-    bool gt2( const doubleLinkedPatchElement& rhs ) {
-      // setting the largest dimension
-      float volume       = weight * ( globalOccupancyMap.size() );
-      float volume_right = rhs.weight * ( rhs.globalOccupancyMap.size() );
-      if ( volume > volume_right ) { return true; }
-      if ( volume < volume_right ) { return false; }
-      { return elem->gt( rhs.elem[0] ); }
-    }
+    // bool gt2( const doubleLinkedPatchElement& rhs ) {
+    //   // setting the largest dimension
+    //   float volume       = weight * ( globalOccupancyMap.size() );
+    //   float volume_right = rhs.weight * ( rhs.globalOccupancyMap.size() );
+    //   if ( volume > volume_right ) { return true; }
+    //   if ( volume < volume_right ) { return false; }
+    //   { return elem->gt( rhs.elem[0] ); }
+    // }
   };
 
   std::vector<std::vector<doubleLinkedPatchElement>> patchMatrix;
@@ -7158,25 +7158,25 @@ void PCCEncoder::setPointLocalReconstructionData( PCCFrameContext&              
 #endif
 }
 void PCCEncoder::setPostProcessingSeiParameters( GeneratePointCloudParameters& params, PCCContext& context ) {
-  params.occupancyResolution_           = params_.occupancyResolution_;
-  params.occupancyPrecision_            = params_.occupancyPrecision_;
-  params.enableSizeQuantization_        = context.getEnablePatchSizeQuantization();
-  params.flagGeometrySmoothing_         = params_.flagGeometrySmoothing_;
-  params.gridSmoothing_                 = params_.gridSmoothing_;
-  params.gridSize_                      = params_.gridSize_;
-  params.neighborCountSmoothing_        = params_.neighborCountSmoothing_;
-  params.radius2Smoothing_              = params_.radius2Smoothing_;
-  params.radius2BoundaryDetection_      = params_.radius2BoundaryDetection_;
-  params.thresholdSmoothing_            = params_.thresholdSmoothing_;
-  params.rawPointColorFormat_           = size_t( params_.losslessGeo444_ ? COLOURFORMAT444 : COLOURFORMAT420 );
-  params.nbThread_                      = params_.nbThread_;
-  params.absoluteD1_                    = params_.absoluteD1_;
-  params.multipleStreams_               = params_.multipleStreams_;
-  params.surfaceThickness_              = params_.surfaceThickness_;
-  params.thresholdColorSmoothing_       = params_.thresholdColorSmoothing_;
-  params.thresholdColorDifference_      = params_.thresholdColorDifference_;
-  params.thresholdColorVariation_       = params_.thresholdColorVariation_;
-  params.thresholdLocalEntropy_         = params_.thresholdLocalEntropy_;
+  params.occupancyResolution_      = params_.occupancyResolution_;
+  params.occupancyPrecision_       = params_.occupancyPrecision_;
+  params.enableSizeQuantization_   = context.getEnablePatchSizeQuantization();
+  params.flagGeometrySmoothing_    = params_.flagGeometrySmoothing_;
+  params.gridSmoothing_            = params_.gridSmoothing_;
+  params.gridSize_                 = params_.gridSize_;
+  params.neighborCountSmoothing_   = params_.neighborCountSmoothing_;
+  params.radius2Smoothing_         = params_.radius2Smoothing_;
+  params.radius2BoundaryDetection_ = params_.radius2BoundaryDetection_;
+  params.thresholdSmoothing_       = params_.thresholdSmoothing_;
+  params.rawPointColorFormat_      = size_t( params_.losslessGeo444_ ? COLOURFORMAT444 : COLOURFORMAT420 );
+  params.nbThread_                 = params_.nbThread_;
+  params.absoluteD1_               = params_.absoluteD1_;
+  params.multipleStreams_          = params_.multipleStreams_;
+  params.surfaceThickness_         = params_.surfaceThickness_;
+  params.thresholdColorSmoothing_  = params_.thresholdColorSmoothing_;
+  params.thresholdColorDifference_ = params_.thresholdColorDifference_;
+  params.thresholdColorVariation_  = params_.thresholdColorVariation_;
+  // params.thresholdLocalEntropy_         = params_.thresholdLocalEntropy_;
   params.radius2ColorSmoothing_         = params_.radius2ColorSmoothing_;
   params.neighborCountColorSmoothing_   = params_.neighborCountColorSmoothing_;
   params.flagColorSmoothing_            = params_.flagColorSmoothing_;
@@ -7199,25 +7199,25 @@ void PCCEncoder::setPostProcessingSeiParameters( GeneratePointCloudParameters& p
   params.pbfLog2Threshold_              = 0;
 }
 void PCCEncoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& params, PCCContext& context ) {
-  params.occupancyResolution_           = params_.occupancyResolution_;
-  params.occupancyPrecision_            = params_.occupancyPrecision_;
-  params.enableSizeQuantization_        = context.getEnablePatchSizeQuantization();
-  params.flagGeometrySmoothing_         = params_.flagGeometrySmoothing_;
-  params.gridSmoothing_                 = params_.gridSmoothing_;
-  params.gridSize_                      = params_.gridSize_;
-  params.neighborCountSmoothing_        = params_.neighborCountSmoothing_;
-  params.radius2Smoothing_              = params_.radius2Smoothing_;
-  params.radius2BoundaryDetection_      = params_.radius2BoundaryDetection_;
-  params.thresholdSmoothing_            = params_.thresholdSmoothing_;
-  params.rawPointColorFormat_           = size_t( params_.losslessGeo444_ ? COLOURFORMAT444 : COLOURFORMAT420 );
-  params.nbThread_                      = params_.nbThread_;
-  params.absoluteD1_                    = params_.absoluteD1_;
-  params.multipleStreams_               = params_.multipleStreams_;
-  params.surfaceThickness_              = params_.surfaceThickness_;
-  params.thresholdColorSmoothing_       = params_.thresholdColorSmoothing_;
-  params.thresholdColorDifference_      = params_.thresholdColorDifference_;
-  params.thresholdColorVariation_       = params_.thresholdColorVariation_;
-  params.thresholdLocalEntropy_         = params_.thresholdLocalEntropy_;
+  params.occupancyResolution_      = params_.occupancyResolution_;
+  params.occupancyPrecision_       = params_.occupancyPrecision_;
+  params.enableSizeQuantization_   = context.getEnablePatchSizeQuantization();
+  params.flagGeometrySmoothing_    = params_.flagGeometrySmoothing_;
+  params.gridSmoothing_            = params_.gridSmoothing_;
+  params.gridSize_                 = params_.gridSize_;
+  params.neighborCountSmoothing_   = params_.neighborCountSmoothing_;
+  params.radius2Smoothing_         = params_.radius2Smoothing_;
+  params.radius2BoundaryDetection_ = params_.radius2BoundaryDetection_;
+  params.thresholdSmoothing_       = params_.thresholdSmoothing_;
+  params.rawPointColorFormat_      = size_t( params_.losslessGeo444_ ? COLOURFORMAT444 : COLOURFORMAT420 );
+  params.nbThread_                 = params_.nbThread_;
+  params.absoluteD1_               = params_.absoluteD1_;
+  params.multipleStreams_          = params_.multipleStreams_;
+  params.surfaceThickness_         = params_.surfaceThickness_;
+  params.thresholdColorSmoothing_  = params_.thresholdColorSmoothing_;
+  params.thresholdColorDifference_ = params_.thresholdColorDifference_;
+  params.thresholdColorVariation_  = params_.thresholdColorVariation_;
+  // params.thresholdLocalEntropy_         = params_.thresholdLocalEntropy_;
   params.radius2ColorSmoothing_         = params_.radius2ColorSmoothing_;
   params.neighborCountColorSmoothing_   = params_.neighborCountColorSmoothing_;
   params.flagColorSmoothing_            = params_.flagColorSmoothing_;
@@ -7277,41 +7277,52 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
     createPatchFrameDataStructure( context, frame, i );
     //*****//
   }
-  if ( params_.flagGeometrySmoothing_ || params_.flagColorSmoothing_ ) {
-    auto& sei = static_cast<SEISmoothingParameters&>( context.addSeiPrefix( SMOOTHING_PARAMETERS, true ) );
-    if ( params_.flagGeometrySmoothing_ ) {
-      sei.setSpGeometryCancelFlag( false );
-      sei.setSpGeometrySmoothingEnabledFlag( params_.gridSmoothing_ || params_.pbfEnableFlag_ );
+  if ( params_.flagGeometrySmoothing_ ) {
+    auto& sei = static_cast<SEIGeometrySmoothing&>( context.addSeiPrefix( GEOMETRY_SMOOTHING, true ) );
+    sei.setSmoothingPersistenceFlag( true );
+    sei.setSmoothingResetFlag( true );
+    sei.setSmoothingInstancesUpdated( params_.gridSmoothing_ || params_.pbfEnableFlag_ );
+    sei.allocate();
+    for ( size_t i = 0; i < sei.getSmoothingInstancesUpdated(); i++ ) {
+      size_t k = i;
+      sei.setSmoothingInstanceIndex( i, k );
+      sei.setSmoothingInstanceCancelFlag( k, false );
       if ( params_.gridSmoothing_ ) {
-        sei.setSpGeometrySmoothingId( 0 );
-        sei.setSpGeometrySmoothingGridSizeMinus2( params_.gridSize_ - 2 );
-        sei.setSpGeometrySmoothingThreshold( params_.thresholdSmoothing_ );
-      }
-      if ( params_.pbfEnableFlag_ ) {
-        sei.setSpGeometrySmoothingId( 1 );
-        sei.setSpGeometryPatchBlockFilteringLog2ThresholdMinus1( params_.pbfLog2Threshold_ - 1 );
-        sei.setSpGeometryPatchBlockFilteringPassesCountMinus1( params_.pbfPassesCount_ - 1 );
-        sei.setSpGeometryPatchBlockFilteringFilterSizeMinus1( params_.pbfFilterSize_ - 1 );
+        sei.setSmoothingMethodType( k, 1 );
+        sei.setSmoothingGridSizeMinus2( k, params_.gridSize_ - 2 );
+        sei.setSmoothingThreshold( k, params_.thresholdSmoothing_ );
+      } else if ( params_.pbfEnableFlag_ ) {
+        sei.setSmoothingMethodType( k, 2 );
+        sei.setPbfLog2ThresholdMinus1( k, params_.pbfLog2Threshold_ - 1 );
+        sei.setPbfPassesCountMinus1( k, params_.pbfPassesCount_ - 1 );
+        sei.setPbfFilterSizeMinus1( k, params_.pbfFilterSize_ - 1 );
       }
     }
+  }
+  if ( params_.flagColorSmoothing_ ) {
+    auto& sei = static_cast<SEIAttributeSmoothing&>( context.addSeiPrefix( ATTRIBUTE_SMOOTHING, true ) );
     if ( params_.flagColorSmoothing_ ) {
-      sei.setSpAttributeCancelFlag( false );
-      sei.setSpNumAttributeUpdates( 1 );
+      sei.setSmoothingPersistenceFlag( true );
+      sei.setSmoothingResetFlag( true );
+      sei.setNumAttributesUpdated( 1 );
       sei.allocate();
-      for ( size_t j = 0; j < sei.getSpNumAttributeUpdates(); j++ ) {
-        sei.setSpAttributeIdx( j, 0 );
-        size_t index     = sei.getSpAttributeIdx( j );
-        size_t dimension = 3;
-        sei.allocate( index + 1, dimension + 1 );
-        sei.setSpDimensionMinus1( index, dimension - 1 );
-        for ( size_t i = 0; i < sei.getSpDimensionMinus1( index ) + 1; i++ ) {
-          sei.setSpAttrSmoothingParamsEnabledFlag( index, i, true );
-          if ( sei.getSpAttrSmoothingParamsEnabledFlag( index, i ) ) {
-            sei.setSpAttrSmoothingGridSizeMinus2( index, i, params_.cgridSize_ - 2 );
-            sei.setSpAttrSmoothingThreshold( index, i, params_.thresholdColorSmoothing_ );
-            sei.setSpAttrSmoothingLocalEntropyThreshold( index, i, params_.thresholdLocalEntropy_ );
-            sei.setSpAttrSmoothingThresholdVariation( index, i, params_.thresholdColorVariation_ );
-            sei.setSpAttrSmoothingThresholdDifference( index, i, params_.thresholdColorDifference_ );
+      for ( size_t j = 0; j < sei.getNumAttributesUpdated(); j++ ) {
+        size_t k = j, dimension = 3;
+        sei.setAttributeIdx( j, j );
+        sei.setSmoothingInstancesUpdated( k, dimension - 1 );
+        sei.setAttributeSmoothingCancelFlag( k, false );
+        sei.allocate( k + 1, dimension + 1 );
+        for ( size_t i = 0; i < sei.getSmoothingInstancesUpdated( k ) + 1; i++ ) {
+          size_t m = i;
+          sei.setSmoothingInstanceIndex( k, i, m );
+          sei.setSmoothingInstanceCancelFlag( k, m, false );
+          sei.setSmoothingMethodType( k, m, 1 );
+          if ( sei.getSmoothingMethodType( k, m ) == 1 ) {
+            sei.setSmoothingGridSizeMinus2( k, m, params_.cgridSize_ - 2 );
+            sei.setSmoothingThreshold( k, m, params_.thresholdColorSmoothing_ );
+            // sei.setLocalEntropyThreshold( k, m, params_.thresholdLocalEntropy_ );
+            sei.setSmoothingThresholdVariation( k, m, params_.thresholdColorVariation_ );
+            sei.setSmoothingThresholdDifference( k, m, params_.thresholdColorDifference_ );
           }
         }
       }
@@ -7331,7 +7342,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
   // used, the code below is wrong (patches are not accumulated, but overwriten)
   for ( size_t tileIndex = 0; tileIndex < NumTilesInPatchFrame; tileIndex++ ) {
     auto&        atglu                     = context.getAtlasTileLayer( frameIndex, tileIndex );
-    auto&        ath                      = atglu.getAtlasTileHeader();
+    auto&        ath                       = atglu.getAtlasTileHeader();
     auto&        atgdu                     = atglu.getAtlasTileDataUnit();
     size_t       afpsId                    = ath.getAtlasFrameParameterSetId();
     auto&        afps                      = context.getAtlasFrameParameterSet( afpsId );
@@ -7355,8 +7366,8 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
                  frame.getEomPatches().size() );
     atglu.setFrameIndex( frameIndex );
     ath.setAtlasFrmOrderCntLsb( frameIndex );
-    ath.setType( I_TILE );  
-    if ( frameIndex != 0 ) {   
+    ath.setType( I_TILE );
+    if ( frameIndex != 0 ) {
       bool interPredPresent = false;
       for ( auto& patch : patches ) {
         interPredPresent |= ( patch.getBestMatchIdx() != InvalidPatchIndex );
@@ -7414,10 +7425,10 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
         } else {
           if ( static_cast<int>( asps.getExtendedProjectionEnabledFlag() ) == 0 ) {
             ipdu.set3dPosMinZ( ( max3DCoordinate - patch.getD1() ) / minLevel -
-                                   ( max3DCoordinate - refPatch.getD1() ) / minLevel );
+                               ( max3DCoordinate - refPatch.getD1() ) / minLevel );
           } else {
             ipdu.set3dPosMinZ( ( ( max3DCoordinate << 1 ) - patch.getD1() ) / minLevel -
-                                   ( ( max3DCoordinate << 1 ) - refPatch.getD1() ) / minLevel );
+                               ( ( max3DCoordinate << 1 ) - refPatch.getD1() ) / minLevel );
           }
         }
 
@@ -7429,9 +7440,9 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
             "IPDU: refAtlasFrame= %d refPatchIdx = %d pos2DXY = %ld %ld "
             "pos3DXYZW = %ld %ld %ld %ld size2D = %ld %ld "
             "\n",
-            ipdu.getRefIndex(), ipdu.getRefPatchIndex(), ipdu.get2dPosX(), ipdu.get2dPosY(),
-            ipdu.get3dPosX(), ipdu.get3dPosY(), ipdu.get3dPosMinZ(), ipdu.get3dPosDeltaMaxZ(),
-            ipdu.get2dDeltaSizeX(), ipdu.get2dDeltaSizeY() );
+            ipdu.getRefIndex(), ipdu.getRefPatchIndex(), ipdu.get2dPosX(), ipdu.get2dPosY(), ipdu.get3dPosX(),
+            ipdu.get3dPosY(), ipdu.get3dPosMinZ(), ipdu.get3dPosDeltaMaxZ(), ipdu.get2dDeltaSizeX(),
+            ipdu.get2dDeltaSizeY() );
         TRACE_CODEC(
             "\trefPatch: Idx = %zu UV0 = %zu %zu  UV1 = %zu %zu Size = %zu %zu "
             "%zu  Lod = %u,%u\n",
@@ -7458,7 +7469,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
       } else {
         // INTRA patches
         uint8_t patchType = static_cast<uint8_t>( ( ath.getType() == I_TILE ) ? I_INTRA : P_INTRA );
-        auto& pid = atgdu.addPatchInformationData( patchType );
+        auto&   pid       = atgdu.addPatchInformationData( patchType );
         TRACE_CODEC( "patch %zu / %zu: Intra \n", patchIndex, totalPatchCount );
         auto& pdu = pid.getPatchDataUnit();
         pdu.set2dPosX( patch.getU0() );
@@ -7485,8 +7496,8 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
         pdu.set3dPosY( patch.getV1() );
         size_t pduProjectPlane = patch.getProjectionMode() * 3 + size_t( patch.getNormalAxis() );
         pdu.setProjectionId( asps.getExtendedProjectionEnabledFlag()
-                                    ? ( pduProjectPlane << 2 ) + patch.getAxisOfAdditionalPlane()
-                                    : pduProjectPlane );
+                                 ? ( pduProjectPlane << 2 ) + patch.getAxisOfAdditionalPlane()
+                                 : pduProjectPlane );
         if ( asps.getPatchSizeQuantizerPresentFlag() ) {
           pdu.set2dSizeXMinus1( ( patch.getPatchSize2DXInPixel() - 1 ) / quantizerSizeX );
           pdu.set2dSizeYMinus1( ( patch.getPatchSize2DYInPixel() - 1 ) / quantizerSizeY );
@@ -7515,8 +7526,8 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
             patchIndex, patch.getU0(), patch.getV0(), patch.getU1(), patch.getV1(), patch.getD1(), patch.getSizeU0(),
             patch.getSizeV0(), patch.getSizeD(), pdu.get3dPosDeltaMaxZ(), patch.getProjectionMode(),
             patch.getPatchOrientation(), patch.getNormalAxis(), patch.getTangentAxis(), patch.getBitangentAxis(),
-            (size_t)lodEnableFlag, patch.getLodScaleX(), patch.getLodScaleY(),
-            asps.getExtendedProjectionEnabledFlag(), pdu.getProjectionId(), patch.getAxisOfAdditionalPlane() );
+            (size_t)lodEnableFlag, patch.getLodScaleX(), patch.getLodScaleY(), asps.getExtendedProjectionEnabledFlag(),
+            pdu.getProjectionId(), patch.getAxisOfAdditionalPlane() );
 
         if ( asps.getPointLocalReconstructionEnabledFlag() ) {
           setPointLocalReconstructionData( frame, patch, pdu.getPointLocalReconstructionData(),
@@ -7530,8 +7541,8 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
       for ( size_t mpsPatchIndex = 0; mpsPatchIndex < numberOfPcmPatches; ++mpsPatchIndex ) {
         auto&   rawPointsPatch = pcmPatches[mpsPatchIndex];
         uint8_t patchType      = static_cast<uint8_t>( ( ath.getType() == I_TILE ) ? I_RAW : P_RAW );
-        auto& pid  = atgdu.addPatchInformationData( patchType );
-        auto& rpdu = pid.getRawPatchDataUnit();
+        auto&   pid            = atgdu.addPatchInformationData( patchType );
+        auto&   rpdu           = pid.getRawPatchDataUnit();
         TRACE_CODEC( "patch %zu / %zu: raw \n", patches.size() + mpsPatchIndex, totalPatchCount );
         rpdu.set2dPosX( rawPointsPatch.u0_ );
         rpdu.set2dPosY( rawPointsPatch.v0_ );
@@ -7562,8 +7573,8 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
       for ( size_t eomPatchIndex = 0; eomPatchIndex < numberOfEomPatches; ++eomPatchIndex ) {
         auto&   eomPatch  = frame.getEomPatches()[eomPatchIndex];
         uint8_t patchType = static_cast<uint8_t>( ( ath.getType() == I_TILE ) ? I_EOM : P_EOM );
-        auto& pid  = atgdu.addPatchInformationData( patchType );
-        auto& epdu = pid.getEomPatchDataUnit();
+        auto&   pid       = atgdu.addPatchInformationData( patchType );
+        auto&   epdu      = pid.getEomPatchDataUnit();
         TRACE_CODEC( "patch %zu / %zu: EOM \n", patches.size() + pcmPatches.size() + eomPatchIndex, totalPatchCount );
         epdu.set2dPosX( eomPatch.u0_ );
         epdu.set2dPosY( eomPatch.v0_ );

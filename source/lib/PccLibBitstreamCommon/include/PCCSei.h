@@ -311,10 +311,10 @@ class SEIGeometryTransformationParams : public SEI {
 // F.2.10  Attribute transformation parameters SEI message syntax
 class SEIAttributeTransformationParams : public SEI {
  public:
-  SEIAttributeTransformationParams() : 
-    atpCancelFlag_( false ), 
-    atpNumAttributeUpdates_( 0 ),
-    atpPersistenceFlag_( false ) {}
+  SEIAttributeTransformationParams() :
+      atpCancelFlag_( false ),
+      atpNumAttributeUpdates_( 0 ),
+      atpPersistenceFlag_( false ) {}
 
   ~SEIAttributeTransformationParams() {
     atpAttributeIdx_.clear();
@@ -353,9 +353,9 @@ class SEIAttributeTransformationParams : public SEI {
   std::vector<std::vector<bool>>&     getAtpOffsetParamsEnabledFlag() { return atpOffsetParamsEnabledFlag_; }
   std::vector<std::vector<uint32_t>>& getAtpAttributeScale() { return atpAttributeScale_; }
   std::vector<std::vector<int32_t>>&  getAtpAttributeOffset() { return atpAttributeOffset_; }
-  bool                                getAtpPersistenceFlag() { return atpPersistenceFlag_; }  
-  uint8_t  getAtpAttributeIdx( size_t i ) { return atpAttributeIdx_[i]; }
-  uint8_t  getAtpDimensionMinus1( size_t i ) { return atpDimensionMinus1_[i]; }
+  bool                                getAtpPersistenceFlag() { return atpPersistenceFlag_; }
+  uint8_t                             getAtpAttributeIdx( size_t i ) { return atpAttributeIdx_[i]; }
+  uint8_t                             getAtpDimensionMinus1( size_t i ) { return atpDimensionMinus1_[i]; }
   bool     getAtpScaleParamsEnabledFlag( size_t i, size_t j ) { return atpScaleParamsEnabledFlag_[i][j]; }
   bool     getAtpOffsetParamsEnabledFlag( size_t i, size_t j ) { return atpOffsetParamsEnabledFlag_[i][j]; }
   uint32_t getAtpAttributeScale( size_t i, size_t j ) { return atpAttributeScale_[i][j]; }
@@ -370,7 +370,7 @@ class SEIAttributeTransformationParams : public SEI {
   void setAtpAttributeScale( size_t i, size_t j, uint32_t value ) { atpAttributeScale_[i][j] = value; }
   void setAtpAttributeOffset( size_t i, size_t j, int32_t value ) { atpAttributeOffset_[i][j] = value; }
   void setAtpPersistenceFlag( bool value ) { atpPersistenceFlag_ = value; }
-  
+
  private:
   bool                               atpCancelFlag_;
   int32_t                            atpNumAttributeUpdates_;
@@ -677,7 +677,7 @@ class SEIObjectLabelInformation : public SEI {
   bool           getOliLabelCancelFlag() { return oliLabelCancelFlag_; }
   bool           getOliBitEqualToZero() { return oliBitEqualToZero_; }
   std::string&   getOliLabel( size_t index ) { return oliLabel_[index]; }
-  bool           getOliPersistenceFlag() { return oliPersistenceFlag_; }  
+  bool           getOliPersistenceFlag() { return oliPersistenceFlag_; }
 
   void setOliCancelFlag( bool value ) { oliCancelFlag_ = value; }
   void setOliLabelLanguagePresentFlag( bool value ) { oliLabelLanguagePresentFlag_ = value; }
@@ -691,6 +691,7 @@ class SEIObjectLabelInformation : public SEI {
     oliLabel_[index] = value;
   }
   void setOliPersistenceFlag( bool value ) { oliPersistenceFlag_ = value; }
+
  private:
   bool                     oliCancelFlag_;
   bool                     oliLabelLanguagePresentFlag_;
@@ -701,7 +702,7 @@ class SEIObjectLabelInformation : public SEI {
   bool                     oliBitEqualToZero_;
   std::vector<std::string> oliLabel_;  // st(v)
   bool                     oliPersistenceFlag_;
-};                                     // Object label information
+};  // Object label information
 
 class SEIPatchInformation : public SEI {
  public:
@@ -755,8 +756,8 @@ class SEIPatchInformation : public SEI {
   std::vector<std::vector<bool>>                  piPatchCancelFlag_;
   std::vector<std::vector<uint32_t>>              piPatchNumberOfObjectsMinus1_;
   std::vector<std::vector<std::vector<uint32_t>>> piPatchObjectIdx_;
+};
 
-};  // patch information
 class SEIVolumetricRectangleInformation : public SEI {
  public:
   SEIVolumetricRectangleInformation() {}
@@ -822,8 +823,7 @@ class SEIVolumetricRectangleInformation : public SEI {
   std::vector<uint32_t>              vriBoundingBoxHeight_;
   std::vector<uint32_t>              vriRectangleNumberOfObjectsMinus1_;
   std::vector<std::vector<uint32_t>> vriRectangleObjectIdx_;
-
-};  // volumetric rectangle information
+};
 
 // F.2.15  Buffering period SEI message syntax
 class SEIBufferingPeriod : public SEI {
@@ -957,206 +957,342 @@ class SEIAtlasFrameTiming : public SEI {
   uint32_t aftDabOutputDelay_;
 };
 
-// F.2.17  Presentation inforomation SEI message syntax
-class SEIPresentationInformation : public SEI {
+class SEIAtlasInformation : public SEI {
  public:
-  SEIPresentationInformation() :
-      piUnitOfLengthFlag_( false ),
-      piOrientationPresentFlag_( false ),
-      piPivotPresentFlag_( false ),
-      piDimensionPresentFlag_( false ) {
-    for ( size_t i = 0; i < 3; i++ ) {
-      piUp_[i]        = 0;
-      piFront_[i]     = 0;
-      piPivot_[i]     = 0;
-      piDimension_[i] = 0;
-    }
+  SEIAtlasInformation() :
+      aiPersistenceFlag_( false ),
+      aiResetFlag_( false ),
+      aiNumAtlasesMinus1_( 0 ),
+      aiNumUpdates_( 0 ),
+      aiLog2MaxObjectIdxTracked_( 0 ) {}
+  ~SEIAtlasInformation() {
+    aiObjectIdx_.clear();
+    for ( auto& element : aiObjectInAtlasPresentFlag_ ) { element.clear(); }
+    aiObjectInAtlasPresentFlag_.clear();
   }
-  ~SEIPresentationInformation() {}
-  SEIPresentationInformation& operator=( const SEIPresentationInformation& ) = default;
+  SEIAtlasInformation& operator=( const SEIAtlasInformation& ) = default;
 
-  SeiPayloadType getPayloadType() { return PRESENTATION_INFORMATION; }
+  SeiPayloadType getPayloadType() { return ATLAS_INFORMATION; }
 
-  bool    getPiUnitOfLengthFlag() { return piUnitOfLengthFlag_; }
-  bool    getPiOrientationPresentFlag() { return piOrientationPresentFlag_; }
-  bool    getPiPivotPresentFlag() { return piPivotPresentFlag_; }
-  bool    getPiDimensionPresentFlag() { return piDimensionPresentFlag_; }
-  int32_t getPiUp( size_t index ) { return piUp_[index]; }
-  int32_t getPiFront( size_t index ) { return piFront_[index]; }
-  int64_t getPiPivot( size_t index ) { return piPivot_[index]; }
-  int64_t getPiDimension( size_t index ) { return piDimension_[index]; }
-  void    setPiUnitOfLengthFlag( bool value ) { piUnitOfLengthFlag_ = value; }
-  void    setPiOrientationPresentFlag( bool value ) { piOrientationPresentFlag_ = value; }
-  void    setPiPivotPresentFlag( bool value ) { piPivotPresentFlag_ = value; }
-  void    setPiDimensionPresentFlag( bool value ) { piDimensionPresentFlag_ = value; }
-  void    setPiUp( size_t index, int32_t value ) { piUp_[index] = value; }
-  void    setPiFront( size_t index, int32_t value ) { piFront_[index] = value; }
-  void    setPiPivot( size_t index, int32_t value ) { piPivot_[index] = value; }
-  void    setPiDimension( size_t index, int32_t value ) { piDimension_[index] = value; }
+  void allocate() {
+    aiObjectIdx_.resize( aiNumUpdates_, 0 );
+    aiObjectInAtlasPresentFlag_.resize( aiNumUpdates_ );
+    for ( auto& element : aiObjectInAtlasPresentFlag_ ) { element.resize( aiNumAtlasesMinus1_ + 1, false ); }
+  }
+
+  bool     getPersistenceFlag() { return aiPersistenceFlag_; }
+  bool     getResetFlag() { return aiResetFlag_; }
+  uint32_t getNumAtlasesMinus1() { return aiNumAtlasesMinus1_; }
+  uint32_t getNumUpdates() { return aiNumUpdates_; }
+  uint32_t getLog2MaxObjectIdxTracked() { return aiLog2MaxObjectIdxTracked_; }
+  uint32_t getObjectIdx( size_t i ) { return aiObjectIdx_[i]; }
+  bool     getObjectInAtlasPresentFlag( size_t i, size_t j ) { return aiObjectInAtlasPresentFlag_[i][j]; }
+
+  void setPersistenceFlag( bool value ) { aiPersistenceFlag_ = value; }
+  void setResetFlag( bool value ) { aiResetFlag_ = value; }
+  void setNumAtlasesMinus1( uint32_t value ) { aiNumAtlasesMinus1_ = value; }
+  void setNumUpdates( uint32_t value ) { aiNumUpdates_ = value; }
+  void setLog2MaxObjectIdxTracked( uint32_t value ) { aiLog2MaxObjectIdxTracked_ = value; }
+  void setObjectIdx( size_t i, uint32_t value ) { aiObjectIdx_[i] = value; }
+  void setObjectInAtlasPresentFlag( size_t i, size_t j, bool value ) { aiObjectInAtlasPresentFlag_[i][j] = value; }
 
  private:
-  bool    piUnitOfLengthFlag_;
-  bool    piOrientationPresentFlag_;
-  bool    piPivotPresentFlag_;
-  bool    piDimensionPresentFlag_;
-  int32_t piUp_[3];
-  int32_t piFront_[3];
-  int64_t piPivot_[3];
-  int64_t piDimension_[3];
+  bool                           aiPersistenceFlag_;
+  bool                           aiResetFlag_;
+  uint32_t                       aiNumAtlasesMinus1_;
+  uint32_t                       aiNumUpdates_;
+  uint32_t                       aiLog2MaxObjectIdxTracked_;
+  std::vector<uint32_t>          aiObjectIdx_;
+  std::vector<std::vector<bool>> aiObjectInAtlasPresentFlag_;
 };
 
-// F.2.18  Smoothing parameters SEI message syntax
-class SEISmoothingParameters : public SEI {
+class SEIViewportCameraParameters : public SEI {
  public:
-  SEISmoothingParameters() :
-      spGeometryCancelFlag_( true ),
-      spAttributeCancelFlag_( true ),
-      spGeometrySmoothingEnabledFlag_( false ),
-      spGeometrySmoothingGridSizeMinus2_( 0 ),
-      spGeometrySmoothingThreshold_( 0 ),
-      spGeometrySmoothingId_( 0 ),
-      spGeometryPatchBlockFilteringLog2ThresholdMinus1_( 0 ),
-      spGeometryPatchBlockFilteringPassesCountMinus1_( 0 ),
-      spGeometryPatchBlockFilteringFilterSizeMinus1_( 0 ),
-      spNumAttributeUpdates_( 0 ) {}
+  SEIViewportCameraParameters() :
+      vcpCameraId_( 0 ),
+      vcpCancelFlag_( false ),
+      vcpPersistenceFlag_( false ),
+      vcpCameraType_( 0.f ),
+      vcpErpHorizontalFov_( 0.f ),
+      vcpErpVerticalFov_( 0.f ),
+      vcpPerspectiveAspectRatio_( 0.f ),
+      vcpPerspectiveHorizontalFov_( 0.f ),
+      vcpOrthoAspectRatio_( 0.f ),
+      vcpOrthoHorizontalSize_( 0.f ),
+      vcpClippingNearPlane_( 0.f ),
+      vcpClippingFarPlane_( 0.f ) {}
+  ~SEIViewportCameraParameters() {}
+  SEIViewportCameraParameters& operator=( const SEIViewportCameraParameters& ) = default;
 
-  ~SEISmoothingParameters() {
-    for ( auto& element : spAttrSmoothingParamsEnabledFlag_ ) { element.clear(); }
-    for ( auto& element : spAttrSmoothingGridSizeMinus2_ ) { element.clear(); }
-    for ( auto& element : spAttrSmoothingThreshold_ ) { element.clear(); }
-    for ( auto& element : spAttrSmoothingLocalEntropyThreshold_ ) { element.clear(); }
-    for ( auto& element : spAttrSmoothingThresholdVariation_ ) { element.clear(); }
-    for ( auto& element : spAttrSmoothingThresholdDifference_ ) { element.clear(); }
-    spAttributeIdx_.clear();
-    spDimensionMinus1_.clear();
-    spAttrSmoothingParamsEnabledFlag_.clear();
-    spAttrSmoothingGridSizeMinus2_.clear();
-    spAttrSmoothingThreshold_.clear();
-    spAttrSmoothingLocalEntropyThreshold_.clear();
-    spAttrSmoothingThresholdVariation_.clear();
-    spAttrSmoothingThresholdDifference_.clear();
+  SeiPayloadType getPayloadType() { return VIEWPORT_CAMERA_PARAMETERS; }
+
+  uint32_t getCameraId() { return vcpCameraId_; }
+  bool     getCancelFlag() { return vcpCancelFlag_; }
+  bool     getPersistenceFlag() { return vcpPersistenceFlag_; }
+  uint8_t  getCameraType() { return vcpCameraType_; }
+  float    getErpHorizontalFov() { return vcpErpHorizontalFov_; }
+  float    getErpVerticalFov() { return vcpErpVerticalFov_; }
+  float    getPerspectiveAspectRatio() { return vcpPerspectiveAspectRatio_; }
+  float    getPerspectiveHorizontalFov() { return vcpPerspectiveHorizontalFov_; }
+  float    getOrthoAspectRatio() { return vcpOrthoAspectRatio_; }
+  float    getOrthoHorizontalSize() { return vcpOrthoHorizontalSize_; }
+  float    getClippingNearPlane() { return vcpClippingNearPlane_; }
+  float    getClippingFarPlane() { return vcpClippingFarPlane_; }
+
+  void setCameraId( uint32_t value ) { vcpCameraId_ = value; }
+  void setCancelFlag( bool value ) { vcpCancelFlag_ = value; }
+  void setPersistenceFlag( bool value ) { vcpPersistenceFlag_ = value; }
+  void setCameraType( uint8_t value ) { vcpCameraType_ = value; }
+  void setErpHorizontalFov( float value ) { vcpErpHorizontalFov_ = value; }
+  void setErpVerticalFov( float value ) { vcpErpVerticalFov_ = value; }
+  void setPerspectiveAspectRatio( float value ) { vcpPerspectiveAspectRatio_ = value; }
+  void setPerspectiveHorizontalFov( float value ) { vcpPerspectiveHorizontalFov_ = value; }
+  void setOrthoAspectRatio( float value ) { vcpOrthoAspectRatio_ = value; }
+  void setOrthoHorizontalSize( float value ) { vcpOrthoHorizontalSize_ = value; }
+  void setClippingNearPlane( float value ) { vcpClippingNearPlane_ = value; }
+  void setClippingFarPlane( float value ) { vcpClippingFarPlane_ = value; }
+
+ private:
+  uint32_t vcpCameraId_;
+  bool     vcpCancelFlag_;
+  bool     vcpPersistenceFlag_;
+  uint8_t  vcpCameraType_;
+  float    vcpErpHorizontalFov_;
+  float    vcpErpVerticalFov_;
+  float    vcpPerspectiveAspectRatio_;
+  float    vcpPerspectiveHorizontalFov_;
+  float    vcpOrthoAspectRatio_;
+  float    vcpOrthoHorizontalSize_;
+  float    vcpClippingNearPlane_;
+  float    vcpClippingFarPlane_;
+};
+
+class SEIViewportPosition : public SEI {
+ public:
+  SEIViewportPosition() :
+      vpViewportId_( 0 ),
+      vpCameraParametersPresentFlag_( false ),
+      vpVcpCameraId_( 0 ),
+      vpCancelFlag_( false ),
+      vpPersistenceFlag_( false ),
+      vpPosition_{0.0f, 0.0f, 0.0f},
+      vpQuaternionX_( 0.0f ),
+      vpQuaternionY_( 0.0f ),
+      vpQuaternionZ_( 0.0f ),
+      vpCenterViewFlag_( false ),
+      vpLeftViewFlag_( false ) {}
+  ~SEIViewportPosition() {}
+  SEIViewportPosition& operator=( const SEIViewportPosition& ) = default;
+
+  SeiPayloadType getPayloadType() { return VIEWPORT_POSITION; }
+
+  uint32_t getViewportId() { return vpViewportId_; }
+  bool     getCameraParametersPresentFlag() { return vpCameraParametersPresentFlag_; }
+  uint8_t  getVcpCameraId() { return vpVcpCameraId_; }
+  bool     getCancelFlag() { return vpCancelFlag_; }
+  bool     getPersistenceFlag() { return vpPersistenceFlag_; }
+  float    getPosition( size_t i ) { return vpPosition_[i]; }
+  float    getQuaternionX() { return vpQuaternionX_; }
+  float    getQuaternionY() { return vpQuaternionY_; }
+  float    getQuaternionZ() { return vpQuaternionZ_; }
+  bool     getCenterViewFlag() { return vpCenterViewFlag_; }
+  bool     getLeftViewFlag() { return vpLeftViewFlag_; }
+
+  void setViewportId( uint32_t value ) { vpViewportId_ = value; }
+  void setCameraParametersPresentFlag( bool value ) { vpCameraParametersPresentFlag_ = value; }
+  void setVcpCameraId( uint8_t value ) { vpVcpCameraId_ = value; }
+  void setCancelFlag( bool value ) { vpCancelFlag_ = value; }
+  void setPersistenceFlag( bool value ) { vpPersistenceFlag_ = value; }
+  void setPosition( size_t i, float value ) { vpPosition_[i] = value; }
+  void setQuaternionX( float value ) { vpQuaternionX_ = value; }
+  void setQuaternionY( float value ) { vpQuaternionY_ = value; }
+  void setQuaternionZ( float value ) { vpQuaternionZ_ = value; }
+  void setCenterViewFlag( bool value ) { vpCenterViewFlag_ = value; }
+  void setLeftViewFlag( bool value ) { vpLeftViewFlag_ = value; }
+
+ private:
+  uint32_t vpViewportId_;
+  bool     vpCameraParametersPresentFlag_;
+  uint8_t  vpVcpCameraId_;
+  bool     vpCancelFlag_;
+  bool     vpPersistenceFlag_;
+  float    vpPosition_[3];
+  float    vpQuaternionX_;
+  float    vpQuaternionY_;
+  float    vpQuaternionZ_;
+  bool     vpCenterViewFlag_;
+  bool     vpLeftViewFlag_;
+};
+
+class SEIGeometrySmoothing : public SEI {
+ public:
+  SEIGeometrySmoothing() :
+      gsSmoothingPersistenceFlag_( false ),
+      gsSmoothingResetFlag_( false ),
+      gsSmoothingInstancesUpdated_( 0 ) {}
+  ~SEIGeometrySmoothing() {
+    gsSmoothingInstanceIndex_.clear();
+    gsSmoothingInstanceCancelFlag_.clear();
+    gsSmoothingMethodType_.clear();
+    gsSmoothingGridSizeMinus2_.clear();
+    gsSmoothingThreshold_.clear();
+    gsPbfLog2ThresholdMinus1_.clear();
+    gsPbfPassesCountMinus1_.clear();
+    gsPbfFilterSizeMinus1_.clear();
   }
-  SEISmoothingParameters& operator=( const SEISmoothingParameters& ) = default;
+  SEIGeometrySmoothing& operator=( const SEIGeometrySmoothing& ) = default;
 
-  SeiPayloadType getPayloadType() { return SMOOTHING_PARAMETERS; }
+  SeiPayloadType getPayloadType() { return GEOMETRY_SMOOTHING; }
+  void           allocate() {
+    gsSmoothingInstanceIndex_.resize( gsSmoothingInstancesUpdated_, 0 );
+    gsSmoothingInstanceCancelFlag_.resize( gsSmoothingInstancesUpdated_, 0 );
+    gsSmoothingMethodType_.resize( gsSmoothingInstancesUpdated_, 0 );
+    gsSmoothingGridSizeMinus2_.resize( gsSmoothingInstancesUpdated_, 0 );
+    gsSmoothingThreshold_.resize( gsSmoothingInstancesUpdated_, 0 );
+    gsPbfLog2ThresholdMinus1_.resize( gsSmoothingInstancesUpdated_, 0 );
+    gsPbfPassesCountMinus1_.resize( gsSmoothingInstancesUpdated_, 0 );
+    gsPbfFilterSizeMinus1_.resize( gsSmoothingInstancesUpdated_, 0 );
+  }
 
-  void allocate() { spAttributeIdx_.resize( spNumAttributeUpdates_ ); }
+  bool    getSmoothingPersistenceFlag() { return gsSmoothingPersistenceFlag_; }
+  bool    getSmoothingResetFlag() { return gsSmoothingResetFlag_; }
+  uint8_t getSmoothingInstancesUpdated() { return gsSmoothingInstancesUpdated_; }
+  uint8_t getSmoothingInstanceIndex( size_t i ) { return gsSmoothingInstanceIndex_[i]; }
+  bool    getSmoothingInstanceCancelFlag( size_t i ) { return gsSmoothingInstanceCancelFlag_[i]; }
+  uint8_t getSmoothingMethodType( size_t i ) { return gsSmoothingMethodType_[i]; }
+  uint8_t getSmoothingGridSizeMinus2( size_t i ) { return gsSmoothingGridSizeMinus2_[i]; }
+  uint8_t getSmoothingThreshold( size_t i ) { return gsSmoothingThreshold_[i]; }
+  uint8_t getPbfLog2ThresholdMinus1( size_t i ) { return gsPbfLog2ThresholdMinus1_[i]; }
+  uint8_t getPbfPassesCountMinus1( size_t i ) { return gsPbfPassesCountMinus1_[i]; }
+  uint8_t getPbfFilterSizeMinus1( size_t i ) { return gsPbfFilterSizeMinus1_[i]; }
+
+  void setSmoothingPersistenceFlag( bool value ) { gsSmoothingPersistenceFlag_ = value; }
+  void setSmoothingResetFlag( bool value ) { gsSmoothingResetFlag_ = value; }
+  void setSmoothingInstancesUpdated( uint8_t value ) { gsSmoothingInstancesUpdated_ = value; }
+  void setSmoothingInstanceIndex( size_t i, uint8_t value ) { gsSmoothingInstanceIndex_[i] = value; }
+  void setSmoothingInstanceCancelFlag( size_t i, bool value ) { gsSmoothingInstanceCancelFlag_[i] = value; }
+  void setSmoothingMethodType( size_t i, uint8_t value ) { gsSmoothingMethodType_[i] = value; }
+  void setSmoothingGridSizeMinus2( size_t i, uint8_t value ) { gsSmoothingGridSizeMinus2_[i] = value; }
+  void setSmoothingThreshold( size_t i, uint8_t value ) { gsSmoothingThreshold_[i] = value; }
+  void setPbfLog2ThresholdMinus1( size_t i, uint8_t value ) { gsPbfLog2ThresholdMinus1_[i] = value; }
+  void setPbfPassesCountMinus1( size_t i, uint8_t value ) { gsPbfPassesCountMinus1_[i] = value; }
+  void setPbfFilterSizeMinus1( size_t i, uint8_t value ) { gsPbfFilterSizeMinus1_[i] = value; }
+
+ private:
+  bool                 gsSmoothingPersistenceFlag_;
+  bool                 gsSmoothingResetFlag_;
+  uint8_t              gsSmoothingInstancesUpdated_;
+  std::vector<uint8_t> gsSmoothingInstanceIndex_;
+  std::vector<bool>    gsSmoothingInstanceCancelFlag_;
+  std::vector<uint8_t> gsSmoothingMethodType_;
+  std::vector<uint8_t> gsSmoothingGridSizeMinus2_;
+  std::vector<uint8_t> gsSmoothingThreshold_;
+  std::vector<uint8_t> gsPbfLog2ThresholdMinus1_;
+  std::vector<uint8_t> gsPbfPassesCountMinus1_;
+  std::vector<uint8_t> gsPbfFilterSizeMinus1_;
+};
+
+class SEIAttributeSmoothing : public SEI {
+ public:
+  SEIAttributeSmoothing() :
+      asSmoothingPersistenceFlag_( false ),
+      asSmoothingResetFlag_( false ),
+      asNumAttributesUpdated_( 0 ) {}
+  ~SEIAttributeSmoothing() {
+    asAttributeIdx_.clear();
+    asAttributeSmoothingCancelFlag_.clear();
+    asSmoothingInstancesUpdated_.clear();
+    for ( auto& element : asSmoothingInstanceIndex_ ) { element.clear(); }
+    for ( auto& element : asSmoothingInstanceCancelFlag_ ) { element.clear(); }
+    for ( auto& element : asSmoothingMethodType_ ) { element.clear(); }
+    for ( auto& element : asSmoothingGridSizeMinus2_ ) { element.clear(); }
+    for ( auto& element : asSmoothingThreshold_ ) { element.clear(); }
+    for ( auto& element : asSmoothingThresholdVariation_ ) { element.clear(); }
+    for ( auto& element : asSmoothingThresholdDifference_ ) { element.clear(); }
+    asSmoothingInstanceIndex_.clear();
+    asSmoothingInstanceCancelFlag_.clear();
+    asSmoothingMethodType_.clear();
+    asSmoothingGridSizeMinus2_.clear();
+    asSmoothingThreshold_.clear();
+    asSmoothingThresholdVariation_.clear();
+    asSmoothingThresholdDifference_.clear();
+  }
+  SEIAttributeSmoothing& operator=( const SEIAttributeSmoothing& ) = default;
+
+  SeiPayloadType getPayloadType() { return ATTRIBUTE_SMOOTHING; }
+
+  void allocate() {
+    asAttributeIdx_.resize( asNumAttributesUpdated_, 0 );
+    asAttributeSmoothingCancelFlag_.resize( asNumAttributesUpdated_, false );
+    asSmoothingInstancesUpdated_.resize( asNumAttributesUpdated_, 0 );
+  }
   void allocate( size_t size, size_t dimension ) {
-    if ( spDimensionMinus1_.size() < size ) {
-      spDimensionMinus1_.resize( size );
-      spAttrSmoothingParamsEnabledFlag_.resize( size );
-      spAttrSmoothingGridSizeMinus2_.resize( size );
-      spAttrSmoothingThreshold_.resize( size );
-      spAttrSmoothingLocalEntropyThreshold_.resize( size );
-      spAttrSmoothingThresholdVariation_.resize( size );
-      spAttrSmoothingThresholdDifference_.resize( size );
+    if ( asSmoothingInstanceIndex_.size() < size ) {
+      asSmoothingInstanceIndex_.resize( size );
+      asSmoothingInstanceCancelFlag_.resize( size );
+      asSmoothingMethodType_.resize( size );
+      asSmoothingGridSizeMinus2_.resize( size );
+      asSmoothingThreshold_.resize( size );
+      asSmoothingThresholdVariation_.resize( size );
+      asSmoothingThresholdDifference_.resize( size );
     }
-    spAttrSmoothingParamsEnabledFlag_[size - 1].resize( dimension );
-    spAttrSmoothingGridSizeMinus2_[size - 1].resize( dimension );
-    spAttrSmoothingThreshold_[size - 1].resize( dimension );
-    spAttrSmoothingLocalEntropyThreshold_[size - 1].resize( dimension );
-    spAttrSmoothingThresholdVariation_[size - 1].resize( dimension );
-    spAttrSmoothingThresholdDifference_[size - 1].resize( dimension );
-  }
-  bool    getSpGeometryCancelFlag() { return spGeometryCancelFlag_; }
-  bool    getSpAttributeCancelFlag() { return spAttributeCancelFlag_; }
-  bool    getSpGeometrySmoothingEnabledFlag() { return spGeometrySmoothingEnabledFlag_; }
-  uint8_t getSpGeometrySmoothingId() { return spGeometrySmoothingId_; }
-  uint8_t getSpGeometrySmoothingGridSizeMinus2() { return spGeometrySmoothingGridSizeMinus2_; }
-  uint8_t getSpGeometrySmoothingThreshold() { return spGeometrySmoothingThreshold_; }
-  uint8_t getSpGeometryPatchBlockFilteringLog2ThresholdMinus1() {
-    return spGeometryPatchBlockFilteringLog2ThresholdMinus1_;
-  }
-  uint8_t getSpGeometryPatchBlockFilteringPassesCountMinus1() {
-    return spGeometryPatchBlockFilteringPassesCountMinus1_;
-  }
-  uint8_t  getSpGeometryPatchBlockFilteringFilterSizeMinus1() { return spGeometryPatchBlockFilteringFilterSizeMinus1_; }
-  uint32_t getSpNumAttributeUpdates() { return spNumAttributeUpdates_; }
-  std::vector<uint32_t>&          getSpAttributeIdx() { return spAttributeIdx_; }
-  std::vector<uint32_t>&          getSpDimensionMinus1() { return spDimensionMinus1_; }
-  std::vector<std::vector<bool>>& getSpAttrSmoothingParamsEnabledFlag() { return spAttrSmoothingParamsEnabledFlag_; }
-  std::vector<std::vector<uint32_t>>& getSpAttrSmoothingGridSizeMinus2() { return spAttrSmoothingGridSizeMinus2_; }
-  std::vector<std::vector<uint32_t>>& getSpAttrSmoothingThreshold() { return spAttrSmoothingThreshold_; }
-  std::vector<std::vector<uint32_t>>& getSpAttrSmoothingLocalEntropyThreshold() {
-    return spAttrSmoothingLocalEntropyThreshold_;
-  }
-  std::vector<std::vector<uint32_t>>& getSpAttrSmoothingThresholdVariation() {
-    return spAttrSmoothingThresholdVariation_;
-  }
-  std::vector<std::vector<uint32_t>>& getSpAttrSmoothingThresholdDifference() {
-    return spAttrSmoothingThresholdDifference_;
+    asSmoothingInstanceIndex_[size - 1].resize( dimension );
+    asSmoothingInstanceCancelFlag_[size - 1].resize( dimension );
+    asSmoothingMethodType_[size - 1].resize( dimension );
+    asSmoothingGridSizeMinus2_[size - 1].resize( dimension );
+    asSmoothingThreshold_[size - 1].resize( dimension );
+    asSmoothingThresholdVariation_[size - 1].resize( dimension );
+    asSmoothingThresholdDifference_[size - 1].resize( dimension );
   }
 
-  uint32_t getSpAttributeIdx( size_t i ) { return spAttributeIdx_[i]; }
-  uint32_t getSpDimensionMinus1( size_t i ) { return spDimensionMinus1_[i]; }
-  bool     getSpAttrSmoothingParamsEnabledFlag( size_t i, size_t j ) { return spAttrSmoothingParamsEnabledFlag_[i][j]; }
-  uint32_t getSpAttrSmoothingGridSizeMinus2( size_t i, size_t j ) { return spAttrSmoothingGridSizeMinus2_[i][j]; }
-  uint32_t getSpAttrSmoothingThreshold( size_t i, size_t j ) { return spAttrSmoothingThreshold_[i][j]; }
-  uint32_t getSpAttrSmoothingLocalEntropyThreshold( size_t i, size_t j ) {
-    return spAttrSmoothingLocalEntropyThreshold_[i][j];
-  }
-  uint32_t getSpAttrSmoothingThresholdVariation( size_t i, size_t j ) {
-    return spAttrSmoothingThresholdVariation_[i][j];
-  }
-  uint32_t getSpAttrSmoothingThresholdDifference( size_t i, size_t j ) {
-    return spAttrSmoothingThresholdDifference_[i][j];
-  }
+  uint8_t getSmoothingPersistenceFlag() { return asSmoothingPersistenceFlag_; }
+  uint8_t getSmoothingResetFlag() { return asSmoothingResetFlag_; }
+  uint8_t getNumAttributesUpdated() { return asNumAttributesUpdated_; }
+  uint8_t getAttributeIdx( size_t i ) { return asAttributeIdx_[i]; }
+  uint8_t getAttributeSmoothingCancelFlag( size_t i ) { return asAttributeSmoothingCancelFlag_[i]; }
+  uint8_t getSmoothingInstancesUpdated( size_t i ) { return asSmoothingInstancesUpdated_[i]; }
+  uint8_t getSmoothingInstanceIndex( size_t i, size_t j ) { return asSmoothingInstanceIndex_[i][j]; }
+  uint8_t getSmoothingInstanceCancelFlag( size_t i, size_t j ) { return asSmoothingInstanceCancelFlag_[i][j]; }
+  uint8_t getSmoothingMethodType( size_t i, size_t j ) { return asSmoothingMethodType_[i][j]; }
+  uint8_t getSmoothingGridSizeMinus2( size_t i, size_t j ) { return asSmoothingGridSizeMinus2_[i][j]; }
+  uint8_t getSmoothingThreshold( size_t i, size_t j ) { return asSmoothingThreshold_[i][j]; }
+  uint8_t getSmoothingThresholdVariation( size_t i, size_t j ) { return asSmoothingThresholdVariation_[i][j]; }
+  uint8_t getSmoothingThresholdDifference( size_t i, size_t j ) { return asSmoothingThresholdDifference_[i][j]; }
 
-  void setSpGeometryCancelFlag( bool value ) { spGeometryCancelFlag_ = value; }
-  void setSpAttributeCancelFlag( bool value ) { spAttributeCancelFlag_ = value; }
-  void setSpGeometrySmoothingEnabledFlag( bool value ) { spGeometrySmoothingEnabledFlag_ = value; }
-  void setSpGeometrySmoothingId( uint8_t value ) { spGeometrySmoothingId_ = value; }
-  void setSpGeometrySmoothingGridSizeMinus2( uint8_t value ) { spGeometrySmoothingGridSizeMinus2_ = value; }
-  void setSpGeometrySmoothingThreshold( uint8_t value ) { spGeometrySmoothingThreshold_ = value; }
-  void setSpNumAttributeUpdates( uint32_t value ) { spNumAttributeUpdates_ = value; }
-  void setSpGeometryPatchBlockFilteringLog2ThresholdMinus1( uint8_t value ) {
-    spGeometryPatchBlockFilteringLog2ThresholdMinus1_ = value;
+  void setSmoothingPersistenceFlag( uint8_t value ) { asSmoothingPersistenceFlag_ = value; }
+  void setSmoothingResetFlag( uint8_t value ) { asSmoothingResetFlag_ = value; }
+  void setNumAttributesUpdated( uint8_t value ) { asNumAttributesUpdated_ = value; }
+  void setAttributeIdx( size_t i, uint8_t value ) { asAttributeIdx_[i] = value; }
+  void setAttributeSmoothingCancelFlag( size_t i, uint8_t value ) { asAttributeSmoothingCancelFlag_[i] = value; }
+  void setSmoothingInstancesUpdated( size_t i, uint8_t value ) { asSmoothingInstancesUpdated_[i] = value; }
+  void setSmoothingInstanceIndex( size_t i, size_t j, uint8_t value ) { asSmoothingInstanceIndex_[i][j] = value; }
+  void setSmoothingInstanceCancelFlag( size_t i, size_t j, uint8_t value ) {
+    asSmoothingInstanceCancelFlag_[i][j] = value;
   }
-  void setSpGeometryPatchBlockFilteringPassesCountMinus1( uint8_t value ) {
-    spGeometryPatchBlockFilteringPassesCountMinus1_ = value;
+  void setSmoothingMethodType( size_t i, size_t j, uint8_t value ) { asSmoothingMethodType_[i][j] = value; }
+  void setSmoothingGridSizeMinus2( size_t i, size_t j, uint8_t value ) { asSmoothingGridSizeMinus2_[i][j] = value; }
+  void setSmoothingThreshold( size_t i, size_t j, uint8_t value ) { asSmoothingThreshold_[i][j] = value; }
+  void setSmoothingThresholdVariation( size_t i, size_t j, uint8_t value ) {
+    asSmoothingThresholdVariation_[i][j] = value;
   }
-  void setSpGeometryPatchBlockFilteringFilterSizeMinus1( uint8_t value ) {
-    spGeometryPatchBlockFilteringFilterSizeMinus1_ = value;
-  }
-  void setSpAttributeIdx( size_t i, uint32_t value ) { spAttributeIdx_[i] = value; }
-  void setSpDimensionMinus1( size_t i, uint32_t value ) { spDimensionMinus1_[i] = value; }
-  void setSpAttrSmoothingParamsEnabledFlag( size_t i, size_t j, bool value ) {
-    spAttrSmoothingParamsEnabledFlag_[i][j] = value;
-  }
-  void setSpAttrSmoothingGridSizeMinus2( size_t i, size_t j, uint32_t value ) {
-    spAttrSmoothingGridSizeMinus2_[i][j] = value;
-  }
-  void setSpAttrSmoothingThreshold( size_t i, size_t j, uint32_t value ) { spAttrSmoothingThreshold_[i][j] = value; }
-  void setSpAttrSmoothingLocalEntropyThreshold( size_t i, size_t j, uint32_t value ) {
-    spAttrSmoothingLocalEntropyThreshold_[i][j] = value;
-  }
-  void setSpAttrSmoothingThresholdVariation( size_t i, size_t j, uint32_t value ) {
-    spAttrSmoothingThresholdVariation_[i][j] = value;
-  }
-  void setSpAttrSmoothingThresholdDifference( size_t i, size_t j, uint32_t value ) {
-    spAttrSmoothingThresholdDifference_[i][j] = value;
+  void setSmoothingThresholdDifference( size_t i, size_t j, uint8_t value ) {
+    asSmoothingThresholdDifference_[i][j] = value;
   }
 
  private:
-  bool    spGeometryCancelFlag_;
-  bool    spAttributeCancelFlag_;
-  bool    spGeometrySmoothingEnabledFlag_;
-  uint8_t spGeometrySmoothingGridSizeMinus2_;
-  uint8_t spGeometrySmoothingThreshold_;
-  uint8_t spGeometrySmoothingId_;
-  uint8_t spGeometryPatchBlockFilteringLog2ThresholdMinus1_;
-  uint8_t spGeometryPatchBlockFilteringPassesCountMinus1_;
-  uint8_t spGeometryPatchBlockFilteringFilterSizeMinus1_;
-
-  uint32_t                           spNumAttributeUpdates_;
-  std::vector<uint32_t>              spAttributeIdx_;
-  std::vector<uint32_t>              spDimensionMinus1_;
-  std::vector<std::vector<bool>>     spAttrSmoothingParamsEnabledFlag_;
-  std::vector<std::vector<uint32_t>> spAttrSmoothingGridSizeMinus2_;
-  std::vector<std::vector<uint32_t>> spAttrSmoothingThreshold_;
-  std::vector<std::vector<uint32_t>> spAttrSmoothingLocalEntropyThreshold_;
-  std::vector<std::vector<uint32_t>> spAttrSmoothingThresholdVariation_;
-  std::vector<std::vector<uint32_t>> spAttrSmoothingThresholdDifference_;
+  bool                              asSmoothingPersistenceFlag_;
+  bool                              asSmoothingResetFlag_;
+  uint8_t                           asNumAttributesUpdated_;
+  std::vector<uint8_t>              asAttributeIdx_;
+  std::vector<bool>                 asAttributeSmoothingCancelFlag_;
+  std::vector<uint8_t>              asSmoothingInstancesUpdated_;
+  std::vector<std::vector<uint8_t>> asSmoothingInstanceIndex_;
+  std::vector<std::vector<uint8_t>> asSmoothingInstanceCancelFlag_;
+  std::vector<std::vector<uint8_t>> asSmoothingMethodType_;
+  std::vector<std::vector<uint8_t>> asSmoothingGridSizeMinus2_;
+  std::vector<std::vector<uint8_t>> asSmoothingThreshold_;
+  std::vector<std::vector<uint8_t>> asSmoothingThresholdVariation_;
+  std::vector<std::vector<uint8_t>> asSmoothingThresholdDifference_;
 };
 
 };  // namespace pcc

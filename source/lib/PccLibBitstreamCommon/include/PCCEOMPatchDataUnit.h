@@ -48,22 +48,22 @@ class EOMPatchDataUnit {
       patchCountMinus1_( 0 ),
       patchIndex_( 0 ),
       frameIndex_( 0 ) {
-      associatedPatchesIdx_.clear();
-      points_.clear();
+    associatedPatchesIdx_.clear();
+    points_.clear();
   };
   ~EOMPatchDataUnit(){};
   EOMPatchDataUnit& operator=( const EOMPatchDataUnit& ) = default;
-  
-  bool getPatchInAuxiliaryVideoFlag() { return patchInAuxiliaryVideoFlag_; }
-  size_t               get2dPosX() { return pos2dX_; }
-  size_t               get2dPosY() { return pos2dY_; }
-  size_t               get2dSizeXMinus1() { return size2dXMinus1_; }
-  size_t               get2dSizeYMinus1() { return size2dYMinus1_; }
-  size_t               getPatchCountMinus1() { return patchCountMinus1_; }
-  size_t               getAssociatedPatchesIdx( size_t index ) { return associatedPatchesIdx_[index]; }
-  size_t               getPoints( size_t index ) { return points_[index]; }
-  size_t               getPatchIndex() { return patchIndex_; }
-  size_t               getFrameIndex() { return frameIndex_; }
+
+  bool   getPatchInAuxiliaryVideoFlag() { return patchInAuxiliaryVideoFlag_; }
+  size_t get2dPosX() { return pos2dX_; }
+  size_t get2dPosY() { return pos2dY_; }
+  size_t get2dSizeXMinus1() { return size2dXMinus1_; }
+  size_t get2dSizeYMinus1() { return size2dYMinus1_; }
+  size_t getPatchCountMinus1() { return patchCountMinus1_; }
+  size_t getAssociatedPatchesIdx( size_t index ) { return associatedPatchesIdx_[index]; }
+  size_t getPoints( size_t index ) { return points_[index]; }
+  size_t getPatchIndex() { return patchIndex_; }
+  size_t getFrameIndex() { return frameIndex_; }
 
   void setPatchInAuxiliaryVideoFlag( bool value ) { patchInAuxiliaryVideoFlag_ = value; }
   void set2dPosX( size_t value ) { pos2dX_ = value; }
@@ -72,7 +72,7 @@ class EOMPatchDataUnit {
   void set2dSizeYMinus1( size_t value ) { size2dYMinus1_ = value; }
   void setPatchIndex( size_t value ) { patchIndex_ = value; }
   void setFrameIndex( size_t value ) { frameIndex_ = value; }
-  void setAssociatedPatchesIdx(  size_t index, size_t value ) { associatedPatchesIdx_[index] = value; }
+  void setAssociatedPatchesIdx( size_t index, size_t value ) { associatedPatchesIdx_[index] = value; }
   void setPoints( size_t index, size_t value ) { points_[index] = value; }
   void setPatchCountMinus1( uint32_t value ) {
     patchCountMinus1_ = value;

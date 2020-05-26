@@ -81,8 +81,7 @@ class AtlasCameraParameters {
       cameraModel_( 0 ),
       scaleEnabledFlag_( false ),
       offsetEnabledFlag_( false ),
-      rotationEnabledFlag_( false )
-  {}
+      rotationEnabledFlag_( false ) {}
   ~AtlasCameraParameters() {}
   AtlasCameraParameters& operator=( const AtlasCameraParameters& ) = default;
 
@@ -112,7 +111,6 @@ class AtlasCameraParameters {
   int32_t  rotation_[3];
 };
 
-
 // H.7.3.6.3.1	AAPS V-PCC extension syntax
 class AapsVpccExtension {
  public:
@@ -122,7 +120,7 @@ class AapsVpccExtension {
 
   bool                   getCameraParametersPresentFlag() { return cameraParametersPresentFlag_; }
   AtlasCameraParameters& getAtlasCameraParameters() { return atlasCameraParameters_; }
-  void setCameraParametersPresentFlag( bool value ) { cameraParametersPresentFlag_ = value; }
+  void                   setCameraParametersPresentFlag( bool value ) { cameraParametersPresentFlag_ = value; }
 
  private:
   bool                  cameraParametersPresentFlag_;

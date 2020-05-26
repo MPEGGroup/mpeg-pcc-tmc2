@@ -47,7 +47,7 @@ class AtlasTileLayerRbsp {
 
   AtlasTileLayerRbsp& operator=( const AtlasTileLayerRbsp& ) = default;
 
-  uint8_t                 getFrameIndex() { return frameIndex_; }
+  uint8_t            getFrameIndex() { return frameIndex_; }
   AtlasTileHeader&   getAtlasTileHeader() { return atlasTileHeader_; }
   AtlasTileDataUnit& getAtlasTileDataUnit() { return atlasTileDataUnit_; }
 
@@ -56,7 +56,7 @@ class AtlasTileLayerRbsp {
   void setAtlasTileDataUnit( AtlasTileDataUnit value ) { atlasTileDataUnit_ = value; }
 
  private:
-  uint8_t                frameIndex_;
+  uint8_t           frameIndex_;
   AtlasTileHeader   atlasTileHeader_;
   AtlasTileDataUnit atlasTileDataUnit_;
 };

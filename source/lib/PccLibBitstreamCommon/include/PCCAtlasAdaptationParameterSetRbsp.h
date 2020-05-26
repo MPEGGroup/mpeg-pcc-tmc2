@@ -66,7 +66,8 @@ class AtlasAdaptationParameterSetRbsp {
   void setVpccExtensionFlag( bool value ) { vpccExtensionFlag_ = value; }
   void setMivExtensionFlag( bool value ) { mivExtensionFlag_ = value; }
   void setExtension6Bits( bool value ) { extension6Bits_ = value; }
-  AapsVpccExtension& getAapsVpccExtension(){ return aapsVpccExtension_; }
+  AapsVpccExtension& getAapsVpccExtension() { return aapsVpccExtension_; }
+
  private:
   uint8_t atlasAdaptationParameterSetId_;
   bool    log2MaxAfocPresentFlag_;

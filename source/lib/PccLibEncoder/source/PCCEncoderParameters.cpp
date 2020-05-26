@@ -801,10 +801,10 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
 
   sps.setMapCountMinus1( atlasIndex, static_cast<uint32_t>( mapCountMinus1_ ) );
   sps.setMultipleMapStreamsPresentFlag( atlasIndex, mapCountMinus1_ != 0 && multipleStreams_ );
-  sps.setAuxiliaryVideoPresentFlag( atlasIndex, useRawPointsSeparateVideo_ );   
-  sps.setOccupancyVideoPresentFlag( atlasIndex, true );   
-  sps.setGeometryVideoPresentFlag( atlasIndex, true );   
-  sps.setAttributeVideoPresentFlag( atlasIndex, true );   
+  sps.setAuxiliaryVideoPresentFlag( atlasIndex, useRawPointsSeparateVideo_ );
+  sps.setOccupancyVideoPresentFlag( atlasIndex, true );
+  sps.setGeometryVideoPresentFlag( atlasIndex, true );
+  sps.setAttributeVideoPresentFlag( atlasIndex, true );
   asps.setRawPatchEnabledFlag( losslessGeo_ || lossyRawPointsPatch_ );
   for ( size_t i = 0; i < mapCountMinus1_ + 1; i++ ) {
     if ( i == 0 ) {
@@ -846,7 +846,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   asps.setExtension6Bits( 0 );
   asps.setExtendedProjectionEnabledFlag( additionalProjectionPlaneMode_ > 0 );
 
-  if( asps.getVpccExtensionFlag() ){ 
+  if ( asps.getVpccExtensionFlag() ) {
     auto& ext = asps.getAspsVpccExtension();
     ext.setRemoveDuplicatePointEnableFlag( removeDuplicatePoints_ );
     ext.setSurfaceThicknessMinus1( surfaceThickness_ - 1 );
@@ -881,7 +881,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   for ( size_t frameIdx = 0; frameIdx < frameCount_; frameIdx++ ) {
     for ( size_t tileId = 0; tileId < numTilesPerFrame; tileId++ ) {
       auto& atgl = context.addAtlasTileLayer( frameIdx, tileId );
-      auto& ath = atgl.getAtlasTileHeader();
+      auto& ath  = atgl.getAtlasTileHeader();
       ath.setAtlasFrameParameterSetId( 0 );
       if ( additionalProjectionPlaneMode_ > 0 ) {
         ath.setPosMinZQuantizer( uint8_t( std::log2( minLevel_ ) ) - 1 );

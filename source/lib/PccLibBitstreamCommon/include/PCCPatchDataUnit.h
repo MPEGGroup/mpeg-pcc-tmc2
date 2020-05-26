@@ -92,7 +92,7 @@ class PatchDataUnit {
   void   setLodEnableFlag( bool value ) { lodEnableFlag_ = value; }
   void   setLodScaleXminus1( uint8_t value ) { lodScaleXminus1_ = value; }
   void   setLodScaleY( uint8_t value ) { lodScaleY_ = value; }
-  void   setPointLocalReconstructionData( PointLocalReconstructionData value ) { pointLocalReconstructionData_ = value; }
+  void setPointLocalReconstructionData( PointLocalReconstructionData value ) { pointLocalReconstructionData_ = value; }
 
  private:
   size_t                       pos2dX_;

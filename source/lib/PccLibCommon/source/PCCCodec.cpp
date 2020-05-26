@@ -599,7 +599,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
                                    const GeneratePointCloudParameters& params,
                                    std::vector<uint32_t>&              partition,
                                    bool                                bDecoder ) {
-  TRACE_CODEC( "generatePointCloud F = %zu start \n", frame.getIndex() );  
+  TRACE_CODEC( "generatePointCloud F = %zu start \n", frame.getIndex() );
 #ifdef CODEC_TRACE
   TRACE_CODEC( "Generate point Cloud start \n" );
   TRACE_CODEC( "  occupancyResolution_            = %zu \n", params.occupancyResolution_ );
@@ -629,10 +629,10 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
       TRACE_CODEC( "  thresholdColorSmoothing_        = %f  \n", params.thresholdColorSmoothing_ );
       TRACE_CODEC( "  thresholdColorDifference_       = %f  \n", params.thresholdColorDifference_ );
       TRACE_CODEC( "  thresholdColorVariation_        = %f  \n", params.thresholdColorVariation_ );
-      TRACE_CODEC( "  thresholdLocalEntropy_          = %f  \n", params.thresholdLocalEntropy_ );
+      // TRACE_CODEC( "  thresholdLocalEntropy_          = %f  \n", params.thresholdLocalEntropy_ );
     } else {
       TRACE_CODEC( "  thresholdColorSmoothing_        = %f  \n", params.thresholdColorSmoothing_ );
-      TRACE_CODEC( "  thresholdLocalEntropy_          = %f  \n", params.thresholdLocalEntropy_ );
+      // TRACE_CODEC( "  thresholdLocalEntropy_          = %f  \n", params.thresholdLocalEntropy_ );
       TRACE_CODEC( "  radius2ColorSmoothing_          = %f  \n", params.radius2ColorSmoothing_ );
       TRACE_CODEC( "  neighborCountColorSmoothing_    = %zu \n", params.neighborCountColorSmoothing_ );
     }
@@ -2206,7 +2206,7 @@ void PCCCodec::generateRawPointsTexturefromVideo( PCCContext& context ) {
   auto&        videoRawPointsTexture = context.getVideoRawPointsTexture();
   videoRawPointsTexture.resize( gofSize );
   TRACE_CODEC( "generateRawPointsTexturefromVideo \n" );
-  for ( auto& frame : context.getFrames() ) {    
+  for ( auto& frame : context.getFrames() ) {
     generateRawPointsTexturefromVideo( context, frame, frame.getIndex() );
     std::cout << "generate raw points (Texture) : frame " << frame.getIndex()
               << ", # of raw points Texture : " << frame.getRawPointsPatch( 0 ).size() << std::endl;

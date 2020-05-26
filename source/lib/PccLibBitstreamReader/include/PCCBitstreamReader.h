@@ -247,10 +247,6 @@ class PCCBitstreamReader {
                                             AtlasSequenceParameterSetRbsp& asps,
                                             PCCBitstream&                  bitstream );
 
-  // // 7.3.8  Supplemental enhancement information message syntax
-  // void seiMessage( PatchDataGroup& pdg, PCCHighLevelSyntax& syntax,
-  // PCCBitstream& bitstream );
-
   // 7.3.8 Supplemental enhancement information message syntax
   static void seiMessage( PCCBitstream& bitstream, PCCHighLevelSyntax& syntax, NalUnitType nalUnitType );
 
@@ -391,42 +387,50 @@ class PCCBitstreamReader {
   // F.2.4  User data unregistered SEI message syntax
   static void userDataUnregistered( PCCBitstream& bitstream, SEI& sei, size_t payloadSize );
   // F.2.5  Recovery point SEI message syntax
-  static void recoveryPoint( PCCBitstream& bitstream, SEI& sei, size_t payloadSize );
+  static void recoveryPoint( PCCBitstream& bitstream, SEI& sei );
   // F.2.6  No display SEI message syntax
-  static void noDisplay( PCCBitstream& bitstream, SEI& sei, size_t payloadSize );
+  static void noDisplay( PCCBitstream& bitstream, SEI& sei );
   // F.2.7  Reserved SEI message syntax
   static void reservedSeiMessage( PCCBitstream& bitstream, SEI& sei, size_t payloadSize );
   // F.2.8  SEI manifest SEI message syntax
-  static void seiManifest( PCCBitstream& bitstream, SEI& sei, size_t payloadSize );
+  static void seiManifest( PCCBitstream& bitstream, SEI& sei );
   // F.2.9  SEI prefix indication SEI message syntax
-  static void seiPrefixIndication( PCCBitstream& bitstream, SEI& sei, size_t payloadSize );
+  static void seiPrefixIndication( PCCBitstream& bitstream, SEI& sei );
   // F.2.10  Attribute transformation parameters SEI message syntax
-  static void attributeTransformationParams( PCCBitstream& bitstream, SEI& sei, size_t payloadSize );
+  static void attributeTransformationParams( PCCBitstream& bitstream, SEI& sei );
   // F.2.11  Active substreams SEI message syntax
-  static void activeSubBitstreams( PCCBitstream& bitstream, SEI& sei, size_t payloadSize );
+  static void activeSubBitstreams( PCCBitstream& bitstream, SEI& sei );
   // F.2.12  Component codec mapping SEI message syntax
-  static void componentCodecMapping( PCCBitstream& bitstream, SEI& sei, size_t payloadSize );
+  static void componentCodecMapping( PCCBitstream& bitstream, SEI& sei );
   // F.2.14  Volumetric Tiling SEI message syntax
 
   // F.2.15  Buffering period SEI message syntax
   static void bufferingPeriod( PCCBitstream&        bitstream,
                                SEI&                 sei,
-                               size_t               payloadSize,
                                bool                 NalHrdBpPresentFlag,
                                bool                 AclHrdBpPresentFlag,
                                std::vector<uint8_t> hrdCabCntMinus1 );
   // F.2.16  Atlas frame timing SEI message syntax
-  static void atlasFrameTiming( PCCBitstream& bitstream, SEI& sei, size_t payloadSize, bool CabDabDelaysPresentFlag );
-  // F.2.17  Presentation inforomation SEI message syntax
-  static void presentationInformation( PCCBitstream& bitstream, SEI& sei, size_t payloadSize );
-  // F.2.18  Smoothing parameters SEI message syntax
-  static void smoothingParameters( PCCBitstream& bitstream, SEI& sei, size_t payloadSize );
+  static void atlasFrameTiming( PCCBitstream& bitstream, SEI& sei, bool CabDabDelaysPresentFlag );
 
-  // F.2.13.1	Scene object information SEI message syntax 
-  static void sceneObjectInformation( PCCBitstream& bitstream, SEI& sei, size_t payloadSize );
-  static void objectLabelInformation( PCCBitstream& bitstream, SEI& sei, size_t payloadSize );
-  static void patchInformation( PCCBitstream& bitstream, SEI& sei, size_t payloadSize );
-  static void volumetricRectangleInformation( PCCBitstream& bitstream, SEI& sei, size_t payloadSize );
+  // F.2.13.1 Scene object information SEI message syntax
+  static void sceneObjectInformation( PCCBitstream& bitstream, SEI& sei );
+  // F.2.13.2 Object label information SEI message syntax
+  static void objectLabelInformation( PCCBitstream& bitstream, SEI& sei );
+  // F.2.13.3 Patch information SEI message syntax
+  static void patchInformation( PCCBitstream& bitstream, SEI& sei );
+  // F.2.13.4 Volumetric rectangle information SEI message syntax
+  static void volumetricRectangleInformation( PCCBitstream& bitstream, SEI& sei );
+  // F.2.13.5  Atlas information  SEI message syntax
+  static void atlasInformation( PCCBitstream& bitstream, SEI& seiAbstract );
+  // F.2.16.1 Viewport camera parameters SEI messages syntax
+  static void viewportCameraParameters( PCCBitstream& bitstream, SEI& seiAbstract );
+  // F.2.16.1 Viewport camera parameters SEI messages syntax
+  static void viewportPosition( PCCBitstream& bitstream, SEI& seiAbstract );
+  // H.16.2.1 Geometry smoothing SEI message syntax
+  static void geometrySmoothing( PCCBitstream& bitstream, SEI& seiAbstract );
+  // H.16.2.2 Attribute smoothing SEI message syntax
+  static void attributeSmoothing( PCCBitstream& bitstream, SEI& seiAbstract );
 
   // F.2  VUI syntax
   // F.2.1  VUI parameters syntax

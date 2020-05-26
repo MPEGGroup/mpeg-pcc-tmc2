@@ -56,19 +56,19 @@ class InterPatchDataUnit {
       frameIndex_( 0 ){};
   ~InterPatchDataUnit(){};
   InterPatchDataUnit& operator=( const InterPatchDataUnit& ) = default;
- 
-  size_t  getPatchIndex() { return patchIndex_; }
-  size_t  getFrameIndex() { return frameIndex_; }
-  int64_t getRefIndex() { return refIndex_; }
-  int64_t getRefPatchIndex() { return refPatchIndex_; }
-  int64_t get2dPosX() { return pos2dX_; }
-  int64_t get2dPosY() { return pos2dY_; }
-  int64_t get2dDeltaSizeX() { return delta2dSizeX_; }
-  int64_t get2dDeltaSizeY() { return delta2dSizeY_; }
-  int64_t get3dPosX() { return pos3dX_; }
-  int64_t get3dPosY() { return pos3dY_; }
-  int64_t get3dPosMinZ() { return pos3dMinZ_; }
-  int64_t get3dPosDeltaMaxZ() { return pos3dDeltaMaxZ_; }
+
+  size_t                        getPatchIndex() { return patchIndex_; }
+  size_t                        getFrameIndex() { return frameIndex_; }
+  int64_t                       getRefIndex() { return refIndex_; }
+  int64_t                       getRefPatchIndex() { return refPatchIndex_; }
+  int64_t                       get2dPosX() { return pos2dX_; }
+  int64_t                       get2dPosY() { return pos2dY_; }
+  int64_t                       get2dDeltaSizeX() { return delta2dSizeX_; }
+  int64_t                       get2dDeltaSizeY() { return delta2dSizeY_; }
+  int64_t                       get3dPosX() { return pos3dX_; }
+  int64_t                       get3dPosY() { return pos3dY_; }
+  int64_t                       get3dPosMinZ() { return pos3dMinZ_; }
+  int64_t                       get3dPosDeltaMaxZ() { return pos3dDeltaMaxZ_; }
   PointLocalReconstructionData& getPointLocalReconstructionData() { return pointLocalReconstructionData_; }
 
   void setPatchIndex( size_t value ) { patchIndex_ = value; }

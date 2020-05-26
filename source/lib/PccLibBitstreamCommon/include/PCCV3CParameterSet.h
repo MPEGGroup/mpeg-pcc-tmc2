@@ -77,7 +77,7 @@ class V3CParameterSet {
                          uint16_t avgFrameRate,
                          uint32_t mapCountMinus1,
                          bool     multipleMapStreamsPresentFlag,
-                         bool     auxiliaryVideoPresentFlag, 
+                         bool     auxiliaryVideoPresentFlag,
                          bool     occupancyVideoPresentFlag,
                          bool     geometryVideoPresentFlag,
                          bool     attributeVideoPresentFlag ) {
@@ -136,7 +136,7 @@ class V3CParameterSet {
   bool                  getExtensionPresentFlag() { return extensionPresentFlag_; }
   bool                  getVpccExtensionFlag() { return vpccExtensionFlag_; }
   bool                  getMivExtensionFlag() { return mivExtensionFlag_; }
-  uint8_t                  getExtension6Bits() { return extension6Bits_; }
+  uint8_t               getExtension6Bits() { return extension6Bits_; }
   size_t                getExtensionLengthMinus1() { return extensionLengthMinus1_; }
   std::vector<uint8_t>& getExtensionDataByte() { return extensionDataByte_; }
   uint8_t               getExtensionDataByte( size_t index ) { return extensionDataByte_[index]; }
@@ -195,11 +195,11 @@ class V3CParameterSet {
   bool                              extensionPresentFlag_;
   bool                              vpccExtensionFlag_;
   bool                              mivExtensionFlag_;
-  uint8_t                              extension6Bits_;
+  uint8_t                           extension6Bits_;
   size_t                            extensionLengthMinus1_;
   std::vector<uint8_t>              extensionDataByte_;
 
-  VpsVpccExtension                  vpsVpccExtension_;
+  VpsVpccExtension vpsVpccExtension_;
 };
 
 };  // namespace pcc

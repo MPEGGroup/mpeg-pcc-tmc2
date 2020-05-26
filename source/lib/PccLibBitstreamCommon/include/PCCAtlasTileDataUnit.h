@@ -39,13 +39,11 @@
 namespace pcc {
 
 // 7.3.7.1  General atlas tile data unit syntax
-// atgduPatchMode_?)
 class AtlasTileDataUnit {
  public:
   AtlasTileDataUnit() {}
   ~AtlasTileDataUnit() { patchInformationData_.clear(); }
   AtlasTileDataUnit& operator=( const AtlasTileDataUnit& ) = default;
-
   void init() { patchInformationData_.clear(); }
   void allocate( size_t size ) { patchInformationData_.resize( size ); }
 
@@ -59,9 +57,7 @@ class AtlasTileDataUnit {
 
   size_t  getFrameIndex() { return frameIndex_; }
   uint8_t getPatchMode( size_t index ) { return patchInformationData_[index].getPatchMode(); }
-  uint8_t getPatchCount() { return patchInformationData_.size(); }
-  size_t  getAtgduPatchMode() { return atgduPatchMode_; }
-
+  size_t  getPatchCount() { return patchInformationData_.size(); }
   PatchInformationData&              getPatchInformationData( size_t index ) { return patchInformationData_[index]; }
   std::vector<PatchInformationData>& getPatchInformationData() { return patchInformationData_; }
   size_t                             getMatchedPatchCount() {
@@ -71,16 +67,14 @@ class AtlasTileDataUnit {
     }
     return matchedPatchCount;
   }
-
   void setFrameIndex( size_t value ) { frameIndex_ = value; }
   void setPatchCount( size_t value ) { patchCount_ = value; }
-  void setAtgduPatchMode( size_t value ) { atgduPatchMode_ = value; }
   void setPatchInformationData( size_t index, PatchInformationData& value ) { patchInformationData_[index] = value; }
 
  private:
   size_t                            frameIndex_;
   size_t                            patchCount_;
-  size_t                            atgduPatchMode_;
+  size_t                            patchMode_;
   std::vector<PatchInformationData> patchInformationData_;
 };
 

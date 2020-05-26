@@ -136,9 +136,8 @@ class AtlasFrameTileInformation {
       assert( 0 );
     tileId_[index] = value;
   }
-  void     setAuxiliaryVideoTileRowWidthMinus1( uint32_t value ) { auxiliaryVideoTileRowWidthMinus1_ = value; }
+  void setAuxiliaryVideoTileRowWidthMinus1( uint32_t value ) { auxiliaryVideoTileRowWidthMinus1_ = value; }
   void setAuxiliaryVideoTileRowHeight( size_t index, uint32_t value ) { auxiliaryVideoTileRowHeight_[index] = value; }
-
 
  private:
   bool                  singleTileInAtlasFrameFlag_;

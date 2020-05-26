@@ -193,7 +193,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
              ai.getAttributeMSBAlignFlag(attrIndex));*/
           std::cout << "texture video  ->" << videoBitstream.size() << " B" << std::endl;
         }
-        if ( asps.getRawPatchEnabledFlag( ) && sps.getAuxiliaryVideoPresentFlag( atlasIndex ) ) {
+        if ( asps.getRawPatchEnabledFlag() && sps.getAuxiliaryVideoPresentFlag( atlasIndex ) ) {
           auto  textureIndex     = static_cast<PCCVideoType>( VIDEO_TEXTURE_RAW + attrPartitionIndex );
           auto& videoBitstreamMP = context.getVideoBitstream( textureIndex );
           videoDecoder.decompress( context.getVideoRawPointsTexture(), path.str(), context.size(), videoBitstreamMP,
@@ -403,7 +403,8 @@ void PCCDecoder::setPostProcessingSeiParameters( GeneratePointCloudParameters& p
   auto&   oi                    = sps.getOccupancyInformation( atlasIndex );
   auto&   gi                    = sps.getGeometryInformation( atlasIndex );
   auto&   asps                  = context.getAtlasSequenceParameterSet( 0 );
-  bool    seiSmoothingIsPresent = context.seiIsPresent( NAL_PREFIX_ESEI, SMOOTHING_PARAMETERS );
+  bool    seiGeometrySmoothing  = context.seiIsPresent( NAL_PREFIX_ESEI, GEOMETRY_SMOOTHING );
+  bool    seiAttributeSmoothing = context.seiIsPresent( NAL_PREFIX_ESEI, ATTRIBUTE_SMOOTHING );
   auto&   plt                   = sps.getProfileTierLevel();
   params.flagGeometrySmoothing_ = false;
   params.gridSmoothing_         = false;
@@ -413,20 +414,22 @@ void PCCDecoder::setPostProcessingSeiParameters( GeneratePointCloudParameters& p
   params.pbfPassesCount_        = 0;
   params.pbfFilterSize_         = 0;
   params.pbfLog2Threshold_      = 0;
-  if ( seiSmoothingIsPresent ) {
-    auto* sei = static_cast<SEISmoothingParameters*>( context.getSei( NAL_PREFIX_ESEI, SMOOTHING_PARAMETERS ) );
-    if ( sei->getSpGeometrySmoothingEnabledFlag() ) {
-      params.flagGeometrySmoothing_ = true;
-      if ( sei->getSpGeometrySmoothingId() == 0 ) {
-        params.gridSmoothing_      = true;
-        params.gridSize_           = sei->getSpGeometrySmoothingGridSizeMinus2() + 2;
-        params.thresholdSmoothing_ = static_cast<double>( sei->getSpGeometrySmoothingThreshold() );
-      }
-      if ( sei->getSpGeometrySmoothingId() == 1 ) {
-        params.pbfEnableFlag_    = true;
-        params.pbfPassesCount_   = sei->getSpGeometryPatchBlockFilteringPassesCountMinus1() + 1;
-        params.pbfFilterSize_    = sei->getSpGeometryPatchBlockFilteringFilterSizeMinus1() + 1;
-        params.pbfLog2Threshold_ = sei->getSpGeometryPatchBlockFilteringLog2ThresholdMinus1() + 1;
+  if ( seiGeometrySmoothing ) {
+    auto* sei = static_cast<SEIGeometrySmoothing*>( context.getSei( NAL_PREFIX_ESEI, GEOMETRY_SMOOTHING ) );
+    for ( size_t i = 0; i < sei->getSmoothingInstancesUpdated(); i++ ) {
+      size_t k = sei->getSmoothingInstanceIndex( i );
+      if ( !sei->getSmoothingInstanceCancelFlag( k ) ) {
+        params.flagGeometrySmoothing_ = true;
+        if ( sei->getSmoothingMethodType( k ) == 1 ) {
+          params.gridSmoothing_      = true;
+          params.gridSize_           = sei->getSmoothingGridSizeMinus2( k ) + 2;
+          params.thresholdSmoothing_ = static_cast<double>( sei->getSmoothingThreshold( k ) );
+        } else if ( sei->getSmoothingMethodType( k ) == 2 ) {
+          params.pbfEnableFlag_    = true;
+          params.pbfPassesCount_   = sei->getPbfPassesCountMinus1( k ) + 1;
+          params.pbfFilterSize_    = sei->getPbfFilterSizeMinus1( k ) + 1;
+          params.pbfLog2Threshold_ = sei->getPbfLog2ThresholdMinus1( k ) + 1;
+        }
       }
     }
   }
@@ -437,30 +440,33 @@ void PCCDecoder::setPostProcessingSeiParameters( GeneratePointCloudParameters& p
       size_t( plt.getProfileCodecGroupIdc() == CODEC_GROUP_HEVC444 ? COLOURFORMAT444 : COLOURFORMAT420 );
   params.nbThread_   = params_.nbThread_;
   params.absoluteD1_ = sps.getMapCountMinus1( atlasIndex ) == 0 || sps.getMapAbsoluteCodingEnableFlag( atlasIndex, 1 );
-  params.multipleStreams_             = sps.getMultipleMapStreamsPresentFlag( atlasIndex );
-  params.surfaceThickness_            = asps.getAspsVpccExtension().getSurfaceThicknessMinus1() + 1;
-  params.thresholdColorSmoothing_     = 0.;
-  params.gridColorSmoothing_          = false;
-  params.cgridSize_                   = 0;
-  params.thresholdColorDifference_    = 0;
-  params.thresholdColorVariation_     = 0;
-  params.thresholdLocalEntropy_       = 0;
+  params.multipleStreams_          = sps.getMultipleMapStreamsPresentFlag( atlasIndex );
+  params.surfaceThickness_         = asps.getAspsVpccExtension().getSurfaceThicknessMinus1() + 1;
+  params.thresholdColorSmoothing_  = 0.;
+  params.gridColorSmoothing_       = false;
+  params.cgridSize_                = 0;
+  params.thresholdColorDifference_ = 0;
+  params.thresholdColorVariation_  = 0;
+  // params.thresholdLocalEntropy_       = 0;
   params.radius2ColorSmoothing_       = 64;
   params.neighborCountColorSmoothing_ = 64;
   params.flagColorSmoothing_          = false;
-  if ( seiSmoothingIsPresent ) {
-    auto* sei = static_cast<SEISmoothingParameters*>( context.getSei( NAL_PREFIX_ESEI, SMOOTHING_PARAMETERS ) );
-    for ( size_t j = 0; j < sei->getSpNumAttributeUpdates(); j++ ) {
-      size_t index = sei->getSpAttributeIdx( j );
-      for ( size_t i = 0; i < sei->getSpDimensionMinus1( index ) + 1; i++ ) {
-        if ( sei->getSpAttrSmoothingParamsEnabledFlag( index, i ) ) {
-          params.flagColorSmoothing_       = true;
-          params.thresholdColorSmoothing_  = static_cast<double>( sei->getSpAttrSmoothingThreshold( index, i ) );
-          params.gridColorSmoothing_       = true;
-          params.cgridSize_                = sei->getSpAttrSmoothingGridSizeMinus2( index, i ) + 2;
-          params.thresholdColorDifference_ = sei->getSpAttrSmoothingThresholdDifference( index, i );
-          params.thresholdColorVariation_  = sei->getSpAttrSmoothingThresholdVariation( index, i );
-          params.thresholdLocalEntropy_    = sei->getSpAttrSmoothingLocalEntropyThreshold( index, i );
+  if ( seiAttributeSmoothing ) {
+    auto* sei = static_cast<SEIAttributeSmoothing*>( context.getSei( NAL_PREFIX_ESEI, ATTRIBUTE_SMOOTHING ) );
+    for ( size_t j = 0; j < sei->getNumAttributesUpdated(); j++ ) {
+      size_t k = sei->getAttributeIdx( j );
+      if ( !sei->getAttributeSmoothingCancelFlag( k ) ) {
+        for ( size_t i = 0; i < sei->getSmoothingInstancesUpdated( k ) + 1; i++ ) {
+          size_t m = sei->getSmoothingInstanceIndex( k, i );
+          if ( !sei->getSmoothingInstanceCancelFlag( k, m ) ) {
+            params.flagColorSmoothing_       = true;
+            params.thresholdColorSmoothing_  = static_cast<double>( sei->getSmoothingThreshold( k, m ) );
+            params.gridColorSmoothing_       = true;
+            params.cgridSize_                = sei->getSmoothingGridSizeMinus2( k, m ) + 2;
+            params.thresholdColorDifference_ = sei->getSmoothingThresholdDifference( k, m );
+            params.thresholdColorVariation_  = sei->getSmoothingThresholdVariation( k, m );
+            // params.thresholdLocalEntropy_    = sei->getSmoothingThreshold( index, i );
+          }
         }
       }
     }
@@ -470,7 +476,7 @@ void PCCDecoder::setPostProcessingSeiParameters( GeneratePointCloudParameters& p
   params.pointLocalReconstruction_      = asps.getPointLocalReconstructionEnabledFlag();
   params.mapCountMinus1_                = sps.getMapCountMinus1( atlasIndex );
   params.singleMapPixelInterleaving_    = asps.getPixelDeinterleavingFlag();
-  params.useAdditionalPointsPatch_      = asps.getRawPatchEnabledFlag( );
+  params.useAdditionalPointsPatch_      = asps.getRawPatchEnabledFlag();
   params.enhancedOccupancyMapCode_      = asps.getEomPatchEnabledFlag();
   params.EOMFixBitCount_                = asps.getEomFixBitCountMinus1() + 1;
   params.geometry3dCoordinatesBitdepth_ = gi.getGeometry3dCoordinatesBitdepthMinus1() + 1;
@@ -483,7 +489,8 @@ void PCCDecoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& 
   auto&   oi                    = sps.getOccupancyInformation( atlasIndex );
   auto&   gi                    = sps.getGeometryInformation( atlasIndex );
   auto&   asps                  = context.getAtlasSequenceParameterSet( 0 );
-  bool    seiSmoothingIsPresent = context.seiIsPresent( NAL_PREFIX_ESEI, SMOOTHING_PARAMETERS );
+  bool    seiGeometrySmoothing  = context.seiIsPresent( NAL_PREFIX_ESEI, GEOMETRY_SMOOTHING );
+  bool    seiAttributeSmoothing = context.seiIsPresent( NAL_PREFIX_ESEI, ATTRIBUTE_SMOOTHING );
   auto&   plt                   = sps.getProfileTierLevel();
   params.flagGeometrySmoothing_ = false;
   params.gridSmoothing_         = false;
@@ -493,20 +500,22 @@ void PCCDecoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& 
   params.pbfPassesCount_        = 0;
   params.pbfFilterSize_         = 0;
   params.pbfLog2Threshold_      = 0;
-  if ( seiSmoothingIsPresent ) {
-    auto* sei = static_cast<SEISmoothingParameters*>( context.getSei( NAL_PREFIX_ESEI, SMOOTHING_PARAMETERS ) );
-    if ( sei->getSpGeometrySmoothingEnabledFlag() ) {
-      params.flagGeometrySmoothing_ = true;
-      if ( sei->getSpGeometrySmoothingId() == 0 ) {
-        params.gridSmoothing_      = true;
-        params.gridSize_           = sei->getSpGeometrySmoothingGridSizeMinus2() + 2;
-        params.thresholdSmoothing_ = static_cast<double>( sei->getSpGeometrySmoothingThreshold() );
-      }
-      if ( sei->getSpGeometrySmoothingId() == 1 ) {
-        params.pbfEnableFlag_    = true;
-        params.pbfPassesCount_   = sei->getSpGeometryPatchBlockFilteringPassesCountMinus1() + 1;
-        params.pbfFilterSize_    = sei->getSpGeometryPatchBlockFilteringFilterSizeMinus1() + 1;
-        params.pbfLog2Threshold_ = sei->getSpGeometryPatchBlockFilteringLog2ThresholdMinus1() + 1;
+  if ( seiGeometrySmoothing ) {
+    auto* sei = static_cast<SEIGeometrySmoothing*>( context.getSei( NAL_PREFIX_ESEI, GEOMETRY_SMOOTHING ) );
+    for ( size_t i = 0; i < sei->getSmoothingInstancesUpdated(); i++ ) {
+      size_t k = sei->getSmoothingInstanceIndex( i );
+      if ( !sei->getSmoothingInstanceCancelFlag( k ) ) {
+        params.flagGeometrySmoothing_ = true;
+        if ( sei->getSmoothingMethodType( k ) == 1 ) {
+          params.gridSmoothing_      = true;
+          params.gridSize_           = sei->getSmoothingGridSizeMinus2( k ) + 2;
+          params.thresholdSmoothing_ = static_cast<double>( sei->getSmoothingThreshold( k ) );
+        } else if ( sei->getSmoothingMethodType( k ) == 2 ) {
+          params.pbfEnableFlag_    = true;
+          params.pbfPassesCount_   = sei->getPbfPassesCountMinus1( k ) + 1;
+          params.pbfFilterSize_    = sei->getPbfFilterSizeMinus1( k ) + 1;
+          params.pbfLog2Threshold_ = sei->getPbfLog2ThresholdMinus1( k ) + 1;
+        }
       }
     }
   }
@@ -517,30 +526,35 @@ void PCCDecoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& 
       size_t( plt.getProfileCodecGroupIdc() == CODEC_GROUP_HEVC444 ? COLOURFORMAT444 : COLOURFORMAT420 );
   params.nbThread_   = params_.nbThread_;
   params.absoluteD1_ = sps.getMapCountMinus1( atlasIndex ) == 0 || sps.getMapAbsoluteCodingEnableFlag( atlasIndex, 1 );
-  params.multipleStreams_             = sps.getMultipleMapStreamsPresentFlag( atlasIndex );
-  params.surfaceThickness_            = asps.getAspsVpccExtension().getSurfaceThicknessMinus1() + 1;
-  params.thresholdColorSmoothing_     = 0.;
-  params.gridColorSmoothing_          = false;
-  params.cgridSize_                   = 0;
-  params.thresholdColorDifference_    = 0;
-  params.thresholdColorVariation_     = 0;
-  params.thresholdLocalEntropy_       = 0;
+  params.multipleStreams_          = sps.getMultipleMapStreamsPresentFlag( atlasIndex );
+  params.surfaceThickness_         = asps.getAspsVpccExtension().getSurfaceThicknessMinus1() + 1;
+  params.thresholdColorSmoothing_  = 0.;
+  params.gridColorSmoothing_       = false;
+  params.cgridSize_                = 0;
+  params.thresholdColorDifference_ = 0;
+  params.thresholdColorVariation_  = 0;
+  // params.thresholdLocalEntropy_       = 0;
   params.radius2ColorSmoothing_       = 64;
   params.neighborCountColorSmoothing_ = 64;
   params.flagColorSmoothing_          = false;
-  if ( seiSmoothingIsPresent ) {
-    auto* sei = static_cast<SEISmoothingParameters*>( context.getSei( NAL_PREFIX_ESEI, SMOOTHING_PARAMETERS ) );
-    for ( size_t j = 0; j < sei->getSpNumAttributeUpdates(); j++ ) {
-      size_t index = sei->getSpAttributeIdx( j );
-      for ( size_t i = 0; i < sei->getSpDimensionMinus1( index ) + 1; i++ ) {
-        if ( sei->getSpAttrSmoothingParamsEnabledFlag( index, i ) ) {
-          params.flagColorSmoothing_       = true;
-          params.thresholdColorSmoothing_  = static_cast<double>( sei->getSpAttrSmoothingThreshold( index, i ) );
-          params.gridColorSmoothing_       = true;
-          params.cgridSize_                = sei->getSpAttrSmoothingGridSizeMinus2( index, i ) + 2;
-          params.thresholdColorDifference_ = sei->getSpAttrSmoothingThresholdDifference( index, i );
-          params.thresholdColorVariation_  = sei->getSpAttrSmoothingThresholdVariation( index, i );
-          params.thresholdLocalEntropy_    = sei->getSpAttrSmoothingLocalEntropyThreshold( index, i );
+  if ( seiAttributeSmoothing ) {
+    auto* sei = static_cast<SEIAttributeSmoothing*>( context.getSei( NAL_PREFIX_ESEI, ATTRIBUTE_SMOOTHING ) );
+    for ( size_t j = 0; j < sei->getNumAttributesUpdated(); j++ ) {
+      size_t k = sei->getAttributeIdx( j );
+      if ( !sei->getAttributeSmoothingCancelFlag( k ) ) {
+        for ( size_t i = 0; i < sei->getSmoothingInstancesUpdated( k ) + 1; i++ ) {
+          size_t m = sei->getSmoothingInstanceIndex( k, i );
+          if ( !sei->getSmoothingInstanceCancelFlag( k, m ) ) {
+            if ( sei->getSmoothingMethodType( k, m ) == 1 ) {
+              params.flagColorSmoothing_       = true;
+              params.thresholdColorSmoothing_  = static_cast<double>( sei->getSmoothingThreshold( k, m ) );
+              params.gridColorSmoothing_       = true;
+              params.cgridSize_                = sei->getSmoothingGridSizeMinus2( k, m ) + 2;
+              params.thresholdColorDifference_ = sei->getSmoothingThresholdDifference( k, m );
+              params.thresholdColorVariation_  = sei->getSmoothingThresholdVariation( k, m );
+              // params.thresholdLocalEntropy_    = sei->getSmoothingLocalEntropyThreshold( k, m );
+            }
+          }
         }
       }
     }
@@ -562,7 +576,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
   auto&  sps        = context.getVps();
   size_t atlasIndex = context.getAtlasIndex();
   auto&  asps       = context.getAtlasSequenceParameterSet( /*0*/ );
-  auto& atglulist = context.getAtlasTileLayerList();
+  auto&  atglulist  = context.getAtlasTileLayerList();
   // context.setOccupancyPackingBlockSize( pow( 2,
   // asps.getLog2PatchPackingBlockSize() ) );
   context.resize( atglulist.size() );  // assuming that we have just one tile
@@ -601,7 +615,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
   // used, the code below is wrong (patches are not accumulated, but overwriten)
   for ( size_t tileIndex = 0; tileIndex < NumTilesInPatchFrame; tileIndex++ ) {
     auto& atglu = context.getAtlasTileLayer( frameIndex, tileIndex );
-    auto& ath  = atglu.getAtlasTileHeader();
+    auto& ath   = atglu.getAtlasTileHeader();
     // the header indicates the structures used
     auto& afps  = context.getAtlasFrameParameterSet( ath.getAtlasFrameParameterSetId() );
     auto& asps  = context.getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
@@ -620,7 +634,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
     size_t       numRawPatches           = 0;
     size_t       numNonRawPatch          = 0;
     size_t       numEomPatch             = 0;
-    PCCTileType tileType           = ath.getType();
+    PCCTileType  tileType                = ath.getType();
     size_t       patchCount              = atgdu.getPatchCount();
     for ( size_t i = 0; i < patchCount; i++ ) {
       PCCPatchType currPatchType = getPatchType( tileType, atgdu.getPatchMode( i ) );
@@ -720,8 +734,8 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
             patchIndex, patch.getU0(), patch.getV0(), patch.getU1(), patch.getV1(), patch.getD1(), patch.getSizeU0(),
             patch.getSizeV0(), patch.getSizeD(), pdu.get3dPosDeltaMaxZ(), patch.getProjectionMode(),
             patch.getPatchOrientation(), patch.getNormalAxis(), patch.getTangentAxis(), patch.getBitangentAxis(),
-            (size_t)lodEnableFlag, patch.getLodScaleX(), patch.getLodScaleY(),
-            asps.getExtendedProjectionEnabledFlag(), pdu.getProjectionId(), patch.getAxisOfAdditionalPlane() );
+            (size_t)lodEnableFlag, patch.getLodScaleX(), patch.getLodScaleY(), asps.getExtendedProjectionEnabledFlag(),
+            pdu.getProjectionId(), patch.getAxisOfAdditionalPlane() );
         patch.allocOneLayerData();
         if ( asps.getPointLocalReconstructionEnabledFlag() ) {
           setPointLocalReconstructionData( frame, patch, pdu.getPointLocalReconstructionData(),
@@ -737,9 +751,9 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
             "IPDU: refAtlasFrame= %d refPatchIdx = %d pos2DXY = %ld %ld "
             "pos3DXYZW = %ld %ld %ld %ld size2D = %ld %ld "
             "\n",
-            ipdu.getRefIndex(), ipdu.getRefPatchIndex(), ipdu.get2dPosX(), ipdu.get2dPosY(),
-            ipdu.get3dPosX(), ipdu.get3dPosY(), ipdu.get3dPosMinZ(), ipdu.get3dPosDeltaMaxZ(),
-            ipdu.get2dDeltaSizeX(), ipdu.get2dDeltaSizeY() );
+            ipdu.getRefIndex(), ipdu.getRefPatchIndex(), ipdu.get2dPosX(), ipdu.get2dPosY(), ipdu.get3dPosX(),
+            ipdu.get3dPosY(), ipdu.get3dPosMinZ(), ipdu.get3dPosDeltaMaxZ(), ipdu.get2dDeltaSizeX(),
+            ipdu.get2dDeltaSizeY() );
         patch.setBestMatchIdx( static_cast<int32_t>( ipdu.getRefPatchIndex() + predIndex ) );
         predIndex += ipdu.getRefPatchIndex() + 1;
         patch.setRefAtlasFrameIndex( ipdu.getRefIndex() );
@@ -779,9 +793,8 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
           patch.getD1() = ( ipdu.get3dPosMinZ() + ( refPatch.getD1() / minLevel ) ) * minLevel;
         } else {
           if ( static_cast<int>( asps.getExtendedProjectionEnabledFlag() ) == 0 ) {
-            patch.getD1() =
-                max3DCoordinate -
-                ( ipdu.get3dPosMinZ() + ( ( max3DCoordinate - refPatch.getD1() ) / minLevel ) ) * minLevel;
+            patch.getD1() = max3DCoordinate -
+                            ( ipdu.get3dPosMinZ() + ( ( max3DCoordinate - refPatch.getD1() ) / minLevel ) ) * minLevel;
           } else {
             patch.getD1() =
                 ( max3DCoordinate << 1 ) -
@@ -826,9 +839,8 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
             "MPDU: refAtlasFrame= %d refPatchIdx = ?? pos2DXY = %ld %ld "
             "pos3DXYZW = %ld %ld %ld %ld size2D = %ld %ld "
             "\n",
-            mpdu.getRefIndex(), mpdu.get2dPosX(), mpdu.get2dPosY(), mpdu.get3dPosX(),
-            mpdu.get3dPosY(), mpdu.get3dPosMinZ(), mpdu.get3dPosDeltaMaxZ(), mpdu.get2dDeltaSizeX(),
-            mpdu.get2dDeltaSizeY() );
+            mpdu.getRefIndex(), mpdu.get2dPosX(), mpdu.get2dPosY(), mpdu.get3dPosX(), mpdu.get3dPosY(),
+            mpdu.get3dPosMinZ(), mpdu.get3dPosDeltaMaxZ(), mpdu.get2dDeltaSizeX(), mpdu.get2dDeltaSizeY() );
 
         patch.setBestMatchIdx( patchIndex );
         predIndex = patchIndex;
@@ -869,8 +881,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
               } else {
                 patch.getD1() =
                     ( max3DCoordinate << 1 ) -
-                    ( mpdu.get3dPosMinZ() + ( ( ( max3DCoordinate << 1 ) - refPatch.getD1() ) / minLevel ) ) *
-                        minLevel;
+                    ( mpdu.get3dPosMinZ() + ( ( ( max3DCoordinate << 1 ) - refPatch.getD1() ) / minLevel ) ) * minLevel;
               }
             }
 

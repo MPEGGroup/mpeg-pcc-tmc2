@@ -97,11 +97,11 @@ void PCCFrameContext::constructAtghRefListStruct( PCCContext& context, AtlasTile
   auto&  afps   = context.getAtlasFrameParameterSet( afpsId );
   size_t aspsId = afps.getAtlasSequenceParameterSetId();
   auto&  asps   = context.getAtlasSequenceParameterSet( aspsId );
-  ath.setRefAtlasFrameListSpsFlag( true );                       // using ASPS refList
-  ath.setRefAtlasFrameListIdx( getActiveRefAtlasFrameIndex() );  // ath.atgh_ref_atlas_frame_list_idx
+  ath.setRefAtlasFrameListSpsFlag( true );                                         // using ASPS refList
+  ath.setRefAtlasFrameListIdx( getActiveRefAtlasFrameIndex() );                    // ath.atgh_ref_atlas_frame_list_idx
   ath.setRefListStruct( asps.getRefListStruct( ath.getRefAtlasFrameListIdx() ) );  // copied to ath's refList,
-                                                                                         // not signalled
-  if ( index_ <= afps.getNumRefIdxDefaultActiveMinus1() ) {  // 3
+                                                                                   // not signalled
+  if ( index_ <= afps.getNumRefIdxDefaultActiveMinus1() ) {                        // 3
     ath.setNumRefIdxActiveOverrideFlag( true );
     ath.setNumRefIdxActiveMinus1( index_ == 0 ? 0 : ( index_ - 1 ) );
   } else {
