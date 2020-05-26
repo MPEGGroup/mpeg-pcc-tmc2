@@ -76,15 +76,15 @@ class PCCAtlasContext {
   void                                   printBlockToPatch( const size_t occupancyResolution );
 
   // video related functions
-  void                           allocateVideoFrames( PCCHighLevelSyntax& syntax, size_t numFrames );
-  void                           clearVideoFrames();
-  PCCVideoOccupancyMap&          getVideoOccupancyMap() { return occFrames_; }
-  //PCCVideoGeometry&              getVideoGeometry( size_t mapIdx ) { return geoFrames_[mapIdx]; }
+  void                  allocateVideoFrames( PCCHighLevelSyntax& syntax, size_t numFrames );
+  void                  clearVideoFrames();
+  PCCVideoOccupancyMap& getVideoOccupancyMap() { return occFrames_; }
+  // PCCVideoGeometry&              getVideoGeometry( size_t mapIdx ) { return geoFrames_[mapIdx]; }
   std::vector<PCCVideoGeometry>& getVideoGeometryMultiple() { return geoFrames_; }
   PCCVideoGeometry&              getVideoAuxGeometry() { return geoAuxFrames_; }
-//  PCCVideoAttributes&            getVideoAttribute( size_t attrIdx, size_t partIdx, size_t mapIdx ) {
-//    return attrFrames_[attrIdx][partIdx][mapIdx];
-//  }
+  //  PCCVideoAttributes&            getVideoAttribute( size_t attrIdx, size_t partIdx, size_t mapIdx ) {
+  //    return attrFrames_[attrIdx][partIdx][mapIdx];
+  //  }
   std::vector<PCCVideoTexture>& getVideoAttributeMultiple( size_t attrIdx, size_t partIdx ) {
     return attrFrames_[attrIdx][partIdx];
   }

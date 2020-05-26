@@ -116,11 +116,11 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
   } else {
     int   decodedBitDepthGeo = gi.getGeometryNominal2dBitdepthMinus1() + 1;
     auto& videoBitstream     = context.getVideoBitstream( VIDEO_GEOMETRY );
-    videoDecoder.decompress( context.getVideoGeometryMultiple()[0], path.str(), context.size() * mapCount, videoBitstream,
-                             params_.videoDecoderPath_, context, decodedBitDepthGeo, params_.keepIntermediateFiles_,
-                             isGeometry444 );
-    context.getVideoGeometryMultiple()[0].convertBitdepth( decodedBitDepthGeo, gi.getGeometryNominal2dBitdepthMinus1() + 1,
-                                                gi.getGeometryMSBAlignFlag() );
+    videoDecoder.decompress( context.getVideoGeometryMultiple()[0], path.str(), context.size() * mapCount,
+                             videoBitstream, params_.videoDecoderPath_, context, decodedBitDepthGeo,
+                             params_.keepIntermediateFiles_, isGeometry444 );
+    context.getVideoGeometryMultiple()[0].convertBitdepth(
+        decodedBitDepthGeo, gi.getGeometryNominal2dBitdepthMinus1() + 1, gi.getGeometryMSBAlignFlag() );
     std::cout << "geometry video ->" << videoBitstream.size() << " B" << std::endl;
   }
 
@@ -176,14 +176,14 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
           auto  textureIndex   = static_cast<PCCVideoType>( VIDEO_TEXTURE + attrPartitionIndex );
           auto& videoBitstream = context.getVideoBitstream( textureIndex );
           printf( "call videoDecoder.decompress()::context.getVideoTexture() \n" );
-          videoDecoder.decompress( context.getVideoTextureMultiple()[0],       // video,
-                                   path.str(),                      // path,
-                                   context.size() * mapCount,       // frameCount,
-                                   videoBitstream,                  // bitstream,
-                                   params_.videoDecoderPath_,       // decoderPath,
-                                   context,                         // contexts,
-                                   decodedBitdepthAttribute,        // bitDepth,
-                                   params_.keepIntermediateFiles_,  // keepIntermediateFiles
+          videoDecoder.decompress( context.getVideoTextureMultiple()[0],  // video,
+                                   path.str(),                            // path,
+                                   context.size() * mapCount,             // frameCount,
+                                   videoBitstream,                        // bitstream,
+                                   params_.videoDecoderPath_,             // decoderPath,
+                                   context,                               // contexts,
+                                   decodedBitdepthAttribute,              // bitDepth,
+                                   params_.keepIntermediateFiles_,        // keepIntermediateFiles
                                    isAttributes444,
                                    params_.patchColorSubsampling_,  // patchColorSubsampling
                                    params_.inverseColorSpaceConversionConfig_, params_.colorSpaceConversionPath_ );

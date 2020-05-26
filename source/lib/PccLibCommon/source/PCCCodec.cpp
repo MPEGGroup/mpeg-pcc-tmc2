@@ -409,9 +409,10 @@ std::vector<PCCPoint3D> PCCCodec::generatePoints( const GeneratePointCloudParame
                                                   const bool                           filling,
                                                   const size_t                         minD1,
                                                   const size_t                         neighbor ) {
-  const auto& patch = frame.getPatch( patchIndex );
+  const auto& patch  = frame.getPatch( patchIndex );
   auto&       frame0 = videoGeometryMultiple[0].getFrame( videoFrameIndex );
-      //params.multipleStreams_ ? videoGeometryMultiple[0].getFrame( videoFrameIndex ) : videoGeometry.getFrame( videoFrameIndex );
+  // params.multipleStreams_ ? videoGeometryMultiple[0].getFrame( videoFrameIndex ) : videoGeometry.getFrame(
+  // videoFrameIndex );
   std::vector<PCCPoint3D> createdPoints;
   PCCPoint3D              point0;
   if ( params.pbfEnableFlag_ ) {
@@ -881,10 +882,9 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
                 }       // if (eomCode == 0)
               } else {  // not params.enhancedOccupancyMapCode_
                 auto& mode = context.getPointLocalReconstructionMode( patch.getPointLocalReconstructionMode( u0, v0 ) );
-                auto  createdPoints =
-                    generatePoints( params, frame, //videoGeometry,
-                                   videoGeometryMultiple, videoFrameIndex, patchIndex, u, v, x, y,
-                                    mode.interpolate_, mode.filling_, mode.minD1_, mode.neighbor_ );
+                auto  createdPoints = generatePoints( params, frame,  // videoGeometry,
+                                                     videoGeometryMultiple, videoFrameIndex, patchIndex, u, v, x, y,
+                                                     mode.interpolate_, mode.filling_, mode.minD1_, mode.neighbor_ );
                 if ( !createdPoints.empty() ) {
                   for ( size_t i = 0; i < createdPoints.size(); i++ ) {
                     if ( ( !params.removeDuplicatePoints_ ) ||
@@ -1993,10 +1993,10 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
 #ifdef CODEC_TRACE
   printChecksum( reconstruct, "colorPointCloud in" );
 #endif
-  auto&        sps        = context.getVps();
-  auto&        videoTexture       = context.getVideoTextureMultiple()[0];
-  auto&        videoTextureFrame1 = context.getVideoTextureMultiple()[1];
-  const size_t mapCount           = params.mapCountMinus1_ + 1;
+  auto&        sps                           = context.getVps();
+  auto&        videoTexture                  = context.getVideoTextureMultiple()[0];
+  auto&        videoTextureFrame1            = context.getVideoTextureMultiple()[1];
+  const size_t mapCount                      = params.mapCountMinus1_ + 1;
   size_t       numberOfRawPointsAndEOMColors = 0;
   size_t       numOfRawGeos                  = 0;
   size_t       numberOfEOMPoints             = 0;

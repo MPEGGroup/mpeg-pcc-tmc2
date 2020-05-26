@@ -588,15 +588,17 @@ bool PCCEncoderParameters::check() {
     std::cerr << "absoluteD1_ should be true when multipleStreams_ is false\n";
     absoluteD1_ = true;
   }
-  if( !absoluteT1_ ) {//jkei: absoluteT1 -> enableT1Prediction
+  if ( !absoluteT1_ ) {  // jkei: absoluteT1 -> enableT1Prediction
     std::cerr << "non-first maps of Texture Image is coded ";
-    if(absoluteD1_) std::cerr<<"without prediction\n";
-    else std::cerr<<"with prediction\n";
+    if ( absoluteD1_ )
+      std::cerr << "without prediction\n";
+    else
+      std::cerr << "with prediction\n";
   }
-//  if ( absoluteD1_ && !absoluteT1_ ) {
-//    std::cerr << "absoluteT1_ should be true when absoluteD1_ is true\n";
-//    absoluteT1_ = true;
-//  }
+  //  if ( absoluteD1_ && !absoluteT1_ ) {
+  //    std::cerr << "absoluteT1_ should be true when absoluteD1_ is true\n";
+  //    absoluteT1_ = true;
+  //  }
 
   if ( losslessGeo_ ) {
     pbfEnableFlag_          = false;

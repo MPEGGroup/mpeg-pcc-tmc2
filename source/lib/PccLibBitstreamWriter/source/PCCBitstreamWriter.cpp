@@ -729,9 +729,9 @@ void PCCBitstreamWriter::atlasFrameTileInformation( AtlasFrameTileInformation&  
       bitstream.writeUvlc( afti.getNumTilesInAtlasFrameMinus1() );  // ue(v)
       for ( size_t i = 0; i <= afti.getNumTilesInAtlasFrameMinus1(); i++ ) {
         uint8_t bitCount = ceilLog2( NumPartitionsInAtlasFrame );
-        bitstream.write( afti.getTopLeftPartitionIdx( i ), bitCount );  // u(v) :
-        bitstream.writeUvlc( afti.getBottomRightPartitionColumnOffset( i )); //ue(v)
-        bitstream.writeUvlc( afti.getBottomRightPartitionRowOffset( i )); //ue(v)
+        bitstream.write( afti.getTopLeftPartitionIdx( i ), bitCount );         // u(v) :
+        bitstream.writeUvlc( afti.getBottomRightPartitionColumnOffset( i ) );  // ue(v)
+        bitstream.writeUvlc( afti.getBottomRightPartitionRowOffset( i ) );     // ue(v)
       }
     }
   }
@@ -1452,7 +1452,9 @@ void PCCBitstreamWriter::sampleStreamNalUnit( PCCHighLevelSyntax&  syntax,
                    8 * ( ssnu.getUnitSizePrecisionBytesMinus1() + 1 ) );  // u(v)
   nalUnitHeader( bitstream, nalu );
   switch ( nalu.getNalUnitType() ) {
-    case NAL_ASPS: atlasSequenceParameterSetRbsp( syntax.getAtlasSequenceParameterSet( index ), syntax, bitstream ); break;
+    case NAL_ASPS:
+      atlasSequenceParameterSetRbsp( syntax.getAtlasSequenceParameterSet( index ), syntax, bitstream );
+      break;
     case NAL_AFPS: atlasFrameParameterSetRbsp( syntax.getAtlasFrameParameterSet( index ), syntax, bitstream ); break;
     case NAL_TRAIL_N:
     case NAL_TRAIL_R:
@@ -2177,89 +2179,102 @@ void PCCBitstreamWriter::attributeSmoothing( PCCBitstream& bitstream, SEI& seiAb
 
 ////////
 
-// F.2  VUI syntax
-// F.2.1  VUI parameters syntax
+// G.2 VUI syntax
+// G.2.1 VUI parameters syntax
 void PCCBitstreamWriter::vuiParameters( PCCBitstream& bitstream, VUIParameters& vp ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
-  bitstream.write( vp.getVuiWorldCoordinatesInfoPresentFlag(), 1 );  // u(1)
-  if ( vp.getVuiWorldCoordinatesInfoPresentFlag() ) {
-    bitstream.write( vp.getVuiUnitInMetresFlag(), 1 );  // u(1)
-    bitstream.write( vp.getVuiNumUnitsInBlock(), 32 );  // u(32)
-    bitstream.write( vp.getVuiBlockScale(), 32 );       // u(32)
-  }
-  bitstream.write( vp.getVuiDefaultDispalyBoxSize(), 1 );  // u(1)
-  if ( vp.getVuiDefaultDispalyBoxSize() ) {
-    bitstream.writeUvlc( vp.getVuiDefDispBoxLeftOffset() );    // ue(v)
-    bitstream.writeUvlc( vp.getVuiDefDispBoxRightOffset() );   // ue(v)
-    bitstream.writeUvlc( vp.getVuiDefDispBoxTopOffset() );     // ue(v)
-    bitstream.writeUvlc( vp.getVuiDefDispBoxBottomOffset() );  // ue(v)
-    bitstream.writeUvlc( vp.getVuiDefDispBoxFrontOffset() );   // ue(v)
-    bitstream.writeUvlc( vp.getVuiDefDispBoxBackOffset() );    // ue(v)
-  }
-  bitstream.write( vp.getVuiTimingInfoPresentFlag(), 1 );  // u(1)
-  if ( vp.getVuiTimingInfoPresentFlag() ) {
-    bitstream.write( vp.getVuiNumUnitsInTick(), 32 );              // u(32)
-    bitstream.write( vp.getVuiTimeScale(), 32 );                   // u(32)
-    bitstream.write( vp.getVuiPocProportionalToTimingFlag(), 1 );  // u(1)
-    if ( vp.getVuiPocProportionalToTimingFlag() ) {
-      bitstream.writeUvlc( vp.getVuiNumTicksPocDiffOneMinus1() );  // ue(v)
+  bitstream.write( vp.getTimingInfoPresentFlag(), 1 );  // u(1)
+  if ( vp.getTimingInfoPresentFlag() ) {
+    bitstream.write( vp.getNumUnitsInTick(), 32 );              // u(32)
+    bitstream.write( vp.getTimeScale(), 32 );                   // u(32)
+    bitstream.write( vp.getPocProportionalToTimingFlag(), 1 );  // u(1)
+    if ( vp.getPocProportionalToTimingFlag() ) {
+      bitstream.writeUvlc( vp.getNumTicksPocDiffOneMinus1() );  // ue(v)
     }
-    bitstream.write( vp.getVuiHrdParametersPresentFlag(), 1 );  // u(1)
-    if ( vp.getVuiHrdParametersPresentFlag() ) { hrdParameters( bitstream, vp.getHrdParameters() ); }
+    bitstream.write( vp.getHrdParametersPresentFlag(), 1 );  // u(1)
+    if ( vp.getHrdParametersPresentFlag() ) { hrdParameters( bitstream, vp.getHrdParameters() ); }
   }
-  bitstream.write( vp.getVuiBitstreamRestrictionFlag(), 1 );  // u(1)
-  if ( vp.getVuiBitstreamRestrictionFlag() ) {
-    bitstream.write( vp.getVuiTilesRestrictedFlag(), 1 );  // u(1)
-    bitstream.write( vp.getVuiConsistentTilesForVideoComponentsFlag(),
-                     1 );                                  // u(1)
-    bitstream.writeUvlc( vp.getVuiMaxNumTilePerAtlas() );  // ue(v)
+  bitstream.write( vp.getBitstreamRestrictionPresentFlag(), 1 );  // u(1)
+
+  if ( vp.getBitstreamRestrictionPresentFlag() ) {
+    bitstream.write( vp.getTilesRestrictedFlag(), 1 );                    // u(1)
+    bitstream.write( vp.getConsistentTilesForVideoComponentsFlag(), 1 );  // u(1)
+    bitstream.writeUvlc( vp.getMaxNumTilesPerAtlas() );                   // ue(v)
+  }
+  bitstream.write( vp.getCoordinateSystemParametersPresentFlag(), 1 );  // u(1)
+  if ( vp.getCoordinateSystemParametersPresentFlag() ) {
+    coordinateSystemParameters( bitstream, vp.getCoordinateSystemParameters() );
+  }
+  bitstream.write( vp.getUnitInMetresFlag(), 1 );           // u(1)
+  bitstream.write( vp.getDisplayBoxInfoPresentFlag(), 1 );  // u(1)
+  if ( vp.getDisplayBoxInfoPresentFlag() ) {
+    for ( size_t d = 0; d < 3; d++ ) {
+      bitstream.writeUvlc( vp.getDisplayBoxOrigin( d ) );  // ue(v)
+      bitstream.writeUvlc( vp.getDisplayBoxSize( d ) );    // ue(v)
+    }
+    bitstream.write( vp.getAnchorPointPresentFlag(), 1 );  // u(1)
+    if ( vp.getAnchorPointPresentFlag() ) {
+      for ( size_t d = 0; d < 3; d++ ) {
+        bitstream.write( vp.getAnchorPoint( d ), 32 );  // fl(32)
+      }
+    }
   }
 }
 
-// F.2.2  HRD parameters syntax
+// G.2.2  HRD parameters syntax
 void PCCBitstreamWriter::hrdParameters( PCCBitstream& bitstream, HrdParameters& hp ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
-  bitstream.write( hp.getHrdNalParametersPresentFlag(), 1 );  // u(1)
-  bitstream.write( hp.getHrdAclParametersPresentFlag(), 1 );  // u(1)
-  if ( hp.getHrdNalParametersPresentFlag() || hp.getHrdAclParametersPresentFlag() ) {
-    bitstream.write( hp.getHrdBitRateScale(), 4 );                        // u(4)
-    bitstream.write( hp.getHrdCabSizeScale(), 4 );                        // u(4)
-    bitstream.write( hp.getHrdInitialCabRemovalDelayLengthMinus1(), 5 );  // u(5)
-    bitstream.write( hp.getHrdAuCabRemovalDelayLengthMinus1(), 5 );       // u(5)
-    bitstream.write( hp.getHrdDabOutputDelayLengthMinus1(), 5 );          // u(5)
+  bitstream.write( hp.getNalParametersPresentFlag(), 1 );  // u(1)
+  bitstream.write( hp.getAclParametersPresentFlag(), 1 );  // u(1)
+  if ( hp.getNalParametersPresentFlag() || hp.getAclParametersPresentFlag() ) {
+    bitstream.write( hp.getBitRateScale(), 4 );                        // u(4)
+    bitstream.write( hp.getCabSizeScale(), 4 );                        // u(4)
+    bitstream.write( hp.getInitialCabRemovalDelayLengthMinus1(), 5 );  // u(5)
+    bitstream.write( hp.getAuCabRemovalDelayLengthMinus1(), 5 );       // u(5)
+    bitstream.write( hp.getDabOutputDelayLengthMinus1(), 5 );          // u(5)
   }
   for ( size_t i = 0; i <= hp.getMaxNumSubLayersMinus1(); i++ ) {
-    bitstream.write( hp.getHrdFixedAtlasRateGeneralFlag( i ), 1 );  // u(1)
-    if ( !hp.getHrdFixedAtlasRateGeneralFlag( i ) ) {
-      bitstream.write( hp.getHrdFixedAtlasRateWithinCasFlag( i ), 1 );  // u(1)
+    bitstream.write( hp.getFixedAtlasRateGeneralFlag( i ), 1 );  // u(1)
+    if ( !hp.getFixedAtlasRateGeneralFlag( i ) ) {
+      bitstream.write( hp.getFixedAtlasRateWithinCasFlag( i ), 1 );  // u(1)
     }
-    if ( hp.getHrdFixedAtlasRateWithinCasFlag( i ) ) {
-      bitstream.write( hp.getHrdElementalDurationInTcMinus1( i ), 1 );  // ue(v)
+    if ( hp.getFixedAtlasRateWithinCasFlag( i ) ) {
+      bitstream.write( hp.getElementalDurationInTcMinus1( i ), 1 );  // ue(v)
     } else {
-      bitstream.write( hp.getHrdLowDelayFlag( i ), 1 );  // u(1)
+      bitstream.write( hp.getLowDelayFlag( i ), 1 );  // u(1)
     }
-    if ( !hp.getHrdLowDelayFlag( i ) ) {
-      bitstream.write( hp.getHrdCabCntMinus1( i ), 1 );  // ue(v)
+    if ( !hp.getLowDelayFlag( i ) ) {
+      bitstream.write( hp.getCabCntMinus1( i ), 1 );  // ue(v)
     }
-    if ( hp.getHrdNalParametersPresentFlag() ) {
-      hrdSubLayerParameters( bitstream, hp.getHrdSubLayerParameters( 0, i ),
-                             static_cast<size_t>( hp.getHrdCabCntMinus1( i ) ) );
+    if ( hp.getNalParametersPresentFlag() ) {
+      hrdSubLayerParameters( bitstream, hp.getHdrSubLayerParameters( 0, i ),
+                             static_cast<size_t>( hp.getCabCntMinus1( i ) ) );
     }
-    if ( hp.getHrdAclParametersPresentFlag() ) {
-      hrdSubLayerParameters( bitstream, hp.getHrdSubLayerParameters( 1, i ),
-                             static_cast<size_t>( hp.getHrdCabCntMinus1( i ) ) );
+    if ( hp.getAclParametersPresentFlag() ) {
+      hrdSubLayerParameters( bitstream, hp.getHdrSubLayerParameters( 1, i ),
+                             static_cast<size_t>( hp.getCabCntMinus1( i ) ) );
     }
   }
 }
 
-// F.2.3  Sub-layer HRD parameters syntax
+// G.2.3  Sub-layer HRD parameters syntax
 void PCCBitstreamWriter::hrdSubLayerParameters( PCCBitstream& bitstream, HrdSubLayerParameters& hlsp, size_t cabCnt ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   for ( size_t i = 0; i <= cabCnt; i++ ) {
-    bitstream.writeUvlc( hlsp.getHrdBitRateValueMinus1( i ) );  // ue(v)
-    bitstream.writeUvlc( hlsp.getHrdCabSizeValueMinus1( i ) );  // ue(v)
-    bitstream.write( hlsp.getHrdCbrFlag( i ), 1 );              // u(1)
+    bitstream.writeUvlc( hlsp.getBitRateValueMinus1( i ) );  // ue(v)
+    bitstream.writeUvlc( hlsp.getCabSizeValueMinus1( i ) );  // ue(v)
+    bitstream.write( hlsp.getCbrFlag( i ), 1 );              // u(1)
   }
+}
+
+// G.2.4	Coordinate system parameters syntax
+void PCCBitstreamWriter::coordinateSystemParameters( PCCBitstream& bitstream, CoordinateSystemParameters& csp ) {
+  TRACE_BITSTREAM( "%s \n", __func__ );
+  bitstream.write( csp.getForwardAxis(), 2 );    // u(2)
+  bitstream.write( csp.getDeltaLeftAxis(), 1 );  // u(1)
+  bitstream.write( csp.getForwardSign(), 1 );    // u(1)
+  bitstream.write( csp.getLeftSign(), 1 );       // u(1)
+  bitstream.write( csp.getUpSign(), 1 );         // u(1)
 }
 
 // H.7.3.4.1	VPS V-PCC extension syntax

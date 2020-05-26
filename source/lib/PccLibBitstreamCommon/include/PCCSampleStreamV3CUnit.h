@@ -54,7 +54,7 @@ class SampleStreamV3CUnit {
   size_t                getV3CUnitCount() { return v3cUnits_.size(); }
   V3CUnit&              getLastV3CUnit() { return v3cUnits_.back(); }
   uint32_t              getSsvhUnitSizePrecisionBytesMinus1() { return ssvhUnitSizePrecisionBytesMinus1_; }
-  
+
   void setSsvhUnitSizePrecisionBytesMinus1( uint32_t value ) { ssvhUnitSizePrecisionBytesMinus1_ = value; }
 
  private:

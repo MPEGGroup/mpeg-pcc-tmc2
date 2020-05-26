@@ -93,7 +93,6 @@ class AtlasFrameTileInformation {
   void setNumTilesInAtlasFrameMinus1( uint32_t value ) { numTilesInAtlasFrameMinus1_ = value; }
   void setSignalledTileIdFlag( bool value ) { signalledTileIdFlag_ = value; }
   void setSignalledTileIdLengthMinus1( uint32_t value ) { signalledTileIdLengthMinus1_ = value; }
-
   void setPartitionColsWidthMinus1( size_t index, uint32_t value ) {
     if ( index == ( partitionColsWidthMinus1_.size() ) )
       partitionColsWidthMinus1_.resize( partitionColsWidthMinus1_.size() + 1 );

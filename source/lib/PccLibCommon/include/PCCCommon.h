@@ -122,13 +122,14 @@ const std::vector<int> orientation_vertical = {
     PATCH_ORIENTATION_DEFAULT, PATCH_ORIENTATION_SWAP,    PATCH_ORIENTATION_ROT180,
     PATCH_ORIENTATION_MIRROR,  PATCH_ORIENTATION_MROT180, PATCH_ORIENTATION_ROT270,
     PATCH_ORIENTATION_MROT90,  PATCH_ORIENTATION_ROT90};  // favoring vertical orientation
-const std::vector<int> orientation_horizontal = {PATCH_ORIENTATION_SWAP,   PATCH_ORIENTATION_DEFAULT, PATCH_ORIENTATION_ROT270,
-                                      PATCH_ORIENTATION_MROT90, PATCH_ORIENTATION_ROT90,   PATCH_ORIENTATION_ROT180,
-                                      PATCH_ORIENTATION_MIRROR, PATCH_ORIENTATION_MROT180};  // favoring
-                                                                                             // horizontal
-                                                                                             // orientations
-                                                                                             // (that should be
-                                                                                             // rotated)
+const std::vector<int> orientation_horizontal = {PATCH_ORIENTATION_SWAP,   PATCH_ORIENTATION_DEFAULT,
+                                                 PATCH_ORIENTATION_ROT270, PATCH_ORIENTATION_MROT90,
+                                                 PATCH_ORIENTATION_ROT90,  PATCH_ORIENTATION_ROT180,
+                                                 PATCH_ORIENTATION_MIRROR, PATCH_ORIENTATION_MROT180};  // favoring
+                                                                                                        // horizontal
+                                                                                                        // orientations
+                                                                                                        // (that should
+                                                                                                        // be rotated)
 
 static inline PCCEndianness PCCSystemEndianness() {
   uint32_t num = 1;

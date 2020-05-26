@@ -68,18 +68,16 @@ namespace pcc {
 // ******************************************************************* //
 // Trace modes to validate new syntax
 // ******************************************************************* //
- #define BITSTREAM_TRACE
+// #define BITSTREAM_TRACE
 
 // ******************************************************************* //
 // Common constants
 // ******************************************************************* //
 #define ATLASIDXPCC 0
 
-const uint32_t PCCTMC2ContainerMagicNumber = 23021981;
-const uint32_t PCCTMC2ContainerVersion     = 1;
-const uint32_t PCC_UNDEFINED_INDEX         = -1;
-const bool     printDetailedInfo           = false;
-const uint8_t  MAX_NUM_ATTR_PARTITIONS     = 64;
+const uint32_t PCC_UNDEFINED_INDEX     = -1;
+const bool     printDetailedInfo       = false;
+const uint8_t  MAX_NUM_ATTR_PARTITIONS = 64;
 enum PCCVideoType {
   VIDEO_OCCUPANCY = 0,
   VIDEO_GEOMETRY,

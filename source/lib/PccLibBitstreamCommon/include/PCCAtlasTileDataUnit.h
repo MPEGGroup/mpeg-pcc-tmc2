@@ -44,8 +44,8 @@ class AtlasTileDataUnit {
   AtlasTileDataUnit() {}
   ~AtlasTileDataUnit() { patchInformationData_.clear(); }
   AtlasTileDataUnit& operator=( const AtlasTileDataUnit& ) = default;
-  void init() { patchInformationData_.clear(); }
-  void allocate( size_t size ) { patchInformationData_.resize( size ); }
+  void               init() { patchInformationData_.clear(); }
+  void               allocate( size_t size ) { patchInformationData_.resize( size ); }
 
   void addPatchInformationData( PatchInformationData& value ) { patchInformationData_.push_back( value ); }
   PatchInformationData& addPatchInformationData( uint8_t patchMode ) {
@@ -55,10 +55,10 @@ class AtlasTileDataUnit {
     return patchInformationData_.back();
   }
 
-  size_t  getFrameIndex() { return frameIndex_; }
-  uint8_t getPatchMode( size_t index ) { return patchInformationData_[index].getPatchMode(); }
-  size_t  getPatchCount() { return patchInformationData_.size(); }
-  PatchInformationData&              getPatchInformationData( size_t index ) { return patchInformationData_[index]; }
+  size_t                getFrameIndex() { return frameIndex_; }
+  uint8_t               getPatchMode( size_t index ) { return patchInformationData_[index].getPatchMode(); }
+  size_t                getPatchCount() { return patchInformationData_.size(); }
+  PatchInformationData& getPatchInformationData( size_t index ) { return patchInformationData_[index]; }
   std::vector<PatchInformationData>& getPatchInformationData() { return patchInformationData_; }
   size_t                             getMatchedPatchCount() {
     size_t matchedPatchCount = 0;

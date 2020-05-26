@@ -431,13 +431,15 @@ class PCCBitstreamWriter {
   // H.16.2.2 Attribute smoothing SEI message syntax
   static void attributeSmoothing( PCCBitstream& bitstream, SEI& seiAbstract );
 
-  // F.2  VUI syntax
-  // F.2.1  VUI parameters syntax
+  // G.2  VUI syntax
+  // G.2.1  VUI parameters syntax
   void vuiParameters( PCCBitstream& bitstream, VUIParameters& vp );
-  // F.2.2  HRD parameters syntax
+  // G.2.2  HRD parameters syntax
   void hrdParameters( PCCBitstream& bitstream, HrdParameters& hp );
-  // F.2.3  Sub-layer HRD parameters syntax
+  // G.2.3  Sub-layer HRD parameters syntax
   static void hrdSubLayerParameters( PCCBitstream& bitstream, HrdSubLayerParameters& hlsp, size_t cabCnt );
+  // G.2.4	Coordinate system parameters syntax
+  static void coordinateSystemParameters( PCCBitstream& bitstream, CoordinateSystemParameters& csp );
 
   // H.7.3.4.1 VPS V-PCC extension syntax
   static void vpsVpccExtension( PCCBitstream& bitstream, VpsVpccExtension& ext );

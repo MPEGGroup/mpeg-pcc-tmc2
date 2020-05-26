@@ -64,7 +64,6 @@ int parserPccBin( const std::string& filename ) {
   bitstream.setTraceFile( bitstream.getTraceFile() );
 #endif
   if ( !bitstream.initialize( filename ) ) { return -1; }
-  if ( !bitstream.readHeader() ) { return -1; }
   bitstreamStat.setHeader( bitstream.size() );
 
   SampleStreamV3CUnit ssvu;

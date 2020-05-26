@@ -39,9 +39,10 @@
 namespace pcc {
 
 struct PCCBistreamPosition {
-  uint64_t bytes;
-  uint8_t  bits;
+  uint64_t bytes_;
+  uint8_t  bits_;
 };
+
 class PCCVideoBitstream;
 
 #ifdef BITSTREAM_TRACE
@@ -126,7 +127,6 @@ class PCCBitstreamStat {
   void   setVideoBinSize( PCCVideoType type, size_t size ) { bitstreamGofStat_.back().setVideoBinSize( type, size ); }
   size_t getV3CUnitSize( V3CUnitType type ) { return bitstreamGofStat_.back().getV3CUnitSize( type ); }
   size_t getVideoBinSize( PCCVideoType type ) { return bitstreamGofStat_.back().getVideoBinSize( type ); }
-
   size_t getTotalGeometry() { return bitstreamGofStat_.back().getTotalGeometry(); }
   size_t getTotalTexture() { return bitstreamGofStat_.back().getTotalTexture(); }
   size_t getTotalMetadata() { return bitstreamGofStat_.back().getTotalMetadata(); }
@@ -170,33 +170,31 @@ class PCCBitstream {
   void initialize( uint64_t capacity ) { data_.resize( capacity, 0 ); }
   void clear() {
     data_.clear();
-    position_.bits  = 0;
-    position_.bytes = 0;
+    position_.bits_  = 0;
+    position_.bytes_ = 0;
   }
   void beginning() {
-    position_.bits  = 0;
-    position_.bytes = 0;
+    position_.bits_  = 0;
+    position_.bytes_ = 0;
   }
   bool                  write( const std::string& compressedStreamPath );
   uint8_t*              buffer() { return data_.data(); }
   std::vector<uint8_t>& vector() { return data_; }
-  uint64_t&             size() { return position_.bytes; }
+  uint64_t&             size() { return position_.bytes_; }
   uint64_t              capacity() { return data_.size(); }
   PCCBistreamPosition   getPosition() { return position_; }
   void                  setPosition( PCCBistreamPosition& val ) { position_ = val; }
   PCCBitstream&         operator+=( const uint64_t size ) {
-    position_.bytes += size;
+    position_.bytes_ += size;
     return *this;
   }
-  void writeHeader();
   void writeBuffer( const uint8_t* data, const size_t size );
   void copyFrom( PCCBitstream& dataBitstream, const uint64_t startByte, const uint64_t bitstreamSize );
   void copyTo( PCCBitstream& dataBitstream, uint64_t startByte, uint64_t outputSize );
   void write( PCCVideoBitstream& videoBitstream );
-  bool readHeader();
   void read( PCCVideoBitstream& videoBitstream );
-  bool byteAligned() { return ( position_.bits == 0 ); }
-  bool moreData() { return position_.bytes < data_.size(); }
+  bool byteAligned() { return ( position_.bits_ == 0 ); }
+  bool moreData() { return position_.bytes_ < data_.size(); }
 
   inline std::string readString() {
     while ( !byteAligned() ) { read( 1 ); }
@@ -332,7 +330,7 @@ class PCCBitstream {
   void trace( const char* pFormat, Args... eArgs ) {
     if ( trace_ ) {
       FILE* output = traceFile_ ? traceFile_ : stdout;
-      fprintf( output, "[%6llu - %2u]: ", position_.bytes, position_.bits );
+      fprintf( output, "[%6zu - %2u]: ", position_.bytes_, position_.bits_ );
       fflush( output );
       fprintf( output, pFormat, eArgs... );
       fflush( output );
@@ -363,26 +361,26 @@ class PCCBitstream {
   inline uint32_t read( uint8_t bits, PCCBistreamPosition& pos ) {
     uint32_t value = 0;
     for ( size_t i = 0; i < bits; i++ ) {
-      value |= ( ( data_[pos.bytes] >> ( 7 - pos.bits ) ) & 1 ) << ( bits - 1 - i );
-      if ( pos.bits == 7 ) {
-        pos.bytes++;
-        pos.bits = 0;
+      value |= ( ( data_[pos.bytes_] >> ( 7 - pos.bits_ ) ) & 1 ) << ( bits - 1 - i );
+      if ( pos.bits_ == 7 ) {
+        pos.bytes_++;
+        pos.bits_ = 0;
       } else {
-        pos.bits++;
+        pos.bits_++;
       }
     }
     return value;
   }
 
   inline void write( uint32_t value, uint8_t bits, PCCBistreamPosition& pos ) {
-    if ( pos.bytes + bits + 16 >= data_.size() ) { realloc(); }
+    if ( pos.bytes_ + bits + 16 >= data_.size() ) { realloc(); }
     for ( size_t i = 0; i < bits; i++ ) {
-      data_[pos.bytes] |= ( ( value >> ( bits - 1 - i ) ) & 1 ) << ( 7 - pos.bits );
-      if ( pos.bits == 7 ) {
-        pos.bytes++;
-        pos.bits = 0;
+      data_[pos.bytes_] |= ( ( value >> ( bits - 1 - i ) ) & 1 ) << ( 7 - pos.bits_ );
+      if ( pos.bits_ == 7 ) {
+        pos.bytes_++;
+        pos.bits_ = 0;
       } else {
-        pos.bits++;
+        pos.bits_++;
       }
     }
   }

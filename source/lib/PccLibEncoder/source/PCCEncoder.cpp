@@ -163,8 +163,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   if ( !params_.useRawPointsSeparateVideo_ && ( params_.losslessGeo_ || params_.lossyRawPointsPatch_ ) ) {
     markRawPatchLocationOccupancyMapVideo( context );
   }
-  printf("generateBlockToPatchFromBoundaryBox is used\n");
-  generateBlockToPatchFromBoundaryBox( context, params_.occupancyResolution_);
+  printf( "generateBlockToPatchFromBoundaryBox is used\n" );
+  generateBlockToPatchFromBoundaryBox( context, params_.occupancyResolution_ );
 
   // GEOMETRY IMAGE PADDING
   dilateGeometryVideo( sources, context );
@@ -191,21 +191,22 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
 
   if ( params_.losslessGeo_ ) { internalBitDepth = geometryVideoBitDepth; }
 
-  auto& videoBitstreamD0 = params_.multipleStreams_? context.createVideoBitstream( VIDEO_GEOMETRY_D0 ) : context.createVideoBitstream( VIDEO_GEOMETRY );
-  auto& videoGeometry  = context.getVideoGeometryMultiple()[0];
+  auto& videoBitstreamD0 = params_.multipleStreams_ ? context.createVideoBitstream( VIDEO_GEOMETRY_D0 )
+                                                    : context.createVideoBitstream( VIDEO_GEOMETRY );
+  auto& videoGeometry = context.getVideoGeometryMultiple()[0];
   videoEncoder.compress(
-                        videoGeometry, path.str(),
-                        params_.multipleStreams_?  ( params_.geometryQP_ - 1 ) : params_.geometryQP_,
-                        videoBitstreamD0,
-                        params_.multipleStreams_? params_.geometryD0Config_ :
-                        (params_.mapCountMinus1_ == 0 ? getEncoderConfig1L( params_.geometryConfig_ ) : params_.geometryConfig_),
-                        ( static_cast<int>( params_.use3dmc_ ) != 0 ) ? params_.videoEncoderAuxPath_ : params_.videoEncoderPath_,
-                        context, nbyteGeo,                                // nbyte
-                        params_.losslessGeo_ && params_.losslessGeo444_,  // use444CodecIo
-                        params_.use3dmc_,                                 // use3dmv
-                        internalBitDepth,                                 // internalBitDepth
-                        false,                                            // useConversion
-                        params_.keepIntermediateFiles_ );                 // keepIntermediateFiles
+      videoGeometry, path.str(), params_.multipleStreams_ ? ( params_.geometryQP_ - 1 ) : params_.geometryQP_,
+      videoBitstreamD0,
+      params_.multipleStreams_
+          ? params_.geometryD0Config_
+          : ( params_.mapCountMinus1_ == 0 ? getEncoderConfig1L( params_.geometryConfig_ ) : params_.geometryConfig_ ),
+      ( static_cast<int>( params_.use3dmc_ ) != 0 ) ? params_.videoEncoderAuxPath_ : params_.videoEncoderPath_, context,
+      nbyteGeo,                                         // nbyte
+      params_.losslessGeo_ && params_.losslessGeo444_,  // use444CodecIo
+      params_.use3dmc_,                                 // use3dmv
+      internalBitDepth,                                 // internalBitDepth
+      false,                                            // useConversion
+      params_.keepIntermediateFiles_ );                 // keepIntermediateFiles
   size_t sizeGeometryVideo = videoBitstreamD0.size();
   std::cout << "sizeGeometryVideo: " << sizeGeometryVideo << std::endl;
 
@@ -216,8 +217,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                    "yet. Exiting... "
                 << std::endl;
     }
-      std::exit( -1 );
-    
+    std::exit( -1 );
+
     if ( !params_.absoluteD1_ ) {
       // Form differential video geometryD1
       for ( size_t f = 0; f < frames.size(); ++f ) {
@@ -242,11 +243,10 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
 
     size_t sizeGeometryVideoD1 = videoBitstreamD1.size();
     std::cout << "sizeGeometryVideoD1: " << sizeGeometryVideoD1 << std::endl;
-    std::cout << "geometryVideo ->" << ( sizeGeometryVideo + sizeGeometryVideoD1 ) << "=" << sizeGeometryVideo
-              << "+" << sizeGeometryVideoD1 << " B ("
+    std::cout << "geometryVideo ->" << ( sizeGeometryVideo + sizeGeometryVideoD1 ) << "=" << sizeGeometryVideo << "+"
+              << sizeGeometryVideoD1 << " B ("
               << ( ( sizeGeometryVideo + sizeGeometryVideoD1 ) * 8.0 ) / ( 2 * frames.size() * pointCount ) << " bpp)"
               << std::endl;
-    
   }
 
   if ( asps.getRawPatchEnabledFlag() && sps.getAuxiliaryVideoPresentFlag( atlasIndex ) ) {
@@ -276,7 +276,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
 
   if ( ai.getAttributeCount() > 0 ) {
     std::cout << "Texture Coding starts" << std::endl;
-    const size_t mapCount             = params_.mapCountMinus1_ + 1;
+    const size_t mapCount = params_.mapCountMinus1_ + 1;
     // GENERATE ATTRIBUTE
     generateTextureVideo( sources, reconstructs, context, params_ );
     std::cout << "generate Texture Video done" << std::endl;
@@ -292,20 +292,25 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
           switch ( params_.textureBGFill_ ) {
             case 0:
               for ( int mapIdx = 0; mapIdx < mapCount; mapIdx++ ) {
-                size_t videoFrameIdx = params_.multipleStreams_ ? f: (f * mapCount + mapIdx);
-                dilate( frames[f], context.getVideoTextureMultiple()[params_.multipleStreams_?mapIdx:0].getFrame( videoFrameIdx ) );
+                size_t videoFrameIdx = params_.multipleStreams_ ? f : ( f * mapCount + mapIdx );
+                dilate( frames[f], context.getVideoTextureMultiple()[params_.multipleStreams_ ? mapIdx : 0].getFrame(
+                                       videoFrameIdx ) );
               }
               break;
             case 1:
               for ( int mapIdx = 0; mapIdx < mapCount; mapIdx++ ) {
-                size_t videoFrameIdx = params_.multipleStreams_ ? f: (f * mapCount + mapIdx);
-                dilateSmoothedPushPull( frames[f], context.getVideoTextureMultiple()[params_.multipleStreams_?mapIdx:0].getFrame( videoFrameIdx ) );
+                size_t videoFrameIdx = params_.multipleStreams_ ? f : ( f * mapCount + mapIdx );
+                dilateSmoothedPushPull(
+                    frames[f], context.getVideoTextureMultiple()[params_.multipleStreams_ ? mapIdx : 0].getFrame(
+                                   videoFrameIdx ) );
               }
               break;
             case 2:
               for ( int mapIdx = 0; mapIdx < mapCount; mapIdx++ ) {
-                size_t videoFrameIdx = params_.multipleStreams_ ? f: (f * mapCount + mapIdx);
-                dilateHarmonicBackgroundFill( frames[f], context.getVideoTextureMultiple()[params_.multipleStreams_?mapIdx:0].getFrame( videoFrameIdx ) );
+                size_t videoFrameIdx = params_.multipleStreams_ ? f : ( f * mapCount + mapIdx );
+                dilateHarmonicBackgroundFill(
+                    frames[f], context.getVideoTextureMultiple()[params_.multipleStreams_ ? mapIdx : 0].getFrame(
+                                   videoFrameIdx ) );
               }
               break;
             default: std::cout << "Warning: no texture padding applied!" << std::endl;
@@ -342,7 +347,9 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
           switch ( params_.textureBGFill_ ) {
             case 0: dilate( frames[f], context.getVideoTextureMultiple()[0].getFrame( f ) ); break;
             case 1: dilateSmoothedPushPull( frames[f], context.getVideoTextureMultiple()[0].getFrame( f ) ); break;
-            case 2: dilateHarmonicBackgroundFill( frames[f], context.getVideoTextureMultiple()[0].getFrame( f ) ); break;
+            case 2:
+              dilateHarmonicBackgroundFill( frames[f], context.getVideoTextureMultiple()[0].getFrame( f ) );
+              break;
             default: std::cout << "Warning: no texture padding applied!" << std::endl;
           }
         }
@@ -355,28 +362,28 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     }
     // ENCODE ATTRIBUTE IMAGE
     std::cout << "texture video " << std::endl;
-    auto&        videoBitstream = params_.multipleStreams_? context.createVideoBitstream( VIDEO_TEXTURE_T0 ) : context.createVideoBitstream( VIDEO_TEXTURE );
-    const size_t nbyteAtt       = 1;
+    auto& videoBitstream = params_.multipleStreams_ ? context.createVideoBitstream( VIDEO_TEXTURE_T0 )
+                                                    : context.createVideoBitstream( VIDEO_TEXTURE );
+    const size_t nbyteAtt = 1;
     videoEncoder.compress(
-                          context.getVideoTextureMultiple()[0], path.str(), params_.textureQP_,
-                          videoBitstream,
-                          params_.multipleStreams_?
-                          (params_.mapCountMinus1_ == 0 ? getEncoderConfig1L( params_.textureConfig_ ) : params_.textureT0Config_) :
-                          (params_.mapCountMinus1_ == 0 ? getEncoderConfig1L( params_.textureConfig_ ) : params_.textureConfig_),
-                          ( static_cast<int>( params_.use3dmc_ ) != 0 ) ? params_.videoEncoderAuxPath_ : params_.videoEncoderPath_,
-                          context, nbyteAtt,                           // nbyte
-                          params_.losslessGeo_,                        // use444CodecIo
-                          params_.use3dmc_,                            // use3dmv
-                          10,                                          // internalBitDepth
-                          !params_.losslessGeo_,                       // useConversion
-                          params_.keepIntermediateFiles_,              // keepIntermediateFiles
-                          params_.colorSpaceConversionConfig_,         // colorSpaceConversionConfig
-                          params_.inverseColorSpaceConversionConfig_,  // inverseColorSpaceConversionConfig
-                          params_.colorSpaceConversionPath_ );         // colorSpaceConversionPath
+        context.getVideoTextureMultiple()[0], path.str(), params_.textureQP_, videoBitstream,
+        params_.multipleStreams_
+            ? ( params_.mapCountMinus1_ == 0 ? getEncoderConfig1L( params_.textureConfig_ ) : params_.textureT0Config_ )
+            : ( params_.mapCountMinus1_ == 0 ? getEncoderConfig1L( params_.textureConfig_ ) : params_.textureConfig_ ),
+        ( static_cast<int>( params_.use3dmc_ ) != 0 ) ? params_.videoEncoderAuxPath_ : params_.videoEncoderPath_,
+        context, nbyteAtt,                           // nbyte
+        params_.losslessGeo_,                        // use444CodecIo
+        params_.use3dmc_,                            // use3dmv
+        10,                                          // internalBitDepth
+        !params_.losslessGeo_,                       // useConversion
+        params_.keepIntermediateFiles_,              // keepIntermediateFiles
+        params_.colorSpaceConversionConfig_,         // colorSpaceConversionConfig
+        params_.inverseColorSpaceConversionConfig_,  // inverseColorSpaceConversionConfig
+        params_.colorSpaceConversionPath_ );         // colorSpaceConversionPath
     auto sizeTextureVideo = videoBitstream.size();
     std::cout << "texture video ->" << sizeTextureVideo << " B ("
-    << ( sizeTextureVideo * 8.0 ) / ( 2 * frames.size() * pointCount ) << " bpp)" << std::endl;
-    
+              << ( sizeTextureVideo * 8.0 ) / ( 2 * frames.size() * pointCount ) << " bpp)" << std::endl;
+
     if ( params_.multipleStreams_ ) {
       // Form differential video textureT1
       if ( !params_.absoluteT1_ ) {
@@ -387,7 +394,9 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
             switch ( params_.textureBGFill_ ) {
               case 0: dilate( frames[f], context.getVideoTextureMultiple()[1].getFrame( f ) ); break;
               case 1: dilateSmoothedPushPull( frames[f], context.getVideoTextureMultiple()[1].getFrame( f ) ); break;
-              case 2: dilateHarmonicBackgroundFill( frames[f], context.getVideoTextureMultiple()[1].getFrame( f ) ); break;
+              case 2:
+                dilateHarmonicBackgroundFill( frames[f], context.getVideoTextureMultiple()[1].getFrame( f ) );
+                break;
               default: std::cout << "Warning: no texture padding applied!" << std::endl;
             }
           }
@@ -414,7 +423,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
       size_t sizeTextureVideoT1 = videoBitstreamT1.size();
       std::cout << "texture video ->" << ( sizeTextureVideo + sizeTextureVideoT1 ) << "=" << sizeTextureVideo << "+"
                 << sizeTextureVideoT1 << " B ("
-                << ( ( sizeTextureVideo+ sizeTextureVideoT1 ) * 8.0 ) / ( 2 * frames.size() * pointCount ) << " bpp)"
+                << ( ( sizeTextureVideo + sizeTextureVideoT1 ) * 8.0 ) / ( 2 * frames.size() * pointCount ) << " bpp)"
                 << std::endl;
     }
 
@@ -1039,7 +1048,7 @@ double PCCEncoder::adjustReferenceAtlasFrame( PCCContext&            context,
 
 void PCCEncoder::spatialConsistencyPackFlexible( PCCFrameContext& frame,
                                                  PCCFrameContext& prevFrame,
-                                                 int packingStrategy,
+                                                 int              packingStrategy,
                                                  int              safeguard,
                                                  bool             enablePointCloudPartitioning ) {
   auto& width   = frame.getWidth();
@@ -1049,10 +1058,11 @@ void PCCEncoder::spatialConsistencyPackFlexible( PCCFrameContext& frame,
   auto& prevPatches = prevFrame.getPatches();
   if ( patches.empty() ) { return; }
 #if 1
-  if(packingStrategy==0) std::sort( patches.begin(), patches.end() );
+  if ( packingStrategy == 0 )
+    std::sort( patches.begin(), patches.end() );
   else
 #endif
-  std::sort( patches.begin(), patches.end(), []( PCCPatch& a, PCCPatch& b ) { return a.gt( b ); } );
+    std::sort( patches.begin(), patches.end(), []( PCCPatch& a, PCCPatch& b ) { return a.gt( b ); } );
   int              id             = 0;
   size_t           occupancySizeU = params_.minimumImageWidth_ / params_.occupancyResolution_;
   size_t           occupancySizeV = ( std::max )( patches[0].getSizeU0(), patches[0].getSizeV0() );
@@ -1130,7 +1140,7 @@ void PCCEncoder::spatialConsistencyPackFlexible( PCCFrameContext& frame,
   height = occupancySizeV * params_.occupancyResolution_;
   size_t maxOccupancyRow{0};
 
-  int               numOrientations = packingStrategy==0? 1:( params_.useEightOrientations_ ? 8 : 2 );
+  int               numOrientations = packingStrategy == 0 ? 1 : ( params_.useEightOrientations_ ? 8 : 2 );
   std::vector<bool> occupancyMap;
   occupancyMap.resize( occupancySizeU * occupancySizeV, false );
   if ( !params_.enablePointCloudPartitioning_ ) {
@@ -1176,13 +1186,14 @@ void PCCEncoder::spatialConsistencyPackFlexible( PCCFrameContext& frame,
               patch.getU0() = u;
               patch.getV0() = v;
               for ( size_t orientationIdx = 0; orientationIdx < numOrientations && !locationFound; orientationIdx++ ) {
-                if(packingStrategy==0) patch.getPatchOrientation() = PATCH_ORIENTATION_DEFAULT;
-                else{
-                if ( patch.getSizeU0() > patch.getSizeV0() ) {
-                  patch.getPatchOrientation() = orientation_horizontal[orientationIdx];
-                } else {
-                  patch.getPatchOrientation() = orientation_vertical[orientationIdx];
-                }
+                if ( packingStrategy == 0 )
+                  patch.getPatchOrientation() = PATCH_ORIENTATION_DEFAULT;
+                else {
+                  if ( patch.getSizeU0() > patch.getSizeV0() ) {
+                    patch.getPatchOrientation() = orientation_horizontal[orientationIdx];
+                  } else {
+                    patch.getPatchOrientation() = orientation_vertical[orientationIdx];
+                  }
                 }
                 if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_,
                                                 safeguard ) ) {
@@ -1361,13 +1372,14 @@ void PCCEncoder::spatialConsistencyPackFlexible( PCCFrameContext& frame,
                   if ( tileIsAvailable ) {
                     for ( size_t orientationIdx = 0; orientationIdx < numOrientations && !locationFound;
                           orientationIdx++ ) {
-                      if(packingStrategy==0) patch.getPatchOrientation() = PATCH_ORIENTATION_DEFAULT;
-                      else{
-                      if ( patch.getSizeU0() > patch.getSizeV0() ) {
-                        patch.getPatchOrientation() = orientation_horizontal[orientationIdx];
-                      } else {
-                        patch.getPatchOrientation() = orientation_vertical[orientationIdx];
-                      }
+                      if ( packingStrategy == 0 )
+                        patch.getPatchOrientation() = PATCH_ORIENTATION_DEFAULT;
+                      else {
+                        if ( patch.getSizeU0() > patch.getSizeV0() ) {
+                          patch.getPatchOrientation() = orientation_horizontal[orientationIdx];
+                        } else {
+                          patch.getPatchOrientation() = orientation_vertical[orientationIdx];
+                        }
                       }
                       if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV,
                                                       params_.lowDelayEncoding_, safeguard, tile ) ) {
@@ -1422,7 +1434,8 @@ void PCCEncoder::spatialConsistencyPackFlexible( PCCFrameContext& frame,
     packEOMTexturePointsPatch( frame, occupancyMap, width, height, occupancySizeU, occupancySizeV, maxOccupancyRow );
   }
   if ( printDetailedInfo ) { printMap( occupancyMap, occupancySizeU, occupancySizeV ); }
-  std::cout << "actualImageSize(spatalConsistencyPackFlexible "<< packingStrategy <<") " << width << " x " << height << std::endl;
+  std::cout << "actualImageSize(spatalConsistencyPackFlexible " << packingStrategy << ") " << width << " x " << height
+            << std::endl;
 }
 
 void PCCEncoder::spatialConsistencyPackTetris( PCCFrameContext& frame, PCCFrameContext& prevFrame, int safeguard ) {
@@ -2017,7 +2030,7 @@ void PCCEncoder::doGlobalTetrisPacking( PCCContext& context ) {
                                   PATCH_ORIENTATION_MROT90, PATCH_ORIENTATION_ROT90,   PATCH_ORIENTATION_ROT180,
                                   PATCH_ORIENTATION_MIRROR, PATCH_ORIENTATION_MROT180};
       }
-      numOrientations = params_.packingStrategy_ == 0? 1 :(params_.useEightOrientations_ ? 8 : 2);
+      numOrientations = params_.packingStrategy_ == 0 ? 1 : ( params_.useEightOrientations_ ? 8 : 2 );
 
       std::vector<bool> occupancyMap;
       occupancyMap.resize( occupancySizeU * occupancySizeV, false );
@@ -2352,7 +2365,10 @@ void PCCEncoder::doGlobalTetrisPacking( PCCContext& context ) {
   }
 }
 
-void PCCEncoder::packFlexible( PCCFrameContext& frame, int packingStrategy, int safeguard, bool enablePointCloudPartitioning ) {
+void PCCEncoder::packFlexible( PCCFrameContext& frame,
+                               int              packingStrategy,
+                               int              safeguard,
+                               bool             enablePointCloudPartitioning ) {
   auto& width   = frame.getWidth();
   auto& height  = frame.getHeight();
   auto& patches = frame.getPatches();
@@ -2361,11 +2377,12 @@ void PCCEncoder::packFlexible( PCCFrameContext& frame, int packingStrategy, int 
   frame.setNumMatchedPatches( 0 );
   if ( patches.empty() ) { return; }
   // sorting by patch largest dimension
-#if 1 //jkei: to be same as before
-  if(packingStrategy==0) std::sort( patches.begin(), patches.end() );
+#if 1  // jkei: to be same as before
+  if ( packingStrategy == 0 )
+    std::sort( patches.begin(), patches.end() );
   else
 #endif
-  std::sort( patches.begin(), patches.end(), []( PCCPatch& a, PCCPatch& b ) { return a.gt( b ); } );
+    std::sort( patches.begin(), patches.end(), []( PCCPatch& a, PCCPatch& b ) { return a.gt( b ); } );
   if ( printDetailedInfo ) {
     std::cout << "Patch order:" << std::endl;
     for ( auto& patch : patches ) {
@@ -2390,7 +2407,7 @@ void PCCEncoder::packFlexible( PCCFrameContext& frame, int packingStrategy, int 
   size_t maxOccupancyRow{0};
 
   std::vector<bool> occupancyMap;
-  int numOrientations = (packingStrategy==0)? 1: (params_.useEightOrientations_ ? 8 : 2);
+  int               numOrientations = ( packingStrategy == 0 ) ? 1 : ( params_.useEightOrientations_ ? 8 : 2 );
   occupancyMap.resize( occupancySizeU * occupancySizeV, false );
   if ( !params_.enablePointCloudPartitioning_ ) {
     for ( auto& patch : patches ) {
@@ -2404,13 +2421,14 @@ void PCCEncoder::packFlexible( PCCFrameContext& frame, int packingStrategy, int 
             patch.getU0() = u;
             patch.getV0() = v;
             for ( size_t orientationIdx = 0; orientationIdx < numOrientations && !locationFound; orientationIdx++ ) {
-              if(packingStrategy==0) patch.getPatchOrientation() = PATCH_ORIENTATION_DEFAULT;
-              else{
-              if ( patch.getSizeU0() > patch.getSizeV0() ) {
-                patch.getPatchOrientation() = orientation_horizontal[orientationIdx];
-              } else {
-                patch.getPatchOrientation() = orientation_vertical[orientationIdx];
-              }
+              if ( packingStrategy == 0 )
+                patch.getPatchOrientation() = PATCH_ORIENTATION_DEFAULT;
+              else {
+                if ( patch.getSizeU0() > patch.getSizeV0() ) {
+                  patch.getPatchOrientation() = orientation_horizontal[orientationIdx];
+                } else {
+                  patch.getPatchOrientation() = orientation_vertical[orientationIdx];
+                }
               }
               if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_,
                                               safeguard ) ) {
@@ -2503,13 +2521,14 @@ void PCCEncoder::packFlexible( PCCFrameContext& frame, int packingStrategy, int 
                 if ( tileIsAvailable ) {
                   for ( size_t orientationIdx = 0; orientationIdx < numOrientations && !locationFound;
                         orientationIdx++ ) {
-                    if(packingStrategy==0) patch.getPatchOrientation() = PATCH_ORIENTATION_DEFAULT;
-                    else{
-                    if ( patch.getSizeU0() > patch.getSizeV0() ) {
-                      patch.getPatchOrientation() = orientation_horizontal[orientationIdx];
-                    } else {
-                      patch.getPatchOrientation() = orientation_vertical[orientationIdx];
-                    }
+                    if ( packingStrategy == 0 )
+                      patch.getPatchOrientation() = PATCH_ORIENTATION_DEFAULT;
+                    else {
+                      if ( patch.getSizeU0() > patch.getSizeV0() ) {
+                        patch.getPatchOrientation() = orientation_horizontal[orientationIdx];
+                      } else {
+                        patch.getPatchOrientation() = orientation_vertical[orientationIdx];
+                      }
                     }
                     if ( patch.checkFitPatchCanvas( occupancyMap, occupancySizeU, occupancySizeV,
                                                     params_.lowDelayEncoding_, safeguard, tile ) ) {
@@ -2563,7 +2582,7 @@ void PCCEncoder::packFlexible( PCCFrameContext& frame, int packingStrategy, int 
     packEOMTexturePointsPatch( frame, occupancyMap, width, height, occupancySizeU, occupancySizeV, maxOccupancyRow );
   }
   if ( printDetailedInfo ) { printMap( occupancyMap, occupancySizeU, occupancySizeV ); }
-  std::cout << "actualImageSize (packFlexible "<<packingStrategy<<") " << width << " x " << height << std::endl;
+  std::cout << "actualImageSize (packFlexible " << packingStrategy << ") " << width << " x " << height << std::endl;
 }
 
 void PCCEncoder::packTetris( PCCFrameContext& frame, int safeguard ) {
@@ -3037,29 +3056,29 @@ bool PCCEncoder::generateGeometryVideo( const PCCPointSet3&                 sour
   if ( params_.enhancedOccupancyMapCode_ ) { generateEomPatch( source, frame ); }
   if ( params_.packingStrategy_ == 0 || params_.packingStrategy_ == 1 ) {
     if ( ( frameIndex == 0 ) || ( !params_.constrainedPack_ ) )
-      packFlexible( frame, params_.packingStrategy_, params_.safeGuardDistance_, params_.enablePointCloudPartitioning_ );
-    else
+      packFlexible( frame, params_.packingStrategy_, params_.safeGuardDistance_,
+                    params_.enablePointCloudPartitioning_ );
+    else if ( params_.globalPatchAllocation_ == 2 ) {
+      findMatchesForGlobalTetrisPacking( frame, prevFrame );  // this could also be a different prevFrame,
+                                                              // it depends on the prediction structure
+    } else {
+      spatialConsistencyPackFlexible( frame, prevFrame, params_.packingStrategy_, params_.safeGuardDistance_,
+                                      params_.enablePointCloudPartitioning_ );
+    }
+  }
+
+  else if ( params_.packingStrategy_ == 2 ) {
+    if ( ( frameIndex == 0 ) || ( !params_.constrainedPack_ ) ) {
+      packTetris( frame, params_.safeGuardDistance_ );
+    } else {
       if ( params_.globalPatchAllocation_ == 2 ) {
         findMatchesForGlobalTetrisPacking( frame, prevFrame );  // this could also be a different prevFrame,
                                                                 // it depends on the prediction structure
       } else {
-      spatialConsistencyPackFlexible( frame, prevFrame, params_.packingStrategy_, params_.safeGuardDistance_,
-                                      params_.enablePointCloudPartitioning_ );
+        spatialConsistencyPackTetris( frame, prevFrame, params_.safeGuardDistance_ );
       }
+    }
   }
-
-    else if ( params_.packingStrategy_ == 2 ) {
-        if ( ( frameIndex == 0 ) || ( !params_.constrainedPack_ ) ) {
-          packTetris( frame, params_.safeGuardDistance_ );
-        } else {
-          if ( params_.globalPatchAllocation_ == 2 ) {
-            findMatchesForGlobalTetrisPacking( frame, prevFrame );  // this could also be a different prevFrame,
-                                                                    // it depends on the prediction structure
-          } else {
-            spatialConsistencyPackTetris( frame, prevFrame, params_.safeGuardDistance_ );
-          }
-        }
-      }
 
   return true;
 }
@@ -4114,9 +4133,7 @@ bool PCCEncoder::generateGeometryVideo( const PCCGroupOfFrames& sources, PCCCont
 void PCCEncoder::pointLocalReconstructionSearch( PCCContext& context, const GeneratePointCloudParameters& params ) {
   auto& frames                = context.getFrames();
   auto& videoGeometryMultiple = context.getVideoGeometryMultiple();
-  for ( auto& frame : frames ) {
-    pointLocalReconstructionSearch( context, frame, videoGeometryMultiple, params );
-  }
+  for ( auto& frame : frames ) { pointLocalReconstructionSearch( context, frame, videoGeometryMultiple, params ); }
 }
 
 void PCCEncoder::pointLocalReconstructionSearch( PCCContext&                          context,
@@ -4196,10 +4213,8 @@ void PCCEncoder::pointLocalReconstructionSearch( PCCContext&                    
                   size_t       y;
                   const bool   occupancy = occupancyMap[patch.patch2Canvas( u, v, imageWidth, imageHeight, x, y )] != 0;
                   if ( !occupancy ) { continue; }
-                  auto createdPoints =
-                      generatePoints( params, frame,
-                                     videoMultiple, frameIndex, patchIndex, u, v, x, y,
-                                      mode.interpolate_, mode.filling_, mode.minD1_, mode.neighbor_ );
+                  auto createdPoints = generatePoints( params, frame, videoMultiple, frameIndex, patchIndex, u, v, x, y,
+                                                       mode.interpolate_, mode.filling_, mode.minD1_, mode.neighbor_ );
                   if ( !createdPoints.empty() ) {
                     for ( const auto& createdPoint : createdPoints ) {
                       reconstruct[optimizationIndex].addPoint( createdPoint );
@@ -4255,10 +4270,8 @@ void PCCEncoder::pointLocalReconstructionSearch( PCCContext&                    
                   size_t       y;
                   const bool   occupancy = occupancyMap[patch.patch2Canvas( u, v, imageWidth, imageHeight, x, y )] != 0;
                   if ( !occupancy ) { continue; }
-                  auto createdPoints =
-                      generatePoints( params, frame,
-                                     videoMultiple, frameIndex, patchIndex, u, v, x, y,
-                                      mode.interpolate_, mode.filling_, mode.minD1_, mode.neighbor_ );
+                  auto createdPoints = generatePoints( params, frame, videoMultiple, frameIndex, patchIndex, u, v, x, y,
+                                                       mode.interpolate_, mode.filling_, mode.minD1_, mode.neighbor_ );
                   if ( !createdPoints.empty() ) {
                     for ( const auto& createdPoint : createdPoints ) {
                       if ( patch.getAxisOfAdditionalPlane() == 0 ) {
@@ -5771,7 +5784,7 @@ size_t PCCEncoder::unionPatchGenerationAndPacking( const GlobalPatches& globalPa
   size_t maxOccupancyRow{0};
 
   std::vector<bool> occupancyMap;
-  int numOrientations = params_.packingStrategy_==0? 1 :(params_.useEightOrientations_ ? 8 : 2);
+  int               numOrientations = params_.packingStrategy_ == 0 ? 1 : ( params_.useEightOrientations_ ? 8 : 2 );
   occupancyMap.resize( occupancySizeU * occupancySizeV, false );
   for ( auto& iter : unionPatchTemp ) {
     auto& curPatchUnion = iter.second;  // [u0, v0] may be modified;
@@ -5877,7 +5890,7 @@ void PCCEncoder::packingFirstFrame( PCCContext& context,
   size_t maxOccupancyRow{0};
 
   {
-    int numOrientations = (params_.packingStrategy_==0 )? 1 : (params_.useEightOrientations_ ? 8 : 2);
+    int numOrientations = ( params_.packingStrategy_ == 0 ) ? 1 : ( params_.useEightOrientations_ ? 8 : 2 );
 
     std::vector<bool> occupancyMap;
     occupancyMap.resize( occupancySizeU * occupancySizeV, false );
@@ -5932,13 +5945,14 @@ void PCCEncoder::packingFirstFrame( PCCContext& context,
               curGPAPatchData.u0 = u;
               curGPAPatchData.v0 = v;
               for ( size_t orientationIdx = 0; orientationIdx < numOrientations && !locationFound; orientationIdx++ ) {
-                if(params_.packingStrategy_==0 ) curGPAPatchData.patchOrientation = PATCH_ORIENTATION_DEFAULT;
-                else{
-                if ( curGPAPatchData.sizeU0 > curGPAPatchData.sizeV0 ) {
-                  curGPAPatchData.patchOrientation = orientation_horizontal[orientationIdx];
-                } else {
-                  curGPAPatchData.patchOrientation = orientation_vertical[orientationIdx];
-                }
+                if ( params_.packingStrategy_ == 0 )
+                  curGPAPatchData.patchOrientation = PATCH_ORIENTATION_DEFAULT;
+                else {
+                  if ( curGPAPatchData.sizeU0 > curGPAPatchData.sizeV0 ) {
+                    curGPAPatchData.patchOrientation = orientation_horizontal[orientationIdx];
+                  } else {
+                    curGPAPatchData.patchOrientation = orientation_vertical[orientationIdx];
+                  }
                 }
                 if ( patch.checkFitPatchCanvasForGPA( occupancyMap, occupancySizeU, occupancySizeV,
                                                       params_.lowDelayEncoding_, safeguard ) ) {
@@ -6191,7 +6205,7 @@ void PCCEncoder::performGPAPacking( const SubContext& subContext,
     }
     widthGPA  = occupancySizeU * params_.occupancyResolution_;
     heightGPA = occupancySizeV * params_.occupancyResolution_;
-    size_t maxOccupancyRow{0};
+    size_t            maxOccupancyRow{0};
     std::vector<bool> occupancyMap;
     occupancyMap.resize( occupancySizeU * occupancySizeV, false );
     // !!!packing global matched patch;
@@ -6294,7 +6308,7 @@ void PCCEncoder::packingWithoutRefForFirstFrameNoglobalPatch(
     size_t&            widthGPA,
     size_t&            maxOccupancyRow ) {  // GPA_HAMONIZATION, the whole function has been
                                  // changed
-  int           numOrientations = (params_.packingStrategy_==0 )? 1:(params_.useEightOrientations_ ? 8 : 2);
+  int           numOrientations = ( params_.packingStrategy_ == 0 ) ? 1 : ( params_.useEightOrientations_ ? 8 : 2 );
   GPAPatchData& curGPAPatchData = patch.getCurGPAPatchData();  // GPAPatchData& preGPAPatchData =
                                                                // patch.getCurGPAPatchData();
 
@@ -6309,7 +6323,7 @@ void PCCEncoder::packingWithoutRefForFirstFrameNoglobalPatch(
         curGPAPatchData.v0 = v;
         if ( params_.packingStrategy_ == 0 ) {
           curGPAPatchData.patchOrientation = PATCH_ORIENTATION_DEFAULT;
-          //std::cout<<"checkFitPatchCanvasForGPA"<<std::endl;
+          // std::cout<<"checkFitPatchCanvasForGPA"<<std::endl;
           if ( patch.checkFitPatchCanvasForGPA( occupancyMap, occupancySizeU, occupancySizeV, params_.lowDelayEncoding_,
                                                 safeguard ) ) {
             locationFound = true;
@@ -6321,13 +6335,14 @@ void PCCEncoder::packingWithoutRefForFirstFrameNoglobalPatch(
           }
         } else {  // try several orientation.
           for ( size_t orientationIdx = 0; orientationIdx < numOrientations && !locationFound; orientationIdx++ ) {
-            if(params_.packingStrategy_==0 ) curGPAPatchData.patchOrientation = PATCH_ORIENTATION_DEFAULT;
-            else{
-            if ( patch.getSizeU0() > patch.getSizeV0() ) {
-              curGPAPatchData.patchOrientation = orientation_horizontal[orientationIdx];
-            } else {
-              curGPAPatchData.patchOrientation = orientation_vertical[orientationIdx];
-            }
+            if ( params_.packingStrategy_ == 0 )
+              curGPAPatchData.patchOrientation = PATCH_ORIENTATION_DEFAULT;
+            else {
+              if ( patch.getSizeU0() > patch.getSizeV0() ) {
+                curGPAPatchData.patchOrientation = orientation_horizontal[orientationIdx];
+              } else {
+                curGPAPatchData.patchOrientation = orientation_vertical[orientationIdx];
+              }
             }
             if ( patch.checkFitPatchCanvasForGPA( occupancyMap, occupancySizeU, occupancySizeV,
                                                   params_.lowDelayEncoding_, safeguard ) ) {
@@ -6386,7 +6401,7 @@ void PCCEncoder::packingWithRefForFirstFrameNoglobalPatch( PCCPatch&            
                                                            size_t&                      widthGPA,
                                                            size_t&                      maxOccupancyRow ) {
   // favoring horizontal orientations (that should be rotated)
-  int32_t       numOrientations = (params_.packingStrategy_==0 )? 1:(params_.useEightOrientations_ ? 8 : 2);
+  int32_t       numOrientations = ( params_.packingStrategy_ == 0 ) ? 1 : ( params_.useEightOrientations_ ? 8 : 2 );
   GPAPatchData& curGPAPatchData = patch.getCurGPAPatchData();  // GPA_HARMONIZATION
 
   assert( curGPAPatchData.sizeU0 <= occupancySizeU );
@@ -6443,13 +6458,13 @@ void PCCEncoder::packingWithRefForFirstFrameNoglobalPatch( PCCPatch&            
           curGPAPatchData.u0 = u;
           curGPAPatchData.v0 = v;
           for ( size_t orientationIdx = 0; orientationIdx < numOrientations && !locationFound; orientationIdx++ ) {
-            if(params_.packingStrategy_==0 ) curGPAPatchData.patchOrientation = PATCH_ORIENTATION_DEFAULT;
+            if ( params_.packingStrategy_ == 0 ) curGPAPatchData.patchOrientation = PATCH_ORIENTATION_DEFAULT;
             {
-            if ( patch.getSizeU0() > patch.getSizeV0() ) {
-              curGPAPatchData.patchOrientation = orientation_horizontal[orientationIdx];
-            } else {
-              curGPAPatchData.patchOrientation = orientation_vertical[orientationIdx];
-            }
+              if ( patch.getSizeU0() > patch.getSizeV0() ) {
+                curGPAPatchData.patchOrientation = orientation_horizontal[orientationIdx];
+              } else {
+                curGPAPatchData.patchOrientation = orientation_vertical[orientationIdx];
+              }
             }
             if ( patch.checkFitPatchCanvasForGPA( occupancyMap, occupancySizeU, occupancySizeV,
                                                   params_.lowDelayEncoding_, safeguard ) ) {

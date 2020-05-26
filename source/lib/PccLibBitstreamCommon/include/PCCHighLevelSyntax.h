@@ -30,8 +30,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef PCC_BITSTREAM_SYNTAX_H
-#define PCC_BITSTREAM_SYNTAX_H
+#ifndef PCC_BITSTREAM_HIGHLEVELSYNTAX_H
+#define PCC_BITSTREAM_HIGHLEVELSYNTAX_H
 
 #include "PCCBitstreamCommon.h"
 #include "PCCVideoBitstream.h"
@@ -256,22 +256,17 @@ class PCCAtlasHighLevelSyntax {
   SEI&                               getSeiSuffix( size_t index ) { return *( seiSuffix_[index] ); }
 
  private:
-  // video related variables
-  std::vector<PCCVideoBitstream> videoBitstream_;
-  // ASPS related variables
-  std::vector<AtlasSequenceParameterSetRbsp> atlasSequenceParameterSet_;
-  uint8_t                                    activeASPS_;
-  std::vector<std::vector<int32_t>>          refAtlasFrameList_;
-  size_t                                     maxNumRefAtlasFrame_;
-  std::vector<PointLocalReconstructionMode>  pointLocalReconstructionMode_;
-  // AFPS related variables
-  std::vector<AtlasFrameParameterSetRbsp> atlasFrameParameterSet_;
-  uint8_t                                 activeAFPS_;
-  // ATGL related variables
-  std::vector<std::vector<AtlasTileLayerRbsp>> atlasTileLayer_;
-  // SEI related variables
-  std::vector<std::shared_ptr<SEI>> seiPrefix_;
-  std::vector<std::shared_ptr<SEI>> seiSuffix_;
+  std::vector<PCCVideoBitstream>               videoBitstream_;             // video related variables
+  std::vector<AtlasSequenceParameterSetRbsp>   atlasSequenceParameterSet_;  // ASPS related variables
+  uint8_t                                      activeASPS_;
+  std::vector<std::vector<int32_t>>            refAtlasFrameList_;
+  size_t                                       maxNumRefAtlasFrame_;
+  std::vector<PointLocalReconstructionMode>    pointLocalReconstructionMode_;
+  std::vector<AtlasFrameParameterSetRbsp>      atlasFrameParameterSet_;  // AFPS related variables
+  uint8_t                                      activeAFPS_;
+  std::vector<std::vector<AtlasTileLayerRbsp>> atlasTileLayer_;  // ATGL related variables
+  std::vector<std::shared_ptr<SEI>>            seiPrefix_;       // SEI related variables
+  std::vector<std::shared_ptr<SEI>>            seiSuffix_;
 };
 
 class PCCHighLevelSyntax {
@@ -284,11 +279,11 @@ class PCCHighLevelSyntax {
   PCCBitstreamStat& getBitstreamStat() { return *bitstreamStat_; }
 
   // V3C unit related functions
-  V3CUnitPayloadHeader& getV3CUnitHeaderAVD() { return V3CUnitHeader_[size_t( V3C_AVD ) - 1]; }  // 3
-  V3CUnitPayloadHeader& getV3CUnitHeaderGVD() { return V3CUnitHeader_[size_t( V3C_GVD ) - 1]; }  // 2
-  V3CUnitPayloadHeader& getV3CUnitHeaderOVD() { return V3CUnitHeader_[size_t( V3C_OVD ) - 1]; }  // 1
-  V3CUnitPayloadHeader& getV3CUnitHeaderAD() { return V3CUnitHeader_[size_t( V3C_AD ) - 1]; }    // 0
-  V3CUnitPayloadHeader& getV3CUnitHeader( int index ) { return V3CUnitHeader_[index]; }
+  V3CUnitPayloadHeader& getV3CUnitHeaderAVD() { return v3cUnitHeader_[size_t( V3C_AVD ) - 1]; }  // 3
+  V3CUnitPayloadHeader& getV3CUnitHeaderGVD() { return v3cUnitHeader_[size_t( V3C_GVD ) - 1]; }  // 2
+  V3CUnitPayloadHeader& getV3CUnitHeaderOVD() { return v3cUnitHeader_[size_t( V3C_OVD ) - 1]; }  // 1
+  V3CUnitPayloadHeader& getV3CUnitHeaderAD() { return v3cUnitHeader_[size_t( V3C_AD ) - 1]; }    // 0
+  V3CUnitPayloadHeader& getV3CUnitHeader( int index ) { return v3cUnitHeader_[index]; }
 
   // VPS related functions
   V3CParameterSet& getVps() { return getVps( activeVPS_ ); }
@@ -474,7 +469,7 @@ class PCCHighLevelSyntax {
  private:
   size_t                         gofSize_;
   std::vector<PCCVideoBitstream> videoBitstream_;
-  V3CUnitPayloadHeader           V3CUnitHeader_[5];
+  V3CUnitPayloadHeader           v3cUnitHeader_[5];
   std::vector<V3CParameterSet>   vpccParameterSets_;
   uint8_t                        activeVPS_;
   uint8_t                        occupancyPrecision_;
@@ -497,4 +492,4 @@ class PCCHighLevelSyntax {
 };
 };  // namespace pcc
 
-#endif /* PCC_BITSTREAM_SYNTAX_H */
+#endif /* PCC_BITSTREAM_HIGHLEVELSYNTAX_H */

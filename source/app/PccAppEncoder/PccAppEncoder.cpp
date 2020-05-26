@@ -636,7 +636,7 @@ bool parseParameters( int                   argc,
     ( "packingStrategy",
       encoderParams.packingStrategy_,
       encoderParams.packingStrategy_,
-      "Patches packing strategy(0: anchor packing, 1(default): flexible packing, 2: tetris packing)\n" )
+      "Patches packing strategy(0: anchor packing, 1(default): flexible packing, 2: tetris packing)" )
     ( "useEightOrientations",
       encoderParams.useEightOrientations_,
       encoderParams.useEightOrientations_,
@@ -655,47 +655,47 @@ bool parseParameters( int                   argc,
     ( "lossyRawPointsPatch",
       encoderParams.lossyRawPointsPatch_,
       encoderParams.lossyRawPointsPatch_,
-      "Lossy raw points patch(0: no lossy raw points patch, 1: enable lossy raw points patch (default=0)\n" )
+      "Lossy raw points patch(0: no lossy raw points patch, 1: enable lossy raw points patch (default=0)" )
     ( "minNormSumOfInvDist4MPSelection",
       encoderParams.minNormSumOfInvDist4MPSelection_,
       encoderParams.minNormSumOfInvDist4MPSelection_,
-      "Minimum normalized sum of inverse distance for raw points selection: double value between 0.0 and 1.0 (default=0.35)\n" )
+      "Minimum normalized sum of inverse distance for raw points selection: double value between 0.0 and 1.0 (default=0.35)" )
     ( "lossyRawPointPatchGeoQP",
       encoderParams.lossyRawPointPatchGeoQP_,
       encoderParams.lossyRawPointPatchGeoQP_,
-      "QP value for geometry in lossy raw points patch (default=4)\n" )
+      "QP value for geometry in lossy raw points patch (default=4)" )
     ( "globalPatchAllocation",
       encoderParams.globalPatchAllocation_,
       encoderParams.globalPatchAllocation_,
-      "Global temporally consistent patch allocation.(0: anchor's packing method(default), 1: gpa algorithm, 2: gtp algorithm)\n" )
+      "Global temporally consistent patch allocation.(0: anchor's packing method(default), 1: gpa algorithm, 2: gtp algorithm)" )
     ( "globalPackingStrategyGOF",
       encoderParams.globalPackingStrategyGOF_,
       encoderParams.globalPackingStrategyGOF_,
-      "Number of frames to pack globally (0:(entire GOF))\n" )
+      "Number of frames to pack globally (0:(entire GOF))" )
     ( "globalPackingStrategyReset",
       encoderParams.globalPackingStrategyReset_,
       encoderParams.globalPackingStrategyReset_,
-      "Remove the reference to the previous frame (0(default), 1)\n" )
+      "Remove the reference to the previous frame (0(default), 1)" )
     ( "globalPackingStrategyThreshold",
       encoderParams.globalPackingStrategyThreshold_,
       encoderParams.globalPackingStrategyThreshold_,
-      "matched patches area ratio threshold (decides if connections are valid or not, 0(default))\n" )
+      "matched patches area ratio threshold (decides if connections are valid or not, 0(default))" )
     ( "patchPrecedenceOrder",
       encoderParams.patchPrecedenceOrderFlag_,
       encoderParams.patchPrecedenceOrderFlag_, 
-      "Order of patches\n" )
+      "Order of patches" )
     ( "lowDelayEncoding",
       encoderParams.lowDelayEncoding_,
       encoderParams.lowDelayEncoding_,
-      "Low Delay encoding (0(default): do nothing, 1: does not allow overlap of patches bounding boxes for low delay encoding)\n" )
+      "Low Delay encoding (0(default): do nothing, 1: does not allow overlap of patches bounding boxes for low delay encoding)" )
     ( "geometryPadding",
       encoderParams.geometryPadding_,
       encoderParams.geometryPadding_,
-      "Selects the background filling operation for geometry (0: anchor, 1(default): 3D geometry padding)\n" )
+      "Selects the background filling operation for geometry (0: anchor, 1(default): 3D geometry padding)" )
     ( "apply3dMotionCompensation",
       encoderParams.use3dmc_,
       encoderParams.use3dmc_,
-      "Use auxilliary information for 3d motion compensation.(0: conventional video coding, 1: 3D motion compensated)\n" )
+      "Use auxilliary information for 3d motion compensation.(0: conventional video coding, 1: 3D motion compensated)" )
     ( "geometry3dCoordinatesBitdepth",
       encoderParams.geometry3dCoordinatesBitdepth_,
       encoderParams.geometry3dCoordinatesBitdepth_,
@@ -715,11 +715,11 @@ bool parseParameters( int                   argc,
     ( "enhancedProjectionPlane",
       encoderParams.enhancedPP_,
       encoderParams.enhancedPP_,
-      "Use enhanced Projection Plane(0: OFF, 1: ON)\n" )
+      "Use enhanced Projection Plane(0: OFF, 1: ON)" )
     ( "minWeightEPP",
       encoderParams.minWeightEPP_,
       encoderParams.minWeightEPP_, 
-      "Minimum value\n" )
+      "Minimum value" )
     ( "additionalProjectionPlaneMode",
       encoderParams.additionalProjectionPlaneMode_,
       encoderParams.additionalProjectionPlaneMode_,
@@ -789,19 +789,19 @@ bool parseParameters( int                   argc,
     ( "pbfEnableFlag",
       encoderParams.pbfEnableFlag_,
       encoderParams.pbfEnableFlag_, 
-      " enable patch block filtering \n" )
+      " enable patch block filtering " )
     ( "pbfFilterSize",
       encoderParams.pbfFilterSize_,
       encoderParams.pbfFilterSize_, 
-      "pbfFilterSize \n" )
+      "pbfFilterSize " )
     ( "pbfPassesCount",
       encoderParams.pbfPassesCount_,
       encoderParams.pbfPassesCount_, 
-      "pbfPassesCount \n" )
+      "pbfPassesCount " )
     ( "pbfLog2Threshold",
       encoderParams.pbfLog2Threshold_,
       encoderParams.pbfLog2Threshold_, 
-      "pbfLog2Threshold \n" );
+      "pbfLog2Threshold " );
 
     opts.addOptions()
     ( "computeChecksum", 
@@ -980,13 +980,11 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
   bitstream.openTrace( removeFileExtension( encoderParams.compressedStreamPath_ ) + "_samplestream_write.txt" );
   bitstream.setTraceFile( bitstream.getTraceFile() );
 #endif
-  //bitstream.writeHeader();
   bitstreamStat.setHeader( bitstream.size() );
   PCCBitstreamWriter bitstreamWriter;
   size_t             headerSize = bitstreamWriter.write( ssvu, bitstream );
   bitstreamStat.incrHeader( headerSize );
   bitstream.write( encoderParams.compressedStreamPath_ );
-
   bitstreamStat.trace();
   std::cout << "Total bitstream size " << bitstream.size() << " B" << std::endl;
 
