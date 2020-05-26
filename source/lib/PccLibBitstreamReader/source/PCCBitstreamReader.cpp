@@ -642,19 +642,14 @@ void PCCBitstreamReader::atlasFrameTileInformation( AtlasFrameTileInformation&  
     }
     afti.setSinglePartitionPerTileFlag( bitstream.read( 1 ) );  //  u(1)
     if ( afti.getSinglePartitionPerTileFlag() == 0U ) {
-      uint32_t NumTilesInPatchFrame =
+      uint32_t NumPartitionsInAtlasFrame =
           ( afti.getNumPartitionColumnsMinus1() + 1 ) * ( afti.getNumPartitionRowsMinus1() + 1 );
       afti.setNumTilesInAtlasFrameMinus1( bitstream.readUvlc() );  // ue(v)
       for ( size_t i = 0; i <= afti.getNumTilesInAtlasFrameMinus1(); i++ ) {
-        uint8_t bitCount = ceilLog2( NumTilesInPatchFrame );
-        if ( i > 0 ) {
-          afti.setTopLeftPartitionIdx( i, bitstream.read( bitCount ) );  // u(v)
-        } else {
-          afti.setTopLeftPartitionIdx( i, 0 );
-        }
-        bitCount = ceilLog2( NumTilesInPatchFrame - afti.getTopLeftPartitionIdx( i ) );
-        afti.setBottomRightPartitionColumnOffset( i, bitstream.read( bitCount ) );  // u(v)
-        afti.setBottomRightPartitionRowOffset( i, bitstream.read( bitCount ) );     // u(v)
+        uint8_t bitCount = ceilLog2( NumPartitionsInAtlasFrame );
+        afti.setTopLeftPartitionIdx( i, bitstream.read( bitCount ) );  // u(v)
+        afti.setBottomRightPartitionColumnOffset( i, bitstream.readUvlc() );  // ue(v)
+        afti.setBottomRightPartitionRowOffset( i, bitstream.readUvlc() );     // ue(v)
       }
     } else {
       afti.setNumTilesInAtlasFrameMinus1(

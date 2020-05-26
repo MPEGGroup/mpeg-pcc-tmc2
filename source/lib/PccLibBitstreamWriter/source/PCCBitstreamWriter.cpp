@@ -724,17 +724,14 @@ void PCCBitstreamWriter::atlasFrameTileInformation( AtlasFrameTileInformation&  
     }
     bitstream.write( afti.getSinglePartitionPerTileFlag(), 1 );  //  u(1)
     if ( afti.getSinglePartitionPerTileFlag() == 0u ) {
-      uint32_t NumTilesInPatchFrame =
+      uint32_t NumPartitionsInAtlasFrame =
           ( afti.getNumPartitionColumnsMinus1() + 1 ) * ( afti.getNumPartitionRowsMinus1() + 1 );
       bitstream.writeUvlc( afti.getNumTilesInAtlasFrameMinus1() );  // ue(v)
       for ( size_t i = 0; i <= afti.getNumTilesInAtlasFrameMinus1(); i++ ) {
-        uint8_t bitCount = ceilLog2( NumTilesInPatchFrame );
-        if ( i > 0 ) {
-          bitstream.write( afti.getTopLeftPartitionIdx( i ), bitCount );  // u(v) :
-        }
-        bitCount = ceilLog2( NumTilesInPatchFrame - afti.getTopLeftPartitionIdx( i ) );
-        bitstream.write( afti.getBottomRightPartitionColumnOffset( i ), bitCount );  // u(v)
-        bitstream.write( afti.getBottomRightPartitionRowOffset( i ), bitCount );     // u(v)
+        uint8_t bitCount = ceilLog2( NumPartitionsInAtlasFrame );
+        bitstream.write( afti.getTopLeftPartitionIdx( i ), bitCount );  // u(v) :
+        bitstream.writeUvlc( afti.getBottomRightPartitionColumnOffset( i )); //ue(v)
+        bitstream.writeUvlc( afti.getBottomRightPartitionRowOffset( i )); //ue(v)
       }
     }
   }
