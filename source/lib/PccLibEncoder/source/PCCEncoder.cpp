@@ -4005,7 +4005,16 @@ void PCCEncoder::generateRawPointsPatch( const PCCPointSet3& source,
                   } else {
                     point1[patch.getNormalAxis()] = double( patch.getD1() - depth0 - nDeltaDCur );
                   }
-                  pointsToBeProjected.addPoint( point1 );
+                  PCCPoint3D  input = point1;
+                  if ( patch.getAxisOfAdditionalPlane() != 0 ) {
+                    PCCVector3D tmp1;
+                    PCCPatch::InverseRotatePosition45DegreeOnAxis( patch.getAxisOfAdditionalPlane(),
+                                                                   geometry3dCoordinatesBitdepth, input, tmp1 );
+                    input.x() = tmp1.x();
+                    input.y() = tmp1.y();
+                    input.z() = tmp1.z();
+                  }
+                  pointsToBeProjected.addPoint( input );
                 }
               }  // for each i
             }    // if( patch.getDepthEnhancedDeltaD()[p] != 0) )

@@ -287,7 +287,7 @@ void PCCPatchSegmenter3::resampledPointcloud( std::vector<size_t>& pointCount,
           resampledPatchPartition.push_back( patchIndex );
           if ( createSubPointCloud ) { rec.addPoint( point ); }
         }
-        if ( createSubPointCloud ) { rec.addPoint( point ); }
+        //if ( createSubPointCloud ) { rec.addPoint( point ); }
         d0CountPerPatch++;
 
         // add EOM
@@ -300,8 +300,17 @@ void PCCPatchSegmenter3::resampledPointcloud( std::vector<size_t>& pointCount,
               uint16_t nDeltaDCur             = ( i + 1 );
               pointEOM[patch.getNormalAxis()] = double( depth0 + projectionTypeIndication * ( nDeltaDCur ) );
               if ( pointEOM[patch.getNormalAxis()] != point[patch.getNormalAxis()] ) {
-                resampled.addPoint( pointEOM );
-                resampledPatchPartition.push_back( patchIndex );
+                if (bIsAdditionalProjectionPlane) {
+                  PCCVector3D point_tmp;
+                  auto&       input = pointEOM;
+                  iconvert(patch.getAxisOfAdditionalPlane(), geometryBitDepth3D, input, point_tmp);
+                  resampled.addPoint(point_tmp);
+                  resampledPatchPartition.push_back(patchIndex);
+                }
+                else {
+                  resampled.addPoint( pointEOM );
+                  resampledPatchPartition.push_back( patchIndex );
+                }
                 eomCountPerPatch++;
               }
             }
