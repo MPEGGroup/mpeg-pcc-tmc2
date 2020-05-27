@@ -873,8 +873,6 @@ void PCCBitstreamReader::atlasTileDataUnit( AtlasTileDataUnit&  atdu,
   TRACE_BITSTREAM( "Type = %zu \n", ath.getType() );
   atdu.init();
   size_t patchIndex = 0;
-  // auto   tileType = ath.getType();
-  // TRACE_BITSTREAM( "ath.getType()        = %zu \n", ath.getType() );
   TRACE_BITSTREAM( "patch %zu : \n", patchIndex );
   prevPatchSizeU_   = 0;
   prevPatchSizeV_   = 0;
@@ -1019,7 +1017,7 @@ void PCCBitstreamReader::patchDataUnit( PatchDataUnit&      pdu,
   TRACE_BITSTREAM( "PointLocalReconstructionEnabledFlag = %d \n", asps.getPointLocalReconstructionEnabledFlag() );
   if ( asps.getPointLocalReconstructionEnabledFlag() ) {
     auto& plrd = pdu.getPointLocalReconstructionData();
-    TRACE_BITSTREAM( "Size = %ld %ld\n", pdu.get2dSizeYMinus1() + 1, pdu.get2dSizeYMinus1() + 1 );
+    TRACE_BITSTREAM( "Size = %ld %ld\n", pdu.get2dSizeXMinus1() + 1, pdu.get2dSizeYMinus1() + 1 );
     plrd.allocate( pdu.get2dSizeXMinus1() + 1, pdu.get2dSizeYMinus1() + 1 );
     pointLocalReconstructionData( plrd, syntax, asps, bitstream );
   }
@@ -1139,7 +1137,6 @@ void PCCBitstreamReader::interPatchDataUnit( InterPatchDataUnit& ipdu,
       ipdu.getFrameIndex(), numRefIdxActive, ipdu.getRefIndex(), ipdu.getRefPatchIndex(), ipdu.get2dPosX(),
       ipdu.get2dPosY(), ipdu.get2dDeltaSizeX(), ipdu.get2dDeltaSizeY(), ipdu.get3dPosX(), ipdu.get3dPosY(),
       ipdu.get3dPosMinZ(), ipdu.get3dPosDeltaMaxZ() );
-
   if ( asps.getPointLocalReconstructionEnabledFlag() ) {
     auto&   atglPrev      = syntax.getAtlasTileLayer( prevFrameIndex_ );
     auto&   atghPrev      = atglPrev.getHeader();
@@ -1162,7 +1159,7 @@ void PCCBitstreamReader::interPatchDataUnit( InterPatchDataUnit& ipdu,
         sizeU += plrdPrev.getBlockToPatchMapWidth();
         sizeV += plrdPrev.getBlockToPatchMapHeight();
       }
-    } else if ( ath.getType() == I_TILE ) {
+    } else if ( atghPrev.getType() == I_TILE ) {
       if ( patchModePrev == I_INTRA ) {
         auto& plrdPrev = pidPrev.getPatchDataUnit().getPointLocalReconstructionData();
         sizeU += plrdPrev.getBlockToPatchMapWidth();

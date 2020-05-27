@@ -1041,7 +1041,7 @@ void PCCBitstreamWriter::patchDataUnit( PatchDataUnit&      pdu,
   TRACE_BITSTREAM( "PointLocalReconstructionEnabledFlag = %d \n", asps.getPointLocalReconstructionEnabledFlag() );
   if ( asps.getPointLocalReconstructionEnabledFlag() ) {
     auto& plrd = pdu.getPointLocalReconstructionData();
-    TRACE_BITSTREAM( "Size = %ld %ld\n", pdu.get2dSizeXMinus1(), pdu.get2dSizeYMinus1() );
+    TRACE_BITSTREAM( "Size = %ld %ld\n", pdu.get2dSizeXMinus1() + 1, pdu.get2dSizeYMinus1() + 1 );
     pointLocalReconstructionData( plrd, syntax, asps, bitstream );
   }
 #ifdef BITSTREAM_TRACE
@@ -1105,8 +1105,10 @@ void PCCBitstreamWriter::mergePatchDataUnit( MergePatchDataUnit& mpdu,
     auto& plrd = mpdu.getPointLocalReconstructionData();
     TRACE_BITSTREAM( "Prev Size = %d %d Delta Size = %ld %ld => %ld %ld \n",
                      plrd.getBlockToPatchMapWidth() - mpdu.get2dDeltaSizeX(),
-                     plrd.getBlockToPatchMapHeight() - mpdu.get2dDeltaSizeY(), mpdu.get2dDeltaSizeX(),
-                     mpdu.get2dDeltaSizeY(), plrd.getBlockToPatchMapWidth(), plrd.getBlockToPatchMapHeight() );
+                     plrd.getBlockToPatchMapHeight() - mpdu.get2dDeltaSizeY(),
+
+                     mpdu.get2dDeltaSizeX(), mpdu.get2dDeltaSizeY(), plrd.getBlockToPatchMapWidth(),
+                     plrd.getBlockToPatchMapHeight() );
     pointLocalReconstructionData( plrd, syntax, asps, bitstream );
   }
 #ifdef BITSTREAM_TRACE
@@ -1332,7 +1334,6 @@ void PCCBitstreamWriter::atlasSubStream( PCCHighLevelSyntax& syntax, PCCBitstrea
     nu.setSize( atglSizeList[frameIdx] );  //+headsize
     auto& atgl = syntax.getAtlasTileLayer( frameIdx );
     atgl.getDataUnit().setFrameIndex( frameIdx );
-    TRACE_BITSTREAM( " ATGL: frame %zu\n", frameIdx );
     sampleStreamNalUnit( syntax, bitstream, ssnu, nu, frameIdx );
     TRACE_BITSTREAM(
         "nalu[%d]:%s, nalSizePrecision:%d, naluSize:%zu, sizeBitstream "
@@ -2092,91 +2093,6 @@ void PCCBitstreamWriter::attributeSmoothing( PCCBitstream& bitstream, SEI& seiAb
   }
 }
 
-// // F.2.17  Presentation inforomation SEI message syntax
-// void PCCBitstreamWriter::presentationInformation( PCCBitstream& bitstream, SEI& seiAbstract ) {
-//   TRACE_BITSTREAM( "%s \n", __func__ );
-//   auto& sei = static_cast<SEIPresentationInformation&>( seiAbstract );
-//   bitstream.write( sei.getUnitOfLengthFlag(), 1 );        // u(1)
-//   bitstream.write( sei.getOrientationPresentFlag(), 1 );  // u(1)
-//   bitstream.write( sei.getPivotPresentFlag(), 1 );        // u(1)
-//   bitstream.write( sei.getDimensionPresentFlag(), 1 );    // u(1)
-//   if ( sei.getOrientationPresentFlag() ) {
-//     for ( size_t d = 0; d < 3; d++ ) {
-//       bitstream.writeS( sei.getUp( d ), 32 );     // i(32)
-//       bitstream.writeS( sei.getFront( d ), 32 );  // i(32)
-//     }
-//   }
-//   if ( sei.getPivotPresentFlag() ) {
-//     for ( size_t d = 0; d < 3; d++ ) {
-//       bitstream.writeS( sei.getPivot( d ) >> 32, 32 );
-//       bitstream.write( sei.getPivot( d ) & 0xFFFFFFFF, 32 );  // i(64)
-//     }
-//   }
-//   if ( sei.getDimensionPresentFlag() ) {
-//     for ( size_t d = 0; d < 3; d++ ) {
-//       bitstream.writeS( sei.getDimension( d ) >> 32, 32 );
-//       bitstream.write( sei.getDimension( d ) & 0xFFFFFFFF, 32 );  // i(64)
-//     }
-//   }
-// }
-
-// // F.2.18  Smoothing parameters SEI message syntax
-// void PCCBitstreamWriter::smoothingParameters( PCCBitstream& bitstream, SEI& seiAbstract ) {
-//   TRACE_BITSTREAM( "%s \n", __func__ );
-//   auto& sei = static_cast<SEISmoothingParameters&>( seiAbstract );
-//   bitstream.write( sei.getSpGeometryCancelFlag(), 1 );   // u(1)
-//   bitstream.write( sei.getSpAttributeCancelFlag(), 1 );  // u(1)
-//   if ( !sei.getSpGeometryCancelFlag() ) {
-//     bitstream.write( sei.getSpGeometrySmoothingEnabledFlag(), 1 );  // u(1)
-//     if ( static_cast<int>( sei.getSpGeometrySmoothingEnabledFlag() ) == 1 ) {
-//       bitstream.write( sei.getSpGeometrySmoothingId(), 8 );  // u(8)
-//       TRACE_BITSTREAM( "SpGeometrySmoothingId = %u \n", sei.getSpGeometrySmoothingId() );
-//       if ( sei.getSpGeometrySmoothingId() == 0 ) {
-//         bitstream.write( sei.getSpGeometrySmoothingGridSizeMinus2(), 7 );  // u(7)
-//         bitstream.write( sei.getSpGeometrySmoothingThreshold(), 8 );       // u(8)
-//         TRACE_BITSTREAM( "  GridSizeMinus2 = %u \n", sei.getSpGeometrySmoothingGridSizeMinus2() );
-//         TRACE_BITSTREAM( "  Threshold = %u \n", sei.getSpGeometrySmoothingThreshold() );
-//       } else if ( sei.getSpGeometrySmoothingId() == 1 ) {
-//         bitstream.write( sei.getSpGeometryPatchBlockFilteringLog2ThresholdMinus1(),
-//                          2 );  // u(2)
-//         bitstream.write( sei.getSpGeometryPatchBlockFilteringPassesCountMinus1(),
-//                          2 );  // u(3)
-//         bitstream.write( sei.getSpGeometryPatchBlockFilteringFilterSizeMinus1(),
-//                          3 );  // u(3)
-//         TRACE_BITSTREAM( "  Log2ThresholdMinus1 = %u \n", sei.getSpGeometryPatchBlockFilteringLog2ThresholdMinus1()
-//         ); TRACE_BITSTREAM( "  PassesCountMinus1 = %u \n", sei.getSpGeometryPatchBlockFilteringPassesCountMinus1() );
-//         TRACE_BITSTREAM( "  FilterSizeMinus1 = %u \n", sei.getSpGeometryPatchBlockFilteringFilterSizeMinus1() );
-//       }
-//     }
-//   }
-//   if ( !sei.getSpAttributeCancelFlag() ) {
-//     bitstream.writeUvlc( sei.getSpNumAttributeUpdates() );  // ue(v)
-//     for ( size_t j = 0; j < sei.getSpNumAttributeUpdates(); j++ ) {
-//       bitstream.write( sei.getSpAttributeIdx( j ), 8 );  // u(8)
-//       size_t index = sei.getSpAttributeIdx( j );
-//       bitstream.write( sei.getSpDimensionMinus1( index ), 8 );  // u(8)
-//       for ( size_t i = 0; i < sei.getSpDimensionMinus1( index ) + 1; i++ ) {
-//         bitstream.write( sei.getSpAttrSmoothingParamsEnabledFlag( index, i ),
-//                          1 );  // u(1)
-//         if ( sei.getSpAttrSmoothingParamsEnabledFlag( index, i ) ) {
-//           bitstream.write( sei.getSpAttrSmoothingGridSizeMinus2( index, i ),
-//                            8 );  // u(8)
-//           bitstream.write( sei.getSpAttrSmoothingThreshold( index, i ),
-//                            8 );  // u(8)
-//           bitstream.write( sei.getSpAttrSmoothingLocalEntropyThreshold( index, i ),
-//                            8 );  // u(3)
-//           bitstream.write( sei.getSpAttrSmoothingThresholdVariation( index, i ),
-//                            8 );  // u(8)
-//           bitstream.write( sei.getSpAttrSmoothingThresholdDifference( index, i ),
-//                            8 );  // u(8)
-//         }
-//       }
-//     }
-//   }
-// }
-
-////////
-
 // G.2 VUI syntax
 // G.2.1 VUI parameters syntax
 void PCCBitstreamWriter::vuiParameters( PCCBitstream& bitstream, VUIParameters& vp ) {
@@ -2193,7 +2109,6 @@ void PCCBitstreamWriter::vuiParameters( PCCBitstream& bitstream, VUIParameters& 
     if ( vp.getHrdParametersPresentFlag() ) { hrdParameters( bitstream, vp.getHrdParameters() ); }
   }
   bitstream.write( vp.getBitstreamRestrictionPresentFlag(), 1 );  // u(1)
-
   if ( vp.getBitstreamRestrictionPresentFlag() ) {
     bitstream.write( vp.getTilesRestrictedFlag(), 1 );                    // u(1)
     bitstream.write( vp.getConsistentTilesForVideoComponentsFlag(), 1 );  // u(1)

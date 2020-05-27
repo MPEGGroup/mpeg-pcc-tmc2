@@ -494,6 +494,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     auto& reconstruct = reconstructs[frame.getIndex()];
     auto& partition   = partitions[frameIdx];
 
+    TRACE_CODEC( "Post-Processing: postprocessSmoothing = %zu pbfEnableFlag = %d \n",
+                 params_.postprocessSmoothingFilter_, params_.pbfEnableFlag_ );
     if ( ppSEIParams.flagGeometrySmoothing_ ) {
       PCCPointSet3 tempFrameBuffer = reconstruct;
       if ( ppSEIParams.gridSmoothing_ ) {
@@ -502,26 +504,39 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
       if ( !ppSEIParams.pbfEnableFlag_ ) {
         // These are different attribute transfer functions
         if ( params_.postprocessSmoothingFilter_ == 1 ) {
+          TRACE_CODEC( " transferColors16bitBP \n" );
           tempFrameBuffer.transferColors16bitBP( reconstruct, int32_t( 0 ), isAttributes444, 8, 1, true, true, true,
                                                  false, 4, 4, 1000, 1000, 1000 * 256,
                                                  1000 * 256 );  // jkie: let's make it general
         } else if ( params_.postprocessSmoothingFilter_ == 2 ) {
+          TRACE_CODEC( " transferColorWeight \n" );
           tempFrameBuffer.transferColorWeight( reconstruct, 0.1 );
         } else if ( params_.postprocessSmoothingFilter_ == 3 ) {
+          TRACE_CODEC( " transferColorsFilter3 \n" );
           tempFrameBuffer.transferColorsFilter3( reconstruct, int32_t( 0 ), isAttributes444 );
         }
       }
     }
 
     if ( ppSEIParams.flagColorSmoothing_ ) {
+      TRACE_CODEC( " colorSmoothing \n" );
       colorSmoothing( reconstruct, context, params_.colorTransform_, ppSEIParams );
     }
     if ( !isAttributes444 ) {  // lossy: convert 16-bit yuv444 to 8-bit RGB444
+      TRACE_CODEC( "lossy: convert 16-bit yuv444 to 8-bit RGB444 (convertYUV16ToRGB8) \n" );
       reconstruct.convertYUV16ToRGB8();
+#ifdef TRACE_CODEC
+      for ( size_t i = 0; i < 100; i++ ) {
+        TRACE_CODEC( "%4zu %4zu %4zu: c16 %4zu %4zu %4zu c8 %4zu %4zu %4zu\n", reconstruct[i][0], reconstruct[i][1],
+                     reconstruct[i][2], reconstruct.getColor16bit( i )[0], reconstruct.getColor16bit( i )[1],
+                     reconstruct.getColor16bit( i )[2], reconstruct.getColor( i )[0], reconstruct.getColor( i )[1],
+                     reconstruct.getColor( i )[2] );
+      }
+#endif
     } else {  // lossless: copy 16-bit RGB to 8-bit RGB
+      TRACE_CODEC( "lossy: lossless: copy 16-bit RGB to 8-bit RGB (copyRGB16ToRGB8) \n" );
       reconstruct.copyRGB16ToRGB8();
     }
-
   }  // frame
 
   if ( !params_.keepIntermediateFiles_ && params_.use3dmc_ ) { remove3DMotionEstimationFiles( path.str() ); }
@@ -6513,8 +6528,6 @@ void PCCEncoder::packingWithRefForFirstFrameNoglobalPatch( PCCPatch&            
 void PCCEncoder::setPointLocalReconstruction( PCCContext& context ) {
   TRACE_CODEC( "setPointLocalReconstruction \n" );
   auto& asps = context.getAtlasSequenceParameterSet( 0 );
-  TRACE_CODEC( "  MapCountMinus1 = %u \n", asps.getMapCountMinus1() );
-  TRACE_CODEC( "  plrlNumberOfModes_ = %u \n", params_.plrlNumberOfModes_ );
   asps.setPointLocalReconstructionEnabledFlag( true );
   asps.allocatePointLocalReconstructionInformation();
   auto& plri = asps.getPointLocalReconstructionInformation( 0 );
@@ -6618,11 +6631,12 @@ void PCCEncoder::setPostProcessingSeiParameters( GeneratePointCloudParameters& p
   params.plrlNumberOfModes_             = params_.plrlNumberOfModes_;
   params.geometryBitDepth3D_            = params_.geometry3dCoordinatesBitdepth_;
   params.EOMFixBitCount_                = params_.EOMFixBitCount_;
-  params.pbfEnableFlag_                 = false;
-  params.pbfPassesCount_                = 0;
-  params.pbfFilterSize_                 = 0;
-  params.pbfLog2Threshold_              = 0;
+  params.pbfEnableFlag_                 = params_.pbfEnableFlag_;
+  params.pbfPassesCount_                = params_.pbfPassesCount_;
+  params.pbfFilterSize_                 = params_.pbfFilterSize_;
+  params.pbfLog2Threshold_              = params_.pbfLog2Threshold_;
 }
+
 void PCCEncoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& params, PCCContext& context ) {
   params.occupancyResolution_      = params_.occupancyResolution_;
   params.occupancyPrecision_       = params_.occupancyPrecision_;
@@ -6673,7 +6687,6 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
   size_t frameCount = context.getFrames().size();
   TRACE_CODEC( "frameCount = %u \n", frameCount );
   TRACE_CODEC( "PLR = %d \n", params_.pointLocalReconstruction_ );
-
   if ( params_.pointLocalReconstruction_ ) { setPointLocalReconstruction( context ); }
 
   // patch reordering

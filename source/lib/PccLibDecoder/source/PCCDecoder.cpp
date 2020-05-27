@@ -294,7 +294,8 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
     }
 
     // Post-Processing
-    printf( "Post-Processing  params_.postprocessSmoothingFilter_ = %zu \n", params_.postprocessSmoothingFilter_ );
+    TRACE_CODEC( "Post-Processing: postprocessSmoothing = %zu pbfEnableFlag = %d \n",
+                 params_.postprocessSmoothingFilter_, ppSEIParams.pbfEnableFlag_ );
     if ( ppSEIParams.flagGeometrySmoothing_ ) {
       PCCPointSet3 tempFrameBuffer = reconstruct;
       if ( ppSEIParams.gridSmoothing_ ) {
@@ -303,24 +304,36 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
       if ( !ppSEIParams.pbfEnableFlag_ ) {
         // These are different attribute transfer functions
         if ( params_.postprocessSmoothingFilter_ == 1 ) {
+          TRACE_CODEC( " transferColors16bitBP \n" );
           tempFrameBuffer.transferColors16bitBP( reconstruct, int32_t( 0 ), isAttributes444, 8, 1, true, true, true,
                                                  false, 4, 4, 1000, 1000, 1000 * 256,
                                                  1000 * 256 );  // jkie: let's make it general
         } else if ( params_.postprocessSmoothingFilter_ == 2 ) {
+          TRACE_CODEC( " transferColorWeight \n" );
           tempFrameBuffer.transferColorWeight( reconstruct, 0.1 );
         } else if ( params_.postprocessSmoothingFilter_ == 3 ) {
+          TRACE_CODEC( " transferColorsFilter3 \n" );
           tempFrameBuffer.transferColorsFilter3( reconstruct, int32_t( 0 ), isAttributes444 );
         }
       }
     }
     if ( ppSEIParams.flagColorSmoothing_ ) {
+      TRACE_CODEC( " colorSmoothing \n" );
       colorSmoothing( reconstruct, context, params_.colorTransform_, ppSEIParams );
     }
     if ( !isAttributes444 ) {  // lossy: convert 16-bit yuv444 to 8-bit RGB444
-      printf( " convert 16-bit yuv444 to 8-bit RGB444 \n" );
+      TRACE_CODEC( "lossy: convert 16-bit yuv444 to 8-bit RGB444 (convertYUV16ToRGB8) \n" );
       reconstruct.convertYUV16ToRGB8();
+#ifdef TRACE_CODEC
+      for ( size_t i = 0; i < 100; i++ ) {
+        TRACE_CODEC( "%4zu %4zu %4zu: c16 %4zu %4zu %4zu c8 %4zu %4zu %4zu\n", reconstruct[i][0], reconstruct[i][1],
+                     reconstruct[i][2], reconstruct.getColor16bit( i )[0], reconstruct.getColor16bit( i )[1],
+                     reconstruct.getColor16bit( i )[2], reconstruct.getColor( i )[0], reconstruct.getColor( i )[1],
+                     reconstruct.getColor( i )[2] );
+      }
+#endif
     } else {  // lossless: copy 16-bit RGB to 8-bit RGB
-      printf( "lossless: copy 16-bit RGB to 8-bit RGB\n" );
+      TRACE_CODEC( "lossy: lossless: copy 16-bit RGB to 8-bit RGB (copyRGB16ToRGB8) \n" );
       reconstruct.copyRGB16ToRGB8();
     }
   }
@@ -332,7 +345,8 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
 }
 
 void PCCDecoder::setPointLocalReconstruction( PCCContext& context ) {
-  auto&                        asps = context.getAtlasSequenceParameterSet( 0 );
+  auto& asps = context.getAtlasSequenceParameterSet( 0 );
+  TRACE_CODEC( "PLR = %d \n", asps.getPointLocalReconstructionEnabledFlag() );
   PointLocalReconstructionMode mode = {false, false, 0, 1};
   context.addPointLocalReconstructionMode( mode );
   if ( asps.getPointLocalReconstructionEnabledFlag() ) {
@@ -344,14 +358,14 @@ void PCCDecoder::setPointLocalReconstruction( PCCContext& context ) {
       mode.neighbor_    = plri.getNeighbourMinus1( i ) + 1;
       context.addPointLocalReconstructionMode( mode );
     }
-  }
 #ifdef CODEC_TRACE
-  for ( size_t i = 0; i < context.getPointLocalReconstructionModeNumber(); i++ ) {
-    auto& mode = context.getPointLocalReconstructionMode( i );
-    TRACE_CODEC( "Plrm[%zu]: Inter = %d Fill = %d minD1 = %u neighbor = %u \n", i, mode.interpolate_, mode.filling_,
-                 mode.minD1_, mode.neighbor_ );
-  }
+    for ( size_t i = 0; i < context.getPointLocalReconstructionModeNumber(); i++ ) {
+      auto& mode = context.getPointLocalReconstructionMode( i );
+      TRACE_CODEC( "Plrm[%zu]: Inter = %d Fill = %d minD1 = %u neighbor = %u \n", i, mode.interpolate_, mode.filling_,
+                   mode.minD1_, mode.neighbor_ );
+    }
 #endif
+  }
 }
 
 void PCCDecoder::setPointLocalReconstructionData( PCCFrameContext&              frame,
