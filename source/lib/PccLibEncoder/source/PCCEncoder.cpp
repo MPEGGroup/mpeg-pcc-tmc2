@@ -91,7 +91,12 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   for ( size_t i = 0; i < frames.size(); i++ ) {
     frames[i].setRawPatchEnabledFlag( params_.losslessGeo_ || params_.lossyRawPointsPatch_ );
     frames[i].setUseRawPointsSeparateVideo( params_.useRawPointsSeparateVideo_ );
+#if EXPAND_RANGE_ENCODER
+    frames[i].setGeometry3dCoordinatesBitdepth( params_.geometry3dCoordinatesBitdepth_ +
+                                                ( params_.additionalProjectionPlaneMode_ > 0 ) );
+#else
     frames[i].setGeometry3dCoordinatesBitdepth( params_.geometry3dCoordinatesBitdepth_ );
+#endif
     frames[i].setGeometry2dNorminalBitdepth( params_.geometryNominal2dBitdepth_ );
     frames[i].setMaxDepth( ( 1 << params_.geometryNominal2dBitdepth_ ) - 1 );
     frames[i].setLog2PatchQuantizerSizeX( context.getLog2PatchQuantizerSizeX() );
@@ -912,7 +917,12 @@ double PCCEncoder::adjustReferenceAtlasFrame( PCCContext&            context,
   auto bitMaxD1 = uint8_t( ceilLog2( uint32_t( maxD1 ) ) );
   auto bitMaxDD = uint8_t( ceilLog2( uint32_t( maxDD ) ) );
 
+#if EXPAND_RANGE_ENCODER
+  const size_t max3DCoordinate =
+      size_t( 1 ) << ( params_.geometry3dCoordinatesBitdepth_ + ( params_.additionalProjectionPlaneMode_ > 0 ) );
+#else
   const size_t max3DCoordinate = size_t( 1 ) << params_.geometry3dCoordinatesBitdepth_;
+#endif
   for ( size_t curId = 0; curId < curPatchCount; curId++ ) {
     auto& curPatch = curPatches[curId];
     // intra
@@ -3535,7 +3545,12 @@ void PCCEncoder::generateRawPointsPatch( const PCCPointSet3& source,
   //  const int16_t infiniteDepth    = ( std::numeric_limits<int16_t>::max )();
   auto& patches = frame.getPatches();
 
+#if EXPAND_RANGE_ENCODER
+  const size_t geometry3dCoordinatesBitdepth =
+      params_.geometry3dCoordinatesBitdepth_ + ( params_.additionalProjectionPlaneMode_ > 0 );
+#else
   const size_t geometry3dCoordinatesBitdepth = params_.geometry3dCoordinatesBitdepth_;
+#endif
 
   PCCPointSet3 pointsToBeProjected;
   for ( const auto& patch : patches ) {
@@ -3588,7 +3603,16 @@ void PCCEncoder::generateRawPointsPatch( const PCCPointSet3& source,
                   } else {
                     point1[patch.getNormalAxis()] = double( patch.getD1() - depth0 - nDeltaDCur );
                   }
-                  pointsToBeProjected.addPoint( point1 );
+                  PCCPoint3D input = point1;
+                  if ( patch.getAxisOfAdditionalPlane() != 0 ) {
+                    PCCVector3D tmp1;
+                    PCCPatch::InverseRotatePosition45DegreeOnAxis( patch.getAxisOfAdditionalPlane(),
+                                                                   geometry3dCoordinatesBitdepth, input, tmp1 );
+                    input.x() = tmp1.x();
+                    input.y() = tmp1.y();
+                    input.z() = tmp1.z();
+                  }
+                  pointsToBeProjected.addPoint( input );
                 }
               }  // for each i
             }    // if( patch.getDepthEnhancedDeltaD()[p] != 0) )
@@ -4098,26 +4122,30 @@ bool PCCEncoder::generateGeometryVideo( const PCCGroupOfFrames& sources, PCCCont
   params.additionalProjectionPlaneMode_       = params_.additionalProjectionPlaneMode_;
   params.partialAdditionalProjectionPlane_    = params_.partialAdditionalProjectionPlane_;
   params.maxAllowedDepth_                     = ( size_t( 1 ) << params_.geometryNominal2dBitdepth_ ) - 1;
-  params.geometryBitDepth3D_                  = params_.geometry3dCoordinatesBitdepth_;
-  params.EOMFixBitCount_                      = params_.EOMFixBitCount_;
-  params.EOMSingleLayerMode_                  = params_.enhancedOccupancyMapCode_ && ( params_.mapCountMinus1_ == 0 );
-  params.patchExpansion_                      = params_.patchExpansion_;
-  params.highGradientSeparation_              = params_.highGradientSeparation_;
-  params.minGradient_                         = params_.minGradient_;
-  params.minNumHighGradientPoints_            = params_.minNumHighGradientPoints_;
-  params.enablePointCloudPartitioning_        = params_.enablePointCloudPartitioning_;
-  params.roiBoundingBoxMinX_                  = params_.roiBoundingBoxMinX_;
-  params.roiBoundingBoxMaxX_                  = params_.roiBoundingBoxMaxX_;
-  params.roiBoundingBoxMinY_                  = params_.roiBoundingBoxMinY_;
-  params.roiBoundingBoxMaxY_                  = params_.roiBoundingBoxMaxY_;
-  params.roiBoundingBoxMinZ_                  = params_.roiBoundingBoxMinZ_;
-  params.roiBoundingBoxMaxZ_                  = params_.roiBoundingBoxMaxZ_;
-  params.numTilesHor_                         = params_.numTilesHor_;
-  params.tileHeightToWidthRatio_              = params_.tileHeightToWidthRatio_;
-  params.numCutsAlong1stLongestAxis_          = params_.numCutsAlong1stLongestAxis_;
-  params.numCutsAlong2ndLongestAxis_          = params_.numCutsAlong2ndLongestAxis_;
-  params.numCutsAlong3rdLongestAxis_          = params_.numCutsAlong3rdLongestAxis_;
-  params.createSubPointCloud_ = params_.pointLocalReconstruction_ || params_.singleMapPixelInterleaving_;
+#if EXPAND_RANGE_ENCODER
+  params.geometryBitDepth3D_ = params_.geometry3dCoordinatesBitdepth_ + ( params_.additionalProjectionPlaneMode_ > 0 );
+#else
+  params.geometryBitDepth3D_ = params_.geometry3dCoordinatesBitdepth_;
+#endif
+  params.EOMFixBitCount_               = params_.EOMFixBitCount_;
+  params.EOMSingleLayerMode_           = params_.enhancedOccupancyMapCode_ && ( params_.mapCountMinus1_ == 0 );
+  params.patchExpansion_               = params_.patchExpansion_;
+  params.highGradientSeparation_       = params_.highGradientSeparation_;
+  params.minGradient_                  = params_.minGradient_;
+  params.minNumHighGradientPoints_     = params_.minNumHighGradientPoints_;
+  params.enablePointCloudPartitioning_ = params_.enablePointCloudPartitioning_;
+  params.roiBoundingBoxMinX_           = params_.roiBoundingBoxMinX_;
+  params.roiBoundingBoxMaxX_           = params_.roiBoundingBoxMaxX_;
+  params.roiBoundingBoxMinY_           = params_.roiBoundingBoxMinY_;
+  params.roiBoundingBoxMaxY_           = params_.roiBoundingBoxMaxY_;
+  params.roiBoundingBoxMinZ_           = params_.roiBoundingBoxMinZ_;
+  params.roiBoundingBoxMaxZ_           = params_.roiBoundingBoxMaxZ_;
+  params.numTilesHor_                  = params_.numTilesHor_;
+  params.tileHeightToWidthRatio_       = params_.tileHeightToWidthRatio_;
+  params.numCutsAlong1stLongestAxis_   = params_.numCutsAlong1stLongestAxis_;
+  params.numCutsAlong2ndLongestAxis_   = params_.numCutsAlong2ndLongestAxis_;
+  params.numCutsAlong3rdLongestAxis_   = params_.numCutsAlong3rdLongestAxis_;
+  params.createSubPointCloud_          = params_.pointLocalReconstruction_ || params_.singleMapPixelInterleaving_;
   if ( params_.additionalProjectionPlaneMode_ == 0 || params_.additionalProjectionPlaneMode_ == 5 ) {
     calculateWeightNormal( context, sources[0], frames[0] );
     params.weightNormal_ = frames[0].getWeightNormal();
@@ -6618,26 +6646,31 @@ void PCCEncoder::setPostProcessingSeiParameters( GeneratePointCloudParameters& p
   params.thresholdColorDifference_ = params_.thresholdColorDifference_;
   params.thresholdColorVariation_  = params_.thresholdColorVariation_;
   // params.thresholdLocalEntropy_         = params_.thresholdLocalEntropy_;
-  params.radius2ColorSmoothing_         = params_.radius2ColorSmoothing_;
-  params.neighborCountColorSmoothing_   = params_.neighborCountColorSmoothing_;
-  params.flagColorSmoothing_            = params_.flagColorSmoothing_;
-  params.gridColorSmoothing_            = params_.gridColorSmoothing_;
-  params.cgridSize_                     = params_.cgridSize_;
-  params.enhancedOccupancyMapCode_      = params_.enhancedOccupancyMapCode_;
-  params.thresholdLossyOM_              = params_.thresholdLossyOM_;
-  params.removeDuplicatePoints_         = params_.removeDuplicatePoints_;
-  params.pointLocalReconstruction_      = params_.pointLocalReconstruction_;
-  params.mapCountMinus1_                = params_.mapCountMinus1_;
-  params.singleMapPixelInterleaving_    = params_.singleMapPixelInterleaving_;
+  params.radius2ColorSmoothing_       = params_.radius2ColorSmoothing_;
+  params.neighborCountColorSmoothing_ = params_.neighborCountColorSmoothing_;
+  params.flagColorSmoothing_          = params_.flagColorSmoothing_;
+  params.gridColorSmoothing_          = params_.gridColorSmoothing_;
+  params.cgridSize_                   = params_.cgridSize_;
+  params.enhancedOccupancyMapCode_    = params_.enhancedOccupancyMapCode_;
+  params.thresholdLossyOM_            = params_.thresholdLossyOM_;
+  params.removeDuplicatePoints_       = params_.removeDuplicatePoints_;
+  params.pointLocalReconstruction_    = params_.pointLocalReconstruction_;
+  params.mapCountMinus1_              = params_.mapCountMinus1_;
+  params.singleMapPixelInterleaving_  = params_.singleMapPixelInterleaving_;
+#if EXPAND_RANGE_ENCODER
+  params.geometry3dCoordinatesBitdepth_ =
+      params_.geometry3dCoordinatesBitdepth_ + ( params_.additionalProjectionPlaneMode_ > 0 );
+#else
   params.geometry3dCoordinatesBitdepth_ = params_.geometry3dCoordinatesBitdepth_;
-  params.useAdditionalPointsPatch_      = params_.losslessGeo_ || params_.lossyRawPointsPatch_;
-  params.plrlNumberOfModes_             = params_.plrlNumberOfModes_;
-  params.geometryBitDepth3D_            = params_.geometry3dCoordinatesBitdepth_;
-  params.EOMFixBitCount_                = params_.EOMFixBitCount_;
-  params.pbfEnableFlag_                 = params_.pbfEnableFlag_;
-  params.pbfPassesCount_                = params_.pbfPassesCount_;
-  params.pbfFilterSize_                 = params_.pbfFilterSize_;
-  params.pbfLog2Threshold_              = params_.pbfLog2Threshold_;
+#endif
+  params.useAdditionalPointsPatch_ = params_.losslessGeo_ || params_.lossyRawPointsPatch_;
+  params.plrlNumberOfModes_        = params_.plrlNumberOfModes_;
+  params.geometryBitDepth3D_       = params_.geometry3dCoordinatesBitdepth_;
+  params.EOMFixBitCount_           = params_.EOMFixBitCount_;
+  params.pbfEnableFlag_            = params_.pbfEnableFlag_;
+  params.pbfPassesCount_           = params_.pbfPassesCount_;
+  params.pbfFilterSize_            = params_.pbfFilterSize_;
+  params.pbfLog2Threshold_         = params_.pbfLog2Threshold_;
 }
 
 void PCCEncoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& params, PCCContext& context ) {
@@ -6660,26 +6693,35 @@ void PCCEncoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& 
   params.thresholdColorDifference_ = params_.thresholdColorDifference_;
   params.thresholdColorVariation_  = params_.thresholdColorVariation_;
   // params.thresholdLocalEntropy_         = params_.thresholdLocalEntropy_;
-  params.radius2ColorSmoothing_         = params_.radius2ColorSmoothing_;
-  params.neighborCountColorSmoothing_   = params_.neighborCountColorSmoothing_;
-  params.flagColorSmoothing_            = params_.flagColorSmoothing_;
-  params.gridColorSmoothing_            = params_.gridColorSmoothing_;
-  params.cgridSize_                     = params_.cgridSize_;
-  params.enhancedOccupancyMapCode_      = params_.enhancedOccupancyMapCode_;
-  params.thresholdLossyOM_              = params_.thresholdLossyOM_;
-  params.removeDuplicatePoints_         = params_.removeDuplicatePoints_;
-  params.pointLocalReconstruction_      = params_.pointLocalReconstruction_;
-  params.mapCountMinus1_                = params_.mapCountMinus1_;
-  params.singleMapPixelInterleaving_    = params_.singleMapPixelInterleaving_;
+  params.radius2ColorSmoothing_       = params_.radius2ColorSmoothing_;
+  params.neighborCountColorSmoothing_ = params_.neighborCountColorSmoothing_;
+  params.flagColorSmoothing_          = params_.flagColorSmoothing_;
+  params.gridColorSmoothing_          = params_.gridColorSmoothing_;
+  params.cgridSize_                   = params_.cgridSize_;
+  params.enhancedOccupancyMapCode_    = params_.enhancedOccupancyMapCode_;
+  params.thresholdLossyOM_            = params_.thresholdLossyOM_;
+  params.removeDuplicatePoints_       = params_.removeDuplicatePoints_;
+  params.pointLocalReconstruction_    = params_.pointLocalReconstruction_;
+  params.mapCountMinus1_              = params_.mapCountMinus1_;
+  params.singleMapPixelInterleaving_  = params_.singleMapPixelInterleaving_;
+#if EXPAND_RANGE_ENCODER
+  params.geometry3dCoordinatesBitdepth_ =
+      params_.geometry3dCoordinatesBitdepth_ + ( params_.additionalProjectionPlaneMode_ > 0 );
+#else
   params.geometry3dCoordinatesBitdepth_ = params_.geometry3dCoordinatesBitdepth_;
-  params.useAdditionalPointsPatch_      = params_.losslessGeo_ || params_.lossyRawPointsPatch_;
-  params.plrlNumberOfModes_             = params_.plrlNumberOfModes_;
-  params.geometryBitDepth3D_            = params_.geometry3dCoordinatesBitdepth_;
-  params.EOMFixBitCount_                = params_.EOMFixBitCount_;
-  params.pbfEnableFlag_                 = false;
-  params.pbfPassesCount_                = 0;
-  params.pbfFilterSize_                 = 0;
-  params.pbfLog2Threshold_              = 0;
+#endif
+  params.useAdditionalPointsPatch_ = params_.losslessGeo_ || params_.lossyRawPointsPatch_;
+  params.plrlNumberOfModes_        = params_.plrlNumberOfModes_;
+#if EXPAND_RANGE_ENCODER
+  params.geometryBitDepth3D_ = params_.geometry3dCoordinatesBitdepth_ + ( params_.additionalProjectionPlaneMode_ > 0 );
+#else
+  params.geometryBitDepth3D_ = params_.geometry3dCoordinatesBitdepth_;
+#endif
+  params.EOMFixBitCount_   = params_.EOMFixBitCount_;
+  params.pbfEnableFlag_    = false;
+  params.pbfPassesCount_   = 0;
+  params.pbfFilterSize_    = 0;
+  params.pbfLog2Threshold_ = 0;
 
   // generatePointCloudParameters.path_ = path.str();
 }
@@ -6795,13 +6837,9 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
     auto         geometryBitDepth2D        = gi.getGeometryNominal2dBitdepthMinus1() + 1;
     auto         maxBitCountForMaxDepthTmp = uint8_t( geometryBitDepth2D - gbitCountSize[minLevel] + 1 );
     auto         maxBitCountForMinDepthTmp = uint8_t( 10 - gbitCountSize[minLevel] );
-    if ( asps.getExtendedProjectionEnabledFlag() ) {
-      maxBitCountForMaxDepthTmp += 1;
-      maxBitCountForMinDepthTmp += 1;
-    }
-    int64_t prevSizeU0 = 0;
-    int64_t prevSizeV0 = 0;
-    int64_t predIndex  = 0;
+    int64_t      prevSizeU0                = 0;
+    int64_t      prevSizeV0                = 0;
+    int64_t      predIndex                 = 0;
     TRACE_CODEC( "Patches size                        = %zu \n", patches.size() );
     TRACE_CODEC( "non-regular Patches(pcm, eom)     = %zu, %zu \n", frame.getRawPointsPatches().size(),
                  frame.getEomPatches().size() );
@@ -6935,10 +6973,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
 
         pdu.set3dPosX( patch.getU1() );
         pdu.set3dPosY( patch.getV1() );
-        size_t pduProjectPlane = patch.getProjectionMode() * 3 + size_t( patch.getNormalAxis() );
-        pdu.setProjectionId( asps.getExtendedProjectionEnabledFlag()
-                                 ? ( pduProjectPlane << 2 ) + patch.getAxisOfAdditionalPlane()
-                                 : pduProjectPlane );
+        pdu.setProjectionId( patch.getViewId() );
         if ( asps.getPatchSizeQuantizerPresentFlag() ) {
           pdu.set2dSizeXMinus1( ( patch.getPatchSize2DXInPixel() - 1 ) / quantizerSizeX );
           pdu.set2dSizeYMinus1( ( patch.getPatchSize2DYInPixel() - 1 ) / quantizerSizeY );
@@ -6954,7 +6989,11 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
           if ( static_cast<int>( asps.getExtendedProjectionEnabledFlag() ) == 0 ) {
             pdu.set3dPosMinZ( ( max3DCoordinate - patch.getD1() ) / minLevel );
           } else {
+#if EXPAND_RANGE_ENCODER
+            pdu.set3dPosMinZ( ( max3DCoordinate - patch.getD1() ) / minLevel );
+#else
             pdu.set3dPosMinZ( ( ( max3DCoordinate << 1 ) - patch.getD1() ) / minLevel );
+#endif
           }
         }
 

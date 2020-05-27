@@ -187,7 +187,6 @@ PCCEncoderParameters::PCCEncoderParameters() {
   use3dmc_                          = true;
   enhancedPP_                       = true;
   minWeightEPP_                     = 0.6;
-  geometry3dCoordinatesBitdepth_    = 10;
   additionalProjectionPlaneMode_    = 0;
   partialAdditionalProjectionPlane_ = 0.00;
 
@@ -833,6 +832,8 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   asps.setMapCountMinus1( mapCountMinus1_ );
   asps.setLongTermRefAtlasFramesFlag( false );
   asps.setUseEightOrientationsFlag( useEightOrientations_ );
+  asps.setExtendedProjectionEnabledFlag( additionalProjectionPlaneMode_ > 0 );
+  asps.setMaxNumberProjectionsMinus1( 5 + 4 * ( std::min )( additionalProjectionPlaneMode_, 3 ) );
   asps.setNormalAxisLimitsQuantizationEnabledFlag( true );
   asps.setNormalAxisMaxDeltaValueEnabledFlag( true );
   asps.setxelDeinterleavingFlag( singleMapPixelInterleaving_ );
@@ -880,22 +881,23 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   int numTilesPerFrame = ( afps.getAtlasFrameTileInformation().getNumPartitionRowsMinus1() + 1 ) *
                          ( afps.getAtlasFrameTileInformation().getNumPartitionColumnsMinus1() + 1 );
   for ( size_t frameIdx = 0; frameIdx < frameCount_; frameIdx++ ) {
-    for ( size_t tileId = 0; tileId < numTilesPerFrame; tileId++ ) {
-      auto& atgl = context.addAtlasTileLayer( frameIdx, tileId );
+    for ( size_t tileGroupId = 0; tileGroupId < numTilesPerFrame; tileGroupId++ ) {
+      auto& atgl = context.addAtlasTileLayer( frameIdx, tileGroupId );
       auto& ath  = atgl.getHeader();
       ath.setAtlasFrameParameterSetId( 0 );
-      if ( additionalProjectionPlaneMode_ > 0 ) {
-        ath.setPosMinZQuantizer( uint8_t( std::log2( minLevel_ ) ) - 1 );
-      } else {
-        ath.setPosMinZQuantizer( uint8_t( std::log2( minLevel_ ) ) );
-      }
+      ath.setPosMinZQuantizer( uint8_t( std::log2( minLevel_ ) ) );
       ath.setPosDeltaMaxZQuantizer( uint8_t( std::log2( minLevel_ ) ) );
       ath.setPatchSizeXinfoQuantizer( log2QuantizerSizeX_ );
       ath.setPatchSizeYinfoQuantizer( log2QuantizerSizeY_ );
       if ( afps.getRaw3dPosBitCountExplicitModeFlag() ) {
         ath.setRaw3dPosAxisBitCountMinus1( 0 );  //
       } else {
+#if EXPAND_RANGE_ENCODER
+        ath.setRaw3dPosAxisBitCountMinus1( geometry3dCoordinatesBitdepth_ + asps.getExtendedProjectionEnabledFlag() -
+                                           geometryNominal2dBitdepth_ - 1 );
+#else
         ath.setRaw3dPosAxisBitCountMinus1( geometry3dCoordinatesBitdepth_ - geometryNominal2dBitdepth_ - 1 );
+#endif
       }
       ath.setNumRefIdxActiveOverrideFlag( false );
 
@@ -911,7 +913,12 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   oi.setOccupancyNominal2DBitdepthMinus1( 7 );
   oi.setOccupancyMSBAlignFlag( false );
 
+#if EXPAND_RANGE_ENCODER
+  gi.setGeometry3dCoordinatesBitdepthMinus1(
+      uint8_t( geometry3dCoordinatesBitdepth_ + asps.getExtendedProjectionEnabledFlag() - 1 ) );
+#else
   gi.setGeometry3dCoordinatesBitdepthMinus1( uint8_t( geometry3dCoordinatesBitdepth_ - 1 ) );
+#endif
   gi.setGeometryNominal2dBitdepthMinus1( uint8_t( geometryNominal2dBitdepth_ - 1 ) );
   gi.setGeometryMSBAlignFlag( false );
 
@@ -923,7 +930,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   context.setRawAttWidth( textureRawSeparateVideoWidth_ );
   context.setRawGeoHeight( 0 );
   context.setRawAttHeight( 0 );
-  context.setGeometry3dCoordinatesBitdepth( geometry3dCoordinatesBitdepth_ );
+  context.setGeometry3dCoordinatesBitdepth( gi.getGeometry3dCoordinatesBitdepthMinus1() + 1 );
   size_t numPlrm = pointLocalReconstruction_
                        ? ( std::max )( static_cast<size_t>( 1 ),
                                        ( std::min )( plrlNumberOfModes_, g_pointLocalReconstructionMode.size() ) )

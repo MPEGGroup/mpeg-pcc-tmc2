@@ -55,7 +55,7 @@ class AtlasSequenceParameterSetRbsp {
       useEightOrientationsFlag_( false ),
       extendedProjectionEnabledFlag_( false ),
       maxNumberProjectionsMinus1_( 5 ),
-      normalAxisLimitsQuantizationEnabledFlag_( false ),
+      normalAxisLimitsQuantizationEnabledFlag_( true ),
       normalAxisMaxDeltaValueEnabledFlag_( false ),
       patchPrecedenceOrderFlag_( false ),
       log2PatchPackingBlockSize_( 0 ),
@@ -96,7 +96,7 @@ class AtlasSequenceParameterSetRbsp {
   uint8_t            getNumRefAtlasFrameListsInAsps() { return numRefAtlasFrameListsInAsps_; }
   bool               getUseEightOrientationsFlag() { return useEightOrientationsFlag_; }
   bool               getExtendedProjectionEnabledFlag() { return extendedProjectionEnabledFlag_; }
-  uint8_t            getMaxNumberProjectionsMinus1() { return maxNumberProjectionsMinus1_; }
+  size_t             getMaxNumberProjectionsMinus1() { return maxNumberProjectionsMinus1_; }
   bool               getNormalAxisLimitsQuantizationEnabledFlag() { return normalAxisLimitsQuantizationEnabledFlag_; }
   bool               getNormalAxisMaxDeltaValueEnabledFlag() { return normalAxisMaxDeltaValueEnabledFlag_; }
   bool               getPatchPrecedenceOrderFlag() { return patchPrecedenceOrderFlag_; }
@@ -126,7 +126,7 @@ class AtlasSequenceParameterSetRbsp {
   void setNumRefAtlasFrameListsInAsps( uint8_t value ) { numRefAtlasFrameListsInAsps_ = value; }
   void setUseEightOrientationsFlag( bool value ) { useEightOrientationsFlag_ = value; }
   void setExtendedProjectionEnabledFlag( bool value ) { extendedProjectionEnabledFlag_ = value; }
-  void setMaxNumberProjectionsMinus1( uint8_t value ) { maxNumberProjectionsMinus1_ = value; }
+  void setMaxNumberProjectionsMinus1( size_t value ) { maxNumberProjectionsMinus1_ = value; }
   void setNormalAxisLimitsQuantizationEnabledFlag( bool value ) { normalAxisLimitsQuantizationEnabledFlag_ = value; }
   void setNormalAxisMaxDeltaValueEnabledFlag( bool value ) { normalAxisMaxDeltaValueEnabledFlag_ = value; }
   void setPatchPrecedenceOrderFlag( bool value ) { patchPrecedenceOrderFlag_ = value; }
@@ -176,7 +176,7 @@ class AtlasSequenceParameterSetRbsp {
   std::vector<RefListStruct>                       refListStruct_;
   bool                                             useEightOrientationsFlag_;
   bool                                             extendedProjectionEnabledFlag_;
-  uint8_t                                          maxNumberProjectionsMinus1_;
+  size_t                                           maxNumberProjectionsMinus1_;
   bool                                             normalAxisLimitsQuantizationEnabledFlag_;
   bool                                             normalAxisMaxDeltaValueEnabledFlag_;
   bool                                             patchPrecedenceOrderFlag_;

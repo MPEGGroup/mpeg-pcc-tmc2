@@ -807,8 +807,16 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
               // \n",blockIndex, canvasIndex, occupancy, x,y );
               if ( params.enhancedOccupancyMapCode_ ) {
                 // D0
-                PCCPoint3D   point0      = patch.generatePoint( u, v, frame0.getValue( 0, x, y ) );
-                const size_t pointIndex0 = reconstruct.addPoint( point0 );
+                PCCPoint3D point0 = patch.generatePoint( u, v, frame0.getValue( 0, x, y ) );
+                size_t     pointIndex0;  // = reconstruct.addPoint(point0);
+                if ( patch.getAxisOfAdditionalPlane() == 0 ) {
+                  pointIndex0 = reconstruct.addPoint( point0 );
+                } else {
+                  PCCVector3D tmp;
+                  PCCPatch::InverseRotatePosition45DegreeOnAxis( patch.getAxisOfAdditionalPlane(),
+                                                                 params.geometryBitDepth3D_, point0, tmp );
+                  pointIndex0 = reconstruct.addPoint( tmp );
+                }
                 reconstruct.setPointPatchIndex( pointIndex0, patchIndex );
                 reconstruct.setColor( pointIndex0, color );
                 if ( PCC_SAVE_POINT_TYPE == 1 ) { reconstruct.setType( pointIndex0, POINT_D0 ); }
@@ -845,7 +853,15 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
                 PCCPoint3D point1( point0 );
                 if ( eomCode == 0 ) {
                   if ( !params.removeDuplicatePoints_ ) {
-                    const size_t pointIndex1 = reconstruct.addPoint( point1 );
+                    size_t pointIndex1;  // = reconstruct.addPoint(point1);
+                    if ( patch.getAxisOfAdditionalPlane() == 0 ) {
+                      pointIndex1 = reconstruct.addPoint( point1 );
+                    } else {
+                      PCCVector3D tmp;
+                      PCCPatch::InverseRotatePosition45DegreeOnAxis( patch.getAxisOfAdditionalPlane(),
+                                                                     params.geometryBitDepth3D_, point1, tmp );
+                      pointIndex1 = reconstruct.addPoint( tmp );
+                    }
                     reconstruct.setPointPatchIndex( pointIndex1, patchIndex );
                     reconstruct.setColor( pointIndex1, color );
                     if ( PCC_SAVE_POINT_TYPE == 1 ) { reconstruct.setType( pointIndex1, POINT_D1 ); }
@@ -869,14 +885,29 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
                             static_cast<double>( point0[patch.getNormalAxis()] - deltaDCur );
                       }
                       if ( ( eomCode == 1 || i == d1pos ) && ( params.mapCountMinus1_ > 0 ) ) {  // d1
-                        pointIndex1 = reconstruct.addPoint( point1 );
+                        // pointIndex1 = reconstruct.addPoint( point1 );
+                        if ( patch.getAxisOfAdditionalPlane() == 0 ) {
+                          pointIndex1 = reconstruct.addPoint( point1 );
+                        } else {
+                          PCCVector3D tmp;
+                          PCCPatch::InverseRotatePosition45DegreeOnAxis( patch.getAxisOfAdditionalPlane(),
+                                                                         params.geometryBitDepth3D_, point1, tmp );
+                          pointIndex1 = reconstruct.addPoint( tmp );
+                        }
                         reconstruct.setPointPatchIndex( pointIndex1, patchIndex );
                         reconstruct.setColor( pointIndex1, color );
                         if ( PCC_SAVE_POINT_TYPE == 1 ) { reconstruct.setType( pointIndex1, POINT_D1 ); }
                         partition.push_back( uint32_t( patchIndex ) );
                         pointToPixel.emplace_back( x, y, 1 );
                       } else {
-                        eomPointsPerPatch[patchIndex].push_back( point1 );
+                        if ( patch.getAxisOfAdditionalPlane() == 0 ) {
+                          eomPointsPerPatch[patchIndex].push_back( point1 );
+                        } else {
+                          PCCVector3D tmp;
+                          PCCPatch::InverseRotatePosition45DegreeOnAxis( patch.getAxisOfAdditionalPlane(),
+                                                                         params.geometryBitDepth3D_, point1, tmp );
+                          eomPointsPerPatch[patchIndex].push_back( PCCPoint3D( tmp[0], tmp[1], tmp[2] ) );
+                        }
                       }
                       addedPointCount++;
                     }

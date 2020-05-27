@@ -216,8 +216,12 @@ class PCCPatchSegmenter3 {
   std::vector<PCCPatch> boxMaxDepths_;  // box depth list
 
   void convert( size_t Axis, size_t lod, PCCPoint3D input, PCCPoint3D& output ) {
+#ifdef EXPAND_RANGE_ENCODER
+    size_t shif = ( 1u << ( lod - 1 ) ) - 1;
+#else
     size_t shif = ( 1u << lod ) - 1;
-    output      = input;
+#endif
+    output = input;
     if ( Axis == 1 ) {  // Additional plane are defined by Y Axis.
       output.x() = input.x() + input.z();
       output.z() = -input.x() + input.z() + shif;
@@ -233,7 +237,11 @@ class PCCPatchSegmenter3 {
   }
 
   void iconvert( size_t Axis, size_t lod, PCCVector3D input, PCCVector3D& output ) {
+#ifdef EXPAND_RANGE_ENCODER
+    size_t shif = ( 1u << ( lod - 1 ) ) - 1;
+#else
     size_t shif = ( 1u << lod ) - 1;
+#endif
     // output = input;
     output.x() = input.x();
     output.y() = input.y();

@@ -1017,8 +1017,18 @@ void PCCBitstreamWriter::patchDataUnit( PatchDataUnit&      pdu,
                    ath.getPosMinZQuantizer(), 2 );
 
   if ( asps.getNormalAxisMaxDeltaValueEnabledFlag() ) {
+#if EXPAND_RANGE_CONDITIONAL
+    uint8_t bitCountForMaxDepth = syntax.getVps().getGeometryInformation( 0 ).getGeometry3dCoordinatesBitdepthMinus1() -
+                                  ath.getPosDeltaMaxZQuantizer() + 1 + asps.getExtendedProjectionEnabledFlag();
+#else
+#ifdef EXPAND_RANGE_ENCODER
+    uint8_t bitCountForMaxDepth = syntax.getVps().getGeometryInformation( 0 ).getGeometry3dCoordinatesBitdepthMinus1() -
+                                  ath.getPosDeltaMaxZQuantizer() + 1;
+#else
     uint8_t bitCountForMaxDepth = syntax.getVps().getGeometryInformation( 0 ).getGeometry3dCoordinatesBitdepthMinus1() -
                                   ath.getPosDeltaMaxZQuantizer() + 2;
+#endif
+#endif
     // if ( asps.getExtendedProjectionEnabledFlag() ) { bitCountForMaxDepth++; }
     bitstream.write( pdu.get3dPosDeltaMaxZ(), bitCountForMaxDepth );
     TRACE_BITSTREAM( " Pdu3dPosDeltaMaxZ: %zu ( bitCountForMaxDepth = %u) \n", pdu.get3dPosDeltaMaxZ(),

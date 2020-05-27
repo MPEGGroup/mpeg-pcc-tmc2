@@ -73,6 +73,8 @@ namespace pcc {
 // ******************************************************************* //
 // Common constants
 // ******************************************************************* //
+#define EXPAND_RANGE_CONDITIONAL 0
+#define EXPAND_RANGE_ENCODER 1
 #define ATLASIDXPCC 0
 
 const uint32_t PCC_UNDEFINED_INDEX     = -1;
