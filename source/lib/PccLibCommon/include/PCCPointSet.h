@@ -152,6 +152,17 @@ class PCCPointSet3 {
     assert( index < pointPatchIndexes_.size() );
     pointPatchIndexes_[index] = PointPatchIndex;
   }
+  uint64_t& getParentPointIndex( const size_t index ) { return parentPointIndex_[index]; }
+  void      setParentPointIndex( const size_t index, const uint64_t parentIndex ) {
+    assert( index < parentPointIndex_.size() );
+    parentPointIndex_[index] = parentIndex;
+  }
+  //  void addParentIndex( const uint64_t parentIndex ) {
+  //    const size_t index = getPointCount();
+  //    resize( index + 1 );
+  //    parentPointIndex_[index] = parentIndex;
+  //    //return index;
+  //  }
   uint16_t getReflectance( const size_t index ) const {
     assert( index < reflectances_.size() && withReflectances_ );
     return reflectances_[index];
@@ -236,6 +247,7 @@ class PCCPointSet3 {
                        const double  thresholdColorOutlierDist               = 10.0 ) const;
 
   bool transferColors16bitBP( PCCPointSet3& target,
+                              const int     filterType,
                               const int32_t searchRange,
                               const bool    losslessTexture                         = false,
                               const int     numNeighborsColorTransferFwd            = 1,
@@ -289,6 +301,7 @@ class PCCPointSet3 {
     if ( hasNormals() ) { normals_.resize( size ); }
     boundaryPointTypes_.resize( size );
     pointPatchIndexes_.resize( size );
+    parentPointIndex_.resize( size );
   }
   void reserve( const size_t size ) {
     positions_.reserve( size );
@@ -300,6 +313,7 @@ class PCCPointSet3 {
     if ( PCC_SAVE_POINT_TYPE ) { types_.reserve( size ); }
     boundaryPointTypes_.reserve( size );
     pointPatchIndexes_.reserve( size );
+    parentPointIndex_.reserve( size );
   }
   void clear() {
     positions_.clear();
@@ -309,6 +323,7 @@ class PCCPointSet3 {
     if ( PCC_SAVE_POINT_TYPE ) { types_.clear(); }
     boundaryPointTypes_.clear();
     pointPatchIndexes_.clear();
+    parentPointIndex_.clear();
     normals_.clear();
   }
   size_t addPoint( const PCCPoint3D& position ) {
@@ -433,6 +448,7 @@ class PCCPointSet3 {
   std::vector<uint16_t>      reflectances_;
   std::vector<uint16_t>      boundaryPointTypes_;
   std::vector<uint16_t>      pointPatchIndexes_;
+  std::vector<uint64_t>      parentPointIndex_;
   std::vector<uint8_t>       types_;
   std::vector<PCCNormal3D>   normals_;
   bool                       withNormals_;

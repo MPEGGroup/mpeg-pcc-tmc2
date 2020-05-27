@@ -503,11 +503,14 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
       }
       if ( !ppSEIParams.pbfEnableFlag_ ) {
         // These are different attribute transfer functions
-        if ( params_.postprocessSmoothingFilter_ == 1 ) {
+        if ( params_.postprocessSmoothingFilter_ == 1 || params_.postprocessSmoothingFilter_ == 5 ) {
           TRACE_CODEC( " transferColors16bitBP \n" );
-          tempFrameBuffer.transferColors16bitBP( reconstruct, int32_t( 0 ), isAttributes444, 8, 1, true, true, true,
-                                                 false, 4, 4, 1000, 1000, 1000 * 256,
-                                                 1000 * 256 );  // jkie: let's make it general
+          // tempFrameBuffer[i].transferColors16bit( reconstructs[i], int32_t( 0
+          // ), params_.losslessGeo_ == 1, 8, 1, 1,
+          // 1, 1, 0, 4, 4, 1000, 1000, 1000 * 256, 1000 * 256 );
+          tempFrameBuffer.transferColors16bitBP( reconstruct, params_.postprocessSmoothingFilter_, int32_t( 0 ),
+                                                 (bool)( params_.losslessGeo_ ), 8, 1, true, true, true, false, 4, 4,
+                                                 1000, 1000, 1000 * 256, 1000 * 256 );
         } else if ( params_.postprocessSmoothingFilter_ == 2 ) {
           TRACE_CODEC( " transferColorWeight \n" );
           tempFrameBuffer.transferColorWeight( reconstruct, 0.1 );
