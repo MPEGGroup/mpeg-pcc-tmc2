@@ -1125,7 +1125,6 @@ class SEIAttributeSmoothing : public SEI {
     smoothingThresholdVariation_[size - 1].resize( dimension );
     smoothingThresholdDifference_[size - 1].resize( dimension );
   }
-
   uint8_t getSmoothingPersistenceFlag() { return smoothingPersistenceFlag_; }
   uint8_t getSmoothingResetFlag() { return smoothingResetFlag_; }
   uint8_t getNumAttributesUpdated() { return numAttributesUpdated_; }

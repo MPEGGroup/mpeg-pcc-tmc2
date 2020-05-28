@@ -61,28 +61,24 @@ typedef pcc::PCCImage<uint16_t, 3> PCCImageGeometry;
 typedef pcc::PCCImage<uint8_t, 3>  PCCImageOccupancyMap;
 
 struct GeneratePointCloudParameters {
-  size_t occupancyResolution_;
-  size_t occupancyPrecision_;
-  bool   enableSizeQuantization_;
-  bool   gridSmoothing_;
-  size_t gridSize_;
-  size_t neighborCountSmoothing_;
-  double radius2Smoothing_;
-  double radius2BoundaryDetection_;
-  double thresholdSmoothing_;
-  size_t rawPointColorFormat_;
-  size_t nbThread_;
-  bool   multipleStreams_;
-  bool   absoluteD1_;
-  size_t surfaceThickness_;
-  double thresholdColorSmoothing_;
-  bool   gridColorSmoothing_;
-  size_t cgridSize_;
-  double thresholdColorDifference_;
-  double thresholdColorVariation_;
-  // double      thresholdLocalEntropy_;
-  double      radius2ColorSmoothing_;
-  size_t      neighborCountColorSmoothing_;
+  size_t      occupancyResolution_;
+  size_t      occupancyPrecision_;
+  bool        enableSizeQuantization_;
+  bool        gridSmoothing_;
+  size_t      gridSize_;
+  size_t      neighborCountSmoothing_;
+  double      radius2Smoothing_;
+  double      radius2BoundaryDetection_;
+  double      thresholdSmoothing_;
+  size_t      rawPointColorFormat_;
+  size_t      nbThread_;
+  bool        multipleStreams_;
+  bool        absoluteD1_;
+  size_t      surfaceThickness_;
+  double      thresholdColorSmoothing_;
+  size_t      cgridSize_;
+  double      thresholdColorDifference_;
+  double      thresholdColorVariation_;
   bool        flagGeometrySmoothing_;
   bool        flagColorSmoothing_;
   bool        enhancedOccupancyMapCode_;
@@ -309,8 +305,6 @@ class PCCCodec {
   void updateReconstruct( PCCPointSet3&              reconstruct,
                           const PCCPointSet3&        subReconstruct,
                           const std::vector<size_t>& subReconstructIndex );
-
-  void smoothPointCloudColor( PCCPointSet3& reconstruct, const GeneratePointCloudParameters params );
 
   void smoothPointCloudGrid( PCCPointSet3&                       reconstruct,
                              const std::vector<uint32_t>&        partition,

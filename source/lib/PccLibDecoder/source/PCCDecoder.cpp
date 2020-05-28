@@ -458,29 +458,23 @@ void PCCDecoder::setPostProcessingSeiParameters( GeneratePointCloudParameters& p
   params.multipleStreams_          = sps.getMultipleMapStreamsPresentFlag( atlasIndex );
   params.surfaceThickness_         = asps.getAspsVpccExtension().getSurfaceThicknessMinus1() + 1;
   params.thresholdColorSmoothing_  = 0.;
-  params.gridColorSmoothing_       = false;
+  params.flagColorSmoothing_       = false;
   params.cgridSize_                = 0;
   params.thresholdColorDifference_ = 0;
   params.thresholdColorVariation_  = 0;
-  // params.thresholdLocalEntropy_       = 0;
-  params.radius2ColorSmoothing_       = 64;
-  params.neighborCountColorSmoothing_ = 64;
-  params.flagColorSmoothing_          = false;
   if ( seiAttributeSmoothing ) {
-    auto* sei = static_cast<SEIAttributeSmoothing*>( context.getSei( NAL_PREFIX_ESEI, ATTRIBUTE_SMOOTHING ) );
+    auto* sei = static_cast<SEIAttributeSmoothing*>( context.getSei( NAL_PREFIX_ESEI, ATTRIBUTE_SMOOTHING ) );    
     for ( size_t j = 0; j < sei->getNumAttributesUpdated(); j++ ) {
       size_t k = sei->getAttributeIdx( j );
       if ( !sei->getAttributeSmoothingCancelFlag( k ) ) {
-        for ( size_t i = 0; i < sei->getSmoothingInstancesUpdated( k ) + 1; i++ ) {
+        for ( size_t i = 0; i < sei->getSmoothingInstancesUpdated( k ); i++ ) {
           size_t m = sei->getSmoothingInstanceIndex( k, i );
           if ( !sei->getSmoothingInstanceCancelFlag( k, m ) ) {
-            params.flagColorSmoothing_       = true;
-            params.thresholdColorSmoothing_  = static_cast<double>( sei->getSmoothingThreshold( k, m ) );
-            params.gridColorSmoothing_       = true;
+            params.flagColorSmoothing_       = true;      
             params.cgridSize_                = sei->getSmoothingGridSizeMinus2( k, m ) + 2;
+            params.thresholdColorSmoothing_  = static_cast<double>( sei->getSmoothingThreshold( k, m ) );      
             params.thresholdColorDifference_ = sei->getSmoothingThresholdDifference( k, m );
             params.thresholdColorVariation_  = sei->getSmoothingThresholdVariation( k, m );
-            // params.thresholdLocalEntropy_    = sei->getSmoothingThreshold( index, i );
           }
         }
       }
@@ -543,15 +537,11 @@ void PCCDecoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& 
   params.absoluteD1_ = sps.getMapCountMinus1( atlasIndex ) == 0 || sps.getMapAbsoluteCodingEnableFlag( atlasIndex, 1 );
   params.multipleStreams_          = sps.getMultipleMapStreamsPresentFlag( atlasIndex );
   params.surfaceThickness_         = asps.getAspsVpccExtension().getSurfaceThicknessMinus1() + 1;
-  params.thresholdColorSmoothing_  = 0.;
-  params.gridColorSmoothing_       = false;
+  params.flagColorSmoothing_       = false;
   params.cgridSize_                = 0;
+  params.thresholdColorSmoothing_  = 0.;
   params.thresholdColorDifference_ = 0;
   params.thresholdColorVariation_  = 0;
-  // params.thresholdLocalEntropy_       = 0;
-  params.radius2ColorSmoothing_       = 64;
-  params.neighborCountColorSmoothing_ = 64;
-  params.flagColorSmoothing_          = false;
   if ( seiAttributeSmoothing ) {
     auto* sei = static_cast<SEIAttributeSmoothing*>( context.getSei( NAL_PREFIX_ESEI, ATTRIBUTE_SMOOTHING ) );
     for ( size_t j = 0; j < sei->getNumAttributesUpdated(); j++ ) {
@@ -561,13 +551,11 @@ void PCCDecoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& 
           size_t m = sei->getSmoothingInstanceIndex( k, i );
           if ( !sei->getSmoothingInstanceCancelFlag( k, m ) ) {
             if ( sei->getSmoothingMethodType( k, m ) == 1 ) {
-              params.flagColorSmoothing_       = true;
-              params.thresholdColorSmoothing_  = static_cast<double>( sei->getSmoothingThreshold( k, m ) );
-              params.gridColorSmoothing_       = true;
+              params.flagColorSmoothing_       = true;           
               params.cgridSize_                = sei->getSmoothingGridSizeMinus2( k, m ) + 2;
+              params.thresholdColorSmoothing_  = static_cast<double>( sei->getSmoothingThreshold( k, m ) );   
               params.thresholdColorDifference_ = sei->getSmoothingThresholdDifference( k, m );
               params.thresholdColorVariation_  = sei->getSmoothingThresholdVariation( k, m );
-              // params.thresholdLocalEntropy_    = sei->getSmoothingLocalEntropyThreshold( k, m );
             }
           }
         }
@@ -748,7 +736,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
             patch.getSizeV0(), patch.getSizeD(), pdu.get3dPosDeltaMaxZ(), patch.getProjectionMode(),
             patch.getPatchOrientation(), patch.getNormalAxis(), patch.getTangentAxis(), patch.getBitangentAxis(),
             (size_t)lodEnableFlag, patch.getLodScaleX(), patch.getLodScaleY(), asps.getExtendedProjectionEnabledFlag(),
-            pdu.getPduProjectionId(), patch.getAxisOfAdditionalPlane() );
+            pdu.getProjectionId(), patch.getAxisOfAdditionalPlane() );
         patch.allocOneLayerData();
         if ( asps.getPointLocalReconstructionEnabledFlag() ) {
           setPointLocalReconstructionData( frame, patch, pdu.getPointLocalReconstructionData(),

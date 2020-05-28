@@ -5307,24 +5307,22 @@ void PCCEncoder::presmoothPointCloudColor( PCCPointSet3& reconstruct, const PCCE
   limited.execute( [&] {
     tbb::parallel_for( size_t( 0 ), pointCount, [&]( const size_t i ) {
       //  for (size_t i = 0; i < pointCount; ++i) {
-
       PCCNNResult result;
       if ( reconstruct.getBoundaryPointType( i ) == 2 ) {
-        kdtree.searchRadius( reconstruct[i], params.neighborCountColorSmoothing_, params.radius2ColorSmoothing_,
+        kdtree.searchRadius( reconstruct[i], params.neighborCountColorPreSmoothing_, params.radius2ColorPreSmoothing_,
                              result );
         PCCVector3D          centroid( 0.0 );
         size_t               neighborCount = 0;
         std::vector<uint8_t> Lum;
         for ( size_t r = 0; r < result.count(); ++r ) {
           const double dist2 = result.dist( r );
-          if ( dist2 > params.radius2ColorSmoothing_ ) { break; }
+          if ( dist2 > params.radius2ColorPreSmoothing_ ) { break; }
           ++neighborCount;
           const size_t index = result.indices( r );
           PCCColor3B   color = reconstruct.getColor( index );
           centroid[0] += double( color[0] );
           centroid[1] += double( color[1] );
           centroid[2] += double( color[2] );
-
           double Y = 0.2126 * double( color[0] ) + 0.7152 * double( color[1] ) + 0.0722 * double( color[2] );
           Lum.push_back( uint8_t( Y ) );
         }
@@ -5340,8 +5338,8 @@ void PCCEncoder::presmoothPointCloudColor( PCCPointSet3& reconstruct, const PCCE
           PCCColor3B colorQP         = reconstruct.getColor( i );
           double     distToCentroid2 = 0;
           for ( size_t k = 0; k < 3; ++k ) { distToCentroid2 += abs( centroid[k] - double( colorQP[k] ) ); }
-          if ( distToCentroid2 >= double( params.thresholdColorSmoothing_ ) &&
-               H < double( params.thresholdLocalEntropy_ ) ) {
+          if ( distToCentroid2 >= double( params.thresholdColorPreSmoothing_ ) &&
+               H < double( params.thresholdColorPreSmoothingLocalEntropy_ ) ) {
             color[0] = uint8_t( centroid[0] );
             color[1] = uint8_t( centroid[1] );
             color[2] = uint8_t( centroid[2] );
@@ -6627,36 +6625,32 @@ void PCCEncoder::setPointLocalReconstructionData( PCCFrameContext&              
 #endif
 }
 void PCCEncoder::setPostProcessingSeiParameters( GeneratePointCloudParameters& params, PCCContext& context ) {
-  params.occupancyResolution_      = params_.occupancyResolution_;
-  params.occupancyPrecision_       = params_.occupancyPrecision_;
-  params.enableSizeQuantization_   = context.getEnablePatchSizeQuantization();
-  params.flagGeometrySmoothing_    = params_.flagGeometrySmoothing_;
-  params.gridSmoothing_            = params_.gridSmoothing_;
-  params.gridSize_                 = params_.gridSize_;
-  params.neighborCountSmoothing_   = params_.neighborCountSmoothing_;
-  params.radius2Smoothing_         = params_.radius2Smoothing_;
-  params.radius2BoundaryDetection_ = params_.radius2BoundaryDetection_;
-  params.thresholdSmoothing_       = params_.thresholdSmoothing_;
-  params.rawPointColorFormat_      = size_t( params_.losslessGeo444_ ? COLOURFORMAT444 : COLOURFORMAT420 );
-  params.nbThread_                 = params_.nbThread_;
-  params.absoluteD1_               = params_.absoluteD1_;
-  params.multipleStreams_          = params_.multipleStreams_;
-  params.surfaceThickness_         = params_.surfaceThickness_;
-  params.thresholdColorSmoothing_  = params_.thresholdColorSmoothing_;
-  params.thresholdColorDifference_ = params_.thresholdColorDifference_;
-  params.thresholdColorVariation_  = params_.thresholdColorVariation_;
-  // params.thresholdLocalEntropy_         = params_.thresholdLocalEntropy_;
-  params.radius2ColorSmoothing_       = params_.radius2ColorSmoothing_;
-  params.neighborCountColorSmoothing_ = params_.neighborCountColorSmoothing_;
-  params.flagColorSmoothing_          = params_.flagColorSmoothing_;
-  params.gridColorSmoothing_          = params_.gridColorSmoothing_;
-  params.cgridSize_                   = params_.cgridSize_;
-  params.enhancedOccupancyMapCode_    = params_.enhancedOccupancyMapCode_;
-  params.thresholdLossyOM_            = params_.thresholdLossyOM_;
-  params.removeDuplicatePoints_       = params_.removeDuplicatePoints_;
-  params.pointLocalReconstruction_    = params_.pointLocalReconstruction_;
-  params.mapCountMinus1_              = params_.mapCountMinus1_;
-  params.singleMapPixelInterleaving_  = params_.singleMapPixelInterleaving_;
+  params.occupancyResolution_        = params_.occupancyResolution_;
+  params.occupancyPrecision_         = params_.occupancyPrecision_;
+  params.enableSizeQuantization_     = context.getEnablePatchSizeQuantization();
+  params.flagGeometrySmoothing_      = params_.flagGeometrySmoothing_;
+  params.gridSmoothing_              = params_.gridSmoothing_;
+  params.gridSize_                   = params_.gridSize_;
+  params.neighborCountSmoothing_     = params_.neighborCountSmoothing_;
+  params.radius2Smoothing_           = params_.radius2Smoothing_;
+  params.radius2BoundaryDetection_   = params_.radius2BoundaryDetection_;
+  params.thresholdSmoothing_         = params_.thresholdSmoothing_;
+  params.rawPointColorFormat_        = size_t( params_.losslessGeo444_ ? COLOURFORMAT444 : COLOURFORMAT420 );
+  params.nbThread_                   = params_.nbThread_;
+  params.absoluteD1_                 = params_.absoluteD1_;
+  params.multipleStreams_            = params_.multipleStreams_;
+  params.surfaceThickness_           = params_.surfaceThickness_;
+  params.thresholdColorSmoothing_    = params_.thresholdColorSmoothing_;
+  params.thresholdColorDifference_   = params_.thresholdColorDifference_;
+  params.thresholdColorVariation_    = params_.thresholdColorVariation_;
+  params.flagColorSmoothing_         = params_.flagColorSmoothing_;
+  params.cgridSize_                  = params_.cgridSize_;
+  params.enhancedOccupancyMapCode_   = params_.enhancedOccupancyMapCode_;
+  params.thresholdLossyOM_           = params_.thresholdLossyOM_;
+  params.removeDuplicatePoints_      = params_.removeDuplicatePoints_;
+  params.pointLocalReconstruction_   = params_.pointLocalReconstruction_;
+  params.mapCountMinus1_             = params_.mapCountMinus1_;
+  params.singleMapPixelInterleaving_ = params_.singleMapPixelInterleaving_;
 #if EXPAND_RANGE_ENCODER
   params.geometry3dCoordinatesBitdepth_ =
       params_.geometry3dCoordinatesBitdepth_ + ( params_.additionalProjectionPlaneMode_ > 0 );
@@ -6674,36 +6668,32 @@ void PCCEncoder::setPostProcessingSeiParameters( GeneratePointCloudParameters& p
 }
 
 void PCCEncoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& params, PCCContext& context ) {
-  params.occupancyResolution_      = params_.occupancyResolution_;
-  params.occupancyPrecision_       = params_.occupancyPrecision_;
-  params.enableSizeQuantization_   = context.getEnablePatchSizeQuantization();
-  params.flagGeometrySmoothing_    = params_.flagGeometrySmoothing_;
-  params.gridSmoothing_            = params_.gridSmoothing_;
-  params.gridSize_                 = params_.gridSize_;
-  params.neighborCountSmoothing_   = params_.neighborCountSmoothing_;
-  params.radius2Smoothing_         = params_.radius2Smoothing_;
-  params.radius2BoundaryDetection_ = params_.radius2BoundaryDetection_;
-  params.thresholdSmoothing_       = params_.thresholdSmoothing_;
-  params.rawPointColorFormat_      = size_t( params_.losslessGeo444_ ? COLOURFORMAT444 : COLOURFORMAT420 );
-  params.nbThread_                 = params_.nbThread_;
-  params.absoluteD1_               = params_.absoluteD1_;
-  params.multipleStreams_          = params_.multipleStreams_;
-  params.surfaceThickness_         = params_.surfaceThickness_;
-  params.thresholdColorSmoothing_  = params_.thresholdColorSmoothing_;
-  params.thresholdColorDifference_ = params_.thresholdColorDifference_;
-  params.thresholdColorVariation_  = params_.thresholdColorVariation_;
-  // params.thresholdLocalEntropy_         = params_.thresholdLocalEntropy_;
-  params.radius2ColorSmoothing_       = params_.radius2ColorSmoothing_;
-  params.neighborCountColorSmoothing_ = params_.neighborCountColorSmoothing_;
-  params.flagColorSmoothing_          = params_.flagColorSmoothing_;
-  params.gridColorSmoothing_          = params_.gridColorSmoothing_;
-  params.cgridSize_                   = params_.cgridSize_;
-  params.enhancedOccupancyMapCode_    = params_.enhancedOccupancyMapCode_;
-  params.thresholdLossyOM_            = params_.thresholdLossyOM_;
-  params.removeDuplicatePoints_       = params_.removeDuplicatePoints_;
-  params.pointLocalReconstruction_    = params_.pointLocalReconstruction_;
-  params.mapCountMinus1_              = params_.mapCountMinus1_;
-  params.singleMapPixelInterleaving_  = params_.singleMapPixelInterleaving_;
+  params.occupancyResolution_        = params_.occupancyResolution_;
+  params.occupancyPrecision_         = params_.occupancyPrecision_;
+  params.enableSizeQuantization_     = context.getEnablePatchSizeQuantization();
+  params.flagGeometrySmoothing_      = params_.flagGeometrySmoothing_;
+  params.gridSmoothing_              = params_.gridSmoothing_;
+  params.gridSize_                   = params_.gridSize_;
+  params.neighborCountSmoothing_     = params_.neighborCountSmoothing_;
+  params.radius2Smoothing_           = params_.radius2Smoothing_;
+  params.radius2BoundaryDetection_   = params_.radius2BoundaryDetection_;
+  params.thresholdSmoothing_         = params_.thresholdSmoothing_;
+  params.rawPointColorFormat_        = size_t( params_.losslessGeo444_ ? COLOURFORMAT444 : COLOURFORMAT420 );
+  params.nbThread_                   = params_.nbThread_;
+  params.absoluteD1_                 = params_.absoluteD1_;
+  params.multipleStreams_            = params_.multipleStreams_;
+  params.surfaceThickness_           = params_.surfaceThickness_;
+  params.thresholdColorSmoothing_    = params_.thresholdColorSmoothing_;
+  params.thresholdColorDifference_   = params_.thresholdColorDifference_;
+  params.thresholdColorVariation_    = params_.thresholdColorVariation_;
+  params.flagColorSmoothing_         = params_.flagColorSmoothing_;
+  params.cgridSize_                  = params_.cgridSize_;
+  params.enhancedOccupancyMapCode_   = params_.enhancedOccupancyMapCode_;
+  params.thresholdLossyOM_           = params_.thresholdLossyOM_;
+  params.removeDuplicatePoints_      = params_.removeDuplicatePoints_;
+  params.pointLocalReconstruction_   = params_.pointLocalReconstruction_;
+  params.mapCountMinus1_             = params_.mapCountMinus1_;
+  params.singleMapPixelInterleaving_ = params_.singleMapPixelInterleaving_;
 #if EXPAND_RANGE_ENCODER
   params.geometry3dCoordinatesBitdepth_ =
       params_.geometry3dCoordinatesBitdepth_ + ( params_.additionalProjectionPlaneMode_ > 0 );
@@ -6790,12 +6780,12 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
       sei.setNumAttributesUpdated( 1 );
       sei.allocate();
       for ( size_t j = 0; j < sei.getNumAttributesUpdated(); j++ ) {
-        size_t k = j, dimension = 3;
-        sei.setAttributeIdx( j, j );
-        sei.setSmoothingInstancesUpdated( k, dimension - 1 );
+        size_t k = j;
+        sei.setAttributeIdx( j, k );
+        sei.setSmoothingInstancesUpdated( k, 1 );
         sei.setAttributeSmoothingCancelFlag( k, false );
-        sei.allocate( k + 1, dimension + 1 );
-        for ( size_t i = 0; i < sei.getSmoothingInstancesUpdated( k ) + 1; i++ ) {
+        sei.allocate( k + 1, sei.getSmoothingInstancesUpdated( k ) + 1 );
+        for ( size_t i = 0; i < sei.getSmoothingInstancesUpdated( k ); i++ ) {
           size_t m = i;
           sei.setSmoothingInstanceIndex( k, i, m );
           sei.setSmoothingInstanceCancelFlag( k, m, false );
@@ -6803,7 +6793,6 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
           if ( sei.getSmoothingMethodType( k, m ) == 1 ) {
             sei.setSmoothingGridSizeMinus2( k, m, params_.cgridSize_ - 2 );
             sei.setSmoothingThreshold( k, m, params_.thresholdColorSmoothing_ );
-            // sei.setLocalEntropyThreshold( k, m, params_.thresholdLocalEntropy_ );
             sei.setSmoothingThresholdVariation( k, m, params_.thresholdColorVariation_ );
             sei.setSmoothingThresholdDifference( k, m, params_.thresholdColorDifference_ );
           }

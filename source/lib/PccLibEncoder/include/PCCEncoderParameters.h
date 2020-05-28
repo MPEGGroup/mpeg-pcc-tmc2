@@ -120,10 +120,6 @@ class PCCEncoderParameters {
   double thresholdColorSmoothing_;
   double thresholdColorDifference_;
   double thresholdColorVariation_;
-  double thresholdLocalEntropy_;
-  double radius2ColorSmoothing_;
-  size_t neighborCountColorSmoothing_;
-  bool   gridColorSmoothing_;
   size_t cgridSize_;
   bool   flagColorSmoothing_;
 

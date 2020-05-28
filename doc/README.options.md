@@ -88,7 +88,6 @@ The next tables shows the parameters of the encoder, decoder and metrics program
 --thresholdColorSmoothing=10                  & Threshold of color smoothing               \\ \hline
 --thresholdLocalEntropy=4.5                   & Threshold of local entropy                 \\ \hline
 --radius2ColorSmoothing=64                    & Redius of color smoothing                  \\ \hline
---neighborCountColorSmoothing=64              & Neighbor count for color smoothing         \\ \hline
 --flagColorSmoothing=0                        & Enable color smoothing                     \\ \hline
 --thresholdColorPreSmoothing=10               & Threshold of color pre-smoothing           \\ \hline
 --thresholdColorPreSmoothing                  & Threshold of color pre-smoothing local     \\ 

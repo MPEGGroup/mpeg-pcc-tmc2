@@ -321,10 +321,6 @@ bool parseParameters( int                   argc,
       encoderParams.thresholdColorSmoothing_,
       encoderParams.thresholdColorSmoothing_, 
       "Threshold of color smoothing" )
-    ( "gridColorSmoothing",
-      encoderParams.gridColorSmoothing_,
-      encoderParams.gridColorSmoothing_,
-      "Enable low complexity color smoothing" )
     ( "cgridSize",
       encoderParams.cgridSize_,
       encoderParams.cgridSize_,
@@ -336,19 +332,7 @@ bool parseParameters( int                   argc,
     ( "thresholdColorVariation",
       encoderParams.thresholdColorVariation_,
       encoderParams.thresholdColorVariation_,
-      "Threshold of color variation in cells" )
-    ( "thresholdLocalEntropy",
-      encoderParams.thresholdLocalEntropy_,
-      encoderParams.thresholdLocalEntropy_, 
-      "Threshold of local entropy" )
-    ( "radius2ColorSmoothing",
-      encoderParams.radius2ColorSmoothing_,
-      encoderParams.radius2ColorSmoothing_, 
-      "Redius of color smoothing" )
-    ( "neighborCountColorSmoothing",
-      encoderParams.neighborCountColorSmoothing_,
-      encoderParams.neighborCountColorSmoothing_,
-      "Neighbor count for color smoothing" )
+      "Threshold of color variation in cells" )  
     ( "flagColorSmoothing",
       encoderParams.flagColorSmoothing_,
       encoderParams.flagColorSmoothing_, 

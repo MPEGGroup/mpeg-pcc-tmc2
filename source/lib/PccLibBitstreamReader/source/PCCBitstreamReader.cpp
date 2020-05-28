@@ -2029,9 +2029,9 @@ void PCCBitstreamReader::attributeSmoothing( PCCBitstream& bitstream, SEI& seiAb
     sei.setAttributeSmoothingCancelFlag( k, bitstream.read( 1 ) );  // u(1)
     sei.setSmoothingInstancesUpdated( k, bitstream.read( 8 ) );     //	u(8)
     for ( size_t i = 0; i < sei.getSmoothingInstancesUpdated( k ); i++ ) {
-      sei.setSmoothingInstanceIndex( k, i, bitstream.read( 8 ) );  //	u(8)
-      size_t m = sei.getSmoothingInstanceIndex( k, i );
+      size_t m = bitstream.read( 8 );  //	u(8)
       sei.allocate( k + 1, m + 1 );
+      sei.setSmoothingInstanceIndex( k, i, m );
       sei.setSmoothingInstanceCancelFlag( k, m, bitstream.read( 1 ) );  // u(1)
       if ( sei.getSmoothingInstanceCancelFlag( k, m ) != 1 ) {
         sei.setSmoothingMethodType( k, m, bitstream.read( 8 ) );  // u(8)

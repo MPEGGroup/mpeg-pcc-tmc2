@@ -132,11 +132,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   thresholdColorSmoothing_                = 10.0;
   thresholdColorDifference_               = 10.0;
   thresholdColorVariation_                = 6.0;
-  thresholdLocalEntropy_                  = 4.0;
-  radius2ColorSmoothing_                  = 4.0 * 16;
-  neighborCountColorSmoothing_            = 4 * 16;
   flagColorSmoothing_                     = false;
-  gridColorSmoothing_                     = true;
   cgridSize_                              = 4;
   thresholdColorPreSmoothing_             = 10.0;
   thresholdColorPreSmoothingLocalEntropy_ = 4.5;
@@ -379,19 +375,10 @@ void PCCEncoderParameters::print() {
   std::cout << "\t Color smoothing" << std::endl;
   std::cout << "\t   flagColorSmoothing                     " << flagColorSmoothing_ << std::endl;
   if ( flagColorSmoothing_ ) {
-    std::cout << "\t   gridColorSmoothing                   " << gridColorSmoothing_ << std::endl;
-    if ( gridColorSmoothing_ ) {
-      std::cout << "\t   thresholdColorSmoothing            " << thresholdColorSmoothing_ << std::endl;
-      std::cout << "\t   thresholdColorDifference           " << thresholdColorDifference_ << std::endl;
-      std::cout << "\t   thresholdColorVariation            " << thresholdColorVariation_ << std::endl;
-      std::cout << "\t   thresholdLocalEntropy              " << thresholdLocalEntropy_ << std::endl;
-      std::cout << "\t   cgridSize                          " << cgridSize_ << std::endl;
-    } else {
-      std::cout << "\t   thresholdColorSmoothing            " << thresholdColorSmoothing_ << std::endl;
-      std::cout << "\t   thresholdLocalEntropy              " << thresholdLocalEntropy_ << std::endl;
-      std::cout << "\t   radius2ColorSmoothing              " << radius2ColorSmoothing_ << std::endl;
-      std::cout << "\t   neighborCountColorSmoothing        " << neighborCountColorSmoothing_ << std::endl;
-    }
+    std::cout << "\t   thresholdColorSmoothing            " << thresholdColorSmoothing_ << std::endl;
+    std::cout << "\t   thresholdColorDifference           " << thresholdColorDifference_ << std::endl;
+    std::cout << "\t   thresholdColorVariation            " << thresholdColorVariation_ << std::endl;
+    std::cout << "\t   cgridSize                          " << cgridSize_ << std::endl;
   }
   std::cout << "\t Color pre-smoothing                      " << std::endl;
   std::cout << "\t   thresholdColorPreSmoothing             " << thresholdColorSmoothing_ << std::endl;
@@ -736,7 +723,7 @@ bool PCCEncoderParameters::check() {
       if ( gridSize_ % 2 == 1 ) { std::cerr << "WARNING: gridSize should be an even number\n"; }
     }
   }
-  if ( flagColorSmoothing_ && gridColorSmoothing_ ) {
+  if ( flagColorSmoothing_ ) {
     if ( cgridSize_ == 0 ) {
       ret = false;
       std::cerr << "color gridSize shall be greater than 0. \n";
@@ -747,7 +734,6 @@ bool PCCEncoderParameters::check() {
     ret = false;
     std::cerr << "EOMFixBitCount shall be greater than 0. \n";
   }
-
   return ret;
 }
 

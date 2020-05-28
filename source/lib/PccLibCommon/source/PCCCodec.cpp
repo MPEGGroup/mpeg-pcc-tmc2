@@ -213,88 +213,79 @@ void PCCCodec::colorSmoothing( PCCPointSet3&                       reconstruct,
   const int w        = pow( 2, params.geometryBitDepth3D_ ) / gridSize;
   const int w3       = w * w * w;
   assert( params.flagColorSmoothing_ );
-  if ( params.gridColorSmoothing_ ) {
-    size_t           pointCount = reconstruct.getPointCount();
-    std::vector<int> cellIndex;
-    cellIndex.resize( w3 );
-    std::fill( cellIndex.begin(), cellIndex.end(), -1 );
-
-    size_t    numBoundaryCells = 0;
-    const int disth            = ( std::max )( gridSize / 2, 1 );
-    int       pcMaxSize        = pow( 2, params.geometryBitDepth3D_ );
-
-    for ( size_t n = 0; n < pointCount; ++n ) {
-      if ( reconstruct.getBoundaryPointType( n ) == 1 ) {
-        PCCPoint3D point = reconstruct[n];
-        int        x     = point.x();
-        int        y     = point.y();
-        int        z     = point.z();
-
-        if ( x < disth || y < disth || z < disth || pcMaxSize <= x + disth || pcMaxSize <= y + disth ||
-             pcMaxSize <= z + disth ) {
-          continue;
-        }
-
-        int x2 = x / gridSize;
-        int y2 = y / gridSize;
-        int z2 = z / gridSize;
-
-        int x3 = x % gridSize;
-        int y3 = y % gridSize;
-        int z3 = z % gridSize;
-
-        int qx = x2 + ( ( x3 < gridSize / 2 ) ? -1 : 0 );
-        int qy = y2 + ( ( y3 < gridSize / 2 ) ? -1 : 0 );
-        int qz = z2 + ( ( z3 < gridSize / 2 ) ? -1 : 0 );
-
-        for ( int ix = 0; ix < 2; ix++ ) {
-          for ( int iy = 0; iy < 2; iy++ ) {
-            for ( int iz = 0; iz < 2; iz++ ) {
-              int x4     = qx + ix;
-              int y4     = qy + iy;
-              int z4     = qz + iz;
-              int cellId = x4 + y4 * w + z4 * w * w;
-              if ( cellIndex[cellId] == -1 ) {
-                cellIndex[cellId] = numBoundaryCells;
-                numBoundaryCells++;
-              }
+  TRACE_CODEC( "colorSmoothing \n" );
+  TRACE_CODEC( "  geometryBitDepth3D_       = %zu \n", params.geometryBitDepth3D_ );
+  TRACE_CODEC( "  thresholdColorVariation_  = %f \n", params.thresholdColorVariation_ );
+  TRACE_CODEC( "  thresholdColorDifference_ = %f \n", params.thresholdColorDifference_ );
+  size_t           pointCount = reconstruct.getPointCount();
+  std::vector<int> cellIndex;
+  cellIndex.resize( w3 );
+  std::fill( cellIndex.begin(), cellIndex.end(), -1 );
+  size_t    numBoundaryCells = 0;
+  const int disth            = ( std::max )( gridSize / 2, 1 );
+  int       pcMaxSize        = pow( 2, params.geometryBitDepth3D_ );
+  for ( size_t n = 0; n < pointCount; ++n ) {
+    if ( reconstruct.getBoundaryPointType( n ) == 1 ) {
+      PCCPoint3D point = reconstruct[n];
+      int        x     = point.x();
+      int        y     = point.y();
+      int        z     = point.z();
+      if ( x < disth || y < disth || z < disth || pcMaxSize <= x + disth || pcMaxSize <= y + disth ||
+            pcMaxSize <= z + disth ) {
+        continue;
+      }
+      int x2 = x / gridSize;
+      int y2 = y / gridSize;
+      int z2 = z / gridSize;
+      int x3 = x % gridSize;
+      int y3 = y % gridSize;
+      int z3 = z % gridSize;
+      int qx = x2 + ( ( x3 < gridSize / 2 ) ? -1 : 0 );
+      int qy = y2 + ( ( y3 < gridSize / 2 ) ? -1 : 0 );
+      int qz = z2 + ( ( z3 < gridSize / 2 ) ? -1 : 0 );
+      for ( int ix = 0; ix < 2; ix++ ) {
+        for ( int iy = 0; iy < 2; iy++ ) {
+          for ( int iz = 0; iz < 2; iz++ ) {
+            int x4     = qx + ix;
+            int y4     = qy + iy;
+            int z4     = qz + iz;
+            int cellId = x4 + y4 * w + z4 * w * w;
+            if ( cellIndex[cellId] == -1 ) {
+              cellIndex[cellId] = numBoundaryCells;
+              numBoundaryCells++;
             }
           }
         }
       }
     }
-
-    colorSmoothingCenter_.resize( numBoundaryCells );
-    colorSmoothingCount_.resize( numBoundaryCells );
-    colorSmoothingPartition_.resize( numBoundaryCells );
-    colorSmoothingDoSmooth_.resize( numBoundaryCells );
-    std::fill( colorSmoothingCenter_.begin(), colorSmoothingCenter_.end(), 0 );
-    std::fill( colorSmoothingCount_.begin(), colorSmoothingCount_.end(), 0 );
-    std::fill( colorSmoothingPartition_.begin(), colorSmoothingPartition_.end(), 0 );
-    std::fill( colorSmoothingDoSmooth_.begin(), colorSmoothingDoSmooth_.end(), 0 );
-    colorSmoothingLum_.clear();
-    colorSmoothingLum_.resize( numBoundaryCells );
-    for ( int k = 0; k < reconstruct.getPointCount(); k++ ) {
-      PCCPoint3D point  = reconstruct[k];
-      int        x2     = point.x() / gridSize;
-      int        y2     = point.y() / gridSize;
-      int        z2     = point.z() / gridSize;
-      int        cellId = x2 + y2 * w + z2 * w * w;
-      if ( cellIndex[cellId] != -1 ) {
-        PCCColor16bit color16bit = reconstruct.getColor16bit( k );
-        PCCVector3D   clr;
-        for ( size_t c = 0; c < 3; ++c ) { clr[c] = double( color16bit[c] ); }
-
-        const size_t patchIndexPlusOne = reconstruct.getPointPatchIndex( k ) + 1;
-        addGridColorCentroid( reconstruct[k], clr, patchIndexPlusOne, colorSmoothingCount_, colorSmoothingCenter_,
-                              colorSmoothingPartition_, colorSmoothingDoSmooth_, gridSize, colorSmoothingLum_, params,
-                              cellIndex[cellId] );
-      }
-    }
-    smoothPointCloudColorLC( reconstruct, params, cellIndex );
-  } else {
-    smoothPointCloudColor( reconstruct, params );
   }
+  colorSmoothingCenter_.resize( numBoundaryCells );
+  colorSmoothingCount_.resize( numBoundaryCells );
+  colorSmoothingPartition_.resize( numBoundaryCells );
+  colorSmoothingDoSmooth_.resize( numBoundaryCells );
+  std::fill( colorSmoothingCenter_.begin(), colorSmoothingCenter_.end(), 0 );
+  std::fill( colorSmoothingCount_.begin(), colorSmoothingCount_.end(), 0 );
+  std::fill( colorSmoothingPartition_.begin(), colorSmoothingPartition_.end(), 0 );
+  std::fill( colorSmoothingDoSmooth_.begin(), colorSmoothingDoSmooth_.end(), 0 );
+  colorSmoothingLum_.clear();
+  colorSmoothingLum_.resize( numBoundaryCells );
+  for ( int k = 0; k < reconstruct.getPointCount(); k++ ) {
+    PCCPoint3D point  = reconstruct[k];
+    int        x2     = point.x() / gridSize;
+    int        y2     = point.y() / gridSize;
+    int        z2     = point.z() / gridSize;
+    int        cellId = x2 + y2 * w + z2 * w * w;
+    if ( cellIndex[cellId] != -1 ) {
+      PCCColor16bit color16bit = reconstruct.getColor16bit( k );
+      PCCVector3D   clr;
+      for ( size_t c = 0; c < 3; ++c ) { clr[c] = double( color16bit[c] ); }
+      const size_t patchIndexPlusOne = reconstruct.getPointPatchIndex( k ) + 1;
+      addGridColorCentroid( reconstruct[k], clr, patchIndexPlusOne, colorSmoothingCount_, colorSmoothingCenter_,
+                            colorSmoothingPartition_, colorSmoothingDoSmooth_, gridSize, colorSmoothingLum_, params,
+                            cellIndex[cellId] );
+    }
+  }
+  smoothPointCloudColorLC( reconstruct, params, cellIndex );
   colorSmoothingCenter_.resize( 0 );
   colorSmoothingCenter_.shrink_to_fit();
   colorSmoothingCount_.resize( 0 );
@@ -629,19 +620,10 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
   TRACE_CODEC( "  absoluteD1_                     = %d  \n", params.absoluteD1_ );
   TRACE_CODEC( "  flagColorSmoothing_             = %d  \n", params.flagColorSmoothing_ );
   if ( params.flagColorSmoothing_ ) {
-    TRACE_CODEC( "  gridColorSmoothing_           = %d  \n", params.gridColorSmoothing_ );
-    if ( params.gridColorSmoothing_ ) {
-      TRACE_CODEC( "  cgridSize_                      = %zu \n", params.cgridSize_ );
-      TRACE_CODEC( "  thresholdColorSmoothing_        = %f  \n", params.thresholdColorSmoothing_ );
-      TRACE_CODEC( "  thresholdColorDifference_       = %f  \n", params.thresholdColorDifference_ );
-      TRACE_CODEC( "  thresholdColorVariation_        = %f  \n", params.thresholdColorVariation_ );
-      // TRACE_CODEC( "  thresholdLocalEntropy_          = %f  \n", params.thresholdLocalEntropy_ );
-    } else {
-      TRACE_CODEC( "  thresholdColorSmoothing_        = %f  \n", params.thresholdColorSmoothing_ );
-      // TRACE_CODEC( "  thresholdLocalEntropy_          = %f  \n", params.thresholdLocalEntropy_ );
-      TRACE_CODEC( "  radius2ColorSmoothing_          = %f  \n", params.radius2ColorSmoothing_ );
-      TRACE_CODEC( "  neighborCountColorSmoothing_    = %zu \n", params.neighborCountColorSmoothing_ );
-    }
+    TRACE_CODEC( "  cgridSize_                      = %zu \n", params.cgridSize_ );
+    TRACE_CODEC( "  thresholdColorSmoothing_        = %f  \n", params.thresholdColorSmoothing_ );
+    TRACE_CODEC( "  thresholdColorDifference_       = %f  \n", params.thresholdColorDifference_ );
+    TRACE_CODEC( "  thresholdColorVariation_        = %f  \n", params.thresholdColorVariation_ );
   }
   TRACE_CODEC( "  enhancedOccupancyMapCode_       = %d  \n", params.enhancedOccupancyMapCode_ );
   if ( params.enhancedOccupancyMapCode_ ) {
@@ -1567,61 +1549,6 @@ void PCCCodec::smoothPointCloud( PCCPointSet3&                      reconstruct,
   TRACE_CODEC( " smoothPointCloud done \n" );
 }
 
-void PCCCodec::smoothPointCloudColor( PCCPointSet3& reconstruct, const GeneratePointCloudParameters params ) {
-  TRACE_CODEC( " smoothPointCloudColor start \n" );
-  const size_t            pointCount = reconstruct.getPointCount();
-  PCCKdTree               kdtree( reconstruct );
-  std::vector<PCCColor3B> temp;
-  temp.resize( pointCount );
-  for ( size_t m = 0; m < pointCount; ++m ) { temp[m] = reconstruct.getColor( m ); }
-  tbb::task_arena limited( static_cast<int>( params.nbThread_ ) );
-  limited.execute( [&] {
-    tbb::parallel_for( size_t( 0 ), pointCount, [&]( const size_t i ) {
-      PCCNNResult result;
-      if ( reconstruct.getBoundaryPointType( i ) == 1 ) {
-        kdtree.searchRadius( reconstruct[i], params.neighborCountColorSmoothing_, params.radius2ColorSmoothing_,
-                             result );
-        PCCVector3D          centroid( 0.0 );
-        size_t               neighborCount = 0;
-        std::vector<uint8_t> Lum;
-        bool                 otherClusterPointCount = false;
-        const size_t         queryPointPatchIndex   = reconstruct.getPointPatchIndex( i );
-        for ( size_t r = 0; r < result.count(); ++r ) {
-          ++neighborCount;
-          const size_t index = result.indices( r );
-          PCCColor3B   color = reconstruct.getColor( index );
-          centroid[0] += double( color[0] );
-          centroid[1] += double( color[1] );
-          centroid[2] += double( color[2] );
-          otherClusterPointCount |= ( queryPointPatchIndex != reconstruct.getPointPatchIndex( index ) );
-
-          Lum.push_back( color[0] );
-        }
-        PCCColor3B color;
-        if ( otherClusterPointCount ) {
-          for ( size_t k = 0; k < 3; ++k ) {
-            centroid[k] = double( int64_t( centroid[k] + ( neighborCount / 2 ) ) / neighborCount );
-          }
-          // Texture characterization
-          double     H               = entropy( Lum, int( neighborCount ) );
-          PCCColor3B colorQP         = reconstruct.getColor( i );
-          double     distToCentroid2 = 0;
-          for ( size_t k = 0; k < 3; ++k ) { distToCentroid2 += abs( centroid[k] - double( colorQP[k] ) ); }
-          if ( distToCentroid2 >= double( params.thresholdColorSmoothing_ ) && H < 4.5 ) {
-            color[0] = uint8_t( centroid[0] );
-            color[1] = uint8_t( centroid[1] );
-            color[2] = uint8_t( centroid[2] );
-            temp[i]  = color;
-          }
-        }
-      }
-    } );
-  } );
-  limited.execute( [&] {
-    tbb::parallel_for( size_t( 0 ), pointCount, [&]( const size_t i ) { reconstruct.setColor( i, temp[i] ); } );
-  } );
-}
-
 void PCCCodec::addGridColorCentroid( PCCPoint3D&                         point,
                                      PCCVector3D&                        color,
                                      uint32_t                            patchIdx,
@@ -1646,7 +1573,6 @@ void PCCCodec::addGridColorCentroid( PCCPoint3D&                         point,
   colorCenter[cellId][1] += static_cast<float>( color[1] );
   colorCenter[cellId][2] += static_cast<float>( color[2] );
   colorGridCount[cellId]++;
-
   colorLum[cellId].push_back( uint16_t( color[0] ) );
 }
 
