@@ -54,12 +54,14 @@ bool PCCGroupOfFrames::load( const std::string&      uncompressedDataPath,
     auto& pointSet = frames_[frameNumber - startFrameNumber];
     pointSet.resize( 0 );
     if ( !pointSet.read( fileName, readNormals ) ) {
-      std::cout << "Error: can't open " << fileName << std::endl;
-      if ( frameNumber == startFrameNumber ) { return false; }
+      std::cout << "Error: can't open " << fileName << std::endl;      
+      frames_.resize( frameNumber - startFrameNumber );
+      break;
+    } else {
+      if ( colorTransform == COLOR_TRANSFORM_RGB_TO_YCBCR ) { pointSet.convertRGBToYUV(); }
     }
-    if ( colorTransform == COLOR_TRANSFORM_RGB_TO_YCBCR ) { pointSet.convertRGBToYUV(); }
   }
-  return true;
+  return ( startFrameNumber != endFrameNumber ) ;
 }
 
 bool PCCGroupOfFrames::write( const std::string& reconstructedDataPath, size_t& frameNumber ) {
