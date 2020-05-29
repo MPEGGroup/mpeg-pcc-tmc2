@@ -588,7 +588,10 @@ bool PCCEncoderParameters::check() {
 
   if ( losslessGeo_ ) {
     pbfEnableFlag_          = false;
-    occupancyMapRefinement_ = false;
+    occupancyMapRefinement_ = false;    
+    flagColorSmoothing_     = false;    
+    flagGeometrySmoothing_  = false;
+    gridSmoothing_          = false;
     if ( pointLocalReconstruction_ ) {
       pointLocalReconstruction_ = false;
       std::cerr << "WARNING: pointLocalReconstruction_ is only for lossy "
@@ -603,7 +606,7 @@ bool PCCEncoderParameters::check() {
       lossyRawPointsPatch_ = false;
       std::cerr << "WARNING: lossyRawPointsPatch_ is only for lossy coding "
                    "mode for now. Force lossyRawPointsPatch_=FALSE.\n";
-    }
+    }    
   } else {
     if ( enhancedOccupancyMapCode_ ) {
       enhancedOccupancyMapCode_ = false;
