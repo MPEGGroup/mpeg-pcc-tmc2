@@ -221,8 +221,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                    "absoluteD1_ = 0 as "
                    "yet. Exiting... "
                 << std::endl;
+      std::exit( -1 );
     }
-    std::exit( -1 );
 
     if ( !params_.absoluteD1_ ) {
       // Form differential video geometryD1
