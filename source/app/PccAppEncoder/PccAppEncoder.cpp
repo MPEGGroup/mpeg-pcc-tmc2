@@ -139,6 +139,10 @@ bool parseParameters( int                   argc,
       encoderParams.groupOfFramesSize_,
       encoderParams.groupOfFramesSize_, 
       "Random access period" )
+    ( "atlasIntraPeriod",
+      encoderParams.atlasIntraPeriod_,
+      encoderParams.atlasIntraPeriod_,
+      "Atlas Intra refresh period" )
 
     // colour space conversion
     ( "colorTransform",

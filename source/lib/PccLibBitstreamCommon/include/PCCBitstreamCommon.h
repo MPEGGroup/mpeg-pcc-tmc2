@@ -180,7 +180,7 @@ enum PCCCodecGroup {
 
 enum PCCTileType {
   P_TILE = 0,  // Inter atlas tile
-  I_TILE,      //  Intra atlas tile)
+  I_TILE,      // Intra atlas tile)
   SKIP_TILE,   // SKIP atlas tile
   RESERVED_3   // 3 to N (N not defined?)
 };
