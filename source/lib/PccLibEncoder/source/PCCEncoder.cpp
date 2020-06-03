@@ -6866,7 +6866,8 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
         // INTER patches
         size_t      refPOC   = frame.getRefAFOC( patch.getRefAtlasFrameIndex() );
         const auto& refPatch = context.getFrame( refPOC ).getPatches()[patch.getBestMatchIdx()];
-        auto&       pid      = atgdu.addPatchInformationData( static_cast<uint8_t>( P_INTER ) );
+        auto&       pid      = atgdu.addPatchInformationData(
+          static_cast<uint8_t>( ( ath.getType() == I_TILE ) ? I_INTRA : P_INTER ) );
         TRACE_CODEC( "patch %zu / %zu: Inter \n", patchIndex, totalPatchCount );
         auto& ipdu = pid.getInterPatchDataUnit();
         ipdu.setRefIndex( patch.getRefAtlasFrameIndex() );
