@@ -50,7 +50,6 @@ PCCEncoderParameters::PCCEncoderParameters() {
   startFrameNumber_                        = 0;
   frameCount_                              = 300;
   groupOfFramesSize_                       = 32;
-  atlasIntraPeriod_                        = -1;
   colorTransform_                          = COLOR_TRANSFORM_RGB_TO_YCBCR;
   colorSpaceConversionPath_                = {};
   colorSpaceConversionConfig_              = {};
@@ -263,7 +262,6 @@ void PCCEncoderParameters::print() {
   std::cout << "\t mapCountMinus1                           " << mapCountMinus1_ << std::endl;
   std::cout << "\t startFrameNumber                         " << startFrameNumber_ << std::endl;
   std::cout << "\t groupOfFramesSize                        " << groupOfFramesSize_ << std::endl;
-  std::cout << "\t atlasIntraPeriod                         " << atlasIntraPeriod_ << std::endl;
   std::cout << "\t colorTransform                           " << colorTransform_ << std::endl;
   std::cout << "\t nbThread                                 " << nbThread_ << std::endl;
   std::cout << "\t keepIntermediateFiles                    " << keepIntermediateFiles_ << std::endl;

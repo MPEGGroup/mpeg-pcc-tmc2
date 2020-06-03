@@ -64,7 +64,6 @@ class PCCEncoderParameters {
   size_t            nbThread_;
   size_t            frameCount_;
   size_t            groupOfFramesSize_;
-  size_t            atlasIntraPeriod_;
   std::string       uncompressedDataPath_;
 
   // packing
