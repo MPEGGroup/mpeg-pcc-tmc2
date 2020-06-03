@@ -105,7 +105,7 @@ class V3CParameterSet {
     mapPredictorIndexDiff_.resize( atlasCountMinus1_ + 1 );
     auxiliaryVideoPresentFlag_.resize( atlasCountMinus1_ + 1 );
     geometryVideoPresentFlag_.resize( atlasCountMinus1_ + 1 );
-    geometryVideoPresentFlag_.resize( atlasCountMinus1_ + 1 );
+    occupancyVideoPresentFlag_.resize( atlasCountMinus1_ + 1 );
     attributeVideoPresentFlag_.resize( atlasCountMinus1_ + 1 );
     geometryInformation_.resize( atlasCountMinus1_ + 1 );
     occupancyInformation_.resize( atlasCountMinus1_ + 1 );
