@@ -18,7 +18,6 @@ then
     echo -e "\033[0;32mClean: ${CURDIR}/dependencies/HM-16.20+SCM-8.8 \033[0m";
     rm -rf ${CURDIR}/dependencies/HM-16.20+SCM-8.8;
   fi
-
   if [ "$1" == "hdrtools" ] || [ "$1" == "all" ] 
   then 
     echo -e "\033[0;32mClean: ${CURDIR}/dependencies/HDRTools \033[0m";

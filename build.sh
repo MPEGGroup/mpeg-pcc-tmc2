@@ -65,15 +65,9 @@ if [ $MACHINE != "Linux" ]
 then 
   echo "Windows cmake"
   ${CMAKE} -H${CURDIR} -B${CURDIR}/build/${MODE}   -G "${CMAKE_GENERATORS}" -A x64 ${CMAKE_FLAGS}
-  #  -T v142,host=x64
 else
-
-echo "CMAKE = $CMAKE";
   ${CMAKE} -H${CURDIR} -B${CURDIR}/build/${MODE} -G "${CMAKE_GENERATORS}"  ${CMAKE_FLAGS} 
-  
-echo "CMAKE = $CMAKE";
 fi 
-
 
 if [ $FORMAT == 1 ] 
 then 
@@ -100,7 +94,6 @@ then
 fi 
 
 echo -e "\033[0;32mBuild: $(readlink -f $CURDIR) \033[0m";
-
 case "${MACHINE}" in
   Linux) make -C ${CURDIR}/build/${MODE} -j ${NUMBER_OF_PROCESSORS} ${CMD} -s ;  if [[ $? -ne 0 ]] ; then exit 1; fi ;;
   Mac)   echo "Please, open the generated xcode project and build it ";;
