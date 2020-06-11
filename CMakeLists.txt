@@ -100,4 +100,5 @@ IF( USE_HMLIB_VIDEO_CODEC )
   ADD_SUBDIRECTORY(source/app/PccAppHMVideoDecoder)
 ENDIF()
 ADD_SUBDIRECTORY(source/app/PccAppColorConverter)
+ADD_SUBDIRECTORY(source/app/PccAppNormalGenerator)
 
