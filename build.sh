@@ -36,6 +36,7 @@ MODE=Release;
 FORMAT=0;
 TIDY=0;
 CMAKE_FLAGS=;
+DOC=0;
 if [ "$MACHINE" == "Linux" ] ; then NUMBER_OF_PROCESSORS=`grep -c ^processor /proc/cpuinfo`; fi
 
 for i in "$@"

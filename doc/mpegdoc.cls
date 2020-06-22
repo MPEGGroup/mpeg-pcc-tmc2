@@ -48,8 +48,8 @@
 \RequirePackage{datetime}
 \renewcommand{\dateseparator}{-}
 \newdateformat{MPEG@yyyymmdddate}{%
- % \THEYEAR\dateseparator\twodigit{\THEMONTH}\dateseparator\twodigit{\THEDAY}}
-  2019-08-02}
+  \THEYEAR\dateseparator\twodigit{\THEMONTH}\dateseparator\twodigit{\THEDAY}}
+ % 2020-06-06}
 
 
 % all pages only have a footer
@@ -58,7 +58,7 @@
 \renewcommand{\headrulewidth}{0pt}
 \fancyhead{}
 \cfoot{\thepage}
-\rfoot{Date saved: \MPEG@yyyymmdddate\today}
+\rfoot{\MPEG@yyyymmdddate\today}
 
 % macros for document metadata
 \RequirePackage[normalem]{ulem}
