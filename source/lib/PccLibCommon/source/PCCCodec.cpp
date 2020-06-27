@@ -86,6 +86,7 @@ bool PCCCodec::colorPointCloud( PCCGroupOfFrames&                     reconstruc
                                 const GeneratePointCloudParameters&   params ) {
   auto& frames = context.getFrames();
   for ( size_t i = 0; i < frames.size(); i++ ) {
+    if(reconstructs[i].getPointCount()==0) continue;
     for ( size_t attIdx = 0; attIdx < attributeCount; attIdx++ ) {
       colorPointCloud( reconstructs[i], context, frames[i], absoluteT1List[attIdx], multipleStreams, attributeCount,
                        params );
@@ -107,6 +108,7 @@ void PCCCodec::smoothPointCloudPostprocess( PCCPointSet3&                       
   TRACE_CODEC( "  thresholdSmoothing_    = %f \n", params.thresholdSmoothing_ );
   TRACE_CODEC( "  pbfEnableFlag_         = %d \n", params.pbfEnableFlag_ );
 #endif
+  if(reconstruct.getPointCount()==0) return;
   if ( params.flagGeometrySmoothing_ ) {
     if ( params.gridSmoothing_ ) {
       // reset for each GOF
@@ -1962,6 +1964,7 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
 #ifdef CODEC_TRACE
   printChecksum( reconstruct, "colorPointCloud in" );
 #endif
+  if(reconstruct.getPointCount()==0) return false;
   auto&        sps                           = context.getVps();
   auto&        videoTexture                  = context.getVideoTextureMultiple()[0];
   auto&        videoTextureFrame1            = context.getVideoTextureMultiple()[1];

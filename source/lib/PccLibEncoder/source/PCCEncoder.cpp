@@ -808,6 +808,13 @@ bool PCCEncoder::modifyOccupancyMap( const size_t           imageWidth,
       }
     }
   }
+
+  for(size_t yy=0; yy<videoFrameOccupancyMap.getHeight(); yy++)
+    for(size_t xx=0; xx<videoFrameOccupancyMap.getWidth(); xx++){
+      auto pixel = videoFrameOccupancyMap.getValue(0, xx, yy);
+      videoFrameOccupancyMap.setValue(0, xx, yy, ( pixel <= params_.thresholdLossyOM_ )?0:1);
+    }
+  
   return true;
 }
 
@@ -5442,7 +5449,6 @@ bool PCCEncoder::generateTextureVideo( const PCCPointSet3& reconstruct,
   if ( ( losslessAtt || lossyRawPointsPatch ) && useRawPointsSeparateVideo ) {
     pointCount = frame.getTotalNumberOfRegularPoints();
   }
-  if ( ( pointCount == 0u ) || !reconstruct.hasColors() ) { return false; }
 
   const size_t curNumOfVideoFrames = video.getFrameCount();
   if ( params_.multipleStreams_ ) {
@@ -5463,7 +5469,7 @@ bool PCCEncoder::generateTextureVideo( const PCCPointSet3& reconstruct,
       image.set( 0 );
     }
   }
-
+  if ( ( pointCount == 0u ) || !reconstruct.hasColors() ) { return false; }
   std::vector<bool> markT1;
   if ( params_.mapCountMinus1_ > 0 && params_.removeDuplicatePoints_ ) {
     const size_t size = frame.getWidth() * frame.getHeight();
