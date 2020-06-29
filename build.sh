@@ -101,4 +101,4 @@ case "${MACHINE}" in
   *)     buildWindows ./build/${MODE}/TMC2.sln ${MODE};;
 esac 
 echo -e "\033[0;32mdone \033[0m";
-
+ 
