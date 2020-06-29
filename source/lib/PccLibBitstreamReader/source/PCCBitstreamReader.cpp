@@ -256,7 +256,7 @@ void PCCBitstreamReader::v3cParameterSet( V3CParameterSet& sps, PCCHighLevelSynt
   syntax.allocateAtlasHLS( sps.getAtlasCountMinus1() + 1 );
   for ( uint32_t j = 0; j < sps.getAtlasCountMinus1() + 1; j++ ) {
     TRACE_BITSTREAM( "Atlas = %zu \n", j );
-    sps.setAtlasId( j, bitstream.read( 16 ) );        // u(16)
+    sps.setAtlasId( j, bitstream.read( 6 ) );         // u(6)
     sps.setFrameWidth( j, bitstream.read( 16 ) );     // u(16)
     sps.setFrameHeight( j, bitstream.read( 16 ) );    // u(16)
     sps.setMapCountMinus1( j, bitstream.read( 4 ) );  // u(4)

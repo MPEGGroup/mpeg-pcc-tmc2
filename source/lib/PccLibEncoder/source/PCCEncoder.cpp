@@ -4150,6 +4150,7 @@ bool PCCEncoder::generateGeometryVideo( const PCCGroupOfFrames& sources, PCCCont
     calculateWeightNormal( context, sources[0], frames[0] );
     params.weightNormal_ = frames[0].getWeightNormal();
   }
+
   float sumDistanceSrcRec = 0;
   for ( size_t i = 0; i < frames.size(); i++ ) {
     size_t preIndex       = i > 0 ? ( i - 1 ) : 0;

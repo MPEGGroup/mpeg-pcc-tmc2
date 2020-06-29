@@ -371,7 +371,7 @@ void PCCBitstreamWriter::v3cParameterSet( V3CParameterSet& vps, PCCHighLevelSynt
   bitstream.write( vps.getAtlasCountMinus1(), 6 );   // u(6)
   for ( uint32_t j = 0; j < vps.getAtlasCountMinus1() + 1; j++ ) {
     TRACE_BITSTREAM( "Atlas = %zu \n", j );
-    bitstream.write( vps.getAtlasId( j ), 16 );        // u(16)
+    bitstream.write( vps.getAtlasId( j ), 6 );         // u(6)
     bitstream.write( vps.getFrameWidth( j ), 16 );     // u(16)
     bitstream.write( vps.getFrameHeight( j ), 16 );    // u(16)
     bitstream.write( vps.getMapCountMinus1( j ), 4 );  // u(4)

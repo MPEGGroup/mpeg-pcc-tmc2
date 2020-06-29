@@ -197,8 +197,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
 
   // Sort raw points by Morton code
   mortonOrderSortRawPoints_     = false;
-  textureRawSeparateVideoWidth_ = 64;
-  // yo-  textureRawSeparateVideoWidth_ = 256;
+  textureRawSeparateVideoWidth_ = 128;
 
   // Separate high gradient points
   highGradientSeparation_   = false;

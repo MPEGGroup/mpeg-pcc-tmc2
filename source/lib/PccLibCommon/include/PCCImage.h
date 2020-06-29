@@ -108,7 +108,7 @@ class PCCImage {
           buffer[x]      = *src;
           buffer[x + 1]  = *src;
         }
-        memcpy( (char*)( buffer + width_ ), (char*)buffer, width2 * sizeof( T ) );
+        memcpy( (char*)( buffer + width_ ), (char*)buffer, width_ * sizeof( T ) );
       }
     }
   }
