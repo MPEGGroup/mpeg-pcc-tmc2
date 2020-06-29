@@ -8,7 +8,9 @@ MD_SRC=\
 	README.about.md \
 	README.build.md \
 	README.options.md \
+	README.libraries.md \
 	README.usage.md \
+	README.references.md \
 	$(NULL)
 
 TEX_SRC=\

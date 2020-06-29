@@ -8,7 +8,7 @@ repository:
    <http://mpegx.int-evry.fr/software/MPEG/PCC/TM/mpeg-pcc-tmc2>
 
 Each released version may be identified by a version control system tag in
-the form `release-v7.0`.
+the form `release-v10.0` [1].
 
 An example:
 
@@ -80,7 +80,27 @@ The common test conditions use HM reference software to encode the created video
 The  next command lines could be used to download HM reference software and apply patch: 
 
 ```console
-svn checkout https://hevc.hhi.fraunhofer.de/svn/svn_HEVCSoftware/tags/HM-16.20+SCM-8.8/external/HM-16.20+SCM-8.8+3DMC;    
+svn checkout https://hevc.hhi.fraunhofer.de/svn/svn_HEVCSoftware/\\
+   tags/HM-16.20+SCM-8.8/external/HM-16.20+SCM-8.8+3DMC;    
 cd external/HM-16.20+SCM-8.8+3DMC
-svn patch ../../mpeg-pcc-tmc2/dependencies/hm-modification/pcc_me-ext_for_HM-16.20+SCM-8.8.patch 
+svn patch ../../mpeg-pcc-tmc2/dependencies/hm-modification/\\
+   pcc_me-ext_for_HM-16.20+SCM-8.8.patch 
 ```
+
+### HDRTools
+
+The HDRTools is used to perform color convertion. This software must be cloned and built and a path must be set to the PccAppEndoder and PccAppDecoder to perform CTC conditions [2].
+
+```console
+git clone -b 0.17-dev https://gitlab.com/standards/HDRTools.git
+```
+
+### Metrics
+
+To evaluate the performance of the VPCC encoding, the PCC_distorsion software must be used: 
+
+```console
+git clone http://mpegx.int-evry.fr/software/MPEG/PCC/mpeg-pcc-dmetric.git
+```
+
+
