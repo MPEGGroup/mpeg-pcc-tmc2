@@ -573,17 +573,10 @@ bool PCCEncoderParameters::check() {
     std::cerr << "absoluteD1_ should be true when multipleStreams_ is false\n";
     absoluteD1_ = true;
   }
-  if ( !absoluteT1_ ) {  // jkei: absoluteT1 -> enableT1Prediction
-    std::cerr << "non-first maps of Texture Image is coded ";
-    if ( absoluteD1_ )
-      std::cerr << "without prediction\n";
-    else
-      std::cerr << "with prediction\n";
+  if ( !absoluteT1_ && absoluteD1_ ) {
+    std::cerr << "absoluteT1 cannot be false when absoluteD1 is true\n";
+    ret=false;
   }
-  //  if ( absoluteD1_ && !absoluteT1_ ) {
-  //    std::cerr << "absoluteT1_ should be true when absoluteD1_ is true\n";
-  //    absoluteT1_ = true;
-  //  }
 
   if ( losslessGeo_ ) {
     pbfEnableFlag_          = false;
@@ -811,8 +804,16 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     ai.setAttributeNominal2dBitdepthMinus1( 0, 7 );
   }
   for ( size_t i = 0; i < ai.getAttributeCount(); i++ ) {
-    ai.setAttributeMapAbsoluteCodingPersistenceFlag( i, absoluteT1_ );
+    if( absoluteT1_ == absoluteD1_ )
+      ai.setAttributeMapAbsoluteCodingPersistenceFlag( i, false );
+    else if( absoluteT1_ && !absoluteD1_ )
+      ai.setAttributeMapAbsoluteCodingPersistenceFlag( i, true );
+    else{
+      std::cerr<<"absoluteT1_ should be true when absoluteD1_ is true\n";
+      exit(0);
+    }
   }
+
   asps.setLog2PatchPackingBlockSize( std::log2( occupancyResolution_ ) );
   asps.setLog2MaxAtlasFrameOrderCntLsbMinus4( 4 );
   asps.setMaxDecAtlasFrameBufferingMinus1( 0 );
