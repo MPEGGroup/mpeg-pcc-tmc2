@@ -110,11 +110,21 @@ void PCCFrameContext::constructAtghRefListStruct( PCCContext& context, AtlasTile
   ath.setRefAtlasFrameListSpsFlag( true );                                         // using ASPS refList
   ath.setRefAtlasFrameListIdx( getBestRefListIndexInAsps() );                      // ath.atgh_ref_atlas_frame_list_idx
   
-  //jkei: do we need this?
-  //ath.setRefListStruct( asps.getRefListStruct( ath.getRefAtlasFrameListIdx() ) );  // copied to ath's refList,
-                                                                                   // not signalled
   if(!ath.getRefAtlasFrameListSpsFlag()){
-    //create ath.refListStruct
+    for ( size_t list = 0; list < getRefAfocListSize(); list++ ) {
+      RefListStruct refList;
+      refList.setNumRefEntries( getRefAfocListSize() );
+      refList.allocate();
+      for ( size_t i = 0; i < refList.getNumRefEntries(); i++ ) {
+        int afocDiff=-1;
+        if(i==0) afocDiff = index_ - getRefAfoc(i); //index_+1,index_+2,index_+3,index_+4
+        else afocDiff = getRefAfoc(i-1) - getRefAfoc(i);     //RefAtlasFrmAfocList[ j ] = afocBase − DeltaAfocSt[ RlsIdx ][ j ]
+        refList.setAbsDeltaAfocSt( i, std::abs( afocDiff ) );
+        refList.setStrafEntrySignFlag( i, afocDiff < 0 ? false : !false );
+        refList.setStRefAtalsFrameFlag( i, true );
+      }
+      ath.setRefListStruct( refList );
+    }
   }
 //jkei: FDIS 7.3.6.11
   if(numRefIdxActive_>0){
