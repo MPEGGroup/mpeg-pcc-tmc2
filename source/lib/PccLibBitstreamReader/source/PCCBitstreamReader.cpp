@@ -1038,12 +1038,12 @@ void PCCBitstreamReader::patchDataUnit( PatchDataUnit&      pdu,
       "Frame %zu, Patch(%zu) => 2Dpos = %4zu %4zu 2Dsize = %4ld %4ld 3Dpos = "
       "%ld %ld %ld DeltaMaxZ = %ld Projection = "
       "%zu "
-      "Orientation = %zu lod=(%zu) %zu %zu\n ",
+      "Orientation = %zu lod=(%zu) %zu %zu\n",
       pdu.getFrameIndex(), pdu.getPatchIndex(), pdu.get2dPosX(), pdu.get2dPosY(), pdu.get2dSizeXMinus1() + 1,
       pdu.get2dSizeYMinus1() + 1, pdu.get3dPosX(), pdu.get3dPosY(), pdu.get3dPosMinZ(), pdu.get3dPosDeltaMaxZ(),
       pdu.getProjectionId(), pdu.getOrientationIndex(), pdu.getLodEnableFlag(),
-      pdu.getLodEnableFlag() ? pdu.getLodScaleXminus1() : (uint8_t)0,
-      pdu.getLodEnableFlag() ? pdu.getLodScaleY() : (uint8_t)0 );
+      pdu.getLodEnableFlag() ? pdu.getLodScaleXminus1() : (size_t)0,
+      pdu.getLodEnableFlag() ? pdu.getLodScaleY() : (size_t)0 );
 }
 
 // 7.3.7.4  Skip patch data unit syntax
@@ -1129,6 +1129,9 @@ void PCCBitstreamReader::interPatchDataUnit( InterPatchDataUnit& ipdu,
   } else {
     ipdu.setRefIndex( 0 );
   }
+  TRACE_BITSTREAM(
+                  "%zu frame: numRefIdxActive = %zu reference = frame%zu\n",
+                  ipdu.getFrameIndex(), numRefIdxActive, ipdu.getRefIndex());
   ipdu.setRefPatchIndex( bitstream.readSvlc() );
   ipdu.set2dPosX( bitstream.readSvlc() );        // se(v)
   ipdu.set2dPosY( bitstream.readSvlc() );        // se(v)

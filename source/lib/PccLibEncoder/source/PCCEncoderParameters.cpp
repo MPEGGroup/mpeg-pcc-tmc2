@@ -732,15 +732,17 @@ bool PCCEncoderParameters::check() {
   return ret;
 }
 
-void PCCEncoderParameters::constructAspsRefList( PCCContext& context, size_t aspsIdx, size_t afpsIdx ) {
+void PCCEncoderParameters::constructAspsRefListStruct( PCCContext& context, size_t aspsIdx, size_t afpsIdx ) {
   auto& asps = context.getAtlasSequenceParameterSet( aspsIdx );
-  // construction of reference frame list of ASPS
+  // construction of reference frame list of ASPS : RefAtlasFrmAfocList[ j ] = afocBase − DeltaAfocSt[ RlsIdx ][ j ]
   for ( size_t list = 0; list < context.getNumOfRefAtlasFrameList(); list++ ) {
     RefListStruct refList;
-    refList.setNumRefEntries( context.getMaxNumRefAtlasFrame() );  //-1,-2,-3,-4
+    refList.setNumRefEntries( context.getMaxNumRefAtlasFrame( list ) );  //1,2,3,4
     refList.allocate();
     for ( size_t i = 0; i < refList.getNumRefEntries(); i++ ) {
-      int afocDiff = context.getRefAtlasFrame( list, i );
+      int afocDiff=-1;
+      if(i==0) afocDiff = context.getRefAtlasFrame( list, i );
+      else afocDiff = context.getRefAtlasFrame( list, i ) - context.getRefAtlasFrame( list, i-1 );
       refList.setAbsDeltaAfocSt( i, std::abs( afocDiff ) );
       refList.setStrafEntrySignFlag( i, afocDiff < 0 ? false : !false );
       refList.setStRefAtalsFrameFlag( i, true );
@@ -776,7 +778,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     context.setSizeOfRefAtlasFrameList( list, maxNumRefAtlasFrame_ );
     for ( size_t i = 0; i < maxNumRefAtlasFrame_; i++ ) {
       context.setRefAtlasFrame( list, i,
-                                -static_cast<int32_t>( i + 1 ) );  //-1, -2, -3, -4
+                                static_cast<int32_t>( i + 1 ) );  //1, 2, 3, 4
     }
   }
 
@@ -817,7 +819,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   asps.setLog2PatchPackingBlockSize( std::log2( occupancyResolution_ ) );
   asps.setLog2MaxAtlasFrameOrderCntLsbMinus4( 4 );
   asps.setMaxDecAtlasFrameBufferingMinus1( 0 );
-  asps.setNumRefAtlasFrameListsInAsps( 1 );
+  asps.setNumRefAtlasFrameListsInAsps( maxNumRefAtlasList_ );
   asps.setMapCountMinus1( mapCountMinus1_ );
   asps.setLongTermRefAtlasFramesFlag( false );
   asps.setUseEightOrientationsFlag( useEightOrientations_ );
@@ -896,7 +898,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   }
 
   // construction of reference frame list of ASPS
-  constructAspsRefList( context, 0, 0 );
+  constructAspsRefListStruct( context, 0, 0 );
 
   oi.setLossyOccupancyMapCompressionThreshold( thresholdLossyOM_ );
   oi.setOccupancyNominal2DBitdepthMinus1( 7 );

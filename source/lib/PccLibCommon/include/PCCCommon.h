@@ -86,7 +86,7 @@ static const uint8_t PCC_SAVE_POINT_TYPE = 0;  // Save point information in reco
 // ******************************************************************* //
 // Trace modes to validate new syntax
 // ******************************************************************* //
-// #define CODEC_TRACE
+ #define CODEC_TRACE
 
 // ******************************************************************* //
 // Common constants
@@ -187,7 +187,7 @@ void printVector( std::vector<T>    data,
   }
 }
 
-static std::string getParameter( const std::string& config, const std::string& param ) {
+static inline std::string getParameter( const std::string& config, const std::string& param ) {
   std::size_t pos = 0;
   if ( ( pos = config.find( param ) ) == std::string::npos ) {
     printf( "Can't find parameter: \"%s\" in: %s \n", param.c_str(), config.c_str() );

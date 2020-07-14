@@ -561,6 +561,7 @@ void PCCBitstreamWriter::atlasSequenceParameterSetRbsp( AtlasSequenceParameterSe
   bitstream.writeUvlc( static_cast<uint32_t>( asps.getMaxDecAtlasFrameBufferingMinus1() ) );     // ue(v)
   bitstream.write( asps.getLongTermRefAtlasFramesFlag(), 1 );                                    // u(1)
   bitstream.writeUvlc( static_cast<uint32_t>( asps.getNumRefAtlasFrameListsInAsps() ) );         // ue(v)
+  TRACE_BITSTREAM( "ASPS: NumRefListStruct = %u \n", asps.getNumRefAtlasFrameListsInAsps() );
   for ( size_t i = 0; i < asps.getNumRefAtlasFrameListsInAsps(); i++ ) {
     refListStruct( asps.getRefListStruct( i ), asps, bitstream );
   }
@@ -1061,7 +1062,7 @@ void PCCBitstreamWriter::patchDataUnit( PatchDataUnit&      pdu,
       "Frame %zu, Patch(%zu) => 2Dpos = %4zu %4zu 2Dsize = %4ld %4ld 3Dpos = "
       "%ld %ld %ld DeltaMaxZ = %ld Projection = "
       "%zu "
-      "Orientation = %zu lod=(%zu) %zu %zu\n ",
+      "Orientation = %zu lod=(%zu) %zu %zu\n",
       pdu.getFrameIndex(), pdu.getPatchIndex(), pdu.get2dPosX(), pdu.get2dPosY(), pdu.get2dSizeXMinus1() + 1,
       pdu.get2dSizeYMinus1() + 1, pdu.get3dPosX(), pdu.get3dPosY(), pdu.get3dPosMinZ(), pdu.get3dPosDeltaMaxZ(),
       pdu.getProjectionId(), pdu.getOrientationIndex(), pdu.getLodEnableFlag(),
@@ -1145,6 +1146,9 @@ void PCCBitstreamWriter::interPatchDataUnit( InterPatchDataUnit& ipdu,
   if ( numRefIdxActive > 1 ) {
     bitstream.writeUvlc( int32_t( ipdu.getRefIndex() ) );  // ue(v)
   }
+  TRACE_BITSTREAM(
+      "%zu frame: numRefIdxActive = %zu reference = frame%zu\n",
+      ipdu.getFrameIndex(), numRefIdxActive, ipdu.getRefIndex());
   bitstream.writeSvlc( int32_t( ipdu.getRefPatchIndex() ) );  // se(v)
   bitstream.writeSvlc( int32_t( ipdu.get2dPosX() ) );         // se(v)
   bitstream.writeSvlc( int32_t( ipdu.get2dPosY() ) );         // se(v)
@@ -1289,22 +1293,22 @@ void PCCBitstreamWriter::atlasSubStream( PCCHighLevelSyntax& syntax, PCCBitstrea
     if ( maxUnitSize < seiSuffixSizeList[i] ) { maxUnitSize = seiSuffixSizeList[i]; }
   }
   // calculation of the max unit size done
-  TRACE_BITSTREAM(
-      "maxUnitSize                                                        = %u "
-      "\n",
-      maxUnitSize );
-  TRACE_BITSTREAM(
-      "ceilLog2( maxUnitSize + 1 )                                        = %d "
-      "\n",
-      ceilLog2( maxUnitSize + 1 ) );
-  TRACE_BITSTREAM(
-      "ceil( static_cast<double>( ceilLog2( maxUnitSize + 1 ) ) / 8.0 ) ) = %f "
-      "\n",
-      ceil( static_cast<double>( ceilLog2( maxUnitSize + 1 ) ) / 8.0 ) );
+//  TRACE_BITSTREAM(
+//      "maxUnitSize                                                        = %u "
+//      "\n",
+//      maxUnitSize );
+//  TRACE_BITSTREAM(
+//      "ceilLog2( maxUnitSize + 1 )                                        = %d "
+//      "\n",
+//      ceilLog2( maxUnitSize + 1 ) );
+//  TRACE_BITSTREAM(
+//      "ceil( static_cast<double>( ceilLog2( maxUnitSize + 1 ) ) / 8.0 ) ) = %f "
+//      "\n",
+//      ceil( static_cast<double>( ceilLog2( maxUnitSize + 1 ) ) / 8.0 ) );
 
   uint32_t precision = static_cast<uint32_t>(
       min( max( static_cast<int>( ceil( static_cast<double>( ceilLog2( maxUnitSize + 1 ) ) / 8.0 ) ), 1 ), 8 ) - 1 );
-  TRACE_BITSTREAM( "precision                                                      = %u \n", precision );
+  //TRACE_BITSTREAM( "precision                                                      = %u \n", precision );
   ssnu.setSizePrecisionBytesMinus1( precision );
   sampleStreamNalHeader( bitstream, ssnu );
   for ( size_t aspsCount = 0; aspsCount < syntax.getAtlasSequenceParameterSetList().size(); aspsCount++ ) {

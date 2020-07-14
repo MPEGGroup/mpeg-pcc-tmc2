@@ -116,7 +116,6 @@ class PCCAtlasHighLevelSyntax {
   size_t  getSizeOfRefAtlasFrameList( size_t listIndex ) { return refAtlasFrameList_[listIndex].size(); }
   int32_t getRefAtlasFrame( size_t listIndex, size_t refIndex ) { return refAtlasFrameList_[listIndex][refIndex]; }
   std::vector<int32_t>& getRefAtlasFrameList( size_t listIndex ) { return refAtlasFrameList_[listIndex]; }
-  void                  constructRefList( size_t aspsIdx, size_t afpsIdx );
   size_t                getNumRefIdxActive( AtlasTileHeader& ath );
   size_t                getMaxNumRefAtlasFrame() { return maxNumRefAtlasFrame_; }
   void                  setMaxNumRefAtlasFrame( size_t value ) { maxNumRefAtlasFrame_ = value; }
@@ -348,6 +347,12 @@ class PCCHighLevelSyntax {
     return atlasHLS_[atlasIndex_].getAtlasSequenceParameterSetList();
   }
   // reference list, defined in ASPS
+  size_t getNumRefIdxActive( AtlasTileHeader& ath ) { return atlasHLS_[atlasIndex_].getNumRefIdxActive( ath ); };
+
+  //jkei: do we need this?
+  size_t getMaxNumRefAtlasFrame(size_t listIndex) { return atlasHLS_[atlasIndex_].getMaxNumRefAtlasFrame(); }
+  size_t getMaxNumRefAtlasFrame() { return atlasHLS_[atlasIndex_].getMaxNumRefAtlasFrame(); }
+
   void setNumOfRefAtlasFrameList( size_t value ) { atlasHLS_[atlasIndex_].setNumOfRefAtlasFrameList( value ); }
   void setSizeOfRefAtlasFrameList( size_t listIndex, size_t listSize ) {
     atlasHLS_[atlasIndex_].setSizeOfRefAtlasFrameList( listIndex, listSize );
@@ -368,11 +373,6 @@ class PCCHighLevelSyntax {
   std::vector<int32_t>& getRefAtlasFrameList( size_t listIndex ) {
     return atlasHLS_[atlasIndex_].getRefAtlasFrameList( listIndex );
   }
-  void constructRefList( size_t aspsIdx, size_t afpsIdx ) {
-    atlasHLS_[atlasIndex_].constructRefList( aspsIdx, afpsIdx );
-  };
-  size_t getNumRefIdxActive( AtlasTileHeader& ath ) { return atlasHLS_[atlasIndex_].getNumRefIdxActive( ath ); };
-  size_t getMaxNumRefAtlasFrame() { return atlasHLS_[atlasIndex_].getMaxNumRefAtlasFrame(); }
   void   setMaxNumRefAtlasFrame( size_t value ) { atlasHLS_[atlasIndex_].setMaxNumRefAtlasFrame( value ); }
   // point local recosntruction, defined in ASPS
   void addPointLocalReconstructionMode( const PointLocalReconstructionMode& mode ) {
