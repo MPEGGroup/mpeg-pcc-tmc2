@@ -573,10 +573,9 @@ bool parseParameters( int                   argc,
       encoderParams.deltaCoding_,
       "Delta meta-data coding" )
     ( "maxNumRefAtalsList",
-    //
       encoderParams.maxNumRefAtlasList_,
       encoderParams.maxNumRefAtlasList_,
-      "maximum Number of Reference Patch list, default: 1" )
+      "maximum Number of Reference Atlas Frame list, default: 1" )
     ( "maxNumRefAtlasFrame",
       encoderParams.maxNumRefAtlasFrame_,
       encoderParams.maxNumRefAtlasFrame_,

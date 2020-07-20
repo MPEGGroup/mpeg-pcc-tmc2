@@ -587,7 +587,6 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
                                        // total number of frames?
   TRACE_CODEC( "frameCount = %u \n", context.size() );
   setPointLocalReconstruction( context );
-  context.constructRefList( 0, 0 );
   context.setRawGeoWidth( 64 );
   context.setRawAttWidth( 0 );
   context.setRawGeoHeight( 0 );
@@ -595,7 +594,6 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
 
   for ( size_t i = 0; i < context.size(); i++ ) {
     auto& frame = context.getFrame( i );
-    if ( i > 0 ) { frame.setRefAFOCList( context ); }
     frame.setAFOC( i );
     frame.setIndex( i );
     frame.setWidth( sps.getFrameWidth( atlasIndex ) );
@@ -623,6 +621,9 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
     auto& afps  = context.getAtlasFrameParameterSet( ath.getAtlasFrameParameterSetId() );
     auto& asps  = context.getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
     auto& atgdu = atglu.getDataUnit();
+    if ( frameIndex > 0 && ath.getType()!=I_TILE ) {
+      frame.setRefAfocList( context, ath, ath.getAtlasFrameParameterSetId() );
+    }
 
     // local variable initialization
     auto&        patches                 = frame.getPatches();
@@ -749,7 +750,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
 
         TRACE_CODEC( "patch %zu / %zu: Inter \n", patchIndex, patchCount );
         TRACE_CODEC(
-            "IPDU: refAtlasFrame= %d refPatchIdx = %d pos2DXY = %ld %ld "
+            "\tIPDU: refAtlasFrame= %d refPatchIdx = %d pos2DXY = %ld %ld "
             "pos3DXYZW = %ld %ld %ld %ld size2D = %ld %ld "
             "\n",
             ipdu.getRefIndex(), ipdu.getRefPatchIndex(), ipdu.get2dPosX(), ipdu.get2dPosY(), ipdu.get3dPosX(),
@@ -758,12 +759,13 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
         patch.setBestMatchIdx( static_cast<int32_t>( ipdu.getRefPatchIndex() + predIndex ) );
         predIndex += ipdu.getRefPatchIndex() + 1;
         patch.setRefAtlasFrameIndex( ipdu.getRefIndex() );
-        size_t      refPOC   = frame.getRefAFOC( patch.getRefAtlasFrameIndex() );
+        size_t      refPOC   = (size_t) frame.getRefAfoc( patch.getRefAtlasFrameIndex() );
         const auto& refPatch = context.getFrame( refPOC ).getPatches()[patch.getBestMatchIdx()];
         TRACE_CODEC(
-            "\trefPatch: Idx = %zu UV0 = %zu %zu  UV1 = %zu %zu Size = %zu %zu "
+            "\trefPatch: refIndex = %zu, refFrame = %zu, Idx = %zu/%zu UV0 = %zu %zu  UV1 = %zu %zu Size = %zu %zu "
             "%zu  Lod = %u,%u\n",
-            patch.getBestMatchIdx(), refPatch.getU0(), refPatch.getV0(), refPatch.getU1(), refPatch.getV1(),
+                    patch.getRefAtlasFrameIndex(), refPOC,
+                    patch.getBestMatchIdx(), context.getFrame( refPOC ).getPatches().size(), refPatch.getU0(), refPatch.getV0(), refPatch.getU1(), refPatch.getV1(),
             refPatch.getSizeU0(), refPatch.getSizeV0(), refPatch.getSizeD(), refPatch.getLodScaleX(),
             refPatch.getLodScaleY() );
         patch.getProjectionMode()   = refPatch.getProjectionMode();
@@ -819,7 +821,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
         prevPatchSize2DYInPixel = patch.getPatchSize2DYInPixel();
 
         TRACE_CODEC(
-            "patch(Inter) %zu: UV0 %4zu %4zu UV1 %4zu %4zu D1=%4zu S=%4zu %4zu "
+            "\tpatch(Inter) %zu: UV0 %4zu %4zu UV1 %4zu %4zu D1=%4zu S=%4zu %4zu "
             "%4zu from DeltaSize = "
             "%4ld %4ld P=%zu O=%zu A=%u%u%u Lod = %zu,%zu \n",
             patchIndex, patch.getU0(), patch.getV0(), patch.getU1(), patch.getV1(), patch.getD1(), patch.getSizeU0(),
@@ -851,7 +853,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
         patch.setBestMatchIdx( patchIndex );
         predIndex = patchIndex;
         patch.setRefAtlasFrameIndex( mpdu.getRefIndex() );
-        size_t      refPOC   = frame.getRefAFOC( patch.getRefAtlasFrameIndex() );
+        size_t      refPOC   = (size_t) frame.getRefAfoc( patch.getRefAtlasFrameIndex() );
         const auto& refPatch = context.getFrame( refPOC ).getPatches()[patch.getBestMatchIdx()];
 
         if ( mpdu.getOverride2dParamsFlag() ) {
@@ -943,7 +945,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
         patch.setBestMatchIdx( static_cast<int32_t>( patchIndex ) );
         predIndex += patchIndex;
         patch.setRefAtlasFrameIndex( 0 );
-        size_t      refPOC   = frame.getRefAFOC( patch.getRefAtlasFrameIndex() );
+        size_t      refPOC   = (size_t) frame.getRefAfoc( patch.getRefAtlasFrameIndex() );
         const auto& refPatch = context.getFrame( refPOC ).getPatches()[patch.getBestMatchIdx()];
         TRACE_CODEC(
             "\trefPatch: Idx = %zu UV0 = %zu %zu  UV1 = %zu %zu Size = %zu %zu "

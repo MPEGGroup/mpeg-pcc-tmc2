@@ -2268,7 +2268,7 @@ void PCCCodec::generateRawPointsTexturefromVideo( PCCContext& context, PCCFrameC
 }
 
 void PCCCodec::generateOccupancyMap( PCCFrameContext&            frame,
-                                     const PCCImageOccupancyMap& videoFrame,
+                                     PCCImageOccupancyMap&       videoFrame,
                                      const size_t                occupancyPrecision,
                                      const size_t                thresholdLossyOM,
                                      const bool                  enhancedOccupancyMapForDepthFlag ) {
@@ -2290,6 +2290,12 @@ void PCCCodec::generateOccupancyMap( PCCFrameContext&            frame,
       }
     }
   }
+
+  for(size_t yy=0; yy<videoFrame.getHeight(); yy++)
+    for(size_t xx=0; xx<videoFrame.getWidth(); xx++){
+      videoFrame.setValue(0, xx, yy, occupancyMap[yy*occupancyPrecision*width + xx*occupancyPrecision]);
+    }
+
 }
 
 void PCCCodec::generateBlockToPatchFromBoundaryBox( PCCContext& context, const size_t occupancyResolution ) {

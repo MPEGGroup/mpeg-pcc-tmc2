@@ -102,7 +102,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     frames[i].setLog2PatchQuantizerSizeX( context.getLog2PatchQuantizerSizeX() );
     frames[i].setLog2PatchQuantizerSizeY( context.getLog2PatchQuantizerSizeY() );
     frames[i].setAFOC( i );
-    frames[i].setRefAFOCList( context );
+    frames[i].setNumRefIdxActive( std::min(i, params_.maxNumRefAtlasFrame_));
+    frames[i].setRefAfocList( context, 0 ); //initialization
   }
 
   PCCVideoEncoder videoEncoder;
@@ -475,16 +476,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   std::vector<std::vector<bool>> absoluteT1List;
   absoluteT1List.resize( ai.getAttributeCount() );
   for ( int attrIdx = 0; attrIdx < ai.getAttributeCount(); ++attrIdx ) {
-    absoluteT1List[attrIdx].resize( sps.getMapCountMinus1( atlasIndex ) + 1 );
-    if ( ai.getAttributeMapAbsoluteCodingPersistenceFlag( attrIdx ) != 0u ) {
-      for ( uint32_t mapIdx = 0; mapIdx < sps.getMapCountMinus1( atlasIndex ) + 1; ++mapIdx ) {
-        absoluteT1List[attrIdx][mapIdx] = true;
-      }
-    } else {
-      // follow geometry
-      for ( uint32_t mapIdx = 0; mapIdx < sps.getMapCountMinus1( atlasIndex ) + 1; ++mapIdx ) {
-        absoluteT1List[attrIdx][mapIdx] = sps.getMapAbsoluteCodingEnableFlag( atlasIndex, mapIdx );
-      }
+    for ( uint32_t mapIdx = 0; mapIdx < sps.getMapCountMinus1( atlasIndex ) + 1; ++mapIdx ) {
+      absoluteT1List[attrIdx].push_back(params_.absoluteT1_);
     }
   }
   colorPointCloud( reconstructs, context, ai.getAttributeCount(), params_.colorTransform_, absoluteT1List,
@@ -876,7 +869,8 @@ void PCCEncoder::adjustReferenceAtlasFrames( PCCContext& context ) {
     size_t                bestListIdx   = 0;
     double                dTempListDist = 0;
     std::vector<PCCPatch> tempPatchList;
-    for ( size_t listIdx = 0; listIdx < frame.getNumOfRefAtlasFrameList(); listIdx++ ) {
+    for ( size_t listIdx = 0; listIdx < context.getNumOfRefAtlasFrameList(); listIdx++ )
+    {
       dTempListDist = 0;
       tempPatchList.clear();
       double dTempListDist = adjustReferenceAtlasFrame( context, frame, listIdx, tempPatchList );
@@ -886,7 +880,9 @@ void PCCEncoder::adjustReferenceAtlasFrames( PCCContext& context ) {
         bestPatchList = tempPatchList;
       }
     }
-    frame.setActiveRefAtlasFrameIndex( bestListIdx );
+    frame.setNumRefIdxActive( std::min( frameIndex, context.getSizeOfRefAtlasFrameList(bestListIdx)));
+    frame.setBestRefListIndexInAsps(bestListIdx);
+    frame.setRefAfocList(context, bestListIdx);
     frame.getPatches() = bestPatchList;
   }  // frame
 }
@@ -895,6 +891,7 @@ double PCCEncoder::adjustReferenceAtlasFrame( PCCContext&            context,
                                               PCCFrameContext&       frame,
                                               size_t                 listIndex,
                                               std::vector<PCCPatch>& tempPatchList ) {
+  frame.setRefAfocList(context, listIndex);
   PCCBitstream tempBitStream;
   auto         curPatches    = frame.getPatches();
   size_t       curPatchCount = curPatches.size();
@@ -957,7 +954,8 @@ double PCCEncoder::adjustReferenceAtlasFrame( PCCContext&            context,
 
     // inter
     if ( curPatch.getBestMatchIdx() != -1 ) {
-      size_t refPOC   = frame.getRefAFOC( listIndex, 0 );
+      int32_t refPOC   = frame.getRefAfoc( 0 );
+      if(refPOC<0) break;
       auto&  refPatch = context[refPOC].getPatch( curPatch.getBestMatchIdx() );
       tempBitStream.writeSvlc( int32_t( static_cast<int64_t>( curPatch.getBestMatchIdx() ) - curId ) );  // approx
       tempBitStream.writeUvlc( int32_t( 0 ) );
@@ -998,9 +996,10 @@ double PCCEncoder::adjustReferenceAtlasFrame( PCCContext&            context,
   }
 
   // loop over refPicture in the list
-  size_t sizeOfList = frame.getRefAFOCListSize( listIndex );
+  size_t sizeOfList = frame.getRefAfocListSize();
   for ( size_t refIdx = 0; refIdx < sizeOfList; refIdx++ ) {
-    size_t refPOC     = frame.getRefAFOC( listIndex, refIdx );
+    int32_t refPOC     = frame.getRefAfoc( refIdx );
+    if(refPOC<0) continue;
     auto&  refPatches = context.getFrame( refPOC ).getPatches();
     for ( size_t refPatchId = 0; refPatchId < refPatches.size(); refPatchId++ ) {
       // bestOrderPatches.clear();
@@ -6871,7 +6870,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
       const auto& patch = patches[patchIndex];
       if ( patch.getBestMatchIdx() != InvalidPatchIndex ) {
         // INTER patches
-        size_t      refPOC   = frame.getRefAFOC( patch.getRefAtlasFrameIndex() );
+        size_t      refPOC   = (size_t) frame.getRefAfoc( patch.getRefAtlasFrameIndex() );
         const auto& refPatch = context.getFrame( refPOC ).getPatches()[patch.getBestMatchIdx()];
         auto&       pid      = atgdu.addPatchInformationData( static_cast<uint8_t>( P_INTER ) );
         TRACE_CODEC( "patch %zu / %zu: Inter \n", patchIndex, totalPatchCount );
@@ -6912,16 +6911,16 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
         const int64_t delta_dd = ( static_cast<int64_t>( quantDD ) ) - ( static_cast<int64_t>( prevQDD ) );
         ipdu.set3dPosDeltaMaxZ( delta_dd );
         TRACE_CODEC(
-            "IPDU: refAtlasFrame= %d refPatchIdx = %d pos2DXY = %ld %ld "
+            "\tIPDU: refAtlasFrame= %d refPatchIdx = %d pos2DXY = %ld %ld "
             "pos3DXYZW = %ld %ld %ld %ld size2D = %ld %ld "
             "\n",
             ipdu.getRefIndex(), ipdu.getRefPatchIndex(), ipdu.get2dPosX(), ipdu.get2dPosY(), ipdu.get3dPosX(),
             ipdu.get3dPosY(), ipdu.get3dPosMinZ(), ipdu.get3dPosDeltaMaxZ(), ipdu.get2dDeltaSizeX(),
             ipdu.get2dDeltaSizeY() );
         TRACE_CODEC(
-            "\trefPatch: Idx = %zu UV0 = %zu %zu  UV1 = %zu %zu Size = %zu %zu "
-            "%zu  Lod = %u,%u\n",
-            patch.getBestMatchIdx(), refPatch.getU0(), refPatch.getV0(), refPatch.getU1(), refPatch.getV1(),
+            "\trefPatch: refIndex = %zu, refFrame = %zu, Idx = %zu/%zu UV0 = %zu %zu  UV1 = %zu %zu Size = %zu %zu "
+            "%zu  Lod = %u,%u\n", patch.getRefAtlasFrameIndex(), refPOC,
+                    patch.getBestMatchIdx(), context.getFrame( refPOC ).getPatches().size(), refPatch.getU0(), refPatch.getV0(), refPatch.getU1(), refPatch.getV1(),
             refPatch.getSizeU0(), refPatch.getSizeV0(), refPatch.getSizeD(), refPatch.getLodScaleX(),
             refPatch.getLodScaleY() );
 
@@ -6934,7 +6933,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
         prevSizeV0 = asps.getPatchSizeQuantizerPresentFlag() ? patch.getPatchSize2DYInPixel() : patch.getSizeV0();
         predIndex += ipdu.getRefPatchIndex() + 1;
         TRACE_CODEC(
-            "patch(Inter) %zu: UV0 %4zu %4zu UV1 %4zu %4zu D1=%4zu S=%4zu %4zu "
+            "\tpatch(Inter) %zu: UV0 %4zu %4zu UV1 %4zu %4zu D1=%4zu S=%4zu %4zu "
             "%4zu from DeltaSize = "
             "%4ld %4ld P=%zu O=%zu A=%u%u%u Lod = %zu,%zu \n",
             patchIndex, patch.getU0(), patch.getV0(), patch.getU1(), patch.getV1(), patch.getD1(), patch.getSizeU0(),
