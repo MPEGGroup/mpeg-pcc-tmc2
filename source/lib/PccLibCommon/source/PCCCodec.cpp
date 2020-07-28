@@ -108,7 +108,7 @@ void PCCCodec::smoothPointCloudPostprocess( PCCPointSet3&                       
   TRACE_CODEC( "  thresholdSmoothing_    = %f \n", params.thresholdSmoothing_ );
   TRACE_CODEC( "  pbfEnableFlag_         = %d \n", params.pbfEnableFlag_ );
 #endif
-  if(reconstruct.getPointCount()==0) return;
+  if( reconstruct.getPointCount() == 0 ) { return; }
   if ( params.flagGeometrySmoothing_ ) {
     if ( params.gridSmoothing_ ) {
       // reset for each GOF

@@ -526,14 +526,14 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     if ( !isAttributes444 ) {  // lossy: convert 16-bit yuv444 to 8-bit RGB444
       TRACE_CODEC( "lossy: convert 16-bit yuv444 to 8-bit RGB444 (convertYUV16ToRGB8) \n" );
       reconstruct.convertYUV16ToRGB8();
-#ifdef TRACE_CODEC
-      for ( size_t i = 0; i < 100; i++ ) {
-        TRACE_CODEC( "%4zu %4zu %4zu: c16 %4zu %4zu %4zu c8 %4zu %4zu %4zu\n", reconstruct[i][0], reconstruct[i][1],
-                     reconstruct[i][2], reconstruct.getColor16bit( i )[0], reconstruct.getColor16bit( i )[1],
-                     reconstruct.getColor16bit( i )[2], reconstruct.getColor( i )[0], reconstruct.getColor( i )[1],
-                     reconstruct.getColor( i )[2] );
-      }
-#endif
+// #ifdef TRACE_CODEC
+//       for ( size_t i = 0; i < 100; i++ ) {
+//         TRACE_CODEC( "%4zu %4zu %4zu: c16 %4zu %4zu %4zu c8 %4zu %4zu %4zu\n", reconstruct[i][0], reconstruct[i][1],
+//                      reconstruct[i][2], reconstruct.getColor16bit( i )[0], reconstruct.getColor16bit( i )[1],
+//                      reconstruct.getColor16bit( i )[2], reconstruct.getColor( i )[0], reconstruct.getColor( i )[1],
+//                      reconstruct.getColor( i )[2] );
+//       }
+// #endif
     } else {  // lossless: copy 16-bit RGB to 8-bit RGB
       TRACE_CODEC( "lossy: lossless: copy 16-bit RGB to 8-bit RGB (copyRGB16ToRGB8) \n" );
       reconstruct.copyRGB16ToRGB8();
@@ -3057,8 +3057,7 @@ bool PCCEncoder::generateGeometryVideo( const PCCPointSet3&                 sour
                                         PCCFrameContext&                    prevFrame,
                                         size_t                              frameIndex,
                                         float&                              distanceSrcRec ) {
-  if ( source.getPointCount() == 0u ) { return false; }
-
+  if ( source.getPointCount() == 0u ) { return true;  }
   if ( segmenterParams.additionalProjectionPlaneMode_ != 5 ) {
     auto& patches = frame.getPatches();
     patches.reserve( 256 );
@@ -3067,17 +3066,13 @@ bool PCCEncoder::generateGeometryVideo( const PCCPointSet3&                 sour
     segmenter.compute( source, frame.getIndex(), segmenterParams, patches, frame.getSrcPointCloudByPatch(),
                        distanceSrcRec );
   } else if ( segmenterParams.additionalProjectionPlaneMode_ == 5 ) {
-    SegmentationPartiallyAddtinalProjectionPlane( source, frame, segmenterParams, videoGeometry, prevFrame, frameIndex,
+    segmentationPartiallyAddtinalProjectionPlane( source, frame, segmenterParams, videoGeometry, prevFrame, frameIndex,
                                                   distanceSrcRec );
   }
-
   if ( params_.levelOfDetailX_ > 1 || params_.levelOfDetailY_ > 1 ) { generateScaledGeometry( source, frame ); }
-
   if ( params_.occupancyMapRefinement_ ) { refineOccupancyMap( frame ); }
   if ( frame.getRawPatchEnabledFlag() ) {
-    generateRawPointsPatch( source, frame,
-                            segmenterParams.useEnhancedOccupancyMapCode_ );  // useEnhancedOccupancyMapCode for
-                                                                             // EOM code
+    generateRawPointsPatch( source, frame, segmenterParams.useEnhancedOccupancyMapCode_ );  
     for ( int i = 0; i < frame.getNumberOfRawPointsPatches(); i++ ) {
       if ( params_.mortonOrderSortRawPoints_ ) {
         sortRawPointsPatchMorton( frame, i );
@@ -3086,7 +3081,6 @@ bool PCCEncoder::generateGeometryVideo( const PCCPointSet3&                 sour
       }
     }
   }
-
   if ( params_.enhancedOccupancyMapCode_ ) { generateEomPatch( source, frame ); }
   if ( params_.packingStrategy_ == 0 || params_.packingStrategy_ == 1 ) {
     if ( ( frameIndex == 0 ) || ( !params_.constrainedPack_ ) )
@@ -3099,9 +3093,7 @@ bool PCCEncoder::generateGeometryVideo( const PCCPointSet3&                 sour
       spatialConsistencyPackFlexible( frame, prevFrame, params_.packingStrategy_, params_.safeGuardDistance_,
                                       params_.enablePointCloudPartitioning_ );
     }
-  }
-
-  else if ( params_.packingStrategy_ == 2 ) {
+  } else if ( params_.packingStrategy_ == 2 ) {
     if ( ( frameIndex == 0 ) || ( !params_.constrainedPack_ ) ) {
       packTetris( frame, params_.safeGuardDistance_ );
     } else {
@@ -3113,7 +3105,6 @@ bool PCCEncoder::generateGeometryVideo( const PCCPointSet3&                 sour
       }
     }
   }
-
   return true;
 }
 
@@ -4158,6 +4149,7 @@ bool PCCEncoder::generateGeometryVideo( const PCCGroupOfFrames& sources, PCCCont
   }
 
   float sumDistanceSrcRec = 0;
+  printf("Generate generateGeometryVideo loop \n");  fflush(stdout);
   for ( size_t i = 0; i < frames.size(); i++ ) {
     size_t preIndex       = i > 0 ? ( i - 1 ) : 0;
     float  distanceSrcRec = 0;
@@ -4167,6 +4159,7 @@ bool PCCEncoder::generateGeometryVideo( const PCCGroupOfFrames& sources, PCCCont
     }
     sumDistanceSrcRec += distanceSrcRec;
   }
+  printf("Generate generateGeometryVideo loop done \n"); fflush(stdout);
   if ( params_.pointLocalReconstruction_ || params_.singleMapPixelInterleaving_ ) {
     const float distanceSrcRec = sumDistanceSrcRec / static_cast<float>( frames.size() );
     if ( distanceSrcRec >= 250.F ) {
@@ -7074,7 +7067,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
   }
 }
 
-void PCCEncoder::SegmentationPartiallyAddtinalProjectionPlane( const PCCPointSet3&                 source,
+void PCCEncoder::segmentationPartiallyAddtinalProjectionPlane( const PCCPointSet3&                 source,
                                                                PCCFrameContext&                    frame,
                                                                const PCCPatchSegmenter3Parameters& segmenterParams,
                                                                PCCVideoGeometry&                   videoGeometry,

@@ -356,7 +356,7 @@ class PCCEncoder : public PCCCodec {
                                         size_t                        occupancyPackingBlockSize,
                                         size_t                        patchIndex );
   //**Additional Projection Plane**//
-  void SegmentationPartiallyAddtinalProjectionPlane( const PCCPointSet3&                 source,
+  void segmentationPartiallyAddtinalProjectionPlane( const PCCPointSet3&                 source,
                                                      PCCFrameContext&                    frameContext,
                                                      const PCCPatchSegmenter3Parameters& segmenterParams,
                                                      PCCVideoGeometry&                   videoGeometry,

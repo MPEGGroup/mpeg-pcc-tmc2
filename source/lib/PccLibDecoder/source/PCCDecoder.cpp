@@ -324,14 +324,14 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
     if ( !isAttributes444 ) {  // lossy: convert 16-bit yuv444 to 8-bit RGB444
       TRACE_CODEC( "lossy: convert 16-bit yuv444 to 8-bit RGB444 (convertYUV16ToRGB8) \n" );
       reconstruct.convertYUV16ToRGB8();
-#ifdef TRACE_CODEC
-      for ( size_t i = 0; i < 100; i++ ) {
-        TRACE_CODEC( "%4zu %4zu %4zu: c16 %4zu %4zu %4zu c8 %4zu %4zu %4zu\n", reconstruct[i][0], reconstruct[i][1],
-                     reconstruct[i][2], reconstruct.getColor16bit( i )[0], reconstruct.getColor16bit( i )[1],
-                     reconstruct.getColor16bit( i )[2], reconstruct.getColor( i )[0], reconstruct.getColor( i )[1],
-                     reconstruct.getColor( i )[2] );
-      }
-#endif
+// #ifdef TRACE_CODEC
+//       for ( size_t i = 0; i < 100; i++ ) {
+//         TRACE_CODEC( "%4zu %4zu %4zu: c16 %4zu %4zu %4zu c8 %4zu %4zu %4zu\n", reconstruct[i][0], reconstruct[i][1],
+//                      reconstruct[i][2], reconstruct.getColor16bit( i )[0], reconstruct.getColor16bit( i )[1],
+//                      reconstruct.getColor16bit( i )[2], reconstruct.getColor( i )[0], reconstruct.getColor( i )[1],
+//                      reconstruct.getColor( i )[2] );
+//       }
+// #endif
     } else {  // lossless: copy 16-bit RGB to 8-bit RGB
       TRACE_CODEC( "lossy: lossless: copy 16-bit RGB to 8-bit RGB (copyRGB16ToRGB8) \n" );
       reconstruct.copyRGB16ToRGB8();

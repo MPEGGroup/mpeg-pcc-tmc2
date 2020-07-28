@@ -10,7 +10,9 @@ ENDIF()
 
 MESSAGE("HDRTOOLS_DIR       : ${HDRTOOLS_DIR}") 
 IF ( NOT EXISTS "${HDRTOOLS_DIR}/common/CMakeLists.txt" )
+  message( "\n\n Error: commande: \n \t  git clone http://gitlab.com/standards/HDRTools.git ${HDRTOOLS_DIR} not work")
   message( FATAL_ERROR "${HDRTOOLS_DIR}/common/CMakeLists.txt not exist")
+
 ELSE()
   ADD_SUBDIRECTORY( ${HDRTOOLS_DIR}/common ) 
 ENDIF()
