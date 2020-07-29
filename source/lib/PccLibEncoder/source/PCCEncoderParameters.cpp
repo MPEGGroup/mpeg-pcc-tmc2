@@ -574,8 +574,8 @@ bool PCCEncoderParameters::check() {
     absoluteD1_ = true;
   }
   if ( !absoluteT1_ && absoluteD1_ ) {
-    std::cerr << "absoluteT1 cannot be false when absoluteD1 is true\n";
-    ret=false;
+    std::cerr << "absoluteT1 cannot be false when absoluteD1 is true, force absoluteT1 equals to true\n";        
+    absoluteT1_ = true;
   }
 
   if ( losslessGeo_ ) {
@@ -584,6 +584,11 @@ bool PCCEncoderParameters::check() {
     flagColorSmoothing_     = false;    
     flagGeometrySmoothing_  = false;
     gridSmoothing_          = false;
+    if( lossyRawPointsPatch_ == true ){
+      std::cerr << "WARNING: lossyRawPointsPatch_ is only for lossy "
+                   "coding mode for now. Force lossyRawPointsPatch_=FALSE.\n";
+      lossyRawPointsPatch_ = false; 
+    }
     if ( pointLocalReconstruction_ ) {
       pointLocalReconstruction_ = false;
       std::cerr << "WARNING: pointLocalReconstruction_ is only for lossy "
