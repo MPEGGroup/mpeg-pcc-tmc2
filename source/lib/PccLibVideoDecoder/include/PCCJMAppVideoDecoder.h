@@ -30,23 +30,22 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef PCCHMAppVideoDecoder_h
-#define PCCHMAppVideoDecoder_h
+#ifndef PCCJMAppVideoDecoder_h
+#define PCCJMAppVideoDecoder_h
 
 #include "PCCCommon.h"
 
-#ifdef USE_HMAPP_VIDEO_CODEC
-
+#ifdef USE_JMAPP_VIDEO_CODEC
 #include "PCCVideo.h"
 #include "PCCVirtualVideoDecoder.h"
 
 namespace pcc {
 
 template <class T>
-class PCCHMAppVideoDecoder : public PCCVirtualVideoDecoder<T> {
+class PCCJMAppVideoDecoder : public PCCVirtualVideoDecoder<T> {
  public:
-  PCCHMAppVideoDecoder();
-  ~PCCHMAppVideoDecoder();
+  PCCJMAppVideoDecoder();
+  ~PCCJMAppVideoDecoder();
 
   void decode( PCCVideoBitstream& bitstream,
                size_t             outputBitDepth,

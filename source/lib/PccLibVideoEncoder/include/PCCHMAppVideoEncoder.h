@@ -38,6 +38,8 @@
 #include "PCCVideo.h"
 #include "PCCVirtualVideoEncoder.h"
 
+#ifdef USE_HMAPP_VIDEO_CODEC
+
 namespace pcc {
 
 template <class T>
@@ -46,15 +48,17 @@ class PCCHMAppVideoEncoder : public PCCVirtualVideoEncoder<T> {
   PCCHMAppVideoEncoder();
   ~PCCHMAppVideoEncoder();
 
-  void encode( PCCVideo<T, 3>&    videoSrc,
-               std::string        arguments,
-               PCCVideoBitstream& bitstream,
-               PCCVideo<T, 3>&    videoRec );
+  void encode( PCCVideo<T, 3>&            videoSrc,
+               PCCVideoEncoderParameters& params,
+               PCCVideoBitstream&         bitstream,
+               PCCVideo<T, 3>&            videoRec );
 
  private:
   PCCCOLORFORMAT getColorFormat( std::string& name );
 };
 
 }  // namespace pcc
+
+#endif  //~USE_HMAPP_VIDEO_CODEC
 
 #endif  //~__PCCHMAppVideoEncoder_H__

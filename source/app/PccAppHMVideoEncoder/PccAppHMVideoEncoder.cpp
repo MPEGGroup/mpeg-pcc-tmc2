@@ -95,8 +95,8 @@ int main( int argc, char* argv[] ) {
   PCCVideoBitstream bitstream( VIDEO_OCCUPANCY );
   PCCContext        context;
   PCCVideoEncoder   encoder;
-  encoder.compress( videoSrc, std::string( "" ), 8, bitstream, encoderParameters, enc, context, 1, false, false, 8,
-                    false, true );
+  encoder.compress( videoSrc, std::string( "" ), 8, bitstream, encoderParameters, enc, HMLIB, context, 1, false, false,
+                    8, false, true );
   videoSrc.swap( videoRec );
   bitstream.write( removeFileExtension( srcVideo ) + ".bin" );
   videoRec.write( removeFileExtension( srcVideo ) + "_rec.yuv", nbyte );

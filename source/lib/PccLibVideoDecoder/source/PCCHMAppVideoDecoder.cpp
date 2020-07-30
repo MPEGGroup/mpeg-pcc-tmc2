@@ -32,7 +32,7 @@
  */
 #include "PCCCommon.h"
 
-#ifndef USE_HM_VIDEO_CODEC
+#ifdef USE_HMAPP_VIDEO_CODEC
 
 #include "PCCHMAppVideoDecoder.h"
 #include "PCCHevcParser.h"

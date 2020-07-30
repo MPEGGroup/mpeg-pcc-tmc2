@@ -36,10 +36,17 @@
 
 #include <program_options_lite.h>
 
-#ifdef USE_HM_VIDEO_CODEC
+#ifdef USE_HMLIB_VIDEO_CODEC
 #include "PCCHMLibVideoDecoder.h"
-#else
+#endif
+#ifdef USE_FFMPEG_VIDEO_CODEC
+#include "PCCFFMPEGLibVideoDecoder.h"
+#endif
+#ifdef USE_HMAPP_VIDEO_CODEC
 #include "PCCHMAppVideoDecoder.h"
+#endif
+#ifdef USE_JMAPP_VIDEO_CODEC
+#include "PCCJMAppVideoDecoder.h"
 #endif
 
 using namespace std;
@@ -94,16 +101,21 @@ int main( int argc, char* argv[] ) {
 
   PCCVideoBitstream bitstream( VIDEO_OCCUPANCY );
   bitstream.read( binFile );
-
   typedef uint16_t T;
-  PCCVideo<T, 3>   videoDec;
-#ifdef USE_HM_VIDEO_CODEC
-  PCCHMLibVideoDecoder<T> hmDecoder;
-#else
-  PCCHMAppVideoDecoder<T> hmDecoder;
+  PCCVideo<T, 3>   video;
+#ifdef USE_HMLIB_VIDEO_CODEC
+  PCCHMLibVideoDecoder<T> decoder;
 #endif
-  hmDecoder.decode( bitstream, nbyte == 1 ? 8 : 0, false, videoDec, path, removeFileExtension( binFile ), frame );
-  videoDec.write( removeFileExtension( binFile ) + "_dec.yuv", nbyte );
-
+  // #ifdef USE_FFMPEG_VIDEO_CODEC
+  //   PCCFFMPEGLibVideoDecoder<T> decoder;
+  // #endif
+  // #ifdef USE_HMAPP_VIDEO_CODEC
+  //   PCCJMAppVideoDecoder<T> decoder;
+  // #endif
+  // #ifdef USE_HMAPP_VIDEO_CODEC
+  //   PCCJMAppVideoDecoder<T> decoder;
+  // #endif
+  decoder.decode( bitstream, nbyte == 1 ? 8 : 0, false, video, path, removeFileExtension( binFile ), frame );
+  video.write( removeFileExtension( binFile ) + "_dec.yuv", nbyte );
   return 1;
 }

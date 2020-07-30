@@ -42,8 +42,9 @@ PCCDecoderParameters::PCCDecoderParameters() {
   colorTransform_                    = COLOR_TRANSFORM_RGB_TO_YCBCR;
   colorSpaceConversionPath_          = {};
   inverseColorSpaceConversionConfig_ = {};
-  videoDecoderPath_                  = {};
-  videoDecoderOccupancyMapPath_      = {};
+  videoDecoderOccupancyPath_         = {};
+  videoDecoderGeometryPath_          = {};
+  videoDecoderAttributePath_         = {};
   nbThread_                          = 1;
   keepIntermediateFiles_             = false;
   postprocessSmoothingFilter_        = 1;
@@ -60,17 +61,14 @@ void PCCDecoderParameters::print() {
   std::cout << "\t keepIntermediateFiles               " << keepIntermediateFiles_ << std::endl;
   std::cout << "\t video encoding" << std::endl;
   std::cout << "\t   colorSpaceConversionPath          " << colorSpaceConversionPath_ << std::endl;
-  std::cout << "\t   videoDecoderPath                  " << videoDecoderPath_ << std::endl;
-  std::cout << "\t   videoDecoderOccupancyMapPath      " << videoDecoderOccupancyMapPath_ << std::endl;
+  std::cout << "\t   videoDecoderOccupancyPath         " << videoDecoderOccupancyPath_ << std::endl;
+  std::cout << "\t   videoDecoderGeometryPath          " << videoDecoderGeometryPath_ << std::endl;
+  std::cout << "\t   videoDecoderAttributePath         " << videoDecoderAttributePath_ << std::endl;
   std::cout << "\t   inverseColorSpaceConversionConfig " << inverseColorSpaceConversionConfig_ << std::endl;
   std::cout << "\t   patchColorSubsampling             " << patchColorSubsampling_ << std::endl;
 }
 
-void PCCDecoderParameters::completePath() {
-  if ( videoDecoderOccupancyMapPath_.empty() || !exist( videoDecoderOccupancyMapPath_ ) ) {
-    videoDecoderOccupancyMapPath_ = videoDecoderPath_;
-  }
-}
+void PCCDecoderParameters::completePath() {}
 
 bool PCCDecoderParameters::check() {
   bool ret = true;
@@ -103,21 +101,14 @@ bool PCCDecoderParameters::check() {
     ret = false;
     std::cerr << "compressedStreamPath not exist\n";
   }
-  if ( videoDecoderPath_.empty() ) {
-    ret = false;
-    std::cerr << "videoDecoderPath not set\n";
+  if ( videoDecoderOccupancyPath_.empty() || !exist( videoDecoderOccupancyPath_ ) ) {    
+    std::cerr << "videoDecoderOccupancyPath not set\n";
   }
-  if ( !exist( videoDecoderPath_ ) ) {
-    ret = false;
-    std::cerr << "videoDecoderPath not exist\n";
+  if ( videoDecoderGeometryPath_.empty() || !exist( videoDecoderGeometryPath_ ) ) {    
+    std::cerr << "videoDecoderGeometryPath not set\n";
   }
-  if ( videoDecoderOccupancyMapPath_.empty() ) {
-    ret = false;
-    std::cerr << "videoDecoderOccupancyMapPath not set\n";
-  }
-  if ( !exist( videoDecoderOccupancyMapPath_ ) ) {
-    ret = false;
-    std::cerr << "videoDecoderOccupancyMapPath not exist\n";
+  if ( videoDecoderAttributePath_.empty() || !exist( videoDecoderAttributePath_ ) ) {
+    std::cerr << "videoDecoderGeometryPath not set\n";
   }
   return ret;
 }

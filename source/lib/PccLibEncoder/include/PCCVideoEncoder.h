@@ -39,12 +39,18 @@
 #include "PCCContext.h"
 #include "PCCFrameContext.h"
 #include "PCCPatch.h"
-#ifdef USE_HM_VIDEO_CODEC
+#ifdef USE_HMLIB_VIDEO_CODEC
 #include "PCCHMLibVideoEncoder.h"
-#else
+#endif
+#ifdef USE_FFMPEG_VIDEO_CODEC
+#include "PCCFFMPEGLibVideoEncoder.h"
+#endif
+#ifdef USE_HMAPP_VIDEO_CODEC
 #include "PCCHMAppVideoEncoder.h"
 #endif
-
+#ifdef USE_JMAPP_VIDEO_CODEC
+#include "PCCJMAppVideoEncoder.h"
+#endif
 #include "PCCInternalColorConverter.h"
 #ifdef USE_HDRTOOLS
 #include "PCCHDRToolsLibColorConverter.h"
@@ -67,6 +73,7 @@ class PCCVideoEncoder {
                  PCCVideoBitstream& bitstream,
                  const std::string& encoderConfig,
                  const std::string& encoderPath,
+                 PCCCodecId         codecId,
                  PCCContext&        contexts,
                  const size_t       nbyte,
                  const bool         use444CodecIo,
@@ -79,7 +86,7 @@ class PCCVideoEncoder {
                  const std::string& colorSpaceConversionPath          = "",
                  const size_t       downsamplingFilter                = 4,
                  const size_t       upsamplingFilter                  = 0,
-                 const bool         patchColorSubsampling             = false ) {
+                 const bool         patchColorSubsampling             = false ) {    
     auto& frames = video.getFrames();
     if ( frames.empty() || frames[0].getChannelCount() != 3 ) { return false; }
     const size_t      width                = frames[0].getWidth();
@@ -105,11 +112,24 @@ class PCCVideoEncoder {
     const bool        yuvVideo          = colorSpaceConversionConfig.empty() || use444CodecIo;
 
     std::shared_ptr<PCCVirtualVideoEncoder<T>> encoder;
-#ifdef USE_HM_VIDEO_CODEC
-    encoder = std::make_shared<PCCHMLibVideoEncoder<T>>();
-#else
-    encoder = std::make_shared<PCCHMAppVideoEncoder<T>>();
+    switch ( codecId ) {
+#ifdef USE_HMLIB_VIDEO_CODEC
+      case HMLIB: encoder = std::make_shared<PCCHMLibVideoEncoder<T>>(); break;
 #endif
+#ifdef USE_FFMPEG_VIDEO_CODEC
+      case FFMPEG: encoder = std::make_shared<PCCFFMPEGLibVideoEncoder<T>>(); break;
+#endif
+#ifdef USE_HMAPP_VIDEO_CODEC
+      case HMAPP: encoder = std::make_shared<PCCHMAppVideoEncoder<T>>(); break;
+#endif
+#ifdef USE_JMAPP_VIDEO_CODEC;
+      case JMAPP: encoder = std::make_shared<PCCJMAppVideoEncoder<T>>(); break;
+#endif
+      default:
+        printf( "Error: codec id not supported \n" );
+        exit( -1 );
+        break;
+    }
     std::shared_ptr<PCCVirtualColorConverter<T>> converter;
     std::string                                  configInverseColorSpace, configColorSpace;
     if ( colorSpaceConversionPath.empty() ) {
@@ -329,10 +349,8 @@ class PCCVideoEncoder {
               }
             }
             // perform downsampling
-            // const std::string rgbFileNameTmp = addVideoFormat( fileName +
-            // "_tmp.rgb", patch_width, patch_height );
-            // const std::string yuvFileNameTmp = addVideoFormat( fileName +
-            // "_tmp.yuv", patch_width, patch_height, true
+            // const std::string rgbFileNameTmp = addVideoFormat( fileName + "_tmp.rgb", patch_width, patch_height );
+            // const std::string yuvFileNameTmp = addVideoFormat( fileName + "_tmp.yuv", patch_width, patch_height, true
             // );
             PCCVideo<T, 3> tmpVideo;
             tmpVideo.resize( 1 );
@@ -363,47 +381,29 @@ class PCCVideoEncoder {
     if ( keepIntermediateFiles ) { video.write( srcYuvFileName, nbyte ); }
 
     // Encode video
-    std::stringstream cmd;
-    if ( use444CodecIo ) {
-      cmd << encoderPath << " -c " << encoderConfig << " --InputFile=" << srcYuvFileName << " --InputBitDepth=" << depth
-          << " --InternalBitDepth=" << depth << " --InternalBitDepthC=" << depth << " --InputChromaFormat=" << format
-          << " --FrameRate=30 "
-          << " --FrameSkip=0 "
-          << " --SourceWidth=" << width << " --SourceHeight=" << height << " --ConformanceWindowMode=1 "
-          << " --FramesToBeEncoded=" << frameCount << " --BitstreamFile=" << binFileName
-          << " --ReconFile=" << recYuvFileName << " --QP=" << qp << " --InputColourSpaceConvert=RGBtoGBR";
-      cmd << " --OutputBitDepth=" << depth;
-      cmd << " --OutputBitDepthC=" << depth;
-      if ( use3dmv ) {
-        cmd << " --UsePccMotionEstimation=1 --BlockToPatchFile=" << blockToPatchFileName
-            << " --OccupancyMapFile=" << occupancyMapFileName << " --PatchInfoFile=" << patchInfoFileName;
-      }
-    } else {
-      cmd << encoderPath << " -c " << encoderConfig << " --InputFile=" << srcYuvFileName << " --InputBitDepth=" << depth
-          << " --InputChromaFormat=" << format << " --FrameRate=30 "
-          << " --FrameSkip=0 "
-          << " --SourceWidth=" << width << " --SourceHeight=" << height << " --ConformanceWindowMode=1 "
-          << " --FramesToBeEncoded=" << frameCount << " --BitstreamFile=" << binFileName
-          << " --ReconFile=" << recYuvFileName << " --QP=" << qp;
-      if ( internalBitDepth != 0 ) {
-        cmd << " --InternalBitDepth=" << internalBitDepth << " --InternalBitDepthC=" << internalBitDepth;
-      }
-      cmd << " --OutputBitDepth=" << depth;
-      cmd << " --OutputBitDepthC=" << depth;
-      if ( use3dmv ) {
-        cmd << " --UsePccMotionEstimation=1 --BlockToPatchFile=" << blockToPatchFileName
-            << " --OccupancyMapFile=" << occupancyMapFileName << " --PatchInfoFile=" << patchInfoFileName;
-      }
-    }
-    std::cout << cmd.str() << std::endl;
+    PCCVideoEncoderParameters params;
+    params.encoderPath_            = encoderPath;
+    params.srcYuvFileName_         = srcYuvFileName;
+    params.binFileName_            = binFileName;
+    params.recYuvFileName_         = recYuvFileName;
+    params.encoderConfig_          = encoderConfig;
+    params.qp_                     = qp;
+    params.inputBitDepth_          = depth;
+    params.internalBitDepth_       = internalBitDepth;
+    params.outputBitDepth_         = depth;
+    params.use444CodecIo_          = use444CodecIo;
+    params.usePccMotionEstimation_ = use3dmv;
+    params.blockToPatchFile_       = blockToPatchFileName;
+    params.occupancyMapFile_       = occupancyMapFileName;
+    params.patchInfoFile_          = patchInfoFileName;
+    printf("Encode: video size = %zu x %zu num frames = %zu \n", video.getWidth(), video.getHeight(), video.getFrameCount() );
+    fflush(stdout); 
     PCCVideo<T, 3> videoRec;
-    printf( "encode start \n" );
-    fflush( stdout );
-    encoder->encode( video, cmd.str(), bitstream, videoRec );
-    printf( "encode done \n" );
-    fflush( stdout );
-    if ( keepIntermediateFiles ) { videoRec.write( recYuvFileName, nbyte ); }
-
+    encoder->encode( video, params, bitstream, videoRec );
+    if ( keepIntermediateFiles ) {
+      bitstream.write( binFileName );
+      videoRec.write( recYuvFileName, nbyte );
+    }
     // Convert rec video
     if ( yuvVideo ) {
       if ( use444CodecIo ) {

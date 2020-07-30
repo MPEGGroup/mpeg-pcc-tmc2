@@ -144,9 +144,11 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   // ENCODE OCCUPANCY MAP
   auto& videoBitstream = context.createVideoBitstream( VIDEO_OCCUPANCY );
   generateOccupancyMapVideo( sources, context );
+
   auto& videoOccupancyMap = context.getVideoOccupancyMap();
   videoEncoder.compress( videoOccupancyMap, path.str(), params_.occupancyMapQP_, videoBitstream,
-                         params_.occupancyMapVideoEncoderConfig_, params_.videoEncoderOccupancyMapPath_, context,
+                         params_.occupancyMapVideoEncoderConfig_, params_.videoEncoderOccupancyPath_,
+                         params_.videoEncoderOccupancyCodecId_, context,
                          ( params_.EOMFixBitCount_ <= 8 ) ? 1 : 2,  // nByte
                          false,                                     // use444CodecIo
                          false,                                     // use3dmv
@@ -206,7 +208,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
       params_.multipleStreams_
           ? params_.geometryD0Config_
           : ( params_.mapCountMinus1_ == 0 ? getEncoderConfig1L( params_.geometryConfig_ ) : params_.geometryConfig_ ),
-      ( static_cast<int>( params_.use3dmc_ ) != 0 ) ? params_.videoEncoderAuxPath_ : params_.videoEncoderPath_, context,
+      params_.videoEncoderGeometryPath_, params_.videoEncoderGeometryCodecId_, context,
       nbyteGeo,                                         // nbyte
       params_.losslessGeo_ && params_.losslessGeo444_,  // use444CodecIo
       params_.use3dmc_,                                 // use3dmv
@@ -237,15 +239,14 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     // Compress geometryD1
     auto& videoGeometryD1  = context.getVideoGeometryMultiple()[1];
     auto& videoBitstreamD1 = context.createVideoBitstream( VIDEO_GEOMETRY_D1 );
-    videoEncoder.compress(
-        videoGeometryD1, path.str(), params_.geometryQP_, videoBitstreamD1, params_.geometryD1Config_,
-        ( static_cast<int>( params_.use3dmc_ ) != 0 ) ? params_.videoEncoderAuxPath_ : params_.videoEncoderPath_,
-        context, nbyteGeo,                                // nbyte
-        params_.losslessGeo_ && params_.losslessGeo444_,  // use444CodecIo
-        params_.use3dmc_,                                 // use3dmv
-        internalBitDepth,                                 // internalBitDepth
-        false,                                            // useConversion
-        params_.keepIntermediateFiles_ );
+    videoEncoder.compress( videoGeometryD1, path.str(), params_.geometryQP_, videoBitstreamD1,
+                           params_.geometryD1Config_, params_.videoEncoderGeometryPath_,
+                           params_.videoEncoderGeometryCodecId_, context, nbyteGeo,  // nbyte
+                           params_.losslessGeo_ && params_.losslessGeo444_,          // use444CodecIo
+                           params_.use3dmc_,                                         // use3dmv
+                           internalBitDepth,                                         // internalBitDepth
+                           false,                                                    // useConversion
+                           params_.keepIntermediateFiles_ );
 
     size_t sizeGeometryVideoD1 = videoBitstreamD1.size();
     std::cout << "sizeGeometryVideoD1: " << sizeGeometryVideoD1 << std::endl;
@@ -261,7 +262,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     auto& videoRawPointsGeometry = context.getVideoRawPointsGeometry();
     videoEncoder.compress( videoRawPointsGeometry, path.str(),
                            params_.lossyRawPointsPatch_ ? params_.lossyRawPointPatchGeoQP_ : params_.geometryQP_,
-                           videoBitstreamMP, params_.geometryMPConfig_, params_.videoEncoderPath_, context,
+                           videoBitstreamMP, params_.geometryMPConfig_, params_.videoEncoderGeometryPath_,
+                           params_.videoEncoderGeometryCodecId_, context,
                            nbyteGeoMP,        // nbyte
                            false,             // use444CodecIo
                            false,             // use3dmv
@@ -289,82 +291,88 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
 
     if ( !( params_.losslessGeo_ && params_.textureDilationOffLossless_ ) && params_.textureBGFill_ < 3 ) {
       // ATTRIBUTE IMAGE PADDING
-      for ( size_t f = 0; f < frames.size(); ++f ) {
-        using namespace std::chrono;
-        pcc::chrono::Stopwatch<std::chrono::steady_clock> clockPadding;
-        clockPadding.start();
 
-        if ( params_.absoluteT1_ ) {
-          switch ( params_.textureBGFill_ ) {
-            case 0:
-              for ( int mapIdx = 0; mapIdx < mapCount; mapIdx++ ) {
-                size_t videoFrameIdx = params_.multipleStreams_ ? f : ( f * mapCount + mapIdx );
-                dilate( frames[f], context.getVideoTextureMultiple()[params_.multipleStreams_ ? mapIdx : 0].getFrame(
-                                       videoFrameIdx ) );
-              }
-              break;
-            case 1:
-              for ( int mapIdx = 0; mapIdx < mapCount; mapIdx++ ) {
-                size_t videoFrameIdx = params_.multipleStreams_ ? f : ( f * mapCount + mapIdx );
-                dilateSmoothedPushPull(
-                    frames[f], context.getVideoTextureMultiple()[params_.multipleStreams_ ? mapIdx : 0].getFrame(
-                                   videoFrameIdx ) );
-              }
-              break;
-            case 2:
-              for ( int mapIdx = 0; mapIdx < mapCount; mapIdx++ ) {
-                size_t videoFrameIdx = params_.multipleStreams_ ? f : ( f * mapCount + mapIdx );
-                dilateHarmonicBackgroundFill(
-                    frames[f], context.getVideoTextureMultiple()[params_.multipleStreams_ ? mapIdx : 0].getFrame(
-                                   videoFrameIdx ) );
-              }
-              break;
-            default: std::cout << "Warning: no texture padding applied!" << std::endl;
-          }  // switch
-          if ( mapCount > 1 && !params_.multipleStreams_ && params_.groupDilation_ ) {
-            // Group dilation in texture
-            auto&    frame        = frames[f];
-            auto&    occupancyMap = frame.getOccupancyMap();
-            auto&    width        = frame.getWidth();
-            auto&    height       = frame.getHeight();
-            auto&    frame1       = context.getVideoTextureMultiple()[0].getFrame( f * mapCount );
-            auto&    frame2       = context.getVideoTextureMultiple()[0].getFrame( f * mapCount + 1 );
-            uint8_t  tmp_d0;
-            uint8_t  tmp_d1;
-            uint32_t tmp_avg;
-            for ( size_t y = 0; y < height; y++ ) {
-              for ( size_t x = 0; x < width; x++ ) {
-                const size_t pos = y * width + x;
-                if ( occupancyMap[pos] == 0 ) {
-                  for ( size_t c = 0; c < 3; c++ ) {
-                    tmp_d0  = frame1.getValue( c, x, y );
-                    tmp_d1  = frame2.getValue( c, x, y );
-                    tmp_avg = ( static_cast<uint32_t>( tmp_d0 ) + static_cast<uint32_t>( tmp_d1 ) + 1 ) >> 1;
-                    frame1.setValue( c, x, y, static_cast<uint8_t>( tmp_avg ) );
-                    frame2.setValue( c, x, y, static_cast<uint8_t>( tmp_avg ) );
+      tbb::task_arena limited( static_cast<int>( params_.nbThread_ ) );
+      limited.execute( [&] {
+        tbb::parallel_for( size_t( 0 ), frames.size(), [&]( const size_t f ) {
+          // for ( size_t f = 0; f < frames.size(); ++f ) {
+          using namespace std::chrono;
+          pcc::chrono::Stopwatch<std::chrono::steady_clock> clockPadding;
+          clockPadding.start();
+
+          if ( params_.absoluteT1_ ) {
+            switch ( params_.textureBGFill_ ) {
+              case 0:
+                for ( int mapIdx = 0; mapIdx < mapCount; mapIdx++ ) {
+                  size_t videoFrameIdx = params_.multipleStreams_ ? f : ( f * mapCount + mapIdx );
+                  dilate( frames[f], context.getVideoTextureMultiple()[params_.multipleStreams_ ? mapIdx : 0].getFrame(
+                                         videoFrameIdx ) );
+                }
+                break;
+              case 1:
+                for ( int mapIdx = 0; mapIdx < mapCount; mapIdx++ ) {
+                  size_t videoFrameIdx = params_.multipleStreams_ ? f : ( f * mapCount + mapIdx );
+                  dilateSmoothedPushPull(
+                      frames[f], context.getVideoTextureMultiple()[params_.multipleStreams_ ? mapIdx : 0].getFrame(
+                                     videoFrameIdx ) );
+                }
+                break;
+              case 2:
+                for ( int mapIdx = 0; mapIdx < mapCount; mapIdx++ ) {
+                  size_t videoFrameIdx = params_.multipleStreams_ ? f : ( f * mapCount + mapIdx );
+                  dilateHarmonicBackgroundFill(
+                      frames[f], context.getVideoTextureMultiple()[params_.multipleStreams_ ? mapIdx : 0].getFrame(
+                                     videoFrameIdx ) );
+                }
+                break;
+              default: std::cout << "Warning: no texture padding applied!" << std::endl;
+            }  // switch
+            if ( mapCount > 1 && !params_.multipleStreams_ && params_.groupDilation_ ) {
+              // Group dilation in texture
+              auto&    frame        = frames[f];
+              auto&    occupancyMap = frame.getOccupancyMap();
+              auto&    width        = frame.getWidth();
+              auto&    height       = frame.getHeight();
+              auto&    frame1       = context.getVideoTextureMultiple()[0].getFrame( f * mapCount );
+              auto&    frame2       = context.getVideoTextureMultiple()[0].getFrame( f * mapCount + 1 );
+              uint8_t  tmp_d0;
+              uint8_t  tmp_d1;
+              uint32_t tmp_avg;
+              for ( size_t y = 0; y < height; y++ ) {
+                for ( size_t x = 0; x < width; x++ ) {
+                  const size_t pos = y * width + x;
+                  if ( occupancyMap[pos] == 0 ) {
+                    for ( size_t c = 0; c < 3; c++ ) {
+                      tmp_d0  = frame1.getValue( c, x, y );
+                      tmp_d1  = frame2.getValue( c, x, y );
+                      tmp_avg = ( static_cast<uint32_t>( tmp_d0 ) + static_cast<uint32_t>( tmp_d1 ) + 1 ) >> 1;
+                      frame1.setValue( c, x, y, static_cast<uint8_t>( tmp_avg ) );
+                      frame2.setValue( c, x, y, static_cast<uint8_t>( tmp_avg ) );
+                    }
                   }
                 }
               }
+            }  // groupDilation and !onelayerMode
+          }    // absoluteT1
+          else if ( params_.multipleStreams_ ) {
+            // params_.multipleStreams_ && !absoluteT1
+            switch ( params_.textureBGFill_ ) {
+              case 0: dilate( frames[f], context.getVideoTextureMultiple()[0].getFrame( f ) ); break;
+              case 1: dilateSmoothedPushPull( frames[f], context.getVideoTextureMultiple()[0].getFrame( f ) ); break;
+              case 2:
+                dilateHarmonicBackgroundFill( frames[f], context.getVideoTextureMultiple()[0].getFrame( f ) );
+                break;
+              default: std::cout << "Warning: no texture padding applied!" << std::endl;
             }
-          }  // groupDilation and !onelayerMode
-        }    // absoluteT1
-        else if ( params_.multipleStreams_ ) {
-          // params_.multipleStreams_ && !absoluteT1
-          switch ( params_.textureBGFill_ ) {
-            case 0: dilate( frames[f], context.getVideoTextureMultiple()[0].getFrame( f ) ); break;
-            case 1: dilateSmoothedPushPull( frames[f], context.getVideoTextureMultiple()[0].getFrame( f ) ); break;
-            case 2:
-              dilateHarmonicBackgroundFill( frames[f], context.getVideoTextureMultiple()[0].getFrame( f ) );
-              break;
-            default: std::cout << "Warning: no texture padding applied!" << std::endl;
           }
-        }
-        clockPadding.stop();
-        using ms              = milliseconds;
-        auto totalPaddingTime = duration_cast<ms>( clockPadding.count() ).count();
-        std::cout << "Processing time (Padding [T0T1]" << f << "/" << frames.size()
-                  << "): " << totalPaddingTime / 1000.0 << " s\n";
-      }
+          clockPadding.stop();
+          using ms              = milliseconds;
+          auto totalPaddingTime = duration_cast<ms>( clockPadding.count() ).count();
+          std::cout << "Processing time (Padding [T0T1]" << f << "/" << frames.size()
+                    << "): " << totalPaddingTime / 1000.0 << " s\n";
+        } );
+      } );
+      // }
     }
     // ENCODE ATTRIBUTE IMAGE
     std::cout << "texture video " << std::endl;
@@ -376,10 +384,9 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
         params_.multipleStreams_
             ? ( params_.mapCountMinus1_ == 0 ? getEncoderConfig1L( params_.textureConfig_ ) : params_.textureT0Config_ )
             : ( params_.mapCountMinus1_ == 0 ? getEncoderConfig1L( params_.textureConfig_ ) : params_.textureConfig_ ),
-        ( static_cast<int>( params_.use3dmc_ ) != 0 ) ? params_.videoEncoderAuxPath_ : params_.videoEncoderPath_,
-        context, nbyteAtt,                           // nbyte
-        params_.losslessGeo_,                        // use444CodecIo
-        params_.use3dmc_,                            // use3dmv
+        params_.videoEncoderAttributePath_, params_.videoEncoderAttributeCodecId_, context, nbyteAtt,  // nbyte
+        params_.losslessGeo_,                                                                          // use444CodecIo
+        params_.use3dmc_,                                                                              // use3dmv
         10,                                          // internalBitDepth
         !params_.losslessGeo_,                       // useConversion
         params_.keepIntermediateFiles_,              // keepIntermediateFiles
@@ -415,8 +422,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
       videoEncoder.compress(
           context.getVideoTextureMultiple()[1], path.str(), params_.textureQP_ + params_.qpAdjT1_, videoBitstreamT1,
           params_.mapCountMinus1_ == 0 ? getEncoderConfig1L( params_.textureConfig_ ) : params_.textureT1Config_,
-          ( static_cast<int>( params_.use3dmc_ ) != 0 ) ? params_.videoEncoderAuxPath_ : params_.videoEncoderPath_,
-          context, nbyteAtt,                           // nbyte
+          params_.videoEncoderAttributePath_, params_.videoEncoderAttributeCodecId_, context, nbyteAtt,  // nbyte
           params_.losslessGeo_,                        // use444CodecIo
           params_.use3dmc_,                            // use3dmv
           10,                                          // internalBitDepth
@@ -440,9 +446,11 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
       auto&        videoRawPointsTexture = context.getVideoRawPointsTexture();
       const size_t nByteAttMP            = 1;
       videoEncoder.compress( videoRawPointsTexture, path.str(), params_.textureQP_, videoBitstreamMP,
-                             params_.textureMPConfig_, params_.videoEncoderPath_, context, nByteAttMP,  // nbyte
-                             params_.losslessGeo_,                                                      // use444CodecIo
-                             false,                                                                     // use3dmv
+                             params_.textureMPConfig_, params_.videoEncoderAttributePath_,
+                             params_.videoEncoderAttributeCodecId_, context,
+                             nByteAttMP,                                  // nbyte
+                             params_.losslessGeo_,                        // use444CodecIo
+                             false,                                       // use3dmv
                              10,                                          // internalBitDepth
                              !params_.losslessGeo_,                       // useConversion
                              params_.keepIntermediateFiles_,              // keepIntermediateFiles
@@ -484,62 +492,67 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                    static_cast<size_t>( params_.multipleStreams_ ), gpcParams );
 
   std::cout << "Post Processing Point Clouds" << std::endl;
-  bool isAttributes444 = static_cast<int>( params_.losslessGeo_ ) == 1;
-  for ( size_t frameIdx = 0; frameIdx < sources.getFrameCount(); frameIdx++ ) {
-    auto&                        frame = context.getFrame( frameIdx );
-    GeneratePointCloudParameters ppSEIParams;
-    setPostProcessingSeiParameters( ppSEIParams, context );
-    auto& reconstruct = reconstructs[frame.getIndex()];
-    auto& partition   = partitions[frameIdx];
+  bool            isAttributes444 = static_cast<int>( params_.losslessGeo_ ) == 1;
+  tbb::task_arena limited( static_cast<int>( params_.nbThread_ * 0 + 1 ) );
+  limited.execute( [&] {
+    tbb::parallel_for( size_t( 0 ), sources.getFrameCount(), [&]( const size_t frameIdx ) {
+      // for ( size_t frameIdx = 0; frameIdx < sources.getFrameCount(); frameIdx++ ) {
+      auto&                        frame = context.getFrame( frameIdx );
+      GeneratePointCloudParameters ppSEIParams;
+      setPostProcessingSeiParameters( ppSEIParams, context );
+      auto& reconstruct = reconstructs[frame.getIndex()];
+      auto& partition   = partitions[frameIdx];
 
-    TRACE_CODEC( "Post-Processing: postprocessSmoothing = %zu pbfEnableFlag = %d \n",
-                 params_.postprocessSmoothingFilter_, params_.pbfEnableFlag_ );
-    if ( ppSEIParams.flagGeometrySmoothing_ ) {
-      PCCPointSet3 tempFrameBuffer = reconstruct;
-      if ( ppSEIParams.gridSmoothing_ ) {
-        smoothPointCloudPostprocess( reconstruct, context, params_.colorTransform_, ppSEIParams, partition );
-      }
-      if ( !ppSEIParams.pbfEnableFlag_ ) {
-        // These are different attribute transfer functions
-        if ( params_.postprocessSmoothingFilter_ == 1 || params_.postprocessSmoothingFilter_ == 5 ) {
-          TRACE_CODEC( " transferColors16bitBP \n" );
-          // tempFrameBuffer[i].transferColors16bit( reconstructs[i], int32_t( 0
-          // ), params_.losslessGeo_ == 1, 8, 1, 1,
-          // 1, 1, 0, 4, 4, 1000, 1000, 1000 * 256, 1000 * 256 );
-          tempFrameBuffer.transferColors16bitBP( reconstruct, params_.postprocessSmoothingFilter_, int32_t( 0 ),
-                                                 (bool)( params_.losslessGeo_ ), 8, 1, true, true, true, false, 4, 4,
-                                                 1000, 1000, 1000 * 256, 1000 * 256 );
-        } else if ( params_.postprocessSmoothingFilter_ == 2 ) {
-          TRACE_CODEC( " transferColorWeight \n" );
-          tempFrameBuffer.transferColorWeight( reconstruct, 0.1 );
-        } else if ( params_.postprocessSmoothingFilter_ == 3 ) {
-          TRACE_CODEC( " transferColorsFilter3 \n" );
-          tempFrameBuffer.transferColorsFilter3( reconstruct, int32_t( 0 ), isAttributes444 );
+      TRACE_CODEC( "Post-Processing: postprocessSmoothing = %zu pbfEnableFlag = %d \n",
+                   params_.postprocessSmoothingFilter_, params_.pbfEnableFlag_ );
+      if ( ppSEIParams.flagGeometrySmoothing_ ) {
+        PCCPointSet3 tempFrameBuffer = reconstruct;
+        if ( ppSEIParams.gridSmoothing_ ) {
+          smoothPointCloudPostprocess( reconstruct, context, params_.colorTransform_, ppSEIParams, partition );
+        }
+        if ( !ppSEIParams.pbfEnableFlag_ ) {
+          // These are different attribute transfer functions
+          if ( params_.postprocessSmoothingFilter_ == 1 || params_.postprocessSmoothingFilter_ == 5 ) {
+            TRACE_CODEC( " transferColors16bitBP \n" );
+            // tempFrameBuffer[i].transferColors16bit( reconstructs[i], int32_t( 0
+            // ), params_.losslessGeo_ == 1, 8, 1, 1,
+            // 1, 1, 0, 4, 4, 1000, 1000, 1000 * 256, 1000 * 256 );
+            tempFrameBuffer.transferColors16bitBP( reconstruct, params_.postprocessSmoothingFilter_, int32_t( 0 ),
+                                                   (bool)( params_.losslessGeo_ ), 8, 1, true, true, true, false, 4, 4,
+                                                   1000, 1000, 1000 * 256, 1000 * 256 );
+          } else if ( params_.postprocessSmoothingFilter_ == 2 ) {
+            TRACE_CODEC( " transferColorWeight \n" );
+            tempFrameBuffer.transferColorWeight( reconstruct, 0.1 );
+          } else if ( params_.postprocessSmoothingFilter_ == 3 ) {
+            TRACE_CODEC( " transferColorsFilter3 \n" );
+            tempFrameBuffer.transferColorsFilter3( reconstruct, int32_t( 0 ), isAttributes444 );
+          }
         }
       }
-    }
 
-    if ( ppSEIParams.flagColorSmoothing_ ) {
-      TRACE_CODEC( " colorSmoothing \n" );
-      colorSmoothing( reconstruct, context, params_.colorTransform_, ppSEIParams );
-    }
-    if ( !isAttributes444 ) {  // lossy: convert 16-bit yuv444 to 8-bit RGB444
-      TRACE_CODEC( "lossy: convert 16-bit yuv444 to 8-bit RGB444 (convertYUV16ToRGB8) \n" );
-      reconstruct.convertYUV16ToRGB8();
-      // #ifdef TRACE_CODEC
-      //       for ( size_t i = 0; i < 100; i++ ) {
-      //         TRACE_CODEC( "%4zu %4zu %4zu: c16 %4zu %4zu %4zu c8 %4zu %4zu %4zu\n", reconstruct[i][0],
-      //         reconstruct[i][1],
-      //                      reconstruct[i][2], reconstruct.getColor16bit( i )[0], reconstruct.getColor16bit( i )[1],
-      //                      reconstruct.getColor16bit( i )[2], reconstruct.getColor( i )[0], reconstruct.getColor( i
-      //                      )[1], reconstruct.getColor( i )[2] );
-      //       }
-      // #endif
-    } else {  // lossless: copy 16-bit RGB to 8-bit RGB
-      TRACE_CODEC( "lossy: lossless: copy 16-bit RGB to 8-bit RGB (copyRGB16ToRGB8) \n" );
-      reconstruct.copyRGB16ToRGB8();
-    }
-  }  // frame
+      if ( ppSEIParams.flagColorSmoothing_ ) {
+        TRACE_CODEC( " colorSmoothing \n" );
+        colorSmoothing( reconstruct, context, params_.colorTransform_, ppSEIParams );
+      }
+      if ( !isAttributes444 ) {  // lossy: convert 16-bit yuv444 to 8-bit RGB444
+        TRACE_CODEC( "lossy: convert 16-bit yuv444 to 8-bit RGB444 (convertYUV16ToRGB8) \n" );
+        reconstruct.convertYUV16ToRGB8();
+        // #ifdef TRACE_CODEC
+        //       for ( size_t i = 0; i < 100; i++ ) {
+        //         TRACE_CODEC( "%4zu %4zu %4zu: c16 %4zu %4zu %4zu c8 %4zu %4zu %4zu\n", reconstruct[i][0],
+        //         reconstruct[i][1],
+        //                      reconstruct[i][2], reconstruct.getColor16bit( i )[0], reconstruct.getColor16bit( i )[1],
+        //                      reconstruct.getColor16bit( i )[2], reconstruct.getColor( i )[0], reconstruct.getColor( i
+        //                      )[1], reconstruct.getColor( i )[2] );
+        //       }
+        // #endif
+      } else {  // lossless: copy 16-bit RGB to 8-bit RGB
+        TRACE_CODEC( "lossy: lossless: copy 16-bit RGB to 8-bit RGB (copyRGB16ToRGB8) \n" );
+        reconstruct.copyRGB16ToRGB8();
+      }
+      // }  // frame
+    } );
+  } );
 
   if ( !params_.keepIntermediateFiles_ && params_.use3dmc_ ) { remove3DMotionEstimationFiles( path.str() ); }
 
@@ -630,12 +643,15 @@ bool PCCEncoder::generateOccupancyMapVideo( const PCCGroupOfFrames& sources, PCC
   auto& videoOccupancyMap = context.getVideoOccupancyMap();
   bool  ret               = true;
   videoOccupancyMap.resize( sources.getFrameCount() );
-  for ( size_t f = 0; f < sources.getFrameCount(); ++f ) {
-    auto&                 contextFrame = context.getFrames()[f];
-    PCCImageOccupancyMap& videoFrame   = videoOccupancyMap.getFrame( f );
-    ret &= generateOccupancyMapVideo( contextFrame.getWidth(), contextFrame.getHeight(), contextFrame.getOccupancyMap(),
-                                      videoFrame );
-  }
+  tbb::task_arena limited( static_cast<int>( params_.nbThread_ ) );
+  limited.execute( [&] {
+    tbb::parallel_for( size_t( 0 ), sources.getFrameCount(), [&]( const size_t f ) {
+      auto&                 contextFrame = context.getFrames()[f];
+      PCCImageOccupancyMap& videoFrame   = videoOccupancyMap.getFrame( f );
+      ret &= generateOccupancyMapVideo( contextFrame.getWidth(), contextFrame.getHeight(),
+                                        contextFrame.getOccupancyMap(), videoFrame );
+    } );
+  } );
   return ret;
 }
 
@@ -3109,31 +3125,35 @@ bool PCCEncoder::generateGeometryVideo( const PCCPointSet3&                 sour
 }
 
 void PCCEncoder::geometryGroupDilation( PCCContext& context ) {
-  auto& videoGeometry         = context.getVideoGeometryMultiple()[0];
-  auto& videoGeometryMultiple = context.getVideoGeometryMultiple();
-  auto  videoOccupancyMap     = context.getVideoOccupancyMap();
-  auto& frames                = context.getFrames();
-  for ( size_t f = 0; f < frames.size(); ++f ) {
-    auto& frame        = frames[f];
-    auto& width        = frame.getWidth();
-    auto& height       = frame.getHeight();
-    auto& occupancyMap = videoOccupancyMap.getFrame( f );
-    auto& frame1 = params_.multipleStreams_ ? videoGeometryMultiple[0].getFrame( f ) : videoGeometry.getFrame( 2 * f );
-    auto& frame2 =
-        params_.multipleStreams_ ? videoGeometryMultiple[1].getFrame( f ) : videoGeometry.getFrame( 2 * f + 1 );
-    for ( size_t y = 0; y < height; y++ ) {
-      for ( size_t x = 0; x < width; x++ ) {
-        // const size_t pos = y * width + x;
-        if ( occupancyMap.getValue( 0, x / params_.occupancyPrecision_, y / params_.occupancyPrecision_ ) == 0 ) {
-          uint32_t avg = ( ( static_cast<uint32_t>( frame1.getValue( 0, x, y ) ) ) +
-                           ( static_cast<uint32_t>( frame2.getValue( 0, x, y ) ) ) + 1 ) >>
-                         1;
-          frame1.setValue( 0, x, y, static_cast<uint16_t>( avg ) );
-          frame2.setValue( 0, x, y, static_cast<uint16_t>( avg ) );
+  auto&           videoGeometry         = context.getVideoGeometryMultiple()[0];
+  auto&           videoGeometryMultiple = context.getVideoGeometryMultiple();
+  auto            videoOccupancyMap     = context.getVideoOccupancyMap();
+  auto&           frames                = context.getFrames();
+  tbb::task_arena limited( static_cast<int>( params_.nbThread_ ) );
+  limited.execute( [&] {
+    tbb::parallel_for( size_t( 0 ), frames.size(), [&]( const size_t f ) {
+      auto& frame        = frames[f];
+      auto& width        = frame.getWidth();
+      auto& height       = frame.getHeight();
+      auto& occupancyMap = videoOccupancyMap.getFrame( f );
+      auto& frame1 =
+          params_.multipleStreams_ ? videoGeometryMultiple[0].getFrame( f ) : videoGeometry.getFrame( 2 * f );
+      auto& frame2 =
+          params_.multipleStreams_ ? videoGeometryMultiple[1].getFrame( f ) : videoGeometry.getFrame( 2 * f + 1 );
+      for ( size_t y = 0; y < height; y++ ) {
+        for ( size_t x = 0; x < width; x++ ) {
+          // const size_t pos = y * width + x;
+          if ( occupancyMap.getValue( 0, x / params_.occupancyPrecision_, y / params_.occupancyPrecision_ ) == 0 ) {
+            uint32_t avg = ( ( static_cast<uint32_t>( frame1.getValue( 0, x, y ) ) ) +
+                             ( static_cast<uint32_t>( frame2.getValue( 0, x, y ) ) ) + 1 ) >>
+                           1;
+            frame1.setValue( 0, x, y, static_cast<uint16_t>( avg ) );
+            frame2.setValue( 0, x, y, static_cast<uint16_t>( avg ) );
+          }
         }
       }
-    }
-  }
+    } );
+  } );
 }
 
 bool PCCEncoder::generateOccupancyMap( PCCContext& context ) {
@@ -4148,20 +4168,19 @@ bool PCCEncoder::generateGeometryVideo( const PCCGroupOfFrames& sources, PCCCont
     params.weightNormal_ = frames[0].getWeightNormal();
   }
 
-  float sumDistanceSrcRec = 0;
-  printf( "Generate generateGeometryVideo loop \n" );
-  fflush( stdout );
-  for ( size_t i = 0; i < frames.size(); i++ ) {
-    size_t preIndex       = i > 0 ? ( i - 1 ) : 0;
-    float  distanceSrcRec = 0;
-    if ( !generateGeometryVideo( sources[i], frames[i], params, videoGeometry, frames[preIndex], i, distanceSrcRec ) ) {
-      res = false;
-      break;
-    }
-    sumDistanceSrcRec += distanceSrcRec;
-  }
-  printf( "Generate generateGeometryVideo loop done \n" );
-  fflush( stdout );
+  float           sumDistanceSrcRec = 0;
+  tbb::task_arena limited( static_cast<int>( params_.nbThread_ ) );
+  limited.execute( [&] {
+    tbb::parallel_for( size_t( 0 ), frames.size(), [&]( const size_t i ) {
+      size_t preIndex       = i > 0 ? ( i - 1 ) : 0;
+      float  distanceSrcRec = 0;
+      if ( !generateGeometryVideo( sources[i], frames[i], params, videoGeometry, frames[preIndex], i,
+                                   distanceSrcRec ) ) {
+        res = false;
+      }
+      sumDistanceSrcRec += distanceSrcRec;
+    } );
+  } );
   if ( params_.pointLocalReconstruction_ || params_.singleMapPixelInterleaving_ ) {
     const float distanceSrcRec = sumDistanceSrcRec / static_cast<float>( frames.size() );
     if ( distanceSrcRec >= 250.F ) {
@@ -4416,46 +4435,50 @@ bool PCCEncoder::dilateGeometryVideo( const PCCGroupOfFrames& sources, PCCContex
   auto& frames                = context.getFrames();
   printf( " geometryGroupDilation frames.size() = %zu \n", frames.size() );
   fflush( stdout );
-  for ( size_t i = 0; i < frames.size(); i++ ) {
-    if ( params_.multipleStreams_ ) {
-      const size_t geometryVideoSize = videoGeometryMultiple[0].getFrameCount();
-      videoGeometryMultiple[0].resize( geometryVideoSize + 1 );  // increasing the video with only one frame
-      videoGeometryMultiple[1].resize( geometryVideoSize + 1 );
-      auto& frame0 = videoGeometryMultiple[0].getFrame( geometryVideoSize );
-      generateIntraImage( frames[i], 0, frame0 );
-      auto& frame1 = videoGeometryMultiple[1].getFrame( geometryVideoSize );
-      generateIntraImage( frames[i], 1, frame1 );
-      dilate3DPadding( sources[i], frames[i], frame0, videoOccupancyMap.getFrame( i ) );
-      if ( params_.absoluteD1_ ) { dilate3DPadding( sources[i], frames[i], frame1, videoOccupancyMap.getFrame( i ) ); }
-    } else {
-      const size_t geometryVideoSize = videoGeometry.getFrameCount();
-      const size_t mapCount          = params_.mapCountMinus1_ + 1;
-      videoGeometry.resize( geometryVideoSize + mapCount );  // increasing the
-                                                             // video with
-                                                             // mapCount frames
 
-      if ( params_.singleMapPixelInterleaving_ ) {
-        auto& frame1 = videoGeometry.getFrame( geometryVideoSize );
-        generateIntraImage( frames[i], 0, frame1 );
-        dilate( frames[i], frame1 );
-        PCCImageGeometry frame2;
-        generateIntraImage( frames[i], 1, frame2 );
-        dilate3DPadding( sources[i], frames[i], frame2, videoOccupancyMap.getFrame( i ) );
-        for ( size_t x = 0; x < frame1.getWidth(); x++ ) {
-          for ( size_t y = 0; y < frame1.getHeight(); y++ ) {
-            if ( ( x + y ) % 2 == 1 ) { frame1.setValue( 0, x, y, frame2.getValue( 0, x, y ) ); }
-          }
+  const size_t mapCount = params_.mapCountMinus1_ + 1;
+  if ( params_.multipleStreams_ ) {
+    videoGeometryMultiple[0].resize( frames.size() );  // increasing the video with only one frame
+    videoGeometryMultiple[1].resize( frames.size() );
+  } else {
+    videoGeometry.resize( frames.size() * mapCount );  // increasing the video with apCount frames
+  }
+  tbb::task_arena limited( static_cast<int>( params_.nbThread_ ) );
+  limited.execute( [&] {
+    tbb::parallel_for( size_t( 0 ), frames.size(), [&]( const size_t i ) {
+      if ( params_.multipleStreams_ ) {
+        auto& frame0 = videoGeometryMultiple[0].getFrame( i );
+        generateIntraImage( frames[i], 0, frame0 );
+        auto& frame1 = videoGeometryMultiple[1].getFrame( i );
+        generateIntraImage( frames[i], 1, frame1 );
+        dilate3DPadding( sources[i], frames[i], frame0, videoOccupancyMap.getFrame( i ) );
+        if ( params_.absoluteD1_ ) {
+          dilate3DPadding( sources[i], frames[i], frame1, videoOccupancyMap.getFrame( i ) );
         }
       } else {
-        for ( size_t f = 0; f < mapCount; ++f ) {
-          auto& frame1 = videoGeometry.getFrame( geometryVideoSize + f );
-          generateIntraImage( frames[i], f, frame1 );
-          dilate3DPadding( sources[i], frames[i], videoGeometry.getFrame( geometryVideoSize + f ),
-                           videoOccupancyMap.getFrame( i ) );
+        if ( params_.singleMapPixelInterleaving_ ) {
+          auto& frame1 = videoGeometry.getFrame( i );
+          generateIntraImage( frames[i], 0, frame1 );
+          dilate( frames[i], frame1 );
+          PCCImageGeometry frame2;
+          generateIntraImage( frames[i], 1, frame2 );
+          dilate3DPadding( sources[i], frames[i], frame2, videoOccupancyMap.getFrame( i ) );
+          for ( size_t x = 0; x < frame1.getWidth(); x++ ) {
+            for ( size_t y = 0; y < frame1.getHeight(); y++ ) {
+              if ( ( x + y ) % 2 == 1 ) { frame1.setValue( 0, x, y, frame2.getValue( 0, x, y ) ); }
+            }
+          }
+        } else {
+          for ( size_t f = 0; f < mapCount; ++f ) {
+            auto& frame1 = videoGeometry.getFrame( i * mapCount + f );
+            generateIntraImage( frames[i], f, frame1 );
+            dilate3DPadding( sources[i], frames[i], videoGeometry.getFrame( i * mapCount + f ),
+                             videoOccupancyMap.getFrame( i ) );
+          }
         }
       }
-    }
-  }
+    } );
+  } );
   return true;
 }
 
@@ -5364,11 +5387,12 @@ bool PCCEncoder::generateTextureVideo( const PCCGroupOfFrames&     sources,
                                        PCCGroupOfFrames&           reconstructs,
                                        PCCContext&                 context,
                                        const PCCEncoderParameters& params ) {
-  auto& frames = context.getFrames();
-  bool  ret    = true;
+  auto&  frames   = context.getFrames();
+  bool   ret      = true;
+  size_t mapCount = params_.mapCountMinus1_ + 1;
+
   for ( size_t i = 0; i < frames.size(); i++ ) {
-    auto&  frame    = frames[i];
-    size_t mapCount = params_.mapCountMinus1_ + 1;
+    auto& frame = frames[i];
     if ( params_.pointLocalReconstruction_ ) {
       // create sub reconstruct point cloud
       PCCPointSet3   subReconstruct;
@@ -5387,13 +5411,13 @@ bool PCCEncoder::generateTextureVideo( const PCCGroupOfFrames&     sources,
       }
       subReconstruct.resize( numPointSub );
       sources[i].transferColors( subReconstruct, int32_t( params_.bestColorSearchRange_ ),
-                                 static_cast<int>( params_.losslessGeo_ ) == 1, params_.numNeighborsColorTransferFwd_,
-                                 params_.numNeighborsColorTransferBwd_, params_.useDistWeightedAverageFwd_,
-                                 params_.useDistWeightedAverageBwd_, params_.skipAvgIfIdenticalSourcePointPresentFwd_,
-                                 params_.skipAvgIfIdenticalSourcePointPresentBwd_, params_.distOffsetFwd_,
-                                 params_.distOffsetBwd_, params_.maxGeometryDist2Fwd_, params_.maxGeometryDist2Bwd_,
-                                 params_.maxColorDist2Fwd_, params_.maxColorDist2Bwd_, params_.excludeColorOutlier_,
-                                 params_.thresholdColorOutlierDist_ );
+                                  static_cast<int>( params_.losslessGeo_ ) == 1, params_.numNeighborsColorTransferFwd_,
+                                  params_.numNeighborsColorTransferBwd_, params_.useDistWeightedAverageFwd_,
+                                  params_.useDistWeightedAverageBwd_, params_.skipAvgIfIdenticalSourcePointPresentFwd_,
+                                  params_.skipAvgIfIdenticalSourcePointPresentBwd_, params_.distOffsetFwd_,
+                                  params_.distOffsetBwd_, params_.maxGeometryDist2Fwd_, params_.maxGeometryDist2Bwd_,
+                                  params_.maxColorDist2Fwd_, params_.maxColorDist2Bwd_, params_.excludeColorOutlier_,
+                                  params_.thresholdColorOutlierDist_ );
 
       for ( size_t j = 0; j < numPointSub; j++ ) {
         reconstructs[i].setColor( subReconstructIndex[j], subReconstruct.getColor( j ) );
@@ -5408,13 +5432,13 @@ bool PCCEncoder::generateTextureVideo( const PCCGroupOfFrames&     sources,
       }
     } else {
       sources[i].transferColors( reconstructs[i], int32_t( params_.bestColorSearchRange_ ),
-                                 static_cast<int>( params_.losslessGeo_ ) == 1, params_.numNeighborsColorTransferFwd_,
-                                 params_.numNeighborsColorTransferBwd_, params_.useDistWeightedAverageFwd_,
-                                 params_.useDistWeightedAverageBwd_, params_.skipAvgIfIdenticalSourcePointPresentFwd_,
-                                 params_.skipAvgIfIdenticalSourcePointPresentBwd_, params_.distOffsetFwd_,
-                                 params_.distOffsetBwd_, params_.maxGeometryDist2Fwd_, params_.maxGeometryDist2Bwd_,
-                                 params_.maxColorDist2Fwd_, params_.maxColorDist2Bwd_, params_.excludeColorOutlier_,
-                                 params_.thresholdColorOutlierDist_ );
+                                  static_cast<int>( params_.losslessGeo_ ) == 1, params_.numNeighborsColorTransferFwd_,
+                                  params_.numNeighborsColorTransferBwd_, params_.useDistWeightedAverageFwd_,
+                                  params_.useDistWeightedAverageBwd_, params_.skipAvgIfIdenticalSourcePointPresentFwd_,
+                                  params_.skipAvgIfIdenticalSourcePointPresentBwd_, params_.distOffsetFwd_,
+                                  params_.distOffsetBwd_, params_.maxGeometryDist2Fwd_, params_.maxGeometryDist2Bwd_,
+                                  params_.maxColorDist2Fwd_, params_.maxColorDist2Bwd_, params_.excludeColorOutlier_,
+                                  params_.thresholdColorOutlierDist_ );
       // color pre-smoothing
       if ( !params_.losslessGeo_ && params_.flagColorPreSmoothing_ ) {
         presmoothPointCloudColor( reconstructs[i], params );
@@ -5455,7 +5479,6 @@ bool PCCEncoder::generateTextureVideo( const PCCPointSet3& reconstruct,
     auto& image1 = videoT1.getFrame( curNumOfVideoFrames );
     image1.resize( frame.getWidth(), frame.getHeight(), PCCCOLORFORMAT::RGB444 );
     image1.set( 0 );
-
   } else {
     video.resize( curNumOfVideoFrames + mapCount );  // adding mapCount more
     for ( size_t f = 0; f < mapCount; ++f ) {
@@ -5480,22 +5503,22 @@ bool PCCEncoder::generateTextureVideo( const PCCPointSet3& reconstruct,
     const size_t             f        = location[2];
     if ( params_.singleMapPixelInterleaving_ ) {
       if ( ( f == 0 && ( ( u + v ) % 2 == 0 ) ) || ( f == 1 && ( ( u + v ) % 2 == 1 ) ) ) {
-        auto& image = video.getFrame( curNumOfVideoFrames );
+        auto& image = video.getFrame( frameIndex /*curNumOfVideoFrames*/ );
         image.setValue( 0, u, v, color[0] );
         image.setValue( 1, u, v, color[1] );
         image.setValue( 2, u, v, color[2] );
       }
     } else {
       if ( f < mapCount ) {
-        auto& image = params_.multipleStreams_ ? ( ( f == 0 ) ? video.getFrame( curNumOfVideoFrames )
-                                                              : videoT1.getFrame( curNumOfVideoFrames ) )
-                                               : video.getFrame( f + curNumOfVideoFrames );
+        auto& image = params_.multipleStreams_ ? ( ( f == 0 ) ? video.getFrame( frameIndex /*curNumOfVideoFrames*/ )
+                                                              : videoT1.getFrame( frameIndex /*curNumOfVideoFrames*/ ) )
+                                               : video.getFrame( f + frameIndex * mapCount /*curNumOfVideoFrames*/ );
         image.setValue( 0, u, v, color[0] );
         image.setValue( 1, u, v, color[1] );
         image.setValue( 2, u, v, color[2] );
         if ( params_.mapCountMinus1_ > 0 && params_.removeDuplicatePoints_ ) {
-          auto& image1 = params_.multipleStreams_ ? videoT1.getFrame( curNumOfVideoFrames )
-                                                  : video.getFrame( 1 + curNumOfVideoFrames );
+          auto& image1 = params_.multipleStreams_ ? videoT1.getFrame( frameIndex /*curNumOfVideoFrames*/ )
+                                                  : video.getFrame( 1 + frameIndex * mapCount /*curNumOfVideoFrames*/ );
           if ( f == 0 ) {
             if ( !markT1[v * frame.getWidth() + u] ) {
               image1.setValue( 0, u, v, color[0] );

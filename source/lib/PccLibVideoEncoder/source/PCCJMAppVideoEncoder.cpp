@@ -31,47 +31,38 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "PCCHMAppVideoEncoder.h"
+#include "PCCJMAppVideoEncoder.h"
 #include "PCCSystem.h"
 
-#ifdef USE_HMAPP_VIDEO_CODEC
+#ifdef USE_JMAPP_VIDEO_CODEC
 
 using namespace pcc;
 
 template <typename T>
-PCCHMAppVideoEncoder<T>::PCCHMAppVideoEncoder() {}
+PCCJMAppVideoEncoder<T>::PCCJMAppVideoEncoder() {}
 template <typename T>
-PCCHMAppVideoEncoder<T>::~PCCHMAppVideoEncoder() {}
+PCCJMAppVideoEncoder<T>::~PCCJMAppVideoEncoder() {}
 
 template <typename T>
-void PCCHMAppVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
+void PCCJMAppVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
                                       PCCVideoEncoderParameters& params,
                                       PCCVideoBitstream&         bitstream,
                                       PCCVideo<T, 3>&            videoRec ) {
-  const size_t      width      = videoSrc.getWidth();
-  const size_t      height     = videoSrc.getHeight();
-  const size_t      frameCount = videoSrc.getFrameCount();
-  std::stringstream cmd;
-  cmd << params.encoderPath_ << " -c " << params.encoderConfig_ << " --InputFile=" << params.srcYuvFileName_
-      << " --InputBitDepth=" << params.inputBitDepth_
-      << " --InputChromaFormat=" << ( params.use444CodecIo_ ? "444" : "420" )
-      << " --OutputBitDepth=" << params.outputBitDepth_ << " --OutputBitDepthC=" << params.outputBitDepth_
-      << " --FrameRate=30"
-      << " --FrameSkip=0"
-      << " --SourceWidth=" << width << " --SourceHeight=" << height << " --ConformanceWindowMode=1 "
-      << " --FramesToBeEncoded=" << frameCount << " --BitstreamFile=" << params.binFileName_
-      << " --ReconFile=" << params.recYuvFileName_ << " --QP=" << params.qp_;
-  if ( params.internalBitDepth_ != 0 ) {
-    cmd << " --InternalBitDepth=" << params.internalBitDepth_ << " --InternalBitDepthC=" << params.internalBitDepth_;
-  }
-  if ( params.usePccMotionEstimation_ ) {
-    cmd << " --UsePccMotionEstimation=1"
-        << " --BlockToPatchFile=" << params.blockToPatchFile_ << " --OccupancyMapFile=" << params.occupancyMapFile_
-        << " --PatchInfoFile=" << params.patchInfoFile_;
-  }
-  if ( params.use444CodecIo_ ) { cmd << " --InputColourSpaceConvert=RGBtoGBR"; }
-  std::cout << cmd.str() << std::endl;
+  const size_t width      = videoSrc.getWidth();
+  const size_t height     = videoSrc.getHeight();
+  const size_t frameCount = videoSrc.getFrameCount();
 
+  std::stringstream cmd;
+  cmd << params.encoderPath_ << " -d " << params.encoderConfig_ << " -p QPPSlice=" << params.qp_
+      << " -p QPISlice=" << params.qp_ << " -p InputFile=" << params.srcYuvFileName_
+      << " -p SourceBitDepthLuma=" << params.inputBitDepth_ << " -p YUVFormat=" << ( params.use444CodecIo_ ? "3" : "1" )
+      << " -p FrameRate=30 "
+      << " -p FrameSkip=0 "
+      << " -p SourceWidth=" << width << " -p SourceHeight=" << height << " -p FramesToBeEncoded=" << frameCount
+      << " -p OutputFile=" << params.binFileName_ << " -p ReconFile=" << params.recYuvFileName_
+      << " -p OutputBitDepthLuma=" << params.outputBitDepth_ << " -p OutputBitDepthChroma=" << params.outputBitDepth_;
+
+  std::cout << cmd.str() << std::endl;
   videoSrc.write( params.srcYuvFileName_, params.inputBitDepth_ == 8 ? 1 : 2 );
   if ( pcc::system( cmd.str().c_str() ) ) {
     std::cout << "Error: can't run system command!" << std::endl;
@@ -84,7 +75,7 @@ void PCCHMAppVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
 }
 
 template <typename T>
-PCCCOLORFORMAT PCCHMAppVideoEncoder<T>::getColorFormat( std::string& name ) {
+PCCCOLORFORMAT PCCJMAppVideoEncoder<T>::getColorFormat( std::string& name ) {
   if ( ( name.find( "_p444.rgb" ) ) != std::string::npos ) {
     return PCCCOLORFORMAT::RGB444;
   } else if ( ( name.find( "_p444.yuv" ) ) != std::string::npos ) {
@@ -92,13 +83,13 @@ PCCCOLORFORMAT PCCHMAppVideoEncoder<T>::getColorFormat( std::string& name ) {
   } else if ( ( name.find( "_p420.yuv" ) ) != std::string::npos ) {
     return PCCCOLORFORMAT::YUV420;
   } else {
-    printf( "PCCHMAppVideoEncoder can't find parameters %s \n", name.c_str() );
+    printf( "PCCJMAppVideoEncoder can't find parameters %s \n", name.c_str() );
     exit( -1 );
   }
   return PCCCOLORFORMAT::UNKNOWN;
 }
 
-template class pcc::PCCHMAppVideoEncoder<uint8_t>;
-template class pcc::PCCHMAppVideoEncoder<uint16_t>;
+template class pcc::PCCJMAppVideoEncoder<uint8_t>;
+template class pcc::PCCJMAppVideoEncoder<uint16_t>;
 
-#endif  //~USE_HMAPP_VIDEO_CODEC
+#endif  //~USE_JMAPP_VIDEO_CODEC

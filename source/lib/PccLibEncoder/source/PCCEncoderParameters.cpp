@@ -41,6 +41,28 @@ const std::vector<PointLocalReconstructionMode> g_pointLocalReconstructionMode =
     {false, false, 1, 1}, {true, false, 1, 1}, {true, true, 1, 1}, {true, false, 1, 2}, {true, true, 1, 2},
 };
 
+bool checkCodecId( PCCCodecId codecId ){
+  switch ( codecId ) {
+#ifdef USE_HMLIB_VIDEO_CODEC
+    case HMLIB:  break;
+#endif
+#ifdef USE_FFMPEG_VIDEO_CODEC
+    case FFMPEG: break;
+#endif
+#ifdef USE_HMAPP_VIDEO_CODEC
+    case HMAPP:  break;
+#endif
+#ifdef USE_JMAPP_VIDEO_CODEC;
+    case JMAPP:  break;
+#endif
+    default:
+      printf( "Error: codec id %d not supported \n", (int)codecId );
+      return false;
+      break;
+  }
+  return true;
+}
+
 PCCEncoderParameters::PCCEncoderParameters() {
   uncompressedDataPath_                    = {};
   compressedStreamPath_                    = {};
@@ -103,9 +125,12 @@ PCCEncoderParameters::PCCEncoderParameters() {
   maxColorDist2Bwd_                        = 10000.0;
   excludeColorOutlier_                     = false;
   thresholdColorOutlierDist_               = 10.0;
-  videoEncoderPath_                        = {};
-  videoEncoderAuxPath_                     = {};
-  videoEncoderOccupancyMapPath_            = {};
+  videoEncoderOccupancyPath_               = {};
+  videoEncoderGeometryPath_                = {};
+  videoEncoderAttributePath_               = {};
+  videoEncoderOccupancyCodecId_            = HMLIB;
+  videoEncoderGeometryCodecId_             = HMLIB;
+  videoEncoderAttributeCodecId_            = HMLIB;
   geometryQP_                              = 28;
   textureQP_                               = 43;
   geometryConfig_                          = {};
@@ -317,9 +342,12 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   geometryQP                             " << geometryQP_ << std::endl;
   std::cout << "\t   textureQP                              " << textureQP_ << std::endl;
   std::cout << "\t   colorSpaceConversionPath               " << colorSpaceConversionPath_ << std::endl;
-  std::cout << "\t   videoEncoderPath                       " << videoEncoderPath_ << std::endl;
-  std::cout << "\t   videoEncoderAuxPath                    " << videoEncoderAuxPath_ << std::endl;
-  std::cout << "\t   videoEncoderOccupancyMapPath           " << videoEncoderOccupancyMapPath_ << std::endl;
+  std::cout << "\t   videoEncoderOccupancyPath              " << videoEncoderOccupancyPath_ << std::endl;
+  std::cout << "\t   videoEncoderGeometryPath               " << videoEncoderGeometryPath_ << std::endl;
+  std::cout << "\t   videoEncoderAttributePath              " << videoEncoderAttributePath_ << std::endl;
+  std::cout << "\t   videoEncoderOccupancyCodecId           " << videoEncoderOccupancyCodecId_ << std::endl;
+  std::cout << "\t   videoEncoderGeometryCodecId            " << videoEncoderGeometryCodecId_ << std::endl;
+  std::cout << "\t   videoEncoderAttributeCodecId           " << videoEncoderAttributeCodecId_ << std::endl;
   if ( multipleStreams_ ) {
     std::cout << "\t   geometryD0Config                     " << geometryD0Config_ << std::endl;
     std::cout << "\t   geometryD1Config                     " << geometryD1Config_ << std::endl;
@@ -511,26 +539,27 @@ bool PCCEncoderParameters::check() {
     ret = false;
     std::cerr << "uncompressedDataPath not set\n";
   }
-  if ( videoEncoderPath_.empty() ) {
+  
+  if( !checkCodecId( videoEncoderOccupancyCodecId_ ) || 
+      !checkCodecId( videoEncoderGeometryCodecId_ ) || 
+      !checkCodecId( videoEncoderAttributeCodecId_ ) ){
+    std::cerr << "ERROR: CodecId is not correct" << std::endl;
     ret = false;
-    std::cerr << "videoEncoderPath not set\n";
   }
-  if ( !exist( videoEncoderPath_ ) ) {
+#if defined( USE_HMAPP_VIDEO_CODEC ) || defined( USE_JMAPP_VIDEO_CODEC )
+  if ( ((int)videoEncoderOccupancyCodecId_) < 2 && ( ( videoEncoderOccupancyPath_.empty() || !exist( videoEncoderOccupancyPath_ ) ) ) ) {
+    std::cerr << "ERROR: videoEncoderOccupancyPath_ not set or not exist : " << videoEncoderOccupancyPath_ << std::endl;
     ret = false;
-    std::cerr << "videoEncoderPath not exist\n";
   }
-
-  if ( ( videoEncoderOccupancyMapPath_.empty() || !exist( videoEncoderOccupancyMapPath_ ) ) ) {
-    std::cerr << "WARNING: videoEncoderOccupancyMapPath is set as "
-                 "videoEncoderPath_ : "
-              << videoEncoderPath_ << std::endl;
-    videoEncoderOccupancyMapPath_ = videoEncoderPath_;
+  if ( ((int)videoEncoderGeometryCodecId_) < 2 && ( ( videoEncoderGeometryPath_.empty() || !exist( videoEncoderGeometryPath_ ) ) ) ) {
+    std::cerr << "ERROR: videoEncoderGeometryPath not set or not exist : " << videoEncoderGeometryPath_ << std::endl;
+    ret = false;
   }
-
-  if ( videoEncoderAuxPath_.empty() || !exist( videoEncoderAuxPath_ ) ) {
-    std::cerr << "WARNING: videoEncoderAuxPath_ is set as videoEncoderPath_ : " << videoEncoderPath_ << std::endl;
-    videoEncoderAuxPath_ = videoEncoderPath_;
+  if ( ((int)videoEncoderAttributeCodecId_) < 2 && ( ( videoEncoderAttributePath_.empty() || !exist( videoEncoderAttributePath_ ) ) ) ) {
+    std::cerr << "ERROR: videoEncoderAttributePath not set or not exist : " << videoEncoderAttributePath_ << std::endl;
+    ret = false;
   }
+#endif
 
   if ( multipleStreams_ ) {
     if ( geometryD0Config_.empty() || geometryD1Config_.empty() ) {
@@ -921,6 +950,12 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
 #endif
   gi.setGeometry2dBitdepthMinus1( uint8_t( geometryNominal2dBitdepth_ - 1 ) );
   gi.setGeometryMSBAlignFlag( false );
+
+  oi.setOccupancyCodecId( videoEncoderOccupancyCodecId_ );
+  gi.setGeometryCodecId( videoEncoderGeometryCodecId_ );
+  for ( uint32_t i = 0; i < ai.getAttributeCount(); i++ ) {
+    ai.setAttributeCodecId( i, videoEncoderAttributeCodecId_ );
+  }
 
   // Encoder only data
   context.setOccupancyPrecision( occupancyPrecision_ );

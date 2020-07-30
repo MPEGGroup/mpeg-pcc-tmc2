@@ -39,16 +39,33 @@
 
 namespace pcc {
 
+struct PCCVideoEncoderParameters {
+  std::string encoderPath_;
+  std::string srcYuvFileName_;
+  std::string binFileName_;
+  std::string recYuvFileName_;
+  std::string encoderConfig_;
+  int32_t     qp_;
+  int32_t     inputBitDepth_;
+  int32_t     internalBitDepth_;
+  int32_t     outputBitDepth_;
+  bool        use444CodecIo_;
+  bool        usePccMotionEstimation_;
+  std::string blockToPatchFile_;
+  std::string occupancyMapFile_;
+  std::string patchInfoFile_;
+};
+
 template <class T>
 class PCCVirtualVideoEncoder {
  public:
   PCCVirtualVideoEncoder() {}
   ~PCCVirtualVideoEncoder() {}
 
-  virtual void encode( PCCVideo<T, 3>&    videoSrc,
-                       std::string        arguments,
-                       PCCVideoBitstream& bitstream,
-                       PCCVideo<T, 3>&    videoRec ) = 0;
+  virtual void encode( PCCVideo<T, 3>&            videoSrc,
+                       PCCVideoEncoderParameters& params,
+                       PCCVideoBitstream&         bitstream,
+                       PCCVideo<T, 3>&            videoRec ) = 0;
 
  private:
 };

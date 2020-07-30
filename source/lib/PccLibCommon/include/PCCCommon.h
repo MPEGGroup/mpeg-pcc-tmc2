@@ -86,7 +86,7 @@ static const uint8_t PCC_SAVE_POINT_TYPE = 0;  // Save point information in reco
 // ******************************************************************* //
 // Trace modes to validate new syntax
 // ******************************************************************* //
-#define CODEC_TRACE
+// #define CODEC_TRACE
 
 // ******************************************************************* //
 // Common constants
@@ -98,6 +98,22 @@ enum PCCColorTransform { COLOR_TRANSFORM_NONE = 0, COLOR_TRANSFORM_RGB_TO_YCBCR 
 enum PCCPointType { POINT_UNSET = 0, POINT_D0, POINT_D1, POINT_DF, POINT_SMOOTH, POINT_EOM };
 enum { COLOURFORMAT420 = 0, COLOURFORMAT444 = 1 };
 enum PCCCOLORFORMAT { UNKNOWN = 0, RGB444, YUV444, YUV420 };
+
+enum PCCCodecId {
+#ifdef USE_JMAPP_VIDEO_CODEC
+  JMAPP = 0,
+#endif
+#ifdef USE_HMAPP_VIDEO_CODEC
+  HMAPP = 1,
+#endif
+#ifdef USE_HMLIB_VIDEO_CODEC
+  HMLIB = 2,
+#endif
+#ifdef USE_FFMPEG_VIDEO_CODEC
+  FFMPEG = 3,
+#endif
+  UNKNOWN_CODEC = 4
+};
 
 const int16_t infiniteDepth          = ( std::numeric_limits<int16_t>::max )();
 const int64_t infinitenumber         = ( std::numeric_limits<int64_t>::max )();

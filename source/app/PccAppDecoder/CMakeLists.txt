@@ -18,7 +18,13 @@ INCLUDE_DIRECTORIES( ${CMAKE_SOURCE_DIR}/source/lib/PccLibCommon/include
 
 ADD_EXECUTABLE( ${MYNAME} ${SRC} )
 
-SET( LIBS PccLibCommon PccLibDecoder PccLibMetrics tbb_static PccLibBitstreamCommon PccLibBitstreamReader )
+SET( LIBS PccLibCommon PccLibDecoder PccLibMetrics tbb_static PccLibBitstreamCommon PccLibBitstreamReader  )
+
+IF( USE_FFMPEG_VIDEO_CODEC )
+  IF( WIN32 OR MSVC OR MSYS OR MINGW )
+    LINK_DIRECTORIES( ${FFMPEG_DEV_DIR}/lib ) 
+  ENDIF()  
+ENDIF()
 
 TARGET_LINK_LIBRARIES( ${MYNAME} ${LIBS} )
 

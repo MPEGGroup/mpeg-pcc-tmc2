@@ -132,13 +132,18 @@ bool parseParameters( int                   argc,
       decoderParams.inverseColorSpaceConversionConfig_,
       decoderParams.inverseColorSpaceConversionConfig_,
     "HDRConvert configuration file used for YUV420 to RGB444 conversion")
-    ( "videoDecoderPath",
-      decoderParams.videoDecoderPath_,
-      decoderParams.videoDecoderPath_, "HM video decoder executable")
-    ( "videoDecoderOccupancyMapPath",
-      decoderParams.videoDecoderOccupancyMapPath_,
-      decoderParams.videoDecoderOccupancyMapPath_,
-    "HM lossless video decoder executable for occupancy map")
+    ( "videoDecoderOccupancyPath",
+      decoderParams.videoDecoderOccupancyPath_,
+      decoderParams.videoDecoderOccupancyPath_, 
+      "Occupancy video decoder executable")
+    ( "videoDecoderGeometryPath",
+      decoderParams.videoDecoderGeometryPath_,
+      decoderParams.videoDecoderGeometryPath_, 
+      "Geometry video decoder executable")
+    ( "videoDecoderAttributePath",
+      decoderParams.videoDecoderAttributePath_,
+      decoderParams.videoDecoderAttributePath_, 
+      "Attribute video decoder executable")
     ( "nbThread",
       decoderParams.nbThread_,
       decoderParams.nbThread_,

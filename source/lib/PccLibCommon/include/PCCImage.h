@@ -151,7 +151,7 @@ class PCCImage {
     width_  = sizeU0;
     height_ = sizeV0;
     format_ = format;
-    printf( "Image resize: %zu x %zu format = %d \n", width_, height_, format_ );
+    // printf( "Image resize: %zu x %zu format = %d \n", width_, height_, format_ );
     const size_t size = width_ * height_;
     if ( format_ == PCCCOLORFORMAT::YUV420 ) {
       channels_[0].resize( size );
@@ -219,10 +219,8 @@ class PCCImage {
     size_t chromaSubsample = widthY / widthC;
     if ( ( chromaSubsample == 1 && format_ == PCCCOLORFORMAT::YUV420 ) ||
          ( chromaSubsample == 2 && format_ != PCCCOLORFORMAT::YUV420 ) ) {
-      printf(
-          "Error: image get not possible from image of format = %d with "
-          "chromaSubsample = %zu \n",
-          (int32_t)format_, chromaSubsample );
+      printf( "Error: image get not possible from image of format = %d with  chromaSubsample = %zu \n",
+              (int32_t)format_, chromaSubsample );
       exit( -1 );
     }
     size_t       widthChroma  = width_ / chromaSubsample;
@@ -232,10 +230,8 @@ class PCCImage {
     const size_t heightSrc[3] = {height_, heightChroma, heightChroma};
     const size_t heightDst[3] = {heightY, heightC, heightC};
     const size_t stride[3]    = {strideY, strideC, strideC};
-    printf(
-        "copy image from PCC to HM: S = %d (%4zux%4zu => %4zux%4zu S=%4zu C: "
-        "%4zux%4zu ) \n",
-        shiftbits, width_, height_, widthY, heightY, strideY, widthC, heightC );
+    printf( "copy image from PCC to HM: S = %d (%4zux%4zu => %4zux%4zu S=%4zu C: %4zux%4zu ) \n", shiftbits, width_,
+            height_, widthY, heightY, strideY, widthC, heightC );
     for ( size_t c = 0; c < 3; c++ ) {
       auto* src = channels_[c].data();
       auto* dst = ptr[rgb2bgr][c];
@@ -255,10 +251,8 @@ class PCCImage {
   }
 
   bool write( std::ofstream& outfile, const size_t nbyte ) {
-    printf(
-        "Image write %zux%zu T = %zu nbyte = %zu color format = %d channel "
-        "size = %zu %zu %zu \n",
-        width_, height_, sizeof( T ), nbyte, format_, channels_[0].size(), channels_[1].size(), channels_[2].size() );
+    printf( "Image write %zux%zu T = %zu nbyte = %zu color format = %d channel size = %zu %zu %zu \n", width_, height_,
+            sizeof( T ), nbyte, format_, channels_[0].size(), channels_[1].size(), channels_[2].size() );
     fflush( stdout );
     if ( nbyte == sizeof( T ) ) {
       if ( !outfile.good() ) { return false; }
@@ -288,8 +282,8 @@ class PCCImage {
              const size_t         sizeV0,
              const PCCCOLORFORMAT format,
              const size_t         nbyte ) {
-    printf( " read image %zu x %zu x %zu / %zu format = %d infile.eof() = %d \n", sizeU0, sizeV0, nbyte, sizeof( T ),
-            format, infile.eof() );
+    // printf( " read image %zu x %zu x %zu / %zu format = %d infile.eof() = %d \n", sizeU0, sizeV0, nbyte, sizeof( T ),
+    // format, infile.eof() );
     if ( infile.eof() ) {
       printf( "Read image eof found return false \n" );
       return false;

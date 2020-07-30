@@ -32,31 +32,58 @@
  */
 #include "PCCCommon.h"
 
-#ifdef USE_HMLIB_VIDEO_CODEC
+#ifdef USE_JMAPP_VIDEO_CODEC
 
-#include "PCCHMLibVideoDecoder.h"
-#include "PCCHMLibVideoDecoderImpl.h"
+#include "PCCJMAppVideoDecoder.h"
+#include "PCCHevcParser.h"
+#include "PCCSystem.h"
 
 using namespace pcc;
 
 template <typename T>
-PCCHMLibVideoDecoder<T>::PCCHMLibVideoDecoder() {}
+PCCJMAppVideoDecoder<T>::PCCJMAppVideoDecoder() {}
 template <typename T>
-PCCHMLibVideoDecoder<T>::~PCCHMLibVideoDecoder() {}
+PCCJMAppVideoDecoder<T>::~PCCJMAppVideoDecoder() {}
 
 template <typename T>
-void PCCHMLibVideoDecoder<T>::decode( PCCVideoBitstream& bitstream,
+void PCCJMAppVideoDecoder<T>::decode( PCCVideoBitstream& bitstream,
                                       size_t             outputBitDepth,
                                       bool               RGB2GBR,
                                       PCCVideo<T, 3>&    video,
                                       const std::string& decoderPath,
-                                      const std::string& parameters,
+                                      const std::string& fileName,
                                       const size_t       frameCount ) {
-  PCCHMLibVideoDecoderImpl<T> decoder;
-  decoder.decode( bitstream, outputBitDepth, RGB2GBR, video );
+  size_t        width = 0, height = 0;
+  PCCHevcParser hevcParser;
+  hevcParser.getVideoSize( bitstream.vector(), width, height );
+  const std::string binFileName = fileName + ".bin";
+  const std::string reconFile =
+      addVideoFormat( fileName + "_rec", width, height, !RGB2GBR, !RGB2GBR, outputBitDepth == 10 ? "10" : "8" );
+  bitstream.write( binFileName );
+
+  std::stringstream cmd;
+  cmd << decoderPath << " -i " << binFileName << " -o " << reconFile;
+  if ( RGB2GBR ) {
+    cmd << decoderPath << " -p OutputColourSpaceConvert=GBRtoRGB";
+  } else {
+    if ( outputBitDepth == 8 ) { cmd << " --p OutputBitDepthLuma=8 --p OutputBitDepthChroma=8"; }
+  }
+  std::cout << cmd.str() << '\n';
+  if ( pcc::system( cmd.str().c_str() ) ) {
+    std::cout << "Error: can't run system command!" << std::endl;
+    exit( -1 );
+  }
+  PCCCOLORFORMAT format = RGB2GBR ? PCCCOLORFORMAT::RGB444 : PCCCOLORFORMAT::YUV420;
+  video.clear();
+  video.read( reconFile, width, height, format, frameCount, outputBitDepth == 8 ? 1 : 2 );
+  printf( "File read size = %zu x %zu frame count = %zu \n", video.getWidth(), video.getHeight(),
+          video.getFrameCount() );
+
+  removeFile( binFileName );
+  removeFile( reconFile );
 }
 
-template class pcc::PCCHMLibVideoDecoder<uint8_t>;
-template class pcc::PCCHMLibVideoDecoder<uint16_t>;
+template class pcc::PCCJMAppVideoDecoder<uint8_t>;
+template class pcc::PCCJMAppVideoDecoder<uint16_t>;
 
 #endif

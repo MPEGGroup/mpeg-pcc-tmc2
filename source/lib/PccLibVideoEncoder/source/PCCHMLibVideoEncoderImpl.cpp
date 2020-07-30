@@ -33,7 +33,7 @@
 
 #include "PCCCommon.h"
 
-#ifdef USE_HM_VIDEO_CODEC
+#ifdef USE_HMLIB_VIDEO_CODEC
 
 #include "PCCHMLibVideoEncoderImpl.h"
 

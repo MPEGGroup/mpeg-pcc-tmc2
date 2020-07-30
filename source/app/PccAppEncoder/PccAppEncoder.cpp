@@ -77,6 +77,12 @@ static std::istream& operator>>( std::istream& in, PCCColorTransform& val ) {
   val = PCCColorTransform( tmp );
   return in;
 }
+static std::istream& operator>>( std::istream& in, PCCCodecId& val ) {
+  unsigned int tmp;
+  in >> tmp;
+  val = PCCCodecId( tmp );
+  return in;
+}
 }  // namespace pcc
 
 //---------------------------------------------------------------------------
@@ -424,18 +430,30 @@ bool parseParameters( int                   argc,
       "Threshold of color distance to exclude outliers from the NN set" )
 
     // video encoding
-    ( "videoEncoderPath",
-      encoderParams.videoEncoderPath_,
-      encoderParams.videoEncoderPath_, 
-      "HM video encoder executable" )
-    ( "videoEncoderAuxPath",
-      encoderParams.videoEncoderAuxPath_,
-      encoderParams.videoEncoderAuxPath_, 
-      "HM video encoder executable" )
-    ( "videoEncoderOccupancyMapPath",
-      encoderParams.videoEncoderOccupancyMapPath_,
-      encoderParams.videoEncoderOccupancyMapPath_,
-      "HM lossless video encoder executable for occupancy map" )
+    ( "videoEncoderOccupancyPath",
+      encoderParams.videoEncoderOccupancyPath_,
+      encoderParams.videoEncoderOccupancyPath_,
+      "Occupancy video encoder executable path" )
+    ( "videoEncoderGeometryPath",
+      encoderParams.videoEncoderGeometryPath_,
+      encoderParams.videoEncoderGeometryPath_, 
+      "Geometry video encoder executable path" )
+    ( "videoEncoderAttributePath",
+      encoderParams.videoEncoderAttributePath_,
+      encoderParams.videoEncoderAttributePath_, 
+      "Attribute video encoder executable path" )
+    ( "videoEncoderOccupancyCodecId",
+      encoderParams.videoEncoderOccupancyCodecId_,
+      encoderParams.videoEncoderOccupancyCodecId_,
+      "Occupancy video encoder codec id" )
+    ( "videoEncoderGeometryCodecId",
+      encoderParams.videoEncoderGeometryCodecId_,
+      encoderParams.videoEncoderGeometryCodecId_, 
+      "Geometry video encoder codec id" )
+    ( "videoEncoderAttributeCodecId",
+      encoderParams.videoEncoderAttributeCodecId_,
+      encoderParams.videoEncoderAttributeCodecId_, 
+      "Attribute video encoder codec id" )
     ( "geometryQP",
       encoderParams.geometryQP_,
       encoderParams.geometryQP_,
@@ -899,15 +917,20 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
     context.setActiveVpsId( contextIndex );
     PCCGroupOfFrames sources;
     PCCGroupOfFrames reconstructs;
+    clock.start();
     if ( !sources.load( encoderParams.uncompressedDataPath_, startFrameNumber, endFrameNumber,
-                        encoderParams.colorTransform_ ) ) {
+                        encoderParams.colorTransform_, false, encoderParams.nbThread_ ) ) {
       return -1;
     }
     if ( sources.getFrameCount() < endFrameNumber - startFrameNumber ) {
       endFrameNumber  = startFrameNumber + sources.getFrameCount();
       endFrameNumber0 = endFrameNumber;
     }
-    clock.start();
+    // printf("Frame cound = %zu \n",sources.getFrameCount());
+    // for( auto& source : sources ){
+    //   printf(" - %9zu points \n", source.getPointCount());
+    // }
+
     std::cout << "Compressing group of frames " << contextIndex << ": " << startFrameNumber << " -> " << endFrameNumber
               << "..." << std::endl;
     int                ret = encoder.encode( sources, context, reconstructs );
@@ -926,6 +949,7 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
     bitstream.closeTrace();
 #endif
     clock.stop();
+
     PCCGroupOfFrames normals;
     bool             bRunMetric = true;
     if ( metricsParams.computeMetrics_ ) {
@@ -948,9 +972,9 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
     if ( !encoderParams.reconstructedDataPath_.empty() ) {
       reconstructs.write( encoderParams.reconstructedDataPath_, reconstructedFrameNumber );
     }
+    normals.clear();
     sources.clear();
     reconstructs.clear();
-    normals.clear();
     startFrameNumber = endFrameNumber;
     contextIndex++;
   }

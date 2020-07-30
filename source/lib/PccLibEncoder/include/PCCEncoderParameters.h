@@ -55,10 +55,13 @@ class PCCEncoderParameters {
   std::string       reconstructedDataPath_;
   PCCColorTransform colorTransform_;
   std::string       colorSpaceConversionPath_;
-  std::string       videoEncoderPath_;
+  std::string       videoEncoderOccupancyPath_;
+  std::string       videoEncoderGeometryPath_;
+  std::string       videoEncoderAttributePath_;
+  PCCCodecId        videoEncoderOccupancyCodecId_;
+  PCCCodecId        videoEncoderGeometryCodecId_;
+  PCCCodecId        videoEncoderAttributeCodecId_;
   bool              use3dmc_;
-  std::string       videoEncoderAuxPath_;
-  std::string       videoEncoderOccupancyMapPath_;
   std::string       colorSpaceConversionConfig_;
   std::string       inverseColorSpaceConversionConfig_;
   size_t            nbThread_;

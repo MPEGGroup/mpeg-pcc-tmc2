@@ -6,5 +6,9 @@
 
 #cmakedefine ENABLE_PAPI_PROFILING
 
-#cmakedefine USE_HM_VIDEO_CODEC
+#cmakedefine USE_JMAPP_VIDEO_CODEC
+#cmakedefine USE_HMLIB_VIDEO_CODEC
+#cmakedefine USE_HMAPP_VIDEO_CODEC
+#cmakedefine USE_FFMPEG_VIDEO_CODEC
+
 #cmakedefine USE_HDRTOOLS

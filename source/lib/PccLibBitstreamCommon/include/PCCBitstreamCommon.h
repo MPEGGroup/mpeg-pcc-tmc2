@@ -66,7 +66,7 @@ namespace pcc {
 // ******************************************************************* //
 // Trace modes to validate new syntax
 // ******************************************************************* //
-#define BITSTREAM_TRACE
+// #define BITSTREAM_TRACE
 
 // ******************************************************************* //
 // Common constants
@@ -171,9 +171,9 @@ enum PCCCodecID { CODEC_HEVC = 0 };
 
 enum PCCCodecGroup {
   CODEC_GROUP_AVC_PROGRESSIVE_HIGH = 0,
-  CODEC_GROUP_HEVC_MAIN10,
-  CODEC_GROUP_HEVC444,
-  CODEC_GROUP_MP4RA
+  CODEC_GROUP_HEVC_MAIN10          = 1,
+  CODEC_GROUP_HEVC444              = 2,
+  CODEC_GROUP_MP4RA                = 3
 };
 
 enum PCCTileType {

@@ -4,8 +4,14 @@ PROJECT (TMC2 CXX C )
 SET( TMC2_VERSION_MAJOR 10 )
 SET( TMC2_VERSION_MINOR 0 )
 
-OPTION( USE_HM_VIDEO_CODEC "Clone, build and use HM video encoder and decoder"   TRUE )
-OPTION( USE_HDRTOOLS       "Clone, build and use HDRTools for color conversions" TRUE )
+# Video encoder and decoder library and application:
+OPTION( USE_JMAPP_VIDEO_CODEC     "Use JM application to encode and decode video"           TRUE )
+OPTION( USE_HMAPP_VIDEO_CODEC     "Use HM application to encode and decode video"           TRUE )
+OPTION( USE_HMLIB_VIDEO_CODEC     "Clone, build and use HM video encoder and decoder"       TRUE )
+OPTION( USE_FFMPEG_VIDEO_CODEC    "Clone, build and use FFMPEG video encoder and decoder"   FALSE )
+
+# Color conversion library:
+OPTION( USE_HDRTOOLS              "Clone, build and use HDRTools for color conversions"     TRUE )
 
 ## CLANG-TIDY CHECK
 set(CMAKE_CXX_STANDARD 14)
@@ -49,9 +55,9 @@ IF( ENABLE_PAPI_PROFILING )
 ENDIF()
 # SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-function -Wno-implicit -Wno-sign-compare -Wall -Wformat=0" )
 
-SET( CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib )
-SET( CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib )
-SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin )
+SET( CMAKE_LIBRARY_OUTPUT_DIRECTORY         ${CMAKE_SOURCE_DIR}/lib )
+SET( CMAKE_ARCHIVE_OUTPUT_DIRECTORY         ${CMAKE_SOURCE_DIR}/lib )
+SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY         ${CMAKE_SOURCE_DIR}/bin )
 
 IF (MSVC)
   ADD_DEFINITIONS("/wd4244 /wd4267 /wd4996")
@@ -59,9 +65,12 @@ IF (MSVC)
   SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /NODEFAULTLIB:tbb.lib")
 ENDIF()
 
-# INCLUDE USE_HM_VIDEO_CODEC
-IF( USE_HM_VIDEO_CODEC )
+# Include external libraries
+IF( USE_HMLIB_VIDEO_CODEC )
   INCLUDE( ${CMAKE_SOURCE_DIR}/dependencies/cmake/hm.cmake )
+ENDIF()
+IF( USE_FFMPEG_VIDEO_CODEC )
+  INCLUDE( ${CMAKE_SOURCE_DIR}/dependencies/cmake/ffmpeg.cmake )
 ENDIF()
 if ( USE_HDRTOOLS )  
   INCLUDE( ${CMAKE_SOURCE_DIR}/dependencies/cmake/hdrtools.cmake )
@@ -86,7 +95,9 @@ ADD_SUBDIRECTORY(source/app/PccAppParser)
 ADD_SUBDIRECTORY(source/app/PccAppEncoder)
 ADD_SUBDIRECTORY(source/app/PccAppDecoder)
 ADD_SUBDIRECTORY(source/app/PccAppMetrics)
-ADD_SUBDIRECTORY(source/app/PccAppHMVideoEncoder)
-ADD_SUBDIRECTORY(source/app/PccAppHMVideoDecoder)
+IF( USE_HMLIB_VIDEO_CODEC )
+  ADD_SUBDIRECTORY(source/app/PccAppHMVideoEncoder)
+  ADD_SUBDIRECTORY(source/app/PccAppHMVideoDecoder)
+ENDIF()
 ADD_SUBDIRECTORY(source/app/PccAppColorConverter)
 

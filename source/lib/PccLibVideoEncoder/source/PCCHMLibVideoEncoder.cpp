@@ -32,7 +32,7 @@
  */
 #include "PCCCommon.h"
 
-#ifdef USE_HM_VIDEO_CODEC
+#ifdef USE_HMLIB_VIDEO_CODEC
 #include "PCCVideo.h"
 #include "PCCHMLibVideoEncoder.h"
 #include "PCCHMLibVideoEncoderImpl.h"
@@ -45,12 +45,36 @@ template <typename T>
 PCCHMLibVideoEncoder<T>::~PCCHMLibVideoEncoder() {}
 
 template <typename T>
-void PCCHMLibVideoEncoder<T>::encode( PCCVideo<T, 3>&    videoSrc,
-                                      std::string        arguments,
-                                      PCCVideoBitstream& bitstream,
-                                      PCCVideo<T, 3>&    videoRec ) {
+void PCCHMLibVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
+                                      PCCVideoEncoderParameters& params,
+                                      PCCVideoBitstream&         bitstream,
+                                      PCCVideo<T, 3>&            videoRec ) {
+  const size_t      width      = videoSrc.getWidth();
+  const size_t      height     = videoSrc.getHeight();
+  const size_t      frameCount = videoSrc.getFrameCount();
+  std::stringstream cmd;
+  cmd << "HMEncoder" << " -c " << params.encoderConfig_ << " --InputFile=" << params.srcYuvFileName_
+      << " --InputBitDepth=" << params.inputBitDepth_
+      << " --InputChromaFormat=" << ( params.use444CodecIo_ ? "444" : "420" )
+      << " --OutputBitDepth=" << params.outputBitDepth_ << " --OutputBitDepthC=" << params.outputBitDepth_
+      << " --FrameRate=30"
+      << " --FrameSkip=0"
+      << " --SourceWidth=" << width << " --SourceHeight=" << height << " --ConformanceWindowMode=1 "
+      << " --FramesToBeEncoded=" << frameCount << " --BitstreamFile=" << params.binFileName_
+      << " --ReconFile=" << params.recYuvFileName_ << " --QP=" << params.qp_;
+  if ( params.internalBitDepth_ != 0 ) {
+    cmd << " --InternalBitDepth=" << params.internalBitDepth_ << " --InternalBitDepthC=" << params.internalBitDepth_;
+  }
+  if ( params.usePccMotionEstimation_ ) {
+    cmd << " --UsePccMotionEstimation=1"
+        << " --BlockToPatchFile=" << params.blockToPatchFile_ << " --OccupancyMapFile=" << params.occupancyMapFile_
+        << " --PatchInfoFile=" << params.patchInfoFile_;
+  }
+  if ( params.use444CodecIo_ ) { cmd << " --InputColourSpaceConvert=RGBtoGBR"; }
+  std::cout << cmd.str() << std::endl;
+
   PCCHMLibVideoEncoderImpl<T> encoder;
-  encoder.encode( videoSrc, arguments, bitstream, videoRec );
+  encoder.encode( videoSrc, cmd.str(), bitstream, videoRec );
 }
 
 template class pcc::PCCHMLibVideoEncoder<uint8_t>;

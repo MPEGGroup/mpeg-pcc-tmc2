@@ -63,13 +63,14 @@ void PCCCodec::generatePointCloud( PCCGroupOfFrames&                   reconstru
 #ifdef ENABLE_PAPI_PROFILING
   PAPI_PROFILING_INITIALIZE;
 #endif
+  partitions.resize( frames.size() );
+
   for ( size_t i = 0; i < frames.size(); i++ ) {
     TRACE_CODEC( " Frame %zu / %zu \n", i, frames.size() );
-    std::vector<uint32_t> partition;
+    auto& partition = partitions[i];
     generatePointCloud( reconstructs[i], context,
                         frames[i],  // videoGeometry, videoGeometryMultiple, videoOccupancyMap,
                         params, partition, bDecoder );
-    partitions.push_back( partition );
   }
 #ifdef ENABLE_PAPI_PROFILING
   PAPI_PROFILING_RESULTS;

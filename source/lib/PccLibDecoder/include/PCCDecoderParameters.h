@@ -48,8 +48,9 @@ class PCCDecoderParameters {
   size_t            startFrameNumber_;
   std::string       compressedStreamPath_;
   std::string       reconstructedDataPath_;
-  std::string       videoDecoderPath_;
-  std::string       videoDecoderOccupancyMapPath_;
+  std::string       videoDecoderOccupancyPath_;
+  std::string       videoDecoderGeometryPath_;
+  std::string       videoDecoderAttributePath_;
   PCCColorTransform colorTransform_;
   std::string       colorSpaceConversionPath_;
   std::string       inverseColorSpaceConversionConfig_;

@@ -36,7 +36,7 @@
 
 #include "PCCCommon.h"
 
-#ifdef USE_HM_VIDEO_CODEC
+#ifdef USE_HMLIB_VIDEO_CODEC
 #include "PCCVideo.h"
 #include "PCCVirtualVideoEncoder.h"
 
@@ -48,10 +48,10 @@ class PCCHMLibVideoEncoder : public PCCVirtualVideoEncoder<T> {
   PCCHMLibVideoEncoder();
   ~PCCHMLibVideoEncoder();
 
-  void encode( PCCVideo<T, 3>&    videoSrc,
-               std::string        arguments,
-               PCCVideoBitstream& bitstream,
-               PCCVideo<T, 3>&    videoRec );
+  void encode( PCCVideo<T, 3>&            videoSrc,
+               PCCVideoEncoderParameters& params,
+               PCCVideoBitstream&         bitstream,
+               PCCVideo<T, 3>&            videoRec );
 };
 
 }  // namespace pcc

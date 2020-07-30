@@ -509,18 +509,18 @@ void PCCBitstreamWriter::attributeInformation( AttributeInformation& ai,
 void PCCBitstreamWriter::profileToolsetConstraintsInformation( ProfileToolsetConstraintsInformation& ptci,
                                                                PCCBitstream&                         bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
-  bitstream.write( ptci.getOneFrameOnlyFlag(), 1 );                       // u(1)
-  bitstream.write( ptci.getEOMContraintFlag(), 1 );                       // u(1)
-  bitstream.write( ptci.getMaxMapCountMinus1(), 4 );                      // u(4)
-  bitstream.write( ptci.getMaxAtlasCountMinus1(), 4 );                    // u(4)
-  bitstream.write( ptci.getMultipleMapStreamsConstraintFlag(), 1 );       // u(1)
-  bitstream.write( ptci.getPLRConstraintFlag(), 1 );                      // u(1)
-  bitstream.write( ptci.getAttributeMaxDimensionMinus1(), 6 );            // u(6)
-  bitstream.write( ptci.getAttributeMaxDimensionPartitionsMinus1(), 6 );  // u(6)
-  bitstream.write( ptci.getNoEightOrientationsConstraintFlag(), 1 );      // u(1)
-  bitstream.write( ptci.getNo45DegreeProjectionPatchConstraintFlag(), 1 ); // u(1)
-  bitstream.write( 0, 6 );                                     // u(6)
-  bitstream.write( ptci.getNumReservedConstraintBytes(), 8 );  // u(8)
+  bitstream.write( ptci.getOneFrameOnlyFlag(), 1 );                         // u(1)
+  bitstream.write( ptci.getEOMContraintFlag(), 1 );                         // u(1)
+  bitstream.write( ptci.getMaxMapCountMinus1(), 4 );                        // u(4)
+  bitstream.write( ptci.getMaxAtlasCountMinus1(), 4 );                      // u(4)
+  bitstream.write( ptci.getMultipleMapStreamsConstraintFlag(), 1 );         // u(1)
+  bitstream.write( ptci.getPLRConstraintFlag(), 1 );                        // u(1)
+  bitstream.write( ptci.getAttributeMaxDimensionMinus1(), 6 );              // u(6)
+  bitstream.write( ptci.getAttributeMaxDimensionPartitionsMinus1(), 6 );    // u(6)
+  bitstream.write( ptci.getNoEightOrientationsConstraintFlag(), 1 );        // u(1)
+  bitstream.write( ptci.getNo45DegreeProjectionPatchConstraintFlag(), 1 );  // u(1)
+  bitstream.write( 0, 6 );                                                  // u(6)
+  bitstream.write( ptci.getNumReservedConstraintBytes(), 8 );               // u(8)
   for ( size_t i = 0; i < ptci.getNumReservedConstraintBytes(); i++ ) {
     bitstream.write( ptci.getReservedConstraintByte( i ), 8 );  // u(8)
   }
