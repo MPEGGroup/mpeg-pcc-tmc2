@@ -114,27 +114,26 @@ class PCCFrameContext {
   uint8_t getLog2PatchQuantizerSizeY() { return log2PatchQuantizerSizeY_; }
   void    setLog2PatchQuantizerSizeX( uint8_t value ) { log2PatchQuantizerSizeX_ = value; }
   void    setLog2PatchQuantizerSizeY( uint8_t value ) { log2PatchQuantizerSizeY_ = value; }
-  void resizeRefAfoc( size_t value ) { refAFOCList_.resize( value ); }
-  void setRefAfoc( size_t refIndex, int32_t value ) { refAFOCList_[refIndex] = value; }
-  void setBestRefListIndexInAsps( size_t value ) { bestRefListIndexInAsps_ = value; }
-  void setAtlasFrmOrderCntVal( size_t value ) { atlasFrmOrderCntVal_ = value; }
-  void setAtlasFrmOrderCntMsb( size_t value ) { atlasFrmOrderCntMsb_ = value; }
-  void setAtlasFrmOrderCntLsb( size_t value ) { atlasFrmOrderCntLsb_ = value; }
-  void setAFOC( size_t value ) { afOrderCnt_ = value; }
- 
+  void    resizeRefAfoc( size_t value ) { refAFOCList_.resize( value ); }
+  void    setRefAfoc( size_t refIndex, int32_t value ) { refAFOCList_[refIndex] = value; }
+  void    setBestRefListIndexInAsps( size_t value ) { bestRefListIndexInAsps_ = value; }
+  void    setAtlasFrmOrderCntVal( size_t value ) { atlasFrmOrderCntVal_ = value; }
+  void    setAtlasFrmOrderCntMsb( size_t value ) { atlasFrmOrderCntMsb_ = value; }
+  void    setAtlasFrmOrderCntLsb( size_t value ) { atlasFrmOrderCntLsb_ = value; }
+  void    setAFOC( size_t value ) { afOrderCnt_ = value; }
 
   size_t getAtlasFrmOrderCntVal() { return atlasFrmOrderCntVal_; }
   size_t getAtlasFrmOrderCntMsb() { return atlasFrmOrderCntMsb_; }
   size_t getAtlasFrmOrderCntLsb() { return atlasFrmOrderCntLsb_; }
 
-  void constructAtghRefListStruct( PCCContext& context, AtlasTileHeader& ath );
-  void setNumRefIdxActive( size_t value ) { numRefIdxActive_ = value; }
-  void setRefAfocList( PCCContext& context, AtlasTileHeader& ath, size_t afpsIndex );
-  void setRefAfocList( PCCContext& context, size_t refListIdx );
+  void    constructAtghRefListStruct( PCCContext& context, AtlasTileHeader& ath );
+  void    setNumRefIdxActive( size_t value ) { numRefIdxActive_ = value; }
+  void    setRefAfocList( PCCContext& context, AtlasTileHeader& ath, size_t afpsIndex );
+  void    setRefAfocList( PCCContext& context, size_t refListIdx );
   int32_t getRefAfoc( size_t refIndex ) { return refAFOCList_[refIndex]; }
-  size_t getRefAfocListSize() { return refAFOCList_.size(); }
-  size_t getBestRefListIndexInAsps() { return bestRefListIndexInAsps_; }
-  
+  size_t  getRefAfocListSize() { return refAFOCList_.size(); }
+  size_t  getBestRefListIndexInAsps() { return bestRefListIndexInAsps_; }
+
   size_t getNumRefIdxActive() { return numRefIdxActive_; }
   void   allocOneLayerData();
   void   printBlockToPatch( const size_t occupancyResolution );
@@ -161,9 +160,9 @@ class PCCFrameContext {
   size_t                                       atlasFrmOrderCntVal_;
   size_t                                       atlasFrmOrderCntMsb_;
   size_t                                       atlasFrmOrderCntLsb_;
-  std::vector<int32_t>                         refAFOCList_; //jkei: 1 list for a tile
+  std::vector<int32_t>                         refAFOCList_;  // jkei: 1 list for a tile
   size_t                                       numRefIdxActive_;
-  size_t                                       bestRefListIndexInAsps_; //listIndex in context
+  size_t                                       bestRefListIndexInAsps_;  // listIndex in context
   size_t                                       log2PatchQuantizerSizeX_;
   size_t                                       log2PatchQuantizerSizeY_;
   std::vector<PCCVector3<size_t>>              pointToPixel_;

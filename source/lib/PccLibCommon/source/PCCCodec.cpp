@@ -86,7 +86,7 @@ bool PCCCodec::colorPointCloud( PCCGroupOfFrames&                     reconstruc
                                 const GeneratePointCloudParameters&   params ) {
   auto& frames = context.getFrames();
   for ( size_t i = 0; i < frames.size(); i++ ) {
-    if(reconstructs[i].getPointCount()==0) continue;
+    if ( reconstructs[i].getPointCount() == 0 ) continue;
     for ( size_t attIdx = 0; attIdx < attributeCount; attIdx++ ) {
       colorPointCloud( reconstructs[i], context, frames[i], absoluteT1List[attIdx], multipleStreams, attributeCount,
                        params );
@@ -108,7 +108,7 @@ void PCCCodec::smoothPointCloudPostprocess( PCCPointSet3&                       
   TRACE_CODEC( "  thresholdSmoothing_    = %f \n", params.thresholdSmoothing_ );
   TRACE_CODEC( "  pbfEnableFlag_         = %d \n", params.pbfEnableFlag_ );
 #endif
-  if( reconstruct.getPointCount() == 0 ) { return; }
+  if ( reconstruct.getPointCount() == 0 ) { return; }
   if ( params.flagGeometrySmoothing_ ) {
     if ( params.gridSmoothing_ ) {
       // reset for each GOF
@@ -122,7 +122,8 @@ void PCCCodec::smoothPointCloudPostprocess( PCCPointSet3&                       
         }
       }
       int maxSize = ( std::max )( ( std::max )( boundingBox.max_.x(), boundingBox.max_.y() ), boundingBox.max_.z() );
-      const size_t w = ( maxSize + static_cast<int>( params.gridSize_ ) - 1 ) / ( static_cast<int>( params.gridSize_ ) );
+      const size_t w =
+          ( maxSize + static_cast<int>( params.gridSize_ ) - 1 ) / ( static_cast<int>( params.gridSize_ ) );
 
       // identify boundary cells
       size_t           pointCount = reconstruct.getPointCount();
@@ -224,10 +225,10 @@ void PCCCodec::colorSmoothing( PCCPointSet3&                       reconstruct,
   TRACE_CODEC( "  geometryBitDepth3D_       = %zu \n", params.geometryBitDepth3D_ );
   TRACE_CODEC( "  thresholdColorVariation_  = %f \n", params.thresholdColorVariation_ );
   TRACE_CODEC( "  thresholdColorDifference_ = %f \n", params.thresholdColorDifference_ );
-  TRACE_CODEC( "  pcMaxSize = %d \n",pcMaxSize );
-  TRACE_CODEC( "  gridSize  = %zu \n",gridSize );
-  TRACE_CODEC( "  w         = %zu \n",w );
-  TRACE_CODEC( "  w3        = %zu \n",w3 );
+  TRACE_CODEC( "  pcMaxSize = %d \n", pcMaxSize );
+  TRACE_CODEC( "  gridSize  = %zu \n", gridSize );
+  TRACE_CODEC( "  w         = %zu \n", w );
+  TRACE_CODEC( "  w3        = %zu \n", w3 );
   for ( size_t n = 0; n < pointCount; ++n ) {
     if ( reconstruct.getBoundaryPointType( n ) == 1 ) {
       PCCPoint3D point = reconstruct[n];
@@ -235,7 +236,7 @@ void PCCCodec::colorSmoothing( PCCPointSet3&                       reconstruct,
       int        y     = point.y();
       int        z     = point.z();
       if ( x < disth || y < disth || z < disth || pcMaxSize <= x + disth || pcMaxSize <= y + disth ||
-            pcMaxSize <= z + disth ) {
+           pcMaxSize <= z + disth ) {
         continue;
       }
       int x2 = x / gridSize;
@@ -279,8 +280,8 @@ void PCCCodec::colorSmoothing( PCCPointSet3&                       reconstruct,
     int        y2     = point.y() / gridSize;
     int        z2     = point.z() / gridSize;
     size_t     cellId = x2 + y2 * w + z2 * w * w;
-    if( cellId >= cellIndex.size() ){
-      TRACE_CODEC( " cellId >  cellIndex.size() <=>  %zu > %zu \n",cellId, cellIndex.size() );      
+    if ( cellId >= cellIndex.size() ) {
+      TRACE_CODEC( " cellId >  cellIndex.size() <=>  %zu > %zu \n", cellId, cellIndex.size() );
     } else {
       if ( cellIndex[cellId] != -1 ) {
         PCCColor16bit color16bit = reconstruct.getColor16bit( k );
@@ -408,7 +409,8 @@ std::vector<PCCPoint3D> PCCCodec::generatePoints( const GeneratePointCloudParame
                                                   const size_t                         neighbor ) {
   const auto& patch  = frame.getPatch( patchIndex );
   auto&       frame0 = videoGeometryMultiple[0].getFrame( videoFrameIndex );
-  // params.multipleStreams_ ? videoGeometryMultiple[0].getFrame( videoFrameIndex ) : videoGeometry.getFrame(
+  // params.multipleStreams_ ? videoGeometryMultiple[0].getFrame(
+  // videoFrameIndex ) : videoGeometry.getFrame(
   // videoFrameIndex );
   std::vector<PCCPoint3D> createdPoints;
   PCCPoint3D              point0;
@@ -1964,7 +1966,7 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
 #ifdef CODEC_TRACE
   printChecksum( reconstruct, "colorPointCloud in" );
 #endif
-  if(reconstruct.getPointCount()==0) return false;
+  if ( reconstruct.getPointCount() == 0 ) return false;
   auto&        sps                           = context.getVps();
   auto&        videoTexture                  = context.getVideoTextureMultiple()[0];
   auto&        videoTextureFrame1            = context.getVideoTextureMultiple()[1];
@@ -2092,7 +2094,8 @@ bool PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
 #ifdef TRACE_CODEC
           if ( index < 100 ) {
             TRACE_CODEC(
-                " %4zu %4zu %4zu: f = %2zu  xy = %4zu %4zu => c8 = %3zu %3zu %3zu c16 = %3zu %3zu %3zu from %3zu %3zu "
+                " %4zu %4zu %4zu: f = %2zu  xy = %4zu %4zu => c8 = %3zu %3zu "
+                "%3zu c16 = %3zu %3zu %3zu from %3zu %3zu "
                 "%3zu (i=%6zu index = %6zu)\n",
                 reconstruct[i][0], reconstruct[i][1], reconstruct[i][2], f, x, y, color8bit[i][0], color8bit[i][1],
                 color8bit[i][2], color16bit[i][0], color16bit[i][1], color16bit[i][2], frame.getValue( 0, x, y ),
@@ -2267,11 +2270,11 @@ void PCCCodec::generateRawPointsTexturefromVideo( PCCContext& context, PCCFrameC
   }
 }
 
-void PCCCodec::generateOccupancyMap( PCCFrameContext&            frame,
-                                     PCCImageOccupancyMap&       videoFrame,
-                                     const size_t                occupancyPrecision,
-                                     const size_t                thresholdLossyOM,
-                                     const bool                  enhancedOccupancyMapForDepthFlag ) {
+void PCCCodec::generateOccupancyMap( PCCFrameContext&      frame,
+                                     PCCImageOccupancyMap& videoFrame,
+                                     const size_t          occupancyPrecision,
+                                     const size_t          thresholdLossyOM,
+                                     const bool            enhancedOccupancyMapForDepthFlag ) {
   auto  width        = frame.getWidth();
   auto  height       = frame.getHeight();
   auto& occupancyMap = frame.getOccupancyMap();
@@ -2291,11 +2294,10 @@ void PCCCodec::generateOccupancyMap( PCCFrameContext&            frame,
     }
   }
 
-  for(size_t yy=0; yy<videoFrame.getHeight(); yy++)
-    for(size_t xx=0; xx<videoFrame.getWidth(); xx++){
-      videoFrame.setValue(0, xx, yy, occupancyMap[yy*occupancyPrecision*width + xx*occupancyPrecision]);
+  for ( size_t yy = 0; yy < videoFrame.getHeight(); yy++ )
+    for ( size_t xx = 0; xx < videoFrame.getWidth(); xx++ ) {
+      videoFrame.setValue( 0, xx, yy, occupancyMap[yy * occupancyPrecision * width + xx * occupancyPrecision] );
     }
-
 }
 
 void PCCCodec::generateBlockToPatchFromBoundaryBox( PCCContext& context, const size_t occupancyResolution ) {

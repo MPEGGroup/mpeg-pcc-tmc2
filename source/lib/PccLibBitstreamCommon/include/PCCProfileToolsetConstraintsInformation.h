@@ -42,60 +42,58 @@ class ProfileToolsetConstraintsInformation {
  public:
   ProfileToolsetConstraintsInformation() :
       oneFrameOnlyFlag_( false ),
-      enhancedOccupancyMapForDepthContraintFlag_( false ),
+      EOMContraintFlag_( false ),
       maxMapCountMinus1_( 0 ),
       maxAtlasCountMinus1_( 0 ),
       multipleMapStreamsConstraintFlag_( false ),
-      pointLocalReconstructionConstraintFlag_( false ),
+      PLRConstraintFlag_( false ),
       attributeMaxDimensionMinus1_( 0 ),
       attributeMaxDimensionPartitionsMinus1_( 0 ),
       noEightOrientationsConstraintFlag_( true ),
-      no45degreeProjectionPatchConstraintFlag_( true ),
-      numReservedConstraintByte_( 0 ) {}
+      No45DegreeProjectionPatchConstraintFlag_( true ),
+      NumReservedConstraintBytes_( 0 ) {}
   ~ProfileToolsetConstraintsInformation() { reservedConstraintByte_.clear(); }
   ProfileToolsetConstraintsInformation& operator=( const ProfileToolsetConstraintsInformation& ) = default;
 
-  void allocate() { reservedConstraintByte_.resize( numReservedConstraintByte_, 0 ); }
+  void allocate() { reservedConstraintByte_.resize( NumReservedConstraintBytes_, 0 ); }
 
   bool    getOneFrameOnlyFlag() { return oneFrameOnlyFlag_; }
-  bool    getEnhancedOccupancyMapForDepthContraintFlag() { return enhancedOccupancyMapForDepthContraintFlag_; }
+  bool    getEOMContraintFlag() { return EOMContraintFlag_; }
   uint8_t getMaxMapCountMinus1() { return maxMapCountMinus1_; }
   uint8_t getMaxAtlasCountMinus1() { return maxAtlasCountMinus1_; }
   bool    getMultipleMapStreamsConstraintFlag() { return multipleMapStreamsConstraintFlag_; }
-  bool    getPointLocalReconstructionConstraintFlag() { return pointLocalReconstructionConstraintFlag_; }
+  bool    getPLRConstraintFlag() { return PLRConstraintFlag_; }
   uint8_t getAttributeMaxDimensionMinus1() { return attributeMaxDimensionMinus1_; }
   uint8_t getAttributeMaxDimensionPartitionsMinus1() { return attributeMaxDimensionPartitionsMinus1_; }
   bool    getNoEightOrientationsConstraintFlag() { return noEightOrientationsConstraintFlag_; }
-  bool    getNo45degreeProjectionPatchConstraintFlag() { return no45degreeProjectionPatchConstraintFlag_; }
-  uint8_t getNumReservedConstraintByte() { return numReservedConstraintByte_; }
+  bool    getNo45DegreeProjectionPatchConstraintFlag() { return No45DegreeProjectionPatchConstraintFlag_; }
+  uint8_t getNumReservedConstraintBytes() { return NumReservedConstraintBytes_; }
   uint8_t getReservedConstraintByte( size_t index ) { return reservedConstraintByte_[index]; }
   void    setOneFrameOnlyFlag( bool value ) { oneFrameOnlyFlag_ = value; }
-  void    setEnhancedOccupancyMapForDepthContraintFlag( bool value ) {
-    enhancedOccupancyMapForDepthContraintFlag_ = value;
-  }
-  void setMaxMapCountMinus1( bool value ) { maxMapCountMinus1_ = value; }
-  void setMaxAtlasCountMinus1( bool value ) { maxAtlasCountMinus1_ = value; }
-  void setMultipleMapStreamsConstraintFlag( bool value ) { multipleMapStreamsConstraintFlag_ = value; }
-  void setPointLocalReconstructionConstraintFlag( bool value ) { pointLocalReconstructionConstraintFlag_ = value; }
-  void setAttributeMaxDimensionMinus1( bool value ) { attributeMaxDimensionMinus1_ = value; }
-  void setAttributeMaxDimensionPartitionsMinus1( bool value ) { attributeMaxDimensionPartitionsMinus1_ = value; }
-  void setNoEightOrientationsConstraintFlag( bool value ) { noEightOrientationsConstraintFlag_ = value; }
-  void setNo45degreeProjectionPatchConstraintFlag( bool value ) { no45degreeProjectionPatchConstraintFlag_ = value; }
-  void setNumReservedConstraintByte( bool value ) { numReservedConstraintByte_ = value; }
-  void setReservedConstraintByte( size_t index, bool value ) { reservedConstraintByte_[index] = value; }
+  void    setEOMContraintFlag( bool value ) { EOMContraintFlag_ = value; }
+  void    setMaxMapCountMinus1( bool value ) { maxMapCountMinus1_ = value; }
+  void    setMaxAtlasCountMinus1( bool value ) { maxAtlasCountMinus1_ = value; }
+  void    setMultipleMapStreamsConstraintFlag( bool value ) { multipleMapStreamsConstraintFlag_ = value; }
+  void    setPLRConstraintFlag( bool value ) { PLRConstraintFlag_ = value; }
+  void    setAttributeMaxDimensionMinus1( bool value ) { attributeMaxDimensionMinus1_ = value; }
+  void    setAttributeMaxDimensionPartitionsMinus1( bool value ) { attributeMaxDimensionPartitionsMinus1_ = value; }
+  void    setNoEightOrientationsConstraintFlag( bool value ) { noEightOrientationsConstraintFlag_ = value; }
+  void    setNo45DegreeProjectionPatchConstraintFlag( bool value ) { No45DegreeProjectionPatchConstraintFlag_ = value; }
+  void    setNumReservedConstraintBytes( bool value ) { NumReservedConstraintBytes_ = value; }
+  void    setReservedConstraintByte( size_t index, bool value ) { reservedConstraintByte_[index] = value; }
 
  private:
   bool                 oneFrameOnlyFlag_;
-  bool                 enhancedOccupancyMapForDepthContraintFlag_;
+  bool                 EOMContraintFlag_;
   uint8_t              maxMapCountMinus1_;
   uint8_t              maxAtlasCountMinus1_;
   bool                 multipleMapStreamsConstraintFlag_;
-  bool                 pointLocalReconstructionConstraintFlag_;
+  bool                 PLRConstraintFlag_;
   uint8_t              attributeMaxDimensionMinus1_;
   uint8_t              attributeMaxDimensionPartitionsMinus1_;
   bool                 noEightOrientationsConstraintFlag_;
-  bool                 no45degreeProjectionPatchConstraintFlag_;
-  uint8_t              numReservedConstraintByte_;
+  bool                 No45DegreeProjectionPatchConstraintFlag_;
+  uint8_t              NumReservedConstraintBytes_;
   std::vector<uint8_t> reservedConstraintByte_;
 };
 

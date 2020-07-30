@@ -841,15 +841,15 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
         int16_t minU = ( std::numeric_limits<int16_t>::max )();
         int16_t minV = ( std::numeric_limits<int16_t>::max )();
         for ( const auto i : connectedComponent ) {
-          // const PCCPoint3D& point = points[i];      
+          // const PCCPoint3D& point = points[i];
           PCCPoint3D pointTmp = points[i];
           if ( bIsAdditionalProjectionPlane ) {
             auto& input = pointTmp;
             convert( patch.getAxisOfAdditionalPlane(), geometryBitDepth3D, input, pointTmp );
           }
           const auto& point = pointTmp;
-          minU                    = ( std::min )( minU, int16_t( round( point[patch.getTangentAxis()] ) ) );
-          minV                    = ( std::min )( minV, int16_t( round( point[patch.getBitangentAxis()] ) ) );
+          minU              = ( std::min )( minU, int16_t( round( point[patch.getTangentAxis()] ) ) );
+          minV              = ( std::min )( minV, int16_t( round( point[patch.getBitangentAxis()] ) ) );
         }
         std::vector<size_t> tempCC;
         tempCC.resize( 0 );
@@ -861,8 +861,8 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
             convert( patch.getAxisOfAdditionalPlane(), geometryBitDepth3D, input, pointTmp );
           }
           const auto& point = pointTmp;
-          const auto        u     = int16_t( round( point[patch.getTangentAxis()] ) );
-          const auto        v     = int16_t( round( point[patch.getBitangentAxis()] ) );
+          const auto  u     = int16_t( round( point[patch.getTangentAxis()] ) );
+          const auto  v     = int16_t( round( point[patch.getBitangentAxis()] ) );
           if ( u - minU < params.maxPatchSize_ && v - minV < params.maxPatchSize_ ) { tempCC.push_back( i ); }
         }
         connectedComponent = tempCC;

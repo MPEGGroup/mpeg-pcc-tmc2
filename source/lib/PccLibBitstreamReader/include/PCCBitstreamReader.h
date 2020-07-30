@@ -69,8 +69,8 @@ class MergePatchDataUnit;
 class SkipPatchDataUnit;
 class RawPatchDataUnit;
 class EOMPatchDataUnit;
-class PointLocalReconstructionInformation;
-class PointLocalReconstructionData;
+class PLRInformation;
+class PLRData;
 class SeiMessage;
 class AtlasFrameTileInformation;
 class SampleStreamNalUnit;
@@ -141,29 +141,25 @@ class PCCBitstreamReader {
   static void rbspTrailingBits( PCCBitstream& bitstream );
   static bool payloadExtensionPresent( PCCBitstream& bitstream );
 
-  // 7.3.6.10	Frame order count RBSP syntax
-  static uint32_t frameOrderCountRbsp( PCCBitstream&                    bitstream,
-                                       V3CUnitHeader&                   vuh,
-                                       AtlasSequenceParameterSetRbsp&   asps,
-                                       AtlasAdaptationParameterSetRbsp& aaps );
-
   // 7.3.5.1  General NAL unit syntax
   // 7.3.5.2  NAL unit header syntax
-  // 7.3.6.1  Atlas sequence parameter set Rbsp syntax
+  // 7.3.6.1 Atlas sequence parameter set Rbsp
+  // 7.3.6.1.1 General Atlas sequence parameter set Rbsp
   void atlasSequenceParameterSetRbsp( AtlasSequenceParameterSetRbsp& asps,
                                       PCCHighLevelSyntax&            syntax,
                                       PCCBitstream&                  bitstream );
-  // 7.3.6.2  Point local reconstruction information syntax
-  static void pointLocalReconstructionInformation( AtlasSequenceParameterSetRbsp& asps,
-                                                   PCCHighLevelSyntax&            syntax,
-                                                   PCCBitstream&                  bitstream );
+  // 7.3.6.1.2 Point local reconstruction information syntax
+  static void plrInformation( AtlasSequenceParameterSetRbsp& asps,
+                              PCCHighLevelSyntax&            syntax,
+                              PCCBitstream&                  bitstream );
 
-  // 7.3.6.3  Atlas frame parameter set Rbsp syntax
+  // 7.3.6.2 Atlas frame parameter set Rbsp syntax
+  // 7.3.6.2.1 General atlas frame parameter set Rbsp syntax
   static void atlasFrameParameterSetRbsp( AtlasFrameParameterSetRbsp& afps,
                                           PCCHighLevelSyntax&         syntax,
                                           PCCBitstream&               bitstream );
 
-  // 7.3.6.4  Atlas frame tile information syntax
+  // 7.3.6.2.2 Atlas frame tile information syntax
   static void atlasFrameTileInformation( AtlasFrameTileInformation&     afti,
                                          AtlasSequenceParameterSetRbsp& asps,
                                          PCCBitstream&                  bitstream );
@@ -172,7 +168,7 @@ class PCCBitstreamReader {
   // 7.3.6.3.1	General atlas adaptation parameter set RBSP syntax
   void atlasAdaptationParameterSetRbsp( AtlasAdaptationParameterSetRbsp& aaps, PCCBitstream& bitstream );
 
-  // 7.3.6.5  Supplemental enhancement information Rbsp syntax
+  // 7.3.6.4  Supplemental enhancement information Rbsp
   void seiRbsp( PCCHighLevelSyntax& syntax, PCCBitstream& bitstream, NalUnitType nalUnitType );
 
   // 7.3.6.6  Access unit delimiter Rbsp syntax
@@ -184,7 +180,7 @@ class PCCBitstreamReader {
   // 7.3.6.9  Filler data Rbsp syntax
   void fillerDataRbsp( FillerDataRbsp& fdrbsp, PCCHighLevelSyntax& syntax, PCCBitstream& bitstream );
 
-  // 7.3.6.10  Atlas tile group layer Rbsp syntax = patchTileLayerUnit
+  // 7.3.6.9 Atlas tile group layer Rbsp syntax = patchTileLayerUnit
   void atlasTileLayerRbsp( AtlasTileLayerRbsp& atgl, PCCHighLevelSyntax& syntax, PCCBitstream& bitstream );
 
   // 7.3.6.11  Atlas tile group header syntax
@@ -213,10 +209,7 @@ class PCCBitstreamReader {
                              PCCBitstream&       bitstream );
 
   // 7.3.7.4  Skip patch data unit syntax
-  static void skipPatchDataUnit( SkipPatchDataUnit&  spdu,
-                                 AtlasTileHeader&    ath,
-                                 PCCHighLevelSyntax& syntax,
-                                 PCCBitstream&       bitstream );
+  static void skipPatchDataUnit( PCCBitstream& bitstream );
 
   // 7.3.7.5  Merge patch data unit syntax
   void mergePatchDataUnit( MergePatchDataUnit& mpdu,
@@ -242,10 +235,10 @@ class PCCBitstreamReader {
                                 PCCBitstream&       bitstream );
 
   // 7.3.7.9  Point local reconstruction data syntax
-  static void pointLocalReconstructionData( PointLocalReconstructionData&  plrd,
-                                            PCCHighLevelSyntax&            syntax,
-                                            AtlasSequenceParameterSetRbsp& asps,
-                                            PCCBitstream&                  bitstream );
+  static void plrData( PLRData&                       plrd,
+                       PCCHighLevelSyntax&            syntax,
+                       AtlasSequenceParameterSetRbsp& asps,
+                       PCCBitstream&                  bitstream );
 
   // 7.3.8 Supplemental enhancement information message syntax
   static void seiMessage( PCCBitstream& bitstream, PCCHighLevelSyntax& syntax, NalUnitType nalUnitType );
@@ -348,9 +341,7 @@ class PCCBitstreamReader {
                          PCCBitstream&       bitstream );
 
   // 7.3.5.21 Point local reconstruction syntax
-  void pointLocalReconstructionInformation( PointLocalReconstructionInformation& plri,
-                                            PCCHighLevelSyntax&                  syntax,
-                                            PCCBitstream&                        bitstream );
+  void plrInformation( PLRInformation& plri, PCCHighLevelSyntax& syntax, PCCBitstream& bitstream );
 
   // B.2  Sample stream V3C unit syntax and semantics
   // B.2.1  Sample stream V3C header syntax
@@ -427,9 +418,13 @@ class PCCBitstreamReader {
   static void viewportCameraParameters( PCCBitstream& bitstream, SEI& seiAbstract );
   // F.2.16.1 Viewport camera parameters SEI messages syntax
   static void viewportPosition( PCCBitstream& bitstream, SEI& seiAbstract );
-  // H.16.2.1 Geometry smoothing SEI message syntax
+  // F.2.17 Decoded Atlas Information Hash SEI message syntax
+  static void decodedAtlasInformationHash( PCCBitstream& bitstream, SEI& seiAbstract );
+  // H.16.2.1	Occupancy synthesis SEI message syntax
+  static void occupancySynthesis( PCCBitstream& bitstream, SEI& seiAbstract );
+  // H.16.2.2 Geometry smoothing SEI message syntax
   static void geometrySmoothing( PCCBitstream& bitstream, SEI& seiAbstract );
-  // H.16.2.2 Attribute smoothing SEI message syntax
+  // H.16.2.3 Attribute smoothing SEI message syntax
   static void attributeSmoothing( PCCBitstream& bitstream, SEI& seiAbstract );
 
   // G.2  VUI syntax
@@ -458,12 +453,12 @@ class PCCBitstreamReader {
   // H.7.3.6.2.2	AFPS MIV extension syntax
   static void afpsMivExtension( PCCBitstream& bitstream );
 
-  // H.7.3.6.3.1	AAPS V-PCC extension syntax
+  // H.7.3.6.2.1	AAPS V-PCC extension syntax
   static void aapsVpccExtension( PCCBitstream& bitstream, AapsVpccExtension& ext );
-  // H.7.3.6.3.2	AAPS MIV extension syntax
+  // H.7.3.6.2.2	AAPS MIV extension syntax
   static void aapsMivExtension( PCCBitstream& bitstream );
 
-  // H.7.3.6.3.2	Atlas camera parameters syntax
+  // H.7.3.6.2.2	Atlas camera parameters syntax
   static void atlasCameraParameters( PCCBitstream& bitstream, AtlasCameraParameters& acp );
 
   int32_t prevPatchSizeU_;

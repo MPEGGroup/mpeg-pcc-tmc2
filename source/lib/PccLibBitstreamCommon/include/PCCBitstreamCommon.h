@@ -66,7 +66,7 @@ namespace pcc {
 // ******************************************************************* //
 // Trace modes to validate new syntax
 // ******************************************************************* //
- #define BITSTREAM_TRACE
+#define BITSTREAM_TRACE
 
 // ******************************************************************* //
 // Common constants
@@ -281,8 +281,10 @@ enum SeiPayloadType {
   ATLAS_INFORMATION                = 18,  // 18: atlas_information
   VIEWPORT_CAMERA_PARAMETERS       = 19,  // 17: viewport camera parameters
   VIEWPORT_POSITION                = 20,  // 20: viewport position
-  GEOMETRY_SMOOTHING               = 64,  // 17: geometry smoothing
-  ATTRIBUTE_SMOOTHING              = 65,  // 20: attribute smoothing
+  DECODED_ATLAS_INFORMATION_HASH   = 21,  // 21: decoded atlas information hash
+  OCCUPANCY_SYNTHESIS              = 63,  // 63: occupancy synthesis
+  GEOMETRY_SMOOTHING               = 64,  // 64: geometry smoothing
+  ATTRIBUTE_SMOOTHING              = 65,  // 65: attribute smoothing
   RESERVED_SEI_MESSAGE             = 127  // xx: reservedSeiMessage
 };
 

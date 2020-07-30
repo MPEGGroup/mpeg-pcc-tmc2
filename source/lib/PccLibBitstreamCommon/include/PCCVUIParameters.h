@@ -181,9 +181,10 @@ class VUIParameters {
       numTicksPocDiffOneMinus1_( 0 ),
       hrdParametersPresentFlag_( false ),
       bitstreamRestrictionPresentFlag_( false ),
-      tilesRestrictedFlag_( false ),
-      consistentTilesForVideoComponentsFlag_( false ),
-      maxNumTilesPerAtlas_( 0 ),
+      tilesFixedStructureForAtlasFlag_( false ),
+      tilesFixedStructureForVideoSubstreamsFlag_( false ),
+      constrainedTilesAcrossV3cComponentsIdc_( false ),
+      maxNumTilesPerAtlasMinus1_( 0 ),
       coordinateSystemParametersPresentFlag_( false ),
       unitInMetresFlag_( false ),
       displayBoxInfoPresentFlag_( false ),
@@ -205,9 +206,10 @@ class VUIParameters {
   uint32_t getNumTicksPocDiffOneMinus1() { return numTicksPocDiffOneMinus1_; }
   bool     getHrdParametersPresentFlag() { return hrdParametersPresentFlag_; }
   bool     getBitstreamRestrictionPresentFlag() { return bitstreamRestrictionPresentFlag_; }
-  bool     getTilesRestrictedFlag() { return tilesRestrictedFlag_; }
-  bool     getConsistentTilesForVideoComponentsFlag() { return consistentTilesForVideoComponentsFlag_; }
-  uint32_t getMaxNumTilesPerAtlas() { return maxNumTilesPerAtlas_; }
+  bool     getTilesFixedStructureForAtlasFlag() { return tilesFixedStructureForAtlasFlag_; }
+  bool     getTilesFixedStructureForVideoSubstreamsFlag() { return tilesFixedStructureForVideoSubstreamsFlag_; }
+  uint32_t getConstrainedTilesAcrossV3cComponentsIdc() { return constrainedTilesAcrossV3cComponentsIdc_; }
+  uint32_t getMaxNumTilesPerAtlasMinus1() { return maxNumTilesPerAtlasMinus1_; }
   bool     getCoordinateSystemParametersPresentFlag() { return coordinateSystemParametersPresentFlag_; }
   bool     getUnitInMetresFlag() { return unitInMetresFlag_; }
   bool     getDisplayBoxInfoPresentFlag() { return displayBoxInfoPresentFlag_; }
@@ -223,9 +225,12 @@ class VUIParameters {
   void setNumTicksPocDiffOneMinus1( uint32_t value ) { numTicksPocDiffOneMinus1_ = value; }
   void setHrdParametersPresentFlag( bool value ) { hrdParametersPresentFlag_ = value; }
   void setBitstreamRestrictionPresentFlag( bool value ) { bitstreamRestrictionPresentFlag_ = value; }
-  void setTilesRestrictedFlag( bool value ) { tilesRestrictedFlag_ = value; }
-  void setConsistentTilesForVideoComponentsFlag( bool value ) { consistentTilesForVideoComponentsFlag_ = value; }
-  void setMaxNumTilesPerAtlas( uint32_t value ) { maxNumTilesPerAtlas_ = value; }
+  void setTilesFixedStructureForAtlasFlag( bool value ) { tilesFixedStructureForAtlasFlag_ = value; }
+  void setTilesFixedStructureForVideoSubstreamsFlag( bool value ) {
+    tilesFixedStructureForVideoSubstreamsFlag_ = value;
+  }
+  void setConstrainedTilesAcrossV3cComponentsIdc( uint32_t value ) { constrainedTilesAcrossV3cComponentsIdc_ = value; }
+  void setMaxNumTilesPerAtlasMinus1( uint32_t value ) { maxNumTilesPerAtlasMinus1_ = value; }
   void setCoordinateSystemParametersPresentFlag( bool value ) { coordinateSystemParametersPresentFlag_ = value; }
   void setUnitInMetresFlag( bool value ) { unitInMetresFlag_ = value; }
   void setDisplayBoxInfoPresentFlag( bool value ) { displayBoxInfoPresentFlag_ = value; }
@@ -242,9 +247,10 @@ class VUIParameters {
   uint32_t numTicksPocDiffOneMinus1_;
   bool     hrdParametersPresentFlag_;
   bool     bitstreamRestrictionPresentFlag_;
-  bool     tilesRestrictedFlag_;
-  bool     consistentTilesForVideoComponentsFlag_;
-  uint32_t maxNumTilesPerAtlas_;
+  bool     tilesFixedStructureForAtlasFlag_;
+  bool     tilesFixedStructureForVideoSubstreamsFlag_;
+  uint32_t constrainedTilesAcrossV3cComponentsIdc_;
+  uint32_t maxNumTilesPerAtlasMinus1_;
   bool     coordinateSystemParametersPresentFlag_;
   bool     unitInMetresFlag_;
   bool     displayBoxInfoPresentFlag_;

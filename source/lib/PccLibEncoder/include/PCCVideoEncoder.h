@@ -329,8 +329,10 @@ class PCCVideoEncoder {
               }
             }
             // perform downsampling
-            // const std::string rgbFileNameTmp = addVideoFormat( fileName + "_tmp.rgb", patch_width, patch_height );
-            // const std::string yuvFileNameTmp = addVideoFormat( fileName + "_tmp.yuv", patch_width, patch_height, true
+            // const std::string rgbFileNameTmp = addVideoFormat( fileName +
+            // "_tmp.rgb", patch_width, patch_height );
+            // const std::string yuvFileNameTmp = addVideoFormat( fileName +
+            // "_tmp.yuv", patch_width, patch_height, true
             // );
             PCCVideo<T, 3> tmpVideo;
             tmpVideo.resize( 1 );

@@ -76,53 +76,61 @@ class PCCHDRToolsLibColorConverterImpl {
   void process( ProjectParameters* inputParams, PCCVideo<T, 3>& videoSrc, PCCVideo<T, 3>& videoDst );
   void destroy();
 
-  int                              m_nFrameStores;
-  hdrtoolslib::Frame*              m_oFrameStore;        // picture storage for output frames
-  hdrtoolslib::Frame*              m_iFrameStore;        // picture storage for input frames
-  hdrtoolslib::Frame*              m_pFrameStore[7];     // picture storage for processing frames
-  hdrtoolslib::Frame*              m_croppedFrameStore;  // cropped frame store
-  hdrtoolslib::Frame*              m_convertFrameStore;  // pixel type conversion frame store
-  hdrtoolslib::Frame*              m_colorSpaceFrame;
-  hdrtoolslib::Frame*              m_scaledFrame;
-  hdrtoolslib::FrameFilter*        m_frameFilter;
-  hdrtoolslib::FrameFilter*        m_frameFilterNoise0;
-  hdrtoolslib::FrameFilter*        m_frameFilterNoise1;
-  hdrtoolslib::FrameFilter*        m_frameFilterNoise2;
-  hdrtoolslib::Convert*            m_convertProcess;         // Final Conversion process
-  hdrtoolslib::Convert*            m_convertIQuantize;       // Initial Conversion process
-  hdrtoolslib::ColorTransform*     m_colorTransform;         // Color space conversion
-  hdrtoolslib::ColorTransform*     m_colorSpaceConvert;      // Color space conversion (second)
-  hdrtoolslib::ColorTransform*     m_colorSpaceConvertMC;    // Color space conversion (final)
-  hdrtoolslib::ConvertColorFormat* m_convertFormatIn;        // Input Chroma format conversion
-  hdrtoolslib::ConvertColorFormat* m_convertFormatOut;       // Output chroma format conversion
-  hdrtoolslib::DisplayGammaAdjust* m_srcDisplayGammaAdjust;  // Source Display Gamma adjustment
-  hdrtoolslib::DisplayGammaAdjust* m_outDisplayGammaAdjust;  // Output Display Gamma adjustment
-  hdrtoolslib::AddNoise*           m_addNoise;               // Noise Addition
-  hdrtoolslib::FrameScale*         m_frameScale;
-  hdrtoolslib::TransferFunction*   m_normalizeFunction;       // Data normalization for OpenEXR inputs
-  hdrtoolslib::TransferFunction*   m_inputTransferFunction;   // Transfer function
-  hdrtoolslib::TransferFunction*   m_outputTransferFunction;  // Transfer function
-  bool                             m_useSingleTransferStep;
-  int                              m_startFrame;
-  bool                             m_filterInFloat;
-  bool                             m_changeColorPrimaries;
-  bool                             m_bUseChromaDeblocking;
-  bool                             m_bUseWienerFiltering;
-  bool                             m_bUse2DSepFiltering;
-  bool                             m_bUseNLMeansFiltering;
-  bool                             m_b2DSepMode;
-  int                              m_cropOffsetLeft;
-  int                              m_cropOffsetTop;
-  int                              m_cropOffsetRight;
-  int                              m_cropOffsetBottom;
-  int                              m_width;
-  int                              m_height;
-  hdrtoolslib::IOVideo*            m_inputFile;
-  hdrtoolslib::IOVideo*            m_outputFile;
-  int                              m_cropWidth;
-  int                              m_cropHeight;
-  hdrtoolslib::Input*              m_inputFrame;   // input frames
-  hdrtoolslib::Output*             m_outputFrame;  // output frames
+  int                 m_nFrameStores;
+  hdrtoolslib::Frame* m_oFrameStore;                 // picture storage for output frames
+  hdrtoolslib::Frame* m_iFrameStore;                 // picture storage for input frames
+  hdrtoolslib::Frame* m_pFrameStore[7];              // picture storage for processing
+                                                     // frames
+  hdrtoolslib::Frame*          m_croppedFrameStore;  // cropped frame store
+  hdrtoolslib::Frame*          m_convertFrameStore;  // pixel type conversion frame store
+  hdrtoolslib::Frame*          m_colorSpaceFrame;
+  hdrtoolslib::Frame*          m_scaledFrame;
+  hdrtoolslib::FrameFilter*    m_frameFilter;
+  hdrtoolslib::FrameFilter*    m_frameFilterNoise0;
+  hdrtoolslib::FrameFilter*    m_frameFilterNoise1;
+  hdrtoolslib::FrameFilter*    m_frameFilterNoise2;
+  hdrtoolslib::Convert*        m_convertProcess;             // Final Conversion process
+  hdrtoolslib::Convert*        m_convertIQuantize;           // Initial Conversion process
+  hdrtoolslib::ColorTransform* m_colorTransform;             // Color space conversion
+  hdrtoolslib::ColorTransform* m_colorSpaceConvert;          // Color space conversion
+                                                             // (second)
+  hdrtoolslib::ColorTransform* m_colorSpaceConvertMC;        // Color space conversion
+                                                             // (final)
+  hdrtoolslib::ConvertColorFormat* m_convertFormatIn;        // Input Chroma format
+                                                             // conversion
+  hdrtoolslib::ConvertColorFormat* m_convertFormatOut;       // Output chroma format
+                                                             // conversion
+  hdrtoolslib::DisplayGammaAdjust* m_srcDisplayGammaAdjust;  // Source Display
+                                                             // Gamma adjustment
+  hdrtoolslib::DisplayGammaAdjust* m_outDisplayGammaAdjust;  // Output Display
+                                                             // Gamma adjustment
+  hdrtoolslib::AddNoise*         m_addNoise;                 // Noise Addition
+  hdrtoolslib::FrameScale*       m_frameScale;
+  hdrtoolslib::TransferFunction* m_normalizeFunction;       // Data normalization for
+                                                            // OpenEXR inputs
+  hdrtoolslib::TransferFunction* m_inputTransferFunction;   // Transfer function
+  hdrtoolslib::TransferFunction* m_outputTransferFunction;  // Transfer function
+  bool                           m_useSingleTransferStep;
+  int                            m_startFrame;
+  bool                           m_filterInFloat;
+  bool                           m_changeColorPrimaries;
+  bool                           m_bUseChromaDeblocking;
+  bool                           m_bUseWienerFiltering;
+  bool                           m_bUse2DSepFiltering;
+  bool                           m_bUseNLMeansFiltering;
+  bool                           m_b2DSepMode;
+  int                            m_cropOffsetLeft;
+  int                            m_cropOffsetTop;
+  int                            m_cropOffsetRight;
+  int                            m_cropOffsetBottom;
+  int                            m_width;
+  int                            m_height;
+  hdrtoolslib::IOVideo*          m_inputFile;
+  hdrtoolslib::IOVideo*          m_outputFile;
+  int                            m_cropWidth;
+  int                            m_cropHeight;
+  hdrtoolslib::Input*            m_inputFrame;   // input frames
+  hdrtoolslib::Output*           m_outputFrame;  // output frames
 };
 
 };  // namespace pcc

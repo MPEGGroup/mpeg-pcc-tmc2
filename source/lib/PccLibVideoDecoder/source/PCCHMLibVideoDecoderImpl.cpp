@@ -67,8 +67,9 @@ void PCCHMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream,
   m_cTDecTop.setDecodedPictureHashSEIEnabled( 1 );
   m_iPOCLastDisplay += m_iSkipFrame;  // set the last displayed POC correctly for skip forward.
   // main decoder loop
-  Bool openedReconFile = false;  // reconstruction file not yet opened. (must be performed after SPS is seen)
-  Bool loopFiltered    = false;
+  Bool openedReconFile = false;  // reconstruction file not yet opened. (must be
+                                 // performed after SPS is seen)
+  Bool loopFiltered = false;
   while ( !!bitstreamFile ) {
 #if RExt__DECODER_DEBUG_BIT_STATISTICS
     TComCodingStatistics::TComCodingStatisticsData backupStats( TComCodingStatistics::GetStatistics() );
@@ -142,7 +143,8 @@ void PCCHMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream,
         xWriteOutput( pcListPic, nalu.m_temporalId, video );
         m_cTDecTop.setFirstSliceInPicture( false );
       }
-      // write reconstruction to file -- for additional bumping as defined in C.5.2.3
+      // write reconstruction to file -- for additional bumping as defined in
+      // C.5.2.3
       if ( !bNewPicture && nalu.m_nalUnitType >= NAL_UNIT_CODED_SLICE_TRAIL_N &&
            nalu.m_nalUnitType <= NAL_UNIT_RESERVED_VCL31 ) {
         setVideoSize( pcListPic->front()->getPicSym()->getSPS() );
@@ -212,7 +214,8 @@ void PCCHMLibVideoDecoderImpl<T>::xWriteOutput( TComList<TComPic*>* pcListPic, U
         xWritePicture( pcPicTop->getPicYuvRec(), video );
         // update POC of display order
         m_iPOCLastDisplay = pcPicBottom->getPOC();
-        // erase non-referenced picture in the reference picture list after display
+        // erase non-referenced picture in the reference picture list after
+        // display
         if ( !pcPicTop->getSlice( 0 )->isReferenced() && pcPicTop->getReconMark() == true ) {
           pcPicTop->setReconMark( false );
           // mark it should be extended later
@@ -241,7 +244,8 @@ void PCCHMLibVideoDecoderImpl<T>::xWriteOutput( TComList<TComPic*>* pcListPic, U
         xWritePicture( pcPic->getPicYuvRec(), video );
         // update POC of display order
         m_iPOCLastDisplay = pcPic->getPOC();
-        // erase non-referenced picture in the reference picture list after display
+        // erase non-referenced picture in the reference picture list after
+        // display
         if ( !pcPic->getSlice( 0 )->isReferenced() && pcPic->getReconMark() == true ) {
           pcPic->setReconMark( false );
           // mark it should be extended later
@@ -274,7 +278,8 @@ void PCCHMLibVideoDecoderImpl<T>::xFlushOutput( TComList<TComPic*>* pcListPic, P
         xWritePicture( pcPic->getPicYuvRec(), video );
         // update POC of display order
         m_iPOCLastDisplay = pcPicBottom->getPOC();
-        // erase non-referenced picture in the reference picture list after display
+        // erase non-referenced picture in the reference picture list after
+        // display
         if ( !pcPicTop->getSlice( 0 )->isReferenced() && pcPicTop->getReconMark() == true ) {
           pcPicTop->setReconMark( false );
           // mark it should be extended later
@@ -308,7 +313,8 @@ void PCCHMLibVideoDecoderImpl<T>::xFlushOutput( TComList<TComPic*>* pcListPic, P
         xWritePicture( pcPic->getPicYuvRec(), video );
         // update POC of display order
         m_iPOCLastDisplay = pcPic->getPOC();
-        // erase non-referenced picture in the reference picture list after display
+        // erase non-referenced picture in the reference picture list after
+        // display
         if ( !pcPic->getSlice( 0 )->isReferenced() && pcPic->getReconMark() == true ) {
           pcPic->setReconMark( false );
           // mark it should be extended later
@@ -331,9 +337,11 @@ void PCCHMLibVideoDecoderImpl<T>::xFlushOutput( TComList<TComPic*>* pcListPic, P
 template <typename T>
 void PCCHMLibVideoDecoderImpl<T>::xWritePicture( const TComPicYuv* pic, PCCVideo<T, 3>& video ) {
   int chromaSubsample = pic->getWidth( COMPONENT_Y ) / pic->getWidth( COMPONENT_Cb );
-  printf( "write output frame %zu size = %d %d bit depth = %d - %d = %d in %zd bytes buffers ( ChromaSub. = %d )\n",
-          video.size(), pic->getWidth( COMPONENT_Y ), pic->getHeight( COMPONENT_Y ), m_internalBitDepths,
-          m_outputBitDepth[0], m_internalBitDepths - m_outputBitDepth[0], sizeof( T ), chromaSubsample );
+  printf(
+      "write output frame %zu size = %d %d bit depth = %d - %d = %d in %zd "
+      "bytes buffers ( ChromaSub. = %d )\n",
+      video.size(), pic->getWidth( COMPONENT_Y ), pic->getHeight( COMPONENT_Y ), m_internalBitDepths,
+      m_outputBitDepth[0], m_internalBitDepths - m_outputBitDepth[0], sizeof( T ), chromaSubsample );
   fflush( stdout );
   video.resize( video.getFrameCount() + 1 );
   auto&          image = video.getFrames().back();

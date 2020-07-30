@@ -50,8 +50,9 @@ size_t PCCAtlasHighLevelSyntax::getNumRefIdxActive( AtlasTileHeader& ath ) {
     if ( ath.getNumRefIdxActiveOverrideFlag() ) {
       numRefIdxActive = ath.getNumRefIdxActiveMinus1() + 1;
     } else {
-      auto& asps = getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
-      auto& refList = ath.getRefAtlasFrameListSpsFlag()? asps.getRefListStruct( ath.getRefAtlasFrameListIdx()) : ath.getRefListStruct();
+      auto& asps    = getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
+      auto& refList = ath.getRefAtlasFrameListSpsFlag() ? asps.getRefListStruct( ath.getRefAtlasFrameListIdx() )
+                                                        : ath.getRefListStruct();
       numRefIdxActive =
           static_cast<size_t>( ( std::min )( static_cast<int>( refList.getNumRefEntries() ),
                                              static_cast<int>( afps.getNumRefIdxDefaultActiveMinus1() ) + 1 ) );

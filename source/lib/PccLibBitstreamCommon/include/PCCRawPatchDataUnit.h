@@ -46,9 +46,9 @@ class RawPatchDataUnit {
       pos2dY_( 0 ),
       size2dXMinus1_( 0 ),
       size2dYMinus1_( 0 ),
-      pos3dX_( 0 ),
-      pos3dY_( 0 ),
-      pos3dZ_( 0 ),
+      pos3dOffsetX_( 0 ),
+      pos3dOffsetY_( 0 ),
+      pos3dOffsetZ_( 0 ),
       rawPointsMinus1_( 0 ),
       patchIndex_( 0 ),
       frameIndex_( 0 ) {}
@@ -60,9 +60,9 @@ class RawPatchDataUnit {
   size_t   get2dPosY() { return pos2dY_; }
   int64_t  get2dSizeXMinus1() { return size2dXMinus1_; }
   int64_t  get2dSizeYMinus1() { return size2dYMinus1_; }
-  size_t   get3dPosX() { return pos3dX_; }
-  size_t   get3dPosY() { return pos3dY_; }
-  size_t   get3dPosZ() { return pos3dZ_; }
+  size_t   get3dOffsetX() { return pos3dOffsetX_; }
+  size_t   get3dOffsetY() { return pos3dOffsetY_; }
+  size_t   get3dOffsetZ() { return pos3dOffsetZ_; }
   uint32_t getRawPointsMinus1() { return rawPointsMinus1_; }
   size_t   getPatchIndex() { return patchIndex_; }
   size_t   getFrameIndex() { return frameIndex_; }
@@ -73,9 +73,9 @@ class RawPatchDataUnit {
   void     set2dPosY( size_t value ) { pos2dY_ = value; }
   void     set2dSizeXMinus1( uint64_t value ) { size2dXMinus1_ = value; }
   void     set2dSizeYMinus1( uint64_t value ) { size2dYMinus1_ = value; }
-  void     set3dPosX( size_t value ) { pos3dX_ = value; }
-  void     set3dPosY( size_t value ) { pos3dY_ = value; }
-  void     set3dPosZ( size_t value ) { pos3dZ_ = value; }
+  void     set3dOffsetX( size_t value ) { pos3dOffsetX_ = value; }
+  void     set3dOffsetY( size_t value ) { pos3dOffsetY_ = value; }
+  void     set3dOffsetZ( size_t value ) { pos3dOffsetZ_ = value; }
   void     setRawPointsMinus1( uint32_t value ) { rawPointsMinus1_ = value; }
 
  private:
@@ -84,9 +84,9 @@ class RawPatchDataUnit {
   size_t   pos2dY_;
   uint64_t size2dXMinus1_;
   uint64_t size2dYMinus1_;
-  size_t   pos3dX_;
-  size_t   pos3dY_;
-  size_t   pos3dZ_;
+  size_t   pos3dOffsetX_;
+  size_t   pos3dOffsetY_;
+  size_t   pos3dOffsetZ_;
   uint32_t rawPointsMinus1_;
   size_t   patchIndex_;
   size_t   frameIndex_;

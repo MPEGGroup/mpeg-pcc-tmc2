@@ -133,7 +133,8 @@ class PCCVideoDecoder {
           // image that will contain the per-patch chroma sub-sampled image
           auto& destImage = video.getFrame( frNum );
           destImage.resize( width, height, PCCCOLORFORMAT::YUV444 );
-          // iterate the patch information and perform chroma down-sampling on each patch individually
+          // iterate the patch information and perform chroma down-sampling on
+          // each patch individually
           std::vector<PCCPatch> patches      = context.getPatches();
           std::vector<size_t>   blockToPatch = context.getBlockToPatch();
           for ( int patchIdx = 0; patchIdx <= patches.size(); patchIdx++ ) {
@@ -314,8 +315,10 @@ class PCCVideoDecoder {
               }
             }
             // perform downsampling
-            // const std::string rgbRecFileNamePatch = addVideoFormat( fileName + "_tmp", patch_width, patch_height,
-            // false, false ); const std::string yuvRecFileNamePatch = addVideoFormat( fileName + "_tmp", patch_width,
+            // const std::string rgbRecFileNamePatch = addVideoFormat( fileName
+            // + "_tmp", patch_width, patch_height,
+            // false, false ); const std::string yuvRecFileNamePatch =
+            // addVideoFormat( fileName + "_tmp", patch_width,
             // patch_height, true, true );
             PCCVideo<T, 3> tmpVideo;
             tmpVideo.resize( 1 );

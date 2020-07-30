@@ -38,7 +38,7 @@
 
 namespace pcc {
 
-// 7.3.6.5  Supplemental enhancement information RBSP syntax
+// 7.3.6.4  Supplemental enhancement information Rbsp
 class SupplementalEnhancementInformationRbsp {
  public:
   SupplementalEnhancementInformationRbsp() {}

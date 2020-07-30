@@ -206,11 +206,11 @@ class PCCCodec {
   }
 #endif
  protected:
-  void generateOccupancyMap( PCCFrameContext&            frame,
-                             PCCImageOccupancyMap&       videoFrame,
-                             const size_t                occupancyPrecision,
-                             const size_t                thresholdLossyOM,
-                             const bool                  enhancedOccupancyMapForDepthFlag );
+  void generateOccupancyMap( PCCFrameContext&      frame,
+                             PCCImageOccupancyMap& videoFrame,
+                             const size_t          occupancyPrecision,
+                             const size_t          thresholdLossyOM,
+                             const bool            enhancedOccupancyMapForDepthFlag );
 
   void generateBlockToPatchFromBoundaryBox( PCCContext& context, const size_t occupancyResolution );
 
@@ -249,7 +249,8 @@ class PCCCodec {
                                           const bool                           filling,
                                           const size_t                         minD1,
                                           const size_t                         neighbor );
-  // PCCPatchType            getCurrPatchType( PCCTileType tileType, uint8_t patchMode );
+  // PCCPatchType            getCurrPatchType( PCCTileType tileType, uint8_t
+  // patchMode );
   inline double entropy( std::vector<uint8_t>& Data, int N ) {
     std::vector<size_t> count;
     count.resize( 256, 0 );

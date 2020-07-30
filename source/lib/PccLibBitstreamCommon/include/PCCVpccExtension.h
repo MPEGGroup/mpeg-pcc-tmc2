@@ -74,7 +74,7 @@ class AfpsVpccExtension {
  private:
 };
 
-// H.7.3.6.3.2	Atlas camera parameters syntax
+// H.7.3.6.2.2	Atlas camera parameters syntax
 class AtlasCameraParameters {
  public:
   AtlasCameraParameters() :
@@ -111,7 +111,7 @@ class AtlasCameraParameters {
   int32_t  rotation_[3];
 };
 
-// H.7.3.6.3.1	AAPS V-PCC extension syntax
+// H.7.3.6.2.1	AAPS V-PCC extension syntax
 class AapsVpccExtension {
  public:
   AapsVpccExtension() {}

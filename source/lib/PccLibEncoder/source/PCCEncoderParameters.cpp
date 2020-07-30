@@ -574,20 +574,21 @@ bool PCCEncoderParameters::check() {
     absoluteD1_ = true;
   }
   if ( !absoluteT1_ && absoluteD1_ ) {
-    std::cerr << "absoluteT1 cannot be false when absoluteD1 is true, force absoluteT1 equals to true\n";        
+    std::cerr << "absoluteT1 cannot be false when absoluteD1 is true, force "
+                 "absoluteT1 equals to true\n";
     absoluteT1_ = true;
   }
 
   if ( losslessGeo_ ) {
     pbfEnableFlag_          = false;
-    occupancyMapRefinement_ = false;    
-    flagColorSmoothing_     = false;    
+    occupancyMapRefinement_ = false;
+    flagColorSmoothing_     = false;
     flagGeometrySmoothing_  = false;
     gridSmoothing_          = false;
-    if( lossyRawPointsPatch_ == true ){
+    if ( lossyRawPointsPatch_ == true ) {
       std::cerr << "WARNING: lossyRawPointsPatch_ is only for lossy "
                    "coding mode for now. Force lossyRawPointsPatch_=FALSE.\n";
-      lossyRawPointsPatch_ = false; 
+      lossyRawPointsPatch_ = false;
     }
     if ( pointLocalReconstruction_ ) {
       pointLocalReconstruction_ = false;
@@ -603,7 +604,7 @@ bool PCCEncoderParameters::check() {
       lossyRawPointsPatch_ = false;
       std::cerr << "WARNING: lossyRawPointsPatch_ is only for lossy coding "
                    "mode for now. Force lossyRawPointsPatch_=FALSE.\n";
-    }    
+    }
   } else {
     if ( enhancedOccupancyMapCode_ ) {
       enhancedOccupancyMapCode_ = false;
@@ -739,15 +740,18 @@ bool PCCEncoderParameters::check() {
 
 void PCCEncoderParameters::constructAspsRefListStruct( PCCContext& context, size_t aspsIdx, size_t afpsIdx ) {
   auto& asps = context.getAtlasSequenceParameterSet( aspsIdx );
-  // construction of reference frame list of ASPS : RefAtlasFrmAfocList[ j ] = afocBase − DeltaAfocSt[ RlsIdx ][ j ]
+  // construction of reference frame list of ASPS : RefAtlasFrmAfocList[ j ] =
+  // afocBase − DeltaAfocSt[ RlsIdx ][ j ]
   for ( size_t list = 0; list < context.getNumOfRefAtlasFrameList(); list++ ) {
     RefListStruct refList;
-    refList.setNumRefEntries( context.getMaxNumRefAtlasFrame( list ) );  //1,2,3,4
+    refList.setNumRefEntries( context.getMaxNumRefAtlasFrame( list ) );  // 1,2,3,4
     refList.allocate();
     for ( size_t i = 0; i < refList.getNumRefEntries(); i++ ) {
-      int afocDiff=-1;
-      if(i==0) afocDiff = context.getRefAtlasFrame( list, i );
-      else afocDiff = context.getRefAtlasFrame( list, i ) - context.getRefAtlasFrame( list, i-1 );
+      int afocDiff = -1;
+      if ( i == 0 )
+        afocDiff = context.getRefAtlasFrame( list, i );
+      else
+        afocDiff = context.getRefAtlasFrame( list, i ) - context.getRefAtlasFrame( list, i - 1 );
       refList.setAbsDeltaAfocSt( i, std::abs( afocDiff ) );
       refList.setStrafEntrySignFlag( i, afocDiff < 0 ? false : !false );
       refList.setStRefAtalsFrameFlag( i, true );
@@ -783,7 +787,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     context.setSizeOfRefAtlasFrameList( list, maxNumRefAtlasFrame_ );
     for ( size_t i = 0; i < maxNumRefAtlasFrame_; i++ ) {
       context.setRefAtlasFrame( list, i,
-                                static_cast<int32_t>( i + 1 ) );  //1, 2, 3, 4
+                                static_cast<int32_t>( i + 1 ) );  // 1, 2, 3, 4
     }
   }
 
@@ -808,16 +812,16 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   ai.allocate();
   if ( static_cast<int>( noAttributes_ ) == 0 ) {
     ai.setAttributeDimensionMinus1( 0, noAttributes_ ? 0 : 2 );
-    ai.setAttributeNominal2dBitdepthMinus1( 0, 7 );
+    ai.setAttribute2dBitdepthMinus1( 0, 7 );
   }
   for ( size_t i = 0; i < ai.getAttributeCount(); i++ ) {
-    if( absoluteT1_ == absoluteD1_ )
+    if ( absoluteT1_ == absoluteD1_ )
       ai.setAttributeMapAbsoluteCodingPersistenceFlag( i, false );
-    else if( absoluteT1_ && !absoluteD1_ )
+    else if ( absoluteT1_ && !absoluteD1_ )
       ai.setAttributeMapAbsoluteCodingPersistenceFlag( i, true );
-    else{
-      std::cerr<<"absoluteT1_ should be true when absoluteD1_ is true\n";
-      exit(0);
+    else {
+      std::cerr << "absoluteT1_ should be true when absoluteD1_ is true\n";
+      exit( 0 );
     }
   }
 
@@ -836,7 +840,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   asps.setPatchPrecedenceOrderFlag( patchPrecedenceOrderFlag_ );
   asps.setPatchSizeQuantizerPresentFlag( context.getEnablePatchSizeQuantization() );
   asps.setEomPatchEnabledFlag( enhancedOccupancyMapCode_ );
-  asps.setPointLocalReconstructionEnabledFlag( pointLocalReconstruction_ );
+  asps.setPLREnabledFlag( pointLocalReconstruction_ );
   asps.setVuiParametersPresentFlag( false );
   asps.setExtensionFlag( true );
   asps.setVpccExtensionFlag( true );
@@ -905,8 +909,8 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   // construction of reference frame list of ASPS
   constructAspsRefListStruct( context, 0, 0 );
 
-  oi.setLossyOccupancyMapCompressionThreshold( thresholdLossyOM_ );
-  oi.setOccupancyNominal2DBitdepthMinus1( 7 );
+  oi.setLossyOccupancyCompressionThreshold( thresholdLossyOM_ );
+  oi.setOccupancy2DBitdepthMinus1( 7 );
   oi.setOccupancyMSBAlignFlag( false );
 
 #if EXPAND_RANGE_ENCODER
@@ -915,7 +919,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
 #else
   gi.setGeometry3dCoordinatesBitdepthMinus1( uint8_t( geometry3dCoordinatesBitdepth_ - 1 ) );
 #endif
-  gi.setGeometryNominal2dBitdepthMinus1( uint8_t( geometryNominal2dBitdepth_ - 1 ) );
+  gi.setGeometry2dBitdepthMinus1( uint8_t( geometryNominal2dBitdepth_ - 1 ) );
   gi.setGeometryMSBAlignFlag( false );
 
   // Encoder only data

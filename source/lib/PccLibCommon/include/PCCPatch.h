@@ -168,11 +168,11 @@ class PCCPatch {
   std::vector<int16_t>&       getDepth( int i ) { return depth_[i]; }
   std::vector<bool>&          getOccupancy() { return occupancy_; }
   size_t                      getLodScaleX() { return levelOfDetailX_; }
-  size_t                      getLodScaleY() { return levelOfDetailY_; }
+  size_t                      getLodScaleYIdc() { return levelOfDetailY_; }
   size_t                      getLodScaleX() const { return levelOfDetailX_; }
-  size_t                      getLodScaleY() const { return levelOfDetailY_; }
+  size_t                      getLodScaleYIdc() const { return levelOfDetailY_; }
   void                        setLodScaleX( size_t value ) { levelOfDetailX_ = value; }
-  void                        setLodScaleY( size_t value ) { levelOfDetailY_ = value; }
+  void                        setLodScaleYIdc( size_t value ) { levelOfDetailY_ = value; }
   size_t&                     getAxisOfAdditionalPlane() { return axisOfAdditionalPlane_; }
   size_t                      getIndex() const { return index_; }
   size_t                      getOriginalIndex() const { return originalIndex_; }

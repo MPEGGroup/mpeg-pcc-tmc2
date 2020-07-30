@@ -51,11 +51,15 @@ void PCCHDRToolsAppColorConverter<T>::convert( std::string        configFile,
                                                const std::string& externalPath,
                                                const std::string& fileName ) {
   if ( externalPath.empty() ) {
-    printf( "PCCHDRToolsAppColorConverter error: hdrTools path must be be defined \n" );
+    printf(
+        "PCCHDRToolsAppColorConverter error: hdrTools path must be be defined "
+        "\n" );
     exit( -1 );
   }
   if ( fileName.empty() ) {
-    printf( "PCCHDRToolsAppColorConverter error: fileName path must be be defined \n" );
+    printf(
+        "PCCHDRToolsAppColorConverter error: fileName path must be be defined "
+        "\n" );
     exit( -1 );
   }
   std::ifstream ifs( configFile );

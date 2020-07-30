@@ -69,8 +69,10 @@ class PCCImage {
 
   void convertYUV444ToYUV420( const PCCImage<T, 3>& image ) {
     if ( image.getColorFormat() != PCCCOLORFORMAT::YUV444 ) {
-      printf( "Error: convertYUV44ToYUV420 not possible from image of format = %d != YUV444 \n",
-              (int32_t)image.getColorFormat() );
+      printf(
+          "Error: convertYUV44ToYUV420 not possible from image of format = %d "
+          "!= YUV444 \n",
+          (int32_t)image.getColorFormat() );
       exit( -1 );
     }
     resize( image.getWidth(), image.getHeight(), PCCCOLORFORMAT::YUV420 );
@@ -91,8 +93,10 @@ class PCCImage {
 
   void convertYUV420ToYUV444( const PCCImage<T, 3>& image ) {
     if ( image.getColorFormat() != PCCCOLORFORMAT::YUV420 ) {
-      printf( "Error: convertYUV44ToYUV420 not possible from image of format = %d != YUV420 \n",
-              (int32_t)image.getColorFormat() );
+      printf(
+          "Error: convertYUV44ToYUV420 not possible from image of format = %d "
+          "!= YUV420 \n",
+          (int32_t)image.getColorFormat() );
       exit( -1 );
     }
     resize( image.getWidth(), image.getHeight(), PCCCOLORFORMAT::YUV444 );
@@ -177,8 +181,10 @@ class PCCImage {
     const size_t height[3] = {heightY, heightC, heightC};
     const size_t stride[3] = {strideY, strideC, strideC};
     int16_t      rounding  = 1 << ( shiftbits - 1 );
-    printf( "copy image from HM to PCC: S=%d R=%d (%4zux%4zu S=%4zu C:%4zux%4zu => %4zux%4zu) bgr=%d \n", shiftbits,
-            rounding, widthY, heightY, strideY, widthC, heightC, width_, height_, rgb2bgr );
+    printf(
+        "copy image from HM to PCC: S=%d R=%d (%4zux%4zu S=%4zu C:%4zux%4zu => "
+        "%4zux%4zu) bgr=%d \n",
+        shiftbits, rounding, widthY, heightY, strideY, widthC, heightC, width_, height_, rgb2bgr );
     for ( size_t c = 0; c < 3; c++ ) {
       auto* src = ptr[rgb2bgr][c];
       auto* dst = channels_[c].data();
@@ -213,8 +219,10 @@ class PCCImage {
     size_t chromaSubsample = widthY / widthC;
     if ( ( chromaSubsample == 1 && format_ == PCCCOLORFORMAT::YUV420 ) ||
          ( chromaSubsample == 2 && format_ != PCCCOLORFORMAT::YUV420 ) ) {
-      printf( "Error: image get not possible from image of format = %d with chromaSubsample = %zu \n", (int32_t)format_,
-              chromaSubsample );
+      printf(
+          "Error: image get not possible from image of format = %d with "
+          "chromaSubsample = %zu \n",
+          (int32_t)format_, chromaSubsample );
       exit( -1 );
     }
     size_t       widthChroma  = width_ / chromaSubsample;
@@ -224,8 +232,10 @@ class PCCImage {
     const size_t heightSrc[3] = {height_, heightChroma, heightChroma};
     const size_t heightDst[3] = {heightY, heightC, heightC};
     const size_t stride[3]    = {strideY, strideC, strideC};
-    printf( "copy image from PCC to HM: S = %d (%4zux%4zu => %4zux%4zu S=%4zu C: %4zux%4zu ) \n", shiftbits, width_,
-            height_, widthY, heightY, strideY, widthC, heightC );
+    printf(
+        "copy image from PCC to HM: S = %d (%4zux%4zu => %4zux%4zu S=%4zu C: "
+        "%4zux%4zu ) \n",
+        shiftbits, width_, height_, widthY, heightY, strideY, widthC, heightC );
     for ( size_t c = 0; c < 3; c++ ) {
       auto* src = channels_[c].data();
       auto* dst = ptr[rgb2bgr][c];
@@ -245,8 +255,10 @@ class PCCImage {
   }
 
   bool write( std::ofstream& outfile, const size_t nbyte ) {
-    printf( "Image write %zux%zu T = %zu nbyte = %zu color format = %d channel size = %zu %zu %zu \n", width_, height_,
-            sizeof( T ), nbyte, format_, channels_[0].size(), channels_[1].size(), channels_[2].size() );
+    printf(
+        "Image write %zux%zu T = %zu nbyte = %zu color format = %d channel "
+        "size = %zu %zu %zu \n",
+        width_, height_, sizeof( T ), nbyte, format_, channels_[0].size(), channels_[1].size(), channels_[2].size() );
     fflush( stdout );
     if ( nbyte == sizeof( T ) ) {
       if ( !outfile.good() ) { return false; }
@@ -344,9 +356,12 @@ class PCCImage {
   }
 
   static inline T tMin( T a, T b ) { return ( ( a ) < ( b ) ) ? ( a ) : ( b ); }
-  // static inline float fMin( float a, float b ) { return ( ( a ) < ( b ) ) ? ( a ) : ( b ); }
-  // static inline float fMax( float a, float b ) { return ( ( a ) > ( b ) ) ? ( a ) : ( b ); }
-  // static inline float fClip( float x, float low, float high ) { return fMin( fMax( x, low ), high ); }
+  // static inline float fMin( float a, float b ) { return ( ( a ) < ( b ) ) ? (
+  // a ) : ( b ); }
+  // static inline float fMax( float a, float b ) { return ( ( a ) > ( b ) ) ? (
+  // a ) : ( b ); }
+  // static inline float fClip( float x, float low, float high ) { return fMin(
+  // fMax( x, low ), high ); }
 
   void convertBitdepth( uint8_t bitdepthInput, uint8_t bitdepthOutput, bool msbAlignFlag ) {
     if ( bitdepthInput > sizeof( T ) * 8 ) {
@@ -398,7 +413,8 @@ class PCCImage {
   size_t         height_;
   std::vector<T> channels_[N];
   PCCCOLORFORMAT format_;
-  size_t         deprecatedColorFormat_;  // 0.RGB 1.YUV420 2.YUV444 16bits  // TODO JR: must be removed
+  size_t         deprecatedColorFormat_;  // 0.RGB 1.YUV420 2.YUV444 16bits  // TODO JR:
+                                          // must be removed
 };
 }  // namespace pcc
 

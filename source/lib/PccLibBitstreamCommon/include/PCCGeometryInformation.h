@@ -42,7 +42,7 @@ class GeometryInformation {
  public:
   GeometryInformation() :
       geometryCodecId_( 0 ),
-      geometryNominal2dBitdepthMinus1_( 10 ),
+      Geometry2dBitdepthMinus1_( 10 ),
       geometryMSBAlignFlag_( false ),
       geometry3dCoordinatesBitdepthMinus1_( 9 ),
       auxiliaryGeometryCodecId_( 0 ) {}
@@ -50,19 +50,19 @@ class GeometryInformation {
   GeometryInformation& operator=( const GeometryInformation& ) = default;
 
   uint8_t getGeometryCodecId() { return geometryCodecId_; }
-  uint8_t getGeometryNominal2dBitdepthMinus1() { return geometryNominal2dBitdepthMinus1_; }
+  uint8_t getGeometry2dBitdepthMinus1() { return Geometry2dBitdepthMinus1_; }
   bool    getGeometryMSBAlignFlag() { return geometryMSBAlignFlag_; }
   uint8_t getGeometry3dCoordinatesBitdepthMinus1() { return geometry3dCoordinatesBitdepthMinus1_; }
   uint8_t getAuxiliaryGeometryCodecId() { return auxiliaryGeometryCodecId_; }
   void    setGeometryCodecId( uint8_t value ) { geometryCodecId_ = value; }
-  void    setGeometryNominal2dBitdepthMinus1( uint8_t value ) { geometryNominal2dBitdepthMinus1_ = value; }
+  void    setGeometry2dBitdepthMinus1( uint8_t value ) { Geometry2dBitdepthMinus1_ = value; }
   void    setGeometryMSBAlignFlag( bool value ) { geometryMSBAlignFlag_ = value; }
   void    setGeometry3dCoordinatesBitdepthMinus1( uint8_t value ) { geometry3dCoordinatesBitdepthMinus1_ = value; }
   void    setAuxiliaryGeometryCodecId( uint8_t value ) { auxiliaryGeometryCodecId_ = value; }
 
  private:
   uint8_t geometryCodecId_;
-  uint8_t geometryNominal2dBitdepthMinus1_;
+  uint8_t Geometry2dBitdepthMinus1_;
   bool    geometryMSBAlignFlag_;
   uint8_t geometry3dCoordinatesBitdepthMinus1_;
   uint8_t auxiliaryGeometryCodecId_;

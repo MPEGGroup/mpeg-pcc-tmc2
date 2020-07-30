@@ -51,7 +51,7 @@ int main( int argc, char* argv[] ) {
   clockWall.start();
   int ret = decompressVideo( decoderParams, metricsParams, clockUser );
   clockWall.stop();
-  
+
   using namespace std::chrono;
   using ms       = milliseconds;
   auto totalWall = duration_cast<ms>( clockWall.count() ).count();

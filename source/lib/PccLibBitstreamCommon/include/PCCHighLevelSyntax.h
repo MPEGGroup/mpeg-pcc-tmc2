@@ -206,6 +206,8 @@ class PCCAtlasHighLevelSyntax {
       case ATLAS_INFORMATION: sharedPtr = std::make_shared<SEIAtlasInformation>(); break;
       case VIEWPORT_CAMERA_PARAMETERS: sharedPtr = std::make_shared<SEIViewportCameraParameters>(); break;
       case VIEWPORT_POSITION: sharedPtr = std::make_shared<SEIViewportPosition>(); break;
+      case DECODED_ATLAS_INFORMATION_HASH: sharedPtr = std::make_shared<SEIDecodedAtlasInformationHash>(); break;
+      case OCCUPANCY_SYNTHESIS: sharedPtr = std::make_shared<SEIOccupancySynthesis>(); break;
       case GEOMETRY_SMOOTHING: sharedPtr = std::make_shared<SEIGeometrySmoothing>(); break;
       case ATTRIBUTE_SMOOTHING: sharedPtr = std::make_shared<SEIAttributeSmoothing>(); break;
       case RESERVED_SEI_MESSAGE: sharedPtr = std::make_shared<SEIReservedSeiMessage>(); break;
@@ -255,17 +257,20 @@ class PCCAtlasHighLevelSyntax {
   SEI&                               getSeiSuffix( size_t index ) { return *( seiSuffix_[index] ); }
 
  private:
-  std::vector<PCCVideoBitstream>               videoBitstream_;             // video related variables
-  std::vector<AtlasSequenceParameterSetRbsp>   atlasSequenceParameterSet_;  // ASPS related variables
-  uint8_t                                      activeASPS_;
-  std::vector<std::vector<int32_t>>            refAtlasFrameList_;
-  size_t                                       maxNumRefAtlasFrame_;
-  std::vector<PointLocalReconstructionMode>    pointLocalReconstructionMode_;
-  std::vector<AtlasFrameParameterSetRbsp>      atlasFrameParameterSet_;  // AFPS related variables
+  std::vector<PCCVideoBitstream>             videoBitstream_;             // video related variables
+  std::vector<AtlasSequenceParameterSetRbsp> atlasSequenceParameterSet_;  // ASPS related variables
+  uint8_t                                    activeASPS_;
+  std::vector<std::vector<int32_t>>          refAtlasFrameList_;
+  size_t                                     maxNumRefAtlasFrame_;
+  std::vector<PointLocalReconstructionMode>  pointLocalReconstructionMode_;
+  std::vector<AtlasFrameParameterSetRbsp>    atlasFrameParameterSet_;  // AFPS
+                                                                       // related
+                                                                       // variables
   uint8_t                                      activeAFPS_;
-  std::vector<std::vector<AtlasTileLayerRbsp>> atlasTileLayer_;  // ATGL related variables
-  std::vector<std::shared_ptr<SEI>>            seiPrefix_;       // SEI related variables
-  std::vector<std::shared_ptr<SEI>>            seiSuffix_;
+  std::vector<std::vector<AtlasTileLayerRbsp>> atlasTileLayer_;  // ATGL related
+                                                                 // variables
+  std::vector<std::shared_ptr<SEI>> seiPrefix_;                  // SEI related variables
+  std::vector<std::shared_ptr<SEI>> seiSuffix_;
 };
 
 class PCCHighLevelSyntax {
@@ -349,8 +354,8 @@ class PCCHighLevelSyntax {
   // reference list, defined in ASPS
   size_t getNumRefIdxActive( AtlasTileHeader& ath ) { return atlasHLS_[atlasIndex_].getNumRefIdxActive( ath ); };
 
-  //jkei: do we need this?
-  size_t getMaxNumRefAtlasFrame(size_t listIndex) { return atlasHLS_[atlasIndex_].getMaxNumRefAtlasFrame(); }
+  // jkei: do we need this?
+  size_t getMaxNumRefAtlasFrame( size_t listIndex ) { return atlasHLS_[atlasIndex_].getMaxNumRefAtlasFrame(); }
   size_t getMaxNumRefAtlasFrame() { return atlasHLS_[atlasIndex_].getMaxNumRefAtlasFrame(); }
 
   void setNumOfRefAtlasFrameList( size_t value ) { atlasHLS_[atlasIndex_].setNumOfRefAtlasFrameList( value ); }
@@ -373,7 +378,7 @@ class PCCHighLevelSyntax {
   std::vector<int32_t>& getRefAtlasFrameList( size_t listIndex ) {
     return atlasHLS_[atlasIndex_].getRefAtlasFrameList( listIndex );
   }
-  void   setMaxNumRefAtlasFrame( size_t value ) { atlasHLS_[atlasIndex_].setMaxNumRefAtlasFrame( value ); }
+  void setMaxNumRefAtlasFrame( size_t value ) { atlasHLS_[atlasIndex_].setMaxNumRefAtlasFrame( value ); }
   // point local recosntruction, defined in ASPS
   void addPointLocalReconstructionMode( const PointLocalReconstructionMode& mode ) {
     atlasHLS_[atlasIndex_].addPointLocalReconstructionMode( mode );

@@ -38,7 +38,8 @@
 
 namespace pcc {
 
-// 7.3.6.3  Atlas frame parameter set RBSP syntax
+// 7.3.6.2 Atlas frame parameter set Rbsp syntax
+// 7.3.6.2.1 General atlas frame parameter set Rbsp syntax
 class AtlasFrameParameterSetRbsp {
  public:
   AtlasFrameParameterSetRbsp() :

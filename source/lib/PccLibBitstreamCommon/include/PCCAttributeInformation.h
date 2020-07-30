@@ -47,7 +47,7 @@ class AttributeInformation {
     auxiliaryAttributeCodecId_.clear();
     attributeDimensionMinus1_.clear();
     attributeDimensionPartitionsMinus1_.clear();
-    attributeNominal2dBitdepthMinus1_.clear();
+    Attribute2dBitdepthMinus1_.clear();
     for ( auto& value : attributePartitionChannelsMinus1_ ) { value.clear(); }
     attributePartitionChannelsMinus1_.clear();
     attributeMapAbsoluteCodingPersistenceFlagList_.clear();
@@ -61,7 +61,7 @@ class AttributeInformation {
     auxiliaryAttributeCodecId_.resize( attributeCount_, 0 );
     attributeDimensionMinus1_.resize( attributeCount_, 0 );
     attributeDimensionPartitionsMinus1_.resize( attributeCount_, 0 );
-    attributeNominal2dBitdepthMinus1_.resize( attributeCount_, 0 );
+    Attribute2dBitdepthMinus1_.resize( attributeCount_, 0 );
     attributePartitionChannelsMinus1_.resize( attributeCount_ );
     attributeMapAbsoluteCodingPersistenceFlagList_.resize( attributeCount_ );
     attributeMSBAlignFlag_.resize( attributeCount_, 0 );
@@ -73,7 +73,7 @@ class AttributeInformation {
   uint8_t getAuxiliaryAttributeCodecId( uint32_t index ) { return auxiliaryAttributeCodecId_[index]; }
   uint8_t getAttributeDimensionMinus1( uint32_t index ) { return attributeDimensionMinus1_[index]; }
   uint8_t getAttributeDimensionPartitionsMinus1( uint32_t index ) { return attributeDimensionPartitionsMinus1_[index]; }
-  uint8_t getAttributeNominal2dBitdepthMinus1( uint32_t index ) { return attributeNominal2dBitdepthMinus1_[index]; }
+  uint8_t getAttribute2dBitdepthMinus1( uint32_t index ) { return Attribute2dBitdepthMinus1_[index]; }
   uint8_t getAttributePartitionChannelsMinus1( uint32_t index, uint32_t j ) {
     if ( j >= attributePartitionChannelsMinus1_[index].size() ) {
       attributePartitionChannelsMinus1_[index].resize( j + 1, 0 );
@@ -95,9 +95,7 @@ class AttributeInformation {
   void setAttributeDimensionPartitionsMinus1( uint32_t index, uint8_t value ) {
     attributeDimensionPartitionsMinus1_[index] = value;
   }
-  void setAttributeNominal2dBitdepthMinus1( uint32_t index, uint8_t value ) {
-    attributeNominal2dBitdepthMinus1_[index] = value;
-  }
+  void setAttribute2dBitdepthMinus1( uint32_t index, uint8_t value ) { Attribute2dBitdepthMinus1_[index] = value; }
   void setAttributePartitionChannelsMinus1( uint32_t index, uint32_t j, uint8_t value ) {
     if ( j >= attributePartitionChannelsMinus1_[index].size() ) {
       attributePartitionChannelsMinus1_[index].resize( j + 1, 0 );
@@ -117,7 +115,7 @@ class AttributeInformation {
   std::vector<uint8_t>              attributeDimensionMinus1_;
   std::vector<uint8_t>              attributeDimensionPartitionsMinus1_;
   std::vector<std::vector<uint8_t>> attributePartitionChannelsMinus1_;
-  std::vector<uint8_t>              attributeNominal2dBitdepthMinus1_;
+  std::vector<uint8_t>              Attribute2dBitdepthMinus1_;
   std::vector<bool>                 attributeMSBAlignFlag_;
 };
 

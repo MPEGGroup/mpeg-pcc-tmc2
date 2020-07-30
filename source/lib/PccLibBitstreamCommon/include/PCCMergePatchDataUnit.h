@@ -34,7 +34,7 @@
 #define PCC_BITSTREAM_MERGEPATCHDATAUNIT_H
 
 #include "PCCBitstreamCommon.h"
-#include "PCCPointLocalReconstructionData.h"
+#include "PCCPLRData.h"
 
 namespace pcc {
 
@@ -50,30 +50,30 @@ class MergePatchDataUnit {
       pos2dY_( 0 ),
       delta2dSizeX_( 0 ),
       delta2dSizeY_( 0 ),
-      pos3dX_( 0 ),
-      pos3dY_( 0 ),
-      pos3dMinZ_( 0 ),
-      pos3dDeltaMaxZ_( 0 ),
+      pos3dOffsetX_( 0 ),
+      pos3dOffsetY_( 0 ),
+      pos3dOffsetMinZ_( 0 ),
+      pos3dRangeZ_( 0 ),
       patchIndex_( 0 ),
       frameIndex_( 0 ){};
   ~MergePatchDataUnit(){};
   MergePatchDataUnit& operator=( const MergePatchDataUnit& ) = default;
 
-  bool                          getOverride2dParamsFlag() { return override2dParamsFlag_; }
-  bool                          getOverride3dParamsFlag() { return override3dParamsFlag_; }
-  bool                          getOverridePlrFlag() { return overridePlrFlag_; }
-  int64_t                       getRefIndex() { return refIndex_; }
-  int64_t                       get2dPosX() { return pos2dX_; }
-  int64_t                       get2dPosY() { return pos2dY_; }
-  int64_t                       get2dDeltaSizeX() { return delta2dSizeX_; }
-  int64_t                       get2dDeltaSizeY() { return delta2dSizeY_; }
-  int64_t                       get3dPosX() { return pos3dX_; }
-  int64_t                       get3dPosY() { return pos3dY_; }
-  int64_t                       get3dPosMinZ() { return pos3dMinZ_; }
-  int64_t                       get3dPosDeltaMaxZ() { return pos3dDeltaMaxZ_; }
-  size_t                        getPatchIndex() { return patchIndex_; }
-  size_t                        getFrameIndex() { return frameIndex_; }
-  PointLocalReconstructionData& getPointLocalReconstructionData() { return pointLocalReconstructionData_; }
+  bool     getOverride2dParamsFlag() { return override2dParamsFlag_; }
+  bool     getOverride3dParamsFlag() { return override3dParamsFlag_; }
+  bool     getOverridePlrFlag() { return overridePlrFlag_; }
+  int64_t  getRefIndex() { return refIndex_; }
+  int64_t  get2dPosX() { return pos2dX_; }
+  int64_t  get2dPosY() { return pos2dY_; }
+  int64_t  get2dDeltaSizeX() { return delta2dSizeX_; }
+  int64_t  get2dDeltaSizeY() { return delta2dSizeY_; }
+  int64_t  get3dOffsetX() { return pos3dOffsetX_; }
+  int64_t  get3dOffsetY() { return pos3dOffsetY_; }
+  int64_t  get3dOffsetMinZ() { return pos3dOffsetMinZ_; }
+  int64_t  get3dRangeZ() { return pos3dRangeZ_; }
+  size_t   getPatchIndex() { return patchIndex_; }
+  size_t   getFrameIndex() { return frameIndex_; }
+  PLRData& getPLRData() { return pointLocalReconstructionData_; }
 
   void setOverride2dParamsFlag( bool value ) { override2dParamsFlag_ = value; }
   void setOverride3dParamsFlag( bool value ) { override3dParamsFlag_ = value; }
@@ -83,30 +83,30 @@ class MergePatchDataUnit {
   void set2dPosY( int64_t value ) { pos2dY_ = value; }
   void set2dDeltaSizeX( int64_t value ) { delta2dSizeX_ = value; }
   void set2dDeltaSizeY( int64_t value ) { delta2dSizeY_ = value; }
-  void set3dPosX( int64_t value ) { pos3dX_ = value; }
-  void set3dPosY( int64_t value ) { pos3dY_ = value; }
-  void set3dPosMinZ( int64_t value ) { pos3dMinZ_ = value; }
-  void set3dPosDeltaMaxZ( int64_t value ) { pos3dDeltaMaxZ_ = value; }
+  void set3dOffsetX( int64_t value ) { pos3dOffsetX_ = value; }
+  void set3dOffsetY( int64_t value ) { pos3dOffsetY_ = value; }
+  void set3dOffsetMinZ( int64_t value ) { pos3dOffsetMinZ_ = value; }
+  void set3dRangeZ( int64_t value ) { pos3dRangeZ_ = value; }
   void setPatchIndex( size_t value ) { patchIndex_ = value; }
   void setFrameIndex( size_t value ) { frameIndex_ = value; }
-  void setPointLocalReconstructionData( PointLocalReconstructionData value ) { pointLocalReconstructionData_ = value; }
+  void setPLRData( PLRData value ) { pointLocalReconstructionData_ = value; }
 
  private:
-  bool                         override2dParamsFlag_;
-  bool                         override3dParamsFlag_;
-  bool                         overridePlrFlag_;
-  int64_t                      refIndex_;
-  int64_t                      pos2dX_;
-  int64_t                      pos2dY_;
-  int64_t                      delta2dSizeX_;
-  int64_t                      delta2dSizeY_;
-  int64_t                      pos3dX_;
-  int64_t                      pos3dY_;
-  int64_t                      pos3dMinZ_;
-  int64_t                      pos3dDeltaMaxZ_;
-  size_t                       patchIndex_;
-  size_t                       frameIndex_;
-  PointLocalReconstructionData pointLocalReconstructionData_;
+  bool    override2dParamsFlag_;
+  bool    override3dParamsFlag_;
+  bool    overridePlrFlag_;
+  int64_t refIndex_;
+  int64_t pos2dX_;
+  int64_t pos2dY_;
+  int64_t delta2dSizeX_;
+  int64_t delta2dSizeY_;
+  int64_t pos3dOffsetX_;
+  int64_t pos3dOffsetY_;
+  int64_t pos3dOffsetMinZ_;
+  int64_t pos3dRangeZ_;
+  size_t  patchIndex_;
+  size_t  frameIndex_;
+  PLRData pointLocalReconstructionData_;
 };
 
 };  // namespace pcc

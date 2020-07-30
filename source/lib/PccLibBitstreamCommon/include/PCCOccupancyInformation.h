@@ -42,30 +42,30 @@ class OccupancyInformation {
  public:
   OccupancyInformation() :
       occupancyCodecId_( 0 ),
-      lossyOccupancyMapCompressionThreshold_( 0 ),
-      occupancyNominal2DBitdepthMinus1_( 10 ),
+      LossyOccupancyCompressionThreshold_( 0 ),
+      Occupancy2DBitdepthMinus1_( 10 ),
       occupancyMSBAlignFlag_( false ) {}
   ~OccupancyInformation() {}
   OccupancyInformation& operator=( const OccupancyInformation& ) = default;
   void                  init( uint8_t codecId, uint8_t threshold, uint8_t nominal2DBitdepth, bool msbAlignFlag ) {
-    occupancyCodecId_                      = codecId;
-    lossyOccupancyMapCompressionThreshold_ = threshold;
-    occupancyNominal2DBitdepthMinus1_      = nominal2DBitdepth;
-    occupancyMSBAlignFlag_                 = msbAlignFlag;
+    occupancyCodecId_                   = codecId;
+    LossyOccupancyCompressionThreshold_ = threshold;
+    Occupancy2DBitdepthMinus1_          = nominal2DBitdepth;
+    occupancyMSBAlignFlag_              = msbAlignFlag;
   }
   uint8_t getOccupancyCodecId() { return occupancyCodecId_; }
-  uint8_t getLossyOccupancyMapCompressionThreshold() { return lossyOccupancyMapCompressionThreshold_; }
-  uint8_t getOccupancyNominal2DBitdepthMinus1() { return occupancyNominal2DBitdepthMinus1_; }
+  uint8_t getLossyOccupancyCompressionThreshold() { return LossyOccupancyCompressionThreshold_; }
+  uint8_t getOccupancy2DBitdepthMinus1() { return Occupancy2DBitdepthMinus1_; }
   bool    getOccupancyMSBAlignFlag() { return occupancyMSBAlignFlag_; }
   void    setOccupancyCodecId( uint8_t value ) { occupancyCodecId_ = value; }
-  void    setLossyOccupancyMapCompressionThreshold( uint8_t value ) { lossyOccupancyMapCompressionThreshold_ = value; }
-  void    setOccupancyNominal2DBitdepthMinus1( uint8_t value ) { occupancyNominal2DBitdepthMinus1_ = value; }
+  void    setLossyOccupancyCompressionThreshold( uint8_t value ) { LossyOccupancyCompressionThreshold_ = value; }
+  void    setOccupancy2DBitdepthMinus1( uint8_t value ) { Occupancy2DBitdepthMinus1_ = value; }
   void    setOccupancyMSBAlignFlag( bool value ) { occupancyMSBAlignFlag_ = value; }
 
  private:
   uint8_t occupancyCodecId_;
-  uint8_t lossyOccupancyMapCompressionThreshold_;
-  uint8_t occupancyNominal2DBitdepthMinus1_;
+  uint8_t LossyOccupancyCompressionThreshold_;
+  uint8_t Occupancy2DBitdepthMinus1_;
   bool    occupancyMSBAlignFlag_;
 };
 

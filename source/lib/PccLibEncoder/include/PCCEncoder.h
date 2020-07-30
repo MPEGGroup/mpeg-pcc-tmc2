@@ -48,7 +48,7 @@ class PCCFrameContext;
 class PatchFrameGeometryParameterSet;
 class GeometryPatchParameterSet;
 class V3CParameterSet;
-class PointLocalReconstructionData;
+class PLRData;
 
 template <typename T, size_t N>
 class PCCVideo;
@@ -350,11 +350,11 @@ class PCCEncoder : public PCCCodec {
 
   void setPointLocalReconstruction( PCCContext& context );
 
-  void setPointLocalReconstructionData( PCCFrameContext&              frame,
-                                        const PCCPatch&               patch,
-                                        PointLocalReconstructionData& plrd,
-                                        size_t                        occupancyPackingBlockSize,
-                                        size_t                        patchIndex );
+  void setPLRData( PCCFrameContext& frame,
+                   const PCCPatch&  patch,
+                   PLRData&         plrd,
+                   size_t           occupancyPackingBlockSize,
+                   size_t           patchIndex );
   //**Additional Projection Plane**//
   void segmentationPartiallyAddtinalProjectionPlane( const PCCPointSet3&                 source,
                                                      PCCFrameContext&                    frameContext,

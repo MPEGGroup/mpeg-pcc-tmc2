@@ -1116,7 +1116,7 @@ bool PCCPointSet3::transferColors16bitBP( PCCPointSet3& target,
   std::cout << "colorTransfer filter: " << filterType << std::endl;
   const auto&  source           = *this;
   const size_t pointCountSource = source.getPointCount();
-  const size_t pointCountTarget = target.getPointCount();  
+  const size_t pointCountTarget = target.getPointCount();
   if ( ( pointCountSource == 0u ) || ( pointCountTarget == 0u ) || !source.hasColors() ) { return false; }
   PCCKdTree kdtreeTarget( target );
   PCCKdTree kdtreeSource( source );

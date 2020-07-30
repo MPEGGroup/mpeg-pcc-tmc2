@@ -34,7 +34,7 @@
 #define PCC_BITSTREAM_PATCHDATAUNIT_H
 
 #include "PCCBitstreamCommon.h"
-#include "PCCPointLocalReconstructionData.h"
+#include "PCCPLRData.h"
 
 namespace pcc {
 
@@ -46,34 +46,34 @@ class PatchDataUnit {
       pos2dY_( 0 ),
       size2dXMinus1_( 0 ),
       size2dYMinus1_( 0 ),
-      pos3dX_( 0 ),
-      pos3dY_( 0 ),
-      pos3dMinZ_( 0 ),
-      pos3dDeltaMaxZ_( 0 ),
+      pos3dOffsetX_( 0 ),
+      pos3dOffsetY_( 0 ),
+      pos3dOffsetMinZ_( 0 ),
+      pos3dRangeZ_( 0 ),
       projectionId_( 0 ),
       orientationIndex_( 0 ),
       lodEnableFlag_( false ),
       lodScaleXminus1_( 0 ),
-      lodScaleY_( 0 ),
+      lodScaleYIdc_( 0 ),
       patchIndex_( 0 ),
       frameIndex_( 0 ) {}
   ~PatchDataUnit() {}
 
-  PatchDataUnit&                operator=( const PatchDataUnit& ) = default;
-  size_t                        get2dPosX() { return pos2dX_; }
-  size_t                        get2dPosY() { return pos2dY_; }
-  int64_t                       get2dSizeXMinus1() { return size2dXMinus1_; }
-  int64_t                       get2dSizeYMinus1() { return size2dYMinus1_; }
-  size_t                        get3dPosX() { return pos3dX_; }
-  size_t                        get3dPosY() { return pos3dY_; }
-  size_t                        get3dPosMinZ() { return pos3dMinZ_; }
-  size_t                        get3dPosDeltaMaxZ() { return pos3dDeltaMaxZ_; }
-  size_t                        getProjectionId() { return projectionId_; }
-  size_t                        getOrientationIndex() { return orientationIndex_; }
-  bool                          getLodEnableFlag() { return lodEnableFlag_; }
-  uint8_t                       getLodScaleXminus1() { return lodScaleXminus1_; }
-  uint8_t                       getLodScaleY() { return lodScaleY_; }
-  PointLocalReconstructionData& getPointLocalReconstructionData() { return pointLocalReconstructionData_; }
+  PatchDataUnit& operator=( const PatchDataUnit& ) = default;
+  size_t         get2dPosX() { return pos2dX_; }
+  size_t         get2dPosY() { return pos2dY_; }
+  int64_t        get2dSizeXMinus1() { return size2dXMinus1_; }
+  int64_t        get2dSizeYMinus1() { return size2dYMinus1_; }
+  size_t         get3dOffsetX() { return pos3dOffsetX_; }
+  size_t         get3dOffsetY() { return pos3dOffsetY_; }
+  size_t         get3dOffsetMinZ() { return pos3dOffsetMinZ_; }
+  size_t         get3dRangeZ() { return pos3dRangeZ_; }
+  size_t         getProjectionId() { return projectionId_; }
+  size_t         getOrientationIndex() { return orientationIndex_; }
+  bool           getLodEnableFlag() { return lodEnableFlag_; }
+  uint8_t        getLodScaleXminus1() { return lodScaleXminus1_; }
+  uint8_t        getLodScaleYIdc() { return lodScaleYIdc_; }
+  PLRData&       getPLRData() { return pointLocalReconstructionData_; }
 
   size_t getPatchIndex() { return patchIndex_; }
   size_t getFrameIndex() { return frameIndex_; }
@@ -83,34 +83,34 @@ class PatchDataUnit {
   void   set2dPosY( size_t value ) { pos2dY_ = value; }
   void   set2dSizeXMinus1( uint64_t value ) { size2dXMinus1_ = value; }
   void   set2dSizeYMinus1( uint64_t value ) { size2dYMinus1_ = value; }
-  void   set3dPosX( size_t value ) { pos3dX_ = value; }
-  void   set3dPosY( size_t value ) { pos3dY_ = value; }
-  void   set3dPosMinZ( size_t value ) { pos3dMinZ_ = value; }
-  void   set3dPosDeltaMaxZ( size_t value ) { pos3dDeltaMaxZ_ = value; }
+  void   set3dOffsetX( size_t value ) { pos3dOffsetX_ = value; }
+  void   set3dOffsetY( size_t value ) { pos3dOffsetY_ = value; }
+  void   set3dOffsetMinZ( size_t value ) { pos3dOffsetMinZ_ = value; }
+  void   set3dRangeZ( size_t value ) { pos3dRangeZ_ = value; }
   void   setProjectionId( size_t value ) { projectionId_ = value; }
   void   setOrientationIndex( size_t value ) { orientationIndex_ = value; }
   void   setLodEnableFlag( bool value ) { lodEnableFlag_ = value; }
   void   setLodScaleXminus1( uint8_t value ) { lodScaleXminus1_ = value; }
-  void   setLodScaleY( uint8_t value ) { lodScaleY_ = value; }
-  void setPointLocalReconstructionData( PointLocalReconstructionData value ) { pointLocalReconstructionData_ = value; }
+  void   setLodScaleYIdc( uint8_t value ) { lodScaleYIdc_ = value; }
+  void   setPLRData( PLRData value ) { pointLocalReconstructionData_ = value; }
 
  private:
-  size_t                       pos2dX_;
-  size_t                       pos2dY_;
-  uint64_t                     size2dXMinus1_;
-  uint64_t                     size2dYMinus1_;
-  size_t                       pos3dX_;
-  size_t                       pos3dY_;
-  size_t                       pos3dMinZ_;
-  size_t                       pos3dDeltaMaxZ_;
-  size_t                       projectionId_;
-  size_t                       orientationIndex_;
-  bool                         lodEnableFlag_;
-  uint8_t                      lodScaleXminus1_;
-  uint8_t                      lodScaleY_;
-  PointLocalReconstructionData pointLocalReconstructionData_;
-  size_t                       patchIndex_;
-  size_t                       frameIndex_;
+  size_t   pos2dX_;
+  size_t   pos2dY_;
+  uint64_t size2dXMinus1_;
+  uint64_t size2dYMinus1_;
+  size_t   pos3dOffsetX_;
+  size_t   pos3dOffsetY_;
+  size_t   pos3dOffsetMinZ_;
+  size_t   pos3dRangeZ_;
+  size_t   projectionId_;
+  size_t   orientationIndex_;
+  bool     lodEnableFlag_;
+  uint8_t  lodScaleXminus1_;
+  uint8_t  lodScaleYIdc_;
+  PLRData  pointLocalReconstructionData_;
+  size_t   patchIndex_;
+  size_t   frameIndex_;
 };
 
 };  // namespace pcc

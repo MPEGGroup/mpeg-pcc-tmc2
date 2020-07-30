@@ -76,7 +76,7 @@ void PCCAtlasContext::allocateVideoFrames( PCCHighLevelSyntax& syntax, size_t nu
   size_t nominalHeight = syntax.getVps().getFrameHeight( atlasIndex_ );
   // allocating structures for occupancy map
   size_t nominalBitDepthOccupancy =
-      syntax.getVps().getOccupancyInformation( atlasIndex_ ).getOccupancyNominal2DBitdepthMinus1() + 1;
+      syntax.getVps().getOccupancyInformation( atlasIndex_ ).getOccupancy2DBitdepthMinus1() + 1;
   occFrames_.resize( numFrames );
   occBitdepth_.resize( numFrames, nominalBitDepthOccupancy );
   occWidth_.resize( numFrames, nominalWidth );
@@ -84,7 +84,7 @@ void PCCAtlasContext::allocateVideoFrames( PCCHighLevelSyntax& syntax, size_t nu
 
   // allocating structures for geometry
   size_t nominalBitDepthGeometry =
-      syntax.getVps().getGeometryInformation( atlasIndex_ ).getGeometryNominal2dBitdepthMinus1() + 1;
+      syntax.getVps().getGeometryInformation( atlasIndex_ ).getGeometry2dBitdepthMinus1() + 1;
   geoFrames_.resize( mapCount );
   geoBitdepth_.resize( mapCount );
   geoWidth_.resize( mapCount );
@@ -104,7 +104,7 @@ void PCCAtlasContext::allocateVideoFrames( PCCHighLevelSyntax& syntax, size_t nu
   attrHeight_.resize( attrCount );
   for ( size_t attrIdx = 0; attrIdx < attrCount; attrIdx++ ) {
     size_t nominalBitDepthAttribute =
-        syntax.getVps().getAttributeInformation( atlasIndex_ ).getAttributeNominal2dBitdepthMinus1( attrIdx ) + 1;
+        syntax.getVps().getAttributeInformation( atlasIndex_ ).getAttribute2dBitdepthMinus1( attrIdx ) + 1;
     size_t partitionCount =
         syntax.getVps().getAttributeInformation( atlasIndex_ ).getAttributeDimensionPartitionsMinus1( attrIdx ) + 1;
     attrFrames_[attrIdx].resize( partitionCount );

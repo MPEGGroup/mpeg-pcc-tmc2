@@ -870,7 +870,7 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
                    const PCCMetricsParameters& metricsParams,
                    StopwatchUserTime&          clock ) {
   const size_t startFrameNumber0        = encoderParams.startFrameNumber_;
-  size_t endFrameNumber0                = encoderParams.startFrameNumber_ + encoderParams.frameCount_;
+  size_t       endFrameNumber0          = encoderParams.startFrameNumber_ + encoderParams.frameCount_;
   const size_t groupOfFramesSize0       = ( std::max )( size_t( 1 ), encoderParams.groupOfFramesSize_ );
   size_t       startFrameNumber         = startFrameNumber0;
   size_t       reconstructedFrameNumber = encoderParams.startFrameNumber_;
@@ -904,13 +904,13 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
       return -1;
     }
     if ( sources.getFrameCount() < endFrameNumber - startFrameNumber ) {
-      endFrameNumber = startFrameNumber + sources.getFrameCount();
+      endFrameNumber  = startFrameNumber + sources.getFrameCount();
       endFrameNumber0 = endFrameNumber;
     }
     clock.start();
     std::cout << "Compressing group of frames " << contextIndex << ": " << startFrameNumber << " -> " << endFrameNumber
               << "..." << std::endl;
-    int ret = encoder.encode( sources, context, reconstructs );
+    int                ret = encoder.encode( sources, context, reconstructs );
     PCCBitstreamWriter bitstreamWriter;
 #ifdef BITSTREAM_TRACE
     PCCBitstream bitstream;

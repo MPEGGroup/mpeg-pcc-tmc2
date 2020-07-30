@@ -180,7 +180,8 @@ void PCCHDRToolsLibColorConverterImpl<T>::init( ProjectParameters* inputParams )
     m_pFrameStore[0] = NULL;
   }
 
-  // Here we may convert to the output's format type (e.g. from integer to float).
+  // Here we may convert to the output's format type (e.g. from integer to
+  // float).
   m_convertFrameStore =
       new Frame( m_width, m_height, true, m_inputFrame->m_colorSpace, m_inputFrame->m_colorPrimaries, chromaFormat,
                  output->m_sampleRange, output->m_bitDepthComp[Y_COMP], output->m_isInterlaced,
@@ -592,7 +593,8 @@ void PCCHDRToolsLibColorConverterImpl<T>::process( ProjectParameters* inputParam
         m_convertFormatIn->process( m_convertFrameStore, m_pFrameStore[0] );
       } else {
         m_convertFormatIn->process( m_pFrameStore[0], currentFrame );
-        // Here perform forced clipping of the data after upconversion of the chroma components
+        // Here perform forced clipping of the data after upconversion of the
+        // chroma components
         if ( inputParams->m_forceClipping == 2 ) m_pFrameStore[0]->clipRange();
         // Convert to different format if needed (integer to float)
         m_convertIQuantize->process( m_convertFrameStore, m_pFrameStore[0] );
@@ -656,7 +658,8 @@ void PCCHDRToolsLibColorConverterImpl<T>::process( ProjectParameters* inputParam
     }
     // frame output
     m_outputFrame->copyFrame( m_oFrameStore );
-    // m_outputFrame->writeOneFrame( m_outputFile, frameNumber, m_outputFile->m_fileHeader, 0 );
+    // m_outputFrame->writeOneFrame( m_outputFile, frameNumber,
+    // m_outputFile->m_fileHeader, 0 );
     if ( m_oFrameStore->m_isFloat ) {
       printf( "float input not supported \n" );
       exit( -1 );
