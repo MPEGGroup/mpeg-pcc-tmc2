@@ -35,8 +35,8 @@
 #ifdef USE_JMAPP_VIDEO_CODEC
 
 #include "PCCJMAppVideoDecoder.h"
-#include "PCCHevcParser.h"
 #include "PCCSystem.h"
+#include "PCCAvcParser.h"
 
 using namespace pcc;
 
@@ -52,10 +52,12 @@ void PCCJMAppVideoDecoder<T>::decode( PCCVideoBitstream& bitstream,
                                       PCCVideo<T, 3>&    video,
                                       const std::string& decoderPath,
                                       const std::string& fileName,
-                                      const size_t       frameCount ) {
+                                      const size_t       frameCount,
+                                      const size_t       codecId ) {
   size_t        width = 0, height = 0;
-  PCCHevcParser hevcParser;
-  hevcParser.getVideoSize( bitstream.vector(), width, height );
+  PCCAvcParser avcParser;
+  avcParser.getVideoSize( bitstream.vector(), width, height, codecId );
+
   const std::string binFileName = fileName + ".bin";
   const std::string reconFile =
       addVideoFormat( fileName + "_rec", width, height, !RGB2GBR, !RGB2GBR, outputBitDepth == 10 ? "10" : "8" );
@@ -63,11 +65,6 @@ void PCCJMAppVideoDecoder<T>::decode( PCCVideoBitstream& bitstream,
 
   std::stringstream cmd;
   cmd << decoderPath << " -i " << binFileName << " -o " << reconFile;
-  if ( RGB2GBR ) {
-    cmd << decoderPath << " -p OutputColourSpaceConvert=GBRtoRGB";
-  } else {
-    if ( outputBitDepth == 8 ) { cmd << " --p OutputBitDepthLuma=8 --p OutputBitDepthChroma=8"; }
-  }
   std::cout << cmd.str() << '\n';
   if ( pcc::system( cmd.str().c_str() ) ) {
     std::cout << "Error: can't run system command!" << std::endl;

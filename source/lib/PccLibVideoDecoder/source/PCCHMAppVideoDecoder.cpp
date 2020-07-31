@@ -52,7 +52,8 @@ void PCCHMAppVideoDecoder<T>::decode( PCCVideoBitstream& bitstream,
                                       PCCVideo<T, 3>&    video,
                                       const std::string& decoderPath,
                                       const std::string& fileName,
-                                      const size_t       frameCount ) {
+                                      const size_t       frameCount,
+                                      const size_t       codecId ) {
   size_t        width = 0, height = 0;
   PCCHevcParser hevcParser;
   hevcParser.getVideoSize( bitstream.vector(), width, height );

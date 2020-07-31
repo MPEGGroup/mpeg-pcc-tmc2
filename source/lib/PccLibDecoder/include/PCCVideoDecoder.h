@@ -109,7 +109,7 @@ class PCCVideoDecoder {
 #endif
 #ifdef USE_JMAPP_VIDEO_CODEC;
       case JMAPP:
-        decoder = std::make_shared<PCCHMAppVideoDecoder<T>>();       
+        decoder = std::make_shared<PCCJMAppVideoDecoder<T>>();       
         if ( decoderPath.empty() || !exist( decoderPath ) ) {    
           std::cerr << "decoderPath not set\n";
           exit(1);
@@ -121,7 +121,7 @@ class PCCVideoDecoder {
         exit( -1 );
         break;
     }
-    decoder->decode( bitstream, bitDepth == 8 ? 8 : 10, use444CodecIo, video, decoderPath, fileName, frameCount );
+    decoder->decode( bitstream, bitDepth == 8 ? 8 : 10, use444CodecIo, video, decoderPath, fileName, frameCount, codecId );
     width  = video.getWidth();
     height = video.getHeight();
     const std::string yuvRecFileName =

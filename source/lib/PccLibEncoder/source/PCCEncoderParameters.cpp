@@ -128,9 +128,9 @@ PCCEncoderParameters::PCCEncoderParameters() {
   videoEncoderOccupancyPath_               = {};
   videoEncoderGeometryPath_                = {};
   videoEncoderAttributePath_               = {};
-  videoEncoderOccupancyCodecId_            = HMLIB;
-  videoEncoderGeometryCodecId_             = HMLIB;
-  videoEncoderAttributeCodecId_            = HMLIB;
+  videoEncoderOccupancyCodecId_            = UNKNOWN_CODEC;
+  videoEncoderGeometryCodecId_             = UNKNOWN_CODEC;
+  videoEncoderAttributeCodecId_            = UNKNOWN_CODEC;
   geometryQP_                              = 28;
   textureQP_                               = 43;
   geometryConfig_                          = {};
