@@ -51,7 +51,8 @@ class RawPatchDataUnit {
       pos3dOffsetZ_( 0 ),
       rawPointsMinus1_( 0 ),
       patchIndex_( 0 ),
-      frameIndex_( 0 ) {}
+      frameIndex_( 0 ),
+      tileOrder_( 0 ) {}
   ~RawPatchDataUnit() {}
   RawPatchDataUnit& operator=( const RawPatchDataUnit& ) = default;
 
@@ -66,8 +67,10 @@ class RawPatchDataUnit {
   uint32_t getRawPointsMinus1() { return rawPointsMinus1_; }
   size_t   getPatchIndex() { return patchIndex_; }
   size_t   getFrameIndex() { return frameIndex_; }
+  size_t   getTileOrder() { return tileOrder_; }
   void     setPatchIndex( size_t value ) { patchIndex_ = value; }
   void     setFrameIndex( size_t value ) { frameIndex_ = value; }
+  void     setTileOrder( size_t value ) { tileOrder_ = value; }
   void     setPatchInAuxiliaryVideoFlag( bool value ) { patchInAuxiliaryVideoFlag_ = value; }
   void     set2dPosX( size_t value ) { pos2dX_ = value; }
   void     set2dPosY( size_t value ) { pos2dY_ = value; }
@@ -90,6 +93,7 @@ class RawPatchDataUnit {
   uint32_t rawPointsMinus1_;
   size_t   patchIndex_;
   size_t   frameIndex_;
+  size_t   tileOrder_;
 };
 
 };  // namespace pcc

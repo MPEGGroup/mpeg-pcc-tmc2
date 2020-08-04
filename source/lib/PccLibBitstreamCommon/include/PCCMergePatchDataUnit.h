@@ -55,7 +55,8 @@ class MergePatchDataUnit {
       pos3dOffsetMinZ_( 0 ),
       pos3dRangeZ_( 0 ),
       patchIndex_( 0 ),
-      frameIndex_( 0 ){};
+      frameIndex_( 0 ),
+      tileOrder_( 0 ){};
   ~MergePatchDataUnit(){};
   MergePatchDataUnit& operator=( const MergePatchDataUnit& ) = default;
 
@@ -73,7 +74,8 @@ class MergePatchDataUnit {
   int64_t  get3dRangeZ() { return pos3dRangeZ_; }
   size_t   getPatchIndex() { return patchIndex_; }
   size_t   getFrameIndex() { return frameIndex_; }
-  PLRData& getPLRData() { return pointLocalReconstructionData_; }
+  size_t   getTileOrder() { return tileOrder_; }
+  PLRData& getPLRData() { return plrData_; }
 
   void setOverride2dParamsFlag( bool value ) { override2dParamsFlag_ = value; }
   void setOverride3dParamsFlag( bool value ) { override3dParamsFlag_ = value; }
@@ -89,7 +91,8 @@ class MergePatchDataUnit {
   void set3dRangeZ( int64_t value ) { pos3dRangeZ_ = value; }
   void setPatchIndex( size_t value ) { patchIndex_ = value; }
   void setFrameIndex( size_t value ) { frameIndex_ = value; }
-  void setPLRData( PLRData value ) { pointLocalReconstructionData_ = value; }
+  void setTileOrder( size_t value ) { tileOrder_ = value; }
+  void setPLRData( PLRData value ) { plrData_ = value; }
 
  private:
   bool    override2dParamsFlag_;
@@ -106,7 +109,8 @@ class MergePatchDataUnit {
   int64_t pos3dRangeZ_;
   size_t  patchIndex_;
   size_t  frameIndex_;
-  PLRData pointLocalReconstructionData_;
+  size_t  tileOrder_;
+  PLRData plrData_;
 };
 
 };  // namespace pcc

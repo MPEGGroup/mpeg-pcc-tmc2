@@ -86,7 +86,7 @@ class PCCVideoEncoder {
                  const std::string& colorSpaceConversionPath          = "",
                  const size_t       downsamplingFilter                = 4,
                  const size_t       upsamplingFilter                  = 0,
-                 const bool         patchColorSubsampling             = false ) {    
+                 const bool         patchColorSubsampling             = false ) {
     auto& frames = video.getFrames();
     if ( frames.empty() || frames[0].getChannelCount() != 3 ) { return false; }
     const size_t      width                = frames[0].getWidth();
@@ -170,8 +170,8 @@ class PCCVideoEncoder {
 
           // iterate the patch information and perform chroma down-sampling on
           // each patch individually
-          std::vector<PCCPatch> patches      = context.getPatches();
-          std::vector<size_t>   blockToPatch = context.getBlockToPatch();
+          std::vector<PCCPatch> patches      = context.getAtlasFrameContext().getPatches();
+          std::vector<size_t>   blockToPatch = context.getAtlasFrameContext().getBlockToPatch();
           for ( int patchIdx = 0; patchIdx <= patches.size(); patchIdx++ ) {
             size_t occupancyResolution;
             size_t patch_left;
@@ -207,7 +207,7 @@ class PCCVideoEncoder {
             // fill in the blocks by extending the edges
             for ( size_t i = 0; i < patch_height / occupancyResolution; i++ ) {
               for ( size_t j = 0; j < patch_width / occupancyResolution; j++ ) {
-                if ( context
+                if ( context.getAtlasFrameContext()
                          .getBlockToPatch()[( i + patch_top / occupancyResolution ) * ( width / occupancyResolution ) +
                                             j + patch_left / occupancyResolution] == patchIdx ) {
                   // do nothing
@@ -223,9 +223,10 @@ class PCCVideoEncoder {
                   // current block
                   searchIndex = (int)j;
                   while ( searchIndex >= 0 ) {
-                    if ( context.getBlockToPatch()[( i + patch_top / occupancyResolution ) *
-                                                       ( width / occupancyResolution ) +
-                                                   searchIndex + patch_left / occupancyResolution] == patchIdx ) {
+                    if ( context.getAtlasFrameContext()
+                             .getBlockToPatch()[( i + patch_top / occupancyResolution ) *
+                                                    ( width / occupancyResolution ) +
+                                                searchIndex + patch_left / occupancyResolution] == patchIdx ) {
                       neighborIdx[0]      = searchIndex;
                       neighborDistance[0] = (int)j - searchIndex;
                       searchIndex         = 0;
@@ -236,9 +237,10 @@ class PCCVideoEncoder {
                   // current block
                   searchIndex = (int)j;
                   while ( searchIndex < patch_width / occupancyResolution ) {
-                    if ( context.getBlockToPatch()[( i + patch_top / occupancyResolution ) *
-                                                       ( width / occupancyResolution ) +
-                                                   searchIndex + patch_left / occupancyResolution] == patchIdx ) {
+                    if ( context.getAtlasFrameContext()
+                             .getBlockToPatch()[( i + patch_top / occupancyResolution ) *
+                                                    ( width / occupancyResolution ) +
+                                                searchIndex + patch_left / occupancyResolution] == patchIdx ) {
                       neighborIdx[1]      = searchIndex;
                       neighborDistance[1] = searchIndex - (int)j;
                       searchIndex         = (int)patch_width / occupancyResolution;
@@ -248,9 +250,10 @@ class PCCVideoEncoder {
                   // looking for the neighboring block above the current block
                   searchIndex = (int)i;
                   while ( searchIndex >= 0 ) {
-                    if ( context.getBlockToPatch()[( searchIndex + patch_top / occupancyResolution ) *
-                                                       ( width / occupancyResolution ) +
-                                                   j + patch_left / occupancyResolution] == patchIdx ) {
+                    if ( context.getAtlasFrameContext()
+                             .getBlockToPatch()[( searchIndex + patch_top / occupancyResolution ) *
+                                                    ( width / occupancyResolution ) +
+                                                j + patch_left / occupancyResolution] == patchIdx ) {
                       neighborIdx[2]      = searchIndex;
                       neighborDistance[2] = (int)i - searchIndex;
                       searchIndex         = 0;
@@ -260,9 +263,10 @@ class PCCVideoEncoder {
                   // looking for the neighboring block below the current block
                   searchIndex = (int)i;
                   while ( searchIndex < patch_height / occupancyResolution ) {
-                    if ( context.getBlockToPatch()[( searchIndex + patch_top / occupancyResolution ) *
-                                                       ( width / occupancyResolution ) +
-                                                   j + patch_left / occupancyResolution] == patchIdx ) {
+                    if ( context.getAtlasFrameContext()
+                             .getBlockToPatch()[( searchIndex + patch_top / occupancyResolution ) *
+                                                    ( width / occupancyResolution ) +
+                                                j + patch_left / occupancyResolution] == patchIdx ) {
                       neighborIdx[3]      = searchIndex;
                       neighborDistance[3] = searchIndex - (int)i;
                       searchIndex         = (int)patch_height / occupancyResolution;
@@ -359,9 +363,10 @@ class PCCVideoEncoder {
             // substitute the pixels in the output image for compression
             for ( size_t i = 0; i < patch_height; i++ ) {
               for ( size_t j = 0; j < patch_width; j++ ) {
-                if ( context.getBlockToPatch()[( ( i + patch_top ) / occupancyResolution ) *
-                                                   ( width / occupancyResolution ) +
-                                               ( j + patch_left ) / occupancyResolution] == patchIdx ) {
+                if ( context.getAtlasFrameContext().getBlockToPatch()[( ( i + patch_top ) / occupancyResolution ) *
+                                                                          ( width / occupancyResolution ) +
+                                                                      ( j + patch_left ) / occupancyResolution] ==
+                     patchIdx ) {
                   // do nothing
                   for ( size_t cc = 0; cc < 3; cc++ ) {
                     destImage.setValue( cc, j + patch_left, i + patch_top, tmpImage.getValue( cc, j, i ) );
@@ -396,8 +401,9 @@ class PCCVideoEncoder {
     params.blockToPatchFile_       = blockToPatchFileName;
     params.occupancyMapFile_       = occupancyMapFileName;
     params.patchInfoFile_          = patchInfoFileName;
-    printf("Encode: video size = %zu x %zu num frames = %zu \n", video.getWidth(), video.getHeight(), video.getFrameCount() );
-    fflush(stdout); 
+    printf( "Encode: video size = %zu x %zu num frames = %zu \n", video.getWidth(), video.getHeight(),
+            video.getFrameCount() );
+    fflush( stdout );
     PCCVideo<T, 3> videoRec;
     encoder->encode( video, params, bitstream, videoRec );
     if ( keepIntermediateFiles ) {

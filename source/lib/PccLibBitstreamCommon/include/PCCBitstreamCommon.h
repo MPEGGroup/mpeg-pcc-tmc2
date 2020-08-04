@@ -61,12 +61,14 @@
 #include <mach/mach.h>
 #endif
 
+#define REFERENCELIST_BUGFIX 1
+
 namespace pcc {
 
 // ******************************************************************* //
 // Trace modes to validate new syntax
 // ******************************************************************* //
-// #define BITSTREAM_TRACE
+#define BITSTREAM_TRACE
 
 // ******************************************************************* //
 // Common constants
@@ -230,7 +232,7 @@ enum PCCPatchType {
   ERROR_PATCH
 };
 
-static PCCPatchType getPatchType( PCCTileType tileType, uint8_t patchMode ) {
+static inline PCCPatchType getPatchType( PCCTileType tileType, uint8_t patchMode ) {
   if ( tileType == SKIP_TILE ) {
     return SKIP_PATCH;
   } else if ( tileType == P_TILE ) {

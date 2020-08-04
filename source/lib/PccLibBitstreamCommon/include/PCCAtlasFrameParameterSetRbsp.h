@@ -94,6 +94,7 @@ class AtlasFrameParameterSetRbsp {
   void setVpccExtensionFlag( bool value ) { vpccExtensionFlag_ = value; }
   void setMivExtensionFlag( bool value ) { mivExtensionFlag_ = value; }
   void setExtension6Bits( uint8_t value ) { extension6Bits_ = value; }
+  void setAtlasFrameTileInformation( AtlasFrameTileInformation& value ) { atlasFrameTileInformation_ = value; }
   void setLodModeEnableFlag( bool value ) { lodModeEnableFlag_ = value; }
 
  private:

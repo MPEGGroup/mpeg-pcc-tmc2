@@ -159,8 +159,8 @@ class PCCEncoderParameters {
 
   // raw points video
   bool        useRawPointsSeparateVideo_;
-  std::string geometryMPConfig_;
-  std::string textureMPConfig_;
+  std::string geometryAuxVideoConfig_;
+  std::string textureAuxVideoConfig_;
 
   // scale and bias
   float             modelScale_;
@@ -273,6 +273,18 @@ class PCCEncoderParameters {
   bool   patchPrecedenceOrderFlag_;
   size_t maxNumRefAtlasList_;
   size_t maxNumRefAtlasFrame_;
+
+  size_t log2MaxAtlasFrameOrderCntLsb_;
+  size_t tileSegmentationType_;
+  size_t numMaxTilePerFrame_;
+  bool   uniformPartitionSpacing_;
+  size_t tilePartitionWidth_;
+  size_t tilePartitionHeight_;
+#if NONUNIFORM_PARTSIZE
+  size_t              numTilesVer_;
+  std::vector<size_t> multiplePartitionWidth_;
+  std::vector<size_t> multiplePartitionHeight_;
+#endif
 };
 
 };  // namespace pcc

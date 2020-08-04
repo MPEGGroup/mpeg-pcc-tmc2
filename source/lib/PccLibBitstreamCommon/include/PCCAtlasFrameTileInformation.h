@@ -69,7 +69,46 @@ class AtlasFrameTileInformation {
   };
 
   AtlasFrameTileInformation& operator=( const AtlasFrameTileInformation& ) = default;
+  bool                       operator==( const AtlasFrameTileInformation& other ) const {
+    if ( singleTileInAtlasFrameFlag_ != other.singleTileInAtlasFrameFlag_ )
+      return false;
+    else if ( !singleTileInAtlasFrameFlag_ ) {
+      if ( uniformPartitionSpacingFlag_ != other.uniformPartitionSpacingFlag_ ) return false;
+      if ( uniformPartitionSpacingFlag_ ) {
+        if ( partitionColumnWidthMinus1_[0] != other.partitionColumnWidthMinus1_[0] ) return false;
+        if ( partitionRowHeightMinus1_[0] != other.partitionRowHeightMinus1_[0] ) return false;
+      } else {
+        if ( numPartitionColumnsMinus1_ != other.numPartitionColumnsMinus1_ ) return false;
+        if ( numPartitionRowsMinus1_ != other.numPartitionRowsMinus1_ ) return false;
 
+        for ( size_t i = 0; i <= numPartitionColumnsMinus1_; i++ ) {
+          if ( partitionColumnWidthMinus1_[i] != other.partitionColumnWidthMinus1_[i] ) return false;
+        }
+        for ( size_t i = 0; i <= numPartitionRowsMinus1_; i++ ) {
+          if ( partitionRowHeightMinus1_[i] != other.partitionRowHeightMinus1_[i] ) return false;
+        }
+      }
+      if ( singlePartitionPerTileFlag_ != other.singlePartitionPerTileFlag_ ) return false;
+      if ( numTilesInAtlasFrameMinus1_ != other.numTilesInAtlasFrameMinus1_ ) return false;
+      if ( !singleTileInAtlasFrameFlag_ ) {
+        for ( uint32_t i = 0; i < numTilesInAtlasFrameMinus1_ + 1; i++ ) {
+          if ( topLeftPartitionIdx_[i] != other.topLeftPartitionIdx_[i] ) return false;
+          if ( bottomRightPartitionColumnOffset_[i] != other.bottomRightPartitionColumnOffset_[i] ) return false;
+          if ( bottomRightPartitionRowOffset_[i] != other.bottomRightPartitionRowOffset_[i] ) return false;
+        }
+      }
+
+      if ( auxiliaryVideoTileRowHeight_.size() != other.auxiliaryVideoTileRowHeight_.size() ) return false;
+      if ( auxiliaryVideoTileRowHeight_.size() != 0 )  // jkei: it will be better to be "if (asps.useAuxVideoEnbleFlag)"
+      {
+        if ( auxiliaryVideoTileRowWidthMinus1_ != other.auxiliaryVideoTileRowWidthMinus1_ ) return false;
+        for ( size_t ti = 0; ti < ( numTilesInAtlasFrameMinus1_ + 1 ); ti++ ) {
+          if ( auxiliaryVideoTileRowHeight_[ti] != other.auxiliaryVideoTileRowHeight_[ti] ) return false;
+        }
+      }
+    }
+    return true;
+  }
   bool     getSingleTileInAtlasFrameFlag() { return singleTileInAtlasFrameFlag_; }
   bool     getUniformPartitionSpacingFlag() { return uniformPartitionSpacingFlag_; }
   uint32_t getNumPartitionColumnsMinus1() { return numPartitionColumnsMinus1_; }
@@ -79,7 +118,7 @@ class AtlasFrameTileInformation {
   bool     getSignalledTileIdFlag() { return signalledTileIdFlag_; }
   uint32_t getSignalledTileIdLengthMinus1() { return signalledTileIdLengthMinus1_; }
   uint32_t getPartitionColumnsWidthMinus1() { return partitionColumnsWidthMinus1_; }
-  uint32_t getPartitionRowsHeightMinus1() { return partitionRowsHeightMinus1_; }
+  uint32_t getPartitionRowHeightMinus1() { return partitionRowsHeightMinus1_; }
   uint32_t getPartitionColumnWidthMinus1( size_t index ) { return partitionColumnWidthMinus1_[index]; }
   uint32_t getPartitionRowHeightMinus1( size_t index ) { return partitionRowHeightMinus1_[index]; }
   uint32_t getTopLeftPartitionIdx( size_t index ) { return topLeftPartitionIdx_[index]; }
@@ -142,7 +181,15 @@ class AtlasFrameTileInformation {
     tileId_[index] = value;
   }
   void setAuxiliaryVideoTileRowWidthMinus1( uint32_t value ) { auxiliaryVideoTileRowWidthMinus1_ = value; }
-  void setAuxiliaryVideoTileRowHeight( size_t index, uint32_t value ) { auxiliaryVideoTileRowHeight_[index] = value; }
+  void setAuxiliaryVideoTileRowHeight( size_t index, uint32_t value ) {
+    if ( index == ( auxiliaryVideoTileRowHeight_.size() ) )
+      auxiliaryVideoTileRowHeight_.resize( auxiliaryVideoTileRowHeight_.size() + 1 );
+    else if ( index > auxiliaryVideoTileRowHeight_.size() )
+      assert( 0 );
+    auxiliaryVideoTileRowHeight_[index] = value;
+  }
+  std::vector<size_t>& getColWidth() { return colWidth_; }
+  std::vector<size_t>& getRowHeight() { return rowHeight_; }
 
  private:
   bool                  singleTileInAtlasFrameFlag_;
@@ -163,6 +210,8 @@ class AtlasFrameTileInformation {
   std::vector<uint32_t> tileId_;
   uint32_t              auxiliaryVideoTileRowWidthMinus1_;
   std::vector<uint32_t> auxiliaryVideoTileRowHeight_;
+  std::vector<size_t>   colWidth_;
+  std::vector<size_t>   rowHeight_;
 };
 
 };  // namespace pcc

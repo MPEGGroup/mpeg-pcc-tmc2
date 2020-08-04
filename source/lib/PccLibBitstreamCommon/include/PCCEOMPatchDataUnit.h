@@ -47,7 +47,8 @@ class EOMPatchDataUnit {
       size2dYMinus1_( 0 ),
       patchCountMinus1_( 0 ),
       patchIndex_( 0 ),
-      frameIndex_( 0 ) {
+      frameIndex_( 0 ),
+      tileIndex_( 0 ) {
     associatedPatchesIdx_.clear();
     points_.clear();
   };
@@ -64,6 +65,7 @@ class EOMPatchDataUnit {
   size_t getPoints( size_t index ) { return points_[index]; }
   size_t getPatchIndex() { return patchIndex_; }
   size_t getFrameIndex() { return frameIndex_; }
+  size_t getTileIndex() { return tileIndex_; }
 
   void setPatchInAuxiliaryVideoFlag( bool value ) { patchInAuxiliaryVideoFlag_ = value; }
   void set2dPosX( size_t value ) { pos2dX_ = value; }
@@ -72,6 +74,7 @@ class EOMPatchDataUnit {
   void set2dSizeYMinus1( size_t value ) { size2dYMinus1_ = value; }
   void setPatchIndex( size_t value ) { patchIndex_ = value; }
   void setFrameIndex( size_t value ) { frameIndex_ = value; }
+  void setTileOrder( size_t value ) { tileIndex_ = value; }
   void setAssociatedPatchesIdx( size_t index, size_t value ) { associatedPatchesIdx_[index] = value; }
   void setPoints( size_t index, size_t value ) { points_[index] = value; }
   void setPatchCountMinus1( uint32_t value ) {
@@ -91,6 +94,7 @@ class EOMPatchDataUnit {
   std::vector<size_t> points_;
   size_t              patchIndex_;
   size_t              frameIndex_;
+  size_t              tileIndex_;
 };
 
 };  // namespace pcc

@@ -41,19 +41,19 @@ const std::vector<PointLocalReconstructionMode> g_pointLocalReconstructionMode =
     {false, false, 1, 1}, {true, false, 1, 1}, {true, true, 1, 1}, {true, false, 1, 2}, {true, true, 1, 2},
 };
 
-bool checkCodecId( PCCCodecId codecId ){
+bool checkCodecId( PCCCodecId codecId ) {
   switch ( codecId ) {
 #ifdef USE_HMLIB_VIDEO_CODEC
-    case HMLIB:  break;
+    case HMLIB: break;
 #endif
 #ifdef USE_FFMPEG_VIDEO_CODEC
     case FFMPEG: break;
 #endif
 #ifdef USE_HMAPP_VIDEO_CODEC
-    case HMAPP:  break;
+    case HMAPP: break;
 #endif
 #ifdef USE_JMAPP_VIDEO_CODEC;
-    case JMAPP:  break;
+    case JMAPP: break;
 #endif
     default:
       printf( "Error: codec id %d not supported \n", (int)codecId );
@@ -143,8 +143,8 @@ PCCEncoderParameters::PCCEncoderParameters() {
   noAttributes_                            = false;
   losslessGeo444_                          = false;
   useRawPointsSeparateVideo_               = false;
-  geometryMPConfig_                        = {};
-  textureMPConfig_                         = {};
+  geometryAuxVideoConfig_                  = {};
+  textureAuxVideoConfig_                   = {};
   nbThread_                                = 1;
   keepIntermediateFiles_                   = false;
 
@@ -239,7 +239,12 @@ PCCEncoderParameters::PCCEncoderParameters() {
   maxNumRefAtlasList_       = 1;
   maxNumRefAtlasFrame_      = 1;
 
-  // qunatizer;
+  log2MaxAtlasFrameOrderCntLsb_ = 10;
+  tileSegmentationType_         = 0;
+  numMaxTilePerFrame_           = 1;
+  uniformPartitionSpacing_      = true;
+  tilePartitionWidth_           = 0;
+  tilePartitionHeight_          = 0;
 }
 
 PCCEncoderParameters::~PCCEncoderParameters() = default;
@@ -255,6 +260,11 @@ void PCCEncoderParameters::completePath() {
     if ( !textureConfig_.empty() ) { textureConfig_ = configurationFolder_ + textureConfig_; }
     if ( !textureT0Config_.empty() ) { textureT0Config_ = configurationFolder_ + textureT0Config_; }
     if ( !textureT1Config_.empty() ) { textureT1Config_ = configurationFolder_ + textureT1Config_; }
+    if ( !geometryAuxVideoConfig_.empty() ) {
+      geometryAuxVideoConfig_ = configurationFolder_ + geometryAuxVideoConfig_;
+    }
+    if ( !textureAuxVideoConfig_.empty() ) { textureAuxVideoConfig_ = configurationFolder_ + textureAuxVideoConfig_; }
+
     if ( !inverseColorSpaceConversionConfig_.empty() ) {
       inverseColorSpaceConversionConfig_ = configurationFolder_ + inverseColorSpaceConversionConfig_;
     }
@@ -265,8 +275,10 @@ void PCCEncoderParameters::completePath() {
       occupancyMapVideoEncoderConfig_ = configurationFolder_ + occupancyMapVideoEncoderConfig_;
     }
     if ( useRawPointsSeparateVideo_ ) {
-      if ( !geometryMPConfig_.empty() ) { geometryMPConfig_ = configurationFolder_ + geometryMPConfig_; }
-      if ( !textureMPConfig_.empty() ) { textureMPConfig_ = configurationFolder_ + textureMPConfig_; }
+      if ( !geometryAuxVideoConfig_.empty() ) {
+        geometryAuxVideoConfig_ = configurationFolder_ + geometryAuxVideoConfig_;
+      }
+      if ( !textureAuxVideoConfig_.empty() ) { textureAuxVideoConfig_ = configurationFolder_ + textureAuxVideoConfig_; }
     }
   }
 }
@@ -325,6 +337,7 @@ void PCCEncoderParameters::print() {
   std::cout << "\t Packing" << std::endl;
   std::cout << "\t   minimumImageWidth                      " << minimumImageWidth_ << std::endl;
   std::cout << "\t   minimumImageHeight                     " << minimumImageHeight_ << std::endl;
+  std::cout << "\t   log2MaxAtlasFrameOrderCntLsb           " << log2MaxAtlasFrameOrderCntLsb_ << std::endl;
   std::cout << "\t   packingStrategy                        " << packingStrategy_ << std::endl;
   std::cout << "\t   useEightOrientations                   " << useEightOrientations_ << std::endl;
   std::cout << "\t   safeGuardDistance                      " << safeGuardDistance_ << std::endl;
@@ -362,8 +375,8 @@ void PCCEncoderParameters::print() {
   }
   if ( useRawPointsSeparateVideo_ ) {
     if ( losslessGeo_ ) {
-      std::cout << "\t geometryMPConfig                     " << geometryMPConfig_ << std::endl;
-      std::cout << "\t textureMPConfig                      " << textureMPConfig_ << std::endl;
+      std::cout << "\t geometryAuxVideoConfig                     " << geometryAuxVideoConfig_ << std::endl;
+      std::cout << "\t textureAuxVideoConfig                      " << textureAuxVideoConfig_ << std::endl;
     }
   }
   std::cout << "\t   colorSpaceConversionConfig             " << colorSpaceConversionConfig_ << std::endl;
@@ -452,6 +465,28 @@ void PCCEncoderParameters::print() {
   std::cout << "\t Geometry 2D and 3D bitdepths             " << std::endl;
   std::cout << "\t   geometry3dCoordinatesBitdepth          " << geometry3dCoordinatesBitdepth_ << std::endl;
   std::cout << "\t   geometryNominal2dBitdepth              " << geometryNominal2dBitdepth_ << std::endl;
+  std::cout << "\t Image partitions and tiles               " << std::endl;
+  std::cout << "\t tileSegmentationType                     " << tileSegmentationType_ << std::endl;
+  if ( tileSegmentationType_ > 1 ) {
+    std::cout << "\t   numMaxTilePerFrame                     " << numMaxTilePerFrame_ << std::endl;
+    if ( numMaxTilePerFrame_ > 1 ) {
+      std::cout << "\t   uniformPartitionSpacing              " << uniformPartitionSpacing_ << std::endl;
+#if NONUNIFORM_PARTSIZE
+      if ( uniformPartitionSpacing_ ) {
+        std::cout << "\t   tilePartitionWidth                   " << tilePartitionWidth_ << std::endl;
+        std::cout << "\t   tilePartitionHeight                  " << tilePartitionHeight_ << std::endl;
+      } else {
+        std::cout << "\t   numPartitionCol                      " << numTilesHor_ << std::endl;
+        for ( auto& partSize : multiplePartitionWidth_ ) std::cout << "\t" << partSize;
+        std::cout << "\t   numPartitionRow                      " << numTilesVer_ << std::endl;
+        for ( auto& partSize : multiplePartitionHeight_ ) std::cout << "\t" << partSize;
+      }
+#else
+      std::cout << "\t   tilePartitionWidth                   " << tilePartitionWidth_ << std::endl;
+      std::cout << "\t   tilePartitionHeight                  " << tilePartitionHeight_ << std::endl;
+#endif
+    }
+  }
   std::cout << "\t Point cloud partitions and tiles         " << std::endl;
   std::cout << "\t   enablePointCloudPartitioning           " << enablePointCloudPartitioning_ << std::endl;
   if ( enablePointCloudPartitioning_ ) {
@@ -539,23 +574,25 @@ bool PCCEncoderParameters::check() {
     ret = false;
     std::cerr << "uncompressedDataPath not set\n";
   }
-  
-  if( !checkCodecId( videoEncoderOccupancyCodecId_ ) || 
-      !checkCodecId( videoEncoderGeometryCodecId_ ) || 
-      !checkCodecId( videoEncoderAttributeCodecId_ ) ){
+
+  if ( !checkCodecId( videoEncoderOccupancyCodecId_ ) || !checkCodecId( videoEncoderGeometryCodecId_ ) ||
+       !checkCodecId( videoEncoderAttributeCodecId_ ) ) {
     std::cerr << "ERROR: CodecId is not correct" << std::endl;
     ret = false;
   }
 #if defined( USE_HMAPP_VIDEO_CODEC ) || defined( USE_JMAPP_VIDEO_CODEC )
-  if ( ((int)videoEncoderOccupancyCodecId_) < 2 && ( ( videoEncoderOccupancyPath_.empty() || !exist( videoEncoderOccupancyPath_ ) ) ) ) {
+  if ( ( (int)videoEncoderOccupancyCodecId_ ) < 2 &&
+       ( ( videoEncoderOccupancyPath_.empty() || !exist( videoEncoderOccupancyPath_ ) ) ) ) {
     std::cerr << "ERROR: videoEncoderOccupancyPath_ not set or not exist : " << videoEncoderOccupancyPath_ << std::endl;
     ret = false;
   }
-  if ( ((int)videoEncoderGeometryCodecId_) < 2 && ( ( videoEncoderGeometryPath_.empty() || !exist( videoEncoderGeometryPath_ ) ) ) ) {
+  if ( ( (int)videoEncoderGeometryCodecId_ ) < 2 &&
+       ( ( videoEncoderGeometryPath_.empty() || !exist( videoEncoderGeometryPath_ ) ) ) ) {
     std::cerr << "ERROR: videoEncoderGeometryPath not set or not exist : " << videoEncoderGeometryPath_ << std::endl;
     ret = false;
   }
-  if ( ((int)videoEncoderAttributeCodecId_) < 2 && ( ( videoEncoderAttributePath_.empty() || !exist( videoEncoderAttributePath_ ) ) ) ) {
+  if ( ( (int)videoEncoderAttributeCodecId_ ) < 2 &&
+       ( ( videoEncoderAttributePath_.empty() || !exist( videoEncoderAttributePath_ ) ) ) ) {
     std::cerr << "ERROR: videoEncoderAttributePath not set or not exist : " << videoEncoderAttributePath_ << std::endl;
     ret = false;
   }
@@ -569,7 +606,9 @@ bool PCCEncoderParameters::check() {
       geometryD0Config_ = geometryConfig_.substr( 0, geometryConfig_.find_last_of( '.' ) ) + "-D0.cfg";
       geometryD1Config_ = geometryConfig_.substr( 0, geometryConfig_.find_last_of( '.' ) ) + "-D1.cfg";
     }
+#if !MULTISTREAM_AUXVIDEO
     geometryConfig_ = {};
+#endif
   } else {
     geometryD0Config_ = {};
     geometryD1Config_ = {};
@@ -588,7 +627,9 @@ bool PCCEncoderParameters::check() {
       textureT0Config_ = textureConfig_.substr( 0, textureConfig_.find_last_of( '.' ) ) + "-T0.cfg";
       textureT1Config_ = textureConfig_.substr( 0, textureConfig_.find_last_of( '.' ) ) + "-T1.cfg";
     }
+#if !MULTISTREAM_AUXVIDEO
     textureConfig_ = {};
+#endif
   } else {
     textureT0Config_ = {};
     textureT1Config_ = {};
@@ -602,12 +643,37 @@ bool PCCEncoderParameters::check() {
     std::cerr << "absoluteD1_ should be true when multipleStreams_ is false\n";
     absoluteD1_ = true;
   }
-  if ( !absoluteT1_ && absoluteD1_ ) {
-    std::cerr << "absoluteT1 cannot be false when absoluteD1 is true, force "
-                 "absoluteT1 equals to true\n";
-    absoluteT1_ = true;
-  }
+#if MULTISTREAM_BUGFIX
+  // spec:
+  // asps_map_absolute_coding_enabled_flag : 1.no prediction 0.predicted(CTC)
+  // ai_attribute_map_absolute_coding_persistence_flag : 1.no prediction 0.same as the geometry video
+  // d1flag=1 t1flag=1  -> d1=1 t1=1
+  // d1flag=1 t1flag=0  -> d1=1 t1=1
+  // d1flag=0 t1flag=1  -> d1=0 t1=1
+  // d1flag=0 t1flag=0  -> d1=0 t1=0
 
+  // d1=1 t1=1
+  // d1=1 t1=0 -> never happens
+  // d1=0 t1=1
+  // d1=0 t1=0
+  if ( !absoluteT1_ && absoluteD1_ ) {
+    std::cerr << "absoluteT1 should be true when absoluteD1 is true\n";
+    absoluteT1_ = 1;
+    // ret=false;
+  }
+#else
+  if ( !absoluteT1_ ) {  // jkei: absoluteT1 -> enableT1Prediction
+    std::cerr << "non-first maps of Texture Image is coded ";
+    if ( absoluteD1_ )
+      std::cerr << "without prediction\n";
+    else
+      std::cerr << "with prediction\n";
+  }
+  //  if ( absoluteD1_ && !absoluteT1_ ) {
+  //    std::cerr << "absoluteT1_ should be true when absoluteD1_ is true\n";
+  //    absoluteT1_ = true;
+  //  }
+#endif
   if ( losslessGeo_ ) {
     pbfEnableFlag_          = false;
     occupancyMapRefinement_ = false;
@@ -684,16 +750,32 @@ bool PCCEncoderParameters::check() {
       std::cerr << "Pixel Interleaving is built on one layer coding. Force "
                    "mapCountMinus1_ = 0.\n";
     }
-    if ( geometryMPConfig_.empty() || !exist( geometryMPConfig_ ) ) {
-      std::cerr << "WARNING: geometryMPConfig_ is set as geometryConfig_ : " << geometryConfig_ << std::endl;
-      geometryMPConfig_ = geometryConfig_;
+    if ( geometryAuxVideoConfig_.empty() || !exist( geometryAuxVideoConfig_ ) ) {
+      if ( !geometryConfig_.empty() ) {
+        std::cerr << "WARNING: geometryAuxVideoConfig_ is set as geometryConfig_ : " << geometryConfig_ << std::endl;
+        geometryAuxVideoConfig_ = geometryConfig_;
+      } else {
+#if MULTISTREAM_AUXVIDEO
+        ret = false;
+        std::cerr << "geometryConfig_ and geometryAuxVideoConfig_ are empty\n";
+#endif
+      }
     } else {
-      std::cout << "geometryMPConfig: " << geometryMPConfig_ << std::endl;
+      std::cout << "geometryAuxConfig: " << geometryAuxVideoConfig_ << std::endl;
     }
-    if ( textureMPConfig_.empty() || !exist( textureMPConfig_ ) ) {
-      std::cerr << "WARNING: textureMPConfig_ is set as textureConfig_ : " << textureConfig_ << std::endl;
-      textureMPConfig_ = textureConfig_;
-    }
+    if ( textureAuxVideoConfig_.empty() || !exist( textureAuxVideoConfig_ ) ) {
+      if ( !textureConfig_.empty() ) {
+        std::cerr << "WARNING: textureAuxVideoConfig_ is set as textureConfig_ : " << textureConfig_ << std::endl;
+        textureAuxVideoConfig_ = textureConfig_;
+      } else {
+#if MULTISTREAM_AUXVIDEO
+        ret = false;
+        std::cerr << "textureConfig_ and textureAuxVideoConfig_ are empty\n";
+#endif
+      }
+
+    } else
+      std::cout << "textureAuxConfig: " << textureAuxVideoConfig_ << std::endl;
   }
 
   if ( singleMapPixelInterleaving_ && pointLocalReconstruction_ ) {
@@ -739,6 +821,41 @@ bool PCCEncoderParameters::check() {
     }
   }
 
+  if ( tileSegmentationType_ == 0 ) {
+    numMaxTilePerFrame_ = 1;
+  } else if ( tileSegmentationType_ == 1 ) {
+    if ( !enablePointCloudPartitioning_ ) {
+      std::cerr << "enablePointCloudPartitioning should be true when tileSegmentationType=0\n";
+      enablePointCloudPartitioning_ = true;
+    }
+  } else if ( tileSegmentationType_ == 2 ) {
+    if ( numMaxTilePerFrame_ != 3 ) {
+      numMaxTilePerFrame_ = 3;
+      std::cerr << "current version allows numMaxTilePerFrame_=3 only\n";
+    };
+
+    if ( numMaxTilePerFrame_ > 1 ) {
+      if ( tilePartitionWidth_ == 0 || tilePartitionHeight_ == 0 ) {
+        std::cerr << "tilePartitionWidth/Height should be greater than 0 : set as 1x1\n";
+        tilePartitionWidth_  = 1;
+        tilePartitionHeight_ = 1;
+      }
+    }
+  }
+#if NONUNIFORM_PARTSIZE
+  if ( multiplePartitionWidth_.size() != 0 ) {
+    if ( multiplePartitionWidth_.size() != numTilesHor_ ) {
+      std::cerr << "size of multiPartitionWidth should be same as numTilesHor_\n";
+      numTilesHor_ = multiplePartitionWidth_.size();
+    }
+  }
+  if ( multiplePartitionHeight_.size() != 0 ) {
+    if ( multiplePartitionHeight_.size() != numTilesVer_ ) {
+      std::cerr << "size of multiPartitionHeight should be same as numTilesVer_\n";
+      numTilesVer_ = multiplePartitionHeight_.size();
+    }
+  }
+#endif
   if ( flagGeometrySmoothing_ ) {
     if ( pbfEnableFlag_ ) {
       gridSmoothing_ = false;
@@ -769,18 +886,25 @@ bool PCCEncoderParameters::check() {
 
 void PCCEncoderParameters::constructAspsRefListStruct( PCCContext& context, size_t aspsIdx, size_t afpsIdx ) {
   auto& asps = context.getAtlasSequenceParameterSet( aspsIdx );
-  // construction of reference frame list of ASPS : RefAtlasFrmAfocList[ j ] =
-  // afocBase − DeltaAfocSt[ RlsIdx ][ j ]
+  // construction of reference frame list of ASPS : RefAtlasFrmAfocList[ j ] = afocBase − DeltaAfocSt[ RlsIdx ][ j ]
   for ( size_t list = 0; list < context.getNumOfRefAtlasFrameList(); list++ ) {
     RefListStruct refList;
+#if REFERENCELIST_BUGFIX
     refList.setNumRefEntries( context.getMaxNumRefAtlasFrame( list ) );  // 1,2,3,4
+#else
+    refList.setNumRefEntries( context.getMaxNumRefAtlasFrame() );  //-1,-2,-3,-4
+#endif
     refList.allocate();
     for ( size_t i = 0; i < refList.getNumRefEntries(); i++ ) {
+#if REFERENCELIST_BUGFIX
       int afocDiff = -1;
       if ( i == 0 )
         afocDiff = context.getRefAtlasFrame( list, i );
       else
         afocDiff = context.getRefAtlasFrame( list, i ) - context.getRefAtlasFrame( list, i - 1 );
+#else
+      int afocDiff = context.getRefAtlasFrame( list, i );
+#endif
       refList.setAbsDeltaAfocSt( i, std::abs( afocDiff ) );
       refList.setStrafEntrySignFlag( i, afocDiff < 0 ? false : !false );
       refList.setStRefAtalsFrameFlag( i, true );
@@ -790,17 +914,17 @@ void PCCEncoderParameters::constructAspsRefListStruct( PCCContext& context, size
 }
 
 void PCCEncoderParameters::initializeContext( PCCContext& context ) {
-  auto& sps      = context.getVps();
+  auto& vps      = context.getVps();
   int   numAtlas = 1;
   context.resizeAtlas( numAtlas );  // single atlas for V3C
-  sps.setAtlasCountMinus1( numAtlas - 1 );
-  sps.allocateAtlas();
-  context.allocateAtlasHLS( sps.getAtlasCountMinus1() + 1 );
+  vps.setAtlasCountMinus1( numAtlas - 1 );
+  vps.allocateAtlas();
+  context.allocateAtlasHLS( vps.getAtlasCountMinus1() + 1 );
   size_t atlasIndex = 0;
   context.setAtlasIndex( atlasIndex );
-  auto& ai   = sps.getAttributeInformation( atlasIndex );
-  auto& oi   = sps.getOccupancyInformation( atlasIndex );
-  auto& gi   = sps.getGeometryInformation( atlasIndex );
+  auto& ai   = vps.getAttributeInformation( atlasIndex );
+  auto& oi   = vps.getOccupancyInformation( atlasIndex );
+  auto& gi   = vps.getGeometryInformation( atlasIndex );
   auto& asps = context.addAtlasSequenceParameterSet( 0 );
   auto& afps = context.addAtlasFrameParameterSet( 0 );
 
@@ -815,25 +939,31 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   for ( size_t list = 0; list < maxNumRefAtlasList_; list++ ) {
     context.setSizeOfRefAtlasFrameList( list, maxNumRefAtlasFrame_ );
     for ( size_t i = 0; i < maxNumRefAtlasFrame_; i++ ) {
+#if REFERENCELIST_BUGFIX
       context.setRefAtlasFrame( list, i,
                                 static_cast<int32_t>( i + 1 ) );  // 1, 2, 3, 4
+#else
+      context.setRefAtlasFrame( list, i,
+                                -static_cast<int32_t>( i + 1 ) );  //-1, -2, -3, -4
+#endif
     }
   }
+  context.setLog2MaxAtlasFrameOrderCntLsb( log2MaxAtlasFrameOrderCntLsb_ );
 
-  sps.setMapCountMinus1( atlasIndex, static_cast<uint32_t>( mapCountMinus1_ ) );
-  sps.setMultipleMapStreamsPresentFlag( atlasIndex, mapCountMinus1_ != 0 && multipleStreams_ );
-  sps.setAuxiliaryVideoPresentFlag( atlasIndex, useRawPointsSeparateVideo_ );
-  sps.setOccupancyVideoPresentFlag( atlasIndex, true );
-  sps.setGeometryVideoPresentFlag( atlasIndex, true );
-  sps.setAttributeVideoPresentFlag( atlasIndex, true );
+  vps.setMapCountMinus1( atlasIndex, static_cast<uint32_t>( mapCountMinus1_ ) );
+  vps.setMultipleMapStreamsPresentFlag( atlasIndex, mapCountMinus1_ != 0 && multipleStreams_ );
+  vps.setAuxiliaryVideoPresentFlag( atlasIndex, useRawPointsSeparateVideo_ );
+  vps.setOccupancyVideoPresentFlag( atlasIndex, true );
+  vps.setGeometryVideoPresentFlag( atlasIndex, true );
+  vps.setAttributeVideoPresentFlag( atlasIndex, true );
   asps.setRawPatchEnabledFlag( losslessGeo_ || lossyRawPointsPatch_ );
   for ( size_t i = 0; i < mapCountMinus1_ + 1; i++ ) {
     if ( i == 0 ) {
-      sps.setMapAbsoluteCodingEnableFlag( atlasIndex, i, true );
-      sps.setMapPredictorIndexDiff( atlasIndex, i, false );
+      vps.setMapAbsoluteCodingEnableFlag( atlasIndex, i, true );
+      vps.setMapPredictorIndexDiff( atlasIndex, i, false );
     } else {
-      sps.setMapAbsoluteCodingEnableFlag( atlasIndex, i, absoluteD1_ );
-      sps.setMapPredictorIndexDiff( atlasIndex, i, false );
+      vps.setMapAbsoluteCodingEnableFlag( atlasIndex, i, absoluteD1_ );
+      vps.setMapPredictorIndexDiff( atlasIndex, i, false );
     }
   }
 
@@ -843,6 +973,25 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     ai.setAttributeDimensionMinus1( 0, noAttributes_ ? 0 : 2 );
     ai.setAttribute2dBitdepthMinus1( 0, 7 );
   }
+#if MULTISTREAM_BUGFIX
+  // d1flag=1 t1flag=1  -> d1=1 t1=1
+  // d1flag=1 t1flag=0  -> d1=1 t1=1
+  // d1flag=0 t1flag=1  -> d1=0 t1=1
+  // d1flag=0 t1flag=0  -> d1=0 t1=0
+  // nothing            -> d1=1 t1=0
+
+  for ( size_t i = 0; i < ai.getAttributeCount(); i++ ) {
+    if ( absoluteT1_ == absoluteD1_ )  // jkei:(1,1) & (0,0)
+      ai.setAttributeMapAbsoluteCodingPersistenceFlag( i, false );
+    else if ( absoluteT1_ && !absoluteD1_ )  // jkei:(0,1)
+      ai.setAttributeMapAbsoluteCodingPersistenceFlag( i, true );
+    else {
+      printf( "%d, %d\n", absoluteD1_, absoluteT1_ );
+      std::cerr << "absoluteT1_ should be true when absoluteD1_ is true\n";
+      exit( 0 );
+    }
+  }
+#else
   for ( size_t i = 0; i < ai.getAttributeCount(); i++ ) {
     if ( absoluteT1_ == absoluteD1_ )
       ai.setAttributeMapAbsoluteCodingPersistenceFlag( i, false );
@@ -853,9 +1002,9 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
       exit( 0 );
     }
   }
-
+#endif
   asps.setLog2PatchPackingBlockSize( std::log2( occupancyResolution_ ) );
-  asps.setLog2MaxAtlasFrameOrderCntLsbMinus4( 4 );
+  asps.setLog2MaxAtlasFrameOrderCntLsbMinus4( log2MaxAtlasFrameOrderCntLsb_ - 4 );
   asps.setMaxDecAtlasFrameBufferingMinus1( 0 );
   asps.setNumRefAtlasFrameListsInAsps( maxNumRefAtlasList_ );
   asps.setMapCountMinus1( mapCountMinus1_ );
@@ -876,7 +1025,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   asps.setMivExtensionFlag( false );
   asps.setExtension6Bits( 0 );
   asps.setExtendedProjectionEnabledFlag( additionalProjectionPlaneMode_ > 0 );
-
+  asps.setAuxiliaryVideoEnabledFlag( useRawPointsSeparateVideo_ );
   if ( asps.getVpccExtensionFlag() ) {
     auto& ext = asps.getAspsVpccExtension();
     ext.setRemoveDuplicatePointEnableFlag( removeDuplicatePoints_ );
@@ -889,8 +1038,13 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     asps.setEomFixBitCountMinus1( EOMFixBitCount_ - 1 );  // default values
   }
   afps.setAtlasSequenceParameterSetId( 0 );
+#if LOSSLESS_3DROI
+  afps.setNumRefIdxDefaultActiveMinus1( static_cast<uint8_t>(
+      constrainedPack_ ? ( ( std::max )( 0, static_cast<int>( maxNumRefAtlasFrame_ ) - 1 ) ) : 0 ) );
+#else
   afps.setNumRefIdxDefaultActiveMinus1(
       static_cast<uint8_t>( ( std::max )( 0, static_cast<int>( maxNumRefAtlasFrame_ ) - 1 ) ) );
+#endif
   afps.setAdditionalLtAfocLsbLen( 4 );
   // afps.setOverrideEomForDepthFlag( false );
   // afps.setEomNumberOfPatchBitCountMinus1( 0 );
@@ -905,35 +1059,6 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   //   afps.setEomMaxBitCountMinus1( 7 );
   //   afps.setEomNumberOfPatchBitCountMinus1( 7 );
   // }
-  // now create a list of tile groups per frame (NOTE: our frame has only one
-  // tile group)
-  int numTilesPerFrame = ( afps.getAtlasFrameTileInformation().getNumPartitionRowsMinus1() + 1 ) *
-                         ( afps.getAtlasFrameTileInformation().getNumPartitionColumnsMinus1() + 1 );
-  for ( size_t frameIdx = 0; frameIdx < frameCount_; frameIdx++ ) {
-    for ( size_t tileGroupId = 0; tileGroupId < numTilesPerFrame; tileGroupId++ ) {
-      auto& atgl = context.addAtlasTileLayer( frameIdx, tileGroupId );
-      auto& ath  = atgl.getHeader();
-      ath.setAtlasFrameParameterSetId( 0 );
-      ath.setPosMinZQuantizer( uint8_t( std::log2( minLevel_ ) ) );
-      ath.setPosDeltaMaxZQuantizer( uint8_t( std::log2( minLevel_ ) ) );
-      ath.setPatchSizeXinfoQuantizer( log2QuantizerSizeX_ );
-      ath.setPatchSizeYinfoQuantizer( log2QuantizerSizeY_ );
-      if ( afps.getRaw3dPosBitCountExplicitModeFlag() ) {
-        ath.setRaw3dPosAxisBitCountMinus1( 0 );  //
-      } else {
-#if EXPAND_RANGE_ENCODER
-        ath.setRaw3dPosAxisBitCountMinus1( geometry3dCoordinatesBitdepth_ + asps.getExtendedProjectionEnabledFlag() -
-                                           geometryNominal2dBitdepth_ - 1 );
-#else
-        ath.setRaw3dPosAxisBitCountMinus1( geometry3dCoordinatesBitdepth_ - geometryNominal2dBitdepth_ - 1 );
-#endif
-      }
-      ath.setNumRefIdxActiveOverrideFlag( false );
-
-      ath.setRefAtlasFrameListSpsFlag( true );
-      ath.setRefAtlasFrameListIdx( 0 );
-    }
-  }
 
   // construction of reference frame list of ASPS
   constructAspsRefListStruct( context, 0, 0 );
@@ -961,10 +1086,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   context.setOccupancyPrecision( occupancyPrecision_ );
   context.setModelScale( modelScale_ );
   context.setModelOrigin( modelOrigin_ );
-  context.setRawGeoWidth( textureRawSeparateVideoWidth_ );
-  context.setRawAttWidth( textureRawSeparateVideoWidth_ );
-  context.setRawGeoHeight( 0 );
-  context.setRawAttHeight( 0 );
+  context.setAuxVideoWidth( textureRawSeparateVideoWidth_ );
   context.setGeometry3dCoordinatesBitdepth( gi.getGeometry3dCoordinatesBitdepthMinus1() + 1 );
   size_t numPlrm = pointLocalReconstruction_
                        ? ( std::max )( static_cast<size_t>( 1 ),
@@ -979,7 +1101,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   // atlas video allocation
   context.getAtlas( atlasIndex ).allocateVideoFrames( context, 0 );
 
-  auto& plt = sps.getProfileTierLevel();
+  auto& plt = vps.getProfileTierLevel();
   plt.setProfileCodecGroupIdc( CODEC_GROUP_HEVC_MAIN10 );
   if ( losslessGeo_ ) { plt.setProfileCodecGroupIdc( CODEC_GROUP_HEVC444 ); }
 }

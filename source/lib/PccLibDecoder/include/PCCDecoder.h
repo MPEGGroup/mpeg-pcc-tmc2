@@ -65,7 +65,7 @@ class PCCDecoder : public PCCCodec {
   void setPostProcessingSeiParameters( GeneratePointCloudParameters& gpcParams, PCCContext& context );
   void setGeneratePointCloudParameters( GeneratePointCloudParameters& gpcParams, PCCContext& context );
   void createPatchFrameDataStructure( PCCContext& context );
-  void createPatchFrameDataStructure( PCCContext& context, PCCFrameContext& frame, size_t frameIndex );
+  void createPatchFrameDataStructure( PCCContext& context, size_t atglOrder );
 
  private:
   void setPointLocalReconstruction( PCCContext& context );

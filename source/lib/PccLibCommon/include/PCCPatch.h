@@ -84,6 +84,8 @@ class PCCPatch {
  public:
   PCCPatch() :
       index_( 0 ),
+      frameIndex_( 0 ),
+      tileIndex_( 0 ),
       u1_( 0 ),
       v1_( 0 ),
       d1_( 0 ),
@@ -141,6 +143,12 @@ class PCCPatch {
   size_t                      getD0Count() { return d0Count_; }
   void                        setD0Count( size_t value ) { d0Count_ = value; }
   size_t&                     getIndex() { return index_; }
+  size_t                      getFrameIndex() { return frameIndex_; }
+  size_t                      getTileIndex() { return tileIndex_; }
+  size_t                      getIndexInFrame() { return indexInFrame_; }
+  void                        setFrameIndex( size_t value ) { frameIndex_ = value; }
+  void                        setTileIndex( size_t value ) { tileIndex_ = value; }
+  void                        setIndexInFrame( size_t value ) { indexInFrame_ = value; }
   size_t&                     getOriginalIndex() { return originalIndex_; }
   size_t&                     getU1() { return u1_; }
   size_t&                     getV1() { return v1_; }
@@ -168,9 +176,9 @@ class PCCPatch {
   std::vector<int16_t>&       getDepth( int i ) { return depth_[i]; }
   std::vector<bool>&          getOccupancy() { return occupancy_; }
   size_t                      getLodScaleX() { return levelOfDetailX_; }
-  size_t                      getLodScaleYIdc() { return levelOfDetailY_; }
+  size_t                      getLodScaleY() { return levelOfDetailY_; }
   size_t                      getLodScaleX() const { return levelOfDetailX_; }
-  size_t                      getLodScaleYIdc() const { return levelOfDetailY_; }
+  size_t                      getLodScaleY() const { return levelOfDetailY_; }
   void                        setLodScaleX( size_t value ) { levelOfDetailX_ = value; }
   void                        setLodScaleYIdc( size_t value ) { levelOfDetailY_ = value; }
   size_t&                     getAxisOfAdditionalPlane() { return axisOfAdditionalPlane_; }
@@ -462,10 +470,21 @@ class PCCPatch {
       default: assert( 0 ); break;
     }
     // checking the results are within canvas boundary (missing y check)
+    if ( x >= canvasStride || y >= canvasHeight ) {
+      printf(
+          "(x,y) is out of boundary : frame %zu, tile %zu canvassize %zux%zu : uvstart(%zu,%zu) size(%zu,%zu), "
+          "uv(%zu,%zu), xy(%zu,%zu), orientation(%zu)\n",
+          getFrameIndex(), getTileIndex(), canvasStride, canvasHeight, u0_ * occupancyResolution_,
+          v0_ * occupancyResolution_, sizeU0_ * occupancyResolution_, sizeV0_ * occupancyResolution_, u, v, x, y,
+          patchOrientation_ );
+      exit( 180 );
+    }
+
     assert( x >= 0 );
     assert( y >= 0 );
     assert( x < canvasStride );
     assert( y < canvasHeight );
+
     return ( x + canvasStride * y );
   }
 
@@ -1304,16 +1323,19 @@ class PCCPatch {
  private:
   size_t index_;          // patch index
   size_t originalIndex_;  // patch original index
-  size_t u1_;             // tangential shift
-  size_t v1_;             // bitangential shift
-  size_t d1_;             // depth shift
-  size_t sizeD_;          // size for depth
-  size_t sizeU_;          // size for depth
-  size_t sizeV_;          // size for depth
-  size_t u0_;             // location in packed image (n*occupancyResolution_)
-  size_t v0_;             // location in packed image (n*occupancyResolution_)
-  size_t sizeU0_;         // size of occupancy map (n*occupancyResolution_)
-  size_t sizeV0_;         // size of occupancy map (n*occupancyResolution_)
+  size_t frameIndex_;
+  size_t tileIndex_;
+  size_t indexInFrame_;
+  size_t u1_;      // tangential shift
+  size_t v1_;      // bitangential shift
+  size_t d1_;      // depth shift
+  size_t sizeD_;   // size for depth
+  size_t sizeU_;   // size for depth
+  size_t sizeV_;   // size for depth
+  size_t u0_;      // location in packed image (n*occupancyResolution_)
+  size_t v0_;      // location in packed image (n*occupancyResolution_)
+  size_t sizeU0_;  // size of occupancy map (n*occupancyResolution_)
+  size_t sizeV0_;  // size of occupancy map (n*occupancyResolution_)
   size_t size2DXInPixel_;
   size_t size2DYInPixel_;
   size_t occupancyResolution_;  // occupancy map resolution
@@ -1416,7 +1438,10 @@ struct PCCEomPatch {
   size_t              v0_;
   size_t              sizeU_;
   size_t              sizeV_;
+  size_t              tileIndex_;
+  size_t              frameIndex_;
   size_t              eomCount_;  // in this EomPatch
+  size_t              occupancyResolution_;
   std::vector<size_t> memberPatches;
   std::vector<size_t> eomCountPerPatch;
 };
@@ -1429,6 +1454,8 @@ struct PCCRawPointsPatch {
   size_t                sizeV_;
   size_t                u0_;
   size_t                v0_;
+  size_t                tileIndex_;
+  size_t                frameIndex_;
   size_t                sizeV0_;
   size_t                sizeU0_;
   size_t                occupancyResolution_;
@@ -1440,7 +1467,6 @@ struct PCCRawPointsPatch {
   std::vector<uint16_t> g_;
   std::vector<uint16_t> b_;
 
-  size_t numberOfEOMPoints_;
   size_t numberOfRawPoints_;
   size_t numberOfRawPointsColors_;
 
@@ -1459,17 +1485,10 @@ struct PCCRawPointsPatch {
     z_.resize( size, val );
   }
 
-  const size_t size() { return x_.size(); }
-
-  const size_t sizeOfColor() { return r_.size(); }
+  const size_t sizeX() { return x_.size(); }
   void         setNumberOfRawPoints( size_t numberOfRawPoints ) { numberOfRawPoints_ = numberOfRawPoints; }
-  void         setNumberOfRawPointsColors( size_t numberOfRawPointsColors ) {
-    numberOfRawPointsColors_ = numberOfRawPointsColors;
-  }
   const size_t getNumberOfRawPoints() { return numberOfRawPoints_; }
-  const size_t getNumberOfRawPointsColors() { return numberOfRawPointsColors_; }
-
-  void resizeColor( const size_t size ) {
+  void         resizeColor( const size_t size ) {
     r_.resize( size );
     g_.resize( size );
     b_.resize( size );
@@ -1480,18 +1499,16 @@ struct PCCRawPointsPatch {
     b_.resize( size, val );
   }
   void reset() {
-    sizeU_                   = 0;
-    sizeV_                   = 0;
-    u0_                      = 0;
-    v0_                      = 0;
-    sizeV0_                  = 0;
-    sizeU0_                  = 0;
-    occupancyResolution_     = 0;
-    numberOfEOMPoints_       = 0;
-    numberOfRawPoints_       = 0;
-    numberOfRawPointsColors_ = 0;
-    preV0_                   = 0;
-    tempV0_                  = 0;
+    sizeU_               = 0;
+    sizeV_               = 0;
+    u0_                  = 0;
+    v0_                  = 0;
+    sizeV0_              = 0;
+    sizeU0_              = 0;
+    occupancyResolution_ = 0;
+    numberOfRawPoints_   = 0;
+    preV0_               = 0;
+    tempV0_              = 0;
     occupancy_.resize( 0 );
     x_.resize( 0 );
     y_.resize( 0 );

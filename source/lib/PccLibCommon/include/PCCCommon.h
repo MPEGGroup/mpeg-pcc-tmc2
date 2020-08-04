@@ -70,6 +70,19 @@
 #undef OPTIONAL
 
 #define MATCHTOANCHOR 1  // jkei: set 1 to match with the results of anchor for mapcount=1 case.
+#define AUXVIDEO_TILE \
+  1  // tile7: if(auxiliaryVideoTileRowHeight_.size()!=other.auxiliaryVideoTileRowHeight_.size()) return false;
+
+#define MULTISTREAM_BUGFIX 1
+#define LOSSYOCCMAP_BUGFIX 1
+#define REFERENCELIST_BUGFIX 1
+#define USEAUXVIDEOFLAG 1
+#define MULTISTREAM_AUXVIDEO 1
+
+#define TILEINFO_DERIVATION 1  // d127
+#define NONUNIFORM_PARTSIZE 0
+
+#define LOSSLESS_3DROI 1
 
 namespace pcc {
 
@@ -81,12 +94,12 @@ namespace pcc {
 // ******************************************************************* //
 // Coding tool configuration
 // ******************************************************************* //
-static const uint8_t PCC_SAVE_POINT_TYPE = 0;  // Save point information in reconstructed ply.
+static const uint8_t PCC_SAVE_POINT_TYPE = 1;  // Save point information in reconstructed ply.
 
 // ******************************************************************* //
 // Trace modes to validate new syntax
 // ******************************************************************* //
-// #define CODEC_TRACE
+#define CODEC_TRACE
 
 // ******************************************************************* //
 // Common constants
@@ -95,7 +108,7 @@ static const uint8_t PCC_SAVE_POINT_TYPE = 0;  // Save point information in reco
 
 enum PCCEndianness { PCC_BIG_ENDIAN = 0, PCC_LITTLE_ENDIAN = 1 };
 enum PCCColorTransform { COLOR_TRANSFORM_NONE = 0, COLOR_TRANSFORM_RGB_TO_YCBCR = 1 };
-enum PCCPointType { POINT_UNSET = 0, POINT_D0, POINT_D1, POINT_DF, POINT_SMOOTH, POINT_EOM };
+enum PCCPointType { POINT_UNSET = 0, POINT_D0, POINT_D1, POINT_DF, POINT_SMOOTH, POINT_EOM, POINT_RAW };
 enum { COLOURFORMAT420 = 0, COLOURFORMAT444 = 1 };
 enum PCCCOLORFORMAT { UNKNOWN = 0, RGB444, YUV444, YUV420 };
 

@@ -56,7 +56,8 @@ class PatchDataUnit {
       lodScaleXminus1_( 0 ),
       lodScaleYIdc_( 0 ),
       patchIndex_( 0 ),
-      frameIndex_( 0 ) {}
+      frameIndex_( 0 ),
+      tileOrder_( 0 ) {}
   ~PatchDataUnit() {}
 
   PatchDataUnit& operator=( const PatchDataUnit& ) = default;
@@ -72,27 +73,29 @@ class PatchDataUnit {
   size_t         getOrientationIndex() { return orientationIndex_; }
   bool           getLodEnableFlag() { return lodEnableFlag_; }
   uint8_t        getLodScaleXminus1() { return lodScaleXminus1_; }
-  uint8_t        getLodScaleYIdc() { return lodScaleYIdc_; }
+  uint8_t        getLodScaleY() { return lodScaleYIdc_; }
+  size_t         getPatchIndex() { return patchIndex_; }
+  size_t         getFrameIndex() { return frameIndex_; }
+  size_t         getTileOrder() { return tileOrder_; }
   PLRData&       getPLRData() { return pointLocalReconstructionData_; }
 
-  size_t getPatchIndex() { return patchIndex_; }
-  size_t getFrameIndex() { return frameIndex_; }
-  void   setPatchIndex( size_t value ) { patchIndex_ = value; }
-  void   setFrameIndex( size_t value ) { frameIndex_ = value; }
-  void   set2dPosX( size_t value ) { pos2dX_ = value; }
-  void   set2dPosY( size_t value ) { pos2dY_ = value; }
-  void   set2dSizeXMinus1( uint64_t value ) { size2dXMinus1_ = value; }
-  void   set2dSizeYMinus1( uint64_t value ) { size2dYMinus1_ = value; }
-  void   set3dOffsetX( size_t value ) { pos3dOffsetX_ = value; }
-  void   set3dOffsetY( size_t value ) { pos3dOffsetY_ = value; }
-  void   set3dOffsetMinZ( size_t value ) { pos3dOffsetMinZ_ = value; }
-  void   set3dRangeZ( size_t value ) { pos3dRangeZ_ = value; }
-  void   setProjectionId( size_t value ) { projectionId_ = value; }
-  void   setOrientationIndex( size_t value ) { orientationIndex_ = value; }
-  void   setLodEnableFlag( bool value ) { lodEnableFlag_ = value; }
-  void   setLodScaleXminus1( uint8_t value ) { lodScaleXminus1_ = value; }
-  void   setLodScaleYIdc( uint8_t value ) { lodScaleYIdc_ = value; }
-  void   setPLRData( PLRData value ) { pointLocalReconstructionData_ = value; }
+  void setPatchIndex( size_t value ) { patchIndex_ = value; }
+  void setFrameIndex( size_t value ) { frameIndex_ = value; }
+  void setTileOrder( size_t value ) { tileOrder_ = value; }
+  void set2dPosX( size_t value ) { pos2dX_ = value; }
+  void set2dPosY( size_t value ) { pos2dY_ = value; }
+  void set2dSizeXMinus1( uint64_t value ) { size2dXMinus1_ = value; }
+  void set2dSizeYMinus1( uint64_t value ) { size2dYMinus1_ = value; }
+  void set3dOffsetX( size_t value ) { pos3dOffsetX_ = value; }
+  void set3dOffsetY( size_t value ) { pos3dOffsetY_ = value; }
+  void set3dOffsetMinZ( size_t value ) { pos3dOffsetMinZ_ = value; }
+  void set3dRangeZ( size_t value ) { pos3dRangeZ_ = value; }
+  void setProjectionId( size_t value ) { projectionId_ = value; }
+  void setOrientationIndex( size_t value ) { orientationIndex_ = value; }
+  void setLodEnableFlag( bool value ) { lodEnableFlag_ = value; }
+  void setLodScaleXminus1( uint8_t value ) { lodScaleXminus1_ = value; }
+  void setLodScaleYIdc( uint8_t value ) { lodScaleYIdc_ = value; }
+  void setPLRData( PLRData value ) { pointLocalReconstructionData_ = value; }
 
  private:
   size_t   pos2dX_;
@@ -111,6 +114,7 @@ class PatchDataUnit {
   PLRData  pointLocalReconstructionData_;
   size_t   patchIndex_;
   size_t   frameIndex_;
+  size_t   tileOrder_;
 };
 
 };  // namespace pcc

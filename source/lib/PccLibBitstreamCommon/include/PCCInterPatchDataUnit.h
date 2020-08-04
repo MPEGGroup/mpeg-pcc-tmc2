@@ -53,12 +53,14 @@ class InterPatchDataUnit {
       pos3dOffsetMinZ_( 0 ),
       pos3dRangeZ_( 0 ),
       patchIndex_( 0 ),
-      frameIndex_( 0 ){};
+      frameIndex_( 0 ),
+      tileOrder_( 0 ){};
   ~InterPatchDataUnit(){};
   InterPatchDataUnit& operator=( const InterPatchDataUnit& ) = default;
 
   size_t   getPatchIndex() { return patchIndex_; }
   size_t   getFrameIndex() { return frameIndex_; }
+  size_t   getTileOrder() { return tileOrder_; }
   int64_t  getRefIndex() { return refIndex_; }
   int64_t  getRefPatchIndex() { return refPatchIndex_; }
   int64_t  get2dPosX() { return pos2dX_; }
@@ -69,10 +71,11 @@ class InterPatchDataUnit {
   int64_t  get3dOffsetY() { return pos3dOffsetY_; }
   int64_t  get3dOffsetMinZ() { return pos3dOffsetMinZ_; }
   int64_t  get3dRangeZ() { return pos3dRangeZ_; }
-  PLRData& getPLRData() { return pointLocalReconstructionData_; }
+  PLRData& getPLRData() { return plrData_; }
 
   void setPatchIndex( size_t value ) { patchIndex_ = value; }
   void setFrameIndex( size_t value ) { frameIndex_ = value; }
+  void setTileOrder( size_t value ) { tileOrder_ = value; }
   void setRefIndex( int64_t value ) { refIndex_ = value; }
   void setRefPatchIndex( int64_t value ) { refPatchIndex_ = value; }
   void set2dPosX( int64_t value ) { pos2dX_ = value; }
@@ -83,7 +86,7 @@ class InterPatchDataUnit {
   void set3dOffsetY( int64_t value ) { pos3dOffsetY_ = value; }
   void set3dOffsetMinZ( int64_t value ) { pos3dOffsetMinZ_ = value; }
   void set3dRangeZ( int64_t value ) { pos3dRangeZ_ = value; }
-  void setPLRData( PLRData value ) { pointLocalReconstructionData_ = value; }
+  void setPLRData( PLRData value ) { plrData_ = value; }
 
  private:
   int64_t refIndex_;
@@ -98,7 +101,8 @@ class InterPatchDataUnit {
   int64_t pos3dRangeZ_;
   size_t  patchIndex_;
   size_t  frameIndex_;
-  PLRData pointLocalReconstructionData_;
+  size_t  tileOrder_;
+  PLRData plrData_;
 };
 
 };  // namespace pcc

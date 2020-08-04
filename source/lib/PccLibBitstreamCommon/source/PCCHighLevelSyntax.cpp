@@ -35,13 +35,29 @@
 
 using namespace pcc;
 
-PCCHighLevelSyntax::PCCHighLevelSyntax() : gofSize_( 0 ) {}
+PCCHighLevelSyntax::PCCHighLevelSyntax() {}
 
 PCCHighLevelSyntax::~PCCHighLevelSyntax() {
   vpccParameterSets_.clear();
   atlasHLS_.clear();
 }
-
+#if !REFERENCELIST_BUGFIX
+void PCCAtlasHighLevelSyntax::constructRefList( size_t aspsIdx, size_t afpsIdx ) {
+  auto& asps = atlasSequenceParameterSet_[aspsIdx];
+  // construction of reference frame list from ASPS refList (decoder)
+  setNumOfRefAtlasFrameList( asps.getNumRefAtlasFrameListsInAsps() );
+  for ( size_t list = 0; list < getNumOfRefAtlasFrameList(); list++ ) {
+    auto& refList = asps.getRefListStruct( list );
+    setMaxNumRefAtlasFrame( refList.getNumRefEntries() );
+    setSizeOfRefAtlasFrameList( list, maxNumRefAtlasFrame_ );
+    for ( size_t i = 0; i < refList.getNumRefEntries(); i++ ) {
+      int  absDiff = refList.getAbsDeltaAfocSt( i );
+      bool sign    = refList.getStrafEntrySignFlag( i );
+      setRefAtlasFrame( list, i, static_cast<int>( sign ) == 0 ? ( -absDiff ) : absDiff );
+    }
+  }
+}
+#endif
 size_t PCCAtlasHighLevelSyntax::getNumRefIdxActive( AtlasTileHeader& ath ) {
   size_t afpsId          = ath.getAtlasFrameParameterSetId();
   auto&  afps            = getAtlasFrameParameterSet( afpsId );
@@ -50,9 +66,13 @@ size_t PCCAtlasHighLevelSyntax::getNumRefIdxActive( AtlasTileHeader& ath ) {
     if ( ath.getNumRefIdxActiveOverrideFlag() ) {
       numRefIdxActive = ath.getNumRefIdxActiveMinus1() + 1;
     } else {
+#if REFERENCELIST_BUGFIX
       auto& asps    = getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
       auto& refList = ath.getRefAtlasFrameListSpsFlag() ? asps.getRefListStruct( ath.getRefAtlasFrameListIdx() )
                                                         : ath.getRefListStruct();
+#else
+      auto& refList = ath.getRefListStruct();
+#endif
       numRefIdxActive =
           static_cast<size_t>( ( std::min )( static_cast<int>( refList.getNumRefEntries() ),
                                              static_cast<int>( afps.getNumRefIdxDefaultActiveMinus1() ) + 1 ) );
@@ -72,9 +92,6 @@ void PCCAtlasHighLevelSyntax::printVideoBitstream() {
   fflush( stdout );
 }
 
-PCCAtlasHighLevelSyntax::PCCAtlasHighLevelSyntax() {
-  activeAFPS_ = 0;
-  activeASPS_ = 0;
-}
+PCCAtlasHighLevelSyntax::PCCAtlasHighLevelSyntax() {}
 
 PCCAtlasHighLevelSyntax::~PCCAtlasHighLevelSyntax() { videoBitstream_.clear(); }
