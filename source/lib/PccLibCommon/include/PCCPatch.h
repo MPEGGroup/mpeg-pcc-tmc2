@@ -145,6 +145,8 @@ class PCCPatch {
   size_t&                     getIndex() { return index_; }
   size_t                      getFrameIndex() { return frameIndex_; }
   size_t                      getTileIndex() { return tileIndex_; }
+  size_t                      getFrameIndex() const { return frameIndex_; }
+  size_t                      getTileIndex() const { return tileIndex_; }
   size_t                      getIndexInFrame() { return indexInFrame_; }
   void                        setFrameIndex( size_t value ) { frameIndex_ = value; }
   void                        setTileIndex( size_t value ) { tileIndex_ = value; }
@@ -472,7 +474,7 @@ class PCCPatch {
     // checking the results are within canvas boundary (missing y check)
     if ( x >= canvasStride || y >= canvasHeight ) {
       printf(
-          "(x,y) is out of boundary : frame %zu, tile %zu canvassize %zux%zu : uvstart(%zu,%zu) size(%zu,%zu), "
+          "patch2Canvas (x,y) is out of boundary : frame %zu, tile %zu canvassize %zux%zu : uvstart(%zu,%zu) size(%zu,%zu), "
           "uv(%zu,%zu), xy(%zu,%zu), orientation(%zu)\n",
           getFrameIndex(), getTileIndex(), canvasStride, canvasHeight, u0_ * occupancyResolution_,
           v0_ * occupancyResolution_, sizeU0_ * occupancyResolution_, sizeV0_ * occupancyResolution_, u, v, x, y,
@@ -533,7 +535,7 @@ class PCCPatch {
         break;
       default: return -1; break;
     }
-    // checking the results are within canvas boundary (missing y check)
+    // checking the results are within canvasHeightBlk boundary (missing y check)
     if ( x < 0 ) return -1;
     if ( y < 0 ) return -1;
     if ( x >= canvasStrideBlk ) return -1;

@@ -2167,10 +2167,10 @@ void PCCCodec::generateOccupancyMap( PCCFrameContext& tile,
   }
 
 #if MULTITILE_BUGFIX //jkei: do we need this for non - lossy occupancy case as well?
-  for ( size_t yy = 0; yy < videoFrame.getHeight(); yy++ )
-    for ( size_t xx = 0; xx < videoFrame.getWidth(); xx++ ) {
-      videoFrame.setValue( 0, xx + tile.getLeftTopXInFrame(), yy + tile.getLeftTopYInFrame(),
-                           occupancyMap[( yy * occupancyPrecision ) * width + xx * occupancyPrecision] );
+  for ( size_t yy = 0; yy < tile.getHeight(); yy++ )
+    for ( size_t xx = 0; xx < tile.getWidth(); xx++ ) {
+      videoFrame.setValue( 0,  (xx + tile.getLeftTopXInFrame())/occupancyPrecision, (yy + tile.getLeftTopYInFrame())/occupancyPrecision,
+                           occupancyMap[ yy * width + xx ] );
     }
 #else
   for ( size_t yy = 0; yy < tile.getHeight(); yy++ )

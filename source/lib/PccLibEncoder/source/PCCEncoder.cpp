@@ -75,10 +75,10 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   size_t layerCountMinus1Original             = params_.mapCountMinus1_;
   size_t singleLayerPixelInterleavingOriginal = static_cast<size_t>( params_.singleMapPixelInterleaving_ );
   if ( params_.nbThread_ > 0 ) { tbb::task_scheduler_init init( static_cast<int>( params_.nbThread_ ) ); }
-#if 1
+
   if ( params_.losslessGeo_ && params_.tileSegmentationType_ > 1 && params_.numMaxTilePerFrame_ > 1 )
     params_.numMaxTilePerFrame_ += 1;
-#endif
+
   params_.initializeContext( context );
   assert( sources.getFrameCount() < 256 );
   size_t atlasIndex = 0;
@@ -963,7 +963,7 @@ void PCCEncoder::modifyOccupancyMapEOM( PCCFrameContext& frame ) {
 
 void PCCEncoder::adjustReferenceAtlasFrames( PCCContext& context, size_t tileIndex ) {
   for ( size_t frameIdx = 2; frameIdx < context.getFrames().size(); frameIdx++ ) {
-    std::cout << ":::::---- adjusting reference frames for frame " << frameIdx << "tile " << tileIndex << std::endl;
+    std::cout << ":::::---- adjusting reference frames for frame " << frameIdx << "\ttile " << tileIndex << std::endl;
     auto&                 tile         = context[frameIdx].getTile( tileIndex );
     double                dMinListDist = 0;
     std::vector<PCCPatch> bestPatchList;
@@ -3536,12 +3536,7 @@ size_t PCCEncoder::packRawPointsPatchSimple( PCCFrameContext& tile,
     for ( size_t v = 0; v < rawPointsPatch.sizeV_; ++v ) {
       for ( size_t u = 0; u < rawPointsPatch.sizeU_; ++u ) {
         const size_t p = v * rawPointsPatch.sizeU_ + u;
-#if 1  // jkei: bugfix & spec alignment
-        if ( p < rawPointsPatch.getNumberOfRawPoints() * 3 )
-#else
-        if ( rawPointsPatch.x_[p] < infiniteDepth )
-#endif
-        {
+        if ( p < rawPointsPatch.getNumberOfRawPoints() * 3 ) {
           const size_t u0 = u / rawPointsPatch.occupancyResolution_;
           const size_t v0 = v / rawPointsPatch.occupancyResolution_;
           const size_t p0 = v0 * rawPointsPatch.sizeU0_ + u0;
@@ -3601,12 +3596,7 @@ size_t PCCEncoder::packRawPointsPatch( PCCFrameContext&   frame,
     for ( size_t v = 0; v < rawPointsPatch.sizeV_; ++v ) {
       for ( size_t u = 0; u < rawPointsPatch.sizeU_; ++u ) {
         const size_t p = v * rawPointsPatch.sizeU_ + u;
-#if 1  // jkei: bugfix & spec alignment
-        if ( p < rawPointsPatch.getNumberOfRawPoints() * 3 )
-#else
-        if ( rawPointsPatch.x_[p] < infiniteValue )
-#endif
-        {
+        if ( p < rawPointsPatch.getNumberOfRawPoints() * 3 ) {
           const size_t u0 = u / rawPointsPatch.occupancyResolution_;
           const size_t v0 = v / rawPointsPatch.occupancyResolution_;
           const size_t p0 = v0 * rawPointsPatch.sizeU0_ + u0;
@@ -4129,12 +4119,7 @@ void PCCEncoder::generateIntraImage( PCCAtlasFrameContext& atlasFrame,
           for ( size_t v = 0; v < rawPointsPatch.sizeV_; ++v ) {
             for ( size_t u = 0; u < rawPointsPatch.sizeU_; ++u ) {
               const size_t p = v * rawPointsPatch.sizeU_ + u;
-#if 1  // jkei: bugfix & spec alignment
-              if ( p < rawPointsPatch.getNumberOfRawPoints() * 3 )
-#else
-              if ( rawPointsPatch.x_[p] < infiniteDepth )
-#endif
-              {
+              if ( p < rawPointsPatch.getNumberOfRawPoints() * 3 ) {
                 assert( rawPointsPatch.x_[p] < infiniteDepth );
                 if ( rawPointsPatch.x_[p] >= infiniteDepth ) {
                   printf( "(rawPointsPatch.x_[%zu] >=infiniteDepth)\n", p );
@@ -4152,14 +4137,12 @@ void PCCEncoder::generateIntraImage( PCCAtlasFrameContext& atlasFrame,
                                   uint16_t( rawPointsPatch.z_[p] ) );
                 }
               }
-#if 1
               else {
                 const size_t x = ( u0 + u );
                 const size_t y = ( v0 + v );
                 image.setValue( 0, x + tile.getLeftTopXInFrame(), y + tile.getLeftTopYInFrame(),
                                 uint16_t( rawPointsPatch.x_[rawPointsPatch.getNumberOfRawPoints() * 3 - 1] ) );
               }
-#endif
             }
           }
         }
@@ -6113,12 +6096,7 @@ void PCCEncoder::markRawPatchLocation( PCCFrameContext& frame, PCCImageOccupancy
         for ( size_t v = 0; v < rawPointsPatch.sizeV_; ++v ) {
           for ( size_t u = 0; u < rawPointsPatch.sizeU_; ++u ) {
             const size_t p = v * rawPointsPatch.sizeU_ + u;
-#if 1  // jkei:bugfix
-            if ( p < rawPointsPatch.getNumberOfRawPoints() * 3 )
-#else
-            if ( rawPointsPatch.x_[p] < infiniteDepth )
-#endif
-            {
+            if ( p < rawPointsPatch.getNumberOfRawPoints() * 3 ) {
               const size_t x = ( u0 + u );
               const size_t y = ( v0 + v );
               if ( !params_.lossyRawPointsPatch_ ) {
@@ -8070,9 +8048,11 @@ void PCCEncoder::performGPAPacking( const SubContext& subContext,
         curGPAPatchData.u0               = unionPatch[trackIndex].getU0();
         curGPAPatchData.v0               = unionPatch[trackIndex].getV0();
         curGPAPatchData.patchOrientation = unionPatch[trackIndex].getPatchOrientation();
-        if ( printDetailedInfo ) {
+         if ( printDetailedInfo ) {
           std::cout << "Orientation:" << curGPAPatchData.patchOrientation << " for GPA patch in the same position ("
-                    << curGPAPatchData.u0 << "," << curGPAPatchData.v0 << ")" << std::endl;
+                    << curGPAPatchData.u0 << "," << curGPAPatchData.v0 << ") size: "<<curGPAPatchData.sizeU0 <<"x"<<curGPAPatchData.sizeV0
+          <<" tileSize "<<curFrameContext.getWidth()<<"x"<<curFrameContext.getHeight()
+          << std::endl;
         }
         for ( size_t v0 = 0; v0 < curGPAPatchData.sizeV0; ++v0 ) {
           for ( size_t u0 = 0; u0 < curGPAPatchData.sizeU0; ++u0 ) {
