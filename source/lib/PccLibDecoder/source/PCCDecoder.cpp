@@ -619,23 +619,16 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
   auto& afps  = context.getAtlasFrameParameterSet( ath.getAtlasFrameParameterSetId() );
   auto& asps  = context.getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
   auto& atgdu = atlu.getDataUnit();
-#if !REFERENCELIST_BUGFIX
-  context.constructRefList( afps.getAtlasSequenceParameterSetId(), ath.getAtlasFrameParameterSetId() );
-#endif
   // current tile position derivation
   size_t           frameIndex = atlu.getAtlasFrmOrderCntVal();
   size_t           tileIndex = setTileGroupSizeAndLocation( context, frameIndex, ath );  // width,height,leftTopPosition
   PCCFrameContext& tile = context[frameIndex].getTile( tileIndex );
   tile.setIndex( atlu.getAtlasFrmOrderCntVal() );
   tile.setTileIndex( tileIndex );
-#if USEAUXVIDEOFLAG
   tile.setUseRawPointsSeparateVideo( sps.getAuxiliaryVideoPresentFlag( atlasIndex ) &&
                                      asps.getAuxiliaryVideoEnabledFlag() );
-#else
-  tile.setUseRawPointsSeparateVideo( sps.getAuxiliaryVideoPresentFlag( atlasIndex ) );
-#endif
   tile.setRawPatchEnabledFlag( asps.getRawPatchEnabledFlag() );
-#if REFERENCELIST_BUGFIX
+
   if ( tile.getIndex() > 0 && ath.getType() != I_TILE ) {
     tile.setRefAfocList( context, ath, ath.getAtlasFrameParameterSetId() );
 
@@ -643,7 +636,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
     for ( size_t i = 0; i < tile.getRefAfocListSize(); i++ ) { TRACE_CODEC( "\t%zu", tile.getRefAfoc( i ) ); }
     TRACE_CODEC( "\n" );
   }
-#endif
+
 
   // local variable initialization
   auto&        patches                 = tile.getPatches();

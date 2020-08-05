@@ -61,8 +61,7 @@
 #include <mach/mach.h>
 #endif
 
-#define REFERENCELIST_BUGFIX 1
-
+#define TILETYPE0_BUGFIX 1
 namespace pcc {
 
 // ******************************************************************* //

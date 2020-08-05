@@ -42,7 +42,11 @@ class AtlasFrameTileInformation {
  public:
   AtlasFrameTileInformation() :
       singleTileInAtlasFrameFlag_( 0 ),
+#if TILETYPE0_BUGFIX
+      uniformPartitionSpacingFlag_( 1 ),
+#else
       uniformPartitionSpacingFlag_( 0 ),
+#endif
       numPartitionColumnsMinus1_( 0 ),
       numPartitionRowsMinus1_( 0 ),
       partitionColumnsWidthMinus1_( 0 ),

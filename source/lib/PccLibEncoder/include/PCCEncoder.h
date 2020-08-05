@@ -186,10 +186,10 @@ class PCCEncoder : public PCCCodec {
                                   int         lastFramePlus1 = -1 );
   size_t segmentSequence( PCCContext& context, std::vector<std::pair<size_t, size_t>>& framesInAFPS );
   bool   relocateTileGeometryVideo( PCCContext& context, std::vector<std::pair<size_t, size_t>>& framesInAFPS );
-#if LOSSLESS_3DROI
+
   bool placeEomPatchInTile( PCCContext& context, std::vector<std::pair<size_t, size_t>>& framesInAFPS );
   bool placeRawPatchTile( PCCContext& context, std::vector<std::pair<size_t, size_t>>& framesInAFPS );
-#endif
+
   bool generateGeometryVideo( const PCCGroupOfFrames& sources, PCCContext& context );
 
   bool        generateTextureVideo( const PCCGroupOfFrames&     sources,
@@ -287,9 +287,9 @@ class PCCEncoder : public PCCCodec {
   void spatialConsistencyPackFlexibleMultipleTiles( PCCAtlasFrameContext& frame,
                                                     PCCAtlasFrameContext& prevFrame,
                                                     int                   safeguard );
-#if LOSSLESS_3DROI
+
   size_t packRawPointsPatchSimple( PCCFrameContext& tile, size_t patchStartOffsetX = 0, size_t patchStartOffsetY = 0 );
-#endif
+
   size_t packRawPointsPatch( PCCFrameContext&   frame,
                              std::vector<bool>& occupancyMap,
                              size_t             width,

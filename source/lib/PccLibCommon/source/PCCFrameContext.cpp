@@ -53,12 +53,7 @@ PCCFrameContext::PCCFrameContext() :
     geometry2dBitdepth_( 8 ) {
   log2PatchQuantizerSizeX_ = 4;
   log2PatchQuantizerSizeY_ = 4;
-#if REFERENCELIST_BUGFIX
   bestRefListIndexInAsps_ = 0;
-#else
-  numOfAvailableRefAtlasFrameList_ = 1;
-  activeRefAtlasFrameIndex_        = 0;
-#endif
   leftTopXInFrame_ = 0;
   leftTopYInFrame_ = 0;
   refAFOCList_.resize( 0 );
@@ -77,7 +72,7 @@ PCCFrameContext::~PCCFrameContext() {
   for ( auto& block : pointToPixelByBlock_ ) { block.clear(); }
   pointToPixelByBlock_.clear();
 }
-#if REFERENCELIST_BUGFIX
+
 void PCCFrameContext::setRefAfocList( PCCContext& context, AtlasTileHeader& ath, size_t afpsIndex ) {
   // decoder, per tile
   auto&         afps   = context.getAtlasFrameParameterSet( afpsIndex );
@@ -150,46 +145,7 @@ void PCCFrameContext::constructAtghRefListStruct( PCCContext& context, AtlasTile
     if ( ath.getNumRefIdxActiveOverrideFlag() ) ath.setNumRefIdxActiveMinus1( numRefIdxActive_ - 1 );
   }
 }
-#else
-// void PCCFrameContext::setRefAFOCList( std::vector<std::vector<size_t>>& list ) {
-//  size_t listSize = ( std::min )( refAFOCList_.size(), list.size() );
-//  for ( size_t i = 0; i < listSize; i++ ) {
-//    size_t refSize = ( std::min )( refAFOCList_[i].size(), list[i].size() );
-//    for ( size_t j = 0; j < refSize; j++ ) { refAFOCList_[i][j] = list[i][j]; }
-//  }
-//}
-// void PCCFrameContext::setRefAFOCList( PCCContext& context ) {
-//  numOfAvailableRefAtlasFrameList_ = context.getNumOfRefAtlasFrameList();
-//  refAFOCList_.resize( numOfAvailableRefAtlasFrameList_ );
-//  int refPOC = 0;
-//  for ( size_t i = 0; i < numOfAvailableRefAtlasFrameList_; i++ ) {
-//    size_t maxRefNum = context.getSizeOfRefAtlasFrameList( i );
-//    for ( size_t j = 0; j < maxRefNum; j++ ) {
-//      refPOC = int( index_ ) + int( context.getRefAtlasFrame( i, j ) );
-//      if ( refPOC >= 0 ) { refAFOCList_[i].push_back( refPOC ); }
-//    }
-//    if ( refAFOCList_[i].empty() ) { refAFOCList_[i].push_back( 255 ); }
-//  }
-//}
-//
-// void PCCFrameContext::constructAtghRefListStruct( PCCContext& context, AtlasTileHeader& ath ) {
-//  size_t afpsId = ath.getAtlasFrameParameterSetId();
-//  auto&  afps   = context.getAtlasFrameParameterSet( afpsId );
-//  size_t aspsId = afps.getAtlasSequenceParameterSetId();
-//  auto&  asps   = context.getAtlasSequenceParameterSet( aspsId );
-//  ath.setRefAtlasFrameListSpsFlag( true );                                         // using ASPS refList
-//  ath.setRefAtlasFrameListIdx( getActiveRefAtlasFrameIndex() );                    //
-//  ath.atgh_ref_atlas_frame_list_idx ath.setRefListStruct( asps.getRefListStruct( ath.getRefAtlasFrameListIdx() ) ); //
-//  copied to ath's refList,
-//                                                                                   // not signalled
-//  if ( index_ <= afps.getNumRefIdxDefaultActiveMinus1() ) {                        // 3
-//    ath.setNumRefIdxActiveOverrideFlag( true );
-//    ath.setNumRefIdxActiveMinus1( index_ == 0 ? 0 : ( index_ - 1 ) );
-//  } else {
-//    ath.setNumRefIdxActiveOverrideFlag( false );
-//  }
-//}
-#endif
+
 void PCCFrameContext::allocOneLayerData() {
   for ( auto& patch : patches_ ) { patch.allocOneLayerData(); }
 }

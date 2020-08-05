@@ -116,15 +116,8 @@ class PCCAtlasHighLevelSyntax {
   size_t  getSizeOfRefAtlasFrameList( size_t listIndex ) { return refAtlasFrameList_[listIndex].size(); }
   int32_t getRefAtlasFrame( size_t listIndex, size_t refIndex ) { return refAtlasFrameList_[listIndex][refIndex]; }
   std::vector<int32_t>& getRefAtlasFrameList( size_t listIndex ) { return refAtlasFrameList_[listIndex]; }
-#if !REFERENCELIST_BUGFIX
-  void constructRefList( size_t aspsIdx, size_t afpsIdx );
-#endif
   size_t getNumRefIdxActive( AtlasTileHeader& ath );
-#if REFERENCELIST_BUGFIX
   size_t getMaxNumRefAtlasFrame( size_t listIndex ) { return maxNumRefAtlasFrame_; }
-#else
-  size_t getMaxNumRefAtlasFrame() { return maxNumRefAtlasFrame_; }
-#endif
   void setMaxNumRefAtlasFrame( size_t value ) { maxNumRefAtlasFrame_ = value; }
   // point local recosntruction, defined in ASPS
   void addPointLocalReconstructionMode( const PointLocalReconstructionMode& mode ) {
@@ -371,19 +364,10 @@ class PCCHighLevelSyntax {
   std::vector<int32_t>& getRefAtlasFrameList( size_t listIndex ) {
     return atlasHLS_[atlasIndex_].getRefAtlasFrameList( listIndex );
   }
-#if !REFERENCELIST_BUGFIX
-  void constructRefList( size_t aspsIdx, size_t afpsIdx ) {
-    atlasHLS_[atlasIndex_].constructRefList( aspsIdx, afpsIdx );
-  };
-#endif
   size_t getNumRefIdxActive( AtlasTileHeader& ath ) { return atlasHLS_[atlasIndex_].getNumRefIdxActive( ath ); };
-#if REFERENCELIST_BUGFIX
   size_t getMaxNumRefAtlasFrame( size_t listIndex ) {
     return atlasHLS_[atlasIndex_].getMaxNumRefAtlasFrame( listIndex );
   }
-#else
-  size_t getMaxNumRefAtlasFrame() { return atlasHLS_[atlasIndex_].getMaxNumRefAtlasFrame(); }
-#endif
   void setMaxNumRefAtlasFrame( size_t value ) { atlasHLS_[atlasIndex_].setMaxNumRefAtlasFrame( value ); }
   // point local recosntruction, defined in ASPS
   void addPointLocalReconstructionMode( const PointLocalReconstructionMode& mode ) {

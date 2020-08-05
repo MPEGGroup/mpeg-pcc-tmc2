@@ -70,20 +70,12 @@
 #undef OPTIONAL
 
 #define MATCHTOANCHOR 1  // jkei: set 1 to match with the results of anchor for mapcount=1 case.
-#define AUXVIDEO_TILE \
-  1  // tile7: if(auxiliaryVideoTileRowHeight_.size()!=other.auxiliaryVideoTileRowHeight_.size()) return false;
-
-#define MULTISTREAM_BUGFIX 1
-#define LOSSYOCCMAP_BUGFIX 1
-#define REFERENCELIST_BUGFIX 1
-#define USEAUXVIDEOFLAG 1
-#define MULTISTREAM_AUXVIDEO 1
-
-#define TILEINFO_DERIVATION 1  // d127
 #define NONUNIFORM_PARTSIZE 0
 
-#define LOSSLESS_3DROI 1
+#define TILETYPE0_BUGFIX 1
+#define MULTITILE_BUGFIX 1
 
+//MULTISTREAM_AUXVIDEO 1 //multistream & auxvideo doesnot have config for auxvideo
 namespace pcc {
 
 // ******************************************************************* //

@@ -487,7 +487,7 @@ void PCCBitstreamReader::atlasSequenceParameterSetRbsp( AtlasSequenceParameterSe
   asps.setxelDeinterleavingFlag( bitstream.read( 1 ) );          // u(1)
   if ( asps.getPixelDeinterleavingFlag() ) {
     for ( size_t i = 0; i < asps.getMapCountMinus1() + 1; i++ ) {
-      asps.setPixeDeinterleavingMapFlag( i, bitstream.read( 1 ) );  // u(1)
+      asps.setPixelDeinterleavingMapFlag( i, bitstream.read( 1 ) );  // u(1)
     }
   }
   asps.setEomPatchEnabledFlag( bitstream.read( 1 ) );  // u(1)
@@ -617,6 +617,8 @@ void PCCBitstreamReader::atlasFrameTileInformation( AtlasFrameTileInformation&  
                                                     PCCBitstream&                  bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   afti.setSingleTileInAtlasFrameFlag( bitstream.read( 1 ) != 0U );  // u(1)
+  TRACE_BITSTREAM( "afti: singleTile :%zu\n", afti.getSingleTileInAtlasFrameFlag());
+  TRACE_BITSTREAM( "afti: uniformPartition :%zu\n", afti.getUniformPartitionSpacingFlag());
   if ( !afti.getSingleTileInAtlasFrameFlag() ) {
     afti.setUniformPartitionSpacingFlag( bitstream.read( 1 ) != 0U );  // u(1)
     if ( afti.getUniformPartitionSpacingFlag() ) {

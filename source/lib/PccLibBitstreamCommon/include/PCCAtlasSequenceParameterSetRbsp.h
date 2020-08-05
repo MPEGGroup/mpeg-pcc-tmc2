@@ -64,7 +64,7 @@ class AtlasSequenceParameterSetRbsp {
       patchSizeQuantizerPresentFlag_( false ),
       mapCountMinus1_( 0 ),
       pixelDeinterleavingFlag_( false ),
-      pixeDeinterleavingMapFlag_( false ),
+      pixelDeinterleavingMapFlag_( false ),
       eomPatchEnabledFlag_( false ),
       eomFixBitCountMinus1_( 0 ),
       rawPatchEnabledFlag_( false ),
@@ -77,14 +77,14 @@ class AtlasSequenceParameterSetRbsp {
       extension6Bits_( 0 ) {}
   ~AtlasSequenceParameterSetRbsp() {
     refListStruct_.clear();
-    pixeDeinterleavingMapFlag_.clear();
+    pixelDeinterleavingMapFlag_.clear();
     plrInformation_.clear();
   }
 
   AtlasSequenceParameterSetRbsp& operator=( const AtlasSequenceParameterSetRbsp& ) = default;
 
   void allocateRefListStruct() { refListStruct_.resize( numRefAtlasFrameListsInAsps_ ); }
-  void allocatePixeDeinterleavingMapFlag() { pixeDeinterleavingMapFlag_.resize( mapCountMinus1_ ); }
+  void allocatePixelDeinterleavingMapFlag() { pixelDeinterleavingMapFlag_.resize( mapCountMinus1_ ); }
   void allocatePLRInformation() { plrInformation_.resize( mapCountMinus1_ + 1 ); }
 
   uint8_t            getAtlasSequenceParameterSetId() { return atlasSequenceParameterSetId_; }
@@ -106,7 +106,7 @@ class AtlasSequenceParameterSetRbsp {
   bool               getPatchSizeQuantizerPresentFlag() { return patchSizeQuantizerPresentFlag_; }
   uint8_t            getMapCountMinus1() { return mapCountMinus1_; }
   bool               getPixelDeinterleavingFlag() { return pixelDeinterleavingFlag_; }
-  bool               getPixeDeinterleavingMapFlag( size_t index ) { return pixeDeinterleavingMapFlag_[index]; }
+  bool               getPixelDeinterleavingMapFlag( size_t index ) { return pixelDeinterleavingMapFlag_[index]; }
   bool               getEomPatchEnabledFlag() { return eomPatchEnabledFlag_; }
   uint8_t            getEomFixBitCountMinus1() { return eomFixBitCountMinus1_; }
   bool               getRawPatchEnabledFlag() { return rawPatchEnabledFlag_; }
@@ -138,7 +138,7 @@ class AtlasSequenceParameterSetRbsp {
   void setPatchSizeQuantizerPresentFlag( bool value ) { patchSizeQuantizerPresentFlag_ = value; }
   void setMapCountMinus1( uint8_t value ) { mapCountMinus1_ = value; }
   void setxelDeinterleavingFlag( bool value ) { pixelDeinterleavingFlag_ = value; }
-  void setPixeDeinterleavingMapFlag( size_t index, bool value ) { pixeDeinterleavingMapFlag_[index] = value; }
+  void setPixelDeinterleavingMapFlag( size_t index, bool value ) { pixelDeinterleavingMapFlag_[index] = value; }
   void setEomPatchEnabledFlag( bool value ) { eomPatchEnabledFlag_ = value; }
   void setEomFixBitCountMinus1( uint8_t value ) { eomFixBitCountMinus1_ = value; }
   void setRawPatchEnabledFlag( bool value ) { rawPatchEnabledFlag_ = value; }
@@ -186,7 +186,7 @@ class AtlasSequenceParameterSetRbsp {
   bool                        patchSizeQuantizerPresentFlag_;
   uint8_t                     mapCountMinus1_;
   bool                        pixelDeinterleavingFlag_;
-  std::vector<bool>           pixeDeinterleavingMapFlag_;
+  std::vector<bool>           pixelDeinterleavingMapFlag_;
   bool                        eomPatchEnabledFlag_;
   uint8_t                     eomFixBitCountMinus1_;
   bool                        rawPatchEnabledFlag_;

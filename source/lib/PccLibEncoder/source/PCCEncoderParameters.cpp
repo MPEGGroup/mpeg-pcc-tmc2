@@ -606,9 +606,6 @@ bool PCCEncoderParameters::check() {
       geometryD0Config_ = geometryConfig_.substr( 0, geometryConfig_.find_last_of( '.' ) ) + "-D0.cfg";
       geometryD1Config_ = geometryConfig_.substr( 0, geometryConfig_.find_last_of( '.' ) ) + "-D1.cfg";
     }
-#if !MULTISTREAM_AUXVIDEO
-    geometryConfig_ = {};
-#endif
   } else {
     geometryD0Config_ = {};
     geometryD1Config_ = {};
@@ -627,9 +624,6 @@ bool PCCEncoderParameters::check() {
       textureT0Config_ = textureConfig_.substr( 0, textureConfig_.find_last_of( '.' ) ) + "-T0.cfg";
       textureT1Config_ = textureConfig_.substr( 0, textureConfig_.find_last_of( '.' ) ) + "-T1.cfg";
     }
-#if !MULTISTREAM_AUXVIDEO
-    textureConfig_ = {};
-#endif
   } else {
     textureT0Config_ = {};
     textureT1Config_ = {};
@@ -643,7 +637,6 @@ bool PCCEncoderParameters::check() {
     std::cerr << "absoluteD1_ should be true when multipleStreams_ is false\n";
     absoluteD1_ = true;
   }
-#if MULTISTREAM_BUGFIX
   // spec:
   // asps_map_absolute_coding_enabled_flag : 1.no prediction 0.predicted(CTC)
   // ai_attribute_map_absolute_coding_persistence_flag : 1.no prediction 0.same as the geometry video
@@ -661,19 +654,6 @@ bool PCCEncoderParameters::check() {
     absoluteT1_ = 1;
     // ret=false;
   }
-#else
-  if ( !absoluteT1_ ) {  // jkei: absoluteT1 -> enableT1Prediction
-    std::cerr << "non-first maps of Texture Image is coded ";
-    if ( absoluteD1_ )
-      std::cerr << "without prediction\n";
-    else
-      std::cerr << "with prediction\n";
-  }
-  //  if ( absoluteD1_ && !absoluteT1_ ) {
-  //    std::cerr << "absoluteT1_ should be true when absoluteD1_ is true\n";
-  //    absoluteT1_ = true;
-  //  }
-#endif
   if ( losslessGeo_ ) {
     pbfEnableFlag_          = false;
     occupancyMapRefinement_ = false;
@@ -755,10 +735,8 @@ bool PCCEncoderParameters::check() {
         std::cerr << "WARNING: geometryAuxVideoConfig_ is set as geometryConfig_ : " << geometryConfig_ << std::endl;
         geometryAuxVideoConfig_ = geometryConfig_;
       } else {
-#if MULTISTREAM_AUXVIDEO
         ret = false;
         std::cerr << "geometryConfig_ and geometryAuxVideoConfig_ are empty\n";
-#endif
       }
     } else {
       std::cout << "geometryAuxConfig: " << geometryAuxVideoConfig_ << std::endl;
@@ -768,10 +746,8 @@ bool PCCEncoderParameters::check() {
         std::cerr << "WARNING: textureAuxVideoConfig_ is set as textureConfig_ : " << textureConfig_ << std::endl;
         textureAuxVideoConfig_ = textureConfig_;
       } else {
-#if MULTISTREAM_AUXVIDEO
         ret = false;
         std::cerr << "textureConfig_ and textureAuxVideoConfig_ are empty\n";
-#endif
       }
 
     } else
@@ -889,22 +865,14 @@ void PCCEncoderParameters::constructAspsRefListStruct( PCCContext& context, size
   // construction of reference frame list of ASPS : RefAtlasFrmAfocList[ j ] = afocBase − DeltaAfocSt[ RlsIdx ][ j ]
   for ( size_t list = 0; list < context.getNumOfRefAtlasFrameList(); list++ ) {
     RefListStruct refList;
-#if REFERENCELIST_BUGFIX
     refList.setNumRefEntries( context.getMaxNumRefAtlasFrame( list ) );  // 1,2,3,4
-#else
-    refList.setNumRefEntries( context.getMaxNumRefAtlasFrame() );  //-1,-2,-3,-4
-#endif
     refList.allocate();
     for ( size_t i = 0; i < refList.getNumRefEntries(); i++ ) {
-#if REFERENCELIST_BUGFIX
       int afocDiff = -1;
       if ( i == 0 )
         afocDiff = context.getRefAtlasFrame( list, i );
       else
-        afocDiff = context.getRefAtlasFrame( list, i ) - context.getRefAtlasFrame( list, i - 1 );
-#else
-      int afocDiff = context.getRefAtlasFrame( list, i );
-#endif
+        afocDiff = context.getRefAtlasFrame( list, i ) - context.getRefAtlasFrame( list, i - 1 ); //jkei: difference from the previous entry
       refList.setAbsDeltaAfocSt( i, std::abs( afocDiff ) );
       refList.setStrafEntrySignFlag( i, afocDiff < 0 ? false : !false );
       refList.setStRefAtalsFrameFlag( i, true );
@@ -939,13 +907,8 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   for ( size_t list = 0; list < maxNumRefAtlasList_; list++ ) {
     context.setSizeOfRefAtlasFrameList( list, maxNumRefAtlasFrame_ );
     for ( size_t i = 0; i < maxNumRefAtlasFrame_; i++ ) {
-#if REFERENCELIST_BUGFIX
       context.setRefAtlasFrame( list, i,
                                 static_cast<int32_t>( i + 1 ) );  // 1, 2, 3, 4
-#else
-      context.setRefAtlasFrame( list, i,
-                                -static_cast<int32_t>( i + 1 ) );  //-1, -2, -3, -4
-#endif
     }
   }
   context.setLog2MaxAtlasFrameOrderCntLsb( log2MaxAtlasFrameOrderCntLsb_ );
@@ -973,13 +936,12 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     ai.setAttributeDimensionMinus1( 0, noAttributes_ ? 0 : 2 );
     ai.setAttribute2dBitdepthMinus1( 0, 7 );
   }
-#if MULTISTREAM_BUGFIX
+
   // d1flag=1 t1flag=1  -> d1=1 t1=1
   // d1flag=1 t1flag=0  -> d1=1 t1=1
   // d1flag=0 t1flag=1  -> d1=0 t1=1
   // d1flag=0 t1flag=0  -> d1=0 t1=0
   // nothing            -> d1=1 t1=0
-
   for ( size_t i = 0; i < ai.getAttributeCount(); i++ ) {
     if ( absoluteT1_ == absoluteD1_ )  // jkei:(1,1) & (0,0)
       ai.setAttributeMapAbsoluteCodingPersistenceFlag( i, false );
@@ -991,18 +953,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
       exit( 0 );
     }
   }
-#else
-  for ( size_t i = 0; i < ai.getAttributeCount(); i++ ) {
-    if ( absoluteT1_ == absoluteD1_ )
-      ai.setAttributeMapAbsoluteCodingPersistenceFlag( i, false );
-    else if ( absoluteT1_ && !absoluteD1_ )
-      ai.setAttributeMapAbsoluteCodingPersistenceFlag( i, true );
-    else {
-      std::cerr << "absoluteT1_ should be true when absoluteD1_ is true\n";
-      exit( 0 );
-    }
-  }
-#endif
+
   asps.setLog2PatchPackingBlockSize( std::log2( occupancyResolution_ ) );
   asps.setLog2MaxAtlasFrameOrderCntLsbMinus4( log2MaxAtlasFrameOrderCntLsb_ - 4 );
   asps.setMaxDecAtlasFrameBufferingMinus1( 0 );
@@ -1038,13 +989,10 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     asps.setEomFixBitCountMinus1( EOMFixBitCount_ - 1 );  // default values
   }
   afps.setAtlasSequenceParameterSetId( 0 );
-#if LOSSLESS_3DROI
+
   afps.setNumRefIdxDefaultActiveMinus1( static_cast<uint8_t>(
       constrainedPack_ ? ( ( std::max )( 0, static_cast<int>( maxNumRefAtlasFrame_ ) - 1 ) ) : 0 ) );
-#else
-  afps.setNumRefIdxDefaultActiveMinus1(
-      static_cast<uint8_t>( ( std::max )( 0, static_cast<int>( maxNumRefAtlasFrame_ ) - 1 ) ) );
-#endif
+
   afps.setAdditionalLtAfocLsbLen( 4 );
   // afps.setOverrideEomForDepthFlag( false );
   // afps.setEomNumberOfPatchBitCountMinus1( 0 );

@@ -194,11 +194,7 @@ class PCCCodec {
 #endif
  protected:
   void generateOccupancyMap( PCCFrameContext& frame,
-#if LOSSYOCCMAP_BUGFIX
                              PCCImageOccupancyMap& videoFrame,
-#else
-                             const PCCImageOccupancyMap& videoFrame,
-#endif
                              const size_t occupancyPrecision,
                              const size_t thresholdLossyOM,
                              const bool   enhancedOccupancyMapForDepthFlag );
