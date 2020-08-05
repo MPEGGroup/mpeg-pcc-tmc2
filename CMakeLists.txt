@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 
 PROJECT (TMC2 CXX C )
 SET( TMC2_VERSION_MAJOR 11 )
-SET( TMC2_VERSION_MINOR 0 )
+SET( TMC2_VERSION_MINOR 0  )
 
 # Video encoder and decoder library and application:
 OPTION( USE_JMAPP_VIDEO_CODEC     "Use JM application to encode and decode video"           TRUE )
