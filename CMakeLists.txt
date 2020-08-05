@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 
 PROJECT (TMC2 CXX C )
-SET( TMC2_VERSION_MAJOR 10 )
+SET( TMC2_VERSION_MAJOR 11 )
 SET( TMC2_VERSION_MINOR 0 )
 
 # Video encoder and decoder library and application:
 OPTION( USE_JMAPP_VIDEO_CODEC     "Use JM application to encode and decode video"           TRUE )
-OPTION( USE_HMAPP_VIDEO_CODEC     "Use HM application to encode and decode video"           FALSE )
+OPTION( USE_HMAPP_VIDEO_CODEC     "Use HM application to encode and decode video"           TRUE )
 OPTION( USE_HMLIB_VIDEO_CODEC     "Clone, build and use HM video encoder and decoder"       TRUE )
 OPTION( USE_FFMPEG_VIDEO_CODEC    "Clone, build and use FFMPEG video encoder and decoder"   FALSE )
 
