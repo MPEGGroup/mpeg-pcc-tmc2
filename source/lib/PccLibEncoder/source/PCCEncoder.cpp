@@ -129,7 +129,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     adjustReferenceAtlasFrames( context );
   }
 
-  resizeGeometryVideo( context );
+  resizeGeometryVideo( context ,params_.videoEncoderOccupancyCodecId_);
 
   sps.setFrameWidth( atlasIndex, static_cast<uint16_t>( frames[0].getWidth() ) );
   sps.setFrameHeight( atlasIndex, static_cast<uint16_t>( frames[0].getHeight() ) );
@@ -4370,7 +4370,7 @@ void PCCEncoder::pointLocalReconstructionSearch( PCCContext&                    
   }  // patch
 }
 
-bool PCCEncoder::resizeGeometryVideo( PCCContext& context ) {
+bool PCCEncoder::resizeGeometryVideo( PCCContext& context ,PCCCodecId codecId ) {
   size_t maxWidth  = 0;
   size_t maxHeight = 0;
   for ( auto& frame : context.getFrames() ) {
@@ -4379,6 +4379,26 @@ bool PCCEncoder::resizeGeometryVideo( PCCContext& context ) {
   }
   maxWidth  = ( std::max )( maxWidth, params_.minimumImageWidth_ );
   maxHeight = ( std::max )( maxHeight, params_.minimumImageHeight_ );
+
+  if ( codecId == JMAPP ) {
+    int ResMultiPre_occupancyResolution = params_.occupancyResolution_ * params_.occupancyPrecision_;
+    if ( maxHeight % ResMultiPre_occupancyResolution != 0 ) {
+      std::cout << "maxHeight % ResMultiPre_occupancyResolution != 0 " << std::endl;
+      std::cout << "original maxHeight = " << maxHeight << std::endl;
+      int rem   = maxHeight % ResMultiPre_occupancyResolution;
+      maxHeight = maxHeight + ( ResMultiPre_occupancyResolution - rem );
+      std::cout << "final maxHeight = " << maxHeight << std::endl;
+    }
+
+    if ( maxWidth % ResMultiPre_occupancyResolution != 0 ) {
+      std::cout << "maxWidth % ResMultiPre_occupancyResolution != 0 " << std::endl;
+      std::cout << "original maxWidth = " << maxWidth << std::endl;
+      int rem  = maxWidth % ResMultiPre_occupancyResolution;
+      maxWidth = maxWidth + ( ResMultiPre_occupancyResolution - rem );
+      std::cout << "final maxHeight = " << maxHeight << std::endl;
+    }
+  }
+
   for ( auto& frame : context.getFrames() ) {
     frame.getWidth()  = maxWidth;
     frame.getHeight() = maxHeight;

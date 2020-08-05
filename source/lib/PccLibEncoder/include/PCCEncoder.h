@@ -164,7 +164,7 @@ class PCCEncoder : public PCCCodec {
 
   //**geometry video**//
   bool generateGeometryVideo( const PCCGroupOfFrames& sources, PCCContext& context );
-  bool resizeGeometryVideo( PCCContext& context );
+  bool resizeGeometryVideo( PCCContext& context ,PCCCodecId codecId );
   bool dilateGeometryVideo( const PCCGroupOfFrames& sources, PCCContext& context );
 
   bool generateTextureVideo( const PCCGroupOfFrames&     sources,
