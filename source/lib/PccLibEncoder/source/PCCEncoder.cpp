@@ -129,7 +129,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     adjustReferenceAtlasFrames( context );
   }
 
-  resizeGeometryVideo( context ,params_.videoEncoderOccupancyCodecId_);
+  resizeGeometryVideo( context, params_.videoEncoderOccupancyCodecId_ );
 
   sps.setFrameWidth( atlasIndex, static_cast<uint16_t>( frames[0].getWidth() ) );
   sps.setFrameHeight( atlasIndex, static_cast<uint16_t>( frames[0].getHeight() ) );
@@ -4370,7 +4370,7 @@ void PCCEncoder::pointLocalReconstructionSearch( PCCContext&                    
   }  // patch
 }
 
-bool PCCEncoder::resizeGeometryVideo( PCCContext& context ,PCCCodecId codecId ) {
+bool PCCEncoder::resizeGeometryVideo( PCCContext& context, PCCCodecId codecId ) {
   size_t maxWidth  = 0;
   size_t maxHeight = 0;
   for ( auto& frame : context.getFrames() ) {
@@ -5431,13 +5431,13 @@ bool PCCEncoder::generateTextureVideo( const PCCGroupOfFrames&     sources,
       }
       subReconstruct.resize( numPointSub );
       sources[i].transferColors( subReconstruct, int32_t( params_.bestColorSearchRange_ ),
-                                  static_cast<int>( params_.losslessGeo_ ) == 1, params_.numNeighborsColorTransferFwd_,
-                                  params_.numNeighborsColorTransferBwd_, params_.useDistWeightedAverageFwd_,
-                                  params_.useDistWeightedAverageBwd_, params_.skipAvgIfIdenticalSourcePointPresentFwd_,
-                                  params_.skipAvgIfIdenticalSourcePointPresentBwd_, params_.distOffsetFwd_,
-                                  params_.distOffsetBwd_, params_.maxGeometryDist2Fwd_, params_.maxGeometryDist2Bwd_,
-                                  params_.maxColorDist2Fwd_, params_.maxColorDist2Bwd_, params_.excludeColorOutlier_,
-                                  params_.thresholdColorOutlierDist_ );
+                                 static_cast<int>( params_.losslessGeo_ ) == 1, params_.numNeighborsColorTransferFwd_,
+                                 params_.numNeighborsColorTransferBwd_, params_.useDistWeightedAverageFwd_,
+                                 params_.useDistWeightedAverageBwd_, params_.skipAvgIfIdenticalSourcePointPresentFwd_,
+                                 params_.skipAvgIfIdenticalSourcePointPresentBwd_, params_.distOffsetFwd_,
+                                 params_.distOffsetBwd_, params_.maxGeometryDist2Fwd_, params_.maxGeometryDist2Bwd_,
+                                 params_.maxColorDist2Fwd_, params_.maxColorDist2Bwd_, params_.excludeColorOutlier_,
+                                 params_.thresholdColorOutlierDist_ );
 
       for ( size_t j = 0; j < numPointSub; j++ ) {
         reconstructs[i].setColor( subReconstructIndex[j], subReconstruct.getColor( j ) );
@@ -5452,13 +5452,13 @@ bool PCCEncoder::generateTextureVideo( const PCCGroupOfFrames&     sources,
       }
     } else {
       sources[i].transferColors( reconstructs[i], int32_t( params_.bestColorSearchRange_ ),
-                                  static_cast<int>( params_.losslessGeo_ ) == 1, params_.numNeighborsColorTransferFwd_,
-                                  params_.numNeighborsColorTransferBwd_, params_.useDistWeightedAverageFwd_,
-                                  params_.useDistWeightedAverageBwd_, params_.skipAvgIfIdenticalSourcePointPresentFwd_,
-                                  params_.skipAvgIfIdenticalSourcePointPresentBwd_, params_.distOffsetFwd_,
-                                  params_.distOffsetBwd_, params_.maxGeometryDist2Fwd_, params_.maxGeometryDist2Bwd_,
-                                  params_.maxColorDist2Fwd_, params_.maxColorDist2Bwd_, params_.excludeColorOutlier_,
-                                  params_.thresholdColorOutlierDist_ );
+                                 static_cast<int>( params_.losslessGeo_ ) == 1, params_.numNeighborsColorTransferFwd_,
+                                 params_.numNeighborsColorTransferBwd_, params_.useDistWeightedAverageFwd_,
+                                 params_.useDistWeightedAverageBwd_, params_.skipAvgIfIdenticalSourcePointPresentFwd_,
+                                 params_.skipAvgIfIdenticalSourcePointPresentBwd_, params_.distOffsetFwd_,
+                                 params_.distOffsetBwd_, params_.maxGeometryDist2Fwd_, params_.maxGeometryDist2Bwd_,
+                                 params_.maxColorDist2Fwd_, params_.maxColorDist2Bwd_, params_.excludeColorOutlier_,
+                                 params_.thresholdColorOutlierDist_ );
       // color pre-smoothing
       if ( !params_.losslessGeo_ && params_.flagColorPreSmoothing_ ) {
         presmoothPointCloudColor( reconstructs[i], params );

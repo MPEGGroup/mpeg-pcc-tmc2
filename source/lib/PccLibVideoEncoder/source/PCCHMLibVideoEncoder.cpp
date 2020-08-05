@@ -53,7 +53,8 @@ void PCCHMLibVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
   const size_t      height     = videoSrc.getHeight();
   const size_t      frameCount = videoSrc.getFrameCount();
   std::stringstream cmd;
-  cmd << "HMEncoder" << " -c " << params.encoderConfig_ << " --InputFile=" << params.srcYuvFileName_
+  cmd << "HMEncoder"
+      << " -c " << params.encoderConfig_ << " --InputFile=" << params.srcYuvFileName_
       << " --InputBitDepth=" << params.inputBitDepth_
       << " --InputChromaFormat=" << ( params.use444CodecIo_ ? "444" : "420" )
       << " --OutputBitDepth=" << params.outputBitDepth_ << " --OutputBitDepthC=" << params.outputBitDepth_

@@ -99,20 +99,20 @@ class PCCVideoDecoder {
       case FFMPEG: decoder = std::make_shared<PCCFFMPEGLibVideoDecoder<T>>(); break;
 #endif
 #ifdef USE_HMAPP_VIDEO_CODEC
-      case HMAPP: 
-        decoder = std::make_shared<PCCHMAppVideoDecoder<T>>(); 
-        if ( decoderPath.empty() || !exist( decoderPath ) ) {    
+      case HMAPP:
+        decoder = std::make_shared<PCCHMAppVideoDecoder<T>>();
+        if ( decoderPath.empty() || !exist( decoderPath ) ) {
           std::cerr << "decoderPath not set\n";
-          exit(1);
+          exit( 1 );
         }
         break;
 #endif
 #ifdef USE_JMAPP_VIDEO_CODEC;
       case JMAPP:
-        decoder = std::make_shared<PCCJMAppVideoDecoder<T>>();       
-        if ( decoderPath.empty() || !exist( decoderPath ) ) {    
+        decoder = std::make_shared<PCCJMAppVideoDecoder<T>>();
+        if ( decoderPath.empty() || !exist( decoderPath ) ) {
           std::cerr << "decoderPath not set\n";
-          exit(1);
+          exit( 1 );
         }
         break;
 #endif
@@ -121,7 +121,8 @@ class PCCVideoDecoder {
         exit( -1 );
         break;
     }
-    decoder->decode( bitstream, bitDepth == 8 ? 8 : 10, use444CodecIo, video, decoderPath, fileName, frameCount, codecId );
+    decoder->decode( bitstream, bitDepth == 8 ? 8 : 10, use444CodecIo, video, decoderPath, fileName, frameCount,
+                     codecId );
     width  = video.getWidth();
     height = video.getHeight();
     const std::string yuvRecFileName =

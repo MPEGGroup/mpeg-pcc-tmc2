@@ -101,10 +101,10 @@ bool PCCDecoderParameters::check() {
     ret = false;
     std::cerr << "compressedStreamPath not exist\n";
   }
-  if ( videoDecoderOccupancyPath_.empty() || !exist( videoDecoderOccupancyPath_ ) ) {    
+  if ( videoDecoderOccupancyPath_.empty() || !exist( videoDecoderOccupancyPath_ ) ) {
     std::cerr << "videoDecoderOccupancyPath not set\n";
   }
-  if ( videoDecoderGeometryPath_.empty() || !exist( videoDecoderGeometryPath_ ) ) {    
+  if ( videoDecoderGeometryPath_.empty() || !exist( videoDecoderGeometryPath_ ) ) {
     std::cerr << "videoDecoderGeometryPath not set\n";
   }
   if ( videoDecoderAttributePath_.empty() || !exist( videoDecoderAttributePath_ ) ) {

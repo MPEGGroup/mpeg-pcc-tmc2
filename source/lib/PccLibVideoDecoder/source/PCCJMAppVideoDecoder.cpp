@@ -54,7 +54,7 @@ void PCCJMAppVideoDecoder<T>::decode( PCCVideoBitstream& bitstream,
                                       const std::string& fileName,
                                       const size_t       frameCount,
                                       const size_t       codecId ) {
-  size_t        width = 0, height = 0;
+  size_t       width = 0, height = 0;
   PCCAvcParser avcParser;
   avcParser.getVideoSize( bitstream.vector(), width, height, codecId );
 

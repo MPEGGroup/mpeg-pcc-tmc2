@@ -41,19 +41,19 @@ const std::vector<PointLocalReconstructionMode> g_pointLocalReconstructionMode =
     {false, false, 1, 1}, {true, false, 1, 1}, {true, true, 1, 1}, {true, false, 1, 2}, {true, true, 1, 2},
 };
 
-bool checkCodecId( PCCCodecId codecId ){
+bool checkCodecId( PCCCodecId codecId ) {
   switch ( codecId ) {
 #ifdef USE_HMLIB_VIDEO_CODEC
-    case HMLIB:  break;
+    case HMLIB: break;
 #endif
 #ifdef USE_FFMPEG_VIDEO_CODEC
     case FFMPEG: break;
 #endif
 #ifdef USE_HMAPP_VIDEO_CODEC
-    case HMAPP:  break;
+    case HMAPP: break;
 #endif
 #ifdef USE_JMAPP_VIDEO_CODEC;
-    case JMAPP:  break;
+    case JMAPP: break;
 #endif
     default:
       printf( "Error: codec id %d not supported \n", (int)codecId );
@@ -539,23 +539,25 @@ bool PCCEncoderParameters::check() {
     ret = false;
     std::cerr << "uncompressedDataPath not set\n";
   }
-  
-  if( !checkCodecId( videoEncoderOccupancyCodecId_ ) || 
-      !checkCodecId( videoEncoderGeometryCodecId_ ) || 
-      !checkCodecId( videoEncoderAttributeCodecId_ ) ){
+
+  if ( !checkCodecId( videoEncoderOccupancyCodecId_ ) || !checkCodecId( videoEncoderGeometryCodecId_ ) ||
+       !checkCodecId( videoEncoderAttributeCodecId_ ) ) {
     std::cerr << "ERROR: CodecId is not correct" << std::endl;
     ret = false;
   }
 #if defined( USE_HMAPP_VIDEO_CODEC ) || defined( USE_JMAPP_VIDEO_CODEC )
-  if ( ((int)videoEncoderOccupancyCodecId_) < 2 && ( ( videoEncoderOccupancyPath_.empty() || !exist( videoEncoderOccupancyPath_ ) ) ) ) {
+  if ( ( (int)videoEncoderOccupancyCodecId_ ) < 2 &&
+       ( ( videoEncoderOccupancyPath_.empty() || !exist( videoEncoderOccupancyPath_ ) ) ) ) {
     std::cerr << "ERROR: videoEncoderOccupancyPath_ not set or not exist : " << videoEncoderOccupancyPath_ << std::endl;
     ret = false;
   }
-  if ( ((int)videoEncoderGeometryCodecId_) < 2 && ( ( videoEncoderGeometryPath_.empty() || !exist( videoEncoderGeometryPath_ ) ) ) ) {
+  if ( ( (int)videoEncoderGeometryCodecId_ ) < 2 &&
+       ( ( videoEncoderGeometryPath_.empty() || !exist( videoEncoderGeometryPath_ ) ) ) ) {
     std::cerr << "ERROR: videoEncoderGeometryPath not set or not exist : " << videoEncoderGeometryPath_ << std::endl;
     ret = false;
   }
-  if ( ((int)videoEncoderAttributeCodecId_) < 2 && ( ( videoEncoderAttributePath_.empty() || !exist( videoEncoderAttributePath_ ) ) ) ) {
+  if ( ( (int)videoEncoderAttributeCodecId_ ) < 2 &&
+       ( ( videoEncoderAttributePath_.empty() || !exist( videoEncoderAttributePath_ ) ) ) ) {
     std::cerr << "ERROR: videoEncoderAttributePath not set or not exist : " << videoEncoderAttributePath_ << std::endl;
     ret = false;
   }

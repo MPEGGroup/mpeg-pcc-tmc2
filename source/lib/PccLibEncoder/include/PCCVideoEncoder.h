@@ -86,7 +86,7 @@ class PCCVideoEncoder {
                  const std::string& colorSpaceConversionPath          = "",
                  const size_t       downsamplingFilter                = 4,
                  const size_t       upsamplingFilter                  = 0,
-                 const bool         patchColorSubsampling             = false ) {    
+                 const bool         patchColorSubsampling             = false ) {
     auto& frames = video.getFrames();
     if ( frames.empty() || frames[0].getChannelCount() != 3 ) { return false; }
     const size_t      width                = frames[0].getWidth();
@@ -396,8 +396,9 @@ class PCCVideoEncoder {
     params.blockToPatchFile_       = blockToPatchFileName;
     params.occupancyMapFile_       = occupancyMapFileName;
     params.patchInfoFile_          = patchInfoFileName;
-    printf("Encode: video size = %zu x %zu num frames = %zu \n", video.getWidth(), video.getHeight(), video.getFrameCount() );
-    fflush(stdout); 
+    printf( "Encode: video size = %zu x %zu num frames = %zu \n", video.getWidth(), video.getHeight(),
+            video.getFrameCount() );
+    fflush( stdout );
     PCCVideo<T, 3> videoRec;
     encoder->encode( video, params, bitstream, videoRec );
     if ( keepIntermediateFiles ) {
