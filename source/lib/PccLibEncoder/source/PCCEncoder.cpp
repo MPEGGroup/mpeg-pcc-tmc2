@@ -5931,7 +5931,7 @@ bool PCCEncoder::relocateTileGeometryVideo( PCCContext&                         
         tile.setLeftTopXInFrame( tempLeftTopX );
         tile.setLeftTopYInFrame( tempLeftTopY );
 
-        assert( tempLeftTopX + tile.getWidth() < frameWidth );
+        assert( tempLeftTopX + tile.getWidth() <= frameWidth );
         frameHeight = std::max( frameHeight, (size_t)tempLeftTopY + tile.getHeight() );
       }
 
@@ -8563,6 +8563,9 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
       auto& atglu = context.addAtlasTileLayer( i, ti );
       auto& ath   = atglu.getHeader();
       ath.setAtlasFrameParameterSetId( atlasFrameParameterSetId );
+#if 1
+      printf("createPatchFrameDataStructure tile %zu\n", ti);
+#endif
       auto& afps = context.getAtlasFrameParameterSet( atlasFrameParameterSetId );
       // tile header
       if ( params_.additionalProjectionPlaneMode_ > 0 ) {

@@ -617,8 +617,6 @@ void PCCBitstreamReader::atlasFrameTileInformation( AtlasFrameTileInformation&  
                                                     PCCBitstream&                  bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   afti.setSingleTileInAtlasFrameFlag( bitstream.read( 1 ) != 0U );  // u(1)
-  TRACE_BITSTREAM( "afti: singleTile :%zu\n", afti.getSingleTileInAtlasFrameFlag());
-  TRACE_BITSTREAM( "afti: uniformPartition :%zu\n", afti.getUniformPartitionSpacingFlag());
   if ( !afti.getSingleTileInAtlasFrameFlag() ) {
     afti.setUniformPartitionSpacingFlag( bitstream.read( 1 ) != 0U );  // u(1)
     if ( afti.getUniformPartitionSpacingFlag() ) {
@@ -671,6 +669,9 @@ void PCCBitstreamReader::atlasFrameTileInformation( AtlasFrameTileInformation&  
   } else {
     afti.setNumTilesInAtlasFrameMinus1( 0 );
   }
+  TRACE_BITSTREAM( "afti: singleTile :%zu\n", afti.getSingleTileInAtlasFrameFlag());
+  TRACE_BITSTREAM( "afti: uniformPartition :%zu\n", afti.getUniformPartitionSpacingFlag());
+  TRACE_BITSTREAM( "afti: numTilesInAtlasFrameMinus1 :%zu\n", afti.getNumTilesInAtlasFrameMinus1());
   if ( asps.getAuxiliaryVideoEnabledFlag() ) {
     afti.setAuxiliaryVideoTileRowWidthMinus1( bitstream.readUvlc() );  // ue(v)
     for ( size_t i = 0; i <= afti.getNumTilesInAtlasFrameMinus1(); i++ ) {

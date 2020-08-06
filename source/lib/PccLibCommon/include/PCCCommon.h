@@ -74,6 +74,7 @@
 
 #define TILETYPE0_BUGFIX 1
 #define MULTITILE_BUGFIX 1
+#define TILEPARTITION_BUGFIX 1
 
 //MULTISTREAM_AUXVIDEO 1 //multistream & auxvideo doesnot have config for auxvideo
 namespace pcc {

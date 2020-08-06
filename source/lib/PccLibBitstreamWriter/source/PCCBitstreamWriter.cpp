@@ -695,13 +695,13 @@ void PCCBitstreamWriter::atlasFrameTileInformation( AtlasFrameTileInformation&  
                                                     PCCBitstream&                  bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   bitstream.write( afti.getSingleTileInAtlasFrameFlag(), 1 );  // u(1)
-  TRACE_BITSTREAM( "afti: singleTile :%zu\n", afti.getSingleTileInAtlasFrameFlag());
-  TRACE_BITSTREAM( "afti: uniformPartition :%zu\n", afti.getUniformPartitionSpacingFlag());
   if ( !afti.getSingleTileInAtlasFrameFlag() ) {
     bitstream.write( afti.getUniformPartitionSpacingFlag(), 1 );  // u(1)
+    TRACE_BITSTREAM( "afti: uniformPartition :%zu !singleTile\n", afti.getUniformPartitionSpacingFlag());
     if ( afti.getUniformPartitionSpacingFlag() ) {
       bitstream.writeUvlc( afti.getPartitionColumnsWidthMinus1() );  //  ue(v)
       bitstream.writeUvlc( afti.getPartitionRowHeightMinus1() );     //  ue(v)
+     // TRACE_BITSTREAM( "afti: %zux%zu\n", afti.getPartitionColumnsWidthMinus1() , afti.getPartitionRowHeightMinus1());
     } else {
       bitstream.writeUvlc( afti.getNumPartitionColumnsMinus1() );  //  ue(v)
       bitstream.writeUvlc( afti.getNumPartitionRowsMinus1() );     //  ue(v)
@@ -736,6 +736,9 @@ void PCCBitstreamWriter::atlasFrameTileInformation( AtlasFrameTileInformation&  
       }
     }
   }
+  TRACE_BITSTREAM( "afti: singleTile :%zu\n", afti.getSingleTileInAtlasFrameFlag());
+  TRACE_BITSTREAM( "afti: uniformPartition :%zu\n", afti.getUniformPartitionSpacingFlag());
+  TRACE_BITSTREAM( "afti: numTilesInAtlasFrameMinus1 :%zu\n", afti.getNumTilesInAtlasFrameMinus1());
   if ( asps.getAuxiliaryVideoEnabledFlag() ) {
     bitstream.writeUvlc( afti.getAuxiliaryVideoTileRowWidthMinus1() );  // ue(v)
     for ( size_t i = 0; i <= afti.getNumTilesInAtlasFrameMinus1(); i++ ) {

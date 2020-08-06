@@ -49,8 +49,10 @@ class AtlasFrameTileInformation {
 #endif
       numPartitionColumnsMinus1_( 0 ),
       numPartitionRowsMinus1_( 0 ),
+#if !TILEPARTITION_BUGFIX
       partitionColumnsWidthMinus1_( 0 ),
       partitionRowsHeightMinus1_( 0 ),
+#endif
       singlePartitionPerTileFlag_( 0 ),
       numTilesInAtlasFrameMinus1_( 0 ),
       signalledTileIdFlag_( 0 ),
@@ -121,8 +123,13 @@ class AtlasFrameTileInformation {
   uint32_t getNumTilesInAtlasFrameMinus1() { return numTilesInAtlasFrameMinus1_; }
   bool     getSignalledTileIdFlag() { return signalledTileIdFlag_; }
   uint32_t getSignalledTileIdLengthMinus1() { return signalledTileIdLengthMinus1_; }
+#if TILEPARTITION_BUGFIX
+  uint32_t getPartitionColumnsWidthMinus1() { return partitionColumnWidthMinus1_[0]; }
+  uint32_t getPartitionRowHeightMinus1() { return partitionRowHeightMinus1_[0]; }
+#else
   uint32_t getPartitionColumnsWidthMinus1() { return partitionColumnsWidthMinus1_; }
   uint32_t getPartitionRowHeightMinus1() { return partitionRowsHeightMinus1_; }
+#endif
   uint32_t getPartitionColumnWidthMinus1( size_t index ) { return partitionColumnWidthMinus1_[index]; }
   uint32_t getPartitionRowHeightMinus1( size_t index ) { return partitionRowHeightMinus1_[index]; }
   uint32_t getTopLeftPartitionIdx( size_t index ) { return topLeftPartitionIdx_[index]; }
@@ -140,8 +147,13 @@ class AtlasFrameTileInformation {
   void setNumTilesInAtlasFrameMinus1( uint32_t value ) { numTilesInAtlasFrameMinus1_ = value; }
   void setSignalledTileIdFlag( bool value ) { signalledTileIdFlag_ = value; }
   void setSignalledTileIdLengthMinus1( uint32_t value ) { signalledTileIdLengthMinus1_ = value; }
+#if TILEPARTITION_BUGFIX
+  void setPartitionColumnsWidthMinus1( uint32_t value ) { partitionColumnWidthMinus1_[0] = value; }
+  void setPartitionRowsHeightMinus1( uint32_t value ) { partitionRowHeightMinus1_[0] = value; }
+#else
   void setPartitionColumnsWidthMinus1( uint32_t value ) { partitionColumnsWidthMinus1_ = value; }
   void setPartitionRowsHeightMinus1( uint32_t value ) { partitionRowsHeightMinus1_ = value; }
+#endif
   void setPartitionColumnWidthMinus1( size_t index, uint32_t value ) {
     if ( index == ( partitionColumnWidthMinus1_.size() ) )
       partitionColumnWidthMinus1_.resize( partitionColumnWidthMinus1_.size() + 1 );
@@ -204,8 +216,10 @@ class AtlasFrameTileInformation {
   uint32_t              numTilesInAtlasFrameMinus1_;
   bool                  signalledTileIdFlag_;
   uint32_t              signalledTileIdLengthMinus1_;
+#if !TILEPARTITION_BUGFIX
   uint32_t              partitionColumnsWidthMinus1_;
   uint32_t              partitionRowsHeightMinus1_;
+#endif
   std::vector<uint32_t> partitionColumnWidthMinus1_;
   std::vector<uint32_t> partitionRowHeightMinus1_;
   std::vector<uint32_t> topLeftPartitionIdx_;
