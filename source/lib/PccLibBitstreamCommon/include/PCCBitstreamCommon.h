@@ -62,6 +62,7 @@
 #endif
 
 #define TILETYPE0_BUGFIX 1
+#define TILEPARTITION_BUGFIX 1
 namespace pcc {
 
 // ******************************************************************* //

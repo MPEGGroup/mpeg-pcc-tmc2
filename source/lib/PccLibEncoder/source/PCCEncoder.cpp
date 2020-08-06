@@ -4148,7 +4148,7 @@ void PCCEncoder::generateIntraImage( PCCAtlasFrameContext& atlasFrame,
         }
       }
     }
-  }  // tile
+  }// tile
 }
 bool PCCEncoder::predictTextureFrame( PCCFrameContext&       frame,
                                       const PCCImageTexture& reference,
@@ -8653,6 +8653,9 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
       }
     }
   }
+  #if 1
+        printf("createPatchFrameDataStructure done\n");
+  #endif
 }
 
 void PCCEncoder::createPatchFrameDataStructure( PCCContext&         context,

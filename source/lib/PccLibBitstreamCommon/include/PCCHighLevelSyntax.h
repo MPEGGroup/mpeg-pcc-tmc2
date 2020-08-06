@@ -132,7 +132,22 @@ class PCCAtlasHighLevelSyntax {
   // void                        setActveAFPS( size_t afpsId ) { activeAFPS_ = afpsId; }
   AtlasFrameParameterSetRbsp& getAtlasFrameParameterSet( size_t setId ) { return atlasFrameParameterSet_[setId]; }
   // AtlasFrameParameterSetRbsp& getAtlasFrameParameterSet() { return atlasFrameParameterSet_[activeAFPS_]; }
-  std::vector<AtlasFrameParameterSetRbsp>& getAtlasFrameParameterSetList() { return atlasFrameParameterSet_; }
+  std::vector<AtlasFrameParameterSetRbsp>& getAtlasFrameParameterSetList() {
+#if 0
+    printf("\t-------(inPCCAtlasHighLevelSyntax)------------\n");
+    printf("\t-- size of videoBitstream_               : %zu\n", videoBitstream_.size());
+    printf("\t-- size of atlasSequenceParameterSet_    : %zu\n", atlasSequenceParameterSet_.size());
+    printf("\t-- size of refAtlasFrameList_            : %zu\n", refAtlasFrameList_.size());
+    printf("\t-- maxNumRefAtlasFrame_                  : %zu\n", maxNumRefAtlasFrame_);
+    printf("\t-- size of pointLocalReconstructionMode_ : %zu\n", pointLocalReconstructionMode_.size());
+    printf("\t-- size of atlasFrameParameterSet_       : %zu\n", atlasFrameParameterSet_.size());
+    printf("\t-- size of atlasTileLayer_               : %zu\n", atlasTileLayer_.size());
+    printf("\t-- size of seiPrefix_                    : %zu\n", seiPrefix_.size());
+    printf("\t-- size of seiSuffix_                    : %zu\n", seiSuffix_.size());
+    printf("\t----------------------------------------------\n");
+    
+#endif
+    return atlasFrameParameterSet_; }
   AtlasFrameParameterSetRbsp&              addAtlasFrameParameterSet() {
     AtlasFrameParameterSetRbsp afps;
     afps.setAtlasFrameParameterSetId( atlasFrameParameterSet_.size() );
@@ -388,6 +403,12 @@ class PCCHighLevelSyntax {
   // AtlasFrameParameterSetRbsp& getAtlasFrameParameterSet() { return
   // atlasHLS_[atlasIndex_].getAtlasFrameParameterSet(); }
   std::vector<AtlasFrameParameterSetRbsp>& getAtlasFrameParameterSetList() {
+#if 0
+    printf("(inPCCHighLevelSyntax) atlasIndex:%zu atlasHLS_.size():%zu aspsSize:%zu afpsSize:%zu\n", atlasIndex_, atlasHLS_.size(),
+           atlasHLS_[atlasIndex_].getAtlasSequenceParameterSetList().size(),
+           atlasHLS_[atlasIndex_].getAtlasFrameParameterSetList().size()
+           );
+#endif
     return atlasHLS_[atlasIndex_].getAtlasFrameParameterSetList();
   }
   AtlasFrameParameterSetRbsp& addAtlasFrameParameterSet() { return atlasHLS_[atlasIndex_].addAtlasFrameParameterSet(); }

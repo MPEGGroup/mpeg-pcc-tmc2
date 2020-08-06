@@ -1352,17 +1352,10 @@ void PCCBitstreamWriter::atlasSubStream( PCCHighLevelSyntax& syntax, PCCBitstrea
     if ( maxUnitSize < seiPrefixSizeList[i] ) { maxUnitSize = seiPrefixSizeList[i]; }
   }
   for ( size_t atglIdx = 0; atglIdx < atglSizeList.size(); atglIdx++ ) {
-    int numTilesPerFrame = 1;  // (afps.getAtlasFrameTileInformation().getNumPartitionRowsMinus1()
-                               // + 1)
-                               // *
-    // (afps.getAtlasFrameTileInformation().getNumPartitionColumnsMinus1() + 1);
-    for ( size_t tileId = 0; tileId < numTilesPerFrame; tileId++ ) {  // TODO: make this more than just
-                                                                      // one tile groups per frame
-      atlasTileLayerRbsp( syntax.getAtlasTileLayer( atglIdx ), syntax, tempBitStream );
-      atglSizeList[atglIdx] = tempBitStream.size() - lastSize + nalHeaderSize;
-      lastSize              = tempBitStream.size();
-      if ( maxUnitSize < atglSizeList[atglIdx] ) { maxUnitSize = atglSizeList[atglIdx]; }
-    }
+    atlasTileLayerRbsp( syntax.getAtlasTileLayer( atglIdx ), syntax, tempBitStream );
+    atglSizeList[atglIdx] = tempBitStream.size() - lastSize + nalHeaderSize;
+    lastSize              = tempBitStream.size();
+    if ( maxUnitSize < atglSizeList[atglIdx] ) { maxUnitSize = atglSizeList[atglIdx]; }
   }
   for ( size_t i = 0; i < syntax.getSeiSuffix().size(); i++ ) {
     seiRbsp( syntax, tempBitStream, syntax.getSeiSuffix( i ), NAL_SUFFIX_ESEI );
@@ -1370,7 +1363,11 @@ void PCCBitstreamWriter::atlasSubStream( PCCHighLevelSyntax& syntax, PCCBitstrea
     lastSize             = tempBitStream.size();
     if ( maxUnitSize < seiSuffixSizeList[i] ) { maxUnitSize = seiSuffixSizeList[i]; }
   }
-
+  // calculation of the max unit size done
+  TRACE_BITSTREAM("maxUnitSize = %u\n", maxUnitSize );
+  TRACE_BITSTREAM("ceilLog2( maxUnitSize + 1 ) = %d\n", ceilLog2( maxUnitSize + 1 ) );
+  TRACE_BITSTREAM( "ceil( static_cast<double>( ceilLog2( maxUnitSize + 1 ) ) / 8.0 ) ) = %f\n",
+      ceil( static_cast<double>( ceilLog2( maxUnitSize + 1 ) ) / 8.0 ) );
   uint32_t precision = static_cast<uint32_t>(
       min( max( static_cast<int>( ceil( static_cast<double>( ceilLog2( maxUnitSize + 1 ) ) / 8.0 ) ), 1 ), 8 ) - 1 );
   // TRACE_BITSTREAM( "precision = %u \n", precision );
