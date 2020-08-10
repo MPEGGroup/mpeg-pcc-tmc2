@@ -303,7 +303,9 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   if ( asps.getRawPatchEnabledFlag() && asps.getAuxiliaryVideoEnabledFlag() ) {
     std::cout << "*******Video: Aux (Geometry) ********" << std::endl;
     placeAuxiliaryPointsTiles( context );
-
+#if TILETYPE1_RAWAUXVIDEO_BUGFIX
+    //jkei: if no points are saved in the video, the video should not be created.
+#endif
     auto& videoBitstreamMP = context.createVideoBitstream( VIDEO_GEOMETRY_RAW );
     generateRawPointsGeometryVideo( context );
     auto& videoRawPointsGeometry = context.getVideoRawPointsGeometry();
@@ -1196,6 +1198,9 @@ void PCCEncoder::spatialConsistencyPackFlexible( PCCFrameContext& frame,
   auto& prevPatches = prevFrame.getPatches();
   if ( patches.empty() ) {
     if ( frame.getNumberOfRawPointsPatches() == 0 ) return;
+#if TILETYPE2_RAWAUXVIDEO_BUGFIX
+    if ( frame.getUseRawPointsSeparateVideo() ) return;
+#endif
     std::vector<bool> occupancyMap;
     size_t            occupancySizeU = presetWidth / params_.occupancyResolution_;
     size_t            occupancySizeV = presetHeight / params_.occupancyResolution_;
@@ -2376,7 +2381,9 @@ void PCCEncoder::packFlexible( PCCFrameContext& frame,
   frame.setNumMatchedPatches( 0 );
   if ( patches.empty() ) {
     if ( frame.getNumberOfRawPointsPatches() == 0 ) return;
-
+#if TILETYPE2_RAWAUXVIDEO_BUGFIX
+    if ( frame.getUseRawPointsSeparateVideo() ) return;
+#endif
     std::vector<bool> occupancyMap;
     size_t            occupancySizeU = presetWidth / params_.occupancyResolution_;
     size_t            occupancySizeV = presetHeight / params_.occupancyResolution_;
@@ -2632,7 +2639,7 @@ void PCCEncoder::packMultipleTiles( PCCAtlasFrameContext& atlasFrame, int safegu
 
   // jkei: raw/eom patches are packed in a tile/a frame later
 
-  std::cout << "actualImageSize " << width << " x " << height << std::endl;
+  std::cout << "frame "<<atlasFrame.getAtlasFrameIndex()<<" packMultipleTiles: actualImageSize " << width << " x " << height << std::endl;
 }
 void PCCEncoder::packFlexibleMultipleTiles( PCCAtlasFrameContext& atlasFrame, int safeguard ) {
   auto& frame              = atlasFrame.getAtlasFrameContext();
@@ -2829,7 +2836,7 @@ void PCCEncoder::packFlexibleMultipleTiles( PCCAtlasFrameContext& atlasFrame, in
   }  // ROI loop
 
   // jkei: raw/eom patches are packed in a tile/a frame later
-  std::cout << "actualImageSize " << width << " x " << height << std::endl;
+  std::cout << "frame "<<atlasFrame.getAtlasFrameIndex()<<" packFlexibleMultipleTiles: actualImageSize " << width << " x " << height << std::endl;
 }
 void PCCEncoder::spatialConsistencyPackMultipleTiles( PCCAtlasFrameContext& atlasFrame,
                                                       PCCAtlasFrameContext& prevAtlasFrame,
@@ -2993,7 +3000,7 @@ void PCCEncoder::spatialConsistencyPackMultipleTiles( PCCAtlasFrameContext& atla
   }  // ROI loop
 
   // jkei: raw/eom patches are packed in a tile/a frame later
-  std::cout << "actualImageSize " << width << " x" << height << std::endl;
+  std::cout << "frame "<<atlasFrame.getAtlasFrameIndex()<<" spatialConsistencypackMultipleTiles: actualImageSize " << width << " x" << height << std::endl;
 }
 
 void PCCEncoder::spatialConsistencyPackFlexibleMultipleTiles( PCCAtlasFrameContext& atlasFrame,
@@ -3317,7 +3324,7 @@ void PCCEncoder::spatialConsistencyPackFlexibleMultipleTiles( PCCAtlasFrameConte
 
   // jkei: raw/eom patches are packed in a tile/a frame later
   if ( printDetailedInfo ) { printMap( occupancyMap, occupancySizeU, occupancySizeV ); }
-  std::cout << "actualImageSize " << width << " x " << height << std::endl;
+  std::cout << "frame "<<atlasFrame.getAtlasFrameIndex()<<" spacialConsistencyPackFlexibleMultipleTiles: actualImageSize " << width << " x " << height << std::endl;
 }
 
 void PCCEncoder::packTetris( PCCFrameContext& frame, size_t presetWidth, size_t presetHeight, int safeguard ) {
@@ -4691,21 +4698,17 @@ void PCCEncoder::placeAuxiliaryPointsTiles( PCCContext& context ) {
     context.setAuxTileLeftTopY( ti, context.getAuxTileLeftTopY( ti - 1 ) + context.getAuxTileHeight( ti - 1 ) );
   }
 #if 1
-  std::cout << "tileHeight: ";
-  for ( size_t ti = 1; ti < context.getAuxTileHeight().size(); ti++ )
-    std::cout << context.getAuxTileHeight( ti ) << "\t";
-  std::cout << ", ";
-  for ( size_t ti = 1; ti < context.getAuxTileHeight().size(); ti++ )
-    std::cout << context.getAuxTileLeftTopY( ti ) << "\t";
-  std::cout << std::endl;
+  std::cout << "placeAuxTileInAuxVideo tile info: ";
+  for ( size_t ti = 0; ti < context.getAuxTileHeight().size(); ti++ )
+    std::cout << "tile["<<ti<<"] LeftTopY: "<< context.getAuxTileLeftTopY( ti )<<"Height: "<< context.getAuxTileHeight( ti ) << "\n";
 
   for ( size_t frameIdx = 0; frameIdx < context.size(); frameIdx++ ) {
-    printf( "placeAuxTileInAuxVideo: frame[%zu] video size: %zux%zu\n", frameIdx, context.getAuxVideoWidth(),
+    printf( "frame[%zu] video size: %zux%zu\n", frameIdx, context.getAuxVideoWidth(),
             context.getAuxVideoHeight() );
     for ( size_t tileIdx = 0; tileIdx < context[frameIdx].getNumTilesInAtlasFrame(); tileIdx++ ) {
       auto& rawPatches = context[frameIdx].getTile( tileIdx ).getRawPointsPatches();
       auto& eomPatches = context[frameIdx].getTile( tileIdx ).getEomPatches();
-      printf( "tile[%zu] starts @%zu,%zu\n", tileIdx, 0, context.getAuxTileLeftTopY( tileIdx ) );
+      printf( "tile[%zu] in AuxVideo starts @%zu size %zu\n", tileIdx, context.getAuxTileLeftTopY( tileIdx ), context.getAuxTileHeight( tileIdx ));
       for ( size_t i = 0; i < rawPatches.size(); i++ ) {
         printf( "\trawPatch[%zu] #ofRawPoints %zu, %zu,%zu %zux%zu\n", i, rawPatches[i].getNumberOfRawPoints(),
                 rawPatches[i].u0_, rawPatches[i].v0_, rawPatches[i].sizeU0_, rawPatches[i].sizeV0_ );
@@ -5054,14 +5057,39 @@ bool PCCEncoder::placeSegments( const PCCGroupOfFrames& sources, PCCContext& con
     if ( params_.enhancedOccupancyMapCode_ && !params_.useRawPointsSeparateVideo_ ) {
       placeEomPatchInTile( context, framesInAFPS );
     }
+#if TILETYPE1_RAWAUXVIDEO_BUGFIX
+      for ( size_t segIdx = 0; segIdx < framesInAFPS.size(); segIdx++ ) {
+        size_t firstFrame    = framesInAFPS[segIdx].first;
+        size_t lastFrame     = framesInAFPS[segIdx].second;
+        size_t numTilesInSeg = context[firstFrame].getNumTilesInAtlasFrame();
+        if ( ( params_.losslessGeo_ || params_.lossyRawPointsPatch_ ) && !params_.useRawPointsSeparateVideo_ )
+          numTilesInSeg -= 1;
 
+        for ( size_t tileIdx = 0; tileIdx < numTilesInSeg; tileIdx++ ) {
+          size_t initTileWidth  = context.getFrame( firstFrame ).getTile( tileIdx ).getWidth();
+          size_t initTileHeight = context.getFrame( firstFrame ).getTile( tileIdx ).getHeight();
+          resizeTileGeometryVideo( context, tileIdx, initTileWidth, initTileHeight, firstFrame, lastFrame + 1 );
+        }
+      }
+#endif
     relocateTileGeometryVideo( context, framesInAFPS );
+#if !TILETYPE1_RAWAUXVIDEO_BUGFIX
     resizeGeometryVideo( context );
+#endif
     if ( ( params_.losslessGeo_ || params_.lossyRawPointsPatch_ ) &&
-         !params_.useRawPointsSeparateVideo_ ) {  // and also lossy raw points some other
-      placeRawPatchTile( context, framesInAFPS );
+         !params_.useRawPointsSeparateVideo_ ) {
+#if TILETYPE1_RAWAUXVIDEO_BUGFIX
       resizeGeometryVideo( context );
+#endif
+      placeRawPatchTile( context, framesInAFPS );
+#if !TILETYPE1_RAWAUXVIDEO_BUGFIX
+      resizeGeometryVideo( context );
+#endif
     }
+#if TILETYPE1_RAWAUXVIDEO_BUGFIX
+    resizeGeometryVideo( context );
+#endif
+
     for ( size_t frameIdx = 0; frameIdx < context.getFrames().size(); frameIdx++ ) {
       for ( size_t tileIdx = 0; tileIdx < context[frameIdx].getNumTilesInAtlasFrame(); tileIdx++ ) {
         if ( frameIdx == 0 )
@@ -5076,7 +5104,17 @@ bool PCCEncoder::placeSegments( const PCCGroupOfFrames& sources, PCCContext& con
       context.getAuxTileHeight().resize( maxNumTile );
       context.getAuxTileLeftTopY().resize( maxNumTile );
     }
-
+#if 1
+    for(size_t fi=0; fi<context.size(); fi++){
+      for(size_t ti=0; ti<context[fi].getNumTilesInAtlasFrame(); ti++){
+        printf("frame %zu tile %zu : %zu,%zu (%zux%zu)\n", fi, ti,
+               context[fi].getTile(ti).getLeftTopXInFrame(),
+               context[fi].getTile(ti).getLeftTopYInFrame(),
+               context[fi].getTile(ti).getWidth(),
+               context[fi].getTile(ti).getHeight());
+      }
+    }
+#endif
   } else {
     if ( params_.numMaxTilePerFrame_ > 1 ) generateTilesFromSegments( context );
 
@@ -5444,8 +5482,12 @@ void PCCEncoder::generateTilesFromImage( PCCContext& context ) {
         } // pi
 
       } // if(params_contrainedPack_)
-
-      if ( params_.enhancedOccupancyMapCode_ && !params_.useRawPointsSeparateVideo_ ) {
+#if TILETYPE1_RAWAUXVIDEO_BUGFIX
+      if ( params_.enhancedOccupancyMapCode_)
+#else
+      if ( params_.enhancedOccupancyMapCode_ && !params_.useRawPointsSeparateVideo_ )
+#endif
+      {
         PCCEomPatch eomPatch;
         eomPatch.tileIndex_  = tile.getTileIndex();
         eomPatch.frameIndex_ = tile.getIndex();
@@ -5474,8 +5516,12 @@ void PCCEncoder::generateTilesFromImage( PCCContext& context ) {
       tile.setTileIndex( tileIdx );
       tile.setRefAfocList( context, tile.getBestRefListIndexInAsps() );
     }  // tile
-
-    if ( ( params_.losslessGeo_ || params_.lossyRawPointsPatch_ ) && !params_.useRawPointsSeparateVideo_ ) {
+#if TILETYPE1_RAWAUXVIDEO_BUGFIX
+    if( params_.losslessGeo_ || params_.lossyRawPointsPatch_ )
+#else
+    if ( ( params_.losslessGeo_ || params_.lossyRawPointsPatch_ ) && !params_.useRawPointsSeparateVideo_ )
+#endif
+    {
       context[frameIndex].setNumTilesInAtlasFrame( context[frameIndex].getNumTilesInAtlasFrame() + 1 );
       context[frameIndex].getTiles().resize( context[frameIndex].getNumTilesInAtlasFrame() );
       auto& tile = context[frameIndex].getTile( context[frameIndex].getNumTilesInAtlasFrame() - 1 );
@@ -5544,10 +5590,16 @@ void PCCEncoder::placeTiles( PCCContext& context, size_t minFrameWidth, size_t m
         tileGroupIdx = 3;
         // bottom
         incomingTileGroups[tileGroupIdx].setLeftTopXInFrame( 0 );
+#if TILETYPE2_RAWAUXVIDEO_BUGFIX //jkei: is it correct?
+        if(!params_.useRawPointsSeparateVideo_){
+#endif
         incomingTileGroups[tileGroupIdx].setLeftTopYInFrame( frameHeight );
 
         frameWidth = std::max( frameWidth, incomingTileGroups[tileGroupIdx].getWidth() );
         frameHeight += incomingTileGroups[tileGroupIdx].getHeight();
+#if TILETYPE2_RAWAUXVIDEO_BUGFIX
+        }
+#endif
       }
       // copying to framesForPatchSegmentation
       auto& outputFrame = context[frameIdx].getAtlasFrameContext();
@@ -5575,10 +5627,17 @@ void PCCEncoder::placeTiles( PCCContext& context, size_t minFrameWidth, size_t m
         outputFrameRawPatches.clear();
         for ( size_t patchIdx = 0; patchIdx < inputTileGroupRawPatches.size(); patchIdx++ ) {
           outputFrameRawPatches.push_back( inputTileGroupRawPatches[patchIdx] );
+#if TILETYPE2_RAWAUXVIDEO_BUGFIX
+          if(!params_.useRawPointsSeparateVideo_)
+          {
+#endif
           outputFrameRawPatches[outputFrameRawPatches.size() - 1].u0_ +=
               inputTileGroup.getLeftTopXInFrame() / params_.occupancyResolution_;
           outputFrameRawPatches[outputFrameRawPatches.size() - 1].v0_ +=
               inputTileGroup.getLeftTopYInFrame() / params_.occupancyResolution_;
+#if TILETYPE2_RAWAUXVIDEO_BUGFIX
+          }
+#endif
         }
 
         // eom
@@ -5596,6 +5655,24 @@ void PCCEncoder::placeTiles( PCCContext& context, size_t minFrameWidth, size_t m
 
       context[frameIdx].updatePartitionInfoPerFrame( frameIdx, frameWidth, frameHeight, params_.numMaxTilePerFrame_,
                                                      true, params_.tilePartitionWidth_, params_.tilePartitionHeight_ );
+#if 1
+      for(size_t ti=0; ti<context[frameIdx].getNumTilesInAtlasFrame(); ti++){
+        if( incomingTileGroups[ti].getPatches().size()!=0 )
+          printf("placeTiles frame %zu tile %zu: start %zu,%zu size %zux%zu\n", frameIdx, ti,
+               incomingTileGroups[ti].getLeftTopXInFrame(),
+               incomingTileGroups[ti].getLeftTopYInFrame(),
+               incomingTileGroups[ti].getWidth(),
+               incomingTileGroups[ti].getHeight());
+        else{
+          printf("placeTiles frame %zu tile %zu (patchEmpty) auxVideo %d: start %zu,%zu size %zux%zu\n", frameIdx, ti,
+               incomingTileGroups[ti].getUseRawPointsSeparateVideo(),
+               incomingTileGroups[ti].getLeftTopXInFrame(),
+               incomingTileGroups[ti].getLeftTopYInFrame(),
+               incomingTileGroups[ti].getWidth(),
+               incomingTileGroups[ti].getHeight());
+        }
+      }
+#endif
     }  // frameIdx=0; frameIdx<context.getFrameCount(); frameIdx++)
 
     resizeGeometryVideo( context );  // setAtalsWidth, Height
@@ -7200,8 +7277,11 @@ size_t PCCEncoder::generateTextureVideo( const PCCPointSet3& reconstruct,
   size_t pointCount    = regPointCount + ( params_.useRawPointsSeparateVideo_ ? 0 : auxPointCount );
 
   bool lossyRawPointsPatch = tileGroup.getRawPatchEnabledFlag() && ( !params_.losslessGeo_ );
-
+#if AUXVIDEO_BUGFIX
+  if ( ( pointCount == 0u && auxPointCount == 0u ) || !reconstruct.hasColors() ) { return false; }
+#else
   if ( ( pointCount == 0u ) || !reconstruct.hasColors() ) { return false; }
+#endif
   std::vector<bool> markT1;
   if ( params_.mapCountMinus1_ > 0 && params_.removeDuplicatePoints_ ) {
     const size_t size = tileGroup.getWidth() * tileGroup.getHeight();

@@ -935,6 +935,9 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
     }
     frame.setTotalNumberOfEOMPoints( totalEOMPointsInFrame );
   }
+#if 1
+  printf("frame %zu, tile %zu: regularPoints+eomPoints %zu\n", frameIndex, tileIndex, reconstruct.getPointCount()  );
+#endif
   TRACE_CODEC( " totalEOMPointsInFrame = %zu  \n", totalEOMPointsInFrame );
   TRACE_CODEC( " point = %zu  \n", reconstruct.getPointCount() );
   if ( params.useAdditionalPointsPatch_ ) {
@@ -966,7 +969,6 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
       size_t numberOfRawPointsPatches = frame.getNumberOfRawPointsPatches();
       for ( int i = 0; i < numberOfRawPointsPatches; i++ ) {
         auto& rawPointsPatch = frame.getRawPointsPatch( i );
-
         PCCColor3B rawPointsColor( uint8_t( 0 ) );
         rawPointsColor[0]     = 0;
         rawPointsColor[1]     = 255;
@@ -1019,7 +1021,9 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
       }
     }  // fi :useRawPointsSeparateVideo
   }    // fi : useAdditionalPointsPatch
-
+#if 1
+    printf("frame %zu, tile %zu: regularPoints+eomPoints+rawPoints %zu\n", frameIndex, tileIndex, reconstruct.getPointCount()  );
+#endif
   if ( params.flagGeometrySmoothing_ && !params.pbfEnableFlag_ ) {
     TRACE_CODEC( " identify first boundary layer \n" );
     // identify first boundary layer
@@ -2018,6 +2022,7 @@ void PCCCodec::generateRawPointsGeometryfromVideo( PCCContext& context, PCCFrame
   size_t numberOfRawPointsPatches = tile.getNumberOfRawPointsPatches();
   bool   isAuxiliarygeometrys444  = false;  // yo- use geo auxiliary codecID
 
+  //jkei: it will contaminate the source. the reconstructed vaules should be saved in the different location.
   for ( int i = 0; i < numberOfRawPointsPatches; i++ ) {
     auto&        rawPointsPatch = tile.getRawPointsPatch( i );
     const size_t v0             = rawPointsPatch.v0_ * rawPointsPatch.occupancyResolution_;
@@ -2306,8 +2311,19 @@ void PCCCodec::generateAfti( PCCContext& context, size_t frameIndex, AtlasFrameT
   auto& atlasFrame = context.getFrame( frameIndex );
   for ( size_t ti = 0; ti < partitionInfoPerFrame.getNumTilesInAtlasFrame(); ti++ ) {
     auto& tile = atlasFrame.getTile( ti );
-//    auto tileWidth  = tile.getWidth();
-//    auto tileHeight = tile.getHeight();
+#if TILE_PARTITINING_BUGFIX
+    if( tile.getPatches().size()==0 && partitionInfoPerFrame.getAtlasFrameContext().getUseRawPointsSeparateVideo() ){
+      aftiLocal.setTopLeftPartitionIdx( ti, 0 );
+      aftiLocal.setBottomRightPartitionColumnOffset( ti, 0 );
+      aftiLocal.setBottomRightPartitionRowOffset( ti, 0 );
+#if 1
+      printf( "enc:%zu frame %zu tile:(%zu,%zu), Raw Tile %zux%zu in Auxiliary video\n", frameIndex,
+             ti, atlasFrame.getTile( ti ).getLeftTopXInFrame(), atlasFrame.getTile( ti ).getLeftTopYInFrame(),
+             atlasFrame.getTile( ti ).getWidth(), atlasFrame.getTile( ti ).getHeight() );
+#endif
+      continue;
+    }
+#endif
     int    leftTopX          = tile.getLeftTopXInFrame();
     int    leftTopY          = tile.getLeftTopYInFrame();
     int    bottomRightDeltaX = tile.getWidth();
@@ -2325,6 +2341,16 @@ void PCCCodec::generateAfti( PCCContext& context, size_t frameIndex, AtlasFrameT
     aftiLocal.setTopLeftPartitionIdx( ti, topLeftIdx );
 
     size_t numPartBottomX = 0, numPartBottomY = 0;
+#if TILE_PARTITINING_BUGFIX //jkei: it has been okay since it was uniformsize
+    while ( bottomRightDeltaX > 0 ) {
+      bottomRightDeltaX -= partitionInfoPerFrame.getPartitionWidth()[ numPartLeftX + numPartBottomX];
+      numPartBottomX += 1;
+    }
+    while ( bottomRightDeltaY > 0 ) {
+      bottomRightDeltaY -= partitionInfoPerFrame.getPartitionHeight()[ numPartLeftY + numPartBottomY];
+      numPartBottomY += 1;
+    }
+#else
     while ( bottomRightDeltaX > 0 ) {
       bottomRightDeltaX -= partitionInfoPerFrame.getPartitionWidth()[numPartBottomX];
       numPartBottomX += 1;
@@ -2333,12 +2359,13 @@ void PCCCodec::generateAfti( PCCContext& context, size_t frameIndex, AtlasFrameT
       bottomRightDeltaY -= partitionInfoPerFrame.getPartitionHeight()[numPartBottomY];
       numPartBottomY += 1;
     }
+#endif
     assert( numPartBottomX >= 1 && numPartBottomY >= 1 );
 
     if ( ( numPartBottomX < 1 ) || ( numPartBottomY < 1 ) ) {
       printf(
-          "enc:error((numPartBottomX<1) || (numPartBottomY <1)) %zu frame %zu tile:(%zu,%zu), %zux%zu -> "
-          "leftIdx(%zu,%zu), bottom(%zu,%zu)\n",
+          "enc:<error> %zu frame %zu tile:(%zu,%zu), %zux%zu -> "
+          "leftIdx(%zu,%zu), bottom(%zu,%zu) : ((numPartBottomX<1) || (numPartBottomY <1))\n",
           frameIndex, ti, atlasFrame.getTile( ti ).getLeftTopXInFrame(), atlasFrame.getTile( ti ).getLeftTopYInFrame(),
           atlasFrame.getTile( ti ).getWidth(), atlasFrame.getTile( ti ).getHeight(), numPartLeftX, numPartLeftY,
           numPartBottomX, numPartBottomY );
