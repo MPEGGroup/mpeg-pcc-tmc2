@@ -79,8 +79,10 @@
 #define TILETYPE1_RAWAUXVIDEO_BUGFIX 1
 #define TILETYPE2_RAWAUXVIDEO_BUGFIX 1 //jkei: how/when to place raw tiles
 #define TILE_PARTITINING_BUGFIX 1
-
+#define TILETYPE1_RAWAUXVIDEO_BUGFIX2 1 //jkei: u0_,v0_ of patches in the atlasframe are different from adjusted ones
+#define TILE_PARTITINING_BUGFIX2 1
 //MULTISTREAM_AUXVIDEO 1 //multistream & auxvideo doesnot have config for auxvideo
+
 namespace pcc {
 
 // ******************************************************************* //

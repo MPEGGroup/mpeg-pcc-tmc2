@@ -734,6 +734,9 @@ bool PCCEncoder::generateOccupancyMapVideo( const PCCGroupOfFrames& sources, PCC
   bool  ret               = true;
   videoOccupancyMap.resize( sources.getFrameCount() );
   for ( size_t f = 0; f < sources.getFrameCount(); ++f ) {
+#if 1
+    //lets make it per tile later
+#endif
     auto&                 contextFrame = context.getFrames()[f];
     PCCImageOccupancyMap& videoFrame   = videoOccupancyMap.getFrame( f );
     ret &= generateOccupancyMapVideo( contextFrame.getFrameWidth(), contextFrame.getFrameHeight(),
@@ -3895,6 +3898,7 @@ bool PCCEncoder::generateOccupancyMap( PCCContext& context, bool copyToFrame ) {
                 frame.getTile( ti ).getOccupancyMap()[y * tile.getWidth() + x];
           }
         }
+
       }  // copyToFrame
     }    // ti
     if ( !params_.absoluteD1_ || !params_.absoluteT1_ ) {
@@ -5107,11 +5111,13 @@ bool PCCEncoder::placeSegments( const PCCGroupOfFrames& sources, PCCContext& con
 #if 1
     for(size_t fi=0; fi<context.size(); fi++){
       for(size_t ti=0; ti<context[fi].getNumTilesInAtlasFrame(); ti++){
-        printf("frame %zu tile %zu : %zu,%zu (%zux%zu)\n", fi, ti,
+        printf("actual tileSize: frame %zu tile %zu : %zu,%zu (%zux%zu) patchCount %zu\n", fi, ti,
                context[fi].getTile(ti).getLeftTopXInFrame(),
                context[fi].getTile(ti).getLeftTopYInFrame(),
                context[fi].getTile(ti).getWidth(),
-               context[fi].getTile(ti).getHeight());
+               context[fi].getTile(ti).getHeight(),
+               context[fi].getTile(ti).getPatches().size()
+               );
       }
     }
 #endif
@@ -5546,7 +5552,16 @@ void PCCEncoder::generateTilesFromImage( PCCContext& context ) {
         tile.getRawPointsPatches().push_back( rawPointsPatch );
       }  // rawpatches
     }
-
+#if TILETYPE1_RAWAUXVIDEO_BUGFIX2
+    //refill patches in container
+    frameContainer.getAtlasFrameContext().getPatches().clear();
+    for ( uint32_t tileIdx = 0; tileIdx < numTiles; tileIdx++ ) {
+      auto& tile = frameContainer.getTile( tileIdx );
+      for ( auto patch : tile.getPatches() ) {
+         frameContainer.getAtlasFrameContext().getPatches().push_back( patch );
+      }
+    }
+#endif
   }  // frameIndex
 }
 

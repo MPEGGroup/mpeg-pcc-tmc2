@@ -569,7 +569,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
   auto&        blockToPatch          = frame.getBlockToPatch();
   const size_t blockToPatchWidth     = frame.getWidth() / params.occupancyResolution_;
   const size_t blockToPatchHeight    = frame.getHeight() / params.occupancyResolution_;
-  const size_t patchCount            = patches.size();
+  const size_t totlaPatchCount            = patches.size();
   uint32_t     patchIndex            = 0;
   reconstruct.addColors();
 
@@ -610,7 +610,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
   if ( params.enableSizeQuantization_ ) {
     size_t quantizerSizeX = ( size_t( 1 ) << frame.getLog2PatchQuantizerSizeX() );
     size_t quantizerSizeY = ( size_t( 1 ) << frame.getLog2PatchQuantizerSizeY() );
-    for ( size_t patchIndex = 0; patchIndex < patchCount; ++patchIndex ) {
+    for ( size_t patchIndex = 0; patchIndex < totlaPatchCount; ++patchIndex ) {
       auto&  patch             = patches[patchIndex];
       size_t nonZeroPixel      = 0;
       size_t patchSizeXInPixel = ( patch.getPatchSize2DXInPixel() / quantizerSizeX ) * quantizerSizeX;
@@ -666,12 +666,12 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
   if ( !params.pbfEnableFlag_ ) { BPflag.resize( tileGroupWidth * tileGroupHeight, 0 ); }
 
   std::vector<std::vector<PCCPoint3D>> eomPointsPerPatch;
-  eomPointsPerPatch.resize( patchCount );
+  eomPointsPerPatch.resize( totlaPatchCount );
   uint32_t index;
 
   for ( index = 0; index < patches.size(); index++ ) {
     patchIndex = ( bDecoder && context.getAtlasSequenceParameterSet( 0 ).getPatchPrecedenceOrderFlag() )
-                     ? ( patchCount - index - 1 )
+                     ? ( totlaPatchCount - index - 1 )
                      : index;
     const size_t patchIndexPlusOne = patchIndex + 1;
     auto&        patch             = patches[patchIndex];
@@ -680,7 +680,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
         "P%2lu/%2lu: 2D=(%2lu,%2lu)*(%2lu,%2lu) 3D(%4zu,%4zu,%4zu)*(%4zu,%4zu) "
         "A=(%zu,%zu,%zu) Or=%zu P=%zu => %zu "
         "AxisOfAdditionalPlane = %zu \n",
-        patchIndex, patchCount, patch.getU0(), patch.getV0(), patch.getSizeU0(), patch.getSizeV0(), patch.getU1(),
+        patchIndex, totlaPatchCount, patch.getU0(), patch.getV0(), patch.getSizeU0(), patch.getSizeV0(), patch.getU1(),
         patch.getV1(), patch.getD1(), patch.getSizeU0() * patch.getOccupancyResolution(),
         patch.getSizeV0() * patch.getOccupancyResolution(), patch.getNormalAxis(), patch.getTangentAxis(),
         patch.getBitangentAxis(), patch.getPatchOrientation(), patch.getProjectionMode(), reconstruct.getPointCount(),
@@ -889,12 +889,16 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
     }
   }
   frame.setTotalNumberOfRegularPoints( reconstruct.getPointCount() );
+#if 1
+  printf("frame %zu, tile %zu: regularPoints %zu\n", frameIndex, tileIndex, reconstruct.getPointCount()  );
+#endif
   patchIndex                         = index;
   size_t       totalEOMPointsInFrame = 0;
   PCCPointSet3 eomSavedPoints;
   if ( params.enhancedOccupancyMapCode_ ) {
+
     const size_t blockSize       = params.occupancyResolution_ * params.occupancyResolution_;
-    size_t       totalPatchCount = patchCount;
+//    size_t       totalPatchCount = patchCount;
     size_t       numEOMPatches   = frame.getEomPatches().size();
     for ( int j = 0; j < numEOMPatches; j++ ) {
       auto&  eomPatch               = frame.getEomPatches( j );
@@ -903,10 +907,10 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
       size_t v0Eom                  = useRawPointsSeparateVideo ? 0 : eomPatch.v0_ * params.occupancyResolution_;
       totalEOMPointsInFrame += eomPatch.eomCount_;
       size_t totalPointCount = 0;
-      for ( size_t patchCount = 0; patchCount < numPatchesInEOMPatches; patchCount++ ) {
+      for ( size_t patchIdxInEom = 0; patchIdxInEom < numPatchesInEOMPatches; patchIdxInEom++ ) {
         size_t memberPatchIdx = ( bDecoder && context.getAtlasSequenceParameterSet( 0 ).getPatchPrecedenceOrderFlag() )
-                                    ? ( totalPatchCount - eomPatch.memberPatches[patchCount] - 1 )
-                                    : eomPatch.memberPatches[patchCount];
+        ? ( totlaPatchCount - eomPatch.memberPatches[patchIdxInEom] - 1 )
+                                    : eomPatch.memberPatches[patchIdxInEom];
         size_t numberOfEOMPointsPerPatch = eomPointsPerPatch[memberPatchIdx].size();
         for ( size_t pointCount = 0; pointCount < numberOfEOMPointsPerPatch; pointCount++ ) {
           size_t currBlock                 = totalPointCount / blockSize;
@@ -2393,10 +2397,14 @@ void PCCCodec::generateAfti( PCCContext& context, size_t frameIndex, AtlasFrameT
   if ( partitionInfoPerFrame.getAtlasFrameContext().getUseRawPointsSeparateVideo() ) {
     aftiLocal.setAuxiliaryVideoTileRowWidthMinus1( context.getAuxVideoWidth() / 64 - 1 );
     for ( size_t ti = 0; ti < partitionInfoPerFrame.getNumTilesInAtlasFrame(); ti++ ) {
+#if TILE_PARTITINING_BUGFIX2
+      aftiLocal.setAuxiliaryVideoTileRowHeight( ti, context.getAuxTileHeight( ti )/64 );
+#else
       aftiLocal.setAuxiliaryVideoTileRowHeight( ti, context.getAuxTileHeight( ti ) );
+#endif
     }
 #if 1
-    printf( "enc:%zu frame auxiliaryVideoTileRowWidthMinus1():%u\t", frameIndex,
+    printf( "enc:%zu frame auxiliaryVideoTileRowWidthMinus1(): width(64x)%u\t height: ", frameIndex,
             aftiLocal.getAuxiliaryVideoTileRowWidthMinus1() );
     for ( size_t ti = 0; ti < partitionInfoPerFrame.getNumTilesInAtlasFrame(); ti++ )
       printf( "%u\t", aftiLocal.getAuxiliaryVideoTileRowHeight( ti ) );
@@ -2474,7 +2482,11 @@ void PCCCodec::setTilePartitionSizeAfti( PCCContext& context ) {
                                            0 );  // jkei: do we need it per frame?
       context.getAuxTileHeight().resize( afti.getNumTilesInAtlasFrameMinus1() + 1, 0 );
       for ( size_t ti = 0; ti <= afti.getNumTilesInAtlasFrameMinus1(); ti++ ) {
+#if TILE_PARTITINING_BUGFIX2
+        context.setAuxTileHeight( ti, afti.getAuxiliaryVideoTileRowHeight( ti )*64 );
+#else
         context.setAuxTileHeight( ti, afti.getAuxiliaryVideoTileRowHeight( ti ) );
+#endif
         if ( ti < afti.getNumTilesInAtlasFrameMinus1() )
           context.setAuxTileLeftTopY( ti + 1,
                                       context.getAuxTileLeftTopY( ti ) + afti.getAuxiliaryVideoTileRowHeight( ti ) );
