@@ -159,9 +159,9 @@ class PCCEncoder : public PCCCodec {
 
   //**tile and partitions**//
   void generateTilesFromSegments( PCCContext& context );
-  void generateTilesFromImage( PCCContext& context );
-  void placeTiles( PCCContext& context, size_t minFrameWidth, size_t minFrameHeight );
-
+  void generateTilesFromImage   ( PCCContext& context );
+  void placeTiles               ( PCCContext& context, size_t minFrameWidth, size_t minFrameHeight );
+  void replaceFrameContext      ( PCCContext& context );
   //**patch segmentation**//
   // bool generateGeometryVideo( const PCCGroupOfFrames& sources, PCCContext& context );
   bool generateSegments( const PCCGroupOfFrames& sources, PCCContext& context );

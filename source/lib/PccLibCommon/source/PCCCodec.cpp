@@ -931,6 +931,9 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
           partition.push_back( uint32_t( patchIndex ) );
           totalPointCount++;
           pointToPixel.emplace_back( uu, vv, 0 );
+#if TILETYPE1_RAWAUXVIDEO_BUGFIX2
+          if(!params.useAuxSeperateVideo_)
+#endif
           occupancyMap[vv * tileGroupWidth + uu] = 1;  // occupied
         }
       }
@@ -1992,6 +1995,7 @@ size_t PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruc
       }
     }
   }  // noAtt
+
 #ifdef CODEC_TRACE
   printChecksum( reconstruct, "colorPointCloud out" );
   TRACE_CODEC( "colorPointCloud done \n" );
@@ -2148,6 +2152,39 @@ void PCCCodec::generateRawPointsTexturefromVideo( PCCContext& context, PCCFrameC
       }
       eomPatchOffset += eomPointsPatch.eomCount_;
     }  // eomPatches
+    
+//    for ( size_t patchIdxInEom = 0; patchIdxInEom < numPatchesInEOMPatches; patchIdxInEom++ ) {
+//      size_t memberPatchIdx = ( bDecoder && context.getAtlasSequenceParameterSet( 0 ).getPatchPrecedenceOrderFlag() )
+//      ? ( totlaPatchCount - eomPatch.memberPatches[patchIdxInEom] - 1 )
+//      : eomPatch.memberPatches[patchIdxInEom];
+//      size_t numberOfEOMPointsPerPatch = eomPointsPerPatch[memberPatchIdx].size();
+//      for ( size_t pointCount = 0; pointCount < numberOfEOMPointsPerPatch; pointCount++ ) {
+//        size_t currBlock                 = totalPointCount / blockSize;
+//        size_t nPixelInCurrentBlockCount = totalPointCount - currBlock * blockSize;
+//        size_t uBlock                    = currBlock % blockToPatchWidth;
+//        size_t vBlock                    = currBlock / blockToPatchWidth;
+//        size_t uu =
+//        uBlock * params.occupancyResolution_ + nPixelInCurrentBlockCount % params.occupancyResolution_ + u0Eom;
+//        size_t vv =
+//        vBlock * params.occupancyResolution_ + nPixelInCurrentBlockCount / params.occupancyResolution_ + v0Eom;
+//        PCCPoint3D point1      = eomPointsPerPatch[memberPatchIdx][pointCount];
+//        size_t     pointIndex1 = reconstruct.addPoint( point1 );
+//        reconstruct.setPointPatchIndex( pointIndex1, tileIndex, patchIndex );
+//        eomSavedPoints.addPoint( point1 );
+//        // reconstruct.setColor( pointIndex1, color );
+//        if ( PCC_SAVE_POINT_TYPE == 1 ) { reconstruct.setType( pointIndex1, POINT_EOM ); }
+//        partition.push_back( uint32_t( patchIndex ) );
+//        totalPointCount++;
+//        pointToPixel.emplace_back( uu, vv, 0 );
+//#if TILETYPE1_RAWAUXVIDEO_BUGFIX2
+//        if(!params.useAuxSeperateVideo_)
+//#endif
+//          occupancyMap[vv * tileGroupWidth + uu] = 1;  // occupied
+//      }
+//    }
+    
+    
+    
   }
 }
 void PCCCodec::generateOccupancyMap( PCCFrameContext& tile,
@@ -2484,12 +2521,15 @@ void PCCCodec::setTilePartitionSizeAfti( PCCContext& context ) {
       for ( size_t ti = 0; ti <= afti.getNumTilesInAtlasFrameMinus1(); ti++ ) {
 #if TILE_PARTITINING_BUGFIX2
         context.setAuxTileHeight( ti, afti.getAuxiliaryVideoTileRowHeight( ti )*64 );
+        if ( ti < afti.getNumTilesInAtlasFrameMinus1() )
+          context.setAuxTileLeftTopY( ti + 1,
+                                      context.getAuxTileLeftTopY( ti ) + context.getAuxTileHeight( ti ) );
 #else
         context.setAuxTileHeight( ti, afti.getAuxiliaryVideoTileRowHeight( ti ) );
-#endif
         if ( ti < afti.getNumTilesInAtlasFrameMinus1() )
           context.setAuxTileLeftTopY( ti + 1,
                                       context.getAuxTileLeftTopY( ti ) + afti.getAuxiliaryVideoTileRowHeight( ti ) );
+#endif
       }
     }
   }  // afpsIdx

@@ -168,7 +168,11 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   if ( params_.tileSegmentationType_ > 1 && params_.numMaxTilePerFrame_ > 1 ) {
     placeTiles( context, params_.minimumImageWidth_, params_.minimumImageHeight_ );
   }
-
+#if TILETYPE1_RAWAUXVIDEO_BUGFIX2
+  if ( params_.tileSegmentationType_ > 0 )
+    replaceFrameContext( context );
+#endif
+  
   // params_.initializeContext( context );
   auto& sps  = context.getVps();
   auto& ai   = sps.getAttributeInformation( atlasIndex );
@@ -195,7 +199,6 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   // ENCODE OCCUPANCY MAP
   auto& videoBitstream = context.createVideoBitstream( VIDEO_OCCUPANCY );
   generateOccupancyMapVideo( sources, context );
-
   auto& videoOccupancyMap = context.getVideoOccupancyMap();
   videoEncoder.compress( videoOccupancyMap, path.str(), params_.occupancyMapQP_, videoBitstream,
                          params_.occupancyMapVideoEncoderConfig_, params_.videoEncoderOccupancyPath_,
@@ -332,7 +335,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   context.allocOneLayerData();
   std::vector<std::vector<uint32_t>> partitions;
   partitions.resize( context.size() );
-  //  generatePointCloud( reconstructs, context, gpcParams, partitions, false );
+
   for ( size_t frameIdx = 0; frameIdx < context.size(); frameIdx++ ) {
     for ( size_t tileGroupIdx = 0; tileGroupIdx < context[frameIdx].getNumTilesInAtlasFrame(); tileGroupIdx++ ) {
       PCCPointSet3 tileGroupReconstrct;
@@ -4249,7 +4252,7 @@ bool PCCEncoder::predictGeometryFrame( PCCFrameContext&        frame,
 
   const size_t patchCount = patches.size();
   size_t       patchIndex{0};
-
+  //jkei: why does it need to be patch level?
   for ( patchIndex = 0; patchIndex < patchCount; ++patchIndex ) {
     const size_t patchIndexPlusOne = patchIndex + 1;
     auto&        patch             = patches[patchIndex];
@@ -4280,7 +4283,6 @@ bool PCCEncoder::predictGeometryFrame( PCCFrameContext&        frame,
       }
     }
   }
-
   return true;
 }
 
@@ -5552,16 +5554,6 @@ void PCCEncoder::generateTilesFromImage( PCCContext& context ) {
         tile.getRawPointsPatches().push_back( rawPointsPatch );
       }  // rawpatches
     }
-#if TILETYPE1_RAWAUXVIDEO_BUGFIX2
-    //refill patches in container
-    frameContainer.getAtlasFrameContext().getPatches().clear();
-    for ( uint32_t tileIdx = 0; tileIdx < numTiles; tileIdx++ ) {
-      auto& tile = frameContainer.getTile( tileIdx );
-      for ( auto patch : tile.getPatches() ) {
-         frameContainer.getAtlasFrameContext().getPatches().push_back( patch );
-      }
-    }
-#endif
   }  // frameIndex
 }
 
@@ -5692,6 +5684,34 @@ void PCCEncoder::placeTiles( PCCContext& context, size_t minFrameWidth, size_t m
 
     resizeGeometryVideo( context );  // setAtalsWidth, Height
   }
+}
+void PCCEncoder::replaceFrameContext( PCCContext& context ){
+  for(size_t frameIdx=0; frameIdx< context.size(); frameIdx++){
+    if( context[frameIdx].getNumTilesInAtlasFrame()==1 ) continue;
+    auto& frame = context[frameIdx].getAtlasFrameContext();
+    frame.setLeftTopXInFrame(0);
+    frame.setLeftTopYInFrame(0);
+    frame.setTileIndex(255);
+    frame.getPatches().clear();
+    
+    size_t tileCount =context[frameIdx].getNumTilesInAtlasFrame();
+    if(params_.losslessGeo_) tileCount -= 1;
+    for(size_t tileIdx=0; tileIdx<tileCount; tileIdx++){
+      auto& tile = context[frameIdx].getTile( tileIdx );
+      for ( auto patch : tile.getPatches() ) {
+        patch.getU0() +=tile.getLeftTopXInFrame()/params_.occupancyResolution_;
+        patch.getV0() +=tile.getLeftTopYInFrame()/params_.occupancyResolution_;
+        patch.getU1() +=tile.getLeftTopXInFrame();
+        patch.getV1() +=tile.getLeftTopYInFrame();
+        frame.getPatches().push_back( patch );
+      }
+    }
+    
+    //eom
+    
+    //raw
+
+  }//frame
 }
 
 void PCCEncoder::pointLocalReconstructionSearch( PCCContext&                         context,

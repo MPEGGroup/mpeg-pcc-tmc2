@@ -82,7 +82,7 @@ class PCCAtlasHighLevelSyntax {
   AtlasSequenceParameterSetRbsp& getAtlasSequenceParameterSet( size_t setId ) {
     return atlasSequenceParameterSet_[setId];
   }
-  // AtlasSequenceParameterSetRbsp& getAtlasSequenceParameterSet() { return atlasSequenceParameterSet_[activeASPS_]; }
+//  std::vector<AtlasSequenceParameterSetRbsp>& getAtlasSequenceParameterSetList() { return atlasSequenceParameterSet_; }
   AtlasSequenceParameterSetRbsp& addAtlasSequenceParameterSet() {
     AtlasSequenceParameterSetRbsp asps;
     asps.setAtlasSequenceParameterSetId( atlasSequenceParameterSet_.size() );
