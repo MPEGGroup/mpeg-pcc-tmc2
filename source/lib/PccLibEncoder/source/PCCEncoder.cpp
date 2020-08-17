@@ -223,10 +223,16 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
               << ( static_cast<float>( changedPixCnt1To0 ) * 100.0F / pixCnt ) << std::endl;
   }
 
+  #if 1
+    printf( "markRawPatchLocationOccupancyMapVideo\n" );
+  #endif
+  
   if ( !params_.useRawPointsSeparateVideo_ && ( params_.losslessGeo_ || params_.lossyRawPointsPatch_ ) ) {
     markRawPatchLocationOccupancyMapVideo( context );
   }
-
+  #if 1
+    printf( "generateBlockToPatchFromOccupancyMapVideo\n" );
+  #endif
   generateBlockToPatchFromOccupancyMapVideo( context, params_.occupancyResolution_, params_.occupancyPrecision_ );
 #if 1
   printf( "Processing Geometry\n" );
@@ -328,6 +334,26 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     }
   }
 
+#if 1
+  printf("****Tile***Info***Summary******************\n");
+  for(size_t fi=0; fi<context.size(); fi++){
+    
+    for(size_t ti=0; ti<context[fi].getNumTilesInAtlasFrame(); ti++){
+      auto& tile = context[fi].getTile(ti);
+      printf("frame %zu tile %zu: (%zu,%zu) (%zux%zu) patchCount:%zu regPoints:%zu, rawPatch:%zu rawPoints:%zu eomPatch:%zu eomPoints:%zu\n",
+             fi, ti, tile.getLeftTopXInFrame(), tile.getLeftTopYInFrame(), tile.getWidth(), tile.getHeight(),
+             tile.getPatches().size(), tile.getTotalNumberOfRegularPoints(),
+             tile.getRawPointsPatches().size(), tile.getRawPointsPatches().size()==0? 0: tile.getRawPointsPatch(0).getNumberOfRawPoints(),
+             tile.getEomPatches().size(), tile.getEomPatches().size()==0? 0:tile.getEomPatches(0).eomCount_
+             );
+      if(params_.useRawPointsSeparateVideo_){
+        printf("frame(auxVideo) %zu tile %zu: (0,%zu) (%zux%zu)\n",
+               fi, ti, context.getAuxTileLeftTopY(ti), context.getAuxVideoWidth(), context.getAuxTileHeight(ti));
+      }
+    }
+  }
+  printf("*********************************************\n");
+#endif
   // RECONSTRUCT POINT CLOUD GEOMETRY
   GeneratePointCloudParameters gpcParams;
   setGeneratePointCloudParameters( gpcParams, context );
@@ -3560,10 +3586,10 @@ size_t PCCEncoder::packRawPointsPatchSimple( PCCFrameContext& tile,
       }
     }
     rawPointsPatch.u0_ = 0;
-    rawPointsPatch.v0_ = totalHeight;
+    rawPointsPatch.v0_ = totalHeight/params_.occupancyResolution_;//TILE_PARTITINING_BUGFIX3
     totalHeight += rawPointsPatch.sizeV_;
 
-    printf( "packRawPointsPatch[%zu/%zu]: pos %zu,%zu size(%zux%zu) #ofpixels %zu\n", i, numberOfRawPointsPatches,
+    printf( "packRawPointsPatch[%zu/%zu]: posU0V0 %zu,%zu sizeU0V0(%zux%zu) #ofpixels %zu\n", i, numberOfRawPointsPatches,
             rawPointsPatch.u0_, rawPointsPatch.v0_, rawPointsPatch.sizeU0_, rawPointsPatch.sizeV0_,
             rawPointsPatch.sizeX() );
   }  // i
@@ -3657,7 +3683,7 @@ size_t PCCEncoder::packRawPointsPatch( PCCFrameContext&   frame,
       }
       height = ( std::max )( height, ( patch.getV0() + patch.getSizeV0() ) * params_.occupancyResolution_ );
     }
-    printf( "packRawPointsPatch[%zu/%zu]: pos %zu,%zu size(%zux%zu) #ofpixels %zu\n", i, numberOfRawPointsPatches,
+    printf( "packRawPointsPatch[%zu/%zu]: posU0V0 %zu,%zu sizeU0V0(%zux%zu) #ofpixels %zu\n", i, numberOfRawPointsPatches,
             rawPointsPatch.u0_, rawPointsPatch.v0_, rawPointsPatch.sizeU0_, rawPointsPatch.sizeV0_,
             rawPointsPatch.sizeX() );
   }
@@ -5553,6 +5579,9 @@ void PCCEncoder::generateTilesFromImage( PCCContext& context ) {
         rawPointsPatch.tileIndex_ = tile.getTileIndex();
         tile.getRawPointsPatches().push_back( rawPointsPatch );
       }  // rawpatches
+#if TILE_PARTITINING_BUGFIX3
+      context[frameIndex].getAtlasFrameContext().getRawPointsPatches().clear();
+#endif
     }
   }  // frameIndex
 }
@@ -5710,7 +5739,6 @@ void PCCEncoder::replaceFrameContext( PCCContext& context ){
     //eom
     
     //raw
-
   }//frame
 }
 
@@ -6153,6 +6181,7 @@ bool PCCEncoder::placeRawPatchTile( PCCContext& context, std::vector<std::pair<s
       tile.setHeight( std::ceil( (double)tileHeight / 64.0 ) * 64 );
       atlasFrame.setHeight( atlasFrame.getHeight() + tile.getHeight() );
 
+//#if !TILE_PARTITINING_BUGFIX3
       auto& atlasFrameRawPatches = atlasFrame.getRawPointsPatches();
       atlasFrameRawPatches.clear();
       for ( size_t patchIdx = 0; patchIdx < tile.getRawPointsPatches().size(); patchIdx++ ) {
@@ -6166,7 +6195,11 @@ bool PCCEncoder::placeRawPatchTile( PCCContext& context, std::vector<std::pair<s
                 << " size: " << tile.getWidth() << "x" << tile.getHeight() << " patchSize: " << tile.getPatches().size()
                 << "\trawPatchSize: " << tile.getRawPointsPatches().size() << "\t";
       std::cout << " ImageSize " << atlasFrame.getWidth() << " x " << atlasFrame.getHeight() << "\n";
-
+      std::cout<<"copyToFrame:" << atlasFrameRawPatches.size()<<"\n";
+      for(size_t ii=0; ii<atlasFrameRawPatches.size(); ii++){
+        std::cout <<"atlasFrameRawPatch["<<ii<<"]:"<<atlasFrameRawPatches[ii].u0_ <<", "<< atlasFrameRawPatches[ii].v0_<<"\t";
+        std::cout<<atlasFrameRawPatches[ii].sizeU_ <<"x"<< atlasFrameRawPatches[ii].sizeV_<<" #points: "<<atlasFrameRawPatches[ii].getNumberOfRawPoints()<<std::endl;
+      }
       size_t partitionWidthIn64 = ( context[frameIdx].getFrameWidth() / ( 64 * params_.numTilesHor_ ) );
       size_t partitionHeightIn64 =
           ( params_.tileHeightToWidthRatio_ * context[frameIdx].getFrameWidth() / ( 64 * params_.numTilesHor_ ) );
@@ -6213,8 +6246,9 @@ void PCCEncoder::markRawPatchLocation( PCCFrameContext& frame, PCCImageOccupancy
               const size_t y = ( v0 + v );
               if ( !params_.lossyRawPointsPatch_ ) {
                 if ( x >= videoWidth || y >= videoHeight ) {
-                  std::cout << "\t\tout of image :" << x << "," << y << "(" << x + y * videoWidth
+                  std::cout << "\t\tframe ["<<frame.getIndex()<<"] out of image :" << x << "," << y << "(" << x + y * videoWidth
                             << ") vs occupancyMap size :" << videoWidth << "x" << videoHeight << std::endl;
+                  std::cout<<"rawpatch["<<i<<"] #point:"<<rawPointsPatch.getNumberOfRawPoints()<<" size: "<<rawPointsPatch.sizeU_<<"x"<< rawPointsPatch.sizeV_<<"\tat "<<u0<<", "<<v0<<std::endl;
                   exit( 0 );
                 }
                 assert( x < videoWidth && y < videoHeight );

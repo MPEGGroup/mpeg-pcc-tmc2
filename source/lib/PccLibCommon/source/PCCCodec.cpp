@@ -896,7 +896,6 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
   size_t       totalEOMPointsInFrame = 0;
   PCCPointSet3 eomSavedPoints;
   if ( params.enhancedOccupancyMapCode_ ) {
-
     const size_t blockSize       = params.occupancyResolution_ * params.occupancyResolution_;
 //    size_t       totalPatchCount = patchCount;
     size_t       numEOMPatches   = frame.getEomPatches().size();
