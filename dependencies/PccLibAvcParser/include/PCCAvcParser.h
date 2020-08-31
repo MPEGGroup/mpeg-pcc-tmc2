@@ -6,10 +6,10 @@
 #include "PccAvcTDecCAVLC_avc.h"
 
 
-class PCCAvcNalu {
+class PccAvcNalu {
  public:
-  PCCAvcNalu(){ data_.clear(); }
-  ~PCCAvcNalu(){ data_.clear(); }
+  PccAvcNalu(){ data_.clear(); }
+  ~PccAvcNalu(){ data_.clear(); }
 
   uint8_t* data() { return data_.data(); }
   size_t   size() const { return data_.size(); }
@@ -29,22 +29,22 @@ class PCCAvcNalu {
   std::vector<uint8_t> data_;
 };
 
-class PCCAvcFrame {
+class PccAvcFrame {
  public:
-  PCCAvcFrame(){  nalu_.clear(); }
-  ~PCCAvcFrame(){ nalu_.clear(); }
-  void add( PCCAvcNalu& nalu ) {  nalu_.push_back( nalu ); }
-  const std::vector<PCCAvcNalu>& getNalu() const { return nalu_; }
-  const PCCAvcNalu&              getNalu( size_t frameIndex ) const { return nalu_[frameIndex]; }
+  PccAvcFrame(){  nalu_.clear(); }
+  ~PccAvcFrame(){ nalu_.clear(); }
+  void add( PccAvcNalu& nalu ) {  nalu_.push_back( nalu ); }
+  const std::vector<PccAvcNalu>& getNalu() const { return nalu_; }
+  const PccAvcNalu&              getNalu( size_t frameIndex ) const { return nalu_[frameIndex]; }
   const size_t                    getFrameCount() { return nalu_.size(); }
 private:
-  std::vector<PCCAvcNalu> nalu_;
+  std::vector<PccAvcNalu> nalu_;
 };
 
-class PCCAvcParser {
+class PccAvcParser {
  public:
-  PCCAvcParser();
-  ~PCCAvcParser();
+  PccAvcParser();
+  ~PccAvcParser();
   void getVideoSize( const std::vector<uint8_t>& buffer, size_t& width, size_t& height, int CodecId );
   void display();
   const char* getNaluType( int iNaluType );
@@ -57,13 +57,13 @@ class PCCAvcParser {
                    const size_t pos,
                    const size_t size );
 
-  const std::vector<PCCAvcNalu>& getVps () const { return vps_; }
-  const std::vector<PCCAvcNalu>& getSps () const { return sps_; }
-  const std::vector<PCCAvcNalu>& getPps () const { return pps_; }
-  std::vector<PCCAvcNalu>  vps_;
-  std::vector<PCCAvcNalu>  sps_;
-  std::vector<PCCAvcNalu>  pps_;
-  std::vector<PCCAvcFrame> frames_;
+  const std::vector<PccAvcNalu>& getVps () const { return vps_; }
+  const std::vector<PccAvcNalu>& getSps () const { return sps_; }
+  const std::vector<PccAvcNalu>& getPps () const { return pps_; }
+  std::vector<PccAvcNalu>  vps_;
+  std::vector<PccAvcNalu>  sps_;
+  std::vector<PccAvcNalu>  pps_;
+  std::vector<PccAvcFrame> frames_;
 
 };
-#endif //~_PCC_Avc_PARSER_H_
+#endif //~_Pcc_Avc_PARSER_H_

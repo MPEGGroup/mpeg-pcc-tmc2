@@ -36,7 +36,7 @@
 
 #include "PCCJMAppVideoDecoder.h"
 #include "PCCSystem.h"
-#include "PCCAvcParser.h"
+#include "PccAvcParser.h"
 
 using namespace pcc;
 
@@ -55,7 +55,7 @@ void PCCJMAppVideoDecoder<T>::decode( PCCVideoBitstream& bitstream,
                                       const size_t       frameCount,
                                       const size_t       codecId ) {
   size_t       width = 0, height = 0;
-  PCCAvcParser avcParser;
+  PccAvcParser avcParser;
   avcParser.getVideoSize( bitstream.vector(), width, height, codecId );
 
   const std::string binFileName = fileName + ".bin";

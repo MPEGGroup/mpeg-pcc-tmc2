@@ -12,21 +12,21 @@ using namespace std;
 #include "PccAvcParser.h"
 #include "PccAvcTDecCAVLC_avc.h"
 
-PCCAvcParser::PCCAvcParser() {
+PccAvcParser::PccAvcParser() {
   frames_.clear();
   vps_.clear();
   sps_.clear();
   pps_.clear();
 }
 
-PCCAvcParser::~PCCAvcParser() {
+PccAvcParser::~PccAvcParser() {
   frames_.clear();
   vps_.clear();
   sps_.clear();
   pps_.clear();
 }
 
-const char* PCCAvcParser::getNaluType( int iNaluType ) {
+const char* PccAvcParser::getNaluType( int iNaluType ) {
   switch ( iNaluType ) {
     case NALU_TYPE_SLICE: return "SLICE  "; break;
     case NALU_TYPE_DPA: return "DPA  "; break;
@@ -58,12 +58,12 @@ const char* PCCAvcParser::getNaluType( int iNaluType ) {
   return "ERROR";
 }
 
-void PCCAvcParser::getVideoSize( const std::vector<uint8_t>& buffer, size_t& width, size_t& height, int CodecId ) {
+void PccAvcParser::getVideoSize( const std::vector<uint8_t>& buffer, size_t& width, size_t& height, int CodecId ) {
   //std::cout << "HELLO!!!getVideoSize!!!"<< std::endl;
   setBuffer( buffer, width, height,  CodecId );
   //std::cout << "BYE!!!getVideoSize!!!" << std::endl;
 }
-void PCCAvcParser::display() {
+void PccAvcParser::display() {
   int    poc = 0;
   size_t sum = 0;
   for ( auto& nalu : vps_ ) {
@@ -92,11 +92,11 @@ void PCCAvcParser::display() {
   //printf( " sum = %lu \n", sum );
 }
 
-void PCCAvcParser::createNalu( const size_t                frameIndex,
+void PccAvcParser::createNalu( const size_t                frameIndex,
                                const std::vector<uint8_t>& buffer,
                                const size_t                pos,
                                const size_t                size ) {
-  PCCAvcNalu nalu;
+  PccAvcNalu nalu;
   nalu.add( buffer, pos, size );
   switch ( nalu.getNaluType() ) {
     // case NAL_TYPE_VPS : vps_.push_back( nalu ); break;
@@ -111,7 +111,7 @@ void PCCAvcParser::createNalu( const size_t                frameIndex,
   }
 }
 
-void PCCAvcParser::setBuffer( const std::vector<uint8_t>& buffer, size_t& width, size_t& height, int CodecId ) {
+void PccAvcParser::setBuffer( const std::vector<uint8_t>& buffer, size_t& width, size_t& height, int CodecId ) {
   const int      size                   = (int)buffer.size();
   const uint8_t* data                   = buffer.data();
   TDecCavlc_avc* decCavlc               = new TDecCavlc_avc();
