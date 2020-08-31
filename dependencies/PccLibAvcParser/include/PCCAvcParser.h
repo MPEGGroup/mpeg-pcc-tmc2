@@ -1,9 +1,9 @@
 #ifndef _PCC_AVC_PARSER_H_
 #define _PCC_AVC_PARSER_H_
 
-#include "CommonDef.h"
-#include "TComSlice_avc.h"
-#include "TDecCAVLC_avc.h"
+#include "PccAvcCommonDef.h"
+#include "PccAvcTComSlice_avc.h"
+#include "PccAvcTDecCAVLC_avc.h"
 
 
 class PCCAvcNalu {

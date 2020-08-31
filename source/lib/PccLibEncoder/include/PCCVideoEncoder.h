@@ -122,7 +122,7 @@ class PCCVideoEncoder {
 #ifdef USE_HMAPP_VIDEO_CODEC
       case HMAPP: encoder = std::make_shared<PCCHMAppVideoEncoder<T>>(); break;
 #endif
-#ifdef USE_JMAPP_VIDEO_CODEC;
+#ifdef USE_JMAPP_VIDEO_CODEC
       case JMAPP: encoder = std::make_shared<PCCJMAppVideoEncoder<T>>(); break;
 #endif
       default:

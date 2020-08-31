@@ -9,8 +9,8 @@
 #include <vector>
 using namespace std;
 
-#include "PCCAvcParser.h"
-#include "TDecCAVLC_avc.h"
+#include "PccAvcParser.h"
+#include "PccAvcTDecCAVLC_avc.h"
 
 PCCAvcParser::PCCAvcParser() {
   frames_.clear();

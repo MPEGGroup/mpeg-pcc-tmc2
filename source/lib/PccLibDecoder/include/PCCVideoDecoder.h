@@ -107,7 +107,7 @@ class PCCVideoDecoder {
         }
         break;
 #endif
-#ifdef USE_JMAPP_VIDEO_CODEC;
+#ifdef USE_JMAPP_VIDEO_CODEC
       case JMAPP:
         decoder = std::make_shared<PCCJMAppVideoDecoder<T>>();
         if ( decoderPath.empty() || !exist( decoderPath ) ) {

@@ -35,7 +35,7 @@
 #ifdef USE_HMAPP_VIDEO_CODEC
 
 #include "PCCHMAppVideoDecoder.h"
-#include "PCCHevcParser.h"
+#include "PccHevcParser.h"
 #include "PCCSystem.h"
 
 using namespace pcc;
@@ -55,7 +55,7 @@ void PCCHMAppVideoDecoder<T>::decode( PCCVideoBitstream& bitstream,
                                       const size_t       frameCount,
                                       const size_t       codecId ) {
   size_t        width = 0, height = 0;
-  PCCHevcParser hevcParser;
+  pcc_hevc::PccHevcParser hevcParser;
   hevcParser.getVideoSize( bitstream.vector(), width, height );
   const std::string binFileName = fileName + ".bin";
   const std::string reconFile =

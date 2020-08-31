@@ -1,15 +1,16 @@
 #ifndef _PCC_HEVC_PARSER_H_
 #define _PCC_HEVC_PARSER_H_
 
-#include "CommonDef.h"
-#include "TComSlice.h"
-#include "TDecCAVLC.h"
+#include "PccHevcCommonDef.h"
+#include "PccHevcTComSlice.h"
+#include "PccHevcTDecCAVLC.h"
 
+namespace pcc_hevc { 
 
-class PCCHevcNalu {
+class PccHevcNalu {
  public:
-  PCCHevcNalu(){ data_.clear(); }
-  ~PCCHevcNalu(){ data_.clear(); }
+  PccHevcNalu(){ data_.clear(); }
+  ~PccHevcNalu(){ data_.clear(); }
 
   uint8_t* data() { return data_.data(); }
   size_t   size() const { return data_.size(); }
@@ -29,22 +30,22 @@ class PCCHevcNalu {
   std::vector<uint8_t> data_;
 };
 
-class PCCHevcFrame {
+class PccHevcFrame {
  public:
-  PCCHevcFrame(){  nalu_.clear(); }
-  ~PCCHevcFrame(){ nalu_.clear(); }
-  void add( PCCHevcNalu& nalu ) {  nalu_.push_back( nalu ); }
-  const std::vector<PCCHevcNalu>& getNalu() const { return nalu_; }
-  const PCCHevcNalu&              getNalu( size_t frameIndex ) const { return nalu_[frameIndex]; }
+  PccHevcFrame(){  nalu_.clear(); }
+  ~PccHevcFrame(){ nalu_.clear(); }
+  void add( PccHevcNalu& nalu ) {  nalu_.push_back( nalu ); }
+  const std::vector<PccHevcNalu>& getNalu() const { return nalu_; }
+  const PccHevcNalu&              getNalu( size_t frameIndex ) const { return nalu_[frameIndex]; }
   const size_t                    getFrameCount() { return nalu_.size(); }
 private:
-  std::vector<PCCHevcNalu> nalu_;
+  std::vector<PccHevcNalu> nalu_;
 };
 
-class PCCHevcParser {
+class PccHevcParser {
  public:
-  PCCHevcParser();
-  ~PCCHevcParser();
+  PccHevcParser();
+  ~PccHevcParser();
   void getVideoSize( const std::vector<uint8_t>& buffer, size_t& width, size_t& height );
   void display();
 
@@ -56,13 +57,16 @@ class PCCHevcParser {
                    const size_t pos,
                    const size_t size );
 
-  const std::vector<PCCHevcNalu>& getVps () const { return vps_; }
-  const std::vector<PCCHevcNalu>& getSps () const { return sps_; }
-  const std::vector<PCCHevcNalu>& getPps () const { return pps_; }
-  std::vector<PCCHevcNalu>  vps_;
-  std::vector<PCCHevcNalu>  sps_;
-  std::vector<PCCHevcNalu>  pps_;
-  std::vector<PCCHevcFrame> frames_;
+  const std::vector<PccHevcNalu>& getVps () const { return vps_; }
+  const std::vector<PccHevcNalu>& getSps () const { return sps_; }
+  const std::vector<PccHevcNalu>& getPps () const { return pps_; }
+  std::vector<PccHevcNalu>  vps_;
+  std::vector<PccHevcNalu>  sps_;
+  std::vector<PccHevcNalu>  pps_;
+  std::vector<PccHevcFrame> frames_;
 
 };
+
+ }; // namespace pcc_hevc
+
 #endif //~_PCC_HEVC_PARSER_H_

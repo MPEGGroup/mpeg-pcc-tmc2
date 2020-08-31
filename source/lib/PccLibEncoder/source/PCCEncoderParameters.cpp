@@ -128,9 +128,15 @@ PCCEncoderParameters::PCCEncoderParameters() {
   videoEncoderOccupancyPath_               = {};
   videoEncoderGeometryPath_                = {};
   videoEncoderAttributePath_               = {};
+#ifdef USE_HMLIB_VIDEO_CODEC
   videoEncoderOccupancyCodecId_            = HMLIB;
   videoEncoderGeometryCodecId_             = HMLIB;
   videoEncoderAttributeCodecId_            = HMLIB;
+#else
+  videoEncoderOccupancyCodecId_            = HMAPP;
+  videoEncoderGeometryCodecId_             = HMAPP;
+  videoEncoderAttributeCodecId_            = HMAPP;
+#endif
   geometryQP_                              = 28;
   textureQP_                               = 43;
   geometryConfig_                          = {};

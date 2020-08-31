@@ -7,10 +7,12 @@
 #include <list>
 #include <algorithm>
 #include <vector>
-using namespace std;
 
-#include "PCCHevcParser.h"
-#include "TDecCAVLC.h"
+#include "PccHevcParser.h"
+#include "PccHevcTDecCAVLC.h"
+
+using namespace std;
+using namespace pcc_hevc;
 
 const char* getNaluType( int iNaluType ) {
   switch( iNaluType ) {
@@ -84,24 +86,24 @@ const char* getNaluType( int iNaluType ) {
   return "ERROR";
 }
 
-PCCHevcParser::PCCHevcParser() {
+PccHevcParser::PccHevcParser() {
   frames_.clear();
   vps_.clear();
   sps_.clear();
   pps_.clear();
 }
 
-PCCHevcParser::~PCCHevcParser() {
+PccHevcParser::~PccHevcParser() {
   frames_.clear();
   vps_.clear();
   sps_.clear();
   pps_.clear();
 }
 
-void PCCHevcParser::getVideoSize( const std::vector<uint8_t>& buffer, size_t& width, size_t& height ) {
+void PccHevcParser::getVideoSize( const std::vector<uint8_t>& buffer, size_t& width, size_t& height ) {
   setBuffer( buffer, width, height );
 }
-void PCCHevcParser::display() {
+void PccHevcParser::display() {
   int    poc = 0;
   size_t sum = 0;
   for ( auto& nalu : vps_ ) {
@@ -130,11 +132,11 @@ void PCCHevcParser::display() {
   printf( " sum = %zu \n", sum );
 }
 
-void PCCHevcParser::createNalu( const size_t frameIndex,
+void PccHevcParser::createNalu( const size_t frameIndex,
                                 const std::vector<uint8_t>& buffer,
                                 const size_t pos,
                                 const size_t size ) {
-  PCCHevcNalu nalu;
+  PccHevcNalu nalu;
   nalu.add( buffer, pos, size );
   switch( nalu.getNaluType() ) {
     case NAL_UNIT_VPS : vps_.push_back( nalu ); break;
@@ -149,10 +151,10 @@ void PCCHevcParser::createNalu( const size_t frameIndex,
   }
 }
 
-void PCCHevcParser::setBuffer( const std::vector<uint8_t>& buffer, size_t& width, size_t& height ) {
+void PccHevcParser::setBuffer( const std::vector<uint8_t>& buffer, size_t& width, size_t& height ) {
   const int      size                   = (int)buffer.size();
   const uint8_t* data                   = buffer.data();
-  TDecCavlc*     decCavlc               = new TDecCavlc();
+  TDecCavlc* decCavlc    = new TDecCavlc();
   int            nalNumber              = 0;
   int            index                  = 0;
   int            startCodeSize          = 4;

@@ -33,8 +33,9 @@
 #ifndef PCC_APP_ENCODER_H
 #define PCC_APP_ENCODER_H
 
+#ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
-
+#endif
 #include "PCCCommon.h"
 #include "PCCChrono.h"
 #include "PCCMemory.h"
