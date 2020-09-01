@@ -1847,6 +1847,7 @@ private:
   std::map<Int,MapData<T> > m_paramsetMap;
   Int                       m_maxId;
 
+  // static Void setID(T* parameterSet, const Int psId);
   static Void setID(T* parameterSet, const Int psId);
 };
 

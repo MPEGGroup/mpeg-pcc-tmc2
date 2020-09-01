@@ -4380,7 +4380,7 @@ bool PCCEncoder::resizeGeometryVideo( PCCContext& context, PCCCodecId codecId ) 
   maxWidth  = ( std::max )( maxWidth, params_.minimumImageWidth_ );
   maxHeight = ( std::max )( maxHeight, params_.minimumImageHeight_ );
 
-#ifdef USE_JMAPP_VIDEO_CODEC;
+#ifdef USE_JMAPP_VIDEO_CODEC
   if ( codecId == JMAPP ) {
     int ResMultiPre_occupancyResolution = params_.occupancyResolution_ * params_.occupancyPrecision_;
     if ( maxHeight % ResMultiPre_occupancyResolution != 0 ) {

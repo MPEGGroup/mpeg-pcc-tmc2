@@ -52,7 +52,7 @@ bool checkCodecId( PCCCodecId codecId ) {
 #ifdef USE_HMAPP_VIDEO_CODEC
     case HMAPP: break;
 #endif
-#ifdef USE_JMAPP_VIDEO_CODEC;
+#ifdef USE_JMAPP_VIDEO_CODEC
     case JMAPP: break;
 #endif
     default:

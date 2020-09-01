@@ -2455,6 +2455,8 @@ Bool ParameterSetManager::activatePPS(Int ppsId, Bool isIRAP)
   return false;
 }
 
+namespace pcc_hevc {
+  
 template <>
 Void ParameterSetMap<TComPPS>::setID(TComPPS* parameterSet, const Int psId)
 {
@@ -2466,6 +2468,7 @@ Void ParameterSetMap<TComSPS>::setID(TComSPS* parameterSet, const Int psId)
 {
   parameterSet->setSPSId(psId);
 }
+};
 
 ProfileTierLevel::ProfileTierLevel()
   : m_profileSpace    (0)
