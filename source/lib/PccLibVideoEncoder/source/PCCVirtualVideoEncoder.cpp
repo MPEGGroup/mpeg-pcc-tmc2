@@ -30,34 +30,44 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef PCCVirtualVideoDecoder_h
-#define PCCVirtualVideoDecoder_h
 
-#include "PCCCommon.h"
-#include "PCCVideo.h"
-#include "PCCVideoBitstream.h"
+#include "PCCVirtualVideoEncoder.h"
 
-namespace pcc {
+#include "PCCJMAppVideoEncoder.h"
+#include "PCCHMAppVideoEncoder.h"
+#include "PCCHMLibVideoEncoder.h"
+#include "PCCVTMLibVideoEncoder.h"
+#ifdef USE_FFMPEG_VIDEO_CODEC
+#include "PCCFFMPEGLibVideoEncoder.h"
+#endif
 
-template <class T>
-class PCCVirtualVideoDecoder {
- public:
-  PCCVirtualVideoDecoder() {}
-  ~PCCVirtualVideoDecoder() {}
+using namespace pcc;
 
-  static std::shared_ptr<PCCVirtualVideoDecoder<T>> create( PCCCodecId codecId );
+template <typename T>
+std::shared_ptr<PCCVirtualVideoEncoder<T>> PCCVirtualVideoEncoder<T>::create( PCCCodecId codecId ) {
+    switch ( codecId ) {
+#ifdef USE_JMAPP_VIDEO_CODEC
+    case JMAPP: return std::make_shared<PCCJMAppVideoEncoder<T>>(); break;
+#endif
+#ifdef USE_HMAPP_VIDEO_CODEC
+    case HMAPP: return std::make_shared<PCCHMAppVideoEncoder<T>>(); break;
+#endif
+#ifdef USE_HMLIB_VIDEO_CODEC
+    case HMLIB: return std::make_shared<PCCHMLibVideoEncoder<T>>(); break;
+#endif
+#ifdef USE_VTMLIB_VIDEO_CODEC
+    case VTMLIB: return std::make_shared<PCCVTMLibVideoEncoder<T>>(); break;
+#endif
+#ifdef USE_FFMPEG_VIDEO_CODEC
+    case FFMPEG: return std::make_shared<PCCFFMPEGLibVideoEncoder<T>>(); break;
+#endif
+    default:
+      printf( "Error PCCVirtualVideoEncoder: codec id not supported ( %d ) \n", (int)codecId );
+      exit( -1 );
+      break;
+  }
+  return nullptr;
+}
 
-  virtual void decode( PCCVideoBitstream& bitstream,
-                       size_t             outputBitDepth,
-                       bool               RGB2GBR,
-                       PCCVideo<T, 3>&    video,
-                       const std::string& decoderPath = "",
-                       const std::string& parameters  = "",
-                       const size_t       frameCount  = 0 ) = 0;
-
- private:
-};
-
-};  // namespace pcc
-
-#endif /* PCCVirtualVideoDecoder_h */
+template class pcc::PCCVirtualVideoEncoder<uint8_t>;
+template class pcc::PCCVirtualVideoEncoder<uint16_t>;

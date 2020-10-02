@@ -45,13 +45,12 @@ class PccAvcParser {
  public:
   PccAvcParser();
   ~PccAvcParser();
-  void getVideoSize( const std::vector<uint8_t>& buffer, size_t& width, size_t& height, int CodecId );
+  void getVideoSize( const std::vector<uint8_t>& buffer, size_t& width, size_t& height, int isAnnexB );
   void display();
   const char* getNaluType( int iNaluType );
 
  private:
-  void setBuffer( const std::vector<uint8_t>& buffer, size_t& width, size_t& height, int CodecId );
-  //void createNalu( const std::vector<uint8_t>& buffer, const size_t pos, const size_t size );
+  void setBuffer( const std::vector<uint8_t>& buffer, size_t& width, size_t& height, int isAnnexB );
   void createNalu( const size_t frameIndex,
                    const std::vector<uint8_t>& buffer,
                    const size_t pos,

@@ -115,6 +115,15 @@ class PCCVideo {
     for ( auto& frame : frames_ ) { frame.convertYUV444ToYUV420(); }
   }
 
+  bool allPixelsEqualToZero(){
+    for ( auto& frame : frames_ ) { 
+      if( ! frame.allPixelsEqualToZero() ){
+        return false; 
+      } 
+    }
+    return true;
+  }
+
  private:
   bool write( std::ofstream& outfile, const size_t nbyte ) {
     for ( auto& frame : frames_ ) {

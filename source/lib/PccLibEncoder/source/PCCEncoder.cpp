@@ -6991,7 +6991,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
             patch.getBitangentAxis(), patch.getLodScaleX(), patch.getLodScaleYIdc() );
       } else {
         // INTRA patches
-        uint8_t patchType = static_cast<uint8_t>( ( ath.getType() == I_TILE ) ? I_INTRA : P_INTRA );
+        uint8_t patchType = ( ath.getType() == I_TILE ) ? static_cast<uint8_t>( I_INTRA ) : static_cast<uint8_t>( P_INTRA );
         auto&   pid       = atgdu.addPatchInformationData( patchType );
         TRACE_CODEC( "patch %zu / %zu: Intra \n", patchIndex, totalPatchCount );
         auto& pdu = pid.getPatchDataUnit();
@@ -7060,7 +7060,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
       size_t numberOfPcmPatches = frame.getNumberOfRawPointsPatches();
       for ( size_t mpsPatchIndex = 0; mpsPatchIndex < numberOfPcmPatches; ++mpsPatchIndex ) {
         auto&   rawPointsPatch = pcmPatches[mpsPatchIndex];
-        uint8_t patchType      = static_cast<uint8_t>( ( ath.getType() == I_TILE ) ? I_RAW : P_RAW );
+        uint8_t patchType      = ( ath.getType() == I_TILE ) ? static_cast<uint8_t>( I_RAW ) : static_cast<uint8_t>( P_RAW );
         auto&   pid            = atgdu.addPatchInformationData( patchType );
         auto&   rpdu           = pid.getRawPatchDataUnit();
         TRACE_CODEC( "patch %zu / %zu: raw \n", patches.size() + mpsPatchIndex, totalPatchCount );
@@ -7090,7 +7090,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
       size_t numberOfEomPatches = frame.getEomPatches().size();
       for ( size_t eomPatchIndex = 0; eomPatchIndex < numberOfEomPatches; ++eomPatchIndex ) {
         auto&   eomPatch  = frame.getEomPatches()[eomPatchIndex];
-        uint8_t patchType = static_cast<uint8_t>( ( ath.getType() == I_TILE ) ? I_EOM : P_EOM );
+        uint8_t patchType = ( ath.getType() == I_TILE ) ? static_cast<uint8_t>( I_EOM ) : static_cast<uint8_t>( P_EOM );
         auto&   pid       = atgdu.addPatchInformationData( patchType );
         auto&   epdu      = pid.getEomPatchDataUnit();
         TRACE_CODEC( "patch %zu / %zu: EOM \n", patches.size() + pcmPatches.size() + eomPatchIndex, totalPatchCount );
@@ -7112,7 +7112,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context, PCCFrameCon
       }
     }
     TRACE_CODEC( "patch %zu / %zu: end \n", patches.size(), patches.size() );
-    uint8_t patchType = static_cast<uint8_t>( ( ath.getType() == I_TILE ) ? I_END : P_END );
+    uint8_t patchType = ( ath.getType() == I_TILE ) ? static_cast<uint8_t>( I_END ) : static_cast<uint8_t>( P_END );
     atgdu.addPatchInformationData( patchType );
   }
 }

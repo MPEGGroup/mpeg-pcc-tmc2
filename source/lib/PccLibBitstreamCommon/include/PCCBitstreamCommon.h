@@ -425,10 +425,35 @@ static inline void removeFile( const std::string string ) {
   }
 }
 
+#ifndef _WIN32
+static char getSeparator() { return '/'; }
+#else
+static char getSeparator() { return '\\'; }
+#endif
+
+static char getSeparator( const std::string& eFilename ) {
+  auto pos1 = eFilename.find_last_of( '/' ), pos2 = eFilename.find_last_of( '\\' );
+  auto pos = std::max( pos1 != std::string::npos ? pos1 : 0, pos2 != std::string::npos ? pos2 : 0 );
+  return pos != 0 ? eFilename[pos] : getSeparator();
+}
+
 static inline std::string removeFileExtension( const std::string string ) {
   size_t pos = string.find_last_of( "." );
   return ( pos != std::string::npos && pos + 4 == string.length() ) ? string.substr( 0, pos ) : string;
 }
+
+static std::string getDirectoryName( const std::string& string ) {
+  auto position = string.find_last_of( getSeparator( string ) );
+  if ( position != std::string::npos ) { return string.substr( 0, position ); }
+  return string;
+}
+
+static std::string getBasename( const std::string& string ) {
+  auto position = string.find_last_of( getSeparator() );
+  if ( position != std::string::npos ) { return string.substr( position + 1, string.length() ); }
+  return string;
+}
+
 
 static inline std::string addVideoFormat( const std::string filename,
                                           const size_t      width,

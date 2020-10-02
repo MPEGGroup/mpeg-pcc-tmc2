@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2017, ITU/ISO/IEC
+ * Copyright (c) 2010-2020, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -96,8 +96,22 @@ namespace df
         }
         else
         {
+#if JVET_O0549_ENCODER_ONLY_FILTER_POL
+          if (opt_name.size() > 0 && opt_name.back() == '*')
+          {
+            string prefix_name = opt_name.substr(0, opt_name.size() - 1);
+            names->opt_prefix.push_back(prefix_name);
+            opt_prefix_map[prefix_name].push_back(names);
+          }
+          else
+          {
+            names->opt_long.push_back(opt_name);
+            opt_long_map[opt_name].push_back(names);
+          }
+#else
           names->opt_long.push_back(opt_name);
           opt_long_map[opt_name].push_back(names);
+#endif
         }
         opt_start += opt_end + 1;
       }
@@ -150,6 +164,12 @@ namespace df
       {
         out << "--" << entry.opt_long.front();
       }
+#if JVET_O0549_ENCODER_ONLY_FILTER_POL
+      else if (!entry.opt_prefix.empty())
+      {
+      out << "--" << entry.opt_prefix.front() << "*";
+      }
+#endif
     }
 
     /* format the help text */
@@ -271,6 +291,9 @@ namespace df
     bool OptionWriter::storePair(bool allow_long, bool allow_short, const string& name, const string& value)
     {
       bool found = false;
+#if JVET_O0549_ENCODER_ONLY_FILTER_POL
+      std::string val = value;
+#endif
       Options::NamesMap::iterator opt_it;
       if (allow_long)
       {
@@ -290,15 +313,34 @@ namespace df
           found = true;
         }
       }
-
+#if JVET_O0549_ENCODER_ONLY_FILTER_POL
+      bool allow_prefix = allow_long;
+      if (allow_prefix && !found)
+      {
+        for (opt_it = opts.opt_prefix_map.begin(); opt_it != opts.opt_prefix_map.end(); opt_it++)
+        {
+          std::string name_prefix = name.substr(0, opt_it->first.size());
+          if (name_prefix == opt_it->first)
+          {
+            // prepend value matching *
+            val = name.substr(name_prefix.size()) + std::string(" ") + val;
+            found = true;
+            break;
+          }
+        }
+      }
+#endif
       if (!found)
       {
         error_reporter.error(where())
           << "Unknown option `" << name << "' (value:`" << value << "')\n";
         return false;
       }
-
+#if JVET_O0549_ENCODER_ONLY_FILTER_POL
+      setOptions((*opt_it).second, val, error_reporter);
+#else
       setOptions((*opt_it).second, value, error_reporter);
+#endif
       return true;
     }
 
@@ -333,16 +375,6 @@ namespace df
       {
         /* no argument found => argument in argv[1] (maybe) */
         /* xxx, need to handle case where option isn't required */
-#if 0
-        /* commented out, to return to true GNU style processing
-        * where longopts have to include an =, otherwise they are
-        * booleans */
-        if (argc == 1)
-        {
-          return 0; /* run out of argv for argument */
-        }
-        extra_argc_consumed = 1;
-#endif
         if(!storePair(true, false, option, "1"))
         {
           return 0;

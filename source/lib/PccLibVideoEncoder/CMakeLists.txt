@@ -4,25 +4,26 @@ GET_FILENAME_COMPONENT(MYNAME ${CMAKE_CURRENT_LIST_DIR} NAME)
 STRING(REPLACE " " "_" MYNAME ${MYNAME})
 PROJECT(${MYNAME} C CXX)
 
-FILE(GLOB SRC  include/*.h 
-               source/*.cpp  
-               ${HM_LIB_SOURCE_DIR}/TAppCommon/* )
-
-INCLUDE_DIRECTORIES( include 
-                     ${CMAKE_SOURCE_DIR}/source/lib/PccLibCommon/include/
-                     ${CMAKE_SOURCE_DIR}/source/lib/PccLibBitstreamCommon/include/
-                     ${HM_LIB_SOURCE_DIR}/TAppCommon/
-                     ${HM_LIB_SOURCE_DIR}/ )
+FILE(GLOB SRC include/*.h 
+              source/*.cpp
+              ${HM_LIB_SOURCE_DIR}/TAppCommon/* )
 
 SET( LIBS PccLibCommon )
+INCLUDE_DIRECTORIES( include 
+                     ${CMAKE_SOURCE_DIR}/source/lib/PccLibCommon/include/
+                     ${CMAKE_SOURCE_DIR}/source/lib/PccLibBitstreamCommon/include/ )
+                     
+IF( USE_VTMLIB_VIDEO_CODEC )
+  INCLUDE_DIRECTORIES( ${VTM_LIB_SOURCE_DIR}/ )
+  SET( LIBS ${LIBS} CommonLib EncoderLib DecoderLib )
+ENDIF()
 IF( USE_HMLIB_VIDEO_CODEC )
-    SET( LIBS ${LIBS} TLibCommon TLibVideoIO TLibEncoder )
+  INCLUDE_DIRECTORIES( ${HM_LIB_SOURCE_DIR}/ )
+  SET( LIBS ${LIBS} TLibCommon TLibEncoder )
 ENDIF()
 IF( USE_FFMPEG_VIDEO_CODEC )
-  INCLUDE_DIRECTORIES(${FFMPEG_INCLUDE} )
-  IF( WIN32 OR MSVC OR MSYS OR MINGW )
-    LINK_DIRECTORIES( ${FFMPEG_DEV_DIR}/lib ) 
-  ENDIF()
+  INCLUDE_DIRECTORIES( ${FFMPEG_INCLUDE} )
+  # IF( WIN32 OR MSVC OR MSYS OR MINGW )  LINK_DIRECTORIES( ${FFMPEG_DEV_DIR}/lib ) ENDIF()
   INCLUDE_DIRECTORIES( ${CMAKE_SOURCE_DIR}/source/lib/PccLibVideoDecoder/include/ )
   SET( LIBS ${LIBS} ${AVCODEC_LIBRARY} ${AVUTIL_LIBRARY} ${AVFORMAT_LIBRARY} PccLibVideoDecoder )    
 ENDIF()

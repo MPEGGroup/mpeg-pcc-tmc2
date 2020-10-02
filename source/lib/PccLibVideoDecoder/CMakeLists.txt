@@ -10,19 +10,20 @@ FILE(GLOB SRC  include/*.h
 
 INCLUDE_DIRECTORIES( include 
                      ${CMAKE_SOURCE_DIR}/source/lib/PccLibCommon/include/
-                     ${CMAKE_SOURCE_DIR}/source/lib/PccLibBitstreamCommon/include/
-                     ${HM_LIB_SOURCE_DIR}/TAppCommon/
-                     ${HM_LIB_SOURCE_DIR}/ )
+                     ${CMAKE_SOURCE_DIR}/source/lib/PccLibBitstreamCommon/include/ )
 
 SET( LIBS PccLibCommon )
 IF( USE_HMLIB_VIDEO_CODEC )
-    SET( LIBS ${LIBS} TLibCommon TLibVideoIO TLibDecoder )
+  INCLUDE_DIRECTORIES( ${HM_LIB_SOURCE_DIR}/  )
+  SET( LIBS ${LIBS} TLibCommon TLibDecoder )
+ENDIF()
+IF( USE_VTMLIB_VIDEO_CODEC )
+  INCLUDE_DIRECTORIES( ${VTM_LIB_SOURCE_DIR}/ )
+  SET( LIBS ${LIBS} CommonLib DecoderLib )
 ENDIF()
 IF( USE_FFMPEG_VIDEO_CODEC )  
-  INCLUDE_DIRECTORIES(${FFMPEG_INCLUDE} )
-  IF( WIN32 OR MSVC OR MSYS OR MINGW )
-    LINK_DIRECTORIES( ${FFMPEG_DEV_DIR}/lib ) 
-  ENDIF()  
+  INCLUDE_DIRECTORIES( ${FFMPEG_INCLUDE} )
+  # IF( WIN32 OR MSVC OR MSYS OR MINGW ) LINK_DIRECTORIES( ${FFMPEG_DEV_DIR}/lib ) ENDIF()  
   SET( LIBS ${LIBS} ${AVCODEC_LIBRARY} ${AVUTIL_LIBRARY} ${AVFORMAT_LIBRARY} )
 ENDIF()
 IF( USE_HMAPP_VIDEO_CODEC )

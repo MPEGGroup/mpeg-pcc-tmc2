@@ -62,6 +62,8 @@ class PCCVirtualVideoEncoder {
   PCCVirtualVideoEncoder() {}
   ~PCCVirtualVideoEncoder() {}
 
+  static std::shared_ptr<PCCVirtualVideoEncoder<T>> create( PCCCodecId codecId );
+
   virtual void encode( PCCVideo<T, 3>&            videoSrc,
                        PCCVideoEncoderParameters& params,
                        PCCVideoBitstream&         bitstream,

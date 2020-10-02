@@ -97,13 +97,25 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
   printf( "CodecId occupancyCodecId = %d geometry = %d attribute = %d \n", (int)occupancyCodecId, (int)geometryCodecId,
           (int)attributeCodecId );
 
-  videoDecoder.decompress( context.getVideoOccupancyMap(), path.str(), context.size(), videoBitstreamOM,
-                           params_.videoDecoderOccupancyPath_, occupancyCodecId, context, decodedBitDepthOM,
-                           params_.keepIntermediateFiles_, isOCM444, false, "", "" );
+  printf( " Decode O size = %zu \n", videoBitstreamOM.size() );
+  fflush( stdout );
+  videoDecoder.decompress( context.getVideoOccupancyMap(),      //  video
+                           path.str(),                          // path
+                           context.size(),                      // frameCount
+                           videoBitstreamOM,                    // bitstream
+                           params_.videoDecoderOccupancyPath_,  // decoderPath
+                           occupancyCodecId,                    // codecId
+                           context,                             // contexts
+                           decodedBitDepthOM,                   // bitDepth
+                           params_.keepIntermediateFiles_,      // keepIntermediateFiles
+                           isOCM444,                            // use444CodecIo
+                           false,                               // patchColorSubsampling
+                           "",                                  // inverseColorSpaceConversionConfig
+                           "" );                                // colorSpaceConversionPath
   // converting the decoded bitdepth to the nominal bitdepth
   context.getVideoOccupancyMap().convertBitdepth( decodedBitDepthOM, oi.getOccupancy2DBitdepthMinus1() + 1,
                                                   oi.getOccupancyMSBAlignFlag() );
-
+  
   if ( sps.getMultipleMapStreamsPresentFlag( atlasIndex ) ) {
     context.getVideoGeometryMultiple().resize( sps.getMapCountMinus1( atlasIndex ) + 1 );
     size_t totalGeoSize = 0;
@@ -124,9 +136,19 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
   } else {
     int   decodedBitDepthGeo = gi.getGeometry2dBitdepthMinus1() + 1;
     auto& videoBitstream     = context.getVideoBitstream( VIDEO_GEOMETRY );
-    videoDecoder.decompress( context.getVideoGeometryMultiple()[0], path.str(), context.size() * mapCount,
-                             videoBitstream, params_.videoDecoderGeometryPath_, geometryCodecId, context,
-                             decodedBitDepthGeo, params_.keepIntermediateFiles_, isGeometry444 );
+
+    printf( " Decode G size = %zu \n", videoBitstream.size() );
+    fflush( stdout );
+    videoDecoder.decompress( context.getVideoGeometryMultiple()[0],  //
+                             path.str(),                             //
+                             context.size() * mapCount,              //
+                             videoBitstream,                         //
+                             params_.videoDecoderGeometryPath_,      //
+                             geometryCodecId,                        //
+                             context,                                //
+                             decodedBitDepthGeo,                     //
+                             params_.keepIntermediateFiles_,         //
+                             isGeometry444 );
     context.getVideoGeometryMultiple()[0].convertBitdepth( decodedBitDepthGeo, gi.getGeometry2dBitdepthMinus1() + 1,
                                                            gi.getGeometryMSBAlignFlag() );
     std::cout << "geometry video ->" << videoBitstream.size() << " B" << std::endl;
@@ -142,6 +164,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
                                                          gi.getGeometryMSBAlignFlag() );
     std::cout << " raw points geometry -> " << videoBitstreamMP.size() << " B " << endl;
   }
+
 
   if ( ai.getAttributeCount() > 0 ) {
     for ( int attrIndex = 0; attrIndex < sps.getAttributeInformation( atlasIndex ).getAttributeCount();
@@ -174,18 +197,20 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
           auto  textureIndex   = static_cast<PCCVideoType>( VIDEO_TEXTURE + attrPartitionIndex );
           auto& videoBitstream = context.getVideoBitstream( textureIndex );
           printf( "call videoDecoder.decompress()::context.getVideoTexture() \n" );
-          videoDecoder.decompress( context.getVideoTextureMultiple()[0],  // video,
-                                   path.str(),                            // path,
-                                   context.size() * mapCount,             // frameCount,
-                                   videoBitstream,                        // bitstream,
-                                   params_.videoDecoderAttributePath_,    // decoderPath,
-                                   attributeCodecId,
-                                   context,                         // contexts,
-                                   decodedBitdepthAttribute,        // bitDepth,
-                                   params_.keepIntermediateFiles_,  // keepIntermediateFiles
-                                   isAttributes444,
-                                   params_.patchColorSubsampling_,  // patchColorSubsampling
-                                   params_.inverseColorSpaceConversionConfig_, params_.colorSpaceConversionPath_ );
+          printf(" Decode T size = %zu \n",videoBitstream.size() ); fflush(stdout);
+          videoDecoder.decompress( context.getVideoTextureMultiple()[0],        // video,
+                                   path.str(),                                  // path,
+                                   context.size() * mapCount,                   // frameCount,
+                                   videoBitstream,                              // bitstream,
+                                   params_.videoDecoderAttributePath_,          // decoderPath,
+                                   attributeCodecId,                            // attributeCodecId
+                                   context,                                     // contexts,
+                                   decodedBitdepthAttribute,                    // bitDepth,
+                                   params_.keepIntermediateFiles_,              // keepIntermediateFiles
+                                   isAttributes444,                             // isAttributes444
+                                   params_.patchColorSubsampling_,              // patchColorSubsampling
+                                   params_.inverseColorSpaceConversionConfig_,  // inverseColorSpaceConversionConfig_
+                                   params_.colorSpaceConversionPath_ );
           std::cout << "texture video  ->" << videoBitstream.size() << " B" << std::endl;
         }
         if ( asps.getRawPatchEnabledFlag() && sps.getAuxiliaryVideoPresentFlag( atlasIndex ) ) {

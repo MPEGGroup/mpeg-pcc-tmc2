@@ -58,9 +58,9 @@ const char* PccAvcParser::getNaluType( int iNaluType ) {
   return "ERROR";
 }
 
-void PccAvcParser::getVideoSize( const std::vector<uint8_t>& buffer, size_t& width, size_t& height, int CodecId ) {
+void PccAvcParser::getVideoSize( const std::vector<uint8_t>& buffer, size_t& width, size_t& height, int isAnnexB ) {
   //std::cout << "HELLO!!!getVideoSize!!!"<< std::endl;
-  setBuffer( buffer, width, height,  CodecId );
+  setBuffer( buffer, width, height, isAnnexB );
   //std::cout << "BYE!!!getVideoSize!!!" << std::endl;
 }
 void PccAvcParser::display() {
@@ -111,7 +111,7 @@ void PccAvcParser::createNalu( const size_t                frameIndex,
   }
 }
 
-void PccAvcParser::setBuffer( const std::vector<uint8_t>& buffer, size_t& width, size_t& height, int CodecId ) {
+void PccAvcParser::setBuffer( const std::vector<uint8_t>& buffer, size_t& width, size_t& height, int isAnnexB ) {
   const int      size                   = (int)buffer.size();
   const uint8_t* data                   = buffer.data();
   TDecCavlc_avc* decCavlc               = new TDecCavlc_avc();
@@ -127,7 +127,7 @@ void PccAvcParser::setBuffer( const std::vector<uint8_t>& buffer, size_t& width,
   int             satrtPos = 0;
   //std::cout << "HELLO!!!setBuffer!!!"<< std::endl;
   
-  if ( CodecId == 3 ) {
+  if ( !isAnnexB ) {
     satrtPos = 0;  
   } 
   else 
@@ -136,7 +136,7 @@ void PccAvcParser::setBuffer( const std::vector<uint8_t>& buffer, size_t& width,
   }
 
    for ( Int i = satrtPos; i <= size; i++ ) {
-    if ( CodecId == 3 ) {
+    if ( !isAnnexB ) {
         
        //std::cout <<"i = "<<i<< " nalu header: " << (int)data[i + 0] << " " << (int)data[i + 1] << " " << (int)data[i + 2] << " "
         //        << (int)data[i + 3] << std::endl;

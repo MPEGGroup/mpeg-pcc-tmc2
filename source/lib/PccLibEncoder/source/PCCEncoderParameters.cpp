@@ -41,10 +41,31 @@ const std::vector<PointLocalReconstructionMode> g_pointLocalReconstructionMode =
     {false, false, 1, 1}, {true, false, 1, 1}, {true, true, 1, 1}, {true, false, 1, 2}, {true, true, 1, 2},
 };
 
+PCCCodecId getDefaultCodecId() {
+#ifdef USE_HMLIB_VIDEO_CODEC
+  return HMLIB;
+#endif
+#ifdef USE_FFMPEG_VIDEO_CODEC
+  return FFMPEG;
+#endif
+#ifdef USE_VTMLIB_VIDEO_CODEC
+  return VTMLIB;
+#endif
+#ifdef USE_HMAPP_VIDEO_CODEC
+  return HMAPP;
+#endif
+#ifdef USE_JMAPP_VIDEO_CODEC
+  return JMAPP;
+#endif
+}
+
 bool checkCodecId( PCCCodecId codecId ) {
   switch ( codecId ) {
 #ifdef USE_HMLIB_VIDEO_CODEC
     case HMLIB: break;
+#endif
+#ifdef USE_VTMLIB_VIDEO_CODEC
+    case VTMLIB: break;
 #endif
 #ifdef USE_FFMPEG_VIDEO_CODEC
     case FFMPEG: break;
@@ -128,15 +149,9 @@ PCCEncoderParameters::PCCEncoderParameters() {
   videoEncoderOccupancyPath_               = {};
   videoEncoderGeometryPath_                = {};
   videoEncoderAttributePath_               = {};
-#ifdef USE_HMLIB_VIDEO_CODEC
-  videoEncoderOccupancyCodecId_            = HMLIB;
-  videoEncoderGeometryCodecId_             = HMLIB;
-  videoEncoderAttributeCodecId_            = HMLIB;
-#else
-  videoEncoderOccupancyCodecId_            = HMAPP;
-  videoEncoderGeometryCodecId_             = HMAPP;
-  videoEncoderAttributeCodecId_            = HMAPP;
-#endif
+  videoEncoderOccupancyCodecId_            = getDefaultCodecId();
+  videoEncoderGeometryCodecId_             = getDefaultCodecId();
+  videoEncoderAttributeCodecId_            = getDefaultCodecId();
   geometryQP_                              = 28;
   textureQP_                               = 43;
   geometryConfig_                          = {};

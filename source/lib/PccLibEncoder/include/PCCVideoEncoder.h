@@ -39,18 +39,8 @@
 #include "PCCContext.h"
 #include "PCCFrameContext.h"
 #include "PCCPatch.h"
-#ifdef USE_HMLIB_VIDEO_CODEC
-#include "PCCHMLibVideoEncoder.h"
-#endif
-#ifdef USE_FFMPEG_VIDEO_CODEC
-#include "PCCFFMPEGLibVideoEncoder.h"
-#endif
-#ifdef USE_HMAPP_VIDEO_CODEC
-#include "PCCHMAppVideoEncoder.h"
-#endif
-#ifdef USE_JMAPP_VIDEO_CODEC
-#include "PCCJMAppVideoEncoder.h"
-#endif
+
+#include "PCCVirtualVideoEncoder.h"
 #include "PCCInternalColorConverter.h"
 #ifdef USE_HDRTOOLS
 #include "PCCHDRToolsLibColorConverter.h"
@@ -111,25 +101,6 @@ class PCCVideoEncoder {
     const std::string yuv444RecFileName = addVideoFormat( fileName + "_rec", width, height, true, false, "16" );
     const bool        yuvVideo          = colorSpaceConversionConfig.empty() || use444CodecIo;
 
-    std::shared_ptr<PCCVirtualVideoEncoder<T>> encoder;
-    switch ( codecId ) {
-#ifdef USE_HMLIB_VIDEO_CODEC
-      case HMLIB: encoder = std::make_shared<PCCHMLibVideoEncoder<T>>(); break;
-#endif
-#ifdef USE_FFMPEG_VIDEO_CODEC
-      case FFMPEG: encoder = std::make_shared<PCCFFMPEGLibVideoEncoder<T>>(); break;
-#endif
-#ifdef USE_HMAPP_VIDEO_CODEC
-      case HMAPP: encoder = std::make_shared<PCCHMAppVideoEncoder<T>>(); break;
-#endif
-#ifdef USE_JMAPP_VIDEO_CODEC
-      case JMAPP: encoder = std::make_shared<PCCJMAppVideoEncoder<T>>(); break;
-#endif
-      default:
-        printf( "Error: codec id not supported \n" );
-        exit( -1 );
-        break;
-    }
     std::shared_ptr<PCCVirtualColorConverter<T>> converter;
     std::string                                  configInverseColorSpace, configColorSpace;
     if ( colorSpaceConversionPath.empty() ) {
@@ -400,6 +371,7 @@ class PCCVideoEncoder {
             video.getFrameCount() );
     fflush( stdout );
     PCCVideo<T, 3> videoRec;
+    auto encoder = PCCVirtualVideoEncoder<T>::create( codecId );
     encoder->encode( video, params, bitstream, videoRec );
     if ( keepIntermediateFiles ) {
       bitstream.write( binFileName );

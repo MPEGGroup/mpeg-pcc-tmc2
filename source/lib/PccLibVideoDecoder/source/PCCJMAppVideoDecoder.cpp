@@ -52,11 +52,14 @@ void PCCJMAppVideoDecoder<T>::decode( PCCVideoBitstream& bitstream,
                                       PCCVideo<T, 3>&    video,
                                       const std::string& decoderPath,
                                       const std::string& fileName,
-                                      const size_t       frameCount,
-                                      const size_t       codecId ) {
+                                      const size_t       frameCount ) {                                        
+  if ( decoderPath.empty() || !exist( decoderPath ) ) {
+    std::cerr << "decoderPath not set\n";
+    exit( 1 );
+  }
   size_t       width = 0, height = 0;
   PccAvcParser avcParser;
-  avcParser.getVideoSize( bitstream.vector(), width, height, codecId );
+  avcParser.getVideoSize( bitstream.vector(), width, height, true );
 
   const std::string binFileName = fileName + ".bin";
   const std::string reconFile =

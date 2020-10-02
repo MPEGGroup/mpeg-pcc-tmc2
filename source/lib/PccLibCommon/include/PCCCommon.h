@@ -112,8 +112,11 @@ enum PCCCodecId {
 #ifdef USE_FFMPEG_VIDEO_CODEC
   FFMPEG = 3,
 #endif
-  UNKNOWN_CODEC = 4
-};
+#ifdef USE_VTMLIB_VIDEO_CODEC
+  VTMLIB = 4,
+#endif
+  UNKNOWN_CODEC = 5
+}; 
 
 const int16_t infiniteDepth          = ( std::numeric_limits<int16_t>::max )();
 const int64_t infinitenumber         = ( std::numeric_limits<int64_t>::max )();
