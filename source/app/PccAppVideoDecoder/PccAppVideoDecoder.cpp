@@ -105,6 +105,6 @@ int main( int argc, char* argv[] ) {
   auto decoder = PCCVirtualVideoDecoder<uint16_t>::create( codecId );  
   decoder->decode( bitstream, nbyte == 1 ? 8 : 10, false, video, path, removeFileExtension( binFile ), frame );
   video[0].trace();
-  video.write( removeFileExtension( binFile ) + "_dec" + to_string( i )  + ".yuv", nbyte );  
+  video.write( removeFileExtension( binFile ) + "_dec.yuv", nbyte );  
   return 1;
 }
