@@ -201,8 +201,7 @@ std::istringstream& operator>>( std::istringstream& in,
   return in;
 }
 Bool confirmPara( Bool bflag, const TChar* message );
-}
-
+}  //~namespace pcc_hm
 
 static inline ChromaFormat numberToChromaFormat( const Int val ) {
   switch ( val ) {
@@ -417,9 +416,7 @@ static inline istream& operator>>( istream& in, ScalingListMode& mode ) {
   return readStrToEnum( strToScalingListMode, sizeof( strToScalingListMode ) / sizeof( *strToScalingListMode ), in,
                         mode );
 }
-}
-
-namespace pcc_hm::Level {
+namespace Level {
 static inline istream& operator>>( istream& in, Tier& tier ) {
   return readStrToEnum( strToTier, sizeof( strToTier ) / sizeof( *strToTier ), in, tier );
 }
@@ -427,8 +424,8 @@ static inline istream& operator>>( istream& in, Tier& tier ) {
 static inline istream& operator>>( istream& in, Name& level ) {
   return readStrToEnum( strToLevel, sizeof( strToLevel ) / sizeof( *strToLevel ), in, level );
 }
-}  // namespace Level
-
+}  //~namespace Level
+}  //~namespace pcc_hm
 
 template <class T>
 struct SMultiValueInput {
@@ -483,7 +480,7 @@ template <class T>
 static inline istream& operator>>( std::istream& in, SMultiValueInput<T>& values ) {
   return values.readValues( in );
 }
-}
+}  //~namespace pcc_hm
 
 template <>
 UInt SMultiValueInput<UInt>::readValue( const TChar*& pStr, Bool& bSuccess ) {
@@ -575,7 +572,7 @@ static inline istream& operator>>( std::istream& in, PCCHMLibVideoEncoderCfg::Op
   }
   return in;
 }
-}
+}  //~namespace pcc_hm
 #endif
 
 static Void automaticallySelectRExtProfile( const Bool         bUsingGeneralRExtTools,

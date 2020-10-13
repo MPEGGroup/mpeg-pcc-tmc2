@@ -431,10 +431,10 @@ static char getSeparator() { return '/'; }
 static char getSeparator() { return '\\'; }
 #endif
 
-static char getSeparator( const std::string& eFilename ) {
+static char getSeparator( const std::string& eFilename ) {  
   auto pos1 = eFilename.find_last_of( '/' ), pos2 = eFilename.find_last_of( '\\' );
-  auto pos = std::max( pos1 != std::string::npos ? pos1 : 0, pos2 != std::string::npos ? pos2 : 0 );
-  return pos != 0 ? eFilename[pos] : getSeparator();
+  auto pos = (std::max)( pos1 != std::string::npos ? pos1 : 0, pos2 != std::string::npos ? pos2 : 0 );
+  return ( pos != 0 ? eFilename[pos] : getSeparator() );
 }
 
 static inline std::string removeFileExtension( const std::string string ) {
