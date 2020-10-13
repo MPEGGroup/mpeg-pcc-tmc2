@@ -34,55 +34,13 @@
 #include "PCCEncoderParameters.h"
 #include "PCCContext.h"
 #include "PCCFrameContext.h"
+#include "PCCVirtualVideoEncoder.h"
 using namespace pcc;
 
 const std::vector<PointLocalReconstructionMode> g_pointLocalReconstructionMode = {
     {false, false, 0, 1}, {true, false, 0, 1}, {true, true, 0, 1}, {true, false, 0, 2}, {true, true, 0, 2},
     {false, false, 1, 1}, {true, false, 1, 1}, {true, true, 1, 1}, {true, false, 1, 2}, {true, true, 1, 2},
 };
-
-PCCCodecId getDefaultCodecId() {
-#ifdef USE_HMLIB_VIDEO_CODEC
-  return HMLIB;
-#endif
-#ifdef USE_FFMPEG_VIDEO_CODEC
-  return FFMPEG;
-#endif
-#ifdef USE_VTMLIB_VIDEO_CODEC
-  return VTMLIB;
-#endif
-#ifdef USE_HMAPP_VIDEO_CODEC
-  return HMAPP;
-#endif
-#ifdef USE_JMAPP_VIDEO_CODEC
-  return JMAPP;
-#endif
-}
-
-bool checkCodecId( PCCCodecId codecId ) {
-  switch ( codecId ) {
-#ifdef USE_HMLIB_VIDEO_CODEC
-    case HMLIB: break;
-#endif
-#ifdef USE_VTMLIB_VIDEO_CODEC
-    case VTMLIB: break;
-#endif
-#ifdef USE_FFMPEG_VIDEO_CODEC
-    case FFMPEG: break;
-#endif
-#ifdef USE_HMAPP_VIDEO_CODEC
-    case HMAPP: break;
-#endif
-#ifdef USE_JMAPP_VIDEO_CODEC
-    case JMAPP: break;
-#endif
-    default:
-      printf( "Error: codec id %d not supported \n", (int)codecId );
-      return false;
-      break;
-  }
-  return true;
-}
 
 PCCEncoderParameters::PCCEncoderParameters() {
   uncompressedDataPath_                    = {};
@@ -149,9 +107,9 @@ PCCEncoderParameters::PCCEncoderParameters() {
   videoEncoderOccupancyPath_               = {};
   videoEncoderGeometryPath_                = {};
   videoEncoderAttributePath_               = {};
-  videoEncoderOccupancyCodecId_            = getDefaultCodecId();
-  videoEncoderGeometryCodecId_             = getDefaultCodecId();
-  videoEncoderAttributeCodecId_            = getDefaultCodecId();
+  videoEncoderOccupancyCodecId_            = PCCVirtualVideoEncoder<uint8_t>::getDefaultCodecId();
+  videoEncoderGeometryCodecId_             = PCCVirtualVideoEncoder<uint8_t>::getDefaultCodecId();
+  videoEncoderAttributeCodecId_            = PCCVirtualVideoEncoder<uint8_t>::getDefaultCodecId();
   geometryQP_                              = 28;
   textureQP_                               = 43;
   geometryConfig_                          = {};
@@ -561,8 +519,9 @@ bool PCCEncoderParameters::check() {
     std::cerr << "uncompressedDataPath not set\n";
   }
 
-  if ( !checkCodecId( videoEncoderOccupancyCodecId_ ) || !checkCodecId( videoEncoderGeometryCodecId_ ) ||
-       !checkCodecId( videoEncoderAttributeCodecId_ ) ) {
+  if ( !PCCVirtualVideoEncoder<uint8_t>::checkCodecId( videoEncoderOccupancyCodecId_ ) ||
+       !PCCVirtualVideoEncoder<uint8_t>::checkCodecId( videoEncoderGeometryCodecId_ ) ||
+       !PCCVirtualVideoEncoder<uint8_t>::checkCodecId( videoEncoderAttributeCodecId_ ) ) {
     std::cerr << "ERROR: CodecId is not correct" << std::endl;
     ret = false;
   }

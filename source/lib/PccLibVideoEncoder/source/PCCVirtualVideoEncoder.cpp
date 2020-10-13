@@ -36,12 +36,50 @@
 #include "PCCJMAppVideoEncoder.h"
 #include "PCCHMAppVideoEncoder.h"
 #include "PCCHMLibVideoEncoder.h"
-#include "PCCVTMLibVideoEncoder.h"
 #ifdef USE_FFMPEG_VIDEO_CODEC
 #include "PCCFFMPEGLibVideoEncoder.h"
 #endif
 
 using namespace pcc;
+
+template <typename T>
+PCCCodecId PCCVirtualVideoEncoder<T>::getDefaultCodecId() {
+#ifdef USE_HMLIB_VIDEO_CODEC
+  return HMLIB;
+#endif
+#ifdef USE_FFMPEG_VIDEO_CODEC
+  return FFMPEG;
+#endif
+#ifdef USE_HMAPP_VIDEO_CODEC
+  return HMAPP;
+#endif
+#ifdef USE_JMAPP_VIDEO_CODEC
+  return JMAPP;
+#endif
+}
+
+template <typename T>
+bool PCCVirtualVideoEncoder<T>::checkCodecId( PCCCodecId codecId ) {
+  switch ( codecId ) {
+#ifdef USE_HMLIB_VIDEO_CODEC
+    case HMLIB: break;
+#endif
+#ifdef USE_FFMPEG_VIDEO_CODEC
+    case FFMPEG: break;
+#endif
+#ifdef USE_HMAPP_VIDEO_CODEC
+    case HMAPP: break;
+#endif
+#ifdef USE_JMAPP_VIDEO_CODEC
+    case JMAPP: break;
+#endif
+    default:
+      printf( "Error: codec id %d not supported \n", (int)codecId );
+      return false;
+      break;
+  }
+  return true;
+}
 
 template <typename T>
 std::shared_ptr<PCCVirtualVideoEncoder<T>> PCCVirtualVideoEncoder<T>::create( PCCCodecId codecId ) {
@@ -54,9 +92,6 @@ std::shared_ptr<PCCVirtualVideoEncoder<T>> PCCVirtualVideoEncoder<T>::create( PC
 #endif
 #ifdef USE_HMLIB_VIDEO_CODEC
     case HMLIB: return std::make_shared<PCCHMLibVideoEncoder<T>>(); break;
-#endif
-#ifdef USE_VTMLIB_VIDEO_CODEC
-    case VTMLIB: return std::make_shared<PCCVTMLibVideoEncoder<T>>(); break;
 #endif
 #ifdef USE_FFMPEG_VIDEO_CODEC
     case FFMPEG: return std::make_shared<PCCFFMPEGLibVideoEncoder<T>>(); break;

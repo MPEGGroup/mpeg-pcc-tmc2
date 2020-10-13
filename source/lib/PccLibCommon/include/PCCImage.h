@@ -431,12 +431,10 @@ class PCCImage {
     }
   }
 
-  bool allPixelsEqualToZero(){
-    for( size_t i=0;i<N;i++){
-      for (auto& e : channels_[i] ){
-        if (e != 0 ){
-          return false; 
-        }
+  bool allPixelsEqualToZero() {
+    for ( auto& channel : channels_ ) {
+      for ( auto& e : channel ) {
+        if ( e != 0 ) { return false; }
       }
     }
     return true;

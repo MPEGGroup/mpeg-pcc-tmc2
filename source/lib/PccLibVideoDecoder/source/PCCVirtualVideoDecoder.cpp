@@ -36,7 +36,6 @@
 #include "PCCJMAppVideoDecoder.h"
 #include "PCCHMAppVideoDecoder.h"
 #include "PCCHMLibVideoDecoder.h"
-#include "PCCVTMLibVideoDecoder.h"
 #ifdef USE_FFMPEG_VIDEO_CODEC
 #include "PCCFFMPEGLibVideoDecoder.h"
 #endif
@@ -55,11 +54,6 @@ std::shared_ptr<PCCVirtualVideoDecoder<T>> PCCVirtualVideoDecoder<T>::create( PC
 #endif
 #ifdef USE_HMLIB_VIDEO_CODEC
     case HMLIB: return std::make_shared<PCCHMLibVideoDecoder<T>>(); break;
-#endif
-#ifdef USE_VTMLIB_VIDEO_CODEC
-    case VTMLIB: 
-      printf( "PCCVirtualVideoDecoder: create PCCVTMLibVideoDecoder \n" );  fflush(stdout);    
-      return std::make_shared<PCCVTMLibVideoDecoder<T>>(); break;
 #endif
 #ifdef USE_FFMPEG_VIDEO_CODEC
     case FFMPEG: return std::make_shared<PCCFFMPEGLibVideoDecoder<T>>(); break;

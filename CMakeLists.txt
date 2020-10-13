@@ -8,7 +8,6 @@ SET( TMC2_VERSION_MINOR 0  )
 OPTION( USE_JMAPP_VIDEO_CODEC     "Use JM application to encode and decode video"           TRUE )
 OPTION( USE_HMAPP_VIDEO_CODEC     "Use HM application to encode and decode video"           TRUE )
 OPTION( USE_HMLIB_VIDEO_CODEC     "Clone, build and use HM video encoder and decoder"       TRUE )
-OPTION( USE_VTMLIB_VIDEO_CODEC    "Clone, build and use VTM video encoder and decoder"      FALSE )
 OPTION( USE_FFMPEG_VIDEO_CODEC    "Clone, build and use FFMPEG video encoder and decoder"   FALSE )
 
 # Color conversion library:
@@ -54,9 +53,6 @@ ENDIF()
 # Include external libraries
 IF( USE_HMLIB_VIDEO_CODEC )
   INCLUDE( ${CMAKE_SOURCE_DIR}/dependencies/cmake/hm.cmake )
-ENDIF()
-IF( USE_VTMLIB_VIDEO_CODEC )
-  INCLUDE( ${CMAKE_SOURCE_DIR}/dependencies/cmake/vtm.cmake )
 ENDIF()
 IF( USE_FFMPEG_VIDEO_CODEC )
   INCLUDE( ${CMAKE_SOURCE_DIR}/dependencies/cmake/ffmpeg.cmake )
