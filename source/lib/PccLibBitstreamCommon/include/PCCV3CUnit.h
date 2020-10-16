@@ -38,7 +38,7 @@
 
 namespace pcc {
 
-// 7.3.2.1	General V3C unit syntax
+// 8.3.2.1	General V3C unit syntax
 class V3CUnit {
  public:
   V3CUnit() {}

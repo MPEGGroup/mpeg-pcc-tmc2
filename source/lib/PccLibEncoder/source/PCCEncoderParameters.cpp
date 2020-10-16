@@ -855,8 +855,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   asps.setVuiParametersPresentFlag( false );
   asps.setExtensionFlag( true );
   asps.setVpccExtensionFlag( true );
-  asps.setMivExtensionFlag( false );
-  asps.setExtension6Bits( 0 );
+  asps.setExtension7Bits( 0 );
   asps.setExtendedProjectionEnabledFlag( additionalProjectionPlaneMode_ > 0 );
 
   if ( asps.getVpccExtensionFlag() ) {
@@ -879,9 +878,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   // afps.setEomMaxBitCountMinus1( 0 );
   afps.setRaw3dPosBitCountExplicitModeFlag( false );
   afps.setExtensionFlag( true );
-  afps.setVpccExtensionFlag( true );
-  afps.setMivExtensionFlag( true );
-  afps.setExtension6Bits( 0 );
+  afps.setExtension8Bits( 0 );
 
   // if ( static_cast<int>( afps.getOverrideEomForDepthFlag() ) == 0 ) {
   //   afps.setEomMaxBitCountMinus1( 7 );
@@ -896,8 +893,8 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
       auto& atgl = context.addAtlasTileLayer( frameIdx, tileGroupId );
       auto& ath  = atgl.getHeader();
       ath.setAtlasFrameParameterSetId( 0 );
-      ath.setPosMinZQuantizer( uint8_t( std::log2( minLevel_ ) ) );
-      ath.setPosDeltaMaxZQuantizer( uint8_t( std::log2( minLevel_ ) ) );
+      ath.setPosMinDQuantizer( uint8_t( std::log2( minLevel_ ) ) );
+      ath.setPosDeltaMaxDQuantizer( uint8_t( std::log2( minLevel_ ) ) );
       ath.setPatchSizeXinfoQuantizer( log2QuantizerSizeX_ );
       ath.setPatchSizeYinfoQuantizer( log2QuantizerSizeY_ );
       if ( afps.getRaw3dPosBitCountExplicitModeFlag() ) {

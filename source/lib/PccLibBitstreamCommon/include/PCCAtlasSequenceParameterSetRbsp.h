@@ -41,7 +41,7 @@
 
 namespace pcc {
 
-// 7.3.6.1.1 General Atlas sequence parameter set Rbsp
+// 8.3.6.1.1 General Atlas sequence parameter set Rbsp
 class AtlasSequenceParameterSetRbsp {
  public:
   AtlasSequenceParameterSetRbsp() :
@@ -72,9 +72,8 @@ class AtlasSequenceParameterSetRbsp {
       PLREnabledFlag_( false ),
       vuiParametersPresentFlag_( false ),
       extensionFlag_( false ),
-      vpccExtensionFlag_( false ),
-      mivExtensionFlag_( false ),
-      extension6Bits_( 0 ) {}
+      vpccExtensionFlag_( false ),      
+      extension7Bits_( 0 ) {}
   ~AtlasSequenceParameterSetRbsp() {
     refListStruct_.clear();
     pixeDeinterleavingMapFlag_.clear();
@@ -115,8 +114,7 @@ class AtlasSequenceParameterSetRbsp {
   bool               getVuiParametersPresentFlag() { return vuiParametersPresentFlag_; }
   bool               getExtensionFlag() { return extensionFlag_; }
   bool               getVpccExtensionFlag() { return vpccExtensionFlag_; }
-  bool               getMivExtensionFlag() { return mivExtensionFlag_; }
-  uint8_t            getExtension6Bits() { return extension6Bits_; }
+  uint8_t            getExtension7Bits() { return extension7Bits_; }
   VUIParameters&     getVuiParameters() { return vuiParameters_; }
   AspsVpccExtension& getAspsVpccExtension() { return aspsVpccExtension_; }
   void               setAtlasSequenceParameterSetId( uint8_t value ) { atlasSequenceParameterSetId_ = value; }
@@ -146,9 +144,8 @@ class AtlasSequenceParameterSetRbsp {
   void setPLREnabledFlag( bool value ) { PLREnabledFlag_ = value; }
   void setVuiParametersPresentFlag( bool value ) { vuiParametersPresentFlag_ = value; }
   void setExtensionFlag( bool value ) { extensionFlag_ = value; }
-  void setVpccExtensionFlag( bool value ) { vpccExtensionFlag_ = value; }
-  void setMivExtensionFlag( bool value ) { mivExtensionFlag_ = value; }
-  void setExtension6Bits( uint8_t value ) { extension6Bits_ = value; }
+  void setVpccExtensionFlag( bool value ) { vpccExtensionFlag_ = value; }  
+  void setExtension7Bits( uint8_t value ) { extension7Bits_ = value; }
 
   RefListStruct& getRefListStruct( uint8_t index ) { return refListStruct_[index]; }
   void           addRefListStruct( RefListStruct value ) { refListStruct_.push_back( value ); }
@@ -196,8 +193,7 @@ class AtlasSequenceParameterSetRbsp {
   bool                        vuiParametersPresentFlag_;
   bool                        extensionFlag_;
   bool                        vpccExtensionFlag_;
-  bool                        mivExtensionFlag_;
-  uint8_t                     extension6Bits_;
+  uint8_t                     extension7Bits_;
   VUIParameters               vuiParameters_;
   AspsVpccExtension           aspsVpccExtension_;
 };

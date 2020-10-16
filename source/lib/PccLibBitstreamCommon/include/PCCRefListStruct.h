@@ -37,7 +37,7 @@
 
 namespace pcc {
 
-// 7.3.6.12  Reference list structure syntax
+// 8.3.6.12  Reference list structure syntax
 class RefListStruct {
  public:
   RefListStruct() : numRefEntries_( 0 ) {

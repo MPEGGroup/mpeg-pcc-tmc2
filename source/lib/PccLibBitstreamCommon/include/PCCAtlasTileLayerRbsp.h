@@ -39,7 +39,7 @@
 
 namespace pcc {
 
-// 7.3.6.10  Atlas tile layer RBSP syntax
+// 8.3.6.10  Atlas tile layer RBSP syntax
 class AtlasTileLayerRbsp {
  public:
   AtlasTileLayerRbsp() : frameIndex_( 0 ) {}

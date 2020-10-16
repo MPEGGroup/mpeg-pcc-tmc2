@@ -37,7 +37,7 @@
 
 namespace pcc {
 
-// 7.3.7.4  Skip patch data unit syntax
+// 8.3.7.4  Skip patch data unit syntax
 class SkipPatchDataUnit {
  public:
   SkipPatchDataUnit() : patchIndex_( 0 ), frameIndex_( 0 ){};

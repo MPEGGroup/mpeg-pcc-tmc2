@@ -30,49 +30,23 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef PCC_BITSTREAM_V3CUNITHEADER_H
-#define PCC_BITSTREAM_V3CUNITHEADER_H
+#ifndef PCC_BITSTREAM_ENDOFATLASSUBBITSTREAMRBSP_H
+#define PCC_BITSTREAM_ENDOFATLASSUBBITSTREAMRBSP_H
 
 #include "PCCBitstreamCommon.h"
 
 namespace pcc {
 
-// 8.3.2.2  V3C unit header syntax
-class V3CUnitHeader {
+// 8.3.6.7 End of bitstream RBSP syntax
+class EndOfAtlasSubBitstreamRbsp {
  public:
-  V3CUnitHeader() :
-      // unitType_( 0 ),
-      sequenceParamterSetId_( 0 ),
-      atlasId_( 0 ),
-      attributeIndex_( 0 ),
-      attributeDimensionIndex_( 0 ),
-      mapIndex_( 0 ),
-      auxiliaryVideoFlag_( false ) {}
-
-  ~V3CUnitHeader() {}
-  V3CUnitHeader& operator=( const V3CUnitHeader& ) = default;
-  uint8_t        getV3CParameterSetId() { return sequenceParamterSetId_; }
-  uint8_t        getAtlasId() { return atlasId_; }
-  uint8_t        getAttributeIndex() { return attributeIndex_; }
-  uint8_t        getAttributeDimensionIndex() { return attributeDimensionIndex_; }
-  uint8_t        getMapIndex() { return mapIndex_; }
-  bool           getAuxiliaryVideoFlag() { return auxiliaryVideoFlag_; }
-  void           setV3CParameterSetId( uint8_t value ) { sequenceParamterSetId_ = value; }
-  void           setAtlasId( uint8_t value ) { atlasId_ = value; }
-  void           setAttributeIndex( uint8_t value ) { attributeIndex_ = value; }
-  void           setAttributeDimensionIndex( uint8_t value ) { attributeDimensionIndex_ = value; }
-  void           setMapIndex( uint8_t value ) { mapIndex_ = value; }
-  void           setAuxiliaryVideoFlag( bool value ) { auxiliaryVideoFlag_ = value; }
+  EndOfAtlasSubBitstreamRbsp() {}
+  ~EndOfAtlasSubBitstreamRbsp() {}
+  EndOfAtlasSubBitstreamRbsp& operator=( const EndOfAtlasSubBitstreamRbsp& ) = default;
 
  private:
-  uint8_t sequenceParamterSetId_;
-  uint8_t atlasId_;
-  uint8_t attributeIndex_;
-  uint8_t attributeDimensionIndex_;
-  uint8_t mapIndex_;
-  bool    auxiliaryVideoFlag_;
 };
 
 };  // namespace pcc
 
-#endif  //~PCC_BITSTREAM_V3CUNITHEADER_H
+#endif  //~PCC_BITSTREAM_ENDOFATLASSUBBITSTREAMRBSP_H

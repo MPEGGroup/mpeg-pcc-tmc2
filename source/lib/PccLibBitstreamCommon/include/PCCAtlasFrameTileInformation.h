@@ -37,7 +37,7 @@
 
 namespace pcc {
 
-// 7.3.6.2.2 Atlas frame tile information syntax
+// 8.3.6.2.2 Atlas frame tile information syntax
 class AtlasFrameTileInformation {
  public:
   AtlasFrameTileInformation() :

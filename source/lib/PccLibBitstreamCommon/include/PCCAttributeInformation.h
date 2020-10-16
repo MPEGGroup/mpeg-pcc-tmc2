@@ -37,7 +37,7 @@
 
 namespace pcc {
 
-// 7.3.4.5 Attribute information Syntax
+// 8.3.4.5 Attribute information Syntax
 class AttributeInformation {
  public:
   AttributeInformation() : attributeCount_( 0 ) {}

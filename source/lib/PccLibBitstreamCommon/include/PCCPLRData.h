@@ -37,7 +37,7 @@
 
 namespace pcc {
 
-// 7.3.7.9 Point local reconstruction data syntax
+// 8.3.7.9 Point local reconstruction data syntax
 class PLRData {
  public:
   PLRData() :

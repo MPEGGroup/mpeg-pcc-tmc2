@@ -44,7 +44,7 @@
 
 namespace pcc {
 
-// 7.3.7.2  Patch information data syntax (pid)
+// 8.3.7.2  Patch information data syntax (pid)
 class PatchInformationData {
  public:
   PatchInformationData(){};

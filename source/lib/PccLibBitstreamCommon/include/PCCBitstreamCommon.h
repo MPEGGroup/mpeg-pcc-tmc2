@@ -266,26 +266,25 @@ enum SeiPayloadType {
   USER_DATAREGISTERED_ITUTT35      = 3,   //  3: userDataRegisteredItuTT35
   USER_DATA_UNREGISTERED           = 4,   //  4: userDataUnregistered
   RECOVERY_POINT                   = 5,   //  5: recoveryPoint
-  NO_DISPLAY                       = 6,   //  6: noDisplay
+  NO_RECONSTRUCTION                = 6,   //  6: no reconstruction
   TIME_CODE                        = 7,   //  7: timeCode
-  REGIONAL_NESTING                 = 8,   //  8: regionalNesting
-  SEI_MANIFEST                     = 9,   //  9: seiManifest
-  SEI_PREFIX_INDICATION            = 10,  // 10: seiPrefixIndication
-  ATTRIBUTE_TRANSFORMATION_PARAMS  = 11,  // 11: attributeTransformationParams
-  ACTIVE_SUB_BITSTREAMS            = 12,  // 12: activeSubBitstreams
-  COMPONENT_CODEC_MAPPING          = 13,  // 13: componentCodecMapping
-  SCENE_OBJECT_INFORMATION         = 14,  // 14: scene object information m52705
-  OBJECT_LABEL_INFORMATION         = 15,  // 15: Object label information
-  PATCH_INFORMATION                = 16,  // 16: Patch information SEI message syntax
-  VOLUMETRIC_RECTANGLE_INFORMATION = 17,  // 17: Volumetric rectangle information
-  ATLAS_INFORMATION                = 18,  // 18: atlas_information
-  VIEWPORT_CAMERA_PARAMETERS       = 19,  // 17: viewport camera parameters
-  VIEWPORT_POSITION                = 20,  // 20: viewport position
-  DECODED_ATLAS_INFORMATION_HASH   = 21,  // 21: decoded atlas information hash
-  OCCUPANCY_SYNTHESIS              = 63,  // 63: occupancy synthesis
-  GEOMETRY_SMOOTHING               = 64,  // 64: geometry smoothing
-  ATTRIBUTE_SMOOTHING              = 65,  // 65: attribute smoothing
-  RESERVED_SEI_MESSAGE             = 127  // xx: reservedSeiMessage
+  SEI_MANIFEST                     = 8,   //  8: seiManifest
+  SEI_PREFIX_INDICATION            = 9,   //  9: seiPrefixIndication
+  ACTIVE_SUB_BITSTREAMS            = 10,  // 10: activeSubBitstreams
+  COMPONENT_CODEC_MAPPING          = 11,  // 11: componentCodecMapping
+  SCENE_OBJECT_INFORMATION         = 12,  // 12: scene object information m52705
+  OBJECT_LABEL_INFORMATION         = 13,  // 13: Object label information
+  PATCH_INFORMATION                = 14,  // 14: Patch information SEI message syntax
+  VOLUMETRIC_RECTANGLE_INFORMATION = 15,  // 15: Volumetric rectangle information
+  ATLAS_OBJECT_INFORMATION         = 16,  // 16: atlas_information
+  VIEWPORT_CAMERA_PARAMETERS       = 17,  // 17: viewport camera parameters
+  VIEWPORT_POSITION                = 18,  // 18: viewport position
+  DECODED_ATLAS_INFORMATION_HASH   = 19,  // 19: decoded atlas information hash
+  ATTRIBUTE_TRANSFORMATION_PARAMS  = 64,  // 64: attribute transformation params
+  OCCUPANCY_SYNTHESIS              = 65,  // 65: occupancy synthesis
+  GEOMETRY_SMOOTHING               = 66,  // 66: geometry smoothing
+  ATTRIBUTE_SMOOTHING              = 67,  // 67: attribute smoothing
+  RESERVED_SEI_MESSAGE             = 68,  // 68: reservedSeiMessage
 };
 
 enum NalUnitType {
@@ -337,7 +336,7 @@ enum NalUnitType {
   NAL_PREFIX_ESEI,      // 45 Essential supplemental enhancement information non-ACL
   NAL_SUFFIX_ESEI,      // 46 Essential supplemental enhancement information non-ACL
   NAL_AAPS,             // 47 Atlas adaptation parameter set non-ACL
-  NAL_FOC,              // 48 Frame order count non-ACL
+  NAL_RSV_NACL_48,      // 48  Reserved non-ACL NAL unit types non-ACL
   NAL_RSV_NACL_49,      // 49 Reserved non-ACL NAL unit types non-ACL
   NAL_RSV_NACL_50,      // 50 Reserved non-ACL NAL unit types non-ACL
   NAL_RSV_NACL_51,      // 51 Reserved non-ACL NAL unit types non-ACL
