@@ -526,6 +526,11 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
           } else if ( params_.postprocessSmoothingFilter_ == 3 ) {
             TRACE_CODEC( " transferColorsFilter3 \n" );
             tempFrameBuffer.transferColorsFilter3( reconstruct, int32_t( 0 ), isAttributes444 );
+          } else if ( params_.postprocessSmoothingFilter_ == 7 || params_.postprocessSmoothingFilter_ == 9 ) {
+            TRACE_CODEC( " transferColorsFilter3 \n" );
+            tempFrameBuffer.transferColorsBackward16bitBP( reconstruct, params_.postprocessSmoothingFilter_, int32_t( 0 ),
+                                                          isAttributes444, 8, 1, true, true, true, false, 4, 4, 1000, 1000,
+                                                          1000 * 256, 1000 * 256 );
           }
         }
       }
@@ -4170,6 +4175,17 @@ bool PCCEncoder::generateGeometryVideo( const PCCGroupOfFrames& sources, PCCCont
 
   float           sumDistanceSrcRec = 0;
   tbb::task_arena limited( static_cast<int>( params_.nbThread_ ) );
+#if 1
+  for(size_t i=0; i< frames.size(); i++){
+    size_t preIndex       = i > 0 ? ( i - 1 ) : 0;
+    float  distanceSrcRec = 0;
+    if ( !generateGeometryVideo( sources[i], frames[i], params, videoGeometry, frames[preIndex], i,
+                                 distanceSrcRec ) ) {
+      res = false;
+    }
+    sumDistanceSrcRec += distanceSrcRec;
+  }
+#else
   limited.execute( [&] {
     tbb::parallel_for( size_t( 0 ), frames.size(), [&]( const size_t i ) {
       size_t preIndex       = i > 0 ? ( i - 1 ) : 0;
@@ -4181,6 +4197,7 @@ bool PCCEncoder::generateGeometryVideo( const PCCGroupOfFrames& sources, PCCCont
       sumDistanceSrcRec += distanceSrcRec;
     } );
   } );
+#endif
   if ( params_.pointLocalReconstruction_ || params_.singleMapPixelInterleaving_ ) {
     const float distanceSrcRec = sumDistanceSrcRec / static_cast<float>( frames.size() );
     if ( distanceSrcRec >= 250.F ) {
