@@ -326,6 +326,11 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
         } else if ( params_.postprocessSmoothingFilter_ == 3 ) {
           TRACE_CODEC( " transferColorsFilter3 \n" );
           tempFrameBuffer.transferColorsFilter3( reconstruct, int32_t( 0 ), isAttributes444 );
+        } else if ( params_.postprocessSmoothingFilter_ == 7 || params_.postprocessSmoothingFilter_ == 9 ) {
+          TRACE_CODEC( " transferColorsFilter3 \n" );
+          tempFrameBuffer.transferColorsBackward16bitBP( reconstruct, params_.postprocessSmoothingFilter_, int32_t( 0 ),
+                                                isAttributes444, 8, 1, true, true, true, false, 4, 4, 1000, 1000,
+                                                1000 * 256, 1000 * 256 );
         }
       }
     }
