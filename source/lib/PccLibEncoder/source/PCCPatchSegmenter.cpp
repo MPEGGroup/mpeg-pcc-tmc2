@@ -1470,10 +1470,7 @@ void PCCPatchSegmenter3::refineSegmentationGridBased( const PCCPointSet3&       
     for(auto& pointIndexToScore : pointIndexToScoreMap) {
       pointIndexToScore.second->updateScores(*(pointIndexToScore.first->pointIndices), partition);
     }
-    /*tbb::task_arena limited((int)nbThread_);
-    limited.execute([&] {
-      tbb::parallel_for(size_t(0), gridCenters.getPointCount(), [&](const size_t
-    i) {*/
+
     for ( size_t i = 0; i < gridCenters.getPointCount(); ++i ) {
       std::fill(scoreSmooth.begin(), scoreSmooth.end(), 0);
       
@@ -1494,8 +1491,8 @@ void PCCPatchSegmenter3::refineSegmentationGridBased( const PCCPointSet3&       
         }
         const auto& result = std::max_element(scores.begin(), scores.end());
         tmpPartition[j] = std::distance(scores.begin(), result);
-      } /*);
-    });*/
+      } 
+    }
     swap( tmpPartition, partition );
   }
 }
