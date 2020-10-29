@@ -246,9 +246,9 @@ std::vector<uint8_t> PCCPointSet3::computeMd5() {
 }
 
 void PCCPointSet3::sortColor( std::vector<size_t>& list ) {
-  for ( size_t i = 0; i < list.size(); i++ ) {
+  for ( size_t i = 0; i < list.size(); ++i ) {
     size_t indexMin = i;
-    for ( size_t j = i + 1; j < list.size(); j++ ) {
+    for ( size_t j = i + 1; j < list.size(); ++j ) {
       if ( colors_[list[j]] < colors_[list[indexMin]] ) { indexMin = j; }
     }
     if ( i != indexMin ) {
@@ -811,11 +811,9 @@ bool PCCPointSet3::transferColors( PCCPointSet3& target,
     kdtreeSource.search( target[index], numNeighborsColorTransferFwd, result );
     // keep the points that satisfy geometry dist threshold
     while ( true ) {
-      if ( result.count() == 1 ) { break; }
-      if ( result.dist( int( result.count() ) - 1 ) <= maxGeometryDist2Fwd ) { break; }
-      result.pop_dist();
-      result.pop_indices();
-      result.dec_count();
+      if ( result.size() == 1 ) { break; }
+      if ( result.dist( int( result.size() ) - 1 ) <= maxGeometryDist2Fwd ) { break; }
+      result.popBack();
     }
     bool isDone = false;
     if ( skipAvgIfIdenticalSourcePointPresentFwd ) {
@@ -825,7 +823,7 @@ bool PCCPointSet3::transferColors( PCCPointSet3& target,
       }
     }
     if ( !isDone ) {
-      int nNN = static_cast<int>( result.count() );
+      int nNN = static_cast<int>( result.size() );
       while ( nNN > 0 && !isDone ) {
         if ( nNN == 1 ) {
           refinedColors1[index] = source.getColor( result.indices( 0 ) );
@@ -911,7 +909,7 @@ bool PCCPointSet3::transferColors( PCCPointSet3& target,
     const PCCColor3B color = source.getColor( index );
     kdtreeTarget.search( source[index], numNeighborsColorTransferBwd, result );
     // keep the points that satisfy geometry dist threshold
-    for ( int i = 0; i < result.count(); ++i ) {
+    for ( int i = 0; i < result.size(); ++i ) {
       if ( result.dist( i ) <= maxGeometryDist2Bwd ) {
         refinedColorsDists2[result.indices( i )].push_back( DistColor8Bit{result.dist( i ), color} );
       }
@@ -1137,7 +1135,7 @@ bool PCCPointSet3::transferColors16bitBP( PCCPointSet3& target,
     if ( target.getBoundaryPointType( index ) == 3 ) {
       kdtreeSource.search( target[index], numNeighborsColorTransferFwd, result );
       if ( filterType == 1 ) {
-        for ( size_t rI = 0; rI < result.count(); rI++ ) {
+        for ( size_t rI = 0; rI < result.size(); ++rI ) {
           auto indexInSource = result.indices( rI );
           auto partIndex2    = partSource.addPoint( source[indexInSource] );
           partSource.setColor( partIndex2, source.getColor( indexInSource ) );
@@ -1147,11 +1145,9 @@ bool PCCPointSet3::transferColors16bitBP( PCCPointSet3& target,
       }
       // keep the points that satisfy geometry dist threshold
       while ( true ) {
-        if ( result.count() == 1 ) { break; }
-        if ( result.dist( int( result.count() ) - 1 ) <= maxGeometryDist2Fwd ) { break; }
-        result.pop_dist();
-        result.pop_indices();
-        result.dec_count();
+        if ( result.size() == 1 ) { break; }
+        if ( result.dist( int( result.size() ) - 1 ) <= maxGeometryDist2Fwd ) { break; }
+        result.popBack();
       }
       bool isDone = false;
       if ( skipAvgIfIdenticalSourcePointPresentFwd ) {
@@ -1252,7 +1248,7 @@ bool PCCPointSet3::transferColors16bitBP( PCCPointSet3& target,
       const PCCColor16bit color = partSource.getColor16bit( index );
       kdtreeTarget.search( partSource[index], numNeighborsColorTransferBwd, result );
       // keep the points that satisfy geometry dist threshold
-      for ( int i = 0; i < result.count(); ++i ) {
+      for ( int i = 0; i < result.size(); ++i ) {
         if ( result.dist( i ) <= maxGeometryDist2Bwd ) {
           if ( std::abs( color[0] - target.getColor16bit()[result.indices( i )][0] ) < 40 &&
                std::abs( color[1] - target.getColor16bit()[result.indices( i )][1] ) < 40 &&
@@ -1275,7 +1271,7 @@ bool PCCPointSet3::transferColors16bitBP( PCCPointSet3& target,
       const PCCColor16bit color = source.getColor16bit( index );
       kdtreeTarget.search( source[index], numNeighborsColorTransferBwd, result );
       // keep the points that satisfy geometry dist threshold
-      for ( int i = 0; i < result.count(); ++i ) {
+      for ( int i = 0; i < result.size(); ++i ) {
         if ( result.dist( i ) <= maxGeometryDist2Bwd ) {
           refinedColorsDists2[result.indices( i )].push_back( DistColor{result.dist( i ), color} );
         }
@@ -1662,10 +1658,8 @@ bool PCCPointSet3::transferColorsBackward16bitBP( PCCPointSet3& target,
       // keep the points that satisfy geometry dist threshold
       while ( true ) {
         if ( result.count() == 1 ) { break; }
-        if ( result.dist( int( result.count() ) - 1 ) <= maxGeometryDist2Fwd ) { break; }
-        result.pop_dist();
-        result.pop_indices();
-        result.dec_count();
+        if ( result.dist( int( result.size() ) - 1 ) <= maxGeometryDist2Fwd ) { break; }
+        result.popBack();
       }
       bool isDone = false;
       if ( skipAvgIfIdenticalSourcePointPresentFwd ) {
@@ -1796,11 +1790,9 @@ bool PCCPointSet3::transferColors16bit( PCCPointSet3& target,
     kdtreeSource.search( target[index], numNeighborsColorTransferFwd, result );
     // keep the points that satisfy geometry dist threshold
     while ( true ) {
-      if ( result.count() == 1 ) { break; }
-      if ( result.dist( int( result.count() ) - 1 ) <= maxGeometryDist2Fwd ) { break; }
-      result.pop_dist();
-      result.pop_indices();
-      result.dec_count();
+      if ( result.size() == 1 ) { break; }
+      if ( result.dist( int( result.size() ) - 1 ) <= maxGeometryDist2Fwd ) { break; }
+      result.popBack();
     }
     bool isDone = false;
     if ( skipAvgIfIdenticalSourcePointPresentFwd ) {
@@ -1810,7 +1802,7 @@ bool PCCPointSet3::transferColors16bit( PCCPointSet3& target,
       }
     }
     if ( !isDone ) {
-      int nNN = static_cast<int>( result.count() );
+      int nNN = static_cast<int>( result.size() );
       while ( nNN > 0 && !isDone ) {
         if ( nNN == 1 ) {
           refinedColors1[index] = source.getColor16bit( result.indices( 0 ) );
@@ -1898,7 +1890,7 @@ bool PCCPointSet3::transferColors16bit( PCCPointSet3& target,
     const PCCColor16bit color = source.getColor16bit( index );
     kdtreeTarget.search( source[index], numNeighborsColorTransferBwd, result );
     // keep the points that satisfy geometry dist threshold
-    for ( int i = 0; i < result.count(); ++i ) {
+    for ( int i = 0; i < result.size(); ++i ) {
       if ( result.dist( i ) <= maxGeometryDist2Bwd ) {
         refinedColorsDists2[result.indices( i )].push_back( DistColor{result.dist( i ), color} );
       }
@@ -2243,8 +2235,8 @@ bool PCCPointSet3::transferColorWeight( PCCPointSet3& target, const double bestC
     kdtreeSource.search( target[index], num_results, result );
     double color16bit[3] = {0., 0., 0.};
     double sum           = 0;
-    if ( result.count() > 1 && result.dist( 0 ) > 0.0001 ) {
-      for ( size_t i = 0; i < result.count(); i++ ) {
+    if ( result.size() > 1 && result.dist( 0 ) > 0.0001 ) {
+      for ( size_t i = 0; i < result.size(); ++i ) {
         const auto&  found = source.getColor16bit( result.indices( i ) );
         const double w     = 1.0 / pow( result.dist( i ), 2.0 );
 
@@ -2322,14 +2314,14 @@ void PCCPointSet3::scaleNormals( const PCCPointSet3& sourceWithNormal ) {
   PCCKdTree    kdtreeSrc( sourceWithNormal );
   PCCKdTree    kdtreeDst( *this );
   PCCNNResult  result;
-  for ( size_t i = 0; i < sourceWithNormal.getPointCount(); i++ ) {
+  for ( size_t i = 0; i < sourceWithNormal.getPointCount(); ++i ) {
     // For point 'i' in A, find its nearest neighbor in B. store it in 'j'
     size_t num_results = 0;
     do {
       num_results += num_results_incr;
       kdtreeDst.search( sourceWithNormal.positions_[i], num_results, result );
     } while ( result.dist( 0 ) == result.dist( num_results - 1 ) && num_results + num_results_incr <= num_results_max );
-    for ( size_t j = 0; j < result.count(); j++ ) {
+    for ( size_t j = 0; j < result.size(); ++j ) {
       if ( result.dist( 0 ) == result.dist( j ) ) {
         size_t index = result.indices( j );
         normals_[index][0] += sourceWithNormal.normals_[i][0];
@@ -2340,7 +2332,7 @@ void PCCPointSet3::scaleNormals( const PCCPointSet3& sourceWithNormal ) {
     }
   }
 
-  for ( long i = 0; i < getPointCount(); i++ ) {
+  for ( long i = 0; i < getPointCount(); ++i ) {
     if ( count[i] > 0 ) {
       normals_[i][0] /= count[i];
       normals_[i][1] /= count[i];
@@ -2353,7 +2345,7 @@ void PCCPointSet3::scaleNormals( const PCCPointSet3& sourceWithNormal ) {
       } while ( result.dist( 0 ) == result.dist( num_results - 1 ) &&
                 num_results + num_results_incr <= num_results_max );
       size_t num = 0;
-      for ( size_t j = 0; j < num_results; j++ ) {
+      for ( size_t j = 0; j < num_results; ++j ) {
         if ( result.dist( 0 ) == result.dist( j ) ) {
           size_t index = result.indices( j );
           normals_[i][0] += sourceWithNormal.normals_[index][0];
