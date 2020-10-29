@@ -381,10 +381,10 @@ void PCCEncoderParameters::print() {
   std::cout << "\t Color smoothing" << std::endl;
   std::cout << "\t   flagColorSmoothing                     " << flagColorSmoothing_ << std::endl;
   if ( flagColorSmoothing_ ) {
-    std::cout << "\t   thresholdColorSmoothing            " << thresholdColorSmoothing_ << std::endl;
-    std::cout << "\t   thresholdColorDifference           " << thresholdColorDifference_ << std::endl;
-    std::cout << "\t   thresholdColorVariation            " << thresholdColorVariation_ << std::endl;
-    std::cout << "\t   cgridSize                          " << cgridSize_ << std::endl;
+    std::cout << "\t   thresholdColorSmoothing                " << thresholdColorSmoothing_ << std::endl;
+    std::cout << "\t   thresholdColorDifference               " << thresholdColorDifference_ << std::endl;
+    std::cout << "\t   thresholdColorVariation                " << thresholdColorVariation_ << std::endl;
+    std::cout << "\t   cgridSize                              " << cgridSize_ << std::endl;
   }
   std::cout << "\t Color pre-smoothing                      " << std::endl;
   std::cout << "\t   thresholdColorPreSmoothing             " << thresholdColorSmoothing_ << std::endl;
@@ -797,8 +797,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   for ( size_t list = 0; list < maxNumRefAtlasList_; list++ ) {
     context.setSizeOfRefAtlasFrameList( list, maxNumRefAtlasFrame_ );
     for ( size_t i = 0; i < maxNumRefAtlasFrame_; i++ ) {
-      context.setRefAtlasFrame( list, i,
-                                static_cast<int32_t>( i + 1 ) );  // 1, 2, 3, 4
+      context.setRefAtlasFrame( list, i, static_cast<int32_t>( i + 1 ) );  // 1, 2, 3, 4
     }
   }
 
@@ -826,11 +825,11 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     ai.setAttribute2dBitdepthMinus1( 0, 7 );
   }
   for ( size_t i = 0; i < ai.getAttributeCount(); i++ ) {
-    if ( absoluteT1_ == absoluteD1_ )
+    if ( absoluteT1_ == absoluteD1_ ) {
       ai.setAttributeMapAbsoluteCodingPersistenceFlag( i, false );
-    else if ( absoluteT1_ && !absoluteD1_ )
+    } else if ( absoluteT1_ && !absoluteD1_ ) {
       ai.setAttributeMapAbsoluteCodingPersistenceFlag( i, true );
-    else {
+    } else {
       std::cerr << "absoluteT1_ should be true when absoluteD1_ is true\n";
       exit( 0 );
     }
