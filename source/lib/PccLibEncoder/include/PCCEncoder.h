@@ -122,6 +122,15 @@ class PCCEncoder : public PCCCodec {
   void createPatchFrameDataStructure( PCCContext& context );
   void createPatchFrameDataStructure( PCCContext& context, PCCFrameContext& frame, size_t frameIndex );
 
+  protected:
+
+  void atlasPatchCommonByteString( std::vector<uint8_t>& stringByte, size_t patchIdx );
+  void atlasPatchApplicationByteString( std::vector<uint8_t>& stringByte, size_t patchIdx );
+  void tilePatchCommonByteString( std::vector<uint8_t>& stringByte, size_t tileID, size_t patchIdx );
+  void tilePatchApplicationByteString( std::vector<uint8_t>& stringByte, size_t tileID, size_t patchIdx );
+  void atlasblockToPatchByteString( std::vector<uint8_t>& stringByte );
+  void tileblockToPatchByteString( std::vector<uint8_t>& stringByte, size_t tileID );
+  
  private:
   template <typename T>
   T limit( T x, T minVal, T maxVal );

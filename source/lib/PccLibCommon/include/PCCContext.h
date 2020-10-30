@@ -180,6 +180,10 @@ class PCCContext : public PCCHighLevelSyntax {
   float              getModelScale() { return modelScale_; }
   void               setModelScale( float value ) { modelScale_ = value; }
 
+  std::vector<uint8_t> computeMD5( uint8_t* byteString, size_t size );
+  uint16_t             computeCRC( uint8_t* byteString, size_t size );
+  uint32_t             computeCheckSum( uint8_t* byteString, size_t size );
+
  private:
   PCCVector3<float>            modelOrigin_;
   float                        modelScale_;

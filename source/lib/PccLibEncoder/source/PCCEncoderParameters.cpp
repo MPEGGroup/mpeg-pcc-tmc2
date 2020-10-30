@@ -80,6 +80,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   occupancyMapVideoEncoderConfig_          = {};
   occupancyMapQP_                          = 8;
   occupancyMapRefinement_                  = false;
+  flagDecodedAtlasInformationHash_         = true;
   postprocessSmoothingFilter_              = 1;
   flagGeometrySmoothing_                   = true;
   patchExpansion_                          = false;
@@ -363,6 +364,8 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   Lossy occupancy map threshold          " << thresholdLossyOM_ << std::endl;
   std::cout << "\t   Lossy occupancy map prefilter          " << prefilterLossyOM_ << std::endl;
   std::cout << "\t   postprocessSmoothingFilter             " << postprocessSmoothingFilter_ << std::endl;
+  std::cout << "\t Decoded Atlas Information Hash           " << std::endl;
+  std::cout << "\t   flagDecodedAtlasInformationHash        " << flagDecodedAtlasInformationHash_ << std::endl;
   std::cout << "\t Geometry smoothing                       " << std::endl;
   std::cout << "\t   flagGeometrySmoothing                  " << flagGeometrySmoothing_ << std::endl;
   if ( flagGeometrySmoothing_ ) {

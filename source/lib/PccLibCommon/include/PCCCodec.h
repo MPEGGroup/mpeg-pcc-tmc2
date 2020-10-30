@@ -75,6 +75,7 @@ struct GeneratePointCloudParameters {
   bool        multipleStreams_;
   bool        absoluteD1_;
   size_t      surfaceThickness_;
+  bool        flagDecodedAtlasInformationHash_;
   double      thresholdColorSmoothing_;
   size_t      cgridSize_;
   double      thresholdColorDifference_;

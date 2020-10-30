@@ -230,6 +230,12 @@ enum PCCPatchType {
   ERROR_PATCH
 };
 
+enum PCCHashPatchType {  // Note JR: must be check with Ali
+  PROJECTED = 0,
+  RAW,
+  EOM
+};
+
 static PCCPatchType getPatchType( PCCTileType tileType, uint8_t patchMode ) {
   if ( tileType == SKIP_TILE ) {
     return SKIP_PATCH;

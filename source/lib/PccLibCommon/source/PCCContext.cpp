@@ -34,6 +34,7 @@
 #include "PCCFrameContext.h"
 #include "PCCVideo.h"
 #include "PCCContext.h"
+#include "MD5.h"
 
 using namespace pcc;
 
@@ -183,4 +184,38 @@ void PCCAtlasContext::clearVideoFrames() {
     attrAuxFrame.clear();
   }
   attrAuxFrames_.clear();
+}
+
+std::vector<uint8_t> PCCContext::computeMD5( uint8_t* byteString, size_t len) {
+  MD5                  md5Hash;
+  std::vector<uint8_t> tmp_digest;
+  tmp_digest.resize( 16 );
+  md5Hash.update( byteString, len );
+  md5Hash.finalize( tmp_digest.data() );
+  return tmp_digest;
+}
+
+uint16_t PCCContext::computeCRC( uint8_t* byteString, size_t len) {
+  uint8_t      crcMsb, bitVal, dataByte;
+  unsigned int crc    = 0xFFFF;
+  byteString[len]     = 0;
+  byteString[len + 1] = 0;
+
+  for ( unsigned int bitIdx = 0; bitIdx < ( len + 2 ) * 8; bitIdx++ ) {
+    dataByte = byteString[bitIdx >> 3];
+    crcMsb   = ( crc >> 15 ) & 1;
+    bitVal   = ( dataByte >> ( 7 - bitIdx ) ) & 1;
+    crc      = ( ( ( crc << 1 ) + bitVal ) & 0xFFFF ) ^ ( crcMsb * 0x1021 );
+  }
+  return crc;
+};
+
+uint32_t PCCContext::computeCheckSum( uint8_t* byteString, size_t len) {
+  uint32_t checkSum = 0;
+  uint8_t  xor_mask;
+  for ( uint32_t i = 0; i < len; i++ ) {
+    xor_mask = ( i & 0xFF ) ^ ( i >> 8 );
+    checkSum = ( checkSum + ( ( byteString[i] & 0xFF ) ^ xor_mask ) ) & 0xFFFFFFFF;
+  }
+  return checkSum;
 }

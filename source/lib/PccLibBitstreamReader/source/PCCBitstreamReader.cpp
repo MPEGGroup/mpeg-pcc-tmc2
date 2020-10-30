@@ -1938,40 +1938,29 @@ void PCCBitstreamReader::viewportPosition( PCCBitstream& bitstream, SEI& seiAbst
   // JR TODO: fl(32) must be check
 }
 
-// F.2.16 Decoded Atlas Information Hash SEI message syntax ( JR NOTE: will update by Ali  )
+
+// F.2.16 Decoded Atlas Information Hash SEI message syntax
 void PCCBitstreamReader::decodedAtlasInformationHash( PCCBitstream& bitstream, SEI& seiAbstract ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   auto& sei = static_cast<SEIDecodedAtlasInformationHash&>( seiAbstract );
   sei.setCancelFlag( bitstream.read( 1 ) );  // u(1)
   if ( !sei.getCancelFlag() ) {
     sei.setPersistenceFlag( bitstream.read( 1 ) );                      // u(1)
-    sei.setHashType( bitstream.read( 1 ) );                             // u(8)
+    sei.setHashType( bitstream.read( 8 ) );                             // u(8)
+    sei.setDecodedHighLevelHashPresentFlag( bitstream.read( 1 ) );      // u(1)
     sei.setDecodedAtlasHashPresentFlag( bitstream.read( 1 ) );          // u(1)
     sei.setDecodedAtlasB2pHashPresentFlag( bitstream.read( 1 ) );       // u(1)
     sei.setDecodedAtlasTilesHashPresentFlag( bitstream.read( 1 ) );     // u(1)
     sei.setDecodedAtlasTilesB2pHashPresentFlag( bitstream.read( 1 ) );  // u(1)
-    bitstream.read( 2 );                                                // u(2)
-    if ( sei.getDecodedAtlasHashPresentFlag() ) {
-      if ( sei.getHashType() == 0 ) {
-        for ( size_t i = 0; i < 16; i++ ) {
-          sei.setAtlasMd5( i, bitstream.read( 8 ) );  // b(8)
-        }
-      } else if ( sei.getHashType() == 1 ) {
-        sei.setAtlasCrc( bitstream.read( 16 ) );  // u(16)
-      } else if ( sei.getHashType() == 2 ) {
-        sei.setAtlasChecksum( bitstream.read( 32 ) );  // u(32)
-      }
+    bitstream.read( 1 );                                                // u(1)
+    if ( sei.getDecodedHighLevelHashPresentFlag() ) { 
+        decodedHighLevelHash( bitstream, sei); 
     }
-    if ( sei.getDecodedAtlasB2pHashPresentFlag() ) {
-      if ( sei.getHashType() == 0 ) {
-        for ( size_t i = 0; i < 16; i++ ) {
-          sei.setAtlasB2pMd5( i, bitstream.read( 8 ) );  // b(8)
-        }
-      } else if ( sei.getHashType() == 1 ) {
-        sei.setAtlasB2pCrc( bitstream.read( 16 ) );  // u(16)
-      } else if ( sei.getHashType() == 2 ) {
-        sei.setAtlasB2pChecksum( bitstream.read( 32 ) );  // u(32)
-      }
+    if ( sei.getDecodedAtlasHashPresentFlag() ) { 
+        decodedAtlasHash( bitstream, sei); 
+    }
+    if ( sei.getDecodedAtlasB2pHashPresentFlag() ) { 
+        decodedAtlasB2pHash( bitstream, sei); 
     }
     if ( sei.getDecodedAtlasTilesHashPresentFlag() || sei.getDecodedAtlasTilesB2pHashPresentFlag() ) {
       sei.setNumTilesMinus1( bitstream.readUvlc() );   // ue(v)
@@ -1985,32 +1974,91 @@ void PCCBitstreamReader::decodedAtlasInformationHash( PCCBitstream& bitstream, S
       }
       for ( size_t t = 0; t <= sei.getNumTilesMinus1(); t++ ) {
         size_t j = sei.getTileId( t );
-        if ( sei.getDecodedAtlasTilesHashPresentFlag() ) {
-          if ( sei.getHashType() == 0 ) {
-            for ( size_t i = 0; i < 16; i++ ) {
-              sei.setAtlasTilesMd5( j, i, bitstream.read( 8 ) );  // b(8)
-            }
-          } else if ( sei.getHashType() == 1 ) {
-            sei.setAtlasTilesCrc( j, bitstream.read( 16 ) );  // u(16)
-          } else if ( sei.getHashType() == 2 ) {
-            sei.setAtlasTilesChecksum( j, bitstream.read( 32 ) );  // u(32)
-          }
+        if ( sei.getDecodedAtlasTilesHashPresentFlag() ) { 
+            decodedAtlasTilesHash( bitstream, sei, j ); 
         }
         if ( sei.getDecodedAtlasTilesB2pHashPresentFlag() ) {
-          if ( sei.getHashType() == 0 ) {
-            for ( size_t i = 0; i < 16; i++ ) {
-              sei.setAtlasTilesB2pMd5( j, i, bitstream.read( 8 ) );  // b(8)
-            }
-          } else if ( sei.getHashType() == 1 ) {
-            sei.setAtlasTilesB2pCrc( j, bitstream.read( 16 ) );  // u(16)
-          } else if ( sei.getHashType() == 2 ) {
-            sei.setAtlasTilesB2pChecksum( j, bitstream.read( 32 ) );  // u(32)
-          }
+          decodedAtlasTilesB2pHash( bitstream, sei, j );
         }
       }
     }
   }
 }
+
+void PCCBitstreamReader::decodedHighLevelHash( PCCBitstream& bitstream, SEI& seiAbs ) {
+  auto&   sei   = static_cast<SEIDecodedAtlasInformationHash&>( seiAbs );
+  uint8_t hType = sei.getHashType();
+  if ( hType == 0 ) {
+    for ( size_t i = 0; i < 16; i++ ) {
+      sei.setHighLevelMd5( i, bitstream.read( 8 ) );  // b(8)
+    }
+  } else if ( hType == 1 ) {
+    std::cerr << " Decoder CRC Value: High Level " << std::endl;
+    sei.setHighLevelCrc( bitstream.read( 16 ) );  // u(16)
+    std::cerr << " " << sei.getHighLevelCrc()  << std::endl; 
+  } else if ( hType == 2 ) {
+    std::cerr << " Decoder CheckSum Value: High Level " << std::endl;
+    sei.setHighLevelCheckSum(bitstream.read( 32 ));  // u(32)
+    std::cerr << " " << sei.getHighLevelCheckSum() << std::endl; 
+  }
+}
+
+void PCCBitstreamReader::decodedAtlasHash( PCCBitstream& bitstream, SEI& seiAbs ) {
+  auto&   sei   = static_cast<SEIDecodedAtlasInformationHash&>( seiAbs );
+  uint8_t hType = sei.getHashType();
+  if ( hType == 0 ) {
+    for ( size_t i = 0; i < 16; i++ ) {
+        sei.setAtlasMd5( i, bitstream.read( 8 ) );  // b(8)
+    }
+  } else if ( hType == 1 ) {
+    sei.setAtlasCrc( bitstream.read( 16 ) );  // u(16)
+  } else if ( hType == 2 ) {
+    sei.setAtlasCheckSum( bitstream.read( 32 ) );  // u(32)
+  }
+}
+
+void PCCBitstreamReader::decodedAtlasB2pHash( PCCBitstream& bitstream, SEI& seiAbs ) {
+  auto&   sei   = static_cast<SEIDecodedAtlasInformationHash&>( seiAbs );
+  uint8_t hType = sei.getHashType();
+  if ( hType == 0 ) {
+    for ( size_t i = 0; i < 16; i++ ) {
+      sei.setAtlasB2pMd5( i, bitstream.read( 8 ) );  // b(8)
+    }
+  } else if ( hType == 1 ) {
+    sei.setAtlasB2pCrc( bitstream.read( 16 ) );  // u(16)
+  } else if ( hType == 2 ) {
+    sei.setAtlasCheckSum( bitstream.read( 32 ) );  // u(32)
+  }
+}
+
+void PCCBitstreamReader::decodedAtlasTilesHash( PCCBitstream& bitstream, SEI& seiAbs, size_t id ) {
+  auto&   sei   = static_cast<SEIDecodedAtlasInformationHash&>( seiAbs );
+  uint8_t hType = sei.getHashType();
+  if ( hType == 0 ) {
+    for ( size_t i = 0; i < 16; i++ ) {
+      sei.setAtlasTilesMd5( id, i, bitstream.read( 8 ) );  // b(8)
+    }
+  } else if ( hType == 1 ) {
+    sei.setAtlasTilesCrc( id, bitstream.read( 16 ) );  // u(16)
+  } else if ( hType == 2 ) {
+    sei.setAtlasTilesCheckSum( id, bitstream.read( 32 ) );  // u(32)
+  }
+}
+
+void PCCBitstreamReader::decodedAtlasTilesB2pHash( PCCBitstream& bitstream, SEI& seiAbs, size_t id ) {
+  auto&   sei   = static_cast<SEIDecodedAtlasInformationHash&>( seiAbs );
+  uint8_t hType = sei.getHashType();
+  if ( hType == 0 ) {
+    for ( size_t i = 0; i < 16; i++ ) {
+      sei.setAtlasTilesB2pMd5( id, i, bitstream.read( 8 ) );  // b(8)
+    }
+  } else if ( hType == 1 ) {
+    sei.setAtlasTilesB2pCrc( id, bitstream.read( 16 ) );  // u(16)
+  } else if ( hType == 2 ) {
+    sei.setAtlasTilesCheckSum( id, bitstream.read( 32 ) );  // u(32)
+  }
+}
+
 
 // F.2.17 Time code SEI message syntax
 void PCCBitstreamReader::timeCode( PCCBitstream& bitstream, SEI& seiAbstract ) {
