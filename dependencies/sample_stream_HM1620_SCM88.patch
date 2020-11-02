@@ -1,0 +1,302 @@
+diff --git a/HM.xcodeproj/project.pbxproj b/HM.xcodeproj/project.pbxproj
+index 39c09af2..61868284 100644
+--- a/HM.xcodeproj/project.pbxproj
++++ b/HM.xcodeproj/project.pbxproj
+@@ -940,7 +940,6 @@
+ 		08FB7793FE84155DC02AAC07 /* Project object */ = {
+ 			isa = PBXProject;
+ 			attributes = {
+-				BuildIndependentTargetsInParallel = YES;
+ 				LastUpgradeCheck = 0510;
+ 			};
+ 			buildConfigurationList = 1DEB923508733DC60010E9CD /* Build configuration list for PBXProject "HM" */;
+@@ -1281,6 +1280,7 @@
+ 			isa = XCBuildConfiguration;
+ 			buildSettings = {
+ 				ALWAYS_SEARCH_USER_PATHS = NO;
++				ARCHS = "$(ARCHS_STANDARD)";
+ 				COPY_PHASE_STRIP = NO;
+ 				GCC_DYNAMIC_NO_PIC = NO;
+ 				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+@@ -1300,6 +1300,7 @@
+ 			isa = XCBuildConfiguration;
+ 			buildSettings = {
+ 				ALWAYS_SEARCH_USER_PATHS = NO;
++				ARCHS = "$(ARCHS_STANDARD)";
+ 				COPY_PHASE_STRIP = YES;
+ 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+ 				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+@@ -1319,6 +1320,7 @@
+ 			isa = XCBuildConfiguration;
+ 			buildSettings = {
+ 				ALWAYS_SEARCH_USER_PATHS = NO;
++				ARCHS = "$(ARCHS_STANDARD)";
+ 				COPY_PHASE_STRIP = NO;
+ 				GCC_DYNAMIC_NO_PIC = NO;
+ 				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+@@ -1334,6 +1336,7 @@
+ 			isa = XCBuildConfiguration;
+ 			buildSettings = {
+ 				ALWAYS_SEARCH_USER_PATHS = NO;
++				ARCHS = "$(ARCHS_STANDARD)";
+ 				COPY_PHASE_STRIP = YES;
+ 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+ 				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+diff --git a/source/App/TAppDecoder/TAppDecCfg.cpp b/source/App/TAppDecoder/TAppDecCfg.cpp
+index a17a9bb8..1723b4b0 100644
+--- a/source/App/TAppDecoder/TAppDecCfg.cpp
++++ b/source/App/TAppDecoder/TAppDecCfg.cpp
+@@ -88,6 +88,10 @@ Bool TAppDecCfg::parseCfg( Int argc, TChar* argv[] )
+   ("SEIColourRemappingInfoFilename",  m_colourRemapSEIFileName,        string(""), "Colour Remapping YUV output file name. If empty, no remapping is applied (ignore SEI message)\n")
+ #if O0043_BEST_EFFORT_DECODING
+   ("ForceDecodeBitDepth",       m_forceDecodeBitDepth,                 0U,         "Force the decoder to operate at a particular bit-depth (best effort decoding)")
++#endif
++#if SAMPLE_STREAM
++  //  ("sampleStreamPrecisionByte",           m_SampleStreamUnitSizePrecisionBytes,          4,       "unit_size_precision_bytes")
++  ("fileformatSampleStream",              m_SampleStream,          false,       "Indicate the file format is sample stream")
+ #endif
+   ("OutputDecodedSEIMessagesFilename",  m_outputDecodedSEIMessagesFilename,    string(""), "When non empty, output decoded SEI messages to the indicated file. If file is '-', then output to stdout\n")
+   ("ClipOutputVideoToRec709Range",      m_bClipOutputVideoToRec709Range,  false, "If true then clip output video to the Rec. 709 Range on saving")
+diff --git a/source/App/TAppDecoder/TAppDecCfg.h b/source/App/TAppDecoder/TAppDecCfg.h
+index c3087c3d..369dcb46 100644
+--- a/source/App/TAppDecoder/TAppDecCfg.h
++++ b/source/App/TAppDecoder/TAppDecCfg.h
+@@ -70,6 +70,10 @@ protected:
+   Int           m_respectDefDispWindow;               ///< Only output content inside the default display window
+ #if O0043_BEST_EFFORT_DECODING
+   UInt          m_forceDecodeBitDepth;                ///< if non-zero, force the bit depth at the decoder (best effort decoding)
++#endif
++#if SAMPLE_STREAM
++  Bool          m_SampleStream;
++  UInt          m_SampleStreamUnitSizePrecisionBytes;
+ #endif
+   std::string   m_outputDecodedSEIMessagesFilename;   ///< filename to output decoded SEI messages to. If '-', then use stdout. If empty, do not output details.
+   Bool          m_bClipOutputVideoToRec709Range;      ///< If true, clip the output video to the Rec 709 range on saving.
+@@ -92,6 +96,10 @@ public:
+   , m_respectDefDispWindow(0)
+ #if O0043_BEST_EFFORT_DECODING
+   , m_forceDecodeBitDepth(0)
++#endif
++#if SAMPLE_STREAM
++  , m_SampleStream(false)
++  , m_SampleStreamUnitSizePrecisionBytes(4)
+ #endif
+   , m_outputDecodedSEIMessagesFilename()
+   , m_bClipOutputVideoToRec709Range(false)
+diff --git a/source/App/TAppDecoder/TAppDecTop.cpp b/source/App/TAppDecoder/TAppDecTop.cpp
+index bd890032..787463ae 100644
+--- a/source/App/TAppDecoder/TAppDecTop.cpp
++++ b/source/App/TAppDecoder/TAppDecTop.cpp
+@@ -142,6 +142,11 @@ Void TAppDecTop::decode()
+     AnnexBStats stats = AnnexBStats();
+ 
+     InputNALUnit nalu;
++#if SAMPLE_STREAM
++    if(m_SampleStream){
++      sampleStreamNALUnit(bytestream, m_SampleStreamUnitSizePrecisionBytes, nalu.getBitstream().getFifo(), stats);
++    }else
++#endif
+     byteStreamNALUnit(bytestream, nalu.getBitstream().getFifo(), stats);
+ 
+     // call actual decoding function
+@@ -177,6 +182,11 @@ Void TAppDecTop::decode()
+           bytestream.reset();
+           TComCodingStatistics::SetStatistics(backupStats);
+ #else
++#if SAMPLE_STREAM
++          if(m_SampleStream)
++            bitstreamFile.seekg(location);
++          else
++#endif
+           bitstreamFile.seekg(location-streamoff(3));
+           bytestream.reset();
+ #endif
+diff --git a/source/App/TAppEncoder/TAppEncCfg.cpp b/source/App/TAppEncoder/TAppEncCfg.cpp
+index ae643351..0f8baeec 100644
+--- a/source/App/TAppEncoder/TAppEncCfg.cpp
++++ b/source/App/TAppEncoder/TAppEncCfg.cpp
+@@ -132,6 +132,10 @@ TAppEncCfg::TAppEncCfg()
+ #if EXTENSION_360_VIDEO
+ , m_ext360(*this)
+ #endif
++#if SAMPLE_STREAM
++, m_fileformatSampleStream(false)
++, m_SampleStreamUnitSizePrecisionBytes(4)
++#endif
+ {
+   m_aidQP = NULL;
+   m_startOfCodedInterval = NULL;
+@@ -782,6 +786,10 @@ Bool TAppEncCfg::parseCfg( Int argc, TChar* argv[] )
+   ("WarnUnknowParameter,w",                           warnUnknowParameter,                                  0, "warn for unknown configuration parameters instead of failing")
+ 
+   // File, I/O and source parameters
++#if SAMPLE_STREAM
++  ("fileformateSampleStream",                         m_fileformatSampleStream,                             false, "FileFormat: 1. SampleStream 0.ByteStream(AnnexB)")
++  //("sampleStreamPrecisionBytes",                     m_SampleStreamUnitSizePrecisionBytes,                 4, "FileFormat: Unit Size Precision in Byte for SampleStream")
++#endif
+   ("InputFile,i",                                     m_inputFileName,                             string(""), "Original YUV input file name")
+   ("InputPathPrefix,-ipp",                            inputPathPrefix,                             string(""), "pathname to prepend to input filename")
+   ("BitstreamFile,b",                                 m_bitstreamFileName,                         string(""), "Bitstream output file name")
+diff --git a/source/App/TAppEncoder/TAppEncCfg.h b/source/App/TAppEncoder/TAppEncCfg.h
+index 5f6c8fe0..767b19eb 100644
+--- a/source/App/TAppEncoder/TAppEncCfg.h
++++ b/source/App/TAppEncoder/TAppEncCfg.h
+@@ -72,7 +72,10 @@ protected:
+   std::string m_inputFileName;                                ///< source file name
+   std::string m_bitstreamFileName;                            ///< output bitstream file
+   std::string m_reconFileName;                                ///< output reconstruction file
+-
++#if SAMPLE_STREAM
++  Bool        m_fileformatSampleStream;
++  UInt        m_SampleStreamUnitSizePrecisionBytes;
++#endif
+   // Lambda modifiers
+   Double    m_adLambdaModifier[ MAX_TLAYER ];                 ///< Lambda modifier array for each temporal layer
+   std::vector<Double> m_adIntraLambdaModifier;                ///< Lambda modifier for Intra pictures, one for each temporal layer. If size>temporalLayer, then use [temporalLayer], else if size>0, use [size()-1], else use m_adLambdaModifier.
+diff --git a/source/App/TAppEncoder/TAppEncTop.cpp b/source/App/TAppEncoder/TAppEncTop.cpp
+index 71ef375d..84213f0a 100644
+--- a/source/App/TAppEncoder/TAppEncTop.cpp
++++ b/source/App/TAppEncoder/TAppEncTop.cpp
+@@ -819,8 +819,17 @@ Void TAppEncTop::xWriteOutput(std::ostream& bitstreamFile, Int iNumEncoded, cons
+       }
+ 
+       const AccessUnit& au = *(iterBitstream++);
++#if SAMPLE_STREAM
++      if(m_fileformatSampleStream){
++        const vector<UInt>& stats = writeSampleStream(bitstreamFile, m_SampleStreamUnitSizePrecisionBytes, au);
++        rateStatsAccum(au, stats);
++      } else{
++#endif
+       const vector<UInt>& stats = writeAnnexB(bitstreamFile, au);
+       rateStatsAccum(au, stats);
++#if SAMPLE_STREAM
++      }
++#endif
+     }
+   }
+ }
+diff --git a/source/Lib/TLibCommon/CommonDef.h b/source/Lib/TLibCommon/CommonDef.h
+index aeec7351..4c84c542 100644
+--- a/source/Lib/TLibCommon/CommonDef.h
++++ b/source/Lib/TLibCommon/CommonDef.h
+@@ -43,6 +43,8 @@
+ #include <assert.h>
+ #include <limits>
+ 
++#define SAMPLE_STREAM 1
++
+ #if _MSC_VER > 1000
+ // disable "signed and unsigned mismatch"
+ #pragma warning( disable : 4018 )
+diff --git a/source/Lib/TLibDecoder/AnnexBread.cpp b/source/Lib/TLibDecoder/AnnexBread.cpp
+index d9396e0a..dc739f66 100644
+--- a/source/Lib/TLibDecoder/AnnexBread.cpp
++++ b/source/Lib/TLibDecoder/AnnexBread.cpp
+@@ -196,4 +196,59 @@ byteStreamNALUnit(
+   stats.m_numBytesInNALUnit = UInt(nalUnit.size());
+   return eof;
+ }
++
++#if SAMPLE_STREAM
++static Void
++_sampleStreamNALUnit(
++  InputByteStream& bs,
++  size_t unitSizePrecisionBytes,
++  vector<uint8_t>& nalUnit,
++  AnnexBStats& stats)
++{
++  //read the size
++  size_t auSize=0;
++  for(size_t i=0; i<unitSizePrecisionBytes; i++)
++    auSize = (auSize<<8) + bs.readByte();
++  
++#if RExt__DECODER_DEBUG_BIT_STATISTICS
++  statBits.bits+=32; statBits.count+=4;
++#endif
++  stats.m_numStartCodePrefixBytes += 0;
++
++#if RExt__DECODER_DEBUG_BIT_STATISTICS
++  TComCodingStatistics::SStat &bodyStats=TComCodingStatistics::GetStatisticEP(STATS__NAL_UNIT_TOTAL_BODY);
++#endif
++
++  for(size_t nalubyte=0; nalubyte<auSize; nalubyte++)
++  {
++#if RExt__DECODER_DEBUG_BIT_STATISTICS
++    uint8_t thebyte=bs.readByte();bodyStats.bits+=8;bodyStats.count++;
++    nalUnit.push_back(thebyte);
++#else
++    nalUnit.push_back(bs.readByte());
++#endif
++  }
++  
++}
++
++Bool
++sampleStreamNALUnit(
++  InputByteStream& bs,
++  size_t unitSizePrecisionBytes,
++  vector<uint8_t>& nalUnit,
++  AnnexBStats& stats)
++{
++  Bool eof = false;
++  try
++  {
++    _sampleStreamNALUnit(bs, unitSizePrecisionBytes, nalUnit, stats);
++  }
++  catch (...)
++  {
++    eof = true;
++  }
++  stats.m_numBytesInNALUnit = UInt(nalUnit.size());
++  return eof;
++}
++#endif
+ //! \}
+diff --git a/source/Lib/TLibDecoder/AnnexBread.h b/source/Lib/TLibDecoder/AnnexBread.h
+index b7a48771..641ae855 100644
+--- a/source/Lib/TLibDecoder/AnnexBread.h
++++ b/source/Lib/TLibDecoder/AnnexBread.h
+@@ -193,7 +193,9 @@ struct AnnexBStats
+ };
+ 
+ Bool byteStreamNALUnit(InputByteStream& bs, std::vector<uint8_t>& nalUnit, AnnexBStats& stats);
+-
++#if SAMPLE_STREAM
++Bool sampleStreamNALUnit(InputByteStream& bs, size_t unitSizePrecisionBytes, std::vector<uint8_t>& nalUnit, AnnexBStats& stats);
++#endif
+ //! \}
+ 
+ #endif
+diff --git a/source/Lib/TLibEncoder/AnnexBwrite.h b/source/Lib/TLibEncoder/AnnexBwrite.h
+index e7b94147..64c0064c 100644
+--- a/source/Lib/TLibEncoder/AnnexBwrite.h
++++ b/source/Lib/TLibEncoder/AnnexBwrite.h
+@@ -86,6 +86,28 @@ static std::vector<UInt> writeAnnexB(std::ostream& out, const AccessUnit& au)
+ 
+   return annexBsizes;
+ }
++
++#if SAMPLE_STREAM
++static std::vector<UInt> writeSampleStream(std::ostream& out, UInt precisionBytes, const AccessUnit& au)
++{
++  std::vector<UInt> sampleStreamsizes;
++
++  for (AccessUnit::const_iterator it = au.begin(); it != au.end(); it++)
++  {
++    const NALUnitEBSP& nalu = **it;
++    UInt size = 0;
++    
++    TComOutputBitstream bsNALUSize;
++    bsNALUSize.write(nalu.m_nalUnitData.str().size(), precisionBytes*8);
++    out.write(reinterpret_cast<const TChar*>(bsNALUSize.getByteStream()), bsNALUSize.getByteStreamLength());
++    out << nalu.m_nalUnitData.str();
++    size += UInt(nalu.m_nalUnitData.str().size());
++    sampleStreamsizes.push_back(size);
++  }
++
++  return sampleStreamsizes;
++}
++#endif
+ //! \}
+ 
+ #endif
