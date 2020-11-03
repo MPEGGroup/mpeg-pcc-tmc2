@@ -383,9 +383,17 @@ bool PCCPointSet3::write( const std::string& fileName, const bool asAscii ) {
     fout << "property float y" << std::endl;
     fout << "property float z" << std::endl;
   } else {
-    fout << "property int16 x" << std::endl;
-    fout << "property int16 y" << std::endl;
-    fout << "property int16 z" << std::endl;
+    //fout << "property int16 x" << std::endl;
+    //fout << "property int16 y" << std::endl;
+    //fout << "property int16 z" << std::endl;
+    fout << "property float x" << std::endl;
+    fout << "property float y" << std::endl;
+    fout << "property float z" << std::endl;
+  }
+  if ( hasNormals() ) {
+    fout << "property float nx" << std::endl;
+    fout << "property float ny" << std::endl;
+    fout << "property float nz" << std::endl;
   }
   if ( hasColors() ) {
     fout << "property uchar red" << std::endl;
@@ -409,6 +417,11 @@ bool PCCPointSet3::write( const std::string& fileName, const bool asAscii ) {
     for ( size_t i = 0; i < pointCount; ++i ) {
       const PCCPoint3D& position = ( *this )[i];
       fout << position.x() << " " << position.y() << " " << position.z();
+      if ( hasNormals() ) {
+        const PCCNormal3D& normal = getNormals()[i];
+        fout << " " << static_cast<float>( normal[0] ) << " " << static_cast<float>( normal[1] ) << " "
+             << static_cast<float>( normal[2] );
+      }
       if ( hasColors() ) {
         const PCCColor3B& color = getColor( i );
         fout << " " << static_cast<int>( color[0] ) << " " << static_cast<int>( color[1] ) << " "
@@ -421,10 +434,22 @@ bool PCCPointSet3::write( const std::string& fileName, const bool asAscii ) {
   } else {
     fout.clear();
     fout.close();
-    fout.open( fileName, std::ofstream::binary | std::ofstream::out );
+    fout.open( fileName, std::ofstream::binary | std::ofstream::out | std::ofstream::app);
     for ( size_t i = 0; i < pointCount; ++i ) {
       const PCCPoint3D& position = ( *this )[i];
-      fout.write( reinterpret_cast<const char* const>( &position ), sizeof( PCCType ) * 3 );
+      //fout.write( reinterpret_cast<const char* const>( &position ), sizeof( PCCType ) * 3 );
+      float value[3];
+        value[0] = position[0];
+        value[1] = position[1];
+        value[2] = position[2];
+        fout.write( reinterpret_cast<const char*>( &value), sizeof( float ) * 3 );
+      if ( hasNormals() ) {
+        const PCCNormal3D& normal = getNormals()[ i ];
+        value[0] = normal[0];
+        value[1] = normal[1];
+        value[2] = normal[2];
+        fout.write( reinterpret_cast<const char*>( &value), sizeof( float ) * 3 );
+      }
       if ( hasColors() ) {
         const PCCColor3B& color = getColor( i );
         fout.write( reinterpret_cast<const char*>( &color ), sizeof( uint8_t ) * 3 );

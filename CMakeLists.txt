@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 
 PROJECT (TMC2 CXX C )
-SET( TMC2_VERSION_MAJOR 11 )
+SET( TMC2_VERSION_MAJOR 12 )
 SET( TMC2_VERSION_MINOR 0  )
 
 # Video encoder and decoder library and application:
@@ -83,3 +83,4 @@ ADD_SUBDIRECTORY(source/app/PccAppMetrics)
 ADD_SUBDIRECTORY(source/app/PccAppVideoEncoder)
 ADD_SUBDIRECTORY(source/app/PccAppVideoDecoder)
 ADD_SUBDIRECTORY(source/app/PccAppColorConverter)
+ADD_SUBDIRECTORY(source/app/PccAppNormalGenerator)

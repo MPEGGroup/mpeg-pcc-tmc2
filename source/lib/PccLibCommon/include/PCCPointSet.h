@@ -228,6 +228,11 @@ class PCCPointSet3 {
     withNormals_ = false;
     normals_.resize( 0 );
   }
+  void setNormal(size_t idx, PCCNormal3D value) {
+    if (idx > normals_.size())
+      exit(-1);
+    normals_[idx] = value;
+  }
 
   bool transferColors( PCCPointSet3& target,
                        const int32_t searchRange,
