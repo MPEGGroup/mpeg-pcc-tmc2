@@ -41,18 +41,7 @@
 #include "PCCContext.h"
 #include "PCCFrameContext.h"
 #include "PCCPatch.h"
-#ifdef USE_HMLIB_VIDEO_CODEC
-#include "PCCHMLibVideoDecoder.h"
-#endif
-#ifdef USE_FFMPEG_VIDEO_CODEC
-#include "PCCFFMPEGLibVideoDecoder.h"
-#endif
-#ifdef USE_HMAPP_VIDEO_CODEC
-#include "PCCHMAppVideoDecoder.h"
-#endif
-#ifdef USE_JMAPP_VIDEO_CODEC
-#include "PCCJMAppVideoDecoder.h"
-#endif
+#include "PCCVirtualVideoDecoder.h"
 #include "PCCInternalColorConverter.h"
 #ifdef USE_HDRTOOLS
 #include "PCCHDRToolsLibColorConverter.h"
@@ -90,39 +79,9 @@ class PCCVideoDecoder {
     if ( keepIntermediateFiles ) { bitstream.write( binFileName ); }
 
     // Decode video
-    std::shared_ptr<PCCVirtualVideoDecoder<T>> decoder;
-    switch ( codecId ) {
-#ifdef USE_HMLIB_VIDEO_CODEC
-      case HMLIB: decoder = std::make_shared<PCCHMLibVideoDecoder<T>>(); break;
-#endif
-#ifdef USE_FFMPEG_VIDEO_CODEC
-      case FFMPEG: decoder = std::make_shared<PCCFFMPEGLibVideoDecoder<T>>(); break;
-#endif
-#ifdef USE_HMAPP_VIDEO_CODEC
-      case HMAPP:
-        decoder = std::make_shared<PCCHMAppVideoDecoder<T>>();
-        if ( decoderPath.empty() || !exist( decoderPath ) ) {
-          std::cerr << "decoderPath not set\n";
-          exit( 1 );
-        }
-        break;
-#endif
-#ifdef USE_JMAPP_VIDEO_CODEC;
-      case JMAPP:
-        decoder = std::make_shared<PCCJMAppVideoDecoder<T>>();
-        if ( decoderPath.empty() || !exist( decoderPath ) ) {
-          std::cerr << "decoderPath not set\n";
-          exit( 1 );
-        }
-        break;
-#endif
-      default:
-        printf( "Error: codec id not supported \n" );
-        exit( -1 );
-        break;
-    }
-    decoder->decode( bitstream, bitDepth == 8 ? 8 : 10, use444CodecIo, video, decoderPath, fileName, frameCount,
-                     codecId );
+    auto decoder = PCCVirtualVideoDecoder<T>::create( codecId );
+    printf(" decompress size T = %zu \n",sizeof(T)); fflush(stdout);
+    decoder->decode( bitstream, bitDepth == 8 ? 8 : 10, use444CodecIo, video, decoderPath, fileName, frameCount );
     width  = video.getWidth();
     height = video.getHeight();
     const std::string yuvRecFileName =

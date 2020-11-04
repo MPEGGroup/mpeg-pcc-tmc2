@@ -37,7 +37,7 @@
 
 namespace pcc {
 
-// 7.3.6.9  Filler data RBSP syntax
+// 8.3.6.9  Filler data RBSP syntax
 class FillerDataRbsp {
  public:
   FillerDataRbsp() {}

@@ -36,13 +36,25 @@
 
 #include "PCCHMLibVideoDecoderImpl.h"
 
+#include <TLibCommon/TComList.h>
+#include <TLibCommon/TComPicYuv.h>
+#include <TLibDecoder/AnnexBread.h>
+#include <TLibDecoder/NALread.h>
+#include <TLibDecoder/TDecTop.h>
+
 using namespace pcc;
+using namespace pcc_hm;
 
 template <typename T>
-PCCHMLibVideoDecoderImpl<T>::PCCHMLibVideoDecoderImpl() {}
+PCCHMLibVideoDecoderImpl<T>::PCCHMLibVideoDecoderImpl() :
+    m_iPOCLastDisplay ( -MAX_INT ) {
+  m_pTDecTop = new pcc_hm::TDecTop();
+}
 
 template <typename T>
-PCCHMLibVideoDecoderImpl<T>::~PCCHMLibVideoDecoderImpl() {}
+PCCHMLibVideoDecoderImpl<T>::~PCCHMLibVideoDecoderImpl() {
+  delete m_pTDecTop; 
+}
 
 template <typename T>
 void PCCHMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream,
@@ -53,18 +65,18 @@ void PCCHMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream,
   std::istringstream  iss( s );
   std::istream&       bitstreamFile = iss;
   Int                 poc;
-  TComList<TComPic*>* pcListPic = NULL;
+  pcc_hm::TComList<pcc_hm::TComPic*>* pcListPic = NULL;
   m_bRGB2GBR                    = RGB2GBR;
-  InputByteStream bytestream( bitstreamFile );
+  pcc_hm::InputByteStream bytestream( bitstreamFile );
   if ( outputBitDepth ) {
     m_outputBitDepth[CHANNEL_TYPE_LUMA]   = outputBitDepth;
     m_outputBitDepth[CHANNEL_TYPE_CHROMA] = outputBitDepth;
   }
   video.clear();
   // create & initialize internal classes
-  m_cTDecTop.create();
-  m_cTDecTop.init();
-  m_cTDecTop.setDecodedPictureHashSEIEnabled( 1 );
+  m_pTDecTop->create();
+  m_pTDecTop->init();
+  m_pTDecTop->setDecodedPictureHashSEIEnabled( 1 );
   m_iPOCLastDisplay += m_iSkipFrame;  // set the last displayed POC correctly for skip forward.
   // main decoder loop
   Bool openedReconFile = false;  // reconstruction file not yet opened. (must be
@@ -86,7 +98,7 @@ void PCCHMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream,
       fprintf( stderr, "Warning: Attempt to decode an empty NAL unit\n" );
     } else {
       read( nalu );
-      bNewPicture = m_cTDecTop.decode( nalu, m_iSkipFrame, m_iPOCLastDisplay );
+      bNewPicture = m_pTDecTop->decode( nalu, m_iSkipFrame, m_iPOCLastDisplay );
       if ( bNewPicture ) {
         bitstreamFile.clear();
 #if RExt__DECODER_DEBUG_BIT_STATISTICS
@@ -101,80 +113,80 @@ void PCCHMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream,
     }
 
     if ( ( bNewPicture || !bitstreamFile || nalu.m_nalUnitType == NAL_UNIT_EOS ) &&
-         !m_cTDecTop.getFirstSliceInSequence() ) {
-      if ( !loopFiltered || bitstreamFile ) { m_cTDecTop.executeLoopFilters( poc, pcListPic ); }
+         !m_pTDecTop->getFirstSliceInSequence() ) {
+      if ( !loopFiltered || bitstreamFile ) { m_pTDecTop->executeLoopFilters( poc, pcListPic ); }
       loopFiltered = ( nalu.m_nalUnitType == NAL_UNIT_EOS );
-      if ( nalu.m_nalUnitType == NAL_UNIT_EOS ) { m_cTDecTop.setFirstSliceInSequence( true ); }
+      if ( nalu.m_nalUnitType == NAL_UNIT_EOS ) { m_pTDecTop->setFirstSliceInSequence( true ); }
     } else if ( ( bNewPicture || !bitstreamFile || nalu.m_nalUnitType == NAL_UNIT_EOS ) &&
-                m_cTDecTop.getFirstSliceInSequence() ) {
-      m_cTDecTop.setFirstSliceInPicture( true );
+                m_pTDecTop->getFirstSliceInSequence() ) {
+      m_pTDecTop->setFirstSliceInPicture( true );
     }
 
     if ( pcListPic ) {
       if ( bNewPicture ) {
-        if ( m_cTDecTop.getTwoVersionsOfCurrDecPicFlag() ) {
+        if ( m_pTDecTop->getTwoVersionsOfCurrDecPicFlag() ) {
           // remove current picture before ILF
-          m_cTDecTop.remCurPicBefILFFromDPBDecDPBFullnessByOne( pcListPic );
-          m_cTDecTop.updateCurrentPictureFlag( pcListPic );
-        } else if ( m_cTDecTop.isCurrPicAsRef() ) {
-          m_cTDecTop.markCurrentPictureAfterILFforShortTermRef( pcListPic );
+          m_pTDecTop->remCurPicBefILFFromDPBDecDPBFullnessByOne( pcListPic );
+          m_pTDecTop->updateCurrentPictureFlag( pcListPic );
+        } else if ( m_pTDecTop->isCurrPicAsRef() ) {
+          m_pTDecTop->markCurrentPictureAfterILFforShortTermRef( pcListPic );
         }
       }
       // write reconstruction to file
       if ( bNewPicture ) {
-        setVideoSize( pcListPic->front()->getPicSym()->getSPS() );
+        setVideoSize( &pcListPic->front()->getPicSym()->getSPS() );
         xWriteOutput( pcListPic, nalu.m_temporalId, video );
       }
       if ( ( bNewPicture || nalu.m_nalUnitType == NAL_UNIT_CODED_SLICE_CRA ) &&
-           m_cTDecTop.getNoOutputPriorPicsFlag() ) {
-        m_cTDecTop.checkNoOutputPriorPics( pcListPic );
-        m_cTDecTop.setNoOutputPriorPicsFlag( false );
+           m_pTDecTop->getNoOutputPriorPicsFlag() ) {
+        m_pTDecTop->checkNoOutputPriorPics( pcListPic );
+        m_pTDecTop->setNoOutputPriorPicsFlag( false );
       }
       if ( bNewPicture && ( nalu.m_nalUnitType == NAL_UNIT_CODED_SLICE_IDR_W_RADL ||
                             nalu.m_nalUnitType == NAL_UNIT_CODED_SLICE_IDR_N_LP ||
                             nalu.m_nalUnitType == NAL_UNIT_CODED_SLICE_BLA_N_LP ||
                             nalu.m_nalUnitType == NAL_UNIT_CODED_SLICE_BLA_W_RADL ||
                             nalu.m_nalUnitType == NAL_UNIT_CODED_SLICE_BLA_W_LP ) ) {
-        setVideoSize( pcListPic->front()->getPicSym()->getSPS() );
+        setVideoSize( &pcListPic->front()->getPicSym()->getSPS() );
         xFlushOutput( pcListPic, video );
       }
       if ( nalu.m_nalUnitType == NAL_UNIT_EOS ) {
-        setVideoSize( pcListPic->front()->getPicSym()->getSPS() );
+        setVideoSize( &pcListPic->front()->getPicSym()->getSPS() );
         xWriteOutput( pcListPic, nalu.m_temporalId, video );
-        m_cTDecTop.setFirstSliceInPicture( false );
+        m_pTDecTop->setFirstSliceInPicture( false );
       }
       // write reconstruction to file -- for additional bumping as defined in
       // C.5.2.3
       if ( !bNewPicture && nalu.m_nalUnitType >= NAL_UNIT_CODED_SLICE_TRAIL_N &&
            nalu.m_nalUnitType <= NAL_UNIT_RESERVED_VCL31 ) {
-        setVideoSize( pcListPic->front()->getPicSym()->getSPS() );
+        setVideoSize( &pcListPic->front()->getPicSym()->getSPS() );
         xWriteOutput( pcListPic, nalu.m_temporalId, video );
       }
     }
   }
-  setVideoSize( pcListPic->front()->getPicSym()->getSPS() );
+  setVideoSize( &pcListPic->front()->getPicSym()->getSPS() );
   xFlushOutput( pcListPic, video );
   // delete buffers
-  m_cTDecTop.deletePicBuffer();
+  m_pTDecTop->deletePicBuffer();
 
   // destroy internal classes
-  m_cTDecTop.destroy();
+  m_pTDecTop->destroy();
 }
 
 template <typename T>
-void PCCHMLibVideoDecoderImpl<T>::setVideoSize( const TComSPS& sps ) {
-  auto& window        = sps.getConformanceWindow();
-  int   width         = sps.getPicWidthInLumaSamples();
-  int   height        = sps.getPicHeightInLumaSamples();
+void PCCHMLibVideoDecoderImpl<T>::setVideoSize( const pcc_hm::TComSPS* sps ) {
+  auto& window        = sps->getConformanceWindow();
+  int   width         = sps->getPicWidthInLumaSamples();
+  int   height        = sps->getPicHeightInLumaSamples();
   m_outputWidth       = width - window.getWindowLeftOffset() - window.getWindowRightOffset();
   m_outputHeight      = height - window.getWindowTopOffset() - window.getWindowBottomOffset();
-  m_internalBitDepths = sps.getBitDepths().recon[CHANNEL_TYPE_LUMA];
+  m_internalBitDepths = sps->getBitDepths().recon[CHANNEL_TYPE_LUMA];
 }
 
 template <typename T>
-void PCCHMLibVideoDecoderImpl<T>::xWriteOutput( TComList<TComPic*>* pcListPic, UInt tId, PCCVideo<T, 3>& video ) {
+void PCCHMLibVideoDecoderImpl<T>::xWriteOutput( pcc_hm::TComList<pcc_hm::TComPic*>* pcListPic, UInt tId, PCCVideo<T, 3>& video ) {
   if ( pcListPic->empty() ) { return; }
-  TComList<TComPic*>::iterator iterPic                = pcListPic->begin();
+  pcc_hm::TComList<pcc_hm::TComPic*>::iterator iterPic                = pcListPic->begin();
   Int                          numPicsNotYetDisplayed = 0;
   Int                          dpbFullness            = 0;
   const TComSPS*               activeSPS              = &( pcListPic->front()->getPicSym()->getSPS() );
@@ -206,7 +218,7 @@ void PCCHMLibVideoDecoderImpl<T>::xWriteOutput( TComList<TComPic*>* pcListPic, U
       TComPic* pcPicBottom = *( iterPic );
       if ( pcPicTop->getOutputMark() && pcPicBottom->getOutputMark() &&
            ( numPicsNotYetDisplayed > numReorderPicsHighestTid ||
-             dpbFullness > maxDecPicBufferingHighestTid - m_cTDecTop.getTwoVersionsOfCurrDecPicFlag() ) &&
+             dpbFullness > maxDecPicBufferingHighestTid - m_pTDecTop->getTwoVersionsOfCurrDecPicFlag() ) &&
            ( !( pcPicTop->getPOC() % 2 ) && pcPicBottom->getPOC() == pcPicTop->getPOC() + 1 ) &&
            ( pcPicTop->getPOC() == m_iPOCLastDisplay + 1 || m_iPOCLastDisplay < 0 ) ) {
         // write to file
@@ -237,7 +249,7 @@ void PCCHMLibVideoDecoderImpl<T>::xWriteOutput( TComList<TComPic*>* pcListPic, U
 
       if ( pcPic->getOutputMark() && pcPic->getPOC() > m_iPOCLastDisplay &&
            ( numPicsNotYetDisplayed > numReorderPicsHighestTid ||
-             dpbFullness > maxDecPicBufferingHighestTid - m_cTDecTop.getTwoVersionsOfCurrDecPicFlag() ) ) {
+             dpbFullness > maxDecPicBufferingHighestTid - m_pTDecTop->getTwoVersionsOfCurrDecPicFlag() ) ) {
         // write to file
         numPicsNotYetDisplayed--;
         if ( pcPic->getSlice( 0 )->isReferenced() == false ) { dpbFullness--; }
@@ -259,13 +271,13 @@ void PCCHMLibVideoDecoderImpl<T>::xWriteOutput( TComList<TComPic*>* pcListPic, U
 }
 
 template <typename T>
-void PCCHMLibVideoDecoderImpl<T>::xFlushOutput( TComList<TComPic*>* pcListPic, PCCVideo<T, 3>& video ) {
+void PCCHMLibVideoDecoderImpl<T>::xFlushOutput( pcc_hm::TComList<pcc_hm::TComPic*>* pcListPic, PCCVideo<T, 3>& video ) {
   if ( !pcListPic || pcListPic->empty() ) { return; }
-  TComList<TComPic*>::iterator iterPic = pcListPic->begin();
+  pcc_hm::TComList<pcc_hm::TComPic*>::iterator iterPic = pcListPic->begin();
   iterPic                              = pcListPic->begin();
-  TComPic* pcPic                       = *( iterPic );
+  pcc_hm::TComPic* pcPic                       = *( iterPic );
   if ( pcPic->isField() ) {  // Field Decoding
-    TComList<TComPic*>::iterator endPic = pcListPic->end();
+    pcc_hm::TComList<pcc_hm::TComPic*>::iterator endPic = pcListPic->end();
     endPic--;
     TComPic *pcPicTop, *pcPicBottom = NULL;
     while ( iterPic != endPic ) {
@@ -335,7 +347,7 @@ void PCCHMLibVideoDecoderImpl<T>::xFlushOutput( TComList<TComPic*>* pcListPic, P
 }
 
 template <typename T>
-void PCCHMLibVideoDecoderImpl<T>::xWritePicture( const TComPicYuv* pic, PCCVideo<T, 3>& video ) {
+void PCCHMLibVideoDecoderImpl<T>::xWritePicture( const pcc_hm::TComPicYuv* pic, PCCVideo<T, 3>& video ) {
   int chromaSubsample = pic->getWidth( COMPONENT_Y ) / pic->getWidth( COMPONENT_Cb );
   printf(
       "write output frame %zu size = %d %d bit depth = %d - %d = %d in %zd "

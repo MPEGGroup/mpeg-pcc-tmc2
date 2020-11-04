@@ -99,7 +99,7 @@ static const uint8_t PCC_SAVE_POINT_TYPE = 1;  // Save point information in reco
 // ******************************************************************* //
 // Trace modes to validate new syntax
 // ******************************************************************* //
-#define CODEC_TRACE
+#define CODEC_TRACE 
 
 // ******************************************************************* //
 // Common constants
@@ -126,7 +126,7 @@ enum PCCCodecId {
   FFMPEG = 3,
 #endif
   UNKNOWN_CODEC = 4
-};
+}; 
 
 const int16_t infiniteDepth          = ( std::numeric_limits<int16_t>::max )();
 const int64_t infinitenumber         = ( std::numeric_limits<int64_t>::max )();

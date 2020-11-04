@@ -82,7 +82,8 @@ class PCCAtlasHighLevelSyntax {
   AtlasSequenceParameterSetRbsp& getAtlasSequenceParameterSet( size_t setId ) {
     return atlasSequenceParameterSet_[setId];
   }
-//  std::vector<AtlasSequenceParameterSetRbsp>& getAtlasSequenceParameterSetList() { return atlasSequenceParameterSet_; }
+  //  std::vector<AtlasSequenceParameterSetRbsp>& getAtlasSequenceParameterSetList() { return
+  //  atlasSequenceParameterSet_; }
   AtlasSequenceParameterSetRbsp& addAtlasSequenceParameterSet() {
     AtlasSequenceParameterSetRbsp asps;
     asps.setAtlasSequenceParameterSetId( atlasSequenceParameterSet_.size() );
@@ -116,9 +117,9 @@ class PCCAtlasHighLevelSyntax {
   size_t  getSizeOfRefAtlasFrameList( size_t listIndex ) { return refAtlasFrameList_[listIndex].size(); }
   int32_t getRefAtlasFrame( size_t listIndex, size_t refIndex ) { return refAtlasFrameList_[listIndex][refIndex]; }
   std::vector<int32_t>& getRefAtlasFrameList( size_t listIndex ) { return refAtlasFrameList_[listIndex]; }
-  size_t getNumRefIdxActive( AtlasTileHeader& ath );
-  size_t getMaxNumRefAtlasFrame( size_t listIndex ) { return maxNumRefAtlasFrame_; }
-  void setMaxNumRefAtlasFrame( size_t value ) { maxNumRefAtlasFrame_ = value; }
+  size_t                getNumRefIdxActive( AtlasTileHeader& ath );
+  size_t                getMaxNumRefAtlasFrame( size_t listIndex ) { return maxNumRefAtlasFrame_; }
+  void                  setMaxNumRefAtlasFrame( size_t value ) { maxNumRefAtlasFrame_ = value; }
   // point local recosntruction, defined in ASPS
   void addPointLocalReconstructionMode( const PointLocalReconstructionMode& mode ) {
     pointLocalReconstructionMode_.push_back( mode );
@@ -145,10 +146,11 @@ class PCCAtlasHighLevelSyntax {
     printf("\t-- size of seiPrefix_                    : %zu\n", seiPrefix_.size());
     printf("\t-- size of seiSuffix_                    : %zu\n", seiSuffix_.size());
     printf("\t----------------------------------------------\n");
-    
+
 #endif
-    return atlasFrameParameterSet_; }
-  AtlasFrameParameterSetRbsp&              addAtlasFrameParameterSet() {
+    return atlasFrameParameterSet_;
+  }
+  AtlasFrameParameterSetRbsp& addAtlasFrameParameterSet() {
     AtlasFrameParameterSetRbsp afps;
     afps.setAtlasFrameParameterSetId( atlasFrameParameterSet_.size() );
     atlasFrameParameterSet_.push_back( afps );
@@ -197,22 +199,24 @@ class PCCAtlasHighLevelSyntax {
       case USER_DATAREGISTERED_ITUTT35: sharedPtr = std::make_shared<SEIUserDataRegisteredItuTT35>(); break;
       case USER_DATA_UNREGISTERED: sharedPtr = std::make_shared<SEIUserDataUnregistered>(); break;
       case RECOVERY_POINT: sharedPtr = std::make_shared<SEIRecoveryPoint>(); break;
-      case NO_DISPLAY: sharedPtr = std::make_shared<SEINoDisplay>(); break;
-      case TIME_CODE: break;
-      case REGIONAL_NESTING: break;
+      case NO_RECONSTRUCTION: sharedPtr = std::make_shared<SEINoDisplay>(); break;
+      case TIME_CODE:
+        sharedPtr = std::make_shared<SEITimeCode>();
+        break;
+        break;
       case SEI_MANIFEST: sharedPtr = std::make_shared<SEIManifest>(); break;
       case SEI_PREFIX_INDICATION: sharedPtr = std::make_shared<SEIPrefixIndication>(); break;
-      case ATTRIBUTE_TRANSFORMATION_PARAMS: sharedPtr = std::make_shared<SEIAttributeTransformationParams>(); break;
       case ACTIVE_SUB_BITSTREAMS: sharedPtr = std::make_shared<SEIActiveSubBitstreams>(); break;
       case COMPONENT_CODEC_MAPPING: sharedPtr = std::make_shared<SEIComponentCodecMapping>(); break;
       case SCENE_OBJECT_INFORMATION: sharedPtr = std::make_shared<SEISceneObjectInformation>(); break;
       case OBJECT_LABEL_INFORMATION: sharedPtr = std::make_shared<SEIObjectLabelInformation>(); break;
       case PATCH_INFORMATION: sharedPtr = std::make_shared<SEIPatchInformation>(); break;
       case VOLUMETRIC_RECTANGLE_INFORMATION: sharedPtr = std::make_shared<SEIVolumetricRectangleInformation>(); break;
-      case ATLAS_INFORMATION: sharedPtr = std::make_shared<SEIAtlasInformation>(); break;
+      case ATLAS_OBJECT_INFORMATION: sharedPtr = std::make_shared<SEIAtlasInformation>(); break;
       case VIEWPORT_CAMERA_PARAMETERS: sharedPtr = std::make_shared<SEIViewportCameraParameters>(); break;
       case VIEWPORT_POSITION: sharedPtr = std::make_shared<SEIViewportPosition>(); break;
       case DECODED_ATLAS_INFORMATION_HASH: sharedPtr = std::make_shared<SEIDecodedAtlasInformationHash>(); break;
+      case ATTRIBUTE_TRANSFORMATION_PARAMS: sharedPtr = std::make_shared<SEIAttributeTransformationParams>(); break;
       case OCCUPANCY_SYNTHESIS: sharedPtr = std::make_shared<SEIOccupancySynthesis>(); break;
       case GEOMETRY_SMOOTHING: sharedPtr = std::make_shared<SEIGeometrySmoothing>(); break;
       case ATTRIBUTE_SMOOTHING: sharedPtr = std::make_shared<SEIAttributeSmoothing>(); break;
@@ -452,6 +456,7 @@ class PCCHighLevelSyntax {
 
   // context variables, not sure if we should keep them at this level, but
   // leaving here for now
+  size_t  getGofSize() { return gofSize_; }
   uint8_t getOccupancyPrecision() { return occupancyPrecision_; }
   //  uint8_t getOccupancyPackingBlockSize() {
   //    return pow( 2, atlasHLS_[atlasIndex_].getAtlasSequenceParameterSet().getLog2PatchPackingBlockSize() );
@@ -462,7 +467,7 @@ class PCCHighLevelSyntax {
   size_t  getAuxVideoWidth() { return auxVideWidth_; }
   size_t  getAuxVideoHeight() {
     size_t videoHeight = 0;
-    for ( auto& height : auxTileHeight_ ) videoHeight += height;
+    for ( auto& height : auxTileHeight_ ) { videoHeight += height; }
     return videoHeight;
   }
   size_t               getAuxTileHeight( size_t index ) { return auxTileHeight_[index]; }
@@ -472,6 +477,7 @@ class PCCHighLevelSyntax {
   bool&                getPrefilterLossyOM() { return prefilterLossyOM_; }
   size_t&              getOffsetLossyOM() { return offsetLossyOM_; }
   size_t               getGeometry3dCoordinatesBitdepth() { return geometry3dCoordinatesBitdepth_; }
+  void                 setGofSize( size_t gofSize ) { gofSize_ = gofSize; }
   void                 setOccupancyPrecision( uint8_t value ) { occupancyPrecision_ = value; }
   void                 setLog2PatchQuantizerSizeX( uint8_t value ) { log2PatchQuantizerSizeX_ = value; }
   void                 setLog2PatchQuantizerSizeY( uint8_t value ) { log2PatchQuantizerSizeY_ = value; }
@@ -485,6 +491,7 @@ class PCCHighLevelSyntax {
   bool&                getSingleLayerMode() { return singleLayerMode_; }
 
  private:
+  size_t                         gofSize_;
   std::vector<PCCVideoBitstream> videoBitstream_;
   V3CUnitHeader                  v3cUnitHeader_[5];
   std::vector<V3CParameterSet>   vpccParameterSets_;

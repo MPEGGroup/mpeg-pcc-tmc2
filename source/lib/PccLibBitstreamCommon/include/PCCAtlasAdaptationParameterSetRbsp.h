@@ -37,45 +37,33 @@
 
 namespace pcc {
 
-// 7.3.6.3.1	General atlas adaptation parameter set RBSP syntax
+// 8.3.6.3.1	General atlas adaptation parameter set RBSP syntax
 class AtlasAdaptationParameterSetRbsp {
  public:
   AtlasAdaptationParameterSetRbsp() :
       atlasAdaptationParameterSetId_( 0 ),
-      log2MaxAfocPresentFlag_( 0 ),
-      log2MaxAtlasFrameOrderCntLsbMinus4_( 0 ),
       extensionFlag_( false ),
-      vpccExtensionFlag_( false ),
-      mivExtensionFlag_( false ),
-      extension6Bits_( 0 ){};
+      vpccExtensionFlag_( false ),  
+      extension7Bits_( 0 ){};
   ~AtlasAdaptationParameterSetRbsp(){};
   AtlasAdaptationParameterSetRbsp& operator=( const AtlasAdaptationParameterSetRbsp& ) = default;
 
   uint8_t getAtlasAdaptationParameterSetId() { return atlasAdaptationParameterSetId_; }
-  bool    getLog2MaxAfocPresentFlag() { return log2MaxAfocPresentFlag_; }
-  uint8_t getLog2MaxAtlasFrameOrderCntLsbMinus4() { return log2MaxAtlasFrameOrderCntLsbMinus4_; }
   bool    getExtensionFlag() { return extensionFlag_; }
   bool    getVpccExtensionFlag() { return vpccExtensionFlag_; }
-  bool    getMivExtensionFlag() { return mivExtensionFlag_; }
-  bool    getExtension6Bits() { return extension6Bits_; }
+  bool    getExtension7Bits() { return extension7Bits_; }
 
   void setAtlasAdaptationParameterSetId( uint8_t value ) { atlasAdaptationParameterSetId_ = value; }
-  void setLog2MaxAfocPresentFlag( bool value ) { log2MaxAfocPresentFlag_ = value; }
-  void setLog2MaxAtlasFrameOrderCntLsbMinus4( uint8_t value ) { log2MaxAtlasFrameOrderCntLsbMinus4_ = value; }
   void setExtensionFlag( bool value ) { extensionFlag_ = value; }
   void setVpccExtensionFlag( bool value ) { vpccExtensionFlag_ = value; }
-  void setMivExtensionFlag( bool value ) { mivExtensionFlag_ = value; }
-  void setExtension6Bits( bool value ) { extension6Bits_ = value; }
+  void setExtension7Bits( bool value ) { extension7Bits_ = value; }
   AapsVpccExtension& getAapsVpccExtension() { return aapsVpccExtension_; }
 
  private:
   uint8_t           atlasAdaptationParameterSetId_;
-  bool              log2MaxAfocPresentFlag_;
-  uint8_t           log2MaxAtlasFrameOrderCntLsbMinus4_;
   bool              extensionFlag_;
   bool              vpccExtensionFlag_;
-  bool              mivExtensionFlag_;
-  uint8_t           extension6Bits_;
+  uint8_t           extension7Bits_;
   AapsVpccExtension aapsVpccExtension_;
 };
 

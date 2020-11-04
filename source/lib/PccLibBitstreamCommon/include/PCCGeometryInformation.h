@@ -37,7 +37,7 @@
 
 namespace pcc {
 
-// 7.3.4.4 Geometry information Syntax
+// 8.3.4.4 Geometry information Syntax
 class GeometryInformation {
  public:
   GeometryInformation() :

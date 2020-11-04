@@ -51,8 +51,7 @@ void PCCHMLibVideoDecoder<T>::decode( PCCVideoBitstream& bitstream,
                                       PCCVideo<T, 3>&    video,
                                       const std::string& decoderPath,
                                       const std::string& parameters,
-                                      const size_t       frameCount,
-                                      const size_t       codecId ) {
+                                      const size_t       frameCount ) {
   PCCHMLibVideoDecoderImpl<T> decoder;
   decoder.decode( bitstream, outputBitDepth, RGB2GBR, video );
 }

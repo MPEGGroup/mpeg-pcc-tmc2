@@ -38,8 +38,8 @@
 
 namespace pcc {
 
-// 7.3.6.2 Atlas frame parameter set Rbsp syntax
-// 7.3.6.2.1 General atlas frame parameter set Rbsp syntax
+// 8.3.6.2 Atlas frame parameter set Rbsp syntax
+// 8.3.6.2.1 General atlas frame parameter set Rbsp syntax
 class AtlasFrameParameterSetRbsp {
  public:
   AtlasFrameParameterSetRbsp() :
@@ -51,9 +51,7 @@ class AtlasFrameParameterSetRbsp {
       lodModeEnableFlag_( false ),
       raw3dPosBitCountExplicitModeFlag_( 0 ),
       extensionFlag_( 0 ),
-      vpccExtensionFlag_( 0 ),
-      mivExtensionFlag_( 0 ),
-      extension6Bits_( 0 ) {}
+      extension8Bits_( 0 ) {}
 
   ~AtlasFrameParameterSetRbsp() {}
   AtlasFrameParameterSetRbsp& operator=( const AtlasFrameParameterSetRbsp& ) = default;
@@ -64,9 +62,7 @@ class AtlasFrameParameterSetRbsp {
     lodModeEnableFlag_                = refAfps.getLodModeEnableFlag();
     raw3dPosBitCountExplicitModeFlag_ = refAfps.getRaw3dPosBitCountExplicitModeFlag();
     extensionFlag_                    = refAfps.getExtensionFlag();
-    vpccExtensionFlag_                = refAfps.getVpccExtensionFlag();
-    mivExtensionFlag_                 = refAfps.getMivExtensionFlag();
-    extension6Bits_                   = refAfps.getExtension6Bits();
+    extension8Bits_                   = refAfps.getExtension8Bits();
     atlasFrameTileInformation_        = refAfps.getAtlasFrameTileInformation();
   }
 
@@ -77,9 +73,7 @@ class AtlasFrameParameterSetRbsp {
   uint8_t                    getAdditionalLtAfocLsbLen() { return additionalLtAfocLsbLen_; }
   bool                       getRaw3dPosBitCountExplicitModeFlag() { return raw3dPosBitCountExplicitModeFlag_; }
   bool                       getExtensionFlag() { return extensionFlag_; }
-  bool                       getVpccExtensionFlag() { return vpccExtensionFlag_; }
-  bool                       getMivExtensionFlag() { return mivExtensionFlag_; }
-  uint8_t                    getExtension6Bits() { return extension6Bits_; }
+  uint8_t                    getExtension8Bits() { return extension8Bits_; }
   AtlasFrameTileInformation& getAtlasFrameTileInformation() { return atlasFrameTileInformation_; }
   bool                       getLodModeEnableFlag() { return lodModeEnableFlag_; }
   AfpsVpccExtension&         getAfpsVpccExtension() { return afpsVpccExtension_; }
@@ -91,11 +85,9 @@ class AtlasFrameParameterSetRbsp {
   void setAdditionalLtAfocLsbLen( uint8_t value ) { additionalLtAfocLsbLen_ = value; }
   void setRaw3dPosBitCountExplicitModeFlag( bool value ) { raw3dPosBitCountExplicitModeFlag_ = value; }
   void setExtensionFlag( bool value ) { extensionFlag_ = value; }
-  void setVpccExtensionFlag( bool value ) { vpccExtensionFlag_ = value; }
-  void setMivExtensionFlag( bool value ) { mivExtensionFlag_ = value; }
-  void setExtension6Bits( uint8_t value ) { extension6Bits_ = value; }
-  void setAtlasFrameTileInformation( AtlasFrameTileInformation& value ) { atlasFrameTileInformation_ = value; }
+  void setExtension8Bits( uint8_t value ) { extension8Bits_ = value; }
   void setLodModeEnableFlag( bool value ) { lodModeEnableFlag_ = value; }
+  void setAtlasFrameTileInformation( AtlasFrameTileInformation& value ) { atlasFrameTileInformation_ = value; }
 
  private:
   uint8_t                   atlasFrameParameterSetId_;
@@ -107,9 +99,7 @@ class AtlasFrameParameterSetRbsp {
   bool                      lodModeEnableFlag_;
   bool                      raw3dPosBitCountExplicitModeFlag_;
   bool                      extensionFlag_;
-  bool                      vpccExtensionFlag_;
-  bool                      mivExtensionFlag_;
-  uint8_t                   extension6Bits_;
+  uint8_t                   extension8Bits_;
   AfpsVpccExtension         afpsVpccExtension_;
 };
 

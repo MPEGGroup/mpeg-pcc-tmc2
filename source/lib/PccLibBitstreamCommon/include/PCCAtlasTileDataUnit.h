@@ -38,7 +38,7 @@
 
 namespace pcc {
 
-// 7.3.7.1  General atlas tile data unit syntax
+// 8.3.7.1  General atlas tile data unit syntax
 class AtlasTileDataUnit {
  public:
   AtlasTileDataUnit() {}
@@ -67,12 +67,12 @@ class AtlasTileDataUnit {
     return matchedPatchCount;
   }
   void setTileOrder( size_t value ) { tileOrder_ = value; }
-  void setPatchCount( size_t value ) { patchCount_ = value; }
+  // void setPatchCount( size_t value ) { patchCount_ = value; }
   void setPatchInformationData( size_t index, PatchInformationData& value ) { patchInformationData_[index] = value; }
 
  private:
   size_t                            tileOrder_;
-  size_t                            patchCount_;
+  // size_t                            patchCount_;
   std::vector<PatchInformationData> patchInformationData_;
 };
 

@@ -70,12 +70,13 @@ bool PCCGroupOfFrames::load( const std::string&      uncompressedDataPath,
 
 bool PCCGroupOfFrames::write( const std::string& reconstructedDataPath, size_t& frameNumber, const size_t nbThread ) {
   char            fileName[4096];
+  bool ret = true;
   tbb::task_arena limited( static_cast<int>( nbThread ) );
   limited.execute( [&] {
     tbb::parallel_for( size_t( 0 ), frames_.size(), [&]( const size_t i ) {
       auto& pointSet = frames_[i];
       sprintf( fileName, reconstructedDataPath.c_str(), frameNumber + i );
-      if ( !pointSet.write( fileName, true ) ) { return false; }
+      if ( !pointSet.write( fileName, true ) ) { ret = false; }
     } );
   } );
   frameNumber += frames_.size();

@@ -177,7 +177,7 @@ class PCCEncoder : public PCCCodec {
                       size_t                frameIndex );
 
   //**video/image reneration and resizing**//
-  bool   resizeGeometryVideo( PCCContext& context );
+  bool   resizeGeometryVideo( PCCContext& context, PCCCodecId codecId );
   bool   resizeTileGeometryVideo( PCCContext& context,
                                   size_t      tileGroupIdx,
                                   size_t      frameWidth,
@@ -186,12 +186,9 @@ class PCCEncoder : public PCCCodec {
                                   int         lastFramePlus1 = -1 );
   size_t segmentSequence( PCCContext& context, std::vector<std::pair<size_t, size_t>>& framesInAFPS );
   bool   relocateTileGeometryVideo( PCCContext& context, std::vector<std::pair<size_t, size_t>>& framesInAFPS );
-
   bool placeEomPatchInTile( PCCContext& context, std::vector<std::pair<size_t, size_t>>& framesInAFPS );
   bool placeRawPatchTile( PCCContext& context, std::vector<std::pair<size_t, size_t>>& framesInAFPS );
-
   bool generateGeometryVideo( const PCCGroupOfFrames& sources, PCCContext& context );
-
   bool        generateTextureVideo( const PCCGroupOfFrames&     sources,
                                     PCCGroupOfFrames&           reconstruct,
                                     PCCContext&                 context,

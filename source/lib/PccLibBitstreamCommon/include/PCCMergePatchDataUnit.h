@@ -38,7 +38,7 @@
 
 namespace pcc {
 
-// 7.3.7.5  Merge patch data unit syntax
+// 8.3.7.5  Merge patch data unit syntax
 class MergePatchDataUnit {
  public:
   MergePatchDataUnit() :
@@ -50,10 +50,10 @@ class MergePatchDataUnit {
       pos2dY_( 0 ),
       delta2dSizeX_( 0 ),
       delta2dSizeY_( 0 ),
-      pos3dOffsetX_( 0 ),
-      pos3dOffsetY_( 0 ),
-      pos3dOffsetMinZ_( 0 ),
-      pos3dRangeZ_( 0 ),
+      pos3dOffsetU_( 0 ),
+      pos3dOffsetV_( 0 ),
+      pos3dOffsetD_( 0 ),
+      pos3dRangeD_( 0 ),
       patchIndex_( 0 ),
       frameIndex_( 0 ),
       tileOrder_( 0 ){};
@@ -68,10 +68,10 @@ class MergePatchDataUnit {
   int64_t  get2dPosY() { return pos2dY_; }
   int64_t  get2dDeltaSizeX() { return delta2dSizeX_; }
   int64_t  get2dDeltaSizeY() { return delta2dSizeY_; }
-  int64_t  get3dOffsetX() { return pos3dOffsetX_; }
-  int64_t  get3dOffsetY() { return pos3dOffsetY_; }
-  int64_t  get3dOffsetMinZ() { return pos3dOffsetMinZ_; }
-  int64_t  get3dRangeZ() { return pos3dRangeZ_; }
+  int64_t  get3dOffsetU() { return pos3dOffsetU_; }
+  int64_t  get3dOffsetV() { return pos3dOffsetV_; }
+  int64_t  get3dOffsetD() { return pos3dOffsetD_; }
+  int64_t  get3dRangeD() { return pos3dRangeD_; }
   size_t   getPatchIndex() { return patchIndex_; }
   size_t   getFrameIndex() { return frameIndex_; }
   size_t   getTileOrder() { return tileOrder_; }
@@ -85,10 +85,10 @@ class MergePatchDataUnit {
   void set2dPosY( int64_t value ) { pos2dY_ = value; }
   void set2dDeltaSizeX( int64_t value ) { delta2dSizeX_ = value; }
   void set2dDeltaSizeY( int64_t value ) { delta2dSizeY_ = value; }
-  void set3dOffsetX( int64_t value ) { pos3dOffsetX_ = value; }
-  void set3dOffsetY( int64_t value ) { pos3dOffsetY_ = value; }
-  void set3dOffsetMinZ( int64_t value ) { pos3dOffsetMinZ_ = value; }
-  void set3dRangeZ( int64_t value ) { pos3dRangeZ_ = value; }
+  void set3dOffsetU( int64_t value ) { pos3dOffsetU_ = value; }
+  void set3dOffsetV( int64_t value ) { pos3dOffsetV_ = value; }
+  void set3dOffsetD( int64_t value ) { pos3dOffsetD_ = value; }
+  void set3dRangeD( int64_t value ) { pos3dRangeD_ = value; }
   void setPatchIndex( size_t value ) { patchIndex_ = value; }
   void setFrameIndex( size_t value ) { frameIndex_ = value; }
   void setTileOrder( size_t value ) { tileOrder_ = value; }
@@ -103,10 +103,10 @@ class MergePatchDataUnit {
   int64_t pos2dY_;
   int64_t delta2dSizeX_;
   int64_t delta2dSizeY_;
-  int64_t pos3dOffsetX_;
-  int64_t pos3dOffsetY_;
-  int64_t pos3dOffsetMinZ_;
-  int64_t pos3dRangeZ_;
+  int64_t pos3dOffsetU_;
+  int64_t pos3dOffsetV_;
+  int64_t pos3dOffsetD_;
+  int64_t pos3dRangeD_;
   size_t  patchIndex_;
   size_t  frameIndex_;
   size_t  tileOrder_;

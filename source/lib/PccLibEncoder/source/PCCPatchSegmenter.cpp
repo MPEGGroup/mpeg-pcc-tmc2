@@ -1323,87 +1323,177 @@ void PCCPatchSegmenter3::refineSegmentationGridBased( const PCCPointSet3&       
   const size_t gridDimShiftSqr = gridDimShift << 1;
   const size_t voxDimHalf      = voxDim >> 1;
 
-  struct voxelType {
-    std::vector<size_t> pointIndices;
-    std::vector<size_t> scoreSmooth;
-
-    size_t pointCount;
-    void   init( size_t cap, size_t orientationCount ) {
-      pointIndices.reserve( cap );
-      scoreSmooth.resize( orientationCount, 0 );
-      pointCount = 0;
+  //holds the point indices of every point in a given grid cell
+  class PointIndicesOfGridCell {
+  public:
+    std::unique_ptr<std::vector<size_t>> pointIndices;
+    inline void init() {
+      pointIndices = std::make_unique<std::vector<size_t>>();
     }
   };
-  auto subToInd = [&]( size_t x, size_t y, size_t z ) { return x + ( y << gridDimShift ) + ( z << gridDimShiftSqr ); };
+
+
+  //holds the scoreSmooths of the points in a cell
+  class ScoreSmoothOfPointsInGridCell {
+    public:
+    std::unique_ptr<std::vector<size_t>> scoreSmooth;
+
+    inline void init(size_t orientationCount ) {
+      //initializes scores as 0
+      scoreSmooth = std::make_unique<std::vector<size_t>>(orientationCount, 0);
+    }
+
+    inline void updateScores(const std::vector<size_t>& point_indices,
+      const std::vector<size_t>& partitions) noexcept {
+      //clears the scores
+      std::fill(scoreSmooth->begin(), scoreSmooth->end(), 0);
+      auto& scores = *scoreSmooth;
+      for (const auto& j : point_indices) { 
+        ++scores[partitions[j]]; 
+      }
+    }
+  };
+
+
+  auto subToInd = [&]( size_t x, size_t y, size_t z ) { 
+    return x + ( y << gridDimShift ) + ( z << gridDimShiftSqr );     
+  };
 
   PCCPointSet3                          gridCenters;
-  std::unordered_map<size_t, voxelType> grid;
+  std::unordered_map<size_t, PointIndicesOfGridCell> gridWithPointIndices;
+  std::unordered_map<size_t, ScoreSmoothOfPointsInGridCell> gridWithScores;
+
+  //works just like the map, but with sequential access and less data (pointers instead of objects)
+  std::vector<std::pair<PointIndicesOfGridCell*, ScoreSmoothOfPointsInGridCell*>> pointIndexToScoreMap;
+
+  
   for ( size_t i = 0; i < pointCount; ++i ) {
     const auto&  pos = pointCloud[i];
     const size_t x0  = ( ( static_cast<size_t>( pos[0] ) + voxDimHalf ) >> voxDimShift );
     const size_t y0  = ( ( static_cast<size_t>( pos[1] ) + voxDimHalf ) >> voxDimShift );
     const size_t z0  = ( ( static_cast<size_t>( pos[2] ) + voxDimHalf ) >> voxDimShift );
     size_t       p   = subToInd( x0, y0, z0 );
-    if ( grid.count( p ) == 0u ) {
-      grid[p].init( 64, orientationCount );
+    if ( gridWithPointIndices.count( p ) == 0u ) {
       gridCenters.addPoint( PCCVector3D( x0, y0, z0 ) );
-    }
-    auto& voxel = grid[p];
-    voxel.pointIndices.push_back( i );
-    voxel.pointCount++;
+      gridWithPointIndices[p].init();
+      gridWithScores[p].init(orientationCount);
+    }   
+    gridWithPointIndices[p].pointIndices->push_back( i );
   }
 
-  PCCKdTree                        kdtree( gridCenters );
-  const size_t                     voxSearchRadius  = searchRadius >> voxDimShift;
-  const size_t                     maxNeighborCount = ( std::numeric_limits<int16_t>::max )();
+  PCCKdTree kdtree( gridCenters );
+  const size_t voxSearchRadius  = searchRadius >> voxDimShift;
+  const size_t maxNeighborCount = ( std::numeric_limits<int16_t>::max )();
   std::vector<std::vector<size_t>> adj( gridCenters.getPointCount() );
   computeAdjacencyInfoInRadius( gridCenters, kdtree, adj, maxNeighborCount, voxSearchRadius );
 
   std::vector<size_t> tmpPartition( pointCount );
-  for ( size_t n = 0; n < iterationCount; ++n ) {
-    for ( auto& gridElm : grid ) {
-      auto& voxel = gridElm.second;
-      std::fill( voxel.scoreSmooth.begin(), voxel.scoreSmooth.end(), 0 );
-      for ( auto& j : voxel.pointIndices ) { ++voxel.scoreSmooth[partition[j]]; }
+  std::vector<size_t> scoreSmooth( orientationCount, 0 );
+
+
+  // pre-processing steps from m55143
+  std::vector<double> weights;
+  weights.reserve(gridCenters.getPointCount());
+
+  std::vector<double> weightedScoreSmooths;
+  weightedScoreSmooths.resize(6, 0.0);
+
+  std::vector<double> scores;
+  scores.resize(6, 0.0);
+
+  std::vector<std::vector<size_t*>> scoreSmoothFromAdjsOf;//i
+  scoreSmoothFromAdjsOf.reserve(gridCenters.getPointCount());
+
+  std::vector<std::vector<size_t>*> pointIndicesOfI;  
+  pointIndicesOfI.reserve(gridCenters.getPointCount());
+
+  
+  //for each cell of the grid
+  for ( size_t i = 0; i < gridCenters.getPointCount(); ++i ) {
+    size_t nnPointCount = 0;
+    auto& currentAdjOfI = adj[i];
+    auto iter = currentAdjOfI.begin();
+
+    for(; iter != currentAdjOfI.end(); ++iter) {
+      auto&  pos = gridCenters[*iter];
+      nnPointCount += gridWithPointIndices[subToInd( pos[0], pos[1], pos[2] )].pointIndices->size();
+      if ( nnPointCount >= maxNNCount ) {
+        break;
+      }
     }
-    /*tbb::task_arena limited((int)nbThread_);
-    limited.execute([&] {
-      tbb::parallel_for(size_t(0), gridCenters.getPointCount(), [&](const size_t
-    i) {*/
+    //pre-computing weights from lambda and the total number of nearest neighbors
+    weights.push_back(lambda / nnPointCount);
+    
+    //removing points from the adjacent list if there is more than maxNNCount
+    if(iter+1 < currentAdjOfI.end()) {
+      currentAdjOfI.erase(iter+1, currentAdjOfI.end());
+    }
+    
+
+    //sorting the points
+    std::sort(currentAdjOfI.begin(), currentAdjOfI.end());
+
+
+    //temporary scores for the adjancent of current i (grid cell i)
+    std::vector<size_t*> tempScoreSmoothFromAdjsOfI;
+    tempScoreSmoothFromAdjsOfI.reserve(currentAdjOfI.size());
+    for(const auto& j: currentAdjOfI) {
+      const auto& pos = gridCenters[j];
+      auto& vox = *(gridWithScores[subToInd( pos[0], pos[1], pos[2] )].scoreSmooth);
+      tempScoreSmoothFromAdjsOfI.push_back(vox.data());
+    }
+
+    //move the temporary scores to the end of the scores vector
+    scoreSmoothFromAdjsOf.emplace_back(std::move(tempScoreSmoothFromAdjsOfI));
+
+
+    const auto& pos = gridCenters[i]; 
+    auto& uniq = gridWithPointIndices[subToInd( pos[0], pos[1], pos[2] )].pointIndices;
+    pointIndicesOfI.push_back(uniq.get());
+
+  } 
+
+
+  // makes the map of point indices and score smooths.
+  // this map is used only once per iteration < iterationCount, to update the scores
+  for (auto& gridElm : gridWithPointIndices ) {
+    //gridElm.second is of type PointIndicesOfGridCell
+    //gridElm.first is the index of a grid cell
+    //gridWithScores[gridElm.first] is of type ScoreSmoothOfPointsInGridCell
+    pointIndexToScoreMap.push_back(std::make_pair(&(gridElm.second), &(gridWithScores[gridElm.first])));
+  }
+
+
+  //main loop
+  for ( size_t n = 0; n < iterationCount; ++n ) {
+
+    //restarts the values of score smooth by checking to which partition points now is part of
+    for(auto& pointIndexToScore : pointIndexToScoreMap) {
+      pointIndexToScore.second->updateScores(*(pointIndexToScore.first->pointIndices), partition);
+    }
+
     for ( size_t i = 0; i < gridCenters.getPointCount(); ++i ) {
-      auto&               pos = gridCenters[i];
-      size_t              p   = subToInd( pos[0], pos[1], pos[2] );
-      std::vector<size_t> scoreSmooth( orientationCount, 0 );
-      size_t              nnPointCount = 0;
-      for ( auto& j : adj[i] ) {
-        auto&  pos = gridCenters[j];
-        size_t q   = subToInd( pos[0], pos[1], pos[2] );
-        /*std::transform(scoreSmooth.begin(), scoreSmooth.end(),
-          grid[q].scoreSmooth.begin(),
-          scoreSmooth.begin(), std::plus<size_t>());*/
-        auto& vox = grid[q];
-        for ( size_t k = 0; k < orientationCount; ++k ) { scoreSmooth[k] += vox.scoreSmooth[k]; }
-        nnPointCount += vox.pointCount;
-        if ( nnPointCount >= maxNNCount ) { break; }
-      }
-      const double weight = lambda / nnPointCount;
-      auto&        pI     = grid[p].pointIndices;
-      for ( auto& j : pI ) {
-        const PCCVector3D normal       = normalsGen.getNormal( j );
-        size_t            clusterIndex = partition[j];
-        double            bestScore    = 0.0;
-        for ( size_t k = 0; k < orientationCount; ++k ) {
-          const double scoreNormal = normal * orientations[k];
-          const double score       = scoreNormal + weight * scoreSmooth[k];
-          if ( score > bestScore ) {
-            bestScore    = score;
-            clusterIndex = k;
-          }
+      std::fill(scoreSmooth.begin(), scoreSmooth.end(), 0);
+      
+      //for each grid cell adjacent to cell center i
+      for (const auto& scoreFromAdjOfI: scoreSmoothFromAdjsOf[i]) {
+        for(size_t k=0;k<orientationCount;++k) {
+          scoreSmooth[k]+=scoreFromAdjOfI[k];
         }
-        tmpPartition[j] = clusterIndex;
       }
-    } /*);
-   });*/
+
+      const auto& pI  = *pointIndicesOfI[i];
+
+      //for each point in a grid cell i
+      for (const auto& j : pI ) {
+        const auto& normal = normalsGen.getNormal( j );
+        for ( size_t k = 0; k < orientationCount; ++k ) {
+          scores[k] = normal * orientations[k] + weights[i]*scoreSmooth[k]  ;
+        }
+        const auto& result = std::max_element(scores.begin(), scores.end());
+        tmpPartition[j] = std::distance(scores.begin(), result);
+      } 
+    }
     swap( tmpPartition, partition );
   }
 }

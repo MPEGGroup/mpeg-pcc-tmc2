@@ -44,7 +44,7 @@ typedef struct PointLocalReconstructionMode {
   uint8_t neighbor_;
 } PointLocalReconstructionMode;
 
-// 7.3.6.1.2 Point local reconstruction information syntax
+// 8.3.6.1.2 Point local reconstruction information syntax
 class PLRInformation {
  public:
   PLRInformation() : numberOfModesMinus1_( 0 ), blockThresholdPerPatchMinus1_( 0 ) {

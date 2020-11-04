@@ -37,7 +37,7 @@
 
 namespace pcc {
 
-// 7.3.7.8  EOM patch data unit syntax
+// 8.3.7.8  EOM patch data unit syntax
 class EOMPatchDataUnit {
  public:
   EOMPatchDataUnit() :

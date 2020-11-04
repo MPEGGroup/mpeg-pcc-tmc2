@@ -176,13 +176,13 @@ class PCCImage {
             PCCCOLORFORMAT format,
             bool           rgb2bgr ) {
     resize( widthY, heightY, format );
-    const Pel*   ptr[2][3] = {{Y, U, V}, {V, Y, U}};
-    const size_t width[3]  = {widthY, widthC, widthC};
-    const size_t height[3] = {heightY, heightC, heightC};
-    const size_t stride[3] = {strideY, strideC, strideC};
+    const Pel*   ptr[2][3] = { { Y, U, V }, { V, Y, U } };
+    const size_t width[3]  = { widthY, widthC, widthC };
+    const size_t height[3] = { heightY, heightC, heightC };
+    const size_t stride[3] = { strideY, strideC, strideC };
     int16_t      rounding  = 1 << ( shiftbits - 1 );
     printf(
-        "copy image from HM to PCC: S=%d R=%d (%4zux%4zu S=%4zu C:%4zux%4zu => "
+        "copy image PCC: Stride=%d Round=%d (%4zux%4zu S=%4zu C:%4zux%4zu => "
         "%4zux%4zu) bgr=%d \n",
         shiftbits, rounding, widthY, heightY, strideY, widthC, heightC, width_, height_, rgb2bgr );
     for ( size_t c = 0; c < 3; c++ ) {
@@ -225,12 +225,12 @@ class PCCImage {
     }
     size_t       widthChroma  = width_ / chromaSubsample;
     size_t       heightChroma = height_ / chromaSubsample;
-    Pel*         ptr[2][3]    = {{Y, U, V}, {V, Y, U}};
-    const size_t width[3]     = {width_, widthChroma, widthChroma};
-    const size_t heightSrc[3] = {height_, heightChroma, heightChroma};
-    const size_t heightDst[3] = {heightY, heightC, heightC};
-    const size_t stride[3]    = {strideY, strideC, strideC};
-    printf( "copy image from PCC to HM: S = %d (%4zux%4zu => %4zux%4zu S=%4zu C: %4zux%4zu ) \n", shiftbits, width_,
+    Pel*         ptr[2][3]    = { { Y, U, V }, { V, Y, U } };
+    const size_t width[3]     = { width_, widthChroma, widthChroma };
+    const size_t heightSrc[3] = { height_, heightChroma, heightChroma };
+    const size_t heightDst[3] = { heightY, heightC, heightC };
+    const size_t stride[3]    = { strideY, strideC, strideC };
+    printf( "copy image from PCC: Shift = %d (%4zux%4zu => %4zux%4zu S=%4zu C: %4zux%4zu ) \n", shiftbits, width_,
             height_, widthY, heightY, strideY, widthC, heightC );
     for ( size_t c = 0; c < 3; c++ ) {
       auto* src = channels_[c].data();
@@ -397,6 +397,49 @@ class PCCImage {
     }
   }
 
+  void trace() {
+    size_t maxWidth  = 16;
+    size_t maxHeight = 16;
+    auto*  Y         = channels_[0].data();
+    auto*  U         = channels_[1].data();
+    auto*  V         = channels_[2].data();
+    bool   yuv444    = format_ != PCCCOLORFORMAT::YUV420;
+    size_t widthC    = yuv444 ? width_ : width_ / 2;
+    size_t heightC   = yuv444 ? height_ : height_ / 2;
+
+    printf( "PïctureL = %4zu x %4zud C = %4zu x %4zu\n", width_, height_, widthC, heightC );
+    for ( size_t j = 0; j < std::min( maxHeight, height_ ); j++ ) {
+      printf( "Y %4zu: ", j );
+      for ( size_t i = 0; i < std::min( maxWidth, width_ ); i++ ) { printf( "%2x ", Y[j * width_ + i] ); }
+      if ( !yuv444 ) {
+        if ( j < heightC ) {
+          printf( "  -  U %4zu: ", j );
+          for ( size_t i = 0; i < std::min( maxWidth, widthC ); i++ ) { printf( "%2x ", U[j * widthC + i] ); }
+        } else {
+          printf( "  -  V %4zu: ", j - heightC );
+          for ( size_t i = 0; i < std::min( maxWidth, widthC ); i++ ) {
+            printf( "%2x ", V[( j - heightC ) * widthC + i] );
+          }
+        }
+      } else {
+        printf( "  -  U %4zu: ", j );
+        for ( size_t i = 0; i < std::min( maxWidth, widthC ); i++ ) { printf( "%2x ", U[j * widthC + i] ); }
+        printf( "  -  V %4zu: ", j );
+        for ( size_t i = 0; i < std::min( maxWidth, widthC ); i++ ) { printf( "%2x ", V[(j)*widthC + i] ); }
+      }
+      printf( "\n" );
+    }
+  }
+
+  bool allPixelsEqualToZero() {
+    for ( auto& channel : channels_ ) {
+      for ( auto& e : channel ) {
+        if ( e != 0 ) { return false; }
+      }
+    }
+    return true;
+  }
+
  private:
   T      clamp( T v, T a, T b ) const { return ( ( v < a ) ? a : ( ( v > b ) ? b : v ) ); }
   int    clamp( int v, int a, int b ) const { return ( ( v < a ) ? a : ( ( v > b ) ? b : v ) ); }
@@ -407,8 +450,7 @@ class PCCImage {
   size_t         height_;
   std::vector<T> channels_[N];
   PCCCOLORFORMAT format_;
-  size_t         deprecatedColorFormat_;  // 0.RGB 1.YUV420 2.YUV444 16bits  // TODO JR:
-                                          // must be removed
+  size_t         deprecatedColorFormat_;  // 0.RGB 1.YUV420 2.YUV444 16bits  // TODO JR: must be removed
 };
 }  // namespace pcc
 

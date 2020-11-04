@@ -38,6 +38,7 @@
 #include "PCCHMLibVideoEncoderImpl.h"
 
 using namespace pcc;
+using namespace pcc_hm;
 
 /// encoder application class
 
