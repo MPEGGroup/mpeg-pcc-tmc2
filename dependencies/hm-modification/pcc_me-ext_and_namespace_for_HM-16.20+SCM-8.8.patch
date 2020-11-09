@@ -42,7 +42,18 @@ Index: source/App/TAppDecoder/TAppDecCfg.cpp
  #ifdef WIN32
  #define strdup _strdup
  #endif
-@@ -182,3 +183,6 @@
+@@ -89,6 +90,10 @@
+ #if O0043_BEST_EFFORT_DECODING
+   ("ForceDecodeBitDepth",       m_forceDecodeBitDepth,                 0U,         "Force the decoder to operate at a particular bit-depth (best effort decoding)")
+ #endif
++#if SAMPLE_STREAM
++  //  ("sampleStreamPrecisionByte",           m_SampleStreamUnitSizePrecisionBytes,          4,       "unit_size_precision_bytes")
++  ("fileformatSampleStream",              m_SampleStream,          false,       "Indicate the file format is sample stream")
++#endif
+   ("OutputDecodedSEIMessagesFilename",  m_outputDecodedSEIMessagesFilename,    string(""), "When non empty, output decoded SEI messages to the indicated file. If file is '-', then output to stdout\n")
+   ("ClipOutputVideoToRec709Range",      m_bClipOutputVideoToRec709Range,  false, "If true then clip output video to the Rec. 709 Range on saving")
+ #if MCTS_ENC_CHECK
+@@ -182,3 +187,6 @@
  }
  
  //! \}
@@ -61,7 +72,29 @@ Index: source/App/TAppDecoder/TAppDecCfg.h
  
  //! \ingroup TAppDecoder
  //! \{
-@@ -112,6 +113,8 @@
+@@ -71,6 +72,10 @@
+ #if O0043_BEST_EFFORT_DECODING
+   UInt          m_forceDecodeBitDepth;                ///< if non-zero, force the bit depth at the decoder (best effort decoding)
+ #endif
++#if SAMPLE_STREAM
++  Bool          m_SampleStream;
++  UInt          m_SampleStreamUnitSizePrecisionBytes;
++ #endif
+   std::string   m_outputDecodedSEIMessagesFilename;   ///< filename to output decoded SEI messages to. If '-', then use stdout. If empty, do not output details.
+   Bool          m_bClipOutputVideoToRec709Range;      ///< If true, clip the output video to the Rec 709 range on saving.
+ #if MCTS_ENC_CHECK
+@@ -93,6 +98,10 @@
+ #if O0043_BEST_EFFORT_DECODING
+   , m_forceDecodeBitDepth(0)
+ #endif
++#if SAMPLE_STREAM
++  , m_SampleStream(false)
++  , m_SampleStreamUnitSizePrecisionBytes(4)
++#endif
+   , m_outputDecodedSEIMessagesFilename()
+   , m_bClipOutputVideoToRec709Range(false)
+ #if MCTS_ENC_CHECK
+@@ -112,6 +121,8 @@
  
  //! \}
  
@@ -82,7 +115,31 @@ Index: source/App/TAppDecoder/TAppDecTop.cpp
  
  //! \ingroup TAppDecoder
  //! \{
-@@ -971,3 +972,6 @@
+@@ -142,6 +143,11 @@
+     AnnexBStats stats = AnnexBStats();
+ 
+     InputNALUnit nalu;
++#if SAMPLE_STREAM
++    if(m_SampleStream){
++      sampleStreamNALUnit(bytestream, m_SampleStreamUnitSizePrecisionBytes, nalu.getBitstream().getFifo(), stats);
++    }else
++#endif
+     byteStreamNALUnit(bytestream, nalu.getBitstream().getFifo(), stats);
+ 
+     // call actual decoding function
+@@ -177,6 +183,11 @@
+           bytestream.reset();
+           TComCodingStatistics::SetStatistics(backupStats);
+ #else
++#if SAMPLE_STREAM
++          if(m_SampleStream)
++            bitstreamFile.seekg(location);
++          else
++#endif
+           bitstreamFile.seekg(location-streamoff(3));
+           bytestream.reset();
+ #endif
+@@ -971,3 +982,6 @@
  }
  
  //! \}
@@ -140,7 +197,26 @@ Index: source/App/TAppEncoder/TAppEncCfg.cpp
  #ifdef WIN32
  #define strdup _strdup
  #endif
-@@ -786,6 +787,12 @@
+@@ -132,6 +133,10 @@
+ #if EXTENSION_360_VIDEO
+ , m_ext360(*this)
+ #endif
++#if SAMPLE_STREAM
++, m_fileformatSampleStream(false)
++, m_SampleStreamUnitSizePrecisionBytes(4)
++#endif
+ {
+   m_aidQP = NULL;
+   m_startOfCodedInterval = NULL;
+@@ -782,10 +787,20 @@
+   ("WarnUnknowParameter,w",                           warnUnknowParameter,                                  0, "warn for unknown configuration parameters instead of failing")
+ 
+   // File, I/O and source parameters
++#if SAMPLE_STREAM
++  ("fileformateSampleStream",                         m_fileformatSampleStream,                             false, "FileFormat: 1. SampleStream 0.ByteStream(AnnexB)")
++  //("sampleStreamPrecisionBytes",                     m_SampleStreamUnitSizePrecisionBytes,                 4, "FileFormat: Unit Size Precision in Byte for SampleStream")
++#endif
+   ("InputFile,i",                                     m_inputFileName,                             string(""), "Original YUV input file name")
    ("InputPathPrefix,-ipp",                            inputPathPrefix,                             string(""), "pathname to prepend to input filename")
    ("BitstreamFile,b",                                 m_bitstreamFileName,                         string(""), "Bitstream output file name")
    ("ReconFile,o",                                     m_reconFileName,                             string(""), "Reconstructed YUV output file name")
@@ -153,10 +229,14 @@ Index: source/App/TAppEncoder/TAppEncCfg.cpp
    ("SourceWidth,-wdt",                                m_iSourceWidth,                                       0, "Source picture width")
    ("SourceHeight,-hgt",                               m_iSourceHeight,                                      0, "Source picture height")
    ("InputBitDepth",                                   m_inputBitDepth[CHANNEL_TYPE_LUMA],                   8, "Bit-depth of input file")
-@@ -3083,6 +3090,14 @@
+@@ -3083,6 +3098,18 @@
    printf("Input          File                    : %s\n", m_inputFileName.c_str()          );
    printf("Bitstream      File                    : %s\n", m_bitstreamFileName.c_str()      );
    printf("Reconstruction File                    : %s\n", m_reconFileName.c_str()          );
++#if SAMPLE_STREAM
++  Bool        m_fileformatSampleStream;
++  UInt        m_SampleStreamUnitSizePrecisionBytes;
++#endif
 +#if PATCH_BASED_MVP || PCC_ME_EXT
 +  printf("PCCExt                                 : %s\n", (m_usePCCExt ? "Enabled" : "Disabled"));
 +  if (m_usePCCExt) {
@@ -168,7 +248,7 @@ Index: source/App/TAppEncoder/TAppEncCfg.cpp
    printf("Real     Format                        : %dx%d %gHz\n", m_iSourceWidth - m_confWinLeft - m_confWinRight, m_iSourceHeight - m_confWinTop - m_confWinBottom, (Double)m_iFrameRate/m_temporalSubsampleRatio );
    printf("Internal Format                        : %dx%d %gHz\n", m_iSourceWidth, m_iSourceHeight, (Double)m_iFrameRate/m_temporalSubsampleRatio );
    printf("Sequence PSNR output                   : %s\n", (m_printMSEBasedSequencePSNR ? "Linear average, MSE-based" : "Linear average only") );
-@@ -3350,3 +3365,6 @@
+@@ -3350,3 +3377,6 @@
  }
  
  //! \}
@@ -289,7 +369,25 @@ Index: source/App/TAppEncoder/TAppEncTop.cpp
    printChromaFormat();
  
    // main encoder loop
-@@ -906,3 +961,6 @@
+@@ -819,8 +874,17 @@
+       }
+ 
+       const AccessUnit& au = *(iterBitstream++);
++#if SAMPLE_STREAM
++      if(m_fileformatSampleStream){
++        const vector<UInt>& stats = writeSampleStream(bitstreamFile, m_SampleStreamUnitSizePrecisionBytes, au);
++        rateStatsAccum(au, stats);
++      } else{
++#endif
+       const vector<UInt>& stats = writeAnnexB(bitstreamFile, au);
+       rateStatsAccum(au, stats);
++#if SAMPLE_STREAM
++      }
++#endif
+     }
+   }
+ }
+@@ -906,3 +970,6 @@
  }
  
  //! \}
@@ -377,18 +475,36 @@ Index: source/App/TAppMCTSExtractor/TAppMctsExtTop.cpp
 ===================================================================
 --- source/App/TAppMCTSExtractor/TAppMctsExtTop.cpp	(revision 4998)
 +++ source/App/TAppMCTSExtractor/TAppMctsExtTop.cpp	(working copy)
-@@ -47,6 +47,7 @@
- #include "TLibDecoder/NALread.h"
- #include "TLibEncoder/NALwrite.h"
- #include "TLibCommon/SEI.h"
-+namespace pcc_hm {
+@@ -44,12 +44,13 @@
  
- #if MCTS_EXTRACTION
-   //! \ingroup TAppMctsExt
-@@ -406,3 +407,6 @@
-   }
- }
- #endif
+ #include "TAppMctsExtTop.h"
+ #include "TLibDecoder/AnnexBread.h"
+-#include "TLibDecoder/NALread.h"
+-#include "TLibEncoder/NALwrite.h"
+-#include "TLibCommon/SEI.h"
+-
+-#if MCTS_EXTRACTION
+-  //! \ingroup TAppMctsExt
++#include "TLibDecoder/NALread.h"
++#include "TLibEncoder/NALwrite.h"
++#include "TLibCommon/SEI.h"
++namespace pcc_hm {
++
++#if MCTS_EXTRACTION
++  //! \ingroup TAppMctsExt
+   //! \{
+ 
+   // ====================================================================================================================
+@@ -403,6 +404,9 @@
+     }
+     bitstreamFile << nalu.m_nalUnitData.str();
+ 
+-  }
+-}
+-#endif
++  }
++}
++#endif
 +
 +
 +} // namespace pcc_hm
@@ -396,20 +512,40 @@ Index: source/App/TAppMCTSExtractor/TAppMctsExtTop.h
 ===================================================================
 --- source/App/TAppMCTSExtractor/TAppMctsExtTop.h	(revision 4998)
 +++ source/App/TAppMCTSExtractor/TAppMctsExtTop.h	(working copy)
-@@ -48,6 +48,7 @@
- 
- #if MCTS_EXTRACTION
- #include "TAppMctsExtCfg.h"
+@@ -45,13 +45,14 @@
+ #include "TLibDecoder/TDecTop.h"
+ #include "TLibEncoder/TEncTop.h"
+ #include "TLibCommon/AccessUnit.h"
++
++#if MCTS_EXTRACTION
++#include "TAppMctsExtCfg.h"
 +namespace pcc_hm {
++
++  //! \ingroup TAppMctsExt
++  //! \{
  
-   //! \ingroup TAppMctsExt
-   //! \{
-@@ -94,4 +95,6 @@
- //! \}
+-#if MCTS_EXTRACTION
+-#include "TAppMctsExtCfg.h"
+-
+-  //! \ingroup TAppMctsExt
+-  //! \{
+-
+   // ====================================================================================================================
+   // Class definition
+   // ====================================================================================================================
+@@ -91,7 +92,9 @@
+   Void  xWriteOutput(std::ostream& bitstreamFile, const AccessUnit accessUnit); ///< write AU into output bitstream
+ };
  
- #endif
+-//! \}
+-
+-#endif
+-#endif
++//! \}
++
++#endif
 +} // namespace pcc_hm
- #endif
++#endif
 +
 Index: source/App/TAppMCTSExtractor/mctsExtmain.cpp
 ===================================================================
@@ -663,7 +799,16 @@ Index: source/Lib/TLibCommon/CommonDef.h
 ===================================================================
 --- source/Lib/TLibCommon/CommonDef.h	(revision 4998)
 +++ source/Lib/TLibCommon/CommonDef.h	(working copy)
-@@ -50,6 +50,7 @@
+@@ -43,6 +43,8 @@
+ #include <assert.h>
+ #include <limits>
+ 
++#define SAMPLE_STREAM 1
++
+ #if _MSC_VER > 1000
+ // disable "signed and unsigned mismatch"
+ #pragma warning( disable : 4018 )
+@@ -50,6 +52,7 @@
  #pragma warning( disable : 4800 )
  #endif // _MSC_VER > 1000
  #include "TypeDef.h"
@@ -671,7 +816,7 @@ Index: source/Lib/TLibCommon/CommonDef.h
  
  #ifdef _MSC_VER
  #if _MSC_VER <= 1500
-@@ -312,5 +313,7 @@
+@@ -312,5 +315,7 @@
  
  //! \}
  
@@ -2018,7 +2163,7 @@ Index: source/Lib/TLibCommon/TComYuv.h
  
  //! \ingroup TLibCommon
  //! \{
-@@ -200,9 +201,9 @@
+@@ -200,13 +201,15 @@
    UInt         getHeight                  (const ComponentID id) const { return m_iHeight >> getComponentScaleY(id);  }
    UInt         getWidth                   (const ComponentID id) const { return m_iWidth >> getComponentScaleX(id);   }
    ChromaFormat getChromaFormat            ()                     const { return m_chromaFormatIDC; }
@@ -2031,7 +2176,6 @@ Index: source/Lib/TLibCommon/TComYuv.h
    Void         convert          (const Bool extendedPrecision, const UInt pixX, const UInt pixY, const UInt width, Bool bForwardConversion, const BitDepths& bitDepths, Bool bLossless = false, TComYuv* pcYuvNoCorrResi= NULL);
    Void         DefaultConvertPix(const UInt pixX, const UInt pixY, const UInt width, const BitDepths& bitDepths);
  };// END CLASS DEFINITION TComYuv
-@@ -209,4 +210,6 @@
  
  //! \}
  
@@ -2093,9 +2237,65 @@ Index: source/Lib/TLibDecoder/AnnexBread.cpp
  
  using namespace std;
  
-@@ -197,3 +198,6 @@
+@@ -196,4 +197,62 @@
+   stats.m_numBytesInNALUnit = UInt(nalUnit.size());
    return eof;
  }
++
++#if SAMPLE_STREAM
++static Void
++_sampleStreamNALUnit(
++  InputByteStream& bs,
++  size_t unitSizePrecisionBytes,
++  vector<uint8_t>& nalUnit,
++  AnnexBStats& stats)
++{
++  //read the size
++  size_t auSize=0;
++  for(size_t i=0; i<unitSizePrecisionBytes; i++)
++    auSize = (auSize<<8) + bs.readByte();
++  
++#if RExt__DECODER_DEBUG_BIT_STATISTICS
++  statBits.bits+=32; statBits.count+=4;
++#endif
++  stats.m_numStartCodePrefixBytes += 0;
++
++#if RExt__DECODER_DEBUG_BIT_STATISTICS
++  TComCodingStatistics::SStat &bodyStats=TComCodingStatistics::GetStatisticEP(STATS__NAL_UNIT_TOTAL_BODY);
++#endif
++
++  for(size_t nalubyte=0; nalubyte<auSize; nalubyte++)
++  {
++#if RExt__DECODER_DEBUG_BIT_STATISTICS
++    uint8_t thebyte=bs.readByte();bodyStats.bits+=8;bodyStats.count++;
++    nalUnit.push_back(thebyte);
++#else
++    nalUnit.push_back(bs.readByte());
++#endif
++  }
++  
++}
++
++Bool
++sampleStreamNALUnit(
++  InputByteStream& bs,
++  size_t unitSizePrecisionBytes,
++  vector<uint8_t>& nalUnit,
++  AnnexBStats& stats)
++{
++  Bool eof = false;
++  try
++  {
++    _sampleStreamNALUnit(bs, unitSizePrecisionBytes, nalUnit, stats);
++  }
++  catch (...)
++  {
++    eof = true;
++  }
++  stats.m_numBytesInNALUnit = UInt(nalUnit.size());
++  return eof;
++}
++#endif
  //! \}
 +
 +
@@ -2112,8 +2312,14 @@ Index: source/Lib/TLibDecoder/AnnexBread.h
  
  //! \ingroup TLibDecoder
  //! \{
-@@ -196,4 +197,6 @@
+@@ -194,6 +195,12 @@
  
+ Bool byteStreamNALUnit(InputByteStream& bs, std::vector<uint8_t>& nalUnit, AnnexBStats& stats);
+ 
++#if SAMPLE_STREAM
++Bool sampleStreamNALUnit(InputByteStream& bs, size_t unitSizePrecisionBytes, std::vector<uint8_t>& nalUnit, AnnexBStats& stats);
++#endif
++
  //! \}
  
 +} // namespace pcc_hm
@@ -2623,8 +2829,33 @@ Index: source/Lib/TLibEncoder/AnnexBwrite.h
  
  //! \ingroup TLibEncoder
  //! \{
-@@ -88,4 +89,6 @@
+@@ -86,6 +87,31 @@
+ 
+   return annexBsizes;
  }
++
++#if SAMPLE_STREAM
++static std::vector<UInt> writeSampleStream(std::ostream& out, UInt precisionBytes, const AccessUnit& au)
++{
++  std::vector<UInt> sampleStreamsizes;
++
++  for (AccessUnit::const_iterator it = au.begin(); it != au.end(); it++)
++  {
++    const NALUnitEBSP& nalu = **it;
++    UInt size = 0;
++    
++    TComOutputBitstream bsNALUSize;
++    bsNALUSize.write(nalu.m_nalUnitData.str().size(), precisionBytes*8);
++    out.write(reinterpret_cast<const TChar*>(bsNALUSize.getByteStream()), bsNALUSize.getByteStreamLength());
++    out << nalu.m_nalUnitData.str();
++    size += UInt(nalu.m_nalUnitData.str().size());
++    sampleStreamsizes.push_back(size);
++  }
++
++  return sampleStreamsizes;
++}
++#endif
++
  //! \}
  
 +} // namespace pcc_hm

@@ -438,7 +438,7 @@ static char getSeparator( const std::string& eFilename ) {
 
 static inline std::string removeFileExtension( const std::string string ) {
   size_t pos = string.find_last_of( "." );
-  return ( pos != std::string::npos && pos + 4 == string.length() ) ? string.substr( 0, pos ) : string;
+  return pos != std::string::npos ? string.substr( 0, pos ) : string;
 }
 
 static std::string getDirectoryName( const std::string& string ) {
