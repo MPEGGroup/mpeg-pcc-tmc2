@@ -423,10 +423,10 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                 }
                 break;
               default: std::cout << "Warning: no texture padding applied!" << std::endl;
-            }  // switch
+            } // switch
             if ( mapCount > 1 && !params_.multipleStreams_ && params_.groupDilation_ ) {
               // Group dilation in texture
-              auto&    frame        = frames[f].getAtlasFrameContext();
+              auto&    frame        = frames[f].getAtlasFrameContext();              
               auto&    occupancyMap = frame.getOccupancyMap();
               auto&    width        = frame.getWidth();
               auto&    height       = frame.getHeight();
@@ -7280,14 +7280,14 @@ bool PCCEncoder::generateTextureVideo( const PCCGroupOfFrames&     sources,
         }
       }
       subReconstruct.resize( numPointSub );
-      sources[i].transferColors(
-          subReconstruct, int32_t( params_.bestColorSearchRange_ ), static_cast<int>( params_.losslessGeo_ ) == 1,
-          params_.numNeighborsColorTransferFwd_, params_.numNeighborsColorTransferBwd_,
-          params_.useDistWeightedAverageFwd_, params_.useDistWeightedAverageBwd_,
-          params_.skipAvgIfIdenticalSourcePointPresentFwd_, params_.skipAvgIfIdenticalSourcePointPresentBwd_,
-          params_.distOffsetFwd_, params_.distOffsetBwd_, params_.maxGeometryDist2Fwd_, params_.maxGeometryDist2Bwd_,
-          params_.maxColorDist2Fwd_, params_.maxColorDist2Bwd_, params_.excludeColorOutlier_,
-          params_.thresholdColorOutlierDist_ );
+      sources[i].transferColors( subReconstruct, int32_t( params_.bestColorSearchRange_ ),
+                                 static_cast<int>( params_.losslessGeo_ ) == 1, params_.numNeighborsColorTransferFwd_,
+                                 params_.numNeighborsColorTransferBwd_, params_.useDistWeightedAverageFwd_,
+                                 params_.useDistWeightedAverageBwd_, params_.skipAvgIfIdenticalSourcePointPresentFwd_,
+                                 params_.skipAvgIfIdenticalSourcePointPresentBwd_, params_.distOffsetFwd_,
+                                 params_.distOffsetBwd_, params_.maxGeometryDist2Fwd_, params_.maxGeometryDist2Bwd_,
+                                 params_.maxColorDist2Fwd_, params_.maxColorDist2Bwd_, params_.excludeColorOutlier_,
+                                 params_.thresholdColorOutlierDist_ );
 
       for ( size_t j = 0; j < numPointSub; j++ ) {
         reconstructs[i].setColor( subReconstructIndex[j], subReconstruct.getColor( j ) );

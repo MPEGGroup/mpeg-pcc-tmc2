@@ -205,10 +205,7 @@ class PCCAtlasHighLevelSyntax {
       case USER_DATA_UNREGISTERED: sharedPtr = std::make_shared<SEIUserDataUnregistered>(); break;
       case RECOVERY_POINT: sharedPtr = std::make_shared<SEIRecoveryPoint>(); break;
       case NO_RECONSTRUCTION: sharedPtr = std::make_shared<SEINoDisplay>(); break;
-      case TIME_CODE:
-        sharedPtr = std::make_shared<SEITimeCode>();
-        break;
-        break;
+      case TIME_CODE: sharedPtr = std::make_shared<SEITimeCode>(); break;
       case SEI_MANIFEST: sharedPtr = std::make_shared<SEIManifest>(); break;
       case SEI_PREFIX_INDICATION: sharedPtr = std::make_shared<SEIPrefixIndication>(); break;
       case ACTIVE_SUB_BITSTREAMS: sharedPtr = std::make_shared<SEIActiveSubBitstreams>(); break;
