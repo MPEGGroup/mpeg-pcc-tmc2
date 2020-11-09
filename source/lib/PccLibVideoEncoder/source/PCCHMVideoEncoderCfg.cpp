@@ -46,9 +46,7 @@
 #include <limits>
 #include "TLibCommon/TComRom.h"
 #include "PCCHMLibVideoEncoderCfg.h"
-//#include "TAppCommon/program_options_lite.h"
-#include "program_options_lite.h"
-
+#include "TAppCommon/program_options_lite.h"
 #include "TLibEncoder/TEncRateCtrl.h"
 #ifdef WIN32
 #define strdup _strdup
@@ -58,20 +56,9 @@
 #define MACRO_TO_STRING( val ) MACRO_TO_STRING_HELPER( val )
 
 using namespace std;
-namespace po = df::program_options_lite;
+using namespace pcc_hm;
 
-// template <typename T>
-// static std::istream& readUInt( std::istream& in, T& val ) {
-//   unsigned int tmp;
-//   in >> tmp;
-//   val = T( tmp );
-//   return in;
-// }
-
-// namespace pcc {
-// static std::istream& operator>>( std::istream& in, PCCColorTransform& val ) {
-// return readUInt( in, val ); }
-// }  // namespace pcc
+namespace po = pcc_hm::df::program_options_lite;
 
 enum UIProfileName  // this is used for determining profile strings, where
                     // multiple profiles map to a single profile idc with
@@ -183,6 +170,7 @@ Void PCCHMLibVideoEncoderCfg::create() {}
 
 Void PCCHMLibVideoEncoderCfg::destroy() {}
 
+namespace pcc_hm{
 std::istringstream& operator>>( std::istringstream& in,
                                 GOPEntry&           entry )  // input
 {
@@ -212,8 +200,8 @@ std::istringstream& operator>>( std::istringstream& in,
   }
   return in;
 }
-
 Bool confirmPara( Bool bflag, const TChar* message );
+}  //~namespace pcc_hm
 
 static inline ChromaFormat numberToChromaFormat( const Int val ) {
   switch ( val ) {
@@ -362,6 +350,7 @@ static const struct MapStrToLevel {
     {"6.1", Level::LEVEL6_1}, {"6.2", Level::LEVEL6_2}, {"8.5", Level::LEVEL8_5},
 };
 
+namespace pcc_hm { 
 UInt g_uiMaxCpbSize[2][21] = {
     //         LEVEL1,        LEVEL2,LEVEL2_1,     LEVEL3, LEVEL3_1,
     // LEVEL4, LEVEL4_1,       LEVEL5,  LEVEL5_1,  LEVEL5_2,    LEVEL6,
@@ -370,6 +359,8 @@ UInt g_uiMaxCpbSize[2][21] = {
      0, 12000000, 20000000, 0,      25000000, 40000000, 60000000, 60000000, 120000000, 240000000},
     {0, 0,        0,        0, 0,         0,         0,         0,         0,         0,        0,
      0, 30000000, 50000000, 0, 100000000, 160000000, 240000000, 240000000, 480000000, 800000000}};
+
+} //~namespace pcc_hm
 
 static const struct MapStrToCostMode {
   const TChar* str;
@@ -413,20 +404,10 @@ static istream& readStrToEnum( P map[], UInt mapLen, istream& in, T& val ) {
 
 // inline to prevent compiler warnings for "unused static function"
 
+namespace pcc_hm{
 static inline istream& operator>>( istream& in, UIProfileName& profile ) {
   return readStrToEnum( strToUIProfileName, sizeof( strToUIProfileName ) / sizeof( *strToUIProfileName ), in, profile );
 }
-
-namespace Level {
-static inline istream& operator>>( istream& in, Tier& tier ) {
-  return readStrToEnum( strToTier, sizeof( strToTier ) / sizeof( *strToTier ), in, tier );
-}
-
-static inline istream& operator>>( istream& in, Name& level ) {
-  return readStrToEnum( strToLevel, sizeof( strToLevel ) / sizeof( *strToLevel ), in, level );
-}
-}  // namespace Level
-
 static inline istream& operator>>( istream& in, CostMode& mode ) {
   return readStrToEnum( strToCostMode, sizeof( strToCostMode ) / sizeof( *strToCostMode ), in, mode );
 }
@@ -435,6 +416,16 @@ static inline istream& operator>>( istream& in, ScalingListMode& mode ) {
   return readStrToEnum( strToScalingListMode, sizeof( strToScalingListMode ) / sizeof( *strToScalingListMode ), in,
                         mode );
 }
+namespace Level {
+static inline istream& operator>>( istream& in, Tier& tier ) {
+  return readStrToEnum( strToTier, sizeof( strToTier ) / sizeof( *strToTier ), in, tier );
+}
+
+static inline istream& operator>>( istream& in, Name& level ) {
+  return readStrToEnum( strToLevel, sizeof( strToLevel ) / sizeof( *strToLevel ), in, level );
+}
+}  //~namespace Level
+}  //~namespace pcc_hm
 
 template <class T>
 struct SMultiValueInput {
@@ -484,10 +475,12 @@ struct SMultiValueInput {
   istream& readValues( std::istream& in );
 };
 
+namespace pcc_hm{
 template <class T>
 static inline istream& operator>>( std::istream& in, SMultiValueInput<T>& values ) {
   return values.readValues( in );
 }
+}  //~namespace pcc_hm
 
 template <>
 UInt SMultiValueInput<UInt>::readValue( const TChar*& pStr, Bool& bSuccess ) {
@@ -567,6 +560,7 @@ istream& SMultiValueInput<T>::readValues( std::istream& in ) {
 }
 
 #if JVET_E0059_FLOATING_POINT_QP_FIX
+namespace pcc_hm {
 template <class T>
 static inline istream& operator>>( std::istream& in, PCCHMLibVideoEncoderCfg::OptionalValue<T>& value ) {
   in >> std::ws;
@@ -578,6 +572,7 @@ static inline istream& operator>>( std::istream& in, PCCHMLibVideoEncoderCfg::Op
   }
   return in;
 }
+}  //~namespace pcc_hm
 #endif
 
 static Void automaticallySelectRExtProfile( const Bool         bUsingGeneralRExtTools,
@@ -3480,11 +3475,13 @@ Void PCCHMLibVideoEncoderCfg::xPrintParameter() {
   fflush( stdout );
 }
 
+namespace pcc_hm{
 Bool confirmPara( Bool bflag, const TChar* message ) {
   if ( !bflag ) { return false; }
 
   printf( "Error: %s\n", message );
   return true;
+}
 }
 
 //! \}

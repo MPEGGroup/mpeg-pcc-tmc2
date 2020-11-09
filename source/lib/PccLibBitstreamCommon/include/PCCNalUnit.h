@@ -37,7 +37,7 @@
 
 namespace pcc {
 
-// 7.3.5 NAL unit syntax
+// 8.3.5 NAL unit syntax
 class NalUnit {
  public:
   NalUnit( NalUnitType nalUnitType = NAL_TRAIL_N, uint8_t layerId = 0, uint8_t temporalyIdPlus1 = 0 ) :

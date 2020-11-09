@@ -37,7 +37,7 @@
 //! \ingroup libMD5
 //! \{
 
-static const UInt MD5_DIGEST_STRING_LENGTH=16;
+static const uint32_t MD5_DIGEST_STRING_LENGTH=16;
 
 class MD5
 {

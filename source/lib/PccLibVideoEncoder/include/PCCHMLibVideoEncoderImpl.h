@@ -43,7 +43,6 @@
 #include <list>
 #include <ostream>
 #include "TLibEncoder/TEncTop.h"
-#include "TLibVideoIO/TVideoIOYuv.h"
 #include "TLibCommon/AccessUnit.h"
 #include "PCCHMLibVideoEncoderCfg.h"
 #include <list>
@@ -60,6 +59,9 @@
 #include "TAppCommon/program_options_lite.h"
 
 namespace pcc {
+  
+using namespace pcc_hm; 
+
 
 // ====================================================================================================================
 // Class definition

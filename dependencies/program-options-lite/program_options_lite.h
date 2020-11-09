@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2017, ITU/ISO/IEC
+ * Copyright (c) 2010-2020, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,31 +30,19 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-#include <vector>
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <list>
 #include <map>
 
+#define JVET_O0549_ENCODER_ONLY_FILTER_POL 1 // JVET-O0549: Encoder-only GOP-based temporal filter. Program Options Lite related changes.
+
 #ifndef __PROGRAM_OPTIONS_LITE__
 #define __PROGRAM_OPTIONS_LITE__
 
 //! \ingroup TAppCommon
 //! \{
-
-static std::istream& operator>>( std::istream& in, std::vector<int>& vector ) {
-  std::string str;
-  in >> str;
-  str.erase( std::remove( str.begin(), str.end(), ' ' ), str.end() );
-  size_t pos = 0;
-  while ( ( pos = str.find( "," ) ) != std::string::npos ) {
-    vector.push_back( std::stoi( str.substr( 0, pos ) ) );
-    str.erase( 0, pos + 1 );
-  }
-  vector.push_back( std::stoi( str.substr( 0, pos ) ) );
-  return in;
-}
 
 
 namespace df
@@ -87,6 +75,15 @@ namespace df
     };
 
     extern ErrorReporter default_error_reporter;
+
+    struct SilentReporter : ErrorReporter
+    {
+      SilentReporter() { }
+      virtual ~SilentReporter() { }
+      virtual std::ostream& error( const std::string& where ) { return dest; }
+      virtual std::ostream& warn( const std::string& where ) { return dest; }
+      std::stringstream dest;
+    };
 
     void doHelp(std::ostream& out, Options& opts, unsigned columns = 80);
     std::list<const char*> scanArgv(Options& opts, unsigned argc, const char* argv[], ErrorReporter& error_reporter = default_error_reporter);
@@ -201,6 +198,7 @@ namespace df
         }
         std::list<std::string> opt_long;
         std::list<std::string> opt_short;
+        std::list<std::string> opt_prefix;
         OptionBase* opt;
       };
 
@@ -212,6 +210,7 @@ namespace df
       typedef std::map<std::string, NamesPtrList> NamesMap;
       NamesMap opt_long_map;
       NamesMap opt_short_map;
+      NamesMap opt_prefix_map;
     };
 
     /* Class with templated overloaded operator(), for use by Options::addOptions() */
@@ -233,7 +232,61 @@ namespace df
         parent.addOption(new Option<T>(name, storage, default_val, desc));
         return *this;
       }
+      template<typename T>
+      OptionSpecific&
+        operator()(const std::string& name, T* storage, T default_val, unsigned uiMaxNum, const std::string& desc = "")
+      {
+        std::string cNameBuffer;
+        std::string cDescriptionBuffer;
 
+        for (unsigned int uiK = 0; uiK < uiMaxNum; uiK++)
+        {
+          // it needs to be reset when extra digit is added, e.g. number 10 and above
+          cNameBuffer.resize(name.size() + 10);
+          cDescriptionBuffer.resize(desc.size() + 10);
+
+          // isn't there are sprintf function for string??
+          sprintf((char*)cNameBuffer.c_str(), name.c_str(), uiK, uiK);
+          sprintf((char*)cDescriptionBuffer.c_str(), desc.c_str(), uiK, uiK);
+
+          size_t pos = cNameBuffer.find_first_of('\0');
+          if (pos != std::string::npos)
+          {
+            cNameBuffer.resize(pos);
+          }
+
+          parent.addOption(new Option<T>(cNameBuffer, (storage[uiK]), default_val, cDescriptionBuffer));
+        }
+
+        return *this;
+      }
+
+      template<typename T>
+      OptionSpecific&
+        operator()(const std::string& name, T** storage, T default_val, unsigned uiMaxNum, const std::string& desc = "")
+      {
+        std::string cNameBuffer;
+        std::string cDescriptionBuffer;
+
+        for (unsigned int uiK = 0; uiK < uiMaxNum; uiK++)
+        {
+          // it needs to be reset when extra digit is added, e.g. number 10 and above
+          cNameBuffer.resize(name.size() + 10);
+          cDescriptionBuffer.resize(desc.size() + 10);
+
+          // isn't there are sprintf function for string??
+          sprintf((char*)cNameBuffer.c_str(), name.c_str(), uiK, uiK);
+          sprintf((char*)cDescriptionBuffer.c_str(), desc.c_str(), uiK, uiK);
+
+          size_t pos = cNameBuffer.find_first_of('\0');
+          if (pos != std::string::npos)
+            cNameBuffer.resize(pos);
+
+          parent.addOption(new Option<T>(cNameBuffer, *(storage[uiK]), default_val, cDescriptionBuffer));
+        }
+
+        return *this;
+      }
       /**
        * Add option described by name to the parent Options list,
        *   with desc as an optional help description

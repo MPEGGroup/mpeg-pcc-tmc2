@@ -23,4 +23,14 @@ then
     echo -e "\033[0;32mClean: ${CURDIR}/dependencies/HDRTools \033[0m";
     rm -rf ${CURDIR}/dependencies/HDRTools;
   fi
+  if [ "$1" == "ffmpeg" ] || [ "$1" == "all" ] 
+  then 
+    echo -e "\033[0;32mClean: ${CURDIR}/dependencies/ffmpeg \033[0m";
+    rm -rf ${CURDIR}/dependencies/ffmpeg;
+  fi
+  if [ "$1" == "vtm" ] || [ "$1" == "all" ] 
+  then 
+    echo -e "\033[0;32mClean: ${CURDIR}/dependencies/vtm \033[0m";
+    rm -rf ${CURDIR}/dependencies/vtm;
+  fi
 fi

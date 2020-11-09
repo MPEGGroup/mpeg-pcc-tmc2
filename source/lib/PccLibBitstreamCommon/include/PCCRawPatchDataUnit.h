@@ -37,7 +37,7 @@
 
 namespace pcc {
 
-// 7.3.7.7  raw patch data unit syntax
+// 8.3.7.7  raw patch data unit syntax
 class RawPatchDataUnit {
  public:
   RawPatchDataUnit() :
@@ -46,8 +46,8 @@ class RawPatchDataUnit {
       pos2dY_( 0 ),
       size2dXMinus1_( 0 ),
       size2dYMinus1_( 0 ),
-      pos3dOffsetX_( 0 ),
-      pos3dOffsetY_( 0 ),
+      pos3dOffsetU_( 0 ),
+      pos3dOffsetV_( 0 ),
       pos3dOffsetZ_( 0 ),
       rawPointsMinus1_( 0 ),
       patchIndex_( 0 ),
@@ -60,8 +60,8 @@ class RawPatchDataUnit {
   size_t   get2dPosY() { return pos2dY_; }
   int64_t  get2dSizeXMinus1() { return size2dXMinus1_; }
   int64_t  get2dSizeYMinus1() { return size2dYMinus1_; }
-  size_t   get3dOffsetX() { return pos3dOffsetX_; }
-  size_t   get3dOffsetY() { return pos3dOffsetY_; }
+  size_t   get3dOffsetU() { return pos3dOffsetU_; }
+  size_t   get3dOffsetV() { return pos3dOffsetV_; }
   size_t   get3dOffsetZ() { return pos3dOffsetZ_; }
   uint32_t getRawPointsMinus1() { return rawPointsMinus1_; }
   size_t   getPatchIndex() { return patchIndex_; }
@@ -73,8 +73,8 @@ class RawPatchDataUnit {
   void     set2dPosY( size_t value ) { pos2dY_ = value; }
   void     set2dSizeXMinus1( uint64_t value ) { size2dXMinus1_ = value; }
   void     set2dSizeYMinus1( uint64_t value ) { size2dYMinus1_ = value; }
-  void     set3dOffsetX( size_t value ) { pos3dOffsetX_ = value; }
-  void     set3dOffsetY( size_t value ) { pos3dOffsetY_ = value; }
+  void     set3dOffsetU( size_t value ) { pos3dOffsetU_ = value; }
+  void     set3dOffsetV( size_t value ) { pos3dOffsetV_ = value; }
   void     set3dOffsetZ( size_t value ) { pos3dOffsetZ_ = value; }
   void     setRawPointsMinus1( uint32_t value ) { rawPointsMinus1_ = value; }
 
@@ -84,8 +84,8 @@ class RawPatchDataUnit {
   size_t   pos2dY_;
   uint64_t size2dXMinus1_;
   uint64_t size2dYMinus1_;
-  size_t   pos3dOffsetX_;
-  size_t   pos3dOffsetY_;
+  size_t   pos3dOffsetU_;
+  size_t   pos3dOffsetV_;
   size_t   pos3dOffsetZ_;
   uint32_t rawPointsMinus1_;
   size_t   patchIndex_;

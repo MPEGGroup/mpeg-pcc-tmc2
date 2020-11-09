@@ -37,7 +37,7 @@
 
 namespace pcc {
 
-// 7.3.4.3 Occupancy information Set Syntax
+// 8.3.4.3 Occupancy information Set Syntax
 class OccupancyInformation {
  public:
   OccupancyInformation() :

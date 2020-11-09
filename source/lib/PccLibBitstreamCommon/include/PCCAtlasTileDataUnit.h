@@ -38,7 +38,7 @@
 
 namespace pcc {
 
-// 7.3.7.1  General atlas tile data unit syntax
+// 8.3.7.1  General atlas tile data unit syntax
 class AtlasTileDataUnit {
  public:
   AtlasTileDataUnit() {}

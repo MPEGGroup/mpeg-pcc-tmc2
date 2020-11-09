@@ -34,34 +34,13 @@
 #include "PCCEncoderParameters.h"
 #include "PCCContext.h"
 #include "PCCFrameContext.h"
+#include "PCCVirtualVideoEncoder.h"
 using namespace pcc;
 
 const std::vector<PointLocalReconstructionMode> g_pointLocalReconstructionMode = {
     {false, false, 0, 1}, {true, false, 0, 1}, {true, true, 0, 1}, {true, false, 0, 2}, {true, true, 0, 2},
     {false, false, 1, 1}, {true, false, 1, 1}, {true, true, 1, 1}, {true, false, 1, 2}, {true, true, 1, 2},
 };
-
-bool checkCodecId( PCCCodecId codecId ) {
-  switch ( codecId ) {
-#ifdef USE_HMLIB_VIDEO_CODEC
-    case HMLIB: break;
-#endif
-#ifdef USE_FFMPEG_VIDEO_CODEC
-    case FFMPEG: break;
-#endif
-#ifdef USE_HMAPP_VIDEO_CODEC
-    case HMAPP: break;
-#endif
-#ifdef USE_JMAPP_VIDEO_CODEC;
-    case JMAPP: break;
-#endif
-    default:
-      printf( "Error: codec id %d not supported \n", (int)codecId );
-      return false;
-      break;
-  }
-  return true;
-}
 
 PCCEncoderParameters::PCCEncoderParameters() {
   uncompressedDataPath_                    = {};
@@ -128,9 +107,9 @@ PCCEncoderParameters::PCCEncoderParameters() {
   videoEncoderOccupancyPath_               = {};
   videoEncoderGeometryPath_                = {};
   videoEncoderAttributePath_               = {};
-  videoEncoderOccupancyCodecId_            = HMLIB;
-  videoEncoderGeometryCodecId_             = HMLIB;
-  videoEncoderAttributeCodecId_            = HMLIB;
+  videoEncoderOccupancyCodecId_            = PCCVirtualVideoEncoder<uint8_t>::getDefaultCodecId();
+  videoEncoderGeometryCodecId_             = PCCVirtualVideoEncoder<uint8_t>::getDefaultCodecId();
+  videoEncoderAttributeCodecId_            = PCCVirtualVideoEncoder<uint8_t>::getDefaultCodecId();
   geometryQP_                              = 28;
   textureQP_                               = 43;
   geometryConfig_                          = {};
@@ -402,10 +381,10 @@ void PCCEncoderParameters::print() {
   std::cout << "\t Color smoothing" << std::endl;
   std::cout << "\t   flagColorSmoothing                     " << flagColorSmoothing_ << std::endl;
   if ( flagColorSmoothing_ ) {
-    std::cout << "\t   thresholdColorSmoothing            " << thresholdColorSmoothing_ << std::endl;
-    std::cout << "\t   thresholdColorDifference           " << thresholdColorDifference_ << std::endl;
-    std::cout << "\t   thresholdColorVariation            " << thresholdColorVariation_ << std::endl;
-    std::cout << "\t   cgridSize                          " << cgridSize_ << std::endl;
+    std::cout << "\t   thresholdColorSmoothing                " << thresholdColorSmoothing_ << std::endl;
+    std::cout << "\t   thresholdColorDifference               " << thresholdColorDifference_ << std::endl;
+    std::cout << "\t   thresholdColorVariation                " << thresholdColorVariation_ << std::endl;
+    std::cout << "\t   cgridSize                              " << cgridSize_ << std::endl;
   }
   std::cout << "\t Color pre-smoothing                      " << std::endl;
   std::cout << "\t   thresholdColorPreSmoothing             " << thresholdColorSmoothing_ << std::endl;
@@ -540,8 +519,9 @@ bool PCCEncoderParameters::check() {
     std::cerr << "uncompressedDataPath not set\n";
   }
 
-  if ( !checkCodecId( videoEncoderOccupancyCodecId_ ) || !checkCodecId( videoEncoderGeometryCodecId_ ) ||
-       !checkCodecId( videoEncoderAttributeCodecId_ ) ) {
+  if ( !PCCVirtualVideoEncoder<uint8_t>::checkCodecId( videoEncoderOccupancyCodecId_ ) ||
+       !PCCVirtualVideoEncoder<uint8_t>::checkCodecId( videoEncoderGeometryCodecId_ ) ||
+       !PCCVirtualVideoEncoder<uint8_t>::checkCodecId( videoEncoderAttributeCodecId_ ) ) {
     std::cerr << "ERROR: CodecId is not correct" << std::endl;
     ret = false;
   }
@@ -817,8 +797,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   for ( size_t list = 0; list < maxNumRefAtlasList_; list++ ) {
     context.setSizeOfRefAtlasFrameList( list, maxNumRefAtlasFrame_ );
     for ( size_t i = 0; i < maxNumRefAtlasFrame_; i++ ) {
-      context.setRefAtlasFrame( list, i,
-                                static_cast<int32_t>( i + 1 ) );  // 1, 2, 3, 4
+      context.setRefAtlasFrame( list, i, static_cast<int32_t>( i + 1 ) );  // 1, 2, 3, 4
     }
   }
 
@@ -846,11 +825,11 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     ai.setAttribute2dBitdepthMinus1( 0, 7 );
   }
   for ( size_t i = 0; i < ai.getAttributeCount(); i++ ) {
-    if ( absoluteT1_ == absoluteD1_ )
+    if ( absoluteT1_ == absoluteD1_ ) {
       ai.setAttributeMapAbsoluteCodingPersistenceFlag( i, false );
-    else if ( absoluteT1_ && !absoluteD1_ )
+    } else if ( absoluteT1_ && !absoluteD1_ ) {
       ai.setAttributeMapAbsoluteCodingPersistenceFlag( i, true );
-    else {
+    } else {
       std::cerr << "absoluteT1_ should be true when absoluteD1_ is true\n";
       exit( 0 );
     }
@@ -875,8 +854,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   asps.setVuiParametersPresentFlag( false );
   asps.setExtensionFlag( true );
   asps.setVpccExtensionFlag( true );
-  asps.setMivExtensionFlag( false );
-  asps.setExtension6Bits( 0 );
+  asps.setExtension7Bits( 0 );
   asps.setExtendedProjectionEnabledFlag( additionalProjectionPlaneMode_ > 0 );
 
   if ( asps.getVpccExtensionFlag() ) {
@@ -899,9 +877,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   // afps.setEomMaxBitCountMinus1( 0 );
   afps.setRaw3dPosBitCountExplicitModeFlag( false );
   afps.setExtensionFlag( true );
-  afps.setVpccExtensionFlag( true );
-  afps.setMivExtensionFlag( true );
-  afps.setExtension6Bits( 0 );
+  afps.setExtension8Bits( 0 );
 
   // if ( static_cast<int>( afps.getOverrideEomForDepthFlag() ) == 0 ) {
   //   afps.setEomMaxBitCountMinus1( 7 );
@@ -916,8 +892,8 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
       auto& atgl = context.addAtlasTileLayer( frameIdx, tileGroupId );
       auto& ath  = atgl.getHeader();
       ath.setAtlasFrameParameterSetId( 0 );
-      ath.setPosMinZQuantizer( uint8_t( std::log2( minLevel_ ) ) );
-      ath.setPosDeltaMaxZQuantizer( uint8_t( std::log2( minLevel_ ) ) );
+      ath.setPosMinDQuantizer( uint8_t( std::log2( minLevel_ ) ) );
+      ath.setPosDeltaMaxDQuantizer( uint8_t( std::log2( minLevel_ ) ) );
       ath.setPatchSizeXinfoQuantizer( log2QuantizerSizeX_ );
       ath.setPatchSizeYinfoQuantizer( log2QuantizerSizeY_ );
       if ( afps.getRaw3dPosBitCountExplicitModeFlag() ) {

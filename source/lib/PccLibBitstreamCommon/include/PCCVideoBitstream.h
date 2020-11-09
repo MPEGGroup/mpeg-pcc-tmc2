@@ -42,6 +42,7 @@ class PCCVideoBitstream {
   PCCVideoBitstream( PCCVideoType type ) : type_( type ) { data_.clear(); }
   ~PCCVideoBitstream() { data_.clear(); }
 
+  PCCVideoBitstream& operator=( const PCCVideoBitstream& ) = default;
   void                  resize( size_t size ) { data_.resize( size ); }
   std::vector<uint8_t>& vector() { return data_; }
   uint8_t*              buffer() { return data_.data(); }

@@ -461,6 +461,19 @@ static inline PCCVector3D& operator-=( PCCVector3D& a, const PCCPoint3D& b ) {
   return a;
 }
 
+struct DistColor {
+  double        dist;
+  PCCColor16bit color;
+  PCCPoint3D    point;
+  size_t        index;
+  size_t        indexPartial;
+};
+
+  struct DistColor8Bit {
+    double     dist;
+    PCCColor3B color;
+  };
+
 // Slightly modified version of http://www.melax.com/diag.html?attredirects=0
 // A must be a symmetric matrix.
 // returns Q and D such that

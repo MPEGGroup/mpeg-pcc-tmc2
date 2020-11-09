@@ -37,7 +37,7 @@
 
 namespace pcc {
 
-// 7.3.4.6	Profile toolset constraints information syntax
+// 8.3.4.6	Profile toolset constraints information syntax
 class ProfileToolsetConstraintsInformation {
  public:
   ProfileToolsetConstraintsInformation() :

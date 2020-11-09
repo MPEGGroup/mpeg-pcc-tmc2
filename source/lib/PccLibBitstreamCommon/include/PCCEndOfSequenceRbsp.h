@@ -37,7 +37,7 @@
 
 namespace pcc {
 
-// 7.3.6.7  End of sequence RBSP syntax
+// 8.3.6.7  End of sequence RBSP syntax
 class EndOfSequenceRbsp {
  public:
   EndOfSequenceRbsp() {}

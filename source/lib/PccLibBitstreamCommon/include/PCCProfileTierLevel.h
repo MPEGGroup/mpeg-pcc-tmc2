@@ -38,7 +38,7 @@
 
 namespace pcc {
 
-// 7.3.4.2 Profile, Tier and Level Syntax
+// 8.3.4.2 Profile, Tier and Level Syntax
 class ProfileTierLevel {
  public:
   ProfileTierLevel() :

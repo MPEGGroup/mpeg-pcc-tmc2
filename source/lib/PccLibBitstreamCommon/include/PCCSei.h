@@ -128,7 +128,7 @@ class SEINoDisplay : public SEI {
   ~SEINoDisplay() {}
   SEINoDisplay& operator=( const SEINoDisplay& ) = default;
 
-  SeiPayloadType getPayloadType() { return NO_DISPLAY; }
+  SeiPayloadType getPayloadType() { return NO_RECONSTRUCTION; }
 
  private:
 };
@@ -743,6 +743,11 @@ class SEIBufferingPeriod : public SEI {
     for ( auto& element : nalInitialCabRemovalOffset_ ) { element.clear(); }
     for ( auto& element : aclInitialCabRemovalDelay_ ) { element.clear(); }
     for ( auto& element : aclInitialCabRemovalOffset_ ) { element.clear(); }
+    for ( auto& element : nalInitialAltCabRemovalDelay_ ) { element.clear(); }
+    for ( auto& element : nalInitialAltCabRemovalOffset_ ) { element.clear(); }
+    for ( auto& element : aclInitialAltCabRemovalDelay_ ) { element.clear(); }
+    for ( auto& element : aclInitialAltCabRemovalOffset_ ) { element.clear(); }
+    hrdCabCntMinus1_.clear();
     nalInitialCabRemovalDelay_.clear();
     nalInitialCabRemovalOffset_.clear();
     aclInitialCabRemovalDelay_.clear();
@@ -756,6 +761,7 @@ class SEIBufferingPeriod : public SEI {
 
   SeiPayloadType getPayloadType() { return BUFFERING_PERIOD; }
   void           allocate() {
+    hrdCabCntMinus1_.resize( maxSubLayersMinus1_ + 1 );
     nalInitialCabRemovalDelay_.resize( maxSubLayersMinus1_ + 1 );
     nalInitialCabRemovalOffset_.resize( maxSubLayersMinus1_ + 1 );
     aclInitialCabRemovalDelay_.resize( maxSubLayersMinus1_ + 1 );
@@ -765,70 +771,104 @@ class SEIBufferingPeriod : public SEI {
     aclInitialAltCabRemovalDelay_.resize( maxSubLayersMinus1_ + 1 );
     aclInitialAltCabRemovalOffset_.resize( maxSubLayersMinus1_ + 1 );
   }
-  bool                                getIrapCabParamsPresentFlag() { return irapCabParamsPresentFlag_; }
-  bool                                getConcatenationFlag() { return concatenationFlag_; }
-  uint8_t                             getAtlasSequenceParameterSetId() { return atlasSequenceParameterSetId_; }
-  uint32_t                            getCabDelayOffset() { return cabDelayOffset_; }
-  uint32_t                            getDabDelayOffset() { return dabDelayOffset_; }
-  uint32_t                            getAtlasCabRemovalDelayDeltaMinus1() { return atlasCabRemovalDelayDeltaMinus1_; }
-  uint32_t                            getMaxSubLayersMinus1() { return maxSubLayersMinus1_; }
-  std::vector<std::vector<uint32_t>>& getNalInitialCabRemovalDelay() { return nalInitialCabRemovalDelay_; }
-  std::vector<std::vector<uint32_t>>& getNalInitialCabRemovalOffse() { return nalInitialCabRemovalOffset_; }
-  std::vector<uint32_t>&              getNalInitialAltCabRemovalDelay() { return nalInitialAltCabRemovalDelay_; }
-  std::vector<uint32_t>&              getNalInitialAltCabRemovalOffset() { return nalInitialAltCabRemovalOffset_; }
-  std::vector<std::vector<uint32_t>>& getAclInitialCabRemovalDelay() { return aclInitialCabRemovalDelay_; }
-  std::vector<std::vector<uint32_t>>& getAclInitialCabRemovalOffset() { return aclInitialCabRemovalOffset_; }
-  std::vector<uint32_t>&              getAclInitialAltCabRemovalDelay() { return aclInitialAltCabRemovalDelay_; }
-  std::vector<uint32_t>&              getAclInitialAltCabRemovalOffset() { return aclInitialAltCabRemovalOffset_; }
-  std::vector<uint32_t>&              getNalInitialCabRemovalDelay( size_t i ) { return nalInitialCabRemovalDelay_[i]; }
-  std::vector<uint32_t>& getNalInitialCabRemovalOffsey( size_t i ) { return nalInitialCabRemovalOffset_[i]; }
-  std::vector<uint32_t>& getAclInitialCabRemovalDelay( size_t i ) { return aclInitialCabRemovalDelay_[i]; }
-  std::vector<uint32_t>& getAclInitialCabRemovalOffset( size_t i ) { return aclInitialCabRemovalOffset_[i]; }
-  uint32_t               getNalInitialAltCabRemovalDelay( size_t i ) { return nalInitialAltCabRemovalDelay_[i]; }
-  uint32_t               getNalInitialAltCabRemovalOffset( size_t i ) { return nalInitialAltCabRemovalOffset_[i]; }
-  uint32_t               getAclInitialAltCabRemovalDelay( size_t i ) { return aclInitialAltCabRemovalDelay_[i]; }
-  uint32_t               getAclInitialAltCabRemovalOffset( size_t i ) { return aclInitialAltCabRemovalOffset_[i]; }
-  uint32_t               getNalInitialCabRemovalDelay( size_t i, size_t j ) { return nalInitialCabRemovalDelay_[i][j]; }
-  uint32_t getNalInitialCabRemovalOffset( size_t i, size_t j ) { return nalInitialCabRemovalOffset_[i][j]; }
-  uint32_t getAclInitialCabRemovalDelay( size_t i, size_t j ) { return aclInitialCabRemovalDelay_[i][j]; }
-  uint32_t getAclInitialCabRemovalOffset( size_t i, size_t j ) { return aclInitialCabRemovalOffset_[i][j]; }
+    void           allocate( size_t i ) {
+    nalInitialCabRemovalDelay_[i].resize( hrdCabCntMinus1_[i] + 1 );
+    nalInitialCabRemovalOffset_[i].resize(  hrdCabCntMinus1_[i] + 1 );
+    aclInitialCabRemovalDelay_[i].resize(  hrdCabCntMinus1_[i] + 1 );
+    aclInitialCabRemovalOffset_[i].resize(  hrdCabCntMinus1_[i] + 1 );
+    nalInitialAltCabRemovalDelay_[i].resize(  hrdCabCntMinus1_[i] + 1 );
+    nalInitialAltCabRemovalOffset_[i].resize(  hrdCabCntMinus1_[i] + 1 );
+    aclInitialAltCabRemovalDelay_[i].resize(  hrdCabCntMinus1_[i] + 1 );
+    aclInitialAltCabRemovalOffset_[i].resize(  hrdCabCntMinus1_[i] + 1 );
+    }
 
-  void setIrapCabParamsPresentFlag( bool value ) { irapCabParamsPresentFlag_ = value; }
-  void setConcatenationFlag( bool value ) { concatenationFlag_ = value; }
-  void setAtlasSequenceParameterSetId( uint8_t value ) { atlasSequenceParameterSetId_ = value; }
-  void setCabDelayOffset( uint32_t value ) { cabDelayOffset_ = value; }
-  void setDabDelayOffset( uint32_t value ) { dabDelayOffset_ = value; }
-  void setAtlasCabRemovalDelayDeltaMinus1( uint32_t value ) { atlasCabRemovalDelayDeltaMinus1_ = value; }
-  void setMaxSubLayersMinus1( uint32_t value ) { maxSubLayersMinus1_ = value; }
-  void setNalInitialAltCabRemovalDelay( size_t i, uint32_t value ) { nalInitialAltCabRemovalDelay_[i] = value; }
-  void setNalInitialAltCabRemovalOffset( size_t i, uint32_t value ) { nalInitialAltCabRemovalOffset_[i] = value; }
-  void setAclInitialAltCabRemovalDelay( size_t i, uint32_t value ) { aclInitialAltCabRemovalDelay_[i] = value; }
-  void setAclInitialAltCabRemovalOffset( size_t i, uint32_t value ) { aclInitialAltCabRemovalOffset_[i] = value; }
-  void setNalInitialCabRemovalDelay( size_t i, size_t j, uint32_t value ) { nalInitialCabRemovalDelay_[i][j] = value; }
-  void setNalInitialCabRemovalOffset( size_t i, size_t j, uint32_t value ) {
-    nalInitialCabRemovalOffset_[i][j] = value;
-  }
-  void setAclInitialCabRemovalDelay( size_t i, size_t j, uint32_t value ) { aclInitialCabRemovalDelay_[i][j] = value; }
-  void setAclInitialCabRemovalOffset( size_t i, size_t j, uint32_t value ) {
-    aclInitialCabRemovalOffset_[i][j] = value;
-  }
+    bool                   getNalHrdParamsPresentFlag() { return nalHrdParamsPresentFlag_; }
+    bool                   getAclHrdParamsPresentFlag() { return aclHrdParamsPresentFlag_; }
+    bool                   getInitialCabRemovalDelayLengthMinus1() { return initialCabRemovalDelayLengthMinus1_; }
+    bool                   getAuCabRemovalDelayLengthMinus1() { return auCabRemovalDelayLengthMinus1_; }
+    bool                   getDabOutputDelayLengthMinus1() { return dabOutputDelayLengthMinus1_; }
+    bool                   getIrapCabParamsPresentFlag() { return irapCabParamsPresentFlag_; }
+    bool                   getConcatenationFlag() { return concatenationFlag_; }
+    uint8_t                getAtlasSequenceParameterSetId() { return atlasSequenceParameterSetId_; }
+    uint32_t               getCabDelayOffset() { return cabDelayOffset_; }
+    uint32_t               getDabDelayOffset() { return dabDelayOffset_; }
+    uint32_t               getAtlasCabRemovalDelayDeltaMinus1() { return atlasCabRemovalDelayDeltaMinus1_; }
+    uint32_t               getMaxSubLayersMinus1() { return maxSubLayersMinus1_; }
+    std::vector<uint32_t>& getHrdCabCntMinus1() { return hrdCabCntMinus1_; }
+    std::vector<std::vector<uint32_t>>& getNalInitialCabRemovalDelay() { return nalInitialCabRemovalDelay_; }
+    std::vector<std::vector<uint32_t>>& getNalInitialCabRemovalOffse() { return nalInitialCabRemovalOffset_; }
+    std::vector<std::vector<uint32_t>>& getNalInitialAltCabRemovalDelay() { return nalInitialAltCabRemovalDelay_; }
+    std::vector<std::vector<uint32_t>>& getNalInitialAltCabRemovalOffset() { return nalInitialAltCabRemovalOffset_; }
+    std::vector<std::vector<uint32_t>>& getAclInitialCabRemovalDelay() { return aclInitialCabRemovalDelay_; }
+    std::vector<std::vector<uint32_t>>& getAclInitialCabRemovalOffset() { return aclInitialCabRemovalOffset_; }
+    std::vector<std::vector<uint32_t>>& getAclInitialAltCabRemovalDelay() { return aclInitialAltCabRemovalDelay_; }
+    std::vector<std::vector<uint32_t>>& getAclInitialAltCabRemovalOffset() { return aclInitialAltCabRemovalOffset_; }
+    uint32_t                            getHrdCabCntMinus1( size_t i ) { return hrdCabCntMinus1_[i]; }
+    uint32_t getNalInitialCabRemovalDelay( size_t i, size_t j ) { return nalInitialCabRemovalDelay_[i][j]; }
+    uint32_t getNalInitialCabRemovalOffset( size_t i, size_t j ) { return nalInitialCabRemovalOffset_[i][j]; }
+    uint32_t getAclInitialCabRemovalDelay( size_t i, size_t j ) { return aclInitialCabRemovalDelay_[i][j]; }
+    uint32_t getAclInitialCabRemovalOffset( size_t i, size_t j ) { return aclInitialCabRemovalOffset_[i][j]; }
+    uint32_t getNalInitialAltCabRemovalDelay( size_t i, size_t j ) { return nalInitialAltCabRemovalDelay_[i][j]; }
+    uint32_t getNalInitialAltCabRemovalOffset( size_t i, size_t j ) { return nalInitialAltCabRemovalOffset_[i][j]; }
+    uint32_t getAclInitialAltCabRemovalDelay( size_t i, size_t j ) { return aclInitialAltCabRemovalDelay_[i][j]; }
+    uint32_t getAclInitialAltCabRemovalOffset( size_t i, size_t j ) { return aclInitialAltCabRemovalOffset_[i][j]; }
+    std::vector<uint32_t>& getNalInitialCabRemovalDelay( size_t i ) { return nalInitialCabRemovalDelay_[i]; }
+    std::vector<uint32_t>& getNalInitialCabRemovalOffsey( size_t i ) { return nalInitialCabRemovalOffset_[i]; }
+    std::vector<uint32_t>& getAclInitialCabRemovalDelay( size_t i ) { return aclInitialCabRemovalDelay_[i]; }
+    std::vector<uint32_t>& getAclInitialCabRemovalOffset( size_t i ) { return aclInitialCabRemovalOffset_[i]; }
+    std::vector<uint32_t>& getNalInitialAltCabRemovalDelay( size_t i ) { return nalInitialAltCabRemovalDelay_[i]; }
+    std::vector<uint32_t>& getNalInitialAltCabRemovalOffset( size_t i ) { return nalInitialAltCabRemovalOffset_[i]; }
+    std::vector<uint32_t>& getAclInitialAltCabRemovalDelay( size_t i ) { return aclInitialAltCabRemovalDelay_[i]; }
+    std::vector<uint32_t>& getAclInitialAltCabRemovalOffset( size_t i ) { return aclInitialAltCabRemovalOffset_[i]; }
 
- private:
-  bool                               irapCabParamsPresentFlag_;
-  bool                               concatenationFlag_;
-  uint8_t                            atlasSequenceParameterSetId_;
-  uint32_t                           cabDelayOffset_;
-  uint32_t                           dabDelayOffset_;
-  uint32_t                           atlasCabRemovalDelayDeltaMinus1_;
-  uint32_t                           maxSubLayersMinus1_;
-  std::vector<std::vector<uint32_t>> nalInitialCabRemovalDelay_;
-  std::vector<std::vector<uint32_t>> nalInitialCabRemovalOffset_;
-  std::vector<uint32_t>              nalInitialAltCabRemovalDelay_;
-  std::vector<uint32_t>              nalInitialAltCabRemovalOffset_;
-  std::vector<std::vector<uint32_t>> aclInitialCabRemovalDelay_;
-  std::vector<std::vector<uint32_t>> aclInitialCabRemovalOffset_;
-  std::vector<uint32_t>              aclInitialAltCabRemovalDelay_;
-  std::vector<uint32_t>              aclInitialAltCabRemovalOffset_;
+    void setNalHrdParamsPresentFlag( bool value ) { nalHrdParamsPresentFlag_ = value; }
+    void setAclHrdParamsPresentFlag( bool value ) { aclHrdParamsPresentFlag_ = value; }
+    void setInitialCabRemovalDelayLengthMinus1( bool value ) { initialCabRemovalDelayLengthMinus1_ = value; }
+    void setAuCabRemovalDelayLengthMinus1( bool value ) { auCabRemovalDelayLengthMinus1_ = value; }
+    void setDabOutputDelayLengthMinus1( bool value ) { dabOutputDelayLengthMinus1_ = value; }
+    void setIrapCabParamsPresentFlag( bool value ) { irapCabParamsPresentFlag_ = value; }
+    void setConcatenationFlag( bool value ) { concatenationFlag_ = value; }
+    void setAtlasSequenceParameterSetId( uint8_t value ) { atlasSequenceParameterSetId_ = value; }
+    void setCabDelayOffset( uint32_t value ) { cabDelayOffset_ = value; }
+    void setDabDelayOffset( uint32_t value ) { dabDelayOffset_ = value; }
+    void setAtlasCabRemovalDelayDeltaMinus1( uint32_t value ) { atlasCabRemovalDelayDeltaMinus1_ = value; }
+    void setMaxSubLayersMinus1( uint32_t value ) { maxSubLayersMinus1_ = value; }
+    void setHrdCabCntMinus1( size_t i, uint32_t v ) { hrdCabCntMinus1_[i] = v; }
+    void setNalInitialAltCabRemovalDelay( size_t i, size_t j, uint32_t v ) { nalInitialAltCabRemovalDelay_[i][j] = v; }
+    void setNalInitialAltCabRemovalOffset( size_t i, size_t j, uint32_t v ) {
+      nalInitialAltCabRemovalOffset_[i][j] = v;
+    }
+    void setAclInitialAltCabRemovalDelay( size_t i, size_t j, uint32_t v ) { aclInitialAltCabRemovalDelay_[i][j] = v; }
+    void setAclInitialAltCabRemovalOffset( size_t i, size_t j, uint32_t v ) {
+      aclInitialAltCabRemovalOffset_[i][j] = v;
+    }
+    void setNalInitialCabRemovalDelay( size_t i, size_t j, uint32_t v ) { nalInitialCabRemovalDelay_[i][j] = v; }
+    void setNalInitialCabRemovalOffset( size_t i, size_t j, uint32_t v ) { nalInitialCabRemovalOffset_[i][j] = v; }
+    void setAclInitialCabRemovalDelay( size_t i, size_t j, uint32_t v ) { aclInitialCabRemovalDelay_[i][j] = v; }
+    void setAclInitialCabRemovalOffset( size_t i, size_t j, uint32_t v ) { aclInitialCabRemovalOffset_[i][j] = v; }
+
+   private:
+    bool                               nalHrdParamsPresentFlag_;
+    bool                               aclHrdParamsPresentFlag_;
+    bool                               initialCabRemovalDelayLengthMinus1_;
+    bool                               auCabRemovalDelayLengthMinus1_;
+    bool                               dabOutputDelayLengthMinus1_;
+    bool                               irapCabParamsPresentFlag_;
+    bool                               concatenationFlag_;
+    uint8_t                            atlasSequenceParameterSetId_;
+    uint32_t                           cabDelayOffset_;
+    uint32_t                           dabDelayOffset_;
+    uint32_t                           atlasCabRemovalDelayDeltaMinus1_;
+    uint32_t                           maxSubLayersMinus1_;
+    std::vector<uint32_t>              hrdCabCntMinus1_;
+    std::vector<std::vector<uint32_t>> nalInitialCabRemovalDelay_;
+    std::vector<std::vector<uint32_t>> nalInitialCabRemovalOffset_;
+    std::vector<std::vector<uint32_t>> nalInitialAltCabRemovalDelay_;
+    std::vector<std::vector<uint32_t>> nalInitialAltCabRemovalOffset_;
+    std::vector<std::vector<uint32_t>> aclInitialCabRemovalDelay_;
+    std::vector<std::vector<uint32_t>> aclInitialCabRemovalOffset_;
+    std::vector<std::vector<uint32_t>> aclInitialAltCabRemovalDelay_;
+    std::vector<std::vector<uint32_t>> aclInitialAltCabRemovalOffset_;
 };
 
 // F.2.16  Atlas frame timing SEI message syntax
@@ -867,7 +907,7 @@ class SEIAtlasInformation : public SEI {
   }
   SEIAtlasInformation& operator=( const SEIAtlasInformation& ) = default;
 
-  SeiPayloadType getPayloadType() { return ATLAS_INFORMATION; }
+  SeiPayloadType getPayloadType() { return ATLAS_OBJECT_INFORMATION; }
 
   void allocateAltasId() { atlasId_.resize( numAtlasesMinus1_ + 1, 0 ); }
   void allocateObjectIdx() {
@@ -974,10 +1014,10 @@ class SEIViewportPosition : public SEI {
       CameraId_( 0 ),
       cancelFlag_( false ),
       persistenceFlag_( false ),
-      position_{0.0f, 0.0f, 0.0f},
-      quaternionX_( 0.0f ),
-      quaternionY_( 0.0f ),
-      quaternionZ_( 0.0f ),
+      position_{ 0.0f, 0.0f, 0.0f },
+      rotationQX_( 0.0f ),
+      rotationQY_( 0.0f ),
+      rotationQZ_( 0.0f ),
       centerViewFlag_( false ),
       leftViewFlag_( false ) {}
   ~SEIViewportPosition() {}
@@ -991,9 +1031,9 @@ class SEIViewportPosition : public SEI {
   bool     getCancelFlag() { return cancelFlag_; }
   bool     getPersistenceFlag() { return persistenceFlag_; }
   float    getPosition( size_t i ) { return position_[i]; }
-  float    getQuaternionX() { return quaternionX_; }
-  float    getQuaternionY() { return quaternionY_; }
-  float    getQuaternionZ() { return quaternionZ_; }
+  float    getRotationQX() { return rotationQX_; }
+  float    getRotationQY() { return rotationQY_; }
+  float    getRotationQZ() { return rotationQZ_; }
   bool     getCenterViewFlag() { return centerViewFlag_; }
   bool     getLeftViewFlag() { return leftViewFlag_; }
 
@@ -1003,9 +1043,9 @@ class SEIViewportPosition : public SEI {
   void setCancelFlag( bool value ) { cancelFlag_ = value; }
   void setPersistenceFlag( bool value ) { persistenceFlag_ = value; }
   void setPosition( size_t i, float value ) { position_[i] = value; }
-  void setQuaternionX( float value ) { quaternionX_ = value; }
-  void setQuaternionY( float value ) { quaternionY_ = value; }
-  void setQuaternionZ( float value ) { quaternionZ_ = value; }
+  void setRotationQX( float value ) { rotationQX_ = value; }
+  void setRotationQY( float value ) { rotationQY_ = value; }
+  void setRotationQZ( float value ) { rotationQZ_ = value; }
   void setCenterViewFlag( bool value ) { centerViewFlag_ = value; }
   void setLeftViewFlag( bool value ) { leftViewFlag_ = value; }
 
@@ -1016,9 +1056,9 @@ class SEIViewportPosition : public SEI {
   bool     cancelFlag_;
   bool     persistenceFlag_;
   float    position_[3];
-  float    quaternionX_;
-  float    quaternionY_;
-  float    quaternionZ_;
+  float    rotationQX_;
+  float    rotationQY_;
+  float    rotationQZ_;
   bool     centerViewFlag_;
   bool     leftViewFlag_;
 };
@@ -1190,6 +1230,7 @@ class SEIGeometrySmoothing : public SEI {
     instanceIndex_.clear();
     instanceCancelFlag_.clear();
     methodType_.clear();
+    filterEomPointsFlag_.clear();
     gridSizeMinus2_.clear();
     threshold_.clear();
   }
@@ -1200,6 +1241,7 @@ class SEIGeometrySmoothing : public SEI {
     instanceIndex_.resize( instancesUpdated_, 0 );
     instanceCancelFlag_.resize( instancesUpdated_, 0 );
     methodType_.resize( instancesUpdated_, 0 );
+    filterEomPointsFlag_.resize( instancesUpdated_, 0 );
     gridSizeMinus2_.resize( instancesUpdated_, 0 );
     threshold_.resize( instancesUpdated_, 0 );
   }
@@ -1210,6 +1252,7 @@ class SEIGeometrySmoothing : public SEI {
   uint8_t getInstanceIndex( size_t i ) { return instanceIndex_[i]; }
   bool    getInstanceCancelFlag( size_t i ) { return instanceCancelFlag_[i]; }
   uint8_t getMethodType( size_t i ) { return methodType_[i]; }
+  uint8_t getFilterEomPointsFlag( size_t i ) { return filterEomPointsFlag_[i]; }
   uint8_t getGridSizeMinus2( size_t i ) { return gridSizeMinus2_[i]; }
   uint8_t getThreshold( size_t i ) { return threshold_[i]; }
 
@@ -1219,6 +1262,7 @@ class SEIGeometrySmoothing : public SEI {
   void setInstanceIndex( size_t i, uint8_t value ) { instanceIndex_[i] = value; }
   void setInstanceCancelFlag( size_t i, bool value ) { instanceCancelFlag_[i] = value; }
   void setMethodType( size_t i, uint8_t value ) { methodType_[i] = value; }
+  void setFilterEomPointsFlag( size_t i, uint8_t value ) { filterEomPointsFlag_[i] = value; }
   void setGridSizeMinus2( size_t i, uint8_t value ) { gridSizeMinus2_[i] = value; }
   void setThreshold( size_t i, uint8_t value ) { threshold_[i] = value; }
 
@@ -1229,6 +1273,7 @@ class SEIGeometrySmoothing : public SEI {
   std::vector<uint8_t> instanceIndex_;
   std::vector<bool>    instanceCancelFlag_;
   std::vector<uint8_t> methodType_;
+  std::vector<bool>    filterEomPointsFlag_;
   std::vector<uint8_t> gridSizeMinus2_;
   std::vector<uint8_t> threshold_;
 };
@@ -1250,6 +1295,7 @@ class SEIAttributeSmoothing : public SEI {
     instanceIndex_.clear();
     instanceCancelFlag_.clear();
     methodType_.clear();
+    filterEomPointsFlag_.clear();
     gridSizeMinus2_.clear();
     threshold_.clear();
     thresholdVariation_.clear();
@@ -1269,6 +1315,7 @@ class SEIAttributeSmoothing : public SEI {
       instanceIndex_.resize( size );
       instanceCancelFlag_.resize( size );
       methodType_.resize( size );
+      filterEomPointsFlag_.resize( size );
       gridSizeMinus2_.resize( size );
       threshold_.resize( size );
       thresholdVariation_.resize( size );
@@ -1277,6 +1324,7 @@ class SEIAttributeSmoothing : public SEI {
     instanceIndex_[size - 1].resize( dimension );
     instanceCancelFlag_[size - 1].resize( dimension );
     methodType_[size - 1].resize( dimension );
+    filterEomPointsFlag_[size - 1].resize( dimension );
     gridSizeMinus2_[size - 1].resize( dimension );
     threshold_[size - 1].resize( dimension );
     thresholdVariation_[size - 1].resize( dimension );
@@ -1291,6 +1339,7 @@ class SEIAttributeSmoothing : public SEI {
   uint8_t getInstanceIndex( size_t i, size_t j ) { return instanceIndex_[i][j]; }
   uint8_t getInstanceCancelFlag( size_t i, size_t j ) { return instanceCancelFlag_[i][j]; }
   uint8_t getMethodType( size_t i, size_t j ) { return methodType_[i][j]; }
+  uint8_t getFilterEomPointsFlag( size_t i, size_t j ) { return filterEomPointsFlag_[i][j]; }
   uint8_t getGridSizeMinus2( size_t i, size_t j ) { return gridSizeMinus2_[i][j]; }
   uint8_t getThreshold( size_t i, size_t j ) { return threshold_[i][j]; }
   uint8_t getThresholdVariation( size_t i, size_t j ) { return thresholdVariation_[i][j]; }
@@ -1304,7 +1353,8 @@ class SEIAttributeSmoothing : public SEI {
   void setInstancesUpdated( size_t i, uint8_t value ) { instancesUpdated_[i] = value; }
   void setInstanceIndex( size_t i, size_t j, uint8_t value ) { instanceIndex_[i][j] = value; }
   void setInstanceCancelFlag( size_t i, size_t j, uint8_t value ) { instanceCancelFlag_[i][j] = value; }
-  void setMethodType( size_t i, size_t j, uint8_t value ) { methodType_[i][j] = value; }
+  void setMethodType( size_t i, size_t j, uint8_t value ) { methodType_[i][j] = value; }  
+  void setFilterEomPointsFlag( size_t i, size_t j, uint8_t value ) { filterEomPointsFlag_[i][j] = value; }
   void setGridSizeMinus2( size_t i, size_t j, uint8_t value ) { gridSizeMinus2_[i][j] = value; }
   void setThreshold( size_t i, size_t j, uint8_t value ) { threshold_[i][j] = value; }
   void setThresholdVariation( size_t i, size_t j, uint8_t value ) { thresholdVariation_[i][j] = value; }
@@ -1320,10 +1370,84 @@ class SEIAttributeSmoothing : public SEI {
   std::vector<std::vector<uint8_t>> instanceIndex_;
   std::vector<std::vector<uint8_t>> instanceCancelFlag_;
   std::vector<std::vector<uint8_t>> methodType_;
+  std::vector<std::vector<uint8_t>> filterEomPointsFlag_;
   std::vector<std::vector<uint8_t>> gridSizeMinus2_;
   std::vector<std::vector<uint8_t>> threshold_;
   std::vector<std::vector<uint8_t>> thresholdVariation_;
   std::vector<std::vector<uint8_t>> thresholdDifference_;
+};
+
+class SEITimeCode : public SEI {
+ public:
+  SEITimeCode() :
+      numUnitsInTick_( 0 ),
+      timeScale_( 0 ),
+      countingType_( 0 ),
+      fullTimestampFlag_( false ),
+      discontinuityFlag_( false ),
+      cntDroppedFlag_( false ),
+      secondFlag_( false ),
+      minutesFlag_( false ),
+      hoursFlag_( 0 ),
+      nFrames_( 0 ),
+      secondsValue_( 0 ),
+      minutesValue_( 0 ),
+      hoursValue_( 0 ),
+      timeOffsetLength_( 0 ),
+      timeOffsetValue_( 0 ) {}
+  ~SEITimeCode() {}
+  SEITimeCode& operator=( const SEITimeCode& ) = default;
+
+  SeiPayloadType getPayloadType() { return TIME_CODE; }
+
+  uint32_t getNumUnitsInTick() { return numUnitsInTick_; }
+  uint32_t getTimeScale() { return timeScale_; }
+  uint16_t getCountingType() { return countingType_; }
+  bool     getFullTimestampFlag() { return fullTimestampFlag_; }
+  bool     getDiscontinuityFlag() { return discontinuityFlag_; }
+  bool     getCntDroppedFlag() { return cntDroppedFlag_; }
+  bool     getSecondFlag() { return secondFlag_; }
+  bool     getMinutesFlag() { return minutesFlag_; }
+  bool     getHoursFlag() { return hoursFlag_; }
+  uint16_t getNFrames() { return nFrames_; }
+  uint16_t getSecondsValue() { return secondsValue_; }
+  uint16_t getMinutesValue() { return minutesValue_; }
+  uint16_t getHoursValue() { return hoursValue_; }
+  uint16_t getTimeOffsetLength() { return timeOffsetLength_; }
+  int16_t  getTimeOffsetValue() { return timeOffsetValue_; }
+
+  void setNumUnitsInTick( uint32_t value ) { numUnitsInTick_ = value; }
+  void setTimeScale( uint32_t value ) { timeScale_ = value; }
+  void setCountingType( uint16_t value ) { countingType_ = value; }
+  void setFullTimestampFlag( bool value ) { fullTimestampFlag_ = value; }
+  void setDiscontinuityFlag( bool value ) { discontinuityFlag_ = value; }
+  void setCntDroppedFlag( bool value ) { cntDroppedFlag_ = value; }
+  void setSecondFlag( bool value ) { secondFlag_ = value; }
+  void setMinutesFlag( bool value ) { minutesFlag_ = value; }
+  void setHoursFlag( bool value ) { hoursFlag_ = value; }
+  void setNFrames( uint16_t value ) { nFrames_ = value; }
+  void setSecondsValue( uint16_t value ) { secondsValue_ = value; }
+  void setMinutesValue( uint16_t value ) { minutesValue_ = value; }
+  void setHoursValue( uint16_t value ) { hoursValue_ = value; }
+  void setTimeOffsetLength( uint16_t value ) { timeOffsetLength_ = value; }
+  void setTimeOffsetValue( int16_t value ) { timeOffsetValue_ = value; }
+
+ private:
+  uint32_t numUnitsInTick_;
+  uint32_t timeScale_;
+  uint16_t countingType_;
+  bool     fullTimestampFlag_;
+  bool     discontinuityFlag_;
+  bool     cntDroppedFlag_;
+  bool     secondFlag_;
+  bool     minutesFlag_;
+  bool     hoursFlag_;
+  uint16_t nFrames_;
+  uint16_t secondsValue_;
+  uint16_t minutesValue_;
+  uint16_t hoursValue_;
+  uint16_t timeOffsetLength_;
+  int16_t  timeOffsetValue_;
 };
 
 };  // namespace pcc

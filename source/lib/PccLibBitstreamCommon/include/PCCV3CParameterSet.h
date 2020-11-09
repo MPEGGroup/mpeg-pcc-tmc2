@@ -42,16 +42,14 @@
 
 namespace pcc {
 
-// 7.3.4.1  General V3C Sequence parameter set syntax
+// 8.3.4.1  General V3C Sequence parameter set syntax
 class V3CParameterSet {
  public:
   V3CParameterSet() :
       v3cParameterSetId_( 0 ),
       atlasCountMinus1_( 0 ),
       extensionPresentFlag_( false ),
-      vpccExtensionFlag_( false ),
-      mivExtensionFlag_( false ),
-      extension6Bits_( 0 ),
+      extension8Bits_( 0 ),
       extensionLengthMinus1_( 0 ) {}
   ~V3CParameterSet() {
     for ( auto& data : mapAbsoluteCodingEnableFlag_ ) { data.clear(); }
@@ -134,9 +132,7 @@ class V3CParameterSet {
   OccupancyInformation& getOccupancyInformation( size_t index ) { return occupancyInformation_[index]; }
   AttributeInformation& getAttributeInformation( size_t index ) { return attributeInformation_[index]; }
   bool                  getExtensionPresentFlag() { return extensionPresentFlag_; }
-  bool                  getVpccExtensionFlag() { return vpccExtensionFlag_; }
-  bool                  getMivExtensionFlag() { return mivExtensionFlag_; }
-  uint8_t               getExtension6Bits() { return extension6Bits_; }
+  uint8_t               getExtension8Bits() { return extension8Bits_; }
   size_t                getExtensionLengthMinus1() { return extensionLengthMinus1_; }
   std::vector<uint8_t>& getExtensionDataByte() { return extensionDataByte_; }
   uint8_t               getExtensionDataByte( size_t index ) { return extensionDataByte_[index]; }
@@ -169,9 +165,7 @@ class V3CParameterSet {
   void addMapPredictorIndexDiff( size_t index, bool value ) { mapPredictorIndexDiff_[index].push_back( value ); }
   void setExtensionDataByte( size_t index, uint8_t value ) { extensionDataByte_[index] = value; }
   void setExtensionPresentFlag( bool value ) { extensionPresentFlag_ = value; }
-  void setVpccExtensionFlag( bool value ) { vpccExtensionFlag_ = value; }
-  void setMivExtensionFlag( bool value ) { mivExtensionFlag_ = value; }
-  void setExtension6Bits( uint8_t value ) { extension6Bits_ = value; }
+  void setExtension8Bits( uint8_t value ) { extension8Bits_ = value; }
   void setExtensionLengthMinus1( size_t value ) { extensionLengthMinus1_ = value; }
 
  private:
@@ -193,9 +187,7 @@ class V3CParameterSet {
   std::vector<GeometryInformation>  geometryInformation_;
   std::vector<AttributeInformation> attributeInformation_;
   bool                              extensionPresentFlag_;
-  bool                              vpccExtensionFlag_;
-  bool                              mivExtensionFlag_;
-  uint8_t                           extension6Bits_;
+  uint8_t                           extension8Bits_;
   size_t                            extensionLengthMinus1_;
   std::vector<uint8_t>              extensionDataByte_;
 

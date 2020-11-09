@@ -37,7 +37,7 @@
 
 namespace pcc {
 
-// 7.3.6.6  Access unit delimiter RBSP syntax
+// 8.3.6.6  Access unit delimiter RBSP syntax
 class AccessUnitDelimiterRbsp {
  public:
   AccessUnitDelimiterRbsp() : aframeType_( 0 ) {}

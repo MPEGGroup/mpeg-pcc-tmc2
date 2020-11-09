@@ -38,10 +38,11 @@
 
 namespace pcc {
 
-// 7.3.6.11  Atlas tile header syntax
+// 8.3.6.11  Atlas tile header syntax
 class AtlasTileHeader {
  public:
   AtlasTileHeader() :
+      noOutputOfPriorAtlasFramesFlag_( false ),
       frameIndex_( 0 ),
       atlasFrameParameterSetId_( 0 ),
       atlasAdaptationParameterSetId_( 0 ),
@@ -51,8 +52,8 @@ class AtlasTileHeader {
       atlasFrmOrderCntLsb_( 0 ),
       refAtlasFrameListSpsFlag_( 0 ),
       refAtlasFrameListIdx_( 0 ),
-      posMinZQuantizer_( 0 ),
-      posDeltaMaxZQuantizer_( 0 ),
+      posMinDQuantizer_( 0 ),
+      posDeltaMaxDQuantizer_( 0 ),
       patchSizeXinfoQuantizer_( 0 ),
       patchSizeYinfoQuantizer_( 0 ),
       raw3dPosAxisBitCountMinus1_( 0 ),
@@ -70,6 +71,7 @@ class AtlasTileHeader {
   void                  setRefListStruct( RefListStruct value ) { refListStruct_ = value; }
   uint8_t               getFrameIndex() { return frameIndex_; }
   void                  setFrameIndex( uint8_t value ) { frameIndex_ = value; }
+  bool                  getNoOutputOfPriorAtlasFramesFlag() { return noOutputOfPriorAtlasFramesFlag_; }
   uint8_t               getAtlasFrameParameterSetId() { return atlasFrameParameterSetId_; }
   uint8_t               getAtlasAdaptationParameterSetId() { return atlasAdaptationParameterSetId_; }
   uint32_t              getId() { return id_; }
@@ -78,8 +80,8 @@ class AtlasTileHeader {
   uint8_t               getAtlasFrmOrderCntLsb() { return atlasFrmOrderCntLsb_; }
   bool                  getRefAtlasFrameListSpsFlag() { return refAtlasFrameListSpsFlag_; }
   uint8_t               getRefAtlasFrameListIdx() { return refAtlasFrameListIdx_; }
-  uint8_t               getPosMinZQuantizer() { return posMinZQuantizer_; }
-  uint8_t               getPosDeltaMaxZQuantizer() { return posDeltaMaxZQuantizer_; }
+  uint8_t               getPosMinDQuantizer() { return posMinDQuantizer_; }
+  uint8_t               getPosDeltaMaxDQuantizer() { return posDeltaMaxDQuantizer_; }
   uint8_t               getPatchSizeXinfoQuantizer() { return patchSizeXinfoQuantizer_; }
   uint8_t               getPatchSizeYinfoQuantizer() { return patchSizeYinfoQuantizer_; }
   uint8_t               getRaw3dPosAxisBitCountMinus1() { return raw3dPosAxisBitCountMinus1_; }
@@ -90,6 +92,7 @@ class AtlasTileHeader {
   bool                  getAdditionalAfocLsbPresentFlag( size_t idx ) { return additionalAfocLsbPresentFlag_[idx]; }
   uint8_t               getAdditionalAfocLsbVal( size_t idx ) { return additionalAfocLsbVal_[idx]; }
 
+  void setNoOutputOfPriorAtlasFramesFlag( bool value ) { noOutputOfPriorAtlasFramesFlag_ = value; }
   void setAtlasFrameParameterSetId( uint8_t value ) { atlasFrameParameterSetId_ = value; }
   void setAtlasAdaptationParameterSetId( uint8_t value ) { atlasAdaptationParameterSetId_ = value; }
   void setId( uint32_t value ) { id_ = value; }
@@ -98,8 +101,8 @@ class AtlasTileHeader {
   void setAtlasFrmOrderCntLsb( uint8_t value ) { atlasFrmOrderCntLsb_ = value; }
   void setRefAtlasFrameListSpsFlag( bool value ) { refAtlasFrameListSpsFlag_ = value; }
   void setRefAtlasFrameListIdx( uint8_t value ) { refAtlasFrameListIdx_ = value; }
-  void setPosMinZQuantizer( uint8_t value ) { posMinZQuantizer_ = value; }
-  void setPosDeltaMaxZQuantizer( uint8_t value ) { posDeltaMaxZQuantizer_ = value; }
+  void setPosMinDQuantizer( uint8_t value ) { posMinDQuantizer_ = value; }
+  void setPosDeltaMaxDQuantizer( uint8_t value ) { posDeltaMaxDQuantizer_ = value; }
   void setPatchSizeXinfoQuantizer( uint8_t value ) { patchSizeXinfoQuantizer_ = value; }
   void setPatchSizeYinfoQuantizer( uint8_t value ) { patchSizeYinfoQuantizer_ = value; }
   void setRaw3dPosAxisBitCountMinus1( uint8_t value ) { raw3dPosAxisBitCountMinus1_ = value; }
@@ -111,6 +114,7 @@ class AtlasTileHeader {
   void setAdditionalAfocLsbVal( size_t idx, uint8_t value ) { additionalAfocLsbVal_[idx] = value; }
 
  private:
+  bool                 noOutputOfPriorAtlasFramesFlag_;
   uint8_t              frameIndex_;
   uint8_t              atlasFrameParameterSetId_;
   uint8_t              atlasAdaptationParameterSetId_;
@@ -122,8 +126,8 @@ class AtlasTileHeader {
   uint8_t              refAtlasFrameListIdx_;
   std::vector<bool>    additionalAfocLsbPresentFlag_;
   std::vector<uint8_t> additionalAfocLsbVal_;
-  uint8_t              posMinZQuantizer_;
-  uint8_t              posDeltaMaxZQuantizer_;
+  uint8_t              posMinDQuantizer_;
+  uint8_t              posDeltaMaxDQuantizer_;
   uint8_t              patchSizeXinfoQuantizer_;
   uint8_t              patchSizeYinfoQuantizer_;
   uint8_t              raw3dPosAxisBitCountMinus1_;

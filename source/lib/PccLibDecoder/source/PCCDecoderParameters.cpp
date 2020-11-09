@@ -85,21 +85,13 @@ bool PCCDecoderParameters::check() {
     inverseColorSpaceConversionConfig_ = "";
   }
 
-  if ( compressedStreamPath_.empty() ) {
+  if ( compressedStreamPath_.empty() || !exist( compressedStreamPath_ )  ) {
     ret = false;
-    std::cerr << "compressedStreamPath not set\n";
+    std::cerr << "compressedStreamPath not set or exist\n";
   }
-  if ( inverseColorSpaceConversionConfig_.empty() ) {
+  if ( inverseColorSpaceConversionConfig_.empty() || !exist( inverseColorSpaceConversionConfig_ ) ) {
     ret = false;
-    std::cerr << "inverseColorSpaceConversionConfig not set\n";
-  }
-  if ( !exist( inverseColorSpaceConversionConfig_ ) ) {
-    ret = false;
-    std::cerr << "inverseColorSpaceConversionConfig not exist\n";
-  }
-  if ( !exist( compressedStreamPath_ ) ) {
-    ret = false;
-    std::cerr << "compressedStreamPath not exist\n";
+    std::cerr << "inverseColorSpaceConversionConfig not set or exist\n";
   }
   if ( videoDecoderOccupancyPath_.empty() || !exist( videoDecoderOccupancyPath_ ) ) {
     std::cerr << "videoDecoderOccupancyPath not set\n";
@@ -108,7 +100,7 @@ bool PCCDecoderParameters::check() {
     std::cerr << "videoDecoderGeometryPath not set\n";
   }
   if ( videoDecoderAttributePath_.empty() || !exist( videoDecoderAttributePath_ ) ) {
-    std::cerr << "videoDecoderGeometryPath not set\n";
+    std::cerr << "videoDecoderAttributePath not set\n";
   }
   return ret;
 }
