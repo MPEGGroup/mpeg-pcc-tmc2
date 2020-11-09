@@ -338,6 +338,136 @@ void PCCBitstreamWriter::v3cUnitPayload( PCCHighLevelSyntax& syntax,
   }
 }
 
+// 8.3.2.4 Atlas sub-bitstream syntax
+void PCCBitstreamWriter::atlasSubStream( PCCHighLevelSyntax& syntax, PCCBitstream& bitstream ) {
+  TRACE_BITSTREAM( "%s \n", __func__ );
+  SampleStreamNalUnit   ssnu;
+  uint32_t              maxUnitSize = 0;
+  PCCBitstream          tempBitStream;
+  std::vector<uint32_t> aspsSizeList;
+  std::vector<uint32_t> afpsSizeList;
+  std::vector<uint32_t> seiPrefixSizeList;
+  std::vector<uint32_t> seiSuffixSizeList;
+  aspsSizeList.resize( syntax.getAtlasSequenceParameterSetList().size() );
+  afpsSizeList.resize( syntax.getAtlasFrameParameterSetList().size() );
+  seiPrefixSizeList.resize( syntax.getSeiPrefix().size() );
+  seiSuffixSizeList.resize( syntax.getSeiSuffix().size() );
+
+  std::vector<uint32_t> atglSizeList;
+  atglSizeList.resize( syntax.getAtlasTileLayerList().size() );
+
+  uint32_t lastSize      = 0;
+  size_t   nalHeaderSize = 2;
+  for ( size_t aspsIdx = 0; aspsIdx < syntax.getAtlasSequenceParameterSetList().size(); aspsIdx++ ) {
+    atlasSequenceParameterSetRbsp( syntax.getAtlasSequenceParameterSet( aspsIdx ), syntax, tempBitStream );
+    aspsSizeList[aspsIdx] = tempBitStream.size() - lastSize + nalHeaderSize;
+    lastSize              = tempBitStream.size();
+    if ( maxUnitSize < aspsSizeList[aspsIdx] ) { maxUnitSize = aspsSizeList[aspsIdx]; }
+  }
+  for ( size_t afpsIdx = 0; afpsIdx < syntax.getAtlasFrameParameterSetList().size(); afpsIdx++ ) {
+    atlasFrameParameterSetRbsp( syntax.getAtlasFrameParameterSet( afpsIdx ), syntax, tempBitStream );
+    afpsSizeList[afpsIdx] = tempBitStream.size() - lastSize + nalHeaderSize;
+    lastSize              = tempBitStream.size();
+    if ( maxUnitSize < afpsSizeList[afpsIdx] ) { maxUnitSize = afpsSizeList[afpsIdx]; }
+  }
+  for ( size_t i = 0; i < syntax.getSeiPrefix().size(); i++ ) {
+    seiRbsp( syntax, tempBitStream, syntax.getSeiPrefix( i ), NAL_PREFIX_ESEI );
+    seiPrefixSizeList[i] = tempBitStream.size() - lastSize + nalHeaderSize;
+    lastSize             = tempBitStream.size();
+    if ( maxUnitSize < seiPrefixSizeList[i] ) { maxUnitSize = seiPrefixSizeList[i]; }
+  }
+  // for ( size_t atglIdx = 0; atglIdx < atglSizeList.size(); atglIdx++ ) {
+  //   int numTilesPerFrame = 1;
+  //   // (afps.getAtlasFrameTileInformation().getNumPartitionRowsMinus1() + 1) *
+  //   // (afps.getAtlasFrameTileInformation().getNumPartitionColumnsMinus1() + 1);
+  //   for ( size_t tileId = 0; tileId < numTilesPerFrame; tileId++ ) {  // TODO: make this more than just
+  //                                                                     // one tile groups per frame
+  //     atlasTileLayerRbsp( syntax.getAtlasTileLayer( atglIdx ), syntax, NAL_SKIP_R, tempBitStream );
+  //     atglSizeList[atglIdx] = tempBitStream.size() - lastSize + nalHeaderSize;
+  //     lastSize              = tempBitStream.size();
+  //     if ( maxUnitSize < atglSizeList[atglIdx] ) { maxUnitSize = atglSizeList[atglIdx]; }
+  //   }
+  // }
+  for ( size_t atglIdx = 0; atglIdx < atglSizeList.size(); atglIdx++ ) {
+    atlasTileLayerRbsp( syntax.getAtlasTileLayer( atglIdx ), syntax, NAL_SKIP_R, tempBitStream );
+    atglSizeList[atglIdx] = tempBitStream.size() - lastSize + nalHeaderSize;
+    lastSize              = tempBitStream.size();
+    if ( maxUnitSize < atglSizeList[atglIdx] ) { maxUnitSize = atglSizeList[atglIdx]; }
+  }
+  for ( size_t i = 0; i < syntax.getSeiSuffix().size(); i++ ) {
+    seiRbsp( syntax, tempBitStream, syntax.getSeiSuffix( i ), NAL_SUFFIX_ESEI );
+    seiSuffixSizeList[i] = tempBitStream.size() - lastSize + nalHeaderSize;
+    lastSize             = tempBitStream.size();
+    if ( maxUnitSize < seiSuffixSizeList[i] ) { maxUnitSize = seiSuffixSizeList[i]; }
+  }
+  // calculation of the max unit size done
+  TRACE_BITSTREAM("maxUnitSize = %u\n", maxUnitSize );
+  TRACE_BITSTREAM("ceilLog2( maxUnitSize + 1 ) = %d\n", ceilLog2( maxUnitSize + 1 ) );
+  TRACE_BITSTREAM( "ceil( static_cast<double>( ceilLog2( maxUnitSize + 1 ) ) / 8.0 ) ) = %f\n",
+      ceil( static_cast<double>( ceilLog2( maxUnitSize + 1 ) ) / 8.0 ) );
+  uint32_t precision = static_cast<uint32_t>(
+      min( max( static_cast<int>( ceil( static_cast<double>( ceilLog2( maxUnitSize + 1 ) ) / 8.0 ) ), 1 ), 8 ) - 1 );
+  // TRACE_BITSTREAM( "precision = %u \n", precision );
+  ssnu.setSizePrecisionBytesMinus1( precision );
+  sampleStreamNalHeader( bitstream, ssnu );
+  for ( size_t aspsCount = 0; aspsCount < syntax.getAtlasSequenceParameterSetList().size(); aspsCount++ ) {
+    NalUnit nu( NAL_ASPS, 0, 1 );
+    nu.setSize( aspsSizeList[aspsCount] );
+    sampleStreamNalUnit( syntax, bitstream, ssnu, nu, aspsCount );
+    TRACE_BITSTREAM(
+        "nalu[%d]:%s, nalSizePrecision:%d, naluSize:%zu, sizeBitstream "
+        "written: %llu\n",
+        (int)nu.getType(), toString( nu.getType() ).c_str(), ( ssnu.getSizePrecisionBytesMinus1() + 1 ), nu.getSize(),
+        bitstream.size() );
+  }
+  for ( size_t afpsCount = 0; afpsCount < syntax.getAtlasFrameParameterSetList().size(); afpsCount++ ) {
+    NalUnit nu( NAL_AFPS, 0, 1 );
+    nu.setSize( afpsSizeList[afpsCount] );
+    sampleStreamNalUnit( syntax, bitstream, ssnu, nu, afpsCount );
+    TRACE_BITSTREAM(
+        "nalu[%d]:%s, nalSizePrecision:%d, naluSize:%zu, sizeBitstream "
+        "written: %llu\n",
+        (int)nu.getType(), toString( nu.getType() ).c_str(), ( ssnu.getSizePrecisionBytesMinus1() + 1 ), nu.getSize(),
+        bitstream.size() );
+  }
+  // NAL_PREFIX_SEI
+  for ( size_t i = 0; i < syntax.getSeiPrefix().size(); i++ ) {
+    NalUnit nu( NAL_PREFIX_ESEI, 0, 1 );
+    nu.setSize( seiPrefixSizeList[i] );
+    sampleStreamNalUnit( syntax, bitstream, ssnu, nu, i );
+    TRACE_BITSTREAM(
+        "nalu[%d]:%s, nalSizePrecision:%d, naluSize:%zu, sizeBitstream "
+        "written: %llu\n",
+        (int)nu.getType(), toString( nu.getType() ).c_str(), ( ssnu.getSizePrecisionBytesMinus1() + 1 ), nu.getSize(),
+        bitstream.size() );
+  }
+  // NAL_TRAIL, NAL_TSA, NAL_STSA, NAL_RADL, NAL_RASL,NAL_SKIP
+  for ( size_t tileOrder = 0; tileOrder < atglSizeList.size(); tileOrder++ ) {
+    NalUnit nu( NAL_TSA_N, 0, 1 );
+    nu.setSize( atglSizeList[tileOrder] );  //+headsize
+    auto& atgl = syntax.getAtlasTileLayer( tileOrder );
+    atgl.getDataUnit().setTileOrder( tileOrder );
+    // TRACE_BITSTREAM( " ATGL: frame %zu\n", frameIdx );
+    sampleStreamNalUnit( syntax, bitstream, ssnu, nu, tileOrder );
+    TRACE_BITSTREAM(
+        "nalu[%d]:%s, nalSizePrecision:%d, naluSize:%zu, sizeBitstream "
+        "written: %llu\n",
+        (int)nu.getType(), toString( nu.getType() ).c_str(), ( ssnu.getSizePrecisionBytesMinus1() + 1 ), nu.getSize(),
+        bitstream.size() );
+  }
+  // NAL_SUFFIX_SEI
+  for ( size_t i = 0; i < syntax.getSeiSuffix().size(); i++ ) {
+    NalUnit nu( NAL_SUFFIX_ESEI, 0, 1 );
+    nu.setSize( seiSuffixSizeList[i] );
+    sampleStreamNalUnit( syntax, bitstream, ssnu, nu, i );
+    TRACE_BITSTREAM(
+        "nalu[%d]:%s, nalSizePrecision:%d, naluSize:%zu, sizeBitstream "
+        "written: %llu\n",
+        (int)nu.getType(), toString( nu.getType() ).c_str(), ( ssnu.getSizePrecisionBytesMinus1() + 1 ), nu.getSize(),
+        bitstream.size() );
+  }
+}
+
 // 8.3.3 Byte alignment syntax
 void PCCBitstreamWriter::byteAlignment( PCCBitstream& bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
@@ -1307,139 +1437,6 @@ void PCCBitstreamWriter::seiMessage( PCCBitstream&       bitstream,
   bitstream.write( payloadSize, 8 );  // u(8)
   seiPayload( bitstream, syntax, sei, nalUnitType );
 }
-
-
-// 8.3.2.4 Atlas sub-bitstream syntax
-void PCCBitstreamWriter::atlasSubStream( PCCHighLevelSyntax& syntax, PCCBitstream& bitstream ) {
-  TRACE_BITSTREAM( "%s \n", __func__ );
-  SampleStreamNalUnit   ssnu;
-  uint32_t              maxUnitSize = 0;
-  PCCBitstream          tempBitStream;
-  std::vector<uint32_t> aspsSizeList;
-  std::vector<uint32_t> afpsSizeList;
-  std::vector<uint32_t> seiPrefixSizeList;
-  std::vector<uint32_t> seiSuffixSizeList;
-  aspsSizeList.resize( syntax.getAtlasSequenceParameterSetList().size() );
-  afpsSizeList.resize( syntax.getAtlasFrameParameterSetList().size() );
-  seiPrefixSizeList.resize( syntax.getSeiPrefix().size() );
-  seiSuffixSizeList.resize( syntax.getSeiSuffix().size() );
-
-  std::vector<uint32_t> atglSizeList;
-  atglSizeList.resize( syntax.getAtlasTileLayerList().size() );
-
-  uint32_t lastSize      = 0;
-  size_t   nalHeaderSize = 2;
-  for ( size_t aspsIdx = 0; aspsIdx < syntax.getAtlasSequenceParameterSetList().size(); aspsIdx++ ) {
-    atlasSequenceParameterSetRbsp( syntax.getAtlasSequenceParameterSet( aspsIdx ), syntax, tempBitStream );
-    aspsSizeList[aspsIdx] = tempBitStream.size() - lastSize + nalHeaderSize;
-    lastSize              = tempBitStream.size();
-    if ( maxUnitSize < aspsSizeList[aspsIdx] ) { maxUnitSize = aspsSizeList[aspsIdx]; }
-  }
-  for ( size_t afpsIdx = 0; afpsIdx < syntax.getAtlasFrameParameterSetList().size(); afpsIdx++ ) {
-    atlasFrameParameterSetRbsp( syntax.getAtlasFrameParameterSet( afpsIdx ), syntax, tempBitStream );
-    afpsSizeList[afpsIdx] = tempBitStream.size() - lastSize + nalHeaderSize;
-    lastSize              = tempBitStream.size();
-    if ( maxUnitSize < afpsSizeList[afpsIdx] ) { maxUnitSize = afpsSizeList[afpsIdx]; }
-  }
-  for ( size_t i = 0; i < syntax.getSeiPrefix().size(); i++ ) {
-    seiRbsp( syntax, tempBitStream, syntax.getSeiPrefix( i ), NAL_PREFIX_ESEI );
-    seiPrefixSizeList[i] = tempBitStream.size() - lastSize + nalHeaderSize;
-    lastSize             = tempBitStream.size();
-    if ( maxUnitSize < seiPrefixSizeList[i] ) { maxUnitSize = seiPrefixSizeList[i]; }
-  }
-  // for ( size_t atglIdx = 0; atglIdx < atglSizeList.size(); atglIdx++ ) {
-  //   int numTilesPerFrame = 1;
-  //   // (afps.getAtlasFrameTileInformation().getNumPartitionRowsMinus1() + 1) *
-  //   // (afps.getAtlasFrameTileInformation().getNumPartitionColumnsMinus1() + 1);
-  //   for ( size_t tileId = 0; tileId < numTilesPerFrame; tileId++ ) {  // TODO: make this more than just
-  //                                                                     // one tile groups per frame
-  //     atlasTileLayerRbsp( syntax.getAtlasTileLayer( atglIdx ), syntax, NAL_SKIP_R, tempBitStream );
-  //     atglSizeList[atglIdx] = tempBitStream.size() - lastSize + nalHeaderSize;
-  //     lastSize              = tempBitStream.size();
-  //     if ( maxUnitSize < atglSizeList[atglIdx] ) { maxUnitSize = atglSizeList[atglIdx]; }
-  //   }
-  // }
-  for ( size_t atglIdx = 0; atglIdx < atglSizeList.size(); atglIdx++ ) {
-    atlasTileLayerRbsp( syntax.getAtlasTileLayer( atglIdx ), syntax, NAL_SKIP_R, tempBitStream );
-    atglSizeList[atglIdx] = tempBitStream.size() - lastSize + nalHeaderSize;
-    lastSize              = tempBitStream.size();
-    if ( maxUnitSize < atglSizeList[atglIdx] ) { maxUnitSize = atglSizeList[atglIdx]; }
-  }
-
-  for ( size_t i = 0; i < syntax.getSeiSuffix().size(); i++ ) {
-    seiRbsp( syntax, tempBitStream, syntax.getSeiSuffix( i ), NAL_SUFFIX_ESEI );
-    seiSuffixSizeList[i] = tempBitStream.size() - lastSize + nalHeaderSize;
-    lastSize             = tempBitStream.size();
-    if ( maxUnitSize < seiSuffixSizeList[i] ) { maxUnitSize = seiSuffixSizeList[i]; }
-  }
-  // calculation of the max unit size done
-  TRACE_BITSTREAM("maxUnitSize = %u\n", maxUnitSize );
-  TRACE_BITSTREAM("ceilLog2( maxUnitSize + 1 ) = %d\n", ceilLog2( maxUnitSize + 1 ) );
-  TRACE_BITSTREAM( "ceil( static_cast<double>( ceilLog2( maxUnitSize + 1 ) ) / 8.0 ) ) = %f\n",
-      ceil( static_cast<double>( ceilLog2( maxUnitSize + 1 ) ) / 8.0 ) );
-  uint32_t precision = static_cast<uint32_t>(
-      min( max( static_cast<int>( ceil( static_cast<double>( ceilLog2( maxUnitSize + 1 ) ) / 8.0 ) ), 1 ), 8 ) - 1 );
-  // TRACE_BITSTREAM( "precision = %u \n", precision );
-  ssnu.setSizePrecisionBytesMinus1( precision );
-  sampleStreamNalHeader( bitstream, ssnu );
-  for ( size_t aspsCount = 0; aspsCount < syntax.getAtlasSequenceParameterSetList().size(); aspsCount++ ) {
-    NalUnit nu( NAL_ASPS, 0, 1 );
-    nu.setSize( aspsSizeList[aspsCount] );
-    sampleStreamNalUnit( syntax, bitstream, ssnu, nu, aspsCount );
-    TRACE_BITSTREAM(
-        "nalu[%d]:%s, nalSizePrecision:%d, naluSize:%zu, sizeBitstream "
-        "written: %llu\n",
-        (int)nu.getType(), toString( nu.getType() ).c_str(), ( ssnu.getSizePrecisionBytesMinus1() + 1 ), nu.getSize(),
-        bitstream.size() );
-  }
-  for ( size_t afpsCount = 0; afpsCount < syntax.getAtlasFrameParameterSetList().size(); afpsCount++ ) {
-    NalUnit nu( NAL_AFPS, 0, 1 );
-    nu.setSize( afpsSizeList[afpsCount] );
-    sampleStreamNalUnit( syntax, bitstream, ssnu, nu, afpsCount );
-    TRACE_BITSTREAM(
-        "nalu[%d]:%s, nalSizePrecision:%d, naluSize:%zu, sizeBitstream "
-        "written: %llu\n",
-        (int)nu.getType(), toString( nu.getType() ).c_str(), ( ssnu.getSizePrecisionBytesMinus1() + 1 ), nu.getSize(),
-        bitstream.size() );
-  }
-  // NAL_PREFIX_SEI
-  for ( size_t i = 0; i < syntax.getSeiPrefix().size(); i++ ) {
-    NalUnit nu( NAL_PREFIX_ESEI, 0, 1 );
-    nu.setSize( seiPrefixSizeList[i] );
-    sampleStreamNalUnit( syntax, bitstream, ssnu, nu, i );
-    TRACE_BITSTREAM(
-        "nalu[%d]:%s, nalSizePrecision:%d, naluSize:%zu, sizeBitstream "
-        "written: %llu\n",
-        (int)nu.getType(), toString( nu.getType() ).c_str(), ( ssnu.getSizePrecisionBytesMinus1() + 1 ), nu.getSize(),
-        bitstream.size() );
-  }
-  // NAL_TRAIL, NAL_TSA, NAL_STSA, NAL_RADL, NAL_RASL,NAL_SKIP
-  for ( size_t tileOrder = 0; tileOrder < atglSizeList.size(); tileOrder++ ) {
-    NalUnit nu( NAL_TSA_N, 0, 1 );
-    nu.setSize( atglSizeList[tileOrder] );  //+headsize
-    auto& atgl = syntax.getAtlasTileLayer( tileOrder );
-    atgl.getDataUnit().setTileOrder( tileOrder );
-    // TRACE_BITSTREAM( " ATGL: frame %zu\n", frameIdx );
-    sampleStreamNalUnit( syntax, bitstream, ssnu, nu, tileOrder );
-    TRACE_BITSTREAM(
-        "nalu[%d]:%s, nalSizePrecision:%d, naluSize:%zu, sizeBitstream "
-        "written: %llu\n",
-        (int)nu.getType(), toString( nu.getType() ).c_str(), ( ssnu.getSizePrecisionBytesMinus1() + 1 ), nu.getSize(),
-        bitstream.size() );
-  }
-  // NAL_SUFFIX_SEI
-  for ( size_t i = 0; i < syntax.getSeiSuffix().size(); i++ ) {
-    NalUnit nu( NAL_SUFFIX_ESEI, 0, 1 );
-    nu.setSize( seiSuffixSizeList[i] );
-    sampleStreamNalUnit( syntax, bitstream, ssnu, nu, i );
-    TRACE_BITSTREAM(
-        "nalu[%d]:%s, nalSizePrecision:%d, naluSize:%zu, sizeBitstream "
-        "written: %llu\n",
-        (int)nu.getType(), toString( nu.getType() ).c_str(), ( ssnu.getSizePrecisionBytesMinus1() + 1 ), nu.getSize(),
-        bitstream.size() );
-  }
-}
-
 
 // C.2 Sample stream V3C unit syntax and semantics
 // C.2.1 Sample stream V3C header syntax

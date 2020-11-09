@@ -61,19 +61,21 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
                            context.getVps().getV3CParameterSetId() ) );
 #endif
   createPatchFrameDataStructure( context );
+printf("Here \n");fflush(stdout);
 #ifdef CODEC_TRACE
   closeTrace();
 #endif
+printf("Here \n");fflush(stdout);
 
   PCCVideoDecoder   videoDecoder;
   std::stringstream path;
-  auto&             sps  = context.getVps();
-  auto&             ai   = sps.getAttributeInformation( atlasIndex );
-  auto&             oi   = sps.getOccupancyInformation( atlasIndex );
-  auto&             gi   = sps.getGeometryInformation( atlasIndex );
-  auto&             asps = context.getAtlasSequenceParameterSet( 0 );
+  auto&             sps          = context.getVps();
+  auto&             ai           = sps.getAttributeInformation( atlasIndex );
+  auto&             oi           = sps.getOccupancyInformation( atlasIndex );
+  auto&             gi           = sps.getGeometryInformation( atlasIndex );
+  auto&             asps         = context.getAtlasSequenceParameterSet( 0 );
+  size_t            pcFrameCount = context.size();
   path << removeFileExtension( params_.compressedStreamPath_ ) << "_dec_GOF" << sps.getV3CParameterSetId() << "_";
-  size_t pcFrameCount = context.size();
 #ifdef CODEC_TRACE
   setTrace( true );
   openTrace( stringFormat( "%s_GOF%u_codec_decode.txt", removeFileExtension( params_.compressedStreamPath_ ).c_str(),
@@ -89,6 +91,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
   bool         isAttributes444          = plt.getProfileCodecGroupIdc() == CODEC_GROUP_HEVC444;
   bool         isAuxiliaryAttributes444 = plt.getProfileCodecGroupIdc() == CODEC_GROUP_HEVC444;
 
+printf("Here \n");fflush(stdout);
   PCCCodecId occupancyCodecId = (PCCCodecId)oi.getOccupancyCodecId();
   PCCCodecId geometryCodecId  = (PCCCodecId)gi.getGeometryCodecId();
   PCCCodecId attributeCodecId;
@@ -256,6 +259,8 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
     }
   }
 
+  printf( "generate point cloud of %zu frames \n", pcFrameCount );
+  fflush( stdout );
   for ( size_t frameIdx = 0; frameIdx < pcFrameCount; frameIdx++ ) {
     // All video have been decoded, start reconsctruction processes
     if ( asps.getRawPatchEnabledFlag() && asps.getAuxiliaryVideoEnabledFlag() &&
@@ -629,20 +634,31 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
 
   size_t frameCount = 0;
   for ( size_t i = 0; i < atglulist.size(); i++ ) {
-    frameCount = std::max( frameCount, ( context.calculateAFOCval( atglulist, i ) + 1 ) );
+    frameCount = std::max( frameCount, ( context.calculateAFOCval( atglulist[0], i ) + 1 ) );
   }
 
+  frameCount = atglulist.size(); // JR fixe: the previous computation could be review.
+  printf( "createPatchFrameDataStructure => frameCount = %zu \n",frameCount );
+
+  printf( "resize \n" );
+  fflush( stdout );
   context.resize( frameCount );
+  printf( "done \n" );
+  fflush( stdout );
+
   // jkei: atglOrder for a tile,
   // jkei: atglulist[atglOrder].getAtlasFrmOrderCntVal() for a frame
   for ( size_t atglOrder = 0; atglOrder < atglulist.size(); atglOrder++ ) {
+    printf( "createPatchFrameDataStructure %zu \n", atglOrder );
+    fflush( stdout );
     createPatchFrameDataStructure( context, atglOrder );
+    printf( "done \n" );
+    fflush( stdout );
   }
 }
 
 void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atglOrder ) {
   //"frame" is a tile here
-  // TRACE_CODEC( "createPatchFrameDataStructure Frame %zu, atglOrder %zu \n", context.getTo.getIndex(), atglOrder );
   auto&  sps        = context.getVps();
   size_t atlasIndex = context.getAtlasIndex();
   auto&  gi         = sps.getGeometryInformation( atlasIndex );
@@ -652,9 +668,18 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
   auto& afps  = context.getAtlasFrameParameterSet( ath.getAtlasFrameParameterSetId() );
   auto& asps  = context.getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
   auto& atgdu = atlu.getDataUnit();
+    printf( "here \n" );
+    fflush( stdout );
   // current tile position derivation
-  size_t           frameIndex = atlu.getAtlasFrmOrderCntVal();
-  size_t           tileIndex = setTileGroupSizeAndLocation( context, frameIndex, ath );  // width,height,leftTopPosition
+  size_t frameIndex = atlu.getAtlasFrmOrderCntVal();
+    printf( "frameIndex = %zu  \n", frameIndex );
+    fflush( stdout );
+  size_t tileIndex  = setTileGroupSizeAndLocation( context, frameIndex, ath );  // width,height,leftTopPosition
+
+  printf( "createPatchFrameDataStructure Frame = %zu Tiles = %zu atlasIndex = %zu atglOrder %zu \n", atlasIndex,
+          tileIndex, context.getAtlasIndex(), atglOrder );
+  fflush( stdout );
+
   PCCFrameContext& tile = context[frameIndex].getTile( tileIndex );
   tile.setIndex( atlu.getAtlasFrmOrderCntVal() );
   tile.setTileIndex( tileIndex );

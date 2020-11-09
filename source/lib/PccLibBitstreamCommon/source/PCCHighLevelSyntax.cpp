@@ -35,12 +35,13 @@
 
 using namespace pcc;
 
-PCCHighLevelSyntax::PCCHighLevelSyntax() {}
+PCCHighLevelSyntax::PCCHighLevelSyntax() : gofSize_( 0 ) {}
 
 PCCHighLevelSyntax::~PCCHighLevelSyntax() {
   vpccParameterSets_.clear();
   atlasHLS_.clear();
 }
+
 size_t PCCAtlasHighLevelSyntax::getNumRefIdxActive( AtlasTileHeader& ath ) {
   size_t afpsId          = ath.getAtlasFrameParameterSetId();
   auto&  afps            = getAtlasFrameParameterSet( afpsId );
@@ -71,6 +72,9 @@ void PCCAtlasHighLevelSyntax::printVideoBitstream() {
   fflush( stdout );
 }
 
-PCCAtlasHighLevelSyntax::PCCAtlasHighLevelSyntax() {}
+PCCAtlasHighLevelSyntax::PCCAtlasHighLevelSyntax() {
+  activeAFPS_ = 0;
+  activeASPS_ = 0;
+}
 
 PCCAtlasHighLevelSyntax::~PCCAtlasHighLevelSyntax() { videoBitstream_.clear(); }

@@ -569,7 +569,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
   auto&        blockToPatch          = frame.getBlockToPatch();
   const size_t blockToPatchWidth     = frame.getWidth() / params.occupancyResolution_;
   const size_t blockToPatchHeight    = frame.getHeight() / params.occupancyResolution_;
-  const size_t totlaPatchCount            = patches.size();
+  const size_t totalPatchCount       = patches.size();
   uint32_t     patchIndex            = 0;
   reconstruct.addColors();
 
@@ -610,7 +610,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
   if ( params.enableSizeQuantization_ ) {
     size_t quantizerSizeX = ( size_t( 1 ) << frame.getLog2PatchQuantizerSizeX() );
     size_t quantizerSizeY = ( size_t( 1 ) << frame.getLog2PatchQuantizerSizeY() );
-    for ( size_t patchIndex = 0; patchIndex < totlaPatchCount; ++patchIndex ) {
+    for ( size_t patchIndex = 0; patchIndex < totalPatchCount; ++patchIndex ) {
       auto&  patch             = patches[patchIndex];
       size_t nonZeroPixel      = 0;
       size_t patchSizeXInPixel = ( patch.getPatchSize2DXInPixel() / quantizerSizeX ) * quantizerSizeX;
@@ -666,12 +666,12 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
   if ( !params.pbfEnableFlag_ ) { BPflag.resize( tileGroupWidth * tileGroupHeight, 0 ); }
 
   std::vector<std::vector<PCCPoint3D>> eomPointsPerPatch;
-  eomPointsPerPatch.resize( totlaPatchCount );
+  eomPointsPerPatch.resize( totalPatchCount );
   uint32_t index;
 
   for ( index = 0; index < patches.size(); index++ ) {
     patchIndex = ( bDecoder && context.getAtlasSequenceParameterSet( 0 ).getPatchPrecedenceOrderFlag() )
-                     ? ( totlaPatchCount - index - 1 )
+                     ? ( totalPatchCount - index - 1 )
                      : index;
     const size_t patchIndexPlusOne = patchIndex + 1;
     auto&        patch             = patches[patchIndex];
@@ -680,7 +680,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
         "P%2lu/%2lu: 2D=(%2lu,%2lu)*(%2lu,%2lu) 3D(%4zu,%4zu,%4zu)*(%4zu,%4zu) "
         "A=(%zu,%zu,%zu) Or=%zu P=%zu => %zu "
         "AxisOfAdditionalPlane = %zu \n",
-        patchIndex, totlaPatchCount, patch.getU0(), patch.getV0(), patch.getSizeU0(), patch.getSizeV0(), patch.getU1(),
+        patchIndex, totalPatchCount, patch.getU0(), patch.getV0(), patch.getSizeU0(), patch.getSizeV0(), patch.getU1(),
         patch.getV1(), patch.getD1(), patch.getSizeU0() * patch.getOccupancyResolution(),
         patch.getSizeV0() * patch.getOccupancyResolution(), patch.getNormalAxis(), patch.getTangentAxis(),
         patch.getBitangentAxis(), patch.getPatchOrientation(), patch.getProjectionMode(), reconstruct.getPointCount(),
@@ -908,7 +908,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
       size_t totalPointCount = 0;
       for ( size_t patchIdxInEom = 0; patchIdxInEom < numPatchesInEOMPatches; patchIdxInEom++ ) {
         size_t memberPatchIdx = ( bDecoder && context.getAtlasSequenceParameterSet( 0 ).getPatchPrecedenceOrderFlag() )
-        ? ( totlaPatchCount - eomPatch.memberPatches[patchIdxInEom] - 1 )
+        ? ( totalPatchCount - eomPatch.memberPatches[patchIdxInEom] - 1 )
                                     : eomPatch.memberPatches[patchIdxInEom];
         size_t numberOfEOMPointsPerPatch = eomPointsPerPatch[memberPatchIdx].size();
         for ( size_t pointCount = 0; pointCount < numberOfEOMPointsPerPatch; pointCount++ ) {

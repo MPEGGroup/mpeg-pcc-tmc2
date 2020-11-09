@@ -1,5 +1,5 @@
- /* License, included below. This software may be subject to other third party
 /* The copyright in this software is being made available under the BSD
+ * License, included below. This software may be subject to other third party
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
@@ -911,8 +911,8 @@ void PCCBitstreamReader::atlasTileDataUnit( AtlasTileDataUnit&  atdu,
     if ( ( patchMode == I_END ) || ( patchMode == P_END ) ) {
       TRACE_BITSTREAM( "patchInformationData: AtghType = %zu patchMode = %zu \n", ath.getType(), patchMode );
     }
-    TRACE_BITSTREAM( "atdu.getPatchCount() including END = %zu \n", atdu.getPatchCount() + 1 );
 #endif
+    TRACE_BITSTREAM( "atdu.getPatchCount() including END = %zu \n", atdu.getPatchCount() + 1 );
   }
 }
 
