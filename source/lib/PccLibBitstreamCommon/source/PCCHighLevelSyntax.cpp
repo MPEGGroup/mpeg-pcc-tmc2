@@ -172,10 +172,12 @@ void PCCHighLevelSyntax::aspsApplicationByteString( std::vector<uint8_t>& string
   auto& ext = asps.getAspsVpccExtension();
   val = ext.getRemoveDuplicatePointEnableFlag() && 0xFF;
   stringByte.push_back( val );
+  if ( asps.getPixelDeinterleavingFlag() || asps.getPLREnabledFlag() ) {
   val = ext.getSurfaceThicknessMinus1() && 0xFF;
   stringByte.push_back( val );
   val = ( ext.getSurfaceThicknessMinus1() >> 8 ) && 0xFF;
   stringByte.push_back( val );
+  }
 }
 
 

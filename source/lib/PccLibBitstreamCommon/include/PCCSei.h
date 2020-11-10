@@ -1088,38 +1088,42 @@ class SEIDecodedAtlasInformationHash : public SEI {
   SeiPayloadType getPayloadType() { return DECODED_ATLAS_INFORMATION_HASH; }
 
   void initialize() {  
-    numTilesMinus1_ = 0;
+
     cancelFlag_        = false;
     persistenceFlag_ = false;
-    hashType_          = 0;
-    decodedHighLevelHashPresentFlag_ = false;
-    decodedAtlasHashPresentFlag_     = true;
+    
+    hashType_          = 1;
+    
+    decodedHighLevelHashPresentFlag_ = true;
+    decodedAtlasHashPresentFlag_     = false;
     decodedAtlasB2pHashPresentFlag_  = false;
     decodedAtlasTilesHashPresentFlag_     = false;
     decodedAtlasTilesB2pHashPresentFlag_  = false;
+
+    numTilesMinus1_                       = 0;
+    tileIdLenMinus1_ = 0;
+
+    highLevelCrc_      = 0;
+    highLevelChecksum_ = 0;
+    atlasCrc_ = 0;
+    atlasChecksum_ = 0;
+    atlasB2pCrc_ = 0;
+    atlasB2pChecksum_ = 0;
     allocate();
   }
 
   void allocate() {
     tileId_.resize( numTilesMinus1_  + 1);
-
     highLevelMd5_.resize( 16 );
-    highLevelCrc_      = 0;
-    highLevelChecksum_ = 0;
-
     atlasMd5_.resize( 16 );
-    atlasCrc_ = 0;
-    atlasChecksum_ = 0;
-    atlasTilesB2pMd5_.resize( 16 );
-    atlasB2pCrc_ = 0;
-    atlasB2pChecksum_ = 0;
-
+    atlasB2pMd5_.resize( 16 );
+    atlasTilesMd5_.resize( numTilesMinus1_ + 1 );
     atlasTilesCrc_.resize( numTilesMinus1_  + 1 );
     atlasTilesChecksum_.resize( numTilesMinus1_  + 1 );
+    atlasTilesB2pMd5_.resize( numTilesMinus1_ + 1 );
     atlasTilesB2pCrc_.resize( numTilesMinus1_ + 1 );
     atlasTilesB2pChecksum_.resize( numTilesMinus1_  + 1 );
-    atlasTilesMd5_.resize( numTilesMinus1_  + 1 );
-    atlasTilesB2pMd5_.resize( numTilesMinus1_  + 1 );
+
     for ( auto& element : atlasTilesMd5_ ) { element.resize( 16 ); }
     for ( auto& element : atlasTilesB2pMd5_ ) { element.resize( 16 ); }
   }
@@ -1155,7 +1159,7 @@ class SEIDecodedAtlasInformationHash : public SEI {
   void setCancelFlag( bool value ) { cancelFlag_ = value; }
   void setPersistenceFlag( bool value ) { persistenceFlag_ = value; }
   void setHashType( uint8_t value ) { hashType_ = value; }
-  void setDecodedHighLevelHashPresentFlag( bool value ) { decodedAtlasHashPresentFlag_ = value; }
+  void setDecodedHighLevelHashPresentFlag( bool value ) { decodedHighLevelHashPresentFlag_ = value; }
   void setDecodedAtlasHashPresentFlag( bool value ) { decodedAtlasHashPresentFlag_ = value; }
   void setDecodedAtlasB2pHashPresentFlag( bool value ) { decodedAtlasB2pHashPresentFlag_ = value; }
   void setDecodedAtlasTilesHashPresentFlag( bool value ) { decodedAtlasTilesHashPresentFlag_ = value; }
@@ -1178,7 +1182,6 @@ class SEIDecodedAtlasInformationHash : public SEI {
   void setAtlasTilesB2pCheckSum( size_t i, uint32_t value ) { atlasTilesB2pChecksum_[i] = value; }
   void setAtlasTilesMd5( size_t i, size_t j, uint32_t value ) { atlasTilesMd5_[i][j] = value; }
   void setAtlasTilesB2pMd5( size_t i, size_t j, uint32_t value ) { atlasTilesB2pMd5_[i][j] = value; }
-
 
  private:
   bool                               cancelFlag_;

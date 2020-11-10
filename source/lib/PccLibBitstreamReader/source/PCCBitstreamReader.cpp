@@ -982,10 +982,10 @@ void PCCBitstreamReader::patchDataUnit( PatchDataUnit&      pdu,
   TRACE_BITSTREAM( " 2dPosXY: %zu,%zu\n", pdu.get2dPosX(), pdu.get2dPosX() );
   TRACE_BITSTREAM( " 2dSizeXY: %d,%d\n", int32_t( pdu.get2dSizeXMinus1() + 1 ), int32_t( pdu.get2dSizeYMinus1() + 1 ) );
   TRACE_BITSTREAM( " 3dPosXY: %zu,%zu\n", pdu.get3dOffsetU(), pdu.get3dOffsetV() );
-  TRACE_BITSTREAM( " Pdu3dPosMinZ: %zu ( bitCountForMinDepth = %u = %u - %u + %u ) \n", pdu.get3dOffsetD(),
+  /*TRACE_BITSTREAM( " Pdu3dPosMinZ: %zu ( bitCountForMinDepth = %u = %u - %u + %u ) \n", pdu.get3dOffsetD(),
                    bitCountForMinDepth,
                    syntax.getVps().getGeometryInformation( 0 ).getGeometry3dCoordinatesBitdepthMinus1(),
-                   ath.getPosMinDQuantizer(), 2 );
+                   ath.getPosMinDQuantizer(), 2 );*/
 
   if ( asps.getNormalAxisMaxDeltaValueEnabledFlag() ) {
 #if EXPAND_RANGE_CONDITIONAL
@@ -1027,7 +1027,7 @@ void PCCBitstreamReader::patchDataUnit( PatchDataUnit&      pdu,
     plrData( plrd, syntax, asps, bitstream );
   }
 #ifdef BITSTREAM_TRACE
-  if ( asps.getMivExtensionFlag() ) { TRACE_BITSTREAM( "MivExtension \n" ); }
+  //if ( asps.getMivExtensionFlag() ) { TRACE_BITSTREAM( "MivExtension \n" ); }
 #endif
   TRACE_BITSTREAM(
       "Frame %zu, Patch(%zu) => 2Dpos = %4zu %4zu 2Dsize = %4ld %4ld 3Dpos = "
@@ -1993,13 +1993,9 @@ void PCCBitstreamReader::decodedHighLevelHash( PCCBitstream& bitstream, SEI& sei
       sei.setHighLevelMd5( i, bitstream.read( 8 ) );  // b(8)
     }
   } else if ( hType == 1 ) {
-    std::cerr << " Decoder CRC Value: High Level " << std::endl;
     sei.setHighLevelCrc( bitstream.read( 16 ) );  // u(16)
-    std::cerr << " " << sei.getHighLevelCrc()  << std::endl; 
   } else if ( hType == 2 ) {
-    std::cerr << " Decoder CheckSum Value: High Level " << std::endl;
     sei.setHighLevelCheckSum(bitstream.read( 32 ));  // u(32)
-    std::cerr << " " << sei.getHighLevelCheckSum() << std::endl; 
   }
 }
 

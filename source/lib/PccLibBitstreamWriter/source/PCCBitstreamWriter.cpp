@@ -1123,10 +1123,10 @@ void PCCBitstreamWriter::patchDataUnit( PatchDataUnit&      pdu,
   TRACE_BITSTREAM( " 2dPosXY: %zu,%zu\n", pdu.get2dPosX(), pdu.get2dPosX() );
   TRACE_BITSTREAM( " 2dSizeXY: %d,%d\n", int32_t( pdu.get2dSizeXMinus1() + 1 ), int32_t( pdu.get2dSizeYMinus1() + 1 ) );
   TRACE_BITSTREAM( " 3dPosXY: %zu,%zu\n", pdu.get3dOffsetU(), pdu.get3dOffsetV() );
-  TRACE_BITSTREAM( " Pdu3dPosMinZ: %zu ( bitCountForMinDepth = %u = %u - %u + %u ) \n", pdu.get3dOffsetD(),
+  /*TRACE_BITSTREAM( " Pdu3dPosMinZ: %zu ( bitCountForMinDepth = %u = %u - %u + %u ) \n", pdu.get3dOffsetD(),
                    bitCountForMinDepth,
                    syntax.getVps().getGeometryInformation( 0 ).getGeometry3dCoordinatesBitdepthMinus1(),
-                   ath.getPosMinDQuantizer(), 2 );
+                   ath.getPosMinDQuantizer(), 2 );*/
 
   if ( asps.getNormalAxisMaxDeltaValueEnabledFlag() ) {
 #if EXPAND_RANGE_CONDITIONAL
@@ -1464,7 +1464,7 @@ void PCCBitstreamWriter::sampleStreamNalUnit( PCCHighLevelSyntax&  syntax,
     case NAL_SKIP_N:
     case NAL_SKIP_R: atlasTileLayerRbsp( syntax.getAtlasTileLayer( index ), syntax, nalu.getType(), bitstream ); break;
     case NAL_SUFFIX_ESEI:
-    case NAL_SUFFIX_NSEI: seiRbsp( syntax, bitstream, syntax.getSeiSuffix( index ), nalu.getType() );
+    case NAL_SUFFIX_NSEI: seiRbsp( syntax, bitstream, syntax.getSeiSuffix( index ), nalu.getType() ); break;
     case NAL_PREFIX_ESEI:
     case NAL_PREFIX_NSEI: seiRbsp( syntax, bitstream, syntax.getSeiPrefix( index ), nalu.getType() ); break;
     default: fprintf( stderr, "sampleStreamNalUnit type = %d not supported\n", static_cast<int32_t>( nalu.getType() ) );
@@ -1531,7 +1531,7 @@ void PCCBitstreamWriter::seiPayload( PCCBitstream&       bitstream,
     }
   } else { /* nalUnitType  ==  NAL_SUFFIX_SEI  || nalUnitType  ==
               NAL_SUFFIX_NSEI */
-    SEI& sei = syntax.addSeiSuffix( payloadType, nalUnitType == NAL_SUFFIX_ESEI );
+    /*SEI& sei = syntax.addSeiSuffix( payloadType, nalUnitType == NAL_SUFFIX_ESEI );*/
     if ( payloadType == FILLER_PAYLOAD ) {  // 2
       fillerPayload( bitstream, sei );
     } else if ( payloadType == USER_DATAREGISTERED_ITUTT35 ) {  // 3
