@@ -212,6 +212,9 @@ class PCCBitstream {
     for ( auto& element : str ) { write( element, 8 ); }
   }
 
+  inline uint32_t peekByteAt(uint64_t peekPos){
+    return data_[peekPos];
+  }
   inline uint32_t read( uint8_t bits, bool bFullStream = false ) {
     uint32_t code = read( bits, position_ );
 #ifdef BITSTREAM_TRACE

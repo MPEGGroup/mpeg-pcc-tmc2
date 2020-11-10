@@ -35,7 +35,7 @@
 
 using namespace pcc;
 
-PCCHighLevelSyntax::PCCHighLevelSyntax() : gofSize_( 0 ) {}
+PCCHighLevelSyntax::PCCHighLevelSyntax() {}
 
 PCCHighLevelSyntax::~PCCHighLevelSyntax() {
   vpccParameterSets_.clear();
@@ -72,9 +72,6 @@ void PCCAtlasHighLevelSyntax::printVideoBitstream() {
   fflush( stdout );
 }
 
-PCCAtlasHighLevelSyntax::PCCAtlasHighLevelSyntax() {
-  activeAFPS_ = 0;
-  activeASPS_ = 0;
-}
+PCCAtlasHighLevelSyntax::PCCAtlasHighLevelSyntax() { }
 
 PCCAtlasHighLevelSyntax::~PCCAtlasHighLevelSyntax() { videoBitstream_.clear(); }

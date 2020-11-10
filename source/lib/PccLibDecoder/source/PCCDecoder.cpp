@@ -61,11 +61,10 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
                            context.getVps().getV3CParameterSetId() ) );
 #endif
   createPatchFrameDataStructure( context );
-printf("Here \n");fflush(stdout);
+
 #ifdef CODEC_TRACE
   closeTrace();
 #endif
-printf("Here \n");fflush(stdout);
 
   PCCVideoDecoder   videoDecoder;
   std::stringstream path;
@@ -91,7 +90,7 @@ printf("Here \n");fflush(stdout);
   bool         isAttributes444          = plt.getProfileCodecGroupIdc() == CODEC_GROUP_HEVC444;
   bool         isAuxiliaryAttributes444 = plt.getProfileCodecGroupIdc() == CODEC_GROUP_HEVC444;
 
-printf("Here \n");fflush(stdout);
+
   PCCCodecId occupancyCodecId = (PCCCodecId)oi.getOccupancyCodecId();
   PCCCodecId geometryCodecId  = (PCCCodecId)gi.getGeometryCodecId();
   PCCCodecId attributeCodecId;
@@ -628,37 +627,25 @@ void PCCDecoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& 
 void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
   TRACE_CODEC( "createPatchFrameDataStructure GOP start \n" );
   auto& atglulist = context.getAtlasTileLayerList();
-
-  // partition information derivation
+  
+  //partition information derivation
   setTilePartitionSizeAfti( context );
 
-  size_t frameCount = 0;
+  size_t frameCount=0;
   for ( size_t i = 0; i < atglulist.size(); i++ ) {
-    frameCount = std::max( frameCount, ( context.calculateAFOCval( atglulist[0], i ) + 1 ) );
+    frameCount = std::max(frameCount, (context.calculateAFOCval(atglulist, i)+1));
   }
 
-  frameCount = atglulist.size(); // JR fixe: the previous computation could be review.
-  printf( "createPatchFrameDataStructure => frameCount = %zu \n",frameCount );
-
-  printf( "resize \n" );
-  fflush( stdout );
   context.resize( frameCount );
-  printf( "done \n" );
-  fflush( stdout );
-
-  // jkei: atglOrder for a tile,
-  // jkei: atglulist[atglOrder].getAtlasFrmOrderCntVal() for a frame
-  for ( size_t atglOrder = 0; atglOrder < atglulist.size(); atglOrder++ ) {
-    printf( "createPatchFrameDataStructure %zu \n", atglOrder );
-    fflush( stdout );
-    createPatchFrameDataStructure( context, atglOrder );
-    printf( "done \n" );
-    fflush( stdout );
+  //jkei: atglOrder for a tile,
+  //jkei: atglulist[atglOrder].getAtlasFrmOrderCntVal() for a frame
+  for( size_t atglOrder=0; atglOrder < atglulist.size(); atglOrder++ ){
+    createPatchFrameDataStructure(context, atglOrder);
   }
 }
 
 void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atglOrder ) {
-  //"frame" is a tile here
+  TRACE_CODEC( "createPatchFrameDataStructure Tile %zu \n", atglOrder );
   auto&  sps        = context.getVps();
   size_t atlasIndex = context.getAtlasIndex();
   auto&  gi         = sps.getGeometryInformation( atlasIndex );
@@ -668,15 +655,12 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
   auto& afps  = context.getAtlasFrameParameterSet( ath.getAtlasFrameParameterSetId() );
   auto& asps  = context.getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
   auto& atgdu = atlu.getDataUnit();
-    printf( "here \n" );
-    fflush( stdout );
+
   // current tile position derivation
   size_t frameIndex = atlu.getAtlasFrmOrderCntVal();
-    printf( "frameIndex = %zu  \n", frameIndex );
-    fflush( stdout );
   size_t tileIndex  = setTileGroupSizeAndLocation( context, frameIndex, ath );  // width,height,leftTopPosition
 
-  printf( "createPatchFrameDataStructure Frame = %zu Tiles = %zu atlasIndex = %zu atglOrder %zu \n", atlasIndex,
+  printf( "createPatchFrameDataStructure Frame = %zu Tiles = %zu atlasIndex = %zu atglOrder %zu \n", frameIndex,
           tileIndex, context.getAtlasIndex(), atglOrder );
   fflush( stdout );
 
@@ -723,12 +707,10 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
   eomPatches.reserve( numEomPatch );
   patches.resize( numNonRawPatch );
   pcmPatches.resize( numRawPatches );
-  TRACE_CODEC( "Patches size                        = %zu \n", patches.size() );
-  TRACE_CODEC( "non-regular Patches(pcm, eom)     = %zu, %zu \n", numRawPatches, numEomPatch );
-  TRACE_CODEC(
-      "Tile Type                     = %zu (0.P_TILE "
-      "1.SKIP_TILE 2.I_TILE_GRP)\n",
-      (size_t)ath.getType() );
+  TRACE_CODEC( "Patches size                      = %zu \n", patches.size() );
+  TRACE_CODEC( "non-regular Patches(raw, eom)     = %zu, %zu \n", numRawPatches, numEomPatch );
+  TRACE_CODEC( "Tile Type                         = %zu (0.P_TILE 1.I_TILE 2.SKIP_TILE)\n", (size_t)ath.getType() );
+  
   // TRACE_CODEC( "OccupancyPackingBlockSize           = %d \n", context.getOccupancyPackingBlockSize() );
   size_t  totalNumberOfRawPoints = 0;
   size_t  totalNumberOfEomPoints = 0;

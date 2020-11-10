@@ -54,8 +54,8 @@ size_t PCCBitstreamReader::read( PCCBitstream& bitstream, SampleStreamV3CUnit& s
   TRACE_BITSTREAM( "PCCBitstreamXXcoder: SampleStream Vpcc Unit start \n" );
   sampleStreamV3CHeader( bitstream, ssvu );
   headerSize++;
-  TRACE_BITSTREAM( "UnitSizePrecisionBytesMinus1 %d <=> %d / 8 - 1\n", ssvu.getSsvhUnitSizePrecisionBytesMinus1() + 1,
-                   ceilLog2( ssvu.getSsvhUnitSizePrecisionBytesMinus1() + 1 ) );
+  TRACE_BITSTREAM( "UnitSizePrecisionBytesMinus1 %d <=> bytesToRead %d\n", ssvu.getSsvhUnitSizePrecisionBytesMinus1(),
+                   ( 8 * ( ssvu.getSsvhUnitSizePrecisionBytesMinus1() + 1 ) ));
   size_t unitCount = 0;
   while ( bitstream.moreData() ) {
     auto& v3cUnit = ssvu.addV3CUnit();
@@ -224,6 +224,23 @@ void PCCBitstreamReader::atlasSubStream( PCCHighLevelSyntax& syntax, PCCBitstrea
   size_t              sizeBitstream = bitstream.capacity();
   SampleStreamNalUnit ssnu;
   sampleStreamNalHeader( bitstream, ssnu );
+  
+//  uint64_t tempPos = bitstream.size();
+//  while(tempPos<sizeBitstream){
+//    uint8_t unitSizePrecision = ( 8 * ( ssnu.getSizePrecisionBytesMinus1() + 1 ) );
+//    uint32_t unitSize = 0;
+//    for(uint8_t byteRead=0; byteRead<unitSizePrecision; byteRead++){
+//      unitSize += bitstream.peekByteAt(tempPos+byteRead)<<(8*(unitSizePrecision-byteRead-1));
+//    }
+//
+//    uint16_t firstByte = bitstream.peekByteAt(tempPos+unitSizePrecision);
+//    firstByte = firstByte<<1; //removing first bit of nal_layer_id
+//    firstByte = firstByte>>2; //removing nal_forbidden_zero_bit and a bit by the above operation
+//    nal_unit_type = (uint8_t)firstByte;
+//
+//    tempPos +=( unitSizePrecision + unitSize);
+//  }
+  
   while ( bitstream.size() < sizeBitstream ) {
     ssnu.addNalUnit();
     sampleStreamNalUnit( syntax, bitstream, ssnu, ssnu.getNalUnit().size() - 1 );
@@ -605,6 +622,7 @@ void PCCBitstreamReader::atlasFrameTileInformation( AtlasFrameTileInformation&  
   afti.setSingleTileInAtlasFrameFlag( bitstream.read( 1 ) != 0U );  // u(1)
   if ( !afti.getSingleTileInAtlasFrameFlag() ) {
     afti.setUniformPartitionSpacingFlag( bitstream.read( 1 ) != 0U );  // u(1)
+    TRACE_BITSTREAM( "afti: uniformPartition :%zu !singleTile\n", afti.getUniformPartitionSpacingFlag());
     if ( afti.getUniformPartitionSpacingFlag() ) {
       afti.setPartitionColumnsWidthMinus1( bitstream.readUvlc() );  //  ue(v)
       afti.setPartitionRowsHeightMinus1( bitstream.readUvlc() );    //  ue(v)
@@ -1339,6 +1357,7 @@ void PCCBitstreamReader::sampleStreamV3CUnit( PCCBitstream& bitstream, SampleStr
   auto    v3cUnitType  = static_cast<V3CUnitType>( v3cUnitType8 >>= 3 );
   v3cUnit.setType( v3cUnitType );
   TRACE_BITSTREAM( "V3CUnitType: %hhu V3CUnitSize: %zu\n", v3cUnitType8, v3cUnit.getSize() );
+  printf( "V3CUnitType: %hhu V3CUnitSize: %zu\n", v3cUnitType8, v3cUnit.getSize() );
 }
 
 // D.2 Sample stream NAL unit syntax and semantics

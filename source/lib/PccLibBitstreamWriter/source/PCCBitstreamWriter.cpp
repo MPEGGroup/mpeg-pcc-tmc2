@@ -67,11 +67,12 @@ size_t PCCBitstreamWriter::write( SampleStreamV3CUnit& ssvu, PCCBitstream& bitst
   TRACE_BITSTREAM( "maxUnitSize = %u \n", maxUnitSize );
   uint32_t precision = static_cast<uint32_t>(
       min( max( static_cast<int>( ceil( static_cast<double>( ceilLog2( maxUnitSize ) ) / 8.0 ) ), 1 ), 8 ) - 1 );
-  TRACE_BITSTREAM( " => SsvhUnitSizePrecisionBytesMinus1 = %u \n", precision );
   ssvu.setSsvhUnitSizePrecisionBytesMinus1( precision );
+  TRACE_BITSTREAM( " => SsvhUnitSizePrecisionBytesMinus1 = %u \n", ssvu.getSsvhUnitSizePrecisionBytesMinus1() );
+  
   sampleStreamV3CHeader( bitstream, ssvu );
   headerSize += 1;
-  TRACE_BITSTREAM( "UnitSizePrecisionBytesMinus1 %d <=> %d / 8 - 1\n", precision, ceilLog2( maxUnitSize ) );
+  TRACE_BITSTREAM( "UnitSizePrecisionBytesMinus1 %d <=> bytesToRead %d\n", precision, ( 8 * ( ssvu.getSsvhUnitSizePrecisionBytesMinus1() + 1 ) ) );
   size_t unitCount = 0;
   for ( auto& v3cUnit : ssvu.getV3CUnit() ) {
     sampleStreamV3CUnit( bitstream, ssvu, v3cUnit );
@@ -376,18 +377,6 @@ void PCCBitstreamWriter::atlasSubStream( PCCHighLevelSyntax& syntax, PCCBitstrea
     lastSize             = tempBitStream.size();
     if ( maxUnitSize < seiPrefixSizeList[i] ) { maxUnitSize = seiPrefixSizeList[i]; }
   }
-  // for ( size_t atglIdx = 0; atglIdx < atglSizeList.size(); atglIdx++ ) {
-  //   int numTilesPerFrame = 1;
-  //   // (afps.getAtlasFrameTileInformation().getNumPartitionRowsMinus1() + 1) *
-  //   // (afps.getAtlasFrameTileInformation().getNumPartitionColumnsMinus1() + 1);
-  //   for ( size_t tileId = 0; tileId < numTilesPerFrame; tileId++ ) {  // TODO: make this more than just
-  //                                                                     // one tile groups per frame
-  //     atlasTileLayerRbsp( syntax.getAtlasTileLayer( atglIdx ), syntax, NAL_SKIP_R, tempBitStream );
-  //     atglSizeList[atglIdx] = tempBitStream.size() - lastSize + nalHeaderSize;
-  //     lastSize              = tempBitStream.size();
-  //     if ( maxUnitSize < atglSizeList[atglIdx] ) { maxUnitSize = atglSizeList[atglIdx]; }
-  //   }
-  // }
   for ( size_t atglIdx = 0; atglIdx < atglSizeList.size(); atglIdx++ ) {
     atlasTileLayerRbsp( syntax.getAtlasTileLayer( atglIdx ), syntax, NAL_SKIP_R, tempBitStream );
     atglSizeList[atglIdx] = tempBitStream.size() - lastSize + nalHeaderSize;
@@ -401,7 +390,7 @@ void PCCBitstreamWriter::atlasSubStream( PCCHighLevelSyntax& syntax, PCCBitstrea
     if ( maxUnitSize < seiSuffixSizeList[i] ) { maxUnitSize = seiSuffixSizeList[i]; }
   }
   // calculation of the max unit size done
-  TRACE_BITSTREAM("maxUnitSize = %u\n", maxUnitSize );
+  TRACE_BITSTREAM("maxUnitSize                 = %u\n", maxUnitSize );
   TRACE_BITSTREAM("ceilLog2( maxUnitSize + 1 ) = %d\n", ceilLog2( maxUnitSize + 1 ) );
   TRACE_BITSTREAM( "ceil( static_cast<double>( ceilLog2( maxUnitSize + 1 ) ) / 8.0 ) ) = %f\n",
       ceil( static_cast<double>( ceilLog2( maxUnitSize + 1 ) ) / 8.0 ) );

@@ -89,7 +89,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                            context.getVps().getV3CParameterSetId() ) );
 #endif
   reconstructs.setFrameCount( sources.getFrameCount() );
-  context.setGofSize( sources.getFrameCount() );
+  //context.setGofSize( sources.getFrameCount() );
   context.resize( sources.getFrameCount() );
   auto& frames = context.getFrames();
   for ( size_t i = 0; i < frames.size(); i++ ) {
@@ -8822,7 +8822,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&         context,
                                                 AtlasTileLayerRbsp& atglu,
                                                 size_t              frameIndex,
                                                 size_t              tileIndex ) {
-  TRACE_CODEC( "createPatchFrameDataStructure Frame %zu \n", tile.getIndex() );
+  TRACE_CODEC( "createPatchFrameDataStructure Tile %zu \n", tile.getIndex() );
   auto&        patches            = tile.getPatches();
   auto&        pcmPatches         = tile.getRawPointsPatches();
   auto&        sps                = context.getVps();
@@ -8839,17 +8839,11 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&         context,
   int64_t      prevSizeV0         = 0;
   int64_t      predIndex          = 0;
 
-  TRACE_CODEC( "\tframe[%zu]\tRefAfocList:", frameIndex );
-  for ( size_t i = 0; i < tile.getRefAfocListSize(); i++ ) { TRACE_CODEC( "\t%zu", tile.getRefAfoc( i ) ); }
-  TRACE_CODEC( "\n" );
-  TRACE_CODEC( "Patches size                        = %zu \n", patches.size() );
-  TRACE_CODEC( "non-regular Patches(pcm, eom)     = %zu, %zu \n", tile.getRawPointsPatches().size(),
-               tile.getEomPatches().size() );
   atglu.setAtlasFrmOrderCntVal( tile.getAtlasFrmOrderCntVal() );
   ath.setId( tileIndex );
 
   ath.setAtlasFrmOrderCntLsb( tile.getAtlasFrmOrderCntLsb() );
-  ath.setType( I_TILE );    // P_TILE_GRP = 0, SKIP_TILE_GRP, I_TILE_GRP
+  ath.setType( I_TILE );    // P_TILE = 0, I_TILE, SKIP_TILE
   if ( frameIndex != 0 ) {  // && sps.getPatchInterPredictionEnabledFlag() ){
     bool interPredPresent = false;
     for ( auto& patch : patches ) {
@@ -8866,11 +8860,14 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&         context,
 
   if ( ath.getType() != I_TILE ) {
     tile.constructAtghRefListStruct( context, ath );
+    TRACE_CODEC( "\tframe[%zu]\tRefAfocList:", frameIndex );
+    for ( size_t i = 0; i < tile.getRefAfocListSize(); i++ ) { TRACE_CODEC( "\t%zu", tile.getRefAfoc( i ) ); }
+    TRACE_CODEC( "\n" );
   }
-  TRACE_CODEC(
-      "Tile Type                     = %zu (0.P_TILE "
-      "1.SKIP_TILE 2.I_TILE_GRP)\n",
-      (size_t)ath.getType() );
+  TRACE_CODEC( "Patches size                      = %zu \n", patches.size() );
+  TRACE_CODEC( "non-regular Patches(raw, eom)     = %zu, %zu \n", tile.getRawPointsPatches().size(),
+               tile.getEomPatches().size() );
+  TRACE_CODEC( "Tile Type                         = %zu (0.P_TILE 1.I_TILE 2.SKIP_TILE)\n", (size_t)ath.getType() );
   //TRACE_CODEC( "OccupancyPackingBlockSize           = %d \n", context.getOccupancyPackingBlockSize() );
 
 // all patches

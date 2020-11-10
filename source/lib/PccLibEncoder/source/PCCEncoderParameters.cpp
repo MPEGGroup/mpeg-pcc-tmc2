@@ -978,40 +978,6 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   afps.setExtensionFlag( true );
   afps.setExtension8Bits( 0 );
 
-  // if ( static_cast<int>( afps.getOverrideEomForDepthFlag() ) == 0 ) {
-  //   afps.setEomMaxBitCountMinus1( 7 );
-  //   afps.setEomNumberOfPatchBitCountMinus1( 7 );
-  // }
-  // now create a list of tile groups per frame (NOTE: our frame has only one
-  // tile group)
-  int numTilesPerFrame = ( afps.getAtlasFrameTileInformation().getNumPartitionRowsMinus1() + 1 ) *
-                         ( afps.getAtlasFrameTileInformation().getNumPartitionColumnsMinus1() + 1 );
-  for ( size_t frameIdx = 0; frameIdx < frameCount_; frameIdx++ ) {
-    for ( size_t tileGroupId = 0; tileGroupId < numTilesPerFrame; tileGroupId++ ) {
-      auto& atgl = context.addAtlasTileLayer( frameIdx, tileGroupId );
-      auto& ath  = atgl.getHeader();
-      ath.setAtlasFrameParameterSetId( 0 );
-      ath.setPosMinDQuantizer( uint8_t( std::log2( minLevel_ ) ) );
-      ath.setPosDeltaMaxDQuantizer( uint8_t( std::log2( minLevel_ ) ) );
-      ath.setPatchSizeXinfoQuantizer( log2QuantizerSizeX_ );
-      ath.setPatchSizeYinfoQuantizer( log2QuantizerSizeY_ );
-      if ( afps.getRaw3dPosBitCountExplicitModeFlag() ) {
-        ath.setRaw3dPosAxisBitCountMinus1( 0 );  //
-      } else {
-#if EXPAND_RANGE_ENCODER
-        ath.setRaw3dPosAxisBitCountMinus1( geometry3dCoordinatesBitdepth_ + asps.getExtendedProjectionEnabledFlag() -
-                                           geometryNominal2dBitdepth_ - 1 );
-#else
-        ath.setRaw3dPosAxisBitCountMinus1( geometry3dCoordinatesBitdepth_ - geometryNominal2dBitdepth_ - 1 );
-#endif
-      }
-      ath.setNumRefIdxActiveOverrideFlag( false );
-
-      ath.setRefAtlasFrameListSpsFlag( true );
-      ath.setRefAtlasFrameListIdx( 0 );
-    }
-  }
-
   // construction of reference frame list of ASPS
   constructAspsRefListStruct( context, 0, 0 );
 
