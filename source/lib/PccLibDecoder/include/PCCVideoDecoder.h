@@ -127,8 +127,8 @@ class PCCVideoDecoder {
           auto& destImage = video.getFrame( frNum );
           destImage.resize( width, height, PCCCOLORFORMAT::YUV444 );
           // iterate the patch information and perform chroma down-sampling on each patch individually
-          std::vector<PCCPatch> patches      = context.getAtlasFrameContext().getPatches();
-          std::vector<size_t>   blockToPatch = context.getAtlasFrameContext().getBlockToPatch();
+          std::vector<PCCPatch> patches      = context.getTitleFrameContext().getPatches();
+          std::vector<size_t>   blockToPatch = context.getTitleFrameContext().getBlockToPatch();
           for ( int patchIdx = 0; patchIdx <= patches.size(); patchIdx++ ) {
             size_t occupancyResolution;
             size_t patch_left;
@@ -165,7 +165,7 @@ class PCCVideoDecoder {
             // fill in the blocks by extending the edges
             for ( size_t i = 0; i < patch_height / occupancyResolution; i++ ) {
               for ( size_t j = 0; j < patch_width / occupancyResolution; j++ ) {
-                if ( context.getAtlasFrameContext()
+                if ( context.getTitleFrameContext()
                          .getBlockToPatch()[( i + patch_top / occupancyResolution ) * ( width / occupancyResolution ) +
                                             j + patch_left / occupancyResolution] == patchIdx ) {
                   // do nothing
@@ -181,7 +181,7 @@ class PCCVideoDecoder {
                   // current block
                   searchIndex = j;
                   while ( searchIndex >= 0 ) {
-                    if ( context.getAtlasFrameContext()
+                    if ( context.getTitleFrameContext()
                              .getBlockToPatch()[( i + patch_top / occupancyResolution ) *
                                                     ( width / occupancyResolution ) +
                                                 searchIndex + patch_left / occupancyResolution] == patchIdx ) {
@@ -195,7 +195,7 @@ class PCCVideoDecoder {
                   // current block
                   searchIndex = j;
                   while ( searchIndex < patch_width / occupancyResolution ) {
-                    if ( context.getAtlasFrameContext()
+                    if ( context.getTitleFrameContext()
                              .getBlockToPatch()[( i + patch_top / occupancyResolution ) *
                                                     ( width / occupancyResolution ) +
                                                 searchIndex + patch_left / occupancyResolution] == patchIdx ) {
@@ -208,7 +208,7 @@ class PCCVideoDecoder {
                   // looking for the neighboring block above the current block
                   searchIndex = i;
                   while ( searchIndex >= 0 ) {
-                    if ( context.getAtlasFrameContext()
+                    if ( context.getTitleFrameContext()
                              .getBlockToPatch()[( searchIndex + patch_top / occupancyResolution ) *
                                                     ( width / occupancyResolution ) +
                                                 j + patch_left / occupancyResolution] == patchIdx ) {
@@ -221,7 +221,7 @@ class PCCVideoDecoder {
                   // looking for the neighboring block below the current block
                   searchIndex = i;
                   while ( searchIndex < patch_height / occupancyResolution ) {
-                    if ( context.getAtlasFrameContext()
+                    if ( context.getTitleFrameContext()
                              .getBlockToPatch()[( searchIndex + patch_top / occupancyResolution ) *
                                                     ( width / occupancyResolution ) +
                                                 j + patch_left / occupancyResolution] == patchIdx ) {
@@ -324,7 +324,7 @@ class PCCVideoDecoder {
             // substitute the pixels in the output image for compression
             for ( size_t i = 0; i < patch_height; i++ ) {
               for ( size_t j = 0; j < patch_width; j++ ) {
-                if ( context.getAtlasFrameContext().getBlockToPatch()[( ( i + patch_top ) / occupancyResolution ) *
+                if ( context.getTitleFrameContext().getBlockToPatch()[( ( i + patch_top ) / occupancyResolution ) *
                                                                           ( width / occupancyResolution ) +
                                                                       ( j + patch_left ) / occupancyResolution] ==
                      patchIdx ) {

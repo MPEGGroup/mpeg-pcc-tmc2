@@ -906,7 +906,6 @@ void PCCBitstreamWriter::atlasTileLayerRbsp( AtlasTileLayerRbsp& atgl,
 }
 
 // 8.3.6.10 RBSP trailing bit syntax
-static void rbspTrailingBits( PCCBitstream& bitstream );
 void        PCCBitstreamWriter::rbspTrailingBits( PCCBitstream& bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   bitstream.write( 1, 1 );  // f(1): equal to 1
@@ -1711,7 +1710,7 @@ void PCCBitstreamWriter::componentCodecMapping( PCCBitstream& bitstream, SEI& se
 void PCCBitstreamWriter::sceneObjectInformation( PCCBitstream& bitstream, SEI& seiAbstract ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   auto&         sei           = static_cast<SEISceneObjectInformation&>( seiAbstract );
-  const int32_t fixedBitcount = 16;
+  //const int32_t fixedBitcount = 16;
   bitstream.write( sei.getPersistenceFlag(), 1 );    // u(1)
   bitstream.write( sei.getResetFlag(), 1 );          // u(1)
   bitstream.writeUvlc( sei.getNumObjectUpdates() );  // ue(v)

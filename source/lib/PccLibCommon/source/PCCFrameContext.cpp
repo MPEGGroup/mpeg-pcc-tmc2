@@ -37,7 +37,7 @@
 using namespace pcc;
 
 PCCFrameContext::PCCFrameContext() :
-    index_( 0 ),
+    frameIndex_( 0 ),
     numMatchedPatches_( 0 ),
     width_( 0 ),
     height_( 0 ),
@@ -92,7 +92,7 @@ void PCCFrameContext::setRefAfocList( PCCContext& context, AtlasTileHeader& ath,
     int deltaAfocSt = 0;
     if ( refList.getStRefAtalsFrameFlag( idx ) )
       deltaAfocSt = ( 2 * refList.getStrafEntrySignFlag( idx ) - 1 ) * refList.getAbsDeltaAfocSt( idx );  // Eq.26
-    int refPOC = idx == 0 ? ( int( index_ ) - deltaAfocSt ) : ( refAFOCList_[idx - 1] - deltaAfocSt );
+    int refPOC = idx == 0 ? ( int( frameIndex_ ) - deltaAfocSt ) : ( refAFOCList_[idx - 1] - deltaAfocSt );
     if ( refPOC >= 0 ) refAFOCList_.push_back( refPOC );
   }
 }
@@ -102,7 +102,7 @@ void PCCFrameContext::setRefAfocList( PCCContext& context, size_t refListIdx ) {
   size_t maxRefNum = context.getSizeOfRefAtlasFrameList( refListIdx );
   refAFOCList_.clear();
   for ( size_t j = 0; j < maxRefNum; j++ ) {
-    refPOC = int( index_ ) - int( context.getRefAtlasFrame( refListIdx, j ) );
+    refPOC = int( frameIndex_ ) - int( context.getRefAtlasFrame( refListIdx, j ) );
     if ( refPOC >= 0 ) { refAFOCList_.push_back( refPOC ); }
   }
   // if ( refAFOCList_.empty() ) { refAFOCList_.push_back( 255 ); } //jkei: size is used for signalling
@@ -124,7 +124,7 @@ void PCCFrameContext::constructAtghRefListStruct( PCCContext& context, AtlasTile
     for ( size_t i = 0; i < refList.getNumRefEntries(); i++ ) {
       int afocDiff = -1;
       if ( i == 0 )
-        afocDiff = index_ - getRefAfoc( i );  // index_+1,index_+2,index_+3,index_+4
+        afocDiff = frameIndex_ - getRefAfoc( i );  // index_+1,index_+2,index_+3,index_+4
       else
         afocDiff =
             getRefAfoc( i - 1 ) - getRefAfoc( i );  // RefAtlasFrmAfocList[ j ] = afocBase − DeltaAfocSt[ RlsIdx ][ j ]
@@ -150,7 +150,7 @@ void PCCFrameContext::allocOneLayerData() {
   for ( auto& patch : patches_ ) { patch.allocOneLayerData(); }
 }
 void PCCFrameContext::printBlockToPatch( const size_t resolution ) {
-  printVector( blockToPatch_, width_ / resolution, height_ / resolution, stringFormat( "blockToPatch[%d]", index_ ),
+  printVector( blockToPatch_, width_ / resolution, height_ / resolution, stringFormat( "blockToPatch[%d]", frameIndex_ ),
                true );
 }
 void PCCFrameContext::printPatch() {

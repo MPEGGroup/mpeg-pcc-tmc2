@@ -69,7 +69,7 @@ class PCCDecoder : public PCCCodec {
 
  private:
   void setPointLocalReconstruction( PCCContext& context );
-  void setPLRData( PCCFrameContext& frame, PCCPatch& patch, PLRData& plrd, size_t occupancyPackingBlockSize );
+  void setPLRData( PCCFrameContext& tile, PCCPatch& patch, PLRData& plrd, size_t occupancyPackingBlockSize );
 
   PCCDecoderParameters params_;
 };

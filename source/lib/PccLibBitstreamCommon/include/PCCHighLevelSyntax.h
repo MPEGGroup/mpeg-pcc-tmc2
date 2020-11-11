@@ -177,7 +177,7 @@ class PCCAtlasHighLevelSyntax {
     atlasTileLayer_.push_back( atgl );
     return atlasTileLayer_.back();
   }
-  AtlasTileLayerRbsp& addAtlasTileLayer( size_t frameIdx, size_t tileGroupIdx ) {
+  AtlasTileLayerRbsp& addAtlasTileLayer( size_t frameIdx, size_t tileIdx ) {
     AtlasTileLayerRbsp atgl;
     atgl.setAtlasFrmOrderCntVal( frameIdx );
     atlasTileLayer_.push_back( atgl );
@@ -407,8 +407,8 @@ class PCCHighLevelSyntax {
 
   // ATGL related functions
   AtlasTileLayerRbsp& addAtlasTileLayer() { return atlasHLS_[atlasIndex_].addAtlasTileLayer(); }  // decoder
-  AtlasTileLayerRbsp& addAtlasTileLayer( size_t frameIdx, size_t tileGroupIdx ) {
-    return atlasHLS_[atlasIndex_].addAtlasTileLayer( frameIdx, tileGroupIdx );
+  AtlasTileLayerRbsp& addAtlasTileLayer( size_t frameIdx, size_t tileIdx ) {
+    return atlasHLS_[atlasIndex_].addAtlasTileLayer( frameIdx, tileIdx );
   }
   std::vector<AtlasTileLayerRbsp>& getAtlasTileLayerList() {
     return atlasHLS_[atlasIndex_].getAtlasTileLayerList();

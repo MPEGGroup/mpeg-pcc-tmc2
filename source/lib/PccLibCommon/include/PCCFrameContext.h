@@ -74,7 +74,7 @@ class PCCFrameContext {
   std::vector<PCCColor3B>&        getEOMTextures() { return eomTextures_; };
   size_t&                         getWidth() { return width_; }
   size_t&                         getHeight() { return height_; }
-  const size_t                    getIndex() { return index_; }
+  const size_t                    getFrameIndex() { return frameIndex_; }
   const size_t                    getTileIndex() { return tileIndex_; }
   const size_t                    getTotalNumberOfEOMPoints() { return totalNumberOfEOMPoints_; }
   const size_t                    getTotalNumberOfRegularPoints() { return totalNumberOfRegularPoints_; }
@@ -97,7 +97,7 @@ class PCCFrameContext {
   PCCFrameOCMInfo&           getPCCOCPGPAInfo() { return ocpGPAInfo_; }
   size_t&                    getGlobalPatchCount() { return globalPatchCount_; }
   size_t                     getGeometry3dCoordinatesBitdepth() { return geometry3dCoordinatesBitdepth_; }
-  void                       setIndex( size_t value ) { index_ = value; }
+  void                       setFrameIndex( size_t value ) { frameIndex_ = value; }
   void                       setTileIndex( size_t value ) { tileIndex_ = value; }
   void                       setWidth( size_t value ) { width_ = value; }
   void                       setHeight( size_t value ) { height_ = value; }
@@ -152,7 +152,7 @@ class PCCFrameContext {
   void printPatchDecoder();
 
  private:
-  size_t  index_;
+  size_t  frameIndex_;
   size_t  tileIndex_;
   size_t  numMatchedPatches_;
   size_t  width_;
@@ -203,8 +203,8 @@ class PCCAtlasFrameContext {
  public:
   PCCAtlasFrameContext() {
     atlasFrameIndex_         = 0;
-    atlasWidth_              = 0;
-    atlasHeight_             = 0;
+    atlasFrameWidth_              = 0;
+    atlasFrameHeight_             = 0;
     numTilesInAtlasFrame_    = 0;
     uniformPartitionSpacing_ = 0;
     singlePartitionPerTile_  = 1;
@@ -217,7 +217,7 @@ class PCCAtlasFrameContext {
     partitionHeight_.clear();
     partitionPosX_.clear();
     partitionPosY_.clear();
-    tileGroupId_.clear();
+    tileId_.clear();
     tileContexts_.clear();
   };
 
@@ -225,8 +225,8 @@ class PCCAtlasFrameContext {
   void             initNumTiles( size_t value ) { return tileContexts_.resize( value ); }
   void             addTile( PCCFrameContext& tile ) { tileContexts_.push_back( tile ); }
 
-  size_t getFrameWidth() { return atlasWidth_; }
-  size_t getFrameHeight() { return atlasHeight_; }
+  size_t getAtlasFrameWidth() { return atlasFrameWidth_; }
+  size_t getAtlasFrameHeight() { return atlasFrameHeight_; }
   size_t getNumTilesInAtlasFrame() { return numTilesInAtlasFrame_; }
   bool   getUniformPartitionSpacing() { return uniformPartitionSpacing_; }
   size_t getNumPartitionCols() { return numPartitionCols_; }
@@ -238,25 +238,25 @@ class PCCAtlasFrameContext {
   std::vector<size_t>& getPartitionPosX() { return partitionPosX_; }
   std::vector<size_t>& getPartitionPosY() { return partitionPosY_; }
 
-  std::vector<size_t>&          getTileGroupId() { return tileGroupId_; }
+  std::vector<size_t>&          getTileId() { return tileId_; }
   std::vector<PCCFrameContext>& getTiles() { return tileContexts_; }
   PCCFrameContext&              getTile( size_t index ) {
     if ( numTilesInAtlasFrame_ == 1 ) {
       assert( index == 0 );
-      return atlasFrameContext_;
+      return titleFrameContext_;
     } else
       return tileContexts_[index];
   }
 
   size_t getAtlasFrameIndex() { return atlasFrameIndex_; }
   void   setAtlasFrameIndex( size_t value ) { atlasFrameIndex_ = value; }
-  void   setAtlasWidth( size_t value ) {
-    atlasFrameContext_.setWidth( value );
-    atlasWidth_ = value;
+  void   setAtlasFrameWidth( size_t value ) {
+    titleFrameContext_.setWidth( value );
+    atlasFrameWidth_ = value;
   }
-  void setAtlasHeight( size_t value ) {
-    atlasFrameContext_.setHeight( value );
-    atlasHeight_ = value;
+  void setAtlasFrameHeight( size_t value ) {
+    titleFrameContext_.setHeight( value );
+    atlasFrameHeight_ = value;
   }
   void setNumTilesInAtlasFrame( size_t value ) { numTilesInAtlasFrame_ = value; }
   void setUniformPartitionSpacing( bool value ) { uniformPartitionSpacing_ = value; }
@@ -269,11 +269,11 @@ class PCCAtlasFrameContext {
   void setPartitionPosX( std::vector<size_t>& value ) { partitionPosX_ = value; }
   void setPartitionPosY( std::vector<size_t>& value ) { partitionPosY_ = value; }
 
-  void setTileGroupId( std::vector<size_t>& value ) { tileGroupId_ = value; }
+  void setTileId( std::vector<size_t>& value ) { tileId_ = value; }
   void setTiles( std::vector<PCCFrameContext>& value ) { tileContexts_ = value; }
 
-  void             setAtlasFrameContext( PCCFrameContext& value ) { atlasFrameContext_ = value; }
-  PCCFrameContext& getAtlasFrameContext() { return atlasFrameContext_; }
+  void             setTitleFrameContext( PCCFrameContext& value ) { titleFrameContext_ = value; }
+  PCCFrameContext& getTitleFrameContext() { return titleFrameContext_; }
 
   void setSinglePartitionPerTile( bool value ) { singlePartitionPerTile_ = value; }
   bool getSinglePartitionPerTile() { return singlePartitionPerTile_; }
@@ -285,10 +285,10 @@ class PCCAtlasFrameContext {
                                   bool   uniformPartitionSpacing,
                                   size_t partitionWidthIn64,
                                   size_t partitionHeightIn64 ) {
-    atlasFrameContext_.setWidth( width );
-    atlasFrameContext_.setHeight( height );
-    atlasWidth_           = width;
-    atlasHeight_          = height;
+    titleFrameContext_.setWidth( width );
+    titleFrameContext_.setHeight( height );
+    atlasFrameWidth_           = width;
+    atlasFrameHeight_          = height;
     numTilesInAtlasFrame_ = numTiles;
 
     size_t partitionWidthIn  = partitionWidthIn64 * 64;
@@ -302,16 +302,16 @@ class PCCAtlasFrameContext {
       partitionPosX_.resize( numPartitionCols_ );
       partitionPosY_.resize( numPartitionRows_ );
       partitionPosX_[0]   = 0;
-      partitionWidth_[0]  = atlasWidth_;
+      partitionWidth_[0]  = atlasFrameWidth_;
       partitionPosY_[0]   = 0;
-      partitionHeight_[0] = atlasHeight_;
+      partitionHeight_[0] = atlasFrameHeight_;
     } else {
       uniformPartitionSpacing_ = uniformPartitionSpacing;
       // jkei : how to get multiple partition size?
       numPartitionCols_ =
-          (size_t)std::ceil( static_cast<double>( atlasWidth_ ) / static_cast<double>( partitionWidthIn ) );
+          (size_t)std::ceil( static_cast<double>( atlasFrameWidth_ ) / static_cast<double>( partitionWidthIn ) );
       numPartitionRows_ =
-          (size_t)std::ceil( static_cast<double>( atlasHeight_ ) / static_cast<double>( partitionHeightIn ) );
+          (size_t)std::ceil( static_cast<double>( atlasFrameHeight_ ) / static_cast<double>( partitionHeightIn ) );
       partitionWidth_.resize( numPartitionCols_ );
       partitionHeight_.resize( numPartitionRows_ );
       partitionPosX_.resize( numPartitionCols_ );
@@ -328,7 +328,7 @@ class PCCAtlasFrameContext {
         if ( numPartitionCols_ > 1 ) {
           partitionPosX_[numPartitionCols_ - 1] =
               partitionPosX_[numPartitionCols_ - 2] + partitionWidth_[numPartitionCols_ - 2];
-          partitionWidth_[numPartitionCols_ - 1] = atlasWidth_ - partitionPosX_[numPartitionCols_ - 1];
+          partitionWidth_[numPartitionCols_ - 1] = atlasFrameWidth_ - partitionPosX_[numPartitionCols_ - 1];
         }
 
         partitionPosY_[0]   = 0;
@@ -340,7 +340,7 @@ class PCCAtlasFrameContext {
         if ( numPartitionRows_ > 1 ) {
           partitionPosY_[numPartitionRows_ - 1] =
               partitionPosY_[numPartitionRows_ - 2] + partitionHeight_[numPartitionRows_ - 2];
-          partitionHeight_[numPartitionRows_ - 1] = atlasHeight_ - partitionPosY_[numPartitionRows_ - 1];
+          partitionHeight_[numPartitionRows_ - 1] = atlasFrameHeight_ - partitionPosY_[numPartitionRows_ - 1];
         }
       } else {
         // jkei:we need to figure out how to set non-uniform partition spcaing
@@ -371,10 +371,10 @@ class PCCAtlasFrameContext {
                                     int    numPartitionHeight     = -1,
                                     bool   singlePartitionPerTile = false,
                                     bool   signalledTileId        = false ) {
-    atlasFrameContext_.setWidth( width );
-    atlasFrameContext_.setHeight( height );
-    atlasWidth_           = width;
-    atlasHeight_          = height;
+    titleFrameContext_.setWidth( width );
+    titleFrameContext_.setHeight( height );
+    atlasFrameWidth_           = width;
+    atlasFrameHeight_          = height;
     numTilesInAtlasFrame_ = numTiles;
     size_t partitionWidthIn  = partitionWidthIn64 * 64;
     size_t partitionHeightIn = partitionHeightIn64 * 64;
@@ -386,15 +386,15 @@ class PCCAtlasFrameContext {
       partitionPosX_.resize( numPartitionCols_ );
       partitionPosY_.resize( numPartitionRows_ );
       partitionPosX_[0]   = 0;
-      partitionWidth_[0]  = atlasWidth_;
+      partitionWidth_[0]  = atlasFrameWidth_;
       partitionPosY_[0]   = 0;
-      partitionHeight_[0] = atlasHeight_;
+      partitionHeight_[0] = atlasFrameHeight_;
     } else {
       uniformPartitionSpacing_ = uniformPartitionSpacing;
       numPartitionCols_ =
-          (size_t)std::ceil( static_cast<double>( atlasWidth_ ) / static_cast<double>( partitionWidthIn ) );
+          (size_t)std::ceil( static_cast<double>( atlasFrameWidth_ ) / static_cast<double>( partitionWidthIn ) );
       numPartitionRows_ =
-          (size_t)std::ceil( static_cast<double>( atlasHeight_ ) / static_cast<double>( partitionHeightIn ) );
+          (size_t)std::ceil( static_cast<double>( atlasFrameHeight_ ) / static_cast<double>( partitionHeightIn ) );
       partitionWidth_.resize( numPartitionCols_ );
       partitionHeight_.resize( numPartitionRows_ );
       partitionPosX_.resize( numPartitionCols_ );
@@ -410,7 +410,7 @@ class PCCAtlasFrameContext {
         if ( numPartitionCols_ > 1 ) {
           partitionPosX_[numPartitionCols_ - 1] =
               partitionPosX_[numPartitionCols_ - 2] + partitionWidth_[numPartitionCols_ - 2];
-          partitionWidth_[numPartitionCols_ - 1] = atlasWidth_ - partitionPosX_[numPartitionCols_ - 1];
+          partitionWidth_[numPartitionCols_ - 1] = atlasFrameWidth_ - partitionPosX_[numPartitionCols_ - 1];
         }
 
         partitionPosY_[0]   = 0;
@@ -422,7 +422,7 @@ class PCCAtlasFrameContext {
         if ( numPartitionRows_ > 1 ) {
           partitionPosY_[numPartitionRows_ - 1] =
               partitionPosY_[numPartitionRows_ - 2] + partitionHeight_[numPartitionRows_ - 2];
-          partitionHeight_[numPartitionRows_ - 1] = atlasHeight_ - partitionPosY_[numPartitionRows_ - 1];
+          partitionHeight_[numPartitionRows_ - 1] = atlasFrameHeight_ - partitionPosY_[numPartitionRows_ - 1];
         }
       } else {
         // jkei:we need to figure out how to set non-uniform partition spcaing
@@ -443,26 +443,27 @@ class PCCAtlasFrameContext {
     signalledTileId_        = signalledTileId;
   }
 
-  std::vector<int>& getTileToTileGroupMap() { return tileToTileGroupMap_; }
-  std::vector<int>  tileToTileGroupMap_;
+  std::vector<int>& getPartitionToTileMap() { return partitionToTileMap_; }
+  
 
  private:
-  size_t atlasFrameIndex_;
-  size_t atlasWidth_;
-  size_t atlasHeight_;
-  size_t numTilesInAtlasFrame_;
-  bool   uniformPartitionSpacing_;
-  bool   singlePartitionPerTile_;
-  size_t numPartitionCols_;
-  size_t numPartitionRows_;
-  bool   signalledTileId_;
-  std::vector<size_t> partitionWidth_;   // in pixel
-  std::vector<size_t> partitionHeight_;  // in pixel
-  std::vector<size_t> partitionPosX_;    // in pixel
-  std::vector<size_t> partitionPosY_;    // in pixel
-  std::vector<size_t>          tileGroupId_;
+  size_t                       atlasFrameIndex_;
+  size_t                       atlasFrameWidth_;
+  size_t                       atlasFrameHeight_;
+  size_t                       numTilesInAtlasFrame_;
+  bool                         uniformPartitionSpacing_;
+  bool                         singlePartitionPerTile_;
+  size_t                       numPartitionCols_;
+  size_t                       numPartitionRows_;
+  bool                         signalledTileId_;
+  std::vector<size_t>          partitionWidth_;   // in pixel
+  std::vector<size_t>          partitionHeight_;  // in pixel
+  std::vector<size_t>          partitionPosX_;    // in pixel
+  std::vector<size_t>          partitionPosY_;    // in pixel
+  std::vector<size_t>          tileId_;
   std::vector<PCCFrameContext> tileContexts_;
-  PCCFrameContext              atlasFrameContext_;
+  std::vector<int>             partitionToTileMap_;
+  PCCFrameContext              titleFrameContext_;
 };
 
 };  // namespace pcc

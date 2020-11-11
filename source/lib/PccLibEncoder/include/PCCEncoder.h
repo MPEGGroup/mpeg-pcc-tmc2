@@ -122,7 +122,7 @@ class PCCEncoder : public PCCCodec {
   void setGeneratePointCloudParameters( GeneratePointCloudParameters& gpcParams, PCCContext& context );
   void createPatchFrameDataStructure( PCCContext& context );
   void createPatchFrameDataStructure( PCCContext&         context,
-                                      PCCFrameContext&    frame,
+                                      PCCFrameContext&    tile,
                                       AtlasTileLayerRbsp& atglu,
                                       size_t              frameIndex,
                                       size_t              tileIndex = 0 );
@@ -139,9 +139,9 @@ class PCCEncoder : public PCCCodec {
                                   PCCImageOccupancyMap&  videoFrameOccupancyMap );
   //  bool generateOccupancyMap( PCCContext& context );
   bool generateOccupancyMap( PCCContext& context, bool copyToFrame = true );
-  void modifyOccupancyMapEOM( PCCFrameContext& frame );
-  void generateOccupancyMap( PCCFrameContext& frameContext );
-  void refineOccupancyMap( PCCFrameContext& frame );
+  void modifyOccupancyMapEOM( PCCFrameContext& tile );
+  void generateOccupancyMap( PCCFrameContext& tile );
+  void refineOccupancyMap( PCCFrameContext& tile );
 
   void preFilterOccupancyMap( PCCImageOccupancyMap& image, size_t kwidth, size_t kheight );
   bool modifyOccupancyMap( const PCCGroupOfFrames& sources, PCCContext& context );
@@ -153,9 +153,9 @@ class PCCEncoder : public PCCCodec {
 
   //**auxPatches**//
   void markRawPatchLocationOccupancyMapVideo( PCCContext& context );
-  void markRawPatchLocation( PCCFrameContext& contextFrame, PCCImageOccupancyMap& occupancyMap );
-  void sortRawPointsPatch( PCCFrameContext& frameContext, size_t index );
-  void sortRawPointsPatchMorton( PCCFrameContext& frameContext, size_t index );
+  void markRawPatchLocation( PCCFrameContext& titleFrame, PCCImageOccupancyMap& occupancyMap );
+  void sortRawPointsPatch( PCCFrameContext& titleFrame, size_t index );
+  void sortRawPointsPatchMorton( PCCFrameContext& titleFrame, size_t index );
 
   //**tile and partitions**//
   void generateTilesFromSegments( PCCContext& context );
@@ -179,7 +179,7 @@ class PCCEncoder : public PCCCodec {
   //**video/image reneration and resizing**//
   bool   resizeGeometryVideo( PCCContext& context, PCCCodecId codecId );
   bool   resizeTileGeometryVideo( PCCContext& context,
-                                  size_t      tileGroupIdx,
+                                  size_t      tileIndex,
                                   size_t      frameWidth,
                                   size_t      frameHeight,
                                   int         firstFrame     = -1,
@@ -196,34 +196,30 @@ class PCCEncoder : public PCCCodec {
   void        placeAuxiliaryPointsTiles( PCCContext& context );
   void        generateRawPointsGeometryVideo( PCCContext& context );
   void        generateRawPointsTextureVideo( PCCContext& context );
-  void        generateRawPointsGeometryImage( PCCContext& context, PCCFrameContext& frame, PCCImageGeometry& image );
-  void        generateRawPointsTextureImage( PCCContext& context, PCCFrameContext& frame, PCCImageTexture& image );
+  void        generateRawPointsGeometryImage( PCCContext& context, PCCFrameContext& tile, PCCImageGeometry& image );
+  void        generateRawPointsTextureImage( PCCContext& context, PCCFrameContext& tile, PCCImageTexture& image );
   void        generateIntraImage( PCCAtlasFrameContext& frameContext, const size_t mapIndex, PCCImageGeometry& image );
-  bool        predictGeometryFrame( PCCFrameContext&        frameContext,
+  bool        predictGeometryFrame( PCCFrameContext&        titleFrame,
                                     const PCCImageGeometry& reference,
                                     PCCImageGeometry&       image );
-  static bool predictTextureFrame( PCCFrameContext&       frameContext,
+  static bool predictTextureFrame( PCCFrameContext&       titleFrame,
                                    const PCCImageTexture& reference,
                                    PCCImageTexture&       image );
-  void        generateEomPatch( const PCCPointSet3& source, PCCFrameContext& frame );
+  void        generateEomPatch( const PCCPointSet3& source, PCCFrameContext& titleFrame );
   void        generateRawPointsPatch( const PCCPointSet3& source,
-                                      PCCFrameContext&    frameContext,
+                                      PCCFrameContext&    titleFrame,
                                       bool                useEnhancedOccupancyMapCode );
-  bool        generateScaledGeometry( const PCCPointSet3& source, PCCFrameContext& frame );
+  bool        generateScaledGeometry( const PCCPointSet3& source, PCCFrameContext& tile );
   size_t      generateTextureVideo( const PCCPointSet3& reconstruct,
                                     PCCContext&         context,
                                     size_t              frameIndex,
-                                    size_t              tileGroupIndex,
+                                    size_t              tileIndex,
                                     PCCVideoTexture&    video,
                                     PCCVideoTexture&    videoT1,
                                     const size_t        mapCount,
-                                    size_t              accTileGroupPointCount );
+                                    size_t              accTilePointCount );
 
-  void generateIntraEnhancedOccupancyMapImage( PCCFrameContext&        frame,
-                                               const PCCImageGeometry& imageRef,
-                                               PCCImageGeometry&       image );
-
-  void dilateGroupGeometryVideo( PCCContext& context, PCCFrameContext& frame, size_t frameIdx );
+  void dilateGroupGeometryVideo( PCCContext& context, PCCFrameContext& titleFrame, size_t frameIdx );
 
   //**video/image padding**//
   template <typename T>
@@ -269,13 +265,13 @@ class PCCEncoder : public PCCCodec {
   void regionFill( PCCImage<T, 3>& image, std::vector<uint32_t>& occupancyMap, PCCImage<T, 3>& imageLowRes );
 
   //**placing patches**//
-  void packFlexible( PCCFrameContext& frame,
+  void packFlexible( PCCFrameContext& tile,
                      int              packingStrategy,
                      size_t           frameWidth,
                      size_t           frameHeight,
                      int              safeguard                    = 0,
                      bool             enablePointCloudPartitioning = false );
-  void packTetris( PCCFrameContext& frame, size_t frameWidth, size_t frameHeight, int safeguard = 0 );
+  void packTetris( PCCFrameContext& tile, size_t frameWidth, size_t frameHeight, int safeguard = 0 );
   void packMultipleTiles( PCCAtlasFrameContext& frame, int safeguard );
   void packFlexibleMultipleTiles( PCCAtlasFrameContext& frame, int safeguard );
   void spatialConsistencyPackMultipleTiles( PCCAtlasFrameContext& frame,
@@ -301,29 +297,29 @@ class PCCEncoder : public PCCCodec {
                                     size_t             occupancySizeU,
                                     size_t             occupancySizeV,
                                     size_t             maxOccupancyRow );
-  void   adjustReferenceAtlasFrames( PCCContext& context, size_t tileGroupIdx );
+  void   adjustReferenceAtlasFrames( PCCContext& context, size_t tileIndex );
   double adjustReferenceAtlasFrame( PCCContext&            context,
-                                    PCCFrameContext&       frame,
-                                    size_t                 tileGroupIdx,
+                                    PCCFrameContext&       tile,
+                                    size_t                 tileIndex,
                                     size_t                 listIndex,
                                     std::vector<PCCPatch>& tempPatchList );
-  void   spatialConsistencyPackFlexible( PCCFrameContext& frame,
+  void   spatialConsistencyPackFlexible( PCCFrameContext& tile,
                                          PCCFrameContext& prevFrame,
                                          int              packingStrategy,
                                          size_t           frameWidth,
                                          size_t           frameHeight,
                                          int              safeguard                    = 0,
                                          bool             enablePointCloudPartitioning = false );
-  void   spatialConsistencyPackTetris( PCCFrameContext& frame,
+  void   spatialConsistencyPackTetris( PCCFrameContext& tile,
                                        PCCFrameContext& prevFrame,
                                        size_t           frameWidth,
                                        size_t           frameHeight,
                                        int              safeguard = 0 );
 
   //**GTP**//
-  void findMatchesForGlobalTetrisPacking( PCCFrameContext& frame, PCCFrameContext& prevFrame );
+  void findMatchesForGlobalTetrisPacking( PCCFrameContext& tile, PCCFrameContext& prevFrame );
   void doGlobalTetrisPacking( PCCContext& context,
-                              size_t      tileGroupIdx,
+                              size_t      tileIndex,
                               size_t      frameWidth,
                               size_t      frameHeight,
                               int         firstFrame     = -1,
@@ -331,14 +327,14 @@ class PCCEncoder : public PCCCodec {
 
   // perform data-adaptive GPA method;
   void performDataAdaptiveGPAMethod( PCCContext& context,
-                                     size_t      tileGroupIdx,
+                                     size_t      tileIndex,
                                      size_t      frameWidth,
                                      size_t      frameHeight,
                                      int         firstFrame     = -1,
                                      int         lastFramePlus1 = -1 );
 
   // start a subContext;
-  static void initializeSubContext( PCCFrameContext& frameContext,
+  static void initializeSubContext( PCCFrameContext& tile,
                                     SubContext&      subContext,
                                     GlobalPatches&   globalPatchTracks,
                                     unionPatch&      unionPatch,
@@ -346,7 +342,7 @@ class PCCEncoder : public PCCCodec {
   // generate globalPatches;
   static void generateGlobalPatches( PCCContext&    context,
                                      size_t         frameIndex,
-                                     size_t         tileGroupIdx,
+                                     size_t         tileIndex,
                                      GlobalPatches& globalPatchTracks,
                                      size_t         preIndex );
 
@@ -354,7 +350,7 @@ class PCCEncoder : public PCCCodec {
   // unionsPackingImage;
   size_t unionPatchGenerationAndPacking( const GlobalPatches& globalPatchTracks,
                                          PCCContext&          context,
-                                         size_t               tileGroupIdx,
+                                         size_t               tileIndex,
                                          size_t               frameWidth,
                                          size_t               frameHeight,
                                          unionPatch&          unionPatch,
@@ -363,7 +359,7 @@ class PCCEncoder : public PCCCodec {
                                          bool                 useRefFrame = false );
   // update patch information;
   static void updateGPAPatchInformation( PCCContext& context,
-                                         size_t      tileGroupIdx,
+                                         size_t      tileIndex,
                                          SubContext& subContext,
                                          unionPatch& unionPatch );
 
@@ -371,7 +367,7 @@ class PCCEncoder : public PCCCodec {
   void performGPAPacking( const SubContext& subContext,
                           unionPatch&       unionPatch,
                           PCCContext&       context,
-                          size_t            tileGroupIdx,
+                          size_t            tileIndex,
                           size_t            frameWidth,
                           size_t            frameHeight,
                           bool&             badGPAPacking,
@@ -379,17 +375,17 @@ class PCCEncoder : public PCCCodec {
                           int               safeguard   = 0,
                           bool              useRefFrame = false );
 
-  static void clearCurrentGPAPatchDataInfor( PCCContext& context, size_t tileGroupIdx, SubContext& subContext );
+  static void clearCurrentGPAPatchDataInfor( PCCContext& context, size_t tileIndex, SubContext& subContext );
 
   void        packingFirstFrame( PCCContext& context,
                                  size_t      frameIndex,
-                                 size_t      tileGroupIdx,
+                                 size_t      tileIndex,
                                  size_t      frameWidth,
                                  size_t      frameHeight,
                                  bool        packingStrategy,
                                  int         safeguard,
                                  bool        hasRefFrame );
-  static void updatePatchInformation( PCCContext& context, size_t tileGroupIdx, SubContext& subContext );
+  static void updatePatchInformation( PCCContext& context, size_t tileIndex, SubContext& subContext );
   void        packingWithoutRefForFirstFrameNoglobalPatch( PCCPatch&          patch,
                                                            size_t             i,
                                                            size_t             icount,
@@ -416,16 +412,16 @@ class PCCEncoder : public PCCCodec {
 
   //**Point Local Reconstruction**//
   void pointLocalReconstructionSearch( PCCContext&                         context,
-                                       size_t                              tileGroupIdx,
+                                       size_t                              tileIndex,
                                        const GeneratePointCloudParameters& params );
   void pointLocalReconstructionSearch( PCCContext&                          context,
-                                       PCCFrameContext&                     frame,
+                                       PCCFrameContext&                     tile,
                                        const std::vector<PCCVideoGeometry>& videoMultiple,
                                        const GeneratePointCloudParameters&  params );
 
   void setPointLocalReconstruction( PCCContext& context );
 
-  void setPLRData( PCCFrameContext& frame,
+  void setPLRData( PCCFrameContext& tile,
                    const PCCPatch&  patch,
                    PLRData&         plrd,
                    size_t           occupancyPackingBlockSize,
@@ -442,7 +438,7 @@ class PCCEncoder : public PCCCodec {
   void                   create3DMotionEstimationFiles( PCCContext& context, const std::string& path );
   static void            remove3DMotionEstimationFiles( const std::string& path );
   void                   presmoothPointCloudColor( PCCPointSet3& reconstruct, const PCCEncoderParameters params );
-  void calculateWeightNormal( PCCContext& context, const PCCPointSet3& source, PCCFrameContext& frameContext );
+  void calculateWeightNormal( PCCContext& context, const PCCPointSet3& source, PCCFrameContext& titleFrame );
 
   //**print out**//
   static void printMap( std::vector<bool> img, const size_t sizeU, const size_t sizeV );

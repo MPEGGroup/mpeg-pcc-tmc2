@@ -970,12 +970,8 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
       endFrameNumber  = startFrameNumber + sources.getFrameCount();
       endFrameNumber0 = endFrameNumber;
     }
-    // printf("Frame cound = %zu \n",sources.getFrameCount());
-    // for( auto& source : sources ){
-    //   printf(" - %9zu points \n", source.getPointCount());
-    // }
 
-    std::cout << "Compressing group of frames " << contextIndex << ": " << startFrameNumber << " -> " << endFrameNumber
+    std::cout << "Compressing "<< contextIndex << " frames " << startFrameNumber << " -> " << endFrameNumber
               << "..." << std::endl;
     int                ret = encoder.encode( sources, context, reconstructs );
     PCCBitstreamWriter bitstreamWriter;

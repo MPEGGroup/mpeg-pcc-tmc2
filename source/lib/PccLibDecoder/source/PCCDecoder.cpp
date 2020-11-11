@@ -295,12 +295,12 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
     std::vector<uint32_t> partition;
     // Decode point cloud
     printf( "call generatePointCloud() \n" );
-    std::vector<size_t> accTileGroupPointCount;
-    accTileGroupPointCount.resize( ai.getAttributeCount(), 0 );
+    std::vector<size_t> accTilePointCount;
+    accTilePointCount.resize( ai.getAttributeCount(), 0 );
     for ( size_t tileIdx = 0; tileIdx < context[frameIdx].getNumTilesInAtlasFrame(); tileIdx++ ) {
       auto& tile = context[frameIdx].getTile( tileIdx );
       if ( !ppSEIParams.pbfEnableFlag_ ) {
-        generateOccupancyMap( tile, context.getVideoOccupancyMap().getFrame( tile.getIndex() ),
+        generateOccupancyMap( tile, context.getVideoOccupancyMap().getFrame( tile.getFrameIndex() ),
                               context.getOccupancyPrecision(), oi.getLossyOccupancyCompressionThreshold(),
                               asps.getEomPatchEnabledFlag() );
       }
@@ -309,11 +309,11 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
           1 << asps.getLog2PatchPackingBlockSize(), context.getOccupancyPrecision() );
 
       printf( "call generatePointCloud() \n" );
-      PCCPointSet3 tileGroupReconstrct;
-      generatePointCloud( tileGroupReconstrct, context, frameIdx, tileIdx, gpcParams, partition, true );
-      reconstruct.appendPointSet( tileGroupReconstrct );
+      PCCPointSet3 tileReconstrct;
+      generatePointCloud( tileReconstrct, context, frameIdx, tileIdx, gpcParams, partition, true );
+      reconstruct.appendPointSet( tileReconstrct );
       if ( context[frameIdx].getNumTilesInAtlasFrame() > 1 )
-        context[frameIdx].getAtlasFrameContext().appendPointToPixel(
+        context[frameIdx].getTitleFrameContext().appendPointToPixel(
             context[frameIdx].getTile( tileIdx ).getPointToPixel() );
       if ( ai.getAttributeCount() > 0 ) {
         reconstruct.addColors();
@@ -324,8 +324,8 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
         fflush( stdout );
         size_t updatedPointCount       = colorPointCloud( reconstruct, context, tile, absoluteT1List[attIdx],
                                                     sps.getMultipleMapStreamsPresentFlag( atlasIndex ),
-                                                    ai.getAttributeCount(), accTileGroupPointCount[attIdx], gpcParams );
-        accTileGroupPointCount[attIdx] = updatedPointCount;
+                                                    ai.getAttributeCount(), accTilePointCount[attIdx], gpcParams );
+        accTilePointCount[attIdx] = updatedPointCount;
       }
     }  // tile
 
@@ -401,7 +401,7 @@ void PCCDecoder::setPointLocalReconstruction( PCCContext& context ) {
   }
 }
 
-void PCCDecoder::setPLRData( PCCFrameContext& frame,
+void PCCDecoder::setPLRData( PCCFrameContext& tile,
                              PCCPatch&        patch,
                              PLRData&         plrd,
                              size_t           occupancyPackingBlockSize ) {
@@ -658,20 +658,20 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
 
   // current tile position derivation
   size_t frameIndex = atlu.getAtlasFrmOrderCntVal();
-  size_t tileIndex  = setTileGroupSizeAndLocation( context, frameIndex, ath );  // width,height,leftTopPosition
+  size_t tileIndex  = setTileSizeAndLocation( context, frameIndex, ath );  // width,height,leftTopPosition
 
   printf( "createPatchFrameDataStructure Frame = %zu Tiles = %zu atlasIndex = %zu atglOrder %zu \n", frameIndex,
           tileIndex, context.getAtlasIndex(), atglOrder );
   fflush( stdout );
 
   PCCFrameContext& tile = context[frameIndex].getTile( tileIndex );
-  tile.setIndex( atlu.getAtlasFrmOrderCntVal() );
+  tile.setFrameIndex( atlu.getAtlasFrmOrderCntVal() );
   tile.setTileIndex( tileIndex );
   tile.setUseRawPointsSeparateVideo( sps.getAuxiliaryVideoPresentFlag( atlasIndex ) &&
                                      asps.getAuxiliaryVideoEnabledFlag() );
   tile.setRawPatchEnabledFlag( asps.getRawPatchEnabledFlag() );
 
-  if ( tile.getIndex() > 0 && ath.getType() != I_TILE ) {
+  if ( tile.getFrameIndex() > 0 && ath.getType() != I_TILE ) {
     tile.setRefAfocList( context, ath, ath.getAtlasFrameParameterSetId() );
 
     TRACE_CODEC( "\tframe[%zu]\tRefAfocList:", frameIndex );

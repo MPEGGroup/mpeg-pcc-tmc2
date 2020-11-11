@@ -443,13 +443,13 @@ static inline std::string removeFileExtension( const std::string string ) {
   return ( pos != std::string::npos && pos + 4 == string.length() ) ? string.substr( 0, pos ) : string;
 }
 
-static std::string getDirectoryName( const std::string& string ) {
+static inline std::string getDirectoryName( const std::string& string ) {
   auto position = string.find_last_of( getSeparator( string ) );
   if ( position != std::string::npos ) { return string.substr( 0, position ); }
   return string;
 }
 
-static std::string getBasename( const std::string& string ) {
+static inline std::string getBasename( const std::string& string ) {
   auto position = string.find_last_of( getSeparator() );
   if ( position != std::string::npos ) { return string.substr( position + 1, string.length() ); }
   return string;

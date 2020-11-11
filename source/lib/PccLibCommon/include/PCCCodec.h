@@ -114,18 +114,18 @@ class PCCCodec {
   void generatePointCloud( PCCPointSet3&                       reconstruct,
                            PCCContext&                         context,
                            size_t                              frameIndex,
-                           size_t                              tileGroupIndex,
+                           size_t                              tileIndex,
                            const GeneratePointCloudParameters& params,
                            std::vector<uint32_t>&              partition,
                            bool                                bDecoder );
 
   size_t colorPointCloud( PCCPointSet3&                       reconstruct,
                           PCCContext&                         context,
-                          PCCFrameContext&                    tileGroup,
+                          PCCFrameContext&                    tile,
                           const std::vector<bool>&            absoluteT1List,
                           const size_t                        multipleStreams,
                           const uint8_t                       attributeCount,
-                          size_t                              accTileGroupPointCount,
+                          size_t                              accTilePointCount,
                           const GeneratePointCloudParameters& params );
 
   void smoothPointCloudPostprocess( PCCPointSet3&                       reconstruct,
@@ -136,9 +136,9 @@ class PCCCodec {
                        const PCCColorTransform             colorTransform,
                        const GeneratePointCloudParameters& params );
 
-  void generateRawPointsGeometryfromVideo( PCCContext& context, PCCFrameContext& frame, size_t frameIndex );
+  void generateRawPointsGeometryfromVideo( PCCContext& context, PCCFrameContext& tile, size_t frameIndex );
 
-  void generateRawPointsTexturefromVideo( PCCContext& context, PCCFrameContext& frame, size_t frameIndex );
+  void generateRawPointsTexturefromVideo( PCCContext& context, PCCFrameContext& tile, size_t frameIndex );
 
   void generateRawPointsGeometryfromVideo( PCCContext& context, size_t frameIndex );
   void generateRawPointsTexturefromVideo( PCCContext& context, size_t frameIndex );
@@ -193,11 +193,11 @@ class PCCCodec {
   }
 #endif
  protected:
-  void generateOccupancyMap( PCCFrameContext& frame,
+  void generateOccupancyMap( PCCFrameContext&      tile,
                              PCCImageOccupancyMap& videoFrame,
-                             const size_t occupancyPrecision,
-                             const size_t thresholdLossyOM,
-                             const bool   enhancedOccupancyMapForDepthFlag );
+                             const size_t          occupancyPrecision,
+                             const size_t          thresholdLossyOM,
+                             const bool            enhancedOccupancyMapForDepthFlag );
 
   // void generateBlockToPatchFromBoundaryBox( PCCContext& context, const size_t occupancyResolution );
   void generateBlockToPatchFromOccupancyMap( PCCContext&  context,
@@ -221,7 +221,7 @@ class PCCCodec {
                                                   const size_t occupancyPrecision );
 
   void generateBlockToPatchFromOccupancyMapVideo( PCCContext&           context,
-                                                  PCCFrameContext&      frame,
+                                                  PCCFrameContext&      tile,
                                                   size_t                frameIdx,
                                                   PCCImageOccupancyMap& occupancyMapImage,
                                                   const size_t          occupancyResolution,
@@ -236,7 +236,7 @@ class PCCCodec {
                          const bool              projectionMode );
 
   std::vector<PCCPoint3D> generatePoints( const GeneratePointCloudParameters&  params,
-                                          PCCFrameContext&                     frame,
+                                          PCCFrameContext&                     tile,
                                           const std::vector<PCCVideoGeometry>& videoMultiple,
                                           const size_t                         videoFrameIndex,
                                           const size_t                         patchIndex,
@@ -249,7 +249,7 @@ class PCCCodec {
                                           const size_t                         minD1       = 0,
                                           const size_t                         neighbor    = 0 );
   void                    setTilePartitionSizeAfti( PCCContext& context );
-  size_t                  setTileGroupSizeAndLocation( PCCContext& context, size_t frameIndex, AtlasTileHeader& atgh );
+  size_t                  setTileSizeAndLocation( PCCContext& context, size_t frameIndex, AtlasTileHeader& atgh );
   void                    generateAfti( PCCContext& context, size_t frameIndex, AtlasFrameTileInformation& afti );
 
   inline double entropy( std::vector<uint8_t>& Data, int N ) {
@@ -285,28 +285,28 @@ class PCCCodec {
   void smoothPointCloud( PCCPointSet3&                      reconstruct,
                          const std::vector<uint32_t>&       partition,
                          const GeneratePointCloudParameters params );
-
-  void createSubReconstruct( const PCCPointSet3&                 reconstruct,
-                             const std::vector<uint32_t>&        partition,
-                             PCCFrameContext&                    frame,
-                             const GeneratePointCloudParameters& params,
-                             const size_t                        frameCount,
-                             PCCPointSet3&                       subReconstruct,
-                             std::vector<uint32_t>&              subPartition,
-                             std::vector<size_t>&                subReconstructIndex );
-
-  void createSpecificLayerReconstruct( const PCCPointSet3&                 reconstruct,
-                                       const std::vector<uint32_t>&        partition,
-                                       PCCFrameContext&                    frame,
-                                       const GeneratePointCloudParameters& params,
-                                       const size_t                        frameCount,
-                                       PCCPointSet3&                       subReconstruct,
-                                       std::vector<uint32_t>&              subPartition,
-                                       std::vector<size_t>&                subReconstructIndex );
-
-  void updateReconstruct( PCCPointSet3&              reconstruct,
-                          const PCCPointSet3&        subReconstruct,
-                          const std::vector<size_t>& subReconstructIndex );
+////jkei: do we need these 3 functions?
+//  void createSubReconstruct( const PCCPointSet3&                 reconstruct,
+//                             const std::vector<uint32_t>&        partition,
+//                             PCCFrameContext&                    frame,
+//                             const GeneratePointCloudParameters& params,
+//                             const size_t                        frameCount,
+//                             PCCPointSet3&                       subReconstruct,
+//                             std::vector<uint32_t>&              subPartition,
+//                             std::vector<size_t>&                subReconstructIndex );
+//
+//  void createSpecificLayerReconstruct( const PCCPointSet3&                 reconstruct,
+//                                       const std::vector<uint32_t>&        partition,
+//                                       PCCFrameContext&                    frame,
+//                                       const GeneratePointCloudParameters& params,
+//                                       const size_t                        frameCount,
+//                                       PCCPointSet3&                       subReconstruct,
+//                                       std::vector<uint32_t>&              subPartition,
+//                                       std::vector<size_t>&                subReconstructIndex );
+//
+//  void updateReconstruct( PCCPointSet3&              reconstruct,
+//                          const PCCPointSet3&        subReconstruct,
+//                          const std::vector<size_t>& subReconstructIndex );
 
   void smoothPointCloudGrid( PCCPointSet3&                       reconstruct,
                              const std::vector<uint32_t>&        partition,
