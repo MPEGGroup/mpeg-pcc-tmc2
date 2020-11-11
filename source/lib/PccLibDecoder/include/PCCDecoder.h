@@ -71,6 +71,11 @@ class PCCDecoder : public PCCCodec {
   void setPointLocalReconstruction( PCCContext& context );
   void setPLRData( PCCFrameContext& frame, PCCPatch& patch, PLRData& plrd, size_t occupancyPackingBlockSize );
 
+  bool compareHashSEIMD5( std::vector<uint8_t>& encMD5, std::vector<uint8_t>& decMD5 );
+  bool compareHashSEICrc( uint16_t encCrc, uint16_t decCrc );
+  bool compareHashSEICheckSum( uint32_t encCheckSum, uint32_t decCheckSum );
+
+
   PCCDecoderParameters params_;
 };
 };  // namespace pcc

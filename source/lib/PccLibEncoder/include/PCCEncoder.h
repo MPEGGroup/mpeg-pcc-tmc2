@@ -49,6 +49,7 @@ class PatchFrameGeometryParameterSet;
 class GeometryPatchParameterSet;
 class V3CParameterSet;
 class PLRData;
+struct PatchParams;
 
 template <typename T, size_t N>
 class PCCVideo;
@@ -106,6 +107,7 @@ typedef std::map<size_t, PCCPatch> unionPatch;  // unionPatch ------
 typedef std::pair<size_t, size_t> SubContext;   // SubContext ------ [start,
                                                 // end);
 
+
 #define BAD_HEIGHT_THRESHOLD 1.10
 #define BAD_CONDITION_THRESHOLD 2
 
@@ -121,15 +123,6 @@ class PCCEncoder : public PCCCodec {
   void setGeneratePointCloudParameters( GeneratePointCloudParameters& gpcParams, PCCContext& context );
   void createPatchFrameDataStructure( PCCContext& context );
   void createPatchFrameDataStructure( PCCContext& context, PCCFrameContext& frame, size_t frameIndex );
-
-  protected:
-
-  void atlasPatchCommonByteString( std::vector<uint8_t>& stringByte, size_t patchIdx );
-  void atlasPatchApplicationByteString( std::vector<uint8_t>& stringByte, size_t patchIdx );
-  void tilePatchCommonByteString( std::vector<uint8_t>& stringByte, size_t tileID, size_t patchIdx );
-  void tilePatchApplicationByteString( std::vector<uint8_t>& stringByte, size_t tileID, size_t patchIdx );
-  void atlasblockToPatchByteString( std::vector<uint8_t>& stringByte );
-  void tileblockToPatchByteString( std::vector<uint8_t>& stringByte, size_t tileID );
   
  private:
   template <typename T>

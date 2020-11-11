@@ -100,6 +100,48 @@ struct GeneratePointCloudParameters {
   int16_t     pbfLog2Threshold_;
 };
 
+struct PatchParams {
+  PatchParams( bool plrFlag = 0, uint16_t mapCnt = 1 );
+  ~PatchParams(){
+      epduAssociatedPoints.clear();
+  };
+
+  void initPatchParams( bool plrFlag, uint16_t mapCnt );
+
+  int64_t patchType;
+  int8_t  patchInAuxVideo;
+
+  int64_t patch2dPosX;
+  int64_t patch2dPosY;
+  int64_t patch2dSizeX;
+
+  int64_t patch2dSizeY;
+
+  int64_t patch3dOffsetU;
+  int64_t patch3dOffsetV;
+  int64_t patch3dOffsetD;
+
+  int64_t patch3dRangeD;
+
+  int64_t patchProjectionID;
+  int64_t patchOrientationIndex;
+
+  int64_t patchLoDScaleX;
+  int64_t patchLoDScaleY;
+
+  // ajt:: Application related Patch data, maybe an alternative way to do it is t have two spearte structures, one for
+  // common and one for application?
+  int64_t patchRawPoints;
+  // std::vector<int64_t>  patchEomPatchCount;  // this needs to be cheked later?
+  int64_t             epduAssociatedPatchCount;
+  std::vector<size_t> epduAssociatedPoints;
+
+  // std::vector<std::vector<uint8_t>> patchPlrdLevel; ajt:: this should be 3-dimensional - work on it later!
+};
+
+#define CODEC_TRACE
+
+
 #ifdef CODEC_TRACE
 #define TRACE_CODEC( fmt, ... ) trace( fmt, ##__VA_ARGS__ );
 #else
@@ -281,6 +323,25 @@ class PCCCodec {
     return s / double( N );
   }
 
+  std::vector<PatchParams>& getAtlasPatchParams() { return gAtlasPatchParams_; }
+  std::map<size_t, std::vector<PatchParams>>& getTilePatchParams() { return gTilePatchParams_; }
+
+  bool getHighLevelHashPresentFlag() { return highLevelHashPresentFlag_; }
+  bool getAtlasHashPresentFlag() { return atlasHashPresentFlag_; }
+  bool getTileHashPresentFlag() { return tileHashPresentFlag_; }
+
+  void setHighLevelHashPresentFlag( bool value) { highLevelHashPresentFlag_ = value; }
+  void setAtlasHashPresentFlag( bool value) { atlasHashPresentFlag_ = value; }
+  void setTileHashPresentFlag( bool value ) { tileHashPresentFlag_ = value; }
+
+  void atlasPatchCommonByteString( std::vector<uint8_t>& stringByte, size_t patchIndex );
+  void atlasPatchApplicationByteString( std::vector<uint8_t>& stringByte, size_t patchIndex );
+  void tilePatchCommonByteString( std::vector<uint8_t>& stringByte, size_t tileId, size_t patchIndex );
+  void tilePatchApplicationByteString( std::vector<uint8_t>& stringByte, size_t tileId, size_t patchIndex );
+  void atlasBlockToPatchByteString( std::vector<uint8_t>& stringByte );
+  void tileBlockToPatchByteString( std::vector<uint8_t>& stringByte, size_t tileID );
+
+
  private:
   void smoothPointCloud( PCCPointSet3&                      reconstruct,
                          const std::vector<uint32_t>&       partition,
@@ -385,6 +446,7 @@ class PCCCodec {
                                std::vector<uint32_t>&       BPflag,
                                PCCPointSet3&                reconstruct );
 
+
 #ifdef CODEC_TRACE
   void printChecksum( PCCPointSet3& ePointcloud, std::string eString );
 #endif
@@ -397,6 +459,14 @@ class PCCCodec {
   std::vector<bool>                  colorSmoothingDoSmooth_;
   std::vector<uint32_t>              colorSmoothingPartition_;
   std::vector<std::vector<uint16_t>> colorSmoothingLum_;
+
+  std::vector<PatchParams>                      gAtlasPatchParams_;
+  std::map<size_t, std::vector<PatchParams>>    gTilePatchParams_;
+
+  bool highLevelHashPresentFlag_;
+  bool atlasHashPresentFlag_;
+  bool tileHashPresentFlag_;
+
 #ifdef CODEC_TRACE
   bool  trace_;
   FILE* traceFile_;

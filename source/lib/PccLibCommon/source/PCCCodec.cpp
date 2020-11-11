@@ -46,7 +46,9 @@
 
 using namespace pcc;
 
-PCCCodec::PCCCodec() {
+uint64_t bSize;
+
+PCCCodec::PCCCodec() : highLevelHashPresentFlag_( false ), atlasHashPresentFlag_( false ), tileHashPresentFlag_( false ) {
 #ifdef BITSTREAM_TRACE
   trace_     = false;
   traceFile_ = NULL;
@@ -2380,6 +2382,246 @@ void PCCCodec::generateBlockToPatchFromOccupancyMapVideo( PCCContext&           
       }  // u0
     }    // v0
   }      // patch
+}
+
+void PCCCodec::atlasPatchCommonByteString( std::vector<uint8_t>& stringByte, size_t p ) {
+  uint8_t val = gAtlasPatchParams_[ p ].patchType & 0xFF;
+  stringByte.push_back( val );  // uint8_t val = AtlasPatchType[p] & 0xFF;
+  val = gAtlasPatchParams_[ p ].patch2dPosX & 0xFF;
+  stringByte.push_back( val );
+  val = ( gAtlasPatchParams_[ p ].patch2dPosX >> 8 ) & 0xFF;
+  stringByte.push_back( val );
+  val = gAtlasPatchParams_[ p ].patch2dPosY & 0xFF;
+  stringByte.push_back( val );
+  val = ( gAtlasPatchParams_[ p ].patch2dPosY >> 8 ) & 0xFF;
+  stringByte.push_back( val );
+  val = gAtlasPatchParams_[ p ].patch2dSizeX & 0xFF;
+  stringByte.push_back( val );
+  val = ( gAtlasPatchParams_[p].patch2dSizeX >> 8 ) & 0xFF;
+  stringByte.push_back( val );
+  val = gAtlasPatchParams_[p].patch2dSizeY & 0xFF;
+  stringByte.push_back( val );
+  val = ( gAtlasPatchParams_[p].patch2dSizeY >> 8 ) & 0xFF;
+  stringByte.push_back( val );
+  val = gAtlasPatchParams_[p].patch3dOffsetU & 0xFF;
+  stringByte.push_back( val );
+  val = ( gAtlasPatchParams_[ p ].patch3dOffsetU >> 8 ) & 0xFF;
+  stringByte.push_back( val );
+  val = gAtlasPatchParams_[ p ].patch3dOffsetV & 0xFF;
+  stringByte.push_back( val );
+  val = ( gAtlasPatchParams_[ p ].patch3dOffsetV >> 8 ) & 0xFF;
+  stringByte.push_back( val );
+  val = gAtlasPatchParams_[ p ].patch3dOffsetD & 0xFF;
+  stringByte.push_back( val );
+  val = ( gAtlasPatchParams_[ p ].patch3dOffsetD >> 8 ) & 0xFF;
+  stringByte.push_back( val );
+  val = gAtlasPatchParams_[ p ].patch3dRangeD & 0xFF;
+  stringByte.push_back( val );
+  val = ( gAtlasPatchParams_[ p ].patch3dRangeD >> 8 ) & 0xFF;
+  stringByte.push_back( val );
+  val = gAtlasPatchParams_[ p ].patchProjectionID & 0xFF;
+  stringByte.push_back( val );
+  val = gAtlasPatchParams_[ p ].patchOrientationIndex & 0xFF;
+  stringByte.push_back( val );
+  val = gAtlasPatchParams_[ p ].patchLoDScaleX & 0xFF;
+  stringByte.push_back( val );
+  val = ( gAtlasPatchParams_[ p ].patchLoDScaleX >> 8 ) & 0xFF;
+  stringByte.push_back( val );
+  val = gAtlasPatchParams_[ p ].patchLoDScaleY & 0xFF;
+  stringByte.push_back( val );
+  val = ( gAtlasPatchParams_[p].patchLoDScaleY >> 8 ) & 0xFF;
+  stringByte.push_back( val );
+};
+
+void PCCCodec::atlasPatchApplicationByteString( std::vector<uint8_t>& stringByte, size_t p ) {
+  uint8_t val = gAtlasPatchParams_[ p ].patchInAuxVideo & 0xFF;
+  stringByte.push_back( val );  // AtlasPatchInAuxVideo[p] & 0xFF;
+  if ( gAtlasPatchParams_[ p ].patchType == RAW ) {
+    val = gAtlasPatchParams_[ p ].patchRawPoints & 0xFF;
+    stringByte.push_back( val ) ;
+    val = ( gAtlasPatchParams_[p].patchRawPoints >> 8 ) & 0xFF;
+    stringByte.push_back( val );
+  } else if ( gAtlasPatchParams_[ p ].patchType == PROJECTED ) {
+    size_t blockCnt = ( ( gAtlasPatchParams_[ p ].patch2dSizeX + bSize - 1 ) / bSize ) *
+                      ( ( gAtlasPatchParams_[ p ].patch2dSizeY + bSize - 1 ) / bSize );
+
+    /*for ( int m = 0; m < mapCount + 1; m++ ) { //ajt:: need to work on it later for multiple maps!
+      if ( gAtlasPatchParams_.patchPlrdLevel== 1 ) {
+        if ( gAtlasPatchParams_.patchPlrdLevel[p][m] == 0 ) {
+          for ( int j = 0; j < blockCnt; j++ ) {
+            val = gAtlasPatchParams_.patchPlrdBlockModeMinus1[p][m][j] & 0xFF;
+            stringByte.push_back( val );
+            val = ( gAtlasPatchParams_.[p][m][j] >> 8 ) & 0xFF;
+            stringByte.push_back( val );
+          }
+        } else {
+          val = gAtlasPatchParams_.patchPlrdModeMinus1[p][m] & 0xFF;
+            stringByte.push_back( val );
+            val = ( AtlasPlrdBlockModeMinus1[p][m] >> 8 ) & 0xFF;
+            stringByte.push_back( val );
+        }
+      }
+    }*/
+  } else if ( gAtlasPatchParams_[ p ].patchType == EOM ) {
+    // val = gAtlasPatchParams_.patchEomPatchCount[ p ] & 0xFF; // ajt:: this needs to be checked
+    // stringByte.push_back( val );
+    // val = (gAtlasPatchParams_.patchEomPatchCount[ p ] >> 8 ) & 0xFF;
+    // stringByte.push_back( val );
+    val = gAtlasPatchParams_[ p ].epduAssociatedPatchCount & 0xFF;
+    stringByte.push_back( val );
+    val = ( gAtlasPatchParams_[ p ].epduAssociatedPatchCount >> 8 ) & 0xFF;
+    stringByte.push_back( val );
+    for ( int i = 0; i < gAtlasPatchParams_[ p ].epduAssociatedPatchCount; i++ ) {
+      val = gAtlasPatchParams_[ p ].epduAssociatedPoints[ i ] & 0xFF;
+      stringByte.push_back( val );
+      val = ( gAtlasPatchParams_[ p ].epduAssociatedPoints[ i ] >> 8 ) & 0xFF;
+      stringByte.push_back( val );
+    }
+  }
+};
+
+void PCCCodec::tilePatchCommonByteString( std::vector<uint8_t>& stringByte, size_t tileId, size_t p ) {
+  uint8_t val = gTilePatchParams_[ tileId ][ p ].patchType & 0xFF;
+  stringByte.push_back( val );  // uint8_t val = AtlasPatchType & 0xFF;
+  val = gTilePatchParams_[ tileId ][ p ].patch2dPosX & 0xFF;
+  stringByte.push_back( val );
+  val = ( gTilePatchParams_[ tileId ][ p ].patch2dPosX >> 8 ) & 0xFF;
+  stringByte.push_back( val );
+  val = gTilePatchParams_[ tileId ][ p ].patch2dPosY & 0xFF;
+  stringByte.push_back( val );
+  val = ( gTilePatchParams_[ tileId ][ p ].patch2dPosY >> 8 ) & 0xFF;
+  stringByte.push_back( val );
+  val = gTilePatchParams_[ tileId ][ p ].patch2dSizeX & 0xFF;
+  stringByte.push_back( val );
+  val = ( gTilePatchParams_[ tileId ][ p ].patch2dSizeX >> 8 ) & 0xFF;
+  stringByte.push_back( val );
+  val = gTilePatchParams_[ tileId ][ p ].patch2dSizeY & 0xFF;
+  stringByte.push_back( val );
+  val = ( gTilePatchParams_[ tileId ][ p ].patch2dSizeY >> 8 ) & 0xFF;
+  stringByte.push_back( val );
+  val = gTilePatchParams_[ tileId ][ p ].patch3dOffsetU & 0xFF;
+  stringByte.push_back( val );
+  val = ( gTilePatchParams_[ tileId ][ p ].patch3dOffsetU >> 8 ) & 0xFF;
+  stringByte.push_back( val );
+  val = gTilePatchParams_[ tileId ][ p ].patch3dOffsetV & 0xFF;
+  stringByte.push_back( val );
+  val = ( gTilePatchParams_[ tileId ][ p ].patch3dOffsetV >> 8 ) & 0xFF;
+  stringByte.push_back( val );
+  val = gTilePatchParams_[ tileId ][ p ].patch3dOffsetD & 0xFF;
+  stringByte.push_back( val );
+  val = ( gTilePatchParams_[ tileId ][ p ].patch3dOffsetD >> 8 ) & 0xFF;
+  stringByte.push_back( val );
+  val = gTilePatchParams_[ tileId ][ p ].patch3dRangeD & 0xFF;
+  stringByte.push_back( val );
+  val = ( gTilePatchParams_[ tileId ][ p ].patch3dRangeD >> 8 ) & 0xFF;
+  stringByte.push_back( val );
+  val = gTilePatchParams_[ tileId ][ p ].patchProjectionID & 0xFF;
+  stringByte.push_back( val );
+  val = gTilePatchParams_[ tileId ][ p ].patchOrientationIndex & 0xFF;
+  stringByte.push_back( val );
+  val = gTilePatchParams_[ tileId ][ p ].patchLoDScaleX & 0xFF;
+  stringByte.push_back( val );
+  val = ( gTilePatchParams_[ tileId ][ p ].patchLoDScaleX >> 8 ) & 0xFF;
+  stringByte.push_back( val );
+  val = gTilePatchParams_[ tileId ][ p ].patchLoDScaleY & 0xFF;
+  stringByte.push_back( val );
+  val = ( gTilePatchParams_[ tileId ][ p ].patchLoDScaleY >> 8 ) & 0xFF;
+  stringByte.push_back( val );
+};
+
+void PCCCodec::tilePatchApplicationByteString( std::vector<uint8_t>& stringByte, size_t tileId, size_t p ) {
+  uint8_t val = gAtlasPatchParams_[ tileId ].patchInAuxVideo & 0xFF;
+  stringByte.push_back( val );  // AtlasPatchInAuxVideo & 0xFF;
+  if ( gTilePatchParams_[ tileId ][ p ].patchType == RAW ) {
+    val = gTilePatchParams_[ tileId ][ p ].patchRawPoints & 0xFF;
+    stringByte.push_back( val );
+    val = ( gTilePatchParams_[ tileId ][ p ].patchRawPoints >> 8 ) & 0xFF;
+    stringByte.push_back( val );
+  } else if ( gTilePatchParams_[ tileId ][ p ].patchType == PROJECTED ) {
+    size_t blockCnt = ( ( gTilePatchParams_[ tileId ][ p ].patch2dSizeX + bSize - 1 ) / bSize ) *
+                      ( ( gTilePatchParams_[ tileId ][ p ].patch2dSizeY + bSize - 1 ) / bSize );
+
+    /*for ( int m = 0; m < mapCount + 1; m++ ) { //ajt:: need to work on it later for multiple maps!
+      if ( gTilePatchParams_[ tileId ][ p ].patchPlrdLevel== 1 ) {
+        if ( gTilePatchParams_[ tileId ][ p ].patchPlrdLevel[m] == 0 ) {
+          for ( int j = 0; j < blockCnt; j++ ) {
+            val = gTilePatchParams_[ tileId ][ p ].patchPlrdBlockModeMinus1[m][j] & 0xFF;
+            stringByte.push_back( val );
+            val = ( gTilePatchParams_[ tileId ][ p ].[m][j] >> 8 ) & 0xFF;
+            stringByte.push_back( val );
+          }
+        } else {
+          val = gTilePatchParams_[ tileId ][ p ].patchPlrdModeMinus1[m] & 0xFF;
+            stringByte.push_back( val );
+            val = ( AtlasPlrdBlockModeMinus1[m] >> 8 ) & 0xFF;
+            stringByte.push_back( val );
+        }
+      }
+    }*/
+
+  } else if ( gTilePatchParams_[ tileId ][ p ].patchType == EOM ) {
+    // val = gTilePatchParams_[ tileId ][ p ].patchEomPatchCount[ p ] & 0xFF; // ajt:: this needs to be checked
+    // stringByte.push_back( val );
+    // val = (gTilePatchParams_[ tileId ][ p ].patchEomPatchCount[ p ] >> 8 ) & 0xFF;
+    // stringByte.push_back( val );
+    val = gTilePatchParams_[ tileId ][ p ].epduAssociatedPatchCount & 0xFF;
+    stringByte.push_back( val );
+    val = ( gTilePatchParams_[ tileId ][ p ].epduAssociatedPatchCount >> 8 ) & 0xFF;
+    stringByte.push_back( val );
+    for ( int i = 0; i < gTilePatchParams_[ tileId ][ p ].epduAssociatedPatchCount; i++ ) {
+      val = gTilePatchParams_[ tileId ][ p ].epduAssociatedPoints[i] & 0xFF;
+      stringByte.push_back( val );
+      val = ( gTilePatchParams_[ tileId ][ p ].epduAssociatedPoints[i] >> 8 ) & 0xFF;
+      stringByte.push_back( val );
+    }
+  }
+};
+void PCCCodec::atlasBlockToPatchByteString( std::vector<uint8_t>& stringByte ) {
+  /*AtlasB2PDataBytes = 0;
+  for ( int y = 0; y < AtlasBlockToPatchMapHeight; y++ ) {
+      for ( int x = 0; x < AtlasBlockToPatchMapWidth; x++ ) {
+          b2pVal = ( AtlasBlockToPatchMap[y][x] == -1 ) ? 0xFFFF
+                                                  : AtlasBlockToPatchMap[y][x];
+          AtlasB2pData[AtlasB2PDataBytes++] = b2pVal & 0xFF;
+          AtlasB2pData[AtlasB2PDataBytes++] = ( b2pVal >> 8 ) & 0xFF;
+      }
+  }*/
+}
+void PCCCodec::tileBlockToPatchByteString( std::vector<uint8_t>& stringByte, size_t tileID ) {
+  // ajt::to be done later
+}
+
+PatchParams::PatchParams( bool plrFlag, uint16_t mapCnt ) {
+  initPatchParams( plrFlag, mapCnt );
+}
+
+void PatchParams::initPatchParams( bool plrFlag, uint16_t mapCnt ) {
+
+    patchType = PROJECTED ;
+    patch2dPosX = 0;
+    patch2dPosY =  0;
+    patch2dSizeX = 1;
+    patch2dSizeY =  1;
+    patch3dOffsetU =  0;
+    patch3dOffsetV =  0;
+    patch3dOffsetD =  0;
+    patch3dRangeD =  1;
+    patchProjectionID =  0;
+    patchOrientationIndex=  0;
+    patchLoDScaleX=  1;
+    patchLoDScaleY=  1;
+    patchRawPoints=  0;
+    patchInAuxVideo=  0;
+
+    patchRawPoints = 0;
+    epduAssociatedPatchCount = 0;
+    // std::vector<int64_t>  patchEomPatchCount;  // this needs to be cheked later?
+
+    /*if ( plrFlag == true ) {// ajt:: need to revise this later! as part of a new application structure?
+      size_t size = patchPlrdLevel.size();
+      patchPlrdLevel.resize( size + 1 );
+      for ( int m = 0; m < mapCnt; m++ ) patchPlrdLevel[size]=  0 );
+    }*/
 }
 
 #ifdef CODEC_TRACE
