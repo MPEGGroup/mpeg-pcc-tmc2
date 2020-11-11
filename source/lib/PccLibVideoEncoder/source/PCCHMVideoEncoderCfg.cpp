@@ -60,73 +60,6 @@ using namespace pcc_hm;
 
 namespace po = pcc_hm::df::program_options_lite;
 
-enum UIProfileName  // this is used for determining profile strings, where
-                    // multiple profiles map to a single profile idc with
-                    // various constraint flag combinations
-{ UI_NONE                 = 0,
-  UI_MAIN                 = 1,
-  UI_MAIN10               = 2,
-  UI_MAIN10_STILL_PICTURE = 10002,
-  UI_MAINSTILLPICTURE     = 3,
-  UI_MAINREXT             = 4,
-  UI_HIGHTHROUGHPUTREXT   = 5,
-  UI_MAINSCC              = 9,
-  UI_HIGHTHROUGHPUTSCC    = 11,
-  // The following are RExt profiles, which would map to the MAINREXT profile
-  // idc.
-  // The enumeration indicates the bit-depth constraint in the bottom 2 digits
-  //                           the chroma format in the next digit
-  //                           the intra constraint in the next digit (1 for no
-  // intra constraint, 2 for intra constraint)
-  //                           If it is a RExt still picture, there is a '1' for
-  // the top digit.
-  UI_MONOCHROME_8              = 1008,
-  UI_MONOCHROME_12             = 1012,
-  UI_MONOCHROME_16             = 1016,
-  UI_MAIN_12                   = 1112,
-  UI_MAIN_422_10               = 1210,
-  UI_MAIN_422_12               = 1212,
-  UI_MAIN_444                  = 1308,
-  UI_MAIN_444_10               = 1310,
-  UI_MAIN_444_12               = 1312,
-  UI_MAIN_444_16               = 1316,  // non-standard profile definition, used for development purposes
-  UI_MAIN_INTRA                = 2108,
-  UI_MAIN_10_INTRA             = 2110,
-  UI_MAIN_12_INTRA             = 2112,
-  UI_MAIN_422_10_INTRA         = 2210,
-  UI_MAIN_422_12_INTRA         = 2212,
-  UI_MAIN_444_INTRA            = 2308,
-  UI_MAIN_444_10_INTRA         = 2310,
-  UI_MAIN_444_12_INTRA         = 2312,
-  UI_MAIN_444_16_INTRA         = 2316,
-  UI_MAIN_444_STILL_PICTURE    = 11308,
-  UI_MAIN_444_16_STILL_PICTURE = 12316,
-  // The following are high throughput profiles, which would map to the
-  // HIGHTHROUGHPUTREXT profile idc.
-  // The enumeration indicates the bit-depth constraint in the bottom 2 digits
-  //                           the chroma format in the next digit
-  //                           the intra constraint in the next digit
-  //                           There is a '2' for the top digit to indicate it
-  // is high throughput profile
-  UI_HIGHTHROUGHPUT_444          = 21308,
-  UI_HIGHTHROUGHPUT_444_10       = 21310,
-  UI_HIGHTHROUGHPUT_444_14       = 21314,
-  UI_HIGHTHROUGHPUT_444_16_INTRA = 22316,
-  // The following are SCC profiles, which would map to the MAINSCC profile idc.
-  // The enumeration indicates the bit-depth constraint in the bottom 2 digits
-  //                           the chroma format in the next digit
-  //                           the intra constraint in the next digit
-  //                           If it is a SCC profile there is a '2' for the
-  // next digit.
-  //                           If it is a highthroughput , there is a '2' for
-  // the top digit else '1' for the top digit
-  UI_SCC_MAIN                  = 121108,
-  UI_SCC_MAIN_10               = 121110,
-  UI_SCC_MAIN_444              = 121308,
-  UI_SCC_MAIN_444_10           = 121310,
-  UI_SCC_HIGHTHROUGHPUT_444    = 221308,
-  UI_SCC_HIGHTHROUGHPUT_444_10 = 221310,
-  UI_SCC_HIGHTHROUGHPUT_444_14 = 221314 };
 
 //! \ingroup TAppEncoder
 //! \{
@@ -426,54 +359,6 @@ static inline istream& operator>>( istream& in, Name& level ) {
 }
 }  //~namespace Level
 }  //~namespace pcc_hm
-
-template <class T>
-struct SMultiValueInput {
-  const T           minValIncl;
-  const T           maxValIncl;
-  const std::size_t minNumValuesIncl;
-  const std::size_t maxNumValuesIncl;  // Use 0 for unlimited
-  std::vector<T>    values;
-  SMultiValueInput() : minValIncl( 0 ), maxValIncl( 0 ), minNumValuesIncl( 0 ), maxNumValuesIncl( 0 ), values() {}
-  SMultiValueInput( std::vector<T>& defaults ) :
-      minValIncl( 0 ),
-      maxValIncl( 0 ),
-      minNumValuesIncl( 0 ),
-      maxNumValuesIncl( 0 ),
-      values( defaults ) {}
-  SMultiValueInput( const T&    minValue,
-                    const T&    maxValue,
-                    std::size_t minNumberValues = 0,
-                    std::size_t maxNumberValues = 0 ) :
-      minValIncl( minValue ),
-      maxValIncl( maxValue ),
-      minNumValuesIncl( minNumberValues ),
-      maxNumValuesIncl( maxNumberValues ),
-      values() {}
-  SMultiValueInput( const T&    minValue,
-                    const T&    maxValue,
-                    std::size_t minNumberValues,
-                    std::size_t maxNumberValues,
-                    const T*    defValues,
-                    const UInt  numDefValues ) :
-      minValIncl( minValue ),
-      maxValIncl( maxValue ),
-      minNumValuesIncl( minNumberValues ),
-      maxNumValuesIncl( maxNumberValues ),
-      values( defValues, defValues + numDefValues ) {}
-  SMultiValueInput<T>& operator=( const std::vector<T>& userValues ) {
-    values = userValues;
-    return *this;
-  }
-  SMultiValueInput<T>& operator=( const SMultiValueInput<T>& userValues ) {
-    values = userValues.values;
-    return *this;
-  }
-
-  T readValue( const TChar*& pStr, Bool& bSuccess );
-
-  istream& readValues( std::istream& in );
-};
 
 namespace pcc_hm{
 template <class T>

@@ -282,10 +282,10 @@ void PCCNormalsGenerator3::orientNormals( const PCCPointSet3&                   
       PCCVector3D( 0, 1, 0 ), 
       PCCVector3D( 0, 0, 1 ), 
     };
-    int planeWidth[3] = { (bb.max_[1] - bb.min_[1])+1,
+    double planeWidth[3] = { (bb.max_[1] - bb.min_[1])+1,
       (bb.max_[2] - bb.min_[2])+1,
       (bb.max_[0] - bb.min_[0])+1};
-    int planeHeight[3] = {(bb.max_[2]-bb.min_[2])+1, 
+    double planeHeight[3] = {(bb.max_[2]-bb.min_[2])+1, 
       (bb.max_[0]-bb.min_[0])+1, 
       (bb.max_[1]-bb.min_[1])+1};
     //allocating projection planes

@@ -98,14 +98,7 @@ class PCCVideoBitstream {
       endIndex             = getEndOfNaluPosition( startIndex + sizeStartCode );
       size_t headerIndex   = data.size();
       for ( size_t i = 0; i < precision; i++ ) { data.push_back( 0 ); }  // reserve nalu size
-      for ( size_t i = startIndex + sizeStartCode, zeroCount = 0; i < endIndex; i++ ) {
-        if ( ( zeroCount == 3 ) && ( data_[i] <= 3 ) ) {
-          zeroCount = 0;
-        } else {
-          zeroCount = ( data_[i] == 0 ) ? zeroCount + 1 : 0;
-          data.push_back( data_[i] );
-        }
-      }
+      for ( size_t i = startIndex + sizeStartCode; i < endIndex; i++ ) { data.push_back( data_[i] ); }
       size_t naluSize = data.size() - ( headerIndex + precision );
       for ( size_t i = 0; i < precision; i++ ) {
         data[headerIndex + i] = ( naluSize >> ( 8 * ( precision - ( i + 1 ) ) ) ) & 0xff;
@@ -122,18 +115,17 @@ class PCCVideoBitstream {
       int32_t naluSize = 0;
       for ( size_t i = 0; i < precision; i++ ) { naluSize = ( naluSize << 8 ) + data_[startIndex + i]; }
       endIndex = startIndex + precision + naluSize;
-      for ( size_t i = 0; i < sizeStartCode; i++ ) { data.push_back( i == sizeStartCode - 1 ); }
-      for ( size_t i = startIndex + precision, zeroCount = 0; i < endIndex; i++ ) {
-        if ( zeroCount == 3 && data_[i] <= 0x03 ) {
-          data.push_back( 0x03 );
-          zeroCount = 0;
-        }
-        zeroCount = ( data_[i] == 0x00 ) ? zeroCount + 1 : 0;
+      for ( size_t i = 0; i < sizeStartCode-1; i++ ) { data.push_back( 0 ); }
+      data.push_back( 1 );
+      for ( size_t i = startIndex + precision; i < endIndex; i++ ) {
         data.push_back( data_[i] );
       }
       startIndex    = endIndex;
       int naluType  = ( ( data_[startIndex + precision] ) & 126 ) >> 1;
-      sizeStartCode = changeStartCodeSize && naluType >= 32 ? 3 : 4;
+      
+      //NAL_UNIT_VPS, NAL_UNIT_SPS, NAL_UNIT_PPS : size=4
+      //TODO:first NAL of new frame : size 4
+      sizeStartCode = (changeStartCodeSize && (naluType == 32 || naluType == 33 || naluType == 34 ))? 4 : 3;
     } while ( endIndex < data_.size() );
     data_.swap( data );
   }
