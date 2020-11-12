@@ -121,11 +121,15 @@ class PCCVideoBitstream {
         data.push_back( data_[i] );
       }
       startIndex    = endIndex;
+      //the first NALU of a frame, NAL_UNIT_VPS, NAL_UNIT_SPS, NAL_UNIT_PPS : size=4
       int naluType  = ( ( data_[startIndex + precision] ) & 126 ) >> 1;
-      
-      //NAL_UNIT_VPS, NAL_UNIT_SPS, NAL_UNIT_PPS : size=4
-      //TODO:first NAL of new frame : size 4
-      sizeStartCode = (changeStartCodeSize && (naluType == 32 || naluType == 33 || naluType == 34 ))? 4 : 3;
+      bool isNewFrame=false; //isNewFrameNalu(POC calculation);
+      if(isNewFrame==true || (changeStartCodeSize && (naluType == 32 || naluType == 33 || naluType == 34 ))){
+        sizeStartCode=4;
+      } else{
+        sizeStartCode=3;
+      }
+
     } while ( endIndex < data_.size() );
     data_.swap( data );
   }
