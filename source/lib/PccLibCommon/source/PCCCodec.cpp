@@ -46,9 +46,7 @@
 
 using namespace pcc;
 
-uint64_t bSize;
-
-PCCCodec::PCCCodec() : highLevelHashPresentFlag_( false ), atlasHashPresentFlag_( false ), tileHashPresentFlag_( false ) {
+PCCCodec::PCCCodec() {
 #ifdef BITSTREAM_TRACE
   trace_     = false;
   traceFile_ = NULL;
@@ -2434,6 +2432,8 @@ void PCCCodec::atlasPatchCommonByteString( std::vector<uint8_t>& stringByte, siz
 };
 
 void PCCCodec::atlasPatchApplicationByteString( std::vector<uint8_t>& stringByte, size_t p ) {
+
+  uint32_t bSize = getPatchPackingBlockSize();
   uint8_t val = gAtlasPatchParams_[ p ].patchInAuxVideo & 0xFF;
   stringByte.push_back( val );  // AtlasPatchInAuxVideo[p] & 0xFF;
   if ( gAtlasPatchParams_[ p ].patchType == RAW ) {
@@ -2530,6 +2530,7 @@ void PCCCodec::tilePatchCommonByteString( std::vector<uint8_t>& stringByte, size
 };
 
 void PCCCodec::tilePatchApplicationByteString( std::vector<uint8_t>& stringByte, size_t tileId, size_t p ) {
+  uint32_t bSize = getPatchPackingBlockSize();
   uint8_t val = gAtlasPatchParams_[ tileId ].patchInAuxVideo & 0xFF;
   stringByte.push_back( val );  // AtlasPatchInAuxVideo & 0xFF;
   if ( gTilePatchParams_[ tileId ][ p ].patchType == RAW ) {

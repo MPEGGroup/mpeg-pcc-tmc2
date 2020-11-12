@@ -230,7 +230,7 @@ enum PCCPatchType {
   ERROR_PATCH
 };
 
-enum PCCHashPatchType {  // Note JR: must be check with Ali
+enum PCCHashPatchType {  // Note JR: must be check with Ali. It is fine (Ali)
   PROJECTED = 0,
   RAW,
   EOM

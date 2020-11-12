@@ -139,9 +139,6 @@ struct PatchParams {
   // std::vector<std::vector<uint8_t>> patchPlrdLevel; ajt:: this should be 3-dimensional - work on it later!
 };
 
-#define CODEC_TRACE
-
-
 #ifdef CODEC_TRACE
 #define TRACE_CODEC( fmt, ... ) trace( fmt, ##__VA_ARGS__ );
 #else
@@ -326,13 +323,13 @@ class PCCCodec {
   std::vector<PatchParams>& getAtlasPatchParams() { return gAtlasPatchParams_; }
   std::map<size_t, std::vector<PatchParams>>& getTilePatchParams() { return gTilePatchParams_; }
 
-  bool getHighLevelHashPresentFlag() { return highLevelHashPresentFlag_; }
   bool getAtlasHashPresentFlag() { return atlasHashPresentFlag_; }
   bool getTileHashPresentFlag() { return tileHashPresentFlag_; }
+  uint32_t getPatchPackingBlockSize() { return patchPackingBlockSize_; }
 
-  void setHighLevelHashPresentFlag( bool value) { highLevelHashPresentFlag_ = value; }
   void setAtlasHashPresentFlag( bool value) { atlasHashPresentFlag_ = value; }
   void setTileHashPresentFlag( bool value ) { tileHashPresentFlag_ = value; }
+  void setPatchPackingBlockSize( uint32_t value) { patchPackingBlockSize_ = value; }
 
   void atlasPatchCommonByteString( std::vector<uint8_t>& stringByte, size_t patchIndex );
   void atlasPatchApplicationByteString( std::vector<uint8_t>& stringByte, size_t patchIndex );
@@ -462,10 +459,9 @@ class PCCCodec {
 
   std::vector<PatchParams>                      gAtlasPatchParams_;
   std::map<size_t, std::vector<PatchParams>>    gTilePatchParams_;
-
-  bool highLevelHashPresentFlag_;
   bool atlasHashPresentFlag_;
   bool tileHashPresentFlag_;
+  uint32_t patchPackingBlockSize_;
 
 #ifdef CODEC_TRACE
   bool  trace_;
