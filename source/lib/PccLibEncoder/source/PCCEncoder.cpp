@@ -7520,7 +7520,7 @@ void PCCEncoder::performDataAdaptiveGPAMethod( PCCContext& context,
     }
 
     endSubContext = ( badPatchCount || badUnionsHeight || badGPAPacking );
-    std::cout << "\tThe endSubContext is: " << endSubContext << "(" << badPatchCount << "," << badUnionsHeight << ","
+    std::cout << "\tThe endSubContext is: " << endSubContext << "=(" << badPatchCount << "||" << badUnionsHeight << "||"
               << badGPAPacking << ")" << std::endl;
     if ( endSubContext ) {
       std::cout << "\tThe frame is a end point --- " << frameIndex << std::endl;
@@ -7987,9 +7987,6 @@ void PCCEncoder::packingFirstFrame( PCCContext& context,
 void PCCEncoder::updatePatchInformation( PCCContext& context, size_t tileIndex, SubContext& subContext ) {
   std::cout << "The subContext is: [" << subContext.first << ", " << subContext.second << ")" << std::endl;
   for ( size_t frameIndex = subContext.first; frameIndex < subContext.second; ++frameIndex ) {
-#if 1
-    printf("frameIdx\t%zu\n", frameIndex);
-#endif
     PCCFrameContext& tile       = context[frameIndex].getTile( tileIndex );
     tile.getGlobalPatchCount()  = 0;  // GPA_HARMONIZATION
     tile.getWidth()             = tile.getPrePCCGPAFrameSize().widthGPA_;
@@ -8008,9 +8005,6 @@ void PCCEncoder::updatePatchInformation( PCCContext& context, size_t tileIndex, 
       if ( curPatch.getIsGlobalPatch() ) { tile.getGlobalPatchCount() = tile.getGlobalPatchCount() + 1; }
       // GPA_HARMONIZATION End ----------------------------------------
     }
-    #if 1
-        printf("end of copying patches\n");
-    #endif
     // update rawPoints patch infor.
     if ( !tile.getRawPointsPatches().empty() && !tile.getUseRawPointsSeparateVideo() ) {
       for ( size_t idxRawPatches = 0; idxRawPatches < tile.getRawPointsPatches().size(); idxRawPatches++ ) {
@@ -8024,9 +8018,6 @@ void PCCEncoder::updatePatchInformation( PCCContext& context, size_t tileIndex, 
   // GPA_HARMONIZATION Begin  --------------------------------------
   // no need to update single frame.
   if ( subContext.second - subContext.first == 1 ) {  // only one frame
-    #if 1
-        printf("subContext.second (%zu)- subContext.first (%zu)== 1\n", subContext.second, subContext.first );
-    #endif
     // Reset bestMatchIndex for the first frame.
     PCCFrameContext& tile       = context[subContext.first].getTile( tileIndex );
     auto&            curPatches = tile.getPatches();
@@ -8037,7 +8028,6 @@ void PCCEncoder::updatePatchInformation( PCCContext& context, size_t tileIndex, 
   int globalPatchCount = 0;
   for ( size_t frameIndex = subContext.first; frameIndex < subContext.second; frameIndex++ ) {
     PCCFrameContext& tile       = context[frameIndex].getTile( tileIndex );
-    auto&            prevFrame  = context[frameIndex - 1].getTile( tileIndex );
     auto&            curPatches = tile.getPatches();
     for ( size_t index = 0; index < curPatches.size(); index++ ) { curPatches[index].getIndex() = index; }
     // reorder the patches.
@@ -8045,7 +8035,7 @@ void PCCEncoder::updatePatchInformation( PCCContext& context, size_t tileIndex, 
     globalPatchCount                = tile.getGlobalPatchCount();
     std::cout << "\tframeIndex:" << frameIndex << " tileIndex:" << tileIndex
               << " patchCount:" << reorderPatches.size();
-    std::cout << " frame.getGlobalPatchCount() = " << globalPatchCount << std::endl;
+    std::cout << " frame.getGlobalPatchCount() = " << globalPatchCount << std::endl;    fflush(stdout);
 
     curPatches.clear();
     curPatches.resize( 0 );
@@ -8058,7 +8048,8 @@ void PCCEncoder::updatePatchInformation( PCCContext& context, size_t tileIndex, 
       }
     } else {
       // get global patch.
-      for ( int32_t index = 0; index < prevFrame.getPatches().size(); index++ ) {
+      auto&            prevTile  = context[frameIndex - 1].getTile( tileIndex );
+      for ( int32_t index = 0; index < prevTile.getPatches().size(); index++ ) {
         for ( auto& patch : reorderPatches ) {
           if ( ( index == patch.getBestMatchIdx() ) && ( patch.getIsGlobalPatch() ) ) {
             curPatches.emplace_back( patch );
@@ -8105,6 +8096,7 @@ void PCCEncoder::updatePatchInformation( PCCContext& context, size_t tileIndex, 
       curPatches[index].getIndex() = static_cast<size_t>( index );
       std::cout << "\t[" << frameIndex << ":" << index << "/" << curPatches.size() << ", "
                 << curPatches[index].getBestMatchIdx() << "] ";
+      fflush(stdout);
     }
     std::cout << std::endl;
   }
