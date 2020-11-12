@@ -2859,7 +2859,7 @@ void PCCEncoder::spatialConsistencyPackMultipleTiles( PCCAtlasFrameContext& atla
                                                       PCCAtlasFrameContext& prevAtlasFrame,
                                                       int                   safeguard ) {
   auto& frame       = atlasFrame.getTitleFrameContext();
-  auto& prevFrame   = atlasFrame.getTitleFrameContext();
+  auto& prevFrame   = prevAtlasFrame.getTitleFrameContext(); //jkei: this should be prevAtlasFrame not atlasFrame?
   auto& width       = frame.getWidth();
   auto& height      = frame.getHeight();
   auto& patches     = frame.getPatches();
