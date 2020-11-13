@@ -680,7 +680,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
         }
         printf( "<----- Atlas (%d) Hash ", i );
         if ( sei.getHashType() == 0 ) {
-          bool                 equal     = TRUE;
+          bool                 equal     = true;
           std::vector<uint8_t> encMD5( 16 ), decMD5( 16 );
           encMD5 = context.computeMD5( atlasData.data(), atlasData.size() );
           for ( int j = 0; j < 16; j++ ) decMD5[j] = sei.getAtlasMd5( j );
@@ -688,13 +688,13 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
           equal = compareHashSEIMD5( encMD5, decMD5 );
           printf( " (%s) \n", equal ? "OK" : "DIFF" );
         } else if ( sei.getHashType() == 1 ) {
-          bool     equal = TRUE;
+          bool     equal = true;
           uint16_t crc = context.computeCRC( atlasData.data(), atlasData.size() );
           printf( " (CRC): " );
           equal        = compareHashSEICrc( crc, sei.getAtlasCrc() );
           printf( " (%s) \n", equal ? "OK" : "DIFF" );
         } else if ( sei.getHashType() == 2 ) {
-          bool     equal    = TRUE;
+          bool     equal    = true;
           uint32_t checkSum = context.computeCheckSum( atlasData.data(), atlasData.size() );
           printf( " (CheckSum): " );
           equal             = compareHashSEICheckSum( checkSum, sei.getAtlasCheckSum() );
@@ -716,7 +716,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
           }
           printf( "<----- Atlas (%d), TileId (%d) Hash ", i, tileId );
           if ( sei.getHashType() == 0 ) {
-            bool                 equal     = TRUE;
+            bool                 equal     = true;
             std::vector<uint8_t> encMD5( 16 ), decMD5( 16 );
             encMD5 = context.computeMD5( atlasTileData.data(), atlasTileData.size() );
             for ( int j = 0; j < 16; j++ ) decMD5[j] = sei.getAtlasTilesMd5( tileId, j );
@@ -724,14 +724,14 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
             equal = compareHashSEIMD5( encMD5, decMD5 );
             printf( " (%s) \n", equal ? "OK" : "DIFF" );
           } else if ( sei.getHashType() == 1 ) {
-            bool     equal = TRUE;
+            bool     equal = true;
             uint16_t crc = context.computeCRC( atlasTileData.data(), atlasTileData.size() );
             printf( " (CRC): " );
             equal          = compareHashSEICrc( crc, sei.getAtlasTilesCrc(tileId) );
             printf( " (%s) \n", equal ? "OK" : "DIFF" );
 
           } else if ( sei.getHashType() == 2 ) {
-            bool     equal    = TRUE;
+            bool     equal    = true;
             uint32_t checkSum = context.computeCheckSum( atlasTileData.data(), atlasTileData.size() );
             printf( " (CheckSum): " );
             equal             = compareHashSEICheckSum( checkSum, sei.getAtlasTilesCheckSum( tileId) );

@@ -6817,7 +6817,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
     
     if( params_.flagDecodedAtlasInformationHash_ ) {  // ajt:: a simple way to signal hash sei at the frame level, for now!
       auto& sei =
-          static_cast<SEIDecodedAtlasInformationHash&>( context.addSeiSuffix( DECODED_ATLAS_INFORMATION_HASH, FALSE ) );
+          static_cast<SEIDecodedAtlasInformationHash&>( context.addSeiSuffix( DECODED_ATLAS_INFORMATION_HASH, true ) );
       sei.setDecodedHighLevelHashPresentFlag( true );
       sei.setDecodedAtlasHashPresentFlag( true );
       sei.setDecodedAtlasTilesHashPresentFlag( true );
