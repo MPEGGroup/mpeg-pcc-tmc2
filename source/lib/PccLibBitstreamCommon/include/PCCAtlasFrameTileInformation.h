@@ -207,6 +207,81 @@ class AtlasFrameTileInformation {
   std::vector<size_t>& getColWidth() { return colWidth_; }
   std::vector<size_t>& getRowHeight() { return rowHeight_; }
 
+  uint32_t getPartitionPosX( size_t index ) { return partitionPosX_[index]; }
+  uint32_t getPartitionPosY( size_t index ) { return partitionPosY_[index]; }
+
+  void initializePartitionPosX( size_t frameWidth ) {
+    size_t numPartitionColumns, partitionWidth;
+    if ( uniformPartitionSpacingFlag_ ) {
+      partitionWidth      = ( partitionColumnWidthMinus1_[0] + 1 ) * 64;
+      numPartitionColumns = frameWidth / partitionWidth;
+      partitionPosX_.resize( numPartitionColumns );
+      partitionPosX_[0] = 0;
+      for ( size_t i = 1; i < numPartitionColumns - 1; i++ ) {
+        partitionPosX_[i] = partitionPosX_[i - 1] + partitionWidth;
+      }
+    } else {
+      numPartitionColumns = numPartitionColumnsMinus1_ + 1;
+      partitionPosX_.resize( numPartitionColumns );
+      partitionPosX_[0] = 0;
+      partitionWidth    = ( partitionColumnWidthMinus1_[0] + 1 ) * 64;
+      for ( size_t i = 1; i < numPartitionColumns - 1; i++ ) {
+        partitionPosX_[i] = partitionPosX_[i - 1] + partitionWidth;
+        partitionWidth    = ( partitionColumnWidthMinus1_[i] + 1 ) * 64;
+      }
+    }
+    if ( numPartitionColumns > 1 )
+      partitionPosX_[numPartitionColumns - 1] = partitionPosX_[numPartitionColumns - 2] + partitionWidth;
+  }
+
+  void initializePartitionPosY( size_t frameHeight ) {
+    size_t numPartitionRows, partitionHeight;
+    if ( uniformPartitionSpacingFlag_ ) {
+      partitionHeight  = ( partitionRowHeightMinus1_[0] + 1 ) * 64;
+      numPartitionRows = frameHeight / partitionHeight;
+      partitionPosY_.resize( numPartitionRows );
+      partitionPosY_[0] = 0;
+      for ( size_t i = 1; i < numPartitionRows - 1; i++ ) {
+        partitionPosY_[i] = partitionPosY_[i - 1] + partitionHeight;
+      }
+    } else {
+      numPartitionRows = numPartitionRowsMinus1_ + 1;
+      partitionPosY_.resize( numPartitionRows );
+      partitionPosY_[0] = 0;
+      partitionHeight   = ( partitionRowHeightMinus1_[0] + 1 ) * 64;
+      for ( size_t i = 1; i < numPartitionRows - 1; i++ ) {
+        partitionPosY_[i] = partitionPosY_[i - 1] + partitionHeight;
+        partitionHeight   = ( partitionRowHeightMinus1_[i] + 1 ) * 64;
+      }
+    }
+    if ( numPartitionRows > 1 )
+      partitionPosY_[numPartitionRows - 1] = partitionPosY_[numPartitionRows - 2] + partitionHeight;
+  }
+
+  void initializeTileOffsetAndSize() {
+    tileWidth_.resize( numTilesInAtlasFrameMinus1_ + 1 );
+    tileHeight_.resize( numTilesInAtlasFrameMinus1_ + 1 );
+    tileOffsetX_.resize( numTilesInAtlasFrameMinus1_ + 1 );
+    tileOffsetY_.resize( numTilesInAtlasFrameMinus1_ + 1 );
+
+    for ( size_t i = 0; i < numTilesInAtlasFrameMinus1_ + 1; i++ ) {
+      size_t topLeftColumn     = topLeftPartitionIdx_[i] % ( numPartitionColumnsMinus1_ + 1 );
+      size_t topLeftRow        = topLeftPartitionIdx_[i] / ( numPartitionColumnsMinus1_ + 1 );
+      size_t bottomRightColumn = topLeftColumn + bottomRightPartitionColumnOffset_[i];
+      size_t bottomRightRow    = topLeftRow + bottomRightPartitionRowOffset_[i];
+      tileOffsetX_[i]          = partitionPosX_[topLeftColumn];
+      tileOffsetY_[i]          = partitionPosY_[topLeftColumn];
+      tileWidth_[i]            = 0;
+      tileHeight_[i]           = 0;
+      for ( size_t j = topLeftColumn; j <= bottomRightColumn; j++ ) {
+        tileWidth_[i] += ( ( partitionColumnWidthMinus1_[j] + 1 ) * 64 );
+      }
+      for ( size_t j = topLeftRow; j <= bottomRightRow; j++ ) {
+        tileHeight_[i] += ( ( partitionRowHeightMinus1_[j] + 1 ) * 64 );
+      }
+    }
+  }
+
  private:
   bool                  singleTileInAtlasFrameFlag_;
   bool                  uniformPartitionSpacingFlag_;
@@ -230,6 +305,12 @@ class AtlasFrameTileInformation {
   std::vector<uint32_t> auxiliaryVideoTileRowHeight_;
   std::vector<size_t>   colWidth_;
   std::vector<size_t>   rowHeight_;
+  std::vector<uint32_t> partitionPosX_;
+  std::vector<uint32_t> partitionPosY_;
+  std::vector<uint32_t> tileWidth_;
+  std::vector<uint32_t> tileHeight_;
+  std::vector<uint32_t> tileOffsetX_;
+  std::vector<uint32_t> tileOffsetY_;
 };
 
 };  // namespace pcc

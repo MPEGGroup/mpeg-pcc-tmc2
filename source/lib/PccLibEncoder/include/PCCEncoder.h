@@ -50,6 +50,7 @@ class PatchFrameGeometryParameterSet;
 class GeometryPatchParameterSet;
 class V3CParameterSet;
 class PLRData;
+struct PatchParams;
 
 template <typename T, size_t N>
 class PCCVideo;
@@ -106,6 +107,7 @@ typedef std::map<size_t, PCCPatch> unionPatch;  // unionPatch ------
                                                 // [TrackIndex, UnionPatch];
 typedef std::pair<size_t, size_t> SubContext;   // SubContext ------ [start,
                                                 // end);
+
 
 #define BAD_HEIGHT_THRESHOLD 1.10
 #define BAD_CONDITION_THRESHOLD 2

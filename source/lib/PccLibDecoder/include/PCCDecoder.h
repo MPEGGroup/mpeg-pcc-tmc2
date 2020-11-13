@@ -65,11 +65,20 @@ class PCCDecoder : public PCCCodec {
   void setPostProcessingSeiParameters( GeneratePointCloudParameters& gpcParams, PCCContext& context );
   void setGeneratePointCloudParameters( GeneratePointCloudParameters& gpcParams, PCCContext& context );
   void createPatchFrameDataStructure( PCCContext& context );
-  void createPatchFrameDataStructure( PCCContext& context, size_t atglOrder );
+  void createPatchFrameDataStructure( PCCContext&         context,
+                                      PCCFrameContext&    tile,
+                                      AtlasTileLayerRbsp& atglu,
+                                      size_t              frameIndex,
+                                      size_t              tileIndex );
 
  private:
   void setPointLocalReconstruction( PCCContext& context );
   void setPLRData( PCCFrameContext& tile, PCCPatch& patch, PLRData& plrd, size_t occupancyPackingBlockSize );
+
+  bool compareHashSEIMD5( std::vector<uint8_t>& encMD5, std::vector<uint8_t>& decMD5 );
+  bool compareHashSEICrc( uint16_t encCrc, uint16_t decCrc );
+  bool compareHashSEICheckSum( uint32_t encCheckSum, uint32_t decCheckSum );
+
 
   PCCDecoderParameters params_;
 };

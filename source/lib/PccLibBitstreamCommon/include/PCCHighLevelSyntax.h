@@ -473,6 +473,15 @@ class PCCHighLevelSyntax {
   void                 setGeometry3dCoordinatesBitdepth( size_t value ) { geometry3dCoordinatesBitdepth_ = value; }
   bool&                getSingleLayerMode() { return singleLayerMode_; }
 
+  void aspsCommonByteString( std::vector<uint8_t>& stringByte );
+  void aspsApplicationByteString( std::vector<uint8_t>& strinByte );
+  void afpsCommonByteString( std::vector<uint8_t>& stringByte );
+  void afpsApplicationByteString( std::vector<uint8_t>& stringByte );
+  // PatchParams&                   getGlobalAtlasPatchParams() { return gAtlasPatchParams; }
+  // std::map<size_t, PatchParams>& getGlobalTilePatchParams() { return gTilePatchParams; }
+protected:    
+  void getTileOffsetAndSize();
+
  private:
   //size_t                         gofSize_;
   std::vector<PCCVideoBitstream> videoBitstream_;

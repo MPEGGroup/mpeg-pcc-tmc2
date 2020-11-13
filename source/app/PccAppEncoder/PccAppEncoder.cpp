@@ -293,6 +293,12 @@ bool parseParameters( int                   argc,
       encoderParams.occupancyMapRefinement_, 
       "Use occupancy map refinement" )
 
+    // hash
+    ( "decodedAtlasInformationHash",
+      encoderParams.flagDecodedAtlasInformationHash_,
+      encoderParams.flagDecodedAtlasInformationHash_,
+      "Enable decoded atlas information hash\n" )
+
     // smoothing
     ( "postprocessSmoothingFilterType",
       encoderParams.postprocessSmoothingFilter_,

@@ -106,6 +106,9 @@ class PCCEncoderParameters {
   size_t      EOMFixBitCount_;
   bool        occupancyMapRefinement_;
 
+  // hash
+  bool flagDecodedAtlasInformationHash_;
+
   // smoothing
   size_t neighborCountSmoothing_;
   double radius2Smoothing_;
