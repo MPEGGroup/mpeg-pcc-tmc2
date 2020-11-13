@@ -48,10 +48,11 @@ class RawPatchDataUnit {
       size2dYMinus1_( 0 ),
       pos3dOffsetU_( 0 ),
       pos3dOffsetV_( 0 ),
-      pos3dOffsetZ_( 0 ),
+      pos3dOffsetD_( 0 ),
       rawPointsMinus1_( 0 ),
       patchIndex_( 0 ),
-      frameIndex_( 0 ) {}
+      frameIndex_( 0 ),
+      tileOrder_( 0 ) {}
   ~RawPatchDataUnit() {}
   RawPatchDataUnit& operator=( const RawPatchDataUnit& ) = default;
 
@@ -62,12 +63,14 @@ class RawPatchDataUnit {
   int64_t  get2dSizeYMinus1() { return size2dYMinus1_; }
   size_t   get3dOffsetU() { return pos3dOffsetU_; }
   size_t   get3dOffsetV() { return pos3dOffsetV_; }
-  size_t   get3dOffsetZ() { return pos3dOffsetZ_; }
+  size_t   get3dOffsetD() { return pos3dOffsetD_; }
   uint32_t getRawPointsMinus1() { return rawPointsMinus1_; }
   size_t   getPatchIndex() { return patchIndex_; }
   size_t   getFrameIndex() { return frameIndex_; }
+  size_t   getTileOrder() { return tileOrder_; }
   void     setPatchIndex( size_t value ) { patchIndex_ = value; }
   void     setFrameIndex( size_t value ) { frameIndex_ = value; }
+  void     setTileOrder( size_t value ) { tileOrder_ = value; }
   void     setPatchInAuxiliaryVideoFlag( bool value ) { patchInAuxiliaryVideoFlag_ = value; }
   void     set2dPosX( size_t value ) { pos2dX_ = value; }
   void     set2dPosY( size_t value ) { pos2dY_ = value; }
@@ -75,7 +78,7 @@ class RawPatchDataUnit {
   void     set2dSizeYMinus1( uint64_t value ) { size2dYMinus1_ = value; }
   void     set3dOffsetU( size_t value ) { pos3dOffsetU_ = value; }
   void     set3dOffsetV( size_t value ) { pos3dOffsetV_ = value; }
-  void     set3dOffsetZ( size_t value ) { pos3dOffsetZ_ = value; }
+  void     set3dOffsetD( size_t value ) { pos3dOffsetD_ = value; }
   void     setRawPointsMinus1( uint32_t value ) { rawPointsMinus1_ = value; }
 
  private:
@@ -86,10 +89,11 @@ class RawPatchDataUnit {
   uint64_t size2dYMinus1_;
   size_t   pos3dOffsetU_;
   size_t   pos3dOffsetV_;
-  size_t   pos3dOffsetZ_;
+  size_t   pos3dOffsetD_;
   uint32_t rawPointsMinus1_;
   size_t   patchIndex_;
   size_t   frameIndex_;
+  size_t   tileOrder_;
 };
 
 };  // namespace pcc

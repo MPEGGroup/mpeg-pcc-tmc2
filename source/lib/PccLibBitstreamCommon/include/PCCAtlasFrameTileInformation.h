@@ -42,11 +42,17 @@ class AtlasFrameTileInformation {
  public:
   AtlasFrameTileInformation() :
       singleTileInAtlasFrameFlag_( 0 ),
+#if TILETYPE0_BUGFIX
+      uniformPartitionSpacingFlag_( 1 ),
+#else
       uniformPartitionSpacingFlag_( 0 ),
+#endif
       numPartitionColumnsMinus1_( 0 ),
       numPartitionRowsMinus1_( 0 ),
+#if !TILEPARTITION_BUGFIX
       partitionColumnsWidthMinus1_( 0 ),
       partitionRowsHeightMinus1_( 0 ),
+#endif
       singlePartitionPerTileFlag_( 0 ),
       numTilesInAtlasFrameMinus1_( 0 ),
       signalledTileIdFlag_( 0 ),
@@ -69,7 +75,46 @@ class AtlasFrameTileInformation {
   };
 
   AtlasFrameTileInformation& operator=( const AtlasFrameTileInformation& ) = default;
+  bool                       operator==( const AtlasFrameTileInformation& other ) const {
+    if ( singleTileInAtlasFrameFlag_ != other.singleTileInAtlasFrameFlag_ )
+      return false;
+    else if ( !singleTileInAtlasFrameFlag_ ) {
+      if ( uniformPartitionSpacingFlag_ != other.uniformPartitionSpacingFlag_ ) return false;
+      if ( uniformPartitionSpacingFlag_ ) {
+        if ( partitionColumnWidthMinus1_[0] != other.partitionColumnWidthMinus1_[0] ) return false;
+        if ( partitionRowHeightMinus1_[0] != other.partitionRowHeightMinus1_[0] ) return false;
+      } else {
+        if ( numPartitionColumnsMinus1_ != other.numPartitionColumnsMinus1_ ) return false;
+        if ( numPartitionRowsMinus1_ != other.numPartitionRowsMinus1_ ) return false;
 
+        for ( size_t i = 0; i <= numPartitionColumnsMinus1_; i++ ) {
+          if ( partitionColumnWidthMinus1_[i] != other.partitionColumnWidthMinus1_[i] ) return false;
+        }
+        for ( size_t i = 0; i <= numPartitionRowsMinus1_; i++ ) {
+          if ( partitionRowHeightMinus1_[i] != other.partitionRowHeightMinus1_[i] ) return false;
+        }
+      }
+      if ( singlePartitionPerTileFlag_ != other.singlePartitionPerTileFlag_ ) return false;
+      if ( numTilesInAtlasFrameMinus1_ != other.numTilesInAtlasFrameMinus1_ ) return false;
+      if ( !singleTileInAtlasFrameFlag_ ) {
+        for ( uint32_t i = 0; i < numTilesInAtlasFrameMinus1_ + 1; i++ ) {
+          if ( topLeftPartitionIdx_[i] != other.topLeftPartitionIdx_[i] ) return false;
+          if ( bottomRightPartitionColumnOffset_[i] != other.bottomRightPartitionColumnOffset_[i] ) return false;
+          if ( bottomRightPartitionRowOffset_[i] != other.bottomRightPartitionRowOffset_[i] ) return false;
+        }
+      }
+
+      if ( auxiliaryVideoTileRowHeight_.size() != other.auxiliaryVideoTileRowHeight_.size() ) return false;
+      if ( auxiliaryVideoTileRowHeight_.size() != 0 )  // jkei: it will be better to be "if (asps.useAuxVideoEnbleFlag)"
+      {
+        if ( auxiliaryVideoTileRowWidthMinus1_ != other.auxiliaryVideoTileRowWidthMinus1_ ) return false;
+        for ( size_t ti = 0; ti < ( numTilesInAtlasFrameMinus1_ + 1 ); ti++ ) {
+          if ( auxiliaryVideoTileRowHeight_[ti] != other.auxiliaryVideoTileRowHeight_[ti] ) return false;
+        }
+      }
+    }
+    return true;
+  }
   bool     getSingleTileInAtlasFrameFlag() { return singleTileInAtlasFrameFlag_; }
   bool     getUniformPartitionSpacingFlag() { return uniformPartitionSpacingFlag_; }
   uint32_t getNumPartitionColumnsMinus1() { return numPartitionColumnsMinus1_; }
@@ -78,8 +123,13 @@ class AtlasFrameTileInformation {
   uint32_t getNumTilesInAtlasFrameMinus1() { return numTilesInAtlasFrameMinus1_; }
   bool     getSignalledTileIdFlag() { return signalledTileIdFlag_; }
   uint32_t getSignalledTileIdLengthMinus1() { return signalledTileIdLengthMinus1_; }
+#if TILEPARTITION_BUGFIX
+  uint32_t getPartitionColumnsWidthMinus1() { return partitionColumnWidthMinus1_[0]; }
+  uint32_t getPartitionRowHeightMinus1() { return partitionRowHeightMinus1_[0]; }
+#else
   uint32_t getPartitionColumnsWidthMinus1() { return partitionColumnsWidthMinus1_; }
-  uint32_t getPartitionRowsHeightMinus1() { return partitionRowsHeightMinus1_; }
+  uint32_t getPartitionRowHeightMinus1() { return partitionRowsHeightMinus1_; }
+#endif
   uint32_t getPartitionColumnWidthMinus1( size_t index ) { return partitionColumnWidthMinus1_[index]; }
   uint32_t getPartitionRowHeightMinus1( size_t index ) { return partitionRowHeightMinus1_[index]; }
   uint32_t getTopLeftPartitionIdx( size_t index ) { return topLeftPartitionIdx_[index]; }
@@ -97,8 +147,13 @@ class AtlasFrameTileInformation {
   void setNumTilesInAtlasFrameMinus1( uint32_t value ) { numTilesInAtlasFrameMinus1_ = value; }
   void setSignalledTileIdFlag( bool value ) { signalledTileIdFlag_ = value; }
   void setSignalledTileIdLengthMinus1( uint32_t value ) { signalledTileIdLengthMinus1_ = value; }
+#if TILEPARTITION_BUGFIX
+  void setPartitionColumnsWidthMinus1( uint32_t value ) { partitionColumnWidthMinus1_[0] = value; }
+  void setPartitionRowsHeightMinus1( uint32_t value ) { partitionRowHeightMinus1_[0] = value; }
+#else
   void setPartitionColumnsWidthMinus1( uint32_t value ) { partitionColumnsWidthMinus1_ = value; }
   void setPartitionRowsHeightMinus1( uint32_t value ) { partitionRowsHeightMinus1_ = value; }
+#endif
   void setPartitionColumnWidthMinus1( size_t index, uint32_t value ) {
     if ( index == ( partitionColumnWidthMinus1_.size() ) )
       partitionColumnWidthMinus1_.resize( partitionColumnWidthMinus1_.size() + 1 );
@@ -142,7 +197,90 @@ class AtlasFrameTileInformation {
     tileId_[index] = value;
   }
   void setAuxiliaryVideoTileRowWidthMinus1( uint32_t value ) { auxiliaryVideoTileRowWidthMinus1_ = value; }
-  void setAuxiliaryVideoTileRowHeight( size_t index, uint32_t value ) { auxiliaryVideoTileRowHeight_[index] = value; }
+  void setAuxiliaryVideoTileRowHeight( size_t index, uint32_t value ) {
+    if ( index == ( auxiliaryVideoTileRowHeight_.size() ) )
+      auxiliaryVideoTileRowHeight_.resize( auxiliaryVideoTileRowHeight_.size() + 1 );
+    else if ( index > auxiliaryVideoTileRowHeight_.size() )
+      assert( 0 );
+    auxiliaryVideoTileRowHeight_[index] = value;
+  }
+  std::vector<size_t>& getColWidth() { return colWidth_; }
+  std::vector<size_t>& getRowHeight() { return rowHeight_; }
+
+  uint32_t getPartitionPosX( size_t index ) { return partitionPosX_[index]; }
+  uint32_t getPartitionPosY( size_t index ) { return partitionPosY_[index]; }
+
+  void initializePartitionPosX( size_t frameWidth ) {
+    size_t numPartitionColumns, partitionWidth;
+    if ( uniformPartitionSpacingFlag_ ) {
+      partitionWidth      = ( partitionColumnWidthMinus1_[0] + 1 ) * 64;
+      numPartitionColumns = frameWidth / partitionWidth;
+      partitionPosX_.resize( numPartitionColumns );
+      partitionPosX_[0] = 0;
+      for ( size_t i = 1; i < numPartitionColumns - 1; i++ ) {
+        partitionPosX_[i] = partitionPosX_[i - 1] + partitionWidth;
+      }
+    } else {
+      numPartitionColumns = numPartitionColumnsMinus1_ + 1;
+      partitionPosX_.resize( numPartitionColumns );
+      partitionPosX_[0] = 0;
+      partitionWidth    = ( partitionColumnWidthMinus1_[0] + 1 ) * 64;
+      for ( size_t i = 1; i < numPartitionColumns - 1; i++ ) {
+        partitionPosX_[i] = partitionPosX_[i - 1] + partitionWidth;
+        partitionWidth    = ( partitionColumnWidthMinus1_[i] + 1 ) * 64;
+      }
+    }
+    if ( numPartitionColumns > 1 )
+      partitionPosX_[numPartitionColumns - 1] = partitionPosX_[numPartitionColumns - 2] + partitionWidth;
+  }
+
+  void initializePartitionPosY( size_t frameHeight ) {
+    size_t numPartitionRows, partitionHeight;
+    if ( uniformPartitionSpacingFlag_ ) {
+      partitionHeight  = ( partitionRowHeightMinus1_[0] + 1 ) * 64;
+      numPartitionRows = frameHeight / partitionHeight;
+      partitionPosY_.resize( numPartitionRows );
+      partitionPosY_[0] = 0;
+      for ( size_t i = 1; i < numPartitionRows - 1; i++ ) {
+        partitionPosY_[i] = partitionPosY_[i - 1] + partitionHeight;
+      }
+    } else {
+      numPartitionRows = numPartitionRowsMinus1_ + 1;
+      partitionPosY_.resize( numPartitionRows );
+      partitionPosY_[0] = 0;
+      partitionHeight   = ( partitionRowHeightMinus1_[0] + 1 ) * 64;
+      for ( size_t i = 1; i < numPartitionRows - 1; i++ ) {
+        partitionPosY_[i] = partitionPosY_[i - 1] + partitionHeight;
+        partitionHeight   = ( partitionRowHeightMinus1_[i] + 1 ) * 64;
+      }
+    }
+    if ( numPartitionRows > 1 )
+      partitionPosY_[numPartitionRows - 1] = partitionPosY_[numPartitionRows - 2] + partitionHeight;
+  }
+
+  void initializeTileOffsetAndSize() {
+    tileWidth_.resize( numTilesInAtlasFrameMinus1_ + 1 );
+    tileHeight_.resize( numTilesInAtlasFrameMinus1_ + 1 );
+    tileOffsetX_.resize( numTilesInAtlasFrameMinus1_ + 1 );
+    tileOffsetY_.resize( numTilesInAtlasFrameMinus1_ + 1 );
+
+    for ( size_t i = 0; i < numTilesInAtlasFrameMinus1_ + 1; i++ ) {
+      size_t topLeftColumn     = topLeftPartitionIdx_[i] % ( numPartitionColumnsMinus1_ + 1 );
+      size_t topLeftRow        = topLeftPartitionIdx_[i] / ( numPartitionColumnsMinus1_ + 1 );
+      size_t bottomRightColumn = topLeftColumn + bottomRightPartitionColumnOffset_[i];
+      size_t bottomRightRow    = topLeftRow + bottomRightPartitionRowOffset_[i];
+      tileOffsetX_[i]          = partitionPosX_[topLeftColumn];
+      tileOffsetY_[i]          = partitionPosY_[topLeftColumn];
+      tileWidth_[i]            = 0;
+      tileHeight_[i]           = 0;
+      for ( size_t j = topLeftColumn; j <= bottomRightColumn; j++ ) {
+        tileWidth_[i] += ( ( partitionColumnWidthMinus1_[j] + 1 ) * 64 );
+      }
+      for ( size_t j = topLeftRow; j <= bottomRightRow; j++ ) {
+        tileHeight_[i] += ( ( partitionRowHeightMinus1_[j] + 1 ) * 64 );
+      }
+    }
+  }
 
  private:
   bool                  singleTileInAtlasFrameFlag_;
@@ -153,8 +291,10 @@ class AtlasFrameTileInformation {
   uint32_t              numTilesInAtlasFrameMinus1_;
   bool                  signalledTileIdFlag_;
   uint32_t              signalledTileIdLengthMinus1_;
+#if !TILEPARTITION_BUGFIX
   uint32_t              partitionColumnsWidthMinus1_;
   uint32_t              partitionRowsHeightMinus1_;
+#endif
   std::vector<uint32_t> partitionColumnWidthMinus1_;
   std::vector<uint32_t> partitionRowHeightMinus1_;
   std::vector<uint32_t> topLeftPartitionIdx_;
@@ -163,6 +303,14 @@ class AtlasFrameTileInformation {
   std::vector<uint32_t> tileId_;
   uint32_t              auxiliaryVideoTileRowWidthMinus1_;
   std::vector<uint32_t> auxiliaryVideoTileRowHeight_;
+  std::vector<size_t>   colWidth_;
+  std::vector<size_t>   rowHeight_;
+  std::vector<uint32_t> partitionPosX_;
+  std::vector<uint32_t> partitionPosY_;
+  std::vector<uint32_t> tileWidth_;
+  std::vector<uint32_t> tileHeight_;
+  std::vector<uint32_t> tileOffsetX_;
+  std::vector<uint32_t> tileOffsetY_;
 };
 
 };  // namespace pcc

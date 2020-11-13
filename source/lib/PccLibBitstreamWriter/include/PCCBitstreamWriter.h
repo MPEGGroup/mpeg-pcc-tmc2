@@ -429,8 +429,18 @@ class PCCBitstreamWriter {
   // F.2.15.2	Viewport position SEI messages syntax
   static void viewportPosition( PCCBitstream& bitstream, SEI& seiAbstract );
 
-  // F.2.16 Decoded Atlas Information Hash SEI message syntax
+  // F.2.16   Decoded Atlas Information Hash SEI messages syntax
   static void decodedAtlasInformationHash( PCCBitstream& bitstream, SEI& seiAbstract );
+  // F.2.16.1 Decoded high-level hash unit syntax
+  static void decodedHighLevelHash( PCCBitstream& bitstream, SEI& seiAbstract );
+  // F.2.16.2 Decoded atlas hash unit syntax
+  static void decodedAtlasHash( PCCBitstream& bitstream, SEI& seiAbstract );
+  // F.2.16.3 Decoded atlas b2p hash unit syntax
+  static void decodedAtlasB2pHash( PCCBitstream& bitstream, SEI& seiAbstract );
+  // F.2.16.4 Decoded atlas tiles hash unit syntax
+  static void decodedAtlasTilesHash( PCCBitstream& bitstream, SEI& seiAbstract, size_t id );
+  // F.2.16.5 Decoded atlas tile b2p hash unit syntax
+  static void decodedAtlasTilesB2pHash( PCCBitstream& bitstream, SEI& seiAbstract, size_t id );
 
   // F.2.17 Time code SEI message syntax
   void timeCode( PCCBitstream& bitstream, SEI& seiAbstract );

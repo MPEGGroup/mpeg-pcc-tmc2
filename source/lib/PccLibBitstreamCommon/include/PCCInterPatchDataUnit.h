@@ -53,12 +53,14 @@ class InterPatchDataUnit {
       pos3dOffsetD_( 0 ),
       pos3dRangeD_( 0 ),
       patchIndex_( 0 ),
-      frameIndex_( 0 ){};
+      frameIndex_( 0 ),
+      tileOrder_( 0 ){};
   ~InterPatchDataUnit(){};
   InterPatchDataUnit& operator=( const InterPatchDataUnit& ) = default;
 
   size_t   getPatchIndex() { return patchIndex_; }
   size_t   getFrameIndex() { return frameIndex_; }
+  size_t   getTileOrder() { return tileOrder_; }
   int64_t  getRefIndex() { return refIndex_; }
   int64_t  getRefPatchIndex() { return refPatchIndex_; }
   int64_t  get2dPosX() { return pos2dX_; }
@@ -73,6 +75,7 @@ class InterPatchDataUnit {
 
   void setPatchIndex( size_t value ) { patchIndex_ = value; }
   void setFrameIndex( size_t value ) { frameIndex_ = value; }
+  void setTileOrder( size_t value ) { tileOrder_ = value; }
   void setRefIndex( int64_t value ) { refIndex_ = value; }
   void setRefPatchIndex( int64_t value ) { refPatchIndex_ = value; }
   void set2dPosX( int64_t value ) { pos2dX_ = value; }
@@ -98,6 +101,7 @@ class InterPatchDataUnit {
   int64_t pos3dRangeD_;
   size_t  patchIndex_;
   size_t  frameIndex_;
+  size_t  tileOrder_;
   PLRData pointLocalReconstructionData_;
 };
 

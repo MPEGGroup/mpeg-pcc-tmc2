@@ -37,7 +37,7 @@
 using namespace pcc;
 
 PCCFrameContext::PCCFrameContext() :
-    index_( 0 ),
+    frameIndex_( 0 ),
     numMatchedPatches_( 0 ),
     width_( 0 ),
     height_( 0 ),
@@ -50,11 +50,14 @@ PCCFrameContext::PCCFrameContext() :
     pointLocalReconstructionNumber_( 0 ),
     useRawPointsSeparateVideo_( false ),
     rawPatchEnabledFlag_( false ),
-    geometry2dNorminalBitdepth_( 8 ) {
+    geometry2dBitdepth_( 8 ) {
   log2PatchQuantizerSizeX_ = 4;
   log2PatchQuantizerSizeY_ = 4;
-  bestRefListIndexInAsps_  = 0;
+  bestRefListIndexInAsps_ = 0;
+  leftTopXInFrame_ = 0;
+  leftTopYInFrame_ = 0;
   refAFOCList_.resize( 0 );
+  tileIndex_ = 0;
 }
 
 PCCFrameContext::~PCCFrameContext() {
@@ -89,7 +92,7 @@ void PCCFrameContext::setRefAfocList( PCCContext& context, AtlasTileHeader& ath,
     int deltaAfocSt = 0;
     if ( refList.getStRefAtalsFrameFlag( idx ) )
       deltaAfocSt = ( 2 * refList.getStrafEntrySignFlag( idx ) - 1 ) * refList.getAbsDeltaAfocSt( idx );  // Eq.26
-    int refPOC = idx == 0 ? ( int( index_ ) - deltaAfocSt ) : ( refAFOCList_[idx - 1] - deltaAfocSt );
+    int refPOC = idx == 0 ? ( int( frameIndex_ ) - deltaAfocSt ) : ( refAFOCList_[idx - 1] - deltaAfocSt );
     if ( refPOC >= 0 ) refAFOCList_.push_back( refPOC );
   }
 }
@@ -99,38 +102,37 @@ void PCCFrameContext::setRefAfocList( PCCContext& context, size_t refListIdx ) {
   size_t maxRefNum = context.getSizeOfRefAtlasFrameList( refListIdx );
   refAFOCList_.clear();
   for ( size_t j = 0; j < maxRefNum; j++ ) {
-    refPOC = int( index_ ) - int( context.getRefAtlasFrame( refListIdx, j ) );
+    refPOC = int( frameIndex_ ) - int( context.getRefAtlasFrame( refListIdx, j ) );
     if ( refPOC >= 0 ) { refAFOCList_.push_back( refPOC ); }
   }
-  // if ( refAFOCList_.empty() ) { refAFOCList_.push_back( 255 ); } //jkei: size
-  // is used for signalling
+  // if ( refAFOCList_.empty() ) { refAFOCList_.push_back( 255 ); } //jkei: size is used for signalling
 }
+
 void PCCFrameContext::constructAtghRefListStruct( PCCContext& context, AtlasTileHeader& ath ) {
   size_t afpsId = ath.getAtlasFrameParameterSetId();
   auto&  afps   = context.getAtlasFrameParameterSet( afpsId );
   ath.setRefAtlasFrameListSpsFlag( true );                     // using ASPS refList
   ath.setRefAtlasFrameListIdx( getBestRefListIndexInAsps() );  // ath.atgh_ref_atlas_frame_list_idx
 
+  // jkei: do we need this?
+  // ath.setRefListStruct( asps.getRefListStruct( ath.getRefAtlasFrameListIdx() ) );  // copied to ath's refList,
+  // not signalled
   if ( !ath.getRefAtlasFrameListSpsFlag() ) {
-    for ( size_t list = 0; list < getRefAfocListSize(); list++ ) {
-      RefListStruct refList;
-      refList.setNumRefEntries( getRefAfocListSize() );
-      refList.allocate();
-      for ( size_t i = 0; i < refList.getNumRefEntries(); i++ ) {
-        int afocDiff = -1;
-        if ( i == 0 )
-          afocDiff = index_ - getRefAfoc( i );  // index_+1,index_+2,index_+3,index_+4
-        else
-          afocDiff = getRefAfoc( i - 1 ) - getRefAfoc( i );  // RefAtlasFrmAfocList[
-                                                             // j ] = afocBase −
-                                                             // DeltaAfocSt[ RlsIdx
-                                                             // ][ j ]
-        refList.setAbsDeltaAfocSt( i, std::abs( afocDiff ) );
-        refList.setStrafEntrySignFlag( i, afocDiff < 0 ? false : !false );
-        refList.setStRefAtalsFrameFlag( i, true );
-      }
-      ath.setRefListStruct( refList );
+    RefListStruct refList;
+    refList.setNumRefEntries( getRefAfocListSize() );
+    refList.allocate();
+    for ( size_t i = 0; i < refList.getNumRefEntries(); i++ ) {
+      int afocDiff = -1;
+      if ( i == 0 )
+        afocDiff = frameIndex_ - getRefAfoc( i );  // index_+1,index_+2,index_+3,index_+4
+      else
+        afocDiff =
+            getRefAfoc( i - 1 ) - getRefAfoc( i );  // RefAtlasFrmAfocList[ j ] = afocBase − DeltaAfocSt[ RlsIdx ][ j ]
+      refList.setAbsDeltaAfocSt( i, std::abs( afocDiff ) );
+      refList.setStrafEntrySignFlag( i, afocDiff < 0 ? false : !false );
+      refList.setStRefAtalsFrameFlag( i, true );
     }
+    ath.setRefListStruct( refList );
   }
   // jkei: FDIS 7.3.6.11
   if ( numRefIdxActive_ > 0 ) {
@@ -138,7 +140,7 @@ void PCCFrameContext::constructAtghRefListStruct( PCCContext& context, AtlasTile
     if ( getRefAfocListSize() >= ( afps.getNumRefIdxDefaultActiveMinus1() ) )
       bNumRefIdxActiveOverrideFlag = ( numRefIdxActive_ != afps.getNumRefIdxDefaultActiveMinus1() + 1 );
     else
-      bNumRefIdxActiveOverrideFlag = numRefIdxActive_ != context.getMaxNumRefAtlasFrame();
+      bNumRefIdxActiveOverrideFlag = numRefIdxActive_ != context.getMaxNumRefAtlasFrame( getBestRefListIndexInAsps() );
     ath.setNumRefIdxActiveOverrideFlag( bNumRefIdxActiveOverrideFlag );
     if ( ath.getNumRefIdxActiveOverrideFlag() ) ath.setNumRefIdxActiveMinus1( numRefIdxActive_ - 1 );
   }
@@ -148,7 +150,7 @@ void PCCFrameContext::allocOneLayerData() {
   for ( auto& patch : patches_ ) { patch.allocOneLayerData(); }
 }
 void PCCFrameContext::printBlockToPatch( const size_t resolution ) {
-  printVector( blockToPatch_, width_ / resolution, height_ / resolution, stringFormat( "blockToPatch[%d]", index_ ),
+  printVector( blockToPatch_, width_ / resolution, height_ / resolution, stringFormat( "blockToPatch[%d]", frameIndex_ ),
                true );
 }
 void PCCFrameContext::printPatch() {

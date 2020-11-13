@@ -44,23 +44,24 @@
 
 //! \ingroup TAppCommon
 //! \{
-static std::istream& operator>>( std::istream& in, std::vector<int>& vector ) {
-  std::string str;
-  in >> str;
-  str.erase( std::remove( str.begin(), str.end(), ' ' ), str.end() );
-  size_t pos = 0;
-  while ( ( pos = str.find( "," ) ) != std::string::npos ) {
-    vector.push_back( std::stoi( str.substr( 0, pos ) ) );
-    str.erase( 0, pos + 1 );
-  }
-  vector.push_back( std::stoi( str.substr( 0, pos ) ) );
-  return in;
-}
-
+  
 namespace df
 {
   namespace program_options_lite
   {
+    static std::istream& operator>>( std::istream& in, std::vector<int>& vector ) {
+      std::string str;
+      in >> str;
+      str.erase( std::remove( str.begin(), str.end(), ' ' ), str.end() );
+      size_t pos = 0;
+      while ( ( pos = str.find( "," ) ) != std::string::npos ) {
+        vector.push_back( std::stoi( str.substr( 0, pos ) ) );
+        str.erase( 0, pos + 1 );
+      }
+      vector.push_back( std::stoi( str.substr( 0, pos ) ) );
+      return in;
+    }
+
     struct Options;
 
     struct ParseFailure : public std::exception

@@ -34,6 +34,7 @@
 #include "PCCFrameContext.h"
 #include "PCCVideo.h"
 #include "PCCContext.h"
+#include "MD5.h"
 
 using namespace pcc;
 
@@ -46,7 +47,7 @@ void PCCContext::resizeAtlas( size_t size ) {
   for ( int atlIdx = 0; atlIdx < size; atlIdx++ ) { atlasContexts_[atlIdx].setAtlasIndex( atlIdx ); }
 }
 
-PCCAtlasContext::PCCAtlasContext() = default;
+PCCAtlasContext::PCCAtlasContext() { log2MaxAtlasFrameOrderCntLsb_ = 4; }
 
 PCCAtlasContext::~PCCAtlasContext() {
   frameContexts_.clear();
@@ -57,15 +58,56 @@ PCCAtlasContext::~PCCAtlasContext() {
 
 void PCCAtlasContext::resize( size_t size, size_t frameStart ) {
   frameContexts_.resize( size );
-  for ( size_t i = frameStart; i < size + frameStart; i++ ) { frameContexts_[i].setIndex( i ); }
+  for ( size_t i = frameStart; i < size + frameStart; i++ ) { frameContexts_[i].setAtlasFrameIndex( i ); }
+}
+
+size_t PCCAtlasContext::calculateAFOCLsb( size_t frameOrder ) {
+  return frameOrder % ( 1 << log2MaxAtlasFrameOrderCntLsb_ );
+}
+
+size_t PCCContext::calculateAFOCval( std::vector<AtlasTileLayerRbsp>& atglList, size_t atglOrder ) {
+  // 8.2.3.1 Atals frame order count derivation process
+  if ( atglOrder == 0 ) {
+    atglList[atglOrder].setAtlasFrmOrderCntMsb( 0 );
+    atglList[atglOrder].setAtlasFrmOrderCntVal( atglList[atglOrder].getHeader().getAtlasFrmOrderCntLsb() );
+    return atglList[atglOrder].getHeader().getAtlasFrmOrderCntLsb();
+  }
+
+  size_t prevAtlasFrmOrderCntMsb = atglList[atglOrder - 1].getAtlasFrmOrderCntMsb();
+  size_t atlasFrmOrderCntMsb     = 0;
+  auto&  atgh                    = atglList[atglOrder].getHeader();
+  auto&  afps                    = getAtlasFrameParameterSet( atgh.getAtlasFrameParameterSetId() );
+  auto&  asps                    = getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
+
+  size_t maxAtlasFrmOrderCntLsb  = 1 << ( asps.getLog2MaxAtlasFrameOrderCntLsbMinus4() + 1 );
+  size_t afocLsb                 = atgh.getAtlasFrmOrderCntLsb();
+  size_t prevAtlasFrmOrderCntLsb = atglList[atglOrder - 1].getHeader().getAtlasFrmOrderCntLsb();
+  if ( ( afocLsb < prevAtlasFrmOrderCntLsb ) &&
+       ( ( prevAtlasFrmOrderCntLsb - afocLsb ) >= ( maxAtlasFrmOrderCntLsb / 2 ) ) )
+    atlasFrmOrderCntMsb = prevAtlasFrmOrderCntMsb + maxAtlasFrmOrderCntLsb;
+  else if ( ( afocLsb > prevAtlasFrmOrderCntLsb ) &&
+            ( ( afocLsb - prevAtlasFrmOrderCntLsb ) > ( maxAtlasFrmOrderCntLsb / 2 ) ) )
+    atlasFrmOrderCntMsb = prevAtlasFrmOrderCntMsb - maxAtlasFrmOrderCntLsb;
+  else
+    atlasFrmOrderCntMsb = prevAtlasFrmOrderCntMsb;
+
+  atglList[atglOrder].setAtlasFrmOrderCntMsb( atlasFrmOrderCntMsb );
+  atglList[atglOrder].setAtlasFrmOrderCntVal( atlasFrmOrderCntMsb + afocLsb );
+
+  return atlasFrmOrderCntMsb + afocLsb;
 }
 
 void PCCAtlasContext::allocOneLayerData() {
-  for ( auto& frameContext : frameContexts_ ) { frameContext.allocOneLayerData(); }
+  for ( auto& frameContext : frameContexts_ ) {
+    for ( size_t ti = 0; ti < frameContext.getNumTilesInAtlasFrame(); ti++ ) frameContext[ti].allocOneLayerData();
+  }
 }
 
 void PCCAtlasContext::printBlockToPatch( const size_t occupancyResolution ) {
-  for ( auto& frameContext : frameContexts_ ) { frameContext.printBlockToPatch( occupancyResolution ); }
+  for ( auto& frameContext : frameContexts_ ) {
+    for ( size_t ti = 0; ti < frameContext.getNumTilesInAtlasFrame(); ti++ )
+      frameContext[ti].printBlockToPatch( occupancyResolution );
+  }
 }
 
 void PCCAtlasContext::allocateVideoFrames( PCCHighLevelSyntax& syntax, size_t numFrames ) {
@@ -183,4 +225,38 @@ void PCCAtlasContext::clearVideoFrames() {
     attrAuxFrame.clear();
   }
   attrAuxFrames_.clear();
+}
+
+std::vector<uint8_t> PCCContext::computeMD5( uint8_t* byteString, size_t len) {
+  MD5                  md5Hash;
+  std::vector<uint8_t> tmp_digest;
+  tmp_digest.resize( 16 );
+  md5Hash.update( byteString, len );
+  md5Hash.finalize( tmp_digest.data() );
+  return tmp_digest;
+}
+
+uint16_t PCCContext::computeCRC( uint8_t* byteString, size_t len) {
+  uint8_t      crcMsb, bitVal, dataByte;
+  unsigned int crc    = 0xFFFF;
+  byteString[len]     = 0;
+  byteString[len + 1] = 0;
+
+  for ( unsigned int bitIdx = 0; bitIdx < ( len + 2 ) * 8; bitIdx++ ) {
+    dataByte = byteString[bitIdx >> 3];
+    crcMsb   = ( crc >> 15 ) & 1;
+    bitVal   = ( dataByte >> ( 7 - bitIdx ) ) & 1;
+    crc      = ( ( ( crc << 1 ) + bitVal ) & 0xFFFF ) ^ ( crcMsb * 0x1021 );
+  }
+  return crc;
+};
+
+uint32_t PCCContext::computeCheckSum( uint8_t* byteString, size_t len) {
+  uint32_t checkSum = 0;
+  uint8_t  xor_mask;
+  for ( uint32_t i = 0; i < len; i++ ) {
+    xor_mask = ( i & 0xFF ) ^ ( i >> 8 );
+    checkSum = ( checkSum + ( ( byteString[i] & 0xFF ) ^ xor_mask ) ) & 0xFFFFFFFF;
+  }
+  return checkSum;
 }

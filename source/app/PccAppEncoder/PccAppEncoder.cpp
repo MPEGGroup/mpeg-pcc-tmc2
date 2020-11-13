@@ -293,6 +293,12 @@ bool parseParameters( int                   argc,
       encoderParams.occupancyMapRefinement_, 
       "Use occupancy map refinement" )
 
+    // hash
+    ( "decodedAtlasInformationHash",
+      encoderParams.flagDecodedAtlasInformationHash_,
+      encoderParams.flagDecodedAtlasInformationHash_,
+      "Enable decoded atlas information hash\n" )
+
     // smoothing
     ( "postprocessSmoothingFilterType",
       encoderParams.postprocessSmoothingFilter_,
@@ -521,12 +527,12 @@ bool parseParameters( int                   argc,
       encoderParams.textureRawSeparateVideoWidth_,
       "Width of the MP's texture in separate video" )
     ( "geometryMPConfig",
-      encoderParams.geometryMPConfig_,
-      encoderParams.geometryMPConfig_,
+      encoderParams.geometryAuxVideoConfig_,
+      encoderParams.geometryAuxVideoConfig_,
       "HM configuration file for raw points geometry compression" )
     ( "textureMPConfig",
-      encoderParams.textureMPConfig_,
-      encoderParams.textureMPConfig_,
+      encoderParams.textureAuxVideoConfig_,
+      encoderParams.textureAuxVideoConfig_,
       "HM configuration file for raw points texture compression" )
 
     // etc
@@ -742,7 +748,30 @@ bool parseParameters( int                   argc,
       encoderParams.partialAdditionalProjectionPlane_,
       encoderParams.partialAdditionalProjectionPlane_,
       "The value determines the partial point cloud. It's available with only additionalProjectionPlaneMode(5)" )
-
+  ("numMaxTilePerFrame",
+   encoderParams.numMaxTilePerFrame_,
+   encoderParams.numMaxTilePerFrame_,"number of maximum tiles in a frame")
+  ("tilePartitionWidth",
+   encoderParams.tilePartitionWidth_,
+   encoderParams.tilePartitionWidth_,"uniform partition width in the unit of 64 pixels")
+  ("tilePartitionHeight",
+   encoderParams.tilePartitionHeight_,
+   encoderParams.tilePartitionHeight_,"uniform partition height in the unit of 64 pixels")
+#if NONUNIFORM_PARTSIZE
+  ( "multiPartitionWidth",
+   encoderParams.multiplePartitionWidth_,
+   encoderParams.multiplePartitionWidth_,
+   //multiPartitionWidth: 0,0,0,0
+   " " )
+  ( "multiPartitionHeight",
+   encoderParams.multiplePartitionHeight_,
+   encoderParams.multiplePartitionHeight_,
+   " " )
+#endif
+  ( "tileSegmentationType",
+      encoderParams.tileSegmentationType_,
+      encoderParams.tileSegmentationType_,
+      "tile segmentaton method : 0.no tile partition 1. 3D ROI based 2.2D Patch size based " )
     // Point cloud partitions (ROIs) and tiles (m47804 CE2.19)
     ( "enablePointCloudPartitioning",
       encoderParams.enablePointCloudPartitioning_,
@@ -867,11 +896,19 @@ bool parseParameters( int                   argc,
     encoderParams.levelOfDetailY_ = 1;
     std::cerr << "scaling is not allowed in lossless case\n";
   }
+
   if ( encoderParams.enablePointCloudPartitioning_ && encoderParams.patchExpansion_ ) {
     std::cerr << "Point cloud partitioning does not currently support patch "
                  "expansion. \n";
   }
-  if ( encoderParams.enablePointCloudPartitioning_ && ( encoderParams.globalPatchAllocation_ != 0 ) ) {
+  if ( encoderParams.tileSegmentationType_ == 1 ) {
+    if ( encoderParams.enablePointCloudPartitioning_ != 1 ) {
+      encoderParams.enablePointCloudPartitioning_ = 1;
+      std::cerr << "enablePointCloudPartitioning should be 1 when tileSegmentationType is 1.\n";
+    }
+  }
+  if ( encoderParams.tileSegmentationType_ != 1 && encoderParams.enablePointCloudPartitioning_ &&
+       ( encoderParams.globalPatchAllocation_ != 0 ) ) {
     std::cerr << "Point cloud partitioning does not currently support global "
                  "patch allocation. \n";
   }
@@ -939,12 +976,8 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
       endFrameNumber  = startFrameNumber + sources.getFrameCount();
       endFrameNumber0 = endFrameNumber;
     }
-    // printf("Frame cound = %zu \n",sources.getFrameCount());
-    // for( auto& source : sources ){
-    //   printf(" - %9zu points \n", source.getPointCount());
-    // }
 
-    std::cout << "Compressing group of frames " << contextIndex << ": " << startFrameNumber << " -> " << endFrameNumber
+    std::cout << "Compressing "<< contextIndex << " frames " << startFrameNumber << " -> " << endFrameNumber
               << "..." << std::endl;
     int                ret = encoder.encode( sources, context, reconstructs );
     PCCBitstreamWriter bitstreamWriter;

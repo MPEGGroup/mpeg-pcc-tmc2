@@ -54,8 +54,7 @@ class AtlasTileDataUnit {
     patchInformationData_.push_back( pid );
     return patchInformationData_.back();
   }
-
-  size_t                getFrameIndex() { return frameIndex_; }
+  size_t                getTileOrder() { return tileOrder_; }
   uint8_t               getPatchMode( size_t index ) { return patchInformationData_[index].getPatchMode(); }
   size_t                getPatchCount() { return patchInformationData_.size(); }
   PatchInformationData& getPatchInformationData( size_t index ) { return patchInformationData_[index]; }
@@ -67,14 +66,13 @@ class AtlasTileDataUnit {
     }
     return matchedPatchCount;
   }
-  void setFrameIndex( size_t value ) { frameIndex_ = value; }
-  void setPatchCount( size_t value ) { patchCount_ = value; }
+  void setTileOrder( size_t value ) { tileOrder_ = value; }
+  // void setPatchCount( size_t value ) { patchCount_ = value; }
   void setPatchInformationData( size_t index, PatchInformationData& value ) { patchInformationData_[index] = value; }
 
  private:
-  size_t                            frameIndex_;
-  size_t                            patchCount_;
-  size_t                            patchMode_;
+  size_t                            tileOrder_;
+  // size_t                            patchCount_;
   std::vector<PatchInformationData> patchInformationData_;
 };
 

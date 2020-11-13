@@ -1065,11 +1065,12 @@ class SEIViewportPosition : public SEI {
 
 class SEIDecodedAtlasInformationHash : public SEI {
  public:
-  SEIDecodedAtlasInformationHash() : cancelFlag_( false ) {
-    atlasMd5_.resize( 16 );
-    atlasB2pMd5_.resize( 16 );
+  SEIDecodedAtlasInformationHash() {
+    initialize();
   }
+    
   ~SEIDecodedAtlasInformationHash() {
+    highLevelMd5_.clear();
     atlasMd5_.clear();
     atlasB2pMd5_.clear();
     tileId_.clear();
@@ -1086,60 +1087,99 @@ class SEIDecodedAtlasInformationHash : public SEI {
 
   SeiPayloadType getPayloadType() { return DECODED_ATLAS_INFORMATION_HASH; }
 
+  void initialize() {  
+
+    cancelFlag_        = false;
+    persistenceFlag_ = false;
+    
+    hashType_          = 1;
+    
+    decodedHighLevelHashPresentFlag_ = true;
+    decodedAtlasHashPresentFlag_     = false;
+    decodedAtlasB2pHashPresentFlag_  = false;
+    decodedAtlasTilesHashPresentFlag_     = false;
+    decodedAtlasTilesB2pHashPresentFlag_  = false;
+
+    numTilesMinus1_                       = 0;
+    tileIdLenMinus1_ = 0;
+
+    highLevelCrc_      = 0;
+    highLevelChecksum_ = 0;
+    atlasCrc_ = 0;
+    atlasChecksum_ = 0;
+    atlasB2pCrc_ = 0;
+    atlasB2pChecksum_ = 0;
+    allocate();
+  }
+
   void allocate() {
-    tileId_.resize( numTilesMinus1_ );
-    atlasTilesCrc_.resize( numTilesMinus1_ );
-    atlasTilesChecksum_.resize( numTilesMinus1_ );
-    atlasTilesB2pCrc_.resize( numTilesMinus1_ );
-    atlasTilesB2pChecksum_.resize( numTilesMinus1_ );
-    atlasTilesMd5_.resize( numTilesMinus1_ );
-    atlasTilesB2pMd5_.resize( numTilesMinus1_ );
+    tileId_.resize( numTilesMinus1_  + 1);
+    highLevelMd5_.resize( 16 );
+    atlasMd5_.resize( 16 );
+    atlasB2pMd5_.resize( 16 );
+    atlasTilesMd5_.resize( numTilesMinus1_ + 1 );
+    atlasTilesCrc_.resize( numTilesMinus1_  + 1 );
+    atlasTilesChecksum_.resize( numTilesMinus1_  + 1 );
+    atlasTilesB2pMd5_.resize( numTilesMinus1_ + 1 );
+    atlasTilesB2pCrc_.resize( numTilesMinus1_ + 1 );
+    atlasTilesB2pChecksum_.resize( numTilesMinus1_  + 1 );
+
     for ( auto& element : atlasTilesMd5_ ) { element.resize( 16 ); }
     for ( auto& element : atlasTilesB2pMd5_ ) { element.resize( 16 ); }
   }
+
   bool     getCancelFlag() { return cancelFlag_; }
   bool     getPersistenceFlag() { return persistenceFlag_; }
   uint8_t  getHashType() { return hashType_; }
+  bool     getDecodedHighLevelHashPresentFlag() { return decodedHighLevelHashPresentFlag_; }
   bool     getDecodedAtlasHashPresentFlag() { return decodedAtlasHashPresentFlag_; }
   bool     getDecodedAtlasB2pHashPresentFlag() { return decodedAtlasB2pHashPresentFlag_; }
   bool     getDecodedAtlasTilesHashPresentFlag() { return decodedAtlasTilesHashPresentFlag_; }
   bool     getDecodedAtlasTilesB2pHashPresentFlag() { return decodedAtlasTilesB2pHashPresentFlag_; }
+
+  uint16_t getHighLevelCrc() { return highLevelCrc_; }
   uint16_t getAtlasCrc() { return atlasCrc_; }
-  uint32_t getAtlasChecksum() { return atlasChecksum_; }
+  uint32_t getHighLevelCheckSum() { return highLevelChecksum_; }
+  uint32_t getAtlasCheckSum() { return atlasChecksum_; }
   uint16_t getAtlasB2pCrc() { return atlasB2pCrc_; }
-  uint32_t getAtlasB2pChecksum() { return atlasB2pChecksum_; }
+  uint32_t getAtlasB2pCheckSum() { return atlasB2pChecksum_; }
   uint32_t getNumTilesMinus1() { return numTilesMinus1_; }
   uint32_t getTileIdLenMinus1() { return tileIdLenMinus1_; }
   uint32_t getTileId( size_t i ) { return tileId_[i]; }
+  uint8_t  getHighLevelMd5( size_t i ) { return highLevelMd5_[i]; }
   uint8_t  getAtlasMd5( size_t i ) { return atlasMd5_[i]; }
   uint8_t  getAtlasB2pMd5( size_t i ) { return atlasB2pMd5_[i]; }
   uint32_t getAtlasTilesCrc( size_t i ) { return atlasTilesCrc_[i]; }
-  uint32_t getAtlasTilesChecksum( size_t i ) { return atlasTilesChecksum_[i]; }
+  uint32_t getAtlasTilesCheckSum( size_t i ) { return atlasTilesChecksum_[i]; }
   uint32_t getAtlasTilesB2pCrc( size_t i ) { return atlasTilesB2pCrc_[i]; }
-  uint32_t getAtlasTilesB2pChecksum( size_t i ) { return atlasTilesB2pChecksum_[i]; }
+  uint32_t getAtlasTilesB2pCheckSum( size_t i ) { return atlasTilesB2pChecksum_[i]; }
   uint32_t getAtlasTilesMd5( size_t i, size_t j ) { return atlasTilesMd5_[i][j]; }
   uint32_t getAtlasTilesB2pMd5( size_t i, size_t j ) { return atlasTilesB2pMd5_[i][j]; }
 
   void setCancelFlag( bool value ) { cancelFlag_ = value; }
   void setPersistenceFlag( bool value ) { persistenceFlag_ = value; }
   void setHashType( uint8_t value ) { hashType_ = value; }
+  void setDecodedHighLevelHashPresentFlag( bool value ) { decodedHighLevelHashPresentFlag_ = value; }
   void setDecodedAtlasHashPresentFlag( bool value ) { decodedAtlasHashPresentFlag_ = value; }
   void setDecodedAtlasB2pHashPresentFlag( bool value ) { decodedAtlasB2pHashPresentFlag_ = value; }
   void setDecodedAtlasTilesHashPresentFlag( bool value ) { decodedAtlasTilesHashPresentFlag_ = value; }
   void setDecodedAtlasTilesB2pHashPresentFlag( bool value ) { decodedAtlasTilesB2pHashPresentFlag_ = value; }
+  void setHighLevelCrc( uint16_t value ) { highLevelCrc_ = value; }
   void setAtlasCrc( uint16_t value ) { atlasCrc_ = value; }
-  void setAtlasChecksum( uint32_t value ) { atlasChecksum_ = value; }
+  void setHighLevelCheckSum( uint32_t value ) { highLevelChecksum_ = value; }
+  void setAtlasCheckSum( uint32_t value ) { atlasChecksum_ = value; }
   void setAtlasB2pCrc( uint16_t value ) { atlasB2pCrc_ = value; }
-  void setAtlasB2pChecksum( uint32_t value ) { atlasB2pChecksum_ = value; }
+  void setAtlasB2pCheckSum( uint32_t value ) { atlasB2pChecksum_ = value; }
   void setNumTilesMinus1( uint32_t value ) { numTilesMinus1_ = value; }
   void setTileIdLenMinus1( uint32_t value ) { tileIdLenMinus1_ = value; }
   void setTileId( size_t i, uint32_t value ) { tileId_[i] = value; }
+  void setHighLevelMd5( size_t i, uint8_t value ) { highLevelMd5_[i] = value; }
   void setAtlasMd5( size_t i, uint8_t value ) { atlasMd5_[i] = value; }
   void setAtlasB2pMd5( size_t i, uint8_t value ) { atlasB2pMd5_[i] = value; }
   void setAtlasTilesCrc( size_t i, uint32_t value ) { atlasTilesCrc_[i] = value; }
-  void setAtlasTilesChecksum( size_t i, uint32_t value ) { atlasTilesChecksum_[i] = value; }
+  void setAtlasTilesCheckSum( size_t i, uint32_t value ) { atlasTilesChecksum_[i] = value; }
   void setAtlasTilesB2pCrc( size_t i, uint32_t value ) { atlasTilesB2pCrc_[i] = value; }
-  void setAtlasTilesB2pChecksum( size_t i, uint32_t value ) { atlasTilesB2pChecksum_[i] = value; }
+  void setAtlasTilesB2pCheckSum( size_t i, uint32_t value ) { atlasTilesB2pChecksum_[i] = value; }
   void setAtlasTilesMd5( size_t i, size_t j, uint32_t value ) { atlasTilesMd5_[i][j] = value; }
   void setAtlasTilesB2pMd5( size_t i, size_t j, uint32_t value ) { atlasTilesB2pMd5_[i][j] = value; }
 
@@ -1147,26 +1187,33 @@ class SEIDecodedAtlasInformationHash : public SEI {
   bool                               cancelFlag_;
   bool                               persistenceFlag_;
   uint8_t                            hashType_;
+  bool                               decodedHighLevelHashPresentFlag_;
   bool                               decodedAtlasHashPresentFlag_;
   bool                               decodedAtlasB2pHashPresentFlag_;
   bool                               decodedAtlasTilesHashPresentFlag_;
   bool                               decodedAtlasTilesB2pHashPresentFlag_;
+
+  std::vector<uint8_t>               highLevelMd5_;
+  uint16_t                           highLevelCrc_;
+  uint32_t                           highLevelChecksum_;
+  std::vector<uint8_t>               atlasMd5_;
   uint16_t                           atlasCrc_;
   uint32_t                           atlasChecksum_;
+  std::vector<uint8_t>               atlasB2pMd5_;
   uint16_t                           atlasB2pCrc_;
   uint32_t                           atlasB2pChecksum_;
   uint32_t                           numTilesMinus1_;
   uint32_t                           tileIdLenMinus1_;
-  std::vector<uint8_t>               atlasMd5_;
-  std::vector<uint8_t>               atlasB2pMd5_;
+
   std::vector<uint32_t>              tileId_;
-  std::vector<uint32_t>              atlasTilesCrc_;
+  std::vector<uint16_t>              atlasTilesCrc_;
   std::vector<uint32_t>              atlasTilesChecksum_;
-  std::vector<uint32_t>              atlasTilesB2pCrc_;
+  std::vector<uint16_t>              atlasTilesB2pCrc_;
   std::vector<uint32_t>              atlasTilesB2pChecksum_;
   std::vector<std::vector<uint32_t>> atlasTilesMd5_;
   std::vector<std::vector<uint32_t>> atlasTilesB2pMd5_;
 };
+
 
 class SEIOccupancySynthesis : public SEI {
  public:

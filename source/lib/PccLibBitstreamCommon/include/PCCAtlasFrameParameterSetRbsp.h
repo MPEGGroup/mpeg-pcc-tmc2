@@ -87,6 +87,7 @@ class AtlasFrameParameterSetRbsp {
   void setExtensionFlag( bool value ) { extensionFlag_ = value; }
   void setExtension8Bits( uint8_t value ) { extension8Bits_ = value; }
   void setLodModeEnableFlag( bool value ) { lodModeEnableFlag_ = value; }
+  void setAtlasFrameTileInformation( AtlasFrameTileInformation& value ) { atlasFrameTileInformation_ = value; }
 
  private:
   uint8_t                   atlasFrameParameterSetId_;

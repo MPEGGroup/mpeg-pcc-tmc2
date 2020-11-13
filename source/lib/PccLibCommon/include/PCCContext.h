@@ -44,6 +44,7 @@ namespace pcc {
 
 class PCCGroupOfFrames;
 class PCCFrameContext;
+class PCCAtlasFrameContext;
 typedef pcc::PCCVideo<uint16_t, 3> PCCVideoAttributes;
 typedef pcc::PCCVideo<uint16_t, 3> PCCVideoTexture;
 typedef pcc::PCCVideo<uint16_t, 3> PCCVideoGeometry;
@@ -65,15 +66,19 @@ class PCCAtlasContext {
   size_t getAtlasIndex() { return atlasIndex_; }
 
   // frame context related functions
-  std::vector<PCCFrameContext>::iterator begin() { return frameContexts_.begin(); }
-  std::vector<PCCFrameContext>::iterator end() { return frameContexts_.end(); }
-  void                                   resize( size_t size, size_t frameStart = 0 );
-  const size_t                           size() { return frameContexts_.size(); }
-  PCCFrameContext&                       operator[]( int index ) { return frameContexts_[index]; }
-  std::vector<PCCFrameContext>&          getFrameContexts() { return frameContexts_; }
-  PCCFrameContext&                       getFrameContext( int16_t index ) { return frameContexts_[index]; }
-  void                                   allocOneLayerData();
-  void                                   printBlockToPatch( const size_t occupancyResolution );
+  std::vector<PCCAtlasFrameContext>::iterator begin() { return frameContexts_.begin(); }
+  std::vector<PCCAtlasFrameContext>::iterator end() { return frameContexts_.end(); }
+  void                                        resize( size_t size, size_t frameStart = 0 );
+  const size_t                                size() { return frameContexts_.size(); }
+  PCCAtlasFrameContext&                       operator[]( int index ) { return frameContexts_[index]; }
+  std::vector<PCCAtlasFrameContext>&          getFrameContexts() { return frameContexts_; }
+  PCCAtlasFrameContext&                       getFrameContext( int16_t index ) { return frameContexts_[index]; }
+  std::vector<std::pair<size_t, size_t>>&     getFramesInAFPS() { return framesInAFPS_; }
+  size_t                                      calculateAFOCLsb( size_t frameOrder );
+  void                                        allocOneLayerData();
+  void                                        printBlockToPatch( const size_t occupancyResolution );
+  void   setLog2MaxAtlasFrameOrderCntLsb( size_t value ) { log2MaxAtlasFrameOrderCntLsb_ = value; }
+  size_t getLog2MaxAtlasFrameOrderCntLsb() { return log2MaxAtlasFrameOrderCntLsb_; }
 
   // video related functions
   void                  allocateVideoFrames( PCCHighLevelSyntax& syntax, size_t numFrames );
@@ -100,7 +105,9 @@ class PCCAtlasContext {
 
  private:
   size_t                                                     atlasIndex_;
-  std::vector<PCCFrameContext>                               frameContexts_;
+  size_t                                                     log2MaxAtlasFrameOrderCntLsb_;
+  std::vector<PCCAtlasFrameContext>                          frameContexts_;
+  std::vector<std::pair<size_t, size_t>>                     framesInAFPS_;
   PCCVideoOccupancyMap                                       occFrames_;
   std::vector<size_t>                                        occBitdepth_;
   std::vector<size_t>                                        occWidth_;
@@ -159,17 +166,24 @@ class PCCContext : public PCCHighLevelSyntax {
   PCCVideoTexture& getVideoRawPointsTexture() { return atlasContexts_[atlasIndex_].getVideoAuxAttribute( 0, 0 ); }
 
   // fame context related functions
-  std::vector<PCCFrameContext>::iterator begin() { return atlasContexts_[atlasIndex_].getFrameContexts().begin(); }
-  std::vector<PCCFrameContext>::iterator end() { return atlasContexts_[atlasIndex_].getFrameContexts().end(); }
-  const size_t                           size() { return atlasContexts_[atlasIndex_].getFrameContexts().size(); }
-  std::vector<PCCFrameContext>&          getFrames() { return atlasContexts_[atlasIndex_].getFrameContexts(); }
-  PCCFrameContext& getFrame( int16_t index ) { return atlasContexts_[atlasIndex_].getFrameContext( index ); }
-  PCCFrameContext& operator[]( int index ) { return atlasContexts_[atlasIndex_].getFrameContexts()[index]; }
-  void             resize( size_t size ) { atlasContexts_[atlasIndex_].resize( size ); };
-  void             allocOneLayerData() { atlasContexts_[atlasIndex_].allocOneLayerData(); };
-  void             printBlockToPatch( const size_t occupancyResolution ) {
+  std::vector<PCCAtlasFrameContext>::iterator begin() { return atlasContexts_[atlasIndex_].getFrameContexts().begin(); }
+  std::vector<PCCAtlasFrameContext>::iterator end() { return atlasContexts_[atlasIndex_].getFrameContexts().end(); }
+  const size_t                                size() { return atlasContexts_[atlasIndex_].getFrameContexts().size(); }
+  std::vector<PCCAtlasFrameContext>&          getFrames() { return atlasContexts_[atlasIndex_].getFrameContexts(); }
+  PCCAtlasFrameContext& getFrame( int16_t index ) { return atlasContexts_[atlasIndex_].getFrameContext( index ); }
+  std::vector<std::pair<size_t, size_t>>& getFramesInAFPS() { return atlasContexts_[atlasIndex_].getFramesInAFPS(); }
+  size_t calculateAFOCLsb( size_t frameOrder ) { return atlasContexts_[atlasIndex_].calculateAFOCLsb( frameOrder ); }
+  size_t calculateAFOCval( std::vector<AtlasTileLayerRbsp>& atglList, size_t atglOrder );
+  PCCAtlasFrameContext& operator[]( int index ) { return atlasContexts_[atlasIndex_].getFrameContexts()[index]; }
+  void                  resize( size_t size ) { atlasContexts_[atlasIndex_].resize( size ); };
+  void                  allocOneLayerData() { atlasContexts_[atlasIndex_].allocOneLayerData(); };
+  void                  printBlockToPatch( const size_t occupancyResolution ) {
     atlasContexts_[atlasIndex_].printBlockToPatch( occupancyResolution );
   };
+  void setLog2MaxAtlasFrameOrderCntLsb( size_t value ) {
+    atlasContexts_[atlasIndex_].setLog2MaxAtlasFrameOrderCntLsb( value );
+  }
+  size_t getLog2MaxAtlasFrameOrderCntLsb() { return atlasContexts_[atlasIndex_].getLog2MaxAtlasFrameOrderCntLsb(); }
 
   // GPA related functions
   std::vector<SubContext>& getSubContexts() { return atlasContexts_[atlasIndex_].getSubContexts(); }
@@ -179,6 +193,10 @@ class PCCContext : public PCCHighLevelSyntax {
   void               setModelOrigin( PCCVector3<float>& value ) { modelOrigin_ = value; }
   float              getModelScale() { return modelScale_; }
   void               setModelScale( float value ) { modelScale_ = value; }
+
+  std::vector<uint8_t> computeMD5( uint8_t* byteString, size_t size );
+  uint16_t             computeCRC( uint8_t* byteString, size_t size );
+  uint32_t             computeCheckSum( uint8_t* byteString, size_t size );
 
  private:
   PCCVector3<float>            modelOrigin_;

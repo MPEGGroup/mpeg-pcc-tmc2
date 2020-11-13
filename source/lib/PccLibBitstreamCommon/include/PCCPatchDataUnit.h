@@ -56,7 +56,8 @@ class PatchDataUnit {
       lodScaleXminus1_( 0 ),
       lodScaleYIdc_( 0 ),
       patchIndex_( 0 ),
-      frameIndex_( 0 ) {}
+      frameIndex_( 0 ),
+      tileOrder_( 0 ) {}
   ~PatchDataUnit() {}
 
   PatchDataUnit& operator=( const PatchDataUnit& ) = default;
@@ -74,6 +75,7 @@ class PatchDataUnit {
   uint8_t        getLodScaleXMinus1() { return lodScaleXminus1_; }
   uint8_t        getLodScaleYIdc() { return lodScaleYIdc_; }
   PLRData&       getPLRData() { return pointLocalReconstructionData_; }
+  size_t         getTileOrder() { return tileOrder_; }
 
   size_t getPatchIndex() { return patchIndex_; }
   size_t getFrameIndex() { return frameIndex_; }
@@ -93,6 +95,7 @@ class PatchDataUnit {
   void   setLodScaleXMinus1( uint8_t value ) { lodScaleXminus1_ = value; }
   void   setLodScaleYIdc( uint8_t value ) { lodScaleYIdc_ = value; }
   void   setPLRData( PLRData value ) { pointLocalReconstructionData_ = value; }
+  void   setTileOrder( size_t value ) { tileOrder_ = value; }
 
  private:
   size_t   pos2dX_;
@@ -111,6 +114,7 @@ class PatchDataUnit {
   PLRData  pointLocalReconstructionData_;
   size_t   patchIndex_;
   size_t   frameIndex_;
+  size_t   tileOrder_;
 };
 
 };  // namespace pcc

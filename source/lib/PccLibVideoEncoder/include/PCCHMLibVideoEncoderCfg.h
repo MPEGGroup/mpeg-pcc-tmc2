@@ -51,7 +51,7 @@
 // ====================================================================================================================
 // Class definition
 // ====================================================================================================================
-using namespace pcc_hm; 
+using namespace pcc_hm;
 
 enum UIProfileName  // this is used for determining profile strings, where
                     // multiple profiles map to a single profile idc with

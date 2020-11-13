@@ -61,12 +61,14 @@
 #include <mach/mach.h>
 #endif
 
+#define TILETYPE0_BUGFIX 1
+#define TILEPARTITION_BUGFIX 1
 namespace pcc {
 
 // ******************************************************************* //
 // Trace modes to validate new syntax
 // ******************************************************************* //
-// #define BITSTREAM_TRACE
+#define BITSTREAM_TRACE
 
 // ******************************************************************* //
 // Common constants
@@ -228,6 +230,12 @@ enum PCCPatchType {
   EOM_PATCH,
   END_PATCH,
   ERROR_PATCH
+};
+
+enum PCCHashPatchType {  // Note JR: must be check with Ali. It is fine (Ali)
+  PROJECTED = 0,
+  RAW,
+  EOM
 };
 
 static PCCPatchType getPatchType( PCCTileType tileType, uint8_t patchMode ) {
@@ -441,13 +449,13 @@ static inline std::string removeFileExtension( const std::string string ) {
   return pos != std::string::npos ? string.substr( 0, pos ) : string;
 }
 
-static std::string getDirectoryName( const std::string& string ) {
+static inline std::string getDirectoryName( const std::string& string ) {
   auto position = string.find_last_of( getSeparator( string ) );
   if ( position != std::string::npos ) { return string.substr( 0, position ); }
   return string;
 }
 
-static std::string getBasename( const std::string& string ) {
+static inline std::string getBasename( const std::string& string ) {
   auto position = string.find_last_of( getSeparator() );
   if ( position != std::string::npos ) { return string.substr( position + 1, string.length() ); }
   return string;

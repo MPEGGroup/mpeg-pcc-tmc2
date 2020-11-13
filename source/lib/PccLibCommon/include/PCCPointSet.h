@@ -54,7 +54,41 @@ class PCCPointSet3 {
     assert( index < positions_.size() );
     return positions_[index];
   }
-  void setPosition( const size_t index, const PCCPoint3D position ) {
+  size_t appendPointSet( PCCPointSet3& pointSet ) {
+    std::vector<PCCPoint3D>::iterator                itPositions;
+    std::vector<PCCColor3B>::iterator                itColors;
+    std::vector<PCCColor16bit>::iterator             itColors16bit;
+    std::vector<uint16_t>::iterator                  itReflectances;
+    std::vector<uint16_t>::iterator                  itBoundaryPointTypes;
+    std::vector<std::pair<size_t, size_t>>::iterator itPointPatchIndexes;
+    std::vector<uint8_t>::iterator                   itTypes;
+    std::vector<PCCNormal3D>::iterator               itNormals;
+
+    itPositions          = positions_.end();
+    itColors             = colors_.end();
+    itColors16bit        = colors16bit_.end();
+    itReflectances       = reflectances_.end();
+    itBoundaryPointTypes = boundaryPointTypes_.end();
+    itPointPatchIndexes  = pointPatchIndexes_.end();
+    itTypes              = types_.end();
+    itNormals            = normals_.end();
+
+    positions_.insert( itPositions, pointSet.getPositions().begin(), pointSet.getPositions().end() );
+    colors_.insert( itColors, pointSet.getColor().begin(), pointSet.getColor().end() );
+    colors16bit_.insert( itColors16bit, pointSet.getColor16bit().begin(), pointSet.getColor16bit().end() );
+    reflectances_.insert( itReflectances, pointSet.getReflectances().begin(), pointSet.getReflectances().end() );
+    boundaryPointTypes_.insert( itBoundaryPointTypes, pointSet.getBoundaryPointTypes().begin(),
+                                pointSet.getBoundaryPointTypes().end() );
+    pointPatchIndexes_.insert( itPointPatchIndexes, pointSet.getPointPatchIndexes().begin(),
+                               pointSet.getPointPatchIndexes().end() );
+    types_.insert( itTypes, pointSet.getTypes().begin(), pointSet.getTypes().end() );
+    normals_.insert( itNormals, pointSet.getNormals().begin(), pointSet.getNormals().end() );
+
+    resize( getPointCount() );
+    return positions_.size();
+  }
+  std::vector<uint16_t>& getBoundaryPointTypes() { return boundaryPointTypes_; }
+  void                   setPosition( const size_t index, const PCCPoint3D position ) {
     assert( index < positions_.size() );
     positions_[index] = position;
   }
@@ -140,17 +174,19 @@ class PCCPointSet3 {
     assert( index < boundaryPointTypes_.size() );
     boundaryPointTypes_[index] = BoundaryPointType;
   }
-  uint16_t getPointPatchIndex( const size_t index ) const {
+  std::vector<std::pair<size_t, size_t>>& getPointPatchIndexes() { return pointPatchIndexes_; }
+  std::pair<size_t, size_t>               getPointPatchIndex( const size_t index ) const {
     assert( index < pointPatchIndexes_.size() );
     return pointPatchIndexes_[index];
   }
-  uint16_t& getPointPatchIndex( const size_t index ) {
+  std::pair<size_t, size_t>& getPointPatchIndex( const size_t index ) {
     assert( index < pointPatchIndexes_.size() );
     return pointPatchIndexes_[index];
   }
-  void setPointPatchIndex( const size_t index, const uint32_t PointPatchIndex ) {
+  void setPointPatchIndex( const size_t index, const uint32_t tileIndex, const uint32_t patchIndex ) {
     assert( index < pointPatchIndexes_.size() );
-    pointPatchIndexes_[index] = PointPatchIndex;
+    pointPatchIndexes_[index].first  = tileIndex;
+    pointPatchIndexes_[index].second = patchIndex;
   }
   std::vector<uint64_t>& getParentPointIndex()        { return parentPointIndex_; }
   uint64_t& getParentPointIndex( const size_t index ) { return parentPointIndex_[index]; }
@@ -158,12 +194,6 @@ class PCCPointSet3 {
     assert( index < parentPointIndex_.size() );
     parentPointIndex_[index] = parentIndex;
   }
-  //  void addParentIndex( const uint64_t parentIndex ) {
-  //    const size_t index = getPointCount();
-  //    resize( index + 1 );
-  //    parentPointIndex_[index] = parentIndex;
-  //    //return index;
-  //  }
   uint16_t getReflectance( const size_t index ) const {
     assert( index < reflectances_.size() && withReflectances_ );
     return reflectances_[index];
@@ -191,7 +221,10 @@ class PCCPointSet3 {
     withReflectances_ = false;
     reflectances_.resize( 0 );
   }
-
+  uint8_t getType( const size_t index ) const {
+    assert( index < types_.size() );
+    return types_[index];
+  }
   uint8_t& getType( const size_t index ) {
     assert( index < types_.size() );
     return types_[index];
@@ -466,18 +499,18 @@ class PCCPointSet3 {
   void distance( const PCCPointSet3& pointcloud, float& distP ) const;
   std::vector<uint8_t> computeMd5();
 
-  std::vector<PCCPoint3D>    positions_;
-  std::vector<PCCColor3B>    colors_;
-  std::vector<PCCColor16bit> colors16bit_;
-  std::vector<uint16_t>      reflectances_;
-  std::vector<uint16_t>      boundaryPointTypes_;
-  std::vector<uint16_t>      pointPatchIndexes_;
-  std::vector<uint64_t>      parentPointIndex_;
-  std::vector<uint8_t>       types_;
-  std::vector<PCCNormal3D>   normals_;
-  bool                       withNormals_;
-  bool                       withColors_;
-  bool                       withReflectances_;
+  std::vector<PCCPoint3D>                positions_;
+  std::vector<PCCColor3B>                colors_;
+  std::vector<PCCColor16bit>             colors16bit_;
+  std::vector<uint16_t>                  reflectances_;
+  std::vector<uint16_t>                  boundaryPointTypes_;
+  std::vector<std::pair<size_t, size_t>> pointPatchIndexes_;
+  std::vector<uint64_t>                  parentPointIndex_;
+  std::vector<uint8_t>                   types_;
+  std::vector<PCCNormal3D>               normals_;
+  bool                                   withNormals_;
+  bool                                   withColors_;
+  bool                                   withReflectances_;
 };
 }  // namespace pcc
 
