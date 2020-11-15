@@ -475,7 +475,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
         params_.videoEncoderAttributePath_, params_.videoEncoderAttributeCodecId_, context, nbyteAtt,  // nbyte
         params_.losslessGeo_,                                                                          // use444CodecIo
         params_.use3dmc_,                                                                              // use3dmv
-        10,                                          // internalBitDepth
+        params_.losslessGeo_ ? 8 : 10,               // internalBitDepth
         !params_.losslessGeo_,                       // useConversion
         params_.keepIntermediateFiles_,              // keepIntermediateFiles
         params_.colorSpaceConversionConfig_,         // colorSpaceConversionConfig
@@ -512,7 +512,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
           params_.videoEncoderAttributePath_, params_.videoEncoderAttributeCodecId_, context, nbyteAtt,  // nbyte
           params_.losslessGeo_,                        // use444CodecIo
           params_.use3dmc_,                            // use3dmv
-          10,                                          // internalBitDepth
+          params_.losslessGeo_ ? 8 : 10,               // internalBitDepth
           !params_.losslessGeo_,                       // useConversion
           params_.keepIntermediateFiles_,              // keepIntermediateFiles
           params_.colorSpaceConversionConfig_,         // colorSpaceConversionConfig
