@@ -835,7 +835,7 @@ void PCCBitstreamWriter::atlasFrameTileInformation( AtlasFrameTileInformation&  
   bitstream.write( afti.getSignalledTileIdFlag(), 1 );  // u(1)
   if ( afti.getSignalledTileIdFlag() ) {
     bitstream.writeUvlc( afti.getSignalledTileIdLengthMinus1() );  // ue(v)
-    for ( size_t i = 0; i <= afti.getSignalledTileIdLengthMinus1(); i++ ) {
+    for ( size_t i = 0; i <= afti.getNumTilesInAtlasFrameMinus1(); i++ ) { //jkei: bugfix
       uint8_t bitCount = afti.getSignalledTileIdLengthMinus1() + 1;
       bitstream.write( afti.getTileId( i ), bitCount );  // u(v)
     }

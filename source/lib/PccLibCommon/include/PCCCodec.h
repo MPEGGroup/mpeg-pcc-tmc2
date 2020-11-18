@@ -75,7 +75,6 @@ struct GeneratePointCloudParameters {
   bool        multipleStreams_;
   bool        absoluteD1_;
   size_t      surfaceThickness_;
-  bool        flagDecodedAtlasInformationHash_;
   double      thresholdColorSmoothing_;
   size_t      cgridSize_;
   double      thresholdColorDifference_;
@@ -102,12 +101,39 @@ struct GeneratePointCloudParameters {
 };
 
 struct PatchParams {
-  PatchParams( bool plrFlag = 0, uint16_t mapCnt = 1 );
+  PatchParams( bool plrFlag = 0, uint16_t mapCnt = 1 ) {
+
+      patchType = PROJECTED ;
+      patch2dPosX = 0;
+      patch2dPosY =  0;
+      patch2dSizeX = 1;
+      patch2dSizeY =  1;
+      patch3dOffsetU =  0;
+      patch3dOffsetV =  0;
+      patch3dOffsetD =  0;
+      patch3dRangeD =  1;
+      patchProjectionID =  0;
+      patchOrientationIndex=  0;
+      patchLoDScaleX=  1;
+      patchLoDScaleY=  1;
+      patchRawPoints=  0;
+      patchInAuxVideo=  0;
+
+      patchRawPoints = 0;
+      epduAssociatedPatchCount = 0;
+      // std::vector<int64_t>  patchEomPatchCount;  // this needs to be cheked later?
+
+      /*if ( plrFlag == true ) {// ajt:: need to revise this later! as part of a new application structure?
+        size_t size = patchPlrdLevel.size();
+        patchPlrdLevel.resize( size + 1 );
+        for ( int m = 0; m < mapCnt; m++ ) patchPlrdLevel[size]=  0 );
+      }*/
+  }
   ~PatchParams(){
       epduAssociatedPoints.clear();
   };
 
-  void initPatchParams( bool plrFlag, uint16_t mapCnt );
+  //void initPatchParams( bool plrFlag, uint16_t mapCnt );
 
   int64_t patchType;
   int8_t  patchInAuxVideo;
@@ -321,23 +347,14 @@ class PCCCodec {
     return s / double( N );
   }
 
-  std::vector<PatchParams>& getAtlasPatchParams() { return gAtlasPatchParams_; }
-  std::map<size_t, std::vector<PatchParams>>& getTilePatchParams() { return gTilePatchParams_; }
-
-  bool getAtlasHashPresentFlag() { return atlasHashPresentFlag_; }
-  bool getTileHashPresentFlag() { return tileHashPresentFlag_; }
-  uint32_t getPatchPackingBlockSize() { return patchPackingBlockSize_; }
-
-  void setAtlasHashPresentFlag( bool value) { atlasHashPresentFlag_ = value; }
-  void setTileHashPresentFlag( bool value ) { tileHashPresentFlag_ = value; }
-  void setPatchPackingBlockSize( uint32_t value) { patchPackingBlockSize_ = value; }
-
-  void atlasPatchCommonByteString( std::vector<uint8_t>& stringByte, size_t patchIndex );
-  void atlasPatchApplicationByteString( std::vector<uint8_t>& stringByte, size_t patchIndex );
-  void tilePatchCommonByteString( std::vector<uint8_t>& stringByte, size_t tileId, size_t patchIndex );
-  void tilePatchApplicationByteString( std::vector<uint8_t>& stringByte, size_t tileId, size_t patchIndex );
-  void atlasBlockToPatchByteString( std::vector<uint8_t>& stringByte );
-  void tileBlockToPatchByteString( std::vector<uint8_t>& stringByte, size_t tileID );
+  //seiMessage
+  void atlasPatchCommonByteString     ( std::vector<uint8_t>& stringByte, size_t patchIndex, std::vector<PatchParams>& atlasPatchParams );
+  void atlasPatchApplicationByteString( std::vector<uint8_t>& stringByte, size_t patchIndex, std::vector<PatchParams>& atlasPatchParams );
+  void tilePatchCommonByteString      ( std::vector<uint8_t>& stringByte, size_t tileId, size_t patchIndex, std::vector<std::vector<PatchParams>>& tilePatchParams );
+  void tilePatchApplicationByteString ( std::vector<uint8_t>& stringByte, size_t tileId, size_t patchIndex, std::vector<std::vector<PatchParams>>& tilePatchParams );
+  void atlasBlockToPatchByteString    ( std::vector<uint8_t>& stringByte );
+  void tileBlockToPatchByteString     ( std::vector<uint8_t>& stringByte, size_t tileID );
+  void getHashPatchParams( PCCContext& context, size_t frameIndex, size_t tileIndex, size_t atlIndex, std::vector<PatchParams>& atlasPatchParams, std::vector<std::vector<PatchParams>>& tilePatchParams   );
 
 
  private:
@@ -444,7 +461,6 @@ class PCCCodec {
                                std::vector<uint32_t>&       BPflag,
                                PCCPointSet3&                reconstruct );
 
-
 #ifdef CODEC_TRACE
   void printChecksum( PCCPointSet3& ePointcloud, std::string eString );
 #endif
@@ -457,11 +473,6 @@ class PCCCodec {
   std::vector<bool>                          colorSmoothingDoSmooth_;
   std::vector<std::pair<size_t, size_t>>     colorSmoothingPartition_;
   std::vector<std::vector<uint16_t>>         colorSmoothingLum_;
-  std::vector<PatchParams>                   gAtlasPatchParams_;
-  std::map<size_t, std::vector<PatchParams>> gTilePatchParams_;
-  bool                                       atlasHashPresentFlag_;
-  bool                                       tileHashPresentFlag_;
-  uint32_t                                   patchPackingBlockSize_;
 
 #ifdef CODEC_TRACE
   bool  trace_;

@@ -257,6 +257,10 @@ class PCCAtlasHighLevelSyntax {
   SEI& addSeiSuffix( SeiPayloadType payloadType, bool essensial ) {
     return addSei( essensial ? NAL_SUFFIX_ESEI : NAL_SUFFIX_NSEI, payloadType );
   }
+  void addSeiToSeiSuffix( SeiPayloadType payloadType, bool essensial, SEIDecodedAtlasInformationHash& seiContext ){
+      seiSuffix_.push_back( std::make_shared<SEIDecodedAtlasInformationHash>(seiContext) );
+  }
+  
   std::vector<std::shared_ptr<SEI>>& getSeiPrefix() { return seiPrefix_; }
   std::vector<std::shared_ptr<SEI>>& getSeiSuffix() { return seiSuffix_; }
   SEI&                               getSeiPrefix( size_t index ) { return *( seiPrefix_[index] ); }
@@ -437,7 +441,13 @@ class PCCHighLevelSyntax {
   std::vector<std::shared_ptr<SEI>>& getSeiSuffix() { return atlasHLS_[atlasIndex_].getSeiSuffix(); }
   SEI& getSeiPrefix( size_t index ) { return atlasHLS_[atlasIndex_].getSeiPrefix( index ); }
   SEI& getSeiSuffix( size_t index ) { return atlasHLS_[atlasIndex_].getSeiSuffix( index ); }
-
+  std::vector<SEIDecodedAtlasInformationHash>& getSeiHash()               { return seiHash_; }
+  SEIDecodedAtlasInformationHash&              getSeiHash( size_t index ) { return seiHash_[index]; }
+  void addSeiHashToSeiSuffix(size_t i) {
+    return atlasHLS_[atlasIndex_].addSeiToSeiSuffix( DECODED_ATLAS_INFORMATION_HASH, true, seiHash_[i] ); }
+  void allocateSeiHash( size_t hashCount )                                { seiHash_.resize(hashCount); }
+  
+  
   // context variables, not sure if we should keep them at this level, but leave them here for now
   //size_t  getGofSize() { return gofSize_; }
   uint8_t getOccupancyPrecision() { return occupancyPrecision_; }
@@ -473,14 +483,15 @@ class PCCHighLevelSyntax {
   void                 setGeometry3dCoordinatesBitdepth( size_t value ) { geometry3dCoordinatesBitdepth_ = value; }
   bool&                getSingleLayerMode() { return singleLayerMode_; }
 
-  void aspsCommonByteString( std::vector<uint8_t>& stringByte );
-  void aspsApplicationByteString( std::vector<uint8_t>& strinByte );
-  void afpsCommonByteString( std::vector<uint8_t>& stringByte );
-  void afpsApplicationByteString( std::vector<uint8_t>& stringByte );
-  // PatchParams&                   getGlobalAtlasPatchParams() { return gAtlasPatchParams; }
-  // std::map<size_t, PatchParams>& getGlobalTilePatchParams() { return gTilePatchParams; }
-protected:    
-  void getTileOffsetAndSize();
+  void aspsCommonByteString           ( std::vector<uint8_t>& stringByte, size_t aspsIndex );
+  void aspsApplicationByteString      ( std::vector<uint8_t>& strinByte,  size_t aspsIndex, size_t afpsIndex  );
+  void afpsCommonByteString           ( std::vector<uint8_t>& stringByte, size_t afpsIndex );
+  void afpsApplicationByteString      ( std::vector<uint8_t>& stringByte, size_t afpsIndex );
+  
+protected:
+  void getTileOffsetAndSize( size_t afpsIndex, std::vector<size_t>& seiPartitionPosX, std::vector<size_t>& seiPartitionPosY,
+  std::vector<size_t>& seiPartitionWidth, std::vector<size_t>& seiPartitionHeight,
+  size_t seiAuxVideoWidth, std::vector<size_t>& seiAuxTileHeight);
 
  private:
   //size_t                         gofSize_;
@@ -504,6 +515,9 @@ protected:
   size_t                               auxVideWidth_;
   std::vector<size_t>                  auxTileHeight_;
   std::vector<size_t>                  auxTileLeftTopY_;
+  
+  //sei
+  std::vector<SEIDecodedAtlasInformationHash>            seiHash_;
 };
 };  // namespace pcc
 

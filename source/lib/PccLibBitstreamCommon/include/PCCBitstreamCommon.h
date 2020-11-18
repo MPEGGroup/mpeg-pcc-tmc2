@@ -61,8 +61,6 @@
 #include <mach/mach.h>
 #endif
 
-#define TILETYPE0_BUGFIX 1
-#define TILEPARTITION_BUGFIX 1
 namespace pcc {
 
 // ******************************************************************* //
@@ -238,7 +236,7 @@ enum PCCHashPatchType {  // Note JR: must be check with Ali. It is fine (Ali)
   EOM
 };
 
-static PCCPatchType getPatchType( PCCTileType tileType, uint8_t patchMode ) {
+static inline PCCPatchType getPatchType( PCCTileType tileType, uint8_t patchMode ) {
   if ( tileType == SKIP_TILE ) {
     return SKIP_PATCH;
   } else if ( tileType == P_TILE ) {

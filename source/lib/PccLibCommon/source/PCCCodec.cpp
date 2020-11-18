@@ -2292,6 +2292,11 @@ void PCCCodec::generateAfti( PCCContext& context, size_t frameIndex, AtlasFrameT
       for ( size_t ti = 0; ti < partitionInfoPerFrame.getNumTilesInAtlasFrame(); ti++ ) {
         aftiLocal.setAuxiliaryVideoTileRowHeight( ti, context.getAuxTileHeight( ti ) );
       }
+    } else{
+      aftiLocal.setAuxiliaryVideoTileRowWidthMinus1(0 );
+      for ( size_t ti = 0; ti < partitionInfoPerFrame.getNumTilesInAtlasFrame(); ti++ ) {
+        aftiLocal.setAuxiliaryVideoTileRowHeight( ti, 0 );
+      }
     }
     return;
   }
@@ -2316,6 +2321,11 @@ void PCCCodec::generateAfti( PCCContext& context, size_t frameIndex, AtlasFrameT
     for ( size_t ti = 0; ti < partitionInfoPerFrame.getNumTilesInAtlasFrame(); ti++ ) {
       aftiLocal.setTileId( ti, partitionInfoPerFrame.getTileId()[ti] );
     }
+  } else{
+    for ( size_t ti = 0; ti < partitionInfoPerFrame.getNumTilesInAtlasFrame(); ti++ ) {
+      aftiLocal.setTileId( ti, ti );
+    }
+
   }
 
   auto& atlasFrame = context.getFrame( frameIndex );
@@ -2416,7 +2426,12 @@ void PCCCodec::generateAfti( PCCContext& context, size_t frameIndex, AtlasFrameT
       printf( "%u\t", aftiLocal.getAuxiliaryVideoTileRowHeight( ti ) );
     printf( "\n" );
 #endif
-  }
+  } else{
+       aftiLocal.setAuxiliaryVideoTileRowWidthMinus1(0 );
+       for ( size_t ti = 0; ti < partitionInfoPerFrame.getNumTilesInAtlasFrame(); ti++ ) {
+         aftiLocal.setAuxiliaryVideoTileRowHeight( ti, 0 );
+       }
+     }
 }
 void PCCCodec::setTilePartitionSizeAfti( PCCContext& context ) {
   // decoder
@@ -2591,177 +2606,372 @@ size_t PCCCodec::setTileSizeAndLocation( PCCContext& context, size_t frameIndex,
   return tileIndex;
 }
 
-void PCCCodec::atlasPatchCommonByteString( std::vector<uint8_t>& stringByte, size_t p ) {
-  uint8_t val = gAtlasPatchParams_[ p ].patchType & 0xFF;
+//sei hash
+void PCCCodec::getHashPatchParams( PCCContext& context, size_t frameIndex, size_t tileIndex, size_t atlIndex, std::vector<PatchParams>& atlasPatchParams, std::vector<std::vector<PatchParams>>& tilePatchParams   )
+{
+  //jkei: it needs to be use reconstructed patch information
+  auto& atl = context.getAtlasTileLayer( atlIndex );
+  auto& atdu = atl.getDataUnit();
+  auto& ath = atl.getHeader();
+  auto& afps = context.getAtlasFrameParameterSet( ath.getAtlasFrameParameterSetId() );
+  auto& asps = context.getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
+  PCCTileType tileType = ath.getType();
+  auto& tile = context.getFrame( frameIndex ).getTile( tileIndex );
+  size_t patchCount = tile.getPatches().size();// + tile.getRawPointsPatches().size() + tile.getEomPatches().size();
+  for ( size_t patchIdx = 0; patchIdx < patchCount; patchIdx++ ) {
+    PatchParams  pps( asps.getPLREnabledFlag(), asps.getMapCountMinus1() + 1 );
+    auto&        patch         = tile.getPatch(patchIdx);
+    assert( getPatchType( tileType, atdu.getPatchMode( patchIdx ) )!= RAW_PATCH && getPatchType( tileType, atdu.getPatchMode( patchIdx )) != EOM_PATCH );
+    pps.patchType      = PCCHashPatchType::PROJECTED;
+    pps.patch2dPosX    = patch.getU0();
+    pps.patch2dPosY    = patch.getV0();
+    pps.patch2dSizeX   = patch.getSizeU0();
+    pps.patch2dSizeY   = patch.getSizeV0();
+    pps.patch3dOffsetU = patch.getU1();
+    pps.patch3dOffsetV = patch.getV1();
+    pps.patch3dOffsetD = patch.getD1();
+    if ( asps.getNormalAxisMaxDeltaValueEnabledFlag() )
+      pps.patch3dRangeD  = patch.getSizeD(); //pdu.get3dRangeD();
+    else
+      pps.patch3dRangeD  = 0;
+    pps.patchOrientationIndex = patch.getPatchOrientation();
+    pps.patchProjectionID     = patch.getProjectionMode();
+    pps.patchInAuxVideo       = asps.getRawPatchEnabledFlag();  // ajt::check
+    pps.patchLoDScaleX = patch.getLodScaleX();
+    pps.patchLoDScaleY = patch.getLodScaleY();
+    
+    atlasPatchParams.push_back( pps );
+    if(tilePatchParams.size()!=0) tilePatchParams[tileIndex].push_back( pps );
+  }
+  
+  size_t rawPatchCount = tile.getRawPointsPatches().size();
+  for ( size_t patchIdx = 0; patchIdx < rawPatchCount; patchIdx++ ) {
+    PatchParams  pps( asps.getPLREnabledFlag(), asps.getMapCountMinus1() + 1 );
+    auto&        rawPointsPatch         = tile.getRawPointsPatch(patchIdx);
+    assert( getPatchType( tileType, atdu.getPatchMode( patchIdx ) )== RAW_PATCH  );
+    pps.patchType       = RAW;
+    pps.patchRawPoints  = rawPointsPatch.getNumberOfRawPoints();
+    pps.patch2dPosX     = rawPointsPatch.u0_;
+    pps.patch2dPosY     = rawPointsPatch.v0_;
+    pps.patch2dSizeX    = rawPointsPatch.sizeU0_;
+    pps.patch2dSizeY    = rawPointsPatch.sizeV0_;
+    pps.patch3dOffsetU  = rawPointsPatch.u1_;
+    pps.patch3dOffsetV  = rawPointsPatch.v1_;
+    pps.patch3dOffsetD  = rawPointsPatch.d1_;
+    pps.patchInAuxVideo = rawPointsPatch.isPatchInAuxVideo_;
+    
+    atlasPatchParams.push_back( pps );
+    if(tilePatchParams.size()!=0) tilePatchParams[tileIndex].push_back( pps );
+  }
+  
+  size_t eomPatchCount = tile.getEomPatches().size();
+  for ( size_t patchIdx = 0; patchIdx < eomPatchCount; patchIdx++ ) {
+    PatchParams  pps( asps.getPLREnabledFlag(), asps.getMapCountMinus1() + 1 );
+    auto&        eomPatch         = tile.getEomPatches(patchIdx);
+    assert( getPatchType( tileType, atdu.getPatchMode( patchIdx ) )== EOM_PATCH  );
+    
+    pps.patchType                = EOM;
+    pps.patch2dPosX              = eomPatch.u0_;
+    pps.patch2dPosY              = eomPatch.v0_;
+    pps.patch2dSizeX             = eomPatch.sizeU_;
+    pps.patch2dSizeY             = eomPatch.sizeV_;
+    pps.patchInAuxVideo          = eomPatch.isPatchInAuxVideo_;
+    
+    pps.epduAssociatedPatchCount =  eomPatch.memberPatches.size();
+    pps.epduAssociatedPoints.resize( pps.epduAssociatedPatchCount );
+    for ( size_t i = 0; i < pps.epduAssociatedPatchCount; i++ )
+      pps.epduAssociatedPoints[i] = eomPatch.eomCountPerPatch[i];
+    
+    atlasPatchParams.push_back( pps );
+    if(tilePatchParams.size()!=0) tilePatchParams[tileIndex].push_back( pps );
+    
+  }
+
+//     size_t patchCount = tile.getPatches().size() + tile.getRawPointsPatches().size() + tile.getEomPatches().size();
+//     for ( size_t patchIdx = 0; patchIdx < patchCount; patchIdx++ ) {
+//       PatchParams  pps( asps.getPLREnabledFlag(), asps.getMapCountMinus1() + 1 );
+//       auto&        patch         = tile.getPatch(patchIdx);
+//       PCCPatchType currPatchType = getPatchType( tileType, atdu.getPatchMode( patchIdx ) );
+//    if ( currPatchType == INTRA_PATCH ){
+//      auto& pdu = pid.getPatchDataUnit();
+//      pps.patchType      = PCCHashPatchType::PROJECTED;
+//      pps.patch2dPosX    = pdu.get2dPosX();
+//      pps.patch2dPosY    = pdu.get2dPosY();
+//      pps.patch2dSizeX   = pdu.get2dSizeXMinus1();
+//      pps.patch2dSizeY   = pdu.get2dSizeYMinus1();
+//      pps.patch3dOffsetU = pdu.get3dOffsetU();
+//      pps.patch3dOffsetV = pdu.get3dOffsetV();
+//      pps.patch3dOffsetD = pdu.get3dOffsetD();
+//      if ( asps.getNormalAxisMaxDeltaValueEnabledFlag() )
+//      pps.patch3dRangeD  = patch.getSizeD(); //pdu.get3dRangeD();
+//      else
+//        pps.patch3dRangeD  = 0;
+//      pps.patchOrientationIndex = pdu.getOrientationIndex();
+//      pps.patchProjectionID     = pdu.getProjectionId();
+//      pps.patchInAuxVideo       = asps.getRawPatchEnabledFlag();  // ajt::check
+//      pps.patchLoDScaleX = pdu.getLodScaleXMinus1() + 1;
+//      pps.patchLoDScaleY = pdu.getLodScaleYIdc();
+//    }
+//    else if ( currPatchType == INTER_PATCH ) {
+//      //jkei: these should be reconstructed values
+//      auto& ipdu = pid.getInterPatchDataUnit();
+//      pps.patchType      = PROJECTED;
+//      pps.patch2dPosX    = ipdu.get2dPosX();
+//      pps.patch2dPosY    = ipdu.get2dPosY();
+//      pps.patch2dSizeX   = ipdu.get2dDeltaSizeX();
+//      pps.patch2dSizeY   = ipdu.get2dDeltaSizeY();
+//      pps.patch3dOffsetU = ipdu.get3dOffsetU();
+//      pps.patch3dOffsetV = ipdu.get3dOffsetV();
+//      pps.patch3dOffsetD = ipdu.get3dOffsetD();
+//      if ( asps.getNormalAxisMaxDeltaValueEnabledFlag() )
+//      pps.patch3dRangeD  = patch.getSizeD();
+//      else
+//        pps.patch3dRangeD  = 0;
+//      // ajt::need to check these three below for correctness
+//      pps.patchOrientationIndex = patch.getPatchOrientation();
+//      pps.patchProjectionID     = patch.getProjectionMode();
+//      pps.patchInAuxVideo       = asps.getRawPatchEnabledFlag(); // ajt::check
+//      pps.patchLoDScaleX        = patch.getLodScaleX();
+//      pps.patchLoDScaleY        = patch.getLodScaleY();
+//    }
+//    else if ( currPatchType == MERGE_PATCH ) {
+//      //jkei: these should be reconstructed values
+//      auto& mpdu         = pid.getMergePatchDataUnit();
+//      pps.patchType      = PROJECTED;
+//      pps.patch2dPosX    = mpdu.get2dPosX();
+//      pps.patch2dPosY    = mpdu.get2dPosY();
+//      pps.patch2dSizeX   = mpdu.get2dDeltaSizeX();
+//      pps.patch2dSizeY   = mpdu.get2dDeltaSizeY();
+//      pps.patch3dOffsetU = mpdu.get3dOffsetU();
+//      pps.patch3dOffsetV = mpdu.get3dOffsetV();
+//      pps.patch3dOffsetD = mpdu.get3dOffsetD();
+//      pps.patch3dRangeD  = patch.getSizeD();
+//
+//      // ajt::need to check these three below for correctness
+//      pps.patchOrientationIndex = patch.getPatchOrientation();
+//      pps.patchProjectionID     = patch.getProjectionMode();
+//      pps.patchInAuxVideo       = asps.getRawPatchEnabledFlag();
+//      pps.patchLoDScaleX        = patch.getLodScaleX();
+//      pps.patchLoDScaleY        = patch.getLodScaleY();
+//    } else if ( currPatchType == SKIP_PATCH ) {
+//      pps.patchType      = PROJECTED;
+//      pps.patch2dPosX    = patch.getU0();
+//      pps.patch2dPosY    = patch.getV0();
+//      pps.patch2dSizeX   = patch.getSizeU0();
+//      pps.patch2dSizeY   = patch.getSizeV0();
+//      pps.patch3dOffsetU = patch.getU1();
+//      pps.patch3dOffsetV = patch.getV1();
+//      pps.patch3dOffsetD = patch.getD1();
+//      pps.patch3dRangeD  = patch.getSizeD();
+//
+//      // ajt::need to check these three below for correctness
+//      pps.patchOrientationIndex = patch.getPatchOrientation();
+//      pps.patchProjectionID     = patch.getProjectionMode();
+//      pps.patchInAuxVideo       = asps.getRawPatchEnabledFlag();
+//      pps.patchLoDScaleX        = patch.getLodScaleX();
+//      pps.patchLoDScaleY        = patch.getLodScaleY();
+//    } else if ( currPatchType == RAW_PATCH ) {
+//      auto& rpdu          = pid.getRawPatchDataUnit();
+//      pps.patchType       = RAW;
+//      pps.patchRawPoints  = rpdu.getRawPointsMinus1() + 1;
+//      pps.patch2dPosX     = rpdu.get2dPosX();
+//      pps.patch2dPosY     = rpdu.get2dPosY();
+//      pps.patch2dSizeX    = rpdu.get2dSizeXMinus1();
+//      pps.patch2dSizeY    = rpdu.get2dSizeYMinus1();
+//      pps.patch3dOffsetU  = rpdu.get3dOffsetU();
+//      pps.patch3dOffsetV  = rpdu.get3dOffsetV();
+//      pps.patch3dOffsetD  = rpdu.get3dOffsetD();
+//      pps.patchInAuxVideo = rpdu.getPatchInAuxiliaryVideoFlag();
+//    } else if ( currPatchType == EOM_PATCH ) {
+//      auto& epdu                   = pid.getEomPatchDataUnit();
+//      pps.patchType                = EOM;
+//      pps.patch2dPosX              = epdu.get2dPosX();
+//      pps.patch2dPosY              = epdu.get2dPosY();
+//      pps.patch2dSizeX             = epdu.get2dSizeXMinus1();
+//      pps.patch2dSizeY             = epdu.get2dSizeYMinus1();
+//      pps.patchInAuxVideo          = epdu.getPatchInAuxiliaryVideoFlag();
+//      pps.epduAssociatedPatchCount = epdu.getPatchCountMinus1()+1; //  eomPatch.memberPatches.size(); jkei: why is it  eomPatch.memberPatches.size()?
+//      pps.epduAssociatedPoints.resize( pps.epduAssociatedPatchCount );
+//      for ( size_t i = 0; i < pps.epduAssociatedPatchCount; i++ )
+//        pps.epduAssociatedPoints[i] = epdu.getPoints( i );
+//    }
+//    atlasPatchParams.push_back( pps );
+//    if(tilePatchParams.size()!=0) tilePatchParams[tileIndex].push_back( pps );
+ 
+}
+void PCCCodec::atlasPatchCommonByteString( std::vector<uint8_t>& stringByte, size_t p, std::vector<PatchParams>& atlasPatchParams ) {
+  uint8_t val = atlasPatchParams[ p ].patchType & 0xFF;
   stringByte.push_back( val );  // uint8_t val = AtlasPatchType[p] & 0xFF;
-  val = gAtlasPatchParams_[ p ].patch2dPosX & 0xFF;
+  val = atlasPatchParams[ p ].patch2dPosX & 0xFF;
   stringByte.push_back( val );
-  val = ( gAtlasPatchParams_[ p ].patch2dPosX >> 8 ) & 0xFF;
+  val = ( atlasPatchParams[ p ].patch2dPosX >> 8 ) & 0xFF;
   stringByte.push_back( val );
-  val = gAtlasPatchParams_[ p ].patch2dPosY & 0xFF;
+  val = atlasPatchParams[ p ].patch2dPosY & 0xFF;
   stringByte.push_back( val );
-  val = ( gAtlasPatchParams_[ p ].patch2dPosY >> 8 ) & 0xFF;
+  val = ( atlasPatchParams[ p ].patch2dPosY >> 8 ) & 0xFF;
   stringByte.push_back( val );
-  val = gAtlasPatchParams_[ p ].patch2dSizeX & 0xFF;
+  val = atlasPatchParams[ p ].patch2dSizeX & 0xFF;
   stringByte.push_back( val );
-  val = ( gAtlasPatchParams_[p].patch2dSizeX >> 8 ) & 0xFF;
+  val = ( atlasPatchParams[p].patch2dSizeX >> 8 ) & 0xFF;
   stringByte.push_back( val );
-  val = gAtlasPatchParams_[p].patch2dSizeY & 0xFF;
+  val = atlasPatchParams[p].patch2dSizeY & 0xFF;
   stringByte.push_back( val );
-  val = ( gAtlasPatchParams_[p].patch2dSizeY >> 8 ) & 0xFF;
+  val = ( atlasPatchParams[p].patch2dSizeY >> 8 ) & 0xFF;
   stringByte.push_back( val );
-  val = gAtlasPatchParams_[p].patch3dOffsetU & 0xFF;
+  val = atlasPatchParams[p].patch3dOffsetU & 0xFF;
   stringByte.push_back( val );
-  val = ( gAtlasPatchParams_[ p ].patch3dOffsetU >> 8 ) & 0xFF;
+  val = ( atlasPatchParams[ p ].patch3dOffsetU >> 8 ) & 0xFF;
   stringByte.push_back( val );
-  val = gAtlasPatchParams_[ p ].patch3dOffsetV & 0xFF;
+  val = atlasPatchParams[ p ].patch3dOffsetV & 0xFF;
   stringByte.push_back( val );
-  val = ( gAtlasPatchParams_[ p ].patch3dOffsetV >> 8 ) & 0xFF;
+  val = ( atlasPatchParams[ p ].patch3dOffsetV >> 8 ) & 0xFF;
   stringByte.push_back( val );
-  val = gAtlasPatchParams_[ p ].patch3dOffsetD & 0xFF;
+  val = atlasPatchParams[ p ].patch3dOffsetD & 0xFF;
   stringByte.push_back( val );
-  val = ( gAtlasPatchParams_[ p ].patch3dOffsetD >> 8 ) & 0xFF;
+  val = ( atlasPatchParams[ p ].patch3dOffsetD >> 8 ) & 0xFF;
   stringByte.push_back( val );
-  val = gAtlasPatchParams_[ p ].patch3dRangeD & 0xFF;
+  val = atlasPatchParams[ p ].patch3dRangeD & 0xFF;
   stringByte.push_back( val );
-  val = ( gAtlasPatchParams_[ p ].patch3dRangeD >> 8 ) & 0xFF;
+  val = ( atlasPatchParams[ p ].patch3dRangeD >> 8 ) & 0xFF;
   stringByte.push_back( val );
-  val = gAtlasPatchParams_[ p ].patchProjectionID & 0xFF;
+  val = atlasPatchParams[ p ].patchProjectionID & 0xFF;
   stringByte.push_back( val );
-  val = gAtlasPatchParams_[ p ].patchOrientationIndex & 0xFF;
+  val = atlasPatchParams[ p ].patchOrientationIndex & 0xFF;
   stringByte.push_back( val );
-  val = gAtlasPatchParams_[ p ].patchLoDScaleX & 0xFF;
+  val = atlasPatchParams[ p ].patchLoDScaleX & 0xFF;
   stringByte.push_back( val );
-  val = ( gAtlasPatchParams_[ p ].patchLoDScaleX >> 8 ) & 0xFF;
+  val = ( atlasPatchParams[ p ].patchLoDScaleX >> 8 ) & 0xFF;
   stringByte.push_back( val );
-  val = gAtlasPatchParams_[ p ].patchLoDScaleY & 0xFF;
+  val = atlasPatchParams[ p ].patchLoDScaleY & 0xFF;
   stringByte.push_back( val );
-  val = ( gAtlasPatchParams_[p].patchLoDScaleY >> 8 ) & 0xFF;
+  val = ( atlasPatchParams[p].patchLoDScaleY >> 8 ) & 0xFF;
   stringByte.push_back( val );
 };
 
-void PCCCodec::atlasPatchApplicationByteString( std::vector<uint8_t>& stringByte, size_t p ) {
+void PCCCodec::atlasPatchApplicationByteString( std::vector<uint8_t>& stringByte, size_t p, std::vector<PatchParams>& atlasPatchParams ) {
 
-  uint32_t bSize = getPatchPackingBlockSize();
-  uint8_t val = gAtlasPatchParams_[ p ].patchInAuxVideo & 0xFF;
+  //uint32_t bSize = getPatchPackingBlockSize();
+  uint8_t val = atlasPatchParams[ p ].patchInAuxVideo & 0xFF;
   stringByte.push_back( val );  // AtlasPatchInAuxVideo[p] & 0xFF;
-  if ( gAtlasPatchParams_[ p ].patchType == RAW ) {
-    val = gAtlasPatchParams_[ p ].patchRawPoints & 0xFF;
+  if ( atlasPatchParams[ p ].patchType == RAW ) {
+    val = atlasPatchParams[ p ].patchRawPoints & 0xFF;
     stringByte.push_back( val ) ;
-    val = ( gAtlasPatchParams_[p].patchRawPoints >> 8 ) & 0xFF;
+    val = ( atlasPatchParams[p].patchRawPoints >> 8 ) & 0xFF;
     stringByte.push_back( val );
-  } else if ( gAtlasPatchParams_[ p ].patchType == PROJECTED ) {
-    size_t blockCnt = ( ( gAtlasPatchParams_[ p ].patch2dSizeX + bSize - 1 ) / bSize ) *
-                      ( ( gAtlasPatchParams_[ p ].patch2dSizeY + bSize - 1 ) / bSize );
+  } else if ( atlasPatchParams[ p ].patchType == PROJECTED ) {
+    /*
+    size_t blockCnt = ( ( atlasPatchParams[ p ].patch2dSizeX + bSize - 1 ) / bSize ) *
+                      ( ( atlasPatchParams[ p ].patch2dSizeY + bSize - 1 ) / bSize );
 
-    /*for ( int m = 0; m < mapCount + 1; m++ ) { //ajt:: need to work on it later for multiple maps!
-      if ( gAtlasPatchParams_.patchPlrdLevel== 1 ) {
-        if ( gAtlasPatchParams_.patchPlrdLevel[p][m] == 0 ) {
+    for ( int m = 0; m < mapCount + 1; m++ ) { //ajt:: need to work on it later for multiple maps!
+      if ( atlasPatchParams.patchPlrdLevel== 1 ) {
+        if ( atlasPatchParams.patchPlrdLevel[p][m] == 0 ) {
           for ( int j = 0; j < blockCnt; j++ ) {
-            val = gAtlasPatchParams_.patchPlrdBlockModeMinus1[p][m][j] & 0xFF;
+            val = atlasPatchParams.patchPlrdBlockModeMinus1[p][m][j] & 0xFF;
             stringByte.push_back( val );
-            val = ( gAtlasPatchParams_.[p][m][j] >> 8 ) & 0xFF;
+            val = ( atlasPatchParams.[p][m][j] >> 8 ) & 0xFF;
             stringByte.push_back( val );
           }
         } else {
-          val = gAtlasPatchParams_.patchPlrdModeMinus1[p][m] & 0xFF;
+          val = atlasPatchParams.patchPlrdModeMinus1[p][m] & 0xFF;
             stringByte.push_back( val );
             val = ( AtlasPlrdBlockModeMinus1[p][m] >> 8 ) & 0xFF;
             stringByte.push_back( val );
         }
       }
     }*/
-  } else if ( gAtlasPatchParams_[ p ].patchType == EOM ) {
-    // val = gAtlasPatchParams_.patchEomPatchCount[ p ] & 0xFF; // ajt:: this needs to be checked
+  } else if ( atlasPatchParams[ p ].patchType == EOM ) {
+    // val = atlasPatchParams.patchEomPatchCount[ p ] & 0xFF; // ajt:: this needs to be checked
     // stringByte.push_back( val );
-    // val = (gAtlasPatchParams_.patchEomPatchCount[ p ] >> 8 ) & 0xFF;
+    // val = (atlasPatchParams.patchEomPatchCount[ p ] >> 8 ) & 0xFF;
     // stringByte.push_back( val );
-    val = gAtlasPatchParams_[ p ].epduAssociatedPatchCount & 0xFF;
+    val = atlasPatchParams[ p ].epduAssociatedPatchCount & 0xFF;
     stringByte.push_back( val );
-    val = ( gAtlasPatchParams_[ p ].epduAssociatedPatchCount >> 8 ) & 0xFF;
+    val = ( atlasPatchParams[ p ].epduAssociatedPatchCount >> 8 ) & 0xFF;
     stringByte.push_back( val );
-    for ( int i = 0; i < gAtlasPatchParams_[ p ].epduAssociatedPatchCount; i++ ) {
-      val = gAtlasPatchParams_[ p ].epduAssociatedPoints[ i ] & 0xFF;
+    for ( int i = 0; i < atlasPatchParams[ p ].epduAssociatedPatchCount; i++ ) {
+      val = atlasPatchParams[ p ].epduAssociatedPoints[ i ] & 0xFF;
       stringByte.push_back( val );
-      val = ( gAtlasPatchParams_[ p ].epduAssociatedPoints[ i ] >> 8 ) & 0xFF;
+      val = ( atlasPatchParams[ p ].epduAssociatedPoints[ i ] >> 8 ) & 0xFF;
       stringByte.push_back( val );
     }
   }
 };
 
-void PCCCodec::tilePatchCommonByteString( std::vector<uint8_t>& stringByte, size_t tileId, size_t p ) {
-  uint8_t val = gTilePatchParams_[ tileId ][ p ].patchType & 0xFF;
+void PCCCodec::tilePatchCommonByteString( std::vector<uint8_t>& stringByte, size_t tileId, size_t p, std::vector<std::vector<PatchParams>>& tilePatchParams ) {
+  uint8_t val = tilePatchParams[ tileId ][ p ].patchType & 0xFF;
   stringByte.push_back( val );  // uint8_t val = AtlasPatchType & 0xFF;
-  val = gTilePatchParams_[ tileId ][ p ].patch2dPosX & 0xFF;
+  val = tilePatchParams[ tileId ][ p ].patch2dPosX & 0xFF;
   stringByte.push_back( val );
-  val = ( gTilePatchParams_[ tileId ][ p ].patch2dPosX >> 8 ) & 0xFF;
+  val = ( tilePatchParams[ tileId ][ p ].patch2dPosX >> 8 ) & 0xFF;
   stringByte.push_back( val );
-  val = gTilePatchParams_[ tileId ][ p ].patch2dPosY & 0xFF;
+  val = tilePatchParams[ tileId ][ p ].patch2dPosY & 0xFF;
   stringByte.push_back( val );
-  val = ( gTilePatchParams_[ tileId ][ p ].patch2dPosY >> 8 ) & 0xFF;
+  val = ( tilePatchParams[ tileId ][ p ].patch2dPosY >> 8 ) & 0xFF;
   stringByte.push_back( val );
-  val = gTilePatchParams_[ tileId ][ p ].patch2dSizeX & 0xFF;
+  val = tilePatchParams[ tileId ][ p ].patch2dSizeX & 0xFF;
   stringByte.push_back( val );
-  val = ( gTilePatchParams_[ tileId ][ p ].patch2dSizeX >> 8 ) & 0xFF;
+  val = ( tilePatchParams[ tileId ][ p ].patch2dSizeX >> 8 ) & 0xFF;
   stringByte.push_back( val );
-  val = gTilePatchParams_[ tileId ][ p ].patch2dSizeY & 0xFF;
+  val = tilePatchParams[ tileId ][ p ].patch2dSizeY & 0xFF;
   stringByte.push_back( val );
-  val = ( gTilePatchParams_[ tileId ][ p ].patch2dSizeY >> 8 ) & 0xFF;
+  val = ( tilePatchParams[ tileId ][ p ].patch2dSizeY >> 8 ) & 0xFF;
   stringByte.push_back( val );
-  val = gTilePatchParams_[ tileId ][ p ].patch3dOffsetU & 0xFF;
+  val = tilePatchParams[ tileId ][ p ].patch3dOffsetU & 0xFF;
   stringByte.push_back( val );
-  val = ( gTilePatchParams_[ tileId ][ p ].patch3dOffsetU >> 8 ) & 0xFF;
+  val = ( tilePatchParams[ tileId ][ p ].patch3dOffsetU >> 8 ) & 0xFF;
   stringByte.push_back( val );
-  val = gTilePatchParams_[ tileId ][ p ].patch3dOffsetV & 0xFF;
+  val = tilePatchParams[ tileId ][ p ].patch3dOffsetV & 0xFF;
   stringByte.push_back( val );
-  val = ( gTilePatchParams_[ tileId ][ p ].patch3dOffsetV >> 8 ) & 0xFF;
+  val = ( tilePatchParams[ tileId ][ p ].patch3dOffsetV >> 8 ) & 0xFF;
   stringByte.push_back( val );
-  val = gTilePatchParams_[ tileId ][ p ].patch3dOffsetD & 0xFF;
+  val = tilePatchParams[ tileId ][ p ].patch3dOffsetD & 0xFF;
   stringByte.push_back( val );
-  val = ( gTilePatchParams_[ tileId ][ p ].patch3dOffsetD >> 8 ) & 0xFF;
+  val = ( tilePatchParams[ tileId ][ p ].patch3dOffsetD >> 8 ) & 0xFF;
   stringByte.push_back( val );
-  val = gTilePatchParams_[ tileId ][ p ].patch3dRangeD & 0xFF;
+  val = tilePatchParams[ tileId ][ p ].patch3dRangeD & 0xFF;
   stringByte.push_back( val );
-  val = ( gTilePatchParams_[ tileId ][ p ].patch3dRangeD >> 8 ) & 0xFF;
+  val = ( tilePatchParams[ tileId ][ p ].patch3dRangeD >> 8 ) & 0xFF;
   stringByte.push_back( val );
-  val = gTilePatchParams_[ tileId ][ p ].patchProjectionID & 0xFF;
+  val = tilePatchParams[ tileId ][ p ].patchProjectionID & 0xFF;
   stringByte.push_back( val );
-  val = gTilePatchParams_[ tileId ][ p ].patchOrientationIndex & 0xFF;
+  val = tilePatchParams[ tileId ][ p ].patchOrientationIndex & 0xFF;
   stringByte.push_back( val );
-  val = gTilePatchParams_[ tileId ][ p ].patchLoDScaleX & 0xFF;
+  val = tilePatchParams[ tileId ][ p ].patchLoDScaleX & 0xFF;
   stringByte.push_back( val );
-  val = ( gTilePatchParams_[ tileId ][ p ].patchLoDScaleX >> 8 ) & 0xFF;
+  val = ( tilePatchParams[ tileId ][ p ].patchLoDScaleX >> 8 ) & 0xFF;
   stringByte.push_back( val );
-  val = gTilePatchParams_[ tileId ][ p ].patchLoDScaleY & 0xFF;
+  val = tilePatchParams[ tileId ][ p ].patchLoDScaleY & 0xFF;
   stringByte.push_back( val );
-  val = ( gTilePatchParams_[ tileId ][ p ].patchLoDScaleY >> 8 ) & 0xFF;
+  val = ( tilePatchParams[ tileId ][ p ].patchLoDScaleY >> 8 ) & 0xFF;
   stringByte.push_back( val );
+  
 };
 
-void PCCCodec::tilePatchApplicationByteString( std::vector<uint8_t>& stringByte, size_t tileId, size_t p ) {
-  uint32_t bSize = getPatchPackingBlockSize();
-  uint8_t val = gAtlasPatchParams_[ tileId ].patchInAuxVideo & 0xFF;
+void PCCCodec::tilePatchApplicationByteString( std::vector<uint8_t>& stringByte, size_t tileId, size_t p, std::vector<std::vector<PatchParams>>& tilePatchParams ) {
+  //uint32_t bSize = getPatchPackingBlockSize();
+  uint8_t val = tilePatchParams[ tileId ][ p ].patchInAuxVideo & 0xFF; //jkei: why is it gAtlasPatchParams_?
   stringByte.push_back( val );  // AtlasPatchInAuxVideo & 0xFF;
-  if ( gTilePatchParams_[ tileId ][ p ].patchType == RAW ) {
-    val = gTilePatchParams_[ tileId ][ p ].patchRawPoints & 0xFF;
+  if ( tilePatchParams[ tileId ][ p ].patchType == RAW ) {
+    val = tilePatchParams[ tileId ][ p ].patchRawPoints & 0xFF;
     stringByte.push_back( val );
-    val = ( gTilePatchParams_[ tileId ][ p ].patchRawPoints >> 8 ) & 0xFF;
+    val = ( tilePatchParams[ tileId ][ p ].patchRawPoints >> 8 ) & 0xFF;
     stringByte.push_back( val );
-  } else if ( gTilePatchParams_[ tileId ][ p ].patchType == PROJECTED ) {
-    size_t blockCnt = ( ( gTilePatchParams_[ tileId ][ p ].patch2dSizeX + bSize - 1 ) / bSize ) *
-                      ( ( gTilePatchParams_[ tileId ][ p ].patch2dSizeY + bSize - 1 ) / bSize );
+  } else if ( tilePatchParams[ tileId ][ p ].patchType == PROJECTED ) {
+    /*size_t blockCnt = ( ( tilePatchParams[ tileId ][ p ].patch2dSizeX + bSize - 1 ) / bSize ) *
+                      ( ( tilePatchParams[ tileId ][ p ].patch2dSizeY + bSize - 1 ) / bSize );
 
-    /*for ( int m = 0; m < mapCount + 1; m++ ) { //ajt:: need to work on it later for multiple maps!
-      if ( gTilePatchParams_[ tileId ][ p ].patchPlrdLevel== 1 ) {
-        if ( gTilePatchParams_[ tileId ][ p ].patchPlrdLevel[m] == 0 ) {
+    for ( int m = 0; m < mapCount + 1; m++ ) { //ajt:: need to work on it later for multiple maps!
+      if ( tilePatchParams[ tileId ][ p ].patchPlrdLevel== 1 ) {
+        if ( tilePatchParams[ tileId ][ p ].patchPlrdLevel[m] == 0 ) {
           for ( int j = 0; j < blockCnt; j++ ) {
-            val = gTilePatchParams_[ tileId ][ p ].patchPlrdBlockModeMinus1[m][j] & 0xFF;
+            val = tilePatchParams[ tileId ][ p ].patchPlrdBlockModeMinus1[m][j] & 0xFF;
             stringByte.push_back( val );
-            val = ( gTilePatchParams_[ tileId ][ p ].[m][j] >> 8 ) & 0xFF;
+            val = ( tilePatchParams[ tileId ][ p ].[m][j] >> 8 ) & 0xFF;
             stringByte.push_back( val );
           }
         } else {
-          val = gTilePatchParams_[ tileId ][ p ].patchPlrdModeMinus1[m] & 0xFF;
+          val = tilePatchParams[ tileId ][ p ].patchPlrdModeMinus1[m] & 0xFF;
             stringByte.push_back( val );
             val = ( AtlasPlrdBlockModeMinus1[m] >> 8 ) & 0xFF;
             stringByte.push_back( val );
@@ -2769,19 +2979,19 @@ void PCCCodec::tilePatchApplicationByteString( std::vector<uint8_t>& stringByte,
       }
     }*/
 
-  } else if ( gTilePatchParams_[ tileId ][ p ].patchType == EOM ) {
-    // val = gTilePatchParams_[ tileId ][ p ].patchEomPatchCount[ p ] & 0xFF; // ajt:: this needs to be checked
+  } else if ( tilePatchParams[ tileId ][ p ].patchType == EOM ) {
+    // val = tilePatchParams[ tileId ][ p ].patchEomPatchCount[ p ] & 0xFF; // ajt:: this needs to be checked
     // stringByte.push_back( val );
-    // val = (gTilePatchParams_[ tileId ][ p ].patchEomPatchCount[ p ] >> 8 ) & 0xFF;
+    // val = (tilePatchParams[ tileId ][ p ].patchEomPatchCount[ p ] >> 8 ) & 0xFF;
     // stringByte.push_back( val );
-    val = gTilePatchParams_[ tileId ][ p ].epduAssociatedPatchCount & 0xFF;
+    val = tilePatchParams[ tileId ][ p ].epduAssociatedPatchCount & 0xFF;
     stringByte.push_back( val );
-    val = ( gTilePatchParams_[ tileId ][ p ].epduAssociatedPatchCount >> 8 ) & 0xFF;
+    val = ( tilePatchParams[ tileId ][ p ].epduAssociatedPatchCount >> 8 ) & 0xFF;
     stringByte.push_back( val );
-    for ( int i = 0; i < gTilePatchParams_[ tileId ][ p ].epduAssociatedPatchCount; i++ ) {
-      val = gTilePatchParams_[ tileId ][ p ].epduAssociatedPoints[i] & 0xFF;
+    for ( int i = 0; i < tilePatchParams[ tileId ][ p ].epduAssociatedPatchCount; i++ ) {
+      val = tilePatchParams[ tileId ][ p ].epduAssociatedPoints[i] & 0xFF;
       stringByte.push_back( val );
-      val = ( gTilePatchParams_[ tileId ][ p ].epduAssociatedPoints[i] >> 8 ) & 0xFF;
+      val = ( tilePatchParams[ tileId ][ p ].epduAssociatedPoints[i] >> 8 ) & 0xFF;
       stringByte.push_back( val );
     }
   }
@@ -2799,39 +3009,6 @@ void PCCCodec::atlasBlockToPatchByteString( std::vector<uint8_t>& stringByte ) {
 }
 void PCCCodec::tileBlockToPatchByteString( std::vector<uint8_t>& stringByte, size_t tileID ) {
   // ajt::to be done later
-}
-
-PatchParams::PatchParams( bool plrFlag, uint16_t mapCnt ) {
-  initPatchParams( plrFlag, mapCnt );
-}
-
-void PatchParams::initPatchParams( bool plrFlag, uint16_t mapCnt ) {
-
-    patchType = PROJECTED ;
-    patch2dPosX = 0;
-    patch2dPosY =  0;
-    patch2dSizeX = 1;
-    patch2dSizeY =  1;
-    patch3dOffsetU =  0;
-    patch3dOffsetV =  0;
-    patch3dOffsetD =  0;
-    patch3dRangeD =  1;
-    patchProjectionID =  0;
-    patchOrientationIndex=  0;
-    patchLoDScaleX=  1;
-    patchLoDScaleY=  1;
-    patchRawPoints=  0;
-    patchInAuxVideo=  0;
-
-    patchRawPoints = 0;
-    epduAssociatedPatchCount = 0;
-    // std::vector<int64_t>  patchEomPatchCount;  // this needs to be cheked later?
-
-    /*if ( plrFlag == true ) {// ajt:: need to revise this later! as part of a new application structure?
-      size_t size = patchPlrdLevel.size();
-      patchPlrdLevel.resize( size + 1 );
-      for ( int m = 0; m < mapCnt; m++ ) patchPlrdLevel[size]=  0 );
-    }*/
 }
 
 #ifdef CODEC_TRACE

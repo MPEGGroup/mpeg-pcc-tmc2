@@ -76,6 +76,7 @@ class PCCFrameContext {
   size_t&                         getHeight() { return height_; }
   const size_t                    getFrameIndex() { return frameIndex_; }
   const size_t                    getTileIndex() { return tileIndex_; }
+  const size_t                    getAtlIndex() { return atlIndex_; }
   const size_t                    getTotalNumberOfEOMPoints() { return totalNumberOfEOMPoints_; }
   const size_t                    getTotalNumberOfRegularPoints() { return totalNumberOfRegularPoints_; }
   const size_t                    getNumberOfRawPoints( int index ) { return numberOfRawPoints_[index]; }
@@ -99,6 +100,7 @@ class PCCFrameContext {
   size_t                     getGeometry3dCoordinatesBitdepth() { return geometry3dCoordinatesBitdepth_; }
   void                       setFrameIndex( size_t value ) { frameIndex_ = value; }
   void                       setTileIndex( size_t value ) { tileIndex_ = value; }
+  void                       setAtlIndex( size_t value ) { atlIndex_ = value; }
   void                       setWidth( size_t value ) { width_ = value; }
   void                       setHeight( size_t value ) { height_ = value; }
   void                       setUseRawPointsSeparateVideo( bool value ) { useRawPointsSeparateVideo_ = value; }
@@ -154,6 +156,7 @@ class PCCFrameContext {
  private:
   size_t  frameIndex_;
   size_t  tileIndex_;
+  size_t  atlIndex_;
   size_t  numMatchedPatches_;
   size_t  width_;
   size_t  height_;

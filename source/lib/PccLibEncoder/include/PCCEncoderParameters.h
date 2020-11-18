@@ -107,7 +107,7 @@ class PCCEncoderParameters {
   bool        occupancyMapRefinement_;
 
   // hash
-  bool flagDecodedAtlasInformationHash_;
+  size_t decodedAtlasInformationHash_;
 
   // smoothing
   size_t neighborCountSmoothing_;

@@ -295,9 +295,9 @@ bool parseParameters( int                   argc,
 
     // hash
     ( "decodedAtlasInformationHash",
-      encoderParams.flagDecodedAtlasInformationHash_,
-      encoderParams.flagDecodedAtlasInformationHash_,
-      "Enable decoded atlas information hash\n" )
+      encoderParams.decodedAtlasInformationHash_,
+      encoderParams.decodedAtlasInformationHash_,
+      "Enable decoded atlas information hash 0. disable 1.MD5 2.CRC 3.Checksum\n" )
 
     // smoothing
     ( "postprocessSmoothingFilterType",

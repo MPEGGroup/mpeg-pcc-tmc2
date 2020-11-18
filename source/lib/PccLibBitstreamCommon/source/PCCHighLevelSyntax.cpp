@@ -78,8 +78,8 @@ PCCAtlasHighLevelSyntax::~PCCAtlasHighLevelSyntax() { videoBitstream_.clear(); }
 
 
 
-void PCCHighLevelSyntax::aspsCommonByteString( std::vector<uint8_t>& stringByte ) {
-  auto& asps = getAtlasSequenceParameterSet( 0 ); // TODO: get correct value
+void PCCHighLevelSyntax::aspsCommonByteString( std::vector<uint8_t>& stringByte, size_t aspsIndex ) {
+  auto& asps = getAtlasSequenceParameterSet( aspsIndex ); // TODO: get correct value
   uint8_t val  = asps.getFrameWidth() && 0xFF;
   stringByte.push_back( val );
   val = (asps.getFrameWidth() >> 8 ) && 0xFF;
@@ -108,8 +108,8 @@ void PCCHighLevelSyntax::aspsCommonByteString( std::vector<uint8_t>& stringByte 
   stringByte.push_back( val ); 
 }
 
-void PCCHighLevelSyntax::aspsApplicationByteString( std::vector<uint8_t>& stringByte ) {
-  auto&   asps = getAtlasSequenceParameterSet( 0 ); // TODO: get correct value
+void PCCHighLevelSyntax::aspsApplicationByteString( std::vector<uint8_t>& stringByte, size_t aspsIndex, size_t afpsIndex ) {
+  auto&   asps = getAtlasSequenceParameterSet( aspsIndex );
   uint8_t val;
   if ( asps.getPixelDeinterleavingFlag() ) {
     for ( int j = 0; j <= asps.getMapCountMinus1(); j++ ) {
@@ -127,7 +127,7 @@ void PCCHighLevelSyntax::aspsApplicationByteString( std::vector<uint8_t>& string
       stringByte.push_back( val );
    }
   if( asps.getAuxiliaryVideoEnabledFlag() && ( asps.getRawPatchEnabledFlag() || asps.getEomPatchEnabledFlag() ) ) {
-      auto& afps = getAtlasFrameParameterSet( 0 ); // TODO: get correct value
+      auto& afps = getAtlasFrameParameterSet( afpsIndex );
       auto&  afti            = afps.getAtlasFrameTileInformation();
       size_t auxVideoWidthNF = ( afti.getAuxiliaryVideoTileRowWidthMinus1() + 1 ) * 64;
       uint8_t val             = auxVideoWidthNF && 0xFF; //val = AuxVideoWidthNF && 0xFF
@@ -177,36 +177,42 @@ void PCCHighLevelSyntax::aspsApplicationByteString( std::vector<uint8_t>& string
   }
 }
 
-void PCCHighLevelSyntax::afpsCommonByteString( std::vector<uint8_t>& stringByte ) {
+void PCCHighLevelSyntax::afpsCommonByteString( std::vector<uint8_t>& stringByte, size_t afpsIndex ) {
   size_t  prevAuxTileOffset = 0;
-  auto&   afps              = getAtlasFrameParameterSet( 0 );  // TODO: get correct value
-  auto&   afti              = afps.getAtlasFrameTileInformation();
+  auto   afps              = getAtlasFrameParameterSet( afpsIndex );
+  auto   afti              = afps.getAtlasFrameTileInformation();
   uint8_t val               = afti.getNumTilesInAtlasFrameMinus1() && 0xFF;
   stringByte.push_back( val );
 
-  size_t auxVideoWidthNF = ( afti.getAuxiliaryVideoTileRowWidthMinus1() + 1 ) * 64;
-
-  getTileOffsetAndSize();
+  //jkei: resizing hashPartitionPosX, hashPartitionPosY, and hashTileHeight in getTileOffsetAndSize is okay?
+  size_t auxVideoWidthNF=0;
+  std::vector<size_t> hashPartitionPosX;
+  std::vector<size_t> hashPartitionPosY;
+  std::vector<size_t> hashPartitionWidth;
+  std::vector<size_t> hashPartitionHeight;
+  std::vector<size_t> hashTileHeight;
+  getTileOffsetAndSize( afpsIndex, hashPartitionPosX, hashPartitionPosY, hashPartitionWidth, hashPartitionHeight, auxVideoWidthNF, hashTileHeight);
 
   for ( int i = 1; i < afti.getNumTilesInAtlasFrameMinus1() + 1; i++ ) {
+    
     size_t   topLeftColumn     = afti.getTopLeftPartitionIdx( i ) % ( afti.getNumPartitionColumnsMinus1() + 1 );
     size_t   topLeftRow        = afti.getTopLeftPartitionIdx( i ) / ( afti.getNumPartitionColumnsMinus1() + 1 );
     size_t   bottomRightColumn = topLeftColumn + afti.getBottomRightPartitionColumnOffset( i );
     size_t   bottomRightRow    = topLeftRow + afti.getBottomRightPartitionRowOffset( i );
-    uint32_t tileOffsetX       = afti.getPartitionPosX( topLeftColumn );
-    uint32_t tileOffsetY       = afti.getPartitionPosY( topLeftColumn );
+    uint32_t tileOffsetX       = hashPartitionPosX[ topLeftColumn ];
+    uint32_t tileOffsetY       = hashPartitionPosY[ topLeftRow ];
     size_t   tileWidth         = 0;
     size_t   tileHeight        = 0;
 
     for ( int j = topLeftColumn; j <= bottomRightColumn; j++ ) {
-      tileWidth += ( afti.getPartitionColumnWidthMinus1( j ) + 1 );
+      tileWidth += hashPartitionWidth[j];
     }
 
     for ( int j = topLeftRow; j <= bottomRightRow; j++ ) { 
-        tileHeight += ( afti.getPartitionRowHeightMinus1( j ) + 1 );
+        tileHeight += hashPartitionHeight[j];
     }
 
-    size_t auxTileHeight = afti.getAuxiliaryVideoTileRowHeight( i );
+    size_t auxTileHeight = hashTileHeight[i];
     size_t auxTileOffset = prevAuxTileOffset + auxTileHeight;
     prevAuxTileOffset    = auxTileOffset;
 
@@ -238,21 +244,103 @@ void PCCHighLevelSyntax::afpsCommonByteString( std::vector<uint8_t>& stringByte 
     stringByte.push_back( val ); //val = AuxTileHeight[i] && 0xFF;
     val = ( auxTileHeight >> 8 ) && 0xFF;
     stringByte.push_back( val );  //val = AuxTileHeight[i] && 0xFF;
-    val = afps.getAtlasFrameTileInformation().getTileId( i ) && 0xFF; //
-    stringByte.push_back( val );
-    val = ( afps.getAtlasFrameTileInformation().getTileId( i ) >> 8 ) && 0xFF;
-    stringByte.push_back( val );
+    if(afps.getAtlasFrameTileInformation().getSignalledTileIdFlag()){
+      val = afps.getAtlasFrameTileInformation().getTileId( i ) && 0xFF; //
+      stringByte.push_back( val );
+      val = ( afps.getAtlasFrameTileInformation().getTileId( i ) >> 8 ) && 0xFF;
+      stringByte.push_back( val );
+    }else{
+      val = i && 0xFF;
+      stringByte.push_back( val );
+      val = (i>>8) && 0xFF;
+      stringByte.push_back( val );
+    }
   }
+  if(hashPartitionPosX.size()!=0) hashPartitionPosX.clear();
+  if(hashPartitionPosY.size()!=0) hashPartitionPosY.clear();
+  if(hashPartitionWidth.size()!=0) hashPartitionWidth.clear();
+  if(hashPartitionHeight.size()!=0) hashPartitionHeight.clear();
+  if(hashTileHeight.size()!=0)    hashTileHeight.clear();
 }
 
-void PCCHighLevelSyntax::afpsApplicationByteString( std::vector<uint8_t>& stringByte ) {
+void PCCHighLevelSyntax::afpsApplicationByteString( std::vector<uint8_t>& stringByte, size_t afpsIndex ) {
 }
 
-void PCCHighLevelSyntax::getTileOffsetAndSize() {
-    auto& asps = getAtlasSequenceParameterSet( 0 ); // TODO: get correct value);
-    auto& afps = getAtlasFrameParameterSet( 0  ); // TODO: get correct value);
-    auto& afti = afps.getAtlasFrameTileInformation();
-    afti.initializePartitionPosX( asps.getFrameWidth() );
-    afti.initializePartitionPosY( asps.getFrameHeight() );
-    afti.initializeTileOffsetAndSize();
+void PCCHighLevelSyntax::getTileOffsetAndSize( size_t afpsIndex, std::vector<size_t>& seiPartitionPosX, std::vector<size_t>& seiPartitionPosY,
+                                              std::vector<size_t>& seiPartitionWidth, std::vector<size_t>& seiPartitionHeight,
+                                              size_t seiAuxVideoWidth, std::vector<size_t>& seiAuxTileHeight){
+  
+  
+  auto afps = getAtlasFrameParameterSet( afpsIndex );
+  auto asps = getAtlasSequenceParameterSet( afps.getAtlasFrameParameterSetId() );
+  auto afti = afps.getAtlasFrameTileInformation();
+  size_t frameWidth  = asps.getFrameWidth();
+  size_t frameHeight = asps.getFrameHeight();
+  size_t numPartitionCols = afti.getNumPartitionColumnsMinus1() + 1;
+  size_t numPartitionRows = afti.getNumPartitionRowsMinus1() + 1;
+  seiPartitionPosX.resize( numPartitionCols );
+  seiPartitionPosY.resize( numPartitionRows );
+  seiPartitionWidth.resize( numPartitionCols );
+  seiPartitionHeight.resize( numPartitionRows );
+  
+  if ( afti.getUniformPartitionSpacingFlag() ) {
+    size_t uniformPatitionWidth  = 64 * ( afti.getPartitionColumnWidthMinus1( 0 ) + 1 );
+    size_t uniformPatitionHeight = 64 * ( afti.getPartitionRowHeightMinus1( 0 ) + 1 );
+    seiPartitionPosX[0]             = 0;
+    seiPartitionWidth[0]            = uniformPatitionWidth;
+    for ( size_t col = 1; col < numPartitionCols - 1; col++ ) {
+      seiPartitionPosX[col]  = seiPartitionPosX[col - 1] + seiPartitionWidth[col - 1];
+      seiPartitionWidth[col] = uniformPatitionWidth;
+    }
+    if ( numPartitionCols > 1 ) {
+      seiPartitionPosX[numPartitionCols - 1] =
+      seiPartitionPosX[numPartitionCols - 2] + seiPartitionWidth[numPartitionCols - 2];
+      seiPartitionWidth[numPartitionCols - 1] = frameWidth - seiPartitionPosX[numPartitionCols - 1];
+    }
+    
+    seiPartitionPosY[0]   = 0;
+    seiPartitionHeight[0] = uniformPatitionHeight;
+    for ( size_t row = 1; row < numPartitionRows - 1; row++ ) {
+      seiPartitionPosY[row]   = seiPartitionPosY[row - 1] + seiPartitionHeight[row - 1];
+      seiPartitionHeight[row] = uniformPatitionHeight;
+    }
+    if ( numPartitionRows > 1 ) {
+      seiPartitionPosY[numPartitionRows - 1] =
+      seiPartitionPosY[numPartitionRows - 2] + seiPartitionHeight[numPartitionRows - 2];
+      seiPartitionHeight[numPartitionRows - 1] = frameHeight - seiPartitionPosY[numPartitionRows - 1];
+    }
+  } else {
+    // jkei:we need to figure out how to set non-uniform partition spcaing
+    printf( "non uniform tile partitioning\n" );
+    exit( 129 );
+    size_t multiPatitionWidth  = 64 * ( afti.getPartitionColumnWidthMinus1( 0 ) + 1 );
+    size_t multiPatitionHeight = 64 * ( afti.getPartitionRowHeightMinus1( 0 ) + 1 );
+    for ( size_t col = 0; col < numPartitionCols; col++ ) {
+      seiPartitionWidth[col] = multiPatitionWidth;  // jkei: input needs to be array
+      seiPartitionPosX[col]  = seiPartitionPosX[col - 1] + seiPartitionWidth[col];
+    }
+    for ( size_t row = 0; row < numPartitionRows; row++ ) {
+      seiPartitionHeight[row] = multiPatitionHeight;
+      seiPartitionPosY[row]   = seiPartitionPosY[row - 1] + seiPartitionHeight[row];
+    }
+  }
+  
+  if ( asps.getAuxiliaryVideoEnabledFlag() ) {
+    seiAuxVideoWidth = ( ( afti.getAuxiliaryVideoTileRowWidthMinus1() + 1 ) * 64 );
+//    seiAuxTileLeftTopY.resize( afti.getNumTilesInAtlasFrameMinus1() + 1, 0 );
+    seiAuxTileHeight.resize( afti.getNumTilesInAtlasFrameMinus1() + 1, 0 );
+    for ( size_t ti = 0; ti <= afti.getNumTilesInAtlasFrameMinus1(); ti++ ) {
+      seiAuxTileHeight[ ti ] = afti.getAuxiliaryVideoTileRowHeight( ti )*64 ;
+//      if ( ti < afti.getNumTilesInAtlasFrameMinus1() )
+//        seiAuxTileLeftTopY[ti+1] = ( getAuxTileLeftTopY( ti ) + getAuxTileHeight( ti ) );
+    }
+  } else{
+    seiAuxTileHeight.resize( afti.getNumTilesInAtlasFrameMinus1() + 1, 0 );
+  }
+  //    auto& asps = getAtlasSequenceParameterSet( aspsIndex ); // TODO: get correct value);
+  //    auto& afps = getAtlasFrameParameterSet( afpsIndex  ); // TODO: get correct value);
+  //    auto& afti = afps.getAtlasFrameTileInformation();
+  //    afti.initializePartitionPosX( asps.getFrameWidth() );
+  //    afti.initializePartitionPosY( asps.getFrameHeight() );
+  //    afti.initializeTileOffsetAndSize();
 }

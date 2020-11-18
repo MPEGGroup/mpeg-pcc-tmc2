@@ -72,9 +72,7 @@
 #define MATCHTOANCHOR 1  // jkei: set 1 to match with the results of anchor for mapcount=1 case.
 #define NONUNIFORM_PARTSIZE 0
 
-#define TILETYPE0_BUGFIX 1
 #define MULTITILE_BUGFIX 1
-#define TILEPARTITION_BUGFIX 1
 #define AUXVIDEO_BUGFIX 1
 #define TILETYPE1_RAWAUXVIDEO_BUGFIX 1
 #define TILETYPE2_RAWAUXVIDEO_BUGFIX 1 //jkei: how/when to place raw tiles

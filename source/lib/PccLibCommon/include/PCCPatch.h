@@ -1440,6 +1440,7 @@ struct PCCEomPatch {
   size_t              v0_;
   size_t              sizeU_;
   size_t              sizeV_;
+  bool                isPatchInAuxVideo_;
   size_t              tileIndex_;
   size_t              frameIndex_;
   size_t              eomCount_;  // in this EomPatch
@@ -1456,6 +1457,7 @@ struct PCCRawPointsPatch {
   size_t                sizeV_;
   size_t                u0_;
   size_t                v0_;
+  bool                  isPatchInAuxVideo_;
   size_t                tileIndex_;
   size_t                frameIndex_;
   size_t                sizeV0_;

@@ -685,9 +685,13 @@ void PCCBitstreamReader::atlasFrameTileInformation( AtlasFrameTileInformation&  
   afti.setSignalledTileIdFlag( bitstream.read( 1 ) != 0U );  // u(1)
   if ( afti.getSignalledTileIdFlag() ) {
     afti.setSignalledTileIdLengthMinus1( bitstream.readUvlc() );  // ue(v)
-    for ( size_t i = 0; i <= afti.getSignalledTileIdLengthMinus1(); i++ ) {
+    for ( size_t i = 0; i <= afti.getNumTilesInAtlasFrameMinus1(); i++ ) { //jkei: bugfix
       uint8_t bitCount = afti.getSignalledTileIdLengthMinus1() + 1;
       afti.setTileId( i, bitstream.read( bitCount ) );  // u(v)
+    }
+  }else{
+    for ( size_t i = 0; i <= afti.getNumTilesInAtlasFrameMinus1(); i++ ) {
+      afti.setTileId( i, i );
     }
   }
 }
@@ -1038,6 +1042,8 @@ void PCCBitstreamReader::patchDataUnit( PatchDataUnit&      pdu,
 #endif
     pdu.set3dRangeD( bitstream.read( bitCountForMaxDepth ) );  // u(v)
     TRACE_BITSTREAM( " Pdu3dPosDeltaMaxZ: %zu ( bitCountForMaxDepth = %u) \n", pdu.get3dRangeD(), bitCountForMaxDepth );
+  } else {
+    pdu.set3dRangeD( 0 );
   }
   pdu.setProjectionId( bitstream.read( ceilLog2( asps.getMaxNumberProjectionsMinus1() + 1 ) ) );  // u(5 or 3)
 
@@ -1109,7 +1115,8 @@ void PCCBitstreamReader::mergePatchDataUnit( MergePatchDataUnit& mpdu,
       mpdu.set3dOffsetD( bitstream.readSvlc() );  // se(v)
       if ( asps.getNormalAxisMaxDeltaValueEnabledFlag() ) {
         mpdu.set3dRangeD( bitstream.readSvlc() );  // se(v)
-      }
+      } else mpdu.set3dRangeD( 0 );
+
       if ( asps.getPLREnabledFlag() ) {
         overridePlrFlag = ( bitstream.read( 1 ) );  // u(1)
         mpdu.setOverridePlrFlag( static_cast<int64_t>( overridePlrFlag ) );
@@ -1161,6 +1168,8 @@ void PCCBitstreamReader::interPatchDataUnit( InterPatchDataUnit& ipdu,
   ipdu.set3dOffsetD( bitstream.readSvlc() );  // se(v)
   if ( asps.getNormalAxisMaxDeltaValueEnabledFlag() ) {
     ipdu.set3dRangeD( bitstream.readSvlc() );  // se(v)
+  } else {
+    ipdu.set3dRangeD( 0 );
   }
   TRACE_BITSTREAM(
       "%zu frame: numRefIdxActive = %zu reference = frame%zu patch%d 2Dpos = "
@@ -1220,6 +1229,8 @@ void PCCBitstreamReader::rawPatchDataUnit( RawPatchDataUnit&   rpdu,
                    bitCount );
   if ( 1 /* TODO: evaluate: AuxTileHeight[ TileIdToIndex[ ath_id ] ] > 0 */ ) { // JR TODO with JK
     rpdu.setPatchInAuxiliaryVideoFlag( bitstream.read( 1 ) != 0U );  // u(1)
+  } else{
+    rpdu.setPatchInAuxiliaryVideoFlag( 0 );
   }
   rpdu.set2dPosX( bitstream.readUvlc() );           // ue(v)
   rpdu.set2dPosY( bitstream.readUvlc() );           // ue(v)
@@ -1245,6 +1256,8 @@ void PCCBitstreamReader::eomPatchDataUnit( EOMPatchDataUnit&   epdu,
   TRACE_BITSTREAM( "%s \n", __func__ );
   if ( 1 /* TODO: evaluate: AuxTileHeight[ TileIdToIndex[ ath_id ] ] > 0 */ ) { // JR TODO with JK
     epdu.setPatchInAuxiliaryVideoFlag( bitstream.read( 1 ) != 0U );  // u(1)
+  }else{
+    epdu.setPatchInAuxiliaryVideoFlag( 0 );
   }
   epdu.set2dPosX( bitstream.readUvlc() );            // ue(v)
   epdu.set2dPosY( bitstream.readUvlc() );            // ue(v)
@@ -1336,6 +1349,9 @@ void PCCBitstreamReader::seiMessage( PCCBitstream& bitstream, PCCHighLevelSyntax
     payloadSize += byte;
   } while ( byte == 0xff );
   seiPayload( bitstream, syntax, nalUnitType, static_cast<SeiPayloadType>( payloadType ), payloadSize );
+  if(static_cast<SeiPayloadType>( payloadType ) == DECODED_ATLAS_INFORMATION_HASH){
+    syntax.getSeiHash().push_back( static_cast<SEIDecodedAtlasInformationHash&>( *( syntax.getSeiSuffix().back().get() ) ) );
+  }
 }
 
 
@@ -1997,7 +2013,7 @@ void PCCBitstreamReader::decodedAtlasInformationHash( PCCBitstream& bitstream, S
     if ( sei.getDecodedAtlasTilesHashPresentFlag() || sei.getDecodedAtlasTilesB2pHashPresentFlag() ) {
       sei.setNumTilesMinus1( bitstream.readUvlc() );   // ue(v)
       sei.setTileIdLenMinus1( bitstream.readUvlc() );  // ue(v)
-      sei.allocate();
+      sei.allocateAtlasTilesHash(sei.getNumTilesMinus1()+1);
       for ( size_t t = 0; t <= sei.getNumTilesMinus1(); t++ ) {
         sei.setTileId( t, bitstream.read( sei.getTileIdLenMinus1() + 1 ) );  // u(v)
       }
