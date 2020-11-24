@@ -149,6 +149,7 @@ void PCCFrameContext::constructAtghRefListStruct( PCCContext& context, AtlasTile
 void PCCFrameContext::allocOneLayerData() {
   for ( auto& patch : patches_ ) { patch.allocOneLayerData(); }
 }
+
 void PCCFrameContext::printBlockToPatch( const size_t resolution ) {
   printVector( blockToPatch_, width_ / resolution, height_ / resolution, stringFormat( "blockToPatch[%d]", frameIndex_ ),
                true );
@@ -162,6 +163,7 @@ void PCCFrameContext::printPatch() {
   }
   fflush( stdout );
 }
+
 void PCCFrameContext::printPatchDecoder() {
   size_t index = 0;
   printf( "Patch %4zu:", patches_.size() );

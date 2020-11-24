@@ -252,10 +252,12 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
                      StopwatchUserTime&          clock ) {
   PCCBitstream     bitstream;
   PCCBitstreamStat bitstreamStat;
+  PCCLogger logger;
+  logger.initilalize( removeFileExtension( decoderParams.compressedStreamPath_ ), false );
 #ifdef BITSTREAM_TRACE
+  bitstream.setLogger( logger ); 
   bitstream.setTrace( true );
-  bitstream.openTrace( removeFileExtension( decoderParams.compressedStreamPath_ ) + "_samplestream_read.txt" );
-  bitstream.setTraceFile( bitstream.getTraceFile() );
+  size_t index = 0;
 #endif
   if ( !bitstream.initialize( decoderParams.compressedStreamPath_ ) ) { return -1; }
   // if ( !bitstream.readHeader() ) { return -1; }
@@ -269,34 +271,24 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
   std::vector<std::vector<uint8_t>> checksumsDec;
   if ( metricsParams.computeChecksum_ ) { checksum.read( decoderParams.compressedStreamPath_ ); }
   PCCDecoder decoder;
+  decoder.setLogger( logger );
   decoder.setParameters( decoderParams );
 
   SampleStreamV3CUnit ssvu;
-  PCCBitstreamReader  bitstreamReader;
   size_t              headerSize = pcc::PCCBitstreamReader::read( bitstream, ssvu );
   bitstreamStat.incrHeader( headerSize );
-#ifdef BITSTREAM_TRACE
-  size_t index = 0;
-#endif
   bool bMoreData = true;
   while ( bMoreData ) {
     PCCGroupOfFrames reconstructs;
     PCCContext       context;
     context.setBitstreamStat( bitstreamStat );
     clock.start();
-
     PCCBitstreamReader bitstreamReader;
 #ifdef BITSTREAM_TRACE
-    PCCBitstream bitstream;
-    bitstream.setTrace( true );
-    bitstream.openTrace( stringFormat( "%s_GOF%u_hls_decode.txt",
-                                       removeFileExtension( decoderParams.compressedStreamPath_ ).c_str(), index++ ) );
-    bitstreamReader.setTraceFile( bitstream.getTraceFile() );
+    bitstreamReader.setLogger( logger ); 
 #endif
     if ( bitstreamReader.decode( ssvu, context ) == 0 ) { return 0; }
-#ifdef BITSTREAM_TRACE
-    bitstream.closeTrace();
-#endif
+
     // allocate atlas structure
     context.resizeAtlas( context.getVps().getAtlasCountMinus1() + 1 );
     for ( uint32_t atlId = 0; atlId < context.getVps().getAtlasCountMinus1() + 1; atlId++ ) {

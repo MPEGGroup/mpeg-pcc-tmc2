@@ -45,12 +45,6 @@ struct PCCBistreamPosition {
 
 class PCCVideoBitstream;
 
-#ifdef BITSTREAM_TRACE
-#define TRACE_BITSTREAM( fmt, ... ) bitstream.trace( fmt, ##__VA_ARGS__ );
-#else
-#define TRACE_BITSTREAM( fmt, ... )
-#endif
-
 class PCCBitstreamGofStat {
  public:
   PCCBitstreamGofStat() {
@@ -332,32 +326,12 @@ class PCCBitstream {
   template <typename... Args>
   void trace( const char* pFormat, Args... eArgs ) {
     if ( trace_ ) {
-      FILE* output = traceFile_ ? traceFile_ : stdout;
-      fprintf( output, "[%6llu - %2u]: ", position_.bytes_, position_.bits_ );
-      fflush( output );
-      fprintf( output, pFormat, eArgs... );
-      fflush( output );
+      logger_->traceStream( "[%6llu - %2u]: ", position_.bytes_, position_.bits_ );      
+      logger_->traceStream( pFormat, eArgs... );      
     }
   }
   void  setTrace( bool trace ) { trace_ = trace; }
-  void  setTraceFile( FILE* traceFile ) { traceFile_ = traceFile; }
-  FILE* getTraceFile() { return traceFile_; }
-
-  bool getTrace() { return trace_; }
-  bool openTrace( std::string file ) {
-    if ( traceFile_ ) {
-      fclose( traceFile_ );
-      traceFile_ = NULL;
-    }
-    if ( ( traceFile_ = fopen( file.c_str(), "w+" ) ) == NULL ) { return false; }
-    return true;
-  }
-  void closeTrace() {
-    if ( traceFile_ ) {
-      fclose( traceFile_ );
-      traceFile_ = NULL;
-    }
-  }
+  void setLogger( PCCLogger& logger ){ logger_ = &logger;   }
 #endif
  private:
   inline void realloc( const size_t size = 4096 ) { data_.resize( data_.size() + ( ( ( size / 4096 ) + 1 ) * 4096 ) ); }
@@ -393,7 +367,7 @@ class PCCBitstream {
 
 #ifdef BITSTREAM_TRACE
   bool  trace_;
-  FILE* traceFile_;
+  PCCLogger* logger_ = nullptr;
 #endif
 };
 

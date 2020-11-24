@@ -46,12 +46,7 @@
 
 using namespace pcc;
 
-PCCCodec::PCCCodec() {
-#ifdef BITSTREAM_TRACE
-  trace_     = false;
-  traceFile_ = NULL;
-#endif
-}
+PCCCodec::PCCCodec() {}
 PCCCodec::~PCCCodec() = default;
 
 void PCCCodec::smoothPointCloudPostprocess( PCCPointSet3&                       reconstruct,
@@ -2232,12 +2227,13 @@ void PCCCodec::generateBlockToPatchFromOccupancyMapVideo( PCCContext&  context,
       generateBlockToPatchFromOccupancyMapVideo( context, tile, fi, occupancyImage, occupancyResolution,
                                                  occupancyPrecision );
     }
-    if ( context[fi].getNumTilesInAtlasFrame() != 1 ) {
-      PCCFrameContext&      tile          = context.getFrame( fi ).getTitleFrameContext();
-      PCCImageOccupancyMap& occupancyImage = context.getVideoOccupancyMap().getFrame( fi );
-      generateBlockToPatchFromOccupancyMapVideo( context, tile, fi, occupancyImage, occupancyResolution,
-                                                 occupancyPrecision );
-    }
+    // Note JR: based on Ali remark, in comment this second part.
+    // if ( context[fi].getNumTilesInAtlasFrame() != 1 ) {
+    //   PCCFrameContext&      tile          = context.getFrame( fi ).getTitleFrameContext();
+    //   PCCImageOccupancyMap& occupancyImage = context.getVideoOccupancyMap().getFrame( fi );
+    //   generateBlockToPatchFromOccupancyMapVideo( context, tile, fi, occupancyImage, occupancyResolution,
+    //                                              occupancyPrecision );
+    // }
   }  // frame
 }
 

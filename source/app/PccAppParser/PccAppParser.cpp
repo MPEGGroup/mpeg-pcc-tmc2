@@ -58,10 +58,11 @@ void usage() {
 int parserPccBin( const std::string& filename ) {
   PCCBitstream     bitstream;
   PCCBitstreamStat bitstreamStat;
+  PCCLogger logger;
+  logger.initilalize( removeFileExtension( filename ), false );
 #ifdef BITSTREAM_TRACE
+  bitstream.setLogger( logger ); 
   bitstream.setTrace( true );
-  bitstream.openTrace( removeFileExtension( filename ) + "_samplestream_read.txt" );
-  bitstream.setTraceFile( bitstream.getTraceFile() );
 #endif
   if ( !bitstream.initialize( filename ) ) { return -1; }
   bitstreamStat.setHeader( bitstream.size() );

@@ -42,7 +42,6 @@ PCCBitstream::PCCBitstream() {
   data_.clear();
 #ifdef BITSTREAM_TRACE
   trace_     = false;
-  traceFile_ = NULL;
 #endif
 }
 

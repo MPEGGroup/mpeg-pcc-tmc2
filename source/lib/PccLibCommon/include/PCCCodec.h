@@ -162,15 +162,8 @@ struct PatchParams {
   // std::vector<int64_t>  patchEomPatchCount;  // this needs to be cheked later?
   int64_t             epduAssociatedPatchCount;
   std::vector<size_t> epduAssociatedPoints;
-
   // std::vector<std::vector<uint8_t>> patchPlrdLevel; ajt:: this should be 3-dimensional - work on it later!
 };
-
-#ifdef CODEC_TRACE
-#define TRACE_CODEC( fmt, ... ) trace( fmt, ##__VA_ARGS__ );
-#else
-#define TRACE_CODEC( fmt, ... ) ;
-#endif
 
 class PCCCodec {
  public:
@@ -209,55 +202,7 @@ class PCCCodec {
   void generateRawPointsGeometryfromVideo( PCCContext& context, size_t frameIndex );
   void generateRawPointsTexturefromVideo( PCCContext& context, size_t frameIndex );
 
-#ifdef CODEC_TRACE
-  template <typename... Args>
-  void trace( const char* pFormat, Args... eArgs ) {
-    if ( trace_ ) {
-      FILE* output = traceFile_ ? traceFile_ : stdout;
-      fprintf( output, pFormat, eArgs... );
-      fflush( output );
-    }
-  }
-
-  template <typename T>
-  void traceVector( std::vector<T>    data,
-                    const size_t      width,
-                    const size_t      height,
-                    const std::string string,
-                    const bool        hexa = false ) {
-    if ( trace_ ) {
-      if ( data.size() == 0 ) { data.resize( width * height, 0 ); }
-      trace( "%s: %zu %zu \n", string.c_str(), width, height );
-      for ( size_t v0 = 0; v0 < height; ++v0 ) {
-        for ( size_t u0 = 0; u0 < width; ++u0 ) {
-          if ( hexa ) {
-            trace( "%2x", (int)( data[v0 * width + u0] ) );
-          } else {
-            trace( "%3d", (int)( data[v0 * width + u0] ) );
-          }
-        }
-        trace( "\n" );
-      }
-    }
-  }
-
-  void setTrace( bool trace ) { trace_ = trace; }
-  bool getTrace() { return trace_; }
-  bool openTrace( std::string file ) {
-    if ( traceFile_ ) {
-      fclose( traceFile_ );
-      traceFile_ = NULL;
-    }
-    if ( ( traceFile_ = fopen( file.c_str(), "w" ) ) == NULL ) { return false; }
-    return true;
-  }
-  void closeTrace() {
-    if ( traceFile_ ) {
-      fclose( traceFile_ );
-      traceFile_ = NULL;
-    }
-  }
-#endif
+  void setLogger( PCCLogger& logger ) { logger_ = &logger; }
  protected:
   void generateOccupancyMap( PCCFrameContext&      tile,
                              PCCImageOccupancyMap& videoFrame,
@@ -356,7 +301,7 @@ class PCCCodec {
   void tileBlockToPatchByteString     ( std::vector<uint8_t>& stringByte, size_t tileID );
   void getHashPatchParams( PCCContext& context, size_t frameIndex, size_t tileIndex, size_t atlIndex, std::vector<PatchParams>& atlasPatchParams, std::vector<std::vector<PatchParams>>& tilePatchParams   );
 
-
+  PCCLogger* logger_ = nullptr;
  private:
   void smoothPointCloud( PCCPointSet3&                      reconstruct,
                          const std::vector<uint32_t>&       partition,
@@ -473,16 +418,6 @@ class PCCCodec {
   std::vector<bool>                          colorSmoothingDoSmooth_;
   std::vector<std::pair<size_t, size_t>>     colorSmoothingPartition_;
   std::vector<std::vector<uint16_t>>         colorSmoothingLum_;
-
-#ifdef CODEC_TRACE
-  bool  trace_;
-  FILE* traceFile_;
-#else
-#ifdef BITSTREAM_TRACE
-  bool trace_;
-  FILE* traceFile_;
-#endif
-#endif
 };
 
 };  // namespace pcc

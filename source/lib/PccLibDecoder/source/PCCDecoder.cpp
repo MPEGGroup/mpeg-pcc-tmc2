@@ -55,15 +55,20 @@ void PCCDecoder::setParameters( const PCCDecoderParameters& params ) { params_ =
 
 int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int32_t atlasIndex = 0 ) {
   if ( params_.nbThread_ > 0 ) { tbb::task_scheduler_init init( static_cast<int>( params_.nbThread_ ) ); }
-#ifdef CODEC_TRACE
-  setTrace( true );
-  openTrace( stringFormat( "%s_GOF%u_patch_decode.txt", removeFileExtension( params_.compressedStreamPath_ ).c_str(),
-                           context.getVps().getV3CParameterSetId() ) );
-#endif
   createPatchFrameDataStructure( context );
 
-#ifdef CODEC_TRACE
-  closeTrace();
+  // Note JR: logger examples
+#if 1  
+  logger_->trace( LOG_DESCR, "test descr = %d \n", 10  );
+  logger_->trace( LOG_DESCR, "test descr = %d \n", 11  );
+  logger_->trace( LOG_ATLAS, "test atlas = %d \n", 12  );
+  logger_->trace( LOG_ATLAS, "test atlas = %d \n", 13  );
+  logger_->trace( LOG_FRAME, "test frame = %d \n", 14  );
+  logger_->trace( LOG_FRAME, "test frame = %d \n", 15  );
+  logger_->trace( LOG_TILES, "test tiles = %d \n", 16  );
+  logger_->trace( LOG_TILES, "test tiles = %d \n", 17  );
+  logger_->trace( LOG_TRACE, "test trace = %d \n", 18  );
+  logger_->trace( LOG_TRACE, "test trace = %d \n", 19  );
 #endif
 
   PCCVideoDecoder   videoDecoder;
@@ -75,11 +80,6 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
   auto&             asps         = context.getAtlasSequenceParameterSet( 0 );
   size_t            pcFrameCount = context.size();
   path << removeFileExtension( params_.compressedStreamPath_ ) << "_dec_GOF" << sps.getV3CParameterSetId() << "_";
-#ifdef CODEC_TRACE
-  setTrace( true );
-  openTrace( stringFormat( "%s_GOF%u_codec_decode.txt", removeFileExtension( params_.compressedStreamPath_ ).c_str(),
-                           sps.getV3CParameterSetId() ) );
-#endif
   auto&        plt                      = sps.getProfileTierLevel();
   const size_t mapCount                 = sps.getMapCountMinus1( atlasIndex ) + 1;
   auto&        videoBitstreamOM         = context.getVideoBitstream( VIDEO_OCCUPANCY );
@@ -331,7 +331,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
     }  // tile
 
     // Post-Processing
-    TRACE_CODEC( "Post-Processing: postprocessSmoothing = %zu pbfEnableFlag = %d \n",
+    TRACE_PATCH( "Post-Processing: postprocessSmoothing = %zu pbfEnableFlag = %d \n",
                  params_.postprocessSmoothingFilter_, ppSEIParams.pbfEnableFlag_ );
     if ( ppSEIParams.flagGeometrySmoothing_ ) {
       PCCPointSet3 tempFrameBuffer = reconstruct;
@@ -341,18 +341,18 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
       if ( !ppSEIParams.pbfEnableFlag_ ) {
         // These are different attribute transfer functions
         if ( params_.postprocessSmoothingFilter_ == 1 || params_.postprocessSmoothingFilter_ == 5 ) {
-          TRACE_CODEC( " transferColors16bitBP \n" );
+          TRACE_PATCH( " transferColors16bitBP \n" );
           tempFrameBuffer.transferColors16bitBP( reconstruct, params_.postprocessSmoothingFilter_, int32_t( 0 ),
                                                  isAttributes444, 8, 1, true, true, true, false, 4, 4, 1000, 1000,
                                                  1000 * 256, 1000 * 256 );  // jkie: let's make it general
         } else if ( params_.postprocessSmoothingFilter_ == 2 ) {
-          TRACE_CODEC( " transferColorWeight \n" );
+          TRACE_PATCH( " transferColorWeight \n" );
           tempFrameBuffer.transferColorWeight( reconstruct, 0.1 );
         } else if ( params_.postprocessSmoothingFilter_ == 3 ) {
-          TRACE_CODEC( " transferColorsFilter3 \n" );
+          TRACE_PATCH( " transferColorsFilter3 \n" );
           tempFrameBuffer.transferColorsFilter3( reconstruct, int32_t( 0 ), isAttributes444 );
         } else if ( params_.postprocessSmoothingFilter_ == 7 || params_.postprocessSmoothingFilter_ == 9 ) {
-          TRACE_CODEC( " transferColorsFilter3 \n" );
+          TRACE_PATCH( " transferColorsFilter3 \n" );
           tempFrameBuffer.transferColorsBackward16bitBP( reconstruct, params_.postprocessSmoothingFilter_, int32_t( 0 ),
                                                 isAttributes444, 8, 1, true, true, true, false, 4, 4, 1000, 1000,
                                                 1000 * 256, 1000 * 256 );
@@ -360,28 +360,24 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
       }
     }
     if ( ppSEIParams.flagColorSmoothing_ ) { 
-      TRACE_CODEC( " colorSmoothing \n" );
+      TRACE_PATCH( " colorSmoothing \n" );
 			colorSmoothing( reconstruct, params_.colorTransform_, ppSEIParams ); 
     }
     if ( !isAttributes444 ) {  // lossy: convert 16-bit yuv444 to 8-bit RGB444
-      TRACE_CODEC( "lossy: convert 16-bit yuv444 to 8-bit RGB444 (convertYUV16ToRGB8) \n" );
+      TRACE_PATCH( "lossy: convert 16-bit yuv444 to 8-bit RGB444 (convertYUV16ToRGB8) \n" );
       reconstruct.convertYUV16ToRGB8();
     } else {  // lossless: copy 16-bit RGB to 8-bit RGB
-      TRACE_CODEC( "lossy: lossless: copy 16-bit RGB to 8-bit RGB (copyRGB16ToRGB8) \n" );
+      TRACE_PATCH( "lossy: lossless: copy 16-bit RGB to 8-bit RGB (copyRGB16ToRGB8) \n" );
       reconstruct.copyRGB16ToRGB8();
     }
   }
-#ifdef CODEC_TRACE
-  setTrace( false );
-  closeTrace();
-#endif
   return 0;
 }
 
 void PCCDecoder::setPointLocalReconstruction( PCCContext& context ) {
   //jkei: need to place this function in tile loop to access proper asps
   auto& asps = context.getAtlasSequenceParameterSet( 0 );
-  TRACE_CODEC( "PLR = %d \n", asps.getPLREnabledFlag() );
+  TRACE_PATCH( "PLR = %d \n", asps.getPLREnabledFlag() );
   PointLocalReconstructionMode mode = {false, false, 0, 1};
   context.addPointLocalReconstructionMode( mode );
   if ( asps.getPLREnabledFlag() ) {
@@ -396,7 +392,7 @@ void PCCDecoder::setPointLocalReconstruction( PCCContext& context ) {
 #ifdef CODEC_TRACE
     for ( size_t i = 0; i < context.getPointLocalReconstructionModeNumber(); i++ ) {
       auto& mode = context.getPointLocalReconstructionMode( i );
-      TRACE_CODEC( "Plrm[%zu]: Inter = %d Fill = %d minD1 = %u neighbor = %u \n", i, mode.interpolate_, mode.filling_,
+      TRACE_PATCH( "Plrm[%zu]: Inter = %d Fill = %d minD1 = %u neighbor = %u \n", i, mode.interpolate_, mode.filling_,
                    mode.minD1_, mode.neighbor_ );
     }
 #endif
@@ -408,16 +404,16 @@ void PCCDecoder::setPLRData( PCCFrameContext& tile,
                              PLRData&         plrd,
                              size_t           occupancyPackingBlockSize ) {
   patch.allocOneLayerData();
-  TRACE_CODEC( "WxH = %zu x %zu \n", plrd.getBlockToPatchMapWidth(), plrd.getBlockToPatchMapHeight() );
+  TRACE_PATCH( "WxH = %zu x %zu \n", plrd.getBlockToPatchMapWidth(), plrd.getBlockToPatchMapHeight() );
   patch.getPointLocalReconstructionLevel() = static_cast<uint8_t>( plrd.getLevelFlag() );
-  TRACE_CODEC( "  LevelFlag = %d \n", plrd.getLevelFlag() );
+  TRACE_PATCH( "  LevelFlag = %d \n", plrd.getLevelFlag() );
   if ( plrd.getLevelFlag() ) {
     if ( plrd.getPresentFlag() ) {
       patch.getPointLocalReconstructionMode() = plrd.getModeMinus1() + 1;
     } else {
       patch.getPointLocalReconstructionMode() = 0;
     }
-    TRACE_CODEC( "  ModePatch: Present = %d ModeMinus1 = %2d \n", plrd.getPresentFlag(),
+    TRACE_PATCH( "  ModePatch: Present = %d ModeMinus1 = %2d \n", plrd.getPresentFlag(),
                  plrd.getPresentFlag() ? (int32_t)plrd.getModeMinus1() : -1 );
   } else {
     for ( size_t v0 = 0; v0 < plrd.getBlockToPatchMapHeight(); ++v0 ) {
@@ -428,7 +424,7 @@ void PCCDecoder::setPLRData( PCCFrameContext& tile,
         } else {
           patch.getPointLocalReconstructionMode( u0, v0 ) = 0;
         }
-        TRACE_CODEC( "  Mode[%3u]: Present = %d ModeMinus1 = %2d \n", index, plrd.getBlockPresentFlag( index ),
+        TRACE_PATCH( "  Mode[%3u]: Present = %d ModeMinus1 = %2d \n", index, plrd.getBlockPresentFlag( index ),
                      plrd.getBlockPresentFlag( index ) ? (int32_t)plrd.getBlockModeMinus1( index ) : -1 );
       }
     }
@@ -436,7 +432,7 @@ void PCCDecoder::setPLRData( PCCFrameContext& tile,
 #ifdef CODEC_TRACE
   for ( size_t v0 = 0; v0 < patch.getSizeV0(); ++v0 ) {
     for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {
-      TRACE_CODEC(
+      TRACE_PATCH(
           "Block[ %2lu %2lu <=> %4zu ] / [ %2lu %2lu ]: Level = %d Present = "
           "%d mode = %zu \n",
           u0, v0, v0 * patch.getSizeU0() + u0, patch.getSizeU0(), patch.getSizeV0(),
@@ -627,7 +623,7 @@ void PCCDecoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& 
 }
 
 void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
-  TRACE_CODEC( "createPatchFrameDataStructure GOP start \n" );
+  TRACE_PATCH( "createPatchFrameDataStructure GOP start \n" );
   auto& atglulist = context.getAtlasTileLayerList();
   
   //partition information derivation
@@ -657,7 +653,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
 }
 
 void PCCDecoder::createPatchFrameDataStructure(  PCCContext& context, size_t atglOrder ) {
-  TRACE_CODEC( "createPatchFrameDataStructure Tile %zu \n", atglOrder );
+  TRACE_PATCH( "createPatchFrameDataStructure Tile %zu \n", atglOrder );
   auto&  sps        = context.getVps();
   size_t atlasIndex = context.getAtlasIndex();
   auto&  gi         = sps.getGeometryInformation( atlasIndex );
@@ -687,9 +683,9 @@ void PCCDecoder::createPatchFrameDataStructure(  PCCContext& context, size_t atg
   if ( tile.getFrameIndex() > 0 && ath.getType() != I_TILE ) {
     tile.setRefAfocList( context, ath, ath.getAtlasFrameParameterSetId() );
 
-    TRACE_CODEC( "\tframe[%zu]\tRefAfocList:", frameIndex );
-    for ( size_t i = 0; i < tile.getRefAfocListSize(); i++ ) { TRACE_CODEC( "\t%zu", tile.getRefAfoc( i ) ); }
-    TRACE_CODEC( "\n" );
+    TRACE_PATCH( "\tframe[%zu]\tRefAfocList:", frameIndex );
+    for ( size_t i = 0; i < tile.getRefAfocListSize(); i++ ) { TRACE_PATCH( "\t%zu", tile.getRefAfoc( i ) ); }
+    TRACE_PATCH( "\n" );
   }
 
 
@@ -720,11 +716,11 @@ void PCCDecoder::createPatchFrameDataStructure(  PCCContext& context, size_t atg
   eomPatches.reserve( numEomPatch );
   patches.resize( numNonRawPatch );
   pcmPatches.resize( numRawPatches );
-  TRACE_CODEC( "Patches size                      = %zu \n", patches.size() );
-  TRACE_CODEC( "non-regular Patches(raw, eom)     = %zu, %zu \n", numRawPatches, numEomPatch );
-  TRACE_CODEC( "Tile Type                         = %zu (0.P_TILE 1.I_TILE 2.SKIP_TILE)\n", (size_t)ath.getType() );
+  TRACE_PATCH( "Patches size                      = %zu \n", patches.size() );
+  TRACE_PATCH( "non-regular Patches(raw, eom)     = %zu, %zu \n", numRawPatches, numEomPatch );
+  TRACE_PATCH( "Tile Type                         = %zu (0.P_TILE 1.I_TILE 2.SKIP_TILE)\n", (size_t)ath.getType() );
   
-  // TRACE_CODEC( "OccupancyPackingBlockSize           = %d \n", context.getOccupancyPackingBlockSize() );
+  // TRACE_PATCH( "OccupancyPackingBlockSize           = %d \n", context.getOccupancyPackingBlockSize() );
   size_t  totalNumberOfRawPoints = 0;
   size_t  totalNumberOfEomPoints = 0;
   size_t  patchIndex             = 0;
@@ -767,7 +763,7 @@ void PCCDecoder::createPatchFrameDataStructure(  PCCContext& context, size_t atg
       }
       patch.getPatchOrientation() = pdu.getOrientationIndex();
       patch.setViewId( pdu.getProjectionId() );
-      TRACE_CODEC( "patch %zu / %zu: Intra \n", patchIndex, patchCount );
+      TRACE_PATCH( "patch %zu / %zu: Intra \n", patchIndex, patchCount );
       const size_t max3DCoordinate = size_t( 1 ) << ( gi.getGeometry3dCoordinatesBitdepthMinus1() + 1 );
       if ( patch.getProjectionMode() == 0 ) {
         patch.getD1() = static_cast<int32_t>( pdu.get3dOffsetD() ) * minLevel;
@@ -796,7 +792,7 @@ void PCCDecoder::createPatchFrameDataStructure(  PCCContext& context, size_t atg
         patch.getTangentAxis()   = 0;
         patch.getBitangentAxis() = 1;
       }
-      TRACE_CODEC(
+      TRACE_PATCH(
           "patch(Intra) %zu: UV0 %4zu %4zu UV1 %4zu %4zu D1=%4zu S=%4zu %4zu %4zu(%4zu) P=%zu O=%zu A=%u%u%u Lod "
           "=(%zu) %zu,%zu 45=%d ProjId=%4zu Axis=%zu \n",
           patchIndex, patch.getU0(), patch.getV0(), patch.getU1(), patch.getV1(), patch.getD1(), patch.getSizeU0(),
@@ -813,8 +809,8 @@ void PCCDecoder::createPatchFrameDataStructure(  PCCContext& context, size_t atg
       patch.getOccupancyResolution() = 1 << asps.getLog2PatchPackingBlockSize();
       auto& ipdu                     = pid.getInterPatchDataUnit();
 
-      TRACE_CODEC( "patch %zu / %zu: Inter \n", patchIndex, patchCount );
-      TRACE_CODEC(
+      TRACE_PATCH( "patch %zu / %zu: Inter \n", patchIndex, patchCount );
+      TRACE_PATCH(
           "\tIPDU: refAtlasFrame= %d refPatchIdx = %d pos2DXY = %ld %ld pos3DXYZW = %ld %ld %ld %ld size2D = %ld %ld "
           "\n",
           ipdu.getRefIndex(), ipdu.getRefPatchIndex(), ipdu.get2dPosX(), ipdu.get2dPosY(), ipdu.get3dOffsetU(),
@@ -825,7 +821,7 @@ void PCCDecoder::createPatchFrameDataStructure(  PCCContext& context, size_t atg
       patch.setRefAtlasFrameIndex( ipdu.getRefIndex() );
       size_t      refPOC   = (size_t)tile.getRefAfoc( patch.getRefAtlasFrameIndex() );
       const auto& refPatch = context.getFrame( refPOC ).getTile( tileIndex ).getPatches()[patch.getBestMatchIdx()];
-      TRACE_CODEC(
+      TRACE_PATCH(
           "\trefPatch: refIndex = %zu, refFrame = %zu, Idx = %zu/%zu UV0 = %zu %zu  UV1 = %zu %zu Size = %zu %zu %zu "
           " Lod = %u,%u\n",
           patch.getRefAtlasFrameIndex(), refPOC, patch.getBestMatchIdx(),
@@ -882,7 +878,7 @@ void PCCDecoder::createPatchFrameDataStructure(  PCCContext& context, size_t atg
       prevPatchSize2DXInPixel = patch.getPatchSize2DXInPixel();
       prevPatchSize2DYInPixel = patch.getPatchSize2DYInPixel();
 
-      TRACE_CODEC(
+      TRACE_PATCH(
           "\tpatch(Inter) %zu: UV0 %4zu %4zu UV1 %4zu %4zu D1=%4zu S=%4zu %4zu %4zu from DeltaSize = %4ld %4ld P=%zu "
           "O=%zu A=%u%u%u Lod = %zu,%zu \n",
           patchIndex, patch.getU0(), patch.getV0(), patch.getU1(), patch.getV1(), patch.getD1(), patch.getSizeU0(),
@@ -902,8 +898,8 @@ void PCCDecoder::createPatchFrameDataStructure(  PCCContext& context, size_t atg
       bool         overridePlrFlag   = false;
       const size_t max3DCoordinate   = size_t( 1 ) << ( gi.getGeometry3dCoordinatesBitdepthMinus1() + 1 );
 
-      TRACE_CODEC( "patch %zu / %zu: Inter \n", patchIndex, patchCount );
-      TRACE_CODEC(
+      TRACE_PATCH( "patch %zu / %zu: Inter \n", patchIndex, patchCount );
+      TRACE_PATCH(
           "MPDU: refAtlasFrame= %d refPatchIdx = ?? pos2DXY = %ld %ld pos3DXYZW = %ld %ld %ld %ld size2D = %ld %ld "
           "\n",
           mpdu.getRefIndex(), mpdu.get2dPosX(), mpdu.get2dPosY(), mpdu.get3dOffsetU(), mpdu.get3dOffsetV(),
@@ -980,7 +976,7 @@ void PCCDecoder::createPatchFrameDataStructure(  PCCContext& context, size_t atg
       prevPatchSize2DXInPixel = patch.getPatchSize2DXInPixel();
       prevPatchSize2DYInPixel = patch.getPatchSize2DYInPixel();
 
-      TRACE_CODEC(
+      TRACE_PATCH(
           "patch(Inter) %zu: UV0 %4zu %4zu UV1 %4zu %4zu D1=%4zu S=%4zu %4zu %4zu from DeltaSize = %4ld %4ld P=%zu "
           "O=%zu A=%u%u%u Lod = %zu,%zu \n",
           patchIndex, patch.getU0(), patch.getV0(), patch.getU1(), patch.getV1(), patch.getD1(), patch.getSizeU0(),
@@ -995,15 +991,15 @@ void PCCDecoder::createPatchFrameDataStructure(  PCCContext& context, size_t atg
     } else if ( currPatchType == SKIP_PATCH ) {
       assert( -1 );
       auto& patch = patches[patchIndex];
-      TRACE_CODEC( "patch %zu / %zu: Inter \n", patchIndex, patchCount );
-      TRACE_CODEC( "SDU: refAtlasFrame= 0 refPatchIdx = %d \n", patchIndex );
+      TRACE_PATCH( "patch %zu / %zu: Inter \n", patchIndex, patchCount );
+      TRACE_PATCH( "SDU: refAtlasFrame= 0 refPatchIdx = %d \n", patchIndex );
 
       patch.setBestMatchIdx( static_cast<int32_t>( patchIndex ) );
       predIndex += patchIndex;
       patch.setRefAtlasFrameIndex( 0 );
       size_t      refPOC   = (size_t)tile.getRefAfoc( patch.getRefAtlasFrameIndex() );
       const auto& refPatch = context.getFrame( refPOC ).getTile( tileIndex ).getPatches()[patch.getBestMatchIdx()];
-      TRACE_CODEC( "\trefPatch: Idx = %zu UV0 = %zu %zu  UV1 = %zu %zu Size = %zu %zu %zu  Lod = %u,%u \n",
+      TRACE_PATCH( "\trefPatch: Idx = %zu UV0 = %zu %zu  UV1 = %zu %zu Size = %zu %zu %zu  Lod = %u,%u \n",
                    patch.getBestMatchIdx(), refPatch.getU0(), refPatch.getV0(), refPatch.getU1(), refPatch.getV1(),
                    refPatch.getSizeU0(), refPatch.getSizeV0(), refPatch.getSizeD(), refPatch.getLodScaleX(),
                    refPatch.getLodScaleY() );
@@ -1054,7 +1050,7 @@ void PCCDecoder::createPatchFrameDataStructure(  PCCContext& context, size_t atg
       prevSizeV0              = patch.getSizeV0();
       prevPatchSize2DXInPixel = patch.getPatchSize2DXInPixel();
       prevPatchSize2DYInPixel = patch.getPatchSize2DYInPixel();
-      TRACE_CODEC(
+      TRACE_PATCH(
           "patch(skip) %zu: UV0 %4zu %4zu UV1 %4zu %4zu D1=%4zu S=%4zu %4zu %4zu P=%zu O=%zu A=%u%u%u Lod = %zu,%zu "
           "\n",
           patchIndex, patch.getU0(), patch.getV0(), patch.getU1(), patch.getV1(), patch.getD1(), patch.getSizeU0(),
@@ -1063,7 +1059,7 @@ void PCCDecoder::createPatchFrameDataStructure(  PCCContext& context, size_t atg
           patch.getLodScaleY() );
       patch.allocOneLayerData();
     } else if ( currPatchType == RAW_PATCH ) {
-      TRACE_CODEC( "patch %zu / %zu: raw \n", patchIndex, patchCount );
+      TRACE_PATCH( "patch %zu / %zu: raw \n", patchIndex, patchCount );
       auto& rpdu             = pid.getRawPatchDataUnit();
       auto& rawPointsPatch   = pcmPatches[patchIndex - numNonRawPatch];
       rawPointsPatch.isPatchInAuxVideo_ = rpdu.getPatchInAuxiliaryVideoFlag();
@@ -1084,12 +1080,12 @@ void PCCDecoder::createPatchFrameDataStructure(  PCCContext& context, size_t atg
       rawPointsPatch.setNumberOfRawPoints( rpdu.getRawPointsMinus1() + 1 );
       rawPointsPatch.occupancyResolution_ = 1 << asps.getLog2PatchPackingBlockSize();
       totalNumberOfRawPoints += rawPointsPatch.getNumberOfRawPoints();
-      TRACE_CODEC( "Raw :UV = %zu %zu  size = %zu %zu  uvd1 = %zu %zu %zu numPoints = %zu ocmRes = %zu \n",
+      TRACE_PATCH( "Raw :UV = %zu %zu  size = %zu %zu  uvd1 = %zu %zu %zu numPoints = %zu ocmRes = %zu \n",
                    rawPointsPatch.u0_, rawPointsPatch.v0_, rawPointsPatch.sizeU0_, rawPointsPatch.sizeV0_,
                    rawPointsPatch.u1_, rawPointsPatch.v1_, rawPointsPatch.d1_, rawPointsPatch.numberOfRawPoints_,
                    rawPointsPatch.occupancyResolution_ );
     } else if ( currPatchType == EOM_PATCH ) {
-      TRACE_CODEC( "patch %zu / %zu: EOM \n", patchIndex, patchCount );
+      TRACE_PATCH( "patch %zu / %zu: EOM \n", patchIndex, patchCount );
       auto&       epdu       = pid.getEomPatchDataUnit();
       auto&       eomPatches = tile.getEomPatches();
       PCCEomPatch eomPatch;
@@ -1109,20 +1105,20 @@ void PCCDecoder::createPatchFrameDataStructure(  PCCContext& context, size_t atg
       eomPatch.occupancyResolution_ = 1 << asps.getLog2PatchPackingBlockSize();
       eomPatches.push_back( eomPatch );
       totalNumberOfEomPoints += eomPatch.eomCount_;
-      TRACE_CODEC( "EOM: U0V0 %zu,%zu\tSizeU0V0 %zu,%zu\tN= %zu,%zu\n", eomPatch.u0_, eomPatch.v0_, eomPatch.sizeU_,
+      TRACE_PATCH( "EOM: U0V0 %zu,%zu\tSizeU0V0 %zu,%zu\tN= %zu,%zu\n", eomPatch.u0_, eomPatch.v0_, eomPatch.sizeU_,
                    eomPatch.sizeV_, eomPatch.memberPatches.size(), eomPatch.eomCount_ );
       for ( size_t i = 0; i < eomPatch.memberPatches.size(); i++ ) {
-        TRACE_CODEC( "%zu, %zu\n", eomPatch.memberPatches[i], eomPatch.eomCountPerPatch[i] );
+        TRACE_PATCH( "%zu, %zu\n", eomPatch.memberPatches[i], eomPatch.eomCountPerPatch[i] );
       }
-      TRACE_CODEC( "\n" );
+      TRACE_PATCH( "\n" );
     } else if ( currPatchType == END_PATCH ) {
       break;
     } else {
       printf( "Error: unknow frame/patch type \n" );
-      TRACE_CODEC( "Error: unknow frame/patch type \n" );
+      TRACE_PATCH( "Error: unknow frame/patch type \n" );
     }
   }
-  TRACE_CODEC( "patch %zu / %zu: end \n", patches.size(), patches.size() );
+  TRACE_PATCH( "patch %zu / %zu: end \n", patches.size(), patches.size() );
   tile.setTotalNumberOfRawPoints( totalNumberOfRawPoints );
   tile.setTotalNumberOfEOMPoints( totalNumberOfEomPoints );
 }
@@ -1159,7 +1155,7 @@ bool PCCDecoder::compareHashSEICheckSum( uint32_t encCheckSum, uint32_t decCheck
 }
 
 void PCCDecoder::createHashInformation(PCCContext& context, int frameIndex ){
-  TRACE_CODEC( "createHashInformation Frame %zu \n", frameIndex );
+  TRACE_PATCH( "createHashInformation Frame %zu \n", frameIndex );
   printf("createHashInformation frame %zu\n", frameIndex);
   size_t hashIndex =  frameIndex; //jkei: how do we know this sei is for this frameIndex??
   auto& sei = context.getSeiHash( hashIndex );

@@ -99,7 +99,7 @@ class PCCBitstreamWriter {
   int     encode( PCCHighLevelSyntax& syntax, SampleStreamV3CUnit& ssvu );
 
 #ifdef BITSTREAM_TRACE
-  void setTraceFile( FILE* traceFile ) { traceFile_ = traceFile; }
+  void setLogger( PCCLogger& logger ) { logger_ = &logger; }
 #endif
  private:
   // 8.3.2 V3C unit syntax
@@ -484,9 +484,8 @@ class PCCBitstreamWriter {
   // H.7.3.6.2.2 Atlas camera parameters syntax
   static void atlasCameraParameters( PCCBitstream& bitstream, AtlasCameraParameters& acp );
 
-// PCCEncoderParameters params_;
 #ifdef BITSTREAM_TRACE
-  FILE* traceFile_;
+  PCCLogger* logger_ = nullptr;
 #endif
 };
 

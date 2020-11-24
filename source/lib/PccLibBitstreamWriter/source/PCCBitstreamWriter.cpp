@@ -101,7 +101,7 @@ int PCCBitstreamWriter::encode( PCCHighLevelSyntax& syntax, SampleStreamV3CUnit&
   PCCBitstream bitstreamVPS;
 #ifdef BITSTREAM_TRACE
   bitstreamVPS.setTrace( true );
-  bitstreamVPS.setTraceFile( traceFile_ );
+  bitstreamVPS.setLogger( *logger_ ); 
   bitstreamVPS.trace( "PCCBitstream::(V3C_VPS)\n" );
 #endif
   v3cUnit( syntax, bitstreamVPS, V3C_VPS );
@@ -115,7 +115,7 @@ int PCCBitstreamWriter::encode( PCCHighLevelSyntax& syntax, SampleStreamV3CUnit&
     PCCBitstream bitstreamAD;
 #ifdef BITSTREAM_TRACE
     bitstreamAD.setTrace( true );
-    bitstreamAD.setTraceFile( traceFile_ );
+    bitstreamAD.setLogger( *logger_ ); 
     bitstreamAD.trace( "PCCBitstream::(V3C_AD)\n" );
 #endif
     v3cUnit( syntax, bitstreamAD, V3C_AD );
@@ -124,7 +124,7 @@ int PCCBitstreamWriter::encode( PCCHighLevelSyntax& syntax, SampleStreamV3CUnit&
     PCCBitstream bitstreamOVD;
 #ifdef BITSTREAM_TRACE
     bitstreamOVD.setTrace( true );
-    bitstreamOVD.setTraceFile( traceFile_ );
+    bitstreamOVD.setLogger( *logger_ ); 
     bitstreamOVD.trace( "PCCBitstream::(V3C_OVD)\n" );
 #endif
     v3cUnit( syntax, bitstreamOVD, V3C_OVD );
@@ -135,7 +135,7 @@ int PCCBitstreamWriter::encode( PCCHighLevelSyntax& syntax, SampleStreamV3CUnit&
         PCCBitstream bitstreamGVD;
 #ifdef BITSTREAM_TRACE
         bitstreamGVD.setTrace( true );
-        bitstreamGVD.setTraceFile( traceFile_ );
+        bitstreamGVD.setLogger( *logger_ ); 
         bitstreamGVD.trace( "PCCBitstream::(V3C_GVD)\n" );
 #endif
         // encode D(mapIdx)
@@ -148,7 +148,7 @@ int PCCBitstreamWriter::encode( PCCHighLevelSyntax& syntax, SampleStreamV3CUnit&
       PCCBitstream bitstreamGVD;
 #ifdef BITSTREAM_TRACE
       bitstreamGVD.setTrace( true );
-      bitstreamGVD.setTraceFile( traceFile_ );
+      bitstreamGVD.setLogger( *logger_ ); 
       bitstreamGVD.trace( "PCCBitstream::(V3C_GVD)\n" );
 #endif
       // encode D=D(0)|D(1)|...|D(N)
@@ -161,7 +161,7 @@ int PCCBitstreamWriter::encode( PCCHighLevelSyntax& syntax, SampleStreamV3CUnit&
       PCCBitstream bitstreamGVD;
 #ifdef BITSTREAM_TRACE
       bitstreamGVD.setTrace( true );
-      bitstreamGVD.setTraceFile( traceFile_ );
+      bitstreamGVD.setLogger( *logger_ ); 
       bitstreamGVD.trace( "PCCBitstream::(V3C_GVD)\n" );
 #endif
       // encode RAW
@@ -182,7 +182,7 @@ int PCCBitstreamWriter::encode( PCCHighLevelSyntax& syntax, SampleStreamV3CUnit&
             PCCBitstream bitstreamAVD;
 #ifdef BITSTREAM_TRACE
             bitstreamAVD.setTrace( true );
-            bitstreamAVD.setTraceFile( traceFile_ );
+            bitstreamAVD.setLogger( *logger_ ); 
             bitstreamAVD.trace( "PCCBitstream::(V3C_AVD)\n" );
 #endif
             // encode D(mapIdx)
@@ -197,7 +197,7 @@ int PCCBitstreamWriter::encode( PCCHighLevelSyntax& syntax, SampleStreamV3CUnit&
           PCCBitstream bitstreamAVD;
 #ifdef BITSTREAM_TRACE
           bitstreamAVD.setTrace( true );
-          bitstreamAVD.setTraceFile( traceFile_ );
+          bitstreamAVD.setLogger( *logger_ ); 
           bitstreamAVD.trace( "PCCBitstream::(V3C_AVD)\n" );
 #endif
           // encode D=D(0)|D(1)|...|D(N)
@@ -212,7 +212,7 @@ int PCCBitstreamWriter::encode( PCCHighLevelSyntax& syntax, SampleStreamV3CUnit&
           PCCBitstream bitstreamAVD;
 #ifdef BITSTREAM_TRACE
           bitstreamAVD.setTrace( true );
-          bitstreamAVD.setTraceFile( traceFile_ );
+          bitstreamAVD.setLogger( *logger_ ); 
           bitstreamAVD.trace( "PCCBitstream::(V3C_AVD)\n" );
 #endif
           // encode RAW

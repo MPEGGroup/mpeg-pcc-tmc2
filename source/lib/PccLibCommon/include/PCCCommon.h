@@ -95,11 +95,6 @@ namespace pcc {
 static const uint8_t PCC_SAVE_POINT_TYPE = 0;  // Save point information in reconstructed ply.
 
 // ******************************************************************* //
-// Trace modes to validate new syntax
-// ******************************************************************* //
-#define CODEC_TRACE 
-
-// ******************************************************************* //
 // Common constants
 // ******************************************************************* //
 #define POSTSMOOTHING_RGB2YUV 0

@@ -448,7 +448,6 @@ class PCCAtlasFrameContext {
 
   std::vector<int>& getPartitionToTileMap() { return partitionToTileMap_; }
   
-
  private:
   size_t                       atlasFrameIndex_;
   size_t                       atlasFrameWidth_;

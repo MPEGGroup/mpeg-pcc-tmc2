@@ -96,7 +96,7 @@ class PCCBitstreamReader {
   int32_t       decode( SampleStreamV3CUnit& ssvu, PCCHighLevelSyntax& syntax );
 
 #ifdef BITSTREAM_TRACE
-  void setTraceFile( FILE* traceFile ) { traceFile_ = traceFile; }
+  void setLogger( PCCLogger& logger ) { logger_ = &logger; }
 #endif
  private:
   // 8.3.2 V3C unit syntax
@@ -491,7 +491,7 @@ class PCCBitstreamReader {
   int32_t prevFrameIndex_;
 
 #ifdef BITSTREAM_TRACE
-  FILE* traceFile_;
+  PCCLogger* logger_ = nullptr;
 #endif
 };
 

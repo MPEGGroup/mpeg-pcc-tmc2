@@ -943,9 +943,12 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
   size_t       startFrameNumber         = startFrameNumber0;
   size_t       reconstructedFrameNumber = encoderParams.startFrameNumber_;
 
+  PCCLogger                logger;
+  logger.initilalize( removeFileExtension( encoderParams.compressedStreamPath_ ), true );
   std::unique_ptr<uint8_t> buffer;
   size_t                   contextIndex = 0;
   PCCEncoder               encoder;
+  encoder.setLogger( logger );
   encoder.setParameters( encoderParams );
   std::vector<std::vector<uint8_t>> reconstructedChecksums;
   std::vector<std::vector<uint8_t>> sourceReorderChecksums;
@@ -957,8 +960,7 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
 
   PCCBitstreamStat    bitstreamStat;
   SampleStreamV3CUnit ssvu;
-  // Place to get/set default values for gof metadata enabled flags (in sequence
-  // level).
+  // Place to get/set default values for gof metadata enabled flags (in sequence level).
   while ( startFrameNumber < endFrameNumber0 ) {
     size_t     endFrameNumber = min( startFrameNumber + groupOfFramesSize0, endFrameNumber0 );
     PCCContext context;
@@ -982,18 +984,10 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
     int                ret = encoder.encode( sources, context, reconstructs );
     PCCBitstreamWriter bitstreamWriter;
 #ifdef BITSTREAM_TRACE
-    PCCBitstream bitstream;
-    bitstream.setTrace( true );
-    bitstream.openTrace( stringFormat( "%s_GOF%u_hls_encode.txt",
-                                       removeFileExtension( encoderParams.compressedStreamPath_ ).c_str(),
-                                       context.getVps().getV3CParameterSetId() ) );
-    bitstreamWriter.setTraceFile( bitstream.getTraceFile() );
+    bitstreamWriter.setLogger( logger ); 
 #endif
     ret |= bitstreamWriter.encode( context, ssvu );
-#ifdef BITSTREAM_TRACE
-    bitstreamWriter.setTraceFile( NULL );
-    bitstream.closeTrace();
-#endif
+
     clock.stop();
 
     PCCGroupOfFrames normals;
@@ -1027,9 +1021,8 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
 
   PCCBitstream bitstream;
 #ifdef BITSTREAM_TRACE
+  bitstream.setLogger( logger ); 
   bitstream.setTrace( true );
-  bitstream.openTrace( removeFileExtension( encoderParams.compressedStreamPath_ ) + "_samplestream_write.txt" );
-  bitstream.setTraceFile( bitstream.getTraceFile() );
 #endif
   bitstreamStat.setHeader( bitstream.size() );
   PCCBitstreamWriter bitstreamWriter;

@@ -156,7 +156,7 @@ void PCCBitstreamReader::v3cUnit( PCCHighLevelSyntax& syntax, V3CUnit& currV3CUn
   PCCBitstream& bitstream = currV3CUnit.getBitstream();
 #ifdef BITSTREAM_TRACE
   bitstream.setTrace( true );
-  bitstream.setTraceFile( traceFile_ );
+  bitstream.setLogger( *logger_ );   
   TRACE_BITSTREAM( "PCCBitstream::(%s)\n", toString( currV3CUnit.getType() ).c_str() );
 #endif
   TRACE_BITSTREAM( "%s \n", __func__ );

@@ -45,10 +45,10 @@ namespace pcc {
 class PCCGroupOfFrames;
 class PCCFrameContext;
 class PCCAtlasFrameContext;
-typedef pcc::PCCVideo<uint16_t, 3> PCCVideoAttributes;
-typedef pcc::PCCVideo<uint16_t, 3> PCCVideoTexture;
-typedef pcc::PCCVideo<uint16_t, 3> PCCVideoGeometry;
-typedef pcc::PCCVideo<uint8_t, 3>  PCCVideoOccupancyMap;
+typedef PCCVideo<uint16_t, 3> PCCVideoAttributes;
+typedef PCCVideo<uint16_t, 3> PCCVideoTexture;
+typedef PCCVideo<uint16_t, 3> PCCVideoGeometry;
+typedef PCCVideo<uint8_t, 3>  PCCVideoOccupancyMap;
 
 class PCCPatch;
 typedef std::map<size_t, PCCPatch>                 unionPatch;     // [TrackIndex, PatchUnion]

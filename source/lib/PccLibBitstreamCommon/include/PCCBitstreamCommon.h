@@ -67,6 +67,7 @@ namespace pcc {
 // Trace modes to validate new syntax
 // ******************************************************************* //
 #define BITSTREAM_TRACE
+#define CODEC_TRACE 
 
 // ******************************************************************* //
 // Common constants
@@ -536,5 +537,7 @@ static inline int floorLog2( uint32_t x ) {
 
 static inline int ceilLog2( uint32_t x ) { return ( x == 0 ) ? -1 : floorLog2( x - 1 ) + 1; }
 }  // namespace pcc
+
+#include "PCCLogger.h"
 
 #endif /* PCC_BITSTREAM_COMMON_H */
