@@ -2071,7 +2071,7 @@ void PCCBitstreamReader::decodedAtlasB2pHash( PCCBitstream& bitstream, SEI& seiA
   } else if ( hType == 1 ) {
     sei.setAtlasB2pCrc( bitstream.read( 16 ) );  // u(16)
   } else if ( hType == 2 ) {
-    sei.setAtlasCheckSum( bitstream.read( 32 ) );  // u(32)
+    sei.setAtlasB2pCheckSum( bitstream.read( 32 ) );  // u(32)
   }
 }
 
@@ -2099,7 +2099,7 @@ void PCCBitstreamReader::decodedAtlasTilesB2pHash( PCCBitstream& bitstream, SEI&
   } else if ( hType == 1 ) {
     sei.setAtlasTilesB2pCrc( id, bitstream.read( 16 ) );  // u(16)
   } else if ( hType == 2 ) {
-    sei.setAtlasTilesCheckSum( id, bitstream.read( 32 ) );  // u(32)
+    sei.setAtlasTilesB2pCheckSum( id, bitstream.read( 32 ) );  // u(32)
   }
 }
 

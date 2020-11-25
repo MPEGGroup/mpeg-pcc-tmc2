@@ -1086,12 +1086,14 @@ class SEIDecodedAtlasInformationHash : public SEI {
     highLevelMd5_.resize( 16 );
     atlasMd5_.resize( 16 );
     atlasB2pMd5_.resize( 16 );
-    atlasTilesCrc_.clear();
-    atlasTilesChecksum_.clear();
-    atlasTilesMd5_.clear();
-    atlasTilesB2pCrc_.clear();
-    atlasTilesB2pChecksum_.clear();
-    atlasTilesB2pMd5_.clear();
+    atlasTilesCrc_.resize(numTilesMinus1_  + 1);
+    atlasTilesChecksum_.resize( numTilesMinus1_ + 1 );;
+    atlasTilesMd5_.resize( numTilesMinus1_ + 1 );
+    atlasTilesB2pCrc_.resize( numTilesMinus1_ + 1 );
+    atlasTilesB2pChecksum_.resize( numTilesMinus1_ + 1 );
+    atlasTilesB2pMd5_.resize( numTilesMinus1_ + 1 );
+    for ( auto& element : atlasTilesMd5_ ) { element.resize( 16 ); }
+    for ( auto& element : atlasTilesB2pMd5_ ) { element.resize( 16 ); }
   }
   
   ~SEIDecodedAtlasInformationHash() {
@@ -1154,6 +1156,14 @@ class SEIDecodedAtlasInformationHash : public SEI {
   uint32_t getAtlasTilesB2pCheckSum( size_t i ) { return atlasTilesB2pChecksum_[i]; }
   uint32_t getAtlasTilesMd5( size_t i, size_t j ) { return atlasTilesMd5_[i][j]; }
   uint32_t getAtlasTilesB2pMd5( size_t i, size_t j ) { return atlasTilesB2pMd5_[i][j]; }
+  uint32_t getTileIdtoTileIdx( uint32_t tileId ) {
+    uint32_t i;
+    for ( i = 0; i < tileId_.size(); i++ ) {
+      if ( tileId_[i] == tileId ) return i;
+    }
+    std::cerr << " tile ID does not exist " << std::endl;
+    assert( i != tileId_.size() );
+  }
 
   void setCancelFlag( bool value ) { cancelFlag_ = value; }
   void setPersistenceFlag( bool value ) { persistenceFlag_ = value; }

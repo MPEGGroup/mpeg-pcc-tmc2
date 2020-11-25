@@ -348,13 +348,35 @@ class PCCCodec {
   }
 
   //seiMessage
+
+  void aspsCommonByteString( std::vector<uint8_t>& stringByte, AtlasSequenceParameterSetRbsp& asps );
+  void aspsApplicationByteString( std::vector<uint8_t>& strinByte, AtlasSequenceParameterSetRbsp& asps, AtlasFrameParameterSetRbsp& afps );
+  void afpsCommonByteString( std::vector<uint8_t>& stringByte, PCCContext& context, size_t afpsIndex, size_t frmIndex );
+  void afpsApplicationByteString( std::vector<uint8_t>& stringByte, AtlasSequenceParameterSetRbsp& asps, AtlasFrameParameterSetRbsp& afps );
+  
   void atlasPatchCommonByteString     ( std::vector<uint8_t>& stringByte, size_t patchIndex, std::vector<PatchParams>& atlasPatchParams );
   void atlasPatchApplicationByteString( std::vector<uint8_t>& stringByte, size_t patchIndex, std::vector<PatchParams>& atlasPatchParams );
   void tilePatchCommonByteString      ( std::vector<uint8_t>& stringByte, size_t tileId, size_t patchIndex, std::vector<std::vector<PatchParams>>& tilePatchParams );
   void tilePatchApplicationByteString ( std::vector<uint8_t>& stringByte, size_t tileId, size_t patchIndex, std::vector<std::vector<PatchParams>>& tilePatchParams );
-  void atlasBlockToPatchByteString    ( std::vector<uint8_t>& stringByte );
-  void tileBlockToPatchByteString     ( std::vector<uint8_t>& stringByte, size_t tileID );
-  void getHashPatchParams( PCCContext& context, size_t frameIndex, size_t tileIndex, size_t atlIndex, std::vector<PatchParams>& atlasPatchParams, std::vector<std::vector<PatchParams>>& tilePatchParams   );
+  void atlasBlockToPatchByteString    ( std::vector<uint8_t>& stringByte, std::vector<std::vector<int64_t>> atlasB2p );
+  void tileBlockToPatchByteString     ( std::vector<uint8_t>& stringByte, size_t tileID, std::vector<std::vector<std::vector<int64_t>>> tileB2p ); 
+  void getHashPatchParams( PCCContext&                            context,
+                           size_t                                 frameIndex,
+                           size_t                                 tileIndex,
+                           size_t                                 atlIndex,
+                           std::vector<std::vector<PatchParams>>& tilePatchParams,
+                           std::vector<PatchParams>&               atlasPatchParams );
+  void getB2PHashPatchParams( PCCContext&                                    context,
+                              size_t                                         frameIndex,
+                              std::vector<std::vector<std::vector<int64_t>>>& tileB2PPatchParams,
+                              std::vector<std::vector<int64_t>>&              atlasB2PPatchParams );
+  
+  void getB2PHashAtlasPatchParams( PCCContext&                                    context,
+                                  size_t                                         frameIndex,
+                                  size_t                                         tileIdx,
+                                  size_t                                         atlIndex,
+                                  std::vector<std::vector<std::vector<int64_t>>>& tileB2PPatchParams,
+                                  std::vector<std::vector<int64_t>>&              atlasB2PPatchParams );
 
 
  private:
