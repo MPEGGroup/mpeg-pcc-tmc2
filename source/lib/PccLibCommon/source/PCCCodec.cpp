@@ -2877,6 +2877,8 @@ void PCCCodec::getB2PHashPatchParams( PCCContext&                               
     }
     const size_t patchCount =
         tile.getPatches().size() + tile.getRawPointsPatches().size() + tile.getEomPatches().size();
+    const size_t regularPatchCount = tile.getPatches().size();
+    const size_t rawPatchCount = tile.getRawPointsPatches().size();
     for ( size_t p = 0; p < patchCount; p++ ) {
       if ( getPatchType( tileType, atdu.getPatchMode( p ) ) != RAW_PATCH &&
            getPatchType( tileType, atdu.getPatchMode( p ) ) != EOM_PATCH ) {
@@ -2893,25 +2895,24 @@ void PCCCodec::getB2PHashPatchParams( PCCContext&                               
             }
           }
       } else if ( getPatchType( tileType, atdu.getPatchMode( p ) ) == RAW_PATCH &&
-                  tile.getRawPointsPatches()[p].isPatchInAuxVideo_ == 0 ) {
-        auto&    rawPointsPatch     = tile.getRawPointsPatch( p );
-        uint32_t xOrg               = tile.getRawPointsPatch( p ).u0_ / patchPackingBlockSize;
-        uint32_t yOrg               = tile.getRawPointsPatch( p ).v0_ / patchPackingBlockSize;
-        uint32_t tilePatchWidthBlk  = ( tile.getRawPointsPatch( p ).u0_ + offset ) / patchPackingBlockSize;
-        uint32_t tilePatchHeightBlk = ( tile.getRawPointsPatch( p ).v0_ + offset ) / patchPackingBlockSize;
+                  tile.getRawPointsPatches()[ p - regularPatchCount ].isPatchInAuxVideo_ == 0 ) {
+        auto&    rawPointsPatch     = tile.getRawPointsPatch( p - regularPatchCount );
+        uint32_t xOrg               = rawPointsPatch.u0_ / patchPackingBlockSize;
+        uint32_t yOrg               = rawPointsPatch.v0_ / patchPackingBlockSize;
+        uint32_t tilePatchWidthBlk  = ( rawPointsPatch.u0_ + offset ) / patchPackingBlockSize;
+        uint32_t tilePatchHeightBlk = ( rawPointsPatch.v0_ + offset ) / patchPackingBlockSize;
         for ( uint32_t y = 0; y < tilePatchHeightBlk; y++ )
           for ( uint32_t x = 0; x < tilePatchWidthBlk; x++ ) { 
               b2pTilePatchParams[tileIdx][y][x] = p;
               b2pAtlasPatchParams[tileOffsetBlkY + yOrg + y][tileOffsetBlkX + xOrg + x] = p + offsetPatch;
           }
       } else if ( getPatchType( tileType, atdu.getPatchMode( p ) ) == EOM_PATCH &&
-                  tile.getEomPatches()[p].isPatchInAuxVideo_ == 0 ) {
-        size_t   rawPatchCount      = tile.getRawPointsPatches().size();
-        auto&    eomPointsPatch     = tile.getEomPatches( p );
-        uint32_t xOrg               = tile.getEomPatches( p ).u0_ / patchPackingBlockSize;
-        uint32_t yOrg               = tile.getEomPatches( p ).v0_ / patchPackingBlockSize;
-        uint32_t tilePatchWidthBlk  = ( tile.getEomPatches( p ).u0_ + offset ) / patchPackingBlockSize;
-        uint32_t tilePatchHeightBlk = ( tile.getEomPatches( p ).v0_ + offset ) / patchPackingBlockSize;
+                  tile.getEomPatches()[p - regularPatchCount - rawPatchCount].isPatchInAuxVideo_ == 0 ) {
+        auto&    eomPointsPatch     = tile.getEomPatches( p - regularPatchCount - rawPatchCount );
+        uint32_t xOrg               = eomPointsPatch.u0_ / patchPackingBlockSize;
+        uint32_t yOrg               = eomPointsPatch.v0_ / patchPackingBlockSize;
+        uint32_t tilePatchWidthBlk  = ( eomPointsPatch.u0_ + offset ) / patchPackingBlockSize;
+        uint32_t tilePatchHeightBlk = ( eomPointsPatch.v0_ + offset ) / patchPackingBlockSize;
         for ( uint32_t y = 0; y < tilePatchHeightBlk; y++ )
           for ( uint32_t x = 0; x < tilePatchWidthBlk; x++ ) { 
               b2pTilePatchParams[tileIdx][y][x] = p;
