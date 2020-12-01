@@ -753,7 +753,7 @@ void PCCDecoder::createPatchFrameDataStructure(  PCCContext& context, size_t atg
         patch.setLodScaleX( 1 );
         patch.setLodScaleYIdc( 1 );
       }
-      patch.getSizeD() = ( std::min )( pdu.get3dRangeD() * minLevel, (size_t)255 );
+      patch.getSizeD() = pdu.get3dRangeD() * minLevel ; //( std::min )( pdu.get3dRangeD() * minLevel, (size_t)256 ); //jkei: getNominalBitDepth()
       if ( asps.getPatchSizeQuantizerPresentFlag() ) {
         patch.setPatchSize2DXInPixel( pdu.get2dSizeXMinus1() * quantizerSizeX + 1 );
         patch.setPatchSize2DYInPixel( pdu.get2dSizeYMinus1() * quantizerSizeY + 1 );
@@ -874,7 +874,7 @@ void PCCDecoder::createPatchFrameDataStructure(  PCCContext& context, size_t atg
       const int64_t delta_DD = ipdu.get3dRangeD();
       size_t        prevDD   = refPatch.getSizeD() / minLevel;
       if ( prevDD * minLevel != refPatch.getSizeD() ) { prevDD += 1; }
-      patch.getSizeD() = ( std::min )( size_t( ( delta_DD + prevDD ) * minLevel ), (size_t)255 );
+      patch.getSizeD() = size_t( ( delta_DD + prevDD ) * minLevel ); //( std::min )( size_t( ( delta_DD + prevDD ) * minLevel ), (size_t)256 );
       patch.setLodScaleX( refPatch.getLodScaleX() );
       patch.setLodScaleYIdc( refPatch.getLodScaleY() );
       prevSizeU0              = patch.getSizeU0();
@@ -962,7 +962,7 @@ void PCCDecoder::createPatchFrameDataStructure(  PCCContext& context, size_t atg
           const int64_t delta_DD = mpdu.get3dRangeD();
           size_t        prevDD   = refPatch.getSizeD() / minLevel;
           if ( prevDD * minLevel != refPatch.getSizeD() ) { prevDD += 1; }
-          patch.getSizeD() = ( std::min )( size_t( ( delta_DD + prevDD ) * minLevel ), (size_t)255 );
+          patch.getSizeD() = size_t( ( delta_DD + prevDD ) * minLevel ); //( std::min )( size_t( ( delta_DD + prevDD ) * minLevel ), (size_t)256 );
 
           if ( asps.getPLREnabledFlag() ) { overridePlrFlag = ( mpdu.getOverridePlrFlag() != 0 ); }
         }
@@ -1047,7 +1047,7 @@ void PCCDecoder::createPatchFrameDataStructure(  PCCContext& context, size_t atg
       }
       size_t prevDD = refPatch.getSizeD() / minLevel;
       if ( prevDD * minLevel != refPatch.getSizeD() ) { prevDD += 1; }
-      patch.getSizeD() = ( std::min )( size_t( (prevDD)*minLevel ), (size_t)255 );
+      patch.getSizeD() = size_t( (prevDD)*minLevel ); //( std::min )( size_t( (prevDD)*minLevel ), (size_t)256 );
       patch.setLodScaleX( refPatch.getLodScaleX() );
       patch.setLodScaleYIdc( refPatch.getLodScaleY() );
       prevSizeU0              = patch.getSizeU0();

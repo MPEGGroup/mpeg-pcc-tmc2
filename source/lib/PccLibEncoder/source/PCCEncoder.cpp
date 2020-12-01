@@ -82,7 +82,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
 
   params_.initializeContext( context );
   assert( sources.getFrameCount() < 256 );
-  size_t atlasIndex = 0;
+  size_t atlasIndex = 0; //jkei: this should be vps.vps_atlas_id[ k ]
   if ( sources.getFrameCount() == 0 ) { return 0; }
 #ifdef CODEC_TRACE
   setTrace( true );
@@ -3519,6 +3519,7 @@ void PCCEncoder::packEOMTexturePointsPatch( PCCFrameContext&   frame,
         ceil( double( eomPatches[i].eomCount_ ) / ( params_.occupancyResolution_ * params_.occupancyResolution_ ) ) );
     auto eomPointsPatchBlocksV = static_cast<size_t>( ceil( double( eomPointsPatchBlocks ) / occupancySizeU ) );
     occupancySizeV += eomPointsPatchBlocksV;
+    eomPatches[i].isPatchInAuxVideo_ = params_.useRawPointsSeparateVideo_;
     eomPatches[i].u0_    = 0;
     eomPatches[i].v0_    = lastHeight / params_.occupancyResolution_;
     eomPatches[i].sizeU_ = occupancySizeU;
@@ -4121,11 +4122,9 @@ void PCCEncoder::generateIntraImage( PCCAtlasFrameContext& atlasFrame,
             size_t y;
             patch.patch2Canvas( u, v, width, height, x, y );
             assert( x < width && y < height );
-            // FIX1
-            //          if ( msb_align_flag )
-            //            // image.setValue(0, x, y, uint16_t(d));
             image.setValue( 0, x + tile.getLeftTopXInFrame(), y + tile.getLeftTopYInFrame(), uint16_t( d ) );
-            maxDepth = ( std::max )( maxDepth, patch.getSizeD() );
+            //maxDepth = ( std::max )( maxDepth, patch.getSizeD() );
+            maxDepth = (std::max)(maxDepth, (size_t) d);
           }
         }
       }
@@ -4527,6 +4526,7 @@ void PCCEncoder::generateRawPointsPatch( const PCCPointSet3& source,
           frame.getNumberOfRawPoints().resize( numberOfRawPointsPatches );
           frame.setNumberOfRawPoints( numberOfRawPointsPatches - 1, numRawPointsBBox );
           rawPointsPatch.occupancyResolution_ = params_.occupancyResolution_;
+          rawPointsPatch.isPatchInAuxVideo_   = params_.useRawPointsSeparateVideo_;
           rawPointsPatch.sizeU_               = 0;
           rawPointsPatch.sizeV_               = 0;
           rawPointsPatch.u0_                  = 0;
@@ -4813,6 +4813,8 @@ void PCCEncoder::generateRawPointsGeometryImage( PCCContext& context, PCCFrameCo
         "\tgenerateRawPointsGeometryImage:: (u0,v0,sizeU,sizeU) = "
         "(%zu,%zu,%zu,%zu) \n",
         u0, v0, rawPointsPatch.sizeU_, rawPointsPatch.sizeV_ );
+    
+    rawPointsPatch.isPatchInAuxVideo_ = true;
     if ( params_.losslessGeo444_ ) {
       lastValue = rawPointsPatch.x_[numberOfRawPoints - 1];
       lastY     = rawPointsPatch.y_[numberOfRawPoints - 1];
@@ -9030,7 +9032,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&         context,
       auto&   pid            = atgdu.addPatchInformationData( patchType );
       auto&   rpdu           = pid.getRawPatchDataUnit();
       TRACE_CODEC( "patch %zu / %zu: raw \n", patches.size() + mpsPatchIndex, totalPatchCount );
-      rpdu.setPatchInAuxiliaryVideoFlag( params_.useRawPointsSeparateVideo_ );
+      rpdu.setPatchInAuxiliaryVideoFlag( rawPointsPatch.isPatchInAuxVideo_ );
       rpdu.set2dPosX( rawPointsPatch.u0_ );
       rpdu.set2dPosY( rawPointsPatch.v0_ );
       rpdu.set2dSizeXMinus1( rawPointsPatch.sizeU0_ - 1 );
@@ -9061,7 +9063,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&         context,
       auto&   pid       = atgdu.addPatchInformationData( patchType );
       auto&   epdu      = pid.getEomPatchDataUnit();
       TRACE_CODEC( "patch %zu / %zu: EOM \n", patches.size() + pcmPatches.size() + eomPatchIndex, totalPatchCount );
-      epdu.setPatchInAuxiliaryVideoFlag( params_.useRawPointsSeparateVideo_ );
+      epdu.setPatchInAuxiliaryVideoFlag( eomPatch.isPatchInAuxVideo_ );
       epdu.set2dPosX( eomPatch.u0_ );
       epdu.set2dPosY( eomPatch.v0_ );
       epdu.set2dSizeXMinus1( eomPatch.sizeU_ - 1 );
@@ -9223,7 +9225,7 @@ void PCCEncoder::createHashInformation( PCCContext& context, int frameIndex, siz
         uint8_t bitCount = tileInfo.getSignalledTileIdFlag()
                                ? ( tileInfo.getSignalledTileIdLengthMinus1() + 1 )
                                : ( ceilLog2( tileInfo.getNumTilesInAtlasFrameMinus1() + 1 ) );
-        sei.setTileIdLenMinus1( bitCount );
+        sei.setTileIdLenMinus1( tileInfo.getNumTilesInAtlasFrameMinus1() == 0? 0 : (bitCount-1) );
       }
       if ( sei.getDecodedAtlasTilesHashPresentFlag() ) {
         std::vector<uint8_t> atlasTileData;

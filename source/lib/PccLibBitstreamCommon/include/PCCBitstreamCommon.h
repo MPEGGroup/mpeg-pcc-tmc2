@@ -467,7 +467,7 @@ static inline std::string addVideoFormat( const std::string filename,
                                           const bool        is420 = true,
                                           const std::string pixel = "8" ) {
   std::stringstream result;
-  result << filename << "_" << width << "x" << height << "_" << pixel << "bit_" << ( isYUV & is420 ? "p420" : "p444" )
+  result << filename << "_" << width << "x" << height << "_" << pixel << "bit_" << (( isYUV & is420) ? "p420" : "p444" )
          << ( isYUV ? ".yuv" : ".rgb" );
   return result.str();
 }

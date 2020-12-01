@@ -1227,7 +1227,10 @@ void PCCBitstreamReader::rawPatchDataUnit( RawPatchDataUnit&   rpdu,
   int32_t bitCount = ath.getRaw3dPosAxisBitCountMinus1() + 1;
   TRACE_BITSTREAM( " AtghRaw3dPosAxisBitCountMinus1 = %zu => bitcount = %d \n", ath.getRaw3dPosAxisBitCountMinus1(),
                    bitCount );
-  if ( 1 /* TODO: evaluate: AuxTileHeight[ TileIdToIndex[ ath_id ] ] > 0 */ ) { // JR TODO with JK
+  auto& afti          = syntax.getAtlasFrameParameterSet(ath.getAtlasFrameParameterSetId()).getAtlasFrameTileInformation();
+  auto  ath_id        = ath.getId();
+  auto  tileIdToIndex = afti.getTileId(ath_id);
+  if ( afti.getAuxiliaryVideoTileRowHeight( tileIdToIndex ) ) {
     rpdu.setPatchInAuxiliaryVideoFlag( bitstream.read( 1 ) != 0U );  // u(1)
   } else{
     rpdu.setPatchInAuxiliaryVideoFlag( 0 );
@@ -1254,7 +1257,10 @@ void PCCBitstreamReader::eomPatchDataUnit( EOMPatchDataUnit&   epdu,
                                            PCCHighLevelSyntax& syntax,
                                            PCCBitstream&       bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
-  if ( 1 /* TODO: evaluate: AuxTileHeight[ TileIdToIndex[ ath_id ] ] > 0 */ ) { // JR TODO with JK
+  auto& afti          = syntax.getAtlasFrameParameterSet(ath.getAtlasFrameParameterSetId()).getAtlasFrameTileInformation();
+  auto  ath_id        = ath.getId();
+  auto  tileIdToIndex = afti.getTileId(ath_id);
+  if ( afti.getAuxiliaryVideoTileRowHeight( tileIdToIndex ) ) {
     epdu.setPatchInAuxiliaryVideoFlag( bitstream.read( 1 ) != 0U );  // u(1)
   }else{
     epdu.setPatchInAuxiliaryVideoFlag( 0 );

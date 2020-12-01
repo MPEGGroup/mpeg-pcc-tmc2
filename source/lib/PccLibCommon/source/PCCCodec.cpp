@@ -2622,7 +2622,6 @@ void PCCCodec::getHashPatchParams( PCCContext&                            contex
   //ajt:: the original version was done under the assumption of bitstream level hash value derivation and not on the reconstructed.
   //ajt:: It may be the matter of wrong interpretation. I do agree to change it to reconstructed, instead.
   auto&       atl           = context.getAtlasTileLayer( atlIndex );
-  auto& atdu = atl.getDataUnit();
   auto& ath = atl.getHeader();
   auto& afps = context.getAtlasFrameParameterSet( ath.getAtlasFrameParameterSetId() );
   auto& asps = context.getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
@@ -2652,14 +2651,15 @@ void PCCCodec::getHashPatchParams( PCCContext&                            contex
       pps.patch3dRangeD  = 0;
     pps.patchOrientationIndex = patch.getPatchOrientation();
     pps.patchProjectionID     = patch.getProjectionMode();
-    pps.patchInAuxVideo       = asps.getRawPatchEnabledFlag();  // ajt::check
-    pps.patchLoDScaleX = patch.getLodScaleX();
-    pps.patchLoDScaleY = patch.getLodScaleY();
-    
-    if(tilePatchParams.size()!=0) tilePatchParams[tileIndex].push_back( pps );
+    pps.patchInAuxVideo       = 0; // ajt::check
+    pps.patchLoDScaleX        = patch.getLodScaleX();
+    pps.patchLoDScaleY        = patch.getLodScaleY();
+
+    atlasPatchParams.push_back( pps );
     pps.patch2dPosX += tileOffsetX;
     pps.patch2dPosY += tileOffsetY;
-    atlasPatchParams.push_back( pps );
+    if(tilePatchParams.size()!=0) tilePatchParams[tileIndex].push_back( pps );
+
   }
   
   size_t rawPatchCount = tile.getRawPointsPatches().size();
@@ -2678,10 +2678,10 @@ void PCCCodec::getHashPatchParams( PCCContext&                            contex
     pps.patch3dOffsetD  = rawPointsPatch.d1_;
     pps.patchInAuxVideo = rawPointsPatch.isPatchInAuxVideo_;
     
-    if(tilePatchParams.size()!=0) tilePatchParams[tileIndex].push_back( pps );
+    atlasPatchParams.push_back( pps );
     pps.patch2dPosX += tileOffsetX;
     pps.patch2dPosY += tileOffsetY;
-    atlasPatchParams.push_back( pps );
+    if(tilePatchParams.size()!=0) tilePatchParams[tileIndex].push_back( pps );
   }
   
   size_t eomPatchCount = tile.getEomPatches().size();
@@ -2701,124 +2701,12 @@ void PCCCodec::getHashPatchParams( PCCContext&                            contex
     pps.epduAssociatedPoints.resize( pps.epduAssociatedPatchCount );
     for ( size_t i = 0; i < pps.epduAssociatedPatchCount; i++ )
       pps.epduAssociatedPoints[i] = eomPatch.eomCountPerPatch[i];
-
-    if(tilePatchParams.size()!=0) tilePatchParams[tileIndex].push_back( pps );
+    
+    atlasPatchParams.push_back( pps );
     pps.patch2dPosX += tileOffsetX;
     pps.patch2dPosY += tileOffsetY;
-    atlasPatchParams.push_back( pps );
-    
+    if(tilePatchParams.size()!=0) tilePatchParams[tileIndex].push_back( pps );
   }
-
-//     size_t patchCount = tile.getPatches().size() + tile.getRawPointsPatches().size() + tile.getEomPatches().size();
-//     for ( size_t patchIdx = 0; patchIdx < patchCount; patchIdx++ ) {
-//       PatchParams  pps( asps.getPLREnabledFlag(), asps.getMapCountMinus1() + 1 );
-//       auto&        patch         = tile.getPatch(patchIdx);
-//       PCCPatchType currPatchType = getPatchType( tileType, atdu.getPatchMode( patchIdx ) );
-//    if ( currPatchType == INTRA_PATCH ){
-//      auto& pdu = pid.getPatchDataUnit();
-//      pps.patchType      = PCCHashPatchType::PROJECTED;
-//      pps.patch2dPosX    = pdu.get2dPosX();
-//      pps.patch2dPosY    = pdu.get2dPosY();
-//      pps.patch2dSizeX   = pdu.get2dSizeXMinus1();
-//      pps.patch2dSizeY   = pdu.get2dSizeYMinus1();
-//      pps.patch3dOffsetU = pdu.get3dOffsetU();
-//      pps.patch3dOffsetV = pdu.get3dOffsetV();
-//      pps.patch3dOffsetD = pdu.get3dOffsetD();
-//      if ( asps.getNormalAxisMaxDeltaValueEnabledFlag() )
-//      pps.patch3dRangeD  = patch.getSizeD(); //pdu.get3dRangeD();
-//      else
-//        pps.patch3dRangeD  = 0;
-//      pps.patchOrientationIndex = pdu.getOrientationIndex();
-//      pps.patchProjectionID     = pdu.getProjectionId();
-//      pps.patchInAuxVideo       = asps.getRawPatchEnabledFlag();  // ajt::check
-//      pps.patchLoDScaleX = pdu.getLodScaleXMinus1() + 1;
-//      pps.patchLoDScaleY = pdu.getLodScaleYIdc();
-//    }
-//    else if ( currPatchType == INTER_PATCH ) {
-//      //jkei: these should be reconstructed values
-//      auto& ipdu = pid.getInterPatchDataUnit();
-//      pps.patchType      = PROJECTED;
-//      pps.patch2dPosX    = ipdu.get2dPosX();
-//      pps.patch2dPosY    = ipdu.get2dPosY();
-//      pps.patch2dSizeX   = ipdu.get2dDeltaSizeX();
-//      pps.patch2dSizeY   = ipdu.get2dDeltaSizeY();
-//      pps.patch3dOffsetU = ipdu.get3dOffsetU();
-//      pps.patch3dOffsetV = ipdu.get3dOffsetV();
-//      pps.patch3dOffsetD = ipdu.get3dOffsetD();
-//      if ( asps.getNormalAxisMaxDeltaValueEnabledFlag() )
-//      pps.patch3dRangeD  = patch.getSizeD();
-//      else
-//        pps.patch3dRangeD  = 0;
-//      // ajt::need to check these three below for correctness
-//      pps.patchOrientationIndex = patch.getPatchOrientation();
-//      pps.patchProjectionID     = patch.getProjectionMode();
-//      pps.patchInAuxVideo       = asps.getRawPatchEnabledFlag(); // ajt::check
-//      pps.patchLoDScaleX        = patch.getLodScaleX();
-//      pps.patchLoDScaleY        = patch.getLodScaleY();
-//    }
-//    else if ( currPatchType == MERGE_PATCH ) {
-//      //jkei: these should be reconstructed values
-//      auto& mpdu         = pid.getMergePatchDataUnit();
-//      pps.patchType      = PROJECTED;
-//      pps.patch2dPosX    = mpdu.get2dPosX();
-//      pps.patch2dPosY    = mpdu.get2dPosY();
-//      pps.patch2dSizeX   = mpdu.get2dDeltaSizeX();
-//      pps.patch2dSizeY   = mpdu.get2dDeltaSizeY();
-//      pps.patch3dOffsetU = mpdu.get3dOffsetU();
-//      pps.patch3dOffsetV = mpdu.get3dOffsetV();
-//      pps.patch3dOffsetD = mpdu.get3dOffsetD();
-//      pps.patch3dRangeD  = patch.getSizeD();
-//
-//      // ajt::need to check these three below for correctness
-//      pps.patchOrientationIndex = patch.getPatchOrientation();
-//      pps.patchProjectionID     = patch.getProjectionMode();
-//      pps.patchInAuxVideo       = asps.getRawPatchEnabledFlag();
-//      pps.patchLoDScaleX        = patch.getLodScaleX();
-//      pps.patchLoDScaleY        = patch.getLodScaleY();
-//    } else if ( currPatchType == SKIP_PATCH ) {
-//      pps.patchType      = PROJECTED;
-//      pps.patch2dPosX    = patch.getU0();
-//      pps.patch2dPosY    = patch.getV0();
-//      pps.patch2dSizeX   = patch.getSizeU0();
-//      pps.patch2dSizeY   = patch.getSizeV0();
-//      pps.patch3dOffsetU = patch.getU1();
-//      pps.patch3dOffsetV = patch.getV1();
-//      pps.patch3dOffsetD = patch.getD1();
-//      pps.patch3dRangeD  = patch.getSizeD();
-//
-//      // ajt::need to check these three below for correctness
-//      pps.patchOrientationIndex = patch.getPatchOrientation();
-//      pps.patchProjectionID     = patch.getProjectionMode();
-//      pps.patchInAuxVideo       = asps.getRawPatchEnabledFlag();
-//      pps.patchLoDScaleX        = patch.getLodScaleX();
-//      pps.patchLoDScaleY        = patch.getLodScaleY();
-//    } else if ( currPatchType == RAW_PATCH ) {
-//      auto& rpdu          = pid.getRawPatchDataUnit();
-//      pps.patchType       = RAW;
-//      pps.patchRawPoints  = rpdu.getRawPointsMinus1() + 1;
-//      pps.patch2dPosX     = rpdu.get2dPosX();
-//      pps.patch2dPosY     = rpdu.get2dPosY();
-//      pps.patch2dSizeX    = rpdu.get2dSizeXMinus1();
-//      pps.patch2dSizeY    = rpdu.get2dSizeYMinus1();
-//      pps.patch3dOffsetU  = rpdu.get3dOffsetU();
-//      pps.patch3dOffsetV  = rpdu.get3dOffsetV();
-//      pps.patch3dOffsetD  = rpdu.get3dOffsetD();
-//      pps.patchInAuxVideo = rpdu.getPatchInAuxiliaryVideoFlag();
-//    } else if ( currPatchType == EOM_PATCH ) {
-//      auto& epdu                   = pid.getEomPatchDataUnit();
-//      pps.patchType                = EOM;
-//      pps.patch2dPosX              = epdu.get2dPosX();
-//      pps.patch2dPosY              = epdu.get2dPosY();
-//      pps.patch2dSizeX             = epdu.get2dSizeXMinus1();
-//      pps.patch2dSizeY             = epdu.get2dSizeYMinus1();
-//      pps.patchInAuxVideo          = epdu.getPatchInAuxiliaryVideoFlag();
-//      pps.epduAssociatedPatchCount = epdu.getPatchCountMinus1()+1; //  eomPatch.memberPatches.size(); jkei: why is it  eomPatch.memberPatches.size()?
-//      pps.epduAssociatedPoints.resize( pps.epduAssociatedPatchCount );
-//      for ( size_t i = 0; i < pps.epduAssociatedPatchCount; i++ )
-//        pps.epduAssociatedPoints[i] = epdu.getPoints( i );
-//    }
-//    atlasPatchParams.push_back( pps );
-//    if(tilePatchParams.size()!=0) tilePatchParams[tileIndex].push_back( pps );
  
 }
 
@@ -3036,11 +2924,6 @@ void PCCCodec::afpsCommonByteString( std::vector<uint8_t>& stringByte,
   std::vector<size_t> hashAuxTileHeight;
 
   auto   asps             = context.getAtlasSequenceParameterSet( afps.getAtlasFrameParameterSetId() );
-  size_t frameWidth       = asps.getFrameWidth();
-  size_t frameHeight      = asps.getFrameHeight();
-  size_t numPartitionCols = afti.getNumPartitionColumnsMinus1() + 1;
-  size_t numPartitionRows = afti.getNumPartitionRowsMinus1() + 1;
-
   size_t prevAuxTileOffset   = 0;
   size_t hashAuxVideoWidthNF = 0;
 

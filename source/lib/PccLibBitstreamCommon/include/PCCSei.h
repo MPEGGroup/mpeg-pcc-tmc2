@@ -1115,6 +1115,7 @@ class SEIDecodedAtlasInformationHash : public SEI {
   SeiPayloadType getPayloadType() { return DECODED_ATLAS_INFORMATION_HASH; }
 
   void allocateAtlasTilesHash(size_t numTiles) {
+    assert( numTiles > 0 );
     numTilesMinus1_              = numTiles-1;
     tileId_.resize               ( numTiles );
     if( highLevelMd5_.size() != 16 ) highLevelMd5_.resize( 16 );
@@ -1156,14 +1157,6 @@ class SEIDecodedAtlasInformationHash : public SEI {
   uint32_t getAtlasTilesB2pCheckSum( size_t i ) { return atlasTilesB2pChecksum_[i]; }
   uint32_t getAtlasTilesMd5( size_t i, size_t j ) { return atlasTilesMd5_[i][j]; }
   uint32_t getAtlasTilesB2pMd5( size_t i, size_t j ) { return atlasTilesB2pMd5_[i][j]; }
-  uint32_t getTileIdtoTileIdx( uint32_t tileId ) {
-    uint32_t i;
-    for ( i = 0; i < tileId_.size(); i++ ) {
-      if ( tileId_[i] == tileId ) return i;
-    }
-    std::cerr << " tile ID does not exist " << std::endl;
-    assert( i != tileId_.size() );
-  }
 
   void setCancelFlag( bool value ) { cancelFlag_ = value; }
   void setPersistenceFlag( bool value ) { persistenceFlag_ = value; }
