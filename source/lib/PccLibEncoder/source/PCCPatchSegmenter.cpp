@@ -462,7 +462,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
   const bool       EOMSingleLayerMode                = params.EOMSingleLayerMode_;
   const size_t     EOMFixBitCount                    = params.EOMFixBitCount_;
   const size_t     surfaceThickness                  = params.surfaceThickness_;
-  const size_t     maxAlloweomepth                   = params.maxAllowedDepth_;
+  const size_t     maxAllowedDepth                   = params.maxAllowedDepth_;
   const size_t     minLevel                          = params.minLevel_;
   bool             useEnhancedOccupancyMapCode       = params.useEnhancedOccupancyMapCode_;
   const bool       createSubPointCloud               = params.createSubPointCloud_;
@@ -1033,7 +1033,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
           const size_t p0    = v0 * patch.getSizeU0() + u0;
           int16_t      tmp_a = std::abs( depth0 - peakPerBlock[p0] );
           int16_t      tmp_b = int16_t( surfaceThickness ) + projectionDirectionType * depth0;
-          int16_t      tmp_c = projectionDirectionType * patch.getD1() + int16_t( maxAlloweomepth );
+          int16_t      tmp_c = projectionDirectionType * patch.getD1() + int16_t( maxAllowedDepth );
           if ( depth0 != infiniteDepth ) {
             if ( ( tmp_a > 32 ) || ( tmp_b > tmp_c ) ) {
               patch.getDepth( 0 )[p]     = infiniteDepth;
@@ -1133,7 +1133,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
       eomCountPerPatch = pointCount[2];
 
       size_t quantDD   = patch.getSizeD() == 0 ? 0 : ( ( patch.getSizeD() - 1 ) / minLevel + 1 );
-      patch.getSizeD() = ( std::min )( quantDD * minLevel, static_cast<size_t>( maxAlloweomepth ) );
+      patch.getSizeD() = quantDD * minLevel; //( std::min )( quantDD * minLevel, static_cast<size_t>( maxAllowedDepth ) );
 
       if ( createSubPointCloud ) {
         PCCPointSet3 testSrc;

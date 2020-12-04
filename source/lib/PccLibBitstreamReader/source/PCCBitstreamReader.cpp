@@ -1227,7 +1227,10 @@ void PCCBitstreamReader::rawPatchDataUnit( RawPatchDataUnit&   rpdu,
   int32_t bitCount = ath.getRaw3dPosAxisBitCountMinus1() + 1;
   TRACE_BITSTREAM( " AtghRaw3dPosAxisBitCountMinus1 = %zu => bitcount = %d \n", ath.getRaw3dPosAxisBitCountMinus1(),
                    bitCount );
-  if ( 1 /* TODO: evaluate: AuxTileHeight[ TileIdToIndex[ ath_id ] ] > 0 */ ) { // JR TODO with JK
+  auto& afti          = syntax.getAtlasFrameParameterSet(ath.getAtlasFrameParameterSetId()).getAtlasFrameTileInformation();
+  auto  ath_id        = ath.getId();
+  auto  tileIdToIndex = afti.getTileId(ath_id);
+  if ( afti.getAuxiliaryVideoTileRowHeight( tileIdToIndex ) ) {
     rpdu.setPatchInAuxiliaryVideoFlag( bitstream.read( 1 ) != 0U );  // u(1)
   } else{
     rpdu.setPatchInAuxiliaryVideoFlag( 0 );
@@ -1254,7 +1257,10 @@ void PCCBitstreamReader::eomPatchDataUnit( EOMPatchDataUnit&   epdu,
                                            PCCHighLevelSyntax& syntax,
                                            PCCBitstream&       bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
-  if ( 1 /* TODO: evaluate: AuxTileHeight[ TileIdToIndex[ ath_id ] ] > 0 */ ) { // JR TODO with JK
+  auto& afti          = syntax.getAtlasFrameParameterSet(ath.getAtlasFrameParameterSetId()).getAtlasFrameTileInformation();
+  auto  ath_id        = ath.getId();
+  auto  tileIdToIndex = afti.getTileId(ath_id);
+  if ( afti.getAuxiliaryVideoTileRowHeight( tileIdToIndex ) ) {
     epdu.setPatchInAuxiliaryVideoFlag( bitstream.read( 1 ) != 0U );  // u(1)
   }else{
     epdu.setPatchInAuxiliaryVideoFlag( 0 );
@@ -2071,7 +2077,7 @@ void PCCBitstreamReader::decodedAtlasB2pHash( PCCBitstream& bitstream, SEI& seiA
   } else if ( hType == 1 ) {
     sei.setAtlasB2pCrc( bitstream.read( 16 ) );  // u(16)
   } else if ( hType == 2 ) {
-    sei.setAtlasCheckSum( bitstream.read( 32 ) );  // u(32)
+    sei.setAtlasB2pCheckSum( bitstream.read( 32 ) );  // u(32)
   }
 }
 
@@ -2099,7 +2105,7 @@ void PCCBitstreamReader::decodedAtlasTilesB2pHash( PCCBitstream& bitstream, SEI&
   } else if ( hType == 1 ) {
     sei.setAtlasTilesB2pCrc( id, bitstream.read( 16 ) );  // u(16)
   } else if ( hType == 2 ) {
-    sei.setAtlasTilesCheckSum( id, bitstream.read( 32 ) );  // u(32)
+    sei.setAtlasTilesB2pCheckSum( id, bitstream.read( 32 ) );  // u(32)
   }
 }
 

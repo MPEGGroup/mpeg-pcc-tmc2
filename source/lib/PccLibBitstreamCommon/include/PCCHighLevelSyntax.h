@@ -483,16 +483,6 @@ class PCCHighLevelSyntax {
   void                 setGeometry3dCoordinatesBitdepth( size_t value ) { geometry3dCoordinatesBitdepth_ = value; }
   bool&                getSingleLayerMode() { return singleLayerMode_; }
 
-  void aspsCommonByteString           ( std::vector<uint8_t>& stringByte, size_t aspsIndex );
-  void aspsApplicationByteString      ( std::vector<uint8_t>& strinByte,  size_t aspsIndex, size_t afpsIndex  );
-  void afpsCommonByteString           ( std::vector<uint8_t>& stringByte, size_t afpsIndex );
-  void afpsApplicationByteString      ( std::vector<uint8_t>& stringByte, size_t afpsIndex );
-  
-protected:
-  void getTileOffsetAndSize( size_t afpsIndex, std::vector<size_t>& seiPartitionPosX, std::vector<size_t>& seiPartitionPosY,
-  std::vector<size_t>& seiPartitionWidth, std::vector<size_t>& seiPartitionHeight,
-  size_t seiAuxVideoWidth, std::vector<size_t>& seiAuxTileHeight);
-
  private:
   //size_t                         gofSize_;
   std::vector<PCCVideoBitstream> videoBitstream_;

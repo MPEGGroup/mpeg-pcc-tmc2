@@ -80,7 +80,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   occupancyMapVideoEncoderConfig_          = {};
   occupancyMapQP_                          = 8;
   occupancyMapRefinement_                  = false;
-  decodedAtlasInformationHash_             = 1;
+  decodedAtlasInformationHash_             = 0;
   postprocessSmoothingFilter_              = 1;
   flagGeometrySmoothing_                   = true;
   patchExpansion_                          = false;

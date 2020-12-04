@@ -1299,8 +1299,11 @@ void PCCBitstreamWriter::rawPatchDataUnit( RawPatchDataUnit&   rpdu,
   int32_t bitCount = ath.getRaw3dPosAxisBitCountMinus1() + 1;
   TRACE_BITSTREAM( " AtghRaw3dPosAxisBitCountMinus1 = %zu => bitcount = %d \n", ath.getRaw3dPosAxisBitCountMinus1(),
                    bitCount );
-  if ( 1 /* TODO: evaluate: AuxTileHeight[ TileIdToIndex[ ath_id ] ] > 0 */ ) {  // JR TODO with JK
-    bitstream.write( rpdu.getPatchInAuxiliaryVideoFlag(), 1 );                   // u(1)
+  auto& afti          = syntax.getAtlasFrameParameterSet(ath.getAtlasFrameParameterSetId()).getAtlasFrameTileInformation();
+  auto  ath_id        = ath.getId();
+  auto  tileIdToIndex = afti.getTileId(ath_id);
+  if ( afti.getAuxiliaryVideoTileRowHeight( tileIdToIndex ) ) {
+    bitstream.write( rpdu.getPatchInAuxiliaryVideoFlag(), 1 );                  // u(1)
   }
   bitstream.writeUvlc( rpdu.get2dPosX() );           // ue(v)
   bitstream.writeUvlc( rpdu.get2dPosY() );           // ue(v)
@@ -1323,8 +1326,10 @@ void PCCBitstreamWriter::eomPatchDataUnit( EOMPatchDataUnit&   epdu,
                                            PCCHighLevelSyntax& syntax,
                                            PCCBitstream&       bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
-
-  if ( 1 /* TODO: evaluate: AuxTileHeight[ TileIdToIndex[ ath_id ] ] > 0 */ ) {  // JR TODO with JK
+  auto& afti          = syntax.getAtlasFrameParameterSet(ath.getAtlasFrameParameterSetId()).getAtlasFrameTileInformation();
+  auto  ath_id        = ath.getId();
+  auto  tileIdToIndex = afti.getTileId(ath_id);
+  if ( afti.getAuxiliaryVideoTileRowHeight( tileIdToIndex ) ) {
     bitstream.write( epdu.getPatchInAuxiliaryVideoFlag(), 1 );                   // u(1)
   }
   bitstream.writeUvlc( epdu.get2dPosX() );            // ue(v)

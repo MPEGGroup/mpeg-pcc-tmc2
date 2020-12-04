@@ -1086,12 +1086,14 @@ class SEIDecodedAtlasInformationHash : public SEI {
     highLevelMd5_.resize( 16 );
     atlasMd5_.resize( 16 );
     atlasB2pMd5_.resize( 16 );
-    atlasTilesCrc_.clear();
-    atlasTilesChecksum_.clear();
-    atlasTilesMd5_.clear();
-    atlasTilesB2pCrc_.clear();
-    atlasTilesB2pChecksum_.clear();
-    atlasTilesB2pMd5_.clear();
+    atlasTilesCrc_.resize(numTilesMinus1_  + 1);
+    atlasTilesChecksum_.resize( numTilesMinus1_ + 1 );;
+    atlasTilesMd5_.resize( numTilesMinus1_ + 1 );
+    atlasTilesB2pCrc_.resize( numTilesMinus1_ + 1 );
+    atlasTilesB2pChecksum_.resize( numTilesMinus1_ + 1 );
+    atlasTilesB2pMd5_.resize( numTilesMinus1_ + 1 );
+    for ( auto& element : atlasTilesMd5_ ) { element.resize( 16 ); }
+    for ( auto& element : atlasTilesB2pMd5_ ) { element.resize( 16 ); }
   }
   
   ~SEIDecodedAtlasInformationHash() {
@@ -1113,6 +1115,7 @@ class SEIDecodedAtlasInformationHash : public SEI {
   SeiPayloadType getPayloadType() { return DECODED_ATLAS_INFORMATION_HASH; }
 
   void allocateAtlasTilesHash(size_t numTiles) {
+    assert( numTiles > 0 );
     numTilesMinus1_              = numTiles-1;
     tileId_.resize               ( numTiles );
     if( highLevelMd5_.size() != 16 ) highLevelMd5_.resize( 16 );
