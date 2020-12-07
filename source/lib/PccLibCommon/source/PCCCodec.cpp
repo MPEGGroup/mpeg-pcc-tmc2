@@ -394,13 +394,11 @@ std::vector<PCCPoint3D> PCCCodec::generatePoints( const GeneratePointCloudParame
     } else {
       occupancyTop = y > 0 && ( patch.getOccupancyMap( ( x ) / patch.getOccupancyResolution(),
                                                        ( y - 1 ) / patch.getOccupancyResolution() ) != 0 );
-      occupancyBotton =
-          y < ( imageHeight - 1 ) && ( patch.getOccupancyMap( ( x ) / patch.getOccupancyResolution(),
+      occupancyBotton = y < ( imageHeight - 1 ) && ( patch.getOccupancyMap( ( x ) / patch.getOccupancyResolution(),
                                                               ( y + 1 ) / patch.getOccupancyResolution() ) != 0 );
       occupancyLeft = x > 0 && ( patch.getOccupancyMap( ( x - 1 ) / patch.getOccupancyResolution(),
                                                         ( y ) / patch.getOccupancyResolution() ) != 0 );
-      occupancyRight =
-          x < ( imageWidth - 1 ) && ( patch.getOccupancyMap( ( x + 1 ) / patch.getOccupancyResolution(),
+      occupancyRight = x < ( imageWidth - 1 ) && ( patch.getOccupancyMap( ( x + 1 ) / patch.getOccupancyResolution(),
                                                              ( y ) / patch.getOccupancyResolution() ) != 0 );
     }
     auto&        blockToPatch      = tile.getBlockToPatch();
@@ -575,10 +573,8 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
     patchBlockFiltering.setPatches( &( tile.getPatches() ) );
     patchBlockFiltering.setBlockToPatch( &( tile.getBlockToPatch() ) );
     patchBlockFiltering.setOccupancyMapEncoder( &( tile.getOccupancyMap() ) );
-    patchBlockFiltering.setOccupancyMapVideo(
-        &( context.getVideoOccupancyMap().getFrame( tile.getFrameIndex() ).getChannel( 0 ) ) );
-    patchBlockFiltering.setGeometryVideo(
-        &( videoGeometry.getFrame( tile.getFrameIndex() * ( params.mapCountMinus1_ + 1 ) ).getChannel( 0 ) ) );
+    patchBlockFiltering.setOccupancyMapVideo( &( videoOccupancyMap.getFrame( tile.getFrameIndex() ).getChannel( 0 ) ) );
+    patchBlockFiltering.setGeometryVideo(     &( videoGeometry.getFrame( tile.getFrameIndex() * ( params.mapCountMinus1_ + 1 ) ).getChannel( 0 ) ) );
     patchBlockFiltering.patchBorderFiltering( tile.getWidth(), tile.getHeight(), params.occupancyResolution_,
                                               params.occupancyPrecision_,
                                               !params.enhancedOccupancyMapCode_ ? params.thresholdLossyOM_ : 0,
@@ -1852,12 +1848,11 @@ size_t PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruc
                                   const GeneratePointCloudParameters& params ) {
   TRACE_CODEC( "colorPointCloud start \n" );
 
-  if ( reconstruct.getPointCount() == 0 ) return accTilePointCount;
+  if ( reconstruct.getPointCount() == 0 ) { return accTilePointCount; }
 
 #ifdef CODEC_TRACE
   printChecksum( reconstruct, "colorPointCloud in" );
 #endif
-  if ( reconstruct.getPointCount() == 0 ) return false;
   auto&        videoTexture       = context.getVideoTextureMultiple()[0];
   auto&        videoTextureFrame1 = context.getVideoTextureMultiple()[1];
   const size_t mapCount           = params.mapCountMinus1_ + 1;
@@ -1889,6 +1884,7 @@ size_t PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruc
       TRACE_CODEC( "numberOfEOMPoints            = %zu \n", numberOfEOMPoints );
     }
     TRACE_CODEC( "pointCount                   = %zu \n", pointCount );
+    TRACE_CODEC( "reconstruct.getPointCount()  = %zu \n", reconstruct.getPointCount() );
     TRACE_CODEC( "pointToPixel size            = %zu \n", pointToPixel.size() );
     TRACE_CODEC( "pointLocalReconstruction     = %d \n", params.pointLocalReconstruction_ );
     TRACE_CODEC( "singleLayerPixelInterleaving = %d \n", params.singleMapPixelInterleaving_ );
@@ -1959,7 +1955,7 @@ size_t PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruc
         if ( f < mapCount ) {
           const auto& frame = videoTexture.getFrame( shift + f );
           for ( size_t c = 0; c < 3; ++c ) { color16bit[i][c] = frame.getValue( c, x, y ); }
-          int index = source.addPoint( reconstruct[i] );
+          int index = source.addPoint( reconstruct[i] );          
           source.setColor16bit( index, color16bit[i] );
         } else {
           target.addPoint( reconstruct[i] );

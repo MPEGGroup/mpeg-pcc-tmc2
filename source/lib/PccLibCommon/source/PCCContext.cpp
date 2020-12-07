@@ -97,9 +97,12 @@ size_t PCCContext::calculateAFOCval( std::vector<AtlasTileLayerRbsp>& atglList, 
   return atlasFrmOrderCntMsb + afocLsb;
 }
 
-void PCCAtlasContext::allocOneLayerData() {
+
+void PCCAtlasContext::allocOneLayerData() {  
   for ( auto& frameContext : frameContexts_ ) {
-    for ( size_t ti = 0; ti < frameContext.getNumTilesInAtlasFrame(); ti++ ) frameContext[ti].allocOneLayerData();
+    for ( size_t ti = 0; ti < frameContext.getNumTilesInAtlasFrame(); ti++ ){
+      frameContext[ti].allocOneLayerData();
+    }
   }
 }
 
@@ -259,4 +262,15 @@ uint32_t PCCContext::computeCheckSum( uint8_t* byteString, size_t len) {
     checkSum = ( checkSum + ( ( byteString[i] & 0xFF ) ^ xor_mask ) ) & 0xFFFFFFFF;
   }
   return checkSum;
+}
+
+void PCCContext::allocOneLayerData() {
+  atlasContexts_[atlasIndex_].allocOneLayerData();
+  for ( size_t frameIdx = 0; frameIdx < size(); frameIdx++ ) {
+    auto& atlasFrameContext = atlasContexts_[atlasIndex_].getFrameContexts()[frameIdx];
+    for ( size_t tileIdx = 0; tileIdx < atlasFrameContext.getNumTilesInAtlasFrame(); tileIdx++ ) {
+      auto& tile = atlasFrameContext.getTile( tileIdx );
+      tile.allocOneLayerData();
+    }
+  }
 }

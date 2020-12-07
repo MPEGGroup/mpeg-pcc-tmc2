@@ -147,7 +147,9 @@ void PCCFrameContext::constructAtghRefListStruct( PCCContext& context, AtlasTile
 }
 
 void PCCFrameContext::allocOneLayerData() {
-  for ( auto& patch : patches_ ) { patch.allocOneLayerData(); }
+  for ( auto& patch : patches_ ) { 
+    patch.allocOneLayerData();
+  }
 }
 
 void PCCFrameContext::printBlockToPatch( const size_t resolution ) {

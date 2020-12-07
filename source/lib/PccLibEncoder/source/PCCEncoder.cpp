@@ -348,7 +348,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   }
 
 #if 1
-  printf("****TileInfo***Summary******************\n");
+  printf("****TileInfo***Summary******************\n"); fflush(stdout);
   for(size_t fi=0; fi<context.size(); fi++){
     
     for(size_t ti=0; ti<context[fi].getNumTilesInAtlasFrame(); ti++){
@@ -366,25 +366,28 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     }
   }
   printf("*********************************************\n");
+  fflush(stdout);
 #endif
   // RECONSTRUCT POINT CLOUD GEOMETRY
   GeneratePointCloudParameters gpcParams;
   setGeneratePointCloudParameters( gpcParams, context );
-
   context.allocOneLayerData();
   std::vector<std::vector<uint32_t>> partitions;
   partitions.resize( context.size() );
-
   for ( size_t frameIdx = 0; frameIdx < context.size(); frameIdx++ ) {
-    for ( size_t tileIdx = 0; tileIdx < context[frameIdx].getNumTilesInAtlasFrame(); tileIdx++ ) {
+    auto& frame = context[frameIdx];
+    for ( size_t tileIdx = 0; tileIdx < frame.getNumTilesInAtlasFrame(); tileIdx++ ) {
       PCCPointSet3 tileReconstrct;
-      if ( params_.pointLocalReconstruction_ ) { pointLocalReconstructionSearch( context, tileIdx, gpcParams ); }
-      generatePointCloud( tileReconstrct, context, frameIdx, tileIdx, gpcParams, partitions[frameIdx],
-                          false );
+      auto&        tile = frame.getTile( tileIdx );      
+      if ( params_.pointLocalReconstruction_ ) {
+        auto& videoGeometryMultiple = context.getVideoGeometryMultiple();
+        pointLocalReconstructionSearch( context, tile, videoGeometryMultiple, gpcParams );        
+      }
+      generatePointCloud( tileReconstrct, context, frameIdx, tileIdx, gpcParams, partitions[frameIdx], false );      
       reconstructs[frameIdx].appendPointSet( tileReconstrct );
-      if ( context[frameIdx].getNumTilesInAtlasFrame() != 1 )
-        context[frameIdx].getTitleFrameContext().appendPointToPixel(
-            context[frameIdx].getTile( tileIdx ).getPointToPixel() );
+      if ( frame.getNumTilesInAtlasFrame() != 1 ){
+        frame.getTitleFrameContext().appendPointToPixel( tile.getPointToPixel() );
+      }
     }
   }
 
@@ -393,7 +396,6 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     const size_t mapCount = params_.mapCountMinus1_ + 1;
     // GENERATE ATTRIBUTE
     generateTextureVideo( sources, reconstructs, context, params_ );
-    std::cout << "generate Texture Video done" << std::endl;
 
     if ( !( params_.losslessGeo_ && params_.textureDilationOffLossless_ ) && params_.textureBGFill_ < 3 ) {
       // ATTRIBUTE IMAGE PADDING
@@ -570,8 +572,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
       for ( auto& reconstruct : reconstructs ) { reconstruct.clear(); }
       for ( auto& partition : partitions ) { partition.clear(); }
       partitions.clear();
-      // generatePointCloud( reconstructs, context, gpcParams, partitions, false );
-
+      partitions.resize( context.size() );
       for ( size_t fi = 0; fi < context.size(); fi++ ){
         for ( size_t ti = 0; ti < context[fi].getNumTilesInAtlasFrame(); ti++ ) {
           generatePointCloud( reconstructs[fi], context, fi, ti, gpcParams, partitions[fi], false );
@@ -584,14 +585,14 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   // recreating the prediction list per attribute (either the attribute is coded
   // absoulte, or follows the geometry)
   // see contribution m52529
+
   std::vector<std::vector<bool>> absoluteT1List;
   absoluteT1List.resize( ai.getAttributeCount() );
   for ( int attrIdx = 0; attrIdx < ai.getAttributeCount(); ++attrIdx ) {
-    for ( uint32_t mapIdx = 0; mapIdx < sps.getMapCountMinus1( atlasIndex ) + 1; ++mapIdx ) {
+     for ( uint32_t mapIdx = 0; mapIdx < sps.getMapCountMinus1( atlasIndex ) + 1; ++mapIdx ) {
       absoluteT1List[attrIdx].push_back( params_.absoluteT1_ );
     }
   }
-
   for ( size_t frameIdx = 0; frameIdx < context.size(); frameIdx++ ) {
     reconstructs[frameIdx].addColors();
     reconstructs[frameIdx].addColors16bit();
@@ -599,7 +600,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     size_t accTilePointCount = 0;
     for ( size_t tileIdx = 0; tileIdx < context[frameIdx].getNumTilesInAtlasFrame(); tileIdx++ ) {
       auto& tile = context[frameIdx].getTile( tileIdx );
-      for ( size_t attIdx = 0; attIdx < 1; attIdx++ ) {  // ai.getAttributeCount()
+      for ( size_t attIdx = 0; attIdx < 1; attIdx++ ) {  // ai.getAttributeCount()      
         size_t updatedPointCount = colorPointCloud( reconstructs[frameIdx], context, tile, absoluteT1List[attIdx],
                                                     sps.getMultipleMapStreamsPresentFlag( ATLASIDXPCC ),
                                                     ai.getAttributeCount(), accTilePointCount, gpcParams );
@@ -607,6 +608,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
       }
     }  // tile
   }
+
   std::cout << "Post Processing Point Clouds" << std::endl;
   bool            isAttributes444 = static_cast<int>( params_.losslessGeo_ ) == 1;
   for ( size_t frameIdx = 0; frameIdx < sources.getFrameCount(); frameIdx++ ) {
@@ -5731,17 +5733,6 @@ void PCCEncoder::replaceFrameContext( PCCContext& context ){
   }//frame
 }
 
-
-void PCCEncoder::pointLocalReconstructionSearch( PCCContext&                         context,
-                                                 size_t                              tileIndex,
-                                                 const GeneratePointCloudParameters& params ) {
-  auto& videoGeometryMultiple = context.getVideoGeometryMultiple();
-  for ( size_t fi = 0; fi < context.size(); fi++ ) {
-    auto& tile = context[fi].getTile( tileIndex );
-    pointLocalReconstructionSearch( context, tile, videoGeometryMultiple, params );
-  }
-}
-
 void PCCEncoder::pointLocalReconstructionSearch( PCCContext&                          context,
                                                  PCCFrameContext&                     frame,
                                                  const std::vector<PCCVideoGeometry>& videoMultiple,
@@ -5749,6 +5740,7 @@ void PCCEncoder::pointLocalReconstructionSearch( PCCContext&                    
   auto&                 patches         = frame.getPatches();
   auto&                 blockToPatch    = frame.getBlockToPatch();
   auto&                 occupancyMapOrg = frame.getOccupancyMap();
+  
   std::vector<uint32_t> occupancyMap;
   occupancyMap.resize( occupancyMapOrg.size(), 0 );
   for ( size_t i = 0; i < occupancyMapOrg.size(); i++ ) {
@@ -5759,6 +5751,7 @@ void PCCEncoder::pointLocalReconstructionSearch( PCCContext&                    
   const size_t blockToPatchWidth  = width / params_.occupancyResolution_;
   const size_t blockToPatchHeight = height / params_.occupancyResolution_;
   const size_t blockSize0         = params_.occupancyResolution_ / params_.occupancyPrecision_;
+  
   for ( size_t v0 = 0; v0 < blockToPatchHeight; ++v0 ) {
     for ( size_t u0 = 0; u0 < blockToPatchWidth; ++u0 ) {
       for ( size_t v1 = 0; v1 < blockSize0; ++v1 ) {
@@ -5792,11 +5785,12 @@ void PCCEncoder::pointLocalReconstructionSearch( PCCContext&                    
   size_t       nbOfOptimizationMode = context.getPointLocalReconstructionModeNumber();
   const size_t imageWidth           = videoMultiple[0].getWidth();
   const size_t imageHeight          = videoMultiple[0].getHeight();
-  for ( size_t patchIndex = 0; patchIndex < patchCount; ++patchIndex ) {
+
+  for ( size_t patchIndex = 0; patchIndex < patchCount; ++patchIndex ) {    
     const size_t  patchIndexPlusOne = patchIndex + 1;
     auto&         patch             = patches[patchIndex];
-    const size_t& patchSize         = patch.getSizeU0() * patch.getSizeV0();
-    if ( patchSize == 1 || patchSize <= params_.patchSize_ ) {
+    const size_t& patchSize         = patch.getSizeU0() * patch.getSizeV0();    
+    if ( patchSize == 1 || patchSize <= params_.patchSize_ ) {      
       patch.getPointLocalReconstructionLevel()     = 1;
       auto&                     srcPointCloudPatch = frame.getSrcPointCloudByPatch( patch.getOriginalIndex() );
       std::vector<PCCPointSet3> reconstruct;
@@ -5844,11 +5838,12 @@ void PCCEncoder::pointLocalReconstructionSearch( PCCContext&                    
     } else {
       patch.getPointLocalReconstructionLevel() = 0;
       for ( size_t v0 = 0; v0 < patch.getSizeV0(); ++v0 ) {
-        for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {
-          patch.getPointLocalReconstructionMode( u0, v0 ) = 0;
-          const size_t blockIndex = patch.patchBlock2CanvasBlock( u0, v0, blockToPatchWidth, blockToPatchHeight );
-          if ( blockToPatch[blockIndex] == patchIndexPlusOne ) {
-            auto&        srcPointCloudPatch = frame.getSrcPointCloudByPatch( patch.getOriginalIndex() );
+        for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {          
+          patch.getPointLocalReconstructionMode( u0, v0 ) = 0;           
+
+          const size_t blockIndex = patch.patchBlock2CanvasBlock( u0, v0, blockToPatchWidth, blockToPatchHeight );          
+          if ( blockToPatch[blockIndex] == patchIndexPlusOne ) {            
+            auto&        srcPointCloudPatch = frame.getSrcPointCloudByPatch( patch.getOriginalIndex() );                        
             PCCPointSet3 blockSrcPointCloud;
             const size_t xMin = u0 * patch.getOccupancyResolution() + patch.getU1();
             const size_t yMin = v0 * patch.getOccupancyResolution() + patch.getV1();
@@ -7260,58 +7255,18 @@ bool PCCEncoder::generateTextureVideo( const PCCGroupOfFrames&     sources,
   for ( size_t i = 0; i < context.size(); i++ ) {
     auto&  frame    = context[i].getTitleFrameContext();
     size_t mapCount = params_.mapCountMinus1_ + 1;
-    if ( params_.pointLocalReconstruction_ ) {
-      // create sub reconstruct point cloud
-      PCCPointSet3   subReconstruct;
-      vector<size_t> subReconstructIndex;
-      subReconstructIndex.clear();
-      if ( reconstructs[i].hasColors() ) { subReconstruct.addColors(); }
-      size_t numPointSub  = 0;
-      size_t numPoint     = reconstructs[i].getPointCount();
-      auto&  pointToPixel = frame.getPointToPixel();
-      for ( size_t j = 0; j < numPoint; j++ ) {
-        if ( pointToPixel[j][2] < mapCount ) {
-          numPointSub++;
-          subReconstruct.addPoint( reconstructs[i][j] );
-          subReconstructIndex.push_back( j );
-        }
-      }
-      subReconstruct.resize( numPointSub );
-      sources[i].transferColors( subReconstruct, int32_t( params_.bestColorSearchRange_ ),
-                                 static_cast<int>( params_.losslessGeo_ ) == 1, params_.numNeighborsColorTransferFwd_,
-                                 params_.numNeighborsColorTransferBwd_, params_.useDistWeightedAverageFwd_,
-                                 params_.useDistWeightedAverageBwd_, params_.skipAvgIfIdenticalSourcePointPresentFwd_,
-                                 params_.skipAvgIfIdenticalSourcePointPresentBwd_, params_.distOffsetFwd_,
-                                 params_.distOffsetBwd_, params_.maxGeometryDist2Fwd_, params_.maxGeometryDist2Bwd_,
-                                 params_.maxColorDist2Fwd_, params_.maxColorDist2Bwd_, params_.excludeColorOutlier_,
-                                 params_.thresholdColorOutlierDist_ );
-
-      for ( size_t j = 0; j < numPointSub; j++ ) {
-        reconstructs[i].setColor( subReconstructIndex[j], subReconstruct.getColor( j ) );
-        subReconstruct.setBoundaryPointType( j, reconstructs[i].getBoundaryPointType( subReconstructIndex[j] ) );
-      }
-      // color pre-smoothing
-      if ( !params_.losslessGeo_ && params_.flagColorPreSmoothing_ ) {
-        presmoothPointCloudColor( subReconstruct, params );
-        for ( size_t j = 0; j < numPointSub; j++ ) {
-          reconstructs[i].setColor( subReconstructIndex[j], subReconstruct.getColor( j ) );
-        }
-      }
-    } else {
-      sources[i].transferColors( reconstructs[i], int32_t( params_.bestColorSearchRange_ ),
-                                 static_cast<int>( params_.losslessGeo_ ) == 1, params_.numNeighborsColorTransferFwd_,
-                                 params_.numNeighborsColorTransferBwd_, params_.useDistWeightedAverageFwd_,
-                                 params_.useDistWeightedAverageBwd_, params_.skipAvgIfIdenticalSourcePointPresentFwd_,
-                                 params_.skipAvgIfIdenticalSourcePointPresentBwd_, params_.distOffsetFwd_,
-                                 params_.distOffsetBwd_, params_.maxGeometryDist2Fwd_, params_.maxGeometryDist2Bwd_,
-                                 params_.maxColorDist2Fwd_, params_.maxColorDist2Bwd_, params_.excludeColorOutlier_,
-                                 params_.thresholdColorOutlierDist_ );
-      // color pre-smoothing
-      if ( !params_.losslessGeo_ && params_.flagColorPreSmoothing_ ) {
-        presmoothPointCloudColor( reconstructs[i], params );
-      }
+    sources[i].transferColors( reconstructs[i], int32_t( params_.bestColorSearchRange_ ),
+                               static_cast<int>( params_.losslessGeo_ ) == 1, params_.numNeighborsColorTransferFwd_,
+                               params_.numNeighborsColorTransferBwd_, params_.useDistWeightedAverageFwd_,
+                               params_.useDistWeightedAverageBwd_, params_.skipAvgIfIdenticalSourcePointPresentFwd_,
+                               params_.skipAvgIfIdenticalSourcePointPresentBwd_, params_.distOffsetFwd_,
+                               params_.distOffsetBwd_, params_.maxGeometryDist2Fwd_, params_.maxGeometryDist2Bwd_,
+                               params_.maxColorDist2Fwd_, params_.maxColorDist2Bwd_, params_.excludeColorOutlier_,
+                               params_.thresholdColorOutlierDist_ );
+    // color pre-smoothing
+    if ( !params_.losslessGeo_ && params_.flagColorPreSmoothing_ ) {
+      presmoothPointCloudColor( reconstructs[i], params );
     }
-    //
     size_t imageWidth  = frame.getWidth();
     size_t imageHeight = frame.getHeight();
     if ( params_.multipleStreams_ ) {
