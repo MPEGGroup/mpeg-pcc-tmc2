@@ -477,8 +477,8 @@ void PCCBitstreamReader::atlasSequenceParameterSetRbsp( AtlasSequenceParameterSe
   asps.setAtlasSequenceParameterSetId( bitstream.readUvlc() );         // ue(v)
   asps.setFrameWidth( bitstream.readUvlc() );                          // ue(v)
   asps.setFrameHeight( bitstream.readUvlc() );                         // ue(v)
-  asps.setGeometry2dBitdepthMinus1( bitstream.read( 5 ) );             // u(5)
   asps.setGeometry3dBitdepthMinus1( bitstream.read( 5 ) );             // u(5)
+  asps.setGeometry2dBitdepthMinus1( bitstream.read( 5 ) );             // u(5)
   asps.setLog2MaxAtlasFrameOrderCntLsbMinus4( bitstream.readUvlc() );  // ue(v)
   asps.setMaxDecAtlasFrameBufferingMinus1( bitstream.readUvlc() );     // ue(v)
   asps.setLongTermRefAtlasFramesFlag( bitstream.read( 1 ) != 0U );     // u(1)
@@ -1011,9 +1011,8 @@ void PCCBitstreamReader::patchDataUnit( PatchDataUnit&      pdu,
   size_t  aspsId     = afps.getAtlasSequenceParameterSetId();
   auto&   asps       = syntax.getAtlasSequenceParameterSet( aspsId );
   auto&   vps        = syntax.getVps();
-  auto&   gi         = vps.getGeometryInformation( 0 );
-  uint8_t bitCountUV = gi.getGeometry3dCoordinatesBitdepthMinus1() + 1;
-  uint8_t bitCountD  = gi.getGeometry3dCoordinatesBitdepthMinus1() - ath.getPosMinDQuantizer() + 2;
+  uint8_t bitCountUV = asps.getGeometry3dBitdepthMinus1() + 1;
+  uint8_t bitCountD  = asps.getGeometry3dBitdepthMinus1() - ath.getPosMinDQuantizer() + 2;
   pdu.set2dPosX( bitstream.readUvlc() );             // ue(v)
   pdu.set2dPosY( bitstream.readUvlc() );             // ue(v)
   pdu.set2dSizeXMinus1( bitstream.readUvlc() );      // ue(v)
@@ -1025,21 +1024,10 @@ void PCCBitstreamReader::patchDataUnit( PatchDataUnit&      pdu,
   TRACE_BITSTREAM( " 2dSizeXY: %d,%d\n", int32_t( pdu.get2dSizeXMinus1() + 1 ), int32_t( pdu.get2dSizeYMinus1() + 1 ) );
   TRACE_BITSTREAM( " 3dPosXY: %zu,%zu\n", pdu.get3dOffsetU(), pdu.get3dOffsetV() );
   TRACE_BITSTREAM( " Pdu3dPosMinZ: %zu ( bitCountD = %u = %u - %u + %u ) \n", pdu.get3dOffsetD(), bitCountD,
-                   gi.getGeometry3dCoordinatesBitdepthMinus1(), ath.getPosMinDQuantizer(), 2 );
+                  asps.getGeometry3dBitdepthMinus1(), ath.getPosMinDQuantizer(), 2 );
 
   if ( asps.getNormalAxisMaxDeltaValueEnabledFlag() ) {
-#if EXPAND_RANGE_CONDITIONAL
-    uint8_t bitCountForMaxDepth = vps.getGeometryInformation( 0 ).getGeometry3dCoordinatesBitdepthMinus1() -
-                                  ath.getPosDeltaMaxDQuantizer() + 1 + asps.getExtendedProjectionEnabledFlag();
-#else
-#ifdef EXPAND_RANGE_ENCODER
-    uint8_t bitCountForMaxDepth = vps.getGeometryInformation( 0 ).getGeometry3dCoordinatesBitdepthMinus1() -
-                                  ath.getPosDeltaMaxDQuantizer() + 1;
-#else
-    uint8_t bitCountForMaxDepth = svps.getGeometryInformation( 0 ).getGeometry3dCoordinatesBitdepthMinus1() -
-                                  ath.getPosDeltaMaxDQuantizer() + 2;
-#endif
-#endif
+    uint8_t bitCountForMaxDepth = std::min( asps.getGeometry2dBitdepthMinus1(), asps.getGeometry3dBitdepthMinus1())+1 - ath.getPosDeltaMaxDQuantizer();
     pdu.set3dRangeD( bitstream.read( bitCountForMaxDepth ) );  // u(v)
     TRACE_BITSTREAM( " Pdu3dPosDeltaMaxZ: %zu ( bitCountForMaxDepth = %u) \n", pdu.get3dRangeD(), bitCountForMaxDepth );
   } else {
