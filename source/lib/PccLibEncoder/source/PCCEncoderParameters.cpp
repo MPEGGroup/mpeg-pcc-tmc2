@@ -963,12 +963,15 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     ext.setRemoveDuplicatePointEnableFlag( removeDuplicatePoints_ );
     ext.setSurfaceThicknessMinus1( surfaceThickness_ - 1 );
   }
-
   if ( ( asps.getEomPatchEnabledFlag() ) && mapCountMinus1_ == 0 ) {
     asps.setEomFixBitCountMinus1( EOMFixBitCount_ - 1 );
   } else {
     asps.setEomFixBitCountMinus1( EOMFixBitCount_ - 1 );  // default values
   }
+  asps.setGeometry3dBitdepthMinus1(
+      uint8_t( geometry3dCoordinatesBitdepth_ + asps.getExtendedProjectionEnabledFlag() - 1 ) );
+  asps.setGeometry2dBitdepthMinus1( uint8_t( geometryNominal2dBitdepth_ - 1 ) );
+
   afps.setAtlasSequenceParameterSetId( 0 );
 
   afps.setNumRefIdxDefaultActiveMinus1( static_cast<uint8_t>(

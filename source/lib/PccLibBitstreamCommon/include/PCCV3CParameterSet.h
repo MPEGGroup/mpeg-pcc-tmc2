@@ -94,7 +94,7 @@ class V3CParameterSet {
   }
 
   void allocateAtlas() {
-    atlasId_.resize( atlasCountMinus1_ + 1, 1 );
+    atlasId_.resize( atlasCountMinus1_ + 1, 0 );
     frameWidth_.resize( atlasCountMinus1_ + 1, 1 );
     frameHeight_.resize( atlasCountMinus1_ + 1 );
     mapCountMinus1_.resize( atlasCountMinus1_ + 1 );

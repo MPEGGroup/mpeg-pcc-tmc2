@@ -2632,7 +2632,7 @@ void PCCCodec::getHashPatchParams( PCCContext&                            contex
   for ( size_t patchIdx = 0; patchIdx < patchCount; patchIdx++ ) {
     PatchParams  pps( asps.getPLREnabledFlag(), asps.getMapCountMinus1() + 1 );
     auto&        patch         = tile.getPatch(patchIdx);
-    assert( getPatchType( tileType, atdu.getPatchMode( patchIdx ) )!= RAW_PATCH && getPatchType( tileType, atdu.getPatchMode( patchIdx )) != EOM_PATCH );
+    assert( getPatchType( tileType, atl.getDataUnit().getPatchMode( patchIdx ) )!= RAW_PATCH && getPatchType( tileType, atl.getDataUnit().getPatchMode( patchIdx )) != EOM_PATCH );
     pps.patchType      = PCCHashPatchType::PROJECTED;
     pps.patch2dPosX    = patch.getU0();
     pps.patch2dPosY    = patch.getV0();
@@ -2662,7 +2662,7 @@ void PCCCodec::getHashPatchParams( PCCContext&                            contex
   for ( size_t patchIdx = 0; patchIdx < rawPatchCount; patchIdx++ ) {
     PatchParams  pps( asps.getPLREnabledFlag(), asps.getMapCountMinus1() + 1 );
     auto&        rawPointsPatch         = tile.getRawPointsPatch(patchIdx);
-    assert( getPatchType( tileType, atdu.getPatchMode( patchIdx ) )== RAW_PATCH  );
+    assert( getPatchType( tileType, atl.getDataUnit().getPatchMode( patchIdx ) )== RAW_PATCH  );
     pps.patchType       = RAW;
     pps.patchRawPoints  = rawPointsPatch.getNumberOfRawPoints();
     pps.patch2dPosX     = rawPointsPatch.u0_;
@@ -2684,7 +2684,7 @@ void PCCCodec::getHashPatchParams( PCCContext&                            contex
   for ( size_t patchIdx = 0; patchIdx < eomPatchCount; patchIdx++ ) {
     PatchParams  pps( asps.getPLREnabledFlag(), asps.getMapCountMinus1() + 1 );
     auto&        eomPatch         = tile.getEomPatches(patchIdx);
-    assert( getPatchType( tileType, atdu.getPatchMode( patchIdx ) )== EOM_PATCH  );
+    assert( getPatchType( tileType, atl.getDataUnit().getPatchMode( patchIdx ) )== EOM_PATCH  );
     
     pps.patchType                = EOM;
     pps.patch2dPosX              = eomPatch.u0_;
