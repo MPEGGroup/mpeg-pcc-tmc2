@@ -324,9 +324,11 @@ class PCCPatchSegmenter3 {
       PCCVector3D( 0.0, -1.0, 0.0 ),                       // 4
       PCCVector3D( 0.0, 0.0, -1.0 ),                       // 5
       PCCVector3D( 0.0, sqrt( 2 ) / 2, sqrt( 2 ) / 2 ),    // 6
-      PCCVector3D( 0.0, -sqrt( 2 ) / 2, sqrt( 2 ) / 2 ),   // 7
+      //PCCVector3D( 0.0, -sqrt( 2 ) / 2, sqrt( 2 ) / 2 ),   // 7
+      PCCVector3D( 0.0,  sqrt( 2 ) / 2, -sqrt( 2 ) / 2 ),   // 7
       PCCVector3D( 0.0, -sqrt( 2 ) / 2, -sqrt( 2 ) / 2 ),  // 8
-      PCCVector3D( 0.0, sqrt( 2 ) / 2, -sqrt( 2 ) / 2 ),   // 9
+      //PCCVector3D( 0.0, sqrt( 2 ) / 2, -sqrt( 2 ) / 2 ),   // 9
+      PCCVector3D( 0.0, -sqrt( 2 ) / 2, sqrt( 2 ) / 2 ),   // 9
   };
 
   PCCVector3D orientations10_YAxis[10] = {
@@ -350,9 +352,11 @@ class PCCPatchSegmenter3 {
       PCCVector3D( 0.0, -1.0, 0.0 ),                       // 4
       PCCVector3D( 0.0, 0.0, -1.0 ),                       // 5
       PCCVector3D( sqrt( 2 ) / 2, sqrt( 2 ) / 2, 0.0 ),    // 6
-      PCCVector3D( -sqrt( 2 ) / 2, sqrt( 2 ) / 2, 0.0 ),   // 7
+      //PCCVector3D( -sqrt( 2 ) / 2, sqrt( 2 ) / 2, 0.0 ),   // 7
+      PCCVector3D( sqrt( 2 ) / 2, -sqrt( 2 ) / 2, 0.0 ),   // 7
       PCCVector3D( -sqrt( 2 ) / 2, -sqrt( 2 ) / 2, 0.0 ),  // 8
-      PCCVector3D( sqrt( 2 ) / 2, -sqrt( 2 ) / 2, 0.0 ),   // 9
+      //PCCVector3D( sqrt( 2 ) / 2, -sqrt( 2 ) / 2, 0.0 ),   // 9
+      PCCVector3D( -sqrt( 2 ) / 2, sqrt( 2 ) / 2, 0.0 ),   // 9
   };
 
   //  const size_t orientation18Count = 18;
@@ -368,13 +372,17 @@ class PCCPatchSegmenter3 {
       PCCVector3D( -sqrt( 2 ) / 2, 0.0, -sqrt( 2 ) / 2 ),  // 8
       PCCVector3D( sqrt( 2 ) / 2, 0.0, -sqrt( 2 ) / 2 ),   // 9
       PCCVector3D( 0.0, sqrt( 2 ) / 2, sqrt( 2 ) / 2 ),    // 10   2
-      PCCVector3D( 0.0, -sqrt( 2 ) / 2, sqrt( 2 ) / 2 ),   // 11
+      //PCCVector3D( 0.0, -sqrt( 2 ) / 2, sqrt( 2 ) / 2 ),   // 11
+      PCCVector3D( 0.0, sqrt( 2 ) / 2, -sqrt( 2 ) / 2 ),   // 11
       PCCVector3D( 0.0, -sqrt( 2 ) / 2, -sqrt( 2 ) / 2 ),  // 12
-      PCCVector3D( 0.0, sqrt( 2 ) / 2, -sqrt( 2 ) / 2 ),   // 13
+      //PCCVector3D( 0.0, sqrt( 2 ) / 2, -sqrt( 2 ) / 2 ),   // 13
+      PCCVector3D( 0.0, -sqrt( 2 ) / 2, sqrt( 2 ) / 2 ),   // 13
       PCCVector3D( sqrt( 2 ) / 2, sqrt( 2 ) / 2, 0.0 ),    // 14    3
-      PCCVector3D( -sqrt( 2 ) / 2, sqrt( 2 ) / 2, 0.0 ),   // 15
+      //PCCVector3D( -sqrt( 2 ) / 2, sqrt( 2 ) / 2, 0.0 ),   // 15
+      PCCVector3D( sqrt( 2 ) / 2, -sqrt( 2 ) / 2, 0.0 ),   // 15
       PCCVector3D( -sqrt( 2 ) / 2, -sqrt( 2 ) / 2, 0.0 ),  // 16
-      PCCVector3D( sqrt( 2 ) / 2, -sqrt( 2 ) / 2, 0.0 ),   // 17
+      //PCCVector3D( sqrt( 2 ) / 2, -sqrt( 2 ) / 2, 0.0 ),   // 17
+      PCCVector3D( -sqrt( 2 ) / 2, sqrt( 2 ) / 2, 0.0 ),   // 17
   };
 };
 

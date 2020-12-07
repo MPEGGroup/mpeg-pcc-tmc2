@@ -106,7 +106,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   for ( size_t i = 0; i < frames.size(); i++ ) {
     frames[i].getTitleFrameContext().setRawPatchEnabledFlag( params_.losslessGeo_ || params_.lossyRawPointsPatch_ );
     frames[i].getTitleFrameContext().setUseRawPointsSeparateVideo( params_.useRawPointsSeparateVideo_ );
-    frames[i].getTitleFrameContext().setGeometry3dCoordinatesBitdepth( params_.geometry3dCoordinatesBitdepth_ );
+    //frames[i].getTitleFrameContext().setGeometry3dCoordinatesBitdepth( params_.geometry3dCoordinatesBitdepth_ );
+    frames[i].getTitleFrameContext().setGeometry3dCoordinatesBitdepth( params_.geometry3dCoordinatesBitdepth_ + (params_.additionalProjectionPlaneMode_ > 0));
     frames[i].getTitleFrameContext().setGeometry2dBitdepth( params_.geometryNominal2dBitdepth_ );
     frames[i].getTitleFrameContext().setMaxDepth( ( 1 << params_.geometryNominal2dBitdepth_ ) - 1 );
     frames[i].getTitleFrameContext().setLog2PatchQuantizerSizeX( context.getLog2PatchQuantizerSizeX() );
@@ -142,7 +143,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
       for ( size_t ti = 0; ti < params_.numMaxTilePerFrame_; ti++ ) {
         frames[i][ti].setRawPatchEnabledFlag( params_.losslessGeo_ || params_.lossyRawPointsPatch_ );
         frames[i][ti].setUseRawPointsSeparateVideo( params_.useRawPointsSeparateVideo_ );
-        frames[i][ti].setGeometry3dCoordinatesBitdepth( params_.geometry3dCoordinatesBitdepth_ );
+        frames[i][ti].setGeometry3dCoordinatesBitdepth( params_.geometry3dCoordinatesBitdepth_ + (params_.additionalProjectionPlaneMode_ > 0));
         frames[i][ti].setGeometry2dBitdepth( params_.geometryNominal2dBitdepth_ );
         frames[i][ti].setMaxDepth( ( 1 << params_.geometryNominal2dBitdepth_ ) - 1 );
         frames[i][ti].setLog2PatchQuantizerSizeX( context.getLog2PatchQuantizerSizeX() );
@@ -5528,7 +5529,7 @@ void PCCEncoder::generateTilesFromImage( PCCContext& context ) {
 
       tile.setRawPatchEnabledFlag( params_.losslessGeo_ || params_.lossyRawPointsPatch_ );
       tile.setUseRawPointsSeparateVideo( params_.useRawPointsSeparateVideo_ );
-      tile.setGeometry3dCoordinatesBitdepth( params_.geometry3dCoordinatesBitdepth_ );
+      tile.setGeometry3dCoordinatesBitdepth( params_.geometry3dCoordinatesBitdepth_ +( params_.additionalProjectionPlaneMode_ > 0 ) );
       tile.setGeometry2dBitdepth( params_.geometryNominal2dBitdepth_ );
       tile.setMaxDepth( ( 1 << params_.geometryNominal2dBitdepth_ ) - 1 );
       tile.setLog2PatchQuantizerSizeX( context.getLog2PatchQuantizerSizeX() );
@@ -5551,7 +5552,7 @@ void PCCEncoder::generateTilesFromImage( PCCContext& context ) {
       tile.setTileIndex( context[frameIndex].getNumTilesInAtlasFrame() - 1 );
       tile.setRawPatchEnabledFlag( params_.losslessGeo_ || params_.lossyRawPointsPatch_ );
       tile.setUseRawPointsSeparateVideo( params_.useRawPointsSeparateVideo_ );
-      tile.setGeometry3dCoordinatesBitdepth( params_.geometry3dCoordinatesBitdepth_ );
+      tile.setGeometry3dCoordinatesBitdepth( params_.geometry3dCoordinatesBitdepth_ + ( params_.additionalProjectionPlaneMode_ > 0 ) );
       tile.setGeometry2dBitdepth( params_.geometryNominal2dBitdepth_ );
       tile.setMaxDepth( ( 1 << params_.geometryNominal2dBitdepth_ ) - 1 );
       tile.setLog2PatchQuantizerSizeX( context.getLog2PatchQuantizerSizeX() );
@@ -8602,7 +8603,7 @@ void PCCEncoder::setPostProcessingSeiParameters( GeneratePointCloudParameters& p
 #endif
   params.useAdditionalPointsPatch_ = params_.losslessGeo_ || params_.lossyRawPointsPatch_;
   params.plrlNumberOfModes_        = params_.plrlNumberOfModes_;
-  params.geometryBitDepth3D_       = params_.geometry3dCoordinatesBitdepth_;
+  params.geometryBitDepth3D_ = params_.geometry3dCoordinatesBitdepth_ + ( params_.additionalProjectionPlaneMode_ > 0 );
   params.EOMFixBitCount_           = params_.EOMFixBitCount_;
   params.pbfEnableFlag_            = params_.pbfEnableFlag_;
   params.pbfPassesCount_           = params_.pbfPassesCount_;
@@ -8734,7 +8735,8 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
       if ( afps.getRaw3dPosBitCountExplicitModeFlag() ) {
         ath.setRaw3dPosAxisBitCountMinus1( 0 );  //
       } else {
-        ath.setRaw3dPosAxisBitCountMinus1( params_.geometry3dCoordinatesBitdepth_ - params_.geometryNominal2dBitdepth_ -
+        ath.setRaw3dPosAxisBitCountMinus1( params_.geometry3dCoordinatesBitdepth_ + ( params_.additionalProjectionPlaneMode_ > 0 ) -
+                                           params_.geometryNominal2dBitdepth_ -
                                            1 );
       }
       ath.setNumRefIdxActiveOverrideFlag( false );

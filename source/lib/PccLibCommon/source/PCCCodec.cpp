@@ -2651,10 +2651,10 @@ void PCCCodec::getHashPatchParams( PCCContext&                            contex
     pps.patchLoDScaleX        = patch.getLodScaleX();
     pps.patchLoDScaleY        = patch.getLodScaleY();
 
-    atlasPatchParams.push_back( pps );
+    if(tilePatchParams.size()!=0) tilePatchParams[tileIndex].push_back( pps );
     pps.patch2dPosX += tileOffsetX;
     pps.patch2dPosY += tileOffsetY;
-    if(tilePatchParams.size()!=0) tilePatchParams[tileIndex].push_back( pps );
+    atlasPatchParams.push_back( pps );
 
   }
   
@@ -2674,10 +2674,10 @@ void PCCCodec::getHashPatchParams( PCCContext&                            contex
     pps.patch3dOffsetD  = rawPointsPatch.d1_;
     pps.patchInAuxVideo = rawPointsPatch.isPatchInAuxVideo_;
     
-    atlasPatchParams.push_back( pps );
+    if(tilePatchParams.size()!=0) tilePatchParams[tileIndex].push_back( pps );
     pps.patch2dPosX += tileOffsetX;
     pps.patch2dPosY += tileOffsetY;
-    if(tilePatchParams.size()!=0) tilePatchParams[tileIndex].push_back( pps );
+    atlasPatchParams.push_back( pps );
   }
   
   size_t eomPatchCount = tile.getEomPatches().size();
@@ -2698,10 +2698,10 @@ void PCCCodec::getHashPatchParams( PCCContext&                            contex
     for ( size_t i = 0; i < pps.epduAssociatedPatchCount; i++ )
       pps.epduAssociatedPoints[i] = eomPatch.eomCountPerPatch[i];
     
-    atlasPatchParams.push_back( pps );
+    if(tilePatchParams.size()!=0) tilePatchParams[tileIndex].push_back( pps );
     pps.patch2dPosX += tileOffsetX;
     pps.patch2dPosY += tileOffsetY;
-    if(tilePatchParams.size()!=0) tilePatchParams[tileIndex].push_back( pps );
+    atlasPatchParams.push_back( pps );
   }
  
 }

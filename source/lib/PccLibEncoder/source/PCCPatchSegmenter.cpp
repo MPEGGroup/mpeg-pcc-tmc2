@@ -1396,10 +1396,10 @@ void PCCPatchSegmenter3::refineSegmentationGridBased( const PCCPointSet3&       
   weights.reserve(gridCenters.getPointCount());
 
   std::vector<double> weightedScoreSmooths;
-  weightedScoreSmooths.resize(6, 0.0);
+  weightedScoreSmooths.resize( orientationCount, 0.0 );
 
   std::vector<double> scores;
-  scores.resize(6, 0.0);
+  scores.resize( orientationCount, 0.0 );
 
   std::vector<std::vector<size_t*>> scoreSmoothFromAdjsOf;//i
   scoreSmoothFromAdjsOf.reserve(gridCenters.getPointCount());
@@ -1425,8 +1425,9 @@ void PCCPatchSegmenter3::refineSegmentationGridBased( const PCCPointSet3&       
     weights.push_back(lambda / nnPointCount);
     
     //removing points from the adjacent list if there is more than maxNNCount
-    if(iter+1 < currentAdjOfI.end()) {
-      currentAdjOfI.erase(iter+1, currentAdjOfI.end());
+    //if ( iter + 1 < currentAdjOfI.end() ) {
+    if ( iter != currentAdjOfI.end() ) {
+      currentAdjOfI.erase( iter + 1, currentAdjOfI.end() );
     }
     
 
