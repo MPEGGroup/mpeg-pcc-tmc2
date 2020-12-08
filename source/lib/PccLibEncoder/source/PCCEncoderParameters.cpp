@@ -976,8 +976,9 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
       uint8_t( geometry3dCoordinatesBitdepth_ + asps.getExtendedProjectionEnabledFlag() - 1 ) );  // here 
 
     // NOTE JR: decoder/reader must used this value (asps no gi ) ? 
+    // NOTE JR: reconstruction must used gi ? 
 
-    
+
   asps.setGeometry2dBitdepthMinus1( uint8_t( geometryNominal2dBitdepth_ - 1 ) );
   afps.setAtlasSequenceParameterSetId( 0 );
   afps.setNumRefIdxDefaultActiveMinus1( static_cast<uint8_t>(

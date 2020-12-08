@@ -1426,7 +1426,9 @@ void PCCBitstreamReader::seiPayload( PCCBitstream&       bitstream,
     if ( payloadType == BUFFERING_PERIOD ) {  // 0
       bufferingPeriod( bitstream, sei );
     } else if ( payloadType == ATLAS_FRAME_TIMING ) {  // 1
-      atlasFrameTiming( bitstream, sei, false );
+      assert( syntax.seiIsPresent( NAL_PREFIX_NSEI, BUFFERING_PERIOD ) );
+      SEI& bpsei = *(syntax.getSeiPrefix().back().get());
+      atlasFrameTiming( bitstream, sei, bpsei, false );
     } else if ( payloadType == FILLER_PAYLOAD ) {  // 2
       fillerPayload( bitstream, sei, payloadSize );
     } else if ( payloadType == USER_DATAREGISTERED_ITUTT35 ) {  // 3
@@ -1919,13 +1921,18 @@ void PCCBitstreamReader::bufferingPeriod( PCCBitstream& bitstream, SEI& seiAbstr
 }
 
 // F.2.14  Atlas frame timing SEI message syntax
-void PCCBitstreamReader::atlasFrameTiming( PCCBitstream& bitstream, SEI& seiAbstract, bool CabDabDelaysPresentFlag ) {
+void PCCBitstreamReader::atlasFrameTiming( PCCBitstream& bitstream,
+                                           SEI&          seiAbstract,
+                                           SEI&          seiBufferingPeriodAbstract,
+                                           bool          cabDabDelaysPresentFlag ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
-  auto&         sei           = static_cast<SEIAtlasFrameTiming&>( seiAbstract );
-  const int32_t fixedBitcount = 16;
-  if ( CabDabDelaysPresentFlag ) {
-    sei.setAftCabRemovalDelayMinus1( bitstream.read( fixedBitcount ) );  // u(v)
-    sei.setAftDabOutputDelay( bitstream.read( fixedBitcount ) );         // u(v)
+  auto& sei   = static_cast<SEIAtlasFrameTiming&>( seiAbstract );
+  auto& bpsei = static_cast<SEIBufferingPeriod&>( seiBufferingPeriodAbstract );
+  if ( cabDabDelaysPresentFlag ) {
+    for ( uint32_t i = 0; i <= bpsei.getMaxSubLayersMinus1(); i++ ) {
+      sei.setAftCabRemovalDelayMinus1( i, bitstream.read( bpsei.getAuCabRemovalDelayLengthMinus1() + 1 ) );  // u(v)
+      sei.setAftDabOutputDelay( i, bitstream.read( bpsei.getDabOutputDelayLengthMinus1() + 1 ) );            // u(v)
+    }
   }
 }
 

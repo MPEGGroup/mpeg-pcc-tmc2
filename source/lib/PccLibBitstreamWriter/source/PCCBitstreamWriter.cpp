@@ -1492,7 +1492,9 @@ void PCCBitstreamWriter::seiPayload( PCCBitstream&       bitstream,
     if ( payloadType == BUFFERING_PERIOD ) {  // 0
       bufferingPeriod( bitstream, sei );
     } else if ( payloadType == ATLAS_FRAME_TIMING ) {  // 1
-      atlasFrameTiming( bitstream, sei, false );
+      assert( syntax.seiIsPresent( NAL_PREFIX_NSEI, BUFFERING_PERIOD ) );
+      SEI& bpsei = *( syntax.getSeiPrefix().back().get() ); // NOTE JR: could be updated.
+      atlasFrameTiming( bitstream, sei, bpsei, false );
     } else if ( payloadType == FILLER_PAYLOAD ) {  // 2
       fillerPayload( bitstream, sei );
     } else if ( payloadType == USER_DATAREGISTERED_ITUTT35 ) {  // 3
@@ -1967,13 +1969,18 @@ void PCCBitstreamWriter::bufferingPeriod( PCCBitstream&        bitstream,
 }
 
 // F.2.14  Atlas frame timing SEI message syntax
-void PCCBitstreamWriter::atlasFrameTiming( PCCBitstream& bitstream, SEI& seiAbstract, bool cabDabDelaysPresentFlag ) {
+void PCCBitstreamWriter::atlasFrameTiming( PCCBitstream& bitstream,
+                                           SEI&          seiAbstract,
+                                           SEI&          seiBufferingPeriodAbstract,
+                                           bool          cabDabDelaysPresentFlag ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
-  auto&         sei           = static_cast<SEIAtlasFrameTiming&>( seiAbstract );
-  const int32_t fixedBitcount = 16;
+  auto& sei   = static_cast<SEIAtlasFrameTiming&>( seiAbstract );
+  auto& bpsei = static_cast<SEIBufferingPeriod&>( seiBufferingPeriodAbstract );
   if ( cabDabDelaysPresentFlag ) {
-    bitstream.write( sei.getAftCabRemovalDelayMinus1(), fixedBitcount );  // u(v)
-    bitstream.write( sei.getAftDabOutputDelay(), fixedBitcount );         // u(v)
+    for ( uint32_t i = 0; i <= bpsei.getMaxSubLayersMinus1(); i++ ) {
+      bitstream.write( sei.getAftCabRemovalDelayMinus1( i ), bpsei.getAuCabRemovalDelayLengthMinus1() + 1 );  // u(v)
+      bitstream.write( sei.getAftDabOutputDelay( i ), bpsei.getDabOutputDelayLengthMinus1() + 1 );            // u(v)
+    }
   }
 }
 

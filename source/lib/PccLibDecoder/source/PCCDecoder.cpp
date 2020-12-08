@@ -1030,7 +1030,7 @@ void PCCDecoder::createPatchFrameDataStructure(  PCCContext& context, size_t atg
       if ( patch.getProjectionMode() == 0 ) {
         patch.getD1() = ( ( refPatch.getD1() / minLevel ) ) * minLevel;
       } else {
-        if ( static_cast<int>( asps.getExtendedProjectionEnabledFlag() ) == 0 ) {
+        if ( static_cast<int>( asps.getExtendedProjectionEnabledFlag() ) == 0 ) {  // TODO JR: remove the if;
           patch.getD1() = max3DCoordinate - ( ( ( max3DCoordinate - refPatch.getD1() ) / minLevel ) ) * minLevel;
         } else {
 #if EXPAND_RANGE_ENCODER

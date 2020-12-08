@@ -422,8 +422,11 @@ class PCCBitstreamWriter {
   // F.2.13  Buffering period SEI message syntax
   static void bufferingPeriod( PCCBitstream& bitstream, SEI& sei );
   // F.2.14  Atlas frame timing SEI message syntax
-  static void atlasFrameTiming( PCCBitstream& bitstream, SEI& sei, bool CabDabDelaysPresentFlag );
-  
+  static void atlasFrameTiming( PCCBitstream& bitstream,
+                                SEI&          sei,
+                                SEI&          seiBufferingPeriodAbstract,
+                                bool          cabDabDelaysPresentFlag );
+
   // F.2.15.1 Viewport camera parameters SEI messages syntax
   static void viewportCameraParameters( PCCBitstream& bitstream, SEI& seiAbstract );
   // F.2.15.2	Viewport position SEI messages syntax
