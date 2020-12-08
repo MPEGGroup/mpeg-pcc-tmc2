@@ -77,11 +77,14 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   size_t singleLayerPixelInterleavingOriginal = static_cast<size_t>( params_.singleMapPixelInterleaving_ );
   if ( params_.nbThread_ > 0 ) { tbb::task_scheduler_init init( static_cast<int>( params_.nbThread_ ) ); }
 
-  if ( params_.losslessGeo_ && params_.tileSegmentationType_ > 1 && params_.numMaxTilePerFrame_ > 1 )
+  if ( sources.getFrameCount() == 0 ) { return 0; }
+  assert( sources.getFrameCount() < 256 );
+  if ( params_.losslessGeo_ && params_.tileSegmentationType_ > 1 && params_.numMaxTilePerFrame_ > 1 ){
     params_.numMaxTilePerFrame_ += 1;
+  }
+  reconstructs.setFrameCount( sources.getFrameCount() );
 
-  // Note JR: logger examples
-#if 1  
+#if 0 // Note JR: logger examples
   logger_->traceDescr( "test descr = %d \n", 10 );
   logger_->traceDescr( "test descr = %d \n", 11 );
   logger_->traceAtlas( "test atlas = %d \n", 12 );
@@ -92,88 +95,29 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   logger_->traceTiles( "test tiles = %d \n", 17 );
   logger_->traceTrace( "test trace = %d \n", 18 );
   logger_->traceTrace( "test trace = %d \n", 19 );
-
 #endif
 
-  params_.initializeContext( context );
-  assert( sources.getFrameCount() < 256 );
-  size_t atlasIndex = 0; //jkei: this should be vps.vps_atlas_id[ k ]
-  if ( sources.getFrameCount() == 0 ) { return 0; }
-  reconstructs.setFrameCount( sources.getFrameCount() );
-  //context.setGofSize( sources.getFrameCount() );
+  context.resizeAtlas( 1 );
+  context.setAtlasIndex( 0 ); 
   context.resize( sources.getFrameCount() );
-  auto& frames = context.getFrames();
+  auto& frames = context.getFrames();  
   for ( size_t i = 0; i < frames.size(); i++ ) {
+    frames[i].getTitleFrameContext().setFrameIndex( i );  // should before setRefAFOCList
     frames[i].getTitleFrameContext().setRawPatchEnabledFlag( params_.losslessGeo_ || params_.lossyRawPointsPatch_ );
     frames[i].getTitleFrameContext().setUseRawPointsSeparateVideo( params_.useRawPointsSeparateVideo_ );
-    //frames[i].getTitleFrameContext().setGeometry3dCoordinatesBitdepth( params_.geometry3dCoordinatesBitdepth_ );
     frames[i].getTitleFrameContext().setGeometry3dCoordinatesBitdepth( params_.geometry3dCoordinatesBitdepth_ + (params_.additionalProjectionPlaneMode_ > 0));
     frames[i].getTitleFrameContext().setGeometry2dBitdepth( params_.geometryNominal2dBitdepth_ );
     frames[i].getTitleFrameContext().setMaxDepth( ( 1 << params_.geometryNominal2dBitdepth_ ) - 1 );
-    frames[i].getTitleFrameContext().setLog2PatchQuantizerSizeX( context.getLog2PatchQuantizerSizeX() );
-    frames[i].getTitleFrameContext().setLog2PatchQuantizerSizeY( context.getLog2PatchQuantizerSizeY() );
-    frames[i].getTitleFrameContext().setAtlasFrmOrderCntLsb( context.calculateAFOCLsb( i ) );
-    frames[i].getTitleFrameContext().setAtlasFrmOrderCntVal( i );
-    frames[i].getTitleFrameContext().setFrameIndex( i );  // should before setRefAFOCList
-
-    if ( i == 0 )
-      frames[i].getTitleFrameContext().setNumRefIdxActive( 0 );
-    else
-      frames[i].getTitleFrameContext().setNumRefIdxActive(
-          params_.constrainedPack_ ? std::min( i, params_.maxNumRefAtlasFrame_ ) : 0 );
-    frames[i].getTitleFrameContext().setRefAfocList( context, 0 );  // initialization
-
-    if ( params_.tileSegmentationType_ == 1 ) {
-      // jkei: we assume the width cannot be changed.
-      size_t partitionWidthIn64 = ( params_.minimumImageWidth_ / ( 64 * params_.numTilesHor_ ) );
-      size_t partitionHeightIn64 =
-          ( params_.tileHeightToWidthRatio_ * params_.minimumImageWidth_ / ( 64 * params_.numTilesHor_ ) );
-      frames[i].initPartitionInfoPerFrame( i, params_.minimumImageWidth_, params_.minimumImageHeight_, 0,
-                                           params_.uniformPartitionSpacing_, partitionWidthIn64, partitionHeightIn64 );
-    } else {
-      if ( params_.useRawPointsSeparateVideo_ ) {
-        context.getAuxTileHeight().resize( params_.numMaxTilePerFrame_ );
-        context.getAuxTileLeftTopY().resize( params_.numMaxTilePerFrame_ );
-      }
-      frames[i].setNumTilesInAtlasFrame( params_.numMaxTilePerFrame_ );
-      frames[i].initNumTiles( params_.numMaxTilePerFrame_ );
-      frames[i].initPartitionInfoPerFrame( i, params_.minimumImageWidth_, params_.minimumImageHeight_,
-                                           params_.numMaxTilePerFrame_, params_.uniformPartitionSpacing_,
-                                           params_.tilePartitionWidth_, params_.tilePartitionHeight_ );
-      for ( size_t ti = 0; ti < params_.numMaxTilePerFrame_; ti++ ) {
-        frames[i][ti].setRawPatchEnabledFlag( params_.losslessGeo_ || params_.lossyRawPointsPatch_ );
-        frames[i][ti].setUseRawPointsSeparateVideo( params_.useRawPointsSeparateVideo_ );
-        frames[i][ti].setGeometry3dCoordinatesBitdepth( params_.geometry3dCoordinatesBitdepth_ + (params_.additionalProjectionPlaneMode_ > 0));
-        frames[i][ti].setGeometry2dBitdepth( params_.geometryNominal2dBitdepth_ );
-        frames[i][ti].setMaxDepth( ( 1 << params_.geometryNominal2dBitdepth_ ) - 1 );
-        frames[i][ti].setLog2PatchQuantizerSizeX( context.getLog2PatchQuantizerSizeX() );
-        frames[i][ti].setLog2PatchQuantizerSizeY( context.getLog2PatchQuantizerSizeY() );
-        frames[i][ti].setAtlasFrmOrderCntLsb( context.calculateAFOCLsb( i ) );
-        frames[i][ti].setAtlasFrmOrderCntVal( i );
-        frames[i][ti].setFrameIndex( i );  // should before setRefAFOCList
-
-        if ( i == 0 ) {
-          frames[i][ti].setNumRefIdxActive( 0 );
-        } else {
-          frames[i][ti].setNumRefIdxActive( params_.constrainedPack_ ? std::min( i, params_.maxNumRefAtlasFrame_ )
-                                                                     : 0 );
-        }
-        frames[i][ti].setGeometry2dBitdepth( params_.geometryNominal2dBitdepth_ );
-        frames[i][ti].setMaxDepth( ( 1 << params_.geometryNominal2dBitdepth_ ) - 1 );
-        frames[i][ti].setLog2PatchQuantizerSizeX( context.getLog2PatchQuantizerSizeX() );
-        frames[i][ti].setLog2PatchQuantizerSizeY( context.getLog2PatchQuantizerSizeY() );
-        frames[i][ti].setNumRefIdxActive( std::min( i, params_.maxNumRefAtlasFrame_ ) );
-        frames[i][ti].setRefAfocList( context, 0 );  // initialization
-
-      }
-    }
+    frames[i].getTitleFrameContext().setLog2PatchQuantizerSizeX( params_.log2QuantizerSizeX_);
+    frames[i].getTitleFrameContext().setLog2PatchQuantizerSizeY( params_.log2QuantizerSizeY_ );
   }
 
-  PCCVideoEncoder videoEncoder;
-  const size_t    pointCount = sources[0].getPointCount();
+  // Segmentation  
+  generateSegments( sources, context );  
+  
+  // Init context and tiles
+  params_.initializeContext( context );
 
-  // Segmentation
-  generateSegments( sources, context );
   // Segment Placement
   placeSegments( sources, context );
   // updatePartitionInformation
@@ -181,20 +125,21 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     placeTiles( context, params_.minimumImageWidth_, params_.minimumImageHeight_ );
   }
 #if TILETYPE1_RAWAUXVIDEO_BUGFIX2
-  if ( params_.tileSegmentationType_ > 0 )
+  if ( params_.tileSegmentationType_ > 0 ){
     replaceFrameContext( context );
+  }
 #endif
-  
-  // params_.initializeContext( context );
-  auto& sps  = context.getVps();
-  auto& ai   = sps.getAttributeInformation( atlasIndex );
-  auto& asps = context.getAtlasSequenceParameterSet( atlasIndex );
+
+  PCCVideoEncoder   videoEncoder;
+  size_t            atlasIndex = context.getAtlasIndex();
+  const size_t      pointCount = sources[0].getPointCount();
+  auto&             sps        = context.getVps();
+  auto&             ai         = sps.getAttributeInformation( atlasIndex );
+  auto&             asps       = context.getAtlasSequenceParameterSet( atlasIndex );
   std::stringstream path;
   path << removeFileExtension( params_.compressedStreamPath_ ) << "_GOF" << sps.getV3CParameterSetId() << "_";
-
   sps.setFrameWidth( atlasIndex, static_cast<uint16_t>( frames[0].getAtlasFrameWidth() ) );
   sps.setFrameHeight( atlasIndex, static_cast<uint16_t>( frames[0].getAtlasFrameHeight() ) );
-
   // DIS requirement, see 7.4.6.1
   for ( int i = 0; i < context.getAtlasSequenceParameterSetList().size(); i++ ) {
     context.getAtlasSequenceParameterSet( i ).setFrameHeight( sps.getFrameHeight( atlasIndex ) );
@@ -678,6 +623,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   params_.pointLocalReconstruction_   = ( pointLocalReconstructionOriginal != 0u );
   params_.mapCountMinus1_             = layerCountMinus1Original;
   params_.singleMapPixelInterleaving_ = ( singleLayerPixelInterleavingOriginal != 0u );
+  printf("Done Encoder \n"); fflush(stdout);
   return 0;
 }
 
@@ -3690,12 +3636,10 @@ struct mypair {
 
 bool comp1( const mypair& a, const mypair& b ) { return a.value < b.value; }
 
-void PCCEncoder::calculateWeightNormal( PCCContext& context, const PCCPointSet3& source, PCCFrameContext& frame ) {
-  size_t            atlasIndex         = 0;
-  auto&             gi                 = context.getVps().getGeometryInformation( atlasIndex );
-  size_t            geometryBitDepth3D = gi.getGeometry3dCoordinatesBitdepthMinus1() + 1;
-  size_t            maxValue           = size_t( 1 ) << geometryBitDepth3D;
-  PCCVector3D       weight_value;
+PCCVector3D PCCEncoder::calculateWeightNormal( size_t geometryBitDepth3D, const PCCPointSet3& source ) {
+  size_t            atlasIndex = 0;
+  size_t            maxValue   = size_t( 1 ) << geometryBitDepth3D;
+  PCCVector3D       weightValue;
   std::vector<bool> pjFace;
   pjFace.resize( maxValue * maxValue * 3 );
   size_t pointCount = source.getPointCount();
@@ -3735,43 +3679,42 @@ void PCCEncoder::calculateWeightNormal( PCCContext& context, const PCCPointSet3&
 
     std::sort( pjCnt, pjCnt + 3, comp1 );
 
-    double axis_weight[6];
+    double axisWeight[6];
     if ( ( double( pjCnt[0].value ) / double( pjCnt[2].value ) ) >= params_.minWeightEPP_ ) {
       int idx_t          = pjCnt[0].idx;
-      axis_weight[idx_t] = axis_weight[idx_t + 3] = double( pjCnt[0].value ) / double( pjCnt[2].value );
+      axisWeight[idx_t] = axisWeight[idx_t + 3] = double( pjCnt[0].value ) / double( pjCnt[2].value );
 
       idx_t              = pjCnt[1].idx;
-      axis_weight[idx_t] = axis_weight[idx_t + 3] = double( pjCnt[1].value ) / double( pjCnt[2].value );
+      axisWeight[idx_t] = axisWeight[idx_t + 3] = double( pjCnt[1].value ) / double( pjCnt[2].value );
 
       idx_t              = pjCnt[2].idx;
-      axis_weight[idx_t] = axis_weight[idx_t + 3] = 1.0;
+      axisWeight[idx_t] = axisWeight[idx_t + 3] = 1.0;
     } else {
       int    idx_t = pjCnt[0].idx;
       double tmpb;
       double tmpa;
-      axis_weight[idx_t] = axis_weight[idx_t + 3] = params_.minWeightEPP_;
+      axisWeight[idx_t] = axisWeight[idx_t + 3] = params_.minWeightEPP_;
 
       idx_t              = pjCnt[2].idx;
-      axis_weight[idx_t] = axis_weight[idx_t + 3] = 1.0;
+      axisWeight[idx_t] = axisWeight[idx_t + 3] = 1.0;
 
       idx_t = pjCnt[1].idx;
       tmpb  = double( pjCnt[1].value ) / double( pjCnt[2].value );
       tmpa  = double( pjCnt[0].value ) / double( pjCnt[2].value );
 
-      axis_weight[idx_t] = axis_weight[idx_t + 3] =
+      axisWeight[idx_t] = axisWeight[idx_t + 3] =
           params_.minWeightEPP_ + ( tmpb - tmpa ) / ( 1.0 - tmpa ) * ( 1 - params_.minWeightEPP_ );
     }
 
-    weight_value[0] = axis_weight[0];
-    weight_value[1] = axis_weight[1];
-    weight_value[2] = axis_weight[2];
+    weightValue[0] = axisWeight[0];
+    weightValue[1] = axisWeight[1];
+    weightValue[2] = axisWeight[2];
   } else {
-    weight_value[0] = 1.0;
-    weight_value[1] = 1.0;
-    weight_value[2] = 1.0;
+    weightValue[0] = 1.0;
+    weightValue[1] = 1.0;
+    weightValue[2] = 1.0;
   }
-
-  frame.getWeightNormal() = weight_value;
+  return weightValue;
 }
 
 bool PCCEncoder::generateScaledGeometry( const PCCPointSet3& source, PCCFrameContext& title ) {
@@ -3855,9 +3798,7 @@ bool PCCEncoder::generateSegments( const PCCPointSet3&                 source,
   }
 
   if ( frame.getRawPatchEnabledFlag() ) {
-    generateRawPointsPatch( source, frame,
-                            segmenterParams.useEnhancedOccupancyMapCode_ );  // useEnhancedOccupancyMapCode for
-    // EOM code
+    generateRawPointsPatch( source, frame, segmenterParams.useEnhancedOccupancyMapCode_ );      
     for ( int i = 0; i < frame.getNumberOfRawPointsPatches(); i++ ) {
       if ( params_.mortonOrderSortRawPoints_ ) {
         sortRawPointsPatchMorton( frame, i );
@@ -4348,7 +4289,6 @@ void PCCEncoder::generateRawPointsPatch( const PCCPointSet3& source,
                                          bool                useEnhancedOccupancyMapCode ) {
   //  const int16_t infiniteDepth    = ( std::numeric_limits<int16_t>::max )();
   auto& patches = frame.getPatches();
-
 #if EXPAND_RANGE_ENCODER
   const size_t geometry3dCoordinatesBitdepth =
       params_.geometry3dCoordinatesBitdepth_ + ( params_.additionalProjectionPlaneMode_ > 0 );
@@ -4364,13 +4304,11 @@ void PCCEncoder::generateRawPointsPatch( const PCCPointSet3& source,
         const size_t depth0 = patch.getDepth( 0 )[p];
         if ( depth0 < infiniteDepth ) {
           PCCPoint3D point0;
-
           if ( patch.getProjectionMode() == 0 ) {
             point0[patch.getNormalAxis()] = double( depth0 + patch.getD1() );
           } else {
             point0[patch.getNormalAxis()] = double( patch.getD1() - depth0 );
           }
-
           point0[patch.getTangentAxis()]   = double( u ) + patch.getU1();
           point0[patch.getBitangentAxis()] = double( v ) + patch.getV1();
           if ( patch.getAxisOfAdditionalPlane() != 0 ) {
@@ -4961,8 +4899,8 @@ bool PCCEncoder::generateSegments( const PCCGroupOfFrames& sources, PCCContext& 
   params.occupancyResolution_                 = params_.occupancyResolution_;
   params.enablePatchSplitting_                = params_.enablePatchSplitting_;
   params.maxPatchSize_                        = params_.maxPatchSize_;
-  params.quantizerSizeX_                      = size_t( 1 ) << context.getLog2PatchQuantizerSizeX();
-  params.quantizerSizeY_                      = size_t( 1 ) << context.getLog2PatchQuantizerSizeY();
+  params.quantizerSizeX_                      = size_t( 1 ) << params_.log2QuantizerSizeX_;
+  params.quantizerSizeY_                      = size_t( 1 ) << params_.log2QuantizerSizeY_;
   params.minPointCountPerCCPatchSegmentation_ = params_.minPointCountPerCCPatchSegmentation_;
   params.maxNNCountPatchSegmentation_         = params_.maxNNCountPatchSegmentation_;
   params.surfaceThickness_                    = params_.surfaceThickness_;
@@ -5002,8 +4940,7 @@ bool PCCEncoder::generateSegments( const PCCGroupOfFrames& sources, PCCContext& 
   params.numCutsAlong3rdLongestAxis_   = params_.numCutsAlong3rdLongestAxis_;
   params.createSubPointCloud_          = params_.pointLocalReconstruction_ || params_.singleMapPixelInterleaving_;
   if ( params_.additionalProjectionPlaneMode_ == 0 || params_.additionalProjectionPlaneMode_ == 5 ) {
-    calculateWeightNormal( context, sources[0], frames[0].getTitleFrameContext() );
-    params.weightNormal_ = frames[0].getTitleFrameContext().getWeightNormal();
+    params.weightNormal_ = calculateWeightNormal( params.geometryBitDepth3D_, sources[0] );  
   }
   float sumDistanceSrcRec = 0;
   for ( size_t i = 0; i < frames.size(); i++ ) {
@@ -5015,8 +4952,8 @@ bool PCCEncoder::generateSegments( const PCCGroupOfFrames& sources, PCCContext& 
     sumDistanceSrcRec += distanceSrcRec;
   }
   if ( params_.pointLocalReconstruction_ || params_.singleMapPixelInterleaving_ ) {
-    const float distanceSrcRec = sumDistanceSrcRec / static_cast<float>( frames.size() );
-    if ( distanceSrcRec >= 250.F ) {
+    const float distanceSrcRec = sumDistanceSrcRec / static_cast<float>( frames.size() );    
+    if ( distanceSrcRec >= 250.F ) {      
       params_.pointLocalReconstruction_   = false;
       params_.mapCountMinus1_             = 1;
       params_.singleMapPixelInterleaving_ = false;

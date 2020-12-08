@@ -91,7 +91,6 @@ class PCCFrameContext {
   std::vector<PCCPointSet3>&      getSrcPointCloudByPatch() { return srcPointCloudByPatch_; }
   PCCPointSet3&              getSrcPointCloudByPatch( size_t patchIndex ) { return srcPointCloudByPatch_[patchIndex]; }
   std::vector<PCCPointSet3>& getSrcPointCloudByBlock() { return srcPointCloudByBlock_; }
-  PCCVector3D&               getWeightNormal() { return weightNormal_; }
   uint8_t&                   getPointLocalReconstructionNumber() { return pointLocalReconstructionNumber_; }
   PCCGPAFrameSize&           getPrePCCGPAFrameSize() { return prePCCGPAFrameSize_; }
   PCCGPAFrameSize&           getCurPCCGPAFrameSize() { return curPCCGPAFrameSize_; }
@@ -198,7 +197,6 @@ class PCCFrameContext {
   PCCGPAFrameSize                              prePCCGPAFrameSize_;
   PCCGPAFrameSize                              curPCCGPAFrameSize_;
   PCCFrameOCMInfo                              ocpGPAInfo_;
-  PCCVector3D                                  weightNormal_;
   std::vector<PCCEomPatch>                     eomPatches_;
 };
 

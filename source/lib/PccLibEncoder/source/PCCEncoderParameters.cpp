@@ -971,20 +971,13 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   asps.setGeometry3dBitdepthMinus1(
       uint8_t( geometry3dCoordinatesBitdepth_ + asps.getExtendedProjectionEnabledFlag() - 1 ) );
   asps.setGeometry2dBitdepthMinus1( uint8_t( geometryNominal2dBitdepth_ - 1 ) );
-
   afps.setAtlasSequenceParameterSetId( 0 );
-
   afps.setNumRefIdxDefaultActiveMinus1( static_cast<uint8_t>(
       constrainedPack_ ? ( ( std::max )( 0, static_cast<int>( maxNumRefAtlasFrame_ ) - 1 ) ) : 0 ) );
-
   afps.setAdditionalLtAfocLsbLen( 4 );
-  // afps.setOverrideEomForDepthFlag( false );
-  // afps.setEomNumberOfPatchBitCountMinus1( 0 );
-  // afps.setEomMaxBitCountMinus1( 0 );
   afps.setRaw3dPosBitCountExplicitModeFlag( false );
   afps.setExtensionFlag( true );
   afps.setExtension8Bits( 0 );
-
   // construction of reference frame list of ASPS
   constructAspsRefListStruct( context, 0, 0 );
 
@@ -1029,4 +1022,68 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   auto& plt = vps.getProfileTierLevel();
   plt.setProfileCodecGroupIdc( CODEC_GROUP_HEVC_MAIN10 );
   if ( losslessGeo_ ) { plt.setProfileCodecGroupIdc( CODEC_GROUP_HEVC444 ); }
+  
+  auto& frames = context.getFrames(); 
+  for ( size_t i = 0; i < frames.size(); i++ ) {
+    frames[i].getTitleFrameContext().setFrameIndex( i );  // should before setRefAFOCList
+    frames[i].getTitleFrameContext().setRawPatchEnabledFlag( losslessGeo_ || lossyRawPointsPatch_ );
+    frames[i].getTitleFrameContext().setUseRawPointsSeparateVideo( useRawPointsSeparateVideo_ );
+    frames[i].getTitleFrameContext().setGeometry3dCoordinatesBitdepth( geometry3dCoordinatesBitdepth_ + (additionalProjectionPlaneMode_ > 0));
+    frames[i].getTitleFrameContext().setGeometry2dBitdepth( geometryNominal2dBitdepth_ );
+    frames[i].getTitleFrameContext().setMaxDepth( ( 1 << geometryNominal2dBitdepth_ ) - 1 );
+    frames[i].getTitleFrameContext().setLog2PatchQuantizerSizeX( context.getLog2PatchQuantizerSizeX() );
+    frames[i].getTitleFrameContext().setLog2PatchQuantizerSizeY( context.getLog2PatchQuantizerSizeY() );
+    frames[i].getTitleFrameContext().setAtlasFrmOrderCntLsb( context.calculateAFOCLsb( i ) );
+    frames[i].getTitleFrameContext().setAtlasFrmOrderCntVal( i );
+    if ( i == 0 ){
+      frames[i].getTitleFrameContext().setNumRefIdxActive( 0 );
+    }else{
+      frames[i].getTitleFrameContext().setNumRefIdxActive(
+          constrainedPack_ ? (std::min)( i, maxNumRefAtlasFrame_ ) : 0 );
+    }
+    frames[i].getTitleFrameContext().setRefAfocList( context, 0 );  // initialization
+
+    if ( tileSegmentationType_ == 1 ) {
+      // jkei: we assume the width cannot be changed.
+      size_t partitionWidthIn64 = ( minimumImageWidth_ / ( 64 * numTilesHor_ ) );
+      size_t partitionHeightIn64 =
+          ( tileHeightToWidthRatio_ * minimumImageWidth_ / ( 64 * numTilesHor_ ) );
+      frames[i].initPartitionInfoPerFrame( i, minimumImageWidth_, minimumImageHeight_, 0,
+                                           uniformPartitionSpacing_, partitionWidthIn64, partitionHeightIn64 );
+    } else {
+      if ( useRawPointsSeparateVideo_ ) {
+        context.getAuxTileHeight().resize( numMaxTilePerFrame_ );
+        context.getAuxTileLeftTopY().resize( numMaxTilePerFrame_ );
+      }
+      frames[i].setNumTilesInAtlasFrame( numMaxTilePerFrame_ );
+      frames[i].initNumTiles( numMaxTilePerFrame_ );
+      frames[i].initPartitionInfoPerFrame( i, minimumImageWidth_, minimumImageHeight_,
+                                           numMaxTilePerFrame_, uniformPartitionSpacing_,
+                                           tilePartitionWidth_, tilePartitionHeight_ );
+      for ( size_t ti = 0; ti < numMaxTilePerFrame_; ti++ ) {
+        frames[i][ti].setRawPatchEnabledFlag( losslessGeo_ || lossyRawPointsPatch_ );
+        frames[i][ti].setUseRawPointsSeparateVideo( useRawPointsSeparateVideo_ );
+        frames[i][ti].setGeometry3dCoordinatesBitdepth( geometry3dCoordinatesBitdepth_ + (additionalProjectionPlaneMode_ > 0));
+        frames[i][ti].setGeometry2dBitdepth( geometryNominal2dBitdepth_ );
+        frames[i][ti].setMaxDepth( ( 1 << geometryNominal2dBitdepth_ ) - 1 );
+        frames[i][ti].setLog2PatchQuantizerSizeX( context.getLog2PatchQuantizerSizeX() );
+        frames[i][ti].setLog2PatchQuantizerSizeY( context.getLog2PatchQuantizerSizeY() );
+        frames[i][ti].setAtlasFrmOrderCntLsb( context.calculateAFOCLsb( i ) );
+        frames[i][ti].setAtlasFrmOrderCntVal( i );
+        frames[i][ti].setFrameIndex( i );  // should before setRefAFOCList
+        if ( i == 0 ) {
+          frames[i][ti].setNumRefIdxActive( 0 );
+        } else {
+          frames[i][ti].setNumRefIdxActive( constrainedPack_ ? (std::min)( i, maxNumRefAtlasFrame_ )
+                                                                     : 0 );
+        }
+        frames[i][ti].setGeometry2dBitdepth( geometryNominal2dBitdepth_ );
+        frames[i][ti].setMaxDepth( ( 1 << geometryNominal2dBitdepth_ ) - 1 );
+        frames[i][ti].setLog2PatchQuantizerSizeX( context.getLog2PatchQuantizerSizeX() );
+        frames[i][ti].setLog2PatchQuantizerSizeY( context.getLog2PatchQuantizerSizeY() );
+        frames[i][ti].setNumRefIdxActive( std::min( i, maxNumRefAtlasFrame_ ) );
+        frames[i][ti].setRefAfocList( context, 0 );  // initialization
+      }
+    }
+  }
 }

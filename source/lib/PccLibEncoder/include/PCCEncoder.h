@@ -441,7 +441,7 @@ class PCCEncoder : public PCCCodec {
   void                   create3DMotionEstimationFiles( PCCContext& context, const std::string& path );
   static void            remove3DMotionEstimationFiles( const std::string& path );
   void                   presmoothPointCloudColor( PCCPointSet3& reconstruct, const PCCEncoderParameters params );
-  void calculateWeightNormal( PCCContext& context, const PCCPointSet3& source, PCCFrameContext& titleFrame );
+  PCCVector3D            calculateWeightNormal( size_t geometryBitDepth3D, const PCCPointSet3& source );
 
   //**print out**//
   static void printMap( std::vector<bool> img, const size_t sizeU, const size_t sizeV );
