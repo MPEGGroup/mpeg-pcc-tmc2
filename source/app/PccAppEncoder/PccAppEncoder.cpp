@@ -605,10 +605,6 @@ bool parseParameters( int                   argc,
     ( "patchColorSubsampling",
       encoderParams.patchColorSubsampling_, false,
       "Enable per patch color sub-sampling\n" )
-    ( "deltaCoding",
-      encoderParams.deltaCoding_,
-      encoderParams.deltaCoding_,
-      "Delta meta-data coding" )
     ( "maxNumRefAtalsList",
       encoderParams.maxNumRefAtlasList_,
       encoderParams.maxNumRefAtlasList_,

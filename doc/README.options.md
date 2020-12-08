@@ -164,7 +164,6 @@ thresholdLossyOM                  &  Threshold for converting non-binary occupan
 prefilterLossyOM                  &  Selects whether the occupany map is prefiltered    \\ 
                                   &  before lossy compression (default=false)           \\ \hline
 patchColorSubsampling             &  Enable per patch color sub-sampling                \\ \hline
-deltaCoding                       &  Delta meta-data coding                             \\ \hline
 maxNumRefAtalsList                &  maximum Number of Reference Patch list,            \\ 
                                   &  default: 1                                         \\ \hline
 maxNumRefAtlasFrame               &  maximum Number of Reference Atlas Frame per        \\ 

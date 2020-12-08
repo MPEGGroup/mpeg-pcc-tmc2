@@ -152,7 +152,6 @@ PCCEncoderParameters::PCCEncoderParameters() {
   thresholdLossyOM_                       = 0;
   prefilterLossyOM_                       = false;
   patchColorSubsampling_                  = false;
-  deltaCoding_                            = true;
   mapCountMinus1_                         = 1;
 
   // reconstruction
@@ -287,7 +286,6 @@ void PCCEncoderParameters::print() {
   std::cout << "\t absoluteT1                               " << absoluteT1_ << std::endl;
   std::cout << "\t qpT1                                     " << qpAdjT1_ << std::endl;
   std::cout << "\t constrainedPack                          " << constrainedPack_ << std::endl;
-  std::cout << "\t deltaCoding                              " << deltaCoding_ << std::endl;
   std::cout << "\t  maxNumRefPatchList                      " << maxNumRefAtlasList_ << std::endl;
   std::cout << "\t maxNumRefIndex                           " << maxNumRefAtlasFrame_ << std::endl;
   std::cout << "\t Segmentation" << std::endl;

@@ -207,7 +207,6 @@ class PCCEncoderParameters {
 
   // visual quality
   bool   patchColorSubsampling_;
-  bool   deltaCoding_;
   bool   surfaceSeparation_;
   bool   highGradientSeparation_;
   double minGradient_;
