@@ -69,6 +69,9 @@
 #endif
 #undef OPTIONAL
 
+
+ // TODO JR: remove all macros: 
+ 
 #define MATCHTOANCHOR 1  // jkei: set 1 to match with the results of anchor for mapcount=1 case.
 #define NONUNIFORM_PARTSIZE 0
 

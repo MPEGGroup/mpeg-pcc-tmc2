@@ -56,6 +56,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   colorSpaceConversionConfig_              = {};
   inverseColorSpaceConversionConfig_       = {};
   nnNormalEstimation_                      = 16;
+  normalOrientation_                       = 1;
   gridBasedRefineSegmentation_             = true;
   maxNNCountRefineSegmentation_            = gridBasedRefineSegmentation_ ? 1024 : 256;
   iterationCountRefineSegmentation_        = gridBasedRefineSegmentation_ ? 10 : 100;
@@ -290,6 +291,7 @@ void PCCEncoderParameters::print() {
   std::cout << "\t maxNumRefIndex                           " << maxNumRefAtlasFrame_ << std::endl;
   std::cout << "\t Segmentation" << std::endl;
   std::cout << "\t   nnNormalEstimation                     " << nnNormalEstimation_ << std::endl;
+  std::cout << "\t   normalOrientation                      " << normalOrientation_ << std::endl;
   std::cout << "\t   gridBasedRefineSegmentation            " << gridBasedRefineSegmentation_ << std::endl;
   std::cout << "\t   maxNNCountRefineSegmentation           " << maxNNCountRefineSegmentation_ << std::endl;
   std::cout << "\t   iterationCountRefineSegmentation       " << iterationCountRefineSegmentation_ << std::endl;
@@ -618,6 +620,10 @@ bool PCCEncoderParameters::check() {
   if ( !multipleStreams_ && !absoluteD1_ ) {
     std::cerr << "absoluteD1_ should be true when multipleStreams_ is false\n";
     absoluteD1_ = true;
+  }
+  if( normalOrientation_ > 3 ){
+    std::cerr << "WARNING: the normal orientation is out of the possible range [0;3]\n";
+    normalOrientation_ = 1;
   }
   // spec:
   // asps_map_absolute_coding_enabled_flag : 1.no prediction 0.predicted(CTC)
@@ -967,7 +973,11 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     asps.setEomFixBitCountMinus1( EOMFixBitCount_ - 1 );  // default values
   }
   asps.setGeometry3dBitdepthMinus1(
-      uint8_t( geometry3dCoordinatesBitdepth_ + asps.getExtendedProjectionEnabledFlag() - 1 ) );
+      uint8_t( geometry3dCoordinatesBitdepth_ + asps.getExtendedProjectionEnabledFlag() - 1 ) );  // here 
+
+    // NOTE JR: decoder/reader must used this value (asps no gi ) ? 
+
+    
   asps.setGeometry2dBitdepthMinus1( uint8_t( geometryNominal2dBitdepth_ - 1 ) );
   afps.setAtlasSequenceParameterSetId( 0 );
   afps.setNumRefIdxDefaultActiveMinus1( static_cast<uint8_t>(
@@ -985,7 +995,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
 
 #if EXPAND_RANGE_ENCODER
   gi.setGeometry3dCoordinatesBitdepthMinus1(
-      uint8_t( geometry3dCoordinatesBitdepth_ + asps.getExtendedProjectionEnabledFlag() - 1 ) );
+      uint8_t( geometry3dCoordinatesBitdepth_ + asps.getExtendedProjectionEnabledFlag() - 1 ) ); // same 
 #else
   gi.setGeometry3dCoordinatesBitdepthMinus1( uint8_t( geometry3dCoordinatesBitdepth_ - 1 ) );
 #endif

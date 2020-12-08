@@ -72,22 +72,24 @@ void PCCPatchSegmenter3::compute( const PCCPointSet3&                 geometry,
   }
   std::cout << std::endl << "============= FRAME " << frameIndex << " ============= " << std::endl;
   std::cout << "  Computing normals for original point cloud... ";
-  PCCKdTree                            kdtree( geometry );
-  PCCNNResult                          result;
-  PCCNormalsGenerator3                 normalsGen;
-  const PCCNormalsGenerator3Parameters normalsGenParams = {PCCVector3D( 0.0 ),
-                                                           ( std::numeric_limits<double>::max )(),
-                                                           ( std::numeric_limits<double>::max )(),
-                                                           ( std::numeric_limits<double>::max )(),
-                                                           ( std::numeric_limits<double>::max )(),
-                                                           params.nnNormalEstimation_,
-                                                           params.nnNormalEstimation_,
-                                                           params.nnNormalEstimation_,
-                                                           0,
-                                                           PCC_NORMALS_GENERATOR_ORIENTATION_SPANNING_TREE,
-                                                           false,
-                                                           false,
-                                                           false};
+  PCCKdTree            kdtree( geometry );
+  PCCNNResult          result;
+  PCCNormalsGenerator3 normalsGen;
+  auto                 normalsOrientation = static_cast<PCCNormalsGeneratorOrientation>( params.normalOrientation_ );
+  const PCCNormalsGenerator3Parameters normalsGenParams = { PCCVector3D( 0.0 ),
+                                                            ( std::numeric_limits<double>::max )(),
+                                                            ( std::numeric_limits<double>::max )(),
+                                                            ( std::numeric_limits<double>::max )(),
+                                                            ( std::numeric_limits<double>::max )(),
+                                                            params.nnNormalEstimation_,
+                                                            params.nnNormalEstimation_,
+                                                            params.nnNormalEstimation_,
+                                                            0,
+                                                            normalsOrientation,
+                                                            false,
+                                                            false,
+                                                            false };
+  // PCC_NORMALS_GENERATOR_ORIENTATION_SPANNING_TREE,   
   normalsGen.compute( geometry, kdtree, normalsGenParams, nbThread_ );
   std::cout << "[done]" << std::endl;
 
@@ -340,7 +342,6 @@ void PCCPatchSegmenter3::resampledPointcloud( std::vector<size_t>& pointCount,
             if ( createSubPointCloud ) { rec.addPoint( point ); }
           }
           assert( abs( patch.getDepth( 0 )[p] - patch.getDepth( 1 )[p] ) <= int( surfaceThickness ) );
-
         }  // multipleLayer
         // adjust depth(0), depth(1)
         patch.getDepth( 0 )[p] = projectionTypeIndication * ( patch.getDepth( 0 )[p] - int16_t( patch.getD1() ) );
@@ -1133,7 +1134,9 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
       eomCountPerPatch = pointCount[2];
 
       size_t quantDD   = patch.getSizeD() == 0 ? 0 : ( ( patch.getSizeD() - 1 ) / minLevel + 1 );
-      patch.getSizeD() = quantDD * minLevel; //( std::min )( quantDD * minLevel, static_cast<size_t>( maxAllowedDepth ) );
+      patch.getSizeD() = quantDD * minLevel;
+      // Note: must be further study:
+      // use the min between 1 << geometry3dCoordinatesBitdepth_ - 1 and 1 << geometryNominal3dBitdepth_ - 1 ?
 
       if ( createSubPointCloud ) {
         PCCPointSet3 testSrc;

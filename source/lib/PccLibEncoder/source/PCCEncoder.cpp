@@ -184,10 +184,11 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
 
   generateBlockToPatchFromOccupancyMapVideo( context, params_.occupancyResolution_, params_.occupancyPrecision_ );
 #if 1
-  printf( "Processing Geometry\n" );
+  printf( "Processing Geometry\n" ); fflush(stdout);
 #endif
   // Generate GEOMETRY IMAGE & dilation
   generateGeometryVideo( sources, context );
+  printf( "generateGeometryVideo done \n" ); fflush(stdout);
 
   // ENCODE GEOMETRY IMAGE
   if ( params_.use3dmc_ ) { create3DMotionEstimationFiles( context, path.str() ); }
@@ -4891,6 +4892,7 @@ bool PCCEncoder::generateSegments( const PCCGroupOfFrames& sources, PCCContext& 
   bool                         res            = true;
   auto&                        frames         = context.getFrames();
   params.nnNormalEstimation_                  = params_.nnNormalEstimation_;
+  params.normalOrientation_                   = params_.normalOrientation_;  
   params.gridBasedRefineSegmentation_         = params_.gridBasedRefineSegmentation_;
   params.maxNNCountRefineSegmentation_        = params_.maxNNCountRefineSegmentation_;
   params.iterationCountRefineSegmentation_    = params_.iterationCountRefineSegmentation_;
@@ -8770,7 +8772,6 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&         context,
   TRACE_PATCH( "non-regular Patches(raw, eom)     = %zu, %zu \n", tile.getRawPointsPatches().size(),
                tile.getEomPatches().size() );
   TRACE_PATCH( "Tile Type                         = %zu (0.P_TILE 1.I_TILE 2.SKIP_TILE)\n", (size_t)ath.getType() );
-  //TRACE_PATCH( "OccupancyPackingBlockSize           = %d \n", context.getOccupancyPackingBlockSize() );
 
 // all patches
 #ifdef CODEC_TRACE

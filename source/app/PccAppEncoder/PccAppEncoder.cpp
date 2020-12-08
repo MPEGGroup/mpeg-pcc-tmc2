@@ -182,6 +182,10 @@ bool parseParameters( int                   argc,
       encoderParams.nnNormalEstimation_,
       encoderParams.nnNormalEstimation_,
       "Number of points used for normal estimation" )
+    ( "normalOrientation",
+      encoderParams.normalOrientation_,
+      encoderParams.normalOrientation_,
+      "Normal orientation: 0: None 1: spanning tree, 2:view point, 3:cubemap projection" )     
     ( "gridBasedRefineSegmentation",
       encoderParams.gridBasedRefineSegmentation_,
       encoderParams.gridBasedRefineSegmentation_,

@@ -79,6 +79,7 @@ class PCCEncoderParameters {
 
   // segmentation
   size_t nnNormalEstimation_;
+  size_t normalOrientation_;
   bool   gridBasedRefineSegmentation_;
   size_t maxNNCountRefineSegmentation_;
   size_t iterationCountRefineSegmentation_;
