@@ -41,7 +41,7 @@ PCCBitstream::PCCBitstream() {
   position_.bits_  = 0;
   data_.clear();
 #ifdef BITSTREAM_TRACE
-  trace_     = false;
+  trace_ = false;
 #endif
 }
 

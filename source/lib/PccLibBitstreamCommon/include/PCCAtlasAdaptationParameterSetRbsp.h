@@ -43,7 +43,7 @@ class AtlasAdaptationParameterSetRbsp {
   AtlasAdaptationParameterSetRbsp() :
       atlasAdaptationParameterSetId_( 0 ),
       extensionFlag_( false ),
-      vpccExtensionFlag_( false ),  
+      vpccExtensionFlag_( false ),
       extension7Bits_( 0 ){};
   ~AtlasAdaptationParameterSetRbsp(){};
   AtlasAdaptationParameterSetRbsp& operator=( const AtlasAdaptationParameterSetRbsp& ) = default;
@@ -53,10 +53,10 @@ class AtlasAdaptationParameterSetRbsp {
   bool    getVpccExtensionFlag() { return vpccExtensionFlag_; }
   bool    getExtension7Bits() { return extension7Bits_; }
 
-  void setAtlasAdaptationParameterSetId( uint8_t value ) { atlasAdaptationParameterSetId_ = value; }
-  void setExtensionFlag( bool value ) { extensionFlag_ = value; }
-  void setVpccExtensionFlag( bool value ) { vpccExtensionFlag_ = value; }
-  void setExtension7Bits( bool value ) { extension7Bits_ = value; }
+  void               setAtlasAdaptationParameterSetId( uint8_t value ) { atlasAdaptationParameterSetId_ = value; }
+  void               setExtensionFlag( bool value ) { extensionFlag_ = value; }
+  void               setVpccExtensionFlag( bool value ) { vpccExtensionFlag_ = value; }
+  void               setExtension7Bits( bool value ) { extension7Bits_ = value; }
   AapsVpccExtension& getAapsVpccExtension() { return aapsVpccExtension_; }
 
  private:

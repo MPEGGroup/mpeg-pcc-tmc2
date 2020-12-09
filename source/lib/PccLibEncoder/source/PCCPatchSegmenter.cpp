@@ -76,20 +76,20 @@ void PCCPatchSegmenter3::compute( const PCCPointSet3&                 geometry,
   PCCNNResult          result;
   PCCNormalsGenerator3 normalsGen;
   auto                 normalsOrientation = static_cast<PCCNormalsGeneratorOrientation>( params.normalOrientation_ );
-  const PCCNormalsGenerator3Parameters normalsGenParams = { PCCVector3D( 0.0 ),
-                                                            ( std::numeric_limits<double>::max )(),
-                                                            ( std::numeric_limits<double>::max )(),
-                                                            ( std::numeric_limits<double>::max )(),
-                                                            ( std::numeric_limits<double>::max )(),
-                                                            params.nnNormalEstimation_,
-                                                            params.nnNormalEstimation_,
-                                                            params.nnNormalEstimation_,
-                                                            0,
-                                                            normalsOrientation,
-                                                            false,
-                                                            false,
-                                                            false };
-  // PCC_NORMALS_GENERATOR_ORIENTATION_SPANNING_TREE,   
+  const PCCNormalsGenerator3Parameters normalsGenParams = {PCCVector3D( 0.0 ),
+                                                           ( std::numeric_limits<double>::max )(),
+                                                           ( std::numeric_limits<double>::max )(),
+                                                           ( std::numeric_limits<double>::max )(),
+                                                           ( std::numeric_limits<double>::max )(),
+                                                           params.nnNormalEstimation_,
+                                                           params.nnNormalEstimation_,
+                                                           params.nnNormalEstimation_,
+                                                           0,
+                                                           normalsOrientation,
+                                                           false,
+                                                           false,
+                                                           false};
+  // PCC_NORMALS_GENERATOR_ORIENTATION_SPANNING_TREE,
   normalsGen.compute( geometry, kdtree, normalsGenParams, nbThread_ );
   std::cout << "[done]" << std::endl;
 
@@ -292,8 +292,8 @@ void PCCPatchSegmenter3::resampledPointcloud( std::vector<size_t>& pointCount,
         d0CountPerPatch++;
 
         // add EOM
-        PCCVector3D pointEOM( point ); 
-        if ( useEnhancedOccupancyMapCode && patch.getDepthEnhancedDeltaD()[p] != 0 ) {          
+        PCCVector3D pointEOM( point );
+        if ( useEnhancedOccupancyMapCode && patch.getDepthEnhancedDeltaD()[p] != 0 ) {
           size_t N = multipleMaps ? surfaceThickness : EOMFixBitCount;
           for ( uint16_t i = 0; i < N; i++ ) {
             if ( ( patch.getDepthEnhancedDeltaD()[p] & ( 1 << i ) ) != 0 ) {
@@ -317,7 +317,7 @@ void PCCPatchSegmenter3::resampledPointcloud( std::vector<size_t>& pointCount,
         }
 
         // add depth1
-        if ( !( useEnhancedOccupancyMapCode && !multipleMaps ) )   {
+        if ( !( useEnhancedOccupancyMapCode && !multipleMaps ) ) {
           int16_t depth1               = patch.getDepth( 1 )[p];
           point[patch.getNormalAxis()] = double( depth1 );
           if ( patch.getDepth( 0 )[p] != patch.getDepth( 1 )[p] ) { d1CountPerPatch++; }
@@ -335,17 +335,17 @@ void PCCPatchSegmenter3::resampledPointcloud( std::vector<size_t>& pointCount,
             if ( createSubPointCloud ) { rec.addPoint( point ); }
           }
           assert( abs( patch.getDepth( 0 )[p] - patch.getDepth( 1 )[p] ) <= int( surfaceThickness ) );
-        } 
+        }
         // adjust depth(0), depth(1)
         patch.getDepth( 0 )[p] = projectionTypeIndication * ( patch.getDepth( 0 )[p] - int16_t( patch.getD1() ) );
-        patch.getSizeD()       = ( std::max )( patch.getSizeD(), static_cast<size_t>( patch.getDepth( 0 )[p] ) );  
+        patch.getSizeD()       = ( std::max )( patch.getSizeD(), static_cast<size_t>( patch.getDepth( 0 )[p] ) );
         if ( !( useEnhancedOccupancyMapCode && !multipleMaps ) ) {
           patch.getDepth( 1 )[p] = projectionTypeIndication * ( patch.getDepth( 1 )[p] - int16_t( patch.getD1() ) );
-          patch.getSizeD()       = ( std::max )( patch.getSizeD(), static_cast<size_t>( patch.getDepth( 1 )[p] ) );  
-        }                                                                                    
-      } 
-    }   
-  }     
+          patch.getSizeD()       = ( std::max )( patch.getSizeD(), static_cast<size_t>( patch.getDepth( 1 )[p] ) );
+        }
+      }
+    }
+  }
   pointCount[0] = d0CountPerPatch;
   pointCount[1] = d1CountPerPatch;
   pointCount[2] = eomCountPerPatch;
@@ -371,7 +371,7 @@ int16_t PCCPatchSegmenter3::getPatchSurfaceThickness( const PCCPointSet3&      p
   d1NumList.resize( surfaceThickness, 0 );
   int16_t patch_surfaceThickness = -1;
   for ( size_t i = 0; i < surfaceThickness; i++ ) {
-    patchSurfaceThicknessList[i] = surfaceThickness - i; 
+    patchSurfaceThicknessList[i] = surfaceThickness - i;
     errSumList[i]                = 0;
     totalNumList[i]              = 0;
     d1NumList[i]                 = 0;
@@ -722,7 +722,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
 
       std::cout << " # CC " << connectedComponents.size() << std::endl;
     } else {
-      std::vector<std::vector<std::vector<size_t>>> connectedComponentsChunks( numChunks ); 
+      std::vector<std::vector<std::vector<size_t>>> connectedComponentsChunks( numChunks );
       for ( size_t chunkIndex = 0; chunkIndex < numChunks; ++chunkIndex ) {
         std::cout << "\n\t Extracting connected components of chunk " << chunkIndex << "... ";
         std::vector<size_t> fifo;
@@ -787,9 +787,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
     }
     if ( patchExpansionEnabled ) {
       std::sort( connectedComponents.begin(), connectedComponents.end(),
-                 []( const std::vector<size_t>& a, const std::vector<size_t>& b ) {
-                   return a.size() >= b.size();
-                 } ); 
+                 []( const std::vector<size_t>& a, const std::vector<size_t>& b ) { return a.size() >= b.size(); } );
     }
     bool bIsAdditionalProjectionPlane;
     for ( auto& connectedComponent : connectedComponents ) {
@@ -925,8 +923,8 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
         const auto  v     = size_t( round( point[patch.getBitangentAxis()] - patch.getV1() ) );
         assert( u >= 0 && u < patch.getSizeU() );
         assert( v >= 0 && v < patch.getSizeV() );
-        const size_t p = v * patch.getSizeU() + u;
-        bool bValidPoint = ( patch.getProjectionMode() == 0 )
+        const size_t p           = v * patch.getSizeU() + u;
+        bool         bValidPoint = ( patch.getProjectionMode() == 0 )
                                ? ( patch.getDepth( 0 )[p] > d )
                                : ( ( patch.getDepth( 0 )[p] == infiniteDepth ) || ( patch.getDepth( 0 )[p] < d ) );
         int16_t minD0;
@@ -968,7 +966,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
       patch.getOccupancy().resize( patch.getSizeU0() * patch.getSizeV0(), false );
 
       // filter depth
-      std::vector<int16_t> peakPerBlock;  
+      std::vector<int16_t> peakPerBlock;
       peakPerBlock.resize( patch.getSizeU0() * patch.getSizeV0(), patch.getProjectionMode() == 0 ? infiniteDepth : 0 );
       for ( int64_t v = 0; v < int64_t( patch.getSizeV() ); ++v ) {
         for ( int64_t u = 0; u < int64_t( patch.getSizeU() ); ++u ) {
@@ -1035,8 +1033,8 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
               patch.getDepthEnhancedDeltaD()[p] |= 1 << ( deltaD - 1 );
             }
           }
-        }       
-      } else {  
+        }
+      } else {
         // compute d1 map
         patch.getDepth( 1 ) = patch.getDepth( 0 );
         int16_t patch_surfaceThickness =
@@ -1060,7 +1058,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
             assert( v >= 0 && v < patch.getSizeV() );
             const size_t  p      = v * patch.getSizeU() + u;
             const int16_t depth0 = patch.getDepth( 0 )[p];
-            const int16_t deltaD = projectionDirectionType * ( d - depth0 );  
+            const int16_t deltaD = projectionDirectionType * ( d - depth0 );
             if ( !( depth0 < infiniteDepth ) ) { continue; }
             bool bsimilar = colorSimilarity( frame_pcc_color[i], frame_pcc_color[patch.getDepth0PccIdx()[p]], 128 );
             if ( depth0 < infiniteDepth && ( deltaD ) <= int16_t( patch_surfaceThickness ) && deltaD >= 0 &&
@@ -1282,50 +1280,41 @@ void PCCPatchSegmenter3::refineSegmentationGridBased( const PCCPointSet3&       
   const size_t gridDimShiftSqr = gridDimShift << 1;
   const size_t voxDimHalf      = voxDim >> 1;
 
-  //holds the point indices of every point in a given grid cell
+  // holds the point indices of every point in a given grid cell
   class PointIndicesOfGridCell {
-  public:
+   public:
     std::unique_ptr<std::vector<size_t>> pointIndices;
-    inline void init() {
-      pointIndices = std::make_unique<std::vector<size_t>>();
-    }
+    inline void                          init() { pointIndices = std::make_unique<std::vector<size_t>>(); }
   };
 
-
-  //holds the scoreSmooths of the points in a cell
+  // holds the scoreSmooths of the points in a cell
   class ScoreSmoothOfPointsInGridCell {
-    public:
+   public:
     std::unique_ptr<std::vector<size_t>> scoreSmooth;
 
-    inline void init(size_t orientationCount ) {
-      //initializes scores as 0
-      scoreSmooth = std::make_unique<std::vector<size_t>>(orientationCount, 0);
+    inline void init( size_t orientationCount ) {
+      // initializes scores as 0
+      scoreSmooth = std::make_unique<std::vector<size_t>>( orientationCount, 0 );
     }
 
-    inline void updateScores(const std::vector<size_t>& point_indices,
-      const std::vector<size_t>& partitions) noexcept {
-      //clears the scores
-      std::fill(scoreSmooth->begin(), scoreSmooth->end(), 0);
+    inline void updateScores( const std::vector<size_t>& point_indices,
+                              const std::vector<size_t>& partitions ) noexcept {
+      // clears the scores
+      std::fill( scoreSmooth->begin(), scoreSmooth->end(), 0 );
       auto& scores = *scoreSmooth;
-      for (const auto& j : point_indices) { 
-        ++scores[partitions[j]]; 
-      }
+      for ( const auto& j : point_indices ) { ++scores[partitions[j]]; }
     }
   };
 
+  auto subToInd = [&]( size_t x, size_t y, size_t z ) { return x + ( y << gridDimShift ) + ( z << gridDimShiftSqr ); };
 
-  auto subToInd = [&]( size_t x, size_t y, size_t z ) { 
-    return x + ( y << gridDimShift ) + ( z << gridDimShiftSqr );     
-  };
-
-  PCCPointSet3                          gridCenters;
-  std::unordered_map<size_t, PointIndicesOfGridCell> gridWithPointIndices;
+  PCCPointSet3                                              gridCenters;
+  std::unordered_map<size_t, PointIndicesOfGridCell>        gridWithPointIndices;
   std::unordered_map<size_t, ScoreSmoothOfPointsInGridCell> gridWithScores;
 
-  //works just like the map, but with sequential access and less data (pointers instead of objects)
+  // works just like the map, but with sequential access and less data (pointers instead of objects)
   std::vector<std::pair<PointIndicesOfGridCell*, ScoreSmoothOfPointsInGridCell*>> pointIndexToScoreMap;
 
-  
   for ( size_t i = 0; i < pointCount; ++i ) {
     const auto&  pos = pointCloud[i];
     const size_t x0  = ( ( static_cast<size_t>( pos[0] ) + voxDimHalf ) >> voxDimShift );
@@ -1335,24 +1324,23 @@ void PCCPatchSegmenter3::refineSegmentationGridBased( const PCCPointSet3&       
     if ( gridWithPointIndices.count( p ) == 0u ) {
       gridCenters.addPoint( PCCVector3D( x0, y0, z0 ) );
       gridWithPointIndices[p].init();
-      gridWithScores[p].init(orientationCount);
-    }   
+      gridWithScores[p].init( orientationCount );
+    }
     gridWithPointIndices[p].pointIndices->push_back( i );
   }
 
-  PCCKdTree kdtree( gridCenters );
-  const size_t voxSearchRadius  = searchRadius >> voxDimShift;
-  const size_t maxNeighborCount = ( std::numeric_limits<int16_t>::max )();
+  PCCKdTree                        kdtree( gridCenters );
+  const size_t                     voxSearchRadius  = searchRadius >> voxDimShift;
+  const size_t                     maxNeighborCount = ( std::numeric_limits<int16_t>::max )();
   std::vector<std::vector<size_t>> adj( gridCenters.getPointCount() );
   computeAdjacencyInfoInRadius( gridCenters, kdtree, adj, maxNeighborCount, voxSearchRadius );
 
   std::vector<size_t> tmpPartition( pointCount );
   std::vector<size_t> scoreSmooth( orientationCount, 0 );
 
-
   // pre-processing steps from m55143
   std::vector<double> weights;
-  weights.reserve(gridCenters.getPointCount());
+  weights.reserve( gridCenters.getPointCount() );
 
   std::vector<double> weightedScoreSmooths;
   weightedScoreSmooths.resize( orientationCount, 0.0 );
@@ -1360,99 +1348,85 @@ void PCCPatchSegmenter3::refineSegmentationGridBased( const PCCPointSet3&       
   std::vector<double> scores;
   scores.resize( orientationCount, 0.0 );
 
-  std::vector<std::vector<size_t*>> scoreSmoothFromAdjsOf;//i
-  scoreSmoothFromAdjsOf.reserve(gridCenters.getPointCount());
+  std::vector<std::vector<size_t*>> scoreSmoothFromAdjsOf;  // i
+  scoreSmoothFromAdjsOf.reserve( gridCenters.getPointCount() );
 
-  std::vector<std::vector<size_t>*> pointIndicesOfI;  
-  pointIndicesOfI.reserve(gridCenters.getPointCount());
+  std::vector<std::vector<size_t>*> pointIndicesOfI;
+  pointIndicesOfI.reserve( gridCenters.getPointCount() );
 
-  
-  //for each cell of the grid
+  // for each cell of the grid
   for ( size_t i = 0; i < gridCenters.getPointCount(); ++i ) {
-    size_t nnPointCount = 0;
-    auto& currentAdjOfI = adj[i];
-    auto iter = currentAdjOfI.begin();
+    size_t nnPointCount  = 0;
+    auto&  currentAdjOfI = adj[i];
+    auto   iter          = currentAdjOfI.begin();
 
-    for(; iter != currentAdjOfI.end(); ++iter) {
-      auto&  pos = gridCenters[*iter];
+    for ( ; iter != currentAdjOfI.end(); ++iter ) {
+      auto& pos = gridCenters[*iter];
       nnPointCount += gridWithPointIndices[subToInd( pos[0], pos[1], pos[2] )].pointIndices->size();
-      if ( nnPointCount >= maxNNCount ) {
-        break;
-      }
+      if ( nnPointCount >= maxNNCount ) { break; }
     }
-    //pre-computing weights from lambda and the total number of nearest neighbors
-    weights.push_back(lambda / nnPointCount);
-    
-    //removing points from the adjacent list if there is more than maxNNCount
-    //if ( iter + 1 < currentAdjOfI.end() ) {
-    if ( iter != currentAdjOfI.end() ) {
-      currentAdjOfI.erase( iter + 1, currentAdjOfI.end() );
-    }
-    
+    // pre-computing weights from lambda and the total number of nearest neighbors
+    weights.push_back( lambda / nnPointCount );
 
-    //sorting the points
-    std::sort(currentAdjOfI.begin(), currentAdjOfI.end());
+    // removing points from the adjacent list if there is more than maxNNCount
+    // if ( iter + 1 < currentAdjOfI.end() ) {
+    if ( iter != currentAdjOfI.end() ) { currentAdjOfI.erase( iter + 1, currentAdjOfI.end() ); }
 
+    // sorting the points
+    std::sort( currentAdjOfI.begin(), currentAdjOfI.end() );
 
-    //temporary scores for the adjancent of current i (grid cell i)
+    // temporary scores for the adjancent of current i (grid cell i)
     std::vector<size_t*> tempScoreSmoothFromAdjsOfI;
-    tempScoreSmoothFromAdjsOfI.reserve(currentAdjOfI.size());
-    for(const auto& j: currentAdjOfI) {
+    tempScoreSmoothFromAdjsOfI.reserve( currentAdjOfI.size() );
+    for ( const auto& j : currentAdjOfI ) {
       const auto& pos = gridCenters[j];
-      auto& vox = *(gridWithScores[subToInd( pos[0], pos[1], pos[2] )].scoreSmooth);
-      tempScoreSmoothFromAdjsOfI.push_back(vox.data());
+      auto&       vox = *( gridWithScores[subToInd( pos[0], pos[1], pos[2] )].scoreSmooth );
+      tempScoreSmoothFromAdjsOfI.push_back( vox.data() );
     }
 
-    //move the temporary scores to the end of the scores vector
-    scoreSmoothFromAdjsOf.emplace_back(std::move(tempScoreSmoothFromAdjsOfI));
+    // move the temporary scores to the end of the scores vector
+    scoreSmoothFromAdjsOf.emplace_back( std::move( tempScoreSmoothFromAdjsOfI ) );
 
-
-    const auto& pos = gridCenters[i]; 
-    auto& uniq = gridWithPointIndices[subToInd( pos[0], pos[1], pos[2] )].pointIndices;
-    pointIndicesOfI.push_back(uniq.get());
-
-  } 
-
+    const auto& pos  = gridCenters[i];
+    auto&       uniq = gridWithPointIndices[subToInd( pos[0], pos[1], pos[2] )].pointIndices;
+    pointIndicesOfI.push_back( uniq.get() );
+  }
 
   // makes the map of point indices and score smooths.
   // this map is used only once per iteration < iterationCount, to update the scores
-  for (auto& gridElm : gridWithPointIndices ) {
-    //gridElm.second is of type PointIndicesOfGridCell
-    //gridElm.first is the index of a grid cell
-    //gridWithScores[gridElm.first] is of type ScoreSmoothOfPointsInGridCell
-    pointIndexToScoreMap.push_back(std::make_pair(&(gridElm.second), &(gridWithScores[gridElm.first])));
+  for ( auto& gridElm : gridWithPointIndices ) {
+    // gridElm.second is of type PointIndicesOfGridCell
+    // gridElm.first is the index of a grid cell
+    // gridWithScores[gridElm.first] is of type ScoreSmoothOfPointsInGridCell
+    pointIndexToScoreMap.push_back( std::make_pair( &( gridElm.second ), &( gridWithScores[gridElm.first] ) ) );
   }
 
-
-  //main loop
+  // main loop
   for ( size_t n = 0; n < iterationCount; ++n ) {
-
-    //restarts the values of score smooth by checking to which partition points now is part of
-    for(auto& pointIndexToScore : pointIndexToScoreMap) {
-      pointIndexToScore.second->updateScores(*(pointIndexToScore.first->pointIndices), partition);
+    // restarts the values of score smooth by checking to which partition points now is part of
+    for ( auto& pointIndexToScore : pointIndexToScoreMap ) {
+      pointIndexToScore.second->updateScores( *( pointIndexToScore.first->pointIndices ), partition );
     }
 
     for ( size_t i = 0; i < gridCenters.getPointCount(); ++i ) {
-      std::fill(scoreSmooth.begin(), scoreSmooth.end(), 0);
-      
-      //for each grid cell adjacent to cell center i
-      for (const auto& scoreFromAdjOfI: scoreSmoothFromAdjsOf[i]) {
-        for(size_t k=0;k<orientationCount;++k) {
-          scoreSmooth[k]+=scoreFromAdjOfI[k];
-        }
+      std::fill( scoreSmooth.begin(), scoreSmooth.end(), 0 );
+
+      // for each grid cell adjacent to cell center i
+      for ( const auto& scoreFromAdjOfI : scoreSmoothFromAdjsOf[i] ) {
+        for ( size_t k = 0; k < orientationCount; ++k ) { scoreSmooth[k] += scoreFromAdjOfI[k]; }
       }
 
-      const auto& pI  = *pointIndicesOfI[i];
+      const auto& pI = *pointIndicesOfI[i];
 
-      //for each point in a grid cell i
-      for (const auto& j : pI ) {
+      // for each point in a grid cell i
+      for ( const auto& j : pI ) {
         const auto& normal = normalsGen.getNormal( j );
         for ( size_t k = 0; k < orientationCount; ++k ) {
-          scores[k] = normal * orientations[k] + weights[i]*scoreSmooth[k]  ;
+          scores[k] = normal * orientations[k] + weights[i] * scoreSmooth[k];
         }
-        const auto& result = std::max_element(scores.begin(), scores.end());
-        tmpPartition[j] = std::distance(scores.begin(), result);
-      } 
+        const auto& result = std::max_element( scores.begin(), scores.end() );
+        tmpPartition[j]    = std::distance( scores.begin(), result );
+      }
     }
     swap( tmpPartition, partition );
   }

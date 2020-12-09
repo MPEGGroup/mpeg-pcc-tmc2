@@ -46,14 +46,13 @@ using namespace pcc;
 using namespace pcc_hm;
 
 template <typename T>
-PCCHMLibVideoDecoderImpl<T>::PCCHMLibVideoDecoderImpl() :
-    m_iPOCLastDisplay ( -MAX_INT ) {
+PCCHMLibVideoDecoderImpl<T>::PCCHMLibVideoDecoderImpl() : m_iPOCLastDisplay( -MAX_INT ) {
   m_pTDecTop = new pcc_hm::TDecTop();
 }
 
 template <typename T>
 PCCHMLibVideoDecoderImpl<T>::~PCCHMLibVideoDecoderImpl() {
-  delete m_pTDecTop; 
+  delete m_pTDecTop;
 }
 
 template <typename T>
@@ -61,12 +60,12 @@ void PCCHMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream,
                                           size_t             outputBitDepth,
                                           bool               RGB2GBR,
                                           PCCVideo<T, 3>&    video ) {
-  std::string         s( reinterpret_cast<char*>( bitstream.buffer() ), bitstream.size() );
-  std::istringstream  iss( s );
-  std::istream&       bitstreamFile = iss;
-  Int                 poc;
+  std::string                         s( reinterpret_cast<char*>( bitstream.buffer() ), bitstream.size() );
+  std::istringstream                  iss( s );
+  std::istream&                       bitstreamFile = iss;
+  Int                                 poc;
   pcc_hm::TComList<pcc_hm::TComPic*>* pcListPic = NULL;
-  m_bRGB2GBR                    = RGB2GBR;
+  m_bRGB2GBR                                    = RGB2GBR;
   pcc_hm::InputByteStream bytestream( bitstreamFile );
   if ( outputBitDepth ) {
     m_outputBitDepth[CHANNEL_TYPE_LUMA]   = outputBitDepth;
@@ -184,17 +183,19 @@ void PCCHMLibVideoDecoderImpl<T>::setVideoSize( const pcc_hm::TComSPS* sps ) {
 }
 
 template <typename T>
-void PCCHMLibVideoDecoderImpl<T>::xWriteOutput( pcc_hm::TComList<pcc_hm::TComPic*>* pcListPic, UInt tId, PCCVideo<T, 3>& video ) {
+void PCCHMLibVideoDecoderImpl<T>::xWriteOutput( pcc_hm::TComList<pcc_hm::TComPic*>* pcListPic,
+                                                UInt                                tId,
+                                                PCCVideo<T, 3>&                     video ) {
   if ( pcListPic->empty() ) { return; }
   pcc_hm::TComList<pcc_hm::TComPic*>::iterator iterPic                = pcListPic->begin();
-  Int                          numPicsNotYetDisplayed = 0;
-  Int                          dpbFullness            = 0;
-  const TComSPS*               activeSPS              = &( pcListPic->front()->getPicSym()->getSPS() );
-  UInt                         numReorderPicsHighestTid;
-  UInt                         maxDecPicBufferingHighestTid;
-  UInt                         maxNrSublayers = activeSPS->getMaxTLayers();
-  numReorderPicsHighestTid                    = activeSPS->getNumReorderPics( maxNrSublayers - 1 );
-  maxDecPicBufferingHighestTid                = activeSPS->getMaxDecPicBuffering( maxNrSublayers - 1 );
+  Int                                          numPicsNotYetDisplayed = 0;
+  Int                                          dpbFullness            = 0;
+  const TComSPS*                               activeSPS              = &( pcListPic->front()->getPicSym()->getSPS() );
+  UInt                                         numReorderPicsHighestTid;
+  UInt                                         maxDecPicBufferingHighestTid;
+  UInt                                         maxNrSublayers = activeSPS->getMaxTLayers();
+  numReorderPicsHighestTid                                    = activeSPS->getNumReorderPics( maxNrSublayers - 1 );
+  maxDecPicBufferingHighestTid                                = activeSPS->getMaxDecPicBuffering( maxNrSublayers - 1 );
   while ( iterPic != pcListPic->end() ) {
     TComPic* pcPic = *( iterPic );
     if ( pcPic->getOutputMark() && pcPic->getPOC() > m_iPOCLastDisplay ) {
@@ -274,8 +275,8 @@ template <typename T>
 void PCCHMLibVideoDecoderImpl<T>::xFlushOutput( pcc_hm::TComList<pcc_hm::TComPic*>* pcListPic, PCCVideo<T, 3>& video ) {
   if ( !pcListPic || pcListPic->empty() ) { return; }
   pcc_hm::TComList<pcc_hm::TComPic*>::iterator iterPic = pcListPic->begin();
-  iterPic                              = pcListPic->begin();
-  pcc_hm::TComPic* pcPic                       = *( iterPic );
+  iterPic                                              = pcListPic->begin();
+  pcc_hm::TComPic* pcPic                               = *( iterPic );
   if ( pcPic->isField() ) {  // Field Decoding
     pcc_hm::TComList<pcc_hm::TComPic*>::iterator endPic = pcListPic->end();
     endPic--;

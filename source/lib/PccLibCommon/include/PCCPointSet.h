@@ -188,9 +188,9 @@ class PCCPointSet3 {
     pointPatchIndexes_[index].first  = tileIndex;
     pointPatchIndexes_[index].second = patchIndex;
   }
-  std::vector<uint64_t>& getParentPointIndex()        { return parentPointIndex_; }
-  uint64_t& getParentPointIndex( const size_t index ) { return parentPointIndex_[index]; }
-  void      setParentPointIndex( const size_t index, const uint64_t parentIndex ) {
+  std::vector<uint64_t>& getParentPointIndex() { return parentPointIndex_; }
+  uint64_t&              getParentPointIndex( const size_t index ) { return parentPointIndex_[index]; }
+  void                   setParentPointIndex( const size_t index, const uint64_t parentIndex ) {
     assert( index < parentPointIndex_.size() );
     parentPointIndex_[index] = parentIndex;
   }
@@ -261,9 +261,8 @@ class PCCPointSet3 {
     withNormals_ = false;
     normals_.resize( 0 );
   }
-  void setNormal(size_t idx, PCCNormal3D value) {
-    if (idx > normals_.size())
-      exit(-1);
+  void setNormal( size_t idx, PCCNormal3D value ) {
+    if ( idx > normals_.size() ) exit( -1 );
     normals_[idx] = value;
   }
 
@@ -304,24 +303,24 @@ class PCCPointSet3 {
                               const bool    excludeColorOutlier                     = false,
                               const double  thresholdColorOutlierDist               = 10.0 ) const;
   bool transferColorsBackward16bitBP( PCCPointSet3& target,
-                                     const int     filterType,
-                                     const int32_t searchRange,
-                                     const bool    losslessTexture,
-                                     const int     numNeighborsColorTransferFwd,
-                                     const int     numNeighborsColorTransferBwd,
-                                     const bool    useDistWeightedAverageFwd,
-                                     const bool    useDistWeightedAverageBwd,
-                                     const bool    skipAvgIfIdenticalSourcePointPresentFwd,
-                                     const bool    skipAvgIfIdenticalSourcePointPresentBwd,
-                                     const double  distOffsetFwd,
-                                     const double  distOffsetBwd,
-                                     double        maxGeometryDist2Fwd,
-                                     double        maxGeometryDist2Bwd,
-                                     double        maxColorDist2Fwd,
-                                     double        maxColorDist2Bwd,
-                                     const bool    excludeColorOutlier = false,
-                                     const double  thresholdColorOutlierDist = 10.0) const;
-  
+                                      const int     filterType,
+                                      const int32_t searchRange,
+                                      const bool    losslessTexture,
+                                      const int     numNeighborsColorTransferFwd,
+                                      const int     numNeighborsColorTransferBwd,
+                                      const bool    useDistWeightedAverageFwd,
+                                      const bool    useDistWeightedAverageBwd,
+                                      const bool    skipAvgIfIdenticalSourcePointPresentFwd,
+                                      const bool    skipAvgIfIdenticalSourcePointPresentBwd,
+                                      const double  distOffsetFwd,
+                                      const double  distOffsetBwd,
+                                      double        maxGeometryDist2Fwd,
+                                      double        maxGeometryDist2Bwd,
+                                      double        maxColorDist2Fwd,
+                                      double        maxColorDist2Bwd,
+                                      const bool    excludeColorOutlier       = false,
+                                      const double  thresholdColorOutlierDist = 10.0 ) const;
+
   bool transferColors16bit( PCCPointSet3& target,
                             const int32_t searchRange,
                             const bool    losslessTexture                         = false,

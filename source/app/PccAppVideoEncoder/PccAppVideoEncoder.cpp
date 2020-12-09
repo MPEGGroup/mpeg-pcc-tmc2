@@ -108,8 +108,8 @@ int main( int argc, char* argv[] ) {
   if ( !parseParameters( argc, argv, srcVideo, encoderParameters, width, height, frameCount, nbyte, codecId ) ) {
     return -1;
   }
-  PCCVideoBitstream    bitstream( VIDEO_OCCUPANCY );
-  
+  PCCVideoBitstream bitstream( VIDEO_OCCUPANCY );
+
   PCCVideo<uint8_t, 3> videoSrc, videoRec;
   videoSrc.read( srcVideo, width, height, PCCCOLORFORMAT::YUV420, frameCount, nbyte );
 
@@ -125,7 +125,7 @@ int main( int argc, char* argv[] ) {
   params.outputBitDepth_         = 8;
   params.use444CodecIo_          = false;
   params.usePccMotionEstimation_ = false;
- 
+
   auto encoder = PCCVirtualVideoEncoder<uint8_t>::create( codecId );
   encoder->encode( videoSrc, params, bitstream, videoRec );
   bitstream.write( removeFileExtension( srcVideo ) + ".bin" );

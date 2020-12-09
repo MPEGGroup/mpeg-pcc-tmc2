@@ -376,7 +376,7 @@ class PCCVideoEncoder {
             video.getFrameCount() );
     fflush( stdout );
     PCCVideo<T, 3> videoRec;
-    auto encoder = PCCVirtualVideoEncoder<T>::create( codecId );
+    auto           encoder = PCCVirtualVideoEncoder<T>::create( codecId );
     encoder->encode( video, params, bitstream, videoRec );
     if ( keepIntermediateFiles ) {
       bitstream.write( binFileName );

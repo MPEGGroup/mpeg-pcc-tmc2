@@ -61,9 +61,9 @@ int  compressVideo( const pcc::PCCEncoderParameters& encoderParams,
                     const pcc::PCCMetricsParameters& metricsParams,
                     pcc::chrono::StopwatchUserTime& );
 
-//namespace pcc {
-//static std::istream& operator>>( std::istream& in, PCCColorTransform& val );
-//static std::istream& operator>>( std::istream& in, PCCCodecId& val );
-//static std::istream& operator>>( std::istream& in, std::vector<int>& vector );
+// namespace pcc {
+// static std::istream& operator>>( std::istream& in, PCCColorTransform& val );
+// static std::istream& operator>>( std::istream& in, PCCCodecId& val );
+// static std::istream& operator>>( std::istream& in, std::vector<int>& vector );
 //}
 #endif /* PCC_APP_DECODER_H */

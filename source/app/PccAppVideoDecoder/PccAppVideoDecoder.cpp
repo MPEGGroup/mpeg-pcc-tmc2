@@ -100,11 +100,11 @@ int main( int argc, char* argv[] ) {
     return -1;
   }
   PCCVideoBitstream bitstream( VIDEO_TEXTURE );
-  bitstream.read( binFile );  
-  PCCVideo<uint16_t, 3>   video;
-  auto decoder = PCCVirtualVideoDecoder<uint16_t>::create( codecId );  
+  bitstream.read( binFile );
+  PCCVideo<uint16_t, 3> video;
+  auto                  decoder = PCCVirtualVideoDecoder<uint16_t>::create( codecId );
   decoder->decode( bitstream, nbyte == 1 ? 8 : 10, false, video, path, removeFileExtension( binFile ), frame );
   video[0].trace();
-  video.write( removeFileExtension( binFile ) + "_dec.yuv", nbyte );  
+  video.write( removeFileExtension( binFile ) + "_dec.yuv", nbyte );
   return 1;
 }

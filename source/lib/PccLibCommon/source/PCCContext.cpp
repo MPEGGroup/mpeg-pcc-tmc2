@@ -97,12 +97,9 @@ size_t PCCContext::calculateAFOCval( std::vector<AtlasTileLayerRbsp>& atglList, 
   return atlasFrmOrderCntMsb + afocLsb;
 }
 
-
-void PCCAtlasContext::allocOneLayerData() {  
+void PCCAtlasContext::allocOneLayerData() {
   for ( auto& frameContext : frameContexts_ ) {
-    for ( size_t ti = 0; ti < frameContext.getNumTilesInAtlasFrame(); ti++ ){
-      frameContext[ti].allocOneLayerData();
-    }
+    for ( size_t ti = 0; ti < frameContext.getNumTilesInAtlasFrame(); ti++ ) { frameContext[ti].allocOneLayerData(); }
   }
 }
 
@@ -230,7 +227,7 @@ void PCCAtlasContext::clearVideoFrames() {
   attrAuxFrames_.clear();
 }
 
-std::vector<uint8_t> PCCContext::computeMD5( uint8_t* byteString, size_t len) {
+std::vector<uint8_t> PCCContext::computeMD5( uint8_t* byteString, size_t len ) {
   MD5                  md5Hash;
   std::vector<uint8_t> tmp_digest;
   tmp_digest.resize( 16 );
@@ -239,7 +236,7 @@ std::vector<uint8_t> PCCContext::computeMD5( uint8_t* byteString, size_t len) {
   return tmp_digest;
 }
 
-uint16_t PCCContext::computeCRC( uint8_t* byteString, size_t len) {
+uint16_t PCCContext::computeCRC( uint8_t* byteString, size_t len ) {
   uint8_t      crcMsb, bitVal, dataByte;
   unsigned int crc    = 0xFFFF;
   byteString[len]     = 0;
@@ -254,7 +251,7 @@ uint16_t PCCContext::computeCRC( uint8_t* byteString, size_t len) {
   return crc;
 };
 
-uint32_t PCCContext::computeCheckSum( uint8_t* byteString, size_t len) {
+uint32_t PCCContext::computeCheckSum( uint8_t* byteString, size_t len ) {
   uint32_t checkSum = 0;
   uint8_t  xor_mask;
   for ( uint32_t i = 0; i < len; i++ ) {

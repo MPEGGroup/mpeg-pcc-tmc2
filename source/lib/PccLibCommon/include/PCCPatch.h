@@ -474,7 +474,8 @@ class PCCPatch {
     // checking the results are within canvas boundary (missing y check)
     if ( x >= canvasStride || y >= canvasHeight ) {
       printf(
-          "patch2Canvas (x,y) is out of boundary : frame %zu, tile %zu canvassize %zux%zu : uvstart(%zu,%zu) size(%zu,%zu), "
+          "patch2Canvas (x,y) is out of boundary : frame %zu, tile %zu canvassize %zux%zu : uvstart(%zu,%zu) "
+          "size(%zu,%zu), "
           "uv(%zu,%zu), xy(%zu,%zu), orientation(%zu)\n",
           getFrameIndex(), getTileIndex(), canvasStride, canvasHeight, u0_ * occupancyResolution_,
           v0_ * occupancyResolution_, sizeU0_ * occupancyResolution_, sizeV0_ * occupancyResolution_, u, v, x, y,
@@ -989,7 +990,7 @@ class PCCPatch {
   }
 
   static void InverseRotatePosition45DegreeOnAxis( size_t Axis, size_t lod, PCCPoint3D input, PCCVector3D& output ) {
-    size_t s = ( 1u << ( lod - 1 ) ) - 1;
+    size_t s   = ( 1u << ( lod - 1 ) ) - 1;
     output.x() = input.x();
     output.y() = input.y();
     output.z() = input.z();
@@ -1015,7 +1016,7 @@ class PCCPatch {
 
   static void RotatePosition45DegreeOnAxis( size_t Axis, size_t lod, PCCPoint3D input, PCCPoint3D& output ) {
     size_t shif = ( 1u << ( lod - 1 ) ) - 1;
-    output = input;
+    output      = input;
     if ( Axis == 1 ) {  // Additional plane are defined by Y Axis.
       output.x() = input.x() + input.z();
       output.z() = -input.x() + input.z() + shif;

@@ -53,9 +53,9 @@ PCCFrameContext::PCCFrameContext() :
     geometry2dBitdepth_( 8 ) {
   log2PatchQuantizerSizeX_ = 4;
   log2PatchQuantizerSizeY_ = 4;
-  bestRefListIndexInAsps_ = 0;
-  leftTopXInFrame_ = 0;
-  leftTopYInFrame_ = 0;
+  bestRefListIndexInAsps_  = 0;
+  leftTopXInFrame_         = 0;
+  leftTopYInFrame_         = 0;
   refAFOCList_.resize( 0 );
   tileIndex_ = 0;
 }
@@ -87,7 +87,7 @@ void PCCFrameContext::setRefAfocList( PCCContext& context, AtlasTileHeader& ath,
   }
   refAFOCList_.clear();
   size_t listSize = refList.getNumRefEntries();
-  for ( size_t idx = 0; idx < listSize; idx++ ) {  
+  for ( size_t idx = 0; idx < listSize; idx++ ) {
     int deltaAfocSt = 0;
     if ( refList.getStRefAtalsFrameFlag( idx ) )
       deltaAfocSt = ( 2 * refList.getStrafEntrySignFlag( idx ) - 1 ) * refList.getAbsDeltaAfocSt( idx );  // Eq.26
@@ -109,8 +109,8 @@ void PCCFrameContext::setRefAfocList( PCCContext& context, size_t refListIdx ) {
 void PCCFrameContext::constructAtghRefListStruct( PCCContext& context, AtlasTileHeader& ath ) {
   size_t afpsId = ath.getAtlasFrameParameterSetId();
   auto&  afps   = context.getAtlasFrameParameterSet( afpsId );
-  ath.setRefAtlasFrameListSpsFlag( true );                     
-  ath.setRefAtlasFrameListIdx( getBestRefListIndexInAsps() );  
+  ath.setRefAtlasFrameListSpsFlag( true );
+  ath.setRefAtlasFrameListIdx( getBestRefListIndexInAsps() );
   if ( !ath.getRefAtlasFrameListSpsFlag() ) {
     RefListStruct refList;
     refList.setNumRefEntries( getRefAfocListSize() );
@@ -129,10 +129,10 @@ void PCCFrameContext::constructAtghRefListStruct( PCCContext& context, AtlasTile
     ath.setRefListStruct( refList );
   }
   if ( numRefIdxActive_ > 0 ) {
-    bool bNumRefIdxActiveOverrideFlag = false;  
-    if ( getRefAfocListSize() >= ( afps.getNumRefIdxDefaultActiveMinus1() ) ){
+    bool bNumRefIdxActiveOverrideFlag = false;
+    if ( getRefAfocListSize() >= ( afps.getNumRefIdxDefaultActiveMinus1() ) ) {
       bNumRefIdxActiveOverrideFlag = ( numRefIdxActive_ != afps.getNumRefIdxDefaultActiveMinus1() + 1 );
-    }else{
+    } else {
       bNumRefIdxActiveOverrideFlag = numRefIdxActive_ != context.getMaxNumRefAtlasFrame( getBestRefListIndexInAsps() );
     }
     ath.setNumRefIdxActiveOverrideFlag( bNumRefIdxActiveOverrideFlag );
@@ -141,14 +141,12 @@ void PCCFrameContext::constructAtghRefListStruct( PCCContext& context, AtlasTile
 }
 
 void PCCFrameContext::allocOneLayerData() {
-  for ( auto& patch : patches_ ) { 
-    patch.allocOneLayerData();
-  }
+  for ( auto& patch : patches_ ) { patch.allocOneLayerData(); }
 }
 
 void PCCFrameContext::printBlockToPatch( const size_t resolution ) {
-  printVector( blockToPatch_, width_ / resolution, height_ / resolution, stringFormat( "blockToPatch[%d]", frameIndex_ ),
-               true );
+  printVector( blockToPatch_, width_ / resolution, height_ / resolution,
+               stringFormat( "blockToPatch[%d]", frameIndex_ ), true );
 }
 void PCCFrameContext::printPatch() {
   size_t index = 0;

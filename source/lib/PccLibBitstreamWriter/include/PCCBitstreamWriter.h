@@ -406,7 +406,7 @@ class PCCBitstreamWriter {
   static void activeSubBitstreams( PCCBitstream& bitstream, SEI& sei );
   // F.2.11  Component codec mapping SEI message syntax
   static void componentCodecMapping( PCCBitstream& bitstream, SEI& sei );
-  
+
   // F.2.12  Volumetric Tiling SEI message syntax
   // F.2.12.1 Scene object information SEI message syntax
   static void sceneObjectInformation( PCCBitstream& bitstream, SEI& sei );
@@ -474,7 +474,7 @@ class PCCBitstreamWriter {
 
   // H.7.3.6.1.1 ASPS V-PCC extension syntax
   static void aspsVpccExtension( PCCBitstream& bitstream, AtlasSequenceParameterSetRbsp& asps, AspsVpccExtension& ext );
-  
+
   // H.7.3.6.1.2 ASPS MIV extension syntax
   static void aspsMivExtension( PCCBitstream& bitstream );
 

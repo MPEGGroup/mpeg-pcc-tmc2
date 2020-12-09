@@ -72,6 +72,6 @@ void PCCAtlasHighLevelSyntax::printVideoBitstream() {
   fflush( stdout );
 }
 
-PCCAtlasHighLevelSyntax::PCCAtlasHighLevelSyntax() { }
+PCCAtlasHighLevelSyntax::PCCAtlasHighLevelSyntax() {}
 
 PCCAtlasHighLevelSyntax::~PCCAtlasHighLevelSyntax() { videoBitstream_.clear(); }

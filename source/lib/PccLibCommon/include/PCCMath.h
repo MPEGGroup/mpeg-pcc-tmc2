@@ -469,10 +469,10 @@ struct DistColor {
   size_t        indexPartial;
 };
 
-  struct DistColor8Bit {
-    double     dist;
-    PCCColor3B color;
-  };
+struct DistColor8Bit {
+  double     dist;
+  PCCColor3B color;
+};
 
 // Slightly modified version of http://www.melax.com/diag.html?attredirects=0
 // A must be a symmetric matrix.

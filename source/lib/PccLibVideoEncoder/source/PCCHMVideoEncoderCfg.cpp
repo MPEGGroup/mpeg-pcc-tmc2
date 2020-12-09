@@ -60,7 +60,6 @@ using namespace pcc_hm;
 
 namespace po = pcc_hm::df::program_options_lite;
 
-
 //! \ingroup TAppEncoder
 //! \{
 
@@ -103,7 +102,7 @@ Void PCCHMLibVideoEncoderCfg::create() {}
 
 Void PCCHMLibVideoEncoderCfg::destroy() {}
 
-namespace pcc_hm{
+namespace pcc_hm {
 std::istringstream& operator>>( std::istringstream& in,
                                 GOPEntry&           entry )  // input
 {
@@ -134,7 +133,7 @@ std::istringstream& operator>>( std::istringstream& in,
   return in;
 }
 Bool confirmPara( Bool bflag, const TChar* message );
-}  //~namespace pcc_hm
+}  // namespace pcc_hm
 
 static inline ChromaFormat numberToChromaFormat( const Int val ) {
   switch ( val ) {
@@ -283,7 +282,7 @@ static const struct MapStrToLevel {
     {"6.1", Level::LEVEL6_1}, {"6.2", Level::LEVEL6_2}, {"8.5", Level::LEVEL8_5},
 };
 
-namespace pcc_hm { 
+namespace pcc_hm {
 UInt g_uiMaxCpbSize[2][21] = {
     //         LEVEL1,        LEVEL2,LEVEL2_1,     LEVEL3, LEVEL3_1,
     // LEVEL4, LEVEL4_1,       LEVEL5,  LEVEL5_1,  LEVEL5_2,    LEVEL6,
@@ -293,7 +292,7 @@ UInt g_uiMaxCpbSize[2][21] = {
     {0, 0,        0,        0, 0,         0,         0,         0,         0,         0,        0,
      0, 30000000, 50000000, 0, 100000000, 160000000, 240000000, 240000000, 480000000, 800000000}};
 
-} //~namespace pcc_hm
+}  // namespace pcc_hm
 
 static const struct MapStrToCostMode {
   const TChar* str;
@@ -337,7 +336,7 @@ static istream& readStrToEnum( P map[], UInt mapLen, istream& in, T& val ) {
 
 // inline to prevent compiler warnings for "unused static function"
 
-namespace pcc_hm{
+namespace pcc_hm {
 static inline istream& operator>>( istream& in, UIProfileName& profile ) {
   return readStrToEnum( strToUIProfileName, sizeof( strToUIProfileName ) / sizeof( *strToUIProfileName ), in, profile );
 }
@@ -357,15 +356,15 @@ static inline istream& operator>>( istream& in, Tier& tier ) {
 static inline istream& operator>>( istream& in, Name& level ) {
   return readStrToEnum( strToLevel, sizeof( strToLevel ) / sizeof( *strToLevel ), in, level );
 }
-}  //~namespace Level
-}  //~namespace pcc_hm
+}  // namespace Level
+}  // namespace pcc_hm
 
-namespace pcc_hm{
+namespace pcc_hm {
 template <class T>
 static inline istream& operator>>( std::istream& in, SMultiValueInput<T>& values ) {
   return values.readValues( in );
 }
-}  //~namespace pcc_hm
+}  // namespace pcc_hm
 
 template <>
 UInt SMultiValueInput<UInt>::readValue( const TChar*& pStr, Bool& bSuccess ) {
@@ -457,7 +456,7 @@ static inline istream& operator>>( std::istream& in, PCCHMLibVideoEncoderCfg::Op
   }
   return in;
 }
-}  //~namespace pcc_hm
+}  // namespace pcc_hm
 #endif
 
 static Void automaticallySelectRExtProfile( const Bool         bUsingGeneralRExtTools,
@@ -3360,14 +3359,14 @@ Void PCCHMLibVideoEncoderCfg::xPrintParameter() {
   fflush( stdout );
 }
 
-namespace pcc_hm{
+namespace pcc_hm {
 Bool confirmPara( Bool bflag, const TChar* message ) {
   if ( !bflag ) { return false; }
 
   printf( "Error: %s\n", message );
   return true;
 }
-}
+}  // namespace pcc_hm
 
 //! \}
 

@@ -59,20 +59,18 @@ class PCCNNResult {
     indices_.reserve( size );
     dist_.reserve( size );
   }
-  inline size_t size() const { 
-    assert(indices_.size() == dist_.size());
+  inline size_t size() const {
+    assert( indices_.size() == dist_.size() );
     return indices_.size();
   }
-  inline size_t count() const { 
-    return size();
-  }
+  inline size_t  count() const { return size(); }
   inline size_t& indices( size_t index ) { return indices_[index]; }
   inline double& dist( size_t index ) { return dist_[index]; }
   inline size_t* indices() { return indices_.data(); }
   inline double* dist() { return dist_.data(); }
-  inline void    pushBack(const std::pair<size_t, double>& value) {
-    indices_.push_back(value.first);
-    dist_.push_back(value.second);
+  inline void    pushBack( const std::pair<size_t, double>& value ) {
+    indices_.push_back( value.first );
+    dist_.push_back( value.second );
   }
   inline void popBack() {
     indices_.pop_back();

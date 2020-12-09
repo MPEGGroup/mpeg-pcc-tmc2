@@ -176,10 +176,10 @@ class PCCImage {
             PCCCOLORFORMAT format,
             bool           rgb2bgr ) {
     resize( widthY, heightY, format );
-    const Pel*   ptr[2][3] = { { Y, U, V }, { V, Y, U } };
-    const size_t width[3]  = { widthY, widthC, widthC };
-    const size_t height[3] = { heightY, heightC, heightC };
-    const size_t stride[3] = { strideY, strideC, strideC };
+    const Pel*   ptr[2][3] = {{Y, U, V}, {V, Y, U}};
+    const size_t width[3]  = {widthY, widthC, widthC};
+    const size_t height[3] = {heightY, heightC, heightC};
+    const size_t stride[3] = {strideY, strideC, strideC};
     int16_t      rounding  = 1 << ( shiftbits - 1 );
     printf(
         "copy image PCC: Stride=%d Round=%d (%4zux%4zu S=%4zu C:%4zux%4zu => "
@@ -225,11 +225,11 @@ class PCCImage {
     }
     size_t       widthChroma  = width_ / chromaSubsample;
     size_t       heightChroma = height_ / chromaSubsample;
-    Pel*         ptr[2][3]    = { { Y, U, V }, { V, Y, U } };
-    const size_t width[3]     = { width_, widthChroma, widthChroma };
-    const size_t heightSrc[3] = { height_, heightChroma, heightChroma };
-    const size_t heightDst[3] = { heightY, heightC, heightC };
-    const size_t stride[3]    = { strideY, strideC, strideC };
+    Pel*         ptr[2][3]    = {{Y, U, V}, {V, Y, U}};
+    const size_t width[3]     = {width_, widthChroma, widthChroma};
+    const size_t heightSrc[3] = {height_, heightChroma, heightChroma};
+    const size_t heightDst[3] = {heightY, heightC, heightC};
+    const size_t stride[3]    = {strideY, strideC, strideC};
     printf( "copy image from PCC: Shift = %d (%4zux%4zu => %4zux%4zu S=%4zu C: %4zux%4zu ) \n", shiftbits, width_,
             height_, widthY, heightY, strideY, widthC, heightC );
     for ( size_t c = 0; c < 3; c++ ) {

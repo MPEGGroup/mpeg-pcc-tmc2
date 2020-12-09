@@ -42,7 +42,7 @@ class PCCVideoBitstream {
   PCCVideoBitstream( PCCVideoType type ) : type_( type ) { data_.clear(); }
   ~PCCVideoBitstream() { data_.clear(); }
 
-  PCCVideoBitstream& operator=( const PCCVideoBitstream& ) = default;
+  PCCVideoBitstream&    operator=( const PCCVideoBitstream& ) = default;
   void                  resize( size_t size ) { data_.resize( size ); }
   std::vector<uint8_t>& vector() { return data_; }
   uint8_t*              buffer() { return data_.data(); }
@@ -119,14 +119,16 @@ class PCCVideoBitstream {
     data_.swap( data );
   }
 
-  void sampleStreamToByteStream( size_t precision = 4, bool emulationPreventionBytes = false, bool changeStartCodeSize = true ) {    
+  void sampleStreamToByteStream( size_t precision                = 4,
+                                 bool   emulationPreventionBytes = false,
+                                 bool   changeStartCodeSize      = true ) {
     size_t               sizeStartCode = 4, startIndex = 0, endIndex = 0;
     std::vector<uint8_t> data;
     do {
       int32_t naluSize = 0;
       for ( size_t i = 0; i < precision; i++ ) { naluSize = ( naluSize << 8 ) + data_[startIndex + i]; }
       endIndex = startIndex + precision + naluSize;
-      for ( size_t i = 0; i < sizeStartCode-1; i++ ) { data.push_back( 0 ); }
+      for ( size_t i = 0; i < sizeStartCode - 1; i++ ) { data.push_back( 0 ); }
       data.push_back( 1 );
       if ( emulationPreventionBytes ) {
         for ( size_t i = startIndex + precision, zeroCount = 0; i < endIndex; i++ ) {
@@ -140,14 +142,14 @@ class PCCVideoBitstream {
       } else {
         for ( size_t i = startIndex + precision; i < endIndex; i++ ) { data.push_back( data_[i] ); }
       }
-      startIndex    = endIndex;
-      //the first NALU of a frame, NAL_UNIT_VPS, NAL_UNIT_SPS, NAL_UNIT_PPS : size=4
-      int naluType  = ( ( data_[startIndex + precision] ) & 126 ) >> 1;
-      bool isNewFrame=false; //isNewFrameNalu(POC calculation);
-      if(isNewFrame==true || (changeStartCodeSize && (naluType == 32 || naluType == 33 || naluType == 34 ))){
-        sizeStartCode=4;
-      } else{
-        sizeStartCode=3;
+      startIndex = endIndex;
+      // the first NALU of a frame, NAL_UNIT_VPS, NAL_UNIT_SPS, NAL_UNIT_PPS : size=4
+      int  naluType   = ( ( data_[startIndex + precision] ) & 126 ) >> 1;
+      bool isNewFrame = false;  // isNewFrameNalu(POC calculation);
+      if ( isNewFrame == true || ( changeStartCodeSize && ( naluType == 32 || naluType == 33 || naluType == 34 ) ) ) {
+        sizeStartCode = 4;
+      } else {
+        sizeStartCode = 3;
       }
 
     } while ( endIndex < data_.size() );

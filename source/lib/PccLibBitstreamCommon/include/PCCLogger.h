@@ -49,7 +49,7 @@ enum PCCLoggerType {
 #endif
 #ifdef CODEC_TRACE
   LOG_CODEC,
-  LOG_PATCH, 
+  LOG_PATCH,
 #endif
   LOG_ERROR,
 };
@@ -105,16 +105,14 @@ class PCCVirtualLogger {
 
 class PCCLogger {
  public:
-  PCCLogger() : filename_( "" ), encoder_ (true) {
-    logger_.resize( LOG_ERROR );
-  }
+  PCCLogger() : filename_( "" ), encoder_( true ) { logger_.resize( LOG_ERROR ); }
   ~PCCLogger() { logger_.clear(); }
-  void initilalize( std::string filename, bool encoder ){    
+  void initilalize( std::string filename, bool encoder ) {
     filename_ = filename;
-    encoder_ = encoder;
+    encoder_  = encoder;
   }
-  void enable( PCCLoggerType type ){ logger_[type].enable(); }
-  void disable( PCCLoggerType type ){ logger_[type].disable(); }
+  void enable( PCCLoggerType type ) { logger_[type].enable(); }
+  void disable( PCCLoggerType type ) { logger_[type].disable(); }
 
   template <typename... Args>
   inline void trace( PCCLoggerType type, const char* format, Args... args ) {
@@ -171,17 +169,15 @@ class PCCLogger {
     if ( data.size() == 0 ) { data.resize( width * height, 0 ); }
     trace( type, "%s: %zu %zu \n", string.c_str(), width, height );
     for ( size_t v0 = 0; v0 < height; ++v0 ) {
-      for ( size_t u0 = 0; u0 < width; ++u0 ) {
-        trace( type, hexa ? "%2x" : "%3d", (int)( data[v0 * width + u0] ) );      
-      }
+      for ( size_t u0 = 0; u0 < width; ++u0 ) { trace( type, hexa ? "%2x" : "%3d", (int)( data[v0 * width + u0] ) ); }
       trace( type, "\n" );
     }
   }
 
  private:
   std::vector<PCCVirtualLogger> logger_;
-  std::string filename_;
-  bool encoder_;
+  std::string                   filename_;
+  bool                          encoder_;
 };
 
 #ifdef BITSTREAM_TRACE
@@ -197,7 +193,6 @@ class PCCLogger {
 #define TRACE_CODEC( fmt, ... ) ;
 #define TRACE_PATCH( fmt, ... ) ;
 #endif
-
 
 }  // namespace pcc
 

@@ -67,7 +67,7 @@ namespace pcc {
 // Trace modes to validate new syntax
 // ******************************************************************* //
 // #define BITSTREAM_TRACE
-// #define CODEC_TRACE 
+// #define CODEC_TRACE
 
 // ******************************************************************* //
 // Common constants
@@ -434,9 +434,9 @@ static char getSeparator() { return '/'; }
 static char getSeparator() { return '\\'; }
 #endif
 
-static char getSeparator( const std::string& eFilename ) {  
+static char getSeparator( const std::string& eFilename ) {
   auto pos1 = eFilename.find_last_of( '/' ), pos2 = eFilename.find_last_of( '\\' );
-  auto pos = (std::max)( pos1 != std::string::npos ? pos1 : 0, pos2 != std::string::npos ? pos2 : 0 );
+  auto pos = ( std::max )( pos1 != std::string::npos ? pos1 : 0, pos2 != std::string::npos ? pos2 : 0 );
   return ( pos != 0 ? eFilename[pos] : getSeparator() );
 }
 
@@ -457,7 +457,6 @@ static inline std::string getBasename( const std::string& string ) {
   return string;
 }
 
-
 static inline std::string addVideoFormat( const std::string filename,
                                           const size_t      width,
                                           const size_t      height,
@@ -465,8 +464,8 @@ static inline std::string addVideoFormat( const std::string filename,
                                           const bool        is420 = true,
                                           const std::string pixel = "8" ) {
   std::stringstream result;
-  result << filename << "_" << width << "x" << height << "_" << pixel << "bit_" << (( isYUV & is420) ? "p420" : "p444" )
-         << ( isYUV ? ".yuv" : ".rgb" );
+  result << filename << "_" << width << "x" << height << "_" << pixel << "bit_"
+         << ( ( isYUV & is420 ) ? "p420" : "p444" ) << ( isYUV ? ".yuv" : ".rgb" );
   return result.str();
 }
 

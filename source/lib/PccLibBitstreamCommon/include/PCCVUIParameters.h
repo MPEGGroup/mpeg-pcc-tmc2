@@ -241,17 +241,17 @@ class VUIParameters {
   HrdParameters&              getHrdParameters() { return hrdParameters_; }
   CoordinateSystemParameters& getCoordinateSystemParameters() { return coordinateSystemParameters_; }
   MaxCodedVideoResolution&    getMaxCodedVideoResolution() { return maxCodedVideoResolution_; }
-  bool     getTimingInfoPresentFlag() { return timingInfoPresentFlag_; }
-  uint32_t getNumUnitsInTick() { return numUnitsInTick_; }
-  uint32_t getTimeScale() { return timeScale_; }
-  bool     getPocProportionalToTimingFlag() { return pocProportionalToTimingFlag_; }
-  uint32_t getNumTicksPocDiffOneMinus1() { return numTicksPocDiffOneMinus1_; }
-  bool     getHrdParametersPresentFlag() { return hrdParametersPresentFlag_; }
-  bool     getTileRestrictionsPresentFlag() { return tileRestrictionsPresentFlag_; }
-  bool     getFixedAtlasTileStructureFlag() { return fixedAtlasTileStructureFlag_; }
-  bool     getFixedVideoTileStructureFlag() { return fixedVideoTileStructureFlag_; }
+  bool                        getTimingInfoPresentFlag() { return timingInfoPresentFlag_; }
+  uint32_t                    getNumUnitsInTick() { return numUnitsInTick_; }
+  uint32_t                    getTimeScale() { return timeScale_; }
+  bool                        getPocProportionalToTimingFlag() { return pocProportionalToTimingFlag_; }
+  uint32_t                    getNumTicksPocDiffOneMinus1() { return numTicksPocDiffOneMinus1_; }
+  bool                        getHrdParametersPresentFlag() { return hrdParametersPresentFlag_; }
+  bool                        getTileRestrictionsPresentFlag() { return tileRestrictionsPresentFlag_; }
+  bool                        getFixedAtlasTileStructureFlag() { return fixedAtlasTileStructureFlag_; }
+  bool                        getFixedVideoTileStructureFlag() { return fixedVideoTileStructureFlag_; }
   uint32_t getConstrainedTilesAcrossV3cComponentsIdc() { return constrainedTilesAcrossV3cComponentsIdc_; }
-  uint32_t getMaxNumTilesPerAtlasMinus1() { return maxNumTilesPerAtlasMinus1_; }  
+  uint32_t getMaxNumTilesPerAtlasMinus1() { return maxNumTilesPerAtlasMinus1_; }
   bool     getMaxCodedVideoResolutionPresentFlag() { return maxCodedVideoResolutionPresentFlag_; }
   bool     getCoordinateSystemParametersPresentFlag() { return coordinateSystemParametersPresentFlag_; }
   bool     getUnitInMetresFlag() { return unitInMetresFlag_; }

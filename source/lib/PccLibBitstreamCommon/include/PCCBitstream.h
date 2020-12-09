@@ -206,9 +206,7 @@ class PCCBitstream {
     for ( auto& element : str ) { write( element, 8 ); }
   }
 
-  inline uint32_t peekByteAt(uint64_t peekPos){
-    return data_[peekPos];
-  }
+  inline uint32_t peekByteAt( uint64_t peekPos ) { return data_[peekPos]; }
   inline uint32_t read( uint8_t bits, bool bFullStream = false ) {
     uint32_t code = read( bits, position_ );
 #ifdef BITSTREAM_TRACE
@@ -326,12 +324,12 @@ class PCCBitstream {
   template <typename... Args>
   void trace( const char* pFormat, Args... eArgs ) {
     if ( trace_ ) {
-      logger_->traceStream( "[%6llu - %2u]: ", position_.bytes_, position_.bits_ );      
-      logger_->traceStream( pFormat, eArgs... );      
+      logger_->traceStream( "[%6llu - %2u]: ", position_.bytes_, position_.bits_ );
+      logger_->traceStream( pFormat, eArgs... );
     }
   }
-  void  setTrace( bool trace ) { trace_ = trace; }
-  void setLogger( PCCLogger& logger ){ logger_ = &logger;   }
+  void setTrace( bool trace ) { trace_ = trace; }
+  void setLogger( PCCLogger& logger ) { logger_ = &logger; }
 #endif
  private:
   inline void realloc( const size_t size = 4096 ) { data_.resize( data_.size() + ( ( ( size / 4096 ) + 1 ) * 4096 ) ); }
@@ -366,7 +364,7 @@ class PCCBitstream {
   PCCBistreamPosition  position_;
 
 #ifdef BITSTREAM_TRACE
-  bool  trace_;
+  bool       trace_;
   PCCLogger* logger_ = nullptr;
 #endif
 };

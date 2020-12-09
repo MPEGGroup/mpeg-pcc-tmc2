@@ -126,9 +126,9 @@ class PCCFrameContext {
   void setRefAfoc( size_t refIndex, int32_t value ) { refAFOCList_[refIndex] = value; }
   void setBestRefListIndexInAsps( size_t value ) { bestRefListIndexInAsps_ = value; }
 
-  void setAtlasFrmOrderCntVal( size_t value ) { atlasFrmOrderCntVal_ = value; }
-  void setAtlasFrmOrderCntMsb( size_t value ) { atlasFrmOrderCntMsb_ = value; }
-  void setAtlasFrmOrderCntLsb( size_t value ) { atlasFrmOrderCntLsb_ = value; }
+  void   setAtlasFrmOrderCntVal( size_t value ) { atlasFrmOrderCntVal_ = value; }
+  void   setAtlasFrmOrderCntMsb( size_t value ) { atlasFrmOrderCntMsb_ = value; }
+  void   setAtlasFrmOrderCntLsb( size_t value ) { atlasFrmOrderCntLsb_ = value; }
   size_t getAtlasFrmOrderCntVal() { return atlasFrmOrderCntVal_; }
   size_t getAtlasFrmOrderCntMsb() { return atlasFrmOrderCntMsb_; }
   size_t getAtlasFrmOrderCntLsb() { return atlasFrmOrderCntLsb_; }
@@ -203,8 +203,8 @@ class PCCAtlasFrameContext {
  public:
   PCCAtlasFrameContext() {
     atlasFrameIndex_         = 0;
-    atlasFrameWidth_              = 0;
-    atlasFrameHeight_             = 0;
+    atlasFrameWidth_         = 0;
+    atlasFrameHeight_        = 0;
     numTilesInAtlasFrame_    = 0;
     uniformPartitionSpacing_ = 0;
     singlePartitionPerTile_  = 1;
@@ -304,7 +304,7 @@ class PCCAtlasFrameContext {
       partitionPosY_[0]   = 0;
       partitionHeight_[0] = atlasFrameHeight_;
     } else {
-      uniformPartitionSpacing_ = uniformPartitionSpacing;      
+      uniformPartitionSpacing_ = uniformPartitionSpacing;
       numPartitionCols_ =
           (size_t)std::ceil( static_cast<double>( atlasFrameWidth_ ) / static_cast<double>( partitionWidthIn ) );
       numPartitionRows_ =
@@ -314,7 +314,7 @@ class PCCAtlasFrameContext {
       partitionPosX_.resize( numPartitionCols_ );
       partitionPosY_.resize( numPartitionRows_ );
 
-      if ( uniformPartitionSpacing ) {        
+      if ( uniformPartitionSpacing ) {
         partitionPosX_[0]  = 0;
         partitionWidth_[0] = partitionWidthIn;
         for ( size_t col = 1; col < numPartitionCols_ - 1; col++ ) {
@@ -342,7 +342,7 @@ class PCCAtlasFrameContext {
         printf( "non uniform tile partitioning\n" );
         exit( 128 );
         for ( size_t col = 0; col < numPartitionCols_; col++ ) {
-          partitionWidth_[col] = partitionWidthIn; 
+          partitionWidth_[col] = partitionWidthIn;
           partitionPosX_[col]  = partitionPosX_[col - 1] + partitionWidth_[col];
         }
         for ( size_t row = 0; row < numPartitionRows_; row++ ) {
@@ -368,9 +368,9 @@ class PCCAtlasFrameContext {
                                     bool   signalledTileId        = false ) {
     titleFrameContext_.setWidth( width );
     titleFrameContext_.setHeight( height );
-    atlasFrameWidth_           = width;
-    atlasFrameHeight_          = height;
-    numTilesInAtlasFrame_ = numTiles;
+    atlasFrameWidth_         = width;
+    atlasFrameHeight_        = height;
+    numTilesInAtlasFrame_    = numTiles;
     size_t partitionWidthIn  = partitionWidthIn64 * 64;
     size_t partitionHeightIn = partitionHeightIn64 * 64;
     if ( numTiles == 1 ) {
@@ -418,11 +418,11 @@ class PCCAtlasFrameContext {
               partitionPosY_[numPartitionRows_ - 2] + partitionHeight_[numPartitionRows_ - 2];
           partitionHeight_[numPartitionRows_ - 1] = atlasFrameHeight_ - partitionPosY_[numPartitionRows_ - 1];
         }
-      } else {        
+      } else {
         printf( "non uniform tile partitioning\n" );
         exit( 130 );
         for ( size_t col = 0; col < numPartitionCols_; col++ ) {
-          partitionWidth_[col] = partitionWidthIn;  
+          partitionWidth_[col] = partitionWidthIn;
           partitionPosX_[col]  = partitionPosX_[col - 1] + partitionWidth_[col];
         }
         for ( size_t row = 0; row < numPartitionRows_; row++ ) {
@@ -437,7 +437,7 @@ class PCCAtlasFrameContext {
   }
 
   std::vector<int>& getPartitionToTileMap() { return partitionToTileMap_; }
-  
+
  private:
   size_t                       atlasFrameIndex_;
   size_t                       atlasFrameWidth_;

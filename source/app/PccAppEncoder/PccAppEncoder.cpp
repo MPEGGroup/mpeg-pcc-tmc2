@@ -932,7 +932,7 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
   size_t       startFrameNumber         = startFrameNumber0;
   size_t       reconstructedFrameNumber = encoderParams.startFrameNumber_;
 
-  PCCLogger                logger;
+  PCCLogger logger;
   logger.initilalize( removeFileExtension( encoderParams.compressedStreamPath_ ), true );
   std::unique_ptr<uint8_t> buffer;
   size_t                   contextIndex = 0;
@@ -968,12 +968,12 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
       endFrameNumber0 = endFrameNumber;
     }
 
-    std::cout << "Compressing "<< contextIndex << " frames " << startFrameNumber << " -> " << endFrameNumber
-              << "..." << std::endl;
+    std::cout << "Compressing " << contextIndex << " frames " << startFrameNumber << " -> " << endFrameNumber << "..."
+              << std::endl;
     int                ret = encoder.encode( sources, context, reconstructs );
     PCCBitstreamWriter bitstreamWriter;
 #ifdef BITSTREAM_TRACE
-    bitstreamWriter.setLogger( logger ); 
+    bitstreamWriter.setLogger( logger );
 #endif
     ret |= bitstreamWriter.encode( context, ssvu );
 
@@ -1010,7 +1010,7 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
 
   PCCBitstream bitstream;
 #ifdef BITSTREAM_TRACE
-  bitstream.setLogger( logger ); 
+  bitstream.setLogger( logger );
   bitstream.setTrace( true );
 #endif
   bitstreamStat.setHeader( bitstream.size() );

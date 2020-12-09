@@ -218,12 +218,12 @@ class PCCPatchSegmenter3 {
 
   void convert( size_t axis, size_t lod, PCCPoint3D input, PCCPoint3D& output ) {
     size_t shif = ( 1u << ( lod - 1 ) ) - 1;
-    if ( axis == 1 ) {  
+    if ( axis == 1 ) {
       output.x() = input.x() + input.z();
       output.y() = input.y();
       output.z() = -input.x() + input.z() + shif;
     }
-    if ( axis == 2 ) {  
+    if ( axis == 2 ) {
       output.x() = input.x();
       output.y() = -input.z() + input.y() + shif;
       output.z() = input.z() + input.y();
@@ -302,18 +302,18 @@ class PCCPatchSegmenter3 {
   const size_t orientationCount6 = 6;
   //  const size_t orientation10Count = 10;
   PCCVector3D orientations10_XAxis[10] = {
-      PCCVector3D( 1.0, 0.0, 0.0 ),                        // 0
-      PCCVector3D( 0.0, 1.0, 0.0 ),                        // 1
-      PCCVector3D( 0.0, 0.0, 1.0 ),                        // 2
-      PCCVector3D( -1.0, 0.0, 0.0 ),                       // 3
-      PCCVector3D( 0.0, -1.0, 0.0 ),                       // 4
-      PCCVector3D( 0.0, 0.0, -1.0 ),                       // 5
-      PCCVector3D( 0.0, sqrt( 2 ) / 2, sqrt( 2 ) / 2 ),    // 6
-      //PCCVector3D( 0.0, -sqrt( 2 ) / 2, sqrt( 2 ) / 2 ),   // 7
-      PCCVector3D( 0.0,  sqrt( 2 ) / 2, -sqrt( 2 ) / 2 ),   // 7
+      PCCVector3D( 1.0, 0.0, 0.0 ),                      // 0
+      PCCVector3D( 0.0, 1.0, 0.0 ),                      // 1
+      PCCVector3D( 0.0, 0.0, 1.0 ),                      // 2
+      PCCVector3D( -1.0, 0.0, 0.0 ),                     // 3
+      PCCVector3D( 0.0, -1.0, 0.0 ),                     // 4
+      PCCVector3D( 0.0, 0.0, -1.0 ),                     // 5
+      PCCVector3D( 0.0, sqrt( 2 ) / 2, sqrt( 2 ) / 2 ),  // 6
+      // PCCVector3D( 0.0, -sqrt( 2 ) / 2, sqrt( 2 ) / 2 ),   // 7
+      PCCVector3D( 0.0, sqrt( 2 ) / 2, -sqrt( 2 ) / 2 ),   // 7
       PCCVector3D( 0.0, -sqrt( 2 ) / 2, -sqrt( 2 ) / 2 ),  // 8
-      //PCCVector3D( 0.0, sqrt( 2 ) / 2, -sqrt( 2 ) / 2 ),   // 9
-      PCCVector3D( 0.0, -sqrt( 2 ) / 2, sqrt( 2 ) / 2 ),   // 9
+      // PCCVector3D( 0.0, sqrt( 2 ) / 2, -sqrt( 2 ) / 2 ),   // 9
+      PCCVector3D( 0.0, -sqrt( 2 ) / 2, sqrt( 2 ) / 2 ),  // 9
   };
 
   PCCVector3D orientations10_YAxis[10] = {
@@ -330,18 +330,18 @@ class PCCPatchSegmenter3 {
   };
 
   PCCVector3D orientations10_ZAxis[10] = {
-      PCCVector3D( 1.0, 0.0, 0.0 ),                        // 0
-      PCCVector3D( 0.0, 1.0, 0.0 ),                        // 1
-      PCCVector3D( 0.0, 0.0, 1.0 ),                        // 2
-      PCCVector3D( -1.0, 0.0, 0.0 ),                       // 3
-      PCCVector3D( 0.0, -1.0, 0.0 ),                       // 4
-      PCCVector3D( 0.0, 0.0, -1.0 ),                       // 5
-      PCCVector3D( sqrt( 2 ) / 2, sqrt( 2 ) / 2, 0.0 ),    // 6
-      //PCCVector3D( -sqrt( 2 ) / 2, sqrt( 2 ) / 2, 0.0 ),   // 7
+      PCCVector3D( 1.0, 0.0, 0.0 ),                      // 0
+      PCCVector3D( 0.0, 1.0, 0.0 ),                      // 1
+      PCCVector3D( 0.0, 0.0, 1.0 ),                      // 2
+      PCCVector3D( -1.0, 0.0, 0.0 ),                     // 3
+      PCCVector3D( 0.0, -1.0, 0.0 ),                     // 4
+      PCCVector3D( 0.0, 0.0, -1.0 ),                     // 5
+      PCCVector3D( sqrt( 2 ) / 2, sqrt( 2 ) / 2, 0.0 ),  // 6
+      // PCCVector3D( -sqrt( 2 ) / 2, sqrt( 2 ) / 2, 0.0 ),   // 7
       PCCVector3D( sqrt( 2 ) / 2, -sqrt( 2 ) / 2, 0.0 ),   // 7
       PCCVector3D( -sqrt( 2 ) / 2, -sqrt( 2 ) / 2, 0.0 ),  // 8
-      //PCCVector3D( sqrt( 2 ) / 2, -sqrt( 2 ) / 2, 0.0 ),   // 9
-      PCCVector3D( -sqrt( 2 ) / 2, sqrt( 2 ) / 2, 0.0 ),   // 9
+      // PCCVector3D( sqrt( 2 ) / 2, -sqrt( 2 ) / 2, 0.0 ),   // 9
+      PCCVector3D( -sqrt( 2 ) / 2, sqrt( 2 ) / 2, 0.0 ),  // 9
   };
 
   //  const size_t orientation18Count = 18;
@@ -357,17 +357,17 @@ class PCCPatchSegmenter3 {
       PCCVector3D( -sqrt( 2 ) / 2, 0.0, -sqrt( 2 ) / 2 ),  // 8
       PCCVector3D( sqrt( 2 ) / 2, 0.0, -sqrt( 2 ) / 2 ),   // 9
       PCCVector3D( 0.0, sqrt( 2 ) / 2, sqrt( 2 ) / 2 ),    // 10   2
-      //PCCVector3D( 0.0, -sqrt( 2 ) / 2, sqrt( 2 ) / 2 ),   // 11
+      // PCCVector3D( 0.0, -sqrt( 2 ) / 2, sqrt( 2 ) / 2 ),   // 11
       PCCVector3D( 0.0, sqrt( 2 ) / 2, -sqrt( 2 ) / 2 ),   // 11
       PCCVector3D( 0.0, -sqrt( 2 ) / 2, -sqrt( 2 ) / 2 ),  // 12
-      //PCCVector3D( 0.0, sqrt( 2 ) / 2, -sqrt( 2 ) / 2 ),   // 13
-      PCCVector3D( 0.0, -sqrt( 2 ) / 2, sqrt( 2 ) / 2 ),   // 13
-      PCCVector3D( sqrt( 2 ) / 2, sqrt( 2 ) / 2, 0.0 ),    // 14    3
-      //PCCVector3D( -sqrt( 2 ) / 2, sqrt( 2 ) / 2, 0.0 ),   // 15
+      // PCCVector3D( 0.0, sqrt( 2 ) / 2, -sqrt( 2 ) / 2 ),   // 13
+      PCCVector3D( 0.0, -sqrt( 2 ) / 2, sqrt( 2 ) / 2 ),  // 13
+      PCCVector3D( sqrt( 2 ) / 2, sqrt( 2 ) / 2, 0.0 ),   // 14    3
+      // PCCVector3D( -sqrt( 2 ) / 2, sqrt( 2 ) / 2, 0.0 ),   // 15
       PCCVector3D( sqrt( 2 ) / 2, -sqrt( 2 ) / 2, 0.0 ),   // 15
       PCCVector3D( -sqrt( 2 ) / 2, -sqrt( 2 ) / 2, 0.0 ),  // 16
-      //PCCVector3D( sqrt( 2 ) / 2, -sqrt( 2 ) / 2, 0.0 ),   // 17
-      PCCVector3D( -sqrt( 2 ) / 2, sqrt( 2 ) / 2, 0.0 ),   // 17
+      // PCCVector3D( sqrt( 2 ) / 2, -sqrt( 2 ) / 2, 0.0 ),   // 17
+      PCCVector3D( -sqrt( 2 ) / 2, sqrt( 2 ) / 2, 0.0 ),  // 17
   };
 };
 

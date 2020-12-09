@@ -59,9 +59,8 @@
 #include "TAppCommon/program_options_lite.h"
 
 namespace pcc {
-  
-using namespace pcc_hm; 
 
+using namespace pcc_hm;
 
 // ====================================================================================================================
 // Class definition

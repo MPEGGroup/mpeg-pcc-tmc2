@@ -80,7 +80,8 @@ class PCCVideoDecoder {
 
     // Decode video
     auto decoder = PCCVirtualVideoDecoder<T>::create( codecId );
-    printf(" decompress size T = %zu \n",sizeof(T)); fflush(stdout);
+    printf( " decompress size T = %zu \n", sizeof( T ) );
+    fflush( stdout );
     decoder->decode( bitstream, bitDepth == 8 ? 8 : 10, use444CodecIo, video, decoderPath, fileName, frameCount );
     width  = video.getWidth();
     height = video.getHeight();

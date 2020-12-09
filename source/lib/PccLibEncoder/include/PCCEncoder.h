@@ -108,7 +108,6 @@ typedef std::map<size_t, PCCPatch> unionPatch;  // unionPatch ------
 typedef std::pair<size_t, size_t> SubContext;   // SubContext ------ [start,
                                                 // end);
 
-
 #define BAD_HEIGHT_THRESHOLD 1.10
 #define BAD_CONDITION_THRESHOLD 2
 
@@ -162,9 +161,9 @@ class PCCEncoder : public PCCCodec {
 
   //**tile and partitions**//
   void generateTilesFromSegments( PCCContext& context );
-  void generateTilesFromImage   ( PCCContext& context );
-  void placeTiles               ( PCCContext& context, size_t minFrameWidth, size_t minFrameHeight );
-  void replaceFrameContext      ( PCCContext& context );
+  void generateTilesFromImage( PCCContext& context );
+  void placeTiles( PCCContext& context, size_t minFrameWidth, size_t minFrameHeight );
+  void replaceFrameContext( PCCContext& context );
   //**patch segmentation**//
   // bool generateGeometryVideo( const PCCGroupOfFrames& sources, PCCContext& context );
   bool generateSegments( const PCCGroupOfFrames& sources, PCCContext& context );
@@ -189,22 +188,20 @@ class PCCEncoder : public PCCCodec {
                                   int         lastFramePlus1 = -1 );
   size_t segmentSequence( PCCContext& context, std::vector<std::pair<size_t, size_t>>& framesInAFPS );
   bool   relocateTileGeometryVideo( PCCContext& context, std::vector<std::pair<size_t, size_t>>& framesInAFPS );
-  bool placeEomPatchInTile( PCCContext& context, std::vector<std::pair<size_t, size_t>>& framesInAFPS );
-  bool placeRawPatchTile( PCCContext& context, std::vector<std::pair<size_t, size_t>>& framesInAFPS );
-  bool generateGeometryVideo( const PCCGroupOfFrames& sources, PCCContext& context );
-  bool        generateTextureVideo( const PCCGroupOfFrames&     sources,
-                                    PCCGroupOfFrames&           reconstruct,
-                                    PCCContext&                 context,
-                                    const PCCEncoderParameters& params );
-  void        placeAuxiliaryPointsTiles( PCCContext& context );
-  void        generateRawPointsGeometryVideo( PCCContext& context );
-  void        generateRawPointsTextureVideo( PCCContext& context );
-  void        generateRawPointsGeometryImage( PCCContext& context, PCCFrameContext& tile, PCCImageGeometry& image );
-  void        generateRawPointsTextureImage( PCCContext& context, PCCFrameContext& tile, PCCImageTexture& image );
-  void        generateIntraImage( PCCAtlasFrameContext& frameContext, const size_t mapIndex, PCCImageGeometry& image );
-  bool        predictGeometryFrame( PCCFrameContext&        titleFrame,
-                                    const PCCImageGeometry& reference,
-                                    PCCImageGeometry&       image );
+  bool   placeEomPatchInTile( PCCContext& context, std::vector<std::pair<size_t, size_t>>& framesInAFPS );
+  bool   placeRawPatchTile( PCCContext& context, std::vector<std::pair<size_t, size_t>>& framesInAFPS );
+  bool   generateGeometryVideo( const PCCGroupOfFrames& sources, PCCContext& context );
+  bool   generateTextureVideo( const PCCGroupOfFrames&     sources,
+                               PCCGroupOfFrames&           reconstruct,
+                               PCCContext&                 context,
+                               const PCCEncoderParameters& params );
+  void   placeAuxiliaryPointsTiles( PCCContext& context );
+  void   generateRawPointsGeometryVideo( PCCContext& context );
+  void   generateRawPointsTextureVideo( PCCContext& context );
+  void   generateRawPointsGeometryImage( PCCContext& context, PCCFrameContext& tile, PCCImageGeometry& image );
+  void   generateRawPointsTextureImage( PCCContext& context, PCCFrameContext& tile, PCCImageTexture& image );
+  void   generateIntraImage( PCCAtlasFrameContext& frameContext, const size_t mapIndex, PCCImageGeometry& image );
+  bool predictGeometryFrame( PCCFrameContext& titleFrame, const PCCImageGeometry& reference, PCCImageGeometry& image );
   static bool predictTextureFrame( PCCFrameContext&       titleFrame,
                                    const PCCImageTexture& reference,
                                    PCCImageTexture&       image );

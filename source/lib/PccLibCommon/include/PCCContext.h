@@ -176,7 +176,7 @@ class PCCContext : public PCCHighLevelSyntax {
   size_t calculateAFOCval( std::vector<AtlasTileLayerRbsp>& atglList, size_t atglOrder );
   PCCAtlasFrameContext& operator[]( int index ) { return atlasContexts_[atlasIndex_].getFrameContexts()[index]; }
   void                  resize( size_t size ) { atlasContexts_[atlasIndex_].resize( size ); };
-  void                  allocOneLayerData(); 
+  void                  allocOneLayerData();
   void                  printBlockToPatch( const size_t occupancyResolution ) {
     atlasContexts_[atlasIndex_].printBlockToPatch( occupancyResolution );
   };

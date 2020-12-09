@@ -115,11 +115,9 @@ class PCCVideo {
     for ( auto& frame : frames_ ) { frame.convertYUV444ToYUV420(); }
   }
 
-  bool allPixelsEqualToZero(){
-    for ( auto& frame : frames_ ) { 
-      if( ! frame.allPixelsEqualToZero() ){
-        return false; 
-      } 
+  bool allPixelsEqualToZero() {
+    for ( auto& frame : frames_ ) {
+      if ( !frame.allPixelsEqualToZero() ) { return false; }
     }
     return true;
   }

@@ -252,10 +252,10 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
                      StopwatchUserTime&          clock ) {
   PCCBitstream     bitstream;
   PCCBitstreamStat bitstreamStat;
-  PCCLogger logger;
+  PCCLogger        logger;
   logger.initilalize( removeFileExtension( decoderParams.compressedStreamPath_ ), false );
 #ifdef BITSTREAM_TRACE
-  bitstream.setLogger( logger ); 
+  bitstream.setLogger( logger );
   bitstream.setTrace( true );
   size_t index = 0;
 #endif
@@ -285,7 +285,7 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
     clock.start();
     PCCBitstreamReader bitstreamReader;
 #ifdef BITSTREAM_TRACE
-    bitstreamReader.setLogger( logger ); 
+    bitstreamReader.setLogger( logger );
 #endif
     if ( bitstreamReader.decode( ssvu, context ) == 0 ) { return 0; }
 

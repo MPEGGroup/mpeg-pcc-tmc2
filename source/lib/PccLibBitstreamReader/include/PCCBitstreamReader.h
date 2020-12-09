@@ -459,7 +459,6 @@ class PCCBitstreamReader {
   static void geometrySmoothing( PCCBitstream& bitstream, SEI& seiAbstract );
   // H.20.2.20 Attribute smoothing SEI message syntax
   static void attributeSmoothing( PCCBitstream& bitstream, SEI& seiAbstract );
-  
 
   // G.2  VUI syntax
   // G.2.1  VUI parameters syntax
@@ -478,13 +477,13 @@ class PCCBitstreamReader {
 
   // H.7.3.6.1.1	ASPS V-PCC extension syntax
   static void aspsVpccExtension( PCCBitstream& bitstream, AtlasSequenceParameterSetRbsp& asps, AspsVpccExtension& ext );
-  
+
   // H.7.3.6.2.1	AFPS V-PCC extension syntax
   static void afpsVpccExtension( PCCBitstream& bitstream, AfpsVpccExtension& ext );
 
   // H.7.3.6.2.1	AAPS V-PCC extension syntax
   static void aapsVpccExtension( PCCBitstream& bitstream, AapsVpccExtension& ext );
-  
+
   // H.7.3.6.2.2	Atlas camera parameters syntax
   static void atlasCameraParameters( PCCBitstream& bitstream, AtlasCameraParameters& acp );
 

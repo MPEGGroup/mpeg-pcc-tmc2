@@ -72,7 +72,7 @@ class AtlasSequenceParameterSetRbsp {
       PLREnabledFlag_( false ),
       vuiParametersPresentFlag_( false ),
       extensionFlag_( false ),
-      vpccExtensionFlag_( false ),      
+      vpccExtensionFlag_( false ),
       extension7Bits_( 0 ) {}
   ~AtlasSequenceParameterSetRbsp() {
     refListStruct_.clear();
@@ -144,7 +144,7 @@ class AtlasSequenceParameterSetRbsp {
   void setPLREnabledFlag( bool value ) { PLREnabledFlag_ = value; }
   void setVuiParametersPresentFlag( bool value ) { vuiParametersPresentFlag_ = value; }
   void setExtensionFlag( bool value ) { extensionFlag_ = value; }
-  void setVpccExtensionFlag( bool value ) { vpccExtensionFlag_ = value; }  
+  void setVpccExtensionFlag( bool value ) { vpccExtensionFlag_ = value; }
   void setExtension7Bits( uint8_t value ) { extension7Bits_ = value; }
 
   RefListStruct& getRefListStruct( uint8_t index ) { return refListStruct_[index]; }

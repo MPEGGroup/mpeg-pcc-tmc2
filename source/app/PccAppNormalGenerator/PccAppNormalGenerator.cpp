@@ -37,11 +37,11 @@ using namespace pcc;
 
 int main( int argc, char* argv[] ) {
   std::cout << "PccAppNormalGenerator v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MINOR << std::endl << std::endl;
-  std::string uncompressedDataPath;
-  std::string reconstructedDataPath;
-  size_t startFrameNumber;
-  size_t frameCount;
-  size_t nbThread = 0;
+  std::string                    uncompressedDataPath;
+  std::string                    reconstructedDataPath;
+  size_t                         startFrameNumber;
+  size_t                         frameCount;
+  size_t                         nbThread     = 0;
   PCCNormalsGenerator3Parameters normalParams = {PCCVector3D( 0.0 ),
                                                  ( std::numeric_limits<double>::max )(),
                                                  ( std::numeric_limits<double>::max )(),
@@ -54,10 +54,14 @@ int main( int argc, char* argv[] ) {
                                                  PCC_NORMALS_GENERATOR_ORIENTATION_SPANNING_TREE,
                                                  false,
                                                  false,
-                                                 false}; //default values
-  if ( !parseParameters( argc, argv, uncompressedDataPath,reconstructedDataPath,startFrameNumber,frameCount,nbThread, normalParams) ) { return -1; }
-  if ( nbThread > 0 ) { tbb::task_scheduler_init init( static_cast<int>( nbThread) ); }
-  int ret = generateNormal( uncompressedDataPath,reconstructedDataPath,startFrameNumber,frameCount,nbThread,normalParams);
+                                                 false};  // default values
+  if ( !parseParameters( argc, argv, uncompressedDataPath, reconstructedDataPath, startFrameNumber, frameCount,
+                         nbThread, normalParams ) ) {
+    return -1;
+  }
+  if ( nbThread > 0 ) { tbb::task_scheduler_init init( static_cast<int>( nbThread ) ); }
+  int ret = generateNormal( uncompressedDataPath, reconstructedDataPath, startFrameNumber, frameCount, nbThread,
+                            normalParams );
   return ret;
 }
 
@@ -76,14 +80,14 @@ static std::istream& operator>>( std::istream& in, PCCNormalsGeneratorOrientatio
 //---------------------------------------------------------------------------
 // :: Command line / config parsing
 
-bool parseParameters( int          argc,
-                      char*        argv[],
-                      std::string& srcPlyPath,
-                      std::string& dstPlyPath,
-                      size_t&      startFrame,
-                      size_t&      numFrames,
-                      size_t&      numThread,
-                      PCCNormalsGenerator3Parameters& normalParams) {
+bool parseParameters( int                             argc,
+                      char*                           argv[],
+                      std::string&                    srcPlyPath,
+                      std::string&                    dstPlyPath,
+                      size_t&                         startFrame,
+                      size_t&                         numFrames,
+                      size_t&                         numThread,
+                      PCCNormalsGenerator3Parameters& normalParams ) {
   namespace po    = df::program_options_lite;
   bool print_help = false;
 
@@ -161,7 +165,7 @@ bool parseParameters( int          argc,
   po::setDefaults( opts );
   po::ErrorReporter        err;
   const list<const char*>& argv_unhandled = po::scanArgv( opts, argc, (const char**)argv, err );
-  
+
   for ( const auto arg : argv_unhandled ) { printf( "Unhandled argument ignored: %s \n", arg ); }
 
   if ( argc == 1 || print_help ) {
@@ -169,11 +173,9 @@ bool parseParameters( int          argc,
     return false;
   }
 
-  if (srcPlyPath.empty()) {
-    srcPlyPath = uncompressedDataFolder + uncompressedDataPath;
-  }
-  if (dstPlyPath.empty()) {
-    dstPlyPath = uncompressedDataFolder + uncompressedDataPath.substr(0, uncompressedDataPath.size() - 4) + "_n.ply";
+  if ( srcPlyPath.empty() ) { srcPlyPath = uncompressedDataFolder + uncompressedDataPath; }
+  if ( dstPlyPath.empty() ) {
+    dstPlyPath = uncompressedDataFolder + uncompressedDataPath.substr( 0, uncompressedDataPath.size() - 4 ) + "_n.ply";
   }
 
   printf( "parseParameters : \n" );
@@ -182,22 +184,26 @@ bool parseParameters( int          argc,
   printf( "  startFrame   = %zu \n", startFrame );
   printf( "  frameCount   = %zu \n", numFrames );
   printf( "  numThread    = %zu \n", numThread );
-  printf( "  normalParameters: \n");
-  printf( "    viewPoint                                       = [%f,%f,%f] \n", normalParams.viewPoint_[0],normalParams.viewPoint_[1],normalParams.viewPoint_[2]);
-  printf( "    radiusNormalSmoothing                           = %f \n", normalParams.radiusNormalSmoothing_);
-  printf( "    radiusNormalEstimation                          = %f \n", normalParams.radiusNormalEstimation_);
-  printf( "    radiusNormalOrientation                         = %f \n", normalParams.radiusNormalOrientation_);
-  printf( "    weightNormalSmoothing                           = %f \n", normalParams.weightNormalSmoothing_);
-  printf( "    numberOfNearestNeighborsInNormalSmoothing       = %zu \n", normalParams.numberOfNearestNeighborsInNormalSmoothing_);
-  printf( "    numberOfNearestNeighborsInNormalEstimation      = %zu \n", normalParams.numberOfNearestNeighborsInNormalEstimation_);
-  printf( "    numberOfNearestNeighborsInNormalOrientation     = %zu \n", normalParams.numberOfNearestNeighborsInNormalOrientation_);
-  printf( "    numberOfIterationsInNormalSmoothing             = %zu \n", normalParams.numberOfIterationsInNormalSmoothing_);
-  printf( "    orientationStrategy                             = %u \n", normalParams.orientationStrategy_);
-  printf( "    storeEigenvalues                                = %u \n", normalParams.storeEigenvalues_);
-  printf( "    storeNumberOfNearestNeighborsInNormalEstimation = %u \n", normalParams.storeNumberOfNearestNeighborsInNormalEstimation_);
-  printf( "    storeCentroids                                  = %u \n",normalParams.storeCentroids_);
-
-  //if ( !encoderParams.check() ) { std::cerr << "Input encoder parameters not correct \n"; }
+  printf( "  normalParameters: \n" );
+  printf( "    viewPoint                                       = [%f,%f,%f] \n", normalParams.viewPoint_[0],
+          normalParams.viewPoint_[1], normalParams.viewPoint_[2] );
+  printf( "    radiusNormalSmoothing                           = %f \n", normalParams.radiusNormalSmoothing_ );
+  printf( "    radiusNormalEstimation                          = %f \n", normalParams.radiusNormalEstimation_ );
+  printf( "    radiusNormalOrientation                         = %f \n", normalParams.radiusNormalOrientation_ );
+  printf( "    weightNormalSmoothing                           = %f \n", normalParams.weightNormalSmoothing_ );
+  printf( "    numberOfNearestNeighborsInNormalSmoothing       = %zu \n",
+          normalParams.numberOfNearestNeighborsInNormalSmoothing_ );
+  printf( "    numberOfNearestNeighborsInNormalEstimation      = %zu \n",
+          normalParams.numberOfNearestNeighborsInNormalEstimation_ );
+  printf( "    numberOfNearestNeighborsInNormalOrientation     = %zu \n",
+          normalParams.numberOfNearestNeighborsInNormalOrientation_ );
+  printf( "    numberOfIterationsInNormalSmoothing             = %zu \n",
+          normalParams.numberOfIterationsInNormalSmoothing_ );
+  printf( "    orientationStrategy                             = %u \n", normalParams.orientationStrategy_ );
+  printf( "    storeEigenvalues                                = %u \n", normalParams.storeEigenvalues_ );
+  printf( "    storeNumberOfNearestNeighborsInNormalEstimation = %u \n",
+          normalParams.storeNumberOfNearestNeighborsInNormalEstimation_ );
+  printf( "    storeCentroids                                  = %u \n", normalParams.storeCentroids_ );
 
   // report the current configuration (only in the absence of errors so
   // that errors/warnings are more obvious and in the same place).
@@ -206,44 +212,37 @@ bool parseParameters( int          argc,
   return true;
 }
 
-int generateNormal( const std::string uncompressedDataPath,
-                    const std::string reconstructedDataPath,
-                    const size_t startFrameNumber,
-                    const size_t frameCount,
-                    const size_t nbThread,
-                    const PCCNormalsGenerator3Parameters& normalParams) {
-  
+int generateNormal( const std::string                     uncompressedDataPath,
+                    const std::string                     reconstructedDataPath,
+                    const size_t                          startFrameNumber,
+                    const size_t                          frameCount,
+                    const size_t                          nbThread,
+                    const PCCNormalsGenerator3Parameters& normalParams ) {
   PCCGroupOfFrames sources;
-  //reading the input ply
+  // reading the input ply
   std::cout << std::endl << "============= INPUT: " << uncompressedDataPath << " ============= " << std::endl;
-  if (!sources.load(
-    uncompressedDataPath,
-    startFrameNumber,
-    startFrameNumber + frameCount,
-    COLOR_TRANSFORM_NONE)) {
+  if ( !sources.load( uncompressedDataPath, startFrameNumber, startFrameNumber + frameCount, COLOR_TRANSFORM_NONE ) ) {
     return -1;
   }
-  //calculating the normal for each frame
-  for (int frIdx = startFrameNumber; frIdx < startFrameNumber + frameCount; frIdx++) {
+  // calculating the normal for each frame
+  for ( int frIdx = startFrameNumber; frIdx < startFrameNumber + frameCount; frIdx++ ) {
     std::cout << std::endl << "============= FRAME " << frIdx << " ============= " << std::endl;
     std::cout << "  Computing normals for original point cloud... ";
-    PCCPointSet3& geometry = sources.getFrames()[frIdx];
-    PCCKdTree                            kdtree( geometry );
-    PCCNNResult                          result;
-    PCCNormalsGenerator3                 normalsGen;
+    PCCPointSet3&        geometry = sources.getFrames()[frIdx];
+    PCCKdTree            kdtree( geometry );
+    PCCNNResult          result;
+    PCCNormalsGenerator3 normalsGen;
     normalsGen.compute( geometry, kdtree, normalParams, nbThread );
     geometry.addNormals();
-    for (int ptIdx = 0; ptIdx < geometry.getPointCount(); ptIdx++) {
-      geometry.setNormal(ptIdx, normalsGen.getNormal(ptIdx));
+    for ( int ptIdx = 0; ptIdx < geometry.getPointCount(); ptIdx++ ) {
+      geometry.setNormal( ptIdx, normalsGen.getNormal( ptIdx ) );
     }
     std::cout << "[done]" << std::endl;
   }
-  //saving the normal
+  // saving the normal
   std::cout << std::endl << "============= OUTPUT: " << reconstructedDataPath << " ============= " << std::endl;
   size_t startFrame = startFrameNumber;
-  if ( !reconstructedDataPath.empty() ) {
-      sources.write( reconstructedDataPath, startFrame);
-  }
+  if ( !reconstructedDataPath.empty() ) { sources.write( reconstructedDataPath, startFrame ); }
   sources.clear();
   return 0;
 }

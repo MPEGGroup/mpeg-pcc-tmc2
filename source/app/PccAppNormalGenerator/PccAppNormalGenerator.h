@@ -43,20 +43,20 @@
 #include <program_options_lite.h>
 #include <tbb/tbb.h>
 
-bool parseParameters( int          argc,
-                      char*        argv[],
-                      std::string& srcPlyPath,
-                      std::string& dstPlyPath,
-                      size_t&      startFrame,
-                      size_t&      numFrames,
-                      size_t&      numThread,
-                      pcc::PCCNormalsGenerator3Parameters& normalParams);
+bool parseParameters( int                                  argc,
+                      char*                                argv[],
+                      std::string&                         srcPlyPath,
+                      std::string&                         dstPlyPath,
+                      size_t&                              startFrame,
+                      size_t&                              numFrames,
+                      size_t&                              numThread,
+                      pcc::PCCNormalsGenerator3Parameters& normalParams );
 void usage();
-int generateNormal( const std::string uncompressedDataPath,
-                    const std::string reconstructedDataPath,
-                    const size_t startFrameNumber,
-                    const size_t frameCount,
-                    const size_t nbThread,
-                    const pcc::PCCNormalsGenerator3Parameters& normalParams);
+int  generateNormal( const std::string                          uncompressedDataPath,
+                     const std::string                          reconstructedDataPath,
+                     const size_t                               startFrameNumber,
+                     const size_t                               frameCount,
+                     const size_t                               nbThread,
+                     const pcc::PCCNormalsGenerator3Parameters& normalParams );
 
 #endif /* PCC_APP_DECODER_H */

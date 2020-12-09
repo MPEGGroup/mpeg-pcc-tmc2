@@ -43,9 +43,10 @@
 using namespace pcc;
 
 template <typename T>
-std::shared_ptr<PCCVirtualVideoDecoder<T>> PCCVirtualVideoDecoder<T>::create( PCCCodecId codecId ) {    
-      printf( "PCCVirtualVideoDecoder: create codecId = %d \n", codecId );  fflush(stdout);    
-    switch ( codecId ) {
+std::shared_ptr<PCCVirtualVideoDecoder<T>> PCCVirtualVideoDecoder<T>::create( PCCCodecId codecId ) {
+  printf( "PCCVirtualVideoDecoder: create codecId = %d \n", codecId );
+  fflush( stdout );
+  switch ( codecId ) {
 #ifdef USE_JMAPP_VIDEO_CODEC
     case JMAPP: return std::make_shared<PCCJMAppVideoDecoder<T>>(); break;
 #endif

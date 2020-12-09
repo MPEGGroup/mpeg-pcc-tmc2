@@ -83,7 +83,7 @@ bool PCCVirtualVideoEncoder<T>::checkCodecId( PCCCodecId codecId ) {
 
 template <typename T>
 std::shared_ptr<PCCVirtualVideoEncoder<T>> PCCVirtualVideoEncoder<T>::create( PCCCodecId codecId ) {
-    switch ( codecId ) {
+  switch ( codecId ) {
 #ifdef USE_JMAPP_VIDEO_CODEC
     case JMAPP: return std::make_shared<PCCJMAppVideoEncoder<T>>(); break;
 #endif

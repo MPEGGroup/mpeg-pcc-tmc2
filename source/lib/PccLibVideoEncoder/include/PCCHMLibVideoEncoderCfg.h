@@ -169,7 +169,6 @@ struct SMultiValueInput {
   istream& readValues( std::istream& in );
 };
 
-
 /// encoder configuration class
 class PCCHMLibVideoEncoderCfg {
 #if JVET_E0059_FLOATING_POINT_QP_FIX
@@ -827,19 +826,19 @@ class PCCHMLibVideoEncoderCfg {
                                              /// member variables
 
 };  // END CLASS DEFINITION PCCHMLibVideoEncoderCfg
-namespace pcc_hm{
-static inline istream& operator>>( istream& in, UIProfileName& profile ) ;
+namespace pcc_hm {
+static inline istream& operator>>( istream& in, UIProfileName& profile );
 static inline istream& operator>>( istream& in, CostMode& mode );
 static inline istream& operator>>( istream& in, ScalingListMode& mode );
 namespace Level {
 static inline istream& operator>>( istream& in, Tier& tier );
 static inline istream& operator>>( istream& in, Name& level );
-}  //~namespace Level
+}  // namespace Level
 template <class T>
 static inline istream& operator>>( std::istream& in, SMultiValueInput<T>& values );
 template <class T>
 static inline istream& operator>>( std::istream& in, PCCHMLibVideoEncoderCfg::OptionalValue<T>& value );
-}
+}  // namespace pcc_hm
 //! \}
 #endif
 

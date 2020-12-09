@@ -102,38 +102,35 @@ struct GeneratePointCloudParameters {
 
 struct PatchParams {
   PatchParams( bool plrFlag = 0, uint16_t mapCnt = 1 ) {
+    patchType             = PROJECTED;
+    patch2dPosX           = 0;
+    patch2dPosY           = 0;
+    patch2dSizeX          = 1;
+    patch2dSizeY          = 1;
+    patch3dOffsetU        = 0;
+    patch3dOffsetV        = 0;
+    patch3dOffsetD        = 0;
+    patch3dRangeD         = 1;
+    patchProjectionID     = 0;
+    patchOrientationIndex = 0;
+    patchLoDScaleX        = 1;
+    patchLoDScaleY        = 1;
+    patchRawPoints        = 0;
+    patchInAuxVideo       = 0;
 
-      patchType = PROJECTED ;
-      patch2dPosX = 0;
-      patch2dPosY =  0;
-      patch2dSizeX = 1;
-      patch2dSizeY =  1;
-      patch3dOffsetU =  0;
-      patch3dOffsetV =  0;
-      patch3dOffsetD =  0;
-      patch3dRangeD =  1;
-      patchProjectionID =  0;
-      patchOrientationIndex=  0;
-      patchLoDScaleX=  1;
-      patchLoDScaleY=  1;
-      patchRawPoints=  0;
-      patchInAuxVideo=  0;
+    patchRawPoints           = 0;
+    epduAssociatedPatchCount = 0;
+    // std::vector<int64_t>  patchEomPatchCount;  // this needs to be cheked later?
 
-      patchRawPoints = 0;
-      epduAssociatedPatchCount = 0;
-      // std::vector<int64_t>  patchEomPatchCount;  // this needs to be cheked later?
-
-      /*if ( plrFlag == true ) {// ajt:: need to revise this later! as part of a new application structure?
-        size_t size = patchPlrdLevel.size();
-        patchPlrdLevel.resize( size + 1 );
-        for ( int m = 0; m < mapCnt; m++ ) patchPlrdLevel[size]=  0 );
-      }*/
+    /*if ( plrFlag == true ) {// ajt:: need to revise this later! as part of a new application structure?
+      size_t size = patchPlrdLevel.size();
+      patchPlrdLevel.resize( size + 1 );
+      for ( int m = 0; m < mapCnt; m++ ) patchPlrdLevel[size]=  0 );
+    }*/
   }
-  ~PatchParams(){
-      epduAssociatedPoints.clear();
-  };
+  ~PatchParams() { epduAssociatedPoints.clear(); };
 
-  //void initPatchParams( bool plrFlag, uint16_t mapCnt );
+  // void initPatchParams( bool plrFlag, uint16_t mapCnt );
 
   int64_t patchType;
   int8_t  patchInAuxVideo;
@@ -203,6 +200,7 @@ class PCCCodec {
   void generateRawPointsTexturefromVideo( PCCContext& context, size_t frameIndex );
 
   void setLogger( PCCLogger& logger ) { logger_ = &logger; }
+
  protected:
   void generateOccupancyMap( PCCFrameContext&      tile,
                              PCCImageOccupancyMap& videoFrame,
@@ -292,38 +290,55 @@ class PCCCodec {
     return s / double( N );
   }
 
-  //seiMessage
+  // seiMessage
 
   void aspsCommonByteString( std::vector<uint8_t>& stringByte, AtlasSequenceParameterSetRbsp& asps );
-  void aspsApplicationByteString( std::vector<uint8_t>& strinByte, AtlasSequenceParameterSetRbsp& asps, AtlasFrameParameterSetRbsp& afps );
+  void aspsApplicationByteString( std::vector<uint8_t>&          strinByte,
+                                  AtlasSequenceParameterSetRbsp& asps,
+                                  AtlasFrameParameterSetRbsp&    afps );
   void afpsCommonByteString( std::vector<uint8_t>& stringByte, PCCContext& context, size_t afpsIndex, size_t frmIndex );
-  void afpsApplicationByteString( std::vector<uint8_t>& stringByte, AtlasSequenceParameterSetRbsp& asps, AtlasFrameParameterSetRbsp& afps );
-  
-  void atlasPatchCommonByteString     ( std::vector<uint8_t>& stringByte, size_t patchIndex, std::vector<PatchParams>& atlasPatchParams );
-  void atlasPatchApplicationByteString( std::vector<uint8_t>& stringByte, size_t patchIndex, std::vector<PatchParams>& atlasPatchParams );
-  void tilePatchCommonByteString      ( std::vector<uint8_t>& stringByte, size_t tileId, size_t patchIndex, std::vector<std::vector<PatchParams>>& tilePatchParams );
-  void tilePatchApplicationByteString ( std::vector<uint8_t>& stringByte, size_t tileId, size_t patchIndex, std::vector<std::vector<PatchParams>>& tilePatchParams );
-  void atlasBlockToPatchByteString    ( std::vector<uint8_t>& stringByte, std::vector<std::vector<int64_t>> atlasB2p );
-  void tileBlockToPatchByteString     ( std::vector<uint8_t>& stringByte, size_t tileID, std::vector<std::vector<std::vector<int64_t>>> tileB2p ); 
+  void afpsApplicationByteString( std::vector<uint8_t>&          stringByte,
+                                  AtlasSequenceParameterSetRbsp& asps,
+                                  AtlasFrameParameterSetRbsp&    afps );
+
+  void atlasPatchCommonByteString( std::vector<uint8_t>&     stringByte,
+                                   size_t                    patchIndex,
+                                   std::vector<PatchParams>& atlasPatchParams );
+  void atlasPatchApplicationByteString( std::vector<uint8_t>&     stringByte,
+                                        size_t                    patchIndex,
+                                        std::vector<PatchParams>& atlasPatchParams );
+  void tilePatchCommonByteString( std::vector<uint8_t>&                  stringByte,
+                                  size_t                                 tileId,
+                                  size_t                                 patchIndex,
+                                  std::vector<std::vector<PatchParams>>& tilePatchParams );
+  void tilePatchApplicationByteString( std::vector<uint8_t>&                  stringByte,
+                                       size_t                                 tileId,
+                                       size_t                                 patchIndex,
+                                       std::vector<std::vector<PatchParams>>& tilePatchParams );
+  void atlasBlockToPatchByteString( std::vector<uint8_t>& stringByte, std::vector<std::vector<int64_t>> atlasB2p );
+  void tileBlockToPatchByteString( std::vector<uint8_t>&                          stringByte,
+                                   size_t                                         tileID,
+                                   std::vector<std::vector<std::vector<int64_t>>> tileB2p );
   void getHashPatchParams( PCCContext&                            context,
                            size_t                                 frameIndex,
                            size_t                                 tileIndex,
                            size_t                                 atlIndex,
                            std::vector<std::vector<PatchParams>>& tilePatchParams,
-                           std::vector<PatchParams>&               atlasPatchParams );
-  void getB2PHashPatchParams( PCCContext&                                    context,
-                              size_t                                         frameIndex,
+                           std::vector<PatchParams>&              atlasPatchParams );
+  void getB2PHashPatchParams( PCCContext&                                     context,
+                              size_t                                          frameIndex,
                               std::vector<std::vector<std::vector<int64_t>>>& tileB2PPatchParams,
                               std::vector<std::vector<int64_t>>&              atlasB2PPatchParams );
-  
-  void getB2PHashAtlasPatchParams( PCCContext&                                    context,
-                                  size_t                                         frameIndex,
-                                  size_t                                         tileIdx,
-                                  size_t                                         atlIndex,
-                                  std::vector<std::vector<std::vector<int64_t>>>& tileB2PPatchParams,
-                                  std::vector<std::vector<int64_t>>&              atlasB2PPatchParams );
+
+  void getB2PHashAtlasPatchParams( PCCContext&                                     context,
+                                   size_t                                          frameIndex,
+                                   size_t                                          tileIdx,
+                                   size_t                                          atlIndex,
+                                   std::vector<std::vector<std::vector<int64_t>>>& tileB2PPatchParams,
+                                   std::vector<std::vector<int64_t>>&              atlasB2PPatchParams );
 
   PCCLogger* logger_ = nullptr;
+
  private:
   void smoothPointCloud( PCCPointSet3&                      reconstruct,
                          const std::vector<uint32_t>&       partition,
@@ -409,15 +424,15 @@ class PCCCodec {
 #ifdef CODEC_TRACE
   void printChecksum( PCCPointSet3& ePointcloud, std::string eString );
 #endif
-  std::vector<uint16_t>                      geoSmoothingCount_;
-  std::vector<PCCVector3<float>>             geoSmoothingCenter_;
-  std::vector<bool>                          geoSmoothingDoSmooth_;
-  std::vector<uint32_t>                      geoSmoothingPartition_;
-  std::vector<uint16_t>                      colorSmoothingCount_;
-  std::vector<PCCVector3<float>>             colorSmoothingCenter_;
-  std::vector<bool>                          colorSmoothingDoSmooth_;
-  std::vector<std::pair<size_t, size_t>>     colorSmoothingPartition_;
-  std::vector<std::vector<uint16_t>>         colorSmoothingLum_;
+  std::vector<uint16_t>                  geoSmoothingCount_;
+  std::vector<PCCVector3<float>>         geoSmoothingCenter_;
+  std::vector<bool>                      geoSmoothingDoSmooth_;
+  std::vector<uint32_t>                  geoSmoothingPartition_;
+  std::vector<uint16_t>                  colorSmoothingCount_;
+  std::vector<PCCVector3<float>>         colorSmoothingCenter_;
+  std::vector<bool>                      colorSmoothingDoSmooth_;
+  std::vector<std::pair<size_t, size_t>> colorSmoothingPartition_;
+  std::vector<std::vector<uint16_t>>     colorSmoothingLum_;
 };
 
 };  // namespace pcc

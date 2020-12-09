@@ -71,7 +71,7 @@ class AtlasTileDataUnit {
   void setPatchInformationData( size_t index, PatchInformationData& value ) { patchInformationData_[index] = value; }
 
  private:
-  size_t                            tileOrder_;
+  size_t tileOrder_;
   // size_t                            patchCount_;
   std::vector<PatchInformationData> patchInformationData_;
 };

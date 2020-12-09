@@ -124,7 +124,9 @@ class AtlasFrameTileInformation {
   uint32_t getBottomRightPartitionRowOffset( size_t index ) { return bottomRightPartitionRowOffset_[index]; }
   uint32_t getTileId( size_t index ) { return tileId_[index]; }
   uint32_t getAuxiliaryVideoTileRowWidthMinus1() { return auxiliaryVideoTileRowWidthMinus1_; }
-  uint32_t getAuxiliaryVideoTileRowHeight( size_t index ) { return auxiliaryVideoTileRowHeight_.size()==0? 0: auxiliaryVideoTileRowHeight_[index]; }
+  uint32_t getAuxiliaryVideoTileRowHeight( size_t index ) {
+    return auxiliaryVideoTileRowHeight_.size() == 0 ? 0 : auxiliaryVideoTileRowHeight_[index];
+  }
 
   void setSingleTileInAtlasFrameFlag( bool value ) { singleTileInAtlasFrameFlag_ = value; }
   void setUniformPartitionSpacingFlag( bool value ) { uniformPartitionSpacingFlag_ = value; }

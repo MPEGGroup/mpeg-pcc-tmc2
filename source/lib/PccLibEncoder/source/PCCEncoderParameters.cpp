@@ -377,8 +377,9 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   Lossy occupancy map threshold          " << thresholdLossyOM_ << std::endl;
   std::cout << "\t   Lossy occupancy map prefilter          " << prefilterLossyOM_ << std::endl;
   std::cout << "\t   postprocessSmoothingFilter             " << postprocessSmoothingFilter_ << std::endl;
-  std::cout << "\t Decoded Atlas Information Hash           " << (decodedAtlasInformationHash_>0?1:0) << std::endl;
-  if(decodedAtlasInformationHash_>0)
+  std::cout << "\t Decoded Atlas Information Hash           " << ( decodedAtlasInformationHash_ > 0 ? 1 : 0 )
+            << std::endl;
+  if ( decodedAtlasInformationHash_ > 0 )
     std::cout << "\t   DecodedAtlasInformationHash Type           " << decodedAtlasInformationHash_ << std::endl;
   std::cout << "\t Geometry smoothing                       " << std::endl;
   std::cout << "\t   flagGeometrySmoothing                  " << flagGeometrySmoothing_ << std::endl;
@@ -603,7 +604,7 @@ bool PCCEncoderParameters::check() {
     std::cerr << "absoluteD1_ should be true when multipleStreams_ is false\n";
     absoluteD1_ = true;
   }
-  if( normalOrientation_ > 3 ){
+  if ( normalOrientation_ > 3 ) {
     std::cerr << "WARNING: the normal orientation is out of the possible range [0;3]\n";
     normalOrientation_ = 1;
   }
@@ -804,17 +805,17 @@ bool PCCEncoderParameters::check() {
 }
 
 void PCCEncoderParameters::constructAspsRefListStruct( PCCContext& context, size_t aspsIdx, size_t afpsIdx ) {
-  auto& asps = context.getAtlasSequenceParameterSet( aspsIdx );  
+  auto& asps = context.getAtlasSequenceParameterSet( aspsIdx );
   for ( size_t list = 0; list < context.getNumOfRefAtlasFrameList(); list++ ) {
     RefListStruct refList;
-    refList.setNumRefEntries( context.getMaxNumRefAtlasFrame( list ) ); 
+    refList.setNumRefEntries( context.getMaxNumRefAtlasFrame( list ) );
     refList.allocate();
     for ( size_t i = 0; i < refList.getNumRefEntries(); i++ ) {
       int afocDiff = -1;
       if ( i == 0 )
         afocDiff = context.getRefAtlasFrame( list, i );
       else
-        afocDiff = context.getRefAtlasFrame( list, i ) - context.getRefAtlasFrame( list, i - 1 ); 
+        afocDiff = context.getRefAtlasFrame( list, i ) - context.getRefAtlasFrame( list, i - 1 );
       refList.setAbsDeltaAfocSt( i, std::abs( afocDiff ) );
       refList.setStrafEntrySignFlag( i, afocDiff < 0 ? false : !false );
       refList.setStRefAtalsFrameFlag( i, true );
@@ -926,7 +927,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   afps.setRaw3dPosBitCountExplicitModeFlag( false );
   afps.setExtensionFlag( true );
   afps.setExtension8Bits( 0 );
-  constructAspsRefListStruct( context, 0, 0 ); 
+  constructAspsRefListStruct( context, 0, 0 );
 
   // occupancy information
   auto& oi = vps.getOccupancyInformation( atlasIndex );
@@ -1008,7 +1009,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
       atlas.initPartitionInfoPerFrame( i, minimumImageWidth_, minimumImageHeight_, numMaxTilePerFrame_,
                                        uniformPartitionSpacing_, tilePartitionWidth_, tilePartitionHeight_ );
       for ( size_t ti = 0; ti < numMaxTilePerFrame_; ti++ ) {
-        auto& tile = atlas[ti]; 
+        auto& tile = atlas[ti];
         tile.setRawPatchEnabledFlag( losslessGeo_ || lossyRawPointsPatch_ );
         tile.setUseRawPointsSeparateVideo( useRawPointsSeparateVideo_ );
         tile.setGeometry3dCoordinatesBitdepth( bitdepth3D );
@@ -1018,19 +1019,18 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
         tile.setLog2PatchQuantizerSizeY( context.getLog2PatchQuantizerSizeY() );
         tile.setAtlasFrmOrderCntLsb( context.calculateAFOCLsb( i ) );
         tile.setAtlasFrmOrderCntVal( i );
-        tile.setFrameIndex( i );  
+        tile.setFrameIndex( i );
         if ( i == 0 ) {
           tile.setNumRefIdxActive( 0 );
         } else {
-          tile.setNumRefIdxActive( constrainedPack_ ? (std::min)( i, maxNumRefAtlasFrame_ )
-                                                                     : 0 );
+          tile.setNumRefIdxActive( constrainedPack_ ? ( std::min )( i, maxNumRefAtlasFrame_ ) : 0 );
         }
         tile.setGeometry2dBitdepth( geometryNominal2dBitdepth_ );
         tile.setMaxDepth( ( 1 << geometryNominal2dBitdepth_ ) - 1 );
         tile.setLog2PatchQuantizerSizeX( context.getLog2PatchQuantizerSizeX() );
         tile.setLog2PatchQuantizerSizeY( context.getLog2PatchQuantizerSizeY() );
         tile.setNumRefIdxActive( std::min( i, maxNumRefAtlasFrame_ ) );
-        tile.setRefAfocList( context, 0 ); 
+        tile.setRefAfocList( context, 0 );
       }
     }
   }
