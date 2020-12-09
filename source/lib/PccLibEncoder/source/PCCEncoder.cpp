@@ -124,11 +124,9 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   if ( params_.tileSegmentationType_ > 1 && params_.numMaxTilePerFrame_ > 1 ) {
     placeTiles( context, params_.minimumImageWidth_, params_.minimumImageHeight_ );
   }
-#if TILETYPE1_RAWAUXVIDEO_BUGFIX2
   if ( params_.tileSegmentationType_ > 0 ){
     replaceFrameContext( context );
   }
-#endif
 
   PCCVideoEncoder   videoEncoder;
   size_t            atlasIndex = context.getAtlasIndex();
@@ -271,9 +269,6 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   if ( asps.getRawPatchEnabledFlag() && asps.getAuxiliaryVideoEnabledFlag() ) {
     std::cout << "*******Video: Aux (Geometry) ********" << std::endl;
     placeAuxiliaryPointsTiles( context );
-#if TILETYPE1_RAWAUXVIDEO_BUGFIX
-    //jkei: if no points are saved in the video, the video should not be created.
-#endif
     auto& videoBitstreamMP = context.createVideoBitstream( VIDEO_GEOMETRY_RAW );
     generateRawPointsGeometryVideo( context );
     auto& videoRawPointsGeometry = context.getVideoRawPointsGeometry();
@@ -341,8 +336,10 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     std::cout << "Texture Coding starts" << std::endl;
     const size_t mapCount = params_.mapCountMinus1_ + 1;
     // GENERATE ATTRIBUTE
+    printf("generateTextureVideo \n"); fflush(stdout);
     generateTextureVideo( sources, reconstructs, context, params_ );
 
+    printf("generateTextureVideo done \n"); fflush(stdout);
     if ( !( params_.losslessGeo_ && params_.textureDilationOffLossless_ ) && params_.textureBGFill_ < 3 ) {
       // ATTRIBUTE IMAGE PADDING
       tbb::task_arena limited( static_cast<int>( params_.nbThread_ ) );
@@ -548,7 +545,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
       auto& tile = context[frameIdx].getTile( tileIdx );
       for ( size_t attIdx = 0; attIdx < 1; attIdx++ ) {  // ai.getAttributeCount()      
         size_t updatedPointCount = colorPointCloud( reconstructs[frameIdx], context, tile, absoluteT1List[attIdx],
-                                                    sps.getMultipleMapStreamsPresentFlag( ATLASIDXPCC ),
+                                                    sps.getMultipleMapStreamsPresentFlag( 0 ),
                                                     ai.getAttributeCount(), accTilePointCount, gpcParams );
         accTilePointCount        = updatedPointCount;      
       }
@@ -994,12 +991,8 @@ double PCCEncoder::adjustReferenceAtlasFrame( PCCContext&            context,
   auto bitMaxD1 = uint8_t( ceilLog2( uint32_t( maxD1 ) ) );
   auto bitMaxDD = uint8_t( ceilLog2( uint32_t( maxDD ) ) );
 
-#if EXPAND_RANGE_ENCODER
   const size_t max3DCoordinate =
       size_t( 1 ) << ( params_.geometry3dCoordinatesBitdepth_ + ( params_.additionalProjectionPlaneMode_ > 0 ) );
-#else
-  const size_t max3DCoordinate = size_t( 1 ) << params_.geometry3dCoordinatesBitdepth_;
-#endif
   for ( size_t curId = 0; curId < curPatchCount; curId++ ) {
     auto& curPatch = curPatches[curId];
     // intra
@@ -1166,10 +1159,8 @@ void PCCEncoder::spatialConsistencyPackFlexible( PCCFrameContext& tile,
 
   auto& prevPatches = prevFrame.getPatches();
   if ( patches.empty() ) {
-    if ( tile.getNumberOfRawPointsPatches() == 0 ) return;
-#if TILETYPE2_RAWAUXVIDEO_BUGFIX
-    if ( tile.getUseRawPointsSeparateVideo() ) return;
-#endif
+    if ( tile.getNumberOfRawPointsPatches() == 0 ) { return; }
+    if ( tile.getUseRawPointsSeparateVideo() ) { return; }
     std::vector<bool> occupancyMap;
     size_t            occupancySizeU = presetWidth / params_.occupancyResolution_;
     size_t            occupancySizeV = presetHeight / params_.occupancyResolution_;
@@ -2349,10 +2340,8 @@ void PCCEncoder::packFlexible( PCCFrameContext& tile,
   // previous frame
   tile.setNumMatchedPatches( 0 );
   if ( patches.empty() ) {
-    if ( tile.getNumberOfRawPointsPatches() == 0 ) return;
-#if TILETYPE2_RAWAUXVIDEO_BUGFIX
-    if ( tile.getUseRawPointsSeparateVideo() ) return;
-#endif
+    if ( tile.getNumberOfRawPointsPatches() == 0 ) { return; }
+    if ( tile.getUseRawPointsSeparateVideo() ) { return; }
     std::vector<bool> occupancyMap;
     size_t            occupancySizeU = presetWidth / params_.occupancyResolution_;
     size_t            occupancySizeV = presetHeight / params_.occupancyResolution_;
@@ -3524,7 +3513,7 @@ size_t PCCEncoder::packRawPointsPatchSimple( PCCFrameContext& tile,
       }
     }
     rawPointsPatch.u0_ = 0;
-    rawPointsPatch.v0_ = totalHeight/params_.occupancyResolution_;//TILE_PARTITINING_BUGFIX3
+    rawPointsPatch.v0_ = totalHeight/params_.occupancyResolution_;
     totalHeight += rawPointsPatch.sizeV_;
 
     printf( "packRawPointsPatch[%zu/%zu]: posU0V0 %zu,%zu sizeU0V0(%zux%zu) #ofpixels %zu\n", i, numberOfRawPointsPatches,
@@ -4290,12 +4279,8 @@ void PCCEncoder::generateRawPointsPatch( const PCCPointSet3& source,
                                          bool                useEnhancedOccupancyMapCode ) {
   //  const int16_t infiniteDepth    = ( std::numeric_limits<int16_t>::max )();
   auto& patches = frame.getPatches();
-#if EXPAND_RANGE_ENCODER
   const size_t geometry3dCoordinatesBitdepth =
       params_.geometry3dCoordinatesBitdepth_ + ( params_.additionalProjectionPlaneMode_ > 0 );
-#else
-  const size_t geometry3dCoordinatesBitdepth = params_.geometry3dCoordinatesBitdepth_;
-#endif
 
   PCCPointSet3 pointsToBeProjected;
   for ( const auto& patch : patches ) {
@@ -4917,11 +4902,7 @@ bool PCCEncoder::generateSegments( const PCCGroupOfFrames& sources, PCCContext& 
   params.additionalProjectionPlaneMode_       = params_.additionalProjectionPlaneMode_;
   params.partialAdditionalProjectionPlane_    = params_.partialAdditionalProjectionPlane_;
   params.maxAllowedDepth_                     = ( size_t( 1 ) << params_.geometryNominal2dBitdepth_ ) - 1;
-#if EXPAND_RANGE_ENCODER
   params.geometryBitDepth3D_ = params_.geometry3dCoordinatesBitdepth_ + ( params_.additionalProjectionPlaneMode_ > 0 );
-#else
-  params.geometryBitDepth3D_ = params_.geometry3dCoordinatesBitdepth_;
-#endif
   params.EOMFixBitCount_               = params_.EOMFixBitCount_;
   params.EOMSingleLayerMode_           = params_.enhancedOccupancyMapCode_ && ( params_.mapCountMinus1_ == 0 );
   params.patchExpansion_               = params_.patchExpansion_;
@@ -5020,7 +5001,6 @@ bool PCCEncoder::placeSegments( const PCCGroupOfFrames& sources, PCCContext& con
     if ( params_.enhancedOccupancyMapCode_ && !params_.useRawPointsSeparateVideo_ ) {
       placeEomPatchInTile( context, framesInAFPS );
     }
-#if TILETYPE1_RAWAUXVIDEO_BUGFIX
       for ( size_t segIdx = 0; segIdx < framesInAFPS.size(); segIdx++ ) {
         size_t firstFrame    = framesInAFPS[segIdx].first;
         size_t lastFrame     = framesInAFPS[segIdx].second;
@@ -5034,24 +5014,13 @@ bool PCCEncoder::placeSegments( const PCCGroupOfFrames& sources, PCCContext& con
           resizeTileGeometryVideo( context, tileIdx, initTileWidth, initTileHeight, firstFrame, lastFrame + 1 );
         }
       }
-#endif
     relocateTileGeometryVideo( context, framesInAFPS );
-#if !TILETYPE1_RAWAUXVIDEO_BUGFIX
-    resizeGeometryVideo( context,  params_.videoEncoderOccupancyCodecId_ );
-#endif
     if ( ( params_.losslessGeo_ || params_.lossyRawPointsPatch_ ) &&
          !params_.useRawPointsSeparateVideo_ ) {
-#if TILETYPE1_RAWAUXVIDEO_BUGFIX
       resizeGeometryVideo( context,  params_.videoEncoderOccupancyCodecId_ );
-#endif
       placeRawPatchTile( context, framesInAFPS );
-#if !TILETYPE1_RAWAUXVIDEO_BUGFIX
-      resizeGeometryVideo( context,  params_.videoEncoderOccupancyCodecId_ );
-#endif
     }
-#if TILETYPE1_RAWAUXVIDEO_BUGFIX
     resizeGeometryVideo( context,  params_.videoEncoderOccupancyCodecId_ );
-#endif
 
     for ( size_t frameIdx = 0; frameIdx < context.getFrames().size(); frameIdx++ ) {
       for ( size_t tileIdx = 0; tileIdx < context[frameIdx].getNumTilesInAtlasFrame(); tileIdx++ ) {
@@ -5445,14 +5414,9 @@ void PCCEncoder::generateTilesFromImage( PCCContext& context ) {
             } // piPreve
           } // not-invalid
         } // pi
-
       } // if(params_contrainedPack_)
-#if TILETYPE1_RAWAUXVIDEO_BUGFIX
-      if ( params_.enhancedOccupancyMapCode_)
-#else
-      if ( params_.enhancedOccupancyMapCode_ && !params_.useRawPointsSeparateVideo_ )
-#endif
-      {
+
+      if ( params_.enhancedOccupancyMapCode_) {
         PCCEomPatch eomPatch;
         eomPatch.tileIndex_  = tile.getTileIndex();
         eomPatch.frameIndex_ = tile.getFrameIndex();
@@ -5481,12 +5445,7 @@ void PCCEncoder::generateTilesFromImage( PCCContext& context ) {
       tile.setTileIndex( tileIdx );
       tile.setRefAfocList( context, tile.getBestRefListIndexInAsps() );
     }  // tile
-#if TILETYPE1_RAWAUXVIDEO_BUGFIX
-    if( params_.losslessGeo_ || params_.lossyRawPointsPatch_ )
-#else
-    if ( ( params_.losslessGeo_ || params_.lossyRawPointsPatch_ ) && !params_.useRawPointsSeparateVideo_ )
-#endif
-    {
+    if( params_.losslessGeo_ || params_.lossyRawPointsPatch_ ) {
       context[frameIndex].setNumTilesInAtlasFrame( context[frameIndex].getNumTilesInAtlasFrame() + 1 );
       context[frameIndex].getTiles().resize( context[frameIndex].getNumTilesInAtlasFrame() );
       auto& tile = context[frameIndex].getTile( context[frameIndex].getNumTilesInAtlasFrame() - 1 );
@@ -5510,9 +5469,7 @@ void PCCEncoder::generateTilesFromImage( PCCContext& context ) {
         rawPointsPatch.tileIndex_ = tile.getTileIndex();
         tile.getRawPointsPatches().push_back( rawPointsPatch );
       }  // rawpatches
-#if TILE_PARTITINING_BUGFIX3
       context[frameIndex].getTitleFrameContext().getRawPointsPatches().clear();
-#endif
     }
   }  // frameIndex
 }
@@ -5557,16 +5514,11 @@ void PCCEncoder::placeTiles( PCCContext& context, size_t minFrameWidth, size_t m
         tileIdx = 3;
         // bottom
         incomingTiles[tileIdx].setLeftTopXInFrame( 0 );
-#if TILETYPE2_RAWAUXVIDEO_BUGFIX //jkei: is it correct?
         if(!params_.useRawPointsSeparateVideo_){
-#endif
         incomingTiles[tileIdx].setLeftTopYInFrame( frameHeight );
-
         frameWidth = std::max( frameWidth, incomingTiles[tileIdx].getWidth() );
         frameHeight += incomingTiles[tileIdx].getHeight();
-#if TILETYPE2_RAWAUXVIDEO_BUGFIX
         }
-#endif
       }
       // copying to framesForPatchSegmentation
       auto& outputFrame = context[frameIdx].getTitleFrameContext();
@@ -5589,22 +5541,17 @@ void PCCEncoder::placeTiles( PCCContext& context, size_t minFrameWidth, size_t m
               inputTile.getLeftTopYInFrame() / params_.occupancyResolution_;
         }
         // raw
-        auto& outputFrameRawPatches    = outputFrame.getRawPointsPatches();
-        auto& inputTileRawPatches = inputTile.getRawPointsPatches();
+        auto& outputFrameRawPatches = outputFrame.getRawPointsPatches();
+        auto& inputTileRawPatches   = inputTile.getRawPointsPatches();
         outputFrameRawPatches.clear();
         for ( size_t patchIdx = 0; patchIdx < inputTileRawPatches.size(); patchIdx++ ) {
           outputFrameRawPatches.push_back( inputTileRawPatches[patchIdx] );
-#if TILETYPE2_RAWAUXVIDEO_BUGFIX
-          if(!params_.useRawPointsSeparateVideo_)
-          {
-#endif
-          outputFrameRawPatches[outputFrameRawPatches.size() - 1].u0_ +=
-              inputTile.getLeftTopXInFrame() / params_.occupancyResolution_;
-          outputFrameRawPatches[outputFrameRawPatches.size() - 1].v0_ +=
-              inputTile.getLeftTopYInFrame() / params_.occupancyResolution_;
-#if TILETYPE2_RAWAUXVIDEO_BUGFIX
+          if ( !params_.useRawPointsSeparateVideo_ ) {
+            outputFrameRawPatches[outputFrameRawPatches.size() - 1].u0_ +=
+                inputTile.getLeftTopXInFrame() / params_.occupancyResolution_;
+            outputFrameRawPatches[outputFrameRawPatches.size() - 1].v0_ +=
+                inputTile.getLeftTopYInFrame() / params_.occupancyResolution_;
           }
-#endif
         }
 
         // eom
@@ -6124,7 +6071,6 @@ bool PCCEncoder::placeRawPatchTile( PCCContext& context, std::vector<std::pair<s
       tile.setHeight( std::ceil( (double)tileHeight / 64.0 ) * 64 );
       atlasFrame.setHeight( atlasFrame.getHeight() + tile.getHeight() );
 
-//#if !TILE_PARTITINING_BUGFIX3
       auto& atlasFrameRawPatches = atlasFrame.getRawPointsPatches();
       atlasFrameRawPatches.clear();
       for ( size_t patchIdx = 0; patchIdx < tile.getRawPointsPatches().size(); patchIdx++ ) {
@@ -7227,7 +7173,6 @@ bool PCCEncoder::generateTextureVideo( const PCCGroupOfFrames&     sources,
       accTilePointCount = generateTextureVideo( reconstructs[i], context, i, tileIdx, video, videoT1,
                                                      mapCount, accTilePointCount );
     }
-    // ret &= generateTextureVideo( reconstructs[i], context, frameIdx, mapCount );
   }
   return ret;
 }
@@ -7247,11 +7192,7 @@ size_t PCCEncoder::generateTextureVideo( const PCCPointSet3& reconstruct,
   size_t pointCount    = regPointCount + ( params_.useRawPointsSeparateVideo_ ? 0 : auxPointCount );
 
   bool lossyRawPointsPatch = tile.getRawPatchEnabledFlag() && ( !params_.losslessGeo_ );
-#if AUXVIDEO_BUGFIX
   if ( ( pointCount == 0u && auxPointCount == 0u ) || !reconstruct.hasColors() ) { return false; }
-#else
-  if ( ( pointCount == 0u ) || !reconstruct.hasColors() ) { return false; }
-#endif
   std::vector<bool> markT1;
   if ( params_.mapCountMinus1_ > 0 && params_.removeDuplicatePoints_ ) {
     const size_t size = tile.getWidth() * tile.getHeight();
@@ -8489,20 +8430,15 @@ void PCCEncoder::setPostProcessingSeiParameters( GeneratePointCloudParameters& p
   params.pointLocalReconstruction_   = params_.pointLocalReconstruction_;
   params.mapCountMinus1_             = params_.mapCountMinus1_;
   params.singleMapPixelInterleaving_ = params_.singleMapPixelInterleaving_;
-#if EXPAND_RANGE_ENCODER
-  params.geometry3dCoordinatesBitdepth_ =
-      params_.geometry3dCoordinatesBitdepth_ + ( params_.additionalProjectionPlaneMode_ > 0 );
-#else
-  params.geometry3dCoordinatesBitdepth_ = params_.geometry3dCoordinatesBitdepth_;
-#endif
+  params.geometry3dCoordinatesBitdepth_ = params_.geometry3dCoordinatesBitdepth_ + ( params_.additionalProjectionPlaneMode_ > 0 );
   params.useAdditionalPointsPatch_ = params_.losslessGeo_ || params_.lossyRawPointsPatch_;
   params.plrlNumberOfModes_        = params_.plrlNumberOfModes_;
   params.geometryBitDepth3D_ = params_.geometry3dCoordinatesBitdepth_ + ( params_.additionalProjectionPlaneMode_ > 0 );
-  params.EOMFixBitCount_           = params_.EOMFixBitCount_;
-  params.pbfEnableFlag_            = params_.pbfEnableFlag_;
-  params.pbfPassesCount_           = params_.pbfPassesCount_;
-  params.pbfFilterSize_            = params_.pbfFilterSize_;
-  params.pbfLog2Threshold_         = params_.pbfLog2Threshold_;
+  params.EOMFixBitCount_     = params_.EOMFixBitCount_;
+  params.pbfEnableFlag_      = params_.pbfEnableFlag_;
+  params.pbfPassesCount_     = params_.pbfPassesCount_;
+  params.pbfFilterSize_      = params_.pbfFilterSize_;
+  params.pbfLog2Threshold_   = params_.pbfLog2Threshold_;
 }
 
 void PCCEncoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& params, PCCContext& context ) {
@@ -8533,19 +8469,11 @@ void PCCEncoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& 
   params.pointLocalReconstruction_   = params_.pointLocalReconstruction_;
   params.mapCountMinus1_             = params_.mapCountMinus1_;
   params.singleMapPixelInterleaving_ = params_.singleMapPixelInterleaving_;
-#if EXPAND_RANGE_ENCODER
   params.geometry3dCoordinatesBitdepth_ =
       params_.geometry3dCoordinatesBitdepth_ + ( params_.additionalProjectionPlaneMode_ > 0 );
-#else
-  params.geometry3dCoordinatesBitdepth_ = params_.geometry3dCoordinatesBitdepth_;
-#endif
   params.useAdditionalPointsPatch_ = params_.losslessGeo_ || params_.lossyRawPointsPatch_;
   params.plrlNumberOfModes_        = params_.plrlNumberOfModes_;
-#if EXPAND_RANGE_ENCODER
   params.geometryBitDepth3D_ = params_.geometry3dCoordinatesBitdepth_ + ( params_.additionalProjectionPlaneMode_ > 0 );
-#else
-  params.geometryBitDepth3D_ = params_.geometry3dCoordinatesBitdepth_;
-#endif
   params.EOMFixBitCount_   = params_.EOMFixBitCount_;
   params.pbfEnableFlag_    = false;
   params.pbfPassesCount_   = 0;
@@ -8892,15 +8820,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&         context,
       if ( patch.getProjectionMode() == 0 ) {
         pdu.set3dOffsetD( patch.getD1() / minLevel );
       } else {
-        if ( static_cast<int>( asps.getExtendedProjectionEnabledFlag() ) == 0 ) {
-          pdu.set3dOffsetD( ( max3DCoordinate - patch.getD1() ) / minLevel );
-        } else {
-#if EXPAND_RANGE_ENCODER
-          pdu.set3dOffsetD( ( max3DCoordinate - patch.getD1() ) / minLevel );
-#else
-          pdu.set3dOffsetD( ( ( max3DCoordinate << 1 ) - patch.getD1() ) / minLevel );
-#endif
-        }
+        pdu.set3dOffsetD( ( max3DCoordinate - patch.getD1() ) / minLevel );              
       }
       size_t quantDD = patch.getSizeD() == 0 ? 0 : ( ( patch.getSizeD() - 1 ) / minLevel + 1 );
       pdu.set3dRangeD( quantDD );

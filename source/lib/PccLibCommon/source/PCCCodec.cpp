@@ -921,10 +921,9 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
           partition.push_back( uint32_t( patchIndex ) );
           totalPointCount++;
           pointToPixel.emplace_back( uu, vv, 0 );
-#if TILETYPE1_RAWAUXVIDEO_BUGFIX2
-          if(!params.useAuxSeperateVideo_)
-#endif
-          occupancyMap[vv * tileWidth + uu] = 1;  // occupied
+          if(!params.useAuxSeperateVideo_){
+            occupancyMap[vv * tileWidth + uu] = 1;  // occupied
+          }
         }
       }
       TRACE_CODEC( "%d eomPatch :%zu,%zu\t %zu patches, %zu points\n", j, u0Eom, v0Eom, numPatchesInEOMPatches,
@@ -2141,50 +2140,32 @@ void PCCCodec::generateRawPointsTexturefromVideo( PCCContext& context, PCCFrameC
         eomTextures[k + eomPatchOffset].b() = image.getValue( 2, xx, yy );
       }
       eomPatchOffset += eomPointsPatch.eomCount_;
-    }  // eomPatches
-    
-   
-    
+    }  
   }
 }
-void PCCCodec::generateOccupancyMap( PCCFrameContext& tile,
+
+void PCCCodec::generateOccupancyMap( PCCFrameContext&      tile,
                                      PCCImageOccupancyMap& videoFrame,
-                                     const size_t occupancyPrecision,
-                                     const size_t thresholdLossyOM,
-                                     const bool   enhancedOccupancyMapForDepthFlag ) {
-  auto  width        = tile.getWidth();
-  auto  height       = tile.getHeight();
-  auto& occupancyMap = tile.getOccupancyMap();
+                                     const size_t          occupancyPrecision,
+                                     const size_t          thresholdLossyOM,
+                                     const bool            enhancedOccupancyMapForDepthFlag ) {
+  auto   width        = tile.getWidth();
+  auto   height       = tile.getHeight();
+  size_t u0           = tile.getLeftTopXInFrame() / occupancyPrecision;
+  size_t v0           = tile.getLeftTopYInFrame() / occupancyPrecision;
+  auto&  occupancyMap = tile.getOccupancyMap();
   occupancyMap.resize( width * height, 0 );
   for ( size_t v = 0; v < height; ++v ) {
     for ( size_t u = 0; u < width; ++u ) {
-      uint8_t pixel = videoFrame.getValue( 0, tile.getLeftTopXInFrame() / occupancyPrecision + u / occupancyPrecision,
-                                           tile.getLeftTopYInFrame() / occupancyPrecision + v / occupancyPrecision );
+      uint8_t& pixel = videoFrame.getValue( 0, u0 + u / occupancyPrecision, v0 + v / occupancyPrecision );
       if ( !enhancedOccupancyMapForDepthFlag ) {
-        if ( pixel <= thresholdLossyOM ) {
-          occupancyMap[v * width + u] = 0;
-        } else {
-          occupancyMap[v * width + u] = 1;
-        }
+        occupancyMap[v * width + u] = ( pixel > thresholdLossyOM );
+        pixel = occupancyMap[v * width + u];
       } else {
         occupancyMap[v * width + u] = pixel;
       }
     }
   }
-
-#if MULTITILE_BUGFIX //jkei: do we need this for non - lossy occupancy case as well?
-  for ( size_t yy = 0; yy < tile.getHeight(); yy++ )
-    for ( size_t xx = 0; xx < tile.getWidth(); xx++ ) {
-      videoFrame.setValue( 0,  (xx + tile.getLeftTopXInFrame())/occupancyPrecision, (yy + tile.getLeftTopYInFrame())/occupancyPrecision,
-                           occupancyMap[ yy * width + xx ] );
-    }
-#else
-  for ( size_t yy = 0; yy < tile.getHeight(); yy++ )
-    for ( size_t xx = 0; xx < tile.getWidth(); xx++ ) {
-      videoFrame.setValue( 0, xx + tile.getLeftTopXInFrame(), yy + tile.getLeftTopYInFrame(),
-                           occupancyMap[( yy * occupancyPrecision ) * width + xx * occupancyPrecision] );
-    }
-#endif
 }
 
 void PCCCodec::generateBlockToPatchFromBoundaryBox( PCCContext&      context,
@@ -2208,9 +2189,9 @@ void PCCCodec::generateBlockToPatchFromBoundaryBox( PCCContext&      context,
         } else {
           blockToPatch[blockIndex] = patchIndex + 1;
         }
-      }  // u0
-    }    // v0
-  }      // patch
+      }  
+    }    
+  }      
 }
 
 void PCCCodec::generateBlockToPatchFromOccupancyMapVideo( PCCContext&  context,
@@ -2223,18 +2204,11 @@ void PCCCodec::generateBlockToPatchFromOccupancyMapVideo( PCCContext&  context,
       generateBlockToPatchFromOccupancyMapVideo( context, tile, fi, occupancyImage, occupancyResolution,
                                                  occupancyPrecision );
     }
-    // Note JR: based on Ali remark, in comment this second part.
-    // if ( context[fi].getNumTilesInAtlasFrame() != 1 ) {
-    //   PCCFrameContext&      tile          = context.getFrame( fi ).getTitleFrameContext();
-    //   PCCImageOccupancyMap& occupancyImage = context.getVideoOccupancyMap().getFrame( fi );
-    //   generateBlockToPatchFromOccupancyMapVideo( context, tile, fi, occupancyImage, occupancyResolution,
-    //                                              occupancyPrecision );
-    // }
-  }  // frame
+  } 
 }
 
 void PCCCodec::generateBlockToPatchFromOccupancyMapVideo( PCCContext&           context,
-                                                          PCCFrameContext&      tile,  // tile
+                                                          PCCFrameContext&      tile,  
                                                           size_t                frameIdx,
                                                           PCCImageOccupancyMap& occupancyMapImage,
                                                           const size_t          occupancyResolution,
@@ -2263,19 +2237,19 @@ void PCCCodec::generateBlockToPatchFromOccupancyMapVideo( PCCContext&           
             patch.patch2Canvas( u, v, tile.getWidth(), tile.getHeight(), x, y );
             x += tile.getLeftTopXInFrame();
             y += tile.getLeftTopYInFrame();
-
             nonZeroPixel += static_cast<unsigned long long>(
                 occupancyMapImage.getValue( 0, x / occupancyPrecision, y / occupancyPrecision ) != 0 );
-          }  // u1
-        }    // v1
+          }  
+        }    
         if ( nonZeroPixel > 0 ) { blockToPatch[blockIndex] = patchIndex + 1; }
-      }  // u0
-    }    // v0
-  }      // patch
+      }  
+    }    
+  }      
 }
 
-void PCCCodec::generateAfti( PCCContext& context, size_t frameIndex, AtlasFrameTileInformation& aftiLocal ) {
-  // encoder
+void PCCCodec::generateAfti( PCCContext&                context,
+                             size_t                     frameIndex,
+                             AtlasFrameTileInformation& aftiLocal ) {  // encoder
   auto& partitionInfoPerFrame = context[frameIndex];
   aftiLocal.setSingleTileInAtlasFrameFlag( partitionInfoPerFrame.getNumTilesInAtlasFrame() == 1 );
   if ( partitionInfoPerFrame.getNumTilesInAtlasFrame() == 1 ) {
@@ -2284,7 +2258,7 @@ void PCCCodec::generateAfti( PCCContext& context, size_t frameIndex, AtlasFrameT
       for ( size_t ti = 0; ti < partitionInfoPerFrame.getNumTilesInAtlasFrame(); ti++ ) {
         aftiLocal.setAuxiliaryVideoTileRowHeight( ti, context.getAuxTileHeight( ti ) );
       }
-    } else{
+    } else {
       aftiLocal.setAuxiliaryVideoTileRowWidthMinus1(0 );
       for ( size_t ti = 0; ti < partitionInfoPerFrame.getNumTilesInAtlasFrame(); ti++ ) {
         aftiLocal.setAuxiliaryVideoTileRowHeight( ti, 0 );
@@ -2295,18 +2269,15 @@ void PCCCodec::generateAfti( PCCContext& context, size_t frameIndex, AtlasFrameT
   aftiLocal.setUniformPartitionSpacingFlag( partitionInfoPerFrame.getUniformPartitionSpacing() );
   aftiLocal.setNumPartitionColumnsMinus1( partitionInfoPerFrame.getNumPartitionCols() - 1 );
   aftiLocal.setNumPartitionRowsMinus1( partitionInfoPerFrame.getNumPartitionRows() - 1 );
-  //jkei: getPartitionWidth is pixel precision
-  for ( size_t col = 0; col < partitionInfoPerFrame.getNumPartitionCols(); col++ )
+  for ( size_t col = 0; col < partitionInfoPerFrame.getNumPartitionCols(); col++ ){
     aftiLocal.setPartitionColumnWidthMinus1( col, partitionInfoPerFrame.getPartitionWidth()[col] / 64 - 1 );
-  for ( size_t row = 0; row < partitionInfoPerFrame.getNumPartitionRows(); row++ )
+  }
+  for ( size_t row = 0; row < partitionInfoPerFrame.getNumPartitionRows(); row++ ){
     aftiLocal.setPartitionRowHeightMinus1( row, partitionInfoPerFrame.getPartitionHeight()[row] / 64 - 1 );
-
+  }
   aftiLocal.setSinglePartitionPerTileFlag( partitionInfoPerFrame.getSinglePartitionPerTile() );
-  aftiLocal.setNumTilesInAtlasFrameMinus1( partitionInfoPerFrame.getNumTilesInAtlasFrame() -
-                                           1 );  // partitionToTileMap.size()
-#if 1
+  aftiLocal.setNumTilesInAtlasFrameMinus1( partitionInfoPerFrame.getNumTilesInAtlasFrame() - 1 );  
   if ( partitionInfoPerFrame.getSignalledTileId() == true ) { exit( 100 ); }
-#endif
   aftiLocal.setSignalledTileIdFlag( partitionInfoPerFrame.getSignalledTileId() );
   if ( partitionInfoPerFrame.getSignalledTileId() ) {
     aftiLocal.setSignalledTileIdLengthMinus1( ceil( log2( partitionInfoPerFrame.getNumTilesInAtlasFrame() + 1 ) ) - 1 );
@@ -2317,25 +2288,19 @@ void PCCCodec::generateAfti( PCCContext& context, size_t frameIndex, AtlasFrameT
     for ( size_t ti = 0; ti < partitionInfoPerFrame.getNumTilesInAtlasFrame(); ti++ ) {
       aftiLocal.setTileId( ti, ti );
     }
-
   }
-
   auto& atlasFrame = context.getFrame( frameIndex );
   for ( size_t ti = 0; ti < partitionInfoPerFrame.getNumTilesInAtlasFrame(); ti++ ) {
     auto& tile = atlasFrame.getTile( ti );
-#if TILE_PARTITINING_BUGFIX
     if( tile.getPatches().size()==0 && partitionInfoPerFrame.getTitleFrameContext().getUseRawPointsSeparateVideo() ){
       aftiLocal.setTopLeftPartitionIdx( ti, 0 );
       aftiLocal.setBottomRightPartitionColumnOffset( ti, 0 );
       aftiLocal.setBottomRightPartitionRowOffset( ti, 0 );
-#if 1
       printf( "enc:%zu frame %zu tile:(%zu,%zu), Raw Tile %zux%zu in Auxiliary video\n", frameIndex,
              ti, atlasFrame.getTile( ti ).getLeftTopXInFrame(), atlasFrame.getTile( ti ).getLeftTopYInFrame(),
              atlasFrame.getTile( ti ).getWidth(), atlasFrame.getTile( ti ).getHeight() );
-#endif
       continue;
     }
-#endif
     int    leftTopX          = tile.getLeftTopXInFrame();
     int    leftTopY          = tile.getLeftTopYInFrame();
     int    bottomRightDeltaX = tile.getWidth();
@@ -2353,7 +2318,6 @@ void PCCCodec::generateAfti( PCCContext& context, size_t frameIndex, AtlasFrameT
     aftiLocal.setTopLeftPartitionIdx( ti, topLeftIdx );
 
     size_t numPartBottomX = 0, numPartBottomY = 0;
-#if TILE_PARTITINING_BUGFIX //jkei: it has been okay since it was uniformsize
     while ( bottomRightDeltaX > 0 ) {
       bottomRightDeltaX -= partitionInfoPerFrame.getPartitionWidth()[ numPartLeftX + numPartBottomX];
       numPartBottomX += 1;
@@ -2362,18 +2326,7 @@ void PCCCodec::generateAfti( PCCContext& context, size_t frameIndex, AtlasFrameT
       bottomRightDeltaY -= partitionInfoPerFrame.getPartitionHeight()[ numPartLeftY + numPartBottomY];
       numPartBottomY += 1;
     }
-#else
-    while ( bottomRightDeltaX > 0 ) {
-      bottomRightDeltaX -= partitionInfoPerFrame.getPartitionWidth()[numPartBottomX];
-      numPartBottomX += 1;
-    }
-    while ( bottomRightDeltaY > 0 ) {
-      bottomRightDeltaY -= partitionInfoPerFrame.getPartitionHeight()[numPartBottomY];
-      numPartBottomY += 1;
-    }
-#endif
     assert( numPartBottomX >= 1 && numPartBottomY >= 1 );
-
     if ( ( numPartBottomX < 1 ) || ( numPartBottomY < 1 ) ) {
       printf(
           "enc:<error> %zu frame %zu tile:(%zu,%zu), %zux%zu -> "
@@ -2405,11 +2358,7 @@ void PCCCodec::generateAfti( PCCContext& context, size_t frameIndex, AtlasFrameT
   if ( partitionInfoPerFrame.getTitleFrameContext().getUseRawPointsSeparateVideo() ) {
     aftiLocal.setAuxiliaryVideoTileRowWidthMinus1( context.getAuxVideoWidth() / 64 - 1 );
     for ( size_t ti = 0; ti < partitionInfoPerFrame.getNumTilesInAtlasFrame(); ti++ ) {
-#if TILE_PARTITINING_BUGFIX2
-      aftiLocal.setAuxiliaryVideoTileRowHeight( ti, context.getAuxTileHeight( ti )/64 );
-#else
-      aftiLocal.setAuxiliaryVideoTileRowHeight( ti, context.getAuxTileHeight( ti ) );
-#endif
+      aftiLocal.setAuxiliaryVideoTileRowHeight( ti, context.getAuxTileHeight( ti ) / 64 );
     }
 #if 1
     printf( "enc:%zu frame auxiliaryVideoTileRowWidthMinus1(): width(64x)%u\t height: ", frameIndex,
@@ -2423,18 +2372,15 @@ void PCCCodec::generateAfti( PCCContext& context, size_t frameIndex, AtlasFrameT
        for ( size_t ti = 0; ti < partitionInfoPerFrame.getNumTilesInAtlasFrame(); ti++ ) {
          aftiLocal.setAuxiliaryVideoTileRowHeight( ti, 0 );
        }
-     }
+  }
 }
-void PCCCodec::setTilePartitionSizeAfti( PCCContext& context ) {
-  // decoder
+void PCCCodec::setTilePartitionSizeAfti( PCCContext& context ) {  // decoder
   for ( size_t afpsIdx = 0; afpsIdx < context.getAtlasFrameParameterSetList().size(); afpsIdx++ ) {
-    auto& afps = context.getAtlasFrameParameterSet( afpsIdx );
-    auto& asps = context.getAtlasSequenceParameterSet( afps.getAtlasFrameParameterSetId() );
-    auto& afti = afps.getAtlasFrameTileInformation();
-
-    size_t frameWidth  = asps.getFrameWidth();
-    size_t frameHeight = asps.getFrameHeight();
-
+    auto&  afps             = context.getAtlasFrameParameterSet( afpsIdx );
+    auto&  asps             = context.getAtlasSequenceParameterSet( afps.getAtlasFrameParameterSetId() );
+    auto&  afti             = afps.getAtlasFrameTileInformation();
+    size_t frameWidth       = asps.getFrameWidth();
+    size_t frameHeight      = asps.getFrameHeight();
     size_t numPartitionCols = afti.getNumPartitionColumnsMinus1() + 1;
     size_t numPartitionRows = afti.getNumPartitionRowsMinus1() + 1;
     auto&  partitionWidth   = afti.getColWidth();
@@ -2445,7 +2391,6 @@ void PCCCodec::setTilePartitionSizeAfti( PCCContext& context ) {
     partitionHeight.resize( numPartitionRows );
     partitionPosX.resize( numPartitionCols );
     partitionPosY.resize( numPartitionRows );
-
     if ( afti.getUniformPartitionSpacingFlag() ) {
       size_t uniformPatitionWidth  = 64 * ( afti.getPartitionColumnWidthMinus1( 0 ) + 1 );
       size_t uniformPatitionHeight = 64 * ( afti.getPartitionRowHeightMinus1( 0 ) + 1 );
@@ -2473,13 +2418,12 @@ void PCCCodec::setTilePartitionSizeAfti( PCCContext& context ) {
         partitionHeight[numPartitionRows - 1] = frameHeight - partitionPosY[numPartitionRows - 1];
       }
     } else {
-      // jkei:we need to figure out how to set non-uniform partition spcaing
       printf( "non uniform tile partitioning\n" );
       exit( 129 );
       size_t multiPatitionWidth  = 64 * ( afti.getPartitionColumnWidthMinus1( 0 ) + 1 );
       size_t multiPatitionHeight = 64 * ( afti.getPartitionRowHeightMinus1( 0 ) + 1 );
       for ( size_t col = 0; col < numPartitionCols; col++ ) {
-        partitionWidth[col] = multiPatitionWidth;  // jkei: input needs to be array
+        partitionWidth[col] = multiPatitionWidth; 
         partitionPosX[col]  = partitionPosX[col - 1] + partitionWidth[col];
       }
       for ( size_t row = 0; row < numPartitionRows; row++ ) {
@@ -2487,25 +2431,14 @@ void PCCCodec::setTilePartitionSizeAfti( PCCContext& context ) {
         partitionPosY[row]   = partitionPosY[row - 1] + partitionHeight[row];
       }
     }
-
-
     if ( asps.getAuxiliaryVideoEnabledFlag() ) {
       context.setAuxVideoWidth( ( afti.getAuxiliaryVideoTileRowWidthMinus1() + 1 ) * 64 );
-      context.getAuxTileLeftTopY().resize( afti.getNumTilesInAtlasFrameMinus1() + 1,
-                                           0 );  // jkei: do we need it per frame?
+      context.getAuxTileLeftTopY().resize( afti.getNumTilesInAtlasFrameMinus1() + 1, 0 );
       context.getAuxTileHeight().resize( afti.getNumTilesInAtlasFrameMinus1() + 1, 0 );
       for ( size_t ti = 0; ti <= afti.getNumTilesInAtlasFrameMinus1(); ti++ ) {
-#if TILE_PARTITINING_BUGFIX2
-        context.setAuxTileHeight( ti, afti.getAuxiliaryVideoTileRowHeight( ti )*64 );
+        context.setAuxTileHeight( ti, afti.getAuxiliaryVideoTileRowHeight( ti ) * 64 );
         if ( ti < afti.getNumTilesInAtlasFrameMinus1() )
-          context.setAuxTileLeftTopY( ti + 1,
-                                      context.getAuxTileLeftTopY( ti ) + context.getAuxTileHeight( ti ) );
-#else
-        context.setAuxTileHeight( ti, afti.getAuxiliaryVideoTileRowHeight( ti ) );
-        if ( ti < afti.getNumTilesInAtlasFrameMinus1() )
-          context.setAuxTileLeftTopY( ti + 1,
-                                      context.getAuxTileLeftTopY( ti ) + afti.getAuxiliaryVideoTileRowHeight( ti ) );
-#endif
+          context.setAuxTileLeftTopY( ti + 1, context.getAuxTileLeftTopY( ti ) + context.getAuxTileHeight( ti ) );
       }
     }
   }  // afpsIdx

@@ -880,21 +880,19 @@ class SEIAtlasFrameTiming : public SEI {
       dabOutputDelay_.clear();
   }
   SEIAtlasFrameTiming& operator=( const SEIAtlasFrameTiming& ) = default;
+  
+  SeiPayloadType getPayloadType() { return ATLAS_FRAME_TIMING; }
 
   void                 allocate( int32_t size ) {
     cabRemovalDelayMinus1_.resize( size, 0 );
     dabOutputDelay_.resize( size, 0 );
   }
-
-  SeiPayloadType getPayloadType() { return ATLAS_FRAME_TIMING; }
-
   std::vector<uint32_t>& getAftCabRemovalDelayMinus1() { return cabRemovalDelayMinus1_; }
   std::vector<uint32_t>& getAftDabOutputDelay() { return dabOutputDelay_; }
-  uint32_t getAftCabRemovalDelayMinus1( uint32_t i) { return cabRemovalDelayMinus1_[ i ]; }
-  uint32_t getAftDabOutputDelay( uint32_t i ) { return dabOutputDelay_[ i ]; }
-
-  void setAftCabRemovalDelayMinus1( uint32_t i, uint32_t value ) { cabRemovalDelayMinus1_[ i ] = value; }
-  void setAftDabOutputDelay( uint32_t i, uint32_t value ) { dabOutputDelay_[ i ] = value; }
+  uint32_t               getAftCabRemovalDelayMinus1( uint32_t i ) { return cabRemovalDelayMinus1_[i]; }
+  uint32_t               getAftDabOutputDelay( uint32_t i ) { return dabOutputDelay_[i]; }
+  void setAftCabRemovalDelayMinus1( uint32_t i, uint32_t value ) { cabRemovalDelayMinus1_[i] = value; }
+  void setAftDabOutputDelay( uint32_t i, uint32_t value ) { dabOutputDelay_[i] = value; }
 
  private:
   std::vector<uint32_t> cabRemovalDelayMinus1_;

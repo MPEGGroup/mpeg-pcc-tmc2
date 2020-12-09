@@ -454,20 +454,8 @@ void PCCEncoderParameters::print() {
     std::cout << "\t   numMaxTilePerFrame                     " << numMaxTilePerFrame_ << std::endl;
     if ( numMaxTilePerFrame_ > 1 ) {
       std::cout << "\t   uniformPartitionSpacing              " << uniformPartitionSpacing_ << std::endl;
-#if NONUNIFORM_PARTSIZE
-      if ( uniformPartitionSpacing_ ) {
-        std::cout << "\t   tilePartitionWidth                   " << tilePartitionWidth_ << std::endl;
-        std::cout << "\t   tilePartitionHeight                  " << tilePartitionHeight_ << std::endl;
-      } else {
-        std::cout << "\t   numPartitionCol                      " << numTilesHor_ << std::endl;
-        for ( auto& partSize : multiplePartitionWidth_ ) std::cout << "\t" << partSize;
-        std::cout << "\t   numPartitionRow                      " << numTilesVer_ << std::endl;
-        for ( auto& partSize : multiplePartitionHeight_ ) std::cout << "\t" << partSize;
-      }
-#else
       std::cout << "\t   tilePartitionWidth                   " << tilePartitionWidth_ << std::endl;
       std::cout << "\t   tilePartitionHeight                  " << tilePartitionHeight_ << std::endl;
-#endif
     }
   }
   std::cout << "\t Point cloud partitions and tiles         " << std::endl;
@@ -806,20 +794,6 @@ bool PCCEncoderParameters::check() {
       }
     }
   }
-#if NONUNIFORM_PARTSIZE
-  if ( multiplePartitionWidth_.size() != 0 ) {
-    if ( multiplePartitionWidth_.size() != numTilesHor_ ) {
-      std::cerr << "size of multiPartitionWidth should be same as numTilesHor_\n";
-      numTilesHor_ = multiplePartitionWidth_.size();
-    }
-  }
-  if ( multiplePartitionHeight_.size() != 0 ) {
-    if ( multiplePartitionHeight_.size() != numTilesVer_ ) {
-      std::cerr << "size of multiPartitionHeight should be same as numTilesVer_\n";
-      numTilesVer_ = multiplePartitionHeight_.size();
-    }
-  }
-#endif
   if ( flagGeometrySmoothing_ ) {
     if ( pbfEnableFlag_ ) {
       gridSmoothing_ = false;
@@ -994,12 +968,8 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   oi.setOccupancy2DBitdepthMinus1( 7 );
   oi.setOccupancyMSBAlignFlag( false );
 
-#if EXPAND_RANGE_ENCODER
   gi.setGeometry3dCoordinatesBitdepthMinus1(
       uint8_t( geometry3dCoordinatesBitdepth_ + asps.getExtendedProjectionEnabledFlag() - 1 ) ); // same 
-#else
-  gi.setGeometry3dCoordinatesBitdepthMinus1( uint8_t( geometry3dCoordinatesBitdepth_ - 1 ) );
-#endif
   gi.setGeometry2dBitdepthMinus1( uint8_t( geometryNominal2dBitdepth_ - 1 ) );
   gi.setGeometryMSBAlignFlag( false );
 

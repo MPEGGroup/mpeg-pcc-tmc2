@@ -771,11 +771,7 @@ void PCCDecoder::createPatchFrameDataStructure(  PCCContext& context, size_t atg
         if ( static_cast<int>( asps.getExtendedProjectionEnabledFlag() ) == 0 ) {
           patch.getD1() = max3DCoordinate - static_cast<int32_t>( pdu.get3dOffsetD() ) * minLevel;
         } else {
-#if EXPAND_RANGE_ENCODER
           patch.getD1() = ( max3DCoordinate ) - static_cast<int32_t>( pdu.get3dOffsetD() ) * minLevel;
-#else
-          patch.getD1() = ( max3DCoordinate << 1 ) - static_cast<int32_t>( pdu.get3dOffsetD() ) * minLevel;
-#endif
         }
       }
       prevSizeU0              = patch.getSizeU0();
@@ -857,14 +853,8 @@ void PCCDecoder::createPatchFrameDataStructure(  PCCContext& context, size_t atg
           patch.getD1() = max3DCoordinate -
                           ( ipdu.get3dOffsetD() + ( ( max3DCoordinate - refPatch.getD1() ) / minLevel ) ) * minLevel;
         } else {
-#if EXPAND_RANGE_ENCODER
           patch.getD1() = ( max3DCoordinate ) -
                           ( ipdu.get3dOffsetD() + ( ( (max3DCoordinate)-refPatch.getD1() ) / minLevel ) ) * minLevel;
-#else
-          patch.getD1() =
-              ( max3DCoordinate << 1 ) -
-              ( ipdu.get3dOffsetD() + ( ( ( max3DCoordinate << 1 ) - refPatch.getD1() ) / minLevel ) ) * minLevel;
-#endif
         }
       }
       const int64_t delta_DD = ipdu.get3dRangeD();
@@ -942,16 +932,9 @@ void PCCDecoder::createPatchFrameDataStructure(  PCCContext& context, size_t atg
                   max3DCoordinate -
                   ( mpdu.get3dOffsetD() + ( ( max3DCoordinate - refPatch.getD1() ) / minLevel ) ) * minLevel;
             } else {
-#if EXPAND_RANGE_ENCODER
               patch.getD1() =
                   max3DCoordinate -
                   ( mpdu.get3dOffsetD() + ( ( max3DCoordinate - refPatch.getD1() ) / minLevel ) ) * minLevel;
-#else
-              patch.getD1() =
-                  ( max3DCoordinate << 1 ) -
-                  ( mpdu.get3dOffsetD() + ( ( ( max3DCoordinate << 1 ) - refPatch.getD1() ) / minLevel ) ) *
-                      minLevel;
-#endif
             }
           }
 
@@ -1033,12 +1016,7 @@ void PCCDecoder::createPatchFrameDataStructure(  PCCContext& context, size_t atg
         if ( static_cast<int>( asps.getExtendedProjectionEnabledFlag() ) == 0 ) {  // TODO JR: remove the if;
           patch.getD1() = max3DCoordinate - ( ( ( max3DCoordinate - refPatch.getD1() ) / minLevel ) ) * minLevel;
         } else {
-#if EXPAND_RANGE_ENCODER
           patch.getD1() = max3DCoordinate - ( ( ( max3DCoordinate - refPatch.getD1() ) / minLevel ) ) * minLevel;
-#else
-          patch.getD1() =
-              ( max3DCoordinate << 1 ) - ( ( ( ( max3DCoordinate << 1 ) - refPatch.getD1() ) / minLevel ) ) * minLevel;
-#endif
         }
       }
       size_t prevDD = refPatch.getSizeD() / minLevel;

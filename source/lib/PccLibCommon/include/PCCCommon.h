@@ -69,22 +69,6 @@
 #endif
 #undef OPTIONAL
 
-
- // TODO JR: remove all macros: 
- 
-#define MATCHTOANCHOR 1  // jkei: set 1 to match with the results of anchor for mapcount=1 case.
-#define NONUNIFORM_PARTSIZE 0
-
-#define MULTITILE_BUGFIX 1
-#define AUXVIDEO_BUGFIX 1
-#define TILETYPE1_RAWAUXVIDEO_BUGFIX 1
-#define TILETYPE2_RAWAUXVIDEO_BUGFIX 1 //jkei: how/when to place raw tiles
-#define TILE_PARTITINING_BUGFIX 1
-#define TILETYPE1_RAWAUXVIDEO_BUGFIX2 1 //jkei: u0_,v0_ of patches in the atlasframe are different from adjusted ones
-#define TILE_PARTITINING_BUGFIX2 1
-#define TILE_PARTITINING_BUGFIX3 1
-//MULTISTREAM_AUXVIDEO 1 //multistream & auxvideo doesnot have config for auxvideo
-
 namespace pcc {
 
 // ******************************************************************* //
@@ -96,12 +80,11 @@ namespace pcc {
 // Coding tool configuration
 // ******************************************************************* //
 static const uint8_t PCC_SAVE_POINT_TYPE = 0;  // Save point information in reconstructed ply.
+#define POSTSMOOTHING_RGB2YUV 0                // BT709 RGB to YUV convertion used for post-smoothing
 
 // ******************************************************************* //
 // Common constants
 // ******************************************************************* //
-#define POSTSMOOTHING_RGB2YUV 0
-
 enum PCCEndianness { PCC_BIG_ENDIAN = 0, PCC_LITTLE_ENDIAN = 1 };
 enum PCCColorTransform { COLOR_TRANSFORM_NONE = 0, COLOR_TRANSFORM_RGB_TO_YCBCR = 1 };
 enum PCCPointType { POINT_UNSET = 0, POINT_D0, POINT_D1, POINT_DF, POINT_SMOOTH, POINT_EOM, POINT_RAW };

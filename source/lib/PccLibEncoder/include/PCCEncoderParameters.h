@@ -272,7 +272,7 @@ class PCCEncoderParameters {
   int16_t pbfFilterSize_;
   int16_t pbfLog2Threshold_;
 
-  //
+  // re
   bool   patchPrecedenceOrderFlag_;
   size_t maxNumRefAtlasList_;
   size_t maxNumRefAtlasFrame_;
@@ -283,11 +283,7 @@ class PCCEncoderParameters {
   bool   uniformPartitionSpacing_;
   size_t tilePartitionWidth_;
   size_t tilePartitionHeight_;
-#if NONUNIFORM_PARTSIZE
-  size_t              numTilesVer_;
-  std::vector<size_t> multiplePartitionWidth_;
-  std::vector<size_t> multiplePartitionHeight_;
-#endif
+
 };
 
 };  // namespace pcc

@@ -757,17 +757,6 @@ bool parseParameters( int                   argc,
   ("tilePartitionHeight",
    encoderParams.tilePartitionHeight_,
    encoderParams.tilePartitionHeight_,"uniform partition height in the unit of 64 pixels")
-#if NONUNIFORM_PARTSIZE
-  ( "multiPartitionWidth",
-   encoderParams.multiplePartitionWidth_,
-   encoderParams.multiplePartitionWidth_,
-   //multiPartitionWidth: 0,0,0,0
-   " " )
-  ( "multiPartitionHeight",
-   encoderParams.multiplePartitionHeight_,
-   encoderParams.multiplePartitionHeight_,
-   " " )
-#endif
   ( "tileSegmentationType",
       encoderParams.tileSegmentationType_,
       encoderParams.tileSegmentationType_,

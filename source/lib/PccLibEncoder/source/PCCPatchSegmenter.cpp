@@ -318,13 +318,8 @@ void PCCPatchSegmenter3::resampledPointcloud( std::vector<size_t>& pointCount,
           }  // N
         }
 
-// add depth1
-#if MATCHTOANCHOR
-        if ( !( useEnhancedOccupancyMapCode && !multipleMaps ) )  // jkei: it changes resample point cloud
-#else
-        if ( multipleMaps )
-#endif
-        {
+        // add depth1
+        if ( !( useEnhancedOccupancyMapCode && !multipleMaps ) )   {
           int16_t depth1               = patch.getDepth( 1 )[p];
           point[patch.getNormalAxis()] = double( depth1 );
           if ( patch.getDepth( 0 )[p] != patch.getDepth( 1 )[p] ) { d1CountPerPatch++; }
@@ -347,12 +342,7 @@ void PCCPatchSegmenter3::resampledPointcloud( std::vector<size_t>& pointCount,
         patch.getDepth( 0 )[p] = projectionTypeIndication * ( patch.getDepth( 0 )[p] - int16_t( patch.getD1() ) );
         patch.getSizeD()       = ( std::max )( patch.getSizeD(),
                                          static_cast<size_t>( patch.getDepth( 0 )[p] ) );  // compute max depth
-#if MATCHTOANCHOR
-        if ( !( useEnhancedOccupancyMapCode && !multipleMaps ) )
-#else
-        if ( multipleMaps )
-#endif
-        {
+        if ( !( useEnhancedOccupancyMapCode && !multipleMaps ) ) {
           patch.getDepth( 1 )[p] = projectionTypeIndication * ( patch.getDepth( 1 )[p] - int16_t( patch.getD1() ) );
           patch.getSizeD()       = ( std::max )( patch.getSizeD(),
                                            static_cast<size_t>( patch.getDepth( 1 )[p] ) );  // compute max depth

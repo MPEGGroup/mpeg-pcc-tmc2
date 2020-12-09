@@ -66,15 +66,12 @@ namespace pcc {
 // ******************************************************************* //
 // Trace modes to validate new syntax
 // ******************************************************************* //
-#define BITSTREAM_TRACE
-#define CODEC_TRACE 
+// #define BITSTREAM_TRACE
+// #define CODEC_TRACE 
 
 // ******************************************************************* //
 // Common constants
 // ******************************************************************* //
-#define EXPAND_RANGE_CONDITIONAL 0 // TODO JR: remove   
-#define EXPAND_RANGE_ENCODER 1     // TODO JR: remove 
-#define ATLASIDXPCC 0
 
 const uint32_t PCC_UNDEFINED_INDEX     = -1;
 const bool     printDetailedInfo       = false;

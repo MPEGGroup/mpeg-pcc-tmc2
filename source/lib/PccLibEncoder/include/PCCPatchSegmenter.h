@@ -217,17 +217,13 @@ class PCCPatchSegmenter3 {
   std::vector<PCCPatch> boxMaxDepths_;  // box depth list
 
   void convert( size_t Axis, size_t lod, PCCPoint3D input, PCCPoint3D& output ) {
-#ifdef EXPAND_RANGE_ENCODER
     size_t shif = ( 1u << ( lod - 1 ) ) - 1;
-#else
-    size_t shif = ( 1u << lod ) - 1;
-#endif
     output = input;
-    if ( Axis == 1 ) {  // Additional plane are defined by Y Axis.
+    if ( Axis == 1 ) {  
       output.x() = input.x() + input.z();
       output.z() = -input.x() + input.z() + shif;
     }
-    if ( Axis == 2 ) {  // Additional plane are defined by X Axis.
+    if ( Axis == 2 ) {  
       output.z() = input.z() + input.y();
       output.y() = -input.z() + input.y() + shif;
     }
@@ -238,36 +234,19 @@ class PCCPatchSegmenter3 {
   }
 
   void iconvert( size_t Axis, size_t lod, PCCVector3D input, PCCVector3D& output ) {
-#ifdef EXPAND_RANGE_ENCODER
     size_t shif = ( 1u << ( lod - 1 ) ) - 1;
-#else
-    size_t shif = ( 1u << lod ) - 1;
-#endif
-    // output = input;
-    output.x() = input.x();
-    output.y() = input.y();
-    output.z() = input.z();
-
-    if ( Axis == 1 ) {  // Additional plane are defined by Y Axis.
-      output.x() = input.x() - input.z() + shif;
-      output.x() /= 2.0;
-
-      output.z() = input.x() + input.z() - shif;
-      output.z() /= 2.0;
+    output = input;
+    if ( Axis == 1 ) {  
+      output.x() = ( input.x() - input.z() + shif) / 2.0;
+      output.z() = ( input.x() + input.z() - shif) / 2.0;
     }
     if ( Axis == 2 ) {
-      output.z() = input.z() - input.y() + shif;
-      output.z() /= 2.0;
-
-      output.y() = input.z() + input.y() - shif;
-      output.y() /= 2.0;
-    }  // not implemented yet
+      output.z() = ( input.z() - input.y() + shif) / 2.0;
+      output.y() = ( input.z() + input.y() - shif ) / 2.0 ;      
+    }  
     if ( Axis == 3 ) {
-      output.y() = input.y() - input.x() + shif;
-      output.y() /= 2.0;
-
-      output.x() = input.y() + input.x() - shif;
-      output.x() /= 2.0;
+      output.y() = ( input.y() - input.x() + shif) / 2.0;
+      output.x() = ( input.y() + input.x() - shif) / 2.0;
     }
   }
 
