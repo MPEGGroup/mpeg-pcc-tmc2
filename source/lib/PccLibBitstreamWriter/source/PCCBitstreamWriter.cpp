@@ -1131,7 +1131,7 @@ void PCCBitstreamWriter::patchDataUnit( PatchDataUnit&      pdu,
   auto&   asps       = syntax.getAtlasSequenceParameterSet( aspsId );
   auto&   vps        = syntax.getVps();
   uint8_t bitCountUV = asps.getGeometry3dBitdepthMinus1() + 1;
-  uint8_t bitCountD  = asps.getGeometry3dBitdepthMinus1() - ath.getPosMinDQuantizer() + 2;
+  uint8_t bitCountD  = asps.getGeometry3dBitdepthMinus1() - ath.getPosMinDQuantizer() + 1;
   bitstream.writeUvlc( pdu.get2dPosX() );             // ue(v)
   bitstream.writeUvlc( pdu.get2dPosY() );             // ue(v)
   bitstream.writeUvlc( pdu.get2dSizeXMinus1() );      // ue(v)
