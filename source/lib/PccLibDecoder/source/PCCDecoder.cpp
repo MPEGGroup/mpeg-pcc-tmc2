@@ -375,7 +375,6 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
 }
 
 void PCCDecoder::setPointLocalReconstruction( PCCContext& context ) {
-  //jkei: need to place this function in tile loop to access proper asps
   auto& asps = context.getAtlasSequenceParameterSet( 0 );
   TRACE_PATCH( "PLR = %d \n", asps.getPLREnabledFlag() );
   PointLocalReconstructionMode mode = {false, false, 0, 1};
@@ -625,21 +624,16 @@ void PCCDecoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& 
 void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
   TRACE_PATCH( "createPatchFrameDataStructure GOP start \n" );
   auto& atglulist = context.getAtlasTileLayerList();
-  
-  //partition information derivation
+  // partition information derivation
   setTilePartitionSizeAfti( context );
-
   size_t frameCount=0;
   for ( size_t i = 0; i < atglulist.size(); i++ ) {
     frameCount = std::max(frameCount, (context.calculateAFOCval(atglulist, i)+1));
   }
-
   context.resize( frameCount );  
-  setPointLocalReconstruction( context ); //jkei: need to place this function in tile loop to access proper asps
-  for( size_t atglOrder=0; atglOrder < atglulist.size(); atglOrder++ ){
-    //************//
+  setPointLocalReconstruction( context );
+  for( size_t atglOrder=0; atglOrder < atglulist.size(); atglOrder++ ){    
     createPatchFrameDataStructure(context, atglOrder);
-    //************//
   }
 
   //sei hash
@@ -649,7 +643,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
     for(size_t fi=0; fi<frameCount; fi++){
       createHashInformation(context, fi );
     }
-  }//if(bHashSeiIsPresent)
+  }
 }
 
 void PCCDecoder::createPatchFrameDataStructure(  PCCContext& context, size_t atglOrder ) {
@@ -749,7 +743,7 @@ void PCCDecoder::createPatchFrameDataStructure(  PCCContext& context, size_t atg
         patch.setLodScaleX( 1 );
         patch.setLodScaleYIdc( 1 );
       }
-      patch.getSizeD() = pdu.get3dRangeD() * minLevel ; //( std::min )( pdu.get3dRangeD() * minLevel, (size_t)256 ); //jkei: getNominalBitDepth()
+      patch.getSizeD() = pdu.get3dRangeD() * minLevel ;
       if ( asps.getPatchSizeQuantizerPresentFlag() ) {
         patch.setPatchSize2DXInPixel( pdu.get2dSizeXMinus1() * quantizerSizeX + 1 );
         patch.setPatchSize2DYInPixel( pdu.get2dSizeYMinus1() * quantizerSizeY + 1 );
@@ -1135,7 +1129,7 @@ bool PCCDecoder::compareHashSEICheckSum( uint32_t encCheckSum, uint32_t decCheck
 void PCCDecoder::createHashInformation(PCCContext& context, int frameIndex ){
   TRACE_PATCH( "createHashInformation Frame %zu \n", frameIndex );
   printf("createHashInformation frame %zu\n", frameIndex);
-  size_t hashIndex =  frameIndex; //jkei: how do we know this sei is for this frameIndex??
+  size_t hashIndex =  frameIndex; 
   auto& sei = context.getSeiHash( hashIndex );
   bool seiHashCancelFlag  = sei.getCancelFlag();
   std::vector<PatchParams> atlasPatchParams;
@@ -1152,9 +1146,9 @@ void PCCDecoder::createHashInformation(PCCContext& context, int frameIndex ){
     auto&                afps         = context.getAtlasFrameParameterSet( afpsIndex );
     std::vector<uint8_t> highLevelAtlasData;
     aspsCommonByteString     ( highLevelAtlasData, asps );
-    aspsApplicationByteString( highLevelAtlasData, asps, afps  ); //jkei:is it asps?
+    aspsApplicationByteString( highLevelAtlasData, asps, afps  ); 
     afpsCommonByteString( highLevelAtlasData, context, afpsIndex, frameIndex );
-    afpsApplicationByteString( highLevelAtlasData, asps, afps ); //jkei:is it afpsIdx?
+    afpsApplicationByteString( highLevelAtlasData, asps, afps );  
     
     printf( "**sei** HighLevel Hash\n" );
     if ( sei.getHashType() == 0 ) {

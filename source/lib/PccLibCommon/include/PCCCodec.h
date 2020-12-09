@@ -328,28 +328,6 @@ class PCCCodec {
   void smoothPointCloud( PCCPointSet3&                      reconstruct,
                          const std::vector<uint32_t>&       partition,
                          const GeneratePointCloudParameters params );
-////jkei: do we need these 3 functions?
-//  void createSubReconstruct( const PCCPointSet3&                 reconstruct,
-//                             const std::vector<uint32_t>&        partition,
-//                             PCCFrameContext&                    frame,
-//                             const GeneratePointCloudParameters& params,
-//                             const size_t                        frameCount,
-//                             PCCPointSet3&                       subReconstruct,
-//                             std::vector<uint32_t>&              subPartition,
-//                             std::vector<size_t>&                subReconstructIndex );
-//
-//  void createSpecificLayerReconstruct( const PCCPointSet3&                 reconstruct,
-//                                       const std::vector<uint32_t>&        partition,
-//                                       PCCFrameContext&                    frame,
-//                                       const GeneratePointCloudParameters& params,
-//                                       const size_t                        frameCount,
-//                                       PCCPointSet3&                       subReconstruct,
-//                                       std::vector<uint32_t>&              subPartition,
-//                                       std::vector<size_t>&                subReconstructIndex );
-//
-//  void updateReconstruct( PCCPointSet3&              reconstruct,
-//                          const PCCPointSet3&        subReconstruct,
-//                          const std::vector<size_t>& subReconstructIndex );
 
   void smoothPointCloudGrid( PCCPointSet3&                       reconstruct,
                              const std::vector<uint32_t>&        partition,

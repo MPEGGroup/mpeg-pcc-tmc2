@@ -288,7 +288,7 @@ class SEIAttributeTransformationParams : public SEI {
   bool                               persistenceFlag_;
 };
 
-// F.2.11  Active substreams SEI message syntax
+// F.2.10  Active substreams SEI message syntax
 class SEIActiveSubBitstreams : public SEI {
  public:
   SEIActiveSubBitstreams() :
@@ -344,7 +344,7 @@ class SEIActiveSubBitstreams : public SEI {
   std::vector<uint8_t> activeMapIdx_;
 };
 
-// F.2.12  Component codec mapping SEI message syntax
+// F.2.11  Component codec mapping SEI message syntax
 class SEIComponentCodecMapping : public SEI {
  public:
   SEIComponentCodecMapping() : componentCodecCancelFlag_( 0 ), codecMappingsCountMinus1_( 0 ) {}
@@ -377,8 +377,7 @@ class SEIComponentCodecMapping : public SEI {
   std::vector<std::string> codec4cc_;
 };
 
-// F.2.14  Volumetric Tiling SEI message syntax
-// m52705
+// F.2.12.1	Scene object information SEI message syntax
 class SEISceneObjectInformation : public SEI {
  public:
   SEISceneObjectInformation() : persistenceFlag_( true ), resetFlag_( true ) {}
@@ -567,9 +566,9 @@ class SEISceneObjectInformation : public SEI {
   std::vector<uint16_t>              pointSize_;
   std::vector<bool>                  materialIdUpdateFlag_;
   std::vector<uint16_t>              materialId_;
+};
 
-};  // sceneobjectinformation
-
+// F.2.12.2 Object label information SEI message syntax
 class SEIObjectLabelInformation : public SEI {
  public:
   SEIObjectLabelInformation() : cancelFlag_( false ) {}
@@ -611,8 +610,9 @@ class SEIObjectLabelInformation : public SEI {
   bool                     bitEqualToZero_;
   std::vector<std::string> label_;  // st(v)
   bool                     persistenceFlag_;
-};  // Object label information
+}; 
 
+// F.2.12.3 Patch information SEI message syntax
 class SEIPatchInformation : public SEI {
  public:
   SEIPatchInformation() {}
@@ -664,6 +664,7 @@ class SEIPatchInformation : public SEI {
   std::vector<std::vector<std::vector<uint32_t>>> patchObjectIdx_;
 };
 
+// F.2.12.4 Volumetric rectangle information SEI message syntax
 class SEIVolumetricRectangleInformation : public SEI {
  public:
   SEIVolumetricRectangleInformation() {}
@@ -727,7 +728,7 @@ class SEIVolumetricRectangleInformation : public SEI {
   std::vector<std::vector<uint32_t>> rectangleObjectIdx_;
 };
 
-// F.2.15  Buffering period SEI message syntax
+// F.2.13  Buffering period SEI message syntax
 class SEIBufferingPeriod : public SEI {
  public:
   SEIBufferingPeriod() :
@@ -871,7 +872,7 @@ class SEIBufferingPeriod : public SEI {
     std::vector<std::vector<uint32_t>> aclInitialAltCabRemovalOffset_;
 };
 
-// F.2.16  Atlas frame timing SEI message syntax
+// F.2.14  Atlas frame timing SEI message syntax
 class SEIAtlasFrameTiming : public SEI {
  public:
   SEIAtlasFrameTiming( ) {}
@@ -899,6 +900,7 @@ class SEIAtlasFrameTiming : public SEI {
   std::vector<uint32_t> dabOutputDelay_;
 };
 
+// F.2.12.5  Atlas object information  SEI message syntax
 class SEIAtlasInformation : public SEI {
  public:
   SEIAtlasInformation() :
@@ -953,6 +955,7 @@ class SEIAtlasInformation : public SEI {
   std::vector<std::vector<bool>> objectInAtlasPresentFlag_;
 };
 
+// F.2.15.1	Viewport camera parameters SEI messages syntax
 class SEIViewportCameraParameters : public SEI {
  public:
   SEIViewportCameraParameters() :
@@ -1014,6 +1017,7 @@ class SEIViewportCameraParameters : public SEI {
   float    clippingFarPlane_;
 };
 
+// F.2.15.2	Viewport position SEI messages syntax
 class SEIViewportPosition : public SEI {
  public:
   SEIViewportPosition() :
@@ -1071,6 +1075,8 @@ class SEIViewportPosition : public SEI {
   bool     leftViewFlag_;
 };
 
+// F.2.16 Decoded Atlas Information Hash SEI message syntax
+// F.2.16.1 Decoded high level hash unit syntax
 class SEIDecodedAtlasInformationHash : public SEI {
  public:
   SEIDecodedAtlasInformationHash():
@@ -1202,12 +1208,9 @@ class SEIDecodedAtlasInformationHash : public SEI {
   bool                               decodedAtlasB2pHashPresentFlag_;
   bool                               decodedAtlasTilesHashPresentFlag_;
   bool                               decodedAtlasTilesB2pHashPresentFlag_;
-
   uint32_t                           numTilesMinus1_;
   uint32_t                           tileIdLenMinus1_;
   std::vector<uint32_t>              tileId_;
-
-  //decoded_high_level_hash
   std::vector<uint8_t>               highLevelMd5_;
   uint16_t                           highLevelCrc_;
   uint32_t                           highLevelChecksum_;
@@ -1225,7 +1228,7 @@ class SEIDecodedAtlasInformationHash : public SEI {
   std::vector<std::vector<uint32_t>> atlasTilesB2pMd5_;
 };
 
-
+// H.20.2.18 Occupancy synthesis SEI message syntax
 class SEIOccupancySynthesis : public SEI {
  public:
   SEIOccupancySynthesis() : persistenceFlag_( false ), resetFlag_( false ), instancesUpdated_( 0 ) {}
@@ -1281,6 +1284,7 @@ class SEIOccupancySynthesis : public SEI {
   std::vector<uint8_t> pbfFilterSizeMinus1_;
 };
 
+// H.20.2.19 Geometry smoothing SEI message syntax
 class SEIGeometrySmoothing : public SEI {
  public:
   SEIGeometrySmoothing() : persistenceFlag_( false ), resetFlag_( false ), instancesUpdated_( 0 ) {}
@@ -1336,6 +1340,7 @@ class SEIGeometrySmoothing : public SEI {
   std::vector<uint8_t> threshold_;
 };
 
+// H.20.2.20 Attribute smoothing SEI message syntax
 class SEIAttributeSmoothing : public SEI {
  public:
   SEIAttributeSmoothing() : persistenceFlag_( false ), resetFlag_( false ), numAttributesUpdated_( 0 ) {}
@@ -1435,6 +1440,7 @@ class SEIAttributeSmoothing : public SEI {
   std::vector<std::vector<uint8_t>> thresholdDifference_;
 };
 
+// F.2.17 Time code SEI message syntax
 class SEITimeCode : public SEI {
  public:
   SEITimeCode() :

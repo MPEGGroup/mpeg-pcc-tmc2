@@ -872,7 +872,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
                     }
                   }
                 }
-              }  // fi (params.enhancedOccupancyMapCode_)
+              }  
             }
           }
         }
@@ -888,7 +888,6 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
   PCCPointSet3 eomSavedPoints;
   if ( params.enhancedOccupancyMapCode_ ) {
     const size_t blockSize       = params.occupancyResolution_ * params.occupancyResolution_;
-//    size_t       totalPatchCount = patchCount;
     size_t       numEOMPatches   = tile.getEomPatches().size();
     for ( int j = 0; j < numEOMPatches; j++ ) {
       auto&  eomPatch               = tile.getEomPatches( j );
@@ -1015,14 +1014,13 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
           }
         }
       }
-    }  // fi :useRawPointsSeparateVideo
-  }    // fi : useAdditionalPointsPatch
+    } 
+  }    
 #if 1
     printf("frame %zu, tile %zu: regularPoints+eomPoints+rawPoints %zu\n", frameIndex, tileIndex, reconstruct.getPointCount()  );
 #endif
   if ( params.flagGeometrySmoothing_ && !params.pbfEnableFlag_ ) {
     TRACE_CODEC( " identify first boundary layer \n" );
-    // identify first boundary layer
     if ( useRawPointsSeparateVideo ) {
       assert( ( reconstruct.getPointCount() - tile.getTotalNumberOfRawPoints() ) == pointToPixel.size() );
     } else {
@@ -1246,9 +1244,6 @@ bool PCCCodec::gridFiltering( const std::vector<uint32_t>&    partition,
   centroid4 /= gridSize2 * gridSize2 * gridSize2;
   count /= gridSize2 * gridSize2 * gridSize2;
   centroid = centroid4 * count;
-  //  centroid = (centroid4 * count) / (gridSize2 * gridSize2 * gridSize2 *
-  // gridSize2 * gridSize2 * gridSize2);
-
   return otherClusterPointCount;
 }
 
@@ -1335,9 +1330,6 @@ bool PCCCodec::gridFilteringTransfer( const std::vector<uint32_t>& partition,
   count /= gridSize2 * gridSize2 * gridSize2;
   centroid4 /= gridSize2 * gridSize2 * gridSize2;
   centroid = centroid4 * count;
-  // centroid = (centroid4 * count) / (gridSize2 * gridSize2 * gridSize2 *
-  // gridSize2 * gridSize2 * gridSize2);
-
   return otherClusterPointCount;
 }
 
@@ -1368,8 +1360,6 @@ void PCCCodec::smoothPointCloudGrid( PCCPointSet3&                       reconst
                          geoSmoothingDoSmooth_, gridSize, gridWidth, cellIndex );
     }
     if ( otherClusterPointCount ) {
-      // double dist2 = ( ( curVector * count - centroid ).getNorm2() +
-      // (double)count / 2.0 ) / (double)count;
       double dist2 = ( ( curVector * count - centroid ).getNorm2() ) / static_cast<double>( count ) + 0.5;
       if ( dist2 >= ( std::max )( static_cast<int>( params.thresholdSmoothing_ ), count ) * 2 ) {
         centroid = centroid / static_cast<double>( count ) + 0.5;
@@ -1679,7 +1669,6 @@ bool PCCCodec::gridFilteringColor( PCCPoint3D&                         curPos,
     colorCentroid3[1][1][1][2] =
         double( colorCenter[cellIndex[idx[1][1][1]]][2] ) / double( colorGridCount[cellIndex[idx[1][1][1]]] );
     double Y7 = colorCentroid3[1][1][1][0];
-
     if ( abs( Y0 - Y7 ) > yThresh ) { colorCentroid3[1][1][1] = curPosColor; }
     if ( colorGridCount[cellIndex[idx[1][1][1]]] > 1 ) {
       double meanY =
@@ -1691,11 +1680,9 @@ bool PCCCodec::gridFilteringColor( PCCPoint3D&                         curPos,
   } else {
     colorCentroid3[1][1][1] = curPosColor;
   }
-#if 1
   int gridSizeWx = ( gridSize2 - wx );
   int gridSizeWy = ( gridSize2 - wy );
   int gridSizeWz = ( gridSize2 - wz );
-
   colorCentroid3[0][0][0] = gridSizeWx * gridSizeWy * gridSizeWz * colorCentroid3[0][0][0];
   colorCentroid3[0][0][1] = (wx)*gridSizeWy * gridSizeWz * colorCentroid3[0][0][1];
   colorCentroid3[0][1][0] = gridSizeWx * (wy)*gridSizeWz * colorCentroid3[0][1][0];
@@ -1703,16 +1690,6 @@ bool PCCCodec::gridFilteringColor( PCCPoint3D&                         curPos,
   colorCentroid3[1][0][0] = gridSizeWx * gridSizeWy * (wz)*colorCentroid3[1][0][0];
   colorCentroid3[1][0][1] = (wx)*gridSizeWy * (wz)*colorCentroid3[1][0][1];
   colorCentroid3[1][1][0] = gridSizeWx * ( wy ) * (wz)*colorCentroid3[1][1][0];
-#else
-  colorCentroid3[0][0][0] = ( gridSize2 - wx ) * ( gridSize2 - wy ) * ( gridSize2 - wz ) * colorCentroid3[0][0][0];
-  colorCentroid3[0][0][1] = ( wx ) * ( gridSize2 - wy ) * ( gridSize2 - wz ) * colorCentroid3[0][0][1];
-  colorCentroid3[0][1][0] = ( gridSize2 - wx ) * ( wy ) * ( gridSize2 - wz ) * colorCentroid3[0][1][0];
-  colorCentroid3[0][1][1] = ( wx ) * ( wy ) * ( gridSize2 - wz ) * colorCentroid3[0][1][1];
-  colorCentroid3[1][0][0] = ( gridSize2 - wx ) * ( gridSize2 - wy ) * (wz)*colorCentroid3[1][0][0];
-  colorCentroid3[1][0][1] = ( wx ) * ( gridSize2 - wy ) * (wz)*colorCentroid3[1][0][1];
-  colorCentroid3[1][1][0] = ( gridSize2 - wx ) * ( wy ) * (wz)*colorCentroid3[1][1][0];
-  colorCentroid3[1][1][1] = ( wx ) * ( wy ) * (wz)*colorCentroid3[1][1][1];
-#endif
   PCCVector3D colorCentroid4;
   colorCentroid4 = colorCentroid3[0][0][0] + colorCentroid3[0][0][1] + colorCentroid3[0][1][0] +
                    colorCentroid3[0][1][1] + colorCentroid3[1][0][0] + colorCentroid3[1][0][1] +
@@ -1756,86 +1733,19 @@ void PCCCodec::smoothPointCloudColorLC( PCCPointSet3&                       reco
       colorCentroid = ( colorCentroid + static_cast<double>( colorCount ) / 2.0 ) / static_cast<double>( colorCount );
       for ( size_t k = 0; k < 3; ++k ) { colorCentroid[k] = double( int64_t( colorCentroid[k] ) ); }
       double distToCentroid2 = 0;
-
-      double Ycent = colorCentroid[0];
-      double Ycur  = curPosColor[0];
-
-      distToCentroid2 = abs( Ycent - Ycur ) * 10. / 256.;
-
+      double Ycent           = colorCentroid[0];
+      double Ycur            = curPosColor[0];
+      distToCentroid2        = abs( Ycent - Ycur ) * 10. / 256.;
       if ( distToCentroid2 >= params.thresholdColorSmoothing_ ) {
         PCCColor16bit color16bit;
         color16bit[0] = uint16_t( colorCentroid[0] );
         color16bit[1] = uint16_t( colorCentroid[1] );
         color16bit[2] = uint16_t( colorCentroid[2] );
-
         reconstruct.setColor16bit( i, color16bit );
       }
     }
   }
 }
-
-//void PCCCodec::createSpecificLayerReconstruct( const PCCPointSet3&                 reconstruct,
-//                                               const std::vector<uint32_t>&        partition,
-//                                               PCCFrameContext&                    frame,
-//                                               const GeneratePointCloudParameters& params,
-//                                               const size_t                        frameCount,
-//                                               PCCPointSet3&                       subReconstruct,
-//                                               std::vector<uint32_t>&              subPartition,
-//                                               std::vector<size_t>&                subReconstructIndex ) {
-//  subReconstruct.clear();
-//  subPartition.clear();
-//  subReconstructIndex.clear();
-//  auto&        pointToPixel = frame.getPointToPixel();
-//  const size_t pointCount   = reconstruct.getPointCount();
-//  if ( ( pointCount == 0U ) || !reconstruct.hasColors() ) { return; }
-//  for ( size_t i = 0; i < pointCount; ++i ) {
-//    const PCCVector3<size_t> location = pointToPixel[i];
-//    const size_t             f        = location[2];
-//    if ( f == frameCount ) {
-//      subReconstruct.addPoint( reconstruct[i] );
-//      subPartition.push_back( partition[i] );
-//      subReconstructIndex.push_back( i );
-//    }
-//  }
-//  subReconstruct.addColors();
-//}
-
-//void PCCCodec::createSubReconstruct( const PCCPointSet3&                 reconstruct,
-//                                     const std::vector<uint32_t>&        partition,
-//                                     PCCFrameContext&                    frame,
-//                                     const GeneratePointCloudParameters& params,
-//                                     const size_t                        frameCount,
-//                                     PCCPointSet3&                       subReconstruct,
-//                                     std::vector<uint32_t>&              subPartition,
-//                                     std::vector<size_t>&                subReconstructIndex ) {
-//  subReconstruct.clear();
-//  subPartition.clear();
-//  subReconstructIndex.clear();
-//  auto&        pointToPixel = frame.getPointToPixel();
-//  const size_t pointCount   = reconstruct.getPointCount();
-//  if ( ( pointCount == 0U ) || !reconstruct.hasColors() ) { return; }
-//  for ( size_t i = 0; i < pointCount; ++i ) {
-//    const PCCVector3<size_t> location = pointToPixel[i];
-//    const size_t             f        = location[2];
-//    if ( f < frameCount ) {
-//      subReconstruct.addPoint( reconstruct[i] );
-//      subReconstruct.setType( frameCount, POINT_UNSET );
-//      subPartition.push_back( partition[i] );
-//      subReconstructIndex.push_back( i );
-//    }
-//  }
-//  subReconstruct.addColors();
-//}
-//
-//void PCCCodec::updateReconstruct( PCCPointSet3&              reconstruct,
-//                                  const PCCPointSet3&        subReconstruct,
-//                                  const std::vector<size_t>& subReconstructIndex ) {
-//  if ( subReconstruct.getPointCount() > 0 ) {
-//    for ( size_t i = 0; i < subReconstruct.getPointCount(); ++i ) {
-//      reconstruct[subReconstructIndex[i]] = subReconstruct[i];
-//    }
-//  }
-//}
 
 size_t PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruct,
                                   PCCContext&                         context,
@@ -2017,9 +1927,7 @@ void PCCCodec::generateRawPointsGeometryfromVideo( PCCContext& context, PCCFrame
   auto&  videoRawPointsGeometry   = context.getVideoRawPointsGeometry();
   auto&  image                    = videoRawPointsGeometry.getFrame( frameIndex );
   size_t numberOfRawPointsPatches = tile.getNumberOfRawPointsPatches();
-  bool   isAuxiliarygeometrys444  = false;  // yo- use geo auxiliary codecID
-
-  //jkei: it will contaminate the source. the reconstructed vaules should be saved in the different location.
+  bool   isAuxiliarygeometrys444  = false;
   for ( int i = 0; i < numberOfRawPointsPatches; i++ ) {
     auto&        rawPointsPatch = tile.getRawPointsPatch( i );
     const size_t v0             = rawPointsPatch.v0_ * rawPointsPatch.occupancyResolution_;
@@ -2055,7 +1963,6 @@ void PCCCodec::generateRawPointsTexturefromVideo( PCCContext& context, size_t fr
   for ( size_t tileIdx = 0; tileIdx < context.getFrame( frameIndex ).getNumTilesInAtlasFrame(); tileIdx++ ) {
     auto& tile = context.getFrame( frameIndex ).getTile( tileIdx );
     generateRawPointsTexturefromVideo( context, tile, frameIndex );
-
     std::cout << "generate raw Points Video (Texture) frame[" << frameIndex << "] tile[" << tileIdx << "] : "
               << " #rawPatches: " << tile.getNumberOfRawPointsPatches()
               << " #rawPoints: " << tile.getTotalNumberOfRawPoints() << " #eomPoints: " << tile.getEomPatches().size()
@@ -2066,21 +1973,17 @@ void PCCCodec::generateRawPointsTexturefromVideo( PCCContext& context, size_t fr
 }
 
 void PCCCodec::generateRawPointsTexturefromVideo( PCCContext& context, PCCFrameContext& tile, size_t frameIndex ) {
-  auto&  videoRawPointsTexture = context.getVideoRawPointsTexture();
-  auto&  image                 = videoRawPointsTexture.getFrame( frameIndex );
-  size_t width                 = image.getWidth();
-  //  size_t height                = image.getHeight();
-
-  size_t                   numberOfEOMPoints = tile.getTotalNumberOfEOMPoints();
-  size_t                   numberOfRawPoints = tile.getTotalNumberOfRawPoints();
-  std::vector<PCCColor3B>& rawTextures       = tile.getRawPointsTextures();
-  std::vector<PCCColor3B>& eomTextures       = tile.getEOMTextures();
+  auto&                    videoRawPointsTexture    = context.getVideoRawPointsTexture();
+  auto&                    image                    = videoRawPointsTexture.getFrame( frameIndex );
+  size_t                   width                    = image.getWidth();
+  size_t                   numberOfEOMPoints        = tile.getTotalNumberOfEOMPoints();
+  size_t                   numberOfRawPoints        = tile.getTotalNumberOfRawPoints();
+  std::vector<PCCColor3B>& rawTextures              = tile.getRawPointsTextures();
+  std::vector<PCCColor3B>& eomTextures              = tile.getEOMTextures();
+  size_t                   numberOfRawPointsPatches = tile.getNumberOfRawPointsPatches();
   rawTextures.resize( numberOfRawPoints );
   eomTextures.resize( numberOfEOMPoints );
-  size_t numberOfRawPointsPatches = tile.getNumberOfRawPointsPatches();
-
   if ( numberOfRawPoints ) {
-    // jkei: this part is different frome the spec TODO: update the spec
     size_t rawPatchOffset = 0;
     for ( int i = 0; i < numberOfRawPointsPatches; i++ ) {
       int    pointIndex        = 0;
@@ -2542,10 +2445,7 @@ void PCCCodec::getHashPatchParams( PCCContext&                            contex
                                    size_t                                 tileIndex,
                                    size_t                                 atlIndex,
                                    std::vector<std::vector<PatchParams>>& tilePatchParams,
-                                   std::vector<PatchParams>&               atlasPatchParams ) {
-  //jkei: it needs to be use reconstructed patch information
-  //ajt:: the original version was done under the assumption of bitstream level hash value derivation and not on the reconstructed.
-  //ajt:: It may be the matter of wrong interpretation. I do agree to change it to reconstructed, instead.
+                                   std::vector<PatchParams>&               atlasPatchParams ) {  
   auto&       atl           = context.getAtlasTileLayer( atlIndex );
   auto& ath = atl.getHeader();
   auto& afps = context.getAtlasFrameParameterSet( ath.getAtlasFrameParameterSetId() );
@@ -2555,13 +2455,14 @@ void PCCCodec::getHashPatchParams( PCCContext&                            contex
   size_t      topLeftRow    = afti.getTopLeftPartitionIdx( tileIndex ) / ( afti.getNumPartitionColumnsMinus1() + 1 );
   size_t      tileOffsetX   = context[frameIndex].getPartitionPosX()[topLeftColumn];
   size_t      tileOffsetY   = context[frameIndex].getPartitionPosY()[topLeftRow];
-  PCCTileType tileType = ath.getType();
-  auto& tile = context.getFrame( frameIndex ).getTile( tileIndex );
-  size_t patchCount = tile.getPatches().size();// + tile.getRawPointsPatches().size() + tile.getEomPatches().size();
+  PCCTileType tileType      = ath.getType();
+  auto&       tile          = context.getFrame( frameIndex ).getTile( tileIndex );
+  size_t      patchCount    = tile.getPatches().size();
   for ( size_t patchIdx = 0; patchIdx < patchCount; patchIdx++ ) {
-    PatchParams  pps( asps.getPLREnabledFlag(), asps.getMapCountMinus1() + 1 );
-    auto&        patch         = tile.getPatch(patchIdx);
-    assert( getPatchType( tileType, atl.getDataUnit().getPatchMode( patchIdx ) )!= RAW_PATCH && getPatchType( tileType, atl.getDataUnit().getPatchMode( patchIdx )) != EOM_PATCH );
+    PatchParams pps( asps.getPLREnabledFlag(), asps.getMapCountMinus1() + 1 );
+    auto&       patch = tile.getPatch( patchIdx );
+    assert( getPatchType( tileType, atl.getDataUnit().getPatchMode( patchIdx ) ) != RAW_PATCH &&
+            getPatchType( tileType, atl.getDataUnit().getPatchMode( patchIdx ) ) != EOM_PATCH );
     pps.patchType      = PCCHashPatchType::PROJECTED;
     pps.patch2dPosX    = patch.getU0();
     pps.patch2dPosY    = patch.getV0();
@@ -2570,23 +2471,22 @@ void PCCCodec::getHashPatchParams( PCCContext&                            contex
     pps.patch3dOffsetU = patch.getU1();
     pps.patch3dOffsetV = patch.getV1();
     pps.patch3dOffsetD = patch.getD1();
-    if ( asps.getNormalAxisMaxDeltaValueEnabledFlag() )
-      pps.patch3dRangeD  = patch.getSizeD(); //pdu.get3dRangeD();
-    else
+    if ( asps.getNormalAxisMaxDeltaValueEnabledFlag() ){
+      pps.patch3dRangeD  = patch.getSizeD(); 
+    }else{
       pps.patch3dRangeD  = 0;
+    }
     pps.patchOrientationIndex = patch.getPatchOrientation();
     pps.patchProjectionID     = patch.getProjectionMode();
     pps.patchInAuxVideo       = 0; // ajt::check
     pps.patchLoDScaleX        = patch.getLodScaleX();
     pps.patchLoDScaleY        = patch.getLodScaleY();
-
     if(tilePatchParams.size()!=0) tilePatchParams[tileIndex].push_back( pps );
     pps.patch2dPosX += tileOffsetX;
     pps.patch2dPosY += tileOffsetY;
     atlasPatchParams.push_back( pps );
-
   }
-  
+
   size_t rawPatchCount = tile.getRawPointsPatches().size();
   for ( size_t patchIdx = 0; patchIdx < rawPatchCount; patchIdx++ ) {
     PatchParams  pps( asps.getPLREnabledFlag(), asps.getMapCountMinus1() + 1 );
@@ -2602,7 +2502,6 @@ void PCCCodec::getHashPatchParams( PCCContext&                            contex
     pps.patch3dOffsetV  = rawPointsPatch.v1_;
     pps.patch3dOffsetD  = rawPointsPatch.d1_;
     pps.patchInAuxVideo = rawPointsPatch.isPatchInAuxVideo_;
-    
     if(tilePatchParams.size()!=0) tilePatchParams[tileIndex].push_back( pps );
     pps.patch2dPosX += tileOffsetX;
     pps.patch2dPosY += tileOffsetY;
@@ -2613,80 +2512,65 @@ void PCCCodec::getHashPatchParams( PCCContext&                            contex
   for ( size_t patchIdx = 0; patchIdx < eomPatchCount; patchIdx++ ) {
     PatchParams  pps( asps.getPLREnabledFlag(), asps.getMapCountMinus1() + 1 );
     auto&        eomPatch         = tile.getEomPatches(patchIdx);
-    assert( getPatchType( tileType, atl.getDataUnit().getPatchMode( patchIdx ) )== EOM_PATCH  );
-    
+    assert( getPatchType( tileType, atl.getDataUnit().getPatchMode( patchIdx ) )== EOM_PATCH  );    
     pps.patchType                = EOM;
     pps.patch2dPosX              = eomPatch.u0_;
     pps.patch2dPosY              = eomPatch.v0_;
     pps.patch2dSizeX             = eomPatch.sizeU_;
     pps.patch2dSizeY             = eomPatch.sizeV_;
-    pps.patchInAuxVideo          = eomPatch.isPatchInAuxVideo_;
-    
+    pps.patchInAuxVideo          = eomPatch.isPatchInAuxVideo_;    
     pps.epduAssociatedPatchCount =  eomPatch.memberPatches.size();
     pps.epduAssociatedPoints.resize( pps.epduAssociatedPatchCount );
-    for ( size_t i = 0; i < pps.epduAssociatedPatchCount; i++ )
+    for ( size_t i = 0; i < pps.epduAssociatedPatchCount; i++ ){
       pps.epduAssociatedPoints[i] = eomPatch.eomCountPerPatch[i];
-    
+    }    
     if(tilePatchParams.size()!=0) tilePatchParams[tileIndex].push_back( pps );
     pps.patch2dPosX += tileOffsetX;
     pps.patch2dPosY += tileOffsetY;
     atlasPatchParams.push_back( pps );
   }
- 
 }
 
-
-
-void PCCCodec::getB2PHashPatchParams( PCCContext&                                    context,
-                                          size_t                                     frameIndex,
-                                          std::vector<std::vector<std::vector<int64_t>>>& b2pTilePatchParams,
-                                          std::vector<std::vector<int64_t>>& b2pAtlasPatchParams ) {
-
-  size_t atlIdx     = context[frameIndex].getTile( 0 ).getAtlIndex();
-  auto&  tileHeader = context.getAtlasTileLayerList()[atlIdx].getHeader();
-  size_t afpsIndex  = tileHeader.getAtlasFrameParameterSetId();
-  size_t aspsIndex  = context.getAtlasFrameParameterSet( afpsIndex ).getAtlasFrameParameterSetId();
-  auto&  asps       = context.getAtlasSequenceParameterSet( aspsIndex );
-  auto&  afps       = context.getAtlasFrameParameterSet( afpsIndex );
-  auto&  afti       = afps.getAtlasFrameTileInformation();
-  
-  size_t      numTilesInPatchFrame = context[frameIndex].getNumTilesInAtlasFrame();
-  size_t      patchPackingBlockSize = ( 1 << asps.getLog2PatchPackingBlockSize() );
-  size_t      offset                = patchPackingBlockSize - 1;
-
+void PCCCodec::getB2PHashPatchParams( PCCContext&                                     context,
+                                      size_t                                          frameIndex,
+                                      std::vector<std::vector<std::vector<int64_t>>>& b2pTilePatchParams,
+                                      std::vector<std::vector<int64_t>>&              b2pAtlasPatchParams ) {
+  size_t atlIdx                     = context[frameIndex].getTile( 0 ).getAtlIndex();
+  auto&  tileHeader                 = context.getAtlasTileLayerList()[atlIdx].getHeader();
+  size_t afpsIndex                  = tileHeader.getAtlasFrameParameterSetId();
+  size_t aspsIndex                  = context.getAtlasFrameParameterSet( afpsIndex ).getAtlasFrameParameterSetId();
+  auto&  asps                       = context.getAtlasSequenceParameterSet( aspsIndex );
+  auto&  afps                       = context.getAtlasFrameParameterSet( afpsIndex );
+  auto&  afti                       = afps.getAtlasFrameTileInformation();
+  size_t numTilesInPatchFrame       = context[frameIndex].getNumTilesInAtlasFrame();
+  size_t patchPackingBlockSize      = ( 1 << asps.getLog2PatchPackingBlockSize() );
+  size_t offset                     = patchPackingBlockSize - 1;
   size_t atlasBlockToPatchMapWidth  = ( asps.getFrameWidth() + offset ) / patchPackingBlockSize;
   size_t atlasBlockToPatchMapHeight = ( asps.getFrameHeight() + offset ) / patchPackingBlockSize;
 
   b2pTilePatchParams.resize( numTilesInPatchFrame );
   b2pAtlasPatchParams.resize( atlasBlockToPatchMapHeight );
   for ( auto& e : b2pAtlasPatchParams ) e.resize( atlasBlockToPatchMapWidth );
-
   for ( size_t y = 0; y < atlasBlockToPatchMapHeight; y++ ) {
-    for ( size_t x = 0; x < atlasBlockToPatchMapWidth; x++ ) b2pAtlasPatchParams[y][x] = -1;
+    for ( size_t x = 0; x < atlasBlockToPatchMapWidth; x++ ) { b2pAtlasPatchParams[y][x] = -1; }
   }
-
   size_t offsetPatch = 0;
-  
   for ( size_t tileIdx = 0; tileIdx < numTilesInPatchFrame; tileIdx++ ) {
-    
-    auto&       tile         = context[frameIndex].getTile( tileIdx );
-    size_t      atlIdx       = tile.getAtlIndex();
-    auto&       ath   = context.getAtlasTileLayerList()[atlIdx].getHeader();
-    auto&       atdu = context.getAtlasTileLayerList()[atlIdx].getDataUnit();
-   
-    PCCTileType tileType = ath.getType();
-
-    size_t topLeftColumn = afti.getTopLeftPartitionIdx( tileIdx ) % ( afti.getNumPartitionColumnsMinus1() + 1 );
-    size_t topLeftRow    = afti.getTopLeftPartitionIdx( tileIdx ) / ( afti.getNumPartitionColumnsMinus1() + 1 );
-    size_t tileOffsetBlkX = context[frameIndex].getPartitionPosX()[topLeftColumn] / patchPackingBlockSize;
-    size_t tileOffsetBlkY    = context[frameIndex].getPartitionPosY()[topLeftRow] / patchPackingBlockSize;
-
-    size_t tileBlockToPatchMapWidth  = ( tile.getWidth() + offset ) / patchPackingBlockSize;
-    size_t tileBlockToPatchMapHeight = ( tile.getHeight() + offset ) / patchPackingBlockSize;
+    auto&       tile           = context[frameIndex].getTile( tileIdx );
+    size_t      atlIdx         = tile.getAtlIndex();
+    auto&       ath            = context.getAtlasTileLayerList()[atlIdx].getHeader();
+    auto&       atdu           = context.getAtlasTileLayerList()[atlIdx].getDataUnit();
+    PCCTileType tileType       = ath.getType();
+    size_t      topLeftColumn  = afti.getTopLeftPartitionIdx( tileIdx ) % ( afti.getNumPartitionColumnsMinus1() + 1 );
+    size_t      topLeftRow     = afti.getTopLeftPartitionIdx( tileIdx ) / ( afti.getNumPartitionColumnsMinus1() + 1 );
+    size_t      tileOffsetBlkX = context[frameIndex].getPartitionPosX()[topLeftColumn] / patchPackingBlockSize;
+    size_t      tileOffsetBlkY = context[frameIndex].getPartitionPosY()[topLeftRow] / patchPackingBlockSize;
+    size_t      tileBlockToPatchMapWidth  = ( tile.getWidth() + offset ) / patchPackingBlockSize;
+    size_t      tileBlockToPatchMapHeight = ( tile.getHeight() + offset ) / patchPackingBlockSize;
     for ( auto& e : b2pTilePatchParams ) e.resize( tileBlockToPatchMapHeight );
     for ( size_t y = 0; y < tileBlockToPatchMapHeight; y++ ) {
       b2pTilePatchParams[tileIdx][y].resize( tileBlockToPatchMapWidth );
-      for ( size_t x = 0; x < tileBlockToPatchMapWidth; x++ ) b2pTilePatchParams[tileIdx][y][x] = -1;
+      for ( size_t x = 0; x < tileBlockToPatchMapWidth; x++ ) { b2pTilePatchParams[tileIdx][y][x] = -1; }
     }
     const size_t patchCount =
         tile.getPatches().size() + tile.getRawPointsPatches().size() + tile.getEomPatches().size();
@@ -2715,9 +2599,9 @@ void PCCCodec::getB2PHashPatchParams( PCCContext&                               
         uint32_t tilePatchWidthBlk  = ( rawPointsPatch.u0_ + offset ) / patchPackingBlockSize;
         uint32_t tilePatchHeightBlk = ( rawPointsPatch.v0_ + offset ) / patchPackingBlockSize;
         for ( uint32_t y = 0; y < tilePatchHeightBlk; y++ )
-          for ( uint32_t x = 0; x < tilePatchWidthBlk; x++ ) { 
-              b2pTilePatchParams[tileIdx][y][x] = p;
-              b2pAtlasPatchParams[tileOffsetBlkY + yOrg + y][tileOffsetBlkX + xOrg + x] = p + offsetPatch;
+          for ( uint32_t x = 0; x < tilePatchWidthBlk; x++ ) {
+            b2pTilePatchParams[tileIdx][y][x]                                         = p;
+            b2pAtlasPatchParams[tileOffsetBlkY + yOrg + y][tileOffsetBlkX + xOrg + x] = p + offsetPatch;
           }
       } else if ( getPatchType( tileType, atdu.getPatchMode( p ) ) == EOM_PATCH &&
                   tile.getEomPatches()[p - regularPatchCount - rawPatchCount].isPatchInAuxVideo_ == 0 ) {
@@ -2726,11 +2610,12 @@ void PCCCodec::getB2PHashPatchParams( PCCContext&                               
         uint32_t yOrg               = eomPointsPatch.v0_ / patchPackingBlockSize;
         uint32_t tilePatchWidthBlk  = ( eomPointsPatch.u0_ + offset ) / patchPackingBlockSize;
         uint32_t tilePatchHeightBlk = ( eomPointsPatch.v0_ + offset ) / patchPackingBlockSize;
-        for ( uint32_t y = 0; y < tilePatchHeightBlk; y++ )
-          for ( uint32_t x = 0; x < tilePatchWidthBlk; x++ ) { 
-              b2pTilePatchParams[tileIdx][y][x] = p;
-              b2pAtlasPatchParams[tileOffsetBlkY + yOrg + y][tileOffsetBlkX + xOrg + x] = p + offsetPatch;
+        for ( uint32_t y = 0; y < tilePatchHeightBlk; y++ ){
+          for ( uint32_t x = 0; x < tilePatchWidthBlk; x++ ) {
+            b2pTilePatchParams[tileIdx][y][x]                                         = p;
+            b2pAtlasPatchParams[tileOffsetBlkY + yOrg + y][tileOffsetBlkX + xOrg + x] = p + offsetPatch;
           }
+        }
       }
     }
     offsetPatch += patchCount;
@@ -2777,7 +2662,6 @@ void PCCCodec::aspsApplicationByteString( std::vector<uint8_t>& stringByte,
       stringByte.push_back( val );
     }
   }
-
   val = asps.getRawPatchEnabledFlag() & 0xFF;
   stringByte.push_back( val );
   val = asps.getEomPatchEnabledFlag() & 0xFF;
@@ -2845,13 +2729,10 @@ void PCCCodec::afpsCommonByteString( std::vector<uint8_t>& stringByte,
   auto    afti = afps.getAtlasFrameTileInformation();
   uint8_t val  = afti.getNumTilesInAtlasFrameMinus1() & 0xFF;
   stringByte.push_back( val );
-
   std::vector<size_t> hashAuxTileHeight;
-
   auto   asps             = context.getAtlasSequenceParameterSet( afps.getAtlasFrameParameterSetId() );
   size_t prevAuxTileOffset   = 0;
   size_t hashAuxVideoWidthNF = 0;
-
   if ( asps.getAuxiliaryVideoEnabledFlag() ) {
     hashAuxVideoWidthNF = ( ( afti.getAuxiliaryVideoTileRowWidthMinus1() + 1 ) * 64 );
     hashAuxTileHeight.resize( afti.getNumTilesInAtlasFrameMinus1() + 1, 0 );
@@ -2862,52 +2743,46 @@ void PCCCodec::afpsCommonByteString( std::vector<uint8_t>& stringByte,
     hashAuxTileHeight.resize( afti.getNumTilesInAtlasFrameMinus1() + 1, 0 );
   }
 
-  for ( int i = 0; i < afti.getNumTilesInAtlasFrameMinus1() + 1;
-        i++ ) {  // ajt:: i = 1 should change to i = 0 in the spec.!
-
-    size_t   topLeftColumn     = afti.getTopLeftPartitionIdx( i ) % ( afti.getNumPartitionColumnsMinus1() + 1 );
-    size_t   topLeftRow        = afti.getTopLeftPartitionIdx( i ) / ( afti.getNumPartitionColumnsMinus1() + 1 );
-    size_t   bottomRightColumn = topLeftColumn + afti.getBottomRightPartitionColumnOffset( i );
-    size_t   bottomRightRow    = topLeftRow + afti.getBottomRightPartitionRowOffset( i );
- 
-    size_t   tileWidth         = 0;
-    size_t   tileHeight        = 0;
-
-    size_t tileOffsetX   = context[frameIndex].getPartitionPosX()[topLeftColumn];
-    size_t tileOffsetY   = context[frameIndex].getPartitionPosY()[topLeftRow];
-
-    for ( int j = topLeftColumn; j <= bottomRightColumn; j++ ) { tileWidth += context[frameIndex].getPartitionWidth()[j]; }
-
+  for ( int i = 0; i < afti.getNumTilesInAtlasFrameMinus1() + 1; i++ ) {
+    size_t topLeftColumn     = afti.getTopLeftPartitionIdx( i ) % ( afti.getNumPartitionColumnsMinus1() + 1 );
+    size_t topLeftRow        = afti.getTopLeftPartitionIdx( i ) / ( afti.getNumPartitionColumnsMinus1() + 1 );
+    size_t bottomRightColumn = topLeftColumn + afti.getBottomRightPartitionColumnOffset( i );
+    size_t bottomRightRow    = topLeftRow + afti.getBottomRightPartitionRowOffset( i );
+    size_t tileWidth         = 0;
+    size_t tileHeight        = 0;
+    size_t tileOffsetX       = context[frameIndex].getPartitionPosX()[topLeftColumn];
+    size_t tileOffsetY       = context[frameIndex].getPartitionPosY()[topLeftRow];
+    for ( int j = topLeftColumn; j <= bottomRightColumn; j++ ) {
+      tileWidth += context[frameIndex].getPartitionWidth()[j];
+    }
     for ( int j = topLeftRow; j <= bottomRightRow; j++ ) { tileHeight += context[frameIndex].getPartitionHeight()[j]; }
-
     size_t auxTileHeight = hashAuxTileHeight[i];
     size_t auxTileOffset = prevAuxTileOffset + auxTileHeight;
     prevAuxTileOffset    = auxTileOffset;
-
-    val = tileOffsetX & 0xFF;
-    stringByte.push_back( val );  // val = TileOffsetX[i] & 0xFF;
+    val                  = tileOffsetX & 0xFF;
+    stringByte.push_back( val );
     val = ( tileOffsetX >> 8 ) & 0xFF;
-    stringByte.push_back( val );  // val = ( TileOffsetX[i] >> 8 ) & 0xFF;
+    stringByte.push_back( val ); 
     val = tileOffsetY & 0xFF;
-    stringByte.push_back( val );  // val = TileOffsetY[i] & 0xFF;
+    stringByte.push_back( val ); 
     val = ( tileOffsetY >> 8 ) & 0xFF;
-    stringByte.push_back( val );  // val = ( TileOffsetY[i] >> 8 ) & 0xFF;
+    stringByte.push_back( val ); 
     val = tileWidth & 0xFF;
-    stringByte.push_back( val );  // val = TileWidth[i] & 0xFF;
+    stringByte.push_back( val ); 
     val = ( tileWidth >> 8 ) & 0xFF;
-    stringByte.push_back( val );  // val = ( TileWidth[i] >> 8 ) & 0xFF;
+    stringByte.push_back( val ); 
     val = tileHeight & 0xFF;
-    stringByte.push_back( val );  // val = TileHeight[i] & 0xFF;
+    stringByte.push_back( val ); 
     val = ( tileHeight >> 8 ) & 0xFF;
-    stringByte.push_back( val );  // val = ( TileHeight[i] >> 8 ) & 0xFF;
+    stringByte.push_back( val ); 
     val = auxTileOffset & 0xFF;
-    stringByte.push_back( val );  // val = AuxTileOffset[i] & 0xFF;
+    stringByte.push_back( val ); 
     val = ( auxTileOffset >> 8 ) & 0xFF;
-    stringByte.push_back( val );  // val = ( AuxTileOffset[i] >> 8 ) & 0xFF;
+    stringByte.push_back( val ); 
     val = auxTileHeight & 0xFF;
-    stringByte.push_back( val );  // val = AuxTileHeight[i] & 0xFF;
+    stringByte.push_back( val ); 
     val = ( auxTileHeight >> 8 ) & 0xFF;
-    stringByte.push_back( val );  // val = AuxTileHeight[i] & 0xFF;
+    stringByte.push_back( val ); 
     if ( afps.getAtlasFrameTileInformation().getSignalledTileIdFlag() ) {
       val = afps.getAtlasFrameTileInformation().getTileId( i ) & 0xFF;  //
       stringByte.push_back( val );
@@ -2929,7 +2804,7 @@ void PCCCodec::atlasPatchCommonByteString( std::vector<uint8_t>&     stringByte,
                                            size_t                    p,
                                            std::vector<PatchParams>& atlasPatchParams ) {
   uint8_t val = atlasPatchParams[ p ].patchType & 0xFF;
-  stringByte.push_back( val );  // uint8_t val = AtlasPatchType[p] & 0xFF;
+  stringByte.push_back( val );  
   val = atlasPatchParams[ p ].patch2dPosX & 0xFF;
   stringByte.push_back( val );
   val = ( atlasPatchParams[ p ].patch2dPosX >> 8 ) & 0xFF;
@@ -2977,10 +2852,8 @@ void PCCCodec::atlasPatchCommonByteString( std::vector<uint8_t>&     stringByte,
 };
 
 void PCCCodec::atlasPatchApplicationByteString( std::vector<uint8_t>& stringByte, size_t p, std::vector<PatchParams>& atlasPatchParams ) {
-
-  //uint32_t bSize = getPatchPackingBlockSize();
   uint8_t val = atlasPatchParams[ p ].patchInAuxVideo & 0xFF;
-  stringByte.push_back( val );  // AtlasPatchInAuxVideo[p] & 0xFF;
+  stringByte.push_back( val );  
   if ( atlasPatchParams[ p ].patchType == RAW ) {
     val = atlasPatchParams[ p ].patchRawPoints & 0xFF;
     stringByte.push_back( val ) ;
@@ -3026,60 +2899,61 @@ void PCCCodec::atlasPatchApplicationByteString( std::vector<uint8_t>& stringByte
   }
 };
 
-void PCCCodec::tilePatchCommonByteString( std::vector<uint8_t>& stringByte, size_t tileId, size_t p, std::vector<std::vector<PatchParams>>& tilePatchParams ) {
-  uint8_t val = tilePatchParams[ tileId ][ p ].patchType & 0xFF;
-  stringByte.push_back( val );  // uint8_t val = AtlasPatchType & 0xFF;
-  val = tilePatchParams[ tileId ][ p ].patch2dPosX & 0xFF;
+void PCCCodec::tilePatchCommonByteString( std::vector<uint8_t>&                  stringByte,
+                                          size_t                                 tileId,
+                                          size_t                                 p,
+                                          std::vector<std::vector<PatchParams>>& tilePatchParams ) {
+  uint8_t val = tilePatchParams[tileId][p].patchType & 0xFF;
   stringByte.push_back( val );
-  val = ( tilePatchParams[ tileId ][ p ].patch2dPosX >> 8 ) & 0xFF;
+  val = tilePatchParams[tileId][p].patch2dPosX & 0xFF;
   stringByte.push_back( val );
-  val = tilePatchParams[ tileId ][ p ].patch2dPosY & 0xFF;
+  val = ( tilePatchParams[tileId][p].patch2dPosX >> 8 ) & 0xFF;
   stringByte.push_back( val );
-  val = ( tilePatchParams[ tileId ][ p ].patch2dPosY >> 8 ) & 0xFF;
+  val = tilePatchParams[tileId][p].patch2dPosY & 0xFF;
   stringByte.push_back( val );
-  val = tilePatchParams[ tileId ][ p ].patch2dSizeX & 0xFF;
+  val = ( tilePatchParams[tileId][p].patch2dPosY >> 8 ) & 0xFF;
   stringByte.push_back( val );
-  val = ( tilePatchParams[ tileId ][ p ].patch2dSizeX >> 8 ) & 0xFF;
+  val = tilePatchParams[tileId][p].patch2dSizeX & 0xFF;
   stringByte.push_back( val );
-  val = tilePatchParams[ tileId ][ p ].patch2dSizeY & 0xFF;
+  val = ( tilePatchParams[tileId][p].patch2dSizeX >> 8 ) & 0xFF;
   stringByte.push_back( val );
-  val = ( tilePatchParams[ tileId ][ p ].patch2dSizeY >> 8 ) & 0xFF;
+  val = tilePatchParams[tileId][p].patch2dSizeY & 0xFF;
   stringByte.push_back( val );
-  val = tilePatchParams[ tileId ][ p ].patch3dOffsetU & 0xFF;
+  val = ( tilePatchParams[tileId][p].patch2dSizeY >> 8 ) & 0xFF;
   stringByte.push_back( val );
-  val = ( tilePatchParams[ tileId ][ p ].patch3dOffsetU >> 8 ) & 0xFF;
+  val = tilePatchParams[tileId][p].patch3dOffsetU & 0xFF;
   stringByte.push_back( val );
-  val = tilePatchParams[ tileId ][ p ].patch3dOffsetV & 0xFF;
+  val = ( tilePatchParams[tileId][p].patch3dOffsetU >> 8 ) & 0xFF;
   stringByte.push_back( val );
-  val = ( tilePatchParams[ tileId ][ p ].patch3dOffsetV >> 8 ) & 0xFF;
+  val = tilePatchParams[tileId][p].patch3dOffsetV & 0xFF;
   stringByte.push_back( val );
-  val = tilePatchParams[ tileId ][ p ].patch3dOffsetD & 0xFF;
+  val = ( tilePatchParams[tileId][p].patch3dOffsetV >> 8 ) & 0xFF;
   stringByte.push_back( val );
-  val = ( tilePatchParams[ tileId ][ p ].patch3dOffsetD >> 8 ) & 0xFF;
+  val = tilePatchParams[tileId][p].patch3dOffsetD & 0xFF;
   stringByte.push_back( val );
-  val = tilePatchParams[ tileId ][ p ].patch3dRangeD & 0xFF;
+  val = ( tilePatchParams[tileId][p].patch3dOffsetD >> 8 ) & 0xFF;
   stringByte.push_back( val );
-  val = ( tilePatchParams[ tileId ][ p ].patch3dRangeD >> 8 ) & 0xFF;
+  val = tilePatchParams[tileId][p].patch3dRangeD & 0xFF;
   stringByte.push_back( val );
-  val = tilePatchParams[ tileId ][ p ].patchProjectionID & 0xFF;
+  val = ( tilePatchParams[tileId][p].patch3dRangeD >> 8 ) & 0xFF;
   stringByte.push_back( val );
-  val = tilePatchParams[ tileId ][ p ].patchOrientationIndex & 0xFF;
+  val = tilePatchParams[tileId][p].patchProjectionID & 0xFF;
   stringByte.push_back( val );
-  val = tilePatchParams[ tileId ][ p ].patchLoDScaleX & 0xFF;
+  val = tilePatchParams[tileId][p].patchOrientationIndex & 0xFF;
   stringByte.push_back( val );
-  val = ( tilePatchParams[ tileId ][ p ].patchLoDScaleX >> 8 ) & 0xFF;
+  val = tilePatchParams[tileId][p].patchLoDScaleX & 0xFF;
   stringByte.push_back( val );
-  val = tilePatchParams[ tileId ][ p ].patchLoDScaleY & 0xFF;
+  val = ( tilePatchParams[tileId][p].patchLoDScaleX >> 8 ) & 0xFF;
   stringByte.push_back( val );
-  val = ( tilePatchParams[ tileId ][ p ].patchLoDScaleY >> 8 ) & 0xFF;
+  val = tilePatchParams[tileId][p].patchLoDScaleY & 0xFF;
   stringByte.push_back( val );
-  
+  val = ( tilePatchParams[tileId][p].patchLoDScaleY >> 8 ) & 0xFF;
+  stringByte.push_back( val );
 };
 
-void PCCCodec::tilePatchApplicationByteString( std::vector<uint8_t>& stringByte, size_t tileId, size_t p, std::vector<std::vector<PatchParams>>& tilePatchParams ) {
-  //uint32_t bSize = getPatchPackingBlockSize();
-  uint8_t val = tilePatchParams[ tileId ][ p ].patchInAuxVideo & 0xFF; //jkei: why is it gAtlasPatchParams_?
-  stringByte.push_back( val );  // AtlasPatchInAuxVideo & 0xFF;
+void PCCCodec::tilePatchApplicationByteString( std::vector<uint8_t>& stringByte, size_t tileId, size_t p, std::vector<std::vector<PatchParams>>& tilePatchParams ) {  
+  uint8_t val = tilePatchParams[ tileId ][ p ].patchInAuxVideo & 0xFF; 
+  stringByte.push_back( val );  
   if ( tilePatchParams[ tileId ][ p ].patchType == RAW ) {
     val = tilePatchParams[ tileId ][ p ].patchRawPoints & 0xFF;
     stringByte.push_back( val );
@@ -3125,7 +2999,6 @@ void PCCCodec::tilePatchApplicationByteString( std::vector<uint8_t>& stringByte,
   }
 };
 void PCCCodec::atlasBlockToPatchByteString( std::vector<uint8_t>& stringByte,std::vector<std::vector<int64_t>> atlasB2p ) {
-
   uint8_t b2pVal;
   for ( size_t y = 0; y < atlasB2p.size(); y++ ) {
     for ( size_t x = 0; x < atlasB2p[y].size(); x++ ) {
@@ -3135,10 +3008,10 @@ void PCCCodec::atlasBlockToPatchByteString( std::vector<uint8_t>& stringByte,std
     }
   }
 }
+
 void PCCCodec::tileBlockToPatchByteString( std::vector<uint8_t>&                         stringByte,
                                            size_t                                        tileId,
                                            std::vector<std::vector<std::vector<int64_t>>> tileB2p ) {
-
   uint8_t b2pVal;
   for ( size_t y = 0; y < tileB2p[tileId].size(); y++ ) {
     for ( size_t x = 0; x < tileB2p[tileId][y].size(); x++ ) {

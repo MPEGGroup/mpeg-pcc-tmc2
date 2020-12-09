@@ -153,32 +153,31 @@ class PCCFrameContext {
   void printPatchDecoder();
 
  private:
-  size_t  frameIndex_;
-  size_t  tileIndex_;
-  size_t  atlIndex_;
-  size_t  numMatchedPatches_;
-  size_t  width_;
-  size_t  height_;
-  size_t  leftTopXInFrame_;
-  size_t  leftTopYInFrame_;
-  size_t  numberOfRawPointsPatches_;
-  size_t  totalNumberOfRawPoints_;
-  size_t  totalNumberOfEOMPoints_;
-  size_t  totalNumberOfRegularPoints_;
-  size_t  globalPatchCount_;
-  size_t  geometry3dCoordinatesBitdepth_;
-  uint8_t pointLocalReconstructionNumber_;
-  bool    useRawPointsSeparateVideo_;
-  bool    rawPatchEnabledFlag_;
-  size_t  geometry2dBitdepth_;
-  size_t  maxDepth_;
-
-  size_t               atlasFrmOrderCntVal_;
-  size_t               atlasFrmOrderCntMsb_;
-  size_t               atlasFrmOrderCntLsb_;
-  std::vector<int32_t> refAFOCList_;  // jkei: one list for a tile
-  size_t               numRefIdxActive_;
-  size_t               bestRefListIndexInAsps_;  // listIndex in context
+  size_t                                       frameIndex_;
+  size_t                                       tileIndex_;
+  size_t                                       atlIndex_;
+  size_t                                       numMatchedPatches_;
+  size_t                                       width_;
+  size_t                                       height_;
+  size_t                                       leftTopXInFrame_;
+  size_t                                       leftTopYInFrame_;
+  size_t                                       numberOfRawPointsPatches_;
+  size_t                                       totalNumberOfRawPoints_;
+  size_t                                       totalNumberOfEOMPoints_;
+  size_t                                       totalNumberOfRegularPoints_;
+  size_t                                       globalPatchCount_;
+  size_t                                       geometry3dCoordinatesBitdepth_;
+  uint8_t                                      pointLocalReconstructionNumber_;
+  bool                                         useRawPointsSeparateVideo_;
+  bool                                         rawPatchEnabledFlag_;
+  size_t                                       geometry2dBitdepth_;
+  size_t                                       maxDepth_;
+  size_t                                       atlasFrmOrderCntVal_;
+  size_t                                       atlasFrmOrderCntMsb_;
+  size_t                                       atlasFrmOrderCntLsb_;
+  std::vector<int32_t>                         refAFOCList_;
+  size_t                                       numRefIdxActive_;
+  size_t                                       bestRefListIndexInAsps_;
   size_t                                       log2PatchQuantizerSizeX_;
   size_t                                       log2PatchQuantizerSizeY_;
   std::vector<PCCVector3<size_t>>              pointToPixel_;
@@ -288,13 +287,11 @@ class PCCAtlasFrameContext {
                                   size_t partitionHeightIn64 ) {
     titleFrameContext_.setWidth( width );
     titleFrameContext_.setHeight( height );
-    atlasFrameWidth_           = width;
-    atlasFrameHeight_          = height;
-    numTilesInAtlasFrame_ = numTiles;
-
+    atlasFrameWidth_         = width;
+    atlasFrameHeight_        = height;
+    numTilesInAtlasFrame_    = numTiles;
     size_t partitionWidthIn  = partitionWidthIn64 * 64;
     size_t partitionHeightIn = partitionHeightIn64 * 64;
-
     if ( numTiles == 1 ) {
       numPartitionCols_ = 1;
       numPartitionRows_ = 1;
@@ -307,8 +304,7 @@ class PCCAtlasFrameContext {
       partitionPosY_[0]   = 0;
       partitionHeight_[0] = atlasFrameHeight_;
     } else {
-      uniformPartitionSpacing_ = uniformPartitionSpacing;
-      // jkei : how to get multiple partition size?
+      uniformPartitionSpacing_ = uniformPartitionSpacing;      
       numPartitionCols_ =
           (size_t)std::ceil( static_cast<double>( atlasFrameWidth_ ) / static_cast<double>( partitionWidthIn ) );
       numPartitionRows_ =
@@ -318,8 +314,7 @@ class PCCAtlasFrameContext {
       partitionPosX_.resize( numPartitionCols_ );
       partitionPosY_.resize( numPartitionRows_ );
 
-      if ( uniformPartitionSpacing ) {
-        // jkei: issue: the last one can be less than 1 -> the spec update required
+      if ( uniformPartitionSpacing ) {        
         partitionPosX_[0]  = 0;
         partitionWidth_[0] = partitionWidthIn;
         for ( size_t col = 1; col < numPartitionCols_ - 1; col++ ) {
@@ -344,11 +339,10 @@ class PCCAtlasFrameContext {
           partitionHeight_[numPartitionRows_ - 1] = atlasFrameHeight_ - partitionPosY_[numPartitionRows_ - 1];
         }
       } else {
-        // jkei:we need to figure out how to set non-uniform partition spcaing
         printf( "non uniform tile partitioning\n" );
         exit( 128 );
         for ( size_t col = 0; col < numPartitionCols_; col++ ) {
-          partitionWidth_[col] = partitionWidthIn;  // jkei: input needs to be array
+          partitionWidth_[col] = partitionWidthIn; 
           partitionPosX_[col]  = partitionPosX_[col - 1] + partitionWidth_[col];
         }
         for ( size_t row = 0; row < numPartitionRows_; row++ ) {
@@ -401,7 +395,6 @@ class PCCAtlasFrameContext {
       partitionPosX_.resize( numPartitionCols_ );
       partitionPosY_.resize( numPartitionRows_ );
       if ( uniformPartitionSpacing ) {
-        // jkei: issue: the last one can be less than 1 -> the spec update required
         partitionPosX_[0]  = 0;
         partitionWidth_[0] = partitionWidthIn;
         for ( size_t col = 1; col < numPartitionCols_ - 1; col++ ) {
@@ -425,12 +418,11 @@ class PCCAtlasFrameContext {
               partitionPosY_[numPartitionRows_ - 2] + partitionHeight_[numPartitionRows_ - 2];
           partitionHeight_[numPartitionRows_ - 1] = atlasFrameHeight_ - partitionPosY_[numPartitionRows_ - 1];
         }
-      } else {
-        // jkei:we need to figure out how to set non-uniform partition spcaing
+      } else {        
         printf( "non uniform tile partitioning\n" );
         exit( 130 );
         for ( size_t col = 0; col < numPartitionCols_; col++ ) {
-          partitionWidth_[col] = partitionWidthIn;  // jkei: input needs to be array
+          partitionWidth_[col] = partitionWidthIn;  
           partitionPosX_[col]  = partitionPosX_[col - 1] + partitionWidth_[col];
         }
         for ( size_t row = 0; row < numPartitionRows_; row++ ) {

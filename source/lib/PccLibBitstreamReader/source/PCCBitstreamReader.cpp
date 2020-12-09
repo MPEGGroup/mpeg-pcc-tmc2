@@ -685,7 +685,7 @@ void PCCBitstreamReader::atlasFrameTileInformation( AtlasFrameTileInformation&  
   afti.setSignalledTileIdFlag( bitstream.read( 1 ) != 0U );  // u(1)
   if ( afti.getSignalledTileIdFlag() ) {
     afti.setSignalledTileIdLengthMinus1( bitstream.readUvlc() );  // ue(v)
-    for ( size_t i = 0; i <= afti.getNumTilesInAtlasFrameMinus1(); i++ ) { //jkei: bugfix
+    for ( size_t i = 0; i <= afti.getNumTilesInAtlasFrameMinus1(); i++ ) { 
       uint8_t bitCount = afti.getSignalledTileIdLengthMinus1() + 1;
       afti.setTileId( i, bitstream.read( bitCount ) );  // u(v)
     }
@@ -1427,7 +1427,7 @@ void PCCBitstreamReader::seiPayload( PCCBitstream&       bitstream,
       bufferingPeriod( bitstream, sei );
     } else if ( payloadType == ATLAS_FRAME_TIMING ) {  // 1
       assert( syntax.seiIsPresent( NAL_PREFIX_NSEI, BUFFERING_PERIOD ) );
-      SEI& bpsei = *(syntax.getSeiPrefix().back().get());
+      auto& bpsei = *syntax.getLastSei( NAL_PREFIX_NSEI, BUFFERING_PERIOD ); 
       atlasFrameTiming( bitstream, sei, bpsei, false );
     } else if ( payloadType == FILLER_PAYLOAD ) {  // 2
       fillerPayload( bitstream, sei, payloadSize );
@@ -1474,7 +1474,7 @@ void PCCBitstreamReader::seiPayload( PCCBitstream&       bitstream,
     } else {
       reservedSeiMessage( bitstream, sei, payloadSize );
     }
-  } else {  /* nalUnitType  ==  NAL_SUFFIX_ESEI || nalUnitType  ==  NAL_SUFFIX_NSEI */
+  } else {  
     if ( payloadType == FILLER_PAYLOAD ) {  // 2
       fillerPayload( bitstream, sei, payloadSize );
     } else if ( payloadType == USER_DATAREGISTERED_ITUTT35 ) {  // 3
@@ -1911,10 +1911,10 @@ void PCCBitstreamReader::bufferingPeriod( PCCBitstream& bitstream, SEI& seiAbstr
       for ( size_t j = 0; j < sei.getHrdCabCntMinus1( i ) + 1; j++ ) {
         sei.setAclInitialCabRemovalDelay( i, j, bitstream.read( bitCount ) );   // u(v)
         sei.setAclInitialCabRemovalOffset( i, j, bitstream.read( bitCount ) );  // u(v)
-      if ( sei.getIrapCabParamsPresentFlag() ) {
-        sei.setAclInitialAltCabRemovalDelay( i, j, bitstream.read( bitCount ) );   // u(v)
-        sei.setAclInitialAltCabRemovalOffset( i, j, bitstream.read( bitCount ) );  // u(v)
-      }
+        if ( sei.getIrapCabParamsPresentFlag() ) {
+          sei.setAclInitialAltCabRemovalDelay( i, j, bitstream.read( bitCount ) );   // u(v)
+          sei.setAclInitialAltCabRemovalOffset( i, j, bitstream.read( bitCount ) );  // u(v)
+        }
       }
     }
   }
@@ -2153,10 +2153,8 @@ void PCCBitstreamReader::attributeTransformationParams( PCCBitstream& bitstream,
       sei.setDimensionMinus1( index, bitstream.read( 8 ) );  // u(8)
       sei.allocate( index );
       for ( size_t i = 0; i < sei.getDimensionMinus1( index ); i++ ) {
-        sei.setScaleParamsEnabledFlag( index, i,
-                                       bitstream.read( 1 ) != 0U );  // u(1)
-        sei.setOffsetParamsEnabledFlag( index, i,
-                                        bitstream.read( 1 ) != 0U );  // u(1)
+        sei.setScaleParamsEnabledFlag( index, i, bitstream.read( 1 ) != 0U );   // u(1)
+        sei.setOffsetParamsEnabledFlag( index, i, bitstream.read( 1 ) != 0U );  // u(1)
         if ( sei.getScaleParamsEnabledFlag( index, i ) ) {
           sei.setAttributeScale( index, i, bitstream.read( 32 ) );  // u(32)
         }

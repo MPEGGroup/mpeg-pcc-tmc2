@@ -98,8 +98,7 @@ class AtlasFrameTileInformation {
       }
 
       if ( auxiliaryVideoTileRowHeight_.size() != other.auxiliaryVideoTileRowHeight_.size() ) return false;
-      if ( auxiliaryVideoTileRowHeight_.size() != 0 )  // jkei: it will be better to be "if (asps.useAuxVideoEnbleFlag)"
-      {
+      if ( auxiliaryVideoTileRowHeight_.size() != 0 ) {
         if ( auxiliaryVideoTileRowWidthMinus1_ != other.auxiliaryVideoTileRowWidthMinus1_ ) return false;
         for ( size_t ti = 0; ti < ( numTilesInAtlasFrameMinus1_ + 1 ); ti++ ) {
           if ( auxiliaryVideoTileRowHeight_[ti] != other.auxiliaryVideoTileRowHeight_[ti] ) return false;

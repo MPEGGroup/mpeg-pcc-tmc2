@@ -95,6 +95,7 @@ class PCCAtlasHighLevelSyntax {
     return atlasSequenceParameterSet_[setId];
   }
   std::vector<AtlasSequenceParameterSetRbsp>& getAtlasSequenceParameterSetList() { return atlasSequenceParameterSet_; }
+  
   // reference list, defined in ASPS
   void setNumOfRefAtlasFrameList( size_t value ) { refAtlasFrameList_.resize( value ); }
   void setSizeOfRefAtlasFrameList( size_t listIndex, size_t listSize ) {
@@ -117,6 +118,7 @@ class PCCAtlasHighLevelSyntax {
   size_t                getNumRefIdxActive( AtlasTileHeader& ath );
   size_t                getMaxNumRefAtlasFrame( size_t listIndex ) { return maxNumRefAtlasFrame_; }
   void                  setMaxNumRefAtlasFrame( size_t value ) { maxNumRefAtlasFrame_ = value; }
+
   // point local recosntruction, defined in ASPS
   void addPointLocalReconstructionMode( const PointLocalReconstructionMode& mode ) {
     pointLocalReconstructionMode_.push_back( mode );
@@ -127,9 +129,7 @@ class PCCAtlasHighLevelSyntax {
   size_t getPointLocalReconstructionModeNumber() { return pointLocalReconstructionMode_.size(); }
 
   // AFPS related functions
-  // void                        setActveAFPS( size_t afpsId ) { activeAFPS_ = afpsId; }
   AtlasFrameParameterSetRbsp& getAtlasFrameParameterSet( size_t setId ) { return atlasFrameParameterSet_[setId]; }
-  // AtlasFrameParameterSetRbsp& getAtlasFrameParameterSet() { return atlasFrameParameterSet_[activeAFPS_]; }
   std::vector<AtlasFrameParameterSetRbsp>& getAtlasFrameParameterSetList() {
 #if 0
     printf("\t-------(inPCCAtlasHighLevelSyntax)------------\n");
@@ -245,8 +245,18 @@ class PCCAtlasHighLevelSyntax {
     return false;
   }
   SEI* getSei( NalUnitType nalUnitType, SeiPayloadType payloadType ) {
-    for ( auto& sei : nalUnitType == NAL_PREFIX_ESEI || nalUnitType == NAL_PREFIX_NSEI ? seiPrefix_ : seiSuffix_ ) {
+    auto& seis = ( nalUnitType == NAL_PREFIX_ESEI || nalUnitType == NAL_PREFIX_NSEI ) ? seiPrefix_ : seiSuffix_; 
+    for ( auto& sei : seis ) {
       if ( sei->getPayloadType() == payloadType ) { return sei.get(); }
+    }
+    assert( 0 );
+    return (SEI*)nullptr;
+  }
+
+  SEI* getLastSei( NalUnitType nalUnitType, SeiPayloadType payloadType ){
+    auto& seis = ( nalUnitType == NAL_PREFIX_ESEI || nalUnitType == NAL_PREFIX_NSEI ) ? seiPrefix_ : seiSuffix_; 
+    for (auto sei = seis.rbegin(); sei != seis.rend(); ++sei ) { 
+      if ( sei->get()->getPayloadType() == payloadType ) { return sei->get(); }
     }
     assert( 0 );
     return (SEI*)nullptr;
@@ -273,7 +283,7 @@ class PCCAtlasHighLevelSyntax {
   size_t                                       maxNumRefAtlasFrame_;
   std::vector<PointLocalReconstructionMode>    pointLocalReconstructionMode_;
   std::vector<AtlasFrameParameterSetRbsp>      atlasFrameParameterSet_;  // AFPS related variables
-  std::vector<AtlasTileLayerRbsp>              atlasTileLayer_;  // ATGL related variables
+  std::vector<AtlasTileLayerRbsp>              atlasTileLayer_;          // ATGL related variables
   std::vector<std::shared_ptr<SEI>>            seiPrefix_;               // SEI related variables
   std::vector<std::shared_ptr<SEI>>            seiSuffix_;
 };
@@ -329,8 +339,7 @@ class PCCHighLevelSyntax {
   }
   void setAtlasIndex( size_t atlId ) { atlasIndex_ = atlId; }
 
-  // All the functions below are just redirect to the corresponding atlas
-  // function
+  // All the functions below are just redirect to the corresponding atlas function
   // video related functions
   PCCVideoBitstream& createVideoBitstream( PCCVideoType type ) {
     return atlasHLS_[atlasIndex_].createVideoBitstream( type );
@@ -339,12 +348,11 @@ class PCCHighLevelSyntax {
   PCCVideoBitstream& getVideoBitstream( size_t index ) { return atlasHLS_[atlasIndex_].getVideoBitstream( index ); }
   PCCVideoBitstream& getVideoBitstream( PCCVideoType type ) { return atlasHLS_[atlasIndex_].getVideoBitstream( type ); }
   void               printVideoBitstream() { return atlasHLS_[atlasIndex_].printVideoBitstream(); };
+  
   // ASPS related functions
-  // void                           setActiveASPS( size_t aspsId ) { atlasHLS_[atlasIndex_].setActiveASPS( aspsId ); }
   AtlasSequenceParameterSetRbsp& getAtlasSequenceParameterSet( size_t setId ) {
     return atlasHLS_[atlasIndex_].getAtlasSequenceParameterSet( setId );
   }
-
   AtlasSequenceParameterSetRbsp& addAtlasSequenceParameterSet() {
     return atlasHLS_[atlasIndex_].addAtlasSequenceParameterSet();
   }
@@ -380,6 +388,7 @@ class PCCHighLevelSyntax {
     return atlasHLS_[atlasIndex_].getMaxNumRefAtlasFrame( listIndex );
   }
   void setMaxNumRefAtlasFrame( size_t value ) { atlasHLS_[atlasIndex_].setMaxNumRefAtlasFrame( value ); }
+  
   // point local recosntruction, defined in ASPS
   void addPointLocalReconstructionMode( const PointLocalReconstructionMode& mode ) {
     atlasHLS_[atlasIndex_].addPointLocalReconstructionMode( mode );
@@ -391,13 +400,10 @@ class PCCHighLevelSyntax {
     return atlasHLS_[atlasIndex_].getPointLocalReconstructionModeNumber();
   }
 
-  // AFPS related functions
-  // void                        setActveAFPS( size_t afpsId ) { atlasHLS_[atlasIndex_].setActveAFPS( afpsId ); }
+  // AFPS related functions  
   AtlasFrameParameterSetRbsp& getAtlasFrameParameterSet( size_t setId ) {
     return atlasHLS_[atlasIndex_].getAtlasFrameParameterSet( setId );
   }
-  // AtlasFrameParameterSetRbsp& getAtlasFrameParameterSet() { return
-  // atlasHLS_[atlasIndex_].getAtlasFrameParameterSet(); }
   std::vector<AtlasFrameParameterSetRbsp>& getAtlasFrameParameterSetList() {
     return atlasHLS_[atlasIndex_].getAtlasFrameParameterSetList();
   }
@@ -431,6 +437,9 @@ class PCCHighLevelSyntax {
   SEI* getSei( NalUnitType nalUnitType, SeiPayloadType payloadType ) {
     return atlasHLS_[atlasIndex_].getSei( nalUnitType, payloadType );
   }
+  SEI* getLastSei( NalUnitType nalUnitType, SeiPayloadType payloadType ) {
+    return atlasHLS_[atlasIndex_].getLastSei( nalUnitType, payloadType );
+  }
   SEI& addSeiPrefix( SeiPayloadType payloadType, bool essensial ) {
     return atlasHLS_[atlasIndex_].addSeiPrefix( payloadType, essensial );
   }
@@ -440,20 +449,15 @@ class PCCHighLevelSyntax {
   std::vector<std::shared_ptr<SEI>>& getSeiPrefix() { return atlasHLS_[atlasIndex_].getSeiPrefix(); }
   std::vector<std::shared_ptr<SEI>>& getSeiSuffix() { return atlasHLS_[atlasIndex_].getSeiSuffix(); }
   SEI& getSeiPrefix( size_t index ) { return atlasHLS_[atlasIndex_].getSeiPrefix( index ); }
-  SEI& getSeiSuffix( size_t index ) { return atlasHLS_[atlasIndex_].getSeiSuffix( index ); }
+  SEI& getSeiSuffix( size_t index ) { return atlasHLS_[atlasIndex_].getSeiSuffix( index ); }  
+
   std::vector<SEIDecodedAtlasInformationHash>& getSeiHash()               { return seiHash_; }
   SEIDecodedAtlasInformationHash&              getSeiHash( size_t index ) { return seiHash_[index]; }
   void addSeiHashToSeiSuffix(size_t i) {
     return atlasHLS_[atlasIndex_].addSeiToSeiSuffix( DECODED_ATLAS_INFORMATION_HASH, true, seiHash_[i] ); }
   void allocateSeiHash( size_t hashCount )                                { seiHash_.resize(hashCount); }
   
-  
-  // context variables, not sure if we should keep them at this level, but leave them here for now
-  //size_t  getGofSize() { return gofSize_; }
   uint8_t getOccupancyPrecision() { return occupancyPrecision_; }
-  //  uint8_t getOccupancyPackingBlockSize() {
-  //    return pow( 2, atlasHLS_[atlasIndex_].getAtlasSequenceParameterSet().getLog2PatchPackingBlockSize() );
-  //  }
   uint8_t getLog2PatchQuantizerSizeX() { return log2PatchQuantizerSizeX_; }
   uint8_t getLog2PatchQuantizerSizeY() { return log2PatchQuantizerSizeY_; }
   bool    getEnablePatchSizeQuantization() { return enablePatchSizeQuantization_; }
@@ -470,7 +474,6 @@ class PCCHighLevelSyntax {
   bool&                getPrefilterLossyOM() { return prefilterLossyOM_; }
   size_t&              getOffsetLossyOM() { return offsetLossyOM_; }
   size_t               getGeometry3dCoordinatesBitdepth() { return geometry3dCoordinatesBitdepth_; }
-  //void                 setGofSize( size_t gofSize ) { gofSize_ = gofSize; }
   void                 setOccupancyPrecision( uint8_t value ) { occupancyPrecision_ = value; }
   void                 setLog2PatchQuantizerSizeX( uint8_t value ) { log2PatchQuantizerSizeX_ = value; }
   void                 setLog2PatchQuantizerSizeY( uint8_t value ) { log2PatchQuantizerSizeY_ = value; }
@@ -484,30 +487,25 @@ class PCCHighLevelSyntax {
   bool&                getSingleLayerMode() { return singleLayerMode_; }
 
  private:
-  //size_t                         gofSize_;
-  std::vector<PCCVideoBitstream> videoBitstream_;
-  V3CUnitHeader                  v3cUnitHeader_[5];
-  std::vector<V3CParameterSet>   vpccParameterSets_;
-  uint8_t                        activeVPS_;
-  uint8_t                        occupancyPrecision_;
-  uint8_t                        log2PatchQuantizerSizeX_;
-  uint8_t                        log2PatchQuantizerSizeY_;
-  bool                           enablePatchSizeQuantization_;
-  bool                           prefilterLossyOM_;
-  size_t                         offsetLossyOM_;
-  size_t                         geometry3dCoordinatesBitdepth_;
-  bool                           singleLayerMode_;
-  PCCBitstreamStat*              bitstreamStat_;
-
-  // atlas substream high level syntax variable
-  std::vector<PCCAtlasHighLevelSyntax> atlasHLS_;
-  size_t                               atlasIndex_;
-  size_t                               auxVideWidth_;
-  std::vector<size_t>                  auxTileHeight_;
-  std::vector<size_t>                  auxTileLeftTopY_;
-  
-  //sei
-  std::vector<SEIDecodedAtlasInformationHash>            seiHash_;
+  std::vector<PCCVideoBitstream>              videoBitstream_;
+  V3CUnitHeader                               v3cUnitHeader_[5];
+  std::vector<V3CParameterSet>                vpccParameterSets_;
+  uint8_t                                     activeVPS_;
+  uint8_t                                     occupancyPrecision_;
+  uint8_t                                     log2PatchQuantizerSizeX_;
+  uint8_t                                     log2PatchQuantizerSizeY_;
+  bool                                        enablePatchSizeQuantization_;
+  bool                                        prefilterLossyOM_;
+  size_t                                      offsetLossyOM_;
+  size_t                                      geometry3dCoordinatesBitdepth_;
+  bool                                        singleLayerMode_;
+  PCCBitstreamStat*                           bitstreamStat_;
+  std::vector<PCCAtlasHighLevelSyntax>        atlasHLS_;
+  size_t                                      atlasIndex_;
+  size_t                                      auxVideWidth_;
+  std::vector<size_t>                         auxTileHeight_;
+  std::vector<size_t>                         auxTileLeftTopY_;
+  std::vector<SEIDecodedAtlasInformationHash> seiHash_;
 };
 };  // namespace pcc
 

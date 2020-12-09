@@ -216,37 +216,42 @@ class PCCPatchSegmenter3 {
   std::vector<PCCPatch> boxMinDepths_;  // box depth list
   std::vector<PCCPatch> boxMaxDepths_;  // box depth list
 
-  void convert( size_t Axis, size_t lod, PCCPoint3D input, PCCPoint3D& output ) {
+  void convert( size_t axis, size_t lod, PCCPoint3D input, PCCPoint3D& output ) {
     size_t shif = ( 1u << ( lod - 1 ) ) - 1;
-    output = input;
-    if ( Axis == 1 ) {  
+    if ( axis == 1 ) {  
       output.x() = input.x() + input.z();
+      output.y() = input.y();
       output.z() = -input.x() + input.z() + shif;
     }
-    if ( Axis == 2 ) {  
-      output.z() = input.z() + input.y();
+    if ( axis == 2 ) {  
+      output.x() = input.x();
       output.y() = -input.z() + input.y() + shif;
+      output.z() = input.z() + input.y();
     }
-    if ( Axis == 3 ) {
-      output.y() = input.y() + input.x();
+    if ( axis == 3 ) {
       output.x() = -input.y() + input.x() + shif;
+      output.y() = input.y() + input.x();
+      output.z() = input.z();
     }
   }
 
-  void iconvert( size_t Axis, size_t lod, PCCVector3D input, PCCVector3D& output ) {
+  void iconvert( size_t axis, size_t lod, PCCVector3D input, PCCVector3D& output ) {
     size_t shif = ( 1u << ( lod - 1 ) ) - 1;
-    output = input;
-    if ( Axis == 1 ) {  
-      output.x() = ( input.x() - input.z() + shif) / 2.0;
-      output.z() = ( input.x() + input.z() - shif) / 2.0;
+    output      = input;
+    if ( axis == 1 ) {
+      output.x() = ( input.x() - input.z() + shif ) / 2.0;
+      output.y() = input.y();
+      output.z() = ( input.x() + input.z() - shif ) / 2.0;
     }
-    if ( Axis == 2 ) {
-      output.z() = ( input.z() - input.y() + shif) / 2.0;
-      output.y() = ( input.z() + input.y() - shif ) / 2.0 ;      
-    }  
-    if ( Axis == 3 ) {
-      output.y() = ( input.y() - input.x() + shif) / 2.0;
-      output.x() = ( input.y() + input.x() - shif) / 2.0;
+    if ( axis == 2 ) {
+      output.x() = input.x();
+      output.y() = ( input.z() + input.y() - shif ) / 2.0;
+      output.z() = ( input.z() - input.y() + shif ) / 2.0;
+    }
+    if ( axis == 3 ) {
+      output.x() = ( input.y() + input.x() - shif ) / 2.0;
+      output.y() = ( input.y() - input.x() + shif ) / 2.0;
+      output.z() = input.z();
     }
   }
 
