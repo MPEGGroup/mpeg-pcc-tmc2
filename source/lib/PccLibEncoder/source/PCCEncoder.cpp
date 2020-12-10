@@ -3485,7 +3485,7 @@ size_t PCCEncoder::packRawPointsPatchSimple( PCCFrameContext& tile,
     rawPointsPatch.v0_ = totalHeight / params_.occupancyResolution_;
     totalHeight += rawPointsPatch.sizeV_;
 
-    printf( "packRawPointsPatch[%zu/%zu]: posU0V0 %zu,%zu sizeU0V0(%zux%zu) #ofpixels %zu\n", i,
+    printf( "packRawPointsPatch[%d/%zu]: posU0V0 %zu,%zu sizeU0V0(%zux%zu) #ofpixels %zu\n", i,
             numberOfRawPointsPatches, rawPointsPatch.u0_, rawPointsPatch.v0_, rawPointsPatch.sizeU0_,
             rawPointsPatch.sizeV0_, rawPointsPatch.sizeX() );
   }
@@ -3576,7 +3576,7 @@ size_t PCCEncoder::packRawPointsPatch( PCCFrameContext&   tile,
       }
       height = ( std::max )( height, ( patch.getV0() + patch.getSizeV0() ) * params_.occupancyResolution_ );
     }
-    printf( "packRawPointsPatch[%zu/%zu]: posU0V0 %zu,%zu sizeU0V0(%zux%zu) #ofpixels %zu\n", i,
+    printf( "packRawPointsPatch[%d/%zu]: posU0V0 %zu,%zu sizeU0V0(%zux%zu) #ofpixels %zu\n", i,
             numberOfRawPointsPatches, rawPointsPatch.u0_, rawPointsPatch.v0_, rawPointsPatch.sizeU0_,
             rawPointsPatch.sizeV0_, rawPointsPatch.sizeX() );
   }
@@ -8665,7 +8665,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&         context,
           refPatch.getLodScaleX(), refPatch.getLodScaleY() );
 
       if ( asps.getPLREnabledFlag() ) {
-        setPLRData( tile, patch, ipdu.getPLRData(), 1 << asps.getLog2PatchPackingBlockSize(), patchIndex );
+        setPLRData( tile, patch, ipdu.getPLRData(), size_t( 1 ) << asps.getLog2PatchPackingBlockSize(), patchIndex );
       }
       prevSizeU0 = asps.getPatchSizeQuantizerPresentFlag() ? patch.getPatchSize2DXInPixel()
                                                            : patch.getSizeU0();  // prevPatchSize2DXInPixel
@@ -8734,7 +8734,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&         context,
           pdu.getProjectionId(), patch.getAxisOfAdditionalPlane() );
 
       if ( asps.getPLREnabledFlag() ) {
-        setPLRData( tile, patch, pdu.getPLRData(), 1 << asps.getLog2PatchPackingBlockSize(), patchIndex );
+        setPLRData( tile, patch, pdu.getPLRData(), size_t( 1 ) << asps.getLog2PatchPackingBlockSize(), patchIndex );
       }
     }
   }
@@ -8951,7 +8951,7 @@ void PCCEncoder::createHashInformation( PCCContext& context, int frameIndex, siz
           tilePatchCommonByteString( atlasTileData, tileId, patchIdx, tilePatchParams );
           tilePatchApplicationByteString( atlasTileData, tileId, patchIdx, tilePatchParams );
         }
-        printf( "**sei** TilesPatchHash: frame(%d), tile(%d, tileId %d)\n", frameIndex, tileIdx, tileId );
+        printf( "**sei** TilesPatchHash: frame(%d), tile(%zu, tileId %zu)\n", frameIndex, tileIdx, tileId );
         if ( sei.getHashType() == 0 ) {
           std::vector<uint8_t> md5Digest( 16 );
           md5Digest = context.computeMD5( atlasTileData.data(), atlasTileData.size() );
@@ -8973,7 +8973,7 @@ void PCCEncoder::createHashInformation( PCCContext& context, int frameIndex, siz
       if ( sei.getDecodedAtlasTilesB2pHashPresentFlag() ) {
         std::vector<uint8_t> tileB2PData;
         tileBlockToPatchByteString( tileB2PData, tileId, tileB2PPatchParams );
-        printf( "**sei** TilesB2pPatchHash: frame(%d), tileIdx(%d)\n", frameIndex, tileIdx );
+        printf( "**sei** TilesB2pPatchHash: frame(%d), tileIdx(%zu)\n", frameIndex, tileIdx );
         if ( sei.getHashType() == 0 ) {
           std::vector<uint8_t> md5Digest( 16 );
           md5Digest = context.computeMD5( tileB2PData.data(), tileB2PData.size() );

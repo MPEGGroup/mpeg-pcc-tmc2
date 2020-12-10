@@ -2522,7 +2522,7 @@ void PCCCodec::getHashPatchParams( PCCContext&                            contex
     pps.patchInAuxVideo          = eomPatch.isPatchInAuxVideo_;
     pps.epduAssociatedPatchCount = eomPatch.memberPatches.size();
     pps.epduAssociatedPoints.resize( pps.epduAssociatedPatchCount );
-    for ( size_t i = 0; i < pps.epduAssociatedPatchCount; i++ ) {
+    for ( int64_t i = 0; i < pps.epduAssociatedPatchCount; i++ ) {
       pps.epduAssociatedPoints[i] = eomPatch.eomCountPerPatch[i];
     }
     if ( tilePatchParams.size() != 0 ) tilePatchParams[tileIndex].push_back( pps );
@@ -2544,7 +2544,7 @@ void PCCCodec::getB2PHashPatchParams( PCCContext&                               
   auto&  afps                       = context.getAtlasFrameParameterSet( afpsIndex );
   auto&  afti                       = afps.getAtlasFrameTileInformation();
   size_t numTilesInPatchFrame       = context[frameIndex].getNumTilesInAtlasFrame();
-  size_t patchPackingBlockSize      = ( 1 << asps.getLog2PatchPackingBlockSize() );
+  size_t patchPackingBlockSize      = size_t( 1 ) << asps.getLog2PatchPackingBlockSize();
   size_t offset                     = patchPackingBlockSize - 1;
   size_t atlasBlockToPatchMapWidth  = ( asps.getFrameWidth() + offset ) / patchPackingBlockSize;
   size_t atlasBlockToPatchMapHeight = ( asps.getFrameHeight() + offset ) / patchPackingBlockSize;
@@ -2626,19 +2626,19 @@ void PCCCodec::getB2PHashPatchParams( PCCContext&                               
 void PCCCodec::aspsCommonByteString( std::vector<uint8_t>& stringByte, AtlasSequenceParameterSetRbsp& asps ) {
   uint8_t val = asps.getFrameWidth() & 0xFF;
   stringByte.push_back( val );
-  val = ( asps.getFrameWidth() >> 8 ) & 0xFF;
+  val = ( size_t( asps.getFrameWidth() ) >> 8 ) & 0xFF;
   stringByte.push_back( val );
-  val = ( asps.getFrameWidth() >> 16 ) & 0xFF;
+  val = ( size_t( asps.getFrameWidth() ) >> 16 ) & 0xFF;
   stringByte.push_back( val );
-  val = ( asps.getFrameWidth() >> 24 ) & 0xFF;
+  val = ( size_t( asps.getFrameWidth() ) >> 24 ) & 0xFF;
   stringByte.push_back( val );
   val = asps.getFrameHeight() & 0xFF;
   stringByte.push_back( val );
   val = ( asps.getFrameHeight() >> 8 ) & 0xFF;
   stringByte.push_back( val );
-  val = ( asps.getFrameHeight() >> 16 ) & 0xFF;
+  val = ( size_t( asps.getFrameHeight() ) >> 16 ) & 0xFF;
   stringByte.push_back( val );
-  val = ( asps.getFrameHeight() >> 24 ) & 0xFF;
+  val = ( size_t( asps.getFrameHeight() ) >> 24 ) & 0xFF;
   stringByte.push_back( val );
   val = asps.getGeometry3dBitdepthMinus1() & 0xFF;
   stringByte.push_back( val );
@@ -2648,7 +2648,7 @@ void PCCCodec::aspsCommonByteString( std::vector<uint8_t>& stringByte, AtlasSequ
   stringByte.push_back( val );
   val = asps.getMaxNumberProjectionsMinus1() & 0xFF;
   stringByte.push_back( val );
-  val = asps.getPatchPrecedenceOrderFlag() & 0xFF;
+  val = uint8_t( asps.getPatchPrecedenceOrderFlag() ) & 0xFF;
   stringByte.push_back( val );
 }
 
@@ -2658,13 +2658,13 @@ void PCCCodec::aspsApplicationByteString( std::vector<uint8_t>&          stringB
   uint8_t val;
   if ( asps.getPixelDeinterleavingFlag() ) {
     for ( int j = 0; j <= asps.getMapCountMinus1(); j++ ) {
-      val = asps.getPixelDeinterleavingMapFlag( j ) & 0xFF;  // asps_map_pixel_deinterleaving_flag[ j ]
+      val = uint8_t( asps.getPixelDeinterleavingMapFlag( j ) ) & 0xFF;  
       stringByte.push_back( val );
     }
   }
-  val = asps.getRawPatchEnabledFlag() & 0xFF;
+  val = uint8_t( asps.getRawPatchEnabledFlag() ) & 0xFF;
   stringByte.push_back( val );
-  val = asps.getEomPatchEnabledFlag() & 0xFF;
+  val = uint8_t( asps.getEomPatchEnabledFlag() ) & 0xFF;
   stringByte.push_back( val );
   if ( asps.getEomPatchEnabledFlag() && asps.getMapCountMinus1() == 0 ) {
     val = asps.getEomFixBitCountMinus1() & 0xFF;
@@ -2678,26 +2678,27 @@ void PCCCodec::aspsApplicationByteString( std::vector<uint8_t>&          stringB
     val = ( auxVideoWidthNF >> 8 ) & 0xFF;  // val = ( AuxVideoWidthNF >> 8 ) & 0xFF;
     stringByte.push_back( val );
     size_t auxVideoHeightNF = 0;
-    for ( int i = 0; i <= afti.getNumTilesInAtlasFrameMinus1(); i++ )
+    for ( uint32_t i = 0; i <= afti.getNumTilesInAtlasFrameMinus1(); i++ ) {
       auxVideoHeightNF += ( afti.getAuxiliaryVideoTileRowHeight( i ) * 64 );
+    }
     val = auxVideoHeightNF & 0xFF;  // val = AuxVideoHeightNF & 0xFF
     stringByte.push_back( val );
     val = ( auxVideoHeightNF >> 8 ) & 0xFF;  //( AuxVideoHeightNF >> 8 ) & 0xFF
     stringByte.push_back( val );
   }
-  val = asps.getPLREnabledFlag() & 0xFF;
+  val = uint8_t( asps.getPLREnabledFlag() ) & 0xFF;
   stringByte.push_back( val );
   if ( asps.getPLREnabledFlag() ) {
-    for ( int i = 0; i < asps.getMapCountMinus1() + 1; i++ ) {
-      val = asps.getPLRInformation( i ).getMapEnabledFlag() & 0xFF;  // plri_map_present_flag in the spec?
+    for ( uint8_t i = 0; i < asps.getMapCountMinus1() + 1; i++ ) {
+      val = uint8_t( asps.getPLRInformation( i ).getMapEnabledFlag() ) & 0xFF;  // plri_map_present_flag in the spec?
       stringByte.push_back( val );
       if ( asps.getPLRInformation( i ).getMapEnabledFlag() ) {
         val = asps.getPLRInformation( i ).getNumberOfModesMinus1() & 0xFF;
         stringByte.push_back( val );
         for ( int j = 0; j < asps.getPLRInformation( i ).getNumberOfModesMinus1() + 1; j++ ) {
-          val = asps.getPLRInformation( i ).getInterpolateFlag( j ) & 0xFF;
+          val = uint8_t( asps.getPLRInformation( i ).getInterpolateFlag( j ) ) & 0xFF;
           stringByte.push_back( val );
-          val = asps.getPLRInformation( i ).getFillingFlag( j ) & 0xFF;
+          val = uint8_t( asps.getPLRInformation( i ).getFillingFlag( j ) ) & 0xFF;
           stringByte.push_back( val );
           val = asps.getPLRInformation( i ).getMinimumDepth( j ) & 0xFF;
           stringByte.push_back( val );
@@ -2710,12 +2711,12 @@ void PCCCodec::aspsApplicationByteString( std::vector<uint8_t>&          stringB
     }
   }
   auto& ext = asps.getAspsVpccExtension();
-  val       = ext.getRemoveDuplicatePointEnableFlag() & 0xFF;
+  val       = uint8_t( ext.getRemoveDuplicatePointEnableFlag() ) & 0xFF;
   stringByte.push_back( val );
   if ( asps.getPixelDeinterleavingFlag() || asps.getPLREnabledFlag() ) {
     val = ext.getSurfaceThicknessMinus1() & 0xFF;
     stringByte.push_back( val );
-    val = ( ext.getSurfaceThicknessMinus1() >> 8 ) & 0xFF;
+    val = ( size_t( ext.getSurfaceThicknessMinus1() ) >> 8 ) & 0xFF;
     stringByte.push_back( val );
   }
 }
@@ -2742,7 +2743,7 @@ void PCCCodec::afpsCommonByteString( std::vector<uint8_t>& stringByte,
     hashAuxTileHeight.resize( afti.getNumTilesInAtlasFrameMinus1() + 1, 0 );
   }
 
-  for ( int i = 0; i < afti.getNumTilesInAtlasFrameMinus1() + 1; i++ ) {
+  for ( uint32_t i = 0; i < afti.getNumTilesInAtlasFrameMinus1() + 1; i++ ) {
     size_t topLeftColumn     = afti.getTopLeftPartitionIdx( i ) % ( afti.getNumPartitionColumnsMinus1() + 1 );
     size_t topLeftRow        = afti.getTopLeftPartitionIdx( i ) / ( afti.getNumPartitionColumnsMinus1() + 1 );
     size_t bottomRightColumn = topLeftColumn + afti.getBottomRightPartitionColumnOffset( i );
@@ -3010,7 +3011,7 @@ void PCCCodec::atlasBlockToPatchByteString( std::vector<uint8_t>&             st
     for ( size_t x = 0; x < atlasB2p[y].size(); x++ ) {
       b2pVal = ( atlasB2p[y][x] == -1 ) ? 0xFFFF : atlasB2p[y][x];
       stringByte.push_back( b2pVal & 0xFF );
-      stringByte.push_back( ( b2pVal >> 8 ) & 0xFF );
+      stringByte.push_back( ( size_t( b2pVal ) >> 8 ) & 0xFF );
     }
   }
 }
@@ -3023,7 +3024,7 @@ void PCCCodec::tileBlockToPatchByteString( std::vector<uint8_t>&                
     for ( size_t x = 0; x < tileB2p[tileId][y].size(); x++ ) {
       b2pVal = ( tileB2p[tileId][y][x] == -1 ) ? 0xFFFF : tileB2p[tileId][y][x];
       stringByte.push_back( b2pVal & 0xFF );
-      stringByte.push_back( ( b2pVal >> 8 ) & 0xFF );
+      stringByte.push_back( ( size_t( b2pVal ) >> 8 ) & 0xFF );
     }
   }
 }

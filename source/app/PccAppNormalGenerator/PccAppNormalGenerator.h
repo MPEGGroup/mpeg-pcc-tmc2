@@ -33,8 +33,9 @@
 #ifndef PCC_APP_DECODER_H
 #define PCC_APP_DECODER_H
 
+#ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
-
+#endif
 #include "PCCCommon.h"
 #include "PCCMath.h"
 #include "PCCKdTree.h"
