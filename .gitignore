@@ -32,11 +32,12 @@
 
 .DS_Store
 # Cmake
-mvsc/
-build/
-bin/
+/mvsc/
+/build/
+/bin/
+/lib/
 !dependencies/tbb/build/
-dependencies/papi
+/dependencies/papi
 Debug
 Release
 CMakeFiles
@@ -51,22 +52,22 @@ xcuserdata
 .cproject
 # User data
 data/
-*.cmake
 .idea
 DerivedData
 
 source/lib/PccLibCommon/include/PCCConfig.h
 source/lib/PccLibBitstreamCommon/include/PCCConfig.h
 
-test/*.ply
-test/*.bin
-test/*.yuv
-test/*.rgb
-scripts/
+/*.ply
+/*.bin
+/*.hevc
+/*.yuv
+/*.rgb
+/scripts/
 
 log.txt
 
-.vscode/
-dependencies/HM-16.20+SCM-8.8/
+/.vscode/
+/dependencies/HM-16.20+SCM-8.8/
+/dependencies/HDRTools/
 
-dependencies/HDRTools/

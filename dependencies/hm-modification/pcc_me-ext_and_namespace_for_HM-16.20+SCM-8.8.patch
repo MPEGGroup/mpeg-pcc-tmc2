@@ -1,7 +1,8 @@
 Index: compat/msvc/stdint.h
 ===================================================================
---- compat/msvc/stdint.h	(revision 4998)
-+++ compat/msvc/stdint.h	(working copy)
+diff --git a/compat/msvc/stdint.h b/compat/msvc/stdint.h
+--- a/compat/msvc/stdint.h	(revision 4998)
++++ b/compat/msvc/stdint.h	(working copy)
 @@ -4,6 +4,7 @@
  #endif
  #if _MSC_VER > 1500
@@ -17,8 +18,9 @@ Index: compat/msvc/stdint.h
 +
 Index: doc/mainpage.h
 ===================================================================
---- doc/mainpage.h	(revision 4998)
-+++ doc/mainpage.h	(working copy)
+diff --git a/doc/mainpage.h b/doc/mainpage.h
+--- a/doc/mainpage.h	(revision 4998)
++++ b/doc/mainpage.h	(working copy)
 @@ -1,4 +1,5 @@
  #include "TLibCommon/CommonDef.h"
 +namespace pcc_hm {
@@ -32,8 +34,9 @@ Index: doc/mainpage.h
 +
 Index: source/App/TAppDecoder/TAppDecCfg.cpp
 ===================================================================
---- source/App/TAppDecoder/TAppDecCfg.cpp	(revision 4998)
-+++ source/App/TAppDecoder/TAppDecCfg.cpp	(working copy)
+diff --git a/source/App/TAppDecoder/TAppDecCfg.cpp b/source/App/TAppDecoder/TAppDecCfg.cpp
+--- a/source/App/TAppDecoder/TAppDecCfg.cpp	(revision 4998)
++++ b/source/App/TAppDecoder/TAppDecCfg.cpp	(working copy)
 @@ -41,6 +41,7 @@
  #include "TAppDecCfg.h"
  #include "TAppCommon/program_options_lite.h"
@@ -62,8 +65,9 @@ Index: source/App/TAppDecoder/TAppDecCfg.cpp
 +} // namespace pcc_hm
 Index: source/App/TAppDecoder/TAppDecCfg.h
 ===================================================================
---- source/App/TAppDecoder/TAppDecCfg.h	(revision 4998)
-+++ source/App/TAppDecoder/TAppDecCfg.h	(working copy)
+diff --git a/source/App/TAppDecoder/TAppDecCfg.h b/source/App/TAppDecoder/TAppDecCfg.h
+--- a/source/App/TAppDecoder/TAppDecCfg.h	(revision 4998)
++++ b/source/App/TAppDecoder/TAppDecCfg.h	(working copy)
 @@ -44,6 +44,7 @@
  
  #include "TLibCommon/CommonDef.h"
@@ -105,8 +109,9 @@ Index: source/App/TAppDecoder/TAppDecCfg.h
 +
 Index: source/App/TAppDecoder/TAppDecTop.cpp
 ===================================================================
---- source/App/TAppDecoder/TAppDecTop.cpp	(revision 4998)
-+++ source/App/TAppDecoder/TAppDecTop.cpp	(working copy)
+diff --git a/source/App/TAppDecoder/TAppDecTop.cpp b/source/App/TAppDecoder/TAppDecTop.cpp
+--- a/source/App/TAppDecoder/TAppDecTop.cpp	(revision 4998)
++++ b/source/App/TAppDecoder/TAppDecTop.cpp	(working copy)
 @@ -47,6 +47,7 @@
  #if RExt__DECODER_DEBUG_BIT_STATISTICS
  #include "TLibCommon/TComCodingStatistics.h"
@@ -148,8 +153,9 @@ Index: source/App/TAppDecoder/TAppDecTop.cpp
 +} // namespace pcc_hm
 Index: source/App/TAppDecoder/TAppDecTop.h
 ===================================================================
---- source/App/TAppDecoder/TAppDecTop.h	(revision 4998)
-+++ source/App/TAppDecoder/TAppDecTop.h	(working copy)
+diff --git a/source/App/TAppDecoder/TAppDecTop.h b/source/App/TAppDecoder/TAppDecTop.h
+--- a/source/App/TAppDecoder/TAppDecTop.h	(revision 4998)
++++ b/source/App/TAppDecoder/TAppDecTop.h	(working copy)
 @@ -47,6 +47,7 @@
  #include "TLibCommon/TComPicYuv.h"
  #include "TLibDecoder/TDecTop.h"
@@ -168,8 +174,9 @@ Index: source/App/TAppDecoder/TAppDecTop.h
 +
 Index: source/App/TAppDecoder/decmain.cpp
 ===================================================================
---- source/App/TAppDecoder/decmain.cpp	(revision 4998)
-+++ source/App/TAppDecoder/decmain.cpp	(working copy)
+diff --git a/source/App/TAppDecoder/decmain.cpp b/source/App/TAppDecoder/decmain.cpp
+--- a/source/App/TAppDecoder/decmain.cpp	(revision 4998)
++++ b/source/App/TAppDecoder/decmain.cpp	(working copy)
 @@ -39,6 +39,7 @@
  #include <stdio.h>
  #include <time.h>
@@ -187,8 +194,9 @@ Index: source/App/TAppDecoder/decmain.cpp
 +} // namespace pcc_hm
 Index: source/App/TAppEncoder/TAppEncCfg.cpp
 ===================================================================
---- source/App/TAppEncoder/TAppEncCfg.cpp	(revision 4998)
-+++ source/App/TAppEncoder/TAppEncCfg.cpp	(working copy)
+diff --git a/source/App/TAppEncoder/TAppEncCfg.cpp b/source/App/TAppEncoder/TAppEncCfg.cpp
+--- a/source/App/TAppEncoder/TAppEncCfg.cpp	(revision 4998)
++++ b/source/App/TAppEncoder/TAppEncCfg.cpp	(working copy)
 @@ -45,6 +45,7 @@
  #include "TAppEncCfg.h"
  #include "TAppCommon/program_options_lite.h"
@@ -257,8 +265,9 @@ Index: source/App/TAppEncoder/TAppEncCfg.cpp
 +} // namespace pcc_hm
 Index: source/App/TAppEncoder/TAppEncCfg.h
 ===================================================================
---- source/App/TAppEncoder/TAppEncCfg.h	(revision 4998)
-+++ source/App/TAppEncoder/TAppEncCfg.h	(working copy)
+diff --git a/source/App/TAppEncoder/TAppEncCfg.h b/source/App/TAppEncoder/TAppEncCfg.h
+--- a/source/App/TAppEncoder/TAppEncCfg.h	(revision 4998)
++++ b/source/App/TAppEncoder/TAppEncCfg.h	(working copy)
 @@ -46,6 +46,7 @@
  #endif
  #include <sstream>
@@ -291,8 +300,9 @@ Index: source/App/TAppEncoder/TAppEncCfg.h
 +
 Index: source/App/TAppEncoder/TAppEncTop.cpp
 ===================================================================
---- source/App/TAppEncoder/TAppEncTop.cpp	(revision 4998)
-+++ source/App/TAppEncoder/TAppEncTop.cpp	(working copy)
+diff --git a/source/App/TAppEncoder/TAppEncTop.cpp b/source/App/TAppEncoder/TAppEncTop.cpp
+--- a/source/App/TAppEncoder/TAppEncTop.cpp	(revision 4998)
++++ b/source/App/TAppEncoder/TAppEncTop.cpp	(working copy)
 @@ -49,6 +49,7 @@
  #if EXTENSION_360_VIDEO
  #include "TAppEncHelper360/TExt360AppEncTop.h"
@@ -396,8 +406,9 @@ Index: source/App/TAppEncoder/TAppEncTop.cpp
 +} // namespace pcc_hm
 Index: source/App/TAppEncoder/TAppEncTop.h
 ===================================================================
---- source/App/TAppEncoder/TAppEncTop.h	(revision 4998)
-+++ source/App/TAppEncoder/TAppEncTop.h	(working copy)
+diff --git a/source/App/TAppEncoder/TAppEncTop.h b/source/App/TAppEncoder/TAppEncTop.h
+--- a/source/App/TAppEncoder/TAppEncTop.h	(revision 4998)
++++ b/source/App/TAppEncoder/TAppEncTop.h	(working copy)
 @@ -45,6 +45,7 @@
  #include "TLibVideoIO/TVideoIOYuv.h"
  #include "TLibCommon/AccessUnit.h"
@@ -416,8 +427,9 @@ Index: source/App/TAppEncoder/TAppEncTop.h
 +
 Index: source/App/TAppEncoder/encmain.cpp
 ===================================================================
---- source/App/TAppEncoder/encmain.cpp	(revision 4998)
-+++ source/App/TAppEncoder/encmain.cpp	(working copy)
+diff --git a/source/App/TAppEncoder/encmain.cpp b/source/App/TAppEncoder/encmain.cpp
+--- a/source/App/TAppEncoder/encmain.cpp	(revision 4998)
++++ b/source/App/TAppEncoder/encmain.cpp	(working copy)
 @@ -44,6 +44,7 @@
  //! \{
  
@@ -435,141 +447,165 @@ Index: source/App/TAppEncoder/encmain.cpp
 +} // namespace pcc_hm
 Index: source/App/TAppMCTSExtractor/TAppMctsExtCfg.cpp
 ===================================================================
---- source/App/TAppMCTSExtractor/TAppMctsExtCfg.cpp	(revision 4998)
-+++ source/App/TAppMCTSExtractor/TAppMctsExtCfg.cpp	(working copy)
-@@ -39,6 +39,7 @@
- #include <string>
- #include "TAppMctsExtCfg.h"
- #include "TAppCommon/program_options_lite.h"
+diff --git a/source/App/TAppMCTSExtractor/TAppMctsExtCfg.cpp b/source/App/TAppMCTSExtractor/TAppMctsExtCfg.cpp
+--- a/source/App/TAppMCTSExtractor/TAppMctsExtCfg.cpp	(revision 4998)
++++ b/source/App/TAppMCTSExtractor/TAppMctsExtCfg.cpp	(working copy)
+@@ -36,12 +36,13 @@
+ */
+ #include <cstdio>
+ #include <cstring>
+-#include <string>
+-#include "TAppMctsExtCfg.h"
+-#include "TAppCommon/program_options_lite.h"
+-
+-#ifdef WIN32
+-#define strdup _strdup
++#include <string>
++#include "TAppMctsExtCfg.h"
++#include "TAppCommon/program_options_lite.h"
 +namespace pcc_hm {
- 
- #ifdef WIN32
- #define strdup _strdup
-@@ -97,3 +98,6 @@
++
++#ifdef WIN32
++#define strdup _strdup
  #endif
  
- //! \}
+ using namespace std;
+@@ -94,6 +95,9 @@
+ 
+   return true;
+ }
+-#endif
+-
+-//! \}
++#endif
++
++//! \}
 +
 +
 +} // namespace pcc_hm
 Index: source/App/TAppMCTSExtractor/TAppMctsExtCfg.h
 ===================================================================
---- source/App/TAppMCTSExtractor/TAppMctsExtCfg.h	(revision 4998)
-+++ source/App/TAppMCTSExtractor/TAppMctsExtCfg.h	(working copy)
-@@ -43,6 +43,7 @@
- 
- #include "TLibCommon/CommonDef.h"
- #include <vector>
-+namespace pcc_hm {
- 
- #if MCTS_EXTRACTION
- 
-@@ -79,4 +80,6 @@
- 
- #endif
- 
-+} // namespace pcc_hm
- #endif
-+
-Index: source/App/TAppMCTSExtractor/TAppMctsExtTop.cpp
-===================================================================
---- source/App/TAppMCTSExtractor/TAppMctsExtTop.cpp	(revision 4998)
-+++ source/App/TAppMCTSExtractor/TAppMctsExtTop.cpp	(working copy)
-@@ -44,12 +44,13 @@
- 
- #include "TAppMctsExtTop.h"
- #include "TLibDecoder/AnnexBread.h"
--#include "TLibDecoder/NALread.h"
--#include "TLibEncoder/NALwrite.h"
--#include "TLibCommon/SEI.h"
+diff --git a/source/App/TAppMCTSExtractor/TAppMctsExtCfg.h b/source/App/TAppMCTSExtractor/TAppMctsExtCfg.h
+--- a/source/App/TAppMCTSExtractor/TAppMctsExtCfg.h	(revision 4998)
++++ b/source/App/TAppMCTSExtractor/TAppMctsExtCfg.h	(working copy)
+@@ -40,12 +40,13 @@
+ #if _MSC_VER > 1000
+ #pragma once
+ #endif // _MSC_VER > 1000
+-
+-#include "TLibCommon/CommonDef.h"
+-#include <vector>
 -
 -#if MCTS_EXTRACTION
--  //! \ingroup TAppMctsExt
-+#include "TLibDecoder/NALread.h"
-+#include "TLibEncoder/NALwrite.h"
-+#include "TLibCommon/SEI.h"
+-
++
++#include "TLibCommon/CommonDef.h"
++#include <vector>
 +namespace pcc_hm {
 +
 +#if MCTS_EXTRACTION
-+  //! \ingroup TAppMctsExt
-   //! \{
++
+ //! \ingroup TAppMctsExt
+ //! \{
  
-   // ====================================================================================================================
-@@ -403,6 +404,9 @@
-     }
-     bitstreamFile << nalu.m_nalUnitData.str();
+@@ -76,7 +77,9 @@
+ };
  
--  }
--}
+ //! \}
+-
 -#endif
-+  }
-+}
+-
+-#endif
++
 +#endif
++
++} // namespace pcc_hm
++#endif
++
+Index: source/App/TAppMCTSExtractor/TAppMctsExtTop.cpp
+===================================================================
+diff --git a/source/App/TAppMCTSExtractor/TAppMctsExtTop.cpp b/source/App/TAppMCTSExtractor/TAppMctsExtTop.cpp
+--- a/source/App/TAppMCTSExtractor/TAppMctsExtTop.cpp	(revision 4998)
++++ b/source/App/TAppMCTSExtractor/TAppMctsExtTop.cpp	(working copy)
+@@ -47,6 +47,7 @@
+ #include "TLibDecoder/NALread.h"
+ #include "TLibEncoder/NALwrite.h"
+ #include "TLibCommon/SEI.h"
++namespace pcc_hm {
+ 
+ #if MCTS_EXTRACTION
+   //! \ingroup TAppMctsExt
+@@ -406,3 +407,6 @@
+   }
+ }
+ #endif
 +
 +
 +} // namespace pcc_hm
 Index: source/App/TAppMCTSExtractor/TAppMctsExtTop.h
 ===================================================================
---- source/App/TAppMCTSExtractor/TAppMctsExtTop.h	(revision 4998)
-+++ source/App/TAppMCTSExtractor/TAppMctsExtTop.h	(working copy)
-@@ -45,13 +45,14 @@
- #include "TLibDecoder/TDecTop.h"
- #include "TLibEncoder/TEncTop.h"
- #include "TLibCommon/AccessUnit.h"
+diff --git a/source/App/TAppMCTSExtractor/TAppMctsExtTop.h b/source/App/TAppMCTSExtractor/TAppMctsExtTop.h
+--- a/source/App/TAppMCTSExtractor/TAppMctsExtTop.h	(revision 4998)
++++ b/source/App/TAppMCTSExtractor/TAppMctsExtTop.h	(working copy)
+@@ -48,6 +48,7 @@
+ 
+ #if MCTS_EXTRACTION
+ #include "TAppMctsExtCfg.h"
++namespace pcc_hm {
+ 
+   //! \ingroup TAppMctsExt
+   //! \{
+@@ -94,4 +95,6 @@
+ //! \}
+ 
+ #endif
++} // namespace pcc_hm
+ #endif
 +
-+#if MCTS_EXTRACTION
-+#include "TAppMctsExtCfg.h"
+Index: source/App/TAppMCTSExtractor/mctsExtmain.cpp
+===================================================================
+diff --git a/source/App/TAppMCTSExtractor/mctsExtmain.cpp b/source/App/TAppMCTSExtractor/mctsExtmain.cpp
+--- a/source/App/TAppMCTSExtractor/mctsExtmain.cpp	(revision 4998)
++++ b/source/App/TAppMCTSExtractor/mctsExtmain.cpp	(working copy)
+@@ -36,13 +36,14 @@
+   */
+ 
+ #include <stdlib.h>  
+-#include <stdio.h>
+-#include <time.h>
+-#include "TAppMctsExtTop.h"
++#include <stdio.h>
++#include <time.h>
++#include "TAppMctsExtTop.h"
 +namespace pcc_hm {
 +
 +  //! \ingroup TAppMctsExt
 +  //! \{
  
--#if MCTS_EXTRACTION
--#include "TAppMctsExtCfg.h"
--
 -  //! \ingroup TAppMctsExt
 -  //! \{
 -
    // ====================================================================================================================
-   // Class definition
+   // Main function
    // ====================================================================================================================
-@@ -91,7 +92,9 @@
-   Void  xWriteOutput(std::ostream& bitstreamFile, const AccessUnit accessUnit); ///< write AU into output bitstream
- };
- 
+@@ -87,6 +88,9 @@
+   // destroy application extractor class
+   cTAppMctsExtTop.destroy();
+ #endif
+-  return returnCode;
+-}
 -//! \}
--
--#endif
--#endif
++  return returnCode;
++}
 +//! \}
-+
-+#endif
-+} // namespace pcc_hm
-+#endif
-+
-Index: source/App/TAppMCTSExtractor/mctsExtmain.cpp
-===================================================================
---- source/App/TAppMCTSExtractor/mctsExtmain.cpp	(revision 4998)
-+++ source/App/TAppMCTSExtractor/mctsExtmain.cpp	(working copy)
-@@ -39,6 +39,7 @@
- #include <stdio.h>
- #include <time.h>
- #include "TAppMctsExtTop.h"
-+namespace pcc_hm {
- 
-   //! \ingroup TAppMctsExt
-   //! \{
-@@ -90,3 +91,6 @@
-   return returnCode;
- }
- //! \}
 +
 +
 +} // namespace pcc_hm
 Index: source/App/utils/BitrateTargeting/ExtractBitrates.cpp
 ===================================================================
---- source/App/utils/BitrateTargeting/ExtractBitrates.cpp	(revision 4998)
-+++ source/App/utils/BitrateTargeting/ExtractBitrates.cpp	(working copy)
+diff --git a/source/App/utils/BitrateTargeting/ExtractBitrates.cpp b/source/App/utils/BitrateTargeting/ExtractBitrates.cpp
+--- a/source/App/utils/BitrateTargeting/ExtractBitrates.cpp	(revision 4998)
++++ b/source/App/utils/BitrateTargeting/ExtractBitrates.cpp	(working copy)
 @@ -37,6 +37,7 @@
  #include <cassert>
  #include <limits>
@@ -587,8 +623,9 @@ Index: source/App/utils/BitrateTargeting/ExtractBitrates.cpp
 +} // namespace pcc_hm
 Index: source/App/utils/BitrateTargeting/ExtractBitrates.h
 ===================================================================
---- source/App/utils/BitrateTargeting/ExtractBitrates.h	(revision 4998)
-+++ source/App/utils/BitrateTargeting/ExtractBitrates.h	(working copy)
+diff --git a/source/App/utils/BitrateTargeting/ExtractBitrates.h b/source/App/utils/BitrateTargeting/ExtractBitrates.h
+--- a/source/App/utils/BitrateTargeting/ExtractBitrates.h	(revision 4998)
++++ b/source/App/utils/BitrateTargeting/ExtractBitrates.h	(working copy)
 @@ -36,6 +36,7 @@
  
  #include "RuntimeError.h"
@@ -606,8 +643,9 @@ Index: source/App/utils/BitrateTargeting/ExtractBitrates.h
 +
 Index: source/App/utils/BitrateTargeting/ExtractBitratesMain.cpp
 ===================================================================
---- source/App/utils/BitrateTargeting/ExtractBitratesMain.cpp	(revision 4998)
-+++ source/App/utils/BitrateTargeting/ExtractBitratesMain.cpp	(working copy)
+diff --git a/source/App/utils/BitrateTargeting/ExtractBitratesMain.cpp b/source/App/utils/BitrateTargeting/ExtractBitratesMain.cpp
+--- a/source/App/utils/BitrateTargeting/ExtractBitratesMain.cpp	(revision 4998)
++++ b/source/App/utils/BitrateTargeting/ExtractBitratesMain.cpp	(working copy)
 @@ -34,6 +34,7 @@
  #include <iostream>
  #include <cassert>
@@ -625,8 +663,9 @@ Index: source/App/utils/BitrateTargeting/ExtractBitratesMain.cpp
 +} // namespace pcc_hm
 Index: source/App/utils/BitrateTargeting/GuessLambdaModifiers.cpp
 ===================================================================
---- source/App/utils/BitrateTargeting/GuessLambdaModifiers.cpp	(revision 4998)
-+++ source/App/utils/BitrateTargeting/GuessLambdaModifiers.cpp	(working copy)
+diff --git a/source/App/utils/BitrateTargeting/GuessLambdaModifiers.cpp b/source/App/utils/BitrateTargeting/GuessLambdaModifiers.cpp
+--- a/source/App/utils/BitrateTargeting/GuessLambdaModifiers.cpp	(revision 4998)
++++ b/source/App/utils/BitrateTargeting/GuessLambdaModifiers.cpp	(working copy)
 @@ -35,6 +35,7 @@
  #include <limits>
  #include <cassert>
@@ -644,8 +683,9 @@ Index: source/App/utils/BitrateTargeting/GuessLambdaModifiers.cpp
 +} // namespace pcc_hm
 Index: source/App/utils/BitrateTargeting/GuessLambdaModifiers.h
 ===================================================================
---- source/App/utils/BitrateTargeting/GuessLambdaModifiers.h	(revision 4998)
-+++ source/App/utils/BitrateTargeting/GuessLambdaModifiers.h	(working copy)
+diff --git a/source/App/utils/BitrateTargeting/GuessLambdaModifiers.h b/source/App/utils/BitrateTargeting/GuessLambdaModifiers.h
+--- a/source/App/utils/BitrateTargeting/GuessLambdaModifiers.h	(revision 4998)
++++ b/source/App/utils/BitrateTargeting/GuessLambdaModifiers.h	(working copy)
 @@ -40,6 +40,7 @@
  #include <list>
  #include <set>
@@ -663,8 +703,9 @@ Index: source/App/utils/BitrateTargeting/GuessLambdaModifiers.h
 +
 Index: source/App/utils/BitrateTargeting/GuessLambdaModifiersMain.cpp
 ===================================================================
---- source/App/utils/BitrateTargeting/GuessLambdaModifiersMain.cpp	(revision 4998)
-+++ source/App/utils/BitrateTargeting/GuessLambdaModifiersMain.cpp	(working copy)
+diff --git a/source/App/utils/BitrateTargeting/GuessLambdaModifiersMain.cpp b/source/App/utils/BitrateTargeting/GuessLambdaModifiersMain.cpp
+--- a/source/App/utils/BitrateTargeting/GuessLambdaModifiersMain.cpp	(revision 4998)
++++ b/source/App/utils/BitrateTargeting/GuessLambdaModifiersMain.cpp	(working copy)
 @@ -35,6 +35,7 @@
  #include "RuntimeError.h"
  #include "GuessLambdaModifiers.h"
@@ -682,8 +723,9 @@ Index: source/App/utils/BitrateTargeting/GuessLambdaModifiersMain.cpp
 +} // namespace pcc_hm
 Index: source/App/utils/BitrateTargeting/RuntimeError.h
 ===================================================================
---- source/App/utils/BitrateTargeting/RuntimeError.h	(revision 4998)
-+++ source/App/utils/BitrateTargeting/RuntimeError.h	(working copy)
+diff --git a/source/App/utils/BitrateTargeting/RuntimeError.h b/source/App/utils/BitrateTargeting/RuntimeError.h
+--- a/source/App/utils/BitrateTargeting/RuntimeError.h	(revision 4998)
++++ b/source/App/utils/BitrateTargeting/RuntimeError.h	(working copy)
 @@ -36,6 +36,7 @@
  
  #include <sstream>
@@ -701,8 +743,9 @@ Index: source/App/utils/BitrateTargeting/RuntimeError.h
 +
 Index: source/App/utils/annexBbytecount.cpp
 ===================================================================
---- source/App/utils/annexBbytecount.cpp	(revision 4998)
-+++ source/App/utils/annexBbytecount.cpp	(working copy)
+diff --git a/source/App/utils/annexBbytecount.cpp b/source/App/utils/annexBbytecount.cpp
+--- a/source/App/utils/annexBbytecount.cpp	(revision 4998)
++++ b/source/App/utils/annexBbytecount.cpp	(working copy)
 @@ -39,6 +39,7 @@
  #include <string.h>
  
@@ -720,8 +763,9 @@ Index: source/App/utils/annexBbytecount.cpp
 +} // namespace pcc_hm
 Index: source/App/utils/convert_NtoMbit_YCbCr.cpp
 ===================================================================
---- source/App/utils/convert_NtoMbit_YCbCr.cpp	(revision 4998)
-+++ source/App/utils/convert_NtoMbit_YCbCr.cpp	(working copy)
+diff --git a/source/App/utils/convert_NtoMbit_YCbCr.cpp b/source/App/utils/convert_NtoMbit_YCbCr.cpp
+--- a/source/App/utils/convert_NtoMbit_YCbCr.cpp	(revision 4998)
++++ b/source/App/utils/convert_NtoMbit_YCbCr.cpp	(working copy)
 @@ -36,6 +36,7 @@
  #include "TLibCommon/TComPicYuv.h"
  #include "TLibVideoIO/TVideoIOYuv.h"
@@ -739,8 +783,9 @@ Index: source/App/utils/convert_NtoMbit_YCbCr.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TAppCommon/program_options_lite.cpp
 ===================================================================
---- source/Lib/TAppCommon/program_options_lite.cpp	(revision 4998)
-+++ source/Lib/TAppCommon/program_options_lite.cpp	(working copy)
+diff --git a/source/Lib/TAppCommon/program_options_lite.cpp b/source/Lib/TAppCommon/program_options_lite.cpp
+--- a/source/Lib/TAppCommon/program_options_lite.cpp	(revision 4998)
++++ b/source/Lib/TAppCommon/program_options_lite.cpp	(working copy)
 @@ -39,6 +39,7 @@
  #include <map>
  #include <algorithm>
@@ -758,8 +803,9 @@ Index: source/Lib/TAppCommon/program_options_lite.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TAppCommon/program_options_lite.h
 ===================================================================
---- source/Lib/TAppCommon/program_options_lite.h	(revision 4998)
-+++ source/Lib/TAppCommon/program_options_lite.h	(working copy)
+diff --git a/source/Lib/TAppCommon/program_options_lite.h b/source/Lib/TAppCommon/program_options_lite.h
+--- a/source/Lib/TAppCommon/program_options_lite.h	(revision 4998)
++++ b/source/Lib/TAppCommon/program_options_lite.h	(working copy)
 @@ -36,6 +36,8 @@
  #include <list>
  #include <map>
@@ -778,8 +824,9 @@ Index: source/Lib/TAppCommon/program_options_lite.h
 +
 Index: source/Lib/TLibCommon/AccessUnit.h
 ===================================================================
---- source/Lib/TLibCommon/AccessUnit.h	(revision 4998)
-+++ source/Lib/TLibCommon/AccessUnit.h	(working copy)
+diff --git a/source/Lib/TLibCommon/AccessUnit.h b/source/Lib/TLibCommon/AccessUnit.h
+--- a/source/Lib/TLibCommon/AccessUnit.h	(revision 4998)
++++ b/source/Lib/TLibCommon/AccessUnit.h	(working copy)
 @@ -43,6 +43,7 @@
  
  #include <list>
@@ -797,8 +844,9 @@ Index: source/Lib/TLibCommon/AccessUnit.h
 +
 Index: source/Lib/TLibCommon/CommonDef.h
 ===================================================================
---- source/Lib/TLibCommon/CommonDef.h	(revision 4998)
-+++ source/Lib/TLibCommon/CommonDef.h	(working copy)
+diff --git a/source/Lib/TLibCommon/CommonDef.h b/source/Lib/TLibCommon/CommonDef.h
+--- a/source/Lib/TLibCommon/CommonDef.h	(revision 4998)
++++ b/source/Lib/TLibCommon/CommonDef.h	(working copy)
 @@ -43,6 +43,8 @@
  #include <assert.h>
  #include <limits>
@@ -826,8 +874,9 @@ Index: source/Lib/TLibCommon/CommonDef.h
 +
 Index: source/Lib/TLibCommon/ContextModel.cpp
 ===================================================================
---- source/Lib/TLibCommon/ContextModel.cpp	(revision 4998)
-+++ source/Lib/TLibCommon/ContextModel.cpp	(working copy)
+diff --git a/source/Lib/TLibCommon/ContextModel.cpp b/source/Lib/TLibCommon/ContextModel.cpp
+--- a/source/Lib/TLibCommon/ContextModel.cpp	(revision 4998)
++++ b/source/Lib/TLibCommon/ContextModel.cpp	(working copy)
 @@ -38,6 +38,7 @@
  #include <algorithm>
  
@@ -845,8 +894,9 @@ Index: source/Lib/TLibCommon/ContextModel.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibCommon/ContextModel.h
 ===================================================================
---- source/Lib/TLibCommon/ContextModel.h	(revision 4998)
-+++ source/Lib/TLibCommon/ContextModel.h	(working copy)
+diff --git a/source/Lib/TLibCommon/ContextModel.h b/source/Lib/TLibCommon/ContextModel.h
+--- a/source/Lib/TLibCommon/ContextModel.h	(revision 4998)
++++ b/source/Lib/TLibCommon/ContextModel.h	(working copy)
 @@ -45,6 +45,7 @@
  
  #include "CommonDef.h"
@@ -865,8 +915,9 @@ Index: source/Lib/TLibCommon/ContextModel.h
 +
 Index: source/Lib/TLibCommon/ContextModel3DBuffer.cpp
 ===================================================================
---- source/Lib/TLibCommon/ContextModel3DBuffer.cpp	(revision 4998)
-+++ source/Lib/TLibCommon/ContextModel3DBuffer.cpp	(working copy)
+diff --git a/source/Lib/TLibCommon/ContextModel3DBuffer.cpp b/source/Lib/TLibCommon/ContextModel3DBuffer.cpp
+--- a/source/Lib/TLibCommon/ContextModel3DBuffer.cpp	(revision 4998)
++++ b/source/Lib/TLibCommon/ContextModel3DBuffer.cpp	(working copy)
 @@ -36,6 +36,7 @@
  */
  
@@ -884,8 +935,9 @@ Index: source/Lib/TLibCommon/ContextModel3DBuffer.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibCommon/ContextModel3DBuffer.h
 ===================================================================
---- source/Lib/TLibCommon/ContextModel3DBuffer.h	(revision 4998)
-+++ source/Lib/TLibCommon/ContextModel3DBuffer.h	(working copy)
+diff --git a/source/Lib/TLibCommon/ContextModel3DBuffer.h b/source/Lib/TLibCommon/ContextModel3DBuffer.h
+--- a/source/Lib/TLibCommon/ContextModel3DBuffer.h	(revision 4998)
++++ b/source/Lib/TLibCommon/ContextModel3DBuffer.h	(working copy)
 @@ -43,6 +43,7 @@
  
  #include "CommonDef.h"
@@ -903,8 +955,9 @@ Index: source/Lib/TLibCommon/ContextModel3DBuffer.h
 +
 Index: source/Lib/TLibCommon/ContextTables.h
 ===================================================================
---- source/Lib/TLibCommon/ContextTables.h	(revision 4998)
-+++ source/Lib/TLibCommon/ContextTables.h	(working copy)
+diff --git a/source/Lib/TLibCommon/ContextTables.h b/source/Lib/TLibCommon/ContextTables.h
+--- a/source/Lib/TLibCommon/ContextTables.h	(revision 4998)
++++ b/source/Lib/TLibCommon/ContextTables.h	(working copy)
 @@ -39,6 +39,7 @@
  #ifndef __CONTEXTTABLES__
  #define __CONTEXTTABLES__
@@ -922,8 +975,9 @@ Index: source/Lib/TLibCommon/ContextTables.h
 +
 Index: source/Lib/TLibCommon/Debug.cpp
 ===================================================================
---- source/Lib/TLibCommon/Debug.cpp	(revision 4998)
-+++ source/Lib/TLibCommon/Debug.cpp	(working copy)
+diff --git a/source/Lib/TLibCommon/Debug.cpp b/source/Lib/TLibCommon/Debug.cpp
+--- a/source/Lib/TLibCommon/Debug.cpp	(revision 4998)
++++ b/source/Lib/TLibCommon/Debug.cpp	(working copy)
 @@ -41,6 +41,7 @@
  #include "TComDataCU.h"
  #include "TComPic.h"
@@ -949,8 +1003,9 @@ Index: source/Lib/TLibCommon/Debug.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibCommon/Debug.h
 ===================================================================
---- source/Lib/TLibCommon/Debug.h	(revision 4998)
-+++ source/Lib/TLibCommon/Debug.h	(working copy)
+diff --git a/source/Lib/TLibCommon/Debug.h b/source/Lib/TLibCommon/Debug.h
+--- a/source/Lib/TLibCommon/Debug.h	(revision 4998)
++++ b/source/Lib/TLibCommon/Debug.h	(working copy)
 @@ -45,6 +45,7 @@
  #include <stdlib.h>
  #include <sstream>
@@ -968,8 +1023,9 @@ Index: source/Lib/TLibCommon/Debug.h
 +
 Index: source/Lib/TLibCommon/NAL.h
 ===================================================================
---- source/Lib/TLibCommon/NAL.h	(revision 4998)
-+++ source/Lib/TLibCommon/NAL.h	(working copy)
+diff --git a/source/Lib/TLibCommon/NAL.h b/source/Lib/TLibCommon/NAL.h
+--- a/source/Lib/TLibCommon/NAL.h	(revision 4998)
++++ b/source/Lib/TLibCommon/NAL.h	(working copy)
 @@ -38,6 +38,7 @@
  
  #include <sstream>
@@ -987,8 +1043,9 @@ Index: source/Lib/TLibCommon/NAL.h
 +
 Index: source/Lib/TLibCommon/SEI.cpp
 ===================================================================
---- source/Lib/TLibCommon/SEI.cpp	(revision 4998)
-+++ source/Lib/TLibCommon/SEI.cpp	(working copy)
+diff --git a/source/Lib/TLibCommon/SEI.cpp b/source/Lib/TLibCommon/SEI.cpp
+--- a/source/Lib/TLibCommon/SEI.cpp	(revision 4998)
++++ b/source/Lib/TLibCommon/SEI.cpp	(working copy)
 @@ -38,6 +38,7 @@
  #include "CommonDef.h"
  #include "SEI.h"
@@ -1006,8 +1063,9 @@ Index: source/Lib/TLibCommon/SEI.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibCommon/SEI.h
 ===================================================================
---- source/Lib/TLibCommon/SEI.h	(revision 4998)
-+++ source/Lib/TLibCommon/SEI.h	(working copy)
+diff --git a/source/Lib/TLibCommon/SEI.h b/source/Lib/TLibCommon/SEI.h
+--- a/source/Lib/TLibCommon/SEI.h	(revision 4998)
++++ b/source/Lib/TLibCommon/SEI.h	(working copy)
 @@ -41,6 +41,7 @@
  
  #include "CommonDef.h"
@@ -1026,8 +1084,9 @@ Index: source/Lib/TLibCommon/SEI.h
 +
 Index: source/Lib/TLibCommon/TComBitCounter.h
 ===================================================================
---- source/Lib/TLibCommon/TComBitCounter.h	(revision 4998)
-+++ source/Lib/TLibCommon/TComBitCounter.h	(working copy)
+diff --git a/source/Lib/TLibCommon/TComBitCounter.h b/source/Lib/TLibCommon/TComBitCounter.h
+--- a/source/Lib/TLibCommon/TComBitCounter.h	(revision 4998)
++++ b/source/Lib/TLibCommon/TComBitCounter.h	(working copy)
 @@ -43,6 +43,7 @@
  #endif // _MSC_VER > 1000
  
@@ -1045,8 +1104,9 @@ Index: source/Lib/TLibCommon/TComBitCounter.h
 +
 Index: source/Lib/TLibCommon/TComBitStream.cpp
 ===================================================================
---- source/Lib/TLibCommon/TComBitStream.cpp	(revision 4998)
-+++ source/Lib/TLibCommon/TComBitStream.cpp	(working copy)
+diff --git a/source/Lib/TLibCommon/TComBitStream.cpp b/source/Lib/TLibCommon/TComBitStream.cpp
+--- a/source/Lib/TLibCommon/TComBitStream.cpp	(revision 4998)
++++ b/source/Lib/TLibCommon/TComBitStream.cpp	(working copy)
 @@ -40,6 +40,7 @@
  #include "TComBitStream.h"
  #include <string.h>
@@ -1064,8 +1124,9 @@ Index: source/Lib/TLibCommon/TComBitStream.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibCommon/TComBitStream.h
 ===================================================================
---- source/Lib/TLibCommon/TComBitStream.h	(revision 4998)
-+++ source/Lib/TLibCommon/TComBitStream.h	(working copy)
+diff --git a/source/Lib/TLibCommon/TComBitStream.h b/source/Lib/TLibCommon/TComBitStream.h
+--- a/source/Lib/TLibCommon/TComBitStream.h	(revision 4998)
++++ b/source/Lib/TLibCommon/TComBitStream.h	(working copy)
 @@ -46,6 +46,7 @@
  #include <vector>
  #include <stdio.h>
@@ -1083,8 +1144,9 @@ Index: source/Lib/TLibCommon/TComBitStream.h
 +
 Index: source/Lib/TLibCommon/TComCABACTables.cpp
 ===================================================================
---- source/Lib/TLibCommon/TComCABACTables.cpp	(revision 4998)
-+++ source/Lib/TLibCommon/TComCABACTables.cpp	(working copy)
+diff --git a/source/Lib/TLibCommon/TComCABACTables.cpp b/source/Lib/TLibCommon/TComCABACTables.cpp
+--- a/source/Lib/TLibCommon/TComCABACTables.cpp	(revision 4998)
++++ b/source/Lib/TLibCommon/TComCABACTables.cpp	(working copy)
 @@ -36,6 +36,7 @@
   */
  
@@ -1102,8 +1164,9 @@ Index: source/Lib/TLibCommon/TComCABACTables.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibCommon/TComCABACTables.h
 ===================================================================
---- source/Lib/TLibCommon/TComCABACTables.h	(revision 4998)
-+++ source/Lib/TLibCommon/TComCABACTables.h	(working copy)
+diff --git a/source/Lib/TLibCommon/TComCABACTables.h b/source/Lib/TLibCommon/TComCABACTables.h
+--- a/source/Lib/TLibCommon/TComCABACTables.h	(revision 4998)
++++ b/source/Lib/TLibCommon/TComCABACTables.h	(working copy)
 @@ -40,6 +40,7 @@
  
  #include "TLibCommon/CommonDef.h"
@@ -1121,8 +1184,9 @@ Index: source/Lib/TLibCommon/TComCABACTables.h
 +
 Index: source/Lib/TLibCommon/TComChromaFormat.cpp
 ===================================================================
---- source/Lib/TLibCommon/TComChromaFormat.cpp	(revision 4998)
-+++ source/Lib/TLibCommon/TComChromaFormat.cpp	(working copy)
+diff --git a/source/Lib/TLibCommon/TComChromaFormat.cpp b/source/Lib/TLibCommon/TComChromaFormat.cpp
+--- a/source/Lib/TLibCommon/TComChromaFormat.cpp	(revision 4998)
++++ b/source/Lib/TLibCommon/TComChromaFormat.cpp	(working copy)
 @@ -37,6 +37,7 @@
  #include "TComDataCU.h"
  #include "TComTrQuant.h"
@@ -1140,8 +1204,9 @@ Index: source/Lib/TLibCommon/TComChromaFormat.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibCommon/TComChromaFormat.h
 ===================================================================
---- source/Lib/TLibCommon/TComChromaFormat.h	(revision 4998)
-+++ source/Lib/TLibCommon/TComChromaFormat.h	(working copy)
+diff --git a/source/Lib/TLibCommon/TComChromaFormat.h b/source/Lib/TLibCommon/TComChromaFormat.h
+--- a/source/Lib/TLibCommon/TComChromaFormat.h	(revision 4998)
++++ b/source/Lib/TLibCommon/TComChromaFormat.h	(working copy)
 @@ -42,6 +42,7 @@
  #include <vector>
  #include <assert.h>
@@ -1159,27 +1224,49 @@ Index: source/Lib/TLibCommon/TComChromaFormat.h
 +
 Index: source/Lib/TLibCommon/TComCodingStatistics.h
 ===================================================================
---- source/Lib/TLibCommon/TComCodingStatistics.h	(revision 4998)
-+++ source/Lib/TLibCommon/TComCodingStatistics.h	(working copy)
-@@ -40,6 +40,7 @@
- #include <map>
- #include <math.h>
- #include "TComChromaFormat.h"
+diff --git a/source/Lib/TLibCommon/TComCodingStatistics.h b/source/Lib/TLibCommon/TComCodingStatistics.h
+--- a/source/Lib/TLibCommon/TComCodingStatistics.h	(revision 4998)
++++ b/source/Lib/TLibCommon/TComCodingStatistics.h	(working copy)
+@@ -37,13 +37,14 @@
+ #include "CommonDef.h"
+ #include <stdio.h>
+ #include <string>
+-#include <map>
+-#include <math.h>
+-#include "TComChromaFormat.h"
++#include <map>
++#include <math.h>
++#include "TComChromaFormat.h"
 +namespace pcc_hm {
++
++static const Int64 TCOMCODINGSTATISTICS_ENTROPYSCALE=32768;
++
  
- static const Int64 TCOMCODINGSTATISTICS_ENTROPYSCALE=32768;
- 
-@@ -486,4 +487,6 @@
-     }
- };
- 
+-static const Int64 TCOMCODINGSTATISTICS_ENTROPYSCALE=32768;
+-
+-
+ enum TComCodingStatisticsType
+ {
+   STATS__NAL_UNIT_TOTAL_BODY,// This is a special case and is not included in the total sums.
+@@ -483,7 +484,9 @@
+       s.bits+=inst.values.values[uiRangeBefore]-inst.values.values[uiRangeAfter];
+       s.count++;
+       s.sum+=val;
+-    }
+-};
+-
+-#endif
++    }
++};
++
 +} // namespace pcc_hm
- #endif
++#endif
 +
 Index: source/Lib/TLibCommon/TComDataCU.cpp
 ===================================================================
---- source/Lib/TLibCommon/TComDataCU.cpp	(revision 4998)
-+++ source/Lib/TLibCommon/TComDataCU.cpp	(working copy)
+diff --git a/source/Lib/TLibCommon/TComDataCU.cpp b/source/Lib/TLibCommon/TComDataCU.cpp
+--- a/source/Lib/TLibCommon/TComDataCU.cpp	(revision 4998)
++++ b/source/Lib/TLibCommon/TComDataCU.cpp	(working copy)
 @@ -39,6 +39,7 @@
  #include "TComDataCU.h"
  #include "TComTU.h"
@@ -1197,8 +1284,9 @@ Index: source/Lib/TLibCommon/TComDataCU.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibCommon/TComDataCU.h
 ===================================================================
---- source/Lib/TLibCommon/TComDataCU.h	(revision 4998)
-+++ source/Lib/TLibCommon/TComDataCU.h	(working copy)
+diff --git a/source/Lib/TLibCommon/TComDataCU.h b/source/Lib/TLibCommon/TComDataCU.h
+--- a/source/Lib/TLibCommon/TComDataCU.h	(revision 4998)
++++ b/source/Lib/TLibCommon/TComDataCU.h	(working copy)
 @@ -48,6 +48,7 @@
  #include "TComSlice.h"
  #include "TComRdCost.h"
@@ -1216,8 +1304,9 @@ Index: source/Lib/TLibCommon/TComDataCU.h
 +
 Index: source/Lib/TLibCommon/TComHash.cpp
 ===================================================================
---- source/Lib/TLibCommon/TComHash.cpp	(revision 4998)
-+++ source/Lib/TLibCommon/TComHash.cpp	(working copy)
+diff --git a/source/Lib/TLibCommon/TComHash.cpp b/source/Lib/TLibCommon/TComHash.cpp
+--- a/source/Lib/TLibCommon/TComHash.cpp	(revision 4998)
++++ b/source/Lib/TLibCommon/TComHash.cpp	(working copy)
 @@ -37,6 +37,7 @@
  
  #include "CommonDef.h"
@@ -1235,8 +1324,9 @@ Index: source/Lib/TLibCommon/TComHash.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibCommon/TComHash.h
 ===================================================================
---- source/Lib/TLibCommon/TComHash.h	(revision 4998)
-+++ source/Lib/TLibCommon/TComHash.h	(working copy)
+diff --git a/source/Lib/TLibCommon/TComHash.h b/source/Lib/TLibCommon/TComHash.h
+--- a/source/Lib/TLibCommon/TComHash.h	(revision 4998)
++++ b/source/Lib/TLibCommon/TComHash.h	(working copy)
 @@ -43,6 +43,7 @@
  #include "TComPicSym.h"
  #include "TComPicYuv.h"
@@ -1254,8 +1344,9 @@ Index: source/Lib/TLibCommon/TComHash.h
 +
 Index: source/Lib/TLibCommon/TComInterpolationFilter.cpp
 ===================================================================
---- source/Lib/TLibCommon/TComInterpolationFilter.cpp	(revision 4998)
-+++ source/Lib/TLibCommon/TComInterpolationFilter.cpp	(working copy)
+diff --git a/source/Lib/TLibCommon/TComInterpolationFilter.cpp b/source/Lib/TLibCommon/TComInterpolationFilter.cpp
+--- a/source/Lib/TLibCommon/TComInterpolationFilter.cpp	(revision 4998)
++++ b/source/Lib/TLibCommon/TComInterpolationFilter.cpp	(working copy)
 @@ -49,6 +49,7 @@
  #if VECTOR_CODING__INTERPOLATION_FILTER && (RExt__HIGH_BIT_DEPTH_SUPPORT==0)
  #include <emmintrin.h>
@@ -1273,8 +1364,9 @@ Index: source/Lib/TLibCommon/TComInterpolationFilter.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibCommon/TComInterpolationFilter.h
 ===================================================================
---- source/Lib/TLibCommon/TComInterpolationFilter.h	(revision 4998)
-+++ source/Lib/TLibCommon/TComInterpolationFilter.h	(working copy)
+diff --git a/source/Lib/TLibCommon/TComInterpolationFilter.h b/source/Lib/TLibCommon/TComInterpolationFilter.h
+--- a/source/Lib/TLibCommon/TComInterpolationFilter.h	(revision 4998)
++++ b/source/Lib/TLibCommon/TComInterpolationFilter.h	(working copy)
 @@ -40,6 +40,7 @@
  #define __TCOMINTERPOLATIONFILTER__
  
@@ -1292,8 +1384,9 @@ Index: source/Lib/TLibCommon/TComInterpolationFilter.h
 +
 Index: source/Lib/TLibCommon/TComList.h
 ===================================================================
---- source/Lib/TLibCommon/TComList.h	(revision 4998)
-+++ source/Lib/TLibCommon/TComList.h	(working copy)
+diff --git a/source/Lib/TLibCommon/TComList.h b/source/Lib/TLibCommon/TComList.h
+--- a/source/Lib/TLibCommon/TComList.h	(revision 4998)
++++ b/source/Lib/TLibCommon/TComList.h	(working copy)
 @@ -47,6 +47,7 @@
  #include "CommonDef.h"
  
@@ -1311,8 +1404,9 @@ Index: source/Lib/TLibCommon/TComList.h
 +
 Index: source/Lib/TLibCommon/TComLoopFilter.cpp
 ===================================================================
---- source/Lib/TLibCommon/TComLoopFilter.cpp	(revision 4998)
-+++ source/Lib/TLibCommon/TComLoopFilter.cpp	(working copy)
+diff --git a/source/Lib/TLibCommon/TComLoopFilter.cpp b/source/Lib/TLibCommon/TComLoopFilter.cpp
+--- a/source/Lib/TLibCommon/TComLoopFilter.cpp	(revision 4998)
++++ b/source/Lib/TLibCommon/TComLoopFilter.cpp	(working copy)
 @@ -39,6 +39,7 @@
  #include "TComSlice.h"
  #include "TComMv.h"
@@ -1330,8 +1424,9 @@ Index: source/Lib/TLibCommon/TComLoopFilter.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibCommon/TComLoopFilter.h
 ===================================================================
---- source/Lib/TLibCommon/TComLoopFilter.h	(revision 4998)
-+++ source/Lib/TLibCommon/TComLoopFilter.h	(working copy)
+diff --git a/source/Lib/TLibCommon/TComLoopFilter.h b/source/Lib/TLibCommon/TComLoopFilter.h
+--- a/source/Lib/TLibCommon/TComLoopFilter.h	(revision 4998)
++++ b/source/Lib/TLibCommon/TComLoopFilter.h	(working copy)
 @@ -40,6 +40,7 @@
  
  #include "CommonDef.h"
@@ -1349,8 +1444,9 @@ Index: source/Lib/TLibCommon/TComLoopFilter.h
 +
 Index: source/Lib/TLibCommon/TComMotionInfo.cpp
 ===================================================================
---- source/Lib/TLibCommon/TComMotionInfo.cpp	(revision 4998)
-+++ source/Lib/TLibCommon/TComMotionInfo.cpp	(working copy)
+diff --git a/source/Lib/TLibCommon/TComMotionInfo.cpp b/source/Lib/TLibCommon/TComMotionInfo.cpp
+--- a/source/Lib/TLibCommon/TComMotionInfo.cpp	(revision 4998)
++++ b/source/Lib/TLibCommon/TComMotionInfo.cpp	(working copy)
 @@ -39,6 +39,7 @@
  #include "TComMotionInfo.h"
  #include "assert.h"
@@ -1368,8 +1464,9 @@ Index: source/Lib/TLibCommon/TComMotionInfo.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibCommon/TComMotionInfo.h
 ===================================================================
---- source/Lib/TLibCommon/TComMotionInfo.h	(revision 4998)
-+++ source/Lib/TLibCommon/TComMotionInfo.h	(working copy)
+diff --git a/source/Lib/TLibCommon/TComMotionInfo.h b/source/Lib/TLibCommon/TComMotionInfo.h
+--- a/source/Lib/TLibCommon/TComMotionInfo.h	(revision 4998)
++++ b/source/Lib/TLibCommon/TComMotionInfo.h	(working copy)
 @@ -42,6 +42,7 @@
  #include <memory.h>
  #include "CommonDef.h"
@@ -1387,8 +1484,9 @@ Index: source/Lib/TLibCommon/TComMotionInfo.h
 +
 Index: source/Lib/TLibCommon/TComMv.h
 ===================================================================
---- source/Lib/TLibCommon/TComMv.h	(revision 4998)
-+++ source/Lib/TLibCommon/TComMv.h	(working copy)
+diff --git a/source/Lib/TLibCommon/TComMv.h b/source/Lib/TLibCommon/TComMv.h
+--- a/source/Lib/TLibCommon/TComMv.h	(revision 4998)
++++ b/source/Lib/TLibCommon/TComMv.h	(working copy)
 @@ -39,6 +39,7 @@
  #define __TCOMMV__
  
@@ -1406,8 +1504,9 @@ Index: source/Lib/TLibCommon/TComMv.h
 +
 Index: source/Lib/TLibCommon/TComPattern.cpp
 ===================================================================
---- source/Lib/TLibCommon/TComPattern.cpp	(revision 4998)
-+++ source/Lib/TLibCommon/TComPattern.cpp	(working copy)
+diff --git a/source/Lib/TLibCommon/TComPattern.cpp b/source/Lib/TLibCommon/TComPattern.cpp
+--- a/source/Lib/TLibCommon/TComPattern.cpp	(revision 4998)
++++ b/source/Lib/TLibCommon/TComPattern.cpp	(working copy)
 @@ -41,6 +41,7 @@
  #include "TComTU.h"
  #include "Debug.h"
@@ -1450,8 +1549,9 @@ Index: source/Lib/TLibCommon/TComPattern.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibCommon/TComPattern.h
 ===================================================================
---- source/Lib/TLibCommon/TComPattern.h	(revision 4998)
-+++ source/Lib/TLibCommon/TComPattern.h	(working copy)
+diff --git a/source/Lib/TLibCommon/TComPattern.h b/source/Lib/TLibCommon/TComPattern.h
+--- a/source/Lib/TLibCommon/TComPattern.h	(revision 4998)
++++ b/source/Lib/TLibCommon/TComPattern.h	(working copy)
 @@ -40,6 +40,7 @@
  
  // Include files
@@ -1517,8 +1617,9 @@ Index: source/Lib/TLibCommon/TComPattern.h
 +
 Index: source/Lib/TLibCommon/TComPic.cpp
 ===================================================================
---- source/Lib/TLibCommon/TComPic.cpp	(revision 4998)
-+++ source/Lib/TLibCommon/TComPic.cpp	(working copy)
+diff --git a/source/Lib/TLibCommon/TComPic.cpp b/source/Lib/TLibCommon/TComPic.cpp
+--- a/source/Lib/TLibCommon/TComPic.cpp	(revision 4998)
++++ b/source/Lib/TLibCommon/TComPic.cpp	(working copy)
 @@ -37,6 +37,7 @@
  
  #include "TComPic.h"
@@ -1576,8 +1677,9 @@ Index: source/Lib/TLibCommon/TComPic.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibCommon/TComPic.h
 ===================================================================
---- source/Lib/TLibCommon/TComPic.h	(revision 4998)
-+++ source/Lib/TLibCommon/TComPic.h	(working copy)
+diff --git a/source/Lib/TLibCommon/TComPic.h b/source/Lib/TLibCommon/TComPic.h
+--- a/source/Lib/TLibCommon/TComPic.h	(revision 4998)
++++ b/source/Lib/TLibCommon/TComPic.h	(working copy)
 @@ -44,6 +44,7 @@
  #include "TComPicYuv.h"
  #include "TComBitStream.h"
@@ -1618,8 +1720,9 @@ Index: source/Lib/TLibCommon/TComPic.h
 +
 Index: source/Lib/TLibCommon/TComPicSym.cpp
 ===================================================================
---- source/Lib/TLibCommon/TComPicSym.cpp	(revision 4998)
-+++ source/Lib/TLibCommon/TComPicSym.cpp	(working copy)
+diff --git a/source/Lib/TLibCommon/TComPicSym.cpp b/source/Lib/TLibCommon/TComPicSym.cpp
+--- a/source/Lib/TLibCommon/TComPicSym.cpp	(revision 4998)
++++ b/source/Lib/TLibCommon/TComPicSym.cpp	(working copy)
 @@ -38,6 +38,7 @@
  #include "TComPicSym.h"
  #include "TComSampleAdaptiveOffset.h"
@@ -1637,8 +1740,9 @@ Index: source/Lib/TLibCommon/TComPicSym.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibCommon/TComPicSym.h
 ===================================================================
---- source/Lib/TLibCommon/TComPicSym.h	(revision 4998)
-+++ source/Lib/TLibCommon/TComPicSym.h	(working copy)
+diff --git a/source/Lib/TLibCommon/TComPicSym.h b/source/Lib/TLibCommon/TComPicSym.h
+--- a/source/Lib/TLibCommon/TComPicSym.h	(revision 4998)
++++ b/source/Lib/TLibCommon/TComPicSym.h	(working copy)
 @@ -44,6 +44,7 @@
  #include "CommonDef.h"
  #include "TComSlice.h"
@@ -1657,8 +1761,9 @@ Index: source/Lib/TLibCommon/TComPicSym.h
 +
 Index: source/Lib/TLibCommon/TComPicYuv.cpp
 ===================================================================
---- source/Lib/TLibCommon/TComPicYuv.cpp	(revision 4998)
-+++ source/Lib/TLibCommon/TComPicYuv.cpp	(working copy)
+diff --git a/source/Lib/TLibCommon/TComPicYuv.cpp b/source/Lib/TLibCommon/TComPicYuv.cpp
+--- a/source/Lib/TLibCommon/TComPicYuv.cpp	(revision 4998)
++++ b/source/Lib/TLibCommon/TComPicYuv.cpp	(working copy)
 @@ -47,6 +47,7 @@
  
  #include "TComPicYuv.h"
@@ -1676,8 +1781,9 @@ Index: source/Lib/TLibCommon/TComPicYuv.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibCommon/TComPicYuv.h
 ===================================================================
---- source/Lib/TLibCommon/TComPicYuv.h	(revision 4998)
-+++ source/Lib/TLibCommon/TComPicYuv.h	(working copy)
+diff --git a/source/Lib/TLibCommon/TComPicYuv.h b/source/Lib/TLibCommon/TComPicYuv.h
+--- a/source/Lib/TLibCommon/TComPicYuv.h	(revision 4998)
++++ b/source/Lib/TLibCommon/TComPicYuv.h	(working copy)
 @@ -43,6 +43,7 @@
  #include "TComRom.h"
  #include "TComChromaFormat.h"
@@ -1720,8 +1826,9 @@ Index: source/Lib/TLibCommon/TComPicYuv.h
 +
 Index: source/Lib/TLibCommon/TComPicYuvMD5.cpp
 ===================================================================
---- source/Lib/TLibCommon/TComPicYuvMD5.cpp	(revision 4998)
-+++ source/Lib/TLibCommon/TComPicYuvMD5.cpp	(working copy)
+diff --git a/source/Lib/TLibCommon/TComPicYuvMD5.cpp b/source/Lib/TLibCommon/TComPicYuvMD5.cpp
+--- a/source/Lib/TLibCommon/TComPicYuvMD5.cpp	(revision 4998)
++++ b/source/Lib/TLibCommon/TComPicYuvMD5.cpp	(working copy)
 @@ -33,6 +33,7 @@
  
  #include "TComPicYuv.h"
@@ -1739,8 +1846,9 @@ Index: source/Lib/TLibCommon/TComPicYuvMD5.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibCommon/TComPrediction.cpp
 ===================================================================
---- source/Lib/TLibCommon/TComPrediction.cpp	(revision 4998)
-+++ source/Lib/TLibCommon/TComPrediction.cpp	(working copy)
+diff --git a/source/Lib/TLibCommon/TComPrediction.cpp b/source/Lib/TLibCommon/TComPrediction.cpp
+--- a/source/Lib/TLibCommon/TComPrediction.cpp	(revision 4998)
++++ b/source/Lib/TLibCommon/TComPrediction.cpp	(working copy)
 @@ -39,6 +39,7 @@
  #include "TComPrediction.h"
  #include "TComPic.h"
@@ -1758,8 +1866,9 @@ Index: source/Lib/TLibCommon/TComPrediction.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibCommon/TComPrediction.h
 ===================================================================
---- source/Lib/TLibCommon/TComPrediction.h	(revision 4998)
-+++ source/Lib/TLibCommon/TComPrediction.h	(working copy)
+diff --git a/source/Lib/TLibCommon/TComPrediction.h b/source/Lib/TLibCommon/TComPrediction.h
+--- a/source/Lib/TLibCommon/TComPrediction.h	(revision 4998)
++++ b/source/Lib/TLibCommon/TComPrediction.h	(working copy)
 @@ -43,6 +43,7 @@
  #include "TComYuv.h"
  #include "TComInterpolationFilter.h"
@@ -1777,8 +1886,9 @@ Index: source/Lib/TLibCommon/TComPrediction.h
 +
 Index: source/Lib/TLibCommon/TComRdCost.cpp
 ===================================================================
---- source/Lib/TLibCommon/TComRdCost.cpp	(revision 4998)
-+++ source/Lib/TLibCommon/TComRdCost.cpp	(working copy)
+diff --git a/source/Lib/TLibCommon/TComRdCost.cpp b/source/Lib/TLibCommon/TComRdCost.cpp
+--- a/source/Lib/TLibCommon/TComRdCost.cpp	(revision 4998)
++++ b/source/Lib/TLibCommon/TComRdCost.cpp	(working copy)
 @@ -45,6 +45,7 @@
  #include <emmintrin.h>
  #include <xmmintrin.h>
@@ -1796,8 +1906,9 @@ Index: source/Lib/TLibCommon/TComRdCost.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibCommon/TComRdCost.h
 ===================================================================
---- source/Lib/TLibCommon/TComRdCost.h	(revision 4998)
-+++ source/Lib/TLibCommon/TComRdCost.h	(working copy)
+diff --git a/source/Lib/TLibCommon/TComRdCost.h b/source/Lib/TLibCommon/TComRdCost.h
+--- a/source/Lib/TLibCommon/TComRdCost.h	(revision 4998)
++++ b/source/Lib/TLibCommon/TComRdCost.h	(working copy)
 @@ -45,6 +45,7 @@
  
  #include "TComSlice.h"
@@ -1825,8 +1936,9 @@ Index: source/Lib/TLibCommon/TComRdCost.h
 +
 Index: source/Lib/TLibCommon/TComRdCostWeightPrediction.cpp
 ===================================================================
---- source/Lib/TLibCommon/TComRdCostWeightPrediction.cpp	(revision 4998)
-+++ source/Lib/TLibCommon/TComRdCostWeightPrediction.cpp	(working copy)
+diff --git a/source/Lib/TLibCommon/TComRdCostWeightPrediction.cpp b/source/Lib/TLibCommon/TComRdCostWeightPrediction.cpp
+--- a/source/Lib/TLibCommon/TComRdCostWeightPrediction.cpp	(revision 4998)
++++ b/source/Lib/TLibCommon/TComRdCostWeightPrediction.cpp	(working copy)
 @@ -39,6 +39,7 @@
  #include <assert.h>
  #include "TComRdCost.h"
@@ -1844,8 +1956,9 @@ Index: source/Lib/TLibCommon/TComRdCostWeightPrediction.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibCommon/TComRdCostWeightPrediction.h
 ===================================================================
---- source/Lib/TLibCommon/TComRdCostWeightPrediction.h	(revision 4998)
-+++ source/Lib/TLibCommon/TComRdCostWeightPrediction.h	(working copy)
+diff --git a/source/Lib/TLibCommon/TComRdCostWeightPrediction.h b/source/Lib/TLibCommon/TComRdCostWeightPrediction.h
+--- a/source/Lib/TLibCommon/TComRdCostWeightPrediction.h	(revision 4998)
++++ b/source/Lib/TLibCommon/TComRdCostWeightPrediction.h	(working copy)
 @@ -40,6 +40,7 @@
  
  
@@ -1864,8 +1977,9 @@ Index: source/Lib/TLibCommon/TComRdCostWeightPrediction.h
 +
 Index: source/Lib/TLibCommon/TComRectangle.h
 ===================================================================
---- source/Lib/TLibCommon/TComRectangle.h	(revision 4998)
-+++ source/Lib/TLibCommon/TComRectangle.h	(working copy)
+diff --git a/source/Lib/TLibCommon/TComRectangle.h b/source/Lib/TLibCommon/TComRectangle.h
+--- a/source/Lib/TLibCommon/TComRectangle.h	(revision 4998)
++++ b/source/Lib/TLibCommon/TComRectangle.h	(working copy)
 @@ -34,6 +34,7 @@
  
  #ifndef __TCOMRECTANGLE__
@@ -1883,8 +1997,9 @@ Index: source/Lib/TLibCommon/TComRectangle.h
 +
 Index: source/Lib/TLibCommon/TComRom.cpp
 ===================================================================
---- source/Lib/TLibCommon/TComRom.cpp	(revision 4998)
-+++ source/Lib/TLibCommon/TComRom.cpp	(working copy)
+diff --git a/source/Lib/TLibCommon/TComRom.cpp b/source/Lib/TLibCommon/TComRom.cpp
+--- a/source/Lib/TLibCommon/TComRom.cpp	(revision 4998)
++++ b/source/Lib/TLibCommon/TComRom.cpp	(working copy)
 @@ -43,6 +43,7 @@
  #include <assert.h>
  #include "TComDataCU.h"
@@ -1912,8 +2027,9 @@ Index: source/Lib/TLibCommon/TComRom.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibCommon/TComRom.h
 ===================================================================
---- source/Lib/TLibCommon/TComRom.h	(revision 4998)
-+++ source/Lib/TLibCommon/TComRom.h	(working copy)
+diff --git a/source/Lib/TLibCommon/TComRom.h b/source/Lib/TLibCommon/TComRom.h
+--- a/source/Lib/TLibCommon/TComRom.h	(revision 4998)
++++ b/source/Lib/TLibCommon/TComRom.h	(working copy)
 @@ -42,6 +42,7 @@
  
  #include<stdio.h>
@@ -1943,8 +2059,9 @@ Index: source/Lib/TLibCommon/TComRom.h
 +
 Index: source/Lib/TLibCommon/TComSampleAdaptiveOffset.cpp
 ===================================================================
---- source/Lib/TLibCommon/TComSampleAdaptiveOffset.cpp	(revision 4998)
-+++ source/Lib/TLibCommon/TComSampleAdaptiveOffset.cpp	(working copy)
+diff --git a/source/Lib/TLibCommon/TComSampleAdaptiveOffset.cpp b/source/Lib/TLibCommon/TComSampleAdaptiveOffset.cpp
+--- a/source/Lib/TLibCommon/TComSampleAdaptiveOffset.cpp	(revision 4998)
++++ b/source/Lib/TLibCommon/TComSampleAdaptiveOffset.cpp	(working copy)
 @@ -40,6 +40,7 @@
  #include <stdlib.h>
  #include <stdio.h>
@@ -1962,8 +2079,9 @@ Index: source/Lib/TLibCommon/TComSampleAdaptiveOffset.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibCommon/TComSampleAdaptiveOffset.h
 ===================================================================
---- source/Lib/TLibCommon/TComSampleAdaptiveOffset.h	(revision 4998)
-+++ source/Lib/TLibCommon/TComSampleAdaptiveOffset.h	(working copy)
+diff --git a/source/Lib/TLibCommon/TComSampleAdaptiveOffset.h b/source/Lib/TLibCommon/TComSampleAdaptiveOffset.h
+--- a/source/Lib/TLibCommon/TComSampleAdaptiveOffset.h	(revision 4998)
++++ b/source/Lib/TLibCommon/TComSampleAdaptiveOffset.h	(working copy)
 @@ -40,6 +40,7 @@
  
  #include "CommonDef.h"
@@ -1982,8 +2100,9 @@ Index: source/Lib/TLibCommon/TComSampleAdaptiveOffset.h
 +
 Index: source/Lib/TLibCommon/TComSlice.cpp
 ===================================================================
---- source/Lib/TLibCommon/TComSlice.cpp	(revision 4998)
-+++ source/Lib/TLibCommon/TComSlice.cpp	(working copy)
+diff --git a/source/Lib/TLibCommon/TComSlice.cpp b/source/Lib/TLibCommon/TComSlice.cpp
+--- a/source/Lib/TLibCommon/TComSlice.cpp	(revision 4998)
++++ b/source/Lib/TLibCommon/TComSlice.cpp	(working copy)
 @@ -40,6 +40,7 @@
  #include "TComPic.h"
  #include "TLibEncoder/TEncSbac.h"
@@ -2001,8 +2120,9 @@ Index: source/Lib/TLibCommon/TComSlice.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibCommon/TComSlice.h
 ===================================================================
---- source/Lib/TLibCommon/TComSlice.h	(revision 4998)
-+++ source/Lib/TLibCommon/TComSlice.h	(working copy)
+diff --git a/source/Lib/TLibCommon/TComSlice.h b/source/Lib/TLibCommon/TComSlice.h
+--- a/source/Lib/TLibCommon/TComSlice.h	(revision 4998)
++++ b/source/Lib/TLibCommon/TComSlice.h	(working copy)
 @@ -45,6 +45,7 @@
  #include "TComRom.h"
  #include "TComList.h"
@@ -2020,8 +2140,9 @@ Index: source/Lib/TLibCommon/TComSlice.h
 +
 Index: source/Lib/TLibCommon/TComTU.cpp
 ===================================================================
---- source/Lib/TLibCommon/TComTU.cpp	(revision 4998)
-+++ source/Lib/TLibCommon/TComTU.cpp	(working copy)
+diff --git a/source/Lib/TLibCommon/TComTU.cpp b/source/Lib/TLibCommon/TComTU.cpp
+--- a/source/Lib/TLibCommon/TComTU.cpp	(revision 4998)
++++ b/source/Lib/TLibCommon/TComTU.cpp	(working copy)
 @@ -36,6 +36,7 @@
  #include "TComRom.h"
  #include "TComDataCU.h"
@@ -2039,8 +2160,9 @@ Index: source/Lib/TLibCommon/TComTU.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibCommon/TComTU.h
 ===================================================================
---- source/Lib/TLibCommon/TComTU.h	(revision 4998)
-+++ source/Lib/TLibCommon/TComTU.h	(working copy)
+diff --git a/source/Lib/TLibCommon/TComTU.h b/source/Lib/TLibCommon/TComTU.h
+--- a/source/Lib/TLibCommon/TComTU.h	(revision 4998)
++++ b/source/Lib/TLibCommon/TComTU.h	(working copy)
 @@ -39,6 +39,7 @@
  #include "CommonDef.h"
  #include "TComRectangle.h"
@@ -2058,8 +2180,9 @@ Index: source/Lib/TLibCommon/TComTU.h
 +
 Index: source/Lib/TLibCommon/TComTrQuant.cpp
 ===================================================================
---- source/Lib/TLibCommon/TComTrQuant.cpp	(revision 4998)
-+++ source/Lib/TLibCommon/TComTrQuant.cpp	(working copy)
+diff --git a/source/Lib/TLibCommon/TComTrQuant.cpp b/source/Lib/TLibCommon/TComTrQuant.cpp
+--- a/source/Lib/TLibCommon/TComTrQuant.cpp	(revision 4998)
++++ b/source/Lib/TLibCommon/TComTrQuant.cpp	(working copy)
 @@ -44,6 +44,7 @@
  #include "ContextTables.h"
  #include "TComTU.h"
@@ -2077,8 +2200,9 @@ Index: source/Lib/TLibCommon/TComTrQuant.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibCommon/TComTrQuant.h
 ===================================================================
---- source/Lib/TLibCommon/TComTrQuant.h	(revision 4998)
-+++ source/Lib/TLibCommon/TComTrQuant.h	(working copy)
+diff --git a/source/Lib/TLibCommon/TComTrQuant.h b/source/Lib/TLibCommon/TComTrQuant.h
+--- a/source/Lib/TLibCommon/TComTrQuant.h	(revision 4998)
++++ b/source/Lib/TLibCommon/TComTrQuant.h	(working copy)
 @@ -43,6 +43,7 @@
  #include "TComDataCU.h"
  #include "TComChromaFormat.h"
@@ -2096,8 +2220,9 @@ Index: source/Lib/TLibCommon/TComTrQuant.h
 +
 Index: source/Lib/TLibCommon/TComWeightPrediction.cpp
 ===================================================================
---- source/Lib/TLibCommon/TComWeightPrediction.cpp	(revision 4998)
-+++ source/Lib/TLibCommon/TComWeightPrediction.cpp	(working copy)
+diff --git a/source/Lib/TLibCommon/TComWeightPrediction.cpp b/source/Lib/TLibCommon/TComWeightPrediction.cpp
+--- a/source/Lib/TLibCommon/TComWeightPrediction.cpp	(revision 4998)
++++ b/source/Lib/TLibCommon/TComWeightPrediction.cpp	(working copy)
 @@ -41,6 +41,7 @@
  #include "TComPic.h"
  #include "TComInterpolationFilter.h"
@@ -2115,8 +2240,9 @@ Index: source/Lib/TLibCommon/TComWeightPrediction.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibCommon/TComWeightPrediction.h
 ===================================================================
---- source/Lib/TLibCommon/TComWeightPrediction.h	(revision 4998)
-+++ source/Lib/TLibCommon/TComWeightPrediction.h	(working copy)
+diff --git a/source/Lib/TLibCommon/TComWeightPrediction.h b/source/Lib/TLibCommon/TComWeightPrediction.h
+--- a/source/Lib/TLibCommon/TComWeightPrediction.h	(revision 4998)
++++ b/source/Lib/TLibCommon/TComWeightPrediction.h	(working copy)
 @@ -39,6 +39,7 @@
  #define __TCOMWEIGHTPREDICTION__
  
@@ -2134,8 +2260,9 @@ Index: source/Lib/TLibCommon/TComWeightPrediction.h
 +
 Index: source/Lib/TLibCommon/TComYuv.cpp
 ===================================================================
---- source/Lib/TLibCommon/TComYuv.cpp	(revision 4998)
-+++ source/Lib/TLibCommon/TComYuv.cpp	(working copy)
+diff --git a/source/Lib/TLibCommon/TComYuv.cpp b/source/Lib/TLibCommon/TComYuv.cpp
+--- a/source/Lib/TLibCommon/TComYuv.cpp	(revision 4998)
++++ b/source/Lib/TLibCommon/TComYuv.cpp	(working copy)
 @@ -44,6 +44,7 @@
  #include "CommonDef.h"
  #include "TComYuv.h"
@@ -2153,8 +2280,9 @@ Index: source/Lib/TLibCommon/TComYuv.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibCommon/TComYuv.h
 ===================================================================
---- source/Lib/TLibCommon/TComYuv.h	(revision 4998)
-+++ source/Lib/TLibCommon/TComYuv.h	(working copy)
+diff --git a/source/Lib/TLibCommon/TComYuv.h b/source/Lib/TLibCommon/TComYuv.h
+--- a/source/Lib/TLibCommon/TComYuv.h	(revision 4998)
++++ b/source/Lib/TLibCommon/TComYuv.h	(working copy)
 @@ -42,6 +42,7 @@
  #include "CommonDef.h"
  #include "TComPicYuv.h"
@@ -2163,7 +2291,7 @@ Index: source/Lib/TLibCommon/TComYuv.h
  
  //! \ingroup TLibCommon
  //! \{
-@@ -200,13 +201,15 @@
+@@ -200,9 +201,9 @@
    UInt         getHeight                  (const ComponentID id) const { return m_iHeight >> getComponentScaleY(id);  }
    UInt         getWidth                   (const ComponentID id) const { return m_iWidth >> getComponentScaleX(id);   }
    ChromaFormat getChromaFormat            ()                     const { return m_chromaFormatIDC; }
@@ -2176,6 +2304,7 @@ Index: source/Lib/TLibCommon/TComYuv.h
    Void         convert          (const Bool extendedPrecision, const UInt pixX, const UInt pixY, const UInt width, Bool bForwardConversion, const BitDepths& bitDepths, Bool bLossless = false, TComYuv* pcYuvNoCorrResi= NULL);
    Void         DefaultConvertPix(const UInt pixX, const UInt pixY, const UInt width, const BitDepths& bitDepths);
  };// END CLASS DEFINITION TComYuv
+@@ -209,4 +210,6 @@
  
  //! \}
  
@@ -2184,8 +2313,9 @@ Index: source/Lib/TLibCommon/TComYuv.h
 +
 Index: source/Lib/TLibCommon/TypeDef.h
 ===================================================================
---- source/Lib/TLibCommon/TypeDef.h	(revision 4998)
-+++ source/Lib/TLibCommon/TypeDef.h	(working copy)
+diff --git a/source/Lib/TLibCommon/TypeDef.h b/source/Lib/TLibCommon/TypeDef.h
+--- a/source/Lib/TLibCommon/TypeDef.h	(revision 4998)
++++ b/source/Lib/TLibCommon/TypeDef.h	(working copy)
 @@ -46,9 +46,20 @@
  #include <utility>
  #include <iostream>
@@ -2227,8 +2357,9 @@ Index: source/Lib/TLibCommon/TypeDef.h
 +
 Index: source/Lib/TLibDecoder/AnnexBread.cpp
 ===================================================================
---- source/Lib/TLibDecoder/AnnexBread.cpp	(revision 4998)
-+++ source/Lib/TLibDecoder/AnnexBread.cpp	(working copy)
+diff --git a/source/Lib/TLibDecoder/AnnexBread.cpp b/source/Lib/TLibDecoder/AnnexBread.cpp
+--- a/source/Lib/TLibDecoder/AnnexBread.cpp	(revision 4998)
++++ b/source/Lib/TLibDecoder/AnnexBread.cpp	(working copy)
 @@ -44,6 +44,7 @@
  #if RExt__DECODER_DEBUG_BIT_STATISTICS
  #include "TLibCommon/TComCodingStatistics.h"
@@ -2302,8 +2433,9 @@ Index: source/Lib/TLibDecoder/AnnexBread.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibDecoder/AnnexBread.h
 ===================================================================
---- source/Lib/TLibDecoder/AnnexBread.h	(revision 4998)
-+++ source/Lib/TLibDecoder/AnnexBread.h	(working copy)
+diff --git a/source/Lib/TLibDecoder/AnnexBread.h b/source/Lib/TLibDecoder/AnnexBread.h
+--- a/source/Lib/TLibDecoder/AnnexBread.h	(revision 4998)
++++ b/source/Lib/TLibDecoder/AnnexBread.h	(working copy)
 @@ -46,6 +46,7 @@
  #include <vector>
  
@@ -2327,8 +2459,9 @@ Index: source/Lib/TLibDecoder/AnnexBread.h
 +
 Index: source/Lib/TLibDecoder/NALread.cpp
 ===================================================================
---- source/Lib/TLibDecoder/NALread.cpp	(revision 4998)
-+++ source/Lib/TLibDecoder/NALread.cpp	(working copy)
+diff --git a/source/Lib/TLibDecoder/NALread.cpp b/source/Lib/TLibDecoder/NALread.cpp
+--- a/source/Lib/TLibDecoder/NALread.cpp	(revision 4998)
++++ b/source/Lib/TLibDecoder/NALread.cpp	(working copy)
 @@ -50,6 +50,7 @@
  #if ENC_DEC_TRACE && DEC_NUH_TRACE
  #include "TLibCommon/TComRom.h"
@@ -2346,8 +2479,9 @@ Index: source/Lib/TLibDecoder/NALread.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibDecoder/NALread.h
 ===================================================================
---- source/Lib/TLibDecoder/NALread.h	(revision 4998)
-+++ source/Lib/TLibDecoder/NALread.h	(working copy)
+diff --git a/source/Lib/TLibDecoder/NALread.h b/source/Lib/TLibDecoder/NALread.h
+--- a/source/Lib/TLibDecoder/NALread.h	(revision 4998)
++++ b/source/Lib/TLibDecoder/NALread.h	(working copy)
 @@ -44,6 +44,7 @@
  #include "TLibCommon/CommonDef.h"
  #include "TLibCommon/TComBitStream.h"
@@ -2365,8 +2499,9 @@ Index: source/Lib/TLibDecoder/NALread.h
 +
 Index: source/Lib/TLibDecoder/SEIread.cpp
 ===================================================================
---- source/Lib/TLibDecoder/SEIread.cpp	(revision 4998)
-+++ source/Lib/TLibDecoder/SEIread.cpp	(working copy)
+diff --git a/source/Lib/TLibDecoder/SEIread.cpp b/source/Lib/TLibDecoder/SEIread.cpp
+--- a/source/Lib/TLibDecoder/SEIread.cpp	(revision 4998)
++++ b/source/Lib/TLibDecoder/SEIread.cpp	(working copy)
 @@ -44,6 +44,7 @@
  #include "SEIread.h"
  #include "TLibCommon/TComPicYuv.h"
@@ -2384,8 +2519,9 @@ Index: source/Lib/TLibDecoder/SEIread.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibDecoder/SEIread.h
 ===================================================================
---- source/Lib/TLibDecoder/SEIread.h	(revision 4998)
-+++ source/Lib/TLibDecoder/SEIread.h	(working copy)
+diff --git a/source/Lib/TLibDecoder/SEIread.h b/source/Lib/TLibDecoder/SEIread.h
+--- a/source/Lib/TLibDecoder/SEIread.h	(revision 4998)
++++ b/source/Lib/TLibDecoder/SEIread.h	(working copy)
 @@ -47,6 +47,7 @@
  //! \{
  
@@ -2403,8 +2539,9 @@ Index: source/Lib/TLibDecoder/SEIread.h
 +
 Index: source/Lib/TLibDecoder/SyntaxElementParser.cpp
 ===================================================================
---- source/Lib/TLibDecoder/SyntaxElementParser.cpp	(revision 4998)
-+++ source/Lib/TLibDecoder/SyntaxElementParser.cpp	(working copy)
+diff --git a/source/Lib/TLibDecoder/SyntaxElementParser.cpp b/source/Lib/TLibDecoder/SyntaxElementParser.cpp
+--- a/source/Lib/TLibDecoder/SyntaxElementParser.cpp	(revision 4998)
++++ b/source/Lib/TLibDecoder/SyntaxElementParser.cpp	(working copy)
 @@ -45,6 +45,7 @@
  #if RExt__DECODER_DEBUG_BIT_STATISTICS
  #include "TLibCommon/TComCodingStatistics.h"
@@ -2422,8 +2559,9 @@ Index: source/Lib/TLibDecoder/SyntaxElementParser.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibDecoder/SyntaxElementParser.h
 ===================================================================
---- source/Lib/TLibDecoder/SyntaxElementParser.h	(revision 4998)
-+++ source/Lib/TLibDecoder/SyntaxElementParser.h	(working copy)
+diff --git a/source/Lib/TLibDecoder/SyntaxElementParser.h b/source/Lib/TLibDecoder/SyntaxElementParser.h
+--- a/source/Lib/TLibDecoder/SyntaxElementParser.h	(revision 4998)
++++ b/source/Lib/TLibDecoder/SyntaxElementParser.h	(working copy)
 @@ -44,6 +44,7 @@
  
  #include "TLibCommon/TComRom.h"
@@ -2442,8 +2580,9 @@ Index: source/Lib/TLibDecoder/SyntaxElementParser.h
 +
 Index: source/Lib/TLibDecoder/TDecBinCoder.h
 ===================================================================
---- source/Lib/TLibDecoder/TDecBinCoder.h	(revision 4998)
-+++ source/Lib/TLibDecoder/TDecBinCoder.h	(working copy)
+diff --git a/source/Lib/TLibDecoder/TDecBinCoder.h b/source/Lib/TLibDecoder/TDecBinCoder.h
+--- a/source/Lib/TLibDecoder/TDecBinCoder.h	(revision 4998)
++++ b/source/Lib/TLibDecoder/TDecBinCoder.h	(working copy)
 @@ -40,6 +40,7 @@
  
  #include "TLibCommon/ContextModel.h"
@@ -2461,8 +2600,9 @@ Index: source/Lib/TLibDecoder/TDecBinCoder.h
 +
 Index: source/Lib/TLibDecoder/TDecBinCoderCABAC.cpp
 ===================================================================
---- source/Lib/TLibDecoder/TDecBinCoderCABAC.cpp	(revision 4998)
-+++ source/Lib/TLibDecoder/TDecBinCoderCABAC.cpp	(working copy)
+diff --git a/source/Lib/TLibDecoder/TDecBinCoderCABAC.cpp b/source/Lib/TLibDecoder/TDecBinCoderCABAC.cpp
+--- a/source/Lib/TLibDecoder/TDecBinCoderCABAC.cpp	(revision 4998)
++++ b/source/Lib/TLibDecoder/TDecBinCoderCABAC.cpp	(working copy)
 @@ -40,6 +40,7 @@
  #if RExt__DECODER_DEBUG_BIT_STATISTICS
  #include "TLibCommon/TComCodingStatistics.h"
@@ -2480,8 +2620,9 @@ Index: source/Lib/TLibDecoder/TDecBinCoderCABAC.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibDecoder/TDecBinCoderCABAC.h
 ===================================================================
---- source/Lib/TLibDecoder/TDecBinCoderCABAC.h	(revision 4998)
-+++ source/Lib/TLibDecoder/TDecBinCoderCABAC.h	(working copy)
+diff --git a/source/Lib/TLibDecoder/TDecBinCoderCABAC.h b/source/Lib/TLibDecoder/TDecBinCoderCABAC.h
+--- a/source/Lib/TLibDecoder/TDecBinCoderCABAC.h	(revision 4998)
++++ b/source/Lib/TLibDecoder/TDecBinCoderCABAC.h	(working copy)
 @@ -40,6 +40,7 @@
  
  #include "TLibCommon/TComCABACTables.h"
@@ -2500,8 +2641,9 @@ Index: source/Lib/TLibDecoder/TDecBinCoderCABAC.h
 +
 Index: source/Lib/TLibDecoder/TDecCAVLC.cpp
 ===================================================================
---- source/Lib/TLibDecoder/TDecCAVLC.cpp	(revision 4998)
-+++ source/Lib/TLibDecoder/TDecCAVLC.cpp	(working copy)
+diff --git a/source/Lib/TLibDecoder/TDecCAVLC.cpp b/source/Lib/TLibDecoder/TDecCAVLC.cpp
+--- a/source/Lib/TLibDecoder/TDecCAVLC.cpp	(revision 4998)
++++ b/source/Lib/TLibDecoder/TDecCAVLC.cpp	(working copy)
 @@ -43,6 +43,7 @@
  #include "TLibCommon/TComCodingStatistics.h"
  #endif
@@ -2519,8 +2661,9 @@ Index: source/Lib/TLibDecoder/TDecCAVLC.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibDecoder/TDecCAVLC.h
 ===================================================================
---- source/Lib/TLibDecoder/TDecCAVLC.h	(revision 4998)
-+++ source/Lib/TLibDecoder/TDecCAVLC.h	(working copy)
+diff --git a/source/Lib/TLibDecoder/TDecCAVLC.h b/source/Lib/TLibDecoder/TDecCAVLC.h
+--- a/source/Lib/TLibDecoder/TDecCAVLC.h	(revision 4998)
++++ b/source/Lib/TLibDecoder/TDecCAVLC.h	(working copy)
 @@ -44,6 +44,7 @@
  
  #include "TDecEntropy.h"
@@ -2538,8 +2681,9 @@ Index: source/Lib/TLibDecoder/TDecCAVLC.h
 +
 Index: source/Lib/TLibDecoder/TDecConformance.cpp
 ===================================================================
---- source/Lib/TLibDecoder/TDecConformance.cpp	(revision 4998)
-+++ source/Lib/TLibDecoder/TDecConformance.cpp	(working copy)
+diff --git a/source/Lib/TLibDecoder/TDecConformance.cpp b/source/Lib/TLibDecoder/TDecConformance.cpp
+--- a/source/Lib/TLibDecoder/TDecConformance.cpp	(revision 4998)
++++ b/source/Lib/TLibDecoder/TDecConformance.cpp	(working copy)
 @@ -41,6 +41,7 @@
  #include "TLibCommon/TComPicSym.h"
  #include "NALread.h"
@@ -2557,8 +2701,9 @@ Index: source/Lib/TLibDecoder/TDecConformance.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibDecoder/TDecConformance.h
 ===================================================================
---- source/Lib/TLibDecoder/TDecConformance.h	(revision 4998)
-+++ source/Lib/TLibDecoder/TDecConformance.h	(working copy)
+diff --git a/source/Lib/TLibDecoder/TDecConformance.h b/source/Lib/TLibDecoder/TDecConformance.h
+--- a/source/Lib/TLibDecoder/TDecConformance.h	(revision 4998)
++++ b/source/Lib/TLibDecoder/TDecConformance.h	(working copy)
 @@ -55,6 +55,7 @@
  #if DECODER_PARTIAL_CONFORMANCE_CHECK == 2
  #include <stdlib.h>
@@ -2576,8 +2721,9 @@ Index: source/Lib/TLibDecoder/TDecConformance.h
 +
 Index: source/Lib/TLibDecoder/TDecCu.cpp
 ===================================================================
---- source/Lib/TLibDecoder/TDecCu.cpp	(revision 4998)
-+++ source/Lib/TLibDecoder/TDecCu.cpp	(working copy)
+diff --git a/source/Lib/TLibDecoder/TDecCu.cpp b/source/Lib/TLibDecoder/TDecCu.cpp
+--- a/source/Lib/TLibDecoder/TDecCu.cpp	(revision 4998)
++++ b/source/Lib/TLibDecoder/TDecCu.cpp	(working copy)
 @@ -38,6 +38,7 @@
  #include "TDecCu.h"
  #include "TLibCommon/TComTU.h"
@@ -2604,8 +2750,9 @@ Index: source/Lib/TLibDecoder/TDecCu.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibDecoder/TDecCu.h
 ===================================================================
---- source/Lib/TLibDecoder/TDecCu.h	(revision 4998)
-+++ source/Lib/TLibDecoder/TDecCu.h	(working copy)
+diff --git a/source/Lib/TLibDecoder/TDecCu.h b/source/Lib/TLibDecoder/TDecCu.h
+--- a/source/Lib/TLibDecoder/TDecCu.h	(revision 4998)
++++ b/source/Lib/TLibDecoder/TDecCu.h	(working copy)
 @@ -45,6 +45,7 @@
  #include "TLibCommon/TComTrQuant.h"
  #include "TDecEntropy.h"
@@ -2624,8 +2771,9 @@ Index: source/Lib/TLibDecoder/TDecCu.h
 +
 Index: source/Lib/TLibDecoder/TDecEntropy.cpp
 ===================================================================
---- source/Lib/TLibDecoder/TDecEntropy.cpp	(revision 4998)
-+++ source/Lib/TLibDecoder/TDecEntropy.cpp	(working copy)
+diff --git a/source/Lib/TLibDecoder/TDecEntropy.cpp b/source/Lib/TLibDecoder/TDecEntropy.cpp
+--- a/source/Lib/TLibDecoder/TDecEntropy.cpp	(revision 4998)
++++ b/source/Lib/TLibDecoder/TDecEntropy.cpp	(working copy)
 @@ -39,6 +39,8 @@
  #include "TLibCommon/TComTU.h"
  #include "TLibCommon/TComPrediction.h"
@@ -2644,8 +2792,9 @@ Index: source/Lib/TLibDecoder/TDecEntropy.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibDecoder/TDecEntropy.h
 ===================================================================
---- source/Lib/TLibDecoder/TDecEntropy.h	(revision 4998)
-+++ source/Lib/TLibDecoder/TDecEntropy.h	(working copy)
+diff --git a/source/Lib/TLibDecoder/TDecEntropy.h b/source/Lib/TLibDecoder/TDecEntropy.h
+--- a/source/Lib/TLibDecoder/TDecEntropy.h	(revision 4998)
++++ b/source/Lib/TLibDecoder/TDecEntropy.h	(working copy)
 @@ -45,6 +45,7 @@
  #include "TLibCommon/TComSampleAdaptiveOffset.h"
  #include "TLibCommon/TComRectangle.h"
@@ -2664,8 +2813,9 @@ Index: source/Lib/TLibDecoder/TDecEntropy.h
 +
 Index: source/Lib/TLibDecoder/TDecGop.cpp
 ===================================================================
---- source/Lib/TLibDecoder/TDecGop.cpp	(revision 4998)
-+++ source/Lib/TLibDecoder/TDecGop.cpp	(working copy)
+diff --git a/source/Lib/TLibDecoder/TDecGop.cpp b/source/Lib/TLibDecoder/TDecGop.cpp
+--- a/source/Lib/TLibDecoder/TDecGop.cpp	(revision 4998)
++++ b/source/Lib/TLibDecoder/TDecGop.cpp	(working copy)
 @@ -44,6 +44,7 @@
  #include "TLibCommon/SEI.h"
  
@@ -2683,8 +2833,9 @@ Index: source/Lib/TLibDecoder/TDecGop.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibDecoder/TDecGop.h
 ===================================================================
---- source/Lib/TLibDecoder/TDecGop.h	(revision 4998)
-+++ source/Lib/TLibDecoder/TDecGop.h	(working copy)
+diff --git a/source/Lib/TLibDecoder/TDecGop.h b/source/Lib/TLibDecoder/TDecGop.h
+--- a/source/Lib/TLibDecoder/TDecGop.h	(revision 4998)
++++ b/source/Lib/TLibDecoder/TDecGop.h	(working copy)
 @@ -54,6 +54,7 @@
  #include "TDecSlice.h"
  #include "TDecBinCoder.h"
@@ -2703,8 +2854,9 @@ Index: source/Lib/TLibDecoder/TDecGop.h
 +
 Index: source/Lib/TLibDecoder/TDecSbac.cpp
 ===================================================================
---- source/Lib/TLibDecoder/TDecSbac.cpp	(revision 4998)
-+++ source/Lib/TLibDecoder/TDecSbac.cpp	(working copy)
+diff --git a/source/Lib/TLibDecoder/TDecSbac.cpp b/source/Lib/TLibDecoder/TDecSbac.cpp
+--- a/source/Lib/TLibDecoder/TDecSbac.cpp	(revision 4998)
++++ b/source/Lib/TLibDecoder/TDecSbac.cpp	(working copy)
 @@ -53,6 +53,7 @@
  #if ENVIRONMENT_VARIABLE_DEBUG_AND_TEST
  #include "../TLibCommon/Debug.h"
@@ -2722,8 +2874,9 @@ Index: source/Lib/TLibDecoder/TDecSbac.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibDecoder/TDecSbac.h
 ===================================================================
---- source/Lib/TLibDecoder/TDecSbac.h	(revision 4998)
-+++ source/Lib/TLibDecoder/TDecSbac.h	(working copy)
+diff --git a/source/Lib/TLibDecoder/TDecSbac.h b/source/Lib/TLibDecoder/TDecSbac.h
+--- a/source/Lib/TLibDecoder/TDecSbac.h	(revision 4998)
++++ b/source/Lib/TLibDecoder/TDecSbac.h	(working copy)
 @@ -49,6 +49,7 @@
  #include "TLibCommon/ContextTables.h"
  #include "TLibCommon/ContextModel.h"
@@ -2741,8 +2894,9 @@ Index: source/Lib/TLibDecoder/TDecSbac.h
 +
 Index: source/Lib/TLibDecoder/TDecSlice.cpp
 ===================================================================
---- source/Lib/TLibDecoder/TDecSlice.cpp	(revision 4998)
-+++ source/Lib/TLibDecoder/TDecSlice.cpp	(working copy)
+diff --git a/source/Lib/TLibDecoder/TDecSlice.cpp b/source/Lib/TLibDecoder/TDecSlice.cpp
+--- a/source/Lib/TLibDecoder/TDecSlice.cpp	(revision 4998)
++++ b/source/Lib/TLibDecoder/TDecSlice.cpp	(working copy)
 @@ -37,6 +37,7 @@
  
  #include "TDecSlice.h"
@@ -2760,8 +2914,9 @@ Index: source/Lib/TLibDecoder/TDecSlice.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibDecoder/TDecSlice.h
 ===================================================================
---- source/Lib/TLibDecoder/TDecSlice.h	(revision 4998)
-+++ source/Lib/TLibDecoder/TDecSlice.h	(working copy)
+diff --git a/source/Lib/TLibDecoder/TDecSlice.h b/source/Lib/TLibDecoder/TDecSlice.h
+--- a/source/Lib/TLibDecoder/TDecSlice.h	(revision 4998)
++++ b/source/Lib/TLibDecoder/TDecSlice.h	(working copy)
 @@ -49,6 +49,7 @@
  #include "TDecCu.h"
  #include "TDecSbac.h"
@@ -2780,8 +2935,9 @@ Index: source/Lib/TLibDecoder/TDecSlice.h
 +
 Index: source/Lib/TLibDecoder/TDecTop.cpp
 ===================================================================
---- source/Lib/TLibDecoder/TDecTop.cpp	(revision 4998)
-+++ source/Lib/TLibDecoder/TDecTop.cpp	(working copy)
+diff --git a/source/Lib/TLibDecoder/TDecTop.cpp b/source/Lib/TLibDecoder/TDecTop.cpp
+--- a/source/Lib/TLibDecoder/TDecTop.cpp	(revision 4998)
++++ b/source/Lib/TLibDecoder/TDecTop.cpp	(working copy)
 @@ -38,6 +38,7 @@
  #include "NALread.h"
  #include "TDecTop.h"
@@ -2799,8 +2955,9 @@ Index: source/Lib/TLibDecoder/TDecTop.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibDecoder/TDecTop.h
 ===================================================================
---- source/Lib/TLibDecoder/TDecTop.h	(revision 4998)
-+++ source/Lib/TLibDecoder/TDecTop.h	(working copy)
+diff --git a/source/Lib/TLibDecoder/TDecTop.h b/source/Lib/TLibDecoder/TDecTop.h
+--- a/source/Lib/TLibDecoder/TDecTop.h	(revision 4998)
++++ b/source/Lib/TLibDecoder/TDecTop.h	(working copy)
 @@ -52,6 +52,7 @@
  #include "TDecCAVLC.h"
  #include "SEIread.h"
@@ -2819,8 +2976,9 @@ Index: source/Lib/TLibDecoder/TDecTop.h
 +
 Index: source/Lib/TLibEncoder/AnnexBwrite.h
 ===================================================================
---- source/Lib/TLibEncoder/AnnexBwrite.h	(revision 4998)
-+++ source/Lib/TLibEncoder/AnnexBwrite.h	(working copy)
+diff --git a/source/Lib/TLibEncoder/AnnexBwrite.h b/source/Lib/TLibEncoder/AnnexBwrite.h
+--- a/source/Lib/TLibEncoder/AnnexBwrite.h	(revision 4998)
++++ b/source/Lib/TLibEncoder/AnnexBwrite.h	(working copy)
 @@ -39,6 +39,7 @@
  #include <ostream>
  #include "TLibCommon/AccessUnit.h"
@@ -2863,8 +3021,9 @@ Index: source/Lib/TLibEncoder/AnnexBwrite.h
 +
 Index: source/Lib/TLibEncoder/NALwrite.cpp
 ===================================================================
---- source/Lib/TLibEncoder/NALwrite.cpp	(revision 4998)
-+++ source/Lib/TLibEncoder/NALwrite.cpp	(working copy)
+diff --git a/source/Lib/TLibEncoder/NALwrite.cpp b/source/Lib/TLibEncoder/NALwrite.cpp
+--- a/source/Lib/TLibEncoder/NALwrite.cpp	(revision 4998)
++++ b/source/Lib/TLibEncoder/NALwrite.cpp	(working copy)
 @@ -38,6 +38,7 @@
  #include "TLibCommon/NAL.h"
  #include "TLibCommon/TComBitStream.h"
@@ -2882,8 +3041,9 @@ Index: source/Lib/TLibEncoder/NALwrite.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibEncoder/NALwrite.h
 ===================================================================
---- source/Lib/TLibEncoder/NALwrite.h	(revision 4998)
-+++ source/Lib/TLibEncoder/NALwrite.h	(working copy)
+diff --git a/source/Lib/TLibEncoder/NALwrite.h b/source/Lib/TLibEncoder/NALwrite.h
+--- a/source/Lib/TLibEncoder/NALwrite.h	(revision 4998)
++++ b/source/Lib/TLibEncoder/NALwrite.h	(working copy)
 @@ -41,6 +41,7 @@
  #include "TLibCommon/CommonDef.h"
  #include "TLibCommon/TComBitStream.h"
@@ -2901,8 +3061,9 @@ Index: source/Lib/TLibEncoder/NALwrite.h
 +
 Index: source/Lib/TLibEncoder/SEIEncoder.cpp
 ===================================================================
---- source/Lib/TLibEncoder/SEIEncoder.cpp	(revision 4998)
-+++ source/Lib/TLibEncoder/SEIEncoder.cpp	(working copy)
+diff --git a/source/Lib/TLibEncoder/SEIEncoder.cpp b/source/Lib/TLibEncoder/SEIEncoder.cpp
+--- a/source/Lib/TLibEncoder/SEIEncoder.cpp	(revision 4998)
++++ b/source/Lib/TLibEncoder/SEIEncoder.cpp	(working copy)
 @@ -35,6 +35,7 @@
  #include "TLibCommon/SEI.h"
  #include "TEncGOP.h"
@@ -2920,8 +3081,9 @@ Index: source/Lib/TLibEncoder/SEIEncoder.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibEncoder/SEIEncoder.h
 ===================================================================
---- source/Lib/TLibEncoder/SEIEncoder.h	(revision 4998)
-+++ source/Lib/TLibEncoder/SEIEncoder.h	(working copy)
+diff --git a/source/Lib/TLibEncoder/SEIEncoder.h b/source/Lib/TLibEncoder/SEIEncoder.h
+--- a/source/Lib/TLibEncoder/SEIEncoder.h	(revision 4998)
++++ b/source/Lib/TLibEncoder/SEIEncoder.h	(working copy)
 @@ -37,6 +37,7 @@
  #define __SEIENCODER__
  
@@ -2939,8 +3101,9 @@ Index: source/Lib/TLibEncoder/SEIEncoder.h
 +
 Index: source/Lib/TLibEncoder/SEIwrite.cpp
 ===================================================================
---- source/Lib/TLibEncoder/SEIwrite.cpp	(revision 4998)
-+++ source/Lib/TLibEncoder/SEIwrite.cpp	(working copy)
+diff --git a/source/Lib/TLibEncoder/SEIwrite.cpp b/source/Lib/TLibEncoder/SEIwrite.cpp
+--- a/source/Lib/TLibEncoder/SEIwrite.cpp	(revision 4998)
++++ b/source/Lib/TLibEncoder/SEIwrite.cpp	(working copy)
 @@ -37,6 +37,7 @@
  #include "TLibCommon/TComSlice.h"
  #include "TLibCommon/TComPicYuv.h"
@@ -2958,8 +3121,9 @@ Index: source/Lib/TLibEncoder/SEIwrite.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibEncoder/SEIwrite.h
 ===================================================================
---- source/Lib/TLibEncoder/SEIwrite.h	(revision 4998)
-+++ source/Lib/TLibEncoder/SEIwrite.h	(working copy)
+diff --git a/source/Lib/TLibEncoder/SEIwrite.h b/source/Lib/TLibEncoder/SEIwrite.h
+--- a/source/Lib/TLibEncoder/SEIwrite.h	(revision 4998)
++++ b/source/Lib/TLibEncoder/SEIwrite.h	(working copy)
 @@ -38,6 +38,7 @@
  
  #include "SyntaxElementWriter.h"
@@ -2977,8 +3141,9 @@ Index: source/Lib/TLibEncoder/SEIwrite.h
 +
 Index: source/Lib/TLibEncoder/SyntaxElementWriter.cpp
 ===================================================================
---- source/Lib/TLibEncoder/SyntaxElementWriter.cpp	(revision 4998)
-+++ source/Lib/TLibEncoder/SyntaxElementWriter.cpp	(working copy)
+diff --git a/source/Lib/TLibEncoder/SyntaxElementWriter.cpp b/source/Lib/TLibEncoder/SyntaxElementWriter.cpp
+--- a/source/Lib/TLibEncoder/SyntaxElementWriter.cpp	(revision 4998)
++++ b/source/Lib/TLibEncoder/SyntaxElementWriter.cpp	(working copy)
 @@ -37,6 +37,7 @@
  
  #include "TLibCommon/CommonDef.h"
@@ -2996,8 +3161,9 @@ Index: source/Lib/TLibEncoder/SyntaxElementWriter.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibEncoder/SyntaxElementWriter.h
 ===================================================================
---- source/Lib/TLibEncoder/SyntaxElementWriter.h	(revision 4998)
-+++ source/Lib/TLibEncoder/SyntaxElementWriter.h	(working copy)
+diff --git a/source/Lib/TLibEncoder/SyntaxElementWriter.h b/source/Lib/TLibEncoder/SyntaxElementWriter.h
+--- a/source/Lib/TLibEncoder/SyntaxElementWriter.h	(revision 4998)
++++ b/source/Lib/TLibEncoder/SyntaxElementWriter.h	(working copy)
 @@ -45,6 +45,7 @@
  #include "TLibCommon/CommonDef.h"
  #include "TLibCommon/TComBitStream.h"
@@ -3016,8 +3182,9 @@ Index: source/Lib/TLibEncoder/SyntaxElementWriter.h
 +
 Index: source/Lib/TLibEncoder/TEncAnalyze.h
 ===================================================================
---- source/Lib/TLibEncoder/TEncAnalyze.h	(revision 4998)
-+++ source/Lib/TLibEncoder/TEncAnalyze.h	(working copy)
+diff --git a/source/Lib/TLibEncoder/TEncAnalyze.h b/source/Lib/TLibEncoder/TEncAnalyze.h
+--- a/source/Lib/TLibEncoder/TEncAnalyze.h	(revision 4998)
++++ b/source/Lib/TLibEncoder/TEncAnalyze.h	(working copy)
 @@ -51,6 +51,7 @@
  #if EXTENSION_360_VIDEO
  #include "TAppEncHelper360/TExt360EncAnalyze.h"
@@ -3035,8 +3202,9 @@ Index: source/Lib/TLibEncoder/TEncAnalyze.h
 +
 Index: source/Lib/TLibEncoder/TEncBinCoder.h
 ===================================================================
---- source/Lib/TLibEncoder/TEncBinCoder.h	(revision 4998)
-+++ source/Lib/TLibEncoder/TEncBinCoder.h	(working copy)
+diff --git a/source/Lib/TLibEncoder/TEncBinCoder.h b/source/Lib/TLibEncoder/TEncBinCoder.h
+--- a/source/Lib/TLibEncoder/TEncBinCoder.h	(revision 4998)
++++ b/source/Lib/TLibEncoder/TEncBinCoder.h	(working copy)
 @@ -40,6 +40,7 @@
  
  #include "TLibCommon/ContextModel.h"
@@ -3055,8 +3223,9 @@ Index: source/Lib/TLibEncoder/TEncBinCoder.h
 +
 Index: source/Lib/TLibEncoder/TEncBinCoderCABAC.cpp
 ===================================================================
---- source/Lib/TLibEncoder/TEncBinCoderCABAC.cpp	(revision 4998)
-+++ source/Lib/TLibEncoder/TEncBinCoderCABAC.cpp	(working copy)
+diff --git a/source/Lib/TLibEncoder/TEncBinCoderCABAC.cpp b/source/Lib/TLibEncoder/TEncBinCoderCABAC.cpp
+--- a/source/Lib/TLibEncoder/TEncBinCoderCABAC.cpp	(revision 4998)
++++ b/source/Lib/TLibEncoder/TEncBinCoderCABAC.cpp	(working copy)
 @@ -38,6 +38,7 @@
  #include "TEncBinCoderCABAC.h"
  #include "TLibCommon/TComRom.h"
@@ -3074,8 +3243,9 @@ Index: source/Lib/TLibEncoder/TEncBinCoderCABAC.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibEncoder/TEncBinCoderCABAC.h
 ===================================================================
---- source/Lib/TLibEncoder/TEncBinCoderCABAC.h	(revision 4998)
-+++ source/Lib/TLibEncoder/TEncBinCoderCABAC.h	(working copy)
+diff --git a/source/Lib/TLibEncoder/TEncBinCoderCABAC.h b/source/Lib/TLibEncoder/TEncBinCoderCABAC.h
+--- a/source/Lib/TLibEncoder/TEncBinCoderCABAC.h	(revision 4998)
++++ b/source/Lib/TLibEncoder/TEncBinCoderCABAC.h	(working copy)
 @@ -40,6 +40,7 @@
  
  #include "TLibCommon/TComCABACTables.h"
@@ -3094,8 +3264,9 @@ Index: source/Lib/TLibEncoder/TEncBinCoderCABAC.h
 +
 Index: source/Lib/TLibEncoder/TEncBinCoderCABACCounter.cpp
 ===================================================================
---- source/Lib/TLibEncoder/TEncBinCoderCABACCounter.cpp	(revision 4998)
-+++ source/Lib/TLibEncoder/TEncBinCoderCABACCounter.cpp	(working copy)
+diff --git a/source/Lib/TLibEncoder/TEncBinCoderCABACCounter.cpp b/source/Lib/TLibEncoder/TEncBinCoderCABACCounter.cpp
+--- a/source/Lib/TLibEncoder/TEncBinCoderCABACCounter.cpp	(revision 4998)
++++ b/source/Lib/TLibEncoder/TEncBinCoderCABACCounter.cpp	(working copy)
 @@ -38,6 +38,7 @@
  #include "TEncBinCoderCABACCounter.h"
  #include "TLibCommon/TComRom.h"
@@ -3113,8 +3284,9 @@ Index: source/Lib/TLibEncoder/TEncBinCoderCABACCounter.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibEncoder/TEncBinCoderCABACCounter.h
 ===================================================================
---- source/Lib/TLibEncoder/TEncBinCoderCABACCounter.h	(revision 4998)
-+++ source/Lib/TLibEncoder/TEncBinCoderCABACCounter.h	(working copy)
+diff --git a/source/Lib/TLibEncoder/TEncBinCoderCABACCounter.h b/source/Lib/TLibEncoder/TEncBinCoderCABACCounter.h
+--- a/source/Lib/TLibEncoder/TEncBinCoderCABACCounter.h	(revision 4998)
++++ b/source/Lib/TLibEncoder/TEncBinCoderCABACCounter.h	(working copy)
 @@ -40,6 +40,7 @@
  
  
@@ -3133,8 +3305,9 @@ Index: source/Lib/TLibEncoder/TEncBinCoderCABACCounter.h
 +
 Index: source/Lib/TLibEncoder/TEncCavlc.cpp
 ===================================================================
---- source/Lib/TLibEncoder/TEncCavlc.cpp	(revision 4998)
-+++ source/Lib/TLibEncoder/TEncCavlc.cpp	(working copy)
+diff --git a/source/Lib/TLibEncoder/TEncCavlc.cpp b/source/Lib/TLibEncoder/TEncCavlc.cpp
+--- a/source/Lib/TLibEncoder/TEncCavlc.cpp	(revision 4998)
++++ b/source/Lib/TLibEncoder/TEncCavlc.cpp	(working copy)
 @@ -38,6 +38,7 @@
  #include "../TLibCommon/CommonDef.h"
  #include "TEncCavlc.h"
@@ -3152,8 +3325,9 @@ Index: source/Lib/TLibEncoder/TEncCavlc.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibEncoder/TEncCavlc.h
 ===================================================================
---- source/Lib/TLibEncoder/TEncCavlc.h	(revision 4998)
-+++ source/Lib/TLibEncoder/TEncCavlc.h	(working copy)
+diff --git a/source/Lib/TLibEncoder/TEncCavlc.h b/source/Lib/TLibEncoder/TEncCavlc.h
+--- a/source/Lib/TLibEncoder/TEncCavlc.h	(revision 4998)
++++ b/source/Lib/TLibEncoder/TEncCavlc.h	(working copy)
 @@ -47,6 +47,7 @@
  #include "TLibCommon/TComRom.h"
  #include "TEncEntropy.h"
@@ -3172,8 +3346,9 @@ Index: source/Lib/TLibEncoder/TEncCavlc.h
 +
 Index: source/Lib/TLibEncoder/TEncCfg.h
 ===================================================================
---- source/Lib/TLibEncoder/TEncCfg.h	(revision 4998)
-+++ source/Lib/TLibEncoder/TEncCfg.h	(working copy)
+diff --git a/source/Lib/TLibEncoder/TEncCfg.h b/source/Lib/TLibEncoder/TEncCfg.h
+--- a/source/Lib/TLibEncoder/TEncCfg.h	(revision 4998)
++++ b/source/Lib/TLibEncoder/TEncCfg.h	(working copy)
 @@ -45,6 +45,7 @@
  #include "TLibCommon/CommonDef.h"
  #include "TLibCommon/TComSlice.h"
@@ -3222,8 +3397,9 @@ Index: source/Lib/TLibEncoder/TEncCfg.h
 +
 Index: source/Lib/TLibEncoder/TEncCu.cpp
 ===================================================================
---- source/Lib/TLibEncoder/TEncCu.cpp	(revision 4998)
-+++ source/Lib/TLibEncoder/TEncCu.cpp	(working copy)
+diff --git a/source/Lib/TLibEncoder/TEncCu.cpp b/source/Lib/TLibEncoder/TEncCu.cpp
+--- a/source/Lib/TLibEncoder/TEncCu.cpp	(revision 4998)
++++ b/source/Lib/TLibEncoder/TEncCu.cpp	(working copy)
 @@ -43,6 +43,7 @@
  
  #include <cmath>
@@ -3241,8 +3417,9 @@ Index: source/Lib/TLibEncoder/TEncCu.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibEncoder/TEncCu.h
 ===================================================================
---- source/Lib/TLibEncoder/TEncCu.h	(revision 4998)
-+++ source/Lib/TLibEncoder/TEncCu.h	(working copy)
+diff --git a/source/Lib/TLibEncoder/TEncCu.h b/source/Lib/TLibEncoder/TEncCu.h
+--- a/source/Lib/TLibEncoder/TEncCu.h	(revision 4998)
++++ b/source/Lib/TLibEncoder/TEncCu.h	(working copy)
 @@ -49,6 +49,7 @@
  #include "TEncEntropy.h"
  #include "TEncSearch.h"
@@ -3260,8 +3437,9 @@ Index: source/Lib/TLibEncoder/TEncCu.h
 +
 Index: source/Lib/TLibEncoder/TEncEntropy.cpp
 ===================================================================
---- source/Lib/TLibEncoder/TEncEntropy.cpp	(revision 4998)
-+++ source/Lib/TLibEncoder/TEncEntropy.cpp	(working copy)
+diff --git a/source/Lib/TLibEncoder/TEncEntropy.cpp b/source/Lib/TLibEncoder/TEncEntropy.cpp
+--- a/source/Lib/TLibEncoder/TEncEntropy.cpp	(revision 4998)
++++ b/source/Lib/TLibEncoder/TEncEntropy.cpp	(working copy)
 @@ -40,6 +40,8 @@
  #include "TLibCommon/TComSampleAdaptiveOffset.h"
  #include "TLibCommon/TComTU.h"
@@ -3280,8 +3458,9 @@ Index: source/Lib/TLibEncoder/TEncEntropy.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibEncoder/TEncEntropy.h
 ===================================================================
---- source/Lib/TLibEncoder/TEncEntropy.h	(revision 4998)
-+++ source/Lib/TLibEncoder/TEncEntropy.h	(working copy)
+diff --git a/source/Lib/TLibEncoder/TEncEntropy.h b/source/Lib/TLibEncoder/TEncEntropy.h
+--- a/source/Lib/TLibEncoder/TEncEntropy.h	(revision 4998)
++++ b/source/Lib/TLibEncoder/TEncEntropy.h	(working copy)
 @@ -46,6 +46,7 @@
  #include "TLibCommon/TComTrQuant.h"
  #include "TLibCommon/TComSampleAdaptiveOffset.h"
@@ -3300,8 +3479,9 @@ Index: source/Lib/TLibEncoder/TEncEntropy.h
 +
 Index: source/Lib/TLibEncoder/TEncGOP.cpp
 ===================================================================
---- source/Lib/TLibEncoder/TEncGOP.cpp	(revision 4998)
-+++ source/Lib/TLibEncoder/TEncGOP.cpp	(working copy)
+diff --git a/source/Lib/TLibEncoder/TEncGOP.cpp b/source/Lib/TLibEncoder/TEncGOP.cpp
+--- a/source/Lib/TLibEncoder/TEncGOP.cpp	(revision 4998)
++++ b/source/Lib/TLibEncoder/TEncGOP.cpp	(working copy)
 @@ -51,6 +51,7 @@
  #include <math.h>
  
@@ -3384,8 +3564,9 @@ Index: source/Lib/TLibEncoder/TEncGOP.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibEncoder/TEncGOP.h
 ===================================================================
---- source/Lib/TLibEncoder/TEncGOP.h	(revision 4998)
-+++ source/Lib/TLibEncoder/TEncGOP.h	(working copy)
+diff --git a/source/Lib/TLibEncoder/TEncGOP.h b/source/Lib/TLibEncoder/TEncGOP.h
+--- a/source/Lib/TLibEncoder/TEncGOP.h	(revision 4998)
++++ b/source/Lib/TLibEncoder/TEncGOP.h	(working copy)
 @@ -61,6 +61,7 @@
  #include "TEncAnalyze.h"
  #include "TEncRateCtrl.h"
@@ -3416,8 +3597,9 @@ Index: source/Lib/TLibEncoder/TEncGOP.h
 +
 Index: source/Lib/TLibEncoder/TEncPic.cpp
 ===================================================================
---- source/Lib/TLibEncoder/TEncPic.cpp	(revision 4998)
-+++ source/Lib/TLibEncoder/TEncPic.cpp	(working copy)
+diff --git a/source/Lib/TLibEncoder/TEncPic.cpp b/source/Lib/TLibEncoder/TEncPic.cpp
+--- a/source/Lib/TLibEncoder/TEncPic.cpp	(revision 4998)
++++ b/source/Lib/TLibEncoder/TEncPic.cpp	(working copy)
 @@ -36,6 +36,7 @@
  */
  
@@ -3435,8 +3617,9 @@ Index: source/Lib/TLibEncoder/TEncPic.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibEncoder/TEncPic.h
 ===================================================================
---- source/Lib/TLibEncoder/TEncPic.h	(revision 4998)
-+++ source/Lib/TLibEncoder/TEncPic.h	(working copy)
+diff --git a/source/Lib/TLibEncoder/TEncPic.h b/source/Lib/TLibEncoder/TEncPic.h
+--- a/source/Lib/TLibEncoder/TEncPic.h	(revision 4998)
++++ b/source/Lib/TLibEncoder/TEncPic.h	(working copy)
 @@ -40,6 +40,7 @@
  
  #include "TLibCommon/CommonDef.h"
@@ -3454,8 +3637,9 @@ Index: source/Lib/TLibEncoder/TEncPic.h
 +
 Index: source/Lib/TLibEncoder/TEncPreanalyzer.cpp
 ===================================================================
---- source/Lib/TLibEncoder/TEncPreanalyzer.cpp	(revision 4998)
-+++ source/Lib/TLibEncoder/TEncPreanalyzer.cpp	(working copy)
+diff --git a/source/Lib/TLibEncoder/TEncPreanalyzer.cpp b/source/Lib/TLibEncoder/TEncPreanalyzer.cpp
+--- a/source/Lib/TLibEncoder/TEncPreanalyzer.cpp	(revision 4998)
++++ b/source/Lib/TLibEncoder/TEncPreanalyzer.cpp	(working copy)
 @@ -39,6 +39,7 @@
  #include <algorithm>
  
@@ -3473,8 +3657,9 @@ Index: source/Lib/TLibEncoder/TEncPreanalyzer.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibEncoder/TEncPreanalyzer.h
 ===================================================================
---- source/Lib/TLibEncoder/TEncPreanalyzer.h	(revision 4998)
-+++ source/Lib/TLibEncoder/TEncPreanalyzer.h	(working copy)
+diff --git a/source/Lib/TLibEncoder/TEncPreanalyzer.h b/source/Lib/TLibEncoder/TEncPreanalyzer.h
+--- a/source/Lib/TLibEncoder/TEncPreanalyzer.h	(revision 4998)
++++ b/source/Lib/TLibEncoder/TEncPreanalyzer.h	(working copy)
 @@ -39,6 +39,7 @@
  #define __TENCPREANALYZER__
  
@@ -3492,8 +3677,9 @@ Index: source/Lib/TLibEncoder/TEncPreanalyzer.h
 +
 Index: source/Lib/TLibEncoder/TEncRateCtrl.cpp
 ===================================================================
---- source/Lib/TLibEncoder/TEncRateCtrl.cpp	(revision 4998)
-+++ source/Lib/TLibEncoder/TEncRateCtrl.cpp	(working copy)
+diff --git a/source/Lib/TLibEncoder/TEncRateCtrl.cpp b/source/Lib/TLibEncoder/TEncRateCtrl.cpp
+--- a/source/Lib/TLibEncoder/TEncRateCtrl.cpp	(revision 4998)
++++ b/source/Lib/TLibEncoder/TEncRateCtrl.cpp	(working copy)
 @@ -39,6 +39,7 @@
  #include "../TLibCommon/TComChromaFormat.h"
  
@@ -3511,8 +3697,9 @@ Index: source/Lib/TLibEncoder/TEncRateCtrl.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibEncoder/TEncRateCtrl.h
 ===================================================================
---- source/Lib/TLibEncoder/TEncRateCtrl.h	(revision 4998)
-+++ source/Lib/TLibEncoder/TEncRateCtrl.h	(working copy)
+diff --git a/source/Lib/TLibEncoder/TEncRateCtrl.h b/source/Lib/TLibEncoder/TEncRateCtrl.h
+--- a/source/Lib/TLibEncoder/TEncRateCtrl.h	(revision 4998)
++++ b/source/Lib/TLibEncoder/TEncRateCtrl.h	(working copy)
 @@ -57,6 +57,7 @@
  #include "../TLibEncoder/TEncCfg.h"
  #include <list>
@@ -3532,8 +3719,9 @@ Index: source/Lib/TLibEncoder/TEncRateCtrl.h
 +
 Index: source/Lib/TLibEncoder/TEncSampleAdaptiveOffset.cpp
 ===================================================================
---- source/Lib/TLibEncoder/TEncSampleAdaptiveOffset.cpp	(revision 4998)
-+++ source/Lib/TLibEncoder/TEncSampleAdaptiveOffset.cpp	(working copy)
+diff --git a/source/Lib/TLibEncoder/TEncSampleAdaptiveOffset.cpp b/source/Lib/TLibEncoder/TEncSampleAdaptiveOffset.cpp
+--- a/source/Lib/TLibEncoder/TEncSampleAdaptiveOffset.cpp	(revision 4998)
++++ b/source/Lib/TLibEncoder/TEncSampleAdaptiveOffset.cpp	(working copy)
 @@ -40,6 +40,7 @@
  #include <stdlib.h>
  #include <stdio.h>
@@ -3551,8 +3739,9 @@ Index: source/Lib/TLibEncoder/TEncSampleAdaptiveOffset.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibEncoder/TEncSampleAdaptiveOffset.h
 ===================================================================
---- source/Lib/TLibEncoder/TEncSampleAdaptiveOffset.h	(revision 4998)
-+++ source/Lib/TLibEncoder/TEncSampleAdaptiveOffset.h	(working copy)
+diff --git a/source/Lib/TLibEncoder/TEncSampleAdaptiveOffset.h b/source/Lib/TLibEncoder/TEncSampleAdaptiveOffset.h
+--- a/source/Lib/TLibEncoder/TEncSampleAdaptiveOffset.h	(revision 4998)
++++ b/source/Lib/TLibEncoder/TEncSampleAdaptiveOffset.h	(working copy)
 @@ -45,6 +45,7 @@
  #include "TEncEntropy.h"
  #include "TEncSbac.h"
@@ -3570,8 +3759,9 @@ Index: source/Lib/TLibEncoder/TEncSampleAdaptiveOffset.h
 +
 Index: source/Lib/TLibEncoder/TEncSbac.cpp
 ===================================================================
---- source/Lib/TLibEncoder/TEncSbac.cpp	(revision 4998)
-+++ source/Lib/TLibEncoder/TEncSbac.cpp	(working copy)
+diff --git a/source/Lib/TLibEncoder/TEncSbac.cpp b/source/Lib/TLibEncoder/TEncSbac.cpp
+--- a/source/Lib/TLibEncoder/TEncSbac.cpp	(revision 4998)
++++ b/source/Lib/TLibEncoder/TEncSbac.cpp	(working copy)
 @@ -45,6 +45,7 @@
  #if ENVIRONMENT_VARIABLE_DEBUG_AND_TEST
  #include "../TLibCommon/Debug.h"
@@ -3589,8 +3779,9 @@ Index: source/Lib/TLibEncoder/TEncSbac.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibEncoder/TEncSbac.h
 ===================================================================
---- source/Lib/TLibEncoder/TEncSbac.h	(revision 4998)
-+++ source/Lib/TLibEncoder/TEncSbac.h	(working copy)
+diff --git a/source/Lib/TLibEncoder/TEncSbac.h b/source/Lib/TLibEncoder/TEncSbac.h
+--- a/source/Lib/TLibEncoder/TEncSbac.h	(revision 4998)
++++ b/source/Lib/TLibEncoder/TEncSbac.h	(working copy)
 @@ -52,6 +52,7 @@
  #if FAST_BIT_EST
  #include "TEncBinCoderCABACCounter.h"
@@ -3608,8 +3799,9 @@ Index: source/Lib/TLibEncoder/TEncSbac.h
 +
 Index: source/Lib/TLibEncoder/TEncSearch.cpp
 ===================================================================
---- source/Lib/TLibEncoder/TEncSearch.cpp	(revision 4998)
-+++ source/Lib/TLibEncoder/TEncSearch.cpp	(working copy)
+diff --git a/source/Lib/TLibEncoder/TEncSearch.cpp b/source/Lib/TLibEncoder/TEncSearch.cpp
+--- a/source/Lib/TLibEncoder/TEncSearch.cpp	(revision 4998)
++++ b/source/Lib/TLibEncoder/TEncSearch.cpp	(working copy)
 @@ -43,6 +43,7 @@
  #include "TLibCommon/Debug.h"
  #include <math.h>
@@ -3760,8 +3952,9 @@ Index: source/Lib/TLibEncoder/TEncSearch.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibEncoder/TEncSearch.h
 ===================================================================
---- source/Lib/TLibEncoder/TEncSearch.h	(revision 4998)
-+++ source/Lib/TLibEncoder/TEncSearch.h	(working copy)
+diff --git a/source/Lib/TLibEncoder/TEncSearch.h b/source/Lib/TLibEncoder/TEncSearch.h
+--- a/source/Lib/TLibEncoder/TEncSearch.h	(revision 4998)
++++ b/source/Lib/TLibEncoder/TEncSearch.h	(working copy)
 @@ -50,6 +50,7 @@
  #include "TEncSbac.h"
  #include "TEncCfg.h"
@@ -3779,8 +3972,9 @@ Index: source/Lib/TLibEncoder/TEncSearch.h
 +
 Index: source/Lib/TLibEncoder/TEncSlice.cpp
 ===================================================================
---- source/Lib/TLibEncoder/TEncSlice.cpp	(revision 4998)
-+++ source/Lib/TLibEncoder/TEncSlice.cpp	(working copy)
+diff --git a/source/Lib/TLibEncoder/TEncSlice.cpp b/source/Lib/TLibEncoder/TEncSlice.cpp
+--- a/source/Lib/TLibEncoder/TEncSlice.cpp	(revision 4998)
++++ b/source/Lib/TLibEncoder/TEncSlice.cpp	(working copy)
 @@ -38,6 +38,7 @@
  #include "TEncTop.h"
  #include "TEncSlice.h"
@@ -3798,8 +3992,9 @@ Index: source/Lib/TLibEncoder/TEncSlice.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibEncoder/TEncSlice.h
 ===================================================================
---- source/Lib/TLibEncoder/TEncSlice.h	(revision 4998)
-+++ source/Lib/TLibEncoder/TEncSlice.h	(working copy)
+diff --git a/source/Lib/TLibEncoder/TEncSlice.h b/source/Lib/TLibEncoder/TEncSlice.h
+--- a/source/Lib/TLibEncoder/TEncSlice.h	(revision 4998)
++++ b/source/Lib/TLibEncoder/TEncSlice.h	(working copy)
 @@ -46,6 +46,7 @@
  #include "TEncCu.h"
  #include "WeightPredAnalysis.h"
@@ -3817,8 +4012,9 @@ Index: source/Lib/TLibEncoder/TEncSlice.h
 +
 Index: source/Lib/TLibEncoder/TEncTop.cpp
 ===================================================================
---- source/Lib/TLibEncoder/TEncTop.cpp	(revision 4998)
-+++ source/Lib/TLibEncoder/TEncTop.cpp	(working copy)
+diff --git a/source/Lib/TLibEncoder/TEncTop.cpp b/source/Lib/TLibEncoder/TEncTop.cpp
+--- a/source/Lib/TLibEncoder/TEncTop.cpp	(revision 4998)
++++ b/source/Lib/TLibEncoder/TEncTop.cpp	(working copy)
 @@ -42,6 +42,7 @@
  #if FAST_BIT_EST
  #include "TLibCommon/ContextModel.h"
@@ -3862,8 +4058,9 @@ Index: source/Lib/TLibEncoder/TEncTop.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibEncoder/TEncTop.h
 ===================================================================
---- source/Lib/TLibEncoder/TEncTop.h	(revision 4998)
-+++ source/Lib/TLibEncoder/TEncTop.h	(working copy)
+diff --git a/source/Lib/TLibEncoder/TEncTop.h b/source/Lib/TLibEncoder/TEncTop.h
+--- a/source/Lib/TLibEncoder/TEncTop.h	(revision 4998)
++++ b/source/Lib/TLibEncoder/TEncTop.h	(working copy)
 @@ -57,6 +57,7 @@
  #include "TEncSampleAdaptiveOffset.h"
  #include "TEncPreanalyzer.h"
@@ -3882,8 +4079,9 @@ Index: source/Lib/TLibEncoder/TEncTop.h
 +
 Index: source/Lib/TLibEncoder/WeightPredAnalysis.cpp
 ===================================================================
---- source/Lib/TLibEncoder/WeightPredAnalysis.cpp	(revision 4998)
-+++ source/Lib/TLibEncoder/WeightPredAnalysis.cpp	(working copy)
+diff --git a/source/Lib/TLibEncoder/WeightPredAnalysis.cpp b/source/Lib/TLibEncoder/WeightPredAnalysis.cpp
+--- a/source/Lib/TLibEncoder/WeightPredAnalysis.cpp	(revision 4998)
++++ b/source/Lib/TLibEncoder/WeightPredAnalysis.cpp	(working copy)
 @@ -41,6 +41,7 @@
  #include "../TLibCommon/TComPicYuv.h"
  #include "WeightPredAnalysis.h"
@@ -3901,8 +4099,9 @@ Index: source/Lib/TLibEncoder/WeightPredAnalysis.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibEncoder/WeightPredAnalysis.h
 ===================================================================
---- source/Lib/TLibEncoder/WeightPredAnalysis.h	(revision 4998)
-+++ source/Lib/TLibEncoder/WeightPredAnalysis.h	(working copy)
+diff --git a/source/Lib/TLibEncoder/WeightPredAnalysis.h b/source/Lib/TLibEncoder/WeightPredAnalysis.h
+--- a/source/Lib/TLibEncoder/WeightPredAnalysis.h	(revision 4998)
++++ b/source/Lib/TLibEncoder/WeightPredAnalysis.h	(working copy)
 @@ -40,6 +40,7 @@
  #include "../TLibCommon/CommonDef.h"
  #include "../TLibCommon/TComSlice.h"
@@ -3920,8 +4119,9 @@ Index: source/Lib/TLibEncoder/WeightPredAnalysis.h
 +
 Index: source/Lib/TLibVideoIO/TVideoIOYuv.cpp
 ===================================================================
---- source/Lib/TLibVideoIO/TVideoIOYuv.cpp	(revision 4998)
-+++ source/Lib/TLibVideoIO/TVideoIOYuv.cpp	(working copy)
+diff --git a/source/Lib/TLibVideoIO/TVideoIOYuv.cpp b/source/Lib/TLibVideoIO/TVideoIOYuv.cpp
+--- a/source/Lib/TLibVideoIO/TVideoIOYuv.cpp	(revision 4998)
++++ b/source/Lib/TLibVideoIO/TVideoIOYuv.cpp	(working copy)
 @@ -45,6 +45,7 @@
  
  #include "TLibCommon/TComRom.h"
@@ -3939,8 +4139,9 @@ Index: source/Lib/TLibVideoIO/TVideoIOYuv.cpp
 +} // namespace pcc_hm
 Index: source/Lib/TLibVideoIO/TVideoIOYuv.h
 ===================================================================
---- source/Lib/TLibVideoIO/TVideoIOYuv.h	(revision 4998)
-+++ source/Lib/TLibVideoIO/TVideoIOYuv.h	(working copy)
+diff --git a/source/Lib/TLibVideoIO/TVideoIOYuv.h b/source/Lib/TLibVideoIO/TVideoIOYuv.h
+--- a/source/Lib/TLibVideoIO/TVideoIOYuv.h	(revision 4998)
++++ b/source/Lib/TLibVideoIO/TVideoIOYuv.h	(working copy)
 @@ -43,6 +43,7 @@
  #include <iostream>
  #include "TLibCommon/CommonDef.h"
@@ -3959,8 +4160,9 @@ Index: source/Lib/TLibVideoIO/TVideoIOYuv.h
 +
 Index: source/Lib/libmd5/MD5.h
 ===================================================================
---- source/Lib/libmd5/MD5.h	(revision 4998)
-+++ source/Lib/libmd5/MD5.h	(working copy)
+diff --git a/source/Lib/libmd5/MD5.h b/source/Lib/libmd5/MD5.h
+--- a/source/Lib/libmd5/MD5.h	(revision 4998)
++++ b/source/Lib/libmd5/MD5.h	(working copy)
 @@ -33,11 +33,12 @@
  #pragma once
  #include "libmd5.h"
@@ -3984,8 +4186,9 @@ Index: source/Lib/libmd5/MD5.h
 \ No newline at end of file
 Index: source/Lib/libmd5/libmd5.h
 ===================================================================
---- source/Lib/libmd5/libmd5.h	(revision 4998)
-+++ source/Lib/libmd5/libmd5.h	(working copy)
+diff --git a/source/Lib/libmd5/libmd5.h b/source/Lib/libmd5/libmd5.h
+--- a/source/Lib/libmd5/libmd5.h	(revision 4998)
++++ b/source/Lib/libmd5/libmd5.h	(working copy)
 @@ -56,3 +56,4 @@
  #endif
  

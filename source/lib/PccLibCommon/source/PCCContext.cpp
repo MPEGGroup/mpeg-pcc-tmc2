@@ -42,6 +42,170 @@ PCCContext::PCCContext() = default;
 
 PCCContext::~PCCContext() { atlasContexts_.clear(); }
 
+
+void PCCContext::setTilePartitionSizeAfti() {  // decoder
+  for ( size_t afpsIdx = 0; afpsIdx < getAtlasFrameParameterSetList().size(); afpsIdx++ ) {
+    auto&  afps             = getAtlasFrameParameterSet( afpsIdx );
+    auto&  asps             = getAtlasSequenceParameterSet( afps.getAtlasFrameParameterSetId() );
+    auto&  afti             = afps.getAtlasFrameTileInformation();
+    size_t frameWidth       = asps.getFrameWidth();
+    size_t frameHeight      = asps.getFrameHeight();
+    size_t numPartitionCols = afti.getNumPartitionColumnsMinus1() + 1;
+    size_t numPartitionRows = afti.getNumPartitionRowsMinus1() + 1;
+    auto&  partitionWidth   = afti.getColWidth();
+    auto&  partitionHeight  = afti.getRowHeight();
+    auto&  partitionPosX    = afti.getColWidth();
+    auto&  partitionPosY    = afti.getRowHeight();
+    partitionWidth.resize( numPartitionCols );
+    partitionHeight.resize( numPartitionRows );
+    partitionPosX.resize( numPartitionCols );
+    partitionPosY.resize( numPartitionRows );
+    if ( afti.getUniformPartitionSpacingFlag() ) {
+      size_t uniformPatitionWidth  = 64 * ( afti.getPartitionColumnWidthMinus1( 0 ) + 1 );
+      size_t uniformPatitionHeight = 64 * ( afti.getPartitionRowHeightMinus1( 0 ) + 1 );
+      partitionPosX[0]             = 0;
+      partitionWidth[0]            = uniformPatitionWidth;
+      for ( size_t col = 1; col < numPartitionCols - 1; col++ ) {
+        partitionPosX[col]  = partitionPosX[col - 1] + partitionWidth[col - 1];
+        partitionWidth[col] = uniformPatitionWidth;
+      }
+      if ( numPartitionCols > 1 ) {
+        partitionPosX[numPartitionCols - 1] =
+            partitionPosX[numPartitionCols - 2] + partitionWidth[numPartitionCols - 2];
+        partitionWidth[numPartitionCols - 1] = frameWidth - partitionPosX[numPartitionCols - 1];
+      }
+
+      partitionPosY[0]   = 0;
+      partitionHeight[0] = uniformPatitionHeight;
+      for ( size_t row = 1; row < numPartitionRows - 1; row++ ) {
+        partitionPosY[row]   = partitionPosY[row - 1] + partitionHeight[row - 1];
+        partitionHeight[row] = uniformPatitionHeight;
+      }
+      if ( numPartitionRows > 1 ) {
+        partitionPosY[numPartitionRows - 1] =
+            partitionPosY[numPartitionRows - 2] + partitionHeight[numPartitionRows - 2];
+        partitionHeight[numPartitionRows - 1] = frameHeight - partitionPosY[numPartitionRows - 1];
+      }
+    } else {
+      printf( "non uniform tile partitioning\n" );
+      exit( 129 );
+      size_t multiPatitionWidth  = 64 * ( afti.getPartitionColumnWidthMinus1( 0 ) + 1 );
+      size_t multiPatitionHeight = 64 * ( afti.getPartitionRowHeightMinus1( 0 ) + 1 );
+      for ( size_t col = 0; col < numPartitionCols; col++ ) {
+        partitionWidth[col] = multiPatitionWidth;
+        partitionPosX[col]  = partitionPosX[col - 1] + partitionWidth[col];
+      }
+      for ( size_t row = 0; row < numPartitionRows; row++ ) {
+        partitionHeight[row] = multiPatitionHeight;
+        partitionPosY[row]   = partitionPosY[row - 1] + partitionHeight[row];
+      }
+    }
+    if ( asps.getAuxiliaryVideoEnabledFlag() ) {
+      setAuxVideoWidth( ( afti.getAuxiliaryVideoTileRowWidthMinus1() + 1 ) * 64 );
+      getAuxTileLeftTopY().resize( afti.getNumTilesInAtlasFrameMinus1() + 1, 0 );
+      getAuxTileHeight().resize( afti.getNumTilesInAtlasFrameMinus1() + 1, 0 );
+      for ( size_t ti = 0; ti <= afti.getNumTilesInAtlasFrameMinus1(); ti++ ) {
+        setAuxTileHeight( ti, afti.getAuxiliaryVideoTileRowHeight( ti ) * 64 );
+        if ( ti < afti.getNumTilesInAtlasFrameMinus1() )
+          setAuxTileLeftTopY( ti + 1, getAuxTileLeftTopY( ti ) + getAuxTileHeight( ti ) );
+      }
+    }
+  }  // afpsIdx
+}
+
+
+size_t PCCContext::setTileSizeAndLocation( size_t frameIndex, AtlasTileHeader& ath ) {
+  size_t afpsIdx   = ath.getAtlasFrameParameterSetId();
+  auto&  afps      = getAtlasFrameParameterSet( afpsIdx );
+  auto&  asps      = getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
+  auto&  afti      = afps.getAtlasFrameTileInformation();
+  size_t tileIndex = 0;
+  auto& frameContext = atlasContexts_[atlasIndex_].getFrameContexts();
+  if ( afti.getSingleTileInAtlasFrameFlag() ) {
+    if ( frameContext[frameIndex].getNumTilesInAtlasFrame() == 0 ) {
+      frameContext[frameIndex].setAtlasFrameWidth( asps.getFrameWidth() );
+      frameContext[frameIndex].setAtlasFrameHeight( asps.getFrameHeight() );
+      frameContext[frameIndex].setNumTilesInAtlasFrame( 1 );
+      frameContext[frameIndex].updatePartitionInfoPerFrame(
+          frameIndex, asps.getFrameWidth(), asps.getFrameHeight(), afti.getNumTilesInAtlasFrameMinus1() + 1,
+          afti.getUniformPartitionSpacingFlag(), afti.getPartitionColumnWidthMinus1( 0 ) + 1,
+          afti.getPartitionRowHeightMinus1( 0 ) + 1, afti.getNumPartitionColumnsMinus1() + 1,
+          afti.getNumPartitionRowsMinus1() + 1, afti.getSinglePartitionPerTileFlag(), afti.getSignalledTileIdFlag() );
+    } else {
+      assert( frameContext[frameIndex].getAtlasFrameWidth() == ( asps.getFrameWidth() ) );
+      assert( frameContext[frameIndex].getAtlasFrameHeight() == ( asps.getFrameHeight() ) );
+      assert( frameContext[frameIndex].getNumTilesInAtlasFrame() == 1 );
+    }
+    auto& tile = frameContext[frameIndex].getTile( 0 );
+    tile.setTileIndex( tileIndex );
+    tile.setLeftTopXInFrame( 0 );
+    tile.setLeftTopYInFrame( 0 );
+    tile.setWidth( asps.getFrameWidth() );
+    tile.setHeight( asps.getFrameHeight() );
+  } else {
+    if ( frameContext[frameIndex].getNumTilesInAtlasFrame() == 0 ) {
+      frameContext[frameIndex].updatePartitionInfoPerFrame(
+          frameIndex, asps.getFrameWidth(), asps.getFrameHeight(), afti.getNumTilesInAtlasFrameMinus1() + 1,
+          afti.getUniformPartitionSpacingFlag(), afti.getPartitionColumnWidthMinus1( 0 ) + 1,
+          afti.getPartitionRowHeightMinus1( 0 ) + 1, afti.getNumPartitionColumnsMinus1() + 1,
+          afti.getNumPartitionRowsMinus1() + 1, afti.getSinglePartitionPerTileFlag(), afti.getSignalledTileIdFlag() );
+      frameContext[frameIndex].initNumTiles( frameContext[frameIndex].getNumTilesInAtlasFrame() );
+    } else {
+      assert( frameContext[frameIndex].getAtlasFrameWidth() == asps.getFrameWidth() );
+      assert( frameContext[frameIndex].getAtlasFrameHeight() == asps.getFrameHeight() );
+      assert( frameContext[frameIndex].getNumTilesInAtlasFrame() == ( afti.getNumTilesInAtlasFrameMinus1() + 1 ) );
+      assert( frameContext[frameIndex].getUniformPartitionSpacing() == afti.getUniformPartitionSpacingFlag() );
+      assert( frameContext[frameIndex].getSinglePartitionPerTile() == afti.getSinglePartitionPerTileFlag() );
+      assert( frameContext[frameIndex].getNumPartitionCols() == ( afti.getNumPartitionColumnsMinus1() + 1 ) );
+      assert( frameContext[frameIndex].getNumPartitionRows() == ( afti.getNumPartitionRowsMinus1() + 1 ) );
+      assert( frameContext[frameIndex].getSignalledTileId() == afti.getSignalledTileIdFlag() );
+    }
+
+    tileIndex   = afti.getSignalledTileIdFlag() ? afti.getTileId( ath.getId() ) : ath.getId();
+    auto&  tile = frameContext[frameIndex].getTile( tileIndex );
+    size_t TopLeftPartitionColumn =
+        afti.getTopLeftPartitionIdx( tileIndex ) % ( afti.getNumPartitionColumnsMinus1() + 1 );
+    size_t TopLeftPartitionRow = afti.getTopLeftPartitionIdx( tileIndex ) / ( afti.getNumPartitionColumnsMinus1() + 1 );
+    size_t BottomRightPartitionColumn = TopLeftPartitionColumn + afti.getBottomRightPartitionColumnOffset( tileIndex );
+    size_t BottomRightPartitionRow    = TopLeftPartitionRow + afti.getBottomRightPartitionRowOffset( tileIndex );
+
+    size_t tileStartX = frameContext[frameIndex].getPartitionPosX()[TopLeftPartitionColumn];
+    size_t tileStartY = frameContext[frameIndex].getPartitionPosY()[TopLeftPartitionRow];
+    size_t tileWidth  = 0;
+    size_t tileHeight = 0;
+    for ( size_t j = TopLeftPartitionColumn; j <= BottomRightPartitionColumn; j++ ) {
+      tileWidth += ( frameContext[frameIndex].getPartitionWidth()[j] );
+    }
+    for ( size_t j = TopLeftPartitionRow; j <= BottomRightPartitionRow; j++ ) {
+      tileHeight += ( frameContext[frameIndex].getPartitionHeight()[j] );
+    }
+    tile.setLeftTopXInFrame( tileStartX );
+    tile.setLeftTopYInFrame( tileStartY );
+
+    if ( ( tile.getLeftTopXInFrame() + tileWidth ) >= frameContext[frameIndex].getAtlasFrameWidth() )
+      tileWidth = frameContext[0].getAtlasFrameWidth() - tile.getLeftTopXInFrame();
+    if ( ( tile.getLeftTopYInFrame() + tileHeight ) >= frameContext[frameIndex].getAtlasFrameHeight() )
+      tileHeight = frameContext[0].getAtlasFrameHeight() - tile.getLeftTopYInFrame();
+
+    tile.setWidth( tileWidth );
+    tile.setHeight( tileHeight );
+
+    assert( tile.getLeftTopXInFrame() < asps.getFrameWidth() );
+    assert( tile.getLeftTopYInFrame() < asps.getFrameHeight() );
+
+#if 1
+    auto& atlasFrame = frameContext[frameIndex];
+    printf( "dec:%zu frame %zu tile:(%zu,%zu), %zux%zu -> leftIdx(%zu,%zu), bottom(%zu,%zu) -> %u,%u,%u\n", frameIndex,
+            tileIndex, atlasFrame.getTile( tileIndex ).getLeftTopXInFrame(),
+            atlasFrame.getTile( tileIndex ).getLeftTopYInFrame(), atlasFrame.getTile( tileIndex ).getWidth(),
+            atlasFrame.getTile( tileIndex ).getHeight(), TopLeftPartitionColumn, TopLeftPartitionRow,
+            BottomRightPartitionColumn, BottomRightPartitionRow, afti.getTopLeftPartitionIdx( tileIndex ),
+            afti.getBottomRightPartitionColumnOffset( tileIndex ), afti.getBottomRightPartitionRowOffset( tileIndex ) );
+#endif
+  }
+  return tileIndex;
+}
+
 void PCCContext::resizeAtlas( size_t size ) {
   atlasContexts_.resize( size );
   for ( int atlIdx = 0; atlIdx < size; atlIdx++ ) { atlasContexts_[atlIdx].setAtlasIndex( atlIdx ); }

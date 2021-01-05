@@ -132,6 +132,9 @@ class PCCContext : public PCCHighLevelSyntax {
   PCCContext();
   ~PCCContext();
 
+  void setTilePartitionSizeAfti();
+  size_t setTileSizeAndLocation( size_t frameIndex, AtlasTileHeader& ath );
+
   // Atlas related functions
   const size_t                  sizeAtlas() { return atlasContexts_.size(); }
   std::vector<PCCAtlasContext>& getAtlases() { return atlasContexts_; }

@@ -372,6 +372,9 @@ class PCCVideoEncoder {
     params.blockToPatchFile_       = blockToPatchFileName;
     params.occupancyMapFile_       = occupancyMapFileName;
     params.patchInfoFile_          = patchInfoFileName;
+    params.cuTransquantBypassFlagForce_ = false;
+    params.transquantBypassEnable_      = false;
+    params.inputColourSpaceConvert_     = use444CodecIo;
     printf( "Encode: video size = %zu x %zu num frames = %zu \n", video.getWidth(), video.getHeight(),
             video.getFrameCount() );
     fflush( stdout );

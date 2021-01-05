@@ -54,6 +54,9 @@ struct PCCVideoEncoderParameters {
   std::string blockToPatchFile_;
   std::string occupancyMapFile_;
   std::string patchInfoFile_;
+  bool        transquantBypassEnable_;
+  bool        cuTransquantBypassFlagForce_;
+  bool        inputColourSpaceConvert_;
 };
 
 template <class T>

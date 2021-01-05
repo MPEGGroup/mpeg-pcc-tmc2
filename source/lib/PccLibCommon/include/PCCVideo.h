@@ -51,6 +51,15 @@ class PCCVideo {
     for ( auto& frame : frames_ ) { frame.clear(); }
     frames_.clear();
   }
+  std::string getName( std::string path ) {
+    PCCCOLORFORMAT format = getColorFormat();
+    return addVideoFormat( path,                                                                  // path
+                           getWidth(),                                                            // width
+                           getHeight(),                                                           // height
+                           format == PCCCOLORFORMAT::YUV444 || format == PCCCOLORFORMAT::YUV420,  // isYUV
+                           format == PCCCOLORFORMAT::YUV420,                                      // is 420
+                           sizeof( T ) == 1 ? "8" : "10" );
+  }
   std::vector<PCCImage<T, N> >& getFrames() { return frames_; }
   void                          swap( PCCVideo<T, N>& video ) { frames_.swap( video.frames_ ); }
 

@@ -94,7 +94,7 @@ void PCCBitstream::read( PCCVideoBitstream& videoBitstream ) {
 #endif
   videoBitstream.resize( size );
   memcpy( videoBitstream.buffer(), data_.data() + position_.bytes_, size );
-  videoBitstream.trace();
+  // videoBitstream.trace();
   position_.bytes_ += size;
 #ifdef BITSTREAM_TRACE
   trace( "Code: video : %4zu \n", size );
@@ -106,7 +106,7 @@ void PCCBitstream::write( PCCVideoBitstream& videoBitstream ) {
   trace( "Code: PCCVideoBitstream \n" );
 #endif
   writeBuffer( videoBitstream.buffer(), videoBitstream.size() );
-  videoBitstream.trace();
+  // videoBitstream.trace();
 #ifdef BITSTREAM_TRACE
   trace( "Code: video : %4zu \n", videoBitstream.size() );
 #endif
