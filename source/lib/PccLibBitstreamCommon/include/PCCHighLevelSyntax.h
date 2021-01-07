@@ -453,7 +453,12 @@ class PCCHighLevelSyntax {
   void addSeiHashToSeiSuffix( size_t i ) {
     return atlasHLS_[atlasIndex_].addSeiToSeiSuffix( DECODED_ATLAS_INFORMATION_HASH, true, seiHash_[i] );
   }
+
   void allocateSeiHash( size_t hashCount ) { seiHash_.resize( hashCount ); }
+  void allocateSeiHash( ) {
+    size_t size = seiHash_.size();
+    seiHash_.resize( size + 1 );
+  }
 
   uint8_t getOccupancyPrecision() { return occupancyPrecision_; }
   uint8_t getLog2PatchQuantizerSizeX() { return log2PatchQuantizerSizeX_; }
