@@ -2495,7 +2495,7 @@ void PCCCodec::checkConformance( const std::string& fileE, const std::string& fi
         { 65536, 512, 128, 480000, 480000, 500, 35651584, 2097152, 16384, 4096 },
         { 65536, 512, 512, 480000, 480000, 500, 35651584, 4194304, 32768, 32768 } };
 
-    const enum V3CLimitType { //Table A-5
+    enum V3CLimitType { //Table A-5
         MaxNumProjPointsPerSec = 0,
         MaxNumEomOMPointsPerSec,
         MaxNumRawPointsPerSec,
@@ -2507,7 +2507,7 @@ void PCCCodec::checkConformance( const std::string& fileE, const std::string& fi
         MaxNumAttributeDims
     };
 
-    const enum ASPSLimitType { //Table A-6
+    enum ASPSLimitType { //Table A-6
         MaxNumProjPatches = 0,
         MaxNumRawPatches,
         MaxNumEomOMPatches,
