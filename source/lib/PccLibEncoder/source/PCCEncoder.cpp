@@ -8436,7 +8436,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
         }
       }
       if ( bPersistance == false ) {
-        context.addAtlasFrameParameterSet( context.getAtlasFrameParameterSet( 0 ) )
+        context.addAtlasFrameParameterSet( context.getAtlasFrameParameterSet( 0 ) ) // ajt::why update afti of afps 0?
             .setAtlasFrameTileInformation( aftiUpdated );
         atlasFrameParameterSetId = context.getAtlasFrameParameterSetList().size() - 1;
       }
@@ -8470,11 +8470,11 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
       ath.setRefAtlasFrameListIdx( 0 );
       PCCFrameContext& tile = context[i].getTile( ti );
       createPatchFrameDataStructure( context, tile, atl, i, ti );
-      tile.setAtlIndex( context.getAtlasTileLayerList().size() - 1 );
+      tile.setAtlIndex( context.getAtlasTileLayerList().size() - 1 ); //ajt::check setAtlIndex?
     }  // tileIdx
   }    // frameCount
 
-  // sei hash
+
   if ( params_.decodedAtlasInformationHash_ > 0 ) {
     context.allocateSeiHash( frameCount );
     assert( context.getSeiHash().size() == frameCount );
@@ -8482,6 +8482,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
       createHashInformation( context, fi, params_.decodedAtlasInformationHash_ - 1 );
     }
   }
+
 
   if ( params_.flagGeometrySmoothing_ ) {
     if ( params_.gridSmoothing_ ) {
@@ -8874,6 +8875,27 @@ void PCCEncoder::createHashInformation( PCCContext& context, int frameIndex, siz
       atlasPatchApplicationByteString( atlasData, atlasPatchIdx, atlasPatchParams );
     }
 
+    size_t atlIdx     = context[frameIndex].getTile( 0 ).getAtlIndex();
+    auto&  tileHeader = context.getAtlasTileLayerList()[atlIdx].getHeader();
+    size_t afpsIndex  = tileHeader.getAtlasFrameParameterSetId();
+    size_t aspsIndex  = context.getAtlasFrameParameterSet( afpsIndex ).getAtlasFrameParameterSetId();
+    auto& afps = context.getAtlasFrameParameterSet( afpsIndex);
+    auto& asps = context.getAtlasSequenceParameterSet( aspsIndex );
+     auto& vps = context.getVps();
+     auto& afc = context.getFrames()[frameIndex];
+     auto& tfc        = afc.getTitleFrameContext();
+     TRACE_ATLAS( "Atlas Frame Index = %d,\n", frameIndex);
+     TRACE_ATLAS("AtlasFrameOrderCntVal = %d,  AtlasFrameWidthMax =  %d, AtlasFrameHeightMax = %d, AtlasID = %d, ASPSFrameSize = %d, VPSMapCount = %d, AttributeCount = %d, AttributeDimension = %d, NumTilesAtlasFrame = %d, AtlasTotalNumProjPatches = %d, " " AtlasTotalNumRawPatches = %d, AtlasTotalNumEOMPatches = %d, ",
+                 tfc.getAtlasFrmOrderCntVal(), asps.getFrameWidth(), asps.getFrameHeight(), vps.getAtlasId( 0 ),
+                 asps.getFrameWidth() * asps.getFrameHeight(), vps.getMapCountMinus1(0) + 1,
+                 vps.getAttributeInformation(0).getAttributeCount(),
+                 vps.getAttributeInformation(0).getAttributeDimensionMinus1(0) + 1, afc.getNumTilesInAtlasFrame(),
+                 tfc.getPatches().size(), tfc.getNumberOfRawPointsPatches(), tfc.getEomPatches().size() );
+     TRACE_FRAME( "Atlas Frame Index = %d, \n", frameIndex );
+     TRACE_FRAME( "PointCloudFrameOrderCntVal = %d, NumProjPoints = %zu, NumRAWPoints = %zu, NumEOMPoints = %zu,\n",
+                  tfc.getAtlasFrmOrderCntVal(), tfc.getTotalNumberOfRegularPoints(), tfc.getTotalNumberOfRawPoints(),
+                  tfc.getTotalNumberOfEOMPoints() );
+                       
     printf( "**sei** AtlasPatchHash: frame(%d) (#patches %zu)\n", frameIndex, patchCount );
     if ( sei.getHashType() == 0 ) {
       std::vector<uint8_t> md5Digest( 16 );
@@ -8881,7 +8903,12 @@ void PCCEncoder::createHashInformation( PCCContext& context, int frameIndex, siz
       printf( "\t**sei** (MD5): " );
       for ( auto& e : md5Digest ) printf( "%02x", e );
       printf( "\n" );
-      for ( int j = 0; j < 16; j++ ) sei.setAtlasMd5( j, md5Digest[j] );
+      TRACE_ATLAS( " Atlas MD5 = " );
+      for ( int j = 0; j < 16; j++ ) { 
+          sei.setAtlasMd5( j, md5Digest[j] );
+          TRACE_ATLAS( "%02x", md5Digest[j] );
+      }
+      TRACE_ATLAS( "," );
     } else if ( sei.getHashType() == 1 ) {
       uint16_t crc = context.computeCRC( atlasData.data(), atlasData.size() );
       printf( "\t**sei** (CRC): % 04x ", crc );
@@ -8904,7 +8931,12 @@ void PCCEncoder::createHashInformation( PCCContext& context, int frameIndex, siz
       printf( "\t**sei** (MD5): " );
       for ( auto& e : md5Digest ) printf( "%02x", e );
       printf( "\n" );
-      for ( int j = 0; j < 16; j++ ) sei.setAtlasB2pMd5( j, md5Digest[j] );
+      TRACE_ATLAS( " Atlas B2P MD5 = " );
+      for ( int j = 0; j < 16; j++ ) { 
+          sei.setAtlasB2pMd5( j, md5Digest[j] ); 
+          TRACE_ATLAS( "%02x", md5Digest[j] );
+      }
+      TRACE_ATLAS( "," );
     } else if ( sei.getHashType() == 1 ) {
       uint16_t crc = context.computeCRC( atlasB2PData.data(), atlasB2PData.size() );
       printf( "\t**sei** (CRC): % 04x ", crc );
@@ -8915,6 +8947,7 @@ void PCCEncoder::createHashInformation( PCCContext& context, int frameIndex, siz
       sei.setAtlasB2pCheckSum( checkSum );
     }
     atlasB2PData.clear();
+    TRACE_ATLAS( "\n" );
   }
 
   // for tiles
@@ -8922,6 +8955,7 @@ void PCCEncoder::createHashInformation( PCCContext& context, int frameIndex, siz
        !seiHashCancelFlag ) {
     sei.allocateAtlasTilesHash( context[frameIndex].getNumTilesInAtlasFrame() );
     sei.setNumTilesMinus1( context[frameIndex].getNumTilesInAtlasFrame() - 1 );
+    TRACE_TILE( "Atlas Frame Index = %d, \n", frameIndex );
     for ( size_t tileIdx = 0; tileIdx < context[frameIndex].getNumTilesInAtlasFrame(); tileIdx++ ) {
       auto&  tile         = context[frameIndex].getTile( tileIdx );
       size_t atlIdx       = tile.getAtlIndex();
@@ -8929,6 +8963,15 @@ void PCCEncoder::createHashInformation( PCCContext& context, int frameIndex, siz
       auto&  tileDataUnit = context.getAtlasTileLayerList()[atlIdx].getDataUnit();
       size_t patchCount   = tileDataUnit.getPatchCount() - 1;  // not the last I_END or P_END
       size_t tileId       = tileHeader.getId();
+      auto&  afps         = context.getAtlasFrameParameterSet( tileHeader.getAtlasFrameParameterSetId());
+      auto&   afti              = afps.getAtlasFrameTileInformation();
+      size_t topLeftColumn     = afti.getTopLeftPartitionIdx( tileIdx ) % ( afti.getNumPartitionColumnsMinus1() + 1 );
+      size_t topLeftRow        = afti.getTopLeftPartitionIdx( tileIdx ) / ( afti.getNumPartitionColumnsMinus1() + 1 );
+      size_t  tileOffsetX       = context[frameIndex].getPartitionPosX()[topLeftColumn];
+      size_t  tileOffsetY       = context[frameIndex].getPartitionPosY()[topLeftRow];
+      TRACE_TILE( "TileID = %d, AtlasFrameOrderCntVal = %d, TileType = %d, TileOffsetX = %d, TileOffsetY = %d, TileWidth = %d, TileHeight = %d, ", 
+                  tileId , tile.getAtlasFrmOrderCntVal(), tileHeader.getType(), tileOffsetX, tileOffsetY,
+                  tile.getWidth(), tile.getHeight() );
       sei.setTileId( tileIdx, tileId );
       if ( tileIdx == 0 ) {
         auto& tileInfo = context.getAtlasFrameParameterSet( tileHeader.getAtlasFrameParameterSetId() )
@@ -8958,7 +9001,12 @@ void PCCEncoder::createHashInformation( PCCContext& context, int frameIndex, siz
           printf( "\t**sei** (MD5): " );
           for ( auto& e : md5Digest ) printf( "%02x", e );
           printf( "\n" );
-          for ( int j = 0; j < 16; j++ ) sei.setAtlasTilesMd5( tileId, j, md5Digest[j] );
+          TRACE_TILE( " Tile MD5 = ");
+          for ( int j = 0; j < 16; j++ ) { 
+              sei.setAtlasTilesMd5( tileId, j, md5Digest[j] );
+              TRACE_TILE( "%02x", md5Digest[j] );
+          }
+          TRACE_TILE( "," );
         } else if ( sei.getHashType() == 1 ) {
           uint16_t crc = context.computeCRC( atlasTileData.data(), atlasTileData.size() );
           printf( "\t**sei** (crc): % 02x ", crc );
@@ -8980,7 +9028,12 @@ void PCCEncoder::createHashInformation( PCCContext& context, int frameIndex, siz
           printf( "\t**sei** (MD5): " );
           for ( auto& e : md5Digest ) printf( "%02x", e );
           printf( "\n" );
-          for ( int j = 0; j < 16; j++ ) sei.setAtlasTilesB2pMd5( tileId, j, md5Digest[j] );
+          TRACE_TILE( " Tile B2P MD5 = ");
+          for ( int j = 0; j < 16; j++ ) {
+            sei.setAtlasTilesB2pMd5( tileId, j, md5Digest[j] );
+            TRACE_TILE( "%02x", md5Digest[j] );
+          }
+          TRACE_TILE( "," );
         } else if ( sei.getHashType() == 1 ) {
           uint16_t crc = context.computeCRC( tileB2PData.data(), tileB2PData.size() );
           printf( "\t**sei** (CRC): % 04x ", crc );
@@ -8992,6 +9045,7 @@ void PCCEncoder::createHashInformation( PCCContext& context, int frameIndex, siz
         }
         tileB2PData.clear();
       }
+      TRACE_TILE( "\n" );
     }
   }
   context.addSeiHashToSeiSuffix( hashIndex );
