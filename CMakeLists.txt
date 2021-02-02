@@ -10,7 +10,8 @@ OPTION( USE_HMAPP_VIDEO_CODEC     "Use HM application to encode and decode video
 OPTION( USE_JMLIB_VIDEO_CODEC     "Clone, build and use JM video encoder and decoder"       TRUE  )  #JMLIB = 2
 OPTION( USE_HMLIB_VIDEO_CODEC     "Clone, build and use HM video encoder and decoder"       TRUE  )  #HMLIB = 3
 OPTION( USE_FFMPEG_VIDEO_CODEC    "Clone, build and use FFMPEG video encoder and decoder"   FALSE )  #FFMPEG = 4
-                                                                                                     #UNKNOWN_CODEC = 5
+OPTION( USE_VTMLIB_VIDEO_CODEC    "Clone, build and use VTM video encoder and decoder"      FALSE )  #VTMLIB = 5
+                                                                                                     #UNKNOWN_CODEC = 6
 
 # Color conversion library:
 OPTION( USE_HDRTOOLS              "Clone, build and use HDRTools for color conversions"     FALSE )
@@ -63,6 +64,9 @@ IF( USE_JMAPP_VIDEO_CODEC )
 ENDIF()
 IF( USE_FFMPEG_VIDEO_CODEC )
   INCLUDE( ${CMAKE_SOURCE_DIR}/dependencies/cmake/ffmpeg.cmake )
+ENDIF()
+IF( USE_VTMLIB_VIDEO_CODEC )
+  INCLUDE( ${CMAKE_SOURCE_DIR}/dependencies/cmake/vtm.cmake )
 ENDIF()
 IF( USE_HDRTOOLS )  
   INCLUDE( ${CMAKE_SOURCE_DIR}/dependencies/cmake/hdrtools.cmake )

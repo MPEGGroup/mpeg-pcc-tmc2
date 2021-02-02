@@ -40,6 +40,9 @@
 #ifdef USE_FFMPEG_VIDEO_CODEC
 #include "PCCFFMPEGLibVideoEncoder.h"
 #endif
+#ifdef USE_VTMLIB_VIDEO_CODEC
+#include "PCCVTMLibVideoEncoder.h"
+#endif
 
 using namespace pcc;
 
@@ -53,6 +56,9 @@ PCCCodecId PCCVirtualVideoEncoder<T>::getDefaultCodecId() {
 #endif
 #ifdef USE_FFMPEG_VIDEO_CODEC
   return FFMPEG;
+#endif
+#ifdef USE_VTMLIB_VIDEO_CODEC
+  return VTMLIB;
 #endif
 #ifdef USE_HMAPP_VIDEO_CODEC
   return HMAPP;
@@ -73,6 +79,9 @@ bool PCCVirtualVideoEncoder<T>::checkCodecId( PCCCodecId codecId ) {
 #endif
 #ifdef USE_FFMPEG_VIDEO_CODEC
     case FFMPEG: break;
+#endif
+#ifdef USE_VTMLIB_VIDEO_CODEC
+    case VTMLIB: break;
 #endif
 #ifdef USE_HMAPP_VIDEO_CODEC
     case HMAPP: break;
@@ -105,6 +114,9 @@ std::shared_ptr<PCCVirtualVideoEncoder<T>> PCCVirtualVideoEncoder<T>::create( PC
 #endif
 #ifdef USE_FFMPEG_VIDEO_CODEC
     case FFMPEG: return std::make_shared<PCCFFMPEGLibVideoEncoder<T>>(); break;
+#endif
+#ifdef USE_VTMLIB_VIDEO_CODEC
+    case VTMLIB: return std::make_shared<PCCVTMLibVideoEncoder<T>>(); break;
 #endif
     default:
       printf( "Error PCCVirtualVideoEncoder: codec id not supported ( %d ) \n", (int)codecId );

@@ -30,6 +30,9 @@ IF( USE_FFMPEG_VIDEO_CODEC )
   INCLUDE_DIRECTORIES( ${CMAKE_SOURCE_DIR}/source/lib/PccLibVideoDecoder/include/ )
   SET( LIBS ${LIBS} ${AVCODEC_LIBRARY} ${AVUTIL_LIBRARY} ${AVFORMAT_LIBRARY} PccLibVideoDecoder )    
 ENDIF()
+IF( USE_VTMLIB_VIDEO_CODEC )
+    SET( LIBS ${LIBS} CommonLib EncoderLib DecoderLib Utilities )
+ENDIF()
 
 ADD_LIBRARY( ${MYNAME} ${LINKER} ${SRC} )
 

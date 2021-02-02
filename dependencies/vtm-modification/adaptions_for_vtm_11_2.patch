@@ -1,0 +1,114 @@
+diff --git a/source/Lib/CommonLib/DepQuant.cpp b/source/Lib/CommonLib/DepQuant.cpp
+index 1cacfd01..0f5a5a55 100644
+--- a/source/Lib/CommonLib/DepQuant.cpp
++++ b/source/Lib/CommonLib/DepQuant.cpp
+@@ -150,10 +150,10 @@ namespace DQIntern
+ 
+   void Rom::xInitScanArrays()
+   {
+-    if( m_scansInitialized )
+-    {
+-      return;
+-    }
++//    if( m_scansInitialized )
++//    {
++//      return;
++//    }
+     ::memset( m_scanId2NbInfoSbbArray, 0, sizeof(m_scanId2NbInfoSbbArray) );
+     ::memset( m_scanId2NbInfoOutArray, 0, sizeof(m_scanId2NbInfoOutArray) );
+     ::memset( m_tuParameters,          0, sizeof(m_tuParameters) );
+diff --git a/source/Lib/DecoderLib/DecLib.cpp b/source/Lib/DecoderLib/DecLib.cpp
+index 4c06188e..edf26f03 100644
+--- a/source/Lib/DecoderLib/DecLib.cpp
++++ b/source/Lib/DecoderLib/DecLib.cpp
+@@ -467,10 +467,10 @@ DecLib::DecLib()
+   for (int i = 0; i < MAX_VPS_LAYERS; i++)
+   {
+     m_associatedIRAPType[i] = NAL_UNIT_INVALID;
+-    std::fill_n(m_prevGDRSubpicPOC[i], MAX_NUM_SUB_PICS, -MAX_INT);
+-    std::fill_n(m_prevIRAPSubpicPOC[i], MAX_NUM_SUB_PICS, -MAX_INT);
+-    memset(m_prevIRAPSubpicDecOrderNo[i], 0, sizeof(int)*MAX_NUM_SUB_PICS);
+-    std::fill_n(m_prevIRAPSubpicType[i], MAX_NUM_SUB_PICS, NAL_UNIT_INVALID);
++//    std::fill_n(m_prevGDRSubpicPOC[i], MAX_NUM_SUB_PICS, -MAX_INT);
++//    std::fill_n(m_prevIRAPSubpicPOC[i], MAX_NUM_SUB_PICS, -MAX_INT);
++//    memset(m_prevIRAPSubpicDecOrderNo[i], 0, sizeof(int)*MAX_NUM_SUB_PICS);
++//    std::fill_n(m_prevIRAPSubpicType[i], MAX_NUM_SUB_PICS, NAL_UNIT_INVALID);
+   }
+ }
+ 
+@@ -2441,10 +2441,10 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
+   pcSlice->getPic()->sliceSubpicIdx.push_back(pps->getSubPicIdxFromSubPicId(pcSlice->getSliceSubPicId()));
+   pcSlice->checkCRA(pcSlice->getRPL0(), pcSlice->getRPL1(), m_pocCRA[nalu.m_nuhLayerId], m_cListPic);
+   pcSlice->constructRefPicList(m_cListPic);
+-  pcSlice->setPrevGDRSubpicPOC(m_prevGDRSubpicPOC[nalu.m_nuhLayerId][currSubPicIdx]);
+-  pcSlice->setPrevIRAPSubpicPOC(m_prevIRAPSubpicPOC[nalu.m_nuhLayerId][currSubPicIdx]);
+-  pcSlice->setPrevIRAPSubpicType(m_prevIRAPSubpicType[nalu.m_nuhLayerId][currSubPicIdx]);
+-  pcSlice->checkSubpicTypeConstraints(m_cListPic, pcSlice->getRPL0(), pcSlice->getRPL1(), m_prevIRAPSubpicDecOrderNo[nalu.m_nuhLayerId][currSubPicIdx]);
++//  pcSlice->setPrevGDRSubpicPOC(m_prevGDRSubpicPOC[nalu.m_nuhLayerId][currSubPicIdx]);
++//  pcSlice->setPrevIRAPSubpicPOC(m_prevIRAPSubpicPOC[nalu.m_nuhLayerId][currSubPicIdx]);
++//  pcSlice->setPrevIRAPSubpicType(m_prevIRAPSubpicType[nalu.m_nuhLayerId][currSubPicIdx]);
++//  pcSlice->checkSubpicTypeConstraints(m_cListPic, pcSlice->getRPL0(), pcSlice->getRPL1(), m_prevIRAPSubpicDecOrderNo[nalu.m_nuhLayerId][currSubPicIdx]);
+   pcSlice->checkRPL(pcSlice->getRPL0(), pcSlice->getRPL1(), m_associatedIRAPDecodingOrderNumber[nalu.m_nuhLayerId], m_cListPic);
+   pcSlice->checkSTSA(m_cListPic);
+   if (m_pcPic->cs->vps && !m_pcPic->cs->vps->getIndependentLayerFlag(m_pcPic->cs->vps->getGeneralLayerIdx(nalu.m_nuhLayerId)) && m_pcPic->cs->pps->getNumSubPics() > 1)
+@@ -2750,16 +2750,16 @@ void DecLib::updatePrevIRAPAndGDRSubpic()
+     if (pcSlice->getCtuAddrInSlice(0) == m_pcPic->cs->pps->getSubPic(subpicIdx).getFirstCTUInSubPic())
+     {
+       const NalUnitType subpicType = pcSlice->getNalUnitType();
+-      if (subpicType == NAL_UNIT_CODED_SLICE_IDR_W_RADL || subpicType == NAL_UNIT_CODED_SLICE_IDR_N_LP || subpicType == NAL_UNIT_CODED_SLICE_CRA)
+-      {
+-        m_prevIRAPSubpicPOC[m_pcPic->layerId][subpicIdx] = m_pcPic->getPOC();
+-        m_prevIRAPSubpicType[m_pcPic->layerId][subpicIdx] = subpicType;
+-        m_prevIRAPSubpicDecOrderNo[m_pcPic->layerId][subpicIdx] = m_pcPic->getDecodingOrderNumber();
+-      }
+-      else if (subpicType == NAL_UNIT_CODED_SLICE_GDR)
+-      {
+-        m_prevGDRSubpicPOC[m_pcPic->layerId][subpicIdx] = m_pcPic->getPOC();
+-      }
++//      if (subpicType == NAL_UNIT_CODED_SLICE_IDR_W_RADL || subpicType == NAL_UNIT_CODED_SLICE_IDR_N_LP || subpicType == NAL_UNIT_CODED_SLICE_CRA)
++//      {
++//        m_prevIRAPSubpicPOC[m_pcPic->layerId][subpicIdx] = m_pcPic->getPOC();
++//        m_prevIRAPSubpicType[m_pcPic->layerId][subpicIdx] = subpicType;
++//        m_prevIRAPSubpicDecOrderNo[m_pcPic->layerId][subpicIdx] = m_pcPic->getDecodingOrderNumber();
++//      }
++//      else if (subpicType == NAL_UNIT_CODED_SLICE_GDR)
++//      {
++//        m_prevGDRSubpicPOC[m_pcPic->layerId][subpicIdx] = m_pcPic->getPOC();
++//      }
+     }
+   }
+ }
+@@ -2974,10 +2974,10 @@ bool DecLib::decode(InputNALUnit& nalu, int& iSkipFrame, int& iPOCLastDisplay, i
+       m_associatedIRAPType[nalu.m_nuhLayerId] = NAL_UNIT_INVALID;
+       m_pocCRA[nalu.m_nuhLayerId] = -MAX_INT;
+       m_prevGDRInSameLayerPOC[nalu.m_nuhLayerId] = -MAX_INT;
+-      std::fill_n(m_prevGDRSubpicPOC[nalu.m_nuhLayerId], MAX_NUM_SUB_PICS, -MAX_INT);
+-      std::fill_n(m_prevIRAPSubpicPOC[nalu.m_nuhLayerId], MAX_NUM_SUB_PICS, -MAX_INT);
+-      memset(m_prevIRAPSubpicDecOrderNo[nalu.m_nuhLayerId], 0, sizeof(int)*MAX_NUM_SUB_PICS);
+-      std::fill_n(m_prevIRAPSubpicType[nalu.m_nuhLayerId], MAX_NUM_SUB_PICS, NAL_UNIT_INVALID);
++//      std::fill_n(m_prevGDRSubpicPOC[nalu.m_nuhLayerId], MAX_NUM_SUB_PICS, -MAX_INT);
++//      std::fill_n(m_prevIRAPSubpicPOC[nalu.m_nuhLayerId], MAX_NUM_SUB_PICS, -MAX_INT);
++//      memset(m_prevIRAPSubpicDecOrderNo[nalu.m_nuhLayerId], 0, sizeof(int)*MAX_NUM_SUB_PICS);
++//      std::fill_n(m_prevIRAPSubpicType[nalu.m_nuhLayerId], MAX_NUM_SUB_PICS, NAL_UNIT_INVALID);
+       m_pocRandomAccess = MAX_INT;
+       m_prevLayerID = MAX_INT;
+       m_prevPOC = -MAX_INT;
+diff --git a/source/Lib/DecoderLib/DecLib.h b/source/Lib/DecoderLib/DecLib.h
+index 4dc88e65..d7858b98 100644
+--- a/source/Lib/DecoderLib/DecLib.h
++++ b/source/Lib/DecoderLib/DecLib.h
+@@ -79,10 +79,10 @@ private:
+   int                     m_decodingOrderCounter;
+   int                     m_puCounter;
+   bool                    m_seiInclusionFlag;
+-  int                     m_prevGDRSubpicPOC[MAX_VPS_LAYERS][MAX_NUM_SUB_PICS];
+-  int                     m_prevIRAPSubpicPOC[MAX_VPS_LAYERS][MAX_NUM_SUB_PICS];
+-  NalUnitType             m_prevIRAPSubpicType[MAX_VPS_LAYERS][MAX_NUM_SUB_PICS];
+-  int                     m_prevIRAPSubpicDecOrderNo[MAX_VPS_LAYERS][MAX_NUM_SUB_PICS];
++//  int                     m_prevGDRSubpicPOC[MAX_VPS_LAYERS][MAX_NUM_SUB_PICS];
++//  int                     m_prevIRAPSubpicPOC[MAX_VPS_LAYERS][MAX_NUM_SUB_PICS];
++//  NalUnitType             m_prevIRAPSubpicType[MAX_VPS_LAYERS][MAX_NUM_SUB_PICS];
++//  int                     m_prevIRAPSubpicDecOrderNo[MAX_VPS_LAYERS][MAX_NUM_SUB_PICS];
+   int                     m_pocRandomAccess;   ///< POC number of the random access point (the first IDR or CRA picture)
+   int                     m_lastRasPoc;
+   bool                    m_prevEOS[MAX_VPS_LAYERS];
