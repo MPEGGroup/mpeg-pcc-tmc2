@@ -4753,24 +4753,17 @@ void PCCEncoder::generateRawPointsTextureImage( PCCContext& context, PCCFrameCon
       int    pointIndex           = 0;
       auto&  rawPointsPatch       = tile.getRawPointsPatch( i );
       size_t numRawColorPoints    = rawPointsPatch.getNumberOfRawPoints();
-      auto   rawPointsPatchBlocks = static_cast<size_t>(
-          ceil( double( numRawColorPoints ) / ( params_.occupancyResolution_ * params_.occupancyResolution_ ) ) );
-      size_t rawPointsPatchColorSizeV0 =
-          static_cast<size_t>( ceil( double( rawPointsPatchBlocks ) / imageWidthInBlock ) );
-      size_t rawPointsPatchColorSizeU0 =
-          static_cast<size_t>( ceil( double( rawPointsPatchBlocks ) / rawPointsPatchColorSizeV0 ) );
+      
       printf(
-          "\tgenerateRawPointsTextureImage:: (u0,v0) %zu,%zu, (sizeU,sizeU:geo) %zux%zu, (sizeU,sizeU:text) %zux%zu\n",
-          rawPointsPatch.u0_, rawPointsPatch.v0_, rawPointsPatch.sizeU_, rawPointsPatch.sizeV_,
-          rawPointsPatchColorSizeU0 * params_.occupancyResolution_,
-          rawPointsPatchColorSizeV0 * params_.occupancyResolution_ );
+          "\tgenerateRawPointsTextureImage:: (u0,v0) %zu,%zu, (sizeU,sizeU) %zux%zu\n",
+          rawPointsPatch.u0_, rawPointsPatch.v0_, rawPointsPatch.sizeU_, rawPointsPatch.sizeV_ );
 
       const size_t             v0          = rawPointsPatch.v0_ * rawPointsPatch.occupancyResolution_;
       const size_t             u0          = rawPointsPatch.u0_ * rawPointsPatch.occupancyResolution_;
       std::vector<PCCColor3B>& rawTextures = tile.getRawPointsTextures();
 
-      for ( size_t v = 0; v < rawPointsPatchColorSizeV0 * params_.occupancyResolution_; ++v ) {
-        for ( size_t u = 0; u < rawPointsPatchColorSizeU0 * params_.occupancyResolution_; ++u ) {
+      for ( size_t v = 0; v < rawPointsPatch.sizeV_; ++v ) {
+        for ( size_t u = 0; u < rawPointsPatch.sizeU_; ++u ) {
           //          const size_t p = v * rawPointsPatch.sizeU_ + u;
           const size_t x = ( u0 + u );
           const size_t y = ( v0 + v ) + context.getAuxTileLeftTopY( tile.getTileIndex() );
@@ -4779,6 +4772,8 @@ void PCCEncoder::generateRawPointsTextureImage( PCCContext& context, PCCFrameCon
             image.setValue( 1, x, y, uint16_t( rawTextures[rawPatchOffset + pointIndex].g() ) );
             image.setValue( 2, x, y, uint16_t( rawTextures[rawPatchOffset + pointIndex].b() ) );
             pointIndex++;
+          } else{
+            break;
           }
         }
       }
@@ -4817,15 +4812,6 @@ void PCCEncoder::generateRawPointsTextureImage( PCCContext& context, PCCFrameCon
         avgG = avgG + double( eomTextures[k + eomPatchOffset].g() ) / eomPointsPatch.eomCount_;
         avgB = avgB + double( eomTextures[k + eomPatchOffset].b() ) / eomPointsPatch.eomCount_;
       }
-      //      if ( !losslessAtt ) {
-      //        for ( size_t k = numOfRawGeos; k < width * heightMP; ++k ) {
-      //          xx = k % width;
-      //          yy = k / width + context.getAuxTileHeight(tile.getTileIndex());
-      //          image.setValue( 0, xx, yy, static_cast<uint8_t>( avgR ) );
-      //          image.setValue( 1, xx, yy, static_cast<uint8_t>( avgG ) );
-      //          image.setValue( 2, xx, yy, static_cast<uint8_t>( avgB ) );
-      //        }
-      //      }
       eomPatchOffset += eomPointsPatch.eomCount_;
     }  // eomPatches
   }

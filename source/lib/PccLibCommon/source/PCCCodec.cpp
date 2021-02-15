@@ -1990,24 +1990,15 @@ void PCCCodec::generateRawPointsTexturefromVideo( PCCContext& context, PCCFrameC
     for ( int i = 0; i < numberOfRawPointsPatches; i++ ) {
       int    pointIndex        = 0;
       auto&  rawPointsPatch    = tile.getRawPointsPatch( i );
-      size_t imageWidthInBlock = width / rawPointsPatch.occupancyResolution_;
       size_t numRawColorPoints = rawPointsPatch.getNumberOfRawPoints();
-      auto   rawPointsPatchBlocks =
-          static_cast<size_t>( ceil( double( numRawColorPoints ) /
-                                     ( rawPointsPatch.occupancyResolution_ * rawPointsPatch.occupancyResolution_ ) ) );
-      size_t rawPointsPatchColorSizeV0 =
-          static_cast<size_t>( ceil( double( rawPointsPatchBlocks ) / imageWidthInBlock ) );
-      size_t rawPointsPatchColorSizeU0 =
-          static_cast<size_t>( ceil( double( rawPointsPatchBlocks ) / rawPointsPatchColorSizeV0 ) );
       printf(
-          "\tgenerateRawPointsTextureImage:: (u0,v0) %zu,%zu, (sizeU,sizeU:geo) %zux%zu, (sizeU,sizeU:text) %zux%zu\n",
-          rawPointsPatch.u0_, rawPointsPatch.v0_, rawPointsPatch.sizeU_, rawPointsPatch.sizeV_,
-          rawPointsPatchColorSizeU0 * rawPointsPatch.occupancyResolution_, rawPointsPatch.occupancyResolution_ );
+          "\tgenerateRawPointsTextureImage:: (u0,v0) %zu,%zu, (sizeU,sizeU) %zux%zu\n",
+          rawPointsPatch.u0_, rawPointsPatch.v0_, rawPointsPatch.sizeU_, rawPointsPatch.sizeV_ );
       const size_t v0 = rawPointsPatch.v0_ * rawPointsPatch.occupancyResolution_;
       const size_t u0 = rawPointsPatch.u0_ * rawPointsPatch.occupancyResolution_;
 
-      for ( size_t v = 0; v < rawPointsPatchColorSizeV0 * rawPointsPatch.occupancyResolution_; ++v ) {
-        for ( size_t u = 0; u < rawPointsPatchColorSizeU0 * rawPointsPatch.occupancyResolution_; ++u ) {
+      for ( size_t v = 0; v < rawPointsPatch.sizeV_; ++v ) {
+        for ( size_t u = 0; u < rawPointsPatch.sizeU_; ++u ) {
           if ( pointIndex < numRawColorPoints ) {
             const size_t x = ( u0 + u );
             const size_t y = ( v0 + v ) + context.getAuxTileLeftTopY( tile.getTileIndex() );
@@ -2016,6 +2007,8 @@ void PCCCodec::generateRawPointsTexturefromVideo( PCCContext& context, PCCFrameC
             rawTextures[rawPatchOffset + pointIndex].g() = image.getValue( 1, x, y );
             rawTextures[rawPatchOffset + pointIndex].b() = image.getValue( 2, x, y );
             pointIndex++;
+          } else{
+            break;
           }
         }
       }
