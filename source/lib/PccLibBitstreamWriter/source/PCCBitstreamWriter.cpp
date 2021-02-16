@@ -761,7 +761,7 @@ void PCCBitstreamWriter::atlasFrameParameterSetRbsp( AtlasFrameParameterSetRbsp&
   bitstream.writeUvlc( afps.getNumRefIdxDefaultActiveMinus1() );     // ue(v)
   bitstream.writeUvlc( afps.getAdditionalLtAfocLsbLen() );           // ue(v)
   bitstream.write( afps.getLodModeEnableFlag(), 1 );                 // u(1)
-  bitstream.write( afps.getRaw3dPosBitCountExplicitModeFlag(), 1 );  // u(1)
+  bitstream.write( afps.getRaw3dOffsetBitCountExplicitModeFlag(), 1 );  // u(1)
   bitstream.write( afps.getExtensionFlag(), 1 );                     // u(1)
   if ( afps.getExtensionFlag() ) {
     bitstream.write( afps.getExtension8Bits(), 8 );  // u(8)
@@ -978,15 +978,15 @@ void PCCBitstreamWriter::atlasTileHeader( AtlasTileHeader&    ath,
       bitstream.write( ath.getPatchSizeXinfoQuantizer(), 3 );  // u(3)
       bitstream.write( ath.getPatchSizeYinfoQuantizer(), 3 );  // u(3)
     }
-    auto& gi = syntax.getVps().getGeometryInformation( 0 );
-    TRACE_BITSTREAM( "Raw3dPosBitCountExplicitModeFlag    = %d \n", afps.getRaw3dPosBitCountExplicitModeFlag() );
-    if ( afps.getRaw3dPosBitCountExplicitModeFlag() ) {
-      size_t bitCount = ceilLog2( gi.getGeometry3dCoordinatesBitdepthMinus1() + 1 );
-      TRACE_BITSTREAM( "Geometry3dCoordinatesBitdepthMinus1 = %zu \n", gi.getGeometry3dCoordinatesBitdepthMinus1() );
-      bitstream.write( ath.getRaw3dPosAxisBitCountMinus1(), bitCount );  // u(v)
+
+    TRACE_BITSTREAM( "Raw3dPosBitCountExplicitModeFlag    = %d \n", afps.getRaw3dOffsetBitCountExplicitModeFlag() );
+    if ( afps.getRaw3dOffsetBitCountExplicitModeFlag() ) {
+      size_t bitCount = floorLog2( asps.getGeometry3dBitdepthMinus1() + 1 );
+      TRACE_BITSTREAM( "bitCount(floorLog2( asps.getGeometry3dBitdepthMinus1() + 1 ) = %zu \n", bitCount  );
+      bitstream.write( ath.getRaw3dOffsetAxisBitCountMinus1(), bitCount );  // u(v)
     } else {
-      TRACE_BITSTREAM( "Geometry3dCoordinatesBitdepthMinus1 = %zu \n", gi.getGeometry3dCoordinatesBitdepthMinus1() );
-      TRACE_BITSTREAM( "Geometry2dBitdepthMinus1     = %zu \n", gi.getGeometry2dBitdepthMinus1() );
+      TRACE_BITSTREAM( "Geometry3dBitdepthMinus1 = %zu \n", asps.getGeometry3dBitdepthMinus1()  );
+      TRACE_BITSTREAM( "Geometry2dBitdepthMinus1 = %zu \n", asps.getGeometry2dBitdepthMinus1() );
     }
     if ( ath.getType() == P_TILE && refList.getNumRefEntries() > 1 ) {
       bitstream.write( ath.getNumRefIdxActiveOverrideFlag(), 1 );  // u(1)
@@ -994,7 +994,7 @@ void PCCBitstreamWriter::atlasTileHeader( AtlasTileHeader&    ath,
         bitstream.writeUvlc( ath.getNumRefIdxActiveMinus1() );  // ue(v)
       }
     }
-    TRACE_BITSTREAM( "==> Raw3dPosAxisBitCountMinus1  = %zu \n", ath.getRaw3dPosAxisBitCountMinus1() );
+    TRACE_BITSTREAM( "==> Raw3dOffsetAxisBitCountMinus1  = %zu \n", ath.getRaw3dOffsetAxisBitCountMinus1() );
     TRACE_BITSTREAM( "==> NumRefIdxActiveOverrideFlag = %zu \n", ath.getNumRefIdxActiveOverrideFlag() );
     TRACE_BITSTREAM( "==> NumRefIdxActiveMinus1       = %zu \n", ath.getNumRefIdxActiveMinus1() );
   }
@@ -1279,8 +1279,8 @@ void PCCBitstreamWriter::rawPatchDataUnit( RawPatchDataUnit&   rpdu,
                                            PCCHighLevelSyntax& syntax,
                                            PCCBitstream&       bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
-  int32_t bitCount = ath.getRaw3dPosAxisBitCountMinus1() + 1;
-  TRACE_BITSTREAM( " AtghRaw3dPosAxisBitCountMinus1 = %zu => bitcount = %d \n", ath.getRaw3dPosAxisBitCountMinus1(),
+  int32_t bitCount = ath.getRaw3dOffsetAxisBitCountMinus1() + 1;
+  TRACE_BITSTREAM( " AtghRaw3dOffsetAxisBitCountMinus1 = %zu => bitcount = %d \n", ath.getRaw3dOffsetAxisBitCountMinus1(),
                    bitCount );
   auto& afti   = syntax.getAtlasFrameParameterSet( ath.getAtlasFrameParameterSetId() ).getAtlasFrameTileInformation();
   auto  ath_id = ath.getId();
