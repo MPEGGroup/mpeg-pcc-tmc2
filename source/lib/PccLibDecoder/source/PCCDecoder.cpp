@@ -297,7 +297,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
     std::vector<size_t> accTilePointCount;
     accTilePointCount.resize( ai.getAttributeCount(), 0 );
     for ( size_t tileIdx = 0; tileIdx < context[frameIdx].getNumTilesInAtlasFrame(); tileIdx++ ) {
-      std::cout << "Processing frame " << frameIdx << " tile " << tileIdx << std::endl;
+      //std::cout << "Processing frame " << frameIdx << " tile " << tileIdx << std::endl;
       auto& tile = context[frameIdx].getTile( tileIdx );
       if ( !ppSEIParams.pbfEnableFlag_ ) {
         generateOccupancyMap( tile, context.getVideoOccupancyMap().getFrame( tile.getFrameIndex() ),
@@ -644,13 +644,15 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
   TRACE_PATCH( "createPatchFrameDataStructure Tile %zu \n", atglOrder );
   auto&  sps        = context.getVps();
   size_t atlasIndex = context.getAtlasIndex();
-  auto&  gi         = sps.getGeometryInformation( atlasIndex );
+  //auto&  gi         = sps.getGeometryInformation( atlasIndex );
   auto&  atlu       = context.getAtlasTileLayer( atglOrder );
   auto&  ath        = atlu.getHeader();
   // the header indicates the structures used
   auto& afps  = context.getAtlasFrameParameterSet( ath.getAtlasFrameParameterSetId() );
   auto& asps  = context.getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
   auto& atgdu = atlu.getDataUnit();
+  auto geometryBitDepth2D = asps.getGeometry2dBitdepthMinus1() + 1;
+  auto geometryBitDepth3D = asps.getGeometry3dBitdepthMinus1() + 1;
 
   // current tile position derivation
   size_t frameIndex = atlu.getAtlasFrmOrderCntVal();
@@ -736,7 +738,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
         patch.setLodScaleX( 1 );
         patch.setLodScaleYIdc( 1 );
       }
-      patch.getSizeD() = pdu.get3dRangeD() * minLevel;
+      patch.getSizeD() = pdu.get3dRangeD()==0?0 : (pdu.get3dRangeD() * minLevel-1);
       if ( asps.getPatchSizeQuantizerPresentFlag() ) {
         patch.setPatchSize2DXInPixel( pdu.get2dSizeXMinus1() * quantizerSizeX + 1 );
         patch.setPatchSize2DYInPixel( pdu.get2dSizeYMinus1() * quantizerSizeY + 1 );
@@ -751,7 +753,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
       patch.getPatchOrientation() = pdu.getOrientationIndex();
       patch.setViewId( pdu.getProjectionId() );
       TRACE_PATCH( "patch %zu / %zu: Intra \n", patchIndex, patchCount );
-      const size_t max3DCoordinate = size_t( 1 ) << ( gi.getGeometry3dCoordinatesBitdepthMinus1() + 1 );
+      const size_t max3DCoordinate = size_t( 1 ) << geometryBitDepth3D;
       if ( patch.getProjectionMode() == 0 ) {
         patch.getD1() = static_cast<int32_t>( pdu.get3dOffsetD() ) * minLevel;
       } else {
@@ -832,7 +834,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
       patch.getTangentAxis()           = refPatch.getTangentAxis();
       patch.getBitangentAxis()         = refPatch.getBitangentAxis();
       patch.getAxisOfAdditionalPlane() = refPatch.getAxisOfAdditionalPlane();
-      const size_t max3DCoordinate     = size_t( 1 ) << ( gi.getGeometry3dCoordinatesBitdepthMinus1() + 1 );
+      const size_t max3DCoordinate     = size_t( 1 ) << geometryBitDepth3D;
       if ( patch.getProjectionMode() == 0 ) {
         patch.getD1() = ( ipdu.get3dOffsetD() + ( refPatch.getD1() / minLevel ) ) * minLevel;
       } else {
@@ -844,11 +846,9 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
                           ( ipdu.get3dOffsetD() + ( ( (max3DCoordinate)-refPatch.getD1() ) / minLevel ) ) * minLevel;
         }
       }
-      const int64_t delta_DD = ipdu.get3dRangeD();
-      size_t        prevDD   = refPatch.getSizeD() / minLevel;
-      if ( prevDD * minLevel != refPatch.getSizeD() ) { prevDD += 1; }
-      patch.getSizeD() = size_t( ( delta_DD + prevDD ) *
-                                 minLevel );  //( std::min )( size_t( ( delta_DD + prevDD ) * minLevel ), (size_t)256 );
+      
+      const int64_t delta_DD = ipdu.get3dRangeD()==0? 0: (ipdu.get3dRangeD()*minLevel-1);
+      patch.getSizeD() = refPatch.getSizeD() + delta_DD ;
       patch.setLodScaleX( refPatch.getLodScaleX() );
       patch.setLodScaleYIdc( refPatch.getLodScaleY() );
       prevSizeU0              = patch.getSizeU0();
@@ -874,7 +874,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
       patch.getOccupancyResolution() = size_t( 1 ) << asps.getLog2PatchPackingBlockSize();
       auto&        mpdu              = pid.getMergePatchDataUnit();
       bool         overridePlrFlag   = false;
-      const size_t max3DCoordinate   = size_t( 1 ) << ( gi.getGeometry3dCoordinatesBitdepthMinus1() + 1 );
+      const size_t max3DCoordinate   = size_t( 1 ) << geometryBitDepth3D;
 
       TRACE_PATCH( "patch %zu / %zu: Inter \n", patchIndex, patchCount );
       TRACE_PATCH(
@@ -925,13 +925,9 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
                   ( mpdu.get3dOffsetD() + ( ( max3DCoordinate - refPatch.getD1() ) / minLevel ) ) * minLevel;
             }
           }
-
-          const int64_t delta_DD = mpdu.get3dRangeD();
-          size_t        prevDD   = refPatch.getSizeD() / minLevel;
-          if ( prevDD * minLevel != refPatch.getSizeD() ) { prevDD += 1; }
-          patch.getSizeD() =
-              size_t( ( delta_DD + prevDD ) *
-                      minLevel );  //( std::min )( size_t( ( delta_DD + prevDD ) * minLevel ), (size_t)256 );
+          
+          const int64_t delta_DD = mpdu.get3dRangeD()==0? 0:(mpdu.get3dRangeD()*minLevel-1);
+          patch.getSizeD() = refPatch.getSizeD() + delta_DD;
 
           if ( asps.getPLREnabledFlag() ) { overridePlrFlag = ( mpdu.getOverridePlrFlag() != 0 ); }
         }
@@ -986,32 +982,15 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
       if ( asps.getPatchSizeQuantizerPresentFlag() ) {
         patch.setPatchSize2DXInPixel( refPatch.getPatchSize2DXInPixel() );
         patch.setPatchSize2DYInPixel( refPatch.getPatchSize2DYInPixel() );
-
-        patch.getSizeU0() =
-            ceil( static_cast<double>( patch.getPatchSize2DXInPixel() ) / static_cast<double>( packingBlockSize ) );
-        patch.getSizeV0() =
-            ceil( static_cast<double>( patch.getPatchSize2DYInPixel() ) / static_cast<double>( packingBlockSize ) );
-      } else {
-        patch.getSizeU0() = refPatch.getSizeU0();
-        patch.getSizeV0() = refPatch.getSizeV0();
       }
+      patch.getSizeU0()                = refPatch.getSizeU0();
+      patch.getSizeV0()                = refPatch.getSizeV0();
       patch.getNormalAxis()            = refPatch.getNormalAxis();
       patch.getTangentAxis()           = refPatch.getTangentAxis();
       patch.getBitangentAxis()         = refPatch.getBitangentAxis();
       patch.getAxisOfAdditionalPlane() = refPatch.getAxisOfAdditionalPlane();
-      const size_t max3DCoordinate     = size_t( 1 ) << ( gi.getGeometry3dCoordinatesBitdepthMinus1() + 1 );
-      if ( patch.getProjectionMode() == 0 ) {
-        patch.getD1() = ( ( refPatch.getD1() / minLevel ) ) * minLevel;
-      } else {
-        if ( static_cast<int>( asps.getExtendedProjectionEnabledFlag() ) == 0 ) {  // TODO JR: remove the if;
-          patch.getD1() = max3DCoordinate - ( ( ( max3DCoordinate - refPatch.getD1() ) / minLevel ) ) * minLevel;
-        } else {
-          patch.getD1() = max3DCoordinate - ( ( ( max3DCoordinate - refPatch.getD1() ) / minLevel ) ) * minLevel;
-        }
-      }
-      size_t prevDD = refPatch.getSizeD() / minLevel;
-      if ( prevDD * minLevel != refPatch.getSizeD() ) { prevDD += 1; }
-      patch.getSizeD() = size_t( (prevDD)*minLevel );  //( std::min )( size_t( (prevDD)*minLevel ), (size_t)256 );
+      patch.getD1()                    = refPatch.getD1();
+      patch.getSizeD()                 = refPatch.getSizeD();
       patch.setLodScaleX( refPatch.getLodScaleX() );
       patch.setLodScaleYIdc( refPatch.getLodScaleY() );
       prevSizeU0              = patch.getSizeU0();
@@ -1040,7 +1019,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
         rawPointsPatch.v1_ = rpdu.get3dOffsetV();
         rawPointsPatch.d1_ = rpdu.get3dOffsetD();
       } else {
-        const size_t pcmU1V1D1Level = size_t( 1 ) << ( gi.getGeometry2dBitdepthMinus1() + 1 );
+        const size_t pcmU1V1D1Level = size_t( 1 ) << geometryBitDepth3D;
         rawPointsPatch.u1_          = rpdu.get3dOffsetU() * pcmU1V1D1Level;
         rawPointsPatch.v1_          = rpdu.get3dOffsetV() * pcmU1V1D1Level;
         rawPointsPatch.d1_          = rpdu.get3dOffsetD() * pcmU1V1D1Level;
