@@ -112,6 +112,9 @@ PCCEncoderParameters::PCCEncoderParameters() {
   videoEncoderOccupancyCodecId_            = PCCVirtualVideoEncoder<uint8_t>::getDefaultCodecId();
   videoEncoderGeometryCodecId_             = PCCVirtualVideoEncoder<uint8_t>::getDefaultCodecId();
   videoEncoderAttributeCodecId_            = PCCVirtualVideoEncoder<uint8_t>::getDefaultCodecId();
+  byteStreamVideoCoderOccupancy_           = true;
+  byteStreamVideoCoderGeometry_            = true;
+  byteStreamVideoCoderAttribute_           = true;
   geometryQP_                              = 28;
   textureQP_                               = 43;
   geometryConfig_                          = {};

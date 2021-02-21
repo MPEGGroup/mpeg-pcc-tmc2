@@ -144,6 +144,18 @@ bool parseParameters( int                   argc,
       decoderParams.videoDecoderAttributePath_,
       decoderParams.videoDecoderAttributePath_, 
       "Attribute video decoder executable")
+    ( "videoDecoderOccupancyPath",
+      decoderParams.byteStreamVideoCoderOccupancy_,
+      decoderParams.byteStreamVideoCoderOccupancy_,
+      "Occupancy video decoder inputs byteStream")
+    ( "videoDecoderGeometryPath",
+      decoderParams.byteStreamVideoCoderGeometry_,
+      decoderParams.byteStreamVideoCoderGeometry_,
+      "Geometry video decoder inputs byteStream")
+    ( "videoDecoderAttributePath",
+      decoderParams.byteStreamVideoCoderAttribute_,
+      decoderParams.byteStreamVideoCoderAttribute_,
+      "Attribute video decoder inputs byteStream")
     ( "nbThread",
       decoderParams.nbThread_,
       decoderParams.nbThread_,

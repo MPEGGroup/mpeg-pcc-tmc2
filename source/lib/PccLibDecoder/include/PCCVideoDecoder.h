@@ -63,6 +63,7 @@ class PCCVideoDecoder {
                    PCCVideoBitstream& bitstream,
                    const std::string& decoderPath,
                    PCCCodecId         codecId,
+                   bool               byteStreamVideoCoder,
                    PCCContext&        contexts,
                    size_t             bitDepth,
                    const bool         keepIntermediateFiles             = false,
@@ -76,6 +77,10 @@ class PCCVideoDecoder {
     const std::string binFileName = fileName + ".bin";
     size_t            width = 0, height = 0;
     size_t            nbyte = bitDepth == 8 ? 1 : 2;
+    
+    if(byteStreamVideoCoder)
+      bitstream.sampleStreamToByteStream();
+      
     if ( keepIntermediateFiles ) { bitstream.write( binFileName ); }
 
     // Decode video

@@ -64,6 +64,7 @@ class PCCVideoEncoder {
                  const std::string& encoderConfig,
                  const std::string& encoderPath,
                  PCCCodecId         codecId,
+                 bool               byteStreamVideoCoder,
                  PCCContext&        contexts,
                  const size_t       nbyte,
                  const bool         use444CodecIo,
@@ -397,6 +398,9 @@ class PCCVideoEncoder {
       if ( keepIntermediateFiles ) { video.write( yuv444RecFileName, 2 ); }
       video.setDeprecatedColorFormat( 2 );
     }
+    
+    if(byteStreamVideoCoder)
+      bitstream.byteStreamToSampleStream();
     return true;
   }
 

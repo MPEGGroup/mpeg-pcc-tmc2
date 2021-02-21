@@ -45,6 +45,9 @@ PCCDecoderParameters::PCCDecoderParameters() {
   videoDecoderOccupancyPath_         = {};
   videoDecoderGeometryPath_          = {};
   videoDecoderAttributePath_         = {};
+  byteStreamVideoCoderOccupancy_     = true;
+  byteStreamVideoCoderGeometry_      = true;
+  byteStreamVideoCoderAttribute_     = true;
   nbThread_                          = 1;
   keepIntermediateFiles_             = false;
   postprocessSmoothingFilter_        = 1;

@@ -61,6 +61,9 @@ class PCCEncoderParameters {
   PCCCodecId        videoEncoderOccupancyCodecId_;
   PCCCodecId        videoEncoderGeometryCodecId_;
   PCCCodecId        videoEncoderAttributeCodecId_;
+  bool              byteStreamVideoCoderOccupancy_;
+  bool              byteStreamVideoCoderGeometry_;
+  bool              byteStreamVideoCoderAttribute_;
   bool              use3dmc_;
   std::string       colorSpaceConversionConfig_;
   std::string       inverseColorSpaceConversionConfig_;

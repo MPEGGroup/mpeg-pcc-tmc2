@@ -477,6 +477,19 @@ bool parseParameters( int                   argc,
       encoderParams.videoEncoderAttributeCodecId_,
       encoderParams.videoEncoderAttributeCodecId_, 
       "Attribute video encoder codec id" )
+  ( "byteStreamVideoEncoderOccupancy",
+    encoderParams.byteStreamVideoCoderOccupancy_,
+    encoderParams.byteStreamVideoCoderOccupancy_,
+    "Attribute video encoder outputs byteStream" )
+  ( "byteStreamVideoEncoderGeometry",
+    encoderParams.byteStreamVideoCoderGeometry_,
+    encoderParams.byteStreamVideoCoderGeometry_,
+    "Attribute video encoder outputs byteStream" )
+  ( "byteStreamVideoEncoderAttribute",
+    encoderParams.byteStreamVideoCoderAttribute_,
+    encoderParams.byteStreamVideoCoderAttribute_,
+    "Attribute video encoder outputs byteStream" )
+
     ( "geometryQP",
       encoderParams.geometryQP_,
       encoderParams.geometryQP_,

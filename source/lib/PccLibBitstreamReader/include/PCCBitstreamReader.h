@@ -107,9 +107,9 @@ class PCCBitstreamReader {
   static void v3cUnitHeader( PCCHighLevelSyntax& syntax, PCCBitstream& bitstream, V3CUnitType& V3CUnitType );
 
   // 8.3.2.3 V3C unit payload syntax
-  void v3cUnitPayload( PCCHighLevelSyntax& syntax, PCCBitstream& bitstream, V3CUnitType& V3CUnitType );
+  void v3cUnitPayload( PCCHighLevelSyntax& syntax, PCCBitstream& bitstream, V3CUnitType& V3CUnitType, size_t V3CUnitSize );
 
-  static void videoSubStream( PCCHighLevelSyntax& syntax, PCCBitstream& bitstream, V3CUnitType& V3CUnitType );
+  static void videoSubStream( PCCHighLevelSyntax& syntax, PCCBitstream& bitstream, V3CUnitType& V3CUnitType, size_t V3CPayloadSize  );
 
   // 8.3.3 Byte alignment syntax
   static void byteAlignment( PCCBitstream& bitstream );

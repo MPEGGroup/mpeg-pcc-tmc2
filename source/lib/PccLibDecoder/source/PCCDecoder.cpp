@@ -107,6 +107,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
                            videoBitstreamOM,                    // bitstream
                            params_.videoDecoderOccupancyPath_,  // decoderPath
                            occupancyCodecId,                    // codecId
+                           params_.byteStreamVideoCoderOccupancy_,
                            context,                             // contexts
                            decodedBitDepthOM,                   // bitDepth
                            params_.keepIntermediateFiles_,      // keepIntermediateFiles
@@ -127,7 +128,8 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
       auto  geometryIndex   = static_cast<PCCVideoType>( VIDEO_GEOMETRY_D0 + mapIndex );
       auto& videoBitstream  = context.getVideoBitstream( geometryIndex );
       videoDecoder.decompress( context.getVideoGeometryMultiple()[mapIndex], path.str(), pcFrameCount, videoBitstream,
-                               params_.videoDecoderGeometryPath_, geometryCodecId, context, decodedBitDepth,
+                               params_.videoDecoderGeometryPath_, geometryCodecId, params_.byteStreamVideoCoderGeometry_,
+                               context, decodedBitDepth,
                                params_.keepIntermediateFiles_, isGeometry444 );
       context.getVideoGeometryMultiple()[mapIndex].convertBitdepth(
           decodedBitDepth, gi.getGeometry2dBitdepthMinus1() + 1, gi.getGeometryMSBAlignFlag() );
@@ -148,6 +150,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
                              videoBitstream,                         //
                              params_.videoDecoderGeometryPath_,      //
                              geometryCodecId,                        //
+                             params_.byteStreamVideoCoderGeometry_,
                              context,                                //
                              decodedBitDepthGeo,                     //
                              params_.keepIntermediateFiles_,         //
@@ -163,7 +166,8 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
     int   decodedBitDepthMP = gi.getGeometry2dBitdepthMinus1() + 1;
     auto& videoBitstreamMP  = context.getVideoBitstream( VIDEO_GEOMETRY_RAW );
     videoDecoder.decompress( context.getVideoRawPointsGeometry(), path.str(), pcFrameCount, videoBitstreamMP,
-                             params_.videoDecoderGeometryPath_, geometryCodecId, context, decodedBitDepthMP,
+                             params_.videoDecoderGeometryPath_, geometryCodecId, params_.byteStreamVideoCoderGeometry_,
+                             context, decodedBitDepthMP,
                              params_.keepIntermediateFiles_, isAuxiliarygeometry444 );
     context.getVideoRawPointsGeometry().convertBitdepth( decodedBitDepthMP, gi.getGeometry2dBitdepthMinus1() + 1,
                                                          gi.getGeometryMSBAlignFlag() );
@@ -190,7 +194,9 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
                 static_cast<PCCVideoType>( VIDEO_TEXTURE_T0 + attrPartitionIndex + MAX_NUM_ATTR_PARTITIONS * mapIndex );
             auto& videoBitstream = context.getVideoBitstream( textureIndex );
             videoDecoder.decompress( context.getVideoTextureMultiple()[mapIndex], path.str(), context.size(),
-                                     videoBitstream, params_.videoDecoderAttributePath_, attributeCodecId, context,
+                                     videoBitstream, params_.videoDecoderAttributePath_, attributeCodecId,
+                                     params_.byteStreamVideoCoderAttribute_,
+                                     context,
                                      ai.getAttribute2dBitdepthMinus1( 0 ) + 1, params_.keepIntermediateFiles_,
                                      isAttributes444, params_.patchColorSubsampling_,
                                      params_.inverseColorSpaceConversionConfig_, params_.colorSpaceConversionPath_ );
@@ -211,6 +217,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
                                    videoBitstream,                              // bitstream,
                                    params_.videoDecoderAttributePath_,          // decoderPath,
                                    attributeCodecId,                            // attributeCodecId
+                                   params_.byteStreamVideoCoderAttribute_,
                                    context,                                     // contexts,
                                    decodedBitdepthAttribute,                    // bitDepth,
                                    params_.keepIntermediateFiles_,              // keepIntermediateFiles
@@ -227,7 +234,8 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
           auto  textureIndex     = static_cast<PCCVideoType>( VIDEO_TEXTURE_RAW + attrPartitionIndex );
           auto& videoBitstreamMP = context.getVideoBitstream( textureIndex );
           videoDecoder.decompress( context.getVideoRawPointsTexture(), path.str(), pcFrameCount, videoBitstreamMP,
-                                   params_.videoDecoderAttributePath_, attributeCodecId, context,
+                                   params_.videoDecoderAttributePath_, attributeCodecId, params_.byteStreamVideoCoderAttribute_,
+                                   context,
                                    decodedBitdepthAttributeMP, params_.keepIntermediateFiles_, isAuxiliaryAttributes444,
                                    false, params_.inverseColorSpaceConversionConfig_,
                                    params_.colorSpaceConversionPath_ );
