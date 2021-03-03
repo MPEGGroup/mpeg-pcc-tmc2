@@ -5,10 +5,12 @@ SET( TMC2_VERSION_MAJOR 12 )
 SET( TMC2_VERSION_MINOR 0  )
 
 # Video encoder and decoder library and application:
-OPTION( USE_JMAPP_VIDEO_CODEC     "Use JM application to encode and decode video"           FALSE )
-OPTION( USE_HMAPP_VIDEO_CODEC     "Use HM application to encode and decode video"           FALSE )
-OPTION( USE_HMLIB_VIDEO_CODEC     "Clone, build and use HM video encoder and decoder"       TRUE )
-OPTION( USE_FFMPEG_VIDEO_CODEC    "Clone, build and use FFMPEG video encoder and decoder"   FALSE )
+OPTION( USE_JMAPP_VIDEO_CODEC     "Use JM application to encode and decode video"           TRUE  )  #JMAPP = 0
+OPTION( USE_HMAPP_VIDEO_CODEC     "Use HM application to encode and decode video"           TRUE  )  #HMAPP = 1
+OPTION( USE_JMLIB_VIDEO_CODEC     "Clone, build and use JM video encoder and decoder"       TRUE  )  #JMLIB = 2
+OPTION( USE_HMLIB_VIDEO_CODEC     "Clone, build and use HM video encoder and decoder"       TRUE  )  #HMLIB = 3
+OPTION( USE_FFMPEG_VIDEO_CODEC    "Clone, build and use FFMPEG video encoder and decoder"   FALSE )  #FFMPEG = 4
+                                                                                                     #UNKNOWN_CODEC = 5
 
 # Color conversion library:
 OPTION( USE_HDRTOOLS              "Clone, build and use HDRTools for color conversions"     FALSE )
@@ -52,6 +54,12 @@ ENDIF()
 # Include external libraries
 IF( USE_HMLIB_VIDEO_CODEC )
   INCLUDE( ${CMAKE_SOURCE_DIR}/dependencies/cmake/hm.cmake )
+ENDIF()
+IF( USE_JMLIB_VIDEO_CODEC )
+  INCLUDE( ${CMAKE_SOURCE_DIR}/dependencies/cmake/jm_lib.cmake )
+ENDIF()
+IF( USE_JMAPP_VIDEO_CODEC )
+  INCLUDE( ${CMAKE_SOURCE_DIR}/dependencies/cmake/jm_app.cmake )
 ENDIF()
 IF( USE_FFMPEG_VIDEO_CODEC )
   INCLUDE( ${CMAKE_SOURCE_DIR}/dependencies/cmake/ffmpeg.cmake )

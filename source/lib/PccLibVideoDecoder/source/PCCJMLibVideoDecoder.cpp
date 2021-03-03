@@ -30,46 +30,33 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+#include "PCCCommon.h"
 
-#include "PCCVirtualVideoDecoder.h"
+#ifdef USE_JMLIB_VIDEO_CODEC
 
-#include "PCCJMAppVideoDecoder.h"
-#include "PCCHMAppVideoDecoder.h"
-#include "PCCHMLibVideoDecoder.h"
 #include "PCCJMLibVideoDecoder.h"
-#ifdef USE_FFMPEG_VIDEO_CODEC
-#include "PCCFFMPEGLibVideoDecoder.h"
-#endif
+#include "PCCJMLibVideoDecoderImpl.h"
 
 using namespace pcc;
 
 template <typename T>
-std::shared_ptr<PCCVirtualVideoDecoder<T>> PCCVirtualVideoDecoder<T>::create( PCCCodecId codecId ) {
-  printf( "PCCVirtualVideoDecoder: create codecId = %d \n", codecId );
-  fflush( stdout );
-  switch ( codecId ) {
-#ifdef USE_JMAPP_VIDEO_CODEC
-    case JMAPP: return std::make_shared<PCCJMAppVideoDecoder<T>>(); break;
-#endif
-#ifdef USE_HMAPP_VIDEO_CODEC
-    case HMAPP: return std::make_shared<PCCHMAppVideoDecoder<T>>(); break;
-#endif
-#ifdef USE_JMLIB_VIDEO_CODEC
-    case JMLIB: return std::make_shared<PCCJMLibVideoDecoder<T>>(); break;
-#endif
-#ifdef USE_HMLIB_VIDEO_CODEC
-    case HMLIB: return std::make_shared<PCCHMLibVideoDecoder<T>>(); break;
-#endif
-#ifdef USE_FFMPEG_VIDEO_CODEC
-    case FFMPEG: return std::make_shared<PCCFFMPEGLibVideoDecoder<T>>(); break;
-#endif
-    default:
-      printf( "Error: codec id not supported \n" );
-      exit( -1 );
-      break;
-  }
-  return nullptr;
+PCCJMLibVideoDecoder<T>::PCCJMLibVideoDecoder() {}
+template <typename T>
+PCCJMLibVideoDecoder<T>::~PCCJMLibVideoDecoder() {}
+
+template <typename T>
+void PCCJMLibVideoDecoder<T>::decode( PCCVideoBitstream& bitstream,
+                                      size_t             outputBitDepth,
+                                      bool               RGB2GBR,
+                                      PCCVideo<T, 3>&    video,
+                                      const std::string& decoderPath,
+                                      const std::string& parameters,
+                                      const size_t       frameCount) {
+  PCCJMLibVideoDecoderImpl<T> decoder;
+  decoder.decode( bitstream, outputBitDepth, RGB2GBR, video, decoderPath, parameters, frameCount );
 }
 
-template class pcc::PCCVirtualVideoDecoder<uint8_t>;
-template class pcc::PCCVirtualVideoDecoder<uint16_t>;
+template class pcc::PCCJMLibVideoDecoder<uint8_t>;
+template class pcc::PCCJMLibVideoDecoder<uint16_t>;
+
+#endif

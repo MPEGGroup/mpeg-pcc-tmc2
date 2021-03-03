@@ -114,6 +114,34 @@ class PCCVideo {
     infile.close();
     return false;
   }
+
+  bool write_JM( const std::string fileName, const size_t nbyte ) {
+    printf( "Write video: %s \n", fileName.c_str() );
+    fflush( stdout );
+    std::ofstream outfile( fileName, std::ios::binary );
+    if ( write( outfile, nbyte ) ) {
+      outfile.close();
+      return true;
+    }
+    return false;
+  }
+  bool read_JM( const std::string    fileName,
+             const size_t         sizeU0,
+             const size_t         sizeV0,
+             const PCCCOLORFORMAT format,
+             const size_t         frameCount,
+             const size_t         nbyte ) {
+    printf( "Read video: %s \n", fileName.c_str() );
+    fflush( stdout );
+    std::ifstream infile( fileName, std::ios::binary );
+    if ( read( infile, sizeU0, sizeV0, format, frameCount, nbyte ) ) {
+      infile.close();
+      return true;
+    }
+    infile.close();
+    return false;
+  }
+
   void convertBitdepth( uint8_t bitdepthInput, uint8_t bitdepthOutput, bool msbAlignFlag ) {
     for ( auto& frame : frames_ ) { frame.convertBitdepth( bitdepthInput, bitdepthOutput, msbAlignFlag ); }
   }
@@ -150,6 +178,26 @@ class PCCVideo {
     }
     return true;
   }
+
+  bool write_JM( std::ofstream& outfile, const size_t nbyte ) {
+    for ( auto& frame : frames_ ) {
+      if ( !frame.write( outfile, nbyte ) ) { return false; }
+    }
+    return true;
+  }
+  bool read_JM( std::ifstream&       infile,
+             const size_t         sizeU0,
+             const size_t         sizeV0,
+             const PCCCOLORFORMAT format,
+             const size_t         frameCount,
+             const size_t         nbyte ) {
+    frames_.resize( frameCount );
+    for ( auto& frame : frames_ ) {
+      if ( !frame.read( infile, sizeU0, sizeV0, format, nbyte ) ) { return false; }
+    }
+    return true;
+  }
+
   std::vector<PCCImage<T, N> > frames_;
 };
 

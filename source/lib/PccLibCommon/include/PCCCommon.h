@@ -98,11 +98,14 @@ enum PCCCodecId {
 #ifdef USE_HMAPP_VIDEO_CODEC
   HMAPP = 1,
 #endif
+#ifdef USE_JMLIB_VIDEO_CODEC
+  JMLIB = 2,
+#endif
 #ifdef USE_HMLIB_VIDEO_CODEC
-  HMLIB = 2,
+  HMLIB = 3,
 #endif
 #ifdef USE_FFMPEG_VIDEO_CODEC
-  FFMPEG = 3,
+  FFMPEG = 4,
 #endif
   UNKNOWN_CODEC = 255
 };

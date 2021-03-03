@@ -30,46 +30,56 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+#ifndef PCCVirtualVideoDecoderImpl_h
+#define PCCVirtualVideoDecoderImpl_h
 
-#include "PCCVirtualVideoDecoder.h"
+#include "PCCCommon.h"
 
-#include "PCCJMAppVideoDecoder.h"
-#include "PCCHMAppVideoDecoder.h"
-#include "PCCHMLibVideoDecoder.h"
-#include "PCCJMLibVideoDecoder.h"
-#ifdef USE_FFMPEG_VIDEO_CODEC
-#include "PCCFFMPEGLibVideoDecoder.h"
-#endif
-
-using namespace pcc;
-
-template <typename T>
-std::shared_ptr<PCCVirtualVideoDecoder<T>> PCCVirtualVideoDecoder<T>::create( PCCCodecId codecId ) {
-  printf( "PCCVirtualVideoDecoder: create codecId = %d \n", codecId );
-  fflush( stdout );
-  switch ( codecId ) {
-#ifdef USE_JMAPP_VIDEO_CODEC
-    case JMAPP: return std::make_shared<PCCJMAppVideoDecoder<T>>(); break;
-#endif
-#ifdef USE_HMAPP_VIDEO_CODEC
-    case HMAPP: return std::make_shared<PCCHMAppVideoDecoder<T>>(); break;
-#endif
 #ifdef USE_JMLIB_VIDEO_CODEC
-    case JMLIB: return std::make_shared<PCCJMLibVideoDecoder<T>>(); break;
-#endif
-#ifdef USE_HMLIB_VIDEO_CODEC
-    case HMLIB: return std::make_shared<PCCHMLibVideoDecoder<T>>(); break;
-#endif
-#ifdef USE_FFMPEG_VIDEO_CODEC
-    case FFMPEG: return std::make_shared<PCCFFMPEGLibVideoDecoder<T>>(); break;
-#endif
-    default:
-      printf( "Error: codec id not supported \n" );
-      exit( -1 );
-      break;
-  }
-  return nullptr;
-}
 
-template class pcc::PCCVirtualVideoDecoder<uint8_t>;
-template class pcc::PCCVirtualVideoDecoder<uint16_t>;
+#include "PCCVideo.h"
+#include "PCCVideoBitstream.h"
+
+//#include <TLibCommon/TComList.h>
+//#include <TLibCommon/TComPicYuv.h>
+//#include <TLibDecoder/AnnexBread.h>
+//#include <TLibDecoder/NALread.h>
+//#include <TLibDecoder/TDecTop.h>
+
+namespace pcc {
+
+template <class T>
+class PCCJMLibVideoDecoderImpl {
+ public:
+  PCCJMLibVideoDecoderImpl();
+
+  ~PCCJMLibVideoDecoderImpl();
+
+  void decode( PCCVideoBitstream& bitstream,
+               size_t             outputBitDepth,
+               bool               RGB2GBR,
+               PCCVideo<T, 3>&    video,
+               const std::string& decoderPath,
+               const std::string& fileName,
+               const size_t       frameCount );
+
+ //private:
+ // void                                  setVideoSize( const TComSPS& sps );
+ // Void                                  xWriteOutput( TComList<TComPic*>* pcListPic, UInt tId, PCCVideo<T, 3>& video );
+ // Void                                  xFlushOutput( TComList<TComPic*>* pcListPic, PCCVideo<T, 3>& video );
+ // void                                  xWritePicture( const TComPicYuv* pic, PCCVideo<T, 3>& video );
+ // TDecTop                               m_cTDecTop{};
+ // int                                   m_iPOCLastDisplay = -MAX_INT;
+ // int                                   m_iSkipFrame{};
+ // std::array<int, MAX_NUM_CHANNEL_TYPE> m_outputBitDepth{};
+ // int                                   m_internalBitDepths;
+ // int                                   m_outputWidth;
+ // int                                   m_outputHeight;
+ // bool                                  m_bRGB2GBR;
+};
+
+};  // namespace pcc
+
+#endif
+
+#endif /* PCCVirtualVideoDecoder_h */

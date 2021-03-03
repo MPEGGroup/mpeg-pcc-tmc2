@@ -70,4 +70,6 @@ log.txt
 /.vscode/
 /dependencies/HM-16.20+SCM-8.8/
 /dependencies/HDRTools/
+/dependencies/jm19.0_lib/
+/dependencies/jm19.0_app/
 
