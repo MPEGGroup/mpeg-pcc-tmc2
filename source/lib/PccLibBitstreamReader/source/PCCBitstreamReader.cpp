@@ -603,7 +603,7 @@ void PCCBitstreamReader::atlasFrameParameterSetRbsp( AtlasFrameParameterSetRbsp&
   afps.setNumRefIdxDefaultActiveMinus1( bitstream.readUvlc() );     // ue(v)
   afps.setAdditionalLtAfocLsbLen( bitstream.readUvlc() );           // ue(v)
   afps.setLodModeEnableFlag( bitstream.read( 1 ) );                 // u(1)
-  afps.setRaw3dPosBitCountExplicitModeFlag( bitstream.read( 1 ) );  // u(1)
+  afps.setRaw3dOffsetBitCountExplicitModeFlag( bitstream.read( 1 ) );  // u(1)
   afps.setExtensionFlag( bitstream.read( 1 ) );                     // u(1)
   if ( afps.getExtensionFlag() ) {
     afps.setExtension8Bits( bitstream.read( 8 ) );  // u(8)
@@ -846,17 +846,15 @@ void PCCBitstreamReader::atlasTileHeader( AtlasTileHeader&    ath,
       ath.setPatchSizeYinfoQuantizer( bitstream.read( 3 ) );  // u(3)
     }
 
-    auto& gi = syntax.getVps().getGeometryInformation( 0 );
-    TRACE_BITSTREAM( "Raw3dPosBitCountExplicitModeFlag    = %d \n", afps.getRaw3dPosBitCountExplicitModeFlag() );
-    if ( afps.getRaw3dPosBitCountExplicitModeFlag() ) {
-      size_t bitCount = ceilLog2( gi.getGeometry3dCoordinatesBitdepthMinus1() + 1 );
-      TRACE_BITSTREAM( "Geometry3dCoordinatesBitdepthMinus1 = %zu \n", gi.getGeometry3dCoordinatesBitdepthMinus1() );
-      ath.setRaw3dPosAxisBitCountMinus1( bitstream.read( bitCount ) );  // u(v)
+    TRACE_BITSTREAM( "Raw3dOffsetBitCountExplicitModeFlag    = %d \n", afps.getRaw3dOffsetBitCountExplicitModeFlag() );
+    if ( afps.getRaw3dOffsetBitCountExplicitModeFlag() ) {
+      size_t bitCount = floorLog2( asps.getGeometry3dBitdepthMinus1() + 1 );
+      TRACE_BITSTREAM( "bitCount(floorLog2( asps.getGeometry3dBitdepthMinus1() + 1 ) = %zu \n", bitCount  );
+      ath.setRaw3dOffsetAxisBitCountMinus1( bitstream.read( bitCount ) );  // u(v)
     } else {
-      TRACE_BITSTREAM( "Geometry3dCoordinatesBitdepthMinus1 = %zu \n", gi.getGeometry3dCoordinatesBitdepthMinus1() );
-      TRACE_BITSTREAM( "Geometry2dBitdepthMinus1     = %zu \n", gi.getGeometry2dBitdepthMinus1() );
-      ath.setRaw3dPosAxisBitCountMinus1( gi.getGeometry3dCoordinatesBitdepthMinus1() -
-                                         gi.getGeometry2dBitdepthMinus1() - 1 );
+      TRACE_BITSTREAM( "Geometry3dBitdepthMinus1 = %zu \n", asps.getGeometry3dBitdepthMinus1()  );
+      TRACE_BITSTREAM( "Geometry2dBitdepthMinus1 = %zu \n", asps.getGeometry2dBitdepthMinus1() );
+      ath.setRaw3dOffsetAxisBitCountMinus1( std::max( 0, asps.getGeometry3dBitdepthMinus1() - asps.getGeometry2dBitdepthMinus1() )-1 );
     }
     if ( ath.getType() == P_TILE && refList.getNumRefEntries() > 1 ) {
       ath.setNumRefIdxActiveOverrideFlag( bitstream.read( 1 ) != 0U );  // u(1)
@@ -864,7 +862,7 @@ void PCCBitstreamReader::atlasTileHeader( AtlasTileHeader&    ath,
         ath.setNumRefIdxActiveMinus1( bitstream.readUvlc() );  // ue(v)
       }
     }
-    TRACE_BITSTREAM( "==> Raw3dPosAxisBitCountMinus1  = %zu \n", ath.getRaw3dPosAxisBitCountMinus1() );
+    TRACE_BITSTREAM( "==> Raw3dOffsetAxisBitCountMinus1  = %zu \n", ath.getRaw3dOffsetAxisBitCountMinus1() );
     TRACE_BITSTREAM( "==> NumRefIdxActiveOverrideFlag = %zu \n", ath.getNumRefIdxActiveOverrideFlag() );
     TRACE_BITSTREAM( "==> NumRefIdxActiveMinus1       = %zu \n", ath.getNumRefIdxActiveMinus1() );
   }
@@ -1216,8 +1214,8 @@ void PCCBitstreamReader::rawPatchDataUnit( RawPatchDataUnit&   rpdu,
                                            PCCHighLevelSyntax& syntax,
                                            PCCBitstream&       bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
-  int32_t bitCount = ath.getRaw3dPosAxisBitCountMinus1() + 1;
-  TRACE_BITSTREAM( " AtghRaw3dPosAxisBitCountMinus1 = %zu => bitcount = %d \n", ath.getRaw3dPosAxisBitCountMinus1(),
+  int32_t bitCount = ath.getRaw3dOffsetAxisBitCountMinus1() + 1;
+  TRACE_BITSTREAM( " AtghRaw3dOffsetAxisBitCountMinus1 = %zu => bitcount = %d \n", ath.getRaw3dOffsetAxisBitCountMinus1(),
                    bitCount );
   auto& afti   = syntax.getAtlasFrameParameterSet( ath.getAtlasFrameParameterSetId() ).getAtlasFrameTileInformation();
   auto  ath_id = ath.getId();

@@ -8444,10 +8444,10 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
       ath.setPosDeltaMaxDQuantizer( uint8_t( std::log2( params_.minLevel_ ) ) );
       ath.setPatchSizeXinfoQuantizer( params_.log2QuantizerSizeX_ );
       ath.setPatchSizeYinfoQuantizer( params_.log2QuantizerSizeY_ );
-      if ( afps.getRaw3dPosBitCountExplicitModeFlag() ) {
-        ath.setRaw3dPosAxisBitCountMinus1( 0 );  //
+      if ( afps.getRaw3dOffsetBitCountExplicitModeFlag() ) {
+        ath.setRaw3dOffsetAxisBitCountMinus1( 0 );  //Note. need to be an encoder parameter
       } else {
-        ath.setRaw3dPosAxisBitCountMinus1( params_.geometry3dCoordinatesBitdepth_ +
+        ath.setRaw3dOffsetAxisBitCountMinus1( params_.geometry3dCoordinatesBitdepth_ +
                                            ( params_.additionalProjectionPlaneMode_ > 0 ) -
                                            params_.geometryNominal2dBitdepth_ - 1 );
       }
@@ -8739,16 +8739,12 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&         context,
       rpdu.set2dPosY( rawPointsPatch.v0_ );
       rpdu.set2dSizeXMinus1( rawPointsPatch.sizeU0_ - 1 );
       rpdu.set2dSizeYMinus1( rawPointsPatch.sizeV0_ - 1 );
-      if ( afps.getRaw3dPosBitCountExplicitModeFlag() ) {
-        rpdu.set3dOffsetU( rawPointsPatch.u1_ );
-        rpdu.set3dOffsetV( rawPointsPatch.v1_ );
-        rpdu.set3dOffsetD( rawPointsPatch.d1_ );
-      } else {
-        const size_t pcmU1V1D1Level = size_t( 1 ) << ( gi.getGeometry2dBitdepthMinus1() + 1 );
-        rpdu.set3dOffsetU( rawPointsPatch.u1_ / pcmU1V1D1Level );
-        rpdu.set3dOffsetV( rawPointsPatch.v1_ / pcmU1V1D1Level );
-        rpdu.set3dOffsetD( rawPointsPatch.d1_ / pcmU1V1D1Level );
-      }
+      size_t  rawShift = afps.getRaw3dOffsetBitCountExplicitModeFlag() ?
+        (asps.getGeometry3dBitdepthMinus1() - ath.getRaw3dOffsetAxisBitCountMinus1()) :
+        (asps.getGeometry2dBitdepthMinus1()+1);
+      rpdu.set3dOffsetU( rawPointsPatch.u1_ >> rawShift );
+      rpdu.set3dOffsetV( rawPointsPatch.v1_ >> rawShift );
+      rpdu.set3dOffsetD( rawPointsPatch.d1_ >> rawShift );
       rpdu.setPatchInAuxiliaryVideoFlag( sps.getAuxiliaryVideoPresentFlag( 0 ) );
       rpdu.setRawPointsMinus1( uint32_t( rawPointsPatch.getNumberOfRawPoints() - 1 ) );
       TRACE_PATCH( "Raw :UV = %zu %zu  size = %zu %zu  uvd1 = %zu %zu %zu numPoints = %zu ocmRes = %zu \n",
