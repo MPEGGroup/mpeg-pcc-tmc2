@@ -84,42 +84,30 @@ bool PCCBitstream::write( const std::string& compressedStreamPath ) {
   return true;
 }
 
-void PCCBitstream::read( PCCVideoBitstream& videoBitstream ) {
+void PCCBitstream::readVideoStream( PCCVideoBitstream& videoBitstream, size_t videoStreamSize ) {
+#ifdef BITSTREAM_TRACE
+  trace( "Code: PCCVideoBitstream \n" );
+  trace( "Code: size = %zu \n", videoStreamSize );
+#endif
+  videoBitstream.resize( videoStreamSize );
+  memcpy( videoBitstream.buffer(), data_.data() + position_.bytes_, videoStreamSize );
+  videoBitstream.trace();
+  position_.bytes_ += videoStreamSize;
+}
+
+void PCCBitstream::writeVideoStream( PCCVideoBitstream& videoBitstream ) {
 #ifdef BITSTREAM_TRACE
   trace( "Code: PCCVideoBitstream \n" );
 #endif
-  uint32_t size = read( 32 );
-#ifdef BITSTREAM_TRACE
-  trace( "Code: size = %zu \n", size );
-#endif
-  videoBitstream.resize( size );
-  memcpy( videoBitstream.buffer(), data_.data() + position_.bytes_, size );
-  // videoBitstream.trace();
-  position_.bytes_ += size;
-#ifdef BITSTREAM_TRACE
-  trace( "Code: video : %4zu \n", size );
-#endif
-}
-
-void PCCBitstream::write( PCCVideoBitstream& videoBitstream ) {
-#ifdef BITSTREAM_TRACE
-  trace( "Code: PCCVideoBitstream \n" );
-#endif
-  writeBuffer( videoBitstream.buffer(), videoBitstream.size() );
-  // videoBitstream.trace();
-#ifdef BITSTREAM_TRACE
-  trace( "Code: video : %4zu \n", videoBitstream.size() );
-#endif
-}
-
-void PCCBitstream::writeBuffer( const uint8_t* data, const size_t size ) {
+  uint8_t* data=videoBitstream.buffer();
+  size_t size =videoBitstream.size();
   realloc( size );
-  write( static_cast<int32_t>( size ), 32 );
-#ifdef BITSTREAM_TRACE
-  trace( "Code: size = %zu \n", size );
-#endif
-  memcpy( data_.data() + position_.bytes_, data, size );
-  position_.bytes_ += size;
+  #ifdef BITSTREAM_TRACE
+    trace( "Code: size = %zu \n", size );
+  #endif
+    memcpy( data_.data() + position_.bytes_, data, size );
+    position_.bytes_ += size;
+  videoBitstream.trace();
 }
 void PCCBitstream::copyFrom( PCCBitstream& dataBitstream, const uint64_t startByte, const uint64_t bitstreamSize ) {
   if ( data_.size() < position_.bytes_ + bitstreamSize ) { data_.resize( position_.bytes_ + bitstreamSize ); }
