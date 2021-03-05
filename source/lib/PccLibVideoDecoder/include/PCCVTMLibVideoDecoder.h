@@ -30,52 +30,34 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+#ifndef PCCVTMLibVideoDecoder_h
+#define PCCVTMLibVideoDecoder_h
 
+#include "PCCCommon.h"
+
+#ifdef USE_VTMLIB_VIDEO_CODEC
+#include "PCCVideo.h"
 #include "PCCVirtualVideoDecoder.h"
 
-#include "PCCJMAppVideoDecoder.h"
-#include "PCCHMAppVideoDecoder.h"
-#include "PCCHMLibVideoDecoder.h"
-#include "PCCJMLibVideoDecoder.h"
-#ifdef USE_FFMPEG_VIDEO_CODEC
-#include "PCCFFMPEGLibVideoDecoder.h"
-#endif
-#ifdef USE_VTMLIB_VIDEO_CODEC
-#include "PCCVTMLibVideoDecoder.h"
+namespace pcc {
+
+template <class T>
+class PCCVTMLibVideoDecoder : public PCCVirtualVideoDecoder<T> {
+ public:
+  PCCVTMLibVideoDecoder();
+  ~PCCVTMLibVideoDecoder();
+
+  void decode( PCCVideoBitstream& bitstream,
+               size_t             outputBitDepth,
+               bool               RGB2GBR,
+               PCCVideo<T, 3>&    video,
+               const std::string& decoderPath = "",
+               const std::string& parameters  = "",
+               const size_t       frameCount  = 0 );
+};
+
+};  // namespace pcc
+
 #endif
 
-using namespace pcc;
-
-template <typename T>
-std::shared_ptr<PCCVirtualVideoDecoder<T>> PCCVirtualVideoDecoder<T>::create( PCCCodecId codecId ) {
-  printf( "PCCVirtualVideoDecoder: create codecId = %d \n", codecId );
-  fflush( stdout );
-  switch ( codecId ) {
-#ifdef USE_JMAPP_VIDEO_CODEC
-    case JMAPP: return std::make_shared<PCCJMAppVideoDecoder<T>>(); break;
-#endif
-#ifdef USE_HMAPP_VIDEO_CODEC
-    case HMAPP: return std::make_shared<PCCHMAppVideoDecoder<T>>(); break;
-#endif
-#ifdef USE_JMLIB_VIDEO_CODEC
-    case JMLIB: return std::make_shared<PCCJMLibVideoDecoder<T>>(); break;
-#endif
-#ifdef USE_HMLIB_VIDEO_CODEC
-    case HMLIB: return std::make_shared<PCCHMLibVideoDecoder<T>>(); break;
-#endif
-#ifdef USE_FFMPEG_VIDEO_CODEC
-    case FFMPEG: return std::make_shared<PCCFFMPEGLibVideoDecoder<T>>(); break;
-#endif
-#ifdef USE_VTMLIB_VIDEO_CODEC
-    case VTMLIB: return std::make_shared<PCCVTMLibVideoDecoder<T>>(); break;
-#endif
-    default:
-      printf( "Error: codec id not supported \n" );
-      exit( -1 );
-      break;
-  }
-  return nullptr;
-}
-
-template class pcc::PCCVirtualVideoDecoder<uint8_t>;
-template class pcc::PCCVirtualVideoDecoder<uint16_t>;
+#endif /* PCCVTMLibVideoDecoder_h */
