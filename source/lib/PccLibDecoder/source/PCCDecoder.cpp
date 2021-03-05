@@ -1019,7 +1019,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
         rawPointsPatch.v1_ = rpdu.get3dOffsetV();
         rawPointsPatch.d1_ = rpdu.get3dOffsetD();
       } else {
-        const size_t pcmU1V1D1Level = size_t( 1 ) << geometryBitDepth3D;
+        const size_t pcmU1V1D1Level = size_t( 1 ) << geometryBitDepth2D;
         rawPointsPatch.u1_          = rpdu.get3dOffsetU() * pcmU1V1D1Level;
         rawPointsPatch.v1_          = rpdu.get3dOffsetV() * pcmU1V1D1Level;
         rawPointsPatch.d1_          = rpdu.get3dOffsetD() * pcmU1V1D1Level;
