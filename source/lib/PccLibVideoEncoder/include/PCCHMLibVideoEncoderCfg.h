@@ -77,6 +77,7 @@ class PCCHMLibVideoEncoderCfg {
   std::string m_occupancyMapFileName;
   std::string m_patchInfoFileName;
 #endif
+
   // Lambda modifiers
   Double m_adLambdaModifier[MAX_TLAYER];        ///< Lambda modifier array for each
                                                 /// temporal layer
@@ -708,6 +709,9 @@ class PCCHMLibVideoEncoderCfg {
   Void destroy();                            ///< destroy option handling class
   Bool parseCfg( Int argc, TChar* argv[] );  ///< parse configuration file to fill
                                              /// member variables
+  #if PCC_CF_EXT
+
+  #endif
 
 };  // END CLASS DEFINITION PCCHMLibVideoEncoderCfg
 

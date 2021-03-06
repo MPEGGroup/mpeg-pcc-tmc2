@@ -74,7 +74,10 @@ class PCCVirtualVideoEncoder {
                        PCCVideoBitstream&         bitstream,
                        PCCVideo<T, 3>&            videoRec ) = 0;
 
- private:
+  void setLogger( PCCLogger& logger ) { logger_ = &logger; }
+
+ protected:
+  PCCLogger* logger_ = nullptr;
 };
 
 };  // namespace pcc

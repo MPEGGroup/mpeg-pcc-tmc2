@@ -380,6 +380,7 @@ class PCCVideoEncoder {
     fflush( stdout );
     PCCVideo<T, 3> videoRec;
     auto           encoder = PCCVirtualVideoEncoder<T>::create( codecId );
+    encoder->setLogger( *logger_ );
     encoder->encode( video, params, bitstream, videoRec );
     if ( keepIntermediateFiles ) {
       bitstream.write( binFileName );
@@ -403,7 +404,11 @@ class PCCVideoEncoder {
     return true;
   }
 
+  void setLogger( PCCLogger& logger ) { logger_ = &logger; }
+
  private:
+
+     PCCLogger* logger_ = nullptr;
 };
 
 };  // namespace pcc

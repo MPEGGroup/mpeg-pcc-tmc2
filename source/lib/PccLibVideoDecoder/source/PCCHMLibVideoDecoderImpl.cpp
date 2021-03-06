@@ -113,7 +113,31 @@ void PCCHMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream,
 
     if ( ( bNewPicture || !bitstreamFile || nalu.m_nalUnitType == NAL_UNIT_EOS ) &&
          !m_pTDecTop->getFirstSliceInSequence() ) {
-      if ( !loopFiltered || bitstreamFile ) { m_pTDecTop->executeLoopFilters( poc, pcListPic ); }
+      if ( !loopFiltered || bitstreamFile ) {
+        m_pTDecTop->executeLoopFilters( poc, pcListPic );
+
+#if PCC_CF_EXT
+        for ( auto& gcf : g_cfData_ ) {
+          TRACE_PICTURE( "PicOrderCntVal = %d, ", gcf.PCCPoc );
+          for ( auto& e : gcf.PCCPicMD5 ) {
+            size_t pos = e.find_first_not_of( " " );
+            if ( pos == string::npos ) continue;
+            pos = e.find_first_of( "," );
+            std::string tmp = e.substr( 0, pos );
+            TRACE_PICTURE( " MD5checksumChan0 = %s, ", tmp.c_str() );
+            e.erase( 0, pos + 1 );
+            tmp = e.substr( 0, pos );
+            pos = e.find_first_of( "," );
+            TRACE_PICTURE( " MD5checksumChan1 = %s, ", tmp.c_str() );
+            e.erase( 0, pos + 1 );
+            tmp = e.substr(0);
+            TRACE_PICTURE( " MD5checksumChan2 = %s ", tmp.c_str() );
+          }
+          TRACE_PICTURE( "\n" );
+        }
+        g_cfData_.clear();
+#endif
+      }
       loopFiltered = ( nalu.m_nalUnitType == NAL_UNIT_EOS );
       if ( nalu.m_nalUnitType == NAL_UNIT_EOS ) { m_pTDecTop->setFirstSliceInSequence( true ); }
     } else if ( ( bNewPicture || !bitstreamFile || nalu.m_nalUnitType == NAL_UNIT_EOS ) &&

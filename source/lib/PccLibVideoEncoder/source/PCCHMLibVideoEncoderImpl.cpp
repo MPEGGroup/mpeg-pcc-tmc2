@@ -32,6 +32,7 @@
  */
 
 #include "PCCCommon.h"
+#include "PCCLogger.h"
 
 #ifdef USE_HMLIB_VIDEO_CODEC
 
@@ -114,7 +115,6 @@ Void PCCHMLibVideoEncoderImpl<T>::encode( PCCVideo<T, 3>&    videoSrc,
   }
 #endif
   printChromaFormat();
-
   // main encoder loop
   Int                              iNumEncoded = 0;
   Bool                             bEos        = false;
@@ -139,6 +139,7 @@ Void PCCHMLibVideoEncoderImpl<T>::encode( PCCVideo<T, 3>&    videoSrc,
   TExt360AppEncTop ext360( *this, m_cTEncTop.getGOPEncoder()->getExt360Data(), *( m_cTEncTop.getGOPEncoder() ),
                            *pcPicYuvOrg );
 #endif
+
   while ( !bEos ) {
     xGetBuffer( pcPicYuvRec );                            // get buffers
     xReadPicture( pcPicYuvOrg, videoSrc, m_iFrameRcvd );  // read input YUV file
@@ -157,8 +158,33 @@ Void PCCHMLibVideoEncoderImpl<T>::encode( PCCVideo<T, 3>&    videoSrc,
     if ( iNumEncoded > 0 ) {
       xWriteOutput( bitstreamFile, iNumEncoded, outputAccessUnits, videoRec );
       outputAccessUnits.clear();
+#if PCC_CF_EXT
+      for ( auto& gcf : g_cfData_ ) {
+        TRACE_PICTURE( "PicOrderCntVal = %d, ", gcf.PCCPoc );
+        for ( auto& e : gcf.PCCPicMD5 ) {
+          size_t pos = e.find_first_not_of( " " );
+          if ( pos == string::npos ) continue;
+          pos             = e.find_first_of( "," );
+          std::string tmp = e.substr( 0, pos );
+          TRACE_PICTURE( " MD5checksumChan0 = %s, ", tmp.c_str() );
+          e.erase( 0, pos + 1 );
+          tmp = e.substr( 0, pos );
+          pos = e.find_first_of( "," );
+          TRACE_PICTURE( " MD5checksumChan1 = %s, ", tmp.c_str() );
+          e.erase( 0, pos + 1 );
+          tmp = e.substr( 0 );
+          TRACE_PICTURE( " MD5checksumChan2 = %s ", tmp.c_str() );
+        }
+        TRACE_PICTURE( "\n" );
+      }
+      g_cfData_.clear();
+#endif
     }
   }
+#if PCC_CF_EXT
+  TRACE_PICTURE( "pic_width_max_in_luma_samples =  %d, pic_height_max_in_luma_samples = %d\n", videoSrc.getWidth(),
+                 videoSrc.getHeight() );
+#endif
   m_cTEncTop.printSummary( m_isField );
   // delete original YUV buffer
   pcPicYuvOrg->destroy();

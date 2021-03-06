@@ -337,9 +337,6 @@ class PCCCodec {
                                    std::vector<std::vector<std::vector<int64_t>>>& tileB2PPatchParams,
                                    std::vector<std::vector<int64_t>>&              atlasB2PPatchParams );
 
-  void checkAtlasConformance() { checkConformance( std::string("_dec_atl.ofl"), std::string("_enc_atl.ofl"), true); }
-  void checkPointConformance() { checkConformance( std::string( "_dec.opcl" ), std::string( "_enc.opcl" ), false ); }
-
   PCCLogger* logger_ = nullptr;
 
  private:
@@ -423,10 +420,6 @@ class PCCCodec {
                                const size_t                 pointIndex,
                                std::vector<uint32_t>&       BPflag,
                                PCCPointSet3&                reconstruct );
-
-  void checkConformance( const std::string& fileEnc, const std::string& fileDec, bool aFlag);
-
-  void searchKeys( std::string& str, std::map<std::string, std::string>& myMap, const std::vector<std::string>& keys );
 
 #ifdef CODEC_TRACE
   void printChecksum( PCCPointSet3& ePointcloud, std::string eString );

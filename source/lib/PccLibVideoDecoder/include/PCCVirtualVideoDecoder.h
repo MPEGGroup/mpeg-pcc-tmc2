@@ -55,7 +55,10 @@ class PCCVirtualVideoDecoder {
                        const std::string& parameters  = "",
                        const size_t       frameCount  = 0 ) = 0;
 
- private:
+  void         setLogger( PCCLogger& logger ) { logger_ = &logger; }
+
+ protected:
+  PCCLogger* logger_ = nullptr;
 };
 
 };  // namespace pcc
