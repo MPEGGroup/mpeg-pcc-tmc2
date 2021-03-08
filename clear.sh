@@ -37,7 +37,7 @@ then
   fi
   if [ "$1" == "vtm" ] || [ "$1" == "all" ] 
   then 
-    echo -e "\033[0;32mClean: ${CURDIR}/dependencies/vtm \033[0m";
-    rm -rf ${CURDIR}/dependencies/vtm;
+    echo -e "\033[0;32mClean: ${CURDIR}/dependencies/VTM-11.2 \033[0m";
+    rm -rf ${CURDIR}/dependencies/VTM-11.2/;
   fi
 fi
