@@ -182,7 +182,7 @@ Void PCCHMLibVideoEncoderImpl<T>::encode( PCCVideo<T, 3>&    videoSrc,
     }
   }
 #if PCC_CF_EXT
-  TRACE_PICTURE( "pic_width_max_in_luma_samples =  %d, pic_height_max_in_luma_samples = %d\n", videoSrc.getWidth(),
+  TRACE_PICTURE( "Width =  %d, Height = %d\n", videoSrc.getWidth(),
                  videoSrc.getHeight() );
 #endif
   m_cTEncTop.printSummary( m_isField );

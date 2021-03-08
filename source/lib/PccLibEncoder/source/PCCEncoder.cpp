@@ -150,8 +150,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   generateOccupancyMap( context, true );
 
   // ENCODE OCCUPANCY MAP
-  TRACE_PICTURE( "occupancy\n" );
-  TRACE_PICTURE( "vuh_map_index = 0,  vuh_auxiliary_video_flag =  0\n" );
+  TRACE_PICTURE( "Occupancy\n" );
+  TRACE_PICTURE( "MapIdx = 0,  AuxiliaryVideoFlag =  0\n" );
   auto& videoBitstream = context.createVideoBitstream( VIDEO_OCCUPANCY );
   generateOccupancyMapVideo( sources, context );
   auto& videoOccupancyMap = context.getVideoOccupancyMap();
@@ -192,8 +192,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   fflush( stdout );
 
   // ENCODE GEOMETRY IMAGE
-  TRACE_PICTURE( "geometry\n" );
-  TRACE_PICTURE( "vuh_map_index = 0, vuh_auxiliary_video_flag = 0\n" );
+  TRACE_PICTURE( "Geometry\n" );
+  TRACE_PICTURE( "MapIdx = 0, AuxiliaryVideoFlag = 0\n" );
   if ( params_.use3dmc_ ) { create3DMotionEstimationFiles( context, path.str() ); }
   auto&  gi                      = context.getVps().getGeometryInformation( atlasIndex );
   size_t geometryVideoBitDepth   = gi.getGeometry2dBitdepthMinus1() + 1;
@@ -246,7 +246,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     }
 
     // Compress geometryD1
-    TRACE_PICTURE( "vuh_map_index = 1, vuh_auxiliary_video_flag = 0\n" );
+    TRACE_PICTURE( "MapIdx = 1, AuxiliaryVideoFlag = 0\n" );
     auto& videoGeometryD1  = context.getVideoGeometryMultiple()[1];
     auto& videoBitstreamD1 = context.createVideoBitstream( VIDEO_GEOMETRY_D1 );
     videoEncoder.compress( videoGeometryD1,                                  // video
@@ -273,7 +273,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   }
 
   if ( asps.getRawPatchEnabledFlag() && asps.getAuxiliaryVideoEnabledFlag() ) {
-    TRACE_PICTURE( "vuh_map_index = 0, vuh_auxiliary_video_flag = 1\n");
+    TRACE_PICTURE( "MapIdx = 0, AuxiliaryVideoFlag = 1\n");
     std::cout << "*******Video: Aux (Geometry) ********" << std::endl;
     placeAuxiliaryPointsTiles( context );
     auto& videoBitstreamMP = context.createVideoBitstream( VIDEO_GEOMETRY_RAW );
@@ -430,15 +430,15 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
       // }
     }
     // ENCODE ATTRIBUTE IMAGE
-    TRACE_PICTURE( "attribute\n");
+    TRACE_PICTURE( "Attribute\n");
     std::cout << "texture video " << std::endl;
     auto& videoBitstream = params_.multipleStreams_ ? context.createVideoBitstream( VIDEO_TEXTURE_T0 )
                                                     : context.createVideoBitstream( VIDEO_TEXTURE );
     const size_t nbyteAtt = 1;
-    int attrPartitionIndex = sps.getAttributeInformation( atlasIndex ).getAttributeDimensionPartitionsMinus1( 0 );
-    TRACE_PICTURE(
-        "vuh_attribute_index = 0, vuh_attribute_partition_index = %d, vuh_map_index = 0, vuh_auxiliary_video_flag = "
-        "0\n", attrPartitionIndex );
+    int attrPartitionIndex = sps.getAttributeInformation( atlasIndex ).getAttributeDimensionPartitionsMinus1( 0 ); //ajt::encoder is limited to attribute Index = 0, only.
+    int attrTypeId = sps.getAttributeInformation( atlasIndex ).getAttributeTypeId(0);
+    TRACE_PICTURE("AttrIdx = 0, AttrPartIdx = %d, AttrTypeID = %d, MapIdx = 0, AuxiliaryVideoFlag = "
+        "0\n", attrPartitionIndex, attrTypeId );
     videoEncoder.compress(
         context.getVideoTextureMultiple()[0], path.str(), params_.textureQP_, videoBitstream,
         params_.multipleStreams_
@@ -477,7 +477,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
       }  //! absoluteT1
 
       // compress textureT1
-      TRACE_PICTURE( "vuh_map_index = 1, vuh_auxiliary_video_flag = 0\n" );
+      TRACE_PICTURE( "MapIdx = 1, AuxiliaryVideoFlag = 0\n" );
       auto& videoBitstreamT1 = context.createVideoBitstream( VIDEO_TEXTURE_T1 );
       videoEncoder.compress(
           context.getVideoTextureMultiple()[1], path.str(), params_.textureQP_ + params_.qpAdjT1_, videoBitstreamT1,
@@ -500,7 +500,10 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     }
 
     if ( asps.getRawPatchEnabledFlag() && asps.getAuxiliaryVideoEnabledFlag() ) {
-      TRACE_PICTURE( "vuh_map_index = 0, vuh_auxiliary_video_flag = 1\n" );
+      TRACE_PICTURE(
+          "AttrIdx = 0, AttrPartIdx = %d, AttrTypeID = %d ",
+          attrPartitionIndex, attrTypeId );
+      TRACE_PICTURE( "MapIdx = 0, AuxiliaryVideoFlag = 1\n" );
       std::cout << "*******Video: Aux (Texture) ********" << std::endl;
       auto& videoBitstreamMP = context.createVideoBitstream( VIDEO_TEXTURE_RAW );
       generateRawPointsTextureVideo( context );

@@ -138,6 +138,10 @@ class PCCLogger {
     trace( LOG_TRACE, format, args... );
   }
   template <typename... Args>
+  inline void traceHLS( const char* format, Args... args ) {
+    trace( LOG_HLS, format, args... );
+  }
+  template <typename... Args>
   inline void traceAtlas( const char* format, Args... args ) {
     trace( LOG_ATLAS, format, args... );
   }
@@ -206,15 +210,15 @@ class PCCLogger {
 #endif
 
 #ifdef CONFORMANCE_TRACE
+#define TRACE_HLS( fmt, ... ) logger_->traceHLS( fmt, ##__VA_ARGS__ ); //ajt::needs further clarification in the conformance test CD?
 #define TRACE_ATLAS( fmt, ... ) logger_->traceAtlas( fmt, ##__VA_ARGS__ );
 #define TRACE_TILE( fmt, ... ) logger_->traceTiles( fmt, ##__VA_ARGS__ );
-#define TRACE_CONFORMANCE( fmt, ... ) logger_->traceConformance( fmt, ##__VA_ARGS__ );
 #define TRACE_PCFRAME( fmt, ... ) logger_->tracePCFrame( fmt, ##__VA_ARGS__ );
 #define TRACE_PICTURE( fmt, ... ) logger_->tracePicture( fmt, ##__VA_ARGS__ );
 #else
+#define TRACE_HLS( fmt, ... ) ;
 #define TRACE_ATLAS( fmt, ... );
 #define TRACE_TILE( fmt, ... );
-#define TRACE_CONFORMANCE( fmt, ... );
 #define TRACE_PCFRAME( fmt, ... );
 #define TRACE_PICTURE( fmt, ... );
 #endif

@@ -103,8 +103,8 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
 
   printf( " Decode O size = %zu \n", videoBitstreamOM.size() );
   fflush( stdout );
-  TRACE_PICTURE( "occupancy\n" );
-  TRACE_PICTURE( "vuh_map_index = 0,  vuh_auxiliary_video_flag =  0\n" );
+  TRACE_PICTURE( "Occupancy\n" );
+  TRACE_PICTURE( "MapIdx = 0,  AuxiliaryVideoFlag =  0\n" );
   videoDecoder.decompress( context.getVideoOccupancyMap(),      //  video
                            path.str(),                          // path
                            context.size(),                      // frameCount
@@ -121,15 +121,15 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
   // converting the decoded bitdepth to the nominal bitdepth
   context.getVideoOccupancyMap().convertBitdepth( decodedBitDepthOM, oi.getOccupancy2DBitdepthMinus1() + 1,
                                                   oi.getOccupancyMSBAlignFlag() );
-  TRACE_PICTURE( "pic_width_max_in_luma_samples =  %d, pic_height_max_in_luma_samples = %d\n",
+  TRACE_PICTURE( "Width =  %d, Height = %d\n",
                  context.getVideoOccupancyMap().getWidth(), context.getVideoOccupancyMap().getHeight() );
 
-  TRACE_PICTURE( "geometry\n" );
+  TRACE_PICTURE( "Geometry\n" );
   if ( sps.getMultipleMapStreamsPresentFlag( atlasIndex ) ) {
     context.getVideoGeometryMultiple().resize( sps.getMapCountMinus1( atlasIndex ) + 1 );
     size_t totalGeoSize = 0;
     for ( uint32_t mapIndex = 0; mapIndex < sps.getMapCountMinus1( atlasIndex ) + 1; mapIndex++ ) {
-      TRACE_PICTURE( "vuh_map_index = %d,  vuh_auxiliary_video_flag =  0\n", mapIndex);
+      TRACE_PICTURE( "MapIdx = %d,  AuxiliaryVideoFlag =  0\n", mapIndex);
       std::cout << "*******Video Decoding: Geometry[" << mapIndex << "] ********" << std::endl;
       int   decodedBitDepth = gi.getGeometry2dBitdepthMinus1() + 1;  // this should be extracted from the bitstream
       auto  geometryIndex   = static_cast<PCCVideoType>( VIDEO_GEOMETRY_D0 + mapIndex );
@@ -139,7 +139,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
                                params_.keepIntermediateFiles_, isGeometry444 );
       context.getVideoGeometryMultiple()[mapIndex].convertBitdepth(
           decodedBitDepth, gi.getGeometry2dBitdepthMinus1() + 1, gi.getGeometryMSBAlignFlag() );
-      TRACE_PICTURE( "pic_width_max_in_luma_samples =  %d, pic_height_max_in_luma_samples = %d\n",
+      TRACE_PICTURE( "Width =  %d, Height = %d\n",
                      context.getVideoGeometryMultiple()[mapIndex].getWidth(),
                      context.getVideoGeometryMultiple()[mapIndex].getHeight() );
       std::cout << "geometry D" << mapIndex << " video ->" << videoBitstream.size() << " B" << std::endl;
@@ -147,7 +147,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
     }
     std::cout << "total geometry video ->" << totalGeoSize << " B" << std::endl;
   } else {
-    TRACE_PICTURE( "vuh_map_index = 0,  vuh_auxiliary_video_flag =  0\n");
+    TRACE_PICTURE( "MapIdx = 0,  AuxiliaryVideoFlag =  0\n");
     std::cout << "*******Video Decoding: Geometry ********" << std::endl;
     int   decodedBitDepthGeo = gi.getGeometry2dBitdepthMinus1() + 1;
     auto& videoBitstream     = context.getVideoBitstream( VIDEO_GEOMETRY );
@@ -166,7 +166,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
                              isGeometry444 );
     context.getVideoGeometryMultiple()[0].convertBitdepth( decodedBitDepthGeo, gi.getGeometry2dBitdepthMinus1() + 1,
                                                            gi.getGeometryMSBAlignFlag() );
-    TRACE_PICTURE( "pic_width_max_in_luma_samples =  %d, pic_height_max_in_luma_samples = %d\n",
+    TRACE_PICTURE( "Width =  %d, Height = %d\n",
                    context.getVideoGeometryMultiple()[ 0 ].getWidth(),
                    context.getVideoGeometryMultiple()[ 0 ].getHeight() );
     std::cout << "geometry video ->" << videoBitstream.size() << " B" << std::endl;
@@ -174,7 +174,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
 
   if ( asps.getRawPatchEnabledFlag() && asps.getAuxiliaryVideoEnabledFlag() &&
        sps.getAuxiliaryVideoPresentFlag( atlasIndex ) ) {
-    TRACE_PICTURE( "vuh_map_index = 0,  vuh_auxiliary_video_flag =  1\n");
+    TRACE_PICTURE( "MapIdx = 0,  AuxiliaryVideoFlag =  1\n");
     std::cout << "*******Video Decoding: Aux Geometry ********" << std::endl;
     int   decodedBitDepthMP = gi.getGeometry2dBitdepthMinus1() + 1;
     auto& videoBitstreamMP  = context.getVideoBitstream( VIDEO_GEOMETRY_RAW );
@@ -183,30 +183,31 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
                              params_.keepIntermediateFiles_, isAuxiliarygeometry444 );
     context.getVideoRawPointsGeometry().convertBitdepth( decodedBitDepthMP, gi.getGeometry2dBitdepthMinus1() + 1,
                                                          gi.getGeometryMSBAlignFlag() );
-    TRACE_PICTURE( "pic_width_max_in_luma_samples =  %d, pic_height_max_in_luma_samples = %d\n",
+    TRACE_PICTURE( "Width =  %d, Height = %d\n",
                    context.getVideoRawPointsGeometry().getWidth(), context.getVideoRawPointsGeometry().getHeight() );
     std::cout << " raw points geometry -> " << videoBitstreamMP.size() << " B " << endl;
   }
 
   if ( ai.getAttributeCount() > 0 ) {
-    TRACE_PICTURE( "attribute\n");
+    TRACE_PICTURE( "Attribute\n");
     for ( int attrIndex = 0; attrIndex < sps.getAttributeInformation( atlasIndex ).getAttributeCount();
           attrIndex++ ) {  // right now we only have one attribute, this should be generalized
-      TRACE_PICTURE( "vuh_attribute_index = %d, ", attrIndex );
+      TRACE_PICTURE( "AttrIdx = %d, ", attrIndex );
       int decodedBitdepthAttribute   = ai.getAttribute2dBitdepthMinus1( attrIndex ) + 1;
       int decodedBitdepthAttributeMP = ai.getAttribute2dBitdepthMinus1( attrIndex ) + 1;
+      int attrTypeId                 = ai.getAttributeTypeId( attrIndex );
       for ( int attrPartitionIndex = 0;
             attrPartitionIndex <
             sps.getAttributeInformation( atlasIndex ).getAttributeDimensionPartitionsMinus1( attrIndex ) + 1;
             attrPartitionIndex++ ) {  // right now we have only one partition, this should be generalized
-        TRACE_PICTURE( "vuh_attribute_partition_index = %d, ", attrPartitionIndex );
+        TRACE_PICTURE( "AttrPartIdx = %d, AttrTypeID = %d, ", attrPartitionIndex, attrTypeId );
         if ( sps.getMultipleMapStreamsPresentFlag( atlasIndex ) ) {
           int sizeTextureVideo = 0;
           context.getVideoTextureMultiple().resize( sps.getMapCountMinus1( atlasIndex ) + 1 );
           // this allocation is considering only one attribute, with a single partition, but multiple streams
           for ( uint32_t mapIndex = 0; mapIndex < sps.getMapCountMinus1( atlasIndex ) + 1; mapIndex++ ) {
             // decompress T[mapIndex]
-            TRACE_PICTURE( "vuh_map_index = %d, vuh_auxiliary_video_flag =  0\n", attrPartitionIndex );
+            TRACE_PICTURE( "MapIdx = %d, AuxiliaryVideoFlag =  0\n", mapIndex );
             std::cout << "*******Video Decoding: Attribute [" << mapIndex << "] ********" << std::endl;
             auto textureIndex =
                 static_cast<PCCVideoType>( VIDEO_TEXTURE_T0 + attrPartitionIndex + MAX_NUM_ATTR_PARTITIONS * mapIndex );
@@ -218,13 +219,13 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
                                      params_.inverseColorSpaceConversionConfig_, params_.colorSpaceConversionPath_ );
             std::cout << "texture T" << mapIndex << " video ->" << videoBitstream.size() << " B" << std::endl;
             sizeTextureVideo += videoBitstream.size();
-            TRACE_PICTURE( "pic_width_max_in_luma_samples =  %d, pic_height_max_in_luma_samples = %d\n",
+            TRACE_PICTURE( "Width =  %d, Height = %d\n",
                            context.getVideoTextureMultiple()[mapIndex].getWidth(),
                            context.getVideoTextureMultiple()[mapIndex].getHeight() );
           }
           std::cout << "texture    video ->" << sizeTextureVideo << " B" << std::endl;
         } else {
-          TRACE_PICTURE( "vuh_map_index = 0, vuh_auxiliary_video_flag =  0\n");
+          TRACE_PICTURE( "MapIdx = 0, AuxiliaryVideoFlag =  0\n");
           std::cout << "*******Video Decoding: Attribute ********" << std::endl;
           auto  textureIndex   = static_cast<PCCVideoType>( VIDEO_TEXTURE + attrPartitionIndex );
           auto& videoBitstream = context.getVideoBitstream( textureIndex );
@@ -245,7 +246,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
                                    params_.inverseColorSpaceConversionConfig_,  // inverseColorSpaceConversionConfig_
                                    params_.colorSpaceConversionPath_ );
 
-          TRACE_PICTURE( "pic_width_max_in_luma_samples =  %d, pic_height_max_in_luma_samples = %d\n",
+          TRACE_PICTURE( "Width =  %d, Height = %d\n",
                          context.getVideoTextureMultiple()[ 0 ].getWidth(),
                          context.getVideoTextureMultiple()[ 0 ].getHeight() );
           std::cout << "texture video  ->" << videoBitstream.size() << " B" << std::endl;
@@ -253,9 +254,10 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
 
         if ( asps.getRawPatchEnabledFlag() && asps.getAuxiliaryVideoEnabledFlag() &&
              sps.getAuxiliaryVideoPresentFlag( atlasIndex ) ) {
-          TRACE_PICTURE( "vuh_map_index = 0, vuh_auxiliary_video_flag =  1,");
+          TRACE_PICTURE( "MapIdx = 0, AuxiliaryVideoFlag =  1,");
           std::cout << "*******Video Decoding: Aux Attribute ********" << std::endl;
           auto  textureIndex     = static_cast<PCCVideoType>( VIDEO_TEXTURE_RAW + attrPartitionIndex );
+          TRACE_PICTURE( "AttrPartIdx = %d, AttrTypeID = %d, ", textureIndex, attrTypeId );
           auto& videoBitstreamMP = context.getVideoBitstream( textureIndex );
           videoDecoder.decompress( context.getVideoRawPointsTexture(), path.str(), pcFrameCount, videoBitstreamMP,
                                    params_.videoDecoderAttributePath_, attributeCodecId, context,
@@ -263,7 +265,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
                                    false, params_.inverseColorSpaceConversionConfig_,
                                    params_.colorSpaceConversionPath_ );
           // generateRawPointsTexturefromVideo( context, reconstructs );
-          TRACE_PICTURE( "pic_width_max_in_luma_samples =  %d, pic_height_max_in_luma_samples = %d\n",
+          TRACE_PICTURE( "Width =  %d, Height = %d\n",
                          context.getVideoRawPointsTexture().getWidth(),
                          context.getVideoRawPointsTexture().getHeight() );
           std::cout << " raw points texture -> " << videoBitstreamMP.size() << " B" << endl;
