@@ -31,7 +31,7 @@ IF( USE_FFMPEG_VIDEO_CODEC )
   SET( LIBS ${LIBS} ${AVCODEC_LIBRARY} ${AVUTIL_LIBRARY} ${AVFORMAT_LIBRARY} PccLibVideoDecoder )    
 ENDIF()
 IF( USE_VTMLIB_VIDEO_CODEC )
-    SET( LIBS ${LIBS} CommonLib EncoderLib DecoderLib Utilities )
+    SET( LIBS ${LIBS} CommonLib EncoderLib_vtm DecoderLib_vtm Utilities_vtm )
 ENDIF()
 
 ADD_LIBRARY( ${MYNAME} ${LINKER} ${SRC} )

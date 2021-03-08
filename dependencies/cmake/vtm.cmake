@@ -16,10 +16,10 @@ function(add_vtm_library module)
   file(GLOB cppSourceFiles "${VTM_LIB_SOURCE_DIR}/${module}/*.cpp")
   file(GLOB cSourceFiles "${VTM_LIB_SOURCE_DIR}/${module}/*.c")
   file(GLOB headerFiles "${VTM_LIB_SOURCE_DIR}/${module}/*.h")
-  add_library(${module} ${cppSourceFiles} ${cSourceFiles} ${headerFiles})
-  target_compile_definitions( ${module} PUBLIC )
-  set_property(TARGET ${module} PROPERTY CXX_CLANG_TIDY) # no clang-tidy
-  add_library(VPCC::${module} ALIAS ${module})
+  add_library(${module}_vtm ${cppSourceFiles} ${cSourceFiles} ${headerFiles})
+  target_compile_definitions( ${module}_vtm PUBLIC )
+  set_property(TARGET ${module}_vtm PROPERTY CXX_CLANG_TIDY) # no clang-tidy
+  add_library(VPCC::${module}_vtm ALIAS ${module}_vtm)
 endfunction()
 
 add_vtm_library(libmd5)
@@ -39,7 +39,7 @@ add_library(CommonLib ${cppSourceFiles} ${cSourceFiles} ${headerFiles} ${X86_SRC
 set_property(TARGET CommonLib PROPERTY CXX_CLANG_TIDY) # no clang-tidy
 add_library(VPCC::CommonLib ALIAS CommonLib)
 target_include_directories( CommonLib PUBLIC ${VTM_LIB_SOURCE_DIR}/CommonLib/. ${VTM_LIB_SOURCE_DIR}/CommonLib/.. ${VTM_LIB_SOURCE_DIR}/CommonLib/x86 )
-target_link_libraries(CommonLib PRIVATE libmd5)
+target_link_libraries(CommonLib PRIVATE libmd5_vtm)
 target_compile_features(CommonLib PUBLIC cxx_std_11)
 target_include_directories(CommonLib PUBLIC "$<BUILD_INTERFACE:${VTM_LIB_SOURCE_DIR}>")
 target_compile_definitions(CommonLib PUBLIC "$<$<CXX_COMPILER_ID:MSVC>:_CRT_SECURE_NO_WARNINGS>")
@@ -63,10 +63,10 @@ endif()
 
 
 add_vtm_library(Utilities)
-target_link_libraries(Utilities PUBLIC CommonLib)
+target_link_libraries(Utilities_vtm PUBLIC CommonLib)
 
 add_vtm_library(DecoderLib)
-target_link_libraries(DecoderLib PUBLIC CommonLib)
+target_link_libraries(DecoderLib_vtm PUBLIC CommonLib)
 
 add_vtm_library(EncoderLib)
-target_link_libraries(EncoderLib PUBLIC CommonLib)
+target_link_libraries(EncoderLib_vtm PUBLIC CommonLib)

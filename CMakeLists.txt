@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.17 FATAL_ERROR)
 
 PROJECT (TMC2 CXX C )
-SET( TMC2_VERSION_MAJOR 12 )
+SET( TMC2_VERSION_MAJOR 13 )
 SET( TMC2_VERSION_MINOR 0  )
 
 # Video encoder and decoder library and application:
@@ -9,8 +9,8 @@ OPTION( USE_JMAPP_VIDEO_CODEC     "Use JM application to encode and decode video
 OPTION( USE_HMAPP_VIDEO_CODEC     "Use HM application to encode and decode video"           TRUE  )  #HMAPP = 1
 OPTION( USE_JMLIB_VIDEO_CODEC     "Clone, build and use JM video encoder and decoder"       TRUE  )  #JMLIB = 2
 OPTION( USE_HMLIB_VIDEO_CODEC     "Clone, build and use HM video encoder and decoder"       TRUE  )  #HMLIB = 3
-OPTION( USE_FFMPEG_VIDEO_CODEC    "Clone, build and use FFMPEG video encoder and decoder"   FALSE )  #FFMPEG = 4
-OPTION( USE_VTMLIB_VIDEO_CODEC    "Clone, build and use VTM video encoder and decoder"      FALSE )  #VTMLIB = 5
+OPTION( USE_VTMLIB_VIDEO_CODEC    "Clone, build and use VTM video encoder and decoder"      TRUE )   #VTMLIB = 4
+OPTION( USE_FFMPEG_VIDEO_CODEC    "Clone, build and use FFMPEG video encoder and decoder"   FALSE )  #FFMPEG = 5
                                                                                                      #UNKNOWN_CODEC = 6
 
 # Color conversion library:
