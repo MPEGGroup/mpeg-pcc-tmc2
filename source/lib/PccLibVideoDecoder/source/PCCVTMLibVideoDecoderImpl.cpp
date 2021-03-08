@@ -135,7 +135,7 @@ uint32_t PCCVTMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream,
          *  - two back-to-back start_code_prefixes
          *  - start_code_prefix immediately followed by EOF
          */
-        msg( ERROR, "Warning: Attempt to decode an empty NAL unit\n");
+        msg( VTM_ERROR, "Warning: Attempt to decode an empty NAL unit\n");
       }
       else
       {
@@ -231,7 +231,7 @@ uint32_t PCCVTMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream,
       if (!loopFiltered[nalu.m_nuhLayerId] || bitstreamFile)
       {
         m_cDecLib.executeLoopFilters();
-        m_cDecLib.finishPicture(poc, pcListPic, INFO, m_newCLVS[nalu.m_nuhLayerId]);
+        m_cDecLib.finishPicture(poc, pcListPic, VTM_INFO, m_newCLVS[nalu.m_nuhLayerId]);
       }
       loopFiltered[nalu.m_nuhLayerId] = (nalu.m_nalUnitType == NAL_UNIT_EOS);
       if (nalu.m_nalUnitType == NAL_UNIT_EOS)
@@ -932,7 +932,7 @@ bool PCCVTMLibVideoDecoderImpl<T>::isNewPicture(std::istream *bitstreamFile, cla
     byteStreamNALUnit(*bytestream, nalu.getBitstream().getFifo(), stats);
     if (nalu.getBitstream().getFifo().empty())
     {
-      msg( ERROR, "Warning: Attempt to decode an empty NAL unit\n");
+      msg( VTM_ERROR, "Warning: Attempt to decode an empty NAL unit\n");
     }
     else
     {
@@ -1038,7 +1038,7 @@ bool PCCVTMLibVideoDecoderImpl<T>::isNewAccessUnit( bool newPicture, std::istrea
     byteStreamNALUnit(*bytestream, nalu.getBitstream().getFifo(), stats);
     if (nalu.getBitstream().getFifo().empty())
     {
-      msg( ERROR, "Warning: Attempt to decode an empty NAL unit\n");
+      msg( VTM_ERROR, "Warning: Attempt to decode an empty NAL unit\n");
     }
     else
     {

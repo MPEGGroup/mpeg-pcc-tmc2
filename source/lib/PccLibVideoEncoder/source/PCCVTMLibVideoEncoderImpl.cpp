@@ -1390,10 +1390,10 @@ template <typename T>
 void PCCVTMLibVideoEncoderImpl<T>::printRateSummary()
 {
   double time = (double) m_iFrameRcvd / m_iFrameRate * m_temporalSubsampleRatio;
-  msg( DETAILS,"Bytes written to file: %u (%.3f kbps)\n", m_totalBytes, 0.008 * m_totalBytes / time );
+  msg( VTM_DETAILS,"Bytes written to file: %u (%.3f kbps)\n", m_totalBytes, 0.008 * m_totalBytes / time );
   if (m_summaryVerboseness > 0)
   {
-    msg(DETAILS, "Bytes for SPS/PPS/APS/Slice (Incl. Annex B): %u (%.3f kbps)\n", m_essentialBytes, 0.008 * m_essentialBytes / time);
+    msg(VTM_DETAILS, "Bytes for SPS/PPS/APS/Slice (Incl. Annex B): %u (%.3f kbps)\n", m_essentialBytes, 0.008 * m_essentialBytes / time);
   }
 }
 
@@ -1407,7 +1407,7 @@ void PCCVTMLibVideoEncoderImpl<T>::xDestroyLib()
 template <typename T>
 void PCCVTMLibVideoEncoderImpl<T>::printChromaFormat()
 {
-  if( g_verbosity >= DETAILS )
+  if( g_verbosity >= VTM_DETAILS )
   {
     std::cout << std::setw(43) << "Input ChromaFormatIDC = ";
     switch (m_InputChromaFormatIDC)

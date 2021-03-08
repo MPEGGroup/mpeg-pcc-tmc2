@@ -757,7 +757,7 @@ bool PCCVTMLibVideoEncoderCfg::parseCfg( int argc, char* argv[] )
   ("SummaryOutFilename",                              m_summaryOutFilename,                          string(), "Filename to use for producing summary output file. If empty, do not produce a file.")
   ("SummaryPicFilenameBase",                          m_summaryPicFilenameBase,                      string(), "Base filename to use for producing summary picture output files. The actual filenames used will have I.txt, P.txt and B.txt appended. If empty, do not produce a file.")
   ("SummaryVerboseness",                              m_summaryVerboseness,                                0u, "Specifies the level of the verboseness of the text output")
-  ("Verbosity,v",                                     m_verbosity,                               (int)VERBOSE, "Specifies the level of the verboseness")
+  ("Verbosity,v",                                     m_verbosity,                               (int)VTM_VERBOSE, "Specifies the level of the verboseness")
 
 #if JVET_O0756_CONFIG_HDRMETRICS || JVET_O0756_CALCULATE_HDRMETRICS
   ( "WhitePointDeltaE1",                              m_whitePointDeltaE[0],                            100.0, "1st reference white point value")
@@ -1560,7 +1560,7 @@ bool PCCVTMLibVideoEncoderCfg::parseCfg( int argc, char* argv[] )
 
   for (list<const char*>::const_iterator it = argv_unhandled.begin(); it != argv_unhandled.end(); it++)
   {
-    msg( ERROR, "Unhandled argument ignored: `%s'\n", *it);
+    msg( VTM_ERROR, "Unhandled argument ignored: `%s'\n", *it);
   }
 
   if (argc == 1 || do_help)
@@ -1733,17 +1733,17 @@ bool PCCVTMLibVideoEncoderCfg::parseCfg( int argc, char* argv[] )
   if (m_costMode != COST_LOSSLESS_CODING && m_mixedLossyLossless)
   {
     m_mixedLossyLossless = 0;
-    msg(WARNING, "*************************************************************************\n");
-    msg(WARNING, "* Mixed lossy lossles coding cannot enable in lossy costMode *\n");
-    msg(WARNING, "* Forcely disabled  m_mixedLossyLossless *\n");
-    msg(WARNING, "*************************************************************************\n");
+    msg(VTM_WARNING, "*************************************************************************\n");
+    msg(VTM_WARNING, "* Mixed lossy lossles coding cannot enable in lossy costMode *\n");
+    msg(VTM_WARNING, "* Forcely disabled  m_mixedLossyLossless *\n");
+    msg(VTM_WARNING, "*************************************************************************\n");
   }
   if (!m_mixedLossyLossless && cfgSliceLosslessArray.values.size() > 0)
   {
-    msg(WARNING, "*************************************************************************\n");
-    msg(WARNING, "* Mixed lossy lossles coding is not enabled *\n");
-    msg(WARNING, "* ignoring the value of SliceLosslessArray *\n");
-    msg(WARNING, "*************************************************************************\n");
+    msg(VTM_WARNING, "*************************************************************************\n");
+    msg(VTM_WARNING, "* Mixed lossy lossles coding is not enabled *\n");
+    msg(VTM_WARNING, "* ignoring the value of SliceLosslessArray *\n");
+    msg(VTM_WARNING, "*************************************************************************\n");
   }
 
   if (m_costMode == COST_LOSSLESS_CODING && m_mixedLossyLossless)
@@ -1958,11 +1958,11 @@ bool PCCVTMLibVideoEncoderCfg::parseCfg( int argc, char* argv[] )
       // conformance
       if ((m_confWinLeft == 0) && (m_confWinRight == 0) && (m_confWinTop == 0) && (m_confWinBottom == 0))
       {
-        msg( ERROR, "Warning: Conformance window enabled, but all conformance window parameters set to zero\n");
+        msg( VTM_ERROR, "Warning: Conformance window enabled, but all conformance window parameters set to zero\n");
       }
       if ((m_aiPad[1] != 0) || (m_aiPad[0]!=0))
       {
-        msg( ERROR, "Warning: Conformance window enabled, padding parameters will be ignored\n");
+        msg( VTM_ERROR, "Warning: Conformance window enabled, padding parameters will be ignored\n");
       }
       m_aiPad[1] = m_aiPad[0] = 0;
       break;
@@ -2153,12 +2153,12 @@ bool PCCVTMLibVideoEncoderCfg::parseCfg( int argc, char* argv[] )
   {
     if (!m_horCollocatedChromaFlag)
     {
-      msg(WARNING, "\nWARNING: HorCollocatedChroma is forced to 1 for chroma formats other than 4:2:0\n");
+      msg(VTM_WARNING, "\nWARNING: HorCollocatedChroma is forced to 1 for chroma formats other than 4:2:0\n");
       m_horCollocatedChromaFlag = true;
     }
     if (!m_verCollocatedChromaFlag)
     {
-      msg(WARNING, "\nWARNING: VerCollocatedChroma is forced to 1 for chroma formats other than 4:2:0\n");
+      msg(VTM_WARNING, "\nWARNING: VerCollocatedChroma is forced to 1 for chroma formats other than 4:2:0\n");
       m_verCollocatedChromaFlag = true;
     }
   }
@@ -2381,9 +2381,9 @@ bool PCCVTMLibVideoEncoderCfg::parseCfg( int argc, char* argv[] )
 #if ENABLE_QPA
   if (m_bUsePerceptQPA && !m_bUseAdaptiveQP && m_dualTree && (m_cbQpOffsetDualTree != 0 || m_crQpOffsetDualTree != 0 || m_cbCrQpOffsetDualTree != 0))
   {
-    msg( WARNING, "*************************************************************************\n" );
-    msg( WARNING, "* WARNING: chroma QPA on, ignoring nonzero dual-tree chroma QP offsets! *\n" );
-    msg( WARNING, "*************************************************************************\n" );
+    msg( VTM_WARNING, "*************************************************************************\n" );
+    msg( VTM_WARNING, "* VTM_WARNING: chroma QPA on, ignoring nonzero dual-tree chroma QP offsets! *\n" );
+    msg( VTM_WARNING, "*************************************************************************\n" );
   }
 
 #if ENABLE_QPA_SUB_CTU
@@ -2406,9 +2406,9 @@ bool PCCVTMLibVideoEncoderCfg::parseCfg( int argc, char* argv[] )
   if( ( ( int ) m_fQP < 38 ) && ( m_iGOPSize > 4 ) && m_bUsePerceptQPA && !m_bUseAdaptiveQP && ( m_iSourceHeight <= 1280 ) && ( m_iSourceWidth <= 2048 ) )
  #endif
   {
-    msg( WARNING, "*************************************************************************\n" );
-    msg( WARNING, "* WARNING: QPA on with large CTU for <=HD sequences, limiting CTU size! *\n" );
-    msg( WARNING, "*************************************************************************\n" );
+    msg( VTM_WARNING, "*************************************************************************\n" );
+    msg( VTM_WARNING, "* VTM_WARNING: QPA on with large CTU for <=HD sequences, limiting CTU size! *\n" );
+    msg( VTM_WARNING, "*************************************************************************\n" );
 
     m_uiCTUSize = m_uiMaxCUWidth;
     if( ( 1u << m_log2MaxTbSize         ) > m_uiCTUSize ) m_log2MaxTbSize--;
@@ -2513,26 +2513,26 @@ int PCCVTMLibVideoEncoderCfg::xAutoDetermineProfile()
 
 bool PCCVTMLibVideoEncoderCfg::xCheckParameter()
 {
-  msg( NOTICE, "\n" );
+  msg( VTM_NOTICE, "\n" );
   if (m_decodedPictureHashSEIType==HASHTYPE_NONE)
   {
-    msg( DETAILS, "******************************************************************\n");
-    msg( DETAILS, "** WARNING: --SEIDecodedPictureHash is now disabled by default. **\n");
-    msg( DETAILS, "**          Automatic verification of decoded pictures by a     **\n");
-    msg( DETAILS, "**          decoder requires this option to be enabled.         **\n");
-    msg( DETAILS, "******************************************************************\n");
+    msg( VTM_DETAILS, "******************************************************************\n");
+    msg( VTM_DETAILS, "** VTM_WARNING: --SEIDecodedPictureHash is now disabled by default. **\n");
+    msg( VTM_DETAILS, "**          Automatic verification of decoded pictures by a     **\n");
+    msg( VTM_DETAILS, "**          decoder requires this option to be enabled.         **\n");
+    msg( VTM_DETAILS, "******************************************************************\n");
   }
   if( m_profile==Profile::NONE )
   {
-    msg( DETAILS, "***************************************************************************\n");
-    msg( DETAILS, "** WARNING: For conforming bitstreams a valid Profile value must be set! **\n");
-    msg( DETAILS, "***************************************************************************\n");
+    msg( VTM_DETAILS, "***************************************************************************\n");
+    msg( VTM_DETAILS, "** VTM_WARNING: For conforming bitstreams a valid Profile value must be set! **\n");
+    msg( VTM_DETAILS, "***************************************************************************\n");
   }
   if( m_level==Level::NONE )
   {
-    msg( DETAILS, "***************************************************************************\n");
-    msg( DETAILS, "** WARNING: For conforming bitstreams a valid Level value must be set!   **\n");
-    msg( DETAILS, "***************************************************************************\n");
+    msg( VTM_DETAILS, "***************************************************************************\n");
+    msg( VTM_DETAILS, "** VTM_WARNING: For conforming bitstreams a valid Level value must be set!   **\n");
+    msg( VTM_DETAILS, "***************************************************************************\n");
   }
 
   bool check_failed = false; /* abort if there is a fatal configuration problem */
@@ -2568,9 +2568,9 @@ bool PCCVTMLibVideoEncoderCfg::xCheckParameter()
   xConfirmPara( m_bUsePerceptQPA && m_lumaLevelToDeltaQPMapping.mode >= 2, "QPA and SharpDeltaQP mode 2 cannot be used together" );
   if( m_bUsePerceptQPA && m_lumaLevelToDeltaQPMapping.mode == LUMALVL_TO_DQP_AVG_METHOD )
   {
-    msg( WARNING, "*********************************************************************************\n" );
-    msg( WARNING, "** WARNING: Applying custom luma-based QPA with activity-based perceptual QPA! **\n" );
-    msg( WARNING, "*********************************************************************************\n" );
+    msg( VTM_WARNING, "*********************************************************************************\n" );
+    msg( VTM_WARNING, "** VTM_WARNING: Applying custom luma-based QPA with activity-based perceptual QPA! **\n" );
+    msg( VTM_WARNING, "*********************************************************************************\n" );
 
     m_lumaLevelToDeltaQPMapping.mode = LUMALVL_TO_DQP_NUM_MODES; // special QPA mode
   }
@@ -2601,10 +2601,10 @@ bool PCCVTMLibVideoEncoderCfg::xCheckParameter()
 
   if( (m_internalBitDepth[CHANNEL_TYPE_LUMA] < m_inputBitDepth[CHANNEL_TYPE_LUMA]) || (m_internalBitDepth[CHANNEL_TYPE_CHROMA] < m_inputBitDepth[CHANNEL_TYPE_CHROMA]) )
   {
-      msg(WARNING, "*****************************************************************************\n");
-      msg(WARNING, "** WARNING: InternalBitDepth is set to the lower value than InputBitDepth! **\n");
-      msg(WARNING, "**          min_qp_prime_ts_minus4 will be clipped to 0 at the low end!    **\n");
-      msg(WARNING, "*****************************************************************************\n");
+      msg(VTM_WARNING, "*****************************************************************************\n");
+      msg(VTM_WARNING, "** VTM_WARNING: InternalBitDepth is set to the lower value than InputBitDepth! **\n");
+      msg(VTM_WARNING, "**          min_qp_prime_ts_minus4 will be clipped to 0 at the low end!    **\n");
+      msg(VTM_WARNING, "*****************************************************************************\n");
   }
 
 #if !RExt__HIGH_BIT_DEPTH_SUPPORT
@@ -2646,16 +2646,16 @@ bool PCCVTMLibVideoEncoderCfg::xCheckParameter()
   {
     if (!m_frameFieldInfoSEIEnabled)
     {
-      msg( WARNING, "*************************************************************************************\n");
-      msg( WARNING, "** WARNING: Frame field information SEI should be enabled for field coding!        **\n");
-      msg( WARNING, "*************************************************************************************\n");
+      msg( VTM_WARNING, "*************************************************************************************\n");
+      msg( VTM_WARNING, "** VTM_WARNING: Frame field information SEI should be enabled for field coding!        **\n");
+      msg( VTM_WARNING, "*************************************************************************************\n");
     }
   }
   if ( m_pictureTimingSEIEnabled && (!m_bufferingPeriodSEIEnabled))
   {
-    msg( WARNING, "****************************************************************************\n");
-    msg( WARNING, "** WARNING: Picture Timing SEI requires Buffering Period SEI. Disabling.  **\n");
-    msg( WARNING, "****************************************************************************\n");
+    msg( VTM_WARNING, "****************************************************************************\n");
+    msg( VTM_WARNING, "** VTM_WARNING: Picture Timing SEI requires Buffering Period SEI. Disabling.  **\n");
+    msg( VTM_WARNING, "****************************************************************************\n");
     m_pictureTimingSEIEnabled = false;
   }
 
@@ -2696,7 +2696,7 @@ bool PCCVTMLibVideoEncoderCfg::xCheckParameter()
 #endif
   if (m_lumaLevelToDeltaQPMapping.mode && m_lmcsEnabled)
   {
-    msg(WARNING, "For HDR-PQ, LMCS should be used mutual-exclusively with Luma-level-based Delta QP. If use LMCS, turn lumaDQP off.\n");
+    msg(VTM_WARNING, "For HDR-PQ, LMCS should be used mutual-exclusively with Luma-level-based Delta QP. If use LMCS, turn lumaDQP off.\n");
     m_lumaLevelToDeltaQPMapping.mode = LUMALVL_TO_DQP_DISABLED;
   }
   if (!m_lmcsEnabled)
@@ -2739,9 +2739,9 @@ bool PCCVTMLibVideoEncoderCfg::xCheckParameter()
   xConfirmPara( m_crQpOffsetDualTree >  12,   "Max. Chroma Cr QP Offset for dual tree is  12" );
   if (m_dualTree && (m_chromaFormatIDC == CHROMA_400))
   {
-    msg( WARNING, "****************************************************************************\n");
-    msg( WARNING, "** WARNING: --DualITree has been disabled because the chromaFormat is 400 **\n");
-    msg( WARNING, "****************************************************************************\n");
+    msg( VTM_WARNING, "****************************************************************************\n");
+    msg( VTM_WARNING, "** VTM_WARNING: --DualITree has been disabled because the chromaFormat is 400 **\n");
+    msg( VTM_WARNING, "****************************************************************************\n");
     m_dualTree = false;
   }
   if (m_alf)
@@ -2756,16 +2756,16 @@ bool PCCVTMLibVideoEncoderCfg::xCheckParameter()
   }
   if (m_ccalf && (m_chromaFormatIDC == CHROMA_400))
   {
-    msg( WARNING, "****************************************************************************\n");
-    msg( WARNING, "** WARNING: --CCALF has been disabled because the chromaFormat is 400     **\n");
-    msg( WARNING, "****************************************************************************\n");
+    msg( VTM_WARNING, "****************************************************************************\n");
+    msg( VTM_WARNING, "** VTM_WARNING: --CCALF has been disabled because the chromaFormat is 400     **\n");
+    msg( VTM_WARNING, "****************************************************************************\n");
     m_ccalf = false;
   }
   if (m_JointCbCrMode && (m_chromaFormatIDC == CHROMA_400))
   {
-    msg( WARNING, "****************************************************************************\n");
-    msg( WARNING, "** WARNING: --JointCbCr has been disabled because the chromaFormat is 400 **\n");
-    msg( WARNING, "****************************************************************************\n");
+    msg( VTM_WARNING, "****************************************************************************\n");
+    msg( VTM_WARNING, "** VTM_WARNING: --JointCbCr has been disabled because the chromaFormat is 400 **\n");
+    msg( VTM_WARNING, "****************************************************************************\n");
     m_JointCbCrMode = false;
   }
   if (m_JointCbCrMode)
@@ -2847,7 +2847,7 @@ bool PCCVTMLibVideoEncoderCfg::xCheckParameter()
   if ( m_Affine == 0 )
   {
     m_maxNumAffineMergeCand = m_sbTmvpEnableFlag ? 1 : 0;
-    if (m_PROF) msg(WARNING, "PROF is forcefully disabled when Affine is off \n");
+    if (m_PROF) msg(VTM_WARNING, "PROF is forcefully disabled when Affine is off \n");
     m_PROF = false;
   }
 
@@ -2990,7 +2990,7 @@ bool PCCVTMLibVideoEncoderCfg::xCheckParameter()
     int curPOC = ((checkGOP - 1) / m_iGOPSize)*m_iGOPSize * multipleFactor + m_RPLList0[curGOP].m_POC;
     if (m_RPLList0[curGOP].m_POC < 0 || m_RPLList1[curGOP].m_POC < 0)
     {
-      msg(WARNING, "\nError: found fewer Reference Picture Sets than GOPSize\n");
+      msg(VTM_WARNING, "\nError: found fewer Reference Picture Sets than GOPSize\n");
       errorGOP = true;
     }
     else
@@ -3026,7 +3026,7 @@ bool PCCVTMLibVideoEncoderCfg::xCheckParameter()
           }
           if (!found)
           {
-            msg(WARNING, "\nError: ref pic %d is not available for GOP frame %d\n", m_RPLList0[curGOP].m_deltaRefPics[i], curGOP + 1);
+            msg(VTM_WARNING, "\nError: ref pic %d is not available for GOP frame %d\n", m_RPLList0[curGOP].m_deltaRefPics[i], curGOP + 1);
             errorGOP = true;
           }
         }
@@ -3594,7 +3594,7 @@ bool PCCVTMLibVideoEncoderCfg::xCheckParameter()
     {
       if ( m_RCInitialQP == 0 )
       {
-        msg( WARNING, "\nInitial QP for rate control is not specified. Reset not to use force intra QP!" );
+        msg( VTM_WARNING, "\nInitial QP for rate control is not specified. Reset not to use force intra QP!" );
         m_RCForceIntraQP = false;
       }
     }
@@ -3783,300 +3783,300 @@ const char *profileToString(const Profile::Name profile)
 
 void PCCVTMLibVideoEncoderCfg::xPrintParameter()
 {
-  //msg( DETAILS, "\n" );
-  msg( DETAILS, "Input          File                    : %s\n", m_inputFileName.c_str() );
-  msg( DETAILS, "Bitstream      File                    : %s\n", m_bitstreamFileName.c_str() );
-  msg( DETAILS, "Reconstruction File                    : %s\n", m_reconFileName.c_str() );
-  msg( DETAILS, "Real     Format                        : %dx%d %gHz\n", m_iSourceWidth - m_confWinLeft - m_confWinRight, m_iSourceHeight - m_confWinTop - m_confWinBottom, (double)m_iFrameRate / m_temporalSubsampleRatio );
-  msg( DETAILS, "Internal Format                        : %dx%d %gHz\n", m_iSourceWidth, m_iSourceHeight, (double)m_iFrameRate / m_temporalSubsampleRatio );
-  msg( DETAILS, "Sequence PSNR output                   : %s\n", ( m_printMSEBasedSequencePSNR ? "Linear average, MSE-based" : "Linear average only" ) );
-  msg( DETAILS, "Hexadecimal PSNR output                : %s\n", ( m_printHexPsnr ? "Enabled" : "Disabled" ) );
-  msg( DETAILS, "Sequence MSE output                    : %s\n", ( m_printSequenceMSE ? "Enabled" : "Disabled" ) );
-  msg( DETAILS, "Frame MSE output                       : %s\n", ( m_printFrameMSE ? "Enabled" : "Disabled" ) );
-  msg( DETAILS, "MS-SSIM output                         : %s\n", ( m_printMSSSIM ? "Enabled" : "Disabled") );
-  msg( DETAILS, "Cabac-zero-word-padding                : %s\n", ( m_cabacZeroWordPaddingEnabled ? "Enabled" : "Disabled" ) );
+  //msg( VTM_DETAILS, "\n" );
+  msg( VTM_DETAILS, "Input          File                    : %s\n", m_inputFileName.c_str() );
+  msg( VTM_DETAILS, "Bitstream      File                    : %s\n", m_bitstreamFileName.c_str() );
+  msg( VTM_DETAILS, "Reconstruction File                    : %s\n", m_reconFileName.c_str() );
+  msg( VTM_DETAILS, "Real     Format                        : %dx%d %gHz\n", m_iSourceWidth - m_confWinLeft - m_confWinRight, m_iSourceHeight - m_confWinTop - m_confWinBottom, (double)m_iFrameRate / m_temporalSubsampleRatio );
+  msg( VTM_DETAILS, "Internal Format                        : %dx%d %gHz\n", m_iSourceWidth, m_iSourceHeight, (double)m_iFrameRate / m_temporalSubsampleRatio );
+  msg( VTM_DETAILS, "Sequence PSNR output                   : %s\n", ( m_printMSEBasedSequencePSNR ? "Linear average, MSE-based" : "Linear average only" ) );
+  msg( VTM_DETAILS, "Hexadecimal PSNR output                : %s\n", ( m_printHexPsnr ? "Enabled" : "Disabled" ) );
+  msg( VTM_DETAILS, "Sequence MSE output                    : %s\n", ( m_printSequenceMSE ? "Enabled" : "Disabled" ) );
+  msg( VTM_DETAILS, "Frame MSE output                       : %s\n", ( m_printFrameMSE ? "Enabled" : "Disabled" ) );
+  msg( VTM_DETAILS, "MS-SSIM output                         : %s\n", ( m_printMSSSIM ? "Enabled" : "Disabled") );
+  msg( VTM_DETAILS, "Cabac-zero-word-padding                : %s\n", ( m_cabacZeroWordPaddingEnabled ? "Enabled" : "Disabled" ) );
   if (m_isField)
   {
-    msg( DETAILS, "Frame/Field                            : Field based coding\n" );
-    msg( DETAILS, "Field index                            : %u - %d (%d fields)\n", m_FrameSkip, m_FrameSkip + m_framesToBeEncoded - 1, m_framesToBeEncoded );
-    msg( DETAILS, "Field Order                            : %s field first\n", m_isTopFieldFirst ? "Top" : "Bottom" );
+    msg( VTM_DETAILS, "Frame/Field                            : Field based coding\n" );
+    msg( VTM_DETAILS, "Field index                            : %u - %d (%d fields)\n", m_FrameSkip, m_FrameSkip + m_framesToBeEncoded - 1, m_framesToBeEncoded );
+    msg( VTM_DETAILS, "Field Order                            : %s field first\n", m_isTopFieldFirst ? "Top" : "Bottom" );
 
   }
   else
   {
-    msg( DETAILS, "Frame/Field                            : Frame based coding\n" );
-    msg( DETAILS, "Frame index                            : %u - %d (%d frames)\n", m_FrameSkip, m_FrameSkip + m_framesToBeEncoded - 1, m_framesToBeEncoded );
+    msg( VTM_DETAILS, "Frame/Field                            : Frame based coding\n" );
+    msg( VTM_DETAILS, "Frame index                            : %u - %d (%d frames)\n", m_FrameSkip, m_FrameSkip + m_framesToBeEncoded - 1, m_framesToBeEncoded );
   }
   {
-    msg( DETAILS, "Profile                                : %s\n", profileToString(m_profile) );
+    msg( VTM_DETAILS, "Profile                                : %s\n", profileToString(m_profile) );
   }
-  msg(DETAILS, "CTU size / min CU size                 : %d / %d \n", m_uiMaxCUWidth, 1 << m_log2MinCuSize);
+  msg(VTM_DETAILS, "CTU size / min CU size                 : %d / %d \n", m_uiMaxCUWidth, 1 << m_log2MinCuSize);
 
-  msg(DETAILS, "subpicture info present flag           : %s\n", m_subPicInfoPresentFlag ? "Enabled" : "Disabled");
+  msg(VTM_DETAILS, "subpicture info present flag           : %s\n", m_subPicInfoPresentFlag ? "Enabled" : "Disabled");
   if (m_subPicInfoPresentFlag)
   {
-    msg(DETAILS, "number of subpictures                  : %d\n", m_numSubPics);
-    msg(DETAILS, "subpicture size same flag              : %d\n", m_subPicSameSizeFlag);
+    msg(VTM_DETAILS, "number of subpictures                  : %d\n", m_numSubPics);
+    msg(VTM_DETAILS, "subpicture size same flag              : %d\n", m_subPicSameSizeFlag);
     if (m_subPicSameSizeFlag)
     {
-      msg(DETAILS, "[0]th subpicture size                  : [%d %d]\n", m_subPicWidth[0], m_subPicHeight[0]);
+      msg(VTM_DETAILS, "[0]th subpicture size                  : [%d %d]\n", m_subPicWidth[0], m_subPicHeight[0]);
     }
     for (int i = 0; i < m_numSubPics; i++)
     {
       if (!m_subPicSameSizeFlag)
       {
-        msg(DETAILS, "[%d]th subpicture location              : [%d %d]\n", i, m_subPicCtuTopLeftX[i],
+        msg(VTM_DETAILS, "[%d]th subpicture location              : [%d %d]\n", i, m_subPicCtuTopLeftX[i],
             m_subPicCtuTopLeftY[i]);
-        msg(DETAILS, "[%d]th subpicture size                  : [%d %d]\n", i, m_subPicWidth[i], m_subPicHeight[i]);
+        msg(VTM_DETAILS, "[%d]th subpicture size                  : [%d %d]\n", i, m_subPicWidth[i], m_subPicHeight[i]);
       }
-      msg(DETAILS, "[%d]th subpicture treated as picture    : %d\n", i,
+      msg(VTM_DETAILS, "[%d]th subpicture treated as picture    : %d\n", i,
           m_subPicTreatedAsPicFlag[i] ? "Enabled" : "Disabled");
-      msg(DETAILS, "loop filter across [%d]th subpicture    : %d\n", i,
+      msg(VTM_DETAILS, "loop filter across [%d]th subpicture    : %d\n", i,
           m_loopFilterAcrossSubpicEnabledFlag[i] ? "Enabled" : "Disabled");
     }
   }
 
-  msg(DETAILS, "subpicture ID present flag             : %s\n",
+  msg(VTM_DETAILS, "subpicture ID present flag             : %s\n",
       m_subPicIdMappingExplicitlySignalledFlag ? "Enabled" : "Disabled");
   if (m_subPicIdMappingExplicitlySignalledFlag)
   {
-    msg(DETAILS, "subpicture ID signalling present flag  : %d\n", m_subPicIdMappingInSpsFlag);
+    msg(VTM_DETAILS, "subpicture ID signalling present flag  : %d\n", m_subPicIdMappingInSpsFlag);
     for (int i = 0; i < m_numSubPics; i++)
     {
-      msg(DETAILS, "[%d]th subpictures ID length           : %d\n", i, m_subPicIdLen);
-      msg(DETAILS, "[%d]th subpictures ID                  : %d\n", i, m_subPicId[i]);
+      msg(VTM_DETAILS, "[%d]th subpictures ID length           : %d\n", i, m_subPicIdLen);
+      msg(VTM_DETAILS, "[%d]th subpictures ID                  : %d\n", i, m_subPicId[i]);
     }
   }
-  msg( DETAILS, "Max TB size                            : %d \n", 1 << m_log2MaxTbSize );
-  msg( DETAILS, "Motion search range                    : %d\n", m_iSearchRange );
-  msg( DETAILS, "Intra period                           : %d\n", m_iIntraPeriod );
-  msg( DETAILS, "Decoding refresh type                  : %d\n", m_iDecodingRefreshType );
-  msg( DETAILS, "DRAP period                            : %d\n", m_drapPeriod );
+  msg( VTM_DETAILS, "Max TB size                            : %d \n", 1 << m_log2MaxTbSize );
+  msg( VTM_DETAILS, "Motion search range                    : %d\n", m_iSearchRange );
+  msg( VTM_DETAILS, "Intra period                           : %d\n", m_iIntraPeriod );
+  msg( VTM_DETAILS, "Decoding refresh type                  : %d\n", m_iDecodingRefreshType );
+  msg( VTM_DETAILS, "DRAP period                            : %d\n", m_drapPeriod );
 #if QP_SWITCHING_FOR_PARALLEL
   if (m_qpIncrementAtSourceFrame.bPresent)
   {
-    msg( DETAILS, "QP                                     : %d (incrementing internal QP at source frame %d)\n", m_iQP, m_qpIncrementAtSourceFrame.value);
+    msg( VTM_DETAILS, "QP                                     : %d (incrementing internal QP at source frame %d)\n", m_iQP, m_qpIncrementAtSourceFrame.value);
   }
   else
   {
-    msg( DETAILS, "QP                                     : %d\n", m_iQP);
+    msg( VTM_DETAILS, "QP                                     : %d\n", m_iQP);
   }
 #else
-  msg( DETAILS, "QP                                     : %5.2f\n", m_fQP );
+  msg( VTM_DETAILS, "QP                                     : %5.2f\n", m_fQP );
 #endif
-  msg( DETAILS, "Max dQP signaling subdiv               : %d\n", m_cuQpDeltaSubdiv);
+  msg( VTM_DETAILS, "Max dQP signaling subdiv               : %d\n", m_cuQpDeltaSubdiv);
 
-  msg( DETAILS, "Cb QP Offset (dual tree)               : %d (%d)\n", m_cbQpOffset, m_cbQpOffsetDualTree);
-  msg( DETAILS, "Cr QP Offset (dual tree)               : %d (%d)\n", m_crQpOffset, m_crQpOffsetDualTree);
-  msg( DETAILS, "QP adaptation                          : %d (range=%d)\n", m_bUseAdaptiveQP, (m_bUseAdaptiveQP ? m_iQPAdaptationRange : 0) );
-  msg( DETAILS, "GOP size                               : %d\n", m_iGOPSize );
-  msg( DETAILS, "Input bit depth                        : (Y:%d, C:%d)\n", m_inputBitDepth[CHANNEL_TYPE_LUMA], m_inputBitDepth[CHANNEL_TYPE_CHROMA] );
-  msg( DETAILS, "MSB-extended bit depth                 : (Y:%d, C:%d)\n", m_MSBExtendedBitDepth[CHANNEL_TYPE_LUMA], m_MSBExtendedBitDepth[CHANNEL_TYPE_CHROMA] );
-  msg( DETAILS, "Internal bit depth                     : (Y:%d, C:%d)\n", m_internalBitDepth[CHANNEL_TYPE_LUMA], m_internalBitDepth[CHANNEL_TYPE_CHROMA] );
-  msg( DETAILS, "Intra reference smoothing              : %s\n", (m_enableIntraReferenceSmoothing           ? "Enabled" : "Disabled") );
-  msg( DETAILS, "cu_chroma_qp_offset_subdiv             : %d\n", m_cuChromaQpOffsetSubdiv);
-  msg( DETAILS, "extended_precision_processing_flag     : %s\n", (m_extendedPrecisionProcessingFlag         ? "Enabled" : "Disabled") );
-  msg( DETAILS, "transform_skip_rotation_enabled_flag   : %s\n", (m_transformSkipRotationEnabledFlag        ? "Enabled" : "Disabled") );
-  msg( DETAILS, "transform_skip_context_enabled_flag    : %s\n", (m_transformSkipContextEnabledFlag         ? "Enabled" : "Disabled") );
-  msg( DETAILS, "high_precision_offsets_enabled_flag    : %s\n", (m_highPrecisionOffsetsEnabledFlag         ? "Enabled" : "Disabled") );
-  msg( DETAILS, "persistent_rice_adaptation_enabled_flag: %s\n", (m_persistentRiceAdaptationEnabledFlag     ? "Enabled" : "Disabled") );
-  msg( DETAILS, "cabac_bypass_alignment_enabled_flag    : %s\n", (m_cabacBypassAlignmentEnabledFlag         ? "Enabled" : "Disabled") );
+  msg( VTM_DETAILS, "Cb QP Offset (dual tree)               : %d (%d)\n", m_cbQpOffset, m_cbQpOffsetDualTree);
+  msg( VTM_DETAILS, "Cr QP Offset (dual tree)               : %d (%d)\n", m_crQpOffset, m_crQpOffsetDualTree);
+  msg( VTM_DETAILS, "QP adaptation                          : %d (range=%d)\n", m_bUseAdaptiveQP, (m_bUseAdaptiveQP ? m_iQPAdaptationRange : 0) );
+  msg( VTM_DETAILS, "GOP size                               : %d\n", m_iGOPSize );
+  msg( VTM_DETAILS, "Input bit depth                        : (Y:%d, C:%d)\n", m_inputBitDepth[CHANNEL_TYPE_LUMA], m_inputBitDepth[CHANNEL_TYPE_CHROMA] );
+  msg( VTM_DETAILS, "MSB-extended bit depth                 : (Y:%d, C:%d)\n", m_MSBExtendedBitDepth[CHANNEL_TYPE_LUMA], m_MSBExtendedBitDepth[CHANNEL_TYPE_CHROMA] );
+  msg( VTM_DETAILS, "Internal bit depth                     : (Y:%d, C:%d)\n", m_internalBitDepth[CHANNEL_TYPE_LUMA], m_internalBitDepth[CHANNEL_TYPE_CHROMA] );
+  msg( VTM_DETAILS, "Intra reference smoothing              : %s\n", (m_enableIntraReferenceSmoothing           ? "Enabled" : "Disabled") );
+  msg( VTM_DETAILS, "cu_chroma_qp_offset_subdiv             : %d\n", m_cuChromaQpOffsetSubdiv);
+  msg( VTM_DETAILS, "extended_precision_processing_flag     : %s\n", (m_extendedPrecisionProcessingFlag         ? "Enabled" : "Disabled") );
+  msg( VTM_DETAILS, "transform_skip_rotation_enabled_flag   : %s\n", (m_transformSkipRotationEnabledFlag        ? "Enabled" : "Disabled") );
+  msg( VTM_DETAILS, "transform_skip_context_enabled_flag    : %s\n", (m_transformSkipContextEnabledFlag         ? "Enabled" : "Disabled") );
+  msg( VTM_DETAILS, "high_precision_offsets_enabled_flag    : %s\n", (m_highPrecisionOffsetsEnabledFlag         ? "Enabled" : "Disabled") );
+  msg( VTM_DETAILS, "persistent_rice_adaptation_enabled_flag: %s\n", (m_persistentRiceAdaptationEnabledFlag     ? "Enabled" : "Disabled") );
+  msg( VTM_DETAILS, "cabac_bypass_alignment_enabled_flag    : %s\n", (m_cabacBypassAlignmentEnabledFlag         ? "Enabled" : "Disabled") );
 
   switch (m_costMode)
   {
-    case COST_STANDARD_LOSSY:               msg( DETAILS, "Cost function:                         : Lossy coding (default)\n"); break;
-    case COST_SEQUENCE_LEVEL_LOSSLESS:      msg( DETAILS, "Cost function:                         : Sequence_level_lossless coding\n"); break;
-    case COST_LOSSLESS_CODING:              msg( DETAILS, "Cost function:                         : Lossless coding with fixed QP of %d\n", LOSSLESS_AND_MIXED_LOSSLESS_RD_COST_TEST_QP); break;
-    case COST_MIXED_LOSSLESS_LOSSY_CODING:  msg( DETAILS, "Cost function:                         : Mixed_lossless_lossy coding with QP'=%d for lossless evaluation\n", LOSSLESS_AND_MIXED_LOSSLESS_RD_COST_TEST_QP_PRIME); break;
-    default:                                msg( DETAILS, "Cost function:                         : Unknown\n"); break;
+    case COST_STANDARD_LOSSY:               msg( VTM_DETAILS, "Cost function:                         : Lossy coding (default)\n"); break;
+    case COST_SEQUENCE_LEVEL_LOSSLESS:      msg( VTM_DETAILS, "Cost function:                         : Sequence_level_lossless coding\n"); break;
+    case COST_LOSSLESS_CODING:              msg( VTM_DETAILS, "Cost function:                         : Lossless coding with fixed QP of %d\n", LOSSLESS_AND_MIXED_LOSSLESS_RD_COST_TEST_QP); break;
+    case COST_MIXED_LOSSLESS_LOSSY_CODING:  msg( VTM_DETAILS, "Cost function:                         : Mixed_lossless_lossy coding with QP'=%d for lossless evaluation\n", LOSSLESS_AND_MIXED_LOSSLESS_RD_COST_TEST_QP_PRIME); break;
+    default:                                msg( VTM_DETAILS, "Cost function:                         : Unknown\n"); break;
   }
 
-  msg( DETAILS, "RateControl                            : %d\n", m_RCEnableRateControl );
-  msg( DETAILS, "WeightedPredMethod                     : %d\n", int(m_weightedPredictionMethod));
+  msg( VTM_DETAILS, "RateControl                            : %d\n", m_RCEnableRateControl );
+  msg( VTM_DETAILS, "WeightedPredMethod                     : %d\n", int(m_weightedPredictionMethod));
 
   if(m_RCEnableRateControl)
   {
-    msg( DETAILS, "TargetBitrate                          : %d\n", m_RCTargetBitrate );
-    msg( DETAILS, "KeepHierarchicalBit                    : %d\n", m_RCKeepHierarchicalBit );
-    msg( DETAILS, "LCULevelRC                             : %d\n", m_RCLCULevelRC );
-    msg( DETAILS, "UseLCUSeparateModel                    : %d\n", m_RCUseLCUSeparateModel );
-    msg( DETAILS, "InitialQP                              : %d\n", m_RCInitialQP );
-    msg( DETAILS, "ForceIntraQP                           : %d\n", m_RCForceIntraQP );
+    msg( VTM_DETAILS, "TargetBitrate                          : %d\n", m_RCTargetBitrate );
+    msg( VTM_DETAILS, "KeepHierarchicalBit                    : %d\n", m_RCKeepHierarchicalBit );
+    msg( VTM_DETAILS, "LCULevelRC                             : %d\n", m_RCLCULevelRC );
+    msg( VTM_DETAILS, "UseLCUSeparateModel                    : %d\n", m_RCUseLCUSeparateModel );
+    msg( VTM_DETAILS, "InitialQP                              : %d\n", m_RCInitialQP );
+    msg( VTM_DETAILS, "ForceIntraQP                           : %d\n", m_RCForceIntraQP );
 #if U0132_TARGET_BITS_SATURATION
-    msg( DETAILS, "CpbSaturation                          : %d\n", m_RCCpbSaturationEnabled );
+    msg( VTM_DETAILS, "CpbSaturation                          : %d\n", m_RCCpbSaturationEnabled );
     if (m_RCCpbSaturationEnabled)
     {
-      msg( DETAILS, "CpbSize                                : %d\n", m_RCCpbSize);
-      msg( DETAILS, "InitalCpbFullness                      : %.2f\n", m_RCInitialCpbFullness);
+      msg( VTM_DETAILS, "CpbSize                                : %d\n", m_RCCpbSize);
+      msg( VTM_DETAILS, "InitalCpbFullness                      : %.2f\n", m_RCInitialCpbFullness);
     }
 #endif
   }
 
-  msg( DETAILS, "Max Num Merge Candidates               : %d\n", m_maxNumMergeCand );
-  msg( DETAILS, "Max Num Affine Merge Candidates        : %d\n", m_maxNumAffineMergeCand );
-  msg( DETAILS, "Max Num Geo Merge Candidates           : %d\n", m_maxNumGeoCand );
-  msg( DETAILS, "Max Num IBC Merge Candidates           : %d\n", m_maxNumIBCMergeCand );
-  msg( DETAILS, "\n");
+  msg( VTM_DETAILS, "Max Num Merge Candidates               : %d\n", m_maxNumMergeCand );
+  msg( VTM_DETAILS, "Max Num Affine Merge Candidates        : %d\n", m_maxNumAffineMergeCand );
+  msg( VTM_DETAILS, "Max Num Geo Merge Candidates           : %d\n", m_maxNumGeoCand );
+  msg( VTM_DETAILS, "Max Num IBC Merge Candidates           : %d\n", m_maxNumIBCMergeCand );
+  msg( VTM_DETAILS, "\n");
 
-  msg( VERBOSE, "TOOL CFG: ");
-  msg( VERBOSE, "IBD:%d ", ((m_internalBitDepth[CHANNEL_TYPE_LUMA] > m_MSBExtendedBitDepth[CHANNEL_TYPE_LUMA]) || (m_internalBitDepth[CHANNEL_TYPE_CHROMA] > m_MSBExtendedBitDepth[CHANNEL_TYPE_CHROMA])));
-  msg( VERBOSE, "HAD:%d ", m_bUseHADME                          );
-  msg( VERBOSE, "RDQ:%d ", m_useRDOQ                            );
-  msg( VERBOSE, "RDQTS:%d ", m_useRDOQTS                        );
-  msg( VERBOSE, "RDpenalty:%d ", m_rdPenalty                    );
+  msg( VTM_VERBOSE, "TOOL CFG: ");
+  msg( VTM_VERBOSE, "IBD:%d ", ((m_internalBitDepth[CHANNEL_TYPE_LUMA] > m_MSBExtendedBitDepth[CHANNEL_TYPE_LUMA]) || (m_internalBitDepth[CHANNEL_TYPE_CHROMA] > m_MSBExtendedBitDepth[CHANNEL_TYPE_CHROMA])));
+  msg( VTM_VERBOSE, "HAD:%d ", m_bUseHADME                          );
+  msg( VTM_VERBOSE, "RDQ:%d ", m_useRDOQ                            );
+  msg( VTM_VERBOSE, "RDQTS:%d ", m_useRDOQTS                        );
+  msg( VTM_VERBOSE, "RDpenalty:%d ", m_rdPenalty                    );
 #if SHARP_LUMA_DELTA_QP
-  msg( VERBOSE, "LQP:%d ", m_lumaLevelToDeltaQPMapping.mode     );
+  msg( VTM_VERBOSE, "LQP:%d ", m_lumaLevelToDeltaQPMapping.mode     );
 #endif
-  msg( VERBOSE, "SQP:%d ", m_uiDeltaQpRD                        );
-  msg( VERBOSE, "ASR:%d ", m_bUseASR                            );
-  msg( VERBOSE, "MinSearchWindow:%d ", m_minSearchWindow        );
-  msg( VERBOSE, "RestrictMESampling:%d ", m_bRestrictMESampling );
-  msg( VERBOSE, "FEN:%d ", int(m_fastInterSearchMode)           );
-  msg( VERBOSE, "ECU:%d ", m_bUseEarlyCU                        );
-  msg( VERBOSE, "FDM:%d ", m_useFastDecisionForMerge            );
-  msg( VERBOSE, "ESD:%d ", m_useEarlySkipDetection              );
-  msg( VERBOSE, "TransformSkip:%d ",     m_useTransformSkip     );
-  msg( VERBOSE, "TransformSkipFast:%d ", m_useTransformSkipFast );
-  msg( VERBOSE, "TransformSkipLog2MaxSize:%d ", m_log2MaxTransformSkipBlockSize);
-  msg(VERBOSE, "ChromaTS:%d ", m_useChromaTS);
-  msg( VERBOSE, "BDPCM:%d ", m_useBDPCM                         );
-  msg( VERBOSE, "Tiles: %dx%d ", m_numTileCols, m_numTileRows );
-  msg( VERBOSE, "Slices: %d ", m_numSlicesInPic);
-  msg( VERBOSE, "MCTS:%d ", m_MCTSEncConstraint );
-  msg( VERBOSE, "SAO:%d ", (m_bUseSAO)?(1):(0));
-  msg( VERBOSE, "ALF:%d ", m_alf ? 1 : 0 );
-  msg( VERBOSE, "CCALF:%d ", m_ccalf ? 1 : 0 );
+  msg( VTM_VERBOSE, "SQP:%d ", m_uiDeltaQpRD                        );
+  msg( VTM_VERBOSE, "ASR:%d ", m_bUseASR                            );
+  msg( VTM_VERBOSE, "MinSearchWindow:%d ", m_minSearchWindow        );
+  msg( VTM_VERBOSE, "RestrictMESampling:%d ", m_bRestrictMESampling );
+  msg( VTM_VERBOSE, "FEN:%d ", int(m_fastInterSearchMode)           );
+  msg( VTM_VERBOSE, "ECU:%d ", m_bUseEarlyCU                        );
+  msg( VTM_VERBOSE, "FDM:%d ", m_useFastDecisionForMerge            );
+  msg( VTM_VERBOSE, "ESD:%d ", m_useEarlySkipDetection              );
+  msg( VTM_VERBOSE, "TransformSkip:%d ",     m_useTransformSkip     );
+  msg( VTM_VERBOSE, "TransformSkipFast:%d ", m_useTransformSkipFast );
+  msg( VTM_VERBOSE, "TransformSkipLog2MaxSize:%d ", m_log2MaxTransformSkipBlockSize);
+  msg(VTM_VERBOSE, "ChromaTS:%d ", m_useChromaTS);
+  msg( VTM_VERBOSE, "BDPCM:%d ", m_useBDPCM                         );
+  msg( VTM_VERBOSE, "Tiles: %dx%d ", m_numTileCols, m_numTileRows );
+  msg( VTM_VERBOSE, "Slices: %d ", m_numSlicesInPic);
+  msg( VTM_VERBOSE, "MCTS:%d ", m_MCTSEncConstraint );
+  msg( VTM_VERBOSE, "SAO:%d ", (m_bUseSAO)?(1):(0));
+  msg( VTM_VERBOSE, "ALF:%d ", m_alf ? 1 : 0 );
+  msg( VTM_VERBOSE, "CCALF:%d ", m_ccalf ? 1 : 0 );
 
-  msg( VERBOSE, "WPP:%d ", (int)m_useWeightedPred);
-  msg( VERBOSE, "WPB:%d ", (int)m_useWeightedBiPred);
-  msg( VERBOSE, "PME:%d ", m_log2ParallelMergeLevel);
+  msg( VTM_VERBOSE, "WPP:%d ", (int)m_useWeightedPred);
+  msg( VTM_VERBOSE, "WPB:%d ", (int)m_useWeightedBiPred);
+  msg( VTM_VERBOSE, "PME:%d ", m_log2ParallelMergeLevel);
   const int iWaveFrontSubstreams = m_entropyCodingSyncEnabledFlag ? (m_iSourceHeight + m_uiMaxCUHeight - 1) / m_uiMaxCUHeight : 1;
-  msg( VERBOSE, " WaveFrontSynchro:%d WaveFrontSubstreams:%d", m_entropyCodingSyncEnabledFlag?1:0, iWaveFrontSubstreams);
-  msg( VERBOSE, " ScalingList:%d ", m_useScalingListId );
-  msg( VERBOSE, "TMVPMode:%d ", m_TMVPModeId );
-  msg( VERBOSE, " DQ:%d ", m_depQuantEnabledFlag);
-  msg( VERBOSE, " SignBitHidingFlag:%d ", m_signDataHidingEnabledFlag);
-  msg( VERBOSE, "RecalQP:%d ", m_recalculateQPAccordingToLambda ? 1 : 0 );
+  msg( VTM_VERBOSE, " WaveFrontSynchro:%d WaveFrontSubstreams:%d", m_entropyCodingSyncEnabledFlag?1:0, iWaveFrontSubstreams);
+  msg( VTM_VERBOSE, " ScalingList:%d ", m_useScalingListId );
+  msg( VTM_VERBOSE, "TMVPMode:%d ", m_TMVPModeId );
+  msg( VTM_VERBOSE, " DQ:%d ", m_depQuantEnabledFlag);
+  msg( VTM_VERBOSE, " SignBitHidingFlag:%d ", m_signDataHidingEnabledFlag);
+  msg( VTM_VERBOSE, "RecalQP:%d ", m_recalculateQPAccordingToLambda ? 1 : 0 );
 
   {
-    msg( VERBOSE, "\nTOOL CFG: " );
-    msg( VERBOSE, "LFNST:%d ", m_LFNST );
-    msg( VERBOSE, "MMVD:%d ", m_MMVD);
-    msg( VERBOSE, "Affine:%d ", m_Affine );
+    msg( VTM_VERBOSE, "\nTOOL CFG: " );
+    msg( VTM_VERBOSE, "LFNST:%d ", m_LFNST );
+    msg( VTM_VERBOSE, "MMVD:%d ", m_MMVD);
+    msg( VTM_VERBOSE, "Affine:%d ", m_Affine );
     if ( m_Affine )
     {
-      msg( VERBOSE, "AffineType:%d ", m_AffineType );
+      msg( VTM_VERBOSE, "AffineType:%d ", m_AffineType );
     }
-    msg(VERBOSE, "PROF:%d ", m_PROF);
-    msg(VERBOSE, "SbTMVP:%d ", m_sbTmvpEnableFlag);
-    msg( VERBOSE, "DualITree:%d ", m_dualTree );
-    msg( VERBOSE, "IMV:%d ", m_ImvMode );
-    msg( VERBOSE, "BIO:%d ", m_BIO );
-    msg( VERBOSE, "LMChroma:%d ", m_LMChroma );
-    msg( VERBOSE, "HorCollocatedChroma:%d ", m_horCollocatedChromaFlag );
-    msg( VERBOSE, "VerCollocatedChroma:%d ", m_verCollocatedChromaFlag );
-    msg( VERBOSE, "MTS: %1d(intra) %1d(inter) ", m_MTS & 1, ( m_MTS >> 1 ) & 1 );
-    msg( VERBOSE, "SBT:%d ", m_SBT );
-    msg( VERBOSE, "ISP:%d ", m_ISP );
-    msg( VERBOSE, "SMVD:%d ", m_SMVD );
-    msg( VERBOSE, "CompositeLTReference:%d ", m_compositeRefEnabled);
-    msg( VERBOSE, "Bcw:%d ", m_bcw );
-    msg( VERBOSE, "BcwFast:%d ", m_BcwFast );
+    msg(VTM_VERBOSE, "PROF:%d ", m_PROF);
+    msg(VTM_VERBOSE, "SbTMVP:%d ", m_sbTmvpEnableFlag);
+    msg( VTM_VERBOSE, "DualITree:%d ", m_dualTree );
+    msg( VTM_VERBOSE, "IMV:%d ", m_ImvMode );
+    msg( VTM_VERBOSE, "BIO:%d ", m_BIO );
+    msg( VTM_VERBOSE, "LMChroma:%d ", m_LMChroma );
+    msg( VTM_VERBOSE, "HorCollocatedChroma:%d ", m_horCollocatedChromaFlag );
+    msg( VTM_VERBOSE, "VerCollocatedChroma:%d ", m_verCollocatedChromaFlag );
+    msg( VTM_VERBOSE, "MTS: %1d(intra) %1d(inter) ", m_MTS & 1, ( m_MTS >> 1 ) & 1 );
+    msg( VTM_VERBOSE, "SBT:%d ", m_SBT );
+    msg( VTM_VERBOSE, "ISP:%d ", m_ISP );
+    msg( VTM_VERBOSE, "SMVD:%d ", m_SMVD );
+    msg( VTM_VERBOSE, "CompositeLTReference:%d ", m_compositeRefEnabled);
+    msg( VTM_VERBOSE, "Bcw:%d ", m_bcw );
+    msg( VTM_VERBOSE, "BcwFast:%d ", m_BcwFast );
 #if LUMA_ADAPTIVE_DEBLOCKING_FILTER_QP_OFFSET
-    msg( VERBOSE, "LADF:%d ", m_LadfEnabed );
+    msg( VTM_VERBOSE, "LADF:%d ", m_LadfEnabed );
 #endif
-    msg(VERBOSE, "CIIP:%d ", m_ciip);
-    msg( VERBOSE, "Geo:%d ", m_Geo );
+    msg(VTM_VERBOSE, "CIIP:%d ", m_ciip);
+    msg( VTM_VERBOSE, "Geo:%d ", m_Geo );
     m_allowDisFracMMVD = m_MMVD ? m_allowDisFracMMVD : false;
     if ( m_MMVD )
-      msg(VERBOSE, "AllowDisFracMMVD:%d ", m_allowDisFracMMVD);
-    msg( VERBOSE, "AffineAmvr:%d ", m_AffineAmvr );
+      msg(VTM_VERBOSE, "AllowDisFracMMVD:%d ", m_allowDisFracMMVD);
+    msg( VTM_VERBOSE, "AffineAmvr:%d ", m_AffineAmvr );
     m_AffineAmvrEncOpt = m_AffineAmvr ? m_AffineAmvrEncOpt : false;
-    msg( VERBOSE, "AffineAmvrEncOpt:%d ", m_AffineAmvrEncOpt );
-    msg(VERBOSE, "DMVR:%d ", m_DMVR);
-    msg(VERBOSE, "MmvdDisNum:%d ", m_MmvdDisNum);
-    msg(VERBOSE, "JointCbCr:%d ", m_JointCbCrMode);
+    msg( VTM_VERBOSE, "AffineAmvrEncOpt:%d ", m_AffineAmvrEncOpt );
+    msg(VTM_VERBOSE, "DMVR:%d ", m_DMVR);
+    msg(VTM_VERBOSE, "MmvdDisNum:%d ", m_MmvdDisNum);
+    msg(VTM_VERBOSE, "JointCbCr:%d ", m_JointCbCrMode);
   }
   m_useColorTrans = (m_chromaFormatIDC == CHROMA_444) ? m_useColorTrans : 0u;
-  msg(VERBOSE, "ACT:%d ", m_useColorTrans);
-    msg(VERBOSE, "PLT:%d ", m_PLTMode);
-    msg(VERBOSE, "IBC:%d ", m_IBCMode);
-  msg( VERBOSE, "HashME:%d ", m_HashME );
-  msg( VERBOSE, "WrapAround:%d ", m_wrapAround);
+  msg(VTM_VERBOSE, "ACT:%d ", m_useColorTrans);
+    msg(VTM_VERBOSE, "PLT:%d ", m_PLTMode);
+    msg(VTM_VERBOSE, "IBC:%d ", m_IBCMode);
+  msg( VTM_VERBOSE, "HashME:%d ", m_HashME );
+  msg( VTM_VERBOSE, "WrapAround:%d ", m_wrapAround);
   if( m_wrapAround )
   {
-    msg( VERBOSE, "WrapAroundOffset:%d ", m_wrapAroundOffset );
+    msg( VTM_VERBOSE, "WrapAroundOffset:%d ", m_wrapAroundOffset );
   }
   // ADD_NEW_TOOL (add some output indicating the usage of tools)
-  msg( VERBOSE, "VirtualBoundariesEnabledFlag:%d ", m_virtualBoundariesEnabledFlag );
-  msg( VERBOSE, "VirtualBoundariesPresentInSPSFlag:%d ", m_virtualBoundariesPresentFlag );
+  msg( VTM_VERBOSE, "VirtualBoundariesEnabledFlag:%d ", m_virtualBoundariesEnabledFlag );
+  msg( VTM_VERBOSE, "VirtualBoundariesPresentInSPSFlag:%d ", m_virtualBoundariesPresentFlag );
   if( m_virtualBoundariesPresentFlag )
   {
-    msg(VERBOSE, "vertical virtual boundaries:[");
+    msg(VTM_VERBOSE, "vertical virtual boundaries:[");
     for (unsigned i = 0; i < m_numVerVirtualBoundaries; i++)
     {
-      msg(VERBOSE, " %d", m_virtualBoundariesPosX[i]);
+      msg(VTM_VERBOSE, " %d", m_virtualBoundariesPosX[i]);
     }
-    msg(VERBOSE, " ] horizontal virtual boundaries:[");
+    msg(VTM_VERBOSE, " ] horizontal virtual boundaries:[");
     for (unsigned i = 0; i < m_numHorVirtualBoundaries; i++)
     {
-      msg(VERBOSE, " %d", m_virtualBoundariesPosY[i]);
+      msg(VTM_VERBOSE, " %d", m_virtualBoundariesPosY[i]);
     }
-    msg(VERBOSE, " ] ");
+    msg(VTM_VERBOSE, " ] ");
   }
-    msg(VERBOSE, "Reshape:%d ", m_lmcsEnabled);
+    msg(VTM_VERBOSE, "Reshape:%d ", m_lmcsEnabled);
     if (m_lmcsEnabled)
     {
-      msg(VERBOSE, "(Signal:%s ", m_reshapeSignalType == 0 ? "SDR" : (m_reshapeSignalType == 2 ? "HDR-HLG" : "HDR-PQ"));
-      msg(VERBOSE, "Opt:%d", m_adpOption);
-      if (m_adpOption > 0) { msg(VERBOSE, " CW:%d", m_initialCW); }
-      msg(VERBOSE, " CSoffset:%d", m_CSoffset);
-      msg(VERBOSE, ") ");
+      msg(VTM_VERBOSE, "(Signal:%s ", m_reshapeSignalType == 0 ? "SDR" : (m_reshapeSignalType == 2 ? "HDR-HLG" : "HDR-PQ"));
+      msg(VTM_VERBOSE, "Opt:%d", m_adpOption);
+      if (m_adpOption > 0) { msg(VTM_VERBOSE, " CW:%d", m_initialCW); }
+      msg(VTM_VERBOSE, " CSoffset:%d", m_CSoffset);
+      msg(VTM_VERBOSE, ") ");
     }
-    msg(VERBOSE, "MRL:%d ", m_MRL);
-    msg(VERBOSE, "MIP:%d ", m_MIP);
-    msg(VERBOSE, "EncDbOpt:%d ", m_encDbOpt);
-  msg( VERBOSE, "\nFAST TOOL CFG: " );
-  msg( VERBOSE, "LCTUFast:%d ", m_useFastLCTU );
-  msg( VERBOSE, "FastMrg:%d ", m_useFastMrg );
-  msg( VERBOSE, "PBIntraFast:%d ", m_usePbIntraFast );
-  if( m_ImvMode ) msg( VERBOSE, "IMV4PelFast:%d ", m_Imv4PelFast );
-  if( m_MTS ) msg( VERBOSE, "MTSMaxCand: %1d(intra) %1d(inter) ", m_MTSIntraMaxCand, m_MTSInterMaxCand );
-  if( m_ISP ) msg( VERBOSE, "ISPFast:%d ", m_useFastISP );
-  if( m_LFNST ) msg( VERBOSE, "FastLFNST:%d ", m_useFastLFNST );
-  msg( VERBOSE, "AMaxBT:%d ", m_useAMaxBT );
-  msg( VERBOSE, "E0023FastEnc:%d ", m_e0023FastEnc );
-  msg( VERBOSE, "ContentBasedFastQtbt:%d ", m_contentBasedFastQtbt );
-  msg( VERBOSE, "UseNonLinearAlfLuma:%d ", m_useNonLinearAlfLuma );
-  msg( VERBOSE, "UseNonLinearAlfChroma:%d ", m_useNonLinearAlfChroma );
-  msg( VERBOSE, "MaxNumAlfAlternativesChroma:%d ", m_maxNumAlfAlternativesChroma );
-  if( m_MIP ) msg(VERBOSE, "FastMIP:%d ", m_useFastMIP);
-  msg( VERBOSE, "FastLocalDualTree:%d ", m_fastLocalDualTreeMode );
+    msg(VTM_VERBOSE, "MRL:%d ", m_MRL);
+    msg(VTM_VERBOSE, "MIP:%d ", m_MIP);
+    msg(VTM_VERBOSE, "EncDbOpt:%d ", m_encDbOpt);
+  msg( VTM_VERBOSE, "\nFAST TOOL CFG: " );
+  msg( VTM_VERBOSE, "LCTUFast:%d ", m_useFastLCTU );
+  msg( VTM_VERBOSE, "FastMrg:%d ", m_useFastMrg );
+  msg( VTM_VERBOSE, "PBIntraFast:%d ", m_usePbIntraFast );
+  if( m_ImvMode ) msg( VTM_VERBOSE, "IMV4PelFast:%d ", m_Imv4PelFast );
+  if( m_MTS ) msg( VTM_VERBOSE, "MTSMaxCand: %1d(intra) %1d(inter) ", m_MTSIntraMaxCand, m_MTSInterMaxCand );
+  if( m_ISP ) msg( VTM_VERBOSE, "ISPFast:%d ", m_useFastISP );
+  if( m_LFNST ) msg( VTM_VERBOSE, "FastLFNST:%d ", m_useFastLFNST );
+  msg( VTM_VERBOSE, "AMaxBT:%d ", m_useAMaxBT );
+  msg( VTM_VERBOSE, "E0023FastEnc:%d ", m_e0023FastEnc );
+  msg( VTM_VERBOSE, "ContentBasedFastQtbt:%d ", m_contentBasedFastQtbt );
+  msg( VTM_VERBOSE, "UseNonLinearAlfLuma:%d ", m_useNonLinearAlfLuma );
+  msg( VTM_VERBOSE, "UseNonLinearAlfChroma:%d ", m_useNonLinearAlfChroma );
+  msg( VTM_VERBOSE, "MaxNumAlfAlternativesChroma:%d ", m_maxNumAlfAlternativesChroma );
+  if( m_MIP ) msg(VTM_VERBOSE, "FastMIP:%d ", m_useFastMIP);
+  msg( VTM_VERBOSE, "FastLocalDualTree:%d ", m_fastLocalDualTreeMode );
 
-  msg( VERBOSE, "NumSplitThreads:%d ", m_numSplitThreads );
+  msg( VTM_VERBOSE, "NumSplitThreads:%d ", m_numSplitThreads );
   if( m_numSplitThreads > 1 )
   {
-    msg( VERBOSE, "ForceSingleSplitThread:%d ", m_forceSplitSequential );
+    msg( VTM_VERBOSE, "ForceSingleSplitThread:%d ", m_forceSplitSequential );
   }
-  msg( VERBOSE, "NumWppThreads:%d+%d ", m_numWppThreads, m_numWppExtraLines );
-  msg( VERBOSE, "EnsureWppBitEqual:%d ", m_ensureWppBitEqual );
+  msg( VTM_VERBOSE, "NumWppThreads:%d+%d ", m_numWppThreads, m_numWppExtraLines );
+  msg( VTM_VERBOSE, "EnsureWppBitEqual:%d ", m_ensureWppBitEqual );
 
   if (m_resChangeInClvsEnabled)
   {
-    msg( VERBOSE, "RPR:(%1.2lfx, %1.2lfx)|%d ", m_scalingRatioHor, m_scalingRatioVer, m_switchPocPeriod );
+    msg( VTM_VERBOSE, "RPR:(%1.2lfx, %1.2lfx)|%d ", m_scalingRatioHor, m_scalingRatioVer, m_switchPocPeriod );
   }
   else
   {
-    msg( VERBOSE, "RPR:%d ", 0 );
+    msg( VTM_VERBOSE, "RPR:%d ", 0 );
   }
-  msg(VERBOSE, "TemporalFilter:%d ", m_gopBasedTemporalFilterEnabled);
+  msg(VTM_VERBOSE, "TemporalFilter:%d ", m_gopBasedTemporalFilterEnabled);
 #if EXTENSION_360_VIDEO
   m_ext360.outputConfigurationSummary();
 #endif
 
-  msg( VERBOSE, "\n\n");
+  msg( VTM_VERBOSE, "\n\n");
 
-  msg( NOTICE, "\n");
+  msg( VTM_NOTICE, "\n");
 
   fflush( stdout );
 }
@@ -4123,7 +4123,7 @@ bool confirmPara(bool bflag, const char* message)
     return false;
   }
 
-  msg( ERROR, "Error: %s\n",message);
+  msg( VTM_ERROR, "Error: %s\n",message);
   return true;
 }
 

@@ -132,7 +132,7 @@ bool PCCVTMLibVideoDecoderCfg::parseCfg( int argc, char* argv[] )
 
   for (list<const char*>::const_iterator it = argv_unhandled.begin(); it != argv_unhandled.end(); it++)
   {
-    msg( ERROR, "Unhandled argument ignored: `%s'\n", *it);
+    msg( VTM_ERROR, "Unhandled argument ignored: `%s'\n", *it);
   }
 
   if (argc == 1 || do_help)
@@ -170,13 +170,13 @@ bool PCCVTMLibVideoDecoderCfg::parseCfg( int argc, char* argv[] )
   m_outputColourSpaceConvert = stringToInputColourSpaceConvert(outputColourSpaceConvert, false);
   if (m_outputColourSpaceConvert>=NUMBER_INPUT_COLOUR_SPACE_CONVERSIONS)
   {
-    msg( ERROR, "Bad output colour space conversion string\n");
+    msg( VTM_ERROR, "Bad output colour space conversion string\n");
     return false;
   }
 
   if (m_bitstreamFileName.empty())
   {
-    msg( ERROR, "No input file specified, aborting\n");
+    msg( VTM_ERROR, "No input file specified, aborting\n");
     return false;
   }
 
@@ -193,7 +193,7 @@ bool PCCVTMLibVideoDecoderCfg::parseCfg( int argc, char* argv[] )
         {
           if ( m_targetDecLayerIdSet.size() == 0 )
           {
-            msg( ERROR, "No LayerId could be parsed in file %s. Decoding all LayerIds as default.\n", cfg_TargetDecLayerIdSetFile.c_str() );
+            msg( VTM_ERROR, "No LayerId could be parsed in file %s. Decoding all LayerIds as default.\n", cfg_TargetDecLayerIdSetFile.c_str() );
           }
           break;
         }
@@ -204,7 +204,7 @@ bool PCCVTMLibVideoDecoderCfg::parseCfg( int argc, char* argv[] )
         }
         if ( layerIdParsed < 0 || layerIdParsed >= MAX_NUM_LAYER_IDS )
         {
-          msg( ERROR, "Warning! Parsed LayerId %d is not within allowed range [0,%d]. Ignoring this value.\n", layerIdParsed, MAX_NUM_LAYER_IDS-1 );
+          msg( VTM_ERROR, "Warning! Parsed LayerId %d is not within allowed range [0,%d]. Ignoring this value.\n", layerIdParsed, MAX_NUM_LAYER_IDS-1 );
         }
         else
         {
@@ -215,13 +215,13 @@ bool PCCVTMLibVideoDecoderCfg::parseCfg( int argc, char* argv[] )
       fclose (targetDecLayerIdSetFile);
       if ( m_targetDecLayerIdSet.size() > 0 && !isLayerIdZeroIncluded )
       {
-        msg( ERROR, "TargetDecLayerIdSet must contain LayerId=0, aborting" );
+        msg( VTM_ERROR, "TargetDecLayerIdSet must contain LayerId=0, aborting" );
         return false;
       }
     }
     else
     {
-      msg( ERROR, "File %s could not be opened. Using all LayerIds as default.\n", cfg_TargetDecLayerIdSetFile.c_str() );
+      msg( VTM_ERROR, "File %s could not be opened. Using all LayerIds as default.\n", cfg_TargetDecLayerIdSetFile.c_str() );
     }
   }
   if (m_iMaxTemporalLayer != 500)
