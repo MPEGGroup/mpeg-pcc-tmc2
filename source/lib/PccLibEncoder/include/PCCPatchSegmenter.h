@@ -74,6 +74,7 @@ struct PCCPatchSegmenter3Parameters {
   PCCVector3D      weightNormal_;
   size_t           additionalProjectionPlaneMode_;
   double           partialAdditionalProjectionPlane_;
+  size_t           geometryBitDepth2D_;
   size_t           geometryBitDepth3D_;
   bool             patchExpansion_;
   bool             highGradientSeparation_;

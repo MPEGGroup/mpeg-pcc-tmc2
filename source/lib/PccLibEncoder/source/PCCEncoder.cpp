@@ -4851,6 +4851,7 @@ bool PCCEncoder::generateSegments( const PCCGroupOfFrames& sources, PCCContext& 
   params.additionalProjectionPlaneMode_       = params_.additionalProjectionPlaneMode_;
   params.partialAdditionalProjectionPlane_    = params_.partialAdditionalProjectionPlane_;
   params.maxAllowedDepth_                     = ( size_t( 1 ) << params_.geometryNominal2dBitdepth_ ) - 1;
+  params.geometryBitDepth2D_ = params_.geometryNominal2dBitdepth_;
   params.geometryBitDepth3D_ = params_.geometry3dCoordinatesBitdepth_ + ( params_.additionalProjectionPlaneMode_ > 0 );
   params.EOMFixBitCount_     = params_.EOMFixBitCount_;
   params.EOMSingleLayerMode_ = params_.enhancedOccupancyMapCode_ && ( params_.mapCountMinus1_ == 0 );
@@ -5777,6 +5778,11 @@ bool PCCEncoder::resizeGeometryVideo( PCCContext& context, PCCCodecId codecId ) 
                                                            ( maxHeight / params_.occupancyResolution_ ) );
     frame.setAtlasFrameWidth( maxWidth );
     frame.setAtlasFrameHeight( maxHeight );
+    
+    if( frame.getNumTilesInAtlasFrame() == 1 ){
+      frame.setPartitionWidth(maxWidth, 0);
+      frame.setPartitionHeight(maxHeight, 0);
+    }
   }
   return true;
 }
@@ -5794,8 +5800,8 @@ bool PCCEncoder::resizeTileGeometryVideo( PCCContext& context,
     maxWidth   = ( std::max )( maxWidth, tile.getWidth() );
     maxHeight  = ( std::max )( maxHeight, tile.getHeight() );
     if ( params_.tileSegmentationType_ != 0 ) {
-      double partitionWidth  = (double)context[frameIdx].getPartitionWidth()[0];
-      double partitionHeight = (double)context[frameIdx].getPartitionHeight()[0];
+      double partitionWidth  = (double)context[frameIdx].getPartitionWidth(0);
+      double partitionHeight = (double)context[frameIdx].getPartitionHeight(0);
       maxWidth               = std::ceil( (double)maxWidth / partitionWidth ) * partitionWidth;
       maxHeight              = std::ceil( (double)maxHeight / partitionHeight ) * partitionHeight;
     }
@@ -5814,6 +5820,10 @@ bool PCCEncoder::resizeTileGeometryVideo( PCCContext& context,
     tile.getHeight() = maxHeight;
     tile.getOccupancyMap().resize(
         ( maxWidth / params_.occupancyResolution_ ) * ( maxHeight / params_.occupancyResolution_ ), 0 );
+    if(params_.tileSegmentationType_==0){
+      context[frameIdx].setPartitionWidth(maxWidth, 0);
+      context[frameIdx].setPartitionHeight(maxHeight, 0);
+    }
   }  // frame
   return true;
 }
@@ -8435,9 +8445,6 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
       auto& atl = context.addAtlasTileLayer( i, ti );
       auto& ath = atl.getHeader();
       ath.setAtlasFrameParameterSetId( atlasFrameParameterSetId );
-#if 1
-      printf( "createPatchFrameDataStructure tile %zu\n", ti );
-#endif
       auto& afps = context.getAtlasFrameParameterSet( atlasFrameParameterSetId );
       // tile header
       if ( params_.additionalProjectionPlaneMode_ > 0 ) {
@@ -8554,10 +8561,10 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&         context,
   auto&        afps               = context.getAtlasFrameParameterSet( ath.getAtlasFrameParameterSetId() );
   size_t       aspsId             = afps.getAtlasSequenceParameterSetId();
   auto&        asps               = context.getAtlasSequenceParameterSet( aspsId );
-  const size_t minLevel           = pow( 2., ath.getPosMinDQuantizer() );
+  const int64_t minLevel           = pow( 2., ath.getPosMinDQuantizer() );
   size_t       atlasIndex         = context.getAtlasIndex();
-  auto&        gi                 = sps.getGeometryInformation( atlasIndex );
-  auto         geometryBitDepth2D = gi.getGeometry2dBitdepthMinus1() + 1;
+  auto         geometryBitDepth2D = asps.getGeometry2dBitdepthMinus1() + 1;
+  auto         geometryBitDepth3D = asps.getGeometry3dBitdepthMinus1() + 1;
   int64_t      prevSizeU0         = 0;
   int64_t      prevSizeV0         = 0;
   int64_t      predIndex          = 0;
@@ -8624,7 +8631,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&         context,
       ipdu.set3dOffsetU( patch.getU1() - refPatch.getU1() );
       ipdu.set3dOffsetV( patch.getV1() - refPatch.getV1() );
 
-      const size_t max3DCoordinate = size_t( 1 ) << ( gi.getGeometry3dCoordinatesBitdepthMinus1() + 1 );
+      const size_t max3DCoordinate =  geometryBitDepth3D;
       if ( patch.getProjectionMode() == 0 ) {
         ipdu.set3dOffsetD( ( patch.getD1() / minLevel ) - ( refPatch.getD1() / minLevel ) );
       } else {
@@ -8636,11 +8643,12 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&         context,
                              ( ( max3DCoordinate << 1 ) - refPatch.getD1() ) / minLevel );
         }
       }
+      int64_t diffDD  = (int64_t)patch.getSizeDPixel()-(int64_t)refPatch.getSizeD();
+      int64_t quantDD = diffDD ==0? 0 : (diffDD +1)/ (int64_t)minLevel;
+      ipdu.set3dRangeD( quantDD );
+      int64_t delta_DD = quantDD==0? 0: (quantDD*minLevel-1); //(int64_t)refPatch.getSizeD() + delta_DD;
+      patches[patchIndex].getSizeD() = (size_t) std::min( (int64_t) std::max((int64_t)(refPatch.getSizeD() + delta_DD), (int64_t)0), (int64_t)(1<<geometryBitDepth2D)-1);
 
-      size_t        quantDD  = patch.getSizeD() == 0 ? 0 : ( ( patch.getSizeD() - 1 ) / minLevel + 1 );
-      size_t        prevQDD  = refPatch.getSizeD() == 0 ? 0 : ( ( refPatch.getSizeD() - 1 ) / minLevel + 1 );
-      const int64_t delta_dd = ( static_cast<int64_t>( quantDD ) ) - ( static_cast<int64_t>( prevQDD ) );
-      ipdu.set3dRangeD( delta_dd );
       TRACE_PATCH(
           "\tIPDU: refAtlasFrame= %d refPatchIdx = %d pos2DXY = %ld %ld pos3DXYZW = %ld %ld %ld %ld size2D = %ld %ld "
           "\n",
@@ -8706,13 +8714,14 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&         context,
         pdu.set2dSizeYMinus1( patch.getSizeV0() - 1 );
       }
       pdu.setOrientationIndex( patch.getPatchOrientation() );
-      const size_t max3DCoordinate = size_t( 1 ) << ( gi.getGeometry3dCoordinatesBitdepthMinus1() + 1 );
+      const size_t max3DCoordinate = size_t( 1 ) << ( geometryBitDepth3D );
       if ( patch.getProjectionMode() == 0 ) {
         pdu.set3dOffsetD( patch.getD1() / minLevel );
       } else {
         pdu.set3dOffsetD( ( max3DCoordinate - patch.getD1() ) / minLevel );
       }
-      size_t quantDD = patch.getSizeD() == 0 ? 0 : ( ( patch.getSizeD() - 1 ) / minLevel + 1 );
+      // Note: quantDD cannot cover up to the maximum depth by this equation. (e.g.getSizeD=255)
+      size_t quantDD = patch.getSizeD() == 0 ? 0 : ( ( patch.getSizeD() + 1 ) / minLevel );
       pdu.set3dRangeD( quantDD );
 
       TRACE_PATCH(
@@ -8743,12 +8752,16 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&         context,
       rpdu.set2dPosY( rawPointsPatch.v0_ );
       rpdu.set2dSizeXMinus1( rawPointsPatch.sizeU0_ - 1 );
       rpdu.set2dSizeYMinus1( rawPointsPatch.sizeV0_ - 1 );
-      size_t  rawShift = afps.getRaw3dOffsetBitCountExplicitModeFlag() ?
-        (asps.getGeometry3dBitdepthMinus1() - ath.getRaw3dOffsetAxisBitCountMinus1()) :
-        (asps.getGeometry2dBitdepthMinus1()+1);
-      rpdu.set3dOffsetU( rawPointsPatch.u1_ >> rawShift );
-      rpdu.set3dOffsetV( rawPointsPatch.v1_ >> rawShift );
-      rpdu.set3dOffsetD( rawPointsPatch.d1_ >> rawShift );
+      if ( afps.getRaw3dPosBitCountExplicitModeFlag() ) {
+        rpdu.set3dOffsetU( rawPointsPatch.u1_ );
+        rpdu.set3dOffsetV( rawPointsPatch.v1_ );
+        rpdu.set3dOffsetD( rawPointsPatch.d1_ );
+      } else {
+        const size_t pcmU1V1D1Level = size_t( 1 ) << ( asps.getGeometry2dBitdepthMinus1() + 1 );
+        rpdu.set3dOffsetU( rawPointsPatch.u1_ / pcmU1V1D1Level );
+        rpdu.set3dOffsetV( rawPointsPatch.v1_ / pcmU1V1D1Level );
+        rpdu.set3dOffsetD( rawPointsPatch.d1_ / pcmU1V1D1Level );
+      }
       rpdu.setPatchInAuxiliaryVideoFlag( sps.getAuxiliaryVideoPresentFlag( 0 ) );
       rpdu.setRawPointsMinus1( uint32_t( rawPointsPatch.getNumberOfRawPoints() - 1 ) );
       TRACE_PATCH( "Raw :UV = %zu %zu  size = %zu %zu  uvd1 = %zu %zu %zu numPoints = %zu ocmRes = %zu \n",
