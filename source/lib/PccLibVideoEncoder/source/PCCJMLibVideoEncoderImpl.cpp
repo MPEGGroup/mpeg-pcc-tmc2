@@ -89,13 +89,14 @@ void PCCJMLibVideoEncoderImpl<T>::encode( PCCVideo<T, 3>&    videoSrc,
  
   int argc = args.size();
   char** argv = &args[0];
-      
+
   std::cout << "[JM Enc args " << argc << "]: " << arguments << std::endl;
-  const size_t srcWidth = videoSrc.getWidth();
-  const size_t srcHeight = videoSrc.getHeight();
-  const size_t frameCount = videoSrc.getFrameCount();
-  PCCCOLORFORMAT format = PCCCOLORFORMAT::YUV420;
-  const size_t nbyte = 1;
+  const size_t   srcWidth           = videoSrc.getWidth();
+  const size_t   srcHeight          = videoSrc.getHeight();
+  const size_t   frameCount         = videoSrc.getFrameCount();
+  int32_t        sourceBitDepthLuma = std::stoi( getParameter( arguments, "SourceBitDepthLuma=" ) );
+  PCCCOLORFORMAT format             = videoSrc.getColorFormat();
+  const size_t   nbyte              = sourceBitDepthLuma == 10 ? 2 : 1;
 
   init_time();
   std::cout << "[ JM Enc ]: frames " << frameCount << std::endl;
@@ -127,7 +128,6 @@ void PCCJMLibVideoEncoderImpl<T>::encode( PCCVideo<T, 3>&    videoSrc,
   videoRec.clear();
   videoRec.read_JM(recName, srcWidth, srcHeight, format, frameCount, nbyte);
   bitstream.read_JM(binName);
-
   return;
 }
 

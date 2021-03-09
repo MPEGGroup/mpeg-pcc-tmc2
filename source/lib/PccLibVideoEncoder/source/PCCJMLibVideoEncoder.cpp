@@ -54,20 +54,30 @@ void PCCJMLibVideoEncoder<T>::encode( PCCVideo<T, 3>&    videoSrc,
   const size_t frameCount = videoSrc.getFrameCount();
 
   std::stringstream cmd;
-  cmd << "JMEncoder"
-	  << " -d " << params.encoderConfig_;
+  cmd << "JMEncoder";
+  cmd << " -d " << params.encoderConfig_;
   if ( bitstream.type() == VIDEO_GEOMETRY && bitstream.type() != VIDEO_TEXTURE ) {
-    cmd << " -p QPPSlice=" << params.qp_ << " -p QPISlice=" << params.qp_ << " -p QPBSlice=" << params.qp_;
+    cmd << " -p QPPSlice=" << params.qp_;
+    cmd << " -p QPISlice=" << params.qp_;
+    cmd << " -p QPBSlice=" << params.qp_;
   }
   if ( bitstream.type() == VIDEO_TEXTURE && bitstream.type() != VIDEO_GEOMETRY ) {
-    cmd << " -p QPPSlice=" << params.qp_ << " -p QPISlice=" << params.qp_ << " -p QPBSlice=" << params.qp_;
+    cmd << " -p QPPSlice=" << params.qp_;
+    cmd << " -p QPISlice=" << params.qp_;
+    cmd << " -p QPBSlice=" << params.qp_;
   }
-  cmd << " -p InputFile=" << params.srcYuvFileName_ << " -p SourceBitDepthLuma=" << params.inputBitDepth_
-      << " -p YUVFormat=" << ( params.use444CodecIo_ ? "3" : "1" ) << " -p FrameRate=30 "
-      << " -p FrameSkip=0 "
-      << " -p SourceWidth=" << width << " -p SourceHeight=" << height << " -p FramesToBeEncoded=" << frameCount
-      << " -p OutputFile=" << params.binFileName_ << " -p ReconFile=" << params.recYuvFileName_
-      << " -p OutputBitDepthLuma=" << params.outputBitDepth_ << " -p OutputBitDepthChroma=" << params.outputBitDepth_;
+  cmd << " -p InputFile=" << params.srcYuvFileName_;
+  cmd << " -p SourceBitDepthLuma=" << params.inputBitDepth_;
+  cmd << " -p YUVFormat=" << ( params.use444CodecIo_ ? "3" : "1" ) ;
+  cmd << " -p FrameRate=30 ";
+  cmd << " -p FrameSkip=0 ";
+  cmd << " -p SourceWidth=" << width;
+  cmd << " -p SourceHeight=" << height;
+  cmd << " -p FramesToBeEncoded=" << frameCount;
+  cmd << " -p OutputFile=" << params.binFileName_;
+  cmd << " -p ReconFile=" << params.recYuvFileName_;
+  cmd << " -p OutputBitDepthLuma=" << params.outputBitDepth_;
+  cmd << " -p OutputBitDepthChroma=" << params.outputBitDepth_;
 
   std::cout << cmd.str() << std::endl;
 
