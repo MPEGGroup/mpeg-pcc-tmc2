@@ -169,15 +169,15 @@ size_t PCCContext::setTileSizeAndLocation( size_t frameIndex, AtlasTileHeader& a
     size_t BottomRightPartitionColumn = TopLeftPartitionColumn + afti.getBottomRightPartitionColumnOffset( tileIndex );
     size_t BottomRightPartitionRow    = TopLeftPartitionRow + afti.getBottomRightPartitionRowOffset( tileIndex );
 
-    size_t tileStartX = frameContext[frameIndex].getPartitionPosX()[TopLeftPartitionColumn];
-    size_t tileStartY = frameContext[frameIndex].getPartitionPosY()[TopLeftPartitionRow];
+    size_t tileStartX = frameContext[frameIndex].getPartitionPosX(TopLeftPartitionColumn);
+    size_t tileStartY = frameContext[frameIndex].getPartitionPosY(TopLeftPartitionRow);
     size_t tileWidth  = 0;
     size_t tileHeight = 0;
     for ( size_t j = TopLeftPartitionColumn; j <= BottomRightPartitionColumn; j++ ) {
-      tileWidth += ( frameContext[frameIndex].getPartitionWidth()[j] );
+      tileWidth += ( frameContext[frameIndex].getPartitionWidth(j) );
     }
     for ( size_t j = TopLeftPartitionRow; j <= BottomRightPartitionRow; j++ ) {
-      tileHeight += ( frameContext[frameIndex].getPartitionHeight()[j] );
+      tileHeight += ( frameContext[frameIndex].getPartitionHeight(j) );
     }
     tile.setLeftTopXInFrame( tileStartX );
     tile.setLeftTopYInFrame( tileStartY );

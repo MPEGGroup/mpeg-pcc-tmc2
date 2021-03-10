@@ -8752,7 +8752,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&         context,
       rpdu.set2dPosY( rawPointsPatch.v0_ );
       rpdu.set2dSizeXMinus1( rawPointsPatch.sizeU0_ - 1 );
       rpdu.set2dSizeYMinus1( rawPointsPatch.sizeV0_ - 1 );
-      if ( afps.getRaw3dPosBitCountExplicitModeFlag() ) {
+      if ( afps.getRaw3dOffsetBitCountExplicitModeFlag() ) {
         rpdu.set3dOffsetU( rawPointsPatch.u1_ );
         rpdu.set3dOffsetV( rawPointsPatch.v1_ );
         rpdu.set3dOffsetD( rawPointsPatch.d1_ );
@@ -8966,8 +8966,8 @@ void PCCEncoder::createHashInformation( PCCContext& context, int frameIndex, siz
       auto&   afti              = afps.getAtlasFrameTileInformation();
       size_t topLeftColumn     = afti.getTopLeftPartitionIdx( tileIdx ) % ( afti.getNumPartitionColumnsMinus1() + 1 );
       size_t topLeftRow        = afti.getTopLeftPartitionIdx( tileIdx ) / ( afti.getNumPartitionColumnsMinus1() + 1 );
-      size_t  tileOffsetX       = context[frameIndex].getPartitionPosX()[topLeftColumn];
-      size_t  tileOffsetY       = context[frameIndex].getPartitionPosY()[topLeftRow];
+      size_t  tileOffsetX       = context[frameIndex].getPartitionPosX(topLeftColumn);
+      size_t  tileOffsetY       = context[frameIndex].getPartitionPosY(topLeftRow);
       TRACE_TILE( "TileID = %d, AtlasFrameOrderCntVal = %d, TileType = %d, TileOffsetX = %d, TileOffsetY = %d, TileWidth = %d, TileHeight = %d, ", 
                   tileId , tile.getAtlasFrmOrderCntVal(), tileHeader.getType(), tileOffsetX, tileOffsetY,
                   tile.getWidth(), tile.getHeight() );
