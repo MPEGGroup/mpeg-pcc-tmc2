@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\PCC\mpeg-pcc-tmc2-release-v13.0-integration\mpeg-pcc-tmc2-test\CMakeFiles\acbb7b648c9e7480ef79fa6670c350c0\INSTALL_force.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{88ACDD19-BA97-3EDE-B160-C1B254A28687}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

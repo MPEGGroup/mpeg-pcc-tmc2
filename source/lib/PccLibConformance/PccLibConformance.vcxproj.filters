@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\PCC\mpeg-pcc-tmc2-release-v13.0-integration\mpeg-pcc-tmc2-test\source\lib\PccLibConformance\source\PCCAppConformance.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\PCC\mpeg-pcc-tmc2-release-v13.0-integration\mpeg-pcc-tmc2-test\source\lib\PccLibConformance\source\PCCConformanceParser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="C:\PCC\mpeg-pcc-tmc2-release-v13.0-integration\mpeg-pcc-tmc2-test\source\lib\PccLibConformance\include\PCCConformanceParser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\PCC\mpeg-pcc-tmc2-release-v13.0-integration\mpeg-pcc-tmc2-test\source\lib\PccLibConformance\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{EE439E29-80B7-356D-BF0C-07B75B474992}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{38EB3592-A45F-386B-8437-1AC4FA06F5B4}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
