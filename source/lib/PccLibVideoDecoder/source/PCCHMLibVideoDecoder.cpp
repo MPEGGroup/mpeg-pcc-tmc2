@@ -53,9 +53,9 @@ void PCCHMLibVideoDecoder<T>::decode( PCCVideoBitstream& bitstream,
                                       const std::string& parameters,
                                       const size_t       frameCount ) {
   PCCHMLibVideoDecoderImpl<T> decoder;
-#if PCC_CF_EXT
-  decoder.setLogger( *logger_ );
-#endif
+// #if PCC_CF_EXT
+//   decoder.setLogger( *logger_ );
+// #endif
   decoder.decode( bitstream, outputBitDepth, RGB2GBR, video );
 }
 

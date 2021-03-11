@@ -42,7 +42,6 @@ PCCContext::PCCContext() = default;
 
 PCCContext::~PCCContext() { atlasContexts_.clear(); }
 
-
 void PCCContext::setTilePartitionSizeAfti() {  // decoder
   for ( size_t afpsIdx = 0; afpsIdx < getAtlasFrameParameterSetList().size(); afpsIdx++ ) {
     auto&  afps             = getAtlasFrameParameterSet( afpsIdx );

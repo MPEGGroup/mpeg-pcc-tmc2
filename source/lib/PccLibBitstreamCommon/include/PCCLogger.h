@@ -137,10 +137,10 @@ class PCCLogger {
   inline void traceTrace( const char* format, Args... args ) {
     trace( LOG_TRACE, format, args... );
   }
-  template <typename... Args>
-  inline void traceHLS( const char* format, Args... args ) {
-    trace( LOG_HLS, format, args... );
-  }
+  // template <typename... Args>
+  // inline void traceHLS( const char* format, Args... args ) {
+  //   trace( LOG_HLS, format, args... );
+  // }
   template <typename... Args>
   inline void traceAtlas( const char* format, Args... args ) {
     trace( LOG_ATLAS, format, args... );

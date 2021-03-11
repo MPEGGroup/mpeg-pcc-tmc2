@@ -487,6 +487,7 @@ class PCCImage {
     return true;
   }
 
+  std::string computeMD5( size_t channel );
  private:
   T      clamp( T v, T a, T b ) const { return ( ( v < a ) ? a : ( ( v > b ) ? b : v ) ); }
   int    clamp( int v, int a, int b ) const { return ( ( v < a ) ? a : ( ( v > b ) ? b : v ) ); }
