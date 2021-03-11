@@ -31,8 +31,8 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __PROGRAM_OPTIONS_LITE__
-#define __PROGRAM_OPTIONS_LITE__
+#ifndef PCCConformanceParser_h
+#define PCCConformanceParser_h
 
 #include <functional>
 #include <iostream>
@@ -187,4 +187,4 @@ class CfrFileParser : ErrorMessage {
 }//name space 
 
 
-#endif
+#endif //~PCCConformanceParser_h

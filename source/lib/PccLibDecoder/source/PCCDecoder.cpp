@@ -59,16 +59,16 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
 
   // Note JR: logger examples
 #if 0
-  logger_->trace( LOG_DESCR, "test descr = %d \n", 10 );
-  logger_->trace( LOG_DESCR, "test descr = %d \n", 11 );
-  logger_->trace( LOG_ATLAS, "test atlas = %d \n", 12 );
-  logger_->trace( LOG_ATLAS, "test atlas = %d \n", 13 );
-  logger_->trace( LOG_FRAME, "test frame = %d \n", 14 );
-  logger_->trace( LOG_FRAME, "test frame = %d \n", 15 );
-  logger_->trace( LOG_TILES, "test tiles = %d \n", 16 );
-  logger_->trace( LOG_TILES, "test tiles = %d \n", 17 );
-  logger_->trace( LOG_TRACE, "test trace = %d \n", 18 );
-  logger_->trace( LOG_TRACE, "test trace = %d \n", 19 );
+  logger_->traceDescr( "test descr = %d \n", 10 );
+  logger_->traceDescr( "test descr = %d \n", 11 );
+  logger_->traceAtlas( "test atlas = %d \n", 12 );
+  logger_->traceAtlas( "test atlas = %d \n", 13 );
+  logger_->traceFrame( "test frame = %d \n", 14 );
+  logger_->traceFrame( "test frame = %d \n", 15 );
+  logger_->traceTiles( "test tiles = %d \n", 16 );
+  logger_->traceTiles( "test tiles = %d \n", 17 );
+  logger_->traceTrace( "test trace = %d \n", 18 );
+  logger_->traceTrace( "test trace = %d \n", 19 );
 #endif
 
   PCCVideoDecoder   videoDecoder;
