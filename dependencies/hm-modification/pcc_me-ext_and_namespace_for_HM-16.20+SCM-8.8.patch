@@ -1,172 +1,3 @@
-<<<<<<< HEAD
-=======
- compat/msvc/stdint.h                               |   2 +
- doc/mainpage.h                                     |   2 +
- source/App/TAppDecoder/TAppDecCfg.cpp              |   8 ++
- source/App/TAppDecoder/TAppDecCfg.h                |  11 ++
- source/App/TAppDecoder/TAppDecTop.cpp              |  14 ++
- source/App/TAppDecoder/TAppDecTop.h                |   3 +
- source/App/TAppDecoder/decmain.cpp                 |   4 +
- source/App/TAppEncoder/TAppEncCfg.cpp              |  30 ++++
- source/App/TAppEncoder/TAppEncCfg.h                |  10 +-
- source/App/TAppEncoder/TAppEncTop.cpp              |  67 +++++++++
- source/App/TAppEncoder/TAppEncTop.h                |   3 +
- source/App/TAppEncoder/encmain.cpp                 |   4 +
- source/App/TAppMCTSExtractor/TAppMctsExtCfg.cpp    |   4 +
- source/App/TAppMCTSExtractor/TAppMctsExtCfg.h      |   3 +
- source/App/TAppMCTSExtractor/TAppMctsExtTop.cpp    |   4 +
- source/App/TAppMCTSExtractor/TAppMctsExtTop.h      |   3 +
- source/App/TAppMCTSExtractor/mctsExtmain.cpp       |   4 +
- .../App/utils/BitrateTargeting/ExtractBitrates.cpp |   4 +
- .../App/utils/BitrateTargeting/ExtractBitrates.h   |   3 +
- .../utils/BitrateTargeting/ExtractBitratesMain.cpp |   4 +
- .../BitrateTargeting/GuessLambdaModifiers.cpp      |   4 +
- .../utils/BitrateTargeting/GuessLambdaModifiers.h  |   3 +
- .../BitrateTargeting/GuessLambdaModifiersMain.cpp  |   4 +
- source/App/utils/BitrateTargeting/RuntimeError.h   |   3 +
- source/App/utils/annexBbytecount.cpp               |   4 +
- source/App/utils/convert_NtoMbit_YCbCr.cpp         |   4 +
- source/Lib/TAppCommon/program_options_lite.cpp     |   4 +
- source/Lib/TAppCommon/program_options_lite.h       |   4 +
- source/Lib/TLibCommon/AccessUnit.h                 |   3 +
- source/Lib/TLibCommon/CommonDef.h                  |   5 +
- source/Lib/TLibCommon/ContextModel.cpp             |   4 +
- source/Lib/TLibCommon/ContextModel.h               |   3 +
- source/Lib/TLibCommon/ContextModel3DBuffer.cpp     |   4 +
- source/Lib/TLibCommon/ContextModel3DBuffer.h       |   3 +
- source/Lib/TLibCommon/ContextTables.h              |   3 +
- source/Lib/TLibCommon/Debug.cpp                    |   5 +
- source/Lib/TLibCommon/Debug.h                      |   3 +
- source/Lib/TLibCommon/NAL.h                        |   3 +
- source/Lib/TLibCommon/SEI.cpp                      |   4 +
- source/Lib/TLibCommon/SEI.h                        |   3 +
- source/Lib/TLibCommon/TComBitCounter.h             |   3 +
- source/Lib/TLibCommon/TComBitStream.cpp            |   4 +
- source/Lib/TLibCommon/TComBitStream.h              |   3 +
- source/Lib/TLibCommon/TComCABACTables.cpp          |   4 +
- source/Lib/TLibCommon/TComCABACTables.h            |   3 +
- source/Lib/TLibCommon/TComChromaFormat.cpp         |   4 +
- source/Lib/TLibCommon/TComChromaFormat.h           |   3 +
- source/Lib/TLibCommon/TComCodingStatistics.h       |   3 +
- source/Lib/TLibCommon/TComDataCU.cpp               |   4 +
- source/Lib/TLibCommon/TComDataCU.h                 |   3 +
- source/Lib/TLibCommon/TComHash.cpp                 |   4 +
- source/Lib/TLibCommon/TComHash.h                   |   3 +
- source/Lib/TLibCommon/TComInterpolationFilter.cpp  |   4 +
- source/Lib/TLibCommon/TComInterpolationFilter.h    |   3 +
- source/Lib/TLibCommon/TComList.h                   |   3 +
- source/Lib/TLibCommon/TComLoopFilter.cpp           |   4 +
- source/Lib/TLibCommon/TComLoopFilter.h             |   3 +
- source/Lib/TLibCommon/TComMotionInfo.cpp           |   4 +
- source/Lib/TLibCommon/TComMotionInfo.h             |   3 +
- source/Lib/TLibCommon/TComMv.h                     |   3 +
- source/Lib/TLibCommon/TComPattern.cpp              |  15 +-
- source/Lib/TLibCommon/TComPattern.h                |  22 +++
- source/Lib/TLibCommon/TComPic.cpp                  |  23 ++++
- source/Lib/TLibCommon/TComPic.h                    |  12 ++
- source/Lib/TLibCommon/TComPicSym.cpp               |   4 +
- source/Lib/TLibCommon/TComPicSym.h                 |   3 +
- source/Lib/TLibCommon/TComPicYuv.cpp               |   4 +
- source/Lib/TLibCommon/TComPicYuv.h                 |  13 +-
- source/Lib/TLibCommon/TComPicYuvMD5.cpp            |   4 +
- source/Lib/TLibCommon/TComPrediction.cpp           |   4 +
- source/Lib/TLibCommon/TComPrediction.h             |   3 +
- source/Lib/TLibCommon/TComRdCost.cpp               |   4 +
- source/Lib/TLibCommon/TComRdCost.h                 |   6 +
- .../Lib/TLibCommon/TComRdCostWeightPrediction.cpp  |   4 +
- source/Lib/TLibCommon/TComRdCostWeightPrediction.h |   3 +
- source/Lib/TLibCommon/TComRectangle.h              |   3 +
- source/Lib/TLibCommon/TComRom.cpp                  |  17 +++
- source/Lib/TLibCommon/TComRom.h                    |  22 +++
- source/Lib/TLibCommon/TComSampleAdaptiveOffset.cpp |   4 +
- source/Lib/TLibCommon/TComSampleAdaptiveOffset.h   |   3 +
- source/Lib/TLibCommon/TComSlice.cpp                |   4 +
- source/Lib/TLibCommon/TComSlice.h                  |   3 +
- source/Lib/TLibCommon/TComTU.cpp                   |   4 +
- source/Lib/TLibCommon/TComTU.h                     |   3 +
- source/Lib/TLibCommon/TComTrQuant.cpp              |   4 +
- source/Lib/TLibCommon/TComTrQuant.h                |   3 +
- source/Lib/TLibCommon/TComWeightPrediction.cpp     |   4 +
- source/Lib/TLibCommon/TComWeightPrediction.h       |   3 +
- source/Lib/TLibCommon/TComYuv.cpp                  |   4 +
- source/Lib/TLibCommon/TComYuv.h                    |   9 +-
- source/Lib/TLibCommon/TypeDef.h                    |  16 ++-
- source/Lib/TLibDecoder/AnnexBread.cpp              |  59 ++++++++
- source/Lib/TLibDecoder/AnnexBread.h                |   7 +
- source/Lib/TLibDecoder/NALread.cpp                 |   4 +
- source/Lib/TLibDecoder/NALread.h                   |   3 +
- source/Lib/TLibDecoder/SEIread.cpp                 |   4 +
- source/Lib/TLibDecoder/SEIread.h                   |   3 +
- source/Lib/TLibDecoder/SyntaxElementParser.cpp     |   4 +
- source/Lib/TLibDecoder/SyntaxElementParser.h       |   3 +
- source/Lib/TLibDecoder/TDecBinCoder.h              |   3 +
- source/Lib/TLibDecoder/TDecBinCoderCABAC.cpp       |   4 +
- source/Lib/TLibDecoder/TDecBinCoderCABAC.h         |   3 +
- source/Lib/TLibDecoder/TDecCAVLC.cpp               |   4 +
- source/Lib/TLibDecoder/TDecCAVLC.h                 |   3 +
- source/Lib/TLibDecoder/TDecConformance.cpp         |   4 +
- source/Lib/TLibDecoder/TDecConformance.h           |   3 +
- source/Lib/TLibDecoder/TDecCu.cpp                  |   6 +-
- source/Lib/TLibDecoder/TDecCu.h                    |   3 +
- source/Lib/TLibDecoder/TDecEntropy.cpp             |   5 +
- source/Lib/TLibDecoder/TDecEntropy.h               |   3 +
- source/Lib/TLibDecoder/TDecGop.cpp                 |  14 ++
- source/Lib/TLibDecoder/TDecGop.h                   |   3 +
- source/Lib/TLibDecoder/TDecSbac.cpp                |   4 +
- source/Lib/TLibDecoder/TDecSbac.h                  |   3 +
- source/Lib/TLibDecoder/TDecSlice.cpp               |   4 +
- source/Lib/TLibDecoder/TDecSlice.h                 |   3 +
- source/Lib/TLibDecoder/TDecTop.cpp                 |   4 +
- source/Lib/TLibDecoder/TDecTop.h                   |   3 +
- source/Lib/TLibEncoder/AnnexBwrite.h               |  26 ++++
- source/Lib/TLibEncoder/NALwrite.cpp                |   4 +
- source/Lib/TLibEncoder/NALwrite.h                  |   3 +
- source/Lib/TLibEncoder/SEIEncoder.cpp              |   4 +
- source/Lib/TLibEncoder/SEIEncoder.h                |   3 +
- source/Lib/TLibEncoder/SEIwrite.cpp                |   4 +
- source/Lib/TLibEncoder/SEIwrite.h                  |   3 +
- source/Lib/TLibEncoder/SyntaxElementWriter.cpp     |   4 +
- source/Lib/TLibEncoder/SyntaxElementWriter.h       |   3 +
- source/Lib/TLibEncoder/TEncAnalyze.h               |   3 +
- source/Lib/TLibEncoder/TEncBinCoder.h              |   3 +
- source/Lib/TLibEncoder/TEncBinCoderCABAC.cpp       |   4 +
- source/Lib/TLibEncoder/TEncBinCoderCABAC.h         |   3 +
- .../Lib/TLibEncoder/TEncBinCoderCABACCounter.cpp   |   4 +
- source/Lib/TLibEncoder/TEncBinCoderCABACCounter.h  |   3 +
- source/Lib/TLibEncoder/TEncCavlc.cpp               |   4 +
- source/Lib/TLibEncoder/TEncCavlc.h                 |   3 +
- source/Lib/TLibEncoder/TEncCfg.h                   |  20 +++
- source/Lib/TLibEncoder/TEncCu.cpp                  |   4 +
- source/Lib/TLibEncoder/TEncCu.h                    |   3 +
- source/Lib/TLibEncoder/TEncEntropy.cpp             |   5 +
- source/Lib/TLibEncoder/TEncEntropy.h               |   3 +
- source/Lib/TLibEncoder/TEncGOP.cpp                 |  65 +++++++++
- source/Lib/TLibEncoder/TEncGOP.h                   |   7 +
- source/Lib/TLibEncoder/TEncPic.cpp                 |   4 +
- source/Lib/TLibEncoder/TEncPic.h                   |   3 +
- source/Lib/TLibEncoder/TEncPreanalyzer.cpp         |   4 +
- source/Lib/TLibEncoder/TEncPreanalyzer.h           |   3 +
- source/Lib/TLibEncoder/TEncRateCtrl.cpp            |   4 +
- source/Lib/TLibEncoder/TEncRateCtrl.h              |   3 +
- .../Lib/TLibEncoder/TEncSampleAdaptiveOffset.cpp   |   4 +
- source/Lib/TLibEncoder/TEncSampleAdaptiveOffset.h  |   3 +
- source/Lib/TLibEncoder/TEncSbac.cpp                |   4 +
- source/Lib/TLibEncoder/TEncSbac.h                  |   3 +
- source/Lib/TLibEncoder/TEncSearch.cpp              | 114 ++++++++++++++-
- source/Lib/TLibEncoder/TEncSearch.h                |   3 +
- source/Lib/TLibEncoder/TEncSlice.cpp               |   4 +
- source/Lib/TLibEncoder/TEncSlice.h                 |   3 +
- source/Lib/TLibEncoder/TEncTop.cpp                 |  14 ++
- source/Lib/TLibEncoder/TEncTop.h                   |   5 +-
- source/Lib/TLibEncoder/WeightPredAnalysis.cpp      |   4 +
- source/Lib/TLibEncoder/WeightPredAnalysis.h        |   3 +
- source/Lib/TLibVideoIO/TVideoIOYuv.cpp             |   4 +
- source/Lib/TLibVideoIO/TVideoIOYuv.h               |   3 +
- source/Lib/libmd5/MD5.h                            | 153 +++++++++++----------
- source/Lib/libmd5/libmd5.h                         |   1 +
- 164 files changed, 1168 insertions(+), 90 deletions(-)
-
->>>>>>> V-PCC_Conformance
 diff --git a/compat/msvc/stdint.h b/compat/msvc/stdint.h
 index 0b3a5c6..0e61823 100644
 --- a/compat/msvc/stdint.h
@@ -211,25 +42,17 @@ index a17a9bb..edd9112 100644
  #ifdef WIN32
  #define strdup _strdup
  #endif
-<<<<<<< HEAD
 @@ -89,6 +90,10 @@ Bool TAppDecCfg::parseCfg( Int argc, TChar* argv[] )
-=======
-@@ -88,6 +89,10 @@ Bool TAppDecCfg::parseCfg( Int argc, TChar* argv[] )
-   ("SEIColourRemappingInfoFilename",  m_colourRemapSEIFileName,        string(""), "Colour Remapping YUV output file name. If empty, no remapping is applied (ignore SEI message)\n")
->>>>>>> V-PCC_Conformance
  #if O0043_BEST_EFFORT_DECODING
    ("ForceDecodeBitDepth",       m_forceDecodeBitDepth,                 0U,         "Force the decoder to operate at a particular bit-depth (best effort decoding)")
-+#endif
+ #endif
 +#if SAMPLE_STREAM
 +  //  ("sampleStreamPrecisionByte",           m_SampleStreamUnitSizePrecisionBytes,          4,       "unit_size_precision_bytes")
 +  ("fileformatSampleStream",              m_SampleStream,          false,       "Indicate the file format is sample stream")
- #endif
++#endif
    ("OutputDecodedSEIMessagesFilename",  m_outputDecodedSEIMessagesFilename,    string(""), "When non empty, output decoded SEI messages to the indicated file. If file is '-', then output to stdout\n")
    ("ClipOutputVideoToRec709Range",      m_bClipOutputVideoToRec709Range,  false, "If true then clip output video to the Rec. 709 Range on saving")
-<<<<<<< HEAD
  #if MCTS_ENC_CHECK
-=======
->>>>>>> V-PCC_Conformance
 @@ -182,3 +187,6 @@ Bool TAppDecCfg::parseCfg( Int argc, TChar* argv[] )
  }
  
@@ -260,25 +83,17 @@ index c3087c3..4156581 100644
    std::string   m_outputDecodedSEIMessagesFilename;   ///< filename to output decoded SEI messages to. If '-', then use stdout. If empty, do not output details.
    Bool          m_bClipOutputVideoToRec709Range;      ///< If true, clip the output video to the Rec 709 range on saving.
  #if MCTS_ENC_CHECK
-<<<<<<< HEAD
 @@ -93,6 +98,10 @@ public:
-=======
-@@ -92,6 +97,10 @@ public:
-   , m_respectDefDispWindow(0)
->>>>>>> V-PCC_Conformance
  #if O0043_BEST_EFFORT_DECODING
    , m_forceDecodeBitDepth(0)
-+#endif
+ #endif
 +#if SAMPLE_STREAM
 +  , m_SampleStream(false)
 +  , m_SampleStreamUnitSizePrecisionBytes(4)
- #endif
++#endif
    , m_outputDecodedSEIMessagesFilename()
    , m_bClipOutputVideoToRec709Range(false)
-<<<<<<< HEAD
  #if MCTS_ENC_CHECK
-=======
->>>>>>> V-PCC_Conformance
 @@ -112,6 +121,8 @@ public:
  
  //! \}
@@ -618,104 +433,6 @@ index 6ac8a80..895347b 100644
 +
 +
 +} // namespace pcc_hm
-<<<<<<< HEAD
-=======
-diff --git a/source/App/TAppMCTSExtractor/TAppMctsExtCfg.cpp b/source/App/TAppMCTSExtractor/TAppMctsExtCfg.cpp
-index b4ef5f1..e3ac4e5 100644
---- a/source/App/TAppMCTSExtractor/TAppMctsExtCfg.cpp
-+++ b/source/App/TAppMCTSExtractor/TAppMctsExtCfg.cpp
-@@ -39,6 +39,7 @@
- #include <string>
- #include "TAppMctsExtCfg.h"
- #include "TAppCommon/program_options_lite.h"
-+namespace pcc_hm {
- 
- #ifdef WIN32
- #define strdup _strdup
-@@ -97,3 +98,6 @@ Bool TAppMctsExtCfg::parseCfg(Int argc, TChar* argv[])
- #endif
- 
- //! \}
-+
-+
-+} // namespace pcc_hm
-diff --git a/source/App/TAppMCTSExtractor/TAppMctsExtCfg.h b/source/App/TAppMCTSExtractor/TAppMctsExtCfg.h
-index 3799936..e0eaed7 100644
---- a/source/App/TAppMCTSExtractor/TAppMctsExtCfg.h
-+++ b/source/App/TAppMCTSExtractor/TAppMctsExtCfg.h
-@@ -43,6 +43,7 @@
- 
- #include "TLibCommon/CommonDef.h"
- #include <vector>
-+namespace pcc_hm {
- 
- #if MCTS_EXTRACTION
- 
-@@ -79,4 +80,6 @@ public:
- 
- #endif
- 
-+} // namespace pcc_hm
- #endif
-+
-diff --git a/source/App/TAppMCTSExtractor/TAppMctsExtTop.cpp b/source/App/TAppMCTSExtractor/TAppMctsExtTop.cpp
-index b68065c..ef2d9c5 100644
---- a/source/App/TAppMCTSExtractor/TAppMctsExtTop.cpp
-+++ b/source/App/TAppMCTSExtractor/TAppMctsExtTop.cpp
-@@ -47,6 +47,7 @@
- #include "TLibDecoder/NALread.h"
- #include "TLibEncoder/NALwrite.h"
- #include "TLibCommon/SEI.h"
-+namespace pcc_hm {
- 
- #if MCTS_EXTRACTION
-   //! \ingroup TAppMctsExt
-@@ -406,3 +407,6 @@ Void TAppMctsExtTop::xWriteOutput(std::ostream& bitstreamFile, const AccessUnit
-   }
- }
- #endif
-+
-+
-+} // namespace pcc_hm
-diff --git a/source/App/TAppMCTSExtractor/TAppMctsExtTop.h b/source/App/TAppMCTSExtractor/TAppMctsExtTop.h
-index bc25d1a..317ff1f 100644
---- a/source/App/TAppMCTSExtractor/TAppMctsExtTop.h
-+++ b/source/App/TAppMCTSExtractor/TAppMctsExtTop.h
-@@ -48,6 +48,7 @@
- 
- #if MCTS_EXTRACTION
- #include "TAppMctsExtCfg.h"
-+namespace pcc_hm {
- 
-   //! \ingroup TAppMctsExt
-   //! \{
-@@ -94,4 +95,6 @@ protected:
- //! \}
- 
- #endif
-+} // namespace pcc_hm
- #endif
-+
-diff --git a/source/App/TAppMCTSExtractor/mctsExtmain.cpp b/source/App/TAppMCTSExtractor/mctsExtmain.cpp
-index 9c36c36..3c66f95 100644
---- a/source/App/TAppMCTSExtractor/mctsExtmain.cpp
-+++ b/source/App/TAppMCTSExtractor/mctsExtmain.cpp
-@@ -39,6 +39,7 @@
- #include <stdio.h>
- #include <time.h>
- #include "TAppMctsExtTop.h"
-+namespace pcc_hm {
- 
-   //! \ingroup TAppMctsExt
-   //! \{
-@@ -90,3 +91,6 @@ int main(int argc, char* argv[])
-   return returnCode;
- }
- //! \}
-+
-+
-+} // namespace pcc_hm
->>>>>>> V-PCC_Conformance
 diff --git a/source/App/utils/BitrateTargeting/ExtractBitrates.cpp b/source/App/utils/BitrateTargeting/ExtractBitrates.cpp
 index 4929cfb..792fe37 100644
 --- a/source/App/utils/BitrateTargeting/ExtractBitrates.cpp
@@ -2032,11 +1749,7 @@ index ba52016..a55399f 100644
  #endif
 +
 diff --git a/source/Lib/TLibCommon/TComRom.cpp b/source/Lib/TLibCommon/TComRom.cpp
-<<<<<<< HEAD
 index 8c552fe..9681fa1 100644
-=======
-index 8c552fe..c884b81 100644
->>>>>>> V-PCC_Conformance
 --- a/source/Lib/TLibCommon/TComRom.cpp
 +++ b/source/Lib/TLibCommon/TComRom.cpp
 @@ -43,6 +43,7 @@
@@ -2047,11 +1760,7 @@ index 8c552fe..c884b81 100644
  // ====================================================================================================================
  // Initialize / destroy functions
  // ====================================================================================================================
-<<<<<<< HEAD
 @@ -760,4 +761,16 @@ const Int g_quantInterDefault8x8[8*8] =
-=======
-@@ -760,4 +761,20 @@ const Int g_quantInterDefault8x8[8*8] =
->>>>>>> V-PCC_Conformance
  const UInt g_scalingListSize   [SCALING_LIST_SIZE_NUM] = {16,64,256,1024};
  const UInt g_scalingListSizeX  [SCALING_LIST_SIZE_NUM] = { 4, 8, 16,  32};
  
@@ -2064,20 +1773,12 @@ index 8c552fe..c884b81 100644
 +Bool g_patchesChange[PCC_ME_EXT_MAX_NUM_PATCHES];
 +#endif
 +
-+#if PCC_CF_EXT
-+std::vector<PCCPicCFData> g_cfData_;
-+#endif
-+
  //! \}
 +
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibCommon/TComRom.h b/source/Lib/TLibCommon/TComRom.h
-<<<<<<< HEAD
 index 879f417..74be8cb 100644
-=======
-index 879f417..c7dae9c 100644
->>>>>>> V-PCC_Conformance
 --- a/source/Lib/TLibCommon/TComRom.h
 +++ b/source/Lib/TLibCommon/TComRom.h
 @@ -42,6 +42,7 @@
@@ -2088,24 +1789,7 @@ index 879f417..c7dae9c 100644
  
  //! \ingroup TLibCommon
  //! \{
-<<<<<<< HEAD
 @@ -174,7 +175,18 @@ extern const UInt g_scalingListSizeX[SCALING_LIST_SIZE_NUM];
-=======
-@@ -158,6 +159,12 @@ extern UInt64 g_nSymbolCounter;
- #define DTRACE_CABAC_R( x,y )
- #define DTRACE_CABAC_N
- 
-+#endif
-+#if PCC_CF_EXT
-+typedef struct PCCPicCFData {
-+  Int                      PCCPoc;
-+  std::vector<std::string> PCCPicMD5;
-+} PCCPicCFData ;
- #endif
- 
- const TChar* nalUnitTypeToString(NalUnitType type);
-@@ -174,7 +181,22 @@ extern const UInt g_scalingListSizeX[SCALING_LIST_SIZE_NUM];
->>>>>>> V-PCC_Conformance
  
  extern UChar g_ucMsbP1Idx[256];
  extern UChar g_getMsbP1Idx(UInt uiVal);
@@ -2116,10 +1800,6 @@ index 879f417..c7dae9c 100644
 +extern long long g_patch2DInfo[PCC_ME_EXT_MAX_NUM_FRAMES][PCC_ME_EXT_MAX_NUM_PATCHES][4];  // u0, v0, sizeU0, sizeV0
 +extern long long g_patch3DInfo[PCC_ME_EXT_MAX_NUM_FRAMES][PCC_ME_EXT_MAX_NUM_PATCHES][3];  // d1, u1, v1
 +extern Bool g_patchesChange[PCC_ME_EXT_MAX_NUM_PATCHES];
-+#endif
-+
-+#if PCC_CF_EXT
-+extern std::vector<PCCPicCFData> g_cfData_;
 +#endif
 +
  //! \}
@@ -2370,17 +2050,10 @@ index b9173c8..e9eb293 100644
  #endif // __TCOMYUV__
 +
 diff --git a/source/Lib/TLibCommon/TypeDef.h b/source/Lib/TLibCommon/TypeDef.h
-<<<<<<< HEAD
 index f9e16de..f865cf2 100644
 --- a/source/Lib/TLibCommon/TypeDef.h
 +++ b/source/Lib/TLibCommon/TypeDef.h
 @@ -46,9 +46,20 @@
-=======
-index f9e16de..d258552 100644
---- a/source/Lib/TLibCommon/TypeDef.h
-+++ b/source/Lib/TLibCommon/TypeDef.h
-@@ -46,9 +46,21 @@
->>>>>>> V-PCC_Conformance
  #include <utility>
  #include <iostream>
  
@@ -2391,7 +2064,6 @@ index f9e16de..d258552 100644
  //! \{
  
 +#define PCC_ME_EXT                                        1
-+#define PCC_CF_EXT                                        1
 +
 +#if PCC_ME_EXT
 +#define PCC_ME_EXT_MAX_NUM_FRAMES                         600
@@ -2402,7 +2074,7 @@ index f9e16de..d258552 100644
  // ====================================================================================================================
  // Debugging
  // ====================================================================================================================
-@@ -141,7 +153,7 @@
+@@ -141,7 +152,7 @@
  
  // This can be enabled by the makefile
  #ifndef RExt__HIGH_BIT_DEPTH_SUPPORT
@@ -2411,11 +2083,7 @@ index f9e16de..d258552 100644
  #endif
  
  #if defined __SSE2__ || defined __AVX2__ || defined __AVX__ || defined _M_AMD64 || defined _M_X64
-<<<<<<< HEAD
 @@ -1112,6 +1123,8 @@ typedef std::vector<RNSEIWindow> RNSEIWindowVec;
-=======
-@@ -1112,6 +1124,8 @@ typedef std::vector<RNSEIWindow> RNSEIWindowVec;
->>>>>>> V-PCC_Conformance
  #endif
  //! \}
  
@@ -2862,11 +2530,7 @@ index 997b483..326f571 100644
  
 +
 diff --git a/source/Lib/TLibDecoder/TDecGop.cpp b/source/Lib/TLibDecoder/TDecGop.cpp
-<<<<<<< HEAD
 index c002c16..64b43c2 100644
-=======
-index c002c16..079d5f6 100644
->>>>>>> V-PCC_Conformance
 --- a/source/Lib/TLibDecoder/TDecGop.cpp
 +++ b/source/Lib/TLibDecoder/TDecGop.cpp
 @@ -44,6 +44,7 @@
@@ -2877,35 +2541,7 @@ index c002c16..079d5f6 100644
  
  //! \ingroup TLibDecoder
  //! \{
-<<<<<<< HEAD
 @@ -265,3 +266,6 @@ static Void calcAndPrintHashStatus(TComPicYuv& pic, const SEIDecodedPictureHash*
-=======
-@@ -163,6 +164,11 @@ Void TDecGop::filterPicture(TComPic* pcPic)
-                                                   pcSlice->getTLayer(),
-                                                   c,
-                                                   pcSlice->getSliceQp() );
-+  #if PCC_CF_EXT
-+  PCCPicCFData tmp;
-+  tmp.PCCPoc = pcSlice->getPOC();
-+  g_cfData_.push_back( tmp );
-+  #endif
- 
-   m_dDecTime += (Double)(clock()-iBeforeTime) / CLOCKS_PER_SEC;
-   printf ("[DT %6.3f] ", m_dDecTime );
-@@ -258,6 +264,11 @@ static Void calcAndPrintHashStatus(TComPicYuv& pic, const SEIDecodedPictureHash*
- 
-   printf("[%s:%s,%s] ", hashType, hashToString(recon_digest, numChar).c_str(), ok);
- 
-+#if PCC_CF_EXT
-+  auto& tmp = g_cfData_.back();
-+  tmp.PCCPicMD5.push_back( hashToString( recon_digest, numChar ) );
-+#endif
-+
-   if (mismatch)
-   {
-     numChecksumErrors++;
-@@ -265,3 +276,6 @@ static Void calcAndPrintHashStatus(TComPicYuv& pic, const SEIDecodedPictureHash*
->>>>>>> V-PCC_Conformance
    }
  }
  //! \}
@@ -3530,11 +3166,7 @@ index 3ddc83b..0ee29e2 100644
  
 +
 diff --git a/source/Lib/TLibEncoder/TEncGOP.cpp b/source/Lib/TLibEncoder/TEncGOP.cpp
-<<<<<<< HEAD
 index 5b7e887..df52740 100644
-=======
-index 5b7e887..31f84a9 100644
->>>>>>> V-PCC_Conformance
 --- a/source/Lib/TLibEncoder/TEncGOP.cpp
 +++ b/source/Lib/TLibEncoder/TEncGOP.cpp
 @@ -51,6 +51,7 @@
@@ -3610,34 +3242,7 @@ index 5b7e887..31f84a9 100644
          m_pcSliceEncoder->compressSlice   ( pcPic, false, false );
  
          const UInt curSliceSegmentEnd = pcSlice->getSliceSegmentCurEndCtuTsAddr();
-<<<<<<< HEAD
 @@ -3741,3 +3792,6 @@ TComSPS* TEncGOP::getSPS(Int id)
-=======
-@@ -2048,11 +2099,22 @@ Void TEncGOP::compressGOP( Int iPOCLast, Int iNumPicRcvd, TComList<TComPic*>& rc
-     Double dEncTime = (Double)(clock()-iBeforeTime) / CLOCKS_PER_SEC;
- 
-     std::string digestStr;
-+#if PCC_CF_EXT
-+    PCCPicCFData tmp;
-+    tmp.PCCPoc  = pcSlice->getPOC();
-+    g_cfData_.push_back(tmp);
-+#endif
-+    
-+
-     if (m_pcCfg->getDecodedPictureHashSEIType()!=HASHTYPE_NONE)
-     {
-       SEIDecodedPictureHash *decodedPictureHashSei = new SEIDecodedPictureHash();
-       m_seiEncoder.initDecodedPictureHashSEI(decodedPictureHashSei, pcPic, digestStr, pcSlice->getSPS()->getBitDepths());
-       trailingSeiMessages.push_back(decodedPictureHashSei);
-+#if PCC_CF_EXT
-+      auto& ref = g_cfData_.back();
-+      ref.PCCPicMD5.push_back( digestStr );
-+#endif
-     }
- 
-     m_pcCfg->setEncodedFlag(iGOPid, true);
-@@ -3741,3 +3803,6 @@ TComSPS* TEncGOP::getSPS(Int id)
->>>>>>> V-PCC_Conformance
    return m_pcEncTop->getSPS(id);
  }
  //! \}
@@ -4123,11 +3728,7 @@ index aef0104..3d83cb5 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibEncoder/TEncTop.h b/source/Lib/TLibEncoder/TEncTop.h
-<<<<<<< HEAD
 index 0e1048e..6a190f5 100644
-=======
-index 0e1048e..7859533 100644
->>>>>>> V-PCC_Conformance
 --- a/source/Lib/TLibEncoder/TEncTop.h
 +++ b/source/Lib/TLibEncoder/TEncTop.h
 @@ -57,6 +57,7 @@
@@ -4138,18 +3739,6 @@ index 0e1048e..7859533 100644
  //! \ingroup TLibEncoder
  //! \{
  
-<<<<<<< HEAD
-=======
-@@ -174,7 +175,7 @@ public:
-                TComPicYuv* pcPicYuvOrg,
-                TComPicYuv* pcPicYuvTrueOrg, const InputColourSpaceConversion snrCSC, // used for SNR calculations. Picture in original colour space.
-                TComList<TComPicYuv*>& rcListPicYuvRecOut,
--               std::list<AccessUnit>& accessUnitsOut, Int& iNumEncoded );
-+               std::list<AccessUnit>& accessUnitsOut, Int& iNumEncoded);
- 
-   /// encode several number of pictures until end-of-sequence
-   Void encode( Bool bEos, TComPicYuv* pcPicYuvOrg,
->>>>>>> V-PCC_Conformance
 @@ -207,5 +208,7 @@ public:
  
  //! \}
@@ -4236,7 +3825,6 @@ index fff7455..e3a59ec 100644
  
 +
 diff --git a/source/Lib/libmd5/MD5.h b/source/Lib/libmd5/MD5.h
-<<<<<<< HEAD
 index 98c01cd..161cd36 100644
 --- a/source/Lib/libmd5/MD5.h
 +++ b/source/Lib/libmd5/MD5.h
@@ -4249,129 +3837,8 @@ index 98c01cd..161cd36 100644
  //! \ingroup libMD5
  //! \{
  
-=======
-index 98c01cd..c25d396 100644
---- a/source/Lib/libmd5/MD5.h
-+++ b/source/Lib/libmd5/MD5.h
-@@ -1,75 +1,78 @@
--/* The copyright in this software is being made available under the BSD
-- * License, included below. This software may be subject to other third party
-- * and contributor rights, including patent rights, and no such rights are
-- * granted under this license.
-- *
-- * Copyright (c) 2010-2017, ITU/ISO/IEC
-- * All rights reserved.
-- *
-- * Redistribution and use in source and binary forms, with or without
-- * modification, are permitted provided that the following conditions are met:
-- *
-- *  * Redistributions of source code must retain the above copyright notice,
-- *    this list of conditions and the following disclaimer.
-- *  * Redistributions in binary form must reproduce the above copyright notice,
-- *    this list of conditions and the following disclaimer in the documentation
-- *    and/or other materials provided with the distribution.
-- *  * Neither the name of the ITU/ISO/IEC nor the names of its contributors may
-- *    be used to endorse or promote products derived from this software without
-- *    specific prior written permission.
-- *
-- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS
-- * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
-- * THE POSSIBILITY OF SUCH DAMAGE.
-- */
--#pragma once
--#include "libmd5.h"
--#include <string>
--
--//! \ingroup libMD5
--//! \{
--
->>>>>>> V-PCC_Conformance
 -static const UInt MD5_DIGEST_STRING_LENGTH=16;
--
--class MD5
--{
--public:
--  /**
--   * initialize digest state
--   */
--  MD5()
--  {
--    MD5Init(&m_state);
--  }
--
--  /**
--   * compute digest over buf of length len.
--   * multiple calls may extend the digest over more data.
--   */
--  void update(unsigned char *buf, unsigned len)
--  {
--    MD5Update(&m_state, buf, len);
--  }
--
--  /**
--   * flush any outstanding MD5 data, write the digest into digest.
--   */
--  void finalize(unsigned char digest[MD5_DIGEST_STRING_LENGTH])
--  {
--    MD5Final(digest, &m_state);
--  }
--
--private:
--  context_md5_t m_state;
--};
--
--
--//! \}
-+/* The copyright in this software is being made available under the BSD
-+ * License, included below. This software may be subject to other third party
-+ * and contributor rights, including patent rights, and no such rights are
-+ * granted under this license.
-+ *
-+ * Copyright (c) 2010-2017, ITU/ISO/IEC
-+ * All rights reserved.
-+ *
-+ * Redistribution and use in source and binary forms, with or without
-+ * modification, are permitted provided that the following conditions are met:
-+ *
-+ *  * Redistributions of source code must retain the above copyright notice,
-+ *    this list of conditions and the following disclaimer.
-+ *  * Redistributions in binary form must reproduce the above copyright notice,
-+ *    this list of conditions and the following disclaimer in the documentation
-+ *    and/or other materials provided with the distribution.
-+ *  * Neither the name of the ITU/ISO/IEC nor the names of its contributors may
-+ *    be used to endorse or promote products derived from this software without
-+ *    specific prior written permission.
-+ *
-+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS
-+ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
-+ * THE POSSIBILITY OF SUCH DAMAGE.
-+ */
-+#pragma once
-+#include "libmd5.h"
-+#include <string>
-+namespace pcc_hm {
-+
-+//! \ingroup libMD5
-+//! \{
-+
 +static const uint32_t MD5_DIGEST_STRING_LENGTH=16;
-<<<<<<< HEAD
  
  class MD5
  {
@@ -4379,43 +3846,6 @@ index 98c01cd..c25d396 100644
  
  
  //! \}
-=======
-+
-+class MD5
-+{
-+public:
-+  /**
-+   * initialize digest state
-+   */
-+  MD5()
-+  {
-+    MD5Init(&m_state);
-+  }
-+
-+  /**
-+   * compute digest over buf of length len.
-+   * multiple calls may extend the digest over more data.
-+   */
-+  void update(unsigned char *buf, unsigned len)
-+  {
-+    MD5Update(&m_state, buf, len);
-+  }
-+
-+  /**
-+   * flush any outstanding MD5 data, write the digest into digest.
-+   */
-+  void finalize(unsigned char digest[MD5_DIGEST_STRING_LENGTH])
-+  {
-+    MD5Final(digest, &m_state);
-+  }
-+
-+private:
-+  context_md5_t m_state;
-+};
-+
-+
-+//! \}
->>>>>>> V-PCC_Conformance
 +
 +}
 \ No newline at end of file

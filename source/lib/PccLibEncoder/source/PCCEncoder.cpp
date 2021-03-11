@@ -8473,14 +8473,10 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
     for ( size_t ti = 0; ti < context[i].getNumTilesInAtlasFrame(); ti++ ) {
       auto& atl = context.addAtlasTileLayer( i, ti );
       auto& ath = atl.getHeader();
-<<<<<<< HEAD
-      ath.setAtlasFrameParameterSetId( atlasFrameParameterSetId );
-=======
       ath.setAtlasFrameParameterSetId( atlasFrameParameterSetId ); //ajt::we also need to add adaptation parameter set ID?
 #if 1
       printf( "createPatchFrameDataStructure tile %zu\n", ti );
 #endif
->>>>>>> V-PCC_Conformance
       auto& afps = context.getAtlasFrameParameterSet( atlasFrameParameterSetId );
       // tile header
       if ( params_.additionalProjectionPlaneMode_ > 0 ) {
