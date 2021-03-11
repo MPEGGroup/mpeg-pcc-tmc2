@@ -122,8 +122,6 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
   // converting the decoded bitdepth to the nominal bitdepth
   context.getVideoOccupancyMap().convertBitdepth( decodedBitDepthOM, oi.getOccupancy2DBitdepthMinus1() + 1,
                                                   oi.getOccupancyMSBAlignFlag() );
-  TRACE_PICTURE( "Width =  %d, Height = %d\n",
-                 context.getVideoOccupancyMap().getWidth(), context.getVideoOccupancyMap().getHeight() );
 
   TRACE_PICTURE( "Geometry\n" );
   if ( sps.getMultipleMapStreamsPresentFlag( atlasIndex ) ) {
@@ -141,9 +139,6 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
                                params_.keepIntermediateFiles_, isGeometry444 );
       context.getVideoGeometryMultiple()[mapIndex].convertBitdepth(
           decodedBitDepth, gi.getGeometry2dBitdepthMinus1() + 1, gi.getGeometryMSBAlignFlag() );
-      TRACE_PICTURE( "Width =  %d, Height = %d\n",
-                     context.getVideoGeometryMultiple()[mapIndex].getWidth(),
-                     context.getVideoGeometryMultiple()[mapIndex].getHeight() );
       std::cout << "geometry D" << mapIndex << " video ->" << videoBitstream.size() << " B" << std::endl;
       totalGeoSize += videoBitstream.size();
     }
@@ -169,9 +164,6 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
                              isGeometry444 );
     context.getVideoGeometryMultiple()[0].convertBitdepth( decodedBitDepthGeo, gi.getGeometry2dBitdepthMinus1() + 1,
                                                            gi.getGeometryMSBAlignFlag() );
-    TRACE_PICTURE( "Width =  %d, Height = %d\n",
-                   context.getVideoGeometryMultiple()[ 0 ].getWidth(),
-                   context.getVideoGeometryMultiple()[ 0 ].getHeight() );
     std::cout << "geometry video ->" << videoBitstream.size() << " B" << std::endl;
   }
 
@@ -187,8 +179,6 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
                              params_.keepIntermediateFiles_, isAuxiliarygeometry444 );
     context.getVideoRawPointsGeometry().convertBitdepth( decodedBitDepthMP, gi.getGeometry2dBitdepthMinus1() + 1,
                                                          gi.getGeometryMSBAlignFlag() );
-    TRACE_PICTURE( "Width =  %d, Height = %d\n",
-                   context.getVideoRawPointsGeometry().getWidth(), context.getVideoRawPointsGeometry().getHeight() );
     std::cout << " raw points geometry -> " << videoBitstreamMP.size() << " B " << endl;
   }
 
@@ -225,9 +215,6 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
                                      params_.inverseColorSpaceConversionConfig_, params_.colorSpaceConversionPath_ );
             std::cout << "texture T" << mapIndex << " video ->" << videoBitstream.size() << " B" << std::endl;
             sizeTextureVideo += videoBitstream.size();
-            TRACE_PICTURE( "Width =  %d, Height = %d\n",
-                           context.getVideoTextureMultiple()[mapIndex].getWidth(),
-                           context.getVideoTextureMultiple()[mapIndex].getHeight() );
           }
           std::cout << "texture    video ->" << sizeTextureVideo << " B" << std::endl;
         } else {
@@ -252,10 +239,6 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
                                    params_.patchColorSubsampling_,              // patchColorSubsampling
                                    params_.inverseColorSpaceConversionConfig_,  // inverseColorSpaceConversionConfig_
                                    params_.colorSpaceConversionPath_ );
-
-          TRACE_PICTURE( "Width =  %d, Height = %d\n",
-                         context.getVideoTextureMultiple()[ 0 ].getWidth(),
-                         context.getVideoTextureMultiple()[ 0 ].getHeight() );
           std::cout << "texture video  ->" << videoBitstream.size() << " B" << std::endl;
         }
 
@@ -273,9 +256,6 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
                                    false, params_.inverseColorSpaceConversionConfig_,
                                    params_.colorSpaceConversionPath_ );
           // generateRawPointsTexturefromVideo( context, reconstructs );
-          TRACE_PICTURE( "Width =  %d, Height = %d\n",
-                         context.getVideoRawPointsTexture().getWidth(),
-                         context.getVideoRawPointsTexture().getHeight() );
           std::cout << " raw points texture -> " << videoBitstreamMP.size() << " B" << endl;
         }
       }
@@ -1259,7 +1239,7 @@ void PCCDecoder::createHashInformation( PCCContext& context, int frameIndex ) {
     TRACE_ATLAS( "Atlas Frame Index = %d \n", frameIndex );
     TRACE_ATLAS(
           "AtlasFrameOrderCntVal = %d,  AtlasFrameWidthMax =  %d, AtlasFrameHeightMax = %d, AtlasID = %d, "
-          "ASPSFrameSize = %d, VPSMapCount = %d, AttributeCount = %d, AttributeDimension = %d, NumTilesAtlasFrame = %d, AtlasTotalNumProjPatches = %d, AtlasTotalNumRawPatches = %d, AtlasTotalNumEomPatches = %d ",
+          "ASPSFrameSize = %d, VPSMapCount = %d, AttributeCount = %d, AttributeDimension = %d, NumTilesAtlasFrame = %d, AtlasTotalNumProjPatches = %d, AtlasTotalNumRawPatches = %d, AtlasTotalNumEomPatches = %d, ",
           atlasFrameOrderCnt, asps.getFrameWidth(), asps.getFrameHeight(), vps.getAtlasId( 0 ),
           asps.getFrameWidth() * asps.getFrameHeight(), vps.getMapCountMinus1( 0 ) + 1,
           vps.getAttributeInformation( 0 ).getAttributeCount(),

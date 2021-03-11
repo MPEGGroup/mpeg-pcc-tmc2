@@ -225,7 +225,7 @@ std::vector<uint8_t> PCCPointSet3::computeChecksum( bool reorderPoints ) {
     PCCPointSet3 reorderPointCloud;
     if ( withColors_ ) { reorderPointCloud.hasColors(); }
     if ( withReflectances_ ) { reorderPointCloud.addReflectances(); }
-    reorder( reorderPointCloud, true );
+    reorder( reorderPointCloud, true );      
     return reorderPointCloud.computeMd5();
   }
   return computeMd5();

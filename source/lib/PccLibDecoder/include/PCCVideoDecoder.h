@@ -94,10 +94,9 @@ class PCCVideoDecoder {
       TRACE_PICTURE( "PicOrderCntVal = %d, ", frameIndex++ );
       TRACE_PICTURE( " MD5checksumChan0 = %s, ", image.computeMD5( 0 ).c_str() );
       TRACE_PICTURE( " MD5checksumChan1 = %s, ", image.computeMD5( 1 ).c_str() );
-      TRACE_PICTURE( " MD5checksumChan2 = %s ", image.computeMD5( 2 ).c_str() );
-      TRACE_PICTURE( "\n" );
+      TRACE_PICTURE( " MD5checksumChan2 = %s \n", image.computeMD5( 2 ).c_str() );
     }
-    TRACE_PICTURE( "Width =  %d, Height = %d\n", video.getWidth(), video.getHeight() );
+    TRACE_PICTURE( "Width =  %d, Height = %d \n", video.getWidth(), video.getHeight() );
 
     width  = video.getWidth();
     height = video.getHeight();

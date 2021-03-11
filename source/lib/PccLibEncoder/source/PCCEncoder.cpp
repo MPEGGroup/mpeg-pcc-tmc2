@@ -504,9 +504,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     }
 
     if ( asps.getRawPatchEnabledFlag() && asps.getAuxiliaryVideoEnabledFlag() ) {
-      TRACE_PICTURE(
-          "AttrIdx = 0, AttrPartIdx = %d, AttrTypeID = %d ",
-          attrPartitionIndex, attrTypeId );
+      TRACE_PICTURE( "AttrIdx = 0, AttrPartIdx = %d, AttrTypeID = %d ", attrPartitionIndex, attrTypeId );
       TRACE_PICTURE( "MapIdx = 0, AuxiliaryVideoFlag = 1\n" );
       std::cout << "*******Video: Aux (Texture) ********" << std::endl;
       auto& videoBitstreamMP = context.createVideoBitstream( VIDEO_TEXTURE_RAW );

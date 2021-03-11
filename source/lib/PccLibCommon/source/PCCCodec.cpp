@@ -1762,7 +1762,8 @@ size_t PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruc
                                   const GeneratePointCloudParameters& params ) {
   TRACE_CODEC( "colorPointCloud start \n" );
 
-  if ( reconstruct.getPointCount() == 0 ) { return accTilePointCount; }
+  if ( reconstruct.getPointCount() == 0 ) { return accTilePointCount; }  
+  reconstruct.fillColor();
 
 #ifdef CODEC_TRACE
   printChecksum( reconstruct, "colorPointCloud in" );
