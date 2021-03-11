@@ -42,10 +42,10 @@ namespace pcc {
 enum PCCLoggerType {
   LOG_DESCR = 0,  // *.txt	a short description of the bitstream	(mandatory)
   LOG_TRACE,      // *.trc	trace file	(optional)
-  LOG_ATLAS,      // *_atl.ofl output atlas log	(mandatory)  ajt:shall we instead use atlas_id.oal?
-  LOG_TILES,      // *_atl.otl	output tile group log	(mandatory)  ajt: within atlas file we could also interleave tiles?
-  LOG_FRAME,      // *.opcl	output point cloud frame log	(mandatory)
-  LOG_CONFORMANCE, // *.txt output conformance 
+  LOG_ATLAS,      // *_atlas_log.txt output atlas log	(mandatory)  ajt:shall we instead use atlas_id.oal?
+  LOG_TILES,      // *_tile_log.txt	output tile group log	(mandatory)  ajt: within atlas file we could also interleave tiles?
+  LOG_PCFRAME,      // *_pcframe_log.txt	output point cloud frame log	(mandatory)
+  LOG_PICTURE,      // *_picture_log.txt	output point cloud frame log	(mandatory)
 #ifdef BITSTREAM_TRACE
   LOG_STREAM,
 #endif
@@ -60,10 +60,10 @@ static const std::string get( PCCLoggerType type ) {
   switch ( type ) {
     case LOG_DESCR: return std::string( ".txt" );
     case LOG_TRACE: return std::string( ".trc" );
-    case LOG_ATLAS: return std::string( "_atl.ofl" );
-    case LOG_TILES: return std::string( "_atl.otl" );
-    case LOG_FRAME: return std::string( ".opcl" );
-    case LOG_CONFORMANCE: return std::string( ".txt" );
+    case LOG_ATLAS: return std::string( "_atlas_log.txt" );
+    case LOG_TILES: return std::string( "_tile_log.txt" );
+    case LOG_PCFRAME: return std::string( "_pcframe_log.txt" );
+    case LOG_PICTURE: return std::string( "_picture_log.txt" );
 #ifdef BITSTREAM_TRACE
     case LOG_STREAM: return std::string( "_bitstream.txt" );
 #endif
@@ -137,6 +137,10 @@ class PCCLogger {
   inline void traceTrace( const char* format, Args... args ) {
     trace( LOG_TRACE, format, args... );
   }
+  // template <typename... Args>
+  // inline void traceHLS( const char* format, Args... args ) {
+  //   trace( LOG_HLS, format, args... );
+  // }
   template <typename... Args>
   inline void traceAtlas( const char* format, Args... args ) {
     trace( LOG_ATLAS, format, args... );
@@ -146,12 +150,12 @@ class PCCLogger {
     trace( LOG_TILES, format, args... );
   }
   template <typename... Args>
-  inline void traceFrame( const char* format, Args... args ) {
-    trace( LOG_FRAME, format, args... );
+  inline void tracePCFrame( const char* format, Args... args ) {
+    trace( LOG_PCFRAME, format, args... );
   }
   template <typename... Args>
-  inline void traceConformance( const char* format, Args... args ) {
-    trace( LOG_CONFORMANCE, format, args... );
+  inline void tracePicture( const char* format, Args... args ) {
+    trace( LOG_PICTURE, format, args... );
   }
 #ifdef BITSTREAM_TRACE
   template <typename... Args>
@@ -206,15 +210,17 @@ class PCCLogger {
 #endif
 
 #ifdef CONFORMANCE_TRACE
+#define TRACE_HLS( fmt, ... ) logger_->traceHLS( fmt, ##__VA_ARGS__ ); //ajt::needs further clarification in the conformance test CD?
 #define TRACE_ATLAS( fmt, ... ) logger_->traceAtlas( fmt, ##__VA_ARGS__ );
 #define TRACE_TILE( fmt, ... ) logger_->traceTiles( fmt, ##__VA_ARGS__ );
-#define TRACE_CONFORMANCE( fmt, ... ) logger_->traceConformance( fmt, ##__VA_ARGS__ );
-#define TRACE_FRAME( fmt, ... ) logger_->traceFrame( fmt, ##__VA_ARGS__ );
+#define TRACE_PCFRAME( fmt, ... ) logger_->tracePCFrame( fmt, ##__VA_ARGS__ );
+#define TRACE_PICTURE( fmt, ... ) logger_->tracePicture( fmt, ##__VA_ARGS__ );
 #else
+#define TRACE_HLS( fmt, ... ) ;
 #define TRACE_ATLAS( fmt, ... );
 #define TRACE_TILE( fmt, ... );
-#define TRACE_CONFORMANCE( fmt, ... );
-#define TRACE_FRAME( fmt, ... );
+#define TRACE_PCFRAME( fmt, ... );
+#define TRACE_PICTURE( fmt, ... );
 #endif
 
 }  // namespace pcc

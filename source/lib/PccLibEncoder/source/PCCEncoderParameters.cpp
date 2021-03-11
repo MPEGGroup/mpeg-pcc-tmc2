@@ -188,7 +188,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   globalPackingStrategyGOF_         = 0;
   globalPackingStrategyReset_       = false;
   globalPackingStrategyThreshold_   = 0;
-  use3dmc_                          = true;
+  use3dmc_                          = false; //ajt:: set it to flase to prevent crash
   enhancedPP_                       = true;
   minWeightEPP_                     = 0.6;
   additionalProjectionPlaneMode_    = 0;
@@ -989,7 +989,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     frame.setMaxDepth( ( 1 << geometryNominal2dBitdepth_ ) - 1 );
     frame.setLog2PatchQuantizerSizeX( context.getLog2PatchQuantizerSizeX() );
     frame.setLog2PatchQuantizerSizeY( context.getLog2PatchQuantizerSizeY() );
-    frame.setAtlasFrmOrderCntLsb( context.calculateAFOCLsb( i ) );
+    frame.setAtlasFrmOrderCntLsb( context.calculateAFOCLsb( i ) );  //ajt:: lsb and afoc values of tileFrame is set during the initilaization process
     frame.setAtlasFrmOrderCntVal( i );
     if ( i == 0 ) {
       frame.setNumRefIdxActive( 0 );

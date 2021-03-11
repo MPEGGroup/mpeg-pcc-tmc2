@@ -30,37 +30,21 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef PCCVirtualVideoDecoder_h
-#define PCCVirtualVideoDecoder_h
 
-#include "PCCCommon.h"
-#include "PCCVideo.h"
-#include "PCCVideoBitstream.h"
+#include "PCCImage.h"
+#include "MD5.h"
 
-namespace pcc {
+using namespace pcc;
 
-template <class T>
-class PCCVirtualVideoDecoder {
- public:
-  PCCVirtualVideoDecoder() {}
-  ~PCCVirtualVideoDecoder() {}
+template <typename T, size_t N>
+std::string PCCImage<T,N>::computeMD5( size_t channel ) {
+  MD5                  md5Hash;
+  std::vector<uint8_t> vector;
+  vector.resize( 16 );
+  md5Hash.update( (uint8_t*)( channels_[channel].data() ), channels_[channel].size() * sizeof(T) );
+  md5Hash.finalize( vector.data() );
+  return std::string( vector.begin(), vector.end() );
+}
 
-  static std::shared_ptr<PCCVirtualVideoDecoder<T>> create( PCCCodecId codecId );
-
-  virtual void decode( PCCVideoBitstream& bitstream,
-                       size_t             outputBitDepth,
-                       bool               RGB2GBR,
-                       PCCVideo<T, 3>&    video,
-                       const std::string& decoderPath = "",
-                       const std::string& parameters  = "",
-                       const size_t       frameCount  = 0 ) = 0;
-
-  // void         setLogger( PCCLogger& logger ) { logger_ = &logger; }
-
-  // PCCLogger* logger_ = nullptr;
- public:
-};
-
-};  // namespace pcc
-
-#endif /* PCCVirtualVideoDecoder_h */
+template class pcc::PCCImage<uint8_t,3>;
+template class pcc::PCCImage<uint16_t,3>;
