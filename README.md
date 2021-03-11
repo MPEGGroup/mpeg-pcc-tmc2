@@ -27,7 +27,7 @@ Bash scripts can be use to build mpeg-pcc-tmc2 project:
 
 ### External dependencies
 
-According to the CMake options defined in the CMakeLists.txt, the TM2 requiered some external dependencies to work: 
+According to the CMake options defined in the CMakeLists.txt, the TMC2 required some external dependencies to work: 
 
   - USE_JMAPP_VIDEO_CODEC: use JM software to encoder and decoder videos (codecId parameters must be set equal to 0 and the videoEncoderOccupancyPath, videoEncoderGeometryPath and videoEncoderAttributePath but be set the JM applications)
   - USE_HMAPP_VIDEO_CODEC: use HM software to encoder and decoder videos (codecId parametesr must be set equal to 1 and the videoEncoderOccupancyPath, videoEncoderGeometryPath and videoEncoderAttributePath but be set the JM applications)
@@ -37,13 +37,13 @@ According to the CMake options defined in the CMakeLists.txt, the TM2 requiered 
   - USE_FFMPEG_VIDEO_CODEC: use FFMPEG library to encoder and decoder videos (codecId parameter must be set equal to 5). This mode is only available in the FFMPEG branch. 
   - USE_HDRTOOLS: use HDRTools to convert the raw video files.
 
-The video encoder softwares and libraries could be found in the corresponding repositories: 
+The video encoder softwares and libraries can be found in the corresponding repositories: 
 
   - JM: https://vcgit.hhi.fraunhofer.de/jct-vc/JM.git
   - HM: https://vcgit.hhi.fraunhofer.de/jvet/HM.git
   - VTM: https://vcgit.hhi.fraunhofer.de/jvet/VVCSoftware_VTM.git
 
-Some changes have been made on these libraries to allow to use the three libraries in the same times and to increase the codec efficiencies for the V3C contents. the three codecs must be patch with the files:
+Some changes have been made on these libraries to allow to use the three libraries at the same time and to increase the codec efficiencies for the V3C contents. the three codecs must be patch with the files:
 
   - JM: dependencies/jm-modification/PCC_JM.patch
   - HM: dependencies/hm-modification/pcc_me-ext_and_namespace_for_HM-16.20+SCM-8.8.patch
@@ -75,14 +75,14 @@ The external dependencies could be downloaded, built and linked independenly:
 
     git clone -b 0.17-dev https://gitlab.com/standards/HDRTools.git dependencies/HDRTools       
 
-The pointcloud metrics could be computed inside the TM2 encoder and decoder according to the input parameters: 
+The pointcloud metrics can be computed inside the TM2 encoder and decoder according to the input parameters: 
 
- 	- computeMetrics: Compute metrics
-	- uncompressedDataPath: Input pointcloud to encode. Multi-frame sequences may be represented by %04i
+    - computeMetrics: Compute metrics
+    - uncompressedDataPath: Input pointcloud to encode. Multi-frame sequences may be represented by %04i
     - normalDataPath:  Input pointcloud to encode. Multi-frame sequences may be represented by %04i
     - resolution: Specify the intrinsic resolution
     - dropdups: 0(detect), 1(drop), 2(average) subsequent points with same coordinates
-	- neighborsProc: 0(undefined), 1(average), 2(weighted average), 3(min), 4(max) neighbors with same geometric distance
+    - neighborsProc: 0(undefined), 1(average), 2(weighted average), 3(min), 4(max) neighbors with same geometric distance
 
 The computations of the metrics are the same than the distances computed with the pcc_distortion software that can be found in: http://mpegx.int-evry.fr/software/MPEG/PCC/mpeg-pcc-dmetric.git.
 
