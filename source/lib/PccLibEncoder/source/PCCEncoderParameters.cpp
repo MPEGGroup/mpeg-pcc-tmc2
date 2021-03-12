@@ -188,7 +188,8 @@ PCCEncoderParameters::PCCEncoderParameters() {
   globalPackingStrategyGOF_         = 0;
   globalPackingStrategyReset_       = false;
   globalPackingStrategyThreshold_   = 0;
-  use3dmc_                          = false; //ajt:: set it to flase to prevent crash
+  use3dmc_                          = true;
+  usePccRDO_                        = false;
   enhancedPP_                       = true;
   minWeightEPP_                     = 0.6;
   additionalProjectionPlaneMode_    = 0;
@@ -616,6 +617,7 @@ bool PCCEncoderParameters::check() {
     absoluteT1_ = 1;
   }
   if ( losslessGeo_ ) {
+    usePccRDO_              = false;
     pbfEnableFlag_          = false;
     occupancyMapRefinement_ = false;
     flagColorSmoothing_     = false;

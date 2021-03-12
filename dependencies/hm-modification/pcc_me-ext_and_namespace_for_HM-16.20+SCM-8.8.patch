@@ -1,38 +1,3 @@
-<<<<<<< HEAD
-=======
-diff --git a/compat/msvc/stdint.h b/compat/msvc/stdint.h
-index 0b3a5c6..0e61823 100644
---- a/compat/msvc/stdint.h
-+++ b/compat/msvc/stdint.h
-@@ -4,6 +4,7 @@
- #endif
- #if _MSC_VER > 1500
- #error local C99 type definition should only be used in Visual C++ before 2010
-+} // namespace pcc_hm
- #endif
- 
- /* a minimal set of C99 types for use with MSVC */
-@@ -17,3 +18,4 @@ typedef unsigned char uint8_t;
- typedef unsigned short int uint16_t;
- typedef unsigned int uint32_t;
- typedef unsigned __int64 uint64_t;
-+
-diff --git a/doc/mainpage.h b/doc/mainpage.h
-index b20ebe3..babde7c 100644
---- a/doc/mainpage.h
-+++ b/doc/mainpage.h
-@@ -1,4 +1,5 @@
- #include "TLibCommon/CommonDef.h"
-+namespace pcc_hm {
- 
- /**
-  * \file mainpage.h
-@@ -63,3 +64,4 @@
-  *  \defgroup TAppEncoder  TAppEncoder - Encoder application
-  *  \defgroup TAppDecoder  TAppDecoder - Decoder application
-  */
-+
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
 diff --git a/source/App/TAppDecoder/TAppDecCfg.cpp b/source/App/TAppDecoder/TAppDecCfg.cpp
 index a17a9bb..edd9112 100644
 --- a/source/App/TAppDecoder/TAppDecCfg.cpp
@@ -189,11 +154,7 @@ index 97d684a..f970aa9 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/App/TAppEncoder/TAppEncCfg.cpp b/source/App/TAppEncoder/TAppEncCfg.cpp
-<<<<<<< HEAD
 index ae64335..876aca5 100644
-=======
-index ae64335..2761d6c 100644
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
 --- a/source/App/TAppEncoder/TAppEncCfg.cpp
 +++ b/source/App/TAppEncoder/TAppEncCfg.cpp
 @@ -45,6 +45,7 @@
@@ -215,11 +176,7 @@ index ae64335..2761d6c 100644
  {
    m_aidQP = NULL;
    m_startOfCodedInterval = NULL;
-<<<<<<< HEAD
 @@ -782,10 +787,26 @@ Bool TAppEncCfg::parseCfg( Int argc, TChar* argv[] )
-=======
-@@ -782,10 +787,20 @@ Bool TAppEncCfg::parseCfg( Int argc, TChar* argv[] )
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
    ("WarnUnknowParameter,w",                           warnUnknowParameter,                                  0, "warn for unknown configuration parameters instead of failing")
  
    // File, I/O and source parameters
@@ -246,11 +203,7 @@ index ae64335..2761d6c 100644
    ("SourceWidth,-wdt",                                m_iSourceWidth,                                       0, "Source picture width")
    ("SourceHeight,-hgt",                               m_iSourceHeight,                                      0, "Source picture height")
    ("InputBitDepth",                                   m_inputBitDepth[CHANNEL_TYPE_LUMA],                   8, "Bit-depth of input file")
-<<<<<<< HEAD
 @@ -3083,6 +3104,27 @@ Void TAppEncCfg::xPrintParameter()
-=======
-@@ -3083,6 +3098,18 @@ Void TAppEncCfg::xPrintParameter()
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
    printf("Input          File                    : %s\n", m_inputFileName.c_str()          );
    printf("Bitstream      File                    : %s\n", m_bitstreamFileName.c_str()      );
    printf("Reconstruction File                    : %s\n", m_reconFileName.c_str()          );
@@ -278,11 +231,7 @@ index ae64335..2761d6c 100644
    printf("Real     Format                        : %dx%d %gHz\n", m_iSourceWidth - m_confWinLeft - m_confWinRight, m_iSourceHeight - m_confWinTop - m_confWinBottom, (Double)m_iFrameRate/m_temporalSubsampleRatio );
    printf("Internal Format                        : %dx%d %gHz\n", m_iSourceWidth, m_iSourceHeight, (Double)m_iFrameRate/m_temporalSubsampleRatio );
    printf("Sequence PSNR output                   : %s\n", (m_printMSEBasedSequencePSNR ? "Linear average, MSE-based" : "Linear average only") );
-<<<<<<< HEAD
 @@ -3350,3 +3392,6 @@ Bool confirmPara(Bool bflag, const TChar* message)
-=======
-@@ -3350,3 +3377,6 @@ Bool confirmPara(Bool bflag, const TChar* message)
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
  }
  
  //! \}
@@ -290,11 +239,7 @@ index ae64335..2761d6c 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/App/TAppEncoder/TAppEncCfg.h b/source/App/TAppEncoder/TAppEncCfg.h
-<<<<<<< HEAD
 index 5f6c8fe..239d016 100644
-=======
-index 5f6c8fe..88a0c23 100644
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
 --- a/source/App/TAppEncoder/TAppEncCfg.h
 +++ b/source/App/TAppEncoder/TAppEncCfg.h
 @@ -46,6 +46,7 @@
@@ -305,11 +250,7 @@ index 5f6c8fe..88a0c23 100644
  //! \ingroup TAppEncoder
  //! \{
  
-<<<<<<< HEAD
 @@ -72,7 +73,18 @@ protected:
-=======
-@@ -72,7 +73,12 @@ protected:
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
    std::string m_inputFileName;                                ///< source file name
    std::string m_bitstreamFileName;                            ///< output bitstream file
    std::string m_reconFileName;                                ///< output reconstruction file
@@ -329,11 +270,7 @@ index 5f6c8fe..88a0c23 100644
    // Lambda modifiers
    Double    m_adLambdaModifier[ MAX_TLAYER ];                 ///< Lambda modifier array for each temporal layer
    std::vector<Double> m_adIntraLambdaModifier;                ///< Lambda modifier for Intra pictures, one for each temporal layer. If size>temporalLayer, then use [temporalLayer], else if size>0, use [size()-1], else use m_adLambdaModifier.
-<<<<<<< HEAD
 @@ -549,5 +561,7 @@ public:
-=======
-@@ -549,5 +555,7 @@ public:
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
  
  //! \}
  
@@ -342,11 +279,7 @@ index 5f6c8fe..88a0c23 100644
  
 +
 diff --git a/source/App/TAppEncoder/TAppEncTop.cpp b/source/App/TAppEncoder/TAppEncTop.cpp
-<<<<<<< HEAD
 index 71ef375..8020463 100644
-=======
-index 71ef375..17215fe 100644
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
 --- a/source/App/TAppEncoder/TAppEncTop.cpp
 +++ b/source/App/TAppEncoder/TAppEncTop.cpp
 @@ -49,6 +49,7 @@
@@ -357,11 +290,7 @@ index 71ef375..17215fe 100644
  
  using namespace std;
  
-<<<<<<< HEAD
 @@ -87,6 +88,21 @@ Void TAppEncTop::xInitLibCfg()
-=======
-@@ -87,6 +88,15 @@ Void TAppEncTop::xInitLibCfg()
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
    }
    m_cTEncTop.setVPS(&vps);
  
@@ -383,11 +312,7 @@ index 71ef375..17215fe 100644
    m_cTEncTop.setProfile                                           ( m_profile);
    m_cTEncTop.setLevel                                             ( m_levelTier, m_level);
    m_cTEncTop.setProgressiveSourceFlag                             ( m_progressiveSourceFlag);
-<<<<<<< HEAD
 @@ -605,6 +621,51 @@ Void TAppEncTop::encode()
-=======
-@@ -605,6 +615,51 @@ Void TAppEncTop::encode()
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
    xCreateLib();
    xInitLib(m_isField);
  
@@ -439,11 +364,7 @@ index 71ef375..17215fe 100644
    printChromaFormat();
  
    // main encoder loop
-<<<<<<< HEAD
 @@ -819,8 +880,17 @@ Void TAppEncTop::xWriteOutput(std::ostream& bitstreamFile, Int iNumEncoded, cons
-=======
-@@ -819,8 +874,17 @@ Void TAppEncTop::xWriteOutput(std::ostream& bitstreamFile, Int iNumEncoded, cons
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
        }
  
        const AccessUnit& au = *(iterBitstream++);
@@ -461,11 +382,7 @@ index 71ef375..17215fe 100644
      }
    }
  }
-<<<<<<< HEAD
 @@ -906,3 +976,6 @@ Void TAppEncTop::printChromaFormat()
-=======
-@@ -906,3 +970,6 @@ Void TAppEncTop::printChromaFormat()
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
  }
  
  //! \}
@@ -1461,11 +1378,7 @@ index df7417b..433a51e 100644
  #endif // __TCOMPATTERN__
 +
 diff --git a/source/Lib/TLibCommon/TComPic.cpp b/source/Lib/TLibCommon/TComPic.cpp
-<<<<<<< HEAD
 index fa1c085..2a0a806 100644
-=======
-index fa1c085..dd33bd5 100644
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
 --- a/source/Lib/TLibCommon/TComPic.cpp
 +++ b/source/Lib/TLibCommon/TComPic.cpp
 @@ -37,6 +37,7 @@
@@ -1476,11 +1389,7 @@ index fa1c085..dd33bd5 100644
  
  //! \ingroup TLibCommon
  //! \{
-<<<<<<< HEAD
 @@ -63,6 +64,13 @@ TComPic::TComPic()
-=======
-@@ -63,6 +64,10 @@ TComPic::TComPic()
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
    {
      m_apcPicYuv[i]      = NULL;
    }
@@ -1494,11 +1403,7 @@ index fa1c085..dd33bd5 100644
  }
  
  TComPic::~TComPic()
-<<<<<<< HEAD
 @@ -105,6 +113,17 @@ Void TComPic::create( const TComSPS &sps, const TComPPS &pps, const Bool bIsVirt
-=======
-@@ -105,6 +110,13 @@ Void TComPic::create( const TComSPS &sps, const TComPPS &pps, const Bool bIsVirt
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
    }
  #endif
  
@@ -1516,11 +1421,7 @@ index fa1c085..dd33bd5 100644
    // there are no SEI messages associated with this picture initially
    if (m_SEIs.size() > 0)
    {
-<<<<<<< HEAD
 @@ -212,6 +231,23 @@ Void TComPic::destroy()
-=======
-@@ -212,6 +224,14 @@ Void TComPic::destroy()
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
      m_apcPicYuvCSC = NULL;
    }
  
@@ -1544,11 +1445,7 @@ index fa1c085..dd33bd5 100644
    deleteSEIs(m_SEIs);
  }
  
-<<<<<<< HEAD
 @@ -377,3 +413,6 @@ Void TComPic::addPictureToHashMapForInter()
-=======
-@@ -377,3 +397,6 @@ Void TComPic::addPictureToHashMapForInter()
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
  }
  
  //! \}
@@ -1556,11 +1453,7 @@ index fa1c085..dd33bd5 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibCommon/TComPic.h b/source/Lib/TLibCommon/TComPic.h
-<<<<<<< HEAD
 index fd78acf..9b3f156 100644
-=======
-index fd78acf..35f5a51 100644
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
 --- a/source/Lib/TLibCommon/TComPic.h
 +++ b/source/Lib/TLibCommon/TComPic.h
 @@ -44,6 +44,7 @@
@@ -1571,11 +1464,7 @@ index fd78acf..35f5a51 100644
  
  //! \ingroup TLibCommon
  //! \{
-<<<<<<< HEAD
 @@ -70,6 +71,13 @@ private:
-=======
-@@ -70,6 +71,10 @@ private:
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
  
    TComPicYuv*           m_pcPicYuvPred;           //  Prediction
    TComPicYuv*           m_pcPicYuvResi;           //  Residual
@@ -1589,11 +1478,7 @@ index fd78acf..35f5a51 100644
    Bool                  m_bReconstructed;
    Bool                  m_bNeededForOutput;
    UInt                  m_uiCurrSliceIdx;         // Index of current slice
-<<<<<<< HEAD
 @@ -91,6 +99,13 @@ public:
-=======
-@@ -91,6 +96,11 @@ public:
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
    TComPic();
    virtual ~TComPic();
  
@@ -1607,11 +1492,7 @@ index fd78acf..35f5a51 100644
  #if REDUCED_ENCODER_MEMORY
    Void          create( const TComSPS &sps, const TComPPS &pps, const Bool bCreateEncoderSourcePicYuv, const Bool bCreateForImmediateReconstruction );
    Void          prepareForEncoderSourcePicYuv();
-<<<<<<< HEAD
 @@ -205,4 +220,6 @@ public:
-=======
-@@ -205,4 +215,6 @@ public:
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
  
  //! \}
  
@@ -1778,11 +1659,7 @@ index 3033221..a3028f1 100644
  #endif // __TCOMPREDICTION__
 +
 diff --git a/source/Lib/TLibCommon/TComRdCost.cpp b/source/Lib/TLibCommon/TComRdCost.cpp
-<<<<<<< HEAD
 index 8faa9f0..598f024 100644
-=======
-index 8faa9f0..2d67459 100644
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
 --- a/source/Lib/TLibCommon/TComRdCost.cpp
 +++ b/source/Lib/TLibCommon/TComRdCost.cpp
 @@ -45,6 +45,7 @@
@@ -1793,7 +1670,6 @@ index 8faa9f0..2d67459 100644
  
  //! \ingroup TLibCommon
  //! \{
-<<<<<<< HEAD
 @@ -338,14 +339,24 @@ Distortion TComRdCost::calcHAD( Int bitDepth, const Pel* pi0, Int iStride0, cons
    return ( uiSum >> DISTORTION_PRECISION_ADJUSTMENT(bitDepth-8) );
  }
@@ -2445,9 +2321,6 @@ index 8faa9f0..2d67459 100644
  
    return ( uiSum );
 @@ -1836,3 +2058,6 @@ Distortion TComRdCost::xGetHADs( DistParam* pcDtParam )
-=======
-@@ -1836,3 +1837,6 @@ Distortion TComRdCost::xGetHADs( DistParam* pcDtParam )
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
  }
  
  //! \}
@@ -2455,11 +2328,7 @@ index 8faa9f0..2d67459 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibCommon/TComRdCost.h b/source/Lib/TLibCommon/TComRdCost.h
-<<<<<<< HEAD
 index ce52715..001b4ff 100644
-=======
-index ce52715..f2261c5 100644
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
 --- a/source/Lib/TLibCommon/TComRdCost.h
 +++ b/source/Lib/TLibCommon/TComRdCost.h
 @@ -45,6 +45,7 @@
@@ -2470,7 +2339,6 @@ index ce52715..f2261c5 100644
  
  //! \ingroup TLibCommon
  //! \{
-<<<<<<< HEAD
 @@ -69,8 +70,14 @@ class DistParam
  public:
    const Pel*            pOrg;
@@ -2502,9 +2370,6 @@ index ce52715..f2261c5 100644
       iCols(0),
       iStep(1),
 @@ -138,6 +151,9 @@ public:
-=======
-@@ -138,6 +139,9 @@ public:
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
    Double calcRdCost( Double numBits, Double distortion, DFunc eDFunc = DF_DEFAULT );
  
    Void    setDistortionWeight  ( const ComponentID compID, const Double distortionWeight ) { m_distortionWeight[compID] = distortionWeight; }
@@ -2514,7 +2379,6 @@ index ce52715..f2261c5 100644
    Void    setLambda      ( Double dLambda, const BitDepths &bitDepths );
    Void    setFrameLambda ( Double dLambda ) { m_dFrameLambda = dLambda; }
  
-<<<<<<< HEAD
 @@ -272,11 +288,16 @@ private:
                                        );
  
@@ -2528,9 +2392,6 @@ index ce52715..f2261c5 100644
 +#endif
  
  };// END CLASS DEFINITION TComRdCost
-=======
-@@ -279,4 +283,6 @@ public:
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
  
  //! \}
  
@@ -2897,17 +2758,10 @@ index b9173c8..e9eb293 100644
  #endif // __TCOMYUV__
 +
 diff --git a/source/Lib/TLibCommon/TypeDef.h b/source/Lib/TLibCommon/TypeDef.h
-<<<<<<< HEAD
 index f9e16de..a4d9344 100644
 --- a/source/Lib/TLibCommon/TypeDef.h
 +++ b/source/Lib/TLibCommon/TypeDef.h
 @@ -46,9 +46,21 @@
-=======
-index f9e16de..f865cf2 100644
---- a/source/Lib/TLibCommon/TypeDef.h
-+++ b/source/Lib/TLibCommon/TypeDef.h
-@@ -46,9 +46,20 @@
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
  #include <utility>
  #include <iostream>
  
@@ -2938,11 +2792,7 @@ index f9e16de..f865cf2 100644
  #endif
  
  #if defined __SSE2__ || defined __AVX2__ || defined __AVX__ || defined _M_AMD64 || defined _M_X64
-<<<<<<< HEAD
 @@ -1112,6 +1124,8 @@ typedef std::vector<RNSEIWindow> RNSEIWindowVec;
-=======
-@@ -1112,6 +1123,8 @@ typedef std::vector<RNSEIWindow> RNSEIWindowVec;
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
  #endif
  //! \}
  
@@ -3897,11 +3747,7 @@ index e41c8e3..145af18 100644
  
 +
 diff --git a/source/Lib/TLibEncoder/TEncCfg.h b/source/Lib/TLibEncoder/TEncCfg.h
-<<<<<<< HEAD
 index f8ec9ec..58b59d1 100644
-=======
-index f8ec9ec..c75ad4a 100644
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
 --- a/source/Lib/TLibEncoder/TEncCfg.h
 +++ b/source/Lib/TLibEncoder/TEncCfg.h
 @@ -45,6 +45,7 @@
@@ -3912,11 +3758,7 @@ index f8ec9ec..c75ad4a 100644
  
  struct GOPEntry
  {
-<<<<<<< HEAD
 @@ -131,6 +132,18 @@ struct TEncSEIKneeFunctionInformation
-=======
-@@ -131,6 +132,12 @@ struct TEncSEIKneeFunctionInformation
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
  };
  
  protected:
@@ -3935,11 +3777,7 @@ index f8ec9ec..c75ad4a 100644
    //==== File I/O ========
    Int       m_iFrameRate;
    Int       m_FrameSkip;
-<<<<<<< HEAD
 @@ -559,6 +572,27 @@ public:
-=======
-@@ -559,6 +566,17 @@ public:
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
    virtual ~TEncCfg()
    {}
  
@@ -3967,11 +3805,7 @@ index f8ec9ec..c75ad4a 100644
    Void setProfile(Profile::Name profile) { m_profile = profile; }
    Void setLevel(Level::Tier tier, Level::Name level) { m_levelTier = tier; m_level = level; }
  
-<<<<<<< HEAD
 @@ -1370,4 +1404,6 @@ public:
-=======
-@@ -1370,4 +1388,6 @@ public:
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
  
  //! \}
  
@@ -3979,11 +3813,7 @@ index f8ec9ec..c75ad4a 100644
  #endif // !defined(AFX_TENCCFG_H__6B99B797_F4DA_4E46_8E78_7656339A6C41__INCLUDED_)
 +
 diff --git a/source/Lib/TLibEncoder/TEncCu.cpp b/source/Lib/TLibEncoder/TEncCu.cpp
-<<<<<<< HEAD
 index efbfb38..178f9cf 100644
-=======
-index efbfb38..ec44f02 100644
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
 --- a/source/Lib/TLibEncoder/TEncCu.cpp
 +++ b/source/Lib/TLibEncoder/TEncCu.cpp
 @@ -43,6 +43,7 @@
@@ -3994,7 +3824,6 @@ index efbfb38..ec44f02 100644
  using namespace std;
  
  
-<<<<<<< HEAD
 @@ -75,6 +76,9 @@ Void TEncCu::create(UChar uhTotalDepth, UInt uiMaxWidth, UInt uiMaxHeight, Chrom
    m_ppcRecoYuvTemp = new TComYuv*[m_uhTotalDepth-1];
    m_ppcOrigYuv     = new TComYuv*[m_uhTotalDepth-1];
@@ -4105,9 +3934,6 @@ index efbfb38..ec44f02 100644
    }
  
 @@ -3464,3 +3504,6 @@ UInt TEncCu::xCheckPaletteMode(TComDataCU *&rpcBestCU, TComDataCU *&rpcTempCU, B
-=======
-@@ -3464,3 +3465,6 @@ UInt TEncCu::xCheckPaletteMode(TComDataCU *&rpcBestCU, TComDataCU *&rpcTempCU, B
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
  }
  
  //! \}
@@ -4115,11 +3941,7 @@ index efbfb38..ec44f02 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibEncoder/TEncCu.h b/source/Lib/TLibEncoder/TEncCu.h
-<<<<<<< HEAD
 index a23d828..caa019e 100644
-=======
-index a23d828..e1c9708 100644
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
 --- a/source/Lib/TLibEncoder/TEncCu.h
 +++ b/source/Lib/TLibEncoder/TEncCu.h
 @@ -49,6 +49,7 @@
@@ -4130,7 +3952,6 @@ index a23d828..e1c9708 100644
  //! \ingroup TLibEncoder
  //! \{
  
-<<<<<<< HEAD
 @@ -79,6 +80,10 @@ private:
    TComYuv**               m_ppcOrigYuv;     ///< Original Yuv for each depth
    TComYuv**               m_ppcNoCorrYuv;
@@ -4143,9 +3964,6 @@ index a23d828..e1c9708 100644
    Bool                    m_bEncodeDQP;
    Bool                    m_bFastDeltaQP;
 @@ -230,4 +235,6 @@ protected:
-=======
-@@ -230,4 +231,6 @@ protected:
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
  
  //! \}
  
@@ -4193,11 +4011,7 @@ index 3ddc83b..0ee29e2 100644
  
 +
 diff --git a/source/Lib/TLibEncoder/TEncGOP.cpp b/source/Lib/TLibEncoder/TEncGOP.cpp
-<<<<<<< HEAD
 index 5b7e887..99fdb20 100644
-=======
-index 5b7e887..df52740 100644
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
 --- a/source/Lib/TLibEncoder/TEncGOP.cpp
 +++ b/source/Lib/TLibEncoder/TEncGOP.cpp
 @@ -51,6 +51,7 @@
@@ -4208,11 +4022,7 @@ index 5b7e887..df52740 100644
  using namespace std;
  
  //! \ingroup TLibEncoder
-<<<<<<< HEAD
 @@ -1197,7 +1198,19 @@ printHash(const HashType hashType, const std::string &digestStr)
-=======
-@@ -1197,7 +1198,11 @@ printHash(const HashType hashType, const std::string &digestStr)
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
  // ====================================================================================================================
  Void TEncGOP::compressGOP( Int iPOCLast, Int iNumPicRcvd, TComList<TComPic*>& rcListPic,
                             TComList<TComPicYuv*>& rcListPicYuvRecOut, std::list<AccessUnit>& accessUnitsInGOP,
@@ -4232,11 +4042,7 @@ index 5b7e887..df52740 100644
  {
    // TODO: Split this function up.
  
-<<<<<<< HEAD
 @@ -1757,6 +1770,139 @@ Void TEncGOP::compressGOP( Int iPOCLast, Int iNumPicRcvd, TComList<TComPic*>& rc
-=======
-@@ -1757,6 +1762,52 @@ Void TEncGOP::compressGOP( Int iPOCLast, Int iNumPicRcvd, TComList<TComPic*>& rc
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
        for(UInt nextCtuTsAddr = 0; nextCtuTsAddr < numberOfCtusInFrame; )
        {
          m_pcSliceEncoder->precompressSlice( pcPic );
@@ -4376,11 +4182,7 @@ index 5b7e887..df52740 100644
          m_pcSliceEncoder->compressSlice   ( pcPic, false, false );
  
          const UInt curSliceSegmentEnd = pcSlice->getSliceSegmentCurEndCtuTsAddr();
-<<<<<<< HEAD
 @@ -3741,3 +3887,6 @@ TComSPS* TEncGOP::getSPS(Int id)
-=======
-@@ -3741,3 +3792,6 @@ TComSPS* TEncGOP::getSPS(Int id)
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
    return m_pcEncTop->getSPS(id);
  }
  //! \}
@@ -4388,11 +4190,7 @@ index 5b7e887..df52740 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibEncoder/TEncGOP.h b/source/Lib/TLibEncoder/TEncGOP.h
-<<<<<<< HEAD
 index ee7cc18..430ce9d 100644
-=======
-index ee7cc18..0f949cb 100644
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
 --- a/source/Lib/TLibEncoder/TEncGOP.h
 +++ b/source/Lib/TLibEncoder/TEncGOP.h
 @@ -61,6 +61,7 @@
@@ -4403,11 +4201,7 @@ index ee7cc18..0f949cb 100644
  
  //! \ingroup TLibEncoder
  //! \{
-<<<<<<< HEAD
 @@ -168,7 +169,19 @@ public:
-=======
-@@ -168,7 +169,11 @@ public:
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
  
    Void  init        ( TEncTop* pcTEncTop );
    Void  compressGOP ( Int iPOCLast, Int iNumPicRcvd, TComList<TComPic*>& rcListPic, TComList<TComPicYuv*>& rcListPicYuvRec,
@@ -4428,11 +4222,7 @@ index ee7cc18..0f949cb 100644
    Void  xAttachSliceDataToNalUnit (OutputNALUnit& rNalu, TComOutputBitstream* pcBitstreamRedirect);
  
  
-<<<<<<< HEAD
 @@ -257,5 +270,7 @@ protected:
-=======
-@@ -257,5 +262,7 @@ protected:
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
  
  //! \}
  
@@ -4557,11 +4347,7 @@ index 94ccce0..4fd18fd 100644
  
 +
 diff --git a/source/Lib/TLibEncoder/TEncSampleAdaptiveOffset.cpp b/source/Lib/TLibEncoder/TEncSampleAdaptiveOffset.cpp
-<<<<<<< HEAD
 index 79a1249..e985358 100644
-=======
-index 79a1249..25ff06e 100644
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
 --- a/source/Lib/TLibEncoder/TEncSampleAdaptiveOffset.cpp
 +++ b/source/Lib/TLibEncoder/TEncSampleAdaptiveOffset.cpp
 @@ -40,6 +40,7 @@
@@ -4572,7 +4358,6 @@ index 79a1249..25ff06e 100644
  
  //! \ingroup TLibEncoder
  //! \{
-<<<<<<< HEAD
 @@ -253,9 +254,15 @@ Void TEncSampleAdaptiveOffset::SAOProcess(TComPic* pPic, Bool* sliceEnabled, con
    resYuv->copyToPic(srcYuv);
    srcYuv->setBorderExtension(false);
@@ -4976,9 +4761,6 @@ index 79a1249..25ff06e 100644
              }
  
 @@ -1333,3 +1500,6 @@ Void TEncSampleAdaptiveOffset::getBlkStats(const ComponentID compIdx, const Int
-=======
-@@ -1333,3 +1334,6 @@ Void TEncSampleAdaptiveOffset::getBlkStats(const ComponentID compIdx, const Int
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
  
  
  //! \}
@@ -4986,11 +4768,7 @@ index 79a1249..25ff06e 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibEncoder/TEncSampleAdaptiveOffset.h b/source/Lib/TLibEncoder/TEncSampleAdaptiveOffset.h
-<<<<<<< HEAD
 index e5d433d..fa15ab1 100644
-=======
-index e5d433d..8c37482 100644
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
 --- a/source/Lib/TLibEncoder/TEncSampleAdaptiveOffset.h
 +++ b/source/Lib/TLibEncoder/TEncSampleAdaptiveOffset.h
 @@ -45,6 +45,7 @@
@@ -5001,7 +4779,6 @@ index e5d433d..8c37482 100644
  
  //! \ingroup TLibEncoder
  //! \{
-<<<<<<< HEAD
 @@ -111,14 +112,22 @@ public:
  public: //methods
    Void getPreDBFStatistics(TComPic* pPic);
@@ -5028,9 +4805,6 @@ index e5d433d..8c37482 100644
    Void deriveModeMergeRDO(const BitDepths &bitDepths, Int ctuRsAddr, SAOBlkParam* mergeList[NUM_SAO_MERGE_TYPES], Bool* sliceEnabled, SAOStatData*** blkStats, SAOBlkParam& modeParam, Double& modeNormCost, TEncSbac** cabacCoderRDO, Int inCabacLabel);
    Int64 getDistortion(const Int channelBitDepth, Int typeIdc, Int typeAuxInfo, Int* offsetVal, SAOStatData& statData);
 @@ -151,4 +160,6 @@ private: //members
-=======
-@@ -151,4 +152,6 @@ private: //members
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
  
  //! \}
  
@@ -5076,11 +4850,7 @@ index 40437d8..5042bdb 100644
  #endif // !defined(AFX_TENCSBAC_H__DDA7CDC4_EDE3_4015_9D32_2156249C82AA__INCLUDED_)
 +
 diff --git a/source/Lib/TLibEncoder/TEncSearch.cpp b/source/Lib/TLibEncoder/TEncSearch.cpp
-<<<<<<< HEAD
 index c307cb2..c37cd0e 100644
-=======
-index c307cb2..9d57513 100644
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
 --- a/source/Lib/TLibEncoder/TEncSearch.cpp
 +++ b/source/Lib/TLibEncoder/TEncSearch.cpp
 @@ -43,6 +43,7 @@
@@ -5102,7 +4872,6 @@ index c307cb2..9d57513 100644
      m_ppcQTTempCoeff[ch] = new TCoeff* [uiNumLayersToAllocate];
  #if ADAPTIVE_QP_SELECTION
      m_ppcQTTempArlCoeff[ch]  = new TCoeff*[uiNumLayersToAllocate];
-<<<<<<< HEAD
 @@ -1306,6 +1307,9 @@ UInt TEncSearch::xGetIntraBitsQTChroma(TComTU &rTu,
  }
  
@@ -5294,9 +5063,6 @@ index c307cb2..9d57513 100644
            {
              m_pcRDGoOnSbacCoder->load( m_pppcRDSbacCoder[uiDepthCU][CI_CURR_BEST] );
 @@ -4080,8 +4132,15 @@ Void TEncSearch::xMotionEstimation( TComDataCU* pcCU, TComYuv* pcYuvOrg, Int iPa
-=======
-@@ -4080,8 +4081,15 @@ Void TEncSearch::xMotionEstimation( TComDataCU* pcCU, TComYuv* pcYuvOrg, Int iPa
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
                          iRoiHeight,
                          pcYuv->getStride(COMPONENT_Y),
                          pcCU->getSlice()->getSPS()->getBitDepth(CHANNEL_TYPE_LUMA),
@@ -5312,11 +5078,7 @@ index c307cb2..9d57513 100644
    xInitTileBorders(pcCU, &cPattern);
  #else
    cPattern.initPattern( pcYuv->getAddr  ( COMPONENT_Y, uiPartAddr ),
-<<<<<<< HEAD
 @@ -4397,6 +4456,105 @@ Void TEncSearch::xTZSearch( const TComDataCU* const pcCU,
-=======
-@@ -4397,6 +4405,105 @@ Void TEncSearch::xTZSearch( const TComDataCU* const pcCU,
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
    // set rcMv (Median predictor) as start point and as best point
    xTZSearchHelp( pcPatternKey, cStruct, rcMv.getHor(), rcMv.getVer(), 0, 0 );
  
@@ -5422,7 +5184,6 @@ index c307cb2..9d57513 100644
    // test whether one of PRED_A, PRED_B, PRED_C MV is better start point than Median predictor
    if ( bTestOtherPredictedMV )
    {
-<<<<<<< HEAD
 @@ -4956,7 +5114,12 @@ Void TEncSearch::encodeResAndCalcRdInterCU( TComDataCU* pcCU, TComYuv* pcYuvOrg,
                                              Bool bSkipResidual,
                                              TComYuv* pcYuvNoCorrResi,
@@ -5543,9 +5304,6 @@ index c307cb2..9d57513 100644
        // split the string by component and append to the relevant output (because decoder decodes in channel order, whereas this search searches by TU-order)
        std::size_t lastPos=0;
 @@ -15001,3 +15197,6 @@ Void TEncSearch::xInitTBCTable()
-=======
-@@ -15001,3 +15108,6 @@ Void TEncSearch::xInitTBCTable()
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
  }
  
  //! \}
@@ -5553,11 +5311,7 @@ index c307cb2..9d57513 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibEncoder/TEncSearch.h b/source/Lib/TLibEncoder/TEncSearch.h
-<<<<<<< HEAD
 index bd9e088..63edbcd 100644
-=======
-index bd9e088..39719e6 100644
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
 --- a/source/Lib/TLibEncoder/TEncSearch.h
 +++ b/source/Lib/TLibEncoder/TEncSearch.h
 @@ -50,6 +50,7 @@
@@ -5568,7 +5322,6 @@ index bd9e088..39719e6 100644
  
  //! \ingroup TLibEncoder
  //! \{
-<<<<<<< HEAD
 @@ -243,6 +244,9 @@ protected:
  public:
    Void  estIntraPredLumaQT      ( TComDataCU* pcCU,
@@ -5652,9 +5405,6 @@ index bd9e088..39719e6 100644
  
    UInt  xModeBitsIntra ( TComDataCU* pcCU, UInt uiMode, UInt uiPartOffset, UInt uiDepth, const ChannelType compID );
 @@ -841,4 +870,6 @@ protected:
-=======
-@@ -841,4 +842,6 @@ protected:
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
  
  //! \}
  
@@ -5700,11 +5450,7 @@ index 554f7ca..3c21748 100644
  #endif // __TENCSLICE__
 +
 diff --git a/source/Lib/TLibEncoder/TEncTop.cpp b/source/Lib/TLibEncoder/TEncTop.cpp
-<<<<<<< HEAD
 index aef0104..8f85683 100644
-=======
-index aef0104..3d83cb5 100644
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
 --- a/source/Lib/TLibEncoder/TEncTop.cpp
 +++ b/source/Lib/TLibEncoder/TEncTop.cpp
 @@ -42,6 +42,7 @@
@@ -5715,11 +5461,7 @@ index aef0104..3d83cb5 100644
  
  //! \ingroup TLibEncoder
  //! \{
-<<<<<<< HEAD
 @@ -362,7 +363,21 @@ Void TEncTop::encode( Bool flush, TComPicYuv* pcPicYuvOrg, TComPicYuv* pcPicYuvT
-=======
-@@ -362,7 +363,12 @@ Void TEncTop::encode( Bool flush, TComPicYuv* pcPicYuvOrg, TComPicYuv* pcPicYuvT
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
    }
  
    // compress GOP
@@ -5741,11 +5483,7 @@ index aef0104..3d83cb5 100644
  
    if ( m_RCEnableRateControl )
    {
-<<<<<<< HEAD
 @@ -466,7 +481,21 @@ Void TEncTop::encode(Bool flush, TComPicYuv* pcPicYuvOrg, TComPicYuv* pcPicYuvTr
-=======
-@@ -466,7 +472,12 @@ Void TEncTop::encode(Bool flush, TComPicYuv* pcPicYuvOrg, TComPicYuv* pcPicYuvTr
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
      if ( m_iNumPicRcvd && ((flush&&fieldNum==1) || (m_iPOCLast/2)==0 || m_iNumPicRcvd==m_iGOPSize ) )
      {
        // compress GOP
@@ -5767,11 +5505,7 @@ index aef0104..3d83cb5 100644
        iNumEncoded += m_iNumPicRcvd;
        m_uiNumAllPicCoded += m_iNumPicRcvd;
        m_iNumPicRcvd = 0;
-<<<<<<< HEAD
 @@ -1491,3 +1520,6 @@ Int TEncCfg::getQPForPicture(const UInt gopIndex, const TComSlice *pSlice) const
-=======
-@@ -1491,3 +1502,6 @@ Int TEncCfg::getQPForPicture(const UInt gopIndex, const TComSlice *pSlice) const
->>>>>>> 1a97f78477402dc3daf2e65f527172b24c708a2f
  #endif
  
  //! \}
