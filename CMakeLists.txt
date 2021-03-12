@@ -17,7 +17,7 @@ OPTION( USE_FFMPEG_VIDEO_CODEC    "Clone, build and use FFMPEG video encoder and
 OPTION( USE_HDRTOOLS              "Clone, build and use HDRTools for color conversions"     FALSE )
 
 # Use HM optimized RDO
-OPTION( USE_HM_PCC_RDO            "Use HM optimized RDO (run \"./clear.sh all\" for each modification)" TRUE )
+OPTION( USE_HM_PCC_RDO            "Use HM optimized RDO (run \"./clear.sh all\" for each modification)" FALSE )
 
 # PAPI profiling tools
 OPTION( ENABLE_PAPI_PROFILING     "Enable PAPI profiling"                                   FALSE )
