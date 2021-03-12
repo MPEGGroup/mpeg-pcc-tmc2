@@ -676,7 +676,11 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     }
   }  // frame
 
+#ifdef USE_HM_PCC_RDO
   if ( !params_.keepIntermediateFiles_ && ( params_.use3dmc_ || params_.usePccRDO_ ) ) {
+#else
+  if ( !params_.keepIntermediateFiles_ && params_.use3dmc_ ) {
+#endif
     remove3DMotionEstimationFiles( path.str() );
   }
 
