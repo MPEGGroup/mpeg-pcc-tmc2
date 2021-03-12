@@ -1,0 +1,3860 @@
+diff --git a/compat/msvc/stdint.h b/compat/msvc/stdint.h
+index 0b3a5c6..0e61823 100644
+--- a/compat/msvc/stdint.h
++++ b/compat/msvc/stdint.h
+@@ -4,6 +4,7 @@
+ #endif
+ #if _MSC_VER > 1500
+ #error local C99 type definition should only be used in Visual C++ before 2010
++} // namespace pcc_hm
+ #endif
+ 
+ /* a minimal set of C99 types for use with MSVC */
+@@ -17,3 +18,4 @@ typedef unsigned char uint8_t;
+ typedef unsigned short int uint16_t;
+ typedef unsigned int uint32_t;
+ typedef unsigned __int64 uint64_t;
++
+diff --git a/doc/mainpage.h b/doc/mainpage.h
+index b20ebe3..babde7c 100644
+--- a/doc/mainpage.h
++++ b/doc/mainpage.h
+@@ -1,4 +1,5 @@
+ #include "TLibCommon/CommonDef.h"
++namespace pcc_hm {
+ 
+ /**
+  * \file mainpage.h
+@@ -63,3 +64,4 @@
+  *  \defgroup TAppEncoder  TAppEncoder - Encoder application
+  *  \defgroup TAppDecoder  TAppDecoder - Decoder application
+  */
++
+diff --git a/source/App/TAppDecoder/TAppDecCfg.cpp b/source/App/TAppDecoder/TAppDecCfg.cpp
+index a17a9bb..edd9112 100644
+--- a/source/App/TAppDecoder/TAppDecCfg.cpp
++++ b/source/App/TAppDecoder/TAppDecCfg.cpp
+@@ -41,6 +41,7 @@
+ #include "TAppDecCfg.h"
+ #include "TAppCommon/program_options_lite.h"
+ #include "TLibCommon/TComChromaFormat.h"
++namespace pcc_hm {
+ #ifdef WIN32
+ #define strdup _strdup
+ #endif
+@@ -89,6 +90,10 @@ Bool TAppDecCfg::parseCfg( Int argc, TChar* argv[] )
+ #if O0043_BEST_EFFORT_DECODING
+   ("ForceDecodeBitDepth",       m_forceDecodeBitDepth,                 0U,         "Force the decoder to operate at a particular bit-depth (best effort decoding)")
+ #endif
++#if SAMPLE_STREAM
++  //  ("sampleStreamPrecisionByte",           m_SampleStreamUnitSizePrecisionBytes,          4,       "unit_size_precision_bytes")
++  ("fileformatSampleStream",              m_SampleStream,          false,       "Indicate the file format is sample stream")
++#endif
+   ("OutputDecodedSEIMessagesFilename",  m_outputDecodedSEIMessagesFilename,    string(""), "When non empty, output decoded SEI messages to the indicated file. If file is '-', then output to stdout\n")
+   ("ClipOutputVideoToRec709Range",      m_bClipOutputVideoToRec709Range,  false, "If true then clip output video to the Rec. 709 Range on saving")
+ #if MCTS_ENC_CHECK
+@@ -182,3 +187,6 @@ Bool TAppDecCfg::parseCfg( Int argc, TChar* argv[] )
+ }
+ 
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/App/TAppDecoder/TAppDecCfg.h b/source/App/TAppDecoder/TAppDecCfg.h
+index c3087c3..4156581 100644
+--- a/source/App/TAppDecoder/TAppDecCfg.h
++++ b/source/App/TAppDecoder/TAppDecCfg.h
+@@ -44,6 +44,7 @@
+ 
+ #include "TLibCommon/CommonDef.h"
+ #include <vector>
++namespace pcc_hm {
+ 
+ //! \ingroup TAppDecoder
+ //! \{
+@@ -71,6 +72,10 @@ protected:
+ #if O0043_BEST_EFFORT_DECODING
+   UInt          m_forceDecodeBitDepth;                ///< if non-zero, force the bit depth at the decoder (best effort decoding)
+ #endif
++#if SAMPLE_STREAM
++  Bool          m_SampleStream;
++  UInt          m_SampleStreamUnitSizePrecisionBytes;
++ #endif
+   std::string   m_outputDecodedSEIMessagesFilename;   ///< filename to output decoded SEI messages to. If '-', then use stdout. If empty, do not output details.
+   Bool          m_bClipOutputVideoToRec709Range;      ///< If true, clip the output video to the Rec 709 range on saving.
+ #if MCTS_ENC_CHECK
+@@ -93,6 +98,10 @@ public:
+ #if O0043_BEST_EFFORT_DECODING
+   , m_forceDecodeBitDepth(0)
+ #endif
++#if SAMPLE_STREAM
++  , m_SampleStream(false)
++  , m_SampleStreamUnitSizePrecisionBytes(4)
++#endif
+   , m_outputDecodedSEIMessagesFilename()
+   , m_bClipOutputVideoToRec709Range(false)
+ #if MCTS_ENC_CHECK
+@@ -112,6 +121,8 @@ public:
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif
+ 
+ 
++
+diff --git a/source/App/TAppDecoder/TAppDecTop.cpp b/source/App/TAppDecoder/TAppDecTop.cpp
+index bd89003..a095c0b 100644
+--- a/source/App/TAppDecoder/TAppDecTop.cpp
++++ b/source/App/TAppDecoder/TAppDecTop.cpp
+@@ -47,6 +47,7 @@
+ #if RExt__DECODER_DEBUG_BIT_STATISTICS
+ #include "TLibCommon/TComCodingStatistics.h"
+ #endif
++namespace pcc_hm {
+ 
+ //! \ingroup TAppDecoder
+ //! \{
+@@ -142,6 +143,11 @@ Void TAppDecTop::decode()
+     AnnexBStats stats = AnnexBStats();
+ 
+     InputNALUnit nalu;
++#if SAMPLE_STREAM
++    if(m_SampleStream){
++      sampleStreamNALUnit(bytestream, m_SampleStreamUnitSizePrecisionBytes, nalu.getBitstream().getFifo(), stats);
++    }else
++#endif
+     byteStreamNALUnit(bytestream, nalu.getBitstream().getFifo(), stats);
+ 
+     // call actual decoding function
+@@ -177,6 +183,11 @@ Void TAppDecTop::decode()
+           bytestream.reset();
+           TComCodingStatistics::SetStatistics(backupStats);
+ #else
++#if SAMPLE_STREAM
++          if(m_SampleStream)
++            bitstreamFile.seekg(location);
++          else
++#endif
+           bitstreamFile.seekg(location-streamoff(3));
+           bytestream.reset();
+ #endif
+@@ -971,3 +982,6 @@ Void TAppDecTop::applyColourRemapping(const TComPicYuv& pic, SEIColourRemappingI
+ }
+ 
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/App/TAppDecoder/TAppDecTop.h b/source/App/TAppDecoder/TAppDecTop.h
+index 2e89b88..22f285d 100644
+--- a/source/App/TAppDecoder/TAppDecTop.h
++++ b/source/App/TAppDecoder/TAppDecTop.h
+@@ -47,6 +47,7 @@
+ #include "TLibCommon/TComPicYuv.h"
+ #include "TLibDecoder/TDecTop.h"
+ #include "TAppDecCfg.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TAppDecoder
+ //! \{
+@@ -94,5 +95,7 @@ private:
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif
+ 
++
+diff --git a/source/App/TAppDecoder/decmain.cpp b/source/App/TAppDecoder/decmain.cpp
+index 97d684a..f970aa9 100644
+--- a/source/App/TAppDecoder/decmain.cpp
++++ b/source/App/TAppDecoder/decmain.cpp
+@@ -39,6 +39,7 @@
+ #include <stdio.h>
+ #include <time.h>
+ #include "TAppDecTop.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TAppDecoder
+ //! \{
+@@ -95,3 +96,6 @@ int main(int argc, char* argv[])
+ }
+ 
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/App/TAppEncoder/TAppEncCfg.cpp b/source/App/TAppEncoder/TAppEncCfg.cpp
+index ae64335..2761d6c 100644
+--- a/source/App/TAppEncoder/TAppEncCfg.cpp
++++ b/source/App/TAppEncoder/TAppEncCfg.cpp
+@@ -45,6 +45,7 @@
+ #include "TAppEncCfg.h"
+ #include "TAppCommon/program_options_lite.h"
+ #include "TLibEncoder/TEncRateCtrl.h"
++namespace pcc_hm {
+ #ifdef WIN32
+ #define strdup _strdup
+ #endif
+@@ -132,6 +133,10 @@ TAppEncCfg::TAppEncCfg()
+ #if EXTENSION_360_VIDEO
+ , m_ext360(*this)
+ #endif
++#if SAMPLE_STREAM
++, m_fileformatSampleStream(false)
++, m_SampleStreamUnitSizePrecisionBytes(4)
++#endif
+ {
+   m_aidQP = NULL;
+   m_startOfCodedInterval = NULL;
+@@ -782,10 +787,20 @@ Bool TAppEncCfg::parseCfg( Int argc, TChar* argv[] )
+   ("WarnUnknowParameter,w",                           warnUnknowParameter,                                  0, "warn for unknown configuration parameters instead of failing")
+ 
+   // File, I/O and source parameters
++#if SAMPLE_STREAM
++  ("fileformateSampleStream",                         m_fileformatSampleStream,                             false, "FileFormat: 1. SampleStream 0.ByteStream(AnnexB)")
++  //("sampleStreamPrecisionBytes",                     m_SampleStreamUnitSizePrecisionBytes,                 4, "FileFormat: Unit Size Precision in Byte for SampleStream")
++#endif
+   ("InputFile,i",                                     m_inputFileName,                             string(""), "Original YUV input file name")
+   ("InputPathPrefix,-ipp",                            inputPathPrefix,                             string(""), "pathname to prepend to input filename")
+   ("BitstreamFile,b",                                 m_bitstreamFileName,                         string(""), "Bitstream output file name")
+   ("ReconFile,o",                                     m_reconFileName,                             string(""), "Reconstructed YUV output file name")
++#if PATCH_BASED_MVP || PCC_ME_EXT
++  ("UsePccMotionEstimation",                          m_usePCCExt,                                      false, "Use modified motion estimation for PCC content")
++	  ("BlockToPatchFile",                            m_blockToPatchFileName,                      string(""), "Input block to patch file name")
++	  ("OccupancyMapFile",                            m_occupancyMapFileName,                      string(""), "Input occupancy map file name")
++	  ("PatchInfoFile",                               m_patchInfoFileName,                         string(""), "Input patch info file name")
++#endif
+   ("SourceWidth,-wdt",                                m_iSourceWidth,                                       0, "Source picture width")
+   ("SourceHeight,-hgt",                               m_iSourceHeight,                                      0, "Source picture height")
+   ("InputBitDepth",                                   m_inputBitDepth[CHANNEL_TYPE_LUMA],                   8, "Bit-depth of input file")
+@@ -3083,6 +3098,18 @@ Void TAppEncCfg::xPrintParameter()
+   printf("Input          File                    : %s\n", m_inputFileName.c_str()          );
+   printf("Bitstream      File                    : %s\n", m_bitstreamFileName.c_str()      );
+   printf("Reconstruction File                    : %s\n", m_reconFileName.c_str()          );
++#if SAMPLE_STREAM
++  Bool        m_fileformatSampleStream;
++  UInt        m_SampleStreamUnitSizePrecisionBytes;
++#endif
++#if PATCH_BASED_MVP || PCC_ME_EXT
++  printf("PCCExt                                 : %s\n", (m_usePCCExt ? "Enabled" : "Disabled"));
++  if (m_usePCCExt) {
++	  printf("BlockToPatch   File                    : %s\n", (m_blockToPatchFileName.c_str()));
++	  printf("OccupancyMap   File                    : %s\n", (m_occupancyMapFileName.c_str()));
++	  printf("PatchInfo      File                    : %s\n", (m_patchInfoFileName.c_str()));
++  }
++#endif
+   printf("Real     Format                        : %dx%d %gHz\n", m_iSourceWidth - m_confWinLeft - m_confWinRight, m_iSourceHeight - m_confWinTop - m_confWinBottom, (Double)m_iFrameRate/m_temporalSubsampleRatio );
+   printf("Internal Format                        : %dx%d %gHz\n", m_iSourceWidth, m_iSourceHeight, (Double)m_iFrameRate/m_temporalSubsampleRatio );
+   printf("Sequence PSNR output                   : %s\n", (m_printMSEBasedSequencePSNR ? "Linear average, MSE-based" : "Linear average only") );
+@@ -3350,3 +3377,6 @@ Bool confirmPara(Bool bflag, const TChar* message)
+ }
+ 
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/App/TAppEncoder/TAppEncCfg.h b/source/App/TAppEncoder/TAppEncCfg.h
+index 5f6c8fe..88a0c23 100644
+--- a/source/App/TAppEncoder/TAppEncCfg.h
++++ b/source/App/TAppEncoder/TAppEncCfg.h
+@@ -46,6 +46,7 @@
+ #endif
+ #include <sstream>
+ #include <vector>
++namespace pcc_hm {
+ //! \ingroup TAppEncoder
+ //! \{
+ 
+@@ -72,7 +73,12 @@ protected:
+   std::string m_inputFileName;                                ///< source file name
+   std::string m_bitstreamFileName;                            ///< output bitstream file
+   std::string m_reconFileName;                                ///< output reconstruction file
+-
++#if PCC_ME_EXT
++  Bool        m_usePCCExt;
++  std::string m_blockToPatchFileName;
++  std::string m_occupancyMapFileName;
++  std::string m_patchInfoFileName;
++#endif
+   // Lambda modifiers
+   Double    m_adLambdaModifier[ MAX_TLAYER ];                 ///< Lambda modifier array for each temporal layer
+   std::vector<Double> m_adIntraLambdaModifier;                ///< Lambda modifier for Intra pictures, one for each temporal layer. If size>temporalLayer, then use [temporalLayer], else if size>0, use [size()-1], else use m_adLambdaModifier.
+@@ -549,5 +555,7 @@ public:
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif // __TAPPENCCFG__
+ 
++
+diff --git a/source/App/TAppEncoder/TAppEncTop.cpp b/source/App/TAppEncoder/TAppEncTop.cpp
+index 71ef375..17215fe 100644
+--- a/source/App/TAppEncoder/TAppEncTop.cpp
++++ b/source/App/TAppEncoder/TAppEncTop.cpp
+@@ -49,6 +49,7 @@
+ #if EXTENSION_360_VIDEO
+ #include "TAppEncHelper360/TExt360AppEncTop.h"
+ #endif
++namespace pcc_hm {
+ 
+ using namespace std;
+ 
+@@ -87,6 +88,15 @@ Void TAppEncTop::xInitLibCfg()
+   }
+   m_cTEncTop.setVPS(&vps);
+ 
++#if PCC_ME_EXT
++  m_cTEncTop.setUsePCCExt(m_usePCCExt);
++  if (m_usePCCExt) {
++	m_cTEncTop.setBlockToPatchFileName(m_blockToPatchFileName);
++	m_cTEncTop.setOccupancyMapFileName(m_occupancyMapFileName);
++	//m_cTencTop.setPatchInfoFileName                                 ( m_patchInfoFileName );
++  }
++#endif
++
+   m_cTEncTop.setProfile                                           ( m_profile);
+   m_cTEncTop.setLevel                                             ( m_levelTier, m_level);
+   m_cTEncTop.setProgressiveSourceFlag                             ( m_progressiveSourceFlag);
+@@ -605,6 +615,51 @@ Void TAppEncTop::encode()
+   xCreateLib();
+   xInitLib(m_isField);
+ 
++#if PCC_ME_EXT
++  if (m_usePCCExt)
++  {
++	  printf("\nReading the aux info files\n");
++	  FILE* patchFile = NULL;
++	  patchFile = fopen(m_patchInfoFileName.c_str(), "rb");
++
++	  for (Int i = 0; i < PCC_ME_EXT_MAX_NUM_FRAMES; i++)
++	  {
++		  long long readSize = fread(&g_numPatches[i], sizeof(long long), 1, patchFile);
++
++		  if (readSize != 1 && readSize != 0)
++		  {
++			  printf("error: Wrong Patch data group file");
++		  }
++
++		  for (Int patchIdx = 0; patchIdx < g_numPatches[i]; patchIdx++)
++		  {
++			  readSize = fread(&g_projectionIndex[i][patchIdx], sizeof(long long), 1, patchFile);
++
++			  if (readSize != 1)
++			  {
++				  printf("error: Wrong Auxiliary data format");
++			  }
++
++			  readSize = fread(g_patch2DInfo[i][patchIdx], sizeof(long long), 4, patchFile);
++
++			  if (readSize != 4)
++			  {
++				  printf("error: Wrong Auxiliary data format");
++			  }
++
++			  readSize = fread(g_patch3DInfo[i][patchIdx], sizeof(long long), 3, patchFile);
++
++			  if (readSize != 3)
++			  {
++				  printf("error: Wrong Auxiliary data format");
++			  }
++		  }
++	  }
++
++	  fclose(patchFile);
++  }
++#endif
++
+   printChromaFormat();
+ 
+   // main encoder loop
+@@ -819,8 +874,17 @@ Void TAppEncTop::xWriteOutput(std::ostream& bitstreamFile, Int iNumEncoded, cons
+       }
+ 
+       const AccessUnit& au = *(iterBitstream++);
++#if SAMPLE_STREAM
++      if(m_fileformatSampleStream){
++        const vector<UInt>& stats = writeSampleStream(bitstreamFile, m_SampleStreamUnitSizePrecisionBytes, au);
++        rateStatsAccum(au, stats);
++      } else{
++#endif
+       const vector<UInt>& stats = writeAnnexB(bitstreamFile, au);
+       rateStatsAccum(au, stats);
++#if SAMPLE_STREAM
++      }
++#endif
+     }
+   }
+ }
+@@ -906,3 +970,6 @@ Void TAppEncTop::printChromaFormat()
+ }
+ 
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/App/TAppEncoder/TAppEncTop.h b/source/App/TAppEncoder/TAppEncTop.h
+index 1749826..2112ea0 100644
+--- a/source/App/TAppEncoder/TAppEncTop.h
++++ b/source/App/TAppEncoder/TAppEncTop.h
+@@ -45,6 +45,7 @@
+ #include "TLibVideoIO/TVideoIOYuv.h"
+ #include "TLibCommon/AccessUnit.h"
+ #include "TAppEncCfg.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TAppEncoder
+ //! \{
+@@ -99,5 +100,7 @@ public:
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif // __TAPPENCTOP__
+ 
++
+diff --git a/source/App/TAppEncoder/encmain.cpp b/source/App/TAppEncoder/encmain.cpp
+index 6ac8a80..895347b 100644
+--- a/source/App/TAppEncoder/encmain.cpp
++++ b/source/App/TAppEncoder/encmain.cpp
+@@ -44,6 +44,7 @@
+ //! \{
+ 
+ #include "../Lib/TLibCommon/Debug.h"
++namespace pcc_hm {
+ 
+ // ====================================================================================================================
+ // Main function
+@@ -108,3 +109,6 @@ int main(int argc, char* argv[])
+ }
+ 
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/App/utils/BitrateTargeting/ExtractBitrates.cpp b/source/App/utils/BitrateTargeting/ExtractBitrates.cpp
+index 4929cfb..792fe37 100644
+--- a/source/App/utils/BitrateTargeting/ExtractBitrates.cpp
++++ b/source/App/utils/BitrateTargeting/ExtractBitrates.cpp
+@@ -37,6 +37,7 @@
+ #include <cassert>
+ #include <limits>
+ #include <map>
++namespace pcc_hm {
+ 
+ namespace
+ {
+@@ -210,3 +211,6 @@ std::vector< double > extractBitratesForTemporalLayers( std::istream& i )
+ 
+   return result;
+ }
++
++
++} // namespace pcc_hm
+diff --git a/source/App/utils/BitrateTargeting/ExtractBitrates.h b/source/App/utils/BitrateTargeting/ExtractBitrates.h
+index 6ef6b21..9c76819 100644
+--- a/source/App/utils/BitrateTargeting/ExtractBitrates.h
++++ b/source/App/utils/BitrateTargeting/ExtractBitrates.h
+@@ -36,6 +36,7 @@
+ 
+ #include "RuntimeError.h"
+ #include <vector>
++namespace pcc_hm {
+ 
+ /// An error occured while parsing a POC line from within a log file
+ class POCParseException: public RuntimeError
+@@ -68,4 +69,6 @@ class NonContiguousQPSetException: public RuntimeError
+ /// \throw NonContiguousQPSetException if the QP set from the log file was not contiguous
+ std::vector< double > extractBitratesForTemporalLayers( std::istream& i );
+ 
++} // namespace pcc_hm
+ #endif
++
+diff --git a/source/App/utils/BitrateTargeting/ExtractBitratesMain.cpp b/source/App/utils/BitrateTargeting/ExtractBitratesMain.cpp
+index adfd71f..b120e95 100644
+--- a/source/App/utils/BitrateTargeting/ExtractBitratesMain.cpp
++++ b/source/App/utils/BitrateTargeting/ExtractBitratesMain.cpp
+@@ -34,6 +34,7 @@
+ #include <iostream>
+ #include <cassert>
+ #include "ExtractBitrates.h"
++namespace pcc_hm {
+ 
+ /// In out, finds the first occurence of toFind and replaces it with "e"
+ /// \pre toFind must have a size of 2
+@@ -97,3 +98,6 @@ int main( int, char** )
+     return 1;
+   }
+ }
++
++
++} // namespace pcc_hm
+diff --git a/source/App/utils/BitrateTargeting/GuessLambdaModifiers.cpp b/source/App/utils/BitrateTargeting/GuessLambdaModifiers.cpp
+index 6844c74..2e494e2 100644
+--- a/source/App/utils/BitrateTargeting/GuessLambdaModifiers.cpp
++++ b/source/App/utils/BitrateTargeting/GuessLambdaModifiers.cpp
+@@ -35,6 +35,7 @@
+ #include <limits>
+ #include <cassert>
+ #include <cmath>
++namespace pcc_hm {
+ 
+ namespace
+ {
+@@ -482,3 +483,6 @@ void guessLambdaModifiers(
+   } while( indexIter != firstIndexSet.end( ) );
+   assert( resultIter == resultVector.end( ) );  // The index set and the result vector should be the same size
+ }
++
++
++} // namespace pcc_hm
+diff --git a/source/App/utils/BitrateTargeting/GuessLambdaModifiers.h b/source/App/utils/BitrateTargeting/GuessLambdaModifiers.h
+index 6722250..88637b8 100644
+--- a/source/App/utils/BitrateTargeting/GuessLambdaModifiers.h
++++ b/source/App/utils/BitrateTargeting/GuessLambdaModifiers.h
+@@ -40,6 +40,7 @@
+ #include <list>
+ #include <set>
+ #include <limits>
++namespace pcc_hm {
+ 
+ /// Thrown if there is an error parsing the initial adjustment parameter
+ class InitialAdjustmentParameterParseException: public RuntimeError
+@@ -145,4 +146,6 @@ void guessLambdaModifiers(
+     std::istream& targetsIstream,
+     std::istream& metaLogIstream );
+ 
++} // namespace pcc_hm
+ #endif
++
+diff --git a/source/App/utils/BitrateTargeting/GuessLambdaModifiersMain.cpp b/source/App/utils/BitrateTargeting/GuessLambdaModifiersMain.cpp
+index 410438a..a99e340 100644
+--- a/source/App/utils/BitrateTargeting/GuessLambdaModifiersMain.cpp
++++ b/source/App/utils/BitrateTargeting/GuessLambdaModifiersMain.cpp
+@@ -35,6 +35,7 @@
+ #include "RuntimeError.h"
+ #include "GuessLambdaModifiers.h"
+ #include <iostream>
++namespace pcc_hm {
+ 
+ class WrongNumberOfArgumentsException: public RuntimeError
+ {
+@@ -73,3 +74,6 @@ int main( int argc, char** ppArgv )
+   }
+   return 1;
+ }
++
++
++} // namespace pcc_hm
+diff --git a/source/App/utils/BitrateTargeting/RuntimeError.h b/source/App/utils/BitrateTargeting/RuntimeError.h
+index d68888e..18c8aa9 100644
+--- a/source/App/utils/BitrateTargeting/RuntimeError.h
++++ b/source/App/utils/BitrateTargeting/RuntimeError.h
+@@ -36,6 +36,7 @@
+ 
+ #include <sstream>
+ #include <stdexcept>
++namespace pcc_hm {
+ 
+ /// This class serves the same purpose as std::runtime_error, but it can be more convenient to use
+ class RuntimeError: public std::runtime_error
+@@ -73,4 +74,6 @@ inline std::ostream& operator<<( std::ostream& left, const RuntimeError& right )
+   return left << right.what( );
+ }
+ 
++} // namespace pcc_hm
+ #endif
++
+diff --git a/source/App/utils/annexBbytecount.cpp b/source/App/utils/annexBbytecount.cpp
+index 27c2826..5e4db60 100644
+--- a/source/App/utils/annexBbytecount.cpp
++++ b/source/App/utils/annexBbytecount.cpp
+@@ -39,6 +39,7 @@
+ #include <string.h>
+ 
+ #include "TLibDecoder/AnnexBread.h"
++namespace pcc_hm {
+ 
+ using namespace std;
+ 
+@@ -239,3 +240,6 @@ int main(int argc, char*argv[])
+ 
+   return 0;
+ }
++
++
++} // namespace pcc_hm
+diff --git a/source/App/utils/convert_NtoMbit_YCbCr.cpp b/source/App/utils/convert_NtoMbit_YCbCr.cpp
+index 6d9454a..4ca5038 100644
+--- a/source/App/utils/convert_NtoMbit_YCbCr.cpp
++++ b/source/App/utils/convert_NtoMbit_YCbCr.cpp
+@@ -36,6 +36,7 @@
+ #include "TLibCommon/TComPicYuv.h"
+ #include "TLibVideoIO/TVideoIOYuv.h"
+ #include "TAppCommon/program_options_lite.h"
++namespace pcc_hm {
+ 
+ using namespace std;
+ namespace po = df::program_options_lite;
+@@ -146,3 +147,6 @@ Int main(Int argc, const char** argv)
+ 
+   return EXIT_SUCCESS;
+ }
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TAppCommon/program_options_lite.cpp b/source/Lib/TAppCommon/program_options_lite.cpp
+index 009dbdf..260b14c 100644
+--- a/source/Lib/TAppCommon/program_options_lite.cpp
++++ b/source/Lib/TAppCommon/program_options_lite.cpp
+@@ -39,6 +39,7 @@
+ #include <map>
+ #include <algorithm>
+ #include "program_options_lite.h"
++namespace pcc_hm {
+ 
+ using namespace std;
+ 
+@@ -564,3 +565,6 @@ namespace df
+ }
+ 
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TAppCommon/program_options_lite.h b/source/Lib/TAppCommon/program_options_lite.h
+index 0a71a23..9e95202 100644
+--- a/source/Lib/TAppCommon/program_options_lite.h
++++ b/source/Lib/TAppCommon/program_options_lite.h
+@@ -36,6 +36,8 @@
+ #include <list>
+ #include <map>
+ 
++namespace pcc_hm {
++
+ #ifndef __PROGRAM_OPTIONS_LITE__
+ #define __PROGRAM_OPTIONS_LITE__
+ 
+@@ -242,4 +244,6 @@ namespace df
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif
++
+diff --git a/source/Lib/TLibCommon/AccessUnit.h b/source/Lib/TLibCommon/AccessUnit.h
+index 64dd0e7..c27d68d 100644
+--- a/source/Lib/TLibCommon/AccessUnit.h
++++ b/source/Lib/TLibCommon/AccessUnit.h
+@@ -43,6 +43,7 @@
+ 
+ #include <list>
+ #include "NAL.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibCommon
+ //! \{
+@@ -73,4 +74,6 @@ public:
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif
++
+diff --git a/source/Lib/TLibCommon/CommonDef.h b/source/Lib/TLibCommon/CommonDef.h
+index aeec735..d255644 100644
+--- a/source/Lib/TLibCommon/CommonDef.h
++++ b/source/Lib/TLibCommon/CommonDef.h
+@@ -43,6 +43,8 @@
+ #include <assert.h>
+ #include <limits>
+ 
++#define SAMPLE_STREAM 1
++
+ #if _MSC_VER > 1000
+ // disable "signed and unsigned mismatch"
+ #pragma warning( disable : 4018 )
+@@ -50,6 +52,7 @@
+ #pragma warning( disable : 4800 )
+ #endif // _MSC_VER > 1000
+ #include "TypeDef.h"
++namespace pcc_hm {
+ 
+ #ifdef _MSC_VER
+ #if _MSC_VER <= 1500
+@@ -312,5 +315,7 @@ template <typename ValueType> inline ValueType rightShiftEvenRounding(const Valu
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif // end of #ifndef  __COMMONDEF__
+ 
++
+diff --git a/source/Lib/TLibCommon/ContextModel.cpp b/source/Lib/TLibCommon/ContextModel.cpp
+index d6ea087..58feff1 100644
+--- a/source/Lib/TLibCommon/ContextModel.cpp
++++ b/source/Lib/TLibCommon/ContextModel.cpp
+@@ -38,6 +38,7 @@
+ #include <algorithm>
+ 
+ #include "ContextModel.h"
++namespace pcc_hm {
+ 
+ using namespace std;
+ //! \ingroup TLibCommon
+@@ -127,3 +128,6 @@ const Int ContextModel::m_entropyBits[ ContextModel::m_totalStates ] =
+ #endif
+ };
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibCommon/ContextModel.h b/source/Lib/TLibCommon/ContextModel.h
+index 7a3942d..6fef4b6 100644
+--- a/source/Lib/TLibCommon/ContextModel.h
++++ b/source/Lib/TLibCommon/ContextModel.h
+@@ -45,6 +45,7 @@
+ 
+ #include "CommonDef.h"
+ #include "TComRom.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibCommon
+ //! \{
+@@ -107,5 +108,7 @@ private:
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif
+ 
++
+diff --git a/source/Lib/TLibCommon/ContextModel3DBuffer.cpp b/source/Lib/TLibCommon/ContextModel3DBuffer.cpp
+index 1e308d9..c63bd11 100644
+--- a/source/Lib/TLibCommon/ContextModel3DBuffer.cpp
++++ b/source/Lib/TLibCommon/ContextModel3DBuffer.cpp
+@@ -36,6 +36,7 @@
+ */
+ 
+ #include "ContextModel3DBuffer.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibCommon
+ //! \{
+@@ -118,3 +119,6 @@ UInt ContextModel3DBuffer::calcCost( SliceType sliceType, Int qp, UChar* ctxMode
+   return cost;
+ }
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibCommon/ContextModel3DBuffer.h b/source/Lib/TLibCommon/ContextModel3DBuffer.h
+index 0e33a3e..8cbb89e 100644
+--- a/source/Lib/TLibCommon/ContextModel3DBuffer.h
++++ b/source/Lib/TLibCommon/ContextModel3DBuffer.h
+@@ -43,6 +43,7 @@
+ 
+ #include "CommonDef.h"
+ #include "ContextModel.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibCommon
+ //! \{
+@@ -94,4 +95,6 @@ public:
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif // _HM_CONTEXT_MODEL_3DBUFFER_H_
++
+diff --git a/source/Lib/TLibCommon/ContextTables.h b/source/Lib/TLibCommon/ContextTables.h
+index 538b2f9..51ac534 100644
+--- a/source/Lib/TLibCommon/ContextTables.h
++++ b/source/Lib/TLibCommon/ContextTables.h
+@@ -39,6 +39,7 @@
+ #ifndef __CONTEXTTABLES__
+ #define __CONTEXTTABLES__
+ #include <cstring>
++namespace pcc_hm {
+ 
+ //! \ingroup TLibCommon
+ //! \{
+@@ -564,4 +565,6 @@ INIT_SCAN_ROTATION_FLAG[NUMBER_OF_SLICE_TYPES][NUM_SCAN_ROTATION_FLAG_CTX] =
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif
++
+diff --git a/source/Lib/TLibCommon/Debug.cpp b/source/Lib/TLibCommon/Debug.cpp
+index d06f964..545339c 100644
+--- a/source/Lib/TLibCommon/Debug.cpp
++++ b/source/Lib/TLibCommon/Debug.cpp
+@@ -41,6 +41,7 @@
+ #include "TComDataCU.h"
+ #include "TComPic.h"
+ #include "TComYuv.h"
++namespace pcc_hm {
+ 
+ static const UInt settingNameWidth  = 66;
+ static const UInt settingHelpWidth  = 84;
+@@ -182,6 +183,7 @@ Void printMacroSettings()
+   PRINT_CONSTANT(O0043_BEST_EFFORT_DECODING,                                        settingNameWidth, settingValueWidth);
+ 
+   PRINT_CONSTANT(ME_ENABLE_ROUNDING_OF_MVS,                                         settingNameWidth, settingValueWidth);
++  PRINT_CONSTANT(PCC_ME_EXT,                                                        settingNameWidth, settingValueWidth);
+ 
+   //------------------------------------------------
+ 
+@@ -490,3 +492,6 @@ Void DebugInterPredResiReco(std::string &sDebug, TComYuv &pred, TComYuv &resi, T
+   }
+ }
+ #endif
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibCommon/Debug.h b/source/Lib/TLibCommon/Debug.h
+index 5c6f3f2..3faba7f 100644
+--- a/source/Lib/TLibCommon/Debug.h
++++ b/source/Lib/TLibCommon/Debug.h
+@@ -45,6 +45,7 @@
+ #include <stdlib.h>
+ #include <sstream>
+ #include <TLibCommon/CommonDef.h>
++namespace pcc_hm {
+ 
+ #if DEBUG_STRING
+ extern const TChar *debug_reorder_data_token[2/*Inter=0, Intra block copy=1*/][MAX_NUM_COMPONENT+1];
+@@ -275,4 +276,6 @@ std::string indentNewLines(const std::string &input, const UInt indentBy);
+ #endif
+ 
+ 
++} // namespace pcc_hm
+ #endif /* __DEBUG__ */
++
+diff --git a/source/Lib/TLibCommon/NAL.h b/source/Lib/TLibCommon/NAL.h
+index 2fa4d19..45d40d4 100644
+--- a/source/Lib/TLibCommon/NAL.h
++++ b/source/Lib/TLibCommon/NAL.h
+@@ -38,6 +38,7 @@
+ 
+ #include <sstream>
+ #include "CommonDef.h"
++namespace pcc_hm {
+ 
+ class TComOutputBitstream;
+ 
+@@ -121,4 +122,6 @@ struct NALUnitEBSP : public NALUnit
+ //! \}
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif
++
+diff --git a/source/Lib/TLibCommon/SEI.cpp b/source/Lib/TLibCommon/SEI.cpp
+index 5dfad04..9c34cfd 100644
+--- a/source/Lib/TLibCommon/SEI.cpp
++++ b/source/Lib/TLibCommon/SEI.cpp
+@@ -38,6 +38,7 @@
+ #include "CommonDef.h"
+ #include "SEI.h"
+ #include <iostream>
++namespace pcc_hm {
+ 
+ const std::vector<SEI::PayloadType> SEI::prefix_sei_messages({
+   SEI::BUFFERING_PERIOD,
+@@ -327,3 +328,6 @@ const TChar *SEI::getSEIMessageString(SEI::PayloadType payloadType)
+     default:                                        return "Unknown";
+   }
+ }
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibCommon/SEI.h b/source/Lib/TLibCommon/SEI.h
+index 45d4aad..f979a59 100644
+--- a/source/Lib/TLibCommon/SEI.h
++++ b/source/Lib/TLibCommon/SEI.h
+@@ -41,6 +41,7 @@
+ 
+ #include "CommonDef.h"
+ #include "libmd5/MD5.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibCommon
+ //! \{
+@@ -1124,5 +1125,7 @@ private:
+   RNSEIWindowVec m_regions;
+   std::vector< SEIListOfIndices > m_rnSeiMessages;
+ };
++} // namespace pcc_hm
+ #endif
+ //! \}
++
+diff --git a/source/Lib/TLibCommon/TComBitCounter.h b/source/Lib/TLibCommon/TComBitCounter.h
+index dc85033..5e6810c 100644
+--- a/source/Lib/TLibCommon/TComBitCounter.h
++++ b/source/Lib/TLibCommon/TComBitCounter.h
+@@ -43,6 +43,7 @@
+ #endif // _MSC_VER > 1000
+ 
+ #include "TComBitStream.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibCommon
+ //! \{
+@@ -70,4 +71,6 @@ public:
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif
++
+diff --git a/source/Lib/TLibCommon/TComBitStream.cpp b/source/Lib/TLibCommon/TComBitStream.cpp
+index 81360d7..3cd93b3 100644
+--- a/source/Lib/TLibCommon/TComBitStream.cpp
++++ b/source/Lib/TLibCommon/TComBitStream.cpp
+@@ -40,6 +40,7 @@
+ #include "TComBitStream.h"
+ #include <string.h>
+ #include <memory.h>
++namespace pcc_hm {
+ 
+ using namespace std;
+ 
+@@ -410,3 +411,6 @@ UInt TComInputBitstream::readByteAlignment()
+ }
+ 
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibCommon/TComBitStream.h b/source/Lib/TLibCommon/TComBitStream.h
+index dcd8c09..d968305 100644
+--- a/source/Lib/TLibCommon/TComBitStream.h
++++ b/source/Lib/TLibCommon/TComBitStream.h
+@@ -46,6 +46,7 @@
+ #include <vector>
+ #include <stdio.h>
+ #include "CommonDef.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibCommon
+ //! \{
+@@ -228,4 +229,6 @@ public:
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif
++
+diff --git a/source/Lib/TLibCommon/TComCABACTables.cpp b/source/Lib/TLibCommon/TComCABACTables.cpp
+index d7c964a..34934a7 100644
+--- a/source/Lib/TLibCommon/TComCABACTables.cpp
++++ b/source/Lib/TLibCommon/TComCABACTables.cpp
+@@ -36,6 +36,7 @@
+  */
+ 
+ #include "TComCABACTables.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibCommon
+ //! \{
+@@ -121,3 +122,6 @@ const UChar TComCABACTables::sm_aucRenormTable[32] =
+ };
+ 
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibCommon/TComCABACTables.h b/source/Lib/TLibCommon/TComCABACTables.h
+index 706c06c..812c7e5 100644
+--- a/source/Lib/TLibCommon/TComCABACTables.h
++++ b/source/Lib/TLibCommon/TComCABACTables.h
+@@ -40,6 +40,7 @@
+ 
+ #include "TLibCommon/CommonDef.h"
+ #include "TLibCommon/TComRom.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibCommon
+ //! \{
+@@ -58,4 +59,6 @@ public:
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif
++
+diff --git a/source/Lib/TLibCommon/TComChromaFormat.cpp b/source/Lib/TLibCommon/TComChromaFormat.cpp
+index bc49f09..690bf14 100644
+--- a/source/Lib/TLibCommon/TComChromaFormat.cpp
++++ b/source/Lib/TLibCommon/TComChromaFormat.cpp
+@@ -37,6 +37,7 @@
+ #include "TComDataCU.h"
+ #include "TComTrQuant.h"
+ #include "TComTU.h"
++namespace pcc_hm {
+ 
+ 
+ 
+@@ -161,3 +162,6 @@ Void getTUEntropyCodingParameters(      TUEntropyCodingParameters &result,
+ 
+ 
+ //----------------------------------------------------------------------------------------------------------------------
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibCommon/TComChromaFormat.h b/source/Lib/TLibCommon/TComChromaFormat.h
+index 08e73d3..5598ec5 100644
+--- a/source/Lib/TLibCommon/TComChromaFormat.h
++++ b/source/Lib/TLibCommon/TComChromaFormat.h
+@@ -42,6 +42,7 @@
+ #include <vector>
+ #include <assert.h>
+ #include "Debug.h"
++namespace pcc_hm {
+ 
+ //======================================================================================================================
+ //Chroma format utility functions  =====================================================================================
+@@ -274,4 +275,6 @@ Void getTUEntropyCodingParameters(      TUEntropyCodingParameters &result,
+ //End  =================================================================================================================
+ //======================================================================================================================
+ 
++} // namespace pcc_hm
+ #endif
++
+diff --git a/source/Lib/TLibCommon/TComCodingStatistics.h b/source/Lib/TLibCommon/TComCodingStatistics.h
+index 440eef8..02279c4 100644
+--- a/source/Lib/TLibCommon/TComCodingStatistics.h
++++ b/source/Lib/TLibCommon/TComCodingStatistics.h
+@@ -40,6 +40,7 @@
+ #include <map>
+ #include <math.h>
+ #include "TComChromaFormat.h"
++namespace pcc_hm {
+ 
+ static const Int64 TCOMCODINGSTATISTICS_ENTROPYSCALE=32768;
+ 
+@@ -486,4 +487,6 @@ class TComCodingStatistics
+     }
+ };
+ 
++} // namespace pcc_hm
+ #endif
++
+diff --git a/source/Lib/TLibCommon/TComDataCU.cpp b/source/Lib/TLibCommon/TComDataCU.cpp
+index f9fe0e2..5d23629 100644
+--- a/source/Lib/TLibCommon/TComDataCU.cpp
++++ b/source/Lib/TLibCommon/TComDataCU.cpp
+@@ -39,6 +39,7 @@
+ #include "TComDataCU.h"
+ #include "TComTU.h"
+ #include "TComPic.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibCommon
+ //! \{
+@@ -4045,3 +4046,6 @@ Void TComDataCU::storeMVForIBCEnc()
+ }
+ #endif
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibCommon/TComDataCU.h b/source/Lib/TLibCommon/TComDataCU.h
+index 04acd9c..5fa0297 100644
+--- a/source/Lib/TLibCommon/TComDataCU.h
++++ b/source/Lib/TLibCommon/TComDataCU.h
+@@ -48,6 +48,7 @@
+ #include "TComSlice.h"
+ #include "TComRdCost.h"
+ #include "TComPattern.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibCommon
+ //! \{
+@@ -668,4 +669,6 @@ namespace RasterAddress
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif
++
+diff --git a/source/Lib/TLibCommon/TComHash.cpp b/source/Lib/TLibCommon/TComHash.cpp
+index 701e17d..be22546 100644
+--- a/source/Lib/TLibCommon/TComHash.cpp
++++ b/source/Lib/TLibCommon/TComHash.cpp
+@@ -37,6 +37,7 @@
+ 
+ #include "CommonDef.h"
+ #include "TComHash.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibCommon
+ //! \{
+@@ -670,3 +671,6 @@ UInt TComHash::getCRCValue2( UChar* p, Int length )
+ }
+ 
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibCommon/TComHash.h b/source/Lib/TLibCommon/TComHash.h
+index 1840bb7..6ddced6 100644
+--- a/source/Lib/TLibCommon/TComHash.h
++++ b/source/Lib/TLibCommon/TComHash.h
+@@ -43,6 +43,7 @@
+ #include "TComPicSym.h"
+ #include "TComPicYuv.h"
+ #include <vector>
++namespace pcc_hm {
+ 
+ //! \ingroup TLibEncoder
+ //! \{
+@@ -127,4 +128,6 @@ private:
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif // __TCOMHASH__
++
+diff --git a/source/Lib/TLibCommon/TComInterpolationFilter.cpp b/source/Lib/TLibCommon/TComInterpolationFilter.cpp
+index 30a5b79..83e7599 100644
+--- a/source/Lib/TLibCommon/TComInterpolationFilter.cpp
++++ b/source/Lib/TLibCommon/TComInterpolationFilter.cpp
+@@ -49,6 +49,7 @@
+ #if VECTOR_CODING__INTERPOLATION_FILTER && (RExt__HIGH_BIT_DEPTH_SUPPORT==0)
+ #include <emmintrin.h>
+ #endif
++namespace pcc_hm {
+ 
+ //! \ingroup TLibCommon
+ //! \{
+@@ -629,3 +630,6 @@ Void TComInterpolationFilter::filterVer(const ComponentID compID, Pel *src, Int
+ }
+ 
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibCommon/TComInterpolationFilter.h b/source/Lib/TLibCommon/TComInterpolationFilter.h
+index bcbd6e4..5950f14 100644
+--- a/source/Lib/TLibCommon/TComInterpolationFilter.h
++++ b/source/Lib/TLibCommon/TComInterpolationFilter.h
+@@ -40,6 +40,7 @@
+ #define __TCOMINTERPOLATIONFILTER__
+ 
+ #include "CommonDef.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibCommon
+ //! \{
+@@ -78,4 +79,6 @@ public:
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif
++
+diff --git a/source/Lib/TLibCommon/TComList.h b/source/Lib/TLibCommon/TComList.h
+index a2bcc68..98271d0 100644
+--- a/source/Lib/TLibCommon/TComList.h
++++ b/source/Lib/TLibCommon/TComList.h
+@@ -47,6 +47,7 @@
+ #include "CommonDef.h"
+ 
+ #include <cstdlib>
++namespace pcc_hm {
+ using namespace std;
+ 
+ //! \ingroup TLibCommon
+@@ -119,4 +120,6 @@ public:
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif
++
+diff --git a/source/Lib/TLibCommon/TComLoopFilter.cpp b/source/Lib/TLibCommon/TComLoopFilter.cpp
+index 40bd1c1..a945cd5 100644
+--- a/source/Lib/TLibCommon/TComLoopFilter.cpp
++++ b/source/Lib/TLibCommon/TComLoopFilter.cpp
+@@ -39,6 +39,7 @@
+ #include "TComSlice.h"
+ #include "TComMv.h"
+ #include "TComTU.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibCommon
+ //! \{
+@@ -960,3 +961,6 @@ __inline Int TComLoopFilter::xCalcDQ( Pel* piSrc, Int iOffset)
+   return abs( piSrc[0] - 2*piSrc[iOffset] + piSrc[iOffset*2] );
+ }
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibCommon/TComLoopFilter.h b/source/Lib/TLibCommon/TComLoopFilter.h
+index ed69a93..dbb6c43 100644
+--- a/source/Lib/TLibCommon/TComLoopFilter.h
++++ b/source/Lib/TLibCommon/TComLoopFilter.h
+@@ -40,6 +40,7 @@
+ 
+ #include "CommonDef.h"
+ #include "TComPic.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibCommon
+ //! \{
+@@ -140,4 +141,6 @@ public:
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif
++
+diff --git a/source/Lib/TLibCommon/TComMotionInfo.cpp b/source/Lib/TLibCommon/TComMotionInfo.cpp
+index 16bc52b..f1ea6f2 100644
+--- a/source/Lib/TLibCommon/TComMotionInfo.cpp
++++ b/source/Lib/TLibCommon/TComMotionInfo.cpp
+@@ -39,6 +39,7 @@
+ #include "TComMotionInfo.h"
+ #include "assert.h"
+ #include <stdlib.h>
++namespace pcc_hm {
+ 
+ //! \ingroup TLibCommon
+ //! \{
+@@ -374,3 +375,6 @@ Void TComCUMvField::compress(SChar* pePredMode, Int scale)
+ }
+ #endif
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibCommon/TComMotionInfo.h b/source/Lib/TLibCommon/TComMotionInfo.h
+index 5b5f87f..4dfa40f 100644
+--- a/source/Lib/TLibCommon/TComMotionInfo.h
++++ b/source/Lib/TLibCommon/TComMotionInfo.h
+@@ -42,6 +42,7 @@
+ #include <memory.h>
+ #include "CommonDef.h"
+ #include "TComMv.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibCommon
+ //! \{
+@@ -164,4 +165,6 @@ public:
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif // __TCOMMOTIONINFO__
++
+diff --git a/source/Lib/TLibCommon/TComMv.h b/source/Lib/TLibCommon/TComMv.h
+index 226f743..a968833 100644
+--- a/source/Lib/TLibCommon/TComMv.h
++++ b/source/Lib/TLibCommon/TComMv.h
+@@ -39,6 +39,7 @@
+ #define __TCOMMV__
+ 
+ #include "CommonDef.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibCommon
+ //! \{
+@@ -179,4 +180,6 @@ public:
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif // __TCOMMV__
++
+diff --git a/source/Lib/TLibCommon/TComPattern.cpp b/source/Lib/TLibCommon/TComPattern.cpp
+index cc7abb6..5d0ba70 100644
+--- a/source/Lib/TLibCommon/TComPattern.cpp
++++ b/source/Lib/TLibCommon/TComPattern.cpp
+@@ -41,6 +41,7 @@
+ #include "TComTU.h"
+ #include "Debug.h"
+ #include "TComPrediction.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibCommon
+ //! \{
+@@ -84,7 +85,12 @@ Void TComPattern::initPattern(Pel* piY,
+                               Int stride,
+                               Int bitDepthLuma,
+                               Int roiPosX,
+-                              Int roiPosY)
++                              Int roiPosY
++#if PCC_ME_EXT
++	                        , Int refIdx,
++	                          RefPicList refPicList
++#endif
++                              )
+ #else
+ Void TComPattern::initPattern (Pel* piY,
+                                Int roiWidth,
+@@ -98,6 +104,10 @@ Void TComPattern::initPattern (Pel* piY,
+   m_roiHeight = roiHeight;
+   m_patternStride = stride;
+   m_bitDepth = bitDepthLuma;
++#if PCC_ME_EXT
++  m_refIdx = refIdx;
++  m_refPicList = refPicList;
++#endif
+ #if MCTS_ENC_CHECK
+   m_roiPosX       = roiPosX;
+   m_roiPosY       = roiPosY;
+@@ -748,3 +758,6 @@ Int isBelowLeftAvailable( const TComDataCU* pcCU, UInt uiPartIdxLT, UInt uiPartI
+   return iNumIntra;
+ }
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibCommon/TComPattern.h b/source/Lib/TLibCommon/TComPattern.h
+index df7417b..433a51e 100644
+--- a/source/Lib/TLibCommon/TComPattern.h
++++ b/source/Lib/TLibCommon/TComPattern.h
+@@ -40,6 +40,7 @@
+ 
+ // Include files
+ #include "CommonDef.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibCommon
+ //! \{
+@@ -61,6 +62,11 @@ private:
+   Int   m_patternStride;
+   Int   m_bitDepth;
+ 
++#if PCC_ME_EXT
++  Int   m_refIdx;
++  RefPicList m_refPicList;
++#endif
++
+ #if MCTS_ENC_CHECK  
+   Int   m_roiPosX;
+   Int   m_roiPosY;
+@@ -76,6 +82,12 @@ public:
+   Int   getROIYHeight() const     { return m_roiHeight;      }
+   Int   getPatternLStride() const { return m_patternStride;  }
+   Int   getBitDepthY() const      { return m_bitDepth;       }
++
++#if PCC_ME_EXT
++  Int   getRefIndex() const       { return m_refIdx;         }
++  RefPicList getRefPicList() const { return m_refPicList;    }
++#endif
++
+ #if MCTS_ENC_CHECK
+   Int   getROIYPosX() const       { return m_roiPosX; }
+   Int   getROIYPosY() const       { return m_roiPosY; }
+@@ -101,6 +113,10 @@ public:
+   , m_roiHeight(0)
+   , m_patternStride(0)
+   , m_bitDepth(0)
++#if PCC_ME_EXT
++  , m_refIdx(0)
++  , m_refPicList(REF_PIC_LIST_X)
++#endif
+ #if MCTS_ENC_CHECK
+   , m_roiPosX(0)
+   , m_roiPosY(0)
+@@ -118,7 +134,11 @@ public:
+ 
+   /// set parameters from Pel buffers for accessing neighbouring pixels
+ #if MCTS_ENC_CHECK
++#if PCC_ME_EXT
++  Void initPattern(Pel* piY, Int roiWidth, Int roiHeight, Int stride, Int bitDepthLuma, Int roiPosX, Int roiPosY, Int refIdx = 0, RefPicList refPicList = REF_PIC_LIST_X);
++#else
+   Void initPattern(Pel* piY, Int roiWidth, Int roiHeight, Int stride, Int bitDepthLuma, Int roiPosX, Int roiPosY);
++#endif
+   Void setTileBorders(Int tileLeftTopPelPosX, Int tileLeftTopPelPosY, Int tileRightBottomPelPosX, Int tileRightBottomPelPosY);
+ #else
+   Void initPattern(Pel* piY, Int roiWidth, Int roiHeight, Int stride, Int bitDepthLuma);
+@@ -127,4 +147,6 @@ public:
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif // __TCOMPATTERN__
++
+diff --git a/source/Lib/TLibCommon/TComPic.cpp b/source/Lib/TLibCommon/TComPic.cpp
+index fa1c085..dd33bd5 100644
+--- a/source/Lib/TLibCommon/TComPic.cpp
++++ b/source/Lib/TLibCommon/TComPic.cpp
+@@ -37,6 +37,7 @@
+ 
+ #include "TComPic.h"
+ #include "SEI.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibCommon
+ //! \{
+@@ -63,6 +64,10 @@ TComPic::TComPic()
+   {
+     m_apcPicYuv[i]      = NULL;
+   }
++#if PCC_ME_EXT
++  m_blockToPatch        = NULL;
++  m_occupancyMap        = NULL;
++#endif
+ }
+ 
+ TComPic::~TComPic()
+@@ -105,6 +110,13 @@ Void TComPic::create( const TComSPS &sps, const TComPPS &pps, const Bool bIsVirt
+   }
+ #endif
+ 
++#if PATCH_BASED_MVP || PCC_ME_EXT
++  {
++	  m_blockToPatch = new long long[iWidth / 16 * iHeight / 16];
++	  m_occupancyMap = new Int[iWidth * iHeight];
++  }
++#endif
++
+   // there are no SEI messages associated with this picture initially
+   if (m_SEIs.size() > 0)
+   {
+@@ -212,6 +224,14 @@ Void TComPic::destroy()
+     m_apcPicYuvCSC = NULL;
+   }
+ 
++#if PATCH_BASED_MVP || PCC_ME_EXT
++  delete m_blockToPatch;
++  m_blockToPatch = NULL;
++
++  delete m_occupancyMap;
++  m_occupancyMap = NULL;
++#endif
++
+   deleteSEIs(m_SEIs);
+ }
+ 
+@@ -377,3 +397,6 @@ Void TComPic::addPictureToHashMapForInter()
+ }
+ 
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibCommon/TComPic.h b/source/Lib/TLibCommon/TComPic.h
+index fd78acf..35f5a51 100644
+--- a/source/Lib/TLibCommon/TComPic.h
++++ b/source/Lib/TLibCommon/TComPic.h
+@@ -44,6 +44,7 @@
+ #include "TComPicYuv.h"
+ #include "TComBitStream.h"
+ #include "TComHash.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibCommon
+ //! \{
+@@ -70,6 +71,10 @@ private:
+ 
+   TComPicYuv*           m_pcPicYuvPred;           //  Prediction
+   TComPicYuv*           m_pcPicYuvResi;           //  Residual
++#if PATCH_BASED_MVP || PCC_ME_EXT
++  long long*            m_blockToPatch;
++  Int*                  m_occupancyMap;
++#endif
+   Bool                  m_bReconstructed;
+   Bool                  m_bNeededForOutput;
+   UInt                  m_uiCurrSliceIdx;         // Index of current slice
+@@ -91,6 +96,11 @@ public:
+   TComPic();
+   virtual ~TComPic();
+ 
++#if PATCH_BASED_MVP || PCC_ME_EXT
++  long long*    getBlockToPatch() const { return m_blockToPatch; }
++  Int*          getOccupancyMap() const { return m_occupancyMap; }
++#endif
++
+ #if REDUCED_ENCODER_MEMORY
+   Void          create( const TComSPS &sps, const TComPPS &pps, const Bool bCreateEncoderSourcePicYuv, const Bool bCreateForImmediateReconstruction );
+   Void          prepareForEncoderSourcePicYuv();
+@@ -205,4 +215,6 @@ public:
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif // __TCOMPIC__
++
+diff --git a/source/Lib/TLibCommon/TComPicSym.cpp b/source/Lib/TLibCommon/TComPicSym.cpp
+index cd50da5..939dff1 100644
+--- a/source/Lib/TLibCommon/TComPicSym.cpp
++++ b/source/Lib/TLibCommon/TComPicSym.cpp
+@@ -38,6 +38,7 @@
+ #include "TComPicSym.h"
+ #include "TComSampleAdaptiveOffset.h"
+ #include "TComSlice.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibCommon
+ //! \{
+@@ -622,3 +623,6 @@ Void getTilePosition(const TComDataCU* const pcCU, UInt &tileXPosInCtus, UInt &t
+ #endif
+ 
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibCommon/TComPicSym.h b/source/Lib/TLibCommon/TComPicSym.h
+index 091cf01..ba91253 100644
+--- a/source/Lib/TLibCommon/TComPicSym.h
++++ b/source/Lib/TLibCommon/TComPicSym.h
+@@ -44,6 +44,7 @@
+ #include "CommonDef.h"
+ #include "TComSlice.h"
+ #include "TComDataCU.h"
++namespace pcc_hm {
+ class TComSampleAdaptiveOffset;
+ class TComPPS;
+ 
+@@ -212,5 +213,7 @@ public:
+ Void getTilePosition(const TComDataCU* const pcCU, UInt &tileXPosInCtus, UInt &tileYPosInCtus, UInt &tileWidthtInCtus, UInt &tileHeightInCtus);
+ #endif
+ 
++} // namespace pcc_hm
+ #endif // __TCOMPICSYM__
+ 
++
+diff --git a/source/Lib/TLibCommon/TComPicYuv.cpp b/source/Lib/TLibCommon/TComPicYuv.cpp
+index c2a0634..6a5a1b2 100644
+--- a/source/Lib/TLibCommon/TComPicYuv.cpp
++++ b/source/Lib/TLibCommon/TComPicYuv.cpp
+@@ -47,6 +47,7 @@
+ 
+ #include "TComPicYuv.h"
+ #include "TLibVideoIO/TVideoIOYuv.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibCommon
+ //! \{
+@@ -410,3 +411,6 @@ Void TComPicYuv::DefaultConvertPix(TComPicYuv* pcSrcPicYuv, const BitDepths& bit
+ }
+ 
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibCommon/TComPicYuv.h b/source/Lib/TLibCommon/TComPicYuv.h
+index 5340f0d..f6a1def 100644
+--- a/source/Lib/TLibCommon/TComPicYuv.h
++++ b/source/Lib/TLibCommon/TComPicYuv.h
+@@ -43,6 +43,7 @@
+ #include "TComRom.h"
+ #include "TComChromaFormat.h"
+ #include "SEI.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibCommon
+ //! \{
+@@ -116,7 +117,7 @@ public:
+   Int           getWidth          (const ComponentID id) const { return  m_picWidth >> getComponentScaleX(id);   }
+   Int           getHeight         (const ComponentID id) const { return  m_picHeight >> getComponentScaleY(id);  }
+   ChromaFormat  getChromaFormat   ()                     const { return m_chromaFormatIDC; }
+-  UInt          getNumberValidComponents() const { return ::getNumberValidComponents(m_chromaFormatIDC); }
++  UInt          getNumberValidComponents() const { return pcc_hm::getNumberValidComponents(m_chromaFormatIDC); }
+ 
+   Int           getStride         (const ComponentID id) const { return ((m_picWidth     ) + (m_marginX  <<1)) >> getComponentScaleX(id); }
+ private:
+@@ -147,11 +148,11 @@ public:
+   const Pel*    getAddr           (const ComponentID ch, const Int ctuRSAddr, const Int uiAbsZorderIdx ) const
+                                      { return m_piPicOrg[ch] + m_ctuOffsetInBuffer[ch==0?0:1][ctuRSAddr] + m_subCuOffsetInBuffer[ch==0?0:1][g_auiZscanToRaster[uiAbsZorderIdx]]; }
+ 
+-  UInt          getComponentScaleX(const ComponentID id) const { return ::getComponentScaleX(id, m_chromaFormatIDC); }
+-  UInt          getComponentScaleY(const ComponentID id) const { return ::getComponentScaleY(id, m_chromaFormatIDC); }
++  UInt          getComponentScaleX(const ComponentID id) const { return pcc_hm::getComponentScaleX(id, m_chromaFormatIDC); }
++  UInt          getComponentScaleY(const ComponentID id) const { return pcc_hm::getComponentScaleY(id, m_chromaFormatIDC); }
+ 
+-  UInt          getChannelTypeScaleX(const ChannelType id) const { return ::getChannelTypeScaleX(id, m_chromaFormatIDC); }
+-  UInt          getChannelTypeScaleY(const ChannelType id) const { return ::getChannelTypeScaleY(id, m_chromaFormatIDC); }
++  UInt          getChannelTypeScaleX(const ChannelType id) const { return pcc_hm::getChannelTypeScaleX(id, m_chromaFormatIDC); }
++  UInt          getChannelTypeScaleY(const ChannelType id) const { return pcc_hm::getChannelTypeScaleY(id, m_chromaFormatIDC); }
+ 
+   // ------------------------------------------------------------------------------------------------
+   //  Miscellaneous
+@@ -183,4 +184,6 @@ UInt calcMD5     (const TComPicYuv& pic, TComPictureHash &digest, const BitDepth
+ std::string hashToString(const TComPictureHash &digest, Int numChar);
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif // __TCOMPICYUV__
++
+diff --git a/source/Lib/TLibCommon/TComPicYuvMD5.cpp b/source/Lib/TLibCommon/TComPicYuvMD5.cpp
+index c64fc0b..ae0d287 100644
+--- a/source/Lib/TLibCommon/TComPicYuvMD5.cpp
++++ b/source/Lib/TLibCommon/TComPicYuvMD5.cpp
+@@ -33,6 +33,7 @@
+ 
+ #include "TComPicYuv.h"
+ #include "libmd5/MD5.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibCommon
+ //! \{
+@@ -225,3 +226,6 @@ std::string hashToString(const TComPictureHash &digest, Int numChar)
+ }
+ 
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibCommon/TComPrediction.cpp b/source/Lib/TLibCommon/TComPrediction.cpp
+index 33208a2..c0a5e81 100644
+--- a/source/Lib/TLibCommon/TComPrediction.cpp
++++ b/source/Lib/TLibCommon/TComPrediction.cpp
+@@ -39,6 +39,7 @@
+ #include "TComPrediction.h"
+ #include "TComPic.h"
+ #include "TComTU.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibCommon
+ //! \{
+@@ -1096,3 +1097,6 @@ Bool TComPrediction::checkTMctsMvp(TComDataCU* pcCU, Int partIdx)
+ 
+ #endif
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibCommon/TComPrediction.h b/source/Lib/TLibCommon/TComPrediction.h
+index 3033221..a3028f1 100644
+--- a/source/Lib/TLibCommon/TComPrediction.h
++++ b/source/Lib/TLibCommon/TComPrediction.h
+@@ -43,6 +43,7 @@
+ #include "TComYuv.h"
+ #include "TComInterpolationFilter.h"
+ #include "TComWeightPrediction.h"
++namespace pcc_hm {
+ 
+ // forward declaration
+ class TComMv;
+@@ -157,4 +158,6 @@ public:
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif // __TCOMPREDICTION__
++
+diff --git a/source/Lib/TLibCommon/TComRdCost.cpp b/source/Lib/TLibCommon/TComRdCost.cpp
+index 8faa9f0..2d67459 100644
+--- a/source/Lib/TLibCommon/TComRdCost.cpp
++++ b/source/Lib/TLibCommon/TComRdCost.cpp
+@@ -45,6 +45,7 @@
+ #include <emmintrin.h>
+ #include <xmmintrin.h>
+ #endif
++namespace pcc_hm {
+ 
+ //! \ingroup TLibCommon
+ //! \{
+@@ -1836,3 +1837,6 @@ Distortion TComRdCost::xGetHADs( DistParam* pcDtParam )
+ }
+ 
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibCommon/TComRdCost.h b/source/Lib/TLibCommon/TComRdCost.h
+index ce52715..f2261c5 100644
+--- a/source/Lib/TLibCommon/TComRdCost.h
++++ b/source/Lib/TLibCommon/TComRdCost.h
+@@ -45,6 +45,7 @@
+ 
+ #include "TComSlice.h"
+ #include "TComRdCostWeightPrediction.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibCommon
+ //! \{
+@@ -138,6 +139,9 @@ public:
+   Double calcRdCost( Double numBits, Double distortion, DFunc eDFunc = DF_DEFAULT );
+ 
+   Void    setDistortionWeight  ( const ComponentID compID, const Double distortionWeight ) { m_distortionWeight[compID] = distortionWeight; }
++#if PCC_ME_EXT
++  Double  getDistortionWeight(const ComponentID compID) { return m_distortionWeight[compID]; }
++#endif
+   Void    setLambda      ( Double dLambda, const BitDepths &bitDepths );
+   Void    setFrameLambda ( Double dLambda ) { m_dFrameLambda = dLambda; }
+ 
+@@ -279,4 +283,6 @@ public:
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif // __TCOMRDCOST__
++
+diff --git a/source/Lib/TLibCommon/TComRdCostWeightPrediction.cpp b/source/Lib/TLibCommon/TComRdCostWeightPrediction.cpp
+index 99eb37d..c0acfc8 100644
+--- a/source/Lib/TLibCommon/TComRdCostWeightPrediction.cpp
++++ b/source/Lib/TLibCommon/TComRdCostWeightPrediction.cpp
+@@ -39,6 +39,7 @@
+ #include <assert.h>
+ #include "TComRdCost.h"
+ #include "TComRdCostWeightPrediction.h"
++namespace pcc_hm {
+ 
+ static Distortion xCalcHADs2x2w( const WPScalingParam &wpCur, const Pel *piOrg, const Pel *piCurr, Int iStrideOrg, Int iStrideCur, Int iStep );
+ static Distortion xCalcHADs4x4w( const WPScalingParam &wpCur, const Pel *piOrg, const Pel *piCurr, Int iStrideOrg, Int iStrideCur, Int iStep );
+@@ -599,3 +600,6 @@ Distortion TComRdCostWeightPrediction::xGetHADsw( DistParam* pcDtParam )
+ 
+   return uiSum >> DISTORTION_PRECISION_ADJUSTMENT(pcDtParam->bitDepth-8);
+ }
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibCommon/TComRdCostWeightPrediction.h b/source/Lib/TLibCommon/TComRdCostWeightPrediction.h
+index 287495e..03c2740 100644
+--- a/source/Lib/TLibCommon/TComRdCostWeightPrediction.h
++++ b/source/Lib/TLibCommon/TComRdCostWeightPrediction.h
+@@ -40,6 +40,7 @@
+ 
+ 
+ #include "CommonDef.h"
++namespace pcc_hm {
+ 
+ class DistParam;
+ class TComPattern;
+@@ -56,5 +57,7 @@ namespace TComRdCostWeightPrediction
+   Distortion xGetHADsw( DistParam* pcDtParam );
+ }// END NAMESPACE DEFINITION TComRdCostWeightPrediction
+ 
++} // namespace pcc_hm
+ #endif // __TCOMRDCOSTWEIGHTPREDICTION__
+ 
++
+diff --git a/source/Lib/TLibCommon/TComRectangle.h b/source/Lib/TLibCommon/TComRectangle.h
+index ba52016..a55399f 100644
+--- a/source/Lib/TLibCommon/TComRectangle.h
++++ b/source/Lib/TLibCommon/TComRectangle.h
+@@ -34,6 +34,7 @@
+ 
+ #ifndef __TCOMRECTANGLE__
+ #define __TCOMRECTANGLE__
++namespace pcc_hm {
+ 
+ 
+ struct TComRectangle
+@@ -47,4 +48,6 @@ struct TComRectangle
+ 
+ 
+ 
++} // namespace pcc_hm
+ #endif
++
+diff --git a/source/Lib/TLibCommon/TComRom.cpp b/source/Lib/TLibCommon/TComRom.cpp
+index 8c552fe..9681fa1 100644
+--- a/source/Lib/TLibCommon/TComRom.cpp
++++ b/source/Lib/TLibCommon/TComRom.cpp
+@@ -43,6 +43,7 @@
+ #include <assert.h>
+ #include "TComDataCU.h"
+ #include "Debug.h"
++namespace pcc_hm {
+ // ====================================================================================================================
+ // Initialize / destroy functions
+ // ====================================================================================================================
+@@ -760,4 +761,16 @@ const Int g_quantInterDefault8x8[8*8] =
+ const UInt g_scalingListSize   [SCALING_LIST_SIZE_NUM] = {16,64,256,1024};
+ const UInt g_scalingListSizeX  [SCALING_LIST_SIZE_NUM] = { 4, 8, 16,  32};
+ 
++#if PCC_ME_EXT
++long long g_numPatches[PCC_ME_EXT_MAX_NUM_FRAMES];
++long long g_projectionIndex[PCC_ME_EXT_MAX_NUM_FRAMES][PCC_ME_EXT_MAX_NUM_PATCHES];
++long long g_patch2DInfo[PCC_ME_EXT_MAX_NUM_FRAMES][PCC_ME_EXT_MAX_NUM_PATCHES][4];  // u0, v0, sizeU0, sizeV0
++long long g_patch3DInfo[PCC_ME_EXT_MAX_NUM_FRAMES][PCC_ME_EXT_MAX_NUM_PATCHES][3];  // d1, u1, v1
++
++Bool g_patchesChange[PCC_ME_EXT_MAX_NUM_PATCHES];
++#endif
++
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibCommon/TComRom.h b/source/Lib/TLibCommon/TComRom.h
+index 879f417..74be8cb 100644
+--- a/source/Lib/TLibCommon/TComRom.h
++++ b/source/Lib/TLibCommon/TComRom.h
+@@ -42,6 +42,7 @@
+ 
+ #include<stdio.h>
+ #include<iostream>
++namespace pcc_hm {
+ 
+ //! \ingroup TLibCommon
+ //! \{
+@@ -174,7 +175,18 @@ extern const UInt g_scalingListSizeX[SCALING_LIST_SIZE_NUM];
+ 
+ extern UChar g_ucMsbP1Idx[256];
+ extern UChar g_getMsbP1Idx(UInt uiVal);
++
++#if PATCH_BASED_MVP || PCC_ME_EXT
++extern long long g_numPatches[PCC_ME_EXT_MAX_NUM_FRAMES];
++extern long long g_projectionIndex[PCC_ME_EXT_MAX_NUM_FRAMES][PCC_ME_EXT_MAX_NUM_PATCHES];
++extern long long g_patch2DInfo[PCC_ME_EXT_MAX_NUM_FRAMES][PCC_ME_EXT_MAX_NUM_PATCHES][4];  // u0, v0, sizeU0, sizeV0
++extern long long g_patch3DInfo[PCC_ME_EXT_MAX_NUM_FRAMES][PCC_ME_EXT_MAX_NUM_PATCHES][3];  // d1, u1, v1
++extern Bool g_patchesChange[PCC_ME_EXT_MAX_NUM_PATCHES];
++#endif
++
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif  //__TCOMROM__
+ 
++
+diff --git a/source/Lib/TLibCommon/TComSampleAdaptiveOffset.cpp b/source/Lib/TLibCommon/TComSampleAdaptiveOffset.cpp
+index a694c91..c6059e5 100644
+--- a/source/Lib/TLibCommon/TComSampleAdaptiveOffset.cpp
++++ b/source/Lib/TLibCommon/TComSampleAdaptiveOffset.cpp
+@@ -40,6 +40,7 @@
+ #include <stdlib.h>
+ #include <stdio.h>
+ #include <math.h>
++namespace pcc_hm {
+ 
+ //! \ingroup TLibCommon
+ //! \{
+@@ -745,3 +746,6 @@ Void TComSampleAdaptiveOffset::xPCMSampleRestoration (TComDataCU* pcCU, UInt uiA
+ }
+ 
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibCommon/TComSampleAdaptiveOffset.h b/source/Lib/TLibCommon/TComSampleAdaptiveOffset.h
+index e2d7627..61d37a6 100644
+--- a/source/Lib/TLibCommon/TComSampleAdaptiveOffset.h
++++ b/source/Lib/TLibCommon/TComSampleAdaptiveOffset.h
+@@ -40,6 +40,7 @@
+ 
+ #include "CommonDef.h"
+ #include "TComPic.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibCommon
+ //! \{
+@@ -103,5 +104,7 @@ private:
+ };
+ 
+ //! \}
++} // namespace pcc_hm
+ #endif
+ 
++
+diff --git a/source/Lib/TLibCommon/TComSlice.cpp b/source/Lib/TLibCommon/TComSlice.cpp
+index a8ea65a..23419b6 100644
+--- a/source/Lib/TLibCommon/TComSlice.cpp
++++ b/source/Lib/TLibCommon/TComSlice.cpp
+@@ -40,6 +40,7 @@
+ #include "TComPic.h"
+ #include "TLibEncoder/TEncSbac.h"
+ #include "TLibDecoder/TDecSbac.h"
++namespace pcc_hm {
+ 
+ 
+ //! \ingroup TLibCommon
+@@ -2494,3 +2495,6 @@ Void calculateParameterSetChangedFlag(Bool &bChanged, const std::vector<UChar> *
+ }
+ 
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibCommon/TComSlice.h b/source/Lib/TLibCommon/TComSlice.h
+index d5bd55e..f68919e 100644
+--- a/source/Lib/TLibCommon/TComSlice.h
++++ b/source/Lib/TLibCommon/TComSlice.h
+@@ -45,6 +45,7 @@
+ #include "TComRom.h"
+ #include "TComList.h"
+ #include "TComChromaFormat.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibCommon
+ //! \{
+@@ -1835,4 +1836,6 @@ protected:
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif // __TCOMSLICE__
++
+diff --git a/source/Lib/TLibCommon/TComTU.cpp b/source/Lib/TLibCommon/TComTU.cpp
+index c54fa2c..2d8323e 100644
+--- a/source/Lib/TLibCommon/TComTU.cpp
++++ b/source/Lib/TLibCommon/TComTU.cpp
+@@ -36,6 +36,7 @@
+ #include "TComRom.h"
+ #include "TComDataCU.h"
+ #include "TComPic.h"
++namespace pcc_hm {
+ 
+ //----------------------------------------------------------------------------------------------------------------------
+ 
+@@ -261,3 +262,6 @@ UInt TComTU::getGolombRiceStatisticsIndex(const ComponentID compID)
+ 
+   return selectedIndex;
+ }
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibCommon/TComTU.h b/source/Lib/TLibCommon/TComTU.h
+index 624e1e8..a5c941a 100644
+--- a/source/Lib/TLibCommon/TComTU.h
++++ b/source/Lib/TLibCommon/TComTU.h
+@@ -39,6 +39,7 @@ class TComTU; // forward declaration
+ #include "CommonDef.h"
+ #include "TComRectangle.h"
+ #include "TComChromaFormat.h"
++namespace pcc_hm {
+ 
+ class TComDataCU; // forward declaration
+ 
+@@ -164,4 +165,6 @@ class TComTURecurse : public TComTU
+ 
+ //----------------------------------------------------------------------------------------------------------------------
+ 
++} // namespace pcc_hm
+ #endif
++
+diff --git a/source/Lib/TLibCommon/TComTrQuant.cpp b/source/Lib/TLibCommon/TComTrQuant.cpp
+index 6e084ad..18abca0 100644
+--- a/source/Lib/TLibCommon/TComTrQuant.cpp
++++ b/source/Lib/TLibCommon/TComTrQuant.cpp
+@@ -44,6 +44,7 @@
+ #include "ContextTables.h"
+ #include "TComTU.h"
+ #include "Debug.h"
++namespace pcc_hm {
+ 
+ typedef struct
+ {
+@@ -3630,3 +3631,6 @@ Void TComTrQuant::crossComponentPrediction(       TComTU      & rTu,
+ }
+ 
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibCommon/TComTrQuant.h b/source/Lib/TLibCommon/TComTrQuant.h
+index fefaf28..99154d9 100644
+--- a/source/Lib/TLibCommon/TComTrQuant.h
++++ b/source/Lib/TLibCommon/TComTrQuant.h
+@@ -43,6 +43,7 @@
+ #include "TComDataCU.h"
+ #include "TComChromaFormat.h"
+ #include "ContextTables.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibCommon
+ //! \{
+@@ -334,4 +335,6 @@ public:
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif // __TCOMTRQUANT__
++
+diff --git a/source/Lib/TLibCommon/TComWeightPrediction.cpp b/source/Lib/TLibCommon/TComWeightPrediction.cpp
+index 957add6..0169d7c 100644
+--- a/source/Lib/TLibCommon/TComWeightPrediction.cpp
++++ b/source/Lib/TLibCommon/TComWeightPrediction.cpp
+@@ -41,6 +41,7 @@
+ #include "TComPic.h"
+ #include "TComInterpolationFilter.h"
+ #include "TComWeightPrediction.h"
++namespace pcc_hm {
+ 
+ 
+ static inline Pel weightBidir( Int w0, Pel P0, Int w1, Pel P1, Int round, Int shift, Int offset, Int clipBD)
+@@ -388,3 +389,6 @@ Void TComWeightPrediction::xWeightedPredictionUni(       TComDataCU *const pcCU,
+   }
+   addWeightUni( pcYuvSrc, pcCU->getSlice()->getSPS()->getBitDepths(), uiPartAddr, iWidth, iHeight, pwp, pcYuvPred );
+ }
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibCommon/TComWeightPrediction.h b/source/Lib/TLibCommon/TComWeightPrediction.h
+index e30290c..b47eea5 100644
+--- a/source/Lib/TLibCommon/TComWeightPrediction.h
++++ b/source/Lib/TLibCommon/TComWeightPrediction.h
+@@ -39,6 +39,7 @@
+ #define __TCOMWEIGHTPREDICTION__
+ 
+ #include "CommonDef.h"
++namespace pcc_hm {
+ 
+ // forward declarations
+ class  TComDataCU;
+@@ -99,4 +100,6 @@ public:
+                                       TComYuv              *pcYuvDst );
+ };
+ 
++} // namespace pcc_hm
+ #endif
++
+diff --git a/source/Lib/TLibCommon/TComYuv.cpp b/source/Lib/TLibCommon/TComYuv.cpp
+index a549862..796f69f 100644
+--- a/source/Lib/TLibCommon/TComYuv.cpp
++++ b/source/Lib/TLibCommon/TComYuv.cpp
+@@ -44,6 +44,7 @@
+ #include "CommonDef.h"
+ #include "TComYuv.h"
+ #include "TComInterpolationFilter.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibCommon
+ //! \{
+@@ -645,3 +646,6 @@ Void TComYuv::DefaultConvertPix(const UInt pixX, const UInt pixY, const UInt wid
+ }
+ 
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibCommon/TComYuv.h b/source/Lib/TLibCommon/TComYuv.h
+index b9173c8..e9eb293 100644
+--- a/source/Lib/TLibCommon/TComYuv.h
++++ b/source/Lib/TLibCommon/TComYuv.h
+@@ -42,6 +42,7 @@
+ #include "CommonDef.h"
+ #include "TComPicYuv.h"
+ #include "TComRectangle.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibCommon
+ //! \{
+@@ -200,13 +201,15 @@ public:
+   UInt         getHeight                  (const ComponentID id) const { return m_iHeight >> getComponentScaleY(id);  }
+   UInt         getWidth                   (const ComponentID id) const { return m_iWidth >> getComponentScaleX(id);   }
+   ChromaFormat getChromaFormat            ()                     const { return m_chromaFormatIDC; }
+-  UInt         getNumberValidComponents   ()                     const { return ::getNumberValidComponents(m_chromaFormatIDC); }
+-  UInt         getComponentScaleX         (const ComponentID id) const { return ::getComponentScaleX(id, m_chromaFormatIDC); }
+-  UInt         getComponentScaleY         (const ComponentID id) const { return ::getComponentScaleY(id, m_chromaFormatIDC); }
++  UInt         getNumberValidComponents   ()                     const { return pcc_hm::getNumberValidComponents(m_chromaFormatIDC); }
++  UInt         getComponentScaleX         (const ComponentID id) const { return pcc_hm::getComponentScaleX(id, m_chromaFormatIDC); }
++  UInt         getComponentScaleY         (const ComponentID id) const { return pcc_hm::getComponentScaleY(id, m_chromaFormatIDC); }
+   Void         convert          (const Bool extendedPrecision, const UInt pixX, const UInt pixY, const UInt width, Bool bForwardConversion, const BitDepths& bitDepths, Bool bLossless = false, TComYuv* pcYuvNoCorrResi= NULL);
+   Void         DefaultConvertPix(const UInt pixX, const UInt pixY, const UInt width, const BitDepths& bitDepths);
+ };// END CLASS DEFINITION TComYuv
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif // __TCOMYUV__
++
+diff --git a/source/Lib/TLibCommon/TypeDef.h b/source/Lib/TLibCommon/TypeDef.h
+index f9e16de..f865cf2 100644
+--- a/source/Lib/TLibCommon/TypeDef.h
++++ b/source/Lib/TLibCommon/TypeDef.h
+@@ -46,9 +46,20 @@
+ #include <utility>
+ #include <iostream>
+ 
++namespace pcc_hm {
++  
++
+ //! \ingroup TLibCommon
+ //! \{
+ 
++#define PCC_ME_EXT                                        1
++
++#if PCC_ME_EXT
++#define PCC_ME_EXT_MAX_NUM_FRAMES                         600
++#define PCC_ME_EXT_MAX_NUM_PATCHES                        1000
++#define PCC_ME_NUM_LAYERS_ACTIVE                          2
++#endif
++
+ // ====================================================================================================================
+ // Debugging
+ // ====================================================================================================================
+@@ -141,7 +152,7 @@
+ 
+ // This can be enabled by the makefile
+ #ifndef RExt__HIGH_BIT_DEPTH_SUPPORT
+-#define RExt__HIGH_BIT_DEPTH_SUPPORT                      0 ///< 0 (default) use data type definitions for 8-10 bit video, 1 = use larger data types to allow for up to 16-bit video (originally developed as part of N0188)
++#define RExt__HIGH_BIT_DEPTH_SUPPORT                      1 ///< 0 (default) use data type definitions for 8-10 bit video, 1 = use larger data types to allow for up to 16-bit video (originally developed as part of N0188)
+ #endif
+ 
+ #if defined __SSE2__ || defined __AVX2__ || defined __AVX__ || defined _M_AMD64 || defined _M_X64
+@@ -1112,6 +1123,8 @@ typedef std::vector<RNSEIWindow> RNSEIWindowVec;
+ #endif
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif
+ 
+ 
++
+diff --git a/source/Lib/TLibDecoder/AnnexBread.cpp b/source/Lib/TLibDecoder/AnnexBread.cpp
+index d9396e0..e58a1cf 100644
+--- a/source/Lib/TLibDecoder/AnnexBread.cpp
++++ b/source/Lib/TLibDecoder/AnnexBread.cpp
+@@ -44,6 +44,7 @@
+ #if RExt__DECODER_DEBUG_BIT_STATISTICS
+ #include "TLibCommon/TComCodingStatistics.h"
+ #endif
++namespace pcc_hm {
+ 
+ using namespace std;
+ 
+@@ -196,4 +197,62 @@ byteStreamNALUnit(
+   stats.m_numBytesInNALUnit = UInt(nalUnit.size());
+   return eof;
+ }
++
++#if SAMPLE_STREAM
++static Void
++_sampleStreamNALUnit(
++  InputByteStream& bs,
++  size_t unitSizePrecisionBytes,
++  vector<uint8_t>& nalUnit,
++  AnnexBStats& stats)
++{
++  //read the size
++  size_t auSize=0;
++  for(size_t i=0; i<unitSizePrecisionBytes; i++)
++    auSize = (auSize<<8) + bs.readByte();
++  
++#if RExt__DECODER_DEBUG_BIT_STATISTICS
++  statBits.bits+=32; statBits.count+=4;
++#endif
++  stats.m_numStartCodePrefixBytes += 0;
++
++#if RExt__DECODER_DEBUG_BIT_STATISTICS
++  TComCodingStatistics::SStat &bodyStats=TComCodingStatistics::GetStatisticEP(STATS__NAL_UNIT_TOTAL_BODY);
++#endif
++
++  for(size_t nalubyte=0; nalubyte<auSize; nalubyte++)
++  {
++#if RExt__DECODER_DEBUG_BIT_STATISTICS
++    uint8_t thebyte=bs.readByte();bodyStats.bits+=8;bodyStats.count++;
++    nalUnit.push_back(thebyte);
++#else
++    nalUnit.push_back(bs.readByte());
++#endif
++  }
++  
++}
++
++Bool
++sampleStreamNALUnit(
++  InputByteStream& bs,
++  size_t unitSizePrecisionBytes,
++  vector<uint8_t>& nalUnit,
++  AnnexBStats& stats)
++{
++  Bool eof = false;
++  try
++  {
++    _sampleStreamNALUnit(bs, unitSizePrecisionBytes, nalUnit, stats);
++  }
++  catch (...)
++  {
++    eof = true;
++  }
++  stats.m_numBytesInNALUnit = UInt(nalUnit.size());
++  return eof;
++}
++#endif
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibDecoder/AnnexBread.h b/source/Lib/TLibDecoder/AnnexBread.h
+index b7a4877..d455789 100644
+--- a/source/Lib/TLibDecoder/AnnexBread.h
++++ b/source/Lib/TLibDecoder/AnnexBread.h
+@@ -46,6 +46,7 @@
+ #include <vector>
+ 
+ #include "TLibCommon/CommonDef.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibDecoder
+ //! \{
+@@ -194,6 +195,12 @@ struct AnnexBStats
+ 
+ Bool byteStreamNALUnit(InputByteStream& bs, std::vector<uint8_t>& nalUnit, AnnexBStats& stats);
+ 
++#if SAMPLE_STREAM
++Bool sampleStreamNALUnit(InputByteStream& bs, size_t unitSizePrecisionBytes, std::vector<uint8_t>& nalUnit, AnnexBStats& stats);
++#endif
++
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif
++
+diff --git a/source/Lib/TLibDecoder/NALread.cpp b/source/Lib/TLibDecoder/NALread.cpp
+index ecc0e0c..7a5c438 100644
+--- a/source/Lib/TLibDecoder/NALread.cpp
++++ b/source/Lib/TLibDecoder/NALread.cpp
+@@ -50,6 +50,7 @@
+ #if ENC_DEC_TRACE && DEC_NUH_TRACE
+ #include "TLibCommon/TComRom.h"
+ #endif
++namespace pcc_hm {
+ 
+ using namespace std;
+ 
+@@ -182,3 +183,6 @@ Void read(InputNALUnit& nalu)
+   readNalUnitHeader(nalu);
+ }
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibDecoder/NALread.h b/source/Lib/TLibDecoder/NALread.h
+index 290978b..b5ca951 100644
+--- a/source/Lib/TLibDecoder/NALread.h
++++ b/source/Lib/TLibDecoder/NALread.h
+@@ -44,6 +44,7 @@
+ #include "TLibCommon/CommonDef.h"
+ #include "TLibCommon/TComBitStream.h"
+ #include "TLibCommon/NAL.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibDecoder
+ //! \{
+@@ -70,4 +71,6 @@ Void readNalUnitHeader(InputNALUnit& nalu);
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif
++
+diff --git a/source/Lib/TLibDecoder/SEIread.cpp b/source/Lib/TLibDecoder/SEIread.cpp
+index eaff161..83e00c7 100644
+--- a/source/Lib/TLibDecoder/SEIread.cpp
++++ b/source/Lib/TLibDecoder/SEIread.cpp
+@@ -44,6 +44,7 @@
+ #include "SEIread.h"
+ #include "TLibCommon/TComPicYuv.h"
+ #include <iomanip>
++namespace pcc_hm {
+ 
+ 
+ //! \ingroup TLibDecoder
+@@ -1907,3 +1908,6 @@ Void SEIReader::xParseSEIRegionalNesting( SEIRegionalNesting& sei, UInt payloadS
+ 
+ 
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibDecoder/SEIread.h b/source/Lib/TLibDecoder/SEIread.h
+index e5bf3a0..56e1e32 100644
+--- a/source/Lib/TLibDecoder/SEIread.h
++++ b/source/Lib/TLibDecoder/SEIread.h
+@@ -47,6 +47,7 @@
+ //! \{
+ 
+ #include "TLibCommon/SEI.h"
++namespace pcc_hm {
+ class TComInputBitstream;
+ 
+ 
+@@ -129,4 +130,6 @@ protected:
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif
++
+diff --git a/source/Lib/TLibDecoder/SyntaxElementParser.cpp b/source/Lib/TLibDecoder/SyntaxElementParser.cpp
+index e97eddb..0426588 100644
+--- a/source/Lib/TLibDecoder/SyntaxElementParser.cpp
++++ b/source/Lib/TLibDecoder/SyntaxElementParser.cpp
+@@ -45,6 +45,7 @@
+ #if RExt__DECODER_DEBUG_BIT_STATISTICS
+ #include "TLibCommon/TComCodingStatistics.h"
+ #endif
++namespace pcc_hm {
+ 
+ #if ENC_DEC_TRACE
+ 
+@@ -314,3 +315,6 @@ Void FDReader::parseFillerData(TComInputBitstream* bs, UInt &fdSize)
+ 
+ //! \}
+ 
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibDecoder/SyntaxElementParser.h b/source/Lib/TLibDecoder/SyntaxElementParser.h
+index 2caf6ba..1da8b18 100644
+--- a/source/Lib/TLibDecoder/SyntaxElementParser.h
++++ b/source/Lib/TLibDecoder/SyntaxElementParser.h
+@@ -44,6 +44,7 @@
+ 
+ #include "TLibCommon/TComRom.h"
+ #include "TDecConformance.h"
++namespace pcc_hm {
+ 
+ #if DECODER_PARTIAL_CONFORMANCE_CHECK!=0
+ #define READ_SCODE_CHK(length, code, name, minValIncl, maxValIncl) xReadSCodeChk ( length, code, name, minValIncl, maxValIncl )
+@@ -147,5 +148,7 @@ public:
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif // !defined(__SYNTAXELEMENTPARSER__)
+ 
++
+diff --git a/source/Lib/TLibDecoder/TDecBinCoder.h b/source/Lib/TLibDecoder/TDecBinCoder.h
+index 84e8cd6..78b70c8 100644
+--- a/source/Lib/TLibDecoder/TDecBinCoder.h
++++ b/source/Lib/TLibDecoder/TDecBinCoder.h
+@@ -40,6 +40,7 @@
+ 
+ #include "TLibCommon/ContextModel.h"
+ #include "TLibCommon/TComBitStream.h"
++namespace pcc_hm {
+ 
+ #if RExt__DECODER_DEBUG_BIT_STATISTICS
+ class TComCodingStatisticsClassType;
+@@ -83,4 +84,6 @@ public:
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif
++
+diff --git a/source/Lib/TLibDecoder/TDecBinCoderCABAC.cpp b/source/Lib/TLibDecoder/TDecBinCoderCABAC.cpp
+index 3b0ed0c..c12702b 100644
+--- a/source/Lib/TLibDecoder/TDecBinCoderCABAC.cpp
++++ b/source/Lib/TLibDecoder/TDecBinCoderCABAC.cpp
+@@ -40,6 +40,7 @@
+ #if RExt__DECODER_DEBUG_BIT_STATISTICS
+ #include "TLibCommon/TComCodingStatistics.h"
+ #endif
++namespace pcc_hm {
+ 
+ //! \ingroup TLibDecoder
+ //! \{
+@@ -381,3 +382,6 @@ Void  TDecBinCABAC::xReadPCMCode(UInt uiLength, UInt& ruiCode)
+ #endif
+ }
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibDecoder/TDecBinCoderCABAC.h b/source/Lib/TLibDecoder/TDecBinCoderCABAC.h
+index 98a78b0..ba0badc 100644
+--- a/source/Lib/TLibDecoder/TDecBinCoderCABAC.h
++++ b/source/Lib/TLibDecoder/TDecBinCoderCABAC.h
+@@ -40,6 +40,7 @@
+ 
+ #include "TLibCommon/TComCABACTables.h"
+ #include "TDecBinCoder.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibDecoder
+ //! \{
+@@ -87,5 +88,7 @@ private:
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif
+ 
++
+diff --git a/source/Lib/TLibDecoder/TDecCAVLC.cpp b/source/Lib/TLibDecoder/TDecCAVLC.cpp
+index 1324589..95b0051 100644
+--- a/source/Lib/TLibDecoder/TDecCAVLC.cpp
++++ b/source/Lib/TLibDecoder/TDecCAVLC.cpp
+@@ -43,6 +43,7 @@
+ #include "TLibCommon/TComCodingStatistics.h"
+ #endif
+ #include "TDecConformance.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibDecoder
+ //! \{
+@@ -2410,3 +2411,6 @@ Void TDecCavlc::parseScanTraverseModeFlag( TComDataCU* /*pcCU*/, UInt /*uiAbsPar
+ 
+ //! \}
+ 
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibDecoder/TDecCAVLC.h b/source/Lib/TLibDecoder/TDecCAVLC.h
+index 180c657..ab66125 100644
+--- a/source/Lib/TLibDecoder/TDecCAVLC.h
++++ b/source/Lib/TLibDecoder/TDecCAVLC.h
+@@ -44,6 +44,7 @@
+ 
+ #include "TDecEntropy.h"
+ #include "SyntaxElementParser.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibDecoder
+ //! \{
+@@ -128,4 +129,6 @@ protected:
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif // !defined(AFX_TDECCAVLC_H__9732DD64_59B0_4A41_B29E_1A5B18821EAD__INCLUDED_)
++
+diff --git a/source/Lib/TLibDecoder/TDecConformance.cpp b/source/Lib/TLibDecoder/TDecConformance.cpp
+index b1af809..c8138cf 100644
+--- a/source/Lib/TLibDecoder/TDecConformance.cpp
++++ b/source/Lib/TLibDecoder/TDecConformance.cpp
+@@ -41,6 +41,7 @@
+ #include "TLibCommon/TComPicSym.h"
+ #include "NALread.h"
+ #include <math.h>
++namespace pcc_hm {
+ 
+ UInt
+ LevelTierFeatures::getMaxPicWidthInLumaSamples()  const
+@@ -450,3 +451,6 @@ TDecConformanceCheck::checkCtuDecoding(const UInt numUsedBits)
+ }
+ 
+ #endif
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibDecoder/TDecConformance.h b/source/Lib/TLibDecoder/TDecConformance.h
+index a9771d4..e1d0100 100644
+--- a/source/Lib/TLibDecoder/TDecConformance.h
++++ b/source/Lib/TLibDecoder/TDecConformance.h
+@@ -55,6 +55,7 @@
+ #if DECODER_PARTIAL_CONFORMANCE_CHECK == 2
+ #include <stdlib.h>
+ #endif
++namespace pcc_hm {
+ 
+ 
+ // Forward declarations
+@@ -261,4 +262,6 @@ public:
+ };
+ 
+ 
++} // namespace pcc_hm
+ #endif
++
+diff --git a/source/Lib/TLibDecoder/TDecCu.cpp b/source/Lib/TLibDecoder/TDecCu.cpp
+index 4b78457..ca0ec0c 100644
+--- a/source/Lib/TLibDecoder/TDecCu.cpp
++++ b/source/Lib/TLibDecoder/TDecCu.cpp
+@@ -38,6 +38,7 @@
+ #include "TDecCu.h"
+ #include "TLibCommon/TComTU.h"
+ #include "TLibCommon/TComPrediction.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibDecoder
+ //! \{
+@@ -740,7 +741,7 @@ TDecCu::xReconIntraQT( TComDataCU* pcCU, UInt uiDepth )
+     for (UInt chType=CHANNEL_TYPE_LUMA; chType<numChType; chType++)
+     {
+       const ChannelType chanType=ChannelType(chType);
+-      const Bool NxNPUHas4Parts = ::isChroma(chanType) ? enable4ChromaPUsInIntraNxNCU(pcCU->getPic()->getChromaFormat()) : true;
++      const Bool NxNPUHas4Parts = pcc_hm::isChroma(chanType) ? enable4ChromaPUsInIntraNxNCU(pcCU->getPic()->getChromaFormat()) : true;
+       const UInt uiInitTrDepth = ( pcCU->getPartitionSize(0) != SIZE_2Nx2N && NxNPUHas4Parts ? 1 : 0 );
+ 
+       TComTURecurse tuRecurseCU(pcCU, 0);
+@@ -1181,3 +1182,6 @@ Void TDecCu::xReconPaletteMode(TComDataCU *pcCU, UInt depth)
+ }
+ 
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibDecoder/TDecCu.h b/source/Lib/TLibDecoder/TDecCu.h
+index d1097c7..b3968e0 100644
+--- a/source/Lib/TLibDecoder/TDecCu.h
++++ b/source/Lib/TLibDecoder/TDecCu.h
+@@ -45,6 +45,7 @@
+ #include "TLibCommon/TComTrQuant.h"
+ #include "TDecEntropy.h"
+ #include "TDecConformance.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibDecoder
+ //! \{
+@@ -130,5 +131,7 @@ protected:
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif
+ 
++
+diff --git a/source/Lib/TLibDecoder/TDecEntropy.cpp b/source/Lib/TLibDecoder/TDecEntropy.cpp
+index f858792..8fd8a86 100644
+--- a/source/Lib/TLibDecoder/TDecEntropy.cpp
++++ b/source/Lib/TLibDecoder/TDecEntropy.cpp
+@@ -39,6 +39,8 @@
+ #include "TLibCommon/TComTU.h"
+ #include "TLibCommon/TComPrediction.h"
+ 
++namespace pcc_hm {
++  
+ #if ENVIRONMENT_VARIABLE_DEBUG_AND_TEST
+ #include "../TLibCommon/Debug.h"
+ static const Bool bDebugRQT = DebugOptionList::DebugRQT.getInt()!=0;
+@@ -742,3 +744,6 @@ Void TDecEntropy::decodePaletteModeInfo( TComDataCU* pcCU, UInt absPartIdx, UInt
+ }
+ 
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibDecoder/TDecEntropy.h b/source/Lib/TLibDecoder/TDecEntropy.h
+index 997b483..326f571 100644
+--- a/source/Lib/TLibDecoder/TDecEntropy.h
++++ b/source/Lib/TLibDecoder/TDecEntropy.h
+@@ -45,6 +45,7 @@
+ #include "TLibCommon/TComSampleAdaptiveOffset.h"
+ #include "TLibCommon/TComRectangle.h"
+ #include "TDecConformance.h"
++namespace pcc_hm {
+ 
+ class TDecSbac;
+ class TDecCavlc;
+@@ -189,5 +190,7 @@ public:
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif // __TDECENTROPY__
+ 
++
+diff --git a/source/Lib/TLibDecoder/TDecGop.cpp b/source/Lib/TLibDecoder/TDecGop.cpp
+index c002c16..64b43c2 100644
+--- a/source/Lib/TLibDecoder/TDecGop.cpp
++++ b/source/Lib/TLibDecoder/TDecGop.cpp
+@@ -44,6 +44,7 @@
+ #include "TLibCommon/SEI.h"
+ 
+ #include <time.h>
++namespace pcc_hm {
+ 
+ //! \ingroup TLibDecoder
+ //! \{
+@@ -265,3 +266,6 @@ static Void calcAndPrintHashStatus(TComPicYuv& pic, const SEIDecodedPictureHash*
+   }
+ }
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibDecoder/TDecGop.h b/source/Lib/TLibDecoder/TDecGop.h
+index a664580..04b9d02 100644
+--- a/source/Lib/TLibDecoder/TDecGop.h
++++ b/source/Lib/TLibDecoder/TDecGop.h
+@@ -54,6 +54,7 @@
+ #include "TDecSlice.h"
+ #include "TDecBinCoder.h"
+ #include "TDecBinCoderCABAC.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibDecoder
+ //! \{
+@@ -105,5 +106,7 @@ public:
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif // !defined(AFX_TDECGOP_H__29440B7A_7CC0_48C7_8DD5_1A531D3CED45__INCLUDED_)
+ 
++
+diff --git a/source/Lib/TLibDecoder/TDecSbac.cpp b/source/Lib/TLibDecoder/TDecSbac.cpp
+index 5979083..e72eb59 100644
+--- a/source/Lib/TLibDecoder/TDecSbac.cpp
++++ b/source/Lib/TLibDecoder/TDecSbac.cpp
+@@ -53,6 +53,7 @@
+ #if ENVIRONMENT_VARIABLE_DEBUG_AND_TEST
+ #include "../TLibCommon/Debug.h"
+ #endif
++namespace pcc_hm {
+ 
+ 
+ //////////////////////////////////////////////////////////////////////
+@@ -2549,3 +2550,6 @@ UInt TDecSbac::xReadTruncMsbP1RefinementBits( ContextModel* pcSCModel, UInt maxV
+ }
+ 
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibDecoder/TDecSbac.h b/source/Lib/TLibDecoder/TDecSbac.h
+index 0122ce4..f9f4da3 100644
+--- a/source/Lib/TLibDecoder/TDecSbac.h
++++ b/source/Lib/TLibDecoder/TDecSbac.h
+@@ -49,6 +49,7 @@
+ #include "TLibCommon/ContextTables.h"
+ #include "TLibCommon/ContextModel.h"
+ #include "TLibCommon/ContextModel3DBuffer.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibDecoder
+ //! \{
+@@ -217,4 +218,6 @@ private:
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif // !defined(AFX_TDECSBAC_H__CFCAAA19_8110_47F4_9A16_810C4B5499D5__INCLUDED_)
++
+diff --git a/source/Lib/TLibDecoder/TDecSlice.cpp b/source/Lib/TLibDecoder/TDecSlice.cpp
+index d4865e4..c83cec2 100644
+--- a/source/Lib/TLibDecoder/TDecSlice.cpp
++++ b/source/Lib/TLibDecoder/TDecSlice.cpp
+@@ -37,6 +37,7 @@
+ 
+ #include "TDecSlice.h"
+ #include "TDecConformance.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibDecoder
+ //! \{
+@@ -403,3 +404,6 @@ Void TDecSlice::xSetPredDefault(Pel lastPalette[MAX_NUM_COMPONENT][MAX_PALETTE_P
+ }
+ 
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibDecoder/TDecSlice.h b/source/Lib/TLibDecoder/TDecSlice.h
+index 8e42903..7773f7f 100644
+--- a/source/Lib/TLibDecoder/TDecSlice.h
++++ b/source/Lib/TLibDecoder/TDecSlice.h
+@@ -49,6 +49,7 @@
+ #include "TDecCu.h"
+ #include "TDecSbac.h"
+ #include "TDecBinCoderCABAC.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibDecoder
+ //! \{
+@@ -90,5 +91,7 @@ public:
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif
+ 
++
+diff --git a/source/Lib/TLibDecoder/TDecTop.cpp b/source/Lib/TLibDecoder/TDecTop.cpp
+index 17beb04..4cccce8 100644
+--- a/source/Lib/TLibDecoder/TDecTop.cpp
++++ b/source/Lib/TLibDecoder/TDecTop.cpp
+@@ -38,6 +38,7 @@
+ #include "NALread.h"
+ #include "TDecTop.h"
+ #include "TDecConformance.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibDecoder
+ //! \{
+@@ -1188,3 +1189,6 @@ Bool TDecTop::isRandomAccessSkipPicture(Int& iSkipFrame,  Int& iPOCLastDisplay)
+ }
+ 
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibDecoder/TDecTop.h b/source/Lib/TLibDecoder/TDecTop.h
+index 087e072..a81ea9b 100644
+--- a/source/Lib/TLibDecoder/TDecTop.h
++++ b/source/Lib/TLibDecoder/TDecTop.h
+@@ -52,6 +52,7 @@
+ #include "TDecCAVLC.h"
+ #include "SEIread.h"
+ #include "TDecConformance.h"
++namespace pcc_hm {
+ 
+ class InputNALUnit;
+ 
+@@ -203,5 +204,7 @@ private:
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif // __TDECTOP__
+ 
++
+diff --git a/source/Lib/TLibEncoder/AnnexBwrite.h b/source/Lib/TLibEncoder/AnnexBwrite.h
+index e7b9414..4d9bf8f 100644
+--- a/source/Lib/TLibEncoder/AnnexBwrite.h
++++ b/source/Lib/TLibEncoder/AnnexBwrite.h
+@@ -39,6 +39,7 @@
+ #include <ostream>
+ #include "TLibCommon/AccessUnit.h"
+ #include "NALwrite.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibEncoder
+ //! \{
+@@ -86,6 +87,31 @@ static std::vector<UInt> writeAnnexB(std::ostream& out, const AccessUnit& au)
+ 
+   return annexBsizes;
+ }
++
++#if SAMPLE_STREAM
++static std::vector<UInt> writeSampleStream(std::ostream& out, UInt precisionBytes, const AccessUnit& au)
++{
++  std::vector<UInt> sampleStreamsizes;
++
++  for (AccessUnit::const_iterator it = au.begin(); it != au.end(); it++)
++  {
++    const NALUnitEBSP& nalu = **it;
++    UInt size = 0;
++    
++    TComOutputBitstream bsNALUSize;
++    bsNALUSize.write(nalu.m_nalUnitData.str().size(), precisionBytes*8);
++    out.write(reinterpret_cast<const TChar*>(bsNALUSize.getByteStream()), bsNALUSize.getByteStreamLength());
++    out << nalu.m_nalUnitData.str();
++    size += UInt(nalu.m_nalUnitData.str().size());
++    sampleStreamsizes.push_back(size);
++  }
++
++  return sampleStreamsizes;
++}
++#endif
++
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif
++
+diff --git a/source/Lib/TLibEncoder/NALwrite.cpp b/source/Lib/TLibEncoder/NALwrite.cpp
+index 31b1653..5a9b26a 100644
+--- a/source/Lib/TLibEncoder/NALwrite.cpp
++++ b/source/Lib/TLibEncoder/NALwrite.cpp
+@@ -38,6 +38,7 @@
+ #include "TLibCommon/NAL.h"
+ #include "TLibCommon/TComBitStream.h"
+ #include "NALwrite.h"
++namespace pcc_hm {
+ 
+ using namespace std;
+ 
+@@ -123,3 +124,6 @@ Void write(ostream& out, OutputNALUnit& nalu)
+ }
+ 
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibEncoder/NALwrite.h b/source/Lib/TLibEncoder/NALwrite.h
+index 698a532..6ffc8a5 100644
+--- a/source/Lib/TLibEncoder/NALwrite.h
++++ b/source/Lib/TLibEncoder/NALwrite.h
+@@ -41,6 +41,7 @@
+ #include "TLibCommon/CommonDef.h"
+ #include "TLibCommon/TComBitStream.h"
+ #include "TLibCommon/NAL.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibEncoder
+ //! \{
+@@ -84,4 +85,6 @@ inline NALUnitEBSP::NALUnitEBSP(OutputNALUnit& nalu)
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif
++
+diff --git a/source/Lib/TLibEncoder/SEIEncoder.cpp b/source/Lib/TLibEncoder/SEIEncoder.cpp
+index 939b406..4ef8ad9 100644
+--- a/source/Lib/TLibEncoder/SEIEncoder.cpp
++++ b/source/Lib/TLibEncoder/SEIEncoder.cpp
+@@ -35,6 +35,7 @@
+ #include "TLibCommon/SEI.h"
+ #include "TEncGOP.h"
+ #include "TEncTop.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibEncoder
+ //! \{
+@@ -1318,3 +1319,6 @@ Void SEIEncoder::initSEIGreenMetadataInfo(SEIGreenMetadataInfo *seiGreenMetadata
+ 
+ 
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibEncoder/SEIEncoder.h b/source/Lib/TLibEncoder/SEIEncoder.h
+index 21265cc..826de45 100644
+--- a/source/Lib/TLibEncoder/SEIEncoder.h
++++ b/source/Lib/TLibEncoder/SEIEncoder.h
+@@ -37,6 +37,7 @@
+ #define __SEIENCODER__
+ 
+ #include "TLibCommon/SEI.h"
++namespace pcc_hm {
+ 
+ // forward declarations
+ class TEncCfg;
+@@ -129,4 +130,6 @@ private:
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif // __SEIENCODER__
++
+diff --git a/source/Lib/TLibEncoder/SEIwrite.cpp b/source/Lib/TLibEncoder/SEIwrite.cpp
+index fa6132b..530ff85 100644
+--- a/source/Lib/TLibEncoder/SEIwrite.cpp
++++ b/source/Lib/TLibEncoder/SEIwrite.cpp
+@@ -37,6 +37,7 @@
+ #include "TLibCommon/TComSlice.h"
+ #include "TLibCommon/TComPicYuv.h"
+ #include "SEIwrite.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibEncoder
+ //! \{
+@@ -1380,3 +1381,6 @@ Void SEIWriter::xWriteByteAlign()
+ }
+ 
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibEncoder/SEIwrite.h b/source/Lib/TLibEncoder/SEIwrite.h
+index 1227c3b..626b1b7 100644
+--- a/source/Lib/TLibEncoder/SEIwrite.h
++++ b/source/Lib/TLibEncoder/SEIwrite.h
+@@ -38,6 +38,7 @@
+ 
+ #include "SyntaxElementWriter.h"
+ #include "TLibCommon/SEI.h"
++namespace pcc_hm {
+ 
+ class TComBitIf;
+ 
+@@ -119,4 +120,6 @@ protected:
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif
++
+diff --git a/source/Lib/TLibEncoder/SyntaxElementWriter.cpp b/source/Lib/TLibEncoder/SyntaxElementWriter.cpp
+index 897f55f..6e43581 100644
+--- a/source/Lib/TLibEncoder/SyntaxElementWriter.cpp
++++ b/source/Lib/TLibEncoder/SyntaxElementWriter.cpp
+@@ -37,6 +37,7 @@
+ 
+ #include "TLibCommon/CommonDef.h"
+ #include "SyntaxElementWriter.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibEncoder
+ //! \{
+@@ -174,3 +175,6 @@ Void SyntaxElementWriter::xWriteRbspTrailingBits()
+ }
+ 
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibEncoder/SyntaxElementWriter.h b/source/Lib/TLibEncoder/SyntaxElementWriter.h
+index fe2e297..cb1b013 100644
+--- a/source/Lib/TLibEncoder/SyntaxElementWriter.h
++++ b/source/Lib/TLibEncoder/SyntaxElementWriter.h
+@@ -45,6 +45,7 @@
+ #include "TLibCommon/CommonDef.h"
+ #include "TLibCommon/TComBitStream.h"
+ #include "TLibCommon/TComRom.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibEncoder
+ //! \{
+@@ -96,5 +97,7 @@ protected:
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif // !defined(__SYNTAXELEMENTWRITER__)
+ 
++
+diff --git a/source/Lib/TLibEncoder/TEncAnalyze.h b/source/Lib/TLibEncoder/TEncAnalyze.h
+index 61456e2..e7932bb 100644
+--- a/source/Lib/TLibEncoder/TEncAnalyze.h
++++ b/source/Lib/TLibEncoder/TEncAnalyze.h
+@@ -51,6 +51,7 @@
+ #if EXTENSION_360_VIDEO
+ #include "TAppEncHelper360/TExt360EncAnalyze.h"
+ #endif
++namespace pcc_hm {
+ 
+ //! \ingroup TLibEncoder
+ //! \{
+@@ -471,4 +472,6 @@ extern TEncAnalyze             m_gcAnalyzeAll_in;
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif // !defined(AFX_TENCANALYZE_H__C79BCAA2_6AC8_4175_A0FE_CF02F5829233__INCLUDED_)
++
+diff --git a/source/Lib/TLibEncoder/TEncBinCoder.h b/source/Lib/TLibEncoder/TEncBinCoder.h
+index 891385a..3708672 100644
+--- a/source/Lib/TLibEncoder/TEncBinCoder.h
++++ b/source/Lib/TLibEncoder/TEncBinCoder.h
+@@ -40,6 +40,7 @@
+ 
+ #include "TLibCommon/ContextModel.h"
+ #include "TLibCommon/TComBitStream.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibEncoder
+ //! \{
+@@ -82,5 +83,7 @@ public:
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif
+ 
++
+diff --git a/source/Lib/TLibEncoder/TEncBinCoderCABAC.cpp b/source/Lib/TLibEncoder/TEncBinCoderCABAC.cpp
+index 827503f..5ccdaf5 100644
+--- a/source/Lib/TLibEncoder/TEncBinCoderCABAC.cpp
++++ b/source/Lib/TLibEncoder/TEncBinCoderCABAC.cpp
+@@ -38,6 +38,7 @@
+ #include "TEncBinCoderCABAC.h"
+ #include "TLibCommon/TComRom.h"
+ #include "TLibCommon/Debug.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibEncoder
+ //! \{
+@@ -444,3 +445,6 @@ Void TEncBinCABAC::writeOut()
+ }
+ 
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibEncoder/TEncBinCoderCABAC.h b/source/Lib/TLibEncoder/TEncBinCoderCABAC.h
+index 2e9dd44..e15bd4d 100644
+--- a/source/Lib/TLibEncoder/TEncBinCoderCABAC.h
++++ b/source/Lib/TLibEncoder/TEncBinCoderCABAC.h
+@@ -40,6 +40,7 @@
+ 
+ #include "TLibCommon/TComCABACTables.h"
+ #include "TEncBinCoder.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibEncoder
+ //! \{
+@@ -107,5 +108,7 @@ private:
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif
+ 
++
+diff --git a/source/Lib/TLibEncoder/TEncBinCoderCABACCounter.cpp b/source/Lib/TLibEncoder/TEncBinCoderCABACCounter.cpp
+index c742f9c..99cc17a 100644
+--- a/source/Lib/TLibEncoder/TEncBinCoderCABACCounter.cpp
++++ b/source/Lib/TLibEncoder/TEncBinCoderCABACCounter.cpp
+@@ -38,6 +38,7 @@
+ #include "TEncBinCoderCABACCounter.h"
+ #include "TLibCommon/TComRom.h"
+ #include "TLibCommon/Debug.h"
++namespace pcc_hm {
+ 
+ 
+ #if FAST_BIT_EST
+@@ -142,3 +143,6 @@ Void TEncBinCABACCounter::align()
+ //! \}
+ #endif
+ 
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibEncoder/TEncBinCoderCABACCounter.h b/source/Lib/TLibEncoder/TEncBinCoderCABACCounter.h
+index 780852a..1cf7fa6 100644
+--- a/source/Lib/TLibEncoder/TEncBinCoderCABACCounter.h
++++ b/source/Lib/TLibEncoder/TEncBinCoderCABACCounter.h
+@@ -40,6 +40,7 @@
+ 
+ 
+ #include "TEncBinCoderCABAC.h"
++namespace pcc_hm {
+ 
+ #if FAST_BIT_EST
+ 
+@@ -78,5 +79,7 @@ private:
+ 
+ #endif
+ 
++} // namespace pcc_hm
+ #endif
+ 
++
+diff --git a/source/Lib/TLibEncoder/TEncCavlc.cpp b/source/Lib/TLibEncoder/TEncCavlc.cpp
+index bbeb6f1..b26e506 100644
+--- a/source/Lib/TLibEncoder/TEncCavlc.cpp
++++ b/source/Lib/TLibEncoder/TEncCavlc.cpp
+@@ -38,6 +38,7 @@
+ #include "../TLibCommon/CommonDef.h"
+ #include "TEncCavlc.h"
+ #include "SEIwrite.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibEncoder
+ //! \{
+@@ -1691,3 +1692,6 @@ Void TEncCavlc::codeColourTransformFlag( TComDataCU* /*pcCU*/, UInt /*absPartIdx
+   assert(0);
+ }
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibEncoder/TEncCavlc.h b/source/Lib/TLibEncoder/TEncCavlc.h
+index e41c8e3..145af18 100644
+--- a/source/Lib/TLibEncoder/TEncCavlc.h
++++ b/source/Lib/TLibEncoder/TEncCavlc.h
+@@ -47,6 +47,7 @@
+ #include "TLibCommon/TComRom.h"
+ #include "TEncEntropy.h"
+ #include "SyntaxElementWriter.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibEncoder
+ //! \{
+@@ -149,5 +150,7 @@ public:
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif // !defined(AFX_TENCCAVLC_H__EE8A0B30_945B_4169_B290_24D3AD52296F__INCLUDED_)
+ 
++
+diff --git a/source/Lib/TLibEncoder/TEncCfg.h b/source/Lib/TLibEncoder/TEncCfg.h
+index f8ec9ec..c75ad4a 100644
+--- a/source/Lib/TLibEncoder/TEncCfg.h
++++ b/source/Lib/TLibEncoder/TEncCfg.h
+@@ -45,6 +45,7 @@
+ #include "TLibCommon/CommonDef.h"
+ #include "TLibCommon/TComSlice.h"
+ #include <assert.h>
++namespace pcc_hm {
+ 
+ struct GOPEntry
+ {
+@@ -131,6 +132,12 @@ struct TEncSEIKneeFunctionInformation
+ };
+ 
+ protected:
++#if PCC_ME_EXT
++	std::string m_blockToPatchFileName;
++	std::string m_occupancyFileName;
++	Bool        m_usePCCExt;
++	//std::string m_patchInfoFileName;
++#endif
+   //==== File I/O ========
+   Int       m_iFrameRate;
+   Int       m_FrameSkip;
+@@ -559,6 +566,17 @@ public:
+   virtual ~TEncCfg()
+   {}
+ 
++#if PCC_ME_EXT
++  Void setBlockToPatchFileName(std::string blockToPatchFileName) { m_blockToPatchFileName = blockToPatchFileName; }
++  std::string getBlockToPatchFileName() { return m_blockToPatchFileName; }
++
++  Void setOccupancyMapFileName(std::string occupancyMapFileName) { m_occupancyFileName = occupancyMapFileName; }
++  std::string getOccupancyMapFileName() { return m_occupancyFileName; }
++
++  Void setUsePCCExt(Bool value) { m_usePCCExt = value; }
++  Bool getUsePCCExt()         const { return m_usePCCExt; }
++#endif
++
+   Void setProfile(Profile::Name profile) { m_profile = profile; }
+   Void setLevel(Level::Tier tier, Level::Name level) { m_levelTier = tier; m_level = level; }
+ 
+@@ -1370,4 +1388,6 @@ public:
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif // !defined(AFX_TENCCFG_H__6B99B797_F4DA_4E46_8E78_7656339A6C41__INCLUDED_)
++
+diff --git a/source/Lib/TLibEncoder/TEncCu.cpp b/source/Lib/TLibEncoder/TEncCu.cpp
+index efbfb38..ec44f02 100644
+--- a/source/Lib/TLibEncoder/TEncCu.cpp
++++ b/source/Lib/TLibEncoder/TEncCu.cpp
+@@ -43,6 +43,7 @@
+ 
+ #include <cmath>
+ #include <algorithm>
++namespace pcc_hm {
+ using namespace std;
+ 
+ 
+@@ -3464,3 +3465,6 @@ UInt TEncCu::xCheckPaletteMode(TComDataCU *&rpcBestCU, TComDataCU *&rpcTempCU, B
+ }
+ 
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibEncoder/TEncCu.h b/source/Lib/TLibEncoder/TEncCu.h
+index a23d828..e1c9708 100644
+--- a/source/Lib/TLibEncoder/TEncCu.h
++++ b/source/Lib/TLibEncoder/TEncCu.h
+@@ -49,6 +49,7 @@
+ #include "TEncEntropy.h"
+ #include "TEncSearch.h"
+ #include "TEncRateCtrl.h"
++namespace pcc_hm {
+ //! \ingroup TLibEncoder
+ //! \{
+ 
+@@ -230,4 +231,6 @@ protected:
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif // __TENCMB__
++
+diff --git a/source/Lib/TLibEncoder/TEncEntropy.cpp b/source/Lib/TLibEncoder/TEncEntropy.cpp
+index e03bc44..2fc3720 100644
+--- a/source/Lib/TLibEncoder/TEncEntropy.cpp
++++ b/source/Lib/TLibEncoder/TEncEntropy.cpp
+@@ -40,6 +40,8 @@
+ #include "TLibCommon/TComSampleAdaptiveOffset.h"
+ #include "TLibCommon/TComTU.h"
+ 
++namespace pcc_hm {
++  
+ #if ENVIRONMENT_VARIABLE_DEBUG_AND_TEST
+ #include "../TLibCommon/Debug.h"
+ static const Bool bDebugPredEnabled = DebugOptionList::DebugPred.getInt()!=0;
+@@ -734,3 +736,6 @@ Int TEncEntropy::countNonZeroCoeffs( TCoeff* pcCoef, UInt uiSize )
+ }
+ 
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibEncoder/TEncEntropy.h b/source/Lib/TLibEncoder/TEncEntropy.h
+index 3ddc83b..0ee29e2 100644
+--- a/source/Lib/TLibEncoder/TEncEntropy.h
++++ b/source/Lib/TLibEncoder/TEncEntropy.h
+@@ -46,6 +46,7 @@
+ #include "TLibCommon/TComTrQuant.h"
+ #include "TLibCommon/TComSampleAdaptiveOffset.h"
+ #include "TLibCommon/TComChromaFormat.h"
++namespace pcc_hm {
+ 
+ class TEncSbac;
+ class TEncCavlc;
+@@ -187,5 +188,7 @@ public:
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif // __TENCENTROPY__
+ 
++
+diff --git a/source/Lib/TLibEncoder/TEncGOP.cpp b/source/Lib/TLibEncoder/TEncGOP.cpp
+index 5b7e887..df52740 100644
+--- a/source/Lib/TLibEncoder/TEncGOP.cpp
++++ b/source/Lib/TLibEncoder/TEncGOP.cpp
+@@ -51,6 +51,7 @@
+ #include <math.h>
+ 
+ #include <deque>
++namespace pcc_hm {
+ using namespace std;
+ 
+ //! \ingroup TLibEncoder
+@@ -1197,7 +1198,11 @@ printHash(const HashType hashType, const std::string &digestStr)
+ // ====================================================================================================================
+ Void TEncGOP::compressGOP( Int iPOCLast, Int iNumPicRcvd, TComList<TComPic*>& rcListPic,
+                            TComList<TComPicYuv*>& rcListPicYuvRecOut, std::list<AccessUnit>& accessUnitsInGOP,
++#if PCC_ME_EXT
++	                       Bool isField, Bool isTff, const InputColourSpaceConversion snr_conversion, const TEncAnalyze::OutputLogControl &outputLogCtrl, Bool usePccME)
++#else
+                            Bool isField, Bool isTff, const InputColourSpaceConversion snr_conversion, const TEncAnalyze::OutputLogControl &outputLogCtrl )
++#endif
+ {
+   // TODO: Split this function up.
+ 
+@@ -1757,6 +1762,52 @@ Void TEncGOP::compressGOP( Int iPOCLast, Int iNumPicRcvd, TComList<TComPic*>& rc
+       for(UInt nextCtuTsAddr = 0; nextCtuTsAddr < numberOfCtusInFrame; )
+       {
+         m_pcSliceEncoder->precompressSlice( pcPic );
++#if PCC_ME_EXT
++		if (pcSlice->getPOC() % PCC_ME_NUM_LAYERS_ACTIVE == 0 && usePccME)
++		{
++			//printf("\nPCC ME ACTIVE\n");
++			Int picWidth = pcPic->getPicYuvRec()->getWidth(COMPONENT_Y);
++			Int picHeight = pcPic->getPicYuvRec()->getHeight(COMPONENT_Y);
++
++			Int blockToPatchWidth = picWidth / 16;
++			Int blockToPatchHeight = picHeight / 16;
++
++			Int currPOC = pcSlice->getPOC() / PCC_ME_NUM_LAYERS_ACTIVE;
++			long long offset = (long long)currPOC * blockToPatchWidth * blockToPatchHeight;
++
++			std::string blockToPatchFileName = m_pcEncTop->getBlockToPatchFileName();
++			FILE* blockToPatchFile = NULL;
++			blockToPatchFile = fopen(blockToPatchFileName.c_str(), "rb");
++			fseek(blockToPatchFile, offset * sizeof(long long), SEEK_SET);
++			long long* blockToPatch = pcPic->getBlockToPatch();
++			size_t readSize = fread(blockToPatch, sizeof(long long), blockToPatchWidth * blockToPatchHeight, blockToPatchFile);
++			if (readSize != blockToPatchWidth * blockToPatchHeight)
++			{
++				printf("error: Resolution does not match");
++			}
++			fclose(blockToPatchFile);
++
++			offset = (long long)currPOC * picWidth * picHeight;
++			std::string occupancyMapFileName = m_pcEncTop->getOccupancyMapFileName();
++			FILE* occupancyMapFile = NULL;
++			occupancyMapFile = fopen(occupancyMapFileName.c_str(), "rb");
++			fseek(occupancyMapFile, offset * sizeof(Int), SEEK_SET);
++			Int* occupancyMap = pcPic->getOccupancyMap();
++			readSize = fread(occupancyMap, sizeof(Int), picWidth * picHeight, occupancyMapFile);
++			if (readSize != picWidth * picHeight)
++			{
++				printf("error: Resolution does not match");
++			}
++			fclose(occupancyMapFile);
++		}
++		if (usePccME)
++		{
++			for (Int i = 0; i < PCC_ME_EXT_MAX_NUM_PATCHES; i++)
++			{
++				g_patchesChange[i] = true;
++			}
++		}
++#endif
+         m_pcSliceEncoder->compressSlice   ( pcPic, false, false );
+ 
+         const UInt curSliceSegmentEnd = pcSlice->getSliceSegmentCurEndCtuTsAddr();
+@@ -3741,3 +3792,6 @@ TComSPS* TEncGOP::getSPS(Int id)
+   return m_pcEncTop->getSPS(id);
+ }
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibEncoder/TEncGOP.h b/source/Lib/TLibEncoder/TEncGOP.h
+index ee7cc18..0f949cb 100644
+--- a/source/Lib/TLibEncoder/TEncGOP.h
++++ b/source/Lib/TLibEncoder/TEncGOP.h
+@@ -61,6 +61,7 @@
+ #include "TEncAnalyze.h"
+ #include "TEncRateCtrl.h"
+ #include <vector>
++namespace pcc_hm {
+ 
+ //! \ingroup TLibEncoder
+ //! \{
+@@ -168,7 +169,11 @@ public:
+ 
+   Void  init        ( TEncTop* pcTEncTop );
+   Void  compressGOP ( Int iPOCLast, Int iNumPicRcvd, TComList<TComPic*>& rcListPic, TComList<TComPicYuv*>& rcListPicYuvRec,
++#if PCC_ME_EXT
++	                 std::list<AccessUnit>& accessUnitsInGOP, Bool isField, Bool isTff, const InputColourSpaceConversion snr_conversion, const TEncAnalyze::OutputLogControl &outputLogCtrl, Bool m_usePCCExt);
++#else
+                      std::list<AccessUnit>& accessUnitsInGOP, Bool isField, Bool isTff, const InputColourSpaceConversion snr_conversion, const TEncAnalyze::OutputLogControl &outputLogCtrl );
++#endif
+   Void  xAttachSliceDataToNalUnit (OutputNALUnit& rNalu, TComOutputBitstream* pcBitstreamRedirect);
+ 
+ 
+@@ -257,5 +262,7 @@ protected:
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif // __TENCGOP__
+ 
++
+diff --git a/source/Lib/TLibEncoder/TEncPic.cpp b/source/Lib/TLibEncoder/TEncPic.cpp
+index 83ce0e0..3bf1103 100644
+--- a/source/Lib/TLibEncoder/TEncPic.cpp
++++ b/source/Lib/TLibEncoder/TEncPic.cpp
+@@ -36,6 +36,7 @@
+ */
+ 
+ #include "TEncPic.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibEncoder
+ //! \{
+@@ -157,3 +158,6 @@ Void TEncPic::destroy()
+ }
+ //! \}
+ 
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibEncoder/TEncPic.h b/source/Lib/TLibEncoder/TEncPic.h
+index 7829114..44cd30f 100644
+--- a/source/Lib/TLibEncoder/TEncPic.h
++++ b/source/Lib/TLibEncoder/TEncPic.h
+@@ -40,6 +40,7 @@
+ 
+ #include "TLibCommon/CommonDef.h"
+ #include "TLibCommon/TComPic.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibEncoder
+ //! \{
+@@ -115,4 +116,6 @@ public:
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif // __TENCPIC__
++
+diff --git a/source/Lib/TLibEncoder/TEncPreanalyzer.cpp b/source/Lib/TLibEncoder/TEncPreanalyzer.cpp
+index 043ccc6..62537df 100644
+--- a/source/Lib/TLibEncoder/TEncPreanalyzer.cpp
++++ b/source/Lib/TLibEncoder/TEncPreanalyzer.cpp
+@@ -39,6 +39,7 @@
+ #include <algorithm>
+ 
+ #include "TEncPreanalyzer.h"
++namespace pcc_hm {
+ 
+ using namespace std;
+ 
+@@ -151,3 +152,6 @@ Void TEncPreanalyzer::xPreanalyze( TEncPic* pcEPic )
+ }
+ //! \}
+ 
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibEncoder/TEncPreanalyzer.h b/source/Lib/TLibEncoder/TEncPreanalyzer.h
+index 0663bee..62e8430 100644
+--- a/source/Lib/TLibEncoder/TEncPreanalyzer.h
++++ b/source/Lib/TLibEncoder/TEncPreanalyzer.h
+@@ -39,6 +39,7 @@
+ #define __TENCPREANALYZER__
+ 
+ #include "TEncPic.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibEncoder
+ //! \{
+@@ -59,4 +60,6 @@ public:
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif // __TENCPREANALYZER__
++
+diff --git a/source/Lib/TLibEncoder/TEncRateCtrl.cpp b/source/Lib/TLibEncoder/TEncRateCtrl.cpp
+index 40686d7..60456fa 100644
+--- a/source/Lib/TLibEncoder/TEncRateCtrl.cpp
++++ b/source/Lib/TLibEncoder/TEncRateCtrl.cpp
+@@ -39,6 +39,7 @@
+ #include "../TLibCommon/TComChromaFormat.h"
+ 
+ #include <cmath>
++namespace pcc_hm {
+ 
+ using namespace std;
+ 
+@@ -1471,3 +1472,6 @@ Void TEncRateCtrl::destroyRCGOP()
+   delete m_encRCGOP;
+   m_encRCGOP = NULL;
+ }
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibEncoder/TEncRateCtrl.h b/source/Lib/TLibEncoder/TEncRateCtrl.h
+index 94ccce0..4fd18fd 100644
+--- a/source/Lib/TLibEncoder/TEncRateCtrl.h
++++ b/source/Lib/TLibEncoder/TEncRateCtrl.h
+@@ -57,6 +57,7 @@ using namespace std;
+ #include "../TLibEncoder/TEncCfg.h"
+ #include <list>
+ #include <cassert>
++namespace pcc_hm {
+ 
+ const Int g_RCInvalidQPValue = -999;
+ const Int g_RCSmoothWindowSize = 40;
+@@ -344,6 +345,8 @@ private:
+   UInt       m_bufferingRate;           // Buffering rate
+ };
+ 
++} // namespace pcc_hm
+ #endif
+ 
+ 
++
+diff --git a/source/Lib/TLibEncoder/TEncSampleAdaptiveOffset.cpp b/source/Lib/TLibEncoder/TEncSampleAdaptiveOffset.cpp
+index 79a1249..25ff06e 100644
+--- a/source/Lib/TLibEncoder/TEncSampleAdaptiveOffset.cpp
++++ b/source/Lib/TLibEncoder/TEncSampleAdaptiveOffset.cpp
+@@ -40,6 +40,7 @@
+ #include <stdlib.h>
+ #include <stdio.h>
+ #include <math.h>
++namespace pcc_hm {
+ 
+ //! \ingroup TLibEncoder
+ //! \{
+@@ -1333,3 +1334,6 @@ Void TEncSampleAdaptiveOffset::getBlkStats(const ComponentID compIdx, const Int
+ 
+ 
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibEncoder/TEncSampleAdaptiveOffset.h b/source/Lib/TLibEncoder/TEncSampleAdaptiveOffset.h
+index e5d433d..8c37482 100644
+--- a/source/Lib/TLibEncoder/TEncSampleAdaptiveOffset.h
++++ b/source/Lib/TLibEncoder/TEncSampleAdaptiveOffset.h
+@@ -45,6 +45,7 @@
+ #include "TEncEntropy.h"
+ #include "TEncSbac.h"
+ #include "TLibCommon/TComBitCounter.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibEncoder
+ //! \{
+@@ -151,4 +152,6 @@ private: //members
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif
++
+diff --git a/source/Lib/TLibEncoder/TEncSbac.cpp b/source/Lib/TLibEncoder/TEncSbac.cpp
+index 35c7cb3..ace030f 100644
+--- a/source/Lib/TLibEncoder/TEncSbac.cpp
++++ b/source/Lib/TLibEncoder/TEncSbac.cpp
+@@ -45,6 +45,7 @@
+ #if ENVIRONMENT_VARIABLE_DEBUG_AND_TEST
+ #include "../TLibCommon/Debug.h"
+ #endif
++namespace pcc_hm {
+ 
+ 
+ //! \ingroup TLibEncoder
+@@ -2608,3 +2609,6 @@ Void TEncSbac::xWriteTruncMsbP1RefinementBits ( UInt symbol, ContextModel* pcSCM
+ }
+ 
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibEncoder/TEncSbac.h b/source/Lib/TLibEncoder/TEncSbac.h
+index 40437d8..5042bdb 100644
+--- a/source/Lib/TLibEncoder/TEncSbac.h
++++ b/source/Lib/TLibEncoder/TEncSbac.h
+@@ -52,6 +52,7 @@
+ #if FAST_BIT_EST
+ #include "TEncBinCoderCABACCounter.h"
+ #endif
++namespace pcc_hm {
+ 
+ class TEncTop;
+ 
+@@ -241,4 +242,6 @@ private:
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif // !defined(AFX_TENCSBAC_H__DDA7CDC4_EDE3_4015_9D32_2156249C82AA__INCLUDED_)
++
+diff --git a/source/Lib/TLibEncoder/TEncSearch.cpp b/source/Lib/TLibEncoder/TEncSearch.cpp
+index c307cb2..9d57513 100644
+--- a/source/Lib/TLibEncoder/TEncSearch.cpp
++++ b/source/Lib/TLibEncoder/TEncSearch.cpp
+@@ -43,6 +43,7 @@
+ #include "TLibCommon/Debug.h"
+ #include <math.h>
+ #include <limits>
++namespace pcc_hm {
+ 
+ 
+ //! \ingroup TLibEncoder
+@@ -405,8 +406,8 @@ Void TEncSearch::init(TEncCfg*       pcEncCfg,
+   const UInt uiNumPartitions = 1<<(maxTotalCUDepth<<1);
+   for (UInt ch=0; ch<MAX_NUM_COMPONENT; ch++)
+   {
+-    const UInt csx=::getComponentScaleX(ComponentID(ch), cform);
+-    const UInt csy=::getComponentScaleY(ComponentID(ch), cform);
++    const UInt csx=pcc_hm::getComponentScaleX(ComponentID(ch), cform);
++    const UInt csy=pcc_hm::getComponentScaleY(ComponentID(ch), cform);
+     m_ppcQTTempCoeff[ch] = new TCoeff* [uiNumLayersToAllocate];
+ #if ADAPTIVE_QP_SELECTION
+     m_ppcQTTempArlCoeff[ch]  = new TCoeff*[uiNumLayersToAllocate];
+@@ -4080,8 +4081,15 @@ Void TEncSearch::xMotionEstimation( TComDataCU* pcCU, TComYuv* pcYuvOrg, Int iPa
+                         iRoiHeight,
+                         pcYuv->getStride(COMPONENT_Y),
+                         pcCU->getSlice()->getSPS()->getBitDepth(CHANNEL_TYPE_LUMA),
++#if PCC_ME_EXT
++                        roiPosX,
++                        roiPosY,
++                        iRefIdxPred,
++                        eRefPicList);
++#else
+                         roiPosX,
+                         roiPosY);
++#endif
+   xInitTileBorders(pcCU, &cPattern);
+ #else
+   cPattern.initPattern( pcYuv->getAddr  ( COMPONENT_Y, uiPartAddr ),
+@@ -4397,6 +4405,105 @@ Void TEncSearch::xTZSearch( const TComDataCU* const pcCU,
+   // set rcMv (Median predictor) as start point and as best point
+   xTZSearchHelp( pcPatternKey, cStruct, rcMv.getHor(), rcMv.getVer(), 0, 0 );
+ 
++#if PCC_ME_EXT
++  if (m_pcEncCfg->getUsePCCExt()) {
++    Int xCoor = pcPatternKey->getROIYPosX() + pcPatternKey->getROIYWidth() / PCC_ME_NUM_LAYERS_ACTIVE;
++    Int yCoor = pcPatternKey->getROIYPosY() + pcPatternKey->getROIYHeight() / PCC_ME_NUM_LAYERS_ACTIVE;
++  
++    Int picWidth = pcCU->getSlice()->getSPS()->getPicWidthInLumaSamples();
++    Int occupancyResolution = 16;
++    Int blockToPatchWidth = picWidth / occupancyResolution;
++  
++    Int* occupancyMap = pcCU->getPic()->getOccupancyMap();
++    long long* blockToPatch = pcCU->getPic()->getBlockToPatch();
++  
++    if (pcCU->getSlice()->getPOC() % 2 == 0 && occupancyMap[yCoor * picWidth + xCoor])
++    {
++  	  Int xBlockIndex = xCoor / occupancyResolution;
++  	  Int yBlockIndex = yCoor / occupancyResolution;
++  
++  	  Int patchIndex = blockToPatch[yBlockIndex * blockToPatchWidth + xBlockIndex] - 1;          // should be minus 1
++  	  Int frameIndex = pcCU->getSlice()->getPOC() / PCC_ME_NUM_LAYERS_ACTIVE;
++  
++  	  // current 3D coordinate derivation
++  	  Int projectIndex = g_projectionIndex[frameIndex][patchIndex];
++  
++  	  Int patchD1 = g_patch3DInfo[frameIndex][patchIndex][0];
++  	  Int patchU1 = g_patch3DInfo[frameIndex][patchIndex][1];
++  	  Int patchV1 = g_patch3DInfo[frameIndex][patchIndex][2];
++  
++  	  Int patchU0 = g_patch2DInfo[frameIndex][patchIndex][0];
++  	  Int patchV0 = g_patch2DInfo[frameIndex][patchIndex][1];
++  
++  	  Int xCoor3D = patchU1 + (xCoor - patchU0 * occupancyResolution);
++  	  Int yCoor3D = patchV1 + (yCoor - patchV0 * occupancyResolution);
++  
++  
++  	  RefPicList eRefPicList = pcPatternKey->getRefPicList();
++  	  Int refIdx = pcPatternKey->getRefIndex();
++  
++  	  // find the suitable patch in the reference frame
++  	  Int refPOC = pcCU->getSlice()->getRefPOC(eRefPicList, refIdx);
++  	  Int refFrameIndex = refPOC / 2;
++  	  Int refNumPatches = g_numPatches[refFrameIndex];
++  
++  	  Int bestPatchIndex = 0;
++  	  Int bestDist = MAX_INT;
++  	  for (Int refPatchIdx = 0; refPatchIdx < refNumPatches; refPatchIdx++)
++  	  {
++  	    Int refProjectionIndex = g_projectionIndex[refFrameIndex][refPatchIdx];
++  	  
++  	    if (refProjectionIndex != projectIndex)
++  	    {
++  	  	  continue;
++  	    }
++  	  
++  	    Int refPatchU1 = g_patch3DInfo[refFrameIndex][refPatchIdx][1];
++  	    Int refPatchV1 = g_patch3DInfo[refFrameIndex][refPatchIdx][2];
++  	  
++  	    Int refPatchSizeU0 = g_patch2DInfo[refFrameIndex][refPatchIdx][2];
++  	    Int refPatchSizeV0 = g_patch2DInfo[refFrameIndex][refPatchIdx][3];
++	  
++	    Int refPatch3DEndU1 = refPatchU1 + refPatchSizeU0 * occupancyResolution - 1;
++	    Int refPatch3DEndV1 = refPatchV1 + refPatchSizeV0 * occupancyResolution - 1;
++	  
++	    Bool xCond = (xCoor3D >= refPatchU1 && xCoor3D <= refPatch3DEndU1);
++	    Bool yCond = (yCoor3D >= refPatchV1 && yCoor3D <= refPatch3DEndV1);
++	  
++	    if (xCond && yCond)
++	    {
++	  	  Int refPatchD1 = g_patch3DInfo[refFrameIndex][refPatchIdx][0];
++	  	  Int patchDist = abs(patchD1 - refPatchD1);
++	  
++	  	  if (patchDist < bestDist)
++	  	  {
++	  	    bestDist = patchDist;
++	  	    bestPatchIndex = refPatchIdx;
++	  	  }
++	    }
++	  }
++
++	  Int diff3DU = g_patch3DInfo[frameIndex][patchIndex][1] - g_patch3DInfo[refFrameIndex][bestPatchIndex][1];
++	  Int diff3DV = g_patch3DInfo[frameIndex][patchIndex][2] - g_patch3DInfo[refFrameIndex][bestPatchIndex][2];
++
++	  Int diff2DU = (g_patch2DInfo[refFrameIndex][bestPatchIndex][0] - g_patch2DInfo[frameIndex][patchIndex][0]) * occupancyResolution;
++	  Int diff2DV = (g_patch2DInfo[refFrameIndex][bestPatchIndex][1] - g_patch2DInfo[frameIndex][patchIndex][1]) * occupancyResolution;
++
++	  Int diffTotalU = diff3DU + diff2DU;
++	  Int diffTotalV = diff3DV + diff2DV;
++
++	  TComMv startMV(diffTotalU << 2, diffTotalV << 2);
++	  pcCU->clipMv(startMV);
++#if ME_ENABLE_ROUNDING_OF_MVS
++	  startMV.divideByPowerOf2(2);
++#else
++	  startMV >>= 2;
++#endif
++	  xTZSearchHelp(pcPatternKey, cStruct, startMV.getHor(), startMV.getVer(), 0, 0);
++	}
++  }
++#endif
++
+   // test whether one of PRED_A, PRED_B, PRED_C MV is better start point than Median predictor
+   if ( bTestOtherPredictedMV )
+   {
+@@ -15001,3 +15108,6 @@ Void TEncSearch::xInitTBCTable()
+ }
+ 
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibEncoder/TEncSearch.h b/source/Lib/TLibEncoder/TEncSearch.h
+index bd9e088..39719e6 100644
+--- a/source/Lib/TLibEncoder/TEncSearch.h
++++ b/source/Lib/TLibEncoder/TEncSearch.h
+@@ -50,6 +50,7 @@
+ #include "TEncSbac.h"
+ #include "TEncCfg.h"
+ #include "TLibCommon/TComHash.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibEncoder
+ //! \{
+@@ -841,4 +842,6 @@ protected:
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif // __TENCSEARCH__
++
+diff --git a/source/Lib/TLibEncoder/TEncSlice.cpp b/source/Lib/TLibEncoder/TEncSlice.cpp
+index db9f08a..3f4d77a 100644
+--- a/source/Lib/TLibEncoder/TEncSlice.cpp
++++ b/source/Lib/TLibEncoder/TEncSlice.cpp
+@@ -38,6 +38,7 @@
+ #include "TEncTop.h"
+ #include "TEncSlice.h"
+ #include <math.h>
++namespace pcc_hm {
+ 
+ //! \ingroup TLibEncoder
+ //! \{
+@@ -1837,3 +1838,6 @@ Void TEncSlice::xSetPredDefault(Pel lastPalette[MAX_NUM_COMPONENT][MAX_PALETTE_P
+   }
+ }
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibEncoder/TEncSlice.h b/source/Lib/TLibEncoder/TEncSlice.h
+index 554f7ca..3c21748 100644
+--- a/source/Lib/TLibEncoder/TEncSlice.h
++++ b/source/Lib/TLibEncoder/TEncSlice.h
+@@ -46,6 +46,7 @@
+ #include "TEncCu.h"
+ #include "WeightPredAnalysis.h"
+ #include "TEncRateCtrl.h"
++namespace pcc_hm {
+ 
+ //! \ingroup TLibEncoder
+ //! \{
+@@ -152,4 +153,6 @@ private:
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif // __TENCSLICE__
++
+diff --git a/source/Lib/TLibEncoder/TEncTop.cpp b/source/Lib/TLibEncoder/TEncTop.cpp
+index aef0104..3d83cb5 100644
+--- a/source/Lib/TLibEncoder/TEncTop.cpp
++++ b/source/Lib/TLibEncoder/TEncTop.cpp
+@@ -42,6 +42,7 @@
+ #if FAST_BIT_EST
+ #include "TLibCommon/ContextModel.h"
+ #endif
++namespace pcc_hm {
+ 
+ //! \ingroup TLibEncoder
+ //! \{
+@@ -362,7 +363,12 @@ Void TEncTop::encode( Bool flush, TComPicYuv* pcPicYuvOrg, TComPicYuv* pcPicYuvT
+   }
+ 
+   // compress GOP
++#if PCC_ME_EXT
++  if (m_usePCCExt) printf("\n\tPCC ME GOP #1 ACTIVE\n");
++  m_cGOPEncoder.compressGOP(m_iPOCLast, m_iNumPicRcvd, m_cListPic, rcListPicYuvRecOut, accessUnitsOut, false, false, snrCSC, getOutputLogControl(), m_usePCCExt);
++#else
+   m_cGOPEncoder.compressGOP(m_iPOCLast, m_iNumPicRcvd, m_cListPic, rcListPicYuvRecOut, accessUnitsOut, false, false, snrCSC, getOutputLogControl());
++#endif
+ 
+   if ( m_RCEnableRateControl )
+   {
+@@ -466,7 +472,12 @@ Void TEncTop::encode(Bool flush, TComPicYuv* pcPicYuvOrg, TComPicYuv* pcPicYuvTr
+     if ( m_iNumPicRcvd && ((flush&&fieldNum==1) || (m_iPOCLast/2)==0 || m_iNumPicRcvd==m_iGOPSize ) )
+     {
+       // compress GOP
++#if PCC_ME_EXT
++      if (m_usePCCExt) printf("\n\tPCC ME GOP #2 ACTIVE\n");
++	  m_cGOPEncoder.compressGOP(m_iPOCLast, m_iNumPicRcvd, m_cListPic, rcListPicYuvRecOut, accessUnitsOut, false, false, snrCSC, getOutputLogControl(), m_usePCCExt);
++#else
+       m_cGOPEncoder.compressGOP(m_iPOCLast, m_iNumPicRcvd, m_cListPic, rcListPicYuvRecOut, accessUnitsOut, true, isTff, snrCSC, getOutputLogControl());
++#endif
+       iNumEncoded += m_iNumPicRcvd;
+       m_uiNumAllPicCoded += m_iNumPicRcvd;
+       m_iNumPicRcvd = 0;
+@@ -1491,3 +1502,6 @@ Int TEncCfg::getQPForPicture(const UInt gopIndex, const TComSlice *pSlice) const
+ #endif
+ 
+ //! \}
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibEncoder/TEncTop.h b/source/Lib/TLibEncoder/TEncTop.h
+index 0e1048e..6a190f5 100644
+--- a/source/Lib/TLibEncoder/TEncTop.h
++++ b/source/Lib/TLibEncoder/TEncTop.h
+@@ -57,6 +57,7 @@
+ #include "TEncSampleAdaptiveOffset.h"
+ #include "TEncPreanalyzer.h"
+ #include "TEncRateCtrl.h"
++namespace pcc_hm {
+ //! \ingroup TLibEncoder
+ //! \{
+ 
+@@ -207,5 +208,7 @@ public:
+ 
+ //! \}
+ 
++} // namespace pcc_hm
+ #endif // __TENCTOP__
+ 
++
+diff --git a/source/Lib/TLibEncoder/WeightPredAnalysis.cpp b/source/Lib/TLibEncoder/WeightPredAnalysis.cpp
+index 333fe23..d8a9693 100644
+--- a/source/Lib/TLibEncoder/WeightPredAnalysis.cpp
++++ b/source/Lib/TLibEncoder/WeightPredAnalysis.cpp
+@@ -41,6 +41,7 @@
+ #include "../TLibCommon/TComPicYuv.h"
+ #include "WeightPredAnalysis.h"
+ #include <limits>
++namespace pcc_hm {
+ 
+ static const Double WEIGHT_PRED_SAD_RELATIVE_TO_NON_WEIGHT_PRED_SAD=0.99; // NOTE: U0040 used 0.95
+ 
+@@ -744,3 +745,6 @@ Int64 xCalcSADvalueWPOptionalClip(const Int   bitDepth,
+   }
+   return SAD;
+ }
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibEncoder/WeightPredAnalysis.h b/source/Lib/TLibEncoder/WeightPredAnalysis.h
+index b59c3ca..d986793 100644
+--- a/source/Lib/TLibEncoder/WeightPredAnalysis.h
++++ b/source/Lib/TLibEncoder/WeightPredAnalysis.h
+@@ -40,6 +40,7 @@
+ #include "../TLibCommon/CommonDef.h"
+ #include "../TLibCommon/TComSlice.h"
+ #include "TEncCavlc.h"
++namespace pcc_hm {
+ 
+ class  WeightPredAnalysis
+ {
+@@ -64,4 +65,6 @@ public:
+   Void  xCheckWPEnable       (TComSlice *const slice);
+ };
+ 
++} // namespace pcc_hm
+ #endif // __WEIGHTPREDANALYSIS__
++
+diff --git a/source/Lib/TLibVideoIO/TVideoIOYuv.cpp b/source/Lib/TLibVideoIO/TVideoIOYuv.cpp
+index dbb743a..170e862 100644
+--- a/source/Lib/TLibVideoIO/TVideoIOYuv.cpp
++++ b/source/Lib/TLibVideoIO/TVideoIOYuv.cpp
+@@ -45,6 +45,7 @@
+ 
+ #include "TLibCommon/TComRom.h"
+ #include "TVideoIOYuv.h"
++namespace pcc_hm {
+ 
+ using namespace std;
+ 
+@@ -1051,3 +1052,6 @@ Void TVideoIOYuv::ColourSpaceConvert(const TComPicYuv &src, TComPicYuv &dest, co
+       break;
+   }
+ }
++
++
++} // namespace pcc_hm
+diff --git a/source/Lib/TLibVideoIO/TVideoIOYuv.h b/source/Lib/TLibVideoIO/TVideoIOYuv.h
+index fff7455..e3a59ec 100644
+--- a/source/Lib/TLibVideoIO/TVideoIOYuv.h
++++ b/source/Lib/TLibVideoIO/TVideoIOYuv.h
+@@ -43,6 +43,7 @@
+ #include <iostream>
+ #include "TLibCommon/CommonDef.h"
+ #include "TLibCommon/TComPicYuv.h"
++namespace pcc_hm {
+ 
+ using namespace std;
+ 
+@@ -87,5 +88,7 @@ public:
+ 
+ };
+ 
++} // namespace pcc_hm
+ #endif // __TVIDEOIOYUV__
+ 
++
+diff --git a/source/Lib/libmd5/MD5.h b/source/Lib/libmd5/MD5.h
+index 98c01cd..161cd36 100644
+--- a/source/Lib/libmd5/MD5.h
++++ b/source/Lib/libmd5/MD5.h
+@@ -33,11 +33,12 @@
+ #pragma once
+ #include "libmd5.h"
+ #include <string>
++namespace pcc_hm {
+ 
+ //! \ingroup libMD5
+ //! \{
+ 
+-static const UInt MD5_DIGEST_STRING_LENGTH=16;
++static const uint32_t MD5_DIGEST_STRING_LENGTH=16;
+ 
+ class MD5
+ {
+@@ -73,3 +74,5 @@ private:
+ 
+ 
+ //! \}
++
++}
+\ No newline at end of file
+diff --git a/source/Lib/libmd5/libmd5.h b/source/Lib/libmd5/libmd5.h
+index 40ade55..2d712ed 100644
+--- a/source/Lib/libmd5/libmd5.h
++++ b/source/Lib/libmd5/libmd5.h
+@@ -56,3 +56,4 @@ void MD5Final(unsigned char digest[16], context_md5_t *ctx);
+ #endif
+ 
+ //! \}
++
