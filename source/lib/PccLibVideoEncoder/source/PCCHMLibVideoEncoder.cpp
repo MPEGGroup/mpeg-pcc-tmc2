@@ -81,6 +81,8 @@ void PCCHMLibVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
     cmd << " --OccupancyMapFile=" << params.occupancyMapFile_;
     cmd << " --PatchInfoFile=" << params.patchInfoFile_;
   }
+  if ( params.usePccRDO_ ) { cmd << " --UsePccRDO=1"; }
+  
   if ( params.inputColourSpaceConvert_ ) { cmd << " --InputColourSpaceConvert=RGBtoGBR"; }
   std::cout << cmd.str() << std::endl;
 

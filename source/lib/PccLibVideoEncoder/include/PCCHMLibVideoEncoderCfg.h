@@ -77,6 +77,12 @@ class PCCHMLibVideoEncoderCfg {
   std::string m_occupancyMapFileName;
   std::string m_patchInfoFileName;
 #endif
+#if PCC_RDO_EXT
+  Bool        m_usePCCRDO;
+#endif
+#if PCC_RDO_EXT && !PCC_ME_EXT
+  std::string m_occupancyMapFileName;
+#endif
   // Lambda modifiers
   Double m_adLambdaModifier[MAX_TLAYER];        ///< Lambda modifier array for each
                                                 /// temporal layer

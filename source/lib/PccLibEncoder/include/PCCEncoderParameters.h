@@ -65,6 +65,7 @@ class PCCEncoderParameters {
   bool              byteStreamVideoCoderGeometry_;
   bool              byteStreamVideoCoderAttribute_;
   bool              use3dmc_;
+  bool              usePccRDO_;
   std::string       colorSpaceConversionConfig_;
   std::string       inverseColorSpaceConversionConfig_;
   size_t            nbThread_;

@@ -57,6 +57,7 @@ struct PCCVideoEncoderParameters {
   bool        transquantBypassEnable_;
   bool        cuTransquantBypassFlagForce_;
   bool        inputColourSpaceConvert_;
+  bool        usePccRDO_;
 };
 
 template <class T>

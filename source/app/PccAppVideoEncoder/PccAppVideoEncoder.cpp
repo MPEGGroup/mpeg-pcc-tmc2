@@ -125,6 +125,7 @@ int main( int argc, char* argv[] ) {
   params.outputBitDepth_         = 8;
   params.use444CodecIo_          = false;
   params.usePccMotionEstimation_ = false;
+  params.usePccRDO_              = false;
 
   auto encoder = PCCVirtualVideoEncoder<uint8_t>::create( codecId );
   encoder->encode( videoSrc, params, bitstream, videoRec );

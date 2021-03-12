@@ -69,6 +69,7 @@ class PCCVideoEncoder {
                  const size_t       nbyte,
                  const bool         use444CodecIo,
                  const bool         use3dmv,
+                 const bool         usePccRDO, 
                  const size_t       internalBitDepth,
                  const bool         useConversion,
                  const bool         keepIntermediateFiles             = false,
@@ -359,23 +360,24 @@ class PCCVideoEncoder {
 
     // Encode video
     PCCVideoEncoderParameters params;
-    params.encoderPath_            = encoderPath;
-    params.srcYuvFileName_         = srcYuvFileName;
-    params.binFileName_            = binFileName;
-    params.recYuvFileName_         = recYuvFileName;
-    params.encoderConfig_          = encoderConfig;
-    params.qp_                     = qp;
-    params.inputBitDepth_          = depth;
-    params.internalBitDepth_       = internalBitDepth;
-    params.outputBitDepth_         = depth;
-    params.use444CodecIo_          = use444CodecIo;
-    params.usePccMotionEstimation_ = use3dmv;
-    params.blockToPatchFile_       = blockToPatchFileName;
-    params.occupancyMapFile_       = occupancyMapFileName;
-    params.patchInfoFile_          = patchInfoFileName;
+    params.encoderPath_                 = encoderPath;
+    params.srcYuvFileName_              = srcYuvFileName;
+    params.binFileName_                 = binFileName;
+    params.recYuvFileName_              = recYuvFileName;
+    params.encoderConfig_               = encoderConfig;
+    params.qp_                          = qp;
+    params.inputBitDepth_               = depth;
+    params.internalBitDepth_            = internalBitDepth;
+    params.outputBitDepth_              = depth;
+    params.use444CodecIo_               = use444CodecIo;
+    params.usePccMotionEstimation_      = use3dmv;
+    params.blockToPatchFile_            = blockToPatchFileName;
+    params.occupancyMapFile_            = occupancyMapFileName;
+    params.patchInfoFile_               = patchInfoFileName;
     params.cuTransquantBypassFlagForce_ = false;
     params.transquantBypassEnable_      = false;
     params.inputColourSpaceConvert_     = use444CodecIo;
+    params.usePccRDO_                   = usePccRDO;
     printf( "Encode: video size = %zu x %zu num frames = %zu \n", video.getWidth(), video.getHeight(),
             video.getFrameCount() );
     fflush( stdout );
