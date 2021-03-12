@@ -8693,16 +8693,11 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&         context,
       if ( patch.getProjectionMode() == 0 ) {
         ipdu.set3dOffsetD( ( patch.getD1() / minLevel ) - ( refPatch.getD1() / minLevel ) );
       } else {
-        if ( static_cast<int>( asps.getExtendedProjectionEnabledFlag() ) == 0 ) {
-          ipdu.set3dOffsetD( ( max3DCoordinate - patch.getD1() ) / minLevel -
-                             ( max3DCoordinate - refPatch.getD1() ) / minLevel );
-        } else {
-          ipdu.set3dOffsetD( ( ( max3DCoordinate << 1 ) - patch.getD1() ) / minLevel -
-                             ( ( max3DCoordinate << 1 ) - refPatch.getD1() ) / minLevel );
-        }
+        ipdu.set3dOffsetD( ( max3DCoordinate - patch.getD1() ) / minLevel -
+                           ( max3DCoordinate - refPatch.getD1() ) / minLevel );
       }
-      int64_t diffDD  = (int64_t)patch.getSizeDPixel()-(int64_t)refPatch.getSizeD();
-      int64_t quantDD = diffDD ==0? 0 : (diffDD +1)/ (int64_t)minLevel;
+      int64_t diffDD  = (int64_t)patch.getSizeDPixel() - (int64_t)refPatch.getSizeD();
+      int64_t quantDD = diffDD == 0 ? 0 : ( diffDD + 1 ) / (int64_t)minLevel;
       ipdu.set3dRangeD( quantDD );
       int64_t delta_DD = quantDD==0? 0: (quantDD*minLevel-1); //(int64_t)refPatch.getSizeD() + delta_DD;
       patches[patchIndex].getSizeD() = (size_t) std::min( (int64_t) std::max((int64_t)(refPatch.getSizeD() + delta_DD), (int64_t)0), (int64_t)(1<<geometryBitDepth2D)-1);

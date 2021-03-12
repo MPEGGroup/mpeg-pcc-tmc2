@@ -802,11 +802,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
       if ( patch.getProjectionMode() == 0 ) {
         patch.getD1() = static_cast<int32_t>( pdu.get3dOffsetD() ) * minLevel;
       } else {
-        if ( static_cast<int>( asps.getExtendedProjectionEnabledFlag() ) == 0 ) {
-          patch.getD1() = max3DCoordinate - static_cast<int32_t>( pdu.get3dOffsetD() ) * minLevel;
-        } else {
-          patch.getD1() = ( max3DCoordinate ) - static_cast<int32_t>( pdu.get3dOffsetD() ) * minLevel;
-        }
+        patch.getD1() = max3DCoordinate - static_cast<int32_t>( pdu.get3dOffsetD() ) * minLevel;
       }
       prevSizeU0              = patch.getSizeU0();
       prevSizeV0              = patch.getSizeV0();
@@ -883,15 +879,10 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
       if ( patch.getProjectionMode() == 0 ) {
         patch.getD1() = ( ipdu.get3dOffsetD() + ( refPatch.getD1() / minLevel ) ) * minLevel;
       } else {
-        if ( static_cast<int>( asps.getExtendedProjectionEnabledFlag() ) == 0 ) {
-          patch.getD1() = max3DCoordinate -
-                          ( ipdu.get3dOffsetD() + ( ( max3DCoordinate - refPatch.getD1() ) / minLevel ) ) * minLevel;
-        } else {
-          patch.getD1() = ( max3DCoordinate ) -
-                          ( ipdu.get3dOffsetD() + ( ( (max3DCoordinate)-refPatch.getD1() ) / minLevel ) ) * minLevel;
-        }
+        patch.getD1() = max3DCoordinate -
+                        ( ipdu.get3dOffsetD() + ( ( max3DCoordinate - refPatch.getD1() ) / minLevel ) ) * minLevel;
       }
-      
+
       const int64_t delta_DD = ipdu.get3dRangeD()==0? 0: (ipdu.get3dRangeD()*minLevel-1);
       patch.getSizeD() = refPatch.getSizeD() + delta_DD ;
       patch.setLodScaleX( refPatch.getLodScaleX() );
@@ -960,17 +951,10 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
           if ( patch.getProjectionMode() == 0 ) {
             patch.getD1() = ( mpdu.get3dOffsetD() + ( refPatch.getD1() / minLevel ) ) * minLevel;
           } else {
-            if ( static_cast<int>( asps.getExtendedProjectionEnabledFlag() ) == 0 ) {
-              patch.getD1() =
-                  max3DCoordinate -
-                  ( mpdu.get3dOffsetD() + ( ( max3DCoordinate - refPatch.getD1() ) / minLevel ) ) * minLevel;
-            } else {
-              patch.getD1() =
-                  max3DCoordinate -
-                  ( mpdu.get3dOffsetD() + ( ( max3DCoordinate - refPatch.getD1() ) / minLevel ) ) * minLevel;
-            }
+            patch.getD1() = max3DCoordinate -
+                            ( mpdu.get3dOffsetD() + ( ( max3DCoordinate - refPatch.getD1() ) / minLevel ) ) * minLevel;
           }
-          
+
           const int64_t delta_DD = mpdu.get3dRangeD()==0? 0:(mpdu.get3dRangeD()*minLevel-1);
           patch.getSizeD() = refPatch.getSizeD() + delta_DD;
 
