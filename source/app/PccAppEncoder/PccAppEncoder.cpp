@@ -729,10 +729,12 @@ bool parseParameters( int                   argc,
       encoderParams.use3dmc_,
       encoderParams.use3dmc_,
       "Use auxilliary information for 3d motion compensation.(0: conventional video coding, 1: 3D motion compensated)" )
+#ifdef USE_HM_PCC_RDO
     ( "usePccRDO",
       encoderParams.usePccRDO_,
       encoderParams.usePccRDO_,
       "Use HEVC PCC RDO optimization" )
+#endif
     ( "geometry3dCoordinatesBitdepth",
       encoderParams.geometry3dCoordinatesBitdepth_,
       encoderParams.geometry3dCoordinatesBitdepth_,

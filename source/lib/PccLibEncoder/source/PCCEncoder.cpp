@@ -162,7 +162,9 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                          ( params_.EOMFixBitCount_ <= 8 ) ? 1 : 2,  // nByte
                          false,                                     // use444CodecIo
                          false,                                     // use3dmv
+#ifdef USE_HM_PCC_RDO
                          false,                                     // usePccRDO
+#endif
                          8,                                         // internalBitDepth
                          false,                                     // useConversion
                          params_.keepIntermediateFiles_ );
@@ -196,7 +198,11 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   // ENCODE GEOMETRY IMAGE
   TRACE_PICTURE( "Geometry\n" );
   TRACE_PICTURE( "MapIdx = 0, AuxiliaryVideoFlag = 0\n" );
+#ifdef USE_HM_PCC_RDO
   if ( params_.use3dmc_ || params_.usePccRDO_ ) { create3DMotionEstimationFiles( context, path.str() ); }
+#else
+  if ( params_.use3dmc_ ) { create3DMotionEstimationFiles( context, path.str() ); }
+#endif
   auto&  gi                      = context.getVps().getGeometryInformation( atlasIndex );
   size_t geometryVideoBitDepth   = gi.getGeometry2dBitdepthMinus1() + 1;
   size_t geometryMPVideoBitDepth = gi.getGeometry2dBitdepthMinus1() + 1;
@@ -225,7 +231,9 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                          nbyteGeo,                                                                  // nbyte
                          params_.losslessGeo_ && params_.losslessGeo444_,                           // use444CodecIo
                          params_.use3dmc_,                                                          // use3dmv
+#ifdef USE_HM_PCC_RDO
                          params_.usePccRDO_,                                                        // usePccRDO
+#endif
                          internalBitDepth,                                                          // internalBitDepth
                          false,                                                                     // useConversion
                          params_.keepIntermediateFiles_ );                                          // keep intermediate
@@ -265,7 +273,9 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                            nbyteGeo,                                         // nbyte
                            params_.losslessGeo_ && params_.losslessGeo444_,  // use444CodecIo
                            params_.use3dmc_,                                 // use3dmv
+#ifdef USE_HM_PCC_RDO
                            params_.usePccRDO_,                               // usePccRDO
+#endif
                            internalBitDepth,                                 // internalBitDepth
                            false,                                            // useConversion
                            params_.keepIntermediateFiles_ );                 // keep intermediate
@@ -292,7 +302,9 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                            nbyteGeoMP,        // nbyte
                            false,             // use444CodecIo
                            false,             // use3dmv
+#ifdef USE_HM_PCC_RDO
                            false,             // usePccRDO
+#endif
                            internalBitDepth,  // internalBitDepth
                            false,             // useConversion
                            params_.keepIntermediateFiles_ );
@@ -455,7 +467,9 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
         params_.byteStreamVideoCoderAttribute_, context, nbyteAtt,  // nbyte
         params_.losslessGeo_,                                       // use444CodecIo
         params_.use3dmc_,                                           // use3dmv
+#ifdef USE_HM_PCC_RDO
         params_.usePccRDO_,                                         // usePccRDO
+#endif
         params_.losslessGeo_ ? 8 : 10,                              // internalBitDepth
         !params_.losslessGeo_,                                      // useConversion
         params_.keepIntermediateFiles_,                             // keepIntermediateFiles
@@ -495,7 +509,9 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
           params_.byteStreamVideoCoderAttribute_, context, nbyteAtt,  // nbyte
           params_.losslessGeo_,                                       // use444CodecIo
           params_.use3dmc_,                                           // use3dmv
+#ifdef USE_HM_PCC_RDO
           params_.usePccRDO_,                                         // usePccRDO
+#endif
           params_.losslessGeo_ ? 8 : 10,                              // internalBitDepth
           !params_.losslessGeo_,                                      // useConversion
           params_.keepIntermediateFiles_,                             // keepIntermediateFiles
@@ -524,7 +540,9 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                              nByteAttMP,                                  // nbyte
                              params_.losslessGeo_,                        // use444CodecIo
                              false,                                       // use3dmv
+#ifdef USE_HM_PCC_RDO
                              false,                                       // usePccRDO
+#endif
                              10,                                          // internalBitDepth
                              !params_.losslessGeo_,                       // useConversion
                              params_.keepIntermediateFiles_,              // keepIntermediateFiles

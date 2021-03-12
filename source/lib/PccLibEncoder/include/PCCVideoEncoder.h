@@ -69,7 +69,9 @@ class PCCVideoEncoder {
                  const size_t       nbyte,
                  const bool         use444CodecIo,
                  const bool         use3dmv,
+#ifdef USE_HM_PCC_RDO
                  const bool         usePccRDO, 
+#endif
                  const size_t       internalBitDepth,
                  const bool         useConversion,
                  const bool         keepIntermediateFiles             = false,
@@ -377,7 +379,9 @@ class PCCVideoEncoder {
     params.cuTransquantBypassFlagForce_ = false;
     params.transquantBypassEnable_      = false;
     params.inputColourSpaceConvert_     = use444CodecIo;
+#ifdef USE_HM_PCC_RDO
     params.usePccRDO_                   = usePccRDO;
+#endif
     printf( "Encode: video size = %zu x %zu num frames = %zu \n", video.getWidth(), video.getHeight(),
             video.getFrameCount() );
     fflush( stdout );

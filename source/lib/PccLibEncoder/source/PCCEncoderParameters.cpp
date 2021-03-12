@@ -189,7 +189,9 @@ PCCEncoderParameters::PCCEncoderParameters() {
   globalPackingStrategyReset_       = false;
   globalPackingStrategyThreshold_   = 0;
   use3dmc_                          = true;
+#ifdef USE_HM_PCC_RDO
   usePccRDO_                        = false;
+#endif
   enhancedPP_                       = true;
   minWeightEPP_                     = 0.6;
   additionalProjectionPlaneMode_    = 0;
@@ -617,7 +619,9 @@ bool PCCEncoderParameters::check() {
     absoluteT1_ = 1;
   }
   if ( losslessGeo_ ) {
+#ifdef USE_HM_PCC_RDO
     usePccRDO_              = false;
+#endif
     pbfEnableFlag_          = false;
     occupancyMapRefinement_ = false;
     flagColorSmoothing_     = false;
