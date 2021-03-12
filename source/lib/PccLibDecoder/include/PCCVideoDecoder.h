@@ -84,10 +84,20 @@ class PCCVideoDecoder {
     if ( keepIntermediateFiles ) { bitstream.write( binFileName ); }
 
     // Decode video
-    auto decoder = PCCVirtualVideoDecoder<T>::create( codecId );
+    auto decoder = PCCVirtualVideoDecoder<T>::create( codecId );    
     printf( " decompress codecId = %d size(T) = %zu bitDepth = %d \n", (int)codecId, sizeof( T ), bitDepth == 8 ? 8 : 10 );
     fflush( stdout );
     decoder->decode( bitstream, bitDepth == 8 ? 8 : 10, use444CodecIo, video, decoderPath, fileName, frameCount );
+
+    size_t frameIndex = 0;
+    for ( auto& image : video ) {
+      TRACE_PICTURE( "PicOrderCntVal = %d, ", frameIndex++ );
+      TRACE_PICTURE( " MD5checksumChan0 = %s, ", image.computeMD5( 0 ).c_str() );
+      TRACE_PICTURE( " MD5checksumChan1 = %s, ", image.computeMD5( 1 ).c_str() );
+      TRACE_PICTURE( " MD5checksumChan2 = %s \n", image.computeMD5( 2 ).c_str() );
+    }
+    TRACE_PICTURE( "Width =  %d, Height = %d \n", video.getWidth(), video.getHeight() );
+
     width  = video.getWidth();
     height = video.getHeight();
     const std::string yuvRecFileName =
@@ -351,6 +361,11 @@ class PCCVideoDecoder {
     }
     return true;
   }
+
+  void setLogger( PCCLogger& logger ) { logger_ = &logger; }
+
+ private:
+  PCCLogger* logger_ = nullptr;
 };
 
 };  // namespace pcc

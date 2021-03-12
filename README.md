@@ -4,7 +4,7 @@
 
 Bash scripts can be use to build mpeg-pcc-tmc2 project: 
 - build.sh: build solutions.  
-- clear.sh: clear solututions.
+- clear.sh: clear solututions ( ./clear.sh all: to clear dependencies)
  
 ### OSX
 - mkdir build
@@ -27,32 +27,72 @@ Bash scripts can be use to build mpeg-pcc-tmc2 project:
 
 ### External dependencies
 
-The external dependencies must be download and build: 
+According to the CMake options defined in the CMakeLists.txt, the TMC2 required some external dependencies to work: 
 
-- HM-16.20+SCM-8.8 (apply pcc_me-ext_for_HM-16.20+SCM-8.8.patch on it stored in \dependencies\hm-modification ).
+  - USE_JMAPP_VIDEO_CODEC: use JM software to encoder and decoder videos (codecId parameters must be set equal to 0 and the videoEncoderOccupancyPath, videoEncoderGeometryPath and videoEncoderAttributePath but be set the JM applications)
+  - USE_HMAPP_VIDEO_CODEC: use HM software to encoder and decoder videos (codecId parametesr must be set equal to 1 and the videoEncoderOccupancyPath, videoEncoderGeometryPath and videoEncoderAttributePath but be set the JM applications)
+  - USE_JMLIB_VIDEO_CODEC: use JM library to encoder and decoder videos (codecId parameter must be set equal to 2)
+  - USE_HMLIB_VIDEO_CODEC: use HM library to encoder and decoder videos (codecId parameter must be set equal to 3)
+  - USE_VTMLIB_VIDEO_CODEC: use VTM library to encoder and decoder videos (codecId parameter must be set equal to 4)
+  - USE_FFMPEG_VIDEO_CODEC: use FFMPEG library to encoder and decoder videos (codecId parameter must be set equal to 5). This mode is only available in the FFMPEG branch. 
+  - USE_HDRTOOLS: use HDRTools to convert the raw video files.
+
+The video encoder softwares and libraries can be found in the corresponding repositories: 
+
+  - JM: https://vcgit.hhi.fraunhofer.de/jct-vc/JM.git
+  - HM: https://vcgit.hhi.fraunhofer.de/jvet/HM.git
+  - VTM: https://vcgit.hhi.fraunhofer.de/jvet/VVCSoftware_VTM.git
+
+Some changes have been made on these libraries to allow to use the three libraries at the same time and to increase the codec efficiencies for the V3C contents. the three codecs must be patch with the files:
+
+  - JM: dependencies/jm-modification/PCC_JM.patch
+  - HM: dependencies/hm-modification/pcc_me-ext_and_namespace_for_HM-16.20+SCM-8.8.patch
+  - VTM: dependencies/vtm-modification/adaptions_for_vtm_11_2.patch
+
+By default according the the CMake options, the dependencies are cloned and patched by the cmake process. 
+ 
+The external dependencies could be downloaded, built and linked independenly: 
+
+- JM:
    
-   svn checkout https://hevc.hhi.fraunhofer.de/svn/svn_HEVCSoftware/tags/HM-16.20+SCM-8.8/ external/HM-16.20+SCM-8.8-3DMC;    
-   cd external/HM-16.20+SCM-8.8-3DMC
-   svn patch ../../tmc2_r7.0/dependencies/hm-modification/pcc_me-ext_for_HM-16.20+SCM-8.8.patch 
+   git clone checkout https://vcgit.hhi.fraunhofer.de/jct-vc/JM.git dependencies/jm19.0_lib
+   cd dependencies/jm19.0_lib
+   git patch ../jm-modification/PCC_JM.patch
+
+- HM:
    
+   git clone checkout  https://vcgit.hhi.fraunhofer.de/jvet/HM.git dependencies/HM-16.20+SCM-8.8
+   cd dependencies/HM-16.20+SCM-8.8
+   git patch ../hm-modification/pcc_me-ext_and_namespace_for_HM-16.20+SCM-8.8.patch
+
+- VTM:
+
+   git clone checkout https://vcgit.hhi.fraunhofer.de/jvet/VVCSoftware_VTM.git dependencies/VTM-11.2    
+   cd dependencies/VTM-11.2
+   git patch ../vtm-modification/adaptions_for_vtm_11_2.patch
+ 
 - HDRTools
 
-    git clone -b 0.17-dev https://gitlab.com/standards/HDRTools.git        
+    git clone -b 0.17-dev https://gitlab.com/standards/HDRTools.git dependencies/HDRTools       
 
-- pcc_distortion
+The pointcloud metrics can be computed inside the TM2 encoder and decoder according to the input parameters: 
 
-	git clone http://mpegx.int-evry.fr/software/MPEG/PCC/mpeg-pcc-dmetric.git 
+    - computeMetrics: Compute metrics
+    - uncompressedDataPath: Input pointcloud to encode. Multi-frame sequences may be represented by %04i
+    - normalDataPath:  Input pointcloud to encode. Multi-frame sequences may be represented by %04i
+    - resolution: Specify the intrinsic resolution
+    - dropdups: 0(detect), 1(drop), 2(average) subsequent points with same coordinates
+    - neighborsProc: 0(undefined), 1(average), 2(weighted average), 3(min), 4(max) neighbors with same geometric distance
+
+The computations of the metrics are the same than the distances computed with the pcc_distortion software that can be found in: http://mpegx.int-evry.fr/software/MPEG/PCC/mpeg-pcc-dmetric.git.
 
 	
 ## Running
 
-Configuration files are provided in the cfg directory to aid configuring
-the encoder.  The general pattern of usage is illustrated below, where
-multiple configuration files control different aspects of the test
-conditions.
+Configuration files are provided in the cfg directory to aid configuring the encoder.  The general pattern of usage is illustrated below, where
+multiple configuration files control different aspects of the test conditions.
 
-NB: parameters set in one configuration file override the same parameter
-in earlier files.  ie. order matters.
+NB: parameters set in one configuration file override the same parameter in earlier files.  ie. order matters.
 
 Further help text describing option usage is available using "./bin/PccAppEncoder --help" or "./bin/PccAppDecoder --help".
 
@@ -94,7 +134,6 @@ These examples can be start based on your system with the following scripts:
 - ./test/runme_osx.sh
 
 The V3C common test condition (CTC) command lines could be found in ./test/ctc_command_line.sh. 
-
 
 ### Contact
 

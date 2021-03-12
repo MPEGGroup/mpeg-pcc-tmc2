@@ -32,6 +32,7 @@
  */
 
 #include "PCCCommon.h"
+#include "PCCLogger.h"
 
 #ifdef USE_HMLIB_VIDEO_CODEC
 
@@ -114,7 +115,6 @@ Void PCCHMLibVideoEncoderImpl<T>::encode( PCCVideo<T, 3>&    videoSrc,
   }
 #endif
   printChromaFormat();
-
   // main encoder loop
   Int                              iNumEncoded = 0;
   Bool                             bEos        = false;
@@ -139,6 +139,7 @@ Void PCCHMLibVideoEncoderImpl<T>::encode( PCCVideo<T, 3>&    videoSrc,
   TExt360AppEncTop ext360( *this, m_cTEncTop.getGOPEncoder()->getExt360Data(), *( m_cTEncTop.getGOPEncoder() ),
                            *pcPicYuvOrg );
 #endif
+
   while ( !bEos ) {
     xGetBuffer( pcPicYuvRec );                            // get buffers
     xReadPicture( pcPicYuvOrg, videoSrc, m_iFrameRcvd );  // read input YUV file

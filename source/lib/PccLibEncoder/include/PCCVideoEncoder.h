@@ -383,7 +383,17 @@ class PCCVideoEncoder {
     fflush( stdout );
     PCCVideo<T, 3> videoRec;
     auto           encoder = PCCVirtualVideoEncoder<T>::create( codecId );
-    encoder->encode( video, params, bitstream, videoRec );
+    encoder->encode( video, params, bitstream, videoRec );   
+
+    size_t frameIndex = 0; 
+    for ( auto& image : videoRec ) {
+      TRACE_PICTURE( "PicOrderCntVal = %d, ", frameIndex++ );      
+      TRACE_PICTURE( " MD5checksumChan0 = %s, ", image.computeMD5( 0 ).c_str() );
+      TRACE_PICTURE( " MD5checksumChan1 = %s, ", image.computeMD5( 1 ).c_str() );
+      TRACE_PICTURE( " MD5checksumChan2 = %s \n", image.computeMD5( 2 ).c_str() );
+    }
+    TRACE_PICTURE( "Width =  %d, Height = %d \n", videoRec.getWidth(), videoRec.getHeight() );
+
     if ( keepIntermediateFiles ) {
       bitstream.write( binFileName );
       videoRec.write( recYuvFileName, nbyte );
@@ -409,7 +419,11 @@ class PCCVideoEncoder {
     return true;
   }
 
+  void setLogger( PCCLogger& logger ) { logger_ = &logger; }
+
  private:
+
+     PCCLogger* logger_ = nullptr;
 };
 
 };  // namespace pcc

@@ -47,32 +47,36 @@ template <typename T>
 PCCVTMLibVideoEncoder<T>::~PCCVTMLibVideoEncoder() {}
 
 template <typename T>
-void PCCVTMLibVideoEncoder<T>::encode( PCCVideo<T, 3>&    videoSrc,
+void PCCVTMLibVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
                                        PCCVideoEncoderParameters& params,
-                                       PCCVideoBitstream& bitstream,
-                                       PCCVideo<T, 3>&    videoRec ) {
+                                       PCCVideoBitstream&         bitstream,
+                                       PCCVideo<T, 3>&            videoRec ) {
   const size_t      width      = videoSrc.getWidth();
   const size_t      height     = videoSrc.getHeight();
   const size_t      frameCount = videoSrc.getFrameCount();
   std::stringstream cmd;
-  cmd << "VTMEncoder"
-      << " -c " << params.encoderConfig_ << " --InputFile=" << params.srcYuvFileName_
-      << " --InputBitDepth=" << params.inputBitDepth_
-      << " --InputChromaFormat=" << ( params.use444CodecIo_ ? "444" : "420" )
-      << " --OutputBitDepth=" << params.outputBitDepth_ << " --OutputBitDepthC=" << params.outputBitDepth_
-      << " --FrameRate=30"
-      << " --FrameSkip=0"
-      << " --SourceWidth=" << width << " --SourceHeight=" << height << " --ConformanceWindowMode=1 "
-      << " --FramesToBeEncoded=" << frameCount << " --BitstreamFile=" << params.binFileName_
-      << " --ReconFile=" << params.recYuvFileName_ << " --QP=" << params.qp_;
-  if ( params.internalBitDepth_ != 0 ) {
-    cmd << " --InternalBitDepth=" << params.internalBitDepth_;
-  }
-//  if ( params.usePccMotionEstimation_ ) {
-//    cmd << " --UsePccMotionEstimation=1"
-//        << " --BlockToPatchFile=" << params.blockToPatchFile_ << " --OccupancyMapFile=" << params.occupancyMapFile_
-//        << " --PatchInfoFile=" << params.patchInfoFile_;
-//  }
+  cmd << "VTMEncoder";
+  cmd << " -c " << params.encoderConfig_;
+  cmd << " --InputFile=" << params.srcYuvFileName_;
+  cmd << " --InputBitDepth=" << params.inputBitDepth_;
+  cmd << " --InputChromaFormat=" << ( params.use444CodecIo_ ? "444" : "420" );
+  cmd << " --OutputBitDepth=" << params.outputBitDepth_;
+  cmd << " --OutputBitDepthC=" << params.outputBitDepth_ ;
+  cmd << " --FrameRate=30";
+  cmd << " --FrameSkip=0";
+  cmd << " --SourceWidth=" << width;
+  cmd << " --SourceHeight=" << height;
+  cmd << " --ConformanceWindowMode=1 ";
+  cmd << " --FramesToBeEncoded=" << frameCount;
+  cmd << " --BitstreamFile=" << params.binFileName_;
+  cmd << " --ReconFile=" << params.recYuvFileName_;
+  cmd << " --QP=" << params.qp_;
+  if ( params.internalBitDepth_ != 0 ) { cmd << " --InternalBitDepth=" << params.internalBitDepth_; }
+  //  if ( params.usePccMotionEstimation_ ) {
+  //    cmd << " --UsePccMotionEstimation=1"
+  //        << " --BlockToPatchFile=" << params.blockToPatchFile_ << " --OccupancyMapFile=" << params.occupancyMapFile_
+  //        << " --PatchInfoFile=" << params.patchInfoFile_;
+  //  }
   if ( params.use444CodecIo_ ) { cmd << " --InputColourSpaceConvert=RGBtoGBR"; }
   std::cout << cmd.str() << std::endl;
   

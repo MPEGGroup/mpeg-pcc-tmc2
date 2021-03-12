@@ -30,57 +30,23 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef PCCVirtualVideoEncoder_h
-#define PCCVirtualVideoEncoder_h
 
-#include "PCCCommon.h"
-#include "PCCVideo.h"
-#include "PCCVideoBitstream.h"
+#include "PCCImage.h"
+#include "MD5.h"
 
-namespace pcc {
+using namespace pcc;
 
-struct PCCVideoEncoderParameters {
-  std::string encoderPath_;
-  std::string srcYuvFileName_;
-  std::string binFileName_;
-  std::string recYuvFileName_;
-  std::string encoderConfig_;
-  int32_t     qp_;
-  int32_t     inputBitDepth_;
-  int32_t     internalBitDepth_;
-  int32_t     outputBitDepth_;
-  bool        use444CodecIo_;
-  bool        usePccMotionEstimation_;
-  std::string blockToPatchFile_;
-  std::string occupancyMapFile_;
-  std::string patchInfoFile_;
-  bool        transquantBypassEnable_;
-  bool        cuTransquantBypassFlagForce_;
-  bool        inputColourSpaceConvert_;
-  bool        usePccRDO_;
-};
+template <typename T, size_t N>
+std::string PCCImage<T,N>::computeMD5( size_t channel ) {
+  MD5                  md5Hash;
+  std::vector<uint8_t> vector;
+  vector.resize( 16 );
+  md5Hash.update( (uint8_t*)( channels_[channel].data() ), channels_[channel].size() * sizeof(T) );
+  md5Hash.finalize( vector.data() );
+  char result[33];
+  for(size_t i = 0; i< 16; i++) { sprintf( result + 2 * i, "%02x", vector[i] ); }    
+  return std::string( result );
+}
 
-template <class T>
-class PCCVirtualVideoEncoder {
- public:
-  PCCVirtualVideoEncoder() {}
-  ~PCCVirtualVideoEncoder() {}
-
-  static std::shared_ptr<PCCVirtualVideoEncoder<T>> create( PCCCodecId codecId );
-  static PCCCodecId                                 getDefaultCodecId();
-  static bool                                       checkCodecId( PCCCodecId codecId );
-
-  virtual void encode( PCCVideo<T, 3>&            videoSrc,
-                       PCCVideoEncoderParameters& params,
-                       PCCVideoBitstream&         bitstream,
-                       PCCVideo<T, 3>&            videoRec ) = 0;
-
-//   void setLogger( PCCLogger& logger ) { logger_ = &logger; }
-
-//  protected:
-//   PCCLogger* logger_ = nullptr;
-};
-
-};  // namespace pcc
-
-#endif /* PCCVirtualVideoEncoder_h */
+template class pcc::PCCImage<uint8_t,3>;
+template class pcc::PCCImage<uint16_t,3>;

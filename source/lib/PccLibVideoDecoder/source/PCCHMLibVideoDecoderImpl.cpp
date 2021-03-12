@@ -31,6 +31,7 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 #include "PCCCommon.h"
+#include "PCCLogger.h"
 
 #ifdef USE_HMLIB_VIDEO_CODEC
 
@@ -113,7 +114,9 @@ void PCCHMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream,
 
     if ( ( bNewPicture || !bitstreamFile || nalu.m_nalUnitType == NAL_UNIT_EOS ) &&
          !m_pTDecTop->getFirstSliceInSequence() ) {
-      if ( !loopFiltered || bitstreamFile ) { m_pTDecTop->executeLoopFilters( poc, pcListPic ); }
+      if ( !loopFiltered || bitstreamFile ) {
+        m_pTDecTop->executeLoopFilters( poc, pcListPic );
+      }
       loopFiltered = ( nalu.m_nalUnitType == NAL_UNIT_EOS );
       if ( nalu.m_nalUnitType == NAL_UNIT_EOS ) { m_pTDecTop->setFirstSliceInSequence( true ); }
     } else if ( ( bNewPicture || !bitstreamFile || nalu.m_nalUnitType == NAL_UNIT_EOS ) &&

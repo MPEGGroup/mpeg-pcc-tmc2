@@ -156,6 +156,7 @@ class PCCPatch {
   size_t&                     getV1() { return v1_; }
   size_t&                     getD1() { return d1_; }
   size_t&                     getSizeD() { return sizeD_; }
+  size_t&                     getSizeDPixel() { return sizeDPixel_; }
   size_t&                     getSizeU() { return sizeU_; }
   size_t&                     getSizeV() { return sizeV_; }
   size_t&                     getU0() { return u0_; }
@@ -190,6 +191,7 @@ class PCCPatch {
   size_t                      getV1() const { return v1_; }
   size_t                      getD1() const { return d1_; }
   size_t                      getSizeD() const { return sizeD_; }
+  size_t                      getSizeDPixel() const { return sizeDPixel_; }
   size_t                      getSizeU() const { return sizeU_; }
   size_t                      getSizeV() const { return sizeV_; }
   size_t                      getU0() const { return u0_; }
@@ -1096,16 +1098,16 @@ class PCCPatch {
         for ( int32_t j = 0, v = v2; j < occupancyPrecision; j++, v++, depth += depthMapWidth_ ) {
           int32_t y = v + y0;
           for ( int32_t i = 0, u = u2; i < occupancyPrecision; i++, u++ ) {
-            int32_t x = ( sizeU0_ * occupancyResolution_ - 1 - u ) + x0;
+            int32_t x = int32_t( sizeU0_ * occupancyResolution_ - 1 - u ) + x0;
             depth[u]  = geometryVideo[x + width * y];
           }
         }
         break;
       case PATCH_ORIENTATION_MROT90:
         for ( int32_t j = 0, v = v2; j < occupancyPrecision; j++, v++, depth += depthMapWidth_ ) {
-          int32_t x = ( sizeV0_ * occupancyResolution_ - 1 - v ) + x0;
+          int32_t x = int32_t( sizeV0_ * occupancyResolution_ - 1 - v ) + x0;
           for ( int32_t i = 0, u = u2; i < occupancyPrecision; i++, u++ ) {
-            int32_t y = ( sizeU0_ * occupancyResolution_ - 1 - u ) + y0;
+            int32_t y = int32_t( sizeU0_ * occupancyResolution_ - 1 - u ) + y0;
             depth[u]  = geometryVideo[x + width * y];
           }
         }
@@ -1148,11 +1150,11 @@ class PCCPatch {
     depthMapHeight_ = sizeV0_ * occupancyResolution_ + 2 * border_;
     depthMap_.resize( depthMapWidth_ * depthMapHeight_, 0 );
     occupancyMap_.resize( depthMapWidth_ * depthMapHeight_, 0 );
-    const int32_t patchIndexPlusOne  = indexCopy_ + 1;
+    const int32_t patchIndexPlusOne  = int32_t(indexCopy_) + 1;
     const auto    ocmWidth           = width / occupancyPrecision;
     const int32_t blockToPatchWidth  = width / occupancyResolution_;
     const int32_t blockToPatchHeight = height / occupancyResolution_;
-    const int32_t occupancyResByPres = occupancyResolution_ / occupancyPrecision;
+    const int32_t occupancyResByPres = int32_t(occupancyResolution_ / occupancyPrecision);
     const int32_t shiftPrecision =
         occupancyPrecision == 1 ? 0 : occupancyPrecision == 2 ? 1 : occupancyPrecision == 4 ? 2 : 3;
     uint8_t* ocm   = occupancyMap_.data() + border_ + depthMapWidth_ * border_;
@@ -1163,9 +1165,9 @@ class PCCPatch {
         const int32_t blockIndex = patchBlock2CanvasBlock( u0, v0, blockToPatchWidth, blockToPatchHeight );
         if ( blockToPatch[blockIndex] == patchIndexPlusOne ) {
           for ( int32_t v1 = 0; v1 < occupancyResByPres; v1++ ) {
-            const int32_t v2 = v0 * occupancyResolution_ + v1 * occupancyPrecision;
+            const int32_t v2 = int32_t(v0 * occupancyResolution_ + v1 * occupancyPrecision);
             for ( int32_t u1 = 0; u1 < occupancyResByPres; u1++ ) {
-              const int32_t u2 = u0 * occupancyResolution_ + u1 * occupancyPrecision;
+              const int32_t u2 = int32_t(u0 * occupancyResolution_ + u1 * occupancyPrecision);
               size_t        x, y;
               patch2Canvas( u2, v2, width, height, x, y );
               if ( occupancyMapVideo[( y >> shiftPrecision ) * ocmWidth + ( x >> shiftPrecision )] > threhold ) {
@@ -1325,6 +1327,7 @@ class PCCPatch {
   size_t v1_;      // bitangential shift
   size_t d1_;      // depth shift
   size_t sizeD_;   // size for depth
+  size_t sizeDPixel_;
   size_t sizeU_;   // size for depth
   size_t sizeV_;   // size for depth
   size_t u0_;      // location in packed image (n*occupancyResolution_)
@@ -1398,8 +1401,8 @@ class PatchBlockFiltering {
     for ( size_t patchIndex = 0; patchIndex < patches_->size(); patchIndex++ ) {
       auto& patch = patches_->at( patchIndex );
       patch.setIndexCopy( patchIndex );
-      patch.setLocalData( *occupancyMapVideo_, *geometryVideo_, *blockToPatch_, imageWidth, imageHeight,
-                          occupancyPrecision, thresholdLossyOM );
+      patch.setLocalData( *occupancyMapVideo_, *geometryVideo_, *blockToPatch_, (int32_t)imageWidth, (int32_t)imageHeight,
+                         (int32_t)occupancyPrecision, (int32_t)thresholdLossyOM );
       patch.generateBorderPoints3D();
     }
     for ( auto& patch : *patches_ ) {

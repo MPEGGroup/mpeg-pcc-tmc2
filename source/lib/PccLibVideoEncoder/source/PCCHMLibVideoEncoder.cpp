@@ -87,6 +87,9 @@ void PCCHMLibVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
   std::cout << cmd.str() << std::endl;
 
   PCCHMLibVideoEncoderImpl<T> encoder;
+  // #if PCC_CF_EXT
+  // encoder.setLogger(*logger_);
+  // #endif
   encoder.encode( videoSrc, cmd.str(), bitstream, videoRec );
 }
 
