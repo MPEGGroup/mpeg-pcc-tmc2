@@ -30,53 +30,44 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-
-
 #include "PCCCommon.h"
-#include "PCCConformance.h"
 #include "PCCConformanceParameters.h"
 
-#include <program_options_lite.h>
-#include <deque>
-
 using namespace pcc;
-using namespace std;
 
-bool parseParameters( int argc, char* argv[], PCCConformanceParameters& params ) {
-  namespace po    = df::program_options_lite;
-  bool print_help = false;
-  // clang-format off
-  po::Options opts;
-  opts.addOptions()
-     ("help", print_help, false, "This help text")
-     ( "checkConformance", params.checkConformance_, params.checkConformance_, "Check conformance")
-     ( "path", params.path_, params.path_, "Root directory of conformance files + prefix: C:\\Test\\pcc_conformance\\Bin\\S26C03R03_")
-     ( "level", params.levelIdc_, params.levelIdc_, "Level indice")
-     ( "fps", params.fps_, params.fps_, "frame per second");
-  // clang-format on
-  po::setDefaults( opts );
-  po::ErrorReporter        err;
-  const list<const char*>& argv_unhandled = po::scanArgv( opts, argc, (const char**)argv, err );
-
-  params.print();
-  if ( !params.check() ) {
-    po::doHelp( std::cout, opts, 78 );
-    printf( "Error Input parameters are not correct \n" );
-    return false;
-  }
-
-  // report the current configuration (only in the absence of errors so
-  // that errors/warnings are more obvious and in the same place).
-  if ( err.is_errored ) { return false; }
-  return true;
+PCCConformanceParameters::PCCConformanceParameters() {
+  checkConformance_ = false;
+  path_             = {};
+  levelIdc_         = 0;
+  fps_              = 0;
 }
 
-int main( int argc, char* argv[] ) {
-  std::cout << "PccAppConformance v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MINOR << std::endl << std::endl;
-  PCCConformanceParameters params;
-  if ( !parseParameters( argc, argv, params ) ) { return -1; }
+PCCConformanceParameters::~PCCConformanceParameters() = default;
 
-  PCCConformance conformance; 
-  conformance.check( params );
-  return 0;
+void PCCConformanceParameters::print() {
+  std::cout << "+ Parameters" << std::endl;
+  std::cout << "\t   checkConformance                     " << checkConformance_ << std::endl;
+  std::cout << "\t   path                                 " << path_ << std::endl;
+  std::cout << "\t   levelIdc                             " << levelIdc_ << std::endl;
+  std::cout << "\t   fps_                                 " << fps_ << std::endl;
+  std::cout << std::endl;
+}
+
+bool PCCConformanceParameters::check() {
+  bool ret = true;
+  if ( checkConformance_ ) {
+    if ( path_.empty() ) {
+      std::cout << "path not set\n";
+      ret = false;
+    }
+    if ( levelIdc_ == 0 ) {
+      std::cout << "levelIdc not set\n";
+      ret = false;
+    }
+    if ( fps_ == 0 ) {
+      std::cout << "levelIdc not set\n";
+      ret = false;
+    }
+  }
+  return ret;
 }

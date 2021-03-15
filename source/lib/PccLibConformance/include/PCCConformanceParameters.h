@@ -30,53 +30,26 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-
+#ifndef PCCConformanceParameters_h
+#define PCCConformanceParameters_h
 
 #include "PCCCommon.h"
-#include "PCCConformance.h"
-#include "PCCConformanceParameters.h"
 
-#include <program_options_lite.h>
-#include <deque>
+namespace pcc {
 
-using namespace pcc;
-using namespace std;
+class PCCConformanceParameters {
+ public:
+  PCCConformanceParameters();
+  ~PCCConformanceParameters();
+  void print();
+  bool check();
 
-bool parseParameters( int argc, char* argv[], PCCConformanceParameters& params ) {
-  namespace po    = df::program_options_lite;
-  bool print_help = false;
-  // clang-format off
-  po::Options opts;
-  opts.addOptions()
-     ("help", print_help, false, "This help text")
-     ( "checkConformance", params.checkConformance_, params.checkConformance_, "Check conformance")
-     ( "path", params.path_, params.path_, "Root directory of conformance files + prefix: C:\\Test\\pcc_conformance\\Bin\\S26C03R03_")
-     ( "level", params.levelIdc_, params.levelIdc_, "Level indice")
-     ( "fps", params.fps_, params.fps_, "frame per second");
-  // clang-format on
-  po::setDefaults( opts );
-  po::ErrorReporter        err;
-  const list<const char*>& argv_unhandled = po::scanArgv( opts, argc, (const char**)argv, err );
+  std::string  path_;
+  size_t       levelIdc_;
+  size_t       fps_;
+  bool         checkConformance_;
+};
 
-  params.print();
-  if ( !params.check() ) {
-    po::doHelp( std::cout, opts, 78 );
-    printf( "Error Input parameters are not correct \n" );
-    return false;
-  }
+};  // namespace pcc
 
-  // report the current configuration (only in the absence of errors so
-  // that errors/warnings are more obvious and in the same place).
-  if ( err.is_errored ) { return false; }
-  return true;
-}
-
-int main( int argc, char* argv[] ) {
-  std::cout << "PccAppConformance v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MINOR << std::endl << std::endl;
-  PCCConformanceParameters params;
-  if ( !parseParameters( argc, argv, params ) ) { return -1; }
-
-  PCCConformance conformance; 
-  conformance.check( params );
-  return 0;
-}
+#endif /* PCCMetricsParameters_h */

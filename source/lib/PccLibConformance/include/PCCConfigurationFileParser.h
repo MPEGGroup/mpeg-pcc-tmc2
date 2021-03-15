@@ -31,17 +31,10 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef PCCConformanceParser_h
-#define PCCConformanceParser_h
+#ifndef PCCConfigurationFleParser_h
+#define PCCConfigurationFleParser_h
 
-#include <functional>
-#include <iostream>
-#include <sstream>
-#include <string>
-#include <list>
-#include <map>
-#include <vector>
-#include<utility>
+#include "PCCCommon.h"
 
 namespace pcc {
 
@@ -125,10 +118,10 @@ enum ASPSLimitType {  // Table A-6
   MaxEomPatchesPerSec
 };
 
-struct ErrorMessage {
-  ErrorMessage( bool flg = false ) : is_errored_( flg ){};
-  ErrorMessage( const ErrorMessage& rep ) : is_errored_( rep.is_errored_ ){};
-  virtual ~ErrorMessage() {}
+struct PCCErrorMessage {
+  PCCErrorMessage( bool flg = false ) : is_errored_( flg ){};
+  PCCErrorMessage( const PCCErrorMessage& rep ) : is_errored_( rep.is_errored_ ){};
+  virtual ~PCCErrorMessage() {}
   virtual std::ostream& error( const std::string& errMessage, const std::string& where = "" );
   virtual std::ostream& warn( const std::string& errMessage, const std::string& where = "" );
   bool                  is_errored_;
@@ -160,10 +153,10 @@ struct PCCDynamicData {
 typedef std::vector<std::map<std::string, std::string>> KeyValMaps;
 typedef std::map<std::string, std::string>              StringStringMap;
 
-class CfrFileParser : ErrorMessage {
+class PCCConfigurationFileParser : PCCErrorMessage {
  public:
-  CfrFileParser( const std::vector<std::string>& keys ) :
-      ErrorMessage(), name_( "" ), linenum_( 0 ), keyList_( keys ){};
+  PCCConfigurationFileParser( const std::vector<std::string>& keys ) :
+      PCCErrorMessage(), name_( "" ), linenum_( 0 ), keyList_( keys ){};
 
   const std::string where() {
     std::ostringstream os;
@@ -186,5 +179,4 @@ class CfrFileParser : ErrorMessage {
 
 }//name space 
 
-
-#endif //~PCCConformanceParser_h
+#endif //~PCCConfigurationFleParser_h
