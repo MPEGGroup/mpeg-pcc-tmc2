@@ -37,7 +37,6 @@
 #include "PCCConformanceParameters.h"
 
 #include <program_options_lite.h>
-#include <deque>
 
 using namespace pcc;
 using namespace std;

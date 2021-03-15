@@ -178,9 +178,11 @@ class PCCVideoBitstream {
  private:
   size_t getEndOfNaluPosition( size_t startIndex ) {
     const size_t size = data_.size();
-    for ( size_t i = startIndex; i <= size; i++ ) {
-      if ( ( data_[i + 0] == 0x00 ) && ( data_[i + 1] == 0x00 ) &&
-           ( ( ( data_[i + 2] == 0x00 ) && ( data_[i + 3] == 0x01 ) ) || ( data_[i + 2] == 0x01 ) ) ) {
+    if ( size < startIndex + 4 ) { return size; }
+    for ( size_t i = startIndex; i < size - 4 ; i++ ) {
+      if ( ( data_[i + 0] == 0x00 ) && 
+           ( data_[i + 1] == 0x00 ) &&
+           ( ( data_[i + 2] == 0x01 ) || ( ( data_[i + 2] == 0x00 ) && ( data_[i + 3] == 0x01 ) ) ) ) {
         return i;
       }
     }
