@@ -118,7 +118,7 @@ bool PCCConformance::checkFiles( std::string&                    fNameEnc,
         cerr << "(Enc: " << left << setw( 30 ) << it->first << ", " << setw( 32 ) << it->second << " )"
              << " **DIFF**  ";
         cerr << "(Dec: " << left << setw( 30 ) << it->first << ", " << setw( 32 ) << dec[it->first] << " )" << endl;
-        allMatch_ = false;
+        allTestsMatch_ = false;
       }
       conformanceCount_++; 
     }
