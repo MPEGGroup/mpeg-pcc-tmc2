@@ -233,7 +233,6 @@ bool parseParameters( int                       argc,
     ( "surfaceSeparation", ignore, ignore, "Ignore parameter");
 
   opts.addOptions()
-     ("help", print_help, false, "This help text")
      ( "checkConformance", 
        conformanceParams.checkConformance_, 
        conformanceParams.checkConformance_, 

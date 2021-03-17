@@ -78,7 +78,11 @@ class PCCVideoDecoder {
     size_t            width = 0, height = 0;
     size_t            nbyte = bitDepth == 8 ? 1 : 2;
 
+#ifdef USE_VTMLIB_VIDEO_CODEC
+    if ( byteStreamVideoCoder ) { bitstream.sampleStreamToByteStream( codecId == VTMLIB ); }
+#else
     if ( byteStreamVideoCoder ) { bitstream.sampleStreamToByteStream(); }
+#endif
     if ( keepIntermediateFiles ) { bitstream.write( binFileName ); }
 
     // Decode video
