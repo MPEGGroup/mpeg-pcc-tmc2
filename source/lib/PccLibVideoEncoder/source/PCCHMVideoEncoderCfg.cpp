@@ -402,31 +402,6 @@ static istream& readStrToEnum( P map[], UInt mapLen, istream& in, T& val ) {
   return in;
 }
 
-// inline to prevent compiler warnings for "unused static function"
-
-namespace pcc_hm {
-static inline istream& operator>>( istream& in, UIProfileName& profile ) {
-  return readStrToEnum( strToUIProfileName, sizeof( strToUIProfileName ) / sizeof( *strToUIProfileName ), in, profile );
-}
-static inline istream& operator>>( istream& in, CostMode& mode ) {
-  return readStrToEnum( strToCostMode, sizeof( strToCostMode ) / sizeof( *strToCostMode ), in, mode );
-}
-
-static inline istream& operator>>( istream& in, ScalingListMode& mode ) {
-  return readStrToEnum( strToScalingListMode, sizeof( strToScalingListMode ) / sizeof( *strToScalingListMode ), in,
-                        mode );
-}
-namespace Level {
-static inline istream& operator>>( istream& in, Tier& tier ) {
-  return readStrToEnum( strToTier, sizeof( strToTier ) / sizeof( *strToTier ), in, tier );
-}
-
-static inline istream& operator>>( istream& in, Name& level ) {
-  return readStrToEnum( strToLevel, sizeof( strToLevel ) / sizeof( *strToLevel ), in, level );
-}
-}
-}  // namespace pcc_hm::Level
-
 template <class T>
 struct SMultiValueInputHM {
   const T           minValIncl;
@@ -474,13 +449,6 @@ struct SMultiValueInputHM {
 
   istream& readValues( std::istream& in );
 };
-
-namespace pcc_hm {
-template <class T>
-static inline istream& operator>>( std::istream& in, SMultiValueInputHM<T>& values ) {
-  return values.readValues( in );
-}
-}  // namespace pcc_hm
 
 template <>
 UInt SMultiValueInputHM<UInt>::readValue( const TChar*& pStr, Bool& bSuccess ) {
@@ -559,8 +527,20 @@ istream& SMultiValueInputHM<T>::readValues( std::istream& in ) {
   return in;
 }
 
+//namespace pcc_hm {
+
+// inline to prevent compiler warnings for "unused static function"
+
+static inline istream& operator>>( istream& in, UIProfileName& profile ) {
+  return readStrToEnum( strToUIProfileName, sizeof( strToUIProfileName ) / sizeof( *strToUIProfileName ), in, profile );
+}
+
+template <class T>
+static inline istream& operator>>( std::istream& in, SMultiValueInputHM<T>& values ) {
+  return values.readValues( in );
+}
+
 #if JVET_E0059_FLOATING_POINT_QP_FIX
-namespace pcc_hm {
 template <class T>
 static inline istream& operator>>( std::istream& in, PCCHMLibVideoEncoderCfg::OptionalValue<T>& value ) {
   in >> std::ws;
@@ -572,8 +552,29 @@ static inline istream& operator>>( std::istream& in, PCCHMLibVideoEncoderCfg::Op
   }
   return in;
 }
-}  // namespace pcc_hm
 #endif
+//}  // namespace pcc_hm
+
+namespace pcc_hm {
+  
+static inline istream& operator>>( istream& in, CostMode& mode ) {
+  return readStrToEnum( strToCostMode, sizeof( strToCostMode ) / sizeof( *strToCostMode ), in, mode );
+}
+static inline istream& operator>>( istream& in, ScalingListMode& mode ) {
+  return readStrToEnum( strToScalingListMode, sizeof( strToScalingListMode ) / sizeof( *strToScalingListMode ), in,
+                        mode );
+}
+namespace Level {
+static inline istream& operator>>( istream& in, Tier& tier ) {
+  return readStrToEnum( strToTier, sizeof( strToTier ) / sizeof( *strToTier ), in, tier );
+}
+
+static inline istream& operator>>( istream& in, Name& level ) {
+  return readStrToEnum( strToLevel, sizeof( strToLevel ) / sizeof( *strToLevel ), in, level );
+}
+} // namespace Level
+} // namespace pcc_hm
+
 
 static Void automaticallySelectRExtProfile( const Bool         bUsingGeneralRExtTools,
                                             const Bool         bUsingChromaQPAdjustment,

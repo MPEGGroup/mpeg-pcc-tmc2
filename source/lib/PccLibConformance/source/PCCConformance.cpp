@@ -123,6 +123,7 @@ bool PCCConformance::checkFiles( std::string&                    fNameEnc,
       conformanceCount_++; 
     }
   }
+  return true;
 }
 
 void PCCConformance::checkConformance( uint8_t levelIdc, double aR, KeyValMaps& key_val_map, bool atlasFlag ) {
@@ -191,7 +192,7 @@ void PCCConformance::checkConformance( uint8_t levelIdc, double aR, KeyValMaps& 
           // cout << totalPerSec.data_[n] << ", " << endl;
           maxValue = maxLevelLimit[agrData[n]];
           if ( totalPerSec.data_[n] > maxValue ) {
-            printf( " %s MaxPerSec %zu Exceeds Table A-6 Specified Limit %zu \n", agrData[n], totalPerSec.data_[n],
+            printf( " %s MaxPerSec %zu Exceeds Table A-6 Specified Limit %zu \n", agrData[n].c_str(), totalPerSec.data_[n],
                     maxValue );
           }
         }
