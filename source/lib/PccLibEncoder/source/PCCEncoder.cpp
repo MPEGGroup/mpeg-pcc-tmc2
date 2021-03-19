@@ -185,7 +185,13 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     markRawPatchLocationOccupancyMapVideo( context );
   }
 
-  generateBlockToPatchFromOccupancyMapVideo( context, params_.occupancyResolution_, params_.occupancyPrecision_ );
+  if ( params_.tileSegmentationType_ > 0 ) {
+    generateAtlasBlockToPatchFromOccupancyMapVideo( context, params_.occupancyResolution_,
+                                                    params_.occupancyPrecision_ );
+  } else {
+    generateBlockToPatchFromOccupancyMapVideo( context, params_.occupancyResolution_, params_.occupancyPrecision_ );
+  }
+
 #if 1
   printf( "Processing Geometry\n" );
   fflush( stdout );

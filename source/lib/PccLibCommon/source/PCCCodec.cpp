@@ -2068,27 +2068,114 @@ void PCCCodec::generateOccupancyMap( PCCFrameContext&      tile,
   }
 }
 
-void PCCCodec::generateBlockToPatchFromBoundaryBox( PCCContext&      context,
-                                                    PCCFrameContext& frame,
-                                                    const size_t     occupancyResolution ) {
-  auto&        patches            = frame.getPatches();
+void PCCCodec::generateTileBlockToPatchFromOccupancyMapVideo( PCCContext&  context,
+                                                          const size_t occupancyResolution,
+                                                          const size_t occupancyPrecision ) {
+  for ( int fi = 0; fi < context.size(); fi++ ) {
+    PCCImageOccupancyMap& occupancyImage = context.getVideoOccupancyMap().getFrame( fi );
+    for ( size_t tileIdx = 0; tileIdx < context[fi].getNumTilesInAtlasFrame(); tileIdx++ ) {
+      auto&                 tile           = context[fi].getTile( tileIdx );
+      generateTileBlockToPatchFromOccupancyMapVideo( context, tile, fi, occupancyImage, occupancyResolution,
+                                                 occupancyPrecision );
+    }
+  }
+}
+
+void PCCCodec::generateTileBlockToPatchFromOccupancyMapVideo( PCCContext&           context,
+                                                          PCCFrameContext&      tile,
+                                                          size_t                frameIdx,
+                                                          PCCImageOccupancyMap& atlasOccupancyMapImage,
+                                                          const size_t          occupancyResolution,
+                                                          const size_t          occupancyPrecision ) {
+  auto&        patches            = tile.getPatches();
   const size_t patchCount         = patches.size();
-  const size_t blockToPatchWidth  = frame.getWidth() / occupancyResolution;
-  const size_t blockToPatchHeight = frame.getHeight() / occupancyResolution;
+  const size_t blockToPatchWidth  = tile.getWidth() / occupancyResolution;
+  const size_t blockToPatchHeight = tile.getHeight() / occupancyResolution;
   const size_t blockCount         = blockToPatchWidth * blockToPatchHeight;
-  auto&        blockToPatch       = frame.getBlockToPatch();
+  auto&        blockToPatch       = tile.getBlockToPatch();
   blockToPatch.resize( blockCount );
   std::fill( blockToPatch.begin(), blockToPatch.end(), 0 );
   for ( size_t patchIndex = 0; patchIndex < patchCount; ++patchIndex ) {
-    auto& patch = patches[patchIndex];
+    auto&  patch        = patches[patchIndex];
+    size_t nonZeroPixel = 0;
     for ( size_t v0 = 0; v0 < patch.getSizeV0(); ++v0 ) {
       for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {
         const size_t blockIndex = patch.patchBlock2CanvasBlock( u0, v0, blockToPatchWidth, blockToPatchHeight );
-        if ( context.getAtlasSequenceParameterSet( 0 ).getPatchPrecedenceOrderFlag() ) {
-          if ( blockToPatch[blockIndex] == 0 ) { blockToPatch[blockIndex] = patchIndex + 1; }
-        } else {
-          blockToPatch[blockIndex] = patchIndex + 1;
+        nonZeroPixel            = 0;
+        for ( size_t v1 = 0; v1 < patch.getOccupancyResolution(); ++v1 ) {
+          const size_t v = v0 * patch.getOccupancyResolution() + v1;
+          for ( size_t u1 = 0; u1 < patch.getOccupancyResolution(); ++u1 ) {
+            const size_t u = u0 * patch.getOccupancyResolution() + u1;
+            size_t       x;
+            size_t       y;
+            patch.patch2Canvas( u, v, tile.getWidth(), tile.getHeight(), x, y );
+            x += tile.getLeftTopXInFrame();
+            y += tile.getLeftTopYInFrame();
+            nonZeroPixel += static_cast<unsigned long long>( atlasOccupancyMapImage.getValue( 0, x / occupancyPrecision, y / occupancyPrecision ) != 0 );
+          }
         }
+        if ( nonZeroPixel > 0 ) { blockToPatch[blockIndex] = patchIndex + 1; }
+      }
+    }
+  }
+}
+
+void PCCCodec::generateAtlasBlockToPatchFromOccupancyMapVideo( PCCContext&  context,
+                                                          const size_t occupancyResolution,
+                                                          const size_t occupancyPrecision ) {
+  //jkei: do we need this?
+  generateTileBlockToPatchFromOccupancyMapVideo(context, occupancyResolution, occupancyPrecision);
+  
+  for ( int fi = 0; fi < context.size(); fi++ ) {
+    PCCImageOccupancyMap& occupancyImage = context.getVideoOccupancyMap().getFrame( fi );
+    auto& atlasFrame = context.getFrame(fi).getTitleFrameContext();
+    //construct atlasPatchData;
+    //jkei: do we need this for tileType1?
+    atlasFrame.getPatches().clear();
+    for(size_t ti=0; ti<context.getFrame(fi).getNumTilesInAtlasFrame(); ti++){
+      auto& tile = context.getFrame(fi).getTile(ti);
+      for( auto patch : tile.getPatches()){
+        atlasFrame.getPatches().push_back(patch);
+      }
+    }
+    generateAtlasBlockToPatchFromOccupancyMapVideo( context, context.getFrame(fi).getTitleFrameContext(), fi, occupancyImage, occupancyResolution,
+                                               occupancyPrecision );
+  }
+}
+
+void PCCCodec::generateAtlasBlockToPatchFromOccupancyMapVideo( PCCContext&           context,
+                                                          PCCFrameContext&      titleFrame,
+                                                          size_t                frameIdx,
+                                                          PCCImageOccupancyMap& occupancyMapImage,
+                                                          const size_t          occupancyResolution,
+                                                          const size_t          occupancyPrecision ) {
+  auto&        patches            = titleFrame.getPatches();
+  const size_t patchCount         = patches.size();
+  const size_t blockToPatchWidth  = titleFrame.getWidth() / occupancyResolution;
+  const size_t blockToPatchHeight = titleFrame.getHeight() / occupancyResolution;
+  const size_t blockCount         = blockToPatchWidth * blockToPatchHeight;
+  auto&        blockToPatch       = titleFrame.getBlockToPatch();
+  blockToPatch.resize( blockCount );
+  std::fill( blockToPatch.begin(), blockToPatch.end(), 0 );
+  for ( size_t patchIndex = 0; patchIndex < patchCount; ++patchIndex ) {
+    auto&  patch        = patches[patchIndex];
+    size_t nonZeroPixel = 0;
+    for ( size_t v0 = 0; v0 < patch.getSizeV0(); ++v0 ) {
+      for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {
+        const size_t blockIndex = patch.patchBlock2CanvasBlock( u0, v0, blockToPatchWidth, blockToPatchHeight );
+        nonZeroPixel            = 0;
+        for ( size_t v1 = 0; v1 < patch.getOccupancyResolution(); ++v1 ) {
+          const size_t v = v0 * patch.getOccupancyResolution() + v1;
+          for ( size_t u1 = 0; u1 < patch.getOccupancyResolution(); ++u1 ) {
+            const size_t u = u0 * patch.getOccupancyResolution() + u1;
+            size_t       x;
+            size_t       y;
+            patch.patch2Canvas( u, v, titleFrame.getWidth(), titleFrame.getHeight(), x, y );
+            nonZeroPixel += static_cast<unsigned long long>(
+                occupancyMapImage.getValue( 0, x / occupancyPrecision, y / occupancyPrecision ) != 0 );
+          }
+        }
+        if ( nonZeroPixel > 0 ) { blockToPatch[blockIndex] = patchIndex + 1; }
       }
     }
   }
@@ -2374,7 +2461,7 @@ size_t PCCCodec::setTileSizeAndLocation( PCCContext& context, size_t frameIndex,
     tile.setWidth( asps.getFrameWidth() );
     tile.setHeight( asps.getFrameHeight() );
   } else {
-    if ( afti.getNumTilesInAtlasFrameMinus1() == 0 ) {
+    if ( afti.getNumTilesInAtlasFrameMinus1() != 0 ) {
       context[frameIndex].updatePartitionInfoPerFrame(
           frameIndex, asps.getFrameWidth(), asps.getFrameHeight(), afti.getNumTilesInAtlasFrameMinus1() + 1,
           afti.getUniformPartitionSpacingFlag(), afti.getPartitionColumnWidthMinus1( 0 ) + 1,

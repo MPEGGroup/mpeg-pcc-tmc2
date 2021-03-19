@@ -329,9 +329,16 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
                               context.getOccupancyPrecision(), oi.getLossyOccupancyCompressionThreshold(),
                               asps.getEomPatchEnabledFlag() );
       }
-      generateBlockToPatchFromOccupancyMapVideo(
-          context, tile, frameIdx, context.getVideoOccupancyMap().getFrame( frameIdx ),
-          size_t( 1 ) << asps.getLog2PatchPackingBlockSize(), context.getOccupancyPrecision() );
+      if (context[frameIdx].getNumTilesInAtlasFrame() > 1 ) {
+        generateTileBlockToPatchFromOccupancyMapVideo(
+            context, tile, frameIdx, context.getVideoOccupancyMap().getFrame( frameIdx ),
+            size_t( 1 ) << asps.getLog2PatchPackingBlockSize(), context.getOccupancyPrecision() );
+
+      } else {
+        generateBlockToPatchFromOccupancyMapVideo(
+            context, tile, frameIdx, context.getVideoOccupancyMap().getFrame( frameIdx ),
+            size_t( 1 ) << asps.getLog2PatchPackingBlockSize(), context.getOccupancyPrecision() );
+      }
 
       printf( "call generatePointCloud() \n" );
       PCCPointSet3 tileReconstrct;

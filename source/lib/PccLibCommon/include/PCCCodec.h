@@ -208,22 +208,27 @@ class PCCCodec {
                              const size_t          thresholdLossyOM,
                              const bool            enhancedOccupancyMapForDepthFlag );
 
-  // void generateBlockToPatchFromBoundaryBox( PCCContext& context, const size_t occupancyResolution );
-  void generateBlockToPatchFromOccupancyMap( PCCContext&  context,
-                                             const size_t occupancyResolution,
-                                             const size_t occupancyPrecision,
-                                             bool         bFrameLevel );
+  void generateTileBlockToPatchFromOccupancyMapVideo( PCCContext&  context,
+                                                  const size_t occupancyResolution,
+                                                  const size_t occupancyPrecision );
 
-  void generateBlockToPatchFromOccupancyMap( PCCContext&           context,
-                                             PCCFrameContext&      tile,
-                                             size_t                frameIdx,
-                                             PCCImageOccupancyMap& occupancyMapImage,
-                                             const size_t          occupancyResolution,
-                                             const size_t          occupancyPrecision );
+  void generateTileBlockToPatchFromOccupancyMapVideo( PCCContext&           context,
+                                                       PCCFrameContext&      tile,
+                                                       size_t                frameIdx,
+                                                       PCCImageOccupancyMap& occupancyMapImage,
+                                                       const size_t          occupancyResolution,
+                                                       const size_t          occupancyPrecision );
+  
+  void generateAtlasBlockToPatchFromOccupancyMapVideo( PCCContext&  context,
+                                                  const size_t occupancyResolution,
+                                                  const size_t occupancyPrecision );
 
-  void generateBlockToPatchFromBoundaryBox( PCCContext&      context,
-                                            PCCFrameContext& frame,
-                                            const size_t     occupancyResolution );
+  void generateAtlasBlockToPatchFromOccupancyMapVideo( PCCContext&           context,
+                                                       PCCFrameContext&      tile,
+                                                       size_t                frameIdx,
+                                                       PCCImageOccupancyMap& occupancyMapImage,
+                                                       const size_t          occupancyResolution,
+                                                       const size_t          occupancyPrecision );
 
   void generateBlockToPatchFromOccupancyMapVideo( PCCContext&  context,
                                                   const size_t occupancyResolution,
