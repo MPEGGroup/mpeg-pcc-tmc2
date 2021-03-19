@@ -38,9 +38,9 @@ using namespace pcc;
 ostream& PCCErrorMessage::error( const std::string& errMessage, const std::string& where ) {
   is_errored_ = true;
   if ( !where.empty() ) {
-    cerr << " Error: " << errMessage << "\n" << where << endl;
+    cerr << "\n\nError: " << errMessage << "\n" << where << endl;
   } else {
-    cerr << " Error: " << errMessage << endl;
+    cerr << "\n\nError: " << errMessage << endl;
   }
   return cerr;
 }

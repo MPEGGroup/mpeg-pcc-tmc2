@@ -38,6 +38,8 @@
 
 namespace pcc {
 
+const std::vector<std::string> hlsKeys = { "HLSMD5" };
+
 const std::vector<std::string> atlasKeys = { "AtlasFrameIndex",
                                              "AtlasFrameOrderCntVal",
                                              "AtlasFrameWidthMax",

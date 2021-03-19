@@ -63,7 +63,9 @@ class PCCConformance {
   inline void convertString( const std::string& keyValue, T& val );
 
   size_t conformanceCount_;
-  bool   allTestsMatch_;
+  size_t checkFileCount_;
+  bool   checkFileTestsMatch_;
+  bool   conformanceTestsMatch_;
 };
 
 }  // namespace pcc
