@@ -51,9 +51,9 @@ void PCCConformance::check( const PCCConformanceParameters& params ) {
   std::string fileDecA = params.path_ + "enc_hls_log.txt";
   std::string fileDecB = params.path_ + "dec_hls_log.txt";
   cout << "\n ^^^^^^Checking High Level Syntax Log Files^^^^^^\n\n";
-
   if ( !checkFiles( fileDecA, fileDecB, hlsKeys, key_val_decA, key_val_decB ) ) {
     std::string tmp = fileDecA + "  " + fileDecB;
+    cout << "\n ******* Files Do Not Have Equal Lines  ******* \n";
     errMsg.warn( "\n ******* Files Do Not Have Equal Lines  ******* \n", tmp );
   }
   fileDecA = params.path_ + "enc_atlas_log.txt";
@@ -61,6 +61,7 @@ void PCCConformance::check( const PCCConformanceParameters& params ) {
   cout << "\n ^^^^^^Checking Atlas Log Files^^^^^^\n\n";
   if ( !checkFiles( fileDecA, fileDecB, atlasKeys, key_val_decA, key_val_decB ) ) {
     std::string tmp = fileDecA + "  " + fileDecB;
+    cout << "\n ******* Files Do Not Have Equal Lines  ******* \n";
     errMsg.warn( "\n ******* Files Do Not Have Equal Lines  ******* \n", tmp );
   }
   conformanceCount_      = 0;
@@ -73,6 +74,7 @@ void PCCConformance::check( const PCCConformanceParameters& params ) {
   fileDecB = params.path_ + "dec_tile_log.txt";
   if ( !checkFiles( fileDecA, fileDecB, tileKeys, key_val_decA, key_val_decB ) ) {
     std::string tmp = fileDecA + "  " + fileDecB;
+    cout << "\n ******* Files Do Not Have Equal Lines  ******* \n";
     errMsg.warn( "\n ******* Files Do Not Have Equal Lines ******* \n", tmp );
   }
   key_val_decA.clear();
@@ -82,6 +84,7 @@ void PCCConformance::check( const PCCConformanceParameters& params ) {
   fileDecB = params.path_ + "dec_pcframe_log.txt";
   if ( !checkFiles( fileDecA, fileDecB, pcframeKeys, key_val_decA, key_val_decB ) ) {
     std::string tmp = fileDecA + "  " + fileDecB;
+    cout << "\n ******* Files Do Not Have Equal Lines  ******* \n";
     errMsg.warn( "\n ******* Files Do Not Have Equal Lines  ******* \n", tmp );
   }
   checkConformance( params.levelIdc_, aR, key_val_decB, false );
@@ -92,6 +95,7 @@ void PCCConformance::check( const PCCConformanceParameters& params ) {
   fileDecB = params.path_ + "dec_picture_log.txt";
   if ( !checkFiles( fileDecA, fileDecB, pictureKeys, key_val_decA, key_val_decB ) ) {
     std::string tmp = fileDecA + "  " + fileDecB;
+    cout << "\n ******* Files Do Not Have Equal Lines  ******* \n";
     errMsg.warn( "\n ******* Files Do Not Have Equal Lines  ******* \n", tmp );
   }
   cout << "\n ^^^^^^Matched Check File Tests " << ( checkFileTestsMatch_ ? "MATCH" : "DIFF" ) << " : " << checkFileCount_
@@ -106,8 +110,14 @@ bool PCCConformance::checkFiles( std::string&                    fNameEnc,
                                  KeyValMaps&                     key_val_enc,
                                  KeyValMaps&                     key_val_dec ) {
   PCCConfigurationFileParser cfr( keyList );
-  cfr.parseFile( fNameEnc, key_val_enc );
-  cfr.parseFile( fNameDec, key_val_dec );
+  if( !cfr.parseFile( fNameEnc, key_val_enc ) ) {
+    cerr << " Encoder File " << fNameEnc << " not exist \n";
+    return false; 
+  }
+  if( !cfr.parseFile( fNameDec, key_val_dec ) ) {
+    cerr << " Decoder File " << fNameDec << " not exist \n";
+    return false; 
+  }
   if ( key_val_enc.size() != key_val_dec.size() ) {
     cerr << " Encoder File Has " << key_val_enc.size() << " Lines \n";
     cerr << " Decoder File Has " << key_val_dec.size() << " Lines \n";
@@ -133,7 +143,7 @@ bool PCCConformance::checkFiles( std::string&                    fNameEnc,
         cerr << "(Dec: " << left << setw( 30 ) << it->first << ", " << setw( 32 ) << dec[it->first] << " )" << endl;
         checkFileTestsMatch_ = false;
       }
-      checkFileCount_++; 
+      checkFileCount_++;
     }
   }
   return true;

@@ -167,7 +167,7 @@ class PCCConfigurationFileParser : PCCErrorMessage {
     return os.str();
   }
 
-  void parseFile( std::string& fileName, KeyValMaps& key_val_maps );
+  bool parseFile( std::string& fileName, KeyValMaps& key_val_maps );
   void scanLine( std::string& line, KeyValMaps& key_val_maps );
   void scanStream( std::istream& in, KeyValMaps& key_Val_maps );
   bool validKey( std::string& key );

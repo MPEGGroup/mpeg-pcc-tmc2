@@ -106,22 +106,23 @@ void PCCConfigurationFileParser::scanStream( std::istream& in, KeyValMaps& key_v
   } while ( !!in );
 }
 
-void PCCConfigurationFileParser::parseFile( std::string& fileName, KeyValMaps& key_val_maps ) {
+bool PCCConfigurationFileParser::parseFile( std::string& fileName, KeyValMaps& key_val_maps ) {
   name_    = fileName;
   linenum_ = 0;
   std::map<std::string, std::string> key_val_map;
   std::ifstream                      cfrStream( name_.c_str(), std::ifstream::in );
   if ( !cfrStream ) {
     error( name_ ) << "Failed to Open : " << name_ << endl;
-    exit( -1 );
+    return false;
   }
   scanStream( cfrStream, key_val_maps );
+  return true;
 }
 
 bool PCCConfigurationFileParser::validKey( std::string& name ) {
   bool found = false;
   for ( auto key : keyList_ ) {
-    if ( !name.compare( key ) ) found = true;
+    if ( !name.compare( key ) ) { found = true; }
   }
   return found;
 }
