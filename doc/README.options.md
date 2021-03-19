@@ -324,7 +324,13 @@ nbThread                       & Number of thread used for parallel         \\
                                & processing                                 \\ \hline
 minimumImageHeight             & Ignore parameter                           \\ \hline
 flagColorPreSmoothing          & Ignore parameter                           \\ \hline
-surfaceSeparation              & Ignore parameter                           \\ \hline
+surfaceSeparation              & Ignore parameter                           \\ \hline\hline
+{\bf Conformance}              &                                            \\ \hline\hline
+checkConformance               & Check conformance                          \\ \hline
+path                           & Root directory of conformance files and    \\ 
+                               & prefix:   S26C03R03_                       \\ \hline
+level                          & Level indice                               \\ \hline
+fps                            & Frame per second                           \\ \hline
 \end{longtable}                      
 
 
