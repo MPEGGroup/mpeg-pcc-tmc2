@@ -42,7 +42,8 @@ namespace pcc {
 enum PCCLoggerType {
   LOG_DESCR = 0,  // *.txt	a short description of the bitstream	(mandatory)
   LOG_TRACE,      // *.trc	trace file	(optional)
-  LOG_ATLAS,      // *_atlas_log.txt output atlas log	(mandatory)  ajt:shall we instead use atlas_id.oal?
+  LOG_HLS,      // *_hls_log.txt output high level syntax log	(mandatory?)  
+  LOG_ATLAS,      // *_atlas_log.txt output atlas log	(mandatory) 
   LOG_TILES,      // *_tile_log.txt	output tile group log	(mandatory)  ajt: within atlas file we could also interleave tiles?
   LOG_PCFRAME,      // *_pcframe_log.txt	output point cloud frame log	(mandatory)
   LOG_PICTURE,      // *_picture_log.txt	output point cloud frame log	(mandatory)
@@ -60,6 +61,7 @@ static const std::string get( PCCLoggerType type ) {
   switch ( type ) {
     case LOG_DESCR: return std::string( ".txt" );
     case LOG_TRACE: return std::string( ".trc" );
+    case LOG_HLS: return std::string( "_hls_log.txt" );
     case LOG_ATLAS: return std::string( "_atlas_log.txt" );
     case LOG_TILES: return std::string( "_tile_log.txt" );
     case LOG_PCFRAME: return std::string( "_pcframe_log.txt" );
@@ -136,6 +138,10 @@ class PCCLogger {
   template <typename... Args>
   inline void traceTrace( const char* format, Args... args ) {
     trace( LOG_TRACE, format, args... );
+  }
+  template <typename... Args>
+  inline void traceHLS( const char* format, Args... args ) {
+    trace( LOG_HLS, format, args... );
   }
   template <typename... Args>
   inline void traceAtlas( const char* format, Args... args ) {
