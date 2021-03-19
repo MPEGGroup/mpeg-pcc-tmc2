@@ -1166,7 +1166,12 @@ void PCCDecoder::createHashInformation( PCCContext& context, int frameIndex ) {
       bool                 equal = false;
       std::vector<uint8_t> encMD5( 16 ), decMD5( 16 );
       encMD5 = context.computeMD5( highLevelAtlasData.data(), highLevelAtlasData.size() );
-      for ( int j = 0; j < 16; j++ ) decMD5[j] = sei.getHighLevelMd5( j );
+      TRACE_HLS( " HLSMD5 = " );
+      for ( int j = 0; j < 16; j++ ) { 
+          decMD5[j] = sei.getHighLevelMd5( j );
+          TRACE_HLS( "%02x", encMD5[j] );
+      }
+      TRACE_HLS( "\n" );
       printf( "\t**sei** (MD5): " );
       equal = compareHashSEIMD5( encMD5, decMD5 );
       printf( " (%s) \n", equal ? "OK" : "DIFF" );

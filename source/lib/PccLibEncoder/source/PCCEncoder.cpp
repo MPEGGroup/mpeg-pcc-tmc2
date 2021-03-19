@@ -8902,7 +8902,12 @@ void PCCEncoder::createHashInformation( PCCContext& context, int frameIndex, siz
       printf( "\t**sei** (MD5): " );
       for ( auto& e : encMD5 ) printf( "%02x", e );
       printf( "\n" );
-      for ( int j = 0; j < 16; j++ ) sei.setHighLevelMd5( j, encMD5[j] );
+      TRACE_HLS( " HLSMD5 = " );
+      for ( int j = 0; j < 16; j++ ) { 
+          sei.setHighLevelMd5( j, encMD5[j] );
+          TRACE_HLS( "%02x", encMD5[j] );
+      }
+      TRACE_HLS( "\n" );
     } else if ( sei.getHashType() == 1 ) {
       uint16_t crc = context.computeCRC( highLevelAtlasData.data(), highLevelAtlasData.size() );
       printf( "\t**sei** (CRC): %04x\n", crc );
