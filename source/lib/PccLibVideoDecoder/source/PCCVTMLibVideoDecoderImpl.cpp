@@ -90,7 +90,7 @@ uint32_t PCCVTMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream,
   }
 
   // main decoder loop
-  bool loopFiltered[MAX_VPS_LAYERS] = { false };
+  bool loopFiltered[MAX_VPS_LAYERS] = {false};
   bool bPicSkipped                  = false;
 
   bool isEosPresentInPu     = false;
@@ -511,10 +511,7 @@ void PCCVTMLibVideoDecoderImpl<T>::xWriteOutput( PicList* pcListPic, uint32_t tI
            ( numPicsNotYetDisplayed > maxNumReorderPicsHighestTid || dpbFullness > maxDecPicBufferingHighestTid ) ) {
         // write to file
         numPicsNotYetDisplayed--;
-        if (!pcPic->referenced)
-        {
-          dpbFullness--;
-        }
+        if ( !pcPic->referenced ) { dpbFullness--; }
         xWritePicture( pcPic, video );
 
         // update POC of display order
@@ -628,7 +625,7 @@ void PCCVTMLibVideoDecoderImpl<T>::xFlushOutput( PicList* pcListPic, PCCVideo<T,
 
   if ( layerId != NOT_VALID ) {
     pcListPic->remove_if( []( Picture* p ) { return p == nullptr; } );
-  } else{
+  } else {
     pcListPic->clear();
   }
   m_iPOCLastDisplay = -MAX_INT;
@@ -642,10 +639,9 @@ void PCCVTMLibVideoDecoderImpl<T>::xWritePicture( const Picture* pic, PCCVideo<T
           m_outputBitDepth[0], m_internalBitDepths - m_outputBitDepth[0], sizeof( T ), chromaSubsample );
   fflush( stdout );
   video.resize( video.getFrameCount() + 1 );
-  auto&          image  = video.getFrames().back();
-  PCCCOLORFORMAT format = chromaSubsample > 1 ? PCCCOLORFORMAT::YUV420
-                          : m_bRGB2GBR        ? PCCCOLORFORMAT::RGB444
-                                              : PCCCOLORFORMAT::YUV444;
+  auto&          image = video.getFrames().back();
+  PCCCOLORFORMAT format =
+      chromaSubsample > 1 ? PCCCOLORFORMAT::YUV420 : m_bRGB2GBR ? PCCCOLORFORMAT::RGB444 : PCCCOLORFORMAT::YUV444;
   image.set( pic->getBuf( COMPONENT_Y, PIC_RECONSTRUCTION ).bufAt( 0, 0 ),
              pic->getBuf( COMPONENT_Cb, PIC_RECONSTRUCTION ).bufAt( 0, 0 ),
              pic->getBuf( COMPONENT_Cr, PIC_RECONSTRUCTION ).bufAt( 0, 0 ), m_outputWidth, m_outputHeight,

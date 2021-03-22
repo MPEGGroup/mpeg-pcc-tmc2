@@ -66,10 +66,10 @@ class PCCGroupOfFrames {
              const bool              readNormals = false,
              const size_t            nbThread    = 1 );
 
-  bool write( const std::string& reconstructedDataPath, 
-              size_t& frameNumber,
-              const size_t nbThread = 1,
-              const bool isAscii = true );
+  bool write( const std::string& reconstructedDataPath,
+              size_t&            frameNumber,
+              const size_t       nbThread = 1,
+              const bool         isAscii  = true );
 
  private:
   std::vector<PCCPointSet3> frames_;

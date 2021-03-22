@@ -70,7 +70,7 @@ class PCCVideoEncoder {
                  const bool         use444CodecIo,
                  const bool         use3dmv,
 #ifdef USE_HM_PCC_RDO
-                 const bool         usePccRDO, 
+                 const bool usePccRDO,
 #endif
                  const size_t       internalBitDepth,
                  const bool         useConversion,
@@ -380,18 +380,18 @@ class PCCVideoEncoder {
     params.transquantBypassEnable_      = false;
     params.inputColourSpaceConvert_     = use444CodecIo;
 #ifdef USE_HM_PCC_RDO
-    params.usePccRDO_                   = usePccRDO;
+    params.usePccRDO_ = usePccRDO;
 #endif
     printf( "Encode: video size = %zu x %zu num frames = %zu \n", video.getWidth(), video.getHeight(),
             video.getFrameCount() );
     fflush( stdout );
     PCCVideo<T, 3> videoRec;
     auto           encoder = PCCVirtualVideoEncoder<T>::create( codecId );
-    encoder->encode( video, params, bitstream, videoRec );   
+    encoder->encode( video, params, bitstream, videoRec );
 
-    size_t frameIndex = 0; 
+    size_t frameIndex = 0;
     for ( auto& image : videoRec ) {
-      TRACE_PICTURE( "PicOrderCntVal = %d, ", frameIndex++ );      
+      TRACE_PICTURE( "PicOrderCntVal = %d, ", frameIndex++ );
       TRACE_PICTURE( " MD5checksumChan0 = %s, ", image.computeMD5( 0 ).c_str() );
       TRACE_PICTURE( " MD5checksumChan1 = %s, ", image.computeMD5( 1 ).c_str() );
       TRACE_PICTURE( " MD5checksumChan2 = %s \n", image.computeMD5( 2 ).c_str() );
@@ -417,17 +417,15 @@ class PCCVideoEncoder {
       if ( keepIntermediateFiles ) { video.write( yuv444RecFileName, 2 ); }
       video.setDeprecatedColorFormat( 2 );
     }
-    
-    if(byteStreamVideoCoder)
-      bitstream.byteStreamToSampleStream();
+
+    if ( byteStreamVideoCoder ) bitstream.byteStreamToSampleStream();
     return true;
   }
 
   void setLogger( PCCLogger& logger ) { logger_ = &logger; }
 
  private:
-
-     PCCLogger* logger_ = nullptr;
+  PCCLogger* logger_ = nullptr;
 };
 
 };  // namespace pcc

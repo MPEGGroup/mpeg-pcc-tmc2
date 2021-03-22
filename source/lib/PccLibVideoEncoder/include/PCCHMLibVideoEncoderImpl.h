@@ -78,15 +78,15 @@ class PCCHMLibVideoEncoderImpl : public PCCHMLibVideoEncoderCfg {
                std::string        arguments,
                PCCVideoBitstream& bitstream,
 
-      PCCVideo<T, 3>&    videoRec );
-// #if PCC_CF_EXT
+               PCCVideo<T, 3>& videoRec );
+  // #if PCC_CF_EXT
   // void setLogger( PCCLogger& logger ) { logger_ = &logger; }
-// #endif
- // protected:
+  // #endif
+  // protected:
 
-// #if PCC_CF_EXT
+  // #if PCC_CF_EXT
   // PCCLogger* logger_ = nullptr;
-// #endif
+  // #endif
 
  private:
   Void xInitLibCfg();

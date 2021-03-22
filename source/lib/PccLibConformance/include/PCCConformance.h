@@ -41,7 +41,7 @@
 #include <list>
 #include <map>
 #include <vector>
-#include<utility>
+#include <utility>
 
 namespace pcc {
 
@@ -70,4 +70,4 @@ class PCCConformance {
 
 }  // namespace pcc
 
-#endif //~PCCConformanceParser_h
+#endif  //~PCCConformanceParser_h

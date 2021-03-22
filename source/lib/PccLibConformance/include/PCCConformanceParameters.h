@@ -44,10 +44,10 @@ class PCCConformanceParameters {
   void print();
   bool check();
 
-  std::string  path_;
-  size_t       levelIdc_;
-  size_t       fps_;
-  bool         checkConformance_;
+  std::string path_;
+  size_t      levelIdc_;
+  size_t      fps_;
+  bool        checkConformance_;
 };
 
 };  // namespace pcc

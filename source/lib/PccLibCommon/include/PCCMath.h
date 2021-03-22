@@ -217,8 +217,8 @@ template <typename T>
 struct PCCBox3 {
   PCCVector3<T> min_;
   PCCVector3<T> max_;
-  
-  void init(){
+
+  void init() {
     min_.x() = ( std::numeric_limits<T>::max )();
     min_.y() = ( std::numeric_limits<T>::max )();
     min_.z() = ( std::numeric_limits<T>::max )();
@@ -230,8 +230,8 @@ struct PCCBox3 {
   inline uint16_t sizeX() const { return max_.x() - min_.x(); }
   inline uint16_t sizeY() const { return max_.y() - min_.y(); }
   inline uint16_t sizeZ() const { return max_.z() - min_.z(); }
-  
-  bool          contains( const PCCVector3<T> point ) const {
+
+  bool contains( const PCCVector3<T> point ) const {
     return !( point.x() < min_.x() || point.x() > max_.x() || point.y() < min_.y() || point.y() > max_.y() ||
               point.z() < min_.z() || point.z() > max_.z() );
   }

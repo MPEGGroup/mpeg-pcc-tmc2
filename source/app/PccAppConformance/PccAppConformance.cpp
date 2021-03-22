@@ -31,7 +31,6 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 #include "PCCCommon.h"
 #include "PCCConformance.h"
 #include "PCCConformanceParameters.h"
@@ -76,7 +75,7 @@ int main( int argc, char* argv[] ) {
   PCCConformanceParameters params;
   if ( !parseParameters( argc, argv, params ) ) { return -1; }
 
-  PCCConformance conformance; 
+  PCCConformance conformance;
   conformance.check( params );
   return 0;
 }

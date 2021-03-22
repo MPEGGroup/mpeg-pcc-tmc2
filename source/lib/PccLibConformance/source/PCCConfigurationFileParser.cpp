@@ -56,17 +56,17 @@ std::ostream& PCCErrorMessage::warn( const std::string& warningMessage, const st
 
 void PCCConfigurationFileParser::scanLine( std::string& line, KeyValMaps& key_val_maps ) {
   std::map<std::string, std::string> key_val_map;
-  std::string                        spKey[3] = { "Occupancy", "Geometry", "Attribute" };
-  if ( line.find( "#" ) != std::string::npos ) { return; } // skip comment line 
+  std::string                        spKey[3] = {"Occupancy", "Geometry", "Attribute"};
+  if ( line.find( "#" ) != std::string::npos ) { return; }  // skip comment line
   size_t start = line.find_first_not_of( " \t\n\r" );
-  if ( start == string::npos ) { return; } // blank line 
+  if ( start == string::npos ) { return; }  // blank line
   line.erase( std::remove( line.begin(), line.end(), ' ' ), line.end() );
   size_t curPos = 0;
   line += " ";
   while ( line.size() > 1 ) {
     std::string keyName = "Not Set", keyValue = "";
     curPos = line.find_first_of( "=" );
-    if ( curPos != std::string::npos ){
+    if ( curPos != std::string::npos ) {
       keyName = line.substr( 0, curPos );
     } else {
       size_t found;

@@ -45,10 +45,10 @@ template <typename T>
 PCCJMLibVideoEncoder<T>::~PCCJMLibVideoEncoder() {}
 
 template <typename T>
-void PCCJMLibVideoEncoder<T>::encode( PCCVideo<T, 3>&    videoSrc,
+void PCCJMLibVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
                                       PCCVideoEncoderParameters& params,
-                                      PCCVideoBitstream& bitstream,
-                                      PCCVideo<T, 3>&    videoRec ) {
+                                      PCCVideoBitstream&         bitstream,
+                                      PCCVideo<T, 3>&            videoRec ) {
   const size_t width      = videoSrc.getWidth();
   const size_t height     = videoSrc.getHeight();
   const size_t frameCount = videoSrc.getFrameCount();
@@ -68,7 +68,7 @@ void PCCJMLibVideoEncoder<T>::encode( PCCVideo<T, 3>&    videoSrc,
   }
   cmd << " -p InputFile=" << params.srcYuvFileName_;
   cmd << " -p SourceBitDepthLuma=" << params.inputBitDepth_;
-  cmd << " -p YUVFormat=" << ( params.use444CodecIo_ ? "3" : "1" ) ;
+  cmd << " -p YUVFormat=" << ( params.use444CodecIo_ ? "3" : "1" );
   cmd << " -p FrameRate=30 ";
   cmd << " -p FrameSkip=0 ";
   cmd << " -p SourceWidth=" << width;

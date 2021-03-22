@@ -126,7 +126,7 @@ int main( int argc, char* argv[] ) {
   params.use444CodecIo_          = false;
   params.usePccMotionEstimation_ = false;
 #ifdef USE_HM_PCC_RDO
-  params.usePccRDO_              = false;
+  params.usePccRDO_ = false;
 #endif
 
   auto encoder = PCCVirtualVideoEncoder<uint8_t>::create( codecId );

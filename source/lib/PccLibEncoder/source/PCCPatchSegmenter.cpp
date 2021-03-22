@@ -1088,16 +1088,17 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
       d1CountPerPatch  = pointCount[1];
       eomCountPerPatch = pointCount[2];
 
-      //note: patch.getSizeD() cannot generate maximum depth(e.g. getSizeD=255, quantDD=3, quantDD needs to be limitted to satisfy the bitcount)
-      //max : (1<<std::min(geometryBitDepth3D, geometryBitDepth2D))
+      // note: patch.getSizeD() cannot generate maximum depth(e.g. getSizeD=255, quantDD=3, quantDD needs to be limitted
+      // to satisfy the bitcount) max : (1<<std::min(geometryBitDepth3D, geometryBitDepth2D))
       patch.getSizeDPixel() = patch.getSizeD();
-      patch.getSizeD() = std::min( (size_t)(1<<std::min(geometryBitDepth3D, geometryBitDepth2D))-1, patch.getSizeD());
-      size_t bitdepthD = std::min(geometryBitDepth3D, geometryBitDepth2D) - std::log2( minLevel );
-      size_t maxDDplus1= 1<<bitdepthD; //e.g. 4
-      size_t quantDD   = patch.getSizeD() ==0? 0 : ((patch.getSizeD()-1) / minLevel + 1); 
-             quantDD   = std::min(quantDD, maxDDplus1-1); //1,2,3,3
-      patch.getSizeD() = quantDD==0? 0 : (quantDD * minLevel - 1); //63, 127, 191, 191
-      
+      patch.getSizeD() =
+          std::min( ( size_t )( 1 << std::min( geometryBitDepth3D, geometryBitDepth2D ) ) - 1, patch.getSizeD() );
+      size_t bitdepthD  = std::min( geometryBitDepth3D, geometryBitDepth2D ) - std::log2( minLevel );
+      size_t maxDDplus1 = 1 << bitdepthD;  // e.g. 4
+      size_t quantDD    = patch.getSizeD() == 0 ? 0 : ( ( patch.getSizeD() - 1 ) / minLevel + 1 );
+      quantDD           = std::min( quantDD, maxDDplus1 - 1 );            // 1,2,3,3
+      patch.getSizeD()  = quantDD == 0 ? 0 : ( quantDD * minLevel - 1 );  // 63, 127, 191, 191
+
       if ( createSubPointCloud ) {
         PCCPointSet3 testSrc;
         PCCPointSet3 testRec;

@@ -37,7 +37,11 @@
 using namespace std;
 using namespace pcc;
 
-PCCConformance::PCCConformance() : conformanceCount_( 0 ), checkFileCount_(0), checkFileTestsMatch_(true), conformanceTestsMatch_( true ) {}
+PCCConformance::PCCConformance() :
+    conformanceCount_( 0 ),
+    checkFileCount_( 0 ),
+    checkFileTestsMatch_( true ),
+    conformanceTestsMatch_( true ) {}
 PCCConformance::~PCCConformance() {}
 
 void PCCConformance::check( const PCCConformanceParameters& params ) {
@@ -45,8 +49,8 @@ void PCCConformance::check( const PCCConformanceParameters& params ) {
   bool            atlasFlag;
   double          aR = 1. / (double)params.fps_;
   KeyValMaps      key_val_decA, key_val_decB;
-  checkFileCount_ = 0;
-  checkFileTestsMatch_    = true;
+  checkFileCount_      = 0;
+  checkFileTestsMatch_ = true;
   cout << "\n MPEG PCC Conformance v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MINOR << endl;
   std::string fileDecA = params.path_ + "enc_hls_log.txt";
   std::string fileDecB = params.path_ + "dec_hls_log.txt";
@@ -98,8 +102,8 @@ void PCCConformance::check( const PCCConformanceParameters& params ) {
     cout << "\n ******* Files Do Not Have Equal Lines  ******* \n";
     errMsg.warn( "\n ******* Files Do Not Have Equal Lines  ******* \n", tmp );
   }
-  cout << "\n ^^^^^^Matched Check File Tests " << ( checkFileTestsMatch_ ? "MATCH" : "DIFF" ) << " : " << checkFileCount_
-       << " tests^^^^^^\n\n";
+  cout << "\n ^^^^^^Matched Check File Tests " << ( checkFileTestsMatch_ ? "MATCH" : "DIFF" ) << " : "
+       << checkFileCount_ << " tests^^^^^^\n\n";
   cout << "\n ^^^^^^Matched Dynamic Conformance Tests " << ( conformanceTestsMatch_ ? "MATCH" : "DIFF" ) << " : "
        << conformanceCount_ << " tests^^^^^^\n\n";
 }
@@ -110,13 +114,13 @@ bool PCCConformance::checkFiles( std::string&                    fNameEnc,
                                  KeyValMaps&                     key_val_enc,
                                  KeyValMaps&                     key_val_dec ) {
   PCCConfigurationFileParser cfr( keyList );
-  if( !cfr.parseFile( fNameEnc, key_val_enc ) ) {
+  if ( !cfr.parseFile( fNameEnc, key_val_enc ) ) {
     cerr << " Encoder File " << fNameEnc << " not exist \n";
-    return false; 
+    return false;
   }
-  if( !cfr.parseFile( fNameDec, key_val_dec ) ) {
+  if ( !cfr.parseFile( fNameDec, key_val_dec ) ) {
     cerr << " Decoder File " << fNameDec << " not exist \n";
-    return false; 
+    return false;
   }
   if ( key_val_enc.size() != key_val_dec.size() ) {
     cerr << " Encoder File Has " << key_val_enc.size() << " Lines \n";
@@ -160,7 +164,9 @@ void PCCConformance::checkConformance( uint8_t levelIdc, double aR, KeyValMaps& 
   int64_t frmPerSecMin1 = ( int64_t )( 1 / aR ) - 1;
   uint8_t levelIdx      = ( uint8_t )( 2 * ( levelIdc / 30.0 - 1 ) );
   if ( levelIdx >= 6 ) {
-    error_rep.error( " Dynamic Conformance Check Cannot Be Done: level indicator should be in multiples of 30 i.e. 30 - 105 for levels 1 to 3.5 \n" );
+    error_rep.error(
+        " Dynamic Conformance Check Cannot Be Done: level indicator should be in multiples of 30 i.e. 30 - 105 for "
+        "levels 1 to 3.5 \n" );
     return;
   }
 
@@ -220,8 +226,8 @@ void PCCConformance::checkConformance( uint8_t levelIdc, double aR, KeyValMaps& 
           // cout << totalPerSec.data_[n] << ", " << endl;
           maxValue = maxLevelLimit[agrData[n]];
           if ( totalPerSec.data_[n] > maxValue ) {
-            printf( " %s MaxPerSec %zu Exceeds Table A-6 Specified Limit %zu \n", agrData[n].c_str(), totalPerSec.data_[n],
-                    maxValue );
+            printf( " %s MaxPerSec %zu Exceeds Table A-6 Specified Limit %zu \n", agrData[n].c_str(),
+                    totalPerSec.data_[n], maxValue );
             conformanceTestsMatch_ = false;
           }
         }

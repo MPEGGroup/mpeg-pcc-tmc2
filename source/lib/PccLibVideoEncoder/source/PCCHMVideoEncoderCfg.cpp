@@ -417,20 +417,20 @@ struct SMultiValueInputHM {
       maxNumValuesIncl( 0 ),
       values( defaults ) {}
   SMultiValueInputHM( const T&    minValue,
-                    const T&    maxValue,
-                    std::size_t minNumberValues = 0,
-                    std::size_t maxNumberValues = 0 ) :
+                      const T&    maxValue,
+                      std::size_t minNumberValues = 0,
+                      std::size_t maxNumberValues = 0 ) :
       minValIncl( minValue ),
       maxValIncl( maxValue ),
       minNumValuesIncl( minNumberValues ),
       maxNumValuesIncl( maxNumberValues ),
       values() {}
   SMultiValueInputHM( const T&    minValue,
-                    const T&    maxValue,
-                    std::size_t minNumberValues,
-                    std::size_t maxNumberValues,
-                    const T*    defValues,
-                    const UInt  numDefValues ) :
+                      const T&    maxValue,
+                      std::size_t minNumberValues,
+                      std::size_t maxNumberValues,
+                      const T*    defValues,
+                      const UInt  numDefValues ) :
       minValIncl( minValue ),
       maxValIncl( maxValue ),
       minNumValuesIncl( minNumberValues ),
@@ -527,7 +527,7 @@ istream& SMultiValueInputHM<T>::readValues( std::istream& in ) {
   return in;
 }
 
-//namespace pcc_hm {
+// namespace pcc_hm {
 
 // inline to prevent compiler warnings for "unused static function"
 
@@ -556,7 +556,7 @@ static inline istream& operator>>( std::istream& in, PCCHMLibVideoEncoderCfg::Op
 //}  // namespace pcc_hm
 
 namespace pcc_hm {
-  
+
 static inline istream& operator>>( istream& in, CostMode& mode ) {
   return readStrToEnum( strToCostMode, sizeof( strToCostMode ) / sizeof( *strToCostMode ), in, mode );
 }
@@ -572,9 +572,8 @@ static inline istream& operator>>( istream& in, Tier& tier ) {
 static inline istream& operator>>( istream& in, Name& level ) {
   return readStrToEnum( strToLevel, sizeof( strToLevel ) / sizeof( *strToLevel ), in, level );
 }
-} // namespace Level
-} // namespace pcc_hm
-
+}  // namespace Level
+}  // namespace pcc_hm
 
 static Void automaticallySelectRExtProfile( const Bool         bUsingGeneralRExtTools,
                                             const Bool         bUsingChromaQPAdjustment,
@@ -658,12 +657,12 @@ Bool PCCHMLibVideoEncoderCfg::parseCfg( Int argc, TChar* argv[] ) {
   // default values]
   SMultiValueInputHM<UInt> cfg_ColumnWidth( 0, std::numeric_limits<UInt>::max(), 0, std::numeric_limits<UInt>::max() );
   SMultiValueInputHM<UInt> cfg_RowHeight( 0, std::numeric_limits<UInt>::max(), 0, std::numeric_limits<UInt>::max() );
-  SMultiValueInputHM<Int>  cfg_startOfCodedInterval( std::numeric_limits<Int>::min(), std::numeric_limits<Int>::max(), 0,
-                                                  1 << 16 );
-  SMultiValueInputHM<Int>  cfg_codedPivotValue( std::numeric_limits<Int>::min(), std::numeric_limits<Int>::max(), 0,
-                                             1 << 16 );
-  SMultiValueInputHM<Int>  cfg_targetPivotValue( std::numeric_limits<Int>::min(), std::numeric_limits<Int>::max(), 0,
-                                              1 << 16 );
+  SMultiValueInputHM<Int> cfg_startOfCodedInterval( std::numeric_limits<Int>::min(), std::numeric_limits<Int>::max(), 0,
+                                                    1 << 16 );
+  SMultiValueInputHM<Int> cfg_codedPivotValue( std::numeric_limits<Int>::min(), std::numeric_limits<Int>::max(), 0,
+                                               1 << 16 );
+  SMultiValueInputHM<Int> cfg_targetPivotValue( std::numeric_limits<Int>::min(), std::numeric_limits<Int>::max(), 0,
+                                                1 << 16 );
 
   SMultiValueInputHM<Double> cfg_adIntraLambdaModifier(
       0, std::numeric_limits<Double>::max(), 0,
@@ -672,29 +671,29 @@ Bool PCCHMLibVideoEncoderCfg::parseCfg( Int argc, TChar* argv[] ) {
                      ///[temporalLayer], else if size>0, use [size()-1], else use
                      /// m_adLambdaModifier.
 
-  const Int             defaultLumaLevelTodQp_QpChangePoints[]   = {-3, -2, -1, 0, 1, 2, 3, 4, 5, 6};
-  const Int             defaultLumaLevelTodQp_LumaChangePoints[] = {0, 301, 367, 434, 501, 567, 634, 701, 767, 834};
+  const Int               defaultLumaLevelTodQp_QpChangePoints[]   = {-3, -2, -1, 0, 1, 2, 3, 4, 5, 6};
+  const Int               defaultLumaLevelTodQp_LumaChangePoints[] = {0, 301, 367, 434, 501, 567, 634, 701, 767, 834};
   SMultiValueInputHM<Int> cfg_lumaLeveltoDQPMappingQP( -MAX_QP, MAX_QP, 0, LUMA_LEVEL_TO_DQP_LUT_MAXSIZE,
-                                                     defaultLumaLevelTodQp_QpChangePoints,
-                                                     sizeof( defaultLumaLevelTodQp_QpChangePoints ) / sizeof( Int ) );
+                                                       defaultLumaLevelTodQp_QpChangePoints,
+                                                       sizeof( defaultLumaLevelTodQp_QpChangePoints ) / sizeof( Int ) );
   SMultiValueInputHM<Int> cfg_lumaLeveltoDQPMappingLuma(
       0, std::numeric_limits<Int>::max(), 0, LUMA_LEVEL_TO_DQP_LUT_MAXSIZE, defaultLumaLevelTodQp_LumaChangePoints,
       sizeof( defaultLumaLevelTodQp_LumaChangePoints ) / sizeof( Int ) );
   UInt lumaLevelToDeltaQPMode;
 
-  const UInt             defaultInputKneeCodes[3]       = {600, 800, 900};
-  const UInt             defaultOutputKneeCodes[3]      = {100, 250, 450};
-  Int                    cfg_kneeSEINumKneePointsMinus1 = 0;
+  const UInt               defaultInputKneeCodes[3]       = {600, 800, 900};
+  const UInt               defaultOutputKneeCodes[3]      = {100, 250, 450};
+  Int                      cfg_kneeSEINumKneePointsMinus1 = 0;
   SMultiValueInputHM<UInt> cfg_kneeSEIInputKneePointValue( 1, 999, 0, 999, defaultInputKneeCodes,
-                                                         sizeof( defaultInputKneeCodes ) / sizeof( UInt ) );
+                                                           sizeof( defaultInputKneeCodes ) / sizeof( UInt ) );
   SMultiValueInputHM<UInt> cfg_kneeSEIOutputKneePointValue( 0, 1000, 0, 999, defaultOutputKneeCodes,
-                                                          sizeof( defaultOutputKneeCodes ) / sizeof( UInt ) );
-  const Int              defaultPrimaryCodes[6]   = {0, 50000, 0, 0, 50000, 0};
-  const Int              defaultWhitePointCode[2] = {16667, 16667};
+                                                            sizeof( defaultOutputKneeCodes ) / sizeof( UInt ) );
+  const Int                defaultPrimaryCodes[6]   = {0, 50000, 0, 0, 50000, 0};
+  const Int                defaultWhitePointCode[2] = {16667, 16667};
   SMultiValueInputHM<Int>  cfg_DisplayPrimariesCode( 0, 50000, 6, 6, defaultPrimaryCodes,
-                                                  sizeof( defaultPrimaryCodes ) / sizeof( Int ) );
+                                                    sizeof( defaultPrimaryCodes ) / sizeof( Int ) );
   SMultiValueInputHM<Int>  cfg_DisplayWhitePointCode( 0, 50000, 2, 2, defaultWhitePointCode,
-                                                   sizeof( defaultWhitePointCode ) / sizeof( Int ) );
+                                                     sizeof( defaultWhitePointCode ) / sizeof( Int ) );
 
   SMultiValueInputHM<Bool> cfg_timeCodeSeiTimeStampFlag( 0, 1, 0, MAX_TIMECODE_SEI_SETS );
   SMultiValueInputHM<Bool> cfg_timeCodeSeiNumUnitFieldBasedFlag( 0, 1, 0, MAX_TIMECODE_SEI_SETS );
@@ -711,7 +710,7 @@ Bool PCCHMLibVideoEncoderCfg::parseCfg( Int argc, TChar* argv[] ) {
   SMultiValueInputHM<Bool> cfg_timeCodeSeiHoursFlag( 0, 1, 0, MAX_TIMECODE_SEI_SETS );
   SMultiValueInputHM<Int>  cfg_timeCodeSeiTimeOffsetLength( 0, 31, 0, MAX_TIMECODE_SEI_SETS );
   SMultiValueInputHM<Int>  cfg_timeCodeSeiTimeOffsetValue( std::numeric_limits<Int>::min(),
-                                                        std::numeric_limits<Int>::max(), 0, MAX_TIMECODE_SEI_SETS );
+                                                          std::numeric_limits<Int>::max(), 0, MAX_TIMECODE_SEI_SETS );
 #if ERP_SR_OV_SEI_MESSAGE
   SMultiValueInputHM<Int>  cfg_omniViewportSEIAzimuthCentre( -11796480, 11796479, 0, 15 );
   SMultiValueInputHM<Int>  cfg_omniViewportSEIElevationCentre( -5898240, 5898240, 0, 15 );
@@ -723,29 +722,29 @@ Bool PCCHMLibVideoEncoderCfg::parseCfg( Int argc, TChar* argv[] ) {
   SMultiValueInputHM<UInt> cfg_rwpSEIRwpTransformType( 0, 7, 0, std::numeric_limits<UChar>::max() );
   SMultiValueInputHM<Bool> cfg_rwpSEIRwpGuardBandFlag( 0, 1, 0, std::numeric_limits<UChar>::max() );
   SMultiValueInputHM<UInt> cfg_rwpSEIProjRegionWidth( 0, std::numeric_limits<UInt>::max(), 0,
-                                                    std::numeric_limits<UChar>::max() );
-  SMultiValueInputHM<UInt> cfg_rwpSEIProjRegionHeight( 0, std::numeric_limits<UInt>::max(), 0,
-                                                     std::numeric_limits<UChar>::max() );
-  SMultiValueInputHM<UInt> cfg_rwpSEIRwpSEIProjRegionTop( 0, std::numeric_limits<UInt>::max(), 0,
-                                                        std::numeric_limits<UChar>::max() );
-  SMultiValueInputHM<UInt> cfg_rwpSEIProjRegionLeft( 0, std::numeric_limits<UInt>::max(), 0,
-                                                   std::numeric_limits<UChar>::max() );
-  SMultiValueInputHM<UInt> cfg_rwpSEIPackedRegionWidth( 0, std::numeric_limits<UShort>::max(), 0,
                                                       std::numeric_limits<UChar>::max() );
-  SMultiValueInputHM<UInt> cfg_rwpSEIPackedRegionHeight( 0, std::numeric_limits<UShort>::max(), 0,
+  SMultiValueInputHM<UInt> cfg_rwpSEIProjRegionHeight( 0, std::numeric_limits<UInt>::max(), 0,
                                                        std::numeric_limits<UChar>::max() );
-  SMultiValueInputHM<UInt> cfg_rwpSEIPackedRegionTop( 0, std::numeric_limits<UShort>::max(), 0,
-                                                    std::numeric_limits<UChar>::max() );
-  SMultiValueInputHM<UInt> cfg_rwpSEIPackedRegionLeft( 0, std::numeric_limits<UShort>::max(), 0,
+  SMultiValueInputHM<UInt> cfg_rwpSEIRwpSEIProjRegionTop( 0, std::numeric_limits<UInt>::max(), 0,
+                                                          std::numeric_limits<UChar>::max() );
+  SMultiValueInputHM<UInt> cfg_rwpSEIProjRegionLeft( 0, std::numeric_limits<UInt>::max(), 0,
                                                      std::numeric_limits<UChar>::max() );
+  SMultiValueInputHM<UInt> cfg_rwpSEIPackedRegionWidth( 0, std::numeric_limits<UShort>::max(), 0,
+                                                        std::numeric_limits<UChar>::max() );
+  SMultiValueInputHM<UInt> cfg_rwpSEIPackedRegionHeight( 0, std::numeric_limits<UShort>::max(), 0,
+                                                         std::numeric_limits<UChar>::max() );
+  SMultiValueInputHM<UInt> cfg_rwpSEIPackedRegionTop( 0, std::numeric_limits<UShort>::max(), 0,
+                                                      std::numeric_limits<UChar>::max() );
+  SMultiValueInputHM<UInt> cfg_rwpSEIPackedRegionLeft( 0, std::numeric_limits<UShort>::max(), 0,
+                                                       std::numeric_limits<UChar>::max() );
   SMultiValueInputHM<UInt> cfg_rwpSEIRwpLeftGuardBandWidth( 0, std::numeric_limits<UChar>::max(), 0,
-                                                          std::numeric_limits<UChar>::max() );
+                                                            std::numeric_limits<UChar>::max() );
   SMultiValueInputHM<UInt> cfg_rwpSEIRwpRightGuardBandWidth( 0, std::numeric_limits<UChar>::max(), 0,
-                                                           std::numeric_limits<UChar>::max() );
-  SMultiValueInputHM<UInt> cfg_rwpSEIRwpTopGuardBandHeight( 0, std::numeric_limits<UChar>::max(), 0,
-                                                          std::numeric_limits<UChar>::max() );
-  SMultiValueInputHM<UInt> cfg_rwpSEIRwpBottomGuardBandHeight( 0, std::numeric_limits<UChar>::max(), 0,
                                                              std::numeric_limits<UChar>::max() );
+  SMultiValueInputHM<UInt> cfg_rwpSEIRwpTopGuardBandHeight( 0, std::numeric_limits<UChar>::max(), 0,
+                                                            std::numeric_limits<UChar>::max() );
+  SMultiValueInputHM<UInt> cfg_rwpSEIRwpBottomGuardBandHeight( 0, std::numeric_limits<UChar>::max(), 0,
+                                                               std::numeric_limits<UChar>::max() );
   SMultiValueInputHM<Bool> cfg_rwpSEIRwpGuardBandNotUsedForPredFlag( 0, 1, 0, std::numeric_limits<UChar>::max() );
   SMultiValueInputHM<UInt> cfg_rwpSEIRwpGuardBandType( 0, 7, 0, 4 * std::numeric_limits<UChar>::max() );
 #endif

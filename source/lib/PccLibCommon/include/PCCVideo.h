@@ -126,11 +126,11 @@ class PCCVideo {
     return false;
   }
   bool read_JM( const std::string    fileName,
-             const size_t         sizeU0,
-             const size_t         sizeV0,
-             const PCCCOLORFORMAT format,
-             const size_t         frameCount,
-             const size_t         nbyte ) {
+                const size_t         sizeU0,
+                const size_t         sizeV0,
+                const PCCCOLORFORMAT format,
+                const size_t         frameCount,
+                const size_t         nbyte ) {
     printf( "Read video: %s \n", fileName.c_str() );
     fflush( stdout );
     std::ifstream infile( fileName, std::ios::binary );
@@ -186,11 +186,11 @@ class PCCVideo {
     return true;
   }
   bool read_JM( std::ifstream&       infile,
-             const size_t         sizeU0,
-             const size_t         sizeV0,
-             const PCCCOLORFORMAT format,
-             const size_t         frameCount,
-             const size_t         nbyte ) {
+                const size_t         sizeU0,
+                const size_t         sizeV0,
+                const PCCCOLORFORMAT format,
+                const size_t         frameCount,
+                const size_t         nbyte ) {
     frames_.resize( frameCount );
     for ( auto& frame : frames_ ) {
       if ( !frame.read( infile, sizeU0, sizeV0, format, nbyte ) ) { return false; }

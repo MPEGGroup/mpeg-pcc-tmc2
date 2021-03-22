@@ -185,12 +185,12 @@ PCCEncoderParameters::PCCEncoderParameters() {
   // GPA
   globalPatchAllocation_ = 0;
   // GTP
-  globalPackingStrategyGOF_         = 0;
-  globalPackingStrategyReset_       = false;
-  globalPackingStrategyThreshold_   = 0;
-  use3dmc_                          = true;
+  globalPackingStrategyGOF_       = 0;
+  globalPackingStrategyReset_     = false;
+  globalPackingStrategyThreshold_ = 0;
+  use3dmc_                        = true;
 #ifdef USE_HM_PCC_RDO
-  usePccRDO_                        = false;
+  usePccRDO_ = false;
 #endif
   enhancedPP_                       = true;
   minWeightEPP_                     = 0.6;
@@ -620,7 +620,7 @@ bool PCCEncoderParameters::check() {
   }
   if ( losslessGeo_ ) {
 #ifdef USE_HM_PCC_RDO
-    usePccRDO_              = false;
+    usePccRDO_ = false;
 #endif
     pbfEnableFlag_          = false;
     occupancyMapRefinement_ = false;
@@ -995,7 +995,8 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     frame.setMaxDepth( ( 1 << geometryNominal2dBitdepth_ ) - 1 );
     frame.setLog2PatchQuantizerSizeX( context.getLog2PatchQuantizerSizeX() );
     frame.setLog2PatchQuantizerSizeY( context.getLog2PatchQuantizerSizeY() );
-    frame.setAtlasFrmOrderCntLsb( context.calculateAFOCLsb( i ) );  //ajt:: lsb and afoc values of tileFrame is set during the initilaization process
+    frame.setAtlasFrmOrderCntLsb( context.calculateAFOCLsb(
+        i ) );  // ajt:: lsb and afoc values of tileFrame is set during the initilaization process
     frame.setAtlasFrmOrderCntVal( i );
     if ( i == 0 ) {
       frame.setNumRefIdxActive( 0 );

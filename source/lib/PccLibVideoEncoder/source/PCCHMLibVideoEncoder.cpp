@@ -84,7 +84,7 @@ void PCCHMLibVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
 #ifdef USE_HM_PCC_RDO
   if ( params.usePccRDO_ ) { cmd << " --UsePccRDO=1"; }
 #endif
-  
+
   if ( params.inputColourSpaceConvert_ ) { cmd << " --InputColourSpaceConvert=RGBtoGBR"; }
   std::cout << cmd.str() << std::endl;
 

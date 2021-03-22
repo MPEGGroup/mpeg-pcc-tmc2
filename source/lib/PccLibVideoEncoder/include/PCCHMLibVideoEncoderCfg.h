@@ -78,7 +78,7 @@ class PCCHMLibVideoEncoderCfg {
   std::string m_patchInfoFileName;
 #endif
 #if PCC_RDO_EXT
-  Bool        m_usePCCRDO;
+  Bool m_usePCCRDO;
 #endif
 #if PCC_RDO_EXT && !PCC_ME_EXT
   std::string m_occupancyMapFileName;
@@ -714,9 +714,9 @@ class PCCHMLibVideoEncoderCfg {
   Void destroy();                            ///< destroy option handling class
   Bool parseCfg( Int argc, TChar* argv[] );  ///< parse configuration file to fill
                                              /// member variables
-  #if PCC_CF_EXT
+#if PCC_CF_EXT
 
-  #endif
+#endif
 
 };  // END CLASS DEFINITION PCCHMLibVideoEncoderCfg
 

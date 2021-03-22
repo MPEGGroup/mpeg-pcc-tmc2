@@ -197,10 +197,10 @@ Void PCCHMLibVideoEncoderImpl<T>::xInitLibCfg() {
   }
 #endif
 #if PCC_RDO_EXT
-  m_cTEncTop.setUsePCCRDOExt(m_usePCCRDO);
+  m_cTEncTop.setUsePCCRDOExt( m_usePCCRDO );
 #endif
 #if PCC_RDO_EXT && !PCC_ME_EXT
-  m_cTEncTop.setOccupancyMapFileName(m_occupancyMapFileName);
+  m_cTEncTop.setOccupancyMapFileName( m_occupancyMapFileName );
 #endif
 
   m_cTEncTop.setProfile( m_profile );

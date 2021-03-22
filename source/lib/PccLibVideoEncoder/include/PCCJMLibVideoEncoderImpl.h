@@ -48,7 +48,7 @@ namespace pcc {
 
 /// encoder application class
 template <class T>
-//class PCCJMLibVideoEncoderImpl : public PCCHMLibVideoEncoderCfg {
+// class PCCJMLibVideoEncoderImpl : public PCCHMLibVideoEncoderCfg {
 class PCCJMLibVideoEncoderImpl {
  public:
   PCCJMLibVideoEncoderImpl();

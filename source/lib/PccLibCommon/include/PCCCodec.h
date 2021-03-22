@@ -209,19 +209,19 @@ class PCCCodec {
                              const bool            enhancedOccupancyMapForDepthFlag );
 
   void generateTileBlockToPatchFromOccupancyMapVideo( PCCContext&  context,
-                                                  const size_t occupancyResolution,
-                                                  const size_t occupancyPrecision );
+                                                      const size_t occupancyResolution,
+                                                      const size_t occupancyPrecision );
 
   void generateTileBlockToPatchFromOccupancyMapVideo( PCCContext&           context,
-                                                       PCCFrameContext&      tile,
-                                                       size_t                frameIdx,
-                                                       PCCImageOccupancyMap& occupancyMapImage,
-                                                       const size_t          occupancyResolution,
-                                                       const size_t          occupancyPrecision );
-  
+                                                      PCCFrameContext&      tile,
+                                                      size_t                frameIdx,
+                                                      PCCImageOccupancyMap& occupancyMapImage,
+                                                      const size_t          occupancyResolution,
+                                                      const size_t          occupancyPrecision );
+
   void generateAtlasBlockToPatchFromOccupancyMapVideo( PCCContext&  context,
-                                                  const size_t occupancyResolution,
-                                                  const size_t occupancyPrecision );
+                                                       const size_t occupancyResolution,
+                                                       const size_t occupancyPrecision );
 
   void generateAtlasBlockToPatchFromOccupancyMapVideo( PCCContext&           context,
                                                        PCCFrameContext&      tile,
